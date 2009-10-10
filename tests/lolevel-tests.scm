@@ -265,25 +265,3 @@
 (assert (not (eq? foo new-foo)))
 
 (assert (equal? '(hello 1 2) (foo 1 2)))
-
-; set-invalid-procedure-call-handler!
-
-(set-invalid-procedure-call-handler!
- (lambda (proc args)
-   (cond [(string? proc) (apply string-ref proc args)]
-         [(vector? proc) (apply vector-ref proc args)]
-         [else
-          (error 'lolevel-test:invalid-procedure-call-handler
-                 "bad argument type - not a procedure" proc args)])))
-
-(assert (char=? #\b ("abc" 1)))
-
-(assert (char=? #\b ('#(#\a #\b #\c) 1)))
-
-; unbound-variable-value
-
-(unbound-variable-value '23skidoo)
-
-(assert (eq? '23skidoo skidoo))
-
-(unbound-variable-value)
