@@ -59,6 +59,7 @@ the program and any runtime options (all options starting with {{-:}})
 removed.
 
 
+
 === current-read-table
 A read-table object that holds read-procedures for special non-standard
 read-syntax (see {{set-read-syntax!}} for more information).
@@ -128,21 +129,6 @@ A procedure of zero arguments that is called via {{reset}}. The
 default behavior in compiled code is to invoke the value of
 {{(exit-handler)}}. The default behavior in the interpreter is to
 abort the current computation and to restart the read-eval-print loop.
-
-
-=== dynamic-load-mode
-On systems that support dynamic loading of compiled code via the {{dlopen(3)}}
-interface (for example Linux and Solaris), some options can be specified to
-fine-tune the behaviour of the dynamic linker. {{MODE}} should be a list of
-symbols (or a single symbol) taken from the following set:
-
-; {{local}} : If {{local}} is given, then any C/C++ symbols defined in the dynamically loaded file are not available for subsequently loaded files and libraries. Use this if you have linked foreign code into your dynamically loadable file and if you don't want to export them (for example because you want to load another file that defines the same symbols).
-; {{global}} : The default is {{global}}, which means all C/C++ symbols are available to code loaded at a later stage.
-; {{now}} : If {{now}} is specified, all symbols are resolved immediately.
-; {{lazy}} : Unresolved symbols are resolved as code from the file is executed. This is the default. 
-
-Note that this procedure does not control the way Scheme variables are handled -
-this facility is mainly of interest when accessing foreign code.
 
 ---
 Previous: [[Declarations]]
