@@ -61,7 +61,6 @@ printed before evaluation by applying the expression to the value of this
 argument, which should be a one-argument procedure.
 
 See also the [[http://chicken.wiki.br/Parameters#load-verbose|load-verbose]] parameter.
-
 ==== load-library
 
  [procedure] (load-library UNIT [LIBRARYFILE])
@@ -81,68 +80,6 @@ can be successfully loaded, a feature-identifier named {{UNIT}}
 is registered. If the feature is already registered before loading,
 the {{load-library}} does nothing.
 
-==== loaded-libraries
-
- [procedure] (loaded-libraries)
- 
-Returns a list of the dynamic library names.
-
-==== dynamic-library-load
-
- [procedure] (dynamic-library-load LIBRARYFILE [ERROR?])
- 
-Performs a dynamic load of the binary file {{LIBRARYFILE}}.
-
-WIll raise an error upon failure to find the symbol. Unless {{ERROR?}} is
-{{#f}}, in which case {{#f}} is returned.
-
-==== dynamic-library-procedure
-
- [procedure] (dynamic-library-procedure LIBRARYFILE SYMBOLNAME HANDLER [ERROR?])
- 
-Performs a symbol to address lookup in the dynamic load library
-{{LIBRARYFILE}}. Attempts to load the library if not already loaded.
-
-A {{symbol}} {{SYMBOLNAME}} will be converted to a {{string}}.
-
-{{HANDLER}} is a procedure of 4 arguments.
-
-Returns a {{procedure}} of N arguments, {{ARGS}}, with body
-{{(HANDLER LIBRARYFILE SYMBOLNAME POINTER ARGS)}}. {{PONTER}} is a {{pointer}}
-with an address value of the symbol in the library.
-
-WIll raise an error upon failure to find the symbol. Unless {{ERROR?}} is
-{{#f}}, in which case {{#f}} is returned.
-
-On platforms other than Windows the literal form of the symbol is attempted
-first, followed by a lookup with a leading underscore {{#\_}}.
-
-==== dynamic-library-variable
-
- [procedure] (dynamic-library-variable LIBRARYFILE SYMBOLNAME HANDLER [ERROR?])
- 
-Performs a symbol to address lookup in the dynamic load library
-{{LIBRARYFILE}}. Attempts to load the library if not already loaded.
-
-A {{symbol}} {{SYMBOLNAME}} will be converted to a {{string}}.
-
-{{HANDLER}} is a procedure of 4 arguments.
-
-Returns a {{procedure}} of N arguments, {{ARGS}}, with body
-{{(HANDLER LIBRARYFILE SYMBOLNAME POINTER ARGS)}}. {{PONTER}} is a {{pointer}}
-with an address value of the symbol in the library.
-
-WIll raise an error upon failure to find the symbol. Unless {{ERROR?}} is
-{{#f}}, in which case {{#f}} is returned.
-
-On platforms other than Windows the literal form of the symbol is attempted
-first, followed by a lookup with a leading underscore {{#\_}}.
-
-The distinction between a procedure and variable symbol lookup is platform
-dependent, if even possible. On Windows {{dynamic-library-variable}} will
-always fail. On all other supported platforms {{dynamic-library-variable}} will
-do the right thing.
-
 ==== set-dynamic-load-mode!
 
  [procedure] (set-dynamic-load-mode! MODELIST)
@@ -159,8 +96,6 @@ symbols (or a single symbol) taken from the following set:
 
 Note that this procedure does not control the way Scheme variables are handled -
 this facility is mainly of interest when accessing foreign code.
-
-DEPRECATED - See the [[http://chicken.wiki.br/Parameters#dynamic-load-mode|dynamic-load-mode]] parameter
 
 
 === Read-eval-print loop
