@@ -3355,7 +3355,8 @@ EOF
 		   (if (##sys#fudge 32) " gchooks" "") 
 		   (if (##sys#fudge 35) " applyhook" "")
 		   (if (##sys#fudge 39) " cross" "") ) ) )
-	(string-append "Version " +build-version+ "\n")
+	(string-append
+	 "Version " +build-version+ "\n"
 	 (get-config)
 	 (if (zero? (##sys#size spec))
 	     ""
