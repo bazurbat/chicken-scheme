@@ -76,7 +76,7 @@
      ##sys#make-c-string ##sys#resolve-include-filename
      ##sys#load ##sys#error ##sys#warn ##sys#hash-table-location ##sys#expand-home-path
      ##sys#make-flonum ##sys#make-pointer ##sys#null-pointer ##sys#address->pointer 
-     ##sys#pointer->address ##sys#compile-to-closure ##sys#make-string ##sys#make-lambda-info ##sys#lambda-info?
+     ##sys#pointer->address ##sys#compile-to-closure ##sys#make-string ##sys#make-lambda-info
      ##sys#number? ##sys#symbol->qualified-string ##sys#decorate-lambda ##sys#string-append
      ##sys#ensure-heap-reserve ##sys#syntax-error-hook ##sys#read-prompt-hook
      ##sys#repl-eval-hook ##sys#append ##sys#eval-decorator
@@ -215,7 +215,7 @@
 (define (##sys#eval-decorator p ll h cntr)
   (##sys#decorate-lambda
    p 
-   ##sys#lambda-info?
+   (lambda (x) (and (not (##sys#immediate? x)) (##core#inline "C_lambdainfop" x)))
    (lambda (p i)
      (##sys#setslot 
       p i 
@@ -1807,3 +1807,13 @@
 
 (define-external (CHICKEN_get_error_message ((c-pointer "char") buf) (int bufsize)) void
   (store-string (or last-error "No error") bufsize buf) )
+
+
+;;; Create lambda-info object
+
+(define (##sys#make-lambda-info str)
+  (let* ((sz (##sys#size str))
+	 (info (##sys#make-string sz)) )
+    (##core#inline "C_copy_memory" info str sz)
+    (##core#inline "C_string_to_lambdainfo" info)
+    info) )
