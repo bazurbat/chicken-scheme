@@ -344,23 +344,15 @@ endif
 
 .PHONY: all
 
-all: buildsvnrevision $(TARGETS)
-
-buildsvnrevision:
-ifdef WINDOWS_SHELL
-	echo 0 >buildsvnrevision
-else
-	sh $(SRCDIR)svnrevision.sh
-endif
+all: $(TARGETS)
 
 # generic part of chicken-config.h
 
 ifndef CUSTOM_CHICKEN_DEFAULTS
-chicken-defaults.h: buildsvnrevision
+chicken-defaults.h:
 	echo "/* generated */" >$@
 	echo "#define C_BUILD_TAG \"$(BUILD_TAG)\"" >>$@
 	echo "#define C_CHICKEN_PROGRAM \"$(CHICKEN_PROGRAM)$(EXE)\"" >>$@
-	echo "#define C_SVN_REVISION $(shell cat buildsvnrevision)" >>$@
 	echo "#ifndef C_INSTALL_CC" >>$@
 	echo "# define C_INSTALL_CC \"$(C_COMPILER)\"" >>$@
 	echo "#endif" >>$@

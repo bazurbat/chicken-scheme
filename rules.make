@@ -1230,7 +1230,7 @@ setup-download.c: $(SRCDIR)setup-download.scm setup-api.c
 
 .PHONY: distfiles dist html
 
-distfiles: buildsvnrevision library.c eval.c expand.c chicken-syntax.c \
+distfiles: library.c eval.c expand.c chicken-syntax.c \
 	data-structures.c ports.c files.c extras.c lolevel.c utils.c \
 	tcp.c srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c \
 	posixunix.c posixwin.c regex.c scheduler.c profiler.c stub.c \
@@ -1276,7 +1276,7 @@ ifdef USES_SONAME
 endif
 
 confclean:
-	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) chicken-config.h chicken-defaults.h buildsvnrevision
+	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) chicken-config.h chicken-defaults.h
 
 spotless: distclean testclean
 	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) library.c eval.c data-structures.c \

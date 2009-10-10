@@ -104,7 +104,6 @@ uutils.c
 build.scm
 version.scm
 buildversion
-buildsvnrevision
 c-backend.scm
 c-platform.scm
 chicken-ffi-syntax.scm
@@ -276,7 +275,6 @@ scripts/makedist.scm
 scripts/README
 scripts/henrietta.scm
 scripts/henrietta.cgi
-svnrevision.sh
 synrules.scm
 expand.scm
 expand.c
