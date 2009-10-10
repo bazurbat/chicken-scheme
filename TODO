@@ -47,9 +47,8 @@ TODO for chicken							-*- Outline -*-
 * tasks
 
 ** branches
-*** try to improve performance in lazy-gensyms
-    this *should* give better performance, but the extra handling of symbols
-    without name seems to be to expensive
+*** unfucked-dload can be removed
+*** remove TODO from master
 
 ** module issues
 *** need a way to omit generating module registration without generating import lib
@@ -76,9 +75,6 @@ TODO for chicken							-*- Outline -*-
 
 ** library units
 *** read-mark list should be stored in read-table
-*** normalize-pathname: return short name on windows? (mingw/msvc)
-*** Use record-descriptors instead of symbols as 1st slot in structure objects?
-**** see Kon's proposal for new record-descriptors in "misc/Chicken Runtime Data Type Proposal"
 *** Weak locatives can probably be used to implement weak hash-tables (at least for some data)
 
 ** syntax-error
@@ -93,6 +89,9 @@ TODO for chicken							-*- Outline -*-
 
 ** scrutiny
 *** add support for keyword arguments and check even length and available keywords
+
+** runtime
+*** try to build with TLS
 
 
 * tests
@@ -112,29 +111,21 @@ TODO for chicken							-*- Outline -*-
 *** This would remove necessity for many simple re-write rules in c-platform.scm
 
 ** self-recursion optimization
-   what MacScheme called "benchmark-mode" (assume self-calls are recursion)
+*** what MacScheme called "benchmark-mode" (assume self-calls are recursion)
 *** needs declaration or option, >= -O2
 
-** when inlining, consing arg-list with "list" may make get-keyword possibly foldable
-
 ** compiler-support for get-keyword ?
+*** what when a function with keyword args gets inlined?
+*** when inlining, consing arg-list with "list" may make get-keyword possibly foldable
 
 ** lambda-fusion / "fuse-and-dispatch" (suggested by Alex Shinn)
    convert groups of local lambdas referenced to only in operator-position into
    looping lambda + dispatch (static variable can be used), otherwise similar to
    a conditional
 
-** lazy gensyms (see "lazy-gensyms" branch)
-
 ** handle optional args primitively 
    for example, set to distinguished val (checking argc) on C level, core
    primitive for checking this - should be quite simple, but llist processing
    (decompose-lambda-list) will be more expensive and cumbersome.
-
-** pre-hashed symbols (extra symbol slot)
-   The memory usage should be acceptable, performance gain is hard to guess.
-   Some experiments indicate that hashing the string is cheaper than it appears,
-   but low-level hashtables should get the most of this (and thus speed up
-   the compiler)
 
 ** The benchmarks are meaningless - find real ones.
