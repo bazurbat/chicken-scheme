@@ -420,14 +420,6 @@ context as the {{condition-case}} form.
 </enscript>
 
 
-==== breakpoint
-
-<procedure>(breakpoint [NAME])</procedure>
-
-Programmatically triggers a breakpoint (similar to the {{,br}} top-level csi
-command).
-
-
 ==== get-condition-property
 
 <procedure>(get-condition-property CONDITION KIND PROPERTY [DEFAULT])</procedure>
@@ -488,10 +480,6 @@ Signaled on errors raised by failed matches (see the section on {{match}}).
 </td></tr><tr><td> (exn syntax)
 
 Signaled on syntax errors.
-
-</td></tr><tr><td> (exn breakpoint)
-
-Signaled when a breakpoint is reached.
 
 </td></tr>
 

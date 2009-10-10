@@ -334,7 +334,6 @@ C_TLS void *C_restart_address;
 C_TLS int C_entry_point_status;
 C_TLS int (*C_gc_mutation_hook)(C_word *slot, C_word val);
 C_TLS void (*C_gc_trace_hook)(C_word *var, int mode);
-C_TLS C_word(*C_get_unbound_variable_value_hook)(C_word sym);
 C_TLS void (*C_panic_hook)(C_char *msg) = NULL;
 C_TLS void (*C_pre_gc_hook)(int mode) = NULL;
 C_TLS void (*C_post_gc_hook)(int mode, long ms) = NULL;
@@ -405,12 +404,6 @@ static C_TLS C_word
   interrupt_hook_symbol,
   current_thread_symbol,
   error_hook_symbol,
-  invalid_procedure_call_hook_symbol,
-  unbound_variable_value_hook_symbol,
-  last_invalid_procedure_symbol,
-  identity_unbound_value_symbol,
-  apply_hook_symbol,
-  last_applied_procedure_symbol,
   pending_finalizers_symbol,
   callback_continuation_stack_symbol,
   *forwarding_table;
@@ -496,7 +489,6 @@ static void C_fcall remark_system_globals(void) C_regparm;
 static void C_fcall remark(C_word *x) C_regparm;
 static C_word C_fcall intern0(C_char *name) C_regparm;
 static void C_fcall update_locative_table(int mode) C_regparm;
-static C_word get_unbound_variable_value(C_word sym);
 static LF_LIST *find_module_handle(C_char *name);
 
 static C_ccall void call_cc_wrapper(C_word c, C_word closure, C_word k, C_word result) C_noret;
@@ -633,7 +625,6 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   mutation_stack_limit = mutation_stack_bottom + DEFAULT_MUTATION_STACK_SIZE;
   C_gc_mutation_hook = NULL;
   C_gc_trace_hook = NULL;
-  C_get_unbound_variable_value_hook = get_unbound_variable_value;
 
   /* Allocate weak item table: */
   if(C_enable_gcweak) {
@@ -981,13 +972,7 @@ void initialize_symbol_table(void)
   error_hook_symbol = C_intern2(C_heaptop, C_text("\003syserror-hook"));
   callback_continuation_stack_symbol = C_intern3(C_heaptop, C_text("\003syscallback-continuation-stack"), C_SCHEME_END_OF_LIST);
   pending_finalizers_symbol = C_intern2(C_heaptop, C_text("\003syspending-finalizers"));
-  invalid_procedure_call_hook_symbol = C_intern3(C_heaptop, C_text("\003sysinvalid-procedure-call-hook"), C_SCHEME_FALSE);
-  unbound_variable_value_hook_symbol = C_intern3(C_heaptop, C_text("\003sysunbound-variable-value-hook"), C_SCHEME_FALSE);
-  last_invalid_procedure_symbol = C_intern3(C_heaptop, C_text("\003syslast-invalid-procedure"), C_SCHEME_FALSE);
-  identity_unbound_value_symbol = C_intern3(C_heaptop, C_text("\003sysidentity-unbound-value"), C_SCHEME_FALSE);
   current_thread_symbol = C_intern3(C_heaptop, C_text("\003syscurrent-thread"), C_SCHEME_FALSE);
-  apply_hook_symbol = C_intern3(C_heaptop, C_text("\003sysapply-hook"), C_SCHEME_FALSE);
-  last_applied_procedure_symbol = C_intern2(C_heaptop, C_text("\003syslast-applied-procedure"));
 }
 
 
@@ -2973,13 +2958,7 @@ C_regparm void C_fcall mark_system_globals(void)
   mark(&error_hook_symbol);
   mark(&callback_continuation_stack_symbol);
   mark(&pending_finalizers_symbol);
-  mark(&invalid_procedure_call_hook_symbol);
-  mark(&unbound_variable_value_hook_symbol);
-  mark(&last_invalid_procedure_symbol);
-  mark(&identity_unbound_value_symbol);
   mark(&current_thread_symbol);
-  mark(&apply_hook_symbol);
-  mark(&last_applied_procedure_symbol);
 }
 
 
@@ -3284,13 +3263,7 @@ C_regparm void C_fcall remark_system_globals(void)
   remark(&error_hook_symbol);
   remark(&callback_continuation_stack_symbol);
   remark(&pending_finalizers_symbol);
-  remark(&invalid_procedure_call_hook_symbol);
-  remark(&unbound_variable_value_hook_symbol);
-  remark(&last_invalid_procedure_symbol);
-  remark(&identity_unbound_value_symbol);
   remark(&current_thread_symbol);
-  remark(&apply_hook_symbol);
-  remark(&last_applied_procedure_symbol);
 }
 
 
@@ -3564,21 +3537,9 @@ C_regparm C_word C_fcall C_retrieve(C_word sym)
   C_word val = C_block_item(sym, 0);
 
   if(val == C_SCHEME_UNBOUND)
-    return C_get_unbound_variable_value_hook(sym);
-
-  return val;
-}
-
-
-C_word get_unbound_variable_value(C_word sym)
-{
-  C_word x = C_block_item(unbound_variable_value_hook_symbol, 0);
-
-  if(x == identity_unbound_value_symbol) return sym;
-  else if(x == C_SCHEME_FALSE)
     barf(C_UNBOUND_VARIABLE_ERROR, NULL, sym);
 
-  return C_block_item(x, 0);
+  return val;
 }
 
 
@@ -3592,7 +3553,7 @@ C_regparm C_word C_fcall C_retrieve2(C_word val, char *name)
     /* this is ok: we won't return from `C_retrieve2'
      * (or the value isn't needed). */
     p = C_alloc(C_SIZEOF_STRING(len));
-    return get_unbound_variable_value(C_string2(&p, name));
+    barf(C_UNBOUND_VARIABLE_ERROR, NULL, C_string2(&p, name));
   }
 
   return val;
@@ -3605,13 +3566,7 @@ static C_word resolve_procedure(C_word closure, C_char *where)
   C_word s;
 
   if(C_immediatep(closure) || C_header_bits(closure) != C_CLOSURE_TYPE) {
-    s = C_block_item(invalid_procedure_call_hook_symbol, 0);
-
-    if(s == C_SCHEME_FALSE)
-      barf(C_NOT_A_CLOSURE_ERROR, where, closure);
-
-    C_mutate(&C_block_item(last_invalid_procedure_symbol, 0), closure);
-    closure = s;
+    barf(C_NOT_A_CLOSURE_ERROR, where, closure);
   }
 
   return closure;
@@ -3622,14 +3577,6 @@ static C_word resolve_procedure(C_word closure, C_char *where)
 C_regparm void *C_fcall C_retrieve_proc(C_word closure)
 {
   closure = resolve_procedure(closure, NULL);
-
-#ifndef C_NO_APPLY_HOOK
-  if(C_block_item(apply_hook_symbol, 0) != C_SCHEME_FALSE) {
-    C_mutate(&C_block_item(last_applied_procedure_symbol, 0), closure);
-    return (void *)C_block_item(C_block_item(apply_hook_symbol, 0), 0);
-  }
-#endif
-
   return (void *)C_block_item(closure, 0);
 }
 
@@ -3640,17 +3587,9 @@ C_regparm void *C_fcall C_retrieve_symbol_proc(C_word sym)
   C_word closure;
 
   if(val == C_SCHEME_UNBOUND)
-    val = C_get_unbound_variable_value_hook(sym);
+    barf(C_UNBOUND_VARIABLE_ERROR, NULL, sym);
 
   closure = resolve_procedure(val, NULL);
-
-#ifndef C_NO_APPLY_HOOK
-  if(C_block_item(apply_hook_symbol, 0) != C_SCHEME_FALSE) {
-    C_mutate(&C_block_item(last_applied_procedure_symbol, 0), closure);
-    return (void *)C_block_item(C_block_item(apply_hook_symbol, 0), 0);
-  }
-#endif
-
   return (void *)C_block_item(closure, 0);
 }
 
@@ -3665,18 +3604,10 @@ C_regparm void *C_fcall C_retrieve2_symbol_proc(C_word val, char *name)
     len = C_strlen(name);
     /* this is ok: we won't return from `C_retrieve2' (or the value isn't needed). */
     p = C_alloc(C_SIZEOF_STRING(len));
-    val = get_unbound_variable_value(C_string2(&p, name));
+    barf(C_UNBOUND_VARIABLE_ERROR, NULL, C_string2(&p, name));
   }
 
   closure = resolve_procedure(val, NULL);
-
-#ifndef C_NO_APPLY_HOOK
-  if(C_block_item(apply_hook_symbol, 0) != C_SCHEME_FALSE) {
-    C_mutate(&C_block_item(last_applied_procedure_symbol, 0), closure);
-    return (void *)C_block_item(C_block_item(apply_hook_symbol, 0), 0);
-  }
-#endif
-
   return (void *)C_block_item(closure, 0);
 }
 
@@ -4260,11 +4191,8 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
 #endif
 
   case C_fix(35):
-#ifndef C_NO_APPLY_HOOK
-    return C_SCHEME_TRUE;
-#else
+    /* used to be apply-hook indicator */
     return C_SCHEME_FALSE;
-#endif
     
   case C_fix(36):
     debug_mode = !debug_mode;

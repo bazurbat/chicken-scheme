@@ -159,7 +159,7 @@ EOF
      ##sys#memory-info ##sys#make-c-string ##sys#find-symbol-table display
      newline string-append ##sys#with-print-length-limit write print vector-fill! ##sys#context-switch
      ##sys#set-finalizer! open-output-string get-output-string read ##sys#make-pointer
-     ##sys#pointer->address number->string ##sys#flush-output ##sys#break-entry ##sys#step
+     ##sys#pointer->address number->string ##sys#flush-output
      ##sys#apply-values ##sys#get-call-chain ##sys#really-print-call-chain
      string->keyword keyword? string->keyword get-environment-variable ##sys#number->string ##sys#copy-bytes
      call-with-current-continuation ##sys#string->number ##sys#inexact->exact ##sys#exact->inexact
@@ -3305,9 +3305,9 @@ EOF
 		   (if (##sys#fudge 24) " dload" "") 
 		   (if (##sys#fudge 28) " ptables" "")
 		   (if (##sys#fudge 32) " gchooks" "") 
-		   (if (##sys#fudge 35) " applyhook" "")
 		   (if (##sys#fudge 39) " cross" "") ) ) )
-	(string-append "Version " +build-version+ "\n")
+	(string-append
+	 "Version " +build-version+ "\n"
 	 (get-config)
 	 (if (zero? (##sys#size spec))
 	     ""
@@ -3353,7 +3353,6 @@ EOF
 (when (##sys#fudge 40) (set! ##sys#features (cons #:manyargs ##sys#features)))
 (when (##sys#fudge 24) (set! ##sys#features (cons #:dload ##sys#features)))
 (when (##sys#fudge 28) (set! ##sys#features (cons #:ptables ##sys#features)))
-(when (##sys#fudge 35) (set! ##sys#features (cons #:applyhook ##sys#features)))
 (when (##sys#fudge 39) (set! ##sys#features (cons #:cross-chicken ##sys#features)))
 
 (define (register-feature! . fs)
@@ -3449,105 +3448,6 @@ EOF
   (if (eq? ##sys#current-thread ##sys#primordial-thread)
       (break)
       (##sys#setslot ##sys#primordial-thread 1 break) ) )
-
-
-;;; Breakpoints
-
-(define ##sys#last-breakpoint #f)
-(define ##sys#break-in-thread #f)
-
-(define (##sys#break-entry name args)
-  ;; Does _not_ unwind!
-  (##sys#call-with-current-continuation
-   (lambda (c)
-     (let ((exn (##sys#make-structure
-		 'condition
-		 '(exn breakpoint)
-		 (list '(exn . message) "*** breakpoint ***"
-		       '(exn . arguments) (list (cons name args))
-		       '(exn . location) name
-		       '(exn . continuation) c) ) ) )
-       (set! ##sys#last-breakpoint exn)
-       (##sys#signal exn) ) ) ) )
-
-(define (##sys#break-resume exn)
-  (let ((a (member '(exn . continuation) (##sys#slot exn 2))))
-    (if a
-	((cadr a) (##core#undefined))
-	(##sys#signal-hook #:type-error "condition has no continuation" exn) ) ) )
-
-(define (breakpoint #!optional name)
-  (##sys#break-entry (or name 'breakpoint) '()) )
-
-
-;;; Single stepping
-
-(define ##sys#stepped-thread #f)
-(define ##sys#step-ports (cons ##sys#standard-input ##sys#standard-output))
-
-(define (##sys#step thunk)
-  (when (eq? ##sys#stepped-thread ##sys#current-thread)
-    (##sys#call-with-values
-     (lambda () 
-       (set! ##sys#apply-hook ##sys#step-hook)
-       (##core#app thunk) )
-     (lambda vals
-       (set! ##sys#apply-hook #f)
-       (set! ##sys#stepped-thread #f)
-       (##sys#apply-values vals) ) ) ) )
-
-(define (singlestep thunk)
-  (unless (##sys#fudge 35)
-    (##sys#signal-hook #:runtime-error 'singlestep "apply-hook not available") )
-  (##sys#check-closure thunk 'singlestep)
-  (set! ##sys#stepped-thread ##sys#current-thread)
-  (##sys#step thunk) )
-
-(define (##sys#step-hook . args)
-  (set! ##sys#apply-hook #f)
-  (let ((o (##sys#slot ##sys#step-ports 1))
-	(i (##sys#slot ##sys#step-ports 0))
-	(p ##sys#last-applied-procedure))
-    (define (skip-to-nl)
-      (let ((c (##sys#read-char-0 i)))
-	(unless (or (eof-object? c) (char=? #\newline c))
-	  (sip-to-nl) ) ) )
-    (define (cont)
-      (set! ##sys#stepped-thread #f)
-      (##sys#apply p args) )
-    (##sys#print "\n " #f o)
-    (##sys#with-print-length-limit 
-     1024
-     (lambda () (##sys#print (cons p args) #t o)) )
-    (flush-output o)
-    (let loop ()
-      (##sys#print "\n	      step (RETURN), (s)kip, (c)ontinue or (b)reak ? " #f o)
-      (let ((c (##sys#read-char-0 i)))
-	(if (eof-object? c)
-	    (cont)
-	    (case c
-	      ((#\newline) 
-	       (set! ##sys#apply-hook ##sys#step-hook)
-	       (##core#app ##sys#apply p args))
-	      ((#\return #\tab #\space) (loop))
-	      ((#\c) (skip-to-nl) (cont))
-	      ((#\s) 
-	       (skip-to-nl)
-	       (##sys#call-with-values 
-		(lambda () (##core#app ##sys#apply p args))
-		(lambda results
-		  (set! ##sys#apply-hook ##sys#step-hook)
-		  (##core#app ##sys#apply-values results) ) ) )
-	      ((#\b) 
-	       (skip-to-nl)
-	       (set! ##sys#stepped-thread #f)
-	       (##sys#break-entry '<step> '())
-	       (##sys#apply p args) ) 
-	      (else
-	       (cond ((eof-object? c) (cont))
-		     (else 
-		      (skip-to-nl) 
-		      (loop))))))))))
 
 
 ;;; Default handlers
