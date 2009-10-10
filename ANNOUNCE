@@ -1,0 +1,42 @@
+ANN.: CHICKEN 4.0.0
+
+Version 4.0.0 of CHICKEN, the portable and practical Scheme system has
+been released. In addition to many bugfixes and cleaning up, it provides
+the following significant changes:
+
+- The macro system has been completely rewritten and is now fully
+  hygienic with highlevel R5RS "syntax-rules" macros and low level
+  "explicit renaming" macros that allow full control over hygienie;
+  "define-macro" is not available anymore
+
+- A module system has been implemented that fully supports hygienic
+  macros and still integrates with separate and cross compilation
+
+- The PCRE-based regular regex code has been replaced by Alex Shinn's
+  excellent "IrRegex" regular expression package (while still being
+  API compatible to the old regular expression subsystem)
+
+- New implementations of the tools for download, build and install
+  extension libraries, which are easier to use and provide more
+  flexibility than the old `chicken-setup'
+
+- A new optimization mode "local" enables inlining of definitions
+  that are still visible from other compilation units
+
+- Better support for build and use on Windows (mingw and msys)
+
+- Experimental support for cross-module inlining
+
+CHICKEN 4.0.0 can be downloaded from:
+
+  http://www.call-with-current-continuation.org/chicken-4.0.0.tar.gz
+
+CHICKEN-related mailing lists can be found here:
+
+  http://mail.nongnu.org/mailman/listinfo/chicken-users
+  http://mail.nongnu.org/mailman/listinfo/chicken-hackers
+
+Send bug reports to to <chicken-janitors@nongnu.org> or use the
+`chicken-bug' program.
+
+Many thanks to all who helped improve and extend the system.

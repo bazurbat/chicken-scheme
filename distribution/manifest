@@ -1,0 +1,346 @@
+ChangeLog
+ChangeLog.20040412
+ChangeLog.20070807
+INSTALL
+LICENSE
+NEWS
+README
+config-arch.sh
+banner.scm
+batch-driver.scm
+benchmarks/0.scm
+benchmarks/cscbench.scm
+benchmarks/nbody.scm
+benchmarks/binarytrees.scm
+benchmarks/boyer.scm
+benchmarks/browse.scm
+benchmarks/conform.scm
+benchmarks/cpstak.scm
+benchmarks/ctak.scm
+benchmarks/dderiv.scm
+benchmarks/deriv.scm
+benchmarks/destructive.scm
+benchmarks/div-iter.scm
+benchmarks/div-rec.scm
+benchmarks/dynamic.scm
+benchmarks/earley.scm
+benchmarks/fft.scm
+benchmarks/fib.scm
+benchmarks/fibc.scm
+benchmarks/fprint.scm
+benchmarks/fread.scm
+benchmarks/hanoi.scm
+benchmarks/lattice.scm
+benchmarks/maze.scm
+benchmarks/nqueens.scm
+benchmarks/others/Makefile
+benchmarks/others/except.scm
+benchmarks/others/except2.scm
+benchmarks/others/exception.cpp
+benchmarks/others/results.txt
+benchmarks/others/setlongjmp.c
+benchmarks/puzzle.scm
+benchmarks/scheme.scm
+benchmarks/tak.scm
+benchmarks/takl.scm
+benchmarks/takr.scm
+benchmarks/traverse.scm
+benchmarks/travinit.scm
+benchmarks/triangl.scm
+benchmarks/regex/benchmark.pl
+benchmarks/regex/re-benchmarks.txt
+benchmarks/regex/benchmark.scm
+batch-driver.c
+c-backend.c
+c-platform.c
+chicken-profile.c
+chicken.c
+compiler.c
+csc.c
+csi.c
+eval.c
+data-structures.c
+ports.c
+files.c
+extras.c
+library.c
+lolevel.c
+optimizer.c
+compiler-syntax.c
+scrutinizer.c
+regex.c
+posixunix.c
+posixwin.c
+profiler.c
+scheduler.c
+srfi-69.c
+srfi-1.c
+srfi-13.c
+srfi-14.c
+srfi-18.c
+srfi-4.c
+stub.c
+support.c
+tcp.c
+ueval.c
+uextras.c
+udata-structures.c
+uports.c
+ufiles.c
+ulibrary.c
+ulolevel.c
+uregex.c
+uposixunix.c
+uposixwin.c
+usrfi-1.c
+usrfi-13.c
+usrfi-14.c
+usrfi-18.c
+usrfi-4.c
+usrfi-69.c
+utcp.c
+utils.c
+uutils.c
+build.scm
+version.scm
+buildversion
+buildsvnrevision
+c-backend.scm
+c-platform.scm
+chicken-ffi-syntax.scm
+chicken-primitive-object-inlines.scm
+chicken-thread-object-inlines.scm
+chicken-profile.1
+chicken-profile.scm
+chicken.1
+chicken.h
+chicken.ico
+chicken.rc
+chicken.scm
+compiler.scm
+csc.1
+csc.scm
+csi.1
+csi.scm
+csibatch.bat
+eval.scm
+extras.scm
+data-structures.scm
+ports.scm
+files.scm
+chicken-bug.1
+chicken-bug.scm
+chicken-bug.c
+hen.el
+scheme-complete.el
+html/Accessing external objects.html
+html/Acknowledgements.html
+html/Basic mode of operation.html
+html/Bibliography.html
+html/Bugs and limitations.html
+html/C interface.html
+html/Callbacks.html
+html/Data representation.html
+html/Declarations.html
+html/Deviations from the standard.html
+html/Embedding.html
+html/Extensions to the standard.html
+html/Extensions.html
+html/Foreign type specifiers.html
+html/Getting started.html
+html/Interface to external functions and variables.html
+html/Locations.html
+html/Modules and macros.html
+html/Non-standard macros and special forms.html
+html/Non-standard read syntax.html
+html/Other support procedures.html
+html/Getting Started.html
+html/Parameters.html
+html/Supported language.html
+html/The User's Manual.html
+html/Unit data-structures.html
+html/Unit eval.html
+html/Unit expand.html
+html/Unit extras.html
+html/Unit files.html
+html/Unit library.html
+html/Unit lolevel.html
+html/Unit ports.html
+html/Unit posix.html
+html/Unit regex.html
+html/Unit srfi-1.html
+html/Unit srfi-13.html
+html/Unit srfi-14.html
+html/Unit srfi-18.html
+html/Unit srfi-4.html
+html/Unit tcp.html
+html/Unit utils.html
+html/Using the compiler.html
+html/Using the interpreter.html
+html/faq.html
+html/manual.css
+library.scm
+lolevel.scm
+optimizer.scm
+compiler-syntax.scm
+scrutinizer.scm
+regex.scm
+irregex.scm
+posixunix.scm
+posixwin.scm
+profiler.scm
+runtime.c
+scheduler.scm
+srfi-69.scm
+srfi-1.scm
+srfi-13.scm
+srfi-14.scm
+srfi-18.scm
+srfi-4.scm
+toposort.scm
+stub.scm
+support.scm
+tcp.scm
+tests/library-tests.scm
+tests/compiler-tests.scm
+tests/compiler-tests-2.scm
+tests/inlining-tests.scm
+tests/locative-stress-test.scm
+tests/r4rstest.scm
+tests/runtests.sh
+tests/srfi-18-tests.scm
+tests/hash-table-tests.scm
+tests/apply-test.scm
+tests/embedded1.c
+tests/embedded2.scm
+tests/fixnum-tests.scm
+tests/path-tests.scm
+tests/posix-tests.scm
+tests/r4rstest.out
+tests/port-tests.scm
+tests/test-gc-hooks.scm
+tests/matchable.scm
+tests/match-tests.scm
+tests/module-tests.scm
+tests/test-finalizers.scm
+tests/test-finalizers-2.scm
+tests/module-tests-compiled.scm
+tests/scrutiny-tests.scm
+tests/scrutiny.expected
+tests/syntax-tests.scm
+tests/syntax-tests-2.scm
+tests/meta-syntax-test.scm
+tests/reexport-tests.scm
+tests/ec.scm
+tests/ec-tests.scm
+tests/test-chained-modules.scm
+tests/import-library-test1.scm
+tests/import-library-test2.scm
+tests/match-test.scm
+tests/test.scm
+tests/loopy-test.scm
+tests/loopy-loop.scm
+tests/r5rs_pitfalls.scm
+tests/test-irregex.scm
+tests/re-tests.txt
+tests/lolevel-tests.scm
+tests/feeley-dynwind.scm
+tests/compiler-syntax-tests.scm
+tweaks.scm
+utils.scm
+apply-hack.x86.S
+apply-hack.x86-64.S
+apply-hack.ppc.darwin.S
+apply-hack.ppc.sysv.S
+apply-hack.sparc64.S
+chicken.pdf
+Makefile
+Makefile.linux
+Makefile.macosx
+Makefile.mingw
+Makefile.mingw-msys
+Makefile.solaris
+Makefile.bsd
+Makefile.cygwin
+Makefile.cross-linux-mingw
+rules.make
+defaults.make
+private-namespace.scm
+compiler-namespace.scm
+scripts/scheme
+scripts/tools.scm
+scripts/test-dist.sh
+scripts/wiki2html.scm
+scripts/make-egg-index.scm
+scripts/makedist.scm
+scripts/README
+scripts/henrietta.scm
+scripts/henrietta.cgi
+svnrevision.sh
+synrules.scm
+expand.scm
+expand.c
+chicken-syntax.scm
+chicken-syntax.c
+unsafe-declarations.scm
+ports.import.scm
+ports.import.c
+files.import.scm
+files.import.c
+scheme.import.scm
+scheme.import.c
+chicken.import.scm
+chicken.import.c
+foreign.import.scm
+foreign.import.c
+compiler.import.scm
+compiler.import.c
+lolevel.import.scm
+srfi-1.import.scm
+srfi-4.import.scm
+data-structures.import.scm
+posix.import.scm
+srfi-13.import.scm
+srfi-69.import.scm
+extras.import.scm
+regex.import.scm
+irregex.import.scm
+srfi-14.import.scm
+tcp.import.scm
+srfi-18.import.scm
+utils.import.scm
+lolevel.import.c
+srfi-1.import.c
+srfi-4.import.c
+data-structures.import.c
+posix.import.c
+srfi-13.import.c
+srfi-69.import.c
+extras.import.c
+regex.import.c
+irregex.import.c
+srfi-14.import.c
+tcp.import.c
+srfi-18.import.c
+utils.import.c
+csi.import.scm
+csi.import.c
+setup-download.scm
+setup-api.scm
+chicken-status.scm
+chicken-status.c
+chicken-install.scm
+chicken-install.c
+chicken-setup.scm
+chicken-setup.c
+chicken-uninstall.scm
+chicken-uninstall.c
+setup.defaults
+chicken-status.1
+chicken-install.1
+chicken-uninstall.1
+setup-download.c
+setup-api.c
+setup-api.import.c
+setup-download.import.c
+types.db

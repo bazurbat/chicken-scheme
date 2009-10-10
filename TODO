@@ -1,0 +1,140 @@
+TODO for chicken							-*- Outline -*-
+================
+
+
+* bugs
+
+** compiler
+*** pre-optimization 
+**** changes call-sites and makes them invalid for later pre-optimization
+*** check profiling (-profile vs. profile-declaration)
+**** this doesn't always seem to work, in particular with library units
+**** ##sys#finish-profile should always be invoked
+     is it in `exit'?
+*** when re-defining intrinsics, the compiler should warn and disable re-writes
+    add declaration to keep re-writes enabled for core library files
+*** -prologue, -epilogue, -prelude, -postlude should check for argument being directory 
+    (reported by Eduardo Cavazos)
+
+** expander
+*** expansion of r5rs_pitfall 4.2 incorrect
+    possibly due to a non-aliased implicit "begin" somewhere
+*** dirty-macros.scm loops when using `defile'
+    possibly due to unrenamed special forms
+*** extended lambda-lists refer to `optional' and `let-optionals[*]'
+    this will break, when these macros are renamed on import or not imported
+    at all
+**** a possible solution is to use internal forms, provided by the "scheme" module.
+*** need way to force generating module-registration code for standalone executables.
+
+** modules
+*** mark import-source (module) on plist of imported symbols and use in re-import warning
+    doesn't work that easily, try to find another solution
+*** DSSSL lambda-lists need imports of `chicken' module ("optional", "let-optionals", ...)
+**** should probably use internal aliases
+
+** libraries
+*** library/runtime: cyclic list checks for assq/assv/assoc/memq/memv/member
+    and C_i_list_tail
+*** finalizers on lexically ref'd data not working in interpreter
+    reported by Jim Ursetto
+    reverted original patch, see patches/finalizer-closures.diff
+
+** tools
+*** chicken-bug: SMTP servers not accessible (greylisting)
+
+
+* tasks
+
+** branches
+*** try to improve performance in lazy-gensyms
+    this *should* give better performance, but the extra handling of symbols
+    without name seems to be to expensive
+
+** module issues
+*** need a way to omit generating module registration without generating import lib
+    for example when compiling static version, where implib already exists
+*** code-duplication in compiler and evaluator for ##core#module
+*** "scheme" module does not include some special forms ("define-syntax", etc.)
+*** import-for-syntax imports value bindings into import-env
+    should actually be a distinct meta-import-env.
+    example: we need `(import-for-syntax chicken)' to have access to
+    `receive' in a procedural syntax definition.
+*** curried define performs expansion in empty se - problem?
+    (as comment in expand.scm indicated (##sys#register-export))
+*** check phase separation and module access
+**** see "expander" above
+*** consider adding support for unnamed modules
+
+** compiler
+*** (csc) generate object-files in /tmp (or TMPDIR)?
+
+** setup/install
+*** setup-download
+**** use "HTTP_PROXY"/"http_proxy" env. var
+**** handle redirects in http-fetch
+
+** library units
+*** read-mark list should be stored in read-table
+*** normalize-pathname: return short name on windows? (mingw/msvc)
+*** Use record-descriptors instead of symbols as 1st slot in structure objects?
+**** see Kon's proposal for new record-descriptors in "misc/Chicken Runtime Data Type Proposal"
+*** Weak locatives can probably be used to implement weak hash-tables (at least for some data)
+
+** syntax-error
+*** if ##sys#current-module is set, add name to error message?
+*** fluidly keep track of expanded forms (extend meaning of culprit) to pprint pruned expr on error
+
+** build
+*** need script to process import libraries for generating indices for doc.callcc.org
+    then tell Toby Butzon about it
+*** using "touch" with WINDOWS_SHELL won't work (need alternative) (mingw/non-msys build)
+*** extend scripts/guess-platforms.sh for more platforms
+
+** scrutiny
+*** add support for keyword arguments and check even length and available keywords
+
+
+* tests
+
+** optional longer run (env. var)
+*** syntax-rules-stress-test
+*** fully compiled ec-tests
+** 3-stage bootstrap with compiler-output comparison
+
+
+* optimizations
+
+** local mode could be enabled for all core libs
+   also could reduce performance, as it does for regex
+
+** global inline files for core units
+*** This would remove necessity for many simple re-write rules in c-platform.scm
+
+** self-recursion optimization
+   what MacScheme called "benchmark-mode" (assume self-calls are recursion)
+*** needs declaration or option, >= -O2
+
+** when inlining, consing arg-list with "list" may make get-keyword possibly foldable
+
+** compiler-support for get-keyword ?
+
+** lambda-fusion / "fuse-and-dispatch" (suggested by Alex Shinn)
+   convert groups of local lambdas referenced to only in operator-position into
+   looping lambda + dispatch (static variable can be used), otherwise similar to
+   a conditional
+
+** lazy gensyms (see "lazy-gensyms" branch)
+
+** handle optional args primitively 
+   for example, set to distinguished val (checking argc) on C level, core
+   primitive for checking this - should be quite simple, but llist processing
+   (decompose-lambda-list) will be more expensive and cumbersome.
+
+** pre-hashed symbols (extra symbol slot)
+   The memory usage should be acceptable, performance gain is hard to guess.
+   Some experiments indicate that hashing the string is cheaper than it appears,
+   but low-level hashtables should get the most of this (and thus speed up
+   the compiler)
+
+** The benchmarks are meaningless - find real ones.

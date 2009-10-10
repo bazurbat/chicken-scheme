@@ -1,0 +1,34 @@
+[[tags:manual]]
+
+== The CHICKEN User's Manual
+
+<nowiki>
+<img style="float:right; border-left:1px solid #ccc;border-bottom:1px solid #ccc;margin-left:1em;" src="http://www.call-with-current-continuation.org/chicken4.png" alt="Stylized picture of a chicken"/>
+</nowiki>
+
+This is the manual for Chicken Scheme, version 4.2.2
+
+; [[Getting started]] : What is CHICKEN and how do I use it?
+
+; [[Basic mode of operation]] : Compiling Scheme files.
+
+; [[Using the compiler]] : Explains how to use CHICKEN to compile programs and execute them.
+
+; [[Using the interpreter]] : Invocation and usage of {{csi}}, the CHICKEN interpreter
+
+; [[Supported language]] : The language implemented by CHICKEN (deviations from the standard and extensions).
+
+; [[Interface to external functions and variables]] : Accessing C and C++ code and data.
+
+; [[Extensions]] : Packaging and installing extension libraries.
+
+; [[Data representation]] : How Scheme data is internally represented.
+
+; [[Bugs and limitations]] : Things that do not work yet.
+
+; [[FAQ]] : A list of Frequently Asked Questions about CHICKEN (and their answers).
+
+; [[Acknowledgements]] : A list of some of the people that have contributed to make CHICKEN what it is.
+
+; [[Bibliography]] : Links to documents that may be of interest.
+

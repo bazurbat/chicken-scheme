@@ -1,0 +1,8 @@
+chicken-bug.scm
+chicken-install.scm
+chicken-profile.scm
+chicken-setup.scm
+chicken-status.scm
+chicken-uninstall.scm
+csc.scm
+csi.scm

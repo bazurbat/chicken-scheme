@@ -1,0 +1,463 @@
+[[tags: manual]]
+[[toc:]]
+
+== Unit regex
+
+This library unit provides support for regular expressions. The regular 
+expression package used is {{irregex}}
+written by Alex Shinn. Irregex supports most Perl-extensions and is
+written completely in Scheme.
+
+This library unit exposes two APIs: the standard Chicken API described below, and the
+original irregex API.  You may use either API or both:
+
+ (require-library regex)   ; required for either API, or both
+ (import regex)            ; import the Chicken regex API
+ (import irregex)          ; import the original irregex API
+
+Regular expressions may be either POSIX-style strings (with most PCRE
+extensions) or an SCSH-style SRE. There is no {{(rx ...)}} syntax -
+just use normal Scheme lists, with quasiquote if you like.
+
+=== grep
+
+ [procedure] (grep REGEX LIST)
+
+Returns all items of {{LIST}} that match the regular expression
+{{REGEX}}.  This procedure could be defined as follows:
+
+<enscript highlight=scheme>
+(define (grep regex lst)
+  (filter (lambda (x) (string-search regex x)) lst) )
+</enscript>
+
+
+=== glob->regexp
+
+ [procedure] (glob->regexp PATTERN)
+
+Converts the file-pattern {{PATTERN}} into a regular expression.
+
+<enscript highlight=scheme>
+(glob->regexp "foo.*")
+=> "foo\..*"
+</enscript>
+
+{{PATTERN}} should follow "glob" syntax. Allowed wildcards are
+
+ *
+ [C...]
+ [C1-C2]
+ [-C...]
+ ?
+
+
+=== glob?
+
+ [procedure] (glob? STRING)
+
+Does the {{STRING}} have any "glob" wildcards?
+
+A string without any "glob" wildcards does not meet the criteria,
+even though it technically is a valid "glob" file-pattern.
+
+
+=== regexp
+
+ [procedure] (regexp STRING [IGNORECASE [IGNORESPACE [UTF8]]])
+
+Returns a precompiled regular expression object for {{string}}.
+The optional arguments {{IGNORECASE}}, {{IGNORESPACE}} and {{UTF8}}
+specify whether the regular expression should be matched with case- or whitespace-differences
+ignored, or whether the string should be treated as containing UTF-8 encoded
+characters, respectively.
+
+Note that code that uses regular expressions heavily should always
+use them in precompiled form, which is likely to be much faster than
+passing strings to any of the regular-expression routines described
+below.
+
+
+=== regexp?
+
+ [procedure] (regexp? X)
+
+Returns {{#t}} if {{X}} is a precompiled regular expression,
+or {{#f}} otherwise.
+
+
+=== string-match
+=== string-match-positions
+
+ [procedure] (string-match REGEXP STRING [START])
+ [procedure] (string-match-positions REGEXP STRING [START])
+
+Matches the regular expression in {{REGEXP}} (a string or a precompiled
+regular expression) with
+{{STRING}} and returns either {{#f}} if the match failed,
+or a list of matching groups, where the first element is the complete
+match. If the optional argument {{START}} is supplied, it specifies
+the starting position in {{STRING}}.  For each matching group the
+result-list contains either: {{#f}} for a non-matching but optional
+group; a list of start- and end-position of the match in {{STRING}}
+(in the case of {{string-match-positions}}); or the matching
+substring (in the case of {{string-match}}). Note that the exact string
+is matched. For searching a pattern inside a string, see below.
+Note also that {{string-match}} is implemented by calling
+{{string-search}} with the regular expression wrapped in {{^ ... $}}.
+If invoked with a precompiled regular expression argument (by using
+{{regexp}}), {{string-match}} is identical to {{string-search}}.
+
+
+=== string-search
+=== string-search-positions
+
+ [procedure] (string-search REGEXP STRING [START [RANGE]])
+ [procedure] (string-search-positions REGEXP STRING [START [RANGE]])
+
+Searches for the first match of the regular expression in
+{{REGEXP}} with {{STRING}}. The search can be limited to
+{{RANGE}} characters.
+
+
+=== string-split-fields
+
+ [procedure] (string-split-fields REGEXP STRING [MODE [START]])
+
+Splits {{STRING}} into a list of fields according to {{MODE}},
+where {{MODE}} can be the keyword {{#:infix}} ({{REGEXP}}
+matches field separator), the keyword {{#:suffix}} ({{REGEXP}}
+matches field terminator) or {{#t}} ({{REGEXP}} matches field),
+which is the default.
+
+<enscript highlight=scheme>
+(define s "this is a string 1, 2, 3,")
+
+(string-split-fields "[^ ]+" s)
+
+  => ("this" "is" "a" "string" "1," "2," "3,")
+
+(string-split-fields " " s #:infix)
+
+  => ("this" "is" "a" "string" "1," "2," "3,")
+
+(string-split-fields "," s #:suffix)
+ 
+  => ("this is a string 1" " 2" " 3")
+</enscript>
+
+
+=== string-substitute
+
+ [procedure] (string-substitute REGEXP SUBST STRING [MODE])
+
+Searches substrings in {{STRING}} that match {{REGEXP}}
+and substitutes them with the string {{SUBST}}. The substitution
+can contain references to subexpressions in 
+{{REGEXP}} with the {{\NUM}} notation, where {{NUM}}
+refers to the NUMth parenthesized expression. The optional argument
+{{MODE}} defaults to 1 and specifies the number of the match to
+be substituted. Any non-numeric index specifies that all matches are to
+be substituted.
+
+<enscript highlight=scheme>
+(string-substitute "([0-9]+) (eggs|chicks)" "\\2 (\\1)" "99 eggs or 99 chicks" 2)
+=> "99 eggs or chicks (99)"
+</enscript>
+
+Note that a regular expression that matches an empty string will
+signal an error.
+
+
+=== string-substitute*
+
+ [procedure] (string-substitute* STRING SMAP [MODE])
+
+Substitutes elements of {{STRING}} with {{string-substitute}} according to {{SMAP}}.
+{{SMAP}} should be an association-list where each element of the list
+is a pair of the form {{(MATCH . REPLACEMENT)}}. Every occurrence of
+the regular expression {{MATCH}} in {{STRING}} will be replaced by the string
+{{REPLACEMENT}}
+
+<enscript highlight=scheme>
+(string-substitute* "<h1>Hello, world!</h1>" '(("<[/A-Za-z0-9]+>" . "")))
+
+=>  "Hello, world!"
+</enscript>
+
+
+=== regexp-escape
+
+ [procedure] (regexp-escape STRING)
+
+Escapes all special characters in {{STRING}} with {{\}}, so that the string can be embedded
+into a regular expression.
+
+<enscript highlight=scheme>
+(regexp-escape "^[0-9]+:.*$")
+=>  "\\^\\[0-9\\]\\+:.\n.\\*\\$"
+</enscript>
+
+=== Extended SRE Syntax
+
+The following table summarizes the SRE syntax, with detailed explanations following.
+
+  ;; basic patterns
+  <string>                          ; literal string
+  (seq <sre> ...)                   ; sequence
+  (: <sre> ...)
+  (or <sre> ...)                    ; alternation
+  
+  ;; optional/multiple patterns
+  (? <sre> ...)                     ; 0 or 1 matches
+  (* <sre> ...)                     ; 0 or more matches
+  (+ <sre> ...)                     ; 1 or more matches
+  (= <n> <sre> ...)                 ; exactly <n> matches
+  (>= <n> <sre> ...)                ; <n> or more matches
+  (** <from> <to> <sre> ...)        ; <n> to <m> matches
+  (?? <sre> ...)                    ; non-greedy (non-greedy) pattern: (0 or 1)
+  (*? <sre> ...)                    ; non-greedy kleene star
+  (**? <from> <to> <sre> ...)       ; non-greedy range
+  
+  ;; submatch patterns
+  (submatch <sre> ...)              ; numbered submatch
+  (submatch-named <name> <sre> ...) ; named submatch
+  (=> <name> <sre> ...)
+  (backref <n-or-name>)             ; match a previous submatch
+  
+  ;; toggling case-sensitivity
+  (w/case <sre> ...)                ; enclosed <sre>s are case-sensitive
+  (w/nocase <sre> ...)              ; enclosed <sre>s are case-insensitive
+  
+  ;; character sets
+  <char>                            ; singleton char set
+  (<string>)                        ; set of chars
+  (or <cset-sre> ...)               ; set union
+  (~ <cset-sre> ...)                ; set complement (i.e. [^...])
+  (- <cset-sre> ...)                ; set difference
+  (& <cset-sre> ...)                ; set intersection
+  (/ <range-spec> ...)              ; pairs of chars as ranges
+  
+  ;; named character sets
+  any
+  nonl
+  ascii
+  lower-case     lower
+  upper-case     upper
+  alphabetic     alpha
+  numeric        num
+  alphanumeric   alphanum  alnum
+  punctuation    punct
+  graphic        graph
+  whitespace     white     space
+  printing       print
+  control        cntrl
+  hex-digit      xdigit
+  
+  ;; assertions and conditionals
+  bos eos                           ; beginning/end of string
+  bol eol                           ; beginning/end of line
+  bow eow                           ; beginning/end of word
+  nwb                               ; non-word-boundary
+  (look-ahead <sre> ...)            ; zero-width look-ahead assertion
+  (look-behind <sre> ...)           ; zero-width look-behind assertion
+  (neg-look-ahead <sre> ...)        ; zero-width negative look-ahead assertion
+  (neg-look-behind <sre> ...)       ; zero-width negative look-behind assertion
+  (atomic <sre> ...)                ; for (?>...) independent patterns
+  (if <test> <pass> [<fail>])       ; conditional patterns
+  commit                            ; don't backtrack beyond this (i.e. cut)
+  
+  ;; backwards compatibility
+  (posix-string <string>)           ; embed a POSIX string literal
+
+====  Basic SRE Patterns
+
+The simplest SRE is a literal string, which matches that string exactly.
+
+  (string-search "needle" "hayneedlehay") => <match>
+
+By default the match is case-sensitive, though you can control this either with the compiler flags or local overrides:
+
+  (string-search "needle" "haynEEdlehay") => #f
+  
+  (string-search (irregex "needle" 'i) "haynEEdlehay") => <match>
+  
+  (string-search '(w/nocase "needle") "haynEEdlehay") => <match>
+
+You can use {{w/case}} to switch back to case-sensitivity inside a {{w/nocase}}:
+
+  (string-search '(w/nocase "SMALL" (w/case "BIG")) "smallBIGsmall") => <match>
+  
+  (string-search '(w/nocase "small" (w/case "big")) "smallBIGsmall") => #f
+
+Of course, literal strings by themselves aren't very interesting
+regular expressions, so we want to be able to compose them. The most
+basic way to do this is with the {{seq}} operator (or its abbreviation {{:}}),
+which matches one or more patterns consecutively:
+
+  (string-search '(: "one" space "two" space "three") "one two three") => <match>
+
+As you may have noticed above, the {{w/case}} and {{w/nocase}} operators
+allowed multiple SREs in a sequence - other operators that take any
+number of arguments (e.g. the repetition operators below) allow such
+implicit sequences.
+
+To match any one of a set of patterns use the or alternation operator:
+
+  (string-search '(or "eeney" "meeney" "miney") "meeney") => <match>
+
+  (string-search '(or "eeney" "meeney" "miney") "moe") => #f
+
+====  SRE Repetition Patterns
+
+There are also several ways to control the number of times a pattern
+is matched. The simplest of these is {{?}} which just optionally matches
+the pattern:
+
+  (string-search '(: "match" (? "es") "!") "matches!") => <match>
+  
+  (string-search '(: "match" (? "es") "!") "match!") => <match>
+  
+  (string-search '(: "match" (? "es") "!") "matche!") => #f
+
+To optionally match any number of times, use {{*}}, the Kleene star:
+
+  (string-search '(: "<" (* (~ #\>)) ">") "<html>") => <match>
+  
+  (string-search '(: "<" (* (~ #\>)) ">") "<>") => <match>
+  
+  (string-search '(: "<" (* (~ #\>)) ">") "<html") => #f
+
+Often you want to match any number of times, but at least one time is required, and for that you use {{+}}:
+
+  (string-search '(: "<" (+ (~ #\>)) ">") "<html>") => <match>
+  
+  (string-search '(: "<" (+ (~ #\>)) ">") "<a>") => <match>
+  
+  (string-search '(: "<" (+ (~ #\>)) ">") "<>") => #f
+
+More generally, to match at least a given number of times, use {{>=}}:
+
+  (string-search '(: "<" (>= 3 (~ #\>)) ">") "<table>") => <match>
+
+  (string-search '(: "<" (>= 3 (~ #\>)) ">") "<pre>") => <match>
+
+  (string-search '(: "<" (>= 3 (~ #\>)) ">") "<tr>") => #f
+
+To match a specific number of times exactly, use {=}:
+
+  (string-search '(: "<" (= 4 (~ #\>)) ">") "<html>") => <match>
+  
+  (string-search '(: "<" (= 4 (~ #\>)) ">") "<table>") => #f
+
+And finally, the most general form is {{**}} which specifies a range
+of times to match. All of the earlier forms are special cases of this.
+
+  (string-search '(: (= 3 (** 1 3 numeric) ".") (** 1 3 numeric)) "192.168.1.10") => <match>
+
+  (string-search '(: (= 3 (** 1 3 numeric) ".") (** 1 3 numeric)) "192.0168.1.10") => #f
+
+There are also so-called "non-greedy" variants of these repetition
+operators, by convention suffixed with an additional {{?}}. Since the
+normal repetition patterns can match any of the allotted repetition
+range, these operators will match a string if and only if the normal
+versions matched. However, when the endpoints of which submatch
+matched where are taken into account (specifically, all matches when
+using string-search since the endpoints of the match itself matter),
+the use of a non-greedy repetition can change the result.
+
+So, whereas {{?}} can be thought to mean "match or don't match," {{??}} means
+"don't match or match." {{*}} typically consumes as much as possible, but
+{{*?}} tries first to match zero times, and only consumes one at a time if
+that fails. If you have a greedy operator followed by a non-greedy
+operator in the same pattern, they can produce surprisins results as
+they compete to make the match longer or shorter. If this seems
+confusing, that's because it is. Non-greedy repetitions are defined
+only in terms of the specific backtracking algorithm used to implement
+them, which for compatibility purposes always means the Perl
+algorithm. Thus, when using these patterns you force IrRegex to use a
+backtracking engine, and can't rely on efficient execution.
+
+====  SRE Character Sets
+
+Perhaps more common than matching specific strings is matching any of
+a set of characters. You can use the or alternation pattern on a list
+of single-character strings to simulate a character set, but this is
+too clumsy for everyday use so SRE syntax allows a number of
+shortcuts.
+
+A single character matches that character literally, a trivial
+character class. More conveniently, a list holding a single element
+which is a string refers to the character set composed of every
+character in the string.
+
+  (string-match '(* #\-) "---") => <match>
+  
+  (string-match '(* #\-) "-_-") => #f
+  
+  (string-match '(* ("aeiou")) "oui") => <match>
+  
+  (string-match '(* ("aeiou")) "ouais") => #f
+
+Ranges are introduced with the {{/}} operator. Any strings or characters
+in the {{/}} are flattened and then taken in pairs to represent the start
+and end points, inclusive, of character ranges.
+
+  (string-match '(* (/ "AZ09")) "R2D2") => <match>
+  
+  (string-match '(* (/ "AZ09")) "C-3PO") => #f
+
+In addition, a number of set algebra operations are provided. or, of
+course, has the same meaning, but when all the options are character
+sets it can be thought of as the set union operator. This is further
+extended by the {{&}} set intersection, {{-}} set difference, and {{~}} set
+complement operators.
+
+  (string-match '(* (& (/ "az") (~ ("aeiou")))) "xyzzy") => <match>
+  
+  (string-match '(* (& (/ "az") (~ ("aeiou")))) "vowels") => #f
+
+  (string-match '(* (- (/ "az") ("aeiou"))) "xyzzy") => <match>
+  
+  (string-match '(* (- (/ "az") ("aeiou"))) "vowels") => #f
+
+====  SRE Assertion Patterns
+
+There are a number of times it can be useful to assert something about
+the area around a pattern without explicitly making it part of the
+pattern. The most common cases are specifically anchoring some pattern
+to the beginning or end of a word or line or even the whole
+string. For example, to match on the end of a word:
+
+  (string-match '(: "foo" eow) "foo") => <match>
+  
+  (string-match '(: "foo" eow) "foo!") => <match>
+  
+  (string-match '(: "foo" eow) "foof") => #f
+
+The {{bow}}, {{bol}}, {{eol}}, {{bos}} and {{eos}} work similarly. {{nwb}} asserts that you
+are not in a word-boundary - if replaced for {{eow}} in the above examples
+it would reverse all the results.
+
+There is no {{wb}}, since you tend to know from context whether it
+would be the beginning or end of a word, but if you need it you can
+always use (or bow eow).
+
+Somewhat more generally, Perl introduced positive and negative
+look-ahead and look-behind patterns. Perl look-behind patterns are
+limited to a fixed length, however the IrRegex versions have no such
+limit.
+
+  (string-match '(: "regular" (look-ahead " expression")) "regular expression") => <match>
+
+The most general case, of course, would be an and pattern to
+complement the or pattern - all the patterns must match or the whole
+pattern fails. This may be provided in a future release, although it
+(and look-ahead and look-behind assertions) are unlikely to be
+compiled efficiently.
+
+
+---
+Previous: [[Unit extras]]
+
+Next: [[Unit srfi-1]]

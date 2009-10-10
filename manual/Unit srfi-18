@@ -1,0 +1,105 @@
+[[tags: manual]]
+
+[[toc:]]
+
+== Unit srfi-18
+
+A simple multithreading package. This threading package follows largely
+the specification of SRFI-18. For more information see the documentation
+for [[http://srfi.schemers.org/srfi-18/srfi-18.html|SRFI-18]].
+
+'''Notes:'''
+
+* {{thread-start!}} accepts a thunk (a zero argument procedure) as argument, which is equivalent to {{(thread-start! (make-thread THUNK))}}.
+
+* {{thread-sleep!}} accepts a seconds real number value in addition to a time object.
+
+* When an uncaught exception (i.e. an error) is signalled in a thread other than the primordial thread and warnings are enabled (see: {{enable-warnings}}, then a warning message is written to the port that is the value of {{(current-error-port)}}.
+
+* Blocking I/O will block all threads, except for some socket operations (see the section about the {{tcp}} unit). An exception is the read-eval-print loop on UNIX platforms: waiting for input will not block other threads, provided the current input port reads input from a console.
+
+* It is generally not a good idea for one thread to call a continuation created by another thread, if {{dynamic-wind}} is involved.
+
+* When more than one thread compete for the current time-slice, the thread that was waiting first will become the next runnable thread.
+
+* The dynamic environment of a thread consists of the following state:
+
+** The current input-, output- and error-port
+
+** The current exception handler
+
+** The values of all current parameters (created by {{make-parameter}})
+
+** Any pending {{dynamic-wind}} thunks.
+
+* When an error is triggered inside the execution context of a thread, the default exception-handler will simply terminate the thread (and store the error condition for later use). Pending {{dynamic-wind}} thunks will ''not'' be invoked. Use a custom exception handler for the thread in that case.
+
+The following procedures are provided, in addition to the procedures defined in SRFI-18:
+
+
+
+=== thread-signal!
+
+ [procedure] (thread-signal! THREAD X)
+
+This will cause {{THREAD}} to signal the condition {{X}} once it is scheduled
+for execution. After signalling the condition, the thread continues with its normal
+execution.
+
+=== thread-quantum
+
+ [procedure] (thread-quantum THREAD)
+
+Returns the quantum of {{THREAD}}, which is an exact integer
+specifying the approximate time-slice of the thread in milliseconds.
+
+=== thread-quantum-set!
+
+ [procedure] (thread-quantum-set! THREAD QUANTUM)
+
+Sets the quantum of {{THREAD}} to {{QUANTUM}}.
+
+=== thread-suspend!
+
+ [procedure] (thread-suspend! THREAD)
+
+Suspends the execution of {{THREAD}} until resumed.
+
+=== thread-resume!
+
+ [procedure] (thread-resume! THREAD)
+
+Readies the suspended thread {{THREAD}}.
+
+=== thread-wait-for-i/o!
+
+ [procedure] (thread-wait-for-i/o! FD [MODE])
+
+Suspends the current thread until input ({{MODE}} is {{#:input}}), output ({{MODE}} is {{#:output}})
+or both ({{MODE}} is {{#:all}}) is available. {{FD}} should be a file-descriptor (not a port!) open
+for input or output, respectively.
+
+=== time->milliseconds
+
+ [procedure] (time->milliseconds TIME)
+
+Converts a time object (as created via {{current-time}}) into an exact integer representing
+the number of milliseconds since process startup.
+
+=== milliseconds->time
+
+ [procedure] (milliseconds->time ms)
+
+Converts into a time object an exact integer representing
+the number of milliseconds since process startup.
+
+This procedure may be useful in combination with {{thread-sleep!}} when your compilation unit is using {{(declare fixnum-arithmetic)}}.  In that case you won't be able to pass an inexact value to {{thread-sleep!}}, but you can do the following:
+
+ (define (thread-sleep!/ms ms)
+   (thread-sleep!
+    (milliseconds->time (+ ms (current-milliseconds)))))
+
+---
+Previous: [[Unit srfi-14]]
+
+Next: [[Unit srfi-69]]
