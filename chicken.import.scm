@@ -205,12 +205,6 @@
    warning
    eval-handler
    er-macro-transformer
-   set-dynamic-load-mode!                         ;DEPRECATED
-   dynamic-load-mode
    dynamic-load-libraries
-   loaded-libraries
-   dynamic-library-load
-   dynamic-library-procedure
-   dynamic-library-variable
    with-exception-handler)
  ##sys#chicken-macro-environment)       ;*** incorrect - won't work in compiled executable that does expansion

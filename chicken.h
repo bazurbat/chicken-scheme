@@ -1506,7 +1506,6 @@ C_fctexport void C_ccall C_software_version(C_word c, C_word closure, C_word k) 
 C_fctexport void C_ccall C_build_platform(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_c_runtime(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_register_finalizer(C_word c, C_word closure, C_word k, C_word x, C_word proc) C_noret;
-C_fctexport void C_ccall C_dlopen_flags(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_set_dlopen_flags(C_word c, C_word closure, C_word k, C_word now, C_word global) C_noret;
 C_fctexport void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word entry, C_word reloadable) C_noret;
 C_fctexport void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table) C_noret;
@@ -1514,15 +1513,6 @@ C_fctexport void C_ccall C_cpu_time(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_locative_ref(C_word c, C_word closure, C_word k, C_word loc) C_noret;
 C_fctexport void C_ccall C_call_with_cthulhu(C_word c, C_word self, C_word k, C_word proc) C_noret;
 C_fctexport void C_ccall C_copy_closure(C_word c, C_word closure, C_word k, C_word proc) C_noret;
-
-C_fctexport void C_ccall C_dynamic_library_names(C_word c, C_word closure, C_word k) C_noret;
-C_fctexport void C_ccall C_dynamic_library_data(C_word c, C_word closure, C_word k, C_word libnam) C_noret;
-C_fctexport void C_ccall C_chicken_library_literal_frame(C_word c, C_word closure, C_word k, C_word lfnam, C_word lfhnd, C_word lfcnt) C_noret;
-C_fctexport void C_ccall C_chicken_library_ptable(C_word c, C_word closure, C_word k, C_word lfnam, C_word lfhnd, C_word lfcnt, C_word inclptrs) C_noret;
-
-C_fctexport void C_ccall C_dynamic_library_load(C_word c, C_word closure, C_word k, C_word name) C_noret;
-C_fctexport void C_ccall C_dynamic_library_symbol(C_word c, C_word closure, C_word k, C_word mname, C_word sname, C_word isprcsym) C_noret;
-C_fctexport void C_ccall C_dynamic_library_unload(C_word c, C_word closure, C_word k, C_word name) C_noret;
 
 #if !defined(__GNUC__) && !defined(__INTEL_COMPILER)
 C_fctexport C_word *C_a_i(C_word **a, int n);
@@ -1670,16 +1660,9 @@ C_fctexport C_word C_fcall C_i_foreign_scheme_or_c_pointer_argumentp(C_word x) C
 C_fctexport C_word C_fcall C_i_foreign_integer_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x) C_regparm;
 
-C_fctexport void * C_fcall C_dynamic_library_open(C_char *name) C_regparm;
-C_fctexport void * C_fcall C_dynamic_library_procedure(void *handle, C_char *name) C_regparm;
-C_fctexport void * C_fcall C_dynamic_library_procedure_exact(void *handle, C_char *name) C_regparm;
-C_fctexport void * C_fcall C_dynamic_library_variable(void *handle, C_char *name) C_regparm;
-C_fctexport void * C_fcall C_dynamic_library_variable_exact(void *handle, C_char *name) C_regparm;
-C_fctexport int C_fcall C_dynamic_library_close(void *handle) C_regparm;
-
-C_fctexport C_char * C_lookup_procedure_id(void *ptr);
-C_fctexport void * C_lookup_procedure_ptr(C_char *id);
-C_fctexport C_word C_ccall C_dunload(C_word name);
+C_fctexport C_char *C_lookup_procedure_id(void *ptr);
+C_fctexport void *C_lookup_procedure_ptr(C_char *id);
+C_fctexport C_word C_dunload(C_word name);
 
 #ifdef C_SIXTY_FOUR
 C_fctexport void C_ccall C_peek_signed_integer_32(C_word c, C_word closure, C_word k, C_word v, C_word index) C_noret;
