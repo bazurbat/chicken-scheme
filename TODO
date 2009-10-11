@@ -94,6 +94,13 @@ TODO for chicken							-*- Outline -*-
 *** try to build with TLS
 
 
+* features
+
+** error-handling hook for argument-type errors that signal a non-number
+   the numbers hook could modify this and provide a better error message if a non-core
+   number type triggers such an error
+
+
 * tests
 
 ** optional longer run (env. var)
