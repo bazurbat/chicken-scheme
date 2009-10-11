@@ -151,29 +151,6 @@ The toplevel loop understands a number of special commands:
 
 ; ,x EXP : Pretty-print macroexpanded expression {{EXP}} (the expression is not evaluated).
 
-; ,tr SYMBOL ... : Enables tracing of the toplevel procedures with the given names.
-
-<enscript highlight=scheme>
-#;1> (fac 10)                       ==> 3628800
-#;2> ,tr fac
-#;3> (fac 3)
-|(fac 3)
-| (fac 2)
-|  (fac 1)
-|   (fac 0)
-|   fac -> 1 
-|  fac -> 1 
-| fac -> 2 
-|fac -> 6                          ==> 6
-#;4> ,utr fac
-#;5> (fac 3)                        ==> 6
-</enscript>
-k
-
-; ,utr SYMBOL ... : Disables tracing of the given toplevel procedures.
-
-; ,info : Lists traced procedures.
-
 You can define your own toplevel commands using the {{toplevel-command}}
 procedure:
 
