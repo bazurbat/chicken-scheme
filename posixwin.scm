@@ -1178,11 +1178,11 @@ EOF
             (create-directory-helper name)))
 
 (define-inline (create-directory-helper-parents name)
-    (let* ((l   (string-split name "\\"))
+    (let* ((l   (string-split name "/\\"))
            (c   (car l)))
         (for-each
              (lambda (x)
-                 (set! c (string-append c "\\" x))
+                 (set! c (string-append c "/\\" x))
                  (create-directory-helper-silent c))
              (cdr l))))
 
