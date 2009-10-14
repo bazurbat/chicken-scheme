@@ -21,7 +21,7 @@ just use normal Scheme lists, with quasiquote if you like.
 
 === grep
 
- [procedure] (grep REGEX LIST)
+ [procedure] (grep REGEX LIST [ACCESSOR])
 
 Returns all items of {{LIST}} that match the regular expression
 {{REGEX}}.  This procedure could be defined as follows:
@@ -30,6 +30,11 @@ Returns all items of {{LIST}} that match the regular expression
 (define (grep regex lst)
   (filter (lambda (x) (string-search regex x)) lst) )
 </enscript>
+
+{{ACCESSOR}} is an optional accessor-procedure applied to each
+element before doing the match. It should take a single argument
+and return a string that will then be used in the regular expression
+matching. {{ACCESSOR}} defaults to the identity function.
 
 
 === glob->regexp

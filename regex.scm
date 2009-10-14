@@ -295,17 +295,17 @@
 ;;; Grep-like function on list:
 
 (define grep
-  (let ([string-search string-search])
-    (lambda (rx lst)
+  (let ((string-search string-search))
+    (lambda (rx lst #!optional (acc (lambda (x) x)))
       (##sys#check-list lst 'grep)
-      (let loop ([lst lst])
-        (if (null? lst)
-            '()
-            (let ([x (car lst)]
-                  [r (cdr lst)] )
-              (if (string-search rx x)
-                  (cons x (loop r))
-                  (loop r) ) ) ) ) ) ) )
+      (let loop ((lst lst))
+	(if (null? lst)
+	    '()
+	    (let ((x (##sys#slot lst 0))
+		  (r (##sys#slot lst 1)) )
+	      (if (string-search rx (acc x))
+		  (cons x (loop r))
+		  (loop r) ) ) ) ) ) ) )
 
 
 ;;; Escape regular expression (suggested by Peter Bex):
