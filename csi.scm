@@ -316,6 +316,11 @@ EOF
 			 (when ##sys#last-exception
 			   (history-add (list ##sys#last-exception))
 			   (describe ##sys#last-exception) ) )
+			((s)
+			 (let* ((str (read-line))
+				(r (system str)) )
+			   (history-add (list r))
+			   r) )
 			((?)
 			 (display 
 			  "Toplevel commands:
