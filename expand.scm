@@ -942,15 +942,19 @@
        (lambda (spec)
 	 (let* ((vs (import-spec spec))
 		(vsv (car vs))
-		(vss (cdr vs)))
+		(vss (cdr vs))
+		(prims '()))
 	   (dd `(IMPORT: ,loc))
 	   (dd `(V: ,(if cm (module-name cm) '<toplevel>) ,(map-se vsv)))
 	   (dd `(S: ,(if cm (module-name cm) '<toplevel>) ,(map-se vss)))
 	   (##sys#mark-imported-symbols vsv) ; mark imports as ##core#aliased
 	   (for-each
 	    (lambda (imp)
-	      (let ((id (car imp))
-		    (aid (cdr imp)))
+	      (let* ((id (car imp))
+		     (aid (cdr imp))
+		     (prim (##sys#get aid '##core#primitive)))
+		(when prim
+		  (set! prims (cons imp prims)))
 		(and-let* ((a (assq id (import-env)))
 			   ((not (eq? aid (cdr a)))))
 		  (##sys#warn "re-importing already imported identifier" id))))
@@ -970,11 +974,22 @@
 	       (module-export-list cm) 
 	       (map car vsv)
 	       (map car vss)))
+	     (when (pair? prims)
+	       (set-module-meta-expressions! 
+		cm
+		(append
+		 (module-meta-expressions cm)
+		 `((##sys#mark-primitive ',prims)))))
 	     (dm "export-list: " (module-export-list cm)))
 	   (import-env (append vsv (import-env)))
 	   (macro-env (append vss (macro-env)))))
        (cdr x))
       '(##core#undefined))))
+
+(define (##sys#mark-primitive prims)
+  (for-each
+   (lambda (a) (##sys#put! (cdr a) '##core#primitive (car a)))
+   prims))
 
 (##sys#extend-macro-environment
  'import '() 

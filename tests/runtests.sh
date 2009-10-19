@@ -80,13 +80,19 @@ $compile syntax-tests-2.scm
 
 #echo "======================================== meta-syntax tests ..."
 #$interpret -bnq meta-syntax-test.scm -e '(import foo)' -e '(bar 1 2)'
-#$compile_s -s meta-syntax-test.scm -j foo
-#$compile_s -s foo.import.scm
+#$compile_s meta-syntax-test.scm -j foo
+#$compile_s foo.import.scm
 #$interpret -bnq -e '(require-library meta-syntax-test)' -e '(import foo)' -e '(bar 1 2)'
 
 echo "======================================== reexport tests ..."
 $interpret -bnq reexport-tests.scm
 $compile reexport-tests.scm
+./a.out
+rm -f reexport-m*.import*
+$compile_s reexport-m1.scm -J
+$compile_s reexport-m1.import.scm
+$interpret -s reexport-m2.scm
+$compile reexport-m2.scm
 ./a.out
 
 echo "======================================== compiler syntax tests ..."
@@ -97,7 +103,7 @@ echo "======================================== import library tests ..."
 rm -f foo.import.*
 $compile import-library-test1.scm -emit-import-library foo
 $interpret -s import-library-test2.scm
-$compile_s -s foo.import.scm -o foo.import.so
+$compile_s foo.import.scm -o foo.import.so
 $interpret -s import-library-test2.scm
 $compile import-library-test2.scm
 ./a.out
@@ -215,7 +221,7 @@ for x in `ls *.scm`; do
 	"plists.scm");;
 	*)
 	    echo $x
-	    ../csc $x -compiler $CHICKEN -I.. -L.. -O3 -d0
+	    ../csc $x -compiler $CHICKEN -I.. -L.. -O3 -d0 -prelude '(define-syntax time (syntax-rules () ((_ x) x)))'
 	    ./`basename $x .scm`;;
     esac
 done
