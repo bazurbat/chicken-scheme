@@ -167,7 +167,7 @@ EOF
      ##sys#unicode-surrogate? ##sys#surrogates->codepoint ##sys#write-char/port
      ##sys#update-errno ##sys#file-info close-output-port close-input-port ##sys#peek-unsigned-integer
      continuation-graft char-downcase string-copy remainder floor ##sys#exact? list->string
-     ##sys#append ##sys#list ##sys#cons ##sys#list->vector ##sys#list ##sys#apply ##sys#make-vector
+     ##sys#append ##sys#list ##sys#cons ##sys#list->vector ##sys#apply ##sys#make-vector
      ##sys#write-char ##sys#force-finalizers ##sys#cleanup-before-exit ##sys#write-char-0
      ##sys#default-read-info-hook ##sys#read-error) ) ] )
 
