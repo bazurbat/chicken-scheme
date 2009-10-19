@@ -46,9 +46,14 @@ TODO for chicken							-*- Outline -*-
 
 * tasks
 
+** remove TODO from master
+
+** collect list of private commits that haven't been pushed to pending, yet
+
+** SHA-1 commit-ID in banner
+
 ** branches
 *** unfucked-dload can be removed
-*** remove TODO from master
 
 ** module issues
 *** need a way to omit generating module registration without generating import lib
@@ -136,3 +141,4 @@ TODO for chicken							-*- Outline -*-
    (decompose-lambda-list) will be more expensive and cumbersome.
 
 ** The benchmarks are meaningless - find real ones.
+*** check Feeley's benchmarks (slatex, compiler)
