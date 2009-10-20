@@ -505,7 +505,9 @@
     (compile -s -O2 -d0 ,iname)
     (install-extension
      name
-     (list fname (make-pathname #f sname "setup"))
+     (list fname 
+	   iname
+	   (make-pathname #f sname "setup"))
      `((version ,version)
        (static ,(make-pathname #f fname "o"))))))
 
