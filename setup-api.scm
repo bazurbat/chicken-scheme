@@ -506,7 +506,7 @@
     (install-extension
      name
      (list fname 
-	   (pathname-replace-extension iname "so")
+	   iname
 	   (make-pathname #f sname "setup"))
      `((version ,version)
        (static ,(make-pathname #f fname "o"))))))

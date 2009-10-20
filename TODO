@@ -4,6 +4,8 @@ TODO for chicken							-*- Outline -*-
 
 * bugs
 
+** csc: no backtrace if chicken fails
+
 ** compiler
 *** pre-optimization 
 **** changes call-sites and makes them invalid for later pre-optimization
