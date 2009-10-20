@@ -131,9 +131,24 @@ TODO for chicken							-*- Outline -*-
 ** global inline files for core units
 *** This would remove necessity for many simple re-write rules in c-platform.scm
 
+** delegates for extended llists
+*** (define (foo ... #!XXX ...) ...)
+    ~>
+    (begin
+      (declare (hide tmp))
+      (define (tmp VAR ...) ...)
+      (define (foo ... #!XXX ...) (tmp VAR ...))
+      (define-compiler-syntax foo
+        (syntax-rules ()
+	  ((_ arg ...) (tmp <processed-arg> ...)))))
+*** only used after definition
+*** only if opt/key defaults don't refer to previous llist vars
+*** disable if no compiler-syntax enabled
+
 ** self-recursion optimization
 *** what MacScheme called "benchmark-mode" (assume self-calls are recursion)
 *** needs declaration or option, >= -O2
+*** can be implemented like in the extended-llists opt. above
 
 ** compiler-support for get-keyword ?
 *** what when a function with keyword args gets inlined?
