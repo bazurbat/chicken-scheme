@@ -1858,7 +1858,7 @@ EOF
       (##sys#check-string filename loc)
       (let ([s (pathname-strip-directory filename)])
 	(setarg 0 s (##sys#size s)) )
-      (build-exec-argvec loc ($quote-args-list arglst exactf) setarg 1)
+      (build-exec-argvec loc (and arglst ($quote-args-list arglst exactf)) setarg 1)
       (build-exec-argvec loc envlst setenv 0)
       (##core#inline "C_flushall")
       (##sys#make-c-string (##sys#expand-home-path filename)) ) ) )
