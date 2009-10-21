@@ -27,9 +27,10 @@
 
 (declare
   (unit eval)
-  (uses expand data-structures)
+  (uses expand)
   (disable-warning var)
-  (hide ##sys#r4rs-environment ##sys#r5rs-environment 
+  (hide ##sys#split-at-separator
+	##sys#r4rs-environment ##sys#r5rs-environment 
 	##sys#interaction-environment pds pdss pxss) 
   (not inline ##sys#repl-eval-hook ##sys#repl-read-hook ##sys#repl-print-hook 
        ##sys#read-prompt-hook ##sys#alias-global-hook ##sys#user-read-hook
@@ -75,7 +76,7 @@
      ##sys#make-c-string ##sys#resolve-include-filename
      ##sys#load ##sys#error ##sys#warn ##sys#hash-table-location ##sys#expand-home-path
      ##sys#make-flonum ##sys#make-pointer ##sys#null-pointer ##sys#address->pointer 
-     ##sys#pointer->address ##sys#compile-to-closure ##sys#make-string ##sys#make-lambda-info ##sys#lambda-info?
+     ##sys#pointer->address ##sys#compile-to-closure ##sys#make-string ##sys#make-lambda-info
      ##sys#number? ##sys#symbol->qualified-string ##sys#decorate-lambda ##sys#string-append
      ##sys#ensure-heap-reserve ##sys#syntax-error-hook ##sys#read-prompt-hook
      ##sys#repl-eval-hook ##sys#append ##sys#eval-decorator
@@ -214,7 +215,7 @@
 (define (##sys#eval-decorator p ll h cntr)
   (##sys#decorate-lambda
    p 
-   ##sys#lambda-info?
+   (lambda (x) (and (not (##sys#immediate? x)) (##core#inline "C_lambdainfop" x)))
    (lambda (p i)
      (##sys#setslot 
       p i 
@@ -873,40 +874,20 @@
 
 (define-foreign-variable _dlerror c-string "C_dlerror")
 
-(define dynamic-load-mode)
-(define set-dynamic-load-mode!)                         ;DEPRECATED
-(let ()
-
-  (define (dynamic-load-flags->mode flags)
-    (and flags
-         (list (if (car flags) 'now 'lazy) (if (cadr flags) 'global 'local)) ) )
-
-  (define (dynamic-load-mode->flags mode)
-    (let ((mode (if (pair? mode) mode (list mode)))
-          (now #f)
-          (global #t) )
-      (let loop ((mode mode))
-        (when (pair? mode)
-	  (case (car mode)
-	    ((global) (set! global #t))
-	    ((local)  (set! global #f))
-	    ((lazy)   (set! now #f))
-	    ((now)    (set! now #t))
-	    (else
-	     (##sys#signal-hook 'set-dynamic-load-mode! "invalid dynamic-load mode" (car mode)) ) )
-	  (loop (cdr mode)) ) )
-      (list now global) ) )
-
-  (set! dynamic-load-mode
-    (make-parameter (dynamic-load-flags->mode (##sys#dlopen-flags))
-      (lambda (x)
-        (cond ((or (pair? x) (symbol? x))
-               (apply ##sys#set-dlopen-flags! (dynamic-load-mode->flags x))
-               (dynamic-load-flags->mode (##sys#dlopen-flags)) )
-              (else
-               '(lazy global) ) ) ) ) )
-             
-  (set! set-dynamic-load-mode! (lambda (mode) (dynamic-load-mode mode) ) ) )
+(define (set-dynamic-load-mode! mode)
+  (let ([mode (if (pair? mode) mode (list mode))]
+	[now #f]
+	[global #t] )
+    (let loop ([mode mode])
+      (when (pair? mode)
+	(case (##sys#slot mode 0)
+	  [(global) (set! global #t)]
+	  [(local) (set! global #f)]
+	  [(lazy) (set! now #f)]
+	  [(now) (set! now #t)]
+	  [else (##sys#signal-hook 'set-dynamic-load-mode! "invalid dynamic-load mode" (##sys#slot mode 0))] )
+	(loop (##sys#slot mode 1)) ) )
+    (##sys#set-dlopen-flags! now global) ) )
 
 (let ([read read]
       [write write]
@@ -1052,8 +1033,7 @@
 	    (let ([libs
 		   (if lib
 		       (##sys#list lib)
-		       (cons (##sys#string-append (##sys#slot uname 1) ;symbol pname
-		                                  ##sys#load-library-extension)
+		       (cons (##sys#string-append (##sys#slot uname 1) ##sys#load-library-extension)
 			     (dynamic-load-libraries) ) ) ]
 		  [top 
 		   (##sys#make-c-string
@@ -1068,9 +1048,7 @@
 	      (let loop ([libs libs])
 		(cond [(null? libs) #f]
 		      [(##sys#dload (##sys#make-c-string (##sys#slot libs 0)) top #f)
-		       ; Cannot be in features yet but check anyway
-		       (unless (memq id ##sys#features)
-		         (set! ##sys#features (cons id ##sys#features)) )
+		       (unless (memq id ##sys#features) (set! ##sys#features (cons id ##sys#features)))
 		       #t]
 		      [else (loop (##sys#slot libs 1))] ) ) ) ) ) ) ) )
 
@@ -1082,59 +1060,17 @@
 
 (define load-library ##sys#load-library)
 
-(define (loaded-libraries)
-  ; Ignore the names of explicitly loaded library units
-  (let loop ((ils (##sys#dynamic-library-names)) (ols '()))
-    (if (null? ils)
-        ols
-        (let ((nam (car ils)))
-          (loop (cdr ils) (if (member nam (dynamic-load-libraries)) ols (cons nam ols))) ) ) ) )
-
-(define (dynamic-library-load name #!optional (err? #t))
-  (##sys#check-string name 'dynamic-library-load)
-  (or (##sys#dynamic-library-load name)
-      (and err?
-           (##sys#error 'dynamic-library-load "cannot load dynamic library" name _dlerror) ) ) )
-
-;; (dynamic-library-procedure mname sname handler [error?]) => procedure/n
-;; (dynamic-library-variable mname sname handler [error?]) => procedure/n
-;;
-;; The 'procedure/n' invokes the handler on (mname sname mname+sname-ptr n-args).
-;; A symbol 'sname' is converted to a string.
-;;
-;; Will attempt to load (global lazy) the library should the attempt to
-;; resolve the symbol fail. Either this succeeds and the symbol is then
-;; resolved, or an error will be signaled.
-
-(define dynamic-library-procedure)
-(define dynamic-library-variable)
-(let ()
-
-  (define (checked-pointer loc ptrfnc mname sname err?)
-    (or (ptrfnc mname sname)
-        (and (parameterize ((dynamic-load-mode '(lazy global)))
-               (dynamic-library-load mname err?))
-             (ptrfnc mname sname) )
-        (and err?
-             (##sys#error loc "cannot resolve dynamic library symbol" mname sname _dlerror) ) ) )
-
-  (define (dynlibsym loc ptrfnc mname sname handler err?)
-    (##sys#check-string mname loc)
-    (##sys#check-closure handler loc)
-    (let ((sname (if (symbol? sname) (symbol->string sname) sname)))
-      (##sys#check-string sname loc)
-      (and-let* ((ptr (checked-pointer loc ptrfnc mname sname err?)))
-        (lambda args (handler mname sname ptr args)) ) ) )
-
-  (set! dynamic-library-procedure
-    (lambda (mname sname handler #!optional (err? #t))
-      (dynlibsym 'dynamic-library-procedure
-                 ##sys#dynamic-library-procedure-pointer mname sname handler err?) ) )
-
-  (set! dynamic-library-variable
-    (lambda (mname sname handler #!optional (err? #t))
-      (dynlibsym 'dynamic-library-variable
-                 ##sys#dynamic-library-variable-pointer mname sname handler err?) ) ) )
+(define ##sys#split-at-separator
+  (let ([reverse reverse] )
+    (lambda (str sep)
+      (let ([len (##sys#size str)])
+	(let loop ([items '()] [i 0] [j 0])
+	  (cond [(fx>= i len)
+		 (reverse (cons (##sys#substring str j len) items)) ]
+		[(char=? (##core#inline "C_subchar" str i) sep)
+		 (let ([i2 (fx+ i 1)])
+		   (loop (cons (##sys#substring str j i) items) i2 i2) ) ]
+		[else (loop items (fx+ i 1) j)] ) ) ) ) ) )
 
 
 ;;; Extensions:
@@ -1871,3 +1807,13 @@
 
 (define-external (CHICKEN_get_error_message ((c-pointer "char") buf) (int bufsize)) void
   (store-string (or last-error "No error") bufsize buf) )
+
+
+;;; Create lambda-info object
+
+(define (##sys#make-lambda-info str)
+  (let* ((sz (##sys#size str))
+	 (info (##sys#make-string sz)) )
+    (##core#inline "C_copy_memory" info str sz)
+    (##core#inline "C_string_to_lambdainfo" info)
+    info) )

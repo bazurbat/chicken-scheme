@@ -497,17 +497,7 @@ static void C_fcall remark(C_word *x) C_regparm;
 static C_word C_fcall intern0(C_char *name) C_regparm;
 static void C_fcall update_locative_table(int mode) C_regparm;
 static C_word get_unbound_variable_value(C_word sym);
-static LF_LIST *find_lf_list_node(C_char *name);
-static C_char *checked_string_argument(char *loc, C_word hstr);
-static C_char *checked_string_or_null_argument(char *loc, C_word hstr);
-static void checked_library_query_arguments(char *loc,
-                                            C_word libnam, C_word libhdl, C_word lfcnt,
-                                            char **name, void **handle, int *count);
-static LF_LIST *make_lf_list_node(C_word *lf, int count, C_PTABLE_ENTRY *ptable, C_char *name, void *handle);
-static void link_lf_list_node(LF_LIST *node);
-static void unlink_lf_list_node(LF_LIST *node);
-static void destroy_lf_list_node(LF_LIST *node);
-static C_char *make_underscore_symstr(C_char *sym);
+static LF_LIST *find_module_handle(C_char *name);
 
 static C_ccall void call_cc_wrapper(C_word c, C_word closure, C_word k, C_word result) C_noret;
 static C_ccall void call_cc_values_wrapper(C_word c, C_word closure, C_word k, ...) C_noret;
@@ -732,7 +722,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 
 static C_PTABLE_ENTRY *create_initial_ptable()
 {
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 74);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 66);
   int i = 0;
 
   if(pt == NULL)
@@ -756,17 +746,8 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_decode_seconds);
   C_pte(C_get_environment_variable);
   C_pte(C_stop_timer);
-  C_pte(C_dlopen_flags);
-  C_pte(C_set_dlopen_flags);
   C_pte(C_dload);
-  C_pte(C_dunload);
-  C_pte(C_dynamic_library_names);
-  C_pte(C_dynamic_library_data);
-  C_pte(C_chicken_library_literal_frame);
-  C_pte(C_chicken_library_ptable);
-  C_pte(C_dynamic_library_load);
-  C_pte(C_dynamic_library_symbol);
-  C_pte(C_dynamic_library_unload);
+  C_pte(C_set_dlopen_flags);
   C_pte(C_become);
   C_pte(C_apply_values);
   C_pte(C_times);
@@ -811,6 +792,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_register_finalizer);
   C_pte(C_locative_ref);
   C_pte(C_call_with_cthulhu);
+  C_pte(C_dunload);
   pt[ i ].id = NULL;
   return pt;
 }
@@ -1863,66 +1845,6 @@ void C_zap_strings(C_word str)
 
 /* Register/unregister literal frame: */
 
-static LF_LIST *
-make_lf_list_node(C_word *lf, int count, C_PTABLE_ENTRY *ptable, C_char *name, void *handle)
-{
-  LF_LIST *node = (LF_LIST *)C_malloc(sizeof(LF_LIST));
-
-  if(NULL == node)
-    barf(C_OUT_OF_MEMORY_ERROR, "make_lf_list_node");
-
-  node->lf = lf;
-  node->count = count;
-  node->ptable = ptable;
-  node->module_name = name;
-  node->module_handle = handle;
-
-  return node;
-}
-
-
-static void
-link_lf_list_node(LF_LIST *node)
-{
-  if(lf_list) lf_list->prev = node;
-  node->next = lf_list;
-  node->prev = NULL;
-  lf_list = node;
-}
-
-
-static void
-unlink_lf_list_node(LF_LIST *node)
-{
-  if (node->next) node->next->prev = node->prev;
-  if (node->prev) node->prev->next = node->next;
-  if (lf_list == node) lf_list = node->next;
-}
-
-
-static void
-destroy_lf_list_node(LF_LIST *node)
-{
-  unlink_lf_list_node(node);
-  C_free(node->module_name);
-  C_free(node);
-}
-
-
-static LF_LIST *
-find_lf_list_node(C_char *name)
-{
-  LF_LIST *np;
-
-  for(np = lf_list; np != NULL; np = np->next) {
-    if(np->module_name != NULL && !C_strcmp(np->module_name, name)) 
-      return np;
-  }
-
-  return NULL;
-}
-
-
 void C_initialize_lf(C_word *lf, int count)
 {
   while(count-- > 0)
@@ -1938,9 +1860,15 @@ void *C_register_lf(C_word *lf, int count)
 
 void *C_register_lf2(C_word *lf, int count, C_PTABLE_ENTRY *ptable)
 {
+  LF_LIST *node = (LF_LIST *)C_malloc(sizeof(LF_LIST));
   LF_LIST *np;
-  LF_LIST *node = make_lf_list_node(lf, count, ptable, NULL, NULL);
   int status = 0;
+
+  node->lf = lf;
+  node->count = count;
+  node->ptable = ptable;
+  node->module_name = NULL;
+  node->module_handle = NULL;
   
   if(reload_lf != NULL) {
     if(debug_mode)
@@ -1958,191 +1886,44 @@ void *C_register_lf2(C_word *lf, int count, C_PTABLE_ENTRY *ptable)
   node->module_handle = current_module_handle;
   current_module_handle = NULL;
 
-  if(reload_lf != node) link_lf_list_node(node);
+  if(reload_lf != node) {
+    if(lf_list) lf_list->prev = node;
+
+    node->next = lf_list;
+    node->prev = NULL;
+    lf_list = node;
+  }
   else reload_lf = NULL;
 
   return (void *)node;
 }
 
 
+LF_LIST *find_module_handle(char *name)
+{
+  LF_LIST *np;
+
+  for(np = lf_list; np != NULL; np = np->next) {
+    if(np->module_name != NULL && !C_strcmp(np->module_name, name)) 
+      return np;
+  }
+
+  return NULL;
+}
+
+
 void C_unregister_lf(void *handle)
 {
-  destroy_lf_list_node((LF_LIST *)handle);
-}
+  LF_LIST *node = (LF_LIST *) handle;
 
+  if (node->next) node->next->prev = node->prev;
 
-void C_ccall
-C_dynamic_library_names(C_word c, C_word closure, C_word k)
-{
-  LF_LIST *np;
-  C_word olst = C_SCHEME_END_OF_LIST;
+  if (node->prev) node->prev->next = node->next;
 
-  if(c != 2) C_bad_argc(c, 2);
+  if (lf_list == node) lf_list = node->next;
 
-  for(np = lf_list; np; np = np->next) {
-    if(NULL != np->module_name && NULL != np->module_handle) {
-      C_word str = C_string2(C_heaptop, np->module_name);
-      olst = C_h_pair(str, olst);
-    }
-  }
-
-  C_kontinue(k, olst);
-}
-
-
-static C_char *
-checked_string_argument(char *loc, C_word hstr)
-{
- int len;
-  C_char *cstr;
-
-  if (!C_immediatep(hstr) && C_STRING_TYPE == C_header_bits(hstr)) {
-    /* make copy of heap string so movement unnoticeable */
-    len = C_header_size(hstr);
-    if(NULL == (cstr = (char *)C_malloc(len + 1)))
-      barf(C_OUT_OF_MEMORY_ERROR, loc);
-    C_memcpy(cstr, C_c_string(hstr), len); (cstr)[ len ] = '\0';
-  } else
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, loc, hstr);
-
-  return cstr;
-}
-
-
-static C_char *
-checked_string_or_null_argument(char *loc, C_word hstr)
-{
-  C_char *cstr = NULL;
-
-  if(!C_immediatep(hstr) || C_SCHEME_FALSE != hstr)
-    cstr = checked_string_argument(loc, hstr);
-
-  return cstr;
-}
-
-
-void C_ccall
-C_dynamic_library_data(C_word c, C_word closure, C_word k, C_word libnam)
-{
-  LF_LIST *np;
-  char *name;
-  C_word olst = C_SCHEME_END_OF_LIST;
-
-  if(c != 3) C_bad_argc(c, 3);
-
-  name = checked_string_or_null_argument("##sys#dynamic-library-data", libnam);
-
-  for(np = lf_list; np; np = np->next) {
-    if(   (!name && !np->module_name)
-       || (name && np->module_name && !strcmp(name, np->module_name))) {
-    C_word ptr = C_mpointer_or_false(C_heaptop, np->module_handle);
-    C_word ent = C_h_list(3, ptr, C_fix(np->count), C_mk_bool(np->ptable));
-    olst = C_h_pair(ent, olst);
-    }
-  }
-
-  if(name) C_free(name);
-
-  C_kontinue(k, olst);
-}
-
-
-static void
-checked_library_query_arguments(char *loc,
-                                C_word libnam, C_word libhdl, C_word lfcnt,
-                                char **name, void **handle, int *count)
-{
-  if(C_immediatep(libhdl) && C_SCHEME_FALSE == libhdl)
-    *handle = NULL;
-  else if (!C_immediatep(libhdl) && C_POINTER_TAG == C_block_header(libhdl))
-    *handle = C_c_pointer_nn(libhdl);
-  else
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, loc, libhdl);
-
-  if(C_immediatep(lfcnt) && (C_FIXNUM_BIT & lfcnt))
-    *count = C_unfix(lfcnt);
-  else
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, loc, lfcnt);
-
-  if(*count < 0)
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, loc, lfcnt);
-
-  *name = checked_string_or_null_argument(loc, libnam);
-}
-
-
-void C_ccall
-C_chicken_library_literal_frame(C_word c, C_word closure, C_word k,
-                                C_word libnam, C_word libhdl, C_word lfcnt)
-{
-  int count;
-  void *handle;
-  char *name;
-  LF_LIST *np;
-  C_word olst = C_SCHEME_END_OF_LIST;
-
-  if(c != 5) C_bad_argc(c, 5);
-
-  checked_library_query_arguments(C_text("##sys#chicken-library-literal-frame"),
-                                  libnam, libhdl, lfcnt,
-                                  &name, &handle, &count);
-
-  for(np = lf_list; np; np = np->next) {
-    if(   (!name && !np->module_name)
-       || (name && np->module_name && !strcmp(name, np->module_name))) {
-      C_word *lf = np->lf;
-      if(lf && handle == np->module_handle && count == np->count) {
-        int cnt;
-        for(cnt = np->count; cnt--; ++lf) {
-          olst = C_h_pair(*lf, olst);
-        }
-      }
-    }
-  }
-  
-  if(name) C_free(name);
-
-  C_kontinue(k, olst);
-}
-
-
-void C_ccall
-C_chicken_library_ptable(C_word c, C_word closure, C_word k,
-                         C_word libnam, C_word libhdl, C_word lfcnt, C_word inclptrs)
-{
-  int count;
-  void *handle;
-  char *name;
-  LF_LIST *np;
-  C_word olst = C_SCHEME_END_OF_LIST;
-
-  if(c != 6) C_bad_argc(c, 6);
-
-  checked_library_query_arguments(C_text("##sys#chicken-library-ptable"),
-                                  libnam, libhdl, lfcnt,
-                                  &name, &handle, &count);
-
-  for(np = lf_list; np; np = np->next) {
-    if(   (!name && !np->module_name)
-       || (name && np->module_name && !strcmp(name, np->module_name))) {
-      C_PTABLE_ENTRY *pt = np->ptable;
-      if(pt && handle == np->module_handle && count == np->count) {
-        for(; pt->id; ++pt) {
-          C_word str = C_string2(C_heaptop, pt->id);
-          C_word ent = str;
-          if(C_truep(inclptrs)) {
-            C_word ptr = C_mpointer_or_false(C_heaptop, pt->ptr);
-            ent = C_h_pair(str, ptr);
-          }
-          olst = C_h_pair(ent, olst);
-        }
-      }
-    }
-  }
-  
-  if(name) C_free(name);
-
-  C_kontinue(k, olst);
+  C_free(node->module_name);
+  C_free(node);
 }
 
 
@@ -8605,17 +8386,6 @@ int C_do_unregister_finalizer(C_word x)
 
 /* Dynamic loading of shared objects: */
 
-void C_ccall C_dlopen_flags(C_word c, C_word closure, C_word k)
-{
-#if !defined(NO_DLOAD2) && defined(HAVE_DLFCN_H)
-  C_word flgs = C_h_list(2, (dlopen_flags & RTLD_NOW) ? C_SCHEME_TRUE : C_SCHEME_FALSE,
-                            (dlopen_flags & RTLD_GLOBAL) ? C_SCHEME_TRUE : C_SCHEME_FALSE);
-  C_kontinue(k, flgs);
-#else
-  C_kontinue(k, C_SCHEME_FALSE);
-#endif
-}
-
 void C_ccall C_set_dlopen_flags(C_word c, C_word closure, C_word k, C_word now, C_word global)
 {
 #if !defined(NO_DLOAD2) && defined(HAVE_DLFCN_H)
@@ -8627,7 +8397,7 @@ void C_ccall C_set_dlopen_flags(C_word c, C_word closure, C_word k, C_word now, 
 
 void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word entry, C_word reloadable)
 {
-#if !defined(NO_DLOAD2)
+#if !defined(NO_DLOAD2) && (defined(HAVE_DLFCN_H) || defined(HAVE_DL_H) || (defined(HAVE_LOADLIBRARY) && defined(HAVE_GETPROCADDRESS)))
   /* Force minor GC: otherwise the lf may contain pointers to stack-data
      (stack allocated interned symbols, for example) */
   C_save_and_reclaim(dload_2, NULL, 4, k, name, entry, reloadable);
@@ -8641,14 +8411,154 @@ void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word ent
 # undef DLOAD_2_DEFINED
 #endif
 
-#if !defined(NO_DLOAD2) && !defined(DLOAD_2_DEFINED)
+#if !defined(NO_DLOAD2) && defined(HAVE_DL_H) && !defined(DLOAD_2_DEFINED)
+# ifdef __hpux__
+#  define DLOAD_2_DEFINED
+void dload_2(void *dummy)
+{
+  void *handle, *p;
+  C_word reloadable = C_restore,
+         entry = C_restore,
+         name = C_restore,
+         k = C_restore;
+  C_char *mname = (C_char *)C_data_pointer(name);
+
+  /*
+   * C_fprintf(C_stderr,
+   *   "shl_loading %s : %s\n",
+   *   (char *) C_data_pointer(name),
+   *   (char *) C_data_pointer(entry));
+   */
+
+  if(C_truep(reloadable) && (reload_lf = find_module_handle(mname)) != NULL) {
+    if(shl_unload((shl_t)reload_lf->module_handle) != 0)
+      panic(C_text("Unable to unload previously loaded compiled code"));
+  }
+  else reload_lf = NULL;
+
+  if ((handle = (void *) shl_load(mname,
+				  BIND_IMMEDIATE | DYNAMIC_PATH,
+				  0L)) != NULL) {
+    shl_t shl_handle = (shl_t) handle;
+
+    /*** This version does not check for C_dynamic_and_unsafe. Fix it. */
+    if (shl_findsym(&shl_handle, (char *) C_data_pointer(entry), TYPE_PROCEDURE, &p) == 0) {
+      current_module_name = C_strdup(mname);
+      current_module_handle = handle;
+
+      if(debug_mode) {
+	if(reload_lf != NULL)
+	  C_printf(C_text("[debug] reloading compiled module `%s' (previous handle was " UWORD_FORMAT_STRING ", new is "
+			  UWORD_FORMAT_STRING ")\n"), current_module_name, (C_uword)reload_lf->module_handle, 
+		   (C_uword)current_module_handle);
+	else 
+	  C_printf(C_text("[debug] loading compiled module `%s' (handle is " UWORD_FORMAT_STRING ")\n"),
+		   current_module_name, (C_uword)current_module_handle);
+      }
+
+      ((C_proc2)p)(2, C_SCHEME_UNDEFINED, k);
+    } else {
+      C_dlerror = (char *) C_strerror(errno);
+      shl_unload(shl_handle);
+    }
+  } else {
+    C_dlerror = (char *) C_strerror(errno);
+  }
+
+  C_kontinue(k, C_SCHEME_FALSE);
+}
+# endif
+#endif
+
+
+#if !defined(NO_DLOAD2) && defined(HAVE_DLFCN_H) && !defined(DLOAD_2_DEFINED)
+# ifndef __hpux__
+#  define DLOAD_2_DEFINED
+void dload_2(void *dummy)
+{
+  void *handle, *p, *p2;
+  C_word 
+    reloadable = C_restore,
+    entry = C_restore,
+    name = C_restore,
+    k = C_restore;
+  C_char *topname = (C_char *)C_data_pointer(entry);
+  C_char *mname = (C_char *)C_data_pointer(name);
+  C_char *tmp;
+  int ok;
+
+  if(C_truep(reloadable) && (reload_lf = find_module_handle(mname)) != NULL) {
+    if(C_dlclose(reload_lf->module_handle) != 0)
+      panic(C_text("Unable to unload previously loaded compiled code"));
+  }
+  else reload_lf = NULL;
+
+  if((handle = C_dlopen(mname, dlopen_flags)) != NULL) {
+    if((p = C_dlsym(handle, topname)) == NULL) {
+      tmp = (C_char *)C_malloc(C_strlen(topname) + 2);
+      
+      if(tmp == NULL)
+	panic(C_text("out of memory - cannot allocate toplevel name string"));
+      
+      C_strcpy(tmp, C_text("_"));
+      C_strcat(tmp, topname);
+      p = C_dlsym(handle, tmp);
+      C_free(tmp);
+    }
+
+    if(p != NULL) {
+      /* check whether dloaded code is not a library unit
+       * and matches current safety setting: */
+      if((p2 = C_dlsym(handle, C_text("C_dynamic_and_unsafe"))) == NULL)
+	p2 = C_dlsym(handle, C_text("_C_dynamic_and_unsafe"));
+
+#ifdef C_UNSAFE_RUNTIME
+      ok = p2 != NULL;		/* unsafe runtime, unsafe code */
+#else
+      ok = p2 == NULL;		/* safe runtime, safe code */
+#endif
+      
+      /* unsafe marker not found and this is not a library unit? */
+      if(!ok && !C_strcmp(topname, "C_toplevel"))
+#ifdef C_UNSAFE_RUNTIME
+	barf(C_RUNTIME_UNSAFE_DLOAD_SAFE_ERROR, NULL);
+#else
+	barf(C_RUNTIME_SAFE_DLOAD_UNSAFE_ERROR, NULL);
+#endif
+
+      current_module_name = C_strdup(mname);
+      current_module_handle = handle;
+
+      if(debug_mode) {
+	if(reload_lf != NULL)
+	  C_printf(C_text("[debug] reloading compiled module `%s' (previous handle was " UWORD_FORMAT_STRING ", new is "
+			  UWORD_FORMAT_STRING ")\n"), current_module_name, (C_uword)reload_lf->module_handle, 
+		   (C_uword)current_module_handle);
+	else 
+	  C_printf(C_text("[debug] loading compiled module `%s' (handle is " UWORD_FORMAT_STRING ")\n"),
+		   current_module_name, (C_uword)current_module_handle);
+      }
+
+      ((C_proc2)p)(2, C_SCHEME_UNDEFINED, k); /* doesn't return */
+    }
+
+    C_dlclose(handle);
+  }
+  
+  C_dlerror = (char *)dlerror();
+  C_kontinue(k, C_SCHEME_FALSE);
+}
+# endif
+#endif
+
+
+#if !defined(NO_DLOAD2) && (defined(HAVE_LOADLIBRARY) && defined(HAVE_GETPROCADDRESS)) && !defined(DLOAD_2_DEFINED)
 # define DLOAD_2_DEFINED
 void dload_2(void *dummy)
 {
-  void *handle;
+  HINSTANCE handle;
   int ok;
-  void *p = NULL;
-  void *p2;
+  FARPROC p = NULL, p2;
   C_word
     reloadable = C_restore,
     entry = C_restore,
@@ -8657,17 +8567,26 @@ void dload_2(void *dummy)
   C_char *topname = (C_char *)C_data_pointer(entry);
   C_char *mname = (C_char *)C_data_pointer(name);
 
-  if(C_truep(reloadable) && (reload_lf = find_lf_list_node(mname)) != NULL) {
-    if(0 != C_dynamic_library_close(reload_lf->module_handle))
+  /* cannot use LoadLibrary on non-DLLs, so we use extension checking */
+  if (C_header_size(name) >= 5) {
+    char *n = (char*) C_data_pointer(name);
+    int l = C_header_size(name);
+    if (C_strncasecmp(".dll", n+l-5, 4) && 
+	C_strncasecmp(".so", n+l-4, 3))
+      C_kontinue(k, C_SCHEME_FALSE);
+  }
+
+  if(C_truep(reloadable) && (reload_lf = find_module_handle((char *)C_data_pointer(name))) != NULL) {
+    if(FreeLibrary((HINSTANCE)reload_lf->module_handle) == 0)
       panic(C_text("Unable to unload previously loaded compiled code"));
   }
   else reload_lf = NULL;
 
-  if((handle = C_dynamic_library_open(mname)) != NULL) {
-    if ((p = C_dynamic_library_procedure(handle, topname)) != NULL) {
+  if((handle = LoadLibrary(mname)) != NULL) {
+    if ((p = GetProcAddress(handle, topname)) != NULL) {
       /* check whether dloaded code is not a library unit
        * and matches current safety setting: */
-      p2 = C_dynamic_library_procedure(handle, C_text("C_dynamic_and_unsafe"));
+      p2 = GetProcAddress(handle, C_text("C_dynamic_and_unsafe"));
 
 #ifdef C_UNSAFE_RUNTIME
       ok = p2 != NULL;		/* unsafe runtime, unsafe code */
@@ -8696,12 +8615,12 @@ void dload_2(void *dummy)
 		   current_module_name, (C_uword)current_module_handle);
       }
 
-      ((C_proc2)p)(2, C_SCHEME_UNDEFINED, k); /* doesn't return */
+      ((C_proc2)p)(2, C_SCHEME_UNDEFINED, k);
     }
-    else
-      C_dynamic_library_close(handle);
+    else FreeLibrary(handle);
   }
 
+  C_dlerror = (char *) C_strerror(errno);
   C_kontinue(k, C_SCHEME_FALSE);
 }
 #endif
@@ -8709,289 +8628,28 @@ void dload_2(void *dummy)
 
 C_word C_ccall C_dunload(C_word name)
 {
-  LF_LIST *np = find_lf_list_node(C_c_string(name));
-  if(NULL != np && 0 == C_dynamic_library_close(np->module_handle)) {
-    C_unregister_lf(np);
-    return C_SCHEME_TRUE;
-  }
+  LF_LIST *m = find_module_handle(C_c_string(name));
+
+  if(m == NULL) return C_SCHEME_FALSE;
+
+#ifndef NO_DLOAD2
+# if defined(__hpux__) && defined(HAVE_DL_H)
+  if(shl_unload((shl_t)m->module_handle) != 0) return C_SCHEME_FALSE;
+# elif defined(HAVE_DLFCN_H)
+  if(dlclose(m->module_handle) != 0) return C_SCHEME_FALSE;
+# elif defined(HAVE_LOADLIBRARY)
+  if(FreeLibrary(m->module_handle) == 0) return C_SCHEME_FALSE;
+# else
   return C_SCHEME_FALSE;
-}
-
-
-/* Dynamic Library Access from C */
-
-C_regparm void * C_fcall
-C_dynamic_library_open(C_char *name)
-{
-#ifndef NO_DLOAD2
-
-# if defined(__hpux__) && defined(HAVE_DL_H)
-
-  shl_t handle = shl_load(name, BIND_IMMEDIATE | DYNAMIC_PATH, 0L);
-  if(NULL != handle) return (void *)handle;
-  C_dlerror = (char *)C_strerror(errno);
-
-# elif defined(HAVE_DLFCN_H)
-
-  void *handle = C_dlopen(name, dlopen_flags);
-  if(NULL != handle) return handle;
-  C_dlerror = (char *)dlerror();
-
-# elif defined(HAVE_LOADLIBRARY)
-
-  HMODULE handle;
-
-  /* cannot use LoadLibrary on non-DLLs, so we use extension checking */
-  int len = strlen(name);
-  /* FIXME - probably should use _stricmp since Windows native */
-  if(   (len >= 5 && C_strncasecmp(".dll", name+len-4, 4))
-     && (len >= 4 && C_strncasecmp(".so", name+len-3, 3))) {
-    static char not_dll_msg[] = "unsuitable pathname extension - not a .DLL or .SO";
-    C_dlerror = not_dll_msg;
-    return NULL;
-  }
-
-  handle = LoadLibrary(name);
-  if(NULL != handle) return (void *)handle;
-  C_dlerror = (char *)C_strerror(errno);
-
 # endif
-
+# else
+  return C_SCHEME_FALSE;
 #endif
 
-  return NULL;
+  C_unregister_lf(m);
+  return C_SCHEME_TRUE;
 }
 
-
-static C_char *
-make_underscore_symstr(C_char *sym)
-{
-  /* if we're out-of-memory don't report it here */
-  char *usym = (C_char *)C_malloc(C_strlen(sym) + 2);
-  if(NULL != usym) {
-    C_strcpy(usym, C_text("_"));
-    C_strcat(usym, sym);
-  }
-  return usym;
-}
-
-
-C_regparm void * C_fcall
-C_dynamic_library_procedure(void *handle, C_char *name)
-{
-  void *ptr = C_dynamic_library_procedure_exact(handle, name);
-
-#ifndef C_MICROSOFT_WINDOWS
-  if(NULL == ptr) {
-    char *tmp = make_underscore_symstr(name);
-    if(NULL != tmp) {
-      ptr = C_dynamic_library_procedure_exact(handle, tmp);
-      C_free(tmp);
-    }
-  }
-#endif
-
-  return ptr;
-}
-
-
-C_regparm void * C_fcall
-C_dynamic_library_procedure_exact(void *handle, C_char *name)
-{
-#ifndef NO_DLOAD2
-
-# if defined(__hpux__) && defined(HAVE_DL_H)
-
-  shl_t shl_handle = (shl_t)handle;
-  void *ptr;
-  if(0 == shl_findsym(&shl_handle, name, TYPE_PROCEDURE, &ptr)) return ptr;
-  C_dlerror = (char *)C_strerror(errno);
-
-# elif defined(HAVE_DLFCN_H)
-
-  void *ptr = C_dlsym(handle, name);
-  if(NULL != ptr) return ptr;
-  C_dlerror = (char *)dlerror();
-
-# elif defined(HAVE_GETPROCADDRESS)
-
-  FARPROC ptr = GetProcAddress((HMODULE)handle, name);
-  if(NULL != ptr) return (void *)ptr;
-  C_dlerror = (char *)C_strerror(errno);
-
-# endif
-
-#endif
-
-  return NULL;
-}
-
-
-C_regparm void * C_fcall
-C_dynamic_library_variable(void *handle, C_char *name)
-{
-  void *ptr = C_dynamic_library_variable_exact(handle, name);
-
-#ifndef C_MICROSOFT_WINDOWS
-  if(NULL == ptr) {
-    char *tmp = make_underscore_symstr(name);
-    if(NULL != tmp) {
-      ptr = C_dynamic_library_variable_exact(handle, tmp);
-      C_free(tmp);
-    }
-  }
-#endif
-
-  return ptr;
-}
-
-
-C_regparm void * C_fcall
-C_dynamic_library_variable_exact(void *handle, C_char *name)
-{
-#ifndef NO_DLOAD2
-
-# if defined(__hpux__) && defined(HAVE_DL_H)
-
-  shl_t shl_handle = (shl_t)handle;
-  void *p;
-  if(0 == shl_findsym(&shl_handle, name, TYPE_DATA, &p)) return p;
-  C_dlerror = (char *)C_strerror(errno);
-
-# elif defined(HAVE_DLFCN_H)
-
-  void *p = C_dlsym(handle, name);
-  if(NULL != p) return p;
-  C_dlerror = (char *)dlerror();
-
-# elif defined(HAVE_GETPROCADDRESS)
-
-  /* Not Supported */
-
-# endif
-
-#endif
-
-  return NULL;
-}
-
-
-C_regparm int C_fcall
-C_dynamic_library_close(void *handle)
-{
-#ifndef NO_DLOAD2
-
-# if defined(__hpux__) && defined(HAVE_DL_H)
-
-  if(0 != shl_unload((shl_t)handle)) return -1;
-  C_dlerror = (char *)C_strerror(errno);
-
-# elif defined(HAVE_DLFCN_H)
-
-  if(0 != C_dlclose(handle)) return -1;
-  C_dlerror = (char *)dlerror();
-
-# elif defined(HAVE_LOADLIBRARY)
-
-  if(0 == FreeLibrary((HMODULE)handle)) return -1;
-  C_dlerror = (char *)C_strerror(errno);
-
-# endif
-
-#endif
-
-  return 0;
-}
-
-
-/* Dynamic Library Access from Scheme */
-
-void C_ccall
-C_dynamic_library_load(C_word c, C_word closure, C_word k, C_word name)
-{
-  C_word succ = C_SCHEME_FALSE;
-  C_char *pname;
-
-  if(c != 3) C_bad_argc(c, 3);
-
-  pname = checked_string_argument("##sys#dynamic-library-load", name); /* only free'ed on err */
-
-  if(NULL == find_lf_list_node(pname)) {
-    void *handle = C_dynamic_library_open(pname);
-    if(NULL != handle) {
-      LF_LIST *node = make_lf_list_node(NULL, 0, NULL, pname, handle);
-      if(NULL != node) {
-        link_lf_list_node(node);
-        succ = C_SCHEME_TRUE;
-      }
-      else {
-        C_free(pname);
-        C_dynamic_library_close(handle);
-      }
-    }
-    else
-      C_free(pname);
-  }
-  /* loading a loaded library is not an error & we don't bump the dload refcnt */
-  else succ = C_SCHEME_TRUE;
-
-  C_kontinue(k, succ);
-}
-
-
-void C_ccall
-C_dynamic_library_symbol(C_word c, C_word closure, C_word k, C_word mname, C_word sname, C_word isprcsym)
-{
-  C_word mptr = C_SCHEME_FALSE;
-  C_char *pmname, *psname;
-  LF_LIST *node;
-
-  if(c != 5) C_bad_argc(c, 5);
-
-  pmname = checked_string_argument("##sys#dynamic-library-symbol", mname);
-  psname = checked_string_argument("##sys#dynamic-library-symbol", sname);
-
-  node = find_lf_list_node(pmname);
-  if(NULL != node) {
-    /* note that this cannot fail out-of-line - so tmp strs will be free'ed */
-    void *ptr = C_truep(isprcsym)
-                  ? C_dynamic_library_procedure(node->module_handle, psname)
-                  : C_dynamic_library_variable(node->module_handle, psname);
-    mptr = C_mpointer_or_false(C_heaptop, ptr);
-  }    
-
-  if(psname) C_free(psname);
-  if(pmname) C_free(pmname);
-
-  C_kontinue(k, mptr);
-}
-
-
-void C_ccall
-C_dynamic_library_unload(C_word c, C_word closure, C_word k, C_word name)
-{
-  C_word succ = C_SCHEME_FALSE;
-  C_char *pname;
-  LF_LIST *node;
-
-  if(c != 3) C_bad_argc(c, 3);
-
-  pname = checked_string_argument("##sys#dynamic-library-unload", name);
-
-  node = find_lf_list_node(pname);
-  if(NULL != node) {
-    /* note that this cannot fail out-of-line - so tmp str will be free'ed */
-    int ret = C_dynamic_library_close(node->module_handle);
-    destroy_lf_list_node(node);
-    if(0 == ret) succ = C_SCHEME_TRUE;
-  }    
- /* unloading an non-loaded library is not an error */
-  else succ = C_SCHEME_TRUE;
-
-  if(pname) C_free(pname);
-
-  C_kontinue(k, succ);
-}
 
 void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table)
 {

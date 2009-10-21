@@ -155,7 +155,7 @@ EOF
      ##sys#intern-symbol ##sys#make-string ##sys#number? software-type build-platform
      open-output-string get-output-string print-call-chain ##sys#symbol-has-toplevel-binding? repl
      argv condition-property-accessor ##sys#decorate-lambda ##sys#become! ##sys#lambda-decoration
-     getter-with-setter ##sys#lambda-info? ##sys#lambda-info ##sys#lambda-info->string open-input-string ##sys#gc
+     getter-with-setter ##sys#lambda-info ##sys#lambda-info->string open-input-string ##sys#gc
      ##sys#memory-info ##sys#make-c-string ##sys#find-symbol-table display
      newline string-append ##sys#with-print-length-limit write print vector-fill! ##sys#context-switch
      ##sys#set-finalizer! open-output-string get-output-string read ##sys#make-pointer
@@ -364,62 +364,14 @@ EOF
 
 ;;; Dynamic Load
 
-;; Library load mode (only active when HAVE_DLFCN_H at the momemnt)
-
-(define ##sys#dlopen-flags (##core#primitive "C_dlopen_flags"))
+(define ##sys#dload (##core#primitive "C_dload"))
 (define ##sys#set-dlopen-flags! (##core#primitive "C_set_dlopen_flags"))
 
-;; Chicken library load
-
-(define ##sys#dload (##core#primitive "C_dload"))
-
-; Dynamic Unload not available on all platforms and to be used with caution!
+;; Dynamic Unload not available on all platforms and to be used with caution!
 (define (##sys#dunload name)
-  (and-let* (((##core#inline "C_dunload" (##sys#make-c-string name))))
+  (and-let* ((r (##core#inline "C_dunload" (##sys#make-c-string name))))
     (##sys#gc #t) 
     #t ) )
-
-;; Non-Chicken library load
-
-(define ##sys#dynamic-library-load (##core#primitive "C_dynamic_library_load"))
-
-; Dynamic Unload not available on all platforms and to be used with caution!
-(define ##sys#dynamic-library-unload (##core#primitive "C_dynamic_library_unload"))
-
-;; Introspection of loaded libraries
-
-; (##sys#dynamic-library-procedure-pointer mname sname) => mname+sname-ptr or #f
-; (##sys#dynamic-library-variable-pointer mname sname) => mname+sname-ptr or #f
-
-(define (##sys#dynamic-library-procedure-pointer mname sname)
-  ((##core#primitive "C_dynamic_library_symbol") mname sname #t) )
-
-(define (##sys#dynamic-library-variable-pointer mname sname)
-  ((##core#primitive "C_dynamic_library_symbol") mname sname #f) )
-
-; (##sys#dynamic-library-names) => (<pathname>...)
-; Does not return the "name" of the running program (i.e. #f) but
-; does return any default libraries.
-
-(define ##sys#dynamic-library-names (##core#primitive "C_dynamic_library_names"))
-
-; (##sys#dynamic-library-data name)
-; => ((<dload-handle> <literal-frame-count> <ptable?>)...)
-; <dload-handle> is a pointer to the actual dload handle or #f
-; <literal-frame-count> is the total of entrypoints (toplevel)
-; <ptable?> is a boolean indicating whether the lib has a ptable
-
-(define ##sys#dynamic-library-data (##core#primitive "C_dynamic_library_data"))
-
-; (##sys#chicken-library-literal-frame name handle count) => (<lf[0]>...)
-
-(define ##sys#chicken-library-literal-frame (##core#primitive "C_chicken_library_literal_frame"))
-
-; (##sys#chicken-library-ptable name handle count pointer?)
-; => ((<ptable[0].id> . <ptable[0].ptr>)...) when pointer? 
-; => (<ptable[0].id>...) when (not pointer?)
-
-(define ##sys#chicken-library-ptable (##core#primitive "C_chicken_library_ptable"))
 
 
 ;;; Operations on booleans:
@@ -4662,18 +4614,10 @@ EOF
 
 ;;; Function debug info:
 
-(define (##sys#make-lambda-info str)
-  (let* ((sz (##sys#size str))
-	 (info (##sys#make-string sz)) )
-    (##core#inline "C_copy_memory" info str sz)
-    (##core#inline "C_string_to_lambdainfo" info)
-    info) )
-
-(define (##sys#lambda-info? x)
-  (and (not (##sys#immediate? x)) (##core#inline "C_lambdainfop" x)) )
-
 (define (##sys#lambda-info proc)
-  (##sys#lambda-decoration proc ##sys#lambda-info?) )
+  (##sys#lambda-decoration 
+   proc 
+   (lambda (x) (and (not (##sys#immediate? x)) (##core#inline "C_lambdainfop" x))) ) )
 
 (define (##sys#lambda-info->string info)
   (let* ((sz (##sys#size info))
