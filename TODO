@@ -54,6 +54,7 @@ TODO for chicken							-*- Outline -*-
    define-foreign-variable
    foreign-[safe-]lambda[*]
    create-temporary-file -> files unit
+   require-library
 
 ** remove TODO from master
 
