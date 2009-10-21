@@ -58,7 +58,95 @@ TODO for chicken							-*- Outline -*-
 
 ** remove TODO from master
 
-** collect list of private commits that haven't been pushed to pending, yet
+** pending commits
+
+commit 6e5eb38f11a2a8f9a82d1009563e371139a76438
+Author: Felix <bunny351@gmail.com>
+Date:   Sun Oct 11 00:45:40 2009 +0200
+
+    removed apply-, unbound-value- and invalid procedure call hooks.
+    These are just complicated hacks with very little value.
+
+commit 3a8da718bf4c6b71ced0fb60bee2bd84a2f2321d
+Author: Felix <bunny351@gmail.com>
+Date:   Wed Oct 14 14:59:13 2009 +0200
+
+    Added optional argument to grep function in regex unit [suggested by Tony Sidaway]
+
+** private commits not in pending
+
+commit 8a988e1fff944a080402b60b1b3f6d983c236a02
+Author: unknown <felix@.(none)>
+Date:   Tue Oct 20 21:56:59 2009 +0200
+
+    removed breakpoint from import file
+
+commit 94f9b927fa3d7b1a6083cb07a8d7c60aa387b4ae
+commit c4b8bde930d383d5572975e6f5cce025d9fb759d
+Author: unknown <felix@.(none)>
+Date:   Tue Oct 20 13:23:55 2009 +0200
+
+    install so, not scm, silly
+
+commit 18b042d591d28ed57115ec783b6b51e66ce62a19
+Author: unknown <felix@.(none)>
+Date:   Tue Oct 20 13:20:10 2009 +0200
+
+    standard-extension didn't install import library
+
+commit c5fac3c98d7c187e0564d062c3f77623f3882741
+Author: unknown <felix@.(none)>
+Date:   Tue Oct 20 12:21:53 2009 +0200
+
+    cleanups in some text-files
+
+commit 89a110080526e0160f3240281d3bd98eb0aff0ba
+Author: unknown <felix@.(none)>
+Date:   Tue Oct 20 12:18:53 2009 +0200
+
+    removed some obsolete scripts and files
+
+commit 81dcc1cfe055eb150c6643447c3ed0f12c118836
+Author: unknown <felix@.(none)>
+Date:   Tue Oct 20 11:51:45 2009 +0200
+
+    process-execute on windows didn't handle case of missing arglist argument
+
+commit bce0d16a76588f8918ace633313edd62ffe575e6
+Author: unknown <felix@.(none)>
+Date:   Mon Oct 19 14:21:51 2009 +0200
+
+    possible fix for reexport bug; no timing output for benchmarks in test suite
+
+commit 1402eea7aec2611dfe48542715b1492561072f41
+Author: unknown <felix@.(none)>
+Date:   Mon Oct 19 12:12:46 2009 +0200
+
+    henrietta shows version in comment marker; removed unused ##sys#syntactic-environment?
+
+commit 7aacba829e680a9c20fdac4800d3445f624bf6c5
+Author: Felix <bunny351@gmail.com>
+Date:   Mon Oct 19 00:42:55 2009 +0200
+
+    removed breakpoint support from scheduler
+
+commit 6987792e2c27ee6c9f6ff655ec94cff052528438
+Author: Felix <bunny351@gmail.com>
+Date:   Sun Oct 11 11:54:28 2009 +0200
+
+    removed uses of NOAPPLYHOOK
+
+commit c1154565abc041202110aae8e93a57cbe3fba3c2
+Author: Felix <bunny351@gmail.com>
+Date:   Sun Oct 11 11:37:44 2009 +0200
+
+    removed trace operations from manual
+
+commit c41657eedc99190a644df6581a8bf9944452a97a
+Author: Felix <bunny351@gmail.com>
+Date:   Sun Oct 11 11:37:06 2009 +0200
+
+    remove tracing facilities from csi - this can be done better using the advice egg
 
 ** SHA-1 commit-ID in banner
 
