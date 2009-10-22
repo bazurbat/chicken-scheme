@@ -48,15 +48,6 @@ TODO for chicken							-*- Outline -*-
 
 * tasks
 
-** scheme-complete
-   get-environment-variable
-   foreign-value
-   define-foreign-variable
-   foreign-[safe-]lambda[*]
-   create-temporary-file -> files unit
-   require-library
-   compile-file
-
 ** remove TODO from master
 
 ** pending commits

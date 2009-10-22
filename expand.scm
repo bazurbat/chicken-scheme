@@ -33,7 +33,8 @@
 	d dd dm dc map-se merge-se
 	lookup check-for-redef) 
   (not inline ##sys#syntax-error-hook ##sys#compiler-syntax-hook
-       ##sys#alias-global-hook ##sys#toplevel-definition-hook))
+       ##sys#alias-global-hook ##sys#toplevel-definition-hook
+       ##sys#toplevel-definition-expansion-hook))
 
 
 
@@ -947,6 +948,7 @@
        #t #t 'reexport) ) )
 
 (define ##sys#initial-macro-environment (##sys#macro-environment))
+(define ##sys#toplevel-definition-expansion-hook #f)
 
 (##sys#extend-macro-environment
  'define
@@ -960,7 +962,11 @@
 	       (##sys#check-syntax 'define head 'symbol)
 	       (##sys#check-syntax 'define body '#(_ 0 1))
 	       (##sys#register-export head (##sys#current-module))
-	       `(##core#set! ,head ,(if (pair? body) (car body) '(##core#undefined))) )
+	       (if ##sys#toplevel-definition-expansion-hook
+		   (##sys#toplevel-definition-expansion-hook form r c)
+		   `(##core#set! 
+		     ,head 
+		     ,(if (pair? body) (car body) '(##core#undefined))) ) )
 	      ((pair? (car head))
 	       (##sys#check-syntax 'define head '(_ . lambda-list))
 	       (##sys#check-syntax 'define body '#(_ 1))
@@ -968,10 +974,7 @@
 	      (else
 	       (##sys#check-syntax 'define head '(symbol . lambda-list))
 	       (##sys#check-syntax 'define body '#(_ 1))
-	       (##sys#register-export (car head) (##sys#current-module))
-	       `(##core#set!
-		 ,(car head)
-		 (,(r 'lambda) ,(cdr head) ,@body))) ) ) ) ) ) )
+	       (loop (list (car head) `(,(r 'lambda) ,(cdr head) ,@body))))))))))
 
 (##sys#extend-macro-environment
  'and
