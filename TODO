@@ -55,6 +55,7 @@ TODO for chicken							-*- Outline -*-
    foreign-[safe-]lambda[*]
    create-temporary-file -> files unit
    require-library
+   compile-file
 
 ** remove TODO from master
 
@@ -74,6 +75,18 @@ Date:   Wed Oct 14 14:59:13 2009 +0200
     Added optional argument to grep function in regex unit [suggested by Tony Sidaway]
 
 ** private commits not in pending
+
+commit ab284ea5881e8a6698f1bfff8e3d0d3ce57ee425
+Author: unknown <felix@.(none)>
+Date:   Thu Oct 22 09:40:10 2009 +0200
+
+    upgrade message in setup-api shows version (thanks to ckeen)
+
+commit d611cdb4ff734bfaaadfadc57985eee6cf410dd1
+Author: unknown <felix@.(none)>
+Date:   Wed Oct 21 16:06:31 2009 +0200
+
+    standard-extension has optional static compile flag
 
 commit 8a988e1fff944a080402b60b1b3f6d983c236a02
 Author: unknown <felix@.(none)>
