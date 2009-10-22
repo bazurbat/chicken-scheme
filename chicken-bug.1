@@ -37,11 +37,10 @@ executables and libraries. Non-option arguments given on the command line
 are inserted into the bug report. If no option is given, or if 
 .B \-
 has been passed on the command line, then a description of the problem
-is read from standard input, until EOF (CTRL-D) is read.
+is read from standard input, until EOF (CTRL-D) or a line consisting only
+of "." (period) is read.
 
-The report will be automatically e-mailed to the CHICKEN maintainers,
-if an SMTP connection can be established. If no connection can be
-made, the bug report will be written to a file in the current directory,
+The bug report will be written to a file in the current directory,
 which should be sent to CHICKEN maintainers as it contains various
 useful bits of information that make it easier to classify the 
 problem described.

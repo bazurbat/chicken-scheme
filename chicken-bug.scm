@@ -33,7 +33,8 @@
   "chicken-janitors@nongnu.org\nchicken-hackers@nongnu.org\nchicken-users@nongnu.org")
 
 (define-constant +destination+ "chicken-janitors@nongnu.org")
-(define-constant +mxservers+ (list "mx10.gnu.org" "mx20.gnu.org"))
+(define-constant +mxservers+ '() ; XXX temporarily disabled 
+  #;(list "mx10.gnu.org" "mx20.gnu.org"))
 (define-constant +send-tries+ 3)
 
 (define-foreign-variable +cc+ c-string "C_TARGET_CC")
@@ -99,13 +100,17 @@ EOF
     (print #<<EOF
 This is the CHICKEN bug report generator. Please enter a detailed
 description of the problem you have encountered and enter CTRL-D (EOF)
-once you have finished. Press CTRL-C to abort the program. You can
+or a line consisting only of "." to finish. Press CTRL-C to abort the program. You can
 also pass the description from a file (just abort now and re-invoke
 "chicken-bug" with one or more input files given on the command-line)
 
 EOF
 ) )
-  (read-all) )
+  (let loop ((data '()))
+    (let ((ln (read-line)))
+      (cond ((or (eof-object? ln) (string=? "." ln))
+	     (string-concatenate-reverse data) )
+	    (else (loop (cons ln data)))))))
 
 (define (justify n)
   (let ((s (number->string n)))
@@ -169,7 +174,9 @@ EOF
         (begin
             (with-output-to-file fname
                 (lambda () (print msg)))
-            (print "\nCould not send mail automatically!\n\nA bug report has been written to `" fname "'.  Please send it to")
+            ;XXX temporarily disabled:
+	    ;(print "\nCould not send mail automatically!\n")
+	    (print "\nA bug report has been written to `" fname "'.  Please send it to")
             (print "one of the following addresses:\n\n" +fallbackdestinations+))
         (or (send-mail (car servs) msg hdrs fname)
             (try-mail (cdr servs) fname hdrs msg))))
