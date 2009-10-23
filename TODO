@@ -52,6 +52,18 @@ TODO for chicken							-*- Outline -*-
 
 ** pending commits
 
+commit d10eb80f3b055c570e632deb50ca8367e55e63bc
+Author: unknown <felix@.(none)>
+Date:   Thu Oct 22 11:46:42 2009 +0200
+
+    added chicken-4 feature identifier
+
+commit 6b762ab536b3c4c58730d0763447210beab89d3b
+Author: unknown <felix@.(none)>
+Date:   Thu Oct 22 11:46:23 2009 +0200
+
+    disabled e-mail transmission in chicken-bug
+
 commit 6e5eb38f11a2a8f9a82d1009563e371139a76438
 Author: Felix <bunny351@gmail.com>
 Date:   Sun Oct 11 00:45:40 2009 +0200
