@@ -254,6 +254,7 @@ Date:   Sun Oct 11 11:37:06 2009 +0200
 *** what MacScheme called "benchmark-mode" (assume self-calls are recursion)
 *** needs declaration or option, >= -O2
 *** can be implemented like in the extended-llists opt. above
+*** this should actually already work in local mode (toplevel defs are known, after all)
 
 ** compiler-support for get-keyword ?
 *** what when a function with keyword args gets inlined?
@@ -271,3 +272,17 @@ Date:   Sun Oct 11 11:37:06 2009 +0200
 
 ** The benchmarks are meaningless - find real ones.
 *** check Feeley's benchmarks (slatex, compiler)
+
+** speculative inlining
+
+(define-compiler-syntax +          ; "mostly-fixnum-flonum" case
+  (syntax-rules ()
+    ((_ x y)
+     (let ((t1 x)
+	   (t2 y))
+       (if (and (fixnum? t1) (fixnum? t2))
+	   (or (##core#inline "C_i_o_fixnum_plus" t1 t2)
+	       (##core#inline_allocate ("C_a_i_plus" 4) t1 t2) )
+	   (if (and (flonum? t1) (flonum? t2))
+	       (##core#inline_allocate ("C_a_i_flonum_plus" 4) t1 t2)
+	       (##core#inline_allocate ("C_a_i_plus" 4) t1 t2) ) ) ) ) ) )
