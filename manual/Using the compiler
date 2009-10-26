@@ -41,7 +41,6 @@ Possible options are:
      t          show time needed for compilation
      b          show breakdown of time needed for each compiler pass
      o          show performed optimizations
-     C          show applications of compiler syntax
      r          show invocation parameters
      s          show program-size information and other statistics
      a          show node-matching during simplification
@@ -56,6 +55,7 @@ Possible options are:
      D          when printing nodes, use node-tree output
      N          show the real-name mapping table
      0          show database before lambda-lifting pass
+     S          show applications of compiler syntax
      T          show expressions after converting to node tree
      L          show expressions after lambda-lifting
      M          show syntax-/runtime-requirements
