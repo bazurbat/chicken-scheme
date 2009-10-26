@@ -52,6 +52,18 @@ TODO for chicken							-*- Outline -*-
 
 ** pending commits
 
+commit 07b6c75671e6ffaf9fa8502cef089165be44686e
+Author: unknown <felix@.(none)>
+Date:   Fri Oct 23 15:41:32 2009 +0200
+
+    resurrected manual.css
+
+commit 6579494dffd3d84fe6ab0ce2b89bbf0fbc2807de
+Author: unknown <felix@.(none)>
+Date:   Thu Oct 22 11:47:04 2009 +0200
+
+    toplevel-def.-expansion-hook
+
 commit d10eb80f3b055c570e632deb50ca8367e55e63bc
 Author: unknown <felix@.(none)>
 Date:   Thu Oct 22 11:46:42 2009 +0200
