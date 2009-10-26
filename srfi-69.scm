@@ -1087,3 +1087,13 @@
   (##sys#check-structure ht 'hash-table 'hash-table-map)
   (##sys#check-closure func 'hash-table-map)
   (*hash-table-fold ht (lambda (k v a) (cons (func k v) a)) '()) )
+
+
+;;; printing
+
+(##sys#register-record-printer
+ 'hash-table
+ (lambda (ht port)
+   (##sys#print "#<hash-table (" #f port)
+   (##sys#print (##sys#slot ht 2) #f port)
+   (##sys#print ")>" #f port) ) )
