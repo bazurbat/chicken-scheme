@@ -1740,7 +1740,7 @@
   #t)
 
 (define-external (CHICKEN_yield) bool
-  (run-safe (lambda () (begin (thread-yield!) #t))) )
+  (run-safe (lambda () (begin (##sys#thread-yield!) #t))) )
 
 (define-external (CHICKEN_eval (scheme-object exp) ((c-pointer "C_word") result)) bool
   (run-safe
