@@ -52,11 +52,29 @@ TODO for chicken							-*- Outline -*-
 
 ** pending commits
 
-commit 07b6c75671e6ffaf9fa8502cef089165be44686e
+commit c3b3345ed4307fe32ef37151bc29d9c4bccf34a4
 Author: unknown <felix@.(none)>
-Date:   Fri Oct 23 15:41:32 2009 +0200
+Date:   Tue Oct 27 11:17:23 2009 +0100
 
-    resurrected manual.css
+    CHICKEN_yield callback should use internal ##sys#thread-yield
+
+commit f4f1ce51affa0295314a5d120627664bd432f0aa
+Author: unknown <felix@.(none)>
+Date:   Mon Oct 26 15:21:06 2009 +0100
+
+    printer for hash-tables shows current size
+
+commit 4d9e6048783133aebd4c4ecc03783aefe40f4103
+Author: unknown <felix@.(none)>
+Date:   Mon Oct 26 08:50:50 2009 +0100
+
+    -debug S instead of -debug C
+
+commit f674d1310a9aa780bd1edc9316e092c062572dde
+Author: Felix <bunny351@gmail.com>
+Date:   Sun Oct 25 13:05:07 2009 +0100
+
+    -debug C for compiler syntax
 
 commit 6579494dffd3d84fe6ab0ce2b89bbf0fbc2807de
 Author: unknown <felix@.(none)>
@@ -230,6 +248,8 @@ Date:   Sun Oct 11 11:37:06 2009 +0200
 ** error-handling hook for argument-type errors that signal a non-number
    the numbers hook could modify this and provide a better error message if a non-core
    number type triggers such an error
+
+** allow `(define-syntax ID1 ID2)' (copy definition or expand into `syntax-rules')
 
 
 * tests
