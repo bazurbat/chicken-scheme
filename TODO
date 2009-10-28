@@ -244,7 +244,7 @@ Date:   Sun Oct 11 11:37:06 2009 +0200
    number type triggers such an error
 
 ** allow `(define-syntax ID1 ID2)' (copy definition or expand into `syntax-rules')
-
+   also: let[rec]-syntax
 
 * tests
 
@@ -255,6 +255,41 @@ Date:   Sun Oct 11 11:37:06 2009 +0200
 
 
 * optimizations
+
+** define these as static inline functions in chicken.h:
+   C_i_not_pair_p_2
+   C_i_fixnum_arithmetic_shift
+   C_a_i_flonum_negate
+   C_a_i_flonum_quotient
+   C_a_i_flonum_times
+   C_a_i_flonum_difference
+   C_a_i_flonum_plus
+   C_u_i_oddp
+   C_u_i_negativep
+   C_u_i_positivep
+   C_u_i_zerop
+   C_u_i_inexactp
+   C_u_i_exactp
+   C_i_flonum_max
+   C_i_flonum_min
+   C_i_fixnum_max
+   C_i_fixnum_min
+   C_i_finitep
+   C_i_flonump
+   C_i_integerp
+   C_i_closurep
+   C_i_portp
+   C_i_vectorp
+   C_i_locativep
+   C_i_stringp
+   C_i_pairp
+   C_i_symbolp
+   C_i_eqvp
+   C_i_o_fixnum_plus
+   C_i_o_fixnum_difference
+   C_i_o_fixnum_and
+   C_i_o_fixnum_ior
+   C_i_o_fixnum_xor
 
 ** local mode could be enabled for all core libs
    also could reduce performance, as it does for regex
