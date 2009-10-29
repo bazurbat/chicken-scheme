@@ -79,6 +79,18 @@ Date:   Mon Oct 19 14:21:51 2009 +0200
 
 ** private commits not in pending
 
+commit 0ef80438adf6bc8f2b4efb0891ce9ee5f645f1c6
+Author: unknown <felix@.(none)>
+Date:   Thu Oct 29 09:32:00 2009 +0100
+
+    installation-prefix is always valid
+
+commit 887601250b1801c3fb77cfe04915760252852ae0
+Author: unknown <felix@.(none)>
+Date:   Thu Oct 29 09:26:34 2009 +0100
+
+    do not run in -setup-mode when cross-compiling an extension
+
 commit c3b3345ed4307fe32ef37151bc29d9c4bccf34a4
 Author: unknown <felix@.(none)>
 Date:   Tue Oct 27 11:17:23 2009 +0100
@@ -245,8 +257,6 @@ Date:   Sun Oct 11 11:37:06 2009 +0200
    the numbers hook could modify this and provide a better error message if a non-core
    number type triggers such an error
 
-** allow `(define-syntax ID1 ID2)' (copy definition or expand into `syntax-rules')
-   also: let[rec]-syntax
 
 * tests
 
@@ -334,7 +344,8 @@ Date:   Sun Oct 11 11:37:06 2009 +0200
    (decompose-lambda-list) will be more expensive and cumbersome.
 
 ** The benchmarks are meaningless - find real ones.
-*** check Feeley's benchmarks (slatex, compiler)
+*** Feeley's benchmarks (slatex, compiler)
+*** Brad Lucier's fft
 
 ** speculative inlining
 
@@ -344,6 +355,7 @@ Date:   Sun Oct 11 11:37:06 2009 +0200
      (let ((t1 x)
 	   (t2 y))
        (if (and (fixnum? t1) (fixnum? t2))
+           ;; makes only sense if C_i_o_fixnum_plus is inlined at C level
 	   (or (##core#inline "C_i_o_fixnum_plus" t1 t2)
 	       (##core#inline_allocate ("C_a_i_plus" 4) t1 t2) )
 	   (if (and (flonum? t1) (flonum? t2))
