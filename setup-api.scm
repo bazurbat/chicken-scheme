@@ -98,13 +98,6 @@
 	(make-pathname p "bin") )
       (foreign-value "C_INSTALL_BIN_HOME" c-string) ) )
 
-(define *doc-path*
-  (or (and-let* ((p (get-environment-variable "CHICKEN_PREFIX")))
-	(make-pathname p "share/chicken/doc") )
-      (make-pathname
-       (foreign-value "C_INSTALL_SHARE_HOME" c-string) 
-       "doc")))
-
 (define chicken-prefix
   (or (get-environment-variable "CHICKEN_PREFIX")
       (let ((m (string-match "(.*)/bin/?" *chicken-bin-path*)))
@@ -422,7 +415,9 @@
   (make-pathname rpath fn setup-file-extension) )
 
 (define installation-prefix
-  (make-parameter (or (get-environment-variable "CHICKEN_INSTALL_PREFIX") #f)))
+  (make-parameter
+   (or (get-environment-variable "CHICKEN_INSTALL_PREFIX")
+       chicken-prefix)))
 
 (define create-directory/parents
   (let ()
@@ -453,7 +448,7 @@
   ;;XXX the prefix handling is completely bogus
   (let ((from (if (pair? from) (car from) from))
 	(to (let ((to-path (if (pair? from) (make-pathname to (cadr from)) to)))
-	      (if (and prefix (not (string-prefix? prefix to-path)))
+	      (if (not (string-prefix? prefix to-path))
 		  (make-pathname prefix to-path) 
 		  to-path))))
     (ensure-directory to)
@@ -540,9 +535,7 @@
 			   (make-dest-pathname rpath f)))
 		       files) ) 
 	   (pre (installation-prefix))
-	   (docpath (if pre
-			(ensure-directory (make-pathname pre "share/chicken/doc"))
-			*doc-path*)))
+	   (docpath (ensure-directory (make-pathname pre "share/chicken/doc"))))
       (and-let* ((docs (assq 'documentation info)))
 	(print "\n* Installing documentation files in " docpath ":")
 	(for-each
@@ -569,11 +562,8 @@
      (if *windows-shell* "exe" #f) ) )
   (when (setup-install-mode)
     (let* ((files (check-filelist (if (list? files) files (list files))))
-	   (ppath ((lambda (pre)
-		     (if pre 
-			 (ensure-directory (make-pathname pre "bin"))
-			 (program-path)))
-		   (installation-prefix)))
+	   (pre (installation-prefix))
+	   (ppath (ensure-directory (make-pathname pre "bin")))
 	   (files (if *windows*
                       (map (lambda (f)
                              (if (list? f) 
@@ -594,17 +584,14 @@
 (define (install-script id files #!optional (info '()))
   (when (setup-install-mode)
     (let* ((files (check-filelist (if (list? files) files (list files))))
-	   (ppath ((lambda (pre) 
-		     (if pre
-			 (ensure-directory (make-pathname pre "bin"))
-			 (program-path)))
-		   (installation-prefix)))
+	   (pre (installation-prefix))
+	   (ppath (ensure-directory (make-pathname pre "bin")))
 	   (pfiles (map (lambda (f)
 			  (let ((from (if (pair? f) (car f) f))
 				(to (make-dest-pathname ppath f)) )
 			    (copy-file from to) 
 			    (unless *windows-shell*
-				    (run (,*chmod-command* a+r ,(shellpath to))))
+			      (run (,*chmod-command* a+r ,(shellpath to))))
 			    to) )
 			files) ) )
       (unless *windows-shell*
@@ -615,7 +602,7 @@
 ;;; More helper stuff
 
 (define (repo-path #!optional ddir?)
-  (let ((p (if (and ddir? (installation-prefix))
+  (let ((p (if ddir?
 	       (make-pathname 
 		(installation-prefix) 
 		(sprintf "lib/chicken/~a" (##sys#fudge 42)))
@@ -631,7 +618,7 @@
 	(begin
 	  (create-directory/parents dir)
 	  (unless *windows-shell*
-		  (run (,*chmod-command* a+x ,(shellpath dir)))))))
+	    (run (,*chmod-command* a+x ,(shellpath dir)))))))
   path)
 
 (define (try-compile code #!key c++ (cc (if c++ *cxx* *cc*)) (cflags "") (ldflags "") 
