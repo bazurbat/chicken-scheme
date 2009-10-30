@@ -40,7 +40,6 @@
    blob-size
    blob?
    blob=?
-   breakpoint
    build-platform
    c-runtime
    call/cc
