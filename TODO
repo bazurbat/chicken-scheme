@@ -79,6 +79,12 @@ Date:   Mon Oct 19 14:21:51 2009 +0200
 
 ** private commits not in pending
 
+commit 420c646af6f8f3e028e97950451539e29e4401d8
+Author: unknown <felix@.(none)>
+Date:   Fri Oct 30 09:49:15 2009 +0100
+
+    fixed bug in get-condition-property
+
 commit 0ef80438adf6bc8f2b4efb0891ce9ee5f645f1c6
 Author: unknown <felix@.(none)>
 Date:   Thu Oct 29 09:32:00 2009 +0100
