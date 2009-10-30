@@ -58,6 +58,13 @@
 ;;; That's all there is to it.
 
 ;;; History:
+;;; 0.8.9: 2009/10/28 - allowing indented module/library definitions,
+;;;                     added various customizations for tab/indent behavior,
+;;;                     complete jumps to end of current symbol
+;;; 0.8.8: 2009/08/18 - fixing bug in scheme-directory-tree-files
+;;                      with funny file names
+;;; 0.8.7: 2009/07/18 - foof-loop support, don't complete current var,
+;;                      updating chicken 4 module information
 ;;; 0.8.6: 2009/05/03 - fixing support for chicken 4 w/ unbalanced parens
 ;;; 0.8.5: 2009/04/30 - full support for chicken 4, fixed bug in caching
 ;;; 0.8.4: 2008/12/26 - numerous small bugfixes (Merry Christmas!)
@@ -1355,27 +1362,70 @@
    ])
 
 (defvar *scheme-chicken-modules*
-  '((extras
+  '((data-structures
      (->string (lambda (obj) str))
-     (alist->hash-table (lambda (alist) hash-table))
      (alist-ref (lambda (alist key :optional eq-fn default)))
      (alist-update! (lambda (key value alist :optional eq-fn) undefined))
+     (always? (lambda (obj) bool))
+     (any? (lambda (obj) bool))
      (atom? (lambda (obj) bool))
      (binary-search (lambda (vec proc)))
      (butlast (lambda (list) list) "drops the last element of list")
-     (call-with-input-string (lambda (string proc)))
-     (call-with-output-string (lambda (proc) str))
      (chop (lambda (list k) list))
      (complement (lambda (f) f2))
      (compose (lambda (f1 f2 \.\.\.) f))
-     (compress (lambda (boolean-list list)))
-     (conc (lambda (obj \.\.\.)))
+     (compress (lambda (boolean-list list) list))
+     (conc (lambda (obj \.\.\.) str))
      (conjoin (lambda (pred \.\.\.) pred))
      (constantly (lambda (obj \.\.\.) f))
      (disjoin (lambda (pred \.\.\.) pred))
      (each (lambda (proc \.\.\.) proc))
      (flatten (lambda (list1 \.\.\.) list))
      (flip (lambda (proc) proc))
+     (identity (lambda (obj)))
+     (intersperse (lambda (list obj) list))
+     (join (lambda (list-of-lists :optional list) list))
+     (left-section (lambda (proc obj \.\.\.) proc))
+     (list->queue (lambda (list) queue))
+     (list-of? (lambda (pred) (lambda (list) bool)))
+     (make-queue (lambda () queue))
+     (merge (lambda (list1 list2 less-fn) list))
+     (merge! (lambda (list1 list2 less-fn) list))
+     (never? (lambda (obj) bool))
+     (none? (lambda (obj) bool))
+     (noop (lambda (obj \.\.\.) undefined))
+     (o (lambda (proc \.\.\.) (lambda (obj))))
+     (project (lambda (n) proc))
+     (queue->list (lambda (queue) list))
+     (queue-add! (lambda (queue obj) undefined))
+     (queue-empty? (lambda (queue) bool))
+     (queue-first (lambda (queue)))
+     (queue-last (lambda (queue)))
+     (queue-push-back! (lambda (queue obj) undefined))
+     (queue-push-back-list! (lambda (queue list) undefined))
+     (queue-remove! (lambda (queue) undefined))
+     (queue? (lambda (obj) bool))
+     (rassoc (lambda (key list :optional eq-fn)))
+     (right-section (lambda (proc obj \.\.\.) proc))
+     (shuffle (lambda (list) list))
+     (sort (lambda ((or list vector) less-fn) (or list vector)))
+     (sort! (lambda ((or list vector) less-fn) (or list vector)))
+     (sorted? (lambda ((or list vector) less-fn) bool))
+     (string-chomp (lambda (str :optional suffix-str) str))
+     (string-chop (lambda (str length) list))
+     (string-compare3 (lambda (str1 str2) n))
+     (string-compare3-ci (lambda (str1 str2) n))
+     (string-intersperse (lambda (list :optional seperator-string) str))
+     (string-split (lambda (str :optional delimiter-str keep-empty?) list))
+     (string-translate (lambda (str from-str :optional to-str) str))
+     (string-translate* (lambda (str list) str))
+     (substring-ci=? (lambda (str1 str2 :optional start1 start2 length) str))
+     (substring-index (lambda (which-str where-str :optional start) i))
+     (substring-index-ci (lambda (which-str where-str :optional start) i))
+     (substring=? (lambda (str1 str2 :optional start1 start2 length) bool))
+     (tail? (lambda (obj list) bool)))
+    (extras
+     (alist->hash-table (lambda (alist) hash-table))
      (format (lambda (format-string arg \.\.\.)))
      (fprintf (lambda (port format-string arg \.\.\.)))
      (hash (lambda (obj :optional n) int))
@@ -1399,69 +1449,89 @@
      (hash-table-values (lambda (hash-table) list))
      (hash-table-walk (lambda (hash-table proc) undefined))
      (hash-table? (lambda (obj) bool))
-     (identity (lambda (obj)))
-     (intersperse (lambda (list obj) list))
-     (join (lambda (list-of-lists :optional list) list))
-     (list->queue (lambda (list) queue))
-     (list-of (lambda (pred)))
      (make-hash-table (lambda (:optional eq-fn hash-fn size) hash-table))
-     (make-input-port (lambda (read-proc ready?-pred close-proc :optional peek-proc) input-port))
-     (make-output-port (lambda (write-proc close-proc :optional flush-proc) output-port))
-     (make-queue (lambda () queue))
-     (merge (lambda (list1 list2 less-fn) list))
-     (merge! (lambda (list1 list2 less-fn) list))
-     (noop (lambda (obj \.\.\.) undefined))
      (pp (lambda (obj :optional output-port) undefined))
      (pretty-print (lambda (obj :optional output-port) undefined))
      (pretty-print-width (lambda (:optional new-width) n))
      (printf (lambda (format-string arg \.\.\.) undefined))
-     (project (lambda (n) proc))
-     (queue->list (lambda (queue) list))
-     (queue-add! (lambda (queue obj) undefined))
-     (queue-empty? (lambda (queue) bool))
-     (queue-first (lambda (queue)))
-     (queue-last (lambda (queue)))
-     (queue-push-back! (lambda (queue obj) undefined))
-     (queue-push-back-list! (lambda (queue list) undefined))
-     (queue-remove! (lambda (queue) undefined))
-     (queue? (lambda (obj) bool))
      (random (lambda (n) n))
      (randomize (lambda (:optional x1) undefined))
-     (rassoc (lambda (key list :optional eq-fn)))
      (read-file (lambda (:optional file-or-port reader-fn max-count) str))
      (read-line (lambda (:optional port limit) str))
      (read-lines (lambda (:optional port max) list))
      (read-string (lambda (:optional n port) str))
      (read-string! (lambda (n dest :optional port start) n))
      (read-token (lambda (predicate :optional port) str))
-     (shuffle (lambda (list) list))
-     (sort (lambda ((or list vector) less-fn) (or list vector)))
-     (sort! (lambda ((or list vector) less-fn) (or list vector)))
-     (sorted? (lambda ((or list vector) less-fn) bool))
      (sprintf (lambda (format-string arg \.\.\.) str))
-     (string-chomp (lambda (str :optional suffix-str) str))
-     (string-chop (lambda (str length) list))
-     (string-ci-hash (lambda (str :optional n) n))
-     (string-compare3 (lambda (str1 str2) n))
-     (string-compare3-ci (lambda (str1 str2) n))
      (string-hash (lambda (str1 :optional n) n))
-     (string-intersperse (lambda (list :optional seperator-string) str))
-     (string-split (lambda (str :optional delimiter-str keep-empty?) list))
-     (string-translate (lambda (str from-str :optional to-str) str))
-     (string-translate* (lambda (str list) str))
-     (substring-ci=? (lambda (str1 str2 :optional start1 start2 length) str))
-     (substring-index (lambda (which-str where-str :optional start) i))
-     (substring-index-ci (lambda (which-str where-str :optional start) i))
-     (substring=? (lambda (str1 str2 :optional start1 start2 length) bool))
-     (tail? (lambda (obj list) bool))
+     (string-ci-hash (lambda (str :optional n) n))
      (with-error-output-to-port (lambda (output-port thunk)))
-     (with-input-from-port (lambda (port thunk)))
-     (with-input-from-string (lambda (str thunk)))
-     (with-output-to-port (lambda (port thunk)))
-     (with-output-to-string (lambda (thunk) str))
      (write-line (lambda (str :optional port) undefined))
      (write-string (lambda (str :optional num port) undefined))
      )
+    (files
+     (absolute-pathname? (lambda (pathname)))
+     (create-temporary-file (lambda (:optional ext-str)))
+     (decompose-pathname (lambda (pathname)))
+     (delete-file* (lambda (filename)))
+     (directory-null? (lambda (pathname) bool))
+     (file-copy (lambda (pathname1 pathname2 :optional bool size)))
+     (file-move (lambda (pathname1 pathname2 :optional bool size)))
+     (make-absolute-pathname (lambda (dir filename :optional ext-str)))
+     (make-pathname (lambda (dir filename :optional ext-str) pathname))
+     (normalize-pathname (lambda (pathname :optional platform) pathname))
+     (pathname-directory (lambda (pathname)))
+     (pathname-extension (lambda (pathname)))
+     (pathname-file (lambda (pathname)))
+     (pathname-replace-directory (lambda (pathname dir)))
+     (pathname-replace-extension (lambda (pathname ext-str)))
+     (pathname-replace-file (lambda (pathname filename)))
+     (pathname-strip-directory (lambda (pathname)))
+     (pathname-strip-extension (lambda (pathname)))
+     )
+    (foreign
+     (define-external (syntax (obj type body \.\.\.)))
+     (define-location (syntax (name type init)))
+     (let-location (syntax bindings body \.\.\.))
+     (foreign-code (syntax (str \.\.\.)))
+     (foreign-value (syntax (str type)))
+     (foreign-declare (syntax (str \.\.\.)))
+     (define-foreign-variable (syntax))
+     (foreign-lambda (syntax))
+     (foreign-lambda* (syntax))
+     (foreign-safe-lambda (syntax))
+     (foreign-safe-lambda* (syntax))
+     (location)
+     (foreign-code (syntax))
+     )
+    (irregex
+     (irregex (lambda (obj flags \.\.\.)))
+     (string->irregex (lambda (str flags \.\.\.)))
+     (sre->irregex (lambda (obj flags \.\.\.)))
+     (string->sre (lambda (str)))
+     (irregex? (lambda (obj) bool))
+     (irregex-match-data? (lambda (obj) bool))
+     (irregex-new-matches (lambda (irx)))
+     (irregex-reset-matches! (lambda (match-data) undefined))
+     (irregex-match-start (lambda (match-data) (or bool integer)))
+     (irregex-match-end (lambda (match-data) (or bool integer)))
+     (irregex-match-substring (lambda (match-data) (or bool string)))
+     (irregex-search (lambda (irx str :optional start end)))
+     (irregex-search/matches (lambda (irx str start end match-data)))
+     (irregex-match (lambda (irx str :optional start end)))
+     (irregex-match-string (lambda (match-data) str))
+     (irregex-fold (lambda (irx kons knil str :optional finish start end)))
+     (irregex-replace (lambda (irx str replacements \.\.\.) str))
+     (irregex-replace/all (lambda (irx str replacements \.\.\.) str))
+     (irregex-apply-match (lambda (match-data list) str))
+     (irregex-dfa (lambda (irx)))
+     (irregex-dfa/search (lambda (irx)))
+     (irregex-dfa/extract (lambda (irx)))
+     (irregex-nfa (lambda (irx)))
+     (irregex-flags (lambda (irx)))
+     (irregex-submatches (lambda (irx) n))
+     (irregex-lengths (lambda (irx) vector))
+     (irregex-names (lambda (irx))))
     (lolevel
      (address->pointer (lambda (n) ptr))
      (align-to-word (lambda (ptr-or-int) ptr))
@@ -1541,6 +1611,21 @@
      (tagged-pointer? (lambda (obj tag) bool))
      (unbound-variable-value (lambda (:optional value)))
      )
+    (ports
+     (call-with-input-string (lambda (string proc)))
+     (call-with-output-string (lambda (proc) str))
+     (make-input-port (lambda (read-proc ready?-pred close-proc :optional peek-proc) input-port))
+     (make-output-port (lambda (write-proc close-proc :optional flush-proc) output-port))
+     (port-for-each (lambda (read-fn thunk) undefined))
+     (port-map (lambda (read-fn thunk)))
+     (port-fold (lambda (proc init port)))
+     (make-broadcast-port (lambda (output-port \.\.\.) output-port))
+     (make-concatenated-port (lambda (input-port \.\.\.) input-port))
+     (with-input-from-port (lambda (input-port thunk)))
+     (with-input-from-string (lambda (str thunk)))
+     (with-output-to-port (lambda (output-port thunk)))
+     (with-output-to-string (lambda (thunk) str))
+     (with-error-output-to-port (lambda (output-port thunk))))
     (posix
      (_exit (lambda (:optional n) undefined))
      (call-with-input-pipe (lambda (cmdline-string proc :optional mode)))
@@ -1566,29 +1651,29 @@
      (directory (lambda (:optional dir show-dotfiles?) list))
      (directory? (lambda (filename) bool))
      (duplicate-fileno (lambda (old-n :optional new-n)))
-;;      (errno/acces integer)
-;;      (errno/again integer)
-;;      (errno/badf integer)
-;;      (errno/busy integer)
-;;      (errno/child integer)
-;;      (errno/exist integer)
-;;      (errno/fault integer)
-;;      (errno/intr integer)
-;;      (errno/inval integer)
-;;      (errno/io integer)
-;;      (errno/isdir integer)
-;;      (errno/mfile integer)
-;;      (errno/noent integer)
-;;      (errno/noexec integer)
-;;      (errno/nomem integer)
-;;      (errno/nospc integer)
-;;      (errno/notdir integer)
-;;      (errno/perm integer)
-;;      (errno/pipe integer)
-;;      (errno/rofs integer)
-;;      (errno/spipe integer)
-;;      (errno/srch integer)
-;;      (errno/wouldblock integer)
+     (errno/acces integer)
+     (errno/again integer)
+     (errno/badf integer)
+     (errno/busy integer)
+     (errno/child integer)
+     (errno/exist integer)
+     (errno/fault integer)
+     (errno/intr integer)
+     (errno/inval integer)
+     (errno/io integer)
+     (errno/isdir integer)
+     (errno/mfile integer)
+     (errno/noent integer)
+     (errno/noexec integer)
+     (errno/nomem integer)
+     (errno/nospc integer)
+     (errno/notdir integer)
+     (errno/perm integer)
+     (errno/pipe integer)
+     (errno/rofs integer)
+     (errno/spipe integer)
+     (errno/srch integer)
+     (errno/wouldblock integer)
      (fifo? (lambda (filename) bool))
      (file-access-time (lambda (filename) real))
      (file-change-time (lambda (filename) real))
@@ -1631,38 +1716,38 @@
      (open-input-pipe (lambda (cmdline-string :optional mode)))
      (open-output-file* (lambda (fileno :optional (flags open-mode open/append open/binary open/creat open/excl open/fsync open/noctty open/nonblock open/rdwr open/sync open/text open/trunc open/write open/wronly))))
      (open-output-pipe (lambda (cmdline-string :optional mode)))
-;;      (open/append integer)
-;;      (open/binary integer)
-;;      (open/creat integer)
-;;      (open/excl integer)
-;;      (open/fsync integer)
-;;      (open/noctty integer)
-;;      (open/nonblock integer)
-;;      (open/rdonly integer)
-;;      (open/rdwr integer)
-;;      (open/read integer)
-;;      (open/sync integer)
-;;      (open/text integer)
-;;      (open/trunc integer)
-;;      (open/write integer)
-;;      (open/wronly integer)
+     (open/append integer)
+     (open/binary integer)
+     (open/creat integer)
+     (open/excl integer)
+     (open/fsync integer)
+     (open/noctty integer)
+     (open/nonblock integer)
+     (open/rdonly integer)
+     (open/rdwr integer)
+     (open/read integer)
+     (open/sync integer)
+     (open/text integer)
+     (open/trunc integer)
+     (open/write integer)
+     (open/wronly integer)
      (parent-process-id (lambda ()))
-;;      (perm/irgrp integer)
-;;      (perm/iroth integer)
-;;      (perm/irusr integer)
-;;      (perm/irwxg integer)
-;;      (perm/irwxo integer)
-;;      (perm/irwxu integer)
-;;      (perm/isgid integer)
-;;      (perm/isuid integer)
-;;      (perm/isvtx integer)
-;;      (perm/iwgrp integer)
-;;      (perm/iwoth integer)
-;;      (perm/iwusr integer)
-;;      (perm/ixgrp integer)
-;;      (perm/ixoth integer)
-;;      (perm/ixusr integer)
-;;      (pipe/buf integer)
+     (perm/irgrp integer)
+     (perm/iroth integer)
+     (perm/irusr integer)
+     (perm/irwxg integer)
+     (perm/irwxo integer)
+     (perm/irwxu integer)
+     (perm/isgid integer)
+     (perm/isuid integer)
+     (perm/isvtx integer)
+     (perm/iwgrp integer)
+     (perm/iwoth integer)
+     (perm/iwusr integer)
+     (perm/ixgrp integer)
+     (perm/ixoth integer)
+     (perm/ixusr integer)
+     (pipe/buf integer)
      (port->fileno (lambda (port)))
      (process (lambda (cmdline-string :optional arg-list env-list)))
      (process-execute (lambda (filename :optional arg-list env-list)))
@@ -1687,31 +1772,31 @@
      (set-signal-mask! (lambda (sig-n-list)))
      (set-user-id! (lambda (n)))
      (setenv (lambda (name value-string)))
-;;      (signal/abrt integer)
-;;      (signal/alrm integer)
-;;      (signal/chld integer)
-;;      (signal/cont integer)
-;;      (signal/fpe integer)
-;;      (signal/hup integer)
-;;      (signal/ill integer)
-;;      (signal/int integer)
-;;      (signal/io integer)
-;;      (signal/kill integer)
-;;      (signal/pipe integer)
-;;      (signal/prof integer)
-;;      (signal/quit integer)
-;;      (signal/segv integer)
-;;      (signal/stop integer)
-;;      (signal/term integer)
-;;      (signal/trap integer)
-;;      (signal/tstp integer)
-;;      (signal/urg integer)
-;;      (signal/usr1 integer)
-;;      (signal/usr2 integer)
-;;      (signal/vtalrm integer)
-;;      (signal/winch integer)
-;;      (signal/xcpu integer)
-;;      (signal/xfsz integer)
+     (signal/abrt integer)
+     (signal/alrm integer)
+     (signal/chld integer)
+     (signal/cont integer)
+     (signal/fpe integer)
+     (signal/hup integer)
+     (signal/ill integer)
+     (signal/int integer)
+     (signal/io integer)
+     (signal/kill integer)
+     (signal/pipe integer)
+     (signal/prof integer)
+     (signal/quit integer)
+     (signal/segv integer)
+     (signal/stop integer)
+     (signal/term integer)
+     (signal/trap integer)
+     (signal/tstp integer)
+     (signal/urg integer)
+     (signal/usr1 integer)
+     (signal/usr2 integer)
+     (signal/vtalrm integer)
+     (signal/winch integer)
+     (signal/xcpu integer)
+     (signal/xfsz integer)
      (sleep (lambda (seconds)))
      (symbolic-link? (lambda (filename)))
      (system-information (lambda ()))
@@ -1744,39 +1829,29 @@
      (tcp-abandon-port (lambda (port)))
      (tcp-accept (lambda (listener)))
      (tcp-accept-ready? (lambda (listener)))
+     (tcp-accept-timeout (lambda (:optional number)))
      (tcp-addresses (lambda (port)))
      (tcp-buffer-size (lambda (:optional new-size)))
      (tcp-close (lambda (listener)))
      (tcp-connect (lambda ((string scheme-complete-host-name) :optional (string scheme-complete-port-name))))
+     (tcp-connect-timeout (lambda (:optional number)))
      (tcp-listen (lambda (tcp-port-n :optional backlog-n host-string)))
      (tcp-listener-fileno (lambda (listener)))
      (tcp-listener-port (lambda (listener)))
      (tcp-listener? (lambda (obj)))
      (tcp-port-numbers (lambda (port)))
+     (tcp-read-timeout (lambda (:optional number)))
+     (tcp-write-timeout (lambda (:optional number)))
      )
     (utils
-     (absolute-pathname? (lambda (pathname)))
-     (create-temporary-file (lambda (:optional ext-str)))
-     (decompose-pathname (lambda (pathname)))
-     (delete-file* (lambda (filename)))
      (for-each-argv-line (lambda (proc) undefined))
      (for-each-line (lambda (proc :optional input-port) undefined))
-     (make-absolute-pathname (lambda (dir filename :optional ext-str)))
-     (make-pathname (lambda (dir filename :optional ext-str)))
-     (pathname-directory (lambda (pathname)))
-     (pathname-extension (lambda (pathname)))
-     (pathname-file (lambda (pathname)))
-     (pathname-replace-directory (lambda (pathname dir)))
-     (pathname-replace-extension (lambda (pathname ext-str)))
-     (pathname-replace-file (lambda (pathname filename)))
-     (pathname-strip-directory (lambda (pathname)))
-     (pathname-strip-extension (lambda (pathname)))
-     (port-for-each (lambda (read-fn thunk) undefined))
-     (port-map (lambda (read-fn thunk)))
      (read-all (lambda (:optional file-or-port)))
      (shift! (lambda (list :optional default)))
      (system* (lambda (format-string arg1 \.\.\.)))
-     (unshift! (lambda (obj pair)))
+     (compile-file (lambda (filename)))
+     (qs (lambda (str :optional platform) str)
+         "quote string for shell")
      )
     ))
 
@@ -1786,7 +1861,6 @@
      (abort (lambda (obj) undefined))
      (add1 (lambda (z) z))
      (andmap (lambda (pred list) bool))
-     (any? (lambda (obj) bool))
      (argc+argv (lambda () (values n ptr)))
      (argv (lambda () list))
      (bit-set? (lambda (n index) bool))
@@ -1821,6 +1895,8 @@
      (current-milliseconds (lambda () n))
      (current-read-table (lambda () read-table))
      (current-seconds (lambda () x1))
+     (define-record (syntax))
+     (define-record-printer (syntax))
      (define-reader-ctor (lambda (sym proc) undefined))
      (delete-file (lambda (filename) undefined))
      (disable-interrupts (lambda () undefined))
@@ -1828,6 +1904,7 @@
      (dynamic-wind (lambda (before-thunk thunk after-thunk)))
      (enable-interrupts (lambda () undefined))
      (enable-warnings (lambda () undefined))
+     (er-macro-transformer (syntax))
      (errno (lambda () n))
      (error (lambda (error-string args \.\.\.) undefined))
      (eval-handler (lambda () proc))
@@ -1882,7 +1959,10 @@
      (get-line-number (lambda (sexp) n))
      (get-output-string (lambda (string-output-port) string))
      (getenv (lambda (name) string))
+     (get-environment-variable (lambda (name) string))
      (getter-with-setter (lambda (get-proc set-proc) proc))
+     (import (special symbol scheme-chicken-available-modules)
+             "import extensions into the current module")
      (implicit-exit-handler (lambda (:optional proc) proc))
      (invalid-procedure-call-handler (lambda (:optional proc) proc))
      (keyword->string (lambda (sym) string))
@@ -1927,6 +2007,12 @@
      (repl (lambda () undefined))
      (repository-path (lambda (:optional dirname) dirname))
      (require (lambda (sym \.\.\.) undefined))
+     (require-extension
+      (special symbol scheme-chicken-available-modules)
+      "import extensions into top-level namespace")
+     (require-library
+      (special symbol scheme-chicken-available-modules)
+      "load (but don't import) extensions")
      (reset (lambda () undefined))
      (reset-handler (lambda (:optional proc) proc))
      (return-to-host (lambda () undefined))
@@ -2757,7 +2843,8 @@
 ;; special lookups (XXXX add more impls, try to abstract better)
 
 (defvar *scheme-chicken-base-repo*
-  (or (getenv "CHICKEN_REPOSITORY")
+  (or (let ((repo (getenv "CHICKEN_REPOSITORY")))
+        (and repo (file-exists-p repo) repo))
       (let ((dir
              (car (remove-if-not #'file-directory-p
                                  '("/usr/lib/chicken"
@@ -2773,7 +2860,7 @@
                         "csi -e '(print (repository-path))'"))
                   (res (substring res 0 (- (length res) 1))))
              (and res (file-directory-p res) res)))
-      "/usr/local/lib/chicken"))
+      "/usr/local/lib/chicken/4"))
 
 (defvar *scheme-chicken-repo-dirs*
   (remove-if-not
@@ -2790,13 +2877,23 @@
   (append
    (mapcar #'symbol-name (mapcar #'car *scheme-chicken-modules*))
    (mapcar
-    #'file-name-sans-extension
-    (directory-files "." nil ".*\\.scm$" t))
+    #'(lambda (f)
+        (let ((f (file-name-sans-extension f)))
+          (if (equalp "import" (file-name-extension f))
+              (file-name-sans-extension f)
+            f)))
+    (directory-files "." nil "^[^.].*\\.scm$" t))
    (scheme-append-map
     #'(lambda (dir)
         (mapcar
-         #'file-name-sans-extension
-         (directory-files dir nil ".*\\.\\(so\\|scm\\)$" t)))
+         #'(lambda (f)
+             (let ((f (file-name-sans-extension f)))
+               (if (equalp "import" (file-name-extension f))
+                   (file-name-sans-extension f)
+                 f)))
+         (if (string-match "/4" dir)
+             (directory-files dir nil "^[^.].*\\.import\\.\\(so\\|scm\\)$" t)
+           (directory-files dir nil "^[^.].*\\.\\(so\\|scm\\)$" t))))
     *scheme-chicken-repo-dirs*)))
 
 (defvar *scheme-gauche-repo-path*
@@ -2892,7 +2989,7 @@
          (if ,buf
              (switch-to-buffer ,buf)
            (switch-to-buffer (find-file-noselect ,path t)))
-         (let ((,res (save-excursion ,@body)))
+         (let ((,res (ignore-errors (save-excursion ,@body))))
            (unless ,buf (kill-buffer (current-buffer)))
            ,res)))))
 
@@ -2901,21 +2998,17 @@
         (stack (list init-dir)))
     (while (consp stack)
       (let* ((dir (pop stack))
-             (files (cddr (directory-files dir full))))
+             (files (remove-if #'(lambda (f) (or (equal f ".") (equal f "..")))
+                               (directory-files dir)))
+             (full-files (mapcar #'(lambda (f) (concat dir "/" f)) files)))
         (setq res (append (if match
                               (remove-if-not
                                #'(lambda (f) (string-match match f))
-                               files)
-                            files)
+                               (if full full-files files))
+                            (if full full-files files))
                           res))
         (setq stack
-              (append
-               (remove-if-not 'file-directory-p
-                              (if full
-                                  files
-                                (mapcar #'(lambda (f) (concat dir "/" f))
-                                        files)))
-               stack))))
+              (append (remove-if-not #'file-directory-p full-files) stack))))
     res))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2968,7 +3061,7 @@
       (forward-sexp (+ n 1))
       (let ((end (point)))
         (forward-sexp -1)
-        (car (read-from-string (buffer-substring (point) end)))))))
+        (car (read-from-string (buffer-substring-no-properties (point) end)))))))
 
 (defun scheme-symbol-at-point ()
   (save-excursion
@@ -2976,23 +3069,36 @@
     (let ((start (point)))
       (skip-syntax-forward "w_")
       (and (< start (point))
-           (intern (buffer-substring start (point)))))))
+           (intern (buffer-substring-no-properties start (point)))))))
 
-(defun scheme-goto-next-top-level ()
+;; should be called from start of current top-level
+(defun scheme-goto-next-top-level (&optional in-mod-p)
   (let ((here (point)))
-    (or (ignore-errors (end-of-defun) (end-of-defun)
-                       (beginning-of-defun)
-                       (< here (point)))
-        (progn (forward-char)
-               (and (re-search-forward "^(" nil t)
-                    (progn (backward-char 1) t)))
+    (or (if in-mod-p
+            (or (ignore-errors (forward-sexp 2) (forward-sexp -1)
+                               (< here (point)))
+                (progn (goto-char here)
+                       ;;(forward-char)
+                       ;; heuristic, if the parens are unbalanced look
+                       ;; for a define starting after a blank line.
+                       ;; better might be to assume they're using a
+                       ;; consistent identation for the module body.
+                       (and (re-search-forward "\n\\s-*\n\\(;[^\n]*\n\\)?\\s-*(" nil t)
+                            (progn (backward-char 1) t))))
+          (or (ignore-errors (end-of-defun) (end-of-defun)
+                             (beginning-of-defun)
+                             (< here (point)))
+              (progn (goto-char here)
+                     (forward-char)
+                     (and (re-search-forward "^(" nil t)
+                          (progn (backward-char 1) t)))))
         (goto-char (point-max)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; variable extraction
 
 (defun scheme-sexp-type-at-point (&optional env)
-  (case (char-syntax (char-after))
+  (case (and (not (eobp)) (char-syntax (char-after)))
     ((?\()
      (forward-char 1)
      (if (eq ?w (char-syntax (char-after)))
@@ -3019,22 +3125,32 @@
     (t
      nil)))
 
-(defun scheme-let-vars-at-point (&optional env)
-  (let ((end (or (ignore-errors
-                   (save-excursion (forward-sexp) (point)))
-                 (point-min)))
+(defun scheme-let-vars-at-point (&optional env limit loopp)
+  (let ((end (min (or limit (point-max))
+                  (or (ignore-errors
+                        (save-excursion (forward-sexp) (point)))
+                      (point-min))))
         (vars '()))
     (forward-char 1)
     (while (< (point) end)
       (when (eq ?\( (char-after))
         (save-excursion
           (forward-char 1)
+          (if (and loopp (looking-at "\\(for\\|let\\|with\\)\\>"))
+              (scheme-beginning-of-next-sexp))
           (if (eq ?w (char-syntax (char-after)))
               (let* ((sym (scheme-symbol-at-point))
-                     (type (ignore-errors
-                             (scheme-beginning-of-next-sexp)
-                             (scheme-sexp-type-at-point env))))
-                (push (if type (list sym type) (list sym)) vars)))))
+                     (type (and (not loopp)
+                                (ignore-errors
+                                  (scheme-beginning-of-next-sexp)
+                                  (scheme-sexp-type-at-point env)))))
+                (push (if type (list sym type) (list sym)) vars)))
+          (when loopp
+            (while (and (< (point) end)
+                        (ignore-errors
+                          (scheme-beginning-of-next-sexp)
+                          (eq ?w (char-syntax (char-after)))))
+              (push (list (scheme-symbol-at-point)) vars)))))
       (unless (ignore-errors (let ((here (point)))
                                (scheme-beginning-of-next-sexp)
                                (> (point) here)))
@@ -3125,8 +3241,34 @@ when scheme-complete can't infer the current implementation."
   :type 'symbol
   :group 'scheme-complete)
 
+(defcustom scheme-always-use-default-implementation-p nil
+  "Always use `scheme-default-implementation' instead of heuristics."
+  :type 'symbol
+  :group 'scheme-complete)
+
 (defcustom scheme-complete-smart-indent-p t
   "Toggles using `scheme-smart-indent' for `scheme-complete-or-indent'."
+  :type 'boolean
+  :group 'scheme-complete)
+
+(defcustom scheme-indent-before-complete-p nil
+  "Toggles indenting the current line before completing."
+  :type 'boolean
+  :group 'scheme-complete)
+
+(defcustom scheme-complete-empty-tab-behavior 'complete
+  "Behavior for `scheme-complete-or-indent' when completing an empty symbol.
+A value of `complete' (the default) will complete all symbols
+elligible according to the normal type inference rules.  Since
+they are not being filtered by any prefix, the list may be long -
+you can scroll through it or switch to the *Completions* buffer
+to view it.  A value of `indent' will assume you meant to indent
+at that location, and `beep' will just beep and do nothing."
+  :type '(choice (const complete) (const indent) (const beep))
+  :group 'scheme-complete)
+
+(defcustom scheme-complete-from-end-of-symbol-p t
+  "If true jump to the end when completing from the middle of a symbol."
   :type 'boolean
   :group 'scheme-complete)
 
@@ -3140,7 +3282,10 @@ when scheme-complete can't infer the current implementation."
 ;;   :type 'boolean
 ;;   :group 'scheme-complete)
 
-(defvar *scheme-interleave-definitions-p* nil)
+(defcustom scheme-interleave-definitions-p nil
+  "Allow internal defines to be mixed with expressions."
+  :type 'boolean
+  :group 'scheme-complete)
 
 (defvar *scheme-complete-module-cache* '())
 
@@ -3157,27 +3302,32 @@ when scheme-complete can't infer the current implementation."
 
 (defvar *scheme-imported-modules* '())
 
+(defun scheme-guess-implementation ()
+  (save-excursion
+    (goto-char (point-min))
+    (or
+     (and (looking-at "#! *\\([^ \t\n]+\\)")
+          (let ((script (file-name-nondirectory (match-string 1))))
+            (cdr (assoc script *scheme-interpreter-alist*))))
+     (cond
+      ((re-search-forward "(define-module +\\(.\\)" nil t)
+       (if (equal "(" (match-string 1))
+           'guile
+         'gauche))
+      ((re-search-forward "(\\(?:use\\|require-library\\) " nil t)
+       'chicken)
+      ((re-search-forward
+        "#\\(?:lang\\|reader\\)" nil t)
+       'mzscheme)
+      ((re-search-forward "(module\\s-" nil t)
+       (if (eq scheme-default-implementation 'mzscheme)
+           (if (looking-at "\\s-*\\sw") 'chicken 'mzscheme)
+         (if (looking-at "\\s-*(") 'mzscheme 'chicken)))))))
+
 (defun scheme-current-implementation ()
-  (unless *scheme-current-implementation*
-    (setq *scheme-current-implementation*
-          (save-excursion
-            (goto-char (point-min))
-            (or
-             (and (looking-at "#! *\\([^ \t\n]+\\)")
-                  (let ((script (file-name-nondirectory (match-string 1))))
-                    (cdr (assoc script *scheme-interpreter-alist*))))
-             (cond
-              ((re-search-forward "(define-module +\\(.\\)" nil t)
-               (if (equal "(" (match-string 1))
-                   'guile
-                 'gauche))
-              ((re-search-forward "(\\(?:use\\|require-library\\) " nil t)
-               'chicken)
-              ((re-search-forward
-                "#\\(?:lang\\|reader\\)" nil t)
-               'mzscheme)
-              ((re-search-forward "(module\\s-" nil t)
-               (if (looking-at "\\s-*\\sw") 'chicken 'mzscheme)))))))
+  (when (and (not *scheme-current-implementation*)
+             (not scheme-always-use-default-implementation-p))
+    (setq *scheme-current-implementation* (scheme-guess-implementation)))
   (or *scheme-current-implementation*
       scheme-default-implementation))
 
@@ -3185,8 +3335,11 @@ when scheme-complete can't infer the current implementation."
 
 (defun scheme-current-local-vars (&optional env)
   (let ((vars '())
-        (limit (save-excursion (beginning-of-defun) (+ (point) 1)))
         (start (point))
+        (limit (save-excursion (beginning-of-defun) (+ (point) 1)))
+        (let-limit (save-excursion (scheme-beginning-of-sexp)
+                                   (scheme-beginning-of-sexp)
+                                   (point)))
         (scan-internal))
     (save-excursion
       (while (> (point) limit)
@@ -3231,21 +3384,26 @@ when scheme-complete can't infer the current implementation."
                              (and (or (eq sym 'match) (< start limit)) start)
                              limit))))
                       vars)))
-              ((let let* letrec letrec* let-syntax letrec-syntax and-let* do)
+              ((let let* letrec letrec* let-syntax letrec-syntax
+                and-let* do loop)
                (or
                 (ignore-errors
                   (save-excursion
                     (scheme-beginning-of-next-sexp)
-                    (if (and (eq sym 'let)
-                             (eq ?w (char-syntax (char-after (point)))))
-                        ;; named let
-                        (let* ((sym (scheme-symbol-at-point))
-                               (args (progn
-                                       (scheme-beginning-of-next-sexp)
-                                       (scheme-let-vars-at-point env))))
-                          (setq vars (cons `(,sym (lambda ,(mapcar #'car args)))
-                                           (append args vars))))
-                      (setq vars (append (scheme-let-vars-at-point env) vars)))
+                    (let* ((loop-name
+                            (and (memq sym '(let loop))
+                                 (eq ?w (char-syntax (char-after (point))))
+                                 (prog1 (scheme-symbol-at-point)
+                                   (scheme-beginning-of-next-sexp))))
+                           (let-vars
+                            (scheme-let-vars-at-point
+                             env let-limit (eq sym 'loop))))
+                      (if loop-name
+                          ;; named let
+                          (setq vars
+                                (cons `(,loop-name (lambda ,(mapcar #'car let-vars)))
+                                      (append let-vars vars)))
+                        (setq vars (append let-vars vars))))
                     t))
                 (goto-char limit)))
               ((let-values let*-values)
@@ -3264,7 +3422,7 @@ when scheme-complete can't infer the current implementation."
                                       (scheme-nth-sexp-at-point 1)))
                              vars)))
               (t
-               (if (string-match "^define\\(-.*\\)?" (symbol-name sym))
+               (if (string-match "^\\(jazz\\.\\)?define\\(-.*\\)?" (symbol-name sym))
                    (let ((defs (save-excursion
                                  (backward-char)
                                  (scheme-extract-definitions))))
@@ -3278,7 +3436,7 @@ when scheme-complete can't infer the current implementation."
                                                      (scheme-flatten
                                                       (cadadr x)))))
                                     defs)
-                                   defs
+                                   (and (not (= 1 (current-column))) defs)
                                    vars)))
                  (setq scan-internal nil))))
             ;; check for internal defines
@@ -3383,39 +3541,38 @@ when scheme-complete can't infer the current implementation."
       ;; guile skips until a closing !#
       (if (eq 'guile (scheme-current-implementation))
           (re-search-forward "!#" nil t)
-        (next-line))))
+        (forward-line))))
 
 (defun scheme-current-imports ()
   (let ((imports '())
-        (*scheme-imported-modules* '()))
+        (*scheme-imported-modules* '())
+        (in-mod-p nil))
     (save-excursion
       (goto-char (point-min))
       (scheme-skip-shebang)
+      (if (not (looking-at "^("))
+          (scheme-goto-next-top-level nil))
       ;; scan for module forms
       (while (not (eobp))
-        (if (ignore-errors (forward-sexp) t)
-            (let ((end (point))
-                  (inside-p nil))
-              (backward-sexp)
-              (when (eq ?\( (char-after))
-                (forward-char)
-                (when (not (eq ?\( (char-after)))
-                  (let ((sym (scheme-symbol-at-point)))
-                    (cond
-                     ((memq sym '(module library))
-                      (forward-sexp 3)
-                      (setq inside-p t))
-                     ((scheme-module-symbol-p sym)
-                      (backward-char)
-                      (ignore-errors
-                        (setq imports
-                              (append (scheme-extract-sexp-imports
-                                       (scheme-nth-sexp-at-point 0))
-                                      imports))))))))
-              (unless inside-p (goto-char end)))
-          ;; if an incomplete sexp is found, try to recover at the
-          ;; next line beginning with an open paren
-          (scheme-goto-next-top-level))))
+        (when (eq ?\( (char-after))
+          (forward-char 1)
+          (when (not (eq ?\( (char-after)))
+            (let ((sym (scheme-symbol-at-point)))
+              (cond
+               ((memq sym '(module library))
+                (forward-sexp 3)
+                (forward-sexp -1)
+                (setq in-mod-p t))
+               ((scheme-module-symbol-p sym)
+                (forward-char -1)
+                (ignore-errors
+                  (setq imports
+                        (append (scheme-extract-sexp-imports
+                                 (scheme-nth-sexp-at-point 0))
+                                imports))))
+               (t
+                (forward-char -1))))))
+        (scheme-goto-next-top-level in-mod-p)))
     imports))
 
 ;; we should be just inside the opening paren of an expression
@@ -3487,11 +3644,23 @@ when scheme-complete can't infer the current implementation."
         (t
          '())))))
 
+(defun scheme-in-defun-name ()
+  (save-excursion
+    (dotimes (i 2)
+      (scheme-beginning-of-sexp)
+      (backward-char))
+    (and (save-excursion
+           (beginning-of-line)
+           (looking-at "\\s-*(define"))
+         (point))))
+
 ;; a little more liberal than -definitions, we try to scan to a new
 ;; top-level form (i.e. a line beginning with an open paren) if
 ;; there's an error during normal sexp movement
 (defun scheme-current-globals ()
   (let ((here (point))
+        (in-mod-p nil)
+        (skip (scheme-in-defun-name))
         (globals '())
         (end (point-max)))
     (save-excursion
@@ -3499,28 +3668,37 @@ when scheme-complete can't infer the current implementation."
       (or (ignore-errors (end-of-defun) (backward-sexp) t)
           (and (re-search-forward "^(" nil t) (progn (backward-char) t))
           (goto-char (point-max)))
+      ;; scan over each top-level form
       (while (< (point) end)
         (cond
          ((and (< (point) here) (looking-at "(\\(module\\|library\\)\\s-"))
+          ;; module definition
           (let ((module-end (ignore-errors
                               (save-excursion (forward-sexp) (point)))))
             (cond
              ((or (not module-end) (< here module-end)) ; inside the module
+              ;; setup to only parse until the module end, continue
+              ;; scanning top-level module forms
               (setq globals '())
+              (setq in-mod-p t)
               (when module-end
                 (setq end module-end))
-              (forward-word 1)
-              (forward-sexp 2)
+              (forward-word 1)  ;; skip the module/library word
+              (forward-sexp 1)  ;; skip the module name
               (scheme-beginning-of-next-sexp))
-             (t ;; not inside the module, skip it altogether
+             (t ;; we're not completing from inside the module, skip
+                ;; the module definition altogether
               (forward-sexp 1)
-              (scheme-goto-next-top-level)))))
+              (scheme-goto-next-top-level nil)))))
          (t
-          (setq globals
-                (append (ignore-errors (scheme-extract-definitions)) globals))
-          (or (and (progn (forward-char) (re-search-forward "^(" nil t))
-                   (progn (backward-char) t))
-              (scheme-goto-next-top-level))))))
+          ;; other form, extract the definitions unless it's a
+          ;; definition for which we're trying to complete the name
+          (if (not (eq (point) skip))
+              (setq globals
+                    (append
+                     (ignore-errors (scheme-extract-definitions))
+                     globals)))
+          (scheme-goto-next-top-level in-mod-p)))))
     globals))
 
 ;; for internal defines, etc.
@@ -3538,7 +3716,7 @@ when scheme-complete can't infer the current implementation."
                                 (> (point) here))
                  (goto-char end)))
            ;; non-definition form, maybe stop scanning
-           ((not *scheme-interleave-definitions-p*)
+           ((not scheme-interleave-definitions-p)
             (goto-char end))))))
     defs))
 
@@ -3661,6 +3839,8 @@ when scheme-complete can't infer the current implementation."
         (cond
          ((eq mod 'scheme)
           (list nil *scheme-r5rs-info*))
+         ((eq mod 'chicken)
+          (list nil (cdr (assq 'chicken *scheme-implementation-exports*))))
          ((file-exists-p source-file)
           (list source-file
                 (scheme-with-find-file source-file
@@ -3933,7 +4113,10 @@ when scheme-complete can't infer the current implementation."
 (defun scheme-current-env ()
   (let ((in-mod-p (scheme-inside-module-p)))
     ;; r5rs
-    (let ((env (if in-mod-p (list) (list *scheme-r5rs-info*))))
+    (let ((env (if in-mod-p
+                   '(((import
+                       (special symbol scheme-chicken-available-modules))))
+                 (list *scheme-r5rs-info*))))
       ;; base language
       (let ((base (cdr (assq (scheme-current-implementation)
                              *scheme-implementation-exports*))))
@@ -3953,8 +4136,7 @@ when scheme-complete can't infer the current implementation."
   (mapcar #'car
           (apply #'concatenate
                  'list
-                 (mapcar #'(lambda (e) (remove-if-not pred e))
-                         env))))
+                 (mapcar #'(lambda (e) (remove-if-not pred e)) env))))
 
 ;; checking return values:
 ;;   a should be capable of returning instances of b
@@ -4141,6 +4323,14 @@ when scheme-complete can't infer the current implementation."
 
 (defun scheme-smart-complete (&optional arg)
   (interactive "P")
+  (if scheme-indent-before-complete-p
+      (lisp-indent-line))
+  (if (and scheme-complete-from-end-of-symbol-p
+           (not (eobp))
+           (eq ?w (char-syntax (char-after)))
+           (not (bobp))
+           (eq ?w (char-syntax (char-before))))
+      (forward-sexp 1))
   (let* ((end (point))
          (start (save-excursion (skip-syntax-backward "w_") (point)))
          (sym (buffer-substring-no-properties start end))
@@ -4163,7 +4353,7 @@ when scheme-complete can't infer the current implementation."
      ;; return all env symbols when a prefix arg is given
      (arg
       (scheme-do-completion sym (scheme-env-filter #'(lambda (x) t) env)))
-     ;; for now just do file-name completion in strings
+     ;; allow different types of strings
      (in-str-p
       (let* ((param-type
               (and (consp inner-type)
@@ -4250,7 +4440,8 @@ when scheme-complete can't infer the current implementation."
              (base-completions
               (scheme-env-filter
                #'(lambda (x)
-                   (scheme-type-match-p (cadr x) base-type))
+                   (and (not (and (consp (cadr x)) (eq 'syntax (caadr x))))
+                        (scheme-type-match-p (cadr x) base-type)))
                env))
              (str-completions
               (let ((completer (scheme-string-completer base-type)))
@@ -4270,7 +4461,7 @@ when scheme-complete can't infer the current implementation."
             (or (null (cdr x))
                 (memq (cadr x) '(procedure object nil))
                 (and (consp (cadr x))
-                     (memq (caadr x) '(lambda syntax)))))
+                     (memq (caadr x) '(lambda syntax special)))))
         env)))
      ;; complete everything
      (t
@@ -4280,11 +4471,16 @@ when scheme-complete can't infer the current implementation."
   (interactive "P")
   (let* ((end (point))
          (func
-          (save-excursion
-            (beginning-of-line)
-            (if (re-search-forward "\\S-" end t)
-                'scheme-smart-complete
-              'lisp-indent-line))))
+          (if (or (eq ?w (char-syntax (char-before)))
+                  (and (save-excursion
+                         (beginning-of-line)
+                         (re-search-forward "\\S-" end t))
+                       (case scheme-complete-empty-tab-behavior
+                         ((indent) nil)
+                         ((beep) (beep))
+                         (t t))))
+              'scheme-smart-complete
+            'lisp-indent-line)))
     (funcall func arg)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -4314,8 +4510,9 @@ when scheme-complete can't infer the current implementation."
           ;; inside the innermost containing sexp.
           (backward-prefix-chars)
           (current-column))
-      (let* ((function (buffer-substring (point)
-                                         (progn (forward-sexp 1) (point))))
+      (let* ((function (buffer-substring-no-properties
+                        (point)
+                        (progn (forward-sexp 1) (point))))
              (function-sym (intern-soft function))
              (method (and (not (assq function-sym (scheme-current-local-vars)))
                           (get function-sym 'scheme-indent-function))))
