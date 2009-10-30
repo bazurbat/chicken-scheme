@@ -1895,6 +1895,9 @@
      (current-milliseconds (lambda () n))
      (current-read-table (lambda () read-table))
      (current-seconds (lambda () x1))
+     (cut (syntax))
+     (cute (lambda (args \.\.\.) proc))
+     (declare (syntax))
      (define-record (syntax))
      (define-record-printer (syntax))
      (define-reader-ctor (lambda (sym proc) undefined))
@@ -3550,8 +3553,8 @@ at that location, and `beep' will just beep and do nothing."
     (save-excursion
       (goto-char (point-min))
       (scheme-skip-shebang)
-      (if (not (looking-at "^("))
-          (scheme-goto-next-top-level nil))
+      (if (re-search-forward "^(" nil t)
+          (forward-char -1))
       ;; scan for module forms
       (while (not (eobp))
         (when (eq ?\( (char-after))
@@ -4471,7 +4474,8 @@ at that location, and `beep' will just beep and do nothing."
   (interactive "P")
   (let* ((end (point))
          (func
-          (if (or (eq ?w (char-syntax (char-before)))
+          (if (or (and (not (bobp))
+                       (eq ?w (char-syntax (char-before))))
                   (and (save-excursion
                          (beginning-of-line)
                          (re-search-forward "\\S-" end t))
