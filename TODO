@@ -52,24 +52,23 @@ TODO for chicken							-*- Outline -*-
 
 ** pending commits
 
-commit 6e5eb38f11a2a8f9a82d1009563e371139a76438
-Author: Felix <bunny351@gmail.com>
-Date:   Sun Oct 11 00:45:40 2009 +0200
-
-    removed apply-, unbound-value- and invalid procedure call hooks.
-    These are just complicated hacks with very little value.
-
-commit 3a8da718bf4c6b71ced0fb60bee2bd84a2f2321d
-Author: Felix <bunny351@gmail.com>
-Date:   Wed Oct 14 14:59:13 2009 +0200
-
-    Added optional argument to grep function in regex unit [suggested by Tony Sidaway]
-
-commit 1402eea7aec2611dfe48542715b1492561072f41
+commit dc0ba86aa9d4488a57ccc7e03c7dcc5b6ff41798
 Author: unknown <felix@.(none)>
-Date:   Mon Oct 19 12:12:46 2009 +0200
+Date:   Thu Oct 22 11:46:23 2009 +0200
 
-    henrietta shows version in comment marker; removed unused ##sys#syntactic-environment?
+    disabled e-mail transmission in chicken-bug
+
+commit ee844ebd18de4ebbd0ec6d2290e3c711633ccae5
+Author: unknown <felix@.(none)>
+Date:   Fri Oct 30 09:49:15 2009 +0100
+
+    fixed bug in get-condition-property
+
+commit bff0472a148dee1f600557423240b32a07b46eda
+Author: unknown <felix@.(none)>
+Date:   Fri Oct 30 12:43:17 2009 +0100
+
+    removed remaining references and support code for breakpoints; removed uses of NOAPPLYHOOK in makefiles
 
 commit bce0d16a76588f8918ace633313edd62ffe575e6
 Author: unknown <felix@.(none)>
@@ -77,13 +76,26 @@ Date:   Mon Oct 19 14:21:51 2009 +0200
 
     possible fix for reexport bug; no timing output for benchmarks in test suite
 
-** private commits not in pending
-
-commit 420c646af6f8f3e028e97950451539e29e4401d8
+commit 1402eea7aec2611dfe48542715b1492561072f41
 Author: unknown <felix@.(none)>
-Date:   Fri Oct 30 09:49:15 2009 +0100
+Date:   Mon Oct 19 12:12:46 2009 +0200
 
-    fixed bug in get-condition-property
+    henrietta shows version in comment marker; removed unused ##sys#syntactic-environment?
+
+commit 3a8da718bf4c6b71ced0fb60bee2bd84a2f2321d
+Author: Felix <bunny351@gmail.com>
+Date:   Wed Oct 14 14:59:13 2009 +0200
+
+    Added optional argument to grep function in regex unit [suggested by Tony Sidaway]
+
+commit 6e5eb38f11a2a8f9a82d1009563e371139a76438
+Author: Felix <bunny351@gmail.com>
+Date:   Sun Oct 11 00:45:40 2009 +0200
+
+    removed apply-, unbound-value- and invalid procedure call hooks.
+    These are just complicated hacks with very little value.
+
+** private commits not in pending
 
 commit 0ef80438adf6bc8f2b4efb0891ce9ee5f645f1c6
 Author: unknown <felix@.(none)>
@@ -127,12 +139,6 @@ Date:   Thu Oct 22 11:47:04 2009 +0200
 
     toplevel-def.-expansion-hook
 
-commit 6b762ab536b3c4c58730d0763447210beab89d3b
-Author: unknown <felix@.(none)>
-Date:   Thu Oct 22 11:46:23 2009 +0200
-
-    disabled e-mail transmission in chicken-bug
-
 commit ab284ea5881e8a6698f1bfff8e3d0d3ce57ee425
 Author: unknown <felix@.(none)>
 Date:   Thu Oct 22 09:40:10 2009 +0200
@@ -144,12 +150,6 @@ Author: unknown <felix@.(none)>
 Date:   Wed Oct 21 16:06:31 2009 +0200
 
     standard-extension has optional static compile flag
-
-commit 8a988e1fff944a080402b60b1b3f6d983c236a02
-Author: unknown <felix@.(none)>
-Date:   Tue Oct 20 21:56:59 2009 +0200
-
-    removed breakpoint from import file
 
 commit 94f9b927fa3d7b1a6083cb07a8d7c60aa387b4ae
 commit c4b8bde930d383d5572975e6f5cce025d9fb759d
@@ -183,18 +183,6 @@ Author: unknown <felix@.(none)>
 Date:   Tue Oct 20 11:51:45 2009 +0200
 
     process-execute on windows didn't handle case of missing arglist argument
-
-commit 7aacba829e680a9c20fdac4800d3445f624bf6c5
-Author: Felix <bunny351@gmail.com>
-Date:   Mon Oct 19 00:42:55 2009 +0200
-
-    removed breakpoint support from scheduler
-
-commit 6987792e2c27ee6c9f6ff655ec94cff052528438
-Author: Felix <bunny351@gmail.com>
-Date:   Sun Oct 11 11:54:28 2009 +0200
-
-    removed uses of NOAPPLYHOOK
 
 commit c1154565abc041202110aae8e93a57cbe3fba3c2
 Author: Felix <bunny351@gmail.com>
