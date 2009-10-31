@@ -1,4 +1,4 @@
-+;;;; csc.scm - Driver program for the CHICKEN compiler - felix -*- Scheme -*-
+;;;; csc.scm - Driver program for the CHICKEN compiler - felix -*- Scheme -*-
 ;
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; Copyright (c) 2008-2009, The Chicken Team
@@ -53,6 +53,7 @@
 (define-foreign-variable TARGET_STATIC_LIB_HOME c-string "C_TARGET_STATIC_LIB_HOME")
 (define-foreign-variable TARGET_RUN_LIB_HOME c-string "C_TARGET_RUN_LIB_HOME")
 (define-foreign-variable CHICKEN_PROGRAM c-string "C_CHICKEN_PROGRAM")
+(define-foreign-variable CSC_PROGRAM c-string "C_CSC_PROGRAM")
 (define-foreign-variable WINDOWS_SHELL bool "C_WINDOWS_SHELL")
 
 
@@ -65,7 +66,7 @@
                        (eq? (machine-type) 'hppa)))
 
 (define (quit msg . args)
-  (fprintf (current-error-port) "csc: ~?~%" msg args)
+  (fprintf (current-error-port) "~a: ~?~%" CSC_PROGRAM msg args)
   (exit 64) )
 
 (define chicken-prefix (get-environment-variable "CHICKEN_PREFIX"))
@@ -185,12 +186,10 @@
   (if host-mode
       INSTALL_MORE_STATIC_LIBS
       TARGET_MORE_STATIC_LIBS))
-
 (define extra-shared-libraries 
   (if host-mode 
       INSTALL_MORE_LIBS
       TARGET_MORE_LIBS))
-
 (define default-library-files 
   (list
    (quotewrap
@@ -198,11 +197,9 @@
 	    (string-append
 	     (if host-mode INSTALL_LIB_HOME TARGET_LIB_HOME)
 	     (string-append "/" default-library)))) ))
-
 (define default-shared-library-files (if msvc
                                          (list (string-append "libchicken." library-extension))
                                          '("-lchicken")))
-
 (define unsafe-library-files
   (list
    (quotewrap 
@@ -210,11 +207,9 @@
 	    (string-append 
 	     (if host-mode INSTALL_LIB_HOME TARGET_LIB_HOME)
 	     (string-append "/" default-unsafe-library)))) ))
-
 (define unsafe-shared-library-files (if msvc
                                         (list (string-append "libuchicken." library-extension))
                                         '("-luchicken")))
-
 (define gui-library-files default-library-files)
 (define gui-shared-library-files default-shared-library-files)
 (define library-files default-library-files)
@@ -229,7 +224,6 @@
 	 id) ) )
 
 (define compile-options '())
-
 (define builtin-compile-options
   (if include-dir (list (conc "-I" (quotewrap include-dir))) '()))
 
@@ -275,10 +269,11 @@
 ;;; Display usage information:
 
 (define (usage)
-  (display #<<EOF
-Usage: csc FILENAME | OPTION ...
+  (let ((csc CSC_PROGRAM))
+    (printf #<<EOF
+Usage: ~a FILENAME | OPTION ...
 
-  `csc' is a driver program for the CHICKEN compiler. Files given on the
+  `~a' is a driver program for the CHICKEN compiler. Files given on the
   command line are translated, compiled or linked as needed.
 
   FILENAME is a Scheme source file name with optional extension or a
@@ -468,10 +463,10 @@ Usage: csc FILENAME | OPTION ...
     -v -k -fixnum-arithmetic -optimize
 
   The contents of the environment variable CSC_OPTIONS are implicitly passed to
-  every invocation of `csc'.
+  every invocation of `~a'.
 
 EOF
-) )
+  csc csc csc) ) )
 
 
 ;;; Parse arguments:
