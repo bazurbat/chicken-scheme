@@ -288,7 +288,12 @@
   (define (make-install-command e+d+v)
     (conc
      *csi*
-     " -bnq -setup-mode -e \"(require-library setup-api)\" -e \"(import setup-api)\""
+     " -bnq "
+     (if (and (feature? #:cross-chicken) ; disable -setup-mode when cross-compiling,
+	      (not *host-extension*)) ; host-repo must always take precedence
+	 ""				
+	 "-setup-mode ")
+     "-e \"(require-library setup-api)\" -e \"(import setup-api)\""
      (sprintf " -e \"(extension-name-and-version '(\\\"~a\\\" \\\"~a\\\"))\"" (car e+d+v) (caddr e+d+v))
      (if (sudo-install) " -e \"(sudo-install #t)\"" "")
      (if *keep* " -e \"(keep-intermediates #t)\"" "")
