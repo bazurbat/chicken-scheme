@@ -185,10 +185,12 @@
   (if host-mode
       INSTALL_MORE_STATIC_LIBS
       TARGET_MORE_STATIC_LIBS))
+
 (define extra-shared-libraries 
   (if host-mode 
       INSTALL_MORE_LIBS
       TARGET_MORE_LIBS))
+
 (define default-library-files 
   (list
    (quotewrap
@@ -196,9 +198,11 @@
 	    (string-append
 	     (if host-mode INSTALL_LIB_HOME TARGET_LIB_HOME)
 	     (string-append "/" default-library)))) ))
+
 (define default-shared-library-files (if msvc
                                          (list (string-append "libchicken." library-extension))
                                          '("-lchicken")))
+
 (define unsafe-library-files
   (list
    (quotewrap 
@@ -206,9 +210,11 @@
 	    (string-append 
 	     (if host-mode INSTALL_LIB_HOME TARGET_LIB_HOME)
 	     (string-append "/" default-unsafe-library)))) ))
+
 (define unsafe-shared-library-files (if msvc
                                         (list (string-append "libuchicken." library-extension))
                                         '("-luchicken")))
+
 (define gui-library-files default-library-files)
 (define gui-shared-library-files default-shared-library-files)
 (define library-files default-library-files)
@@ -223,6 +229,7 @@
 	 id) ) )
 
 (define compile-options '())
+
 (define builtin-compile-options
   (if include-dir (list (conc "-I" (quotewrap include-dir))) '()))
 
