@@ -52,6 +52,12 @@ TODO for chicken							-*- Outline -*-
 
 ** pending commits
 
+commit 045f1db4ee22cdbecade4a17307ae61bba8bf31d
+Author: Felix <bunny351@gmail.com>
+Date:   Sun Nov 1 00:02:00 2009 +0100
+
+    chicken-install should not use setup-mode when cross-compiling
+
 commit dc0ba86aa9d4488a57ccc7e03c7dcc5b6ff41798
 Author: unknown <felix@.(none)>
 Date:   Thu Oct 22 11:46:23 2009 +0200
@@ -103,12 +109,6 @@ Date:   Thu Oct 29 09:32:00 2009 +0100
 
     installation-prefix is always valid
 
-commit 887601250b1801c3fb77cfe04915760252852ae0
-Author: unknown <felix@.(none)>
-Date:   Thu Oct 29 09:26:34 2009 +0100
-
-    do not run in -setup-mode when cross-compiling an extension
-
 commit c3b3345ed4307fe32ef37151bc29d9c4bccf34a4
 Author: unknown <felix@.(none)>
 Date:   Tue Oct 27 11:17:23 2009 +0100
@@ -126,6 +126,8 @@ Author: unknown <felix@.(none)>
 Date:   Mon Oct 26 08:50:50 2009 +0100
 
     -debug S instead of -debug C
+
+*** combine with the one below
 
 commit f674d1310a9aa780bd1edc9316e092c062572dde
 Author: Felix <bunny351@gmail.com>
