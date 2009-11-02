@@ -225,7 +225,10 @@
 		  (make-pathname 
 		   *chicken-bin-path*
 		   (cdr (assoc prg *installed-executables*))))
-		 "-feature" "compiling-extension" "-setup-mode"
+		 "-feature" "compiling-extension" 
+		 (if (and (feature? #:cross-chicken)
+			  (not (host-extension)))
+		     "" "-setup-mode")
 		 (if (keep-intermediates) "-k" "")
 		 (if (host-extension) "-host" "")
 		 *csc-options*) 
