@@ -42,13 +42,10 @@ TODO for chicken							-*- Outline -*-
     reported by Jim Ursetto
     reverted original patch, see patches/finalizer-closures.diff
 
-** tools
-*** chicken-bug: SMTP servers not accessible (greylisting)
-
 
 * tasks
 
-** remove TODO from master
+** eggify lolevel
 
 ** pending commits
 
@@ -102,6 +99,12 @@ Date:   Sun Oct 11 00:45:40 2009 +0200
     These are just complicated hacks with very little value.
 
 ** private commits not in pending
+
+commit d04fa84aa85dd28f5e102278e01330e5924b7668
+Author: unknown <felix@.(none)>
+Date:   Mon Nov 2 17:34:36 2009 +0100
+
+    added culprit to an error message; removed -inlines.scm files
 
 commit 0ef80438adf6bc8f2b4efb0891ce9ee5f645f1c6
 Author: unknown <felix@.(none)>

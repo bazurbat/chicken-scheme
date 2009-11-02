@@ -112,6 +112,13 @@ as a file containing macros to be loaded at compile/macro-expansion time.
 Specifies extensions that should be loaded (via {{require}}) at runtime. This is mostly
 useful for syntax extensions that need additional support code at runtime.
 
+===== import-only
+
+  [extension property] (import-only)
+
+Specifies that this extension only provides a expansion-time code in an import library and
+does not require code to be loaded at runtime.
+
 ===== version
 
  [extension property] (version STRING)
@@ -153,7 +160,7 @@ files in {{FILELIST}} to executable (for installing shell-scripts).
 
 ==== standard-extension
 
- [procedure] (standard-extension ID VERSION [STATIC])
+ [procedure] (standard-extension ID VERSION #!key static info)
 
 A convenience procedure that combines the compilation and installation of 
 a simple single-file extension. This is roughly equivalent to:
@@ -166,7 +173,8 @@ a simple single-file extension. This is roughly equivalent to:
    'ID
    '("ID.o" "ID.so" "ID.import.so")
    '((version 1.0)
-     (static "ID.o")))   ; STATIC ...
+     ... `INFO' ...
+     (static "ID.o")))   ; if `static' is given and true
 
 
 ==== run

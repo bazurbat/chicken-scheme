@@ -494,7 +494,7 @@
 
 ;;; Convenience function
 
-(define (standard-extension name version #!optional (static #f))
+(define (standard-extension name version #!key static (info '()))
   (let* ((sname (->string name))
 	 (fname (make-pathname #f sname "scm"))
 	 (iname (make-pathname #f sname "import.scm")))
@@ -508,6 +508,7 @@
 	   iname
 	   (make-pathname #f sname "setup"))
      `((version ,version)
+       ,@info
        ,@(if static `((static ,(make-pathname #f fname "o"))) '())))))
 
 
