@@ -307,53 +307,14 @@
 
  6. Emacs support:
 
-        An emacs mode is provided in the file `hen.el'. To use it,
-        copy it somewhere into a location you normally use for emacs
-        extensions. If you want to add a specific location permanently
-        to the list of paths emacs should search for extensions, add
-        the following line to your `.emacs' file:
-
-          (setq load-path 
-            (cons
-              "<directory-where-your-emacs-lisp-files-live>" 
-              load-path))
-
-        Add 
-
-          (require 'hen)
-        
-        To make "hen-mode" available, and enter it by issuing the
-        command M-x hen-mode.
-
-        A copy of Alex Shinn's highly useful tab-completion code is
-        also included in `scheme-complete.el'. Install it like `hen.el'
-        and add this code to your `.emacs':
-
-          (autoload 'scheme-smart-complete "scheme-complete" nil t)
-          (eval-after-load 'scheme
-            '(progn (define-key scheme-mode-map "\e\t" 'scheme-smart-complete)))
-
-        Or:
-
-          (eval-after-load 'scheme
-            '(progn (define-key scheme-mode-map "\t" 'scheme-complete-or-indent)))
-
-        If you use eldoc-mode (included in Emacs), you can also get live
-        scheme documentation with:
-
-        (add-hook 'scheme-mode-hook
-          (lambda ()
-              (setq eldoc-info-function 'scheme-get-current-symbol-info)
-                  (eldoc-mode)))
-
-        Replace "'scheme" in the elisp expressions above with "'hen", if
-        you want to add tab-completion to CHICKEN's own emacs mode.
+        See http://chicken.wiki.br/emacs for tips and links to emacs
+	extensions for Scheme and CHICKEN programming.
 
 
  7. Compatibility notes
 
         CHICKEN 4 uses a completely reimplemented hygienic macro and
-	module system, which has considerably more felixbility and power,
+	module system, which has considerably more flexibility and power,
 	but will require rewriting macros in code that previously was
 	used with CHICKEN 3. Notably, `define-macro' is not available
 	anymore. See the manual on how to translate such macros to
