@@ -75,6 +75,4 @@ libs:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) libs
 bootstrap:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) bootstrap
-bench:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) bench
 endif
