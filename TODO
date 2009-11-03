@@ -100,6 +100,38 @@ Date:   Sun Oct 11 00:45:40 2009 +0200
 
 ** private commits not in pending
 
+commit 5f06d4deafa19424d49d78ed0c0a4b4ee5f6e1e5
+Author: unknown <felix@.(none)>
+Date:   Tue Nov 3 14:51:47 2009 +0100
+
+    fix in handling of import-only
+
+commit 1b0996e966da46d3bb02dc46a6dab3545fe5cbbe
+Author: unknown <felix@.(none)>
+Date:   Tue Nov 3 14:50:33 2009 +0100
+
+    import-library is only generated if changed or doesn't exist (suggested by Joerg Wittenberger)
+
+commit 7625d978a572af6d703f398c2706d69fc6b64dbc
+Author: unknown <felix@.(none)>
+Date:   Tue Nov 3 14:41:14 2009 +0100
+
+    removed benchmarks
+
+commit ae5ec1dda65c33d78fe5744311a41d59f6fd5f80
+Author: unknown <felix@.(none)>
+Date:   Tue Nov 3 14:40:25 2009 +0100
+
+    removed elisp files and unused stuff
+
+commit 7a9f9a64552a7a13a166e5b86870111ee78b105c
+Author: unknown <felix@.(none)>
+Date:   Mon Nov 2 18:28:53 2009 +0100
+
+    standard-extension takes keyword args; added import-only extension property
+
+*** Needs splitting up
+
 commit d04fa84aa85dd28f5e102278e01330e5924b7668
 Author: unknown <felix@.(none)>
 Date:   Mon Nov 2 17:34:36 2009 +0100
@@ -137,12 +169,6 @@ Author: Felix <bunny351@gmail.com>
 Date:   Sun Oct 25 13:05:07 2009 +0100
 
     -debug C for compiler syntax
-
-commit 6579494dffd3d84fe6ab0ce2b89bbf0fbc2807de
-Author: unknown <felix@.(none)>
-Date:   Thu Oct 22 11:47:04 2009 +0200
-
-    toplevel-def.-expansion-hook
 
 commit ab284ea5881e8a6698f1bfff8e3d0d3ce57ee425
 Author: unknown <felix@.(none)>
