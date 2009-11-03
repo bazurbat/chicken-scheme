@@ -1225,20 +1225,12 @@
 
 	  (else
 	   (emit-syntax-trace-info x #f)
-	   (let ((x (mapwalk x e se)))
-	     (if (and (pair? (car x))
-		      (symbol? (caar x))
-		      (memq (or (lookup (caar x) se) (caar x)) '(lambda ##core#lambda)))
-		 (let ((lexp (car x))
-		       (args (cdr x)) )
-		   (##sys#check-syntax 'lambda lexp '(_ lambda-list . #(_ 1)) #f se)
-		   (let ((llist (cadr lexp)))
-		     (if (and (proper-list? llist) (= (llist-length llist) (length args)))
-			 `(let ,(map list llist args) ,@(cddr lexp)) 
-			 (let ((var (gensym 't)))
-			   `(let ((,var ,(car x)))
-			     (,var ,@(cdr x)) ) ) ) ) ) 
-		 x))) ) )
+	   (let ((tmp (gensym)))
+	     (walk
+	      `(##core#let 
+		((,tmp ,(car x)))
+		(,tmp ,@(cdr x)))
+	      e se dest)))))
   
   (define (mapwalk xs e se)
     (map (lambda (x) (walk x e se #f)) xs) )
