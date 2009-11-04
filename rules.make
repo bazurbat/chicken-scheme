@@ -852,8 +852,8 @@ install:
 	  $(CHICKEN_STATUS_PROGRAM)$(EXE) $(CHICKEN_SETUP_PROGRAM)$(EXE) \
 	  $(LIBCHICKEN_SO_FILE) $(LIBUCHICKEN_SO_FILE) \
 	  $(IMPORT_LIBRARIES:%=%.so) $(IMPORT_LIBRARIES:%=%.import.so)
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) NEEDS_RELINKING=no RUNTIME_LINKER_PATH=$(LIBDIR) \
-	  SONAME_VERSION=.$(BINARYVERSION) install
+	$(MAKE) -f CONFIG=$(CONFIG) $(SRCDIR)Makefile.$(PLATFORM) NEEDS_RELINKING=no \
+	  RUNTIME_LINKER_PATH=$(LIBDIR) SONAME_VERSION=.$(BINARYVERSION) install
 	$(MAKE_WRITABLE_COMMAND) $(CHICKEN_PROGRAM)$(EXE) $(CSI_PROGRAM)$(EXE) \
 	  $(CSC_PROGRAM)$(EXE) $(CHICKEN_PROFILE_PROGRAM)$(EXE)
 ifndef STATICBUILD
@@ -1312,11 +1312,12 @@ check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 bootstrap: 
 	gzip -d -c $(SRCDIR)bootstrap.tar.gz | tar xvf -
 	touch *.c
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) STATICBUILD=1 DEBUGBUILD=1 PLATFORM=$(PLATFORM) \
-	  chicken$(EXE)
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) CONFIG=$(CONFIG) STATICBUILD=1 \
+	  DEBUGBUILD=1 PLATFORM=$(PLATFORM) chicken$(EXE)
 	$(COPY_COMMAND) chicken$(EXE) chicken-boot$(EXE)
 	touch *.scm
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) confclean
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) CONFIG=$(CONFIG) PLATFORM=$(PLATFORM) \
+	  confclean
 
 $(SRCDIR)bootstrap.tar.gz: distfiles
 	tar cfz $@ library.c eval.c data-structures.c ports.c files.c extras.c lolevel.c utils.c tcp.c \
