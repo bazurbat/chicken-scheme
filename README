@@ -186,6 +186,12 @@
 	  When VARDIR is specified, extensions will be stored in
 	  "<VARDIR>/chicken/<BINARYVERSION>", conforming to the FHS.
 
+	CONFIG=
+	  If you build CHICKEN often, passing all those make variables
+	  can get annoying. An alternative is to create a configuration
+	  file defining the required variables and passing "CONFIG=<configfile>"
+	  to make(1).
+
 
         To remove CHICKEN from your file-system, enter (probably as
         root):

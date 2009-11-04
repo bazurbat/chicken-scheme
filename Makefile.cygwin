@@ -25,6 +25,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 
+ifneq ($(CONFIG),)
+include $(CONFIG)
+endif
+
 SRCDIR = ./
 
 # platform configuration
