@@ -210,4 +210,8 @@ $compile -e embedded2.scm
 echo "======================================== timing compilation ..."
 time $compile silex.scm -t -S -O3
 
+echo "======================================== running floating-point benchmark ..."
+$compile fft.scm -O4 -d0 -disable-interrupts -unsafe-libraries
+time ./a.out
+
 echo "======================================== done."
