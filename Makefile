@@ -24,6 +24,11 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+
+ifneq ($(CONFIG),)
+include $(CONFIG)
+endif
+
 STANDARD_TARGETS \
 	= all clean distclean spotless install uninstall confclean check \
 	  fullcheck dist libs bootstrap
@@ -51,28 +56,28 @@ $(STANDARD_TARGETS):
 	@exit 1
 else
 all:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) all
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) all
 clean:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) clean
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) clean
 distclean:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) distclean
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) distclean
 spotless:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) spotless
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) spotless
 install:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) install
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) install
 uninstall:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) uninstall
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) uninstall
 confclean:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) confclean
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) confclean
 check:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) check
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) check
 fullcheck:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) fullcheck
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) fullcheck
 dist:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) distfiles
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) distfiles
 	csi -s scripts/makedist.scm
 libs:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) libs
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) libs
 bootstrap:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) bootstrap
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) bootstrap
 endif
