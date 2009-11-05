@@ -289,7 +289,7 @@
 			      (let ([ifid (first lparams)])
 				(cond [(and inline-locally 
 					    (test var 'inlinable)
-					    (not (test (first lparams) 'inline-target)) ; inlinable procedure has changed
+					    (not (test ifid 'inline-target)) ; inlinable procedure has changed
 					    (case (variable-mark var '##compiler#inline) 
 					      ((yes) #t)
 					      ((no) #f)
