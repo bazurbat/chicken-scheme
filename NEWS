@@ -1,10 +1,5 @@
-4.2.3
-
-- Updated scheme-complete to version 0.8.9
-
 4.2.2
 
-- exported Unit data-structures 'reverse-string-append'
 - fix for pathnames with whitespace in 'runtests.sh' on Windows
 - fix for 'normalize-pathname' with absolute pathname argument
 - added 'decompose-directory' to unit files
