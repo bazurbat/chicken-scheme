@@ -211,7 +211,11 @@ echo "======================================== timing compilation ..."
 time $compile silex.scm -t -S -O3
 
 echo "======================================== running floating-point benchmark ..."
-$compile fft.scm -O4 -d0 -disable-interrupts -unsafe-libraries
+echo "boxed:"
+$compile fft.scm -O5
+time ./a.out
+echo "unboxed:"
+$compile fft.scm -O5 -D unboxed
 time ./a.out
 
 echo "======================================== done."
