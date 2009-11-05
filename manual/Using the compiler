@@ -26,8 +26,6 @@ Possible options are:
 
 ; -analyze-only : Stop compilation after first analysis pass.
 
-; -benchmark-mode : Equivalent to {{-no-trace -no-lambda-info -optimize-level 4}} {{-fixnum-arithmetic -disable-interrupts -block -inline -lambda-lift}}.
-
 ; -block : Enable block-compilation. When this option is specified, the compiler assumes that global variables are not modified outside this compilation-unit.  Specifically, toplevel bindings are not seen by {{eval}} and unused toplevel bindings are removed.
 
 ; -case-insensitive : Enables the reader to read symbols case insensitive. The default is to read case sensitive (in violation of R5RS).  This option registers the {{case-insensitive}} feature identifier.
@@ -169,6 +167,7 @@ Possible options are:
      -optimize-level 2          is currently the same as -optimize-level 1 -inline
      -optimize-level 3          is equivalent to -optimize-leaf-routines -local -inline
      -optimize-level 4          is equivalent to -optimize-leaf-routines -local -inline -unsafe
+     -optimize-level 5          is equivalent to -optimize-leaf-routines -block -inline -unsafe -lambda-lift -disable-interrupts -no-trace -no-lambda-info
 
 ; -output-file FILENAME : Specifies the pathname of the generated C file. Default is {{FILENAME.c}}.
 

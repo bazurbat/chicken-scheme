@@ -93,7 +93,13 @@
 		   [(4)
 		    (set! options
 		      (cons* 'optimize-leaf-routines 'inline 'local 'unsafe options) ) ]
-		   [else (compiler-warning 'usage "invalid optimization level ~S - ignored" (car rest))] )
+		   [else
+		    (when (>= level 5)
+		      (set! options 
+			(cons* 'disable-interrupts 'no-trace 'unsafe 'block
+			       'optimize-leaf-routines 'lambda-lift 'no-lambda-info
+			       'inline
+			       options) ) ) ] )
 		 (loop (cdr rest)) ) ]
 	      [(eq? 'debug-level o)
 	       (let ([level (string->number (car rest))])
@@ -103,13 +109,6 @@
 		   [(2) #f]
 		   [else (compiler-warning 'usage "invalid debug level ~S - ignored" (car rest))] )
 		 (loop (cdr rest)) ) ]
-	      [(eq? 'benchmark-mode o)
-	       (set! options 
-		 (cons* 'fixnum-arithmetic 'disable-interrupts 'no-trace 'unsafe
-			'optimize-leaf-routines 'block 'lambda-lift 'no-lambda-info
-			'inline
-			options) )
-	       (loop rest) ]
 	      [(memq o valid-compiler-options) (loop rest)]
 	      [(memq o valid-compiler-options-with-argument)
 	       (if (pair? rest)
