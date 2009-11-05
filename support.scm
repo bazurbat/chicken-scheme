@@ -611,7 +611,6 @@
 	  [(##core#variable) 
 	   (let ((var (first params)))
 	     (when (get db var 'contractable)
-	       (debugging 'x "un-marking contractable" var) 
 	       (put! db var 'contractable #f) )
 	     (varnode (rename var rl))) ]
 	  [(set!) 
