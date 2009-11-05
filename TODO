@@ -102,6 +102,30 @@ Date:   Sun Oct 11 00:45:40 2009 +0200
 
 *** ungrouped
 
+commit bf5c355fd8f3e81798d0072370fd51459d38a2f1
+Author: unknown <felix@.(none)>
+Date:   Thu Nov 5 09:53:42 2009 +0100
+
+    fixed bug in optimizer (#99) (reported by Joerg Wittenberger) related to inlining
+
+commit 8241daf4d4428a9536b9029061ba3a7044016e19
+Author: unknown <felix@.(none)>
+Date:   Thu Nov 5 09:52:39 2009 +0100
+
+    tests fixes, run fft in unboxed mode, too
+
+commit ec3069d12920cefa4f5865b6ff11f105d3b1c33e
+Author: unknown <felix@.(none)>
+Date:   Thu Nov 5 09:52:10 2009 +0100
+
+    removed benchmark mode, added -O5
+
+commit 2ef0dc8b81dad8fc781f18de5777052e77235783
+Author: unknown <felix@.(none)>
+Date:   Thu Nov 5 09:50:58 2009 +0100
+
+    NEWS restored (will be done later); fixed missing entry in manifest
+
 commit ee5af60c5d9b09a7acb180de6ac1652b8b0af9b6
 Author: unknown <felix@.(none)>
 Date:   Wed Nov 4 09:49:01 2009 +0100
