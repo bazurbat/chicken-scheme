@@ -102,11 +102,17 @@ Date:   Sun Oct 11 00:45:40 2009 +0200
 
 *** ungrouped
 
-commit bf5c355fd8f3e81798d0072370fd51459d38a2f1
+commit 90b3408415c5c4687e64d0b5edbc4277d5846d4f
 Author: unknown <felix@.(none)>
-Date:   Thu Nov 5 09:53:42 2009 +0100
+Date:   Thu Nov 5 12:06:37 2009 +0100
 
-    fixed bug in optimizer (#99) (reported by Joerg Wittenberger) related to inlining
+    fixes in makedist script
+
+commit 0d258908a522c5ad83cc238eb6b4f3276e0b6c3b
+Author: unknown <felix@.(none)>
+Date:   Thu Nov 5 11:16:49 2009 +0100
+
+    removed obsolete stuff in rules.make
 
 commit 8241daf4d4428a9536b9029061ba3a7044016e19
 Author: unknown <felix@.(none)>
@@ -161,6 +167,20 @@ Author: unknown <felix@.(none)>
 Date:   Tue Oct 20 11:51:45 2009 +0200
 
     process-execute on windows didn't handle case of missing arglist argument
+
+*** optimizer bug
+
+commit bf5c355fd8f3e81798d0072370fd51459d38a2f1
+Author: unknown <felix@.(none)>
+Date:   Thu Nov 5 09:53:42 2009 +0100
+
+    fixed bug in optimizer (#99) (reported by Joerg Wittenberger) related to inlining
+
+commit 23cebadc9e30dba8c7ec257444a6fb23040a488f
+Author: unknown <felix@.(none)>
+Date:   Thu Nov 5 11:17:12 2009 +0100
+
+    removed debugging output in support.scm
 
 *** tests
 
