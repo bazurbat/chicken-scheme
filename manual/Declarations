@@ -77,13 +77,6 @@ The opposite of {{hide}}. All given identifiers will be exported and all topleve
 not listed will be hidden and not be accessible outside of this compilation unit.
 
 
-=== emit-exports
-
- [declaration specifier] (emit-exports STRING)
-
-Write exported toplevel variables to file with name {{STRING}}.
-
-
 === emit-external-prototypes-first
 
  [declaration specifier] (emit-external-prototypes-first)
@@ -116,7 +109,10 @@ compiler option).
 
 Declares that any following definition of a module named {{MODULENAME}} should be written to
 an external file (either a specified one or a file named {{"MODULENAME.import.scm"}}).
-The compiler option {{-emit-import-library}} may also be used.
+The compiler option {{-emit-import-library}} may also be used instead.
+
+Note that the import library is only generated if it cannot be found in the current
+directory, or if it exists but is not equal to the one that would be generated.
 
 
 === inline
