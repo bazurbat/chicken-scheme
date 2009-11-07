@@ -608,7 +608,11 @@
 	    [params (node-parameters n)]
 	    [class (node-class n)] )
 	(case class
-	  [(##core#variable) (varnode (rename (first params) rl))]
+	  [(##core#variable) 
+	   (let ((var (first params)))
+	     (when (get db var 'contractable)
+	       (put! db var 'contractable #f) )
+	     (varnode (rename var rl))) ]
 	  [(set!) 
 	   (make-node
 	    'set! (list (rename (first params) rl))

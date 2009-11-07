@@ -125,7 +125,7 @@
 (define-constant simple-options
   '(-explicit-use -no-trace -no-warnings -no-usual-integrations -optimize-leaf-routines -unsafe
     -block -disable-interrupts -fixnum-arithmetic -to-stdout -profile -raw -accumulate-profile
-    -check-syntax -case-insensitive -benchmark-mode -shared -compile-syntax -no-lambda-info
+    -check-syntax -case-insensitive -shared -compile-syntax -no-lambda-info
     -lambda-lift -dynamic -disable-stack-overflow-checks -local
     -emit-external-prototypes-first -inline -release -scrutinize
     -analyze-only -keep-shadowed-macros -inline-global -ignore-repository
@@ -147,7 +147,6 @@
     (-S "-scrutinize")
     (|-P| "-check-syntax")
     (|-V| "-version")
-    (|-Ob| "-benchmark-mode")
     (-f "-fixnum-arithmetic")
     (|-D| "-feature")
     (-i "-case-insensitive")
@@ -345,7 +344,7 @@ Usage: ~a FILENAME | OPTION ...
 
   Optimization options:
 
-    -O -O1 -O2 -O3 -O4 -optimize-level NUMBER
+    -O -O1 -O2 -O3 -O4 -O5 -optimize-level NUMBER
                                    enable certain sets of optimization options
     -optimize-leaf-routines        enable leaf routine optimization
     -N  -no-usual-integrations     standard procedures may be redefined
@@ -355,9 +354,6 @@ Usage: ~a FILENAME | OPTION ...
     -b  -block                     enable block-compilation
     -disable-interrupts            disable interrupts in compiled code
     -f  -fixnum-arithmetic         assume all numbers are fixnums
-    -Ob  -benchmark-mode           equivalent to '-block -optimize-level 4
-                                    -debug-level 0 -fixnum-arithmetic
-                                    -lambda-lift -inline -disable-interrupts'
     -lambda-lift                   perform lambda-lifting
     -unsafe-libraries              link with unsafe runtime system
     -disable-stack-overflow-checks disables detection of stack-overflows
@@ -444,7 +440,6 @@ Usage: ~a FILENAME | OPTION ...
 
     -debug MODES                   display debugging output for the given modes
     -compiler PATHNAME             use other compiler than default `chicken'
-    -disable-c-syntax-checks       disable syntax checks of C code fragments
     -raw                           do not generate implicit init- and exit code
     -emit-external-prototypes-first
                                    emit prototypes for callbacks before foreign
@@ -642,6 +637,14 @@ EOF
 	       [(|-O2|) (set! rest (cons* "-optimize-level" "2" rest))]
 	       [(|-O3|) (set! rest (cons* "-optimize-level" "3" rest))]
 	       [(|-O4|) (set! rest (cons* "-optimize-level" "4" rest))]
+	       [(|-O5|)
+		(set! rest (cons* "-optimize-level" "5" rest))
+		(t-options "-unsafe-libraries")
+		(set! library-files unsafe-library-files)
+		(set! shared-library-files unsafe-shared-library-files)
+		(when (memq (build-platform) '(mingw32 cygwin gnu))
+		  (set! compile-options 
+		    (cons* "-O3" "-fomit-frame-pointer" compile-options)) ) ]
 	       [(-d0) (set! rest (cons* "-debug-level" "0" rest))]
 	       [(-d1) (set! rest (cons* "-debug-level" "1" rest))]
 	       [(-d2) (set! rest (cons* "-debug-level" "2" rest))]

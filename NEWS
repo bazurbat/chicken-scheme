@@ -1,12 +1,5 @@
-4.2.3
-
-- exported Unit data-structures 'reverse-string-append'
-
 4.2.2
 
-- added 'loaded-libraries', 'dynamic-library-load',
- 'dynamic-library-procedure' and 'dynamic-library-variable'  to eval unit;
- basic support for shared binary load
 - fix for core library modules - regex-extras isn't but srfi-69 is
 - fix for builtin features - srfi-69 isn't
 - fix for pathnames with whitespace in 'runtests.sh' on Windows

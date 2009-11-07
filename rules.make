@@ -852,8 +852,8 @@ install:
 	  $(CHICKEN_STATUS_PROGRAM)$(EXE) $(CHICKEN_SETUP_PROGRAM)$(EXE) \
 	  $(LIBCHICKEN_SO_FILE) $(LIBUCHICKEN_SO_FILE) \
 	  $(IMPORT_LIBRARIES:%=%.so) $(IMPORT_LIBRARIES:%=%.import.so)
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) NEEDS_RELINKING=no RUNTIME_LINKER_PATH=$(LIBDIR) \
-	  SONAME_VERSION=.$(BINARYVERSION) install
+	$(MAKE) -f CONFIG=$(CONFIG) $(SRCDIR)Makefile.$(PLATFORM) NEEDS_RELINKING=no \
+	  RUNTIME_LINKER_PATH=$(LIBDIR) SONAME_VERSION=.$(BINARYVERSION) install
 	$(MAKE_WRITABLE_COMMAND) $(CHICKEN_PROGRAM)$(EXE) $(CSI_PROGRAM)$(EXE) \
 	  $(CSC_PROGRAM)$(EXE) $(CHICKEN_PROFILE_PROGRAM)$(EXE)
 ifndef STATICBUILD
@@ -1300,32 +1300,10 @@ testclean:
 
 # run tests
 
-.PHONY: check fullcheck compiler-check
+.PHONY: check 
 
 check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 	cd tests; sh runtests.sh
-
-# Only for UNIX, yet:
-
-fullcheck: check compiler-check
-
-compiler-check:
-	@echo "======================================== packing ..."
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) dist
-	$(REMOVE_COMMAND $(REMOVE_COMMAND_RECURSIVE_OPTIONS) tests$(SEP)chicken-*
-	tar -C tests -xzf `ls -t chicken-*.tar.gz | head -1`
-	@echo "======================================== building stage 1 ..."
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) STATICBUILD=1 -C tests$(SEP)chicken-* confclean all
-	touch tests$(SEP)chicken-*$(SEP)*.scm
-	@echo "======================================== building stage 2 ..."
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) STATICBUILD=1 -C tests$(SEP)chicken-* confclean all
-	cat tests$(SEP)chicken-*$(SEP)*.c >tests$(SEP)stage2.out
-	@echo "======================================== building stage 3 ..."
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) STATICBUILD=1 -C tests$(SEP)chicken-* confclean all	
-	cat tests$(SEP)chicken-*$(SEP)*.c >tests$(SEP)stage3.out
-	diff tests$(SEP)stage2.out tests$(SEP)stage3.out >tests$(SEP)stages.diff
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_RECURSIVE_OPTIONS) tests$(SEP)chicken-*
-
 
 # bootstrap from C source tarball
 
@@ -1334,25 +1312,15 @@ compiler-check:
 bootstrap: 
 	gzip -d -c $(SRCDIR)bootstrap.tar.gz | tar xvf -
 	touch *.c
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) STATICBUILD=1 DEBUGBUILD=1 PLATFORM=$(PLATFORM) \
-	  chicken$(EXE)
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) CONFIG=$(CONFIG) STATICBUILD=1 \
+	  DEBUGBUILD=1 PLATFORM=$(PLATFORM) chicken$(EXE)
 	$(COPY_COMMAND) chicken$(EXE) chicken-boot$(EXE)
 	touch *.scm
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) confclean
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) CONFIG=$(CONFIG) PLATFORM=$(PLATFORM) \
+	  confclean
 
 $(SRCDIR)bootstrap.tar.gz: distfiles
 	tar cfz $@ library.c eval.c data-structures.c ports.c files.c extras.c lolevel.c utils.c tcp.c \
 	  srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c posixunix.c posixwin.c regex.c \
 	  scheduler.c profiler.c stub.c expand.c chicken-syntax.c \
 	  $(COMPILER_OBJECTS_1:=.c)
-
-
-# benchmarking
-
-.PHONY: bench
-
-bench:
-	@here=`pwd`; \
-	cd $(SRCDIR)benchmarks; \
-	LD_LIBRARY_PATH=$$here DYLD_LIBRARY_PATH=$$here PATH=$$here:$$PATH \
-	$(CSI) -s cscbench.scm $(BENCHMARK_OPTIONS)

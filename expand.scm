@@ -33,8 +33,7 @@
 	d dd dm dc map-se merge-se
 	lookup check-for-redef) 
   (not inline ##sys#syntax-error-hook ##sys#compiler-syntax-hook
-       ##sys#alias-global-hook ##sys#toplevel-definition-hook
-       ##sys#toplevel-definition-expansion-hook))
+       ##sys#alias-global-hook ##sys#toplevel-definition-hook))
 
 
 
@@ -962,11 +961,9 @@
 	       (##sys#check-syntax 'define head 'symbol)
 	       (##sys#check-syntax 'define body '#(_ 0 1))
 	       (##sys#register-export head (##sys#current-module))
-	       (if ##sys#toplevel-definition-expansion-hook
-		   (##sys#toplevel-definition-expansion-hook form r c)
-		   `(##core#set! 
-		     ,head 
-		     ,(if (pair? body) (car body) '(##core#undefined))) ) )
+	       `(##core#set! 
+		 ,head 
+		 ,(if (pair? body) (car body) '(##core#undefined))) )
 	      ((pair? (car head))
 	       (##sys#check-syntax 'define head '(_ . lambda-list))
 	       (##sys#check-syntax 'define body '#(_ 1))

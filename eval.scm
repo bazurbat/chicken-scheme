@@ -1248,27 +1248,31 @@
 		#t) )
 	      ((memq id ##sys#explicit-library-modules)
 	       (let* ((info (##sys#extension-information id 'require-extension))
+		      (nr (assq 'import-only info))
 		      (s (assq 'syntax info)))
 		 (values
 		  `(##core#begin
 		     ,@(if s `((##core#require-for-syntax ',id)) '())
 		     ,(impform
-		       (if comp?
-			   `(##core#declare (uses ,id)) 
-			   `(##sys#load-library ',id #f) )
+		       (if (not nr)
+			   (if comp?
+			       `(##core#declare (uses ,id)) 
+			       `(##sys#load-library ',id #f) )
+			   '(##core#undefined))
 		       id #f))
 		  #t) ) )
 	      (else
 	       (let ((info (##sys#extension-information id 'require-extension)))
 		 (cond (info
 			(let ((s (assq 'syntax info))
+			      (nr (assq 'import-only info))
 			      (rr (assq 'require-at-runtime info)) )
 			  (when s (add-req id #t))
 			  (values 
 			   (impform
 			    `(##core#begin
 			       ,@(if s `((##core#require-for-syntax ',id)) '())
-			       ,@(if (and (not rr) s)
+			       ,@(if (or nr (and (not rr) s))
 				     '()
 				     `((##sys#require
 					,@(map (lambda (id) `',id)

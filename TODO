@@ -45,6 +45,8 @@ TODO for chicken							-*- Outline -*-
 
 * tasks
 
+** eggify lolevel
+
 ** pending commits
 
 commit 045f1db4ee22cdbecade4a17307ae61bba8bf31d
@@ -98,6 +100,50 @@ Date:   Sun Oct 11 00:45:40 2009 +0200
 
 ** private commits not in pending
 
+*** ungrouped
+
+commit 90b3408415c5c4687e64d0b5edbc4277d5846d4f
+Author: unknown <felix@.(none)>
+Date:   Thu Nov 5 12:06:37 2009 +0100
+
+    fixes in makedist script
+
+commit 0d258908a522c5ad83cc238eb6b4f3276e0b6c3b
+Author: unknown <felix@.(none)>
+Date:   Thu Nov 5 11:16:49 2009 +0100
+
+    removed obsolete stuff in rules.make
+
+commit 8241daf4d4428a9536b9029061ba3a7044016e19
+Author: unknown <felix@.(none)>
+Date:   Thu Nov 5 09:52:39 2009 +0100
+
+    tests fixes, run fft in unboxed mode, too
+
+commit ec3069d12920cefa4f5865b6ff11f105d3b1c33e
+Author: unknown <felix@.(none)>
+Date:   Thu Nov 5 09:52:10 2009 +0100
+
+    removed benchmark mode, added -O5
+
+commit 2ef0dc8b81dad8fc781f18de5777052e77235783
+Author: unknown <felix@.(none)>
+Date:   Thu Nov 5 09:50:58 2009 +0100
+
+    NEWS restored (will be done later); fixed missing entry in manifest
+
+commit ee5af60c5d9b09a7acb180de6ac1652b8b0af9b6
+Author: unknown <felix@.(none)>
+Date:   Wed Nov 4 09:49:01 2009 +0100
+
+    allow using config-file for make variables
+
+commit 09b9631ad652b900a414413b1868b75fa77c5fc0
+Author: unknown <felix@.(none)>
+Date:   Tue Nov 3 23:53:32 2009 +0100
+
+    handle non-atomic operator in function call generically by introducing temporary
+
 commit 0ef80438adf6bc8f2b4efb0891ce9ee5f645f1c6
 Author: unknown <felix@.(none)>
 Date:   Thu Oct 29 09:32:00 2009 +0100
@@ -116,13 +162,104 @@ Date:   Mon Oct 26 15:21:06 2009 +0100
 
     printer for hash-tables shows current size
 
+commit 81dcc1cfe055eb150c6643447c3ed0f12c118836
+Author: unknown <felix@.(none)>
+Date:   Tue Oct 20 11:51:45 2009 +0200
+
+    process-execute on windows didn't handle case of missing arglist argument
+
+*** optimizer bug
+
+commit bf5c355fd8f3e81798d0072370fd51459d38a2f1
+Author: unknown <felix@.(none)>
+Date:   Thu Nov 5 09:53:42 2009 +0100
+
+    fixed bug in optimizer (#99) (reported by Joerg Wittenberger) related to inlining
+
+commit 23cebadc9e30dba8c7ec257444a6fb23040a488f
+Author: unknown <felix@.(none)>
+Date:   Thu Nov 5 11:17:12 2009 +0100
+
+    removed debugging output in support.scm
+
+*** tests
+
+commit a2eee7ac4fa8053a0c444b4b94cf97f6ae997628
+Author: unknown <felix@.(none)>
+Date:   Wed Nov 4 13:08:02 2009 +0100
+
+    added Brad Luciers fft benchmark to test suite
+
+commit 2e5f33742846e5ef47e1d48a762ce4cc7c78dc07
+Author: unknown <felix@.(none)>
+Date:   Tue Nov 3 23:50:01 2009 +0100
+
+    added silex.scm as large file for testing compiler runtime
+
+*** import libs
+
+commit 479a3dbb10b73c475b22f50cc31e8ec1ecb2513e
+Author: unknown <felix@.(none)>
+Date:   Tue Nov 3 16:32:43 2009 +0100
+
+    documented new behaviour for import-lib generation
+
+commit 1b0996e966da46d3bb02dc46a6dab3545fe5cbbe
+Author: unknown <felix@.(none)>
+Date:   Tue Nov 3 14:50:33 2009 +0100
+
+    import-library is only generated if changed or doesn't exist (suggested by Joerg Wittenberger)
+
+*** import-only
+
+commit 5f06d4deafa19424d49d78ed0c0a4b4ee5f6e1e5
+Author: unknown <felix@.(none)>
+Date:   Tue Nov 3 14:51:47 2009 +0100
+
+    fix in handling of import-only
+
+commit 7a9f9a64552a7a13a166e5b86870111ee78b105c
+Author: unknown <felix@.(none)>
+Date:   Mon Nov 2 18:28:53 2009 +0100
+
+    standard-extension takes keyword args; added import-only extension property
+**** Needs splitting up
+
+*** cleanup
+
+commit b4da807a873a4c955704a81a69849ffb318fd927
+Author: unknown <felix@.(none)>
+Date:   Wed Nov 4 13:07:41 2009 +0100
+
+    removed references to obsolete option
+
+commit 7625d978a572af6d703f398c2706d69fc6b64dbc
+Author: unknown <felix@.(none)>
+Date:   Tue Nov 3 14:41:14 2009 +0100
+
+    removed benchmarks
+
+commit ae5ec1dda65c33d78fe5744311a41d59f6fd5f80
+Author: unknown <felix@.(none)>
+Date:   Tue Nov 3 14:40:25 2009 +0100
+
+    removed elisp files and unused stuff
+
+*** split up
+
+commit d04fa84aa85dd28f5e102278e01330e5924b7668
+Author: unknown <felix@.(none)>
+Date:   Mon Nov 2 17:34:36 2009 +0100
+
+    added culprit to an error message; removed -inlines.scm files
+
+*** -debug S
+
 commit 4d9e6048783133aebd4c4ecc03783aefe40f4103
 Author: unknown <felix@.(none)>
 Date:   Mon Oct 26 08:50:50 2009 +0100
 
     -debug S instead of -debug C
-
-*** combine with the one below
 
 commit f674d1310a9aa780bd1edc9316e092c062572dde
 Author: Felix <bunny351@gmail.com>
@@ -130,17 +267,7 @@ Date:   Sun Oct 25 13:05:07 2009 +0100
 
     -debug C for compiler syntax
 
-commit 6579494dffd3d84fe6ab0ce2b89bbf0fbc2807de
-Author: unknown <felix@.(none)>
-Date:   Thu Oct 22 11:47:04 2009 +0200
-
-    toplevel-def.-expansion-hook
-
-commit ab284ea5881e8a6698f1bfff8e3d0d3ce57ee425
-Author: unknown <felix@.(none)>
-Date:   Thu Oct 22 09:40:10 2009 +0200
-
-    upgrade message in setup-api shows version (thanks to ckeen)
+*** standard extension
 
 commit d611cdb4ff734bfaaadfadc57985eee6cf410dd1
 Author: unknown <felix@.(none)>
@@ -148,7 +275,6 @@ Date:   Wed Oct 21 16:06:31 2009 +0200
 
     standard-extension has optional static compile flag
 
-commit 94f9b927fa3d7b1a6083cb07a8d7c60aa387b4ae
 commit c4b8bde930d383d5572975e6f5cce025d9fb759d
 Author: unknown <felix@.(none)>
 Date:   Tue Oct 20 13:23:55 2009 +0200
@@ -161,25 +287,7 @@ Date:   Tue Oct 20 13:20:10 2009 +0200
 
     standard-extension didn't install import library
 
-commit c5fac3c98d7c187e0564d062c3f77623f3882741
-Author: unknown <felix@.(none)>
-Date:   Tue Oct 20 12:21:53 2009 +0200
-
-    cleanups in some text-files
-
-commit 89a110080526e0160f3240281d3bd98eb0aff0ba
-Author: unknown <felix@.(none)>
-Date:   Tue Oct 20 12:18:53 2009 +0200
-
-    removed some obsolete scripts and files
-
-***  This is to be split up (manual.css stays)
-
-commit 81dcc1cfe055eb150c6643447c3ed0f12c118836
-Author: unknown <felix@.(none)>
-Date:   Tue Oct 20 11:51:45 2009 +0200
-
-    process-execute on windows didn't handle case of missing arglist argument
+*** notrace
 
 commit c1154565abc041202110aae8e93a57cbe3fba3c2
 Author: Felix <bunny351@gmail.com>
@@ -193,7 +301,26 @@ Date:   Sun Oct 11 11:37:06 2009 +0200
 
     remove tracing facilities from csi - this can be done better using the advice egg
 
-** SHA-1 commit-ID in banner
+*** minor
+
+commit ab284ea5881e8a6698f1bfff8e3d0d3ce57ee425
+Author: unknown <felix@.(none)>
+Date:   Thu Oct 22 09:40:10 2009 +0200
+
+    upgrade message in setup-api shows version (thanks to ckeen)
+
+commit c5fac3c98d7c187e0564d062c3f77623f3882741
+Author: unknown <felix@.(none)>
+Date:   Tue Oct 20 12:21:53 2009 +0200
+
+    cleanups in some text-files
+
+commit 89a110080526e0160f3240281d3bd98eb0aff0ba
+Author: unknown <felix@.(none)>
+Date:   Tue Oct 20 12:18:53 2009 +0200
+
+    removed some obsolete scripts and files
+****  This is to be split up (manual.css stays)
 
 ** module issues
 *** need a way to omit generating module registration without generating import lib
