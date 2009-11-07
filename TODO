@@ -42,13 +42,8 @@ TODO for chicken							-*- Outline -*-
     reported by Jim Ursetto
     reverted original patch, see patches/finalizer-closures.diff
 
-** tools
-*** chicken-bug: SMTP servers not accessible (greylisting)
-
 
 * tasks
-
-** remove TODO from master
 
 ** pending commits
 
@@ -199,9 +194,6 @@ Date:   Sun Oct 11 11:37:06 2009 +0200
     remove tracing facilities from csi - this can be done better using the advice egg
 
 ** SHA-1 commit-ID in banner
-
-** branches
-*** unfucked-dload can be removed
 
 ** module issues
 *** need a way to omit generating module registration without generating import lib
