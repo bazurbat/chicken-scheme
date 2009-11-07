@@ -207,24 +207,15 @@ echo "======================================== embedding (2) ..."
 $compile -e embedded2.scm
 ./a.out
 
-echo "======================================== regex benchmarks ..."
+echo "======================================== timing compilation ..."
+time $compile silex.scm -t -S -O3
 
-cd ../benchmarks/regex
-../../csi -bnq -include-path ../.. benchmark.scm
-cd "${TEST_DIR}"
-
-echo "======================================== benchmarks ..."
-cd ../benchmarks
-for x in `ls *.scm`; do
-    case $x in
-	"cscbench.scm");;
-	"plists.scm");;
-	*)
-	    echo $x
-	    ../csc $x -compiler $CHICKEN -I.. -L.. -O3 -d0 -prelude '(define-syntax time (syntax-rules () ((_ x) x)))'
-	    ./`basename $x .scm`;;
-    esac
-done
-cd "${TEST_DIR}"
+echo "======================================== running floating-point benchmark ..."
+echo "boxed:"
+$compile fft.scm -O5
+time ./a.out
+echo "unboxed:"
+$compile fft.scm -O5 -D unboxed
+time ./a.out
 
 echo "======================================== done."
