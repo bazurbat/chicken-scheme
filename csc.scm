@@ -442,7 +442,6 @@ Usage: csc FILENAME | OPTION ...
 
     -debug MODES                   display debugging output for the given modes
     -compiler PATHNAME             use other compiler than default `chicken'
-    -disable-c-syntax-checks       disable syntax checks of C code fragments
     -raw                           do not generate implicit init- and exit code
     -emit-external-prototypes-first
                                    emit prototypes for callbacks before foreign

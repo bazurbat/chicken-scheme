@@ -4,16 +4,6 @@ README for scripts/
 
 This directory contains a couple of things that might be useful:
 
-  scheme
-
-    A wrapper sh(1) script that allows automatic compilation of Scheme
-    scripts. If you precede a Scheme file with a header line like this
-
-      #!/usr/bin/env scheme
-
-    then a compiled version of the code will be stored in $HOME/.cache
-    and executed, instead of the original source file.
-
   tools.scm
 
     Helper functions for some of the scripts here.

@@ -5,6 +5,8 @@
 
 (load-relative "tools.scm")
 
+(define *help* #f)
+
 (set! *verbose* #t)
 
 (define BUILDVERSION (with-input-from-file "buildversion" read))
@@ -52,6 +54,7 @@
 (define (make-html)
   (unless (file-exists? "html")
     (create-directory "html"))
+  (run (rm -f "manual/*~"))
   (run (,(or (get-environment-variable "CSI")
 	     (let ((this (car (argv))))
 	       (if (string=? "csi" (pathname-file this))
@@ -62,12 +65,16 @@
 	,@(map (o qs (cut make-pathname "manual" <>))
 	       (directory "manual")))))
 
+(define (usage . _)
+  (print "usage: makedist [--release] [--make=PROGRAM] [--platform=PLATFORM] MAKEOPTION ...")
+  (exit 1))
+
 (define *makeargs*
   (simple-args
    (command-line-arguments)
-   (lambda _
-     (print "usage: makedist [--release] [--make=PROGRAM] [--platform=PLATFORM] MAKEOPTION ...")
-     (exit 1))) )
+   usage))
+
+(when *help* (usage))
 
 (run (,*make* -f ,(conc "Makefile." *platform*) distfiles ,@*makeargs*))
 

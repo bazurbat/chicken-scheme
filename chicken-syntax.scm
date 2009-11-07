@@ -443,7 +443,7 @@
 		    (when (or (not (pair? val)) (not (c %lambda (car val))))
 		      (syntax-error 
 		       'define-inline "invalid substitution form - must be lambda"
-		       name) )
+		       name val) )
 		    (list name val) ) ) ] )
 	`(##core#define-inline ,@(quotify-proc (cdr form) 'define-inline)))) ) ) )
 

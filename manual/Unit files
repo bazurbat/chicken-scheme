@@ -119,7 +119,7 @@ Returns 3 values: the {{base-origin}}, {{base-directory}}, and the
 
 {{DIRECTORY}} is a {{string}}.
 
-* On WIndows {{(decompose-directory "c:foo/bar")}} => {{"c:" #f ("foo" "bar")}}
+* On Windows {{(decompose-directory "c:foo/bar")}} => {{"c:" #f ("foo" "bar")}}
 
 
 === Temporary files
