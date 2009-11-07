@@ -1,4 +1,4 @@
-/* cconv-sample.c */
+/* cconv-sample.c - code to disassemble if you want to figure out calling conventions */
 
 
 #include "chicken.h"

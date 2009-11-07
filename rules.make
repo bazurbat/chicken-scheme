@@ -1300,32 +1300,10 @@ testclean:
 
 # run tests
 
-.PHONY: check fullcheck compiler-check
+.PHONY: check 
 
 check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 	cd tests; sh runtests.sh
-
-# Only for UNIX, yet:
-
-fullcheck: check compiler-check
-
-compiler-check:
-	@echo "======================================== packing ..."
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) dist
-	$(REMOVE_COMMAND $(REMOVE_COMMAND_RECURSIVE_OPTIONS) tests$(SEP)chicken-*
-	tar -C tests -xzf `ls -t chicken-*.tar.gz | head -1`
-	@echo "======================================== building stage 1 ..."
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) STATICBUILD=1 -C tests$(SEP)chicken-* confclean all
-	touch tests$(SEP)chicken-*$(SEP)*.scm
-	@echo "======================================== building stage 2 ..."
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) STATICBUILD=1 -C tests$(SEP)chicken-* confclean all
-	cat tests$(SEP)chicken-*$(SEP)*.c >tests$(SEP)stage2.out
-	@echo "======================================== building stage 3 ..."
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) STATICBUILD=1 -C tests$(SEP)chicken-* confclean all	
-	cat tests$(SEP)chicken-*$(SEP)*.c >tests$(SEP)stage3.out
-	diff tests$(SEP)stage2.out tests$(SEP)stage3.out >tests$(SEP)stages.diff
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_RECURSIVE_OPTIONS) tests$(SEP)chicken-*
-
 
 # bootstrap from C source tarball
 
@@ -1345,14 +1323,3 @@ $(SRCDIR)bootstrap.tar.gz: distfiles
 	  srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c posixunix.c posixwin.c regex.c \
 	  scheduler.c profiler.c stub.c expand.c chicken-syntax.c \
 	  $(COMPILER_OBJECTS_1:=.c)
-
-
-# benchmarking
-
-.PHONY: bench
-
-bench:
-	@here=`pwd`; \
-	cd $(SRCDIR)benchmarks; \
-	LD_LIBRARY_PATH=$$here DYLD_LIBRARY_PATH=$$here PATH=$$here:$$PATH \
-	$(CSI) -s cscbench.scm $(BENCHMARK_OPTIONS)
