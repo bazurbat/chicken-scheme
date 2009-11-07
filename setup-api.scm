@@ -499,18 +499,21 @@
 
 ;;; Convenience function
 
-(define (standard-extension name version)
+(define (standard-extension name version #!optional (static #t))
   (let* ((sname (->string name))
 	 (fname (make-pathname #f sname "scm"))
 	 (iname (make-pathname #f sname "import.scm")))
     (compile -s -O2 -d1 ,fname -j ,name)
-    (compile -c -O2 -d1 ,fname -j ,name -unit ,name)
+    (when static 
+      (compile -c -O2 -d1 ,fname -j ,name -unit ,name))
     (compile -s -O2 -d0 ,iname)
     (install-extension
      name
-     (list fname (make-pathname #f sname "setup"))
+     (list fname 
+	   (pathname-replace-extension iname "so")
+	   (make-pathname #f sname "setup"))
      `((version ,version)
-       (static ,(make-pathname #f fname "o"))))))
+       ,@(if static `((static ,(make-pathname #f fname "o"))) '())))))
 
 
 ;;; Installation
