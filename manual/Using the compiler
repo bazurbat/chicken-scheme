@@ -55,6 +55,7 @@ Possible options are:
      D          when printing nodes, use node-tree output
      N          show the real-name mapping table
      0          show database before lambda-lifting pass
+     S          show applications of compiler syntax
      T          show expressions after converting to node tree
      L          show expressions after lambda-lifting
      M          show syntax-/runtime-requirements

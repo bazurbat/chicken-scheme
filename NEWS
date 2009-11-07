@@ -1,3 +1,7 @@
+4.2.3
+
+- Updated scheme-complete to version 0.8.9
+
 4.2.2
 
 - exported Unit data-structures 'reverse-string-append'
