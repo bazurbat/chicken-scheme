@@ -661,11 +661,11 @@
   (when (version>=? v (chicken-version) ) 
     (error (sprintf "CHICKEN version ~a or higher is required" v)) ) )
 
-(define (upgrade-message ext msg)
+(define (upgrade-message ext msg #!optional version)
   (error
    (sprintf
-    "the required extension `~s' ~a - please run~%~%  chicken-install ~a~%~%and repeat the current installation operation."
-    ext msg ext) ) )
+    "the required extension `~s' ~a - please run~%~%  chicken-install ~a~a~%~%and repeat the current installation operation."
+    ext msg ext (if version (string-append ":" version) "")) ) )
 
 (define (required-extension-version . args)
   (let loop ((args args))
@@ -682,7 +682,8 @@
 			  (upgrade-message 
 			   ext
 			   (sprintf "is older than ~a, which is what this extension requires"
-				    version) ) )
+				    version) 
+                           version) )
 			 (else (loop more)) ) ) 
 		 (upgrade-message ext "is not installed") ) ) )
 	  (else 
