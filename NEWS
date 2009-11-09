@@ -1,3 +1,10 @@
+4.2.3
+
+- printer for hash-tables shows current number of stores items
+- when upgrading during installation of a dependency `chicken-install'
+  shows the version to upgrade to (Thanks to Christian Kellermann)
+- Updated scheme-complete (Thanks to Alex Shinn)
+
 4.2.2
 
 - fix for pathnames with whitespace in 'runtests.sh' on Windows
