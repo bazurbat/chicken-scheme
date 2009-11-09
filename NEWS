@@ -35,7 +35,6 @@
   Zbigniew, reported by Marijn Schouten)
 - csc now always exits with a status code of 1 on errors (patch by Zbigniew)
 
-
 4.1.0
 
 - The new parameter "parantheses-synonyms" and the command-line
