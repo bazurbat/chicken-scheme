@@ -4260,6 +4260,7 @@ C_regparm void C_fcall C_raise_interrupt(int reason)
 }
 
 
+/* XXX can be done via macro */
 C_regparm C_word C_fcall C_set_initial_timer_interrupt_period(C_word n)
 {
   C_initial_timer_interrupt_period = C_unfix(n);
