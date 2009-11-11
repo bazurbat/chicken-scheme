@@ -880,7 +880,7 @@
 
 (glob->regexp (procedure glob->regexp (string) string))
 (glob? (procedure glob? (string) boolean))
-(grep (procedure grep (* list) list))
+(grep (procedure grep (* list #!optional (procedure (*) *)) list))
 (regexp (procedure regexp (* #!optional * * *) (struct regexp)))
 (regexp-escape (procedure regexp-escape (string) string))
 (regexp? (procedure regexp? (*) boolean))
