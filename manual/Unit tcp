@@ -150,6 +150,8 @@ Closing the output port will flush automatically.
 Determines the timeout for TCP read operations in milliseconds. A timeout of
 {{#f}} disables timeout checking. The default read timeout is 60000, i.e.
 1 minute.
+If timeout occurs while reading, a condition object of kinds {{(exn i/o net timeout)}}
+is thrown.
 
 === tcp-write-timeout
 
@@ -158,6 +160,8 @@ Determines the timeout for TCP read operations in milliseconds. A timeout of
 Determines the timeout for TCP write operations in milliseconds. A timeout of
 {{#f}} disables timeout checking. The default write timeout is 60000, i.e.
 1 minute.
+If timeout occurs while writing, a condition object of kinds {{(exn i/o net timeout)}}
+is thrown.
 
 === tcp-connect-timeout
 
@@ -165,6 +169,8 @@ Determines the timeout for TCP write operations in milliseconds. A timeout of
 
 Determines the timeout for {{tcp-connect}} operations in milliseconds. A timeout of
 {{#f}} disables timeout checking and is the default.
+If timeout occurs while trying to connect, a condition object of kinds {{(exn i/o net timeout)}}
+is thrown.
 
 
 === tcp-accept-timeout
@@ -173,6 +179,8 @@ Determines the timeout for {{tcp-connect}} operations in milliseconds. A timeout
 
 Determines the timeout for {{tcp-accept}} operations in milliseconds. A timeout of
 {{#f}} disables timeout checking and is the default.
+If timeout occurs while waiting for connections, a condition object of kinds {{(exn i/o net timeout)}}
+is thrown.
 
 
 === Example

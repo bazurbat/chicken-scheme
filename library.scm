@@ -3677,6 +3677,7 @@ EOF
 	   [(#:runtime-error)		'(exn runtime)]
 	   [(#:process-error)		'(exn process)]
 	   [(#:network-error)		'(exn i/o net)]
+	   [(#:network-timeout-error)   '(exn i/o net timeout)]
 	   [(#:limit-error)		'(exn runtime limit)]
 	   [(#:arity-error)		'(exn arity)]
 	   [(#:access-error)		'(exn access)]
