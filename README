@@ -138,6 +138,11 @@
 	  C_COMPILER_OPTIMIZATION_OPTIONS (see below) to have more
 	  control over the options given to the C compiler.
 
+	  Note: there have been reports that newer versions of gcc (4.4???)
+	  generate incorrect code when given "-O3". It is therefore
+	  recommended not to use OPTIMIZE_FOR_SPEED if your gcc version
+	  is 4.4 or higher.	  
+
         C_COMPILER_OPTIMIZATION_OPTIONS=...
           Override built-in C compiler optimization options. Available
           for debug or release build.
