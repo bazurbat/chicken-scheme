@@ -160,7 +160,7 @@ files in {{FILELIST}} to executable (for installing shell-scripts).
 
 ==== standard-extension
 
- [procedure] (standard-extension ID VERSION [STATIC])
+ [procedure] (standard-extension ID VERSION #!key static info)
 
 A convenience procedure that combines the compilation and installation of 
 a simple single-file extension. This is roughly equivalent to:
@@ -173,7 +173,8 @@ a simple single-file extension. This is roughly equivalent to:
    'ID
    '("ID.o" "ID.so" "ID.import.so")
    '((version 1.0)
-     (static "ID.o")))   ; STATIC ...
+     ... `INFO' ...
+     (static "ID.o")))   ; if `static' is given and true
 
 
 ==== run
