@@ -49,6 +49,14 @@ TODO for chicken							-*- Outline -*-
 
 ** private commits not in pending
 
+*** ungrouped
+
+commit 9b0b862d9d4e389cbdc9edddb65645114c4d0555
+Author: Felix <bunny351@gmail.com>
+Date:   Thu Nov 12 20:30:57 2009 +0100
+
+    use distinct condition kind for tcp timeouts
+
 *** import-only
 
 commit 5f06d4deafa19424d49d78ed0c0a4b4ee5f6e1e5
