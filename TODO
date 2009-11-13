@@ -49,30 +49,6 @@ TODO for chicken							-*- Outline -*-
 
 ** private commits not in pending
 
-*** ungrouped
-
-commit 9b0b862d9d4e389cbdc9edddb65645114c4d0555
-Author: Felix <bunny351@gmail.com>
-Date:   Thu Nov 12 20:30:57 2009 +0100
-
-    use distinct condition kind for tcp timeouts
-
-*** import-only
-
-commit 5f06d4deafa19424d49d78ed0c0a4b4ee5f6e1e5
-Author: unknown <felix@.(none)>
-Date:   Tue Nov 3 14:51:47 2009 +0100
-
-    fix in handling of import-only
-
-commit 7a9f9a64552a7a13a166e5b86870111ee78b105c
-Author: unknown <felix@.(none)>
-Date:   Mon Nov 2 18:28:53 2009 +0100
-
-    standard-extension takes keyword args; added import-only extension property
-**** Needs splitting up
-**** make pending when last standard-extension changes are merged
-
 *** notrace
 
 commit c1154565abc041202110aae8e93a57cbe3fba3c2
