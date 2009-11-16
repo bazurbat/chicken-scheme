@@ -49,6 +49,12 @@ TODO for chicken							-*- Outline -*-
 
 ** private commits not in pending
 
+commit 5b09da9117edcc3c80d45d1ef08b788bed42ddf1
+Author: felix <felix@call-with-current-continuation.org>
+Date:   Mon Nov 16 10:37:14 2009 +0100
+
+    don't use backdoor to tinyclos for instance foreign type
+
 *** notrace
 
 commit c1154565abc041202110aae8e93a57cbe3fba3c2
