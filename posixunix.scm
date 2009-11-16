@@ -1953,17 +1953,17 @@ EOF
   (when (fx< (##sys#size tm) 10)
     (##sys#error loc "time vector too short" tm) ) )
 
-(define (seconds->local-time secs)
+(define (seconds->local-time #!optional (secs (current-seconds)))
   (##sys#check-number secs 'seconds->local-time)
   (##sys#decode-seconds secs #f) )
 
-(define (seconds->utc-time secs)
+(define (seconds->utc-time #!optional (secs (current-seconds)))
   (##sys#check-number secs 'seconds->utc-time)
   (##sys#decode-seconds secs #t) )
 
 (define seconds->string
   (let ([ctime (foreign-lambda c-string "C_ctime" integer)])
-    (lambda (secs)
+    (lambda (#!optional (secs (current-seconds)))
       (##sys#check-number secs 'seconds->string)
       (let ([str (ctime secs)])
         (if str
