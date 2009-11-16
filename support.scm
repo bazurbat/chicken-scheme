@@ -1090,7 +1090,11 @@
      (cond 
        [(and (list? type) (= 3 (length type)) 
 	     (memq (car type) '(instance instance-ref)))
-	`(##tinyclos#make-instance-from-pointer ,body ,(caddr type)) ] ;XXX eggified, needs better treatment...
+	(let ((tmp (gensym)))
+	  `(let ((,tmp ,body))
+	     (and ,tmp
+		  (not (##sys#null-pointer? ,tmp))
+		  (make ,(caddr type) 'this ,tmp) ) ) ) ]
        [(and (list? type) (= 3 (length type)) (eq? 'nonnull-instance (car type)))
 	`(make ,(caddr type) 'this ,body) ]
        [else body] ) ] ) )
