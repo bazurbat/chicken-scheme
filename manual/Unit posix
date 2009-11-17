@@ -933,7 +933,7 @@ defaults to the complete length given when the file was mapped.
 
 ==== seconds->local-time
 
-<procedure>(seconds->local-time SECONDS)</procedure>
+<procedure>(seconds->local-time [SECONDS])</procedure>
 
 Breaks down the time value represented in {{SECONDS}} into a 10
 element vector of the form {{#(seconds minutes hours mday month
@@ -949,6 +949,9 @@ year wday yday dstflag timezone)}}, in the following format:
 ; yday (7) : the number of days since January 1 (0 - 365)
 ; dstflag (8) : a flag that is true if Daylight Saving Time is in effect at the time described.
 ; timezone (9) : the difference between UTC and the latest local standard time, in seconds west of UTC.
+
+{{SECONDS}} defaults to
+the value of {{(current-seconds)}}.
 
 ==== local-time->seconds
 
@@ -966,17 +969,19 @@ Returns the abbreviation for the local timezone as a string.
 
 ==== seconds->string
 
-<procedure>(seconds->string SECONDS)</procedure>
+<procedure>(seconds->string [SECONDS])</procedure>
 
 Converts the local time represented in {{SECONDS}} into a string
-of the form {{"Tue May 21 13:46:22 1991"}}.
+of the form {{"Tue May 21 13:46:22 1991"}}. {{SECONDS}} defaults to
+the value of {{(current-seconds)}}.
 
 ==== seconds->utc-time
 
-<procedure>(seconds->utc-time SECONDS)</procedure>
+<procedure>(seconds->utc-time [SECONDS])</procedure>
 
 Similar to {{seconds->local-time}}, but interpretes {{SECONDS}}
-as UTC time.
+as UTC time. {{SECONDS}} defaults to
+the value of {{(current-seconds)}}.
 
 ==== utc-time->seconds
 
