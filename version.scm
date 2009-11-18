@@ -1,1 +1,1 @@
-(define-constant +build-version+ "4.2.4")
+(define-constant +build-version+ "4.2.5")
