@@ -1,3 +1,9 @@
+4.2.5
+
+- fix in optimizer that sometimes caused C functions for inlined
+  procedures to be emitted multiple times (Thanks to Jörg Wittenberger)
+- documented `define-compiler-syntax'
+
 4.2.3
 
 - printer for hash-tables shows current number of stores items

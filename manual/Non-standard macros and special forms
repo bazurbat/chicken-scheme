@@ -319,6 +319,8 @@ expression and compile it normally.
 
 In the interpreter this form does nothing and returns an unspecified value.
 
+Compiler-syntax is never exported from a module.
+
 
 === Conditional forms
 
