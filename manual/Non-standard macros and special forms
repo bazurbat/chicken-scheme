@@ -319,7 +319,15 @@ expression and compile it normally.
 
 In the interpreter this form does nothing and returns an unspecified value.
 
-Compiler-syntax is never exported from a module.
+Compiler-syntax is always local to the current compilation unit and can not be
+exported.
+
+<scheme>
+(define-compiler-syntax +
+  (syntax-rules ()
+    ((_) 1)
+    ((_ x 0) x) ) )
+</scheme>
 
 
 === Conditional forms
