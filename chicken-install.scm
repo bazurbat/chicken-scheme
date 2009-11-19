@@ -156,7 +156,8 @@
                        (cond ((not v)
                               (loop rest (cons (->string (car dep)) missing) upgrade))
                              ((not (version>=? v (->string (cadr dep))))
-			      (when (string=? "chicken" (->string (car dep)))
+			      (when (and (string=? "chicken" (->string (car dep)))
+					 (not *force*))
 				(error
 				 (string-append 
 				  "Your CHICKEN version is not recent enough to use this extension - version "
@@ -519,6 +520,7 @@ EOF
 
   (handle-exceptions ex
       (begin
+	(newline (current-error-port))
         (print-error-message ex (current-error-port))
         (cleanup)
         (exit 1))
