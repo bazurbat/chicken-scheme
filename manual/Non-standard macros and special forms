@@ -330,6 +330,13 @@ exported.
 </scheme>
 
 
+==== let-compiler-syntax
+
+ [syntax] (let-compiler-syntax ((NAME TRANSFORMER) ...) BODY ...)
+
+Allows definition local compiler macros, which are only applicable inside {{BODY ...}}.
+
+
 === Conditional forms
 
 ==== select
