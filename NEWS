@@ -1,3 +1,8 @@
+4.2.6
+
+- Fixed bug in `reexport' that made it impossible to reexport core library
+  definitions
+
 4.2.5
 
 - fix in optimizer that sometimes caused C functions for inlined
