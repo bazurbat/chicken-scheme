@@ -99,6 +99,7 @@
 ; (##core#immutable <exp>)
 ; (##core#global-ref <variable>)
 ; (quote <exp>)
+; ([##core#]syntax <exp>)
 ; (if <exp> <exp> [<exp>])
 ; ([##core#]syntax <exp>)
 ; ([##core#]let <variable> ({(<variable> <exp>)}) <body>)
