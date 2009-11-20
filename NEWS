@@ -1,6 +1,19 @@
+4.2.7
+
+- fixed bugs in `standard-extension' (`setup-api' module) and added keyword 
+  arguments for building static extensions and adding custom properties
+- when cross-compiling, `chicken-install(1)' doesn't pass `-setup-mode'
+  (the host tools should not attempt to load target binaries)
+- `installation-prefix' in the `setup-api' module was not always correctly
+  set
+- the `-force' option in `chicken-install(1)' overrides tje CHICKEN version
+  check
+- disabled e-mail feature in `chicken-bug(1)', since it doesn't work
+  anyway, in the moment
+
 4.2.6
 
-- Fixed bug in `reexport' that made it impossible to reexport core library
+- fixed bug in `reexport' that made it impossible to reexport core library
   definitions
 
 4.2.5
