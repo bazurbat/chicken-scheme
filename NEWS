@@ -1,3 +1,11 @@
+4.2.8
+
+- fixed bug in `get-condition-property'
+- fixed bug in windows version of `process-execute'
+- TCP timeouts throw exception of kind `timeout' to allow
+  distinguishing between timeouts and other errors
+- removed some internal functions that manipulate environments
+
 4.2.7
 
 - fixed bugs in `standard-extension' (`setup-api' module) and added keyword 
