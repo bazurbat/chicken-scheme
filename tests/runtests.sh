@@ -208,7 +208,8 @@ $compile -e embedded2.scm
 ./a.out
 
 echo "======================================== timing compilation ..."
-time $compile silex.scm -t -S -O3
+time $compile compiler.scm -t -S -O5 -debug pbo -vv
+time ./a.out
 
 echo "======================================== running floating-point benchmark ..."
 echo "boxed:"
