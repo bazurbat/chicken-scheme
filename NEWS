@@ -1,3 +1,14 @@
+4.2.9
+
+- added optional argument to `grep' that allows applying a function
+  to each matched item (contributed by Tony Sidaway)
+- added extension-property `import-only', which makes it possible to
+  create extensions that have no runtime part
+- the argument to `seconds->string', `seconds->utc-time' and 
+  `seconds->local-time' is now optional and defaults to the value
+  of `(current-seconds)' (suggested by Mario Goulart)
+- removed read-syntax for `syntax' form
+
 4.2.8
 
 - fixed bug in `get-condition-property'
