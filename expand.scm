@@ -1195,7 +1195,7 @@
 		     x
 		     (cons 'cond-expand clauses)) )
       (define (test fx)
-	(cond ((symbol? fx) (##sys#feature? fx))
+	(cond ((symbol? fx) (##sys#feature? (##sys#strip-syntax fx)))
 	      ((not (pair? fx)) (err fx))
 	      (else
 	       (let ((head (car fx))
