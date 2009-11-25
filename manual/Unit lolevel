@@ -434,14 +434,6 @@ These procedures operate with what are known as {{vector-like objects}}. A
 Note that strings and blobs are not considered vector-like.
 
 
-==== vector-like?
-
- [procedure] (vector-like? X)
-
-Returns {{#t}} when {{X}} is a vector-like object, returns {{#f}}
-otherwise.
-
-
 ==== block-ref
 
  [procedure] (block-ref VECTOR* INDEX)
@@ -701,47 +693,6 @@ error if {{RECORD}} is not a record structure.
 
 Returns a new vector with the type and the elements of the record structure
 {{RECORD}}. Signals an error if {{RECORD}} is not a record structure.
-
-
-
-=== Procedure-call- and variable reference hooks
-
-
-==== set-invalid-procedure-call-handler!
-
- [procedure] (set-invalid-procedure-call-handler! PROC)
-
-Sets an internal hook that is invoked when a call to an object other than a
-procedure is executed at runtime. The procedure {{PROC}} will in that case be
-called with two arguments: the object being called and a list of the passed
-arguments.
-
-<enscript highlight=scheme>
-;;; Access sequence-elements as in ARC:
-
-(set-invalid-procedure-call-handler!
-  (lambda (proc args)
-    (cond [(string? proc) (apply string-ref proc args)]
-          [(vector? proc) (apply vector-ref proc args)]
-          [else (error "call of non-procedure" proc)] ) ) )
-
-("hello" 4)    ==>  #\o
-</enscript>
-
-This facility does not work in code compiled with the ''unsafe'' setting.
-
-
-==== unbound-variable-value
-
- [procedure] (unbound-variable-value [X])
-
-Defines the value that is returned for unbound variables. Normally an error is
-signalled, use this procedure to override the check and return {{X}} instead.
-To set the default behavior (of signalling an error), call
-{{unbound-variable-value}} with no arguments.
-
-This facility does not work in code compiled with the ''unsafe'' setting.
-
 
 
 === Magic
