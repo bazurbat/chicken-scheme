@@ -124,6 +124,13 @@
           option you can still enable symbol GC at runtime by passing 
           the `-:w' runtime option when running the program.
 
+        NOAPPLYHOOK=1
+          For maximum performance this will disable support for 
+          breakpoints, but speed up procedure invocation in safe 
+          code. Smaller binaries can be obtained by also giving 
+          "NOPTABLES=1", but that means serialization (available 
+          as a separate package) of procedures will not be available.
+
         OPTIMIZE_FOR_SPEED=1
           Use C optimization options that prefer speed over size. For
 	  the GNU C compiler this will currently select "-O3" (the

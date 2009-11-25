@@ -172,7 +172,19 @@ k
 
 ; ,utr SYMBOL ... : Disables tracing of the given toplevel procedures.
 
-; ,info : Lists traced procedures.
+; ,br SYMBOL ... : Sets a breakpoint at the procedures named {{SYMBOL ...}}. Breakpoint can also be trigged using the {{breakpoint}} procedure.
+
+; ,ubr SYMBOL ... : Removes breakpoints.
+
+; ,c : Continues execution from the last invoked breakpoint.
+
+; ,breakall : Enable breakpoints for all threads (this is the default).
+
+; ,breakonly THREAD : Enable breakpoints only for the thread returned by the expression {{THREAD}}.
+
+; ,info : Lists traced procedures and breakpoints.
+
+; ,step EXPR : Evaluates {{EXPR}} in single-stepping mode. On each procedure call you will be presented with a menu that allows stepping to the next call, leaving single-stepping mode or triggering a breakpoint. Note that you will see some internal calls, and unsafe or heavily optimized compiled code might not be stepped at all. Single-stepping mode is also possible by invoking the {{singlestep}} procedure.
 
 You can define your own toplevel commands using the {{toplevel-command}}
 procedure:

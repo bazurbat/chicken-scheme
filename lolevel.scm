@@ -440,6 +440,9 @@ EOF
 (define block-set! ##sys#block-set!)
 (define block-ref (getter-with-setter ##sys#block-ref ##sys#block-set!))
 
+(define (vector-like? x)
+  (%generic-vector? x) )
+
 (define (number-of-slots x)
   (##sys#check-generic-vector x 'number-of-slots)
   (##sys#size x) )
@@ -642,6 +645,38 @@ EOF
 	 [new (##core#inline "C_copy_block" old (##sys#make-vector words))] )
     (##sys#become! (list (cons old (proc new))))
     new ) )
+
+
+;;; Hooks:
+
+; we need this because `##sys#invalid-procedure-call-hook' cannot
+; have free variables.
+(define ipc-hook-0 #f)
+
+(define (invalid-procedure-call-handler) ipc-hook-0)
+
+(define (set-invalid-procedure-call-handler! proc)
+  (##sys#check-closure proc 'set-invalid-procedure-call-handler!)
+  (set! ipc-hook-0 proc)
+  (set! ##sys#invalid-procedure-call-hook
+        (lambda args (ipc-hook-0 ##sys#last-invalid-procedure args))) )
+
+(define (unbound-variable-signals-error?) (not ##sys#unbound-variable-value-hook))
+
+; result only trusted when (unbound-variable-signals-error?) is #f
+(define (unbound-variable-given-value)
+  (and ##sys#unbound-variable-value-hook
+       (vector-ref ##sys#unbound-variable-value-hook 0)) )
+
+(define (set-unbound-variable-value! val) (set! ##sys#unbound-variable-value-hook (vector val)))
+
+(define (clear-unbound-variable-value!) (set! ##sys#unbound-variable-value-hook #f))
+
+; this should be the current value procedure
+(define (unbound-variable-value . val)
+  (set! ##sys#unbound-variable-value-hook 
+    (and (pair? val)
+	 (vector (car val)))) )
 
 
 ;;; Access computed globals:

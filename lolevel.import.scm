@@ -31,6 +31,7 @@
    allocate
    block-ref
    block-set!
+   clear-unbound-variable-value!
    extend-procedure
    extended-procedure?
    free
@@ -38,6 +39,7 @@
    global-make-unbound!
    global-ref
    global-set!
+   invalid-procedure-call-handler
    locative->object
    locative-ref
    locative-set!
@@ -90,6 +92,12 @@
    record-instance-slot
    record-instance-slot-set!
    record-instance-type
+   set-invalid-procedure-call-handler!
    set-procedure-data!
+   set-unbound-variable-value!
    tag-pointer
-   tagged-pointer?))
+   tagged-pointer?
+   unbound-variable-value
+   unbound-variable-given-value
+   unbound-variable-signals-error?
+   vector-like?))
