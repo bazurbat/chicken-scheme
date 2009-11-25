@@ -47,7 +47,6 @@
   (tcp-write-timeout +default-tcp-read/write-timeout+)
 
   (define *quiet* #f)
-
   (define *chicken-install-user-agent* (conc "chicken-install " (chicken-version)))
 
   (define (d fstr . args)
@@ -161,7 +160,8 @@
 	   80)
        (if m (list-ref m 5) "/")) ) )
 
-  (define (locate-egg/http egg url #!optional version destination tests)
+  (define (locate-egg/http egg url #!optional version destination tests
+			   proxy-host proxy-port)
     (let ([tmpdir (or destination (get-temporary-directory))])
       (let-values ([(host port locn) (deconstruct-url url)])
 	(let ([locn (string-append
@@ -171,7 +171,7 @@
 		     (if tests "&tests=yes" ""))]
 	      [eggdir (make-pathname tmpdir egg) ] )
 	  (unless (file-exists? eggdir) (create-directory eggdir))
-	  (http-fetch host port locn eggdir)
+	  (http-fetch host port locn eggdir proxy-host proxy-port)
 	  ; If we get here then version of egg exists
 	  (values eggdir (or version "")) ) ) ) )
 
@@ -189,9 +189,14 @@
                              (port 80)
                              (connection "close")
                              (accept "*")
-                             (content-length 0))
+                             (content-length 0)
+			     proxy-host proxy-port)
     (conc
-     "GET " location " HTTP/1.1" "\r\n"
+     "GET " 
+     (if proxy-host 
+	 (string-append "http://" host location)
+	 location)
+     " HTTP/1.1" "\r\n"
      "Connection: " connection "\r\n"
      "User-Agent: " user-agent "\r\n"
      "Accept: " accept "\r\n"
@@ -209,12 +214,16 @@
   (define (match-chunked-transfer-encoding ln)
     (string-match "[Tt]ransfer-[Ee]ncoding:\\s*chunked.*" ln) )
 
-  (define (http-fetch host port locn dest)
-    (d "connecting to host ~s, port ~a ...~%" host port)
-    (let-values ([(in out) (tcp-connect host port)])
+  (define (http-fetch host port locn dest proxy-host proxy-port)
+    (d "connecting to host ~s, port ~a ~a...~%" host port
+       (if proxy-host
+	   (sprintf "(via ~a:~a) " proxy-host proxy-port)
+	   ""))
+    (let-values ([(in out) (tcp-connect (or proxy-host host) (or proxy-port port))])
       (d "requesting ~s ...~%" locn)
       (display
-       (make-HTTP-GET/1.1 locn *chicken-install-user-agent* host port: port accept: "*/*")
+       (make-HTTP-GET/1.1 locn *chicken-install-user-agent* host port: port accept: "*/*"
+			  proxy-host: proxy-host proxy-port: proxy-port)
        out)
       (flush-output out)
       (d "reading response ...~%")
@@ -279,7 +288,8 @@
 	      (get-chunks (cons chunk data)) ) ) ) ) )
 
   (define (retrieve-extension name transport location
-                              #!key version quiet destination username password tests)
+                              #!key version quiet destination username password tests
+			      proxy-host proxy-port)
     (fluid-let ([*quiet* quiet])
       (case transport
 	[(local)
@@ -288,7 +298,7 @@
 	[(svn)
 	 (locate-egg/svn name location version destination username password) ]
 	[(http)
-	 (locate-egg/http name location version destination tests) ]
+	 (locate-egg/http name location version destination tests proxy-host proxy-port) ]
 	[else
 	 (error "cannot retrieve extension unsupported transport" transport) ] ) ) )
 

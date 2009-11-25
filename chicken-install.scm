@@ -81,6 +81,8 @@
   (define *default-location* #f)
   (define *default-transport* 'http)
   (define *windows-shell* (foreign-value "C_WINDOWS_SHELL" bool))
+  (define *proxy-host* #f)
+  (define *proxy-port* #f)
 
   (define-constant +module-db+ "modules.db")
   (define-constant +defaults-file+ "setup.defaults")
@@ -187,7 +189,9 @@
          destination: (and *retrieve-only* (current-directory))
          tests: *run-tests*
          username: *username*
-         password: *password*)
+         password: *password*
+	 proxy-host: *proxy-host*
+	 proxy-port: *proxy-port*)
       [(exn net)
        (print "TCP connect timeout")
        (values #f "") ]
@@ -301,7 +305,8 @@
      (if *no-install* " -e \"(setup-install-mode #f)\"" "")
      (if *host-extension* " -e \"(host-extension #t)\"" "")
      (if *prefix* (sprintf " -e \"(installation-prefix \\\"~a\\\")\"" *prefix*) "")
-     #\space (shellpath (make-pathname (cadr e+d+v) (car e+d+v) "setup"))) )
+     #\space
+     (shellpath (make-pathname (cadr e+d+v) (car e+d+v) "setup"))) )
 
   (define (install eggs)
     (retrieve eggs)
@@ -388,6 +393,7 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
   -k   -keep                    keep temporary files
   -l   -location LOCATION       install from given location instead of default
   -t   -transport TRANSPORT     use given transport instead of default
+       -proxy HOST[:PORT]       download via HTTP proxy
   -s   -sudo                    use sudo(1) for filesystem operations
   -r   -retrieve                only retrieve egg into current directory, don't install
   -n   -no-install              do not install, just build (implies `-keep')
@@ -474,6 +480,16 @@ EOF
                         (unless (pair? (cdr args)) (usage 1))
                         (init-repository (cadr args))
                         (exit 0))
+		       ((string=? "-proxy" arg)
+                        (unless (pair? (cdr args)) (usage 1))
+			(cond ((string-match "(.+)\\:([0-9]+)" (cadr args)) =>
+			       (lambda (m)
+				 (set! *proxy-host* (cadr m))
+				 (set! *proxy-port* (string->number (caddr m)))))
+			      (else
+			       (set! *proxy-host* (cadr args))
+			       (set! *proxy-port* 80)))
+			(loop (cddr args) eggs))
                        ((string=? "-test" arg)
                         (set! *run-tests* #t)
                         (loop (cdr args) eggs))
