@@ -1,3 +1,9 @@
+4.2.11
+
+- added support for a make(1) configuration file ("config.make")
+- `chicken-install' now allows specifiying a proxy for retrieving
+  extensions over HTTP (thanks to Nicolas Pelletier)
+
 4.2.10
 
 - fixed bug in `cond-expand' that incorrectly renamed feature-identifiers
