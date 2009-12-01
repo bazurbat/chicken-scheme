@@ -947,7 +947,6 @@
        #t #t 'reexport) ) )
 
 (define ##sys#initial-macro-environment (##sys#macro-environment))
-(define ##sys#toplevel-definition-expansion-hook #f)
 
 (##sys#extend-macro-environment
  'define

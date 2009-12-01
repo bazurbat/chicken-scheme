@@ -1,3 +1,9 @@
+4.2.12
+
+- removed tracing facility and apply-hook (see the "trace" egg
+  for a replacement for tracing and breakpoints)
+- chicken-install(1): renamed `-host-extension' option to `-host'
+
 4.2.11
 
 - added support for a make(1) configuration file ("config.make")
