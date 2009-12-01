@@ -303,6 +303,40 @@ be helpful when you want to define support procedures for use in macro-transform
 for example.
 
 
+==== define-compiler-syntax
+
+ [syntax] (define-compiler-syntax NAME TRANSFORMER)
+ [syntax] (define-compiler-syntax (NAME VAR ...) BODY ...)
+
+Defines what is usually called a ''compiler macro'': {{NAME}} should be the
+name of a globally or locally bound procedure. Any direct call to this procedure
+will be transformed before compilation, which allows arbitrary rewritings
+of function calls. 
+{{TRANSFORMER}} can be a {{syntax-rules}} expression or an explicit-renaming transforme
+procedure. Returning the original form in an explicit-renaming macro or simply
+"falling trough" all patterns in a {{syntax-rules}} form will keep the original
+expression and compile it normally.
+
+In the interpreter this form does nothing and returns an unspecified value.
+
+Compiler-syntax is always local to the current compilation unit and can not be
+exported.
+
+<scheme>
+(define-compiler-syntax +
+  (syntax-rules ()
+    ((_) 1)
+    ((_ x 0) x) ) )
+</scheme>
+
+
+==== let-compiler-syntax
+
+ [syntax] (let-compiler-syntax ((NAME TRANSFORMER) ...) BODY ...)
+
+Allows definition local compiler macros, which are only applicable inside {{BODY ...}}.
+
+
 === Conditional forms
 
 ==== select

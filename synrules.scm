@@ -130,7 +130,7 @@
   (define (process-match input pattern)
     (cond ((symbol? pattern)
 	   (if (memq pattern subkeywords)
-	       `((,%compare ,input (,%rename (syntax ,pattern))))
+	       `((,%compare ,input (,%rename (##core#syntax ,pattern))))
 	       `()))
 	  ((segment-pattern? pattern)
 	   (process-segment-match input (car pattern)))
@@ -229,7 +229,7 @@
 		     template
 		     (##sys#syntax-error-hook "template dimension error (too few ellipses?)"
 					      template))
-		 `(,%rename (syntax ,template)))))
+		 `(,%rename (##core#syntax ,template)))))
 	  ((segment-template? template)
 	   (let* ((depth (segment-depth template))
 		  (seg-dim (+ dim depth))
