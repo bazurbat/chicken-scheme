@@ -1914,7 +1914,7 @@ void C_unregister_lf(void *handle)
 
 /* Intern symbol into symbol-table: */
 
-C_regparm C_word C_fcall C_intern(C_word **ptr, int len, C_char *str)
+C_regparm C_word C_fcall C_intern(C_word **ptr, int len, C_char *str) 
 {
   return C_intern_in(ptr, len, str, symbol_table);
 }
@@ -2097,6 +2097,7 @@ C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stabl
 
 /* Check block allocation: */
 
+/* I */
 C_regparm C_word C_fcall C_permanentp(C_word x)
 {
   return C_mk_bool(!C_immediatep(x) && !C_in_stackp(x) && !C_in_heapp(x));
@@ -2150,6 +2151,7 @@ C_regparm C_word C_fcall C_restore_rest(C_word *ptr, int num)
 }
 
 
+/* I? */
 C_regparm C_word C_fcall C_restore_rest_vector(C_word *ptr, int num)
 {
   C_word *p0 = ptr;
@@ -2389,6 +2391,7 @@ C_regparm C_word C_fcall C_h_pair(C_word car, C_word cdr)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_flonum(C_word **ptr, double n)
 {
   C_word 
@@ -3965,6 +3968,7 @@ C_regparm C_word C_fcall C_display_flonum(C_word port, C_word n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_read_char(C_word port)
 {
   int c = C_getc(C_port_file(port));
@@ -3973,6 +3977,7 @@ C_regparm C_word C_fcall C_read_char(C_word port)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_peek_char(C_word port)
 {
   C_FILEPTR fp = C_port_file(port);
@@ -4008,6 +4013,7 @@ C_regparm C_word C_fcall C_execute_shell_command(C_word string)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_string_to_pbytevector(C_word s)
 {
   return C_pbytevector(C_header_size(s), C_data_pointer(s));
@@ -4031,6 +4037,7 @@ C_regparm C_word C_fcall C_char_ready_p(C_word port)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_flush_output(C_word port)
 {
   C_fflush(C_port_file(port));
@@ -4236,6 +4243,7 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
 }
 
 
+/* I */
 C_regparm void C_fcall C_paranoid_check_for_interrupt(void)
 {
   if(--C_timer_interrupt_counter <= 0)
@@ -4260,7 +4268,7 @@ C_regparm void C_fcall C_raise_interrupt(int reason)
 }
 
 
-/* XXX can be done via macro */
+/* I */
 C_regparm C_word C_fcall C_set_initial_timer_interrupt_period(C_word n)
 {
   C_initial_timer_interrupt_period = C_unfix(n);
@@ -4268,6 +4276,7 @@ C_regparm C_word C_fcall C_set_initial_timer_interrupt_period(C_word n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_enable_interrupts(void)
 {
   C_timer_interrupt_counter = C_initial_timer_interrupt_period;
@@ -4277,6 +4286,7 @@ C_regparm C_word C_fcall C_enable_interrupts(void)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_disable_interrupts(void)
 {
   C_interrupts_enabled = 0;
@@ -4298,6 +4308,7 @@ C_regparm C_word C_fcall C_establish_signal_handler(C_word signum, C_word reason
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_flonum_in_fixnum_range_p(C_word n)
 {
   double f = C_flonum_magnitude(n);
@@ -4306,6 +4317,7 @@ C_regparm C_word C_fcall C_flonum_in_fixnum_range_p(C_word n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_double_to_number(C_word n)
 {
   double m, f = C_flonum_magnitude(n);
@@ -4317,6 +4329,7 @@ C_regparm C_word C_fcall C_double_to_number(C_word n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_fits_in_int_p(C_word x)
 {
   double n, m;
@@ -4328,6 +4341,7 @@ C_regparm C_word C_fcall C_fits_in_int_p(C_word x)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_fits_in_unsigned_int_p(C_word x)
 {
   double n, m;
@@ -4375,6 +4389,7 @@ C_regparm C_word C_fcall C_evict_block(C_word from, C_word ptr)
 
 /* Conversion routines: */
 
+/* I */
 C_regparm double C_fcall C_c_double(C_word x)
 {
   if(x & C_FIXNUM_BIT) return (double)C_unfix(x);
@@ -4382,6 +4397,7 @@ C_regparm double C_fcall C_c_double(C_word x)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_num_to_int(C_word x)
 {
   if(x & C_FIXNUM_BIT) return C_unfix(x);
@@ -4389,6 +4405,7 @@ C_regparm C_word C_fcall C_num_to_int(C_word x)
 }
 
 
+/* I */
 C_regparm C_s64 C_fcall C_num_to_int64(C_word x)
 {
   if(x & C_FIXNUM_BIT) return (C_s64)C_unfix(x);
@@ -4396,6 +4413,7 @@ C_regparm C_s64 C_fcall C_num_to_int64(C_word x)
 }
 
 
+/* I */
 C_regparm C_uword C_fcall C_num_to_unsigned_int(C_word x)
 {
   if(x & C_FIXNUM_BIT) return C_unfix(x);
@@ -4403,6 +4421,7 @@ C_regparm C_uword C_fcall C_num_to_unsigned_int(C_word x)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_int_to_num(C_word **ptr, C_word n)
 {
   if(C_fitsinfixnump(n)) return C_fix(n);
@@ -4410,6 +4429,7 @@ C_regparm C_word C_fcall C_int_to_num(C_word **ptr, C_word n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_unsigned_int_to_num(C_word **ptr, C_uword n)
 {
   if(C_ufitsinfixnump(n)) return C_fix(n);
@@ -4417,6 +4437,7 @@ C_regparm C_word C_fcall C_unsigned_int_to_num(C_word **ptr, C_uword n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_long_to_num(C_word **ptr, long n)
 {
   if(C_fitsinfixnump(n)) return C_fix(n);
@@ -4424,6 +4445,7 @@ C_regparm C_word C_fcall C_long_to_num(C_word **ptr, long n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_unsigned_long_to_num(C_word **ptr, unsigned long n)
 {
   if(C_ufitsinfixnump(n)) return C_fix(n);
@@ -4431,6 +4453,7 @@ C_regparm C_word C_fcall C_unsigned_long_to_num(C_word **ptr, unsigned long n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_flonum_in_int_range_p(C_word n)
 {
   double m = C_flonum_magnitude(n);
@@ -4439,6 +4462,7 @@ C_regparm C_word C_fcall C_flonum_in_int_range_p(C_word n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_flonum_in_uint_range_p(C_word n)
 {
   double m = C_flonum_magnitude(n);
@@ -4447,36 +4471,42 @@ C_regparm C_word C_fcall C_flonum_in_uint_range_p(C_word n)
 }
 
 
+/* I */
 C_regparm char *C_fcall C_string_or_null(C_word x)
 {
   return C_truep(x) ? C_c_string(x) : NULL;
 }
 
 
+/* I */
 C_regparm void *C_fcall C_data_pointer_or_null(C_word x) 
 {
   return C_truep(x) ? C_data_pointer(x) : NULL;
 }
 
 
+/* I */
 C_regparm void *C_fcall C_srfi_4_vector_or_null(C_word x) 
 {
   return C_truep(x) ? C_data_pointer(C_block_item(x, 1)) : NULL;
 }
 
 
+/* I */
 C_regparm void *C_fcall C_c_pointer_or_null(C_word x) 
 {
   return C_truep(x) ? (void *)C_block_item(x, 0) : NULL;
 }
 
 
+/* I */
 C_regparm void *C_fcall C_scheme_or_c_pointer(C_word x) 
 {
   return C_anypointerp(x) ? (void *)C_block_item(x, 0) : C_data_pointer(x);
 }
 
 
+/* I */
 C_regparm long C_fcall C_num_to_long(C_word x)
 {
   if(x & C_FIXNUM_BIT) return C_unfix(x);
@@ -4484,6 +4514,7 @@ C_regparm long C_fcall C_num_to_long(C_word x)
 }
 
 
+/* I */
 C_regparm unsigned long C_fcall C_num_to_unsigned_long(C_word x)
 {
   if(x & C_FIXNUM_BIT) return C_unfix(x);
@@ -4533,6 +4564,7 @@ C_regparm C_word C_fcall C_i_string_equal_p(C_word x, C_word y)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_u_i_string_equal_p(C_word x, C_word y)
 {
   C_word n;
@@ -4568,6 +4600,7 @@ C_regparm C_word C_fcall C_i_string_ci_equal_p(C_word x, C_word y)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_eqvp(C_word x, C_word y)
 {
   return
@@ -4578,48 +4611,56 @@ C_regparm C_word C_fcall C_i_eqvp(C_word x, C_word y)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_symbolp(C_word x)
 {
   return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_SYMBOL_TAG);
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_pairp(C_word x)
 {
   return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_PAIR_TAG);
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_stringp(C_word x)
 {
   return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_STRING_TYPE);
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_locativep(C_word x)
 {
   return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_LOCATIVE_TAG);
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_vectorp(C_word x)
 {
   return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_VECTOR_TYPE);
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_portp(C_word x)
 {
   return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_PORT_TYPE);
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_closurep(C_word x)
 {
   return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_CLOSURE_TYPE);
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_numberp(C_word x)
 {
   return C_mk_bool((x & C_FIXNUM_BIT)
@@ -4627,6 +4668,7 @@ C_regparm C_word C_fcall C_i_numberp(C_word x)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_rationalp(C_word x)
 {
   if((x & C_FIXNUM_BIT) != 0) return C_SCHEME_TRUE;
@@ -4641,6 +4683,7 @@ C_regparm C_word C_fcall C_i_rationalp(C_word x)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_integerp(C_word x)
 {
   double dummy;
@@ -4651,12 +4694,14 @@ C_regparm C_word C_fcall C_i_integerp(C_word x)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_flonump(C_word x)
 {
   return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG);
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_finitep(C_word x)
 {
   if((x & C_FIXNUM_BIT) != 0) return C_SCHEME_TRUE;
@@ -4664,18 +4709,21 @@ C_regparm C_word C_fcall C_i_finitep(C_word x)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_fixnum_min(C_word x, C_word y)
 {
   return ((C_word)x < (C_word)y) ? x : y;
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_fixnum_max(C_word x, C_word y)
 {
   return ((C_word)x > (C_word)y) ? x : y;
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_flonum_min(C_word x, C_word y)
 {
   double 
@@ -4686,6 +4734,7 @@ C_regparm C_word C_fcall C_i_flonum_min(C_word x, C_word y)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_flonum_max(C_word x, C_word y)
 {
   double 
@@ -4863,6 +4912,7 @@ C_regparm C_word C_fcall C_i_exactp(C_word x)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_u_i_exactp(C_word x)
 {
   if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
@@ -4882,6 +4932,7 @@ C_regparm C_word C_fcall C_i_inexactp(C_word x)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_u_i_inexactp(C_word x)
 {
   if(x & C_FIXNUM_BIT) return C_SCHEME_FALSE;
@@ -4901,6 +4952,7 @@ C_regparm C_word C_fcall C_i_zerop(C_word x)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_u_i_zerop(C_word x)
 {
   if(x & C_FIXNUM_BIT) return C_mk_bool(x == C_fix(0));
@@ -4920,6 +4972,7 @@ C_regparm C_word C_fcall C_i_positivep(C_word x)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_u_i_positivep(C_word x)
 {
   if(x & C_FIXNUM_BIT) return C_mk_bool(C_unfix(x) > 0);
@@ -4939,6 +4992,7 @@ C_regparm C_word C_fcall C_i_negativep(C_word x)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_u_i_negativep(C_word x)
 {
   if(x & C_FIXNUM_BIT) return C_mk_bool(C_unfix(x) < 0);
@@ -4958,6 +5012,7 @@ C_regparm C_word C_fcall C_i_evenp(C_word x)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_u_i_evenp(C_word x)
 {
   if(x & C_FIXNUM_BIT) return C_mk_nbool(x & 0x02);
@@ -4977,6 +5032,7 @@ C_regparm C_word C_fcall C_i_oddp(C_word x)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_u_i_oddp(C_word x)
 {
   if(x & C_FIXNUM_BIT) return C_mk_bool(x & 0x02);
@@ -5343,24 +5399,28 @@ C_regparm C_word C_fcall C_a_i_flonum_plus(C_word **a, int c, C_word n1, C_word 
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_a_i_flonum_difference(C_word **a, int c, C_word n1, C_word n2)
 {
   return C_flonum(a, C_flonum_magnitude(n1) - C_flonum_magnitude(n2));
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_a_i_flonum_times(C_word **a, int c, C_word n1, C_word n2)
 {
   return C_flonum(a, C_flonum_magnitude(n1) * C_flonum_magnitude(n2));
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_a_i_flonum_quotient(C_word **a, int c, C_word n1, C_word n2)
 {
   return C_flonum(a, C_flonum_magnitude(n1) / C_flonum_magnitude(n2));
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_a_i_flonum_negate(C_word **a, int c, C_word n)
 {
   return C_flonum(a, -C_flonum_magnitude(n));
@@ -5500,6 +5560,7 @@ C_regparm C_word C_fcall C_a_i_arithmetic_shift(C_word **a, int c, C_word n1, C_
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_a_i_exp(C_word **a, int c, C_word n)
 {
   double f;
@@ -5509,6 +5570,7 @@ C_regparm C_word C_fcall C_a_i_exp(C_word **a, int c, C_word n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_a_i_log(C_word **a, int c, C_word n)
 {
   double f;
@@ -5518,6 +5580,7 @@ C_regparm C_word C_fcall C_a_i_log(C_word **a, int c, C_word n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_a_i_sin(C_word **a, int c, C_word n)
 {
   double f;
@@ -5527,6 +5590,7 @@ C_regparm C_word C_fcall C_a_i_sin(C_word **a, int c, C_word n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_a_i_cos(C_word **a, int c, C_word n)
 {
   double f;
@@ -5536,6 +5600,7 @@ C_regparm C_word C_fcall C_a_i_cos(C_word **a, int c, C_word n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_a_i_tan(C_word **a, int c, C_word n)
 {
   double f;
@@ -5545,6 +5610,7 @@ C_regparm C_word C_fcall C_a_i_tan(C_word **a, int c, C_word n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_a_i_asin(C_word **a, int c, C_word n)
 {
   double f;
@@ -5554,6 +5620,7 @@ C_regparm C_word C_fcall C_a_i_asin(C_word **a, int c, C_word n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_a_i_acos(C_word **a, int c, C_word n)
 {
   double f;
@@ -5563,6 +5630,7 @@ C_regparm C_word C_fcall C_a_i_acos(C_word **a, int c, C_word n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_a_i_atan(C_word **a, int c, C_word n)
 {
   double f;
@@ -5572,6 +5640,7 @@ C_regparm C_word C_fcall C_a_i_atan(C_word **a, int c, C_word n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_a_i_atan2(C_word **a, int c, C_word n1, C_word n2)
 {
   double f1, f2;
@@ -5582,6 +5651,7 @@ C_regparm C_word C_fcall C_a_i_atan2(C_word **a, int c, C_word n1, C_word n2)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_a_i_sqrt(C_word **a, int c, C_word n)
 {
   double f;
@@ -5591,6 +5661,7 @@ C_regparm C_word C_fcall C_a_i_sqrt(C_word **a, int c, C_word n)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_fixnum_arithmetic_shift(C_word n, C_word c)
 {
   if(C_unfix(c) < 0) return C_fixnum_shift_right(n, C_u_fixnum_negate(c));
@@ -5979,6 +6050,7 @@ C_regparm C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x)
 }
 
 
+/* I */
 C_regparm C_word C_fcall C_i_not_pair_p_2(C_word x)
 {
   return C_mk_bool(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG);
@@ -6232,6 +6304,7 @@ void C_ccall call_cc_values_wrapper(C_word c, C_word closure, C_word k, ...)
 }
 
 
+/* I */
 void C_ccall C_continuation_graft(C_word c, C_word self, C_word k, C_word kk, C_word proc)
 {
   ((C_proc2)C_retrieve_proc(proc))(2, proc, C_block_item(kk, 1));
