@@ -569,6 +569,8 @@
 	      [subs (node-subexpressions body)] )
 	  (and (eq? c 'let)
 	       (null? (cdr params))
+               (not (get db (first params) 'inline-transient))
+               (not (get db (first params) 'references))
 	       (let* ([val (first subs)]
 		      [valparams (node-parameters val)]
 		      [valsubs (node-subexpressions val)] )
@@ -771,7 +773,7 @@
 		  body
 		  sgraph) ] )
 	    (cond [(pair? optimized)
-		   (debugging 'o "eliminated assignments" optimized)
+		   (debugging 'o "converted assignments to bindings" optimized)
 		   (values n2 #t) ]
 		  [else (values n2 #f)] ) ) ) ) ) ) )
 
