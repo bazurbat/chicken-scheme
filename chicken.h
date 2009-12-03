@@ -85,6 +85,7 @@
 #include <setjmp.h>
 #include <limits.h>
 #include <time.h>
+#include <math.h>
 
 #if !defined(C_NONUNIX) || defined(__MINGW32__) || defined(__WATCOMC__)
 # include <unistd.h>
@@ -862,6 +863,26 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_isspace                  isspace
 # define C_islower                  islower
 # define C_isupper                  isupper
+# define C_sin                      sin
+# define C_cos                      cos
+# define C_tan                      tan
+# define C_asin                     asin
+# define C_acos                     acos
+# define C_atan                     atan
+# define C_atan2                    atan2
+# define C_log                      log
+# define C_exp                      exp
+# define C_pow                      pow
+# define C_sqrt                     sqrt
+# define C_ceil                     ceil
+# define C_floor                    floor
+# define C_round                    round
+# define C_trunc                    trunc
+# ifdef __GNUC__
+/* this is stupid */
+extern double round(double);
+extern double trunc(double);
+# endif
 #else
 # include "chicken-libc-stubs.h"
 #endif
@@ -1023,7 +1044,6 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
                                          C_port_file(p)), C_SCHEME_UNDEFINED)
 #define C_fix_to_char(x)                (C_make_character(C_unfix(x)))
 #define C_char_to_fix(x)                (C_fix(C_character_code(x)))
-#define C_math_result(x)                (C_temporary_flonum = (x), C_SCHEME_UNDEFINED)
 #define C_substring_copy(s1, s2, start1, end1, start2) \
                                         (C_memcpy((C_char *)C_data_pointer(s2) + C_unfix(start2), \
                                                   (C_char *)C_data_pointer(s1) + C_unfix(start1), \
@@ -1253,10 +1273,10 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 #define C_alloc_flonum                  C_word *___tmpflonum = C_alloc(WORDS_PER_FLONUM)
 #define C_kontinue_flonum(k, n)         C_kontinue((k), C_flonum(&___tmpflonum, (n)))
 
-#define C_a_i_flonum_truncate(ptr, n, x)  C_flonum(ptr, trunc(C_flonum_magnitude(x)))
-#define C_a_i_flonum_ceiling(ptr, n, x)  C_flonum(ptr, trunc(C_flonum_magnitude(x)))
-#define C_a_i_flonum_floor(ptr, n, x)   C_flonum(ptr, trunc(C_flonum_magnitude(x)))
-#define C_a_i_flonum_round(ptr, n, x)   C_flonum(ptr, round(C_flonum_magnitude(x)))
+#define C_a_i_flonum_truncate(ptr, n, x)  C_flonum(ptr, C_trunc(C_flonum_magnitude(x)))
+#define C_a_i_flonum_ceiling(ptr, n, x)  C_flonum(ptr, C_ceil(C_flonum_magnitude(x)))
+#define C_a_i_flonum_floor(ptr, n, x)   C_flonum(ptr, C_floor(C_flonum_magnitude(x)))
+#define C_a_i_flonum_round(ptr, n, x)   C_flonum(ptr, C_round(C_flonum_magnitude(x)))
 
 #define C_a_i_f32vector_ref(ptr, n, b, i)  C_flonum(ptr, ((float *)C_data_pointer(b))[ C_unfix(i) ])
 #define C_a_i_f64vector_ref(ptr, n, b, i)  C_flonum(ptr, ((double *)C_data_pointer(b))[ C_unfix(i) ])
@@ -1496,7 +1516,6 @@ C_fctexport void C_ccall C_open_file_port(C_word c, C_word closure, C_word k, C_
 C_fctexport void C_ccall C_allocate_vector(C_word c, C_word closure, C_word k, C_word size, C_word type, C_word init, C_word align8) C_noret;
 C_fctexport void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word string) C_noret;
 C_fctexport void C_ccall C_build_symbol(C_word c, C_word closure, C_word k, C_word string) C_noret;
-C_fctexport void C_ccall C_cons_flonum(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_flonum_fraction(C_word c, C_word closure, C_word k, C_word n) C_noret;
 C_fctexport void C_ccall C_exact_to_inexact(C_word c, C_word closure, C_word k, C_word n) C_noret;
 C_fctexport void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2) C_noret;

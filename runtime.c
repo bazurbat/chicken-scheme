@@ -4031,7 +4031,7 @@ C_regparm C_word C_fcall C_char_ready_p(C_word port)
 }
 
 
-/* I */
+/* M */
 C_regparm C_word C_fcall C_flush_output(C_word port)
 {
   C_fflush(C_port_file(port));
@@ -4237,7 +4237,7 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
 }
 
 
-/* I */
+/* M */
 C_regparm void C_fcall C_paranoid_check_for_interrupt(void)
 {
   if(--C_timer_interrupt_counter <= 0)
@@ -4262,7 +4262,7 @@ C_regparm void C_fcall C_raise_interrupt(int reason)
 }
 
 
-/* I */
+/* M */
 C_regparm C_word C_fcall C_set_initial_timer_interrupt_period(C_word n)
 {
   C_initial_timer_interrupt_period = C_unfix(n);
@@ -4270,7 +4270,7 @@ C_regparm C_word C_fcall C_set_initial_timer_interrupt_period(C_word n)
 }
 
 
-/* I */
+/* M */
 C_regparm C_word C_fcall C_enable_interrupts(void)
 {
   C_timer_interrupt_counter = C_initial_timer_interrupt_period;
@@ -4280,7 +4280,7 @@ C_regparm C_word C_fcall C_enable_interrupts(void)
 }
 
 
-/* I */
+/* M */
 C_regparm C_word C_fcall C_disable_interrupts(void)
 {
   C_interrupts_enabled = 0;
@@ -4906,7 +4906,7 @@ C_regparm C_word C_fcall C_i_exactp(C_word x)
 }
 
 
-/* I */
+/* M */
 C_regparm C_word C_fcall C_u_i_exactp(C_word x)
 {
   if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
@@ -4926,7 +4926,7 @@ C_regparm C_word C_fcall C_i_inexactp(C_word x)
 }
 
 
-/* I */
+/* M */
 C_regparm C_word C_fcall C_u_i_inexactp(C_word x)
 {
   if(x & C_FIXNUM_BIT) return C_SCHEME_FALSE;
@@ -5387,34 +5387,35 @@ C_regparm C_word C_fcall C_a_i_abs(C_word **a, int c, C_word x)
 }
 
 
+/* M */
 C_regparm C_word C_fcall C_a_i_flonum_plus(C_word **a, int c, C_word n1, C_word n2)
 {
   return C_flonum(a, C_flonum_magnitude(n1) + C_flonum_magnitude(n2));
 }
 
 
-/* I */
+/* M */
 C_regparm C_word C_fcall C_a_i_flonum_difference(C_word **a, int c, C_word n1, C_word n2)
 {
   return C_flonum(a, C_flonum_magnitude(n1) - C_flonum_magnitude(n2));
 }
 
 
-/* I */
+/* M */
 C_regparm C_word C_fcall C_a_i_flonum_times(C_word **a, int c, C_word n1, C_word n2)
 {
   return C_flonum(a, C_flonum_magnitude(n1) * C_flonum_magnitude(n2));
 }
 
 
-/* I */
+/* M */
 C_regparm C_word C_fcall C_a_i_flonum_quotient(C_word **a, int c, C_word n1, C_word n2)
 {
   return C_flonum(a, C_flonum_magnitude(n1) / C_flonum_magnitude(n2));
 }
 
 
-/* I */
+/* M */
 C_regparm C_word C_fcall C_a_i_flonum_negate(C_word **a, int c, C_word n)
 {
   return C_flonum(a, -C_flonum_magnitude(n));
@@ -7448,7 +7449,7 @@ void C_ccall C_exact_to_inexact(C_word c, C_word closure, C_word k, C_word n)
 
 
 /* this is different from C_a_i_flonum_round, for R5RS compatibility */
-C_word C_fcall C_a_i_flonum_round_proper(C_word **ptr, int c, C_word n)
+C_regparm C_word C_fcall C_a_i_flonum_round_proper(C_word **ptr, int c, C_word n)
 {
   double fn, i, f, i2, r;
 
@@ -8150,6 +8151,7 @@ void C_ccall C_peek_signed_integer(C_word c, C_word closure, C_word k, C_word v,
 void C_ccall C_peek_unsigned_integer(C_word c, C_word closure, C_word k, C_word v, C_word index)
 {
   C_word x = C_block_item(v, C_unfix(index));
+  C_alloc_flonum;
 
   if((x & C_INT_SIGN_BIT) || ((x << 1) & C_INT_SIGN_BIT)) {
     C_kontinue_flonum(k, (double)(C_uword)x);

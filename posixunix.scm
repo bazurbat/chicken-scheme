@@ -433,7 +433,7 @@ C_tm_get( C_word v )
 
 #define C_asctime(v)    (asctime(C_tm_set(v)))
 #define C_a_mktime(ptr, c, v)  C_flonum(ptr, mktime(C_tm_set(v)))
-#define C_a_timegm(v)     C_flonum(ptr, timegm(C_tm_set(v)))
+#define C_a_timegm(ptr, c, v)  C_flonum(ptr, timegm(C_tm_set(v)))
 
 #define TIME_STRING_MAXLENGTH 255
 static char C_time_string [TIME_STRING_MAXLENGTH + 1];
