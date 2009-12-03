@@ -439,6 +439,11 @@ C_tm_get( C_word v )
 static char C_time_string [TIME_STRING_MAXLENGTH + 1];
 #undef TIME_STRING_MAXLENGTH
 
+#ifdef __linux__
+extern char *strptime(const char *s, const char *format, struct tm *tm);
+extern pid_t getpgid(pid_t pid);
+#endif
+
 #define C_strftime(v, f) \
         (strftime(C_time_string, sizeof(C_time_string), C_c_string(f), C_tm_set(v)) ? C_time_string : NULL)
 

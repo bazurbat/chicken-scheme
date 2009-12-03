@@ -878,8 +878,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_floor                    floor
 # define C_round                    round
 # define C_trunc                    trunc
-# ifdef __GNUC__
-/* this is stupid */
+# ifdef __linux__
 extern double round(double);
 extern double trunc(double);
 # endif
