@@ -48,15 +48,14 @@ EOF
   parse-option-string chop-separator lookup-script-file
   report describe dump hexdump bytevector-data get-config
   deldups tty-input?
-  history-list history-count history-add history-ref
-  trace-indent trace-indent-level traced-procedure-entry traced-procedure-exit)
+  history-list history-count history-add history-ref)
 
 (declare
   (always-bound
     ##sys#windows-platform)
-  (hide parse-option-string bytevector-data member* canonicalize-args do-trace do-untrace
-	traced-procedures describer-table dirseparator? resolve-var
-	findall trace-indent command-table do-break do-unbreak broken-procedures) )
+  (hide parse-option-string bytevector-data member* canonicalize-args 
+	describer-table dirseparator? resolve-var
+	findall command-table) )
 
 
 ;;; Parameters:
@@ -254,7 +253,6 @@ EOF
   (let ((eval eval)
 	(load-noisily load-noisily)
 	(read read)
-	(singlestep singlestep)
 	(read-line read-line)
 	(length length)
 	(display display)
@@ -266,7 +264,6 @@ EOF
 	(integer? integer?)
 	(values values) )
     (lambda (form)
-      (set! trace-indent-level 0)
       (cond ((eof-object? form) (exit))
 	    ((and (pair? form)
 		  (eq? 'unquote (##sys#slot form 0)) )
@@ -315,34 +312,10 @@ EOF
 			   (receive rs (time (eval x))
 			     (history-add rs)
 			     (apply values rs) ) ) )
-			((tr) (do-trace (map resolve-var (string-split (read-line)))))
-			((utr) (do-untrace (map resolve-var (string-split (read-line)))))
-			((br) (do-break (map resolve-var (string-split (read-line)))))
-			((ubr) (do-unbreak (map resolve-var (string-split (read-line)))))
-			((uba) (do-unbreak-all))
-			((breakall) 
-			 (set! ##sys#break-in-thread #f) ) 
-			((breakonly)
-			 (set! ##sys#break-in-thread (eval (read))) )
-			((info)
-			 (when (pair? traced-procedures)
-			   (printf "Traced: ~s~%" (map car traced-procedures)) )
-			 (when (pair? broken-procedures)
-			   (printf "Breakpoints: ~s~%" (map car broken-procedures)) ) )
-			((c)
-			 (cond (##sys#last-breakpoint
-				(let ((exn ##sys#last-breakpoint))
-				  (set! ##sys#last-breakpoint #f)
-				  (##sys#break-resume exn) ) )
-			       (else (display "no breakpoint pending\n") ) ) )
 			((exn) 
 			 (when ##sys#last-exception
 			   (history-add (list ##sys#last-exception))
 			   (describe ##sys#last-exception) ) )
-			((step)
-			 (let ((x (read)))
-			   (read-line)
-			   (singlestep (eval `(lambda () ,x))) ) )
 			((s)
 			 (let* ((str (read-line))
 				(r (system str)) )
@@ -362,16 +335,6 @@ EOF
  ,ln FILENAME ...  Load one or more files and print result of each top-level expression
  ,r                Show system information
  ,s TEXT ...       Execute shell-command
- ,tr NAME ...      Trace procedures
- ,utr NAME ...     Untrace procedures
- ,br NAME ...      Set breakpoints
- ,ubr NAME ...     Remove breakpoints
- ,uba              Remove all breakpoints
- ,breakall         Break in all threads (default)
- ,breakonly THREAD Break only in specified thread
- ,c                Continue from breakpoint
- ,info             List traced procedures and breakpoints
- ,step EXPR        Execute EXPR in single-stepping mode
  ,exn              Describe last exception
  ,t EXP            Evaluate form and print elapsed time
  ,x EXP            Pretty print expanded expression EXP\n")
@@ -394,131 +357,6 @@ EOF
 (define (resolve-var str)
   (##sys#strip-syntax (string->symbol str) (##sys#current-environment) #t))
 
-
-;;; Tracing:
-
-(define (del x lst tst)
-  (let loop ([lst lst])
-    (if (null? lst)
-	'()
-	(let ([y (car lst)])
-	  (if (tst x y)
-	      (cdr lst)
-	      (cons y (loop (cdr lst))) ) ) ) ) )
-
-(define trace-indent-level 0)
-(define traced-procedures '())
-(define broken-procedures '())
-
-(define trace-indent
-  (lambda ()
-    (write-char #\|)
-    (do ((i trace-indent-level (sub1 i)))
-	((<= i 0))
-      (write-char #\space) ) ) )
-
-(define traced-procedure-entry
-  (lambda (name args)
-    (trace-indent)
-    (set! trace-indent-level (add1 trace-indent-level))
-    (write (cons name args))
-    (##sys#write-char-0 #\newline ##sys#standard-output) 
-    (flush-output) ) )
-
-(define traced-procedure-exit
-  (lambda (name results)
-    (set! trace-indent-level (sub1 trace-indent-level))
-    (trace-indent)
-    (write name)
-    (display " -> ")
-    (for-each
-     (lambda (x)
-       (write x)
-       (write-char #\space) )
-     results)
-    (##sys#write-char-0 #\newline ##sys#standard-output) 
-    (flush-output) ) )
-
-(define do-trace
-  (lambda (names)
-    (if (null? names)
-	(for-each (lambda (a) (print (car a))) traced-procedures) 
-	(for-each
-	 (lambda (s)
-	   (let ((s (expand s)))
-	     (cond ((assq s traced-procedures)
-		    (##sys#warn "procedure already traced" s) )
-		   ((assq s broken-procedures)
-		    (##sys#warn "procedure already has breakpoint") )
-		   (else
-		    (let ((old (##sys#slot s 0)))
-		      (cond ((not (procedure? old)) (##sys#error "cannot trace non-procedure" s))
-			    (else
-			     (set! traced-procedures (cons (cons s old) traced-procedures))
-			     (##sys#setslot
-			      s 0
-			      (lambda args
-				(traced-procedure-entry s args)
-				(call-with-values (lambda () (apply old args))
-				  (lambda results
-				    (traced-procedure-exit s results) 
-				    (apply values results) ) ) ) ) ) ) ) ) ) ) )
-	 names) ) ) )
-
-(define do-untrace 
-  (lambda (names)
-    (for-each
-     (lambda (s)
-       (let* ((s (expand s))
-	      (p (assq s traced-procedures)) )
-	 (cond ((not p) (##sys#warn "procedure not traced" s))
-	       (else
-		(##sys#setslot s 0 (cdr p))
-		(set! traced-procedures (del p traced-procedures eq?) ) ) ) ) )
-     names) ) )
-
-(define do-break
-  (lambda (names)
-    (if (null? names)
-	(for-each (lambda (b) (print (car a))) broken-procedures) 
-	(for-each
-	 (lambda (s)
-	   (let* ((s (expand s))
-		  (a (assq s traced-procedures)))
-	     (when a
-	       (##sys#warn "un-tracing procedure" s)
-	       (##sys#setslot s 0 (cdr a))
-	       (set! traced-procedures (del a traced-procedures eq?)) )
-	     (let ((old (##sys#slot s 0)))
-	       (cond ((not (procedure? old)) (##sys#error "cannot set breakpoint on non-procedure" s))
-		     (else
-		      (set! broken-procedures (cons (cons s old) broken-procedures))
-		      (##sys#setslot
-		       s 0
-		       (lambda args
-			 (##sys#break-entry s args)
-			 (##sys#apply old args) ) ) ) ) ) ) )
-	 names) ) ) )
-
-(define do-unbreak
-  (lambda (names)
-    (for-each
-     (lambda (s)
-       (let* ((s (expand s))
-	      (p (assq s broken-procedures)) )
-	 (cond ((not p) (##sys#warn "procedure has no breakpoint" s))
-	       (else
-		(##sys#setslot s 0 (cdr p))
-		(set! broken-procedures (del p broken-procedures eq?) ) ) ) ) )
-     names) ) )
-
-(define do-unbreak-all
-  (lambda ()
-    (for-each (lambda (bp)
-                (##sys#setslot (car bp) 0 (cdr bp)))
-              broken-procedures)
-    (set! broken-procedures '())
-    (##sys#void)))
 
 ;;; Parse options from string:
 
@@ -812,6 +650,15 @@ EOF
 
 
 ;;; Start interpreting:
+
+(define (del x lst tst)
+  (let loop ([lst lst])
+    (if (null? lst)
+	'()
+	(let ([y (car lst)])
+	  (if (tst x y)
+	      (cdr lst)
+	      (cons y (loop (cdr lst))) ) ) ) ) )
 
 (define (deldups lis . maybe-=)
   (let ((elt= (optional maybe-= equal?)))

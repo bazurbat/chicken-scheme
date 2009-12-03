@@ -325,7 +325,7 @@ or is of a version older than the one specified.
 
 For a cross-compiling CHICKEN, when compiling an extension, then it
 should be built for the host environment (as opposed to the target
-environment). This parameter is controlled by the {{-host-extension}} command-line
+environment). This parameter is controlled by the {{-host}} command-line
 option. A setup script should perform the proper steps of compiling any
 code by passing {{-host}} when invoking {{csc}} or using the {{compile}}
 macro.
@@ -462,7 +462,7 @@ Available options:
 ; {{-r   -retrieve}} : only retrieve egg into current directory, don't install
 ; {{-n   -no-install}} : do not install, just build (implies {{-keep}})
 ; {{-p   -prefix PREFIX}} : change installation prefix to {{PREFIX}}
-; {{-host-extension}} : when cross-compiling, compile extension for host
+; {{-host}} : when cross-compiling, compile extension for host
 ; {{-test}} : run included test-cases, if available
 ; {{-username USER}} : set username for transports that require this
 ; {{-password PASS}} : set password for transports that require this

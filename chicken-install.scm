@@ -398,7 +398,7 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
   -r   -retrieve                only retrieve egg into current directory, don't install
   -n   -no-install              do not install, just build (implies `-keep')
   -p   -prefix PREFIX           change installation prefix to PREFIX
-       -host-extension          when cross-compiling, compile extension for host
+       -host                    when cross-compiling, compile extension for host
        -test                    run included test-cases, if available
        -username USER           set username for transports that require this
        -password PASS           set password for transports that require this
@@ -493,7 +493,8 @@ EOF
                        ((string=? "-test" arg)
                         (set! *run-tests* #t)
                         (loop (cdr args) eggs))
-                       ((string=? "-host-extension" arg)
+                       ((or (string=? "-host" arg)
+			    (string=? "-host-extension" arg)) ; DEPRECATED
                         (set! *host-extension* #t)
                         (loop (cdr args) eggs))
                        ((string=? "-username" arg)

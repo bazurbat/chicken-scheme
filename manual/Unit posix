@@ -543,7 +543,7 @@ with no arguments and terminates.
 
 ==== process-run
 
-<procedure>(process-run COMMANDLINE])</procedure>
+<procedure>(process-run COMMANDLINE)</procedure>
 <procedure>(process-run COMMAND ARGUMENT-LIST)</procedure>
 
 Creates a new child process. The PID of the new process is returned.

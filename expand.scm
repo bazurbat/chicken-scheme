@@ -960,7 +960,9 @@
 	       (##sys#check-syntax 'define head 'symbol)
 	       (##sys#check-syntax 'define body '#(_ 0 1))
 	       (##sys#register-export head (##sys#current-module))
-	       `(##core#set! ,head ,(if (pair? body) (car body) '(##core#undefined))) )
+	       `(##core#set! 
+		 ,head 
+		 ,(if (pair? body) (car body) '(##core#undefined))) )
 	      ((pair? (car head))
 	       (##sys#check-syntax 'define head '(_ . lambda-list))
 	       (##sys#check-syntax 'define body '#(_ 1))
@@ -968,10 +970,7 @@
 	      (else
 	       (##sys#check-syntax 'define head '(symbol . lambda-list))
 	       (##sys#check-syntax 'define body '#(_ 1))
-	       (##sys#register-export (car head) (##sys#current-module))
-	       `(##core#set!
-		 ,(car head)
-		 (,(r 'lambda) ,(cdr head) ,@body))) ) ) ) ) ) )
+	       (loop (list (car head) `(,(r 'lambda) ,(cdr head) ,@body))))))))))
 
 (##sys#extend-macro-environment
  'and
