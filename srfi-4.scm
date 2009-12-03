@@ -47,8 +47,6 @@
 # define C_a_u32peek(ptr, d, b, i) C_unsigned_int_to_num(ptr, ((C_u32 *)C_data_pointer(b))[ C_unfix(i) ])
 # define C_a_s32peek(ptr, d, b, i) C_int_to_num(ptr, ((C_s32 *)C_data_pointer(b))[ C_unfix(i) ])
 #endif
-#define C_f32peek(b, i)        (C_temporary_flonum = ((float *)C_data_pointer(b))[ C_unfix(i) ], C_SCHEME_UNDEFINED)
-#define C_f64peek(b, i)        (C_temporary_flonum = ((double *)C_data_pointer(b))[ C_unfix(i) ], C_SCHEME_UNDEFINED)
 #define C_u8poke(b, i, x)      ((((unsigned char *)C_data_pointer(b))[ C_unfix(i) ] = C_unfix(x)), C_SCHEME_UNDEFINED)
 #define C_s8poke(b, i, x)      ((((char *)C_data_pointer(b))[ C_unfix(i) ] = C_unfix(x)), C_SCHEME_UNDEFINED)
 #define C_u16poke(b, i, x)     ((((unsigned short *)C_data_pointer(b))[ C_unfix(i) ] = C_unfix(x)), C_SCHEME_UNDEFINED)
@@ -76,7 +74,7 @@ EOF
      ##sys#s32vector-set! read list->f64vector list->s32vector list->u32vector list->u16vector list-s8vector
      list->u8vector set-finalizer!
      ##sys#f32vector-ref ##sys#f32vector-set! ##sys#f64vector-ref ##sys#f64vector-set! ##sys#check-exact-interval
-     ##sys#check-inexact-interval ##sys#check-number ##sys#check-structure ##sys#cons-flonum ##sys#check-list
+     ##sys#check-inexact-interval ##sys#check-number ##sys#check-structure ##sys#check-list
      ##sys#check-range ##sys#error ##sys#signal-hook
      ##sys#error-not-a-proper-list ##sys#print ##sys#allocate-vector) ) ] )
 
@@ -109,12 +107,10 @@ EOF
 (define (##sys#s32vector-ref v i) (##core#inline_allocate ("C_a_s32peek" 4) (##core#inline "C_slot" v 1) i))
 
 (define (##sys#f32vector-ref v i)
-  (##core#inline "C_f32peek" (##core#inline "C_slot" v 1) i)
-  (##sys#cons-flonum) )
+  (##core#inline_allocate ("C_a_i_f32vector_ref" 4) v i))
 
 (define (##sys#f64vector-ref v i)
-  (##core#inline "C_f64peek" (##core#inline "C_slot" v 1) i)
-  (##sys#cons-flonum) )
+  (##core#inline_allocate ("C_a_i_f64vector_ref" 4) v i))
 
 (define (##sys#u8vector-set! v i x) (##core#inline "C_u8poke" (##core#inline "C_slot" v 1) i x))
 (define (##sys#s8vector-set! v i x) (##core#inline "C_s8poke" (##core#inline "C_slot" v 1) i x))

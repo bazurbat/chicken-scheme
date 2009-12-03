@@ -1250,6 +1250,29 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_main_entry_point
 #endif
 
+#define C_alloc_flonum                  C_word *___tmpflonum = C_alloc(WORDS_PER_FLONUM)
+#define C_kontinue_flonum(k, n)         C_kontinue((k), C_flonum(&___tmpflonum, (n)))
+
+#define C_a_i_flonum_truncate(ptr, n, x)  C_flonum(ptr, trunc(C_flonum_magnitude(x)))
+#define C_a_i_flonum_ceiling(ptr, n, x)  C_flonum(ptr, trunc(C_flonum_magnitude(x)))
+#define C_a_i_flonum_floor(ptr, n, x)   C_flonum(ptr, trunc(C_flonum_magnitude(x)))
+#define C_a_i_flonum_round(ptr, n, x)   C_flonum(ptr, round(C_flonum_magnitude(x)))
+
+#define C_a_i_f32vector_ref(ptr, n, b, i)  C_flonum(ptr, ((float *)C_data_pointer(b))[ C_unfix(i) ])
+#define C_a_i_f64vector_ref(ptr, n, b, i)  C_flonum(ptr, ((double *)C_data_pointer(b))[ C_unfix(i) ])
+
+#define C_a_i_flonum_sin(ptr, c, x)     C_flonum(ptr, C_sin(C_flonum_magnitude(x)))
+#define C_a_i_flonum_cos(ptr, c, x)     C_flonum(ptr, C_cos(C_flonum_magnitude(x)))
+#define C_a_i_flonum_tan(ptr, c, x)     C_flonum(ptr, C_tan(C_flonum_magnitude(x)))
+#define C_a_i_flonum_asin(ptr, c, x)    C_flonum(ptr, C_asin(C_flonum_magnitude(x)))
+#define C_a_i_flonum_acos(ptr, c, x)    C_flonum(ptr, C_acos(C_flonum_magnitude(x)))
+#define C_a_i_flonum_atan(ptr, c, x)    C_flonum(ptr, C_atan(C_flonum_magnitude(x)))
+#define C_a_i_flonum_atan2(ptr, c, x, y)  C_flonum(ptr, C_atan2(C_flonum_magnitude(x), C_flonum_magnitude(y)))
+#define C_a_i_flonum_exp(ptr, c, x)     C_flonum(ptr, C_exp(C_flonum_magnitude(x)))
+#define C_a_i_flonum_expt(ptr, c, x, y)  C_flonum(ptr, C_pow(C_flonum_magnitude(x), C_flonum_magnitude(y)))
+#define C_a_i_flonum_log(ptr, c, x)     C_flonum(ptr, C_log(C_flonum_magnitude(x)))
+#define C_a_i_flonum_sqrt(ptr, c, x)    C_flonum(ptr, C_sqrt(C_flonum_magnitude(x)))
+
 
 /* Variables: */
 
@@ -1264,7 +1287,6 @@ C_varextern C_TLS long
 C_varextern C_TLS C_byte
   *C_fromspace_top,
   *C_fromspace_limit;
-C_varextern C_TLS double C_temporary_flonum;
 C_varextern C_TLS jmp_buf C_restart;
 C_varextern C_TLS void *C_restart_address;
 C_varextern C_TLS int C_entry_point_status;
@@ -1477,10 +1499,6 @@ C_fctexport void C_ccall C_build_symbol(C_word c, C_word closure, C_word k, C_wo
 C_fctexport void C_ccall C_cons_flonum(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_flonum_fraction(C_word c, C_word closure, C_word k, C_word n) C_noret;
 C_fctexport void C_ccall C_exact_to_inexact(C_word c, C_word closure, C_word k, C_word n) C_noret;
-C_fctexport void C_ccall C_flonum_floor(C_word c, C_word closure, C_word k, C_word n) C_noret;
-C_fctexport void C_ccall C_flonum_ceiling(C_word c, C_word closure, C_word k, C_word n) C_noret;
-C_fctexport void C_ccall C_flonum_truncate(C_word c, C_word closure, C_word k, C_word n) C_noret;
-C_fctexport void C_ccall C_flonum_round(C_word c, C_word closure, C_word k, C_word n) C_noret;
 C_fctexport void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2) C_noret;
 C_fctexport void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, ...) C_noret;
 C_fctexport void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, ...) C_noret;
@@ -1646,6 +1664,7 @@ C_fctexport C_word C_fcall C_i_o_fixnum_difference(C_word x, C_word y) C_regparm
 C_fctexport C_word C_fcall C_i_o_fixnum_and(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_o_fixnum_ior(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_o_fixnum_xor(C_word x, C_word y) C_regparm;
+C_fctexport C_word C_fcall C_a_i_flonum_round_proper(C_word **a, int c, C_word n) C_regparm;
 
 C_fctexport C_word C_fcall C_i_foreign_char_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_fixnum_argumentp(C_word x) C_regparm;

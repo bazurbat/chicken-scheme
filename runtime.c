@@ -25,6 +25,7 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 */
 
+
 #include "chicken.h"
 #include <errno.h>
 #include <signal.h>
@@ -328,7 +329,6 @@ C_TLS long
 C_TLS C_byte 
   *C_fromspace_top,
   *C_fromspace_limit;
-C_TLS double C_temporary_flonum;
 C_TLS jmp_buf C_restart;
 C_TLS void *C_restart_address;
 C_TLS int C_entry_point_status;
@@ -493,7 +493,6 @@ static LF_LIST *find_module_handle(C_char *name);
 
 static C_ccall void call_cc_wrapper(C_word c, C_word closure, C_word k, C_word result) C_noret;
 static C_ccall void call_cc_values_wrapper(C_word c, C_word closure, C_word k, ...) C_noret;
-static void cons_flonum_trampoline(void *dummy) C_noret;
 static void gc_2(void *dummy) C_noret;
 static void allocate_vector_2(void *dummy) C_noret;
 static void get_argv_2(void *dummy) C_noret;
@@ -713,7 +712,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 
 static C_PTABLE_ENTRY *create_initial_ptable()
 {
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 66);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 61); /* take note of this, it's subtle */
   int i = 0;
 
   if(pt == NULL)
@@ -750,12 +749,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_lessp);
   C_pte(C_greater_or_equal_p);
   C_pte(C_less_or_equal_p);
-  C_pte(C_flonum_floor);
-  C_pte(C_flonum_ceiling);
-  C_pte(C_flonum_truncate);
-  C_pte(C_flonum_round);
   C_pte(C_quotient);
-  C_pte(C_cons_flonum);
   C_pte(C_flonum_fraction);
   C_pte(C_expt);
   C_pte(C_exact_to_inexact);
@@ -6442,6 +6436,7 @@ void C_ccall C_times(C_word c, C_word closure, C_word k, ...)
   C_word iresult = 1;
   int fflag = 0;
   double fresult = 1;
+  C_alloc_flonum;
 
   va_start(v, k);
   c -= 2;
@@ -6466,8 +6461,7 @@ void C_ccall C_times(C_word c, C_word closure, C_word k, ...)
   x = C_fix(iresult);
   
   if(fflag || (double)C_unfix(x) != fresult) {
-      C_temporary_flonum = fresult;
-      C_cons_flonum(2, C_SCHEME_UNDEFINED, k);
+    C_kontinue_flonum(k, fresult);
   }
 
   C_kontinue(k, x);
@@ -6516,6 +6510,7 @@ void C_ccall C_plus(C_word c, C_word closure, C_word k, ...)
   C_word iresult = 0;
   int fflag = 0;
   double fresult = 0;
+  C_alloc_flonum;
 
   va_start(v, k);
   c -= 2;
@@ -6540,8 +6535,7 @@ void C_ccall C_plus(C_word c, C_word closure, C_word k, ...)
   x = C_fix(iresult);
 
   if(fflag || (double)C_unfix(x) != fresult) {
-    C_temporary_flonum = fresult;
-    C_cons_flonum(2, C_SCHEME_UNDEFINED, k);
+    C_kontinue_flonum(k, fresult);
   }
 
   C_kontinue(k, x);
@@ -6583,21 +6577,13 @@ C_regparm C_word C_fcall C_2_plus(C_word **ptr, C_word x, C_word y)
 }
 
 
-void cons_flonum_trampoline(void *dummy)
-{
-  C_word k = C_restore,
-         *a = C_alloc(WORDS_PER_FLONUM);
-
-  C_kontinue(k, C_flonum(&a, C_temporary_flonum));
-}
-
-
 void C_ccall C_minus(C_word c, C_word closure, C_word k, C_word n1, ...)
 {
   va_list v;
   C_word iresult;
   int fflag;
   double fresult;
+  C_alloc_flonum;
 
   if(c < 3) C_bad_min_argc(c, 3);
 
@@ -6643,8 +6629,7 @@ void C_ccall C_minus(C_word c, C_word closure, C_word k, C_word n1, ...)
   n1 = C_fix(iresult);
 
   if(fflag || (double)C_unfix(n1) != fresult) {
-    C_temporary_flonum = fresult;
-    C_cons_flonum(2, C_SCHEME_UNDEFINED, k);
+    C_kontinue_flonum(k, fresult);
   }
 
   C_kontinue(k, n1);
@@ -6693,6 +6678,7 @@ void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...)
   C_word iresult;
   int fflag;
   double fresult, f2;
+  C_alloc_flonum;
 
   if(c < 3) C_bad_min_argc(c, 3);
 
@@ -6766,8 +6752,7 @@ void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...)
   
  cont:
   if(fflag) {
-    C_temporary_flonum = fresult;
-    C_cons_flonum(2, C_SCHEME_UNDEFINED, k);
+    C_kontinue_flonum(k, fresult);
   }
   else n1 = C_fix(iresult);
 
@@ -7228,6 +7213,7 @@ void C_ccall C_expt(C_word c, C_word closure, C_word k, C_word n1, C_word n2)
 {
   double m1, m2;
   C_word r;
+  C_alloc_flonum;
 
   if(c != 4) C_bad_argc(c, 4);
 
@@ -7247,8 +7233,7 @@ void C_ccall C_expt(C_word c, C_word closure, C_word k, C_word n1, C_word n2)
   if(r == m1 && (n1 & C_FIXNUM_BIT) && (n2 & C_FIXNUM_BIT) && modf(m1, &m2) == 0.0 && C_fitsinfixnump(r))
     C_kontinue(k, C_fix(r));
 
-  C_temporary_flonum = m1;
-  C_cons_flonum(2, C_SCHEME_UNDEFINED, k);
+  C_kontinue_flonum(k, m1);
 }
 
 
@@ -7440,19 +7425,20 @@ void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word strin
 void C_ccall C_flonum_fraction(C_word c, C_word closure, C_word k, C_word n)
 {
   double i, fn = C_flonum_magnitude(n);
+  C_alloc_flonum;
 
-  C_temporary_flonum = modf(fn, &i);
-  C_cons_flonum(2, C_SCHEME_UNDEFINED, k);
+  C_kontinue_flonum(k, modf(fn, &i));
 }
 
 
 void C_ccall C_exact_to_inexact(C_word c, C_word closure, C_word k, C_word n)
 {
+  C_alloc_flonum;
+
   if(c != 3) C_bad_argc(c, 3);
 
   if(n & C_FIXNUM_BIT) {
-    C_temporary_flonum = (double)C_unfix(n);
-    C_cons_flonum(2, C_SCHEME_UNDEFINED, k);
+    C_kontinue_flonum(k, (double)C_unfix(n));
   }
   else if(C_immediatep(n) || C_block_header(n) != C_FLONUM_TAG)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "exact->inexact", n);
@@ -7461,57 +7447,38 @@ void C_ccall C_exact_to_inexact(C_word c, C_word closure, C_word k, C_word n)
 }
 
 
-void C_ccall C_flonum_floor(C_word c, C_word closure, C_word k, C_word n)
+/* this is different from C_a_i_flonum_round, for R5RS compatibility */
+C_word C_fcall C_a_i_flonum_round_proper(C_word **ptr, int c, C_word n)
 {
-  C_temporary_flonum = floor(C_flonum_magnitude(n));
-  C_cons_flonum(2, C_SCHEME_UNDEFINED, k);
-}
-
-
-void C_ccall C_flonum_ceiling(C_word c, C_word closure, C_word k, C_word n)
-{
-  C_temporary_flonum = ceil(C_flonum_magnitude(n));
-  C_cons_flonum(2, C_SCHEME_UNDEFINED, k);
-}
-
-
-void C_ccall C_flonum_truncate(C_word c, C_word closure, C_word k, C_word n)
-{
-  modf(C_flonum_magnitude(n), &C_temporary_flonum);
-  C_cons_flonum(2, C_SCHEME_UNDEFINED, k);
-}
-
-
-void C_ccall C_flonum_round(C_word c, C_word closure, C_word k, C_word n)
-{
-  double fn, i, f, i2;
+  double fn, i, f, i2, r;
 
   fn = C_flonum_magnitude(n);
   if(fn < 0.0) {
     f = modf(-fn, &i);
     if(f < 0.5 || (f == 0.5 && modf(i * 0.5, &i2) == 0.0))
-      C_temporary_flonum = -i;
+      r = -i;
     else
-      C_temporary_flonum = -(i + 1.0);
+      r = -(i + 1.0);
   }
   else if(fn == 0.0/* || fn == -0.0*/)
-    C_temporary_flonum = fn;
+    r = fn;
   else {
     f = modf(fn, &i);
     if(f < 0.5 || (f == 0.5 && modf(i * 0.5, &i2) == 0.0))
-      C_temporary_flonum = i;
+      r = i;
     else
-      C_temporary_flonum = i + 1.0;
+      r = i + 1.0;
   }
 
-  C_cons_flonum(2, C_SCHEME_UNDEFINED, k);
+  return C_flonum(ptr, r);
 }
 
 
 void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2)
 {
-  double f1, f2;
+  double f1, f2, r;
   C_word result;
+  C_alloc_flonum;
 
   if(c != 4) C_bad_argc(c, 4);
 
@@ -7543,16 +7510,8 @@ void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2
   if(f2 == 0)
     barf(C_DIVISION_BY_ZERO_ERROR, "quotient");
 
-  modf(f1 / f2, &C_temporary_flonum);
-  C_cons_flonum(2, C_SCHEME_UNDEFINED, k);
-}
-
-
-void C_ccall C_cons_flonum(C_word c, C_word closure, C_word k)
-{
-  C_word *a = C_alloc(WORDS_PER_FLONUM);
-
-  C_kontinue(k, C_flonum(&a, C_temporary_flonum));
+  modf(f1 / f2, &r);
+  C_kontinue_flonum(k, r);
 }
 
 
@@ -8178,11 +8137,10 @@ void C_ccall C_context_switch(C_word c, C_word closure, C_word k, C_word state)
 void C_ccall C_peek_signed_integer(C_word c, C_word closure, C_word k, C_word v, C_word index)
 {
   C_word x = C_block_item(v, C_unfix(index));
+  C_alloc_flonum;
 
   if((x & C_INT_SIGN_BIT) != ((x << 1) & C_INT_SIGN_BIT)) {
-    C_save(k);
-    C_temporary_flonum = (double)x;
-    cons_flonum_trampoline(NULL);
+    C_kontinue_flonum(k, (double)x);
   }
 
   C_kontinue(k, C_fix(x));
@@ -8194,9 +8152,7 @@ void C_ccall C_peek_unsigned_integer(C_word c, C_word closure, C_word k, C_word 
   C_word x = C_block_item(v, C_unfix(index));
 
   if((x & C_INT_SIGN_BIT) || ((x << 1) & C_INT_SIGN_BIT)) {
-    C_save(k);
-    C_temporary_flonum = (double)(C_uword)x;
-    cons_flonum_trampoline(NULL);
+    C_kontinue_flonum(k, (double)(C_uword)x);
   }
 
   C_kontinue(k, C_fix(x));
@@ -8766,6 +8722,7 @@ C_regparm C_word C_fcall C_a_i_make_locative(C_word **a, int c, C_word type, C_w
 void C_ccall C_locative_ref(C_word c, C_word closure, C_word k, C_word loc)
 {
   C_word *ptr, val;
+  C_alloc_flonum;
 
   if(c != 3) C_bad_argc(c, 3);
 
@@ -8785,8 +8742,8 @@ void C_ccall C_locative_ref(C_word c, C_word closure, C_word k, C_word loc)
   case C_S16_LOCATIVE: C_kontinue(k, C_fix(*((short *)ptr)));
   case C_U32_LOCATIVE: C_peek_unsigned_integer(0, 0, k, (C_word)(ptr - 1), 0);
   case C_S32_LOCATIVE: C_peek_signed_integer(0, 0, k, (C_word)(ptr - 1), 0);
-  case C_F32_LOCATIVE: C_temporary_flonum = *((float *)ptr); C_cons_flonum(0, 0, k);
-  case C_F64_LOCATIVE: C_temporary_flonum = *((double *)ptr); C_cons_flonum(0, 0, k);
+  case C_F32_LOCATIVE: C_kontinue_flonum(k, *((float *)ptr));
+  case C_F64_LOCATIVE: C_kontinue_flonum(k, *((double *)ptr));
   default: panic(C_text("bad locative type"));
   }
 }

@@ -67,8 +67,8 @@
      ##sys#check-char ##sys#check-exact ##sys#check-port ##sys#check-string ##sys#load-library
      ##sys#load-library-0
      ##sys#for-each ##sys#map ##sys#setslot ##sys#allocate-vector ##sys#check-pair ##sys#error-not-a-proper-list
-     ##sys#check-symbol ##sys#check-vector ##sys#floor ##sys#ceiling ##sys#truncate ##sys#round 
-     ##sys#check-number ##sys#cons-flonum ##sys#copy-env-table
+     ##sys#check-symbol ##sys#check-vector 
+     ##sys#check-number ##sys#copy-env-table
      ##sys#flonum-fraction ##sys#make-port ##sys#fetch-and-check-port-arg ##sys#print ##sys#check-structure 
      ##sys#make-structure ##sys#feature?
      ##sys#error-handler ##sys#hash-symbol ##sys#check-syntax
