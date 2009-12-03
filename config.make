@@ -23,9 +23,6 @@
 # Enable GC of symbols:
 #SYMBOLGC=1
 
-# Disable apply-hook (for breakpints, etc.):
-# NOAPPLYHOOK=1
-
 # Enable full optimization for compiling generated C code:
 #OPTIMIZE_FOR_SPEED=1
 
