@@ -155,6 +155,9 @@ echo "======================================== fixnum tests ..."
 $compile fixnum-tests.scm
 ./a.out
 
+echo "======================================== srfi-4 tests ..."
+$interpret -s srfi-4-tests.scm
+
 echo "======================================== srfi-18 tests ..."
 $interpret -s srfi-18-tests.scm
 echo "*** Skipping \"feeley-dynwind\" (for now) ***"
@@ -208,7 +211,7 @@ $compile -e embedded2.scm
 ./a.out
 
 echo "======================================== timing compilation ..."
-time $compile compiler.scm -S -O5 -debug pb -vv
+time $compile compiler.scm -S -O5 -debug pb -v
 time ./a.out
 
 echo "======================================== running floating-point benchmark ..."

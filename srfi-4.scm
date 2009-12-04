@@ -118,8 +118,12 @@ EOF
 (define (##sys#s16vector-set! v i x) (##core#inline "C_s16poke" (##core#inline "C_slot" v 1) i x))
 (define (##sys#u32vector-set! v i x) (##core#inline "C_u32poke" (##core#inline "C_slot" v 1) i x))
 (define (##sys#s32vector-set! v i x) (##core#inline "C_s32poke" (##core#inline "C_slot" v 1) i x))
-(define (##sys#f32vector-set! v i x) (##core#inline "C_f32poke" (##core#inline "C_slot" v 1) i x))
-(define (##sys#f64vector-set! v i x) (##core#inline "C_f64poke" (##core#inline "C_slot" v 1) i x))
+
+(define (##sys#f32vector-set! v i x)
+  (##core#inline "C_u_i_f32vector_set" v i x))
+
+(define (##sys#f64vector-set! v i x)
+  (##core#inline "C_u_i_f64vector_set" v i x))
 
 
 ;;; Get vector length:
