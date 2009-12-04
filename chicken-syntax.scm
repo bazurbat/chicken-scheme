@@ -151,22 +151,22 @@
 (##sys#extend-macro-environment
  'assert '()
  (##sys#er-transformer
- (lambda (form r c)
-   (##sys#check-syntax 'assert form '#(_ 1))
-   (let* ((exp (cadr form))
-	  (msg-and-args (cddr form))
-	  (%if (r 'if))
-	  (%quote (r 'quote))
-	  (msg (if (eq? '() msg-and-args)
-		   `(##core#immutable '"assertion failed")
-		   (car msg-and-args) ) ) )
-     `(,%if (##core#check ,exp)
-	    (##core#undefined)
-	    (##sys#error 
-	     ,msg 
-	     ,@(if (fx> (length msg-and-args) 1)
-		   (cdr msg-and-args)
-		   '() ) ) ) ) )) )
+  (lambda (form r c)
+    (##sys#check-syntax 'assert form '#(_ 1))
+    (let* ((exp (cadr form))
+	   (msg-and-args (cddr form))
+	   (%if (r 'if))
+	   (%quote (r 'quote))
+	   (msg (if (eq? '() msg-and-args)
+		    `(##core#immutable '"assertion failed")
+		    (car msg-and-args) ) ) )
+      `(,%if (##core#check ,exp)
+	     (##core#undefined)
+	     (##sys#error 
+	      ,msg 
+	      ,@(if (fx> (length msg-and-args) 1)
+		    (cdr msg-and-args)
+		    `((,%quote ,(##sys#strip-syntax exp))))))))))
 
 (##sys#extend-macro-environment
  'ensure

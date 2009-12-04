@@ -342,7 +342,7 @@ C_free_arg_string(char **where) {
 #define C_tm_set(v) (C_tm_set_08(v), &C_tm)
 
 #define C_asctime(v)    (asctime(C_tm_set(v)))
-#define C_mktime(v)     ((C_temporary_flonum = mktime(C_tm_set(v))) != -1)
+#define C_a_mktime(ptr, c, v)  C_flonum(ptr, mktime(C_tm_set(v)))
 
 #define TIME_STRING_MAXLENGTH 255
 static char C_time_string [TIME_STRING_MAXLENGTH + 1];
@@ -1728,9 +1728,10 @@ EOF
 
 (define (local-time->seconds tm)
   (check-time-vector 'local-time->seconds tm)
-  (if (##core#inline "C_mktime" tm)
-      (##sys#cons-flonum)
-      (##sys#error 'local-time->seconds "cannot convert time vector to seconds" tm) ) )
+  (let ((t (##core#inline_allocate ("C_mktime" 4) tm)))
+    (if (fp= t -1.0)
+	(##sys#error 'local-time->seconds "cannot convert time vector to seconds" tm) 
+	t)))
 
 (define local-timezone-abbreviation
   (foreign-lambda* c-string ()

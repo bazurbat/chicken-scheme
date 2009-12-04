@@ -129,6 +129,8 @@
   '(bitwise-and bitwise-ior bitwise-xor bitwise-not add1 sub1 fx+ fx- fx* fx/ fxmod o
     fx= fx> fx< fx>= fx<= fixnum? fxneg fxmax fxmin identity fp+ fp- fp* fp/ fpmin fpmax fpneg
     fp> fp< fp= fp>= fp<= fxand fxnot fxior fxxor fxshr fxshl bit-set?
+    fpfloor fpceiling fptruncate fpround fpsin fpcos fptan fpasin fpacos fpatan
+    fpatan2 fpexp fpexpt fplog fpsqrt
     arithmetic-shift void flush-output thread-specific thread-specific-set!
     not-pair? atom? null-list? print print* error cpu-time proper-list? call/cc
     blob-size u8vector->blob/shared s8vector->blob/shared u16vector->blob/shared
@@ -143,7 +145,7 @@
     u8vector-length s8vector-length u16vector-length s16vector-length u32vector-length s32vector-length
     f32vector-length f64vector-length setter
     u8vector-ref s8vector-ref u16vector-ref s16vector-ref u32vector-ref s32vector-ref
-    f32vector-ref f64vector-ref
+    f32vector-ref f64vector-ref f32vector-set! f64vector-set!
     u8vector-set! s8vector-set! u16vector-set! s16vector-set! u32vector-set! s32vector-set!
     locative-ref locative-set! locative->object locative? global-ref
     null-pointer? pointer->object flonum? finite?
@@ -184,6 +186,7 @@
     ##sys#byte ##sys#setbyte 
     u8vector-length s8vector-length u16vector-length s16vector-length u32vector-length s32vector-length
     f32vector-length f64vector-length ##sys#apply-values ##sys#setter setter
+    f32vector-set! f64vector-set!
     u8vector-ref s8vector-ref u16vector-ref s16vector-ref u32vector-ref s32vector-ref
     u8vector-set! s8vector-set! u16vector-set! s16vector-set! u32vector-set! s32vector-set!
     ##sys#intern-symbol ##sys#make-symbol make-record-instance error cpu-time ##sys#block-set!) )
@@ -766,10 +769,6 @@
 (rewrite 'string->number 13 "C_string_to_number" #t)
 (rewrite 'number->string 13 "C_number_to_string" #t)
 (rewrite '##sys#call-with-current-continuation 13 "C_call_cc" #t)
-(rewrite '##sys#floor 13 "C_flonum_floor" #t)
-(rewrite '##sys#ceiling 13 "C_flonum_ceiling" #t)
-(rewrite '##sys#truncate 13 "C_flonum_truncate" #t)
-(rewrite '##sys#round 13 "C_flonum_round" #t)
 (rewrite '##sys#allocate-vector 13 "C_allocate_vector" #t)
 (rewrite '##sys#ensure-heap-reserve 13 "C_ensure_heap_reserve" #t)
 (rewrite 'return-to-host 13 "C_return_to_host" #t)
@@ -786,10 +785,22 @@
 (rewrite 'odd? 2 1 "C_i_oddp" #t #f)
 (rewrite 'odd? 2 1 "C_u_i_oddp" #f #f)
 
-(rewrite 'floor 15 'flonum 'fixnum '##sys#floor #f)
-(rewrite 'ceiling 15 'flonum 'fixnum '##sys#ceiling #f)
-(rewrite 'truncate 15 'flonum 'fixnum '##sys#truncate #f)
-(rewrite 'round 15 'flonum 'fixnum '##sys#round #f)
+(rewrite 'floor 15 'flonum 'fixnum 'fpfloor #f)
+(rewrite 'ceiling 15 'flonum 'fixnum 'fpceiling #f)
+(rewrite 'truncate 15 'flonum 'fixnum 'fptruncate #f)
+(rewrite 'round 15 'flonum 'fixnum 'fpround #f)
+
+(rewrite 'fpsin 16 1 "C_a_i_flonum_sin" #f words-per-flonum)
+(rewrite 'fpcos 16 1 "C_a_i_flonum_cos" #f words-per-flonum)
+(rewrite 'fptan 16 1 "C_a_i_flonum_tan" #f words-per-flonum)
+(rewrite 'fpasin 16 1 "C_a_i_flonum_asin" #f words-per-flonum)
+(rewrite 'fpacos 16 1 "C_a_i_flonum_acos" #f words-per-flonum)
+(rewrite 'fpatan 16 1 "C_a_i_flonum_atan" #f words-per-flonum)
+(rewrite 'fpatan2 16 2 "C_a_i_flonum_atan2" #f words-per-flonum)
+(rewrite 'fpexp 16 1 "C_a_i_flonum_exp" #f words-per-flonum)
+(rewrite 'fpexpt 16 2 "C_a_i_flonum_expt" #f words-per-flonum)
+(rewrite 'fplog 16 1 "C_a_i_flonum_log" #f words-per-flonum)
+(rewrite 'fpsqrt 16 1 "C_a_i_flonum_sqrt" #f words-per-flonum)
 
 (rewrite 'cons 16 2 "C_a_i_cons" #t 3)
 (rewrite '##sys#cons 16 2 "C_a_i_cons" #t 3)
@@ -894,6 +905,9 @@
 (rewrite 'u16vector-ref 2 2 "C_u_i_u16vector_ref" #f #f)
 (rewrite 's16vector-ref 2 2 "C_u_i_s16vector_ref" #f #f)
 
+(rewrite 'f32vector-ref 16 2 "C_a_i_f32vector_ref" #f words-per-flonum)
+(rewrite 'f64vector-ref 16 2 "C_a_i_f64vector_ref" #f words-per-flonum)
+
 (rewrite 'u32vector-ref 22 2 "C_a_i_u32vector_ref" #f words-per-flonum "C_u_i_u32vector_ref")
 (rewrite 's32vector-ref 22 2 "C_a_i_s32vector_ref" #f words-per-flonum "C_u_i_s32vector_ref")
 
@@ -903,6 +917,8 @@
 (rewrite 's16vector-set! 2 3 "C_u_i_s16vector_set" #f #f)
 (rewrite 'u32vector-set! 2 3 "C_u_i_u32vector_set" #f #f)
 (rewrite 's32vector-set! 2 3 "C_u_i_s32vector_set" #f #f)
+(rewrite 'f32vector-set! 2 3 "C_u_i_f32vector_set" #f #f)
+(rewrite 'f64vector-set! 2 3 "C_u_i_f64vector_set" #f #f)
 
 (rewrite 'u8vector-length 2 1 "C_u_i_8vector_length" #f #f)
 (rewrite 's8vector-length 2 1 "C_u_i_8vector_length" #f #f)

@@ -432,12 +432,17 @@ C_tm_get( C_word v )
 #endif
 
 #define C_asctime(v)    (asctime(C_tm_set(v)))
-#define C_mktime(v)     ((C_temporary_flonum = mktime(C_tm_set(v))) != -1)
-#define C_timegm(v)     ((C_temporary_flonum = timegm(C_tm_set(v))) != -1)
+#define C_a_mktime(ptr, c, v)  C_flonum(ptr, mktime(C_tm_set(v)))
+#define C_a_timegm(ptr, c, v)  C_flonum(ptr, timegm(C_tm_set(v)))
 
 #define TIME_STRING_MAXLENGTH 255
 static char C_time_string [TIME_STRING_MAXLENGTH + 1];
 #undef TIME_STRING_MAXLENGTH
+
+#ifdef __linux__
+extern char *strptime(const char *s, const char *format, struct tm *tm);
+extern pid_t getpgid(pid_t pid);
+#endif
 
 #define C_strftime(v, f) \
         (strftime(C_time_string, sizeof(C_time_string), C_c_string(f), C_tm_set(v)) ? C_time_string : NULL)
@@ -491,7 +496,7 @@ EOF
      pathname-file process-fork file-close duplicate-fileno process-execute get-environment-variable
      make-string make-input-port make-output-port ##sys#thread-block-for-i/o create-pipe
      process-wait pathname-strip-directory pathname-directory ##sys#expand-home-path directory
-     decompose-pathname ##sys#cons-flonum ##sys#decode-seconds ##sys#null-pointer ##sys#pointer->address
+     decompose-pathname ##sys#decode-seconds ##sys#null-pointer ##sys#pointer->address
      ##sys#substring ##sys#context-switch close-input-pipe close-output-pipe change-directory
      current-directory ##sys#make-pointer port? ##sys#schedule ##sys#process
      ##sys#peek-fixnum ##sys#make-structure ##sys#check-structure ##sys#enable-interrupts
@@ -1994,15 +1999,17 @@ EOF
 
 (define (local-time->seconds tm)
   (check-time-vector 'local-time->seconds tm)
-  (if (##core#inline "C_mktime" tm)
-      (##sys#cons-flonum)
-      (##sys#error 'local-time->seconds "cannot convert time vector to seconds" tm) ) )
+  (let ((t (##core#inline_allocate ("C_a_mktime" 4) tm)))
+    (if (fp= -1.0 t)
+	(##sys#error 'local-time->seconds "cannot convert time vector to seconds" tm)
+	t)))
 
 (define (utc-time->seconds tm)
   (check-time-vector 'utc-time->seconds tm)
-  (if (##core#inline "C_timegm" tm)
-      (##sys#cons-flonum)
-      (##sys#error 'utc-time->seconds "cannot convert time vector to seconds" tm) ) )
+  (let ((t (##core#inline_allocate ("C_a_timegm" 4) tm)))
+    (if (fp= -1.0 t)
+	(##sys#error 'utc-time->seconds "cannot convert time vector to seconds" tm) 
+	t)))
 
 (define local-timezone-abbreviation
   (foreign-lambda* c-string ()
