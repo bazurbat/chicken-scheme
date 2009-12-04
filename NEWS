@@ -69,7 +69,7 @@
 4.2.5
 
 - fix in optimizer that sometimes caused C functions for inlined
-  procedures to be emitted multiple times (Thanks to Jörg Wittenberger)
+  procedures to be emitted multiple times (Thanks to Joerg Wittenberger)
 - documented `define-compiler-syntax' and `let-compiler-syntax'
 
 4.2.3
