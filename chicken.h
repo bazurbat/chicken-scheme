@@ -287,6 +287,12 @@ typedef unsigned __int64   uint64_t;
 
 #define C_c_regparm
 
+#if defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__cplusplus)
+# define C_inline                  inline static
+#else
+# define C_inline                  static
+#endif
+
 /* Thread Local Stoarage */
 #ifdef C_ENABLE_TLS
 # if defined(__GNUC__)
