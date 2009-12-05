@@ -1,7 +1,7 @@
 # rules.make - basic build rules -*- Makefile -*-
 #
-# Copyright (c) 2000-2007, Felix L. Winkelmann
 # Copyright (c) 2008-2009, The Chicken Team
+# Copyright (c) 2000-2007, Felix L. Winkelmann
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -1268,8 +1268,8 @@ clean:
 	  $(LIBCHICKEN_SO_FILE) $(LIBUCHICKEN_SO_FILE) $(LIBCHICKENGUI_SO_FILE) \
 	  libchicken$(A) libuchicken$(A) libchickengui$(A) libchicken$(SO) $(PROGRAM_IMPORT_LIBRARIES) \
 	  $(IMPORT_LIBRARIES:=.import.so) $(LIBCHICKEN_IMPORT_LIBRARY) $(LIBUCHICKEN_IMPORT_LIBRARY) \
-	  $(LIBCHICKENGUI_IMPORT_LIBRARY) setup-api.so setup-download.so \
-	  $(CLEAN_MINGW_LIBS)
+	  $(LIBCHICKENGUI_IMPORT_LIBRARY) setup-api.so setup-api.import.scm setup-download.so \
+	  setup-download.import.scm $(CLEAN_MINGW_LIBS)
 ifdef USES_SONAME
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) libchicken.so.$(BINARYVERSION)
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) libuchicken.so.$(BINARYVERSION)
