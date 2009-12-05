@@ -275,6 +275,10 @@ APPLY_HACK_SRC ?= apply-hack.$(ARCH)$(ASM)
 APPLY_HACK_OBJECT ?= apply-hack.$(ARCH)$(O)
 endif
 
+ifeq ($(HACKED_APPLY),)
+APPLY_HACK_OBJECT =
+endif
+
 # bootstrapping compiler
 
 CHICKEN ?= chicken$(EXE)

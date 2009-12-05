@@ -222,6 +222,7 @@
  perform-inlining!
  perform-lambda-lifting!
  perform-pre-optimization!
+ perform-unboxing!
  posq
  postponed-initforms
  pprint-expressions-to-file

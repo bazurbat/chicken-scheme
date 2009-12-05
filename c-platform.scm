@@ -1,7 +1,7 @@
 ;;;; c-platform.scm - Platform specific parameters and definitions
 ;
-; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; Copyright (c) 2008-2009, The Chicken Team
+; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -92,7 +92,7 @@
     analyze-only dynamic scrutinize no-argc-checks no-procedure-checks
     no-bound-checks no-procedure-checks-for-usual-bindings no-compiler-syntax
     no-parentheses-synonyms no-symbol-escape r5rs-syntax emit-all-import-libraries
-    setup-mode) )
+    setup-mode unboxing) )
 
 (define valid-compiler-options-with-argument
   '(debug 

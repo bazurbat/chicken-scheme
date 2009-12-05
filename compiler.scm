@@ -114,7 +114,7 @@
 ; (##core#loop-lambda <llist> <body>)
 ; (##core#undefined)
 ; (##core#primitive <name>)
-; (##core#inline <op> {<exp>})
+; (##core#inline {<op>} <exp>)
 ; (##core#inline_allocate (<op> <words>) {<exp>})
 ; (##core#inline_ref (<name> <type>))
 ; (##core#inline_update (<name> <type>) <exp>)
@@ -177,13 +177,17 @@
 ; [if {} <exp> <exp> <exp>]
 ; [quote {<exp>}]
 ; [##core#bind {<count>} <exp-v>... <exp>]
+; [##core#let_unboxed {<name> <utype>} <exp1> <exp2>]
 ; [##core#undefined {}]
+; [##core#unboxed_ref {<name> <utype>}]
+; [##core#unboxed_set! {<name> <utype>} <exp>]
 ; [##core#inline {<op>} <exp>...]
 ; [##core#inline_allocate {<op <words>} <exp>...]
 ; [##core#inline_ref {<name> <type>}]
 ; [##core#inline_update {<name> <type>} <exp>]
 ; [##core#inline_loc_ref {<type>} <exp>]
 ; [##core#inline_loc_update {<type>} <exp> <exp>]
+; [##core#inline_unboxed {<op>} <exp> ...]
 ; [##core#closure {<count>} <exp>...]
 ; [##core#box {} <exp>]
 ; [##core#unbox {} <exp>]
@@ -2364,16 +2368,17 @@
 
 (define-record-type lambda-literal
   (make-lambda-literal id external arguments argument-count rest-argument temporaries
-		       callee-signatures allocated directly-called closure-size
-		       looping customizable rest-argument-mode body direct)
+		       unboxed-temporaries callee-signatures allocated directly-called
+		       closure-size looping customizable rest-argument-mode body direct)
   lambda-literal?
   (id lambda-literal-id)			       ; symbol
   (external lambda-literal-external)		       ; boolean
-  (arguments lambda-literal-arguments)		       ; (symbol...)
+  (arguments lambda-literal-arguments)		       ; (symbol ...)
   (argument-count lambda-literal-argument-count)       ; integer
   (rest-argument lambda-literal-rest-argument)	       ; symbol | #f
   (temporaries lambda-literal-temporaries)	       ; integer
-  (callee-signatures lambda-literal-callee-signatures) ; (integer...)
+  (unboxed-temporaries lambda-literal-unboxed-temporaries) ; ((sym . utype) ...)
+  (callee-signatures lambda-literal-callee-signatures) ; (integer ...)
   (allocated lambda-literal-allocated)		       ; integer
   (directly-called lambda-literal-directly-called)     ; boolean
   (closure-size lambda-literal-closure-size)	       ; integer
@@ -2384,16 +2389,17 @@
   (direct lambda-literal-direct))			 ; boolean
   
 (define (prepare-for-code-generation node db)
-  (let ([literals '()]
-	[lambda-info-literals '()]
-        [lambdas '()]
-        [temporaries 0]
-        [allocated 0]
-	[looping 0]
-        [signatures '()] 
-	[fastinits 0] 
-	[fastrefs 0] 
-	[fastsets 0] )
+  (let ((literals '())
+	(lambda-info-literals '())
+        (lambdas '())
+        (temporaries 0)
+	(ubtemporaries '())
+        (allocated 0)
+	(looping 0)
+        (signatures '()) 
+	(fastinits 0) 
+	(fastrefs 0) 
+	(fastsets 0) )
 
     (define (walk-var var e sf)
       (cond [(posq var e) => (lambda (i) (make-node '##core#local (list i) '()))]
@@ -2470,12 +2476,14 @@
 	      subs) ) )
 
 	  ((##core#lambda ##core#direct_lambda) 
-	   (let ([temps temporaries]
-		 [sigs signatures]
-		 [lping looping]
-		 [alc allocated] 
-		 [direct (eq? class '##core#direct_lambda)] )
+	   (let ((temps temporaries)
+		 (ubtemps ubtemporaries)
+		 (sigs signatures)
+		 (lping looping)
+		 (alc allocated) 
+		 (direct (eq? class '##core#direct_lambda)) )
 	     (set! temporaries 0)
+	     (set! ubtemporaries '())
 	     (set! allocated 0)
 	     (set! signatures '())
 	     (set! looping 0)
@@ -2509,6 +2517,7 @@
 			   argc
 			   rest
 			   (add1 temporaries)
+			   ubtemporaries
 			   signatures
 			   allocated
 			   (or direct (memq id direct-call-ids))
@@ -2525,6 +2534,7 @@
 			  lambdas) )
 		  (set! looping lping)
 		  (set! temporaries temps)
+		  (set! ubtemporaries ubtemps)
 		  (set! allocated alc)
 		  (set! signatures sigs)
 		  (make-node '##core#proc (list (first params)) '()) ) ) ) ) )
@@ -2535,9 +2545,18 @@
 		  [boxvars (if (eq? '##core#box (node-class val)) (list var) '())] )
 	     (set! temporaries (add1 temporaries))
 	     (make-node
-	      '##core#bind (list 1)
+	      '##core#bind (list 1)	; is actually never used with more than 1 variable
 	      (list (walk val e here boxes)
 		    (walk (second subs) (append e params) here (append boxvars boxes)) ) ) ) )
+
+	  ((##core#let_unboxed)
+	   (let* ((var (first params))
+		  (val (first subs)) )
+	     (set! ubtemporaries (alist-cons var (second params) ubtemporaries))
+	     (make-node
+	      '##core#let_unboxed params
+	      (list (walk val e here boxes)
+		    (walk (second subs) e here boxes) ) ) ) )
 
 	  ((set!)
 	   (let ([var (first params)]
