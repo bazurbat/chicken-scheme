@@ -1,7 +1,7 @@
 ;;;; chicken.scm - The CHICKEN Scheme compiler (loader/main-module)
 ;
-; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; Copyright (c) 2008-2009, The Chicken Team
+; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -27,7 +27,7 @@
 
 (declare
   (uses chicken-syntax srfi-1 srfi-4 utils files extras data-structures support
-	compiler optimizer compiler-syntax scrutinizer driver platform backend 
+	compiler optimizer unboxing compiler-syntax scrutinizer driver platform backend 
 	srfi-69)
   (compile-syntax) )			
 
@@ -82,6 +82,7 @@
 	       (let ([level (string->number (car rest))])
 		 (case level
 		   [(0) #f]
+		   ;;XXX later add 'unboxing to -O2 and above
 		   [(1)
 		    (set! options (cons 'optimize-leaf-routines options)) ]
 		   [(2)
