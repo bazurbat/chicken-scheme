@@ -1,3 +1,10 @@
+4.2.13
+
+- added new floating-point primitives `fpsin`, `fpcos', `fptan',
+  `fpasin', `fpacos', `fpatan', `fpatan2', `fpexp', `fplog', 
+  `fpexpt' and `fpsqrt'
+- heavy cleanup of floating math library functions
+
 4.2.12
 
 - removed tracing facility and apply-hook (see the "trace" egg
