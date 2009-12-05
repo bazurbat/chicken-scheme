@@ -5,3 +5,5 @@ batch-driver.scm
 c-backend.scm
 c-platform.scm
 chicken.scm
+scrutinizer.scm
+unboxing.scm

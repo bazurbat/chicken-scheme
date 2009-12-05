@@ -26,6 +26,7 @@ lolevel.c
 optimizer.c
 compiler-syntax.c
 scrutinizer.c
+unboxing.c
 regex.c
 posixunix.c
 posixwin.c
@@ -137,6 +138,7 @@ lolevel.scm
 optimizer.scm
 compiler-syntax.scm
 scrutinizer.scm
+unboxing.scm
 regex.scm
 irregex.scm
 posixunix.scm

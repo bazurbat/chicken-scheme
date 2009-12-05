@@ -1086,7 +1086,7 @@ extern double trunc(double);
 #define C_random_fixnum(n)              C_fix((int)(((double)rand())/(RAND_MAX + 1.0) * C_unfix(n)))
 #define C_randomize(n)                  (srand(C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_block_size(x)                 C_fix(C_header_size(x))
-#define C_pointer_address(x)            ((C_byte *)C_u_i_car(x))
+#define C_pointer_address(x)            ((C_byte *)C_block_item((x), 0))
 #define C_block_address(ptr, n, x)      C_a_unsigned_int_to_num(ptr, n, x)
 #define C_offset_pointer(x, y)          (C_pointer_address(x) + (y))
 #define C_kontinue(k, r)                ((C_proc2)(void *)C_u_i_car(k))(2, (k), (r))
@@ -1155,7 +1155,9 @@ extern double trunc(double);
 # define C_a_i_cons(a, n, car, cdr)     C_pair(a, car, cdr)
 #endif /* __GNUC__ */
 
+#define C_a_i_flonum(ptr, i, n)         C_flonum(ptr, n)
 #define C_a_i_data_mpointer(ptr, n, x)  C_mpointer(ptr, C_data_pointer(x))
+#define C_a_i_mpointer(ptr, n, x)       C_mpointer(ptr, (x))
 #define C_a_int_to_num(ptr, n, i)       C_int_to_num(ptr, i)
 #define C_a_unsigned_int_to_num(ptr, n, i)  C_unsigned_int_to_num(ptr, i)
 #define C_a_double_to_num(ptr, n)       C_double_to_number(C_flonum(ptr, n))
@@ -1280,6 +1282,9 @@ extern double trunc(double);
                                         ((C_LAMBDA_INFO_TYPE >> 24) & 0xff)
 # endif
 #endif
+
+#define C_ub_i_flonum_plus(x, y)        ((x) + (y))
+#define C_ub_i_flonum_times(x, y)       ((x) * (y))
 
 #define C_end_of_main
 
