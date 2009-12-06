@@ -4,6 +4,8 @@
   `fpasin', `fpacos', `fpatan', `fpatan2', `fpexp', `fplog', 
   `fpexpt' and `fpsqrt'
 - heavy cleanup of floating math library functions
+- calling `advice' with a single argument shows the tested expression
+  on failure
 
 4.2.12
 

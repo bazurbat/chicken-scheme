@@ -1309,7 +1309,7 @@ check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 .PHONY: bootstrap bootstrap-files
 
 bootstrap: 
-	$(COPY_COMMAND) $(SRCDIR)bootstrap/* $(SRCDIR).
+	$(COPY_COMMAND) $(SRCDIR)bootstrap$(SEP)* $(SRCDIR).
 	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) CONFIG=$(CONFIG) STATICBUILD=1 \
 	  DEBUGBUILD=1 PLATFORM=$(PLATFORM) chicken$(EXE)
 	$(COPY_COMMAND) chicken$(EXE) chicken-boot$(EXE)
