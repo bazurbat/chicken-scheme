@@ -94,15 +94,14 @@ or {{#f}} otherwise.
 === string-match
 === string-match-positions
 
-<procedure>(string-match REGEXP STRING [START])</procedure><br>
-<procedure>(string-match-positions REGEXP STRING [START])</procedure>
+<procedure>(string-match REGEXP STRING)</procedure><br>
+<procedure>(string-match-positions REGEXP STRING)</procedure>
 
 Matches the regular expression in {{REGEXP}} (a string or a precompiled
 regular expression) with
 {{STRING}} and returns either {{#f}} if the match failed,
 or a list of matching groups, where the first element is the complete
-match. If the optional argument {{START}} is supplied, it specifies
-the starting position in {{STRING}}.  For each matching group the
+match.  For each matching group the
 result-list contains either: {{#f}} for a non-matching but optional
 group; a list of start- and end-position of the match in {{STRING}}
 (in the case of {{string-match-positions}}); or the matching
