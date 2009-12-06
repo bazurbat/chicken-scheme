@@ -6,7 +6,7 @@
 
 === foreign-code
 
- [syntax] (foreign-code STRING ...)
+<macro>(foreign-code STRING ...)</macro>
 
 Executes the embedded C/C++ code {{STRING ...}}, which should
 be a sequence of C statements, which are executed and return an unspecified result.
@@ -20,7 +20,7 @@ Code wrapped inside {{foreign-code}} may not invoke callbacks into Scheme.
 
 === foreign-value
 
- [syntax] (foreign-value CODE TYPE)
+<macro>(foreign-value CODE TYPE)</macro>
 
 Evaluates the embedded C/C++ expression {{CODE}} (which may be a string or symbol), returning a value of type given
 in the foreign-type specifier {{TYPE}}.
@@ -32,14 +32,14 @@ in the foreign-type specifier {{TYPE}}.
 
 === foreign-declare
 
- [syntax] (foreign-declare STRING ...)
+<macro>(foreign-declare STRING ...)</macro>
 
 Include given strings verbatim into header of generated file.
 
 
 === define-foreign-type
 
- [syntax] (define-foreign-type NAME TYPE [ARGCONVERT [RETCONVERT]])
+<macro>(define-foreign-type NAME TYPE [ARGCONVERT [RETCONVERT]])</macro>
 
 Defines an alias for {{TYPE}} with the name {{NAME}} (a symbol).
 {{TYPE}} may be a type-specifier or a string naming a C type. The
@@ -72,7 +72,7 @@ in multiple files.
 
 === define-foreign-variable
 
- [syntax] (define-foreign-variable NAME TYPE [STRING])
+<macro>(define-foreign-variable NAME TYPE [STRING])</macro>
 
 Defines a foreign variable of name {{NAME}} (a symbol). {{STRING}}
 should be the real name of a foreign variable or parameterless
@@ -88,7 +88,7 @@ even have to specify an lvalue.
 
 === foreign-lambda
 
- [syntax] (foreign-lambda RETURNTYPE NAME ARGTYPE ...)
+<macro>(foreign-lambda RETURNTYPE NAME ARGTYPE ...)</macro>
 
 Represents a
 binding to an external routine. This form can be used in the position
@@ -98,7 +98,7 @@ name of the external procedure and should be a string or a symbol.
 
 === foreign-lambda*
 
- [syntax] (foreign-lambda* RETURNTYPE ((ARGTYPE VARIABLE) ...) STRING ...)
+<macro>(foreign-lambda* RETURNTYPE ((ARGTYPE VARIABLE) ...) STRING ...)</macro>
 
 Similar to {{foreign-lambda}}, but instead of generating code to
 call an external function, the body of the C procedure is directly given
@@ -120,7 +120,7 @@ commences in the calling code.
 
 === foreign-safe-lambda
 
- [syntax] (foreign-safe-lambda RETURNTYPE NAME ARGTYPE ...)
+<macro>(foreign-safe-lambda RETURNTYPE NAME ARGTYPE ...)</macro>
 
 This is similar to {{foreign-lambda}}, but also allows the called
 function to call Scheme functions and allocate Scheme data-objects. See [[Callbacks]].
@@ -128,7 +128,7 @@ function to call Scheme functions and allocate Scheme data-objects. See [[Callba
 
 === foreign-safe-lambda*
 
- [syntax] (foreign-safe-lambda* RETURNTYPE ((ARGTYPE VARIABLE)...) STRING ...)
+<macro>(foreign-safe-lambda* RETURNTYPE ((ARGTYPE VARIABLE)...) STRING ...)</macro>
 
 This is similar to {{foreign-lambda*}}, but also allows the called
 function to call Scheme functions and allocate Scheme data-objects. See [[Callbacks]].
@@ -137,7 +137,7 @@ function to call Scheme functions and allocate Scheme data-objects. See [[Callba
 
 === foreign-primitive
 
- [syntax] (foreign-primitive [RETURNTYPE] ((ARGTYPE VARIABLE) ...) STRING ...)
+<macro>(foreign-primitive [RETURNTYPE] ((ARGTYPE VARIABLE) ...) STRING ...)</macro>
 
 This is also similar to {{foreign-lambda*}} but the code will be executed
 in a ''primitive'' CPS context, which means it will not actually return, but

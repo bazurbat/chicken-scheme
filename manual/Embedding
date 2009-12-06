@@ -61,7 +61,7 @@ Scheme program.
 
 === return-to-host
 
- [procedure] (return-to-host)
+<procedure>(return-to-host)</procedure>
 
 Exits the Scheme code and returns to the invoking context that called {{CHICKEN_run}}
 or {{CHICKEN_continue}}.

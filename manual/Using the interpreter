@@ -156,7 +156,7 @@ procedure:
 
 === toplevel-command
 
- [procedure] (toplevel-command SYMBOL PROC [HELPSTRING])
+<procedure>(toplevel-command SYMBOL PROC [HELPSTRING])</procedure>
 
 Defines or redefines a toplevel interpreter command which can be invoked by entering
 {{,SYMBOL}}. {{PROC}} will be invoked when the command is entered and may
@@ -174,7 +174,7 @@ Note that the value returned is implicitly quoted.
 
 === set-describer!
 
- [procedure] (set-describer! TAG PROC)
+<procedure>(set-describer! TAG PROC)</procedure>
 
 Sets a custom description handler that invokes {{PROC}} when the {{,d}} command is invoked
 with a record-type object that has the type {{TAG}} (a symbol). {{PROC}} is called with

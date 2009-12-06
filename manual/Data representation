@@ -1,56 +1,55 @@
 [[tags: manual]]
 
-== Data representation
 
-''Note: In all cases below, bits are numbered starting at 1 and beginning with the lowest-order bit.''
+== Data representation
 
 There exist two different kinds of data objects in the CHICKEN system:
 immediate and non-immediate objects. 
 
 === Immediate objects
 
-Immediate objects are represented by a single machine word, which is usually of 32 bits length, or 64 bits
-on 64-bit architectures.   The immediate objects
-come in four different flavors:
+Immediate objects are represented by a single machine word, 32 or 64 bits depending on the architecture.  They come in four different flavors:
 
-'''fixnums''', that is, small exact integers, where bit 1 is
+'''fixnums''', that is, small exact integers, where the lowest order bit is
 set to 1. This gives fixnums a range of 31 bits for the actual
 numeric value (63 bits on 64-bit architectures).
 
-'''characters''', where bits 1-4 are equal to {{C_CHARACTER_BITS}}. The
-Unicode code point of the character is encoded in bits 9 to 32.
+'''characters''', where the four lowest-order bits are equal to
+{{C_CHARACTER_BITS}}, currently 1010. The Unicode code point
+of the character is encoded in the next 24 bits.
 
-'''booleans''', where bits 1-4 are equal to {{C_BOOLEAN_BITS}}. Bit 5
-is one for #t and zero for #f.
+'''booleans''', where the four lowest-order bits are equal to {{C_BOOLEAN_BITS}},
+currently 0110. The next bit is one for #t and zero for #f.
 
 '''other values''': the empty list, the value of unbound identifiers,
-the undefined value (void), and end-of-file.  Bits 1-4 are equal to {{C_SPECIAL_BITS}}; bits 5 to 8 contain an identifying
-number for this type of object.  The following constants are
-defined: {{C_SCHEME_END_OF_LIST C_SCHEME_UNDEFINED C_SCHEME_UNBOUND
-C_SCHEME_END_OF_FILE}}
-
-Collectively, bits 1 and 2 are known as the ''immediate mark bits''.  When bit 1 is set, the object is a fixnum, as described above, and bit 2 is part of its value.  When bit 1 is clear but bit 2 is set, it is an immediate object other than a fixnum.  If neither bit 1 nor bit 2 is set, the object is non-immediate, as described below.
+the undefined value (void), and end-of-file.  The four lowest-order bits are equal to
+{{C_SPECIAL_BITS}}, currently 1110.  The next four bits contain an identifying
+number for this type of object, one of:
+{{C_SCHEME_END_OF_LIST}}, currently 0000;
+{{C_SCHEME_UNDEFINED}}, currently 0001;
+{{C_SCHEME_UNBOUND}}, currently 0010; or
+{{C_SCHEME_END_OF_FILE}}, currently 0011.
 
 === Non-immediate objects
 
+Collectively, the two lowest-order bits are known as the ''immediate mark bits''.  When the lowest bit is set, the object is a fixnum, as described above, and the next bit is part of its value.  When the lowest bit is clear but the next bit is set, it is an immediate object other than a fixnum.  If neither bit is set, the object is non-immediate, as described below.
+
 Non-immediate objects are blocks of data represented by a pointer into
-the heap.  The pointer's immediate mark bits (bits 1 and 2) must be zero to indicate the object is non-immediate;
+the heap.  The pointer's immediate mark bits must be zero to indicate the object is non-immediate;
 this guarantees the data block is aligned on a 4-byte boundary, at minimum.  Alignment of data words
 is required on modern architectures anyway, so we get the ability to distinguish between immediate and non-immediate objects for free.
 
 The first word of the data block contains a header, which gives
-information about the type of the object. The header has the size of a
-machine word, usually 32 bits (64 bits on 64 bit architectures).
+information about the type of the object. The header is a
+single machine word.
 
-Bits 1 to 24 contain the length of the data object, which is either
-the number of bytes in a string (or byte-vector) or the the number
-of elements for a vector or for a structure type.
+The 24 lowest-order bits contain the length of the data object, which is either
+the number of bytes in a string or byte-vector, or the the number
+of elements for a vector or record type.
 
-Bits 25 to 28 contain the type code of the object.
-
-Bits 29 to 32 contain miscellaneous flags used for garbage
+The remaining bits are placed in the high-order end of the header.
+The four highest-order bits are used for garbage
 collection or internal data type dispatching.
-These flags are:
 
 ; C_GC_FORWARDING_BIT : Flag used for forwarding garbage collected object pointers.
 

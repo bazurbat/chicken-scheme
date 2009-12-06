@@ -13,7 +13,7 @@ CHICKEN implements SRFI 69 with SRFI 90 extensions. For more information, see
 
 ==== make-hash-table
 
- [procedure] (make-hash-table [TEST HASH SIZE] [#:test TEST] [#:hash HASH] [#:size SIZE] [#:initial INITIAL] [#:min-load MIN-LOAD] [#:max-load MAX-LOAD] [#:weak-keys WEAK-KEYS] [#:weak-values WEAK-VALUES])
+<procedure>(make-hash-table [TEST HASH SIZE] [#:test TEST] [#:hash HASH] [#:size SIZE] [#:initial INITIAL] [#:min-load MIN-LOAD] [#:max-load MAX-LOAD] [#:weak-keys WEAK-KEYS] [#:weak-values WEAK-VALUES])</procedure>
 
 Returns a new {{HASH-TABLE}} with the supplied configuration.
 
@@ -29,7 +29,7 @@ Returns a new {{HASH-TABLE}} with the supplied configuration.
 
 ==== alist->hash-table
 
- [procedure] (alist->hash-table A-LIST [#:test TEST] [#:hash HASH] [#:size SIZE] [#:initial INITIAL] [#:min-load MIN-LOAD] [#:max-load MAX-LOAD] [#:weak-keys WEAK-KEYS] [#:weak-values WEAK-VALUES])
+<procedure>(alist->hash-table A-LIST [#:test TEST] [#:hash HASH] [#:size SIZE] [#:initial INITIAL] [#:min-load MIN-LOAD] [#:max-load MAX-LOAD] [#:weak-keys WEAK-KEYS] [#:weak-values WEAK-VALUES])</procedure>
 
 Returns a new {{HASH-TABLE}}. The {{HASH-TABLE}} is populated from the
 {{A-LIST}}. The keyword arguments are per {{make-hash-table}}.
@@ -37,91 +37,91 @@ Returns a new {{HASH-TABLE}}. The {{HASH-TABLE}} is populated from the
 
 ==== hash-table?
 
- [procedure] (hash-table? OBJECT)
+<procedure>(hash-table? OBJECT)</procedure>
 
 Is the {{OBJECT}} a {{hash-table}}?
 
 
 ==== hash-table-size
 
- [procedure] (hash-table-size HASH-TABLE)
+<procedure>(hash-table-size HASH-TABLE)</procedure>
 
 The {{HASH-TABLE}} size.
 
 
 ==== hash-table-equivalence-function
 
- [procedure] (hash-table-equivalence-function HASH-TABLE)
+<procedure>(hash-table-equivalence-function HASH-TABLE)</procedure>
 
 The {{HASH-TABLE}} {{equivalence-function}}.
 
 
 ==== hash-table-hash-function
 
- [procedure] (hash-table-hash-function HASH-TABLE)
+<procedure>(hash-table-hash-function HASH-TABLE)</procedure>
 
 The {{HASH-TABLE}} {{hash-function}}.
 
 
 ==== hash-table-min-load
 
- [procedure] (hash-table-min-load HASH-TABLE)
+<procedure>(hash-table-min-load HASH-TABLE)</procedure>
 
 The {{HASH-TABLE}} minimum load factor.
 
 
 ==== hash-table-max-load
 
- [procedure] (hash-table-max-load HASH-TABLE)
+<procedure>(hash-table-max-load HASH-TABLE)</procedure>
 
 The {{HASH-TABLE}} maximum load factor.
 
 
 ==== hash-table-weak-keys
 
- [procedure] (hash-table-weak-keys HASH-TABLE)
+<procedure>(hash-table-weak-keys HASH-TABLE)</procedure>
 
 Does the {{HASH-TABLE}} weak references for keys?
 
 
 ==== hash-table-weak-values
 
- [procedure] (hash-table-weak-values HASH-TABLE)
+<procedure>(hash-table-weak-values HASH-TABLE)</procedure>
 
 Does the {{HASH-TABLE}} weak references for values?
 
 
 ==== hash-table-has-initial?
 
- [procedure] (hash-table-has-initial? HASH-TABLE)
+<procedure>(hash-table-has-initial? HASH-TABLE)</procedure>
 
 Does the {{HASH-TABLE}} have a default initial value?
 
 
 ==== hash-table-initial
 
- [procedure] (hash-table-initial HASH-TABLE)
+<procedure>(hash-table-initial HASH-TABLE)</procedure>
 
 The {{HASH-TABLE}} default initial value.
 
 
 ==== hash-table-keys
 
- [procedure] (hash-table-keys HASH-TABLE)
+<procedure>(hash-table-keys HASH-TABLE)</procedure>
 
 Returns a list of the keys in the {{HASH-TABLE}} population.
 
 
 ==== hash-table-values
 
- [procedure] (hash-table-values HASH-TABLE)
+<procedure>(hash-table-values HASH-TABLE)</procedure>
 
 Returns a list of the values in the {{HASH-TABLE}} population.
 
 
 ==== hash-table->alist
 
- [procedure] (hash-table->alist HASH-TABLE)
+<procedure>(hash-table->alist HASH-TABLE)</procedure>
 
 Returns the population of the {{HASH-TABLE}} as an {{a-list}}.
 
@@ -129,7 +129,7 @@ Returns the population of the {{HASH-TABLE}} as an {{a-list}}.
 
 ==== hash-table-ref
 
- [procedure] (hash-table-ref HASH-TABLE KEY)
+<procedure>(hash-table-ref HASH-TABLE KEY)</procedure>
 
 Returns the {{VALUE}} for the {{KEY}} in the {{HASH-TABLE}}.
 
@@ -138,7 +138,7 @@ Aborts with an exception when the {{KEY}} is missing.
 
 ==== hash-table-ref/default
 
- [procedure] (hash-table-ref/default HASH-TABLE KEY DEFAULT)
+<procedure>(hash-table-ref/default HASH-TABLE KEY DEFAULT)</procedure>
 
 Returns the {{VALUE}} for the {{KEY}} in the {{HASH-TABLE}}, or the {{DEFAULT}}
 when the {{KEY}} is missing.
@@ -146,14 +146,14 @@ when the {{KEY}} is missing.
 
 ==== hash-table-exists?
 
- [procedure] (hash-table-exists? HASH-TABLE KEY)
+<procedure>(hash-table-exists? HASH-TABLE KEY)</procedure>
 
 Does the {{KEY}} exist in the {{HASH-TABLE}}?
 
 
 ==== hash-table-set!
 
- [procedure] (hash-table-set! HASH-TABLE KEY VALUE)
+<procedure>(hash-table-set! HASH-TABLE KEY VALUE)</procedure>
 
 Set the {{VALUE}} for the {{KEY}} in the {{HASH-TABLE}}.
 
@@ -172,7 +172,7 @@ is equivalent to
 
 ==== hash-table-update!
 
- [procedure] (hash-table-update! HASH-TABLE KEY [UPDATE-FUNCTION [DEFAULT-VALUE-FUNCTION]])
+<procedure>(hash-table-update! HASH-TABLE KEY [UPDATE-FUNCTION [DEFAULT-VALUE-FUNCTION]])</procedure>
 
 Sets or replaces the {{VALUE}} for {{KEY}} in the {{HASH-TABLE}}.
 
@@ -188,7 +188,7 @@ Returns the new {{VALUE}}.
 
 ==== hash-table-update!/default
 
- [procedure] (hash-table-update! HASH-TABLE KEY UPDATE-FUNCTION DEFAULT-VALUE)
+<procedure>(hash-table-update!/default HASH-TABLE KEY UPDATE-FUNCTION DEFAULT-VALUE)</procedure>
 
 Sets or replaces the {{VALUE}} for {{KEY}} in the {{HASH-TABLE}}.
 
@@ -202,21 +202,21 @@ Returns the new {{VALUE}}.
 
 ==== hash-table-copy
 
- [procededure] (hash-table-copy HASH-TABLE)
+<procedure>(hash-table-copy HASH-TABLE)</procedure>
 
 Returns a shallow copy of the {{HASH-TABLE}}.
 
 
 ==== hash-table-delete!
 
- [procedure] (hash-table-delete! HASH-TABLE KEY)
+<procedure>(hash-table-delete! HASH-TABLE KEY)</procedure>
 
 Deletes the entry for {{KEY}} in the {{HASH-TABLE}}.
 
 
 ==== hash-table-remove!
 
- [procedure] (hash-table-remove! HASH-TABLE PROC)
+<procedure>(hash-table-remove! HASH-TABLE PROC)</procedure>
 
 Calls {{PROC}} for all entries in {{HASH-TABLE}} with the key and value of each
 entry. If {{PROC}} returns true, then that entry is removed.
@@ -224,14 +224,14 @@ entry. If {{PROC}} returns true, then that entry is removed.
 
 ==== hash-table-clear!
 
- [procedure] (hash-table-clear! HASH-TABLE)
+<procedure>(hash-table-clear! HASH-TABLE)</procedure>
 
 Deletes all entries in {{HASH-TABLE}}.
 
 
 ==== hash-table-merge
 
- [procedure] (hash-table-merge HASH-TABLE-1 HASH-TABLE-2)
+<procedure>(hash-table-merge HASH-TABLE-1 HASH-TABLE-2)</procedure>
 
 Returns a new {{HASH-TABLE}} with the union of {{HASH-TABLE-1}} and
 {{HASH-TABLE-2}}.
@@ -239,7 +239,7 @@ Returns a new {{HASH-TABLE}} with the union of {{HASH-TABLE-1}} and
 
 ==== hash-table-merge!
 
- [procedure] (hash-table-merge! HASH-TABLE-1 HASH-TABLE-2)
+<procedure>(hash-table-merge! HASH-TABLE-1 HASH-TABLE-2)</procedure>
 
 Returns {{HASH-TABLE-1}} as the union of {{HASH-TABLE-1}} and
 {{HASH-TABLE-2}}.
@@ -247,7 +247,7 @@ Returns {{HASH-TABLE-1}} as the union of {{HASH-TABLE-1}} and
 
 ==== hash-table-map
 
- [procedure] (hash-table-map HASH-TABLE FUNC)
+<procedure>(hash-table-map HASH-TABLE FUNC)</procedure>
 
 Calls {{FUNC}} for all entries in {{HASH-TABLE}} with the key and value of each
 entry.
@@ -257,7 +257,7 @@ Returns a list of the results of each call.
 
 ==== hash-table-fold
 
- [procedure] (hash-table-fold HASH-TABLE FUNC INIT)
+<procedure>(hash-table-fold HASH-TABLE FUNC INIT)</procedure>
 
 Calls {{FUNC}} for all entries in {{HASH-TABLE}} with the key and value of each
 entry, and the current folded value. The initial folded value is {{INIT}}.
@@ -267,7 +267,7 @@ Returns the final folded value.
 
 ==== hash-table-for-each
 
- [procedure] (hash-table-for-each HASH-TABLE PROC)
+<procedure>(hash-table-for-each HASH-TABLE PROC)</procedure>
 
 Calls {{PROC}} for all entries in {{HASH-TABLE}} with the key and value of each
 entry.
@@ -275,7 +275,7 @@ entry.
 
 ==== hash-table-walk
 
- [procedure] (hash-table-walk HASH-TABLE PROC)
+<procedure>(hash-table-walk HASH-TABLE PROC)</procedure>
 
 Calls {{PROC}} for all entries in {{HASH-TABLE}} with the key and value of each
 entry.
@@ -288,35 +288,35 @@ All hash functions return a {{fixnum}} in the range [0 {{BOUND}}).
 
 ==== number-hash
 
- [procedure] (number-hash NUMBER [BOUND])
+<procedure>(number-hash NUMBER [BOUND])</procedure>
 
 For use with {{=}} as a {{hash-table-equivalence-function}}.
 
 
 ==== object-uid-hash
 
- [procedure] (object-uid-hash OBJECT [BOUND])
+<procedure>(object-uid-hash OBJECT [BOUND])</procedure>
 
 Currently a synonym for {{equal?-hash}}.
 
 
 ==== symbol-hash
 
- [procedure] (symbol-hash SYMBOL [BOUND])
+<procedure>(symbol-hash SYMBOL [BOUND])</procedure>
 
 For use with {{eq?}} as a {{hash-table-equivalence-function}}.
 
 
 ==== keyword-hash
 
- [procedure] (keyword-hash KEYWORD [BOUND])
+<procedure>(keyword-hash KEYWORD [BOUND])</procedure>
 
 For use with {{eq?}} as a {{hash-table-equivalence-function}}.
 
 
 ==== string-hash
 
- [procedure] (string-hash STRING [BOUND START END])
+<procedure>(string-hash STRING [BOUND START END])</procedure>
 
 For use with {{string=?}} as a {{hash-table-equivalence-function}}.
 The optional {{START}} and {{END}} arguments may be given to limit
@@ -325,43 +325,43 @@ the hash calculation to a specific sub-section of {{STRING}}.
 
 ==== string-ci-hash
 
- [procedure] (string-hash-ci STRING [BOUND START END])
- [procedure] (string-ci-hash STRING [BOUND START END])
+<procedure>(string-hash-ci STRING [BOUND START END])</procedure><br>
+<procedure>(string-ci-hash STRING [BOUND START END])</procedure>
 
 For use with {{string-ci=?}} as a {{hash-table-equivalence-function}}.
 
 
 ==== eq?-hash
 
- [procedure] (eq?-hash OBJECT [BOUND])
+<procedure>(eq?-hash OBJECT [BOUND])</procedure>
 
 For use with {{eq?}} as a {{hash-table-equivalence-function}}.
 
 
 ==== eqv?-hash
 
- [procedure] (eqv?-hash OBJECT [BOUND])
+<procedure>(eqv?-hash OBJECT [BOUND])</procedure>
 
 For use with {{eqv?}} as a {{hash-table-equivalence-function}}.
 
 
 ==== equal?-hash
 
- [procedure] (equal?-hash OBJECT [BOUND])
+<procedure>(equal?-hash OBJECT [BOUND])</procedure>
 
 For use with {{equal?}} as a {{hash-table-equivalence-function}}.
 
 
 ==== hash
 
- [procedure] (hash OBJECT [BOUND])
+<procedure>(hash OBJECT [BOUND])</procedure>
 
 Synonym for {{equal?-hash}}.
 
 
 ==== hash-by-identity
 
- [procedure] (hash-by-identity OBJECT [BOUND])
+<procedure>(hash-by-identity OBJECT [BOUND])</procedure>
 
 Synonym for {{eq?-hash}}.
 

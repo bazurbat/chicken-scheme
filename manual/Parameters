@@ -25,7 +25,7 @@ CHICKEN implements [[http://srfi.schemers.org/srfi-39/srfi-39.html|SRFI-39]].
 
 === make-parameter
 
- [procedure] (make-parameter VALUE [GUARD])
+<procedure>(make-parameter VALUE [GUARD])</procedure>
 
 Returns a procedure that accepts zero or one argument. Invoking the
 procedure with zero arguments returns {{VALUE}}. Invoking the

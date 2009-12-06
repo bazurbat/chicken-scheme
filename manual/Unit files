@@ -27,7 +27,7 @@ For any component that is not contained in {{PATHNAME}}, {{#f}} is returned.
 ==== make-pathname
 ==== make-absolute-pathname
 
-<procedure>(make-pathname DIRECTORY FILENAME [EXTENSION])</procedure>
+<procedure>(make-pathname DIRECTORY FILENAME [EXTENSION])</procedure><br>
 <procedure>(make-absolute-pathname DIRECTORY FILENAME [EXTENSION])</procedure>
 
 Returns a string that names the file with the
@@ -43,41 +43,31 @@ and {{EXTENSION}} should be strings or {{#f}}.
 The {{[SEPARATOR]}} argument is deprecated.
 
 ==== pathname-directory
-
-<procedure>(pathname-directory PATHNAME)</procedure>
-
 ==== pathname-file
-
-<procedure>(pathname-file PATHNAME)</procedure>
-
 ==== pathname-extension
 
+<procedure>(pathname-directory PATHNAME)</procedure><br>
+<procedure>(pathname-file PATHNAME)</procedure><br>
 <procedure>(pathname-extension PATHNAME)</procedure>
 
 Accessors for the components of {{PATHNAME}}. If the pathname does
 not contain the accessed component, then {{#f}} is returned.
 
 ==== pathname-replace-directory
-
-<procedure>(pathname-replace-directory PATHNAME DIRECTORY)</procedure>
-
 ==== pathname-replace-file
-
-<procedure>(pathname-replace-file PATHNAME FILENAME)</procedure>
-
 ==== pathname-replace-extension
 
+<procedure>(pathname-replace-directory PATHNAME DIRECTORY)</procedure><br>
+<procedure>(pathname-replace-file PATHNAME FILENAME)</procedure><br>
 <procedure>(pathname-replace-extension PATHNAME EXTENSION)</procedure>
 
 Return a new pathname with the specified component of {{PATHNAME}}
 replaced by a new value.
 
 ==== pathname-strip-directory
-
-<procedure>(pathname-strip-directory PATHNAME)</procedure>
-
 ==== pathname-strip-extension
 
+<procedure>(pathname-strip-directory PATHNAME)</procedure><br>
 <procedure>(pathname-strip-extension PATHNAME)</procedure>
 
 Return a new pathname with the specified component of {{PATHNAME}}

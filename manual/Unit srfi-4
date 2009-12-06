@@ -11,7 +11,7 @@ collected memory:
 
 === make-XXXvector
 
- [procedure] (make-XXXvector SIZE [INIT NONGC FINALIZE])
+<procedure>(make-XXXvector SIZE [INIT NONGC FINALIZE])</procedure>
 
 Creates a SRFI-4 homogenous number vector of length {{SIZE}}. If {{INIT}} is given, it specifies the initial
 value for each slot in the vector. The optional arguments {{NONGC}} and {{FINALIZE}} define whether the
@@ -41,22 +41,22 @@ Additionally, the following procedures are provided:
 === f32vector->blob/shared
 === f64vector->blob/shared
 
- [procedure] (u8vector->blob U8VECTOR)
- [procedure] (s8vector->blob S8VECTOR)
- [procedure] (u16vector->blob U16VECTOR)
- [procedure] (s16vector->blob S16VECTOR)
- [procedure] (u32vector->blob U32VECTOR)
- [procedure] (s32vector->blob S32VECTOR)
- [procedure] (f32vector->blob F32VECTOR)
- [procedure] (f64vector->blob F64VECTOR)
- [procedure] (u8vector->blob/shared U8VECTOR)
- [procedure] (s8vector->blob/shared S8VECTOR)
- [procedure] (u16vector->blob/shared U16VECTOR)
- [procedure] (s16vector->blob/shared S16VECTOR)
- [procedure] (u32vector->blob/shared U32VECTOR)
- [procedure] (s32vector->blob/shared S32VECTOR)
- [procedure] (f32vector->blob/shared F32VECTOR)
- [procedure] (f64vector->blob/shared F64VECTOR)
+<procedure>(u8vector->blob U8VECTOR)</procedure><br>
+<procedure>(s8vector->blob S8VECTOR)</procedure><br>
+<procedure>(u16vector->blob U16VECTOR)</procedure><br>
+<procedure>(s16vector->blob S16VECTOR)</procedure><br>
+<procedure>(u32vector->blob U32VECTOR)</procedure><br>
+<procedure>(s32vector->blob S32VECTOR)</procedure><br>
+<procedure>(f32vector->blob F32VECTOR)</procedure><br>
+<procedure>(f64vector->blob F64VECTOR)</procedure><br>
+<procedure>(u8vector->blob/shared U8VECTOR)</procedure><br>
+<procedure>(s8vector->blob/shared S8VECTOR)</procedure><br>
+<procedure>(u16vector->blob/shared U16VECTOR)</procedure><br>
+<procedure>(s16vector->blob/shared S16VECTOR)</procedure><br>
+<procedure>(u32vector->blob/shared U32VECTOR)</procedure><br>
+<procedure>(s32vector->blob/shared S32VECTOR)</procedure><br>
+<procedure>(f32vector->blob/shared F32VECTOR)</procedure><br>
+<procedure>(f64vector->blob/shared F64VECTOR)</procedure>
 
 Each of these procedures return the contents of the given vector as a
 'packed' blob. The byte order in that vector is platform-dependent
@@ -81,22 +81,22 @@ variants return a blob that shares memory with the contents of the vector.
 === blob->f32vector/shared
 === blob->f64vector/shared
 
- [procedure] (blob->u8vector BLOB)
- [procedure] (blob->s8vector BLOB)
- [procedure] (blob->u16vector BLOB)
- [procedure] (blob->s16vector BLOB)
- [procedure] (blob->u32vector BLOB)
- [procedure] (blob->s32vector BLOB)
- [procedure] (blob->f32vector BLOB)
- [procedure] (blob->f64vector BLOB)
- [procedure] (blob->u8vector/shared BLOB)
- [procedure] (blob->s8vector/shared BLOB)
- [procedure] (blob->u16vector/shared BLOB)
- [procedure] (blob->s16vector/shared BLOB)
- [procedure] (blob->u32vector/shared BLOB)
- [procedure] (blob->s32vector/shared BLOB)
- [procedure] (blob->f32vector/shared BLOB)
- [procedure] (blob->f64vector/shared BLOB)
+<procedure>(blob->u8vector BLOB)</procedure><br>
+<procedure>(blob->s8vector BLOB)</procedure><br>
+<procedure>(blob->u16vector BLOB)</procedure><br>
+<procedure>(blob->s16vector BLOB)</procedure><br>
+<procedure>(blob->u32vector BLOB)</procedure><br>
+<procedure>(blob->s32vector BLOB)</procedure><br>
+<procedure>(blob->f32vector BLOB)</procedure><br>
+<procedure>(blob->f64vector BLOB)</procedure><br>
+<procedure>(blob->u8vector/shared BLOB)</procedure><br>
+<procedure>(blob->s8vector/shared BLOB)</procedure><br>
+<procedure>(blob->u16vector/shared BLOB)</procedure><br>
+<procedure>(blob->s16vector/shared BLOB)</procedure><br>
+<procedure>(blob->u32vector/shared BLOB)</procedure><br>
+<procedure>(blob->s32vector/shared BLOB)</procedure><br>
+<procedure>(blob->f32vector/shared BLOB)</procedure><br>
+<procedure>(blob->f64vector/shared BLOB)</procedure>
 
 Each of these procedures return a vector where the argument
 {{BLOB}} is taken as a 'packed' representation of the contents
@@ -113,14 +113,14 @@ shares memory with the contents of the blob.
 === subf32vector
 === subf64vector
 
- [procedure] (subu8vector U8VECTOR FROM TO)
- [procedure] (subu16vector U16VECTOR FROM TO)
- [procedure] (subu32vector U32VECTOR FROM TO)
- [procedure] (subs8vector S8VECTOR FROM TO)
- [procedure] (subs16vector S16VECTOR FROM TO)
- [procedure] (subs32vector S32VECTOR FROM TO)
- [procedure] (subf32vector F32VECTOR FROM TO)
- [procedure] (subf64vector F64VECTOR FROM TO)
+<procedure>(subu8vector U8VECTOR FROM TO)</procedure><br>
+<procedure>(subu16vector U16VECTOR FROM TO)</procedure><br>
+<procedure>(subu32vector U32VECTOR FROM TO)</procedure><br>
+<procedure>(subs8vector S8VECTOR FROM TO)</procedure><br>
+<procedure>(subs16vector S16VECTOR FROM TO)</procedure><br>
+<procedure>(subs32vector S32VECTOR FROM TO)</procedure><br>
+<procedure>(subf32vector F32VECTOR FROM TO)</procedure><br>
+<procedure>(subf64vector F64VECTOR FROM TO)</procedure>
 
 Creates a number vector of the same type as the argument vector with the elements at the positions {{FROM}} up to but
 not including {{TO}}.
@@ -130,7 +130,7 @@ SRFI-17 Setters for {{XXXvector-ref}} are defined.
 
 === read-u8vector
 
- [procedure] (read-u8vector LENGTH [PORT])
+<procedure>(read-u8vector LENGTH [PORT])</procedure>
 
 Reads {{LENGTH}} bytes from the {{PORT}} and returns a fresh
 {{u8vector}} or less if end-of-file is encountered. {{PORT}} defaults to the
@@ -140,7 +140,7 @@ If {{LENGTH}} is {{#f}}, the vector will be filled completely until end-of-file 
 
 === read-u8vector!
 
- [procedure] (read-u8vector! LENGTH U8VECTOR [PORT [START]])
+<procedure>(read-u8vector! LENGTH U8VECTOR [PORT [START]])</procedure>
 
 Reads {{LENGTH}} bytes from the {{PORT}} writing the read input into
 {{U8VECTOR}} beginning at {{START}} (or 0 if not given). {{PORT}} defaults
@@ -151,7 +151,7 @@ This procedure returns the number of bytes read.
 
 === write-u8vector
 
- [procedure] (write-u8vector U8VECTOR [PORT [START [END]]])
+<procedure>(write-u8vector U8VECTOR [PORT [START [END]]])</procedure>
 
 Writes the bytes {{U8VECTOR}} between the indices {{START}} (inclusive) and {{END}} (exclusive) to {{PORT}}.
 {{PORT}} defaults to the value of {{(current-output-port)}}.

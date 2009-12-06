@@ -21,7 +21,7 @@ just use normal Scheme lists, with quasiquote if you like.
 
 === grep
 
- [procedure] (grep REGEX LIST [ACCESSOR])
+<procedure>(grep REGEX LIST [ACCESSOR])</procedure>
 
 Returns all items of {{LIST}} that match the regular expression
 {{REGEX}}.  This procedure could be defined as follows:
@@ -39,7 +39,7 @@ matching. {{ACCESSOR}} defaults to the identity function.
 
 === glob->regexp
 
- [procedure] (glob->regexp PATTERN)
+<procedure>(glob->regexp PATTERN)</procedure>
 
 Converts the file-pattern {{PATTERN}} into a regular expression.
 
@@ -59,7 +59,7 @@ Converts the file-pattern {{PATTERN}} into a regular expression.
 
 === glob?
 
- [procedure] (glob? STRING)
+<procedure>(glob? STRING)</procedure>
 
 Does the {{STRING}} have any "glob" wildcards?
 
@@ -69,7 +69,7 @@ even though it technically is a valid "glob" file-pattern.
 
 === regexp
 
- [procedure] (regexp STRING [IGNORECASE [IGNORESPACE [UTF8]]])
+<procedure>(regexp STRING [IGNORECASE [IGNORESPACE [UTF8]]])</procedure>
 
 Returns a precompiled regular expression object for {{string}}.
 The optional arguments {{IGNORECASE}}, {{IGNORESPACE}} and {{UTF8}}
@@ -85,7 +85,7 @@ below.
 
 === regexp?
 
- [procedure] (regexp? X)
+<procedure>(regexp? X)</procedure>
 
 Returns {{#t}} if {{X}} is a precompiled regular expression,
 or {{#f}} otherwise.
@@ -94,8 +94,8 @@ or {{#f}} otherwise.
 === string-match
 === string-match-positions
 
- [procedure] (string-match REGEXP STRING [START])
- [procedure] (string-match-positions REGEXP STRING [START])
+<procedure>(string-match REGEXP STRING [START])</procedure><br>
+<procedure>(string-match-positions REGEXP STRING [START])</procedure>
 
 Matches the regular expression in {{REGEXP}} (a string or a precompiled
 regular expression) with
@@ -117,8 +117,8 @@ If invoked with a precompiled regular expression argument (by using
 === string-search
 === string-search-positions
 
- [procedure] (string-search REGEXP STRING [START [RANGE]])
- [procedure] (string-search-positions REGEXP STRING [START [RANGE]])
+<procedure>(string-search REGEXP STRING [START [RANGE]])</procedure><br>
+<procedure>(string-search-positions REGEXP STRING [START [RANGE]])</procedure>
 
 Searches for the first match of the regular expression in
 {{REGEXP}} with {{STRING}}. The search can be limited to
@@ -127,7 +127,7 @@ Searches for the first match of the regular expression in
 
 === string-split-fields
 
- [procedure] (string-split-fields REGEXP STRING [MODE [START]])
+<procedure>(string-split-fields REGEXP STRING [MODE [START]])</procedure>
 
 Splits {{STRING}} into a list of fields according to {{MODE}},
 where {{MODE}} can be the keyword {{#:infix}} ({{REGEXP}}
@@ -154,7 +154,7 @@ which is the default.
 
 === string-substitute
 
- [procedure] (string-substitute REGEXP SUBST STRING [MODE])
+<procedure>(string-substitute REGEXP SUBST STRING [MODE])</procedure>
 
 Searches substrings in {{STRING}} that match {{REGEXP}}
 and substitutes them with the string {{SUBST}}. The substitution
@@ -176,7 +176,7 @@ signal an error.
 
 === string-substitute*
 
- [procedure] (string-substitute* STRING SMAP [MODE])
+<procedure>(string-substitute* STRING SMAP [MODE])</procedure>
 
 Substitutes elements of {{STRING}} with {{string-substitute}} according to {{SMAP}}.
 {{SMAP}} should be an association-list where each element of the list
@@ -193,7 +193,7 @@ the regular expression {{MATCH}} in {{STRING}} will be replaced by the string
 
 === regexp-escape
 
- [procedure] (regexp-escape STRING)
+<procedure>(regexp-escape STRING)</procedure>
 
 Escapes all special characters in {{STRING}} with {{\}}, so that the string can be embedded
 into a regular expression.

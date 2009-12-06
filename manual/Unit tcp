@@ -129,7 +129,7 @@ without breaking the connection.
 
 === tcp-buffer-size
 
- [parameter] tcp-buffer-size
+<parameter>tcp-buffer-size</parameter>
 
 Sets the size of the output buffer. By default no output-buffering for
 TCP output is done, but to improve performance by minimizing the
@@ -145,7 +145,7 @@ Closing the output port will flush automatically.
 
 === tcp-read-timeout
 
- [parameter] tcp-read-timeout
+<parameter>tcp-read-timeout</parameter>
 
 Determines the timeout for TCP read operations in milliseconds. A timeout of
 {{#f}} disables timeout checking. The default read timeout is 60000, i.e.
@@ -155,7 +155,7 @@ is thrown.
 
 === tcp-write-timeout
 
- [parameter] tcp-write-timeout
+<parameter>tcp-write-timeout</parameter>
 
 Determines the timeout for TCP write operations in milliseconds. A timeout of
 {{#f}} disables timeout checking. The default write timeout is 60000, i.e.
@@ -165,7 +165,7 @@ is thrown.
 
 === tcp-connect-timeout
 
- [parameter] tcp-connect-timeout
+<parameter>tcp-connect-timeout</parameter>
 
 Determines the timeout for {{tcp-connect}} operations in milliseconds. A timeout of
 {{#f}} disables timeout checking and is the default.
@@ -175,7 +175,7 @@ is thrown.
 
 === tcp-accept-timeout
 
- [parameter] tcp-accept-timeout
+<parameter>tcp-accept-timeout</parameter>
 
 Determines the timeout for {{tcp-accept}} operations in milliseconds. A timeout of
 {{#f}} disables timeout checking and is the default.

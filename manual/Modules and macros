@@ -13,7 +13,7 @@ macro system based on ''explicit renaming''.
 
 ==== define-syntax
 
- [syntax] (define-syntax IDENTIFIER TRANSFORMER)
+<macro>(define-syntax IDENTIFIER TRANSFORMER)</macro>
 
 Defines a macro named {{IDENTIFIER}} that will transform an expression
 with {{IDENTIFIER}} in operator position according to {{TRANSFORMER}}.
@@ -50,7 +50,7 @@ transformer procedure is undefined.
 
 ==== define-compiled-syntax
 
- [syntax] (define-compiled-syntax IDENTIFIER TRANSFORMER)
+<macro>(define-compiled-syntax IDENTIFIER TRANSFORMER)</macro>
 
 Equivalent to {{define-syntax}}, but when compiled, will also define the macro
 at runtime.
@@ -58,7 +58,7 @@ at runtime.
 
 ==== syntax
 
- [syntax] (syntax EXPRESSION)
+<macro>(syntax EXPRESSION)</macro>
 
 Similar to {{quote}} but retains syntactical context information for
 embedded identifiers.
@@ -66,7 +66,7 @@ embedded identifiers.
 
 ==== strip-syntax
 
- [procedure] (strip-syntax EXPRESSION)
+<procedure>(strip-syntax EXPRESSION)</procedure>
 
 Strips all syntactical information from {{EXPRESSION}}, returning a new expression
 where symbols have all context-information removed.
@@ -241,8 +241,8 @@ CHICKEN's module system has the following features and shortcomings:
 
 ==== module
 
- [syntax] (module NAME (EXPORT ...) BODY ...)
- [syntax] (module NAME * BODY ...)
+<macro>(module NAME (EXPORT ...) BODY ...)</macro><br>
+<macro>(module NAME * BODY ...)</macro>
 
 Defines a module with the name {{NAME}}, a set of exported bindings
 and a contained sequence of toplevel expressions that are evaluated in
@@ -278,7 +278,7 @@ will modify the original, imported definition.
 
 ==== export
 
- [syntax] (export EXPORT ...)
+<macro>(export EXPORT ...)</macro>
 
 Allows augmenting module-exports from inside the module-body.
 {{EXPORT}} is if the same form as an export-specifier in a 
@@ -287,7 +287,7 @@ Allows augmenting module-exports from inside the module-body.
 
 ==== import
 
- [syntax] (import IMPORT ...)
+<macro>(import IMPORT ...)</macro>
 
 Imports module bindings into the current syntactical environment.
 The visibility of any imported bindings is limited to the current
@@ -307,7 +307,7 @@ a module):
 
   (begin
     (import m1)
-    ...              ; imports not visible here
+    ...)              ; imports not visible here
   
   ...                ; imports visible here
 
@@ -339,7 +339,7 @@ Prefixes all imported identifiers with {{SYMBOL}}.
 
 ==== import-for-syntax
 
- [syntax] (import-for-syntax IMPORT ...)
+<macro>(import-for-syntax IMPORT ...)</macro>
 
 Similar to {{import}}, but imports exported bindings of a module into
 the environment in which macro transformers are evaluated. 

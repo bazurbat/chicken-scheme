@@ -17,58 +17,64 @@ of kind {{(exn i/o file)}}.
 
 ==== File-control Commands
 
-===== fcntl/dupfd
-===== fcntl/getfd
-===== fcntl/setfd
-===== fcntl/getfl
-===== fcntl/setfl
+<constant>fcntl/dupfd</constant><br>
+<constant>fcntl/getfd</constant><br>
+<constant>fcntl/setfd</constant><br>
+<constant>fcntl/getfl</constant><br>
+<constant>fcntl/setfl</constant>
+
+Operations used with {{file-control}}.
 
 ==== Standard I/O file-descriptors
 
-===== fileno/stdin
-===== fileno/stdout
-===== fileno/stderr
+<constant>fileno/stdin</constant><br>
+<constant>fileno/stdout</constant><br>
+<constant>fileno/stderr</constant>
+
+Standard I/O file descriptor numbers, used with procedures 
+such as {{open-input-file*}} which take file descriptors.
 
 ==== Open flags
 
-===== open/rdonly
-===== open/wronly
-===== open/rdwr
-===== open/read
-Synonym for {{open/rdonly}}.
+<constant>open/rdonly</constant><br>
+<constant>open/wronly</constant><br>
+<constant>open/rdwr</constant><br>
+<constant>open/read</constant><br>
+<constant>open/write</constant><br>
+<constant>open/creat</constant><br>
+<constant>open/append</constant><br>
+<constant>open/excl</constant><br>
+<constant>open/noctty</constant><br>
+<constant>open/nonblock</constant><br>
+<constant>open/trunc</constant><br>
+<constant>open/sync</constant><br>
+<constant>open/fsync</constant><br>
+<constant>open/binary</constant><br>
+<constant>open/text</constant>
 
-===== open/write
-Synonym for {{open/wronly}}.
-
-===== open/creat
-===== open/append
-===== open/excl
-===== open/noctty
-===== open/nonblock
-===== open/trunc
-===== open/sync
-===== open/fsync
-===== open/binary
-===== open/text
+Open flags used with the {{file-open}} procedure.  {{open/read}} is a 
+convenience synonym for {{open/rdonly}}, as is {{open/write}} 
+for {{open/wronly}}.
 
 ==== Permission bits
 
-===== perm/irusr
-===== perm/iwusr
-===== perm/ixusr
-===== perm/irgrp
-===== perm/iwgrp
-===== perm/ixgrp
-===== perm/iroth
-===== perm/iwoth
-===== perm/ixoth
-===== perm/irwxu
-===== perm/irwxg
-===== perm/irwxo
-===== perm/isvtx
-===== perm/isuid
-===== perm/isgid
+<constant>perm/irusr</constant><br>
+<constant>perm/iwusr</constant><br>
+<constant>perm/ixusr</constant><br>
+<constant>perm/irgrp</constant><br>
+<constant>perm/iwgrp</constant><br>
+<constant>perm/ixgrp</constant><br>
+<constant>perm/iroth</constant><br>
+<constant>perm/iwoth</constant><br>
+<constant>perm/ixoth</constant><br>
+<constant>perm/irwxu</constant><br>
+<constant>perm/irwxg</constant><br>
+<constant>perm/irwxo</constant><br>
+<constant>perm/isvtx</constant><br>
+<constant>perm/isuid</constant><br>
+<constant>perm/isgid</constant>
 
+Permission bits used with, for example, {{file-open}}.
 
 === Directories
 
@@ -112,7 +118,8 @@ Files beginning with {{.}} are included only if {{SHOW-DOTFILES?}} is given and 
 <procedure>(directory? NAME)</procedure>
 
 Returns {{#t}} if there exists a file with the name {{NAME}}
-and if that file is a directory, or {{#f}} otherwise.
+and if that file is a directory or a symbolic link pointing
+to a directory.  Otherwise, it returns {{#f}}.
 
 ==== glob
 
@@ -137,7 +144,7 @@ If the current process has no root permissions, the operation will fail.
 ==== call-with-input-pipe
 ==== call-with-output-pipe
 
-<procedure>(call-with-input-pipe CMDLINE PROC [MODE])</procedure>
+<procedure>(call-with-input-pipe CMDLINE PROC [MODE])</procedure><br>
 <procedure>(call-with-output-pipe CMDLINE PROC [MODE])</procedure>
 
 Call {{PROC}} with a single argument: a input- or output port
@@ -148,7 +155,7 @@ are returned.
 ==== close-input-pipe
 ==== close-output-pipe
 
-<procedure>(close-input-pipe PORT)</procedure>
+<procedure>(close-input-pipe PORT)</procedure><br>
 <procedure>(close-output-pipe PORT)</procedure>
 
 Closes the pipe given in {{PORT}} and waits until the connected
@@ -188,7 +195,7 @@ atomically into a pipe or FIFO.
 ==== with-input-from-pipe
 ==== with-output-to-pipe
 
-<procedure>(with-input-from-pipe CMDLINE THUNK [MODE])</procedure>
+<procedure>(with-input-from-pipe CMDLINE THUNK [MODE])</procedure><br>
 <procedure>(with-output-to-pipe CMDLINE THUNK [MODE])</procedure>
 
 Temporarily set the value of
@@ -340,7 +347,7 @@ meaningful depending on the {{COMMAND}}.
 ==== open-input-file*
 ==== open-output-file*
 
-<procedure>(open-input-file* FILENO [OPENMODE])</procedure>
+<procedure>(open-input-file* FILENO [OPENMODE])</procedure><br>
 <procedure>(open-output-file* FILENO [OPENMODE])</procedure>
 
 Opens file for the file-descriptor {{FILENO}} for input or output
@@ -363,8 +370,8 @@ this port. Otherwise an error is signaled.
 ==== file-change-time
 ==== file-modification-time
 
-<procedure>(file-access-time FILE)</procedure>
-<procedure>(file-change-time FILE)</procedure>
+<procedure>(file-access-time FILE)</procedure><br>
+<procedure>(file-change-time FILE)</procedure><br>
 <procedure>(file-modification-time FILE)</procedure>
 
 Returns time (in seconds) of the last access, modification or change of {{FILE}}. {{FILE}}
@@ -433,8 +440,8 @@ values.  {{FILE}} may be a filename or a file-descriptor.
 ==== file-write-access?
 ==== file-execute-access?
 
-<procedure>(file-read-access? FILENAME)</procedure>
-<procedure>(file-write-access? FILENAME)</procedure>
+<procedure>(file-read-access? FILENAME)</procedure><br>
+<procedure>(file-write-access? FILENAME)</procedure><br>
 <procedure>(file-execute-access? FILENAME)</procedure>
 
 These procedures return {{#t}} if the current user has read,
@@ -446,9 +453,9 @@ write or execute permissions on the file named {{FILENAME}}.
 ==== fifo?
 ==== socket?
 
-<procedure>(character-device? FILENAME)</procedure>
-<procedure>(block-device? FILENAME)</procedure>
-<procedure>(fifo? FILENAME)</procedure>
+<procedure>(character-device? FILENAME)</procedure><br>
+<procedure>(block-device? FILENAME)</procedure><br>
+<procedure>(fifo? FILENAME)</procedure><br>
 <procedure>(socket? FILENAME)</procedure>
 
 These procedures return {{#t}} if the {{FILENAME}} given is of the 
@@ -468,7 +475,7 @@ or a file-descriptor.
 
 ==== set-file-position!
 
-<procedure>(set-file-position! FILE POSITION [WHENCE])</procedure>
+<procedure>(set-file-position! FILE POSITION [WHENCE])</procedure><br>
 <procedure>(set! (file-position FILE) POSITION)</procedure>
 
 Sets the current read/write position of {{FILE}} to
@@ -543,7 +550,7 @@ with no arguments and terminates.
 
 ==== process-run
 
-<procedure>(process-run COMMANDLINE)</procedure>
+<procedure>(process-run COMMANDLINE)</procedure><br>
 <procedure>(process-run COMMAND ARGUMENT-LIST)</procedure>
 
 Creates a new child process. The PID of the new process is returned.
@@ -577,7 +584,7 @@ returns three values:
 
 ==== process
 
-<procedure>(process COMMANDLINE)</procedure>
+<procedure>(process COMMANDLINE)</procedure><br>
 <procedure>(process COMMAND ARGUMENT-LIST [ENVIRONMENT-LIST])</procedure>
 
 Creates a subprocess and returns three values: an input port from
@@ -596,7 +603,7 @@ Not using the shell may be preferrable for security reasons.
 
 ==== process*
 
-<procedure>(process* COMMANDLINE)</procedure>
+<procedure>(process* COMMANDLINE)</procedure><br>
 <procedure>(process* COMMAND ARGUMENT-LIST [ENVIRONMENT-LIST])</procedure>
 
 Like {{process}} but returns 4 values: an input port from
@@ -830,31 +837,33 @@ Masks (blocks) the signal for the code {{SIGNUM}}.
 
 Unmasks (unblocks) the signal for the code {{SIGNUM}}.
 
-==== signal/term
-==== signal/kill
-==== signal/int
-==== signal/hup
-==== signal/fpe
-==== signal/ill
-==== signal/segv
-==== signal/abrt
-==== signal/trap
-==== signal/quit
-==== signal/alrm
-==== signal/vtalrm
-==== signal/prof
-==== signal/io
-==== signal/urg
-==== signal/chld
-==== signal/cont
-==== signal/stop
-==== signal/tstp
-==== signal/pipe
-==== signal/xcpu
-==== signal/xfsz
-==== signal/usr1
-==== signal/usr2
-==== signal/winch
+==== Signal codes
+
+<constant>signal/term</constant><br>
+<constant>signal/kill</constant><br>
+<constant>signal/int</constant><br>
+<constant>signal/hup</constant><br>
+<constant>signal/fpe</constant><br>
+<constant>signal/ill</constant><br>
+<constant>signal/segv</constant><br>
+<constant>signal/abrt</constant><br>
+<constant>signal/trap</constant><br>
+<constant>signal/quit</constant><br>
+<constant>signal/alrm</constant><br>
+<constant>signal/vtalrm</constant><br>
+<constant>signal/prof</constant><br>
+<constant>signal/io</constant><br>
+<constant>signal/urg</constant><br>
+<constant>signal/chld</constant><br>
+<constant>signal/cont</constant><br>
+<constant>signal/stop</constant><br>
+<constant>signal/tstp</constant><br>
+<constant>signal/pipe</constant><br>
+<constant>signal/xcpu</constant><br>
+<constant>signal/xfsz</constant><br>
+<constant>signal/usr1</constant><br>
+<constant>signal/usr2</constant><br>
+<constant>signal/winch</constant>
 
 These variables contain signal codes for use with {{process-signal}},  {{set-signal-handler!}},  {{signal-handler}},  {{signal-masked?}},  {{signal-mask!}},  or {{signal-unmask!}}.
 
@@ -863,7 +872,7 @@ These variables contain signal codes for use with {{process-signal}},  {{set-sig
 
 ==== current-environment
 
- [procedure] (get-environment-variables)
+<procedure>(get-environment-variables)</procedure>
 
 Returns a association list of the environment variables and their
 current values (see also [[http://srfi.schemers.org/srfi-98/|SRFI-98]]).
@@ -889,7 +898,7 @@ nothing happens.
 
 ==== memory-mapped-file?
 
- [pocedure] (memory-mapped-file? X)
+<procedure>(memory-mapped-file? X)</procedure>
 
 Returns {{#t}}, if {{X}} is an object representing a memory
 mapped file, or {{#f}} otherwise.
@@ -1002,7 +1011,7 @@ The {{FORMAT}} string follows the rules for the C library procedure {{strftime}}
 
 ==== string->time
 
- [procedure] (string->time TIME [FORMAT])
+<procedure>(string->time TIME [FORMAT])</procedure>
 
 Converts a string of the form represented by the {{FORMAT}} string
 into the broken down time represented in a 10 element vector. The
@@ -1025,29 +1034,30 @@ is not called when this procedure is invoked. The optional return-code
 
 === ERRNO values
 
-==== errno/perm
-==== errno/noent
-==== errno/srch
-==== errno/intr
-==== errno/io
-==== errno/noexec
-==== errno/badf
-==== errno/child
-==== errno/nomem
-==== errno/acces
-==== errno/fault
-==== errno/busy
-==== errno/notdir
-==== errno/isdir
-==== errno/inval
-==== errno/mfile
-==== errno/nospc
-==== errno/spipe
-==== errno/pipe
-==== errno/again
-==== errno/rofs
-==== errno/exist
-==== errno/wouldblock
+<constant>errno/perm</constant><br>
+<constant>errno/noent</constant><br>
+<constant>errno/srch</constant><br>
+<constant>errno/intr</constant><br>
+<constant>errno/io</constant><br>
+<constant>errno/noexec</constant><br>
+<constant>errno/badf</constant><br>
+<constant>errno/child</constant><br>
+<constant>errno/nomem</constant><br>
+<constant>errno/acces</constant><br>
+<constant>errno/fault</constant><br>
+<constant>errno/busy</constant><br>
+<constant>errno/notdir</constant><br>
+<constant>errno/isdir</constant><br>
+<constant>errno/inval</constant><br>
+<constant>errno/mfile</constant><br>
+<constant>errno/nospc</constant><br>
+<constant>errno/spipe</constant><br>
+<constant>errno/pipe</constant><br>
+<constant>errno/again</constant><br>
+<constant>errno/rofs</constant><br>
+<constant>errno/exist</constant><br>
+<constant>errno/wouldblock</constant>
+
 These variables contain error codes as returned by {{errno}}.
 
 
@@ -1057,24 +1067,31 @@ These variables contain error codes as returned by {{errno}}.
 
 <procedure>(find-files DIRECTORY PREDICATE [ACTION [IDENTITY [LIMIT]]])</procedure>
 
-Recursively traverses the contents of {{DIRECTORY}} (which should
-be a string) and invokes the procedure {{ACTION}} for all files
-in which the procedure {{PREDICATE}} is true.  {{PREDICATE}}
-may me a procedure of one argument or a regular-expression string.
-{{ACTION}} should be a procedure of two arguments: the currently
-encountered file and the result of the previous invocation of
-{{ACTION}}, or, if this is the first invocation, the value
-of {{IDENTITY}}. {{ACTION}} defaults to {{cons}},
-{{IDENTITY}} defaults to {{()}}.  {{LIMIT}} should be a
-procedure of one argument that is called for each nested directory
-and which should return true, if that directory is to be traversed
-recursively. {{LIMIT}} may also be an exact integer that
-gives the maximum recursion depth. For example, a depth of {{0}} means that only files in the top-level, specified directory are to be traversed. In this case, all nested directories are ignored.  {{LIMIT}} may also be {{#f}} (the default),
-which is equivalent to {{(constantly #t)}}.
+Recursively traverses the contents of {{DIRECTORY}} (which should be a
+string) and invokes the procedure {{ACTION}} for all files in which
+the procedure {{PREDICATE}} is true.  {{PREDICATE}} may be a procedure
+of one argument or a regular-expression string.  {{ACTION}} should be
+a procedure of two arguments: the currently encountered file and the
+result of the previous invocation of {{ACTION}}, or, if this is the
+first invocation, the value of {{IDENTITY}}. {{ACTION}} defaults to
+{{cons}}, {{IDENTITY}} defaults to {{()}}.  {{LIMIT}} should be a
+procedure of one argument that is called for each nested directory and
+which should return true, if that directory is to be traversed
+recursively. {{LIMIT}} may also be an exact integer that gives the
+maximum recursion depth. For example, a depth of {{0}} means that only
+files in the top-level, specified directory are to be traversed. In
+this case, all nested directories are ignored.  {{LIMIT}} may also be
+{{#f}} (the default), which is equivalent to {{(constantly #t)}}.
 
 Note that {{ACTION}} is called with the full pathname of each file,
 including the directory prefix.
 
+Also note that {{find-files}} will traverse symbolic links pointing to
+directories, which may lead to symlink loops or duplication of files.
+To avoid traversing symlinks, you can pass something like this as the
+{{LIMIT}} procedure:
+
+ (lambda (x) (not (symbolic-link? x)))
 
 === Getting the hostname and system information
 
@@ -1121,7 +1138,7 @@ Returns {{#t}} if {{PORT}} is connected to a terminal and
 
 ==== terminal-size
 
- [procedure] (terminal-size)
+<procedure>(terminal-size)</procedure>
 
 Returns two values, the number of columns and rows of the
 current terminal window or {{0}}, {{0}} if the terminal
@@ -1231,9 +1248,9 @@ The optional parameter {{MODE}}, default {{open/binary | open/noinherit}}. This 
 status is available. (Windows does not provide signals as an interprocess
 communication method.)
 
-<procedure>(process-execute PATHNAME [ARGUMENT-LIST [ENVIRONMENT-LIST [EXACT-FLAG]]])</procedure>
-<procedure>(process COMMAND ARGUMENT-LIST [ENVIRONMENT-LIST [EXACT-FLAG]])</procedure>
-<procedure>(process* COMMAND ARGUMENT-LIST [ENVIRONMENT-LIST [EXACT-FLAG]])</procedure>
+<procedure>(process-execute PATHNAME [ARGUMENT-LIST [ENVIRONMENT-LIST [EXACT-FLAG]]])</procedure><br>
+<procedure>(process COMMAND ARGUMENT-LIST [ENVIRONMENT-LIST [EXACT-FLAG]])</procedure><br>
+<procedure>(process* COMMAND ARGUMENT-LIST [ENVIRONMENT-LIST [EXACT-FLAG]])</procedure><br>
 
 The optional parameter {{EXACT-FLAG}}, default {{#f}}. When {{#f}} any argument string with
 embedded whitespace will be wrapped in quotes. When {{#t}} no such wrapping occurs.
@@ -1306,7 +1323,7 @@ Returns:
 * the PID when asynchronous
 * -1 when failure
 
----
+----
 Previous: [[Unit srfi-69]]
 
 Next: [[Unit utils]]

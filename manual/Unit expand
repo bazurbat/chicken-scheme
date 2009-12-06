@@ -11,7 +11,7 @@ option.
 
 ==== get-line-number
 
- [procedure] (get-line-number EXPR)
+<procedure>(get-line-number EXPR)</procedure>
 
 If {{EXPR}} is a pair with the car being a symbol, and line-number
 information is available for this expression, then this procedure returns
@@ -21,14 +21,14 @@ expressions is only available in the compiler.
 
 ==== expand
 
- [procedure] (expand X)
+<procedure>(expand X)</procedure>
 
 If {{X}} is a macro-form, expand the macro (and repeat expansion
 until expression is a non-macro form).  Returns the resulting expression.
 
 ==== syntax-error
 
- [procedure] (syntax-error [LOCATION] MESSAGE ARGUMENT ...)
+<procedure>(syntax-error [LOCATION] MESSAGE ARGUMENT ...)</procedure>
 
 Signals an exception of the kind {{(exn syntax)}}. Otherwise identical to 
 {{error}}.

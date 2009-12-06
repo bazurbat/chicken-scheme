@@ -14,7 +14,7 @@ option.
 
 ==== random-seed
 
- [procedure] (random-seed [SEED])
+<procedure>(random-seed [SEED])</procedure>
 
 Seeds the random number generator with {{SEED}} (an {{integer}}) or 
 {{(current-seconds)}} if {{SEED}} is not given.
@@ -22,7 +22,7 @@ Seeds the random number generator with {{SEED}} (an {{integer}}) or
 
 ==== randomize
 
- [procedure] (randomize [SEED])
+<procedure>(randomize [SEED])</procedure>
 
 Set random-number seed. If {{SEED}} (an {{exact integer}}) is not supplied, the
 current time is used. On startup (when Unit {{extras}} is initialized), the
@@ -31,7 +31,7 @@ random number generator is initialized with the current time.
 
 ==== random
 
- [procedure] (random N)
+<procedure>(random N)</procedure>
 
 Returns a random {{integer}} in {{[0 N-1]}}. {{N}} is an {{integer}}.
 
@@ -46,9 +46,9 @@ On '''Windows''' {{N}} and the random value are {{exact integer}}.
 ==== fprintf
 ==== sprintf
 
- [procedure] (fprintf PORT FORMATSTRING [ARG...])
- [procedure] (printf FORMATSTRING [ARG...])
- [procedure] (sprintf FORMATSTRING [ARG...])
+<procedure>(fprintf PORT FORMATSTRING [ARG...])</procedure><br>
+<procedure>(printf FORMATSTRING [ARG...])</procedure><br>
+<procedure>(sprintf FORMATSTRING [ARG...])</procedure>
 
 Simple formatted output to a given port ({{fprintf}}), the
 value of {{(current-output-port)}} ({{printf}}), or a string
@@ -85,7 +85,7 @@ invoke formatted output routine recursively with the next two arguments as forma
 
 ==== format
 
- [procedure] (format [DESTINATION] FORMATSTRING [ARG...])
+<procedure>(format [DESTINATION] FORMATSTRING [ARG...])</procedure>
 
 The parameters {{FORMATSTRING}} and {{ARG...}} are as for {{printf}}.
 
@@ -102,8 +102,8 @@ The optional {{DESTINATION}}, when supplied, performs:
 
 ==== pretty-print
 
- [procedure] (pretty-print EXP [PORT])
- [procedure] (pp EXP [PORT])
+<procedure>(pretty-print EXP [PORT])</procedure><br>
+<procedure>(pp EXP [PORT])</procedure>
 
 Print expression nicely formatted. {{PORT}} defaults to the value
 of {{(current-output-port)}}.
@@ -119,15 +119,15 @@ wrap will occur.
 ==== read-byte
 ==== write-byte
 
- [procedure] (read-byte [PORT])
- [procedure] (write-byte BYTE [PORT])
+<procedure>(read-byte [PORT])</procedure><br>
+<procedure>(write-byte BYTE [PORT])</procedure>
 
 Read/write a byte to the port given in {{PORT}}, which default to the values
 of {{(current-input-port)}} and {{(current-output-port)}}, respectively.
 
 ==== read-file
 
- [procedure] (read-file [FILE-OR-PORT [READER [MAXCOUNT]]])
+<procedure>(read-file [FILE-OR-PORT [READER [MAXCOUNT]]])</procedure>
 
 Returns a list containing all toplevel expressions
 read from the file or port {{FILE-OR-PORT}}. If no argument is given,
@@ -142,8 +142,8 @@ If {{MAXCOUNT}} is given then only up to {{MAXCOUNT}} expressions will be read i
 ==== read-line
 ==== write-line
 
- [procedure] (read-line [PORT [LIMIT]])
- [procedure] (write-line STRING [PORT])
+<procedure>(read-line [PORT [LIMIT]])</procedure><br>
+<procedure>(write-line STRING [PORT])</procedure>
 
 Line-input and -output. {{PORT}} defaults to the value of
 {{(current-input-port)}} and {{(current-output-port)}},
@@ -154,7 +154,7 @@ characters per line. {{read-line}} returns a string without the terminating newl
 
 ==== read-lines
 
- [procedure] (read-lines [PORT [MAX]])
+<procedure>(read-lines [PORT [MAX]])</procedure>
 
 Read {{MAX}} or fewer lines from {{PORT}}. {{PORT}}
 defaults to the value of {{(current-input-port)}}. {{PORT}} may optionally be
@@ -165,9 +165,9 @@ a string naming a file. Returns a list of strings, each string representing a li
 ==== read-string!
 ==== write-string
 
- [procedure] (read-string [NUM [PORT]])
- [procedure] (read-string! NUM STRING [PORT [START]])
- [procedure] (write-string STRING [NUM [PORT]]
+<procedure>(read-string [NUM [PORT]])</procedure><br>
+<procedure>(read-string! NUM STRING [PORT [START]])</procedure><br>
+<procedure>(write-string STRING [NUM [PORT]])</procedure>
 
 Read or write {{NUM}} characters from/to {{PORT}}, which defaults to the
 value of {{(current-input-port)}} or {{(current-output-port)}}, respectively. 
@@ -182,7 +182,7 @@ the read characters are stored starting at that position.
 
 ==== read-token
 
- [procedure] (read-token PREDICATE [PORT])
+<procedure>(read-token PREDICATE [PORT])</procedure>
 
 Reads characters from {{PORT}} (which defaults to the value of {{(current-input-port)}})
 and calls the procedure {{PREDICATE}} with each character until {{PREDICATE}} returns
