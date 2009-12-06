@@ -164,7 +164,7 @@ Possible options are:
 
      -optimize-level 0          does nothing.
      -optimize-level 1          is equivalent to -optimize-leaf-routines
-     -optimize-level 2          is currently the same as -optimize-level 1 -inline
+     -optimize-level 2          is equivalent to -optimize-leaf-routines -inline
      -optimize-level 3          is equivalent to -optimize-leaf-routines -local -inline
      -optimize-level 4          is equivalent to -optimize-leaf-routines -local -inline -unsafe
      -optimize-level 5          is equivalent to -optimize-leaf-routines -block -inline -unsafe -lambda-lift -disable-interrupts -no-trace -no-lambda-info
