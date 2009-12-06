@@ -209,7 +209,6 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 # define check_alignment(p)
 #endif
 
-#define aligned8(n)                  ((((C_word)(n)) & 7) == 0)
 #define nmax(x, y)                   ((x) > (y) ? (x) : (y))
 #define nmin(x, y)                   ((x) < (y) ? (x) : (y))
 #define percentage(n, p)             ((long)(((double)(n) * (double)p) / 100))
@@ -231,9 +230,6 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
                                        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, w, x); \
                                      else v = C_flonum_magnitude(x);
 #endif
-
-#define C_isnan(f)                   (!((f) == (f)))
-#define C_isinf(f)                   ((f) == (f) + (f) && (f) != 0.0)
 
 
 /* these could be shorter in unsafe mode: */
@@ -2092,15 +2088,6 @@ C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stabl
 }
 
 
-/* Check block allocation: */
-
-/* I */
-C_regparm C_word C_fcall C_permanentp(C_word x)
-{
-  return C_mk_bool(!C_immediatep(x) && !C_in_stackp(x) && !C_in_heapp(x));
-}
-
-
 C_regparm int C_in_stackp(C_word x)
 {
   C_word *ptr = (C_word *)(C_uword)x;
@@ -2292,7 +2279,7 @@ C_regparm C_word C_fcall C_string_aligned8(C_word **ptr, int len, C_char *str)
 
 #ifndef C_SIXTY_FOUR
   /* Align on 8-byte boundary: */
-  if(aligned8(p)) ++p;
+  if(C_aligned8(p)) ++p;
 #endif
 
   p0 = p;
@@ -2388,28 +2375,6 @@ C_regparm C_word C_fcall C_h_pair(C_word car, C_word cdr)
 }
 
 
-/* I */
-C_regparm C_word C_fcall C_flonum(C_word **ptr, double n)
-{
-  C_word 
-    *p = *ptr,
-    *p0;
-
-#ifndef C_SIXTY_FOUR
-#ifndef C_DOUBLE_IS_32_BITS
-  /* Align double on 8-byte boundary: */
-  if(aligned8(p)) ++p;
-#endif
-#endif
-
-  p0 = p;
-  *(p++) = C_FLONUM_TAG;
-  *((double *)p) = n;
-  *ptr = p + sizeof(double) / sizeof(C_word);
-  return (C_word)p0;
-}
-
-
 C_regparm C_word C_fcall C_number(C_word **ptr, double n)
 {
   C_word 
@@ -2425,7 +2390,7 @@ C_regparm C_word C_fcall C_number(C_word **ptr, double n)
 #ifndef C_SIXTY_FOUR
 #ifndef C_DOUBLE_IS_32_BITS
   /* Align double on 8-byte boundary: */
-  if(aligned8(p)) ++p;
+  if(C_aligned8(p)) ++p;
 #endif
 #endif
 
@@ -3007,7 +2972,7 @@ C_regparm void C_fcall mark(C_word *x)
     p2 = (C_SCHEME_BLOCK *)C_align((C_uword)C_fromspace_top);
 
 #ifndef C_SIXTY_FOUR
-    if((h & C_8ALIGN_BIT) && aligned8(p2) && (C_byte *)p2 < C_fromspace_limit) {
+    if((h & C_8ALIGN_BIT) && C_aligned8(p2) && (C_byte *)p2 < C_fromspace_limit) {
       *((C_word *)p2) = ALIGNMENT_HOLE_MARKER;
       p2 = (C_SCHEME_BLOCK *)((C_word *)p2 + 1);
     }
@@ -3062,7 +3027,7 @@ C_regparm void C_fcall mark(C_word *x)
     p2 = (C_SCHEME_BLOCK *)C_align((C_uword)tospace_top);
 
 #ifndef C_SIXTY_FOUR
-    if((h & C_8ALIGN_BIT) && aligned8(p2) && (C_byte *)p2 < tospace_limit) {
+    if((h & C_8ALIGN_BIT) && C_aligned8(p2) && (C_byte *)p2 < tospace_limit) {
       *((C_word *)p2) = ALIGNMENT_HOLE_MARKER;
       p2 = (C_SCHEME_BLOCK *)((C_word *)p2 + 1);
     }
@@ -3337,7 +3302,7 @@ C_regparm void C_fcall remark(C_word *x)
   p2 = (C_SCHEME_BLOCK *)C_align((C_uword)new_tospace_top);
 
 #ifndef C_SIXTY_FOUR
-  if((h & C_8ALIGN_BIT) && aligned8(p2) && (C_byte *)p2 < new_tospace_limit) {
+  if((h & C_8ALIGN_BIT) && C_aligned8(p2) && (C_byte *)p2 < new_tospace_limit) {
     *((C_word *)p2) = ALIGNMENT_HOLE_MARKER;
     p2 = (C_SCHEME_BLOCK *)((C_word *)p2 + 1);
   }
@@ -3965,7 +3930,6 @@ C_regparm C_word C_fcall C_display_flonum(C_word port, C_word n)
 }
 
 
-/* I */
 C_regparm C_word C_fcall C_read_char(C_word port)
 {
   int c = C_getc(C_port_file(port));
@@ -3974,7 +3938,6 @@ C_regparm C_word C_fcall C_read_char(C_word port)
 }
 
 
-/* I */
 C_regparm C_word C_fcall C_peek_char(C_word port)
 {
   C_FILEPTR fp = C_port_file(port);
@@ -4010,13 +3973,6 @@ C_regparm C_word C_fcall C_execute_shell_command(C_word string)
 }
 
 
-/* I */
-C_regparm C_word C_fcall C_string_to_pbytevector(C_word s)
-{
-  return C_pbytevector(C_header_size(s), C_data_pointer(s));
-}
-
-
 C_regparm C_word C_fcall C_char_ready_p(C_word port)
 {
 #if !defined(C_NONUNIX)
@@ -4031,14 +3987,6 @@ C_regparm C_word C_fcall C_char_ready_p(C_word port)
 #else
   return C_SCHEME_TRUE;
 #endif
-}
-
-
-/* M */
-C_regparm C_word C_fcall C_flush_output(C_word port)
-{
-  C_fflush(C_port_file(port));
-  return C_SCHEME_UNDEFINED;
 }
 
 
@@ -4240,7 +4188,6 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
 }
 
 
-/* M */
 C_regparm void C_fcall C_paranoid_check_for_interrupt(void)
 {
   if(--C_timer_interrupt_counter <= 0)
@@ -4265,15 +4212,6 @@ C_regparm void C_fcall C_raise_interrupt(int reason)
 }
 
 
-/* M */
-C_regparm C_word C_fcall C_set_initial_timer_interrupt_period(C_word n)
-{
-  C_initial_timer_interrupt_period = C_unfix(n);
-  return C_SCHEME_UNDEFINED;
-}
-
-
-/* M */
 C_regparm C_word C_fcall C_enable_interrupts(void)
 {
   C_timer_interrupt_counter = C_initial_timer_interrupt_period;
@@ -4283,7 +4221,6 @@ C_regparm C_word C_fcall C_enable_interrupts(void)
 }
 
 
-/* M */
 C_regparm C_word C_fcall C_disable_interrupts(void)
 {
   C_interrupts_enabled = 0;
@@ -4302,51 +4239,6 @@ C_regparm C_word C_fcall C_establish_signal_handler(C_word signum, C_word reason
   }
 
   return C_SCHEME_UNDEFINED;
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_flonum_in_fixnum_range_p(C_word n)
-{
-  double f = C_flonum_magnitude(n);
-
-  return C_mk_bool(f <= (double)C_MOST_POSITIVE_FIXNUM && f >= (double)C_MOST_NEGATIVE_FIXNUM);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_double_to_number(C_word n)
-{
-  double m, f = C_flonum_magnitude(n);
-
-  if(f <= (double)C_MOST_POSITIVE_FIXNUM
-     && f >= (double)C_MOST_NEGATIVE_FIXNUM && modf(f, &m) == 0.0) 
-    return C_fix(f);
-  else return n;
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_fits_in_int_p(C_word x)
-{
-  double n, m;
-
-  if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
-
-  n = C_flonum_magnitude(x);
-  return C_mk_bool(modf(n, &m) == 0.0 && n >= C_WORD_MIN && n <= C_WORD_MAX);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_fits_in_unsigned_int_p(C_word x)
-{
-  double n, m;
-
-  if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
-
-  n = C_flonum_magnitude(x);
-  return C_mk_bool(modf(n, &m) == 0.0 && n >= 0 && n <= C_UWORD_MAX);
 }
 
 
@@ -4381,141 +4273,6 @@ C_regparm C_word C_fcall C_evict_block(C_word from, C_word ptr)
 
   C_memcpy(p, (C_SCHEME_BLOCK *)from, bytes + sizeof(C_header));
   return (C_word)p;
-}
-
-
-/* Conversion routines: */
-
-/* I */
-C_regparm double C_fcall C_c_double(C_word x)
-{
-  if(x & C_FIXNUM_BIT) return (double)C_unfix(x);
-  else return C_flonum_magnitude(x);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_num_to_int(C_word x)
-{
-  if(x & C_FIXNUM_BIT) return C_unfix(x);
-  else return (int)C_flonum_magnitude(x);
-}
-
-
-/* I */
-C_regparm C_s64 C_fcall C_num_to_int64(C_word x)
-{
-  if(x & C_FIXNUM_BIT) return (C_s64)C_unfix(x);
-  else return (C_s64)C_flonum_magnitude(x);
-}
-
-
-/* I */
-C_regparm C_uword C_fcall C_num_to_unsigned_int(C_word x)
-{
-  if(x & C_FIXNUM_BIT) return C_unfix(x);
-  else return (unsigned int)C_flonum_magnitude(x);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_int_to_num(C_word **ptr, C_word n)
-{
-  if(C_fitsinfixnump(n)) return C_fix(n);
-  else return C_flonum(ptr, (double)n);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_unsigned_int_to_num(C_word **ptr, C_uword n)
-{
-  if(C_ufitsinfixnump(n)) return C_fix(n);
-  else return C_flonum(ptr, (double)n);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_long_to_num(C_word **ptr, long n)
-{
-  if(C_fitsinfixnump(n)) return C_fix(n);
-  else return C_flonum(ptr, (double)n);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_unsigned_long_to_num(C_word **ptr, unsigned long n)
-{
-  if(C_ufitsinfixnump(n)) return C_fix(n);
-  else return C_flonum(ptr, (double)n);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_flonum_in_int_range_p(C_word n)
-{
-  double m = C_flonum_magnitude(n);
-
-  return C_mk_bool(m >= C_WORD_MIN && m <= C_WORD_MAX);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_flonum_in_uint_range_p(C_word n)
-{
-  double m = C_flonum_magnitude(n);
-
-  return C_mk_bool(m >= 0 && m <= C_UWORD_MAX);
-}
-
-
-/* I */
-C_regparm char *C_fcall C_string_or_null(C_word x)
-{
-  return C_truep(x) ? C_c_string(x) : NULL;
-}
-
-
-/* I */
-C_regparm void *C_fcall C_data_pointer_or_null(C_word x) 
-{
-  return C_truep(x) ? C_data_pointer(x) : NULL;
-}
-
-
-/* I */
-C_regparm void *C_fcall C_srfi_4_vector_or_null(C_word x) 
-{
-  return C_truep(x) ? C_data_pointer(C_block_item(x, 1)) : NULL;
-}
-
-
-/* I */
-C_regparm void *C_fcall C_c_pointer_or_null(C_word x) 
-{
-  return C_truep(x) ? (void *)C_block_item(x, 0) : NULL;
-}
-
-
-/* I */
-C_regparm void *C_fcall C_scheme_or_c_pointer(C_word x) 
-{
-  return C_anypointerp(x) ? (void *)C_block_item(x, 0) : C_data_pointer(x);
-}
-
-
-/* I */
-C_regparm long C_fcall C_num_to_long(C_word x)
-{
-  if(x & C_FIXNUM_BIT) return C_unfix(x);
-  else return (long)C_flonum_magnitude(x);
-}
-
-
-/* I */
-C_regparm unsigned long C_fcall C_num_to_unsigned_long(C_word x)
-{
-  if(x & C_FIXNUM_BIT) return C_unfix(x);
-  else return (unsigned long)C_flonum_magnitude(x);
 }
 
 
@@ -4561,17 +4318,6 @@ C_regparm C_word C_fcall C_i_string_equal_p(C_word x, C_word y)
 }
 
 
-/* I */
-C_regparm C_word C_fcall C_u_i_string_equal_p(C_word x, C_word y)
-{
-  C_word n;
-
-  n = C_header_size(x);
-  return C_mk_bool(n == C_header_size(y)
-         && !C_memcmp((char *)C_data_pointer(x), (char *)C_data_pointer(y), n));
-}
-
-
 C_regparm C_word C_fcall C_i_string_ci_equal_p(C_word x, C_word y)
 {
   C_word n;
@@ -4594,151 +4340,6 @@ C_regparm C_word C_fcall C_i_string_ci_equal_p(C_word x, C_word y)
     if(C_tolower(*(p1++)) != C_tolower(*(p2++))) return C_SCHEME_FALSE;
 
   return C_SCHEME_TRUE;
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_eqvp(C_word x, C_word y)
-{
-  return
-    C_mk_bool(x == y ||
-	      (!C_immediatep(x) && !C_immediatep(y) &&
-	       C_block_header(x) == C_FLONUM_TAG && C_block_header(y) == C_FLONUM_TAG &&
-	       C_flonum_magnitude(x) == C_flonum_magnitude(y) ) );
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_symbolp(C_word x)
-{
-  return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_SYMBOL_TAG);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_pairp(C_word x)
-{
-  return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_PAIR_TAG);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_stringp(C_word x)
-{
-  return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_STRING_TYPE);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_locativep(C_word x)
-{
-  return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_LOCATIVE_TAG);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_vectorp(C_word x)
-{
-  return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_VECTOR_TYPE);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_portp(C_word x)
-{
-  return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_PORT_TYPE);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_closurep(C_word x)
-{
-  return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_CLOSURE_TYPE);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_numberp(C_word x)
-{
-  return C_mk_bool((x & C_FIXNUM_BIT)
-         || (!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG));
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_rationalp(C_word x)
-{
-  if((x & C_FIXNUM_BIT) != 0) return C_SCHEME_TRUE;
-
-  if((!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG)) {
-    double n = C_flonum_magnitude(x);
-      
-    if(!C_isinf(n) && !C_isnan(n)) return C_SCHEME_TRUE;
-  }
-
-  return C_SCHEME_FALSE;
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_integerp(C_word x)
-{
-  double dummy;
-
-  return C_mk_bool((x & C_FIXNUM_BIT) || 
-		   ((!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) &&
-		    modf(C_flonum_magnitude(x), &dummy) == 0.0 ) );
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_flonump(C_word x)
-{
-  return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_finitep(C_word x)
-{
-  if((x & C_FIXNUM_BIT) != 0) return C_SCHEME_TRUE;
-  else return C_mk_bool(!C_isinf(C_flonum_magnitude(x)));
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_fixnum_min(C_word x, C_word y)
-{
-  return ((C_word)x < (C_word)y) ? x : y;
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_fixnum_max(C_word x, C_word y)
-{
-  return ((C_word)x > (C_word)y) ? x : y;
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_flonum_min(C_word x, C_word y)
-{
-  double 
-    xf = C_flonum_magnitude(x),
-    yf = C_flonum_magnitude(y);
-
-  return xf < yf ? x : y;
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_flonum_max(C_word x, C_word y)
-{
-  double 
-    xf = C_flonum_magnitude(x),
-    yf = C_flonum_magnitude(y);
-
-  return xf > yf ? x : y;
 }
 
 
@@ -4870,7 +4471,7 @@ C_regparm C_word C_fcall C_a_i_bytevector(C_word **ptr, int c, C_word num)
 
 #ifndef C_SIXTY_FOUR
   /* Align on 8-byte boundary: */
-  if(aligned8(p)) ++p;
+  if(C_aligned8(p)) ++p;
 #endif
 
   p0 = p;
@@ -4909,30 +4510,12 @@ C_regparm C_word C_fcall C_i_exactp(C_word x)
 }
 
 
-/* M */
-C_regparm C_word C_fcall C_u_i_exactp(C_word x)
-{
-  if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
-
-  return C_SCHEME_FALSE;
-}
-
-
 C_regparm C_word C_fcall C_i_inexactp(C_word x)
 {
   if(x & C_FIXNUM_BIT) return C_SCHEME_FALSE;
 
   if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "inexact?", x);
-
-  return C_SCHEME_TRUE;
-}
-
-
-/* M */
-C_regparm C_word C_fcall C_u_i_inexactp(C_word x)
-{
-  if(x & C_FIXNUM_BIT) return C_SCHEME_FALSE;
 
   return C_SCHEME_TRUE;
 }
@@ -5387,41 +4970,6 @@ C_regparm C_word C_fcall C_a_i_abs(C_word **a, int c, C_word x)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "abs", x);
 
   return C_flonum(a, fabs(C_flonum_magnitude(x)));
-}
-
-
-/* M */
-C_regparm C_word C_fcall C_a_i_flonum_plus(C_word **a, int c, C_word n1, C_word n2)
-{
-  return C_flonum(a, C_flonum_magnitude(n1) + C_flonum_magnitude(n2));
-}
-
-
-/* M */
-C_regparm C_word C_fcall C_a_i_flonum_difference(C_word **a, int c, C_word n1, C_word n2)
-{
-  return C_flonum(a, C_flonum_magnitude(n1) - C_flonum_magnitude(n2));
-}
-
-
-/* M */
-C_regparm C_word C_fcall C_a_i_flonum_times(C_word **a, int c, C_word n1, C_word n2)
-{
-  return C_flonum(a, C_flonum_magnitude(n1) * C_flonum_magnitude(n2));
-}
-
-
-/* M */
-C_regparm C_word C_fcall C_a_i_flonum_quotient(C_word **a, int c, C_word n1, C_word n2)
-{
-  return C_flonum(a, C_flonum_magnitude(n1) / C_flonum_magnitude(n2));
-}
-
-
-/* M */
-C_regparm C_word C_fcall C_a_i_flonum_negate(C_word **a, int c, C_word n)
-{
-  return C_flonum(a, -C_flonum_magnitude(n));
 }
 
 
@@ -7383,7 +6931,7 @@ void allocate_vector_2(void *dummy)
   else v0 = C_alloc(C_bytestowords(bytes));
 
 #ifndef C_SIXTY_FOUR
-  if(C_truep(align8) && aligned8(v0)) ++v0;
+  if(C_truep(align8) && C_aligned8(v0)) ++v0;
 #endif
 
   v = (C_word)v0;
@@ -9113,7 +8661,7 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
 #ifndef C_SIXTY_FOUR
   if((bits & C_8ALIGN_BIT) != 0) {
     /* Align _data_ on 8-byte boundary: */
-    if(aligned8(*ptr)) ++(*ptr);
+    if(C_aligned8(*ptr)) ++(*ptr);
   }
 #endif
 
