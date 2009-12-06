@@ -8,7 +8,7 @@
 
 ==== require-library
 
- [syntax] (require-library ID ...)
+<macro>(require-library ID ...)</macro>
 
 This form does all the necessary steps to make the libraries or extensions given
 in {{ID ...}} available. It loads syntactic extensions, if needed and generates
@@ -47,7 +47,7 @@ See also: {{set-extension-specifier!}}
 
 ==== require-extension
 
- [syntax] (require-extension ID ...)
+<macro>(require-extension ID ...)</macro>
 
 This is equivalent to {{(require-library ID ...)}} but performs an implicit
 {{import}}.
@@ -56,7 +56,7 @@ This implementation of {{require-extension}} is compliant with [[http://srfi.sch
 
 ==== use
 
- [syntax] (use ID ...)
+<macro>(use ID ...)</macro>
 
 {{use}} is just a shorter alias for {{require-extension}}.
 
@@ -65,7 +65,7 @@ This implementation of {{require-extension}} is compliant with [[http://srfi.sch
 
 ==== optional
 
- [syntax] (optional ARGS DEFAULT)
+<macro>(optional ARGS DEFAULT)</macro>
 
 Use this form for procedures that take a single optional argument. If
 {{ARGS}} is the empty list {{DEFAULT}} is evaluated and
@@ -79,7 +79,7 @@ an error if {{ARGS}} contains more than one value.
 </enscript>
 ==== case-lambda
 
- [syntax] (case-lambda (LAMBDA-LIST1 EXP1 ...) ...)
+<macro>(case-lambda (LAMBDA-LIST1 EXP1 ...) ...)</macro>
 
 Expands into a lambda that invokes the body following the first
 matching lambda-list.
@@ -103,7 +103,7 @@ For more information see the documentation for
 
 ==== let-optionals
 
- [syntax]  (let-optionals ARGS ((VAR1 DEFAULT1) ...) BODY ...)
+<macro> (let-optionals ARGS ((VAR1 DEFAULT1) ...) BODY ...)</macro>
 
 Binding constructs for optional procedure arguments. {{ARGS}} should
 be a rest-parameter taken from a lambda-list. {{let-optionals}}
@@ -120,7 +120,7 @@ arguments are provided.
 
 ==== let-optionals*
 
- [syntax]  (let-optionals* ARGS ((VAR1 DEFAULT1) ... [RESTVAR]) BODY ...)
+<macro> (let-optionals* ARGS ((VAR1 DEFAULT1) ... [RESTVAR]) BODY ...)</macro>
 
 Binding constructs for optional procedure arguments. {{ARGS}} should
 be a rest-parameter taken from a lambda-list. {{let-optionals}}
@@ -141,7 +141,7 @@ an error if any excess arguments are provided.
 
 ==== and-let*
 
- [syntax] (and-let* (BINDING ...) EXP1 EXP2 ...)
+<macro>(and-let* (BINDING ...) EXP1 EXP2 ...)</macro>
 
 SRFI-2. Bind sequentially and execute body. {{BINDING}} can
 be a list of a variable and an expression, a list with a single
@@ -156,8 +156,8 @@ result of the {{and-let*}} form. See also the documentation for
 
 ==== rec
 
- [syntax] (rec NAME EXPRESSION)
- [syntax] (rec (NAME VARIABLE ...) BODY ...)
+<macro>(rec NAME EXPRESSION)</macro><br>
+<macro>(rec (NAME VARIABLE ...) BODY ...)</macro>
 
 Allows simple definition of recursive definitions. {{(rec NAME EXPRESSION)}} is
 equivalent to {{(letrec ((NAME EXPRESSION)) NAME)}} and {{(rec (NAME VARIABLE ...) BODY ...)}}
@@ -165,35 +165,35 @@ is the same as {{(letrec ((NAME (lambda (VARIABLE ...) BODY ...))) NAME)}}.
 
 ==== cut
 
- [syntax] (cut SLOT ...)
- [syntax] (cute SLOT ...)
+<macro>(cut SLOT ...)</macro><br>
+<macro>(cute SLOT ...)</macro>
 
 [[http://srfi.schemers.org/srfi-26/srfi-26.html|Syntactic sugar for specializing parameters]].
 
 ==== define-values
 
- [syntax] (define-values (NAME ...) EXP)
+<macro>(define-values (NAME ...) EXP)</macro>
 
 Defines several variables at once, with the result values of expression
 {{EXP}}.
 
 ==== fluid-let
 
- [syntax] (fluid-let ((VAR1 X1) ...) BODY ...)
+<macro>(fluid-let ((VAR1 X1) ...) BODY ...)</macro>
 
 Binds the variables {{VAR1 ...}} dynamically to the values {{X1 ...}} 
 during execution of {{BODY ...}}.
 
 ==== let-values
 
- [syntax] (let-values (((NAME ...) EXP) ...) BODY ...)
+<macro>(let-values (((NAME ...) EXP) ...) BODY ...)</macro>
 
 SRFI 11.  Binds multiple variables to the result values of {{EXP ...}}.
 All variables are bound simultaneously.
 
 ==== let*-values
 
- [syntax] (let*-values (((NAME ...) EXP) ...) BODY ...)
+<macro>(let*-values (((NAME ...) EXP) ...) BODY ...)</macro>
 
 SRFI 11.  Binds multiple variables to the result values of {{EXP ...}}.
 The variables are bound sequentially.
@@ -206,7 +206,7 @@ The variables are bound sequentially.
 
 ==== letrec-values
 
- [syntax] (letrec-values (((NAME ...) EXP) ...) BODY ...)
+<macro>(letrec-values (((NAME ...) EXP) ...) BODY ...)</macro>
 
 Binds the result values of {{EXP ...}} to multiple variables at once.
 All variables are mutually recursive.
@@ -221,7 +221,7 @@ All variables are mutually recursive.
 
 ==== parameterize
 
- [syntax] (parameterize ((PARAMETER1 X1) ...) BODY ...)
+<macro>(parameterize ((PARAMETER1 X1) ...) BODY ...)</macro>
 
 Binds the parameters {{PARAMETER1 ...}} dynamically to the values
 {{X1 ...}} during execution of {{BODY ...}}.  (see also:
@@ -230,37 +230,27 @@ expression that evaluates to a parameter procedure.
 
 ==== receive
 
- [syntax] (receive (NAME1 ... [. NAMEn]) VALUEEXP BODY ...)
- [syntax] (receive VALUEEXP)
+<macro>(receive (NAME ...) VALUEEXP BODY ...)</macro><br>
+<macro>(receive (NAME1 ... NAMEn . NAMEn+1) VALUEEXP BODY ...)</macro><br>
+<macro>(receive VALUEEXP)</macro>
 
 SRFI-8. Syntactic sugar for {{call-with-values}}. Binds variables
 to the result values of {{VALUEEXP}} and evaluates {{BODY ...}}.
 
-The syntax 
-
-<enscript highlight=scheme>
-(receive VALUEEXP)
-</enscript>
-
-is equivalent to
-
-<enscript highlight=scheme>
-(receive _ VALUEEXP _)
-</enscript>
+{{(receive VALUEEXP)}} is equivalent to {{(receive _ VALUEEXP _)}}.
 
 ==== set!-values
 
- [syntax] (set!-values (NAME ...) EXP)
+<macro>(set!-values (NAME ...) EXP)</macro>
 
 Assigns the result values of expression {{EXP}} to multiple
 variables.
-
 
 === Substitution forms and macros
 
 ==== define-constant
 
- [syntax] (define-constant NAME CONST)
+<macro>(define-constant NAME CONST)</macro>
 
 Define a variable with a constant value, evaluated at compile-time. 
 Any reference to such a
@@ -277,8 +267,9 @@ This for should only be used at top-level.
 
 ==== define-inline
 
- [syntax] (define-inline (NAME VAR ... [. VAR]) BODY ...)
- [syntax] (define-inline NAME EXP)
+<macro>(define-inline (NAME VAR ...) BODY ...)</macro><br>
+<macro>(define-inline (NAME VAR1 ... VARn . VARn+1) BODY ...)</macro><br>
+<macro>(define-inline NAME EXP)</macro>
 
 Defines an inline procedure. Any occurrence of {{NAME}} will be
 replaced by {{EXP}} or {{(lambda (VAR ... [. VAR]) BODY ...)}}. 
@@ -295,8 +286,8 @@ definitions should only appear at toplevel.
 
 ==== define-for-syntax
 
- [syntax] (define-for-syntax (NAME VAR ... [. VAR]) EXP1 ...)
- [syntax] (define-for-syntax NAME [VALUE])
+<macro>(define-for-syntax (NAME VAR ...) EXP1 ...)</macro><br>
+<macro>(define-for-syntax (NAME VAR1 ... VARn . VARn+1) EXP1 ...)</macro><br>
 
 Defines the toplevel variable {{NAME}} at macro-expansion time. This can
 be helpful when you want to define support procedures for use in macro-transformers,
@@ -305,8 +296,8 @@ for example.
 
 ==== define-compiler-syntax
 
- [syntax] (define-compiler-syntax NAME TRANSFORMER)
- [syntax] (define-compiler-syntax (NAME VAR ...) BODY ...)
+<macro>(define-compiler-syntax NAME TRANSFORMER)</macro><br>
+<macro>(define-compiler-syntax (NAME VAR ...) BODY ...)</macro>
 
 Defines what is usually called a ''compiler macro'': {{NAME}} should be the
 name of a globally or locally bound procedure. Any direct call to this procedure
@@ -332,7 +323,7 @@ exported.
 
 ==== let-compiler-syntax
 
- [syntax] (let-compiler-syntax ((NAME TRANSFORMER) ...) BODY ...)
+<macro>(let-compiler-syntax ((NAME TRANSFORMER) ...) BODY ...)</macro>
 
 Allows definition local compiler macros, which are only applicable inside {{BODY ...}}.
 
@@ -341,13 +332,13 @@ Allows definition local compiler macros, which are only applicable inside {{BODY
 
 ==== select
 
- [syntax] (select EXP ((KEY ...) EXP1 ...) ... [(else EXPn ...)])
+<macro>(select EXP ((KEY ...) EXP1 ...) ... [(else EXPn ...)])</macro>
 
 This is similar to {{case}}, but the keys are evaluated.
 
 ==== unless
 
- [syntax] (unless TEST EXP1 EXP2 ...)
+<macro>(unless TEST EXP1 EXP2 ...)</macro>
 
 Equivalent to:
 
@@ -357,7 +348,7 @@ Equivalent to:
 
 ==== when
 
- [syntax] (when TEST EXP1 EXP2 ...)
+<macro>(when TEST EXP1 EXP2 ...)</macro>
 
 Equivalent to:
 
@@ -370,7 +361,7 @@ Equivalent to:
 
 ==== define-record
 
- [syntax] (define-record NAME SLOTNAME ...)
+<macro>(define-record NAME SLOTNAME ...)</macro>
 
 Defines a record type. Call {{make-NAME}} to create an instance
 of the structure (with one initialization-argument for each slot).
@@ -389,10 +380,7 @@ and updated using {{(NAME-SLOTNAME-set!}} {{STRUCT}} {{VALUE)}}.
 
 ==== define-record-type
 
- [syntax] (define-record-type NAME
-                              (CONSTRUCTOR TAG ...)
-                              PREDICATE
-                              (FIELD ACCESSOR [MODIFIER]) ...)
+<macro>(define-record-type NAME (CONSTRUCTOR TAG ...) PREDICATE (FIELD ACCESSOR [MODIFIER]) ...)</macro>
 
 SRFI-9 record types. For more information see the documentation for
 [[http://srfi.schemers.org/srfi-9/srfi-9.html|SRFI-9]].
@@ -400,8 +388,8 @@ SRFI-9 record types. For more information see the documentation for
 
 ==== define-record-printer
 
- [syntax] (define-record-printer (NAME RECORDVAR PORTVAR) BODY ...)
- [syntax] (define-record-printer NAME PROCEDURE)
+<macro>(define-record-printer (NAME RECORDVAR PORTVAR) BODY ...)</macro><br>
+<macro>(define-record-printer NAME PROCEDURE)</macro>
 
 Defines a printing method for record of the type {{NAME}} by
 associating a procedure with the record type. When a record of this
@@ -430,7 +418,7 @@ s                                   ==> "#,(foo 1 2 3)"
 
 ==== assert
 
- [syntax] (assert EXP [STRING ARG ...])
+<macro>(assert EXP [STRING ARG ...])</macro>
 
 Signals an error if {{EXP}} evaluates to false. An optional message
 {{STRING}} and arguments {{ARG ...}} may be supplied to give a
@@ -442,7 +430,7 @@ The result is the value of {{EXP}}.
 
 ==== begin-for-syntax
 
- [syntax] (begin-for-syntax EXP ...)
+<macro>(begin-for-syntax EXP ...)</macro>
 
 Equivalent to {{(begin EXP ...)}}, but performs the evaluation of
 the expression during macro-expansion time.
@@ -450,7 +438,7 @@ the expression during macro-expansion time.
 
 ==== cond-expand
 
- [syntax] (cond-expand FEATURE-CLAUSE ...)
+<macro>(cond-expand FEATURE-CLAUSE ...)</macro>
 
 Expands by selecting feature clauses. This form is allowed to appear in non-toplevel expressions.
 
@@ -470,7 +458,7 @@ For further information, see the documentation for [[http://srfi.schemers.org/sr
 
 ==== ensure
 
- [syntax] (ensure PREDICATE EXP [ARGUMENTS ...])
+<macro>(ensure PREDICATE EXP [ARGUMENTS ...])</macro>
 
 Evaluates the expression {{EXP}} and applies the one-argument
 procedure {{PREDICATE}} to the result. If the predicate returns
@@ -485,7 +473,7 @@ with the offending value and {{PREDICATE}} expression.
 
 ==== eval-when
 
- [syntax] (eval-when (SITUATION ...) EXP ...)
+<macro>(eval-when (SITUATION ...) EXP ...)</macro>
 
 Controls evaluation/compilation of subforms. {{SITUATION}} should
 be one of the symbols {{eval}}, {{compile}} or {{load}}.
@@ -508,7 +496,7 @@ The following table should make this clearer:
 
 ==== include
 
- [syntax] (include STRING)
+<macro>(include STRING)</macro>
 
 Include toplevel-expressions from the given source file in the currently
 compiled/interpreted program.  If the included file has the extension
@@ -518,14 +506,14 @@ current directory and, if not found, in all directories specified in the
 
 ==== nth-value
 
- [syntax] (nth-value N EXP)
+<macro>(nth-value N EXP)</macro>
 
 Returns the {{N}}th value (counting from zero) of the values returned
 by expression {{EXP}}.
 
 ==== time
 
- [syntax] (time EXP1 ...)
+<macro>(time EXP1 ...)</macro>
 
 Evaluates {{EXP1 ...}} and prints elapsed time and some
 values about GC use, like time spent in major GCs, number of minor

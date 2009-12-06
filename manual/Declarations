@@ -7,7 +7,7 @@
 
 === declare
 
- [syntax] (declare DECLSPEC ...)
+<macro>(declare DECLSPEC ...)</macro>
 
 Process declaration specifiers. Declarations always override
 any command-line settings.  Declarations are valid for the whole
@@ -284,26 +284,26 @@ given here:
   
   BASIC --> * 
          |  string 
-	 |  symbol 
-	 |  char 
-	 |  number 
-	 |  boolean 
-	 |  list 
-	 |  pair 
-	 |  procedure 
-	 |  vector 
-	 |  null 
-	 |  eof 
-	 |  port
-	 |  blob 
-	 |  pointer
-	 |  locative
-	 |  fixnum
-	 |  float
+         |  symbol 
+         |  char 
+         |  number 
+         |  boolean 
+         |  list 
+         |  pair 
+         |  procedure 
+         |  vector 
+         |  null 
+         |  eof 
+         |  port
+         |  blob 
+         |  pointer
+         |  locative
+         |  fixnum
+         |  float
   
   RESULTS --> * 
            |  (RVAL1 ...)
-
+  
   RVAL --> undefined
         |  noreturn
 

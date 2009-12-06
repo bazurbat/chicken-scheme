@@ -19,17 +19,17 @@ Adds/subtracts 1 from {{N}}.
 
 ==== Binary integer operations
 
-Binary integer operations. {{arithmetic-shift}} shifts the argument {{N1}} by
-{{N2}} bits to the left. If {{N2}} is negative, than {{N1}} is shifted to the
-right. These operations only accept exact integers or inexact integers in word
-range (32 bit signed on 32-bit platforms, or 64 bit signed on 64-bit
-platforms).
-
 <procedure>(bitwise-and N1 ...)</procedure>
 <procedure>(bitwise-ior N1 ...)</procedure>
 <procedure>(bitwise-xor N1 ...)</procedure>
 <procedure>(bitwise-not N)</procedure>
 <procedure>(arithmetic-shift N1 N2)</procedure>
+
+Binary integer operations. {{arithmetic-shift}} shifts the argument {{N1}} by
+{{N2}} bits to the left. If {{N2}} is negative, then {{N1}} is shifted to the
+right. These operations only accept exact integers or inexact integers in word
+range (32 bit signed on 32-bit platforms, or 64 bit signed on 64-bit
+platforms).
 
 ==== bit-set?
 
@@ -38,17 +38,7 @@ platforms).
 Returns {{#t}} if the bit at the position {{INDEX}} in the integer {{N}} is
 set, or {{#f}} otherwise. The rightmost/least-significant bit is bit 0.
 
-
 ==== Arithmetic fixnum operations
-
-These procedures do not check their arguments, so non-fixnum parameters will
-result in incorrect results. {{fxneg}} negates its argument.
-
-On division by zero, {{fx/}} and {{fxmod}} signal a condition of kind
-{{(exn arithmetic)}}.
-
-{{fxshl}} and {{fxshr}} perform arithmetic shift left and right,
-respectively.
 
 <procedure>(fx+ N1 N2)</procedure>
 <procedure>(fx- N1 N2)</procedure>
@@ -70,9 +60,19 @@ respectively.
 <procedure>(fxshl N1 N2)</procedure>
 <procedure>(fxshr N1 N2)</procedure>
 
+{{fx+}} and friends are arithmetic fixnum operations.  These procedures do not
+check their arguments, so non-fixnum parameters will result in incorrect
+results. {{fxneg}} negates its argument.
+
+On division by zero, {{fx/}} and {{fxmod}} signal a condition of kind
+{{(exn arithmetic)}}.
+
+{{fxshl}} and {{fxshr}} perform arithmetic shift left and right,
+respectively.
+
 ==== fixnum?
 
- [procedure] (fixnum? X)
+<procedure>(fixnum? X)</procedure>
 
 Returns {{#t}} if {{X}} is a fixnum, or {{#f}} otherwise.
 
@@ -109,7 +109,7 @@ in unsafe mode can crash the system.
 
 ==== flonum?
 
- [procedure] (flonum? X)
+<procedure>(flonum? X)</procedure>
 
 Returns {{#t}} if {{X}} is a flonum, or {{#f}} otherwise.
 
@@ -143,7 +143,7 @@ Returns {{#f}} if {{N}} is negative or positive infinity, and {{#t}} otherwise.
 
 ==== signum
 
- [procedure] (signum N)
+<procedure>(signum N)</procedure>
 
 Returns {{1}} if {{N}} is positive, {{-1}} if {{N}}
 is negative or {{0}} if {{N}} is zero. {{signum}} is exactness preserving.
@@ -388,7 +388,7 @@ more information, see the
 
 ==== condition-case
 
- [syntax] (condition-case EXPRESSION CLAUSE ...)
+<macro>(condition-case EXPRESSION CLAUSE ...)</macro>
 
 Evaluates {{EXPRESSION}} and handles any exceptions that are covered by
 {{CLAUSE ...}}, where {{CLAUSE}} should be of the following form:
@@ -502,10 +502,6 @@ argument. If the condition does not have a value for the desired property and
 if the optional argument is given, no error is signaled and the accessor
 returns the third argument.
 
-* In composite conditions all properties are currently collected in a single
-property-list, so in the case that to conditions have the same named property,
-only one will be visible.
-
 
 
 === Environment information and system interface
@@ -564,8 +560,8 @@ Returns the error code of the last system call.
 
 ==== get-environment-variable
 
- [procedure] (get-environment-variable STRING)
- [procedure] (getenv STRING)
+<procedure>(get-environment-variable STRING)</procedure><br>
+<procedure>(getenv STRING)</procedure>
 
 Returns the value of the environment variable {{STRING}} or
 {{#f}} if that variable is not defined. See also [[http://srfi.schemers.org/srfi-98/|SRFI-98]].

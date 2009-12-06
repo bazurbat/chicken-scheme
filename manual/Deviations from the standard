@@ -94,6 +94,6 @@ read/write invariance to inexact numbers.
 not implemented.  R5RS does not require them.
 
 ---
-Previous: [[Supported language]]
+Previous: [[The R5RS standard]]
 
 Next: [[Extensions to the standard]]

@@ -14,7 +14,7 @@ machine word, and double-precision floating point values.
 
 === define-location
 
- [syntax] (define-location NAME TYPE [INIT])
+<macro>(define-location NAME TYPE [INIT])</macro>
 
 Identical to {{(define-external NAME TYPE [INIT])}}, but the variable
 is not accessible from outside of the current compilation unit (it is 
@@ -22,14 +22,14 @@ declared {{static}}).
 
 === let-location
 
- [syntax] (let-location ((NAME TYPE [INIT]) ...) BODY ...)
+<macro>(let-location ((NAME TYPE [INIT]) ...) BODY ...)</macro>
 
 Defines a lexically bound location.
 
 === location
 
- [syntax] (location NAME)
- [syntax] (location X)
+<macro>(location NAME)</macro><br>
+<macro>(location X)</macro>
 
 This form returns a pointer object
 that contains the address of the variable {{NAME}}. 

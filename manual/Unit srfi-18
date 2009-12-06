@@ -40,7 +40,7 @@ The following procedures are provided, in addition to the procedures defined in 
 
 === thread-signal!
 
- [procedure] (thread-signal! THREAD X)
+<procedure>(thread-signal! THREAD X)</procedure>
 
 This will cause {{THREAD}} to signal the condition {{X}} once it is scheduled
 for execution. After signalling the condition, the thread continues with its normal
@@ -48,32 +48,32 @@ execution.
 
 === thread-quantum
 
- [procedure] (thread-quantum THREAD)
+<procedure>(thread-quantum THREAD)</procedure>
 
 Returns the quantum of {{THREAD}}, which is an exact integer
 specifying the approximate time-slice of the thread in milliseconds.
 
 === thread-quantum-set!
 
- [procedure] (thread-quantum-set! THREAD QUANTUM)
+<procedure>(thread-quantum-set! THREAD QUANTUM)</procedure>
 
 Sets the quantum of {{THREAD}} to {{QUANTUM}}.
 
 === thread-suspend!
 
- [procedure] (thread-suspend! THREAD)
+<procedure>(thread-suspend! THREAD)</procedure>
 
 Suspends the execution of {{THREAD}} until resumed.
 
 === thread-resume!
 
- [procedure] (thread-resume! THREAD)
+<procedure>(thread-resume! THREAD)</procedure>
 
 Readies the suspended thread {{THREAD}}.
 
 === thread-wait-for-i/o!
 
- [procedure] (thread-wait-for-i/o! FD [MODE])
+<procedure>(thread-wait-for-i/o! FD [MODE])</procedure>
 
 Suspends the current thread until input ({{MODE}} is {{#:input}}), output ({{MODE}} is {{#:output}})
 or both ({{MODE}} is {{#:all}}) is available. {{FD}} should be a file-descriptor (not a port!) open
@@ -81,14 +81,14 @@ for input or output, respectively.
 
 === time->milliseconds
 
- [procedure] (time->milliseconds TIME)
+<procedure>(time->milliseconds TIME)</procedure>
 
 Converts a time object (as created via {{current-time}}) into an exact integer representing
 the number of milliseconds since process startup.
 
 === milliseconds->time
 
- [procedure] (milliseconds->time ms)
+<procedure>(milliseconds->time ms)</procedure>
 
 Converts into a time object an exact integer representing
 the number of milliseconds since process startup.

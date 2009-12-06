@@ -29,7 +29,7 @@ object'', but a ''pointer-like object''. The distinction is artificial.
 
 ==== address->pointer
 
- [procedure] (address->pointer ADDRESS)
+<procedure>(address->pointer ADDRESS)</procedure>
 
 Creates a new foreign pointer object initialized to point to the address
 given in the integer {{ADDRESS}}.
@@ -37,7 +37,7 @@ given in the integer {{ADDRESS}}.
 
 ==== allocate
 
- [procedure] (allocate BYTES)
+<procedure>(allocate BYTES)</procedure>
 
 Returns a foreign pointer object to a freshly allocated region of static
 memory.
@@ -51,7 +51,7 @@ This procedure could be defined as follows:
 
 ==== free
 
- [procedure] (free POINTER)
+<procedure>(free POINTER)</procedure>
 
 Frees the memory pointed to by {{POINTER}}.
 
@@ -64,14 +64,14 @@ This procedure could be defined as follows:
 
 ==== null-pointer
 
- [procedure] (null-pointer)
+<procedure>(null-pointer)</procedure>
 
 Another way to say {{(address->pointer 0)}}.
 
 
 ==== null-pointer?
 
- [procedure] (null-pointer? POINTER*)
+<procedure>(null-pointer? POINTER*)</procedure>
 
 Returns {{#t}} if the pointer-like object {{POINTER*}} contains a {{NULL}} pointer,
 or {{#f}} otherwise.
@@ -79,7 +79,7 @@ or {{#f}} otherwise.
 
 ==== object->pointer
 
- [procedure] (object->pointer X)
+<procedure>(object->pointer X)</procedure>
 
 Returns a foreign pointer object pointing to the Scheme object X, which should
 be a non-immediate object. ("foreign" here is a bit of a misnomer.)
@@ -89,7 +89,7 @@ Note that data in the garbage collected heap moves during garbage collection.
 
 ==== pointer->object
 
- [procedure] (pointer->object POINTER)
+<procedure>(pointer->object POINTER)</procedure>
 
 Returns the Scheme object pointed to by the pointer object {{POINTER}}.
 
@@ -98,21 +98,21 @@ at your own risk.
 
 ==== pointer?
 
- [procedure] (pointer? X)
+<procedure>(pointer? X)</procedure>
 
 Returns {{#t}} if {{X}} is a pointer object, or {{#f}} otherwise.
 
 
 ==== pointer-like?
 
- [procedure] (pointer-like? X)
+<procedure>(pointer-like? X)</procedure>
 
 Returns {{#t}} if {{X}} is a pointer-like object, or {{#f}} otherwise.
 
 
 ==== pointer=?
 
- [procedure] (pointer=? POINTER*1 POINTER*2)
+<procedure>(pointer=? POINTER*1 POINTER*2)</procedure>
 
 Returns {{#t}} if the pointer-like objects {{POINTER*1}} and {{POINTER*2}} point
 to the same address, or {{#f}} otherwise.
@@ -120,14 +120,14 @@ to the same address, or {{#f}} otherwise.
 
 ==== pointer->address
 
- [procedure] (pointer->address POINTER*)
+<procedure>(pointer->address POINTER*)</procedure>
 
 Returns the address, to which the pointer-like object {{POINTER*}} points.
 
 
 ==== pointer-offset
 
- [procedure] (pointer-offset POINTER* N)
+<procedure>(pointer-offset POINTER* N)</procedure>
 
 Returns a new foreign pointer object representing the pointer-like object
 {{POINTER*}} address value increased by the byte-offset {{N}}.
@@ -137,7 +137,7 @@ Use of anything other than a pointer object as an argument is questionable.
 
 ==== align-to-word
 
- [procedure] (align-to-word POINTER*-OR-INT)
+<procedure>(align-to-word POINTER*-OR-INT)</procedure>
 
 Accepts either a pointer-like object or an integer as the argument and returns
 a new foreign pointer or integer aligned to the native word size of the host
@@ -155,120 +155,120 @@ However, as usual, use of anything other than a pointer object is questionable.
 
 ==== pointer-u8-ref
 
- [procedure] (pointer-u8-ref POINTER)
+<procedure>(pointer-u8-ref POINTER)</procedure>
 
 Returns the unsigned byte at the address designated by {{POINTER}}.
 
 
 ==== pointer-s8-ref
 
- [procedure] (pointer-s8-ref POINTER)
+<procedure>(pointer-s8-ref POINTER)</procedure>
 
 Returns the signed byte at the address designated by {{POINTER}}.
 
 
 ==== pointer-u16-ref
 
- [procedure] (pointer-u16-ref POINTER)
+<procedure>(pointer-u16-ref POINTER)</procedure>
 
 Returns the unsigned 16-bit integer at the address designated by {{POINTER}}.
 
 
 ==== pointer-s16-ref
 
- [procedure] (pointer-s16-ref POINTER)
+<procedure>(pointer-s16-ref POINTER)</procedure>
 
 Returns the signed 16-bit integer at the address designated by {{POINTER}}.
 
 
 ==== pointer-u32-ref
 
- [procedure] (pointer-u32-ref POINTER)
+<procedure>(pointer-u32-ref POINTER)</procedure>
 
 Returns the unsigned 32-bit integer at the address designated by {{POINTER}}.
 
 
 ==== pointer-s32-ref
 
- [procedure] (pointer-s32-ref POINTER)
+<procedure>(pointer-s32-ref POINTER)</procedure>
 
 Returns the signed 32-bit integer at the address designated by {{POINTER}}.
 
 
 ==== pointer-f32-ref
 
- [procedure] (pointer-f32-ref POINTER)
+<procedure>(pointer-f32-ref POINTER)</procedure>
 
 Returns the 32-bit float at the address designated by {{POINTER}}.
 
 
 ==== pointer-f64-ref
 
- [procedure] (pointer-f64-ref POINTER)
+<procedure>(pointer-f64-ref POINTER)</procedure>
 
 Returns the 64-bit double at the address designated by {{POINTER}}.
 
 
 ==== pointer-u8-set!
 
- [procedure] (pointer-u8-set! POINTER N)
- [procedure] (set! (pointer-u8-ref POINTER) N)
+<procedure>(pointer-u8-set! POINTER N)</procedure><br>
+<procedure>(set! (pointer-u8-ref POINTER) N)</procedure>
 
 Stores the unsigned byte {{N}} at the address designated by {{POINTER}}.
 
 
 ==== pointer-s8-set!
 
- [procedure] (pointer-s8-set! POINTER N)
- [procedure] (set! (pointer-s8-ref POINTER) N)
+<procedure>(pointer-s8-set! POINTER N)</procedure><br>
+<procedure>(set! (pointer-s8-ref POINTER) N)</procedure>
 
 Stores the signed byte {{N}} at the address designated by {{POINTER}}.
 
 
 ==== pointer-u16-set!
 
- [procedure] (pointer-u16-set! POINTER N)
- [procedure] (set! (pointer-u16-ref POINTER) N)
+<procedure>(pointer-u16-set! POINTER N)</procedure><br>
+<procedure>(set! (pointer-u16-ref POINTER) N)</procedure>
 
 Stores the unsigned 16-bit integer {{N}} at the address designated by {{POINTER}}.
 
 
 ==== pointer-s16-set!
 
- [procedure] (pointer-s16-set! POINTER N)
- [procedure] (set! (pointer-s16-ref POINTER) N)
+<procedure>(pointer-s16-set! POINTER N)</procedure><br>
+<procedure>(set! (pointer-s16-ref POINTER) N)</procedure>
 
 Stores the signed 16-bit integer {{N}} at the address designated by {{POINTER}}.
 
 
 ==== pointer-u32-set!
 
- [procedure] (pointer-u32-set! POINTER N)
- [procedure] (set! (pointer-u32-ref POINTER) N)
+<procedure>(pointer-u32-set! POINTER N)</procedure><br>
+<procedure>(set! (pointer-u32-ref POINTER) N)</procedure>
 
 Stores the unsigned 32-bit integer {{N}} at the address designated by {{POINTER}}.
 
 
 ==== pointer-s32-set!
 
- [procedure] (pointer-s32-set! POINTER N)
- [procedure] (set! (pointer-s32-ref POINTER) N)
+<procedure>(pointer-s32-set! POINTER N)</procedure><br>
+<procedure>(set! (pointer-s32-ref POINTER) N)</procedure>
 
 Stores the 32-bit integer {{N}} at the address designated by {{POINTER}}.
 
 
 ==== pointer-f32-set!
 
- [procedure] (pointer-f32-set! POINTER N)
- [procedure] (set! (pointer-f32-ref POINTER) N)
+<procedure>(pointer-f32-set! POINTER N)</procedure><br>
+<procedure>(set! (pointer-f32-ref POINTER) N)</procedure>
 
 Stores the 32-bit floating-point number {{N}} at the address designated by {{POINTER}}.
 
 
 ==== pointer-f64-set!
 
- [procedure] (pointer-f64-set! POINTER N)
- [procedure] (set! (pointer-f64-ref POINTER) N)
+<procedure>(pointer-f64-set! POINTER N)</procedure><br>
+<procedure>(set! (pointer-f64-ref POINTER) N)</procedure>
 
 Stores the 64-bit floating-point number {{N}} at the address designated by {{POINTER}}.
 
@@ -281,7 +281,7 @@ Stores the 64-bit floating-point number {{N}} at the address designated by {{POI
 
 ==== tag-pointer
 
- [procedure] (tag-pointer POINTER* TAG)
+<procedure>(tag-pointer POINTER* TAG)</procedure>
 
 Creates a new tagged foreign pointer object from the pointer-like object
 {{POINTER*}} with the tag {{TAG}}, which may an arbitrary Scheme object.
@@ -290,7 +290,7 @@ Use of anything other than a pointer object is questionable.
 
 ==== tagged-pointer?
 
- [procedure] (tagged-pointer? X [TAG])
+<procedure>(tagged-pointer? X [TAG])</procedure>
 
 Returns {{#t}} if {{X}} is a tagged foreign pointer object, or {{#f}} otherwise.
 
@@ -300,7 +300,7 @@ Further, returns {{#t}} when {{X}} has the optional tag {{TAG}} (using an
 
 ==== pointer-tag
 
- [procedure] (pointer-tag POINTER*)
+<procedure>(pointer-tag POINTER*)</procedure>
 
 If {{POINTER}} is a tagged foreign pointer object, its tag is returned. If {{POINTER*}}
 is any other kind of pointer-like object {{#f}} is returned. Otherwise an
@@ -323,7 +323,7 @@ The effect of creating locatives for evicted data (see {{object-evict}}) is unde
 
 ==== make-locative
 
- [procedure] (make-locative OBJ [INDEX])
+<procedure>(make-locative OBJ [INDEX])</procedure>
 
 Creates a locative that refers to the element of the non-immediate object
 {{OBJ}} at position {{INDEX}}. {{OBJ}} may be a vector, pair, string, blob,
@@ -333,7 +333,7 @@ SRFI-4 number-vector, or record structure. {{INDEX}} should be a fixnum.
 
 ==== make-weak-locative
 
- [procedure] (make-weak-locative OBJ [INDEX])
+<procedure>(make-weak-locative OBJ [INDEX])</procedure>
 
 Creates a ''weak'' locative. Even though the locative refers to an element of a container object,
 the container object will still be reclaimed by garbage collection if no other references
@@ -342,14 +342,14 @@ to it exist.
 
 ==== locative?
 
- [procedure] (locative? X)
+<procedure>(locative? X)</procedure>
 
 Returns {{#t}} if {{X}} is a locative, or {{#f}} otherwise.
 
 
 ==== locative-ref
 
- [procedure] (locative-ref LOC)
+<procedure>(locative-ref LOC)</procedure>
 
 Returns the element to which the locative {{LOC}} refers. If the containing
 object has been reclaimed by garbage collection, an error is signalled.
@@ -358,8 +358,8 @@ object has been reclaimed by garbage collection, an error is signalled.
 
 ==== locative-set!
 
- [procedure] (locative-set! LOC X)
- [procedure] (set! (locative-ref LOC) X)
+<procedure>(locative-set! LOC X)</procedure><br>
+<procedure>(set! (locative-ref LOC) X)</procedure>
 
 Changes the element to which the locative {{LOC}} refers to {{X}}.
 If the containing
@@ -368,7 +368,7 @@ object has been reclaimed by garbage collection, an error is signalled.
 
 ==== locative->object
 
- [procedure] (locative->object LOC)
+<procedure>(locative->object LOC)</procedure>
 
 Returns the object that contains the element referred to by {{LOC}} or
 {{#f}} if the container has been reclaimed by garbage collection.
@@ -382,7 +382,7 @@ Returns the object that contains the element referred to by {{LOC}} or
 
 ==== extend-procedure
 
- [procedure] (extend-procedure PROCEDURE X)
+<procedure>(extend-procedure PROCEDURE X)</procedure>
 
 Returns a copy of the procedure {{PROCEDURE}} which contains an additional data
 slot initialized to {{X}}. If {{PROCEDURE}} is already an extended procedure,
@@ -392,7 +392,7 @@ returned. Signals an error when {{PROCEDURE}} is not a procedure.
 
 ==== extended-procedure?
 
- [procedure] (extended-procedure? PROCEDURE)
+<procedure>(extended-procedure? PROCEDURE)</procedure>
 
 Returns {{#t}} if {{PROCEDURE}} is an extended procedure,
 or {{#f}} otherwise.
@@ -400,7 +400,7 @@ or {{#f}} otherwise.
 
 ==== procedure-data
 
- [procedure] (procedure-data PROCEDURE)
+<procedure>(procedure-data PROCEDURE)</procedure>
 
 Returns the data object contained in the extended procedure {{PROCEDURE}}, or
 {{#f}} if it is not an extended procedure.
@@ -408,7 +408,7 @@ Returns the data object contained in the extended procedure {{PROCEDURE}}, or
 
 ==== set-procedure-data!
 
- [procedure] (set-procedure-data! PROCEDURE X)
+<procedure>(set-procedure-data! PROCEDURE X)</procedure>
 
 Changes the data object contained in the extended procedure {{PROCEDURE}} to
 {{X}}. Signals an error when {{PROCEDURE}} is not an extended procedure.
@@ -436,7 +436,7 @@ Note that strings and blobs are not considered vector-like.
 
 ==== block-ref
 
- [procedure] (block-ref VECTOR* INDEX)
+<procedure>(block-ref VECTOR* INDEX)</procedure>
 
 Returns the contents of the {{INDEX}}th slot of the vector-like object
 {{VECTOR*}}.
@@ -444,22 +444,22 @@ Returns the contents of the {{INDEX}}th slot of the vector-like object
 
 ==== block-set!
 
- [procedure] (block-set! VECTOR* INDEX X)
- [procedure] (set! (block-ref VECTOR* INDEX) X)
+<procedure>(block-set! VECTOR* INDEX X)</procedure><br>
+<procedure>(set! (block-ref VECTOR* INDEX) X)</procedure>
 
 Sets the contents of the {{INDEX}}th slot of the vector-like object {{VECTOR*}}
 to the value of {{X}}.
 
 ==== number-of-slots
 
- [procedure] (number-of-slots VECTOR*)
+<procedure>(number-of-slots VECTOR*)</procedure>
 
 Returns the number of slots that the vector-like object {{VECTOR*}} contains.
 
 
 ==== number-of-bytes
 
- [procedure] (number-of-bytes BLOCK)
+<procedure>(number-of-bytes BLOCK)</procedure>
 
 Returns the number of bytes that the object {{BLOCK}} contains. {{BLOCK}} may
 be any non-immediate value.
@@ -467,7 +467,7 @@ be any non-immediate value.
 
 ==== object-copy
 
- [procedure] (object-copy X)
+<procedure>(object-copy X)</procedure>
 
 Copies {{X}} recursively and returns the fresh copy. Objects allocated in
 static memory are copied back into garbage collected storage.
@@ -475,7 +475,7 @@ static memory are copied back into garbage collected storage.
 
 ==== move-memory!
 
- [procedure] (move-memory! FROM TO [BYTES [FROM-OFFSET [TO-OFFSET]])
+<procedure>(move-memory! FROM TO [BYTES [FROM-OFFSET [TO-OFFSET]]])</procedure>
 
 Copies {{BYTES}} bytes of memory from {{FROM}} to {{TO}}. {{FROM}} and {{TO}}
 may be strings, blobs, SRFI-4 number-vectors (see: @ref{Unit srfi-4}), memory
@@ -498,7 +498,7 @@ Signals an error if any of the above constraints is violated.
 
 ==== object-evict
 
- [procedure] (object-evict X [ALLOCATOR])
+<procedure>(object-evict X [ALLOCATOR])</procedure>
 
 Copies the object {{X}} recursively into the memory pointed to by the foreign
 pointer object returned by {{ALLOCATOR}}, which should be a procedure of a
@@ -528,7 +528,7 @@ The {{ALLOCATOR}} defaults to {{allocate}}.
 
 ==== object-evict-to-location
 
- [procedure] (object-evict-to-location X POINTER* [LIMIT])
+<procedure>(object-evict-to-location X POINTER* [LIMIT])</procedure>
 
 As {{object-evict}} but moves the object at the address pointed to by
 the pointer-like object {{POINTER*}}. If the number of copied bytes exceeds
@@ -543,7 +543,7 @@ questionable.
 
 ==== object-evicted?
 
- [procedure] (object-evicted? X)
+<procedure>(object-evicted? X)</procedure>
 
 Returns {{#t}} if {{X}} is a non-immediate evicted data object, or {{#f}}
 otherwise.
@@ -551,7 +551,7 @@ otherwise.
 
 ==== object-release
 
- [procedure] (object-release X [RELEASER])
+<procedure>(object-release X [RELEASER])</procedure>
 
 Frees memory occupied by the evicted object {{X}} recursively.
 {{RELEASER}} should be a procedure of a single argument (a foreign
@@ -561,7 +561,7 @@ pointer object to the static memory to be freed) and defaults to
 
 ==== object-unevict
 
- [procedure] (object-unevict X [FULL])
+<procedure>(object-unevict X [FULL])</procedure>
 
 Copies the object {{X}} and nested objects back into the normal Scheme heap.
 Symbols are re-interned into the symbol table. Strings and byte-vectors are
@@ -570,7 +570,7 @@ Symbols are re-interned into the symbol table. Strings and byte-vectors are
 
 ==== object-size
 
- [procedure] (object-size X)
+<procedure>(object-size X)</procedure>
 
 Returns the number of bytes that would be needed to evict the data object
 {{X}}.
@@ -582,7 +582,7 @@ Returns the number of bytes that would be needed to evict the data object
 
 ==== global-bound?
 
- [procedure] (global-bound? SYMBOL)
+<procedure>(global-bound? SYMBOL)</procedure>
 
 Returns {{#t}}, if the global (''toplevel'') variable with the name {{SYMBOL}}
 is bound to a value, or {{#f}} otherwise.
@@ -590,7 +590,7 @@ is bound to a value, or {{#f}} otherwise.
 
 ==== global-ref
 
- [procedure] (global-ref SYMBOL)
+<procedure>(global-ref SYMBOL)</procedure>
 
 Returns the value of the global variable {{SYMBOL}}.
 If no variable under that name is bound, an error is signalled.
@@ -602,8 +602,8 @@ or if the code has been compiled in {{block}} mode.
 
 ==== global-set!
 
- [procedure] (global-set! SYMBOL X)
- [procedure] (set! (global-ref SYMBOL) X)
+<procedure>(global-set! SYMBOL X)</procedure><br>
+<procedure>(set! (global-ref SYMBOL) X)</procedure>
 
 Sets the global variable named {{SYMBOL}} to the value {{X}}.
 
@@ -614,7 +614,7 @@ Sets the global variable named {{SYMBOL}} to the value {{X}}.
 
 ==== make-record-instance
 
- [procedure] (make-record-instance SYMBOL ARG1 ...)
+<procedure>(make-record-instance SYMBOL ARG1 ...)</procedure>
 
 Returns a new instance of the record type {{SYMBOL}}, with its
 slots initialized to {{ARG1 ...}}.  To illustrate:
@@ -643,7 +643,7 @@ expands into something quite similar to:
 
 ==== record-instance?
 
- [procedure] (record-instance? X [SYMBOL])
+<procedure>(record-instance? X [SYMBOL])</procedure>
 
 Returns {{#t}} if {{X}} is a record structure, or {{#f}} otherwise.
 
@@ -652,7 +652,7 @@ Further, returns {{#t}} if {{X}} is of type {{SYMBOL}}, or {{#f}} otherwise.
 
 ==== record-instance-type
 
- [procedure] (record-instance-type RECORD)
+<procedure>(record-instance-type RECORD)</procedure>
 
 Returns type symbol of the record structure {{RECORD}}. Signals an error if
 {{RECORD}} is not a record structure.
@@ -660,7 +660,7 @@ Returns type symbol of the record structure {{RECORD}}. Signals an error if
 
 ==== record-instance-length
 
- [procedure] (record-instance-length RECORD)
+<procedure>(record-instance-length RECORD)</procedure>
 
 Returns number of slots for the record structure {{RECORD}}. The
 record-instance type is not counted. Signals an error if
@@ -669,7 +669,7 @@ record-instance type is not counted. Signals an error if
 
 ==== record-instance-slot
 
- [procedure] (record-instance-slot RECORD INDEX)
+<procedure>(record-instance-slot RECORD INDEX)</procedure>
 
 Returns the contents of the {{INDEX}}th slot of the record structure
 {{RECORD}}. The slot index range is the open interval (([0
@@ -679,8 +679,8 @@ structure.
 
 ==== record-instance-slot-set!
 
- [procedure] (record-instance-slot-set! RECORD INDEX X)
- [procedure] (set! (record-instance-slot RECORD INDEX) X)
+<procedure>(record-instance-slot-set! RECORD INDEX X)</procedure><br>
+<procedure>(set! (record-instance-slot RECORD INDEX) X)</procedure>
 
 Sets the {{INDEX}}th slot of the record structure {{RECORD}} to {{X}}. The slot
 index range is the open interval (([0 record-instance-length)}}. Signals an
@@ -689,7 +689,7 @@ error if {{RECORD}} is not a record structure.
 
 ==== record->vector
 
- [procedure] (record->vector RECORD)
+<procedure>(record->vector RECORD)</procedure>
 
 Returns a new vector with the type and the elements of the record structure
 {{RECORD}}. Signals an error if {{RECORD}} is not a record structure.
@@ -700,7 +700,7 @@ Returns a new vector with the type and the elements of the record structure
 
 ==== object-become!
 
- [procedure] (object-become! ALIST)
+<procedure>(object-become! ALIST)</procedure>
 
 Changes the identity of the value of the car of each pair in {{ALIST}} to the
 value of the cdr. Both values may not be immediate (i.e. exact integers,
@@ -723,7 +723,7 @@ is undefined.
 
 ==== mutate-procedure
 
- [procedure] (mutate-procedure OLD PROC)
+<procedure>(mutate-procedure OLD PROC)</procedure>
 
 Replaces the procedure {{OLD}} with the result of calling the one-argument
 procedure {{PROC}}. {{PROC}} will receive a copy of {{OLD}} that will be

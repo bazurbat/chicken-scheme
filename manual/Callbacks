@@ -30,8 +30,8 @@ a different callback, your program is likely to crash.
 
 === define-external
 
- [syntax] (define-external [QUALIFIERS] (NAME (ARGUMENTTYPE1 VARIABLE1) ...) RETURNTYPE BODY ...)
- [syntax] (define-external NAME TYPE [INIT])
+<macro>(define-external [QUALIFIERS] (NAME (ARGUMENTTYPE1 VARIABLE1) ...) RETURNTYPE BODY ...)</macro><br>
+<macro>(define-external NAME TYPE [INIT])</macro>
 
 The first form defines an externally callable Scheme
 procedure. {{NAME}} should be a symbol, which, when converted to a

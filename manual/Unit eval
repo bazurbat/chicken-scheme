@@ -11,7 +11,7 @@ option.
 
 ==== load
 
- [procedure] (load FILE [EVALPROC])
+<procedure>(load FILE [EVALPROC])</procedure>
 
 Loads and evaluates expressions from the given source file, which may
 be either a string or an input port.  Each expression read is passed to
@@ -42,14 +42,14 @@ Support for reloading compiled code dynamically is still experimental.
 
 ==== load-relative
 
- [procedure] (load-relative FILE [EVALPROC])
+<procedure>(load-relative FILE [EVALPROC])</procedure>
 
 Similar to {{load}}, but loads {{FILE}} relative to the path
 of the currently loaded file.
 
 ==== load-noisily
 
- [procedure] (load-noisily FILE #!key EVALUATOR TIME PRINTER)
+<procedure>(load-noisily FILE #!key EVALUATOR TIME PRINTER)</procedure>
 
 As {{load}} but the result(s) of each evaluated toplevel-expression
 is written to standard output. If {{EVALUATOR}} is given and not {{#f}},
@@ -63,7 +63,7 @@ argument, which should be a one-argument procedure.
 See also the [[http://chicken.wiki.br/Parameters#load-verbose|load-verbose]] parameter.
 ==== load-library
 
- [procedure] (load-library UNIT [LIBRARYFILE])
+<procedure>(load-library UNIT [LIBRARYFILE])</procedure>
 
 On platforms that support dynamic loading, {{load-library}} loads
 the compiled library unit {{UNIT}} (which should be a symbol). If the
@@ -82,7 +82,7 @@ the {{load-library}} does nothing.
 
 ==== set-dynamic-load-mode!
 
- [procedure] (set-dynamic-load-mode! MODELIST)
+<procedure>(set-dynamic-load-mode! MODELIST)</procedure>
 
 On systems that support dynamic loading of compiled code via the {{dlopen(3)}}
 interface (for example Linux and Solaris), some options can be specified to
@@ -102,7 +102,7 @@ this facility is mainly of interest when accessing foreign code.
 
 ==== repl
 
- [procedure] (repl)
+<procedure>(repl)</procedure>
 
 Start a new read-eval-print loop. Sets the {{reset-handler}} so that
 any invocation of {{reset}} restarts the read-eval-print loop. Also
@@ -125,7 +125,7 @@ or the default library path
 
 ==== extension-information
 
- [procedure] (extension-information ID)
+<procedure>(extension-information ID)</procedure>
 
 If an extension with the name {{ID}} is installed and if it has a setup-information
 list registered in the extension repository, then the info-list is returned. Otherwise
@@ -133,21 +133,21 @@ list registered in the extension repository, then the info-list is returned. Oth
 
 ==== provide
 
- [procedure] (provide ID ...)
+<procedure>(provide ID ...)</procedure>
 
 Registers the extension IDs {{ID ...}} as loaded. This is mainly
 intended to provide aliases for certain extension identifiers.
 
 ==== provided?
 
- [procedure] (provided? ID ...)
+<procedure>(provided? ID ...)</procedure>
 
 Returns {{#t}} if the extension with the IDs {{ID ...}}
 are currently loaded, or {{#f}} otherwise.
 
 ==== require
 
- [procedure] (require ID ...)
+<procedure>(require ID ...)</procedure>
 
 If the extension library {{ID}} is not already loaded into the
 system, then {{require}} will lookup the location of the shared
@@ -164,7 +164,7 @@ from one of the following locations:
 
 ==== set-extension-specifier!
 
- [procedure] (set-extension-specifier! SYMBOL PROC)
+<procedure>(set-extension-specifier! SYMBOL PROC)</procedure>
 
 Registers the handler-procedure {{PROC}} as a extension-specifier with the
 name {{SYMBOL}}. This facility allows extending the set of valid extension
@@ -195,7 +195,7 @@ visible in compiled code.
 
 ==== chicken-home
 
- [procedure] (chicken-home)
+<procedure>(chicken-home)</procedure>
 
 Returns a string given the installation directory (usually {{/usr/local/share/chicken}} on UNIX-like systems).
 As a last option,
@@ -207,7 +207,7 @@ if the environment variable {{CHICKEN_PREFIX}} is set, then {{chicken-home}} wil
 
 ==== eval
 
- [procedure] (eval EXP [ENVIRONMENT])
+<procedure>(eval EXP [ENVIRONMENT])</procedure>
 
 Evaluates {{EXP}} and returns the result of the evaluation. The second argument is optional
 and defaults to the value of {{(interaction-environment)}}.

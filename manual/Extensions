@@ -81,7 +81,7 @@ script has to be in the root path of the archive.
 
 ==== install-extension
 
- (install-extension ID FILELIST [INFOLIST])
+<procedure>(install-extension ID FILELIST [INFOLIST])</procedure>
 
 Installs the extension library with the name {{ID}}. All files given in the list of strings
 {{FILELIST}} will be copied to the extension repository. It should be noted here that
@@ -92,7 +92,7 @@ by the {{require-at-runtime}} property.
 {{FILELIST}} may be a filename, a list of filenames, or a list of pairs of
 the form {{(SOURCE DEST)}} (if you want to copy into a particular sub-directory - the
 destination directory will be created as needed). If {{DEST}} is a relative pathname,
-< it will be copied into the extension repository.
+it will be copied into the extension repository.
 
 The optional argument {{INFOLIST}} should be an association list that
 maps symbols to values, this list will be stored as {{ID.setup-info}} at the same
@@ -146,14 +146,14 @@ string.
 
 ==== install-program
 
- [procedure] (install-program ID FILELIST [INFOLIST])
+<procedure>(install-program ID FILELIST [INFOLIST])</procedure>
 
 Similar to {{install-extension}}, but installs an executable program in the
 executable path (usually {{/usr/local/bin}}).
 
 ==== install-script
 
- [procedure] (install-script ID FILELIST [INFOLIST])
+<procedure>(install-script ID FILELIST [INFOLIST])</procedure>
 
 Similar to {{install-program}}, but additionally changes the file permissions of all
 files in {{FILELIST}} to executable (for installing shell-scripts).
@@ -179,7 +179,7 @@ a simple single-file extension. This is roughly equivalent to:
 
 ==== run
 
- [syntax] (run FORM ...)
+<macro>(run FORM ...)</macro>
 
 Runs the shell command {{FORM}}, which is wrapped in an implicit {{quasiquote}}. 
 {{(run (csc ...))}} is treated specially and passes {{-v}} (if {{-verbose}} has been given
@@ -187,13 +187,13 @@ to {{chicken-install}}) and {{-feature compiling-extension}} options to the comp
 
 ==== compile
 
- [syntax] (compile FORM ...)
+<macro>(compile FORM ...)</macro>
 
 Equivalent to {{(run (csc FORM ...))}}.
 
 ==== make
 
- [syntax] (make ((TARGET (DEPENDENT ...) COMMAND ...) ...) ARGUMENTS)
+<macro>(make ((TARGET (DEPENDENT ...) COMMAND ...) ...) ARGUMENTS)</macro>
 
 A ''make'' macro that executes the expressions {{COMMAND ...}}, when any of the dependents
 {{DEPENDENT ...}} have changed, to build {{TARGET}}. This is the same as the {{make}}
@@ -203,7 +203,7 @@ extension, which is available separately. For more information, see
 
 ==== patch
 
- [procedure] (patch WHICH REGEX SUBST)
+<procedure>(patch WHICH REGEX SUBST)</procedure>
 
 Replaces all occurrences of the regular expression {{REGEX}} with the string {{SUBST}},
 in the file given in {{WHICH}}. If {{WHICH}} is a string, the file will be patched and
@@ -212,28 +212,28 @@ overwritten. If {{WHICH}} is a list of the form {{OLD NEW}}, then a different fi
 
 ==== copy-file
 
- [procedure] (copy-file FROM TO)
+<procedure>(copy-file FROM TO)</procedure>
 
 Copies the file or directory (recursively) given in the string {{FROM}} to the destination
 file or directory {{TO}}.
 
 ==== move-file
 
- [procedure] (move-file FROM TO)
+<procedure>(move-file FROM TO)</procedure>
 
 Moves the file or directory (recursively) given in the string {{FROM}} to the destination
 file or directory {{TO}}.
 
 ==== remove-file*
 
- [procedure] (remove-file* PATH)
+<procedure>(remove-file* PATH)</procedure>
 
 Removes the file or directory given in the string {{PATH}}.
 
 
 ==== find-library
 
- [procedure] (find-library NAME PROC)
+<procedure>(find-library NAME PROC)</procedure>
 
 Returns {{#t}} if the library named {{libNAME.[a|so]}} (unix) or {{NAME.lib}} (windows)
 could be found by compiling and linking a test program. {{PROC}} should be the name of a
@@ -242,13 +242,13 @@ be resolved, {{#f}} is returned.
 
 ==== find-header
 
- [procedure] (find-header NAME)
+<procedure>(find-header NAME)</procedure>
 
 Returns {{#t}} if a C include-file with the given name is available, or {{#f}} otherwise.
 
 ==== try-compile
 
- [procedure] (try-compile CODE #!key cc cflags ldflags compile-only c++)
+<procedure>(try-compile CODE #!key cc cflags ldflags compile-only c++)</procedure>
 
 Returns {{#t}} if the C code in {{CODE}} compiles and links successfully, or {{#f}} otherwise.
 The keyword parameters {{cc}} (compiler name, defaults to the C compiler used to build this system),
@@ -259,20 +259,20 @@ If the keyword argument {{c++}} is given and true, then the code will be compile
 
 ==== create-directory
 
- [procedure] (create-directory PATH)
+<procedure>(create-directory PATH)</procedure>
 
 Creates the directory given in the string {{PATH}}, with all parent directories as needed.
 
 
 ==== chicken-prefix
 
- [parameter] chicken-prefix
+<parameter>chicken-prefix</parameter>
 
 The installation prefix specified when CHICKEN was built.
 
 ==== installation-prefix
 
- [parameter] installation-prefix
+<parameter>installation-prefix</parameter>
 
 An alternative installation prefix that will be prepended to extension
 installation paths if specified. It is set by the {{-install-prefix}}
@@ -280,7 +280,7 @@ option or environment variable {{CHICKEN_INSTALL_PREFIX}}.
 
 ==== program-path
 
- [parameter] (program-path [PATH])
+<parameter>(program-path [PATH])</parameter>
 
 Holds the path where executables are installed and defaults to either {{$CHICKEN_PREFIX/bin}},
 if the environment variable {{CHICKEN_PREFIX}} is set or the
@@ -289,21 +289,21 @@ path where the CHICKEN binaries ({{chicken}}, {{csi}}, etc.) are installed.
 
 ==== setup-root-directory
 
- [parameter] (setup-root-directory [PATH])
+<parameter>(setup-root-directory [PATH])</parameter>
 
 Contains the path of the directory where {{chicken-install}} was invoked.
 
 
 ==== setup-install-mode
 
- [parameter] (setup-install-mode [BOOL])
+<parameter>(setup-install-mode [BOOL])</parameter>
 
 Reflects the setting of the {{-no-install}} option, i.e. is {{#f}}, if {{-no-install}} was
 given to {{chicken-install}}.
 
 ==== required-chicken-version
 
- [procedure] (required-chicken-version VERSION)
+<procedure>(required-chicken-version VERSION)</procedure>
 
 Signals an error if the version of CHICKEN that this script runs under is lexicographically less than
 {{VERSION}} (the argument will be converted to a string, first).
@@ -311,7 +311,7 @@ Signals an error if the version of CHICKEN that this script runs under is lexico
 
 ==== required-extension-version
 
- [procedure] (required-extension-version EXTENSION1 VERSION1 ...)
+<procedure>(required-extension-version EXTENSION1 VERSION1 ...)</procedure>
 
 Checks whether the extensions {{EXTENSION1 ...}} are installed and at least of version {{VERSION1 ...}}.
 The test is made by lexicographically comparing the string-representations of the given version with the version 
@@ -321,7 +321,7 @@ or is of a version older than the one specified.
 
 ==== host-extension
 
- [parameter] host-extension
+<parameter>host-extension</parameter>
 
 For a cross-compiling CHICKEN, when compiling an extension, then it
 should be built for the host environment (as opposed to the target
