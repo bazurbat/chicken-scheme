@@ -56,6 +56,7 @@ Possible options are:
      S          show applications of compiler syntax
      T          show expressions after converting to node tree
      L          show expressions after lambda-lifting
+     U          show expressions after unboxing
      M          show syntax-/runtime-requirements
      1          show source expressions
      2          show canonicalized expressions
