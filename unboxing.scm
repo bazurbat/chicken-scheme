@@ -332,3 +332,9 @@
   (C_a_i_flonum_quotient (flo flo) flo "C_ub_i_flonum_quotient") 
   ;...
   )
+
+
+;;XXX still broken:
+;
+; - literals that are passed to unboxed operations
+;   (these must be bound via ##core#let_unboxed)
