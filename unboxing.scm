@@ -91,7 +91,7 @@
 		(else #f)))
 
 	(define (rewrite! n alt anodes avals atypes0 rtype dest)
-	  (d "rewrite: ~a -> ~a" (first (node-parameters n)) alt)
+	  (d "rewrite: ~a -> ~a  (dest: ~a)" (first (node-parameters n)) alt dest)
 	  (let ((s (symbolify alt)))
 	    (##sys#hash-table-set! 
 	     stats s (add1 (or (##sys#hash-table-ref stats s) 0))))
@@ -327,6 +327,8 @@
 
 (define-unboxed-ops 
   (C_a_i_flonum_plus (flo flo) flo "C_ub_i_flonum_plus")
+  (C_a_i_flonum_difference (flo flo) flo "C_ub_i_flonum_difference")
   (C_a_i_flonum_times (flo flo) flo "C_ub_i_flonum_times") 
+  (C_a_i_flonum_quotient (flo flo) flo "C_ub_i_flonum_quotient") 
   ;...
   )

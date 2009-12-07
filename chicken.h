@@ -886,6 +886,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_floor                    floor
 # define C_round                    round
 # define C_trunc                    trunc
+# define C_fabs                     fabs
 # ifdef __linux__
 extern double round(double);
 extern double trunc(double);
@@ -1284,7 +1285,9 @@ extern double trunc(double);
 #endif
 
 #define C_ub_i_flonum_plus(x, y)        ((x) + (y))
+#define C_ub_i_flonum_difference(x, y)  ((x) - (y))
 #define C_ub_i_flonum_times(x, y)       ((x) * (y))
+#define C_ub_i_flonum_quotient(x, y)    ((x) / (y))
 
 #define C_end_of_main
 
@@ -1324,6 +1327,7 @@ extern double trunc(double);
 #define C_a_i_flonum_expt(ptr, c, x, y)  C_flonum(ptr, C_pow(C_flonum_magnitude(x), C_flonum_magnitude(y)))
 #define C_a_i_flonum_log(ptr, c, x)     C_flonum(ptr, C_log(C_flonum_magnitude(x)))
 #define C_a_i_flonum_sqrt(ptr, c, x)    C_flonum(ptr, C_sqrt(C_flonum_magnitude(x)))
+#define C_a_i_flonum_abs(ptr, c, x)     C_flonum(ptr, C_fabs(C_flonum_magnitude(x)))
 
 
 /* Variables: */

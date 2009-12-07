@@ -130,7 +130,7 @@
     fx= fx> fx< fx>= fx<= fixnum? fxneg fxmax fxmin identity fp+ fp- fp* fp/ fpmin fpmax fpneg
     fp> fp< fp= fp>= fp<= fxand fxnot fxior fxxor fxshr fxshl bit-set?
     fpfloor fpceiling fptruncate fpround fpsin fpcos fptan fpasin fpacos fpatan
-    fpatan2 fpexp fpexpt fplog fpsqrt
+    fpatan2 fpexp fpexpt fplog fpsqrt fpabs
     arithmetic-shift void flush-output thread-specific thread-specific-set!
     not-pair? atom? null-list? print print* error cpu-time proper-list? call/cc
     blob-size u8vector->blob/shared s8vector->blob/shared u16vector->blob/shared
@@ -801,6 +801,7 @@
 (rewrite 'fpexpt 16 2 "C_a_i_flonum_expt" #f words-per-flonum)
 (rewrite 'fplog 16 1 "C_a_i_flonum_log" #f words-per-flonum)
 (rewrite 'fpsqrt 16 1 "C_a_i_flonum_sqrt" #f words-per-flonum)
+(rewrite 'fpabs 16 1 "C_a_i_flonum_abs" #f words-per-flonum)
 
 (rewrite 'cons 16 2 "C_a_i_cons" #t 3)
 (rewrite '##sys#cons 16 2 "C_a_i_cons" #t 3)

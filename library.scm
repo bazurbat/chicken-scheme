@@ -962,6 +962,11 @@ EOF
   (fp-check-flonum x 'fpsqrt)
   (##core#inline_allocate ("C_a_i_flonum_sqrt" 4) x))
 
+(define (fpabs x)
+  #+(not unsafe)
+  (fp-check-flonum x 'fpabs)
+  (##core#inline_allocate ("C_a_i_flonum_abs" 4) x))
+
 (define * (##core#primitive "C_times"))
 (define - (##core#primitive "C_minus"))
 (define + (##core#primitive "C_plus"))

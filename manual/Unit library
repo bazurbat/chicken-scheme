@@ -121,6 +121,7 @@ in unsafe mode can crash the system.
 <procedure>(fpexp X)</procedure>
 <procedure>(fpexpt X Y)</procedure>
 <procedure>(fpsqrt X)</procedure>
+<procedure>(fpabs X)</procedure>
 
 Note: {{fpround}} implements POSIX, which is different from R5RS.
 

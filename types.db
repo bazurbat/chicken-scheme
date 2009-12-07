@@ -298,6 +298,7 @@
 (fp= (procedure fp= (float float) boolean))
 (fp> (procedure fp> (float float) boolean))
 (fp>= (procedure fp>= (float float) boolean))
+(fpabs (procedure fpabs (float) float))
 (fpacos (procedure fpacos (float) float))
 (fpasin (procedure fpasin (float) float))
 (fpatan (procedure fpatan (float) float))
