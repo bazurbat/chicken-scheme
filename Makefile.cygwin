@@ -47,7 +47,7 @@ CXX_COMPILER = g++
 LINKER = gcc
 
 
-C_COMPILER_OPTIONS = -fno-strict-aliasing -DHAVE_CHICKEN_CONFIG_H
+C_COMPILER_OPTIONS ?= -fno-strict-aliasing -DHAVE_CHICKEN_CONFIG_H
 ifdef DEBUGBUILD
 C_COMPILER_OPTIMIZATION_OPTIONS ?= -g -Wall -Wno-unused
 else
