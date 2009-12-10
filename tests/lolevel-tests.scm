@@ -2,7 +2,15 @@
 
 (require-extension lolevel)
 
+(define-syntax assert-error
+  (syntax-rules ()
+    ((_ expr) 
+     (assert (handle-exceptions _ #t expr #f)))))
+
 ; move-memory!
+
+(let ((s "..."))
+  (assert-error (move-memory! "abc" s 3 -1)))
 
 ; object-copy
 
