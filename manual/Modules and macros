@@ -48,14 +48,6 @@ The effect of destructively modifying the s-expression passed to a
 transformer procedure is undefined.
 
 
-==== define-compiled-syntax
-
-<macro>(define-compiled-syntax IDENTIFIER TRANSFORMER)</macro>
-
-Equivalent to {{define-syntax}}, but when compiled, will also define the macro
-at runtime.
-
-
 ==== syntax
 
 <macro>(syntax EXPRESSION)</macro>

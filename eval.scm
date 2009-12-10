@@ -1,7 +1,7 @@
 ;;;; eval.scm - Interpreter for CHICKEN
 ;
-; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; Copyright (c) 2008-2009, The Chicken Team
+; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -619,17 +619,9 @@
 			     (##sys#canonicalize-body (cddr x) se2 #f)
 			     e #f tf cntr se2)))
 			       
-			 ((define-syntax define-compiled-syntax)
-			  (##sys#check-syntax
-			   'define-syntax x
-			   (if (and (pair? (cdr x)) (pair? (cadr x)))
-			       '(_ (variable . lambda-list) . #(_ 1))
-			       '(_ variable _))
-			   #f se)
-			  (let* ((var (if (pair? (cadr x)) (caadr x) (cadr x)))
-				 (body (if (pair? (cadr x))
-					   `(,(rename 'lambda se) ,(cdadr x) ,@(cddr x))
-					   (caddr x)))
+			 ((##core#define-syntax)
+			  (let* ((var (cadr x))
+				 (body (caddr x))
 				 (name (rename var se)))
 			    (##sys#register-syntax-export 
 			     name (##sys#current-module)

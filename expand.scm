@@ -497,8 +497,9 @@
 		    (loop 
 		     (cdr body) 
 		     (cons (if (pair? (cadr def))
-			       `(define-syntax ,(caadr def)
-				  (,(macro-alias 'lambda se) ,(cdadr def) ,@(cddr def)))
+			       `(,(macro-alias 'define-syntax se)
+				 ,(caadr def)
+				 (,(macro-alias 'lambda se) ,(cdadr def) ,@(cddr def)))
 			       def)
 			   defs) 
 		     #f)))
@@ -532,7 +533,8 @@
 					       (##sys#expand-curried-define head (cddr x) se))) ]
 				 [else
 				  (##sys#check-syntax
-				   'define x '(define (variable . lambda-list) . #(_ 1)) #f se)
+				   'define x
+				   '(define (variable . lambda-list) . #(_ 1)) #f se)
 				  (loop rest
 					(cons (car head) vars)
 					(cons `(##core#lambda ,(cdr head) ,@(cddr x)) vals)
@@ -971,6 +973,25 @@
 	       (##sys#check-syntax 'define head '(symbol . lambda-list))
 	       (##sys#check-syntax 'define body '#(_ 1))
 	       (loop (list (car head) `(,(r 'lambda) ,(cdr head) ,@body))))))))))
+
+(##sys#extend-macro-environment
+ 'define-syntax
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    (let ((head (cadr form))
+	  (body (cddr form)) )
+      (cond ((not (pair? head))
+	     (##sys#check-syntax 'define-syntax head 'symbol)
+	     (##sys#check-syntax 'define-syntax body '#(_ 1))
+	     (##sys#register-export head (##sys#current-module))
+	     `(##core#define-syntax ,head ,(car body)))
+	    (else
+	     (##sys#check-syntax 'define-syntax head '(_ . lambda-list))
+	     (##sys#check-syntax 'define-syntax body '#(_ 1))
+	     `(##core#define-syntax 
+	       ,(car head)
+	       (,(r 'lambda) ,(cdr head) ,@body))))))))
 
 (##sys#extend-macro-environment
  'and

@@ -1066,6 +1066,15 @@
       (,(r 'define) ,@(cdr form))))))
 
 
+;;; compiled syntax (DEPRECATED)
+
+(##sys#extend-macro-environment
+ 'define-compiled-syntax '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    `(,(r 'define-syntax) ,@(cdr form)))))
+
+
 ;;; use
 
 (##sys#extend-macro-environment

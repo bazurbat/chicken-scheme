@@ -5,8 +5,8 @@
 ;
 ;
 ;-----------------------------------------------------------------------------------------------------------
-; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; Copyright (c) 2008-2009, The Chicken Team
+; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -141,10 +141,7 @@
 ; (##core#app <exp> {<exp>})
 ; ([##core#]syntax <exp>)
 ; (<exp> {<exp>})
-; (define-syntax <symbol> <expr>)
-; (define-syntax (<symbol> . <llist>) <expr> ...)
-; (define-compiled-syntax <symbol> <expr>)
-; (define-compiled-syntax (<symbol> . <llist>) <expr> ...)
+; (##core#define-syntax <symbol> <expr>)
 ; (##core#define-compiler-syntax <symbol> <expr>)
 ; (##core#let-compiler-syntax ((<symbol> <expr>) ...) <expr> ...)
 ; (##core#module <symbol> #t | (<name> | (<name> ...) ...) <body>)
@@ -720,7 +717,7 @@
 			   (##sys#canonicalize-body (cddr x) se2 compiler-syntax-enabled)
 			   e se2 dest)))
 			       
-		       ((define-syntax define-compiled-syntax)
+		       ((##core#define-syntax)
 			(##sys#check-syntax
 			 (car x) x
 			 (if (pair? (cadr x))
@@ -738,8 +735,7 @@
 			   (##sys#current-environment)
 			   (##sys#er-transformer (eval/meta body)))
 			  (walk
-			   (if (or ##sys#enable-runtime-macros
-				   (eq? 'define-compiled-syntax (car x)))
+			   (if ##sys#enable-runtime-macros
 			       `(##sys#extend-macro-environment
 				 ',var
 				 (##sys#current-environment)
@@ -1332,7 +1328,7 @@
 	(let ([fds (cdr spec)])
 	  (if (every string? fds)
 	      (set! foreign-declarations (append foreign-declarations fds))
-	      (syntax-error "invalid declaration" spec) ) ) )
+	      (syntax-error 'declare "invalid declaration" spec) ) ) )
        ((c-options)
 	(emit-control-file-item `(c-options ,@(strip (cdr spec)))) )
        ((link-options)

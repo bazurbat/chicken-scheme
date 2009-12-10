@@ -38,7 +38,7 @@
 
 (module baz ((x s:list))
   (import (prefix scheme s:))
-  (define-syntax x
+  (s:define-syntax x
     (syntax-rules ()
       ((_ x) (s:list x)))))
 
