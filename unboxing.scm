@@ -326,7 +326,7 @@
 		       (if (eq? r 'none)
 			   (walk (second clauses) dest udest pass2?)
 			   (merge r (walk (second clauses) dest udest pass2?)))))
-		   ((null? (cddr clauses)) 
+		   ((null? (cdr clauses)) 
 		    (merge r (walk (car clauses) dest udest pass2?))) ) )
 
 	      ((##core#call ##core#direct_call)
