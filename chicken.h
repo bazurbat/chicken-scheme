@@ -895,6 +895,7 @@ extern double trunc(double);
 # include "chicken-libc-stubs.h"
 #endif
 
+#define C_id(x)                    (x)
 #define C_return(x)                return(x)
 #define C_resize_stack(n)          C_do_resize_stack(n)
 #define C_memcpy_slots(t, f, n)    C_memcpy((t), (f), (n) * sizeof(C_word))
