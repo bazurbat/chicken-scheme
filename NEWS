@@ -1,5 +1,7 @@
 4.3.0
 
+- fixed bug in `move-memory!' that caused negative offsets to be accepted
+  (thanks to Jim Ursetto)
 - removed tracing facility and apply-hook (see the "trace" egg
   for a replacement for tracing and breakpoints)
 - chicken-install(1): renamed `-host-extension' option to `-host'
