@@ -1,17 +1,11 @@
-4.2.12
+4.3.0
 
 - removed tracing facility and apply-hook (see the "trace" egg
   for a replacement for tracing and breakpoints)
 - chicken-install(1): renamed `-host-extension' option to `-host'
-
-4.2.11
-
 - added support for a make(1) configuration file ("config.make")
 - `chicken-install' now allows specifiying a proxy for retrieving
   extensions over HTTP (thanks to Nicolas Pelletier)
-
-4.2.10
-
 - fixed bug in `cond-expand' that incorrectly renamed feature-identifiers
   if the form was the product of a syntax expansion (reported by Thomas
   Bushnell)
@@ -28,9 +22,6 @@
   has its own release cycle; both files are available, see
   http://chicken.wiki.br/emacs
 - removed meaningless benchmark suite and cleaned up
-
-4.2.9
-
 - added optional argument to `grep' that allows applying a function
   to each matched item (contributed by Tony Sidaway)
 - added extension-property `import-only', which makes it possible to
@@ -39,48 +30,30 @@
   `seconds->local-time' is now optional and defaults to the value
   of `(current-seconds)' (suggested by Mario Goulart)
 - removed read-syntax for `syntax' form
-
-4.2.8
-
 - fixed bug in `get-condition-property'
 - fixed bug in windows version of `process-execute'
 - TCP timeouts throw exception of kind `timeout' to allow
   distinguishing between timeouts and other errors
 - removed some internal functions that manipulate environments
-
-4.2.7
-
 - fixed bugs in `standard-extension' (`setup-api' module) and added keyword 
   arguments for building static extensions and adding custom properties
 - when cross-compiling, `chicken-install(1)' doesn't pass `-setup-mode'
   (the host tools should not attempt to load target binaries)
 - `installation-prefix' in the `setup-api' module was not always correctly
   set
-- the `-force' option in `chicken-install(1)' overrides tje CHICKEN version
+- the `-force' option in `chicken-install(1)' overrides the CHICKEN version
   check
 - disabled e-mail feature in `chicken-bug(1)', since it doesn't work
   anyway, in the moment
-
-4.2.6
-
 - fixed bug in `reexport' that made it impossible to reexport core library
   definitions
-
-4.2.5
-
 - fix in optimizer that sometimes caused C functions for inlined
   procedures to be emitted multiple times (Thanks to Joerg Wittenberger)
 - documented `define-compiler-syntax' and `let-compiler-syntax'
-
-4.2.3
-
 - printer for hash-tables shows current number of stores items
 - when upgrading during installation of a dependency `chicken-install'
   shows the version to upgrade to (Thanks to Christian Kellermann)
 - Updated scheme-complete (Thanks to Alex Shinn)
-
-4.2.2
-
 - fix for pathnames with whitespace in 'runtests.sh' on Windows
 - fix for 'normalize-pathname' with absolute pathname argument
 - added 'decompose-directory' to unit files
