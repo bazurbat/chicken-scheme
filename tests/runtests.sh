@@ -212,7 +212,6 @@ $compile -e embedded2.scm
 
 echo "======================================== timing compilation ..."
 time $compile compiler.scm -S -O5 -debug pb -v
-echo "executing"
 time ./a.out
 
 echo "======================================== running floating-point benchmark ..."
@@ -221,6 +220,9 @@ $compile fft.scm -O5
 time ./a.out
 echo "unboxed:"
 $compile fft.scm -O5 -D unboxed
+time ./a.out
+echo "unboxed/unboxing:"
+$compile fft.scm -O5 -D unboxed -unboxing
 time ./a.out
 
 echo "======================================== done."

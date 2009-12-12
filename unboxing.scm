@@ -119,7 +119,7 @@
 				 (make-node
 				  '##core#inline_allocate (list "C_a_i_mpointer" 2) ; hardcoded size
 				  (list (make-node '##core#unboxed_ref (list tmp rtype) '()))))
-				((chr)
+				((chr fix)
 				 (make-node
 				   '##core#inline
 				   (list (if (eq? rtype 'chr) "C_make_character" "C_fix"))
@@ -247,7 +247,7 @@
 			(when (and a (cdr a))
 			  (copy-node!
 			   (make-node '##core#unboxed_ref (list (alias v) (cdr a)) '())
-			   n)) )
+			   n)))
 		       ((not a) #f)	; global
 		       ((not udest) (boxed! v)))
 		 a))
@@ -278,7 +278,8 @@
 			       (when (and a (car a) (cdr a))
 				 (unboxed! (car a) (cdr a))))
 			     args)
-			    (when dest (unboxed! dest rtype)))
+			    (when dest
+			      (unboxed! dest rtype)))
 			  (cons #f rtype))))))
 
 	      ((let)
@@ -326,7 +327,7 @@
 		       (if (eq? r 'none)
 			   (walk (second clauses) dest udest pass2?)
 			   (merge r (walk (second clauses) dest udest pass2?)))))
-		   ((null? (cdr clauses)) 
+		   ((null? (cddr clauses)) 
 		    (merge r (walk (car clauses) dest udest pass2?))) ) )
 
 	      ((##core#call ##core#direct_call)
@@ -374,11 +375,22 @@
   (C_a_i_flonum_difference (flo flo) flo "C_ub_i_flonum_difference")
   (C_a_i_flonum_times (flo flo) flo "C_ub_i_flonum_times") 
   (C_a_i_flonum_quotient (flo flo) flo "C_ub_i_flonum_quotient") 
-  ;XXX add more rewrites for `fp...' operations
+  (C_a_i_flonum_sin (flo) flo "C_sin")
+  (C_a_i_flonum_cos (flo) flo "C_cos")
+  (C_a_i_flonum_tan (flo) flo "C_tab")
+  (C_a_i_flonum_asin (flo) flo "C_asin")
+  (C_a_i_flonum_acos (flo) flo "C_acos")
+  (C_a_i_flonum_atan (flo) flo "C_atan")
+  (C_a_i_flonum_atan2 (flo flo) flo "C_atan2")
+  (C_a_i_flonum_exp (flo) flo "C_exp")
+  (C_a_i_flonum_expt (flo flo) flo "C_pow")
+  (C_a_i_flonum_log (flo) flo "C_log")
+  (C_a_i_flonum_sqrt (flo) flo "C_sqrt")
+  (C_a_i_flonum_abs (flo) flo "C_fabs")
+  (C_a_i_flonum_truncate (flo) flo "C_trunc")
+  (C_a_i_flonum_ceiling (flo) flo "C_ceil")
+  (C_a_i_flonum_floor (flo) flo "C_floor")
+  (C_a_i_flonum_round (flo) flo "C_round")
+  (C_u_i_f32vector_set (* fix flo) fix "C_ub_i_f32vector_set")
+  (C_u_i_f64vector_set (* fix flo) fix "C_ub_i_f64vector_set")
   )
-
-
-;;XXX still broken:
-;
-; - literals that are passed to unboxed operations
-;   (these must be bound via ##core#let_unboxed)
