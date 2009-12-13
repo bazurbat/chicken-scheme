@@ -802,6 +802,10 @@
 (rewrite 'fplog 16 1 "C_a_i_flonum_log" #f words-per-flonum)
 (rewrite 'fpsqrt 16 1 "C_a_i_flonum_sqrt" #f words-per-flonum)
 (rewrite 'fpabs 16 1 "C_a_i_flonum_abs" #f words-per-flonum)
+(rewrite 'fptruncate 16 1 "C_a_i_flonum_truncate" #f words-per-flonum)
+(rewrite 'fpround 16 1 "C_a_i_flonum_truncate" #f words-per-flonum)
+(rewrite 'fpceiling 16 1 "C_a_i_flonum_truncate" #f words-per-flonum)
+(rewrite 'fpround 16 1 "C_a_i_flonum_truncate" #f words-per-flonum)
 
 (rewrite 'cons 16 2 "C_a_i_cons" #t 3)
 (rewrite '##sys#cons 16 2 "C_a_i_cons" #t 3)

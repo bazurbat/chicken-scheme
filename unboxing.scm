@@ -393,4 +393,6 @@
   (C_a_i_flonum_round (flo) flo "C_round")
   (C_u_i_f32vector_set (* fix flo) fix "C_ub_i_f32vector_set")
   (C_u_i_f64vector_set (* fix flo) fix "C_ub_i_f64vector_set")
+  (C_a_i_f32vector_ref (* fix) flo "C_ub_i_f32vector_ref")
+  (C_a_i_f64vector_ref (* fix) flo "C_ub_i_f64vector_ref")
   )

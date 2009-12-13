@@ -727,7 +727,7 @@
 
     (define (utype t)
       (case t
-	((fix) "long")
+	((fix) "int")
 	((flo) "double")
 	((chr) "char")
 	((ptr) "void *")
