@@ -233,8 +233,7 @@
 ;   standard-binding -> <boolean>            If true: variable names a standard binding
 ;   extended-binding -> <boolean>            If true: variable names an extended binding
 ;   unused -> <boolean>                      If true: variable is a formal parameter that is never used
-;   rest-parameter -> #f | 'vector | 'list   If true: variable holds rest-argument list mode
-;   o-r/access-count -> <n>                  Contains number of references as arguments of optimizable rest operators
+;   rest-parameter -> #f | 'list             If true: variable holds rest-argument list
 ;   constant -> <boolean>                    If true: variable has fixed value
 ;   hidden-refs -> <boolean>                 If true: procedure that refers to hidden global variables
 ;   inline-transient -> <boolean>            If true: was introduced during inlining
@@ -351,7 +350,6 @@
 (define current-program-size 0)
 (define line-number-database-2 #f)
 (define immutable-constants '())
-(define rest-parameters-promoted-to-vector '())
 (define inline-table #f)
 (define inline-table-used #f)
 (define constant-table #f)
@@ -1724,18 +1722,9 @@
 	  ((##core#call)
 	   (grow 1)
 	   (let ([fun (car subs)])
-	     (if (eq? '##core#variable (node-class fun))
-		 (let ([name (first (node-parameters fun))])
-		   (collect! db name 'call-sites (cons here n))
-		   ;; If call to standard-binding & optimizable rest-arg operator: decrease access count:
-		   (if (and (intrinsic? name)
-			    (memq name optimizable-rest-argument-operators) )
-		       (for-each
-			(lambda (arg)
-			  (and-let* ([(eq? '##core#variable (node-class arg))]
-				     [var (first (node-parameters arg))] )
-			    (when (get db var 'rest-parameter) (count! db var 'o-r/access-count)) ) )
-			(cdr subs) ) ) ) )
+	     (when (eq? '##core#variable (node-class fun))
+	       (let ([name (first (node-parameters fun))])
+		 (collect! db name 'call-sites (cons here n))))
 	     (walk (first subs) env localenv here #t)
 	     (walkeach (cdr subs) env localenv here #f) ) )
 
@@ -1780,10 +1769,7 @@
 		   (put! db var 'unknown #t) )
 		 vars)
 		(when rest
-		  (put! db rest 'rest-parameter
-			(if (memq rest rest-parameters-promoted-to-vector)
-			    'vector
-			    'list) ) )
+		  (put! db rest 'rest-parameter 'list) )
 		(when (simple-lambda-node? n) (put! db id 'simple #t))
 		(let ([tl toplevel-scope])
 		  (unless toplevel-lambda-id (set! toplevel-lambda-id id))
@@ -1886,7 +1872,6 @@
 	     [assigned-locally #f]
 	     [undefined #f]
 	     [global #f]
-	     [o-r/access-count 0]
 	     [rest-parameter #f] 
 	     [nreferences 0]
 	     [ncall-sites 0] )
@@ -1909,7 +1894,6 @@
 	      [(global) (set! global #t)]
 	      [(value) (set! value (cdr prop))]
 	      [(local-value) (set! local-value (cdr prop))]
-	      [(o-r/access-count) (set! o-r/access-count (cdr prop))]
 	      [(rest-parameter) (set! rest-parameter #t)] ) )
 	  plist)
 
@@ -2072,24 +2056,9 @@
 				    (eq? (first llist) (first (node-parameters v2))) )
 			   (let ([kvar (first (node-parameters v1))])
 			     (quick-put! plist 'replacable kvar)
-			     (put! db kvar 'replacing #t) ) ) ) ) ) ) ) ) ) )
-
-	 ;; If a rest-argument, convert 'rest-parameter property to 'vector, if the variable is never
-	 ;;  assigned, and the number of references is identical to the number of accesses in optimizable
-	 ;;  rest-argument operators:
-	 ;; - Add variable to "rest-parameters-promoted-to-vector", because subsequent optimization will
-	 ;;   change variables context (operators applied to it).
-	 (when (and rest-parameter
-		    (not assigned)
-		    (= nreferences o-r/access-count) )
-	   (set! rest-parameters-promoted-to-vector (lset-adjoin eq? rest-parameters-promoted-to-vector sym))
-	   (put! db sym 'rest-parameter 'vector) ) ) )
+			     (put! db kvar 'replacing #t) ) ) ) ) ) ) ) ) ) ) ) )
 
      db)
-
-    ;; Remove explicitly consed rest parameters from promoted ones:
-    (set! rest-parameters-promoted-to-vector
-      (lset-difference eq? rest-parameters-promoted-to-vector explicitly-consed) )
 
     ;; Set original program-size, if this is the first analysis-pass:
     (unless original-program-size
@@ -2371,7 +2340,7 @@
   (closure-size lambda-literal-closure-size)	       ; integer
   (looping lambda-literal-looping)		       ; boolean
   (customizable lambda-literal-customizable)	       ; boolean
-  (rest-argument-mode lambda-literal-rest-argument-mode) ; #f | LIST | VECTOR | UNUSED
+  (rest-argument-mode lambda-literal-rest-argument-mode) ; #f | LIST | NONE
   (body lambda-literal-body)				 ; expression
   (direct lambda-literal-direct))			 ; boolean
   
@@ -2488,9 +2457,8 @@
 				  vars)
 			      id
 			      '()) ] )
-		  (case rest-mode
-		    [(none) (debugging 'o "unused rest argument" rest id)]
-		    [(vector) (debugging 'o "rest argument accessed as vector" rest id)] )
+		  (when (eq? rest-mode 'none)
+		    (debugging 'o "unused rest argument" rest id))
 		  (when (and direct rest)
 		    (bomb "bad direct lambda" id allocated rest) )
 		  (set! lambdas

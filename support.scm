@@ -427,7 +427,7 @@
 		       ((potential-value)
 			(set! pval (cdar es)) )
 		       ((replacable home contains contained-in use-expr closure-size rest-parameter
-				    o-r/access-count captured-variables explicit-rest)
+				    captured-variables explicit-rest)
 			(printf "\t~a=~s" (caar es) (cdar es)) )
 		       ((references)
 			(set! refs (cdar es)) )

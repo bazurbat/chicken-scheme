@@ -615,9 +615,7 @@
 		      (gen ");}") ]
 		     [(or rest (> (lambda-literal-allocated ll) 0) (lambda-literal-external ll))
 		      (if (and rest (not (eq? rest-mode 'none)))
-			  (if (eq? rest-mode 'vector)
-			      (set! nsrv (lset-adjoin = nsrv argc))
-			      (set! nsr (lset-adjoin = nsr argc)) ) 
+			  (set! nsr (lset-adjoin = nsr argc)) 
 			  (set! ns (lset-adjoin = ns argc)) ) ] ) ) ) )
 	 lambdas)
 	(for-each
@@ -842,7 +840,6 @@
 ;; 		   [(= nec 1) (gen #t "C_save(" (if empty-closure "t1" "t0") ");")] )
 	     (cond [rest
 		    (gen #t (if (> nec 0) "C_save_and_reclaim" "C_reclaim") "((void*)tr" n #\r)
-		    (when (eq? rest-mode 'vector) (gen #\v))
 		    (gen ",(void*)" id "r")
 		    (when (> nec 0)
 		      (gen #\, nec #\,)
@@ -850,9 +847,7 @@
 		    (gen ");}"
 			 #t "else{"
 			 #t "a=C_alloc((c-" n ")*3);")
-		    (case rest-mode
-		      [(list #f) (gen #t "t" n "=C_restore_rest(a,C_rest_count(0));")]
-		      [(vector) (gen #t "t" n "=C_restore_rest_vector(a,C_rest_count(0));")] )
+		    (gen #t "t" n "=C_restore_rest(a,C_rest_count(0));")
 		    (gen #t id "r(")
 		    (apply gen (intersperse (make-argument-list n "t") #\,))
 		    (gen ",t" n ");}}")

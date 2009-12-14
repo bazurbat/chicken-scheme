@@ -210,7 +210,6 @@
  node->sexpr
  non-foldable-bindings
  nonwinding-call/cc
- optimizable-rest-argument-operators
  optimization-iterations
  original-program-size
  output
