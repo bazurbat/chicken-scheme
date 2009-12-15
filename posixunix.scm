@@ -1312,10 +1312,10 @@ EOF
           _user-shell) ) ) )
 
 (define (current-user-name)
-  (list-ref (user-information (current-user-id)) 0) )
+  (car (user-information (current-user-id))) )
 
 (define (current-effective-user-name)
-  (list-ref (user-information (current-effective-user-id)) 0) )
+  (car (user-information (current-effective-user-id))) )
 
 (define-foreign-variable _group-name nonnull-c-string "C_group->gr_name")
 (define-foreign-variable _group-passwd nonnull-c-string "C_group->gr_passwd")
