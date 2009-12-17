@@ -1,3 +1,8 @@
+4.2.14
+
+- `move-memory!' catches negative offsets now (Thanks to Jim Ursetto)
+- deprecated `define-compiled-syntax'
+
 4.2.13
 
 - added new floating-point primitives `fpsin`, `fpcos', `fptan',

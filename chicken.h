@@ -895,6 +895,7 @@ extern double trunc(double);
 # include "chicken-libc-stubs.h"
 #endif
 
+#define C_id(x)                    (x)
 #define C_return(x)                return(x)
 #define C_resize_stack(n)          C_do_resize_stack(n)
 #define C_memcpy_slots(t, f, n)    C_memcpy((t), (f), (n) * sizeof(C_word))
@@ -1315,6 +1316,11 @@ extern double trunc(double);
 #define C_a_i_f64vector_ref(ptr, n, b, i)  C_flonum(ptr, ((double *)C_data_pointer(C_block_item((b), 1)))[ C_unfix(i) ])
 #define C_u_i_f32vector_set(v, i, x)    ((((float *)C_data_pointer(C_block_item((v), 1)))[ C_unfix(i) ] = C_flonum_magnitude(x)), C_SCHEME_UNDEFINED)
 #define C_u_i_f64vector_set(v, i, x)    ((((double *)C_data_pointer(C_block_item((v), 1)))[ C_unfix(i) ] = C_flonum_magnitude(x)), C_SCHEME_UNDEFINED)
+
+#define C_ub_i_f32vector_ref(b, i)      (((float *)C_data_pointer(C_block_item((b), 1)))[ C_unfix(i) ])
+#define C_ub_i_f64vector_ref(b, i)      (((double *)C_data_pointer(C_block_item((b), 1)))[ C_unfix(i) ])
+#define C_ub_i_f32vector_set(v, i, x)   ((((float *)C_data_pointer(C_block_item((v), 1)))[ C_unfix(i) ] = (x)), 0)
+#define C_ub_i_f64vector_set(v, i, x)   ((((double *)C_data_pointer(C_block_item((v), 1)))[ C_unfix(i) ] = (x)), 0)
 
 #define C_a_i_flonum_sin(ptr, c, x)     C_flonum(ptr, C_sin(C_flonum_magnitude(x)))
 #define C_a_i_flonum_cos(ptr, c, x)     C_flonum(ptr, C_cos(C_flonum_magnitude(x)))

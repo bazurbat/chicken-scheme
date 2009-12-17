@@ -406,9 +406,9 @@
 	     (gen (first params)))
 
 	    ((##core#unboxed_set!)
-	     (gen #t (first params) #\=)
+	     (gen "((" (first params) #\=)
 	     (expr (first subs) i) 
-	     (gen #\;) )
+	     (gen "),C_SCHEME_UNDEFINED)"))
 
 	    ((##core#inline_unboxed)	;XXX is this needed?
 	     (gen (first params) "(")
@@ -727,7 +727,7 @@
 
     (define (utype t)
       (case t
-	((fix) "long")
+	((fix) "int")
 	((flo) "double")
 	((chr) "char")
 	((ptr) "void *")

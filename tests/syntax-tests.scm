@@ -371,3 +371,16 @@
 ;;; canonicalization of body captures 'begin (reported by Abdulaziz Ghuloum)
 
 (let ((begin (lambda (x y) (bomb)))) 1 2)
+
+
+;;; redefinition of defining forms
+
+(module m0001 (foo bar)
+  (import (prefix scheme s:))
+  (s:define-syntax foo (syntax-rules () ((_ x) (s:list x))))
+  (s:define bar 99))
+
+(module m0002 ()
+  (import scheme m0001 extras)
+  (pp (foo bar)))
+

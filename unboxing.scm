@@ -39,7 +39,8 @@
 
 
 (define (perform-unboxing! node)
-  (let ((stats (make-vector 301 '())))
+  (let ((stats (make-vector 301 '()))
+	(any-rewrites #f))
 
     ;; walk nodes in lambda and mark unboxed variables
     (define (walk-lambda id e body)
@@ -93,6 +94,7 @@
 	(define (rewrite! n alt anodes avals atypes0 rtype dest)
 	  (d "rewrite: ~a -> ~a  (dest: ~a)" (first (node-parameters n)) alt dest)
 	  (let ((s (symbolify alt)))
+	    (set! any-rewrites #t)
 	    (##sys#hash-table-set! 
 	     stats s (add1 (or (##sys#hash-table-ref stats s) 0))))
 	  (copy-node!
@@ -117,15 +119,17 @@
 				 (make-node
 				  '##core#inline_allocate (list "C_a_i_mpointer" 2) ; hardcoded size
 				  (list (make-node '##core#unboxed_ref (list tmp rtype) '()))))
-				((chr)
+				((chr fix)
 				 (make-node
 				   '##core#inline
 				   (list (if (eq? rtype 'chr) "C_make_character" "C_fix"))
 				   (list (make-node
 					  '##core#unboxed_ref
 					  (list tmp rtype) '()))))
+				((*) (bomb "unboxed type `*' not allowed as result"))
 				(else (bomb "invalid unboxed type" rtype))))))))) 
-		   ((unboxed-value? (car args))
+		   ((or (eq? (car atypes) '*) 
+			(unboxed-value? (car args)))
 		    (loop (cdr args)
 			  (cdr anodes)
 			  (cdr atypes)
@@ -142,6 +146,7 @@
 				      ((fix) "C_unfix")
 				      ((flo) "C_flonum_magnitude")
 				      ((ptr) "C_pointer_address")
+				      ((*) "C_id")
 				      (else (bomb "invalid unboxed type" (car atypes)))))
 			      (list (car anodes)))
 			     (loop (cdr args)
@@ -159,12 +164,13 @@
 	    (straighten-binding! n) ))
 
 	(define (straighten-binding! n)
-	  ;; change `(let ((v (let (b) x2))) x)' into `(let (b) (let ((v x2)) x))'
+	  ;; change `(let ((<v> (let (...) <x2>))) <>x)' into 
+	  ;;        `(let (...) (let ((<v> <x2>)) <x>))'
 	  (let* ((subs (node-subexpressions n))
 		 (bnode (first subs))
 		 (bcl (node-class bnode)))
 	    (when (memq bcl '(let ##core#let_unboxed))
-	      (d "straighten: ~a -> ~a" (node-parameters n) (node-parameters bnode))
+	      (d "straighten binding: ~a -> ~a" (node-parameters n) (node-parameters bnode))
 	      (copy-node!
 	       (make-node
 		bcl
@@ -181,6 +187,35 @@
 	      (straighten-binding! n)
 	      (straighten-binding! (second (node-subexpressions n))))))
 
+	(define (straighten-call! n)
+	  ;; change `(<proc> ... (let (...) <x>) ...)' into
+	  ;;        `(let (...) (<proc> ... <x> ...))'
+	  (let* ((class (node-class n))
+		 (subs (node-subexpressions n))
+		 (params (node-parameters n))
+		 (proc (first subs))
+		 (args (cdr subs)))
+	    (when (any (lambda (n) (memq (node-class n) '(let ##core#let_unboxed)))
+		       args)
+	      (d "straighten call: ~a" (build-expression-tree proc))
+	      (copy-node!
+	       (let loop ((args args) (newargs '()))
+		 (if (null? args)
+		     (straighten-call!
+		      (make-node class params (cons proc (reverse newargs))))
+		     (let* ((arg (first args))
+			    (aclass (node-class arg))
+			    (asubs (node-subexpressions arg)))
+		       (if (memq aclass '(let ##core#let_unboxed))
+			   (make-node
+			    aclass (node-parameters arg)
+			    (list 
+			     (first asubs)
+			     (loop (cdr args) (cons (second asubs) newargs))))
+			   (loop (cdr args) (cons arg newargs))))))
+	       n))
+	    n))
+
 	(define (walk n dest udest pass2?)
 	  (let ((subs (node-subexpressions n))
 		(params (node-parameters n))
@@ -194,8 +229,7 @@
 		##core#inline_ref
 		##core#inline_loc_ref) #f)
 
-	      ((##core#lambda
-		##core#direct_lambda)
+	      ((##core#lambda ##core#direct_lambda)
 	       (decompose-lambda-list
 		(third params)
 		(lambda (vars argc rest)
@@ -209,12 +243,13 @@
 	      ((##core#variable)
 	       (let* ((v (first params))
 		      (a (assq v e)))
-		 (if pass2?
-		     (when (and a (cdr a))
-		       (copy-node!
-			(make-node '##core#unboxed_ref (list (alias v) (cdr a)) '())
-			n))
-		     (unless udest (boxed! v)))
+		 (cond (pass2?
+			(when (and a (cdr a))
+			  (copy-node!
+			   (make-node '##core#unboxed_ref (list (alias v) (cdr a)) '())
+			   n)))
+		       ((not a) #f)	; global
+		       ((not udest) (boxed! v)))
 		 a))
 
 	      ((##core#inline ##core#inline_allocate)
@@ -226,9 +261,10 @@
 			    (any unboxed-value? args))
 			(let ((alt (first rw))
 			      (atypes (second rw))
-			      (rtype (third rw)))
-			  ;; if result or arguments are unboxed, rewrite node to alternative
-			  (when pass2?
+			      (rtype (third rw))
+			      (safe? (fourth rw)))
+			  ;; result or arguments are unboxed - rewrite node to alternative
+			  (when (and (or unsafe safe?) pass2?)
 			    (rewrite! 
 			     n alt subs args atypes rtype 
 			     (and dest (assq dest e))))
@@ -242,7 +278,8 @@
 			       (when (and a (car a) (cdr a))
 				 (unboxed! (car a) (cdr a))))
 			     args)
-			    (when dest (unboxed! dest rtype)))
+			    (when dest
+			      (unboxed! dest rtype)))
 			  (cons #f rtype))))))
 
 	      ((let)
@@ -275,12 +312,7 @@
 			(invalidate val) ) )
 		 #f))
 
-	      ((quote)
-	       (let ((val (first params)))
-		 (cond ((flonum? val) '(#f . flo))
-		       ((fixnum? val) '(#f . fix))
-		       ((char? val) '(#f . chr))
-		       (else #f))))
+	      ((quote) #f)
 
 	      ((if ##core#cond)
 	       (invalidate (walk (first subs) #f #f pass2?))
@@ -298,6 +330,12 @@
 		   ((null? (cddr clauses)) 
 		    (merge r (walk (car clauses) dest udest pass2?))) ) )
 
+	      ((##core#call ##core#direct_call)
+	       (for-each (o invalidate (cut walk <> #f #f pass2?)) subs)
+	       (when pass2?
+		 (straighten-call! n))
+	       #f)
+
 	      (else
 	       (for-each (o invalidate (cut walk <> #f #f pass2?)) subs)
 	       #f))))
@@ -307,7 +345,8 @@
 	(walk body #f #f #t)))
     
     (walk-lambda #f '() node)
-    (when (debugging 'x #;'o "unboxed rewrites:") ;XXX
+    (when (and any-rewrites
+	       (debugging 'x #;'o "unboxed rewrites:")) ;XXX
       (##sys#hash-table-for-each
        (lambda (k v)
 	 (printf "  ~a\t~a~%" k v) )
@@ -317,10 +356,16 @@
   (syntax-rules ()
     ((_ (name atypes rtype alt) ...)
      (begin
-       (register-op 'name 'atypes 'rtype 'alt) ...))))
+       (register-unboxed-op #f 'name 'atypes 'rtype 'alt) ...))))
 
-(define (register-op name atypes rtype alt)
-  (##sys#put! (symbolify name) '##compiler#unboxed-op (list alt atypes rtype)))
+(define-syntax define-safe-unboxed-ops
+  (syntax-rules ()
+    ((_ (name atypes rtype alt) ...)
+     (begin
+       (register-unboxed-op #t 'name 'atypes 'rtype 'alt) ...))))
+
+(define (register-unboxed-op safe? name atypes rtype alt)
+  (##sys#put! (symbolify name) '##compiler#unboxed-op (list alt atypes rtype safe?)))
 
 
 ;; unboxed rewrites
@@ -330,11 +375,24 @@
   (C_a_i_flonum_difference (flo flo) flo "C_ub_i_flonum_difference")
   (C_a_i_flonum_times (flo flo) flo "C_ub_i_flonum_times") 
   (C_a_i_flonum_quotient (flo flo) flo "C_ub_i_flonum_quotient") 
-  ;...
+  (C_a_i_flonum_sin (flo) flo "C_sin")
+  (C_a_i_flonum_cos (flo) flo "C_cos")
+  (C_a_i_flonum_tan (flo) flo "C_tab")
+  (C_a_i_flonum_asin (flo) flo "C_asin")
+  (C_a_i_flonum_acos (flo) flo "C_acos")
+  (C_a_i_flonum_atan (flo) flo "C_atan")
+  (C_a_i_flonum_atan2 (flo flo) flo "C_atan2")
+  (C_a_i_flonum_exp (flo) flo "C_exp")
+  (C_a_i_flonum_expt (flo flo) flo "C_pow")
+  (C_a_i_flonum_log (flo) flo "C_log")
+  (C_a_i_flonum_sqrt (flo) flo "C_sqrt")
+  (C_a_i_flonum_abs (flo) flo "C_fabs")
+  (C_a_i_flonum_truncate (flo) flo "C_trunc")
+  (C_a_i_flonum_ceiling (flo) flo "C_ceil")
+  (C_a_i_flonum_floor (flo) flo "C_floor")
+  (C_a_i_flonum_round (flo) flo "C_round")
+  (C_u_i_f32vector_set (* fix flo) fix "C_ub_i_f32vector_set")
+  (C_u_i_f64vector_set (* fix flo) fix "C_ub_i_f64vector_set")
+  (C_a_i_f32vector_ref (* fix) flo "C_ub_i_f32vector_ref")
+  (C_a_i_f64vector_ref (* fix) flo "C_ub_i_f64vector_ref")
   )
-
-
-;;XXX still broken:
-;
-; - literals that are passed to unboxed operations
-;   (these must be bound via ##core#let_unboxed)

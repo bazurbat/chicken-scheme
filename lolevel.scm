@@ -1,7 +1,7 @@
 ;;;; lolevel.scm - Low-level routines for CHICKEN
 ;
-; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; Copyright (c) 2008, The Chicken Team
+; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -196,6 +196,12 @@ EOF
       ;
       (##sys#check-block from 'move-memory!)
       (##sys#check-block to 'move-memory!)
+      #+(not unsafe)
+      (when (fx< foffset 0)
+	(##sys#error 'move-memory! "negative source offset" foffset))
+      #+(not unsafe)
+      (when (fx< toffset 0)
+	(##sys#error 'move-memory! "negative destination offset" toffset))
       (let move ([from from] [to to])
 	(cond [(##sys#generic-structure? from)
 	       (if (memq (##sys#slot from 0) slot1structs)

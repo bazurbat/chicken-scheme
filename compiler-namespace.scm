@@ -243,6 +243,7 @@
  real-name
  real-name-table
  real-name2
+ register-unboxed-op
  reorganize-recursive-bindings
  require-imports-flag
  rest-parameters-promoted-to-vector

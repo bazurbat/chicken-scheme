@@ -224,7 +224,7 @@
 
 (define compile-options '())
 (define builtin-compile-options
-  (if include-dir (list (conc "-I" (quotewrap include-dir))) '()))
+  (if include-dir (list (conc "-I\"" include-dir "\"")) '()))
 
 (define compile-only-flag "-c")
 (define translation-optimization-options default-translation-optimization-options)
@@ -240,16 +240,15 @@
 (define link-options '())
 (define builtin-link-options
   (cond ((or osx hpux-hppa mingw)
-	 (list (conc "-L" (quotewrap library-dir))))
-        (msvc
-         (list (conc "-LIBPATH:" (quotewrap library-dir))))
+	 (list (conc "-L\"" library-dir "\"")))
 	(else 
 	 (list
-	  (conc "-L" (quotewrap library-dir))
-	  (conc " -Wl,-R" (quotewrap (prefix "" "lib"
-					     (if host-mode
-						 INSTALL_LIB_HOME
-						 TARGET_RUN_LIB_HOME)))) ) ) ) )
+	  (conc "-L\"" library-dir "\"")
+	  (conc " -Wl,-R\"" (prefix "" "lib"
+				    (if host-mode
+					INSTALL_LIB_HOME
+					TARGET_RUN_LIB_HOME))
+		"\"")) ) ) )
 
 (define target-filename #f)
 (define verbose #f)
@@ -915,11 +914,12 @@ EOF
 	s) ) )
 
 (define (quote-option x)
-  (if (string-any (lambda (c)
-		    (or (char-whitespace? c) (memq c +hairy-chars+)) )
-		  x)
-      (cleanup x)
-      x) )
+  (cond ((string-any (cut char=? #\" <>) x) x)
+	((string-any (lambda (c)
+		       (or (char-whitespace? c) (memq c +hairy-chars+)) )
+		     x)
+	 (cleanup x))
+	(else x) ))
 
 (define last-exit-code #f)
 

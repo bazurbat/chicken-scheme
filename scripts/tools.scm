@@ -19,6 +19,7 @@
 
 (define *tty* 
   (and (##sys#tty-port? (current-output-port)) 
+       (not (feature? #:mingw32))
        (not (equal? (getenv "EMACS") "t"))
        (not (equal? (getenv "TERM") "dumb"))))
 
