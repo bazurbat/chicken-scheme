@@ -221,6 +221,7 @@
  perform-inlining!
  perform-lambda-lifting!
  perform-pre-optimization!
+ perform-unboxing!
  posq
  postponed-initforms
  pprint-expressions-to-file
@@ -241,6 +242,7 @@
  real-name
  real-name-table
  real-name2
+ register-unboxed-op
  reorganize-recursive-bindings
  require-imports-flag
  rest-parameters-promoted-to-vector

@@ -50,7 +50,7 @@ LIBCHICKENGUI_SHARED_OBJECTS = $(LIBCHICKENGUI_OBJECTS_1:=$(O))
 LIBCHICKENGUI_STATIC_OBJECTS = $(LIBCHICKENGUI_OBJECTS_1:=-static$(O))
 
 COMPILER_OBJECTS_1 = \
-       chicken batch-driver compiler optimizer compiler-syntax scrutinizer support \
+       chicken batch-driver compiler optimizer compiler-syntax scrutinizer unboxing support \
        c-platform c-backend
 COMPILER_OBJECTS        = $(COMPILER_OBJECTS_1:=$(O))
 COMPILER_STATIC_OBJECTS = $(COMPILER_OBJECTS_1:=-static$(O))
@@ -587,6 +587,10 @@ scrutinizer$(O): scrutinizer.c chicken.h $(CHICKEN_CONFIG_H)
 	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
 	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) $< \
 	  $(C_COMPILER_OUTPUT)
+unboxing$(O): unboxing.c chicken.h $(CHICKEN_CONFIG_H)
+	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
+	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) $< \
+	  $(C_COMPILER_OUTPUT)
 chicken$(O): chicken.c chicken.h $(CHICKEN_CONFIG_H)
 	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
 	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) $< \
@@ -635,6 +639,10 @@ compiler-syntax-static$(O): compiler-syntax.c chicken.h $(CHICKEN_CONFIG_H)
 	  $(C_COMPILER_STATIC_OPTIONS) \
 	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
 scrutinizer-static$(O): scrutinizer.c chicken.h $(CHICKEN_CONFIG_H)
+	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
+	  $(C_COMPILER_STATIC_OPTIONS) \
+	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
+unboxing-static$(O): unboxing.c chicken.h $(CHICKEN_CONFIG_H)
 	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
 	  $(C_COMPILER_STATIC_OPTIONS) \
 	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
@@ -1192,6 +1200,9 @@ compiler-syntax.c: $(SRCDIR)compiler-syntax.scm $(SRCDIR)compiler-namespace.scm 
 scrutinizer.c: $(SRCDIR)scrutinizer.scm $(SRCDIR)compiler-namespace.scm \
 	  $(SRCDIR)private-namespace.scm $(SRCDIR)tweaks.scm
 	$(CHICKEN) $< $(CHICKEN_COMPILER_OPTIONS) -output-file $@ 
+unboxing.c: $(SRCDIR)unboxing.scm $(SRCDIR)compiler-namespace.scm \
+	  $(SRCDIR)private-namespace.scm $(SRCDIR)tweaks.scm
+	$(CHICKEN) $< $(CHICKEN_COMPILER_OPTIONS) -output-file $@ 
 batch-driver.c: $(SRCDIR)batch-driver.scm $(SRCDIR)compiler-namespace.scm \
 	  $(SRCDIR)private-namespace.scm $(SRCDIR)tweaks.scm
 	$(CHICKEN) $< $(CHICKEN_COMPILER_OPTIONS) -output-file $@ 
@@ -1239,7 +1250,7 @@ distfiles: library.c eval.c expand.c chicken-syntax.c \
 	usrfi-18.c usrfi-69.c uposixunix.c uposixwin.c uregex.c \
 	chicken-profile.c chicken-install.c chicken-uninstall.c chicken-status.c chicken-setup.c \
 	csc.c csi.c chicken.c batch-driver.c compiler.c optimizer.c  \
-	compiler-syntax.c scrutinizer.c support.c \
+	compiler-syntax.c scrutinizer.c unboxing.c support.c \
 	c-platform.c c-backend.c chicken-bug.c $(IMPORT_LIBRARIES:=.import.c)
 
 dist: distfiles
@@ -1288,7 +1299,7 @@ spotless: distclean testclean
 	  usrfi-18.c usrfi-69.c uposixunix.c uposixwin.c uregex.c chicken-profile.c chicken-bug.c \
 	  csc.c csi.c chicken-install.c chicken-setup.c chicken-uninstall.c chicken-status.c \
 	  chicken.c batch-driver.c compiler.c optimizer.c compiler-syntax.c \
-	  scrutinizer.c support.c \
+	  scrutinizer.c support.c unboxing.c \
 	  c-platform.c c-backend.c chicken-boot$(EXE) setup-api.c setup-download.c \
 	  $(IMPORT_LIBRARIES:=.import.c)
 

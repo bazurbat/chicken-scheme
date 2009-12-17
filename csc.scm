@@ -1,7 +1,7 @@
 ;;;; csc.scm - Driver program for the CHICKEN compiler - felix -*- Scheme -*-
 ;
-; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; Copyright (c) 2008-2009, The Chicken Team
+; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -131,7 +131,7 @@
     -analyze-only -keep-shadowed-macros -inline-global -ignore-repository
     -no-symbol-escape -no-parentheses-synonyms -r5rs-syntax
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
-    -emit-all-import-libraries -setup-mode
+    -emit-all-import-libraries -setup-mode -unboxing
     -no-procedure-checks-for-usual-bindings))
 
 (define-constant complex-options
@@ -359,6 +359,7 @@ Usage: ~a FILENAME | OPTION ...
     -inline                        enable inlining
     -inline-limit                  set inlining threshold
     -inline-global                 enable cross-module inlining
+    -unboxing                      use unboxed temporaries if possible
     -n -emit-inline-file FILENAME  generate file with globally inlinable
                                     procedures (implies -inline -local)
     -consult-inline-file FILENAME  explicitly load inline file

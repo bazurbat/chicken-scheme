@@ -221,5 +221,8 @@ time ./a.out
 echo "unboxed:"
 $compile fft.scm -O5 -D unboxed
 time ./a.out
+echo "unboxed/unboxing:"
+$compile fft.scm -O5 -D unboxed -unboxing
+time ./a.out
 
 echo "======================================== done."

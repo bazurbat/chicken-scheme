@@ -1,7 +1,7 @@
 ;;; c-backend.scm - C-generating backend for the CHICKEN compiler
 ;
-; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; Copyright (c) 2008-2009, The Chicken Team
+; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -114,6 +114,13 @@
 		      (gen #\;) 
 		      (loop (cdr bs) (add1 i) (sub1 count)) ]
 		     [else (expr (car bs) i)] ) ) )
+
+	    ((##core#let_unboxed)
+	     (let ((name (first params)))
+	       (gen #t name #\=)
+	       (expr (first subs) i)
+	       (gen #\;)
+	       (expr (second subs) i)))
 
 	    ((##core#ref) 
 	     (gen "((C_word*)")
@@ -360,12 +367,12 @@
 	     (gen ");") )
 
 	    ((##core#inline)
-	     (gen "(C_word)" (first params) #\()
+	     (gen (first params) #\()
 	     (expr-args subs i)
 	     (gen #\)) )
 
 	    ((##core#inline_allocate)
-	     (gen "(C_word)" (first params) "(&a," (length subs))
+	     (gen (first params) "(&a," (length subs))
 	     (if (pair? subs)
 		 (begin
 		   (gen #\,)
@@ -395,6 +402,19 @@
 	       (expr (second subs) i) 
 	       (gen "),C_SCHEME_UNDEFINED)") ) )
 
+	    ((##core#unboxed_ref)
+	     (gen (first params)))
+
+	    ((##core#unboxed_set!)
+	     (gen "((" (first params) #\=)
+	     (expr (first subs) i) 
+	     (gen "),C_SCHEME_UNDEFINED)"))
+
+	    ((##core#inline_unboxed)	;XXX is this needed?
+	     (gen (first params) "(")
+	     (expr-args subs i)
+	     (gen #\)))
+
 	    ((##core#switch)
 	     (gen #t "switch(")
 	     (expr (first subs) i)
@@ -419,7 +439,7 @@
 	     (expr (third subs) i)
 	     (gen #\)) )
 
-	    (else (bomb "bad form")) ) ) )
+	    (else (bomb "bad form" (node-class n))) ) ) )
     
       (define (expr-args args i)
 	(pair-for-each
@@ -703,29 +723,38 @@
 	(##sys#copy-bytes s s2 start 0 len)
 	s2) )
 
+    (define (utype t)
+      (case t
+	((fix) "int")
+	((flo) "double")
+	((chr) "char")
+	((ptr) "void *")
+	(else (bomb "invalid unboxed type" t))))
+
     (define (procedures)
       (for-each
        (lambda (ll)
-	 (let* ([n (lambda-literal-argument-count ll)]
-		[id (lambda-literal-id ll)]
-		[rname (real-name id db)]
-		[demand (lambda-literal-allocated ll)]
-		[rest (lambda-literal-rest-argument ll)]
-		[customizable (lambda-literal-customizable ll)]
-		[empty-closure (and customizable (zero? (lambda-literal-closure-size ll)))]
-		[nec (- n (if empty-closure 1 0))]
-		[vlist0 (make-variable-list n "t")]
-		[alist0 (make-argument-list n "t")]
-		[varlist (intersperse (if empty-closure (cdr vlist0) vlist0) #\,)]
-		[arglist (intersperse (if empty-closure (cdr alist0) alist0) #\,)]
-		[external (lambda-literal-external ll)]
-		[looping (lambda-literal-looping ll)]
-		[direct (lambda-literal-direct ll)]
-		[rest-mode (lambda-literal-rest-argument-mode ll)]
-		[temps (lambda-literal-temporaries ll)]
-		[topname (if unit-name
+	 (let* ((n (lambda-literal-argument-count ll))
+		(id (lambda-literal-id ll))
+		(rname (real-name id db))
+		(demand (lambda-literal-allocated ll))
+		(rest (lambda-literal-rest-argument ll))
+		(customizable (lambda-literal-customizable ll))
+		(empty-closure (and customizable (zero? (lambda-literal-closure-size ll))))
+		(nec (- n (if empty-closure 1 0)))
+		(vlist0 (make-variable-list n "t"))
+		(alist0 (make-argument-list n "t"))
+		(varlist (intersperse (if empty-closure (cdr vlist0) vlist0) #\,))
+		(arglist (intersperse (if empty-closure (cdr alist0) alist0) #\,))
+		(external (lambda-literal-external ll))
+		(looping (lambda-literal-looping ll))
+		(direct (lambda-literal-direct ll))
+		(rest-mode (lambda-literal-rest-argument-mode ll))
+		(temps (lambda-literal-temporaries ll))
+		(ubtemps (lambda-literal-unboxed-temporaries ll))
+		(topname (if unit-name
 			     (string-append unit-name "_toplevel")
-			     "toplevel") ] )
+			     "toplevel") ) )
 	   (when empty-closure (debugging 'o "dropping unused closure argument" id))
 	   (gen #t #t)
 	   (gen "/* " (cleanup rname) " */" #t)
@@ -757,10 +786,15 @@
 	   (gen #t "C_word tmp;")
 	   (if rest
 	       (gen #t "C_word t" n #\;) ; To hold rest-list if demand is met
-	       (do ([i n (add1 i)]
-		    [j (+ temps (if looping (sub1 n) 0)) (sub1 j)] )
-		   ((zero? j))
-		 (gen #t "C_word t" i #\;) ) )
+	       (begin
+		 (do ([i n (add1 i)]
+		      [j (+ temps (if looping (sub1 n) 0)) (sub1 j)] )
+		     ((zero? j))
+		   (gen #t "C_word t" i #\;) )
+		 (for-each
+		  (lambda (ubt)
+		    (gen #t (utype (cdr ubt)) #\space (car ubt) #\;))
+		  ubtemps)))
 	   (cond [(eq? 'toplevel id) 
 		  (let ([ldemand (fold (lambda (lit n) (+ n (literal-size lit))) 0 literals)]
 			[llen (length literals)] )
