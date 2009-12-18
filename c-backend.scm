@@ -725,10 +725,11 @@
 
     (define (utype t)
       (case t
-	((fix) "int")
-	((flo) "double")
-	((chr) "char")
-	((ptr) "void *")
+	((fixnum) "int")
+	((flonum) "double")
+	((char) "char")
+	((pointer) "void *")
+	((bool) "int")
 	(else (bomb "invalid unboxed type" t))))
 
     (define (procedures)

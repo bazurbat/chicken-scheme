@@ -1,7 +1,7 @@
 ;;;; library.scm - R5RS library for the CHICKEN compiler
 ;
-; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; Copyright (c) 2008-2009, The Chicken Team
+; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -966,6 +966,11 @@ EOF
   #+(not unsafe)
   (fp-check-flonum x 'fpabs)
   (##core#inline_allocate ("C_a_i_flonum_abs" 4) x))
+
+(define (fpinteger? x)
+  #+(not unsafe)
+  (fp-check-flonum x 'fpinteger?)
+  (##core#inline "C_u_i_fpintegerp" x))
 
 (define * (##core#primitive "C_times"))
 (define - (##core#primitive "C_minus"))

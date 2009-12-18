@@ -1,3 +1,8 @@
+4.2.15
+
+- added `fpinteger?'
+- added unboxing pass to compiler
+
 4.2.14
 
 - `move-memory!' catches negative offsets now (Thanks to Jim Ursetto)

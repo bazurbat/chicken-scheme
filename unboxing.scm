@@ -111,21 +111,25 @@
 			     (list
 			      n2
 			      (case rtype
-				((flo)
+				((flonum)
 				 (make-node
 				  '##core#inline_allocate (list "C_a_i_flonum" 4) ; hardcoded size
 				  (list (make-node '##core#unboxed_ref (list tmp rtype) '()))))
-				((ptr)
+				((pointer)
 				 (make-node
 				  '##core#inline_allocate (list "C_a_i_mpointer" 2) ; hardcoded size
 				  (list (make-node '##core#unboxed_ref (list tmp rtype) '()))))
-				((chr fix)
+				((char fixnum)
 				 (make-node
 				   '##core#inline
-				   (list (if (eq? rtype 'chr) "C_make_character" "C_fix"))
+				   (list (if (eq? rtype 'char) "C_make_character" "C_fix"))
 				   (list (make-node
 					  '##core#unboxed_ref
 					  (list tmp rtype) '()))))
+				((bool)
+				 (make-node
+				  '##core#inline '("C_mk_bool")
+				  (list (make-node '##core#unboxed_ref (list tmp rtype) '()))))
 				((*) (bomb "unboxed type `*' not allowed as result"))
 				(else (bomb "invalid unboxed type" rtype))))))))) 
 		   ((or (eq? (car atypes) '*) 
@@ -142,12 +146,13 @@
 		       (list (make-node
 			      '##core#inline 
 			      (list (case (car atypes)
-				      ((chr) "C_character_code")
-				      ((fix) "C_unfix")
-				      ((flo) "C_flonum_magnitude")
-				      ((ptr) "C_pointer_address")
+				      ((char) "C_character_code")
+				      ((fixnum) "C_unfix")
+				      ((flonum) "C_flonum_magnitude")
+				      ((pointer) "C_pointer_address")
+				      ((bool) "C_truep")
 				      ((*) "C_id")
-				      (else (bomb "invalid unboxed type" (car atypes)))))
+				      (else (bomb "invalid unboxed argument type" (car atypes)))))
 			      (list (car anodes)))
 			     (loop (cdr args)
 				   (cdr anodes)
@@ -327,7 +332,7 @@
 		       (if (eq? r 'none)
 			   (walk (second clauses) dest udest pass2?)
 			   (merge r (walk (second clauses) dest udest pass2?)))))
-		   ((null? (cddr clauses)) 
+		   ((null? (cdr clauses))
 		    (merge r (walk (car clauses) dest udest pass2?))) ) )
 
 	      ((##core#call ##core#direct_call)
@@ -371,28 +376,31 @@
 ;; unboxed rewrites
 
 (define-unboxed-ops 
-  (C_a_i_flonum_plus (flo flo) flo "C_ub_i_flonum_plus")
-  (C_a_i_flonum_difference (flo flo) flo "C_ub_i_flonum_difference")
-  (C_a_i_flonum_times (flo flo) flo "C_ub_i_flonum_times") 
-  (C_a_i_flonum_quotient (flo flo) flo "C_ub_i_flonum_quotient") 
-  (C_a_i_flonum_sin (flo) flo "C_sin")
-  (C_a_i_flonum_cos (flo) flo "C_cos")
-  (C_a_i_flonum_tan (flo) flo "C_tab")
-  (C_a_i_flonum_asin (flo) flo "C_asin")
-  (C_a_i_flonum_acos (flo) flo "C_acos")
-  (C_a_i_flonum_atan (flo) flo "C_atan")
-  (C_a_i_flonum_atan2 (flo flo) flo "C_atan2")
-  (C_a_i_flonum_exp (flo) flo "C_exp")
-  (C_a_i_flonum_expt (flo flo) flo "C_pow")
-  (C_a_i_flonum_log (flo) flo "C_log")
-  (C_a_i_flonum_sqrt (flo) flo "C_sqrt")
-  (C_a_i_flonum_abs (flo) flo "C_fabs")
-  (C_a_i_flonum_truncate (flo) flo "C_trunc")
-  (C_a_i_flonum_ceiling (flo) flo "C_ceil")
-  (C_a_i_flonum_floor (flo) flo "C_floor")
-  (C_a_i_flonum_round (flo) flo "C_round")
-  (C_u_i_f32vector_set (* fix flo) fix "C_ub_i_f32vector_set")
-  (C_u_i_f64vector_set (* fix flo) fix "C_ub_i_f64vector_set")
-  (C_a_i_f32vector_ref (* fix) flo "C_ub_i_f32vector_ref")
-  (C_a_i_f64vector_ref (* fix) flo "C_ub_i_f64vector_ref")
+  (C_a_i_flonum_plus (flonum flonum) flonum "C_ub_i_flonum_plus")
+  (C_a_i_flonum_difference (flonum flonum) flonum "C_ub_i_flonum_difference")
+  (C_a_i_flonum_times (flonum flonum) flonum "C_ub_i_flonum_times") 
+  (C_a_i_flonum_quotient (flonum flonum) flonum "C_ub_i_flonum_quotient") 
+  (C_a_i_flonum_sin (flonum) flonum "C_sin")
+  (C_a_i_flonum_cos (flonum) flonum "C_cos")
+  (C_a_i_flonum_tan (flonum) flonum "C_tab")
+  (C_a_i_flonum_asin (flonum) flonum "C_asin")
+  (C_a_i_flonum_acos (flonum) flonum "C_acos")
+  (C_a_i_flonum_atan (flonum) flonum "C_atan")
+  (C_a_i_flonum_atan2 (flonum flonum) flonum "C_atan2")
+  (C_a_i_flonum_exp (flonum) flonum "C_exp")
+  (C_a_i_flonum_expt (flonum flonum) flonum "C_pow")
+  (C_a_i_flonum_log (flonum) flonum "C_log")
+  (C_a_i_flonum_sqrt (flonum) flonum "C_sqrt")
+  (C_a_i_flonum_abs (flonum) flonum "C_fabs")
+  (C_a_i_flonum_truncate (flonum) flonum "C_trunc")
+  (C_a_i_flonum_ceiling (flonum) flonum "C_ceil")
+  (C_a_i_flonum_floor (flonum) flonum "C_floor")
+  (C_a_i_flonum_round (flonum) flonum "C_round")
+  (C_u_i_f32vector_set (* fixnum flonum) fixnum "C_ub_i_f32vector_set")
+  (C_u_i_f64vector_set (* fixnum flonum) fixnum "C_ub_i_f64vector_set")
+  (C_a_i_f32vector_ref (* fixnum) flonum "C_ub_i_f32vector_ref")
+  (C_a_i_f64vector_ref (* fixnum) flonum "C_ub_i_f64vector_ref")
+  ; fpinteger?
+  ; finite?
+  ; fp= fp> fp< fp>= fp<=
   )

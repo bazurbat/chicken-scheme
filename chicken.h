@@ -887,6 +887,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_round                    round
 # define C_trunc                    trunc
 # define C_fabs                     fabs
+# define C_modf                     modf
 # ifdef __linux__
 extern double round(double);
 extern double trunc(double);
@@ -1766,7 +1767,7 @@ C_inline C_word C_double_to_number(C_word n)
   double m, f = C_flonum_magnitude(n);
 
   if(f <= (double)C_MOST_POSITIVE_FIXNUM
-     && f >= (double)C_MOST_NEGATIVE_FIXNUM && modf(f, &m) == 0.0) 
+     && f >= (double)C_MOST_NEGATIVE_FIXNUM && C_modf(f, &m) == 0.0) 
     return C_fix(f);
   else return n;
 }
@@ -1779,7 +1780,7 @@ C_inline C_word C_fits_in_int_p(C_word x)
   if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
 
   n = C_flonum_magnitude(x);
-  return C_mk_bool(modf(n, &m) == 0.0 && n >= C_WORD_MIN && n <= C_WORD_MAX);
+  return C_mk_bool(C_modf(n, &m) == 0.0 && n >= C_WORD_MIN && n <= C_WORD_MAX);
 }
 
 
@@ -1790,7 +1791,7 @@ C_inline C_word C_fits_in_unsigned_int_p(C_word x)
   if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
 
   n = C_flonum_magnitude(x);
-  return C_mk_bool(modf(n, &m) == 0.0 && n >= 0 && n <= C_UWORD_MAX);
+  return C_mk_bool(C_modf(n, &m) == 0.0 && n >= 0 && n <= C_UWORD_MAX);
 }
 
 
@@ -1993,13 +1994,21 @@ C_inline C_word C_i_rationalp(C_word x)
 }
 
 
+C_inline C_word C_u_i_fpintegerp(C_word x)
+{
+  double dummy;
+
+  return C_mk_bool(C_modf(C_flonum_magnitude(x), &dummy) == 0.0);
+}
+
+
 C_inline C_word C_i_integerp(C_word x)
 {
   double dummy;
 
   return C_mk_bool((x & C_FIXNUM_BIT) || 
 		   ((!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) &&
-		    modf(C_flonum_magnitude(x), &dummy) == 0.0 ) );
+		    C_modf(C_flonum_magnitude(x), &dummy) == 0.0 ) );
 }
 
 

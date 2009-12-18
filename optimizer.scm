@@ -812,23 +812,17 @@
 		    (list cont (make-node '##core#inline (list (second classargs)) callargs)) ) ) ) ) )
 
     ;; (<op> ...) -> (##core#inline <iop> ...)
-    ;; (<op> <rest-vector>) -> (##core#inline <iopv> <rest-vector>)
-    ((2) ; classargs = (<argc> <iop> <safe> <iopv>)
+    ((2) ; classargs = (<argc> <iop> <safe>)
      (and inline-substitutions-enabled
 	  (= (length callargs) (first classargs))
 	  (intrinsic? name)
 	  (or (third classargs) unsafe)
-	  (let ([arg1 (first callargs)]
-		[iopv (fourth classargs)] )
+	  (let ((arg1 (first callargs)))
 	    (make-node
 	     '##core#call '(#t)
 	     (list 
 	      cont
-	      (cond [(and iopv
-			  (eq? '##core#variable (node-class arg1))
-			  (eq? 'vector (get db (first (node-parameters arg1)) 'rest-parameter)) )
-		     (make-node '##core#inline (list iopv) callargs) ]
-		    [else (make-node '##core#inline (list (second classargs)) callargs)] ) ) ) ) ) )
+	      (make-node '##core#inline (list (second classargs)) callargs) ) ) ) ) )
 
     ;; (<op>) -> <var>
     ((3) ; classargs = (<var>)
