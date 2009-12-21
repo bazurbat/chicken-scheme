@@ -1,3 +1,7 @@
+4.2.15
+
+- fixes in types.db by Jim Ursetto
+
 4.2.14
 
 - `move-memory!' catches negative offsets now (Thanks to Jim Ursetto)
