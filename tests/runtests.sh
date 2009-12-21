@@ -212,6 +212,7 @@ $compile -e embedded2.scm
 
 echo "======================================== timing compilation ..."
 time $compile compiler.scm -O5 -debug pb -v
+echo "executing ..."
 time ./a.out
 
 echo "======================================== running floating-point benchmark ..."
