@@ -1,6 +1,18 @@
 ;;;; compiler-tests.scm
 
 
+;; test dropping of previous toplevel assignments
+
+(define (foo) (define (bar) 1) (bar 2))	; will trigger error later
+(define bar 1)
+(define (baz) 2)
+(define (foo) 'ok)
+
+(assert (eq? 'ok (foo)))
+
+
+;; test hiding of unexported toplevel variables
+
 (module foo (bar)
   (import scheme chicken)
   (declare (hide bar))

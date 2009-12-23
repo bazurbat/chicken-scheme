@@ -39,11 +39,17 @@
 ;;; Scan toplevel expressions for assignments:
 
 (define (scan-toplevel-assignments node)
-  (let ([safe '()]
-	[unsafe '()] )
+  (let ((safe '())
+	(unsafe '()) 
+	(dropped '())
+	(previous '()))
 
     (define (mark v)
-      (if (not (memq v unsafe)) (set! safe (cons v safe))) )
+      (unless (memq v unsafe)
+	(set! safe (cons v safe))) )
+
+    (define (remember v x)
+      (set! previous (alist-update! v x previous)))
 
     (debugging 'p "scanning toplevel assignments...")
     (call-with-current-continuation
@@ -59,8 +65,8 @@
 
 	     [(##core#variable)
 	      (let ([var (first params)])
-		(if (and (not (memq var e)) (not (memq var safe)))
-		    (set! unsafe (cons var unsafe)) ) ) ]
+		(when (and (not (memq var e)) (not (memq var safe)))
+		  (set! unsafe (cons var unsafe)) ) ) ]
 
 	     [(if ##core#cond ##core#switch)
 	      (scan (first subs) e)
@@ -70,19 +76,31 @@
 	      (scan (first subs) e)
 	      (scan (second subs) (append params e)) ]
 
-	     [(lambda ##core#callunit) #f]
+	     [(lambda ##core#lambda ##core#callunit) #f]
 
 	     [(##core#call) (return #f)]
 
 	     [(set!)
 	      (let ([var (first params)])
-		(if (not (memq var e)) (mark var))
-		(scan (first subs) e) ) ]
+		(and-let* ((p (alist-ref var previous)))
+		  (copy-node!
+		   (make-node '##core#undefined '() '())
+		   p)
+		  (let ((a (assq var dropped)))
+		    (if a
+			(set-cdr! a (add1 (cdr a)))
+			(set! dropped (alist-cons var 1 dropped)))))
+		(unless (memq var e) (mark var))
+		(scan (first subs) e)
+		(remember var n) )]
 
 	     [else (scan-each subs e)] ) ) )
 
        (scan node '()) ) )
-    (debugging 'o "safe globals" safe)
+    (when (pair? safe)
+      (debugging 'o "safe globals" (delete-duplicates safe eq?)))
+    (when (pair? dropped)
+      (debugging 'x "dropped unused toplevel assignments" dropped))
     (for-each (cut mark-variable <> '##compiler#always-bound) safe)))
 
 
