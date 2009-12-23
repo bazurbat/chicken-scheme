@@ -1744,9 +1744,9 @@
 		     (walk val env localenv here #f) 
 		     (loop (cdr vars) (cdr vals)) ) ) ) ) )
 
-	  ((lambda)
-	   (grow 1)
-	   (decompose-lambda-list
+	  ((lambda)			; why do we have 2 cases for lambda?
+	   (grow 1)			; the reason for this should be tracked down
+	   (decompose-lambda-list	; and this case removed
 	    (first params)
 	    (lambda (vars argc rest)
 	      (for-each 

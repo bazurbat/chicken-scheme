@@ -117,7 +117,11 @@
 
     (define (print-expr mode dbgmode xs)
       (when (print-header mode dbgmode)
-	(for-each pretty-print xs) ) )
+	(for-each 
+	 (lambda (x) 
+	   (pretty-print x)
+	   (newline))
+	 xs) ) )
 
     (define (infohook class data val)
       (let ([data2 ((or ##sys#default-read-info-hook (lambda (a b c) b)) class data val)])

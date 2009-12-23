@@ -299,7 +299,7 @@ for example.
 <macro>(define-compiler-syntax NAME TRANSFORMER)</macro><br>
 <macro>(define-compiler-syntax (NAME VAR ...) BODY ...)</macro>
 
-Defines what is usually called a ''compiler macro'': {{NAME}} should be the
+Defines what is usually called a ''compiler macro'' in Lisp: {{NAME}} should be the
 name of a globally or locally bound procedure. Any direct call to this procedure
 will be transformed before compilation, which allows arbitrary rewritings
 of function calls. 
@@ -312,6 +312,9 @@ In the interpreter this form does nothing and returns an unspecified value.
 
 Compiler-syntax is always local to the current compilation unit and can not be
 exported.
+
+{{define-compiler-syntax}} should only be used at top-level. Local compiler-syntax
+can be defined with {{let-compiler-syntax}}.
 
 <scheme>
 (define-compiler-syntax +
