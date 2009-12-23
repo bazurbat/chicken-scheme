@@ -400,7 +400,30 @@
   (C_u_i_f64vector_set (* fixnum flonum) fixnum "C_ub_i_f64vector_set")
   (C_a_i_f32vector_ref (* fixnum) flonum "C_ub_i_f32vector_ref")
   (C_a_i_f64vector_ref (* fixnum) flonum "C_ub_i_f64vector_ref")
-  ; fpinteger?
-  ; finite?
-  ; fp= fp> fp< fp>= fp<=
+  (C_u_i_fpintegerp (flonum) bool "C_ub_i_fpintegerp")
+  (C_flonum_equalp (flonum flonum) bool "C_ub_i_flonum_equalp")
+  (C_flonum_greaterp (flonum flonum) bool "C_ub_i_flonum_greaterp")
+  (C_flonum_lessp (flonum flonum) bool "C_ub_i_flonum_lessp")
+  (C_flonum_greater_or_equal_p (flonum flonum) bool "C_ub_i_flonum_greater_or_equal_p")
+  (C_flonum_less_or_equal_p (flonum flonum) bool "C_ub_i_flonum_less_or_equal_p")
+  ; address->pointer
+  ; pointer->address
+  ; pointer+
+  ; pointer=?
+  ; pointer-u8-ref
+  ; pointer-s8-ref
+  ; pointer-u16-ref
+  ; pointer-s16-ref
+  ; pointer-u32-ref
+  ; pointer-s32-ref
+  ; pointer-f32-ref
+  ; pointer-f64-ref
+  ; pointer-u8-set!
+  ; pointer-s8-set!
+  ; pointer-u16-set!
+  ; pointer-s16-set!
+  ; pointer-u32-set!
+  ; pointer-s32-set!
+  ; pointer-f32-set!
+  ; pointer-f64-set!
   )

@@ -146,7 +146,7 @@
     f32vector-ref f64vector-ref f32vector-set! f64vector-set!
     u8vector-set! s8vector-set! u16vector-set! s16vector-set! u32vector-set! s32vector-set!
     locative-ref locative-set! locative->object locative? global-ref
-    null-pointer? pointer->object flonum? finite?
+    null-pointer? pointer->object flonum? finite? address->pointer pointer->address
     printf sprintf format) )
 
 (define internal-bindings
@@ -180,6 +180,7 @@
     u8vector->blob/shared s8vector->blob/shared u16vector->blob/shared s16vector->blob/shared u32vector->blob/shared
     f32vector->blob/shared f64vector->blob/shared
     s32vector->blob/shared read-string read-string! o
+    address->pointer pointer->address
     ##sys#make-structure print* ##sys#make-vector ##sys#apply ##sys#setislot ##sys#block-ref
     ##sys#byte ##sys#setbyte 
     u8vector-length s8vector-length u16vector-length s16vector-length u32vector-length s32vector-length
@@ -571,6 +572,7 @@
 (rewrite 'finite? 2 1 "C_i_finitep" #f)
 (rewrite 'fpinteger? 2 1 "C_u_i_fpintegerp" #f)
 (rewrite '##sys#pointer? 2 1 "C_anypointerp" #t)
+(rewrite 'pointer? 2 1 "C_i_safe_pointerp" #t)
 (rewrite '##sys#generic-structure? 2 1 "C_structurep" #t)
 (rewrite 'exact? 2 1 "C_fixnump" #f)
 (rewrite 'exact? 2 1 "C_i_exactp" #t)
@@ -604,15 +606,15 @@
 (rewrite 'fx< 2 2 "C_fixnum_lessp" #t)
 (rewrite 'fx>= 2 2 "C_fixnum_greater_or_equal_p" #t)
 (rewrite 'fx<= 2 2 "C_fixnum_less_or_equal_p" #t)
-(rewrite 'fp= 2 2 "C_flonum_equalp" #t)
-(rewrite 'fp> 2 2 "C_flonum_greaterp" #t)
-(rewrite 'fp< 2 2 "C_flonum_lessp" #t)
-(rewrite 'fp>= 2 2 "C_flonum_greater_or_equal_p" #t)
-(rewrite 'fp<= 2 2 "C_flonum_less_or_equal_p" #t)
-(rewrite 'fxmax 2 2 "C_i_fixnum_max" #t)
-(rewrite 'fxmin 2 2 "C_i_fixnum_min" #t)
-(rewrite 'fpmax 2 2 "C_i_flonum_max" #t)
-(rewrite 'fpmin 2 2 "C_i_flonum_min" #t)
+(rewrite 'fp= 2 2 "C_flonum_equalp" #f)
+(rewrite 'fp> 2 2 "C_flonum_greaterp" #f)
+(rewrite 'fp< 2 2 "C_flonum_lessp" #f)
+(rewrite 'fp>= 2 2 "C_flonum_greater_or_equal_p" #f)
+(rewrite 'fp<= 2 2 "C_flonum_less_or_equal_p" #f)
+(rewrite 'fxmax 2 2 "C_i_fixnum_max" #f)
+(rewrite 'fxmin 2 2 "C_i_fixnum_min" #f)
+(rewrite 'fpmax 2 2 "C_i_flonum_max" #f)
+(rewrite 'fpmin 2 2 "C_i_flonum_min" #f)
 (rewrite 'char-numeric? 2 1 "C_u_i_char_numericp" #t)
 (rewrite 'char-alphabetic? 2 1 "C_u_i_char_alphabeticp" #t)
 (rewrite 'char-whitespace? 2 1 "C_u_i_char_whitespacep" #t)
@@ -814,6 +816,8 @@
 (rewrite '##sys#vector 16 #f "C_a_i_vector" #t #t)
 (rewrite '##sys#make-structure 16 #f "C_a_i_record" #t #t)
 (rewrite 'string 16 #f "C_a_i_string" #t #t) ; the last #t is actually too much, but we don't care
+(rewrite 'address->pointer 16 1 "C_a_i_address_to_pointer" #f 2)
+(rewrite 'pointer->address 16 1 "C_a_i_pointer_to_address" #f words-per-flonum)
 
 (rewrite
  '##sys#setslot 8

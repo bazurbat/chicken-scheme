@@ -1060,6 +1060,9 @@ extern double trunc(double);
 #define C_a_i_flonum_quotient(ptr, c, n1, n2) C_flonum(ptr, C_flonum_magnitude(n1) / C_flonum_magnitude(n2))
 #define C_a_i_flonum_negate(ptr, c, n)  C_flonum(ptr, -C_flonum_magnitude(n))
 
+#define C_a_i_address_to_pointer(ptr, c, addr)  C_mpointer(ptr, (void *)C_num_to_unsigned_int(addr))
+#define C_a_i_pointer_to_address(ptr, c, pptr)  C_unsigned_int_to_num(ptr, (unsigned int)pptr)
+
 #define C_display_fixnum(p, n)          (C_fprintf(C_port_file(p), C_text("%d"), C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_display_char(p, c)            (C_fputc(C_character_code(c), C_port_file(p)), C_SCHEME_UNDEFINED)
 #define C_display_string(p, s)          (C_fwrite(((C_SCHEME_BLOCK *)(s))->data, sizeof(C_char), C_header_size(s), \
@@ -1290,6 +1293,12 @@ extern double trunc(double);
 #define C_ub_i_flonum_difference(x, y)  ((x) - (y))
 #define C_ub_i_flonum_times(x, y)       ((x) * (y))
 #define C_ub_i_flonum_quotient(x, y)    ((x) / (y))
+
+#define C_ub_i_flonum_equalp(n1, n2)    ((n1) == (n2))
+#define C_ub_i_flonum_greaterp(n1, n2)  ((n1) > (n2))
+#define C_ub_i_flonum_lessp(n1, n2)     ((n1) < (n2))
+#define C_ub_i_flonum_greater_or_equal_p(n1, n2)  ((n1) >= (n2))
+#define C_ub_i_flonum_less_or_equal_p(n1, n2)  ((n1) <= (n2))
 
 #define C_end_of_main
 
@@ -2002,6 +2011,14 @@ C_inline C_word C_u_i_fpintegerp(C_word x)
 }
 
 
+C_inline int C_ub_i_fpintegerp(double x)
+{
+  double dummy;
+
+  return C_modf(x, &dummy) == 0.0;
+}
+
+
 C_inline C_word C_i_integerp(C_word x)
 {
   double dummy;
@@ -2054,6 +2071,21 @@ C_inline C_word C_i_flonum_max(C_word x, C_word y)
     yf = C_flonum_magnitude(y);
 
   return xf > yf ? x : y;
+}
+
+
+C_inline C_word C_i_safe_pointerp(C_word x)
+{
+  if(C_immediatep(x)) return C_SCHEME_FALSE;
+
+  switch(C_block_header(x)) {
+  case C_POINTER_TAG:
+  case C_SWIG_POINTER_TAG:
+  case C_TAGGED_POINTER_TAG:
+    return C_SCHEME_TRUE;
+  }
+
+  return C_SCHEME_FALSE;
 }
 
 
