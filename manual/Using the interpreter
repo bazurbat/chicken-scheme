@@ -57,7 +57,7 @@ The options recognized by the interpreter are:
 
 ; -ss PATHNAME : The same as {{-s PATHNAME}} but invokes the procedure {{main}} with the value of {{(command-line-arguments)}} as its single argument. If the main procedure returns an integer result, then the interpreter is terminated, returning the integer as the status code back to the invoking process. Any other result terminates the interpreter with a zero exit status.
 
-; -setup-mode : When locating extension, search the current directory first. By default, extensions are located first in the ''extension repository'', where {{chicken-install}} stores compiled extensions and their associated metadata.
+; -setup-mode : When locating extensions, search the current directory first. By default, extensions are located first in the ''extension repository'', where {{chicken-install}} stores compiled extensions and their associated metadata.
 
 ; -R  -require-extension NAME : Equivalent to evaluating {{(require-extension NAME)}}.
 
