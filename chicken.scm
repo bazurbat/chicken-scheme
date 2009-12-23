@@ -93,13 +93,14 @@
 		      (cons* 'optimize-leaf-routines 'inline 'local options) ) ]
 		   [(4)
 		    (set! options
-		      (cons* 'optimize-leaf-routines 'inline 'local 'unsafe options) ) ]
+		      (cons* 'optimize-leaf-routines 'inline 'local 'unboxing 'unsafe
+			     options) ) ]
 		   [else
 		    (when (>= level 5)
 		      (set! options 
 			(cons* 'disable-interrupts 'no-trace 'unsafe 'block
 			       'optimize-leaf-routines 'lambda-lift 'no-lambda-info
-			       'inline
+			       'inline 'unboxing
 			       options) ) ) ] )
 		 (loop (cdr rest)) ) ]
 	      [(eq? 'debug-level o)
