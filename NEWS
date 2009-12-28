@@ -2,6 +2,7 @@
 
 - added `fpinteger?'
 - added unboxing pass to compiler
+- fixes in types.db by Jim Ursetto
 
 4.2.14
 

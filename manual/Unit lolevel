@@ -434,6 +434,14 @@ These procedures operate with what are known as {{vector-like objects}}. A
 Note that strings and blobs are not considered vector-like.
 
 
+==== vector-like?
+
+<procedure>(vector-like? X)</procedure>
+
+Returns {{#t}} when {{X}} is a vector-like object, returns {{#f}}
+otherwise.
+
+
 ==== block-ref
 
 <procedure>(block-ref VECTOR* INDEX)</procedure>

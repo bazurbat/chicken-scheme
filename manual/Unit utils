@@ -51,7 +51,7 @@ using backslash ({{\}}).
 
 ==== compile-file
 
- [procedure] (compile-file FILENAME #!key options output-file load)
+<procedure>(compile-file FILENAME #!key options output-file load)</procedure>
 
 Compiles the Scheme source file {{FILENAME}} into a dynamically
 loadable library by invoking the {{csc}} compiler driver. If the
@@ -75,7 +75,7 @@ Notes:
 
 ==== compile-file-options
 
- [parameter] compile-file-options
+<parameter>compile-file-options</parameter>
 
 A parameter that holds a list of default options that should be given
 to {{csc}} after invocation of the {{compile-file}} procedure. 
@@ -85,7 +85,7 @@ The initial default options are {{-scrutinize -O2 -d2}}.
 
 ==== qs
 
- [procedure] (qs STRING [PLATFORM])
+<procedure>(qs STRING [PLATFORM])</procedure>
 
 Escapes {{STRING}} suitably for passing to a shell command on {{PLATFORM}}.
 {{PLATFORM}} defaults to the value of {{(build-platform)}} and indicates in

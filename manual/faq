@@ -432,6 +432,7 @@ The following extended bindings are handled specially:
 {{fx-}} {{fx*}} {{fx/}} {{fxmod}}
 {{fx=}} {{fx>}} {{fx>=}} {{fixnum?}} {{fxneg}} {{fxmax}} {{fxmin}}
 {{fxand}} {{fxior}} {{fxxor}} {{fxnot}} {{fxshl}} {{fxshr}}
+{{finite?}} {{fp=}} {{fp>}} {{fp<}} {{fp>=}} {{fp<=}} {{fpinteger?}}
 {{flonum?}} {{fp+}}
 {{fp-}} {{fp*}} {{fp/}} {{atom?}}
 {{fp=}} {{fp>}} {{fp>=}} {{fpneg}} {{fpmax}} {{fpmin}}

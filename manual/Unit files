@@ -27,8 +27,8 @@ For any component that is not contained in {{PATHNAME}}, {{#f}} is returned.
 ==== make-pathname
 ==== make-absolute-pathname
 
-<procedure>(make-pathname DIRECTORY FILENAME [EXTENSION])</procedure><br>
-<procedure>(make-absolute-pathname DIRECTORY FILENAME [EXTENSION])</procedure>
+<procedure>(make-pathname DIRECTORY FILENAME [EXTENSION [SEPARATOR]])</procedure><br>
+<procedure>(make-absolute-pathname DIRECTORY FILENAME [EXTENSION [SEPARATOR]])</procedure>
 
 Returns a string that names the file with the
 components {{DIRECTORY, FILENAME}} and (optionally)

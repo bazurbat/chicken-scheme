@@ -50,7 +50,7 @@ See also: {{set-extension-specifier!}}
 <macro>(require-extension ID ...)</macro>
 
 This is equivalent to {{(require-library ID ...)}} but performs an implicit
-{{import}}.
+{{import}}, if necessary.
 This implementation of {{require-extension}} is compliant with [[http://srfi.schemers.org/srfi-55/srfi-55.html|SRFI-55]]
 (see the [[http://srfi.schemers.org/srfi-55/srfi-55.html|SRFI-55]] document for more information).
 
@@ -288,6 +288,7 @@ definitions should only appear at toplevel.
 
 <macro>(define-for-syntax (NAME VAR ...) EXP1 ...)</macro><br>
 <macro>(define-for-syntax (NAME VAR1 ... VARn . VARn+1) EXP1 ...)</macro><br>
+<macro>(define-for-syntax NAME [VALUE])</macro>
 
 Defines the toplevel variable {{NAME}} at macro-expansion time. This can
 be helpful when you want to define support procedures for use in macro-transformers,
