@@ -41,66 +41,68 @@
 (define (scan-toplevel-assignments node)
   (let ((safe '())
 	(unsafe '()) 
-	(dropped '())
+	(escaped #f)
 	(previous '()))
 
     (define (mark v)
-      (unless (memq v unsafe)
+      (when (and (not escaped)
+		 (not (memq v unsafe)))
 	(set! safe (cons v safe))) )
 
     (define (remember v x)
       (set! previous (alist-update! v x previous)))
 
+    (define (touch)
+      (set! escaped #t)
+      (set! previous '()))
+
+    (define (scan-each ns e)
+      (for-each (lambda (n) (scan n e)) ns) )
+
+    (define (scan n e)
+      (let ([params (node-parameters n)]
+	    [subs (node-subexpressions n)] )
+	(case (node-class n)
+
+	  [(##core#variable)
+	   (let ((var (first params)))
+	     (when (and (not (memq var e)) 
+			(not (memq var safe)))
+	       (set! unsafe (cons var unsafe)) ) ) ]
+
+	  [(if ##core#cond ##core#switch)
+	   (scan (first subs) e)
+	   (touch)
+	   (scan-each (cdr subs) e)]
+
+	  [(let)
+	   (scan (first subs) e)
+	   (scan (second subs) (append params e)) ]
+
+	  [(lambda ##core#lambda ##core#callunit) #f]
+
+	  [(##core#call) (touch)]
+
+	  [(set!)
+	   (let ([var (first params)])
+	     (and-let* ((p (alist-ref var previous)))
+	       (compiler-warning 
+		'var
+		"dropping assignment of unused value to global variable `~s'"
+		var)
+	       (copy-node!
+		(make-node '##core#undefined '() '())
+		p))
+	     (scan (first subs) e)
+	     (unless (memq var e) (mark var))
+	     (remember var n) )]
+
+	  [else (scan-each subs e)] ) ) )
+
     (debugging 'p "scanning toplevel assignments...")
-    (call-with-current-continuation
-     (lambda (return)
-
-       (define (scan-each ns e)
-	 (for-each (lambda (n) (scan n e)) ns) )
-
-       (define (scan n e)
-	 (let ([params (node-parameters n)]
-	       [subs (node-subexpressions n)] )
-	   (case (node-class n)
-
-	     [(##core#variable)
-	      (let ([var (first params)])
-		(when (and (not (memq var e)) (not (memq var safe)))
-		  (set! unsafe (cons var unsafe)) ) ) ]
-
-	     [(if ##core#cond ##core#switch)
-	      (scan (first subs) e)
-	      (return #f) ]
-
-	     [(let)
-	      (scan (first subs) e)
-	      (scan (second subs) (append params e)) ]
-
-	     [(lambda ##core#lambda ##core#callunit) #f]
-
-	     [(##core#call) (return #f)]
-
-	     [(set!)
-	      (let ([var (first params)])
-		(and-let* ((p (alist-ref var previous)))
-		  (copy-node!
-		   (make-node '##core#undefined '() '())
-		   p)
-		  (let ((a (assq var dropped)))
-		    (if a
-			(set-cdr! a (add1 (cdr a)))
-			(set! dropped (alist-cons var 1 dropped)))))
-		(unless (memq var e) (mark var))
-		(scan (first subs) e)
-		(remember var n) )]
-
-	     [else (scan-each subs e)] ) ) )
-
-       (scan node '()) ) )
+    (scan node '())
     (when (pair? safe)
       (debugging 'o "safe globals" (delete-duplicates safe eq?)))
-    (when (pair? dropped)
-      (debugging 'x "dropped unused toplevel assignments" dropped))
     (for-each (cut mark-variable <> '##compiler#always-bound) safe)))
 
 
