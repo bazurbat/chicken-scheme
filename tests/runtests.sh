@@ -218,7 +218,7 @@ time ./a.out
 echo "======================================== running slatex ..."
 $compile slatex.scm -O5
 mkdir -p slatexdir
-rm slatexdir/*
+rm -f slatexdir/*
 time ./a.out
 
 echo "======================================== running floating-point benchmark ..."

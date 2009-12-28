@@ -4,6 +4,7 @@ support.scm
 batch-driver.scm
 c-backend.scm
 c-platform.scm
+compiler-syntax.scm
 chicken.scm
 scrutinizer.scm
 unboxing.scm
