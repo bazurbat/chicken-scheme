@@ -1411,7 +1411,6 @@ C_fctexport C_word C_fcall C_restore_callback_continuation(void);
 C_fctexport C_word C_fcall C_restore_callback_continuation2(int level);
 C_fctexport C_word C_fcall C_callback(C_word closure, int argc);
 C_fctexport C_word C_fcall C_callback_wrapper(void *proc, int argc);
-C_fctexport void C_fcall C_callback_adjust_stack_limits(C_word *base); /* DEPRECATED */
 C_fctexport void C_fcall C_callback_adjust_stack(C_word *base, int size);
 C_fctexport void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *stack, C_word *symbols);
 C_fctexport void C_fcall C_toplevel_entry(C_char *name) C_regparm;
@@ -1472,7 +1471,6 @@ C_fctexport C_word C_h_structure(int n, ...);
 C_fctexport C_word C_fcall C_mutate(C_word *slot, C_word val) C_regparm;
 C_fctexport void C_fcall C_reclaim(void *trampoline, void *proc) C_regparm C_noret;
 C_fctexport void C_save_and_reclaim(void *trampoline, void *proc, int n, ...) C_noret;
-C_fctexport void C_fcall C_rereclaim(long size) C_regparm; /* deprecated */
 C_fctexport void C_fcall C_rereclaim2(C_uword size, int double_plus) C_regparm;
 C_fctexport C_word C_fcall C_retrieve(C_word sym) C_regparm;
 C_fctexport C_word C_fcall C_retrieve2(C_word val, char *name) C_regparm;

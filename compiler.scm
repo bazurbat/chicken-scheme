@@ -1379,8 +1379,7 @@
 	       [(interrupts-enabled) (set! insert-timer-checks #f)]
 	       [(safe) (set! unsafe #t)]
 	       [else (compiler-warning 'syntax "illegal declaration specifier `~s'" id)]))]))
-       ((compile-syntax 
-	 run-time-macros)		; DEPRECATED
+       ((compile-syntax )
 	(set! ##sys#enable-runtime-macros #t))
        ((block-global hide) 
 	(let ([syms (stripa (cdr spec))])

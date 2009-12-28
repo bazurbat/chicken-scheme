@@ -577,15 +577,6 @@ EOF
 		       (t-options "-verbose") 
 		       (set! verbose 2)) 
 		      (else (set! verbose #t))) ]
-	       [(-v2 -verbose)		; DEPRECATED
-		(set! verbose #t)
-		(t-options "-verbose") ]
-	       [(-v3)			; DEPRECATED
-		(set! verbose #t)
-		(t-options "-verbose")
-                (if (not msvc)
-                    (set! compile-options (cons* "-v" "-Q" compile-options)))
-		(set! link-options (cons (if msvc "-VERBOSE" "-v") link-options)) ]
 	       [(-w -no-warnings)
 		(set! compile-options (cons "-w" compile-options))
 		(t-options "-no-warnings") ]
