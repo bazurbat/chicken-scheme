@@ -1,5 +1,7 @@
 4.3.1
 
+- added `fpinteger?'
+- added unboxing pass to compiler
 - fixes in types.db by Jim Ursetto
 - `move-memory!' catches negative offsets now (Thanks to Jim Ursetto)
 - deprecated `define-compiled-syntax'

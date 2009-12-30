@@ -41,3 +41,6 @@
 (assert (= -43.0 (fpfloor -42.5)))
 (assert (= 43.0 (fpceiling 42.5)))
 (assert (= -42.0 (fpceiling -42.2)))
+(assert (not (fpinteger? 2.3)))
+(assert (fpinteger? 1.0))
+

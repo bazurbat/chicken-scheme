@@ -89,11 +89,11 @@ Returns {{#t}} if {{X}} is a fixnum, or {{#f}} otherwise.
 
 ==== Arithmetic floating-point operations
 
-arguments (except {{flonum?}}, which returns {{#f}}). In unsafe mode,
-these procedures do not check their arguments. A non-flonum argument
-in unsafe mode can crash the system.
+In safe mode, these procedures throw a type error when given non-float
+arguments. In unsafe mode, these procedures do not check their
+arguments. A non-flonum argument in unsafe mode can crash the
+application.
 
-<procedure>(flonum? X)</procedure>
 <procedure>(fp+ X Y)</procedure>
 <procedure>(fp- X Y)</procedure>
 <procedure>(fp* X Y)</procedure>
@@ -121,6 +121,8 @@ in unsafe mode can crash the system.
 <procedure>(fpexp X)</procedure>
 <procedure>(fpexpt X Y)</procedure>
 <procedure>(fpsqrt X)</procedure>
+<procedure>(fpabs X)</procedure>
+<procedure>(fpinteger? X)</procedure>
 
 Note: {{fpround}} implements POSIX, which is different from R5RS.
 

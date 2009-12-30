@@ -1757,29 +1757,6 @@ void C_fcall C_callback_adjust_stack(C_word *a, int size)
 }
 
 
-void C_fcall C_callback_adjust_stack_limits(C_word *a) /* DEPRECATED */
-{
-  if(!chicken_is_running && !C_in_stackp((C_word)a)) {
-    if(debug_mode)
-      C_printf(C_text("[debug] callback invoked in lower stack region - adjusting limits:\n"
-		      "[debug]   current:  \t%p\n"
-		      "[debug]   previous: \t%p (bottom) - %p (limit)\n"),
-	       a, stack_bottom, C_stack_limit);
-
-#if C_STACK_GROWS_DOWNWARD
-    C_stack_limit = (C_word *)((C_byte *)a - stack_size);
-#else
-    C_stack_limit = (C_word *)((C_byte *)a + stack_size);
-#endif
-    stack_bottom = a;
-
-    if(debug_mode)
-      C_printf(C_text("[debug]   new:      \t%p (bottom) - %p (limit)\n"),
-	       stack_bottom, C_stack_limit);
-  }
-}
-
-
 C_word C_fcall C_callback_wrapper(void *proc, int argc)
 {
   C_word
@@ -3061,12 +3038,6 @@ C_regparm void C_fcall mark(C_word *x)
 
 
 /* Do a major GC into a freshly allocated heap: */
-
-C_regparm void C_fcall C_rereclaim(long size) 
-{
-  C_rereclaim2(size < 0 ? -size : size, size < 0);
-}
-
 
 C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
 {

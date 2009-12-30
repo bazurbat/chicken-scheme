@@ -125,9 +125,9 @@ to the same address, or {{#f}} otherwise.
 Returns the address, to which the pointer-like object {{POINTER*}} points.
 
 
-==== pointer-offset
+==== pointer+
 
-<procedure>(pointer-offset POINTER* N)</procedure>
+<procedure>(pointer+ POINTER* N)</procedure>
 
 Returns a new foreign pointer object representing the pointer-like object
 {{POINTER*}} address value increased by the byte-offset {{N}}.

@@ -26,6 +26,7 @@ lolevel.c
 optimizer.c
 compiler-syntax.c
 scrutinizer.c
+unboxing.c
 regex.c
 posixunix.c
 posixwin.c
@@ -138,6 +139,7 @@ lolevel.scm
 optimizer.scm
 compiler-syntax.scm
 scrutinizer.scm
+unboxing.scm
 regex.scm
 irregex.scm
 posixunix.scm
@@ -203,6 +205,9 @@ tests/feeley-dynwind.scm
 tests/compiler-syntax-tests.scm
 tests/compiler.scm
 tests/fft.scm
+tests/slatex.scm
+tests/test.tex
+tests/slatex.sty
 tweaks.scm
 utils.scm
 apply-hack.x86.S
