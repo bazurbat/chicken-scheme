@@ -1,24 +1,14 @@
-4.3.1
+4.3.2
 
 - changed binary version from "4" to "5", because the new runtime
   libraries are not binary-compatible with previous releases; this
   means all eggs have to be reinstalled and existing programs be
   recompiled!
-- added `fpinteger?' and `fpabs'
 - added unboxing pass to compiler which results in part dramatical
   performance improvements for unsafe floating-point-intensive code;
   unboxing is enabled on optimization levels 4 and 5
 - removed rest-argument-vector optimization as it could conflict
   with inlining (thanks to Sven Hartrumpf)
-- fixes in types.db by Jim Ursetto
-- `move-memory!' catches negative offsets now (Thanks to Jim Ursetto)
-- deprecated `define-compiled-syntax'
-- added new floating-point primitives `fpsin`, `fpcos', `fptan',
-  `fpasin', `fpacos', `fpatan', `fpatan2', `fpexp', `fplog', 
-  `fpexpt' and `fpsqrt'
-- heavy cleanup of floating math functions which gives much better performance
-- calling `assert' with a single argument shows the tested expression
-  on failure
 - added `slatex' to tests
 - renamed `pointer-offset' to `pointer+' and deprecated `pointer-offset'
 - toplevel assignments that have no other side-effects can be eliminated
@@ -32,6 +22,19 @@
 - removed deprecated `stat-...' functions in posix library unit
 - removed deprecated `for-each-line' and `for-each-argv-line' procedures
   in utils library unit
+
+4.3.1
+
+- added `fpinteger?' and `fpabs'
+- fixes in types.db by Jim Ursetto
+- `move-memory!' catches negative offsets now (Thanks to Jim Ursetto)
+- deprecated `define-compiled-syntax'
+- added new floating-point primitives `fpsin`, `fpcos', `fptan',
+  `fpasin', `fpacos', `fpatan', `fpatan2', `fpexp', `fplog', 
+  `fpexpt' and `fpsqrt'
+- heavy cleanup of floating math functions which gives much better performance
+- calling `assert' with a single argument shows the tested expression
+  on failure
 
 4.3.0
 
