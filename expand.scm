@@ -1,4 +1,4 @@
-;;;; expand.scm
+;;;; expand.scm - The HI/LO expander
 ;
 ; Copyright (c) 2008-2009, The Chicken Team
 ; All rights reserved.
@@ -709,7 +709,12 @@
 (define ((##sys#er-transformer handler) form se dse)
   (let ((renv '()))			; keep rename-environment for this expansion
     (define (rename sym)
-      (cond ((assq sym renv) => 
+      (cond ((pair? sym)
+	     (cons (rename (car sym)) (rename (cdr sym))))
+	    ((vector? sym)
+	     (list->vector (rename (vector->list sym))))
+	    ((not (symbol? sym)) sym)
+	    ((assq sym renv) => 
 	     (lambda (a) 
 	       (dd `(RENAME/RENV: ,sym --> ,(cdr a)))
 	       (cdr a)))
@@ -730,26 +735,37 @@
 	       a))))
     (define (compare s1 s2)
       (let ((result
-	     (if (and (symbol? s1) (symbol? s2))
-		 (let ((ss1 (or (##sys#get s1 '##core#macro-alias)
-				(lookup2 1 s1 dse)
-				s1) )
-		       (ss2 (or (##sys#get s2 '##core#macro-alias)
-				(lookup2 2 s2 dse)
-				s2) ) )
-		   (cond ((symbol? ss1)
-			  (cond ((symbol? ss2) 
-				 (eq? (or (##sys#get ss1 '##core#primitive) ss1)
-				      (or (##sys#get ss2 '##core#primitive) ss2)))
-				((assq ss1 (##sys#macro-environment)) =>
-				 (lambda (a) (eq? (cdr a) ss2)))
-				(else #f) ) )
-			 ((symbol? ss2)
-			  (cond ((assq ss2 (##sys#macro-environment)) =>
-				 (lambda (a) (eq? ss1 (cdr a))))
-				(else #f)))
-			 (else (eq? ss1 ss2))))
-		 (eq? s1 s2))) )
+	     (cond ((pair? s1)
+		    (and (pair? s2)
+			 (compare (car s1) (car s2))
+			 (compare (cdr s1) (cdr s2))))
+		   ((vector? s1)
+		    (and (vector? s2)
+			 (let ((len (vector-length s1)))
+			   (and (fx= len (vector-length s2))
+				(do ((i 0 (fx+ i 1))
+				     (f #t (compare (vector-ref s1 i) (vector-ref s2 i))))
+				    ((or (fx>= i len) (not f)) f))))))
+		   ((and (symbol? s1) (symbol? s2))
+		    (let ((ss1 (or (##sys#get s1 '##core#macro-alias)
+				   (lookup2 1 s1 dse)
+				   s1) )
+			  (ss2 (or (##sys#get s2 '##core#macro-alias)
+				   (lookup2 2 s2 dse)
+				   s2) ) )
+		      (cond ((symbol? ss1)
+			     (cond ((symbol? ss2) 
+				    (eq? (or (##sys#get ss1 '##core#primitive) ss1)
+					 (or (##sys#get ss2 '##core#primitive) ss2)))
+				   ((assq ss1 (##sys#macro-environment)) =>
+				    (lambda (a) (eq? (cdr a) ss2)))
+				   (else #f) ) )
+			    ((symbol? ss2)
+			     (cond ((assq ss2 (##sys#macro-environment)) =>
+				    (lambda (a) (eq? ss1 (cdr a))))
+				   (else #f)))
+			    (else (eq? ss1 ss2)))))
+		   (else (eq? s1 s2))) ) ) 
 	(dd `(COMPARE: ,s1 ,s2 --> ,result)) 
 	result))
     (define (lookup2 n sym dse)

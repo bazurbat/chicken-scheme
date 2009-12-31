@@ -1,4 +1,4 @@
-;;;; mtest.scm - various macro tests
+;;;; syntax-tests.scm - various macro tests
 
 
 (use extras)
@@ -383,4 +383,23 @@
 (module m0002 ()
   (import scheme m0001 extras)
   (pp (foo bar)))
+
+
+;;; renaming of arbitrary structures
+
+(module m1 (s1 s2)
+
+  (import scheme)
+
+  (define-syntax s1 (syntax-rules () ((_ x) (list x))))
+
+  (define-syntax s2
+    (lambda (x r c)
+      (r `(vector (s1 ,(cadr x)))))) )	; without renaming the local version of `s1'
+					; below will be captured 
+
+(import m1)
+
+(let-syntax ((s1 (syntax-rules () ((_ x) x))))
+  (assert (equal? '#((99)) (s2 99))))
 
