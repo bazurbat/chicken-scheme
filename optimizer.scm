@@ -1782,7 +1782,8 @@
 	    (when (debugging 'l "accessibles:") (pretty-print al))
 	    (debugging 'p "eliminating liftables by access-lists and non-liftable callees...")
 	    (let ([ls (eliminate3 (eliminate4 g2))]) ;(eliminate2 g2 al)))]) - why isn't this used?
-	      (debugging 'o "liftable local procedures" (delay (unzip1 ls)))
+	      (when (pair? ls)
+		(debugging 'o "liftable local procedures" (delay (unzip1 ls))))
 	      (debugging 'p "gathering extra parameters...")
 	      (let ([extra (compute-extra-variables ls)])
 		(when (debugging 'l "additional parameters:") (pretty-print extra))
