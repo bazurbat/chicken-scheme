@@ -57,6 +57,7 @@ CHICKENLIBDIR = $(VARDIR)/chicken
 EGGDIR = $(CHICKENLIBDIR)/$(BINARYVERSION)
 
 ifdef WINDOWS_SHELL
+BRANCHNAME = ""
 SPREFIX = $(subst /,$(SEP),$(PREFIX))
 IBINDIR = $(SPREFIX)$(SEP)bin
 ILIBDIR = $(SPREFIX)$(SEP)lib
@@ -69,6 +70,7 @@ IDOCDIR = $(IDATADIR)$(SEP)doc
 ICHICKENLIBDIR = $(ILIBDIR)$(SEP)chicken
 IEGGDIR = $(ICHICKENLIBDIR)$(SEP)$(BINARYVERSION)
 else
+BRANCHNAME = $(shell scripts/identify-branch)
 SPREFIX = $(PREFIX)
 IBINDIR = $(BINDIR)
 ILIBDIR = $(LIBDIR)
@@ -467,5 +469,8 @@ endif
 	echo "#endif" >>$@
 	echo "#ifndef C_BINARY_VERSION" >>$@
 	echo "# define C_BINARY_VERSION $(BINARYVERSION)" >>$@
+	echo "#endif" >>$@
+	echo "#ifndef C_BRANCH_NAME" >>$@
+	echo "# define C_BRANCH_NAME \"$(BRANCHNAME)\"" >>$@
 	echo "#endif" >>$@
 endif

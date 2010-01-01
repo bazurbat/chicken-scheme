@@ -184,6 +184,7 @@ EOF
 (define-constant maximal-string-length #x00ffffff)
 
 (define-foreign-variable +build-tag+ c-string "C_BUILD_TAG")
+(define-foreign-variable +branch-name+ c-string "C_BRANCH_NAME")
 
 
 ;;; System routines:
@@ -3383,7 +3384,7 @@ EOF
 		   (if (##sys#fudge 32) " gchooks" "") 
 		   (if (##sys#fudge 39) " cross" "") ) ) )
 	(string-append
-	 "Version " +build-version+ "\n"
+	 "Version " +build-version+ " " +branch-name+ "\n"
 	 (get-config)
 	 (if (zero? (##sys#size spec))
 	     ""
