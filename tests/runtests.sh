@@ -100,7 +100,7 @@ $compile compiler-syntax-tests.scm
 ./a.out
 
 echo "======================================== import library tests ..."
-rm -f foo.import.*
+rm -f ../foo.import.* foo.import.*
 $compile import-library-test1.scm -emit-import-library foo
 $interpret -s import-library-test2.scm
 $compile_s foo.import.scm -o foo.import.so
