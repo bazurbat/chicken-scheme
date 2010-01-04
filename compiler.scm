@@ -114,7 +114,7 @@
 ; (##core#loop-lambda <llist> <body>)
 ; (##core#undefined)
 ; (##core#primitive <name>)
-; (##core#inline <op> {<exp>})
+; (##core#inline {<op>} <exp>)
 ; (##core#inline_allocate (<op> <words>) {<exp>})
 ; (##core#inline_ref (<name> <type>))
 ; (##core#inline_update (<name> <type>) <exp>)
@@ -177,13 +177,17 @@
 ; [if {} <exp> <exp> <exp>]
 ; [quote {<exp>}]
 ; [##core#bind {<count>} <exp-v>... <exp>]
+; [##core#let_unboxed {<name> <utype>} <exp1> <exp2>]
 ; [##core#undefined {}]
+; [##core#unboxed_ref {<name> <utype>}]
+; [##core#unboxed_set! {<name> <utype>} <exp>]
 ; [##core#inline {<op>} <exp>...]
 ; [##core#inline_allocate {<op <words>} <exp>...]
 ; [##core#inline_ref {<name> <type>}]
 ; [##core#inline_update {<name> <type>} <exp>]
 ; [##core#inline_loc_ref {<type>} <exp>]
 ; [##core#inline_loc_update {<type>} <exp> <exp>]
+; [##core#inline_unboxed {<op>} <exp> ...]
 ; [##core#closure {<count>} <exp>...]
 ; [##core#box {} <exp>]
 ; [##core#unbox {} <exp>]
@@ -233,8 +237,7 @@
 ;   standard-binding -> <boolean>            If true: variable names a standard binding
 ;   extended-binding -> <boolean>            If true: variable names an extended binding
 ;   unused -> <boolean>                      If true: variable is a formal parameter that is never used
-;   rest-parameter -> #f | 'vector | 'list   If true: variable holds rest-argument list mode
-;   o-r/access-count -> <n>                  Contains number of references as arguments of optimizable rest operators
+;   rest-parameter -> #f | 'list             If true: variable holds rest-argument list
 ;   constant -> <boolean>                    If true: variable has fixed value
 ;   hidden-refs -> <boolean>                 If true: procedure that refers to hidden global variables
 ;   inline-transient -> <boolean>            If true: was introduced during inlining
@@ -351,7 +354,6 @@
 (define current-program-size 0)
 (define line-number-database-2 #f)
 (define immutable-constants '())
-(define rest-parameters-promoted-to-vector '())
 (define inline-table #f)
 (define inline-table-used #f)
 (define constant-table #f)
@@ -1377,8 +1379,7 @@
 	       [(interrupts-enabled) (set! insert-timer-checks #f)]
 	       [(safe) (set! unsafe #t)]
 	       [else (compiler-warning 'syntax "illegal declaration specifier `~s'" id)]))]))
-       ((compile-syntax 
-	 run-time-macros)		; DEPRECATED
+       ((compile-syntax )
 	(set! ##sys#enable-runtime-macros #t))
        ((block-global hide) 
 	(let ([syms (stripa (cdr spec))])
@@ -1724,18 +1725,9 @@
 	  ((##core#call)
 	   (grow 1)
 	   (let ([fun (car subs)])
-	     (if (eq? '##core#variable (node-class fun))
-		 (let ([name (first (node-parameters fun))])
-		   (collect! db name 'call-sites (cons here n))
-		   ;; If call to standard-binding & optimizable rest-arg operator: decrease access count:
-		   (if (and (intrinsic? name)
-			    (memq name optimizable-rest-argument-operators) )
-		       (for-each
-			(lambda (arg)
-			  (and-let* ([(eq? '##core#variable (node-class arg))]
-				     [var (first (node-parameters arg))] )
-			    (when (get db var 'rest-parameter) (count! db var 'o-r/access-count)) ) )
-			(cdr subs) ) ) ) )
+	     (when (eq? '##core#variable (node-class fun))
+	       (let ([name (first (node-parameters fun))])
+		 (collect! db name 'call-sites (cons here n))))
 	     (walk (first subs) env localenv here #t)
 	     (walkeach (cdr subs) env localenv here #f) ) )
 
@@ -1751,9 +1743,9 @@
 		     (walk val env localenv here #f) 
 		     (loop (cdr vars) (cdr vals)) ) ) ) ) )
 
-	  ((lambda)
-	   (grow 1)
-	   (decompose-lambda-list
+	  ((lambda)			; why do we have 2 cases for lambda?
+	   (grow 1)			; the reason for this should be tracked down
+	   (decompose-lambda-list	; and this case removed
 	    (first params)
 	    (lambda (vars argc rest)
 	      (for-each 
@@ -1780,10 +1772,7 @@
 		   (put! db var 'unknown #t) )
 		 vars)
 		(when rest
-		  (put! db rest 'rest-parameter
-			(if (memq rest rest-parameters-promoted-to-vector)
-			    'vector
-			    'list) ) )
+		  (put! db rest 'rest-parameter 'list) )
 		(when (simple-lambda-node? n) (put! db id 'simple #t))
 		(let ([tl toplevel-scope])
 		  (unless toplevel-lambda-id (set! toplevel-lambda-id id))
@@ -1886,7 +1875,6 @@
 	     [assigned-locally #f]
 	     [undefined #f]
 	     [global #f]
-	     [o-r/access-count 0]
 	     [rest-parameter #f] 
 	     [nreferences 0]
 	     [ncall-sites 0] )
@@ -1909,7 +1897,6 @@
 	      [(global) (set! global #t)]
 	      [(value) (set! value (cdr prop))]
 	      [(local-value) (set! local-value (cdr prop))]
-	      [(o-r/access-count) (set! o-r/access-count (cdr prop))]
 	      [(rest-parameter) (set! rest-parameter #t)] ) )
 	  plist)
 
@@ -2072,24 +2059,9 @@
 				    (eq? (first llist) (first (node-parameters v2))) )
 			   (let ([kvar (first (node-parameters v1))])
 			     (quick-put! plist 'replacable kvar)
-			     (put! db kvar 'replacing #t) ) ) ) ) ) ) ) ) ) )
-
-	 ;; If a rest-argument, convert 'rest-parameter property to 'vector, if the variable is never
-	 ;;  assigned, and the number of references is identical to the number of accesses in optimizable
-	 ;;  rest-argument operators:
-	 ;; - Add variable to "rest-parameters-promoted-to-vector", because subsequent optimization will
-	 ;;   change variables context (operators applied to it).
-	 (when (and rest-parameter
-		    (not assigned)
-		    (= nreferences o-r/access-count) )
-	   (set! rest-parameters-promoted-to-vector (lset-adjoin eq? rest-parameters-promoted-to-vector sym))
-	   (put! db sym 'rest-parameter 'vector) ) ) )
+			     (put! db kvar 'replacing #t) ) ) ) ) ) ) ) ) ) ) ) )
 
      db)
-
-    ;; Remove explicitly consed rest parameters from promoted ones:
-    (set! rest-parameters-promoted-to-vector
-      (lset-difference eq? rest-parameters-promoted-to-vector explicitly-consed) )
 
     ;; Set original program-size, if this is the first analysis-pass:
     (unless original-program-size
@@ -2356,36 +2328,38 @@
 
 (define-record-type lambda-literal
   (make-lambda-literal id external arguments argument-count rest-argument temporaries
-		       callee-signatures allocated directly-called closure-size
-		       looping customizable rest-argument-mode body direct)
+		       unboxed-temporaries callee-signatures allocated directly-called
+		       closure-size looping customizable rest-argument-mode body direct)
   lambda-literal?
   (id lambda-literal-id)			       ; symbol
   (external lambda-literal-external)		       ; boolean
-  (arguments lambda-literal-arguments)		       ; (symbol...)
+  (arguments lambda-literal-arguments)		       ; (symbol ...)
   (argument-count lambda-literal-argument-count)       ; integer
   (rest-argument lambda-literal-rest-argument)	       ; symbol | #f
   (temporaries lambda-literal-temporaries)	       ; integer
-  (callee-signatures lambda-literal-callee-signatures) ; (integer...)
+  (unboxed-temporaries lambda-literal-unboxed-temporaries) ; ((sym . utype) ...)
+  (callee-signatures lambda-literal-callee-signatures) ; (integer ...)
   (allocated lambda-literal-allocated)		       ; integer
   (directly-called lambda-literal-directly-called)     ; boolean
   (closure-size lambda-literal-closure-size)	       ; integer
   (looping lambda-literal-looping)		       ; boolean
   (customizable lambda-literal-customizable)	       ; boolean
-  (rest-argument-mode lambda-literal-rest-argument-mode) ; #f | LIST | VECTOR | UNUSED
+  (rest-argument-mode lambda-literal-rest-argument-mode) ; #f | LIST | NONE
   (body lambda-literal-body)				 ; expression
   (direct lambda-literal-direct))			 ; boolean
   
 (define (prepare-for-code-generation node db)
-  (let ([literals '()]
-	[lambda-info-literals '()]
-        [lambdas '()]
-        [temporaries 0]
-        [allocated 0]
-	[looping 0]
-        [signatures '()] 
-	[fastinits 0] 
-	[fastrefs 0] 
-	[fastsets 0] )
+  (let ((literals '())
+	(lambda-info-literals '())
+        (lambdas '())
+        (temporaries 0)
+	(ubtemporaries '())
+        (allocated 0)
+	(looping 0)
+        (signatures '()) 
+	(fastinits 0) 
+	(fastrefs 0) 
+	(fastsets 0) )
 
     (define (walk-var var e sf)
       (cond [(posq var e) => (lambda (i) (make-node '##core#local (list i) '()))]
@@ -2462,12 +2436,14 @@
 	      subs) ) )
 
 	  ((##core#lambda ##core#direct_lambda) 
-	   (let ([temps temporaries]
-		 [sigs signatures]
-		 [lping looping]
-		 [alc allocated] 
-		 [direct (eq? class '##core#direct_lambda)] )
+	   (let ((temps temporaries)
+		 (ubtemps ubtemporaries)
+		 (sigs signatures)
+		 (lping looping)
+		 (alc allocated) 
+		 (direct (eq? class '##core#direct_lambda)) )
 	     (set! temporaries 0)
+	     (set! ubtemporaries '())
 	     (set! allocated 0)
 	     (set! signatures '())
 	     (set! looping 0)
@@ -2488,9 +2464,8 @@
 				  vars)
 			      id
 			      '()) ] )
-		  (case rest-mode
-		    [(none) (debugging 'o "unused rest argument" rest id)]
-		    [(vector) (debugging 'o "rest argument accessed as vector" rest id)] )
+		  (when (eq? rest-mode 'none)
+		    (debugging 'o "unused rest argument" rest id))
 		  (when (and direct rest)
 		    (bomb "bad direct lambda" id allocated rest) )
 		  (set! lambdas
@@ -2501,6 +2476,7 @@
 			   argc
 			   rest
 			   (add1 temporaries)
+			   ubtemporaries
 			   signatures
 			   allocated
 			   (or direct (memq id direct-call-ids))
@@ -2517,6 +2493,7 @@
 			  lambdas) )
 		  (set! looping lping)
 		  (set! temporaries temps)
+		  (set! ubtemporaries ubtemps)
 		  (set! allocated alc)
 		  (set! signatures sigs)
 		  (make-node '##core#proc (list (first params)) '()) ) ) ) ) )
@@ -2527,9 +2504,18 @@
 		  [boxvars (if (eq? '##core#box (node-class val)) (list var) '())] )
 	     (set! temporaries (add1 temporaries))
 	     (make-node
-	      '##core#bind (list 1)
+	      '##core#bind (list 1)	; is actually never used with more than 1 variable
 	      (list (walk val e here boxes)
 		    (walk (second subs) (append e params) here (append boxvars boxes)) ) ) ) )
+
+	  ((##core#let_unboxed)
+	   (let* ((var (first params))
+		  (val (first subs)) )
+	     (set! ubtemporaries (alist-cons var (second params) ubtemporaries))
+	     (make-node
+	      '##core#let_unboxed params
+	      (list (walk val e here boxes)
+		    (walk (second subs) e here boxes) ) ) ) )
 
 	  ((set!)
 	   (let ([var (first params)]

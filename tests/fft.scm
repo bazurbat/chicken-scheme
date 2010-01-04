@@ -2063,8 +2063,8 @@
     (let ((a
 	   (make-f64vector (fx* two^n 2) 0.)))
       (do ((i 0 (fx+ i 1)))
-	  ((fx= i iters)) ; (write table) (newline))
+	  ((fx= i iters)); (write table) (newline))
 	(direct-fft-recursive-4 a table)
 	(inverse-fft-recursive-4 a table)))))
 
-(test 1000 11)
+(test 2000 11)

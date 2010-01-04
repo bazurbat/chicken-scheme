@@ -50,7 +50,7 @@ See also: {{set-extension-specifier!}}
 <macro>(require-extension ID ...)</macro>
 
 This is equivalent to {{(require-library ID ...)}} but performs an implicit
-{{import}}.
+{{import}}, if necessary.
 This implementation of {{require-extension}} is compliant with [[http://srfi.schemers.org/srfi-55/srfi-55.html|SRFI-55]]
 (see the [[http://srfi.schemers.org/srfi-55/srfi-55.html|SRFI-55]] document for more information).
 
@@ -288,6 +288,7 @@ definitions should only appear at toplevel.
 
 <macro>(define-for-syntax (NAME VAR ...) EXP1 ...)</macro><br>
 <macro>(define-for-syntax (NAME VAR1 ... VARn . VARn+1) EXP1 ...)</macro><br>
+<macro>(define-for-syntax NAME [VALUE])</macro>
 
 Defines the toplevel variable {{NAME}} at macro-expansion time. This can
 be helpful when you want to define support procedures for use in macro-transformers,
@@ -299,7 +300,7 @@ for example.
 <macro>(define-compiler-syntax NAME TRANSFORMER)</macro><br>
 <macro>(define-compiler-syntax (NAME VAR ...) BODY ...)</macro>
 
-Defines what is usually called a ''compiler macro'': {{NAME}} should be the
+Defines what is usually called a ''compiler macro'' in Lisp: {{NAME}} should be the
 name of a globally or locally bound procedure. Any direct call to this procedure
 will be transformed before compilation, which allows arbitrary rewritings
 of function calls. 
@@ -312,6 +313,9 @@ In the interpreter this form does nothing and returns an unspecified value.
 
 Compiler-syntax is always local to the current compilation unit and can not be
 exported.
+
+{{define-compiler-syntax}} should only be used at top-level. Local compiler-syntax
+can be defined with {{let-compiler-syntax}}.
 
 <scheme>
 (define-compiler-syntax +

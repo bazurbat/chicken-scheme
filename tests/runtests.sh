@@ -211,7 +211,14 @@ $compile -e embedded2.scm
 ./a.out
 
 echo "======================================== timing compilation ..."
-time $compile compiler.scm -S -O5 -debug pb -v
+time $compile compiler.scm -O5 -debug pb -v
+echo "executing ..."
+time ./a.out
+
+echo "======================================== running slatex ..."
+$compile slatex.scm -O5
+mkdir -p slatexdir
+rm -f slatexdir/*
 time ./a.out
 
 echo "======================================== running floating-point benchmark ..."
@@ -220,6 +227,9 @@ $compile fft.scm -O5
 time ./a.out
 echo "unboxed:"
 $compile fft.scm -O5 -D unboxed
+time ./a.out
+echo "unboxed/unboxing:"
+$compile fft.scm -O5 -D unboxed -unboxing -debug oxi | tee fft.out
 time ./a.out
 
 echo "======================================== done."

@@ -35,7 +35,7 @@ SRCDIR =.$(SEP)
 # platform configuration
 
 DLLSINPATH = 1
-ARCH = x86
+ARCH ?= x86
 WINDOWS = 1
 WINDOWS_SHELL = 1
 UNAME_SYS = MinGW

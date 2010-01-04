@@ -97,7 +97,7 @@ EOF
   (display  #<<EOF
     -b  -batch                    terminate after command-line processing
     -w  -no-warnings              disable all warnings
-    -k  -keyword-style STYLE      enable alternative keyword-syntax
+    -K  -keyword-style STYLE      enable alternative keyword-syntax
                                    (prefix, suffix or none)
         -no-parentheses-synonyms  disables list delimiter synonyms
         -no-symbol-escape         disables support for escaped symbols
@@ -717,13 +717,13 @@ EOF
     "-ss" "-sx" "-s" "-script") )
 
 (define-constant complex-options
-  '("-D" "-feature" "-I" "-include-path" "-k" "-keyword-style") )
+  '("-D" "-feature" "-I" "-include-path" "-K" "-keyword-style") )
 
 (define (run)
   (let* ([extraopts (parse-option-string (or (get-environment-variable "CSI_OPTIONS") ""))]
 	 [args (canonicalize-args (command-line-arguments))]
 	 ; Check for these before 'args' is updated by any 'extraopts'
-	 [kwstyle (member* '("-k" "-keyword-style") args)]
+	 [kwstyle (member* '("-K" "-keyword-style") args)]
 	 [script (member* '("-ss" "-sx" "-s" "-script") args)])
     (cond [script
 	   (when (or (not (pair? (cdr script)))

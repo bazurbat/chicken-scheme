@@ -136,8 +136,6 @@ EOF
 	    [(pred (##sys#slot lst 0)) (loop (##sys#slot lst 1))]
 	    [else #f] ) ) ) )
 
-(define list-of list-of?)		; DEPRECATED
-
 (define (noop . _) (void))
 
 (define (each . procs)

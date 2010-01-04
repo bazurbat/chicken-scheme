@@ -886,6 +886,8 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_floor                    floor
 # define C_round                    round
 # define C_trunc                    trunc
+# define C_fabs                     fabs
+# define C_modf                     modf
 # ifdef __linux__
 extern double round(double);
 extern double trunc(double);
@@ -894,6 +896,7 @@ extern double trunc(double);
 # include "chicken-libc-stubs.h"
 #endif
 
+#define C_id(x)                    (x)
 #define C_return(x)                return(x)
 #define C_resize_stack(n)          C_do_resize_stack(n)
 #define C_memcpy_slots(t, f, n)    C_memcpy((t), (f), (n) * sizeof(C_word))
@@ -1057,6 +1060,9 @@ extern double trunc(double);
 #define C_a_i_flonum_quotient(ptr, c, n1, n2) C_flonum(ptr, C_flonum_magnitude(n1) / C_flonum_magnitude(n2))
 #define C_a_i_flonum_negate(ptr, c, n)  C_flonum(ptr, -C_flonum_magnitude(n))
 
+#define C_a_i_address_to_pointer(ptr, c, addr)  C_mpointer(ptr, (void *)C_num_to_unsigned_int(addr))
+#define C_a_i_pointer_to_address(ptr, c, pptr)  C_unsigned_int_to_num(ptr, (unsigned int)pptr)
+
 #define C_display_fixnum(p, n)          (C_fprintf(C_port_file(p), C_text("%d"), C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_display_char(p, c)            (C_fputc(C_character_code(c), C_port_file(p)), C_SCHEME_UNDEFINED)
 #define C_display_string(p, s)          (C_fwrite(((C_SCHEME_BLOCK *)(s))->data, sizeof(C_char), C_header_size(s), \
@@ -1086,7 +1092,7 @@ extern double trunc(double);
 #define C_random_fixnum(n)              C_fix((int)(((double)rand())/(RAND_MAX + 1.0) * C_unfix(n)))
 #define C_randomize(n)                  (srand(C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_block_size(x)                 C_fix(C_header_size(x))
-#define C_pointer_address(x)            ((C_byte *)C_u_i_car(x))
+#define C_pointer_address(x)            ((C_byte *)C_block_item((x), 0))
 #define C_block_address(ptr, n, x)      C_a_unsigned_int_to_num(ptr, n, x)
 #define C_offset_pointer(x, y)          (C_pointer_address(x) + (y))
 #define C_kontinue(k, r)                ((C_proc2)(void *)C_u_i_car(k))(2, (k), (r))
@@ -1155,7 +1161,9 @@ extern double trunc(double);
 # define C_a_i_cons(a, n, car, cdr)     C_pair(a, car, cdr)
 #endif /* __GNUC__ */
 
+#define C_a_i_flonum(ptr, i, n)         C_flonum(ptr, n)
 #define C_a_i_data_mpointer(ptr, n, x)  C_mpointer(ptr, C_data_pointer(x))
+#define C_a_i_mpointer(ptr, n, x)       C_mpointer(ptr, (x))
 #define C_a_int_to_num(ptr, n, i)       C_int_to_num(ptr, i)
 #define C_a_unsigned_int_to_num(ptr, n, i)  C_unsigned_int_to_num(ptr, i)
 #define C_a_double_to_num(ptr, n)       C_double_to_number(C_flonum(ptr, n))
@@ -1281,6 +1289,17 @@ extern double trunc(double);
 # endif
 #endif
 
+#define C_ub_i_flonum_plus(x, y)        ((x) + (y))
+#define C_ub_i_flonum_difference(x, y)  ((x) - (y))
+#define C_ub_i_flonum_times(x, y)       ((x) * (y))
+#define C_ub_i_flonum_quotient(x, y)    ((x) / (y))
+
+#define C_ub_i_flonum_equalp(n1, n2)    ((n1) == (n2))
+#define C_ub_i_flonum_greaterp(n1, n2)  ((n1) > (n2))
+#define C_ub_i_flonum_lessp(n1, n2)     ((n1) < (n2))
+#define C_ub_i_flonum_greater_or_equal_p(n1, n2)  ((n1) >= (n2))
+#define C_ub_i_flonum_less_or_equal_p(n1, n2)  ((n1) <= (n2))
+
 #define C_end_of_main
 
 #if !defined(C_EMBEDDED) && !defined(C_SHARED)
@@ -1308,6 +1327,11 @@ extern double trunc(double);
 #define C_u_i_f32vector_set(v, i, x)    ((((float *)C_data_pointer(C_block_item((v), 1)))[ C_unfix(i) ] = C_flonum_magnitude(x)), C_SCHEME_UNDEFINED)
 #define C_u_i_f64vector_set(v, i, x)    ((((double *)C_data_pointer(C_block_item((v), 1)))[ C_unfix(i) ] = C_flonum_magnitude(x)), C_SCHEME_UNDEFINED)
 
+#define C_ub_i_f32vector_ref(b, i)      (((float *)C_data_pointer(C_block_item((b), 1)))[ C_unfix(i) ])
+#define C_ub_i_f64vector_ref(b, i)      (((double *)C_data_pointer(C_block_item((b), 1)))[ C_unfix(i) ])
+#define C_ub_i_f32vector_set(v, i, x)   ((((float *)C_data_pointer(C_block_item((v), 1)))[ C_unfix(i) ] = (x)), 0)
+#define C_ub_i_f64vector_set(v, i, x)   ((((double *)C_data_pointer(C_block_item((v), 1)))[ C_unfix(i) ] = (x)), 0)
+
 #define C_a_i_flonum_sin(ptr, c, x)     C_flonum(ptr, C_sin(C_flonum_magnitude(x)))
 #define C_a_i_flonum_cos(ptr, c, x)     C_flonum(ptr, C_cos(C_flonum_magnitude(x)))
 #define C_a_i_flonum_tan(ptr, c, x)     C_flonum(ptr, C_tan(C_flonum_magnitude(x)))
@@ -1319,6 +1343,7 @@ extern double trunc(double);
 #define C_a_i_flonum_expt(ptr, c, x, y)  C_flonum(ptr, C_pow(C_flonum_magnitude(x), C_flonum_magnitude(y)))
 #define C_a_i_flonum_log(ptr, c, x)     C_flonum(ptr, C_log(C_flonum_magnitude(x)))
 #define C_a_i_flonum_sqrt(ptr, c, x)    C_flonum(ptr, C_sqrt(C_flonum_magnitude(x)))
+#define C_a_i_flonum_abs(ptr, c, x)     C_flonum(ptr, C_fabs(C_flonum_magnitude(x)))
 
 
 /* Variables: */
@@ -1386,7 +1411,6 @@ C_fctexport C_word C_fcall C_restore_callback_continuation(void);
 C_fctexport C_word C_fcall C_restore_callback_continuation2(int level);
 C_fctexport C_word C_fcall C_callback(C_word closure, int argc);
 C_fctexport C_word C_fcall C_callback_wrapper(void *proc, int argc);
-C_fctexport void C_fcall C_callback_adjust_stack_limits(C_word *base); /* DEPRECATED */
 C_fctexport void C_fcall C_callback_adjust_stack(C_word *base, int size);
 C_fctexport void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *stack, C_word *symbols);
 C_fctexport void C_fcall C_toplevel_entry(C_char *name) C_regparm;
@@ -1447,7 +1471,6 @@ C_fctexport C_word C_h_structure(int n, ...);
 C_fctexport C_word C_fcall C_mutate(C_word *slot, C_word val) C_regparm;
 C_fctexport void C_fcall C_reclaim(void *trampoline, void *proc) C_regparm C_noret;
 C_fctexport void C_save_and_reclaim(void *trampoline, void *proc, int n, ...) C_noret;
-C_fctexport void C_fcall C_rereclaim(long size) C_regparm; /* deprecated */
 C_fctexport void C_fcall C_rereclaim2(C_uword size, int double_plus) C_regparm;
 C_fctexport C_word C_fcall C_retrieve(C_word sym) C_regparm;
 C_fctexport C_word C_fcall C_retrieve2(C_word val, char *name) C_regparm;
@@ -1751,7 +1774,7 @@ C_inline C_word C_double_to_number(C_word n)
   double m, f = C_flonum_magnitude(n);
 
   if(f <= (double)C_MOST_POSITIVE_FIXNUM
-     && f >= (double)C_MOST_NEGATIVE_FIXNUM && modf(f, &m) == 0.0) 
+     && f >= (double)C_MOST_NEGATIVE_FIXNUM && C_modf(f, &m) == 0.0) 
     return C_fix(f);
   else return n;
 }
@@ -1764,7 +1787,7 @@ C_inline C_word C_fits_in_int_p(C_word x)
   if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
 
   n = C_flonum_magnitude(x);
-  return C_mk_bool(modf(n, &m) == 0.0 && n >= C_WORD_MIN && n <= C_WORD_MAX);
+  return C_mk_bool(C_modf(n, &m) == 0.0 && n >= C_WORD_MIN && n <= C_WORD_MAX);
 }
 
 
@@ -1775,7 +1798,7 @@ C_inline C_word C_fits_in_unsigned_int_p(C_word x)
   if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
 
   n = C_flonum_magnitude(x);
-  return C_mk_bool(modf(n, &m) == 0.0 && n >= 0 && n <= C_UWORD_MAX);
+  return C_mk_bool(C_modf(n, &m) == 0.0 && n >= 0 && n <= C_UWORD_MAX);
 }
 
 
@@ -1978,13 +2001,29 @@ C_inline C_word C_i_rationalp(C_word x)
 }
 
 
+C_inline C_word C_u_i_fpintegerp(C_word x)
+{
+  double dummy;
+
+  return C_mk_bool(C_modf(C_flonum_magnitude(x), &dummy) == 0.0);
+}
+
+
+C_inline int C_ub_i_fpintegerp(double x)
+{
+  double dummy;
+
+  return C_modf(x, &dummy) == 0.0;
+}
+
+
 C_inline C_word C_i_integerp(C_word x)
 {
   double dummy;
 
   return C_mk_bool((x & C_FIXNUM_BIT) || 
 		   ((!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) &&
-		    modf(C_flonum_magnitude(x), &dummy) == 0.0 ) );
+		    C_modf(C_flonum_magnitude(x), &dummy) == 0.0 ) );
 }
 
 
@@ -2030,6 +2069,21 @@ C_inline C_word C_i_flonum_max(C_word x, C_word y)
     yf = C_flonum_magnitude(y);
 
   return xf > yf ? x : y;
+}
+
+
+C_inline C_word C_i_safe_pointerp(C_word x)
+{
+  if(C_immediatep(x)) return C_SCHEME_FALSE;
+
+  switch(C_block_header(x)) {
+  case C_POINTER_TAG:
+  case C_SWIG_POINTER_TAG:
+  case C_TAGGED_POINTER_TAG:
+    return C_SCHEME_TRUE;
+  }
+
+  return C_SCHEME_FALSE;
 }
 
 

@@ -25,8 +25,7 @@
 
 
 (require-library setup-download setup-api)
-(require-library srfi-1 posix data-structures utils regex ports extras
-                 srfi-13 files)
+(require-library srfi-1 posix data-structures utils regex ports extras srfi-13 files)
 (require-library chicken-syntax)	; in case an import library reexports chicken syntax
 
 
@@ -179,7 +178,8 @@
   (define *eggs+dirs+vers* '())
   (define *dependencies* '())
   (define *checked* '())
-  (define *csi* (shellpath (make-pathname *program-path* (foreign-value "C_CSI_PROGRAM" c-string))))
+  (define *csi* 
+    (shellpath (make-pathname *program-path* (foreign-value "C_CSI_PROGRAM" c-string))))
 
   (define (try-extension name version trans locn)
     (condition-case

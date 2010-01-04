@@ -64,35 +64,6 @@
 	  (##sys#error "shell invocation failed with non-zero return status" str n) ) ) ) ) )
 
 
-;;; Handy I/O procedures:
-
-(define for-each-line			; DEPRECATED
-  (let ([read-line read-line])
-    (lambda (proc . port)
-      (let ([port (if (pair? port) (car port) ##sys#standard-input)])
-	(##sys#check-port port 'for-each-line)
-	(let loop ()
-	  (let ([ln (read-line port)])
-	    (unless (eof-object? ln)
-	      (proc ln)
-	      (loop) ) ) ) ) ) ) )
-
-
-;; This one is from William Annis:
-
-(define (for-each-argv-line thunk)	; DEPRECATED
-  (define (file-iterator file thunk)
-    (if (string=? file "-")
-        (for-each-line thunk)
-        (with-input-from-file file (cut for-each-line thunk) ) ) )
-  (let ((args (command-line-arguments)))
-    (if (null? args)
-        ;; If no arguments, take from stdin,
-        (for-each-line thunk)
-        ;; otherwise, hit each file named in argv.
-        (for-each (lambda (arg) (file-iterator arg thunk)) args))))
-
-
 ;;; Read file as string from given filename or port:
 
 (define (read-all . file)

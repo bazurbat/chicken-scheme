@@ -432,10 +432,13 @@ The following extended bindings are handled specially:
 {{fx-}} {{fx*}} {{fx/}} {{fxmod}}
 {{fx=}} {{fx>}} {{fx>=}} {{fixnum?}} {{fxneg}} {{fxmax}} {{fxmin}}
 {{fxand}} {{fxior}} {{fxxor}} {{fxnot}} {{fxshl}} {{fxshr}}
+{{finite?}} {{fp=}} {{fp>}} {{fp<}} {{fp>=}} {{fp<=}} {{fpinteger?}}
 {{flonum?}} {{fp+}}
 {{fp-}} {{fp*}} {{fp/}} {{atom?}}
 {{fp=}} {{fp>}} {{fp>=}} {{fpneg}} {{fpmax}} {{fpmin}}
-{{fpfloor}} {{fpceiling}} {{fpround}} {{fptruncate}}
+{{fpfloor}} {{fpceiling}} {{fpround}} {{fptruncate}} {{fpsqrt}} {{fpabs}}
+{{fplog}} {{fpexp}} {{fpexpt}} {{fpsin}} {{fpcos}} {{fptan}} {{fpasin}}
+{{fpacos}} {{fpatan}} {{fpatan2}}
 {{arithmetic-shift}} {{signum}} {{flush-output}} {{thread-specific}} {{thread-specific-set!}}
 {{not-pair?}} {{null-list?}} {{print}} {{print*}} {{u8vector->blob/shared}}
 {{s8vector->blob/shared}} {{u16vector->blob/shared}} {{s16vector->blob/shared}}
