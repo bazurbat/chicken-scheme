@@ -205,10 +205,11 @@
  3. Usage:
 
         Documentation can be found in the directory
-        PREFIX/share/chicken/doc. The HTML documentation (in
-        "PREFIX/share/chicken/doc/html") is automatically generated
-        from the Wiki pages at <http://chicken.wiki.br/>. Go there to
-        read the most up to date documentation.
+        PREFIX/share/chicken/doc in svnwiki format (see
+        <http://wiki.freaks-unidos.net/svnwiki/> for more information
+        about the used syntax). The manual is maintained in a wiki at
+        <http://chicken.wiki.br/>. Go there to read the most up to
+        date documentation.
 
 
  4. Extensions:
