@@ -199,6 +199,7 @@
 (define default-shared-library-files (if msvc
                                          (list (string-append "libchicken." library-extension))
                                          '("-lchicken")))
+(define unsafe-libraries #f)
 (define unsafe-library-files
   (list
    (quotewrap 
@@ -209,6 +210,11 @@
 (define unsafe-shared-library-files (if msvc
                                         (list (string-append "libuchicken." library-extension))
                                         '("-luchicken")))
+(define (use-unsafe-libraries)
+  (set! unsafe-libraries #t)
+  (set! library-files unsafe-library-files)
+  (set! shared-library-files unsafe-shared-library-files))
+
 (define gui-library-files default-library-files)
 (define gui-shared-library-files default-shared-library-files)
 (define library-files default-library-files)
@@ -631,8 +637,7 @@ EOF
 	       [(|-O5|)
 		(set! rest (cons* "-optimize-level" "5" rest))
 		(t-options "-unsafe-libraries")
-		(set! library-files unsafe-library-files)
-		(set! shared-library-files unsafe-shared-library-files)
+		(use-unsafe-libraries)
 		(when (memq (build-platform) '(mingw32 cygwin gnu))
 		  (set! compile-options 
 		    (cons* "-O3" "-fomit-frame-pointer" compile-options)) ) ]
@@ -677,8 +682,7 @@ EOF
 		(set! rest (cdr rest)) ]
 	       [(-unsafe-libraries)
 		(t-options arg)
-		(set! library-files unsafe-library-files)
-		(set! shared-library-files unsafe-shared-library-files) ]
+		(use-unsafe-libraries) ]
 	       [(-rpath)
 		(check s rest)
 		(when (eq? 'gnu (build-platform))
@@ -691,8 +695,7 @@ EOF
 	       [else
 		(when (memq s '(-unsafe -benchmark-mode))
 		  (when (eq? s '-benchmark-mode)
-		    (set! library-files unsafe-library-files)
-		    (set! shared-library-files unsafe-shared-library-files) ) )
+			(use-unsafe-libraries) ) )
 		(when (eq? s '-to-stdout) 
 		  (set! to-stdout #t)
 		  (set! translate-only #t) )
@@ -837,14 +840,14 @@ EOF
     (when (and osx (or (not cross-chicken) host-mode))
       (unless (zero? ($system 
 		      (string-append
-		       "install_name_tool -change libchicken.dylib "
+		       "install_name_tool -change lib" (if unsafe-libraries "u" "") "chicken.dylib "
 		       (quotewrap 
 			(make-pathname
 			 (prefix "" "lib"
 				 (if host-mode
 				     INSTALL_LIB_HOME
 				     TARGET_RUN_LIB_HOME))
-			 "libchicken.dylib") )
+			 (if unsafe-libraries "libuchicken.dylib" "libchicken.dylib")) )
 		       " " 
 		       target) ) )
 	(exit last-exit-code) ) )

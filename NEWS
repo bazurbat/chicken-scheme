@@ -4,7 +4,7 @@
   libraries are not binary-compatible with previous releases; this
   means all eggs have to be reinstalled and existing programs be
   recompiled!
-- added unboxing pass to compiler which results in part dramatical
+- added unboxing pass to compiler which results in partially dramatical
   performance improvements for unsafe floating-point-intensive code;
   unboxing is enabled on optimization levels 4 and 5
 - removed rest-argument-vector optimization as it could conflict
