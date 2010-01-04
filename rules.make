@@ -660,9 +660,6 @@ chicken-uninstall$(O): chicken-uninstall.c chicken.h $(CHICKEN_CONFIG_H)
 chicken-status$(O): chicken-status.c chicken.h $(CHICKEN_CONFIG_H)
 	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) $(C_COMPILER_SHARED_OPTIONS) \
 	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
-chicken-setup$(O): chicken-setup.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
 csc$(O): csc.c chicken.h $(CHICKEN_CONFIG_H)
 	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) $(C_COMPILER_SHARED_OPTIONS) \
 	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
@@ -761,9 +758,6 @@ $(CHICKEN_UNINSTALL_PROGRAM)$(EXE): chicken-uninstall$(O) $(PRIMARY_LIBCHICKEN)
 	$(LINKER) $(LINKER_OPTIONS) $(LINKER_EXECUTABLE_OPTIONS) $< $(LINKER_OUTPUT) \
           $(LINKER_LIBRARY_PREFIX)chicken$(LINKER_LIBRARY_SUFFIX) $(LINKER_LINK_SHARED_PROGRAM_OPTIONS) $(LIBRARIES)
 $(CHICKEN_STATUS_PROGRAM)$(EXE): chicken-status$(O) $(PRIMARY_LIBCHICKEN)
-	$(LINKER) $(LINKER_OPTIONS) $(LINKER_EXECUTABLE_OPTIONS) $< $(LINKER_OUTPUT) \
-          $(LINKER_LIBRARY_PREFIX)chicken$(LINKER_LIBRARY_SUFFIX) $(LINKER_LINK_SHARED_PROGRAM_OPTIONS) $(LIBRARIES)
-$(CHICKEN_SETUP_PROGRAM)$(EXE): chicken-setup$(O) $(PRIMARY_LIBCHICKEN)
 	$(LINKER) $(LINKER_OPTIONS) $(LINKER_EXECUTABLE_OPTIONS) $< $(LINKER_OUTPUT) \
           $(LINKER_LIBRARY_PREFIX)chicken$(LINKER_LIBRARY_SUFFIX) $(LINKER_LINK_SHARED_PROGRAM_OPTIONS) $(LIBRARIES)
 
@@ -929,8 +923,8 @@ endif
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)chicken-status.1 "$(DESTDIR)$(IMANDIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)chicken-profile.1 "$(DESTDIR)$(IMANDIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)chicken-bug.1 "$(DESTDIR)$(IMANDIR)"
-	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IDOCDIR)$(SEP)html"
-	-$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)html$(SEP)* "$(DESTDIR)$(IDOCDIR)$(SEP)html"
+	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IDOCDIR)$(SEP)manual"
+	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)manual$(SEP)* "$(DESTDIR)$(IDOCDIR)$(SEP)manual"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)README "$(DESTDIR)$(IDOCDIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)LICENSE "$(DESTDIR)$(IDOCDIR)"
 ifdef WINDOWS_SHELL
@@ -1212,8 +1206,6 @@ chicken-uninstall.c: $(SRCDIR)chicken-uninstall.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -ignore-repository -output-file $@ 
 chicken-status.c: $(SRCDIR)chicken-status.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -ignore-repository -output-file $@ 
-chicken-setup.c: $(SRCDIR)chicken-setup.scm
-	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -ignore-repository -output-file $@ 
 csc.c: $(SRCDIR)csc.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
 chicken-bug.c: $(SRCDIR)chicken-bug.scm
@@ -1237,7 +1229,7 @@ distfiles: library.c eval.c expand.c chicken-syntax.c \
 	ulibrary.c ueval.c udata-structures.c uports.c ufiles.c uextras.c ulolevel.c \
 	uutils.c utcp.c usrfi-1.c usrfi-4.c usrfi-13.c usrfi-14.c \
 	usrfi-18.c usrfi-69.c uposixunix.c uposixwin.c uregex.c \
-	chicken-profile.c chicken-install.c chicken-uninstall.c chicken-status.c chicken-setup.c \
+	chicken-profile.c chicken-install.c chicken-uninstall.c chicken-status.c \
 	csc.c csi.c chicken.c batch-driver.c compiler.c optimizer.c  \
 	compiler-syntax.c scrutinizer.c support.c \
 	c-platform.c c-backend.c chicken-bug.c $(IMPORT_LIBRARIES:=.import.c)
@@ -1263,7 +1255,7 @@ endif
 clean:
 	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) chicken$(EXE) csi$(EXE) csc$(EXE) \
 	  chicken-profile$(EXE) csi-static$(EXE) \
-	  chicken-install$(EXE) chicken-uninstall$(EXE) chicken-status$(EXE) chicken-setup$(EXE) \
+	  chicken-install$(EXE) chicken-uninstall$(EXE) chicken-status$(EXE) \
 	  csc-static$(EXE) chicken-static$(EXE) chicken-bug$(EXE) *$(O) \
 	  $(LIBCHICKEN_SO_FILE) $(LIBUCHICKEN_SO_FILE) $(LIBCHICKENGUI_SO_FILE) \
 	  libchicken$(A) libuchicken$(A) libchickengui$(A) libchicken$(SO) $(PROGRAM_IMPORT_LIBRARIES) \
@@ -1286,7 +1278,7 @@ spotless: distclean testclean
 	  ulibrary.c ueval.c udata-structures.c uports.c ufiles.c uextras.c ulolevel.c \
 	  uutils.c utcp.c usrfi-1.c usrfi-4.c usrfi-13.c usrfi-14.c \
 	  usrfi-18.c usrfi-69.c uposixunix.c uposixwin.c uregex.c chicken-profile.c chicken-bug.c \
-	  csc.c csi.c chicken-install.c chicken-setup.c chicken-uninstall.c chicken-status.c \
+	  csc.c csi.c chicken-install.c chicken-uninstall.c chicken-status.c \
 	  chicken.c batch-driver.c compiler.c optimizer.c compiler-syntax.c \
 	  scrutinizer.c support.c \
 	  c-platform.c c-backend.c chicken-boot$(EXE) setup-api.c setup-download.c \

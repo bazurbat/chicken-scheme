@@ -534,26 +534,7 @@
 					(equal? (pathname-extension to) "a"))
 			       (run (,*ranlib-command* ,(shellpath to)) ) ))
 			   (make-dest-pathname rpath f)))
-		       files) ) 
-	   (pre (installation-prefix))
-	   (docpath (ensure-directory (make-pathname pre "share/chicken/doc"))))
-      (and-let* ((docs (assq 'documentation info)))
-	(print "\n* Installing documentation files in " docpath ":")
-	(for-each
-	 (lambda (f)
-	   (copy-file f (make-pathname docpath f) #f) )
-	 (cdr docs))
-	(newline))
-      (and-let* ((exs (assq 'examples info)))
-	(print "\n* Installing example files in " docpath ":")
-	(for-each 
-	 (lambda (f)
-	   (let ((destf (make-pathname docpath f)))
-	     (copy-file f destf #f)
-	     (unless *windows-shell*
-	       (run (,*chmod-command* a+rx ,destf)) ) ))
-	 (cdr exs))
-	(newline))
+		       files) ) )
       (write-info id dests info) ) ) )
 
 (define (install-program id files #!optional (info '()))

@@ -86,53 +86,6 @@ files.scm
 chicken-bug.1
 chicken-bug.scm
 chicken-bug.c
-html/Accessing external objects.html
-html/Acknowledgements.html
-html/Basic mode of operation.html
-html/Bibliography.html
-html/Bugs and limitations.html
-html/C interface.html
-html/Callbacks.html
-html/Data representation.html
-html/Declarations.html
-html/Deviations from the standard.html
-html/Embedding.html
-html/Extensions to the standard.html
-html/Extensions.html
-html/Foreign type specifiers.html
-html/Getting started.html
-html/Interface to external functions and variables.html
-html/Locations.html
-html/Modules and macros.html
-html/Non-standard macros and special forms.html
-html/The R5RS standard.html
-html/Non-standard read syntax.html
-html/Other support procedures.html
-html/Getting Started.html
-html/Parameters.html
-html/Supported language.html
-html/The User's Manual.html
-html/Unit data-structures.html
-html/Unit eval.html
-html/Unit expand.html
-html/Unit extras.html
-html/Unit files.html
-html/Unit library.html
-html/Unit lolevel.html
-html/Unit ports.html
-html/Unit posix.html
-html/Unit regex.html
-html/Unit srfi-1.html
-html/Unit srfi-13.html
-html/Unit srfi-14.html
-html/Unit srfi-18.html
-html/Unit srfi-4.html
-html/Unit tcp.html
-html/Unit utils.html
-html/Using the compiler.html
-html/Using the interpreter.html
-html/faq.html
-html/manual.css
 library.scm
 lolevel.scm
 optimizer.scm
@@ -287,8 +240,6 @@ chicken-status.scm
 chicken-status.c
 chicken-install.scm
 chicken-install.c
-chicken-setup.scm
-chicken-setup.c
 chicken-uninstall.scm
 chicken-uninstall.c
 setup.defaults
@@ -300,3 +251,50 @@ setup-api.c
 setup-api.import.c
 setup-download.import.c
 types.db
+manual/Accessing external objects
+manual/Acknowledgements
+manual/Basic mode of operation
+manual/Bibliography
+manual/Bugs and limitations
+manual/C interface
+manual/Callbacks
+manual/Data representation
+manual/Declarations
+manual/Deviations from the standard
+manual/Embedding
+manual/Extensions
+manual/Extensions to the standard
+manual/Extensions~
+manual/Foreign type specifiers
+manual/Getting started
+manual/Interface to external functions and variables
+manual/Locations
+manual/Modules and macros
+manual/Non-standard macros and special forms
+manual/Non-standard read syntax
+manual/Other support procedures
+manual/Parameters
+manual/Supported language
+manual/The R5RS standard
+manual/The User's Manual
+manual/Unit data-structures
+manual/Unit eval
+manual/Unit expand
+manual/Unit extras
+manual/Unit files
+manual/Unit library
+manual/Unit lolevel
+manual/Unit ports
+manual/Unit posix
+manual/Unit regex
+manual/Unit srfi-1
+manual/Unit srfi-13
+manual/Unit srfi-14
+manual/Unit srfi-18
+manual/Unit srfi-4
+manual/Unit srfi-69
+manual/Unit tcp
+manual/Unit utils
+manual/Using the compiler
+manual/Using the interpreter
+manual/faq
