@@ -68,7 +68,8 @@
 	   (let ((var (first params)))
 	     (when (and (not (memq var e)) 
 			(not (memq var safe)))
-	       (set! unsafe (cons var unsafe)) ) ) ]
+	       (set! unsafe (cons var unsafe)) )
+	     (set! previous (remove (lambda (p) (eq? (car p) var)) previous)))]
 
 	  [(if ##core#cond ##core#switch)
 	   (scan (first subs) e)
@@ -85,17 +86,18 @@
 
 	  [(set!)
 	   (let ([var (first params)])
-	     (and-let* ((p (alist-ref var previous)))
-	       (compiler-warning 
-		'var
-		"dropping assignment of unused value to global variable `~s'"
-		var)
-	       (copy-node!
-		(make-node '##core#undefined '() '())
-		p))
 	     (scan (first subs) e)
-	     (unless (memq var e) (mark var))
-	     (remember var n) )]
+	     (let ((p (alist-ref var previous)))
+	       (when (and p (not (memq var unsafe)))
+		 (compiler-warning 
+		  'var
+		  "dropping assignment of unused value to global variable `~s'"
+		  var)
+		 (copy-node!
+		  (make-node '##core#undefined '() '())
+		  p))
+	       (unless (memq var e) (mark var))
+	       (remember var n) ) ) ]
 
 	  [else (scan-each subs e)] ) ) )
 
