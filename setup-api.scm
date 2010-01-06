@@ -44,7 +44,6 @@
      host-extension
      install-extension install-program install-script
      setup-verbose-mode setup-install-mode
-     setup-verbose-flag setup-install-flag			; DEPRECATED
      installation-prefix chicken-prefix 
      find-library find-header 
      program-path remove-file* 
@@ -116,8 +115,6 @@
 (define setup-root-directory      (make-parameter *base-directory*))
 (define setup-verbose-mode        (make-parameter #f))
 (define setup-install-mode        (make-parameter #t))
-(define setup-verbose-flag setup-verbose-mode) ; DEPRECATED
-(define setup-install-flag setup-install-mode) ; DEPRECATED
 (define program-path              (make-parameter *chicken-bin-path*))
 (define keep-intermediates (make-parameter #f))
 
@@ -174,7 +171,7 @@
         ((car args)     (sudo-install-setup))
         (else           (user-install-setup)) ) )
 
-(define abort-setup (make-parameter exit))
+(define abort-setup (make-parameter (cut exit 1)))
 
 (define (yes-or-no? str #!key default (abort (abort-setup)))
   (let loop ()
@@ -534,26 +531,7 @@
 					(equal? (pathname-extension to) "a"))
 			       (run (,*ranlib-command* ,(shellpath to)) ) ))
 			   (make-dest-pathname rpath f)))
-		       files) ) 
-	   (pre (installation-prefix))
-	   (docpath (ensure-directory (make-pathname pre "share/chicken/doc"))))
-      (and-let* ((docs (assq 'documentation info)))
-	(print "\n* Installing documentation files in " docpath ":")
-	(for-each
-	 (lambda (f)
-	   (copy-file f (make-pathname docpath f) #f) )
-	 (cdr docs))
-	(newline))
-      (and-let* ((exs (assq 'examples info)))
-	(print "\n* Installing example files in " docpath ":")
-	(for-each 
-	 (lambda (f)
-	   (let ((destf (make-pathname docpath f)))
-	     (copy-file f destf #f)
-	     (unless *windows-shell*
-	       (run (,*chmod-command* a+rx ,destf)) ) ))
-	 (cdr exs))
-	(newline))
+		       files) ) )
       (write-info id dests info) ) ) )
 
 (define (install-program id files #!optional (info '()))
