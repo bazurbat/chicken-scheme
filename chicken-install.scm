@@ -82,6 +82,7 @@
   (define *windows-shell* (foreign-value "C_WINDOWS_SHELL" bool))
   (define *proxy-host* #f)
   (define *proxy-port* #f)
+  (define *running-test* #f)
 
   (define-constant +module-db+ "modules.db")
   (define-constant +defaults-file+ "setup.defaults")
@@ -290,7 +291,7 @@
                       "- assuming it has no dependencies")) ] ) ) ) )
        *eggs+dirs+vers*) ) )
 
-  (define (make-install-command e+d+v)
+  (define (make-install-command e+d+v dep?)
     (conc
      *csi*
      " -bnq "
@@ -302,7 +303,7 @@
      (sprintf " -e \"(extension-name-and-version '(\\\"~a\\\" \\\"~a\\\"))\"" (car e+d+v) (caddr e+d+v))
      (if (sudo-install) " -e \"(sudo-install #t)\"" "")
      (if *keep* " -e \"(keep-intermediates #t)\"" "")
-     (if *no-install* " -e \"(setup-install-mode #f)\"" "")
+     (if (and *no-install* (not dep?)) " -e \"(setup-install-mode #f)\"" "")
      (if *host-extension* " -e \"(host-extension #t)\"" "")
      (if *prefix* (sprintf " -e \"(installation-prefix \\\"~a\\\")\"" *prefix*) "")
      #\space
@@ -311,26 +312,41 @@
   (define (install eggs)
     (retrieve eggs)
     (unless *retrieve-only*
-      (let ((dag (reverse (topological-sort *dependencies* string=?))))
+      (let* ((dag (reverse (topological-sort *dependencies* string=?)))
+	     (num (length dag))
+	     (depinstall-ok *force*))
 	(print "install order:")
 	(pp dag)
 	(for-each
-	 (lambda (e+d+v)
+	 (lambda (e+d+v i)
+	   (when (and (not depinstall-ok)
+		      (= i 1)
+		      (> num 1))
+	     (unless (yes-or-no?
+		      (string-append
+		       "You specified `-no-install', but this extension has dependencies"
+		       " that are required for building. Do you still want to install them?"))
+	       (print "aborting installation.")
+	       (cleanup)
+	       (exit 1)))
 	   (print "installing " (car e+d+v) #\: (caddr e+d+v) " ...")
 	   (print "changing current directory to " (cadr e+d+v))
 	   (parameterize ((current-directory (cadr e+d+v)))
-	     (let ([cmd (make-install-command e+d+v)])
+	     (let ([cmd (make-install-command e+d+v (< i num))])
 	       (print "  " cmd)
 	       ($system cmd))
 	     (when (and *run-tests*
 			(file-exists? "tests")
 			(directory? "tests")
 			(file-exists? "tests/run.scm") )
+	       (set! *running-test* #t)
 	       (current-directory "tests")
 	       (let ((cmd (sprintf "~a -s run.scm ~a" *csi* (car e+d+v))))
 		 (print "  " cmd)
-		 ($system cmd)))))
-	 (map (cut assoc <> *eggs+dirs+vers*) dag)))))
+		 ($system cmd))
+	       (set! *running-test* #f))))
+	 (map (cut assoc <> *eggs+dirs+vers*) dag)
+	 (iota num 1)))))
 
   (define (cleanup)
     (unless *keep*
@@ -540,7 +556,7 @@ EOF
 	(newline (current-error-port))
         (print-error-message ex (current-error-port))
         (cleanup)
-        (exit 1))
+        (exit (if *running-test* 2 1)))
     (main (command-line-arguments))
     (cleanup))
 
