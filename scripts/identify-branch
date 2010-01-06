@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# identify-branch - check for .git directory and obtain branchname (unless "master")
+
+if test -d .git; then
+    branchname=`git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/(\1)/'`
+    if test "${branchname}" \!= "(master)"; then
+	echo "${branchname}"
+    fi
+fi
