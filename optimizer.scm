@@ -68,7 +68,8 @@
 	   (let ((var (first params)))
 	     (when (and (not (memq var e)) 
 			(not (memq var safe)))
-	       (set! unsafe (cons var unsafe)) ) ) ]
+	       (set! unsafe (cons var unsafe)) )
+	     (set! previous (remove (lambda (p) (eq? (car p) var)) previous)))]
 
 	  [(if ##core#cond ##core#switch)
 	   (scan (first subs) e)
@@ -85,17 +86,18 @@
 
 	  [(set!)
 	   (let ([var (first params)])
-	     (and-let* ((p (alist-ref var previous)))
-	       (compiler-warning 
-		'var
-		"dropping assignment of unused value to global variable `~s'"
-		var)
-	       (copy-node!
-		(make-node '##core#undefined '() '())
-		p))
 	     (scan (first subs) e)
-	     (unless (memq var e) (mark var))
-	     (remember var n) )]
+	     (let ((p (alist-ref var previous)))
+	       (when (and p (not (memq var unsafe)))
+		 (compiler-warning 
+		  'var
+		  "dropping assignment of unused value to global variable `~s'"
+		  var)
+		 (copy-node!
+		  (make-node '##core#undefined '() '())
+		  p))
+	       (unless (memq var e) (mark var))
+	       (remember var n) ) ) ]
 
 	  [else (scan-each subs e)] ) ) )
 
@@ -1782,7 +1784,8 @@
 	    (when (debugging 'l "accessibles:") (pretty-print al))
 	    (debugging 'p "eliminating liftables by access-lists and non-liftable callees...")
 	    (let ([ls (eliminate3 (eliminate4 g2))]) ;(eliminate2 g2 al)))]) - why isn't this used?
-	      (debugging 'o "liftable local procedures" (delay (unzip1 ls)))
+	      (when (pair? ls)
+		(debugging 'o "liftable local procedures" (delay (unzip1 ls))))
 	      (debugging 'p "gathering extra parameters...")
 	      (let ([extra (compute-extra-variables ls)])
 		(when (debugging 'l "additional parameters:") (pretty-print extra))

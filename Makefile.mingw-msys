@@ -91,8 +91,7 @@ all: libchicken$(A) libuchicken$(A) \
 	$(PROGRAM_PREFIX)chicken-install$(PROGRAM_SUFFIX)$(EXE) \
 	$(PROGRAM_PREFIX)chicken-uninstall$(PROGRAM_SUFFIX)$(EXE) \
 	$(PROGRAM_PREFIX)chicken-status$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)chicken-bug$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)chicken-setup$(PROGRAM_SUFFIX)$(EXE)
+	$(PROGRAM_PREFIX)chicken-bug$(PROGRAM_SUFFIX)$(EXE)
 
 chicken-config.h: chicken-defaults.h
 	echo "#define HAVE_DIRENT_H 1" >$@
