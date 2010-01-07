@@ -1170,7 +1170,7 @@
 				(if (eq? n 0)
 				    `(##sys#append ,htx
 						   ,(walk tail n) )
-				    `(##sys#cons (##sys#list ,%unquote-splicing
+				    `(##sys#cons (##sys#list (,%quote ,%unquote-splicing)
 							     ,(walk htx (fx- n 1)) )
 						 ,(walk tail n) ) ) )
 			      `(##sys#cons ,(walk head n) ,(walk tail n)) ) ) )
