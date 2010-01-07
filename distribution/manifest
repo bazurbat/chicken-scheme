@@ -191,6 +191,7 @@ scripts/makedist.scm
 scripts/README
 scripts/henrietta.scm
 scripts/henrietta.cgi
+scripts/identify-branch
 synrules.scm
 expand.scm
 expand.c
