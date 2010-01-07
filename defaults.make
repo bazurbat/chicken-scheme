@@ -70,7 +70,7 @@ IDOCDIR = $(IDATADIR)$(SEP)doc
 ICHICKENLIBDIR = $(ILIBDIR)$(SEP)chicken
 IEGGDIR = $(ICHICKENLIBDIR)$(SEP)$(BINARYVERSION)
 else
-BRANCHNAME = $(shell scripts/identify-branch)
+BRANCHNAME = $(shell scripts/identify-branch $(SRCDIR))
 SPREFIX = $(PREFIX)
 IBINDIR = $(BINDIR)
 ILIBDIR = $(LIBDIR)
