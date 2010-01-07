@@ -112,7 +112,7 @@ EOF
 			     (loop (append (map (cut string #\- <>) sos) (cdr args)) pats)
 			     (usage 1)))
 		       (usage 1)))
-		  (else (loop (cdr args) (cons arg pats))))))))
+		  (else (loop (cdr args) (cons (glob->regexp arg) pats))))))))
 
   (main (command-line-arguments))
   

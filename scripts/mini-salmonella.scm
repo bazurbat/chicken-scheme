@@ -62,7 +62,7 @@
 (define (install-egg egg dir)
   (let ((status
 	 (system
-	  (sprintf "~a -force -t local -l ~a ~a ;2>~a >nul:"
+	  (sprintf "~a -t local -l ~a ~a ";2>~a >nul:"
 		   *chicken-install*
 		   (normalize-pathname *eggdir*)
 		   egg
