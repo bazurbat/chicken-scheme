@@ -9,14 +9,25 @@
 (use posix files extras data-structures srfi-1 setup-api srfi-13 utils)
 
 (define (usage code)
-  (print "usage: mini-salmonella EGGDIR [PREFIX]")
+  (print "usage: mini-salmonella [-h] [-t] [-d] EGGDIR [PREFIX]")
   (exit code) )
 
-(define-values (*eggdir* *prefix*)
-  (let-optionals (command-line-arguments) 
-      ((eggdir (usage 1))
-       (prefix (pathname-directory (pathname-directory (repository-path)))))
-    (values eggdir prefix)))
+(define *eggdir* #f)
+(define *debug* #f)
+(define *prefix* (pathname-directory (pathname-directory (repository-path))))
+(define *run-tests* #f)
+
+(let loop ((args (command-line-arguments)))
+  (when (pair? args)
+    (let ((arg (car args)))
+      (cond ((string=? "-h" arg) (usage 0))
+	    ((string=? "-t" arg) (set! *run-tests* #t))
+	    ((string=? "-d" arg) (set! *debug* #t))
+	    (*eggdir* (set! *prefix* arg))
+	    (else (set! *eggdir* arg)))
+      (loop (cdr args)))))
+
+(unless *eggdir* (usage 1))
 
 (define *binary-version* (##sys#fudge 42))
 (define *repository* (make-pathname *prefix* (conc "lib/chicken/" *binary-version*)))
@@ -25,7 +36,10 @@
 (define (cleanup-repository)
   (for-each 
    (lambda (f)
-     (delete-file (make-pathname *repository* f)))
+     (let ((f2 (make-pathname *repository* f)))
+       (if (directory? f2)
+	   (remove-directory f2)
+	   (delete-file f2))))
    (lset-difference string=? (directory *repository*) *snapshot*)))
 
 (define *chicken-install*
@@ -48,29 +62,40 @@
   (printf "~a..~?~%" (make-string (max 2 (- 32 (string-length egg))) #\.)
 	  msg args) )
 
+(define *errlogfile* "mini-salmonella.errors.log")
 (define *logfile* "mini-salmonella.log")
 (define *tmplogfile* "mini-salmonella.tmp.log")
 
 (on-exit (lambda () (delete-file* *tmplogfile*)))
 
-(define (copy-log file)
+(define (copy-log egg file)
   (let ((log (read-all file)))
-    (with-output-to-file *logfile*
-      (cut display log)
+    (with-output-to-file *errlogfile*
+      (lambda ()
+	(print #\newline egg #\:)
+	(display log))
       #:append)))
 
 (define (install-egg egg dir)
-  (let ((status
-	 (system
-	  (sprintf "~a -t local -l ~a ~a ";2>~a >nul:"
-		   *chicken-install*
-		   (normalize-pathname *eggdir*)
-		   egg
-		   *tmplogfile*))))
-    (cond ((zero? status) (report egg "OK"))
-	  (else
-	   (report egg "FAILED")
-	   (copy-log *tmplogfile*)))))
+  (let ((command
+	 (sprintf "~a ~a -t local -l ~a ~a ~a"
+		  *chicken-install*
+		  (if *run-tests* "-test" "")
+		  (normalize-pathname *eggdir*)
+		  egg
+		  (if (not *debug*)
+		      (sprintf "2>~a >>~a.out" *tmplogfile* *logfile*)
+		      ""))))
+    (when *debug*
+      (print "  " command))
+    (let ((status (system command)))
+      (cond ((zero? status) (report egg "OK"))
+	    (else
+	     (report egg "FAILED")
+	     (copy-log egg *tmplogfile*))))))
+
+(delete-file* *errlogfile*)
+(delete-file* *logfile*)
 
 (for-each
  (lambda (egg)
