@@ -76,6 +76,9 @@
 	(display log))
       #:append)))
 
+(define *failed* 0)
+(define *succeeded* 0)
+
 (define (install-egg egg dir)
   (let ((command
 	 (sprintf "~a ~a -t local -l ~a ~a ~a"
@@ -89,9 +92,12 @@
     (when *debug*
       (print "  " command))
     (let ((status (system command)))
-      (cond ((zero? status) (report egg "OK"))
+      (cond ((zero? status)
+	     (report egg "OK")
+	     (set! *succeeded* (add1 *succeeded)))
 	    (else
 	     (report egg "FAILED")
+	     (set! *failed* (add1 *failed*))
 	     (copy-log egg *tmplogfile*))))))
 
 (delete-file* *errlogfile*)
@@ -110,5 +116,7 @@
 		 (report egg "<no .setup script>")) )
 	   (report egg "<no .meta file>")))))
  (directory *eggdir*))
+
+(print "\nSucceeded: " *succeeded* ", failed: " *failed*)
 
 )

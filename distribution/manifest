@@ -192,6 +192,7 @@ scripts/README
 scripts/henrietta.scm
 scripts/henrietta.cgi
 scripts/identify-branch
+scripts/mini-salmonella.scm
 synrules.scm
 expand.scm
 expand.c
