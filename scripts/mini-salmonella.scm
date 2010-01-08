@@ -94,7 +94,7 @@
     (let ((status (system command)))
       (cond ((zero? status)
 	     (report egg "OK")
-	     (set! *succeeded* (add1 *succeeded)))
+	     (set! *succeeded* (add1 *succeeded*)))
 	    (else
 	     (report egg "FAILED")
 	     (set! *failed* (add1 *failed*))
@@ -117,6 +117,7 @@
 	   (report egg "<no .meta file>")))))
  (directory *eggdir*))
 
-(print "\nSucceeded: " *succeeded* ", failed: " *failed*)
+(print "\nSucceeded: " *succeeded* ", failed: " *failed* ", total: "
+       (+ *succeeded* *failed*))
 
 )
