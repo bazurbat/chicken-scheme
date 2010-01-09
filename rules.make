@@ -1209,7 +1209,7 @@ csi.c: $(SRCDIR)csi.scm $(SRCDIR)banner.scm $(SRCDIR)private-namespace.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm
 chicken-profile.c: $(SRCDIR)chicken-profile.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
-chicken-install.c: $(SRCDIR)chicken-install.scm setup-download.c
+chicken-install.c: $(SRCDIR)chicken-install.scm setup-download.c setup-api.c
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -ignore-repository -output-file $@ 
 chicken-uninstall.c: $(SRCDIR)chicken-uninstall.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -ignore-repository -output-file $@ 
