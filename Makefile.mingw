@@ -220,15 +220,15 @@ chicken-defaults.h:
 	echo #ifndef C_TARGET_STATIC_LIB_HOME >>$@
 	echo # define C_TARGET_STATIC_LIB_HOME "$(TARGET_PREFIX)/lib" >>$@
 	echo #endif >>$@
-	echo #ifndef C_CSC_PROGRAM" >>$@
+	echo #ifndef C_CSC_PROGRAM >>$@
 	echo # define C_CSC_PROGRAM "$(CSC_PROGRAM)" >>$@
-	echo #endif" >>$@
-	echo #ifndef C_CSI_PROGRAM" >>$@
+	echo #endif >>$@
+	echo #ifndef C_CSI_PROGRAM >>$@
 	echo # define C_CSI_PROGRAM "$(CSI_PROGRAM)" >>$@
-	echo #endif" >>$@
-	echo #ifndef C_CHICKEN_BUG_PROGRAM" >>$@
+	echo #endif >>$@
+	echo #ifndef C_CHICKEN_BUG_PROGRAM >>$@
 	echo # define C_CHICKEN_BUG_PROGRAM "$(CHICKEN_BUG_PROGRAM)" >>$@
-	echo #endif" >>$@
+	echo #endif >>$@
 	echo #ifndef C_BINARY_VERSION >>$@
 	echo # define C_BINARY_VERSION $(BINARYVERSION) >>$@
 	echo #endif >>$@
