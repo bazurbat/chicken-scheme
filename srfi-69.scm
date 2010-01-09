@@ -134,7 +134,8 @@
   (if (fx< fxn 0) (fxneg fxn) fxn ) )
 
 (define-inline (%hash/limit hsh lim)
-  (fxmod (fxand (foreign-value "C_MOST_POSITIVE_FIXNUM" int)
+  ;; use 32-bit mask to have identical hashes on 64-bit platforms
+  (fxmod (fxand (foreign-value "C_MOST_POSITIVE_32_BIT_FIXNUM" int)
 		(%fxabs hsh))
 	 lim) )
 
