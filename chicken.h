@@ -401,6 +401,7 @@ typedef unsigned __int64   uint64_t;
 # define C_WORD_SIZE              32
 #endif
 
+#define C_MOST_POSITIIVE_32_BIT_FIXNUM  0x3fffffff
 #define C_MOST_NEGATIVE_FIXNUM    (-C_MOST_POSITIVE_FIXNUM - 1)
 
 #ifdef C_SIXTY_FOUR
