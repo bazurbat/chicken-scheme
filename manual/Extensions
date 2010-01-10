@@ -468,6 +468,7 @@ Available options:
 ; {{-password PASS}} : set password for transports that require this
 ; {{-i   -init DIRECTORY}} : initialize empty alternative repository
 ; {{-u   -update-db}} : update export database
+; {{-repository}} : print path to extension repository
 
 
 === chicken-uninstall reference

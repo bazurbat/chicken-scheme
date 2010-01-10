@@ -404,6 +404,7 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
        -password PASS           set password for transports that require this
   -i   -init DIRECTORY          initialize empty alternative repository
   -u   -update-db               update export database
+       -repository              print path used for egg installation
 EOF
 );|
     (exit code))
@@ -442,6 +443,9 @@ EOF
                             (string=? arg "-h")
                             (string=? arg "--help"))
                         (usage 0))
+                       ((string=? arg "-repository")
+                        ((printf "~A" (repository-path))
+                        (exit 0)))
                        ((string=? arg "-force")
                         (set! *force* #t)
                         (loop (cdr args) eggs))
