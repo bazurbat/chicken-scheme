@@ -40,7 +40,7 @@
     (always-bound
       ##sys#windows-platform)
     (bound-to-procedure
-      ##sys#check-port port? read-string for-each-line read-line with-input-from-file
+      ##sys#check-port port? read-string read-line with-input-from-file
       command-line-arguments
       string-append
       system)

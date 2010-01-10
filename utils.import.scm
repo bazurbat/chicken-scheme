@@ -26,9 +26,7 @@
 
 (##sys#register-primitive-module
  'utils
- '(for-each-argv-line
-   for-each-line
-   read-all
+ '(read-all
    system*
    qs
    compile-file))

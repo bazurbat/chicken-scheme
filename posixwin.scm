@@ -2034,8 +2034,9 @@ EOF
 	[pathname-file pathname-file]
 	[directory? directory?] )
     (lambda (dir pred . action-id-limit)
-      (let-optionals action-id-limit
-	  ([action (lambda (x y) (cons x y))] ; no eta reduction here - we want cons inlined.
+      (let-optionals
+	  action-id-limit
+	  ([action (lambda (x y) (cons x y))] ; we want cons inlined
 	   [id '()]
 	   [limit #f] )
 	(##sys#check-string dir 'find-files)
@@ -2045,7 +2046,7 @@ EOF
 		      [(fixnum? limit) (lambda _ (fx< depth limit))]
 		      [else limit] ) ]
 	       [pproc
-		(if (string? pred)
+		(if (or (string? pred) (regexp? pred))
 		    (lambda (x) (string-match pred x))
 		    pred) ] )
 	  (let loop ([fs (glob (make-pathname dir "*"))]
@@ -2059,8 +2060,9 @@ EOF
 			       [(lproc f)
 				(loop rest
 				      (fluid-let ([depth (fx+ depth 1)])
-					(loop (glob (make-pathname f "*")) r) ) ) ]
-			       [else (loop rest r)] ) ]
+					(loop (glob (make-pathname f "*"))
+					      (if (pproc f) (action f r) r)) ) ) ]
+			       [else (loop rest (if (pproc f) (action f r) r))] ) ]
 			[(pproc f) (loop rest (action f r))]
 			[else (loop rest r)] ) ) ) ) ) ) ) ) )
 
