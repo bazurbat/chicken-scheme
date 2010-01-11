@@ -1,3 +1,21 @@
+4.3.3
+
+- various mingw Makefile fixes (Thanks to Jim Ursetto)
+- added new option `-repository' to `chicken-install' (Thanks to Christian
+  Kellermann)
+- removed `chicken-setup' stub program
+- fix to `csc' to use the correct library when fixing dynamic load paths
+  (Thanks to Derrell Piper)
+- removed html documentation from distribution (the wiki manual will
+  now be installed)
+- fixed bug in `reexport' which caused syntax not to be correctly
+  reexported
+- previous assignments to a toplevel variable that are separated by
+  side effect free expressions are removed
+- fixed windows version of `find-files' (thanks to Jim Ursetto)
+- documentation for extensions is not installed automatically by
+  `chicken-install' anymore
+
 4.3.2
 
 - changed binary version from "4" to "5", because the new runtime
@@ -29,7 +47,7 @@
 - fixes in types.db by Jim Ursetto
 - `move-memory!' catches negative offsets now (Thanks to Jim Ursetto)
 - deprecated `define-compiled-syntax'
-- added new floating-point primitives `fpsin`, `fpcos', `fptan',
+- added new floating-point primitives `fpsin', `fpcos', `fptan',
   `fpasin', `fpacos', `fpatan', `fpatan2', `fpexp', `fplog', 
   `fpexpt' and `fpsqrt'
 - heavy cleanup of floating math functions which gives much better performance
