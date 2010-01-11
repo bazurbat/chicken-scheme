@@ -31,7 +31,7 @@
   (disable-warning var)
   (hide ##sys#split-at-separator
 	##sys#r4rs-environment ##sys#r5rs-environment 
-	##sys#interaction-environment pds pdss pxss) 
+	##sys#interaction-environment pds pdss pxss d) 
   (not inline ##sys#repl-eval-hook ##sys#repl-read-hook ##sys#repl-print-hook 
        ##sys#read-prompt-hook ##sys#alias-global-hook ##sys#user-read-hook
        ##sys#syntax-error-hook))
