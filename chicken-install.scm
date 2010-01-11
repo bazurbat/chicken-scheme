@@ -444,7 +444,7 @@ EOF
                             (string=? arg "--help"))
                         (usage 0))
                        ((string=? arg "-repository")
-                        (printf "~a" (repository-path))
+                        (print (repository-path))
                         (exit 0))
                        ((string=? arg "-force")
                         (set! *force* #t)
