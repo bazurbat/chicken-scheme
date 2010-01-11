@@ -80,18 +80,7 @@ POSIXFILE = posixwin
 
 include $(SRCDIR)/defaults.make
 
-# main target
-
-all: libchicken$(A) libuchicken$(A) \
-	$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)csi$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)chicken-profile$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)csc$(PROGRAM_SUFFIX)$(EXE) libchicken$(SO) \
-	libuchicken$(SO) libchickengui$(SO) libchickengui$(A) \
-	$(PROGRAM_PREFIX)chicken-install$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)chicken-uninstall$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)chicken-status$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)chicken-bug$(PROGRAM_SUFFIX)$(EXE)
+TARGETS += libchickengui$(SO) libchickengui$(A)
 
 chicken-config.h: chicken-defaults.h
 	echo "#define HAVE_DIRENT_H 1" >$@
