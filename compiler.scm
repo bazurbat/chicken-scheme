@@ -1487,7 +1487,7 @@
 	 [f-id (gensym 'stub)]
 	 [bufvar (gensym)] 
 	 [rsize (estimate-foreign-result-size rtype)] )
-    (when sname (set-real-name! f-id (string->symbol sname)))
+    (set-real-name! f-id #t)
     (set! foreign-lambda-stubs 
       (cons (make-foreign-stub f-id rtype sname argtypes argnames body cps callback)
 	    foreign-lambda-stubs) )
