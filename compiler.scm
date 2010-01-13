@@ -749,7 +749,7 @@
 		       ((##core#define-compiler-syntax)
 			(let* ((var (cadr x))
 			       (body (caddr x))
-			       (name (##sys#strip-syntax var se #t)))
+			       (name (##sys#strip-syntax var se #f)))
 			  (when body
 			    (set! compiler-syntax
 			      (alist-cons
@@ -777,7 +777,7 @@
 			(let ((bs (map
 				   (lambda (b)
 				     (##sys#check-syntax 'let-compiler-syntax b '(symbol . #(_ 0 1)))
-				     (let ((name (##sys#strip-syntax (car b) se #t)))
+				     (let ((name (##sys#strip-syntax (car b) se #f)))
 				       (list 
 					name 
 					(and (pair? (cdr b))

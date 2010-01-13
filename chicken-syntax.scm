@@ -1102,8 +1102,8 @@
  'let-compiler-syntax '()
  (##sys#er-transformer
   (syntax-rules ()
-    ((_ ((name transformer) ...) body ...)
-     (##core#let-compiler-syntax ((name transformer) ...) body ...)))))
+    ((_ (binding ...) body ...)
+     (##core#let-compiler-syntax (binding ...) body ...)))))
 
 
 ;;; Just in case someone forgets
