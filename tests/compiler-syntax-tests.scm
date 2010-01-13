@@ -57,9 +57,20 @@
 (module bar (xxx)
   (import scheme chicken)
   (define (xxx) 'yyy)			; ineffective - suboptimal
+  (define (abc) 123)
   ;(assert (eq? 'yyy (xxx)))
   (define-compiler-syntax xxx
     (syntax-rules ()
       ((_) 'zzz)))
+  (define-syntax alias
+    (syntax-rules ()
+      ((_ name x)
+       (define-compiler-syntax name
+	 (syntax-rules ()
+	   ((_ . args) (x . args)))))))
+  (alias pof +)
+  (alias pif xxx)
+  (assert (= 7 (pof 3 4)))
+  (assert (eq? 'zzz (pif)))
   (print (xxx))
   (assert (eq? 'zzz (xxx))))
