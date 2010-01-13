@@ -85,8 +85,9 @@
 	  [(##core#call) (touch)]
 
 	  [(set!)
-	   (let ([var (first params)])
-	     (scan (first subs) e)
+	   (let ((var (first params))
+		 (val (first subs)))
+	     (scan val e)
 	     (let ((p (alist-ref var previous)))
 	       (when (and p (not (memq var unsafe)))
 		 (compiler-warning 
@@ -96,6 +97,14 @@
 		 (copy-node!
 		  (make-node '##core#undefined '() '())
 		  p))
+	       (when (and (not escaped)
+			  (not (memq var e))
+			  (not (memq var unsafe))
+			  (eq? '##core#variable (node-class val)))
+		 (let ((valname (first (node-parameters val))))
+		   (unless (memq valname e)
+		     (debugging 'x (sprintf "toplevel-alias: ~s -> ~s" var valname))
+		     (##sys#put! var '##compiler#toplevel-alias valname))))
 	       (unless (memq var e) (mark var))
 	       (remember var n) ) ) ]
 
@@ -214,6 +223,7 @@
 		    (touch)
 		    (debugging 'o "substituted constant variable" var)
 		    (qnode (car (node-parameters (test var 'value)))) )
+		   ((##sys#get var '##compiler#toplevel-alias) => replace)
 		   (else
 		    (if (not (eq? var (first params)))
 			(begin
