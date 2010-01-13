@@ -1103,7 +1103,7 @@ extern double trunc(double);
 #define C_null_pointerp(x)              C_mk_bool((void *)C_u_i_car(x) == NULL)
 #define C_update_pointer(p, ptr)        (C_set_block_item(ptr, 0, C_num_to_unsigned_int(p)), C_SCHEME_UNDEFINED)
 #define C_copy_pointer(from, to)        (C_set_block_item(to, 0, C_u_i_car(from)), C_SCHEME_UNDEFINED)
-#define C_pointer_to_object(ptr)        ((C_word*)C_block_item(ptr, 0))
+#define C_pointer_to_object(ptr)        C_block_item(ptr, 0)
 
 #define C_direct_return(dk, x)          (C_kontinue(dk, x), C_SCHEME_UNDEFINED)
 
