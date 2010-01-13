@@ -1091,6 +1091,8 @@
  'define-compiler-syntax '()
  (##sys#er-transformer
   (syntax-rules ()
+    ((_ name)
+     (##core#define-compiler-syntax name #f))
     ((_ (name . llist) body ...)
      (define-compiler-syntax name (lambda llist body ...)))
     ((_ name transformer)

@@ -297,6 +297,7 @@ for example.
 
 ==== define-compiler-syntax
 
+<macro>(define-compiler-syntax NAME)</macro><br>
 <macro>(define-compiler-syntax NAME TRANSFORMER)</macro><br>
 <macro>(define-compiler-syntax (NAME VAR ...) BODY ...)</macro>
 
@@ -324,12 +325,17 @@ can be defined with {{let-compiler-syntax}}.
     ((_ x 0) x) ) )
 </scheme>
 
+If no transformer is given, then {{(define-compiler-syntax NAME)}} removes
+any compiler-syntax definitions for {{NAME}}.
+
 
 ==== let-compiler-syntax
 
-<macro>(let-compiler-syntax ((NAME TRANSFORMER) ...) BODY ...)</macro>
+<macro>(let-compiler-syntax ((NAME [TRANSFORMER]) ...) BODY ...)</macro>
 
 Allows definition local compiler macros, which are only applicable inside {{BODY ...}}.
+By not providing a transformer expression, compiler-syntax for specific identifiers
+can be temporarily disabled.
 
 
 === Conditional forms
