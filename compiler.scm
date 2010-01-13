@@ -411,6 +411,7 @@
 ;;; Expand macros and canonicalize expressions:
 
 (define (canonicalize-expression exp)
+  (let ((compiler-syntax '()))
 
   (define (find-id id se)		; ignores macro bindings
     (cond ((null? se) #f)
@@ -749,35 +750,45 @@
 			(let* ((var (cadr x))
 			       (body (caddr x))
 			       (name (##sys#strip-syntax var se #t)))
+			  (when body
+			    (set! compiler-syntax
+			      (alist-cons
+			       name
+			       (##sys#get name '##compiler#compiler-syntax) compiler-syntax)))
 			  (##sys#put! 
 			   name '##compiler#compiler-syntax
-			   (##sys#cons
-			    (##sys#er-transformer (eval/meta body))
-			    (##sys#current-environment)))
+			   (and body
+				(##sys#cons
+				 (##sys#er-transformer (eval/meta body))
+				 (##sys#current-environment))))
 			  (walk 
 			   (if ##sys#enable-runtime-macros
 			       `(##sys#put! 
 				(##core#syntax ,name)
 				'##compiler#compiler-syntax
-				(##sys#cons
-				 (##sys#er-transformer ,body)
-				 (##sys#current-environment)))
+				,(and body
+				      `(##sys#cons
+					(##sys#er-transformer ,body)
+					(##sys#current-environment))))
 			       '(##core#undefined) )
 			   e se dest)))
 
 		       ((##core#let-compiler-syntax)
-			(let ((bs (map (lambda (b)
-					 (##sys#check-syntax 'let-compiler-syntax b '(symbol _))
-					 (let ((name (##sys#strip-syntax (car b) se #t)))
-					   (list 
-					    name 
-					    (cons (##sys#er-transformer (eval/meta (cadr b))) se)
-					    (##sys#get name '##compiler#compiler-syntax) ) ) )
-				       (cadr x))))
-			  (dynamic-wind	; this ain't thread safe
+			(let ((bs (map
+				   (lambda (b)
+				     (##sys#check-syntax 'let-compiler-syntax b '(symbol . #(_ 0 1)))
+				     (let ((name (##sys#strip-syntax (car b) se #t)))
+				       (list 
+					name 
+					(and (pair? (cdr b))
+					     (cons (##sys#er-transformer (eval/meta (cadr b))) se))
+					(##sys#get name '##compiler#compiler-syntax) ) ) )
+				   (cadr x))))
+			  (dynamic-wind
 			      (lambda ()
 				(for-each
-				 (lambda (b) (##sys#put! (car b) '##compiler#compiler-syntax (cadr b)))
+				 (lambda (b) 
+				   (##sys#put! (car b) '##compiler#compiler-syntax (cadr b)))
 				 bs) )
 			      (lambda ()
 				(walk 
@@ -785,7 +796,8 @@
 				 e se dest) )
 			      (lambda ()
 				(for-each
-				 (lambda (b) (##sys#put! (car b) '##compiler#compiler-syntax (caddr b)))
+				 (lambda (b)
+				   (##sys#put! (car b) '##compiler#compiler-syntax (caddr b)))
 				 bs) ) ) ) )
 
 		       ((##core#module)
@@ -804,7 +816,8 @@
 						  (##sys#syntax-error-hook
 						   'module
 						   "invalid export syntax" exp name))))
-					 (##sys#strip-syntax (caddr x))))))
+					 (##sys#strip-syntax (caddr x)))))
+			       (csyntax compiler-syntax))
 			  (when (##sys#current-module)
 			    (##sys#syntax-error-hook 'module "modules may not be nested" name))
 			  (let-values (((body mreg)
@@ -856,18 +869,24 @@
 							(##sys#current-environment)
 							#f)
 						       xs))))))))
-			    (canonicalize-begin-body
-			     (append
-			      (parameterize ((##sys#current-module #f)
-					     (##sys#macro-environment (##sys#meta-macro-environment)))
-				(map
-				 (lambda (x)
-				   (walk 
-				    x 
-				    e 	;?
-				    (##sys#current-meta-environment) #f) )
-				 mreg))
-			      body)))))
+			    (let ((body
+				   (canonicalize-begin-body
+				    (append
+				     (parameterize ((##sys#current-module #f)
+						    (##sys#macro-environment (##sys#meta-macro-environment)))
+				       (map
+					(lambda (x)
+					  (walk 
+					   x 
+					   e 	;?
+					   (##sys#current-meta-environment) #f) )
+					mreg))
+				     body))))
+			      (do ((cs compiler-syntax (cdr cs)))
+				  ((eq? cs csyntax))
+				(##sys#put! (caar cs) '##compiler#compiler-syntax (cdar cs)))
+			      (set! compiler-syntax csyntax)
+			      body))))
 
 		       ((##core#named-lambda)
 			(walk `(##core#lambda ,@(cddr x)) e se (cadr x)) )
@@ -1245,7 +1264,7 @@
 	(set! extended-bindings (append internal-bindings extended-bindings))
 	exp) )
    '() (##sys#current-environment)
-   #f) )
+   #f) ) )
 
 
 (define (process-declaration spec se)	; se unused in the moment
@@ -1487,7 +1506,7 @@
 	 [f-id (gensym 'stub)]
 	 [bufvar (gensym)] 
 	 [rsize (estimate-foreign-result-size rtype)] )
-    (set-real-name! f-id #t)
+    (when sname (set-real-name! f-id (string->symbol sname)))
     (set! foreign-lambda-stubs 
       (cons (make-foreign-stub f-id rtype sname argtypes argnames body cps callback)
 	    foreign-lambda-stubs) )
