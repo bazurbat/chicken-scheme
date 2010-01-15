@@ -3,6 +3,7 @@
 # test-chicken.sh
 
 set -e
+set -x				# XXX
 
 latest="4.3.0"
 version=
@@ -14,7 +15,7 @@ function usage () {
     echo "usage: test-chicken.sh [-h] [-t TREEDIR] [-d] [VERSION]"
 }
 
-while "$1"; do
+while test -n "$1"; do
     case "$1" in
 	-t) treedir="$2"
 	    shift
@@ -29,7 +30,9 @@ while "$1"; do
 done
 
 if test -z "$download"; then
-    git clone http://chicken.wiki.br/git/chicken-core.git
+    if test \! -d chicken-core; then
+	git clone http://chicken.wiki.br/git/chicken-core.git
+    fi
     cd chicken-core
     if test -n "$version"; then
 	git checkout "$version"
@@ -59,15 +62,16 @@ else
 	    platform="macosx";;
 	*) make="make"
 	    platform="linux";;	# guess
-esac
+    esac
+fi
 
 if test -z "$download"; then
     $make PLATFORM=$platform PREFIX=`pwd` bootstrap
 fi
 
-$make PLATFORM=$platform PREFIX=`pwd` install check
+$make PLATFORM=$platform PREFIX=`pwd` CHICKEN=./chicken-boot install check
 touch *.scm
-$make PLATFORM=$platform PREFIX=`pwd` CHICKEN=bin/chicken clean all
+$make PLATFORM=$platform PREFIX=`pwd` CHICKEN=bin/chicken clean all install
 bin/csi -s scripts/makedist.scm --make=$make --platform=$platform CHICKEN=bin/chicken
 buildversion=`cat buildversion`
 tar xfz chicken-${buildversion}.tar.gz
