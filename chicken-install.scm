@@ -266,7 +266,12 @@
                       (let-values ([(missing upgrade) (outdated-dependencies meta)])
 			(set! *dependencies*
 			  (cons
-			   (cons (car e+d+v) (append missing upgrade))
+			   (cons (car e+d+v)
+				 (map (lambda (mu)
+					(if (pair? mu)
+					    (car mu)
+					    mu))
+				      (append missing upgrade)))
 			   *dependencies*))
                         (when (pair? missing)
                           (print " missing: " (string-intersperse missing ", "))
