@@ -1,6 +1,4 @@
 ;;;; mini-salmonella.scm - very simple tool to build all eggs
-;
-; usage: csi -s mini-salmonella.scm EGGDIR [PREFIX]
 
 
 (module mini-salmonella ()
