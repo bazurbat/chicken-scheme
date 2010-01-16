@@ -1091,6 +1091,8 @@
  'define-compiler-syntax '()
  (##sys#er-transformer
   (syntax-rules ()
+    ((_ name)
+     (##core#define-compiler-syntax name #f))
     ((_ (name . llist) body ...)
      (define-compiler-syntax name (lambda llist body ...)))
     ((_ name transformer)
@@ -1100,8 +1102,8 @@
  'let-compiler-syntax '()
  (##sys#er-transformer
   (syntax-rules ()
-    ((_ ((name transformer) ...) body ...)
-     (##core#let-compiler-syntax ((name transformer) ...) body ...)))))
+    ((_ (binding ...) body ...)
+     (##core#let-compiler-syntax (binding ...) body ...)))))
 
 
 ;;; Just in case someone forgets

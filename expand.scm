@@ -946,7 +946,7 @@
  'reexport '() 
  (##sys#er-transformer 
   (cut ##sys#expand-import <> <> <> ##sys#current-environment ##sys#macro-environment 
-       #t #t 'reexport) ) )
+       #f #t 'reexport) ) )
 
 (define ##sys#initial-macro-environment (##sys#macro-environment))
 
