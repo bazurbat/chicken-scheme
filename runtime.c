@@ -7235,8 +7235,8 @@ static char *to_binary(C_uword num)
 {
   char *p;
 
-  buffer[ 65 ] = '\0';
-  p = buffer + 65;
+  buffer[ 66 ] = '\0';
+  p = buffer + 66;
   
   do {
     *(--p) = (num & 1) ? '1' : '0';
@@ -7253,6 +7253,7 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
   C_char *p;
   double f;
   va_list v;
+  int neg = 0;
 
   if(c == 3) radix = 10;
   else if(c == 4) {
@@ -7268,20 +7269,26 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
   if(num & C_FIXNUM_BIT) {
     num = C_unfix(num);
 
+    if(num < 0) {
+      neg = 1;
+      num = -num;
+    }
+
     switch(radix) {
     case 2:
       p = to_binary(num);
       break;
      
 #ifdef C_SIXTY_FOUR
-    case 8: C_sprintf(p = buffer, C_text("%lo"), num); break;
-    case 10: C_sprintf(p = buffer, C_text("%ld"), num); break;
-    case 16: C_sprintf(p = buffer, C_text("%lx"), num); break;
+    case 8: C_sprintf(p = buffer + 1, C_text("%lo"), num); break;
+    case 10: C_sprintf(p = buffer + 1, C_text("%ld"), num); break;
+    case 16: C_sprintf(p = buffer + 1, C_text("%lx"), num); break;
 #else
-    case 8: C_sprintf(p = buffer, C_text("%o"), num); break;
-    case 10: C_sprintf(p = buffer, C_text("%d"), num); break;
-    case 16: C_sprintf(p = buffer, C_text("%x"), num); break;
+    case 8: C_sprintf(p = buffer + 1, C_text("%o"), num); break;
+    case 10: C_sprintf(p = buffer + 1, C_text("%d"), num); break;
+    case 16: C_sprintf(p = buffer + 1, C_text("%x"), num); break;
 #endif
+
     default: barf(C_BAD_ARGUMENT_TYPE_ERROR, "number->string", C_fix(radix));
     }
   }
@@ -7289,6 +7296,11 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
     f = C_flonum_magnitude(num);
 
     if(C_fits_in_unsigned_int_p(num) == C_SCHEME_TRUE) {
+      if(f < 0) {
+	neg = 1;
+	f = -f;
+      }
+
       switch(radix) {
       case 2:
 	p = to_binary((unsigned int)f);
@@ -7334,11 +7346,13 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
   else
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "number->string", num);
 
-  fini:
-    radix = C_strlen(p);
-    a = C_alloc((C_bytestowords(radix) + 1));
-    radix = C_string(&a, radix, p);
-    C_kontinue(k, radix);
+ fini:
+  if(neg) *(--p) = '-';
+
+  radix = C_strlen(p);
+  a = C_alloc((C_bytestowords(radix) + 1));
+  radix = C_string(&a, radix, p);
+  C_kontinue(k, radix);
 }
 
 

@@ -19,6 +19,22 @@
 (assert (not (rational? 'foo)))
 
 
+;; number->string conversion
+
+(for-each
+ (lambda (x)
+   (let ((number (car x))
+	 (radix (cadr x)))
+     (assert (eqv? number (string->number (number->string number radix) radix)))))
+ '((123 10)
+   (123 2)
+   (123 8)
+   (-123 10)
+   (-123 2)
+   (-123 8)
+   (99.2 10)
+   (-99.2 10)))
+
 ;; fp-math
 
 (assert (= (sin 42.0) (fpsin 42.0)))
