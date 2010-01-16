@@ -57,7 +57,6 @@
 (module bar (xxx)
   (import scheme chicken)
   (define (xxx) 'yyy)			; ineffective - suboptimal
-  (define (abc) 123)
   ;(assert (eq? 'yyy (xxx)))
   (define-compiler-syntax xxx
     (syntax-rules ()
