@@ -631,7 +631,7 @@
   (error
    (sprintf
     "the required extension `~s' ~a - please run~%~%  chicken-install ~a~a~%~%and repeat the current installation operation."
-    ext msg ext (if version (string-append ":" version) "")) ) )
+    ext msg ext (if version (conc ":" version) "")) ) )
 
 (define (required-extension-version . args)
   (let loop ((args args))
