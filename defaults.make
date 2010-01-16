@@ -294,6 +294,7 @@ CHICKEN_OPTIONS = -optimize-level 2 -include-path . -include-path $(SRCDIR) -inl
 ifdef DEBUGBUILD
 CHICKEN_OPTIONS += -feature debugbuild -scrutinize -types $(SRCDIR)types.db
 endif
+CHICKEN_OPTIONS += $(EXTRA_CHICKEN_OPTIONS)
 CHICKEN_LIBRARY_OPTIONS = $(CHICKEN_OPTIONS) -explicit-use -no-trace
 CHICKEN_PROGRAM_OPTIONS = $(CHICKEN_OPTIONS) -no-lambda-info -local
 CHICKEN_COMPILER_OPTIONS = $(CHICKEN_PROGRAM_OPTIONS) -extend private-namespace.scm

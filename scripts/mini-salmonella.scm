@@ -1,6 +1,4 @@
 ;;;; mini-salmonella.scm - very simple tool to build all eggs
-;
-; usage: csi -s mini-salmonella.scm EGGDIR [PREFIX]
 
 
 (module mini-salmonella ()
@@ -9,13 +7,14 @@
 (use posix files extras data-structures srfi-1 setup-api srfi-13 utils)
 
 (define (usage code)
-  (print "usage: mini-salmonella [-h] [-t] [-d] EGGDIR [PREFIX]")
+  (print "usage: mini-salmonella [-h] [-t] [-d] [-f] EGGDIR [PREFIX]")
   (exit code) )
 
 (define *eggdir* #f)
 (define *debug* #f)
 (define *prefix* (pathname-directory (pathname-directory (repository-path))))
 (define *run-tests* #f)
+(define *download* #f)
 
 (let loop ((args (command-line-arguments)))
   (when (pair? args)
@@ -23,6 +22,7 @@
       (cond ((string=? "-h" arg) (usage 0))
 	    ((string=? "-t" arg) (set! *run-tests* #t))
 	    ((string=? "-d" arg) (set! *debug* #t))
+	    ((string=? "-f" arg) (set! *download* #t))
 	    (*eggdir* (set! *prefix* arg))
 	    (else (set! *eggdir* arg)))
       (loop (cdr args)))))
@@ -81,10 +81,12 @@
 
 (define (install-egg egg dir)
   (let ((command
-	 (sprintf "~a ~a -t local -l ~a ~a ~a"
+	 (sprintf "~a ~a ~a ~a ~a"
 		  *chicken-install*
 		  (if *run-tests* "-test" "")
-		  (normalize-pathname *eggdir*)
+		  (if *download* 
+		      ""
+		      (string-append "-l " (normalize-pathname *eggdir*)))
 		  egg
 		  (if (not *debug*)
 		      (sprintf "2>~a >>~a.out" *tmplogfile* *logfile*)

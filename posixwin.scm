@@ -1943,8 +1943,8 @@ EOF
 		(##sys#update-errno)
 		(##sys#signal-hook #:process-error loc "cannot execute process" cmdlin))) ) ) ) ) ) )
 
-#;(define process (void))
-#;(define process* (void))
+(define process)
+(define process*)
 (let ([%process
 	(lambda (loc err? cmd args env exactf)
 	  (let ([chkstrlst
