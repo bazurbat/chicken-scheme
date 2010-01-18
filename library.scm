@@ -893,8 +893,6 @@ EOF
   (fp-check-flonum x 'fpfloor)
   (##core#inline_allocate ("C_a_i_flonum_floor" 4) x))
 
-(define ##sys#floor fpfloor) ; needed for backwards compatibility with "numbers" egg
-
 (define (fptruncate x)
   #+(not unsafe)
   (fp-check-flonum x 'fptruncate)
@@ -909,6 +907,11 @@ EOF
   #+(not unsafe)
   (fp-check-flonum x 'fpceiling)
   (##core#inline_allocate ("C_a_i_flonum_ceiling" 4) x))
+
+(define ##sys#floor fpfloor) ;XXX needed for backwards compatibility with "numbers" egg
+(define ##sys#truncate fptruncate)
+(define ##sys#round fpround)
+(define ##sys#ceiling fpceiling)
 
 (define (fpsin x)
   #+(not unsafe)
