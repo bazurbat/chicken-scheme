@@ -50,5 +50,3 @@
   (let ((r (test 75)))
     (unless (equal? r 5)
     (error "incorrect result: " r))))
-
-(main)

@@ -3,7 +3,7 @@
   (c) 2008-2009, The Chicken Team
   (c) 2000-2007, Felix L. Winkelmann
 
-  version 4.3.3
+  version 4.3.4
 
 
  1. Introduction:
@@ -135,6 +135,10 @@
 	  generate incorrect code when given "-O3". It is therefore
 	  recommended not to use OPTIMIZE_FOR_SPEED if your gcc version
 	  is 4.4 or higher.	  
+
+	EXTRA_CHICKEN_OPTIONS=...
+	  Additional options that should be passed to `chicken' when
+	  building the system.
 
         C_COMPILER_OPTIMIZATION_OPTIONS=...
           Override built-in C compiler optimization options. Available

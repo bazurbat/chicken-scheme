@@ -1,3 +1,19 @@
+4.3.4
+
+- the banner shows the branchname of the build, unless it's "master"
+- the `-no-install' option to `chicken-install' is ignored when
+  building/installing dependencies
+- `chicken-uninstall' takes a glob instead of a regular expression as
+  argument
+- fixed bug that caused the `unboxing' optimization to generate incorrect
+  C code
+- the rename and compare functions for low-level macro-definitions 
+  accept now arbitrary s-expressions and renames/compares them recursively
+- `number->string' handles negative-numbers with bases different from 10
+  correctly (thanks to Peter Danenberg)
+- removed deprecated `setup-install-flag' and `setup-verbose-flag' from
+  the `setup-api' module
+
 4.3.3
 
 - various mingw Makefile fixes (Thanks to Jim Ursetto)
