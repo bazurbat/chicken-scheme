@@ -169,7 +169,7 @@
 	    (straighten-binding! n) ))
 
 	(define (straighten-binding! n)
-	  ;; change `(let ((<v> (let (...) <x2>))) <>x)' into 
+	  ;; change `(let ((<v> (let (...) <x2>))) <x>)' into 
 	  ;;        `(let (...) (let ((<v> <x2>)) <x>))'
 	  (let* ((subs (node-subexpressions n))
 		 (bnode (first subs))
@@ -191,6 +191,29 @@
 	      ;;(pp (build-expression-tree n))
 	      (straighten-binding! n)
 	      (straighten-binding! (second (node-subexpressions n))))))
+
+	(define (straighten-conditional! n)
+	  ;; change `(if (let (...) <x1>) <x2> <x3>)' into 
+	  ;;        `(let (...) (if <x1> <x2> <x3>))'
+	  (let* ((subs (node-subexpressions n))
+		 (bnode (first subs))
+		 (bcl (node-class bnode)))
+	    (when (memq bcl '(let ##core#let_unboxed))
+	      (d "straighten conditional: ~a" (node-parameters bnode))
+	      (copy-node!
+	       (make-node
+		bcl
+		(node-parameters bnode)
+		(let ((bsubs (node-subexpressions bnode)))
+		  (list (first bsubs)
+			(make-node
+			 (node-class n)
+			 (node-parameters n)
+			 (cons (second bsubs) (cdr subs))))))
+	       n)
+	      (straighten-conditional! (second (node-subexpressions n)))
+	      ;;(pp (build-expression-tree n))
+	      (straighten-binding! n))))
 
 	(define (straighten-call! n)
 	  ;; change `(<proc> ... (let (...) <x>) ...)' into
@@ -321,6 +344,7 @@
 
 	      ((if ##core#cond)
 	       (invalidate (walk (first subs) #f #f pass2?))
+	       (straighten-conditional! n)
 	       (let ((r1 (walk (second subs) dest udest pass2?))
 		     (r2 (walk (third subs) dest udest pass2?)))
 		 (merge r1 r2)))

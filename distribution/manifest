@@ -113,6 +113,7 @@ tcp.scm
 tests/library-tests.scm
 tests/compiler-tests.scm
 tests/compiler-tests-2.scm
+tests/compiler-tests-3.scm
 tests/inlining-tests.scm
 tests/locative-stress-test.scm
 tests/r4rstest.scm

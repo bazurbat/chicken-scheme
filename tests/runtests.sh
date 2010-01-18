@@ -37,8 +37,12 @@ echo "======================================== compiler tests ..."
 $compile compiler-tests.scm
 ./a.out
 
-echo "======================================== compiler tests (2) ..."
+echo "======================================== compiler tests (lambda-lift) ..."
 $compile compiler-tests-2.scm -lambda-lift
+./a.out
+
+echo "======================================== compiler tests (unboxing) ..."
+$compile compiler-tests-3.scm -unsafe -unboxing
 ./a.out
 
 echo "======================================== compiler inlining tests  ..."
@@ -211,7 +215,7 @@ $compile -e embedded2.scm
 ./a.out
 
 echo "======================================== timing compilation ..."
-time $compile compiler.scm -O5 -debug pb -v
+time $compile compiler.scm -O5 -debug pb -v -C -Wa,-W
 echo "executing ..."
 time ./a.out
 
