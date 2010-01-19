@@ -1,6 +1,6 @@
 ;;;; csc.scm - Driver program for the CHICKEN compiler - felix -*- Scheme -*-
 ;
-; Copyright (c) 2008-2009, The Chicken Team
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -108,12 +108,20 @@
 (define pic-options (if (or mingw msvc) '("-DPIC") '("-fPIC" "-DPIC")))
 (define windows-shell WINDOWS_SHELL)
 
-(define default-library (string-append
-                         (if msvc "libchicken-static." "libchicken.")
-                         library-extension))
-(define default-unsafe-library (string-append
-                                (if msvc "libuchicken-static." "libuchicken.")
-                                library-extension))
+(define default-library
+  (string-append
+   (if msvc "libchicken-static." "libchicken.")
+   library-extension))
+
+(define default-unsafe-library
+  (string-append
+   (if msvc "libuchicken-static." "libuchicken.")
+   library-extension))
+
+(define default-gui-library
+  (string-append
+   (if msvc "libchickengui-static." "libchickengui.")
+   library-extension))
 
 (define cleanup-filename quotewrap)
 
@@ -185,10 +193,12 @@
   (if host-mode
       INSTALL_MORE_STATIC_LIBS
       TARGET_MORE_STATIC_LIBS))
+
 (define extra-shared-libraries 
   (if host-mode 
       INSTALL_MORE_LIBS
       TARGET_MORE_LIBS))
+
 (define default-library-files 
   (list
    (quotewrap
@@ -196,10 +206,27 @@
 	    (string-append
 	     (if host-mode INSTALL_LIB_HOME TARGET_LIB_HOME)
 	     (string-append "/" default-library)))) ))
-(define default-shared-library-files (if msvc
-                                         (list (string-append "libchicken." library-extension))
-                                         '("-lchicken")))
+
+(define default-shared-library-files 
+  (if msvc
+      (list (string-append "libchicken." library-extension))
+      '("-lchicken")))
+
+(define default-gui-library-files 
+  (list
+   (quotewrap
+    (prefix default-gui-library "lib"
+	    (string-append
+	     (if host-mode INSTALL_LIB_HOME TARGET_LIB_HOME)
+	     (string-append "/" default-library)))) ))
+
+(define default-gui-shared-library-files 
+  (if msvc
+      (list (string-append "libchickengui." library-extension))
+      '("-lchickengui")))
+
 (define unsafe-libraries #f)
+
 (define unsafe-library-files
   (list
    (quotewrap 
@@ -207,16 +234,19 @@
 	    (string-append 
 	     (if host-mode INSTALL_LIB_HOME TARGET_LIB_HOME)
 	     (string-append "/" default-unsafe-library)))) ))
-(define unsafe-shared-library-files (if msvc
-                                        (list (string-append "libuchicken." library-extension))
-                                        '("-luchicken")))
+
+(define unsafe-shared-library-files
+  (if msvc
+      (list (string-append "libuchicken." library-extension))
+      '("-luchicken")))
+
 (define (use-unsafe-libraries)
   (set! unsafe-libraries #t)
   (set! library-files unsafe-library-files)
   (set! shared-library-files unsafe-shared-library-files))
 
-(define gui-library-files default-library-files)
-(define gui-shared-library-files default-shared-library-files)
+(define gui-library-files default-gui-library-files)
+(define gui-shared-library-files default-gui-shared-library-files)
 (define library-files default-library-files)
 (define shared-library-files default-shared-library-files)
 

@@ -3842,6 +3842,12 @@ EOF
 		     args) )
 	((35) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a flonum" args))
 	((36) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a procedure" args))
+	((37) (apply ##sys#signal-hook #:runtime-error loc
+		     "code to load dynamically was linked with non-GUI runtime libraries, but executing runtime was not"
+		     args) )
+	((38) (apply ##sys#signal-hook #:runtime-error loc
+		     "code to load dynamically was linked with GUI runtime libraries, but executing runtime was not"
+		     args) )
 	(else (apply ##sys#signal-hook #:runtime-error loc "unknown internal error" args)) ) ) ) )
 
 
