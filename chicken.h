@@ -1318,7 +1318,7 @@ extern double trunc(double);
 #endif
 
 #if defined(C_SHARED) && defined(C_WINDOWS_GUI)
-# define C_gui_nongui_marker            C_externexport void C_gui_application(void) {}
+# define C_gui_nongui_marker            C_externexport void C_dynamic_and_gui(void) {}
 #else
 # define C_gui_nongui_marker
 #endif

@@ -8110,7 +8110,7 @@ void dload_2(void *dummy)
       }
 
       /* do the same check for GUI libraries: */
-      p2 = GetProcAddress(handle, C_text("C_gui_application"));
+      p2 = GetProcAddress(handle, C_text("C_dynamic_and_gui"));
 
 #ifdef C_WINDOWS_GUI
       ok = p2 != NULL;		/* GUI runtime, GUI code */
