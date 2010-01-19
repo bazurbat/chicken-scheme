@@ -87,16 +87,16 @@ include $(SRCDIR)/defaults.make
 # main target
 
 ifndef BUILD_SETUP_TOOLS
-TARGETS = libchicken$(A) libuchicken$(A) chicken$(EXE) csi$(EXE) \
-	chicken-profile$(EXE) csc$(EXE) libchicken$(SO) \
+TARGETS = libchicken$(A) libuchicken$(A) $(CHICKEN_PROGRAM)$(EXE) $(CSI_PROGRAM)$(EXE) \
+	$(CHICKEN_PROFILE_PROGRAM)$(EXE) $(CSC_PROGRAM)$(EXE) libchicken$(SO) \
 	libuchicken$(SO) \
-	libchickengui$(SO) chicken-bug$(EXE)
+	libchickengui$(SO) $(CHICKEN_BUG_PROGRAM)$(EXE)
 else
-TARGETS = libchicken$(A) libuchicken$(A) chicken$(EXE) csi$(EXE) \
-	chicken-profile$(EXE) csc$(EXE) libchicken$(SO) \
-	libuchicken$(SO) chicken-install$(EXE) chicken-uninstall$(EXE) \
-	chicken-status$(EXE) \
-	libchickengui$(SO) chicken-bug$(EXE)
+TARGETS = libchicken$(A) libuchicken$(A) $(CHICKEN_PROGRAM)$(EXE) $(CSI_PROGRAM)$(EXE) \
+	$(CHICKEN_PROFILE_PROGRAM)$(EXE) $(CSC_PROGRAM)$(EXE) libchicken$(SO) \
+	libuchicken$(SO) $(CHICKEN_INSTALL_PROGRAM)$(EXE) $(CHICKEN_UNINSTALL_PROGRAM)$(EXE) \
+	$(CHICKEN_STATUS_PROGRAM)$(EXE) \
+	libchickengui$(SO) $(CHICKEN_BUG_PROGRAM)$(EXE)
 endif
 
 chicken-config.h: chicken-defaults.h

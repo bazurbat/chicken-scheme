@@ -523,10 +523,10 @@ EOF
 
   (let loop ([args args])
     (cond [(null? args)
-           ;Builtin search directory options do not override explict options
+	   ;; Builtin search directory options do not override explict options
            (set! compile-options (append compile-options builtin-compile-options))
            (set! link-options (append link-options builtin-link-options))
-           ;
+	   ;;
 	   (when inquiry-only
 	     (when show-cflags (print* (compiler-options) #\space))
 	     (when show-ldflags (print* (linker-options) #\space))
@@ -639,6 +639,7 @@ EOF
 		(t-options "-static-extension" (car rest))
 		(set! rest (cdr rest)) ]
 	       [(-windows |-W|)
+		(when (or msvc mingw)
 		(set! gui #t)
 		(cond
                  (mingw
@@ -649,7 +650,7 @@ EOF
                  (msvc
                   (set! link-options
                     (cons* "kernel32.lib" "user32.lib" "gdi32.lib" link-options))
-		  (set! compile-options (cons "-DC_WINDOWS_GUI" compile-options)))) ]
+		  (set! compile-options (cons "-DC_WINDOWS_GUI" compile-options)))) ) ]
 	       [(-framework)
 		(check s rest)
 		(when osx 

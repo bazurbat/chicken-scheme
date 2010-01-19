@@ -496,7 +496,7 @@
 	 (fname (make-pathname #f sname "scm"))
 	 (iname (make-pathname #f sname "import.scm")))
     (compile -s -O2 -d1 ,fname -j ,name)
-    (when static 
+    (when static
       (compile -c -O2 -d1 ,fname -j ,name -unit ,name))
     (compile -s -O2 -d0 ,iname)
     (install-extension
