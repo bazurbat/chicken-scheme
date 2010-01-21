@@ -54,6 +54,7 @@ static C_TLS int C_wait_status;
 #include <fcntl.h>
 #include <dirent.h>
 #include <pwd.h>
+#include <sys/utime.h>
 
 #if defined(__sun__) && defined(__svr4__)
 # include <sys/tty.h>
@@ -479,6 +480,14 @@ static int get_tty_size(int p, int *rows, int *cols)
 }
 #endif
 
+static int set_file_mtime(char *filename, C_word tm)
+{
+  struct _utimbuf tb;
+
+  tb.actime = tb.modtime = C_num_to_int(tm);
+  return _utime(filename, &tb);
+}
+
 EOF
 ) )
 
@@ -780,7 +789,20 @@ EOF
           _stat_st_blksize _stat_st_blocks) )
 
 (define (file-size f) (##sys#stat f #f 'file-size) _stat_st_size)
-(define (file-modification-time f) (##sys#stat f #f 'file-modification-time) _stat_st_mtime)
+
+(define file-modification-time
+  (getter-with-setter 
+   (lambda (f)
+     (##sys#stat f #f 'file-modification-time) _stat_st_mtime)
+   (lambda (f t)
+     (##sys#check-number t 'set-file-modification-time)
+     (let ((r ((foreign-lambda int "set_file_mtime" c-string scheme-object)
+	       (##sys#expand-home-path file) t)))
+       (when (fx< r 0)
+	 (posix-error 
+	  #:file-error 'set-file-modification-time
+	  "cannot set file modification-time" f t))))))
+
 (define (file-access-time f) (##sys#stat f #f 'file-access-time) _stat_st_atime)
 (define (file-change-time f) (##sys#stat f #f 'file-change-time) _stat_st_ctime)
 (define (file-owner f) (##sys#stat f #f 'file-owner) _stat_st_uid)
