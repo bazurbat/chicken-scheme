@@ -1108,9 +1108,11 @@ EOF
    (lambda (f)
      (##sys#stat f) _stat_st_mtime)
    (lambda (f t)
+     (##sys#check-string f 'set-file-modification-time)
      (##sys#check-number t 'set-file-modification-time)
      (let ((r ((foreign-lambda int "set_file_mtime" c-string scheme-object)
-	       (##sys#expand-home-path f) t)))
+	       (##sys#expand-home-path f) 
+	       t)))
        (when (fx< r 0)
 	 (posix-error 
 	  #:file-error 'set-file-modification-time
