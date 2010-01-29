@@ -373,10 +373,14 @@ this port. Otherwise an error is signaled.
 <procedure>(file-access-time FILE)</procedure><br>
 <procedure>(file-change-time FILE)</procedure><br>
 <procedure>(file-modification-time FILE)</procedure>
+<procedure>(set! (file-modification-time FILE) SECONDS)</procedure>
 
 Returns time (in seconds) of the last access, modification or change of {{FILE}}. {{FILE}}
 may be a filename or a file-descriptor. If the file does not exist,
-an error is signaled.
+an error is signaled. 
+
+{{(set! (file-modification-time FILE) SECONDS)}} sets the access- and modification
+time of {{FILE}} to {{SECONDS}}.
 
 ==== file-stat
 

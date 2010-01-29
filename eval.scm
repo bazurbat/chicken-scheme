@@ -1102,7 +1102,7 @@
        (##sys#chicken-prefix 
 	(##sys#string-append 
 	 "lib/chicken/"
-	 (##sys#number->string (or (##sys#fudge 42) default-binary-version)) ) )
+	 (##sys#number->string (##sys#fudge 42))) )
        install-egg-home) ) )
 
 (define repository-path ##sys#repository-path)

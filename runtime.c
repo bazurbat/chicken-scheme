@@ -1560,6 +1560,16 @@ void barf(int code, char *loc, ...)
     c = 0;
     break;
 
+  case C_RUNTIME_GUI_DLOAD_NONGUI_ERROR:
+    msg = C_text("code to load dynamically was linked with non-GUI runtime libraries, but executing runtime was not");
+    c = 0;
+    break;
+
+  case C_RUNTIME_NONGUI_DLOAD_GUI_ERROR:
+    msg = C_text("code to load dynamically was linked with GUI runtime libraries, but executing runtime was not");
+    c = 0;
+    break;
+
   case C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR:
     msg = C_text("bad argument type - not a flonum");
     c = 1;
@@ -4151,7 +4161,7 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
 #ifdef C_BINARY_VERSION
     return C_fix(C_BINARY_VERSION);
 #else
-    return C_SCHEME_FALSE;
+    return C_fix(0);
 #endif
 
   default: return C_SCHEME_UNDEFINED;
@@ -8004,7 +8014,7 @@ void dload_2(void *dummy)
 
     if(p != NULL) {
       /* check whether dloaded code is not a library unit
-       * and matches current safety setting: */
+       * and matches current safety/gui setting: */
       if((p2 = C_dlsym(handle, C_text("C_dynamic_and_unsafe"))) == NULL)
 	p2 = C_dlsym(handle, C_text("_C_dynamic_and_unsafe"));
 
@@ -8091,11 +8101,29 @@ void dload_2(void *dummy)
 #endif
       
       /* unsafe marker not found and this is not a library unit? */
-      if(!ok && !C_strcmp(topname, "C_toplevel"))
+      if(!ok && !C_strcmp(topname, "C_toplevel")) {
 #ifdef C_UNSAFE_RUNTIME
 	barf(C_RUNTIME_UNSAFE_DLOAD_SAFE_ERROR, NULL);
 #else
         barf(C_RUNTIME_SAFE_DLOAD_UNSAFE_ERROR, NULL);
+#endif
+      }
+
+      /* do the same check for GUI libraries: */
+      p2 = GetProcAddress(handle, C_text("C_dynamic_and_gui"));
+
+#ifdef C_WINDOWS_GUI
+      ok = p2 != NULL;		/* GUI runtime, GUI code */
+#else
+      ok = p2 == NULL;		/* non-GUI runtime, non-GUI code */
+#endif
+      
+      /* GUI marker not found and this is not a library unit? */
+      if(!ok && !C_strcmp(topname, "C_toplevel"))
+#ifdef C_WINDOWS_GUI
+	barf(C_RUNTIME_GUI_DLOAD_NONGUI_ERROR, NULL);
+#else
+	barf(C_RUNTIME_NONGUI_DLOAD_GUI_ERROR, NULL);
 #endif
 
       current_module_name = C_strdup(mname);

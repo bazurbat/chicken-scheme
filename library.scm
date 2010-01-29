@@ -61,6 +61,10 @@
 # define C_BUILD_TAG	""
 #endif
 
+#ifndef C_BRANCH_NAME
+# define C_BRANCH_NAME   ""
+#endif
+
 #define C_close_file(p)	      (C_fclose((C_FILEPTR)(C_port_file(p))), C_SCHEME_UNDEFINED)
 #define C_a_f64peek(ptr, c, b, i)  C_flonum(ptr, ((double *)C_data_pointer(b))[ C_unfix(i) ])
 #define C_fetch_c_strlen(b, i) C_fix(strlen((C_char *)C_block_item(b, C_unfix(i))))
@@ -3842,6 +3846,12 @@ EOF
 		     args) )
 	((35) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a flonum" args))
 	((36) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a procedure" args))
+	((37) (apply ##sys#signal-hook #:runtime-error loc
+		     "code to load dynamically was linked with non-GUI runtime libraries, but executing runtime was not"
+		     args) )
+	((38) (apply ##sys#signal-hook #:runtime-error loc
+		     "code to load dynamically was linked with GUI runtime libraries, but executing runtime was not"
+		     args) )
 	(else (apply ##sys#signal-hook #:runtime-error loc "unknown internal error" args)) ) ) ) )
 
 

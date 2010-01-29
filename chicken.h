@@ -564,6 +564,8 @@ typedef unsigned __int64   uint64_t;
 #define C_RUNTIME_SAFE_DLOAD_UNSAFE_ERROR             34
 #define C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR           35
 #define C_BAD_ARGUMENT_TYPE_NO_CLOSURE_ERROR          36
+#define C_RUNTIME_GUI_DLOAD_NONGUI_ERROR              37
+#define C_RUNTIME_NONGUI_DLOAD_GUI_ERROR              38
 
 
 /* Platform information */
@@ -1313,6 +1315,12 @@ extern double trunc(double);
 # endif
 #else
 # define C_main_entry_point
+#endif
+
+#if defined(C_SHARED) && defined(C_WINDOWS_GUI)
+# define C_gui_nongui_marker            C_externexport void C_dynamic_and_gui(void) {}
+#else
+# define C_gui_nongui_marker
 #endif
 
 #define C_alloc_flonum                  C_word *___tmpflonum = C_alloc(WORDS_PER_FLONUM)
