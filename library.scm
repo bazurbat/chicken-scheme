@@ -1,6 +1,6 @@
 ;;;; library.scm - R5RS library for the CHICKEN compiler
 ;
-; Copyright (c) 2008-2009, The Chicken Team
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -59,6 +59,10 @@
 
 #ifndef C_BUILD_TAG
 # define C_BUILD_TAG	""
+#endif
+
+#ifndef C_BRANCH_NAME
+# define C_BRANCH_NAME   ""
 #endif
 
 #define C_close_file(p)	      (C_fclose((C_FILEPTR)(C_port_file(p))), C_SCHEME_UNDEFINED)

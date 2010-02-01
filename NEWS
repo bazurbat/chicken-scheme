@@ -1,3 +1,11 @@
+4.3.5
+
+- on Windows loading of code compiled with [non-]GUI runtime libraries
+  will fail and produce an error message when the loading executable
+  is linked with a different runtime system
+- on Windows, GUI libraries were not correctly linked by `csc'
+- unit posix: added setter for `file-modification-time'
+
 4.3.4
 
 - the banner shows the branchname of the build, unless it's "master"

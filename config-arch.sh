@@ -1,8 +1,8 @@
 #!/bin/sh
 # config-arch.sh - return host architecture id, if supported by apply-hack
 #
+# Copyright (c) 2008-2010, The Chicken Team
 # Copyright (c) 2000-2007, Felix L. Winkelmann
-# Copyright (c) 2008-2009, The Chicken Team
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following

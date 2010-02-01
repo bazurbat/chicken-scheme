@@ -1,7 +1,7 @@
 ;;;; posixunix.scm - Miscellaneous file- and process-handling routines
 ;
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
-; Copyright (c) 2008-2009, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -54,7 +54,7 @@ static C_TLS int C_wait_status;
 #include <fcntl.h>
 #include <dirent.h>
 #include <pwd.h>
-#include <sys/utime.h>
+#include <utime.h>
 
 #if defined(__sun__) && defined(__svr4__)
 # include <sys/tty.h>
@@ -482,10 +482,10 @@ static int get_tty_size(int p, int *rows, int *cols)
 
 static int set_file_mtime(char *filename, C_word tm)
 {
-  struct _utimbuf tb;
+  struct utimbuf tb;
 
   tb.actime = tb.modtime = C_num_to_int(tm);
-  return _utime(filename, &tb);
+  return utime(filename, &tb);
 }
 
 EOF

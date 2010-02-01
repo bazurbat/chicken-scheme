@@ -4161,7 +4161,7 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
 #ifdef C_BINARY_VERSION
     return C_fix(C_BINARY_VERSION);
 #else
-    return C_SCHEME_FALSE;
+    return C_fix(0);
 #endif
 
   default: return C_SCHEME_UNDEFINED;
