@@ -233,93 +233,104 @@
         
  5. Platform issues:
 
-        - *BSD system users *must* use GNU make ("gmake") - the makefiles
-          can not be processed by BSD make.
+    	*BSD:
 
-        - Some old Linux distributions ship with a buggy version of
-          the GNU C compiler (2.96). If the system is configured for
-          kernel recompilation, then an alternative GCC version is
-          available under the name `kgcc' (GCC 2.96 can not recompile
-          the kernel). CHICKEN's configuration script should normally
-          be able to handle this problem, but you have to remember to
-          compile your translated Scheme files with `kgcc' instead of
-          `gcc'.
+          - *BSD system users *must* use GNU make ("gmake") - the makefiles
+            can not be processed by BSD make.
 
-        - Older versions of Solaris have a bug in ld.so that causes
-          trouble with dynamic loading.  Patching Solaris fixes the
-          problem. Solaris 7 needs patch 106950-18. Solaris 8 has an
-          equivalent patch, 109147-16.
+	  - On NetBSD it might be possible that compilation fails with a
+	    "virtual memory exhausted error".  Try the following:
 
-          You can find out if you have these patches installed by
-          running:
+	    % unlimit datasize
 
-          % showrev -p | grep 106950    # solaris 7
-          % showrev -p | grep 109147    # solaris 8
+	  - Using external libraries on NetBSD may also be easier, if
+	    you add the following definitions to `Makefile.bsd':
 
-        - On NetBSD it might be possible that compilation fails with a
-          "virtual memory exhausted error".  Try the following:
+	      C_COMPILER_OPTIONS += -I/usr/pkg/lib
+	      LINKER_OPTIONS += -L/usr/pkg/lib -Wl,-R/usr/pkg/lib
 
-          % unlimit datasize
+	    Note that this may cause build-problems, if you already have
+	    an existing CHICKEN installation in the /usr/pkg prefix.
 
-	- Using external libraries on NetBSD may also be easier, if
-	  you add the following definitions to `Makefile.bsd':
+        Linux:
 
-	    C_COMPILER_OPTIONS += -I/usr/pkg/lib
-	    LINKER_OPTIONS += -L/usr/pkg/lib -Wl,-R/usr/pkg/lib
+	  - Some old Linux distributions ship with a buggy version of
+	    the GNU C compiler (2.96). If the system is configured for
+	    kernel recompilation, then an alternative GCC version is
+	    available under the name `kgcc' (GCC 2.96 can not recompile
+	    the kernel). CHICKEN's configuration script should normally
+	    be able to handle this problem, but you have to remember to
+	    compile your translated Scheme files with `kgcc' instead of
+	    `gcc'.
 
-	  Note that this may cause build-problems, if you already have
-	  an existing CHICKEN installation in the /usr/pkg prefix.
+        Solaris:
 
-        - For Mac OS X, Chicken requires libdl, for loading compiled
-          code dynamically. This library is available on Mac OS X 10.4
-          (Tiger) by default. For older versions you can find it here:
+	  - Older versions of Solaris have a bug in ld.so that causes
+	    trouble with dynamic loading.  Patching Solaris fixes the
+	    problem. Solaris 7 needs patch 106950-18. Solaris 8 has an
+	    equivalent patch, 109147-16.
 
-            http://www.opendarwin.org/projects/dlcompat
+	    You can find out if you have these patches installed by
+	    running:
 
-        - On Mac OS X, Chicken and its eggs can be built as universal 
-          binaries which will work on either Intel or PowerPC.
-          To build on Tiger (10.4):
+	    % showrev -p | grep 106950    # solaris 7
+	    % showrev -p | grep 109147    # solaris 8
 
-            make PLATFORM=macosx ARCH=universal
+	Mac OS X:
 
-          On Leopard (10.5), an extra step is required before `make':
+	  - For Mac OS X, Chicken requires libdl, for loading compiled
+	    code dynamically. This library is available on Mac OS X 10.4
+	    (Tiger) by default. For older versions you can find it here:
 
-            export MACOSX_DEPLOYMENT_TARGET=10.4
-            make PLATFORM=macosx ARCH=universal
+	      http://www.opendarwin.org/projects/dlcompat
 
-        - On Mac OS X, Chicken can be built in 64-bit mode on Intel
-          Core 2 Duo systems--basically, most recent machines.  The default
-          is 32-bit mode.  To enable 64-bit mode, invoke `make' thusly:
+	  - On Mac OS X, Chicken and its eggs can be built as universal 
+	    binaries which will work on either Intel or PowerPC.
+	    To build on Tiger (10.4):
 
-            make PLATFORM=macosx ARCH=x86-64
+	      make PLATFORM=macosx ARCH=universal
 
-        - On Windows, mingw32, <http://mingw.sourceforge.net/> and
-          Cygwin are supported (Microsoft Visual Studio is *NOT*).
-          Makefiles for mingw under MSYS and Windows shell are provided
-          (`Makefile.mingw-msys' and `Makefile.mingw'). Please also
-	  read the notes below.
+	    On Leopard (10.5), an extra step is required before `make':
 
-        - When installing under the mingw-msys platform, PREFIX must be an
-          absolute path name (i.e. it must include the drive letter) and
-	  must use forward slashes (no backward slashes).
+	      export MACOSX_DEPLOYMENT_TARGET=10.4
+	      make PLATFORM=macosx ARCH=universal
 
-        - When installing under mingw, with a windows shell ("cmd.exe"),
-          pass an absolute pathname as PREFIX and use forward slashes.
+	  - On Mac OS X, Chicken can be built in 64-bit mode on Intel
+	    Core 2 Duo systems--basically, most recent machines.  The default
+	    is 32-bit mode.  To enable 64-bit mode, invoke `make' thusly:
 
-	- When installing under mingw without MSYS, make sure that the
-	  MSYS tools (in case you have some of them, in particular the
-	  sh.exe UNIX shell) are *NOT* visible in your PATH.
+	      make PLATFORM=macosx ARCH=x86-64
 
-        - Cygwin will not be able to find the chicken shared libraries
-          until Windows is rebooted.
+   	Windows:
 
-        - gcc 3.4 shows sometimes warnings of the form
+	  - On Windows, mingw32, <http://mingw.sourceforge.net/> and
+	    Cygwin are supported (Microsoft Visual Studio is *NOT*).
+	    Makefiles for mingw under MSYS and the Windows shell are
+	    provided (`Makefile.mingw-msys' and `Makefile.mingw'). 
+	    Please also read the notes below.
 
-            easyffi.c: In function `f_11735':
-            easyffi.c:18697: warning: `noreturn' function does return
-        
-          when compiling the system or compiled Scheme files. These
-          warnings are bogus and can be ignored.
+	  - When installing under the mingw-msys platform, PREFIX must be an
+	    absolute path name (i.e. it must include the drive letter) and
+	    must use forward slashes (no backward slashes).
+
+	  - When installing under mingw, with a windows shell ("cmd.exe"),
+	    pass an absolute pathname as PREFIX and use forward slashes.
+
+	  - When installing under mingw without MSYS, make sure that the
+	    MSYS tools (in case you have some of them, in particular the
+	    sh.exe UNIX shell) are *NOT* visible in your PATH.
+
+	  - Cygwin will not be able to find the chicken shared libraries
+	    until Windows is rebooted.
+
+	  - gcc 3.4 shows sometimes warnings of the form
+
+	      easyffi.c: In function `f_11735':
+	      easyffi.c:18697: warning: `noreturn' function does return
+
+	    when compiling the system or compiled Scheme files. These
+	    warnings are bogus and can be ignored.
+
 
  6. Emacs support:
 
