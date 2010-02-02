@@ -168,7 +168,7 @@ from one of the following locations:
 
 Registers the handler-procedure {{PROC}} as a extension-specifier with the
 name {{SYMBOL}}. This facility allows extending the set of valid extension
-specifiers to be used with {{require-extension}}. When {{register-extension}}
+specifiers to be used with {{require-extension}}. When {{require-extension}}
 is called with an extension specifier of the form {{(SPEC ...)}} and {{SPEC}}
 has been registered with {{set-extension-specifier!}}, then {{PROC}} will
 be called with two arguments: the specifier and the previously installed handler
