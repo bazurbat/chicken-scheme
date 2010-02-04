@@ -1766,7 +1766,7 @@ C_inline C_word C_flonum(C_word **ptr, double n)
 
 C_inline C_word C_string_to_pbytevector(C_word s)
 {
-  return C_pbytevector(C_header_size(s), C_data_pointer(s));
+  return C_pbytevector(C_header_size(s), (C_char *)C_data_pointer(s));
 }
 
 
