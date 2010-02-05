@@ -594,11 +594,13 @@
 			((##core#require-extension)
 			 (let ((imp? (caddr x)))
 			   (walk
-			    (let loop ([ids (cadr x)])
+			    (let loop ([ids (##sys#strip-syntax (cadr x))])
 			      (if (null? ids)
 				  '(##core#undefined)
 				  (let ([id (car ids)])
-				    (let-values ([(exp f) (##sys#do-the-right-thing id #t imp?)])
+				    (let-values ([(exp f)
+						  (##sys#do-the-right-thing
+						   id #t imp?)])
 				      (unless (or f 
 						  (and (symbol? id)
 						       (or (feature? id)

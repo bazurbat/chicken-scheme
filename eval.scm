@@ -706,11 +706,12 @@
 			 [(##core#require-extension)
 			  (let ((imp? (caddr x)))
 			    (compile
-			     (let loop ([ids (cadr x)])
+			     (let loop ([ids (##sys#strip-syntax (cadr x))])
 			       (if (null? ids)
 				   '(##core#undefined)
-				   (let-values ([(exp _)
-						 (##sys#do-the-right-thing (car ids) #f imp?)])
+				   (let-values ([(exp _) 
+						 (##sys#do-the-right-thing
+						  (car ids) #f imp?)])
 				     `(##core#begin ,exp ,(loop (cdr ids))) ) ) )
 			     e #f tf cntr se) ) ]
 
@@ -1280,17 +1281,20 @@
 			  id #f)
 			 #f)))))))
       (if (and (pair? id) (symbol? (car id)))
-	  (let ((a (assq (##sys#slot id 0) ##sys#extension-specifiers)))
+	  (let ((a (assq (##sys#slot id 0)
+			 ##sys#extension-specifiers)))
 	    (if a
 		(let ((a ((##sys#slot a 1) id)))
-		  (cond ((string? a) (values `(load ,a) #f))
+		  (cond ((string? a) (values `(load ,a) #f)) ;XXX hygiene
 			((vector? a) 
 			 (let loop ((specs (vector->list a))
 				    (exps '())
 				    (f #f) )
 			   (if (null? specs)
 			       (values `(##core#begin ,@(reverse exps)) f)
-			       (let-values (((exp fi) (##sys#do-the-right-thing (car specs) comp? imp?)))
+			       (let-values (((exp fi)
+					     (##sys#do-the-right-thing 
+					      (car specs) comp? imp?)))
 				 (loop (cdr specs)
 				       (cons exp exps)
 				       (or fi f) ) ) ) ) )
@@ -1304,7 +1308,8 @@
 
 (define (set-extension-specifier! name proc)
   (##sys#check-symbol name 'set-extension-specifier!)
-  (let ([a (assq name ##sys#extension-specifiers)])
+  (let* ((name (##sys#strip-syntax name))
+	 (a (assq name ##sys#extension-specifiers)))
     (if a
 	(let ([old (##sys#slot a 1)])
 	  (##sys#setslot a 1 (lambda (spec) (proc spec old))) )
