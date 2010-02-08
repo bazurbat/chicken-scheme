@@ -326,7 +326,6 @@ typedef unsigned __int64   uint64_t;
 /* Have a GUI? */
 
 #if defined(C_WINDOWS_GUI)
-# define C_MICROSOFT_WINDOWS
 # include <windows.h>
 # ifndef WINAPI
 #  define WINAPI
@@ -564,8 +563,6 @@ typedef unsigned __int64   uint64_t;
 #define C_RUNTIME_SAFE_DLOAD_UNSAFE_ERROR             34
 #define C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR           35
 #define C_BAD_ARGUMENT_TYPE_NO_CLOSURE_ERROR          36
-#define C_RUNTIME_GUI_DLOAD_NONGUI_ERROR              37
-#define C_RUNTIME_NONGUI_DLOAD_GUI_ERROR              38
 
 
 /* Platform information */
@@ -1305,22 +1302,23 @@ extern double trunc(double);
 
 #define C_end_of_main
 
+/* left for backwards-compatibility */
+#define C_gui_nongui_marker
+
 #if !defined(C_EMBEDDED) && !defined(C_SHARED)
 # ifndef C_WINDOWS_GUI
 #  define C_main_entry_point            int main(int argc, char *argv[]) { return CHICKEN_main(argc, argv, (void*)C_toplevel); } C_end_of_main
 # else
 #  define C_main_entry_point            \
   int WINAPI WinMain(HINSTANCE me, HINSTANCE you, LPSTR cmdline, int show) \
-  { return CHICKEN_main(0, NULL, (void *)C_toplevel); } C_end_of_main
+  { \
+    C_gui_mode = 1; \
+    return CHICKEN_main(0, NULL, (void *)C_toplevel); \
+  } \
+  C_end_of_main
 # endif
 #else
 # define C_main_entry_point
-#endif
-
-#if defined(C_SHARED) && defined(C_WINDOWS_GUI)
-# define C_gui_nongui_marker            C_externexport void C_dynamic_and_gui(void) {}
-#else
-# define C_gui_nongui_marker
 #endif
 
 #define C_alloc_flonum                  C_word *___tmpflonum = C_alloc(WORDS_PER_FLONUM)
@@ -1371,6 +1369,7 @@ C_varextern C_TLS C_byte
 C_varextern C_TLS jmp_buf C_restart;
 C_varextern C_TLS void *C_restart_address;
 C_varextern C_TLS int C_entry_point_status;
+C_varextern C_TLS int C_gui_mode;
 
 C_varextern C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
 C_varextern C_TLS void (*C_pre_gc_hook)(int mode);

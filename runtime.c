@@ -336,6 +336,7 @@ C_TLS void (*C_post_gc_hook)(int mode, long ms) = NULL;
 C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
 
 C_TLS int
+  C_gui_mode = 0,
   C_abort_on_thread_exceptions,
   C_enable_repl,
   C_interrupts_enabled,
@@ -354,7 +355,6 @@ C_TLS C_uword
   C_heap_shrinkage;
 C_TLS C_uword C_maximal_heap_size;
 C_TLS time_t C_startup_time_seconds;
-
 C_TLS char 
   **C_main_argv,
   *C_dlerror;
@@ -515,11 +515,15 @@ int CHICKEN_main(int argc, char *argv[], void *toplevel)
 {
   C_word h, s, n;
 
-#if defined(C_WINDOWS_GUI)
-  parse_argv(GetCommandLine());
-  argc = C_main_argc;
-  argv = C_main_argv;
+  if(C_gui_mode) {
+#ifdef _WIN32
+    parse_argv(GetCommandLine());
+    argc = C_main_argc;
+    argv = C_main_argv;
+#else
+    /* ??? */
 #endif
+  }
 
   CHICKEN_parse_command_line(argc, argv, &h, &s, &n);
   
@@ -533,7 +537,6 @@ int CHICKEN_main(int argc, char *argv[], void *toplevel)
 
 /* Custom argv parser for Windoze: */
 
-#ifdef C_WINDOWS_GUI
 void parse_argv(C_char *cmds)
 {
   C_char *ptr = cmds,
@@ -565,7 +568,6 @@ void parse_argv(C_char *cmds)
     C_main_argv[ C_main_argc++ ] = aptr;
   }
 }
-#endif
 
 
 /* Initialize runtime system: */
@@ -1342,16 +1344,16 @@ void usual_panic(C_char *msg)
 
   C_dbg_hook(C_SCHEME_UNDEFINED);
 
-#ifdef C_MICROSOFT_WINDOWS
-  C_sprintf(buffer, C_text("%s\n\n%s"), msg, dmp);
-
-  MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK);
-  ExitProcess(1);
-#else
-  C_fprintf(C_stderr, C_text("\n%s - execution terminated\n\n%s"), msg, dmp);
-  
-  C_exit(1);
+  if(C_gui_mode) {
+    C_sprintf(buffer, C_text("%s\n\n%s"), msg, dmp);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONERROR);
+    ExitProcess(1);
 #endif
+  } /* fall through if not WIN32 GUI app */
+
+  C_fprintf(C_stderr, C_text("\n%s - execution terminated\n\n%s"), msg, dmp);
+  C_exit(1);
 }
 
 
@@ -1359,16 +1361,16 @@ void horror(C_char *msg)
 {
   C_dbg_hook(C_SCHEME_UNDEFINED);
 
-#ifdef C_MICROSOFT_WINDOWS
-  C_sprintf(buffer, C_text("%s"), msg);
-
-  MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK);
-  ExitProcess(1);
-#else
-  C_fprintf(C_stderr, C_text("\n%s - execution terminated"), msg);
-  
-  C_exit(1);
+  if(C_gui_mode) {
+    C_sprintf(buffer, C_text("%s"), msg);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONERROR);
+    ExitProcess(1);
 #endif
+  } /* fall through */
+
+  C_fprintf(C_stderr, C_text("\n%s - execution terminated"), msg);  
+  C_exit(1);
 }
 
 
@@ -1557,16 +1559,6 @@ void barf(int code, char *loc, ...)
 
   case C_RUNTIME_SAFE_DLOAD_UNSAFE_ERROR:
     msg = C_text("code to load dynamically was linked with unsafe runtime libraries, but executing runtime was not");
-    c = 0;
-    break;
-
-  case C_RUNTIME_GUI_DLOAD_NONGUI_ERROR:
-    msg = C_text("code to load dynamically was linked with non-GUI runtime libraries, but executing runtime was not");
-    c = 0;
-    break;
-
-  case C_RUNTIME_NONGUI_DLOAD_GUI_ERROR:
-    msg = C_text("code to load dynamically was linked with GUI runtime libraries, but executing runtime was not");
     c = 0;
     break;
 
@@ -3743,30 +3735,33 @@ C_word C_halt(C_word msg)
 {
   C_char *dmp = msg != C_SCHEME_FALSE ? C_dump_trace(0) : NULL;
 
-#ifdef C_MICROSOFT_WINDOWS
-  if(msg != C_SCHEME_FALSE) {
-    int n = C_header_size(msg);
+  if(C_gui_mode) {
+    if(msg != C_SCHEME_FALSE) {
+      int n = C_header_size(msg);
+      
+      if (n >= sizeof(buffer))
+	n = sizeof(buffer) - 1;
+      C_strncpy(buffer, (C_char *)C_data_pointer(msg), n);
+      buffer[ n ] = '\0';
+    }
+    else C_strcpy(buffer, C_text("(aborted)"));
 
-    if (n >= sizeof(buffer))
-      n = sizeof(buffer) - 1;
-    C_strncpy(buffer, (C_char *)C_data_pointer(msg), n);
-    buffer[ n ] = '\0';
-  }
-  else C_strcpy(buffer, C_text("(aborted)"));
+    C_strcat(buffer, C_text("\n\n"));
 
-  C_strcat(buffer, C_text("\n\n"));
+    if(dmp != NULL) C_strcat(buffer, dmp);
 
-  if(dmp != NULL) C_strcat(buffer, dmp);
+#if defined(_WIN32) && !defined(__CYGWIN__) 
+    MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONERROR);
+    ExitProcess(1);
+#endif
+  } /* otherwise fall through */
 
-  MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK);
-#else
   if(msg != C_SCHEME_FALSE) {
     C_fwrite(C_data_pointer(msg), C_header_size(msg), sizeof(C_char), C_stderr);
     C_fputc('\n', C_stderr);
   }
 
   if(dmp != NULL) C_fprintf(stderr, C_text("\n%s"), dmp);
-#endif
   
   C_exit(EX_SOFTWARE);
   return 0;
@@ -3775,18 +3770,21 @@ C_word C_halt(C_word msg)
 
 C_word C_message(C_word msg)
 {
-#ifdef C_MICROSOFT_WINDOWS
-  int n = C_header_size(msg);
+  if(C_gui_mode) {
+    int n = C_header_size(msg);
+    
+    if (n >= sizeof(buffer))
+      n = sizeof(buffer) - 1;
+    C_strncpy(buffer, (C_char *)((C_SCHEME_BLOCK *)msg)->data, n);
+    buffer[ n ] = '\0';
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONERROR);
+    ExitProcess(1);
+#endif
+  } /* fall through */
 
-  if (n >= sizeof(buffer))
-    n = sizeof(buffer) - 1;
-  C_strncpy(buffer, (C_char *)((C_SCHEME_BLOCK *)msg)->data, n);
-  buffer[ n ] = '\0';
-  MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK);
-#else
   C_fwrite(((C_SCHEME_BLOCK *)msg)->data, C_header_size(msg), sizeof(C_char), stdout);
   C_putchar('\n');
-#endif
   return C_SCHEME_UNDEFINED;
 }
 
@@ -3989,21 +3987,19 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
     return C_SCHEME_FALSE;
 #endif
 
-  case C_fix(4):
-#ifdef C_GENERIC_CONSOLE
-    return C_SCHEME_TRUE;
-#else
-    return C_SCHEME_FALSE;
-#endif
+  case C_fix(4):		/* is this a console application? */
+    return C_mk_bool(!C_gui_mode);
 
-  case C_fix(5):
-#ifdef C_GENERIC_CONSOLE
-    return C_fix(0);
-#elif defined(C_WINDOWS_GUI)
-    return C_fix(1);
+  case C_fix(5):		/* is this a GUI/console or Windows-GUI application? (silly) */
+    if(C_gui_mode) {
+#ifdef _WIN32
+      return C_fix(1);
 #else
-    return C_SCHEME_FALSE;
+      return C_SCHEME_FALSE;
 #endif
+    }
+
+    return C_fix(0);
 
   case C_fix(6): 
     return C_fix(C_MOST_POSITIVE_FIXNUM & cpu_milliseconds());
@@ -8013,8 +8009,7 @@ void dload_2(void *dummy)
     }
 
     if(p != NULL) {
-      /* check whether dloaded code is not a library unit
-       * and matches current safety/gui setting: */
+      /* check whether dloaded code is not a library unit */
       if((p2 = C_dlsym(handle, C_text("C_dynamic_and_unsafe"))) == NULL)
 	p2 = C_dlsym(handle, C_text("_C_dynamic_and_unsafe"));
 
@@ -8108,23 +8103,6 @@ void dload_2(void *dummy)
         barf(C_RUNTIME_SAFE_DLOAD_UNSAFE_ERROR, NULL);
 #endif
       }
-
-      /* do the same check for GUI libraries: */
-      p2 = GetProcAddress(handle, C_text("C_dynamic_and_gui"));
-
-#ifdef C_WINDOWS_GUI
-      ok = p2 != NULL;		/* GUI runtime, GUI code */
-#else
-      ok = p2 == NULL;		/* non-GUI runtime, non-GUI code */
-#endif
-      
-      /* GUI marker not found and this is not a library unit? */
-      if(!ok && !C_strcmp(topname, "C_toplevel"))
-#ifdef C_WINDOWS_GUI
-	barf(C_RUNTIME_GUI_DLOAD_NONGUI_ERROR, NULL);
-#else
-	barf(C_RUNTIME_NONGUI_DLOAD_GUI_ERROR, NULL);
-#endif
 
       current_module_name = C_strdup(mname);
       current_module_handle = handle;
