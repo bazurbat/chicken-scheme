@@ -152,10 +152,9 @@ Use {{csc}} in combination with the {{-dll}} option:
 
 ==== How do I generate a GUI application under Windows(tm)?
 
-Invoke {{csc}} with the {{-windows}} option. Or pass the {{-DC_WINDOWS_GUI}}
-option to the C compiler and link with the GUI version of the runtime system (that's {{libchicken-gui[-static].lib}}.
-The GUI runtime displays error messages in a message box and does some rudimentary command-line
-parsing.
+Invoke {{csc}} with the {{-gui}} option.  In GUI-mode, the runtime
+system displays error messages in a message box and does some
+rudimentary command-line parsing.
 
 ==== Compiling very large files under Windows with the Microsoft C compiler fails with a message indicating insufficient heap space.
 
@@ -167,12 +166,6 @@ into several library units.
 
 Invoke {{csi}} with the {{-:c}} runtime option. Under Windows the interpreter thinks it
 is not running under control of a terminal and doesn't print the prompt and does not flush the output stream properly.
-
-==== I load compiled code dynamically in a Windows GUI application and it crashes.
-
-Code compiled into a DLL to be loaded dynamically must be linked with the same runtime system as the loading
-application. That means that all dynamically loaded entities (including extensions built and installed with
-{{chicken-install}}) must be compiled with the {{-windows}} {{csc}} option.
 
 ==== On Windows, {{csc.exe}} seems to be doing something wrong.
 
