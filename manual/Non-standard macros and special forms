@@ -50,7 +50,9 @@ See also: {{set-extension-specifier!}}
 <macro>(require-extension ID ...)</macro>
 
 This is equivalent to {{(require-library ID ...)}} but performs an implicit
-{{import}}, if necessary.
+{{import}}, if necessary. {{ID}} may also be an import specification
+(using {{rename}}, {{only}}, {{except}} or {{prefix}}).
+
 This implementation of {{require-extension}} is compliant with [[http://srfi.schemers.org/srfi-55/srfi-55.html|SRFI-55]]
 (see the [[http://srfi.schemers.org/srfi-55/srfi-55.html|SRFI-55]] document for more information).
 

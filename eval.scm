@@ -81,7 +81,7 @@
      ##sys#ensure-heap-reserve ##sys#syntax-error-hook ##sys#read-prompt-hook
      ##sys#repl-eval-hook ##sys#append ##sys#eval-decorator
      open-output-string get-output-string make-parameter software-type software-version machine-type
-     build-platform set-extensions-specifier! ##sys#string->symbol list->vector get-environment-variable
+     build-platform ##sys#string->symbol list->vector get-environment-variable
      extension-information syntax-error ->string chicken-home ##sys#expand-curried-define
      vector->list store-string open-input-string eval ##sys#gc
      with-exception-handler print-error-message read-char read ##sys#read-error
@@ -128,10 +128,10 @@
 
 (define-constant builtin-features
   '(chicken srfi-2 srfi-6 srfi-10 srfi-12 srfi-23 srfi-28 srfi-30 srfi-31 srfi-39 
-	    srfi-88 srfi-98) )
+	    srfi-55 srfi-88 srfi-98) )
 
 (define-constant builtin-features/compiled
-  '(srfi-6 srfi-8 srfi-9 srfi-11 srfi-15 srfi-16 srfi-17 srfi-26 srfi-55) )
+  '(srfi-6 srfi-8 srfi-9 srfi-11 srfi-15 srfi-16 srfi-17 srfi-26) )
 
 (define ##sys#chicken-prefix
   (let ((prefix (and-let* ((p (get-environment-variable prefix-environment-variable)))
@@ -1217,27 +1217,27 @@
 	  (##sys#hash-table-update!
 	   ##compiler#file-requirements
 	   (if syntax? 'dynamic/syntax 'dynamic)
-	   (cut lset-adjoin eq? <> id)	;XXX assumes compiler has srfi-1 loaded
+	   (cut lset-adjoin eq? <> id) ;XXX assumes compiler has srfi-1 loaded
 	   (lambda () (list id)))))
       (define (impform x id builtin?)
 	`(##core#begin
-	   ,x
-	   ,@(if (and imp? (or (not builtin?) (##sys#current-module)))
-		 `((import ,id))	;XXX make hygienic
-		 '())))
-      (define (doit id)
+	  ,x
+	  ,@(if (and imp? (or (not builtin?) (##sys#current-module)))
+		`((import ,id))		;XXX make hygienic
+		'())))
+      (define (doit id impid)
 	(cond ((or (memq id builtin-features)
 		   (if comp?
 		       (memq id builtin-features/compiled)
 		       (##sys#feature? id) ) )
-	       (values (impform '(##core#undefined) id #t) #t) )
+	       (values (impform '(##core#undefined) impid #t) #t) )
 	      ((memq id ##sys#core-library-modules)
 	       (values
 		(impform
 		 (if comp?
 		     `(##core#declare (uses ,id))
 		     `(##sys#load-library ',id #f) )
-		 id #t)
+		 impid #t)
 		#t) )
 	      ((memq id ##sys#explicit-library-modules)
 	       (let* ((info (##sys#extension-information id 'require-extension))
@@ -1245,14 +1245,14 @@
 		      (s (assq 'syntax info)))
 		 (values
 		  `(##core#begin
-		     ,@(if s `((##core#require-for-syntax ',id)) '())
-		     ,(impform
-		       (if (not nr)
-			   (if comp?
-			       `(##core#declare (uses ,id)) 
-			       `(##sys#load-library ',id #f) )
-			   '(##core#undefined))
-		       id #f))
+		    ,@(if s `((##core#require-for-syntax ',id)) '())
+		    ,(impform
+		      (if (not nr)
+			  (if comp?
+			      `(##core#declare (uses ,id)) 
+			      `(##sys#load-library ',id #f) )
+			  '(##core#undefined))
+		      impid #f))
 		  #t) ) )
 	      (else
 	       (let ((info (##sys#extension-information id 'require-extension)))
@@ -1264,93 +1264,48 @@
 			  (values 
 			   (impform
 			    `(##core#begin
-			       ,@(if s `((##core#require-for-syntax ',id)) '())
-			       ,@(if (or nr (and (not rr) s))
-				     '()
-				     `((##sys#require
-					,@(map (lambda (id) `',id)
-					       (cond (rr (cdr rr))
-						     (else (list id)) ) ) ) ) ) )
-			    id #f)
+			      ,@(if s `((##core#require-for-syntax ',id)) '())
+			      ,@(if (or nr (and (not rr) s))
+				    '()
+				    `((##sys#require
+				       ,@(map (lambda (id) `',id)
+					      (cond (rr (cdr rr))
+						    (else (list id)) ) ) ) ) ) )
+			    impid #f)
 			   #t) ) )
 		       (else
 			(add-req id #f)
 			(values
 			 (impform
 			  `(##sys#require ',id) 
-			  id #f)
+			  impid #f)
 			 #f)))))))
-      (if (and (pair? id) (symbol? (car id)))
-	  (let ((a (assq (##sys#slot id 0)
-			 ##sys#extension-specifiers)))
-	    (if a
-		(let ((a ((##sys#slot a 1) id)))
-		  (cond ((string? a) (values `(load ,a) #f)) ;XXX hygiene
-			((vector? a) 
-			 (let loop ((specs (vector->list a))
-				    (exps '())
-				    (f #f) )
-			   (if (null? specs)
-			       (values `(##core#begin ,@(reverse exps)) f)
-			       (let-values (((exp fi)
-					     (##sys#do-the-right-thing 
-					      (car specs) comp? imp?)))
-				 (loop (cdr specs)
-				       (cons exp exps)
-				       (or fi f) ) ) ) ) )
-			(else (##sys#do-the-right-thing a comp? imp?)) ) )
-		(##sys#error "undefined extension specifier" id) ) )
-	  (if (symbol? id)
-	      (doit id) 
-	      (##sys#error "invalid extension specifier" id) ) ) ) ) )
-
-(define ##sys#extension-specifiers '())
-
-(define (set-extension-specifier! name proc)
-  (##sys#check-symbol name 'set-extension-specifier!)
-  (let* ((name (##sys#strip-syntax name))
-	 (a (assq name ##sys#extension-specifiers)))
-    (if a
-	(let ([old (##sys#slot a 1)])
-	  (##sys#setslot a 1 (lambda (spec) (proc spec old))) )
-	(set! ##sys#extension-specifiers
-	  (cons (cons name (lambda (spec) (proc spec #f)))
-		##sys#extension-specifiers)) ) ) )
-
-
-;;; SRFI-55
-
-(set-extension-specifier!
- 'srfi 
- (let ([list->vector list->vector])
-   (lambda (spec old)
-     (list->vector
-      (let loop ([ids (cdr spec)])
-	(if (null? ids)
-	    '()
-	    (let ([id (car ids)])
-	      (##sys#check-exact id 'require-extension)
-	      (cons (##sys#string->symbol (##sys#string-append "srfi-" (number->string id)))
-		    (loop (cdr ids)) ) ) ) ) ) ) ) )
-
-
-;;; Version checking
-
-(set-extension-specifier!
- 'version
- (lambda (spec _)
-   (define (->string x)
-     (cond ((string? x) x)
-	   ((symbol? x) (##sys#slot x 1))
-	   ((number? x) (##sys#number->string x))
-	   (else (error "invalid extension version" x)) ) )
-   (if (and (list? spec) (fx= 3 (length spec)))
-       (let* ((info (extension-information (cadr spec)))
-	      (vv (and info (assq 'version info))) )
-	 (unless (and vv (string>=? (->string (car vv)) (->string (caddr spec))))
-	   (error "installed extension does not match required version" id vv (caddr spec)))
-	 id) 
-       (##sys#syntax-error-hook "invalid version specification" spec)) ) )
+      (cond ((and (pair? id) (symbol? (car id)))
+	     (case (car id)
+	       ((srfi)
+		(let* ((f #f)
+		       (exp
+			`(##core#begin
+			  ,@(map (lambda (n)
+				   (unless (fixnum? n)
+				     (##sys#syntax-error 'require-extension "invalid SRFI number" n))
+				   (let ((rid (string->symbol (string-append "srfi-" (number->string n)))))
+				     (let-values (((exp f2) (doit rid rid)))
+				       (set! f (or f f2))
+				       exp)))
+				 (cdr id)))))
+		  (values exp f)))
+	       ((rename except only prefix)
+		(doit
+		 (let follow ((id2 id))
+		   (if (and (pair? id2) (pair? (cdr id2)))
+		       (follow (cadr id2))
+		       id2))
+		 id))
+	       (else (##sys#error "invalid extension specifier" id) ) ) )
+	    ((symbol? id)
+	     (doit id id))
+	    (else (##sys#error "invalid extension specifier" id) ) ) )))
 
 
 ;;; Convert string into valid C-identifier:
