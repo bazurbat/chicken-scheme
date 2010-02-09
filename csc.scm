@@ -118,11 +118,6 @@
    (if msvc "libuchicken-static." "libuchicken.")
    library-extension))
 
-(define default-gui-library
-  (string-append
-   (if msvc "libchickengui-static." "libchickengui.")
-   library-extension))
-
 (define cleanup-filename quotewrap)
 
 (define default-compilation-optimization-options (string-split (if host-mode INSTALL_CFLAGS TARGET_CFLAGS)))
@@ -212,19 +207,6 @@
       (list (string-append "libchicken." library-extension))
       '("-lchicken")))
 
-(define default-gui-library-files 
-  (list
-   (quotewrap
-    (prefix default-gui-library "lib"
-	    (string-append
-	     (if host-mode INSTALL_LIB_HOME TARGET_LIB_HOME)
-	     (string-append "/" default-library)))) ))
-
-(define default-gui-shared-library-files 
-  (if msvc
-      (list (string-append "libchickengui." library-extension))
-      '("-lchickengui")))
-
 (define unsafe-libraries #f)
 
 (define unsafe-library-files
@@ -245,8 +227,6 @@
   (set! library-files unsafe-library-files)
   (set! shared-library-files unsafe-shared-library-files))
 
-(define gui-library-files default-gui-library-files)
-(define gui-shared-library-files default-gui-shared-library-files)
 (define library-files default-library-files)
 (define shared-library-files default-shared-library-files)
 
@@ -297,7 +277,6 @@
 (define static-libs #f)
 (define static-extensions '())
 (define required-extensions '())
-(define gui #f)
 
 
 ;;; Display usage information:
@@ -425,7 +404,7 @@ Usage: ~a FILENAME | OPTION ...
 
     -e  -embedded                  compile as embedded
                                     (don't generate `main()')
-    -W  -windows                   compile as Windows GUI application
+    -gui                           compile as GUI application
     -R  -require-extension NAME    require extension and import in compiled
                                     code
     -dll -library                  compile multiple units into a dynamic
@@ -638,19 +617,19 @@ EOF
 		(set! static-extensions (append static-extensions (list (car rest))))
 		(t-options "-static-extension" (car rest))
 		(set! rest (cdr rest)) ]
-	       [(-windows |-W|)
+	       [(-gui
+		 -windows |-W|)		;DEPRECATED
 		(when (or msvc mingw)
-		(set! gui #t)
-		(cond
-                 (mingw
-		  (set! link-options
-		    (cons* "-lkernel32" "-luser32" "-lgdi32" "-mwindows"
-			   link-options))
-		  (set! compile-options (cons "-DC_WINDOWS_GUI" compile-options)))
-                 (msvc
-                  (set! link-options
-                    (cons* "kernel32.lib" "user32.lib" "gdi32.lib" link-options))
-		  (set! compile-options (cons "-DC_WINDOWS_GUI" compile-options)))) ) ]
+		  (cond
+		   (mingw
+		    (set! link-options
+		      (cons* "-lkernel32" "-luser32" "-lgdi32" "-mwindows"
+			     link-options))
+		    (set! compile-options (cons "-DC_WINDOWS_GUI" compile-options)))
+		   (msvc
+		    (set! link-options
+		      (cons* "kernel32.lib" "user32.lib" "gdi32.lib" link-options))
+		    (set! compile-options (cons "-DC_WINDOWS_GUI" compile-options)))) ) ]
 	       [(-framework)
 		(check s rest)
 		(when osx 
@@ -912,8 +891,8 @@ EOF
    (append
     (if staticexts (nth-value 0 (static-extension-info)) '())
     (if (or static static-libs)
-        (if gui gui-library-files library-files)
-        (if gui gui-shared-library-files shared-library-files))
+        library-files
+        shared-library-files)
     (if (or static static-libs)
         (list extra-libraries)
         (list extra-shared-libraries)))))

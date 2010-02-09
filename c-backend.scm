@@ -551,7 +551,6 @@
 		      (gen "C_noret_decl(C_" uname ")" #t)
 		      (when emit-unsafe-marker
 			(gen "C_externexport void C_dynamic_and_unsafe(void) {}" #t) )
-		      (gen "C_gui_nongui_marker" #t)
 		      (gen "C_externexport void C_ccall ")
 		      (gen "C_" uname) ) ] )
 	     (gen #\()
