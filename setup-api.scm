@@ -44,7 +44,8 @@
      host-extension
      install-extension install-program install-script
      setup-verbose-mode setup-install-mode
-     installation-prefix chicken-prefix 
+     installation-prefix
+     chicken-prefix 			;XXX remove at some stage from exports
      find-library find-header 
      program-path remove-file* 
      patch yes-or-no? abort-setup
@@ -97,12 +98,9 @@
 	(make-pathname p "bin") )
       (foreign-value "C_INSTALL_BIN_HOME" c-string) ) )
 
-(define chicken-prefix
+(define chicken-prefix			
   (or (get-environment-variable "CHICKEN_PREFIX")
-      (let ((m (string-match "(.*)/bin/?" *chicken-bin-path*)))
-	(if m
-	    (cadr m)
-	    "/usr/local") ) ) )
+      (foreign-value "C_INSTALL_PREFIX" c-string)))
 
 (define (shellpath str)
   (qs (normalize-pathname str)))

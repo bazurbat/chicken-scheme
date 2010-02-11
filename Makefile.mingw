@@ -144,6 +144,9 @@ chicken-defaults.h:
 	echo #ifndef C_INSTALL_LDFLAGS >>$@
 	echo # define C_INSTALL_LDFLAGS "$(LINKER_OPTIONS) $(LINKER_OPTIMIZATION_OPTIONS)" >>$@
 	echo #endif >>$@
+	echo #ifndef C_INSTALL_PREFIX >>$@
+	echo # define C_INSTALL_PREFIX "$(PREFIX)" >>$@
+	echo #endif >>$@
 	echo #ifndef C_INSTALL_SHARE_HOME >>$@
 	echo # define C_INSTALL_SHARE_HOME "$(DATADIR)" >>$@
 	echo #endif >>$@

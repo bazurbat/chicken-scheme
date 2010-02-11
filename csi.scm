@@ -381,7 +381,10 @@ EOF
 	(chop chop)
 	(sort sort)
 	(with-output-to-port with-output-to-port)
-	(current-output-port current-output-port) )
+	(current-output-port current-output-port) 
+	(prefix
+	 (or (get-environment-variable "CHICKEN_PREFIX")
+	     (foreign-value "C_INSTALL_PREFIX" c-string) ) ))
     (lambda port
       (with-output-to-port (if (pair? port) (car port) (current-output-port))
 	(lambda ()
@@ -403,6 +406,8 @@ EOF
                    Software type:   \t~A~%~
                    Software version:\t~A~%~
                    Build platform:  \t~A~%~
+                   Installation prefix:\t~A~%~
+                   Extension path:  \t~A~%~
                    Include path:    \t~A~%~
                    Symbol-table load:\t~S~%  ~
                      Avg bucket length:\t~S~%  ~
@@ -414,6 +419,8 @@ EOF
 		    (software-type)
 		    (software-version)
 		    (build-platform)
+		    prefix
+		    (repository-path)
 		    ##sys#include-pathnames
 		    (shorten (vector-ref sinfo 0))
 		    (shorten (vector-ref sinfo 1))
