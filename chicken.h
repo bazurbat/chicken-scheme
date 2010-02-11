@@ -325,10 +325,12 @@ typedef unsigned __int64   uint64_t;
 
 /* Have a GUI? */
 
-#if defined(C_WINDOWS_GUI)
-# include <windows.h>
-# ifndef WINAPI
-#  define WINAPI
+#if defined(C_WINDOWS_GUI) || defined(C_GUI)
+# ifdef _WIN32
+#  include <windows.h>
+#  ifndef WINAPI
+#   define WINAPI
+#  endif
 # endif
 #else
 # define C_GENERIC_CONSOLE
@@ -1306,9 +1308,7 @@ extern double trunc(double);
 #define C_gui_nongui_marker
 
 #if !defined(C_EMBEDDED) && !defined(C_SHARED)
-# ifndef C_WINDOWS_GUI
-#  define C_main_entry_point            int main(int argc, char *argv[]) { return CHICKEN_main(argc, argv, (void*)C_toplevel); } C_end_of_main
-# else
+# if (defined(C_WINDOWS_GUI) || defined(C_GUI)) && defined(_WIN32)
 #  define C_main_entry_point            \
   int WINAPI WinMain(HINSTANCE me, HINSTANCE you, LPSTR cmdline, int show) \
   { \
@@ -1316,6 +1316,8 @@ extern double trunc(double);
     return CHICKEN_main(0, NULL, (void *)C_toplevel); \
   } \
   C_end_of_main
+# else
+#  define C_main_entry_point            int main(int argc, char *argv[]) { return CHICKEN_main(argc, argv, (void*)C_toplevel); } C_end_of_main
 # endif
 #else
 # define C_main_entry_point

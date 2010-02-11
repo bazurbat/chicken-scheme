@@ -118,8 +118,6 @@
    (if msvc "libuchicken-static." "libuchicken.")
    library-extension))
 
-(define cleanup-filename quotewrap)
-
 (define default-compilation-optimization-options (string-split (if host-mode INSTALL_CFLAGS TARGET_CFLAGS)))
 (define best-compilation-optimization-options default-compilation-optimization-options)
 (define default-linking-optimization-options (string-split (if host-mode INSTALL_LDFLAGS TARGET_LDFLAGS)))
@@ -183,6 +181,7 @@
 (define show-ldflags #f)
 (define show-libs #f)
 (define dry-run #f)
+(define gui #f)
 
 (define extra-libraries
   (if host-mode
@@ -540,11 +539,10 @@ EOF
 	       (when (member target-filename scheme-files)
 		 (printf "Warning: output file will overwrite source file `~A' - renaming source to `~A.old'~%"
 			 target-filename target-filename)
-		 (unless (zero? ($system (sprintf "~A ~A ~A" 
-						  (if windows-shell "move" "mv")
-						  (quotewrap target-filename)
-						  (quotewrap (string-append target-filename ".old")))))
-		   (exit last-exit-code) ) )
+		 (command "~A ~A ~A" 
+			  (if windows-shell "move" "mv")
+			  (quotewrap target-filename)
+			  (quotewrap (string-append target-filename ".old"))))
 	       (run-linking)) ) ]
 	  [else
 	   (let* ([arg (car args)]
@@ -619,17 +617,18 @@ EOF
 		(set! rest (cdr rest)) ]
 	       [(-gui
 		 -windows |-W|)		;DEPRECATED
+		(set! gui #t)
 		(when (or msvc mingw)
 		  (cond
 		   (mingw
 		    (set! link-options
 		      (cons* "-lkernel32" "-luser32" "-lgdi32" "-mwindows"
 			     link-options))
-		    (set! compile-options (cons "-DC_WINDOWS_GUI" compile-options)))
+		    (set! compile-options (cons "-DC_GUI" compile-options)))
 		   (msvc
 		    (set! link-options
 		      (cons* "kernel32.lib" "user32.lib" "gdi32.lib" link-options))
-		    (set! compile-options (cons "-DC_WINDOWS_GUI" compile-options)))) ) ]
+		    (set! compile-options (cons "-DC_GUI" compile-options)))) ) ]
 	       [(-framework)
 		(check s rest)
 		(when osx 
@@ -780,17 +779,15 @@ EOF
 		(cond (cpp-mode "cpp")
 		      (objc-mode "m")
 		      (else "c") ) ) ] )
-       (unless (zero?
-		($system 
-		 (string-intersperse 
-		  (cons* translator (cleanup-filename f) 
-			 (append 
-			  (if to-stdout 
-			      '("-to-stdout")
-			      `("-output-file" ,(cleanup-filename fc)) )
-			  (map quote-option (append translate-options translation-optimization-options)) ) )
-		  " ") ) )
-	 (exit last-exit-code) )
+       (command
+	(string-intersperse 
+	 (cons* translator (quotewrap f) 
+		(append 
+		 (if to-stdout 
+		     '("-to-stdout")
+		     `("-output-file" ,(quotewrap fc)) )
+		 (map quote-option (append translate-options translation-optimization-options)) ) )
+	 " ") )
        (set! c-files (append (list fc) c-files))
        (set! generated-c-files (append (list fc) generated-c-files))))
    scheme-files)
@@ -804,16 +801,14 @@ EOF
     (for-each
      (lambda (f)
        (let ([fo (pathname-replace-extension f object-extension)])
-	 (unless (zero?
-		  ($system
-		   (string-intersperse
-		    (list (cond (cpp-mode c++-compiler)
-				(else compiler) )
-			  (cleanup-filename f)
-			  (string-append compile-output-flag (cleanup-filename fo)) 
-			  compile-only-flag
-			  (compiler-options) ) ) ) )
-	   (exit last-exit-code) )
+	 (command
+	  (string-intersperse
+	   (list (cond (cpp-mode c++-compiler)
+		       (else compiler) )
+		 (quotewrap f)
+		 (string-append compile-output-flag (quotewrap fo)) 
+		 compile-only-flag
+		 (compiler-options) ) ) )
 	 (set! generated-object-files (cons fo generated-object-files))
 	 (set! ofiles (cons fo ofiles))))
      c-files)
@@ -832,35 +827,33 @@ EOF
 ;;; Link object files and libraries:
 
 (define (run-linking)
-  (let ((files (map cleanup-filename
+  (let ((files (map quotewrap
 		    (append object-files
 			    (nth-value 0 (static-extension-info)) ) ) )
-	(target (cleanup-filename target-filename)))
-    (unless (zero?
-	     ($system
-	      (string-intersperse 
-	       (cons* (cond (cpp-mode c++-linker)
-			    (else linker) )
-		      (append
-		       files
-		       (list (string-append link-output-flag target)
-			     (linker-options)
-			     (linker-libraries #f) ) ) ) ) ) )
-      (exit last-exit-code) )
+	(target (quotewrap target-filename)))
+    (command
+     (string-intersperse 
+      (cons* (cond (cpp-mode c++-linker)
+		   (else linker) )
+	     (append
+	      files
+	      (list (string-append link-output-flag target)
+		    (linker-options)
+		    (linker-libraries #f) ) ) ) ) )
     (when (and osx (or (not cross-chicken) host-mode))
-      (unless (zero? ($system 
-		      (string-append
-		       "install_name_tool -change lib" (if unsafe-libraries "u" "") "chicken.dylib "
-		       (quotewrap 
-			(make-pathname
-			 (prefix "" "lib"
-				 (if host-mode
-				     INSTALL_LIB_HOME
-				     TARGET_RUN_LIB_HOME))
-			 (if unsafe-libraries "libuchicken.dylib" "libchicken.dylib")) )
-		       " " 
-		       target) ) )
-	(exit last-exit-code) ) )
+      (command
+       (string-append
+	"install_name_tool -change lib" (if unsafe-libraries "u" "") "chicken.dylib "
+	(quotewrap 
+	 (make-pathname
+	  (prefix "" "lib"
+		  (if host-mode
+		      INSTALL_LIB_HOME
+		      TARGET_RUN_LIB_HOME))
+	  (if unsafe-libraries "libuchicken.dylib" "libchicken.dylib")) )
+	" " 
+	target) )
+      (when gui (rez target)))
     (unless keep-files (for-each $delete-file generated-object-files)) ) )
 
 (define (static-extension-info)
@@ -939,12 +932,50 @@ EOF
 	(if (zero? raw-exit-code) 0 1))
       last-exit-code)))
 
+(define (command fstr . args)
+  (unless (zero? (apply $system fstr args))
+    (exit last-exit-code)))
+
 (define ($delete-file str)
   (when verbose 
     (print "rm " str) )
   (unless dry-run (delete-file str) ))
 
+(define (rez file)
+  ;; see also: http://www.cocan.org/getting_started_with_ocaml_on_mac_os_x
+  (command 
+   "/Developer/Tools/Rez -t APPL -o ~a ~a"
+   (quotewrap file)
+   (quotewrap (make-pathname home "mac.r"))))
+
+(define (create-mac-bundle prg dname)
+  (unless (directory-exists? dname)
+    (create-directory dname))
+  (let ((d (make-pathname dname "Contents")))
+    (unless (directory-exists? d)
+      (create-directory d))
+    (let ((d (make-pathname d "MacOS")))
+      (unless (directory-exists? d)
+	(create-directory d))
+      (let ((pl (make-pathname d "Info.plist")))
+	(unless (file-exists? pl)
+	  (with-output-to-file pl
+	    (cut print #<#EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+  <key>CFBundleExecutable</key>
+  <string>#{prg}</string>
+</dict>
+</plist>
+EOF
+)))
+	d))))
+
 
 ;;; Run it:
 
-(run (append (string-split (or (get-environment-variable "CSC_OPTIONS") "")) arguments))
+(run
+ (append 
+  (string-split (or (get-environment-variable "CSC_OPTIONS") "")) 
+  arguments))

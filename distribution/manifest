@@ -259,6 +259,7 @@ setup-api.c
 setup-api.import.c
 setup-download.import.c
 types.db
+mac.r
 manual/Accessing external objects
 manual/Acknowledgements
 manual/Basic mode of operation

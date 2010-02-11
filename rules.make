@@ -905,6 +905,9 @@ ifdef WINDOWS_SHELL
 endif
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)types.db "$(DESTDIR)$(IEGGDIR)"
 endif
+ifeq ($(PLATFORM),macosx)
+	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)mac.r "$(DESTDIR)$(ISHAREDIR)"
+endif
 
 ifdef STATICBUILD
 # copy/xcopy is too dumb on Windows
