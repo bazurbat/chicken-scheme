@@ -890,6 +890,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_trunc                    trunc
 # define C_fabs                     fabs
 # define C_modf                     modf
+# define C_readlink                 readlink
 # ifdef __linux__
 extern double round(double);
 extern double trunc(double);
@@ -1710,6 +1711,7 @@ C_fctexport C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x) C_re
 C_fctexport C_char *C_lookup_procedure_id(void *ptr);
 C_fctexport void *C_lookup_procedure_ptr(C_char *id);
 C_fctexport C_word C_dunload(C_word name);
+C_fctexport C_char *C_executable_path();
 
 #ifdef C_SIXTY_FOUR
 C_fctexport void C_ccall C_peek_signed_integer_32(C_word c, C_word closure, C_word k, C_word v, C_word index) C_noret;

@@ -8728,7 +8728,39 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
 }
 
 
-C_regparm C_word C_fcall C_decode_literal(C_word **ptr, C_char *str)
+C_regparm C_word C_fcall
+C_decode_literal(C_word **ptr, C_char *str)
 {
   return decode_literal2(ptr, &str, NULL);
+}
+
+
+C_char *
+C_executable_path()
+{
+#ifdef __linux__
+  char linkname[64]; /* /proc/<pid>/exe */
+  pid_t pid;
+  int ret;
+	
+  pid = C_getpid();
+  C_sprintf(linkname, "/proc/%i/exe", pid);
+  ret = C_readlink(linkname, buffer, STRING_BUFFER_SIZE - 1);
+
+  if(ret == -1 || ret >= STRING_BUFFER_SIZE - 1)
+    return NULL;
+	
+  buffer[ ret ] = 0;
+  return buffer;
+#elseif defined(_WIN32) && !defined(__CYGWIN__)
+  int n = GetModuleFileName(NULL, buffer, STRING_BUFFER_SIZE - 1);
+
+  if(n == 0 || n >= STRING_BUFFER_SIZE - 1)
+    return NULL;
+
+  buffer[ n ] = 0;
+  return buffer;
+#else
+  return NULL;
+#endif
 }
