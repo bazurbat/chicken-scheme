@@ -8750,7 +8750,7 @@ C_executable_path()
   if(ret == -1 || ret >= STRING_BUFFER_SIZE - 1)
     return NULL;
 	
-  buffer[ ret ] = 0;
+  buffer[ ret ] = '\0';
   return buffer;
 #elseif defined(_WIN32) && !defined(__CYGWIN__)
   int n = GetModuleFileName(NULL, buffer, STRING_BUFFER_SIZE - 1);
@@ -8758,9 +8758,61 @@ C_executable_path()
   if(n == 0 || n >= STRING_BUFFER_SIZE - 1)
     return NULL;
 
-  buffer[ n ] = 0;
+  buffer[ n ] = '\0';
   return buffer;
 #else
+  int i, j, k;
+  char *fname = C_main_argv[ 0 ];
+  char *path, *dname;
+
+  /* found on stackoverflow.com: */
+
+  /* no name given (execve) */
+  if(fname == NULL) return NULL;
+
+  i = C_strlen(fname) - 1;
+
+  while(i >= 0 && fname[ i ] != '/') --i;
+
+  /* absolute path */
+  if(*fname == '/') {
+    fname[ i ] = '\0';
+    return fname;
+  }
+
+  /* try current dir */
+  if(C_getcwd(buffer, STRING_BUFFER_SIZE - 1) == NULL)
+    return NULL;
+
+  j = C_strlen(buffer);
+  C_strcat(buffer, "/");
+  C_strcat(buffer, fname);
+  
+  if(C_access(buffer, F_OK) == 0) {
+    buffer[ j ] = '\0';
+    return buffer; 
+  }
+  
+  /* walk PATH */
+  path = C_getenv("PATH");
+  
+  if(path == NULL) return NULL;
+
+  for(j = k = 0; path[ k ] != '\0'; ++k) {
+    if(path[ k ] == ':') {
+      C_strncpy(buffer, path + j, k - j);
+      buffer[ k - j ] = '\0';
+      C_strcat(buffer, "/");
+      C_strcat(buffer, fname);
+
+      if(C_access(buffer, F_OK)) return buffer;
+      
+      j = k + 1;
+    }
+  }
+
+  /* give up */
   return NULL;
+}
 #endif
 }
