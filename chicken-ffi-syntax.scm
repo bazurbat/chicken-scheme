@@ -183,5 +183,33 @@
   (lambda (form r c)
     `(##core#foreign-primitive ,@(cdr form)))))
 
+(##sys#extend-macro-environment
+ 'foreign-lambda
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    `(##core#foreign-lambda ,@(cdr form)))))
+
+(##sys#extend-macro-environment
+ 'foreign-lambda*
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    `(##core#foreign-lambda* ,@(cdr form)))))
+
+(##sys#extend-macro-environment
+ 'foreign-safe-lambda
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    `(##core#foreign-safe-lambda ,@(cdr form)))))
+
+(##sys#extend-macro-environment
+ 'foreign-safe-lambda*
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    `(##core#foreign-safe-lambda* ,@(cdr form)))))
+
 
 (##sys#macro-subset me0)))

@@ -127,10 +127,10 @@
 ; (##core#elaborationtimeonly <exp>)
 ; (##core#define-foreign-variable <symbol> <type> [<string>])
 ; (##core#define-foreign-type <symbol> <type> [<proc1> [<proc2>]])
-; (foreign-lambda <type> <string> {<type>})
-; (foreign-lambda* <type> ({(<type> <var>)})) {<string>})
-; (foreign-safe-lambda <type> <string> {<type>})
-; (foreign-safe-lambda* <type> ({(<type> <var>)})) {<string>})
+; (##core#foreign-lambda <type> <string> {<type>})
+; (##core#foreign-lambda* <type> ({(<type> <var>)})) {<string>})
+; (##core#foreign-safe-lambda <type> <string> {<type>})
+; (##core#foreign-safe-lambda* <type> ({(<type> <var>)})) {<string>})
 ; (##core#foreign-primitive <type> ({(<type> <var>)}) {<string>})
 ; (##core#define-inline <name> <exp>)
 ; (define-constant <name> <exp>)
@@ -997,16 +997,16 @@
 				      (cons (walk x e se #f) (fold r)) ) ) ) )
 			     '(##core#undefined) ) )
 
-			((foreign-lambda)
+			((##core#foreign-lambda)
 			 (walk (expand-foreign-lambda x #f) e se dest) )
 
-			((foreign-safe-lambda)
+			((##core#foreign-safe-lambda)
 			 (walk (expand-foreign-lambda x #t) e se dest) )
 
-			((foreign-lambda*)
+			((##core#foreign-lambda*)
 			 (walk (expand-foreign-lambda* x #f) e se dest) )
 
-			((foreign-safe-lambda*)
+			((##core#foreign-safe-lambda*)
 			 (walk (expand-foreign-lambda* x #t) e se dest) )
 
 			((##core#foreign-primitive)
@@ -1488,7 +1488,7 @@
      '(##core#undefined) ) ) )
 
 
-;;; Expand "foreign-lambda"/"foreign-callback-lambda" forms and add item to stub-list:
+;;; Expand "foreign-lambda"/"foreign-safe-lambda" forms and add item to stub-list:
 
 (define-record-type foreign-stub
   (make-foreign-stub id return-type name argument-types argument-names body cps callback)

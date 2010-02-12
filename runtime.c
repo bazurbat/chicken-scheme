@@ -8805,7 +8805,9 @@ C_executable_path()
       C_strcat(buffer, "/");
       C_strcat(buffer, fname);
 
-      if(C_access(buffer, F_OK)) return buffer;
+      if(C_access(buffer, F_OK)) 
+	/*XXX resolve symlinks */
+	return buffer;
       
       j = k + 1;
     }
