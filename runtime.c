@@ -2810,7 +2810,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
     if(C_enable_gcweak) {
       /* Check entries in weak item table and recover items ref'd only
-      * once and which are unbound symbols: */
+      * once, which are unbound symbols and have an empty property-lists: */
       weakn = 0;
       wep = weak_item_table;
 
@@ -2820,7 +2820,9 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 	    item = fptr_to_ptr(item);
 	    container = wep->container & ~WEAK_COUNTER_MASK;
 
-	    if(C_header_bits(item) == C_SYMBOL_TYPE && C_u_i_car(item) == C_SCHEME_UNBOUND) {
+	    if(C_header_bits(item) == C_SYMBOL_TYPE && 
+	       C_block_item(item, 0) == C_SCHEME_UNBOUND &&
+	       C_block_item(item, 2) == C_SCHEME_END_OF_LIST) {
 	      ++weakn;
 #ifdef PARANOIA
 	      item = C_u_i_cdr(item);

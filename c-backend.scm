@@ -853,6 +853,8 @@
 			 (unless direct (gen #t "C_word *a;"))
 			 (when looping (gen #t "loop:")) 
 			 (when (and direct (not unsafe) (not disable-stack-overflow-checking))
+			   ;;XXX this can be lifted out of the loop, if the procedure
+			   ;;    does not allocate (suggested by Benedikt Rosenau):
 			   (gen #t "C_stack_check;") ) ] )
 		  (when (and external (not unsafe) (not no-argc-checks) (not customizable))
 		    ;; (not customizable) implies empty-closure
