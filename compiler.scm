@@ -125,17 +125,17 @@
 ; (##core#compiletimeonly <exp>)
 ; (##core#elaborationtimetoo <exp>)
 ; (##core#elaborationtimeonly <exp>)
-; (define-foreign-variable <symbol> <type> [<string>])
-; (define-foreign-type <symbol> <type> [<proc1> [<proc2>]])
+; (##core#define-foreign-variable <symbol> <type> [<string>])
+; (##core#define-foreign-type <symbol> <type> [<proc1> [<proc2>]])
 ; (foreign-lambda <type> <string> {<type>})
 ; (foreign-lambda* <type> ({(<type> <var>)})) {<string>})
 ; (foreign-safe-lambda <type> <string> {<type>})
 ; (foreign-safe-lambda* <type> ({(<type> <var>)})) {<string>})
-; (foreign-primitive <type> ({(<type> <var>)}) {<string>})
+; (##core#foreign-primitive <type> ({(<type> <var>)}) {<string>})
 ; (##core#define-inline <name> <exp>)
 ; (define-constant <name> <exp>)
 ; (##core#foreign-callback-wrapper '<name> <qualifiers> '<type> '({<type>}) <exp>)
-; (##core#define-external-variable (quote <name>) (quote <type>) (quote <bool>))
+; (##core#define-external-variable <name> <type> <bool> [<symbol>])
 ; (##core#check <exp>)
 ; (##core#require-for-syntax <exp> ...)
 ; (##core#require-extension (<id> ...) <bool>)
@@ -1009,10 +1009,10 @@
 			((foreign-safe-lambda*)
 			 (walk (expand-foreign-lambda* x #t) e se dest) )
 
-			((foreign-primitive)
+			((##core#foreign-primitive)
 			 (walk (expand-foreign-primitive x) e se dest) )
 
-			((define-foreign-variable)
+			((##core#define-foreign-variable)
 			 (let* ([var (##sys#strip-syntax (second x))]
 				[type (##sys#strip-syntax (third x))]
 				[name (if (pair? (cdddr x))
@@ -1026,7 +1026,7 @@
 				   foreign-variables))
 			   '(##core#undefined) ) )
 
-			((define-foreign-type)
+			((##core#define-foreign-type)
 			 (let ([name (second x)]
 			       [type (##sys#strip-syntax (third x))] 
 			       [conv (cdddr x)] )
@@ -1049,7 +1049,7 @@
 				  (##sys#hash-table-set! foreign-type-table name type)
 				  '(##core#undefined) ] ) ) )
 
-			((define-external-variable)
+			((##core#define-external-variable)
 			 (let* ([sym (second x)]
 				[name (symbol->string sym)]
 				[type (third x)] 
