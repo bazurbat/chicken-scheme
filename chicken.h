@@ -891,6 +891,8 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_fabs                     fabs
 # define C_modf                     modf
 # define C_readlink                 readlink
+# define C_getcwd                   getcwd
+# define C_access                   access
 # ifdef __linux__
 extern double round(double);
 extern double trunc(double);
