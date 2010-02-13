@@ -462,6 +462,7 @@ Usage: ~a FILENAME | OPTION ...
     -keep-shadowed-macros          do not remove shadowed macro
     -host                          compile for host when configured for
                                     cross-compiling
+    -private-repository            load extensions from executable path
 
   Options can be collapsed if unambiguous, so
 
@@ -615,20 +616,21 @@ EOF
 		(set! static-extensions (append static-extensions (list (car rest))))
 		(t-options "-static-extension" (car rest))
 		(set! rest (cdr rest)) ]
+	       ((-private-repository)
+		(set! compile-options (cons "-DC_PRIVATE_REPOSITORY" compile-options)))
 	       [(-gui
 		 -windows |-W|)		;DEPRECATED
 		(set! gui #t)
+		(set! compile-options (cons "-DC_GUI" compile-options))
 		(when (or msvc mingw)
 		  (cond
 		   (mingw
 		    (set! link-options
 		      (cons* "-lkernel32" "-luser32" "-lgdi32" "-mwindows"
-			     link-options))
-		    (set! compile-options (cons "-DC_GUI" compile-options)))
+			     link-options)))
 		   (msvc
 		    (set! link-options
-		      (cons* "kernel32.lib" "user32.lib" "gdi32.lib" link-options))
-		    (set! compile-options (cons "-DC_GUI" compile-options)))) ) ]
+		      (cons* "kernel32.lib" "user32.lib" "gdi32.lib" link-options)))))]
 	       [(-framework)
 		(check s rest)
 		(when osx 
@@ -949,18 +951,12 @@ EOF
    (quotewrap (make-pathname home "mac.r"))))
 
 (define (create-mac-bundle prg dname)
-  (unless (directory-exists? dname)
-    (create-directory dname))
-  (let ((d (make-pathname dname "Contents")))
-    (unless (directory-exists? d)
-      (create-directory d))
-    (let ((d (make-pathname d "MacOS")))
-      (unless (directory-exists? d)
-	(create-directory d))
-      (let ((pl (make-pathname d "Info.plist")))
-	(unless (file-exists? pl)
-	  (with-output-to-file pl
-	    (cut print #<#EOF
+  (let ((d (make-pathname dname "Contents/MacOS")))
+    (command "mkdir -p ~a" (qs (normalize-pathname d)))
+    (let ((pl (make-pathname d "Info.plist")))
+      (unless (file-exists? pl)
+	(with-output-to-file pl
+	  (cut print #<#EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0">
 <dict>
@@ -970,7 +966,7 @@ EOF
 </plist>
 EOF
 )))
-	d))))
+      d)))
 
 
 ;;; Run it:

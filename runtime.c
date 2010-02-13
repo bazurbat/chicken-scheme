@@ -381,6 +381,7 @@ static C_TLS size_t
   heapspace2_size;
 static C_TLS C_char 
   buffer[ STRING_BUFFER_SIZE ],
+  *private_repository,
   *current_module_name,
   *save_string;
 static C_TLS C_SYMBOL_TABLE
@@ -4061,7 +4062,8 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
   case C_fix(21):
     return C_fix(C_MOST_POSITIVE_FIXNUM);
 
-    /* 22 */
+  case C_fix(22):
+    return C_mk_bool(private_repository != NULL);
 
   case C_fix(23):
     return C_fix(C_startup_time_seconds);
@@ -8735,35 +8737,34 @@ C_decode_literal(C_word **ptr, C_char *str)
 }
 
 
-C_char *
-C_executable_path()
+void
+C_use_private_repository()
 {
 #ifdef __linux__
-  char linkname[64]; /* /proc/<pid>/exe */
+  C_char linkname[64]; /* /proc/<pid>/exe */
   pid_t pid;
   int ret;
 	
+  private_repository = NULL;
   pid = C_getpid();
   C_sprintf(linkname, "/proc/%i/exe", pid);
   ret = C_readlink(linkname, buffer, STRING_BUFFER_SIZE - 1);
 
   if(ret == -1 || ret >= STRING_BUFFER_SIZE - 1)
-    return NULL;
+    return;
 	
   buffer[ ret ] = '\0';
-  return buffer;
-#elseif defined(_WIN32) && !defined(__CYGWIN__)
+#elif defined(_WIN32) && !defined(__CYGWIN__)
   int n = GetModuleFileName(NULL, buffer, STRING_BUFFER_SIZE - 1);
 
   if(n == 0 || n >= STRING_BUFFER_SIZE - 1)
-    return NULL;
+    return;
 
   buffer[ n ] = '\0';
-  return buffer;
-#else
-  int i, j, k;
-  char *fname = C_main_argv[ 0 ];
-  char *path, *dname;
+#elif defined(__unix__) || defined(C_XXXBSD)
+  int i, j, k, l;
+  C_char *fname = C_main_argv[ 0 ];
+  C_char *path, *dname;
 
   /* found on stackoverflow.com: */
 
@@ -8777,44 +8778,84 @@ C_executable_path()
   /* absolute path */
   if(*fname == '/') {
     fname[ i ] = '\0';
-    return fname;
+    C_strcpy(buffer, fname);
   }
+  else {
+    /* try current dir */
+    if(C_getcwd(buffer, STRING_BUFFER_SIZE - 1) == NULL)
+      return;
 
-  /* try current dir */
-  if(C_getcwd(buffer, STRING_BUFFER_SIZE - 1) == NULL)
-    return NULL;
-
-  j = C_strlen(buffer);
-  C_strcat(buffer, "/");
-  C_strcat(buffer, fname);
+    j = C_strlen(buffer);
+    C_strcat(buffer, "/");
+    C_strcat(buffer, fname);
   
-  if(C_access(buffer, F_OK) == 0) {
-    buffer[ j ] = '\0';
-    return buffer; 
-  }
-  
-  /* walk PATH */
-  path = C_getenv("PATH");
-  
-  if(path == NULL) return NULL;
-
-  for(j = k = 0; path[ k ] != '\0'; ++k) {
-    if(path[ k ] == ':') {
-      C_strncpy(buffer, path + j, k - j);
-      buffer[ k - j ] = '\0';
-      C_strcat(buffer, "/");
-      C_strcat(buffer, fname);
-
-      if(C_access(buffer, F_OK)) 
-	/*XXX resolve symlinks */
-	return buffer;
-      
-      j = k + 1;
+    if(C_access(buffer, F_OK) == 0) {
+      buffer[ j ] = '\0';
+      return buffer; 
     }
+  
+    /* walk PATH */
+    path = C_getenv("PATH");
+  
+    if(path == NULL) return;
+
+    for(l = j = k = 0; !l; ++k) {
+      switch(path[ k ]) {
+
+      case '\0':
+	if(k == 0) return;	/* empty PATH */
+	else l = 1;
+	/* fall through */
+	
+      case ':':
+	C_strncpy(buffer, path + j, k - j);
+	buffer[ k - j ] = '\0';
+	C_strcat(buffer, "/");
+	C_strcat(buffer, fname);
+
+	if(C_access(buffer, F_OK)) {
+	  dname = C_strdup(buffer);
+	  l = C_readlink(dname, buffer, C_STRING_BUFFER_SIZE - 1);
+
+	  if(l == -1) {
+	    /* not a symlink (we ignore other errors here */
+	    dname[ k - j ] = '\0';
+	  }
+	  else {
+	    while(l > 0 && buffer[ l ] != '/') --l;
+	  
+	    C_free(dname);
+	    buffer[ l ] = '\0';
+	  }
+
+	  goto finish;
+	}
+	else j = k + 1;
+
+	break;
+
+      default: ;
+      }      
+    }
+
+    return;
   }
 
-  /* give up */
-  return NULL;
-}
+ finish:
+#else
+  return;
 #endif
+  if(debug_mode) 
+    C_printf(C_text("[debug] using private repository at `%s'\n"),
+	     buffer);
+
+  private_repository = C_strdup(buffer);
 }
+
+
+C_char *
+C_private_repository_path()
+{
+  return private_repository;
+}
+

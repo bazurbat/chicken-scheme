@@ -1098,13 +1098,19 @@
 		  [else p] ) ) ) ) ) ) )
 
 (define ##sys#repository-path
-  (make-parameter 
-   (or (get-environment-variable repository-environment-variable)
-       (##sys#chicken-prefix 
-	(##sys#string-append 
-	 "lib/chicken/"
-	 (##sys#number->string (##sys#fudge 42))) )
-       install-egg-home) ) )
+  (let ((rpath
+	 (if (##sys#fudge 22)		; private repository?
+	     (foreign-value "C_private_repository_path()" c-string)
+	     (or (get-environment-variable repository-environment-variable)
+		 (##sys#chicken-prefix 
+		  (##sys#string-append 
+		   "lib/chicken/"
+		   (##sys#number->string (##sys#fudge 42))) )
+		 install-egg-home))))
+    (lambda (#!optional val)
+      (if val
+	  (set! rpath val)
+	  rpath))))
 
 (define repository-path ##sys#repository-path)
 

@@ -893,6 +893,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_readlink                 readlink
 # define C_getcwd                   getcwd
 # define C_access                   access
+# define C_getpid                   getpid
 # ifdef __linux__
 extern double round(double);
 extern double trunc(double);
@@ -1307,8 +1308,20 @@ extern double trunc(double);
 
 #define C_end_of_main
 
+#ifdef C_PRIVATE_REPOSITORY
+# define C_private_repository           C_use_private_repository()
+#else
+# define C_private_repository
+#endif
+
 /* left for backwards-compatibility */
 #define C_gui_nongui_marker
+
+#ifdef C_GUI
+# define C_set_gui_mode                 C_gui_mode = 1
+#else
+# define C_set_gui_mode
+#endif
 
 #if !defined(C_EMBEDDED) && !defined(C_SHARED)
 # if (defined(C_WINDOWS_GUI) || defined(C_GUI)) && defined(_WIN32)
@@ -1317,10 +1330,14 @@ extern double trunc(double);
   { \
     C_gui_mode = 1; \
     return CHICKEN_main(0, NULL, (void *)C_toplevel); \
-  } \
-  C_end_of_main
+  } C_end_of_main 
 # else
-#  define C_main_entry_point            int main(int argc, char *argv[]) { return CHICKEN_main(argc, argv, (void*)C_toplevel); } C_end_of_main
+#  define C_main_entry_point            \
+  int main(int argc, char *argv[]) \
+  { \
+    C_set_gui_mode; \
+    return CHICKEN_main(argc, argv, (void*)C_toplevel); \
+  } C_end_of_main
 # endif
 #else
 # define C_main_entry_point
@@ -1528,6 +1545,8 @@ C_fctexport C_word C_enumerate_symbols(C_SYMBOL_TABLE *stable, C_word pos) C_reg
 C_fctexport void C_do_register_finalizer(C_word x, C_word proc);
 C_fctexport int C_do_unregister_finalizer(C_word x);
 C_fctexport C_word C_dbg_hook(C_word x);
+C_fctexport void C_use_private_repository();
+C_fctexport C_char *C_private_repository_path();
 
 C_fctimport void C_ccall C_toplevel(C_word c, C_word self, C_word k) C_noret;
 C_fctexport void C_ccall C_stop_timer(C_word c, C_word closure, C_word k) C_noret;

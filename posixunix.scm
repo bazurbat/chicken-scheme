@@ -160,7 +160,6 @@ static C_TLS struct stat C_statbuf;
 
 #define C_fork              fork
 #define C_waitpid(id, o)    C_fix(waitpid(C_unfix(id), &C_wait_status, C_unfix(o)))
-#define C_getpid            getpid
 #define C_getppid           getppid
 #define C_kill(id, s)       C_fix(kill(C_unfix(id), C_unfix(s)))
 #define C_getuid            getuid
@@ -177,7 +176,7 @@ static C_TLS struct stat C_statbuf;
 #define C_setpgid(x, y)     C_fix(setpgid(C_unfix(x), C_unfix(y)))
 #define C_getpgid(x)        C_fix(getpgid(C_unfix(x)))
 #define C_symlink(o, n)     C_fix(symlink(C_data_pointer(o), C_data_pointer(n)))
-#define C_readlink(f, b)    C_fix(readlink(C_data_pointer(f), C_data_pointer(b), FILENAME_MAX))
+#define C_do_readlink(f, b)    C_fix(readlink(C_data_pointer(f), C_data_pointer(b), FILENAME_MAX))
 #define C_getpwnam(n)       C_mk_bool((C_user = getpwnam((char *)C_data_pointer(n))) != NULL)
 #define C_getpwuid(u)       C_mk_bool((C_user = getpwuid(C_unfix(u))) != NULL)
 #ifdef HAVE_GRP_H
@@ -197,7 +196,7 @@ static C_TLS struct stat C_statbuf;
 #define C_dup2(x, y)        C_fix(dup2(C_unfix(x), C_unfix(y)))
 #define C_alarm             alarm
 #define C_setvbuf(p, m, s)  C_fix(setvbuf(C_port_file(p), NULL, C_unfix(m), C_unfix(s)))
-#define C_access(fn, m)     C_fix(access((char *)C_data_pointer(fn), C_unfix(m)))
+#define C_test_access(fn, m)     C_fix(access((char *)C_data_pointer(fn), C_unfix(m)))
 #define C_close(fd)         C_fix(close(C_unfix(fd)))
 #define C_sleep             sleep
 
@@ -1487,7 +1486,7 @@ EOF
 (let ()
   (define (check filename acc loc)
     (##sys#check-string filename loc)
-    (let ([r (fx= 0 (##core#inline "C_access" (##sys#make-c-string (##sys#expand-home-path filename)) acc))])
+    (let ([r (fx= 0 (##core#inline "C_test_access" (##sys#make-c-string (##sys#expand-home-path filename)) acc))])
       (unless r (##sys#update-errno))
       r) )
   (set! file-read-access? (lambda (filename) (check filename _r_ok 'file-read-access?)))
@@ -1538,7 +1537,7 @@ EOF
         [buf (make-string (fx+ _filename_max 1))] )
     (lambda (fname #!optional canonicalize)
       (##sys#check-string fname 'read-symbolic-link)
-      (let ([len (##core#inline "C_readlink" (##sys#make-c-string (##sys#expand-home-path fname)) buf)])
+      (let ([len (##core#inline "C_do_readlink" (##sys#make-c-string (##sys#expand-home-path fname)) buf)])
       (when (fx< len 0)
         (posix-error #:file-error 'read-symbolic-link "cannot read symbolic link" fname) )
       (let ((pathname (substring buf 0 len)))
