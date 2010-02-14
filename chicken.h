@@ -834,6 +834,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_snprintf                 snprintf
 # define C_printf                   printf
 # define C_fprintf                  fprintf
+# define C_vfprintf                 vfprintf
 # define C_fflush                   fflush
 # define C_getchar                  getchar
 # define C_exit                     exit
@@ -1546,6 +1547,7 @@ C_fctexport void C_do_register_finalizer(C_word x, C_word proc);
 C_fctexport int C_do_unregister_finalizer(C_word x);
 C_fctexport C_word C_dbg_hook(C_word x);
 C_fctexport void C_use_private_repository();
+C_fctexport C_char *C_path_to_executable();
 C_fctexport C_char *C_private_repository_path();
 
 C_fctimport void C_ccall C_toplevel(C_word c, C_word self, C_word k) C_noret;

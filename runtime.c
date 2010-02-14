@@ -381,7 +381,7 @@ static C_TLS size_t
   heapspace2_size;
 static C_TLS C_char 
   buffer[ STRING_BUFFER_SIZE ],
-  *private_repository,
+  *private_repository = NULL,
   *current_module_name,
   *save_string;
 static C_TLS C_SYMBOL_TABLE
@@ -413,7 +413,7 @@ static C_TLS int
   fake_tty_flag,
   debug_mode,
   gc_bell,
-  gc_report_flag,
+  gc_report_flag = 0,
   gc_mode,
   gc_count_1,
   gc_count_2,
@@ -510,6 +510,19 @@ static void dload_2(void *dummy) C_noret;
 #endif
 
 
+static void
+C_dbg(C_char *prefix, C_char *fstr, ...)
+{
+  va_list va;
+
+  C_fprintf(C_stderr, "[%s] ", prefix);
+  va_start(va, fstr);
+  C_vfprintf(C_stderr, fstr, va);
+  va_end(va);
+  C_fflush(C_stderr);
+}
+
+
 /* Startup code: */
 
 int CHICKEN_main(int argc, char *argv[], void *toplevel) 
@@ -595,7 +608,8 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   if(chicken_is_initialized) return 1;
   else chicken_is_initialized = 1;
 
-  if(debug_mode) C_printf(C_text("[debug] application startup...\n"));
+  if(debug_mode) 
+    C_dbg(C_text("debug"), C_text("application startup...\n"));
 
   C_panic_hook = usual_panic;
   symbol_table_list = NULL;
@@ -677,7 +691,6 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   dlopen_flags = 0;
 #endif
 
-  gc_report_flag = 0;
   mutation_count = gc_count_1 = gc_count_2 = 0;
   lf_list = NULL;
   C_register_lf2(NULL, 0, create_initial_ptable());
@@ -1029,7 +1042,8 @@ void C_set_or_change_heap_size(C_word heap, int reintern)
 
   if(fromspace_start && heap_size >= heap) return;
 
-  if(debug_mode) C_printf(C_text("[debug] heap resized to %d bytes\n"), (int)heap);
+  if(debug_mode)
+    C_dbg(C_text("debug"), C_text("heap resized to %d bytes\n"), (int)heap);
 
   heap_size = heap;
 
@@ -1063,7 +1077,8 @@ void C_do_resize_stack(C_word stack)
           diff = stack - old;
 
   if(diff != 0 && !stack_size_changed) {
-    if(debug_mode) C_printf(C_text("[debug] stack resized to %d bytes\n"), (int)stack);
+    if(debug_mode) 
+      C_dbg(C_text("debug"), C_text("[debug] stack resized to %d bytes\n"), (int)stack);
 
     stack_size = stack;
 
@@ -1118,11 +1133,12 @@ void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *st
       for(ptr = &C_main_argv[ i ][ 2 ]; *ptr != '\0';) {
 	switch(*(ptr++)) {
 	case '?':
-	  C_printf("\nRuntime options:\n\n"
+	  C_dbg("Runtime options", "\n\n"
 		 " -:?              display this text\n"
 		 " -:c              always treat stdin as console\n"
 		 " -:d              enable debug output\n"
 		 " -:D              enable more debug output\n"
+		 " -:g              show GC information\n"
 		 " -:o              disable stack overflow checks\n"
 		 " -:hiSIZE         set initial heap size\n"
 		 " -:hmSIZE         set maximal heap size\n"
@@ -1201,6 +1217,10 @@ void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *st
 	  debug_mode = 2;
 	  break;
 
+	case 'g':
+	  gc_report_flag = 2;
+	  break;
+
 	case 'w':
 	  C_enable_gcweak = 1;
 	  break;
@@ -1277,7 +1297,7 @@ C_word CHICKEN_run(void *toplevel)
   stack_bottom = C_stack_pointer;
 
   if(debug_mode)
-    C_printf(C_text("[debug] stack bottom is 0x%lx.\n"), (long)stack_bottom);
+    C_dbg(C_text("debug"), C_text("stack bottom is 0x%lx.\n"), (long)stack_bottom);
 
   /* The point of (usually) no return... */
   C_setjmp(C_restart);
@@ -1321,8 +1341,8 @@ C_regparm void C_fcall initial_trampoline(void *proc)
 void C_ccall termination_continuation(C_word c, C_word self, C_word result)
 {
   if(debug_mode) {
-    C_printf(C_text("[debug] application terminated normally (%d major collection%s).\n"), gc_count_2,
-	     gc_count_2 > 1 ? "s" : "");
+    C_dbg(C_text("debug"), C_text("application terminated normally (%d major collection%s).\n"), gc_count_2,
+	  gc_count_2 > 1 ? "s" : "");
   }
 
   exit(0);
@@ -1353,7 +1373,7 @@ void usual_panic(C_char *msg)
 #endif
   } /* fall through if not WIN32 GUI app */
 
-  C_fprintf(C_stderr, C_text("\n%s - execution terminated\n\n%s"), msg, dmp);
+  C_dbg("panic", C_text("\n%s - execution terminated\n\n%s"), msg, dmp);
   C_exit(1);
 }
 
@@ -1370,7 +1390,7 @@ void horror(C_char *msg)
 #endif
   } /* fall through */
 
-  C_fprintf(C_stderr, C_text("\n%s - execution terminated"), msg);  
+  C_dbg("horror", C_text("\n%s - execution terminated"), msg);  
   C_exit(1);
 }
 
@@ -1740,10 +1760,11 @@ void C_fcall C_callback_adjust_stack(C_word *a, int size)
 {
   if(!chicken_is_running && !C_in_stackp((C_word)a)) {
     if(debug_mode)
-      C_printf(C_text("[debug] callback invoked in lower stack region - adjusting limits:\n"
-		      "[debug]   current:  \t%p\n"
-		      "[debug]   previous: \t%p (bottom) - %p (limit)\n"),
-	       a, stack_bottom, C_stack_limit);
+      C_dbg(C_text("debug"), 
+	    C_text("callback invoked in lower stack region - adjusting limits:\n"
+		   "[debug]   current:  \t%p\n"
+		   "[debug]   previous: \t%p (bottom) - %p (limit)\n"),
+	    a, stack_bottom, C_stack_limit);
 
 #if C_STACK_GROWS_DOWNWARD
     C_stack_limit = (C_word *)((C_byte *)a - stack_size);
@@ -1754,8 +1775,8 @@ void C_fcall C_callback_adjust_stack(C_word *a, int size)
 #endif
 
     if(debug_mode)
-      C_printf(C_text("[debug]   new:      \t%p (bottom) - %p (limit)\n"),
-	       stack_bottom, C_stack_limit);
+      C_dbg(C_text("debug"), C_text("new:      \t%p (bottom) - %p (limit)\n"),
+	    stack_bottom, C_stack_limit);
   }
 }
 
@@ -1830,7 +1851,7 @@ void *C_register_lf2(C_word *lf, int count, C_PTABLE_ENTRY *ptable)
   
   if(reload_lf != NULL) {
     if(debug_mode)
-      C_printf(C_text("[debug] replacing previous LF-entry for `%s'\n"), current_module_name);
+      C_dbg(C_text("debug"), C_text("replacing previous LF-entry for `%s'\n"), current_module_name);
     
     C_free(reload_lf->module_name);
     reload_lf->lf = lf;
@@ -2713,8 +2734,8 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
       if(!C_immediatep(last) && (j = C_unfix(C_block_item(last, 0))) != 0) { 
 	/* still finalizers pending: just mark table items... */
-	if(gc_report_flag) 
-	  C_printf(C_text("[GC] %d finalized item(s) still pending\n"), j);
+	if(gc_report_flag)
+	  C_dbg(C_text("GC"), C_text("%d finalized item(s) still pending\n"), j);
 
 	j = fcount = 0;
 
@@ -2730,7 +2751,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 	}
 
 	if(gc_report_flag && fcount > 0)
-	  C_printf(C_text("[GC] %d finalizer value(s) marked\n"), fcount);
+	  C_dbg(C_text("GC"), C_text("%d finalizer value(s) marked\n"), fcount);
       }
       else {
 	j = fcount = 0;
@@ -2755,8 +2776,8 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
       finalizers_checked = 1;
 
       if(pending_finalizer_count > 0 && gc_report_flag)
-	C_printf(C_text("[GC] finalizers pending for rescan:\t %d (%d live)\n"), 
-		 pending_finalizer_count, live_finalizer_count);
+	C_dbg(C_text("GC"), C_text("finalizers pending for rescan:\t %d (%d live)\n"), 
+	      pending_finalizer_count, live_finalizer_count);
 
       goto rescan;
     }
@@ -2764,7 +2785,8 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
       /* Copy finalized items with remembered indices into `##sys#pending-finalizers' 
 	 (and release finalizer node): */
       if(pending_finalizer_count > 0) {
-	if(gc_report_flag) C_printf(C_text("[GC] queueing %d finalizers\n"), pending_finalizer_count);
+	if(gc_report_flag)
+	  C_dbg(C_text("GC"), C_text("queueing %d finalizers\n"), pending_finalizer_count);
 
 	last = C_block_item(pending_finalizers_symbol, 0);
 	assert(C_u_i_car(last) == C_fix(0));
@@ -2811,13 +2833,14 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
     if(C_enable_gcweak) {
       /* Check entries in weak item table and recover items ref'd only
-      * once, which are unbound symbols and have an empty property-lists: */
+      * once, which are unbound symbols and have empty property-lists: */
       weakn = 0;
       wep = weak_item_table;
 
       for(i = 0; i < WEAK_TABLE_SIZE; ++i, ++wep)
 	if(wep->item != 0) { 
-	  if((wep->container & WEAK_COUNTER_MAX) == 0 && is_fptr((item = C_block_header(wep->item)))) {
+	  if((wep->container & WEAK_COUNTER_MAX) == 0 && 
+	     is_fptr((item = C_block_header(wep->item)))) {
 	    item = fptr_to_ptr(item);
 	    container = wep->container & ~WEAK_COUNTER_MASK;
 
@@ -2825,10 +2848,6 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 	       C_block_item(item, 0) == C_SCHEME_UNBOUND &&
 	       C_block_item(item, 2) == C_SCHEME_END_OF_LIST) {
 	      ++weakn;
-#ifdef PARANOIA
-	      item = C_u_i_cdr(item);
-	      C_fprintf(C_stderr, C_text("[recovered: %.*s]\n"), (int)C_header_size(item), (char *)C_data_pointer(item));
-#endif
 	      C_set_block_item(container, 0, C_SCHEME_UNDEFINED);
 	    }
 	  }
@@ -2859,35 +2878,39 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
   }
 
   /* Display GC report: 
-     Note: stubbornly writes to stdout - there is no provision for other output-ports */
+     Note: stubbornly writes to stderr - there is no provision for other output-ports */
   if(gc_report_flag == 1 || (gc_report_flag && gc_mode == GC_MAJOR)) {
-    C_printf(C_text("[GC] level  %d\tgcs(minor)  %d\tgcs(major)  %d\n"),
-	     gc_mode, gc_count_1, gc_count_2);
+    C_dbg(C_text("GC"), C_text("level  %d\tgcs(minor)  %d\tgcs(major)  %d\n"),
+	  gc_mode, gc_count_1, gc_count_2);
     i = (C_uword)C_stack_pointer;
 
 #if C_STACK_GROWS_DOWNWARD
-    C_printf(C_text("[GC] stack\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING), 
-	   (C_uword)C_stack_limit, (C_uword)i, (C_uword)C_stack_limit + stack_size);
+    C_dbg("GC", C_text("stack\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING), 
+	  (C_uword)C_stack_limit, (C_uword)i, (C_uword)C_stack_limit + stack_size);
 #else
-    C_printf(C_text("[GC] stack\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING), 
-	   (C_uword)C_stack_limit - stack_size, (C_uword)i, (C_uword)C_stack_limit);
+    C_dbg("GC", C_text("stack\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING), 
+	  (C_uword)C_stack_limit - stack_size, (C_uword)i, (C_uword)C_stack_limit);
 #endif
 
-    if(gc_mode == GC_MINOR) printf(C_text("\t" UWORD_FORMAT_STRING), count);
+    if(gc_mode == GC_MINOR) 
+      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), count);
 
-    C_printf(C_text("\n[GC]  from\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING),
-	   (C_uword)fromspace_start, (C_uword)C_fromspace_top, (C_uword)C_fromspace_limit);
+    C_fputc('\n', C_stderr);
+    C_dbg("GC", C_text(" from\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING),
+	  (C_uword)fromspace_start, (C_uword)C_fromspace_top, (C_uword)C_fromspace_limit);
 
-    if(gc_mode == GC_MAJOR) printf(C_text("\t" UWORD_FORMAT_STRING), count);
+    if(gc_mode == GC_MAJOR) 
+      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), count);
 
-    C_printf(C_text("\n[GC]    to\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING" \n"), 
-	   (C_uword)tospace_start, (C_uword)tospace_top, 
-	   (C_uword)tospace_limit);
+    C_fputc('\n', C_stderr);
+    C_dbg("GC", C_text("   to\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING" \n"), 
+	  (C_uword)tospace_start, (C_uword)tospace_top, 
+	  (C_uword)tospace_limit);
 
     if(gc_mode == GC_MAJOR && C_enable_gcweak && weakn)
-      C_printf(C_text("[GC] %d recoverable weakly held items found\n"), weakn);
-
-    C_printf(C_text("[GC] %d locatives (from %d)\n"), locative_table_count, locative_table_size);
+      C_dbg("GC", C_text("%d recoverable weakly held items found\n"), weakn);
+    
+    C_dbg("GC", C_text("%d locatives (from %d)\n"), locative_table_count, locative_table_size);
   }
 
   if(gc_mode == GC_MAJOR) gc_count_1 = 0;
@@ -3072,12 +3095,12 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
   if(size == heap_size) return;
 
   if(debug_mode) 
-    C_printf(C_text("[debug] resizing heap dynamically from " UWORD_COUNT_FORMAT_STRING "k to " UWORD_COUNT_FORMAT_STRING "k ...\n"), 
-	     (C_uword)heap_size / 1000, size / 1000);
+    C_dbg(C_text("debug"), C_text("resizing heap dynamically from " UWORD_COUNT_FORMAT_STRING "k to " UWORD_COUNT_FORMAT_STRING "k ...\n"), 
+	  (C_uword)heap_size / 1000, size / 1000);
 
   if(gc_report_flag) {
-    C_printf(C_text("(old) fromspace: \tstart=%08lx, \tlimit=%08lx\n"), (long)fromspace_start, (long)C_fromspace_limit);
-    C_printf(C_text("(old) tospace:   \tstart=%08lx, \tlimit=%08lx\n"), (long)tospace_start, (long)tospace_limit);
+    C_dbg(C_text("GC"), C_text("(old) fromspace: \tstart=%08lx, \tlimit=%08lx\n"), (long)fromspace_start, (long)C_fromspace_limit);
+    C_dbg(C_text("GC"), C_text("(old) tospace:   \tstart=%08lx, \tlimit=%08lx\n"), (long)tospace_start, (long)tospace_limit);
   }
 
   heap_size = size;
@@ -3189,9 +3212,9 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
   C_fromspace_limit = new_tospace_limit;
 
   if(gc_report_flag) {
-    C_printf(C_text("[GC] resized heap to %d bytes\n"), heap_size);
-    C_printf(C_text("(new) fromspace: \tstart=%08lx, \tlimit=%08lx\n"), (long)fromspace_start, (long)C_fromspace_limit);
-    C_printf(C_text("(new) tospace:   \tstart=%08lx, \tlimit=%08lx\n"), (long)tospace_start, (long)tospace_limit);
+    C_dbg(C_text("GC"), C_text("resized heap to %d bytes\n"), heap_size);
+    C_dbg(C_text("GC"), C_text("(new) fromspace: \tstart=%08lx, \tlimit=%08lx\n"), (long)fromspace_start, (long)C_fromspace_limit);
+    C_dbg(C_text("GC"), C_text("(new) tospace:   \tstart=%08lx, \tlimit=%08lx\n"), (long)tospace_start, (long)tospace_limit);
   }
 
   if(C_post_gc_hook != NULL) C_post_gc_hook(GC_REALLOC, 0);
@@ -3309,7 +3332,6 @@ C_regparm void C_fcall update_locative_table(int mode)
 
   for(i = 0; i < locative_table_count; ++i) {
     loc = locative_table[ i ];
-    /*    C_printf("%d: %08lx %d/%d\n", i, loc, C_in_stackp(loc), C_in_heapp(loc)); */
 
     if(loc != C_SCHEME_UNDEFINED) {
       h = C_block_header(loc);
@@ -3396,7 +3418,7 @@ C_regparm void C_fcall update_locative_table(int mode)
   }
 
   if(gc_report_flag && invalidated > 0)
-    C_printf(C_text("[GC] locative-table entries reclaimed: %d\n"), invalidated);
+    C_dbg(C_text("GC"), C_text("locative-table entries reclaimed: %d\n"), invalidated);
 
   if(mode != GC_REALLOC) locative_table_count = hi;
 }
@@ -3727,10 +3749,8 @@ C_regparm C_word C_fcall C_hash_string_ci(C_word str)
 
 C_regparm void C_fcall C_toplevel_entry(C_char *name)
 {
-  if(debug_mode) {
-    C_printf(C_text("[debug] entering toplevel %s...\n"), name);
-    C_fflush(stdout);
-  }
+  if(debug_mode)
+    C_dbg(C_text("debug"), C_text("entering toplevel %s...\n"), name);
 }
 
 
@@ -3764,7 +3784,8 @@ C_word C_halt(C_word msg)
     C_fputc('\n', C_stderr);
   }
 
-  if(dmp != NULL) C_fprintf(stderr, C_text("\n%s"), dmp);
+  if(dmp != NULL) 
+    C_dbg("", C_text("\n%s"), dmp);
   
   C_exit(EX_SOFTWARE);
   return 0;
@@ -7654,8 +7675,8 @@ void C_ccall C_get_symbol_table_info(C_word c, C_word closure, C_word k)
     ++n;
   
   d1 = compute_symbol_table_load(&d2, &total);
-  x = C_flonum(&a, d1);
-  y = C_flonum(&a, d2);
+  x = C_flonum(&a, d1);		/* load */
+  y = C_flonum(&a, d2);		/* avg bucket length */
   C_kontinue(k, C_vector(&a, 4, x, y, C_fix(total), C_fix(n)));
 }
 
@@ -7954,12 +7975,12 @@ void dload_2(void *dummy)
 
       if(debug_mode) {
 	if(reload_lf != NULL)
-	  C_printf(C_text("[debug] reloading compiled module `%s' (previous handle was " UWORD_FORMAT_STRING ", new is "
-			  UWORD_FORMAT_STRING ")\n"), current_module_name, (C_uword)reload_lf->module_handle, 
-		   (C_uword)current_module_handle);
+	  C_dbg(C_text("debug"), C_text("reloading compiled module `%s' (previous handle was " UWORD_FORMAT_STRING ", new is "
+				UWORD_FORMAT_STRING ")\n"), current_module_name, (C_uword)reload_lf->module_handle, 
+		(C_uword)current_module_handle);
 	else 
-	  C_printf(C_text("[debug] loading compiled module `%s' (handle is " UWORD_FORMAT_STRING ")\n"),
-		   current_module_name, (C_uword)current_module_handle);
+	  C_dbg(C_text("debug"), C_text("loading compiled module `%s' (handle is " UWORD_FORMAT_STRING ")\n"),
+		current_module_name, (C_uword)current_module_handle);
       }
 
       ((C_proc2)p)(2, C_SCHEME_UNDEFINED, k);
@@ -8036,12 +8057,12 @@ void dload_2(void *dummy)
 
       if(debug_mode) {
 	if(reload_lf != NULL)
-	  C_printf(C_text("[debug] reloading compiled module `%s' (previous handle was " UWORD_FORMAT_STRING ", new is "
-			  UWORD_FORMAT_STRING ")\n"), current_module_name, (C_uword)reload_lf->module_handle, 
-		   (C_uword)current_module_handle);
+	  C_dbg(C_text("debug"), C_text("reloading compiled module `%s' (previous handle was " UWORD_FORMAT_STRING ", new is "
+				UWORD_FORMAT_STRING ")\n"), current_module_name, (C_uword)reload_lf->module_handle, 
+		(C_uword)current_module_handle);
 	else 
-	  C_printf(C_text("[debug] loading compiled module `%s' (handle is " UWORD_FORMAT_STRING ")\n"),
-		   current_module_name, (C_uword)current_module_handle);
+	  C_dbg(C_text("debug"), C_text("loading compiled module `%s' (handle is " UWORD_FORMAT_STRING ")\n"),
+		current_module_name, (C_uword)current_module_handle);
       }
 
       ((C_proc2)p)(2, C_SCHEME_UNDEFINED, k); /* doesn't return */
@@ -8113,12 +8134,12 @@ void dload_2(void *dummy)
 
       if(debug_mode) {
 	if(reload_lf != NULL)
-	  C_printf(C_text("[debug] reloading compiled module `%s' (previous handle was " UWORD_FORMAT_STRING ", new is "
-			  UWORD_FORMAT_STRING ")\n"), current_module_name, (C_uword)reload_lf->module_handle, 
-		   (C_uword)current_module_handle);
+	  C_dbg(C_text("debug"), C_text("reloading compiled module `%s' (previous handle was " UWORD_FORMAT_STRING ", new is "
+				UWORD_FORMAT_STRING ")\n"), current_module_name, (C_uword)reload_lf->module_handle, 
+		(C_uword)current_module_handle);
 	else 
-	  C_printf(C_text("[debug] loading compiled module `%s' (handle is " UWORD_FORMAT_STRING ")\n"),
-		   current_module_name, (C_uword)current_module_handle);
+	  C_dbg(C_text("debug"), C_text("loading compiled module `%s' (handle is " UWORD_FORMAT_STRING ")\n"),
+		current_module_name, (C_uword)current_module_handle);
       }
 
       ((C_proc2)p)(2, C_SCHEME_UNDEFINED, k);
@@ -8250,8 +8271,8 @@ C_regparm C_word C_fcall C_a_i_make_locative(C_word **a, int c, C_word type, C_w
 
   if(locative_table_count >= locative_table_size) {
     if(debug_mode == 2)
-      C_printf(C_text("[debug] resizing locative table from %d to %d (count is %d)\n"), 
-		      locative_table_size, locative_table_size * 2, locative_table_count);
+      C_dbg(C_text("debug"), C_text("resizing locative table from %d to %d (count is %d)\n"), 
+	    locative_table_size, locative_table_size * 2, locative_table_count);
 
     locative_table = (C_word *)C_realloc(locative_table, locative_table_size * 2 * sizeof(C_word));
 
@@ -8737,30 +8758,33 @@ C_decode_literal(C_word **ptr, C_char *str)
 }
 
 
-void
-C_use_private_repository()
+C_char *
+C_path_to_executable()
 {
 #ifdef __linux__
   C_char linkname[64]; /* /proc/<pid>/exe */
   pid_t pid;
   int ret;
 	
-  private_repository = NULL;
   pid = C_getpid();
   C_sprintf(linkname, "/proc/%i/exe", pid);
   ret = C_readlink(linkname, buffer, STRING_BUFFER_SIZE - 1);
 
   if(ret == -1 || ret >= STRING_BUFFER_SIZE - 1)
-    return;
-	
+    return NULL;
+
+  for(--ret; ret > 0 && buffer[ ret ] != '/'; --ret);
+
   buffer[ ret ] = '\0';
+  return buffer;
 #elif defined(_WIN32) && !defined(__CYGWIN__)
   int n = GetModuleFileName(NULL, buffer, STRING_BUFFER_SIZE - 1);
 
   if(n == 0 || n >= STRING_BUFFER_SIZE - 1)
-    return;
+    return NULL;
 
   buffer[ n ] = '\0';
+  return buffer;
 #elif defined(__unix__) || defined(C_XXXBSD)
   int i, j, k, l;
   C_char *fname = C_main_argv[ 0 ];
@@ -8783,7 +8807,7 @@ C_use_private_repository()
   else {
     /* try current dir */
     if(C_getcwd(buffer, STRING_BUFFER_SIZE - 1) == NULL)
-      return;
+      return NULL;
 
     j = C_strlen(buffer);
     C_strcat(buffer, "/");
@@ -8797,13 +8821,13 @@ C_use_private_repository()
     /* walk PATH */
     path = C_getenv("PATH");
   
-    if(path == NULL) return;
+    if(path == NULL) return NULL;
 
     for(l = j = k = 0; !l; ++k) {
       switch(path[ k ]) {
 
       case '\0':
-	if(k == 0) return;	/* empty PATH */
+	if(k == 0) return NULL;	/* empty PATH */
 	else l = 1;
 	/* fall through */
 	
@@ -8828,7 +8852,7 @@ C_use_private_repository()
 	    buffer[ l ] = '\0';
 	  }
 
-	  goto finish;
+	  return buffer;
 	}
 	else j = k + 1;
 
@@ -8838,18 +8862,24 @@ C_use_private_repository()
       }      
     }
 
-    return;
+    return NULL;
   }
-
- finish:
 #else
-  return;
+  return NULL;
 #endif
-  if(debug_mode) 
-    C_printf(C_text("[debug] using private repository at `%s'\n"),
-	     buffer);
+}
 
-  private_repository = C_strdup(buffer);
+
+void
+C_use_private_repository()
+{
+  C_char *path = C_path_to_executable();
+
+  if(debug_mode) 
+    C_dbg(C_text("debug"), C_text("using private repository at `%s'\n"),
+	  buffer);
+
+  private_repository = path == NULL ? NULL : C_strdup(path);
 }
 
 
@@ -8858,4 +8888,3 @@ C_private_repository_path()
 {
   return private_repository;
 }
-

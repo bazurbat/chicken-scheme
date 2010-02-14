@@ -240,6 +240,8 @@ compiler itself) accept a small set of runtime options:
 
 ; {{-:D}} : Prints some more debug-information at runtime.
 
+; {{-:g}} : Prints information about garbage-collection.
+
 ; {{-:fNUMBER}} : Specifies the maximal number of currently pending finalizers before finalization is forced.
 
 ; {{-:hNUMBER}} : Specifies fixed heap size

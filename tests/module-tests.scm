@@ -156,4 +156,11 @@
             "some text"
             (test-extlambda "some text"))
 
+;;; import-forms in `require-extension':
+
+(module m15 ()
+  (import scheme chicken)
+  (use (prefix (rename srfi-1 (filter f)) 99:))
+  (print 99:f))
+
 (test-end "modules")

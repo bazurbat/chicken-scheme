@@ -3404,6 +3404,9 @@ EOF
 
 (define ##sys#pathname-directory-separator #\/) ; DEPRECATED
 
+(define ##sys#program-directory
+  (foreign-lambda c-string "C_path_to_executable"))
+
 
 ;;; Feature identifiers:
 

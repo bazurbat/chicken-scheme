@@ -195,6 +195,10 @@ for s in 100000 120000 200000 250000 300000 350000 400000 450000 500000; do
     ../chicken ../utils.scm -:s$s -output-file tmp.c -include-path .. 
 done
 
+echo "======================================== symbol-GC tests ..."
+$compile symbolgc-tests.scm
+./a.out -:w
+
 echo "======================================== finalizer tests ..."
 $interpret -s test-finalizers.scm
 

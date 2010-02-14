@@ -13,12 +13,6 @@ This directory contains a couple of things that might be useful:
     Takes a platform-designator and the path to a tarball and unpacks,
     builds and tests the chicken distribution contained therein.
 
-  test-chicken.sh
-
-    Runs a full test of chicken by retrieving it from the git repository,
-    building it, running checks, rebuilding it and building all eggs
-    from a checkout of the svn egg tree (or from an existing tree).
-
   wiki2html.scm
 
     A simple svnwiki -> HTML translator used for the manual. Needs
