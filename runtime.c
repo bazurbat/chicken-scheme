@@ -8875,10 +8875,6 @@ C_use_private_repository()
 {
   C_char *path = C_path_to_executable();
 
-  if(debug_mode) 
-    C_dbg(C_text("debug"), C_text("using private repository at `%s'\n"),
-	  buffer);
-
   private_repository = path == NULL ? NULL : C_strdup(path);
 }
 

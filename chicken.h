@@ -1330,6 +1330,7 @@ extern double trunc(double);
   int WINAPI WinMain(HINSTANCE me, HINSTANCE you, LPSTR cmdline, int show) \
   { \
     C_gui_mode = 1; \
+    C_private_repository; \
     return CHICKEN_main(0, NULL, (void *)C_toplevel); \
   } C_end_of_main 
 # else
@@ -1337,6 +1338,7 @@ extern double trunc(double);
   int main(int argc, char *argv[]) \
   { \
     C_set_gui_mode; \
+    C_private_repository; \
     return CHICKEN_main(argc, argv, (void*)C_toplevel); \
   } C_end_of_main
 # endif
