@@ -566,11 +566,11 @@ void parse_argv(C_char *cmds)
   C_main_argc = 0;
 
   for(;;) {
-    while(isspace(*ptr)) ++ptr;
+    while(isspace((int)(*ptr))) ++ptr;
 
     if(*ptr == '\0') break;
 
-    for(bptr0 = bptr = buffer; !isspace(*ptr) && *ptr != '\0'; *(bptr++) = *(ptr++))
+    for(bptr0 = bptr = buffer; !isspace((int)(*ptr)) && *ptr != '\0'; *(bptr++) = *(ptr++))
       ++n;
     
     *bptr = '\0';
@@ -3742,7 +3742,7 @@ C_regparm C_word C_fcall C_hash_string_ci(C_word str)
   int len = C_header_size(str);
   C_byte *ptr = C_data_pointer(str);
 
-  while(len--) key = (key << 4) + C_tolower(*ptr++);
+  while(len--) key = (key << 4) + C_tolower((int)(*ptr++));
 
   return C_fix(key & C_MOST_POSITIVE_FIXNUM);
 }
@@ -4339,8 +4339,10 @@ C_regparm C_word C_fcall C_i_string_ci_equal_p(C_word x, C_word y)
   p1 = (char *)C_data_pointer(x);
   p2 = (char *)C_data_pointer(y);
 
-  while(n--) 
-    if(C_tolower(*(p1++)) != C_tolower(*(p2++))) return C_SCHEME_FALSE;
+  while(n--) {
+    if(C_tolower((int)(*(p1++))) != C_tolower((int)(*(p2++))))
+      return C_SCHEME_FALSE;
+  }
 
   return C_SCHEME_TRUE;
 }
