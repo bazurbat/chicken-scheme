@@ -617,7 +617,9 @@ EOF
 		(t-options "-static-extension" (car rest))
 		(set! rest (cdr rest)) ]
 	       ((-private-repository)
-		(set! compile-options (cons "-DC_PRIVATE_REPOSITORY" compile-options)))
+		(set! compile-options (cons "-DC_PRIVATE_REPOSITORY" compile-options))
+		(when osx
+		  (set! link-options (cons "-framework CoreFoundation" link-options))))
 	       [(-gui
 		 -windows |-W|)		;DEPRECATED
 		(set! gui #t)

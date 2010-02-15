@@ -515,6 +515,7 @@ C_dbg(C_char *prefix, C_char *fstr, ...)
 {
   va_list va;
 
+  C_fflush(C_stdout);
   C_fprintf(C_stderr, "[%s] ", prefix);
   va_start(va, fstr);
   C_vfprintf(C_stderr, fstr, va);
@@ -8758,123 +8759,9 @@ C_decode_literal(C_word **ptr, C_char *str)
 }
 
 
-C_char *
-C_path_to_executable()
-{
-#ifdef __linux__
-  C_char linkname[64]; /* /proc/<pid>/exe */
-  pid_t pid;
-  int ret;
-	
-  pid = C_getpid();
-  C_sprintf(linkname, "/proc/%i/exe", pid);
-  ret = C_readlink(linkname, buffer, STRING_BUFFER_SIZE - 1);
-
-  if(ret == -1 || ret >= STRING_BUFFER_SIZE - 1)
-    return NULL;
-
-  for(--ret; ret > 0 && buffer[ ret ] != '/'; --ret);
-
-  buffer[ ret ] = '\0';
-  return buffer;
-#elif defined(_WIN32) && !defined(__CYGWIN__)
-  int n = GetModuleFileName(NULL, buffer, STRING_BUFFER_SIZE - 1);
-
-  if(n == 0 || n >= STRING_BUFFER_SIZE - 1)
-    return NULL;
-
-  buffer[ n ] = '\0';
-  return buffer;
-#elif defined(__unix__) || defined(C_XXXBSD)
-  int i, j, k, l;
-  C_char *fname = C_main_argv[ 0 ];
-  C_char *path, *dname;
-
-  /* found on stackoverflow.com: */
-
-  /* no name given (execve) */
-  if(fname == NULL) return NULL;
-
-  i = C_strlen(fname) - 1;
-
-  while(i >= 0 && fname[ i ] != '/') --i;
-
-  /* absolute path */
-  if(*fname == '/') {
-    fname[ i ] = '\0';
-    C_strcpy(buffer, fname);
-  }
-  else {
-    /* try current dir */
-    if(C_getcwd(buffer, STRING_BUFFER_SIZE - 1) == NULL)
-      return NULL;
-
-    j = C_strlen(buffer);
-    C_strcat(buffer, "/");
-    C_strcat(buffer, fname);
-  
-    if(C_access(buffer, F_OK) == 0) {
-      buffer[ j ] = '\0';
-      return buffer; 
-    }
-  
-    /* walk PATH */
-    path = C_getenv("PATH");
-  
-    if(path == NULL) return NULL;
-
-    for(l = j = k = 0; !l; ++k) {
-      switch(path[ k ]) {
-
-      case '\0':
-	if(k == 0) return NULL;	/* empty PATH */
-	else l = 1;
-	/* fall through */
-	
-      case ':':
-	C_strncpy(buffer, path + j, k - j);
-	buffer[ k - j ] = '\0';
-	C_strcat(buffer, "/");
-	C_strcat(buffer, fname);
-
-	if(C_access(buffer, F_OK)) {
-	  dname = C_strdup(buffer);
-	  l = C_readlink(dname, buffer, C_STRING_BUFFER_SIZE - 1);
-
-	  if(l == -1) {
-	    /* not a symlink (we ignore other errors here */
-	    dname[ k - j ] = '\0';
-	  }
-	  else {
-	    while(l > 0 && buffer[ l ] != '/') --l;
-	  
-	    C_free(dname);
-	    buffer[ l ] = '\0';
-	  }
-
-	  return buffer;
-	}
-	else j = k + 1;
-
-	break;
-
-      default: ;
-      }      
-    }
-
-    return NULL;
-  }
-#else
-  return NULL;
-#endif
-}
-
-
 void
-C_use_private_repository()
+C_use_private_repository(C_char *path)
 {
-  C_char *path = C_path_to_executable();
-
   private_repository = path == NULL ? NULL : C_strdup(path);
 }
 

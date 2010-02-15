@@ -325,7 +325,7 @@ typedef unsigned __int64   uint64_t;
 
 /* Have a GUI? */
 
-#if defined(C_WINDOWS_GUI) || defined(C_GUI)
+#if defined(C_WINDOWS_GUI) || defined(C_GUI) || defined(C_PRIVATE_REPOSITORY)
 # ifdef _WIN32
 #  include <windows.h>
 #  ifndef WINAPI
@@ -1310,7 +1310,7 @@ extern double trunc(double);
 #define C_end_of_main
 
 #ifdef C_PRIVATE_REPOSITORY
-# define C_private_repository           C_use_private_repository()
+# define C_private_repository           C_use_private_repository(C_path_to_executable())
 #else
 # define C_private_repository
 #endif
@@ -1548,8 +1548,7 @@ C_fctexport C_word C_enumerate_symbols(C_SYMBOL_TABLE *stable, C_word pos) C_reg
 C_fctexport void C_do_register_finalizer(C_word x, C_word proc);
 C_fctexport int C_do_unregister_finalizer(C_word x);
 C_fctexport C_word C_dbg_hook(C_word x);
-C_fctexport void C_use_private_repository();
-C_fctexport C_char *C_path_to_executable();
+C_fctexport void C_use_private_repository(C_char *path);
 C_fctexport C_char *C_private_repository_path();
 
 C_fctimport void C_ccall C_toplevel(C_word c, C_word self, C_word k) C_noret;
@@ -2122,6 +2121,134 @@ C_inline C_word C_i_safe_pointerp(C_word x)
 
   return C_SCHEME_FALSE;
 }
+
+
+#ifdef C_PRIVATE_REPOSITORY
+# if defined(C_MACOSX) && defined(C_GUI)
+#  include <CoreFoundation/CoreFoundation.h>
+# endif
+C_inline C_char *
+C_path_to_executable()
+{
+  C_char *buffer = (C_char *)C_malloc(MAX_PATH);
+
+  if(buffer == NULL) return NULL;
+
+# ifdef __linux__
+  C_char linkname[64]; /* /proc/<pid>/exe */
+  pid_t pid;
+  int ret;
+	
+  pid = C_getpid();
+  C_sprintf(linkname, "/proc/%i/exe", pid);
+  ret = C_readlink(linkname, buffer, sizeof(buffer) - 1);
+
+  if(ret == -1 || ret >= sizeof(buffer) - 1)
+    return NULL;
+
+  for(--ret; ret > 0 && buffer[ ret ] != '/'; --ret);
+
+  buffer[ ret ] = '\0';
+  return buffer;
+# elif defined(_WIN32) && !defined(__CYGWIN__)
+  int n = GetModuleFileName(NULL, buffer, sizeof(buffer) - 1);
+
+  if(n == 0 || n >= sizeof(buffer) - 1)
+    return NULL;
+
+  buffer[ n ] = '\0';
+  return buffer;
+# elif defined(C_MACOSX) && defined(C_GUI)
+  CFBundleRef bundle = CFBundleGetMainBundle();
+  CFURLRef url = CFBundleCopyExecutableURL(bundle);
+  
+  if(CFURLGetFileSystemRepresentation(url, true, buffer, sizeof(buffer))) 
+    return buffer;
+  else return NULL;  
+# elif defined(__unix__) || defined(C_XXXBSD)
+  int i, j, k, l;
+  C_char *fname = C_main_argv[ 0 ];
+  C_char *path, *dname;
+
+  /* found on stackoverflow.com: */
+
+  /* no name given (execve) */
+  if(fname == NULL) return NULL;
+
+  i = C_strlen(fname) - 1;
+
+  while(i >= 0 && fname[ i ] != '/') --i;
+
+  /* absolute path */
+  if(*fname == '/') {
+    fname[ i ] = '\0';
+    C_strcpy(buffer, fname);
+  }
+  else {
+    /* try current dir */
+    if(C_getcwd(buffer, sizeof(buffer) - 1) == NULL)
+      return NULL;
+
+    j = C_strlen(buffer);
+    C_strcat(buffer, "/");
+    C_strcat(buffer, fname);
+  
+    if(C_access(buffer, F_OK) == 0) {
+      buffer[ j ] = '\0';
+      return buffer; 
+    }
+  
+    /* walk PATH */
+    path = C_getenv("PATH");
+  
+    if(path == NULL) return NULL;
+
+    for(l = j = k = 0; !l; ++k) {
+      switch(path[ k ]) {
+
+      case '\0':
+	if(k == 0) return NULL;	/* empty PATH */
+	else l = 1;
+	/* fall through */
+	
+      case ':':
+	C_strncpy(buffer, path + j, k - j);
+	buffer[ k - j ] = '\0';
+	C_strcat(buffer, "/");
+	C_strcat(buffer, fname);
+
+	if(C_access(buffer, F_OK)) {
+	  dname = C_strdup(buffer);
+	  l = C_readlink(dname, buffer, C_sizeof(buffer) - 1);
+
+	  if(l == -1) {
+	    /* not a symlink (we ignore other errors here */
+	    dname[ k - j ] = '\0';
+	  }
+	  else {
+	    while(l > 0 && buffer[ l ] != '/') --l;
+	  
+	    C_free(dname);
+	    buffer[ l ] = '\0';
+	  }
+
+	  return buffer;
+	}
+	else j = k + 1;
+
+	break;
+
+      default: ;
+      }      
+    }
+
+    return NULL;
+  }
+# else
+  return NULL;
+# endif
+}
+#endif
 
 
 C_END_C_DECLS
