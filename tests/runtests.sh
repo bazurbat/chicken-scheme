@@ -218,6 +218,13 @@ echo "======================================== embedding (2) ..."
 $compile -e embedded2.scm
 ./a.out
 
+echo "======================================== private repository test ..."
+mkdir -p tmp
+$compile private-repository-test.scm -private-repository -o tmp/xxx
+REPO_DIR=$PWD tmp/xxx
+REPO_DIR=$PWD PATH=$PWD/tmp:$PATH xxx
+REPO_DIR=$PWD PATH=$PATH:$PWD/tmp xxx
+
 echo "======================================== timing compilation ..."
 time $compile compiler.scm -O5 -debug pb -v -C -Wa,-W
 echo "executing ..."

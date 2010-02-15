@@ -19,9 +19,10 @@
 (print "recovering ...")
 
 (let loop ()
-  (gc #t)
   (let ((n (vector-ref (##sys#symbol-table-info) 2)))
-    (print n)
-    (unless (= *count1* n) (loop))))
+    (print* n " ")
+    (unless (< (- n *count1*) 200)     ; allow some
+      (gc #t)
+      (loop))))
 
-(print "done.")
+(print "\ndone.")
