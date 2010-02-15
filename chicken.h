@@ -2233,7 +2233,7 @@ C_path_to_executable(C_char *fname)
 	C_strcat(buffer, "/");
 	C_strcat(buffer, fname);
 
-	if(C_access(buffer, F_OK)) {
+	if(C_access(buffer, F_OK) == 0) {
 	  dname = C_strdup(buffer);
 	  l = C_readlink(dname, buffer, C_MAX_PATH - 1);
 
