@@ -2141,9 +2141,9 @@ C_path_to_executable()
 	
   pid = C_getpid();
   C_sprintf(linkname, "/proc/%i/exe", pid);
-  ret = C_readlink(linkname, buffer, MAX_PATH - 1);
+  ret = C_readlink(linkname, buffer, sizeof(buffer) - 1);
 
-  if(ret == -1 || ret >= MAX_PATH - 1)
+  if(ret == -1 || ret >= sizeof(buffer) - 1)
     return NULL;
 
   for(--ret; ret > 0 && buffer[ ret ] != '/'; --ret);
@@ -2151,27 +2151,19 @@ C_path_to_executable()
   buffer[ ret ] = '\0';
   return buffer;
 # elif defined(_WIN32) && !defined(__CYGWIN__)
-  int i;
-  int n = GetModuleFileName(NULL, buffer, MAX_PATH - 1);
+  int n = GetModuleFileName(NULL, buffer, sizeof(buffer) - 1);
 
-  if(n == 0 || n >= MAX_PATH - 1)
+  if(n == 0 || n >= sizeof(buffer) - 1)
     return NULL;
 
-  for(i = n - 1; i >= 0 && buffer[ i ] != '\\'; --i);
-
-  buffer[ i ] = '\0';
+  buffer[ n ] = '\0';
   return buffer;
 # elif defined(C_MACOSX) && defined(C_GUI)
   CFBundleRef bundle = CFBundleGetMainBundle();
   CFURLRef url = CFBundleCopyExecutableURL(bundle);
-  int i;
   
-  if(CFURLGetFileSystemRepresentation(url, true, buffer, MAX_PATH)) {
-    for(i = C_strlen(buffer); i >= 0 && buffer[ i ] != '/') --i;
-
-    buffer[ i ] = '\0';
+  if(CFURLGetFileSystemRepresentation(url, true, buffer, sizeof(buffer))) 
     return buffer;
-  }
   else return NULL;  
 # elif defined(__unix__) || defined(C_XXXBSD)
   int i, j, k, l;
@@ -2194,7 +2186,7 @@ C_path_to_executable()
   }
   else {
     /* try current dir */
-    if(C_getcwd(buffer, MAX_PATH - 1) == NULL)
+    if(C_getcwd(buffer, sizeof(buffer) - 1) == NULL)
       return NULL;
 
     j = C_strlen(buffer);
@@ -2227,7 +2219,7 @@ C_path_to_executable()
 
 	if(C_access(buffer, F_OK)) {
 	  dname = C_strdup(buffer);
-	  l = C_readlink(dname, buffer, MAX_PATH - 1);
+	  l = C_readlink(dname, buffer, C_sizeof(buffer) - 1);
 
 	  if(l == -1) {
 	    /* not a symlink (we ignore other errors here */
