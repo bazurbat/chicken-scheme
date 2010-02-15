@@ -81,6 +81,7 @@ A parameter that holds a list of default options that should be given
 to {{csc}} after invocation of the {{compile-file}} procedure. 
 The initial default options are {{-scrutinize -O2 -d2}}.
 
+
 === Shell argument quoting
 
 ==== qs
@@ -93,6 +94,18 @@ which style the argument should be quoted. On Windows systems, the string
 is simply enclosed in double-quote ({{"}}) characters, on UNIXish systems,
 characters that would have a special meaning to the shell are escaped
 using backslash ({{\}}).
+
+
+=== Scanning through an input port
+
+==== scan-lines
+
+<procedure>(scan-lines REGEXP [PORT])</procedure>
+
+Reads lines from {{PORT}} (defaults to the result of {{(current-input-port)}})
+using {{read-line}} and returns the result of {{(string-search REGEXP LINE)}},
+if the match succeeds. If no match could be found, {{#f}} is returned.
+
 
 Previous: [[Unit posix]]
 

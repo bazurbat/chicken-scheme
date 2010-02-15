@@ -245,8 +245,7 @@
 
 ;;; Glob support:
 
-;FIXME is it worthwhile making this accurate?
-(define (glob? str)
+(define (glob? str)			; DEPRECATED
   (##sys#check-string str 'glob?)
   (let loop ([idx (fx- (string-length str) 1)])
     (and (fx<= 0 idx)
@@ -295,17 +294,19 @@
 ;;; Grep-like function on list:
 
 (define grep
-  (let ((string-search string-search))
+  (let ((string-search string-search)
+	(regexp regexp))
     (lambda (rx lst #!optional (acc (lambda (x) x)))
       (##sys#check-list lst 'grep)
-      (let loop ((lst lst))
-	(if (null? lst)
-	    '()
-	    (let ((x (##sys#slot lst 0))
-		  (r (##sys#slot lst 1)) )
-	      (if (string-search rx (acc x))
-		  (cons x (loop r))
-		  (loop r) ) ) ) ) ) ) )
+      (let ((rx (regexp rx)))
+	(let loop ((lst lst))
+	  (if (null? lst)
+	      '()
+	      (let ((x (##sys#slot lst 0))
+		    (r (##sys#slot lst 1)) )
+		(if (string-search rx (acc x))
+		    (cons x (loop r))
+		    (loop r) ) ) ) ) ) ) ) )
 
 
 ;;; Escape regular expression (suggested by Peter Bex):

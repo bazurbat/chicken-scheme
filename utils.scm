@@ -27,7 +27,7 @@
 
 (declare
   (unit utils)
-  (uses extras srfi-13 posix files)
+  (uses extras srfi-13 posix files regex)
   (usual-integrations)
   (fixnum)
   (hide chop-pds)
@@ -125,3 +125,18 @@
 		  (abort ex))
 	      (load-file f)
 	      f)))))))
+
+
+;;; Scan lines until regex matches
+
+(define scan-lines
+  (let ((regexp regexp)
+	(read-line read-line)
+	(string-search string-search))
+    (lambda (rx #!optional (port ##sys#standard-input))
+      (let ((rx (regexp rx)))
+	(let loop ()
+	  (let ((ln (read-line port)))
+	    (and (not (eof-object? ln))
+		 (let ((m (string-search rx ln)))
+		   (or m (loop))))))))))
