@@ -328,10 +328,10 @@
 		      (= i 1)
 		      (> num 1))
 	     (when (and *no-install*
-			(yes-or-no?
-			 (string-append
-			  "You specified `-no-install', but this extension has dependencies"
-			  " that are required for building. Do you still want to install them?")))
+			(not (yes-or-no?
+			      (string-append
+			       "You specified `-no-install', but this extension has dependencies"
+			       " that are required for building. Do you still want to install them?"))))
 	       (print "aborting installation.")
 	       (cleanup)
 	       (exit 1)))
