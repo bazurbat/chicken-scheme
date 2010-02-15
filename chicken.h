@@ -664,6 +664,12 @@ typedef unsigned __int64   uint64_t;
 # define C_SOFTWARE_VERSION "unknown"
 #endif
 
+#ifdef C_XXXBSD
+# define C_MAX_PATH         PATH_MAX
+#else
+# define C_MAX_PATH         MAX_PATH
+#endif
+
 
 /* Types: */
 
@@ -895,6 +901,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_getcwd                   getcwd
 # define C_access                   access
 # define C_getpid                   getpid
+# define C_getenv                   getenv
 # ifdef __linux__
 extern double round(double);
 extern double trunc(double);
@@ -1310,9 +1317,9 @@ extern double trunc(double);
 #define C_end_of_main
 
 #ifdef C_PRIVATE_REPOSITORY
-# define C_private_repository           C_use_private_repository(C_path_to_executable())
+# define C_private_repository(fname)     C_use_private_repository(C_path_to_executable(fname))
 #else
-# define C_private_repository
+# define C_private_repository(fname)
 #endif
 
 /* left for backwards-compatibility */
@@ -1330,7 +1337,7 @@ extern double trunc(double);
   int WINAPI WinMain(HINSTANCE me, HINSTANCE you, LPSTR cmdline, int show) \
   { \
     C_gui_mode = 1; \
-    C_private_repository; \
+    C_private_repository(NULL);		      \
     return CHICKEN_main(0, NULL, (void *)C_toplevel); \
   } C_end_of_main 
 # else
@@ -1338,7 +1345,7 @@ extern double trunc(double);
   int main(int argc, char *argv[]) \
   { \
     C_set_gui_mode; \
-    C_private_repository; \
+    C_private_repository(argv[ 0 ]);			\
     return CHICKEN_main(argc, argv, (void*)C_toplevel); \
   } C_end_of_main
 # endif
@@ -2128,9 +2135,9 @@ C_inline C_word C_i_safe_pointerp(C_word x)
 #  include <CoreFoundation/CoreFoundation.h>
 # endif
 C_inline C_char *
-C_path_to_executable()
+C_path_to_executable(C_char *fname)
 {
-  C_char *buffer = (C_char *)C_malloc(MAX_PATH);
+  C_char *buffer = (C_char *)C_malloc(C_MAX_PATH);
 
   if(buffer == NULL) return NULL;
 
@@ -2141,9 +2148,9 @@ C_path_to_executable()
 	
   pid = C_getpid();
   C_sprintf(linkname, "/proc/%i/exe", pid);
-  ret = C_readlink(linkname, buffer, MAX_PATH - 1);
+  ret = C_readlink(linkname, buffer, C_MAX_PATH - 1);
 
-  if(ret == -1 || ret >= MAX_PATH - 1)
+  if(ret == -1 || ret >= C_MAX_PATH - 1)
     return NULL;
 
   for(--ret; ret > 0 && buffer[ ret ] != '/'; --ret);
@@ -2152,9 +2159,9 @@ C_path_to_executable()
   return buffer;
 # elif defined(_WIN32) && !defined(__CYGWIN__)
   int i;
-  int n = GetModuleFileName(NULL, buffer, MAX_PATH - 1);
+  int n = GetModuleFileName(NULL, buffer, C_MAX_PATH - 1);
 
-  if(n == 0 || n >= MAX_PATH - 1)
+  if(n == 0 || n >= C_MAX_PATH - 1)
     return NULL;
 
   for(i = n - 1; i >= 0 && buffer[ i ] != '\\'; --i);
@@ -2166,7 +2173,7 @@ C_path_to_executable()
   CFURLRef url = CFBundleCopyExecutableURL(bundle);
   int i;
   
-  if(CFURLGetFileSystemRepresentation(url, true, buffer, MAX_PATH)) {
+  if(CFURLGetFileSystemRepresentation(url, true, buffer, C_MAX_PATH)) {
     for(i = C_strlen(buffer); i >= 0 && buffer[ i ] != '/') --i;
 
     buffer[ i ] = '\0';
@@ -2175,7 +2182,6 @@ C_path_to_executable()
   else return NULL;  
 # elif defined(__unix__) || defined(C_XXXBSD)
   int i, j, k, l;
-  C_char *fname = C_main_argv[ 0 ];
   C_char *path, *dname;
 
   /* found on stackoverflow.com: */
@@ -2191,18 +2197,20 @@ C_path_to_executable()
   if(*fname == '/') {
     fname[ i ] = '\0';
     C_strcpy(buffer, fname);
+    return buffer;
   }
   else {
     /* try current dir */
-    if(C_getcwd(buffer, MAX_PATH - 1) == NULL)
+    if(C_getcwd(buffer, C_MAX_PATH - 1) == NULL)
       return NULL;
 
-    j = C_strlen(buffer);
     C_strcat(buffer, "/");
     C_strcat(buffer, fname);
   
     if(C_access(buffer, F_OK) == 0) {
-      buffer[ j ] = '\0';
+      for(i = C_strlen(buffer); i >= 0 && buffer[ i ] != '/'; --i);
+
+      buffer[ i ] = '\0';
       return buffer; 
     }
   
@@ -2227,7 +2235,7 @@ C_path_to_executable()
 
 	if(C_access(buffer, F_OK)) {
 	  dname = C_strdup(buffer);
-	  l = C_readlink(dname, buffer, MAX_PATH - 1);
+	  l = C_readlink(dname, buffer, C_MAX_PATH - 1);
 
 	  if(l == -1) {
 	    /* not a symlink (we ignore other errors here */
