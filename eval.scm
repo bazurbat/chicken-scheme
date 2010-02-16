@@ -731,7 +731,7 @@
 			      (##sys#warn "declarations are ignored in interpreted code" x) )
 			  (compile '(##core#undefined) e #f tf cntr se) ]
 
-			 [(define-inline define-constant)
+			 [(##core#define-inline ##core#define-constant)
 			  (compile `(,(rename 'define se) ,@(cdr x)) e #f tf cntr se) ]
                    
 			 [(##core#primitive ##core#inline ##core#inline_allocate ##core#foreign-lambda 

@@ -133,7 +133,7 @@
 ; (##core#foreign-safe-lambda* <type> ({(<type> <var>)})) {<string>})
 ; (##core#foreign-primitive <type> ({(<type> <var>)}) {<string>})
 ; (##core#define-inline <name> <exp>)
-; (define-constant <name> <exp>)
+; (##core#define-constant <name> <exp*>)
 ; (##core#foreign-callback-wrapper '<name> <qualifiers> '<type> '({<type>}) <exp>)
 ; (##core#define-external-variable <name> <type> <bool> [<symbol>])
 ; (##core#check <exp>)
@@ -1096,7 +1096,7 @@
 			     (set! inline-table-used #t)
 			     '(##core#undefined)))
 
-			((define-constant)
+			((##core#define-constant)
 			 (let* ([name (second x)]
 				[valexp (third x)]
 				[val (handle-exceptions ex

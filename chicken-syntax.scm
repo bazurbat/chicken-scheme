@@ -43,6 +43,29 @@
   (let ((me0 (##sys#macro-environment)))
 
 (##sys#extend-macro-environment
+ 'define-constant
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    (##sys#check-syntax 'define-constant form '(_ symbol _))
+    `(##core#define-constant ,@(cdr form)))))
+
+(##sys#extend-macro-environment
+ 'define-inline
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    (let ((head (cadr form)))
+      (cond ((pair? head)
+	     (##sys#check-syntax 'define-inline form '(_ (symbol . _) . #(_ 1)))
+	     `(##core#define-inline
+	       ,(car head)
+	       `(,(r 'lambda) ,(cdr head) ,@(cdr form))))
+	    (else
+	     (##sys#check-syntax 'define-inline form '(_ symbol _))
+	     `(##core#define-inline ,@(cdr form))))))))
+
+(##sys#extend-macro-environment
  'define-record '()
  (##sys#er-transformer
   (lambda (x r c)
