@@ -162,6 +162,8 @@ tests/fft.scm
 tests/slatex.scm
 tests/test.tex
 tests/slatex.sty
+tests/symbolgc-tests.scm
+tests/private-repository-test.scm
 tweaks.scm
 utils.scm
 apply-hack.x86.S
