@@ -93,8 +93,8 @@ include $(SRCDIR)/defaults.make
 LIBCHICKEN_SO_LIBRARIES = $(LIBRARIES)
 LIBUCHICKEN_SO_LIBRARIES = $(LIBRARIES)
 
-chicken-config.h: chicken-defaults.h buildsvnrevision
-	echo "#define C_SVN_REVISION $(shell cat buildsvnrevision)" >$@
+chicken-config.h: chicken-defaults.h
+	echo "/* GENERATED */" >$@
 	echo "#define HAVE_DIRENT_H 1" >>$@
 	echo "#define HAVE_INTTYPES_H 1" >>$@
 	echo "#define HAVE_LIMITS_H 1" >>$@
@@ -136,7 +136,6 @@ chicken-defaults.h:
 	echo "/* generated */" >$@
 	echo "#define C_BUILD_TAG \"$(BUILD_TAG)\"" >>$@
 	echo "#define C_CHICKEN_PROGRAM \"$(CHICKEN_PROGRAM)$(EXE)\"" >>$@
-	echo "#define C_SVN_REVISION $(shell cat buildsvnrevision)" >>$@
 	echo "#ifndef C_INSTALL_CC" >>$@
 	echo "# define C_INSTALL_CC \"$(C_COMPILER)\"" >>$@
 	echo "#endif" >>$@

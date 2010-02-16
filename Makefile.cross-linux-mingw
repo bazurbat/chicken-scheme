@@ -96,7 +96,8 @@ TARGETS = libchicken$(A) libuchicken$(A) $(CHICKEN_PROGRAM)$(EXE) $(CSI_PROGRAM)
 endif
 
 chicken-config.h: chicken-defaults.h
-	echo "#define HAVE_DIRENT_H 1" >$@
+	echo "/* GENERATED */" >$@
+	echo "#define HAVE_DIRENT_H 1" >>$@
 	echo "#define HAVE_INTTYPES_H 1" >>$@
 	echo "#define HAVE_LIMITS_H 1" >>$@
 	echo "#define HAVE_LONG_LONG 1" >>$@

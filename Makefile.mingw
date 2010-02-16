@@ -90,7 +90,8 @@ CUSTOM_CHICKEN_DEFAULTS=1
 include $(SRCDIR)defaults.make
 
 chicken-config.h: chicken-defaults.h
-	echo #define HAVE_DIRENT_H 1 >$@
+	echo /* GENERATED */ >$@
+	echo #define HAVE_DIRENT_H 1 >>$@
 	echo #define HAVE_INTTYPES_H 1 >>$@
 	echo #define HAVE_LIMITS_H 1 >>$@
 	echo #define HAVE_LONG_LONG 1 >>$@
@@ -128,7 +129,9 @@ endif
 	type chicken-defaults.h >>$@
 
 chicken-defaults.h:
-	echo /* generated */ >$@
+ifdef OPTIMIZE_FOR_SPEED
+	echo /* (this build was optimized for speed) */ >>$@
+endif
 	echo #define C_BUILD_TAG "$(BUILD_TAG)" >>$@
 	echo #define C_CHICKEN_PROGRAM "$(CHICKEN_PROGRAM)$(EXE)" >>$@
 	echo #define C_WINDOWS_SHELL 1 >>$@
@@ -234,5 +237,6 @@ chicken-defaults.h:
 	echo #ifndef C_BRANCH_NAME >>$@
 	echo # define C_BRANCH_NAME "" >>$@
 	echo #endif >>$@
+	echo /* END OF FILE */ >>$@
 
 include $(SRCDIR)rules.make

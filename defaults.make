@@ -356,7 +356,9 @@ all: $(TARGETS)
 
 ifndef CUSTOM_CHICKEN_DEFAULTS
 chicken-defaults.h:
-	echo "/* generated */" >$@
+ifdef OPTIMIZE_FOR_SPEED
+	echo "/* (this build was optimized for speed) */" >$@
+endif
 	echo "#define C_BUILD_TAG \"$(BUILD_TAG)\"" >>$@
 	echo "#define C_CHICKEN_PROGRAM \"$(CHICKEN_PROGRAM)$(EXE)\"" >>$@
 	echo "#ifndef C_INSTALL_CC" >>$@
@@ -471,4 +473,5 @@ endif
 	echo "#ifndef C_BRANCH_NAME" >>$@
 	echo "# define C_BRANCH_NAME \"$(BRANCHNAME)\"" >>$@
 	echo "#endif" >>$@
+	echo "/* END OF FILE */" >>$@
 endif
