@@ -68,7 +68,7 @@
   (let ([file-exists? file-exists?]
 	[delete-file delete-file] )
     (lambda (file)
-      (and (file-exists? file) (delete-file file) #t) ) ) )
+      (and (file-exists? file) (delete-file file)) ) ) )
 
 ;;; file-copy and file-move : they do what you'd think.
 (define (file-copy origfile newfile #!optional (clobber #f) (blocksize 1024))
