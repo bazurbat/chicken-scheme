@@ -129,7 +129,7 @@
 
 ;;; Scan lines until regex matches
 
-(define scan-lines
+(define scan-input-lines
   (let ((regexp regexp)
 	(read-line read-line)
 	(string-search string-search))

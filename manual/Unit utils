@@ -98,9 +98,9 @@ using backslash ({{\}}).
 
 === Scanning through an input port
 
-==== scan-lines
+==== scan-input-lines
 
-<procedure>(scan-lines REGEXP [PORT])</procedure>
+<procedure>(scan-input-lines REGEXP [PORT])</procedure>
 
 Reads lines from {{PORT}} (defaults to the result of {{(current-input-port)}})
 using {{read-line}} and returns the result of {{(string-search REGEXP LINE)}},
