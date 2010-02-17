@@ -7,7 +7,3 @@
 (server
  (location "http://galinha.ucpel.tche.br/cgi-bin/henrietta")
  (transport http))
-
-(map 
- (regex-case defstruct -> test)
- (trace -> tabexpand))

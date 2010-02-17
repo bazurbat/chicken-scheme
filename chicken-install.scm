@@ -110,11 +110,11 @@
 			     (let ((p (list-index (cut eq? '-> <>) m)))
 			       (unless p (broken x))
 			       (let-values (((from to) (split-at m p)))
-				 (cons from to))))
+				 (cons from (cdr to)))))
 			   (cdr x)))))
 		  (else (broken x))))
 	      (read-file deff)))
-             (pair? *default-sources*) ] ) ) )
+             (pair? *default-sources*) ) ) )
 
   (define (known-default-sources)
     (if (and *default-location* *default-transport*)
@@ -417,13 +417,20 @@
         (remove-directory tmpdir))))
 
   (define (apply-mappings eggs)
-    (delete-duplicates
-     (append-map
-      (lambda (egg)
-	(cond ((find (lambda (m) (member egg (car m))) *mappings*) => cdr)
-	      (else '())) )
-      eggs)
-     string=?))
+    (define (same? e1 e2)
+      (string=? (->string e1) (->string e2)))
+    (let ((eggs2
+	   (delete-duplicates
+	    (append-map
+	     (lambda (egg)
+	       (cond ((find (lambda (m) (find (cut same? egg <>) (car m)))
+			    *mappings*) => 
+			    (lambda (m) (map ->string (cdr m))))
+		     (else (list egg))))
+	     eggs)
+	    string=?)))
+      (print "mapped " eggs " to " eggs2)
+      eggs2))
 
   (define ($system str)
     (let ((r (system
