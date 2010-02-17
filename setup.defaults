@@ -1,8 +1,13 @@
 ;;;; setup.defaults - defaults for chicken-install -*- Scheme -*-
 
-((location "http://chicken.kitten-technologies.co.uk/henrietta.cgi")
+(server
+ (location "http://chicken.kitten-technologies.co.uk/henrietta.cgi")
  (transport http))
 
-((location "http://galinha.ucpel.tche.br/cgi-bin/henrietta")
+(server
+ (location "http://galinha.ucpel.tche.br/cgi-bin/henrietta")
  (transport http))
 
+(map 
+ (regex-case defstruct -> test)
+ (trace -> tabexpand))

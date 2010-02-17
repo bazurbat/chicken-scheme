@@ -83,16 +83,37 @@
   (define *proxy-host* #f)
   (define *proxy-port* #f)
   (define *running-test* #f)
+  (define *mappings* '())
 
   (define-constant +module-db+ "modules.db")
   (define-constant +defaults-file+ "setup.defaults")
 
   (define (load-defaults)
-    (let ([deff (make-pathname (chicken-home) +defaults-file+)])
-      (cond [(not (file-exists? deff))
-             '() ]
-            [else
-             (set! *default-sources* (read-file deff))
+    (let ((deff (make-pathname (chicken-home) +defaults-file+)))
+      (define (broken x)
+	(error "invalid entry in defaults file" deff x))
+      (cond ((not (file-exists? deff)) '())
+            (else
+	     (for-each
+	      (lambda (x)
+		(unless (and (list? x) (positive? (length x)))
+		  (broken x))
+		(case (car x)
+		  ((server)
+		   (set! *default-sources* 
+		     (append *default-sources* (list (cdr x)))))
+		  ((map)
+		   (set! *mappings*
+		     (append
+		      *mappings*
+		      (map (lambda (m)
+			     (let ((p (list-index (cut eq? '-> <>) m)))
+			       (unless p (broken x))
+			       (let-values (((from to) (split-at m p)))
+				 (cons from to))))
+			   (cdr x)))))
+		  (else (broken x))))
+	      (read-file deff)))
              (pair? *default-sources*) ] ) ) )
 
   (define (known-default-sources)
@@ -117,7 +138,7 @@
       (print "copying required files to " dir " ...")
       (for-each
        (lambda (f)
-         ($system (sprintf "~a ~a ~a" copy (shellpath (make-pathname src f)) (shellpath dir))))
+         (command "~a ~a ~a" copy (shellpath (make-pathname src f)) (shellpath dir)))
        +default-repository-files+)))
 
   (define (ext-version x)
@@ -338,7 +359,7 @@
 	   (print "installing " (car e+d+v) #\: (caddr e+d+v) " ...")
 	   (print "changing current directory to " (cadr e+d+v))
 	   (parameterize ((current-directory (cadr e+d+v)))
-	     (let ([cmd (make-install-command e+d+v (< i num))])
+	     (let ((cmd (make-install-command e+d+v (< i num))))
 	       (print "  " cmd)
 	       ($system cmd))
 	     (when (and *run-tests*
@@ -347,9 +368,7 @@
 			(file-exists? "tests/run.scm") )
 	       (set! *running-test* #t)
 	       (current-directory "tests")
-	       (let ((cmd (sprintf "~a -s run.scm ~a" *csi* (car e+d+v))))
-		 (print "  " cmd)
-		 ($system cmd))
+	       (command "~a -s run.scm ~a" *csi* (car e+d+v))
 	       (set! *running-test* #f))))
 	 (map (cut assoc <> *eggs+dirs+vers*) dag)
 	 (iota num 1)))))
@@ -397,6 +416,15 @@
         (copy-file dbfile (make-pathname (repository-path) +module-db+))
         (remove-directory tmpdir))))
 
+  (define (apply-mappings eggs)
+    (delete-duplicates
+     (append-map
+      (lambda (egg)
+	(cond ((find (lambda (m) (member egg (car m))) *mappings*) => cdr)
+	      (else '())) )
+      eggs)
+     string=?))
+
   (define ($system str)
     (let ((r (system
               (if *windows-shell*
@@ -404,6 +432,11 @@
                   str))))
       (unless (zero? r)
         (error "shell command terminated with nonzero exit code" r str))))
+
+  (define (command fstr . args)
+    (let ((cmd (apply sprintf fstr args)))
+      (print "  " cmd)
+      ($system cmd)))
 
   (define (usage code)
     (print #<<EOF
@@ -436,7 +469,7 @@ EOF
   (define (main args)
     (let ((defaults (load-defaults))
           (update #f)
-          (rx "([^:]+):(.+)"))
+          (rx (regexp "([^:]+):(.+)")))
       (let loop ((args args) (eggs '()))
         (cond ((null? args)
                (cond (update (update-db))
@@ -458,7 +491,7 @@ EOF
                           (error "no default transport defined - please use `-transport' option"))
                         (unless *default-location*
                           (error "no default location defined - please use `-location' option")))
-                      (install (reverse eggs)))))
+                      (install (apply-mappings (reverse eggs))))))
               (else
                (let ((arg (car args)))
                  (cond ((or (string=? arg "-help")
