@@ -4,7 +4,7 @@
 (use files)
 
 (define repo (normalize-pathname (repository-path)))
-(define dir (normalize-pathname (get-environment-variable "REPO_DIR")))
+(define dir (normalize-pathname (car (command-line-arguments))))
 
 (print (list dir repo))
 
