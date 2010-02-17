@@ -392,7 +392,7 @@ EOF
 	  (let ([sinfo (##sys#symbol-table-info)]
 		[minfo (memory-statistics)] )
 	    (define (shorten n) (/ (truncate (* n 100)) 100))
-	    (printf "Features:")
+	    (printf "Features:\n")
 	    (for-each
 	     (lambda (lst) 
 	       (display "\n  ")
@@ -401,7 +401,7 @@ EOF
 		  (printf "~a~a" f (make-string (fxmax 1 (fx- 16 (string-length f))) #\space)) )
 		lst) )
 	     (chop (sort (map keyword->string ##sys#features) string<?) 5))
-	    (printf "~%~
+	    (printf "~%~%~
                    Machine type:    \t~A ~A~%~
                    Software type:   \t~A~%~
                    Software version:\t~A~%~
