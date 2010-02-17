@@ -893,19 +893,24 @@ EOF
                 (when (and dir (not (*directory? 'create-directory dir)))
                   (loop (pathname-directory dir))
                   (*create-directory 'create-directory dir)) )
-              (*create-directory 'create-directory name) ) ) ) ) ) )
+              (*create-directory 'create-directory name) ) )
+	name))))
 
 (define change-directory
   (lambda (name)
     (##sys#check-string name 'change-directory)
-    (unless (fx= 0 (##core#inline "C_chdir" (##sys#make-c-string (##sys#expand-home-path name))))
-      (posix-error #:file-error 'change-directory "cannot change current directory" name) ) ) )
+    (let ((name (##sys#make-c-string (##sys#expand-home-path name))))
+      (unless (fx= 0 (##core#inline "C_chdir" name))
+	(posix-error #:file-error 'change-directory "cannot change current directory" name) )
+      name)))
 
 (define delete-directory
   (lambda (name)
     (##sys#check-string name 'delete-directory)
-    (unless (fx= 0 (##core#inline "C_rmdir" (##sys#make-c-string (##sys#expand-home-path name))))
-      (posix-error #:file-error 'delete-directory "cannot delete directory" name) ) ) )
+    (let ((name (##sys#make-c-string (##sys#expand-home-path name))))
+      (unless (fx= 0 (##core#inline "C_rmdir" name))
+	(posix-error #:file-error 'delete-directory "cannot delete directory" name) )
+      name)))
 
 (define directory
   (let ([string-ref string-ref]

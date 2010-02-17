@@ -2106,7 +2106,8 @@ EOF
        (##sys#update-errno)
        (##sys#signal-hook
 	#:file-error 'delete-file
-	(##sys#string-append "cannot delete file - " strerror) filename) ) )
+	(##sys#string-append "cannot delete file - " strerror) filename) )
+     filename)
    #:delete) )
 
 (define (rename-file old new)
@@ -2122,7 +2123,8 @@ EOF
 	  (##sys#update-errno)
 	  (##sys#signal-hook
 	   #:file-error 'rename-file
-	   (##sys#string-append "cannot rename file - " strerror) old new) ) ) ) )
+	   (##sys#string-append "cannot rename file - " strerror) old new) )
+	new)))
    #:rename new) )
 
 

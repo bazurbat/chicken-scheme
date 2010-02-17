@@ -1190,7 +1190,7 @@ EOF
 
 (define-inline (create-directory-helper-silent name)
     (unless (create-directory-check name)
-            (create-directory-helper name)))
+      (create-directory-helper name)))
 
 (define-inline (create-directory-helper-parents name)
   (let* ((l   (string-split name "/\\"))
@@ -1207,21 +1207,27 @@ EOF
     (let ((name (##sys#expand-home-path name)))
       (if parents?
           (create-directory-helper-parents name)
-          (create-directory-helper name)))) )
+          (create-directory-helper name))
+      name)))
 
 (define change-directory
   (lambda (name)
     (##sys#check-string name 'change-directory)
-    (unless (fx= 0 (##core#inline "C_chdir" (##sys#make-c-string (##sys#expand-home-path name))))
-      (##sys#update-errno)
-      (##sys#signal-hook #:file-error 'change-directory "cannot change current directory" name) ) ) )
+    (let ((name (##sys#make-c-string (##sys#expand-home-path name))))
+      (unless (fx= 0 (##core#inline "C_chdir" name))
+	(##sys#update-errno)
+	(##sys#signal-hook
+	 #:file-error 'change-directory "cannot change current directory" name) )
+      name)))
 
 (define delete-directory
   (lambda (name)
     (##sys#check-string name 'delete-directory)
-    (unless (fx= 0 (##core#inline "C_rmdir" (##sys#make-c-string (##sys#expand-home-path name))))
-      (##sys#update-errno)
-      (##sys#signal-hook #:file-error 'delete-directory "cannot delete directory" name) ) ) )
+    (let ((name (##sys#make-c-string (##sys#expand-home-path name))))
+      (unless (fx= 0 (##core#inline "C_rmdir" name))
+	(##sys#update-errno)
+	(##sys#signal-hook #:file-error 'delete-directory "cannot delete directory" name) )
+      name)))
 
 (define directory
   (let ([string-append string-append]
