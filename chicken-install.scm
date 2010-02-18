@@ -285,6 +285,7 @@
                     (let ([meta (with-input-from-file mfile read)])
                       (print "checking dependencies for `" (car e+d+v) "' ...")
                       (let-values ([(missing upgrade) (outdated-dependencies meta)])
+			(set! missing (apply-mappings missing)) ;XXX only missing - wrong?
 			(set! *dependencies*
 			  (cons
 			   (cons (car e+d+v)
