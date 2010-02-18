@@ -7600,7 +7600,7 @@ void file_info_2(void *dummy)
 
 # define ENV_SIZE 32767
 static char *envbuf;
-static char *C_getenv(const char *var)
+static char *C_do_getenv(const char *var)
 {
   envbuf = (char *)malloc(ENV_SIZE);
   if(!envbuf)
@@ -7620,7 +7620,7 @@ static void C_free_envbuf()
   free(envbuf);
 }
 #else
-# define C_getenv(v) getenv(v)
+# define C_do_getenv(v) C_getenv(v)
 # define C_free_envbuf() {}
 #endif
 
@@ -7640,7 +7640,7 @@ void C_ccall C_get_environment_variable(C_word c, C_word closure, C_word k, C_wo
   strncpy(buffer, C_c_string(name), len);
   buffer[ len ] = '\0';
 
-  if((save_string = C_getenv(buffer)) == NULL)
+  if((save_string = C_do_getenv(buffer)) == NULL)
     C_kontinue(k, C_SCHEME_FALSE);
 
   C_save(k);

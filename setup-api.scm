@@ -447,12 +447,8 @@
 		  (make-pathname prefix to-path) 
 		  to-path))))
     (ensure-directory to)
-    (cond ((or (glob? from) (file-exists? from))
-	   (begin
-	     (run (,*copy-command* ,(shellpath from) ,(shellpath to))) 
-	     to))
-	  (err (error "file does not exist" from))
-	  (else (warning "file does not exist" from)))))
+    (run (,*copy-command* ,(shellpath from) ,(shellpath to)))
+    to))
 
 (define (move-file from to)
   (let ((from  (if (pair? from) (car from) from))
