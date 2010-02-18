@@ -200,7 +200,7 @@
 	       (if block
 		   (gen "C_mutate(&lf[" index "]")
 		   (gen "C_mutate((C_word*)lf[" index "]+1") )
-	       (gen " /* (set! " (uncommentify (symbol->string var)) " ...) */,")
+	       (gen " /* (set! " (uncommentify (##sys#symbol->qualified-string var)) " ...) */,")
 	       (expr (car subs) i)
 	       (gen #\)) ) )
 
