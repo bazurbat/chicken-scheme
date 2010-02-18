@@ -124,18 +124,6 @@
           option you can still enable symbol GC at runtime by passing 
           the `-:w' runtime option when running the program.
 
-        OPTIMIZE_FOR_SPEED=1
-          Use C optimization options that prefer speed over size. For
-	  the GNU C compiler this will currently select "-O3" (the
-	  default is "-Os"). You can also se 
-	  C_COMPILER_OPTIMIZATION_OPTIONS (see below) to have more
-	  control over the options given to the C compiler.
-
-	  Note: there have been reports that newer versions of gcc (4.4???)
-	  generate incorrect code when given "-O3". It is therefore
-	  recommended not to use OPTIMIZE_FOR_SPEED if your gcc version
-	  is 4.4 or higher.	  
-
 	EXTRA_CHICKEN_OPTIONS=...
 	  Additional options that should be passed to `chicken' when
 	  building the system.

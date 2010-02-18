@@ -29,4 +29,5 @@
  '(read-all
    system*
    qs
-   compile-file))
+   compile-file
+   scan-input-lines))
