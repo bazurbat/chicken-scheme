@@ -106,6 +106,9 @@ Reads lines from {{PORT}} (defaults to the result of {{(current-input-port)}})
 using {{read-line}} and returns the result of {{(string-search REGEXP LINE)}},
 if the match succeeds. If no match could be found, {{#f}} is returned.
 
+{{REGEXP}} may also be a procedure of one argument which is called for each
+input line and should return a non-false value on success.
+
 
 Previous: [[Unit posix]]
 

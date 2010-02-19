@@ -127,16 +127,18 @@
 	      f)))))))
 
 
-;;; Scan lines until regex matches
+;;; Scan lines until regex or predicate matches
 
 (define scan-input-lines
   (let ((regexp regexp)
 	(read-line read-line)
 	(string-search string-search))
     (lambda (rx #!optional (port ##sys#standard-input))
-      (let ((rx (regexp rx)))
+      (let ((rx (if (procedure? rx)
+		    rx
+		    (cut string-search (regexp rx) <>))))
 	(let loop ()
 	  (let ((ln (read-line port)))
 	    (and (not (eof-object? ln))
-		 (let ((m (string-search rx ln)))
-		   (or m (loop))))))))))
+		 (or (rx ln)
+		     (loop)))))))))
