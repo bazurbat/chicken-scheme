@@ -1163,8 +1163,9 @@
 
 (abandoned-mutex-exception? (procedure abandoned-mutex-exception? (*) boolean))
 (condition-variable-broadcast! (procedure condition-variable-broadcast! ((struct condition-variable)) undefined))
+(condition-variable-name (procedure condition-variable-name ((struct condition-variable)) *))
 (condition-variable-signal! (procedure condition-variable-signal! ((struct condition-variable)) undefined))
-(condition-variable-specific (procedure condition-variable-specific ((struct condition-vasriable)) *))
+(condition-variable-specific (procedure condition-variable-specific ((struct condition-variable)) *))
 (condition-variable-specific-set! (procedure condition-variable-specific-set! ((struct condition-variable) *) undefined))
 (condition-variable? (procedure condition-variable? (*) boolean))
 (current-thread (procedure current-thread () (struct thread)))

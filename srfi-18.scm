@@ -430,6 +430,10 @@ EOF
 (define (condition-variable? x)
   (##sys#structure? x 'condition-variable) )
 
+(define (condition-variable-name cv)
+  (##sys#check-structure cv 'condition-variable 'condition-variable-name)
+  (##sys#slot cv 1) )
+
 (define (condition-variable-specific cv)
   (##sys#check-structure cv 'condition-variable 'condition-variable-specific)
   (##sys#slot cv 3) )
