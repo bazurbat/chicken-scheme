@@ -84,6 +84,7 @@
   (define *proxy-port* #f)
   (define *running-test* #f)
   (define *mappings* '())
+  (define *deploy* #f)
 
   (define-constant +module-db+ "modules.db")
   (define-constant +defaults-file+ "setup.defaults")
@@ -200,6 +201,7 @@
   (define *eggs+dirs+vers* '())
   (define *dependencies* '())
   (define *checked* '())
+
   (define *csi* 
     (shellpath (make-pathname *program-path* (foreign-value "C_CSI_PROGRAM" c-string))))
 
@@ -333,6 +335,7 @@
      (if (and *no-install* (not dep?)) " -e \"(setup-install-mode #f)\"" "")
      (if *host-extension* " -e \"(host-extension #t)\"" "")
      (if *prefix* (sprintf " -e \"(installation-prefix \\\"~a\\\")\"" *prefix*) "")
+     (if *deploy* " -e \"(deployment-mode #t)\"" "")
      #\space
      (shellpath (make-pathname (cadr e+d+v) (car e+d+v) "setup"))) )
 
@@ -468,6 +471,7 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
   -i   -init DIRECTORY          initialize empty alternative repository
   -u   -update-db               update export database
        -repository              print path used for egg installation
+       -deploy                  build extensions for deployment
 EOF
 );|
     (exit code))
@@ -564,6 +568,9 @@ EOF
 			    (string=? "-host-extension" arg)) ; DEPRECATED
                         (set! *host-extension* #t)
                         (loop (cdr args) eggs))
+		       ((string=? "-deploy" arg)
+			(set! *deploy* #t)
+			(loop (cdr args) eggs))
                        ((string=? "-username" arg)
                         (unless (pair? (cdr args)) (usage 1))
                         (set! *username* (cadr args))

@@ -43,7 +43,7 @@
      make make/proc
      host-extension
      install-extension install-program install-script
-     setup-verbose-mode setup-install-mode
+     setup-verbose-mode setup-install-mode deployment-mode
      installation-prefix
      chicken-prefix 			;XXX remove at some stage from exports
      find-library find-header 
@@ -113,6 +113,7 @@
 (define setup-root-directory      (make-parameter *base-directory*))
 (define setup-verbose-mode        (make-parameter #f))
 (define setup-install-mode        (make-parameter #t))
+(define deployment-mode           (make-parameter #f))
 (define program-path              (make-parameter *chicken-bin-path*))
 (define keep-intermediates (make-parameter #f))
 
@@ -219,6 +220,7 @@
 		     "" "-setup-mode")
 		 (if (keep-intermediates) "-k" "")
 		 (if (host-extension) "-host" "")
+		 (if (deployment-mode) "-deploy" "")
 		 *csc-options*) 
 	  " ") )
 	((assoc prg *installed-executables*) =>
