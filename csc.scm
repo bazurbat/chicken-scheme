@@ -65,7 +65,7 @@
 (define win (or mingw msvc))
 
 (define elf
-  (memq (software-version) '(linux freebsd netbsd openbsd dragonfly solaris)))
+  (memq (software-version) '(linux freebsd solaris)))
 
 (define (quit msg . args)
   (fprintf (current-error-port) "~a: ~?~%" CSC_PROGRAM msg args)
