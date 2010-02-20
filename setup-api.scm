@@ -417,7 +417,8 @@
 (define create-directory/parents
   (let ()
     (define (verb dir)
-      (when (setup-verbose-mode) (printf "  creating directory `~a'~%~!" dir)) )
+      (when (setup-verbose-mode)
+	(printf "  mkdir ~a~%~!" dir)) )
     (if *windows*
         (lambda (dir)
           (verb dir)
