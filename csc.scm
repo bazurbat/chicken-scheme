@@ -872,7 +872,8 @@ EOF
 	     (pathname-file target-filename))))
       (set! target (quotewrap target-filename))
       (unless (directory-exists? targetdir)
-	(print "creating " targetdir)
+	(when verbose
+	(print "mkdir " targetdir)
 	(create-directory targetdir)))
     (command
      (string-intersperse 
