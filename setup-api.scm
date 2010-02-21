@@ -578,9 +578,11 @@
 
 (define (repo-path #!optional ddir?)
   (let ((p (if ddir?
-	       (make-pathname 
-		(installation-prefix) 
-		(sprintf "lib/chicken/~a" (##sys#fudge 42)))
+	       (if (deployment-mode)
+		   (installation-prefix)
+		   (make-pathname 
+		    (installation-prefix) 
+		    (sprintf "lib/chicken/~a" (##sys#fudge 42))))
 	       (repository-path))) )
     (ensure-directory p)
     p) )

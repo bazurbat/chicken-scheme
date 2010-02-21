@@ -1,0 +1,67 @@
+[[tags: manual]]
+[[toc:]]
+
+
+== Deployment
+
+CHICKEN generates fully native binaries that can be distributed like 
+normal C/C++ programs. There are various methods of deployment,
+depending on platform, linkage, external dependencies and wether
+the application should be built from sources or precompiled and
+whether the CHICKEN runtime-libraries are expected on the destination
+system or if the application should be completely self-contained.
+
+=== Simple executables
+
+The simplest form of deployment is the single executable. The runtime
+libraries ({{libchicken.so}} or {{libchicken.dll}} is required for these
+programs to run, unless you link your application statically:
+
+  % csc myprogram.scm
+  % ldd myprogram               # on linux
+            linux-gate.so.1 =>  (0xb805c000)
+            libchicken.so.5 => /home/felix/chicken/core/lib/libchicken.so.5 (0xb7c22000)
+            libm.so.6 => /lib/tls/i686/cmov/libm.so.6 (0xb7bec000)
+            libdl.so.2 => /lib/tls/i686/cmov/libdl.so.2 (0xb7be7000)
+            libc.so.6 => /lib/tls/i686/cmov/libc.so.6 (0xb7a84000)
+            /lib/ld-linux.so.2 (0xb805d000)
+
+...
+
+=== Libraries
+
+...
+
+=== Self contained applications
+
+...
+
+==== Platform-specific notes
+
+...
+
+===== Linux
+
+...
+
+===== Windows
+
+...
+
+===== MacOS X
+
+...
+
+===== Other UNIX flavors
+
+...
+
+=== Deploying source code
+
+...
+
+
+---
+Previous: [[Extensions]]
+
+Next: [[Data representation]]

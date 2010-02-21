@@ -55,6 +55,7 @@
 (define-foreign-variable CHICKEN_PROGRAM c-string "C_CHICKEN_PROGRAM")
 (define-foreign-variable CSC_PROGRAM c-string "C_CSC_PROGRAM")
 (define-foreign-variable WINDOWS_SHELL bool "C_WINDOWS_SHELL")
+(define-foreign-variable BINARY_VERSION int "C_BINARY_VERSION")
 
 
 ;;; Parameters:
@@ -290,10 +291,10 @@
 
 (define (usage)
   (let ((csc CSC_PROGRAM))
-    (printf #<<EOF
-Usage: ~a FILENAME | OPTION ...
+    (print #<#EOF
+Usage: #{csc} FILENAME | OPTION ...
 
-  `~a' is a driver program for the CHICKEN compiler. Files given on the
+  `#{csc}' is a driver program for the CHICKEN compiler. Files given on the
   command line are translated, compiled or linked as needed.
 
   FILENAME is a Scheme source file name with optional extension or a
@@ -482,10 +483,10 @@ Usage: ~a FILENAME | OPTION ...
     -v -k -fixnum-arithmetic -optimize
 
   The contents of the environment variable CSC_OPTIONS are implicitly passed to
-  every invocation of `~a'.
+  every invocation of `#{csc}'.
 
 EOF
-  csc csc csc) ) )
+  ) ) )
 
 
 ;;; Parse arguments:
@@ -874,7 +875,7 @@ EOF
       (unless (directory-exists? targetdir)
 	(when verbose
 	(print "mkdir " targetdir)
-	(create-directory targetdir)))
+	(create-directory targetdir))) )
     (command
      (string-intersperse 
       (cons* (cond (cpp-mode c++-linker)
@@ -924,7 +925,7 @@ EOF
 		  "libchicken")
 	      (cond (osx "dylib")
 		    (win "dll")
-		    (else "so")))))
+		    (else (conc "so." BINARY_VERSION))))))
     (copy-files lib targetdir)))
 
 (define (copy-files from to)
