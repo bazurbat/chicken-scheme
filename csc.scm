@@ -238,6 +238,7 @@
 	 id) ) )
 
 (define compile-options '())
+
 (define builtin-compile-options
   (if include-dir (list (conc "-I\"" include-dir "\"")) '()))
 
@@ -253,6 +254,7 @@
              TARGET_LIB_HOME)) )
 
 (define link-options '())
+
 (define builtin-link-options
   (cond ((or osx hpux-hppa mingw)
 	 (list (conc "-L\"" library-dir "\"")))
