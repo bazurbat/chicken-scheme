@@ -484,7 +484,7 @@ EOF
 	 (lambda ()
 	   (##sys#signal exn)
 	   (old) ) )
-	(##sys#setislot thread 3 blocked)
+	(##sys#setslot thread 3 'blocked)
 	(##sys#thread-unblock! thread) ) ) )
 
 
