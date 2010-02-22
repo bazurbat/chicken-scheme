@@ -1,10 +1,10 @@
 /* Generated from srfi-1.scm by the CHICKEN compiler
    http://www.call-with-current-continuation.org
-   2009-12-04 21:25
+   2010-01-20 09:44
    Version 4.2.12
-   linux-unix-gnu-x86 [ manyargs dload ptables ]
-   compiled 2009-12-04 on x (Linux)
-   command line: srfi-1.scm -optimize-level 2 -include-path . -include-path ./ -inline -feature debugbuild -scrutinize -types ./types.db -explicit-use -no-trace -output-file srfi-1.c
+   windows-mingw32-x86 [ manyargs ptables ]
+   compiled 2010-01-08 on lenovo-1 (MINGW32_NT-6.0)
+   command line: srfi-1.scm -optimize-level 2 -include-path . -include-path ./ -inline -explicit-use -no-trace -output-file srfi-1.c
    unit: srfi_1
 */
 

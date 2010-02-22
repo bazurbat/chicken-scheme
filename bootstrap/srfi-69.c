@@ -1,10 +1,10 @@
 /* Generated from srfi-69.scm by the CHICKEN compiler
    http://www.call-with-current-continuation.org
-   2009-12-04 21:26
+   2010-02-09 21:34
    Version 4.2.12
-   linux-unix-gnu-x86 [ manyargs dload ptables ]
-   compiled 2009-12-04 on x (Linux)
-   command line: srfi-69.scm -optimize-level 2 -include-path . -include-path ./ -inline -feature debugbuild -scrutinize -types ./types.db -explicit-use -no-trace -output-file srfi-69.c -extend ./private-namespace.scm
+   windows-mingw32-x86 [ manyargs ptables ]
+   compiled 2010-01-08 on lenovo-1 (MINGW32_NT-6.0)
+   command line: srfi-69.scm -optimize-level 2 -include-path . -include-path ./ -inline -explicit-use -no-trace -output-file srfi-69.c -extend ./private-namespace.scm
    unit: srfi_69
 */
 
@@ -1453,13 +1453,13 @@ lf[51]=C_h_intern(&lf[51],19,"hash-table-max-size");
 lf[52]=C_decode_literal(C_heaptop,"\376B\000\000\014invalid size");
 lf[53]=C_h_intern(&lf[53],8,"\000initial");
 lf[54]=C_h_intern(&lf[54],9,"\000min-load");
-lf[55]=C_decode_literal(C_heaptop,"\376U0.0\000");
-lf[56]=C_decode_literal(C_heaptop,"\376U1.0\000");
+lf[55]=C_decode_literal(C_heaptop,"\376U0.\000");
+lf[56]=C_decode_literal(C_heaptop,"\376U1.\000");
 lf[57]=C_decode_literal(C_heaptop,"\376B\000\000\020invalid min-load");
 lf[58]=C_h_intern(&lf[58],17,"\003syscheck-inexact");
 lf[59]=C_h_intern(&lf[59],9,"\000max-load");
-lf[60]=C_decode_literal(C_heaptop,"\376U0.0\000");
-lf[61]=C_decode_literal(C_heaptop,"\376U1.0\000");
+lf[60]=C_decode_literal(C_heaptop,"\376U0.\000");
+lf[61]=C_decode_literal(C_heaptop,"\376U1.\000");
 lf[62]=C_decode_literal(C_heaptop,"\376B\000\000\020invalid max-load");
 lf[63]=C_h_intern(&lf[63],10,"\000weak-keys");
 lf[64]=C_h_intern(&lf[64],12,"\000weak-values");
@@ -1626,7 +1626,7 @@ t48=C_mutate((C_word*)lf[89]+1 /* (set! hash-table-set! ...) */,(*a=C_CLOSURE_TY
 t49=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_4638,a[2]=((C_word*)t0)[2],tmp=(C_word)a,a+=3,tmp);
 t50=*((C_word*)lf[34]+1);
 t51=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_5658,a[2]=t50,a[3]=((C_word)li110),tmp=(C_word)a,a+=4,tmp);
-/* srfi-69.scm: 808  getter-with-setter */
+/* srfi-69.scm: 809  getter-with-setter */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[116]+1)))(4,*((C_word*)lf[116]+1),t49,t51,*((C_word*)lf[89]+1));}
 
 /* a5657 in k1500 */
@@ -1674,7 +1674,7 @@ if(c!=2) C_bad_argc_2(c,2,t0);
 C_check_for_interrupt;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5778,2,t0,t1);}
-/* srfi-69.scm: 811  ##sys#signal-hook */
+/* srfi-69.scm: 812  ##sys#signal-hook */
 t2=*((C_word*)lf[6]+1);
 ((C_proc7)(void*)(*((C_word*)t2+1)))(7,t2,t1,lf[84],lf[91],lf[115],((C_word*)t0)[3],((C_word*)t0)[2]);}
 
@@ -1690,7 +1690,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5662,2,t0,t1);}
 t2=(C_word)C_i_check_structure_2(((C_word*)t0)[5],lf[33],lf[91]);
 t3=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_5668,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=t1,a[5]=((C_word*)t0)[4],a[6]=((C_word*)t0)[5],tmp=(C_word)a,a+=7,tmp);
-/* srfi-69.scm: 815  ##sys#check-closure */
+/* srfi-69.scm: 816  ##sys#check-closure */
 t4=*((C_word*)lf[48]+1);
 ((C_proc4)(void*)(*((C_word*)t4+1)))(4,t4,t3,t1,lf[91]);}
 
@@ -1712,7 +1712,7 @@ t3=(C_word)C_slot(((C_word*)t0)[6],C_fix(3));
 t4=(C_word)C_slot(((C_word*)t0)[6],C_fix(4));
 t5=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_5680,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=t2,a[6]=t3,a[7]=((C_word*)t0)[5],tmp=(C_word)a,a+=8,tmp);
 t6=(C_word)C_block_size(t2);
-/* srfi-69.scm: 819  hash */
+/* srfi-69.scm: 820  hash */
 t7=t4;
 ((C_proc4)C_retrieve_proc(t7))(4,t7,t5,((C_word*)t0)[3],t6);}
 
@@ -1761,14 +1761,14 @@ C_check_for_interrupt;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_5737,NULL,3,t0,t1,t2);}
 if(C_truep((C_word)C_i_nullp(t2))){
-/* srfi-69.scm: 832  def */
+/* srfi-69.scm: 833  def */
 t3=((C_word*)t0)[5];
 ((C_proc2)C_retrieve_proc(t3))(2,t3,t1);}
 else{
 t3=(C_word)C_slot(t2,C_fix(0));
 t4=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_5756,a[2]=((C_word*)t0)[4],a[3]=t2,a[4]=t3,a[5]=t1,tmp=(C_word)a,a+=6,tmp);
 t5=(C_word)C_slot(t3,C_fix(0));
-/* srfi-69.scm: 834  test */
+/* srfi-69.scm: 835  test */
 t6=((C_word*)t0)[3];
 ((C_proc4)C_retrieve_proc(t6))(4,t6,t4,((C_word*)t0)[2],t5);}}
 
@@ -1783,7 +1783,7 @@ t2=((C_word*)t0)[5];
 ((C_proc2)(void*)(*((C_word*)t2+1)))(2,t2,(C_word)C_slot(((C_word*)t0)[4],C_fix(1)));}
 else{
 t2=(C_word)C_slot(((C_word*)t0)[3],C_fix(1));
-/* srfi-69.scm: 836  loop */
+/* srfi-69.scm: 837  loop */
 t3=((C_word*)((C_word*)t0)[2])[1];
 f_5737(t3,((C_word*)t0)[5],t2);}}
 
@@ -1803,7 +1803,7 @@ C_check_for_interrupt;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_5695,NULL,3,t0,t1,t2);}
 if(C_truep((C_word)C_i_nullp(t2))){
-/* srfi-69.scm: 824  def */
+/* srfi-69.scm: 825  def */
 t3=((C_word*)t0)[4];
 ((C_proc2)C_retrieve_proc(t3))(2,t3,t1);}
 else{
@@ -1815,7 +1815,7 @@ t6=t1;
 ((C_proc2)(void*)(*((C_word*)t6+1)))(2,t6,(C_word)C_slot(t3,C_fix(1)));}
 else{
 t6=(C_word)C_slot(t2,C_fix(1));
-/* srfi-69.scm: 828  loop */
+/* srfi-69.scm: 829  loop */
 t8=t1;
 t9=t6;
 t1=t8;
@@ -1880,7 +1880,7 @@ t23=C_mutate((C_word*)lf[109]+1 /* (set! hash-table-walk ...) */,(*a=C_CLOSURE_T
 t24=C_mutate((C_word*)lf[110]+1 /* (set! hash-table-map ...) */,(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_5617,a[2]=((C_word)li105),tmp=(C_word)a,a+=3,tmp));
 t25=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_5640,a[2]=((C_word*)t0)[2],tmp=(C_word)a,a+=3,tmp);
 t26=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_5642,a[2]=((C_word)li106),tmp=(C_word)a,a+=3,tmp);
-/* srfi-69.scm: 1094 ##sys#register-record-printer */
+/* srfi-69.scm: 1095 ##sys#register-record-printer */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[114]+1)))(4,*((C_word*)lf[114]+1),t25,lf[33],t26);}
 
 /* a5641 in k4636 in k1500 */
@@ -1894,7 +1894,7 @@ C_check_for_interrupt;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr4,(void*)f_5642,4,t0,t1,t2,t3);}
 t4=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5646,a[2]=t2,a[3]=t3,a[4]=t1,tmp=(C_word)a,a+=5,tmp);
-/* srfi-69.scm: 1097 ##sys#print */
+/* srfi-69.scm: 1098 ##sys#print */
 t5=*((C_word*)lf[111]+1);
 ((C_proc5)(void*)(*((C_word*)t5+1)))(5,t5,t4,lf[113],C_SCHEME_FALSE,t3);}
 
@@ -1910,7 +1910,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5646,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_5649,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],tmp=(C_word)a,a+=4,tmp);
 t3=(C_word)C_slot(((C_word*)t0)[2],C_fix(2));
-/* srfi-69.scm: 1098 ##sys#print */
+/* srfi-69.scm: 1099 ##sys#print */
 t4=*((C_word*)lf[111]+1);
 ((C_proc5)(void*)(*((C_word*)t4+1)))(5,t4,t2,t3,C_SCHEME_FALSE,((C_word*)t0)[3]);}
 
@@ -1919,7 +1919,7 @@ static void C_ccall f_5649(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-/* srfi-69.scm: 1099 ##sys#print */
+/* srfi-69.scm: 1100 ##sys#print */
 t2=*((C_word*)lf[111]+1);
 ((C_proc5)(void*)(*((C_word*)t2+1)))(5,t2,((C_word*)t0)[3],lf[112],C_SCHEME_FALSE,((C_word*)t0)[2]);}
 
@@ -1944,7 +1944,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr4,(void*)f_5617,4,t0,t1,t2,t3);}
 t4=(C_word)C_i_check_structure_2(t2,lf[33],lf[110]);
 t5=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5624,a[2]=t2,a[3]=t1,a[4]=t3,tmp=(C_word)a,a+=5,tmp);
-/* srfi-69.scm: 1088 ##sys#check-closure */
+/* srfi-69.scm: 1089 ##sys#check-closure */
 t6=*((C_word*)lf[48]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t5,t3,lf[110]);}
 
@@ -1958,7 +1958,7 @@ C_check_for_interrupt;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5624,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_5629,a[2]=((C_word*)t0)[4],a[3]=((C_word)li104),tmp=(C_word)a,a+=4,tmp);
-/* srfi-69.scm: 1089 *hash-table-fold */
+/* srfi-69.scm: 1090 *hash-table-fold */
 f_5515(((C_word*)t0)[3],((C_word*)t0)[2],t2,C_SCHEME_END_OF_LIST);}
 
 /* a5628 in k5622 in hash-table-map in k4636 in k1500 */
@@ -1972,7 +1972,7 @@ C_check_for_interrupt;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr5,(void*)f_5629,5,t0,t1,t2,t3,t4);}
 t5=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_5637,a[2]=t4,a[3]=t1,tmp=(C_word)a,a+=4,tmp);
-/* srfi-69.scm: 1089 func */
+/* srfi-69.scm: 1090 func */
 t6=((C_word*)t0)[2];
 ((C_proc4)C_retrieve_proc(t6))(4,t6,t5,t2,t3);}
 
@@ -2000,7 +2000,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr4,(void*)f_5605,4,t0,t1,t2,t3);}
 t4=(C_word)C_i_check_structure_2(t2,lf[33],lf[109]);
 t5=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5612,a[2]=t3,a[3]=t2,a[4]=t1,tmp=(C_word)a,a+=5,tmp);
-/* srfi-69.scm: 1083 ##sys#check-closure */
+/* srfi-69.scm: 1084 ##sys#check-closure */
 t6=*((C_word*)lf[48]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t5,t3,lf[109]);}
 
@@ -2009,7 +2009,7 @@ static void C_ccall f_5612(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-/* srfi-69.scm: 1084 *hash-table-for-each */
+/* srfi-69.scm: 1085 *hash-table-for-each */
 f_5444(((C_word*)t0)[4],((C_word*)t0)[3],((C_word*)t0)[2]);}
 
 /* hash-table-for-each in k4636 in k1500 */
@@ -2025,7 +2025,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr4,(void*)f_5593,4,t0,t1,t2,t3);}
 t4=(C_word)C_i_check_structure_2(t2,lf[33],lf[108]);
 t5=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5600,a[2]=t3,a[3]=t2,a[4]=t1,tmp=(C_word)a,a+=5,tmp);
-/* srfi-69.scm: 1078 ##sys#check-closure */
+/* srfi-69.scm: 1079 ##sys#check-closure */
 t6=*((C_word*)lf[48]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t5,t3,lf[108]);}
 
@@ -2034,7 +2034,7 @@ static void C_ccall f_5600(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-/* srfi-69.scm: 1079 *hash-table-for-each */
+/* srfi-69.scm: 1080 *hash-table-for-each */
 f_5444(((C_word*)t0)[4],((C_word*)t0)[3],((C_word*)t0)[2]);}
 
 /* hash-table-fold in k4636 in k1500 */
@@ -2050,7 +2050,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr5,(void*)f_5581,5,t0,t1,t2,t3,t4);}
 t5=(C_word)C_i_check_structure_2(t2,lf[33],lf[107]);
 t6=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_5588,a[2]=t4,a[3]=t3,a[4]=t2,a[5]=t1,tmp=(C_word)a,a+=6,tmp);
-/* srfi-69.scm: 1073 ##sys#check-closure */
+/* srfi-69.scm: 1074 ##sys#check-closure */
 t7=*((C_word*)lf[48]+1);
 ((C_proc4)(void*)(*((C_word*)t7+1)))(4,t7,t6,t3,lf[107]);}
 
@@ -2059,7 +2059,7 @@ static void C_ccall f_5588(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-/* srfi-69.scm: 1074 *hash-table-fold */
+/* srfi-69.scm: 1075 *hash-table-fold */
 f_5515(((C_word*)t0)[5],((C_word*)t0)[4],((C_word*)t0)[3],((C_word*)t0)[2]);}
 
 /* *hash-table-fold in k4636 in k1500 */
@@ -2124,7 +2124,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_5543,NULL,4,t0,t1,t2,t3);}
 if(C_truep((C_word)C_i_nullp(t2))){
 t4=(C_word)C_fixnum_plus(((C_word*)t0)[5],C_fix(1));
-/* srfi-69.scm: 1066 loop */
+/* srfi-69.scm: 1067 loop */
 t5=((C_word*)((C_word*)t0)[4])[1];
 f_5527(t5,t1,t4,t3);}
 else{
@@ -2133,7 +2133,7 @@ t5=(C_word)C_slot(t2,C_fix(1));
 t6=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5571,a[2]=t5,a[3]=t1,a[4]=((C_word*)t0)[3],tmp=(C_word)a,a+=5,tmp);
 t7=(C_word)C_slot(t4,C_fix(0));
 t8=(C_word)C_slot(t4,C_fix(1));
-/* srfi-69.scm: 1069 func */
+/* srfi-69.scm: 1070 func */
 t9=((C_word*)t0)[2];
 ((C_proc5)C_retrieve_proc(t9))(5,t9,t6,t7,t8,t3);}}
 
@@ -2142,7 +2142,7 @@ static void C_ccall f_5571(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-/* srfi-69.scm: 1068 fold2 */
+/* srfi-69.scm: 1069 fold2 */
 t2=((C_word*)((C_word*)t0)[4])[1];
 f_5543(t2,((C_word*)t0)[3],((C_word*)t0)[2],t1);}
 
@@ -2240,7 +2240,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_5487,NULL,3,t0,t1,t2);}
 t3=(C_word)C_slot(t2,C_fix(0));
 t4=(C_word)C_slot(t2,C_fix(1));
-/* srfi-69.scm: 1054 proc */
+/* srfi-69.scm: 1055 proc */
 t5=((C_word*)t0)[2];
 ((C_proc4)C_retrieve_proc(t5))(4,t5,t1,t3,t4);}
 
@@ -2323,7 +2323,7 @@ if(!C_stack_probe(a)){
 C_save_and_reclaim((void*)trf_5410,NULL,4,t0,t1,t2,t3);}
 if(C_truep((C_word)C_i_nullp(t2))){
 t4=(C_word)C_fixnum_plus(((C_word*)t0)[4],C_fix(1));
-/* srfi-69.scm: 1036 loop */
+/* srfi-69.scm: 1037 loop */
 t5=((C_word*)((C_word*)t0)[3])[1];
 f_5394(t5,t1,t4,t3);}
 else{
@@ -2331,7 +2331,7 @@ t4=(C_word)C_slot(t2,C_fix(1));
 t5=(C_word)C_slot(t2,C_fix(0));
 t6=(C_word)C_slot(t5,C_fix(1));
 t7=(C_word)C_a_i_cons(&a,2,t6,t3);
-/* srfi-69.scm: 1037 loop2 */
+/* srfi-69.scm: 1038 loop2 */
 t10=t1;
 t11=t4;
 t12=t7;
@@ -2409,7 +2409,7 @@ if(!C_stack_probe(a)){
 C_save_and_reclaim((void*)trf_5345,NULL,4,t0,t1,t2,t3);}
 if(C_truep((C_word)C_i_nullp(t2))){
 t4=(C_word)C_fixnum_plus(((C_word*)t0)[4],C_fix(1));
-/* srfi-69.scm: 1021 loop */
+/* srfi-69.scm: 1022 loop */
 t5=((C_word*)((C_word*)t0)[3])[1];
 f_5329(t5,t1,t4,t3);}
 else{
@@ -2417,7 +2417,7 @@ t4=(C_word)C_slot(t2,C_fix(1));
 t5=(C_word)C_slot(t2,C_fix(0));
 t6=(C_word)C_slot(t5,C_fix(0));
 t7=(C_word)C_a_i_cons(&a,2,t6,t3);
-/* srfi-69.scm: 1022 loop2 */
+/* srfi-69.scm: 1023 loop2 */
 t10=t1;
 t11=t4;
 t12=t7;
@@ -2519,7 +2519,7 @@ C_save_and_reclaim((void*)trf_5283,NULL,3,t0,t1,t2);}
 t3=(C_word)C_i_check_pair_2(t2,lf[102]);
 t4=(C_word)C_slot(t2,C_fix(0));
 t5=(C_word)C_slot(t2,C_fix(1));
-/* srfi-69.scm: 1005 *hash-table-update!/default */
+/* srfi-69.scm: 1006 *hash-table-update!/default */
 t6=lf[87];
 f_4214(t6,t1,((C_word*)t0)[2],t4,*((C_word*)lf[86]+1),t5);}
 
@@ -2602,7 +2602,7 @@ if(!C_stack_probe(a)){
 C_save_and_reclaim((void*)trf_5221,NULL,4,t0,t1,t2,t3);}
 if(C_truep((C_word)C_i_nullp(t2))){
 t4=(C_word)C_fixnum_plus(((C_word*)t0)[4],C_fix(1));
-/* srfi-69.scm: 992  loop */
+/* srfi-69.scm: 993  loop */
 t5=((C_word*)((C_word*)t0)[3])[1];
 f_5205(t5,t1,t4,t3);}
 else{
@@ -2612,7 +2612,7 @@ t6=(C_word)C_slot(t5,C_fix(0));
 t7=(C_word)C_slot(t5,C_fix(1));
 t8=(C_word)C_a_i_cons(&a,2,t6,t7);
 t9=(C_word)C_a_i_cons(&a,2,t8,t3);
-/* srfi-69.scm: 993  loop2 */
+/* srfi-69.scm: 994  loop2 */
 t12=t1;
 t13=t4;
 t14=t9;
@@ -2636,7 +2636,7 @@ C_save_and_reclaim((void*)tr4,(void*)f_5174,4,t0,t1,t2,t3);}
 t4=(C_word)C_i_check_structure_2(t2,lf[33],lf[100]);
 t5=(C_word)C_i_check_structure_2(t3,lf[33],lf[100]);
 t6=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_5188,a[2]=t3,a[3]=t1,tmp=(C_word)a,a+=4,tmp);
-/* srfi-69.scm: 978  *hash-table-copy */
+/* srfi-69.scm: 979  *hash-table-copy */
 t7=lf[80];
 f_3798(t7,t6,t2);}
 
@@ -2645,7 +2645,7 @@ static void C_ccall f_5188(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-/* srfi-69.scm: 978  *hash-table-merge! */
+/* srfi-69.scm: 979  *hash-table-merge! */
 f_5097(((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* hash-table-merge! in k4636 in k1500 */
@@ -2661,7 +2661,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr4,(void*)f_5162,4,t0,t1,t2,t3);}
 t4=(C_word)C_i_check_structure_2(t2,lf[33],lf[99]);
 t5=(C_word)C_i_check_structure_2(t3,lf[33],lf[99]);
-/* srfi-69.scm: 973  *hash-table-merge! */
+/* srfi-69.scm: 974  *hash-table-merge! */
 f_5097(t1,t2,t3);}
 
 /* *hash-table-merge! in k4636 in k1500 */
@@ -2734,7 +2734,7 @@ t3=(C_word)C_slot(t2,C_fix(0));
 t4=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5145,a[2]=t1,a[3]=((C_word*)t0)[3],a[4]=t2,tmp=(C_word)a,a+=5,tmp);
 t5=(C_word)C_slot(t3,C_fix(0));
 t6=(C_word)C_slot(t3,C_fix(1));
-/* srfi-69.scm: 968  *hash-table-update!/default */
+/* srfi-69.scm: 969  *hash-table-update!/default */
 t7=lf[87];
 f_4214(t7,t4,((C_word*)t0)[2],t5,*((C_word*)lf[86]+1),t6);}}
 
@@ -2773,7 +2773,7 @@ C_save_and_reclaim((void*)tr3,(void*)f_5081,3,t0,t1,t2);}
 t3=(C_word)C_i_check_structure_2(t2,lf[33],lf[96]);
 t4=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_5088,a[2]=t2,a[3]=t1,tmp=(C_word)a,a+=4,tmp);
 t5=(C_word)C_slot(t2,C_fix(1));
-/* srfi-69.scm: 955  vector-fill! */
+/* srfi-69.scm: 956  vector-fill! */
 t6=*((C_word*)lf[97]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t4,t5,C_SCHEME_END_OF_LIST);}
 
@@ -2798,7 +2798,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr4,(void*)f_4985,4,t0,t1,t2,t3);}
 t4=(C_word)C_i_check_structure_2(t2,lf[33],lf[95]);
 t5=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_4992,a[2]=t1,a[3]=t3,a[4]=t2,tmp=(C_word)a,a+=5,tmp);
-/* srfi-69.scm: 932  ##sys#check-closure */
+/* srfi-69.scm: 933  ##sys#check-closure */
 t6=*((C_word*)lf[48]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t5,t3,lf[95]);}
 
@@ -2876,7 +2876,7 @@ t5=(C_word)C_slot(t3,C_fix(1));
 t6=(*a=C_CLOSURE_TYPE|9,a[1]=(C_word)f_5051,a[2]=t3,a[3]=((C_word*)t0)[3],a[4]=t1,a[5]=((C_word*)t0)[4],a[6]=((C_word*)t0)[5],a[7]=((C_word*)t0)[6],a[8]=t5,a[9]=t2,tmp=(C_word)a,a+=10,tmp);
 t7=(C_word)C_slot(t4,C_fix(0));
 t8=(C_word)C_slot(t4,C_fix(1));
-/* srfi-69.scm: 942  func */
+/* srfi-69.scm: 943  func */
 t9=((C_word*)t0)[2];
 ((C_proc4)C_retrieve_proc(t9))(4,t9,t6,t7,t8);}}
 
@@ -2895,7 +2895,7 @@ t4=C_mutate(((C_word *)((C_word*)t0)[5])+1,t3);
 t5=((C_word*)t0)[4];
 ((C_proc2)(void*)(*((C_word*)t5+1)))(2,t5,C_SCHEME_TRUE);}
 else{
-/* srfi-69.scm: 949  loop */
+/* srfi-69.scm: 950  loop */
 t2=((C_word*)((C_word*)t0)[3])[1];
 f_5032(t2,((C_word*)t0)[4],((C_word*)t0)[2],((C_word*)t0)[8]);}}
 
@@ -2928,7 +2928,7 @@ t5=(C_word)C_slot(t2,C_fix(1));
 t6=(C_word)C_block_size(t5);
 t7=(C_word)C_slot(t2,C_fix(4));
 t8=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_4870,a[2]=t1,a[3]=t3,a[4]=((C_word*)t0)[2],a[5]=t5,a[6]=t2,tmp=(C_word)a,a+=7,tmp);
-/* srfi-69.scm: 896  hash */
+/* srfi-69.scm: 897  hash */
 t9=t7;
 ((C_proc4)C_retrieve_proc(t9))(4,t9,t8,t3,t6);}
 
@@ -2985,7 +2985,7 @@ t4=(C_word)C_slot(t3,C_fix(0));
 t5=(C_word)C_slot(t3,C_fix(1));
 t6=(*a=C_CLOSURE_TYPE|10,a[1]=(C_word)f_4956,a[2]=t3,a[3]=((C_word*)t0)[4],a[4]=t1,a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],a[8]=((C_word*)t0)[8],a[9]=t5,a[10]=t2,tmp=(C_word)a,a+=11,tmp);
 t7=(C_word)C_slot(t4,C_fix(0));
-/* srfi-69.scm: 919  test */
+/* srfi-69.scm: 920  test */
 t8=((C_word*)t0)[3];
 ((C_proc4)C_retrieve_proc(t8))(4,t8,t6,((C_word*)t0)[2],t7);}}
 
@@ -3002,7 +3002,7 @@ t3=(C_word)C_i_set_i_slot(((C_word*)t0)[6],C_fix(2),((C_word*)t0)[5]);
 t4=((C_word*)t0)[4];
 ((C_proc2)(void*)(*((C_word*)t4+1)))(2,t4,C_SCHEME_TRUE);}
 else{
-/* srfi-69.scm: 926  loop */
+/* srfi-69.scm: 927  loop */
 t2=((C_word*)((C_word*)t0)[3])[1];
 f_4937(t2,((C_word*)t0)[4],((C_word*)t0)[2],((C_word*)t0)[9]);}}
 
@@ -3059,7 +3059,7 @@ t6=(C_word)C_slot(t2,C_fix(3));
 t7=(C_word)C_slot(t2,C_fix(4));
 t8=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_4762,a[2]=t1,a[3]=t3,a[4]=t5,a[5]=t6,a[6]=((C_word*)t0)[2],tmp=(C_word)a,a+=7,tmp);
 t9=(C_word)C_block_size(t5);
-/* srfi-69.scm: 872  hash */
+/* srfi-69.scm: 873  hash */
 t10=t7;
 ((C_proc4)C_retrieve_proc(t10))(4,t10,t8,t3,t9);}
 
@@ -3110,7 +3110,7 @@ else{
 t3=(C_word)C_slot(t2,C_fix(0));
 t4=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_4830,a[2]=((C_word*)t0)[4],a[3]=t2,a[4]=t1,tmp=(C_word)a,a+=5,tmp);
 t5=(C_word)C_slot(t3,C_fix(0));
-/* srfi-69.scm: 884  test */
+/* srfi-69.scm: 885  test */
 t6=((C_word*)t0)[3];
 ((C_proc4)C_retrieve_proc(t6))(4,t6,t4,((C_word*)t0)[2],t5);}}
 
@@ -3125,7 +3125,7 @@ t2=((C_word*)t0)[4];
 ((C_proc2)(void*)(*((C_word*)t2+1)))(2,t2,t1);}
 else{
 t2=(C_word)C_slot(((C_word*)t0)[3],C_fix(1));
-/* srfi-69.scm: 885  loop */
+/* srfi-69.scm: 886  loop */
 t3=((C_word*)((C_word*)t0)[2])[1];
 f_4817(t3,((C_word*)t0)[4],t2);}}
 
@@ -3175,7 +3175,7 @@ t7=(C_word)C_slot(t2,C_fix(3));
 t8=(C_word)C_slot(t2,C_fix(4));
 t9=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_4656,a[2]=t1,a[3]=t3,a[4]=t4,a[5]=t6,a[6]=t7,a[7]=((C_word*)t0)[2],tmp=(C_word)a,a+=8,tmp);
 t10=(C_word)C_block_size(t6);
-/* srfi-69.scm: 846  hash */
+/* srfi-69.scm: 847  hash */
 t11=t8;
 ((C_proc4)C_retrieve_proc(t11))(4,t11,t9,t3,t10);}
 
@@ -3228,7 +3228,7 @@ else{
 t3=(C_word)C_slot(t2,C_fix(0));
 t4=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_4726,a[2]=((C_word*)t0)[4],a[3]=t2,a[4]=t3,a[5]=t1,tmp=(C_word)a,a+=6,tmp);
 t5=(C_word)C_slot(t3,C_fix(0));
-/* srfi-69.scm: 861  test */
+/* srfi-69.scm: 862  test */
 t6=((C_word*)t0)[3];
 ((C_proc4)C_retrieve_proc(t6))(4,t6,t4,((C_word*)t0)[2],t5);}}
 
@@ -3243,7 +3243,7 @@ t2=((C_word*)t0)[5];
 ((C_proc2)(void*)(*((C_word*)t2+1)))(2,t2,(C_word)C_slot(((C_word*)t0)[4],C_fix(1)));}
 else{
 t2=(C_word)C_slot(((C_word*)t0)[3],C_fix(1));
-/* srfi-69.scm: 863  loop */
+/* srfi-69.scm: 864  loop */
 t3=((C_word*)((C_word*)t0)[2])[1];
 f_4710(t3,((C_word*)t0)[5],t2);}}
 
@@ -3305,7 +3305,7 @@ t12=(C_word)C_slot(t9,C_fix(6));
 t13=(C_word)C_block_size(t10);
 t14=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_4498,a[2]=t12,a[3]=t7,a[4]=t13,a[5]=t10,a[6]=t9,a[7]=t8,tmp=(C_word)a,a+=8,tmp);
 t15=(C_word)C_a_i_times(&a,2,t13,t11);
-/* srfi-69.scm: 636  floor */
+/* srfi-69.scm: 637  floor */
 t16=*((C_word*)lf[83]+1);
 ((C_proc3)(void*)(*((C_word*)t16+1)))(3,t16,t14,t15);}
 
@@ -3323,7 +3323,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_4498,2,t0,t1);}
 t2=(C_word)C_i_inexact_to_exact(t1);
 t3=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_4490,a[2]=((C_word*)t0)[3],a[3]=t2,a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],tmp=(C_word)a,a+=8,tmp);
 t4=(C_word)C_a_i_times(&a,2,((C_word*)t0)[4],((C_word*)t0)[2]);
-/* srfi-69.scm: 637  floor */
+/* srfi-69.scm: 638  floor */
 t5=*((C_word*)lf[83]+1);
 ((C_proc3)(void*)(*((C_word*)t5+1)))(3,t5,t3,t4);}
 
@@ -3355,7 +3355,7 @@ C_word t2;
 C_word t3;
 C_word *a;
 if(C_truep(t1)){
-/* srfi-69.scm: 640  hash-table-resize! */
+/* srfi-69.scm: 641  hash-table-resize! */
 ((C_proc5)C_retrieve_proc(*((C_word*)lf[79]+1)))(5,*((C_word*)lf[79]+1),((C_word*)t0)[5],((C_word*)t0)[4],((C_word*)t0)[3],((C_word*)t0)[2]);}
 else{
 t2=C_SCHEME_UNDEFINED;
@@ -3380,7 +3380,7 @@ t3=(C_word)C_slot(((C_word*)t0)[7],C_fix(3));
 t4=(C_word)C_slot(((C_word*)t0)[7],C_fix(1));
 t5=(C_word)C_block_size(t4);
 t6=(*a=C_CLOSURE_TYPE|9,a[1]=(C_word)f_4520,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[7],a[4]=((C_word*)t0)[3],a[5]=((C_word*)t0)[4],a[6]=t3,a[7]=((C_word*)t0)[5],a[8]=((C_word*)t0)[6],a[9]=t4,tmp=(C_word)a,a+=10,tmp);
-/* srfi-69.scm: 780  hash */
+/* srfi-69.scm: 781  hash */
 t7=t2;
 ((C_proc4)C_retrieve_proc(t7))(4,t7,t6,((C_word*)t0)[4],t5);}
 
@@ -3441,7 +3441,7 @@ else{
 t3=(C_word)C_slot(t2,C_fix(0));
 t4=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_4616,a[2]=((C_word*)t0)[3],a[3]=t2,a[4]=((C_word*)t0)[9],a[5]=t3,a[6]=t1,tmp=(C_word)a,a+=7,tmp);
 t5=(C_word)C_slot(t3,C_fix(0));
-/* srfi-69.scm: 800  test */
+/* srfi-69.scm: 801  test */
 t6=((C_word*)t0)[2];
 ((C_proc4)C_retrieve_proc(t6))(4,t6,t4,((C_word*)t0)[10],t5);}}
 
@@ -3456,7 +3456,7 @@ t2=((C_word*)t0)[6];
 ((C_proc2)(void*)(*((C_word*)t2+1)))(2,t2,(C_word)C_i_setslot(((C_word*)t0)[5],C_fix(1),((C_word*)t0)[4]));}
 else{
 t2=(C_word)C_slot(((C_word*)t0)[3],C_fix(1));
-/* srfi-69.scm: 802  loop */
+/* srfi-69.scm: 803  loop */
 t3=((C_word*)((C_word*)t0)[2])[1];
 f_4586(t3,((C_word*)t0)[6],t2);}}
 
@@ -3494,7 +3494,7 @@ t6=t1;
 ((C_proc2)(void*)(*((C_word*)t6+1)))(2,t6,(C_word)C_i_setslot(t3,C_fix(1),((C_word*)t0)[8]));}
 else{
 t6=(C_word)C_slot(t2,C_fix(1));
-/* srfi-69.scm: 792  loop */
+/* srfi-69.scm: 793  loop */
 t11=t1;
 t12=t6;
 t1=t11;
@@ -3522,7 +3522,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr6,(void*)f_4426,6,t0,t1,t2,t3,t4,t5);}
 t6=(C_word)C_i_check_structure_2(t2,lf[33],lf[88]);
 t7=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_4433,a[2]=t5,a[3]=t4,a[4]=t3,a[5]=t2,a[6]=t1,tmp=(C_word)a,a+=7,tmp);
-/* srfi-69.scm: 767  ##sys#check-closure */
+/* srfi-69.scm: 768  ##sys#check-closure */
 t8=*((C_word*)lf[48]+1);
 ((C_proc4)(void*)(*((C_word*)t8+1)))(4,t8,t7,t4,lf[88]);}
 
@@ -3531,7 +3531,7 @@ static void C_ccall f_4433(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-/* srfi-69.scm: 768  *hash-table-update!/default */
+/* srfi-69.scm: 769  *hash-table-update!/default */
 t2=lf[87];
 f_4214(t2,((C_word*)t0)[6],((C_word*)t0)[5],((C_word*)t0)[4],((C_word*)t0)[3],((C_word*)t0)[2]);}
 
@@ -3563,7 +3563,7 @@ t12=(C_word)C_slot(t9,C_fix(6));
 t13=(C_word)C_block_size(t10);
 t14=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_4271,a[2]=t12,a[3]=t7,a[4]=t13,a[5]=t10,a[6]=t9,a[7]=t8,tmp=(C_word)a,a+=8,tmp);
 t15=(C_word)C_a_i_times(&a,2,t13,t11);
-/* srfi-69.scm: 636  floor */
+/* srfi-69.scm: 637  floor */
 t16=*((C_word*)lf[83]+1);
 ((C_proc3)(void*)(*((C_word*)t16+1)))(3,t16,t14,t15);}
 
@@ -3581,7 +3581,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_4271,2,t0,t1);}
 t2=(C_word)C_i_inexact_to_exact(t1);
 t3=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_4263,a[2]=((C_word*)t0)[3],a[3]=t2,a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],tmp=(C_word)a,a+=8,tmp);
 t4=(C_word)C_a_i_times(&a,2,((C_word*)t0)[4],((C_word*)t0)[2]);
-/* srfi-69.scm: 637  floor */
+/* srfi-69.scm: 638  floor */
 t5=*((C_word*)lf[83]+1);
 ((C_proc3)(void*)(*((C_word*)t5+1)))(3,t5,t3,t4);}
 
@@ -3613,7 +3613,7 @@ C_word t2;
 C_word t3;
 C_word *a;
 if(C_truep(t1)){
-/* srfi-69.scm: 640  hash-table-resize! */
+/* srfi-69.scm: 641  hash-table-resize! */
 ((C_proc5)C_retrieve_proc(*((C_word*)lf[79]+1)))(5,*((C_word*)lf[79]+1),((C_word*)t0)[5],((C_word*)t0)[4],((C_word*)t0)[3],((C_word*)t0)[2]);}
 else{
 t2=C_SCHEME_UNDEFINED;
@@ -3638,7 +3638,7 @@ t3=(C_word)C_slot(((C_word*)t0)[8],C_fix(3));
 t4=(C_word)C_slot(((C_word*)t0)[8],C_fix(1));
 t5=(C_word)C_block_size(t4);
 t6=(*a=C_CLOSURE_TYPE|10,a[1]=(C_word)f_4293,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[8],a[7]=((C_word*)t0)[6],a[8]=t3,a[9]=((C_word*)t0)[7],a[10]=t4,tmp=(C_word)a,a+=11,tmp);
-/* srfi-69.scm: 735  hash */
+/* srfi-69.scm: 736  hash */
 t7=t2;
 ((C_proc4)C_retrieve_proc(t7))(4,t7,t6,((C_word*)t0)[6],t5);}
 
@@ -3687,14 +3687,14 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_4366,NULL,3,t0,t1,t2);}
 if(C_truep((C_word)C_i_nullp(t2))){
 t3=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_4376,a[2]=t1,a[3]=((C_word*)t0)[6],a[4]=((C_word*)t0)[7],a[5]=((C_word*)t0)[8],a[6]=((C_word*)t0)[9],a[7]=((C_word*)t0)[10],a[8]=((C_word*)t0)[11],tmp=(C_word)a,a+=9,tmp);
-/* srfi-69.scm: 754  func */
+/* srfi-69.scm: 755  func */
 t4=((C_word*)t0)[5];
 ((C_proc3)C_retrieve_proc(t4))(3,t4,t3,((C_word*)t0)[4]);}
 else{
 t3=(C_word)C_slot(t2,C_fix(0));
 t4=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_4399,a[2]=((C_word*)t0)[3],a[3]=t2,a[4]=((C_word*)t0)[5],a[5]=t1,a[6]=t3,tmp=(C_word)a,a+=7,tmp);
 t5=(C_word)C_slot(t3,C_fix(0));
-/* srfi-69.scm: 759  test */
+/* srfi-69.scm: 760  test */
 t6=((C_word*)t0)[2];
 ((C_proc4)C_retrieve_proc(t6))(4,t6,t4,((C_word*)t0)[11],t5);}}
 
@@ -3712,12 +3712,12 @@ C_save_and_reclaim((void*)tr2,(void*)f_4399,2,t0,t1);}
 if(C_truep(t1)){
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4402,a[2]=((C_word*)t0)[5],a[3]=((C_word*)t0)[6],tmp=(C_word)a,a+=4,tmp);
 t3=(C_word)C_slot(((C_word*)t0)[6],C_fix(1));
-/* srfi-69.scm: 760  func */
+/* srfi-69.scm: 761  func */
 t4=((C_word*)t0)[4];
 ((C_proc3)C_retrieve_proc(t4))(3,t4,t2,t3);}
 else{
 t2=(C_word)C_slot(((C_word*)t0)[3],C_fix(1));
-/* srfi-69.scm: 763  loop */
+/* srfi-69.scm: 764  loop */
 t3=((C_word*)((C_word*)t0)[2])[1];
 f_4366(t3,((C_word*)t0)[5],t2);}}
 
@@ -3773,7 +3773,7 @@ if(!C_stack_probe(a)){
 C_save_and_reclaim((void*)trf_4307,NULL,3,t0,t1,t2);}
 if(C_truep((C_word)C_i_nullp(t2))){
 t3=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_4317,a[2]=t1,a[3]=((C_word*)t0)[5],a[4]=((C_word*)t0)[6],a[5]=((C_word*)t0)[7],a[6]=((C_word*)t0)[8],a[7]=((C_word*)t0)[9],a[8]=((C_word*)t0)[10],tmp=(C_word)a,a+=9,tmp);
-/* srfi-69.scm: 741  func */
+/* srfi-69.scm: 742  func */
 t4=((C_word*)t0)[4];
 ((C_proc3)C_retrieve_proc(t4))(3,t4,t3,((C_word*)t0)[3]);}
 else{
@@ -3783,12 +3783,12 @@ t5=(C_word)C_eqp(((C_word*)t0)[10],t4);
 if(C_truep(t5)){
 t6=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4343,a[2]=t1,a[3]=t3,tmp=(C_word)a,a+=4,tmp);
 t7=(C_word)C_slot(t3,C_fix(1));
-/* srfi-69.scm: 747  func */
+/* srfi-69.scm: 748  func */
 t8=((C_word*)t0)[4];
 ((C_proc3)C_retrieve_proc(t8))(3,t8,t6,t7);}
 else{
 t6=(C_word)C_slot(t2,C_fix(1));
-/* srfi-69.scm: 750  loop */
+/* srfi-69.scm: 751  loop */
 t11=t1;
 t12=t6;
 t1=t11;
@@ -3921,7 +3921,7 @@ if(c!=2) C_bad_argc_2(c,2,t0);
 C_check_for_interrupt;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4161,2,t0,t1);}
-/* srfi-69.scm: 684  ##sys#signal-hook */
+/* srfi-69.scm: 685  ##sys#signal-hook */
 t2=*((C_word*)lf[6]+1);
 ((C_proc7)(void*)(*((C_word*)t2+1)))(7,t2,t1,lf[84],lf[82],lf[85],((C_word*)t0)[3],((C_word*)t0)[2]);}
 
@@ -3937,7 +3937,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_3921,NULL,4,t0,t1,t2,t3);}
 t4=(C_word)C_i_check_structure_2(((C_word*)t0)[4],lf[33],lf[82]);
 t5=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_3928,a[2]=t1,a[3]=t3,a[4]=t2,a[5]=((C_word*)t0)[2],a[6]=((C_word*)t0)[3],a[7]=((C_word*)t0)[4],tmp=(C_word)a,a+=8,tmp);
-/* srfi-69.scm: 688  ##sys#check-closure */
+/* srfi-69.scm: 689  ##sys#check-closure */
 t6=*((C_word*)lf[48]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t5,t2,lf[82]);}
 
@@ -3951,7 +3951,7 @@ C_check_for_interrupt;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3928,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_3931,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],tmp=(C_word)a,a+=8,tmp);
-/* srfi-69.scm: 689  ##sys#check-closure */
+/* srfi-69.scm: 690  ##sys#check-closure */
 t3=*((C_word*)lf[48]+1);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,((C_word*)t0)[3],lf[82]);}
 
@@ -3983,7 +3983,7 @@ t8=(C_word)C_slot(t5,C_fix(6));
 t9=(C_word)C_block_size(t6);
 t10=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_3987,a[2]=t8,a[3]=t3,a[4]=t9,a[5]=t6,a[6]=t5,a[7]=t4,tmp=(C_word)a,a+=8,tmp);
 t11=(C_word)C_a_i_times(&a,2,t9,t7);
-/* srfi-69.scm: 636  floor */
+/* srfi-69.scm: 637  floor */
 t12=*((C_word*)lf[83]+1);
 ((C_proc3)(void*)(*((C_word*)t12+1)))(3,t12,t10,t11);}
 
@@ -4001,7 +4001,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_3987,2,t0,t1);}
 t2=(C_word)C_i_inexact_to_exact(t1);
 t3=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_3979,a[2]=((C_word*)t0)[3],a[3]=t2,a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],tmp=(C_word)a,a+=8,tmp);
 t4=(C_word)C_a_i_times(&a,2,((C_word*)t0)[4],((C_word*)t0)[2]);
-/* srfi-69.scm: 637  floor */
+/* srfi-69.scm: 638  floor */
 t5=*((C_word*)lf[83]+1);
 ((C_proc3)(void*)(*((C_word*)t5+1)))(3,t5,t3,t4);}
 
@@ -4033,7 +4033,7 @@ C_word t2;
 C_word t3;
 C_word *a;
 if(C_truep(t1)){
-/* srfi-69.scm: 640  hash-table-resize! */
+/* srfi-69.scm: 641  hash-table-resize! */
 ((C_proc5)C_retrieve_proc(*((C_word*)lf[79]+1)))(5,*((C_word*)lf[79]+1),((C_word*)t0)[5],((C_word*)t0)[4],((C_word*)t0)[3],((C_word*)t0)[2]);}
 else{
 t2=C_SCHEME_UNDEFINED;
@@ -4058,7 +4058,7 @@ t3=(C_word)C_slot(((C_word*)t0)[8],C_fix(3));
 t4=(C_word)C_slot(((C_word*)t0)[8],C_fix(1));
 t5=(C_word)C_block_size(t4);
 t6=(*a=C_CLOSURE_TYPE|10,a[1]=(C_word)f_4009,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[8],a[7]=((C_word*)t0)[6],a[8]=t3,a[9]=((C_word*)t0)[7],a[10]=t4,tmp=(C_word)a,a+=11,tmp);
-/* srfi-69.scm: 696  hash */
+/* srfi-69.scm: 697  hash */
 t7=t2;
 ((C_proc4)C_retrieve_proc(t7))(4,t7,t6,((C_word*)t0)[6],t5);}
 
@@ -4109,14 +4109,14 @@ C_save_and_reclaim((void*)trf_4086,NULL,3,t0,t1,t2);}
 if(C_truep((C_word)C_i_nullp(t2))){
 t3=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_4096,a[2]=t1,a[3]=((C_word*)t0)[6],a[4]=((C_word*)t0)[7],a[5]=((C_word*)t0)[8],a[6]=((C_word*)t0)[9],a[7]=((C_word*)t0)[10],a[8]=((C_word*)t0)[11],tmp=(C_word)a,a+=9,tmp);
 t4=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4114,a[2]=t3,a[3]=((C_word*)t0)[5],tmp=(C_word)a,a+=4,tmp);
-/* srfi-69.scm: 715  thunk */
+/* srfi-69.scm: 716  thunk */
 t5=((C_word*)t0)[4];
 ((C_proc2)C_retrieve_proc(t5))(2,t5,t4);}
 else{
 t3=(C_word)C_slot(t2,C_fix(0));
 t4=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_4123,a[2]=((C_word*)t0)[3],a[3]=t2,a[4]=((C_word*)t0)[5],a[5]=t1,a[6]=t3,tmp=(C_word)a,a+=7,tmp);
 t5=(C_word)C_slot(t3,C_fix(0));
-/* srfi-69.scm: 720  test */
+/* srfi-69.scm: 721  test */
 t6=((C_word*)t0)[2];
 ((C_proc4)C_retrieve_proc(t6))(4,t6,t4,((C_word*)t0)[11],t5);}}
 
@@ -4134,12 +4134,12 @@ C_save_and_reclaim((void*)tr2,(void*)f_4123,2,t0,t1);}
 if(C_truep(t1)){
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4126,a[2]=((C_word*)t0)[5],a[3]=((C_word*)t0)[6],tmp=(C_word)a,a+=4,tmp);
 t3=(C_word)C_slot(((C_word*)t0)[6],C_fix(1));
-/* srfi-69.scm: 721  func */
+/* srfi-69.scm: 722  func */
 t4=((C_word*)t0)[4];
 ((C_proc3)C_retrieve_proc(t4))(3,t4,t2,t3);}
 else{
 t2=(C_word)C_slot(((C_word*)t0)[3],C_fix(1));
-/* srfi-69.scm: 724  loop */
+/* srfi-69.scm: 725  loop */
 t3=((C_word*)((C_word*)t0)[2])[1];
 f_4086(t3,((C_word*)t0)[5],t2);}}
 
@@ -4158,7 +4158,7 @@ static void C_ccall f_4114(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-/* srfi-69.scm: 715  func */
+/* srfi-69.scm: 716  func */
 t2=((C_word*)t0)[3];
 ((C_proc3)C_retrieve_proc(t2))(3,t2,((C_word*)t0)[2],t1);}
 
@@ -4206,7 +4206,7 @@ C_save_and_reclaim((void*)trf_4023,NULL,3,t0,t1,t2);}
 if(C_truep((C_word)C_i_nullp(t2))){
 t3=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_4033,a[2]=t1,a[3]=((C_word*)t0)[5],a[4]=((C_word*)t0)[6],a[5]=((C_word*)t0)[7],a[6]=((C_word*)t0)[8],a[7]=((C_word*)t0)[9],a[8]=((C_word*)t0)[10],tmp=(C_word)a,a+=9,tmp);
 t4=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4051,a[2]=t3,a[3]=((C_word*)t0)[4],tmp=(C_word)a,a+=4,tmp);
-/* srfi-69.scm: 702  thunk */
+/* srfi-69.scm: 703  thunk */
 t5=((C_word*)t0)[3];
 ((C_proc2)C_retrieve_proc(t5))(2,t5,t4);}
 else{
@@ -4216,12 +4216,12 @@ t5=(C_word)C_eqp(((C_word*)t0)[10],t4);
 if(C_truep(t5)){
 t6=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4063,a[2]=t1,a[3]=t3,tmp=(C_word)a,a+=4,tmp);
 t7=(C_word)C_slot(t3,C_fix(1));
-/* srfi-69.scm: 708  func */
+/* srfi-69.scm: 709  func */
 t8=((C_word*)t0)[4];
 ((C_proc3)C_retrieve_proc(t8))(3,t8,t6,t7);}
 else{
 t6=(C_word)C_slot(t2,C_fix(1));
-/* srfi-69.scm: 711  loop */
+/* srfi-69.scm: 712  loop */
 t12=t1;
 t13=t6;
 t1=t12;
@@ -4243,7 +4243,7 @@ static void C_ccall f_4051(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-/* srfi-69.scm: 702  func */
+/* srfi-69.scm: 703  func */
 t2=((C_word*)t0)[3];
 ((C_proc3)C_retrieve_proc(t2))(3,t2,((C_word*)t0)[2],t1);}
 
@@ -4279,7 +4279,7 @@ C_check_for_interrupt;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr3,(void*)f_3910,3,t0,t1,t2);}
 t3=(C_word)C_i_check_structure_2(t2,lf[33],lf[81]);
-/* srfi-69.scm: 669  *hash-table-copy */
+/* srfi-69.scm: 670  *hash-table-copy */
 t4=lf[80];
 f_3798(t4,t1,t2);}
 
@@ -4297,7 +4297,7 @@ C_save_and_reclaim((void*)trf_3798,NULL,3,t0,t1,t2);}
 t3=(C_word)C_slot(t2,C_fix(1));
 t4=(C_word)C_block_size(t3);
 t5=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_3808,a[2]=t1,a[3]=t3,a[4]=t2,a[5]=t4,tmp=(C_word)a,a+=6,tmp);
-/* srfi-69.scm: 649  make-vector */
+/* srfi-69.scm: 650  make-vector */
 t6=((C_word*)t0)[2];
 ((C_proc4)C_retrieve_proc(t6))(4,t6,t5,t4,C_SCHEME_END_OF_LIST);}
 
@@ -4348,7 +4348,7 @@ t7=(C_word)C_slot(((C_word*)t0)[5],C_fix(6));
 t8=(C_word)C_slot(((C_word*)t0)[5],C_fix(7));
 t9=(C_word)C_slot(((C_word*)t0)[5],C_fix(8));
 t10=(C_word)C_slot(((C_word*)t0)[5],C_fix(9));
-/* srfi-69.scm: 652  *make-hash-table */
+/* srfi-69.scm: 653  *make-hash-table */
 t11=lf[32];
 f_3203(t11,t1,t3,t4,t5,t6,t7,t10,(C_word)C_a_i_list(&a,1,((C_word*)t0)[4]));}
 else{
@@ -4388,7 +4388,7 @@ t5=(C_word)C_slot(t3,C_fix(1));
 t6=(C_word)C_a_i_cons(&a,2,t4,t5);
 t7=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_3896,a[2]=t6,a[3]=t1,tmp=(C_word)a,a+=4,tmp);
 t8=(C_word)C_slot(t2,C_fix(1));
-/* srfi-69.scm: 665  copy-loop */
+/* srfi-69.scm: 666  copy-loop */
 t10=t7;
 t11=t8;
 t1=t10;
@@ -4433,7 +4433,7 @@ C_save_and_reclaim((void*)tr5,(void*)f_3772,5,t0,t1,t2,t3,t4);}
 t5=(C_word)C_fixnum_times(t4,C_fix(2));
 t6=(C_word)C_i_fixnum_min(C_fix(1073741823),t5);
 t7=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_3779,a[2]=t3,a[3]=t2,a[4]=t1,tmp=(C_word)a,a+=5,tmp);
-/* srfi-69.scm: 624  hash-table-canonical-length */
+/* srfi-69.scm: 625  hash-table-canonical-length */
 f_3173(t7,lf[28],t6);}
 
 /* k3777 in hash-table-resize! in k1500 */
@@ -4446,7 +4446,7 @@ C_check_for_interrupt;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3779,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_3782,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],tmp=(C_word)a,a+=5,tmp);
-/* srfi-69.scm: 625  make-vector */
+/* srfi-69.scm: 626  make-vector */
 t3=*((C_word*)lf[31]+1);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,t1,C_SCHEME_END_OF_LIST);}
 
@@ -4526,7 +4526,7 @@ else{
 t3=(C_word)C_slot(t2,C_fix(0));
 t4=(C_word)C_slot(t3,C_fix(0));
 t5=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_3744,a[2]=t1,a[3]=((C_word*)t0)[4],a[4]=t2,a[5]=((C_word*)t0)[5],a[6]=t4,a[7]=t3,tmp=(C_word)a,a+=8,tmp);
-/* srfi-69.scm: 615  hash */
+/* srfi-69.scm: 616  hash */
 t6=((C_word*)t0)[3];
 ((C_proc4)C_retrieve_proc(t6))(4,t6,t5,t4,((C_word*)t0)[2]);}}
 
@@ -4550,7 +4550,7 @@ t4=(C_word)C_slot(((C_word*)t0)[5],t1);
 t5=(C_word)C_a_i_cons(&a,2,t3,t4);
 t6=(C_word)C_i_setslot(((C_word*)t0)[5],t1,t5);
 t7=(C_word)C_slot(((C_word*)t0)[4],C_fix(1));
-/* srfi-69.scm: 618  loop */
+/* srfi-69.scm: 619  loop */
 t8=((C_word*)((C_word*)t0)[3])[1];
 f_3728(t8,((C_word*)t0)[2],t7);}
 
@@ -4586,7 +4586,7 @@ C_save_and_reclaim((void*)tr3,(void*)f_3678,3,t0,t1,t2);}
 t3=(C_word)C_i_check_structure_2(t2,lf[33],lf[78]);
 t4=(C_word)C_slot(t2,C_fix(9));
 if(C_truep(t4)){
-/* srfi-69.scm: 602  thunk */
+/* srfi-69.scm: 603  thunk */
 t5=t4;
 ((C_proc2)C_retrieve_proc(t5))(2,t5,t1);}
 else{
@@ -4778,7 +4778,7 @@ f_3312(t19,C_SCHEME_UNDEFINED);}
 else{
 t19=(C_word)C_i_car(((C_word*)t4)[1]);
 t20=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_3587,a[2]=t4,a[3]=t19,a[4]=t6,a[5]=t18,tmp=(C_word)a,a+=6,tmp);
-/* srfi-69.scm: 481  keyword? */
+/* srfi-69.scm: 482  keyword? */
 ((C_proc3)C_retrieve_proc(*((C_word*)lf[15]+1)))(3,*((C_word*)lf[15]+1),t20,t19);}}
 
 /* k3585 in make-hash-table in k1500 */
@@ -4797,7 +4797,7 @@ t3=((C_word*)t0)[5];
 f_3312(t3,t2);}
 else{
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_3590,a[2]=((C_word*)t0)[5],a[3]=((C_word*)t0)[2],a[4]=((C_word*)t0)[3],a[5]=((C_word*)t0)[4],tmp=(C_word)a,a+=6,tmp);
-/* srfi-69.scm: 482  ##sys#check-closure */
+/* srfi-69.scm: 483  ##sys#check-closure */
 t3=*((C_word*)lf[48]+1);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,((C_word*)t0)[3],lf[40]);}}
 
@@ -4833,7 +4833,7 @@ f_3315(t3,C_SCHEME_UNDEFINED);}
 else{
 t3=(C_word)C_i_car(((C_word*)((C_word*)t0)[2])[1]);
 t4=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_3567,a[2]=((C_word*)t0)[2],a[3]=t3,a[4]=((C_word*)t0)[10],a[5]=t2,tmp=(C_word)a,a+=6,tmp);
-/* srfi-69.scm: 487  keyword? */
+/* srfi-69.scm: 488  keyword? */
 ((C_proc3)C_retrieve_proc(*((C_word*)lf[15]+1)))(3,*((C_word*)lf[15]+1),t4,t3);}}
 
 /* k3565 in k3310 in make-hash-table in k1500 */
@@ -4852,7 +4852,7 @@ t3=((C_word*)t0)[5];
 f_3315(t3,t2);}
 else{
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_3570,a[2]=((C_word*)t0)[5],a[3]=((C_word*)t0)[2],a[4]=((C_word*)t0)[3],a[5]=((C_word*)t0)[4],tmp=(C_word)a,a+=6,tmp);
-/* srfi-69.scm: 488  ##sys#check-closure */
+/* srfi-69.scm: 489  ##sys#check-closure */
 t3=*((C_word*)lf[48]+1);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,((C_word*)t0)[3],lf[40]);}}
 
@@ -4888,7 +4888,7 @@ f_3318(t3,C_SCHEME_UNDEFINED);}
 else{
 t3=(C_word)C_i_car(((C_word*)((C_word*)t0)[2])[1]);
 t4=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_3535,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[11],a[4]=t3,a[5]=t2,tmp=(C_word)a,a+=6,tmp);
-/* srfi-69.scm: 493  keyword? */
+/* srfi-69.scm: 494  keyword? */
 ((C_proc3)C_retrieve_proc(*((C_word*)lf[15]+1)))(3,*((C_word*)lf[15]+1),t4,t3);}}
 
 /* k3533 in k3313 in k3310 in make-hash-table in k1500 */
@@ -4913,7 +4913,7 @@ if(C_truep((C_word)C_fixnum_lessp(C_fix(0),((C_word*)t0)[4]))){
 t4=t3;
 f_3541(2,t4,C_SCHEME_UNDEFINED);}
 else{
-/* srfi-69.scm: 496  error */
+/* srfi-69.scm: 497  error */
 t4=*((C_word*)lf[45]+1);
 ((C_proc5)(void*)(*((C_word*)t4+1)))(5,t4,t3,lf[40],lf[68],((C_word*)t0)[4]);}}}
 
@@ -4972,7 +4972,7 @@ else{
 t3=(C_word)C_i_car(t2);
 t4=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_3364,a[2]=((C_word*)t0)[9],a[3]=t3,a[4]=((C_word)li29),tmp=(C_word)a,a+=5,tmp);
 t5=(*a=C_CLOSURE_TYPE|12,a[1]=(C_word)f_3374,a[2]=t4,a[3]=((C_word*)t0)[2],a[4]=((C_word*)t0)[3],a[5]=((C_word*)t0)[4],a[6]=((C_word*)t0)[5],a[7]=((C_word*)t0)[6],a[8]=((C_word*)t0)[7],a[9]=t3,a[10]=t1,a[11]=((C_word*)t0)[8],a[12]=t2,tmp=(C_word)a,a+=13,tmp);
-/* srfi-69.scm: 506  keyword? */
+/* srfi-69.scm: 507  keyword? */
 ((C_proc3)C_retrieve_proc(*((C_word*)lf[15]+1)))(3,*((C_word*)lf[15]+1),t5,t3);}}
 
 /* k3372 in loop in k3316 in k3313 in k3310 in make-hash-table in k1500 */
@@ -4992,11 +4992,11 @@ if(C_truep((C_word)C_i_pairp(t2))){
 t4=t3;
 f_3380(2,t4,(C_word)C_i_car(t2));}
 else{
-/* srfi-69.scm: 510  invarg-err */
+/* srfi-69.scm: 511  invarg-err */
 t4=((C_word*)t0)[2];
 f_3364(t4,t3,lf[66]);}}
 else{
-/* srfi-69.scm: 542  invarg-err */
+/* srfi-69.scm: 543  invarg-err */
 t2=((C_word*)t0)[2];
 f_3364(t2,((C_word*)t0)[10],lf[67]);}}
 
@@ -5033,14 +5033,14 @@ t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_3383,a[2]=((C_word*)t0)[10],a[3]=((C_word
 t3=(C_word)C_eqp(((C_word*)t0)[9],lf[47]);
 if(C_truep(t3)){
 t4=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_3396,a[2]=((C_word*)t0)[10],a[3]=((C_word*)t0)[11],a[4]=((C_word*)t0)[12],a[5]=t1,a[6]=((C_word*)t0)[8],tmp=(C_word)a,a+=7,tmp);
-/* srfi-69.scm: 513  ##sys#check-closure */
+/* srfi-69.scm: 514  ##sys#check-closure */
 t5=*((C_word*)lf[48]+1);
 ((C_proc4)(void*)(*((C_word*)t5+1)))(4,t5,t4,t1,lf[40]);}
 else{
 t4=(C_word)C_eqp(((C_word*)t0)[9],lf[49]);
 if(C_truep(t4)){
 t5=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_3406,a[2]=((C_word*)t0)[10],a[3]=((C_word*)t0)[11],a[4]=((C_word*)t0)[12],a[5]=t1,a[6]=((C_word*)t0)[7],tmp=(C_word)a,a+=7,tmp);
-/* srfi-69.scm: 516  ##sys#check-closure */
+/* srfi-69.scm: 517  ##sys#check-closure */
 t6=*((C_word*)lf[48]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t5,t1,lf[40]);}
 else{
@@ -5052,7 +5052,7 @@ if(C_truep((C_word)C_fixnum_lessp(C_fix(0),t1))){
 t8=t7;
 f_3419(2,t8,C_SCHEME_UNDEFINED);}
 else{
-/* srfi-69.scm: 521  error */
+/* srfi-69.scm: 522  error */
 t8=*((C_word*)lf[45]+1);
 ((C_proc5)(void*)(*((C_word*)t8+1)))(5,t8,t7,lf[40],lf[52],t1);}}
 else{
@@ -5060,32 +5060,32 @@ t6=(C_word)C_eqp(((C_word*)t0)[9],lf[53]);
 if(C_truep(t6)){
 t7=C_mutate(((C_word *)((C_word*)t0)[5])+1,(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_3437,a[2]=t1,a[3]=((C_word)li30),tmp=(C_word)a,a+=4,tmp));
 t8=(C_word)C_i_cdr(((C_word*)t0)[12]);
-/* srfi-69.scm: 541  loop */
+/* srfi-69.scm: 542  loop */
 t9=((C_word*)((C_word*)t0)[11])[1];
 f_3353(t9,((C_word*)t0)[10],t8);}
 else{
 t7=(C_word)C_eqp(((C_word*)t0)[9],lf[54]);
 if(C_truep(t7)){
 t8=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_3447,a[2]=((C_word*)t0)[10],a[3]=((C_word*)t0)[11],a[4]=((C_word*)t0)[12],a[5]=t1,a[6]=((C_word*)t0)[4],tmp=(C_word)a,a+=7,tmp);
-/* srfi-69.scm: 526  ##sys#check-inexact */
+/* srfi-69.scm: 527  ##sys#check-inexact */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[58]+1)))(4,*((C_word*)lf[58]+1),t8,t1,lf[40]);}
 else{
 t8=(C_word)C_eqp(((C_word*)t0)[9],lf[59]);
 if(C_truep(t8)){
 t9=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_3472,a[2]=((C_word*)t0)[10],a[3]=((C_word*)t0)[11],a[4]=((C_word*)t0)[12],a[5]=t1,a[6]=((C_word*)t0)[3],tmp=(C_word)a,a+=7,tmp);
-/* srfi-69.scm: 531  ##sys#check-inexact */
+/* srfi-69.scm: 532  ##sys#check-inexact */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[58]+1)))(4,*((C_word*)lf[58]+1),t9,t1,lf[40]);}
 else{
 t9=(C_word)C_eqp(((C_word*)t0)[9],lf[63]);
 if(C_truep(t9)){
 if(C_truep(t1)){
 t10=(C_word)C_i_cdr(((C_word*)t0)[12]);
-/* srfi-69.scm: 541  loop */
+/* srfi-69.scm: 542  loop */
 t11=((C_word*)((C_word*)t0)[11])[1];
 f_3353(t11,((C_word*)t0)[10],t10);}
 else{
 t10=(C_word)C_i_cdr(((C_word*)t0)[12]);
-/* srfi-69.scm: 541  loop */
+/* srfi-69.scm: 542  loop */
 t11=((C_word*)((C_word*)t0)[11])[1];
 f_3353(t11,((C_word*)t0)[10],t10);}}
 else{
@@ -5093,16 +5093,16 @@ t10=(C_word)C_eqp(((C_word*)t0)[9],lf[64]);
 if(C_truep(t10)){
 if(C_truep(t1)){
 t11=(C_word)C_i_cdr(((C_word*)t0)[12]);
-/* srfi-69.scm: 541  loop */
+/* srfi-69.scm: 542  loop */
 t12=((C_word*)((C_word*)t0)[11])[1];
 f_3353(t12,((C_word*)t0)[10],t11);}
 else{
 t11=(C_word)C_i_cdr(((C_word*)t0)[12]);
-/* srfi-69.scm: 541  loop */
+/* srfi-69.scm: 542  loop */
 t12=((C_word*)((C_word*)t0)[11])[1];
 f_3353(t12,((C_word*)t0)[10],t11);}}
 else{
-/* srfi-69.scm: 540  invarg-err */
+/* srfi-69.scm: 541  invarg-err */
 t11=((C_word*)t0)[2];
 f_3364(t11,t2,lf[65]);}}}}}}}}}
 
@@ -5125,11 +5125,11 @@ t4=(C_truep(t3)?(C_word)C_flonum_lessp(((C_word*)t0)[5],lf[61]):C_SCHEME_FALSE);
 if(C_truep(t4)){
 t5=C_mutate(((C_word *)((C_word*)t0)[6])+1,((C_word*)t0)[5]);
 t6=(C_word)C_i_cdr(((C_word*)t0)[4]);
-/* srfi-69.scm: 541  loop */
+/* srfi-69.scm: 542  loop */
 t7=((C_word*)((C_word*)t0)[3])[1];
 f_3353(t7,((C_word*)t0)[2],t6);}
 else{
-/* srfi-69.scm: 533  error */
+/* srfi-69.scm: 534  error */
 t5=*((C_word*)lf[45]+1);
 ((C_proc5)(void*)(*((C_word*)t5+1)))(5,t5,t2,lf[40],lf[62],((C_word*)t0)[5]);}}
 
@@ -5142,7 +5142,7 @@ C_word t4;
 C_word *a;
 t2=C_mutate(((C_word *)((C_word*)t0)[6])+1,((C_word*)t0)[5]);
 t3=(C_word)C_i_cdr(((C_word*)t0)[4]);
-/* srfi-69.scm: 541  loop */
+/* srfi-69.scm: 542  loop */
 t4=((C_word*)((C_word*)t0)[3])[1];
 f_3353(t4,((C_word*)t0)[2],t3);}
 
@@ -5165,11 +5165,11 @@ t4=(C_truep(t3)?(C_word)C_flonum_lessp(((C_word*)t0)[5],lf[56]):C_SCHEME_FALSE);
 if(C_truep(t4)){
 t5=C_mutate(((C_word *)((C_word*)t0)[6])+1,((C_word*)t0)[5]);
 t6=(C_word)C_i_cdr(((C_word*)t0)[4]);
-/* srfi-69.scm: 541  loop */
+/* srfi-69.scm: 542  loop */
 t7=((C_word*)((C_word*)t0)[3])[1];
 f_3353(t7,((C_word*)t0)[2],t6);}
 else{
-/* srfi-69.scm: 528  error */
+/* srfi-69.scm: 529  error */
 t5=*((C_word*)lf[45]+1);
 ((C_proc5)(void*)(*((C_word*)t5+1)))(5,t5,t2,lf[40],lf[57],((C_word*)t0)[5]);}}
 
@@ -5182,7 +5182,7 @@ C_word t4;
 C_word *a;
 t2=C_mutate(((C_word *)((C_word*)t0)[6])+1,((C_word*)t0)[5]);
 t3=(C_word)C_i_cdr(((C_word*)t0)[4]);
-/* srfi-69.scm: 541  loop */
+/* srfi-69.scm: 542  loop */
 t4=((C_word*)((C_word*)t0)[3])[1];
 f_3353(t4,((C_word*)t0)[2],t3);}
 
@@ -5209,7 +5209,7 @@ C_word *a;
 t2=(C_word)C_i_fixnum_min(*((C_word*)lf[51]+1),((C_word*)t0)[6]);
 t3=C_mutate(((C_word *)((C_word*)t0)[5])+1,t2);
 t4=(C_word)C_i_cdr(((C_word*)t0)[4]);
-/* srfi-69.scm: 541  loop */
+/* srfi-69.scm: 542  loop */
 t5=((C_word*)((C_word*)t0)[3])[1];
 f_3353(t5,((C_word*)t0)[2],t4);}
 
@@ -5222,7 +5222,7 @@ C_word t4;
 C_word *a;
 t2=C_mutate(((C_word *)((C_word*)t0)[6])+1,((C_word*)t0)[5]);
 t3=(C_word)C_i_cdr(((C_word*)t0)[4]);
-/* srfi-69.scm: 541  loop */
+/* srfi-69.scm: 542  loop */
 t4=((C_word*)((C_word*)t0)[3])[1];
 f_3353(t4,((C_word*)t0)[2],t3);}
 
@@ -5235,7 +5235,7 @@ C_word t4;
 C_word *a;
 t2=C_mutate(((C_word *)((C_word*)t0)[6])+1,((C_word*)t0)[5]);
 t3=(C_word)C_i_cdr(((C_word*)t0)[4]);
-/* srfi-69.scm: 541  loop */
+/* srfi-69.scm: 542  loop */
 t4=((C_word*)((C_word*)t0)[3])[1];
 f_3353(t4,((C_word*)t0)[2],t3);}
 
@@ -5246,7 +5246,7 @@ C_word t2;
 C_word t3;
 C_word *a;
 t2=(C_word)C_i_cdr(((C_word*)t0)[4]);
-/* srfi-69.scm: 541  loop */
+/* srfi-69.scm: 542  loop */
 t3=((C_word*)((C_word*)t0)[3])[1];
 f_3353(t3,((C_word*)t0)[2],t2);}
 
@@ -5258,7 +5258,7 @@ C_word *a;
 C_check_for_interrupt;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_3364,NULL,3,t0,t1,t2);}
-/* srfi-69.scm: 505  error */
+/* srfi-69.scm: 506  error */
 t3=*((C_word*)lf[45]+1);
 ((C_proc6)(void*)(*((C_word*)t3+1)))(6,t3,t1,lf[40],t2,((C_word*)t0)[3],((C_word*)t0)[2]);}
 
@@ -5273,7 +5273,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3321,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|9,a[1]=(C_word)f_3324,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],a[8]=((C_word*)t0)[8],a[9]=((C_word*)t0)[9],tmp=(C_word)a,a+=10,tmp);
 if(C_truep((C_word)C_flonum_lessp(((C_word*)((C_word*)t0)[4])[1],((C_word*)((C_word*)t0)[5])[1]))){
-/* srfi-69.scm: 545  error */
+/* srfi-69.scm: 546  error */
 t3=*((C_word*)lf[45]+1);
 ((C_proc6)(void*)(*((C_word*)t3+1)))(6,t3,t2,lf[40],lf[46],((C_word*)((C_word*)t0)[5])[1],((C_word*)((C_word*)t0)[4])[1]);}
 else{
@@ -5290,7 +5290,7 @@ C_check_for_interrupt;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3324,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|9,a[1]=(C_word)f_3328,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],a[8]=((C_word*)t0)[8],a[9]=((C_word*)t0)[9],tmp=(C_word)a,a+=10,tmp);
-/* srfi-69.scm: 547  hash-table-canonical-length */
+/* srfi-69.scm: 548  hash-table-canonical-length */
 f_3173(t2,lf[28],((C_word*)((C_word*)t0)[9])[1]);}
 
 /* k3326 in k3322 in k3319 in k3316 in k3313 in k3310 in make-hash-table in k1500 */
@@ -5307,19 +5307,19 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3328,2,t0,t1);}
 t2=C_mutate(((C_word *)((C_word*)t0)[9])+1,t1);
 if(C_truep(((C_word*)((C_word*)t0)[8])[1])){
-/* srfi-69.scm: 557  *make-hash-table */
+/* srfi-69.scm: 558  *make-hash-table */
 t3=lf[32];
 f_3203(t3,((C_word*)t0)[7],((C_word*)((C_word*)t0)[6])[1],((C_word*)((C_word*)t0)[8])[1],((C_word*)((C_word*)t0)[9])[1],((C_word*)((C_word*)t0)[5])[1],((C_word*)((C_word*)t0)[4])[1],((C_word*)((C_word*)t0)[3])[1],C_SCHEME_END_OF_LIST);}
 else{
 t3=f_3236(((C_word*)t0)[2]);
 if(C_truep(t3)){
 t4=C_mutate(((C_word *)((C_word*)t0)[8])+1,t3);
-/* srfi-69.scm: 557  *make-hash-table */
+/* srfi-69.scm: 558  *make-hash-table */
 t5=lf[32];
 f_3203(t5,((C_word*)t0)[7],((C_word*)((C_word*)t0)[6])[1],((C_word*)((C_word*)t0)[8])[1],((C_word*)((C_word*)t0)[9])[1],((C_word*)((C_word*)t0)[5])[1],((C_word*)((C_word*)t0)[4])[1],((C_word*)((C_word*)t0)[3])[1],C_SCHEME_END_OF_LIST);}
 else{
 t4=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_3344,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[9],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],a[8]=((C_word*)t0)[8],tmp=(C_word)a,a+=9,tmp);
-/* srfi-69.scm: 554  warning */
+/* srfi-69.scm: 555  warning */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[43]+1)))(4,*((C_word*)lf[43]+1),t4,lf[40],lf[44]);}}}
 
 /* k3342 in k3326 in k3322 in k3319 in k3316 in k3313 in k3310 in make-hash-table in k1500 */
@@ -5329,7 +5329,7 @@ C_word t2;
 C_word t3;
 C_word *a;
 t2=C_mutate(((C_word *)((C_word*)t0)[8])+1,*((C_word*)lf[21]+1));
-/* srfi-69.scm: 557  *make-hash-table */
+/* srfi-69.scm: 558  *make-hash-table */
 t3=lf[32];
 f_3203(t3,((C_word*)t0)[7],((C_word*)((C_word*)t0)[6])[1],((C_word*)((C_word*)t0)[8])[1],((C_word*)((C_word*)t0)[5])[1],((C_word*)((C_word*)t0)[4])[1],((C_word*)((C_word*)t0)[3])[1],((C_word*)((C_word*)t0)[2])[1],C_SCHEME_END_OF_LIST);}
 
@@ -5400,7 +5400,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_3203,NULL,9,t0,t1,t2,t3,t4,t5,t6,t7,t8);}
 t9=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_3207,a[2]=t7,a[3]=t6,a[4]=t5,a[5]=t3,a[6]=t2,a[7]=t1,tmp=(C_word)a,a+=8,tmp);
 if(C_truep((C_word)C_i_nullp(t8))){
-/* srfi-69.scm: 429  make-vector */
+/* srfi-69.scm: 430  make-vector */
 t10=((C_word*)t0)[2];
 ((C_proc4)C_retrieve_proc(t10))(4,t10,t9,t4,C_SCHEME_END_OF_LIST);}
 else{
@@ -5574,7 +5574,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_3083,NULL,4,t0,t1,t2,t3);}
 t4=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_3087,a[2]=t3,a[3]=t2,a[4]=((C_word*)t0)[2],a[5]=t1,tmp=(C_word)a,a+=6,tmp);
 t5=(C_word)C_block_size(((C_word*)t0)[2]);
-/* srfi-69.scm: 377  ##sys#check-range */
+/* srfi-69.scm: 378  ##sys#check-range */
 ((C_proc6)C_retrieve_proc(*((C_word*)lf[25]+1)))(6,*((C_word*)lf[25]+1),t4,t2,C_fix(0),t5,lf[27]);}
 
 /* k3085 in body652 in string-ci-hash in k1500 */
@@ -5589,7 +5589,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3087,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_3090,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],tmp=(C_word)a,a+=6,tmp);
 t3=(C_word)C_block_size(((C_word*)t0)[4]);
-/* srfi-69.scm: 378  ##sys#check-range */
+/* srfi-69.scm: 379  ##sys#check-range */
 ((C_proc6)C_retrieve_proc(*((C_word*)lf[25]+1)))(6,*((C_word*)lf[25]+1),t2,((C_word*)t0)[2],C_fix(0),t3,lf[27]);}
 
 /* k3088 in k3085 in body652 in string-ci-hash in k1500 */
@@ -5597,7 +5597,7 @@ static void C_ccall f_3090(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-/* srfi-69.scm: 379  ##sys#substring */
+/* srfi-69.scm: 380  ##sys#substring */
 ((C_proc5)C_retrieve_proc(*((C_word*)lf[24]+1)))(5,*((C_word*)lf[24]+1),((C_word*)t0)[5],((C_word*)t0)[4],((C_word*)t0)[3],((C_word*)t0)[2]);}
 
 /* k3044 in string-ci-hash in k1500 */
@@ -5614,13 +5614,13 @@ t2=(C_word)C_hash_string_ci(t1);
 t3=((C_word*)t0)[3];
 if(C_truep((C_word)C_fixnum_lessp(t2,C_fix(0)))){
 t4=(C_word)C_fixnum_negate(t2);
-t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t4);
-/* srfi-69.scm: 137  fxmod */
+t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t4);
+/* srfi-69.scm: 138  fxmod */
 t6=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t3,t5,((C_word*)t0)[2]);}
 else{
-t4=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t2);
-/* srfi-69.scm: 137  fxmod */
+t4=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t2);
+/* srfi-69.scm: 138  fxmod */
 t5=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t5+1)))(4,t5,t3,t4,((C_word*)t0)[2]);}}
 
@@ -5733,7 +5733,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_2942,NULL,4,t0,t1,t2,t3);}
 t4=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_2946,a[2]=t3,a[3]=t2,a[4]=((C_word*)t0)[2],a[5]=t1,tmp=(C_word)a,a+=6,tmp);
 t5=(C_word)C_block_size(((C_word*)t0)[2]);
-/* srfi-69.scm: 365  ##sys#check-range */
+/* srfi-69.scm: 366  ##sys#check-range */
 ((C_proc6)C_retrieve_proc(*((C_word*)lf[25]+1)))(6,*((C_word*)lf[25]+1),t4,t2,C_fix(0),t5,lf[23]);}
 
 /* k2944 in body592 in string-hash in k1500 */
@@ -5748,7 +5748,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2946,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_2949,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],tmp=(C_word)a,a+=6,tmp);
 t3=(C_word)C_block_size(((C_word*)t0)[4]);
-/* srfi-69.scm: 366  ##sys#check-range */
+/* srfi-69.scm: 367  ##sys#check-range */
 ((C_proc6)C_retrieve_proc(*((C_word*)lf[25]+1)))(6,*((C_word*)lf[25]+1),t2,((C_word*)t0)[2],C_fix(0),t3,lf[23]);}
 
 /* k2947 in k2944 in body592 in string-hash in k1500 */
@@ -5756,7 +5756,7 @@ static void C_ccall f_2949(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-/* srfi-69.scm: 367  ##sys#substring */
+/* srfi-69.scm: 368  ##sys#substring */
 ((C_proc5)C_retrieve_proc(*((C_word*)lf[24]+1)))(5,*((C_word*)lf[24]+1),((C_word*)t0)[5],((C_word*)t0)[4],((C_word*)t0)[3],((C_word*)t0)[2]);}
 
 /* k2903 in string-hash in k1500 */
@@ -5773,13 +5773,13 @@ t2=(C_word)C_hash_string(t1);
 t3=((C_word*)t0)[3];
 if(C_truep((C_word)C_fixnum_lessp(t2,C_fix(0)))){
 t4=(C_word)C_fixnum_negate(t2);
-t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t4);
-/* srfi-69.scm: 137  fxmod */
+t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t4);
+/* srfi-69.scm: 138  fxmod */
 t6=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t3,t5,((C_word*)t0)[2]);}
 else{
-t4=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t2);
-/* srfi-69.scm: 137  fxmod */
+t4=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t2);
+/* srfi-69.scm: 138  fxmod */
 t5=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t5+1)))(4,t5,t3,t4,((C_word*)t0)[2]);}}
 
@@ -5831,7 +5831,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2833,2,t0,t1);}
 t2=(C_word)C_i_check_exact_2(t1,lf[22]);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_2867,a[2]=t1,a[3]=((C_word*)t0)[3],tmp=(C_word)a,a+=4,tmp);
-/* srfi-69.scm: 353  *equal?-hash */
+/* srfi-69.scm: 354  *equal?-hash */
 f_2363(t3,((C_word*)t0)[2]);}
 
 /* k2865 in k2831 in equal?-hash in k1500 */
@@ -5849,14 +5849,14 @@ t2=((C_word*)t0)[3];
 t3=((C_word*)t0)[2];
 if(C_truep((C_word)C_fixnum_lessp(t1,C_fix(0)))){
 t4=(C_word)C_fixnum_negate(t1);
-t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t4);
-/* srfi-69.scm: 137  fxmod */
+t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t4);
+/* srfi-69.scm: 138  fxmod */
 t6=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t2,t5,t3);}
 else{
 t4=t1;
-t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t4);
-/* srfi-69.scm: 137  fxmod */
+t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t4);
+/* srfi-69.scm: 138  fxmod */
 t6=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t2,t5,t3);}}
 
@@ -5886,7 +5886,7 @@ t8=(*a=C_VECTOR_TYPE|1,a[1]=t7,tmp=(C_word)a,a+=2,tmp);
 t9=C_set_block_item(t4,0,(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_2366,a[2]=t8,a[3]=((C_word)li9),tmp=(C_word)a,a+=4,tmp));
 t10=C_set_block_item(t6,0,(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_2431,a[2]=t8,a[3]=((C_word)li10),tmp=(C_word)a,a+=4,tmp));
 t11=C_set_block_item(t8,0,(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_2482,a[2]=t4,a[3]=t6,a[4]=((C_word)li15),tmp=(C_word)a,a+=5,tmp));
-/* srfi-69.scm: 349  recursive-hash */
+/* srfi-69.scm: 350  recursive-hash */
 t12=((C_word*)t8)[1];
 f_2482(t12,t1,t2,C_fix(0));}
 
@@ -6006,7 +6006,7 @@ t28=t4;
 ((C_proc2)(void*)(*((C_word*)t28+1)))(2,t28,(C_word)C_fixnum_times(C_fix(331804471),t27));}
 else{
 t6=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_2678,a[2]=t4,tmp=(C_word)a,a+=3,tmp);
-/* srfi-69.scm: 165  ##sys#number-hash-hook */
+/* srfi-69.scm: 166  ##sys#number-hash-hook */
 ((C_proc3)C_retrieve_proc(*((C_word*)lf[2]+1)))(3,*((C_word*)lf[2]+1),t6,t5);}}
 else{
 t4=t2;
@@ -6037,7 +6037,7 @@ t8=t2;
 t9=(C_word)C_peek_fixnum(t8,C_fix(0));
 t10=(C_word)C_fixnum_shift_left(t9,C_fix(4));
 t11=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_2789,a[2]=t10,a[3]=t7,tmp=(C_word)a,a+=4,tmp);
-/* srfi-69.scm: 293  input-port? */
+/* srfi-69.scm: 294  input-port? */
 ((C_proc3)C_retrieve_proc(*((C_word*)lf[20]+1)))(3,*((C_word*)lf[20]+1),t11,t8);}
 else{
 t7=t2;
@@ -6063,7 +6063,7 @@ C_word *a;
 C_check_for_interrupt;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_2817,NULL,3,t0,t1,t2);}
-/* srfi-69.scm: 301  vector-hash */
+/* srfi-69.scm: 302  vector-hash */
 t3=((C_word*)((C_word*)t0)[3])[1];
 f_2366(t3,t1,t2,C_fix(0),((C_word*)t0)[2],C_fix(0));}
 
@@ -6077,7 +6077,7 @@ C_check_for_interrupt;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_2805,NULL,3,t0,t1,t2);}
 t3=(C_word)C_peek_fixnum(t2,C_fix(0));
-/* srfi-69.scm: 298  vector-hash */
+/* srfi-69.scm: 299  vector-hash */
 t4=((C_word*)((C_word*)t0)[3])[1];
 f_2366(t4,t1,t2,t3,((C_word*)t0)[2],C_fix(1));}
 
@@ -6101,7 +6101,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_2738,NULL,3,t0,t1,t2);}
 t3=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_2758,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=t2,a[5]=t1,tmp=(C_word)a,a+=6,tmp);
 t4=(C_word)C_slot(t2,C_fix(0));
-/* srfi-69.scm: 288  recursive-atomic-hash */
+/* srfi-69.scm: 289  recursive-atomic-hash */
 t5=((C_word*)((C_word*)t0)[3])[1];
 f_2431(t5,t3,t4,((C_word*)t0)[2]);}
 
@@ -6119,7 +6119,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_2758,2,t0,t1);}
 t2=(C_word)C_fixnum_shift_left(t1,C_fix(16));
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_2750,a[2]=t2,a[3]=((C_word*)t0)[5],tmp=(C_word)a,a+=4,tmp);
 t4=(C_word)C_slot(((C_word*)t0)[4],C_fix(1));
-/* srfi-69.scm: 289  recursive-atomic-hash */
+/* srfi-69.scm: 290  recursive-atomic-hash */
 t5=((C_word*)((C_word*)t0)[3])[1];
 f_2431(t5,t3,t4,((C_word*)t0)[2]);}
 
@@ -6145,7 +6145,7 @@ C_save_and_reclaim((void*)trf_2712,NULL,3,t0,t1,t2);}
 t3=(C_word)C_i_length(t2);
 t4=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_2724,a[2]=t3,a[3]=t1,tmp=(C_word)a,a+=4,tmp);
 t5=(C_word)C_slot(t2,C_fix(0));
-/* srfi-69.scm: 285  recursive-atomic-hash */
+/* srfi-69.scm: 286  recursive-atomic-hash */
 t6=((C_word*)((C_word*)t0)[3])[1];
 f_2431(t6,t4,t5,((C_word*)t0)[2]);}
 
@@ -6215,7 +6215,7 @@ C_word t3;
 C_word *a;
 if(C_truep(t1)){
 t2=(C_word)C_fixnum_plus(((C_word*)t0)[5],C_fix(1));
-/* srfi-69.scm: 323  recursive-hash */
+/* srfi-69.scm: 324  recursive-hash */
 t3=((C_word*)((C_word*)t0)[4])[1];
 f_2482(t3,((C_word*)t0)[3],((C_word*)t0)[2],t2);}
 else{
@@ -6271,7 +6271,7 @@ t6=(C_word)C_fixnum_shift_left(t2,C_fix(4));
 t7=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_2417,a[2]=t1,a[3]=((C_word*)t0)[5],a[4]=t4,a[5]=t3,a[6]=t2,a[7]=t6,tmp=(C_word)a,a+=8,tmp);
 t8=(C_word)C_slot(((C_word*)t0)[4],t3);
 t9=(C_word)C_fixnum_plus(((C_word*)t0)[3],C_fix(1));
-/* srfi-69.scm: 315  recursive-hash */
+/* srfi-69.scm: 316  recursive-hash */
 t10=((C_word*)((C_word*)t0)[2])[1];
 f_2482(t10,t7,t8,t9);}}
 
@@ -6288,7 +6288,7 @@ t2=(C_word)C_fixnum_plus(((C_word*)t0)[7],t1);
 t3=(C_word)C_fixnum_plus(((C_word*)t0)[6],t2);
 t4=(C_word)C_fixnum_plus(((C_word*)t0)[5],C_fix(1));
 t5=(C_word)C_fixnum_difference(((C_word*)t0)[4],C_fix(1));
-/* srfi-69.scm: 313  loop */
+/* srfi-69.scm: 314  loop */
 t6=((C_word*)((C_word*)t0)[3])[1];
 f_2383(t6,((C_word*)t0)[2],t3,t4,t5);}
 
@@ -6423,11 +6423,11 @@ t27=t3;
 f_2342(2,t27,(C_word)C_fixnum_times(C_fix(331804471),t26));}
 else{
 t5=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_2280,a[2]=t3,tmp=(C_word)a,a+=3,tmp);
-/* srfi-69.scm: 165  ##sys#number-hash-hook */
+/* srfi-69.scm: 166  ##sys#number-hash-hook */
 ((C_proc3)C_retrieve_proc(*((C_word*)lf[2]+1)))(3,*((C_word*)lf[2]+1),t5,t4);}}
 else{
 if(C_truep((C_word)C_blockp(t4))){
-/* srfi-69.scm: 184  *equal?-hash */
+/* srfi-69.scm: 185  *equal?-hash */
 f_2363(t3,t4);}
 else{
 t5=t3;
@@ -6456,14 +6456,14 @@ t2=((C_word*)t0)[3];
 t3=((C_word*)t0)[2];
 if(C_truep((C_word)C_fixnum_lessp(t1,C_fix(0)))){
 t4=(C_word)C_fixnum_negate(t1);
-t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t4);
-/* srfi-69.scm: 137  fxmod */
+t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t4);
+/* srfi-69.scm: 138  fxmod */
 t6=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t2,t5,t3);}
 else{
 t4=t1;
-t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t4);
-/* srfi-69.scm: 137  fxmod */
+t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t4);
+/* srfi-69.scm: 138  fxmod */
 t6=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t2,t5,t3);}}
 
@@ -6548,7 +6548,7 @@ t6=t3;
 f_2068(2,t6,(C_word)C_hash_string(t5));}
 else{
 if(C_truep((C_word)C_blockp(t4))){
-/* srfi-69.scm: 184  *equal?-hash */
+/* srfi-69.scm: 185  *equal?-hash */
 f_2363(t3,t4);}
 else{
 t5=t3;
@@ -6569,14 +6569,14 @@ t2=((C_word*)t0)[3];
 t3=((C_word*)t0)[2];
 if(C_truep((C_word)C_fixnum_lessp(t1,C_fix(0)))){
 t4=(C_word)C_fixnum_negate(t1);
-t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t4);
-/* srfi-69.scm: 137  fxmod */
+t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t4);
+/* srfi-69.scm: 138  fxmod */
 t6=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t2,t5,t3);}
 else{
 t4=t1;
-t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t4);
-/* srfi-69.scm: 137  fxmod */
+t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t4);
+/* srfi-69.scm: 138  fxmod */
 t6=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t2,t5,t3);}}
 
@@ -6626,7 +6626,7 @@ C_check_for_interrupt;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1880,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_1883,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=t1,tmp=(C_word)a,a+=5,tmp);
-/* srfi-69.scm: 220  ##sys#check-keyword */
+/* srfi-69.scm: 221  ##sys#check-keyword */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[12]+1)))(4,*((C_word*)lf[12]+1),t2,((C_word*)t0)[3],lf[16]);}
 
 /* k1881 in k1878 in keyword-hash in k1500 */
@@ -6651,13 +6651,13 @@ t6=((C_word*)t0)[2];
 t7=((C_word*)t0)[4];
 if(C_truep((C_word)C_fixnum_lessp(t5,C_fix(0)))){
 t8=(C_word)C_fixnum_negate(t5);
-t9=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t8);
-/* srfi-69.scm: 137  fxmod */
+t9=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t8);
+/* srfi-69.scm: 138  fxmod */
 t10=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t10+1)))(4,t10,t6,t9,t7);}
 else{
-t8=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t5);
-/* srfi-69.scm: 137  fxmod */
+t8=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t5);
+/* srfi-69.scm: 138  fxmod */
 t9=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t9+1)))(4,t9,t6,t8,t7);}}
 
@@ -6683,7 +6683,7 @@ C_word t4;
 C_word t5;
 C_word *a=C_alloc(5);
 t4=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_1857,a[2]=t2,a[3]=t3,a[4]=t1,tmp=(C_word)a,a+=5,tmp);
-/* srfi-69.scm: 207  keyword? */
+/* srfi-69.scm: 208  keyword? */
 ((C_proc3)C_retrieve_proc(*((C_word*)lf[15]+1)))(3,*((C_word*)lf[15]+1),t4,t2);}
 
 /* k1855 in ##sys#check-keyword in k1500 */
@@ -6699,12 +6699,12 @@ t3=((C_word*)t0)[4];
 ((C_proc2)(void*)(*((C_word*)t3+1)))(2,t3,t2);}
 else{
 if(C_truep((C_word)C_vemptyp(((C_word*)t0)[3]))){
-/* srfi-69.scm: 208  ##sys#signal-hook */
+/* srfi-69.scm: 209  ##sys#signal-hook */
 t2=*((C_word*)lf[6]+1);
 ((C_proc6)(void*)(*((C_word*)t2+1)))(6,t2,((C_word*)t0)[4],lf[13],C_SCHEME_FALSE,lf[14],((C_word*)t0)[2]);}
 else{
 t2=(C_word)C_i_vector_ref(((C_word*)t0)[3],C_fix(0));
-/* srfi-69.scm: 208  ##sys#signal-hook */
+/* srfi-69.scm: 209  ##sys#signal-hook */
 t3=*((C_word*)lf[6]+1);
 ((C_proc6)(void*)(*((C_word*)t3+1)))(6,t3,((C_word*)t0)[4],lf[13],t2,lf[14],((C_word*)t0)[2]);}}}
 
@@ -6768,13 +6768,13 @@ t7=((C_word*)t0)[2];
 t8=t1;
 if(C_truep((C_word)C_fixnum_lessp(t6,C_fix(0)))){
 t9=(C_word)C_fixnum_negate(t6);
-t10=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t9);
-/* srfi-69.scm: 137  fxmod */
+t10=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t9);
+/* srfi-69.scm: 138  fxmod */
 t11=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t11+1)))(4,t11,t7,t10,t8);}
 else{
-t9=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t6);
-/* srfi-69.scm: 137  fxmod */
+t9=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t6);
+/* srfi-69.scm: 138  fxmod */
 t10=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t10+1)))(4,t10,t7,t9,t8);}}
 
@@ -6828,7 +6828,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_1717,2,t0,t1);}
 t2=(C_word)C_i_check_exact_2(t1,lf[10]);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_1756,a[2]=t1,a[3]=((C_word*)t0)[3],tmp=(C_word)a,a+=4,tmp);
 t4=((C_word*)t0)[2];
-/* srfi-69.scm: 184  *equal?-hash */
+/* srfi-69.scm: 185  *equal?-hash */
 f_2363(t3,t4);}
 
 /* k1754 in k1715 in object-uid-hash in k1500 */
@@ -6846,14 +6846,14 @@ t2=((C_word*)t0)[3];
 t3=((C_word*)t0)[2];
 if(C_truep((C_word)C_fixnum_lessp(t1,C_fix(0)))){
 t4=(C_word)C_fixnum_negate(t1);
-t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t4);
-/* srfi-69.scm: 137  fxmod */
+t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t4);
+/* srfi-69.scm: 138  fxmod */
 t6=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t2,t5,t3);}
 else{
 t4=t1;
-t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t4);
-/* srfi-69.scm: 137  fxmod */
+t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t4);
+/* srfi-69.scm: 138  fxmod */
 t6=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t2,t5,t3);}}
 
@@ -6907,7 +6907,7 @@ if(C_truep((C_word)C_i_numberp(((C_word*)t0)[2]))){
 t3=t2;
 f_1517(2,t3,C_SCHEME_UNDEFINED);}
 else{
-/* srfi-69.scm: 173  ##sys#signal-hook */
+/* srfi-69.scm: 174  ##sys#signal-hook */
 t3=*((C_word*)lf[6]+1);
 ((C_proc6)(void*)(*((C_word*)t3+1)))(6,t3,t2,lf[7],lf[4],lf[8],((C_word*)t0)[2]);}}
 
@@ -6979,7 +6979,7 @@ t27=t3;
 f_1686(t27,(C_word)C_fixnum_times(C_fix(331804471),t26));}
 else{
 t5=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_1680,a[2]=t3,tmp=(C_word)a,a+=3,tmp);
-/* srfi-69.scm: 165  ##sys#number-hash-hook */
+/* srfi-69.scm: 166  ##sys#number-hash-hook */
 ((C_proc3)C_retrieve_proc(*((C_word*)lf[2]+1)))(3,*((C_word*)lf[2]+1),t5,t4);}}}
 
 /* k1678 in k1515 in k1512 in number-hash in k1500 */
@@ -7005,14 +7005,14 @@ t2=((C_word*)t0)[3];
 t3=((C_word*)t0)[2];
 if(C_truep((C_word)C_fixnum_lessp(t1,C_fix(0)))){
 t4=(C_word)C_fixnum_negate(t1);
-t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t4);
-/* srfi-69.scm: 137  fxmod */
+t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t4);
+/* srfi-69.scm: 138  fxmod */
 t6=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t2,t5,t3);}
 else{
 t4=t1;
-t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_FIXNUM),t4);
-/* srfi-69.scm: 137  fxmod */
+t5=(C_word)C_fixnum_and(C_fix((C_word)C_MOST_POSITIVE_32_BIT_FIXNUM),t4);
+/* srfi-69.scm: 138  fxmod */
 t6=*((C_word*)lf[5]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t2,t5,t3);}}
 
@@ -7025,7 +7025,7 @@ if(c!=3) C_bad_argc_2(c,3,t0);
 C_check_for_interrupt;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr3,(void*)f_1504,3,t0,t1,t2);}
-/* srfi-69.scm: 161  *equal?-hash */
+/* srfi-69.scm: 162  *equal?-hash */
 f_2363(t1,t2);}
 
 #ifdef C_ENABLE_PTABLES

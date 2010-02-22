@@ -1,10 +1,10 @@
 /* Generated from scrutinizer.scm by the CHICKEN compiler
    http://www.call-with-current-continuation.org
-   2009-12-04 21:30
+   2010-02-09 21:38
    Version 4.2.12
-   linux-unix-gnu-x86 [ manyargs dload ptables ]
-   compiled 2009-12-04 on x (Linux)
-   command line: scrutinizer.scm -optimize-level 2 -include-path . -include-path ./ -inline -feature debugbuild -scrutinize -types ./types.db -no-lambda-info -local -extend private-namespace.scm -output-file scrutinizer.c
+   windows-mingw32-x86 [ manyargs ptables ]
+   compiled 2010-01-08 on lenovo-1 (MINGW32_NT-6.0)
+   command line: scrutinizer.scm -optimize-level 2 -include-path . -include-path ./ -inline -no-lambda-info -local -no-trace -extend private-namespace.scm -no-trace -output-file scrutinizer.c
    unit: scrutinizer
 */
 
@@ -1788,7 +1788,7 @@ C_word t6;
 C_word *a=C_alloc(4);
 t4=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_5653,a[2]=t2,a[3]=t1,tmp=(C_word)a,a+=4,tmp);
 if(C_truep((C_word)C_i_nullp(t3))){
-C_trace("scrutinizer.scm: 613  repository-path");
+/* scrutinizer.scm: 613  repository-path */
 ((C_proc2)C_retrieve_symbol_proc(lf[187]))(2,*((C_word*)lf[187]+1),t4);}
 else{
 t5=(C_word)C_i_cdr(t3);
@@ -1796,7 +1796,7 @@ if(C_truep((C_word)C_i_nullp(t5))){
 t6=t4;
 f_5653(2,t6,(C_word)C_i_car(t3));}
 else{
-C_trace("##sys#error");
+/* ##sys#error */
 t6=*((C_word*)lf[188]+1);
 ((C_proc4)(void*)(*((C_word*)t6+1)))(4,t6,t4,lf[189],t3);}}}
 
@@ -1811,7 +1811,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5653,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_5656,a[2]=((C_word*)t0)[3],tmp=(C_word)a,a+=3,tmp);
 t3=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_5738,a[2]=t2,tmp=(C_word)a,a+=3,tmp);
-C_trace("scrutinizer.scm: 614  make-pathname");
+/* scrutinizer.scm: 614  make-pathname */
 ((C_proc4)C_retrieve_symbol_proc(lf[186]))(4,*((C_word*)lf[186]+1),t3,t1,((C_word*)t0)[2]);}
 
 /* k5736 in k5651 in ##compiler#load-type-database in k1510 in k1507 */
@@ -1819,7 +1819,7 @@ static void C_ccall f_5738(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 614  file-exists?");
+/* scrutinizer.scm: 614  file-exists? */
 ((C_proc3)C_retrieve_symbol_proc(lf[185]))(3,*((C_word*)lf[185]+1),((C_word*)t0)[2],t1);}
 
 /* k5654 in k5651 in ##compiler#load-type-database in k1510 in k1507 */
@@ -1837,7 +1837,7 @@ t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_5662,a[2]=t1,a[3]=((C_word*)t0)[2],tmp=(C
 if(C_truep(C_retrieve(lf[182]))){
 t3=*((C_word*)lf[1]+1);
 t4=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5725,a[2]=t1,a[3]=t3,a[4]=t2,tmp=(C_word)a,a+=5,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t4,lf[184],t3);}
 else{
 t3=t2;
@@ -1855,7 +1855,7 @@ C_word ab[4],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5725,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_5728,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],tmp=(C_word)a,a+=4,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[3]);}
 
 /* k5726 in k5723 in k5654 in k5651 in ##compiler#load-type-database in k1510 in k1507 */
@@ -1867,7 +1867,7 @@ C_word ab[4],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5728,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_5731,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],tmp=(C_word)a,a+=4,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[183],((C_word*)t0)[2]);}
 
 /* k5729 in k5726 in k5723 in k5654 in k5651 in ##compiler#load-type-database in k1510 in k1507 */
@@ -1875,7 +1875,7 @@ static void C_ccall f_5731(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("write-char/port");
+/* write-char/port */
 t2=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t2+1)))(4,t2,((C_word*)t0)[3],C_make_character(10),((C_word*)t0)[2]);}
 
@@ -1888,7 +1888,7 @@ C_word ab[3],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5662,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_5669,a[2]=((C_word*)t0)[3],tmp=(C_word)a,a+=3,tmp);
-C_trace("scrutinizer.scm: 628  read-file");
+/* scrutinizer.scm: 628  read-file */
 ((C_proc3)C_retrieve_symbol_proc(lf[181]))(3,*((C_word*)lf[181]+1),t2,((C_word*)t0)[2]);}
 
 /* k5667 in k5660 in k5654 in k5651 in ##compiler#load-type-database in k1510 in k1507 */
@@ -1924,7 +1924,7 @@ t3=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5711,a[2]=t1,a[3]=((C_word*)t0)[2],a[4]=t
 t4=(C_word)C_slot(t2,C_fix(0));
 t5=(C_word)C_i_car(t4);
 t6=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5686,a[2]=t5,a[3]=t3,a[4]=t4,tmp=(C_word)a,a+=5,tmp);
-C_trace("scrutinizer.scm: 620  ##sys#get");
+/* scrutinizer.scm: 620  ##sys#get */
 ((C_proc4)C_retrieve_symbol_proc(lf[12]))(4,*((C_word*)lf[12]+1),t6,t5,lf[13]);}
 else{
 t3=C_SCHEME_UNDEFINED;
@@ -1959,10 +1959,10 @@ C_word tmp;
 C_word t2;
 C_word *a;
 if(C_truep(t1)){
-C_trace("scrutinizer.scm: 623  compiler-warning");
+/* scrutinizer.scm: 623  compiler-warning */
 ((C_proc7)C_retrieve_symbol_proc(lf[90]))(7,*((C_word*)lf[90]+1),((C_word*)t0)[6],lf[91],lf[180],((C_word*)t0)[5],((C_word*)t0)[4],((C_word*)t0)[3]);}
 else{
-C_trace("scrutinizer.scm: 627  ##sys#put!");
+/* scrutinizer.scm: 627  ##sys#put! */
 ((C_proc5)C_retrieve_symbol_proc(lf[179]))(5,*((C_word*)lf[179]+1),((C_word*)t0)[2],((C_word*)t0)[5],lf[13],((C_word*)t0)[4]);}}
 
 /* k5690 in k5684 in loop1475 in k5667 in k5660 in k5654 in k5651 in ##compiler#load-type-database in k1510 in k1507 */
@@ -1970,7 +1970,7 @@ static void C_ccall f_5692(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 627  ##sys#put!");
+/* scrutinizer.scm: 627  ##sys#put! */
 ((C_proc5)C_retrieve_symbol_proc(lf[179]))(5,*((C_word*)lf[179]+1),((C_word*)t0)[4],((C_word*)t0)[3],lf[13],((C_word*)t0)[2]);}
 
 /* k5709 in loop1475 in k5667 in k5660 in k5654 in k5651 in ##compiler#load-type-database in k1510 in k1507 */
@@ -2169,7 +2169,7 @@ t89=C_set_block_item(t59,0,(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_4809,a[2]=t59,tmp
 t90=C_set_block_item(t61,0,(*a=C_CLOSURE_TYPE|14,a[1]=(C_word)f_4841,a[2]=t49,a[3]=t53,a[4]=t31,a[5]=t47,a[6]=t41,a[7]=t11,a[8]=t61,a[9]=t59,a[10]=t51,a[11]=t43,a[12]=t19,a[13]=t7,a[14]=t5,tmp=(C_word)a,a+=15,tmp));
 t91=(C_word)C_slot(t2,C_fix(3));
 t92=(C_word)C_i_car(t91);
-C_trace("scrutinizer.scm: 611  walk");
+/* scrutinizer.scm: 611  walk */
 t93=((C_word*)t61)[1];
 f_4841(t93,t1,t92,C_SCHEME_END_OF_LIST,C_SCHEME_END_OF_LIST,C_SCHEME_FALSE);}
 
@@ -2373,14 +2373,14 @@ else{
 t17=(C_word)C_eqp(t11,lf[144]);
 if(C_truep(t17)){
 t18=(C_word)C_i_car(t9);
-C_trace("scrutinizer.scm: 525  global-result");
+/* scrutinizer.scm: 525  global-result */
 t19=((C_word*)((C_word*)t0)[14])[1];
 f_1637(t19,t13,t18,t4);}
 else{
 t18=(C_word)C_eqp(t11,lf[145]);
 if(C_truep(t18)){
 t19=(C_word)C_i_car(t9);
-C_trace("scrutinizer.scm: 526  variable-result");
+/* scrutinizer.scm: 526  variable-result */
 t20=((C_word*)((C_word*)t0)[13])[1];
 f_1679(t20,t13,t19,t3,t4);}
 else{
@@ -2389,7 +2389,7 @@ if(C_truep(t19)){
 t20=(*a=C_CLOSURE_TYPE|14,a[1]=(C_word)f_4936,a[2]=((C_word*)t0)[7],a[3]=t5,a[4]=t3,a[5]=((C_word*)t0)[8],a[6]=t7,a[7]=t1,a[8]=((C_word*)t0)[9],a[9]=t2,a[10]=((C_word*)t0)[10],a[11]=t4,a[12]=((C_word*)t0)[11],a[13]=t13,a[14]=((C_word*)t0)[12],tmp=(C_word)a,a+=15,tmp);
 t21=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5110,a[2]=t4,a[3]=t20,a[4]=((C_word*)t0)[6],tmp=(C_word)a,a+=5,tmp);
 t22=(C_word)C_i_car(t7);
-C_trace("scrutinizer.scm: 527  walk");
+/* scrutinizer.scm: 527  walk */
 t84=t21;
 t85=t22;
 t86=t3;
@@ -2415,7 +2415,7 @@ t22=(C_truep(t21)?t21:(C_word)C_eqp(t11,lf[153]));
 if(C_truep(t22)){
 t23=(C_word)C_i_car(t9);
 t24=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_5219,a[2]=t3,a[3]=t4,a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[8],a[6]=t7,a[7]=t5,tmp=(C_word)a,a+=8,tmp);
-C_trace("scrutinizer.scm: 553  decompose-lambda-list");
+/* scrutinizer.scm: 553  decompose-lambda-list */
 ((C_proc4)C_retrieve_symbol_proc(lf[157]))(4,*((C_word*)lf[157]+1),t13,t23,t24);}
 else{
 t23=(C_word)C_eqp(t11,lf[158]);
@@ -2423,7 +2423,7 @@ t24=(C_truep(t23)?t23:(C_word)C_eqp(t11,lf[159]));
 if(C_truep(t24)){
 t25=(C_word)C_i_car(t9);
 t26=(*a=C_CLOSURE_TYPE|10,a[1]=(C_word)f_5335,a[2]=((C_word*)t0)[8],a[3]=t7,a[4]=((C_word*)t0)[6],a[5]=((C_word*)t0)[4],a[6]=t4,a[7]=((C_word*)t0)[11],a[8]=t1,a[9]=t3,a[10]=t25,tmp=(C_word)a,a+=11,tmp);
-C_trace("scrutinizer.scm: 573  ##sys#get");
+/* scrutinizer.scm: 573  ##sys#get */
 ((C_proc4)C_retrieve_symbol_proc(lf[12]))(4,*((C_word*)lf[12]+1),t26,t25,lf[13]);}
 else{
 t25=(C_word)C_eqp(t11,lf[167]);
@@ -2436,13 +2436,13 @@ else{
 t27=(C_word)C_eqp(t11,lf[169]);
 if(C_truep(t27)){
 t28=(*a=C_CLOSURE_TYPE|9,a[1]=(C_word)f_5459,a[2]=t3,a[3]=((C_word*)t0)[8],a[4]=((C_word*)t0)[6],a[5]=t9,a[6]=t4,a[7]=t13,a[8]=((C_word*)t0)[3],a[9]=t7,tmp=(C_word)a,a+=10,tmp);
-C_trace("scrutinizer.scm: 592  fragment");
+/* scrutinizer.scm: 592  fragment */
 f_4078(t28,t2);}
 else{
 t28=(C_word)C_eqp(t11,lf[175]);
 t29=(C_truep(t28)?t28:(C_word)C_eqp(t11,lf[176]));
 if(C_truep(t29)){
-C_trace("scrutinizer.scm: 605  bomb");
+/* scrutinizer.scm: 605  bomb */
 ((C_proc4)C_retrieve_symbol_proc(lf[38]))(4,*((C_word*)lf[38]+1),t13,lf[177],t11);}
 else{
 t30=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_5591,a[2]=t1,tmp=(C_word)a,a+=3,tmp);
@@ -2467,7 +2467,7 @@ if(C_truep((C_word)C_i_pairp(t2))){
 t3=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5601,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],tmp=(C_word)a,a+=5,tmp);
 t4=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5608,a[2]=t1,a[3]=((C_word*)t0)[2],a[4]=t2,tmp=(C_word)a,a+=5,tmp);
 t5=(C_word)C_slot(t2,C_fix(0));
-C_trace("g14021403");
+/* g14021403 */
 t6=t3;
 f_5601(t6,t4,t5);}
 else{
@@ -2492,7 +2492,7 @@ C_word t3;
 C_word *a;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_5601,NULL,3,t0,t1,t2);}
-C_trace("scrutinizer.scm: 607  walk");
+/* scrutinizer.scm: 607  walk */
 t3=((C_word*)((C_word*)t0)[4])[1];
 f_4841(t3,t1,t2,((C_word*)t0)[3],((C_word*)t0)[2],C_SCHEME_FALSE);}
 
@@ -2527,7 +2527,7 @@ t5=(*a=C_VECTOR_TYPE|1,a[1]=t4,tmp=(C_word)a,a+=2,tmp);
 t6=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_5462,a[2]=((C_word*)t0)[5],a[3]=((C_word*)t0)[6],a[4]=((C_word*)t0)[7],a[5]=((C_word*)t0)[8],a[6]=((C_word*)t0)[9],tmp=(C_word)a,a+=7,tmp);
 t7=(*a=C_CLOSURE_TYPE|10,a[1]=(C_word)f_5473,a[2]=((C_word*)t0)[9],a[3]=t6,a[4]=t3,a[5]=t5,a[6]=t1,a[7]=((C_word*)t0)[2],a[8]=((C_word*)t0)[3],a[9]=((C_word*)t0)[6],a[10]=((C_word*)t0)[4],tmp=(C_word)a,a+=11,tmp);
 t8=(C_word)C_i_length(((C_word*)t0)[9]);
-C_trace("scrutinizer.scm: 602  iota");
+/* scrutinizer.scm: 602  iota */
 ((C_proc3)C_retrieve_symbol_proc(lf[174]))(3,*((C_word*)lf[174]+1),t7,t8);}
 
 /* k5471 in k5457 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2567,7 +2567,7 @@ t6=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_5506,a[2]=((C_word*)t0)[5],a[3]=((C_word*
 t7=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_5558,a[2]=((C_word*)t0)[2],a[3]=t1,a[4]=((C_word*)t0)[3],a[5]=t3,a[6]=t2,a[7]=((C_word*)t0)[4],tmp=(C_word)a,a+=8,tmp);
 t8=(C_word)C_slot(t2,C_fix(0));
 t9=(C_word)C_slot(t3,C_fix(0));
-C_trace("g13641365");
+/* g13641365 */
 t10=t6;
 f_5506(t10,t7,t8,t9);}
 else{
@@ -2606,7 +2606,7 @@ C_word *a;
 t2=C_mutate(((C_word *)((C_word*)t0)[7])+1,((C_word*)t0)[6]);
 t3=(C_word)C_slot(((C_word*)t0)[5],C_fix(1));
 t4=(C_word)C_slot(((C_word*)t0)[4],C_fix(1));
-C_trace("loop13441358");
+/* loop13441358 */
 t5=((C_word*)((C_word*)t0)[3])[1];
 f_5475(t5,((C_word*)t0)[2],t3,t4);}
 
@@ -2619,7 +2619,7 @@ C_word ab[10],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_5506,NULL,4,t0,t1,t2,t3);}
 t4=(*a=C_CLOSURE_TYPE|9,a[1]=(C_word)f_5514,a[2]=t3,a[3]=((C_word*)t0)[2],a[4]=((C_word*)t0)[3],a[5]=t2,a[6]=((C_word*)t0)[4],a[7]=((C_word*)t0)[5],a[8]=t1,a[9]=((C_word*)t0)[6],tmp=(C_word)a,a+=10,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t4);}
 
 /* k5512 in g1364 in loop1344 in k5471 in k5457 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2631,7 +2631,7 @@ C_word ab[11],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5514,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|10,a[1]=(C_word)f_5517,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=t1,a[5]=((C_word*)t0)[4],a[6]=((C_word*)t0)[5],a[7]=((C_word*)t0)[6],a[8]=((C_word*)t0)[7],a[9]=((C_word*)t0)[8],a[10]=((C_word*)t0)[9],tmp=(C_word)a,a+=11,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[173],t1);}
 
 /* k5515 in k5512 in g1364 in loop1344 in k5471 in k5457 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2649,11 +2649,11 @@ t2=(*a=C_CLOSURE_TYPE|9,a[1]=(C_word)f_5520,a[2]=((C_word*)t0)[3],a[3]=((C_word*
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_5540,a[2]=((C_word*)t0)[4],a[3]=t2,tmp=(C_word)a,a+=4,tmp);
 t4=(C_word)C_eqp(((C_word*)t0)[2],C_fix(0));
 if(C_truep(t4)){
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[171],((C_word*)t0)[4]);}
 else{
 t5=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_5546,a[2]=((C_word*)t0)[2],a[3]=t3,tmp=(C_word)a,a+=4,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t5);}}
 
 /* k5544 in k5515 in k5512 in g1364 in loop1344 in k5471 in k5457 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2665,7 +2665,7 @@ C_word ab[5],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5546,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5549,a[2]=((C_word*)t0)[2],a[3]=t1,a[4]=((C_word*)t0)[3],tmp=(C_word)a,a+=5,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[172],t1);}
 
 /* k5547 in k5544 in k5515 in k5512 in g1364 in loop1344 in k5471 in k5457 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2677,7 +2677,7 @@ C_word ab[4],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5549,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_5552,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],tmp=(C_word)a,a+=4,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[3]);}
 
 /* k5550 in k5547 in k5544 in k5515 in k5512 in g1364 in loop1344 in k5471 in k5457 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2685,7 +2685,7 @@ static void C_ccall f_5552(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),((C_word*)t0)[3],((C_word*)t0)[2]);}
 
 /* k5538 in k5515 in k5512 in g1364 in loop1344 in k5471 in k5457 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2693,7 +2693,7 @@ static void C_ccall f_5540(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k5518 in k5515 in k5512 in g1364 in loop1344 in k5471 in k5457 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2705,7 +2705,7 @@ C_word ab[10],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5520,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|9,a[1]=(C_word)f_5523,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],a[8]=((C_word*)t0)[8],a[9]=((C_word*)t0)[9],tmp=(C_word)a,a+=10,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[170],((C_word*)t0)[3]);}
 
 /* k5521 in k5518 in k5515 in k5512 in g1364 in loop1344 in k5471 in k5457 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2717,7 +2717,7 @@ C_word ab[9],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5523,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_5526,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],a[7]=((C_word*)t0)[8],a[8]=((C_word*)t0)[9],tmp=(C_word)a,a+=9,tmp);
-C_trace("write");
+/* write */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[113]+1)))(4,*((C_word*)lf[113]+1),t2,((C_word*)t0)[2],((C_word*)t0)[3]);}
 
 /* k5524 in k5521 in k5518 in k5515 in k5512 in g1364 in loop1344 in k5471 in k5457 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2729,7 +2729,7 @@ C_word ab[9],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5526,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_5529,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],a[8]=((C_word*)t0)[8],tmp=(C_word)a,a+=9,tmp);
-C_trace("write-char/port");
+/* write-char/port */
 t3=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,C_make_character(39),((C_word*)t0)[2]);}
 
@@ -2742,7 +2742,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5529,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_5532,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],a[7]=((C_word*)t0)[8],tmp=(C_word)a,a+=8,tmp);
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),t2,((C_word*)t0)[2]);}
 
 /* k5530 in k5527 in k5524 in k5521 in k5518 in k5515 in k5512 in g1364 in loop1344 in k5471 in k5457 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2754,7 +2754,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5532,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_5536,a[2]=((C_word*)t0)[5],a[3]=t1,a[4]=((C_word*)t0)[6],a[5]=((C_word*)t0)[7],tmp=(C_word)a,a+=6,tmp);
-C_trace("scrutinizer.scm: 601  walk");
+/* scrutinizer.scm: 601  walk */
 t3=((C_word*)((C_word*)t0)[4])[1];
 f_4841(t3,t2,((C_word*)t0)[3],((C_word*)t0)[2],((C_word*)t0)[5],C_SCHEME_FALSE);}
 
@@ -2763,7 +2763,7 @@ static void C_ccall f_5536(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 594  single");
+/* scrutinizer.scm: 594  single */
 t2=((C_word*)((C_word*)t0)[5])[1];
 f_3866(t2,((C_word*)t0)[4],((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
@@ -2774,7 +2774,7 @@ C_word t2;
 C_word t3;
 C_word *a;
 t2=(C_word)C_i_car(((C_word*)t0)[6]);
-C_trace("scrutinizer.scm: 603  call-result");
+/* scrutinizer.scm: 603  call-result */
 t3=((C_word*)((C_word*)t0)[5])[1];
 f_4152(t3,((C_word*)t0)[4],t1,((C_word*)t0)[3],t2,((C_word*)t0)[2]);}
 
@@ -2789,7 +2789,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5335,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_5338,a[2]=((C_word*)t0)[5],a[3]=t1,a[4]=((C_word*)t0)[6],a[5]=((C_word*)t0)[7],a[6]=((C_word*)t0)[8],a[7]=((C_word*)t0)[9],a[8]=((C_word*)t0)[10],tmp=(C_word)a,a+=9,tmp);
 t3=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_5421,a[2]=((C_word*)t0)[10],a[3]=((C_word*)t0)[9],a[4]=((C_word*)t0)[2],a[5]=((C_word*)t0)[3],a[6]=((C_word*)t0)[6],a[7]=t2,a[8]=((C_word*)t0)[4],tmp=(C_word)a,a+=9,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t3);}
 
 /* k5419 in k5333 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2801,7 +2801,7 @@ C_word ab[10],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5421,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|9,a[1]=(C_word)f_5424,a[2]=t1,a[3]=((C_word*)t0)[2],a[4]=((C_word*)t0)[3],a[5]=((C_word*)t0)[4],a[6]=((C_word*)t0)[5],a[7]=((C_word*)t0)[6],a[8]=((C_word*)t0)[7],a[9]=((C_word*)t0)[8],tmp=(C_word)a,a+=10,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[166],t1);}
 
 /* k5422 in k5419 in k5333 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2813,7 +2813,7 @@ C_word ab[10],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5424,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|9,a[1]=(C_word)f_5427,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],a[8]=((C_word*)t0)[8],a[9]=((C_word*)t0)[9],tmp=(C_word)a,a+=10,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[3],((C_word*)t0)[2]);}
 
 /* k5425 in k5422 in k5419 in k5333 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2825,7 +2825,7 @@ C_word ab[10],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5427,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|9,a[1]=(C_word)f_5430,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],a[8]=((C_word*)t0)[8],a[9]=((C_word*)t0)[9],tmp=(C_word)a,a+=10,tmp);
-C_trace("write-char/port");
+/* write-char/port */
 t3=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,C_make_character(39),((C_word*)t0)[2]);}
 
@@ -2838,7 +2838,7 @@ C_word ab[9],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5430,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_5433,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],a[7]=((C_word*)t0)[8],a[8]=((C_word*)t0)[9],tmp=(C_word)a,a+=9,tmp);
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),t2,((C_word*)t0)[2]);}
 
 /* k5431 in k5428 in k5425 in k5422 in k5419 in k5333 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2852,7 +2852,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5433,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_5437,a[2]=((C_word*)t0)[6],a[3]=t1,a[4]=((C_word*)t0)[7],a[5]=((C_word*)t0)[8],tmp=(C_word)a,a+=6,tmp);
 t3=(C_word)C_i_car(((C_word*)t0)[5]);
-C_trace("scrutinizer.scm: 576  walk");
+/* scrutinizer.scm: 576  walk */
 t4=((C_word*)((C_word*)t0)[4])[1];
 f_4841(t4,t2,t3,((C_word*)t0)[3],((C_word*)t0)[6],((C_word*)t0)[2]);}
 
@@ -2861,7 +2861,7 @@ static void C_ccall f_5437(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 574  single");
+/* scrutinizer.scm: 574  single */
 t2=((C_word*)((C_word*)t0)[5])[1];
 f_3866(t2,((C_word*)t0)[4],((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
@@ -2891,7 +2891,7 @@ t6=t4;
 f_5363(t6,C_SCHEME_FALSE);}
 else{
 t6=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_5413,a[2]=t4,tmp=(C_word)a,a+=3,tmp);
-C_trace("scrutinizer.scm: 581  match");
+/* scrutinizer.scm: 581  match */
 t7=((C_word*)((C_word*)t0)[2])[1];
 f_2980(t7,t6,((C_word*)t0)[3],t1);}}}
 else{
@@ -2916,7 +2916,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_5363,NULL,2,t0,t1);}
 if(C_truep(t1)){
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_5370,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],tmp=(C_word)a,a+=8,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t2);}
 else{
 t2=((C_word*)t0)[6];
@@ -2931,7 +2931,7 @@ C_word ab[9],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5370,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_5373,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=t1,a[6]=((C_word*)t0)[5],a[7]=((C_word*)t0)[6],a[8]=((C_word*)t0)[7],tmp=(C_word)a,a+=9,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[165],t1);}
 
 /* k5371 in k5368 in k5361 in k5336 in k5333 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2943,7 +2943,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5373,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_5376,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],a[7]=((C_word*)t0)[8],tmp=(C_word)a,a+=8,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[5]);}
 
 /* k5374 in k5371 in k5368 in k5361 in k5336 in k5333 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2955,7 +2955,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5376,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_5379,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],tmp=(C_word)a,a+=8,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[164],((C_word*)t0)[4]);}
 
 /* k5377 in k5374 in k5371 in k5368 in k5361 in k5336 in k5333 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2967,7 +2967,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5379,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_5382,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[4]);}
 
 /* k5380 in k5377 in k5374 in k5371 in k5368 in k5361 in k5336 in k5333 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2979,7 +2979,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5382,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_5385,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[163],((C_word*)t0)[3]);}
 
 /* k5383 in k5380 in k5377 in k5374 in k5371 in k5368 in k5361 in k5336 in k5333 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -2991,7 +2991,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5385,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_5388,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],tmp=(C_word)a,a+=6,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[3]);}
 
 /* k5386 in k5383 in k5380 in k5377 in k5374 in k5371 in k5368 in k5361 in k5336 in k5333 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -3003,7 +3003,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5388,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_5391,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],tmp=(C_word)a,a+=6,tmp);
-C_trace("write-char/port");
+/* write-char/port */
 t3=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,C_make_character(39),((C_word*)t0)[2]);}
 
@@ -3016,7 +3016,7 @@ C_word ab[5],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5391,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5394,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],tmp=(C_word)a,a+=5,tmp);
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),t2,((C_word*)t0)[2]);}
 
 /* k5392 in k5389 in k5386 in k5383 in k5380 in k5377 in k5374 in k5371 in k5368 in k5361 in k5336 in k5333 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -3024,7 +3024,7 @@ static void C_ccall f_5394(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 582  report");
+/* scrutinizer.scm: 582  report */
 t2=((C_word*)((C_word*)t0)[4])[1];
 f_3947(t2,((C_word*)t0)[3],((C_word*)t0)[2],t1);}
 
@@ -3070,7 +3070,7 @@ C_save_and_reclaim((void*)tr5,(void*)f_5219,5,t0,t1,t2,t3,t4);}
 t5=(C_truep(((C_word*)t0)[7])?(C_word)C_a_i_list(&a,1,((C_word*)t0)[7]):C_SCHEME_END_OF_LIST);
 t6=(*a=C_CLOSURE_TYPE|11,a[1]=(C_word)f_5226,a[2]=t2,a[3]=((C_word*)t0)[2],a[4]=t4,a[5]=((C_word*)t0)[3],a[6]=((C_word*)t0)[7],a[7]=((C_word*)t0)[4],a[8]=((C_word*)t0)[5],a[9]=((C_word*)t0)[6],a[10]=t5,a[11]=t1,tmp=(C_word)a,a+=12,tmp);
 t7=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_5313,a[2]=t6,a[3]=t4,tmp=(C_word)a,a+=4,tmp);
-C_trace("scrutinizer.scm: 557  make-list");
+/* scrutinizer.scm: 557  make-list */
 ((C_proc4)C_retrieve_symbol_proc(lf[128]))(4,*((C_word*)lf[128]+1),t7,t3,lf[8]);}
 
 /* k5311 in a5218 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -3079,10 +3079,10 @@ C_word tmp;
 C_word t2;
 C_word *a;
 if(C_truep(((C_word*)t0)[3])){
-C_trace("scrutinizer.scm: 557  append");
+/* scrutinizer.scm: 557  append */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[52]+1)))(4,*((C_word*)lf[52]+1),((C_word*)t0)[2],t1,lf[156]);}
 else{
-C_trace("scrutinizer.scm: 557  append");
+/* scrutinizer.scm: 557  append */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[52]+1)))(4,*((C_word*)lf[52]+1),((C_word*)t0)[2],t1,C_SCHEME_END_OF_LIST);}}
 
 /* k5224 in a5218 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -3107,7 +3107,7 @@ t6=(*a=C_VECTOR_TYPE|1,a[1]=t5,tmp=(C_word)a,a+=2,tmp);
 t7=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_5262,a[2]=((C_word*)t0)[3],a[3]=t2,tmp=(C_word)a,a+=4,tmp);
 t8=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5266,a[2]=t7,a[3]=t4,a[4]=t6,tmp=(C_word)a,a+=5,tmp);
 if(C_truep(((C_word*)t0)[4])){
-C_trace("scrutinizer.scm: 559  butlast");
+/* scrutinizer.scm: 559  butlast */
 ((C_proc3)C_retrieve_symbol_proc(lf[155]))(3,*((C_word*)lf[155]+1),t8,((C_word*)t0)[2]);}
 else{
 t9=t8;
@@ -3158,7 +3158,7 @@ if(C_truep(((C_word*)((C_word*)t0)[4])[1])){
 t6=(C_word)C_i_setslot(((C_word*)((C_word*)t0)[4])[1],C_fix(1),t5);
 t7=C_mutate(((C_word *)((C_word*)t0)[4])+1,t5);
 t8=(C_word)C_slot(t2,C_fix(1));
-C_trace("loop12671280");
+/* loop12671280 */
 t14=t1;
 t15=t8;
 t1=t14;
@@ -3168,7 +3168,7 @@ else{
 t6=C_mutate(((C_word *)((C_word*)t0)[2])+1,t5);
 t7=C_mutate(((C_word *)((C_word*)t0)[4])+1,t5);
 t8=(C_word)C_slot(t2,C_fix(1));
-C_trace("loop12671280");
+/* loop12671280 */
 t14=t1;
 t15=t8;
 t1=t14;
@@ -3184,7 +3184,7 @@ static void C_ccall f_5262(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 558  append");
+/* scrutinizer.scm: 558  append */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[52]+1)))(4,*((C_word*)lf[52]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k5227 in k5224 in a5218 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -3201,7 +3201,7 @@ t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5232,a[2]=((C_word*)t0)[8],a[3]=((C_word*
 t3=(C_word)C_i_car(((C_word*)t0)[7]);
 t4=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_5251,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=t3,a[6]=t2,a[7]=((C_word*)t0)[6],tmp=(C_word)a,a+=8,tmp);
 if(C_truep(((C_word*)t0)[2])){
-C_trace("scrutinizer.scm: 562  alist-cons");
+/* scrutinizer.scm: 562  alist-cons */
 ((C_proc5)C_retrieve_symbol_proc(lf[150]))(5,*((C_word*)lf[150]+1),t4,((C_word*)t0)[2],lf[75],t1);}
 else{
 t5=t4;
@@ -3216,7 +3216,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5251,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_5255,a[2]=t1,a[3]=((C_word*)t0)[5],a[4]=((C_word*)t0)[6],a[5]=((C_word*)t0)[7],tmp=(C_word)a,a+=6,tmp);
-C_trace("scrutinizer.scm: 563  add-loc");
+/* scrutinizer.scm: 563  add-loc */
 t3=((C_word*)((C_word*)t0)[4])[1];
 ((C_proc4)C_retrieve_proc(t3))(4,t3,t2,((C_word*)t0)[3],((C_word*)t0)[2]);}
 
@@ -3225,7 +3225,7 @@ static void C_ccall f_5255(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 561  walk");
+/* scrutinizer.scm: 561  walk */
 t2=((C_word*)((C_word*)t0)[5])[1];
 f_4841(t2,((C_word*)t0)[4],((C_word*)t0)[3],((C_word*)t0)[2],t1,C_SCHEME_FALSE);}
 
@@ -3240,7 +3240,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5232,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_5239,a[2]=((C_word*)t0)[4],tmp=(C_word)a,a+=3,tmp);
 t3=(C_word)C_a_i_list(&a,1,((C_word*)t0)[3]);
-C_trace("scrutinizer.scm: 566  append");
+/* scrutinizer.scm: 566  append */
 ((C_proc6)C_retrieve_proc(*((C_word*)lf[52]+1)))(6,*((C_word*)lf[52]+1),t2,lf[154],((C_word*)t0)[2],t3,t1);}
 
 /* k5237 in k5230 in k5227 in k5224 in a5218 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -3267,12 +3267,12 @@ C_save_and_reclaim((void*)trf_5125,NULL,5,t0,t1,t2,t3,t4);}
 if(C_truep((C_word)C_i_nullp(t2))){
 t5=(C_word)C_i_car(t3);
 t6=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_5143,a[2]=((C_word*)t0)[5],a[3]=((C_word*)t0)[6],a[4]=t5,a[5]=t1,a[6]=((C_word*)t0)[7],tmp=(C_word)a,a+=7,tmp);
-C_trace("scrutinizer.scm: 547  append");
+/* scrutinizer.scm: 547  append */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[52]+1)))(4,*((C_word*)lf[52]+1),t6,t4,((C_word*)t0)[4]);}
 else{
 t5=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_5146,a[2]=t4,a[3]=t1,a[4]=((C_word*)t0)[3],a[5]=t3,a[6]=t2,tmp=(C_word)a,a+=7,tmp);
 t6=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_5169,a[2]=((C_word*)t0)[4],a[3]=((C_word*)t0)[7],a[4]=t2,a[5]=t3,a[6]=((C_word*)t0)[6],a[7]=t5,a[8]=((C_word*)t0)[2],tmp=(C_word)a,a+=9,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t6);}}
 
 /* k5167 in loop in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -3284,7 +3284,7 @@ C_word ab[10],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5169,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|9,a[1]=(C_word)f_5172,a[2]=t1,a[3]=((C_word*)t0)[2],a[4]=((C_word*)t0)[3],a[5]=((C_word*)t0)[4],a[6]=((C_word*)t0)[5],a[7]=((C_word*)t0)[6],a[8]=((C_word*)t0)[7],a[9]=((C_word*)t0)[8],tmp=(C_word)a,a+=10,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[151],t1);}
 
 /* k5170 in k5167 in loop in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -3300,7 +3300,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_5172,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|9,a[1]=(C_word)f_5175,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],a[8]=((C_word*)t0)[8],a[9]=((C_word*)t0)[9],tmp=(C_word)a,a+=10,tmp);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_5197,a[2]=((C_word*)t0)[2],a[3]=t2,tmp=(C_word)a,a+=4,tmp);
 t4=(C_word)C_i_car(((C_word*)t0)[5]);
-C_trace("scrutinizer.scm: 549  real-name");
+/* scrutinizer.scm: 549  real-name */
 ((C_proc3)C_retrieve_symbol_proc(lf[16]))(3,*((C_word*)lf[16]+1),t3,t4);}
 
 /* k5195 in k5170 in k5167 in loop in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -3308,7 +3308,7 @@ static void C_ccall f_5197(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k5173 in k5170 in k5167 in loop in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -3320,7 +3320,7 @@ C_word ab[10],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5175,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|9,a[1]=(C_word)f_5178,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],a[8]=((C_word*)t0)[8],a[9]=((C_word*)t0)[9],tmp=(C_word)a,a+=10,tmp);
-C_trace("write-char/port");
+/* write-char/port */
 t3=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,C_make_character(39),((C_word*)t0)[2]);}
 
@@ -3333,7 +3333,7 @@ C_word ab[9],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5178,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_5181,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],a[7]=((C_word*)t0)[8],a[8]=((C_word*)t0)[9],tmp=(C_word)a,a+=9,tmp);
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),t2,((C_word*)t0)[2]);}
 
 /* k5179 in k5176 in k5173 in k5170 in k5167 in loop in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -3349,7 +3349,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_5181,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_5185,a[2]=((C_word*)t0)[6],a[3]=t1,a[4]=((C_word*)t0)[7],a[5]=((C_word*)t0)[8],tmp=(C_word)a,a+=6,tmp);
 t3=(C_word)C_i_car(((C_word*)t0)[5]);
 t4=(C_word)C_i_car(((C_word*)t0)[4]);
-C_trace("scrutinizer.scm: 550  walk");
+/* scrutinizer.scm: 550  walk */
 t5=((C_word*)((C_word*)t0)[3])[1];
 f_4841(t5,t2,t3,((C_word*)t0)[2],((C_word*)t0)[6],t4);}
 
@@ -3358,7 +3358,7 @@ static void C_ccall f_5185(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 548  single");
+/* scrutinizer.scm: 548  single */
 t2=((C_word*)((C_word*)t0)[5])[1];
 f_3866(t2,((C_word*)t0)[4],((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
@@ -3377,7 +3377,7 @@ t2=(C_word)C_i_cdr(((C_word*)t0)[6]);
 t3=(C_word)C_i_cdr(((C_word*)t0)[5]);
 t4=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_5161,a[2]=t3,a[3]=t2,a[4]=((C_word*)t0)[3],a[5]=((C_word*)t0)[4],tmp=(C_word)a,a+=6,tmp);
 t5=(C_word)C_i_car(((C_word*)t0)[6]);
-C_trace("scrutinizer.scm: 551  alist-cons");
+/* scrutinizer.scm: 551  alist-cons */
 ((C_proc5)C_retrieve_symbol_proc(lf[150]))(5,*((C_word*)lf[150]+1),t4,t5,t1,((C_word*)t0)[2]);}
 
 /* k5159 in k5144 in loop in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -3385,7 +3385,7 @@ static void C_ccall f_5161(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 551  loop");
+/* scrutinizer.scm: 551  loop */
 t2=((C_word*)((C_word*)t0)[5])[1];
 f_5125(t2,((C_word*)t0)[4],((C_word*)t0)[3],((C_word*)t0)[2],t1);}
 
@@ -3394,7 +3394,7 @@ static void C_ccall f_5143(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 547  walk");
+/* scrutinizer.scm: 547  walk */
 t2=((C_word*)((C_word*)t0)[6])[1];
 f_4841(t2,((C_word*)t0)[5],((C_word*)t0)[4],t1,((C_word*)t0)[3],((C_word*)t0)[2]);}
 
@@ -3403,7 +3403,7 @@ static void C_ccall f_5110(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 527  single");
+/* scrutinizer.scm: 527  single */
 t2=((C_word*)((C_word*)t0)[4])[1];
 f_3866(t2,((C_word*)t0)[3],lf[148],t1,((C_word*)t0)[2]);}
 
@@ -3416,7 +3416,7 @@ C_word ab[14],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4936,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|13,a[1]=(C_word)f_4939,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],a[7]=((C_word*)t0)[8],a[8]=((C_word*)t0)[9],a[9]=((C_word*)t0)[10],a[10]=((C_word*)t0)[11],a[11]=((C_word*)t0)[12],a[12]=((C_word*)t0)[13],a[13]=((C_word*)t0)[14],tmp=(C_word)a,a+=14,tmp);
-C_trace("scrutinizer.scm: 528  always-true");
+/* scrutinizer.scm: 528  always-true */
 t3=((C_word*)((C_word*)t0)[2])[1];
 f_1784(t3,t2,t1,((C_word*)t0)[11],((C_word*)t0)[9]);}
 
@@ -3431,7 +3431,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4939,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|13,a[1]=(C_word)f_4942,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],a[8]=((C_word*)t0)[8],a[9]=((C_word*)t0)[9],a[10]=((C_word*)t0)[10],a[11]=((C_word*)t0)[11],a[12]=((C_word*)t0)[12],a[13]=((C_word*)t0)[13],tmp=(C_word)a,a+=14,tmp);
 t3=(C_word)C_i_cadr(((C_word*)t0)[5]);
-C_trace("scrutinizer.scm: 529  walk");
+/* scrutinizer.scm: 529  walk */
 t4=((C_word*)((C_word*)t0)[4])[1];
 f_4841(t4,t2,t3,((C_word*)t0)[3],((C_word*)t0)[10],((C_word*)t0)[2]);}
 
@@ -3446,7 +3446,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4942,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|10,a[1]=(C_word)f_4945,a[2]=((C_word*)t0)[6],a[3]=((C_word*)t0)[7],a[4]=((C_word*)t0)[8],a[5]=((C_word*)t0)[9],a[6]=((C_word*)t0)[10],a[7]=((C_word*)t0)[11],a[8]=t1,a[9]=((C_word*)t0)[12],a[10]=((C_word*)t0)[13],tmp=(C_word)a,a+=11,tmp);
 t3=(C_word)C_i_caddr(((C_word*)t0)[5]);
-C_trace("scrutinizer.scm: 530  walk");
+/* scrutinizer.scm: 530  walk */
 t4=((C_word*)((C_word*)t0)[4])[1];
 f_4841(t4,t2,t3,((C_word*)t0)[3],((C_word*)t0)[10],((C_word*)t0)[2]);}
 
@@ -3485,7 +3485,7 @@ if(C_truep(t1)){
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_4954,a[2]=((C_word*)t0)[8],a[3]=((C_word*)t0)[9],a[4]=((C_word*)t0)[10],a[5]=((C_word*)t0)[11],tmp=(C_word)a,a+=6,tmp);
 t3=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_5026,a[2]=((C_word*)t0)[4],a[3]=((C_word*)t0)[5],a[4]=((C_word*)t0)[6],a[5]=t2,a[6]=((C_word*)t0)[7],tmp=(C_word)a,a+=7,tmp);
 t4=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_5084,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[8],a[4]=((C_word*)t0)[9],a[5]=t3,tmp=(C_word)a,a+=6,tmp);
-C_trace("scrutinizer.scm: 533  any");
+/* scrutinizer.scm: 533  any */
 ((C_proc4)C_retrieve_symbol_proc(lf[56]))(4,*((C_word*)lf[56]+1),t4,((C_word*)((C_word*)t0)[3])[1],((C_word*)t0)[9]);}
 else{
 t2=C_retrieve(lf[51]);
@@ -3505,7 +3505,7 @@ t2=((C_word*)t0)[5];
 f_5026(t2,C_SCHEME_FALSE);}
 else{
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5080,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],tmp=(C_word)a,a+=5,tmp);
-C_trace("scrutinizer.scm: 534  any");
+/* scrutinizer.scm: 534  any */
 ((C_proc4)C_retrieve_symbol_proc(lf[56]))(4,*((C_word*)lf[56]+1),t2,((C_word*)((C_word*)t0)[2])[1],((C_word*)t0)[3]);}}
 
 /* k5078 in k5082 in k4949 in k4943 in k4940 in k4937 in k4934 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -3536,7 +3536,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_5026,NULL,2,t0,t1);}
 if(C_truep(t1)){
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_5033,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t2);}
 else{
 t2=((C_word*)t0)[5];
@@ -3551,7 +3551,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5033,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_5036,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=t1,a[5]=((C_word*)t0)[4],a[6]=((C_word*)t0)[5],a[7]=((C_word*)t0)[6],tmp=(C_word)a,a+=8,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[147],t1);}
 
 /* k5034 in k5031 in k5024 in k4949 in k4943 in k4940 in k4937 in k4934 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -3563,7 +3563,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5036,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_5039,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],tmp=(C_word)a,a+=8,tmp);
-C_trace("write-char/port");
+/* write-char/port */
 t3=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,C_make_character(10),((C_word*)t0)[4]);}
 
@@ -3576,7 +3576,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5039,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_5042,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],tmp=(C_word)a,a+=8,tmp);
-C_trace("write-char/port");
+/* write-char/port */
 t3=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,C_make_character(10),((C_word*)t0)[4]);}
 
@@ -3591,7 +3591,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5042,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_5045,a[2]=((C_word*)t0)[4],a[3]=((C_word*)t0)[5],a[4]=((C_word*)t0)[6],a[5]=((C_word*)t0)[7],tmp=(C_word)a,a+=6,tmp);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_5052,a[2]=((C_word*)t0)[4],a[3]=t2,tmp=(C_word)a,a+=4,tmp);
-C_trace("scrutinizer.scm: 540  pp-fragment");
+/* scrutinizer.scm: 540  pp-fragment */
 t4=((C_word*)((C_word*)t0)[3])[1];
 f_4132(t4,t3,((C_word*)t0)[2]);}
 
@@ -3600,7 +3600,7 @@ static void C_ccall f_5052(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k5043 in k5040 in k5037 in k5034 in k5031 in k5024 in k4949 in k4943 in k4940 in k4937 in k4934 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -3612,7 +3612,7 @@ C_word ab[5],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_5045,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_5048,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],tmp=(C_word)a,a+=5,tmp);
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),t2,((C_word*)t0)[2]);}
 
 /* k5046 in k5043 in k5040 in k5037 in k5034 in k5031 in k5024 in k4949 in k4943 in k4940 in k4937 in k4934 in walk in ##compiler#scrutinize in k1510 in k1507 */
@@ -3620,7 +3620,7 @@ static void C_ccall f_5048(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 536  report");
+/* scrutinizer.scm: 536  report */
 t2=((C_word*)((C_word*)t0)[4])[1];
 f_3947(t2,((C_word*)t0)[3],((C_word*)t0)[2],t1);}
 
@@ -3669,7 +3669,7 @@ t6=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_4990,a[2]=((C_word*)t0)[5],tmp=(C_word)a,
 t7=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_5009,a[2]=((C_word*)t0)[2],a[3]=t1,a[4]=((C_word*)t0)[3],a[5]=t3,a[6]=t2,a[7]=((C_word*)t0)[4],tmp=(C_word)a,a+=8,tmp);
 t8=(C_word)C_slot(t2,C_fix(0));
 t9=(C_word)C_slot(t3,C_fix(0));
-C_trace("g12261227");
+/* g12261227 */
 t10=t6;
 f_4990(t10,t7,t8,t9);}
 else{
@@ -3708,7 +3708,7 @@ C_word *a;
 t2=C_mutate(((C_word *)((C_word*)t0)[7])+1,((C_word*)t0)[6]);
 t3=(C_word)C_slot(((C_word*)t0)[5],C_fix(1));
 t4=(C_word)C_slot(((C_word*)t0)[4],C_fix(1));
-C_trace("loop12061220");
+/* loop12061220 */
 t5=((C_word*)((C_word*)t0)[3])[1];
 f_4959(t5,((C_word*)t0)[2],t3,t4);}
 
@@ -3725,7 +3725,7 @@ C_save_and_reclaim((void*)trf_4990,NULL,4,t0,t1,t2,t3);}
 t4=(C_word)C_a_i_cons(&a,2,t3,C_SCHEME_END_OF_LIST);
 t5=(C_word)C_a_i_cons(&a,2,t2,t4);
 t6=(C_word)C_a_i_cons(&a,2,lf[23],t5);
-C_trace("scrutinizer.scm: 541  simplify");
+/* scrutinizer.scm: 541  simplify */
 t7=((C_word*)((C_word*)t0)[2])[1];
 f_2173(t7,t1,t6);}
 
@@ -3761,7 +3761,7 @@ t4=(C_word)C_i_car(t2);
 t5=(C_word)C_eqp(lf[23],t4);
 if(C_truep(t5)){
 t6=(C_word)C_i_cdr(t2);
-C_trace("scrutinizer.scm: 514  any");
+/* scrutinizer.scm: 514  any */
 ((C_proc4)C_retrieve_symbol_proc(lf[56]))(4,*((C_word*)lf[56]+1),t1,((C_word*)((C_word*)t0)[2])[1],t6);}
 else{
 t6=t1;
@@ -3794,7 +3794,7 @@ t4=(C_word)C_i_memq(t2,lf[129]);
 t5=(C_truep(t4)?t4:(C_word)C_i_not_pair_p(t2));
 if(C_truep(t5)){
 t6=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_4565,a[2]=t1,tmp=(C_word)a,a+=3,tmp);
-C_trace("scrutinizer.scm: 476  make-list");
+/* scrutinizer.scm: 476  make-list */
 ((C_proc4)C_retrieve_symbol_proc(lf[128]))(4,*((C_word*)lf[128]+1),t6,t3,lf[8]);}
 else{
 t6=(C_word)C_i_car(t2);
@@ -3815,7 +3815,7 @@ t15=(C_word)C_i_symbolp(t14);
 t16=t11;
 f_4581(t16,(C_truep(t15)?(C_word)C_i_caddr(t2):(C_word)C_i_cadr(t2)));}}
 else{
-C_trace("scrutinizer.scm: 494  bomb");
+/* scrutinizer.scm: 494  bomb */
 ((C_proc4)C_retrieve_symbol_proc(lf[38]))(4,*((C_word*)lf[38]+1),t1,lf[130],t2);}}}
 
 /* k4579 in procedure-argument-types in ##compiler#scrutinize in k1510 in k1507 */
@@ -3865,7 +3865,7 @@ t5=(C_word)C_i_car(t2);
 t6=(C_word)C_eqp(lf[66],t5);
 if(C_truep(t6)){
 t7=(C_word)C_i_cdr(t2);
-C_trace("scrutinizer.scm: 487  loop");
+/* scrutinizer.scm: 487  loop */
 t16=t1;
 t17=t7;
 t18=t3;
@@ -3917,7 +3917,7 @@ t2=(C_word)C_i_car(((C_word*)t0)[5]);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4655,a[2]=t2,a[3]=((C_word*)t0)[6],tmp=(C_word)a,a+=4,tmp);
 t4=(C_word)C_i_cdr(((C_word*)t0)[5]);
 t5=(C_word)C_fixnum_decrease(((C_word*)t0)[4]);
-C_trace("scrutinizer.scm: 492  loop");
+/* scrutinizer.scm: 492  loop */
 t6=((C_word*)((C_word*)t0)[3])[1];
 f_4583(t6,t3,t4,t5,((C_word*)t0)[2]);}}
 
@@ -3942,7 +3942,7 @@ C_word *a;
 t2=C_mutate(((C_word *)((C_word*)t0)[6])+1,t1);
 t3=(C_word)C_i_cdr(((C_word*)t0)[5]);
 t4=f_2690(t3);
-C_trace("scrutinizer.scm: 490  make-list");
+/* scrutinizer.scm: 490  make-list */
 ((C_proc4)C_retrieve_symbol_proc(lf[128]))(4,*((C_word*)lf[128]+1),((C_word*)t0)[3],((C_word*)t0)[2],t4);}
 
 /* k4572 in procedure-argument-types in ##compiler#scrutinize in k1510 in k1507 */
@@ -3950,7 +3950,7 @@ static void C_ccall f_4574(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 493  values");
+/* scrutinizer.scm: 493  values */
 C_values(4,0,((C_word*)t0)[3],t1,((C_word*)((C_word*)t0)[2])[1]);}
 
 /* k4563 in procedure-argument-types in ##compiler#scrutinize in k1510 in k1507 */
@@ -3958,7 +3958,7 @@ static void C_ccall f_4565(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 476  values");
+/* scrutinizer.scm: 476  values */
 C_values(4,0,((C_word*)t0)[2],t1,C_SCHEME_FALSE);}
 
 /* procedure-type? in ##compiler#scrutinize in k1510 in k1507 */
@@ -3991,7 +3991,7 @@ t6=(C_word)C_i_car(t2);
 t7=(C_word)C_eqp(lf[23],t6);
 if(C_truep(t7)){
 t8=(C_word)C_i_cdr(t2);
-C_trace("scrutinizer.scm: 472  every");
+/* scrutinizer.scm: 472  every */
 ((C_proc4)C_retrieve_symbol_proc(lf[21]))(4,*((C_word*)lf[21]+1),t1,((C_word*)((C_word*)t0)[2])[1],t8);}
 else{
 t8=t1;
@@ -4019,7 +4019,7 @@ t8=(C_word)C_i_car(t2);
 t9=(C_word)C_i_cdr(t2);
 t10=(C_word)C_i_length(t9);
 t11=(*a=C_CLOSURE_TYPE|11,a[1]=(C_word)f_4496,a[2]=((C_word*)t0)[2],a[3]=t1,a[4]=t10,a[5]=((C_word*)t0)[3],a[6]=t6,a[7]=t3,a[8]=((C_word*)t0)[4],a[9]=t8,a[10]=((C_word*)t0)[5],a[11]=t2,tmp=(C_word)a,a+=12,tmp);
-C_trace("scrutinizer.scm: 434  make-list");
+/* scrutinizer.scm: 434  make-list */
 ((C_proc4)C_retrieve_symbol_proc(lf[128]))(4,*((C_word*)lf[128]+1),t11,t10,lf[8]);}
 
 /* k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4041,7 +4041,7 @@ t4=(C_word)C_a_i_cons(&a,2,lf[30],t3);
 t5=(*a=C_CLOSURE_TYPE|10,a[1]=(C_word)f_4238,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],a[7]=((C_word*)t0)[8],a[8]=((C_word*)t0)[9],a[9]=((C_word*)t0)[10],a[10]=((C_word*)t0)[11],tmp=(C_word)a,a+=11,tmp);
 t6=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_4439,a[2]=((C_word*)t0)[6],a[3]=t4,a[4]=((C_word*)t0)[9],a[5]=((C_word*)t0)[7],a[6]=t5,a[7]=((C_word*)t0)[8],tmp=(C_word)a,a+=8,tmp);
 t7=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_4488,a[2]=((C_word*)t0)[9],a[3]=t4,a[4]=((C_word*)t0)[5],a[5]=t6,tmp=(C_word)a,a+=6,tmp);
-C_trace("scrutinizer.scm: 435  procedure-type?");
+/* scrutinizer.scm: 435  procedure-type? */
 t8=((C_word*)((C_word*)t0)[2])[1];
 f_4506(3,t8,t7,((C_word*)t0)[9]);}
 
@@ -4058,7 +4058,7 @@ t2=((C_word*)t0)[5];
 f_4439(t2,C_SCHEME_FALSE);}
 else{
 t2=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_4484,a[2]=((C_word*)t0)[5],tmp=(C_word)a,a+=3,tmp);
-C_trace("scrutinizer.scm: 436  match");
+/* scrutinizer.scm: 436  match */
 t3=((C_word*)((C_word*)t0)[4])[1];
 f_2980(t3,t2,((C_word*)t0)[3],((C_word*)t0)[2]);}}
 
@@ -4080,7 +4080,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_4439,NULL,2,t0,t1);}
 if(C_truep(t1)){
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_4446,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],tmp=(C_word)a,a+=8,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t2);}
 else{
 t2=((C_word*)t0)[6];
@@ -4095,7 +4095,7 @@ C_word ab[9],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4446,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_4449,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=t1,a[6]=((C_word*)t0)[5],a[7]=((C_word*)t0)[6],a[8]=((C_word*)t0)[7],tmp=(C_word)a,a+=9,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[127],t1);}
 
 /* k4447 in k4444 in k4437 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4109,7 +4109,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4449,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_4452,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],a[7]=((C_word*)t0)[8],tmp=(C_word)a,a+=8,tmp);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4474,a[2]=((C_word*)t0)[5],a[3]=t2,tmp=(C_word)a,a+=4,tmp);
-C_trace("scrutinizer.scm: 441  pname");
+/* scrutinizer.scm: 441  pname */
 t4=((C_word*)t0)[2];
 f_4155(t4,t3);}
 
@@ -4118,7 +4118,7 @@ static void C_ccall f_4474(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k4450 in k4447 in k4444 in k4437 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4130,7 +4130,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4452,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_4455,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],tmp=(C_word)a,a+=8,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[126],((C_word*)t0)[4]);}
 
 /* k4453 in k4450 in k4447 in k4444 in k4437 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4142,7 +4142,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4455,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_4458,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[4]);}
 
 /* k4456 in k4453 in k4450 in k4447 in k4444 in k4437 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4154,7 +4154,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4458,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_4461,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[125],((C_word*)t0)[3]);}
 
 /* k4459 in k4456 in k4453 in k4450 in k4447 in k4444 in k4437 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4166,7 +4166,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4461,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_4464,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],tmp=(C_word)a,a+=6,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[3]);}
 
 /* k4462 in k4459 in k4456 in k4453 in k4450 in k4447 in k4444 in k4437 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4178,7 +4178,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4464,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_4467,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],tmp=(C_word)a,a+=6,tmp);
-C_trace("write-char/port");
+/* write-char/port */
 t3=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,C_make_character(39),((C_word*)t0)[2]);}
 
@@ -4191,7 +4191,7 @@ C_word ab[5],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4467,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_4470,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],tmp=(C_word)a,a+=5,tmp);
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),t2,((C_word*)t0)[2]);}
 
 /* k4468 in k4465 in k4462 in k4459 in k4456 in k4453 in k4450 in k4447 in k4444 in k4437 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4199,7 +4199,7 @@ static void C_ccall f_4470(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 437  report");
+/* scrutinizer.scm: 437  report */
 t2=((C_word*)((C_word*)t0)[4])[1];
 f_3947(t2,((C_word*)t0)[3],((C_word*)t0)[2],t1);}
 
@@ -4214,7 +4214,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4238,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_4243,a[2]=((C_word*)t0)[8],a[3]=((C_word*)t0)[9],a[4]=((C_word*)t0)[10],tmp=(C_word)a,a+=5,tmp);
 t3=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_4257,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],a[7]=((C_word*)t0)[8],a[8]=((C_word*)t0)[10],tmp=(C_word)a,a+=9,tmp);
-C_trace("##sys#call-with-values");
+/* ##sys#call-with-values */
 C_call_with_values(4,0,((C_word*)t0)[2],t2,t3);}
 
 /* a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4241,7 +4241,7 @@ f_4264(2,t8,C_SCHEME_UNDEFINED);}
 else{
 t8=(C_word)C_i_length(t2);
 t9=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_4387,a[2]=((C_word*)t0)[4],a[3]=t8,a[4]=((C_word*)t0)[2],a[5]=((C_word*)t0)[5],a[6]=t5,a[7]=((C_word*)t0)[6],tmp=(C_word)a,a+=8,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t9);}}
 
 /* k4385 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4253,7 +4253,7 @@ C_word ab[9],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4387,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_4390,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=t1,a[6]=((C_word*)t0)[5],a[7]=((C_word*)t0)[6],a[8]=((C_word*)t0)[7],tmp=(C_word)a,a+=9,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[124],t1);}
 
 /* k4388 in k4385 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4267,7 +4267,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4390,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_4393,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],a[7]=((C_word*)t0)[8],tmp=(C_word)a,a+=8,tmp);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4432,a[2]=((C_word*)t0)[5],a[3]=t2,tmp=(C_word)a,a+=4,tmp);
-C_trace("scrutinizer.scm: 452  pname");
+/* scrutinizer.scm: 452  pname */
 t4=((C_word*)t0)[2];
 f_4155(t4,t3);}
 
@@ -4276,7 +4276,7 @@ static void C_ccall f_4432(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k4391 in k4388 in k4385 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4288,7 +4288,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4393,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_4396,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],tmp=(C_word)a,a+=8,tmp);
-C_trace("write-char/port");
+/* write-char/port */
 t3=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,C_make_character(32),((C_word*)t0)[4]);}
 
@@ -4301,7 +4301,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4396,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_4399,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],tmp=(C_word)a,a+=8,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[4]);}
 
 /* k4397 in k4394 in k4391 in k4388 in k4385 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4313,7 +4313,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4399,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_4402,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],tmp=(C_word)a,a+=8,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[123],((C_word*)t0)[4]);}
 
 /* k4400 in k4397 in k4394 in k4391 in k4388 in k4385 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4329,7 +4329,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_4402,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_4405,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],tmp=(C_word)a,a+=7,tmp);
 t3=(C_word)C_eqp(((C_word*)t0)[2],C_fix(1));
 t4=(C_truep(t3)?lf[42]:lf[43]);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,t4,((C_word*)t0)[4]);}
 
 /* k4403 in k4400 in k4397 in k4394 in k4391 in k4388 in k4385 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4341,7 +4341,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4405,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_4408,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[122],((C_word*)t0)[3]);}
 
 /* k4406 in k4403 in k4400 in k4397 in k4394 in k4391 in k4388 in k4385 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4353,7 +4353,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4408,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_4411,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[3]);}
 
 /* k4409 in k4406 in k4403 in k4400 in k4397 in k4394 in k4391 in k4388 in k4385 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4365,7 +4365,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4411,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_4414,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[121],((C_word*)t0)[3]);}
 
 /* k4412 in k4409 in k4406 in k4403 in k4400 in k4397 in k4394 in k4391 in k4388 in k4385 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4381,7 +4381,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_4414,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_4417,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],tmp=(C_word)a,a+=6,tmp);
 t3=(C_word)C_eqp(((C_word*)t0)[2],C_fix(1));
 t4=(C_truep(t3)?lf[42]:lf[43]);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,t4,((C_word*)t0)[3]);}
 
 /* k4415 in k4412 in k4409 in k4406 in k4403 in k4400 in k4397 in k4394 in k4391 in k4388 in k4385 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4393,7 +4393,7 @@ C_word ab[5],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4417,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_4420,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],tmp=(C_word)a,a+=5,tmp);
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),t2,((C_word*)t0)[2]);}
 
 /* k4418 in k4415 in k4412 in k4409 in k4406 in k4403 in k4400 in k4397 in k4394 in k4391 in k4388 in k4385 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4401,7 +4401,7 @@ static void C_ccall f_4420(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 448  report");
+/* scrutinizer.scm: 448  report */
 t2=((C_word*)((C_word*)t0)[4])[1];
 f_3947(t2,((C_word*)t0)[3],((C_word*)t0)[2],t1);}
 
@@ -4450,7 +4450,7 @@ t7=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_4296,a[2]=t1,a[3]=((C_word*)t0)[6],a[4]=t
 t8=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_4314,a[2]=t4,a[3]=t3,a[4]=((C_word*)t0)[3],a[5]=t2,a[6]=((C_word*)t0)[4],a[7]=((C_word*)t0)[5],a[8]=t7,tmp=(C_word)a,a+=9,tmp);
 t9=(C_word)C_i_car(t3);
 t10=(C_word)C_i_car(t2);
-C_trace("scrutinizer.scm: 458  match");
+/* scrutinizer.scm: 458  match */
 t11=((C_word*)((C_word*)t0)[2])[1];
 f_2980(t11,t8,t9,t10);}}
 
@@ -4467,7 +4467,7 @@ t2=((C_word*)t0)[8];
 f_4296(2,t2,C_SCHEME_UNDEFINED);}
 else{
 t2=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_4321,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[8],a[8]=((C_word*)t0)[7],tmp=(C_word)a,a+=9,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t2);}}
 
 /* k4319 in k4312 in doloop1025 in k4262 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4479,7 +4479,7 @@ C_word ab[10],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4321,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|9,a[1]=(C_word)f_4324,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=t1,a[7]=((C_word*)t0)[6],a[8]=((C_word*)t0)[7],a[9]=((C_word*)t0)[8],tmp=(C_word)a,a+=10,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[120],t1);}
 
 /* k4322 in k4319 in k4312 in doloop1025 in k4262 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4491,7 +4491,7 @@ C_word ab[9],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4324,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_4327,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],a[7]=((C_word*)t0)[8],a[8]=((C_word*)t0)[9],tmp=(C_word)a,a+=9,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[6]);}
 
 /* k4325 in k4322 in k4319 in k4312 in doloop1025 in k4262 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4503,7 +4503,7 @@ C_word ab[9],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4327,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_4330,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],a[8]=((C_word*)t0)[8],tmp=(C_word)a,a+=9,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[119],((C_word*)t0)[5]);}
 
 /* k4328 in k4325 in k4322 in k4319 in k4312 in doloop1025 in k4262 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4517,7 +4517,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4330,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_4333,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],a[7]=((C_word*)t0)[8],tmp=(C_word)a,a+=8,tmp);
 t3=(C_word)C_i_car(((C_word*)t0)[2]);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,t3,((C_word*)t0)[5]);}
 
 /* k4331 in k4328 in k4325 in k4322 in k4319 in k4312 in doloop1025 in k4262 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4529,7 +4529,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4333,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_4336,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],tmp=(C_word)a,a+=8,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[118],((C_word*)t0)[4]);}
 
 /* k4334 in k4331 in k4328 in k4325 in k4322 in k4319 in k4312 in doloop1025 in k4262 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4543,7 +4543,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4336,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_4339,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],tmp=(C_word)a,a+=7,tmp);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4359,a[2]=((C_word*)t0)[4],a[3]=t2,tmp=(C_word)a,a+=4,tmp);
-C_trace("scrutinizer.scm: 463  pname");
+/* scrutinizer.scm: 463  pname */
 t4=((C_word*)t0)[2];
 f_4155(t4,t3);}
 
@@ -4552,7 +4552,7 @@ static void C_ccall f_4359(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k4337 in k4334 in k4331 in k4328 in k4325 in k4322 in k4319 in k4312 in doloop1025 in k4262 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4564,7 +4564,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4339,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_4342,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[117],((C_word*)t0)[3]);}
 
 /* k4340 in k4337 in k4334 in k4331 in k4328 in k4325 in k4322 in k4319 in k4312 in doloop1025 in k4262 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4578,7 +4578,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4342,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_4345,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],tmp=(C_word)a,a+=6,tmp);
 t3=(C_word)C_i_car(((C_word*)t0)[2]);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,t3,((C_word*)t0)[3]);}
 
 /* k4343 in k4340 in k4337 in k4334 in k4331 in k4328 in k4325 in k4322 in k4319 in k4312 in doloop1025 in k4262 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4590,7 +4590,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4345,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_4348,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],tmp=(C_word)a,a+=6,tmp);
-C_trace("write-char/port");
+/* write-char/port */
 t3=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,C_make_character(39),((C_word*)t0)[2]);}
 
@@ -4603,7 +4603,7 @@ C_word ab[5],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4348,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_4351,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],tmp=(C_word)a,a+=5,tmp);
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),t2,((C_word*)t0)[2]);}
 
 /* k4349 in k4346 in k4343 in k4340 in k4337 in k4334 in k4331 in k4328 in k4325 in k4322 in k4319 in k4312 in doloop1025 in k4262 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4611,7 +4611,7 @@ static void C_ccall f_4351(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 459  report");
+/* scrutinizer.scm: 459  report */
 t2=((C_word*)((C_word*)t0)[4])[1];
 f_3947(t2,((C_word*)t0)[3],((C_word*)t0)[2],t1);}
 
@@ -4665,10 +4665,10 @@ t7=(C_word)C_i_car(((C_word*)t0)[2]);
 t8=(C_word)C_eqp(lf[30],t7);
 if(C_truep(t8)){
 t9=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_4733,a[2]=((C_word*)t0)[2],tmp=(C_word)a,a+=3,tmp);
-C_trace("scrutinizer.scm: 501  call/cc");
+/* scrutinizer.scm: 501  call/cc */
 ((C_proc3)C_retrieve_proc(*((C_word*)lf[63]+1)))(3,*((C_word*)lf[63]+1),t2,t9);}
 else{
-C_trace("scrutinizer.scm: 509  bomb");
+/* scrutinizer.scm: 509  bomb */
 ((C_proc4)C_retrieve_symbol_proc(lf[38]))(4,*((C_word*)lf[38]+1),t2,lf[116],((C_word*)t0)[2]);}}}}
 
 /* a4732 in k4265 in k4262 in a4256 in k4236 in k4494 in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4733,14 +4733,14 @@ t3=t1;
 else{
 t3=(C_word)C_eqp(lf[8],t2);
 if(C_truep(t3)){
-C_trace("scrutinizer.scm: 507  return");
+/* scrutinizer.scm: 507  return */
 t4=((C_word*)t0)[3];
 ((C_proc3)C_retrieve_proc(t4))(3,t4,t1,lf[8]);}
 else{
 t4=(C_word)C_i_car(t2);
 t5=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4770,a[2]=t4,a[3]=t1,tmp=(C_word)a,a+=4,tmp);
 t6=(C_word)C_i_cdr(t2);
-C_trace("scrutinizer.scm: 508  loop");
+/* scrutinizer.scm: 508  loop */
 t8=t5;
 t9=t6;
 t1=t8;
@@ -4779,7 +4779,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4243,2,t0,t1);}
 t2=(C_word)C_i_cdr(((C_word*)t0)[4]);
 t3=(C_word)C_i_length(t2);
-C_trace("scrutinizer.scm: 444  procedure-argument-types");
+/* scrutinizer.scm: 444  procedure-argument-types */
 t4=((C_word*)((C_word*)t0)[3])[1];
 f_4548(t4,t1,((C_word*)t0)[2],t3);}
 
@@ -4792,7 +4792,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_4155,NULL,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_4159,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=t1,tmp=(C_word)a,a+=6,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t2);}
 
 /* k4157 in pname in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4804,7 +4804,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4159,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_4162,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=t1,a[6]=((C_word*)t0)[5],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[114],t1);}
 
 /* k4160 in k4157 in pname in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4818,7 +4818,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4162,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_4165,a[2]=((C_word*)t0)[4],a[3]=((C_word*)t0)[5],a[4]=((C_word*)t0)[6],tmp=(C_word)a,a+=5,tmp);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4223,a[2]=((C_word*)t0)[5],a[3]=t2,tmp=(C_word)a,a+=4,tmp);
-C_trace("scrutinizer.scm: 424  fragment");
+/* scrutinizer.scm: 424  fragment */
 f_4078(t3,((C_word*)t0)[2]);}
 
 /* k4221 in k4160 in k4157 in pname in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4826,7 +4826,7 @@ static void C_ccall f_4223(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("write");
+/* write */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[113]+1)))(4,*((C_word*)lf[113]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k4163 in k4160 in k4157 in pname in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4838,7 +4838,7 @@ C_word ab[5],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4165,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_4168,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],tmp=(C_word)a,a+=5,tmp);
-C_trace("write-char/port");
+/* write-char/port */
 t3=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,C_make_character(39),((C_word*)t0)[3]);}
 
@@ -4876,10 +4876,10 @@ C_save_and_reclaim((void*)trf_4181,NULL,2,t0,t1);}
 if(C_truep(t1)){
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_4184,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],tmp=(C_word)a,a+=5,tmp);
 t3=(C_word)C_i_cadr(((C_word*)t0)[2]);
-C_trace("scrutinizer.scm: 426  source-info->line");
+/* scrutinizer.scm: 426  source-info->line */
 ((C_proc3)C_retrieve_symbol_proc(lf[111]))(3,*((C_word*)lf[111]+1),t2,t3);}
 else{
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[4],lf[112],((C_word*)t0)[3]);}}
 
 /* k4182 in k4179 in k4166 in k4163 in k4160 in k4157 in pname in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4892,10 +4892,10 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4184,2,t0,t1);}
 if(C_truep((C_word)C_i_numberp(t1))){
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4193,a[2]=t1,a[3]=((C_word*)t0)[4],tmp=(C_word)a,a+=4,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t2);}
 else{
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],lf[110],((C_word*)t0)[2]);}}
 
 /* k4191 in k4182 in k4179 in k4166 in k4163 in k4160 in k4157 in pname in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4907,7 +4907,7 @@ C_word ab[5],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4193,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_4196,a[2]=((C_word*)t0)[2],a[3]=t1,a[4]=((C_word*)t0)[3],tmp=(C_word)a,a+=5,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[109],t1);}
 
 /* k4194 in k4191 in k4182 in k4179 in k4166 in k4163 in k4160 in k4157 in pname in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4919,7 +4919,7 @@ C_word ab[4],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4196,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4199,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],tmp=(C_word)a,a+=4,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[3]);}
 
 /* k4197 in k4194 in k4191 in k4182 in k4179 in k4166 in k4163 in k4160 in k4157 in pname in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4931,7 +4931,7 @@ C_word ab[4],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4199,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4202,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],tmp=(C_word)a,a+=4,tmp);
-C_trace("write-char/port");
+/* write-char/port */
 t3=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,C_make_character(41),((C_word*)t0)[2]);}
 
@@ -4940,7 +4940,7 @@ static void C_ccall f_4202(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),((C_word*)t0)[3],((C_word*)t0)[2]);}
 
 /* k4176 in k4166 in k4163 in k4160 in k4157 in pname in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4948,7 +4948,7 @@ static void C_ccall f_4178(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k4169 in k4166 in k4163 in k4160 in k4157 in pname in call-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -4956,7 +4956,7 @@ static void C_ccall f_4171(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),((C_word*)t0)[3],((C_word*)t0)[2]);}
 
 /* pp-fragment in ##compiler#scrutinize in k1510 in k1507 */
@@ -4970,7 +4970,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_4132,NULL,3,t0,t1,t2);}
 t3=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_4140,a[2]=t1,tmp=(C_word)a,a+=3,tmp);
 t4=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4142,a[2]=t2,a[3]=((C_word*)t0)[2],tmp=(C_word)a,a+=4,tmp);
-C_trace("scrutinizer.scm: 417  with-output-to-string");
+/* scrutinizer.scm: 417  with-output-to-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[108]))(3,*((C_word*)lf[108]+1),t3,t4);}
 
 /* a4141 in pp-fragment in ##compiler#scrutinize in k1510 in k1507 */
@@ -4983,7 +4983,7 @@ if(c!=2) C_bad_argc_2(c,2,t0);
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4142,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_4150,a[2]=t1,tmp=(C_word)a,a+=3,tmp);
-C_trace("scrutinizer.scm: 419  fragment");
+/* scrutinizer.scm: 419  fragment */
 f_4078(t2,((C_word*)t0)[2]);}
 
 /* k4148 in a4141 in pp-fragment in ##compiler#scrutinize in k1510 in k1507 */
@@ -4991,7 +4991,7 @@ static void C_ccall f_4150(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 419  pp");
+/* scrutinizer.scm: 419  pp */
 ((C_proc3)C_retrieve_symbol_proc(lf[107]))(3,*((C_word*)lf[107]+1),((C_word*)t0)[2],t1);}
 
 /* k4138 in pp-fragment in ##compiler#scrutinize in k1510 in k1507 */
@@ -4999,7 +4999,7 @@ static void C_ccall f_4140(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 416  string-chomp");
+/* scrutinizer.scm: 416  string-chomp */
 ((C_proc3)C_retrieve_symbol_proc(lf[106]))(3,*((C_word*)lf[106]+1),((C_word*)t0)[2],t1);}
 
 /* fragment in ##compiler#scrutinize in k1510 in k1507 */
@@ -5011,7 +5011,7 @@ C_word ab[3],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_4078,NULL,2,t1,t2);}
 t3=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_4082,a[2]=t1,tmp=(C_word)a,a+=3,tmp);
-C_trace("scrutinizer.scm: 408  build-expression-tree");
+/* scrutinizer.scm: 408  build-expression-tree */
 ((C_proc3)C_retrieve_symbol_proc(lf[105]))(3,*((C_word*)lf[105]+1),t3,t2);}
 
 /* k4080 in fragment in ##compiler#scrutinize in k1510 in k1507 */
@@ -5061,7 +5061,7 @@ t6=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4114,a[2]=t5,a[3]=((C_word*)t0)[2],tmp=(C
 t7=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4122,a[2]=t6,a[3]=t1,tmp=(C_word)a,a+=4,tmp);
 t8=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4126,a[2]=t2,a[3]=t7,tmp=(C_word)a,a+=4,tmp);
 t9=(C_word)C_i_length(t2);
-C_trace("scrutinizer.scm: 413  min");
+/* scrutinizer.scm: 413  min */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[104]+1)))(4,*((C_word*)lf[104]+1),t8,C_fix(5),t9);}
 else{
 t5=t2;
@@ -5073,7 +5073,7 @@ static void C_ccall f_4126(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 413  take");
+/* scrutinizer.scm: 413  take */
 ((C_proc4)C_retrieve_symbol_proc(lf[103]))(4,*((C_word*)lf[103]+1),((C_word*)t0)[3],((C_word*)t0)[2],t1);}
 
 /* k4120 in walk in k4080 in fragment in ##compiler#scrutinize in k1510 in k1507 */
@@ -5081,7 +5081,7 @@ static void C_ccall f_4122(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("map");
+/* map */
 t2=*((C_word*)lf[102]+1);
 ((C_proc4)(void*)(*((C_word*)t2+1)))(4,t2,((C_word*)t0)[3],((C_word*)t0)[2],t1);}
 
@@ -5093,7 +5093,7 @@ C_word *a;
 if(c!=3) C_bad_argc_2(c,3,t0);
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr3,(void*)f_4114,3,t0,t1,t2);}
-C_trace("g934935941");
+/* g934935941 */
 t3=((C_word*)((C_word*)t0)[3])[1];
 f_4087(t3,t1,t2,((C_word*)t0)[2]);}
 
@@ -5118,7 +5118,7 @@ else{
 t4=(C_word)C_i_cdr(t2);
 if(C_truep((C_word)C_i_nullp(t4))){
 t5=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_3998,a[2]=t3,a[3]=t2,a[4]=t1,tmp=(C_word)a,a+=5,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t5);}
 else{
 t5=C_SCHEME_UNDEFINED;
@@ -5138,12 +5138,12 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_4023,NULL,3,t0,t1,t2);}
 t3=(C_word)C_i_cdr(t2);
 if(C_truep((C_word)C_i_nullp(t3))){
-C_trace("scrutinizer.scm: 404  location-name");
+/* scrutinizer.scm: 404  location-name */
 t4=((C_word*)((C_word*)t0)[4])[1];
 f_3957(t4,t1,t2);}
 else{
 t4=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_4036,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=t2,a[5]=t1,tmp=(C_word)a,a+=6,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t4);}}
 
 /* k4034 in rec in location-name in ##compiler#scrutinize in k1510 in k1507 */
@@ -5155,7 +5155,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4036,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_4039,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=t1,a[6]=((C_word*)t0)[5],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[99],t1);}
 
 /* k4037 in k4034 in rec in location-name in ##compiler#scrutinize in k1510 in k1507 */
@@ -5171,7 +5171,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_4039,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_4042,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],tmp=(C_word)a,a+=6,tmp);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4063,a[2]=((C_word*)t0)[5],a[3]=t2,tmp=(C_word)a,a+=4,tmp);
 t4=(C_word)C_i_car(((C_word*)t0)[4]);
-C_trace("scrutinizer.scm: 405  lname");
+/* scrutinizer.scm: 405  lname */
 f_3960(t3,t4);}
 
 /* k4061 in k4037 in k4034 in rec in location-name in ##compiler#scrutinize in k1510 in k1507 */
@@ -5179,7 +5179,7 @@ static void C_ccall f_4063(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k4040 in k4037 in k4034 in rec in location-name in ##compiler#scrutinize in k1510 in k1507 */
@@ -5191,7 +5191,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4042,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_4045,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],tmp=(C_word)a,a+=6,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[98],((C_word*)t0)[4]);}
 
 /* k4043 in k4040 in k4037 in k4034 in rec in location-name in ##compiler#scrutinize in k1510 in k1507 */
@@ -5207,7 +5207,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_4045,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4048,a[2]=((C_word*)t0)[4],a[3]=((C_word*)t0)[5],tmp=(C_word)a,a+=4,tmp);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4055,a[2]=((C_word*)t0)[4],a[3]=t2,tmp=(C_word)a,a+=4,tmp);
 t4=(C_word)C_i_cdr(((C_word*)t0)[3]);
-C_trace("scrutinizer.scm: 405  rec");
+/* scrutinizer.scm: 405  rec */
 t5=((C_word*)((C_word*)t0)[2])[1];
 f_4023(t5,t3,t4);}
 
@@ -5216,7 +5216,7 @@ static void C_ccall f_4055(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k4046 in k4043 in k4040 in k4037 in k4034 in rec in location-name in ##compiler#scrutinize in k1510 in k1507 */
@@ -5224,7 +5224,7 @@ static void C_ccall f_4048(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),((C_word*)t0)[3],((C_word*)t0)[2]);}
 
 /* k3996 in location-name in ##compiler#scrutinize in k1510 in k1507 */
@@ -5236,7 +5236,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3998,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_4001,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=t1,a[5]=((C_word*)t0)[4],tmp=(C_word)a,a+=6,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[97],t1);}
 
 /* k3999 in k3996 in location-name in ##compiler#scrutinize in k1510 in k1507 */
@@ -5252,7 +5252,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_4001,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4004,a[2]=((C_word*)t0)[4],a[3]=((C_word*)t0)[5],tmp=(C_word)a,a+=4,tmp);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4014,a[2]=((C_word*)t0)[4],a[3]=t2,tmp=(C_word)a,a+=4,tmp);
 t4=(C_word)C_i_car(((C_word*)t0)[3]);
-C_trace("scrutinizer.scm: 400  lname");
+/* scrutinizer.scm: 400  lname */
 f_3960(t3,t4);}
 
 /* k4012 in k3999 in k3996 in location-name in ##compiler#scrutinize in k1510 in k1507 */
@@ -5260,7 +5260,7 @@ static void C_ccall f_4014(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k4002 in k3999 in k3996 in location-name in ##compiler#scrutinize in k1510 in k1507 */
@@ -5272,7 +5272,7 @@ C_word ab[4],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_4004,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_4007,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],tmp=(C_word)a,a+=4,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[96],((C_word*)t0)[2]);}
 
 /* k4005 in k4002 in k3999 in k3996 in location-name in ##compiler#scrutinize in k1510 in k1507 */
@@ -5280,7 +5280,7 @@ static void C_ccall f_4007(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),((C_word*)t0)[3],((C_word*)t0)[2]);}
 
 /* lname in location-name in ##compiler#scrutinize in k1510 in k1507 */
@@ -5293,7 +5293,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_3960,NULL,2,t1,t2);}
 if(C_truep(t2)){
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_3967,a[2]=t2,a[3]=t1,tmp=(C_word)a,a+=4,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t3);}
 else{
 t3=t1;
@@ -5308,7 +5308,7 @@ C_word ab[5],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3967,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_3970,a[2]=((C_word*)t0)[2],a[3]=t1,a[4]=((C_word*)t0)[3],tmp=(C_word)a,a+=5,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[93],t1);}
 
 /* k3968 in k3965 in lname in location-name in ##compiler#scrutinize in k1510 in k1507 */
@@ -5322,7 +5322,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3970,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_3973,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],tmp=(C_word)a,a+=4,tmp);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_3983,a[2]=((C_word*)t0)[3],a[3]=t2,tmp=(C_word)a,a+=4,tmp);
-C_trace("scrutinizer.scm: 396  real-name");
+/* scrutinizer.scm: 396  real-name */
 ((C_proc3)C_retrieve_symbol_proc(lf[16]))(3,*((C_word*)lf[16]+1),t3,((C_word*)t0)[2]);}
 
 /* k3981 in k3968 in k3965 in lname in location-name in ##compiler#scrutinize in k1510 in k1507 */
@@ -5330,7 +5330,7 @@ static void C_ccall f_3983(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k3971 in k3968 in k3965 in lname in location-name in ##compiler#scrutinize in k1510 in k1507 */
@@ -5342,7 +5342,7 @@ C_word ab[4],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3973,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_3976,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],tmp=(C_word)a,a+=4,tmp);
-C_trace("write-char/port");
+/* write-char/port */
 t3=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,C_make_character(39),((C_word*)t0)[2]);}
 
@@ -5351,7 +5351,7 @@ static void C_ccall f_3976(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),((C_word*)t0)[3],((C_word*)t0)[2]);}
 
 /* report in ##compiler#scrutinize in k1510 in k1507 */
@@ -5363,7 +5363,7 @@ C_word ab[4],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_3947,NULL,4,t0,t1,t2,t3);}
 t4=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_3955,a[2]=t3,a[3]=t1,tmp=(C_word)a,a+=4,tmp);
-C_trace("scrutinizer.scm: 392  location-name");
+/* scrutinizer.scm: 392  location-name */
 t5=((C_word*)((C_word*)t0)[2])[1];
 f_3957(t5,t4,t2);}
 
@@ -5372,7 +5372,7 @@ static void C_ccall f_3955(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 389  compiler-warning");
+/* scrutinizer.scm: 389  compiler-warning */
 ((C_proc6)C_retrieve_symbol_proc(lf[90]))(6,*((C_word*)lf[90]+1),((C_word*)t0)[3],lf[91],lf[92],t1,((C_word*)t0)[2]);}
 
 /* single in ##compiler#scrutinize in k1510 in k1507 */
@@ -5405,12 +5405,12 @@ t8=(C_word)C_eqp(t6,C_fix(0));
 if(C_truep(t8)){
 t9=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_3894,a[2]=t1,tmp=(C_word)a,a+=3,tmp);
 t10=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_3898,a[2]=t2,a[3]=t4,a[4]=t9,a[5]=((C_word*)t0)[2],tmp=(C_word)a,a+=6,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t10);}
 else{
 t9=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_3913,a[2]=t3,a[3]=t1,tmp=(C_word)a,a+=4,tmp);
 t10=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_3920,a[2]=t2,a[3]=t6,a[4]=t4,a[5]=t9,a[6]=((C_word*)t0)[2],tmp=(C_word)a,a+=7,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t10);}}}}
 
 /* k3918 in single in ##compiler#scrutinize in k1510 in k1507 */
@@ -5422,7 +5422,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3920,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_3923,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=t1,a[5]=((C_word*)t0)[4],a[6]=((C_word*)t0)[5],a[7]=((C_word*)t0)[6],tmp=(C_word)a,a+=8,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[89],t1);}
 
 /* k3921 in k3918 in single in ##compiler#scrutinize in k1510 in k1507 */
@@ -5434,7 +5434,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3923,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_3926,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[4]);}
 
 /* k3924 in k3921 in k3918 in single in ##compiler#scrutinize in k1510 in k1507 */
@@ -5446,7 +5446,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3926,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_3929,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[88],((C_word*)t0)[3]);}
 
 /* k3927 in k3924 in k3921 in k3918 in single in ##compiler#scrutinize in k1510 in k1507 */
@@ -5458,7 +5458,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3929,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_3932,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[3]);}
 
 /* k3930 in k3927 in k3924 in k3921 in k3918 in single in ##compiler#scrutinize in k1510 in k1507 */
@@ -5470,7 +5470,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3932,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_3935,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[87],((C_word*)t0)[3]);}
 
 /* k3933 in k3930 in k3927 in k3924 in k3921 in k3918 in single in ##compiler#scrutinize in k1510 in k1507 */
@@ -5486,7 +5486,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_3935,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_3938,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],tmp=(C_word)a,a+=6,tmp);
 t3=(C_word)C_eqp(((C_word*)t0)[2],C_fix(1));
 t4=(C_truep(t3)?lf[42]:lf[43]);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,t4,((C_word*)t0)[3]);}
 
 /* k3936 in k3933 in k3930 in k3927 in k3924 in k3921 in k3918 in single in ##compiler#scrutinize in k1510 in k1507 */
@@ -5498,7 +5498,7 @@ C_word ab[5],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3938,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_3941,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],tmp=(C_word)a,a+=5,tmp);
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),t2,((C_word*)t0)[2]);}
 
 /* k3939 in k3936 in k3933 in k3930 in k3927 in k3924 in k3921 in k3918 in single in ##compiler#scrutinize in k1510 in k1507 */
@@ -5506,7 +5506,7 @@ static void C_ccall f_3941(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 383  report");
+/* scrutinizer.scm: 383  report */
 t2=((C_word*)((C_word*)t0)[4])[1];
 f_3947(t2,((C_word*)t0)[3],((C_word*)t0)[2],t1);}
 
@@ -5527,7 +5527,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3898,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_3901,a[2]=((C_word*)t0)[2],a[3]=t1,a[4]=((C_word*)t0)[3],a[5]=((C_word*)t0)[4],a[6]=((C_word*)t0)[5],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[86],t1);}
 
 /* k3899 in k3896 in single in ##compiler#scrutinize in k1510 in k1507 */
@@ -5539,7 +5539,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3901,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_3904,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],tmp=(C_word)a,a+=6,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[3]);}
 
 /* k3902 in k3899 in k3896 in single in ##compiler#scrutinize in k1510 in k1507 */
@@ -5551,7 +5551,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3904,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_3907,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],tmp=(C_word)a,a+=6,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[85],((C_word*)t0)[2]);}
 
 /* k3905 in k3902 in k3899 in k3896 in single in ##compiler#scrutinize in k1510 in k1507 */
@@ -5563,7 +5563,7 @@ C_word ab[5],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3907,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_3910,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],tmp=(C_word)a,a+=5,tmp);
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),t2,((C_word*)t0)[2]);}
 
 /* k3908 in k3905 in k3902 in k3899 in k3896 in single in ##compiler#scrutinize in k1510 in k1507 */
@@ -5571,7 +5571,7 @@ static void C_ccall f_3910(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 378  report");
+/* scrutinizer.scm: 378  report */
 t2=((C_word*)((C_word*)t0)[4])[1];
 f_3947(t2,((C_word*)t0)[3],((C_word*)t0)[2],t1);}
 
@@ -5656,7 +5656,7 @@ t11=(C_word)C_eqp(t10,lf[23]);
 if(C_truep(t11)){
 t12=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_3602,a[2]=t3,a[3]=((C_word*)t0)[2],tmp=(C_word)a,a+=4,tmp);
 t13=(C_word)C_i_cdr(t2);
-C_trace("scrutinizer.scm: 339  every");
+/* scrutinizer.scm: 339  every */
 ((C_proc4)C_retrieve_symbol_proc(lf[21]))(4,*((C_word*)lf[21]+1),t1,t12,t13);}
 else{
 t12=(C_word)C_eqp(t10,lf[30]);
@@ -5740,7 +5740,7 @@ t6=(C_word)C_i_car(t2);
 t7=(C_word)C_eqp(t6,lf[66]);
 if(C_truep(t7)){
 t8=(C_word)C_i_cdr(t2);
-C_trace("scrutinizer.scm: 360  loop1");
+/* scrutinizer.scm: 360  loop1 */
 t25=t1;
 t26=t8;
 t27=t3;
@@ -5757,7 +5757,7 @@ t8=(C_word)C_i_car(t3);
 t9=(C_word)C_eqp(t8,lf[66]);
 if(C_truep(t9)){
 t10=(C_word)C_i_cdr(t3);
-C_trace("scrutinizer.scm: 362  loop1");
+/* scrutinizer.scm: 362  loop1 */
 t25=t1;
 t26=t2;
 t27=t10;
@@ -5774,7 +5774,7 @@ t10=(C_word)C_i_car(t2);
 t11=(C_word)C_eqp(t10,lf[65]);
 if(C_truep(t11)){
 t12=(C_word)C_i_cdr(t2);
-C_trace("scrutinizer.scm: 364  loop1");
+/* scrutinizer.scm: 364  loop1 */
 t25=t1;
 t26=t12;
 t27=t3;
@@ -5791,7 +5791,7 @@ t12=(C_word)C_i_car(t3);
 t13=(C_word)C_eqp(t12,lf[65]);
 if(C_truep(t13)){
 t14=(C_word)C_i_cdr(t3);
-C_trace("scrutinizer.scm: 366  loop1");
+/* scrutinizer.scm: 366  loop1 */
 t25=t1;
 t26=t2;
 t27=t14;
@@ -5807,7 +5807,7 @@ else{
 t14=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_3768,a[2]=t5,a[3]=t4,a[4]=t1,a[5]=((C_word*)t0)[2],a[6]=t3,a[7]=t2,tmp=(C_word)a,a+=8,tmp);
 t15=(C_word)C_i_car(t2);
 t16=(C_word)C_i_car(t3);
-C_trace("scrutinizer.scm: 367  type<=?");
+/* scrutinizer.scm: 367  type<=? */
 t17=((C_word*)((C_word*)t0)[5])[1];
 f_3526(t17,t14,t15,t16);}}}}}}}
 
@@ -5821,7 +5821,7 @@ C_word *a;
 if(C_truep(t1)){
 t2=(C_word)C_i_cdr(((C_word*)t0)[7]);
 t3=(C_word)C_i_cdr(((C_word*)t0)[6]);
-C_trace("scrutinizer.scm: 368  loop1");
+/* scrutinizer.scm: 368  loop1 */
 t4=((C_word*)((C_word*)t0)[5])[1];
 f_3633(t4,((C_word*)t0)[4],t2,t3,((C_word*)t0)[3],((C_word*)t0)[2]);}
 else{
@@ -5877,7 +5877,7 @@ else{
 t6=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_3682,a[2]=t1,a[3]=((C_word*)t0)[3],a[4]=t3,a[5]=t2,tmp=(C_word)a,a+=6,tmp);
 t7=(C_word)C_i_car(t2);
 t8=(C_word)C_i_car(t3);
-C_trace("scrutinizer.scm: 355  type<=?");
+/* scrutinizer.scm: 355  type<=? */
 t9=((C_word*)((C_word*)t0)[2])[1];
 f_3526(t9,t6,t7,t8);}}}}
 
@@ -5891,7 +5891,7 @@ C_word *a;
 if(C_truep(t1)){
 t2=(C_word)C_i_cdr(((C_word*)t0)[5]);
 t3=(C_word)C_i_cdr(((C_word*)t0)[4]);
-C_trace("scrutinizer.scm: 356  loop2");
+/* scrutinizer.scm: 356  loop2 */
 t4=((C_word*)((C_word*)t0)[3])[1];
 f_3654(t4,((C_word*)t0)[2],t2,t3);}
 else{
@@ -5906,7 +5906,7 @@ C_word *a;
 if(c!=3) C_bad_argc_2(c,3,t0);
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr3,(void*)f_3602,3,t0,t1,t2);}
-C_trace("g800801");
+/* g800801 */
 t3=((C_word*)((C_word*)t0)[3])[1];
 f_3526(t3,t1,t2,((C_word*)t0)[2]);}
 
@@ -5943,7 +5943,7 @@ else{
 t6=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_3505,a[2]=t1,a[3]=((C_word*)t0)[3],a[4]=t3,a[5]=t2,tmp=(C_word)a,a+=6,tmp);
 t7=(C_word)C_i_car(t2);
 t8=(C_word)C_i_car(t3);
-C_trace("scrutinizer.scm: 326  match");
+/* scrutinizer.scm: 326  match */
 t9=((C_word*)((C_word*)t0)[2])[1];
 f_2980(t9,t6,t7,t8);}}}}}
 
@@ -5957,7 +5957,7 @@ C_word *a;
 if(C_truep(t1)){
 t2=(C_word)C_i_cdr(((C_word*)t0)[5]);
 t3=(C_word)C_i_cdr(((C_word*)t0)[4]);
-C_trace("scrutinizer.scm: 327  match-results");
+/* scrutinizer.scm: 327  match-results */
 t4=((C_word*)((C_word*)t0)[3])[1];
 f_3471(t4,((C_word*)t0)[2],t2,t3);}
 else{
@@ -6055,7 +6055,7 @@ t7=(C_word)C_i_car(t2);
 t8=(C_word)C_eqp(lf[66],t7);
 if(C_truep(t8)){
 t9=(C_word)C_i_cdr(t2);
-C_trace("scrutinizer.scm: 312  loop");
+/* scrutinizer.scm: 312  loop */
 t32=t1;
 t33=t9;
 t34=t3;
@@ -6072,7 +6072,7 @@ t9=(C_word)C_i_car(t3);
 t10=(C_word)C_eqp(lf[66],t9);
 if(C_truep(t10)){
 t11=(C_word)C_i_cdr(t3);
-C_trace("scrutinizer.scm: 314  loop");
+/* scrutinizer.scm: 314  loop */
 t32=t1;
 t33=t2;
 t34=t11;
@@ -6090,7 +6090,7 @@ t12=(C_word)C_eqp(lf[65],t11);
 if(C_truep(t12)){
 t13=(C_word)C_i_cdr(t2);
 t14=f_2690(t13);
-C_trace("scrutinizer.scm: 316  match-rest");
+/* scrutinizer.scm: 316  match-rest */
 t15=((C_word*)t0)[3];
 f_3267(t15,t1,t14,t3);}
 else{
@@ -6099,14 +6099,14 @@ t14=(C_word)C_eqp(lf[65],t13);
 if(C_truep(t14)){
 t15=(C_word)C_i_cdr(t3);
 t16=f_2690(t15);
-C_trace("scrutinizer.scm: 318  match-rest");
+/* scrutinizer.scm: 318  match-rest */
 t17=((C_word*)t0)[3];
 f_3267(t17,t1,t16,t2);}
 else{
 t15=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_3434,a[2]=t5,a[3]=t4,a[4]=t1,a[5]=((C_word*)t0)[5],a[6]=t3,a[7]=t2,tmp=(C_word)a,a+=8,tmp);
 t16=(C_word)C_i_car(t2);
 t17=(C_word)C_i_car(t3);
-C_trace("scrutinizer.scm: 319  match");
+/* scrutinizer.scm: 319  match */
 t18=((C_word*)((C_word*)t0)[2])[1];
 f_2980(t18,t15,t16,t17);}}}}}}}
 
@@ -6120,7 +6120,7 @@ C_word *a;
 if(C_truep(t1)){
 t2=(C_word)C_i_cdr(((C_word*)t0)[7]);
 t3=(C_word)C_i_cdr(((C_word*)t0)[6]);
-C_trace("scrutinizer.scm: 319  loop");
+/* scrutinizer.scm: 319  loop */
 t4=((C_word*)((C_word*)t0)[5])[1];
 f_3326(t4,((C_word*)t0)[4],t2,t3,((C_word*)t0)[3],((C_word*)t0)[2]);}
 else{
@@ -6138,7 +6138,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_3267,NULL,4,t0,t1,t2,t3);}
 t4=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_3273,a[2]=t3,tmp=(C_word)a,a+=3,tmp);
 t5=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_3285,a[2]=t2,a[3]=((C_word*)t0)[2],a[4]=((C_word*)t0)[3],tmp=(C_word)a,a+=5,tmp);
-C_trace("##sys#call-with-values");
+/* ##sys#call-with-values */
 C_call_with_values(4,0,t1,t4,t5);}
 
 /* a3284 in match-rest in match-args in ##compiler#scrutinize in k1510 in k1507 */
@@ -6153,7 +6153,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr4,(void*)f_3285,4,t0,t1,t2,t3);}
 t4=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_3292,a[2]=((C_word*)t0)[2],a[3]=t1,a[4]=((C_word*)t0)[3],a[5]=((C_word*)t0)[4],a[6]=t3,tmp=(C_word)a,a+=7,tmp);
 t5=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_3311,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],tmp=(C_word)a,a+=4,tmp);
-C_trace("scrutinizer.scm: 298  every");
+/* scrutinizer.scm: 298  every */
 ((C_proc4)C_retrieve_symbol_proc(lf[21]))(4,*((C_word*)lf[21]+1),t4,t5,t2);}
 
 /* a3310 in a3284 in match-rest in match-args in ##compiler#scrutinize in k1510 in k1507 */
@@ -6164,7 +6164,7 @@ C_word *a;
 if(c!=3) C_bad_argc_2(c,3,t0);
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr3,(void*)f_3311,3,t0,t1,t2);}
-C_trace("g712713");
+/* g712713 */
 t3=((C_word*)((C_word*)t0)[3])[1];
 f_2980(t3,t1,((C_word*)t0)[2],t2);}
 
@@ -6179,11 +6179,11 @@ if(C_truep(t1)){
 if(C_truep((C_word)C_i_pairp(((C_word*)t0)[6]))){
 t2=(C_word)C_i_cdr(((C_word*)t0)[6]);
 t3=f_2690(t2);
-C_trace("scrutinizer.scm: 299  match");
+/* scrutinizer.scm: 299  match */
 t4=((C_word*)((C_word*)t0)[4])[1];
 f_2980(t4,((C_word*)t0)[3],((C_word*)t0)[2],t3);}
 else{
-C_trace("scrutinizer.scm: 299  match");
+/* scrutinizer.scm: 299  match */
 t2=((C_word*)((C_word*)t0)[4])[1];
 f_2980(t2,((C_word*)t0)[3],((C_word*)t0)[2],lf[8]);}}
 else{
@@ -6200,7 +6200,7 @@ if(c!=2) C_bad_argc_2(c,2,t0);
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_3273,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|1,a[1]=(C_word)f_3279,tmp=(C_word)a,a+=2,tmp);
-C_trace("scrutinizer.scm: 297  break");
+/* scrutinizer.scm: 297  break */
 ((C_proc4)C_retrieve_symbol_proc(lf[79]))(4,*((C_word*)lf[79]+1),t1,t2,((C_word*)t0)[2]);}
 
 /* a3278 in a3272 in match-rest in match-args in ##compiler#scrutinize in k1510 in k1507 */
@@ -6213,7 +6213,7 @@ if(c!=3) C_bad_argc_2(c,3,t0);
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr3,(void*)f_3279,3,t0,t1,t2);}
 t3=*((C_word*)lf[55]+1);
-C_trace("g697698");
+/* g697698 */
 t4=t3;
 ((C_proc4)C_retrieve_proc(t4))(4,t4,t1,lf[65],t2);}
 
@@ -6319,7 +6319,7 @@ C_save_and_reclaim((void*)trf_3076,NULL,2,t0,t1);}
 if(C_truep(t1)){
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_3081,a[2]=((C_word*)t0)[7],a[3]=((C_word*)t0)[8],tmp=(C_word)a,a+=4,tmp);
 t3=(C_word)C_i_cdr(((C_word*)t0)[6]);
-C_trace("scrutinizer.scm: 278  any");
+/* scrutinizer.scm: 278  any */
 ((C_proc4)C_retrieve_symbol_proc(lf[56]))(4,*((C_word*)lf[56]+1),((C_word*)t0)[5],t2,t3);}
 else{
 t2=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_3095,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[7],a[7]=((C_word*)t0)[6],a[8]=((C_word*)t0)[8],tmp=(C_word)a,a+=9,tmp);
@@ -6348,7 +6348,7 @@ C_save_and_reclaim((void*)trf_3095,NULL,2,t0,t1);}
 if(C_truep(t1)){
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_3100,a[2]=((C_word*)t0)[7],a[3]=((C_word*)t0)[8],tmp=(C_word)a,a+=4,tmp);
 t3=(C_word)C_i_cdr(((C_word*)t0)[6]);
-C_trace("scrutinizer.scm: 279  any");
+/* scrutinizer.scm: 279  any */
 ((C_proc4)C_retrieve_symbol_proc(lf[56]))(4,*((C_word*)lf[56]+1),((C_word*)t0)[5],t2,t3);}
 else{
 t2=((C_word*)t0)[7];
@@ -6407,7 +6407,7 @@ t9=(C_truep(t8)?(C_word)C_i_cdddr(((C_word*)t0)[7]):(C_word)C_i_cddr(((C_word*)t
 t10=f_2650(((C_word*)t0)[5]);
 t11=(C_truep(t10)?(C_word)C_i_cdddr(((C_word*)t0)[5]):(C_word)C_i_cddr(((C_word*)t0)[5]));
 t12=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_3159,a[2]=t11,a[3]=t9,a[4]=((C_word*)t0)[3],a[5]=((C_word*)t0)[4],tmp=(C_word)a,a+=6,tmp);
-C_trace("scrutinizer.scm: 289  match-args");
+/* scrutinizer.scm: 289  match-args */
 t13=((C_word*)((C_word*)t0)[2])[1];
 f_3261(t13,t12,t5,t7);}
 else{
@@ -6424,7 +6424,7 @@ C_word tmp;
 C_word t2;
 C_word *a;
 if(C_truep(t1)){
-C_trace("scrutinizer.scm: 290  match-results");
+/* scrutinizer.scm: 290  match-results */
 t2=((C_word*)((C_word*)t0)[5])[1];
 f_3471(t2,((C_word*)t0)[4],((C_word*)t0)[3],((C_word*)t0)[2]);}
 else{
@@ -6439,7 +6439,7 @@ C_word *a;
 if(c!=3) C_bad_argc_2(c,3,t0);
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr3,(void*)f_3100,3,t0,t1,t2);}
-C_trace("g659660");
+/* g659660 */
 t3=((C_word*)((C_word*)t0)[3])[1];
 f_2980(t3,t1,((C_word*)t0)[2],t2);}
 
@@ -6451,7 +6451,7 @@ C_word *a;
 if(c!=3) C_bad_argc_2(c,3,t0);
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr3,(void*)f_3081,3,t0,t1,t2);}
-C_trace("g648649");
+/* g648649 */
 t3=((C_word*)((C_word*)t0)[3])[1];
 f_2980(t3,t1,t2,((C_word*)t0)[2]);}
 
@@ -6464,7 +6464,7 @@ C_word ab[3],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_2980,NULL,4,t0,t1,t2,t3);}
 t4=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_2984,a[2]=t1,tmp=(C_word)a,a+=3,tmp);
-C_trace("scrutinizer.scm: 265  match1");
+/* scrutinizer.scm: 265  match1 */
 t5=((C_word*)((C_word*)t0)[2])[1];
 f_2989(t5,t4,t2,t3);}
 
@@ -6515,7 +6515,7 @@ t8=(C_word)C_i_car(t3);
 t9=(C_word)C_a_i_cons(&a,2,t8,C_SCHEME_END_OF_LIST);
 t10=(C_word)C_a_i_cons(&a,2,t7,t9);
 t11=(C_word)C_a_i_cons(&a,2,lf[23],t10);
-C_trace("scrutinizer.scm: 262  simplify");
+/* scrutinizer.scm: 262  simplify */
 t12=((C_word*)((C_word*)t0)[2])[1];
 f_2173(t12,t6,t11);}}}}
 
@@ -6532,7 +6532,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_2943,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_2947,a[2]=t1,a[3]=((C_word*)t0)[5],tmp=(C_word)a,a+=4,tmp);
 t3=(C_word)C_i_cdr(((C_word*)t0)[4]);
 t4=(C_word)C_i_cdr(((C_word*)t0)[3]);
-C_trace("scrutinizer.scm: 263  merge-result-types");
+/* scrutinizer.scm: 263  merge-result-types */
 t5=((C_word*)((C_word*)t0)[2])[1];
 f_2914(t5,t2,t3,t4);}
 
@@ -6613,7 +6613,7 @@ t10=(C_word)C_i_car(t3);
 t11=(C_word)C_a_i_cons(&a,2,t10,C_SCHEME_END_OF_LIST);
 t12=(C_word)C_a_i_cons(&a,2,t9,t11);
 t13=(C_word)C_a_i_cons(&a,2,lf[23],t12);
-C_trace("scrutinizer.scm: 256  simplify");
+/* scrutinizer.scm: 256  simplify */
 t14=((C_word*)((C_word*)t0)[3])[1];
 f_2173(t14,t8,t13);}}}}
 
@@ -6630,7 +6630,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_2872,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_2876,a[2]=t1,a[3]=((C_word*)t0)[5],tmp=(C_word)a,a+=4,tmp);
 t3=(C_word)C_i_cdr(((C_word*)t0)[4]);
 t4=(C_word)C_i_cdr(((C_word*)t0)[3]);
-C_trace("scrutinizer.scm: 257  merge-argument-types");
+/* scrutinizer.scm: 257  merge-argument-types */
 t5=((C_word*)((C_word*)t0)[2])[1];
 f_2712(t5,t2,t3,t4);}
 
@@ -6664,7 +6664,7 @@ t4=(C_word)C_i_cadr(((C_word*)t0)[4]);
 t5=(C_word)C_a_i_cons(&a,2,t4,C_SCHEME_END_OF_LIST);
 t6=(C_word)C_a_i_cons(&a,2,t3,t5);
 t7=(C_word)C_a_i_cons(&a,2,lf[23],t6);
-C_trace("scrutinizer.scm: 253  simplify");
+/* scrutinizer.scm: 253  simplify */
 t8=((C_word*)((C_word*)t0)[2])[1];
 f_2173(t8,t2,t7);}
 else{
@@ -6686,7 +6686,7 @@ t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_2823,a[2]=((C_word*)t0)[5],a[3]=t1,tmp=(C
 t3=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_2827,a[2]=t2,tmp=(C_word)a,a+=3,tmp);
 t4=(C_word)C_i_cddr(((C_word*)t0)[4]);
 t5=(C_word)C_i_cddr(((C_word*)t0)[3]);
-C_trace("scrutinizer.scm: 254  merge-argument-types");
+/* scrutinizer.scm: 254  merge-argument-types */
 t6=((C_word*)((C_word*)t0)[2])[1];
 f_2712(t6,t3,t4,t5);}
 
@@ -6695,7 +6695,7 @@ static void C_ccall f_2827(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("##sys#append");
+/* ##sys#append */
 t2=*((C_word*)lf[57]+1);
 ((C_proc4)(void*)(*((C_word*)t2+1)))(4,t2,((C_word*)t0)[2],t1,C_SCHEME_END_OF_LIST);}
 
@@ -6735,7 +6735,7 @@ t6=f_2690(t5);
 t7=(C_word)C_a_i_cons(&a,2,t6,C_SCHEME_END_OF_LIST);
 t8=(C_word)C_a_i_cons(&a,2,t4,t7);
 t9=(C_word)C_a_i_cons(&a,2,lf[23],t8);
-C_trace("scrutinizer.scm: 246  simplify");
+/* scrutinizer.scm: 246  simplify */
 t10=((C_word*)((C_word*)t0)[2])[1];
 f_2173(t10,t2,t9);}
 else{
@@ -6805,7 +6805,7 @@ C_word ab[9],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_2182,NULL,3,t0,t1,t2);}
 t3=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_2188,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],a[8]=t2,tmp=(C_word)a,a+=9,tmp);
-C_trace("scrutinizer.scm: 172  call/cc");
+/* scrutinizer.scm: 172  call/cc */
 ((C_proc3)C_retrieve_proc(*((C_word*)lf[63]+1)))(3,*((C_word*)lf[63]+1),t1,t3);}
 
 /* a2187 in simplify1 in ##compiler#scrutinize in k1510 in k1507 */
@@ -6847,13 +6847,13 @@ t5=(C_word)C_i_length(((C_word*)t0)[8]);
 t6=(C_word)C_eqp(C_fix(2),t5);
 if(C_truep(t6)){
 t7=(C_word)C_i_cadr(((C_word*)t0)[8]);
-C_trace("scrutinizer.scm: 177  simplify");
+/* scrutinizer.scm: 177  simplify */
 t8=((C_word*)((C_word*)t0)[7])[1];
 f_2173(t8,t1,t7);}
 else{
 t7=(*a=C_CLOSURE_TYPE|9,a[1]=(C_word)f_2223,a[2]=((C_word*)t0)[3],a[3]=t2,a[4]=((C_word*)t0)[7],a[5]=((C_word*)t0)[8],a[6]=((C_word*)t0)[4],a[7]=((C_word*)t0)[5],a[8]=((C_word*)t0)[6],a[9]=t1,tmp=(C_word)a,a+=10,tmp);
 t8=(C_word)C_i_cdr(((C_word*)t0)[8]);
-C_trace("scrutinizer.scm: 178  every");
+/* scrutinizer.scm: 178  every */
 ((C_proc4)C_retrieve_symbol_proc(lf[21]))(4,*((C_word*)lf[21]+1),t7,((C_word*)((C_word*)t0)[2])[1],t8);}}
 else{
 t5=(C_word)C_eqp(t3,lf[30]);
@@ -6895,7 +6895,7 @@ C_save_and_reclaim((void*)trf_2594,NULL,3,t0,t1,t2);}
 if(C_truep((C_word)C_i_pairp(t2))){
 t3=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2623,a[2]=((C_word*)t0)[3],a[3]=t1,a[4]=((C_word*)t0)[4],a[5]=t2,a[6]=((C_word*)t0)[5],tmp=(C_word)a,a+=7,tmp);
 t4=(C_word)C_slot(t2,C_fix(0));
-C_trace("g471472");
+/* g471472 */
 t5=((C_word*)((C_word*)t0)[2])[1];
 f_2173(t5,t3,t4);}
 else{
@@ -6922,14 +6922,14 @@ if(C_truep(((C_word*)((C_word*)t0)[6])[1])){
 t3=(C_word)C_i_setslot(((C_word*)((C_word*)t0)[6])[1],C_fix(1),t2);
 t4=C_mutate(((C_word *)((C_word*)t0)[6])+1,t2);
 t5=(C_word)C_slot(((C_word*)t0)[5],C_fix(1));
-C_trace("loop455468");
+/* loop455468 */
 t6=((C_word*)((C_word*)t0)[4])[1];
 f_2594(t6,((C_word*)t0)[3],t5);}
 else{
 t3=C_mutate(((C_word *)((C_word*)t0)[2])+1,t2);
 t4=C_mutate(((C_word *)((C_word*)t0)[6])+1,t2);
 t5=(C_word)C_slot(((C_word*)t0)[5],C_fix(1));
-C_trace("loop455468");
+/* loop455468 */
 t6=((C_word*)((C_word*)t0)[4])[1];
 f_2594(t6,((C_word*)t0)[3],t5);}}
 
@@ -6954,7 +6954,7 @@ t2=(C_word)C_a_i_list(&a,1,t1);
 t3=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_2543,a[2]=t2,a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],tmp=(C_word)a,a+=5,tmp);
 t4=(C_word)C_eqp(lf[8],((C_word*)t0)[3]);
 if(C_truep(t4)){
-C_trace("scrutinizer.scm: 221  append");
+/* scrutinizer.scm: 221  append */
 ((C_proc6)C_retrieve_proc(*((C_word*)lf[52]+1)))(6,*((C_word*)lf[52]+1),((C_word*)t0)[5],lf[62],((C_word*)t0)[4],t2,lf[8]);}
 else{
 t5=C_SCHEME_END_OF_LIST;
@@ -6980,7 +6980,7 @@ C_save_and_reclaim((void*)trf_2551,NULL,3,t0,t1,t2);}
 if(C_truep((C_word)C_i_pairp(t2))){
 t3=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2580,a[2]=((C_word*)t0)[3],a[3]=t1,a[4]=((C_word*)t0)[4],a[5]=t2,a[6]=((C_word*)t0)[5],tmp=(C_word)a,a+=7,tmp);
 t4=(C_word)C_slot(t2,C_fix(0));
-C_trace("g494495");
+/* g494495 */
 t5=((C_word*)((C_word*)t0)[2])[1];
 f_2173(t5,t3,t4);}
 else{
@@ -7007,14 +7007,14 @@ if(C_truep(((C_word*)((C_word*)t0)[6])[1])){
 t3=(C_word)C_i_setslot(((C_word*)((C_word*)t0)[6])[1],C_fix(1),t2);
 t4=C_mutate(((C_word *)((C_word*)t0)[6])+1,t2);
 t5=(C_word)C_slot(((C_word*)t0)[5],C_fix(1));
-C_trace("loop478491");
+/* loop478491 */
 t6=((C_word*)((C_word*)t0)[4])[1];
 f_2551(t6,((C_word*)t0)[3],t5);}
 else{
 t3=C_mutate(((C_word *)((C_word*)t0)[2])+1,t2);
 t4=C_mutate(((C_word *)((C_word*)t0)[6])+1,t2);
 t5=(C_word)C_slot(((C_word*)t0)[5],C_fix(1));
-C_trace("loop478491");
+/* loop478491 */
 t6=((C_word*)((C_word*)t0)[4])[1];
 f_2551(t6,((C_word*)t0)[3],t5);}}
 
@@ -7023,7 +7023,7 @@ static void C_ccall f_2543(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 221  append");
+/* scrutinizer.scm: 221  append */
 ((C_proc6)C_retrieve_proc(*((C_word*)lf[52]+1)))(6,*((C_word*)lf[52]+1),((C_word*)t0)[4],lf[61],((C_word*)t0)[3],((C_word*)t0)[2],t1);}
 
 /* k2221 in a2187 in simplify1 in ##compiler#scrutinize in k1510 in k1507 */
@@ -7043,13 +7043,13 @@ if(C_truep(t1)){
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2229,a[2]=((C_word*)t0)[5],a[3]=((C_word*)t0)[6],a[4]=((C_word*)t0)[7],a[5]=((C_word*)t0)[8],a[6]=((C_word*)t0)[9],tmp=(C_word)a,a+=7,tmp);
 t3=(*a=C_CLOSURE_TYPE|1,a[1]=(C_word)f_2326,tmp=(C_word)a,a+=2,tmp);
 t4=(C_word)C_i_cdr(((C_word*)t0)[5]);
-C_trace("scrutinizer.scm: 179  any");
+/* scrutinizer.scm: 179  any */
 ((C_proc4)C_retrieve_symbol_proc(lf[56]))(4,*((C_word*)lf[56]+1),t2,t3,t4);}
 else{
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2337,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[9],a[6]=((C_word*)t0)[5],tmp=(C_word)a,a+=7,tmp);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_2469,a[2]=((C_word*)t0)[4],a[3]=((C_word*)t0)[3],tmp=(C_word)a,a+=4,tmp);
 t4=(C_word)C_i_cdr(((C_word*)t0)[5]);
-C_trace("scrutinizer.scm: 197  append-map");
+/* scrutinizer.scm: 197  append-map */
 ((C_proc4)C_retrieve_symbol_proc(lf[60]))(4,*((C_word*)lf[60]+1),t2,t3,t4);}}
 
 /* a2468 in k2221 in a2187 in simplify1 in ##compiler#scrutinize in k1510 in k1507 */
@@ -7062,7 +7062,7 @@ if(c!=3) C_bad_argc_2(c,3,t0);
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr3,(void*)f_2469,3,t0,t1,t2);}
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_2473,a[2]=((C_word*)t0)[3],a[3]=t1,tmp=(C_word)a,a+=4,tmp);
-C_trace("scrutinizer.scm: 199  simplify");
+/* scrutinizer.scm: 199  simplify */
 t4=((C_word*)((C_word*)t0)[2])[1];
 f_2173(t4,t3,t2);}
 
@@ -7098,7 +7098,7 @@ t2=((C_word*)t0)[4];
 else{
 t2=(C_word)C_eqp(((C_word*)t0)[3],lf[14]);
 if(C_truep(t2)){
-C_trace("scrutinizer.scm: 203  return");
+/* scrutinizer.scm: 203  return */
 t3=((C_word*)t0)[2];
 ((C_proc3)C_retrieve_proc(t3))(3,t3,((C_word*)t0)[4],lf[14]);}
 else{
@@ -7136,20 +7136,20 @@ C_word ab[11],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_2379,NULL,4,t0,t1,t2,t3);}
 if(C_truep((C_word)C_i_nullp(t2))){
-C_trace("scrutinizer.scm: 207  reverse");
+/* scrutinizer.scm: 207  reverse */
 ((C_proc3)C_retrieve_proc(*((C_word*)lf[59]+1)))(3,*((C_word*)lf[59]+1),t1,t3);}
 else{
 t4=(C_word)C_i_car(t2);
 t5=(C_word)C_eqp(lf[8],t4);
 if(C_truep(t5)){
-C_trace("scrutinizer.scm: 208  return");
+/* scrutinizer.scm: 208  return */
 t6=((C_word*)t0)[4];
 ((C_proc3)C_retrieve_proc(t6))(3,t6,t1,lf[8]);}
 else{
 t6=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2404,a[2]=((C_word*)t0)[2],a[3]=t3,a[4]=t1,a[5]=((C_word*)t0)[3],a[6]=t2,tmp=(C_word)a,a+=7,tmp);
 t7=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_2451,a[2]=((C_word*)t0)[2],a[3]=t2,tmp=(C_word)a,a+=4,tmp);
 t8=(C_word)C_i_cdr(t2);
-C_trace("scrutinizer.scm: 209  any");
+/* scrutinizer.scm: 209  any */
 ((C_proc4)C_retrieve_symbol_proc(lf[56]))(4,*((C_word*)lf[56]+1),t6,t7,t8);}}}
 
 /* a2450 in loop in k2335 in k2221 in a2187 in simplify1 in ##compiler#scrutinize in k1510 in k1507 */
@@ -7162,7 +7162,7 @@ if(c!=3) C_bad_argc_2(c,3,t0);
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr3,(void*)f_2451,3,t0,t1,t2);}
 t3=(C_word)C_i_car(((C_word*)t0)[3]);
-C_trace("g415416");
+/* g415416 */
 t4=((C_word*)((C_word*)t0)[2])[1];
 f_3526(t4,t1,t3,t2);}
 
@@ -7178,13 +7178,13 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2404,2,t0,t1);}
 if(C_truep(t1)){
 t2=(C_word)C_i_cdr(((C_word*)t0)[6]);
-C_trace("scrutinizer.scm: 210  loop");
+/* scrutinizer.scm: 210  loop */
 t3=((C_word*)((C_word*)t0)[5])[1];
 f_2379(t3,((C_word*)t0)[4],t2,((C_word*)t0)[3]);}
 else{
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_2417,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],tmp=(C_word)a,a+=6,tmp);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_2441,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[6],tmp=(C_word)a,a+=4,tmp);
-C_trace("scrutinizer.scm: 211  any");
+/* scrutinizer.scm: 211  any */
 ((C_proc4)C_retrieve_symbol_proc(lf[56]))(4,*((C_word*)lf[56]+1),t2,t3,((C_word*)t0)[3]);}}
 
 /* a2440 in k2402 in loop in k2335 in k2221 in a2187 in simplify1 in ##compiler#scrutinize in k1510 in k1507 */
@@ -7197,7 +7197,7 @@ if(c!=3) C_bad_argc_2(c,3,t0);
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr3,(void*)f_2441,3,t0,t1,t2);}
 t3=(C_word)C_i_car(((C_word*)t0)[3]);
-C_trace("g424425");
+/* g424425 */
 t4=((C_word*)((C_word*)t0)[2])[1];
 f_3526(t4,t1,t3,t2);}
 
@@ -7214,14 +7214,14 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2417,2,t0,t1);}
 if(C_truep(t1)){
 t2=(C_word)C_i_cdr(((C_word*)t0)[5]);
-C_trace("scrutinizer.scm: 212  loop");
+/* scrutinizer.scm: 212  loop */
 t3=((C_word*)((C_word*)t0)[4])[1];
 f_2379(t3,((C_word*)t0)[3],t2,((C_word*)t0)[2]);}
 else{
 t2=(C_word)C_i_cdr(((C_word*)t0)[5]);
 t3=(C_word)C_i_car(((C_word*)t0)[5]);
 t4=(C_word)C_a_i_cons(&a,2,t3,((C_word*)t0)[2]);
-C_trace("scrutinizer.scm: 213  loop");
+/* scrutinizer.scm: 213  loop */
 t5=((C_word*)((C_word*)t0)[4])[1];
 f_2379(t5,((C_word*)t0)[3],t2,t4);}}
 
@@ -7248,7 +7248,7 @@ t3=C_retrieve(lf[51]);
 t4=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_2360,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[2],tmp=(C_word)a,a+=4,tmp);
 t5=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_2367,a[2]=t1,a[3]=t4,tmp=(C_word)a,a+=4,tmp);
 t6=(*a=C_CLOSURE_TYPE|1,a[1]=(C_word)f_2369,tmp=(C_word)a,a+=2,tmp);
-C_trace("scrutinizer.scm: 217  any");
+/* scrutinizer.scm: 217  any */
 ((C_proc4)C_retrieve_symbol_proc(lf[56]))(4,*((C_word*)lf[56]+1),t5,t6,t1);}}
 
 /* a2368 in k2338 in k2335 in k2221 in a2187 in simplify1 in ##compiler#scrutinize in k1510 in k1507 */
@@ -7261,7 +7261,7 @@ if(c!=3) C_bad_argc_2(c,3,t0);
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr3,(void*)f_2369,3,t0,t1,t2);}
 t3=*((C_word*)lf[55]+1);
-C_trace("g445446");
+/* g445446 */
 t4=t3;
 ((C_proc4)C_retrieve_proc(t4))(4,t4,t1,t2,lf[8]);}
 
@@ -7272,12 +7272,12 @@ C_word t2;
 C_word t3;
 C_word *a;
 if(C_truep(t1)){
-C_trace("##sys#append");
+/* ##sys#append */
 t2=*((C_word*)lf[57]+1);
 ((C_proc4)(void*)(*((C_word*)t2+1)))(4,t2,((C_word*)t0)[3],lf[58],C_SCHEME_END_OF_LIST);}
 else{
 t2=((C_word*)t0)[2];
-C_trace("##sys#append");
+/* ##sys#append */
 t3=*((C_word*)lf[57]+1);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,((C_word*)t0)[3],t2,C_SCHEME_END_OF_LIST);}}
 
@@ -7290,7 +7290,7 @@ C_word ab[3],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2360,2,t0,t1);}
 t2=(C_word)C_a_i_cons(&a,2,lf[23],t1);
-C_trace("scrutinizer.scm: 217  simplify");
+/* scrutinizer.scm: 217  simplify */
 t3=((C_word*)((C_word*)t0)[3])[1];
 f_2173(t3,((C_word*)t0)[2],t2);}
 
@@ -7304,7 +7304,7 @@ if(c!=3) C_bad_argc_2(c,3,t0);
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr3,(void*)f_2326,3,t0,t1,t2);}
 t3=*((C_word*)lf[55]+1);
-C_trace("g367368");
+/* g367368 */
 t4=t3;
 ((C_proc4)C_retrieve_proc(t4))(4,t4,t1,lf[30],t2);}
 
@@ -7323,7 +7323,7 @@ t2=((C_word*)t0)[6];
 else{
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_2234,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],tmp=(C_word)a,a+=5,tmp);
 t3=(C_word)C_i_cdr(((C_word*)t0)[2]);
-C_trace("scrutinizer.scm: 181  reduce");
+/* scrutinizer.scm: 181  reduce */
 ((C_proc5)C_retrieve_symbol_proc(lf[54]))(5,*((C_word*)lf[54]+1),((C_word*)t0)[6],t2,C_SCHEME_FALSE,t3);}}
 
 /* a2233 in k2227 in k2221 in a2187 in simplify1 in ##compiler#scrutinize in k1510 in k1507 */
@@ -7374,7 +7374,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_2260,NULL,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2272,a[2]=((C_word*)t0)[5],a[3]=((C_word*)t0)[6],a[4]=((C_word*)t0)[7],a[5]=t1,a[6]=((C_word*)t0)[8],tmp=(C_word)a,a+=7,tmp);
-C_trace("scrutinizer.scm: 192  merge-argument-types");
+/* scrutinizer.scm: 192  merge-argument-types */
 t3=((C_word*)((C_word*)t0)[4])[1];
 f_2712(t3,t2,((C_word*)t0)[3],((C_word*)t0)[2]);}
 
@@ -7389,7 +7389,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2272,2,t0,t1);}
 t2=(C_word)C_a_i_list(&a,1,t1);
 t3=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_2268,a[2]=t2,a[3]=((C_word*)t0)[5],a[4]=((C_word*)t0)[6],tmp=(C_word)a,a+=5,tmp);
-C_trace("scrutinizer.scm: 193  merge-result-types");
+/* scrutinizer.scm: 193  merge-result-types */
 t4=((C_word*)((C_word*)t0)[4])[1];
 f_2914(t4,t3,((C_word*)t0)[3],((C_word*)t0)[2]);}
 
@@ -7398,7 +7398,7 @@ static void C_ccall f_2268(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 189  append");
+/* scrutinizer.scm: 189  append */
 ((C_proc6)C_retrieve_proc(*((C_word*)lf[52]+1)))(6,*((C_word*)lf[52]+1),((C_word*)t0)[4],lf[53],((C_word*)t0)[3],((C_word*)t0)[2],t1);}
 
 /* simplify in ##compiler#scrutinize in k1510 in k1507 */
@@ -7410,7 +7410,7 @@ C_word ab[3],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_2173,NULL,3,t0,t1,t2);}
 t3=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_2177,a[2]=t1,tmp=(C_word)a,a+=3,tmp);
-C_trace("scrutinizer.scm: 168  simplify1");
+/* scrutinizer.scm: 168  simplify1 */
 t4=((C_word*)((C_word*)t0)[2])[1];
 f_2182(t4,t3,t2);}
 
@@ -7453,7 +7453,7 @@ t9=t1;
 ((C_proc2)(void*)(*((C_word*)t9+1)))(2,t9,lf[48]);}
 else{
 t9=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2108,a[2]=t4,a[3]=t7,a[4]=t2,a[5]=((C_word*)t0)[2],a[6]=t1,tmp=(C_word)a,a+=7,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t9);}}}
 
 /* k2106 in result-string in ##compiler#scrutinize in k1510 in k1507 */
@@ -7465,7 +7465,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2108,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2111,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=t1,a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],t1);}
 
 /* k2109 in k2106 in result-string in ##compiler#scrutinize in k1510 in k1507 */
@@ -7477,7 +7477,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2111,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2114,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[50],((C_word*)t0)[5]);}
 
 /* k2112 in k2109 in k2106 in result-string in ##compiler#scrutinize in k1510 in k1507 */
@@ -7489,7 +7489,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2114,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2117,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[5]);}
 
 /* k2115 in k2112 in k2109 in k2106 in result-string in ##compiler#scrutinize in k1510 in k1507 */
@@ -7501,7 +7501,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2117,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2120,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[49],((C_word*)t0)[5]);}
 
 /* k2118 in k2115 in k2112 in k2109 in k2106 in result-string in ##compiler#scrutinize in k1510 in k1507 */
@@ -7513,7 +7513,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2120,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_2123,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],tmp=(C_word)a,a+=6,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[5]);}
 
 /* k2121 in k2118 in k2115 in k2112 in k2109 in k2106 in result-string in ##compiler#scrutinize in k1510 in k1507 */
@@ -7525,7 +7525,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2123,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_2126,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],tmp=(C_word)a,a+=6,tmp);
-C_trace("write-char/port");
+/* write-char/port */
 t3=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,C_make_character(32),((C_word*)t0)[4]);}
 
@@ -7570,7 +7570,7 @@ C_save_and_reclaim((void*)trf_2138,NULL,3,t0,t1,t2);}
 if(C_truep((C_word)C_i_pairp(t2))){
 t3=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2167,a[2]=((C_word*)t0)[3],a[3]=t1,a[4]=((C_word*)t0)[4],a[5]=t2,a[6]=((C_word*)t0)[5],tmp=(C_word)a,a+=7,tmp);
 t4=(C_word)C_slot(t2,C_fix(0));
-C_trace("g331332");
+/* g331332 */
 t5=((C_word*)((C_word*)t0)[2])[1];
 f_1825(t5,t3,t4);}
 else{
@@ -7597,14 +7597,14 @@ if(C_truep(((C_word*)((C_word*)t0)[6])[1])){
 t3=(C_word)C_i_setslot(((C_word*)((C_word*)t0)[6])[1],C_fix(1),t2);
 t4=C_mutate(((C_word *)((C_word*)t0)[6])+1,t2);
 t5=(C_word)C_slot(((C_word*)t0)[5],C_fix(1));
-C_trace("loop315328");
+/* loop315328 */
 t6=((C_word*)((C_word*)t0)[4])[1];
 f_2138(t6,((C_word*)t0)[3],t5);}
 else{
 t3=C_mutate(((C_word *)((C_word*)t0)[2])+1,t2);
 t4=C_mutate(((C_word *)((C_word*)t0)[6])+1,t2);
 t5=(C_word)C_slot(((C_word*)t0)[5],C_fix(1));
-C_trace("loop315328");
+/* loop315328 */
 t6=((C_word*)((C_word*)t0)[4])[1];
 f_2138(t6,((C_word*)t0)[3],t5);}}
 
@@ -7613,7 +7613,7 @@ static void C_ccall f_2136(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k2127 in k2124 in k2121 in k2118 in k2115 in k2112 in k2109 in k2106 in result-string in ##compiler#scrutinize in k1510 in k1507 */
@@ -7621,7 +7621,7 @@ static void C_ccall f_2129(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),((C_word*)t0)[3],((C_word*)t0)[2]);}
 
 /* argument-string in ##compiler#scrutinize in k1510 in k1507 */
@@ -7647,7 +7647,7 @@ t8=t1;
 ((C_proc2)(void*)(*((C_word*)t8+1)))(2,t8,lf[44]);}
 else{
 t8=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2021,a[2]=t3,a[3]=t6,a[4]=t2,a[5]=((C_word*)t0)[2],a[6]=t1,tmp=(C_word)a,a+=7,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t8);}}
 
 /* k2019 in argument-string in ##compiler#scrutinize in k1510 in k1507 */
@@ -7659,7 +7659,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2021,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2024,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=t1,a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],t1);}
 
 /* k2022 in k2019 in argument-string in ##compiler#scrutinize in k1510 in k1507 */
@@ -7671,7 +7671,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2024,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2027,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[46],((C_word*)t0)[5]);}
 
 /* k2025 in k2022 in k2019 in argument-string in ##compiler#scrutinize in k1510 in k1507 */
@@ -7683,7 +7683,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2027,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2030,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[5]);}
 
 /* k2028 in k2025 in k2022 in k2019 in argument-string in ##compiler#scrutinize in k1510 in k1507 */
@@ -7695,7 +7695,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2030,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2033,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[45],((C_word*)t0)[5]);}
 
 /* k2031 in k2028 in k2025 in k2022 in k2019 in argument-string in ##compiler#scrutinize in k1510 in k1507 */
@@ -7707,7 +7707,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2033,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_2036,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],tmp=(C_word)a,a+=6,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[5]);}
 
 /* k2034 in k2031 in k2028 in k2025 in k2022 in k2019 in argument-string in ##compiler#scrutinize in k1510 in k1507 */
@@ -7719,7 +7719,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_2036,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_2039,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],tmp=(C_word)a,a+=6,tmp);
-C_trace("write-char/port");
+/* write-char/port */
 t3=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,C_make_character(32),((C_word*)t0)[4]);}
 
@@ -7764,7 +7764,7 @@ C_save_and_reclaim((void*)trf_2051,NULL,3,t0,t1,t2);}
 if(C_truep((C_word)C_i_pairp(t2))){
 t3=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_2080,a[2]=((C_word*)t0)[3],a[3]=t1,a[4]=((C_word*)t0)[4],a[5]=t2,a[6]=((C_word*)t0)[5],tmp=(C_word)a,a+=7,tmp);
 t4=(C_word)C_slot(t2,C_fix(0));
-C_trace("g293294");
+/* g293294 */
 t5=((C_word*)((C_word*)t0)[2])[1];
 f_1825(t5,t3,t4);}
 else{
@@ -7791,14 +7791,14 @@ if(C_truep(((C_word*)((C_word*)t0)[6])[1])){
 t3=(C_word)C_i_setslot(((C_word*)((C_word*)t0)[6])[1],C_fix(1),t2);
 t4=C_mutate(((C_word *)((C_word*)t0)[6])+1,t2);
 t5=(C_word)C_slot(((C_word*)t0)[5],C_fix(1));
-C_trace("loop277290");
+/* loop277290 */
 t6=((C_word*)((C_word*)t0)[4])[1];
 f_2051(t6,((C_word*)t0)[3],t5);}
 else{
 t3=C_mutate(((C_word *)((C_word*)t0)[2])+1,t2);
 t4=C_mutate(((C_word *)((C_word*)t0)[6])+1,t2);
 t5=(C_word)C_slot(((C_word*)t0)[5],C_fix(1));
-C_trace("loop277290");
+/* loop277290 */
 t6=((C_word*)((C_word*)t0)[4])[1];
 f_2051(t6,((C_word*)t0)[3],t5);}}
 
@@ -7807,7 +7807,7 @@ static void C_ccall f_2049(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k2040 in k2037 in k2034 in k2031 in k2028 in k2025 in k2022 in k2019 in argument-string in ##compiler#scrutinize in k1510 in k1507 */
@@ -7815,7 +7815,7 @@ static void C_ccall f_2042(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),((C_word*)t0)[3],((C_word*)t0)[2]);}
 
 /* typename in ##compiler#scrutinize in k1510 in k1507 */
@@ -7858,7 +7858,7 @@ t6=t1;
 ((C_proc2)(void*)(*((C_word*)t6+1)))(2,t6,lf[28]);}
 else{
 if(C_truep((C_word)C_i_symbolp(t2))){
-C_trace("scrutinizer.scm: 130  symbol->string");
+/* scrutinizer.scm: 130  symbol->string */
 ((C_proc3)C_retrieve_proc(*((C_word*)lf[29]+1)))(3,*((C_word*)lf[29]+1),t1,t2);}
 else{
 if(C_truep((C_word)C_i_pairp(t2))){
@@ -7893,13 +7893,13 @@ else{
 t9=(C_word)C_eqp(t6,lf[36]);
 if(C_truep(t9)){
 t10=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_1984,a[2]=t2,a[3]=t1,tmp=(C_word)a,a+=4,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t10);}
 else{
-C_trace("scrutinizer.scm: 145  bomb");
+/* scrutinizer.scm: 145  bomb */
 ((C_proc4)C_retrieve_symbol_proc(lf[38]))(4,*((C_word*)lf[38]+1),t1,lf[39],t2);}}}}
 else{
-C_trace("scrutinizer.scm: 146  bomb");
+/* scrutinizer.scm: 146  bomb */
 ((C_proc4)C_retrieve_symbol_proc(lf[38]))(4,*((C_word*)lf[38]+1),t1,lf[40],t2);}}}}}
 
 /* k1982 in typename in ##compiler#scrutinize in k1510 in k1507 */
@@ -7911,7 +7911,7 @@ C_word ab[5],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1984,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_1987,a[2]=((C_word*)t0)[2],a[3]=t1,a[4]=((C_word*)t0)[3],tmp=(C_word)a,a+=5,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[37],t1);}
 
 /* k1985 in k1982 in typename in ##compiler#scrutinize in k1510 in k1507 */
@@ -7925,7 +7925,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1987,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_1990,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],tmp=(C_word)a,a+=4,tmp);
 t3=(C_word)C_i_cadr(((C_word*)t0)[2]);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,t3,((C_word*)t0)[3]);}
 
 /* k1988 in k1985 in k1982 in typename in ##compiler#scrutinize in k1510 in k1507 */
@@ -7933,7 +7933,7 @@ static void C_ccall f_1990(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),((C_word*)t0)[3],((C_word*)t0)[2]);}
 
 /* loop239 in typename in ##compiler#scrutinize in k1510 in k1507 */
@@ -7949,7 +7949,7 @@ C_save_and_reclaim((void*)trf_1942,NULL,3,t0,t1,t2);}
 if(C_truep((C_word)C_i_pairp(t2))){
 t3=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_1971,a[2]=((C_word*)t0)[3],a[3]=t1,a[4]=((C_word*)t0)[4],a[5]=t2,a[6]=((C_word*)t0)[5],tmp=(C_word)a,a+=7,tmp);
 t4=(C_word)C_slot(t2,C_fix(0));
-C_trace("g255256");
+/* g255256 */
 t5=((C_word*)((C_word*)t0)[2])[1];
 f_1825(t5,t3,t4);}
 else{
@@ -7976,14 +7976,14 @@ if(C_truep(((C_word*)((C_word*)t0)[6])[1])){
 t3=(C_word)C_i_setslot(((C_word*)((C_word*)t0)[6])[1],C_fix(1),t2);
 t4=C_mutate(((C_word *)((C_word*)t0)[6])+1,t2);
 t5=(C_word)C_slot(((C_word*)t0)[5],C_fix(1));
-C_trace("loop239252");
+/* loop239252 */
 t6=((C_word*)((C_word*)t0)[4])[1];
 f_1942(t6,((C_word*)t0)[3],t5);}
 else{
 t3=C_mutate(((C_word *)((C_word*)t0)[2])+1,t2);
 t4=C_mutate(((C_word *)((C_word*)t0)[6])+1,t2);
 t5=(C_word)C_slot(((C_word*)t0)[5],C_fix(1));
-C_trace("loop239252");
+/* loop239252 */
 t6=((C_word*)((C_word*)t0)[4])[1];
 f_1942(t6,((C_word*)t0)[3],t5);}}
 
@@ -7992,7 +7992,7 @@ static void C_ccall f_1936(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 140  string-intersperse");
+/* scrutinizer.scm: 140  string-intersperse */
 ((C_proc4)C_retrieve_symbol_proc(lf[34]))(4,*((C_word*)lf[34]+1),((C_word*)t0)[2],t1,lf[35]);}
 
 /* k1869 in typename in ##compiler#scrutinize in k1510 in k1507 */
@@ -8006,11 +8006,11 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_1871,NULL,2,t0,t1);}
 if(C_truep(t1)){
 t2=(C_word)C_i_cadr(((C_word*)t0)[5]);
-C_trace("scrutinizer.scm: 135  ->string");
+/* scrutinizer.scm: 135  ->string */
 ((C_proc3)C_retrieve_symbol_proc(lf[31]))(3,*((C_word*)lf[31]+1),((C_word*)t0)[4],t2);}
 else{
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_1881,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[4],tmp=(C_word)a,a+=6,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t2);}}
 
 /* k1879 in k1869 in typename in ##compiler#scrutinize in k1510 in k1507 */
@@ -8022,7 +8022,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1881,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_1884,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=t1,a[6]=((C_word*)t0)[5],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[33],t1);}
 
 /* k1882 in k1879 in k1869 in typename in ##compiler#scrutinize in k1510 in k1507 */
@@ -8038,7 +8038,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_1884,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_1887,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],tmp=(C_word)a,a+=6,tmp);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_1908,a[2]=((C_word*)t0)[5],a[3]=t2,tmp=(C_word)a,a+=4,tmp);
 t4=(C_word)C_i_cadr(((C_word*)t0)[4]);
-C_trace("scrutinizer.scm: 137  argument-string");
+/* scrutinizer.scm: 137  argument-string */
 t5=((C_word*)((C_word*)t0)[2])[1];
 f_2005(t5,t3,t4);}
 
@@ -8047,7 +8047,7 @@ static void C_ccall f_1908(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k1885 in k1882 in k1879 in k1869 in typename in ##compiler#scrutinize in k1510 in k1507 */
@@ -8059,7 +8059,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1887,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_1890,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],tmp=(C_word)a,a+=6,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[32],((C_word*)t0)[4]);}
 
 /* k1888 in k1885 in k1882 in k1879 in k1869 in typename in ##compiler#scrutinize in k1510 in k1507 */
@@ -8075,7 +8075,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_1890,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_1893,a[2]=((C_word*)t0)[4],a[3]=((C_word*)t0)[5],tmp=(C_word)a,a+=4,tmp);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_1900,a[2]=((C_word*)t0)[4],a[3]=t2,tmp=(C_word)a,a+=4,tmp);
 t4=(C_word)C_i_cddr(((C_word*)t0)[3]);
-C_trace("scrutinizer.scm: 138  result-string");
+/* scrutinizer.scm: 138  result-string */
 t5=((C_word*)((C_word*)t0)[2])[1];
 f_2086(t5,t3,t4);}
 
@@ -8084,7 +8084,7 @@ static void C_ccall f_1900(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k1891 in k1888 in k1885 in k1882 in k1879 in k1869 in typename in ##compiler#scrutinize in k1510 in k1507 */
@@ -8092,7 +8092,7 @@ static void C_ccall f_1893(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),((C_word*)t0)[3],((C_word*)t0)[2]);}
 
 /* always-true in ##compiler#scrutinize in k1510 in k1507 */
@@ -8104,7 +8104,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_1784,NULL,5,t0,t1,t2,t3,t4);}
 t5=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_1788,a[2]=t2,a[3]=t4,a[4]=((C_word*)t0)[3],a[5]=t3,a[6]=((C_word*)t0)[4],a[7]=t1,tmp=(C_word)a,a+=8,tmp);
-C_trace("scrutinizer.scm: 116  always-true1");
+/* scrutinizer.scm: 116  always-true1 */
 t6=((C_word*)((C_word*)t0)[2])[1];
 f_1752(3,t6,t5,t2);}
 
@@ -8120,7 +8120,7 @@ C_save_and_reclaim((void*)tr2,(void*)f_1788,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_1791,a[2]=t1,a[3]=((C_word*)t0)[7],tmp=(C_word)a,a+=4,tmp);
 if(C_truep(t1)){
 t3=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_1798,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=t2,a[7]=((C_word*)t0)[6],tmp=(C_word)a,a+=8,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t3);}
 else{
 t3=((C_word*)t0)[7];
@@ -8135,7 +8135,7 @@ C_word ab[9],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1798,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_1801,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=t1,a[6]=((C_word*)t0)[5],a[7]=((C_word*)t0)[6],a[8]=((C_word*)t0)[7],tmp=(C_word)a,a+=9,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[25],t1);}
 
 /* k1799 in k1796 in k1786 in always-true in ##compiler#scrutinize in k1510 in k1507 */
@@ -8147,7 +8147,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1801,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_1804,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],a[6]=((C_word*)t0)[7],a[7]=((C_word*)t0)[8],tmp=(C_word)a,a+=8,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[5]);}
 
 /* k1802 in k1799 in k1796 in k1786 in always-true in ##compiler#scrutinize in k1510 in k1507 */
@@ -8159,7 +8159,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1804,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_1807,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],tmp=(C_word)a,a+=8,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[24],((C_word*)t0)[4]);}
 
 /* k1805 in k1802 in k1799 in k1796 in k1786 in always-true in ##compiler#scrutinize in k1510 in k1507 */
@@ -8171,7 +8171,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1807,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_1810,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],tmp=(C_word)a,a+=8,tmp);
-C_trace("write-char/port");
+/* write-char/port */
 t3=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,C_make_character(10),((C_word*)t0)[4]);}
 
@@ -8184,7 +8184,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1810,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_1813,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],a[6]=((C_word*)t0)[6],a[7]=((C_word*)t0)[7],tmp=(C_word)a,a+=8,tmp);
-C_trace("write-char/port");
+/* write-char/port */
 t3=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,C_make_character(10),((C_word*)t0)[4]);}
 
@@ -8199,7 +8199,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1813,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_1816,a[2]=((C_word*)t0)[4],a[3]=((C_word*)t0)[5],a[4]=((C_word*)t0)[6],a[5]=((C_word*)t0)[7],tmp=(C_word)a,a+=6,tmp);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_1823,a[2]=((C_word*)t0)[4],a[3]=t2,tmp=(C_word)a,a+=4,tmp);
-C_trace("scrutinizer.scm: 123  pp-fragment");
+/* scrutinizer.scm: 123  pp-fragment */
 t4=((C_word*)((C_word*)t0)[3])[1];
 f_4132(t4,t3,((C_word*)t0)[2]);}
 
@@ -8208,7 +8208,7 @@ static void C_ccall f_1823(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k1814 in k1811 in k1808 in k1805 in k1802 in k1799 in k1796 in k1786 in always-true in ##compiler#scrutinize in k1510 in k1507 */
@@ -8220,7 +8220,7 @@ C_word ab[5],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1816,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_1819,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],tmp=(C_word)a,a+=5,tmp);
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),t2,((C_word*)t0)[2]);}
 
 /* k1817 in k1814 in k1811 in k1808 in k1805 in k1802 in k1799 in k1796 in k1786 in always-true in ##compiler#scrutinize in k1510 in k1507 */
@@ -8228,7 +8228,7 @@ static void C_ccall f_1819(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 118  report");
+/* scrutinizer.scm: 118  report */
 t2=((C_word*)((C_word*)t0)[4])[1];
 f_3947(t2,((C_word*)t0)[3],((C_word*)t0)[2],t1);}
 
@@ -8268,7 +8268,7 @@ C_word t4;
 C_word *a;
 if(C_truep(t1)){
 t2=(C_word)C_i_cdr(((C_word*)t0)[4]);
-C_trace("scrutinizer.scm: 112  every");
+/* scrutinizer.scm: 112  every */
 ((C_proc4)C_retrieve_symbol_proc(lf[21]))(4,*((C_word*)lf[21]+1),((C_word*)t0)[3],((C_word*)((C_word*)t0)[2])[1],t2);}
 else{
 t2=(C_word)C_i_memq(((C_word*)t0)[4],lf[22]);
@@ -8286,7 +8286,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_1679,NULL,5,t0,t1,t2,t3,t4);}
 t5=(*a=C_CLOSURE_TYPE|8,a[1]=(C_word)f_1686,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=t4,a[5]=((C_word*)t0)[4],a[6]=t3,a[7]=t2,a[8]=t1,tmp=(C_word)a,a+=9,tmp);
 t6=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_1743,a[2]=t2,a[3]=t5,tmp=(C_word)a,a+=4,tmp);
-C_trace("scrutinizer.scm: 97   get");
+/* scrutinizer.scm: 97   get */
 ((C_proc5)C_retrieve_symbol_proc(lf[19]))(5,*((C_word*)lf[19]+1),t6,((C_word*)t0)[3],t2,lf[20]);}
 
 /* k1741 in variable-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -8299,7 +8299,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1743,2,t0,t1);}
 if(C_truep(t1)){
 t2=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_1750,a[2]=((C_word*)t0)[3],tmp=(C_word)a,a+=3,tmp);
-C_trace("scrutinizer.scm: 98   ##sys#get");
+/* scrutinizer.scm: 98   ##sys#get */
 ((C_proc4)C_retrieve_symbol_proc(lf[12]))(4,*((C_word*)lf[12]+1),t2,((C_word*)t0)[2],lf[18]);}
 else{
 t2=((C_word*)t0)[3];
@@ -8329,11 +8329,11 @@ else{
 t2=(C_word)C_i_assq(((C_word*)t0)[7],((C_word*)t0)[6]);
 if(C_truep(t2)){
 t3=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_1693,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[7],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],tmp=(C_word)a,a+=6,tmp);
-C_trace("g161162");
+/* g161162 */
 t4=t3;
 f_1693(t4,((C_word*)t0)[8],t2);}
 else{
-C_trace("scrutinizer.scm: 109  global-result");
+/* scrutinizer.scm: 109  global-result */
 t3=((C_word*)((C_word*)t0)[2])[1];
 f_1637(t3,((C_word*)t0)[8],((C_word*)t0)[7],((C_word*)t0)[4]);}}}
 
@@ -8354,7 +8354,7 @@ t4=(C_word)C_eqp(lf[14],t3);
 if(C_truep(t4)){
 t5=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_1703,a[2]=t1,tmp=(C_word)a,a+=3,tmp);
 t6=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_1707,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=t5,a[6]=((C_word*)t0)[5],tmp=(C_word)a,a+=7,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t6);}
 else{
 t5=(C_word)C_i_cdr(t2);
@@ -8370,7 +8370,7 @@ C_word ab[8],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1707,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|7,a[1]=(C_word)f_1710,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=t1,a[5]=((C_word*)t0)[4],a[6]=((C_word*)t0)[5],a[7]=((C_word*)t0)[6],tmp=(C_word)a,a+=8,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[17],t1);}
 
 /* k1708 in k1705 in g161 in k1684 in variable-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -8384,7 +8384,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1710,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_1713,a[2]=((C_word*)t0)[4],a[3]=((C_word*)t0)[5],a[4]=((C_word*)t0)[6],a[5]=((C_word*)t0)[7],tmp=(C_word)a,a+=6,tmp);
 t3=(*a=C_CLOSURE_TYPE|3,a[1]=(C_word)f_1723,a[2]=((C_word*)t0)[4],a[3]=t2,tmp=(C_word)a,a+=4,tmp);
-C_trace("scrutinizer.scm: 106  real-name");
+/* scrutinizer.scm: 106  real-name */
 ((C_proc4)C_retrieve_symbol_proc(lf[16]))(4,*((C_word*)lf[16]+1),t3,((C_word*)t0)[3],((C_word*)t0)[2]);}
 
 /* k1721 in k1708 in k1705 in g161 in k1684 in variable-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -8392,7 +8392,7 @@ static void C_ccall f_1723(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),((C_word*)t0)[3],t1,((C_word*)t0)[2]);}
 
 /* k1711 in k1708 in k1705 in g161 in k1684 in variable-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -8404,7 +8404,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1713,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_1716,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],tmp=(C_word)a,a+=6,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[15],((C_word*)t0)[2]);}
 
 /* k1714 in k1711 in k1708 in k1705 in g161 in k1684 in variable-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -8416,7 +8416,7 @@ C_word ab[5],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1716,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_1719,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],tmp=(C_word)a,a+=5,tmp);
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),t2,((C_word*)t0)[2]);}
 
 /* k1717 in k1714 in k1711 in k1708 in k1705 in g161 in k1684 in variable-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -8424,7 +8424,7 @@ static void C_ccall f_1719(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 103  report");
+/* scrutinizer.scm: 103  report */
 t2=((C_word*)((C_word*)t0)[4])[1];
 f_3947(t2,((C_word*)t0)[3],((C_word*)t0)[2],t1);}
 
@@ -8445,7 +8445,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)trf_1637,NULL,4,t0,t1,t2,t3);}
 t4=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_1641,a[2]=t1,a[3]=t2,a[4]=t3,a[5]=((C_word*)t0)[2],tmp=(C_word)a,a+=6,tmp);
-C_trace("scrutinizer.scm: 83   ##sys#get");
+/* scrutinizer.scm: 83   ##sys#get */
 ((C_proc4)C_retrieve_symbol_proc(lf[12]))(4,*((C_word*)lf[12]+1),t4,t2,lf[13]);}
 
 /* k1639 in global-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -8458,7 +8458,7 @@ if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1641,2,t0,t1);}
 if(C_truep(t1)){
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_1645,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],tmp=(C_word)a,a+=5,tmp);
-C_trace("g130131");
+/* g130131 */
 t3=t2;
 f_1645(t3,((C_word*)t0)[2],t1);}
 else{
@@ -8479,7 +8479,7 @@ t3=(C_word)C_eqp(t2,lf[7]);
 if(C_truep(t3)){
 t4=(*a=C_CLOSURE_TYPE|2,a[1]=(C_word)f_1655,a[2]=t1,tmp=(C_word)a,a+=3,tmp);
 t5=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_1659,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=t4,a[5]=((C_word*)t0)[4],tmp=(C_word)a,a+=6,tmp);
-C_trace("open-output-string");
+/* open-output-string */
 ((C_proc2)C_retrieve_symbol_proc(lf[11]))(2,*((C_word*)lf[11]+1),t5);}
 else{
 t4=t1;
@@ -8494,7 +8494,7 @@ C_word ab[7],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1659,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|6,a[1]=(C_word)f_1662,a[2]=((C_word*)t0)[2],a[3]=t1,a[4]=((C_word*)t0)[3],a[5]=((C_word*)t0)[4],a[6]=((C_word*)t0)[5],tmp=(C_word)a,a+=7,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,lf[10],t1);}
 
 /* k1660 in k1657 in g130 in k1639 in global-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -8506,7 +8506,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1662,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_1665,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],a[5]=((C_word*)t0)[6],tmp=(C_word)a,a+=6,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t2,((C_word*)t0)[2],((C_word*)t0)[3]);}
 
 /* k1663 in k1660 in k1657 in g130 in k1639 in global-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -8518,7 +8518,7 @@ C_word ab[6],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1665,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_1668,a[2]=((C_word*)t0)[2],a[3]=((C_word*)t0)[3],a[4]=((C_word*)t0)[4],a[5]=((C_word*)t0)[5],tmp=(C_word)a,a+=6,tmp);
-C_trace("write-char/port");
+/* write-char/port */
 t3=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t3+1)))(4,t3,t2,C_make_character(39),((C_word*)t0)[2]);}
 
@@ -8531,7 +8531,7 @@ C_word ab[5],*a=ab;
 if(!C_stack_probe(&a)){
 C_save_and_reclaim((void*)tr2,(void*)f_1668,2,t0,t1);}
 t2=(*a=C_CLOSURE_TYPE|4,a[1]=(C_word)f_1671,a[2]=((C_word*)t0)[3],a[3]=((C_word*)t0)[4],a[4]=((C_word*)t0)[5],tmp=(C_word)a,a+=5,tmp);
-C_trace("get-output-string");
+/* get-output-string */
 ((C_proc3)C_retrieve_symbol_proc(lf[9]))(3,*((C_word*)lf[9]+1),t2,((C_word*)t0)[2]);}
 
 /* k1669 in k1666 in k1663 in k1660 in k1657 in g130 in k1639 in global-result in ##compiler#scrutinize in k1510 in k1507 */
@@ -8539,7 +8539,7 @@ static void C_ccall f_1671(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("scrutinizer.scm: 90   report");
+/* scrutinizer.scm: 90   report */
 t2=((C_word*)((C_word*)t0)[4])[1];
 f_3947(t2,((C_word*)t0)[3],((C_word*)t0)[2],t1);}
 
@@ -8576,7 +8576,7 @@ C_word *a=C_alloc(6);
 if(C_truep((C_word)C_fudge(C_fix(13)))){
 t4=*((C_word*)lf[1]+1);
 t5=(*a=C_CLOSURE_TYPE|5,a[1]=(C_word)f_1524,a[2]=t3,a[3]=t2,a[4]=t4,a[5]=t1,tmp=(C_word)a,a+=6,tmp);
-C_trace("display");
+/* display */
 ((C_proc4)C_retrieve_proc(*((C_word*)lf[4]+1)))(4,*((C_word*)lf[4]+1),t5,lf[5],t4);}
 else{
 t4=C_SCHEME_UNDEFINED;
@@ -8599,7 +8599,7 @@ static void C_ccall f_1527(C_word c,C_word t0,C_word t1){
 C_word tmp;
 C_word t2;
 C_word *a;
-C_trace("write-char/port");
+/* write-char/port */
 t2=C_retrieve(lf[2]);
 ((C_proc4)(void*)(*((C_word*)t2+1)))(4,t2,((C_word*)t0)[3],C_make_character(10),((C_word*)t0)[2]);}
 
