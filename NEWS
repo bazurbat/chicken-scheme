@@ -1,3 +1,39 @@
+4.3.6
+
+- removed GUI-specific runtime library (`libchicken-gui') from
+  Windows build - GUI- and non-GUI applications now use the same
+  runtime library
+- undocumented OPTIMIZE_FOR_SPEED build variable: it is generally
+  unsafe to use -O3 in gcc version equal or later than 4.4 (thanks
+  to Sven Hartrumpf for pointing this out)
+- special forms of the foreign-function interface have been replaced
+  with an internal form and syntax to allow renaming and shadowing of
+  these forms
+- the configuration file for `chicken-install' (`setup.defaults') has
+  now a slightly enhanced format and allows to define arbitrary
+  mappings from/to extensions - this is used to handle installation
+  attempts of builtin library units
+- the new `-private-repository' option in `csc' compiles executables
+  with the extension-repository path set to the directory from which
+  the program was started - this is in anticipation of easy to use
+  deployment options in forthcoming releases
+- `csc': deprecated the `-W' and `-windows' options, added `-gui' as
+  a platform-independent replacement
+- `require-extension'/`use' accept import-specifications
+- user-defined extension-specifiers and `set-extension-specifier!'
+  have been removed
+- `delete-file[*]', `rename-file', `create-directory', `file-copy',
+  `file-move', `delete-directory' and `change-directory' return their
+  argument/destination filename on success
+- added the missing procedure `condition-variable-name' to the
+  srfi-18 library unit (Thanks to Joerg Wittenberger)
+- the `glob?' function from the `regex' unit has been deprecated
+- added the procedure `scan-input-lines' to the `utils' library unit
+- added new runtime option `-:g' which enables GC debugging output
+- reclamation of unused symbols in "symbol-gc" mode (`-:w') now only
+  takes place for symbols with an empty property-list
+- various bugfixes and cleaning up
+
 4.3.5
 
 - on Windows loading of code compiled with [non-]GUI runtime libraries
