@@ -100,9 +100,26 @@
    fp=
    fp>
    fp>=
+   fpabs
+   fpacos
+   fpasin
+   fpatan
+   fpatan2
+   fpexp
+   fpexpt
+   fpfloor
+   fpceiling
+   fpcos
+   fpinteger?
+   fplog
    fpmax
    fpmin
    fpneg
+   fpround
+   fpsin
+   fpsqrt
+   fptan
+   fptruncate
    fx-
    fx*
    fx/
