@@ -220,7 +220,7 @@
 		     "" "-setup-mode")
 		 (if (keep-intermediates) "-k" "")
 		 (if (host-extension) "-host" "")
-		 (if (deployment-mode) "-deploy" "")
+		 (if (deployment-mode) "-deployed" "")
 		 *csc-options*) 
 	  " ") )
 	((assoc prg *installed-executables*) =>

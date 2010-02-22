@@ -1079,7 +1079,7 @@ void C_do_resize_stack(C_word stack)
 
   if(diff != 0 && !stack_size_changed) {
     if(debug_mode) 
-      C_dbg(C_text("debug"), C_text("[debug] stack resized to %d bytes\n"), (int)stack);
+      C_dbg(C_text("debug"), C_text("stack resized to %d bytes\n"), (int)stack);
 
     stack_size = stack;
 

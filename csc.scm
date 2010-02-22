@@ -186,7 +186,7 @@
 (define dry-run #f)
 (define gui #f)
 (define deploy #f)
-(define shared-deploy #f)
+(define deployed #f)
 
 (define extra-libraries
   (if host-mode
@@ -264,7 +264,7 @@
 	 (list
 	  (conc "-L\"" library-dir "\"")
 	  (conc " -Wl,-R\""
-		(if (or deploy shared-deploy)
+		(if deployed
 		    "\\$ORIGIN"
 		    (prefix "" "lib"
 			    (if host-mode
@@ -473,6 +473,8 @@ Usage: #{csc} FILENAME | OPTION ...
     -host                          compile for host when configured for
                                     cross-compiling
     -private-repository            load extensions from executable path
+    -deployed                      compile support file to be used from a deployed 
+                                    executable
 
   Options can be collapsed if unambiguous, so
 
@@ -549,11 +551,8 @@ EOF
 			  (pathname-replace-extension (first scheme-files) shared-library-extension)
 			  (pathname-replace-extension (first scheme-files) executable-extension) ) ) )
 		  (run-translation) ] )
-	   (when deploy
-	     (cond (shared
-		    (set! deploy #f)
-		    (set! shared-deploy #t))
-		   (else (use-private-repository))))
+	   (when (and deploy (not shared))
+	     (use-private-repository))
 	   (unless translate-only 
 	     (run-compilation)
 	     (unless compile-only
@@ -654,7 +653,10 @@ EOF
 		    (set! link-options
 		      (cons* "kernel32.lib" "user32.lib" "gdi32.lib" link-options)))))]
 	       ((-deploy)
-		(set! deploy #t))
+		(set! deploy #t)
+		(set! deployed #t))
+	       ((-deployed)
+		(set! deployed #t))
 	       [(-framework)
 		(check s rest)
 		(when osx 
@@ -891,7 +893,7 @@ EOF
 	"install_name_tool -change lib" (if unsafe-libraries "u" "") "chicken.dylib "
 	(quotewrap 
 	 (let ((lib (if unsafe-libraries "libuchicken.dylib" "libchicken.dylib")) )
-	   (if (or shared-deploy deploy)
+	   (if deployed
 	       (make-pathname "@executable_path" lib)
 	       (make-pathname
 		(lib-path)

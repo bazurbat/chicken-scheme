@@ -461,7 +461,7 @@ Available options:
 ; {{-s   -sudo}} : use {{sudo(1)}} for installing or removing files
 ; {{-r   -retrieve}} : only retrieve egg into current directory, don't install
 ; {{-n   -no-install}} : do not install, just build (implies {{-keep}})
-; {{-p   -prefix PREFIX}} : change installation prefix to {{PREFIX}}
+; {{-p   -prefix PREFIX}} : change installation prefix to {{PREFIX}}; note: this must be an absolute path
 ; {{-host}} : when cross-compiling, compile extension for host
 ; {{-test}} : run included test-cases, if available
 ; {{-username USER}} : set username for transports that require this
@@ -469,6 +469,7 @@ Available options:
 ; {{-i   -init DIRECTORY}} : initialize empty alternative repository
 ; {{-u   -update-db}} : update export database
 ; {{-repository}} : print path to extension repository
+; {{-deploy}} : install extension in the application directory for a deployed application (see [[Deployment]] for more information)
 
 
 === chicken-uninstall reference
