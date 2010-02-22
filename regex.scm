@@ -33,6 +33,7 @@
   (usual-integrations)
   (disable-interrupts)
 ;  (disable-warning var)
+  (fixnum)
   (export
     regexp? regexp
     string-match string-match-positions string-search string-search-positions
@@ -57,7 +58,7 @@
  [else
   (declare
     (no-bound-checks)
-    (no-procedure-checks-for-usual-bindings) ) ] )
+    (no-procedure-checks) ) ] )
 
 (include "unsafe-declarations.scm")
 
@@ -298,6 +299,7 @@
 	(regexp regexp))
     (lambda (rx lst #!optional (acc (lambda (x) x)))
       (##sys#check-list lst 'grep)
+      (##sys#check-closure acc 'grep)
       (let ((rx (regexp rx)))
 	(let loop ((lst lst))
 	  (if (null? lst)
