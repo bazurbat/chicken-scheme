@@ -664,11 +664,7 @@ typedef unsigned __int64   uint64_t;
 # define C_SOFTWARE_VERSION "unknown"
 #endif
 
-#ifdef C_XXXBSD
-# define C_MAX_PATH         PATH_MAX
-#else
-# define C_MAX_PATH         MAX_PATH
-#endif
+#define C_MAX_PATH         PATH_MAX
 
 
 /* Types: */
