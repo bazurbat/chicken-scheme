@@ -29,6 +29,7 @@
  '(abandoned-mutex-exception?
    condition-variable-broadcast!
    condition-variable-signal!
+   condition-variable-name
    condition-variable-specific
    condition-variable-specific-set!
    condition-variable?
