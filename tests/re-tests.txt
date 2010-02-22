@@ -118,8 +118,13 @@ a[bcd]+dcdcde	adcdcde	n	-	-
 (bc+d$|ef*g.|h?i(j|k))	effg	n	-	-
 (bc+d$|ef*g.|h?i(j|k))	bcdd	n	-	-
 (bc+d$|ef*g.|h?i(j|k))	reffgz	y	&-\1-\2	effgz-effgz-
+((((((((((a)))))))))	-	c	-	-
+((((((((((a))))))))))	a	y	&-\10	a-a
 (((((((((a)))))))))	a	y	&	a
 multiple words of text	uh-uh	n	-	-
 multiple words	multiple words, yeah	y	&	multiple words
 (.*)c(.*)	abcde	y	&-\1-\2	abcde-ab-de
 \((.*), (.*)\)	(a, b)	y	(\2, \1)	(b, a)
+(we|wee|week)(knights|night)	weeknights	y	&-\1-\2	weeknights-wee-knights
+(a([^a])*)*	abcaBC	y	&-\1-\2	abcaBC-aBC-C
+([Aa]b).*\1	abxyzab	y	&-\1	abxyzab-ab
