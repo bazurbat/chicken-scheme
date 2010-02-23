@@ -172,6 +172,7 @@
 (define absolute-pathname-root)
 (define root-origin)
 (define root-directory)
+
 (let ((string-match string-match))
   (if ##sys#windows-platform
       (let ((rx (regexp "([A-Za-z]:)?([\\/\\\\]).*")))

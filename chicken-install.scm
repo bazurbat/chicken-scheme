@@ -283,6 +283,8 @@
            (let ([mfile (make-pathname (cadr e+d+v) (car e+d+v) "meta")])
              (cond [(file-exists? mfile)
                     (let ([meta (with-input-from-file mfile read)])
+		      (print "checking platform for `" (car e+d+v) "' ...")
+		      (check-platform (car e+d+v) meta)
                       (print "checking dependencies for `" (car e+d+v) "' ...")
                       (let-values ([(missing upgrade) (outdated-dependencies meta)])
 			(set! missing (apply-mappings missing)) ;XXX only missing - wrong?
@@ -317,6 +319,24 @@
                       "extension `" (car e+d+v) "' has no .meta file "
                       "- assuming it has no dependencies")) ] ) ) ) )
        *eggs+dirs+vers*) ) )
+
+  (define (check-platform name meta)
+    (define (fail)
+      (error "extension is not targeted for this system" name))
+    (unless (feature? #:cross-chicken)
+      (and-let* ((platform (assq 'platform meta)))
+	(let loop ((p (cadr platform)))
+	  (cond ((symbol? p) 
+		 (or (feature? p) (fail)))
+		((not (list? p))
+		 (error "invalid `platform' property" name (cadr platform)))
+		((and (eq? 'not (car p)) (pair? (cdr p)))
+		 (and (not (loop (cadr p))) (fail)))
+		((eq? 'and (car p))
+		 (and (every loop (cdr p)) (fail)))
+		((eq? 'or (car p))
+		 (and (not (any? loop (cdr p))) (fail)))
+		(else (error "invalid `platform' property" name (cadr platform))))))))
 
   (define (make-install-command e+d+v dep?)
     (conc
@@ -531,7 +551,12 @@ EOF
                         (loop (cddr args) eggs))
                        ((or (string=? arg "-p") (string=? arg "-prefix"))
                         (unless (pair? (cdr args)) (usage 1))
-                        (set! *prefix* (cadr args))
+                        (set! *prefix* 
+			  (let ((p (cadr args)))
+			    (if (absolute-pathname? p)
+				p
+				(normalize-pathname 
+				 (make-pathname (current-directory) p) ) ) ) )
                         (loop (cddr args) eggs))
                        ((or (string=? arg "-n") (string=? arg "-no-install"))
                         (set! *keep* #t)

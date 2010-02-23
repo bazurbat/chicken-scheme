@@ -7,22 +7,26 @@
 (use posix files extras data-structures srfi-1 setup-api srfi-13 utils)
 
 (define (usage code)
-  (print "usage: mini-salmonella [-h] [-t] [-d] [-f] EGGDIR [PREFIX]")
+  (print "usage: mini-salmonella [-h] [-test] [-debug] [-download] [-trunk] EGGDIR [PREFIX]")
   (exit code) )
 
 (define *eggdir* #f)
 (define *debug* #f)
-(define *prefix* (pathname-directory (pathname-directory (repository-path))))
 (define *run-tests* #f)
 (define *download* #f)
+(define *trunk* #f)
+
+(define *prefix* 
+  (pathname-directory (pathname-directory (pathname-directory (repository-path)))))
 
 (let loop ((args (command-line-arguments)))
   (when (pair? args)
     (let ((arg (car args)))
       (cond ((string=? "-h" arg) (usage 0))
-	    ((string=? "-t" arg) (set! *run-tests* #t))
-	    ((string=? "-d" arg) (set! *debug* #t))
-	    ((string=? "-f" arg) (set! *download* #t))
+	    ((string=? "-test" arg) (set! *run-tests* #t))
+	    ((string=? "-debug" arg) (set! *debug* #t))
+	    ((string=? "-download" arg) (set! *download* #t))
+	    ((string=? "-trunk" arg) (set! *trunk* #t))
 	    (*eggdir* (set! *prefix* arg))
 	    (else (set! *eggdir* arg)))
       (loop (cdr args)))))
@@ -51,12 +55,13 @@
   (let* ((ed (make-pathname *eggdir* egg))
 	 (tagsdir (directory-exists? (make-pathname ed "tags")))
 	 (trunkdir (directory-exists? (make-pathname ed "trunk"))))
-    (if tagsdir
-	(let ((tags (sort (directory tagsdir) version>=?)))
-	  (if (null? tags)
-	      (or trunkdir ed)
-	      (make-pathname ed (string-append "tags/" (first tags)))))
-	(or trunkdir ed))))
+    (cond ((and *trunk* trunkdir) trunkdir)
+	  (tagsdir
+	   (let ((tags (sort (directory tagsdir) version>=?)))
+	     (if (null? tags)
+		 (or trunkdir ed)
+		 (make-pathname ed (string-append "tags/" (first tags))))))
+	  (else ed))))
 
 (define (report egg msg . args)
   (printf "~a..~?~%" (make-string (max 2 (- 32 (string-length egg))) #\.)
@@ -86,7 +91,7 @@
 		  (if *run-tests* "-test" "")
 		  (if *download* 
 		      ""
-		      (string-append "-l " (normalize-pathname *eggdir*)))
+		      (string-append "-t local -l " (normalize-pathname *eggdir*)))
 		  egg
 		  (if (not *debug*)
 		      (sprintf "2>~a >>~a.out" *tmplogfile* *logfile*)
