@@ -862,16 +862,15 @@ EOF
 	 (targetdir #f))
     (when deploy
       (set! targetdir (pathname-strip-extension target-filename))
-      (when osx 
+      (when (and osx gui)
 	(set! targetdir (make-pathname #f targetdir "app"))
-	(command
-	 (sprintf "mkdir -p ~a"
-	   (quotewrap (make-pathname targetdir "{Contents/MacOS,Contents/Resources}")))))
+	(command (sprintf "mkdir -p ~a" (quotewrap (make-pathname targetdir "Contents/MacOS"))))
+	(command (sprintf "mkdir -p ~a" (quotewrap (make-pathname targetdir "Contents/Resources")))))
       (set! target-filename
 	(make-pathname
 	 targetdir
-	 (if osx
-	     (string-append "Contents/MaCOS/" (pathname-file target-filename))
+	 (if (and osx gui)
+	     (string-append "Contents/MacOS/" (pathname-file target-filename))
 	     (pathname-file target-filename))))
       (set! target (quotewrap target-filename))
       (unless (directory-exists? targetdir)
@@ -903,8 +902,11 @@ EOF
       (when (and gui (not deploy))
 	(rez target)))
     (when deploy
-      (copy-libraries targetdir)
-      (when osx
+      (copy-libraries 
+       (if (and osx gui)
+	   (make-pathname targetdir "Contents/MacOS")
+	   targetdir))
+      (when (and osx gui)
 	(create-mac-bundle
 	 (pathname-file target-filename)
 	 targetdir)))
@@ -1038,7 +1040,7 @@ EOF
     (let ((icons (make-pathname d2 "CHICKEN.icns")))
       (unless (file-exists? icons)
 	(copy-files 
-	 (make-pathname home "CHICKEN.icns") 
+	 (make-pathname home "chicken/CHICKEN.icns") 
 	 d2)))
     (let ((pl (make-pathname d0 "Info.plist")))
       (unless (file-exists? pl)
