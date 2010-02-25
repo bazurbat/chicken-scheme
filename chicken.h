@@ -529,7 +529,12 @@ typedef unsigned __int64   uint64_t;
 #define C_byte                    char
 #define C_uword                   unsigned C_word
 #define C_header                  C_uword
-#define C_text(x)                 x
+
+#ifdef __cplusplus
+# define C_text(x)                ((char *)(x))
+#else
+# define C_text(x)                (x)
+#endif
 
 #define C_TIMER_INTERRUPT_NUMBER  255
 
