@@ -178,6 +178,12 @@
 	  to make(1). Even simpler is editing the included "config.make"
 	  and just invoke make(1) without any extra parameters.
 
+        C_COMPILER=
+	  You can select an alternative compiler by setting this variable.
+	  The default compiler is "gcc". CHICKEN can be built with the
+	  LLVM version of gcc and with "clang", the LLVM-based C compiler,
+	  just set C_COMPILER to "llvm-gcc" or "clang".
+
         To remove CHICKEN from your file-system, enter (probably as
         root):
 

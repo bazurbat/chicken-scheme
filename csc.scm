@@ -676,7 +676,7 @@ EOF
 		(set! rest (cons* "-optimize-level" "5" rest))
 		(t-options "-unsafe-libraries")
 		(use-unsafe-libraries)
-		(when (memq (build-platform) '(mingw32 cygwin gnu))
+		(when (memq (build-platform) '(mingw32 cygwin gnu clang))
 		  (set! compile-options 
 		    (cons* "-O3" "-fomit-frame-pointer" compile-options)) ) ]
 	       [(-d0) (set! rest (cons* "-debug-level" "0" rest))]
@@ -723,7 +723,7 @@ EOF
 		(use-unsafe-libraries) ]
 	       [(-rpath)
 		(check s rest)
-		(when (eq? 'gnu (build-platform))
+		(when (memq (build-platform) '(gnu clang))
 		  (set! link-options (append link-options (list (string-append "-Wl,-R" (car rest)))))
 		  (set! rest (cdr rest)) ) ]
 	       [(-host) #f]
@@ -876,8 +876,8 @@ EOF
       (set! target (quotewrap target-filename))
       (unless (directory-exists? targetdir)
 	(when verbose
-	(print "mkdir " targetdir)
-	(create-directory targetdir))) )
+	  (print "mkdir " targetdir))
+	(create-directory targetdir)))
     (command
      (string-intersperse 
       (cons* (cond (cpp-mode c++-linker)
@@ -902,7 +902,7 @@ EOF
 	target) )
       (when (and gui (not deploy))
 	(rez target)))
-    (when deploy
+    (when (and deploy (not (or static static-libs)))
       (copy-libraries 
        (if (and osx gui)
 	   (make-pathname targetdir "Contents/MacOS")
