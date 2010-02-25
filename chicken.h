@@ -249,11 +249,15 @@ typedef unsigned __int64   uint64_t;
 # ifndef __cplusplus
 #  define C_cblock                ({
 #  define C_cblockend             })
-#  define C_noret                 __attribute__ ((noreturn))
+#  ifdef __clang__
+#   define C_noret
+#  else
+#   define C_noret                __attribute__ ((noreturn))
+#  endif
 #  define C_noret_decl(name)
 #  define C_aligned               __attribute__ ((aligned))
 # endif
-# ifdef __i386__
+# if defined(__i386__) && !defined(__clang__)
 #  define C_regparm               __attribute__ ((regparm(3)))
 # endif
 #elif defined(_MSC_VER)
@@ -618,6 +622,8 @@ typedef unsigned __int64   uint64_t;
 # define C_BUILD_PLATFORM "sun"
 #elif defined(__MINGW32__)
 # define C_BUILD_PLATFORM "mingw32"
+#elif defined(__clang__)
+# define C_BUILD_PLATFORM "clang"
 #elif defined(__GNUC__)
 # define C_BUILD_PLATFORM "gnu"
 #elif defined(__MWERKS__)
