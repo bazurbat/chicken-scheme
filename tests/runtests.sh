@@ -242,10 +242,7 @@ echo "boxed:"
 $compile fft.scm -O5
 time ./a.out
 echo "unboxed:"
-$compile fft.scm -O5 -D unboxed
-time ./a.out
-echo "unboxed/unboxing:"
-$compile fft.scm -O5 -D unboxed -unboxing -debug oxi | tee fft.out
+$compile fft.scm -O5 -D unboxed -debug oxi | tee fft.out
 time ./a.out
 
 echo "======================================== done."
