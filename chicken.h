@@ -2176,7 +2176,7 @@ C_path_to_executable(C_char *fname)
   int i;
   
   if(CFURLGetFileSystemRepresentation(url, true, buffer, C_MAX_PATH)) {
-    for(i = C_strlen(buffer); i >= 0 && buffer[ i ] != '/') --i;
+    for(i = C_strlen(buffer); i >= 0 && buffer[ i ] != '/'; --i);
 
     buffer[ i ] = '\0';
     return buffer;

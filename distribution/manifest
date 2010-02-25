@@ -262,6 +262,7 @@ setup-api.import.c
 setup-download.import.c
 types.db
 mac.r
+CHICKEN.icns
 manual/Accessing external objects
 manual/Acknowledgements
 manual/Basic mode of operation
@@ -271,6 +272,7 @@ manual/C interface
 manual/Callbacks
 manual/Data representation
 manual/Declarations
+manual/Deployment
 manual/Deviations from the standard
 manual/Embedding
 manual/Extensions
