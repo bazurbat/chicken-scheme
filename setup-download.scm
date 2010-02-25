@@ -48,6 +48,7 @@
 
   (define *quiet* #f)
   (define *chicken-install-user-agent* (conc "chicken-install " (chicken-version)))
+  (define *trunk* #f)
 
   (define (d fstr . args)
     (let ([port (if *quiet* (current-error-port) (current-output-port))])
@@ -80,7 +81,8 @@
   (define (locate-egg/local egg dir #!optional version destination)
     (let* ([eggdir (make-pathname dir egg)]
 	   [tagdir (make-pathname eggdir "tags")]
-           [tagver (and (file-exists? tagdir) (directory? tagdir)
+           [tagver (and (not *trunk*)
+			(file-exists? tagdir) (directory? tagdir)
                         (existing-version egg version (directory tagdir)) ) ] )
       (if tagver
           (values (make-pathname tagdir tagver) tagver)
@@ -289,8 +291,9 @@
 
   (define (retrieve-extension name transport location
                               #!key version quiet destination username password tests
-			      proxy-host proxy-port)
-    (fluid-let ([*quiet* quiet])
+			      proxy-host proxy-port trunk)
+    (fluid-let ((*quiet* quiet)
+		(*trunk* trunk))
       (case transport
 	[(local)
 	 (when destination (warning "destination for transport `local' ignored"))

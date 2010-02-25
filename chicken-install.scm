@@ -85,6 +85,7 @@
   (define *running-test* #f)
   (define *mappings* '())
   (define *deploy* #f)
+  (define *trunk* #f)
 
   (define-constant +module-db+ "modules.db")
   (define-constant +defaults-file+ "setup.defaults")
@@ -214,6 +215,7 @@
          tests: *run-tests*
          username: *username*
          password: *password*
+	 trunk: *trunk*
 	 proxy-host: *proxy-host*
 	 proxy-port: *proxy-port*)
       [(exn net)
@@ -492,6 +494,7 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
   -u   -update-db               update export database
        -repository              print path used for egg installation
        -deploy                  build extensions for deployment
+       -trunk                   build trunk instead of tagged version (only local)
 EOF
 );|
     (exit code))
@@ -600,6 +603,9 @@ EOF
                         (unless (pair? (cdr args)) (usage 1))
                         (set! *username* (cadr args))
                         (loop (cddr args) eggs))
+		       ((string=? "-trunk" arg)
+			(set! *trunk* #t)
+			(loop (cdr args) eggs))
                        ((string=? "-password" arg)
                         (unless (pair? (cdr args)) (usage 1))
                         (set! *password* (cadr args))

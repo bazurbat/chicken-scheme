@@ -1374,7 +1374,7 @@ void usual_panic(C_char *msg)
 #endif
   } /* fall through if not WIN32 GUI app */
 
-  C_dbg("panic", C_text("\n%s - execution terminated\n\n%s"), msg, dmp);
+  C_dbg("panic", C_text("%s - execution terminated\n\n%s"), msg, dmp);
   C_exit(1);
 }
 

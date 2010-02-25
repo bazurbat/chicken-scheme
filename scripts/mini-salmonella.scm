@@ -86,16 +86,17 @@
 
 (define (install-egg egg dir)
   (let ((command
-	 (sprintf "~a ~a ~a ~a ~a"
-		  *chicken-install*
-		  (if *run-tests* "-test" "")
-		  (if *download* 
-		      ""
-		      (string-append "-t local -l " (normalize-pathname *eggdir*)))
-		  egg
-		  (if (not *debug*)
-		      (sprintf "2>~a >>~a.out" *tmplogfile* *logfile*)
-		      ""))))
+	 (conc
+	  *chicken-install* " "
+	  (if *run-tests* "-test " "")
+	  (if *trunk* "-trunk " "")
+	  (if *download* 
+	      ""
+	      (string-append "-t local -l " (normalize-pathname *eggdir*) " "))
+	  egg " "
+	  (if (not *debug*)
+	      (sprintf "2>~a >>~a.out" *tmplogfile* *logfile*)
+	      ""))))
     (when *debug*
       (print "  " command))
     (let ((status (system command)))
