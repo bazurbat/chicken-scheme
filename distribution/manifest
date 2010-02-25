@@ -262,6 +262,7 @@ setup-api.import.c
 setup-download.import.c
 types.db
 mac.r
+CHICKEN.icns
 manual/Accessing external objects
 manual/Acknowledgements
 manual/Basic mode of operation
