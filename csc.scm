@@ -187,6 +187,7 @@
 (define gui #f)
 (define deploy #f)
 (define deployed #f)
+(define rpath #f)
 
 (define extra-libraries
   (if host-mode
@@ -723,8 +724,10 @@ EOF
 		(use-unsafe-libraries) ]
 	       [(-rpath)
 		(check s rest)
-		(when (memq (build-platform) '(gnu clang))
-		  (set! link-options (append link-options (list (string-append "-Wl,-R" (car rest)))))
+		(set! rpath (car rest))
+		(when (and (memq (build-platform) '(gnu clang))
+			   (not mingw))
+		  (set! link-options (append link-options (list (string-append "-Wl,-R" rpath))))
 		  (set! rest (cdr rest)) ) ]
 	       [(-host) #f]
 	       [(-) 
