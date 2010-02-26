@@ -72,8 +72,6 @@ You can even install extensions inside the application directory:
   -rwxr-xr-x 1 felix felix 7972753 2010-02-22 20:19 libchicken.so.5
   -rwxr-xr-x 1 felix felix   34839 2010-02-22 20:19 myprogram
 
-(Note that the prefix must be an absolute path)
-
 We can check with ldd that those compiled extension libraries are linked with
 the correct library:
 
