@@ -141,6 +141,8 @@ tests/scrutiny.expected
 tests/syntax-tests.scm
 tests/syntax-tests-2.scm
 tests/meta-syntax-test.scm
+tests/reexport-m1.scm
+tests/reexport-m2.scm
 tests/reexport-tests.scm
 tests/ec.scm
 tests/ec-tests.scm

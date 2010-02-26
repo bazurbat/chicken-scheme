@@ -1,3 +1,19 @@
+4.3.7
+
+- the system can now be built with llvm-gcc and/or "clang" (the
+  LLVM C compiler which doesn't use the GNU C frontend)
+- added new option `-trunk' to `chicken-install', which forces
+  building and installing the development version of extensions
+  in combination with `-t local'
+- added new option `-deploy' to `chicken-install', which builds
+  extension for use in "deployed" applications (see below)
+- added option `-deploy' to `csc', the compiler driver. With this
+  option `csc' can build fully self-contained application bundles
+  and double-clickable Macintosh GUI apps; see the "Deployment"
+  manual chapter for more information
+- the directory given to the `-prefix' option of `chicken-install'
+  may now be a relative pathname.
+
 4.3.6
 
 - removed GUI-specific runtime library (`libchicken-gui') from
