@@ -531,7 +531,7 @@ typedef unsigned __int64   uint64_t;
 #define C_header                  C_uword
 
 #ifdef __cplusplus
-# define C_text(x)                ((char *)(x))
+# define C_text(x)                ((C_char *)(x))
 #else
 # define C_text(x)                (x)
 #endif
