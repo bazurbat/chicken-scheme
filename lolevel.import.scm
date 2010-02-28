@@ -67,7 +67,7 @@
    pointer-f32-set!
    pointer-f64-ref
    pointer-f64-set!
-   pointer-offset
+   pointer+
    pointer-s16-ref
    pointer-s16-set!
    pointer-s32-ref
