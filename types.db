@@ -598,7 +598,6 @@
 (pointer->address (procedure pointer->address (pointer) number))
 (pointer-like? (procedure pointer-like? (*) boolean))
 (pointer->object (procedure pointer->object (pointer) *))
-(pointer-offset deprecated)
 (pointer-f32-ref (procedure pointer-f32-ref (pointer) number))
 (pointer-f32-set! (procedure pointer-f32-set! (pointer number) undefined))
 (pointer-f64-ref (procedure pointer-f64-ref (pointer) number))

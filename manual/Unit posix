@@ -412,7 +412,7 @@ port or a file-descriptor.
 
 ==== file-size
 
-<procedure>(file-size FILENAME)</procedure>
+<procedure>(file-size FILE)</procedure>
 
 Returns the size of the file designated by {{FILE}}.  {{FILE}}
 may be a filename or a file-descriptor.  If the file does not exist,
