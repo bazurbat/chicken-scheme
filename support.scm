@@ -1,7 +1,7 @@
 ;;;; support.scm - Miscellaneous support code for the CHICKEN compiler
 ;
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
-; Copyright (c) 2008-2009, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -427,7 +427,7 @@
 		       ((potential-value)
 			(set! pval (cdar es)) )
 		       ((replacable home contains contained-in use-expr closure-size rest-parameter
-				    o-r/access-count captured-variables explicit-rest)
+				    captured-variables explicit-rest)
 			(printf "\t~a=~s" (caar es) (cdar es)) )
 		       ((references)
 			(set! refs (cdar es)) )
@@ -567,6 +567,8 @@
 	       (loop (- n 1) (cdr vals) (cons (walk (car vals)) bindings)) ) ) )
 	((##core#unbox ##core#ref ##core#update ##core#update_i)
 	 (cons* class (walk (car subs)) params (map walk (cdr subs))) ) 
+	((##core#inline_allocate ##core#let_unboxed)
+	 (cons* class params (map walk subs)))
 	(else (cons class (append params (map walk subs)))) ) ) ) )
 
 (define (fold-boolean proc lst)
@@ -1261,6 +1263,7 @@ Usage: chicken FILENAME OPTION ...
     -inline                      enable inlining
     -inline-limit                set inlining threshold
     -inline-global               enable cross-module inlining
+    -unboxing                    use unboxed temporaries if possible
     -emit-inline-file FILENAME   generate file with globally inlinable
                                   procedures (implies -inline -local)
     -consult-inline-file FILENAME  explicitly load inline file

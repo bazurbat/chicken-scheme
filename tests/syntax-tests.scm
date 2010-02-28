@@ -1,4 +1,4 @@
-;;;; mtest.scm - various macro tests
+;;;; syntax-tests.scm - various macro tests
 
 
 (use extras)
@@ -371,3 +371,35 @@
 ;;; canonicalization of body captures 'begin (reported by Abdulaziz Ghuloum)
 
 (let ((begin (lambda (x y) (bomb)))) 1 2)
+
+
+;;; redefinition of defining forms
+
+(module m0001 (foo bar)
+  (import (prefix scheme s:))
+  (s:define-syntax foo (syntax-rules () ((_ x) (s:list x))))
+  (s:define bar 99))
+
+(module m0002 ()
+  (import scheme m0001 extras)
+  (pp (foo bar)))
+
+
+;;; renaming of arbitrary structures
+
+(module m1 (s1 s2)
+
+  (import scheme)
+
+  (define-syntax s1 (syntax-rules () ((_ x) (list x))))
+
+  (define-syntax s2
+    (lambda (x r c)
+      (r `(vector (s1 ,(cadr x)))))) )	; without renaming the local version of `s1'
+					; below will be captured 
+
+(import m1)
+
+(let-syntax ((s1 (syntax-rules () ((_ x) x))))
+  (assert (equal? '#((99)) (s2 99))))
+

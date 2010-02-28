@@ -1,7 +1,7 @@
 ;;;; posixunix.scm - Miscellaneous file- and process-handling routines
 ;
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
-; Copyright (c) 2008-2009, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -54,6 +54,7 @@ static C_TLS int C_wait_status;
 #include <fcntl.h>
 #include <dirent.h>
 #include <pwd.h>
+#include <utime.h>
 
 #if defined(__sun__) && defined(__svr4__)
 # include <sys/tty.h>
@@ -159,7 +160,6 @@ static C_TLS struct stat C_statbuf;
 
 #define C_fork              fork
 #define C_waitpid(id, o)    C_fix(waitpid(C_unfix(id), &C_wait_status, C_unfix(o)))
-#define C_getpid            getpid
 #define C_getppid           getppid
 #define C_kill(id, s)       C_fix(kill(C_unfix(id), C_unfix(s)))
 #define C_getuid            getuid
@@ -176,7 +176,7 @@ static C_TLS struct stat C_statbuf;
 #define C_setpgid(x, y)     C_fix(setpgid(C_unfix(x), C_unfix(y)))
 #define C_getpgid(x)        C_fix(getpgid(C_unfix(x)))
 #define C_symlink(o, n)     C_fix(symlink(C_data_pointer(o), C_data_pointer(n)))
-#define C_readlink(f, b)    C_fix(readlink(C_data_pointer(f), C_data_pointer(b), FILENAME_MAX))
+#define C_do_readlink(f, b)    C_fix(readlink(C_data_pointer(f), C_data_pointer(b), FILENAME_MAX))
 #define C_getpwnam(n)       C_mk_bool((C_user = getpwnam((char *)C_data_pointer(n))) != NULL)
 #define C_getpwuid(u)       C_mk_bool((C_user = getpwuid(C_unfix(u))) != NULL)
 #ifdef HAVE_GRP_H
@@ -196,7 +196,7 @@ static C_TLS struct stat C_statbuf;
 #define C_dup2(x, y)        C_fix(dup2(C_unfix(x), C_unfix(y)))
 #define C_alarm             alarm
 #define C_setvbuf(p, m, s)  C_fix(setvbuf(C_port_file(p), NULL, C_unfix(m), C_unfix(s)))
-#define C_access(fn, m)     C_fix(access((char *)C_data_pointer(fn), C_unfix(m)))
+#define C_test_access(fn, m)     C_fix(access((char *)C_data_pointer(fn), C_unfix(m)))
 #define C_close(fd)         C_fix(close(C_unfix(fd)))
 #define C_sleep             sleep
 
@@ -432,12 +432,17 @@ C_tm_get( C_word v )
 #endif
 
 #define C_asctime(v)    (asctime(C_tm_set(v)))
-#define C_mktime(v)     ((C_temporary_flonum = mktime(C_tm_set(v))) != -1)
-#define C_timegm(v)     ((C_temporary_flonum = timegm(C_tm_set(v))) != -1)
+#define C_a_mktime(ptr, c, v)  C_flonum(ptr, mktime(C_tm_set(v)))
+#define C_a_timegm(ptr, c, v)  C_flonum(ptr, timegm(C_tm_set(v)))
 
 #define TIME_STRING_MAXLENGTH 255
 static char C_time_string [TIME_STRING_MAXLENGTH + 1];
 #undef TIME_STRING_MAXLENGTH
+
+#ifdef __linux__
+extern char *strptime(const char *s, const char *format, struct tm *tm);
+extern pid_t getpgid(pid_t pid);
+#endif
 
 #define C_strftime(v, f) \
         (strftime(C_time_string, sizeof(C_time_string), C_c_string(f), C_tm_set(v)) ? C_time_string : NULL)
@@ -474,6 +479,14 @@ static int get_tty_size(int p, int *rows, int *cols)
 }
 #endif
 
+static int set_file_mtime(char *filename, C_word tm)
+{
+  struct utimbuf tb;
+
+  tb.actime = tb.modtime = C_num_to_int(tm);
+  return utime(filename, &tb);
+}
+
 EOF
 ) )
 
@@ -491,7 +504,7 @@ EOF
      pathname-file process-fork file-close duplicate-fileno process-execute get-environment-variable
      make-string make-input-port make-output-port ##sys#thread-block-for-i/o create-pipe
      process-wait pathname-strip-directory pathname-directory ##sys#expand-home-path directory
-     decompose-pathname ##sys#cons-flonum ##sys#decode-seconds ##sys#null-pointer ##sys#pointer->address
+     decompose-pathname ##sys#decode-seconds ##sys#null-pointer ##sys#pointer->address
      ##sys#substring ##sys#context-switch close-input-pipe close-output-pipe change-directory
      current-directory ##sys#make-pointer port? ##sys#schedule ##sys#process
      ##sys#peek-fixnum ##sys#make-structure ##sys#check-structure ##sys#enable-interrupts
@@ -775,7 +788,20 @@ EOF
           _stat_st_blksize _stat_st_blocks) )
 
 (define (file-size f) (##sys#stat f #f 'file-size) _stat_st_size)
-(define (file-modification-time f) (##sys#stat f #f 'file-modification-time) _stat_st_mtime)
+
+(define file-modification-time
+  (getter-with-setter 
+   (lambda (f)
+     (##sys#stat f #f 'file-modification-time) _stat_st_mtime)
+   (lambda (f t)
+     (##sys#check-number t 'set-file-modification-time)
+     (let ((r ((foreign-lambda int "set_file_mtime" c-string scheme-object)
+	       (##sys#expand-home-path file) t)))
+       (when (fx< r 0)
+	 (posix-error 
+	  #:file-error 'set-file-modification-time
+	  "cannot set file modification-time" f t))))))
+
 (define (file-access-time f) (##sys#stat f #f 'file-access-time) _stat_st_atime)
 (define (file-change-time f) (##sys#stat f #f 'file-change-time) _stat_st_ctime)
 (define (file-owner f) (##sys#stat f #f 'file-owner) _stat_st_uid)
@@ -791,44 +817,25 @@ EOF
   (##sys#stat fname #t 'symbolic-link?)
   (foreign-value "C_islink" bool) )
 
-(define (stat-regular? fname)		; DEPRECATED
-    (##sys#check-string fname 'stat-regular?)
-    (##sys#stat fname #f 'stat-regular?)
-    (foreign-value "C_isreg" bool))
-
-(define (stat-directory? fname)		; DEPRECATED
-    (##sys#check-string fname 'stat-directory?)
-    (##sys#stat fname #f 'stat-directory?)
-    (foreign-value "C_isdir" bool))
-
 (define (character-device? fname)
     (##sys#check-string fname 'character-device?)
     (##sys#stat fname #f 'character-device?)
     (foreign-value "C_ischr" bool))
-
-(define stat-char-device? character-device?) ; DEPRECATED
 
 (define (block-device? fname)
     (##sys#check-string fname 'block-device?)
     (##sys#stat fname #f 'block-device?)
     (foreign-value "C_isblk" bool))
 
-(define stat-block-device? block-device?) ; DEPRECATED
-
 (define (fifo? fname)
     (##sys#check-string fname 'stat-fifo?)
     (##sys#stat fname #f 'stat-fifo?)
     (foreign-value "C_isfifo" bool))
 
-(define stat-fifo? fifo?)		; DEPRECATED
-(define stat-symlink? symbolic-link?)	; DEPRECATED
-
 (define (socket? fname)
   (##sys#check-string fname 'socket?)
   (##sys#stat fname #f 'socket?)
   (foreign-value "C_issock" bool))
-
-(define stat-socket? socket?)		; DEPRECATED
 
 (define set-file-position!
    (lambda (port pos . whence)
@@ -886,19 +893,24 @@ EOF
                 (when (and dir (not (*directory? 'create-directory dir)))
                   (loop (pathname-directory dir))
                   (*create-directory 'create-directory dir)) )
-              (*create-directory 'create-directory name) ) ) ) ) ) )
+              (*create-directory 'create-directory name) ) )
+	name))))
 
 (define change-directory
   (lambda (name)
     (##sys#check-string name 'change-directory)
-    (unless (fx= 0 (##core#inline "C_chdir" (##sys#make-c-string (##sys#expand-home-path name))))
-      (posix-error #:file-error 'change-directory "cannot change current directory" name) ) ) )
+    (let ((name (##sys#make-c-string (##sys#expand-home-path name))))
+      (unless (fx= 0 (##core#inline "C_chdir" name))
+	(posix-error #:file-error 'change-directory "cannot change current directory" name) )
+      name)))
 
 (define delete-directory
   (lambda (name)
     (##sys#check-string name 'delete-directory)
-    (unless (fx= 0 (##core#inline "C_rmdir" (##sys#make-c-string (##sys#expand-home-path name))))
-      (posix-error #:file-error 'delete-directory "cannot delete directory" name) ) ) )
+    (let ((name (##sys#make-c-string (##sys#expand-home-path name))))
+      (unless (fx= 0 (##core#inline "C_rmdir" name))
+	(posix-error #:file-error 'delete-directory "cannot delete directory" name) )
+      name)))
 
 (define directory
   (let ([string-ref string-ref]
@@ -1307,10 +1319,10 @@ EOF
           _user-shell) ) ) )
 
 (define (current-user-name)
-  (list-ref (user-information (current-user-id)) 0) )
+  (car (user-information (current-user-id))) )
 
 (define (current-effective-user-name)
-  (list-ref (user-information (current-effective-user-id)) 0) )
+  (car (user-information (current-effective-user-id))) )
 
 (define-foreign-variable _group-name nonnull-c-string "C_group->gr_name")
 (define-foreign-variable _group-passwd nonnull-c-string "C_group->gr_passwd")
@@ -1479,7 +1491,7 @@ EOF
 (let ()
   (define (check filename acc loc)
     (##sys#check-string filename loc)
-    (let ([r (fx= 0 (##core#inline "C_access" (##sys#make-c-string (##sys#expand-home-path filename)) acc))])
+    (let ([r (fx= 0 (##core#inline "C_test_access" (##sys#make-c-string (##sys#expand-home-path filename)) acc))])
       (unless r (##sys#update-errno))
       r) )
   (set! file-read-access? (lambda (filename) (check filename _r_ok 'file-read-access?)))
@@ -1530,7 +1542,7 @@ EOF
         [buf (make-string (fx+ _filename_max 1))] )
     (lambda (fname #!optional canonicalize)
       (##sys#check-string fname 'read-symbolic-link)
-      (let ([len (##core#inline "C_readlink" (##sys#make-c-string (##sys#expand-home-path fname)) buf)])
+      (let ([len (##core#inline "C_do_readlink" (##sys#make-c-string (##sys#expand-home-path fname)) buf)])
       (when (fx< len 0)
         (posix-error #:file-error 'read-symbolic-link "cannot read symbolic link" fname) )
       (let ((pathname (substring buf 0 len)))
@@ -1994,15 +2006,17 @@ EOF
 
 (define (local-time->seconds tm)
   (check-time-vector 'local-time->seconds tm)
-  (if (##core#inline "C_mktime" tm)
-      (##sys#cons-flonum)
-      (##sys#error 'local-time->seconds "cannot convert time vector to seconds" tm) ) )
+  (let ((t (##core#inline_allocate ("C_a_mktime" 4) tm)))
+    (if (fp= -1.0 t)
+	(##sys#error 'local-time->seconds "cannot convert time vector to seconds" tm)
+	t)))
 
 (define (utc-time->seconds tm)
   (check-time-vector 'utc-time->seconds tm)
-  (if (##core#inline "C_timegm" tm)
-      (##sys#cons-flonum)
-      (##sys#error 'utc-time->seconds "cannot convert time vector to seconds" tm) ) )
+  (let ((t (##core#inline_allocate ("C_a_timegm" 4) tm)))
+    (if (fp= -1.0 t)
+	(##sys#error 'utc-time->seconds "cannot convert time vector to seconds" tm) 
+	t)))
 
 (define local-timezone-abbreviation
   (foreign-lambda* c-string ()

@@ -1,6 +1,18 @@
 ;;;; compiler-tests.scm
 
 
+;; test dropping of previous toplevel assignments
+
+(define (foo) (define (bar) 1) (bar 2))	; will trigger error later
+(define bar 1)
+(define (baz) 2)
+(define (foo) 'ok)
+
+(assert (eq? 'ok (foo)))
+
+
+;; test hiding of unexported toplevel variables
+
 (module foo (bar)
   (import scheme chicken)
   (declare (hide bar))
@@ -83,3 +95,28 @@
   (strlen-safe-macro "hello, world")
   (strlen-safe-macro* "hello, world")
   (strlen-primitive-macro "hello, world"))
+
+;;; compiler-syntax for map/for-each must be careful when the
+;   operator may have side-effects (currently only lambda exprs and symbols
+;   are allowed)
+
+(let ((x #f))
+  (define (f1 x) (print* x " "))
+  (map f1 '(1 2 3))
+  (newline)
+  (map (begin (assert (not x)) 
+	      (set! x #t)
+	      f1)
+       '(1 2 3))
+  (map (lambda (x) (print* ":" x)) '(1 2 3))
+  (newline))
+
+(let ((x #f))
+  (define (f1 x) (print* x " "))
+  (let-syntax ((f1 (syntax-rules ()
+		     ((_ y) 
+		      (begin
+			(assert (not x))
+			(set! x #t)
+			f1)))))
+    (for-each f1 '(1 2 3))))

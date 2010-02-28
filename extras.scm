@@ -1,7 +1,7 @@
 ;;; extras.scm - Optional non-standard extensions
 ;
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
-; Copyright (c) 2008-2009, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -42,8 +42,7 @@
       ##sys#substring ##sys#for-each ##sys#map ##sys#setslot
       ##sys#allocate-vector ##sys#check-pair ##sys#error-not-a-proper-list
       ##sys#member ##sys#assoc ##sys#error ##sys#signal-hook ##sys#read-string!
-      ##sys#check-symbol ##sys#check-vector ##sys#floor ##sys#ceiling
-      ##sys#truncate ##sys#round ##sys#check-number ##sys#cons-flonum
+      ##sys#check-symbol ##sys#check-vector##sys#check-number
       ##sys#flonum-fraction ##sys#make-port ##sys#fetch-and-check-port-arg
       ##sys#print ##sys#check-structure ##sys#make-structure make-parameter
       ##sys#flush-output ##sys#write-char-0 ##sys#number->string

@@ -32,3 +32,15 @@ This directory contains a couple of things that might be useful:
 
     A CGI script and sub-program that serves eggs from a local tree
     or via svn over HTTP.
+
+  mini-salmonella.scm
+
+    A minimalistic version of `salmonella', the egg-test tool. It
+    takes a path to a local checkout of the extensions repository
+    and compiles each egg from scratch, reporting success or 
+    failure.
+
+  identify-branch
+
+    Obtains the branchname, if this is a git(1) checkout, otherwise
+    does nothing.

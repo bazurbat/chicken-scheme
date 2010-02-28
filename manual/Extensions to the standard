@@ -2,23 +2,23 @@
 
 == Extensions to the standard
 
-=== [2.1] 
+=== Identifiers
 
 Identifiers may contain special characters if delimited with
 {{| ... |}}.
 
-=== [2.3] 
+=== Brackets and braces
 
 The brackets {{[ ... ]}} and the braces {{ { ... } }} are
 provided as an alternative syntax for {{( ... )}}.  A number of reader
 extensions is provided. See [[Non-standard read syntax]].
 
-=== [4] 
+=== Non-standard macros
 
 Numerous non-standard macros are provided. See 
 [[Non-standard macros and special forms]] for more information.
 
-=== [4.1.4] 
+=== Extended DSSSL style lambda lists
 
 Extended DSSSL style lambda lists are supported. DSSSL parameter lists are defined by the following grammar:
 
@@ -58,16 +58,16 @@ Example:
      (list x y z i: i j: j))
   3 4 5 i: 6 i: 7)            => (3 4 5 i: 6 j: 1)
 
-=== [4.1.6] 
+=== {{set!}}
 
 {{set!}} for unbound toplevel variables is allowed. {{set! (PROCEDURE ...) ...)}}
 is supported, as CHICKEN implements [[http://srfi.schemers.org/srfi-17/srfi-17.html|SRFI-17]].
 
-=== [4.2.1]
+=== {{cond}}
 
 The {{cond}} form supports [[http://srfi.schemers.org/srfi-61|SRFI-61]].
 
-=== [4.2.2] 
+=== Binding values in {{letrec}}
 
 It is allowed for initialization values of bindings in a {{letrec}}
 construct to refer to previous variables in the same set of bindings, so
@@ -78,16 +78,16 @@ construct to refer to previous variables in the same set of bindings, so
 
 is allowed and returns {{123}}.
 
-=== [4.2.3] 
+=== {{begin}}
 
 {{(begin)}} is allowed in non-toplevel contexts and evaluates
 to an unspecified value.
 
-=== [4.2.5] 
+=== Delayed expressions
 
 Delayed expressions may return multiple values.
 
-=== [5.2.2] 
+=== Internal definitions
 
 CHICKEN extends standard semantics by allowing internal definitions
 everywhere, and not only at the beginning of a body. A set of internal definitions
@@ -110,7 +110,7 @@ Local sequences of {{define-syntax}} forms are translated into equivalent
 {{letrec-syntax}} forms that enclose the following forms as the body of
 the expression.
 
-=== [5.2] 
+=== {{define}}
 
 {{define}} with a single argument is allowed and initializes the toplevel or local binding
 to an unspecified value. CHICKEN supports ''curried'' definitions, where the variable name
@@ -122,17 +122,17 @@ is equivalent to
 
  (define (make-adder x) (lambda (y) (+ x y)))
 
-=== [6] 
+=== Non-standard procedures
 
 CHICKEN provides numerous non-standard procedures. See the manual
 sections on library units for more information.
 
-=== [6.2.4] 
+=== Special IEEE floating-point numbers
 
 The special IEEE floating-point numbers ''+nan'', ''+inf'' and ''-inf''
 are supported, as is negative zero.
 
-=== [6.3.4] 
+=== User defined character names
 
 User defined character names are supported. See
 {{char-name}}. Characters can be given
@@ -143,7 +143,7 @@ written) using the ''#\uXXXX'' and ''#\UXXXXXXXX'' notations.
 Non-standard characters names supported are {{#\tab}}, {{#\linefeed}}, {{#\return}}, {{#\alarm}},
 {{#\vtab}}, {{#\nul}}, {{#\page}}, {{#\esc}}, {{#\delete}} and {{#\backspace}}.
 
-=== [6.3.5]  
+=== Special characters in strings
 
 CHICKEN supports special characters preceded with
 a backslash ''\'' in quoted string
@@ -157,7 +157,7 @@ The latter is encoded in UTF-8 format.
 The third argument to {{substring}} is optional and defaults to the length
 of the string.
 
-=== [6.4] 
+=== {{force}}
 
 {{force}} called with an argument that is not a promise returns
 that object unchanged.  Captured continuations can be safely invoked
@@ -170,7 +170,7 @@ unspecified value. Note that this slight relaxation of the behaviour of
 returning mulitple values to non-multival continuations does not apply to
 explicit continuations (created with {{call-with-current-continuation}}).
 
-=== [6.5] 
+=== {{eval}}
 
 The second argument to {{eval}} is optional and
 defaults to the value of {{(interaction-environment)}}.
@@ -179,13 +179,13 @@ an optional 2nd parameter: if not {{#f}} (which is the default),
 toplevel bindings to standard procedures are mutable and new toplevel
 bindings may be introduced.
 
-=== [6.6] 
+=== Pathnames expansion
 
 The ''tilde'' character ({{~}}) is automatically expanded in pathnames.
 Additionally, if a pathname starts with {{$VARIABLE...}}, then the prefix is replaced
 by the value of the given environment variable.
 
-=== [6.6.1] 
+=== Optional arguments for port-related procedures
 
 If the procedures {{current-input-port}} and
 {{current-output-port}} are called with an argument (which should
@@ -199,7 +199,7 @@ arguments specify the mode in which the file is opened. Possible
 values are the keywords {{#:text}}, {{#:binary}} or
 {{#:append}}.
 
-=== [6.7] 
+=== {{exit}}
 
 The {{exit}} procedure exits a program right away and does ''not'' invoke pending {{dynamic-wind}} thunks.
 

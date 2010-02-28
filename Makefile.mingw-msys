@@ -1,7 +1,7 @@
 # Makefile.mingw - configuration for MinGW (MSYS) -*- Makefile -*-
 #
+# Copyright (c) 2008-2010, The Chicken Team
 # Copyright (c) 2007, Felix L. Winkelmann
-# Copyright (c) 2008-2009, The Chicken Team
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -34,7 +34,7 @@ SRCDIR = ./
 # platform configuration
 
 DLLSINPATH = 1
-ARCH = x86
+ARCH ?= x86
 HACKED_APPLY = 1
 WINDOWS = 1
 
@@ -45,7 +45,7 @@ EXE = .exe
 
 # options
 
-C_COMPILER_OPTIONS = -fno-strict-aliasing -DHAVE_CHICKEN_CONFIG_H
+C_COMPILER_OPTIONS ?= -fno-strict-aliasing -DHAVE_CHICKEN_CONFIG_H
 ifdef DEBUGBUILD
 C_COMPILER_OPTIMIZATION_OPTIONS ?= -g -Wall -Wno-unused
 else
@@ -56,17 +56,13 @@ C_COMPILER_OPTIMIZATION_OPTIONS ?= -Os
 endif
 endif
 C_COMPILER_SHARED_OPTIONS = -DPIC
-C_COMPILER_GUI_RUNTIME_OPTIONS = -DC_WINDOWS_GUI
 LINKER_OPTIONS = -Wl,--enable-auto-import
 LINKER_LINK_SHARED_LIBRARY_OPTIONS = -shared
 LIBRARIES = -lm -lws2_32
 LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libchicken.dll.a
 LIBUCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libuchicken.dll.a
-LIBCHICKENGUI_SO_LINKER_OPTIONS = -Wl,--out-implib,libchickengui.dll.a
 LIBCHICKEN_SO_LIBRARIES = -lm -lws2_32 
 LIBUCHICKEN_SO_LIBRARIES = -lm -lws2_32 
-LIBCHICKENGUI_SO_LIBRARIES = -lm -lkernel32 -luser32 -lgdi32 -lws2_32 
-LIBCHICKENGUI_IMPORT_LIBRARY = libchickengui.dll.a
 LIBCHICKEN_IMPORT_LIBRARY = libchicken.dll.a
 LIBUCHICKEN_IMPORT_LIBRARY = libuchicken.dll.a
 
@@ -80,22 +76,9 @@ POSIXFILE = posixwin
 
 include $(SRCDIR)/defaults.make
 
-# main target
-
-all: libchicken$(A) libuchicken$(A) \
-	$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)csi$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)chicken-profile$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)csc$(PROGRAM_SUFFIX)$(EXE) libchicken$(SO) \
-	libuchicken$(SO) libchickengui$(SO) libchickengui$(A) \
-	$(PROGRAM_PREFIX)chicken-install$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)chicken-uninstall$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)chicken-status$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)chicken-bug$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)chicken-setup$(PROGRAM_SUFFIX)$(EXE)
-
 chicken-config.h: chicken-defaults.h
-	echo "#define HAVE_DIRENT_H 1" >$@
+	echo "/* GENERATED */" >$@
+	echo "#define HAVE_DIRENT_H 1" >>$@
 	echo "#define HAVE_INTTYPES_H 1" >>$@
 	echo "#define HAVE_LIMITS_H 1" >>$@
 	echo "#define HAVE_LONG_LONG 1" >>$@

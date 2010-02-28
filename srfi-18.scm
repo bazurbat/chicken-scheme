@@ -1,7 +1,7 @@
 ;;;; srfi-18.scm - Simple thread unit - felix
 ;
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
-; Copyright (c) 2008-2009, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -58,6 +58,9 @@
   (syntax-rules ()
     ((_ . _) #f)))
 
+#;(define-syntax dbg
+    (syntax-rules ()
+      ((_ x ...) (print x ...))))
 
 ;;; Helper routines:
 
@@ -339,6 +342,7 @@ EOF
 			    (begin
 			      (##sys#setislot mutex 5 #t)
 			      (##sys#setslot t 8 (cons mutex (##sys#slot t 8)))
+			      (##sys#setslot t 11 mutex)
 			      (##sys#setslot mutex 2 t) ) ) ) )
 		  (check)
 		  (return #t) ]
@@ -351,12 +355,14 @@ EOF
 		     (unless (##sys#slot ct 13)  ; not unblocked by timeout
 		       (##sys#remove-from-timeout-list ct))
 		     (##sys#setslot ct 8 (cons mutex (##sys#slot ct 8)))
+		     (##sys#setslot ct 11 #f)
 		     (##sys#setslot mutex 2 thread)
 		     (return #f) ))
 		  (##sys#thread-block-for-timeout! ct limit)
 		  (switch) ]
 		 [else
 		  (##sys#setslot ct 3 'sleeping)
+		  (##sys#setslot ct 11 mutex)
 		  (##sys#setslot ct 1 (lambda () (return #t)))
 		  (switch) ] ) ) ) ) ) ) )
 
@@ -366,30 +372,34 @@ EOF
     (let ([ct ##sys#current-thread]
 	  [cvar (and (pair? cvar-and-to) (car cvar-and-to))]
 	  [timeout (and (fx> (length cvar-and-to) 1) (cadr cvar-and-to))] )
-      (dbg ct ": unlocking " mutex)
-      (when cvar (##sys#check-structure cvar 'condition-variable 'mutex-unlock!))
+      (dbg ct ": unlocking " (mutex-name mutex))
+      (when cvar
+	(##sys#check-structure cvar 'condition-variable 'mutex-unlock!))
       (##sys#call-with-current-continuation
        (lambda (return)
 	 (let ([waiting (##sys#slot mutex 3)]
-	       [limit (and timeout (##sys#compute-time-limit timeout))] 
-	       [result #t] )
+	       [limit (and timeout (##sys#compute-time-limit timeout))] )
 	   (##sys#setislot mutex 4 #f)
 	   (##sys#setislot mutex 5 #f)
 	   (##sys#setslot ct 8 (##sys#delq mutex (##sys#slot ct 8)))
-	   (##sys#setslot ct 1 (lambda () (return result)))
 	   (when cvar
 	     (##sys#setslot cvar 2 (##sys#append (##sys#slot cvar 2) (##sys#list ct)))
-	     (cond [limit
+	     (##sys#setslot ct 11 cvar)
+	     (cond (limit
 		    (##sys#setslot 
 		     ct 1
 		     (lambda () 
 		       (##sys#setslot cvar 2 (##sys#delq ct (##sys#slot cvar 2)))
-		       (unless (##sys#slot ct 13)  ; not unblocked by timeout
-			 (##sys#remove-from-timeout-list ct))
-		       (return #f) ) )
-		    (##sys#thread-block-for-timeout! ct limit) ]
-		   [else 
-		    (##sys#setslot ct 3 'sleeping)] ) )
+		       (##sys#setslot ct 11 #f)
+		       (if (##sys#slot ct 13) ; unblocked by timeout
+			   (return #f)
+			   (begin
+			     (##sys#remove-from-timeout-list ct)
+			     (return #t))) ) )
+		    (##sys#thread-block-for-timeout! ct limit) )
+		   (else
+		    (##sys#setslot ct 1 (lambda () (return #t)))
+		    (##sys#setslot ct 3 'sleeping)) ) )
 	   (unless (null? waiting)
 	     (let* ([wt (##sys#slot waiting 0)]
 		    [wts (##sys#slot wt 3)] )
@@ -398,9 +408,11 @@ EOF
 	       (when (or (eq? wts 'blocked) (eq? wts 'sleeping))
 		 (##sys#setslot mutex 2 wt)
 		 (##sys#setslot wt 8 (cons mutex (##sys#slot wt 8)))
+		 (##sys#setslot wt 11 #f)
 		 (when (eq? wts 'sleeping) (##sys#add-to-ready-queue wt) ) ) ) )
-	   (##sys#schedule) ) ) ) ) ) )
-
+	   (if (eq? (##sys#slot ct 3) 'running)
+	       (return #t)
+	       (##sys#schedule)) ) ) ) ) ))
 
 ;;; Condition variables:
 
@@ -417,6 +429,10 @@ EOF
 
 (define (condition-variable? x)
   (##sys#structure? x 'condition-variable) )
+
+(define (condition-variable-name cv)
+  (##sys#check-structure cv 'condition-variable 'condition-variable-name)
+  (##sys#slot cv 1) )
 
 (define (condition-variable-specific cv)
   (##sys#check-structure cv 'condition-variable 'condition-variable-specific)
@@ -453,14 +469,22 @@ EOF
 
 (define (thread-signal! thread exn)
   (##sys#check-structure thread 'thread 'thread-signal!)
+  (dbg "signal " thread exn)
   (if (eq? thread ##sys#current-thread)
       (##sys#signal exn)
-      (let ([old (##sys#slot thread 1)])
+      (let ([old (##sys#slot thread 1)]
+	    [blocked (##sys#slot thread 11)])
+	(cond
+	 ((##sys#structure? blocked 'condition-variable)
+	  (##sys#setslot blocked 2 (##sys#delq thread (##sys#slot blocked 2))))
+	 ((##sys#structure? blocked 'mutex)
+	  (##sys#setslot blocked 3 (##sys#delq thread (##sys#slot blocked 3)))))
 	(##sys#setslot
 	 thread 1
 	 (lambda ()
 	   (##sys#signal exn)
 	   (old) ) )
+	(##sys#setslot thread 3 'blocked)
 	(##sys#thread-unblock! thread) ) ) )
 
 

@@ -1,3 +1,4 @@
+[[toc:]]
 [[tags: manual]]
 
 
@@ -59,49 +60,62 @@ collection or internal data type dispatching.
 
 ; C_8ALIGN_BIT : Flag that specifies whether the data area of this block should be aligned on an 8-byte boundary (floating-point numbers, for example).
 
-The actual data follows immediately after the header. Note that
-block-addresses are always aligned to the native machine-word
-boundary. Scheme data objects map to blocks in the following manner:
+After these four bits comes a 4-bit type code representing one of the following types:
 
-'''pairs''': vector-like object (type bits {{C_PAIR_TYPE}}),
-where the car and the cdr are contained in the first and second slots,
+'''vectors''': vector objects with type bits {{C_VECTOR_TYPE}}, currently 0000.
+
+'''symbols''': vector objects with type bits {{C_SYMBOL_TYPE}}, currently 0001. The three slots
+contain the toplevel variable value, the print-name (a string), and the property list
+of the symbol.
+
+'''strings''': byte-vector objects with type bits {{C_STRING_TYPE}}, currently 0010.
+
+'''pairs''': vector-like object with type bits {{C_PAIR_TYPE}}, currently 0011).
+The car and the cdr are contained in the first and second slots,
 respectively.
 
-'''vectors''': vector object (type bits {{C_VECTOR_TYPE}}).
-
-'''strings''': byte-vector object (type bits {{C_STRING_TYPE}}).
-
-'''procedures''': special vector object (type bits
-{{C_CLOSURE_TYPE}}). The first slot contains a pointer to a
+'''closures''': special vector objects with type bits
+{{C_CLOSURE_TYPE}}, currently 0100. The first slot contains a pointer to a
 compiled C function. Any extra slots contain the free variables (since
 a flat closure representation is used).
 
-'''flonums''': a byte-vector object (type bits
-{{C_FLONUM_BITS}}). Slots one and two (or a single slot on
+'''flonums''': byte-vector objects with type bits
+{{C_FLONUM_BITS}}, currently 0101. Slots one and two (or a single slot on
 64 bit architectures) contain a 64-bit floating-point number, in the
 representation used by the host systems C compiler.
 
-'''symbols''': a vector object (type bits {{C_SYMBOL_TYPE}}). Slots
-one and two contain the toplevel variable value and the print-name
-(a string) of the symbol, respectively.
-
-'''ports''': a special vector object (type bits
-{{C_PORT_TYPE}}). The first slot contains a pointer to a file-
+'''ports''': special vector objects with type bits
+{{C_PORT_TYPE}}, currently 0111. The first slot contains a pointer to a file-
 stream, if this is a file-pointer, or NULL if not. The other slots
 contain housekeeping data used for this port.
 
-'''structures''': a vector object (type bits
-{{C_STRUCTURE_TYPE}}). The first slot contains a symbol that
+'''structures''': vector objects with type bits
+{{C_STRUCTURE_TYPE}}, currently 1000. The first slot contains a symbol that
 specifies the kind of structure this record is an instance of. The other
 slots contain the actual record items.
 
-'''pointers''': a special vector object (type bits
-{{C_POINTER_TYPE}}). The single slot contains a machine pointer.
+'''pointers''': special vector objects with type bits
+{{C_POINTER_TYPE}}, currently 1001. The single slot contains a machine pointer.
 
-'''tagged pointers''': similar to a pointer (type bits 
-{{C_TAGGED_POINTER_TYPE}}), but the object contains an additional
+'''locatives''': special vector objects with type bits {{C_LOCATIVE_TYPE}}, currently 1010.
+FIXME FIXME FIXME.
+
+'''tagged pointers''': special vector objects with type bits 
+{{C_TAGGED_POINTER_TYPE}}, currently 1011, Tagged pointers are similar to pointers,
+but the object contains an additional
 slot with a tag (an arbitrary data object) that identifies the type
 of the pointer.
+
+'''SWIG pointers''': special vector objects with type bits {{C_SWIG_POINTER_TYPE}}, currently
+1100.
+
+'''lambda infos''': byte-vector objects with type-bits {{C_LAMBDA_INFO_TYPE}}, currently 1101.
+
+'''buckets''': vector objects with type-bits {{C_BUCKET_TYPE}}, currently 1111.
+
+The actual data follows immediately after the header. Note that
+block addresses are always aligned to the native machine-word
+boundary.
 
 Data objects may be allocated outside of the garbage collected heap, as
 long as their layout follows the above mentioned scheme. But care has to
@@ -110,7 +124,9 @@ objects), because this will confuse the garbage collector.
 
 For more information see the header file {{chicken.h}}.
 
+
+
 ---
-Previous: [[Extensions]]
+Previous: [[Deployment]]
 
 Next: [[Bugs and limitations]]

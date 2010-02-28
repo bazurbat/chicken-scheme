@@ -162,35 +162,6 @@ from one of the following locations:
 
 {{ID}} should be a string or a symbol.
 
-==== set-extension-specifier!
-
-<procedure>(set-extension-specifier! SYMBOL PROC)</procedure>
-
-Registers the handler-procedure {{PROC}} as a extension-specifier with the
-name {{SYMBOL}}. This facility allows extending the set of valid extension
-specifiers to be used with {{require-extension}}. When {{register-extension}}
-is called with an extension specifier of the form {{(SPEC ...)}} and {{SPEC}}
-has been registered with {{set-extension-specifier!}}, then {{PROC}} will
-be called with two arguments: the specifier and the previously installed handler
-(or {{#f}} if no such handler was defined). The handler should return a new
-specifier that will be processed recursively. If the handler returns a vector,
-then each element of the vector will be processed recursively. 
-Alternatively the handler may return a string which specifies a file to be loaded:
-
-<enscript highlight=scheme>
-(eval-when (compile eval)
-  (set-extension-specifier! 
-    'my-package 
-    (lambda (spec old) 
-      (make-pathname my-package-directory (->string (cadr spec))) ) ) )
-
-(require-extension (my-package stuff))     ; --> expands into '(load "my-package-dir/stuff")
-</enscript>
-
-Note that the handler has to be registered at compile time, if it is to be 
-visible in compiled code.
-
-
 === System information
 
 ==== chicken-home

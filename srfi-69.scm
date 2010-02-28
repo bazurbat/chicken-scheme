@@ -1,7 +1,7 @@
 ;;; srfi-69.scm - Optional non-standard extensions
 ;
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
-; Copyright (c) 2008-2009, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -134,7 +134,8 @@
   (if (fx< fxn 0) (fxneg fxn) fxn ) )
 
 (define-inline (%hash/limit hsh lim)
-  (fxmod (fxand (foreign-value "C_MOST_POSITIVE_FIXNUM" int)
+  ;; use 32-bit mask to have identical hashes on 64-bit platforms
+  (fxmod (fxand (foreign-value "C_MOST_POSITIVE_32_BIT_FIXNUM" int)
 		(%fxabs hsh))
 	 lim) )
 

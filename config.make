@@ -23,8 +23,8 @@
 # Enable GC of symbols:
 #SYMBOLGC=1
 
-# Enable full optimization for compiling generated C code:
-#OPTIMIZE_FOR_SPEED=1
+# Use alternative C compiler
+#C_COMPILER=
 
 # Add additional C compiler options:
 #C_COMPILER_OPTIMIZATION_OPTIONS=...

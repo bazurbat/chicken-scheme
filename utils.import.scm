@@ -1,6 +1,6 @@
 ;;;; utils.import.scm - import library for "utils" module
 ;
-; Copyright (c) 2008-2009, The Chicken Team
+; Copyright (c) 2008-2010, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -26,9 +26,8 @@
 
 (##sys#register-primitive-module
  'utils
- '(for-each-argv-line
-   for-each-line
-   read-all
+ '(read-all
    system*
    qs
-   compile-file))
+   compile-file
+   scan-input-lines))

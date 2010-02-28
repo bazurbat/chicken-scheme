@@ -4,7 +4,8 @@
 == Unit data-structures
 
 This unit contains a collection of procedures related to data
-structures.
+structures.  This unit is used by default, unless the program is
+compiled with the {{-explicit-use}} option.
 
 
 === Lists
@@ -245,13 +246,13 @@ is the destructive version of sort.
 
 ==== sorted?
 
- [procedure] (sorted? SEQUENCE LESS?)
+<procedure>(sorted? SEQUENCE LESS?)</procedure>
 
 Returns true if the list or vector {{SEQUENCE}} is already sorted.
 
 ==== topological-sort
 
- [procedure] (topological-sort DAG PRED)
+<procedure>(topological-sort DAG PRED)</procedure>
 
 Sorts the directed acyclic graph dag {{DAG}} so that for every edge from vertex
 u to v, u will come before v in the resulting list of vertices.
@@ -280,6 +281,16 @@ Time complexity: O (|V| + |E|)
 
 (socks undershorts pants shoes watch shirt belt tie jacket)
 </enscript>
+
+=== Random numbers
+
+
+==== random-seed
+
+<procedure>(random-seed [SEED])</procedure>
+
+Seeds the random number generator with {{SEED}} (an exact integer) or 
+{{(current-seconds)}} if {{SEED}} is not given.
 
 
 === Strings

@@ -1,7 +1,7 @@
 # Makefile.mingw - configuration for MinGW (no MSYS) -*- Makefile -*-
 #
+# Copyright (c) 2008-2010, The Chicken Team
 # Copyright (c) 2007, Felix L. Winkelmann
-# Copyright (c) 2008-2009, The Chicken Team
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -31,11 +31,12 @@ endif
 
 SEP = $(strip \)
 SRCDIR =.$(SEP)
+BRANCHNAME =
 
 # platform configuration
 
 DLLSINPATH = 1
-ARCH = x86
+ARCH ?= x86
 WINDOWS = 1
 WINDOWS_SHELL = 1
 UNAME_SYS = MinGW
@@ -54,7 +55,7 @@ EXE = .exe
 # options
 
 C_COMPILER ?= gcc
-C_COMPILER_OPTIONS = -fno-strict-aliasing -DHAVE_CHICKEN_CONFIG_H
+C_COMPILER_OPTIONS ?= -fno-strict-aliasing -DHAVE_CHICKEN_CONFIG_H
 ifdef DEBUGBUILD
 C_COMPILER_OPTIMIZATION_OPTIONS ?= -g -Wall -Wno-unused
 else
@@ -65,17 +66,13 @@ C_COMPILER_OPTIMIZATION_OPTIONS ?= -Os
 endif
 endif
 C_COMPILER_SHARED_OPTIONS = -DPIC
-C_COMPILER_GUI_RUNTIME_OPTIONS = -DC_WINDOWS_GUI
 LINKER_LINK_SHARED_LIBRARY_OPTIONS = -shared
 LIBRARIES = -lm -lws2_32
 LINKER_OPTIONS = -Wl,--enable-auto-import
 LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libchicken.dll.a
 LIBUCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libuchicken.dll.a
-LIBCHICKENGUI_SO_LINKER_OPTIONS = -Wl,--out-implib,libchickengui.dll.a
 LIBCHICKEN_SO_LIBRARIES = -lm -lws2_32 
 LIBUCHICKEN_SO_LIBRARIES = -lm -lws2_32 
-LIBCHICKENGUI_SO_LIBRARIES = -lm -lkernel32 -luser32 -lgdi32 -lws2_32 
-LIBCHICKENGUI_IMPORT_LIBRARY = libchickengui.dll.a
 LIBCHICKEN_IMPORT_LIBRARY = libchicken.dll.a
 LIBUCHICKEN_IMPORT_LIBRARY = libuchicken.dll.a
 MAKEDIR_COMMAND_OPTIONS =
@@ -92,22 +89,9 @@ CUSTOM_CHICKEN_DEFAULTS=1
 
 include $(SRCDIR)defaults.make
 
-# main target
-
-all: libchicken$(A) libuchicken$(A) \
-	$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)csi$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)chicken-profile$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)csc$(PROGRAM_SUFFIX)$(EXE) libchicken$(SO) \
-	libuchicken$(SO) libchickengui$(SO) libchickengui$(A) \
-	$(PROGRAM_PREFIX)chicken-install$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)chicken-uninstall$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)chicken-status$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)chicken-bug$(PROGRAM_SUFFIX)$(EXE) \
-	$(PROGRAM_PREFIX)chicken-setup$(PROGRAM_SUFFIX)$(EXE)
-
 chicken-config.h: chicken-defaults.h
-	echo #define HAVE_DIRENT_H 1 >$@
+	echo /* GENERATED */ >$@
+	echo #define HAVE_DIRENT_H 1 >>$@
 	echo #define HAVE_INTTYPES_H 1 >>$@
 	echo #define HAVE_LIMITS_H 1 >>$@
 	echo #define HAVE_LONG_LONG 1 >>$@
@@ -145,7 +129,9 @@ endif
 	type chicken-defaults.h >>$@
 
 chicken-defaults.h:
-	echo /* generated */ >$@
+ifdef OPTIMIZE_FOR_SPEED
+	echo /* (this build was optimized for speed) */ >>$@
+endif
 	echo #define C_BUILD_TAG "$(BUILD_TAG)" >>$@
 	echo #define C_CHICKEN_PROGRAM "$(CHICKEN_PROGRAM)$(EXE)" >>$@
 	echo #define C_WINDOWS_SHELL 1 >>$@
@@ -160,6 +146,9 @@ chicken-defaults.h:
 	echo #endif >>$@
 	echo #ifndef C_INSTALL_LDFLAGS >>$@
 	echo # define C_INSTALL_LDFLAGS "$(LINKER_OPTIONS) $(LINKER_OPTIMIZATION_OPTIONS)" >>$@
+	echo #endif >>$@
+	echo #ifndef C_INSTALL_PREFIX >>$@
+	echo # define C_INSTALL_PREFIX "$(PREFIX)" >>$@
 	echo #endif >>$@
 	echo #ifndef C_INSTALL_SHARE_HOME >>$@
 	echo # define C_INSTALL_SHARE_HOME "$(DATADIR)" >>$@
@@ -233,17 +222,21 @@ chicken-defaults.h:
 	echo #ifndef C_TARGET_STATIC_LIB_HOME >>$@
 	echo # define C_TARGET_STATIC_LIB_HOME "$(TARGET_PREFIX)/lib" >>$@
 	echo #endif >>$@
-	echo #ifndef C_CSC_PROGRAM" >>$@
+	echo #ifndef C_CSC_PROGRAM >>$@
 	echo # define C_CSC_PROGRAM "$(CSC_PROGRAM)" >>$@
-	echo #endif" >>$@
-	echo #ifndef C_CSI_PROGRAM" >>$@
+	echo #endif >>$@
+	echo #ifndef C_CSI_PROGRAM >>$@
 	echo # define C_CSI_PROGRAM "$(CSI_PROGRAM)" >>$@
-	echo #endif" >>$@
-	echo #ifndef C_CHICKEN_BUG_PROGRAM" >>$@
+	echo #endif >>$@
+	echo #ifndef C_CHICKEN_BUG_PROGRAM >>$@
 	echo # define C_CHICKEN_BUG_PROGRAM "$(CHICKEN_BUG_PROGRAM)" >>$@
-	echo #endif" >>$@
+	echo #endif >>$@
 	echo #ifndef C_BINARY_VERSION >>$@
 	echo # define C_BINARY_VERSION $(BINARYVERSION) >>$@
 	echo #endif >>$@
+	echo #ifndef C_BRANCH_NAME >>$@
+	echo # define C_BRANCH_NAME "" >>$@
+	echo #endif >>$@
+	echo /* END OF FILE */ >>$@
 
 include $(SRCDIR)rules.make

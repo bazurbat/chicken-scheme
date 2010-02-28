@@ -27,5 +27,49 @@
 (module m2 ()
   (import scheme chicken (prefix m1 m-))
   (print (m-bar 10))
-  (print (m-bar 10 23))
+  (assert (= 9 (m-bar 10)))
   (print (+ 4 3)))
+
+(define (goo x) `(goo ,x))
+
+(assert (eq? 'goo (car (goo 1))))
+
+(define-compiler-syntax goo
+  (syntax-rules ()
+    ((_ x) `(cs-goo ,x))))
+
+(print (goo 2))
+(assert (eq? 'cs-goo (car (goo 2))))
+
+(define-compiler-syntax goo)
+
+(assert (eq? 'goo (car (goo 3))))
+
+(define-compiler-syntax goo
+  (syntax-rules ()
+    ((_ x) `(cs-goo2 ,x))))
+
+(let-compiler-syntax ((goo))
+		     (assert (eq? 'goo (car (goo 4)))))
+
+(assert (eq? 'cs-goo2 (car (goo 5))))
+
+(module bar (xxx)
+  (import scheme chicken)
+  (define (xxx) 'yyy)			; ineffective - suboptimal
+  ;(assert (eq? 'yyy (xxx)))
+  (define-compiler-syntax xxx
+    (syntax-rules ()
+      ((_) 'zzz)))
+  (define-syntax alias
+    (syntax-rules ()
+      ((_ name x)
+       (define-compiler-syntax name
+	 (syntax-rules ()
+	   ((_ . args) (x . args)))))))
+  (alias pof +)
+  (alias pif xxx)
+  (assert (= 7 (pof 3 4)))
+  (assert (eq? 'zzz (pif)))
+  (print (xxx))
+  (assert (eq? 'zzz (xxx))))

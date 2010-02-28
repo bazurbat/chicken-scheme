@@ -1,7 +1,7 @@
 ;;;; files.scm - File and pathname operations
 ;
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
-; Copyright (c) 2008-2009, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without
@@ -68,7 +68,7 @@
   (let ([file-exists? file-exists?]
 	[delete-file delete-file] )
     (lambda (file)
-      (and (file-exists? file) (delete-file file) #t) ) ) )
+      (and (file-exists? file) (delete-file file)) ) ) )
 
 ;;; file-copy and file-move : they do what you'd think.
 (define (file-copy origfile newfile #!optional (clobber #f) (blocksize 1024))
@@ -172,6 +172,7 @@
 (define absolute-pathname-root)
 (define root-origin)
 (define root-directory)
+
 (let ((string-match string-match))
   (if ##sys#windows-platform
       (let ((rx (regexp "([A-Za-z]:)?([\\/\\\\]).*")))

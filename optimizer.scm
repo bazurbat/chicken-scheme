@@ -1,7 +1,7 @@
 ;;;; optimizer.scm - The CHICKEN Scheme compiler (optimizations)
 ;
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
-; Copyright (c) 2008-2009, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -39,50 +39,81 @@
 ;;; Scan toplevel expressions for assignments:
 
 (define (scan-toplevel-assignments node)
-  (let ([safe '()]
-	[unsafe '()] )
+  (let ((safe '())
+	(unsafe '()) 
+	(escaped #f)
+	(previous '()))
 
     (define (mark v)
-      (if (not (memq v unsafe)) (set! safe (cons v safe))) )
+      (when (and (not escaped)
+		 (not (memq v unsafe)))
+	(set! safe (cons v safe))) )
+
+    (define (remember v x)
+      (set! previous (alist-update! v x previous)))
+
+    (define (touch)
+      (set! escaped #t)
+      (set! previous '()))
+
+    (define (scan-each ns e)
+      (for-each (lambda (n) (scan n e)) ns) )
+
+    (define (scan n e)
+      (let ([params (node-parameters n)]
+	    [subs (node-subexpressions n)] )
+	(case (node-class n)
+
+	  [(##core#variable)
+	   (let ((var (first params)))
+	     (when (and (not (memq var e)) 
+			(not (memq var safe)))
+	       (set! unsafe (cons var unsafe)) )
+	     (set! previous (remove (lambda (p) (eq? (car p) var)) previous)))]
+
+	  [(if ##core#cond ##core#switch)
+	   (scan (first subs) e)
+	   (touch)
+	   (scan-each (cdr subs) e)]
+
+	  [(let)
+	   (scan (first subs) e)
+	   (scan (second subs) (append params e)) ]
+
+	  [(lambda ##core#lambda ##core#callunit) #f]
+
+	  [(##core#call) (touch)]
+
+	  [(set!)
+	   (let ((var (first params))
+		 (val (first subs)))
+	     (scan val e)
+	     (let ((p (alist-ref var previous)))
+	       (when (and p (not (memq var unsafe)))
+		 (compiler-warning 
+		  'var
+		  "dropping assignment of unused value to global variable `~s'"
+		  var)
+		 (copy-node!
+		  (make-node '##core#undefined '() '())
+		  p))
+	       (when (and (not escaped)
+			  (not (memq var e))
+			  (not (memq var unsafe))
+			  (eq? '##core#variable (node-class val)))
+		 (let ((valname (first (node-parameters val))))
+		   (unless (memq valname e)
+		     (debugging 'x (sprintf "toplevel-alias: ~s -> ~s" var valname))
+		     (##sys#put! var '##compiler#toplevel-alias valname))))
+	       (unless (memq var e) (mark var))
+	       (remember var n) ) ) ]
+
+	  [else (scan-each subs e)] ) ) )
 
     (debugging 'p "scanning toplevel assignments...")
-    (call-with-current-continuation
-     (lambda (return)
-
-       (define (scan-each ns e)
-	 (for-each (lambda (n) (scan n e)) ns) )
-
-       (define (scan n e)
-	 (let ([params (node-parameters n)]
-	       [subs (node-subexpressions n)] )
-	   (case (node-class n)
-
-	     [(##core#variable)
-	      (let ([var (first params)])
-		(if (and (not (memq var e)) (not (memq var safe)))
-		    (set! unsafe (cons var unsafe)) ) ) ]
-
-	     [(if ##core#cond ##core#switch)
-	      (scan (first subs) e)
-	      (return #f) ]
-
-	     [(let)
-	      (scan (first subs) e)
-	      (scan (second subs) (append params e)) ]
-
-	     [(lambda ##core#callunit) #f]
-
-	     [(##core#call) (return #f)]
-
-	     [(set!)
-	      (let ([var (first params)])
-		(if (not (memq var e)) (mark var))
-		(scan (first subs) e) ) ]
-
-	     [else (scan-each subs e)] ) ) )
-
-       (scan node '()) ) )
-    (debugging 'o "safe globals" safe)
+    (scan node '())
+    (when (pair? safe)
+      (debugging 'o "safe globals" (delete-duplicates safe eq?)))
     (for-each (cut mark-variable <> '##compiler#always-bound) safe)))
 
 
@@ -192,6 +223,7 @@
 		    (touch)
 		    (debugging 'o "substituted constant variable" var)
 		    (qnode (car (node-parameters (test var 'value)))) )
+		   ((##sys#get var '##compiler#toplevel-alias) => replace)
 		   (else
 		    (if (not (eq? var (first params)))
 			(begin
@@ -812,23 +844,17 @@
 		    (list cont (make-node '##core#inline (list (second classargs)) callargs)) ) ) ) ) )
 
     ;; (<op> ...) -> (##core#inline <iop> ...)
-    ;; (<op> <rest-vector>) -> (##core#inline <iopv> <rest-vector>)
-    ((2) ; classargs = (<argc> <iop> <safe> <iopv>)
+    ((2) ; classargs = (<argc> <iop> <safe>)
      (and inline-substitutions-enabled
 	  (= (length callargs) (first classargs))
 	  (intrinsic? name)
 	  (or (third classargs) unsafe)
-	  (let ([arg1 (first callargs)]
-		[iopv (fourth classargs)] )
+	  (let ((arg1 (first callargs)))
 	    (make-node
 	     '##core#call '(#t)
 	     (list 
 	      cont
-	      (cond [(and iopv
-			  (eq? '##core#variable (node-class arg1))
-			  (eq? 'vector (get db (first (node-parameters arg1)) 'rest-parameter)) )
-		     (make-node '##core#inline (list iopv) callargs) ]
-		    [else (make-node '##core#inline (list (second classargs)) callargs)] ) ) ) ) ) )
+	      (make-node '##core#inline (list (second classargs)) callargs) ) ) ) ) )
 
     ;; (<op>) -> <var>
     ((3) ; classargs = (<var>)
@@ -1768,7 +1794,8 @@
 	    (when (debugging 'l "accessibles:") (pretty-print al))
 	    (debugging 'p "eliminating liftables by access-lists and non-liftable callees...")
 	    (let ([ls (eliminate3 (eliminate4 g2))]) ;(eliminate2 g2 al)))]) - why isn't this used?
-	      (debugging 'o "liftable local procedures" (delay (unzip1 ls)))
+	      (when (pair? ls)
+		(debugging 'o "liftable local procedures" (delay (unzip1 ls))))
 	      (debugging 'p "gathering extra parameters...")
 	      (let ([extra (compute-extra-variables ls)])
 		(when (debugging 'l "additional parameters:") (pretty-print extra))

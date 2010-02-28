@@ -1,6 +1,6 @@
 ;;;; compiler-namespace.scm - private namespace declarations for compiler units
 ;
-; Copyright (c) 2009, The Chicken Team
+; Copyright (c) 2009-2010, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -210,7 +210,6 @@
  node->sexpr
  non-foldable-bindings
  nonwinding-call/cc
- optimizable-rest-argument-operators
  optimization-iterations
  original-program-size
  output
@@ -222,6 +221,7 @@
  perform-inlining!
  perform-lambda-lifting!
  perform-pre-optimization!
+ perform-unboxing!
  posq
  postponed-initforms
  pprint-expressions-to-file
@@ -242,6 +242,7 @@
  real-name
  real-name-table
  real-name2
+ register-unboxed-op
  reorganize-recursive-bindings
  require-imports-flag
  rest-parameters-promoted-to-vector

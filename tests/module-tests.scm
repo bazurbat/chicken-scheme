@@ -38,7 +38,7 @@
 
 (module baz ((x s:list))
   (import (prefix scheme s:))
-  (define-syntax x
+  (s:define-syntax x
     (syntax-rules ()
       ((_ x) (s:list x)))))
 
@@ -155,5 +155,12 @@
 (test-equal "extended lambda list uses expansion environment"
             "some text"
             (test-extlambda "some text"))
+
+;;; import-forms in `require-extension':
+
+(module m15 ()
+  (import scheme chicken)
+  (use (prefix (rename srfi-1 (filter f)) 99:))
+  (print 99:f))
 
 (test-end "modules")

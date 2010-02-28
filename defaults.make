@@ -1,7 +1,7 @@
 # defaults.make - default settings -*- Makefile -*-
 #
+# Copyright (c) 2008-2010, The Chicken Team
 # Copyright (c) 2007, Felix L. Winkelmann
-# Copyright (c) 2008-2009, The Chicken Team
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -27,7 +27,7 @@
 
 # basic parameters
 
-BINARYVERSION = 4
+BINARYVERSION = 5
 STACKDIRECTION ?= 1
 CROSS_CHICKEN ?= 0
 
@@ -43,6 +43,7 @@ SEP ?= /
 SRCDIR ?= .$(SEP)
 DESTDIR ?=
 PREFIX ?= /usr/local
+BRANCHNAME ?= $(shell scripts/identify-branch $(SRCDIR))
 
 BINDIR = $(PREFIX)/bin
 LIBDIR = $(PREFIX)/lib
@@ -188,7 +189,12 @@ REMOVE_COMMAND_OPTIONS ?= -f
 REMOVE_COMMAND_RECURSIVE_OPTIONS ?= -fr
 MAKE_WRITABLE_COMMAND ?= chmod 0755
 endif
-ifndef WINDOWS_SHELL
+ifdef WINDOWS_SHELL
+INSTALL_PROGRAM_SHARED_LIBRARY_OPTIONS ?= /Y
+INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS ?= /Y
+INSTALL_PROGRAM_EXECUTABLE_OPTIONS ?= /Y
+INSTALL_PROGRAM_FILE_OPTIONS ?= /Y
+else
 INSTALL_PROGRAM_SHARED_LIBRARY_OPTIONS ?= -m755
 INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS ?= -m644
 INSTALL_PROGRAM_EXECUTABLE_OPTIONS ?= -m755
@@ -206,17 +212,14 @@ ifeq ($(PLATFORM),cygwin)
 PRIMARY_LIBCHICKEN = cygchicken-0.dll
 LIBCHICKEN_SO_FILE = cygchicken-0.dll
 LIBUCHICKEN_SO_FILE = cyguchicken-0.dll
-LIBCHICKENGUI_SO_FILE ?= 
 else
 PRIMARY_LIBCHICKEN ?= libchicken$(SO)
 LIBCHICKEN_SO_FILE ?= libchicken$(SO)
 LIBUCHICKEN_SO_FILE ?= libuchicken$(SO)
-LIBCHICKENGUI_SO_FILE ?= 
 endif
 endif
 LIBCHICKEN_SO_LIBRARIES ?= $(LIBRARIES)
 LIBUCHICKEN_SO_LIBRARIES ?= $(LIBRARIES)
-LIBCHICKENGUI_SO_LIBRARIES ?= $(LIBRARIES)
 
 # cross settings
 
@@ -270,6 +273,10 @@ APPLY_HACK_SRC ?= apply-hack.$(ARCH)$(ASM)
 APPLY_HACK_OBJECT ?= apply-hack.$(ARCH)$(O)
 endif
 
+ifeq ($(HACKED_APPLY),)
+APPLY_HACK_OBJECT =
+endif
+
 # bootstrapping compiler
 
 CHICKEN ?= chicken$(EXE)
@@ -284,12 +291,13 @@ CHICKEN_OPTIONS = -optimize-level 2 -include-path . -include-path $(SRCDIR) -inl
 ifdef DEBUGBUILD
 CHICKEN_OPTIONS += -feature debugbuild -scrutinize -types $(SRCDIR)types.db
 endif
+CHICKEN_OPTIONS += $(EXTRA_CHICKEN_OPTIONS)
 CHICKEN_LIBRARY_OPTIONS = $(CHICKEN_OPTIONS) -explicit-use -no-trace
 CHICKEN_PROGRAM_OPTIONS = $(CHICKEN_OPTIONS) -no-lambda-info -local
 CHICKEN_COMPILER_OPTIONS = $(CHICKEN_PROGRAM_OPTIONS) -extend private-namespace.scm
 CHICKEN_UNSAFE_OPTIONS = -unsafe -no-lambda-info
 CHICKEN_DYNAMIC_OPTIONS = $(CHICKEN_OPTIONS) -feature chicken-compile-shared -dynamic
-CHICKEN_IMPORT_LIBRARY_OPTIONS = $(CHICKEN_DYNAMIC_OPTIONS)
+CHICKEN_IMPORT_LIBRARY_OPTIONS = $(CHICKEN_DYNAMIC_OPTIONS) -no-trace
 
 ifndef DEBUGBUILD
 CHICKEN_PROGRAM_OPTIONS += -no-trace
@@ -303,7 +311,6 @@ CSC_PROGRAM = $(PROGRAM_PREFIX)csc$(PROGRAM_SUFFIX)
 CSI_PROGRAM = $(PROGRAM_PREFIX)csi$(PROGRAM_SUFFIX)
 CHICKEN_PROFILE_PROGRAM = $(PROGRAM_PREFIX)chicken-profile$(PROGRAM_SUFFIX)
 CHICKEN_INSTALL_PROGRAM = $(PROGRAM_PREFIX)chicken-install$(PROGRAM_SUFFIX)
-CHICKEN_SETUP_PROGRAM = $(PROGRAM_PREFIX)chicken-setup$(PROGRAM_SUFFIX)
 CHICKEN_UNINSTALL_PROGRAM = $(PROGRAM_PREFIX)chicken-uninstall$(PROGRAM_SUFFIX)
 CHICKEN_STATUS_PROGRAM = $(PROGRAM_PREFIX)chicken-status$(PROGRAM_SUFFIX)
 CHICKEN_BUG_PROGRAM = $(PROGRAM_PREFIX)chicken-bug$(PROGRAM_SUFFIX)
@@ -320,7 +327,7 @@ CSI_STATIC_EXECUTABLE = $(CSI_PROGRAM)$(EXE)
 CHICKEN_SHARED_EXECUTABLE = $(CHICKEN_PROGRAM)-shared$(EXE)
 CSI_SHARED_EXECUTABLE = $(CSI_PROGRAM)-shared$(EXE)
 TARGETLIBS ?= libchicken$(A) libuchicken$(A)
-TARGETS ?= $(TARGETLIBS) $(CHICKEN_STATIC_EXECUTABLE) \
+TARGETS += $(TARGETLIBS) $(CHICKEN_STATIC_EXECUTABLE) \
 	$(CSI_STATIC_EXECUTABLE) $(CHICKEN_PROFILE_PROGRAM)$(EXE) \
 	$(CSC_PROGRAM)$(EXE) \
 	$(CHICKEN_BUG_PROGRAM)$(EXE)
@@ -331,10 +338,9 @@ CHICKEN_SHARED_EXECUTABLE = $(CHICKEN_PROGRAM)$(EXE)
 CSI_SHARED_EXECUTABLE = $(CSI_PROGRAM)$(EXE)
 TARGETLIBS ?= libchicken$(A) libuchicken$(A) \
 	$(LIBCHICKEN_SO_FILE) $(LIBUCHICKEN_SO_FILE)
-TARGETS ?= $(TARGETLIBS) $(CHICKEN_SHARED_EXECUTABLE) \
+TARGETS += $(TARGETLIBS) $(CHICKEN_SHARED_EXECUTABLE) \
 	$(CSI_SHARED_EXECUTABLE) $(CHICKEN_PROFILE_PROGRAM)$(EXE) \
 	$(CSC_PROGRAM)$(EXE) $(CHICKEN_INSTALL_PROGRAM)$(EXE) $(CHICKEN_UNINSTALL_PROGRAM)$(EXE) \
-	$(CHICKEN_SETUP_PROGRAM)$(EXE) \
 	$(CHICKEN_STATUS_PROGRAM)$(EXE) setup-download.so setup-api.so \
 	$(CHICKEN_BUG_PROGRAM)$(EXE) \
 	$(IMPORT_LIBRARIES:%=%.import.so)
@@ -350,7 +356,9 @@ all: $(TARGETS)
 
 ifndef CUSTOM_CHICKEN_DEFAULTS
 chicken-defaults.h:
-	echo "/* generated */" >$@
+ifdef OPTIMIZE_FOR_SPEED
+	echo "/* (this build was optimized for speed) */" >$@
+endif
 	echo "#define C_BUILD_TAG \"$(BUILD_TAG)\"" >>$@
 	echo "#define C_CHICKEN_PROGRAM \"$(CHICKEN_PROGRAM)$(EXE)\"" >>$@
 	echo "#ifndef C_INSTALL_CC" >>$@
@@ -364,6 +372,9 @@ chicken-defaults.h:
 	echo "#endif" >>$@
 	echo "#ifndef C_INSTALL_LDFLAGS" >>$@
 	echo "# define C_INSTALL_LDFLAGS \"$(LINKER_OPTIONS) $(LINKER_OPTIMIZATION_OPTIONS)\"" >>$@
+	echo "#endif" >>$@
+	echo "#ifndef C_INSTALL_PREFIX" >>$@
+	echo "# define C_INSTALL_PREFIX \"$(PREFIX)\"" >>$@
 	echo "#endif" >>$@
 	echo "#ifndef C_INSTALL_SHARE_HOME" >>$@
 	echo "# define C_INSTALL_SHARE_HOME \"$(DATADIR)\"" >>$@
@@ -459,4 +470,8 @@ endif
 	echo "#ifndef C_BINARY_VERSION" >>$@
 	echo "# define C_BINARY_VERSION $(BINARYVERSION)" >>$@
 	echo "#endif" >>$@
+	echo "#ifndef C_BRANCH_NAME" >>$@
+	echo "# define C_BRANCH_NAME \"$(BRANCHNAME)\"" >>$@
+	echo "#endif" >>$@
+	echo "/* END OF FILE */" >>$@
 endif

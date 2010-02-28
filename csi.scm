@@ -1,7 +1,7 @@
 ;;;; csi.scm - Interpreter stub for CHICKEN
 ;
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
-; Copyright (c) 2008-2009, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -97,7 +97,7 @@ EOF
   (display  #<<EOF
     -b  -batch                    terminate after command-line processing
     -w  -no-warnings              disable all warnings
-    -k  -keyword-style STYLE      enable alternative keyword-syntax
+    -K  -keyword-style STYLE      enable alternative keyword-syntax
                                    (prefix, suffix or none)
         -no-parentheses-synonyms  disables list delimiter synonyms
         -no-symbol-escape         disables support for escaped symbols
@@ -381,7 +381,10 @@ EOF
 	(chop chop)
 	(sort sort)
 	(with-output-to-port with-output-to-port)
-	(current-output-port current-output-port) )
+	(current-output-port current-output-port) 
+	(prefix
+	 (or (get-environment-variable "CHICKEN_PREFIX")
+	     (foreign-value "C_INSTALL_PREFIX" c-string) ) ))
     (lambda port
       (with-output-to-port (if (pair? port) (car port) (current-output-port))
 	(lambda ()
@@ -389,7 +392,7 @@ EOF
 	  (let ([sinfo (##sys#symbol-table-info)]
 		[minfo (memory-statistics)] )
 	    (define (shorten n) (/ (truncate (* n 100)) 100))
-	    (printf "Features:")
+	    (printf "Features:\n")
 	    (for-each
 	     (lambda (lst) 
 	       (display "\n  ")
@@ -398,11 +401,13 @@ EOF
 		  (printf "~a~a" f (make-string (fxmax 1 (fx- 16 (string-length f))) #\space)) )
 		lst) )
 	     (chop (sort (map keyword->string ##sys#features) string<?) 5))
-	    (printf "~%~
+	    (printf "~%~%~
                    Machine type:    \t~A ~A~%~
                    Software type:   \t~A~%~
                    Software version:\t~A~%~
                    Build platform:  \t~A~%~
+                   Installation prefix:\t~A~%~
+                   Extension path:  \t~A~%~
                    Include path:    \t~A~%~
                    Symbol-table load:\t~S~%  ~
                      Avg bucket length:\t~S~%  ~
@@ -414,6 +419,8 @@ EOF
 		    (software-type)
 		    (software-version)
 		    (build-platform)
+		    prefix
+		    (repository-path)
 		    ##sys#include-pathnames
 		    (shorten (vector-ref sinfo 0))
 		    (shorten (vector-ref sinfo 1))
@@ -717,13 +724,13 @@ EOF
     "-ss" "-sx" "-s" "-script") )
 
 (define-constant complex-options
-  '("-D" "-feature" "-I" "-include-path" "-k" "-keyword-style") )
+  '("-D" "-feature" "-I" "-include-path" "-K" "-keyword-style") )
 
 (define (run)
   (let* ([extraopts (parse-option-string (or (get-environment-variable "CSI_OPTIONS") ""))]
 	 [args (canonicalize-args (command-line-arguments))]
 	 ; Check for these before 'args' is updated by any 'extraopts'
-	 [kwstyle (member* '("-k" "-keyword-style") args)]
+	 [kwstyle (member* '("-K" "-keyword-style") args)]
 	 [script (member* '("-ss" "-sx" "-s" "-script") args)])
     (cond [script
 	   (when (or (not (pair? (cdr script)))

@@ -1,8 +1,6 @@
 ;;;; posixwin.scm - Miscellaneous file- and process-handling routines, available on Windows
 ;
-; By Sergey Khorev
-;
-; Copyright (c) 2008-2009, The Chicken Team
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -103,6 +101,7 @@ int C_not_implemented() { return -1; }
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <direct.h>
+#include <utime.h>
 
 #include <time.h>
 
@@ -251,7 +250,7 @@ readdir(DIR * dir)
 #define C_dup(x)	    C_fix(dup(C_unfix(x)))
 #define C_dup2(x, y)	    C_fix(dup2(C_unfix(x), C_unfix(y)))
 #define C_setvbuf(p, m, s)  C_fix(setvbuf(C_port_file(p), NULL, C_unfix(m), C_unfix(s)))
-#define C_access(fn, m)	    C_fix(access((char *)C_data_pointer(fn), C_unfix(m)))
+#define C_test_access(fn, m)	    C_fix(access((char *)C_data_pointer(fn), C_unfix(m)))
 #define C_pipe(d, m)	    C_fix(_pipe(C_pipefds, PIPE_BUF, C_unfix(m)))
 #define C_close(fd)	    C_fix(close(C_unfix(fd)))
 
@@ -342,7 +341,7 @@ C_free_arg_string(char **where) {
 #define C_tm_set(v) (C_tm_set_08(v), &C_tm)
 
 #define C_asctime(v)    (asctime(C_tm_set(v)))
-#define C_mktime(v)     ((C_temporary_flonum = mktime(C_tm_set(v))) != -1)
+#define C_a_mktime(ptr, c, v)  C_flonum(ptr, mktime(C_tm_set(v)))
 
 #define TIME_STRING_MAXLENGTH 255
 static char C_time_string [TIME_STRING_MAXLENGTH + 1];
@@ -913,6 +912,14 @@ C_process(const char * app, const char * cmdlin, const char ** env,
 
     return success;
 }
+
+static int set_file_mtime(char *filename, C_word tm)
+{
+  struct _utimbuf tb;
+
+  tb.actime = tb.modtime = C_num_to_int(tm);
+  return _utime(filename, &tb);
+}
 EOF
 ) )
 
@@ -1093,7 +1100,22 @@ EOF
 	  0 0 0 0) )
 
 (define (file-size f) (##sys#stat f) _stat_st_size)
-(define (file-modification-time f) (##sys#stat f) _stat_st_mtime)
+
+(define file-modification-time
+  (getter-with-setter 
+   (lambda (f)
+     (##sys#stat f) _stat_st_mtime)
+   (lambda (f t)
+     (##sys#check-string f 'set-file-modification-time)
+     (##sys#check-number t 'set-file-modification-time)
+     (let ((r ((foreign-lambda int "set_file_mtime" c-string scheme-object)
+	       (##sys#expand-home-path f) 
+	       t)))
+       (when (fx< r 0)
+	 (posix-error 
+	  #:file-error 'set-file-modification-time
+	  "cannot set file modification-time" f t))))))
+
 (define (file-access-time f) (##sys#stat f) _stat_st_atime)
 (define (file-change-time f) (##sys#stat f) _stat_st_ctime)
 (define (file-owner f) (##sys#stat f) _stat_st_uid)
@@ -1113,17 +1135,10 @@ EOF
              (lambda (fname)
                  (##sys#check-string fname name)
                  #f))))
-    (set! stat-regular? regular-file?)	; DEPRECATED
-    (set! stat-directory? (stat-type 'stat-directory?)) ; DEPRECATED
-    (set! stat-device? (stat-type 'stat-char-device?))	; DEPRECATED
     (set! character-device? (stat-type 'character-device?))
     (set! block-device? (stat-type 'block-device?))
-    (set! stat-block-device? (stat-type 'stat-block-device?)) ; DEPRECATED
-    (set! stat-fifo? (stat-type 'stat-fifo?))		      ; DEPRECATED
     (set! fifo? (stat-type 'fifo?))
-    (set! stat-symlink? (stat-type 'stat-symlink?)) ; DEPRECATED
-    (set! socket? (stat-type 'socket?))
-    (set! stat-socket? (stat-type 'stat-socket?))) ; DEPRECATED
+    (set! socket? (stat-type 'socket?)))
 
 (define set-file-position!
    (lambda (port pos . whence)
@@ -1175,16 +1190,16 @@ EOF
 
 (define-inline (create-directory-helper-silent name)
     (unless (create-directory-check name)
-            (create-directory-helper name)))
+      (create-directory-helper name)))
 
 (define-inline (create-directory-helper-parents name)
-    (let* ((l   (string-split name "/\\"))
-           (c   (car l)))
-        (for-each
-             (lambda (x)
-                 (set! c (string-append c "/\\" x))
-                 (create-directory-helper-silent c))
-             (cdr l))))
+  (let* ((l   (string-split name "/\\"))
+	 (c   (car l)))
+    (for-each
+     (lambda (x)
+       (set! c (string-append c "/" x))
+       (create-directory-helper-silent c))
+     (cdr l))))
 
 (define create-directory
   (lambda (name #!optional parents?)
@@ -1192,21 +1207,27 @@ EOF
     (let ((name (##sys#expand-home-path name)))
       (if parents?
           (create-directory-helper-parents name)
-          (create-directory-helper name)))) )
+          (create-directory-helper name))
+      name)))
 
 (define change-directory
   (lambda (name)
     (##sys#check-string name 'change-directory)
-    (unless (fx= 0 (##core#inline "C_chdir" (##sys#make-c-string (##sys#expand-home-path name))))
-      (##sys#update-errno)
-      (##sys#signal-hook #:file-error 'change-directory "cannot change current directory" name) ) ) )
+    (let ((name (##sys#make-c-string (##sys#expand-home-path name))))
+      (unless (fx= 0 (##core#inline "C_chdir" name))
+	(##sys#update-errno)
+	(##sys#signal-hook
+	 #:file-error 'change-directory "cannot change current directory" name) )
+      name)))
 
 (define delete-directory
   (lambda (name)
     (##sys#check-string name 'delete-directory)
-    (unless (fx= 0 (##core#inline "C_rmdir" (##sys#make-c-string (##sys#expand-home-path name))))
-      (##sys#update-errno)
-      (##sys#signal-hook #:file-error 'delete-directory "cannot delete directory" name) ) ) )
+    (let ((name (##sys#make-c-string (##sys#expand-home-path name))))
+      (unless (fx= 0 (##core#inline "C_rmdir" name))
+	(##sys#update-errno)
+	(##sys#signal-hook #:file-error 'delete-directory "cannot delete directory" name) )
+      name)))
 
 (define directory
   (let ([string-append string-append]
@@ -1589,7 +1610,7 @@ EOF
 (let ()
   (define (check filename acc loc)
     (##sys#check-string filename loc)
-    (let ([r (fx= 0 (##core#inline "C_access" (##sys#make-c-string (##sys#expand-home-path filename)) acc))])
+    (let ([r (fx= 0 (##core#inline "C_test_access" (##sys#make-c-string (##sys#expand-home-path filename)) acc))])
       (unless r (##sys#update-errno))
       r) )
   (set! file-read-access? (lambda (filename) (check filename _r_ok 'file-read-access?)))
@@ -1728,9 +1749,10 @@ EOF
 
 (define (local-time->seconds tm)
   (check-time-vector 'local-time->seconds tm)
-  (if (##core#inline "C_mktime" tm)
-      (##sys#cons-flonum)
-      (##sys#error 'local-time->seconds "cannot convert time vector to seconds" tm) ) )
+  (let ((t (##core#inline_allocate ("C_a_mktime" 4) tm)))
+    (if (fp= t -1.0)
+	(##sys#error 'local-time->seconds "cannot convert time vector to seconds" tm) 
+	t)))
 
 (define local-timezone-abbreviation
   (foreign-lambda* c-string ()
@@ -1949,8 +1971,8 @@ EOF
 		(##sys#update-errno)
 		(##sys#signal-hook #:process-error loc "cannot execute process" cmdlin))) ) ) ) ) ) )
 
-#;(define process (void))
-#;(define process* (void))
+(define process)
+(define process*)
 (let ([%process
 	(lambda (loc err? cmd args env exactf)
 	  (let ([chkstrlst
@@ -2040,8 +2062,9 @@ EOF
 	[pathname-file pathname-file]
 	[directory? directory?] )
     (lambda (dir pred . action-id-limit)
-      (let-optionals action-id-limit
-	  ([action (lambda (x y) (cons x y))] ; no eta reduction here - we want cons inlined.
+      (let-optionals
+	  action-id-limit
+	  ([action (lambda (x y) (cons x y))] ; we want cons inlined
 	   [id '()]
 	   [limit #f] )
 	(##sys#check-string dir 'find-files)
@@ -2051,7 +2074,7 @@ EOF
 		      [(fixnum? limit) (lambda _ (fx< depth limit))]
 		      [else limit] ) ]
 	       [pproc
-		(if (string? pred)
+		(if (or (string? pred) (regexp? pred))
 		    (lambda (x) (string-match pred x))
 		    pred) ] )
 	  (let loop ([fs (glob (make-pathname dir "*"))]
@@ -2065,8 +2088,9 @@ EOF
 			       [(lproc f)
 				(loop rest
 				      (fluid-let ([depth (fx+ depth 1)])
-					(loop (glob (make-pathname f "*")) r) ) ) ]
-			       [else (loop rest r)] ) ]
+					(loop (glob (make-pathname f "*"))
+					      (if (pproc f) (action f r) r)) ) ) ]
+			       [else (loop rest (if (pproc f) (action f r) r))] ) ]
 			[(pproc f) (loop rest (action f r))]
 			[else (loop rest r)] ) ) ) ) ) ) ) ) )
 

@@ -1,6 +1,6 @@
 ;;;; posix.import.scm - import library for "posix" module
 ;
-; Copyright (c) 2008-2009, The Chicken Team
+; Copyright (c) 2008-2010, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -239,17 +239,10 @@
    signal/xfsz
    signals-list
    sleep
-   stat-block-device?			; DEPRECATED
    block-device?
    character-device?
-   stat-char-device?			; DEPRECATED
-   stat-directory?			; DEPRECATED
-   stat-fifo?				; DEPRECATED
    fifo?
-   stat-regular?			; DEPRECATED
-   stat-socket?				; DEPRECATED
    socket?
-   stat-symlink?			; DEPRECATED
    string->time
    symbolic-link?
    system-information

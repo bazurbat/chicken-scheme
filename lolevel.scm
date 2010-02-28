@@ -1,6 +1,10 @@
 ;;;; lolevel.scm - Low-level routines for CHICKEN
 ;
+<<<<<<< HEAD:lolevel.scm
 ; Copyright (c) 2008, The Chicken Team
+=======
+; Copyright (c) 2008-2010, The Chicken Team
+>>>>>>> master:lolevel.scm
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -78,7 +82,7 @@ EOF
 ;;; Helpers:
 
 (define-inline (%pointer? x)
-  (and (##core#inline "C_blockp" x) (##core#inline "C_anypointerp" x)) )
+  (##core#inline "C_i_safe_pointerp" x))
 
 (define-inline (%generic-pointer? x)
   (or (%pointer? x)
@@ -284,9 +288,11 @@ EOF
   (##sys#check-special p2 'pointer=?)
   (##core#inline "C_pointer_eqp" p1 p2) )
 
-(define pointer-offset
+(define pointer+
   (foreign-lambda* nonnull-c-pointer ([c-pointer ptr] [integer off])
     "return((unsigned char *)ptr + off);") )
+
+(define pointer-offset pointer+)	; DEPRECATED
 
 (define align-to-word
   (let ([align (foreign-lambda integer "C_align" integer)])
