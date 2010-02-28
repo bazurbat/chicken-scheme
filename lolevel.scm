@@ -288,8 +288,6 @@ EOF
   (foreign-lambda* nonnull-c-pointer ([c-pointer ptr] [integer off])
     "return((unsigned char *)ptr + off);") )
 
-(define pointer-offset pointer+)	; DEPRECATED
-
 (define align-to-word
   (let ([align (foreign-lambda integer "C_align" integer)])
     (lambda (x)

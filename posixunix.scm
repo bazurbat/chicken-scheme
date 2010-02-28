@@ -1937,10 +1937,10 @@ EOF
       (let ([addr (if (not addr) (##sys#null-pointer) addr)]
             [off (if (pair? off) (car off) 0)] )
         (unless (and (##core#inline "C_blockp" addr) (##core#inline "C_specialp" addr))
-                (##sys#signal-hook #:type-error 'map-file-to-memory "bad argument type - not a foreign pointer" addr) )
+	  (##sys#signal-hook #:type-error 'map-file-to-memory "bad argument type - not a foreign pointer" addr) )
         (let ([addr2 (mmap addr len prot flag fd off)])
           (when (eq? -1 (##sys#pointer->address addr2))
-                (posix-error #:file-error 'map-file-to-memory "cannot map file to memory" addr len prot flag fd off) )
+	    (posix-error #:file-error 'map-file-to-memory "cannot map file to memory" addr len prot flag fd off) )
           (##sys#make-structure 'mmap addr2 len) ) ) ) ) )
 
 (define unmap-file-from-memory
@@ -1949,7 +1949,7 @@ EOF
       (##sys#check-structure mmap 'mmap 'unmap-file-from-memory)
       (let ([len (if (pair? len) (car len) (##sys#slot mmap 2))])
         (unless (eq? 0 (munmap (##sys#slot mmap 1) len))
-                (posix-error #:file-error 'unmap-file-from-memory "cannot unmap file from memory" mmap len) ) ) ) ) )
+	  (posix-error #:file-error 'unmap-file-from-memory "cannot unmap file from memory" mmap len) ) ) ) ) )
 
 (define (memory-mapped-file-pointer mmap)
   (##sys#check-structure mmap 'mmap 'memory-mapped-file-pointer)
