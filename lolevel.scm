@@ -1,10 +1,6 @@
 ;;;; lolevel.scm - Low-level routines for CHICKEN
 ;
-<<<<<<< HEAD:lolevel.scm
-; Copyright (c) 2008, The Chicken Team
-=======
 ; Copyright (c) 2008-2010, The Chicken Team
->>>>>>> master:lolevel.scm
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
