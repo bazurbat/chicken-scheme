@@ -1294,10 +1294,10 @@ extern double trunc(double);
 
 #define C_u_i_bit_setp(x, i)            C_mk_bool((C_unfix(x) & (1 << C_unfix(i))) != 0)
 
-#define C_u_i_pointer_u8_ref(ptr)         C_fix(((unsigned char *)C_block_item(ptr, 0)))
-#define C_u_i_pointer_s8_ref(ptr)         C_fix(((char *)C_block_item(ptr, 0)))
-#define C_u_i_pointer_u16_ref(ptr)        C_fix(((unsigned short *)C_block_item(ptr, 0)))
-#define C_u_i_pointer_s16_ref(ptr)        C_fix(((short *)C_block_item(ptr, 0)))
+#define C_u_i_pointer_u8_ref(ptr)         C_fix(*((unsigned char *)C_block_item(ptr, 0)))
+#define C_u_i_pointer_s8_ref(ptr)         C_fix(*((char *)C_block_item(ptr, 0)))
+#define C_u_i_pointer_u16_ref(ptr)        C_fix(*((unsigned short *)C_block_item(ptr, 0)))
+#define C_u_i_pointer_s16_ref(ptr)        C_fix(*((short *)C_block_item(ptr, 0)))
 #define C_a_u_i_pointer_u32_ref(ap, n, ptr)  \
   C_unsigned_int_to_num(ap, *((C_u32 *)C_block_item(ptr, 0)))
 #define C_a_u_i_pointer_s32_ref(ap, n, ptr)  \

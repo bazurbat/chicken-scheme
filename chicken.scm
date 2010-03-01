@@ -82,7 +82,6 @@
 	       (let ([level (string->number (car rest))])
 		 (case level
 		   [(0) #f]
-		   ;;XXX later add 'unboxing to -O2 and above
 		   [(1)
 		    (set! options (cons 'optimize-leaf-routines options)) ]
 		   [(2)

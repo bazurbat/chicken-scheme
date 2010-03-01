@@ -4,7 +4,7 @@
 ; "This is insane. What we clearly want to do is not exactly clear, and is rooted in NCOMPLR."
 ;
 ;
-;-----------------------------------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------
 ; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
@@ -111,6 +111,7 @@
 ; ([##core#]lambda ({<variable>}+ [. <variable>]) <body>)
 ; ([##core#]set! <variable> <exp>)
 ; ([##core#]begin <exp> ...)
+; (##core#include <string>)
 ; (##core#named-lambda <name> <llist> <body>)
 ; (##core#loop-lambda <llist> <body>)
 ; (##core#undefined)
@@ -526,7 +527,7 @@
 	     (emit-syntax-trace-info x #f)
 	     (unless (proper-list? x)
 	       (if ln
-		   (syntax-error (sprintf "(in line ~s) - malformed expression" ln) x)
+		   (syntax-error (sprintf "(~a) - malformed expression" ln) x)
 		   (syntax-error "malformed expression" x)))
 	     (set! ##sys#syntax-error-culprit x)
 	     (let* ((name0 (lookup (car x) se))
@@ -803,6 +804,13 @@
 				   (##sys#put! (car b) '##compiler#compiler-syntax (caddr b)))
 				 bs) ) ) ) )
 
+		       ((##core#include)
+			(walk
+			 `(##core#begin
+			   ,@(fluid-let ((##sys#default-read-info-hook read-info-hook))
+			       (##sys#include-forms-from-file (cadr x))))
+			 e se dest))
+
 		       ((##core#module)
 			(let* ((name (##sys#strip-syntax (cadr x)))
 			       (exports 
@@ -950,7 +958,7 @@
 				    (compiler-warning 
 				     'var "assigned global variable `~S' is a macro ~A"
 				     var
-				     (if ln (sprintf "in line ~S" ln) "") )
+				     (if ln (sprintf "(~a)" ln) "") )
 				    (when undefine-shadowed-macros (##sys#undefine-macro! var) ) )
 				  (when (keyword? var)
 				    (compiler-warning 'syntax "assignment to keyword `~S'" var) )
@@ -2149,8 +2157,9 @@
 						     custom
 						     (not (= (llist-length llist) (length (cdr subs)))))
 					    (quit
-					     "known procedure called with wrong number of arguments: ~A" 
-					     (source-info->string name) ) )
+					     "~a: procedure `~a' called with wrong number of arguments" 
+					     (source-info->line name)
+					     (cadr name)))
 					  (register-direct-call! id)
 					  (when custom (register-customizable! varname id)) 
 					  (list id custom) )

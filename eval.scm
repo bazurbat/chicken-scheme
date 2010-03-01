@@ -640,6 +640,10 @@
 			   (##sys#canonicalize-body (cddr x) se #f)
 			   e #f tf cntr se))
 
+			 ((##core#include)
+			  `(##core#begin
+			    ,@(##sys#include-forms-from-file (cadr x))))
+
 			 ((##core#module)
 			  (let* ((name (##sys#strip-syntax (cadr x)))
 				 (exports 
@@ -938,18 +942,18 @@
 			  (##sys#dload (##sys#make-c-string (##sys#string-append "./" fname)) topentry #t) ) ) )
 	    (call-with-current-continuation
 	     (lambda (abrt)
-	       (fluid-let ([##sys#read-error-with-line-number #t]
-			   [##sys#current-source-filename fname]
-			   [##sys#current-load-path
+	       (fluid-let ((##sys#read-error-with-line-number #t)
+			   (##sys#current-source-filename fname)
+			   (##sys#current-load-path
 			    (and fname
 				 (let ((i (has-sep? fname)))
-				   (if i (##sys#substring fname 0 (fx+ i 1)) "") ) ) ]
-			   [##sys#abort-load (lambda () (abrt #f))] )
-		 (let ([in (if fname (open-input-file fname) input)])
+				   (if i (##sys#substring fname 0 (fx+ i 1)) "") ) ) )
+			   (##sys#abort-load (lambda () (abrt #f))) )
+		 (let ((in (if fname (open-input-file fname) input)))
 		   (##sys#dynamic-wind
 		    (lambda () #f)
 		    (lambda ()
-		      (let ([c1 (peek-char in)])
+		      (let ((c1 (peek-char in)))
 			(when (char=? c1 (integer->char 127))
 			  (##sys#error 'load "unable to load compiled module" fname _dlerror) ) )
 		      (let ((x1 (read in)))
@@ -1064,6 +1068,23 @@
 		 (let ([i2 (fx+ i 1)])
 		   (loop (cons (##sys#substring str j i) items) i2 i2) ) ]
 		[else (loop items (fx+ i 1) j)] ) ) ) ) ) )
+
+(define ##sys#include-forms-from-file
+  (let ((load-verbose load-verbose)
+	(print print)
+	(with-input-from-file with-input-from-file)
+	(read read)
+	(reverse reverse))
+    (lambda (fname)
+      (let ((path (##sys#resolve-include-filename fname #t)))
+	(when (load-verbose) (print "; including " path " ..."))
+	(with-input-from-file path
+	  (lambda ()
+	    (fluid-let ((##sys#current-source-filename path))
+	      (do ((x (read) (read))
+		   (xs '() (cons x xs)) )
+		  ((eof-object? x) 
+		   (reverse xs))) ) ) ) ) ) ) )
 
 
 ;;; Extensions:

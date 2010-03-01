@@ -172,6 +172,7 @@
  immediate?
  immutable-constants
  import-libraries
+ read-info-hook
  initialize-analysis-database
  initialize-compiler
  inline-globally
@@ -239,6 +240,7 @@
  put!
  qnode
  r-c-s
+ read/source-info
  real-name
  real-name-table
  real-name2
@@ -261,8 +263,8 @@
  simplify-named-call
  sort-symbols
  source-filename
- source-info->line
  source-info->string
+ source-info->line
  standalone-executable
  string->c-identifier
  string->expr

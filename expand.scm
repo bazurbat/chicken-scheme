@@ -545,8 +545,8 @@
 		      [(eq? 'define-values head)
 		       (##sys#check-syntax 'define-values x '(define-values #(_ 0) _) #f se)
 		       (loop rest vars vals (cons (cadr x) mvars) (cons (caddr x) mvals)) ]
-		      [(eq? 'begin head)
-		       (##sys#check-syntax 'begin x '(begin . #(_ 0)) #f se)
+		      [(or (eq? 'begin head) (eq? '##core#begin head))
+		       (##sys#check-syntax 'begin x '(_ . #(_ 0)) #f se)
 		       (loop (##sys#append (cdr x) rest) vars vals mvars mvals) ]
 		      ((or (memq head vars) (memq head mvars))
 		       (fini vars vals mvars mvals body))
@@ -633,8 +633,8 @@
 	       [ln (get-line-number sexp)] )
 	  (##sys#syntax-error-hook
 	   (if ln 
-	       (string-append "(" (symbol->string id) ") in line " (number->string ln) " - " msg)
-	       (string-append "(" (symbol->string id) ") " msg) )
+	       (string-append "(" ln ") in `" (symbol->string id) "' - " msg)
+	       (string-append "in `" (symbol->string id) "' - " msg) )
 	   exp) ) )
 
       (define (lambda-list? x)

@@ -157,19 +157,9 @@
 (##sys#extend-macro-environment
  'include '()
  (##sys#er-transformer
- (lambda (form r c)
-   (##sys#check-syntax 'include form '(_ string))
-   (let ((path (##sys#resolve-include-filename (cadr form) #t))
-	 (%begin (r 'begin)))
-     (when (load-verbose) (print "; including " path " ..."))
-     `(,%begin
-       ,@(with-input-from-file path
-	   (lambda ()
-	     (fluid-let ((##sys#current-source-filename path))
-	       (do ([x (read) (read)]
-		    [xs '() (cons x xs)] )
-		   ((eof-object? x) 
-		    (reverse xs))) ) ) ) ) ) ) ) )
+  (lambda (form r c)
+    (##sys#check-syntax 'include form '(_ string))
+    `(##core#include ,(cadr form)))))
 
 (##sys#extend-macro-environment
  'assert '()

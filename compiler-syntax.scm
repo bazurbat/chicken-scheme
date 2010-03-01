@@ -179,9 +179,9 @@
 	      (let ((ln (get-line x)))
 		(compiler-warning 
 		 'syntax
-		 "(~a) in format string ~s~a, ~?" 
+		 "`~a', in format string ~s~a, ~?" 
 		 func fstr 
-		 (if ln (sprintf " in line ~a" ln) "")
+		 (if ln (sprintf "(~a)" ln) "")
 		 msg args) ) 
 	      (when ret? (return #f)))
 	    (let ((code '())

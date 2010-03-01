@@ -822,7 +822,7 @@
 (rewrite 'string 16 #f "C_a_i_string" #t #t) ; the last #t is actually too much, but we don't care
 (rewrite 'address->pointer 16 1 "C_a_i_address_to_pointer" #f 2)
 (rewrite 'pointer->address 16 1 "C_a_i_pointer_to_address" #f words-per-flonum)
-(rewrite 'pointer+ 16 2 "C_a_i_pointer_inc" #f 2)
+(rewrite 'pointer+ 16 2 "C_a_u_i_pointer_inc" #f 2)
 
 (rewrite 'pointer-u8-ref 2 1 "C_u_i_pointer_u8_ref" #f)
 (rewrite 'pointer-s8-ref 2 1 "C_u_i_pointer_s8_ref" #f)

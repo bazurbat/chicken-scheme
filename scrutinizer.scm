@@ -419,15 +419,14 @@
 	 (pp (fragment x))))))
   (define (call-result args e loc x params)
     (define (pname)
-      (sprintf 
-       "in procedure call to `~s'~a" 
-       (fragment x)
-       (if (and (pair? params) (pair? (cdr params)))
-	   (let ((n (source-info->line (cadr params))))
-	     (if (number? n)
-		 (sprintf " (line ~a)" n)
-		 ""))
-	   "")))
+      (sprintf "~ain procedure call to `~s', " 
+	  (if (and (pair? params) (pair? (cdr params)))
+	      (let ((n (source-info->line (cadr params))))
+		(if n
+		    (sprintf "~a: " n)
+		    ""))
+	      "")
+	(fragment x)))
     (d "call-result: ~a (~a)" args loc)
     (let* ((ptype (car args))
 	   (nargs (length (cdr args)))
@@ -437,7 +436,7 @@
 	(report
 	 loc
 	 (sprintf
-	  "expected ~a a value of type `~a', but were given a value of type `~a'"
+	  "~aexpected a value of type `~a', but were given a value of type `~a'"
 	  (pname) 
 	  xptype
 	  ptype)))
@@ -448,7 +447,7 @@
 	    (report 
 	     loc
 	     (sprintf
-	      "expected ~a ~a argument~a, but where given ~a argument~a"
+	      "~aexpected ~a argument~a, but where given ~a argument~a"
 	      (pname) alen (multiples alen)
 	      nargs (multiples nargs)))))
 	(do ((args (cdr args) (cdr args))
@@ -459,8 +458,8 @@
 	    (report
 	     loc
 	     (sprintf
-	      "expected argument #~a of type `~a' ~a, but where given an argument of type `~a'"
-	      i (car atypes) (pname) (car args)))))
+	      "~aexpected argument #~a of type `~a', but where given an argument of type `~a'"
+	      (pname) i (car atypes) (car args)))))
 	(let ((r (procedure-result-types ptype values-rest (cdr args))))
 	  (d  "  result-types: ~a" r)
 	  r))))

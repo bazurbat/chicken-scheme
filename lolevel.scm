@@ -363,14 +363,45 @@ EOF
 (define (pointer-f32-set! p n) (##core#inline "C_u_i_pointer_f32_set" p n))
 (define (pointer-f64-set! p n) (##core#inline "C_u_i_pointer_f64_set" p n))
 
-(define (pointer-u8-ref p) (##core#inline "C_u_i_pointer_u8_ref" p))
-(define (pointer-s8-ref p) (##core#inline "C_u_i_pointer_s8_ref" p))
-(define (pointer-u16-ref p) (##core#inline "C_u_i_pointer_u16_ref" p))
-(define (pointer-s16-ref p) (##core#inline "C_u_i_pointer_s16_ref" p))
-(define (pointer-u32-ref p) (##core#inline_allocate ("C_a_u_i_pointer_u32_ref" 4) p))
-(define (pointer-s32-ref p) (##core#inline_allocate ("C_a_u_i_pointer_s32_ref" 4) p))
-(define (pointer-f32-ref p) (##core#inline_allocate ("C_a_u_i_pointer_f32_ref" 4) p))
-(define (pointer-f64-ref p) (##core#inline_allocate ("C_a_u_i_pointer_f64_ref" 4) p))
+(define pointer-u8-ref
+  (getter-with-setter
+   (lambda (p) (##core#inline "C_u_i_pointer_u8_ref" p))
+   pointer-u8-set!))
+
+(define pointer-s8-ref
+  (getter-with-setter
+   (lambda (p) (##core#inline "C_u_i_pointer_s8_ref" p))
+   pointer-s8-set!))
+
+(define pointer-u16-ref
+  (getter-with-setter
+   (lambda (p) (##core#inline "C_u_i_pointer_u16_ref" p))
+   pointer-u16-set!))
+
+(define pointer-s16-ref
+  (getter-with-setter
+   (lambda (p) (##core#inline "C_u_i_pointer_s16_ref" p))
+   pointer-s16-set!))
+
+(define pointer-u32-ref
+  (getter-with-setter
+   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_u32_ref" 4) p)) ;XXX hardcoded size
+   pointer-u32-set!))
+
+(define pointer-s32-ref
+  (getter-with-setter
+   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_s32_ref" 4) p)) ;XXX hardcoded size
+   pointer-s32-set!))
+
+(define pointer-f32-ref
+  (getter-with-setter
+   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_f32_ref" 4) p)) ;XXX hardcoded size
+   pointer-f32-set!))
+
+(define pointer-f64-ref
+  (getter-with-setter
+   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_f64_ref" 4) p)) ;XXX hardcoded size
+   pointer-f64-set!))
 
 
 ;;; Procedures extended with data:

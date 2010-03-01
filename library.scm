@@ -2232,7 +2232,7 @@ EOF
        ##sys#warn
        (let ((ln (##sys#port-line port)))
 	 (if (and ##sys#read-error-with-line-number ln)
-	     (string-append msg " in line " (##sys#number->string ln))
+	     (string-append "(" ln ") " msg)
 	     msg) )
        args) ) ) )
 
@@ -2244,7 +2244,7 @@ EOF
        #:syntax-error
        (let ((ln (##sys#port-line port)))
 	 (if (and ##sys#read-error-with-line-number ln)
-	     (string-append msg " in line " (##sys#number->string ln))
+	     (string-append "(" ln ") " msg)
 	     msg) )
        args) ) ) )
 

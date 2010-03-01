@@ -55,9 +55,9 @@
 
 (assert (pointer=? some-chunk (address->pointer (pointer->address some-chunk))))
 
-; pointer-offset
+; pointer+
 
-(assert (pointer=? (address->pointer #x9) (pointer-offset (address->pointer #x5) #x4)))
+(assert (pointer=? (address->pointer #x9) (pointer+ (address->pointer #x5) #x4)))
 
 ; align-to-word
 

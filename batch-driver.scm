@@ -123,18 +123,6 @@
 	   (newline))
 	 xs) ) )
 
-    (define (infohook class data val)
-      (let ([data2 ((or ##sys#default-read-info-hook (lambda (a b c) b)) class data val)])
-	(when (and (eq? 'list-info class) (symbol? (car data2)))
-	  (##sys#hash-table-set!
-	   ##sys#line-number-database
-	   (car data2)
-	   (alist-cons 
-	    data2 val
-	    (or (##sys#hash-table-ref ##sys#line-number-database (car data2))
-		'() ) ) ) )
-	data2) )
-
     (define (arg-val str)
       (let* ((len (string-length str))
 	     (len1 (- len 1)) )
@@ -157,9 +145,6 @@
     (define (end-time pass)
       (when time-breakdown
 	(printf "milliseconds needed for ~a: \t~s~%" pass (- (cputime) time0)) ) )
-
-    (define (read-form in)
-      (##sys#read in infohook) )
 
     (define (analyze pass node . args)
       (let-optionals args ((no 0) (contf #t))
@@ -413,11 +398,13 @@
 			(let* ((f (car files))
 			       (in (check-and-open-input-file f)) )
 			  (fluid-let ((##sys#current-source-filename f))
-			    (let ((x1 (read-form in)) )
-			      (do ((x x1 (read-form in)))
-				  ((eof-object? x) 
-				   (close-checked-input-file in f) )
-				(set! forms (cons x forms)) ) ) ) ) ) ] ) ) )
+			    (let loop ()
+			      (let ((x (read/source-info in)))
+				(cond ((eof-object? x) 
+				       (close-checked-input-file in f) )
+				      (else
+				       (set! forms (cons x forms))
+				       (loop)))))))) ] ) ) )
 
 	   ;; Start compilation passes:
 	   (let ([proc (user-preprocessor-pass)])
@@ -428,7 +415,8 @@
 	   (print-expr "source" '|1| forms)
 	   (begin-time)
 	   (unless (null? uses-units)
-	     (set! ##sys#explicit-library-modules (append ##sys#explicit-library-modules uses-units))
+	     (set! ##sys#explicit-library-modules
+	       (append ##sys#explicit-library-modules uses-units))
 	     (set! forms (cons `(declare (uses ,@uses-units)) forms)) )
 	   (let* ([exps0 (map canonicalize-expression (append initforms forms))]
 		  [pvec (gensym)]
@@ -466,11 +454,6 @@
 
 	     (when (and unit-name dynamic)
 	       (compiler-warning 'usage "library unit `~a' compiled in dynamic mode" unit-name) )
-
-	     (when (and unsafe (feature? 'compiling-extension))
-	       (compiler-warning 
-		'style
-		"compiling extensions in unsafe mode is bad practice and should be avoided") )
 
 	     (set! ##sys#line-number-database line-number-database-2)
 	     (set! line-number-database-2 #f)
