@@ -1185,6 +1185,8 @@ extern double trunc(double);
 #define C_a_i_flonum(ptr, i, n)         C_flonum(ptr, n)
 #define C_a_i_data_mpointer(ptr, n, x)  C_mpointer(ptr, C_data_pointer(x))
 #define C_a_i_mpointer(ptr, n, x)       C_mpointer(ptr, (x))
+#define C_a_u_i_pointer_inc(ptr, n, p, i) C_mpointer(ptr, (C_char *)(p) + C_unfix(i))
+#define C_pointer_eqp(x, y)             C_mk_bool(C_c_pointer_nn(x) == C_c_pointer_nn(y))
 #define C_a_int_to_num(ptr, n, i)       C_int_to_num(ptr, i)
 #define C_a_unsigned_int_to_num(ptr, n, i)  C_unsigned_int_to_num(ptr, i)
 #define C_a_double_to_num(ptr, n)       C_double_to_number(C_flonum(ptr, n))
@@ -1292,6 +1294,33 @@ extern double trunc(double);
 
 #define C_u_i_bit_setp(x, i)            C_mk_bool((C_unfix(x) & (1 << C_unfix(i))) != 0)
 
+#define C_u_i_pointer_u8_ref(ptr)         C_fix(((unsigned char *)C_block_item(ptr, 0)))
+#define C_u_i_pointer_s8_ref(ptr)         C_fix(((char *)C_block_item(ptr, 0)))
+#define C_u_i_pointer_u16_ref(ptr)        C_fix(((unsigned short *)C_block_item(ptr, 0)))
+#define C_u_i_pointer_s16_ref(ptr)        C_fix(((short *)C_block_item(ptr, 0)))
+#define C_a_u_i_pointer_u32_ref(ap, n, ptr)  \
+  C_unsigned_int_to_num(ap, *((C_u32 *)C_block_item(ptr, 0)))
+#define C_a_u_i_pointer_s32_ref(ap, n, ptr)  \
+  C_int_to_num(ap, *((C_s32 *)C_block_item(ptr, 0)))
+#define C_a_u_i_pointer_f32_ref(ap, n, ptr)  C_flonum(ap, *((float *)C_block_item(ptr, 0)))
+#define C_a_u_i_pointer_f64_ref(ap, n, ptr)  C_flonum(ap, *((double *)C_block_item(ptr, 0)))
+#define C_u_i_pointer_u8_set(ptr, x)  \
+  (*((unsigned char *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
+#define C_u_i_pointer_s8_set(ptr, x)  \
+  (*((char *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
+#define C_u_i_pointer_u16_set(ptr, x)  \
+  (*((unsigned short *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
+#define C_u_i_pointer_s16_set(ptr, x)  \
+  (*((short *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
+#define C_u_i_pointer_u32_set(ptr, x)  \
+  (*((C_u32 *)C_block_item(ptr, 0)) = C_num_to_unsigned_int(x), C_SCHEME_UNDEFINED)
+#define C_u_i_pointer_s32_set(ptr, x)  \
+  (*((C_s32 *)C_block_item(ptr, 0)) = C_num_to_int(x), C_SCHEME_UNDEFINED)
+#define C_u_i_pointer_f32_set(ptr, x)  \
+  (*((float *)C_block_item(ptr, 0)) = C_flonum_magnitude(x), C_SCHEME_UNDEFINED)
+#define C_u_i_pointer_f64_set(ptr, x)  \
+  (*((double *)C_block_item(ptr, 0)) = C_flonum_magnitude(x), C_SCHEME_UNDEFINED)
+
 #ifdef C_BIG_ENDIAN
 # ifdef C_SIXTY_FOUR
 #  define C_lihdr(x, y, z)              ((C_LAMBDA_INFO_TYPE >> 56) & 0xff), \
@@ -1320,6 +1349,26 @@ extern double trunc(double);
 #define C_ub_i_flonum_lessp(n1, n2)     ((n1) < (n2))
 #define C_ub_i_flonum_greater_or_equal_p(n1, n2)  ((n1) >= (n2))
 #define C_ub_i_flonum_less_or_equal_p(n1, n2)  ((n1) <= (n2))
+
+#define C_ub_i_pointer_inc(p, n)        ((void *)((unsigned char *)(p) + (n)))
+#define C_ub_i_pointer_eqp(p1, p2)      ((p1) == (p2))
+
+#define C_ub_i_pointer_u8_ref(p)        (*((unsigned char *)(p)))
+#define C_ub_i_pointer_s8_ref(p)        (*((char *)(p)))
+#define C_ub_i_pointer_u16_ref(p)       (*((unsigned short *)(p)))
+#define C_ub_i_pointer_s16_ref(p)       (*((short *)(p)))
+#define C_ub_i_pointer_u32_ref(p)       (*((C_u32 *)(p)))
+#define C_ub_i_pointer_s32_ref(p)       (*((C_s32 *)(p)))
+#define C_ub_i_pointer_f32_ref(p)       (*((float *)(p)))
+#define C_ub_i_pointer_f64_ref(p)       (*((double *)(p)))
+#define C_ub_i_pointer_u8_set(p, n)     (*((unsigned char *)(p)) = (n))
+#define C_ub_i_pointer_s8_set(p, n)     (*((char *)(p)) = (n))
+#define C_ub_i_pointer_u16_set(p, n)    (*((unsigned short *)(p)) = (n))
+#define C_ub_i_pointer_s16_set(p, n)    (*((short *)(p)) = (n))
+#define C_ub_i_pointer_u32_set(p, n)    (*((C_u32 *)(p)) = (n))
+#define C_ub_i_pointer_s32_set(p, n)    (*((C_s32 *)(p)) = (n))
+#define C_ub_i_pointer_f32_set(p, n)    (*((float *)(p)) = (n))
+#define C_ub_i_pointer_f64_set(p, n)    (*((double *)(p)) = (n))
 
 #define C_end_of_main
 

@@ -146,6 +146,11 @@
     u8vector-set! s8vector-set! u16vector-set! s16vector-set! u32vector-set! s32vector-set!
     locative-ref locative-set! locative->object locative? global-ref
     null-pointer? pointer->object flonum? finite? address->pointer pointer->address
+    pointer+ pointer=?
+    pointer-u8-ref pointer-s8-ref pointer-u16-ref pointer-s16-ref
+    pointer-u32-ref pointer-s32-ref pointer-f32-ref pointer-f64-ref
+    pointer-u8-set! pointer-s8-set! pointer-u16-set! pointer-s16-set!
+    pointer-u32-set! pointer-s32-set! pointer-f32-set! pointer-f64-set!
     printf sprintf format) )
 
 (define internal-bindings
@@ -817,6 +822,25 @@
 (rewrite 'string 16 #f "C_a_i_string" #t #t) ; the last #t is actually too much, but we don't care
 (rewrite 'address->pointer 16 1 "C_a_i_address_to_pointer" #f 2)
 (rewrite 'pointer->address 16 1 "C_a_i_pointer_to_address" #f words-per-flonum)
+(rewrite 'pointer+ 16 2 "C_a_i_pointer_inc" #f 2)
+
+(rewrite 'pointer-u8-ref 2 1 "C_u_i_pointer_u8_ref" #f)
+(rewrite 'pointer-s8-ref 2 1 "C_u_i_pointer_s8_ref" #f)
+(rewrite 'pointer-u16-ref 2 1 "C_u_i_pointer_u16_ref" #f)
+(rewrite 'pointer-s16-ref 2 1 "C_u_i_pointer_s16_ref" #f)
+(rewrite 'pointer-u8-set! 2 2 "C_u_i_pointer_u8_set" #f)
+(rewrite 'pointer-s8-set! 2 2 "C_u_i_pointer_s8_set" #f)
+(rewrite 'pointer-u16-set! 2 2 "C_u_i_pointer_u16_set" #f)
+(rewrite 'pointer-s16-set! 2 2 "C_u_i_pointer_s16_set" #f)
+(rewrite 'pointer-u32-set! 2 2 "C_u_i_pointer_u32_set" #f)
+(rewrite 'pointer-s32-set! 2 2 "C_u_i_pointer_s32_set" #f)
+(rewrite 'pointer-f32-set! 2 2 "C_u_i_pointer_f32_set" #f)
+(rewrite 'pointer-f64-set! 2 2 "C_u_i_pointer_f64_set" #f)
+
+(rewrite 'pointer-u32-ref 16 1 "C_a_u_i_pointer_u32_ref" #f words-per-flonum)
+(rewrite 'pointer-s32-ref 16 1 "C_a_u_i_pointer_s32_ref" #f words-per-flonum)
+(rewrite 'pointer-f32-ref 16 1 "C_a_u_i_pointer_f32_ref" #f words-per-flonum)
+(rewrite 'pointer-f64-ref 16 1 "C_a_u_i_pointer_f64_ref" #f words-per-flonum)
 
 (rewrite
  '##sys#setslot 8

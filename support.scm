@@ -261,7 +261,9 @@
 		(if (exn? ex) 
 		    (exn-msg ex)
 		    (->string ex) ) ) 
-	(let ([xs (with-input-from-string str (lambda () (unfold eof-object? values (lambda (x) (read)) (read))))])
+	(let ([xs (with-input-from-string
+		      str
+		    (lambda () (unfold eof-object? values (lambda (x) (read)) (read))))])
 	  (cond [(null? xs) '(##core#undefined)]
 		[(null? (cdr xs)) (car xs)]
 		[else `(begin ,@xs)] ) ) ) ) ) )

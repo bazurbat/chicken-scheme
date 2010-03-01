@@ -463,6 +463,11 @@ The following extended bindings are handled specially:
 {{hash-table-ref}}
 {{block-set!}} {{number-of-slots}}
 {{first}} {{second}} {{third}} {{fourth}} {{null-pointer?}} {{pointer->object}}
+{{pointer+}} {{pointer=?}}
+{{pointer-u8-ref}} {{pointer-s8-ref}} {{pointer-u16-ref}} {{pointer-s16-ref}} 
+{{pointer-u32-ref}} {{pointer-s32-ref}} {{pointer-f32-ref}} {{pointer-f64-ref}} 
+{{pointer-u8-set!}} {{pointer-s8-set!}} {{pointer-u16-set!}} {{pointer-s16-set!}} 
+{{pointer-u32-set!}} {{pointer-s32-set!}} {{pointer-f32-set!}} {{pointer-f64-set!}} 
 {{make-record-instance}}
 {{locative-ref}} {{locative-set!}} {{locative?}} {{locative->object}} {{identity}}
 {{cpu-time}} {{error}} {{call/cc}} {{any?}}

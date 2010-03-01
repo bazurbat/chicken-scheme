@@ -129,9 +129,10 @@
 	  (##sys#hash-table-set!
 	   ##sys#line-number-database
 	   (car data2)
-	   (alist-cons data2 val
-		       (or (##sys#hash-table-ref ##sys#line-number-database (car data2))
-			   '() ) ) ) )
+	   (alist-cons 
+	    data2 val
+	    (or (##sys#hash-table-ref ##sys#line-number-database (car data2))
+		'() ) ) ) )
 	data2) )
 
     (define (arg-val str)
@@ -612,7 +613,7 @@
 				       (> (- (cputime) start-time) funny-message-timeout))
 			      (display "(don't worry - still compiling...)\n") )
 			    (print-node "closure-converted" '|9| node2)
-			    (when unbox
+			    (when (and unbox unsafe)
 			      (debugging 'p "performing unboxing")
 			      (begin-time)
 			      (perform-unboxing! node2)

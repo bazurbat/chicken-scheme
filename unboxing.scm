@@ -35,7 +35,7 @@
   (when (##sys#fudge 13)
     (printf "[debug] ~?~%" fstr args)) )
 
-(define-syntax d (syntax-rules () ((_ . _) (void))))
+;(define-syntax d (syntax-rules () ((_ . _) (void))))
 
 
 (define (perform-unboxing! node)
@@ -47,12 +47,14 @@
       (let ((ae '()))
 
 	(define (boxed! v)		; 'boxed is sticky
+	  (d "boxing ~a" v )
 	  (cond ((assq v e) =>
 		 (lambda (a)
 		   (set-cdr! a #f) ) )
 		(else (set! e (alist-cons v #f e)))))
 
 	(define (unboxed! v t)
+	  (d "unboxing ~a -> ~a" v t)
 	  (cond ((assq v e) =>
 		 (lambda (a)
 		   (if (cdr a)
@@ -248,7 +250,7 @@
 	  (let ((subs (node-subexpressions n))
 		(params (node-parameters n))
 		(class (node-class n)) )
-	    ;;(d "walk: (~a) ~a ~a" pass2? class params)
+	    (d "walk: (~a) ~a ~a" pass2? class params)
 	    (case class
 
 	      ((##core#undefined
@@ -289,10 +291,9 @@
 			    (any unboxed-value? args))
 			(let ((alt (first rw))
 			      (atypes (second rw))
-			      (rtype (third rw))
-			      (safe? (fourth rw)))
+			      (rtype (third rw)))
 			  ;; result or arguments are unboxed - rewrite node to alternative
-			  (when (and (or unsafe safe?) pass2?)
+			  (when pass2?
 			    (rewrite! 
 			     n alt subs args atypes rtype 
 			     (and dest (assq dest e))))
@@ -369,7 +370,7 @@
 	       (for-each (o invalidate (cut walk <> #f #f pass2?)) subs)
 	       #f))))
 
-	;(d "walk lambda: ~a" id)
+	(d "walk lambda: ~a" id)
 	(walk body #f #f #f)
 	(walk body #f #f #t)))
     
@@ -387,14 +388,8 @@
      (begin
        (register-unboxed-op #f 'name 'atypes 'rtype 'alt) ...))))
 
-(define-syntax define-safe-unboxed-ops
-  (syntax-rules ()
-    ((_ (name atypes rtype alt) ...)
-     (begin
-       (register-unboxed-op #t 'name 'atypes 'rtype 'alt) ...))))
-
-(define (register-unboxed-op safe? name atypes rtype alt)
-  (##sys#put! (symbolify name) '##compiler#unboxed-op (list alt atypes rtype safe?)))
+(define (register-unboxed-op name atypes rtype alt)
+  (##sys#put! (symbolify name) '##compiler#unboxed-op (list alt atypes rtype)))
 
 
 ;; unboxed rewrites
@@ -430,24 +425,22 @@
   (C_flonum_lessp (flonum flonum) bool "C_ub_i_flonum_lessp")
   (C_flonum_greater_or_equal_p (flonum flonum) bool "C_ub_i_flonum_greater_or_equal_p")
   (C_flonum_less_or_equal_p (flonum flonum) bool "C_ub_i_flonum_less_or_equal_p")
-  ; address->pointer
-  ; pointer->address
-  ; pointer+
-  ; pointer=?
-  ; pointer-u8-ref
-  ; pointer-s8-ref
-  ; pointer-u16-ref
-  ; pointer-s16-ref
-  ; pointer-u32-ref
-  ; pointer-s32-ref
-  ; pointer-f32-ref
-  ; pointer-f64-ref
-  ; pointer-u8-set!
-  ; pointer-s8-set!
-  ; pointer-u16-set!
-  ; pointer-s16-set!
-  ; pointer-u32-set!
-  ; pointer-s32-set!
-  ; pointer-f32-set!
-  ; pointer-f64-set!
+  (C_a_u_i_pointer_inc (pointer fixnum) pointer "C_ub_i_pointer_inc")
+  (C_pointer_eqp (pointer pointer) bool "C_ub_i_pointer_eqp")
+  (C_u_i_pointer_u8_ref (pointer) fixnum "C_ub_i_pointer_u8_ref")
+  (C_u_i_pointer_s8_ref (pointer) fixnum "C_ub_i_pointer_s8_ref")
+  (C_u_i_pointer_u16_ref (pointer) fixnum "C_ub_i_pointer_u16_ref")
+  (C_u_i_pointer_s16_ref (pointer) fixnum "C_ub_i_pointer_s16_ref")
+  (C_u_i_pointer_u32_ref (pointer) fixnum "C_ub_i_pointer_u32_ref")
+  (C_u_i_pointer_s32_ref (pointer) fixnum "C_ub_i_pointer_s32_ref")
+  (C_u_i_pointer_f32_ref (pointer) flonum "C_ub_i_pointer_f32_ref")
+  (C_u_i_pointer_f64_ref (pointer) flonum "C_ub_i_pointer_f64_ref")
+  (C_u_i_pointer_u8_set (pointer fixnum) fixnum "C_ub_i_pointer_u8_ref")
+  (C_u_i_pointer_s8_set (pointer fixnum) fixnum "C_ub_i_pointer_s8_ref")
+  (C_u_i_pointer_u16_set (pointer fixnum) fixnum "C_ub_i_pointer_u16_ref")
+  (C_u_i_pointer_s16_set (pointer fixnum) fixnum "C_ub_i_pointer_s16_ref")
+  (C_u_i_pointer_u32_set (pointer fixnum) fixnum "C_ub_i_pointer_u32_ref")
+  (C_u_i_pointer_s32_set (pointer fixnum) fixnum "C_ub_i_pointer_s32_ref")
+  (C_u_i_pointer_f32_set (pointer flonum) flonum "C_ub_i_pointer_f32_ref")
+  (C_u_i_pointer_f64_set (pointer flonum) flonum "C_ub_i_pointer_f64_ref")
   )

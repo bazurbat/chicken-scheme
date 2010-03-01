@@ -45,7 +45,6 @@
 #endif
 
 #define C_w2b(x)                   C_fix(C_wordstobytes(C_unfix(x)))
-#define C_pointer_eqp(x, y)        C_mk_bool(C_c_pointer_nn(x) == C_c_pointer_nn(y))
 #define C_memmove_o(to, from, n, toff, foff) C_memmove((char *)(to) + (toff), (char *)(from) + (foff), (n))
 EOF
 ) )
@@ -355,54 +354,23 @@ EOF
 
 ;;; SRFI-4 number-vector:
 
-(define pointer-u8-set! (foreign-lambda* void ([c-pointer p] [int n]) "*((unsigned char *)p) = n;"))
-(define pointer-s8-set! (foreign-lambda* void ([c-pointer p] [int n]) "*((char *)p) = n;"))
-(define pointer-u16-set! (foreign-lambda* void ([c-pointer p] [int n]) "*((unsigned short *)p) = n;"))
-(define pointer-s16-set! (foreign-lambda* void ([c-pointer p] [int n]) "*((short *)p) = n;"))
-(define pointer-u32-set! (foreign-lambda* void ([c-pointer p] [int n]) "*((C_u32 *)p) = n;"))
-(define pointer-s32-set! (foreign-lambda* void ([c-pointer p] [int n]) "*((C_s32 *)p) = n;"))
-(define pointer-f32-set! (foreign-lambda* void ([c-pointer p] [double n]) "*((float *)p) = n;"))
-(define pointer-f64-set! (foreign-lambda* void ([c-pointer p] [float n]) "*((double *)p) = n;"))
+(define (pointer-u8-set! p n) (##core#inline "C_u_i_pointer_u8_set" p n))
+(define (pointer-s8-set! p n) (##core#inline "C_u_i_pointer_s8_set" p n))
+(define (pointer-u16-set! p n) (##core#inline "C_u_i_pointer_u16_set" p n))
+(define (pointer-s16-set! p n) (##core#inline "C_u_i_pointer_s16_set" p n))
+(define (pointer-u32-set! p n) (##core#inline "C_u_i_pointer_u32_set" p n))
+(define (pointer-s32-set! p n) (##core#inline "C_u_i_pointer_s32_set" p n))
+(define (pointer-f32-set! p n) (##core#inline "C_u_i_pointer_f32_set" p n))
+(define (pointer-f64-set! p n) (##core#inline "C_u_i_pointer_f64_set" p n))
 
-(define pointer-u8-ref
-  (getter-with-setter
-   (foreign-lambda* int ([c-pointer p]) "return(*((unsigned char *)p));")
-   pointer-u8-set!) )
-
-(define pointer-s8-ref
-  (getter-with-setter
-   (foreign-lambda* int ([c-pointer p]) "return(*((signed char *)p));")
-   pointer-s8-set!) )
-
-(define pointer-u16-ref
-  (getter-with-setter
-   (foreign-lambda* int ([c-pointer p]) "return(*((unsigned short *)p));")
-   pointer-u16-set!) )
-
-(define pointer-s16-ref
-  (getter-with-setter
-   (foreign-lambda* int ([c-pointer p]) "return(*((short *)p));")
-   pointer-s6-set!) )
-
-(define pointer-u32-ref
-  (getter-with-setter
-   (foreign-lambda* integer ([c-pointer p]) "return(*((C_u32 *)p));")
-   pointer-u32-set!) )
-
-(define pointer-s32-ref
-  (getter-with-setter
-   (foreign-lambda* integer ([c-pointer p]) "return(*((C_s32 *)p));")
-   pointer-s32-set!) )
-
-(define pointer-f32-ref
-  (getter-with-setter
-   (foreign-lambda* float ([c-pointer p]) "return(*((float *)p));")
-   pointer-f32-set!) )
-
-(define pointer-f64-ref
-  (getter-with-setter
-   (foreign-lambda* double ([c-pointer p]) "return(*((double *)p));")
-   pointer-f64-set!) )
+(define (pointer-u8-ref p) (##core#inline "C_u_i_pointer_u8_ref" p))
+(define (pointer-s8-ref p) (##core#inline "C_u_i_pointer_s8_ref" p))
+(define (pointer-u16-ref p) (##core#inline "C_u_i_pointer_u16_ref" p))
+(define (pointer-s16-ref p) (##core#inline "C_u_i_pointer_s16_ref" p))
+(define (pointer-u32-ref p) (##core#inline_allocate ("C_a_u_i_pointer_u32_ref" 4) p))
+(define (pointer-s32-ref p) (##core#inline_allocate ("C_a_u_i_pointer_s32_ref" 4) p))
+(define (pointer-f32-ref p) (##core#inline_allocate ("C_a_u_i_pointer_f32_ref" 4) p))
+(define (pointer-f64-ref p) (##core#inline_allocate ("C_a_u_i_pointer_f64_ref" 4) p))
 
 
 ;;; Procedures extended with data:
