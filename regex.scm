@@ -38,7 +38,7 @@
     regexp? regexp
     string-match string-match-positions string-search string-search-positions
     string-split-fields string-substitute string-substitute*
-    glob? glob->regexp
+    glob->regexp
     grep
     regexp-escape 
 
@@ -245,18 +245,6 @@
 
 
 ;;; Glob support:
-
-(define (glob? str)			; DEPRECATED
-  (##sys#check-string str 'glob?)
-  (let loop ([idx (fx- (string-length str) 1)])
-    (and (fx<= 0 idx)
-         (case (string-ref str idx)
-           [(#\* #\] #\?)
-             (or (fx= 0 idx)
-                 (not (char=? #\\ (string-ref str (fx- idx 1))))
-                 (loop (fx- idx 2)))]
-           [else
-             (loop (fx- idx 1))]) ) ) )
 
 (define glob->regexp
   (let ([list->string list->string]
