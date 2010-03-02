@@ -1120,7 +1120,7 @@ extern double trunc(double);
 #define C_fetch_byte(x, p)              (((unsigned C_byte *)((C_SCHEME_BLOCK *)(x))->data)[ p ])
 #define C_poke_integer(x, i, n)         (C_set_block_item(x, C_unfix(i), C_num_to_int(n)), C_SCHEME_UNDEFINED)
 #define C_pointer_to_block(p, x)        (C_set_block_item(p, 0, (C_word)C_data_pointer(x)), C_SCHEME_UNDEFINED)
-#define C_null_pointerp(x)              C_mk_bool((void *)C_u_i_car(x) == NULL)
+#define C_null_pointerp(x)              C_mk_bool((void *)C_block_item(x, 0) == NULL)
 #define C_update_pointer(p, ptr)        (C_set_block_item(ptr, 0, C_num_to_unsigned_int(p)), C_SCHEME_UNDEFINED)
 #define C_copy_pointer(from, to)        (C_set_block_item(to, 0, C_u_i_car(from)), C_SCHEME_UNDEFINED)
 #define C_pointer_to_object(ptr)        C_block_item(ptr, 0)
@@ -1352,6 +1352,7 @@ extern double trunc(double);
 
 #define C_ub_i_pointer_inc(p, n)        ((void *)((unsigned char *)(p) + (n)))
 #define C_ub_i_pointer_eqp(p1, p2)      ((p1) == (p2))
+#define C_ub_i_null_pointerp(p)         ((p) == NULL)
 
 #define C_ub_i_pointer_u8_ref(p)        (*((unsigned char *)(p)))
 #define C_ub_i_pointer_s8_ref(p)        (*((char *)(p)))

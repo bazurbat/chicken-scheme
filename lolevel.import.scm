@@ -62,6 +62,7 @@
    object-unevict
    pointer->address
    pointer-like?
+   pointer-offset			; DEPRECATED
    pointer->object
    pointer-f32-ref
    pointer-f32-set!

@@ -268,7 +268,7 @@ EOF
 
 (define (null-pointer? ptr)
   (##sys#check-special ptr 'null-pointer?)
-  (eq? 0 (##sys#pointer->address ptr) ) )
+  (##core#inline "C_null_pointerp" ptr))
 
 (define (object->pointer x)
   (and (##core#inline "C_blockp" x)
@@ -286,6 +286,8 @@ EOF
 (define pointer+
   (foreign-lambda* nonnull-c-pointer ([c-pointer ptr] [integer off])
     "return((unsigned char *)ptr + off);") )
+
+(define pointer-offset pointer+)	; DEPRECATED
 
 (define align-to-word
   (let ([align (foreign-lambda integer "C_align" integer)])

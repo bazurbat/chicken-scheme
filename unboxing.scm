@@ -443,4 +443,5 @@
   (C_u_i_pointer_s32_set (pointer fixnum) fixnum "C_ub_i_pointer_s32_ref")
   (C_u_i_pointer_f32_set (pointer flonum) flonum "C_ub_i_pointer_f32_ref")
   (C_u_i_pointer_f64_set (pointer flonum) flonum "C_ub_i_pointer_f64_ref")
+  (C_null_pointerp (pointer) bool "C_ub_i_null_pointerp")
   )

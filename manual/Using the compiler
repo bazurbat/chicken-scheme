@@ -201,7 +201,7 @@ Possible options are:
 
 ; -to-stdout : Write compiled code to standard output instead of creating a {{.c}} file.
 
-; -unboxing : try to use unboxed temporaries for numerical operations.
+; -unboxing : try to use unboxed temporaries for numerical operations. This optimization is only effective in unsafe mode.
 
 ; -unit NAME : Compile this file as a library unit. Equivalent to {{-prelude "(declare (unit NAME))"}}
 

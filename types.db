@@ -602,6 +602,7 @@
 (pointer-f32-set! (procedure pointer-f32-set! (pointer number) undefined))
 (pointer-f64-ref (procedure pointer-f64-ref (pointer) number))
 (pointer-f64-set! (procedure pointer-f64-set! (pointer number) undefined))
+(pointer-offset deprecated)
 (pointer+ (procedure pointer+ (pointer fixnum) pointer))
 (pointer-s16-ref (procedure pointer-s16-ref (pointer) fixnum))
 (pointer-s16-set! (procedure pointer-s16-set! (pointer fixnum) undefined))
