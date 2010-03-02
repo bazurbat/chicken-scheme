@@ -539,13 +539,13 @@
 					(cons (car head) vars)
 					(cons `(##core#lambda ,(cdr head) ,@(cddr x)) vals)
 					mvars mvals) ] ) ) ) ]
-		      ((eq? 'define-syntax head)
+		      ((eq? 'define-syntax head) ;XXX captures, should perhaps use `##core#define-syntax'?
 		       (##sys#check-syntax 'define-syntax x '(define-syntax _ . #(_ 1)) se)
 		       (fini/syntax vars vals mvars mvals body) )
-		      [(eq? 'define-values head)
+		      [(eq? 'define-values head) ;XXX captures
 		       (##sys#check-syntax 'define-values x '(define-values #(_ 0) _) #f se)
 		       (loop rest vars vals (cons (cadr x) mvars) (cons (caddr x) mvals)) ]
-		      [(or (eq? 'begin head) (eq? '##core#begin head))
+		      [(or (eq? 'begin head) (eq? '##core#begin head)) ;XXX only `##core#begin'?
 		       (##sys#check-syntax 'begin x '(_ . #(_ 0)) #f se)
 		       (loop (##sys#append (cdr x) rest) vars vals mvars mvals) ]
 		      ((or (memq head vars) (memq head mvars))
@@ -965,6 +965,22 @@
        #f #t 'reexport) ) )
 
 (define ##sys#initial-macro-environment (##sys#macro-environment))
+
+(##sys#extend-macro-environment
+ 'if
+ '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'if x '(_ _ _ . #(_)))
+    `(##core#if ,@(cdr x)))))
+
+(##sys#extend-macro-environment
+ 'begin
+ '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'begin x '(_ . #(_ 0)))
+    `(##core#begin ,@(cdr x)))))
 
 (##sys#extend-macro-environment
  'define

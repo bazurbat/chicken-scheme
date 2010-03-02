@@ -101,8 +101,7 @@
 ; (##core#global-ref <variable>)
 ; (quote <exp>)
 ; ([##core#]syntax <exp>)
-; (if <exp> <exp> [<exp>])
-; ([##core#]syntax <exp>)
+; (##core#if <exp> <exp> [<exp>])
 ; ([##core#]let <variable> ({(<variable> <exp>)}) <body>)
 ; ([##core#]let ({(<variable> <exp>)}) <body>)
 ; ([##core#]letrec ({(<variable> <exp>)}) <body>)
@@ -110,7 +109,7 @@
 ; ([##core#]lambda <variable> <body>)
 ; ([##core#]lambda ({<variable>}+ [. <variable>]) <body>)
 ; ([##core#]set! <variable> <exp>)
-; ([##core#]begin <exp> ...)
+; (##core#begin <exp> ...)
 ; (##core#include <string>)
 ; (##core#named-lambda <name> <llist> <body>)
 ; (##core#loop-lambda <llist> <body>)
@@ -544,8 +543,7 @@
 		      (when ln (update-line-number-database! xexpanded ln))
 		      (case name
 			
-			((if)
-			 (##sys#check-syntax 'if x '(if _ _ . #(_)) #f se)
+			((##core#if)
 			 `(if
 			   ,(walk (cadr x) e se #f)
 			   ,(walk (caddr x) e se #f)
@@ -553,7 +551,7 @@
 				'(##core#undefined)
 				(walk (cadddr x) e se #f) ) ) )
 
-			((quote syntax ##core#syntax)
+			((quote syntax ##core#syntax) ;XXX qualify `quote' + `syntax'
 			 (##sys#check-syntax name x '(_ _) #f se)
 			 `(quote ,(##sys#strip-syntax (cadr x))))
 
@@ -614,7 +612,7 @@
 				      `(##core#begin ,exp ,(loop (cdr ids))) ) ) ) )
 			    e se dest) ) )
 
-			((let ##core#let)
+			((let ##core#let) ;XXX qualify `let'
 			 (##sys#check-syntax 'let x '(_ #((variable _) 0) . #(_ 1)) #f se)
 			 (let* ((bindings (cadr x))
 				(vars (unzip1 bindings))
@@ -629,7 +627,7 @@
 				    (append aliases e)
 				    se2 dest) ) ) )
 
-			((letrec ##core#letrec)
+			((letrec ##core#letrec) ;XXX qualify `letrec'
 			 (##sys#check-syntax 'letrec x '(_ #((symbol _) 0) . #(_ 1)))
 			 (let ((bindings (cadr x))
 			       (body (cddr x)) )
@@ -644,7 +642,7 @@
 			      (##core#let () ,@body) )
 			    e se dest)))
 
-			((lambda ##core#lambda)
+			((lambda ##core#lambda) ;XXX qualify `lambda', but: (*)
 			 (##sys#check-syntax 'lambda x '(_ lambda-list . #(_ 1)) #f se)
 			 (let ((llist (cadr x))
 			       (obody (cddr x)) )
@@ -669,6 +667,8 @@
 				(cond ((or (not dest) 
 					   (assq dest se)) ; not global?
 				       l)
+				      ;; (*) here we make a distinction between user-
+				      ;; lambdas and internally created lambdas. Bad.
 				      ((and (eq? 'lambda (or (lookup name se) name))
 					    emit-profile
 					    (or (eq? profiled-procedures 'all)
@@ -690,7 +690,7 @@
 					    dest (cadr body) l) 
 					   l))))))))
 			
-			((let-syntax)
+			((let-syntax)	;XXX qualify `let-syntax'
 			 (##sys#check-syntax 'let-syntax x '(let-syntax #((variable _) 0) . #(_ 1)) #f se)
 			 (let ((se2 (append
 				     (map (lambda (b)
@@ -706,7 +706,7 @@
 			    e se2
 			    dest) ) )
 			       
-		       ((letrec-syntax)
+		       ((letrec-syntax)	;XXX qualify `letrec-syntax'
 			(##sys#check-syntax 'letrec-syntax x '(letrec-syntax #((variable _) 0) . #(_ 1)) #f se)
 			(let* ((ms (map (lambda (b)
 					  (list
@@ -915,7 +915,7 @@
 			  (set-real-names! aliases vars)
 			  `(##core#lambda ,aliases ,body) ) )
 
-			((set! ##core#set!) 
+			((set! ##core#set!) ;XXX qualify `set!'
 			 (##sys#check-syntax 'set! x '(_ variable _) #f se)
 			 (let* ([var0 (cadr x)]
 				[var (lookup var0 se)]
@@ -993,8 +993,7 @@
 			 (eval/meta (cadr x))
 			 '(##core#undefined) )
 
-			((begin ##core#begin) 
-			 (##sys#check-syntax 'begin x '(_ . #(_ 0)) #f se)
+			((##core#begin) 
 			 (if (pair? (cdr x))
 			     (canonicalize-begin-body
 			      (let fold ([xs (cdr x)])
@@ -1224,7 +1223,7 @@
 				       (cons name (alist-cons x2 ln (if old (cdr old) '()))) ) )
 				    x2) ) ] )
 
-			   (cond [(eq? 'location name)
+			   (cond [(eq? 'location name) ;XXX qualify `location'
 				  (##sys#check-syntax 'location x '(location _) #f se)
 				  (let ([sym (cadr x)])
 				    (if (symbol? sym)

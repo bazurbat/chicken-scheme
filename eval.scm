@@ -375,8 +375,7 @@
 		   
 			 [(##core#undefined) (lambda (v) (##core#undefined))]
 
-			 [(if)
-			  (##sys#check-syntax 'if x '(if _ _ . #(_)) #f se)
+			 [(##core#if)
 			  (let* ([test (compile (cadr x) e #f tf cntr se)]
 				 [cns (compile (caddr x) e #f tf cntr se)]
 				 [alt (if (pair? (cdddr x))
@@ -384,10 +383,9 @@
 					  (compile '(##core#undefined) e #f tf cntr se) ) ] )
 			    (lambda (v) (if (##core#app test v) (##core#app cns v) (##core#app alt v))) ) ]
 
-			 [(begin ##core#begin)
-			  (##sys#check-syntax 'begin x '(_ . #(_ 0)) #f se)
-			  (let* ([body (##sys#slot x 1)]
-				 [len (length body)] )
+			 [(##core#begin)
+			  (let* ((body (##sys#slot x 1))
+				 (len (length body)) )
 			    (case len
 			      [(0) (compile '(##core#undefined) e #f tf cntr se)]
 			      [(1) (compile (##sys#slot body 0) e #f tf cntr se)]
@@ -641,8 +639,10 @@
 			   e #f tf cntr se))
 
 			 ((##core#include)
-			  `(##core#begin
-			    ,@(##sys#include-forms-from-file (cadr x))))
+			  (compile
+			   `(##core#begin
+			     ,@(##sys#include-forms-from-file (cadr x)))
+			   e #f tf cntr se))
 
 			 ((##core#module)
 			  (let* ((name (##sys#strip-syntax (cadr x)))
