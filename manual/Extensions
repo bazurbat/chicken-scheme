@@ -461,7 +461,7 @@ Available options:
 ; {{-s   -sudo}} : use {{sudo(1)}} for installing or removing files
 ; {{-r   -retrieve}} : only retrieve egg into current directory, don't install
 ; {{-n   -no-install}} : do not install, just build (implies {{-keep}})
-; {{-p   -prefix PREFIX}} : change installation prefix to {{PREFIX}}; note: this must be an absolute path
+; {{-p   -prefix PREFIX}} : change installation prefix to {{PREFIX}}
 ; {{-host}} : when cross-compiling, compile extension for host
 ; {{-test}} : run included test-cases, if available
 ; {{-username USER}} : set username for transports that require this
