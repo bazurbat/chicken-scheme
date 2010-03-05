@@ -497,16 +497,21 @@ EOF
 	     (##sys#write-char-0 #\newline ##sys#standard-output) ]
 	    [(eq? x (##sys#slot '##sys#arbitrary-unbound-symbol 0))
 	     (fprintf out "unbound value~%") ]
-	    [(##sys#number? x) (fprintf out "number ~S~%" x)]
+	    [(number? x) (fprintf out "number ~S~%" x)]
 	    [(string? x) (descseq "string" ##sys#size string-ref 0)]
 	    [(vector? x) (descseq "vector" ##sys#size ##sys#slot 0)]
 	    [(symbol? x)
-	     (unless (##sys#symbol-has-toplevel-binding? x) (display "unbound " out))
+	     (unless (##sys#symbol-has-toplevel-binding? x)
+	       (display "unbound " out))
 	     (when (and (symbol? x) (fx= 0 (##sys#byte (##sys#slot x 1) 0)))
 	       (display "keyword " out) )
-	     (fprintf out "~asymbol with name ~S~%"
-		      (if (##sys#interned-symbol? x) "" "uninterned ")
-		      (##sys#symbol->string x))
+	     (let ((q (##sys#qualified-symbol? x)))
+	       (fprintf out "~a~asymbol with name ~S~%"
+		 (if (##sys#interned-symbol? x) "" "uninterned ")
+		 (if q "qualified " "")
+		 (if q 
+		     (##sys#symbol->qualified-string x)
+		     (##sys#symbol->string x))))
 	     (let ((plist (##sys#slot x 2)))
 	       (unless (null? plist)
 		 (display "  \nproperties:\n\n" out)
