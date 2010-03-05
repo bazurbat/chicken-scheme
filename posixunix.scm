@@ -2084,13 +2084,13 @@ EOF
       (##sys#terminal-check 'terminal-size port)
       (let-location ((columns int)
 		     (rows int))
-		    (if (fx= 0
-			     (ttysize (##core#inline "C_C_fileno" port)
-				      (location columns)
-				      (location rows)))
-			(values columns rows)
-			(posix-error #:error 'terminal-size
-				     "Unable to get size of terminal" port))))))
+	(if (fx= 0
+		 (ttysize (##core#inline "C_C_fileno" port)
+			  (location columns)
+			  (location rows)))
+	    (values columns rows)
+	    (posix-error #:error 'terminal-size
+			 "Unable to get size of terminal" port))))))
   
 (define get-host-name
   (let ([getit
