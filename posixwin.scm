@@ -1768,7 +1768,13 @@ EOF
 
 (define (terminal-port? port)
   (##sys#check-port port 'terminal-port?)
-  #f)
+  (let ([fp (##sys#peek-unsigned-integer port 0)])
+    (and (not (eq? 0 fp)) (##core#inline "C_tty_portp" port) ) ) )
+
+(define (terminal-size port)
+  (if (terminal-port? port)
+      (values 0 0)
+      (##sys#error 'terminal-size "port is not connected to a terminal" port)))
 
 (define-foreign-variable _iofbf int "_IOFBF")
 (define-foreign-variable _iolbf int "_IOLBF")
@@ -2140,7 +2146,6 @@ EOF
 (define-unimplemented signal-masked?)
 (define-unimplemented signal-unmask!)
 (define-unimplemented terminal-name)
-(define-unimplemented terminal-size)
 (define-unimplemented unmap-file-from-memory)
 (define-unimplemented user-information)
 (define-unimplemented utc-time->seconds)
