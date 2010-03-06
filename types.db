@@ -889,7 +889,7 @@
 
 ;; regex
 
-(glob->regexp (procedure glob->regexp (string) string))
+(glob->regexp (procedure glob->regexp (string #!optional *) *))
 (glob? deprecated)
 (grep (procedure grep (* list #!optional (procedure (*) *)) list))
 (regexp (procedure regexp (* #!optional * * *) (struct regexp)))

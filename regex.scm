@@ -247,37 +247,44 @@
 ;;; Glob support:
 
 (define glob->regexp
-  (let ([list->string list->string]
-        [string->list string->list] )
-    (lambda (s)
+  (let ((list->string list->string)
+        (string->list string->list)
+	(regexp regexp))
+    (lambda (s #!optional sre?)
       (##sys#check-string s 'glob->regexp)
-      (list->string
-       (let loop ((cs (string->list s)))
-         (if (null? cs)
-             '()
-             (let ([c (car cs)]
-                   [rest (cdr cs)] )
-               (cond [(char=? c #\*)  `(#\. #\* ,@(loop rest))]
-                     [(char=? c #\?)  (cons '#\. (loop rest))]
-                     [(char=? c #\[)
-                      (cons
-                       #\[
-                       (let loop2 ((rest rest))
-                         (if (pair? rest)
-			     (cond ((char=? #\] (car rest))
-				    (cons #\] (loop (cdr rest))))
-				   ((and (char=? #\- (car rest)) (pair? (cdr rest)))
-				    `(#\- ,(cadr rest) ,@(loop2 (cddr rest))))
-				   ((and (pair? (cdr rest)) (pair? (cddr rest))
-					 (char=? #\- (cadr rest)) )
-				    `(,(car rest) #\- ,(caddr rest)
-				      ,@(loop2 (cdddr rest))))
-				   ((pair? rest)
-				    (cons (car rest) (loop2 (cdr rest))))
-				   ((null? rest)
-				    (error 'glob->regexp "unexpected end of character class" s))))))]
-                     [(or (char-alphabetic? c) (char-numeric? c)) (cons c (loop rest))]
-                     [else `(#\\ ,c ,@(loop rest))] ) ) ) ) ) ) ) )
+      (let ((sre
+	     (cons 
+	      ':
+	      (let loop ((cs (string->list s)) (dir #t))
+		(if (null? cs)
+		    '()
+		    (let ((c (car cs))
+			  (rest (cdr cs)) )
+		      (cond ((char=? c #\*) 
+			     (if dir
+				 `((or (: (~ ("./\\")) (* (~ ("/\\"))))
+				       (* (~ ("./\\"))))
+				   ,@(loop rest #f))
+				 `((* (~ ("/\\"))) ,@(loop rest #f))))
+			    ((char=? c #\?)  (cons 'any (loop rest #f)))
+			    ((char=? c #\[)
+			     (let loop2 ((rest rest) (s '()))
+			       (cond ((not (pair? rest))
+				      (error 'glob->regexp "unexpected end of character class" s))
+				     ((char=? #\] (car rest))
+				      `((or ,@s) ,@(loop (cdr rest) #f)))
+				     ((and (pair? (cdr rest))
+					   (pair? (cddr rest))
+					   (char=? #\- (cadr rest)) )
+				      (loop2 (cdddr rest) (cons `(/ ,(car rest) ,(caddr rest)) s)))
+				     ((and (pair? (cdr rest))
+					   (char=? #\- (car rest)))
+				      (loop2 (cddr rest)
+					     (cons `(~ ,(cadr rest)) s)))
+				     (else
+				      (loop2 (cdr rest) (cons (car rest) s))))))
+			    (else (cons c (loop rest (memq c '(#\\ #\/))))))))))))
+	(if sre? sre (regexp sre))))))
 
 
 ;;; Grep-like function on list:

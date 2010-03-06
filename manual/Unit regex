@@ -39,7 +39,7 @@ matching. {{ACCESSOR}} defaults to the identity function.
 
 === glob->regexp
 
-<procedure>(glob->regexp PATTERN)</procedure>
+<procedure>(glob->regexp PATTERN [SRE?])</procedure>
 
 Converts the file-pattern {{PATTERN}} into a regular expression.
 
@@ -55,6 +55,10 @@ Converts the file-pattern {{PATTERN}} into a regular expression.
  [C1-C2]
  [-C...]
  ?
+
+{{glob->regexp}} returns a regular expression object if the optional
+argument {{SRE?}} is false or not given, otherwise the SRE of the
+computed regular expression is returned.
 
 
 === regexp

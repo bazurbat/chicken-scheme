@@ -176,6 +176,7 @@ $compile posix-tests.scm
 
 echo "======================================== regular expression tests ..."
 $interpret -bnq test-irregex.scm
+$interpret -bnq test-glob.scm
 
 echo "======================================== r4rstest ..."
 echo "(expect mult-float-print-test to fail)"
