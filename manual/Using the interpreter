@@ -37,7 +37,7 @@ The options recognized by the interpreter are:
 
 ; -I  -include-path PATHNAME : Specifies an alternative search-path for files included via the {{include}} special form. This option may be given multiple times. If the environment variable {{CHICKEN_INCLUDE_PATH}} is set, it should contain a list of alternative include pathnames separated by {{;}}.
 
-; -K  -keyword-style STYLE : Enables alternative keyword syntax, where {{STYLE}} may be either {{prefix}} (as in Common Lisp) or {{suffix}} (as in DSSSL). Any other value is ignored.
+; -k  -keyword-style STYLE : Enables alternative keyword syntax, where {{STYLE}} may be either {{prefix}} (as in Common Lisp) or {{suffix}} (as in DSSSL). Any other value is ignored.
 
 ; -n  -no-init : Do not load initialization-file. If this option is not given and the file {{./.csirc}} or {{$HOME/.csirc}} exists, then it is loaded before the read-eval-print loop commences.
 
@@ -79,7 +79,7 @@ The easiest way is to use the {{-script}} option like this:
                   read)))
 
  % chmod +x foo
- % foo "(+ 3 4)"
+ % ./foo "(+ 3 4)"
  7
 
 The parameter {{command-line-arguments}} is set to a list of the

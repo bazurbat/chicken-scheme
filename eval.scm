@@ -1572,8 +1572,10 @@
 	(for-each (cut ##sys#repl-print-hook <> ##sys#standard-error) xs) )
 
       (define (write-results xs)
-	(unless (or (null? xs) (eq? (##core#undefined) (car xs)))
-	  (for-each (cut ##sys#repl-print-hook <> ##sys#standard-output) xs) ) )
+	(cond ((null? xs)
+	       (##sys#print "; no values\n" #f ##sys#standard-output))
+	      ((not (eq? (##core#undefined) (car xs)))
+	       (for-each (cut ##sys#repl-print-hook <> ##sys#standard-output) xs) ) ) )
 
       (let ((stdin ##sys#standard-input)
 	    (stdout ##sys#standard-output)

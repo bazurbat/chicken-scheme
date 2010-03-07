@@ -2232,7 +2232,7 @@ EOF
        ##sys#warn
        (let ((ln (##sys#port-line port)))
 	 (if (and ##sys#read-error-with-line-number ln)
-	     (string-append "(" ln ") " msg)
+	     (string-append "(line " (##sys#number->string ln) ") " msg)
 	     msg) )
        args) ) ) )
 
@@ -2244,7 +2244,7 @@ EOF
        #:syntax-error
        (let ((ln (##sys#port-line port)))
 	 (if (and ##sys#read-error-with-line-number ln)
-	     (string-append "(" ln ") " msg)
+	     (string-append "(line " (##sys#number->string ln) ") " msg)
 	     msg) )
        args) ) ) )
 
@@ -2956,7 +2956,7 @@ EOF
 		     (case (##core#inline "C_subchar" str 0)
 		       ((#\. #\#) #f)
 		       (else #t) ) )
-		 (not (##core#inline "C_substring_compare" "#!" str 0 0 2))
+		 (not (eq? (##core#inline "C_subchar" str 0) #\#))
 		 (let loop ((i (fx- len 1)))
 		   (if (eq? i 0)
 		       (let ((c (##core#inline "C_subchar" str 0)))
@@ -3011,12 +3011,15 @@ EOF
 			    [else
 			     (outstr port "#:")
 			     (outstr port str) ] ) ) ]
-		       [(memq x '(#!optional #!key #!rest)) (outstr port (##sys#slot x 1))]
-		       [else
-			(let ([str (##sys#symbol->qualified-string x)])
+		       [(memq x '(#!optional #!key #!rest))
+			(outstr port (##sys#slot x 1))]
+		       [(##sys#qualified-symbol? x)
+			(outstr port (##sys#symbol->qualified-string x))]
+		       (else
+			(let ((str (##sys#symbol->string x)))
 			  (if (or (not readable) (sym-is-readable? str))
 			      (outstr port str)
-			      (outreadablesym port str) ) ) ] ) )
+			      (outreadablesym port str) ) ) ) ) )
 		((##sys#number? x) (outstr port (##sys#number->string x)))
 		((##core#inline "C_anypointerp" x) (outstr port (##sys#pointer->string x)))
 		((##core#inline "C_stringp" x)

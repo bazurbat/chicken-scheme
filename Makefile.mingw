@@ -42,7 +42,7 @@ WINDOWS_SHELL = 1
 UNAME_SYS = MinGW
 
 ifeq ($(ARCH),x86)
-HACKED_APPLY = 1
+HACKED_APPLY ?= 1
 else
 HACKED_APPLY =
 endif
@@ -125,7 +125,9 @@ endif
 ifdef SYMBOLGC
 	echo #define C_COLLECT_ALL_SYMBOLS >>$@
 endif
+ifneq ($(HACKED_APPLY),)
 	echo #define C_HACKED_APPLY >>$@
+endif
 	type chicken-defaults.h >>$@
 
 chicken-defaults.h:
