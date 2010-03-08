@@ -284,10 +284,11 @@
 
 	      make PLATFORM=macosx ARCH=universal
 
-	    On Leopard (10.5), an extra step is required before `make':
+	    On Leopard (10.5), an extra step is required before `make',
+	    and you must be sure to use GCC 4.0:
 
 	      export MACOSX_DEPLOYMENT_TARGET=10.4
-	      make PLATFORM=macosx ARCH=universal
+	      make C_COMPILER=gcc-4.0 PLATFORM=macosx ARCH=universal
 
 	  - On Mac OS X, Chicken can be built in 64-bit mode on Intel
 	    Core 2 Duo systems--basically, most recent machines.  The default

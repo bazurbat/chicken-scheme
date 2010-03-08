@@ -55,6 +55,7 @@ LINKER_LINK_SHARED_LIBRARY_OPTIONS = -dynamiclib -compatibility_version 1 -curre
 POSTINSTALL_PROGRAM_FLAGS = -change libchicken$(SO) $(LIBDIR)/libchicken$(SO)
 LIBRARIAN_OPTIONS = scru
 LINKER_LINK_SHARED_DLOADABLE_OPTIONS = -bundle -L.
+ASSEMBLER_OPTIONS =
 
 # file extensions
 
@@ -64,6 +65,7 @@ SO = .dylib
 
 CHICKEN_CONFIG_H = chicken-config.h
 APPLY_HACK_OBJECT = apply-hack.$(ARCH)$(O)
+HACKED_APPLY ?= 1
 
 # architectures
 
@@ -77,18 +79,8 @@ else
 ifeq ($(ARCH),universal)
 C_COMPILER_OPTIONS += -arch ppc -arch i386 -isysroot /Developer/SDKs/MacOSX10.4u.sdk
 LINKER_OPTIONS += -arch ppc -arch i386 -isysroot /Developer/SDKs/MacOSX10.4u.sdk
+endif
 
-ifneq ($(HACKED_APPLY),)
-# We undefine HACKED_APPLY in order to override rules.make.
-HACKED_APPLY=
-apply-hack.ppc.darwin$(O): apply-hack.ppc.darwin.S
-	as -arch ppc -o $@ $<
-apply-hack.x86$(O): apply-hack.x86.S
-	as -arch i386 -o $@ $<
-$(APPLY_HACK_OBJECT): apply-hack.x86$(O) apply-hack.ppc.darwin$(O)
-	lipo -create -output $(APPLY_HACK_OBJECT) $^
-endif
-endif
 endif
 
 # select default and internal settings
@@ -133,5 +125,21 @@ ifneq ($(HACKED_APPLY),)
 	echo "#define C_HACKED_APPLY" >>$@
 endif
 	cat chicken-defaults.h >>$@
+
+ifeq ($(ARCH),universal)
+ifneq ($(HACKED_APPLY),)
+# We undefine HACKED_APPLY in order to override rules.make
+# with our own build rules.
+HACKED_APPLY=
+apply-hack.ppc.darwin$(O): $(SRCDIR)apply-hack.ppc.darwin.S
+	$(ASSEMBLER) $(ASSEMBLER_OPTIONS) -arch ppc \
+           $(ASSEMBLER_COMPILE_OPTION) $< $(ASSEMBLER_OUTPUT)
+apply-hack.x86$(O): $(SRCDIR)apply-hack.x86.S
+	$(ASSEMBLER) $(ASSEMBLER_OPTIONS) -arch i386 \
+           $(ASSEMBLER_COMPILE_OPTION) $< $(ASSEMBLER_OUTPUT)
+$(APPLY_HACK_OBJECT): apply-hack.x86$(O) apply-hack.ppc.darwin$(O)
+	lipo -create -output $@ $^
+endif
+endif
 
 include $(SRCDIR)/rules.make
