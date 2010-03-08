@@ -34,7 +34,7 @@ SRCDIR = ./
 # platform configuration
 
 ARCH ?= x86
-HACKED_APPLY=1
+HACKED_APPLY ?= 1
 DLLSINPATH = 1
 
 # options
@@ -148,6 +148,9 @@ chicken-defaults.h:
 	echo "#ifndef C_INSTALL_LDFLAGS" >>$@
 	echo "# define C_INSTALL_LDFLAGS \"$(LINKER_OPTIONS) $(LINKER_OPTIMIZATION_OPTIONS)\"" >>$@
 	echo "#endif" >>$@
+	echo "#ifndef C_INSTALL_PREFIX" >>$@
+	echo "# define C_INSTALL_PREFIX \"$(PREFIX)\"" >>$@
+	echo "#endif" >>$@
 	echo "#ifndef C_INSTALL_SHARE_HOME" >>$@
 	echo "# define C_INSTALL_SHARE_HOME \"$(DATADIR)\"" >>$@
 	echo "#endif" >>$@
@@ -238,5 +241,9 @@ chicken-defaults.h:
 	echo "#ifndef C_BINARY_VERSION" >>$@
 	echo "# define C_BINARY_VERSION $(BINARYVERSION)" >>$@
 	echo "#endif" >>$@
+	echo "#ifndef C_BRANCH_NAME" >>$@
+	echo "# define C_BRANCH_NAME \"$(BRANCHNAME)\"" >>$@
+	echo "#endif" >>$@
+	echo "/* END OF FILE */" >>$@
 
 include $(SRCDIR)/rules.make
