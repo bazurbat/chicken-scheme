@@ -69,7 +69,7 @@ endif
 C_COMPILER_SHARED_OPTIONS = -DPIC
 LINKER_LINK_SHARED_LIBRARY_OPTIONS = -shared
 LIBRARIES = -lm -lws2_32
-LINKER_OPTIONS = -Wl,--enable-auto-import
+LINKER_OPTIONS += -Wl,--enable-auto-import
 LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libchicken.dll.a
 LIBUCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libuchicken.dll.a
 LIBCHICKEN_SO_LIBRARIES = -lm -lws2_32 

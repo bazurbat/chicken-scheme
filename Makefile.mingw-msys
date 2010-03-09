@@ -61,7 +61,7 @@ C_COMPILER_OPTIMIZATION_OPTIONS ?= -Os
 endif
 endif
 C_COMPILER_SHARED_OPTIONS = -DPIC
-LINKER_OPTIONS = -Wl,--enable-auto-import
+LINKER_OPTIONS += -Wl,--enable-auto-import
 LINKER_LINK_SHARED_LIBRARY_OPTIONS = -shared
 LIBRARIES = -lm -lws2_32
 LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libchicken.dll.a

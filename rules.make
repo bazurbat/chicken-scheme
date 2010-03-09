@@ -1278,22 +1278,3 @@ testclean:
 
 check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 	cd tests; sh runtests.sh
-
-# bootstrap from C source tarball
-
-.PHONY: bootstrap bootstrap-files
-
-bootstrap: 
-	$(COPY_COMMAND) $(SRCDIR)bootstrap$(SEP)* $(SRCDIR).
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) CONFIG=$(CONFIG) STATICBUILD=1 \
-	  DEBUGBUILD=1 PLATFORM=$(PLATFORM) chicken$(EXE)
-	$(COPY_COMMAND) chicken$(EXE) chicken-boot$(EXE)
-	touch *.scm
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) CONFIG=$(CONFIG) PLATFORM=$(PLATFORM) \
-	  confclean
-
-bootstrap-files: distfiles
-	$(COPY_COMMAND) library.c eval.c data-structures.c ports.c files.c extras.c lolevel.c utils.c tcp.c \
-	  srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c posixunix.c posixwin.c regex.c \
-	  scheduler.c profiler.c stub.c expand.c chicken-syntax.c \
-	  $(COMPILER_OBJECTS_1:=.c) $(SRCDIR)bootstrap
