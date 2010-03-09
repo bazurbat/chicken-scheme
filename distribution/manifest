@@ -6,6 +6,7 @@ LICENSE
 NEWS
 README
 config-arch.sh
+identify-branch.sh
 banner.scm
 batch-driver.scm
 batch-driver.c
@@ -188,16 +189,6 @@ rules.make
 defaults.make
 private-namespace.scm
 compiler-namespace.scm
-scripts/tools.scm
-scripts/test-dist.sh
-scripts/wiki2html.scm
-scripts/make-egg-index.scm
-scripts/makedist.scm
-scripts/README
-scripts/henrietta.scm
-scripts/henrietta.cgi
-scripts/identify-branch
-scripts/mini-salmonella.scm
 synrules.scm
 expand.scm
 expand.c

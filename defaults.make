@@ -43,7 +43,7 @@ SEP ?= /
 SRCDIR ?= .$(SEP)
 DESTDIR ?=
 PREFIX ?= /usr/local
-BRANCHNAME ?= $(shell scripts/identify-branch $(SRCDIR))
+BRANCHNAME ?= $(shell sh identify-branch.sh $(SRCDIR))
 
 BINDIR = $(PREFIX)/bin
 LIBDIR = $(PREFIX)/lib
