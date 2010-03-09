@@ -1,4 +1,4 @@
-4.3.7
+4.4.0
 
 - the system can now be built with llvm-gcc and/or "clang" (the
   LLVM C compiler which doesn't use the GNU C frontend)
@@ -13,29 +13,18 @@
   manual chapter for more information
 - the directory given to the `-prefix' option of `chicken-install'
   may now be a relative pathname.
-
-4.3.6
-
 - removed GUI-specific runtime library (`libchicken-gui') from
   Windows build - GUI- and non-GUI applications now use the same
   runtime library
-- undocumented OPTIMIZE_FOR_SPEED build variable: it is generally
-  unsafe to use -O3 in gcc version equal or later than 4.4 (thanks
-  to Sven Hartrumpf for pointing this out)
 - special forms of the foreign-function interface have been replaced
   with an internal form and syntax to allow renaming and shadowing of
   these forms
-- the configuration file for `chicken-install' (`setup.defaults') has
-  now a slightly enhanced format and allows to define arbitrary
-  mappings from/to extensions - this is used to handle installation
-  attempts of builtin library units
 - the new `-private-repository' option in `csc' compiles executables
   with the extension-repository path set to the directory from which
-  the program was started - this is in anticipation of easy to use
-  deployment options in forthcoming releases
+  the program was started
 - `csc': deprecated the `-W' and `-windows' options, added `-gui' as
   a platform-independent replacement
-- `require-extension'/`use' accept import-specifications
+- `require-extension'/`use' accepts now import-specifications
 - user-defined extension-specifiers and `set-extension-specifier!'
   have been removed
 - `delete-file[*]', `rename-file', `create-directory', `file-copy',
@@ -48,35 +37,22 @@
 - added new runtime option `-:g' which enables GC debugging output
 - reclamation of unused symbols in "symbol-gc" mode (`-:w') now only
   takes place for symbols with an empty property-list
-- various bugfixes and cleaning up
-
-4.3.5
-
 - on Windows loading of code compiled with [non-]GUI runtime libraries
   will fail and produce an error message when the loading executable
   is linked with a different runtime system
 - on Windows, GUI libraries were not correctly linked by `csc'
 - unit posix: added setter for `file-modification-time'
-
-4.3.4
-
 - the banner shows the branchname of the build, unless it's "master"
 - the `-no-install' option to `chicken-install' is ignored when
   building/installing dependencies
 - `chicken-uninstall' takes a glob instead of a regular expression as
   argument
-- fixed bug that caused the `unboxing' optimization to generate incorrect
-  C code
 - the rename and compare functions for low-level macro-definitions 
   accept now arbitrary s-expressions and renames/compares them recursively
 - `number->string' handles negative-numbers with bases different from 10
   correctly (thanks to Peter Danenberg)
 - removed deprecated `setup-install-flag' and `setup-verbose-flag' from
   the `setup-api' module
-
-4.3.3
-
-- various mingw Makefile fixes (Thanks to Jim Ursetto)
 - added new option `-repository' to `chicken-install' (Thanks to Christian
   Kellermann)
 - removed `chicken-setup' stub program
@@ -91,9 +67,6 @@
 - fixed windows version of `find-files' (thanks to Jim Ursetto)
 - documentation for extensions is not installed automatically by
   `chicken-install' anymore
-
-4.3.2
-
 - changed binary version from "4" to "5", because the new runtime
   libraries are not binary-compatible with previous releases; this
   means all eggs have to be reinstalled and existing programs be
@@ -103,7 +76,6 @@
   unboxing is enabled on optimization levels 4 and 5
 - removed rest-argument-vector optimization as it could conflict
   with inlining (thanks to Sven Hartrumpf)
-- added `slatex' to tests
 - renamed `pointer-offset' to `pointer+' and deprecated `pointer-offset'
 - toplevel assignments that have no other side-effects can be eliminated
   if it can be shown that the value is not used (the compiler will
@@ -116,22 +88,21 @@
 - removed deprecated `stat-...' functions in posix library unit
 - removed deprecated `for-each-line' and `for-each-argv-line' procedures
   in utils library unit
-
-4.3.1
-
 - added `fpinteger?' and `fpabs'
-- fixes in types.db by Jim Ursetto
-- `move-memory!' catches negative offsets now (Thanks to Jim Ursetto)
 - deprecated `define-compiled-syntax'
 - added new floating-point primitives `fpsin', `fpcos', `fptan',
   `fpasin', `fpacos', `fpatan', `fpatan2', `fpexp', `fplog', 
   `fpexpt' and `fpsqrt'
-- heavy cleanup of floating math functions which gives much better performance
+- heavy cleanup of floating math functions which gives much better performance,
+  especially for code compiled in unsafe mode
 - calling `assert' with a single argument shows the tested expression
   on failure
+- various bugfixes and cleaning up
 
 4.3.0
 
+- fixed bug in `move-memory!' that caused negative offsets to be accepted
+  (thanks to Jim Ursetto)
 - removed tracing facility and apply-hook (see the "trace" egg
   for a replacement for tracing and breakpoints)
 - chicken-install(1): renamed `-host-extension' option to `-host'
