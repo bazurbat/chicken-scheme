@@ -124,7 +124,8 @@ application.
 <procedure>(fpabs X)</procedure>
 <procedure>(fpinteger? X)</procedure>
 
-Note: {{fpround}} implements POSIX, which is different from R5RS.
+Note: {{fpround}} uses the rounding mode that your C library
+implements, which is usually different from R5RS.
 
 ==== flonum?
 
