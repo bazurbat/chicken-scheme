@@ -91,9 +91,89 @@ These macros return immediate Scheme data objects.
 
  [C function] C_word C_list (C_word **ptr, int length, ...)
 
+=== C_closure
+
+ [C function] C_word C_closure (C_word **ptr, int length, C_word procedure, ...)
+
 These functions allocate memory from {{ptr}} and initialize a fresh
 data object. The new data object is returned. {{ptr}} should be the
 '''address''' of an allocation pointer created with {{C_alloc}}.
+
+To find out how big the memory block should be, use the {{C_SIZEOF_*}}
+macros described below.
+
+Here's an example how to create a closure that accepts a vector,
+stores the Scheme numbers 1, 2 and 3 and a given string in it and
+returns that vector to its continuation:
+
+<enscript highlight=scheme>
+#>
+
+#include <assert.h>
+
+void fill_vector(C_word c, C_word closure, C_word vec)
+{
+  C_word kontinuation = C_block_item(closure, 1);
+
+  C_block_item(vec, 0) = C_fix(1);
+  C_block_item(vec, 1) = C_fix(2);
+  C_block_item(vec, 2) = C_fix(3);
+  C_block_item(vec, 3) = C_block_item(closure, 2);
+
+  C_kontinue(kontinuation, vec);
+}
+
+void one_two_three(C_word c, C_word self, C_word k, C_word str)
+{
+  /*
+   * Allocate room on the stack to hold the closure:  1 word for
+   * the type tag, 1 word for the procedure and 2 words for the
+   * values "closed over"; this procedure's continuation "k" and
+   * the argument "str".  We could also use C_alloc(4).
+   */
+  C_word closure[4], *cp = closure;
+
+  /* Create the closure.  It holds 3 values, not counting the tag */
+  C_word closure_object = C_closure(&cp, 3, (C_word)fill_vector, k, str);
+
+  /*
+   * After this, cp points just beyond the last word of the allocated
+   * data and closure_object is an opaque representation of the newly
+   * created closure as a whole, i.e. the following relations hold:
+   */
+  assert(  (closure + 4) == cp  );
+  assert(  C_block_header(closure_object) == (*closure)  );
+  assert(  C_data_pointer(closure_object) == (closure + 1)  );
+  assert(  C_block_item(closure_object, 0) == (*(closure + 1))  );
+
+  /* Make a vector of 4 objects and use closure_object as continuation */
+  C_allocate_vector(6, (C_word)NULL, closure_object, C_fix(4),
+                    C_SCHEME_FALSE,  /* not a byte vector */
+                    C_SCHEME_FALSE,  /* initialization value. Don't care */
+                    C_SCHEME_FALSE); /* don't align at 8 bytes */
+  /* .. C_allocate_vector does not return ... */
+}
+<#
+
+(define one-two-three (##core#primitive "one_two_three"))
+
+(print (one-two-three "hi"))
+</enscript>
+
+This is equivalent to the following in Scheme:
+
+<enscript highlight=scheme>
+(define (one-two-three str)
+  (let ((fill-vector (lambda (vec)
+                       (vector-set! vec 0 1)
+                       (vector-set! vec 1 2)
+                       (vector-set! vec 2 3)
+                       (vector-set! vec 3 str)
+                       vec)))
+    (fill-vector (make-vector 4 #f))))
+
+(print (one-two-three "hi"))
+</enscript>
 
 
 === C_alloc
@@ -184,7 +264,6 @@ These macros and functions can be used to convert Scheme data objects
 back to C data. Note that {{C_c_string()}} returns a pointer
 to the character buffer of the actual Scheme object and is not
 zero-terminated.
-
 
 === C_header_size
 
