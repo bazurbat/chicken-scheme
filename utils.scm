@@ -1,6 +1,6 @@
 ;;;; utils.scm - Utilities for scripting and file stuff
 ;
-; Copyright (c) 2008-2009, The Chicken Team
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -27,7 +27,7 @@
 
 (declare
   (unit utils)
-  (uses extras srfi-13 posix files)
+  (uses extras srfi-13 posix files regex)
   (usual-integrations)
   (fixnum)
   (hide chop-pds)
@@ -40,7 +40,7 @@
     (always-bound
       ##sys#windows-platform)
     (bound-to-procedure
-      ##sys#check-port port? read-string for-each-line read-line with-input-from-file
+      ##sys#check-port port? read-string read-line with-input-from-file
       command-line-arguments
       string-append
       system)
@@ -62,35 +62,6 @@
 	     [n (system str)] )
 	(unless (zero? n)
 	  (##sys#error "shell invocation failed with non-zero return status" str n) ) ) ) ) )
-
-
-;;; Handy I/O procedures:
-
-(define for-each-line			; DEPRECATED
-  (let ([read-line read-line])
-    (lambda (proc . port)
-      (let ([port (if (pair? port) (car port) ##sys#standard-input)])
-	(##sys#check-port port 'for-each-line)
-	(let loop ()
-	  (let ([ln (read-line port)])
-	    (unless (eof-object? ln)
-	      (proc ln)
-	      (loop) ) ) ) ) ) ) )
-
-
-;; This one is from William Annis:
-
-(define (for-each-argv-line thunk)	; DEPRECATED
-  (define (file-iterator file thunk)
-    (if (string=? file "-")
-        (for-each-line thunk)
-        (with-input-from-file file (cut for-each-line thunk) ) ) )
-  (let ((args (command-line-arguments)))
-    (if (null? args)
-        ;; If no arguments, take from stdin,
-        (for-each-line thunk)
-        ;; otherwise, hit each file named in argv.
-        (for-each (lambda (arg) (file-iterator arg thunk)) args))))
 
 
 ;;; Read file as string from given filename or port:
@@ -154,3 +125,20 @@
 		  (abort ex))
 	      (load-file f)
 	      f)))))))
+
+
+;;; Scan lines until regex or predicate matches
+
+(define scan-input-lines
+  (let ((regexp regexp)
+	(read-line read-line)
+	(string-search string-search))
+    (lambda (rx #!optional (port ##sys#standard-input))
+      (let ((rx (if (procedure? rx)
+		    rx
+		    (cut string-search (regexp rx) <>))))
+	(let loop ()
+	  (let ((ln (read-line port)))
+	    (and (not (eof-object? ln))
+		 (or (rx ln)
+		     (loop)))))))))

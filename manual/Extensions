@@ -53,7 +53,7 @@ on the command line.
 
 Sometimes an extension requires a C library to compile. Compilation
 can fail when your system has this library in a nonstandard
-location. Luckily, normally Chicken searches in the default locations
+location. Normally the C compiler searches in the default locations
 {{/usr}} and {{/usr/local}}, and in the prefix where Chicken itself
 was installed. Sometimes this is not enough, so you'll need to supply
 {{chicken-install}} with some extra hints to the C compiler/linker. Here's
@@ -461,13 +461,15 @@ Available options:
 ; {{-s   -sudo}} : use {{sudo(1)}} for installing or removing files
 ; {{-r   -retrieve}} : only retrieve egg into current directory, don't install
 ; {{-n   -no-install}} : do not install, just build (implies {{-keep}})
-; {{-p   -prefix PREFIX}} : change installation prefix to {{PREFIX}}
+; {{-p   -prefix PREFIX}} : change installation prefix to {{PREFIX}}; note: this must be an absolute path
 ; {{-host}} : when cross-compiling, compile extension for host
 ; {{-test}} : run included test-cases, if available
 ; {{-username USER}} : set username for transports that require this
 ; {{-password PASS}} : set password for transports that require this
 ; {{-i   -init DIRECTORY}} : initialize empty alternative repository
 ; {{-u   -update-db}} : update export database
+; {{-repository}} : print path to extension repository
+; {{-deploy}} : install extension in the application directory for a deployed application (see [[Deployment]] for more information)
 
 
 === chicken-uninstall reference
@@ -570,4 +572,4 @@ mailing list.
 ---
 Previous: [[Interface to external functions and variables]]
 
-Next: [[Data representation]]
+Next: [[Deployment]]

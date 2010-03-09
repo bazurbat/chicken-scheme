@@ -1,7 +1,7 @@
 ;;;; lolevel.scm - Low-level routines for CHICKEN
 ;
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
-; Copyright (c) 2008, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -78,7 +78,7 @@ EOF
 ;;; Helpers:
 
 (define-inline (%pointer? x)
-  (and (##core#inline "C_blockp" x) (##core#inline "C_anypointerp" x)) )
+  (##core#inline "C_i_safe_pointerp" x))
 
 (define-inline (%generic-pointer? x)
   (or (%pointer? x)
@@ -196,6 +196,12 @@ EOF
       ;
       (##sys#check-block from 'move-memory!)
       (##sys#check-block to 'move-memory!)
+      #+(not unsafe)
+      (when (fx< foffset 0)
+	(##sys#error 'move-memory! "negative source offset" foffset))
+      #+(not unsafe)
+      (when (fx< toffset 0)
+	(##sys#error 'move-memory! "negative destination offset" toffset))
       (let move ([from from] [to to])
 	(cond [(##sys#generic-structure? from)
 	       (if (memq (##sys#slot from 0) slot1structs)
@@ -278,9 +284,11 @@ EOF
   (##sys#check-special p2 'pointer=?)
   (##core#inline "C_pointer_eqp" p1 p2) )
 
-(define pointer-offset
+(define pointer+
   (foreign-lambda* nonnull-c-pointer ([c-pointer ptr] [integer off])
     "return((unsigned char *)ptr + off);") )
+
+(define pointer-offset pointer+)	; DEPRECATED
 
 (define align-to-word
   (let ([align (foreign-lambda integer "C_align" integer)])

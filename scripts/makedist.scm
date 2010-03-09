@@ -51,20 +51,6 @@
     (run (tar cfz ,(conc distname ".tar.gz") ,distname))
     (run (rm -fr ,distname)) ) )
 
-(define (make-html)
-  (unless (file-exists? "html")
-    (create-directory "html"))
-  (run (rm -f "manual/*~"))
-  (run (,(or (get-environment-variable "CSI")
-	     (let ((this (car (argv))))
-	       (if (string=? "csi" (pathname-file this))
-		   this
-		   "csi")) )
-	-s scripts/wiki2html.scm
-	--outdir=html
-	,@(map (o qs (cut make-pathname "manual" <>))
-	       (directory "manual")))))
-
 (define (usage . _)
   (print "usage: makedist [--release] [--make=PROGRAM] [--platform=PLATFORM] MAKEOPTION ...")
   (exit 1))
@@ -77,8 +63,5 @@
 (when *help* (usage))
 
 (run (,*make* -f ,(conc "Makefile." *platform*) distfiles ,@*makeargs*))
-
-(make-html)
-(run (cp misc/manual.css html))
 
 (release *release*)

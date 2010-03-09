@@ -1,7 +1,7 @@
 ;;;; chicken-ffi-syntax.scm
 ;
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
-; Copyright (c) 2008-2009, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -41,8 +41,8 @@
 	     (##sys#check-syntax 'define-external form '(symbol _ . #(_ 0 1)))
 	     (let ([var (car form)])
 	       `(,(r 'begin)
-		 (,(r 'define-foreign-variable) ,var ,(cadr form))
-		 (,(r 'define-external-variable) ,var ,(cadr form) #t)
+		 (##core#define-foreign-variable ,var ,(cadr form))
+		 (##core#define-external-variable ,var ,(cadr form) #t)
 		 ,@(if (pair? (cddr form))
 		       `((##core#set! ,var ,(caddr form)))
 		       '() ) ) ) ]
@@ -77,8 +77,8 @@
 	  (init (optional (cdddr form) #f))
 	  (name (r (gensym))))
       `(,(r 'begin)
-	(,(r 'define-foreign-variable) ,var ,type ,(symbol->string name))
-	(,(r 'define-external-variable) ,var ,type #f ,name)
+	(##core#define-foreign-variable ,var ,type ,(symbol->string name))
+	(##core#define-external-variable ,var ,type #f ,name)
 	,@(if (pair? init)
 	      `((##core#set! ,var ,(car init)))
 	      '() ) ) ) ) ) )
@@ -141,7 +141,7 @@
     (let ((tmp (gensym 'code_))
 	  (code (cadr form)))
       `(,(r 'begin)
-	(,(r 'define-foreign-variable) ,tmp
+	(##core#define-foreign-variable ,tmp
 	 ,(caddr form)
 	 ,(cond ((string? code) code)
 		((symbol? code) (symbol->string code))
@@ -158,6 +158,58 @@
   (lambda (form r c)
     (##sys#check-syntax 'foreign-declare form '(_ . #(string 0)))
     `(##core#declare (foreign-declare ,@(cdr form))))))
+
+
+;;; Aliases for internal forms
+
+(##sys#extend-macro-environment
+ 'define-foreign-type
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    `(##core#define-foreign-type ,@(cdr form)))))
+
+(##sys#extend-macro-environment
+ 'define-foreign-variable
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    `(##core#define-foreign-variable ,@(cdr form)))))
+
+(##sys#extend-macro-environment
+ 'foreign-primitive
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    `(##core#foreign-primitive ,@(cdr form)))))
+
+(##sys#extend-macro-environment
+ 'foreign-lambda
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    `(##core#foreign-lambda ,@(cdr form)))))
+
+(##sys#extend-macro-environment
+ 'foreign-lambda*
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    `(##core#foreign-lambda* ,@(cdr form)))))
+
+(##sys#extend-macro-environment
+ 'foreign-safe-lambda
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    `(##core#foreign-safe-lambda ,@(cdr form)))))
+
+(##sys#extend-macro-environment
+ 'foreign-safe-lambda*
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    `(##core#foreign-safe-lambda* ,@(cdr form)))))
 
 
 (##sys#macro-subset me0)))

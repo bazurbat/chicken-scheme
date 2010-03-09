@@ -1,7 +1,7 @@
 ;;;; batch-driver.scm - Driver procedure for the compiler
 ;
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
-; Copyright (c) 2008-2009, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -54,42 +54,43 @@
 	      arg) ) ) )
   (initialize-compiler)
   (set! explicit-use-flag (memq 'explicit-use options))
-  (let ([initforms `((##core#declare
+  (let ((initforms `((##core#declare
 		      ,@(append 
 			 default-declarations
 			 (if explicit-use-flag
 			     '()
-			     `((uses ,@units-used-by-default)) ) ) ) ) ]
-        [verbose (memq 'verbose options)]
-	[outfile (cond [(memq 'output-file options) 
+			     `((uses ,@units-used-by-default)) ) ) ) ) )
+        (verbose (memq 'verbose options))
+	(outfile (cond ((memq 'output-file options) 
 			=> (lambda (node)
-			     (let ([oname (option-arg node)])
+			     (let ((oname (option-arg node)))
 			       (if (symbol? oname)
 				   (symbol->string oname)
-				   oname) ) ) ]
-		       [(memq 'to-stdout options) #f]
-		       [else (make-pathname #f (if filename (pathname-file filename) "out") "c")] ) ]
-	[ipath (map chop-separator (string-split (or (get-environment-variable "CHICKEN_INCLUDE_PATH") "") ";"))]
-	[opasses default-optimization-passes]
-	[time0 #f]
-	[time-breakdown #f]
-	[forms '()]
-	[cleanup-forms '(((##sys#implicit-exit-handler)))]
-	[profile (or (memq 'profile options) (memq 'accumulate-profile options) (memq 'profile-name options))]
-	[profile-name (or (and-let* ((pn (memq 'profile-name options))) (cadr pn)) default-profile-name)]
-	[hsize (memq 'heap-size options)]
-	[hisize (memq 'heap-initial-size options)]
-	[hgrowth (memq 'heap-growth options)]
-	[hshrink (memq 'heap-shrinkage options)]
-	[kwstyle (memq 'keyword-style options)]
-	[uses-units '()]
-	[uunit (memq 'unit options)]
-	[a-only (memq 'analyze-only options)]
-	[dynamic (memq 'dynamic options)]
-	[dumpnodes #f]
-	[start-time #f]
+				   oname) ) ) )
+		       ((memq 'to-stdout options) #f)
+		       (else (make-pathname #f (if filename (pathname-file filename) "out") "c")) ) )
+	(ipath (map chop-separator (string-split (or (get-environment-variable "CHICKEN_INCLUDE_PATH") "") ";")))
+	(opasses default-optimization-passes)
+	(time0 #f)
+	(time-breakdown #f)
+	(forms '())
+	(cleanup-forms '(((##sys#implicit-exit-handler))))
+	(profile (or (memq 'profile options) (memq 'accumulate-profile options) (memq 'profile-name options)))
+	(profile-name (or (and-let* ((pn (memq 'profile-name options))) (cadr pn)) default-profile-name))
+	(hsize (memq 'heap-size options))
+	(hisize (memq 'heap-initial-size options))
+	(hgrowth (memq 'heap-growth options))
+	(hshrink (memq 'heap-shrinkage options))
+	(kwstyle (memq 'keyword-style options))
+	(uses-units '())
+	(uunit (memq 'unit options))
+	(a-only (memq 'analyze-only options))
+	(dynamic (memq 'dynamic options))
+	(unbox (memq 'unboxing options))
+	(dumpnodes #f)
+	(start-time #f)
 	(upap #f)
-	[ssize (or (memq 'nursery options) (memq 'stack-size options))] )
+	(ssize (or (memq 'nursery options) (memq 'stack-size options))) )
 
     (define (cputime) (##sys#fudge 6))
 
@@ -116,7 +117,11 @@
 
     (define (print-expr mode dbgmode xs)
       (when (print-header mode dbgmode)
-	(for-each pretty-print xs) ) )
+	(for-each 
+	 (lambda (x) 
+	   (pretty-print x)
+	   (newline))
+	 xs) ) )
 
     (define (infohook class data val)
       (let ([data2 ((or ##sys#default-read-info-hook (lambda (a b c) b)) class data val)])
@@ -571,15 +576,13 @@
 
 		     (when (memq 's debugging-chicken) (print-program-statistics db))
 
-		     (cond [progress
+		     (cond (progress
 			    (debugging 'p "optimization pass" i)
-
 			    (begin-time)
 			    (receive (node2 progress-flag)
 				(perform-high-level-optimizations node2 db)
 			      (end-time "optimization")
 			      (print-node "optimized-iteration" '|5| node2)
-
 			      (cond [progress-flag (loop (add1 i) node2 #t)]
 				    [(not inline-substitutions-enabled)
 				     (debugging 'p "rewritings enabled...")
@@ -593,36 +596,41 @@
 				       (let ([progress (transform-direct-lambdas! node2 db)])
 					 (end-time "leaf routine optimization")
 					 (loop (add1 i) node2 progress) ) ) ]
-				    [else (loop (add1 i) node2 #f)] ) ) ]
+				    [else (loop (add1 i) node2 #f)] ) ) )
 			   
-			   [else
+			   (else
 			    (print-node "optimized" '|7| node2)
-
 			    (when inline-output-file
 			      (let ((f inline-output-file))
 				(dribble "Generating global inline file `~a' ..." f)
 				(emit-global-inline-file f db) ) )
-
 			    (begin-time)
-			    (let ([node3 (perform-closure-conversion node2 db)])
-			      (end-time "closure conversion")
-			      (print-db "final-analysis" '|8| db i)
-			      (when (and ##sys#warnings-enabled (> (- (cputime) start-time) funny-message-timeout))
-				(display "(don't worry - still compiling...)\n") )
-			      (when a-only (exit 0))
-			      (print-node "closure-converted" '|9| node3)
-
+			    (set! node2 (perform-closure-conversion node2 db))
+			    (end-time "closure conversion")
+			    (print-db "final-analysis" '|8| db i)
+			    (when (and ##sys#warnings-enabled
+				       (> (- (cputime) start-time) funny-message-timeout))
+			      (display "(don't worry - still compiling...)\n") )
+			    (print-node "closure-converted" '|9| node2)
+			    (when unbox
+			      (debugging 'p "performing unboxing")
 			      (begin-time)
-			      (receive (node literals lliterals lambdas)
-				  (prepare-for-code-generation node3 db)
-				(end-time "preparation")
-
-                                (begin-time)
-				(let ((out (if outfile (open-output-file outfile) (current-output-port))) )
-				  (dribble "generating `~A' ..." outfile)
-				  (generate-code literals lliterals lambdas out filename dynamic db)
-				  (when outfile (close-output-port out)))
-                                (end-time "code generation")
-                                (when (memq 't debugging-chicken) (##sys#display-times (##sys#stop-timer)))
-                                (compiler-cleanup-hook)
-                                (dribble "compilation finished.") ) ) ] ) ) ) ) ) ) ) ) ) )
+			      (perform-unboxing! node2)
+			      (end-time "unboxing")
+			      (print-node "unboxing" '|U| node2) )
+			    (when a-only (exit 0))
+			    (begin-time)
+			    (receive 
+			     (node literals lliterals lambdas)
+			     (prepare-for-code-generation node2 db)
+			     (end-time "preparation")
+			     (begin-time)
+			     (let ((out (if outfile (open-output-file outfile) (current-output-port))) )
+			       (dribble "generating `~A' ..." outfile)
+			       (generate-code literals lliterals lambdas out filename dynamic db)
+			       (when outfile (close-output-port out)))
+			     (end-time "code generation")
+			     (when (memq 't debugging-chicken)
+			       (##sys#display-times (##sys#stop-timer)))
+			     (compiler-cleanup-hook)
+			     (dribble "compilation finished.") ) ) ) ) ) ) ) ) ) ) ) )

@@ -48,14 +48,6 @@ The effect of destructively modifying the s-expression passed to a
 transformer procedure is undefined.
 
 
-==== define-compiled-syntax
-
-<macro>(define-compiled-syntax IDENTIFIER TRANSFORMER)</macro>
-
-Equivalent to {{define-syntax}}, but when compiled, will also define the macro
-at runtime.
-
-
 ==== syntax
 
 <macro>(syntax EXPRESSION)</macro>
@@ -201,6 +193,12 @@ not hygienic.  Like {{loop}}, it must be written using procedurally:
          `(,(r 'loop)
            (,(r 'if) (,(r 'not) ,test) (exit #f))
            ,@body))))
+
+Note: this implementation of explicit-renaming macros allows passing
+arbitrary expressions to the renaming and comparison procedures. When
+being renamed, a fresh copy of the expression will be produced, with all
+identifiers renamed appropriately. Comparison also supports arbitrary
+expressions as arguments.
 
 
 === Modules

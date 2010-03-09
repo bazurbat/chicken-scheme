@@ -1,8 +1,16 @@
 ;;;; setup.defaults - defaults for chicken-install -*- Scheme -*-
 
-((location "http://chicken.kitten-technologies.co.uk/henrietta.cgi")
+(server
+ (location "http://chicken.kitten-technologies.co.uk/henrietta.cgi")
  (transport http))
 
-((location "http://galinha.ucpel.tche.br/cgi-bin/henrietta")
+(server
+ (location "http://galinha.ucpel.tche.br/cgi-bin/henrietta")
  (transport http))
 
+(map
+ (data-structures 
+  extras files foreign irregex lolevel ports tcp utils
+  posix regex setup-api setup-download
+  srfi-1 srfi-4 srfi-13 srfi-14 srfi-18 srfi-69 
+  ->) )

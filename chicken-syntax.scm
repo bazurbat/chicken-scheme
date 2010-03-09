@@ -1,6 +1,6 @@
 ;;;; chicken-syntax.scm - non-standard syntax extensions
 ;
-; Copyright (c) 2008-2009, The Chicken Team
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -41,6 +41,29 @@
 
 (define ##sys#chicken-macro-environment
   (let ((me0 (##sys#macro-environment)))
+
+(##sys#extend-macro-environment
+ 'define-constant
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    (##sys#check-syntax 'define-constant form '(_ symbol _))
+    `(##core#define-constant ,@(cdr form)))))
+
+(##sys#extend-macro-environment
+ 'define-inline
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    (let ((head (cadr form)))
+      (cond ((pair? head)
+	     (##sys#check-syntax 'define-inline form '(_ (symbol . _) . #(_ 1)))
+	     `(##core#define-inline
+	       ,(car head)
+	       `(,(r 'lambda) ,(cdr head) ,@(cdr form))))
+	    (else
+	     (##sys#check-syntax 'define-inline form '(_ symbol _))
+	     `(##core#define-inline ,@(cdr form))))))))
 
 (##sys#extend-macro-environment
  'define-record '()
@@ -151,22 +174,22 @@
 (##sys#extend-macro-environment
  'assert '()
  (##sys#er-transformer
- (lambda (form r c)
-   (##sys#check-syntax 'assert form '#(_ 1))
-   (let* ((exp (cadr form))
-	  (msg-and-args (cddr form))
-	  (%if (r 'if))
-	  (%quote (r 'quote))
-	  (msg (if (eq? '() msg-and-args)
-		   `(##core#immutable '"assertion failed")
-		   (car msg-and-args) ) ) )
-     `(,%if (##core#check ,exp)
-	    (##core#undefined)
-	    (##sys#error 
-	     ,msg 
-	     ,@(if (fx> (length msg-and-args) 1)
-		   (cdr msg-and-args)
-		   '() ) ) ) ) )) )
+  (lambda (form r c)
+    (##sys#check-syntax 'assert form '#(_ 1))
+    (let* ((exp (cadr form))
+	   (msg-and-args (cddr form))
+	   (%if (r 'if))
+	   (%quote (r 'quote))
+	   (msg (if (eq? '() msg-and-args)
+		    `(##core#immutable '"assertion failed")
+		    (car msg-and-args) ) ) )
+      `(,%if (##core#check ,exp)
+	     (##core#undefined)
+	     (##sys#error 
+	      ,msg 
+	      ,@(if (fx> (length msg-and-args) 1)
+		    (cdr msg-and-args)
+		    `((,%quote ,(##sys#strip-syntax exp))))))))))
 
 (##sys#extend-macro-environment
  'ensure
@@ -1066,6 +1089,15 @@
       (,(r 'define) ,@(cdr form))))))
 
 
+;;; compiled syntax (DEPRECATED)
+
+(##sys#extend-macro-environment
+ 'define-compiled-syntax '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    `(,(r 'define-syntax) ,@(cdr form)))))
+
+
 ;;; use
 
 (##sys#extend-macro-environment
@@ -1082,6 +1114,8 @@
  'define-compiler-syntax '()
  (##sys#er-transformer
   (syntax-rules ()
+    ((_ name)
+     (##core#define-compiler-syntax name #f))
     ((_ (name . llist) body ...)
      (define-compiler-syntax name (lambda llist body ...)))
     ((_ name transformer)
@@ -1091,8 +1125,8 @@
  'let-compiler-syntax '()
  (##sys#er-transformer
   (syntax-rules ()
-    ((_ ((name transformer) ...) body ...)
-     (##core#let-compiler-syntax ((name transformer) ...) body ...)))))
+    ((_ (binding ...) body ...)
+     (##core#let-compiler-syntax (binding ...) body ...)))))
 
 
 ;;; Just in case someone forgets

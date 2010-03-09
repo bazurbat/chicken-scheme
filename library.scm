@@ -1,7 +1,7 @@
 ;;;; library.scm - R5RS library for the CHICKEN compiler
 ;
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
-; Copyright (c) 2008-2009, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -61,8 +61,12 @@
 # define C_BUILD_TAG	""
 #endif
 
+#ifndef C_BRANCH_NAME
+# define C_BRANCH_NAME   ""
+#endif
+
 #define C_close_file(p)	      (C_fclose((C_FILEPTR)(C_port_file(p))), C_SCHEME_UNDEFINED)
-#define C_f64peek(b, i)	      (C_temporary_flonum = ((double *)C_data_pointer(b))[ C_unfix(i) ], C_SCHEME_UNDEFINED)
+#define C_a_f64peek(ptr, c, b, i)  C_flonum(ptr, ((double *)C_data_pointer(b))[ C_unfix(i) ])
 #define C_fetch_c_strlen(b, i) C_fix(strlen((C_char *)C_block_item(b, C_unfix(i))))
 #define C_peek_c_string(b, i, to, len) (C_memcpy(C_data_pointer(to), (C_char *)C_block_item(b, C_unfix(i)), C_unfix(len)), C_SCHEME_UNDEFINED)
 #define C_free_mptr(p, i)     (C_free((void *)C_block_item(p, C_unfix(i))), C_SCHEME_UNDEFINED)
@@ -70,7 +74,7 @@
 
 #define C_direct_continuation(dummy)  t1
 
-#define C_get_current_seconds(dummy)  (C_temporary_flonum = time(NULL), C_SCHEME_UNDEFINED)
+#define C_a_get_current_seconds(ptr, c, dummy)  C_flonum(ptr, time(NULL))
 #define C_peek_c_string_at(ptr, i)    ((C_char *)(((C_char **)ptr)[ i ]))
 
 static C_word fast_read_line_from_file(C_word str, C_word port, C_word size) {
@@ -135,8 +139,8 @@ EOF
      ##sys#check-char ##sys#check-exact ##sys#check-port ##sys#check-port* ##sys#check-string ##sys#substring ##sys#check-port-mode
      ##sys#for-each ##sys#map ##sys#setslot ##sys#allocate-vector ##sys#check-pair 
      ##sys#error-not-a-proper-list ##sys#error ##sys#warn ##sys#signal-hook
-     ##sys#check-symbol ##sys#check-vector ##sys#floor ##sys#ceiling ##sys#truncate ##sys#round 
-     ##sys#check-number ##sys#cons-flonum ##sys#check-integer ##sys#check-special
+     ##sys#check-symbol ##sys#check-vector  
+     ##sys#check-number ##sys#check-integer ##sys#check-special
      ##sys#flonum-fraction ##sys#make-port ##sys#print 
      ##sys#check-structure ##sys#make-structure ##sys#procedure->string
      ##sys#gcd ##sys#lcm ##sys#ensure-heap-reserve ##sys#check-list 
@@ -184,6 +188,7 @@ EOF
 (define-constant maximal-string-length #x00ffffff)
 
 (define-foreign-variable +build-tag+ c-string "C_BUILD_TAG")
+(define-foreign-variable +branch-name+ c-string "C_BRANCH_NAME")
 
 
 ;;; System routines:
@@ -264,8 +269,7 @@ EOF
   (##sys#setslot x i y) )
 
 (define (current-seconds) 
-  (##core#inline "C_get_current_seconds" #f)
-  (##sys#cons-flonum) )
+  (##core#inline_allocate ("C_a_get_current_seconds" 4) #f))
 
 (define (##sys#check-structure x y . loc) 
   (if (pair? loc)
@@ -888,6 +892,96 @@ EOF
     (fp-check-flonums x y 'fpmin)
     (##core#inline "C_i_flonum_min" x y) ] ) )
 
+(define (fpfloor x)
+  #+(not unsafe)
+  (fp-check-flonum x 'fpfloor)
+  (##core#inline_allocate ("C_a_i_flonum_floor" 4) x))
+
+(define (fptruncate x)
+  #+(not unsafe)
+  (fp-check-flonum x 'fptruncate)
+  (##core#inline_allocate ("C_a_i_flonum_truncate" 4) x))
+
+(define (fpround x)
+  #+(not unsafe)
+  (fp-check-flonum x 'fpround)
+  (##core#inline_allocate ("C_a_i_flonum_round" 4) x))
+
+(define (fpceiling x)
+  #+(not unsafe)
+  (fp-check-flonum x 'fpceiling)
+  (##core#inline_allocate ("C_a_i_flonum_ceiling" 4) x))
+
+(define ##sys#floor fpfloor) ;XXX needed for backwards compatibility with "numbers" egg
+(define ##sys#truncate fptruncate)
+(define ##sys#round fpround)
+(define ##sys#ceiling fpceiling)
+
+(define (fpsin x)
+  #+(not unsafe)
+  (fp-check-flonum x 'fpsin)
+  (##core#inline_allocate ("C_a_i_flonum_sin" 4) x))
+
+(define (fpcos x)
+  #+(not unsafe)
+  (fp-check-flonum x 'fpcos)
+  (##core#inline_allocate ("C_a_i_flonum_cos" 4) x))
+
+(define (fptan x)
+  #+(not unsafe)
+  (fp-check-flonum x 'fptan)
+  (##core#inline_allocate ("C_a_i_flonum_tan" 4) x))
+
+(define (fpasin x)
+  #+(not unsafe)
+  (fp-check-flonum x 'fpasin)
+  (##core#inline_allocate ("C_a_i_flonum_asin" 4) x))
+
+(define (fpacos x)
+  #+(not unsafe)
+  (fp-check-flonum x 'fpacos)
+  (##core#inline_allocate ("C_a_i_flonum_acos" 4) x))
+
+(define (fpatan x)
+  #+(not unsafe)
+  (fp-check-flonum x 'fpatan)
+  (##core#inline_allocate ("C_a_i_flonum_atan" 4) x))
+
+(define (fpatan2 x y)
+  #+(not unsafe)
+  (fp-check-flonums x y 'fpatan2)
+  (##core#inline_allocate ("C_a_i_flonum_atan2" 4) x y))
+
+(define (fpexp x)
+  #+(not unsafe)
+  (fp-check-flonum x 'fpexp)
+  (##core#inline_allocate ("C_a_i_flonum_exp" 4) x))
+
+(define (fpexpt x y)
+  #+(not unsafe)
+  (fp-check-flonums x y 'fpexpt)
+  (##core#inline_allocate ("C_a_i_flonum_expt" 4) x y))
+
+(define (fplog x)
+  #+(not unsafe)
+  (fp-check-flonum x 'fplog)
+  (##core#inline_allocate ("C_a_i_flonum_log" 4) x))
+
+(define (fpsqrt x)
+  #+(not unsafe)
+  (fp-check-flonum x 'fpsqrt)
+  (##core#inline_allocate ("C_a_i_flonum_sqrt" 4) x))
+
+(define (fpabs x)
+  #+(not unsafe)
+  (fp-check-flonum x 'fpabs)
+  (##core#inline_allocate ("C_a_i_flonum_abs" 4) x))
+
+(define (fpinteger? x)
+  #+(not unsafe)
+  (fp-check-flonum x 'fpinteger?)
+  (##core#inline "C_u_i_fpintegerp" x))
+
 (define * (##core#primitive "C_times"))
 (define - (##core#primitive "C_minus"))
 (define + (##core#primitive "C_plus"))
@@ -901,12 +995,7 @@ EOF
 (define add1 (lambda (n) (+ n 1)))
 (define sub1 (lambda (n) (- n 1)))
 
-(define ##sys#floor (##core#primitive "C_flonum_floor"))
-(define ##sys#ceiling (##core#primitive "C_flonum_ceiling"))
-(define ##sys#truncate (##core#primitive "C_flonum_truncate"))
-(define ##sys#round (##core#primitive "C_flonum_round"))
 (define quotient (##core#primitive "C_quotient"))
-(define ##sys#cons-flonum (##core#primitive "C_cons_flonum"))
 (define (##sys#number? x) (##core#inline "C_i_numberp" x))
 (define number? ##sys#number?)
 (define complex? number?)
@@ -969,25 +1058,25 @@ EOF
   (##sys#check-number x 'floor)
   (if (##core#inline "C_fixnump" x) 
       x
-      (##sys#floor x) ) )
+      (fpfloor x) ) )
 
 (define (ceiling x)
   (##sys#check-number x 'ceiling)
   (if (##core#inline "C_fixnump" x) 
       x
-      (##sys#ceiling x) ) )
+      (fpceiling x) ) )
 
 (define (truncate x)
   (##sys#check-number x 'truncate)
   (if (##core#inline "C_fixnump" x) 
       x
-      (##sys#truncate x) ) )
+      (fptruncate x) ) )
 
 (define (round x)
   (##sys#check-number x 'round)
   (if (##core#inline "C_fixnump" x) 
       x
-      (##sys#round x) ) )
+      (##core#inline_allocate ("C_a_i_flonum_round_proper" 4) x)))
 
 (define remainder 
   (lambda (x y) (- x (* (quotient x y) y))) )
@@ -2017,7 +2106,8 @@ EOF
        (##sys#update-errno)
        (##sys#signal-hook
 	#:file-error 'delete-file
-	(##sys#string-append "cannot delete file - " strerror) filename) ) )
+	(##sys#string-append "cannot delete file - " strerror) filename) )
+     filename)
    #:delete) )
 
 (define (rename-file old new)
@@ -2033,7 +2123,8 @@ EOF
 	  (##sys#update-errno)
 	  (##sys#signal-hook
 	   #:file-error 'rename-file
-	   (##sys#string-append "cannot rename file - " strerror) old new) ) ) ) )
+	   (##sys#string-append "cannot rename file - " strerror) old new) )
+	new)))
    #:rename new) )
 
 
@@ -3304,7 +3395,7 @@ EOF
 		   (if (##sys#fudge 32) " gchooks" "") 
 		   (if (##sys#fudge 39) " cross" "") ) ) )
 	(string-append
-	 "Version " +build-version+ "\n"
+	 "Version " +build-version+ " " +branch-name+ "\n"
 	 (get-config)
 	 (if (zero? (##sys#size spec))
 	     ""
@@ -3806,8 +3897,7 @@ EOF
 (define (##sys#vector->structure! vec) (##core#inline "C_vector_to_structure" vec))
 
 (define (##sys#peek-double b i)
-  (##core#inline "C_f64peek" b i)
-  (##sys#cons-flonum) )
+  (##core#inline_allocate ("C_a_f64peek" 4) b i))
 
 (define (##sys#peek-c-string b i)
   (and (not (##sys#null-pointer? b))

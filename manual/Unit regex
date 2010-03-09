@@ -57,16 +57,6 @@ Converts the file-pattern {{PATTERN}} into a regular expression.
  ?
 
 
-=== glob?
-
-<procedure>(glob? STRING)</procedure>
-
-Does the {{STRING}} have any "glob" wildcards?
-
-A string without any "glob" wildcards does not meet the criteria,
-even though it technically is a valid "glob" file-pattern.
-
-
 === regexp
 
 <procedure>(regexp STRING [IGNORECASE [IGNORESPACE [UTF8]]])</procedure>

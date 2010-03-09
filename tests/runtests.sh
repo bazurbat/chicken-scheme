@@ -37,8 +37,12 @@ echo "======================================== compiler tests ..."
 $compile compiler-tests.scm
 ./a.out
 
-echo "======================================== compiler tests (2) ..."
+echo "======================================== compiler tests (lambda-lift) ..."
 $compile compiler-tests-2.scm -lambda-lift
+./a.out
+
+echo "======================================== compiler tests (unboxing) ..."
+$compile compiler-tests-3.scm -unsafe -unboxing
 ./a.out
 
 echo "======================================== compiler inlining tests  ..."
@@ -100,7 +104,7 @@ $compile compiler-syntax-tests.scm
 ./a.out
 
 echo "======================================== import library tests ..."
-rm -f foo.import.*
+rm -f ../foo.import.* foo.import.*
 $compile import-library-test1.scm -emit-import-library foo
 $interpret -s import-library-test2.scm
 $compile_s foo.import.scm -o foo.import.so
@@ -155,6 +159,9 @@ echo "======================================== fixnum tests ..."
 $compile fixnum-tests.scm
 ./a.out
 
+echo "======================================== srfi-4 tests ..."
+$interpret -s srfi-4-tests.scm
+
 echo "======================================== srfi-18 tests ..."
 $interpret -s srfi-18-tests.scm
 echo "*** Skipping \"feeley-dynwind\" (for now) ***"
@@ -188,6 +195,10 @@ for s in 100000 120000 200000 250000 300000 350000 400000 450000 500000; do
     ../chicken ../utils.scm -:s$s -output-file tmp.c -include-path .. 
 done
 
+echo "======================================== symbol-GC tests ..."
+$compile symbolgc-tests.scm
+./a.out -:w
+
 echo "======================================== finalizer tests ..."
 $interpret -s test-finalizers.scm
 
@@ -207,8 +218,23 @@ echo "======================================== embedding (2) ..."
 $compile -e embedded2.scm
 ./a.out
 
+echo "======================================== private repository test ..."
+mkdir -p tmp
+$compile private-repository-test.scm -private-repository -o tmp/xxx
+tmp/xxx $PWD/tmp
+PATH=$PWD/tmp:$PATH xxx $PWD/tmp
+# this may crash, if the PATH contains a non-matching libchicken.dll on Windows:
+#PATH=$PATH:$PWD/tmp xxx $PWD/tmp
+
 echo "======================================== timing compilation ..."
-time $compile compiler.scm -t -S -O5 -debug pb -v
+time $compile compiler.scm -O5 -debug pb -v -C -Wa,-W
+echo "executing ..."
+time ./a.out
+
+echo "======================================== running slatex ..."
+$compile slatex.scm -O5
+mkdir -p slatexdir
+rm -f slatexdir/*
 time ./a.out
 
 echo "======================================== running floating-point benchmark ..."
@@ -216,7 +242,7 @@ echo "boxed:"
 $compile fft.scm -O5
 time ./a.out
 echo "unboxed:"
-$compile fft.scm -O5 -D unboxed
+$compile fft.scm -O5 -D unboxed -debug oxi | tee fft.out
 time ./a.out
 
 echo "======================================== done."

@@ -89,11 +89,11 @@ Returns {{#t}} if {{X}} is a fixnum, or {{#f}} otherwise.
 
 ==== Arithmetic floating-point operations
 
-arguments (except {{flonum?}}, which returns {{#f}}). In unsafe mode,
-these procedures do not check their arguments. A non-flonum argument
-in unsafe mode can crash the system.
+In safe mode, these procedures throw a type error when given non-float
+arguments. In unsafe mode, these procedures do not check their
+arguments. A non-flonum argument in unsafe mode can crash the
+application.
 
-<procedure>(flonum? X)</procedure>
 <procedure>(fp+ X Y)</procedure>
 <procedure>(fp- X Y)</procedure>
 <procedure>(fp* X Y)</procedure>
@@ -106,6 +106,25 @@ in unsafe mode can crash the system.
 <procedure>(fp< X Y)</procedure>
 <procedure>(fp>= X Y)</procedure>
 <procedure>(fp<= X Y)</procedure>
+<procedure>(fpfloor X)</procedure>
+<procedure>(fpceiling X)</procedure>
+<procedure>(fptruncate X)</procedure>
+<procedure>(fpround X)</procedure>
+<procedure>(fpsin X)</procedure>
+<procedure>(fpcos X)</procedure>
+<procedure>(fptan X)</procedure>
+<procedure>(fpasin X)</procedure>
+<procedure>(fpacos X)</procedure>
+<procedure>(fpatan X)</procedure>
+<procedure>(fpatan2 X Y)</procedure>
+<procedure>(fplog X)</procedure>
+<procedure>(fpexp X)</procedure>
+<procedure>(fpexpt X Y)</procedure>
+<procedure>(fpsqrt X)</procedure>
+<procedure>(fpabs X)</procedure>
+<procedure>(fpinteger? X)</procedure>
+
+Note: {{fpround}} implements POSIX, which is different from R5RS.
 
 ==== flonum?
 
@@ -1205,7 +1224,7 @@ be compared using {{eq?}}.
 
 ==== get
 
-  [procedure] (get SYMBOL PROPERTY [DEFAULT])
+  <procedure>(get SYMBOL PROPERTY [DEFAULT])</procedure>
 
 Returns the value stored under the key {{PROPERTY}} in the property
 list of {{SYMBOL}}. If no such property is stored, returns
@@ -1213,7 +1232,7 @@ list of {{SYMBOL}}. If no such property is stored, returns
 
 ==== put!
 
-  [procedure] (put! SYMBOL PROPERTY VALUE)
+  <procedure>(put! SYMBOL PROPERTY VALUE)</procedure>
   [setter] (set! (get SYMBOL PROPERTY) VALUE)
 
 Stores {{VALUE}} under the key {{PROPERTY}} in the property list of
@@ -1221,21 +1240,21 @@ Stores {{VALUE}} under the key {{PROPERTY}} in the property list of
 
 ==== remprop!
 
-  [procedure] (remprop! SYMBOL PROPERTY)
+  <procedure>(remprop! SYMBOL PROPERTY)</procedure>
 
 Deletes the first property matching the key {{PROPERTY}} in the property list
 of {{SYMBOL}}. Returns {{#t}} when a deletion performed, and {{#f}} otherwise.
 
 ==== symbol-plist
 
-  [procedure] (symbol-plist SYMBOL)
+  <procedure>(symbol-plist SYMBOL)</procedure>
   [setter] (set! (symbol-plist SYMBOL) LST)
 
 Returns the property list of {{SYMBOL}} or sets it.
 
 ==== get-properties
 
-  [procedure] (get-properties SYMBOL PROPERTIES)
+  <procedure>(get-properties SYMBOL PROPERTIES)</procedure>
 
 Searches the property list of {{SYMBOL}} for the first property with a key in
 the list {{PROPERTIES}}. Returns 3 values: the matching property key, value,

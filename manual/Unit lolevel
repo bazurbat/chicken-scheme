@@ -125,9 +125,9 @@ to the same address, or {{#f}} otherwise.
 Returns the address, to which the pointer-like object {{POINTER*}} points.
 
 
-==== pointer-offset
+==== pointer+
 
-<procedure>(pointer-offset POINTER* N)</procedure>
+<procedure>(pointer+ POINTER* N)</procedure>
 
 Returns a new foreign pointer object representing the pointer-like object
 {{POINTER*}} address value increased by the byte-offset {{N}}.
@@ -432,6 +432,14 @@ These procedures operate with what are known as {{vector-like objects}}. A
 {{vector-like object}} is a vector, record structure, pair, symbol or keyword.
 
 Note that strings and blobs are not considered vector-like.
+
+
+==== vector-like?
+
+<procedure>(vector-like? X)</procedure>
+
+Returns {{#t}} when {{X}} is a vector-like object, returns {{#f}}
+otherwise.
 
 
 ==== block-ref

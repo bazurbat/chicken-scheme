@@ -1,6 +1,6 @@
 ;;;; chicken-uninstall.scm
 ;
-; Copyright (c) 2008-2009, The Chicken Team
+; Copyright (c) 2008-2010, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -112,7 +112,7 @@ EOF
 			     (loop (append (map (cut string #\- <>) sos) (cdr args)) pats)
 			     (usage 1)))
 		       (usage 1)))
-		  (else (loop (cdr args) (cons arg pats))))))))
+		  (else (loop (cdr args) (cons (glob->regexp arg) pats))))))))
 
   (main (command-line-arguments))
   

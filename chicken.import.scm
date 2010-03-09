@@ -1,6 +1,6 @@
 ;;;; chicken.import.scm - import library for "chicken" module
 ;
-; Copyright (c) 2008-2009, The Chicken Team
+; Copyright (c) 2008-2010, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -100,9 +100,26 @@
    fp=
    fp>
    fp>=
+   fpabs
+   fpacos
+   fpasin
+   fpatan
+   fpatan2
+   fpexp
+   fpexpt
+   fpfloor
+   fpceiling
+   fpcos
+   fpinteger?
+   fplog
    fpmax
    fpmin
    fpneg
+   fpround
+   fpsin
+   fpsqrt
+   fptan
+   fptruncate
    fx-
    fx*
    fx/

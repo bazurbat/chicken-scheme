@@ -1,7 +1,7 @@
 # Makefile.macosx - configuration for Apple Macintosh OS X -*- Makefile -*-
 #
+# Copyright (c) 2008-2010, The Chicken Team
 # Copyright (c) 2007, Felix L. Winkelmann
-# Copyright (c) 2008-2009, The Chicken Team
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -33,7 +33,7 @@ SRCDIR = ./
 
 # platform configuration
 
-ARCH = $(shell sh $(SRCDIR)/config-arch.sh)
+ARCH ?= $(shell sh $(SRCDIR)/config-arch.sh)
 
 # commands
 
@@ -41,7 +41,7 @@ POSTINSTALL_PROGRAM = install_name_tool
 
 # options
 
-C_COMPILER_OPTIONS = -no-cpp-precomp -fno-strict-aliasing -fno-common -DHAVE_CHICKEN_CONFIG_H
+C_COMPILER_OPTIONS ?= -no-cpp-precomp -fno-strict-aliasing -fno-common -DHAVE_CHICKEN_CONFIG_H
 ifdef DEBUGBUILD
 C_COMPILER_OPTIMIZATION_OPTIONS ?= -g -Wall -Wno-unused
 else
@@ -96,7 +96,8 @@ endif
 include $(SRCDIR)/defaults.make
 
 chicken-config.h: chicken-defaults.h
-	echo "#define HAVE_DIRENT_H 1" >$@
+	echo "/* GENERATED */" >$@
+	echo "#define HAVE_DIRENT_H 1" >>$@
 	echo "#define HAVE_DLFCN_H 1" >>$@
 	echo "#define HAVE_INTTYPES_H 1" >>$@
 	echo "#define HAVE_LIMITS_H 1" >>$@

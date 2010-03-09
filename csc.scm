@@ -1,7 +1,7 @@
 ;;;; csc.scm - Driver program for the CHICKEN compiler - felix -*- Scheme -*-
 ;
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
-; Copyright (c) 2008-2009, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -55,6 +55,7 @@
 (define-foreign-variable CHICKEN_PROGRAM c-string "C_CHICKEN_PROGRAM")
 (define-foreign-variable CSC_PROGRAM c-string "C_CSC_PROGRAM")
 (define-foreign-variable WINDOWS_SHELL bool "C_WINDOWS_SHELL")
+(define-foreign-variable BINARY_VERSION int "C_BINARY_VERSION")
 
 
 ;;; Parameters:
@@ -62,8 +63,10 @@
 (define mingw (eq? (build-platform) 'mingw32))
 (define msvc (eq? (build-platform) 'msvc))
 (define osx (eq? (software-version) 'macosx))
-(define hpux-hppa (and (eq? (software-version) 'hpux)
-                       (eq? (machine-type) 'hppa)))
+(define win (or mingw msvc))
+
+(define elf
+  (memq (software-version) '(linux freebsd solaris openbsd)))
 
 (define (quit msg . args)
   (fprintf (current-error-port) "~a: ~?~%" CSC_PROGRAM msg args)
@@ -108,14 +111,15 @@
 (define pic-options (if (or mingw msvc) '("-DPIC") '("-fPIC" "-DPIC")))
 (define windows-shell WINDOWS_SHELL)
 
-(define default-library (string-append
-                         (if msvc "libchicken-static." "libchicken.")
-                         library-extension))
-(define default-unsafe-library (string-append
-                                (if msvc "libuchicken-static." "libuchicken.")
-                                library-extension))
+(define default-library
+  (string-append
+   (if msvc "libchicken-static." "libchicken.")
+   library-extension))
 
-(define cleanup-filename quotewrap)
+(define default-unsafe-library
+  (string-append
+   (if msvc "libuchicken-static." "libuchicken.")
+   library-extension))
 
 (define default-compilation-optimization-options (string-split (if host-mode INSTALL_CFLAGS TARGET_CFLAGS)))
 (define best-compilation-optimization-options default-compilation-optimization-options)
@@ -131,7 +135,7 @@
     -analyze-only -keep-shadowed-macros -inline-global -ignore-repository
     -no-symbol-escape -no-parentheses-synonyms -r5rs-syntax
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
-    -emit-all-import-libraries -setup-mode
+    -emit-all-import-libraries -setup-mode -unboxing
     -no-procedure-checks-for-usual-bindings))
 
 (define-constant complex-options
@@ -180,15 +184,20 @@
 (define show-ldflags #f)
 (define show-libs #f)
 (define dry-run #f)
+(define gui #f)
+(define deploy #f)
+(define deployed #f)
 
 (define extra-libraries
   (if host-mode
       INSTALL_MORE_STATIC_LIBS
       TARGET_MORE_STATIC_LIBS))
+
 (define extra-shared-libraries 
   (if host-mode 
       INSTALL_MORE_LIBS
       TARGET_MORE_LIBS))
+
 (define default-library-files 
   (list
    (quotewrap
@@ -196,9 +205,14 @@
 	    (string-append
 	     (if host-mode INSTALL_LIB_HOME TARGET_LIB_HOME)
 	     (string-append "/" default-library)))) ))
-(define default-shared-library-files (if msvc
-                                         (list (string-append "libchicken." library-extension))
-                                         '("-lchicken")))
+
+(define default-shared-library-files 
+  (if msvc
+      (list (string-append "libchicken." library-extension))
+      '("-lchicken")))
+
+(define unsafe-libraries #f)
+
 (define unsafe-library-files
   (list
    (quotewrap 
@@ -206,11 +220,17 @@
 	    (string-append 
 	     (if host-mode INSTALL_LIB_HOME TARGET_LIB_HOME)
 	     (string-append "/" default-unsafe-library)))) ))
-(define unsafe-shared-library-files (if msvc
-                                        (list (string-append "libuchicken." library-extension))
-                                        '("-luchicken")))
-(define gui-library-files default-library-files)
-(define gui-shared-library-files default-shared-library-files)
+
+(define unsafe-shared-library-files
+  (if msvc
+      (list (string-append "libuchicken." library-extension))
+      '("-luchicken")))
+
+(define (use-unsafe-libraries)
+  (set! unsafe-libraries #t)
+  (set! library-files unsafe-library-files)
+  (set! shared-library-files unsafe-shared-library-files))
+
 (define library-files default-library-files)
 (define shared-library-files default-shared-library-files)
 
@@ -223,8 +243,9 @@
 	 id) ) )
 
 (define compile-options '())
+
 (define builtin-compile-options
-  (if include-dir (list (conc "-I" (quotewrap include-dir))) '()))
+  (if include-dir (list (conc "-I\"" include-dir "\"")) '()))
 
 (define compile-only-flag "-c")
 (define translation-optimization-options default-translation-optimization-options)
@@ -238,19 +259,22 @@
              TARGET_LIB_HOME)) )
 
 (define link-options '())
-(define builtin-link-options
-  (cond ((or osx hpux-hppa mingw)
-	 (list (conc "-L" (quotewrap library-dir))))
-        (msvc
-         (list (conc "-LIBPATH:" (quotewrap library-dir))))
-	(else 
-	 (list
-	  (conc "-L" (quotewrap library-dir))
-	  (conc " -Wl,-R" (quotewrap (prefix "" "lib"
-					     (if host-mode
-						 INSTALL_LIB_HOME
-						 TARGET_RUN_LIB_HOME)))) ) ) ) )
 
+(define (builtin-link-options)
+  (cond (elf
+	 (list
+	  (conc "-L\"" library-dir "\"")
+	  (conc " -Wl,-R\""
+		(if deployed
+		    "\\$ORIGIN"
+		    (prefix "" "lib"
+			    (if host-mode
+				INSTALL_LIB_HOME
+				TARGET_RUN_LIB_HOME)))
+		"\"")) )
+	(else
+	 (list (conc "-L\"" library-dir "\"")))))
+	
 (define target-filename #f)
 (define verbose #f)
 (define keep-files #f)
@@ -262,17 +286,16 @@
 (define static-libs #f)
 (define static-extensions '())
 (define required-extensions '())
-(define gui #f)
 
 
 ;;; Display usage information:
 
 (define (usage)
   (let ((csc CSC_PROGRAM))
-    (printf #<<EOF
-Usage: ~a FILENAME | OPTION ...
+    (print #<#EOF
+Usage: #{csc} FILENAME | OPTION ...
 
-  `~a' is a driver program for the CHICKEN compiler. Files given on the
+  `#{csc}' is a driver program for the CHICKEN compiler. Files given on the
   command line are translated, compiled or linked as needed.
 
   FILENAME is a Scheme source file name with optional extension or a
@@ -360,6 +383,7 @@ Usage: ~a FILENAME | OPTION ...
     -inline                        enable inlining
     -inline-limit                  set inlining threshold
     -inline-global                 enable cross-module inlining
+    -unboxing                      use unboxed temporaries if possible
     -n -emit-inline-file FILENAME  generate file with globally inlinable
                                     procedures (implies -inline -local)
     -consult-inline-file FILENAME  explicitly load inline file
@@ -389,11 +413,12 @@ Usage: ~a FILENAME | OPTION ...
 
     -e  -embedded                  compile as embedded
                                     (don't generate `main()')
-    -W  -windows                   compile as Windows GUI application
+    -gui                           compile as GUI application
     -R  -require-extension NAME    require extension and import in compiled
                                     code
     -dll -library                  compile multiple units into a dynamic
                                     library
+    -deploy                        deploy self-contained application bundle
 
   Options to other passes:
 
@@ -448,6 +473,9 @@ Usage: ~a FILENAME | OPTION ...
     -keep-shadowed-macros          do not remove shadowed macro
     -host                          compile for host when configured for
                                     cross-compiling
+    -private-repository            load extensions from executable path
+    -deployed                      compile support file to be used from a deployed 
+                                    executable
 
   Options can be collapsed if unambiguous, so
 
@@ -458,10 +486,10 @@ Usage: ~a FILENAME | OPTION ...
     -v -k -fixnum-arithmetic -optimize
 
   The contents of the environment variable CSC_OPTIONS are implicitly passed to
-  every invocation of `~a'.
+  every invocation of `#{csc}'.
 
 EOF
-  csc csc csc) ) )
+  ) ) )
 
 
 ;;; Parse arguments:
@@ -485,12 +513,17 @@ EOF
              (else "-shared")) link-options))
     (set! shared #t) )
 
+  (define (use-private-repository)
+    (set! compile-options (cons "-DC_PRIVATE_REPOSITORY" compile-options))
+    (when osx
+      (set! link-options (cons "-framework CoreFoundation" link-options))))
+
   (let loop ([args args])
     (cond [(null? args)
-           ;Builtin search directory options do not override explict options
+	   ;; Builtin search directory options do not override explict options
            (set! compile-options (append compile-options builtin-compile-options))
-           (set! link-options (append link-options builtin-link-options))
-           ;
+           (set! link-options (append link-options (builtin-link-options)))
+	   ;;
 	   (when inquiry-only
 	     (when show-cflags (print* (compiler-options) #\space))
 	     (when show-ldflags (print* (linker-options) #\space))
@@ -519,17 +552,20 @@ EOF
 			  (pathname-replace-extension (first scheme-files) shared-library-extension)
 			  (pathname-replace-extension (first scheme-files) executable-extension) ) ) )
 		  (run-translation) ] )
+	   (when (and deploy (not shared))
+	     (use-private-repository))
 	   (unless translate-only 
 	     (run-compilation)
 	     (unless compile-only
 	       (when (member target-filename scheme-files)
 		 (printf "Warning: output file will overwrite source file `~A' - renaming source to `~A.old'~%"
 			 target-filename target-filename)
-		 (unless (zero? ($system (sprintf "~A ~A ~A" 
-						  (if windows-shell "move" "mv")
-						  (quotewrap target-filename)
-						  (quotewrap (string-append target-filename ".old")))))
-		   (exit last-exit-code) ) )
+		 (command 
+		  (sprintf
+		      "~A ~A ~A" 
+		      (if windows-shell "move" "mv")
+		    (quotewrap target-filename)
+		    (quotewrap (string-append target-filename ".old")))))
 	       (run-linking)) ) ]
 	  [else
 	   (let* ([arg (car args)]
@@ -577,15 +613,6 @@ EOF
 		       (t-options "-verbose") 
 		       (set! verbose 2)) 
 		      (else (set! verbose #t))) ]
-	       [(-v2 -verbose)		; DEPRECATED
-		(set! verbose #t)
-		(t-options "-verbose") ]
-	       [(-v3)			; DEPRECATED
-		(set! verbose #t)
-		(t-options "-verbose")
-                (if (not msvc)
-                    (set! compile-options (cons* "-v" "-Q" compile-options)))
-		(set! link-options (cons (if msvc "-VERBOSE" "-v") link-options)) ]
 	       [(-w -no-warnings)
 		(set! compile-options (cons "-w" compile-options))
 		(t-options "-no-warnings") ]
@@ -611,18 +638,26 @@ EOF
 		(set! static-extensions (append static-extensions (list (car rest))))
 		(t-options "-static-extension" (car rest))
 		(set! rest (cdr rest)) ]
-	       [(-windows |-W|)
+	       ((-private-repository)
+		(use-private-repository))
+	       [(-gui
+		 -windows |-W|)		;DEPRECATED
 		(set! gui #t)
-		(cond
-                 (mingw
-		  (set! link-options
-		    (cons* "-lkernel32" "-luser32" "-lgdi32" "-mwindows"
-			   link-options))
-		  (set! compile-options (cons "-DC_WINDOWS_GUI" compile-options)))
-                 (msvc
-                  (set! link-options
-                    (cons* "kernel32.lib" "user32.lib" "gdi32.lib" link-options))
-		  (set! compile-options (cons "-DC_WINDOWS_GUI" compile-options)))) ]
+		(set! compile-options (cons "-DC_GUI" compile-options))
+		(when (or msvc mingw)
+		  (cond
+		   (mingw
+		    (set! link-options
+		      (cons* "-lkernel32" "-luser32" "-lgdi32" "-mwindows"
+			     link-options)))
+		   (msvc
+		    (set! link-options
+		      (cons* "kernel32.lib" "user32.lib" "gdi32.lib" link-options)))))]
+	       ((-deploy)
+		(set! deploy #t)
+		(set! deployed #t))
+	       ((-deployed)
+		(set! deployed #t))
 	       [(-framework)
 		(check s rest)
 		(when osx 
@@ -640,9 +675,8 @@ EOF
 	       [(|-O5|)
 		(set! rest (cons* "-optimize-level" "5" rest))
 		(t-options "-unsafe-libraries")
-		(set! library-files unsafe-library-files)
-		(set! shared-library-files unsafe-shared-library-files)
-		(when (memq (build-platform) '(mingw32 cygwin gnu))
+		(use-unsafe-libraries)
+		(when (memq (build-platform) '(mingw32 cygwin gnu clang))
 		  (set! compile-options 
 		    (cons* "-O3" "-fomit-frame-pointer" compile-options)) ) ]
 	       [(-d0) (set! rest (cons* "-debug-level" "0" rest))]
@@ -686,11 +720,10 @@ EOF
 		(set! rest (cdr rest)) ]
 	       [(-unsafe-libraries)
 		(t-options arg)
-		(set! library-files unsafe-library-files)
-		(set! shared-library-files unsafe-shared-library-files) ]
+		(use-unsafe-libraries) ]
 	       [(-rpath)
 		(check s rest)
-		(when (eq? 'gnu (build-platform))
+		(when (memq (build-platform) '(gnu clang))
 		  (set! link-options (append link-options (list (string-append "-Wl,-R" (car rest)))))
 		  (set! rest (cdr rest)) ) ]
 	       [(-host) #f]
@@ -700,8 +733,7 @@ EOF
 	       [else
 		(when (memq s '(-unsafe -benchmark-mode))
 		  (when (eq? s '-benchmark-mode)
-		    (set! library-files unsafe-library-files)
-		    (set! shared-library-files unsafe-shared-library-files) ) )
+			(use-unsafe-libraries) ) )
 		(when (eq? s '-to-stdout) 
 		  (set! to-stdout #t)
 		  (set! translate-only #t) )
@@ -776,17 +808,15 @@ EOF
 		(cond (cpp-mode "cpp")
 		      (objc-mode "m")
 		      (else "c") ) ) ] )
-       (unless (zero?
-		($system 
-		 (string-intersperse 
-		  (cons* translator (cleanup-filename f) 
-			 (append 
-			  (if to-stdout 
-			      '("-to-stdout")
-			      `("-output-file" ,(cleanup-filename fc)) )
-			  (map quote-option (append translate-options translation-optimization-options)) ) )
-		  " ") ) )
-	 (exit last-exit-code) )
+       (command
+	(string-intersperse 
+	 (cons* translator (quotewrap f) 
+		(append 
+		 (if to-stdout 
+		     '("-to-stdout")
+		     `("-output-file" ,(quotewrap fc)) )
+		 (map quote-option (append translate-options translation-optimization-options)) ) )
+	 " ") )
        (set! c-files (append (list fc) c-files))
        (set! generated-c-files (append (list fc) generated-c-files))))
    scheme-files)
@@ -800,16 +830,14 @@ EOF
     (for-each
      (lambda (f)
        (let ([fo (pathname-replace-extension f object-extension)])
-	 (unless (zero?
-		  ($system
-		   (string-intersperse
-		    (list (cond (cpp-mode c++-compiler)
-				(else compiler) )
-			  (cleanup-filename f)
-			  (string-append compile-output-flag (cleanup-filename fo)) 
-			  compile-only-flag
-			  (compiler-options) ) ) ) )
-	   (exit last-exit-code) )
+	 (command
+	  (string-intersperse
+	   (list (cond (cpp-mode c++-compiler)
+		       (else compiler) )
+		 (quotewrap f)
+		 (string-append compile-output-flag (quotewrap fo)) 
+		 compile-only-flag
+		 (compiler-options) ) ) )
 	 (set! generated-object-files (cons fo generated-object-files))
 	 (set! ofiles (cons fo ofiles))))
      c-files)
@@ -828,36 +856,91 @@ EOF
 ;;; Link object files and libraries:
 
 (define (run-linking)
-  (let ((files (map cleanup-filename
-		    (append object-files
-			    (nth-value 0 (static-extension-info)) ) ) )
-	(target (cleanup-filename target-filename)))
-    (unless (zero?
-	     ($system
-	      (string-intersperse 
-	       (cons* (cond (cpp-mode c++-linker)
-			    (else linker) )
-		      (append
-		       files
-		       (list (string-append link-output-flag target)
-			     (linker-options)
-			     (linker-libraries #f) ) ) ) ) ) )
-      (exit last-exit-code) )
+  (let* ((files (map quotewrap
+		     (append object-files
+			     (nth-value 0 (static-extension-info)) ) ) )
+	 (target (quotewrap target-filename))
+	 (targetdir #f))
+    (when deploy
+      (set! targetdir (pathname-strip-extension target-filename))
+      (when (and osx gui)
+	(set! targetdir (make-pathname #f targetdir "app"))
+	(command (sprintf "mkdir -p ~a" (quotewrap (make-pathname targetdir "Contents/MacOS"))))
+	(command (sprintf "mkdir -p ~a" (quotewrap (make-pathname targetdir "Contents/Resources")))))
+      (set! target-filename
+	(make-pathname
+	 targetdir
+	 (if (and osx gui)
+	     (string-append "Contents/MacOS/" (pathname-file target-filename))
+	     (pathname-file target-filename))))
+      (set! target (quotewrap target-filename))
+      (unless (directory-exists? targetdir)
+	(when verbose
+	  (print "mkdir " targetdir))
+	(create-directory targetdir)))
+    (command
+     (string-intersperse 
+      (cons* (cond (cpp-mode c++-linker)
+		   (else linker) )
+	     (append
+	      files
+	      (list (string-append link-output-flag (quotewrap target-filename))
+		    (linker-options)
+		    (linker-libraries #f) ) ) ) ) )
     (when (and osx (or (not cross-chicken) host-mode))
-      (unless (zero? ($system 
-		      (string-append
-		       "install_name_tool -change libchicken.dylib "
-		       (quotewrap 
-			(make-pathname
-			 (prefix "" "lib"
-				 (if host-mode
-				     INSTALL_LIB_HOME
-				     TARGET_RUN_LIB_HOME))
-			 "libchicken.dylib") )
-		       " " 
-		       target) ) )
-	(exit last-exit-code) ) )
+      (command
+       (string-append
+	"install_name_tool -change lib" (if unsafe-libraries "u" "") "chicken.dylib "
+	(quotewrap 
+	 (let ((lib (if unsafe-libraries "libuchicken.dylib" "libchicken.dylib")) )
+	   (if deployed
+	       (make-pathname "@executable_path" lib)
+	       (make-pathname
+		(lib-path)
+		lib))))
+	" " 
+	target) )
+      (when (and gui (not deploy))
+	(rez target)))
+    (when (and deploy (not (or static static-libs)))
+      (copy-libraries 
+       (if (and osx gui)
+	   (make-pathname targetdir "Contents/MacOS")
+	   targetdir))
+      (when (and osx gui)
+	(create-mac-bundle
+	 (pathname-file target-filename)
+	 targetdir)))
     (unless keep-files (for-each $delete-file generated-object-files)) ) )
+
+(define (lib-path)
+  (prefix "" 
+	  "lib"
+	  (if win
+	      INSTALL_BIN_HOME
+	      (if host-mode
+		  INSTALL_LIB_HOME
+		  TARGET_RUN_LIB_HOME))))
+
+(define (copy-libraries targetdir)
+  (let ((lib (make-pathname
+	      (lib-path) 
+	      (if unsafe-libraries
+		  "libuchicken"
+		  "libchicken")
+	      (cond (osx "dylib")
+		    (win "dll")
+		    (else (conc "so." BINARY_VERSION))))))
+    (copy-files lib targetdir)))
+
+(define (copy-files from to)
+  (command
+   (sprintf "~a ~a ~a"
+     (if windows-shell 
+	 "copy /Y"
+	 "cp")
+     (quotewrap from)
+     (quotewrap to))))
 
 (define (static-extension-info)
   (let ((rpath (repository-path)))
@@ -887,8 +970,8 @@ EOF
    (append
     (if staticexts (nth-value 0 (static-extension-info)) '())
     (if (or static static-libs)
-        (if gui gui-library-files library-files)
-        (if gui gui-shared-library-files shared-library-files))
+        library-files
+        shared-library-files)
     (if (or static static-libs)
         (list extra-libraries)
         (list extra-shared-libraries)))))
@@ -914,11 +997,12 @@ EOF
 	s) ) )
 
 (define (quote-option x)
-  (if (string-any (lambda (c)
-		    (or (char-whitespace? c) (memq c +hairy-chars+)) )
-		  x)
-      (cleanup x)
-      x) )
+  (cond ((string-any (cut char=? #\" <>) x) x)
+	((string-any (lambda (c)
+		       (or (char-whitespace? c) (memq c +hairy-chars+)) )
+		     x)
+	 (cleanup x))
+	(else x) ))
 
 (define last-exit-code #f)
 
@@ -934,12 +1018,59 @@ EOF
 	(if (zero? raw-exit-code) 0 1))
       last-exit-code)))
 
+(define (command str)
+  (unless (zero? ($system str))
+    (exit last-exit-code)))
+
 (define ($delete-file str)
   (when verbose 
     (print "rm " str) )
   (unless dry-run (delete-file str) ))
 
+(define (rez file)
+  ;; see also: http://www.cocan.org/getting_started_with_ocaml_on_mac_os_x
+  (command 
+   (sprintf "/Developer/Tools/Rez -t APPL -o ~a ~a"
+     (quotewrap file)
+     (quotewrap (make-pathname home "mac.r")))))
+
+(define (create-mac-bundle prg dname)
+  (let* ((d0 (make-pathname dname "Contents"))
+	 (d (make-pathname dname "Contents/MacOS"))
+	 (d2 (make-pathname dname "Contents/Resources")))
+    (let ((icons (make-pathname d2 "CHICKEN.icns")))
+      (unless (file-exists? icons)
+	(copy-files 
+	 (make-pathname home "chicken/CHICKEN.icns") 
+	 d2)))
+    (let ((pl (make-pathname d0 "Info.plist")))
+      (unless (file-exists? pl)
+	(with-output-to-file pl
+	  (cut print #<#EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist SYSTEM "file://localhost/System/Library/DTDs/PropertyList.dtd">
+<plist version="0.9">
+<dict>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleIconFile</key>
+	<string>CHICKEN.icns</string>
+        <key>CFBundleGetInfoString</key>
+	<string>Created by CHICKEN</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleExecutable</key>
+	<string>#{prg}</string>
+</dict>
+</plist>
+EOF
+)))
+      d)))
+
 
 ;;; Run it:
 
-(run (append (string-split (or (get-environment-variable "CSC_OPTIONS") "")) arguments))
+(run
+ (append 
+  (string-split (or (get-environment-variable "CSC_OPTIONS") "")) 
+  arguments))

@@ -1,7 +1,7 @@
 ;;;; regex.scm
 ;
+; Copyright (c) 2008-2010, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
-; Copyright (c) 2008-2009, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -33,6 +33,7 @@
   (usual-integrations)
   (disable-interrupts)
 ;  (disable-warning var)
+  (fixnum)
   (export
     regexp? regexp
     string-match string-match-positions string-search string-search-positions
@@ -57,7 +58,7 @@
  [else
   (declare
     (no-bound-checks)
-    (no-procedure-checks-for-usual-bindings) ) ] )
+    (no-procedure-checks) ) ] )
 
 (include "unsafe-declarations.scm")
 
@@ -245,8 +246,7 @@
 
 ;;; Glob support:
 
-;FIXME is it worthwhile making this accurate?
-(define (glob? str)
+(define (glob? str)			; DEPRECATED
   (##sys#check-string str 'glob?)
   (let loop ([idx (fx- (string-length str) 1)])
     (and (fx<= 0 idx)
@@ -295,17 +295,20 @@
 ;;; Grep-like function on list:
 
 (define grep
-  (let ((string-search string-search))
+  (let ((string-search string-search)
+	(regexp regexp))
     (lambda (rx lst #!optional (acc (lambda (x) x)))
       (##sys#check-list lst 'grep)
-      (let loop ((lst lst))
-	(if (null? lst)
-	    '()
-	    (let ((x (##sys#slot lst 0))
-		  (r (##sys#slot lst 1)) )
-	      (if (string-search rx (acc x))
-		  (cons x (loop r))
-		  (loop r) ) ) ) ) ) ) )
+      (##sys#check-closure acc 'grep)
+      (let ((rx (regexp rx)))
+	(let loop ((lst lst))
+	  (if (null? lst)
+	      '()
+	      (let ((x (##sys#slot lst 0))
+		    (r (##sys#slot lst 1)) )
+		(if (string-search rx (acc x))
+		    (cons x (loop r))
+		    (loop r) ) ) ) ) ) ) ) )
 
 
 ;;; Escape regular expression (suggested by Peter Bex):
