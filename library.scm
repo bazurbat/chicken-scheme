@@ -914,7 +914,6 @@ EOF
 
 (define ##sys#floor fpfloor) ;XXX needed for backwards compatibility with "numbers" egg
 (define ##sys#truncate fptruncate)
-(define ##sys#round fpround)
 (define ##sys#ceiling fpceiling)
 
 (define (fpsin x)
@@ -1077,6 +1076,8 @@ EOF
   (if (##core#inline "C_fixnump" x) 
       x
       (##core#inline_allocate ("C_a_i_flonum_round_proper" 4) x)))
+
+(define ##sys#round round)		; this is obsolete and is used by the "numbers" egg (gmp version)
 
 (define remainder 
   (lambda (x y) (- x (* (quotient x y) y))) )
