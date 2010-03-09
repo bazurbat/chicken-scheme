@@ -41,6 +41,7 @@ else
 HACKED_APPLY =
 endif
 WINDOWS = 1
+INSTALL_FETCH_AND_REMOVE ?= 1
 
 # file extensions
 
@@ -69,6 +70,15 @@ LIBCHICKEN_SO_LIBRARIES = -lm -lws2_32
 LIBUCHICKEN_SO_LIBRARIES = -lm -lws2_32 
 LIBCHICKEN_IMPORT_LIBRARY = libchicken.dll.a
 LIBUCHICKEN_IMPORT_LIBRARY = libuchicken.dll.a
+
+# Don't use "install" program as it is broken in some Mingw versions and 
+# Vista doesn't like it, anyway.
+
+INSTALL_PROGRAM = cp
+INSTALL_PROGRAM_SHARED_LIBRARY_OPTIONS = -r
+INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS = -r
+INSTALL_PROGRAM_EXECUTABLE_OPTIONS = -r
+INSTALL_PROGRAM_FILE_OPTIONS = -r
 
 # special files
 
