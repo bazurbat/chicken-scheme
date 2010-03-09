@@ -53,7 +53,9 @@
 	(let ((cop (current-output-port)))
 	  (if (terminal-port? cop)
 	      (let ((w (nth-value 1 (terminal-size cop))))
-		(if (zero? w) default-width w))
+		(if (zero? w) 
+		    default-width 
+		    (min default-width w)))
 	      default-width)))))
 
   (define (list-installed-eggs eggs)
