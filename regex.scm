@@ -72,15 +72,17 @@
 (define-record regexp x)
 
 (define (regexp pat #!optional caseless extended utf8)
-  (make-regexp
-   (apply
-    irregex 
-    pat 
-    (let ((opts '()))
-      (when caseless (set! opts (cons 'i opts)))
-      (when extended (set! opts (cons 'x opts)))
-      (when utf8 (set! opts (cons 'utf8 opts)))
-      opts))) )
+  (if (regexp? pat)
+      pat
+      (make-regexp
+       (apply
+	irregex 
+	pat 
+	(let ((opts '()))
+	  (when caseless (set! opts (cons 'i opts)))
+	  (when extended (set! opts (cons 'x opts)))
+	  (when utf8 (set! opts (cons 'utf8 opts)))
+	  opts))) ) )
 
 (define (unregexp x)
   (cond ((regexp? x) (regexp-x x))
