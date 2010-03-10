@@ -455,7 +455,8 @@
 		     (else (list egg))))
 	     eggs)
 	    string=?)))
-      (print "mapped " eggs " to " eggs2)
+      (unless (lset= string=? eggs eggs2)
+	(print "mapped " eggs " to " eggs2))
       eggs2))
 
   (define ($system str)
