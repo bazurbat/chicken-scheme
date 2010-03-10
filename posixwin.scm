@@ -1213,8 +1213,8 @@ EOF
 (define change-directory
   (lambda (name)
     (##sys#check-string name 'change-directory)
-    (let ((name (##sys#make-c-string (##sys#expand-home-path name))))
-      (unless (fx= 0 (##core#inline "C_chdir" name))
+    (let ((sname (##sys#make-c-string (##sys#expand-home-path name))))
+      (unless (fx= 0 (##core#inline "C_chdir" sname))
 	(##sys#update-errno)
 	(##sys#signal-hook
 	 #:file-error 'change-directory "cannot change current directory" name) )
@@ -1223,8 +1223,8 @@ EOF
 (define delete-directory
   (lambda (name)
     (##sys#check-string name 'delete-directory)
-    (let ((name (##sys#make-c-string (##sys#expand-home-path name))))
-      (unless (fx= 0 (##core#inline "C_rmdir" name))
+    (let ((sname (##sys#make-c-string (##sys#expand-home-path name))))
+      (unless (fx= 0 (##core#inline "C_rmdir" sname))
 	(##sys#update-errno)
 	(##sys#signal-hook #:file-error 'delete-directory "cannot delete directory" name) )
       name)))
