@@ -76,16 +76,12 @@
         "make" invocation to override this setting. "CHICKEN" defaults
         to "$PREFIX/bin/chicken".
 
-        If you do not have a "chicken" binary installed, enter
+        If you do not have a "chicken" binary installed, you will have
+	to obtain a "bootstrapping" compiler, which can either be
+	built from a release tarball or by using a precompiled and
+	statically linked compiler binary from here:
 
-          make PLATFORM=<platform> PREFIX=<destination> bootstrap
-
-        which will copy precompiled C sources into the build-directory
-        that are recent enough to generate the current version. After
-        building a statically linked compiler executable (named
-        "chicken-boot") all *.scm files are marked for rebuild. By
-        passing "CHICKEN=./chicken-boot" to "make", you can force
-        using this bootstrapped compiler to build the system.
+	  http://chicken.wiki.br/chicken-projects/bootstrap/
 
         If CHICKEN is build successfully, you can install it on your
         system by entering
