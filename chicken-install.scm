@@ -120,7 +120,11 @@
 
   (define (known-default-sources)
     (if (and *default-location* *default-transport*)
-        `(((location ,*default-location*)
+        `(((location 
+	    ,(if (and (eq? *default-transport* 'local)
+		      (not (absolute-pathname? *default-location*) ))
+		 (make-pathname (current-directory) *default-location*)
+		 *default-location*))
            (transport ,*default-transport*)))
         *default-sources* ) )
 
@@ -339,7 +343,7 @@
 		((eq? 'and (car p))
 		 (and (every loop (cdr p)) (fail)))
 		((eq? 'or (car p))
-		 (and (not (any? loop (cdr p))) (fail)))
+		 (and (not (any loop (cdr p))) (fail)))
 		(else (error "invalid `platform' property" name (cadr platform))))))))
 
   (define (make-install-command e+d+v dep?)
