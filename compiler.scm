@@ -658,7 +658,7 @@
 				      (build-lambda-list
 				       aliases argc
 				       (and rest (list-ref aliases (posq rest vars))) ) )
-				     (l `(lambda ,llist2 ,body)) )
+				     (l `(##core#lambda ,llist2 ,body)) )
 				(set-real-names! aliases vars)
 				(cond ((or (not dest) 
 					   (assq dest se)) ; not global?

@@ -1029,7 +1029,7 @@
 	     (##sys#check-syntax 'define-syntax body '#(_ 1))
 	     `(##core#define-syntax 
 	       ,(car head)
-	       (,(r 'lambda) ,(cdr head) ,@body))))))))
+	       (##core#lambda ,(cdr head) ,@body))))))))
 
 (##sys#extend-macro-environment
  'let
@@ -1087,7 +1087,7 @@
 		(hbody (car body)) )
 	    (if (null? rbody)
 		hbody
-		`(,(r 'if) ,hbody (,(r 'and) ,@rbody) #f) ) ) ) ) ) ) )
+		`(##core#if ,hbody (,(r 'and) ,@rbody) #f) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'or 
@@ -1102,8 +1102,8 @@
 	   (if (null? rbody)
 	       hbody
 	       (let ((tmp (r 'tmp)))
-		 `(,(r 'let) ((,tmp ,hbody))
-		    (,(r 'if) ,tmp ,tmp (,(r 'or) ,@rbody)) ) ) ) ) ) ) ) ) )
+		 `(##core#let ((,tmp ,hbody))
+		    (##core#if ,tmp ,tmp (,(r 'or) ,@rbody)) ) ) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'cond
@@ -1111,12 +1111,9 @@
  (##sys#er-transformer
   (lambda (form r c)
     (let ((body (cdr form))
-	  (%let (r 'let))
-	  (%if (r 'if))
 	  (%=> (r '=>))
 	  (%or (r 'or))
-	  (%else (r 'else))
-	  (%lambda (r 'lambda)))
+	  (%else (r 'else)))
       (let expand ((clauses body))
 	(if (not (pair? clauses))
 	    '(##core#undefined)
@@ -1135,14 +1132,15 @@
 			  (c %=> (caddr clause)))
 		     (let ((tmp (r 'tmp)))
 		       `(##sys#call-with-values
-			 (,%lambda () ,(car clause))
-			 (,%lambda ,tmp
-				   (if (##sys#apply ,(cadr clause) ,tmp)
-				       (##sys#apply ,(cadddr clause) ,tmp)
-				       ,(expand rclauses) ) ) ) ) )
-		    (else `(,%if ,(car clause) 
-				 (##core#begin ,@(cdr clause))
-				 ,(expand rclauses) ) ) ) ) ) ) ) ) ))
+			 (##core#lambda () ,(car clause))
+			 (##core#lambda 
+			  ,tmp
+			  (if (##sys#apply ,(cadr clause) ,tmp)
+			      (##sys#apply ,(cadddr clause) ,tmp)
+			      ,(expand rclauses) ) ) ) ) )
+		    (else `(##core#if ,(car clause) 
+				      (##core#begin ,@(cdr clause))
+				      ,(expand rclauses) ) ) ) ) ) ) ) ) ))
 
 (##sys#extend-macro-environment
  'case
@@ -1153,7 +1151,6 @@
     (let ((exp (cadr form))
 	  (body (cddr form)) )
       (let ((tmp (r 'tmp))
-	    (%if (r 'if))
 	    (%or (r 'or))
 	    (%else (r 'else)))
 	`(let ((,tmp ,exp))
@@ -1165,10 +1162,12 @@
 		    (##sys#check-syntax 'case clause '#(_ 1))
 		    (if (c %else (car clause))
 			`(##core#begin ,@(cdr clause))
-			`(,%if (,%or ,@(##sys#map
-					(lambda (x) `(##sys#eqv? ,tmp ',x)) (car clause)))
-			       (##core#begin ,@(cdr clause)) 
-			       ,(expand rclauses) ) ) ) ) ) ) ) ) ) ) )
+			`(##core#if (,%or ,@(##sys#map
+					     (lambda (x)
+					       `(##sys#eqv? ,tmp ',x))
+					     (car clause)))
+				    (##core#begin ,@(cdr clause)) 
+				    ,(expand rclauses) ) ) ) ) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'let*
@@ -1177,12 +1176,11 @@
   (lambda (form r c)
     (##sys#check-syntax 'let* form '(_ #((symbol _) 0) . #(_ 1)))
     (let ((bindings (cadr form))
-	  (body (cddr form)) 
-	  (%let (r 'let)))
+	  (body (cddr form)) )
       (let expand ((bs bindings))
 	(if (eq? bs '())
-	    `(,%let () ,@body)
-	    `(,%let (,(car bs)) ,(expand (cdr bs))) ) ) ) ) ) )
+	    `(##core#let () ,@body)
+	    `(##core#let (,(car bs)) ,(expand (cdr bs))) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'do
@@ -1193,40 +1191,39 @@
     (let ((bindings (cadr form))
 	  (test (caddr form))
 	  (body (cdddr form))
-	  (dovar (r 'doloop))
-	  (%let (r 'let))
-	  (%if (r 'if)))
-      `(,%let ,dovar ,(##sys#map (lambda (b) (list (car b) (car (cdr b)))) bindings)
-	      (,%if ,(car test)
-		    ,(let ((tbody (cdr test)))
-		       (if (eq? tbody '())
-			   '(##core#undefined)
-			   `(##core#begin ,@tbody) ) )
-		    (##core#begin
-		     ,(if (eq? body '())
+	  (dovar (r 'doloop)))
+      `(##core#let 
+	,dovar
+	,(##sys#map (lambda (b) (list (car b) (car (cdr b)))) bindings)
+	(##core#if ,(car test)
+		   ,(let ((tbody (cdr test)))
+		      (if (eq? tbody '())
 			  '(##core#undefined)
-			  `(,%let () ,@body) )
-		     (##core#app
-		      ,dovar ,@(##sys#map (lambda (b) 
-					    (if (eq? (cdr (cdr b)) '())
-						(car b)
-						(car (cdr (cdr b))) ) )
-					  bindings) ) ) ) ) ) ) ) )
+			  `(##core#begin ,@tbody) ) )
+		   (##core#begin
+		    ,(if (eq? body '())
+			 '(##core#undefined)
+			 `(##core#let () ,@body) )
+		    (##core#app
+		     ,dovar ,@(##sys#map (lambda (b) 
+					   (if (eq? (cdr (cdr b)) '())
+					       (car b)
+					       (car (cdr (cdr b))) ) )
+					 bindings) ) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'quasiquote
  '()
  (##sys#er-transformer
   (lambda (form r c)
-    (let ((%quote (r 'quote))
-	  (%quasiquote (r 'quasiquote))
+    (let ((%quasiquote (r 'quasiquote))
 	  (%unquote (r 'unquote))
 	  (%unquote-splicing (r 'unquote-splicing)))
       (define (walk x n) (simplify (walk1 x n)))
       (define (walk1 x n)
 	(cond ((vector? x)
 	       `(##sys#list->vector ,(walk (vector->list x) n)) )
-	      ((not (pair? x)) `(,%quote ,x))
+	      ((not (pair? x)) `(##core#quote ,x))
 	      (else
 	       (let ((head (car x))
 		     (tail (cdr x)))
@@ -1237,12 +1234,12 @@
 				  hx
 				  (list '##sys#list `(,%quote ,%unquote)
 					(walk hx (fx- n 1)) ) ) )
-			    `(,%quote ,%unquote) ) )
+			    `(##core#quote ,%unquote) ) )
 		       ((c %quasiquote head)
 			(if (pair? tail)
-			    `(##sys#list (,%quote ,%quasiquote) 
+			    `(##sys#list (##core#quote ,%quasiquote) 
 					 ,(walk (car tail) (fx+ n 1)) ) 
-			    (list '##sys#cons (list %quote %quasiquote) 
+			    (list '##sys#cons (list '##core#quote %quasiquote) 
 				  (walk tail n)) ) )
 		       ((pair? head)
 			(let ((hx (car head))
@@ -1252,7 +1249,7 @@
 				(if (eq? n 0)
 				    `(##sys#append ,htx
 						   ,(walk tail n) )
-				    `(##sys#cons (##sys#list (,%quote ,%unquote-splicing)
+				    `(##sys#cons (##sys#list (##core#quote ,%unquote-splicing)
 							     ,(walk htx (fx- n 1)) )
 						 ,(walk tail n) ) ) )
 			      `(##sys#cons ,(walk head n) ,(walk tail n)) ) ) )
@@ -1280,7 +1277,7 @@
  (##sys#er-transformer
   (lambda (form r c)
     (##sys#check-syntax 'delay form '(_ _))
-    `(##sys#make-promise (lambda () ,(cadr form))))))
+    `(##sys#make-promise (##core#lambda () ,(cadr form))))))
 
 (##sys#extend-macro-environment
  'cond-expand
