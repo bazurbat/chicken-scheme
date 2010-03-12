@@ -645,7 +645,8 @@
 			   e #f tf cntr se))
 
 			 ((##core#module)
-			  (let* ((name (##sys#strip-syntax (cadr x)))
+			  (let* ((x (##sys#strip-syntax x))
+				 (name (##sys#strip-syntax (cadr x)))
 				 (exports 
 				  (or (eq? #t (caddr x))
 				      (map (lambda (exp)

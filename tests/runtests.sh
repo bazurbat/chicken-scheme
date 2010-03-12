@@ -164,7 +164,7 @@ $interpret -s srfi-4-tests.scm
 
 echo "======================================== srfi-18 tests ..."
 $interpret -s srfi-18-tests.scm
-echo "*** Skipping \"feeley-dynwind\" (for now) ***"
+echo "*** Skipping \"feeley-dynwind\" for now ***"
 # $interpret -s feeley-dynwind.scm
 
 echo "======================================== path tests ..."
