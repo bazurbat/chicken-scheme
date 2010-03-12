@@ -345,8 +345,7 @@
 		       ;; a normal walking of the operator)
 		       (case head
 
-			 [(quote)
-			  (##sys#check-syntax 'quote x '(quote _) #f se)
+			 [(##core#quote)
 			  (let* ((c (##sys#strip-syntax (cadr x))))
 			    (case c
 			      [(-1) (lambda v -1)]
@@ -358,7 +357,7 @@
 			      [(()) (lambda v '())]
 			      [else (lambda v c)] ) ) ]
 
-			 ((syntax ##core#syntax)
+			 ((##core#syntax)
 			  (let ((c (cadr x)))
 			    (lambda v c)))
 
@@ -400,8 +399,7 @@
 				      [x3 (compile `(##core#begin ,@(##sys#slot (##sys#slot body 1) 1)) e #f tf cntr se)] )
 				 (lambda (v) (##core#app x1 v) (##core#app x2 v) (##core#app x3 v)) ) ] ) ) ]
 
-			 [(set! ##core#set!)
-			  (##sys#check-syntax 'set! x '(_ variable _) #f se)
+			 [(##core#set!)
 			  (let ((var (cadr x)))
 			    (receive (i j) (lookup var e se)
 			      (let ((val (compile (caddr x) e var tf cntr se)))
@@ -424,8 +422,7 @@
 					 (##sys#setslot
 					  (##core#inline "C_u_i_list_ref" v i) j (##core#app val v)) ) ] ) ) ) ) ]
 
-			 [(let ##core#let)
-			  (##sys#check-syntax 'let x '(_ #((variable _) 0) . #(_ 1)) #f se)
+			 [(##core#let)
 			  (let* ([bindings (cadr x)]
 				 [n (length bindings)] 
 				 [vars (map (lambda (x) (car x)) bindings)] 
@@ -476,8 +473,7 @@
 				       (##sys#setslot v2 i (##core#app (##sys#slot vlist 0) v)) )
 				     (##core#app body (cons v2 v)) ) ) ) ] ) ) ]
 
-			 ((letrec ##core#letrec)
-			  (##sys#check-syntax 'letrec x '(_ #((symbol _) 0) . #(_ 1)))
+			 ((##core#letrec)
 			  (let ((bindings (cadr x))
 				(body (cddr x)) )
 			    (compile
@@ -491,7 +487,7 @@
 			       (##core#let () ,@body) )
 			     e h tf cntr se)))
 
-			 [(lambda ##core#lambda)
+			 [(lambda ##core#lambda) ;XXX qualified only
 			  (##sys#check-syntax 'lambda x '(_ lambda-list . #(_ 1)) #f se)
 			  (let* ([llist (cadr x)]
 				 [body (cddr x)] 
@@ -586,8 +582,7 @@
 						   (##core#app body (##sys#cons (apply ##sys#vector as) v)))))
 					   info h cntr) ) ) ] ) ) ) ) ) ]
 
-			 ((let-syntax)
-			  (##sys#check-syntax 'let-syntax x '(let-syntax #((variable _) 0) . #(_ 1)) #f se)
+			 ((##core#let-syntax)
 			  (let ((se2 (append
 				      (map (lambda (b)
 					     (list
@@ -601,8 +596,7 @@
 			     (##sys#canonicalize-body (cddr x) se2 #f)
 			     e #f tf cntr se2)))
 			       
-			 ((letrec-syntax)
-			  (##sys#check-syntax 'letrec-syntax x '(letrec-syntax #((variable _) 0) . #(_ 1)) #f se)
+			 ((##core#letrec-syntax)
 			  (let* ((ms (map (lambda (b)
 					    (list
 					     (car b)
@@ -744,18 +738,14 @@
 			 [(##core#primitive ##core#inline ##core#inline_allocate ##core#foreign-lambda 
 					    ##core#define-foreign-variable 
 					    ##core#define-external-variable ##core#let-location
-					    ##core#foreign-primitive
+					    ##core#foreign-primitive ##core#location
 					    ##core#foreign-lambda* ##core#define-foreign-type)
 			  (##sys#syntax-error-hook "cannot evaluate compiler-special-form" x) ]
 
 			 [(##core#app)
 			  (compile-call (cdr x) e tf cntr se) ]
 
-			 [else
-			  (cond [(eq? head 'location)
-				 (##sys#syntax-error-hook "cannot evaluate compiler-special-form" x) ]
-
-				[else (compile-call x e tf cntr se)] ) ] ) ) ) ) ]
+			 [else (compile-call x e tf cntr se)] ) ] ) ) ]
 	      
 	      [else
 	       (emit-syntax-trace-info tf x cntr)

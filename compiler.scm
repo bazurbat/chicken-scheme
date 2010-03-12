@@ -550,8 +550,7 @@
 				'(##core#undefined)
 				(walk (cadddr x) e se #f) ) ) )
 
-			((quote syntax ##core#syntax) ;XXX qualify `quote' + `syntax'
-			 (##sys#check-syntax name x '(_ _) #f se)
+			((##core#syntax)
 			 `(quote ,(##sys#strip-syntax (cadr x))))
 
 			((##core#check)
@@ -611,8 +610,7 @@
 				      `(##core#begin ,exp ,(loop (cdr ids))) ) ) ) )
 			    e se dest) ) )
 
-			((let ##core#let) ;XXX qualify `let'
-			 (##sys#check-syntax 'let x '(_ #((variable _) 0) . #(_ 1)) #f se)
+			((##core#let)
 			 (let* ((bindings (cadr x))
 				(vars (unzip1 bindings))
 				(aliases (map gensym vars))
@@ -626,8 +624,7 @@
 				    (append aliases e)
 				    se2 dest) ) ) )
 
-			((letrec ##core#letrec) ;XXX qualify `letrec'
-			 (##sys#check-syntax 'letrec x '(_ #((symbol _) 0) . #(_ 1)))
+			((##core#letrec)
 			 (let ((bindings (cadr x))
 			       (body (cddr x)) )
 			   (walk
@@ -689,8 +686,7 @@
 					    dest (cadr body) l) 
 					   l))))))))
 			
-			((let-syntax)	;XXX qualify `let-syntax'
-			 (##sys#check-syntax 'let-syntax x '(let-syntax #((variable _) 0) . #(_ 1)) #f se)
+			((##core#let-syntax)
 			 (let ((se2 (append
 				     (map (lambda (b)
 					    (list
@@ -705,8 +701,7 @@
 			    e se2
 			    dest) ) )
 			       
-		       ((letrec-syntax)	;XXX qualify `letrec-syntax'
-			(##sys#check-syntax 'letrec-syntax x '(letrec-syntax #((variable _) 0) . #(_ 1)) #f se)
+		       ((##core#letrec-syntax)
 			(let* ((ms (map (lambda (b)
 					  (list
 					   (car b)
@@ -915,8 +910,7 @@
 			  (set-real-names! aliases vars)
 			  `(##core#lambda ,aliases ,body) ) )
 
-			((set! ##core#set!) ;XXX qualify `set!'
-			 (##sys#check-syntax 'set! x '(_ variable _) #f se)
+			((##core#set!)
 			 (let* ([var0 (cadr x)]
 				[var (lookup var0 se)]
 				[ln (get-line x)]
@@ -1210,37 +1204,32 @@
 					   rtype) ) )
 				      e se #f) ) ) ) )
 
-			(else
-			 (let ([handle-call
-				(lambda ()
-				  (let* ([x2 (mapwalk x e se)]
-					 [head2 (car x2)]
-					 [old (##sys#hash-table-ref line-number-database-2 head2)] )
-				    (when ln
-				      (##sys#hash-table-set!
-				       line-number-database-2
-				       head2
-				       (cons name (alist-cons x2 ln (if old (cdr old) '()))) ) )
-				    x2) ) ] )
-
-			   (cond [(eq? 'location name) ;XXX qualify `location'
-				  (##sys#check-syntax 'location x '(location _) #f se)
-				  (let ([sym (cadr x)])
-				    (if (symbol? sym)
-					(cond [(assq (lookup sym se) location-pointer-map)
-					       => (lambda (a)
-						    (walk
-						     `(##sys#make-locative ,(second a) 0 #f 'location)
-						     e se #f) ) ]
-					      [(assq sym external-to-pointer) 
-					       => (lambda (a) (walk (cdr a) e se #f)) ]
-					      [(memq sym callback-names)
-					       `(##core#inline_ref (,(symbol->string sym) c-pointer)) ]
-					      [else 
-					       (walk `(##sys#make-locative ,sym 0 #f 'location) e se #f) ] )
-					(walk `(##sys#make-locative ,sym 0 #f 'location) e se #f) ) ) ]
+			((##core#location)
+			 (let ([sym (cadr x)])
+			   (if (symbol? sym)
+			       (cond [(assq (lookup sym se) location-pointer-map)
+				      => (lambda (a)
+					   (walk
+					    `(##sys#make-locative ,(second a) 0 #f 'location)
+					    e se #f) ) ]
+				     [(assq sym external-to-pointer) 
+				      => (lambda (a) (walk (cdr a) e se #f)) ]
+				     [(memq sym callback-names)
+				      `(##core#inline_ref (,(symbol->string sym) c-pointer)) ]
+				     [else 
+				      (walk `(##sys#make-locative ,sym 0 #f 'location) e se #f) ] )
+			       (walk `(##sys#make-locative ,sym 0 #f 'location) e se #f) ) ) )
 				 
-				 [else (handle-call)] ) ) ) ) ] ) ) ) )
+			(else
+			 (let* ([x2 (mapwalk x e se)]
+				[head2 (car x2)]
+				[old (##sys#hash-table-ref line-number-database-2 head2)] )
+			   (when ln
+			     (##sys#hash-table-set!
+			      line-number-database-2
+			      head2
+			      (cons name (alist-cons x2 ln (if old (cdr old) '()))) ) )
+			   x2) ) ) ] ) ) ) )
 
 	  ((not (proper-list? x))
 	   (syntax-error "malformed expression" x) )
@@ -1609,16 +1598,17 @@
 	((if) (let* ((t1 (gensym 'k))
 		     (t2 (gensym 'r))
 		     (k1 (lambda (r) (make-node '##core#call '(#t) (list (varnode t1) r)))) )
-		(make-node 'let
-			   (list t1)
-			   (list (make-node '##core#lambda (list (gensym-f-id) #f (list t2) 0) 
-					    (list (k (varnode t2))) )
-				 (walk (car subs)
-				       (lambda (v)
-					 (make-node 'if '()
-						    (list v
-							  (walk (cadr subs) k1)
-							  (walk (caddr subs) k1) ) ) ) ) ) ) ) )
+		(make-node 
+		 'let
+		 (list t1)
+		 (list (make-node '##core#lambda (list (gensym-f-id) #f (list t2) 0) 
+				  (list (k (varnode t2))) )
+		       (walk (car subs)
+			     (lambda (v)
+			       (make-node 'if '()
+					  (list v
+						(walk (cadr subs) k1)
+						(walk (caddr subs) k1) ) ) ) ) ) ) ) )
 	((let)
 	 (let loop ((vars params) (vals subs))
 	   (if (null? vars)

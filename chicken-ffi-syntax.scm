@@ -67,6 +67,14 @@
 ;;; External locations:
 
 (##sys#extend-macro-environment
+ 'location
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    (##sys#check-syntax 'location x '(location _))
+    `(##core#location ,(cadr x)))))
+
+(##sys#extend-macro-environment
  'define-location
  '()
  (##sys#er-transformer
