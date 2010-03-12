@@ -614,8 +614,11 @@ EOF
                              (char=? #\- (string-ref arg 0)))
                         (if (> (string-length arg) 2)
                             (let ((sos (string->list (substring arg 1))))
-                              (if (null? (lset-intersection eq? *short-options* sos))
-                                  (loop (append (map (cut string #\- <>) sos) (cdr args)) eggs)
+                              (if (every (cut memq <> *short-options*) sos)
+                                  (loop (append 
+					 (map (cut string #\- <>) sos)
+					 (cdr args)) 
+					eggs)
                                   (usage 1)))
                             (usage 1)))
                        ((equal? "setup" (pathname-extension arg))
