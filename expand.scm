@@ -1088,6 +1088,50 @@
 	    (else `(##core#set! ,dest ,val)))))))
 
 (##sys#extend-macro-environment
+ 'let
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    (##sys#check-syntax 'let x '(_ #((symbol _) 0) . #(_ 1)))
+    `(##core#let ,@(cdr x)))))
+
+(##sys#extend-macro-environment
+ 'letrec
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    (##sys#check-syntax 'letrec x '(_ #((symbol _) 0) . #(_ 1)))
+    `(##core#letrec ,@(cdr x)))))
+
+(##sys#extend-macro-environment
+ 'let-syntax
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    (##sys#check-syntax 'let-syntax x '(_ #((symbol _) 0) . #(_ 1)))
+    `(##core#let-syntax ,@(cdr x)))))
+
+(##sys#extend-macro-environment
+ 'letrec-syntax
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    (##sys#check-syntax 'letrec-syntax x '(_ #((symbol _) 0) . #(_ 1)))
+    `(##core#letrec-syntax ,@(cdr x)))))
+
+(##sys#extend-macro-environment
+ 'set!
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    (##sys#check-syntax 'set! x '(_ _ _))
+    (let ((dest (cadr x))
+	  (val (caddr x)))
+      (cond ((pair? dest)
+	     `((##sys#setter ,(car dest)) ,@(cdr dest) ,val))
+	    (else `(##core#set! ,dest ,val)))))))
+
+(##sys#extend-macro-environment
  'and
  '()
  (##sys#er-transformer
