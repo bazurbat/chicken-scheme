@@ -64,9 +64,10 @@
 (define msvc (eq? (build-platform) 'msvc))
 (define osx (eq? (software-version) 'macosx))
 (define win (or mingw msvc))
+(define netbsd (eq? (software-version) 'netbsd))
 
 (define elf
-  (memq (software-version) '(linux freebsd solaris openbsd)))
+  (memq (software-version) '(linux netbsd freebsd solaris openbsd)))
 
 (define (quit msg . args)
   (fprintf (current-error-port) "~a: ~?~%" CSC_PROGRAM msg args)
@@ -266,7 +267,7 @@
 	 (list
 	  (conc "-L\"" library-dir "\"")
 	  (conc " -Wl,-R\""
-		(if deployed
+		(if (and deployed (not netbsd))
 		    "\\$ORIGIN"
 		    (prefix "" "lib"
 			    (if host-mode
