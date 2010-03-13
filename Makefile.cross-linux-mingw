@@ -45,7 +45,7 @@ EXE = .exe
 
 # commands
 
-HOSTSYSTEM=mingw32
+HOSTSYSTEM ?= mingw32
 
 # options
 
