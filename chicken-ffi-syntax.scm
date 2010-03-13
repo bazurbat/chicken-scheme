@@ -70,7 +70,7 @@
  'location
  '()
  (##sys#er-transformer
-  (lambda (form r c)
+  (lambda (x r c)
     (##sys#check-syntax 'location x '(location _))
     `(##core#location ,(cadr x)))))
 

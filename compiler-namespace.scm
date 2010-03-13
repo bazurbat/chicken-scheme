@@ -194,8 +194,7 @@
  load-type-database
  local-definitions
  location-pointer-map
- loop-lambda-names
- make-argument-list
+  make-argument-list
  make-block-variable-literal
  make-random-name
  make-variable-list

@@ -249,7 +249,9 @@
 				(values
 				 `(##core#app
 				   (##core#letrec
-				    ([,bindings (##core#loop-lambda ,(map (lambda (b) (car b)) bs) ,@(cddr body))])
+				    ([,bindings 
+				      (##core#loop-lambda
+				       ,(map (lambda (b) (car b)) bs) ,@(cddr body))])
 				    ,bindings)
 				   ,@(##sys#map cadr bs) )
 				 #t) ) ]
@@ -1035,15 +1037,17 @@
  'let
  '()
  (##sys#er-transformer
-  (lambda (form r c)
-    (##sys#check-syntax 'let x '(_ #((symbol _) 0) . #(_ 1)))
+  (lambda (x r c)
+    (if (and (pair? (cdr x)) (symbol? (cadr x)))
+	(##sys#check-syntax 'let x '(_ symbol #((symbol _) 0) . #(_ 1)))
+	(##sys#check-syntax 'let x '(_ #((symbol _) 0) . #(_ 1))))
     `(##core#let ,@(cdr x)))))
 
 (##sys#extend-macro-environment
  'letrec
  '()
  (##sys#er-transformer
-  (lambda (form r c)
+  (lambda (x r c)
     (##sys#check-syntax 'letrec x '(_ #((symbol _) 0) . #(_ 1)))
     `(##core#letrec ,@(cdr x)))))
 
@@ -1051,7 +1055,7 @@
  'let-syntax
  '()
  (##sys#er-transformer
-  (lambda (form r c)
+  (lambda (x r c)
     (##sys#check-syntax 'let-syntax x '(_ #((symbol _) 0) . #(_ 1)))
     `(##core#let-syntax ,@(cdr x)))))
 
@@ -1059,7 +1063,7 @@
  'letrec-syntax
  '()
  (##sys#er-transformer
-  (lambda (form r c)
+  (lambda (x r c)
     (##sys#check-syntax 'letrec-syntax x '(_ #((symbol _) 0) . #(_ 1)))
     `(##core#letrec-syntax ,@(cdr x)))))
 
@@ -1067,7 +1071,7 @@
  'set!
  '()
  (##sys#er-transformer
-  (lambda (form r c)
+  (lambda (x r c)
     (##sys#check-syntax 'set! x '(_ _ _))
     (let ((dest (cadr x))
 	  (val (caddr x)))
@@ -1124,10 +1128,10 @@
 		    ((null? (cdr clause)) `(,%or ,(car clause) ,(expand rclauses)))
 		    ((c %=> (cadr clause))
 		     (let ((tmp (r 'tmp)))
-		       `(,%let ((,tmp ,(car clause)))
-			       (,%if ,tmp
-				     (,(caddr clause) ,tmp)
-				     ,(expand rclauses) ) ) ) )
+		       `(##core#let ((,tmp ,(car clause)))
+				    (##core#if ,tmp
+					       (,(caddr clause) ,tmp)
+					       ,(expand rclauses) ) ) ) )
 		    ((and (list? clause) (fx= (length clause) 4)
 			  (c %=> (caddr clause)))
 		     (let ((tmp (r 'tmp)))
@@ -1232,7 +1236,7 @@
 			    (let ((hx (car tail)))
 			      (if (eq? n 0)
 				  hx
-				  (list '##sys#list `(,%quote ,%unquote)
+				  (list '##sys#list `(##core#quote ,%unquote)
 					(walk hx (fx- n 1)) ) ) )
 			    `(##core#quote ,%unquote) ) )
 		       ((c %quasiquote head)

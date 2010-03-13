@@ -35,7 +35,7 @@
 (include "compiler-namespace")
 (include "tweaks")
 
-(eval-when (load) 
+(eval-when (load)
   (include "chicken-ffi-syntax") )
 
 

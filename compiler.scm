@@ -99,19 +99,18 @@
 ; (##core#declare {<spec>})
 ; (##core#immutable <exp>)
 ; (##core#global-ref <variable>)
-; (quote <exp>)
-; ([##core#]syntax <exp>)
+; (##core#quote <exp>)
+; (##core#syntax <exp>)
 ; (##core#if <exp> <exp> [<exp>])
-; ([##core#]let <variable> ({(<variable> <exp>)}) <body>)
-; ([##core#]let ({(<variable> <exp>)}) <body>)
-; ([##core#]letrec ({(<variable> <exp>)}) <body>)
+; (##core#let <variable> ({(<variable> <exp>)}) <body>)
+; (##core#let ({(<variable> <exp>)}) <body>)
+; (##core#letrec ({(<variable> <exp>)}) <body>)
 ; (##core#let-location <symbol> <type> [<init>] <exp>)
-; ([##core#]lambda <variable> <body>)
-; ([##core#]lambda ({<variable>}+ [. <variable>]) <body>)
-; ([##core#]set! <variable> <exp>)
+; (##core#lambda <variable> <body>)
+; (##core#lambda ({<variable>}+ [. <variable>]) <body>)
+; (##core#set! <variable> <exp>)
 ; (##core#begin <exp> ...)
 ; (##core#include <string>)
-; (##core#named-lambda <name> <llist> <body>)
 ; (##core#loop-lambda <llist> <body>)
 ; (##core#undefined)
 ; (##core#primitive <name>)
@@ -140,12 +139,11 @@
 ; (##core#require-for-syntax <exp> ...)
 ; (##core#require-extension (<id> ...) <bool>)
 ; (##core#app <exp> {<exp>})
-; ([##core#]syntax <exp>)
-; (<exp> {<exp>})
 ; (##core#define-syntax <symbol> <expr>)
 ; (##core#define-compiler-syntax <symbol> <expr>)
 ; (##core#let-compiler-syntax ((<symbol> <expr>) ...) <expr> ...)
 ; (##core#module <symbol> #t | (<name> | (<name> ...) ...) <body>)
+; (<exp> {<exp>})
 
 ; - Core language:
 ;
@@ -367,7 +365,6 @@
 (define foreign-lambda-stubs '())
 (define foreign-callback-stubs '())
 (define external-variables '())
-(define loop-lambda-names '())
 (define profile-lambda-list '())
 (define profile-lambda-index 0)
 (define profile-info-vector-name #f)
@@ -550,7 +547,7 @@
 				'(##core#undefined)
 				(walk (cadddr x) e se #f) ) ) )
 
-			((##core#syntax)
+			((##core#syntax ##core#quote)
 			 `(quote ,(##sys#strip-syntax (cadr x))))
 
 			((##core#check)
@@ -638,8 +635,7 @@
 			      (##core#let () ,@body) )
 			    e se dest)))
 
-			((lambda ##core#lambda) ;XXX qualify `lambda', but: (*)
-			 (##sys#check-syntax 'lambda x '(_ lambda-list . #(_ 1)) #f se)
+			((lambda ##core#lambda)
 			 (let ((llist (cadr x))
 			       (obody (cddr x)) )
 			   (when (##sys#extended-lambda-list? llist)
@@ -825,7 +821,8 @@
 					 (##sys#strip-syntax (caddr x)))))
 			       (csyntax compiler-syntax))
 			  (when (##sys#current-module)
-			    (##sys#syntax-error-hook 'module "modules may not be nested" name))
+			    (##sys#syntax-error-hook
+			     'module "modules may not be nested" name))
 			  (let-values (((body mreg)
 					(parameterize ((##sys#current-module 
 							(##sys#register-module name exports) )
@@ -894,10 +891,7 @@
 			      (set! compiler-syntax csyntax)
 			      body))))
 
-		       ((##core#named-lambda)
-			(walk `(##core#lambda ,@(cddr x)) e se (cadr x)) )
-
-		       ((##core#loop-lambda)
+		       ((##core#loop-lambda) ;XXX is this really needed?
 			(let* ([vars (cadr x)]
 			       [obody (cddr x)]
 			       [aliases (map gensym vars)]
@@ -1262,8 +1256,7 @@
      ,(begin
 	(set! extended-bindings (append internal-bindings extended-bindings))
 	exp) )
-   '() (##sys#current-environment)
-   #f) ) )
+   '() (##sys#current-environment) #f) ) )
 
 
 (define (process-declaration spec se)	; se unused in the moment

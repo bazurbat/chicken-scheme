@@ -689,9 +689,6 @@
 			 [(##core#loop-lambda)
 			  (compile `(,(rename 'lambda se) ,@(cdr x)) e #f tf cntr se) ]
 
-			 [(##core#named-lambda)
-			  (compile `(,(rename 'lambda se) ,@(cddr x)) e (cadr x) tf cntr se) ]
-
 			 [(##core#require-for-syntax)
 			  (let ([ids (map (lambda (x)
 					    (eval/meta x))
@@ -745,7 +742,7 @@
 			 [(##core#app)
 			  (compile-call (cdr x) e tf cntr se) ]
 
-			 [else (compile-call x e tf cntr se)] ) ] ) ) ]
+			 [else (compile-call x e tf cntr se)] ) ) ) ) ]
 	      
 	      [else
 	       (emit-syntax-trace-info tf x cntr)
@@ -821,8 +818,8 @@
 	     (##sys#check-structure env 'environment)
 	     (set! e (##sys#slot env 1)) 
 	     (set! mut (##sys#slot env 2)) ) ) )
-       ((fluid-let ([##sys#environment-is-mutable mut]
-		    [##sys#eval-environment e] )
+       ((fluid-let ((##sys#environment-is-mutable mut)
+		    (##sys#eval-environment e) )
 	  (##sys#compile-to-closure x '() (##sys#current-environment)) )
 	'() ) ) ) ) )
 

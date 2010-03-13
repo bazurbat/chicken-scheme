@@ -121,6 +121,18 @@ $interpret matchable.scm -s match-test.scm
 echo "======================================== syntax tests (loopy-loop) ..."
 $interpret -s loopy-test.scm
 
+echo "======================================== r4rstest ..."
+echo "(expect mult-float-print-test to fail)"
+$interpret -e '(set! ##sys#procedure->string (constantly "#<procedure>"))' \
+  -i -s r4rstest.scm >r4rstest.log
+
+if test -n "$MSYSTEM"; then
+    # the windows runtime library prints flonums differently
+    tail r4rstest.log
+else
+    diff -bu r4rstest.out r4rstest.log || true
+fi
+
 echo "======================================== syntax tests (r5rs_pitfalls) ..."
 echo "(expect two failures)"
 $interpret -i -s r5rs_pitfalls.scm
@@ -180,18 +192,6 @@ $compile posix-tests.scm
 echo "======================================== regular expression tests ..."
 $interpret -bnq test-irregex.scm
 $interpret -bnq test-glob.scm
-
-echo "======================================== r4rstest ..."
-echo "(expect mult-float-print-test to fail)"
-$interpret -e '(set! ##sys#procedure->string (constantly "#<procedure>"))' \
-  -i -s r4rstest.scm >r4rstest.log
-
-if test -n "$MSYSTEM"; then
-    # the windows runtime library prints flonums differently
-    tail r4rstest.log
-else
-    diff -bu r4rstest.out r4rstest.log || true
-fi
 
 echo "======================================== compiler/nursery stress test ..."
 for s in 100000 120000 200000 250000 300000 350000 400000 450000 500000; do
