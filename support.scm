@@ -270,9 +270,6 @@
 
 (define decompose-lambda-list ##sys#decompose-lambda-list)
 
-(define (process-lambda-documentation id doc proc)
-  proc)					; Hook this
-
 (define (llist-length llist)
   (##core#inline "C_u_i_length" llist))
 

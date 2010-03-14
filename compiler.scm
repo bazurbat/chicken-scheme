@@ -635,7 +635,7 @@
 			      (##core#let () ,@body) )
 			    e se dest)))
 
-			((lambda ##core#lambda)
+			((##core#lambda)
 			 (let ((llist (cadr x))
 			       (obody (cddr x)) )
 			   (when (##sys#extended-lambda-list? llist)
@@ -659,28 +659,18 @@
 				(cond ((or (not dest) 
 					   (assq dest se)) ; not global?
 				       l)
-				      ;; (*) here we make a distinction between user-
-				      ;; lambdas and internally created lambdas. Bad.
-				      ((and (eq? 'lambda (or (lookup name se) name))
-					    emit-profile
+				      ((and emit-profile
 					    (or (eq? profiled-procedures 'all)
 						(and
 						 (eq? profiled-procedures 'some)
-						 (variable-mark dest '##compiler#profile))))
-				       (expand-profile-lambda dest llist2 body) )
-				      (else
-				       (if (and (> (length body0) 1)
-						(symbol? (car body0))
-						(eq? 'begin (or (lookup (car body0) se) (car body0)))
-						(let ((x1 (cadr body0)))
-						  (or (string? x1)
-						      (and (list? x1)
-							   (= (length x1) 2)
-							   (symbol? (car x1))
-							   (eq? 'quote (or (lookup (car x1) se) (car x1)))))))
-					   (process-lambda-documentation
-					    dest (cadr body) l) 
-					   l))))))))
+						 (variable-mark dest '##compiler#profile)))
+					    (##sys#interned-symbol? dest))
+				       (expand-profile-lambda
+					(if (memq dest e) ;XXX should normally not be the case
+					    e
+					    (##sys#alias-global-hook dest #f))
+					llist2 body) )
+				      (else l)))))))
 			
 			((##core#let-syntax)
 			 (let ((se2 (append

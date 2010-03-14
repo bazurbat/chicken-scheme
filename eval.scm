@@ -487,7 +487,7 @@
 			       (##core#let () ,@body) )
 			     e h tf cntr se)))
 
-			 [(lambda ##core#lambda) ;XXX qualified only
+			 [(##core#lambda)
 			  (##sys#check-syntax 'lambda x '(_ lambda-list . #(_ 1)) #f se)
 			  (let* ([llist (cadr x)]
 				 [body (cddr x)] 

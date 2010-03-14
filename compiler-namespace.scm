@@ -229,7 +229,6 @@
  print-version
  process-command-line
  process-declaration
- process-lambda-documentation
  profile-info-vector-name
  profile-lambda-index
  profile-lambda-list

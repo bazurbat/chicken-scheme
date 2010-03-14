@@ -57,7 +57,7 @@
     (no-procedure-checks)))
  (else))
 
-(begin
+#;(begin
   (define-syntax dd (syntax-rules () ((_ . _) (void))))
   (define-syntax dm (syntax-rules () ((_ . _) (void))))
   (define-syntax dc (syntax-rules () ((_ . _) (void)))) )
@@ -957,6 +957,14 @@
        #f #t 'reexport) ) )
 
 (define ##sys#initial-macro-environment (##sys#macro-environment))
+
+(##sys#extend-macro-environment
+ 'lambda
+ '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'lambda x '(_ lambda-list . #(_ 1)))
+    `(##core#lambda ,@(cdr x)))))
 
 (##sys#extend-macro-environment
  'quote
