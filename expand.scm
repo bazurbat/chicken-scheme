@@ -57,7 +57,7 @@
     (no-procedure-checks)))
  (else))
 
-#;(begin
+(begin
   (define-syntax dd (syntax-rules () ((_ . _) (void))))
   (define-syntax dm (syntax-rules () ((_ . _) (void))))
   (define-syntax dc (syntax-rules () ((_ . _) (void)))) )
