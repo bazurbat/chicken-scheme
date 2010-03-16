@@ -44,6 +44,7 @@ EXE = .exe
 
 C_COMPILER = gcc
 CXX_COMPILER = g++
+RC_COMPILER = windres
 LINKER = gcc
 
 
