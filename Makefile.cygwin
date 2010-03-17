@@ -86,14 +86,6 @@ LIBUCHICKEN_IMPORT_LIBRARY = libuchicken.dll.a
 CHICKEN_CONFIG_H = chicken-config.h
 APPLY_HACK_OBJECT = apply-hack.$(ARCH)$(O)
 
-# Vista doesn't like programs named "install"
-
-INSTALL_PROGRAM = cp
-INSTALL_PROGRAM_SHARED_LIBRARY_OPTIONS = -r
-INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS = -r
-INSTALL_PROGRAM_EXECUTABLE_OPTIONS = -r
-INSTALL_PROGRAM_FILE_OPTIONS = -r
-
 # select default and internal settings
 
 CUSTOM_CHICKEN_DEFAULTS=1
