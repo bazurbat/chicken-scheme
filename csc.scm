@@ -688,8 +688,6 @@ EOF
 	       [(|-O4|) (set! rest (cons* "-optimize-level" "4" rest))]
 	       [(|-O5|)
 		(set! rest (cons* "-optimize-level" "5" rest))
-		(t-options "-unsafe-libraries")
-		(use-unsafe-libraries)
 		(when (memq (build-platform) '(mingw32 cygwin gnu clang))
 		  (set! compile-options 
 		    (cons* "-O3" "-fomit-frame-pointer" compile-options)) ) ]
