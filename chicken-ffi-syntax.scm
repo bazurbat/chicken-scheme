@@ -34,7 +34,6 @@
  (##sys#er-transformer
   (lambda (form r c)
     (let* ((form (cdr form))
-	   (%quote (r 'quote))
 	   (quals (and (pair? form) (string? (car form))))
 	   (var (and (not quals) (pair? form) (symbol? (car form)))) )
       (cond [var
@@ -99,9 +98,8 @@
     (##sys#check-syntax 'let-location form '(_ #((variable _ . #(_ 0 1)) 0) . _))
     (let* ((bindings (cadr form))
 	   (body (cddr form))
-	   (%let (r 'let))
 	   [aliases (map (lambda (_) (r (gensym))) bindings)])
-      `(,%let ,(append-map
+      `(##core#let ,(append-map
 		(lambda (b a)
 		  (if (pair? (cddr b))
 		      (list (cons a (cddr b)))
@@ -119,7 +117,7 @@
 			,(car b)
 			,(cadr b)
 			,rest) ) )
-		`(,%let () ,@body)
+		`(##core#let () ,@body)
 		bindings aliases) ) ) ) ) )
 
 
@@ -132,7 +130,7 @@
   (lambda (form r c)
     (##sys#check-syntax 'foreign-code form '(_ . #(string 0)))
     (let ([tmp (gensym 'code_)])
-      `(,(r 'begin)
+      `(##core#begin
 	 (,(r 'declare)
 	  (foreign-declare
 	   ,(sprintf "static C_word ~A() { ~A\n; return C_SCHEME_UNDEFINED; }\n" 
@@ -148,7 +146,7 @@
     (##sys#check-syntax 'foreign-value form '(_ _ _))
     (let ((tmp (gensym 'code_))
 	  (code (cadr form)))
-      `(,(r 'begin)
+      `(##core#begin
 	(##core#define-foreign-variable ,tmp
 	 ,(caddr form)
 	 ,(cond ((string? code) code)

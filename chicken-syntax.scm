@@ -28,9 +28,12 @@
 (declare
   (unit chicken-syntax)
   (disable-interrupts)
-  (no-bound-checks)
-  (no-procedure-checks)
   (fixnum) )
+
+#+(not debugbuild)
+(declare
+  (no-bound-checks)
+  (no-procedure-checks))
 
 (##sys#provide
  'chicken-more-macros 			; historical, remove later
@@ -93,40 +96,43 @@
 		     `(##core#begin
 			(,%define
 			 ,setr
-			 (##core#lambda (x val)
-				   (##core#check (##sys#check-structure x (##core#quote ,name)))
-				   (##sys#block-set! x ,i val) ) )
+			 (##core#lambda 
+			  (x val)
+			  (##core#check (##sys#check-structure x (##core#quote ,name)))
+			  (##sys#block-set! x ,i val) ) )
 			(,%define
 			 ,getr
 			 ,(if setters
 			      `(,%getter-with-setter
-				(##core#lambda (x) 
-					  (##core#check (##sys#check-structure x (##core#quote ,name)))
-					  (##sys#block-ref x ,i) )
+				(##core#lambda
+				 (x) 
+				 (##core#check (##sys#check-structure x (##core#quote ,name)))
+				 (##sys#block-ref x ,i) )
 				,setr)
-			      `(##core#lambda (x)
-					 (##core#check (##sys#check-structure x (##core#quote ,name)))
-					 (##sys#block-ref x ,i) ) ) ) )
+			      `(##core#lambda 
+				(x)
+				(##core#check (##sys#check-structure x (##core#quote ,name)))
+				(##sys#block-ref x ,i) ) ) ) )
 		     (mapslots (##sys#slot slots 1) (fx+ i 1)) ) ) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'receive
  '()
  (##sys#er-transformer
- (lambda (form r c)
-     (##sys#check-syntax 'receive form '(_ _ . #(_ 0)))
-     (cond ((null? (cddr form))
-	    `(##sys#call-with-values (##core#lambda () ,@(cdr form)) ##sys#list) )
-	   (else
-	    (##sys#check-syntax 'receive form '(_ lambda-list _ . #(_ 1)))
-	    (let ((vars (cadr form))
-		  (exp (caddr form))
-		  (rest (cdddr form)))
-	      (if (and (pair? vars) (null? (cdr vars)))
-		  `(##core#let ((,(car vars) ,exp)) ,@rest)
-		  `(##sys#call-with-values 
-		    (##core#lambda () ,exp)
-		    (##core#lambda ,vars ,@rest)) ) ) ) ) )))
+  (lambda (form r c)
+    (##sys#check-syntax 'receive form '(_ _ . #(_ 0)))
+    (cond ((null? (cddr form))
+	   `(##sys#call-with-values (##core#lambda () ,@(cdr form)) ##sys#list) )
+	  (else
+	   (##sys#check-syntax 'receive form '(_ lambda-list _ . #(_ 1)))
+	   (let ((vars (cadr form))
+		 (exp (caddr form))
+		 (rest (cdddr form)))
+	     (if (and (pair? vars) (null? (cdr vars)))
+		 `(##core#let ((,(car vars) ,exp)) ,@rest)
+		 `(##sys#call-with-values 
+		   (##core#lambda () ,exp)
+		   (##core#lambda ,vars ,@rest)) ) ) ) ) )))
 
 (##sys#extend-macro-environment
  'time '()
@@ -165,12 +171,12 @@
 		    `(##core#immutable '"assertion failed")
 		    (car msg-and-args) ) ) )
       `(##core#if (##core#check ,exp)
-	     (##core#undefined)
-	     (##sys#error 
-	      ,msg 
-	      ,@(if (fx> (length msg-and-args) 1)
-		    (cdr msg-and-args)
-		    `((##core#quote ,(##sys#strip-syntax exp))))))))))
+		  (##core#undefined)
+		  (##sys#error 
+		   ,msg 
+		   ,@(if (fx> (length msg-and-args) 1)
+			 (cdr msg-and-args)
+			 `((##core#quote ,(##sys#strip-syntax exp))))))))))
 
 (##sys#extend-macro-environment
  'ensure
@@ -182,15 +188,16 @@
 	  (exp (caddr form))
 	  (args (cdddr form))
 	  (tmp (r 'tmp)))
-      `(##core#let ([,tmp ,exp])
-	      (##core#if (##core#check (,pred ,tmp))
-		    ,tmp
-		    (##sys#signal-hook
-		     #:type-error
-		     ,@(if (pair? args)
-			   args
-			   `((##core#immutable '"argument has incorrect type")
-			     ,tmp ',pred) ) ) ) ) ) ) ) )
+      `(##core#let
+	([,tmp ,exp])
+	(##core#if (##core#check (,pred ,tmp))
+		   ,tmp
+		   (##sys#signal-hook
+		    #:type-error
+		    ,@(if (pair? args)
+			  args
+			  `((##core#immutable '"argument has incorrect type")
+			    ,tmp ',pred) ) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'fluid-let '()
@@ -202,26 +209,27 @@
 	   (ids (##sys#map car clauses))
 	   (new-tmps (##sys#map (lambda (x) (r (gensym))) clauses))
 	   (old-tmps (##sys#map (lambda (x) (r (gensym))) clauses)))
-       `(##core#let (,@(map ##sys#list new-tmps (##sys#map cadr clauses))
-		,@(map ##sys#list old-tmps
-		       (let loop ((n (length clauses)))
-			 (if (eq? n 0)
-			     '()
-			     (cons #f (loop (fx- n 1))) ) ) ) )
-	       (##sys#dynamic-wind
-		(##core#lambda ()
-			  ,@(map (lambda (ot id) `(##core#set! ,ot ,id))
-				 old-tmps ids)
-			  ,@(map (lambda (id nt) `(##core#set! ,id ,nt))
-				 ids new-tmps)
-			  (##core#undefined) )
-		(##core#lambda () ,@body)
-		(##core#lambda ()
-			  ,@(map (lambda (nt id) `(##core#set! ,nt ,id))
-				 new-tmps ids)
-			  ,@(map (lambda (id ot) `(##core#set! ,id ,ot))
-				 ids old-tmps)
-			  (##core#undefined) ) ) ) ) )))
+       `(##core#let
+	 (,@(map ##sys#list new-tmps (##sys#map cadr clauses))
+	  ,@(map ##sys#list old-tmps
+		 (let loop ((n (length clauses)))
+		   (if (eq? n 0)
+		       '()
+		       (cons #f (loop (fx- n 1))) ) ) ) )
+	 (##sys#dynamic-wind
+	  (##core#lambda ()
+		    ,@(map (lambda (ot id) `(##core#set! ,ot ,id))
+			   old-tmps ids)
+		    ,@(map (lambda (id nt) `(##core#set! ,id ,nt))
+			   ids new-tmps)
+		    (##core#undefined) )
+	  (##core#lambda () ,@body)
+	  (##core#lambda ()
+		    ,@(map (lambda (nt id) `(##core#set! ,nt ,id))
+			   new-tmps ids)
+		    ,@(map (lambda (id ot) `(##core#set! ,id ,ot))
+			   ids old-tmps)
+		    (##core#undefined) ) ) ) ) )))
 
 (##sys#extend-macro-environment
  'eval-when '()
@@ -265,33 +273,38 @@
 	    [vals (##sys#map cadr bindings)]
 	    [aliases (##sys#map (lambda (z) (r (gensym))) params)]
 	    [aliases2 (##sys#map (lambda (z) (r (gensym))) params)] )
-       `(##core#let ,(##sys#append (map ##sys#list aliases params) (map ##sys#list aliases2 vals))
-	  (##core#let ((,swap (##core#lambda ()
-				   ,@(map (lambda (a a2)
-					    `(##core#let ((t (,a))) (,a ,a2)
-						    (##core#set! ,a2 t)))
-					  aliases aliases2) ) ) )
-		 (##sys#dynamic-wind 
-		  ,swap
-		  (##core#lambda () ,@body)
-		  ,swap) ) ) ) )))
+       `(##core#let
+	 ,(##sys#append 
+	   (map ##sys#list aliases params)
+	   (map ##sys#list aliases2 vals))
+	  (##core#let
+	   ((,swap (##core#lambda
+		    ()
+		    ,@(map (lambda (a a2)
+			     `(##core#let ((t (,a))) (,a ,a2)
+					  (##core#set! ,a2 t)))
+			   aliases aliases2) ) ) )
+	   (##sys#dynamic-wind 
+	    ,swap
+	    (##core#lambda () ,@body)
+	    ,swap) ) ) ) )))
 
 (##sys#extend-macro-environment
  'when '()
  (##sys#er-transformer
   (lambda (form r c)
     (##sys#check-syntax 'when form '#(_ 2))
-    `(,(r 'if) ,(cadr form)
-      (,(r 'begin) ,@(cddr form))))))
+    `(##core#if ,(cadr form)
+		(##core#begin ,@(cddr form))))))
 
 (##sys#extend-macro-environment
  'unless '()
  (##sys#er-transformer
   (lambda (form r c)
     (##sys#check-syntax 'unless form '#(_ 2))
-    `(,(r 'if) ,(cadr form)
-      (##core#undefined)
-      (,(r 'begin) ,@(cddr form))))))
+    `(##core#if ,(cadr form)
+		(##core#undefined)
+		(##core#begin ,@(cddr form))))))
 
 (##sys#extend-macro-environment
  'set!-values '()
@@ -364,14 +377,19 @@
 		     [exps (map (lambda (x) (cadr x)) vbindings)]
 		     [llists2 llists2] )
 	    (cond ((null? llists)
-		   `(##core#let ,(map (lambda (v) (##sys#list v (lookup v))) vars) ,@body) )
+		   `(##core#let
+		     ,(map (lambda (v) (##sys#list v (lookup v))) vars) 
+		     ,@body) )
 		  ((and (pair? (car llists2)) (null? (cdar llists2)))
-		   `(##core#let ((,(caar llists2) ,(car exps)))
-			   ,(fold (cdr llists) (cdr exps) (cdr llists2)) ) )
+		   `(##core#let
+		     ((,(caar llists2) ,(car exps)))
+		     ,(fold (cdr llists) (cdr exps) (cdr llists2)) ) )
 		  (else
 		   `(##sys#call-with-values
 		     (##core#lambda () ,(car exps))
-		     (##core#lambda ,(car llists2) ,(fold (cdr llists) (cdr exps) (cdr llists2))) ) ) ) ) ) ) ) ) ) )
+		     (##core#lambda
+		      ,(car llists2) 
+		      ,(fold (cdr llists) (cdr exps) (cdr llists2))) ) ) ) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'let*-values '()
@@ -397,15 +415,15 @@
       (let* ([vars (apply ##sys#append (map (lambda (x) (car x)) vbindings))] 
 	     [aliases (map (lambda (v) (cons v (r (gensym v)))) vars)] 
 	     [lookup (lambda (v) (cdr (assq v aliases)))] )
-	`(##core#let ,(map (lambda (v) (##sys#list v '(##core#undefined))) vars)
-		,@(map (lambda (vb)
-			 `(##sys#call-with-values 
-			   (##core#lambda () ,(cadr vb))
-			   (##core#lambda ,(map lookup (car vb))
-				     ,@(map (lambda (v)
-					      `(##core#set! ,v ,(lookup v))) (car vb)) ) ) )
-		       vbindings)
-		,@body) ) ) ) ) )
+	`(##core#let
+	  ,(map (lambda (v) (##sys#list v '(##core#undefined))) vars)
+	  ,@(map (lambda (vb)
+		   `(##sys#call-with-values 
+		     (##core#lambda () ,(cadr vb))
+		     (##core#lambda ,(map lookup (car vb))
+			       ,@(map (lambda (v) `(##core#set! ,v ,(lookup v))) (car vb)) ) ) )
+		 vbindings)
+	  ,@body) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'nth-value 
@@ -422,22 +440,22 @@
  'define-inline '()
  (##sys#er-transformer
   (lambda (form r c)
-      (letrec ([quotify-proc 
-		(lambda (xs id)
-		  (##sys#check-syntax id xs '#(_ 1))
-		  (let* ([head (car xs)]
-			 [name (if (pair? head) (car head) head)]
-			 [val (if (pair? head)
-				  `(##core#lambda ,(cdr head) ,@(cdr xs))
-				  (cadr xs) ) ] )
-		    (when (or (not (pair? val)) 
-			      (and (not (eq? '##core#lambda (car val)))
-				   (not (c (r 'lambda) (car val)))))
-		      (syntax-error 
-		       'define-inline "invalid substitution form - must be lambda"
-		       name val) )
-		    (list name val) ) ) ] )
-	`(##core#define-inline ,@(quotify-proc (cdr form) 'define-inline)))) ) )
+    (letrec ([quotify-proc 
+	      (lambda (xs id)
+		(##sys#check-syntax id xs '#(_ 1))
+		(let* ([head (car xs)]
+		       [name (if (pair? head) (car head) head)]
+		       [val (if (pair? head)
+				`(##core#lambda ,(cdr head) ,@(cdr xs))
+				(cadr xs) ) ] )
+		  (when (or (not (pair? val)) 
+			    (and (not (eq? '##core#lambda (car val)))
+				 (not (c (r 'lambda) (car val)))))
+		    (syntax-error 
+		     'define-inline "invalid substitution form - must be lambda"
+		     name val) )
+		  (list name val) ) ) ] )
+      `(##core#define-inline ,@(quotify-proc (cdr form) 'define-inline)))) ) )
 
 (##sys#extend-macro-environment
  'and-let* '()
@@ -468,7 +486,8 @@
 	  (tmp (r 'tmp))
 	  (%else (r 'else))
 	  (%or (r 'or)))
-      `(##core#let ((,tmp ,exp))
+      `(##core#let
+	((,tmp ,exp))
 	,(let expand ((clauses body))
 	   (if (not (pair? clauses))
 	       '(##core#undefined)
@@ -658,9 +677,8 @@
  (##sys#er-transformer
   (lambda (form r c)
     (##sys#check-syntax 'optional form '(_ _ . #(_ 0 1)))
-    (let ((var (r 'tmp))
-	  (%if (r 'if)))
-      `(,(r 'let) ((,var ,(cadr form)))
+    (let ((var (r 'tmp)))
+      `(##core#let ((,var ,(cadr form)))
 	(##core#if (,(r 'null?) ,var) 
 	      ,(optional (cddr form) #f)
 	      (##core#if (##core#check (,(r 'null?) (,(r 'cdr) ,var)))
@@ -698,25 +716,26 @@
 	  (%car (r 'car))
 	  (%cdr (r 'cdr)))
       (let ((rvar (r 'tmp)))
-	`(##core#let ((,rvar ,args))
-		,(let loop ([args rvar] [vardefs var/defs])
-		   (if (null? vardefs)
-		       `(##core#if (##core#check (##core#null? ,args))
-			      (##core#let () ,@body)
-			      (##sys#error 
-			       (##core#immutable '"too many optional arguments") 
-			       ,args) )
-		       (let ([head (car vardefs)])
-			 (if (pair? head)
-			     (let ((rvar2 (r 'tmp2)))
-			       `(##core#let ((,(car head) (##core#if (##core#null? ,args)
-							   ,(cadr head)
-							   (,%car ,args)))
-					(,rvar2 (##core#if (,%null? ,args) 
-						      '()
-						      (,%cdr ,args))) )
-				       ,(loop rvar2 (cdr vardefs)) ) )
-			     `(##core#let ((,head ,args)) ,@body) ) ) ) ) ) ) ))))
+	`(##core#let
+	  ((,rvar ,args))
+	  ,(let loop ([args rvar] [vardefs var/defs])
+	     (if (null? vardefs)
+		 `(##core#if (##core#check (,%null? ,args))
+			     (##core#let () ,@body)
+			     (##sys#error 
+			      (##core#immutable '"too many optional arguments") 
+			      ,args) )
+		 (let ([head (car vardefs)])
+		   (if (pair? head)
+		       (let ((rvar2 (r 'tmp2)))
+			 `(##core#let ((,(car head) (##core#if (,%null? ,args)
+							       ,(cadr head)
+							       (,%car ,args)))
+				       (,rvar2 (##core#if (,%null? ,args) 
+							  '()
+							  (,%cdr ,args))) )
+				      ,(loop rvar2 (cdr vardefs)) ) )
+		       `(##core#let ((,head ,args)) ,@body) ) ) ) ) ) ) ))))
 
 
 ;;; case-lambda (SRFI-16):
@@ -748,40 +767,42 @@
 	   (%eq? (r 'eq?))
 	   (%car (r 'car))
 	   (%cdr (r 'cdr)))
-      `(##core#lambda ,(append minvars rvar)
-		 (##core#let ((,lvar (length ,rvar)))
-			,(fold-right
-			  (lambda (c body)
-			    (##sys#decompose-lambda-list
-			     (car c)
-			     (lambda (vars argc rest)
-			       (##sys#check-syntax 'case-lambda (car c) 'lambda-list)
-			       `(##core#if ,(let ([a2 (fx- argc mincount)])
-					 (if rest
-					     (if (zero? a2)
-						 #t
-						 `(,%>= ,lvar ,a2) )
-					     `(,%eq? ,lvar ,a2) ) )
-				      ,(receive (vars1 vars2)
-					   (split-at! (take vars argc) mincount)
-					 (let ((bindings
-						(let build ((vars2 vars2) (vrest rvar))
-						  (if (null? vars2)
-						      (cond (rest `(##core#let ((,rest ,vrest)) ,@(cdr c)))
-							    ((null? (cddr c)) (cadr c))
-							    (else `(##core#let () ,@(cdr c))) )
-						      (let ((vrest2 (r (gensym))))
-							`(##core#let ((,(car vars2) (,%car ,vrest))
-								 (,vrest2 (,%cdr ,vrest)) )
-								,(if (pair? (cdr vars2))
-								     (build (cdr vars2) vrest2)
-								     (build '() vrest2) ) ) ) ) ) ) )
-					   (if (null? vars1)
-					       bindings
-					       `(##core#let ,(map list vars1 minvars) ,bindings) ) ) )
-				      ,body) ) ) )
-			  '(##core#check (##sys#error (##core#immutable '"no matching clause in call to 'case-lambda' form")))
-			  (cdr form))))))))
+      `(##core#lambda
+	,(append minvars rvar)
+	(##core#let
+	 ((,lvar (length ,rvar)))
+	 ,(fold-right
+	   (lambda (c body)
+	     (##sys#decompose-lambda-list
+	      (car c)
+	      (lambda (vars argc rest)
+		(##sys#check-syntax 'case-lambda (car c) 'lambda-list)
+		`(##core#if ,(let ([a2 (fx- argc mincount)])
+			       (if rest
+				   (if (zero? a2)
+				       #t
+				       `(,%>= ,lvar ,a2) )
+				   `(,%eq? ,lvar ,a2) ) )
+			    ,(receive (vars1 vars2)
+				 (split-at! (take vars argc) mincount)
+			       (let ((bindings
+				      (let build ((vars2 vars2) (vrest rvar))
+					(if (null? vars2)
+					    (cond (rest `(##core#let ((,rest ,vrest)) ,@(cdr c)))
+						  ((null? (cddr c)) (cadr c))
+						  (else `(##core#let () ,@(cdr c))) )
+					    (let ((vrest2 (r (gensym))))
+					      `(##core#let ((,(car vars2) (,%car ,vrest))
+							    (,vrest2 (,%cdr ,vrest)) )
+							   ,(if (pair? (cdr vars2))
+								(build (cdr vars2) vrest2)
+								(build '() vrest2) ) ) ) ) ) ) )
+				 (if (null? vars1)
+				     bindings
+				     `(##core#let ,(map list vars1 minvars) ,bindings) ) ) )
+			    ,body) ) ) )
+	   '(##core#check (##sys#error (##core#immutable '"no matching clause in call to 'case-lambda' form")))
+	   (cdr form))))))))
 
 
 ;;; Record printing:
@@ -814,13 +835,15 @@
  (##sys#er-transformer
   (lambda (form r c)
     (##sys#check-syntax 'handle-exceptions form '(_ variable _ . _))
-  (let ((k (r 'k))
-	(args (r 'args)))
-    `((,(r 'call-with-current-continuation)
-       (##core#lambda (,k)
-	 (,(r 'with-exception-handler)
-	  (##core#lambda (,(cadr form)) (,k (##core#lambda () ,(caddr form))))
-	  (##core#lambda ()
+    (let ((k (r 'k))
+	  (args (r 'args)))
+      `((,(r 'call-with-current-continuation)
+	 (##core#lambda
+	  (,k)
+	  (,(r 'with-exception-handler)
+	   (##core#lambda (,(cadr form)) (,k (##core#lambda () ,(caddr form))))
+	   (##core#lambda
+	    ()
 	    (##sys#call-with-values
 	     (##core#lambda () ,@(cdddr form))
 	     (##core#lambda 
@@ -854,9 +877,9 @@
 		     `(##core#let () ,@body) ) ) ) ) )
       `(,(r 'handle-exceptions) ,exvar
 	(##core#let ([,kvar (,%and (##sys#structure? ,exvar (##core#quote condition) )
-			      (##sys#slot ,exvar 1))])
-	       (,(r 'cond) ,@(map parse-clause (cddr form))
-		(,%else (##sys#signal ,exvar)) ) )
+				   (##sys#slot ,exvar 1))])
+		    (,(r 'cond) ,@(map parse-clause (cddr form))
+		     (,%else (##sys#signal ,exvar)) ) )
 	,(cadr form))))))
 
 
@@ -872,16 +895,15 @@
      form
      '(_ variable #(variable 1) variable . _)) 
     (let* ((t (cadr form))
-	  (conser (caddr form))
-	  (pred (cadddr form))
-	  (slots (cddddr form))
-	  (%define (r 'define))
-	  (%quote (r 'quote))
-	  (%getter-with-setter (r 'getter-with-setter))
-	  (vars (cdr conser))
-	  (x (r 'x))
-	  (y (r 'y))
-	  (slotnames (map car slots)))
+	   (conser (caddr form))
+	   (pred (cadddr form))
+	   (slots (cddddr form))
+	   (%define (r 'define))
+	   (%getter-with-setter (r 'getter-with-setter))
+	   (vars (cdr conser))
+	   (x (r 'x))
+	   (y (r 'y))
+	   (slotnames (map car slots)))
       `(##core#begin
 	(,%define ,conser
 		  (##sys#make-structure 
@@ -902,22 +924,22 @@
 				     (pair? (cdr setr))
 				     (c 'setter (car setr))
 				     (cadr setr)))
-		       (get `(,%lambda 
+		       (get `(##core#lambda 
 			      (,x)
 			      (##core#check
 			       (##sys#check-structure
 				,x
-				(,%quote ,t)
-				(,%quote ,(cadr slot))))
+				(##core#quote ,t)
+				(##core#quote ,(cadr slot))))
 			      (##sys#block-ref ,x ,i) ) )
 		       (set (and settable
-				 `(,%lambda
+				 `(##core#lambda
 				   (,x ,y)
 				   (##core#check
 				    (##sys#check-structure
 				     ,x
-				     (,%quote ,t) 
-				     (,%quote ,ssetter)))
+				     (##core#quote ,t) 
+				     (##core#quote ,ssetter)))
 				   (##sys#block-set! ,x ,i ,y)) )))
 		  `((,%define
 		     ,(cadr slot) 
@@ -950,8 +972,9 @@
 		  [rvals (reverse vals)] )
 	      (if rest
 		  (let ([rv (r (gensym))])
-		    `(##core#lambda (,@rvars . ,rv)
-			       (,%apply ,(car rvals) ,@(cdr rvals) ,rv) ) )
+		    `(##core#lambda
+		      (,@rvars . ,rv)
+		      (,%apply ,(car rvals) ,@(cdr rvals) ,rv) ) )
 		  `(##core#lambda ,rvars ((##core#begin ,(car rvals)) ,@(cdr rvals)) ) ) )
 	    (cond ((c %<> (car xs))
 		   (let ([v (r (gensym))])
