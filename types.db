@@ -1169,7 +1169,7 @@
 (condition-variable-specific-set! (procedure condition-variable-specific-set! ((struct condition-variable) *) undefined))
 (condition-variable? (procedure condition-variable? (*) boolean))
 (current-thread (procedure current-thread () (struct thread)))
-(current-time (procedure current-time () number))
+(current-time (procedure current-time () (struct time)))
 (join-timeout-exception? (procedure join-timeout-exception? (*) boolean))
 (make-condition-variable (procedure make-condition-variable (#!optional *) (struct condition-variable)))
 (make-mutex (procedure make-mutex (#!optional *) (struct mutex)))
