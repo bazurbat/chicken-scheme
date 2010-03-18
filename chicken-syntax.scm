@@ -900,10 +900,13 @@
 
 (##sys#extend-macro-environment
  'define-record-type
- `((getter-with-setter . (##sys#primitive-alias 'getter-with-setter)))
+ `((getter-with-setter . ,(##sys#primitive-alias 'getter-with-setter)))
  (##sys#er-transformer
   (lambda (form r c)
-    (##sys#check-syntax 'define-record-type form '(_ variable #(variable 1) variable . _)) 
+    (##sys#check-syntax 
+     'define-record-type 
+     form
+     '(_ variable #(variable 1) variable . _)) 
     (let* ((t (cadr form))
 	  (conser (caddr form))
 	  (pred (cadddr form))
@@ -930,21 +933,42 @@
 	,@(let loop ([slots slots] [i 1])
 	    (if (null? slots)
 		'()
-		(let* ([slot (car slots)]
-		       (setters (memq #:record-setters ##sys#features))
-		       (setr? (pair? (cddr slot))) 
-		       (getr `(,%lambda (,x)
-					(##core#check (##sys#check-structure ,x (,%quote ,t)))
-					(##sys#block-ref ,x ,i) ) ) )
-		  `(,@(if setr?
-			  `((,%define (,(caddr slot) ,x ,y)
-				      (##core#check (##sys#check-structure ,x (,%quote ,t)))
-				      (##sys#block-set! ,x ,i ,y)) )
-			  '() )
-		    (,%define ,(cadr slot) 
-			      ,(if (and setr? setters)
-				   `(,%getter-with-setter ,getr ,(caddr slot))
-				   getr) )
+		(let* ((slot (car slots))
+		       (settable (pair? (cddr slot))) 
+		       (setr (and settable (caddr slot)))
+		       (ssetter (and (pair? setr)
+				     (pair? (cdr setr))
+				     (c 'setter (car setr))
+				     (cadr setr)))
+		       (get `(,%lambda 
+			      (,x)
+			      (##core#check
+			       (##sys#check-structure
+				,x
+				(,%quote ,t)
+				(,%quote ,(cadr slot))))
+			      (##sys#block-ref ,x ,i) ) )
+		       (set (and settable
+				 `(,%lambda
+				   (,x ,y)
+				   (##core#check
+				    (##sys#check-structure
+				     ,x
+				     (,%quote ,t) 
+				     (,%quote ,ssetter)))
+				   (##sys#block-set! ,x ,i ,y)) )))
+		  `((,%define
+		     ,(cadr slot) 
+		     ,(if (and ssetter (c ssetter (cadr slot)))
+			  `(,%getter-with-setter ,get ,set)
+			  get))
+		    ,@(if settable
+			  (if ssetter
+			      (if (not (c ssetter (cadr slot)))
+				  `(((##sys#setter ##sys#setter) ,ssetter ,set))
+				  '())
+			      `((,%define ,setr ,set)))
+			  '())
 		    ,@(loop (cdr slots) (add1 i)) ) ) ) ) ) ) ) ) )
 
 

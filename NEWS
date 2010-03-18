@@ -1,3 +1,63 @@
+4.4.2
+
+- removed bootstrapping target and bootstrapping files from
+  development repository; to bootstrap the system, either
+  use a release or development-snapshot tarball or fetch
+  a statically linked precompiled `chicken' binary from
+  http://chicken.wiki.br/chicken-projects/bootstrap/
+- Jim Ursetto provided some fixes for building universal
+  binaries on Mac OS X
+- `csc' now compiles and links Windows resource (.rc) files
+  when given on the command line
+- `chicken-install' and `chicken-uninstall' have an embedded
+  manifest that suppresses the elevation dialog on Windows
+  Vista and later when UAC is activated (Thanks to Thomas Chust)
+- the `install' program is not used in the build on mingw
+  and mingw/MSYS platforms, since this is broken on older
+  mingw versions
+- line-number-information is now properly handled (in the
+  few places where it is used) correctly for included files;
+  the source file is given in trace-output in addition to
+  the line number
+- removed compiler warning for shared objects compiled in
+  unsafe mode
+- unboxing is now only done in unsafe mode
+- in unsafe mode, pointer-accessors from the `lolevel' unit
+  are now handled intrinsically by the compiler
+- `chicken-install' accepts now relative pathnames for the
+  `-prefix' option
+- `define-record-type' now optionally allows using SRFI-17
+  setters as record-field modifiers
+- `integer?' returns `#f' for NaN and infinite numbers
+- `csc' now has an `-no-elevation' option for embedding a
+  manifest that prevents the elevation dialog on Windows
+  Vista and later when IAC is activated
+- the `,d' csi command displays qualified symbols properly
+- symbols starting with the `#\#' character trigger an
+  error when encountered by the reader
+- Unit posix: `glob->regexp' now always returns a regular
+  expression object or optionally an SRE
+- Unit posix: `terminal-port?' and `terminal-size' have been
+   implemented for Windows, the latter always returns `0 0',
+  though (thanks to Jim Ursetto)
+- Unit regex: `regexp' now accepts a regular expression
+  object as argument
+- Unit regex: removed `glob?'
+
+Special thanks to Mark Carter for patient and thorough
+testing of the Cygwin and mingw builds.
+
+4.4.1
+
+- fixed bug in `chicken-install'/`chicken-uninstall' and
+  `chicken-status' that prevented collapsed command-line
+  options to be handled correctly.
+- disabled runpath-fix for deployed applications for netbsd
+  (but resurrected providing a runpath at all, thanks to 
+  Peter Bex)
+- Peter Bex provided documentation for the `C_closure' C API
+  function
+
 4.4.0
 
 - the system can now be built with llvm-gcc and/or "clang" (the

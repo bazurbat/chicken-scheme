@@ -96,6 +96,13 @@ C_COMPILER ?= gcc
 CXX_COMPILER ?= g++
 LIBRARIAN ?= ar
 endif
+ifdef WINDOWS
+ifdef HOSTSYSTEM
+RC_COMPILER ?= $(HOSTSYSTEM)-windres
+else
+RC_COMPILER ?= windres
+endif
+endif
 LINKER ?= $(C_COMPILER)
 ifdef WINDOWS_SHELL
 REMOVE_COMMAND ?= del
@@ -123,9 +130,11 @@ HOST_LIBRARIAN ?= $(LIBRARIAN)
 ifdef TARGETSYSTEM
 TARGET_C_COMPILER ?= $(TARGETSYSTEM)-$(C_COMPILER)
 TARGET_CXX_COMPILER ?= $(TARGETSYSTEM)-$(CXX_COMPILER)
+TARGET_RC_COMPILER ?= $(TARGETSYSTEM)-$(RC_COMPILER)
 else
 TARGET_C_COMPILER ?= $(C_COMPILER)
 TARGET_CXX_COMPILER ?= $(CXX_COMPILER)
+TARGET_RC_COMPILER ?= $(RC_COMPILER)
 endif
 
 TARGET_C_COMPILER_OPTIONS ?= $(C_COMPILER_OPTIONS)
@@ -311,9 +320,7 @@ CSC_PROGRAM = $(PROGRAM_PREFIX)csc$(PROGRAM_SUFFIX)
 CSI_PROGRAM = $(PROGRAM_PREFIX)csi$(PROGRAM_SUFFIX)
 CHICKEN_PROFILE_PROGRAM = $(PROGRAM_PREFIX)chicken-profile$(PROGRAM_SUFFIX)
 CHICKEN_INSTALL_PROGRAM = $(PROGRAM_PREFIX)chicken-install$(PROGRAM_SUFFIX)
-CHICKEN_FETCH_PROGRAM = $(PROGRAM_PREFIX)chicken-fetch$(PROGRAM_SUFFIX)
 CHICKEN_UNINSTALL_PROGRAM = $(PROGRAM_PREFIX)chicken-uninstall$(PROGRAM_SUFFIX)
-CHICKEN_REMOVE_PROGRAM = $(PROGRAM_PREFIX)chicken-remove$(PROGRAM_SUFFIX)
 CHICKEN_STATUS_PROGRAM = $(PROGRAM_PREFIX)chicken-status$(PROGRAM_SUFFIX)
 CHICKEN_BUG_PROGRAM = $(PROGRAM_PREFIX)chicken-bug$(PROGRAM_SUFFIX)
 IMPORT_LIBRARIES = chicken lolevel srfi-1 srfi-4 data-structures ports files posix srfi-13 srfi-69 extras \
@@ -347,6 +354,9 @@ TARGETS += $(TARGETLIBS) $(CHICKEN_SHARED_EXECUTABLE) \
 	$(CHICKEN_BUG_PROGRAM)$(EXE) \
 	$(IMPORT_LIBRARIES:%=%.import.so)
 endif
+ifdef WINDOWS
+TARGETS += chicken.rc$(O)
+endif
 
 # main rule
 
@@ -368,6 +378,9 @@ endif
 	echo "#endif" >>$@
 	echo "#ifndef C_INSTALL_CXX" >>$@
 	echo "# define C_INSTALL_CXX \"$(CXX_COMPILER)\"" >>$@
+	echo "#endif" >>$@
+	echo "#ifndef C_INSTALL_RC_COMPILER" >>$@
+	echo "# define C_INSTALL_RC_COMPILER \"$(RC_COMPILER)\"" >>$@
 	echo "#endif" >>$@
 	echo "#ifndef C_INSTALL_CFLAGS" >>$@
 	echo "# define C_INSTALL_CFLAGS \"$(C_COMPILER_OPTIONS) $(C_COMPILER_OPTIMIZATION_OPTIONS)\"" >>$@
@@ -423,6 +436,9 @@ endif
 	echo "#ifndef C_TARGET_CXX" >>$@
 	echo "# define C_TARGET_CXX \"$(TARGET_CXX_COMPILER)\"" >>$@
 	echo "#endif" >>$@
+	echo "#ifndef C_TARGET_RC_COMPILER" >>$@
+	echo "# define C_TARGET_RC_COMPILER \"$(TARGET_RC_COMPILER)\"" >>$@
+	echo "#endif" >>$@
 	echo "#ifndef C_TARGET_CFLAGS" >>$@
 	echo "# define C_TARGET_CFLAGS \"$(TARGET_C_COMPILER_OPTIONS) $(TARGET_C_COMPILER_OPTIMIZATION_OPTIONS)\"" >>$@
 	echo "#endif" >>$@
@@ -476,4 +492,42 @@ endif
 	echo "# define C_BRANCH_NAME \"$(BRANCHNAME)\"" >>$@
 	echo "#endif" >>$@
 	echo "/* END OF FILE */" >>$@
+endif
+
+ifndef CUSTOM_RC_FILE
+chicken-install.rc:
+	echo '/* GENERATED */' >$@
+	echo '1 24 MOVEABLE PURE' >>$@
+	echo 'BEGIN' >>$@
+	echo '  "<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>\r\n"' >>$@
+	echo '  "<assembly xmlns=""urn:schemas-microsoft-com:asm.v1"" manifestVersion=""1.0"">\r\n"' >>$@
+	echo '  "  <assemblyIdentity version=""1.0.0.0"" processorArchitecture=""*"" name=""chicken-install"" type=""win32""/>\r\n"' >>$@
+	echo '  "  <ms_asmv2:trustInfo xmlns:ms_asmv2=""urn:schemas-microsoft-com:asm.v2"">\r\n"' >>$@
+	echo '  "    <ms_asmv2:security>\r\n"' >>$@
+	echo '  "      <ms_asmv2:requestedPrivileges>\r\n"' >>$@
+	echo '  "        <ms_asmv2:requestedExecutionLevel level=""asInvoker"" uiAccess=""false""/>\r\n"' >>$@
+	echo '  "      </ms_asmv2:requestedPrivileges>\r\n"' >>$@
+	echo '  "    </ms_asmv2:security>\r\n"' >>$@
+	echo '  "  </ms_asmv2:trustInfo>\r\n"' >>$@
+	echo '  "</assembly>\r\n"' >>$@
+	echo 'END' >>$@
+	echo '/* END OF FILE */' >>$@
+
+chicken-uninstall.rc:
+	echo '/* GENERATED */' >$@
+	echo '1 24 MOVEABLE PURE' >>$@
+	echo 'BEGIN' >>$@
+	echo '  "<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>\r\n"' >>$@
+	echo '  "<assembly xmlns=""urn:schemas-microsoft-com:asm.v1"" manifestVersion=""1.0"">\r\n"' >>$@
+	echo '  "  <assemblyIdentity version=""1.0.0.0"" processorArchitecture=""*"" name=""$(PROGRAM_PREFIX)chicken-install$(PROGRAM_SUFFIX)"" type=""win32""/>\r\n"' >>$@
+	echo '  "  <ms_asmv2:trustInfo xmlns:ms_asmv2=""urn:schemas-microsoft-com:asm.v2"">\r\n"' >>$@
+	echo '  "    <ms_asmv2:security>\r\n"' >>$@
+	echo '  "      <ms_asmv2:requestedPrivileges>\r\n"' >>$@
+	echo '  "        <ms_asmv2:requestedExecutionLevel level=""asInvoker"" uiAccess=""false""/>\r\n"' >>$@
+	echo '  "      </ms_asmv2:requestedPrivileges>\r\n"' >>$@
+	echo '  "    </ms_asmv2:security>\r\n"' >>$@
+	echo '  "  </ms_asmv2:trustInfo>\r\n"' >>$@
+	echo '  "</assembly>\r\n"' >>$@
+	echo 'END' >>$@
+	echo '/* END OF FILE */' >>$@
 endif

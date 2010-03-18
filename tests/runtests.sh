@@ -70,6 +70,9 @@ $compile test-gc-hooks.scm
 
 echo "======================================== library tests ..."
 $interpret -s library-tests.scm
+$interpret -s records-and-setters-test.scm
+$compile records-and-setters-test.scm
+./a.out
 
 echo "======================================== syntax tests ..."
 $interpret -s syntax-tests.scm
@@ -164,7 +167,7 @@ $interpret -s srfi-4-tests.scm
 
 echo "======================================== srfi-18 tests ..."
 $interpret -s srfi-18-tests.scm
-echo "*** Skipping \"feeley-dynwind\" (for now) ***"
+echo "*** Skipping \"feeley-dynwind\" for now ***"
 # $interpret -s feeley-dynwind.scm
 
 echo "======================================== path tests ..."
@@ -210,6 +213,9 @@ $compile test-finalizers-2.scm
 echo "======================================== locative stress test ..."
 $compile locative-stress-test.scm
 ./a.out
+
+echo "======================================== syntax-rules stress test ..."
+time $interpret syntax-rule-stress-test.scm
 
 echo "======================================== embedding (1) ..."
 $compile embedded1.c

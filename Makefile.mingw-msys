@@ -41,7 +41,6 @@ else
 HACKED_APPLY =
 endif
 WINDOWS = 1
-INSTALL_FETCH_AND_REMOVE ?= 1
 
 # file extensions
 

@@ -620,8 +620,11 @@ EOF
                         (if (> (string-length arg) 2)
                             (let ((sos (string->list (substring arg 1))))
                               (if (every (cut memq <> *short-options*) sos)
-				  (loop (append (map (cut string #\- <>) sos) (cdr args)) eggs)
-				  (usage 1)))
+                                  (loop (append 
+					 (map (cut string #\- <>) sos)
+					 (cdr args)) 
+					eggs)
+                                  (usage 1)))
                             (usage 1)))
                        ((equal? "setup" (pathname-extension arg))
                         (let ((egg (pathname-file arg)))

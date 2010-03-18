@@ -2121,6 +2121,8 @@ C_inline C_word C_i_integerp(C_word x)
 {
   double dummy;
 
+  if(C_isnan(x) || C_isinf(x)) return C_SCHEME_FALSE;
+
   return C_mk_bool((x & C_FIXNUM_BIT) || 
 		   ((!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) &&
 		    C_modf(C_flonum_magnitude(x), &dummy) == 0.0 ) );
