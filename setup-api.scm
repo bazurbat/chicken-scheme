@@ -29,7 +29,7 @@
 ; This code is partially quite messy and the API is not overly consistent,
 ; mainly because it has grown "organically" while the old chicken-setup program
 ; evolved. The code was extracted and put into this module, without much
-; cleaning up. Nevertheless, it should work.
+; cleaning up.
 ;
 ; *windows-shell* and, to a lesser extent, 'sudo' processing knowledge is
 ; scattered in the code.
@@ -755,10 +755,16 @@
 		(string-append "\"" str "\"")	; double quotes, yes - thanks to Matthew Flatt
 		str))))
     (unless (zero? r)
-      (error "shell command failed with nonzero exit status" r str))))
+      (quit "shell command failed with nonzero exit status ~a:~%~%  ~a" r str))))
+
+(define (quit fstr . args)
+  (flush-output)
+  (fprintf (current-error-port) "~%~?~%" fstr args)
+  (reset))
 
 ;;; Module Setup
 
 ; User setup by default
 (user-install-setup)
+
 )
