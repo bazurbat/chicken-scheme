@@ -132,7 +132,6 @@
  external-protos-first
  external-to-pointer
  external-variables
- extract-mutable-constants
  file-io-only
  file-requirements
  final-foreign-type
