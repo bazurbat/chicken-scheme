@@ -1412,7 +1412,7 @@
   (import-forms module-import-forms set-module-import-forms!)	    ; (SPEC ...)
   (meta-import-forms module-meta-import-forms set-module-meta-import-forms!)	    ; (SPEC ...)
   (meta-expressions module-meta-expressions set-module-meta-expressions!) ; (EXP ...)
-  (vexports module-vexports set-module-vexports!)	      ; (SYMBOL . SYMBOL)
+  (vexports module-vexports set-module-vexports!)	      ; ((SYMBOL . SYMBOL) ...)
   (sexports module-sexports set-module-sexports!) )	      ; ((SYMBOL SE TRANSFORMER) ...)
 
 (define ##sys#module-name module-name)
