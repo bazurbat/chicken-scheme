@@ -1247,14 +1247,18 @@ html:
 
 clean:
 	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) chicken$(EXE) csi$(EXE) csc$(EXE) \
-	  chicken-profile$(EXE) csi-static$(EXE) \
-	  chicken-install$(EXE) chicken-uninstall$(EXE) chicken-status$(EXE) \
-	  csc-static$(EXE) chicken-static$(EXE) chicken-bug$(EXE) *$(O) \
+	  $(CHICKEN_PROFILE_PROGRAM)$(EXE) \
+	  $(CHICKEN_INSTALL_PROGRAM)$(EXE) \
+	  $(CHICKEN_UNINSTALL_PROGRAM)$(EXE) \
+	  $(CHICKEN_STATUS_PROGRAM)$(EXE) \
+	  $(CHICKEN_BUG_PROGRAM)$(EXE) *$(O) \
 	  $(LIBCHICKEN_SO_FILE) $(LIBUCHICKEN_SO_FILE) \
 	  libchicken$(A) libuchicken$(A) libchicken$(SO) $(PROGRAM_IMPORT_LIBRARIES) \
-	  $(IMPORT_LIBRARIES:=.import.so) $(LIBCHICKEN_IMPORT_LIBRARY) $(LIBUCHICKEN_IMPORT_LIBRARY) \
+	  $(IMPORT_LIBRARIES:=.import.so) $(LIBCHICKEN_IMPORT_LIBRARY) \
+	  $(LIBUCHICKEN_IMPORT_LIBRARY) \
 	  setup-api.so setup-api.import.scm setup-download.so \
 	  setup-download.import.scm
+	  setup-api.c setup-download.c
 ifdef USES_SONAME
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) libchicken.so.$(BINARYVERSION)
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) libuchicken.so.$(BINARYVERSION)
