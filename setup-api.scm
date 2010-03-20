@@ -203,11 +203,6 @@
 
 (define run-verbose (make-parameter #t))
 
-(define (->symbol x)
-  (cond ((symbol? x) x)
-	((string? x) (string->symbol x))
-	(else (string->symbol (->string x)))))
-
 (define (register-program name #!optional
 			  (path (make-pathname *chicken-bin-path* (->string name))))
   (set! *registered-programs* 
@@ -223,30 +218,26 @@
 (let ()
   (define (reg name rname) 
     (register-program name (make-pathname *chicken-bin-path* rname)))
-  ;; csc is handled below
   (reg "chicken" (foreign-value "C_CHICKEN_PROGRAM" c-string))
   (reg "csi" (foreign-value "C_CSI_PROGRAM" c-string))
+  (reg "csc" (foreign-value "C_CSC_PROGRAM" c-string))
   (reg "chicken-bug" (foreign-value "C_CHICKEN_BUG_PROGRAM" c-string)))
 
 (define (fixpath prg)
-  (cond ((string=? prg "csc")
-	 (string-intersperse 
-	  (cons* (shellpath
-		  (make-pathname 
-		   *chicken-bin-path*
-		   (cdr (assoc prg *installed-executables*))))
-		 "-feature" "compiling-extension" 
-		 (if (and (feature? #:cross-chicken)
-			  (not (host-extension)))
-		     "" "-setup-mode")
-		 (if (keep-intermediates) "-k" "")
-		 (if (host-extension) "-host" "")
-		 (if (deployment-mode) "-deployed" "")
-		 *csc-options*) 
-	  " ") )
-	((assoc prg *registered-programs*) => 
-	 (lambda (a) (shellpath (cdr a))))
-	(else prg) ) )
+  (if (string=? prg "csc")
+      (string-intersperse 
+       (cons*
+	(shellpath (find-program "csc"))
+	"-feature" "compiling-extension" 
+	(if (and (feature? #:cross-chicken)
+		 (not (host-extension)))
+	    "" "-setup-mode")
+	(if (keep-intermediates) "-k" "")
+	(if (host-extension) "-host" "")
+	(if (deployment-mode) "-deployed" "")
+	*csc-options*) 
+       " ")
+      (shellpath (find-program prg))))
 
 (define (fixmaketarget file)
   (if (and (equal? "so" (pathname-extension file))
