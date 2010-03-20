@@ -61,6 +61,7 @@
      remove-directory
      remove-extension
      read-info
+     register-program
      shellpath)
   
   (import scheme chicken foreign
@@ -71,12 +72,6 @@
 
 (define-constant setup-file-extension "setup-info")
 
-(define *installed-executables* 
-  `(("chicken" . ,(foreign-value "C_CHICKEN_PROGRAM" c-string))
-    ("csc" . ,(foreign-value "C_CSC_PROGRAM" c-string))
-    ("csi" . ,(foreign-value "C_CSI_PROGRAM" c-string))
-    ("chicken-bug" . ,(foreign-value "C_CHICKEN_BUG_PROGRAM" c-string))))
-
 (define *cc* (foreign-value "C_TARGET_CC" c-string))
 (define *cxx* (foreign-value "C_TARGET_CXX" c-string))
 (define *target-cflags* (foreign-value "C_TARGET_CFLAGS" c-string))
@@ -84,6 +79,7 @@
 (define *target-lib-home* (foreign-value "C_TARGET_LIB_HOME" c-string))
 (define *sudo* #f)
 (define *windows-shell* (foreign-value "C_WINDOWS_SHELL" bool))
+(define *registered-programs* '())
 
 (define *windows*
   (and (eq? (software-type) 'windows) 
@@ -207,6 +203,31 @@
 
 (define run-verbose (make-parameter #t))
 
+(define (->symbol x)
+  (cond ((symbol? x) x)
+	((string? x) (string->symbol x))
+	(else (string->symbol (->string x)))))
+
+(define (register-program name #!optional
+			  (path (make-pathname *chicken-bin-path* (->string name))))
+  (set! *registered-programs* 
+    (alist-cons (->string name) path *registered-programs*)))
+
+(define (find-program name)
+  (let* ((name (->string name))
+	 (a (assoc name *registered-programs*)))
+    (if a
+	(cdr a)
+	name)))
+
+(let ()
+  (define (reg name rname) 
+    (register-program name (make-pathname *chicken-bin-path* rname)))
+  ;; csc is handled below
+  (reg "chicken" (foreign-value "C_CHICKEN_PROGRAM" c-string))
+  (reg "csi" (foreign-value "C_CSI_PROGRAM" c-string))
+  (reg "chicken-bug" (foreign-value "C_CHICKEN_BUG_PROGRAM" c-string)))
+
 (define (fixpath prg)
   (cond ((string=? prg "csc")
 	 (string-intersperse 
@@ -223,8 +244,8 @@
 		 (if (deployment-mode) "-deployed" "")
 		 *csc-options*) 
 	  " ") )
-	((assoc prg *installed-executables*) =>
-	 (lambda (a) (shellpath (make-pathname *chicken-bin-path* (cdr a)))))
+	((assoc prg *registered-programs*) => 
+	 (lambda (a) (shellpath (cdr a))))
 	(else prg) ) )
 
 (define (fixmaketarget file)
