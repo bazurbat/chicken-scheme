@@ -3977,12 +3977,12 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
   long tgc;
 
   switch(fudge_factor) {
-  case C_fix(1): return C_SCHEME_END_OF_FILE;
-  case C_fix(2): 
+  case C_fix(1): return C_SCHEME_END_OF_FILE; /* eof object */
+  case C_fix(2):			      /* get time */
     /* can be considered broken (overflows into negatives), but is useful for randomize */
     return C_fix(C_MOST_POSITIVE_FIXNUM & time(NULL));
 
-  case C_fix(3):
+  case C_fix(3):		/* 64-bit system? */
 #ifdef C_SIXTY_FOUR
     return C_SCHEME_TRUE;
 #else
@@ -4003,50 +4003,50 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
 
     return C_fix(0);
 
-  case C_fix(6): 
+  case C_fix(6): 		/* milliseconds CPU */
     return C_fix(C_MOST_POSITIVE_FIXNUM & cpu_milliseconds());
 
-  case C_fix(7):
+  case C_fix(7):		/* wordsize */
     return C_fix(sizeof(C_word));
 
-  case C_fix(8):
+  case C_fix(8):		/* words needed for double */
     return C_fix(C_wordsperdouble(1));
 
-  case C_fix(9):
+  case C_fix(9):		/* latency */
     return C_fix(last_interrupt_latency);
 
-  case C_fix(10):
+  case C_fix(10):		/* clocks per sec */
     return C_fix(CLOCKS_PER_SEC);
 
-  case C_fix(11):
+  case C_fix(11):		/* not a unix system? */
 #if defined(C_NONUNIX) || defined(__CYGWIN__)
     return C_SCHEME_FALSE;
 #else
     return C_SCHEME_TRUE;
 #endif
 
-  case C_fix(12):
+  case C_fix(12):		/* tty forced? */
     return C_mk_bool(fake_tty_flag);
 
-  case C_fix(13):
+  case C_fix(13):		/* debug mode */
     return C_mk_bool(debug_mode);
 
-  case C_fix(14):
+  case C_fix(14):		/* interrupts enabled? */
     return C_mk_bool(C_interrupts_enabled);
 
-  case C_fix(15):
+  case C_fix(15):		/* symbol-gc enabled? */
     return C_mk_bool(C_enable_gcweak);
 
-  case C_fix(16):
+  case C_fix(16):		/* milliseconds (wall clock) */
     return C_fix(C_MOST_POSITIVE_FIXNUM & milliseconds());
 
-  case C_fix(17):
+  case C_fix(17):		/* fixed heap? */
     return(C_mk_bool(C_heap_size_is_fixed));
 
-  case C_fix(18):
+  case C_fix(18):		/* stack direction */
     return(C_fix(C_STACK_GROWS_DOWNWARD));
 
-  case C_fix(19):
+  case C_fix(19):		/* number of locatives */
     for(i = j = 0; i < locative_table_count; ++i)
       if(locative_table[ i ] != C_SCHEME_UNDEFINED) ++j;
     return C_fix(j);

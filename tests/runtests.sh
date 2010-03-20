@@ -215,7 +215,7 @@ $compile locative-stress-test.scm
 ./a.out
 
 echo "======================================== syntax-rules stress test ..."
-time $interpret syntax-rule-stress-test.scm
+time $interpret -bnq syntax-rule-stress-test.scm
 
 echo "======================================== embedding (1) ..."
 $compile embedded1.c

@@ -258,14 +258,11 @@ EOF
 (define ##sys#apply-argument-limit (##sys#fudge 34))
 
 (define (##sys#block-set! x i y)
-  (cond-expand
-   [(not unsafe)
-    (when (or (not (##core#inline "C_blockp" x)) 
-	      (and (##core#inline "C_specialp" x) (fx= i 0))
-	      (##core#inline "C_byteblockp" x) ) 
-      (##sys#signal-hook '#:type-error '##sys#block-set! "slot not accessible" x) )
-    (##sys#check-range i 0 (##sys#size x) '##sys#block-set!) ]
-   [else] )
+  (when (or (not (##core#inline "C_blockp" x)) 
+	    (and (##core#inline "C_specialp" x) (fx= i 0))
+	    (##core#inline "C_byteblockp" x) ) 
+    (##sys#signal-hook '#:type-error '##sys#block-set! "slot not accessible" x) )
+  (##sys#check-range i 0 (##sys#size x) '##sys#block-set!) ]
   (##sys#setslot x i y) )
 
 (define (current-seconds) 
@@ -454,29 +451,19 @@ EOF
 	(if (eq? (##sys#slot lsts 1) '())
 	    (##sys#slot lsts 0)
 	    (let copy ((node (##sys#slot lsts 0)))
-	      (cond-expand
-	       [unsafe
-		(if (eq? node '()) 
-		    (loop (##sys#slot lsts 1))
-		    (cons (##sys#slot node 0) (copy (##sys#slot node 1))) ) ]
-	       [else
-		(cond ((eq? node '()) (loop (##sys#slot lsts 1)))
-		      ((pair? node)
-		       (cons (##sys#slot node 0) (copy (##sys#slot node 1))) )
-		      (else (##sys#error-not-a-proper-list (##sys#slot lsts 0) 'append)) ) ] ) ) ) ) ) )
+	      (cond ((eq? node '()) (loop (##sys#slot lsts 1)))
+		    ((pair? node)
+		     (cons (##sys#slot node 0) (copy (##sys#slot node 1))) )
+		    (else
+		     (##sys#error-not-a-proper-list
+		      (##sys#slot lsts 0) 'append)) ) )))))
 
 (define (reverse lst0)
   (let loop ((lst lst0) (rest '()))
-    (cond-expand
-     [unsafe
-      (if (eq? lst '()) 
-	  rest
-	  (loop (##sys#slot lst 1) (cons (##sys#slot lst 0) rest))  ) ]
-       [else
-	(cond ((eq? lst '()) rest)
-	      ((pair? lst)
-	       (loop (##sys#slot lst 1) (cons (##sys#slot lst 0) rest)) )
-	      (else (##sys#error-not-a-proper-list lst0 'reverse)) ) ] ) ) )
+    (cond ((eq? lst '()) rest)
+	  ((pair? lst)
+	   (loop (##sys#slot lst 1) (cons (##sys#slot lst 0) rest)) )
+	  (else (##sys#error-not-a-proper-list lst0 'reverse)) ) ))
 
 (define (memq x lst) (##core#inline "C_i_memq" x lst))
 (define (memv x lst) (##core#inline "C_i_memv" x lst))
@@ -503,15 +490,15 @@ EOF
 
 (define (make-string size . fill)
   (##sys#check-exact size 'make-string)
-  #+(not unsafe)
   (when (fx< size 0)
     (##sys#signal-hook #:bounds-error 'make-string "size is negative" size))
-  (%make-string size
-		(if (null? fill)
-		    #\space
-		    (let ((c (car fill)))
-		      (##sys#check-char c 'make-string)
-		      c ) ) ) )
+  (%make-string
+   size
+   (if (null? fill)
+       #\space
+       (let ((c (car fill)))
+	 (##sys#check-char c 'make-string)
+	 c ) ) ) )
 
 (define ##sys#string->list 
   (lambda (s)
@@ -526,43 +513,23 @@ EOF
 (define string->list ##sys#string->list)
 
 (define (##sys#list->string lst0)
-  (cond-expand
-    [unsafe
-    (let* ([len (length lst0)]
-	   [s (##sys#make-string len)] )
-      (do ([i 0 (fx+ i 1)]
-	   [lst lst0 (##sys#slot lst 1)] )
-	((fx>= i len) s)
-	(##core#inline "C_setsubchar" s i (##sys#slot lst 0)) ) )]
-    [else
-    (if (not (list? lst0))
+  (if (not (list? lst0))
       (##sys#error-not-a-proper-list lst0 'list->string)
       (let* ([len (length lst0)]
 	     [s (##sys#make-string len)] )
 	(do ([i 0 (fx+ i 1)]
 	     [lst lst0 (##sys#slot lst 1)] )
-	  ((fx>= i len) s)
+	    ((fx>= i len) s)
 	  (let ([c (##sys#slot lst 0)])
 	    (##sys#check-char c 'list->string)
-	    (##core#inline "C_setsubchar" s i c) ) ) ) )]
-    ))
+	    (##core#inline "C_setsubchar" s i c) ) ) ) ))
 
 (define list->string ##sys#list->string)
 
 ;;; By Sven Hartrumpf:
 
 (define (##sys#reverse-list->string l)
-  (cond-expand
-    [unsafe
-    (let* ((n (length l))
-	   (s (##sys#make-string n)))
-      (let iter ((l2 l) (n2 (fx- n 1)))
-	(cond ((fx>= n2 0)
-	       (##core#inline "C_setsubchar" s n2 (##sys#slot l2 0))
-	       (iter (##sys#slot l2 1) (fx- n2 1)) ) ) )
-      s ) ]
-    [else
-    (if (list? l)
+  (if (list? l)
       (let* ((n (length l))
 	     (s (##sys#make-string n)))
 	(let iter ((l2 l) (n2 (fx- n 1)))
@@ -572,8 +539,7 @@ EOF
 		   (##core#inline "C_setsubchar" s n2 c) )
 		 (iter (##sys#slot l2 1) (fx- n2 1)) ) ) )
 	s )
-      (##sys#error-not-a-proper-list l 'reverse-list->string) ) ]
-    ) )
+      (##sys#error-not-a-proper-list l 'reverse-list->string) ) )
 
 (define reverse-list->string ##sys#reverse-list->string)
 
@@ -599,15 +565,14 @@ EOF
 		   (##sys#check-exact end 'substring)
 		   end) 
 		 (##sys#size s) ) ] )
-    (cond-expand
-     [unsafe (##sys#substring s start end)]
-     [else
-      (let ([len (##sys#size s)])
-       (if (and (fx<= start end)
-		(fx>= start 0)
-		(fx<= end len) )
+    (let ([len (##sys#size s)])
+      (if (and (fx<= start end)
+	       (fx>= start 0)
+	       (fx<= end len) )
 	  (##sys#substring s start end)
-	  (##sys#error-hook (foreign-value "C_OUT_OF_RANGE_ERROR" int) 'substring start end) ) ) ] ) ) )
+	  (##sys#error-hook
+	   (foreign-value "C_OUT_OF_RANGE_ERROR" int)
+	   'substring start end) ) ) ))
 
 (define (##sys#substring s start end)
   (let ([s2 (##sys#make-string (fx- end start))])
@@ -615,8 +580,7 @@ EOF
     s2 ) )
 
 (define (string=? x y)
-  (cond-expand [unsafe (##core#inline "C_u_i_string_equal_p" x y)]
-	       [else (##core#inline "C_i_string_equal_p" x y)] ) )
+  (##core#inline "C_i_string_equal_p" x y))
 
 (define (string-ci=? x y) (##core#inline "C_i_string_ci_equal_p" x y))
 
@@ -770,18 +734,12 @@ EOF
     (##sys#error-hook (foreign-value "C_DIVISION_BY_ZERO_ERROR" int) loc x y) ) )
 
 (define (fx/ x y)
-  (cond-expand
-   [unsafe (##core#inline "C_fixnum_divide" x y)]
-   [else
-    (fx-check-divison-by-zero x y 'fx/)
-    (##core#inline "C_fixnum_divide" x y) ] ) )
+  (fx-check-divison-by-zero x y 'fx/)
+  (##core#inline "C_fixnum_divide" x y) )
 
 (define (fxmod x y)
-  (cond-expand
-   [unsafe (##core#inline "C_fixnum_modulo" x y)]
-   [else
-    (fx-check-divison-by-zero x y 'fxmod)
-    (##core#inline "C_fixnum_modulo" x y) ] ) )
+  (fx-check-divison-by-zero x y 'fxmod)
+  (##core#inline "C_fixnum_modulo" x y) )
 
 (define maximum-flonum (foreign-value "DBL_MAX" double))
 (define minimum-flonum (foreign-value "DBL_MIN" double))
@@ -809,106 +767,66 @@ EOF
     (##sys#error-hook (foreign-value "C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR" int) loc x y) ) )
 
 (define (fp+ x y) 
-  (cond-expand
-   [unsafe (##core#inline_allocate ("C_a_i_flonum_plus" 4) x y)]
-   [else 
-    (fp-check-flonums x y 'fp+)
-    (##core#inline_allocate ("C_a_i_flonum_plus" 4) x y) ] ) )
+  (fp-check-flonums x y 'fp+)
+  (##core#inline_allocate ("C_a_i_flonum_plus" 4) x y) )
 
 (define (fp- x y) 
-  (cond-expand
-   [unsafe (##core#inline_allocate ("C_a_i_flonum_difference" 4) x y)]
-   [else 
-    (fp-check-flonums x y 'fp-)
-    (##core#inline_allocate ("C_a_i_flonum_difference" 4) x y) ] ) )
+  (fp-check-flonums x y 'fp-)
+  (##core#inline_allocate ("C_a_i_flonum_difference" 4) x y) )
 
 (define (fp* x y) 
-  (cond-expand
-   [unsafe (##core#inline_allocate ("C_a_i_flonum_times" 4) x y)]
-   [else 
-    (fp-check-flonums x y 'fp*)
-    (##core#inline_allocate ("C_a_i_flonum_times" 4) x y) ] ) )
+  (fp-check-flonums x y 'fp*)
+  (##core#inline_allocate ("C_a_i_flonum_times" 4) x y) )
 
 (define (fp/ x y)
-  (cond-expand
-   [unsafe (##core#inline_allocate ("C_a_i_flonum_quotient" 4) x y)]
-   [else
-    (fp-check-flonums x y 'fp/)
-    (##core#inline_allocate ("C_a_i_flonum_quotient" 4) x y) ] ) )
+  (fp-check-flonums x y 'fp/)
+  (##core#inline_allocate ("C_a_i_flonum_quotient" 4) x y) )
 
 (define (fp= x y) 
-  (cond-expand
-   [unsafe (##core#inline "C_flonum_equalp" x y)]
-   [else
-    (fp-check-flonums x y 'fp=)
-    (##core#inline "C_flonum_equalp" x y) ] ) )
+  (fp-check-flonums x y 'fp=)
+  (##core#inline "C_flonum_equalp" x y) )
 
 (define (fp> x y) 
-  (cond-expand
-   [unsafe (##core#inline "C_flonum_greaterp" x y)]
-   [else
-    (fp-check-flonums x y 'fp>)
-    (##core#inline "C_flonum_greaterp" x y) ] ) )
+  (fp-check-flonums x y 'fp>)
+  (##core#inline "C_flonum_greaterp" x y) )
 
 (define (fp< x y) 
-  (cond-expand 
-   [unsafe (##core#inline "C_flonum_lessp" x y)]
-   [else
-    (fp-check-flonums x y 'fp<)
-    (##core#inline "C_flonum_lessp" x y) ] ) )
+  (fp-check-flonums x y 'fp<)
+  (##core#inline "C_flonum_lessp" x y) )
 
 (define (fp>= x y) 
-  (cond-expand
-   [unsafe (##core#inline "C_flonum_greater_or_equal_p" x y)]
-   [else
-    (fp-check-flonums x y 'fp>=)
-    (##core#inline "C_flonum_greater_or_equal_p" x y) ] ) )
+  (fp-check-flonums x y 'fp>=)
+  (##core#inline "C_flonum_greater_or_equal_p" x y) )
 
 (define (fp<= x y) 
-  (cond-expand
-   [unsafe (##core#inline "C_flonum_less_or_equal_p" x y)]
-   [else
-    (fp-check-flonums x y 'fp<=)
-    (##core#inline "C_flonum_less_or_equal_p" x y) ] ) )
+  (fp-check-flonums x y 'fp<=)
+  (##core#inline "C_flonum_less_or_equal_p" x y) )
 
 (define (fpneg x) 
-  (cond-expand
-   [unsafe (##core#inline_allocate ("C_a_i_flonum_negate" 4) x)]
-   [else
-    (fp-check-flonum x 'fpneg)
-    (##core#inline_allocate ("C_a_i_flonum_negate" 4) x) ] ) )
+  (fp-check-flonum x 'fpneg)
+  (##core#inline_allocate ("C_a_i_flonum_negate" 4) x) )
 
 (define (fpmax x y) 
-  (cond-expand
-   [unsafe (##core#inline "C_i_flonum_max" x y)]
-   [else
-    (fp-check-flonums x y 'fpmax)
-    (##core#inline "C_i_flonum_max" x y) ] ) )
+  (fp-check-flonums x y 'fpmax)
+  (##core#inline "C_i_flonum_max" x y) )
 
 (define (fpmin x y) 
-  (cond-expand
-   [unsafe (##core#inline "C_i_flonum_min" x y)]
-   [else 
-    (fp-check-flonums x y 'fpmin)
-    (##core#inline "C_i_flonum_min" x y) ] ) )
+  (fp-check-flonums x y 'fpmin)
+  (##core#inline "C_i_flonum_min" x y) )
 
 (define (fpfloor x)
-  #+(not unsafe)
   (fp-check-flonum x 'fpfloor)
   (##core#inline_allocate ("C_a_i_flonum_floor" 4) x))
 
 (define (fptruncate x)
-  #+(not unsafe)
   (fp-check-flonum x 'fptruncate)
   (##core#inline_allocate ("C_a_i_flonum_truncate" 4) x))
 
 (define (fpround x)
-  #+(not unsafe)
   (fp-check-flonum x 'fpround)
   (##core#inline_allocate ("C_a_i_flonum_round" 4) x))
 
 (define (fpceiling x)
-  #+(not unsafe)
   (fp-check-flonum x 'fpceiling)
   (##core#inline_allocate ("C_a_i_flonum_ceiling" 4) x))
 
@@ -917,67 +835,54 @@ EOF
 (define ##sys#ceiling fpceiling)
 
 (define (fpsin x)
-  #+(not unsafe)
   (fp-check-flonum x 'fpsin)
   (##core#inline_allocate ("C_a_i_flonum_sin" 4) x))
 
 (define (fpcos x)
-  #+(not unsafe)
   (fp-check-flonum x 'fpcos)
   (##core#inline_allocate ("C_a_i_flonum_cos" 4) x))
 
 (define (fptan x)
-  #+(not unsafe)
   (fp-check-flonum x 'fptan)
   (##core#inline_allocate ("C_a_i_flonum_tan" 4) x))
 
 (define (fpasin x)
-  #+(not unsafe)
   (fp-check-flonum x 'fpasin)
   (##core#inline_allocate ("C_a_i_flonum_asin" 4) x))
 
 (define (fpacos x)
-  #+(not unsafe)
   (fp-check-flonum x 'fpacos)
   (##core#inline_allocate ("C_a_i_flonum_acos" 4) x))
 
 (define (fpatan x)
-  #+(not unsafe)
   (fp-check-flonum x 'fpatan)
   (##core#inline_allocate ("C_a_i_flonum_atan" 4) x))
 
 (define (fpatan2 x y)
-  #+(not unsafe)
   (fp-check-flonums x y 'fpatan2)
   (##core#inline_allocate ("C_a_i_flonum_atan2" 4) x y))
 
 (define (fpexp x)
-  #+(not unsafe)
   (fp-check-flonum x 'fpexp)
   (##core#inline_allocate ("C_a_i_flonum_exp" 4) x))
 
 (define (fpexpt x y)
-  #+(not unsafe)
   (fp-check-flonums x y 'fpexpt)
   (##core#inline_allocate ("C_a_i_flonum_expt" 4) x y))
 
 (define (fplog x)
-  #+(not unsafe)
   (fp-check-flonum x 'fplog)
   (##core#inline_allocate ("C_a_i_flonum_log" 4) x))
 
 (define (fpsqrt x)
-  #+(not unsafe)
   (fp-check-flonum x 'fpsqrt)
   (##core#inline_allocate ("C_a_i_flonum_sqrt" 4) x))
 
 (define (fpabs x)
-  #+(not unsafe)
   (fp-check-flonum x 'fpabs)
   (##core#inline_allocate ("C_a_i_flonum_abs" 4) x))
 
 (define (fpinteger? x)
-  #+(not unsafe)
   (fp-check-flonum x 'fpinteger?)
   (##core#inline "C_u_i_fpintegerp" x))
 
@@ -1165,11 +1070,11 @@ EOF
       (let loop ([ns ns] [f #t])
 	(let ([head (##sys#slot ns 0)]
 	      [next (##sys#slot ns 1)] )
-	  (cond-expand [unsafe] [else (when f (##sys#check-integer head 'gcd))])
+	  (when f (##sys#check-integer head 'gcd))
 	  (if (null? next)
 	      (abs head)
 	      (let ([n2 (##sys#slot next 0)])
-		(cond-expand [unsafe] [else (##sys#check-integer n2 'gcd)])
+		(##sys#check-integer n2 'gcd)
 		(loop (cons (##sys#gcd head n2) (##sys#slot next 1)) #f) ) ) ) ) ) )
 
 (define (##sys#lcm x y)
@@ -1181,12 +1086,15 @@ EOF
       (let loop ([ns ns] [f #t])
 	(let ([head (##sys#slot ns 0)]
 	      [next (##sys#slot ns 1)] )
-	  (cond-expand [unsafe] [else (when f (##sys#check-integer head 'lcm))])
+	  (when f (##sys#check-integer head 'lcm))
 	  (if (null? next)
 	      (abs head)
 	      (let ([n2 (##sys#slot next 0)])
-		(cond-expand [unsafe] [else (##sys#check-integer n2 'lcm)])
-		(loop (cons (##sys#lcm head (##sys#slot next 0)) (##sys#slot next 1)) #f) ) ) ) ) ) )
+		(##sys#check-integer n2 'lcm)
+		(loop
+		 (cons
+		  (##sys#lcm head (##sys#slot next 0))
+		  (##sys#slot next 1)) #f) ) ) ) ) ) )
 
 (define ##sys#string->number (##core#primitive "C_string_to_number"))
 (define string->number ##sys#string->number)
@@ -1376,7 +1284,7 @@ EOF
 
 (define (##sys#make-vector size . fill)
   (##sys#check-exact size 'make-vector)
-  (cond-expand [unsafe] [else (when (fx< size 0) (##sys#error 'make-vector "size is negative" size))])
+  (when (fx< size 0) (##sys#error 'make-vector "size is negative" size))
   (##sys#allocate-vector
    size #f
    (if (null? fill)
@@ -1387,19 +1295,7 @@ EOF
 (define make-vector ##sys#make-vector)
 
 (define (list->vector lst0)
-  (cond-expand
-    [unsafe
-    (let* ([len (length lst0)]
-	   [v (##sys#make-vector len)] )
-      (let loop ([lst lst0]
-		 [i 0])
-	(if (null? lst)
-	  v
-	  (begin
-	    (##sys#setslot v i (##sys#slot lst 0))
-	    (loop (##sys#slot lst 1) (fx+ i 1)) ) ) ) )]
-    [else
-    (if (not (list? lst0))
+  (if (not (list? lst0))
       (##sys#error-not-a-proper-list lst0 'list->vector)
       (let* ([len (length lst0)]
 	     [v (##sys#make-vector len)] )
@@ -1409,8 +1305,7 @@ EOF
 	    v
 	    (begin
 	      (##sys#setslot v i (##sys#slot lst 0))
-	      (loop (##sys#slot lst 1) (fx+ i 1)) ) ) ) ) )]
-    ))
+	      (loop (##sys#slot lst 1) (fx+ i 1)) ) ) ) ) ))
 
 (define (vector->list v)
   (##sys#check-vector v 'vector->list)
@@ -1438,13 +1333,10 @@ EOF
 	 [len-to (##sys#size to)] 
 	 [n (if (pair? n) (car n) (fxmin len-to len-from))] )
     (##sys#check-exact n 'vector-copy!)
-    (cond-expand
-     [(not unsafe)
-      (when (or (fx> n len-to) (fx> n len-from))
-	(##sys#signal-hook 
-	 #:bounds-error 'vector-copy!
-	 "cannot copy vector - count exceeds length" from to n) ) ]
-     [else] )
+    (when (or (fx> n len-to) (fx> n len-from))
+      (##sys#signal-hook 
+       #:bounds-error 'vector-copy!
+       "cannot copy vector - count exceeds length" from to n) )
     (do ([i 0 (fx+ i 1)])
 	((fx>= i n))
       (##sys#setslot to i (##sys#slot from i)) ) ) )
@@ -1607,32 +1499,18 @@ EOF
 
 (define (##sys#for-each p lst0)
   (let loop ((lst lst0))
-    (cond-expand
-     [unsafe
-      (if (eq? lst '()) 
-	  (##core#undefined)
-	  (begin
-	    (p (##sys#slot lst 0))
-	    (loop (##sys#slot lst 1)) ) ) ]
-     [else
-      (cond ((eq? lst '()) (##core#undefined))
-	    ((pair? lst)
-	     (p (##sys#slot lst 0))
-	     (loop (##sys#slot lst 1)) )
-	    (else (##sys#error-not-a-proper-list lst0 'for-each)) ) ] ) ) )
+    (cond ((eq? lst '()) (##core#undefined))
+	  ((pair? lst)
+	   (p (##sys#slot lst 0))
+	   (loop (##sys#slot lst 1)) )
+	  (else (##sys#error-not-a-proper-list lst0 'for-each)) ) ))
 
 (define (##sys#map p lst0)
   (let loop ((lst lst0))
-    (cond-expand
-     [unsafe
-      (if (eq? lst '()) 
-	  lst
-	  (cons (p (##sys#slot lst 0)) (loop (##sys#slot lst 1))) ) ]
-     [else
-      (cond ((eq? lst '()) lst)
-	    ((pair? lst)
-	     (cons (p (##sys#slot lst 0)) (loop (##sys#slot lst 1))) )
-	    (else (##sys#error-not-a-proper-list lst0 'map)) ) ] ) ) )
+    (cond ((eq? lst '()) lst)
+	  ((pair? lst)
+	   (cons (p (##sys#slot lst 0)) (loop (##sys#slot lst 1))) )
+	  (else (##sys#error-not-a-proper-list lst0 'map)) ) ))
 
 (define for-each)
 (define map)
@@ -1645,8 +1523,7 @@ EOF
 		  lsts
 		  (let ((item (##sys#slot lsts 0)))
 		    (cond ((eq? item '())
-			   (cond-expand [unsafe (##core#undefined)]
-					[else (check lsts start loc)] ) )
+			   (check lsts start loc))
 			  ((pair? item)
 			   (cons (p item) (mapsafe p (##sys#slot lsts 1) #f loc)) )
 			  (else (##sys#error-not-a-proper-list item loc)) ) ) ) ) )
