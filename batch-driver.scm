@@ -205,8 +205,6 @@
     (when (memq 'optimize-leaf-routines options) (set! optimize-leaf-routines #t))
     (when (memq 'unsafe options) 
       (set! unsafe #t) )
-    (when (and dynamic (memq 'unsafe-libraries options))
-      (set! emit-unsafe-marker #t) )
     (when (memq 'setup-mode options)
       (set! ##sys#setup-mode #t))
     (when (memq 'disable-interrupts options) (set! insert-timer-checks #f))

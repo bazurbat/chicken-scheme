@@ -570,10 +570,8 @@ typedef unsigned __int64   uint64_t;
 #define C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR         30
 #define C_BAD_ARGUMENT_TYPE_NO_POINTER_ERROR          31
 #define C_BAD_ARGUMENT_TYPE_NO_TAGGED_POINTER_ERROR   32
-#define C_RUNTIME_UNSAFE_DLOAD_SAFE_ERROR             33
-#define C_RUNTIME_SAFE_DLOAD_UNSAFE_ERROR             34
-#define C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR           35
-#define C_BAD_ARGUMENT_TYPE_NO_CLOSURE_ERROR          36
+#define C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR           33
+#define C_BAD_ARGUMENT_TYPE_NO_CLOSURE_ERROR          34
 
 
 /* Platform information */

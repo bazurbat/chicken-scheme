@@ -3847,14 +3847,8 @@ EOF
 	((30) (apply ##sys#signal-hook #:type-error loc "bad argument type - not an unsigned integer" args))
 	((31) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a pointer" args))
 	((32) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a tagged pointer" args))
-	((33) (apply ##sys#signal-hook #:runtime-error loc
-		     "code to load dynamically was linked with safe runtime libraries, but executing runtime was not"
-		     args) )
-	((34) (apply ##sys#signal-hook #:runtime-error loc
-		     "code to load dynamically was linked with unsafe runtime libraries, but executing runtime was not"
-		     args) )
-	((35) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a flonum" args))
-	((36) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a procedure" args))
+	((33) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a flonum" args))
+	((34) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a procedure" args))
 	(else (apply ##sys#signal-hook #:runtime-error loc "unknown internal error" args)) ) ) ) )
 
 

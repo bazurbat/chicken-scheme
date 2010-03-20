@@ -68,17 +68,9 @@ LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libchicken.dll.a \
 	-Wl,--dll \
 	-Wl,--add-stdcall-alias \
 	-Wl,--no-whole-archive
-LIBUCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libuchicken.dll.a \
-	-Wl,--export-all-symbols \
-	-Wl,--enable-auto-import \
-	-Wl,--image-base=0x10000000 \
-	-Wl,--dll \
-	-Wl,--add-stdcall-alias \
-	-Wl,--no-whole-archive
 
 LIBRARIES = -lm 
 LIBCHICKEN_IMPORT_LIBRARY = libchicken.dll.a
-LIBUCHICKEN_IMPORT_LIBRARY = libuchicken.dll.a
 
 
 # special files
@@ -92,7 +84,6 @@ CUSTOM_CHICKEN_DEFAULTS=1
 include $(SRCDIR)/defaults.make
 
 LIBCHICKEN_SO_LIBRARIES = $(LIBRARIES)
-LIBUCHICKEN_SO_LIBRARIES = $(LIBRARIES)
 
 chicken-config.h: chicken-defaults.h
 	echo "/* GENERATED */" >$@

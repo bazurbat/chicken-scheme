@@ -109,7 +109,6 @@
  emit-profile
  emit-syntax-trace-info
  emit-trace-info
- emit-unsafe-marker
  enable-inline-files
  encode-literal
  eq-inline-operator
