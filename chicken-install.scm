@@ -518,11 +518,11 @@ EOF
                         (let ((setups (glob "*.setup")))
                           (cond ((pair? setups)
                                  (set! *eggs+dirs+vers*
-                                       (append
-                                        (map
-                                         (lambda (s) (cons (pathname-file s) (list "." "")))
-                                         setups)
-                                        *eggs+dirs+vers*)))
+				   (append
+				    (map
+				     (lambda (s) (cons (pathname-file s) (list "." "")))
+				     setups)
+				    *eggs+dirs+vers*)))
                                 (else
                                  (print "no setup-scripts to process")
                                  (exit 1))) ) )
