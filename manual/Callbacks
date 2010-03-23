@@ -67,6 +67,7 @@ statically allocated memory (for example by using {{object-evict}}).
 
 Results of type {{scheme-object}} returned by {{define-external}}
 are always allocated in the secondary heap, that is, not in the stack.
+
 === C_callback
 
  [C function] C_word C_callback (C_word closure, int argc)
