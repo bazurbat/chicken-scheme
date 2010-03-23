@@ -123,16 +123,16 @@
 (define *mkdir-command*)
 
 (define (windows-user-install-setup)
-  (set! *copy-command*        'copy)
+  (set! *copy-command*        "copy")
   (set! *remove-command*      "del /Q /S")
-  (set! *move-command*        'move)
+  (set! *move-command*        "move")
   (set! *chmod-command*       "chmod")
   (set! *ranlib-command*      "ranlib") )
 
 (define (unix-user-install-setup)
   (set! *copy-command*        "cp -r")
   (set! *remove-command*      "rm -fr")
-  (set! *move-command*        'mv)
+  (set! *move-command*        "mv")
   (set! *chmod-command*       "chmod")
   (set! *ranlib-command*      "ranlib")
   (set! *mkdir-command*       "mkdir") )
@@ -212,7 +212,7 @@
   (let* ((name (->string name))
 	 (a (assoc name *registered-programs*)))
     (if a
-	(cdr a)
+	(shellpath (cdr a))
 	name)))
 
 (let ()
@@ -237,7 +237,7 @@
 	(if (deployment-mode) "-deployed" "")
 	*csc-options*) 
        " ")
-      (shellpath (find-program prg))))
+      (find-program prg)))
 
 (define (fixmaketarget file)
   (if (and (equal? "so" (pathname-extension file))
