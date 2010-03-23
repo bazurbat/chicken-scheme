@@ -1300,8 +1300,6 @@ Usage: chicken FILENAME OPTION ...
   Obscure options:
 
     -debug MODES                 display debugging output for the given modes
-    -unsafe-libraries            marks the generated file as being linked with
-                                  the unsafe runtime system
     -raw                         do not generate implicit init- and exit code                           
     -emit-external-prototypes-first
                                  emit prototypes for callbacks before foreign

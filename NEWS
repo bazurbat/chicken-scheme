@@ -1,3 +1,12 @@
+4.4.3
+
+- removed the unsafe runtime library (`libuchicken'), this
+  simplifies and speeds up the build and reduces the risk
+  of executables loading library units from different
+  variants of the runtime system
+- removed the `-unsafe-libraries' option from `chicken'
+  and `csc'
+
 4.4.2
 
 - removed bootstrapping target and bootstrapping files from
