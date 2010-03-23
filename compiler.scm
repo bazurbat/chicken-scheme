@@ -322,7 +322,6 @@
 (define explicit-use-flag #f)
 (define disable-stack-overflow-checking #f)
 (define require-imports-flag #f)
-(define emit-unsafe-marker #f)
 (define external-protos-first #f)
 (define do-lambda-lifting #f)
 (define inline-max-size default-inline-max-size)

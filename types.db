@@ -461,7 +461,7 @@
 (queue-last (procedure queue-last ((struct queue)) *))
 (queue-push-back! (procedure queue-push-back! ((struct queue) *) undefined))
 (queue-push-back-list! (procedure queue-push-back-list! ((struct queue) list) undefined))
-(queue-remove! (procedure queue-remove! ((struct queue)) undefined))
+(queue-remove! (procedure queue-remove! ((struct queue)) *))
 (queue? (procedure queue? (*) boolean))
 (rassoc (procedure rassoc (* list #!optional (procedure (* *) *)) *))
 (right-section (procedure right-section (procedure #!rest) procedure))

@@ -121,11 +121,6 @@
    (if msvc "libchicken-static." "libchicken.")
    library-extension))
 
-(define default-unsafe-library
-  (string-append
-   (if msvc "libuchicken-static." "libuchicken.")
-   library-extension))
-
 (define default-compilation-optimization-options (string-split (if host-mode INSTALL_CFLAGS TARGET_CFLAGS)))
 (define best-compilation-optimization-options default-compilation-optimization-options)
 (define default-linking-optimization-options (string-split (if host-mode INSTALL_LDFLAGS TARGET_LDFLAGS)))
@@ -218,26 +213,6 @@
   (if msvc
       (list (string-append "libchicken." library-extension))
       '("-lchicken")))
-
-(define unsafe-libraries #f)
-
-(define unsafe-library-files
-  (list
-   (quotewrap 
-    (prefix default-unsafe-library "lib"
-	    (string-append 
-	     (if host-mode INSTALL_LIB_HOME TARGET_LIB_HOME)
-	     (string-append "/" default-unsafe-library)))) ))
-
-(define unsafe-shared-library-files
-  (if msvc
-      (list (string-append "libuchicken." library-extension))
-      '("-luchicken")))
-
-(define (use-unsafe-libraries)
-  (set! unsafe-libraries #t)
-  (set! library-files unsafe-library-files)
-  (set! shared-library-files unsafe-shared-library-files))
 
 (define library-files default-library-files)
 (define shared-library-files default-shared-library-files)
@@ -339,7 +314,7 @@ Usage: #{csc} FILENAME | OPTION ...
   Syntax related options:
 
     -i -case-insensitive           don't preserve case of read symbols    
-    -k  -keyword-style STYLE       enable alternative keyword-syntax
+    -K  -keyword-style STYLE       enable alternative keyword-syntax
                                     (prefix, suffix or none)
         -no-parentheses-synonyms   disables list delimiter synonyms
         -no-symbol-escape          disables support for escaped symbols
@@ -386,7 +361,6 @@ Usage: #{csc} FILENAME | OPTION ...
     -disable-interrupts            disable interrupts in compiled code
     -f  -fixnum-arithmetic         assume all numbers are fixnums
     -lambda-lift                   perform lambda-lifting
-    -unsafe-libraries              link with unsafe runtime system
     -disable-stack-overflow-checks disables detection of stack-overflows
     -inline                        enable inlining
     -inline-limit                  set inlining threshold
@@ -730,9 +704,6 @@ EOF
 		(check s rest)
 		(set! link-options (append link-options (string-split (car rest))))
 		(set! rest (cdr rest)) ]
-	       [(-unsafe-libraries)
-		(t-options arg)
-		(use-unsafe-libraries) ]
 	       [(-rpath)
 		(check s rest)
 		(set! rpath (car rest))
@@ -745,9 +716,6 @@ EOF
 		(set! target-filename (make-pathname #f "a" executable-extension))
 		(set! scheme-files (append scheme-files '("-")))]
 	       [else
-		(when (memq s '(-unsafe -benchmark-mode))
-		  (when (eq? s '-benchmark-mode)
-			(use-unsafe-libraries) ) )
 		(when (eq? s '-to-stdout) 
 		  (set! to-stdout #t)
 		  (set! translate-only #t) )
@@ -923,9 +891,9 @@ EOF
     (when (and osx (or (not cross-chicken) host-mode))
       (command
        (string-append
-	"install_name_tool -change lib" (if unsafe-libraries "u" "") "chicken.dylib "
+	"install_name_tool -change libchicken.dylib "
 	(quotewrap 
-	 (let ((lib (if unsafe-libraries "libuchicken.dylib" "libchicken.dylib")) )
+	 (let ((lib "libchicken.dylib"))
 	   (if deployed
 	       (make-pathname "@executable_path" lib)
 	       (make-pathname
@@ -958,9 +926,7 @@ EOF
 (define (copy-libraries targetdir)
   (let ((lib (make-pathname
 	      (lib-path) 
-	      (if unsafe-libraries
-		  "libuchicken"
-		  "libchicken")
+	      "libchicken"
 	      (cond (osx "dylib")
 		    (win "dll")
 		    (else (conc "so." BINARY_VERSION))))))

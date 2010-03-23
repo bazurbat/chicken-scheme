@@ -218,9 +218,7 @@ EOF
   (let ([reverse reverse])
     (lambda (lst n)
       (##sys#check-exact n 'chop)
-      (cond-expand
-       [(not unsafe) (when (fx<= n 0) (##sys#error 'chop "invalid numeric argument" n))]
-       [else] )
+      (when (fx<= n 0) (##sys#error 'chop "invalid numeric argument" n))
       (let ([len (length lst)])
 	(let loop ([lst lst] [i len])
 	  (cond [(null? lst) '()]
@@ -237,7 +235,7 @@ EOF
     (##sys#check-list lst 'join)
     (let loop ([lsts lsts])
       (cond [(null? lsts) '()]
-	    [(cond-expand [unsafe #f] [else (not (pair? lsts))])
+	    [(not (pair? lsts))
 	     (##sys#error-not-a-proper-list lsts) ]
 	    [else
 	     (let ([l (##sys#slot lsts 0)]
@@ -252,11 +250,12 @@ EOF
       (##sys#check-list lst 'compress)
       (let loop ([blst blst] [lst lst])
 	(cond [(null? blst) '()]
-	      [(cond-expand [unsafe #f] [else (not (pair? blst))])
+	      [(not (pair? blst))
 	       (##sys#signal-hook #:type-error 'compress msg blst) ]
-	      [(cond-expand [unsafe #f] [else (not (pair? lst))])
+	      [(not (pair? lst))
 	       (##sys#signal-hook #:type-error 'compress msg lst) ]
-	      [(##sys#slot blst 0) (cons (##sys#slot lst 0) (loop (##sys#slot blst 1) (##sys#slot lst 1)))]
+	      [(##sys#slot blst 0)
+	       (cons (##sys#slot lst 0) (loop (##sys#slot blst 1) (##sys#slot lst 1)))]
 	      [else (loop (##sys#slot blst 1) (##sys#slot lst 1))] ) ) ) ) )
 
 (define shuffle
@@ -307,12 +306,12 @@ EOF
 	default) ) )
 
 (define (rassoc x lst . tst)
-  (cond-expand [(not unsafe) (##sys#check-list lst 'rassoc)][else])
+  (##sys#check-list lst 'rassoc)
   (let ([tst (if (pair? tst) (car tst) eqv?)])
     (let loop ([l lst])
       (and (pair? l)
 	   (let ([a (##sys#slot l 0)])
-	     (cond-expand [(not unsafe) (##sys#check-pair a 'rassoc)][else])
+	     (##sys#check-pair a 'rassoc)
 	     (if (tst x (##sys#slot a 1))
 		 a
 		 (loop (##sys#slot l 1)) ) ) ) ) ) )
@@ -561,7 +560,7 @@ EOF
 			[(char? to)
 			 (##core#inline "C_setsubchar" str2 j to)
 			 (loop (fx+ i 1) (fx+ j 1)) ]
-			[(cond-expand [unsafe #f] [else (fx>= found tlen)])
+			[(fx>= found tlen)
 			 (##sys#error 'string-translate "invalid translation destination" i to) ]
 			[else 
 			 (##core#inline "C_setsubchar" str2 j (##core#inline "C_subchar" to found))
@@ -870,22 +869,16 @@ EOF
   (lambda (q)
     (##sys#check-structure q 'queue 'queue-first)
     (let ((first-pair (##sys#slot q 1)))
-      (cond-expand 
-       [(not unsafe)
-	(when (eq? '() first-pair)
-	  (##sys#error 'queue-first "queue is empty" q)) ]
-       [else] )
+      (when (eq? '() first-pair)
+	(##sys#error 'queue-first "queue is empty" q))
       (##sys#slot first-pair 0) ) ) )
 
 (define queue-last
   (lambda (q)
     (##sys#check-structure q 'queue 'queue-last)
     (let ((last-pair (##sys#slot q 2)))
-      (cond-expand
-       [(not unsafe)
-	(when (eq? '() last-pair)
-	  (##sys#error 'queue-last "queue is empty" q)) ]
-       [else] )
+      (when (eq? '() last-pair)
+	(##sys#error 'queue-last "queue is empty" q))
       (##sys#slot last-pair 0) ) ) )
 
 (define (queue-add! q datum)
@@ -900,11 +893,8 @@ EOF
   (lambda (q)
     (##sys#check-structure q 'queue 'queue-remove!)
     (let ((first-pair (##sys#slot q 1)))
-      (cond-expand
-       [(not unsafe)
-	(when (eq? '() first-pair)
-	  (##sys#error 'queue-remove! "queue is empty" q) ) ]
-       [else] )
+      (when (eq? '() first-pair)
+	(##sys#error 'queue-remove! "queue is empty" q) )
       (let ((first-cdr (##sys#slot first-pair 1)))
 	(##sys#setslot q 1 first-cdr)
 	(if (eq? '() first-cdr)

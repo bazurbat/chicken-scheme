@@ -227,6 +227,7 @@
 
 (define ##sys#unbound-in-eval #f)
 (define ##sys#eval-debug-level 1)
+(define ##sys#unsafe-eval #f)
 
 (define ##sys#compile-to-closure
   (let ([write write]
@@ -300,20 +301,21 @@
 			  (if ##sys#eval-environment
 			      (let ([loc (##sys#hash-table-location ##sys#eval-environment var #t)])
 				(unless loc (##sys#syntax-error-hook "reference to undefined identifier" var))
-				(cond-expand 
-				 [unsafe (lambda v (##sys#slot loc 1))]
-				 [else
-				  (lambda v 
-				    (let ([val (##sys#slot loc 1)])
-				      (if (eq? unbound val)
-					  (##sys#error "unbound variable" var)
-					  val) ) ) ] ) )
-			      (cond-expand
-			       [unsafe (lambda v (##core#inline "C_slot" var 0))]
-			       [else
-				(when (and ##sys#unbound-in-eval (not (##sys#symbol-has-toplevel-binding? var)))
-				  (set! ##sys#unbound-in-eval (cons (cons var cntr) ##sys#unbound-in-eval)) )
-				(lambda v (##core#inline "C_retrieve" var))] ) ) ) ]
+				(if ##sys#unsafe-eval 
+				    (lambda v (##sys#slot loc 1))
+				    (lambda v 
+				      (let ([val (##sys#slot loc 1)])
+					(if (eq? unbound val)
+					    (##sys#error "unbound variable" var)
+					    val) ) ) ))
+			      (cond (##sys#unsafe-eval
+				     (lambda v (##core#inline "C_slot" var 0)))
+				    (else
+				     (when (and ##sys#unbound-in-eval
+						(not (##sys#symbol-has-toplevel-binding? var)))
+				       (set! ##sys#unbound-in-eval
+					 (cons (cons var cntr) ##sys#unbound-in-eval)) )
+				     (lambda v (##core#inline "C_retrieve" var))))))]
 		       [(zero? i) (lambda (v) (##sys#slot (##sys#slot v 0) j))]
 		       [else (lambda (v) (##sys#slot (##core#inline "C_u_i_list_ref" v i) j))] ) ) )
 	      [(##sys#number? x)

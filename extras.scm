@@ -611,7 +611,7 @@
 	      (set! index (fx+ index 1))
 	      c) )
 	  (define (next)
-	    (if (cond-expand [unsafe #f] [else (##core#inline "C_eqp" args '())])
+	    (if (##core#inline "C_eqp" args '())
 		(##sys#error loc "too few arguments to formatted output procedure")
 		(let ((x (##sys#slot args 0)))
 		  (set! args (##sys#slot args 1)) 

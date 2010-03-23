@@ -109,7 +109,6 @@
  emit-profile
  emit-syntax-trace-info
  emit-trace-info
- emit-unsafe-marker
  enable-inline-files
  encode-literal
  eq-inline-operator
@@ -132,7 +131,6 @@
  external-protos-first
  external-to-pointer
  external-variables
- extract-mutable-constants
  file-io-only
  file-requirements
  final-foreign-type
