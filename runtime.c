@@ -217,19 +217,12 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #define ptr_to_fptr(x)               ((((x) >> FORWARDING_BIT_SHIFT) & 1) | C_GC_FORWARDING_BIT | ((x) & ~1))
 #define fptr_to_ptr(x)               (((x) << FORWARDING_BIT_SHIFT) | ((x) & ~(C_GC_FORWARDING_BIT | 1)))
 
-#ifdef C_UNSAFE_RUNTIME
-# define C_check_flonum(x, w)
-# define C_check_real(x, w, v)       if(((x) & C_FIXNUM_BIT) != 0) v = C_unfix(x); \
-                                     else v = C_flonum_magnitude(x);
-# define resolve_procedure(x, w)     (x)
-#else
-# define C_check_flonum(x, w)        if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG) \
+#define C_check_flonum(x, w)        if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG) \
                                        barf(C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR, w, x);
-# define C_check_real(x, w, v)       if(((x) & C_FIXNUM_BIT) != 0) v = C_unfix(x); \
+#define C_check_real(x, w, v)       if(((x) & C_FIXNUM_BIT) != 0) v = C_unfix(x); \
                                      else if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG) \
                                        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, w, x); \
                                      else v = C_flonum_magnitude(x);
-#endif
 
 
 /* these could be shorter in unsafe mode: */
@@ -1574,16 +1567,6 @@ void barf(int code, char *loc, ...)
     c = 2;
     break;
 
-  case C_RUNTIME_UNSAFE_DLOAD_SAFE_ERROR:
-    msg = C_text("code to load dynamically was linked with safe runtime libraries, but executing runtime was not");
-    c = 0;
-    break;
-
-  case C_RUNTIME_SAFE_DLOAD_UNSAFE_ERROR:
-    msg = C_text("code to load dynamically was linked with unsafe runtime libraries, but executing runtime was not");
-    c = 0;
-    break;
-
   case C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR:
     msg = C_text("bad argument type - not a flonum");
     c = 1;
@@ -1714,10 +1697,8 @@ C_word C_fcall C_restore_callback_continuation2(int level)
   C_word p = C_block_item(callback_continuation_stack_symbol, 0),
          k;
 
-#ifndef C_UNSAFE_RUNTIME
   if(level != callback_continuation_level || C_immediatep(p) || C_block_header(p) != C_PAIR_TAG)
     panic(C_text("unbalanced callback continuation stack"));
-#endif
 
   k = C_u_i_car(p);
 
@@ -1735,10 +1716,8 @@ C_word C_fcall C_callback(C_word closure, int argc)
     k = C_closure(&a, 1, (C_word)callback_return_continuation);
   int old = chicken_is_running;
 
-#ifndef C_UNSAFE_RUNTIME
   if(old && C_block_item(callback_continuation_stack_symbol, 0) == C_SCHEME_END_OF_LIST)
     panic(C_text("callback invoked in non-safe context"));
-#endif
 
   C_memcpy(&prev, &C_restart, sizeof(jmp_buf));
   callback_returned_flag = 0;       
@@ -3524,7 +3503,6 @@ C_regparm C_word C_fcall C_retrieve2(C_word val, char *name)
 }
 
 
-#ifndef C_UNSAFE_RUNTIME
 static C_word resolve_procedure(C_word closure, C_char *where)
 {
   C_word s;
@@ -3535,7 +3513,6 @@ static C_word resolve_procedure(C_word closure, C_char *where)
 
   return closure;
 }
-#endif
 
 
 C_regparm void *C_fcall C_retrieve_proc(C_word closure)
@@ -4000,12 +3977,12 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
   long tgc;
 
   switch(fudge_factor) {
-  case C_fix(1): return C_SCHEME_END_OF_FILE;
-  case C_fix(2): 
+  case C_fix(1): return C_SCHEME_END_OF_FILE; /* eof object */
+  case C_fix(2):			      /* get time */
     /* can be considered broken (overflows into negatives), but is useful for randomize */
     return C_fix(C_MOST_POSITIVE_FIXNUM & time(NULL));
 
-  case C_fix(3):
+  case C_fix(3):		/* 64-bit system? */
 #ifdef C_SIXTY_FOUR
     return C_SCHEME_TRUE;
 #else
@@ -4026,60 +4003,56 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
 
     return C_fix(0);
 
-  case C_fix(6): 
+  case C_fix(6): 		/* milliseconds CPU */
     return C_fix(C_MOST_POSITIVE_FIXNUM & cpu_milliseconds());
 
-  case C_fix(7):
+  case C_fix(7):		/* wordsize */
     return C_fix(sizeof(C_word));
 
-  case C_fix(8):
+  case C_fix(8):		/* words needed for double */
     return C_fix(C_wordsperdouble(1));
 
-  case C_fix(9):
+  case C_fix(9):		/* latency */
     return C_fix(last_interrupt_latency);
 
-  case C_fix(10):
+  case C_fix(10):		/* clocks per sec */
     return C_fix(CLOCKS_PER_SEC);
 
-  case C_fix(11):
+  case C_fix(11):		/* not a unix system? */
 #if defined(C_NONUNIX) || defined(__CYGWIN__)
     return C_SCHEME_FALSE;
 #else
     return C_SCHEME_TRUE;
 #endif
 
-  case C_fix(12):
+  case C_fix(12):		/* tty forced? */
     return C_mk_bool(fake_tty_flag);
 
-  case C_fix(13):
+  case C_fix(13):		/* debug mode */
     return C_mk_bool(debug_mode);
 
-  case C_fix(14):
+  case C_fix(14):		/* interrupts enabled? */
     return C_mk_bool(C_interrupts_enabled);
 
-  case C_fix(15):
+  case C_fix(15):		/* symbol-gc enabled? */
     return C_mk_bool(C_enable_gcweak);
 
-  case C_fix(16):
+  case C_fix(16):		/* milliseconds (wall clock) */
     return C_fix(C_MOST_POSITIVE_FIXNUM & milliseconds());
 
-  case C_fix(17):
+  case C_fix(17):		/* fixed heap? */
     return(C_mk_bool(C_heap_size_is_fixed));
 
-  case C_fix(18):
+  case C_fix(18):		/* stack direction */
     return(C_fix(C_STACK_GROWS_DOWNWARD));
 
-  case C_fix(19):
+  case C_fix(19):		/* number of locatives */
     for(i = j = 0; i < locative_table_count; ++i)
       if(locative_table[ i ] != C_SCHEME_UNDEFINED) ++j;
     return C_fix(j);
 
   case C_fix(20):
-#ifdef C_UNSAFE_RUNTIME
-    return C_SCHEME_TRUE;
-#else
     return C_SCHEME_FALSE;
-#endif
 
   case C_fix(21):
     return C_fix(C_MOST_POSITIVE_FIXNUM);
@@ -5652,9 +5625,7 @@ void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...)
   void *proc;
 #endif
 
-#ifndef C_UNSAFE_RUNTIME
   if(c < 4) C_bad_min_argc(c, 4);
-#endif
 
   fn2 = resolve_procedure(fn, "apply");
 
@@ -5671,27 +5642,21 @@ void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...)
 
   x = va_arg(v, C_word);
 
-#ifndef C_UNSAFE_RUNTIME
   if(x != C_SCHEME_END_OF_LIST && (C_immediatep(x) || C_block_header(x) != C_PAIR_TAG))
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "apply", x);
-#endif
 
   for(skip = x; !C_immediatep(skip) && C_block_header(skip) == C_PAIR_TAG; skip = C_u_i_cdr(skip)) {
     x = C_u_i_car(skip);
 
 #ifdef C_HACKED_APPLY
-# ifndef C_UNSAFE_RUNTIME
     if(buf >= C_temporary_stack_bottom) barf(C_TOO_MANY_PARAMETERS_ERROR, "apply");
-# endif
 
     *(buf++) = x;
 #else
     C_save(x);
 
-# ifndef C_UNSAFE_RUNTIME
     if(C_temporary_stack < C_temporary_stack_limit)
       barf(C_TOO_MANY_PARAMETERS_ERROR, "apply");
-# endif
 #endif
     ++n;
   }
@@ -5899,9 +5864,7 @@ void C_ccall C_apply_values(C_word c, C_word closure, C_word k, C_word lst)
 {
   C_word n;
 
-#ifndef C_UNSAFE_RUNTIME
   if(c != 3) C_bad_argc(c, 3);
-#endif
 
   /* Check continuation wether it receives multiple values: */
   if(C_block_item(k, 0) == (C_word)values_continuation) {
@@ -5932,7 +5895,6 @@ void C_ccall C_call_with_values(C_word c, C_word closure, C_word k, C_word thunk
   C_word *a = C_alloc(4),
          kk;
 
-#ifndef C_UNSAFE_RUNTIME
   if(c != 4) C_bad_argc(c, 4);
 
   if(C_immediatep(thunk) || C_header_bits(thunk) != C_CLOSURE_TYPE)
@@ -5940,7 +5902,6 @@ void C_ccall C_call_with_values(C_word c, C_word closure, C_word k, C_word thunk
 
   if(C_immediatep(kont) || C_header_bits(kont) != C_CLOSURE_TYPE)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "call-with-values", kont);
-#endif
 
   kk = C_closure(&a, 3, (C_word)values_continuation, kont, k);
   C_do_apply(0, thunk, kk);
@@ -8015,7 +7976,6 @@ void dload_2(void *dummy)
   C_char *topname = (C_char *)C_data_pointer(entry);
   C_char *mname = (C_char *)C_data_pointer(name);
   C_char *tmp;
-  int ok;
 
   if(C_truep(reloadable) && (reload_lf = find_module_handle(mname)) != NULL) {
     if(C_dlclose(reload_lf->module_handle) != 0)
@@ -8037,24 +7997,6 @@ void dload_2(void *dummy)
     }
 
     if(p != NULL) {
-      /* check whether dloaded code is not a library unit */
-      if((p2 = C_dlsym(handle, C_text("C_dynamic_and_unsafe"))) == NULL)
-	p2 = C_dlsym(handle, C_text("_C_dynamic_and_unsafe"));
-
-#ifdef C_UNSAFE_RUNTIME
-      ok = p2 != NULL;		/* unsafe runtime, unsafe code */
-#else
-      ok = p2 == NULL;		/* safe runtime, safe code */
-#endif
-      
-      /* unsafe marker not found and this is not a library unit? */
-      if(!ok && !C_strcmp(topname, "C_toplevel"))
-#ifdef C_UNSAFE_RUNTIME
-	barf(C_RUNTIME_UNSAFE_DLOAD_SAFE_ERROR, NULL);
-#else
-	barf(C_RUNTIME_SAFE_DLOAD_UNSAFE_ERROR, NULL);
-#endif
-
       current_module_name = C_strdup(mname);
       current_module_handle = handle;
 
@@ -8086,7 +8028,6 @@ void dload_2(void *dummy)
 void dload_2(void *dummy)
 {
   HINSTANCE handle;
-  int ok;
   FARPROC p = NULL, p2;
   C_word
     reloadable = C_restore,
@@ -8113,25 +8054,6 @@ void dload_2(void *dummy)
 
   if((handle = LoadLibrary(mname)) != NULL) {
     if ((p = GetProcAddress(handle, topname)) != NULL) {
-      /* check whether dloaded code is not a library unit
-       * and matches current safety setting: */
-      p2 = GetProcAddress(handle, C_text("C_dynamic_and_unsafe"));
-
-#ifdef C_UNSAFE_RUNTIME
-      ok = p2 != NULL;		/* unsafe runtime, unsafe code */
-#else
-      ok = p2 == NULL;		/* safe runtime, safe code */
-#endif
-      
-      /* unsafe marker not found and this is not a library unit? */
-      if(!ok && !C_strcmp(topname, "C_toplevel")) {
-#ifdef C_UNSAFE_RUNTIME
-	barf(C_RUNTIME_UNSAFE_DLOAD_SAFE_ERROR, NULL);
-#else
-        barf(C_RUNTIME_SAFE_DLOAD_UNSAFE_ERROR, NULL);
-#endif
-      }
-
       current_module_name = C_strdup(mname);
       current_module_handle = handle;
 

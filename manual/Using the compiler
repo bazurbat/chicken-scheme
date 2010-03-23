@@ -207,8 +207,6 @@ Possible options are:
 
 ; -unsafe : Disable runtime safety checks.
 
-; -unsafe-libraries : Marks the generated file for being linked with the unsafe runtime system. This should be used when generating shared object files that are to be loaded dynamically. If the marker is present, any attempt to load code compiled with this option will signal an error.
-
 ; -uses NAME : Use definitions from the library unit {{NAME}}. This is equivalent to {{-prelude "(declare (uses NAME))"}}. Multiple arguments may be given, separated by {{,}}.
 
 ; -no-usual-integrations : Specifies that standard procedures and certain internal procedures may be redefined, and can not be inlined. This is equivalent to declaring {{(not usual-integrations)}}.

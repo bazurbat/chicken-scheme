@@ -141,25 +141,6 @@ EOF
      (and (pair? loc) (car loc))
      "bad argument type - not a pointer" x) ) )
 
-(cond-expand
-  [unsafe
-   (define-syntax ##sys#check-pointer
-     (syntax-rules ()
-       ((_ . _) (##core#undefined))))
-   (define-syntax ##sys#check-block
-     (syntax-rules ()
-       ((_ . _) (##core#undefined))))
-   (define-syntax ##sys#check-become-alist
-     (syntax-rules ()
-       ((_ . _) (##core#undefined))))
-   (define-syntax ##sys#check-generic-structure
-     (syntax-rules ()
-       ((_ . _) (##core#undefined))))
-   (define-syntax ##sys#check-generic-vector
-     (syntax-rules ()
-       ((_ . _) (##core#undefined)))) ]
-  [else] )
-
 
 ;;; Move arbitrary blocks of memory around:
 
@@ -184,21 +165,19 @@ EOF
 	(apply ##sys#error 'move-memory! "number of bytes to move too large" from to args))
       ;
       (define (checkn1 n nmax off)
-	(if (cond-expand [unsafe #t] [else (fx<= n (fx- nmax off))])
+	(if (fx<= n (fx- nmax off))
 	    n
 	    (sizerr n nmax) ) )
       ;
       (define (checkn2 n nmax nmax2 off1 off2)
-	(if (cond-expand [unsafe #t] [else (and (fx<= n (fx- nmax off1)) (fx<= n (fx- nmax2 off2)))])
+	(if (and (fx<= n (fx- nmax off1)) (fx<= n (fx- nmax2 off2)))
 	    n
 	    (sizerr n nmax nmax2) ) )
       ;
       (##sys#check-block from 'move-memory!)
       (##sys#check-block to 'move-memory!)
-      #+(not unsafe)
       (when (fx< foffset 0)
 	(##sys#error 'move-memory! "negative source offset" foffset))
-      #+(not unsafe)
       (when (fx< toffset 0)
 	(##sys#error 'move-memory! "negative destination offset" toffset))
       (let move ([from from] [to to])
@@ -535,7 +514,7 @@ EOF
 	       y ) ] ) ) ) )
 
 (define (object-evict-to-location x ptr . limit)
-  (cond-expand [(not unsafe) (##sys#check-special ptr 'object-evict-to-location)] [else])
+  (##sys#check-special ptr 'object-evict-to-location)
   (let* ([limit (and (pair? limit)
 		     (let ([limit (car limit)])
 		       (##sys#check-exact limit 'object-evict-to-location)
@@ -636,7 +615,7 @@ EOF
 ;;; `become':
 
 (define (object-become! alst)
-  (cond-expand [(not unsafe) (##sys#check-become-alist alst 'object-become!)] [else])
+  (##sys#check-become-alist alst 'object-become!)
   (##sys#become! alst) )
 
 (define (mutate-procedure old proc)

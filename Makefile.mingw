@@ -71,11 +71,8 @@ LINKER_LINK_SHARED_LIBRARY_OPTIONS = -shared
 LIBRARIES = -lm -lws2_32
 LINKER_OPTIONS += -Wl,--enable-auto-import
 LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libchicken.dll.a
-LIBUCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libuchicken.dll.a
 LIBCHICKEN_SO_LIBRARIES = -lm -lws2_32 
-LIBUCHICKEN_SO_LIBRARIES = -lm -lws2_32 
 LIBCHICKEN_IMPORT_LIBRARY = libchicken.dll.a
-LIBUCHICKEN_IMPORT_LIBRARY = libuchicken.dll.a
 MAKEDIR_COMMAND_OPTIONS =
 CUSTOM_RC_FILE = 1
 
