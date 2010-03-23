@@ -314,7 +314,7 @@ Usage: #{csc} FILENAME | OPTION ...
   Syntax related options:
 
     -i -case-insensitive           don't preserve case of read symbols    
-    -k  -keyword-style STYLE       enable alternative keyword-syntax
+    -K  -keyword-style STYLE       enable alternative keyword-syntax
                                     (prefix, suffix or none)
         -no-parentheses-synonyms   disables list delimiter synonyms
         -no-symbol-escape          disables support for escaped symbols
