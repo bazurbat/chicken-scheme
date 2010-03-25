@@ -240,6 +240,7 @@ CHICKEN's module system has the following features and shortcomings:
 ==== module
 
 <macro>(module NAME (EXPORT ...) BODY ...)</macro><br>
+<macro>(module NAME (EXPORT ...) FILENAME)</macro>
 <macro>(module NAME * BODY ...)</macro>
 
 Defines a module with the name {{NAME}}, a set of exported bindings
@@ -252,8 +253,11 @@ the toplevel or in other modules. The latter case exports
 remaining identifiers in the list to be visible in the expansion of
 the macro (this is a hint to the module expander to export bindings
 referenced by syntax-definitions which make use of them, but which
-would normally be internal to the module - that allows some
-optimization and also records).
+would normally be internal to the module - which gives more
+opportunities for optimization).
+
+When the {{BODY}} consists of a single string, it is handled
+as {{(include FILENAME)}}.
 
 Nested modules, modules not at toplevel (i.e. local modules) or
 mutually recursive modules are not supported.
@@ -270,8 +274,11 @@ will export all definitions.
 Note that the module system is only a device for controlling the
 mapping of identifiers to value or syntax bindings. Modules do not
 instantiate separate environments that contain their own bindings, as
-do many other module systems. Redefinition of value or syntax bindings
-will modify the original, imported definition.
+do many other module systems. Redefinition or assignment of value or
+syntax bindings will modify the original, imported definition.
+
+Syntax expansions may result in module-definitions, but must be
+at toplevel.
 
 
 ==== export

@@ -1372,7 +1372,12 @@
       ,(if (eq? '* (##sys#strip-syntax (caddr x))) 
 	   #t 
 	   (caddr x))
-      ,@(cdddr x)))))
+      ,@(let ((body (cdddr x)))
+	  (if (and (pair? body) 
+		   (null? (cdr body))
+		   (string? (car body)))
+	      `((##core#include ,(car body)))
+	      body))))))
 
 (##sys#extend-macro-environment
  'begin-for-syntax
