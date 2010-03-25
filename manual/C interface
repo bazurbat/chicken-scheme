@@ -4,94 +4,148 @@
 
 == C interface
 
-
 The following functions and macros are available for C code that invokes
 Scheme or foreign procedures that are called by Scheme:
 
+=== Temporary stack
 
-
-=== C_save
+==== C_save
 
  [C macro] void C_save (C_word x) :
 
 Saves the Scheme data object {{x}} on the temporary stack.
 
-
-=== C_restore
+==== C_restore
 
  [C macro] void C_restore
 
 Pops and returns the topmost value from the temporary stack.
 
 
-=== C_fix
+=== Type/value predicates
+
+When writing C code that accepts Scheme objects you often need to do
+checking what type of object is passed.  These can help you determine
+the type of an object.
+
+==== C predicates
+
+These return regular C integer values (ie, zero is false, nonzero true).
+
+===== C_truep
+
+ [C macro] int C_truep(C_word x)
+
+Is {{x}} a truthy value, i.e. anything except {{C_SCHEME_FALSE}}?
+
+===== C_immediatep
+
+ [C macro] int C_immediatep(C_word x)
+
+Is {{x}} an immediate object?
+(see [[#constructors-for-immediate-scheme-objects|below]] for a definition)
+
+===== C_fitsinfixnump
+
+ [C macro] int C_fitsinfixnump(int number)
+
+Will {{number}} fit in a fixnum?  It will fit when there is room for
+one additional type bit to tag it as a fixnum (assuming one bit is
+already used for the sign). In practice this means that the number's
+top two bits must be identical.
+
+===== C_ufitsinfixnump
+
+ [C macro] int C_ufitsinfixnump(unsigned int number)
+
+Like {{C_fitsinfixnump}} but for unsigned integers.  This checks the
+top ''two'' bits are zero, since fixnums '''always''' carry a sign.
+
+
+=== Constructors
+
+==== Constructors for immediate Scheme objects
+
+"immediate" Scheme objects are objects that are represented directly
+by a {{C_word}}.  There's no additional memory used by them.
+
+===== C_fix
 
  [C macro] C_word C_fix (int integer)
 
-=== C_make_character
+===== C_make_character
 
  [C macro] C_word C_make_character (int char_code)
 
-=== C_SCHEME_END_OF_LIST
+===== C_mk_bool
+
+ [C macro] C_word C_mk_bool(int truth_value)
+
+===== C_SCHEME_END_OF_LIST
 
  [C macro] C_SCHEME_END_OF_LIST
 
-=== C_word C_SCHEME_END_OF_FILE
+===== C_SCHEME_END_OF_FILE
 
  [C macro] C_SCHEME_END_OF_FILE
 
-=== C_word C_SCHEME_FALSE
+===== C_SCHEME_FALSE
 
  [C macro] C_SCHEME_FALSE
 
-=== C_word C_SCHEME_TRUE
+===== C_SCHEME_TRUE
 
  [C macro] C_SCHEME_TRUE
 
-These macros return immediate Scheme data objects.
 
+==== Constructors for non-immediate Scheme objects
 
-=== C_string
+Non-immediate Scheme objects are still represented and passed around
+by a single {{C_word}}, but this is basically just a pointer to the
+start of the object (which should never be treated as such, use the
+accessor macros instead).
+
+===== C_string
 
  [C function] C_word C_string (C_word **ptr, int length, char *string)
 
-=== C_string2
+===== C_string2
 
  [C function] C_word C_string2 (C_word **ptr, char *zero_terminated_string)
 
-=== C_intern2
+===== C_intern2
 
  [C function] C_word C_intern2 (C_word **ptr, char *zero_terminated_string)
 
-=== C_intern3
+===== C_intern3
 
  [C function] C_word C_intern3 (C_word **ptr, char *zero_terminated_string, C_word initial_value)
 
-=== C_pair
+===== C_pair
 
  [C function] C_word C_pair (C_word **ptr, C_word car, C_word cdr)
 
-=== C_flonum
+===== C_flonum
 
  [C function] C_word C_flonum (C_word **ptr, double number)
 
-=== C_int_to_num
+===== C_int_to_num
 
  [C function] C_word C_int_to_num (C_word **ptr, int integer)
 
-=== C_mpointer
+===== C_mpointer
 
  [C function] C_word C_mpointer (C_word **ptr, void *pointer)
 
-=== C_vector
+===== C_vector
 
  [C function] C_word C_vector (C_word **ptr, int length, ...)
 
-=== C_list
+===== C_list
 
  [C function] C_word C_list (C_word **ptr, int length, ...)
 
-=== C_closure
+===== C_closure
 
  [C function] C_word C_closure (C_word **ptr, int length, C_word procedure, ...)
 
@@ -155,7 +209,9 @@ void one_two_three(C_word c, C_word self, C_word k, C_word str)
 }
 <#
 
-(define one-two-three (##core#primitive "one_two_three"))
+
+(define one-two-three
+   (foreign-primitive ((scheme-object str)) "one_two_three(C_c, C_self, C_k, str);"))
 
 (print (one-two-three "hi"))
 </enscript>
@@ -176,7 +232,11 @@ This is equivalent to the following in Scheme:
 </enscript>
 
 
-=== C_alloc
+==== Memory allocation
+
+These can be used to allocate memory for non-immediate objects.
+
+===== C_alloc
 
  [C macro] C_word* C_alloc (int words)
 
@@ -196,67 +256,68 @@ and can also be simulated by declaring a stack-allocated array of
 {{C_word}}s:
 
 
-=== C_SIZEOF_LIST
+===== C_SIZEOF_LIST
 
  [C macro] int C_SIZEOF_LIST (int length)
 
-=== C_SIZEOF_STRING
+===== C_SIZEOF_STRING
 
  [C macro] int C_SIZEOF_STRING (int length)
 
-=== C_SIZEOF_VECTOR
+===== C_SIZEOF_VECTOR
 
  [C macro] int C_SIZEOF_VECTOR (int length)
 
-=== C_SIZEOF_INTERNED_SYMBOL
+===== C_SIZEOF_INTERNED_SYMBOL
 
  [C macro] int C_SIZEOF_INTERNED_SYMBOL (int length)
 
-=== C_SIZEOF_PAIR
+===== C_SIZEOF_PAIR
 
  [C macro] int C_SIZEOF_PAIR
 
-=== C_SIZEOF_FLONUM
+===== C_SIZEOF_FLONUM
 
  [C macro] int C_SIZEOF_FLONUM
 
-=== C_SIZEOF_POINTER
+===== C_SIZEOF_POINTER
 
  [C macro] int C_SIZEOF_POINTER
 
-=== C_SIZEOF_LOCATIVE
+===== C_SIZEOF_LOCATIVE
 
  [C macro] int C_SIZEOF_LOCATIVE
 
-=== C_SIZEOF_TAGGED_POINTER
+===== C_SIZEOF_TAGGED_POINTER
 
  [C macro] int C_SIZEOF_TAGGED_POINTER
 
 These are macros that return the size in words needed for a data object
 of a given type.
 
+=== Accessors
 
-=== C_character_code
+==== C_character_code
 
  [C macro] int C_character_code (C_word character)
 
-=== C_unfix
+==== C_unfix
 
  [C macro] int C_unfix (C_word fixnum)
 
-=== C_flonum_magnitude
+==== C_flonum_magnitude
 
  [C macro] double C_flonum_magnitude (C_word flonum)
 
-=== C_c_string
+==== C_c_string
 
  [C function] char* C_c_string (C_word string)
 
-=== C_num_to_int
+==== C_num_to_int
 
  [C function] int C_num_to_int (C_word fixnum_or_flonum)
 
-=== C_pointer_address
+==== C_pointer_address
 
  [C function] void* C_pointer_address (C_word pointer)
 
@@ -265,11 +326,11 @@ back to C data. Note that {{C_c_string()}} returns a pointer
 to the character buffer of the actual Scheme object and is not
 zero-terminated.
 
-=== C_header_size
+==== C_header_size
 
  [C macro] int C_header_size (C_word x)
 
-=== C_header_bits
+==== C_header_bits
 
  [C macro] int C_header_bits (C_word x)
 
@@ -277,7 +338,7 @@ Return the number of elements and the type-bits of the non-immediate
 Scheme data object {{x}}.
 
 
-=== C_block_item
+==== C_block_item
 
  [C macro] C_word C_block_item (C_word x, int index)
 
@@ -287,18 +348,25 @@ be fetched, starting at 0. Pairs have 2 slots, one for the '''car'''
 and one for the '''cdr'''. Vectors have one slot for each element.
 
 
-=== C_u_i_car
+==== C_u_i_car
 
  [C macro] C_word C_u_i_car (C_word x)
 
-=== C_u_i_cdr
+==== C_u_i_cdr
 
  [C macro] C_word C_u_i_cdr (C_word x)
 
 Aliases for {{C_block_item(x, 0)}} and {{C_block_item(x, 1)}}, respectively.
 
+==== C_port_file
 
-=== C_data_pointer
+ [C macro] C_word C_port_file (C_word x)
+
+Alias for {{(FILE *)C_block_item(x, 0)}}.  To be used with port
+objects representing files (but will not work on sockets, for example).
+
+
+==== C_data_pointer
 
  [C macro] void* C_data_pointer (C_word x)
 
@@ -334,7 +402,9 @@ variable is unbound {{C_SCHEME_UNBOUND}} is returned. You can set a variable's
 value with {{C_mutate(&C_symbol_value(SYMBOL), VALUE)}}.
 
 
-=== C_gc_protect
+=== GC interface
+
+==== C_gc_protect
 
  [C function] void C_gc_protect (C_word *ptrs[], int n)
 
@@ -353,7 +423,7 @@ For a slightly simpler interface to creating and using GC roots see
 {{CHICKEN_new_gc_root}}.
 
 
-=== C_gc_unprotect
+==== C_gc_unprotect
 
  [C function] void C_gc_unprotect (int n)
 
@@ -361,7 +431,7 @@ Removes the last {{n}} registered variables from the set of
 root variables.
 
 
-=== C_pre_gc_hook
+==== C_pre_gc_hook
 
  [C Variable] void (*C_pre_gc_hook)(int mode)
 
@@ -376,7 +446,7 @@ not invoke Scheme callbacks.
 
 Note that resizing collections may be nested in normal major collections.
 
-=== C_post_gc_hook
+==== C_post_gc_hook
 
  [C Variable] void (*C_post_gc_hook)(int mode, long ms)
 
@@ -390,8 +460,6 @@ invoke Scheme callbacks. The {{ms}} argument records the number of
 milliseconds required for the garbage collection, if the collection
 was a major one. For minor collections the value of the {{ms}} argument
 is undefined.
-
-
 
 === An example for simple calls to foreign code involving callbacks
 
