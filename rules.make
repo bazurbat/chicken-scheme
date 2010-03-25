@@ -867,43 +867,6 @@ profiler.c: $(SRCDIR)profiler.scm
 stub.c: $(SRCDIR)stub.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
 
-ulibrary.c: $(SRCDIR)library.scm $(SRCDIR)version.scm $(SRCDIR)banner.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-ueval.c: $(SRCDIR)eval.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-udata-structures.c: $(SRCDIR)data-structures.scm $(SRCDIR)private-namespace.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm
-uports.c: $(SRCDIR)ports.scm $(SRCDIR)private-namespace.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@
-ufiles.c: $(SRCDIR)files.scm $(SRCDIR)private-namespace.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@
-uextras.c: $(SRCDIR)extras.scm $(SRCDIR)private-namespace.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm
-ulolevel.c: $(SRCDIR)lolevel.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-utcp.c: $(SRCDIR)tcp.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-usrfi-1.c: $(SRCDIR)srfi-1.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-usrfi-4.c: $(SRCDIR)srfi-4.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-usrfi-13.c: $(SRCDIR)srfi-13.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-usrfi-14.c: $(SRCDIR)srfi-14.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-usrfi-18.c: $(SRCDIR)srfi-18.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-usrfi-69.c: $(SRCDIR)srfi-69.scm $(SRCDIR)private-namespace.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm 
-uutils.c: $(SRCDIR)utils.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-uposixunix.c: $(SRCDIR)posixunix.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-uposixwin.c: $(SRCDIR)posixwin.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-uregex.c: $(SRCDIR)regex.scm $(SRCDIR)irregex.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-
 chicken.import.c: $(SRCDIR)chicken.import.scm
 	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
 lolevel.import.c: $(SRCDIR)lolevel.import.scm
@@ -1012,9 +975,6 @@ distfiles: library.c eval.c expand.c chicken-syntax.c \
 	data-structures.c ports.c files.c extras.c lolevel.c utils.c \
 	tcp.c srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c \
 	posixunix.c posixwin.c regex.c scheduler.c profiler.c stub.c \
-	ulibrary.c ueval.c udata-structures.c uports.c ufiles.c uextras.c ulolevel.c \
-	uutils.c utcp.c usrfi-1.c usrfi-4.c usrfi-13.c usrfi-14.c \
-	usrfi-18.c usrfi-69.c uposixunix.c uposixwin.c uregex.c \
 	chicken-profile.c chicken-install.c chicken-uninstall.c chicken-status.c \
 	csc.c csi.c chicken.c batch-driver.c compiler.c optimizer.c  \
 	compiler-syntax.c scrutinizer.c unboxing.c support.c \
@@ -1043,7 +1003,7 @@ clean:
 	  libchicken$(A) libchicken$(SO) $(PROGRAM_IMPORT_LIBRARIES) \
 	  $(IMPORT_LIBRARIES:=.import.so) $(LIBCHICKEN_IMPORT_LIBRARY) \
 	  setup-api.so setup-api.import.scm setup-download.so \
-	  setup-download.import.scm
+	  setup-download.import.scm \
 	  setup-api.c setup-download.c
 ifdef USES_SONAME
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) libchicken.so.$(BINARYVERSION)
@@ -1058,9 +1018,7 @@ spotless: distclean testclean
 	  ports.c files.c extras.c lolevel.c utils.c chicken-syntax.c \
 	  tcp.c srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c expand.c \
 	  posixunix.c posixwin.c regex.c scheduler.c profiler.c stub.c \
-	  ulibrary.c ueval.c udata-structures.c uports.c ufiles.c uextras.c ulolevel.c \
-	  uutils.c utcp.c usrfi-1.c usrfi-4.c usrfi-13.c usrfi-14.c \
-	  usrfi-18.c usrfi-69.c uposixunix.c uposixwin.c uregex.c chicken-profile.c chicken-bug.c \
+	  chicken-profile.c chicken-bug.c \
 	  csc.c csi.c chicken-install.c chicken-uninstall.c chicken-status.c \
 	  chicken.c batch-driver.c compiler.c optimizer.c compiler-syntax.c \
 	  scrutinizer.c support.c unboxing.c \
