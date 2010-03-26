@@ -38,7 +38,7 @@
 
 
 (set! ##sys#features
-  (append '(#:hygienic-macros #:syntax-rules) ##sys#features))
+  (append '(#:hygienic-macros #:syntax-rules #:explicit-renaming) ##sys#features))
 
 (define (d arg1 . more)
   (when (##sys#fudge 13)
@@ -48,7 +48,7 @@
 
 (define dd d)
 (define dm d)
-(define dc d)
+(define dx d)
 
 (cond-expand
  ((not debugbuild)
@@ -60,7 +60,7 @@
 (begin
   (define-syntax dd (syntax-rules () ((_ . _) (void))))
   (define-syntax dm (syntax-rules () ((_ . _) (void))))
-  (define-syntax dc (syntax-rules () ((_ . _) (void)))) )
+  (define-syntax dx (syntax-rules () ((_ . _) (void)))) )
 
 
 ;;; Syntactic environments
@@ -212,12 +212,12 @@
 	    "syntax transformer for `" (symbol->string name)
 	    "' returns original form, which would result in endless expansion")
 	   exp))
-	(dd `(,name --> ,exp2))
+	(dx `(,name --> ,exp2))
 	exp2)))
   (define (expand head exp mdef)
     (dd `(EXPAND: 
 	  ,head 
-	  ,(cond ((get head '##core#macro-alias) =>
+	  ,(cond ((##sys#get head '##core#macro-alias) =>
 		  (lambda (a) (if (symbol? a) a '<macro>)) )
 		 (else '_))
 	  ,exp 
@@ -228,7 +228,7 @@
 	   (##sys#syntax-error-hook "invalid syntax in macro form" exp) )
 	  ((pair? mdef)
 	   (values 
-	    ;; force ref. opaqueness by passing dynamic se  [what is this comment meaning? I forgot]
+	    ;; force ref. opaqueness by passing dynamic se [what does this comment mean? I forgot ...]
 	    (call-handler head (cadr mdef) exp (car mdef) #f)
 	    #t))
 	  (else (values exp #f)) ) )

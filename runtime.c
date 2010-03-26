@@ -1147,6 +1147,7 @@ void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *st
 		 " -:x              deliver uncaught exceptions of other threads to primordial one\n"
 		 " -:b              enter REPL on error\n"
 		 " -:B              sound bell on major GC\n"
+		 " -:G              force GUI mode\n"
 		 " -:aSIZE          set trace-buffer/call-chain size\n"
 		 "\n  SIZE may have a `k' (`K'), `m' (`M') or `g' (`G') suffix, meaning size\n"
 		 "  times 1024, 1048576, and 1073741824, respectively.\n\n");
@@ -1181,6 +1182,9 @@ void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *st
 	case 'B':
 	  gc_bell = 1;
 	  break;
+
+	case 'G':
+	  C_gui_mode = 1;
 
 	case 's':
 	  *stack = arg_val(ptr);

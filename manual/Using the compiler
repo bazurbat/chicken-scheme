@@ -240,6 +240,8 @@ compiler itself) accept a small set of runtime options:
 
 ; {{-:g}} : Prints information about garbage-collection.
 
+; {{-:G}} : Force GUI mode (show error messages in dialog box, suitable for platform).
+
 ; {{-:fNUMBER}} : Specifies the maximal number of currently pending finalizers before finalization is forced.
 
 ; {{-:hNUMBER}} : Specifies fixed heap size
