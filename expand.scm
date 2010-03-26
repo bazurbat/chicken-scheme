@@ -30,11 +30,10 @@
   (fixnum)
   (hide match-expression
 	macro-alias module-indirect-exports
-	d dd dm dc map-se merge-se
+	d dd dm dx map-se merge-se
 	lookup check-for-redef) 
   (not inline ##sys#syntax-error-hook ##sys#compiler-syntax-hook
        ##sys#alias-global-hook ##sys#toplevel-definition-hook))
-
 
 
 (set! ##sys#features
@@ -62,6 +61,12 @@
   (define-syntax dm (syntax-rules () ((_ . _) (void))))
   (define-syntax dx (syntax-rules () ((_ . _) (void)))) )
 
+(define-inline (getp sym prop)
+  (##core#inline "C_i_getprop" sym prop #f))
+
+(define-inline (putp sym prop val)
+  (##core#inline_allocate ("C_a_i_putprop" 8) sym prop val))
+
 
 ;;; Syntactic environments
 
@@ -69,8 +74,8 @@
 (define ##sys#current-meta-environment (make-parameter '()))
 
 (define (lookup id se)
-  (cond ((assq id se) => cdr)
-	((##sys#get id '##core#macro-alias))
+  (cond ((##core#inline "C_u_i_assq" id se) => cdr)
+	((getp id '##core#macro-alias))
 	(else #f)))
 
 (define (macro-alias var se)
@@ -82,8 +87,8 @@
       var
       (let* ((alias (gensym var))
 	     (ua (or (lookup var se) var)))
-	(##sys#put! alias '##core#macro-alias ua)
-	(##sys#put! alias '##core#real-name var)
+	(putp alias '##core#macro-alias ua)
+	(putp alias '##core#real-name var)
 	(dd "aliasing " alias " (real: " var ") to " 
 	    (if (pair? ua)
 		'<macro>
@@ -104,8 +109,8 @@
            ((symbol? x)
             (let ((x2 (if se
                           (lookup x se)
-                          (get x '##core#macro-alias) ) ) )
-              (cond ((get x '##core#real-name))
+                          (getp x '##core#macro-alias) ) ) )
+              (cond ((getp x '##core#real-name))
                     ((and alias (not (assq x se)))
                      (##sys#alias-global-hook x #f))
                     ((not x2) x)
@@ -203,6 +208,7 @@
 	     ex) )
       (let ((exp2
 	     (if cs
+		 ;; compiler-syntax may "fall through"
 		 (fluid-let ((##sys#syntax-rules-mismatch (lambda (input) exp))) ; a bit of a hack
 		   (handler exp se dse))
 		 (handler exp se dse))) )
@@ -217,7 +223,7 @@
   (define (expand head exp mdef)
     (dd `(EXPAND: 
 	  ,head 
-	  ,(cond ((##sys#get head '##core#macro-alias) =>
+	  ,(cond ((getp head '##core#macro-alias) =>
 		  (lambda (a) (if (symbol? a) a '<macro>)) )
 		 (else '_))
 	  ,exp 
@@ -256,7 +262,7 @@
 				   ,@(##sys#map cadr bs) )
 				 #t) ) ]
 			     [else (values exp #f)] ) ) ]
-		    ((and cs? (symbol? head2) (##sys#get head2 '##compiler#compiler-syntax)) =>
+		    ((and cs? (symbol? head2) (getp head2 '##compiler#compiler-syntax)) =>
 		     (lambda (cs)
 		       (let ((result (call-handler head (car cs) exp (cdr cs) #t)))
 			 (cond ((eq? result exp) (expand head exp head2))
@@ -287,11 +293,11 @@
 	     (##sys#module-rename sym (module-name mod))))
 	  (else sym)))
   (cond ((##sys#qualified-symbol? sym) sym)
-	((##sys#get sym '##core#primitive) =>
+	((getp sym '##core#primitive) =>
 	 (lambda (p)
 	   (dm "(ALIAS) primitive: " p)
 	   p))
-	((##sys#get sym '##core#aliased) 
+	((getp sym '##core#aliased) 
 	 (dm "(ALIAS) marked: " sym)
 	 sym)
 	((assq sym (##sys#current-environment)) =>
@@ -300,7 +306,7 @@
 	   (let ((sym2 (cdr a)))
 	     (if (pair? sym2)		; macro (*** can this be?)
 		 (mrename sym)
-		 (or (##sys#get sym2 '##core#primitive) sym2)))))
+		 (or (getp sym2 '##core#primitive) sym2)))))
 	(else (mrename sym))))
 
 
@@ -739,16 +745,16 @@
 				     (f #t (compare (vector-ref s1 i) (vector-ref s2 i))))
 				    ((or (fx>= i len) (not f)) f))))))
 		   ((and (symbol? s1) (symbol? s2))
-		    (let ((ss1 (or (##sys#get s1 '##core#macro-alias)
+		    (let ((ss1 (or (getp s1 '##core#macro-alias)
 				   (lookup2 1 s1 dse)
 				   s1) )
-			  (ss2 (or (##sys#get s2 '##core#macro-alias)
+			  (ss2 (or (getp s2 '##core#macro-alias)
 				   (lookup2 2 s2 dse)
 				   s2) ) )
 		      (cond ((symbol? ss1)
 			     (cond ((symbol? ss2) 
-				    (eq? (or (##sys#get ss1 '##core#primitive) ss1)
-					 (or (##sys#get ss2 '##core#primitive) ss2)))
+				    (eq? (or (getp ss1 '##core#primitive) ss1)
+					 (or (getp ss2 '##core#primitive) ss2)))
 				   ((assq ss1 (##sys#macro-environment)) =>
 				    (lambda (a) (eq? (cdr a) ss2)))
 				   (else #f) ) )
@@ -899,7 +905,7 @@
 	    (lambda (imp)
 	      (let* ((id (car imp))
 		     (aid (cdr imp))
-		     (prim (##sys#get aid '##core#primitive)))
+		     (prim (getp aid '##core#primitive)))
 		(when prim
 		  (set! prims (cons imp prims)))
 		(and-let* ((a (assq id (import-env)))
@@ -935,7 +941,7 @@
 
 (define (##sys#mark-primitive prims)
   (for-each
-   (lambda (a) (##sys#put! (cdr a) '##core#primitive (car a)))
+   (lambda (a) (putp (cdr a) '##core#primitive (car a)))
    prims))
 
 (##sys#extend-macro-environment
@@ -1561,7 +1567,7 @@
    (lambda (imp)
      (when (and (symbol? (cdr imp)) (not (eq? (car imp) (cdr imp))))
        (dm `(MARKING: ,(cdr imp)))
-       (##sys#put! (cdr imp) '##core#aliased #t)))
+       (putp (cdr imp) '##core#aliased #t)))
    se))
 
 (define (module-indirect-exports mod)
@@ -1708,7 +1714,7 @@
   (let ((palias 
 	 (##sys#string->symbol 
 	  (##sys#string-append "#%" (##sys#slot sym 1)))))
-    (##sys#put! palias '##core#primitive sym)
+    (putp palias '##core#primitive sym)
     palias))
 
 (define (##sys#register-primitive-module name vexports #!optional (sexports '()))
@@ -1790,7 +1796,7 @@
        (unless (memq u elist)
 	 (set! missing #t)
 	 (##sys#warn "reference to possibly unbound identifier" u)
-	 (and-let* ((a (##sys#get u '##core#db)))
+	 (and-let* ((a (getp u '##core#db)))
 	   (if (= 1 (length a))
 	       (##sys#warn
 		(string-append 

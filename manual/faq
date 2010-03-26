@@ -424,6 +424,7 @@ The following extended bindings are handled specially:
 {{fx+}}
 {{fx-}} {{fx*}} {{fx/}} {{fxmod}}
 {{fx=}} {{fx>}} {{fx>=}} {{fixnum?}} {{fxneg}} {{fxmax}} {{fxmin}}
+{{fxodd?}} {{fxeven?}}
 {{fxand}} {{fxior}} {{fxxor}} {{fxnot}} {{fxshl}} {{fxshr}}
 {{finite?}} {{fp=}} {{fp>}} {{fp<}} {{fp>=}} {{fp<=}} {{fpinteger?}}
 {{flonum?}} {{fp+}}

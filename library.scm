@@ -728,6 +728,8 @@ EOF
 (define (fxnot x) (##core#inline "C_fixnum_not" x))
 (define (fxshl x y) (##core#inline "C_fixnum_shift_left" x y))
 (define (fxshr x y) (##core#inline "C_fixnum_shift_right" x y))
+(define (fxodd? x) (##core#inline "C_i_fixnumoddp" x))
+(define (fxeven? x) (##core#inline "C_i_fixnumevenp" x))
 
 (define-inline (fx-check-divison-by-zero x y loc)
   (when (eq? 0 y)
@@ -4563,20 +4565,13 @@ EOF
 
 (define (##sys#put! sym prop val)
   (##sys#check-symbol sym 'put!)
-  (let loop ((plist (##sys#slot sym 2)))
-    (cond ((null? plist) (##sys#setslot sym 2 (cons prop (cons val (##sys#slot sym 2)))) )
-	  ((eq? (##sys#slot plist 0) prop) (##sys#setslot (##sys#slot plist 1) 0 val))
-	  (else (loop (##sys#slot (##sys#slot plist 1) 1)))) )
-  val)
+  (##core#inline_allocate ("C_a_i_putprop" 8) sym prop val) )
 
 (define put! ##sys#put!)
 
-(define (##sys#get sym prop . default)
+(define (##sys#get sym prop #!optional default)
   (##sys#check-symbol sym 'get)
-  (let loop ((plist (##sys#slot sym 2)))
-    (cond ((null? plist) (optional default #f))
-	  ((eq? (##sys#slot plist 0) prop) (##sys#slot (##sys#slot plist 1) 0))
-	  (else (loop (##sys#slot (##sys#slot plist 1) 1))))) )
+  (##core#inline "C_i_getprop" sym prop default))
 
 (define get (getter-with-setter ##sys#get put!))
 
@@ -4602,7 +4597,11 @@ EOF
    (lambda (sym lst)
      (##sys#check-symbol sym 'symbol-plist)
      (##sys#check-list lst 'symbol-plist/setter)
-     (##sys#setslot sym 2 lst) ) ) )
+     (if (##core#inline "C_i_fixnumevenp" (##core#inline "C_i_length" lst))
+	 (##sys#setslot sym 2 lst) 
+	 (##sys#signal-hook
+	  #:type-error "property-list must be of even length"
+	  lst sym)))))
 
 (define (get-properties sym props)
   (##sys#check-symbol sym 'get-properties)

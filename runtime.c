@@ -5216,21 +5216,6 @@ C_regparm C_word C_fcall C_i_assq(C_word x, C_word lst)
 }
 
 
-C_regparm C_word C_fcall C_u_i_assq(C_word x, C_word lst)
-{
-  C_word a;
-
-  while(!C_immediatep(lst)) {
-    a = C_u_i_car(lst);
-
-    if(C_u_i_car(a) == x) return a;
-    else lst = C_u_i_cdr(lst);
-  }
-
-  return C_SCHEME_FALSE;
-}
-
-
 C_regparm C_word C_fcall C_i_assv(C_word x, C_word lst)
 {
   C_word a;
@@ -8698,4 +8683,39 @@ C_char *
 C_private_repository_path()
 {
   return private_repository;
+}
+
+
+C_regparm C_word C_fcall
+C_i_getprop(C_word sym, C_word prop, C_word def)
+{
+  C_word pl = C_block_item(sym, 2);
+
+  while(pl != C_SCHEME_END_OF_LIST) {
+    if(C_block_item(pl, 0) == prop)
+      return C_u_i_car(C_u_i_cdr(pl));
+    else pl = C_u_i_cdr(C_u_i_cdr(pl));
+  }
+
+  return def;
+}
+
+
+C_regparm C_word C_fcall
+C_putprop(C_word **ptr, C_word sym, C_word prop, C_word val)
+{
+  C_word pl = C_block_item(sym, 2);
+
+  while(pl != C_SCHEME_END_OF_LIST) {
+    if(C_block_item(pl, 0) == prop) {
+      C_mutate(&C_u_i_car(C_u_i_cdr(pl)), val);
+      return val;
+    }
+    else pl = C_u_i_cdr(C_u_i_cdr(pl));
+  }
+
+  pl = C_pair(ptr, val, C_block_item(sym, 2));
+  pl = C_pair(ptr, prop, pl);
+  C_mutate(&C_block_item(sym, 2), pl);
+  return val;
 }

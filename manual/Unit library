@@ -48,11 +48,6 @@ set, or {{#f}} otherwise. The rightmost/least-significant bit is bit 0.
 <procedure>(fxneg N)</procedure>
 <procedure>(fxmin N1 N2)</procedure>
 <procedure>(fxmax N1 N2)</procedure>
-<procedure>(fx= N1 N2)</procedure>
-<procedure>(fx> N1 N2)</procedure>
-<procedure>(fx< N1 N2)</procedure>
-<procedure>(fx>= N1 N2)</procedure>
-<procedure>(fx<= N1 N2)</procedure>
 <procedure>(fxand N1 N2)</procedure>
 <procedure>(fxior N1 N2)</procedure>
 <procedure>(fxxor N1 N2)</procedure>
@@ -69,6 +64,18 @@ On division by zero, {{fx/}} and {{fxmod}} signal a condition of kind
 
 {{fxshl}} and {{fxshr}} perform arithmetic shift left and right,
 respectively.
+
+==== Fixnum comparison and predicates
+
+<procedure>(fxodd? N)</procedure>
+<procedure>(fxeven? N)</procedure>
+<procedure>(fx= N1 N2)</procedure>
+<procedure>(fx> N1 N2)</procedure>
+<procedure>(fx< N1 N2)</procedure>
+<procedure>(fx>= N1 N2)</procedure>
+<procedure>(fx<= N1 N2)</procedure>
+
+Comparison of fixnums and predicates on them.
 
 ==== fixnum?
 

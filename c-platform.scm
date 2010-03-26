@@ -125,7 +125,7 @@
 (define default-extended-bindings
   '(bitwise-and bitwise-ior bitwise-xor bitwise-not add1 sub1 fx+ fx- fx* fx/ fxmod o
     fx= fx> fx< fx>= fx<= fixnum? fxneg fxmax fxmin identity fp+ fp- fp* fp/ fpmin fpmax fpneg
-    fp> fp< fp= fp>= fp<= fxand fxnot fxior fxxor fxshr fxshl bit-set?
+    fp> fp< fp= fp>= fp<= fxand fxnot fxior fxxor fxshr fxshl bit-set? fxodd? fxeven?
     fpfloor fpceiling fptruncate fpround fpsin fpcos fptan fpasin fpacos fpatan
     fpatan2 fpexp fpexpt fplog fpsqrt fpabs fpinteger?
     arithmetic-shift void flush-output thread-specific thread-specific-set!
@@ -785,10 +785,11 @@
 (rewrite 'odd? 14 'fixnum 1 "C_i_fixnumoddp" "C_i_fixnumoddp")
 (rewrite 'remainder 14 'fixnum 2 "C_fixnum_modulo" "C_fixnum_modulo")
 
-(rewrite 'even? 2 1 "C_i_evenp" #t)
-(rewrite 'even? 2 1 "C_u_i_evenp" #f)
-(rewrite 'odd? 2 1 "C_i_oddp" #t)
-(rewrite 'odd? 2 1 "C_u_i_oddp" #f)
+(rewrite 'even? 17 1 "C_i_evenp" "C_u_i_evenp")
+(rewrite 'odd? 17 1 "C_i_oddp" "C_u_i_oddp")
+
+(rewrite 'fxodd? 2 1 "C_fixnumoddp" #t)
+(rewrite 'fxeven? 2 1 "C_fixnumevenp" #t)
 
 (rewrite 'floor 15 'flonum 'fixnum 'fpfloor #f)
 (rewrite 'ceiling 15 'flonum 'fixnum 'fpceiling #f)

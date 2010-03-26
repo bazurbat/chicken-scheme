@@ -1194,6 +1194,7 @@ extern double trunc(double);
 #define C_i_set_i_slot(x, i, y)         (C_set_block_item(x, C_unfix(i), y), C_SCHEME_UNDEFINED)
 #define C_u_i_set_car(p, x)             (C_mutate(&C_u_i_car(p), x), C_SCHEME_UNDEFINED)
 #define C_u_i_set_cdr(p, x)             (C_mutate(&C_u_i_cdr(p), x), C_SCHEME_UNDEFINED)
+#define C_a_i_putprop(p, c, x, y, z)    C_putprop(p, x, y, z)
 
 #define C_i_not(x)                      (C_truep(x) ? C_SCHEME_FALSE : C_SCHEME_TRUE)
 #define C_i_equalp(x, y)                C_mk_bool(C_equalp((x), (y)))
@@ -1719,7 +1720,6 @@ C_fctexport C_word C_fcall C_i_string_ref(C_word s, C_word i) C_regparm;
 C_fctexport C_word C_fcall C_i_vector_length(C_word v) C_regparm;
 C_fctexport C_word C_fcall C_i_string_length(C_word s) C_regparm;
 C_fctexport C_word C_fcall C_i_assq(C_word x, C_word lst) C_regparm;
-C_fctexport C_word C_fcall C_u_i_assq(C_word x, C_word lst) C_regparm;
 C_fctexport C_word C_fcall C_i_assv(C_word x, C_word lst) C_regparm;
 C_fctexport C_word C_fcall C_i_assoc(C_word x, C_word lst) C_regparm;
 C_fctexport C_word C_fcall C_i_memq(C_word x, C_word lst) C_regparm;
@@ -1780,6 +1780,8 @@ C_fctexport C_word C_fcall C_i_o_fixnum_and(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_o_fixnum_ior(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_o_fixnum_xor(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_a_i_flonum_round_proper(C_word **a, int c, C_word n) C_regparm;
+C_fctexport C_word C_fcall C_i_getprop(C_word sym, C_word prop, C_word def) C_regparm;
+C_fctexport C_word C_fcall C_putprop(C_word **a, C_word sym, C_word prop, C_word val) C_regparm;
 
 C_fctexport C_word C_fcall C_i_foreign_char_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_fixnum_argumentp(C_word x) C_regparm;
@@ -2181,6 +2183,21 @@ C_inline C_word C_i_safe_pointerp(C_word x)
   case C_SWIG_POINTER_TAG:
   case C_TAGGED_POINTER_TAG:
     return C_SCHEME_TRUE;
+  }
+
+  return C_SCHEME_FALSE;
+}
+
+
+C_inline C_word C_u_i_assq(C_word x, C_word lst)
+{
+  C_word a;
+
+  while(!C_immediatep(lst)) {
+    a = C_u_i_car(lst);
+
+    if(C_u_i_car(a) == x) return a;
+    else lst = C_u_i_cdr(lst);
   }
 
   return C_SCHEME_FALSE;
