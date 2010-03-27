@@ -1,3 +1,20 @@
+4.4.4
+
+- Unit library: added `fxodd?' and `fxeven?'
+- All hardcoded special forms have been replaced with
+  syntax definitions that expand into internal forms, this
+  allows redefinition and shadowing of all Scheme core forms
+- faster implementations of `get' and `put!'
+- faster implementation of `assq' in unsafe mode
+- the `-sx' option prefixes each output line with `;'
+- slightly better expansion performance
+- more documentation of the C API (thanks to Peter Bex)
+- `module' supports a shorthand form that refers directly
+  to a file to be included as the module body
+- added runtime option `-:G' to force GUI mode (on platforms
+  that distinguish between GUI and non-GUI applications)
+
+
 4.4.3
 
 - removed the unsafe runtime library (`libuchicken'), this

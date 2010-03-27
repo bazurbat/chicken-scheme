@@ -1185,6 +1185,7 @@ void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *st
 
 	case 'G':
 	  C_gui_mode = 1;
+	  break;
 
 	case 's':
 	  *stack = arg_val(ptr);
