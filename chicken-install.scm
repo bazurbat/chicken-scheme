@@ -459,7 +459,7 @@
 		     (else (list egg))))
 	     eggs)
 	    string=?)))
-      (unless (lset= string=? eggs eggs2)
+      (unless (lset= same? eggs eggs2)
 	(print "mapped " eggs " to " eggs2))
       eggs2))
 
