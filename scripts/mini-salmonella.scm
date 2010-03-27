@@ -61,7 +61,7 @@
 	     (if (null? tags)
 		 (or trunkdir ed)
 		 (make-pathname ed (string-append "tags/" (first tags))))))
-	  (else ed))))
+	  (else (or trunkdir ed)))))
 
 (define (report egg msg . args)
   (printf "~a..~?~%" (make-string (max 2 (- 32 (string-length egg))) #\.)
@@ -94,9 +94,10 @@
 	      ""
 	      (string-append "-t local -l " (normalize-pathname *eggdir*) " "))
 	  egg " "
-	  (if (not *debug*)
-	      (sprintf "2>~a >>~a.out" *tmplogfile* *logfile*)
-	      ""))))
+	  (cond ((not *debug*)
+		 (delete-file* (string-append *logfile* ".out"))
+		 (sprintf "2>~a >>~a.out" *tmplogfile* *logfile*))
+		(else "")))))
     (when *debug*
       (print "  " command))
     (let ((status (system command)))
