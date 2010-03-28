@@ -37,7 +37,7 @@
 
 
 (set! ##sys#features
-  (append '(#:hygienic-macros #:syntax-rules #:explicit-renaming) ##sys#features))
+  (append '(#:hygienic-macros #:syntax-rules) ##sys#features))
 
 (define (d arg1 . more)
   (when (##sys#fudge 13)
