@@ -510,7 +510,7 @@
     (compile -s -O3 -d0 ,iname)
     (install-extension
      name
-     (list fname 
+     (list (pathname-replace-extension fname "so")
 	   (pathname-replace-extension iname "so")
 	   (make-pathname #f sname "setup"))
      `((version ,version)
