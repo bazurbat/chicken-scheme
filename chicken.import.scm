@@ -130,12 +130,14 @@
    fx>
    fx>=
    fxand
+   fxeven?
    fxior
    fxmax
    fxmin
    fxmod
    fxneg
    fxnot
+   fxodd?
    fxshl
    fxshr
    fxxor
