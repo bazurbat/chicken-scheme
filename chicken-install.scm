@@ -375,33 +375,35 @@
 	(pp dag)
 	(for-each
 	 (lambda (e+d+v i)
-	   (when (and (not depinstall-ok)
-		      (= i 1)
-		      (> num 1))
-	     (when (and *no-install*
-			(not (yes-or-no?
-			      (string-append
-			       "You specified `-no-install', but this extension has dependencies"
-			       " that are required for building. Do you still want to install them?"))))
-	       (print "aborting installation.")
-	       (cleanup)
-	       (exit 1)))
-	   (print "installing " (car e+d+v) #\: (caddr e+d+v) " ...")
-	   (print "changing current directory to " (cadr e+d+v))
-	   (parameterize ((current-directory (cadr e+d+v)))
-	     (let ((cmd (make-install-command e+d+v (< i num))))
-	       (print "  " cmd)
-	       ($system cmd))
-	     (when (and *run-tests*
-			(file-exists? "tests")
-			(directory? "tests")
-			(file-exists? "tests/run.scm") )
-	       (set! *running-test* #t)
-	       (current-directory "tests")
-	       (command "~a -s run.scm ~a" *csi* (car e+d+v))
-	       (set! *running-test* #f))))
+	   (let ((isdep (> i 1)))
+	     (when (and (not depinstall-ok)
+			isdep
+			(= i num))
+	       (when (and *no-install*
+			   (not (yes-or-no?
+				 (string-append
+				  "You specified `-no-install', but this extension has dependencies"
+				  " that are required for building. Do you still want to install them?"))))
+		 (print "aborting installation.")
+		 (cleanup)
+		 (exit 1)))
+	     (print "installing " (car e+d+v) #\: (caddr e+d+v) " ...")
+	     (print "changing current directory to " (cadr e+d+v))
+	     (parameterize ((current-directory (cadr e+d+v)))
+	       (let ((cmd (make-install-command e+d+v (> i 1))))
+		 (print "  " cmd)
+		 ($system cmd))
+	       (when (and *run-tests*
+			  (not isdep)
+			  (file-exists? "tests")
+			  (directory? "tests")
+			  (file-exists? "tests/run.scm") )
+		 (set! *running-test* #t)
+		 (current-directory "tests")
+		 (command "~a -s run.scm ~a" *csi* (car e+d+v))
+		 (set! *running-test* #f)))))
 	 (map (cut assoc <> *eggs+dirs+vers*) dag)
-	 (iota num 1)))))
+	 (iota num num -1)))))
 
   (define (cleanup)
     (unless *keep*
