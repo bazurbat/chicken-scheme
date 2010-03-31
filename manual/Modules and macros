@@ -290,6 +290,8 @@ Allows augmenting module-exports from inside the module-body.
 {{module}} export list. An export must precede its first occurrence
 (either use or definition).
 
+If used outside of a module, then this form does nothing.
+
 ==== import
 
 <macro>(import IMPORT ...)</macro>

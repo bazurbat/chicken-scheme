@@ -97,14 +97,6 @@
 		 (copy-node!
 		  (make-node '##core#undefined '() '())
 		  p))
-	       (when (and (not escaped)
-			  (not (memq var e))
-			  (not (memq var unsafe))
-			  (eq? '##core#variable (node-class val)))
-		 (let ((valname (first (node-parameters val))))
-		   (unless (memq valname e)
-		     (debugging 'x (sprintf "toplevel-alias: ~s -> ~s" var valname))
-		     (##sys#put! var '##compiler#toplevel-alias valname))))
 	       (unless (memq var e) (mark var))
 	       (remember var n) ) ) ]
 
@@ -223,7 +215,6 @@
 		    (touch)
 		    (debugging 'o "substituted constant variable" var)
 		    (qnode (car (node-parameters (test var 'value)))) )
-		   ((##sys#get var '##compiler#toplevel-alias) => replace)
 		   (else
 		    (if (not (eq? var (first params)))
 			(begin
@@ -1458,20 +1449,20 @@
     (define (find-lifting-candidates)
       ;; Collect potentially liftable procedures and return as a list of (<name> . <value>) pairs:
       ;; - Also build a-list that maps lambda-nodes to names.
-      (let ([cs '()])
+      (let ((cs '()))
 	(##sys#hash-table-for-each
 	 (lambda (sym plist)
-	   (and-let* ([val (assq 'value plist)]
-		      [refs (assq 'references plist)]
-		      [css (assq 'call-sites plist)] 
-		      [nrefs (length (cdr refs))] )
-	     (when (and (not (assq 'unknown plist))
-			(eq? 'lambda (node-class (cdr val)))
-			(not (assq 'global plist)) 
-			#;(> nrefs 1)
-			(= nrefs (length (cdr css))) )
-	       (set! lambda-values (alist-cons (cdr val) sym lambda-values))
-	       (set! cs (alist-cons sym (cdr val) cs)) ) ) )
+	   (and-let* ((val (assq 'value plist))
+		      (refs (assq 'references plist))
+		      (css (assq 'call-sites plist)) )
+	     (let ((nrefs (length (cdr refs))))
+	       (when (and (not (assq 'unknown plist))
+			  (eq? 'lambda (node-class (cdr val)))
+			  (not (assq 'global plist)) 
+			  #;(> nrefs 1)
+			  (= nrefs (length (cdr css))) )
+		 (set! lambda-values (alist-cons (cdr val) sym lambda-values))
+		 (set! cs (alist-cons sym (cdr val) cs)) ) ) ) )
 	 db)
 	cs) )
 

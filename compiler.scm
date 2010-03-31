@@ -90,7 +90,6 @@
 ;   ##compiler#profile -> BOOL
 ;   ##compiler#unused -> BOOL
 ;   ##compiler#foldable -> BOOL
-;   ##compiler#toplevel-alias -> SYMBOL
 
 ; - Source language:
 ;
