@@ -61,7 +61,7 @@
      remove-directory
      remove-extension
      read-info
-     register-program
+     register-program find-program
      shellpath)
   
   (import scheme chicken foreign
