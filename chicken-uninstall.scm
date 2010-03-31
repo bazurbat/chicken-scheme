@@ -65,7 +65,7 @@
     (let ((eggs (gather-eggs pats)))
       (cond ((null? eggs)
 	     (print "nothing to remove.") )
-	    ((or *force* (equal? eggs pats) (ask eggs))
+	    ((or *force* (ask eggs))
 	     (for-each
 	      (lambda (e)
 		(print "removing " e)
