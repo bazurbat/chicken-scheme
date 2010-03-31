@@ -527,9 +527,10 @@
 					      vals)
 					mvars mvals) ]
 				 [(pair? (car head))
-				  (##sys#check-syntax 'define x '(_ (_ . lambda-list) . #(_ 1)) #f se)
-				  (loop2 (cons (macro-alias 'define se)
-					       (##sys#expand-curried-define head (cddr x) se))) ]
+				  (##sys#check-syntax
+				   'define x '(_ (_ . lambda-list) . #(_ 1)) #f se)
+				  (loop2
+				   (##sys#expand-curried-define head (cddr x) se)) ]
 				 [else
 				  (##sys#check-syntax
 				   'define x
@@ -586,7 +587,7 @@
 	    `(##core#lambda ,(cdr head) ,@body) )
 	  (loop (car head) `((##core#lambda ,(cdr head) ,@body)) ) ))
     (let ([exp (loop head body)])
-      (list name exp) ) ) )
+      (list 'define name exp) ) ) )
 
 
 ;;; General syntax checking routine:
@@ -1008,25 +1009,23 @@
  'define
  '()
  (##sys#er-transformer
-  (lambda (form r c)
-    (let loop ((form (cdr form)))
-      (let ((head (car form))
-	    (body (cdr form)) )
+  (lambda (x r c)
+    (##sys#check-syntax 'define x '(_ . #(_ 1)))
+    (let loop ((form x))
+      (let ((head (cadr form))
+	    (body (cddr form)) )
 	(cond ((not (pair? head))
-	       (##sys#check-syntax 'define head 'symbol)
-	       (##sys#check-syntax 'define body '#(_ 0 1))
+	       (##sys#check-syntax 'define form '(_ symbol . #(_ 0 1)))
 	       (##sys#register-export head (##sys#current-module))
 	       `(##core#set! 
 		 ,head 
 		 ,(if (pair? body) (car body) '(##core#undefined))) )
 	      ((pair? (car head))
-	       (##sys#check-syntax 'define head '(_ . lambda-list))
-	       (##sys#check-syntax 'define body '#(_ 1))
-	       (loop (##sys#expand-curried-define head body '())) ) ;*** '() should be se
+	       (##sys#check-syntax 'define form '(_ (_ . lambda-list) . #(_ 1)))
+	       (loop (##sys#expand-curried-define head body '())) ) ;XXX '() should be se
 	      (else
-	       (##sys#check-syntax 'define head '(symbol . lambda-list))
-	       (##sys#check-syntax 'define body '#(_ 1))
-	       (loop (list (car head) `(,(r 'lambda) ,(cdr head) ,@body))))))))))
+	       (##sys#check-syntax 'define form '(_ (symbol . lambda-list) . #(_ 1)))
+	       (loop (list (car x) (car head) `(##core#lambda ,(cdr head) ,@body))))))))))
 
 (##sys#extend-macro-environment
  'define-syntax
@@ -1401,22 +1400,21 @@
   (lambda (x r c)
     (let ((exps (cdr x))
 	  (mod (##sys#current-module)))
-      (unless mod
-	(syntax-error 'export "`export' used outside module body"))
-      (for-each
-       (lambda (exp)
-	 (when (and (not (symbol? exp)) 
-		    (let loop ((iexp exp))
-		      (cond ((null? iexp) #f)
-			    ((not (pair? iexp)) #t)
-			    ((not (symbol? (car iexp))) #t)
-			    (else (loop (cdr iexp))))))
-	   (syntax-error 'export "invalid export syntax" exp (module-name mod))))
-       exps)
-      (set-module-export-list! 
-       mod
-       (append (module-export-list mod) 
-	       (map ##sys#strip-syntax exps)))
+      (when mod
+	(for-each
+	 (lambda (exp)
+	   (when (and (not (symbol? exp)) 
+		      (let loop ((iexp exp))
+			(cond ((null? iexp) #f)
+			      ((not (pair? iexp)) #t)
+			      ((not (symbol? (car iexp))) #t)
+			      (else (loop (cdr iexp))))))
+	     (syntax-error 'export "invalid export syntax" exp (module-name mod))))
+	 exps)
+	(set-module-export-list! 
+	 mod
+	 (append (module-export-list mod) 
+		 (map ##sys#strip-syntax exps))))
       '(##core#undefined)))))
 
 
