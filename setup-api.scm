@@ -221,6 +221,9 @@
   (reg "chicken" (foreign-value "C_CHICKEN_PROGRAM" c-string))
   (reg "csi" (foreign-value "C_CSI_PROGRAM" c-string))
   (reg "csc" (foreign-value "C_CSC_PROGRAM" c-string))
+  (reg "chicken-install" (foreign-value "C_CHICKEN_INSTALL_PROGRAM" c-string))
+  (reg "chicken-uninstall" (foreign-value "C_CHICKEN_UNINSTALL_PROGRAM" c-string))
+  (reg "chicken-status" (foreign-value "C_CHICKEN_STATUS_PROGRAM" c-string))
   (reg "chicken-bug" (foreign-value "C_CHICKEN_BUG_PROGRAM" c-string)))
 
 (define (fixpath prg)

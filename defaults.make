@@ -473,6 +473,15 @@ endif
 	echo "#ifndef C_CHICKEN_BUG_PROGRAM" >>$@
 	echo "# define C_CHICKEN_BUG_PROGRAM \"$(CHICKEN_BUG_PROGRAM)\"" >>$@
 	echo "#endif" >>$@
+	echo "#ifndef C_CHICKEN_INSTALL_PROGRAM" >>$@
+	echo "# define C_CHICKEN_INSTALL_PROGRAM \"$(CHICKEN_INSTALL_PROGRAM)\"" >>$@
+	echo "#endif" >>$@
+	echo "#ifndef C_CHICKEN_UNINSTALL_PROGRAM" >>$@
+	echo "# define C_CHICKEN_UNINSTALL_PROGRAM \"$(CHICKEN_UNINSTALL_PROGRAM)\"" >>$@
+	echo "#endif" >>$@
+	echo "#ifndef C_CHICKEN_STATUS_PROGRAM" >>$@
+	echo "# define C_CHICKEN_STATUS_PROGRAM \"$(CHICKEN_STATUS_PROGRAM)\"" >>$@
+	echo "#endif" >>$@
 	echo "#ifndef C_WINDOWS_SHELL" >>$@
 ifdef WINDOWS_SHELL
 	echo "# define C_WINDOWS_SHELL 1" >>$@
