@@ -1131,20 +1131,29 @@
 	  (%=> (r '=>))
 	  (%or (r 'or))
 	  (%else (r 'else)))
-      (let expand ((clauses body))
+      (let expand ((clauses body) (else? #f))
 	(if (not (pair? clauses))
 	    '(##core#undefined)
 	    (let ((clause (car clauses))
 		  (rclauses (cdr clauses)) )
 	      (##sys#check-syntax 'cond clause '#(_ 1))
-	      (cond ((c %else (car clause)) `(##core#begin ,@(cdr clause)))
-		    ((null? (cdr clause)) `(,%or ,(car clause) ,(expand rclauses)))
+	      (cond ((c %else (car clause))
+		     (expand rclauses #t)
+		     `(##core#begin ,@(cdr clause)))
+		    (else?
+		     (##sys#warn 
+		      "non-`else' clause following `else' clause in `cond'"
+		      (##sys#strip-syntax clause))
+		     (expand rclauses #t)
+		     '(##core#begin))
+		    ((null? (cdr clause)) 
+		     `(,%or ,(car clause) ,(expand rclauses #f)))
 		    ((c %=> (cadr clause))
 		     (let ((tmp (r 'tmp)))
 		       `(##core#let ((,tmp ,(car clause)))
 				    (##core#if ,tmp
 					       (,(caddr clause) ,tmp)
-					       ,(expand rclauses) ) ) ) )
+					       ,(expand rclauses #f) ) ) ) )
 		    ((and (list? clause) (fx= (length clause) 4)
 			  (c %=> (caddr clause)))
 		     (let ((tmp (r 'tmp)))
@@ -1154,10 +1163,10 @@
 			  ,tmp
 			  (if (##sys#apply ,(cadr clause) ,tmp)
 			      (##sys#apply ,(cadddr clause) ,tmp)
-			      ,(expand rclauses) ) ) ) ) )
+			      ,(expand rclauses #f) ) ) ) ) )
 		    (else `(##core#if ,(car clause) 
 				      (##core#begin ,@(cdr clause))
-				      ,(expand rclauses) ) ) ) ) ) ) ) ) ))
+				      ,(expand rclauses #f) ) ) ) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'case
@@ -1171,20 +1180,28 @@
 	    (%or (r 'or))
 	    (%else (r 'else)))
 	`(let ((,tmp ,exp))
-	   ,(let expand ((clauses body))
+	   ,(let expand ((clauses body) (else? #f))
 	      (if (not (pair? clauses))
 		  '(##core#undefined)
 		  (let ((clause (car clauses))
 			(rclauses (cdr clauses)) )
 		    (##sys#check-syntax 'case clause '#(_ 1))
-		    (if (c %else (car clause))
-			`(##core#begin ,@(cdr clause))
-			`(##core#if (,%or ,@(##sys#map
-					     (lambda (x)
-					       `(##sys#eqv? ,tmp ',x))
-					     (car clause)))
-				    (##core#begin ,@(cdr clause)) 
-				    ,(expand rclauses) ) ) ) ) ) ) ) ) ) ) )
+		    (cond ((c %else (car clause))
+			   (expand rclauses #t)
+			   `(##core#begin ,@(cdr clause)) )
+			  (else?
+			   (##sys#warn 
+			    "non-`else' clause following `else' clause in `case'"
+			    (##sys#strip-syntax clause))
+			   (expand rclauses #t)
+			   '(##core#begin))
+			  (else
+			   `(##core#if (,%or ,@(##sys#map
+						(lambda (x)
+						  `(##sys#eqv? ,tmp ',x))
+						(car clause)))
+				       (##core#begin ,@(cdr clause)) 
+				       ,(expand rclauses #f) ) ) ) ) ) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'let*
