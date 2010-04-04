@@ -572,6 +572,7 @@ typedef unsigned __int64   uint64_t;
 #define C_BAD_ARGUMENT_TYPE_NO_TAGGED_POINTER_ERROR   32
 #define C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR           33
 #define C_BAD_ARGUMENT_TYPE_NO_CLOSURE_ERROR          34
+#define C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR            35
 
 
 /* Platform information */

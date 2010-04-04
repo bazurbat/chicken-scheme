@@ -1582,6 +1582,11 @@ void barf(int code, char *loc, ...)
     c = 1;
     break;
 
+  case C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR:
+    msg = C_text("bad argument type - invalid base");
+    c = 1;
+    break;
+
   default: panic(C_text("illegal internal error code"));
   }
   
@@ -7038,7 +7043,7 @@ void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, 
     va_end(v);
     
     if(radix & C_FIXNUM_BIT) radix = C_unfix(radix);
-    else barf(C_BAD_ARGUMENT_TYPE_ERROR, "string->number", radix);
+    else barf(C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR, "string->number", radix);
   }
   else C_bad_argc(c, 3);
 
@@ -7215,18 +7220,17 @@ C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word
   }
 }
 
-
-static char *to_binary(C_uword num)
+static char *to_n_nary(C_uword num, C_uword base)
 {
   char *p;
-
-  buffer[ 66 ] = '\0';
+  char digits[] ={ '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
+  buffer [ 66 ] = '\0';
   p = buffer + 66;
-  
+
   do {
-    *(--p) = (num & 1) ? '1' : '0';
-    num /= 2;
-  } while(num);
+    *(--p) = digits [ num % base ];
+    num /= base;
+  } while (num);
 
   return p;
 }
@@ -7247,7 +7251,7 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
     va_end(v);
     
     if(radix & C_FIXNUM_BIT) radix = C_unfix(radix);
-    else barf(C_BAD_ARGUMENT_TYPE_ERROR, "number->string", radix);
+    else barf(C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR, "number->string", radix);
   }
   else C_bad_argc(c, 3);
 
@@ -7259,11 +7263,11 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
       num = -num;
     }
 
+    if((radix < 2) || (radix > 16)){
+      barf(C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR, "number->string", C_fix(radix));
+    }
+
     switch(radix) {
-    case 2:
-      p = to_binary(num);
-      break;
-     
 #ifdef C_SIXTY_FOUR
     case 8: C_sprintf(p = buffer + 1, C_text("%lo"), num); break;
     case 10: C_sprintf(p = buffer + 1, C_text("%ld"), num); break;
@@ -7273,8 +7277,8 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
     case 10: C_sprintf(p = buffer + 1, C_text("%d"), num); break;
     case 16: C_sprintf(p = buffer + 1, C_text("%x"), num); break;
 #endif
-
-    default: barf(C_BAD_ARGUMENT_TYPE_ERROR, "number->string", C_fix(radix));
+    default: 
+      p = to_n_nary(num, radix);
     }
   }
   else if(!C_immediatep(num) && C_block_header(num) == C_FLONUM_TAG) {
@@ -7286,11 +7290,11 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 	f = -f;
       }
 
-      switch(radix) {
-      case 2:
-	p = to_binary((unsigned int)f);
-	goto fini;
+      if((radix < 2) || (radix > 16)){
+	barf(C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR, "number->string", C_fix(radix));
+      }
 
+      switch(radix) {
       case 8:
 	C_sprintf(p = buffer, "%o", (unsigned int)f);
 	goto fini;
@@ -7298,6 +7302,11 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
       case 16:
 	C_sprintf(p = buffer, "%x", (unsigned int)f);
 	goto fini;
+
+      default:
+	p = to_n_nary((unsigned int)f, radix);
+	goto fini;
+
       }
     } 
 
