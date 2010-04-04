@@ -1178,6 +1178,7 @@
 	  (body (cddr form)) )
       (let ((tmp (r 'tmp))
 	    (%or (r 'or))
+	    (%eqv? (r 'eqv?))
 	    (%else (r 'else)))
 	`(let ((,tmp ,exp))
 	   ,(let expand ((clauses body) (else? #f))
@@ -1197,8 +1198,7 @@
 			   '(##core#begin))
 			  (else
 			   `(##core#if (,%or ,@(##sys#map
-						(lambda (x)
-						  `(##sys#eqv? ,tmp ',x))
+						(lambda (x) `(,%eqv? ,tmp ',x))
 						(car clause)))
 				       (##core#begin ,@(cdr clause)) 
 				       ,(expand rclauses #f) ) ) ) ) ) ) ) ) ) ) ) )
