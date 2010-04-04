@@ -473,18 +473,30 @@
 	  (%or (r 'or)))
       `(##core#let
 	((,tmp ,exp))
-	,(let expand ((clauses body))
-	   (if (not (pair? clauses))
-	       '(##core#undefined)
-	       (let ((clause (##sys#slot clauses 0))
-		     (rclauses (##sys#slot clauses 1)) )
-		 (##sys#check-syntax 'select clause '#(_ 1))
-		 (if (c %else (car clause))
-		     `(##core#begin ,@(cdr clause))
-		     `(##core#if (,%or ,@(map (lambda (x) `(##sys#eqv? ,tmp ,x)) 
-					 (car clause) ) )
-			    (##core#begin ,@(cdr clause)) 
-			    ,(expand rclauses) ) ) ) ) ) ) ) ) ) )
+	,(let expand ((clauses body) (else? #f))
+	   (cond ((null? clauses)
+		  '(##core#undefined) )
+		 ((not (pair? clauses))
+		  (##sys#syntax-error 'select "invalid syntax" clauses))
+		 (else
+		  (let ((clause (##sys#slot clauses 0))
+			(rclauses (##sys#slot clauses 1)) )
+		    (##sys#check-syntax 'select clause '#(_ 1))
+		    (cond ((c %else (car clause))
+			   (expand rclauses #t)
+			   `(##core#begin ,@(cdr clause)) )
+			  (else?
+			   (##sys#warn 
+			    "non-`else' clause following `else' clause in `cond'"
+			    (##sys#strip-syntax clause))
+			   (expand rclauses #t)
+			   '(##core#begin))
+			  (else
+			   `(##core#if
+			     (,%or ,@(map (lambda (x) `(##sys#eqv? ,tmp ,x)) 
+					  (car clause) ) )
+			     (##core#begin ,@(cdr clause)) 
+			     ,(expand rclauses #f) ) ) ) ) ) ) ) ) ) ) ) )
 
 
 ;;; Optional argument handling:
@@ -999,48 +1011,6 @@
 			   (cons v vals) #f) ) ))))))))
 
 
-;;; Extension helper:
-
-(##sys#extend-macro-environment		; DEPRECATED
- 'define-extension '()
- (##sys#er-transformer
-  (lambda (form r c)
-    (##sys#check-syntax 'define-extension form '(_ symbol . _))
-    (let ((%declare (r 'declare))
-	  (%begin (r 'begin))
-	  (%static (r 'static))
-	  (%dynamic (r 'dynamic))
-	  (%export (r 'export)))
-      (let loop ((s '()) (d '()) (cs (cddr form)) (exports #f))
-	(cond ((null? cs)
-	       (let ((exps (if exports
-			       `(,%declare (,%export ,@exports))
-			       '(##core#begin))))
-		 `(,(r 'cond-expand)
-		   (chicken-compile-shared ,exps ,@d)
-		   ((,(r 'not) compiling) ,@d)
-		   (,(r 'else)
-		    (,%declare (unit ,name))
-		    ,exps
-		    (,(r 'provide) (,(r 'quote) ,name))
-		    ,@s) ) ) )
-	      ((and (pair? cs) (pair? (car cs)))
-	       (let ((t (caar cs))
-		     (next (cdr cs)) )
-		 (cond ((c %static t)
-			(loop (cons `(##core#begin ,@(cdar cs)) s) d next exports))
-		       ((c %dynamic t) 
-			(loop s (cons `(##core#begin ,@(cdar cs)) d) next exports))
-		       ((c %export t)
-			(loop s d next (append (or exports '()) (cdar cs))))
-		       (else
-			(syntax-error 'define-extension "invalid clause specifier" (caar cs))) ) ) )
-	      (else
-	       (syntax-error
-		'define-extension
-		"invalid clause syntax" cs)) ) ) ))))
-
-
 ;;; SRFI-31
 
 (##sys#extend-macro-environment
@@ -1066,15 +1036,6 @@
     (##sys#check-syntax 'define-for-syntax form '(_ _ . _))
     `(,(r 'begin-for-syntax)
       (,(r 'define) ,@(cdr form))))))
-
-
-;;; compiled syntax (DEPRECATED)
-
-(##sys#extend-macro-environment
- 'define-compiled-syntax '()
- (##sys#er-transformer
-  (lambda (form r c)
-    `(,(r 'define-syntax) ,@(cdr form)))))
 
 
 ;;; use
