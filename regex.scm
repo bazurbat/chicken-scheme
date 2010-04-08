@@ -114,25 +114,25 @@
 
 (define (string-search rx str #!optional (start 0) (range (string-length str)))
   (let ((rx (unregexp rx)))
-    (and-let* ((n (string-length str))
-	       (m (irregex-search rx str start (min n (fx+ start range)))))
-      (let loop ((i (irregex-match-num-submatches m))
-                 (res '()))
-        (if (fx< i 0)
-            res
-            (loop (fx- i 1) (cons (irregex-match-substring m i) res)))))))
+    (let ((n (string-length str)))
+      (and-let* ((m (irregex-search rx str start (min n (fx+ start range)))))
+	(let loop ((i (irregex-match-num-submatches m))
+		   (res '()))
+	  (if (fx< i 0)
+	      res
+	      (loop (fx- i 1) (cons (irregex-match-substring m i) res))))))))
 
 (define (string-search-positions rx str #!optional (start 0) (range (string-length str)))
   (let ((rx (unregexp rx)))
-    (and-let* ((n (string-length str))
-	       (m (irregex-search rx str start (min n (fx+ start range)))))
-      (let loop ((i (irregex-match-num-submatches m))
-                 (res '()))
-        (if (fx< i 0)
-            res
-            (loop (fx- i 1) (cons (list (irregex-match-start-index m i)
-                                        (irregex-match-end-index m i))
-                                  res)))))))
+    (let ((n (string-length str)))
+      (and-let* ((m (irregex-search rx str start (min n (fx+ start range)))))
+	(let loop ((i (irregex-match-num-submatches m))
+		   (res '()))
+	  (if (fx< i 0)
+	      res
+	      (loop (fx- i 1) (cons (list (irregex-match-start-index m i)
+					  (irregex-match-end-index m i))
+				    res))))))))
 
 
 ;;; Split string into fields:
