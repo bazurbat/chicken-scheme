@@ -610,6 +610,8 @@
 	    [params (node-parameters n)]
 	    [class (node-class n)] )
 	(case class
+	  ((quote)
+	   (make-node class params '()))
 	  [(##core#variable) 
 	   (let ((var (first params)))
 	     (when (get db var 'contractable)
