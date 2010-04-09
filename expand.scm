@@ -369,11 +369,11 @@
 			     `((,%let*
 				,(map (lambda (k)
 					(let ([s (car k)])
-					  `(,s (##sys#get-keyword 
+					  `(,s (##sys#get-keyword
 						',(->keyword s) ,rvar
 						,@(if (pair? (cdr k)) 
 						      `((,%lambda () ,@(cdr k)))
-						      '() ) ) ) ) )
+						      '())))))
 				      (reverse key) )
 				,@body) ) ) ] )
 		    (cond [(null? opt) body]

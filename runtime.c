@@ -8729,3 +8729,29 @@ C_putprop(C_word **ptr, C_word sym, C_word prop, C_word val)
   C_mutate(&C_block_item(sym, 2), pl);
   return val;
 }
+
+
+C_regparm C_word C_fcall
+C_i_get_keyword(C_word kw, C_word args, C_word def)
+{
+  while(!C_immediatep(args)) {
+    if(C_block_header(args) == C_PAIR_TAG) {
+      if(kw == C_u_i_car(args)) {
+	args = C_u_i_cdr(args);
+
+	if(C_immediatep(args) || C_block_header(args) != C_PAIR_TAG)
+	  return def;
+	else return C_u_i_car(args);
+      }
+      else {
+	args = C_u_i_cdr(args);
+
+	if(C_immediatep(args) || C_block_header(args) != C_PAIR_TAG)
+	  return def;
+	else args = C_u_i_cdr(args);
+      }
+    }
+  }
+
+  return def;
+}

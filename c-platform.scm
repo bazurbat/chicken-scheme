@@ -151,7 +151,7 @@
     pointer-u32-ref pointer-s32-ref pointer-f32-ref pointer-f64-ref
     pointer-u8-set! pointer-s8-set! pointer-u16-set! pointer-s16-set!
     pointer-u32-set! pointer-s32-set! pointer-f32-set! pointer-f64-set!
-    printf sprintf format) )
+    printf sprintf format get-keyword) )
 
 (define internal-bindings
   '(##sys#slot ##sys#setslot ##sys#block-ref ##sys#block-set!
@@ -163,7 +163,7 @@
     ##sys#fudge ##sys#immediate? ##sys#direct-return ##sys#context-switch
     ##sys#make-structure ##sys#apply ##sys#apply-values ##sys#continuation-graft
     ##sys#bytevector? ##sys#make-vector ##sys#setter ##sys#car ##sys#cdr ##sys#pair?
-    ##sys#eq? ##sys#list? ##sys#vector? ##sys#eqv?
+    ##sys#eq? ##sys#list? ##sys#vector? ##sys#eqv? ##sys#get-keyword
     ##sys#foreign-char-argument ##sys#foreign-fixnum-argument ##sys#foreign-flonum-argument
     ##sys#foreign-block-argument ##sys#foreign-number-vector-argument
     ##sys#foreign-string-argument ##sys#foreign-pointer-argument ##sys#void
@@ -186,7 +186,7 @@
     s32vector->blob/shared read-string read-string! o
     address->pointer pointer->address
     ##sys#make-structure print* ##sys#make-vector ##sys#apply ##sys#setislot ##sys#block-ref
-    ##sys#byte ##sys#setbyte 
+    ##sys#byte ##sys#setbyte ##sys#get-keyword get-keyword
     u8vector-length s8vector-length u16vector-length s16vector-length u32vector-length s32vector-length
     f32vector-length f64vector-length ##sys#apply-values ##sys#setter setter
     f32vector-set! f64vector-set!
@@ -1108,3 +1108,6 @@
 (rewrite 'substring-ci=? 23 2 '##sys#substring-ci=? 0 0 #f)
 (rewrite 'substring-index 23 2 '##sys#substring-index 0)
 (rewrite 'substring-index-ci 23 2 '##sys#substring-index-ci 0)
+
+(rewrite 'get-keyword 7 2 "C_i_get_keyword" #f #t)
+(rewrite '##sys#get-keyword 7 2 "C_i_get_keyword" #f #t)

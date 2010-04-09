@@ -1223,15 +1223,14 @@ EOF
 	  (##sys#symbol->string kw)
 	  (##sys#signal-hook #:type-error 'keyword->string "bad argument type - not a keyword" kw) ) ) ) )
 
-(define (##sys#get-keyword key args0 . default)
-  (##sys#check-list args0 'get-keyword)
-  (let ([a (memq key args0)])
-    (if a
-	(let ([r (##sys#slot a 1)])
-	  (if (pair? r)
-	      (##sys#slot r 0)
-	      (##sys#error 'get-keyword "missing keyword argument" args0 key) ) )
-	(and (pair? default) ((car default))) ) ) )
+(define ##sys#get-keyword
+  (let ((tag (list 'tag)))
+    (lambda (key args #!optional thunk)
+      (##sys#check-list args 'get-keyword)
+      (let ((r (##core#inline "C_i_get_keyword" key args tag)))
+	(if (eq? r tag)
+	    (and thunk (thunk))
+	    r)))))
 
 (define get-keyword ##sys#get-keyword)
 
