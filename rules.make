@@ -1046,26 +1046,29 @@ check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 # stage1: build static compiler from current sources with whatever chicken is 
 #         currently available
 stage1:
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) STATICBUILD=1 DEBUGBUILD=1 \
-	  CHICKEN=$(CHICKEN) confclean clean $(CHICKEN_PROGRAM)
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) \
+	  SRCDIR=$(SRCDIR) STATICBUILD=1 DEBUGBUILD=1 CHICKEN=$(CHICKEN) \
+	  confclean clean $(CHICKEN_PROGRAM)
 	$(COPY_COMMAND) $(CHICKEN_PROGRAM) $(CHICKEN_PROGRAM)-stage1$(EXE)
 	-chmod +x $(CHICKEN_PROGRAM)-stage1$(EXE)
 	-touch *.scm
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) stage2
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) SRCDIR=$(SRCDIR) stage2
 
-# stage2: build chicken with compiler built from current sources, so that
-#         it supports all functionality that were recently added
+# stage2: build static chicken with compiler built from current sources, so that
+#         it supports all functionality that has recently been added
 stage2:
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) STATICBUILD=1 DEBUGBUILD=1 \
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) \
+	  SRCDIR=$(SRCDIR) STATICBUILD=1 DEBUGBUILD=1 \
 	  CHICKEN=./$(CHICKEN_PROGRAM)-stage1 clean $(CHICKEN_PROGRAM)
 	$(COPY_COMMAND) $(CHICKEN_PROGRAM) $(CHICKEN_PROGRAM)-stage2$(EXE)
 	-chmod +x $(CHICKEN_PROGRAM)-stage2$(EXE)
 	-touch *.scm
 	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) stage3
 
-# stage3: build chicken with compiler built from compiler built from current 
+# stage3: build whole system with compiler built from compiler built from current 
 #         sources - this should normally not be contaminated by old compilers
 #         or runtime libraries
 stage3:
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) CONFIG=$(CONFIG) \
-	  CHICKEN=./$(CHICKEN_PROGRAM)-stage2 confclean clean all
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) \
+	  SRCDIR=$(SRCDIR) CONFIG=$(CONFIG) CHICKEN=./$(CHICKEN_PROGRAM)-stage2 \
+	  confclean clean all
