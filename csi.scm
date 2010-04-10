@@ -497,6 +497,7 @@ EOF
 	     (##sys#write-char-0 #\newline ##sys#standard-output) ]
 	    [(eq? x (##sys#slot '##sys#arbitrary-unbound-symbol 0))
 	     (fprintf out "unbound value~%") ]
+	    [(flonum? x) (fprintf out "inexact number ~S~%" x)]
 	    [(number? x) (fprintf out "number ~S~%" x)]
 	    [(string? x) (descseq "string" ##sys#size string-ref 0)]
 	    [(vector? x) (descseq "vector" ##sys#size ##sys#slot 0)]

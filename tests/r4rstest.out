@@ -566,24 +566,24 @@ Passed all tests
 
 ;testing inexact numbers; 
 SECTION(6 2)
-(#<procedure> 1 1.0)  ==> #f
-(#<procedure> 0 0.0)  ==> #f
+(#<procedure> 1 1)  ==> #f
+(#<procedure> 0 0)  ==> #f
 SECTION(6 5 5)
 (#<procedure> 3.9)  ==> #t
 (max #t)  ==> #t
-(#<procedure> 3.9 4)  ==> 4.0
-(#<procedure> 4)  ==> 4.0
-(#<procedure> 4.0)  ==> 4.0
+(#<procedure> 3.9 4)  ==> 4
 (#<procedure> 4)  ==> 4
-(#<procedure> 4.0)  ==> 4
+(#<procedure> 4)  ==> 4
+(#<procedure> 4)  ==> 4
+(#<procedure> 4)  ==> 4
 (#<procedure> -4.5)  ==> -4.0
 (#<procedure> -3.5)  ==> -4.0
 (#<procedure> -3.9)  ==> -4.0
-(#<procedure> 0.0)  ==> 0.0
-(#<procedure> 0.25)  ==> 0.0
-(#<procedure> 0.8)  ==> 1.0
-(#<procedure> 3.5)  ==> 4.0
-(#<procedure> 4.5)  ==> 4.0
+(#<procedure> 0)  ==> 0
+(#<procedure> 0.25)  ==> 0
+(#<procedure> 0.8)  ==> 1
+(#<procedure> 3.5)  ==> 4
+(#<procedure> 4.5)  ==> 4
 (#<procedure> 0 0)  ==> 1
 (#<procedure> 0 1)  ==> 0
 (#<procedure> 1 1)  ==> 0.785398163397448
@@ -601,14 +601,17 @@ SECTION(6 5 5)
 
 Passed all tests
 SECTION(6 5 6)
-(float-print-test #t)  ==> #t
-Number readback failure for (+ 1.0 (* -100 2.22044604925031e-16))
+Number readback failure for (+ 0 (* 0 4.94065645841247e-324))
+0
+(float-print-test #f)  ==> #f
+ BUT EXPECTED #t
+Number readback failure for (+ 1 (* -100 2.22044604925031e-16))
 0.999999999999978
-Number readback failure for (+ 10.0 (* -100 1.77635683940025e-15))
+Number readback failure for (+ 10 (* -100 1.77635683940025e-15))
 9.99999999999982
-Number readback failure for (+ 100.0 (* -100 1.4210854715202e-14))
+Number readback failure for (+ 100 (* -100 1.4210854715202e-14))
 99.9999999999986
-Number readback failure for (+ 1e+20 (* -100 16384.0))
+Number readback failure for (+ 1e+20 (* -100 16384))
 9.99999999999984e+19
 Number readback failure for (+ 1e+50 (* -100 2.07691874341393e+34))
 9.99999999999979e+49
@@ -628,13 +631,13 @@ Number readback failure for (+ 1e-100 (* -100 1.26897091865782e-116))
 9.99999999999987e-101
 (mult-float-print-test #f)  ==> #f
  BUT EXPECTED #t
-Number readback failure for (+ 3.0 (* -100 4.44089209850063e-16))
+Number readback failure for (+ 3 (* -100 4.44089209850063e-16))
 2.99999999999996
-Number readback failure for (+ 30.0 (* -100 3.5527136788005e-15))
+Number readback failure for (+ 30 (* -100 3.5527136788005e-15))
 29.9999999999996
-Number readback failure for (+ 300.0 (* -100 5.6843418860808e-14))
+Number readback failure for (+ 300 (* -100 5.6843418860808e-14))
 299.999999999994
-Number readback failure for (+ 3e+20 (* -100 65536.0))
+Number readback failure for (+ 3e+20 (* -100 65536))
 2.99999999999993e+20
 Number readback failure for (+ 3e+50 (* -100 4.15383748682786e+34))
 2.99999999999996e+50
@@ -654,13 +657,13 @@ Number readback failure for (+ 3e-100 (* -100 5.0758836746313e-116))
 2.99999999999995e-100
 (mult-float-print-test #f)  ==> #f
  BUT EXPECTED #t
-Number readback failure for (+ 7.0 (* -100 8.88178419700125e-16))
+Number readback failure for (+ 7 (* -100 8.88178419700125e-16))
 6.99999999999991
-Number readback failure for (+ 70.0 (* -100 1.4210854715202e-14))
+Number readback failure for (+ 70 (* -100 1.4210854715202e-14))
 69.9999999999986
-Number readback failure for (+ 700.0 (* -100 1.13686837721616e-13))
+Number readback failure for (+ 700 (* -100 1.13686837721616e-13))
 699.999999999989
-Number readback failure for (+ 7e+20 (* -100 131072.0))
+Number readback failure for (+ 7e+20 (* -100 131072))
 6.99999999999987e+20
 Number readback failure for (+ 7e+50 (* -100 8.30767497365572e+34))
 6.99999999999992e+50
@@ -686,7 +689,7 @@ Number readback failure for (+ 31.4159265358979 (* -100 3.5527136788005e-15))
 31.4159265358976
 Number readback failure for (+ 314.159265358979 (* -100 5.6843418860808e-14))
 314.159265358974
-Number readback failure for (+ 3.14159265358979e+20 (* -100 65536.0))
+Number readback failure for (+ 3.14159265358979e+20 (* -100 65536))
 3.14159265358973e+20
 Number readback failure for (+ 3.14159265358979e+50 (* -100 4.15383748682786e+34))
 3.14159265358975e+50
@@ -712,7 +715,7 @@ Number readback failure for (+ 27.1828182845905 (* -100 3.5527136788005e-15))
 27.1828182845901
 Number readback failure for (+ 271.828182845905 (* -100 5.6843418860808e-14))
 271.828182845899
-Number readback failure for (+ 2.71828182845905e+20 (* -100 32768.0))
+Number readback failure for (+ 2.71828182845905e+20 (* -100 32768))
 2.71828182845901e+20
 Number readback failure for (+ 2.71828182845905e+50 (* -100 4.15383748682786e+34))
 2.718281828459e+50
@@ -748,6 +751,7 @@ errors were:
 ((6 5 6) (#f #t (mult-float-print-test #f)))
 ((6 5 6) (#f #t (mult-float-print-test #f)))
 ((6 5 6) (#f #t (mult-float-print-test #f)))
+((6 5 6) (#f #t (float-print-test #f)))
 
 
 ;testing scheme 4 functions; 
@@ -771,6 +775,7 @@ errors were:
 ((6 5 6) (#f #t (mult-float-print-test #f)))
 ((6 5 6) (#f #t (mult-float-print-test #f)))
 ((6 5 6) (#f #t (mult-float-print-test #f)))
+((6 5 6) (#f #t (float-print-test #f)))
 
 
 ;testing DELAY and FORCE; 
@@ -789,4 +794,5 @@ errors were:
 ((6 5 6) (#f #t (mult-float-print-test #f)))
 ((6 5 6) (#f #t (mult-float-print-test #f)))
 ((6 5 6) (#f #t (mult-float-print-test #f)))
+((6 5 6) (#f #t (float-print-test #f)))
 
