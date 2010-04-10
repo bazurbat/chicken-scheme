@@ -1037,3 +1037,28 @@ testclean:
 
 check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 	cd tests; sh runtests.sh
+
+
+# 3-stage build
+
+.PHONY: stage1 stage2 stage3
+
+stage1:
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) STATICBUILD=1 DEBUGBUILD=1 \
+	  CHICKEN=$(CHICKEN) confclean clean $(CHICKEN_PROGRAM)
+	$(COPY_COMMAND) $(CHICKEN_PROGRAM) $(CHICKEN_PROGRAM)-stage1$(EXE)
+	-chmod +x $(CHICKEN_PROGRAM)-stage1$(EXE)
+	-touch *.scm
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) stage2
+
+stage2:
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) STATICBUILD=1 DEBUGBUILD=1 \
+	  CHICKEN=./$(CHICKEN_PROGRAM)-stage1 clean $(CHICKEN_PROGRAM)
+	$(COPY_COMMAND) $(CHICKEN_PROGRAM) $(CHICKEN_PROGRAM)-stage2$(EXE)
+	-chmod +x $(CHICKEN_PROGRAM)-stage2$(EXE)
+	-touch *.scm
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) stage3
+
+stage3:
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) CONFIG=$(CONFIG) \
+	  CHICKEN=./$(CHICKEN_PROGRAM)-stage2 confclean clean all
