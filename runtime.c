@@ -7303,6 +7303,9 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 	C_sprintf(p = buffer, "%x", (unsigned int)f);
 	goto fini;
 
+      case 10: break;		/* force output of decimal point to retain
+				   read/write invariance (the little we support) */
+
       default:
 	p = to_n_nary((unsigned int)f, radix);
 	goto fini;

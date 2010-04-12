@@ -27,6 +27,8 @@ CHICKEN=../chicken
 
 if test -n "$MSYSTEM"; then
     CHICKEN="..\\chicken.exe"
+    # make compiled tests use proper library on Windows
+    cp ../libchicken.dll .
 fi
 
 compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
@@ -61,7 +63,7 @@ if test \! -f scrutiny.expected; then
     cp scrutiny.out scrutiny.expected
 fi
 
-diff -u scrutiny.out scrutiny.expected || true
+diff -u scrutiny.out scrutiny.expected
 
 echo "======================================== runtime tests ..."
 $interpret -s apply-test.scm
@@ -130,7 +132,7 @@ if test -n "$MSYSTEM"; then
     # the windows runtime library prints flonums differently
     tail r4rstest.log
 else
-    diff -bu r4rstest.out r4rstest.log || true
+    diff -bu r4rstest.out r4rstest.log
 fi
 
 echo "======================================== syntax tests (r5rs_pitfalls) ..."
