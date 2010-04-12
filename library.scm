@@ -202,10 +202,16 @@ EOF
       (##sys#signal-hook #:error #f)))
 
 (define ##sys#warnings-enabled #t)
+(define ##sys#notices-enabled (##sys#fudge 13))
 
 (define (##sys#warn msg . args)
   (when ##sys#warnings-enabled
     (apply ##sys#signal-hook #:warning msg args) ) )
+
+(define (##sys#notice msg . args)
+  (when (and ##sys#notices-enabled
+	     ##sys#warnings-enabled)
+    (apply ##sys#signal-hook #:notice msg args) ) )
 
 (define (enable-warnings . bool)
   (if (pair? bool) 
@@ -3518,8 +3524,10 @@ EOF
        'condition
        '(user-interrupt)
        '() ) ) ]
-    [(#:warning)
-     (##sys#print "\nWarning: " #f ##sys#standard-error)
+    [(#:warning #:notice)
+     (##sys#print 
+      (if (eq? mode #:warning) "\nWarning: " "\nNote: ")
+      #f ##sys#standard-error)
      (##sys#print msg #f ##sys#standard-error)
      (if (or (null? args) (fx> (length args) 1))
 	 (##sys#write-char-0 #\newline ##sys#standard-error)

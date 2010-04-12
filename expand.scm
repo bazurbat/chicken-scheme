@@ -911,13 +911,13 @@
 		  (set! prims (cons imp prims)))
 		(and-let* ((a (assq id (import-env)))
 			   ((not (eq? aid (cdr a)))))
-		  (##sys#warn "re-importing already imported identifier" id))))
+		  (##sys#notice "re-importing already imported identifier" id))))
 	    vsv)
 	   (for-each
 	    (lambda (imp)
 	      (and-let* ((a (assq (car imp) (macro-env)))
 			 ((not (eq? (cdr imp) (cdr a)))))
-		(##sys#warn "re-importing already imported syntax" (car imp))) )
+		(##sys#notice "re-importing already imported syntax" (car imp))) )
 	    vss)
 	   (when reexp?
 	     (unless cm
@@ -1141,7 +1141,7 @@
 		     (expand rclauses #t)
 		     `(##core#begin ,@(cdr clause)))
 		    (else?
-		     (##sys#warn 
+		     (##sys#notice
 		      "non-`else' clause following `else' clause in `cond'"
 		      (##sys#strip-syntax clause))
 		     (expand rclauses #t)
@@ -1191,7 +1191,7 @@
 			   (expand rclauses #t)
 			   `(##core#begin ,@(cdr clause)) )
 			  (else?
-			   (##sys#warn 
+			   (##sys#notice
 			    "non-`else' clause following `else' clause in `case'"
 			    (##sys#strip-syntax clause))
 			   (expand rclauses #t)
@@ -1524,9 +1524,9 @@
 
 (define (check-for-redef sym env senv)
   (and-let* ((a (assq sym env)))
-    (##sys#warn "redefinition of imported value binding" sym) )
+    (##sys#notice "redefinition of imported value binding" sym) )
   (and-let* ((a (assq sym senv)))
-    (##sys#warn "redefinition of imported syntax binding" sym)))
+    (##sys#notice "redefinition of imported syntax binding" sym)))
 
 (define (##sys#register-export sym mod)
   (when mod

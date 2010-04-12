@@ -1,5 +1,8 @@
 #!/bin/sh
-# runtests.sh
+# runtests.sh - run CHICKEN testsuite
+#
+# - Note: this needs a proper shell, so it will not work with plain mingw
+#   (just the compiler and the Windows shell, without MSYS)
 
 set -e
 TEST_DIR=`pwd`

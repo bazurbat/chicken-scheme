@@ -1909,7 +1909,8 @@
 	     (compiler-warning 'var "local assignment to unused variable `~S' may be unintended" sym) )
 	   (when (and (not (variable-visible? sym))
 		      (not (variable-mark sym '##compiler#constant)) )
-	     (compiler-warning 'var "global variable `~S' is never used" sym) ) )
+	     (##sys#notice 
+	      (sprintf "global variable `~S' is never used" sym) ) ) )
 
  	 ;; Make 'boxed, if 'assigned & 'captured:
 	 (when (and assigned captured)

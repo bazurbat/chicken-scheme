@@ -64,6 +64,7 @@ EOF
 
 (set! ##sys#repl-print-length-limit 2048)
 (set! ##sys#features (cons #:csi ##sys#features))
+(set! ##sys#notices-enabled #t)
 
 
 ;;; Print all sorts of information:
@@ -780,7 +781,8 @@ EOF
 	  (do ([x (read in) (read in)])
 	      ((eof-object? x))
 	    (rec (receive (eval x))) ) ) )
-      (when quietflag (set! ##sys#eval-debug-level 0))
+      (when quietflag
+	(set! ##sys#eval-debug-level 0))
       (when (member* '("-h" "-help" "--help") args)
 	(print-usage)
 	(exit 0) )
@@ -833,6 +835,8 @@ EOF
 	(parentheses-synonyms #f)
 	(symbol-escape #f) )
       (unless (or (member* '("-n" "-no-init") args) script) (loadinit))
+      (when batch 
+	(set! ##sys#notices-enabled #f))
       (do ([args args (cdr args)])
 	  ((null? args)
 	   (unless batch 
