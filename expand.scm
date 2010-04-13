@@ -594,10 +594,47 @@
 
 (define ##sys#line-number-database #f)
 (define ##sys#syntax-error-culprit #f)
+(define ##sys#unimported-syntax-context #f)
 
 (define (##sys#syntax-error-hook . args)
   (apply ##sys#signal-hook #:syntax-error
 	 (##sys#strip-syntax args)))
+
+(define ##sys#syntax-error/context
+  (let ((open-output-string open-output-string)
+	(get-output-string get-output-string))
+    (lambda (msg arg)
+      (cond (##sys#unimported-syntax-context 
+	     =>
+	     (lambda (cx)
+	       (let* ((cx (##sys#strip-syntax cx))
+		      (a (##sys#get cx '##core#db))
+		      (out (open-output-string)))
+		 (##sys#print msg #f out)
+		 (##sys#print ": " #f out)
+		 (##sys#print arg #t out)
+		 (##sys#print "\n\nPerhaps you intended to use the syntax `" #f out)
+		 (##sys#print cx #f out)
+		 (##sys#print "' without importing it first.\n" #f out)
+		 (if (= 1 (length a))
+		     (##sys#print 
+		      (string-append
+		       "Suggesting: `(import "
+		       (symbol->string (cadar a))
+		       ")'")
+		      #f out)
+		     (##sys#print
+		      (string-append
+		       "Suggesting one of:\n"
+		       (let loop ((lst a))
+			 (if (null? lst)
+			     ""
+			     (string-append
+			      "\n    (import " (symbol->string (cadar lst)) ")"
+			      (loop (cdr lst))))))
+		      #f out))
+		 (##sys#syntax-error-hook (get-output-string out)))))
+	    (else (##sys#syntax-error-hook msg arg))))))
 
 (define syntax-error ##sys#syntax-error-hook)
 
@@ -1824,7 +1861,7 @@
 		   (if (null? lst)
 		       ""
 		       (string-append
-			"Warning:     `(import " (symbol->string (cadar lst)) ")'\n"
+			"Warning:     (import " (symbol->string (cadar lst)) ")\n"
 			(loop (cdr lst)))))))))))
      (module-undefined-list mod))
     (when missing

@@ -4282,6 +4282,7 @@ EOF
       (let-optionals args ([port ##sys#standard-output]
 			   [header "Error"] )
 	(##sys#check-port port 'print-error-message)
+	(newline port)
 	(display header port)
 	(cond [(and (not (##sys#immediate? ex)) (eq? 'condition (##sys#slot ex 0)))
 	       (cond ((errmsg ex) =>
