@@ -82,8 +82,8 @@
 		      (set! args (cdr args))
 		      loc))))
       (if loc
-	  (fprintf out "Syntax error (~a): ~a~%~%" loc msg) 
-	  (fprintf out "Syntax error: ~a~%~%" msg) )
+	  (fprintf out "\nSyntax error (~a): ~a~%~%" loc msg) 
+	  (fprintf out "\nSyntax error: ~a~%~%" msg) )
       (for-each (cut fprintf out "\t~s~%" <>) args)
       (print-call-chain out 0 ##sys#current-thread "\n\tExpansion history:\n")
       (exit 70) ) ) )
@@ -1503,7 +1503,8 @@ EOF
       (printf "loading identifier database ~a ...~%" dbfile))
     (for-each
      (lambda (e)
-       (##sys#put! 
-	(car e) '##core#db
-	(append (or (##sys#get (car e) '##core#db) '()) (list (cdr e))) ))
+       (let ((id (car e)))
+	 (##sys#put! 
+	  id '##core#db
+	  (append (or (##sys#get id '##core#db) '()) (list (cdr e))) )))
      (read-file dbfile))))

@@ -31,7 +31,7 @@ VPATH=$(SRCDIR)
 LIBCHICKEN_OBJECTS_1 = \
        library eval data-structures ports files extras lolevel utils tcp srfi-1 srfi-4 srfi-13 \
        srfi-14 srfi-18 srfi-69 $(POSIXFILE) regex scheduler \
-       profiler stub expand chicken-syntax runtime
+       profiler stub expand chicken-syntax chicken-ffi-syntax runtime
 LIBCHICKEN_SHARED_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=$(O))
 LIBCHICKEN_STATIC_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=-static$(O))
 
@@ -57,6 +57,10 @@ expand$(O): expand.c chicken.h $(CHICKEN_CONFIG_H)
 	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
 	  $(C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
 chicken-syntax$(O): chicken-syntax.c chicken.h $(CHICKEN_CONFIG_H)
+	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
+	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
+	  $(C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
+chicken-ffi-syntax$(O): chicken-ffi-syntax.c chicken.h $(CHICKEN_CONFIG_H)
 	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
 	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
 	  $(C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
@@ -157,6 +161,11 @@ expand-static$(O): expand.c chicken.h $(CHICKEN_CONFIG_H)
 	  $(C_COMPILER_STATIC_OPTIONS) \
 	  $(C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
 chicken-syntax-static$(O): chicken-syntax.c chicken.h $(CHICKEN_CONFIG_H)
+	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
+	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
+	  $(C_COMPILER_STATIC_OPTIONS) \
+	  $(C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
+chicken-ffi-syntax-static$(O): chicken-ffi-syntax.c chicken.h $(CHICKEN_CONFIG_H)
 	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
 	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
 	  $(C_COMPILER_STATIC_OPTIONS) \
@@ -828,6 +837,8 @@ expand.c: $(SRCDIR)expand.scm $(SRCDIR)synrules.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
 chicken-syntax.c: $(SRCDIR)chicken-syntax.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
+chicken-ffi-syntax.c: $(SRCDIR)chicken-ffi-syntax.scm
+	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
 data-structures.c: $(SRCDIR)data-structures.scm $(SRCDIR)private-namespace.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm
 ports.c: $(SRCDIR)ports.scm $(SRCDIR)private-namespace.scm
@@ -914,7 +925,7 @@ setup-download.import.c: $(SRCDIR)setup-download.scm
 	$(CHICKEN) $(SRCDIR)setup-download.import.scm $(CHICKEN_IMPORT_LIBRARY_OPTIONS) \
 	  -ignore-repository -output-file $@ 
 
-chicken.c: $(SRCDIR)chicken.scm $(SRCDIR)chicken-ffi-syntax.scm $(SRCDIR)compiler-namespace.scm \
+chicken.c: $(SRCDIR)chicken.scm $(SRCDIR)compiler-namespace.scm \
 	  $(SRCDIR)private-namespace.scm $(SRCDIR)tweaks.scm
 	$(CHICKEN) $< $(CHICKEN_COMPILER_OPTIONS) -output-file $@ 
 support.c: $(SRCDIR)support.scm $(SRCDIR)banner.scm $(SRCDIR)compiler-namespace.scm \
@@ -971,7 +982,7 @@ setup-download.c: $(SRCDIR)setup-download.scm setup-api.c
 
 .PHONY: distfiles dist html
 
-distfiles: library.c eval.c expand.c chicken-syntax.c \
+distfiles: library.c eval.c expand.c chicken-syntax.c chicken-ffi-syntax.c \
 	data-structures.c ports.c files.c extras.c lolevel.c utils.c \
 	tcp.c srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c \
 	posixunix.c posixwin.c regex.c scheduler.c profiler.c stub.c \
@@ -1015,14 +1026,14 @@ confclean:
 
 spotless: distclean testclean
 	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) library.c eval.c data-structures.c \
-	  ports.c files.c extras.c lolevel.c utils.c chicken-syntax.c \
+	  ports.c files.c extras.c lolevel.c utils.c chicken-syntax.c chicken-ffi-syntax.c \
 	  tcp.c srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c expand.c \
 	  posixunix.c posixwin.c regex.c scheduler.c profiler.c stub.c \
 	  chicken-profile.c chicken-bug.c \
 	  csc.c csi.c chicken-install.c chicken-uninstall.c chicken-status.c \
 	  chicken.c batch-driver.c compiler.c optimizer.c compiler-syntax.c \
 	  scrutinizer.c support.c unboxing.c \
-	  c-platform.c c-backend.c chicken-boot$(EXE) setup-api.c setup-download.c \
+	  c-platform.c c-backend.c setup-api.c setup-download.c \
 	  $(IMPORT_LIBRARIES:=.import.c)
 
 distclean: clean confclean

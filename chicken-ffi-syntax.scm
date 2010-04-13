@@ -25,6 +25,20 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
+(declare
+  (unit chicken-ffi-syntax)
+  (disable-interrupts)
+  (fixnum) )
+
+#+(not debugbuild)
+(declare
+  (no-bound-checks)
+  (no-procedure-checks))
+
+(##sys#provide
+ 'chicken-ffi-syntax)
+
+
 (define ##sys#chicken-ffi-macro-environment
   (let ((me0 (##sys#macro-environment)))
 

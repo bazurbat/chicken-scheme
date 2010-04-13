@@ -324,7 +324,7 @@ IMPORT_LIBRARIES = chicken lolevel srfi-1 srfi-4 data-structures ports files pos
 IMPORT_LIBRARIES += setup-api setup-download
 SCRUTINIZED_LIBRARIES = library eval data-structures ports files extras lolevel utils tcp srfi-1 srfi-4 srfi-13 \
        srfi-14 srfi-18 srfi-69 $(POSIXFILE) regex scheduler \
-       profiler stub expand chicken-syntax
+       profiler stub expand chicken-syntax chicken-ffi-syntax
 
 ifdef STATICBUILD
 CHICKEN_STATIC_EXECUTABLE = $(CHICKEN_PROGRAM)$(EXE)
