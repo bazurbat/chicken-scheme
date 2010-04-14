@@ -475,7 +475,6 @@
     to))
 
 (define (path-prefix? pref path)
-  (print (list pref path))
   (string-prefix?
    (normalize-pathname pref)
    (normalize-pathname path)))
