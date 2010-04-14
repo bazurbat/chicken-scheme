@@ -62,6 +62,220 @@ Like {{C_fitsinfixnump}} but for unsigned integers.  This checks the
 top ''two'' bits are zero, since fixnums '''always''' carry a sign.
 
 
+==== Scheme predicates
+
+These return Scheme booleans (ie, C_SCHEME_TRUE or C_SCHEME_FALSE).
+This means they can be used directly from Scheme using {{##core#inline}}.
+
+===== C_zero_length_p
+
+ [C macro] C_word C_zero_length_p(C_word x)
+
+Is {{x}} a Scheme object of zero length?  Only accepts non-immediate objects.
+
+===== C_unboundvaluep
+
+ [C macro] C_word C_unboundvaluep(C_word x)
+
+Is {{x}} the special unbound variable placeholder {{C_SCHEME_UNBOUND}}?
+
+===== C_boundp
+
+ [C macro] C_word C_boundp(C_word x)
+
+Is {{x}} a bound value?  Only accepts non-immediate objects.
+
+===== C_blockp
+
+ [C macro] C_word C_blockp(C_word x)
+
+Is {{x}} a "block" value?
+
+A "block" value is a value that contains a memory block, i.e. is not
+an immediate value.
+
+===== C_immp
+
+ [C macro] C_word C_immp(C_word x)
+
+Is {{x}} an immediate value?
+
+===== C_forwardedp
+
+ [C macro] C_word C_forwardedp(C_word x)
+
+Is {{x}} a GC-forwarded object?
+
+===== C_flonump
+
+ [C macro] C_word C_flonump(C_word x)
+
+Is {{x}} a Scheme flonum object?  Accepts only non-immediate objects.
+
+===== C_stringp
+
+ [C macro] C_word C_stringp(C_word x)
+
+Is {{x}} a Scheme string object?  Accepts only non-immediate objects.
+
+===== C_symbolp
+
+ [C macro] C_word C_symbolp(C_word x)
+
+Is {{x}} a symbol?  Accepts only non-immediate objects.
+
+===== C_pairp
+
+ [C macro] C_word C_pairp(C_word x)
+
+Is {{x}} a pair?  Accepts only non-immediate objects.
+
+===== C_closurep
+
+ [C macro] C_word C_closurep(C_word x)
+
+Is {{x}} a closure?  Accepts only non-immediate objects.
+
+===== C_vectorp
+
+ [C macro] C_word C_vectorp(C_word x)
+
+Is {{x}} any kind of vector?  Accepts only non-immediate objects.
+
+This returns true for both regular heterogenous R5RS vectors and
+bytevectors ("blobs").  However, it does ''not'' return true for
+SRFI-4 vectors, as those are actually bytevectors wrapped in a
+structure with a type tag.
+
+===== C_vectorp
+
+ [C macro] C_word C_bytevectorp(C_word x)
+
+Is {{x}} a bytevector ("blob")? Accepts only non-immediate objects.
+
+===== C_portp
+
+ [C macro] C_word C_portp(C_word x)
+
+Is {{x}} a port object?  Accepts only non-immediate objects.
+
+===== C_structurep
+
+ [C macro] C_word C_structure(C_word x)
+
+Is {{x}} a structure (record) object?  Accepts only non-immediate objects.
+
+===== C_locativep
+
+ [C macro] C_word C_locativep(C_word x)
+
+Is {{x}} a locative object?  Accepts only non-immediate objects.
+
+===== C_charp
+
+ [C macro] C_word C_charp(C_word x)
+
+Is {{x}} a character object?
+
+===== C_booleanp
+
+ [C macro] C_word C_booleanp(C_word x)
+
+Is {{x}} a boolean object?
+
+===== C_eofp
+
+ [C macro] C_word C_eofp(C_word x)
+
+Is {{x}} the {{#!eof}} object?
+
+===== C_undefinedp
+
+ [C macro] C_word C_undefinedp(C_word x)
+
+Is {{x}} the undefined value?
+
+===== C_fixnump
+
+ [C macro] C_word C_fixnump(C_word x)
+
+Is {{x}} a fixnum object?
+
+===== C_nfixnump
+
+ [C macro] C_word C_nfixnump(C_word x)
+
+Is {{x}} ''not'' a fixnum object?
+
+===== C_i_numberp
+
+ [C function] C_word C_i_numberp(C_word x)
+
+Is {{x}} a number object (fixnum or flonum)?
+
+===== C_pointerp
+
+ [C macro] C_word C_pointerp(C_word x)
+
+Is {{x}} a C pointer object?  Only accepts non-immediate objects.
+
+===== C_taggedpointerp
+
+ [C macro] C_word C_taggedpointerp(C_word x)
+
+Is {{x}} a tagged pointer object?  Only accepts non-immediate objects.
+
+===== C_swigpointerp
+
+ [C macro] C_word C_swigpointerp(C_word x)
+
+Is {{x}} a SWIG pointer object?  Only accepts non-immediate objects.
+
+===== C_anypointerp
+
+ [C macro] C_word C_anypointerp(C_word x)
+
+Is {{x}} any type of pointer object?  Only accepts non-immediate objects.
+
+===== C_lambdainfop
+
+ [C macro] C_word C_lambdainfop(C_word x)
+
+Is {{x}} a lambda-info object?  Only accepts non-immediate objects.
+
+===== C_byteblockp
+
+ [C macro] C_word C_byteblockp(C_word x)
+
+Is {{x}} a "byteblock" object?  Only accepts non-immediate objects.
+
+Strings, flonums, bytevectors and lambda-info objects are considered
+"byteblock" objects, as they are not containers for Scheme objects but
+simply point to contiguous memory ranges of bytes.
+
+===== C_specialp
+
+ [C macro] C_word C_specialp(C_word x)
+
+Is {{x}} a "special" object?  Only accepts non-immediate objects.
+
+Closures, ports, pointers and locatives are considered "special"
+objects, as they are not containers for Scheme objects (and they are
+not byte blocks either), so they have to be treated specially by the GC.
+
+===== C_nullp
+
+ [C macro] C_word C_nullp(C_word x)
+
+Is {{x}} the empty list, i.e. is it {{C_SCHEME_END_OF_LIST}}?
+
+===== C_anyp
+
+ [C macro] C_word C_anyp(C_word x)
+
+Always returns {{C_SCHEME_TRUE}}.
+
+
 === Constructors
 
 ==== Constructors for immediate Scheme objects
@@ -80,6 +294,10 @@ by a {{C_word}}.  There's no additional memory used by them.
 ===== C_mk_bool
 
  [C macro] C_word C_mk_bool(int truth_value)
+
+===== C_mk_nbool
+
+ [C macro] C_word C_mk_nbool(int truth_value_to_negate)
 
 ===== C_SCHEME_END_OF_LIST
 
@@ -460,6 +678,568 @@ invoke Scheme callbacks. The {{ms}} argument records the number of
 milliseconds required for the garbage collection, if the collection
 was a major one. For minor collections the value of the {{ms}} argument
 is undefined.
+
+=== Type-specific macros and functions
+
+The following are macros and functions to ask information or perform
+operations on objects once their types are already known.  If you call
+it on any object of another type, it is not defined what will happen
+and likely your program will crash, especially if you pass immediates
+to procedures expecting non-immediates.
+
+==== Vectors
+
+===== C_vemptyp
+
+ [C macro] C_word C_vemptyp(C_word v)
+
+Is the (byte- or heterogenous) vector {{v}} empty?
+
+===== C_notvemptyp
+
+ [C macro] C_word C_notvemptyp(C_word v)
+
+Is the (byte- or heterogenous) vector {{v}} nonempty?
+
+==== Numbers
+
+These procedures accept any type of number, so you can pass in either
+a fixnum or a flonum.  You shouldn't pass in another type though,
+since that could crash your program.
+
+===== C_u_i_exactp
+
+ [C macro] C_word C_u_i_exactp(C_word x)
+
+Is {{x}} an exact number (i.e., a fixnum)?
+
+===== C_u_i_inexactp
+
+ [C macro] C_word C_u_i_inexactp(C_word x)
+
+Is {{x}} an inexact number (i.e., not a fixnum)?
+
+===== C_i_finitep
+
+ [C function] C_word C_i_finitep(C_word x)
+
+Is {{x}} a finite number?  This returns false only when {{x}} is a
+flonum representing {{-inf}} or {{+inf}}.
+
+==== Fixnums
+
+Note: Fixnums are immediates, so there is no {{C_fixnum_equalp}}
+macro.  You can just compare them without hassle (or use
+[[#c-eqp|C_eqp]] if you prefer).
+
+===== C_i_fixnumevenp
+
+ [C macro] C_word C_i_fixnumevenp(C_word x)
+
+Is {{x}} an even fixnum?
+
+===== C_i_fixnumoddp
+
+ [C macro] C_word C_i_fixnumoddp(C_word x)
+
+Is {{x}} an odd fixnum?
+
+===== C_fixnum_times
+
+ [C macro] C_word C_fixnum_times(C_word n1, C_word n2)
+
+Multiply fixnum n1 by fixnum n2.
+
+===== C_fixnum_plus
+
+ [C macro] C_word C_fixnum_plus(C_word n1, C_word n2)
+
+Add fixnum {{n1}} to fixnum {{n2}}.
+
+===== C_u_fixnum_plus
+
+ [C macro] C_word C_u_fixnum_plus(C_word n1, C_word n2)
+
+Like {{C_fixnum_plus}}, but unsafe (assumes no overflow/underflow).
+
+===== C_fixnum_difference
+
+ [C macro] C_word C_fixnum_difference(C_word n1, C_word n2)
+
+Calculate {{n1}} - {{n2}}.
+
+===== C_u_fixnum_difference
+
+ [C macro] C_word C_u_fixnum_difference(C_word n1, C_word n2)
+
+Like {{C_fixnum_difference}}, but unsafe (assumes no overflow/underflow).
+
+===== C_fixnum_divide
+
+ [C macro] C_word C_fixnum_divide(C_word n1, C_word n2)
+
+Divide {{n1}} by {{n2}}, returning the quotient (i.e., integer
+division).
+
+===== C_fixnum_modulo
+
+ [C macro] C_word C_fixnum_modulo(C_word n1, C_word n2)
+
+Calculate {{n1}} modulo {{n2}}.
+
+===== C_fixnum_and
+
+ [C macro] C_word C_fixnum_and(C_word n1, C_word n2)
+
+Calculate the bitwise {{AND}} of the integral values of {{n1}} and {{n2}}.
+
+===== C_u_fixnum_and
+
+ [C macro] C_word C_u_fixnum_and(C_word n1, C_word n2)
+
+Like {{C_fixnum_and}}, but unsafe.
+
+===== C_fixnum_or
+
+ [C macro] C_word C_fixnum_or(C_word n1, C_word n2)
+
+Calculate the bitwise {{OR}} of the integral values of {{n1}} and {{n2}}.
+
+===== C_u_fixnum_or
+
+ [C macro] C_word C_u_fixnum_or(C_word n1, C_word n2)
+
+Like {{C_fixnum_or}}, but unsafe.
+
+===== C_fixnum_xor
+
+ [C macro] C_word C_fixnum_xor(C_word n1, C_word n2)
+
+Calculate the bitwise {{XOR}} of the integral values of {{n1}} and {{n2}}.
+
+===== C_fixnum_not
+
+ [C macro] C_word C_fixnum_not(C_word n)
+
+Calculate the bitwise {{NOT}} (inversion of bits) of the integral
+value of {{n}}.
+
+===== C_fixnum_shift_left
+
+ [C macro] C_word C_fixnum_shift_left(C_word n1, C_word n2)
+
+Shift the integral value of {{n1}} left by {{n2}} positions.
+
+===== C_fixnum_shift_right
+
+ [C macro] C_word C_fixnum_shift_right(C_word n1, C_word n2)
+
+Shift the integral value of {{n1}} right by {{n2}}
+
+===== C_fixnum_negate
+
+ [C macro] C_word C_fixnum_negate(C_word n)
+
+Negate {{n}}, i.e. return {{-n}}.
+
+===== C_fixnum_greaterp
+
+ [C macro] C_word C_fixnum_greaterp(C_word n1, C_word n2)
+
+Returns {{C_SCHEME_TRUE}} when {{n1}} is greater than {{n2}},
+{{C_SCHEME_FALSE}} if not.
+
+===== C_fixnum_greater_or_equal_p
+
+ [C macro] C_word C_fixnum_greater_or_equalp(C_word n1, C_word n2)
+
+Returns {{C_SCHEME_TRUE}} when {{n1}} is greater than or equal to
+{{n2}}, {{C_SCHEME_FALSE}} if not.
+
+===== C_fixnum_lessp
+
+ [C macro] C_word C_fixnum_lessp(C_word n1, C_word n2)
+
+Returns {{C_SCHEME_TRUE}} when {{n1}} is less than {{n2}},
+{{C_SCHEME_FALSE}} if not.
+
+===== C_fixnum_less_or_equal_p
+
+ [C macro] C_word C_fixnum_less_or_equalp(C_word n1, C_word n2)
+
+Returns {{C_SCHEME_TRUE}} when {{n1}} is less than or equal to
+{{n2}}, {{C_SCHEME_FALSE}} if not.
+
+===== C_fixnum_increase
+
+ [C macro] C_word C_fixnum_increase(C_word n)
+
+Adds 1 to {{n}}
+
+===== C_u_fixnum_increase
+
+ [C macro] C_word C_u_fixnum_increase(C_word n)
+
+As {{C_fixnum_increase}}, but unsafe (assumes the result will not overflow).
+
+===== C_fixnum_decrease
+
+ [C macro] C_word C_fixnum_decrease(C_word n)
+
+Subtracts 1 from {{n}}
+
+===== C_u_fixnum_decrease
+
+ [C macro] C_word C_u_fixnum_decrease(C_word n)
+
+As {{C_fixnum_increase}}, but unsafe (assumes the result will not underflow).
+
+===== C_fixnum_abs
+
+ [C macro] C_word C_fixnum_abs(C_word n)
+
+Returns the absolute value of {{n}}.
+
+===== C_i_fixnum_min
+
+ [C function] C_word C_fixnum_min(C_word n1, C_word n2)
+
+Returns the smallest of the two fixnums {{n1}} and {{n2}}.
+
+===== C_i_fixnum_max
+
+ [C function] C_word C_fixnum_max(C_word n1, C_word n2)
+
+Returns the largest of the two fixnums {{n1}} and {{n2}}.
+
+
+==== Flonums
+
+===== C_flonum_equalp
+
+ [C macro] C_word C_flonum_equalp(C_word n1, C_word n2)
+
+Returns {{C_SCHEME_TRUE}} when {{n1}} and {{n2}} are equal flonums,
+{{C_SCHEME_FALSE}} otherwise.
+
+===== C_flonum_greaterp
+
+ [C macro] C_word C_flonum_greaterp(C_word n1, C_word n2)
+
+Returns {{C_SCHEME_TRUE}} when {{n1}} is greater than {{n2}},
+{{C_SCHEME_FALSE}} if not.
+
+===== C_flonum_greater_or_equal_p
+
+ [C macro] C_word C_flonum_greater_or_equal_p(C_word n1, C_word n2)
+
+Returns {{C_SCHEME_TRUE}} when {{n1}} is greater than or equal to {{n2}},
+{{C_SCHEME_FALSE}} if not.
+
+===== C_flonum_lessp
+
+ [C macro] C_word C_flonum_lessp(C_word n1, C_word n2)
+
+Returns {{C_SCHEME_TRUE}} when {{n1}} is less than {{n2}},
+{{C_SCHEME_FALSE}} if not.
+
+===== C_flonum_less_or_equal_p
+
+ [C macro] C_word C_flonum_less_or_equal_p(C_word n1, C_word n2)
+
+Returns {{C_SCHEME_TRUE}} when {{n1}} is less than or equal to {{n2}},
+{{C_SCHEME_FALSE}} if not.
+
+===== C_a_i_flonum_plus
+
+ [C macro] C_word C_a_i_flonum_plus(C_word **ptr, int c, C_word n1, C_word n2)
+
+Adds the flonum {{n1}} to the flonum {{n2}}, using the storage at
+{{ptr}}.  {{c}} should always be 2.
+
+Example:
+
+<enscript highlight=scheme>
+#include <chicken.h>
+#include <stdio.h>
+
+int main(void)
+{
+  C_word *mema, *memb, *memresult;
+  C_word a, b, result;
+
+  mema = C_alloc(C_SIZEOF_FLONUM);
+  memb = C_alloc(C_SIZEOF_FLONUM);
+  memresult = C_alloc(C_SIZEOF_FLONUM);
+  a = C_flonum(&mema, 1.2);
+  b = C_flonum(&memb, 4.7);
+  result = C_a_i_flonum_plus(&memresult, 2, a, b);
+  printf("%lf\n", C_flonum_magnitude(result));
+  return 0;
+}
+</enscript>
+
+This will print {{5.9}}
+
+===== C_a_i_flonum_difference
+
+ [C macro] C_word C_a_i_flonum_difference(C_word **ptr, int c, C_word n1, C_word n2)
+
+Subtracts the flonum {{n2}} from the flonum {{n1}}, using the storage at
+{{ptr}}.  {{c}} should always be 2.
+
+===== C_a_i_flonum_times
+
+ [C macro] C_word C_a_i_flonum_times(C_word **ptr, int c, C_word n1, C_word n2)
+
+Multiplies the flonum {{n1}} by the flonum {{n2}}, using the storage at
+{{ptr}}.  {{c}} should always be 2.
+
+===== C_a_i_flonum_quotient
+
+ [C macro] C_word C_a_i_flonum_quotient(C_word **ptr, int c, C_word n1, C_word n2)
+
+Calculates the quotient of the flonum {{n1}} divided by the flonum
+{{n2}}, using the storage at {{ptr}}.  {{c}} should always be 2.
+
+===== C_a_i_flonum_negate
+
+ [C macro] C_word C_a_i_flonum_negate(C_word **ptr, int c, C_word n)
+
+Negates the flonum {{n}}, using the storage at {{ptr}}. {{c}} should
+always be 1.
+
+===== C_a_i_flonum_truncate
+
+ [C macro] C_word C_a_i_flonum_truncate(C_word **ptr, int c, C_word n)
+
+Truncate the flonum {{n}}, using the storage at {{ptr}}. {{c}} should
+always be 1.
+
+===== C_a_i_flonum_ceiling
+
+ [C macro] C_word C_a_i_flonum_ceiling(C_word **ptr, int c, C_word n)
+
+Round the flonum {{n}}, rounding upwards, using the storage at
+{{ptr}}. {{c}} should always be 1.
+
+===== C_a_i_flonum_floor
+
+ [C macro] C_word C_a_i_flonum_floor(C_word **ptr, int c, C_word n)
+
+Round the flonum {{n}}, rounding downwards, using the storage at
+{{ptr}}. {{c}} should always be 1.
+
+===== C_a_i_flonum_round
+
+ [C macro] C_word C_a_i_flonum_round(C_word **ptr, int c, C_word n)
+
+Round the flonum {{n}}, rounding towards the nearest integer, using
+the storage at {{ptr}}. {{c}} should always be 1.
+
+This macro returns the value like returned by C's {{round()}}
+function.  That means it rounds to the larger value (away from 0) when
+rounding numbers halfway between two integers.
+
+===== C_a_i_flonum_round_proper
+
+ [C macro] C_word C_a_i_flonum_round_proper(C_word **ptr, int c, C_word n)
+
+Round the flonum {{n}}, rounding towards the nearest integer, using
+the storage at {{ptr}}. {{c}} should always be 1.
+
+This macro returns the value like returned by Scheme's {{round}}
+procedure.  That means it rounds to even numbers when rounding
+numbers halfway between two integers.
+
+===== C_a_i_flonum_sin
+
+ [C macro] C_word C_a_i_flonum_sin(C_word **ptr, int c, C_word n)
+
+Calculates the sine of {{n}} (in radians).
+
+===== C_a_i_flonum_cos
+
+ [C macro] C_word C_a_i_flonum_cos(C_word **ptr, int c, C_word n)
+
+Calculates the cosine of {{n}} (in radians).
+
+===== C_a_i_flonum_tan
+
+ [C macro] C_word C_a_i_flonum_tan(C_word **ptr, int c, C_word n)
+
+Calculates the tangent of {{n}} (in radians).
+
+===== C_a_i_flonum_asin
+
+ [C macro] C_word C_a_i_flonum_asin(C_word **ptr, int c, C_word n)
+
+Calculates the arc sine of {{n}} (in radians, in the range -pi/2 through +pi/2).
+
+===== C_a_i_flonum_acos
+
+ [C macro] C_word C_a_i_flonum_acos(C_word **ptr, int c, C_word n)
+
+Calculates the arc cosine of {{n}} (in radians, in the range 0 through pi).
+
+===== C_a_i_flonum_atan
+
+ [C macro] C_word C_a_i_flonum_atan(C_word **ptr, int c, C_word n)
+
+Calculates the arc tangent of {{n}} (in radians, in the range -pi/2 through +pi/2).
+
+Like C's {{atan()}} or Scheme's unary {{atan}}.
+
+===== C_a_i_flonum_atan2
+
+ [C macro] C_word C_a_i_flonum_atan2(C_word **ptr, int c, C_word n1, C_word n2)
+
+Calculates the arc tangent of {{n1/n2}} (in radians), using the sign of both
+to determine the quadrant of the result.
+
+Like C's {{atan2()}} or Scheme's binary {{atan}}.
+
+===== C_a_i_flonum_log
+
+ [C macro] C_word C_a_i_flonum_log(C_word **ptr, int c, C_word n)
+
+Calculate the natural (base {{e}}) logarithm of {{n}}.
+
+===== C_a_i_flonum_exp
+
+ [C macro] C_word C_a_i_flonum_exp(C_word **ptr, int c, C_word n)
+
+Calculates the base {{e}} exponent of {{n}} (i.e., the inverse
+operation of {{C_a_i_flonum_log}}).
+
+===== C_a_i_flonum_expt
+
+ [C macro] C_word C_a_i_flonum_expt(C_word **ptr, int c, C_word n1, C_word n2)
+
+Calculates {{n1}} raised to the power {{n2}}.
+
+===== C_a_i_flonum_sqrt
+
+ [C macro] C_word C_a_i_flonum_sqrt(C_word **ptr, int c, C_word n)
+
+Calculates the square root of {{n}}.
+
+===== C_a_i_flonum_abs
+
+ [C macro] C_word C_a_i_flonum_abs(C_word **ptr, int c, C_word n)
+
+Calculates the absolute value of {{n}}.
+
+
+==== Pointers
+
+===== C_null_pointerp
+
+ [C macro] C_word C_null_pointerp(C_word x)
+
+Is {{x}} a NULL pointer?
+
+===== C_a_i_address_to_pointer
+
+ [C macro] C_word C_a_i_address_to_pointer(C_word **ptr, int c, C_word addr)
+
+Convert {{addr}} to a pointer object using the storage at {{ptr}}.
+{{addr}} is can be either a flonum or a fixnum representing a memory
+address.
+
+===== C_a_i_pointer_to_address
+
+ [C macro] C_word C_a_i_pointer_to_address(C_word **ptr, int c, C_word pptr)
+
+Convert back the pointer {{pptr}} to an address number, possibly using
+the storage at {{ptr}}.  The number returned can be either a fixnum or
+a flonum, so you will have to pass a memory storage that can hold a
+flonum at {{ptr}}.  Whether it is actually used depends on the size of
+the address.
+
+
+==== Ports
+
+===== C_tty_portp
+
+ [C macro] C_word C_tty_portp(C_word x)
+
+Is {{x}} a TTY port object?
+
+==== Structures
+
+===== C_i_structurep
+
+ [C macro] C_word C_i_structurep(C_word x, C_word s)
+
+Is {{x}} a structure (record) object with type tag {{s}}?  This is
+completely safe to use, because it checks whether x is an immediate or
+not.
+
+==== Characters
+
+These understand only ASCII characters.
+
+===== C_u_i_char_alphabeticp
+
+ [C macro] C_word C_u_i_char_alphabeticp(C_word c)
+
+Is {{c}} an alphabetic character?
+
+===== C_u_i_char_numericp
+
+ [C macro] C_word C_u_i_char_numericp(C_word c)
+
+Is {{c}} a numeric character?
+
+===== C_u_i_char_whitespacep
+
+ [C macro] C_word C_u_i_char_whitespacep(C_word c)
+
+Is {{c}} a whitespace character?
+
+===== C_u_i_char_upper_casep
+
+ [C macro] C_word C_u_i_char_upper_casep(C_word c)
+
+Is {{c}} an uppercase character?
+
+===== C_u_i_char_lower_casep
+
+ [C macro] C_word C_u_i_char_lower_casep(C_word c)
+
+Is {{c}} a lowercase character?
+
+
+=== Other Scheme procedures from C
+
+There are a number of Scheme procedures that have a direct C
+implementation, so you can call them from C too.
+
+==== C_eqp
+
+ [C macro] C_word C_eqp(C_word a, C_word b)
+
+The C version of {{(eq? a b)}}.
+
+==== C_equalp
+
+ [C macro] C_word C_equalp(C_word a, C_word b)
+
+The C version of {{(equal? a b)}}.
+
+==== C_i_pairp
+
+ [C function] C_word C_i_pair_p(C_word x)
+
+The C version of {{(pair? x)}}.
+
+==== C_i_not_pair_p
+
+ [C macro] C_word C_i_not_pair_p(C_word x)
+
+The C version of {{(not (pair? x))}}.
+
 
 === An example for simple calls to foreign code involving callbacks
 

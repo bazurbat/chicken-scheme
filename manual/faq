@@ -596,15 +596,16 @@ See the [[Extensions]] chapter for more information.
 You can just set the {{CHICKEN_REPOSITORY}} environment variable.
 It should contain the path where you want eggs to be installed:
 
- $ export CHICKEN_REPOSITORY=~/chicken/
- $ chicken-install -init
- $ chicken-install extensionname
+ $ export CHICKEN_REPOSITORY=~/eggs/lib/chicken/5
+ $ chicken-install -init ~/eggs/lib/chicken/5
+ $ chicken-install -p ~/eggs/ extensionname
 
-In order to make programs (including csi) see these eggs, you should set this variable when you run them.
+In order to make programs (including csi) see these eggs, you should set this variable when you run them. See the [[http://chicken.wiki.br/man/4/Extensions#changing-repository-location|Extensions/Changing repository location]] section of the manual for more information on that.
+
 Alternatively, you can call the {{repository-path}} Scheme procedure before loading the eggs, as in:
 
 <enscript highlight=scheme>
-(repository-path "/home/azul/chicken")
+(repository-path "/home/azul/eggs")
 (use format-modular)
 </enscript>
 

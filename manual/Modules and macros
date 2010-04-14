@@ -22,7 +22,9 @@ a {{syntax-rules}} form. If {{syntax-rules}} is used, the usual R5RS
 semantics apply. If {{TRANSFORMER}} is a procedure, then it will
 be called on expansion with the complete s-expression of the macro
 invocation, a rename procedure that hygienically renames identifiers
-and a comparison procedure that compares (possibly renamed) identifiers.
+and a comparison procedure that compares (possibly renamed) identifiers
+(see the section "Explicit renaming macros" below for a detailed explanation
+on non-R5RS macros).
 
 {{define-syntax}} may be used to define local macros that are visible
 throughout the rest of the body in which the definition occurred, i.e.
