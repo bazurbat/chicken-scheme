@@ -159,7 +159,7 @@ of the string.
 
 === Number/String conversions
 
-The optional "base" argument to{{string->number}} and {{number->string}}
+The optional "base" argument to {{string->number}} and {{number->string}}
 may be any integral value from 2 to 36.
 
 === {{force}}
