@@ -1,3 +1,26 @@
+4.4.5
+
+- certain compiler-warnings that are in really just notes
+  and don't indicate a possible error (like reimport of
+  identifiers) are only shown with -S or in verbose mode
+- fixed handling of VARDIR in `chicken-install' (thanks to
+  Davide Puricelli)
+- `chicken-install -test' doesn't runs tests for dependencies
+- when a non-else clause follows an else-clause in `cond', 
+  `case' or `select' a warning (note) is shown in verbose
+  mode
+- removed the deprecated `define-extension' and
+  `define-compiled-syntax'
+- `chicken-uninstall' now always asks before removing 
+  extensions, unless `-force' is given
+- improved performance of keyword-argument processing slightly
+- added `fxeven?' and `fxodd?'
+- `export' outside of a module definition has no effect
+- `number->string' now accepts arbitrary bases between 2 and 16
+  (thanks to Christian Kellermann)
+- fixed `standard-extension' in `setup-api' module
+- literal constants keep their identity, even when inlined
+
 4.4.4
 
 - Unit library: added `fxodd?' and `fxeven?'
