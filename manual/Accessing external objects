@@ -84,8 +84,21 @@ accessed in the current compilation unit, but the name can be
 lexically shadowed.  Note that {{STRING}} can name an arbitrary C
 expression. If no assignments are performed, then {{STRING}} doesn't
 even have to specify an lvalue.
-
-
+See that {{define-foreign-variable}} will not generate C declarations
+or memory allocation code; use it to include references to variables
+in external C code. To actually create Scheme variables visible from C,
+use {{define-external}} (see the Manual section on
+[[http://chicken.wiki.br/man/4/Callbacks|Callbacks]]).
+For example, the following code:
+<enscript lang="scheme">
+(import foreign)
+(define-foreign-variable x double "var_x")
+(print x)
+</enscript>
+will not work, because a reference to {{var_x}} will be inserted in the C code,
+but no declaration will be included (this can be easily verified by translating
+the program into C with {{csc -t program.scm}}). Changing the second line to
+{{(define-external x double 0.5)}} will work (and the value 0.5 will be printed).
 === foreign-lambda
 
 <macro>(foreign-lambda RETURNTYPE NAME ARGTYPE ...)</macro>
@@ -141,7 +154,7 @@ function to call Scheme functions and allocate Scheme data-objects. See [[Callba
 
 This is also similar to {{foreign-lambda*}} but the code will be executed
 in a ''primitive'' CPS context, which means it will not actually return, but
-call it's continuation on exit. This means that code inside this form may
+call its continuation on exit. This means that code inside this form may
 allocate Scheme data on the C stack (the ''nursery'') with {{C_alloc}}
 (see below). If the {{RETURNTYPE}} is omitted it defaults to {{void}}.
 You can return multiple values inside the body of the {{foreign-primitive}}
