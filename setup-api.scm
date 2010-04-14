@@ -426,10 +426,14 @@
 (define (make-setup-info-pathname fn #!optional (rpath (repository-path)))
   (make-pathname rpath fn setup-file-extension) )
 
-(define installation-prefix
-  (make-parameter
-   (or (get-environment-variable "CHICKEN_INSTALL_PREFIX")
-       chicken-prefix)))
+(define installation-prefix (make-parameter #f))
+
+(define real-installation-prefix
+  (let ((prefix (get-environment-variable "CHICKEN_INSTALL_PREFIX")))
+    (lambda ()
+      (or (installation-prefix)
+	  prefix
+	  chicken-prefix))))
 
 (define create-directory/parents
   (let ()
@@ -457,16 +461,24 @@
 	    (else (with-output-to-file setup-file (cut pp info))))
       (unless *windows-shell* (run (,*chmod-command* a+r ,(shellpath setup-file)))))))
 
-(define (copy-file from to #!optional (err #t) (prefix (installation-prefix)))
+(define (copy-file from to #!optional (err #t) (prefix (real-installation-prefix)))
   ;;XXX the prefix handling is completely bogus
   (let ((from (if (pair? from) (car from) from))
 	(to (let ((to-path (if (pair? from) (make-pathname to (cadr from)) to)))
-	      (if (not (string-prefix? prefix to-path))
-		  (make-pathname prefix to-path) 
+	      (if (not (path-prefix? prefix to-path))
+		  (if (absolute-pathname? to-path)
+		      to-path
+		      (make-pathname prefix to-path) )
 		  to-path))))
     (ensure-directory to)
     (run (,*copy-command* ,(shellpath from) ,(shellpath to)))
     to))
+
+(define (path-prefix? pref path)
+  (print (list pref path))
+  (string-prefix?
+   (normalize-pathname pref)
+   (normalize-pathname path)))
 
 (define (move-file from to)
   (let ((from  (if (pair? from) (car from) from))
@@ -553,7 +565,7 @@
      (if *windows-shell* "exe" #f) ) )
   (when (setup-install-mode)
     (let* ((files (check-filelist (if (list? files) files (list files))))
-	   (pre (installation-prefix))
+	   (pre (real-installation-prefix))
 	   (ppath (ensure-directory (make-pathname pre "bin")))
 	   (files (if *windows*
                       (map (lambda (f)
@@ -575,7 +587,7 @@
 (define (install-script id files #!optional (info '()))
   (when (setup-install-mode)
     (let* ((files (check-filelist (if (list? files) files (list files))))
-	   (pre (installation-prefix))
+	   (pre (real-installation-prefix))
 	   (ppath (ensure-directory (make-pathname pre "bin")))
 	   (pfiles (map (lambda (f)
 			  (let ((from (if (pair? f) (car f) f))
@@ -595,10 +607,13 @@
 (define (repo-path #!optional ddir?)
   (let ((p (if ddir?
 	       (if (deployment-mode)
-		   (installation-prefix)
-		   (make-pathname 
-		    (installation-prefix) 
-		    (sprintf "lib/chicken/~a" (##sys#fudge 42))))
+		   (real-installation-prefix) ; deploy: copy directly into destdir
+		   (let ((p (installation-prefix)))
+		     (if p		; installation-prefix changed: use it
+			 (make-pathname 
+			  p
+			  (sprintf "lib/chicken/~a" (##sys#fudge 42)))
+			 (repository-path)))) ; otherwise use repo-path
 	       (repository-path))) )
     (ensure-directory p)
     p) )

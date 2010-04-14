@@ -360,7 +360,10 @@
      (if *keep* " -e \"(keep-intermediates #t)\"" "")
      (if (and *no-install* (not dep?)) " -e \"(setup-install-mode #f)\"" "")
      (if *host-extension* " -e \"(host-extension #t)\"" "")
-     (if *prefix* (sprintf " -e \"(installation-prefix \\\"~a\\\")\"" *prefix*) "")
+     (if *prefix* 
+	 (sprintf " -e \"(installation-prefix \\\"~a\\\")\"" 
+	   (normalize-pathname *prefix* 'unix))
+	 "")
      (if *deploy* " -e \"(deployment-mode #t)\"" "")
      #\space
      (shellpath (make-pathname (cadr e+d+v) (car e+d+v) "setup"))) )
