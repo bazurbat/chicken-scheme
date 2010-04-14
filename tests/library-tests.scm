@@ -1,5 +1,7 @@
 ;;;; library-tests.scm
 
+(use srfi-1)
+
 
 ;; numbers
 
@@ -35,6 +37,13 @@
    (99.2 10)
    (-99.2 10)))
 
+;; by Christian Kellermann
+(assert 
+ (equal?
+  (map (lambda (n) (number->string 32 n)) (iota 15 2))
+  '("100000" "1012" "200" "112" "52" "44" "40" "35" "32" "2A" "28" "26" "24" "22" "20")))
+
+
 ;; fp-math
 
 (assert (= (sin 42.0) (fpsin 42.0)))
@@ -59,4 +68,3 @@
 (assert (= -42.0 (fpceiling -42.2)))
 (assert (not (fpinteger? 2.3)))
 (assert (fpinteger? 1.0))
-

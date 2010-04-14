@@ -227,6 +227,7 @@
 
 (define ##sys#unbound-in-eval #f)
 (define ##sys#eval-debug-level 1)
+(define ##sys#unsafe-eval #f)
 
 (define ##sys#compile-to-closure
   (let ([write write]
@@ -300,20 +301,21 @@
 			  (if ##sys#eval-environment
 			      (let ([loc (##sys#hash-table-location ##sys#eval-environment var #t)])
 				(unless loc (##sys#syntax-error-hook "reference to undefined identifier" var))
-				(cond-expand 
-				 [unsafe (lambda v (##sys#slot loc 1))]
-				 [else
-				  (lambda v 
-				    (let ([val (##sys#slot loc 1)])
-				      (if (eq? unbound val)
-					  (##sys#error "unbound variable" var)
-					  val) ) ) ] ) )
-			      (cond-expand
-			       [unsafe (lambda v (##core#inline "C_slot" var 0))]
-			       [else
-				(when (and ##sys#unbound-in-eval (not (##sys#symbol-has-toplevel-binding? var)))
-				  (set! ##sys#unbound-in-eval (cons (cons var cntr) ##sys#unbound-in-eval)) )
-				(lambda v (##core#inline "C_retrieve" var))] ) ) ) ]
+				(if ##sys#unsafe-eval 
+				    (lambda v (##sys#slot loc 1))
+				    (lambda v 
+				      (let ([val (##sys#slot loc 1)])
+					(if (eq? unbound val)
+					    (##sys#error "unbound variable" var)
+					    val) ) ) ))
+			      (cond (##sys#unsafe-eval
+				     (lambda v (##core#inline "C_slot" var 0)))
+				    (else
+				     (when (and ##sys#unbound-in-eval
+						(not (##sys#symbol-has-toplevel-binding? var)))
+				       (set! ##sys#unbound-in-eval
+					 (cons (cons var cntr) ##sys#unbound-in-eval)) )
+				     (lambda v (##core#inline "C_retrieve" var))))))]
 		       [(zero? i) (lambda (v) (##sys#slot (##sys#slot v 0) j))]
 		       [else (lambda (v) (##sys#slot (##core#inline "C_u_i_list_ref" v i) j))] ) ) )
 	      [(##sys#number? x)
@@ -343,8 +345,7 @@
 		       ;; a normal walking of the operator)
 		       (case head
 
-			 [(quote)
-			  (##sys#check-syntax 'quote x '(quote _) #f se)
+			 [(##core#quote)
 			  (let* ((c (##sys#strip-syntax (cadr x))))
 			    (case c
 			      [(-1) (lambda v -1)]
@@ -356,7 +357,7 @@
 			      [(()) (lambda v '())]
 			      [else (lambda v c)] ) ) ]
 
-			 ((syntax ##core#syntax)
+			 ((##core#syntax)
 			  (let ((c (cadr x)))
 			    (lambda v c)))
 
@@ -375,8 +376,7 @@
 		   
 			 [(##core#undefined) (lambda (v) (##core#undefined))]
 
-			 [(if)
-			  (##sys#check-syntax 'if x '(if _ _ . #(_)) #f se)
+			 [(##core#if)
 			  (let* ([test (compile (cadr x) e #f tf cntr se)]
 				 [cns (compile (caddr x) e #f tf cntr se)]
 				 [alt (if (pair? (cdddr x))
@@ -384,10 +384,9 @@
 					  (compile '(##core#undefined) e #f tf cntr se) ) ] )
 			    (lambda (v) (if (##core#app test v) (##core#app cns v) (##core#app alt v))) ) ]
 
-			 [(begin ##core#begin)
-			  (##sys#check-syntax 'begin x '(_ . #(_ 0)) #f se)
-			  (let* ([body (##sys#slot x 1)]
-				 [len (length body)] )
+			 [(##core#begin)
+			  (let* ((body (##sys#slot x 1))
+				 (len (length body)) )
 			    (case len
 			      [(0) (compile '(##core#undefined) e #f tf cntr se)]
 			      [(1) (compile (##sys#slot body 0) e #f tf cntr se)]
@@ -400,8 +399,7 @@
 				      [x3 (compile `(##core#begin ,@(##sys#slot (##sys#slot body 1) 1)) e #f tf cntr se)] )
 				 (lambda (v) (##core#app x1 v) (##core#app x2 v) (##core#app x3 v)) ) ] ) ) ]
 
-			 [(set! ##core#set!)
-			  (##sys#check-syntax 'set! x '(_ variable _) #f se)
+			 [(##core#set!)
 			  (let ((var (cadr x)))
 			    (receive (i j) (lookup var e se)
 			      (let ((val (compile (caddr x) e var tf cntr se)))
@@ -424,8 +422,7 @@
 					 (##sys#setslot
 					  (##core#inline "C_u_i_list_ref" v i) j (##core#app val v)) ) ] ) ) ) ) ]
 
-			 [(let ##core#let)
-			  (##sys#check-syntax 'let x '(_ #((variable _) 0) . #(_ 1)) #f se)
+			 [(##core#let)
 			  (let* ([bindings (cadr x)]
 				 [n (length bindings)] 
 				 [vars (map (lambda (x) (car x)) bindings)] 
@@ -476,8 +473,7 @@
 				       (##sys#setslot v2 i (##core#app (##sys#slot vlist 0) v)) )
 				     (##core#app body (cons v2 v)) ) ) ) ] ) ) ]
 
-			 ((letrec ##core#letrec)
-			  (##sys#check-syntax 'letrec x '(_ #((symbol _) 0) . #(_ 1)))
+			 ((##core#letrec)
 			  (let ((bindings (cadr x))
 				(body (cddr x)) )
 			    (compile
@@ -491,7 +487,7 @@
 			       (##core#let () ,@body) )
 			     e h tf cntr se)))
 
-			 [(lambda ##core#lambda)
+			 [(##core#lambda)
 			  (##sys#check-syntax 'lambda x '(_ lambda-list . #(_ 1)) #f se)
 			  (let* ([llist (cadr x)]
 				 [body (cddr x)] 
@@ -586,8 +582,7 @@
 						   (##core#app body (##sys#cons (apply ##sys#vector as) v)))))
 					   info h cntr) ) ) ] ) ) ) ) ) ]
 
-			 ((let-syntax)
-			  (##sys#check-syntax 'let-syntax x '(let-syntax #((variable _) 0) . #(_ 1)) #f se)
+			 ((##core#let-syntax)
 			  (let ((se2 (append
 				      (map (lambda (b)
 					     (list
@@ -601,8 +596,7 @@
 			     (##sys#canonicalize-body (cddr x) se2 #f)
 			     e #f tf cntr se2)))
 			       
-			 ((letrec-syntax)
-			  (##sys#check-syntax 'letrec-syntax x '(letrec-syntax #((variable _) 0) . #(_ 1)) #f se)
+			 ((##core#letrec-syntax)
 			  (let* ((ms (map (lambda (b)
 					    (list
 					     (car b)
@@ -640,8 +634,15 @@
 			   (##sys#canonicalize-body (cddr x) se #f)
 			   e #f tf cntr se))
 
+			 ((##core#include)
+			  (compile
+			   `(##core#begin
+			     ,@(##sys#include-forms-from-file (cadr x)))
+			   e #f tf cntr se))
+
 			 ((##core#module)
-			  (let* ((name (##sys#strip-syntax (cadr x)))
+			  (let* ((x (##sys#strip-syntax x))
+				 (name (##sys#strip-syntax (cadr x)))
 				 (exports 
 				  (or (eq? #t (caddr x))
 				      (map (lambda (exp)
@@ -688,9 +689,6 @@
 			 [(##core#loop-lambda)
 			  (compile `(,(rename 'lambda se) ,@(cdr x)) e #f tf cntr se) ]
 
-			 [(##core#named-lambda)
-			  (compile `(,(rename 'lambda se) ,@(cddr x)) e (cadr x) tf cntr se) ]
-
 			 [(##core#require-for-syntax)
 			  (let ([ids (map (lambda (x)
 					    (eval/meta x))
@@ -728,7 +726,9 @@
 			 [(##core#declare)
 			  (if (memq #:compiling ##sys#features)
 			      (for-each (lambda (d) (##compiler#process-declaration d se)) (cdr x)) 
-			      (##sys#warn "declarations are ignored in interpreted code" x) )
+			      (##sys#notice
+			       "declarations are ignored in interpreted code"
+			       x) )
 			  (compile '(##core#undefined) e #f tf cntr se) ]
 
 			 [(##core#define-inline ##core#define-constant)
@@ -737,18 +737,14 @@
 			 [(##core#primitive ##core#inline ##core#inline_allocate ##core#foreign-lambda 
 					    ##core#define-foreign-variable 
 					    ##core#define-external-variable ##core#let-location
-					    ##core#foreign-primitive
+					    ##core#foreign-primitive ##core#location
 					    ##core#foreign-lambda* ##core#define-foreign-type)
 			  (##sys#syntax-error-hook "cannot evaluate compiler-special-form" x) ]
 
 			 [(##core#app)
 			  (compile-call (cdr x) e tf cntr se) ]
 
-			 [else
-			  (cond [(eq? head 'location)
-				 (##sys#syntax-error-hook "cannot evaluate compiler-special-form" x) ]
-
-				[else (compile-call x e tf cntr se)] ) ] ) ) ) ) ]
+			 [else (compile-call x e tf cntr se)] ) ) ) ) ]
 	      
 	      [else
 	       (emit-syntax-trace-info tf x cntr)
@@ -824,8 +820,8 @@
 	     (##sys#check-structure env 'environment)
 	     (set! e (##sys#slot env 1)) 
 	     (set! mut (##sys#slot env 2)) ) ) )
-       ((fluid-let ([##sys#environment-is-mutable mut]
-		    [##sys#eval-environment e] )
+       ((fluid-let ((##sys#environment-is-mutable mut)
+		    (##sys#eval-environment e) )
 	  (##sys#compile-to-closure x '() (##sys#current-environment)) )
 	'() ) ) ) ) )
 
@@ -938,18 +934,18 @@
 			  (##sys#dload (##sys#make-c-string (##sys#string-append "./" fname)) topentry #t) ) ) )
 	    (call-with-current-continuation
 	     (lambda (abrt)
-	       (fluid-let ([##sys#read-error-with-line-number #t]
-			   [##sys#current-source-filename fname]
-			   [##sys#current-load-path
+	       (fluid-let ((##sys#read-error-with-line-number #t)
+			   (##sys#current-source-filename fname)
+			   (##sys#current-load-path
 			    (and fname
 				 (let ((i (has-sep? fname)))
-				   (if i (##sys#substring fname 0 (fx+ i 1)) "") ) ) ]
-			   [##sys#abort-load (lambda () (abrt #f))] )
-		 (let ([in (if fname (open-input-file fname) input)])
+				   (if i (##sys#substring fname 0 (fx+ i 1)) "") ) ) )
+			   (##sys#abort-load (lambda () (abrt #f))) )
+		 (let ((in (if fname (open-input-file fname) input)))
 		   (##sys#dynamic-wind
 		    (lambda () #f)
 		    (lambda ()
-		      (let ([c1 (peek-char in)])
+		      (let ((c1 (peek-char in)))
 			(when (char=? c1 (integer->char 127))
 			  (##sys#error 'load "unable to load compiled module" fname _dlerror) ) )
 		      (let ((x1 (read in)))
@@ -1064,6 +1060,23 @@
 		 (let ([i2 (fx+ i 1)])
 		   (loop (cons (##sys#substring str j i) items) i2 i2) ) ]
 		[else (loop items (fx+ i 1) j)] ) ) ) ) ) )
+
+(define ##sys#include-forms-from-file
+  (let ((load-verbose load-verbose)
+	(print print)
+	(with-input-from-file with-input-from-file)
+	(read read)
+	(reverse reverse))
+    (lambda (fname)
+      (let ((path (##sys#resolve-include-filename fname #t)))
+	(when (load-verbose) (print "; including " path " ..."))
+	(with-input-from-file path
+	  (lambda ()
+	    (fluid-let ((##sys#current-source-filename path))
+	      (do ((x (read) (read))
+		   (xs '() (cons x xs)) )
+		  ((eof-object? x) 
+		   (reverse xs))) ) ) ) ) ) ) )
 
 
 ;;; Extensions:
@@ -1551,8 +1564,10 @@
 	(for-each (cut ##sys#repl-print-hook <> ##sys#standard-error) xs) )
 
       (define (write-results xs)
-	(unless (or (null? xs) (eq? (##core#undefined) (car xs)))
-	  (for-each (cut ##sys#repl-print-hook <> ##sys#standard-output) xs) ) )
+	(cond ((null? xs)
+	       (##sys#print "; no values\n" #f ##sys#standard-output))
+	      ((not (eq? (##core#undefined) (car xs)))
+	       (for-each (cut ##sys#repl-print-hook <> ##sys#standard-output) xs) ) ) )
 
       (let ((stdin ##sys#standard-input)
 	    (stdout ##sys#standard-output)

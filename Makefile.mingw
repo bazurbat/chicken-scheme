@@ -42,7 +42,7 @@ WINDOWS_SHELL = 1
 UNAME_SYS = MinGW
 
 ifeq ($(ARCH),x86)
-HACKED_APPLY = 1
+HACKED_APPLY ?= 1
 else
 HACKED_APPLY =
 endif
@@ -66,16 +66,15 @@ C_COMPILER_OPTIMIZATION_OPTIONS ?= -Os
 endif
 endif
 C_COMPILER_SHARED_OPTIONS = -DPIC
+RC_COMPILER ?= windres
 LINKER_LINK_SHARED_LIBRARY_OPTIONS = -shared
 LIBRARIES = -lm -lws2_32
-LINKER_OPTIONS = -Wl,--enable-auto-import
+LINKER_OPTIONS += -Wl,--enable-auto-import
 LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libchicken.dll.a
-LIBUCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libuchicken.dll.a
 LIBCHICKEN_SO_LIBRARIES = -lm -lws2_32 
-LIBUCHICKEN_SO_LIBRARIES = -lm -lws2_32 
 LIBCHICKEN_IMPORT_LIBRARY = libchicken.dll.a
-LIBUCHICKEN_IMPORT_LIBRARY = libuchicken.dll.a
 MAKEDIR_COMMAND_OPTIONS =
+CUSTOM_RC_FILE = 1
 
 # special files
 
@@ -125,7 +124,9 @@ endif
 ifdef SYMBOLGC
 	echo #define C_COLLECT_ALL_SYMBOLS >>$@
 endif
+ifneq ($(HACKED_APPLY),)
 	echo #define C_HACKED_APPLY >>$@
+endif
 	type chicken-defaults.h >>$@
 
 chicken-defaults.h:
@@ -140,6 +141,9 @@ endif
 	echo #endif >>$@
 	echo #ifndef C_INSTALL_CXX >>$@
 	echo # define C_INSTALL_CXX "$(CXX_COMPILER)" >>$@
+	echo #endif >>$@
+	echo #ifndef C_INSTALL_RC_COMPILER >>$@
+	echo # define C_INSTALL_RC_COMPILER "$(RC_COMPILER)" >>$@
 	echo #endif >>$@
 	echo #ifndef C_INSTALL_CFLAGS >>$@
 	echo # define C_INSTALL_CFLAGS "$(C_COMPILER_OPTIONS) $(C_COMPILER_OPTIMIZATION_OPTIONS)" >>$@
@@ -195,6 +199,9 @@ endif
 	echo #ifndef C_TARGET_CXX >>$@
 	echo # define C_TARGET_CXX "$(TARGET_CXX_COMPILER)" >>$@
 	echo #endif >>$@
+	echo #ifndef C_TARGET_RC_COMPILER >>$@
+	echo # define C_TARGET_RC_COMPILER "$(TARGET_RC_COMPILER)" >>$@
+	echo #endif >>$@
 	echo #ifndef C_TARGET_CFLAGS >>$@
 	echo # define C_TARGET_CFLAGS "$(TARGET_C_COMPILER_OPTIONS) $(TARGET_C_COMPILER_OPTIMIZATION_OPTIONS)" >>$@
 	echo #endif >>$@
@@ -231,12 +238,57 @@ endif
 	echo #ifndef C_CHICKEN_BUG_PROGRAM >>$@
 	echo # define C_CHICKEN_BUG_PROGRAM "$(CHICKEN_BUG_PROGRAM)" >>$@
 	echo #endif >>$@
+	echo #ifndef C_CHICKEN_INSTALL_PROGRAM >>$@
+	echo # define C_CHICKEN_INSTALL_PROGRAM "$(CHICKEN_INSTALL_PROGRAM)" >>$@
+	echo #endif >>$@
+	echo #ifndef C_CHICKEN_UNINSTALL_PROGRAM >>$@
+	echo # define C_CHICKEN_UNINSTALL_PROGRAM "$(CHICKEN_UNINSTALL_PROGRAM)" >>$@
+	echo #endif >>$@
+	echo #ifndef C_CHICKEN_STATUS_PROGRAM >>$@
+	echo # define C_CHICKEN_STATUS_PROGRAM "$(CHICKEN_STATUS_PROGRAM)" >>$@
+	echo #endif >>$@
 	echo #ifndef C_BINARY_VERSION >>$@
 	echo # define C_BINARY_VERSION $(BINARYVERSION) >>$@
 	echo #endif >>$@
 	echo #ifndef C_BRANCH_NAME >>$@
 	echo # define C_BRANCH_NAME "" >>$@
 	echo #endif >>$@
+	echo /* END OF FILE */ >>$@
+
+chicken-install.rc:
+	echo /* GENERATED */ >$@
+	echo 1 24 MOVEABLE PURE >>$@
+	echo BEGIN >>$@
+	echo   "<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>\r\n" >>$@
+	echo   "<assembly xmlns=""urn:schemas-microsoft-com:asm.v1"" manifestVersion=""1.0"">\r\n" >>$@
+	echo   "  <assemblyIdentity version=""1.0.0.0"" processorArchitecture=""*"" name=""$(PROGRAM_PREFIX)chicken-install$(PROGRAM_SUFFIX)"" type=""win32""/>\r\n" >>$@
+	echo   "  <ms_asmv2:trustInfo xmlns:ms_asmv2=""urn:schemas-microsoft-com:asm.v2"">\r\n" >>$@
+	echo   "    <ms_asmv2:security>\r\n" >>$@
+	echo   "      <ms_asmv2:requestedPrivileges>\r\n" >>$@
+	echo   "        <ms_asmv2:requestedExecutionLevel level=""asInvoker"" uiAccess=""false""/>\r\n" >>$@
+	echo   "      </ms_asmv2:requestedPrivileges>\r\n" >>$@
+	echo   "    </ms_asmv2:security>\r\n" >>$@
+	echo   "  </ms_asmv2:trustInfo>\r\n" >>$@
+	echo   "</assembly>\r\n" >>$@
+	echo END >>$@
+	echo /* END OF FILE */ >>$@
+
+chicken-uninstall.rc:
+	echo /* END OF FILE */ >$@
+	echo 1 24 MOVEABLE PURE >>$@
+	echo BEGIN >>$@
+	echo   "<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>\r\n" >>$@
+	echo   "<assembly xmlns=""urn:schemas-microsoft-com:asm.v1"" manifestVersion=""1.0"">\r\n" >>$@
+	echo   "  <assemblyIdentity version=""1.0.0.0"" processorArchitecture=""*"" name=""$(PROGRAM_PREFIX)chicken-uninstall$(PROGRAM_SUFFIX)"" type=""win32""/>\r\n" >>$@
+	echo   "  <ms_asmv2:trustInfo xmlns:ms_asmv2=""urn:schemas-microsoft-com:asm.v2"">\r\n" >>$@
+	echo   "    <ms_asmv2:security>\r\n" >>$@
+	echo   "      <ms_asmv2:requestedPrivileges>\r\n" >>$@
+	echo   "        <ms_asmv2:requestedExecutionLevel level=""asInvoker"" uiAccess=""false""/>\r\n" >>$@
+	echo   "      </ms_asmv2:requestedPrivileges>\r\n" >>$@
+	echo   "    </ms_asmv2:security>\r\n" >>$@
+	echo   "  </ms_asmv2:trustInfo>\r\n" >>$@
+	echo   "</assembly>\r\n" >>$@
+	echo END >>$@
 	echo /* END OF FILE */ >>$@
 
 include $(SRCDIR)rules.make

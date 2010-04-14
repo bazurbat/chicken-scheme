@@ -29,6 +29,9 @@
 # Add additional C compiler options:
 #C_COMPILER_OPTIMIZATION_OPTIONS=...
 
+# Use alternative resource compiler (for Win32 builds)
+#RC_COMPILER=
+
 # Choose prefix to be added to installed programs:
 #PROGRAM_PREFIX= 
 

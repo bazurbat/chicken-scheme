@@ -131,7 +131,7 @@ Specifies version string.
 
 If the extension also provides a static library, then STRING should
 contain the name of that library. Used by {{csc}} when compiling with
-the {{-static-extensions}} option.
+the {{-static-extension}} option.
 
 ===== static-options
 
@@ -139,7 +139,7 @@ the {{-static-extensions}} option.
 
 Additional options that should be passed to the linker when linking
 with the static version of an extension (see {{static}} above). Used
-by {{csc}} when compiling with the {{-static-extensions}} option.
+by {{csc}} when compiling with the {{-static-extension}} option.
 
 All other properties are currently ignored. The {{FILELIST}} argument may also be a single
 string.
@@ -461,7 +461,7 @@ Available options:
 ; {{-s   -sudo}} : use {{sudo(1)}} for installing or removing files
 ; {{-r   -retrieve}} : only retrieve egg into current directory, don't install
 ; {{-n   -no-install}} : do not install, just build (implies {{-keep}})
-; {{-p   -prefix PREFIX}} : change installation prefix to {{PREFIX}}; note: this must be an absolute path
+; {{-p   -prefix PREFIX}} : change installation prefix to {{PREFIX}}
 ; {{-host}} : when cross-compiling, compile extension for host
 ; {{-test}} : run included test-cases, if available
 ; {{-username USER}} : set username for transports that require this
@@ -542,7 +542,7 @@ library (in addition to the usual
 shared library) in your {{.setup}} script and install it along with the
 dynamically loadable extension. The setup properties {{static}} 
 should contain the name of the object file (or static library) to be
-linked, when {{csc}} gets passed the {{-static-extensions}} option:
+linked, when {{csc}} gets passed the {{-static-extension}} option:
 
 <enscript highlight=scheme>
  (compile -s -O2 -d1 my-ext.scm)   ; dynamically loadable "normal" version
@@ -560,7 +560,7 @@ not do that for the {{static}} extension property.
 
 To actually link with the static version of {{my-ext}}, do:
 
- % csc -static-extensions my-program.scm -uses my-ext
+ % csc -static-extension my-ext my-program.scm
 
 The compiler will try to do the right thing, but can not handle all
 extensions, since the ability to statically link eggs is relatively

@@ -403,3 +403,33 @@
 (let-syntax ((s1 (syntax-rules () ((_ x) x))))
   (assert (equal? '#((99)) (s2 99))))
 
+
+;;; local definitions
+
+(define-syntax s2
+  (syntax-rules ()
+    ((_) 1)))
+
+(define (f1) 3)
+(define v1 9)
+(define v2 10)
+
+(let ()
+  (define-syntax s2
+    (syntax-rules ()
+      ((_) 2)))
+  42
+  (define-values (v1 v2) (values 1 2))
+  43
+  (define (f1) 4)
+  (define ((f2)) 4)
+  (assert (= 4 (f1)))
+  (assert (= 4 ((f2))))
+  (assert (= 2 (s2)))
+  (assert (= 1 v1))
+  (assert (= 2 v2)))
+
+(assert (= 1 (s2)))
+(assert (= 3 (f1)))
+(assert (= 9 v1))
+(assert (= 10 v2))

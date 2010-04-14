@@ -35,7 +35,11 @@ SRCDIR = ./
 
 DLLSINPATH = 1
 ARCH ?= x86
-HACKED_APPLY = 1
+ifeq ($(ARCH),x86)
+HACKED_APPLY ?= 1
+else
+HACKED_APPLY =
+endif
 WINDOWS = 1
 
 # file extensions
@@ -56,15 +60,21 @@ C_COMPILER_OPTIMIZATION_OPTIONS ?= -Os
 endif
 endif
 C_COMPILER_SHARED_OPTIONS = -DPIC
-LINKER_OPTIONS = -Wl,--enable-auto-import
+LINKER_OPTIONS += -Wl,--enable-auto-import
 LINKER_LINK_SHARED_LIBRARY_OPTIONS = -shared
 LIBRARIES = -lm -lws2_32
 LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libchicken.dll.a
-LIBUCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libuchicken.dll.a
 LIBCHICKEN_SO_LIBRARIES = -lm -lws2_32 
-LIBUCHICKEN_SO_LIBRARIES = -lm -lws2_32 
 LIBCHICKEN_IMPORT_LIBRARY = libchicken.dll.a
-LIBUCHICKEN_IMPORT_LIBRARY = libuchicken.dll.a
+
+# Don't use "install" program as it is broken in some Mingw versions and 
+# Vista doesn't like it, anyway.
+
+INSTALL_PROGRAM = cp
+INSTALL_PROGRAM_SHARED_LIBRARY_OPTIONS = -r
+INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS = -r
+INSTALL_PROGRAM_EXECUTABLE_OPTIONS = -r
+INSTALL_PROGRAM_FILE_OPTIONS = -r
 
 # special files
 
@@ -113,7 +123,9 @@ endif
 ifdef SYMBOLGC
 	echo "#define C_COLLECT_ALL_SYMBOLS" >>$@
 endif
+ifneq ($(HACKED_APPLY),)
 	echo "#define C_HACKED_APPLY" >>$@
+endif
 	cat chicken-defaults.h >>$@
 
 include $(SRCDIR)/rules.make

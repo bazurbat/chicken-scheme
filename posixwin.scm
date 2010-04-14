@@ -1213,8 +1213,8 @@ EOF
 (define change-directory
   (lambda (name)
     (##sys#check-string name 'change-directory)
-    (let ((name (##sys#make-c-string (##sys#expand-home-path name))))
-      (unless (fx= 0 (##core#inline "C_chdir" name))
+    (let ((sname (##sys#make-c-string (##sys#expand-home-path name))))
+      (unless (fx= 0 (##core#inline "C_chdir" sname))
 	(##sys#update-errno)
 	(##sys#signal-hook
 	 #:file-error 'change-directory "cannot change current directory" name) )
@@ -1223,8 +1223,8 @@ EOF
 (define delete-directory
   (lambda (name)
     (##sys#check-string name 'delete-directory)
-    (let ((name (##sys#make-c-string (##sys#expand-home-path name))))
-      (unless (fx= 0 (##core#inline "C_rmdir" name))
+    (let ((sname (##sys#make-c-string (##sys#expand-home-path name))))
+      (unless (fx= 0 (##core#inline "C_rmdir" sname))
 	(##sys#update-errno)
 	(##sys#signal-hook #:file-error 'delete-directory "cannot delete directory" name) )
       name)))
@@ -1768,7 +1768,13 @@ EOF
 
 (define (terminal-port? port)
   (##sys#check-port port 'terminal-port?)
-  #f)
+  (let ([fp (##sys#peek-unsigned-integer port 0)])
+    (and (not (eq? 0 fp)) (##core#inline "C_tty_portp" port) ) ) )
+
+(define (terminal-size port)
+  (if (terminal-port? port)
+      (values 0 0)
+      (##sys#error 'terminal-size "port is not connected to a terminal" port)))
 
 (define-foreign-variable _iofbf int "_IOFBF")
 (define-foreign-variable _iolbf int "_IOLBF")
@@ -2140,7 +2146,6 @@ EOF
 (define-unimplemented signal-masked?)
 (define-unimplemented signal-unmask!)
 (define-unimplemented terminal-name)
-(define-unimplemented terminal-size)
 (define-unimplemented unmap-file-from-memory)
 (define-unimplemented user-information)
 (define-unimplemented utc-time->seconds)

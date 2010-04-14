@@ -1119,17 +1119,17 @@
       ((lambda (v) (let* rest . bodies)) i))))
 ;    ((_ . args) (glet* (let let* letrec lambda) . args))))
 
-;(display (let* ((foo 2)) (list foo (mm "mm"))))
+(display (let* ((foo 2)) (list foo (mm "mm"))))
 
-; (display
-;   (let* ((foo 2) 
-; 	  (i 3)
-; 	  (foo 4) 
-; 	  (ft (lambda () (mm "mm"))) ; will capture binding of foo to 4
-; 	  (foo 5)
-; 	  (ft1 (lambda (foo) (mm "mm"))) ; will  capture the arg of ft1
-; 	  (foo 6))
-;     (list foo (mm "mm") (ft) (ft1 7) '(mm "mm"))))
+(display
+ (let* ((foo 2) 
+	(i 3)
+	(foo 4) 
+	(ft (lambda () (mm "mm")))  ; will capture binding of foo to 4
+	(foo 5)
+	(ft1 (lambda (foo) (mm "mm")))	; will  capture the arg of ft1
+	(foo 6))
+   (list foo (mm "mm") (ft) (ft1 7) '(mm "mm"))))
 (newline)
 ; ==> (6 6 4 7 (mm))
 

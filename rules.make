@@ -35,13 +35,6 @@ LIBCHICKEN_OBJECTS_1 = \
 LIBCHICKEN_SHARED_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=$(O))
 LIBCHICKEN_STATIC_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=-static$(O))
 
-LIBUCHICKEN_OBJECTS_1 = \
-       ulibrary ueval udata-structures uports ufiles uextras ulolevel uutils utcp usrfi-1 usrfi-4 \
-       usrfi-13 usrfi-14 usrfi-18 usrfi-69 u$(POSIXFILE) uregex scheduler \
-       profiler stub expand chicken-syntax uruntime
-LIBUCHICKEN_SHARED_OBJECTS = $(LIBUCHICKEN_OBJECTS_1:=$(O))
-LIBUCHICKEN_STATIC_OBJECTS = $(LIBUCHICKEN_OBJECTS_1:=-static$(O))
-
 COMPILER_OBJECTS_1 = \
        chicken batch-driver compiler optimizer compiler-syntax scrutinizer unboxing support \
        c-platform c-backend
@@ -147,83 +140,6 @@ utils$(O): utils.c chicken.h $(CHICKEN_CONFIG_H)
 	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
 	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
 	  $(C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-
-uruntime$(O): runtime.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-ueval$(O): ueval.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-udata-structures$(O): udata-structures.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-uports$(O): uports.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-ufiles$(O): ufiles.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-uextras$(O): uextras.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-ulibrary$(O): ulibrary.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-ulolevel$(O): ulolevel.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-uposixunix$(O): uposixunix.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-uposixwin$(O): uposixwin.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-uregex$(O): uregex.c chicken.h $(CHICKEN_CONFIG_H) 
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-usrfi-1$(O): usrfi-1.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-usrfi-13$(O): usrfi-13.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-usrfi-14$(O): usrfi-14.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-usrfi-18$(O): usrfi-18.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-usrfi-69$(O): usrfi-69.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-usrfi-4$(O): usrfi-4.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-utcp$(O): utcp.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-uutils$(O): uutils.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
 
 runtime-static$(O): runtime.c chicken.h $(CHICKEN_CONFIG_H)
 	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
@@ -346,101 +262,6 @@ utils-static$(O): utils.c chicken.h $(CHICKEN_CONFIG_H)
 	  $(C_COMPILER_STATIC_OPTIONS) \
 	  $(C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
 
-uruntime-static$(O): runtime.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-ueval-static$(O): ueval.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-udata-structures-static$(O): udata-structures.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-uports-static$(O): uports.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-ufiles-static$(O): ufiles.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-uextras-static$(O): uextras.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-ulibrary-static$(O): ulibrary.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-ulolevel-static$(O): ulolevel.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-uposixunix-static$(O): uposixunix.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-uposixwin-static$(O): uposixwin.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-uregex-static$(O): uregex.c chicken.h $(CHICKEN_CONFIG_H) 
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-usrfi-1-static$(O): usrfi-1.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-usrfi-13-static$(O): usrfi-13.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-usrfi-14-static$(O): usrfi-14.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-usrfi-18-static$(O): usrfi-18.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-usrfi-69-static$(O): usrfi-69.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-usrfi-4-static$(O): usrfi-4.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-utcp-static$(O): utcp.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
-uutils-static$(O): uutils.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_UNSAFE_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
 
 # import library objects
 
@@ -668,6 +489,13 @@ chicken-bug$(O): chicken-bug.c chicken.h $(CHICKEN_CONFIG_H)
 	  $(C_COMPILER_STATIC_OPTIONS) \
 	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
 
+# resource objects
+
+.SUFFIXES: .rc
+
+%.rc.o: %.rc
+	$(RC_COMPILER) $< $@
+
 # libraries
 
 .PHONY: libs
@@ -681,13 +509,6 @@ ifdef USES_SONAME
 	ln -sf $(LIBCHICKEN_SO_FILE) $(LIBCHICKEN_SO_FILE).$(BINARYVERSION)
 endif
 
-libuchicken$(SO): $(LIBUCHICKEN_SHARED_OBJECTS) $(APPLY_HACK_OBJECT)
-	$(LINKER) $(LINKER_OPTIONS) $(LINKER_LINK_SHARED_LIBRARY_OPTIONS) $(LIBUCHICKEN_SO_LINKER_OPTIONS) \
-	  $(LINKER_OUTPUT) $^ $(LIBUCHICKEN_SO_LIBRARIES)
-ifdef USES_SONAME
-	ln -sf $(LIBUCHICKEN_SO_FILE) $(LIBUCHICKEN_SO_FILE).$(BINARYVERSION)
-endif
-
 cygchicken-0.dll: $(LIBCHICKEN_SHARED_OBJECTS) $(APPLY_HACK_OBJECT)
 	gcc -shared -o $(LIBCHICKEN_SO_FILE) -Wl,--dll -Wl,--add-stdcall-alias \
 	    -Wl,--enable-stdcall-fixup -Wl,--warn-unresolved-symbols \
@@ -698,21 +519,7 @@ cygchicken-0.dll: $(LIBCHICKEN_SHARED_OBJECTS) $(APPLY_HACK_OBJECT)
 	    -Wl,--whole-archive $(LIBCHICKEN_SHARED_OBJECTS) $(APPLY_HACK_OBJECT) \
 	    -Wl,--no-whole-archive $(LIBCHICKEN_SO_LIBRARIES)
 
-cyguchicken-0.dll: $(LIBUCHICKEN_SHARED_OBJECTS) $(APPLY_HACK_OBJECT)
-	gcc -shared -o $(LIBUCHICKEN_SO_FILE) -Wl,--dll -Wl,--add-stdcall-alias \
-	    -Wl,--enable-stdcall-fixup -Wl,--warn-unresolved-symbols \
-	    -Wl,--dll-search-prefix=cyg -Wl,--allow-multiple-definition \
-	    -Wl,--allow-shlib-undefined -Wl,--export-dynamic \
-	    -Wl,--out-implib=libuchicken.dll.a -Wl,--export-all-symbols \
-	    -Wl,--enable-auto-import \
-	    -Wl,--whole-archive $(LIBUCHICKEN_SHARED_OBJECTS) $(APPLY_HACK_OBJECT) \
-	    -Wl,--no-whole-archive $(LIBUCHICKEN_SO_LIBRARIES)
-
-
 libchicken$(A): $(APPLY_HACK_OBJECT) $(LIBCHICKEN_STATIC_OBJECTS)
-	$(LIBRARIAN) $(LIBRARIAN_OPTIONS) $(LIBRARIAN_OUTPUT) $^
-
-libuchicken$(A): $(APPLY_HACK_OBJECT) $(LIBUCHICKEN_STATIC_OBJECTS)
 	$(LIBRARIAN) $(LIBRARIAN_OPTIONS) $(LIBRARIAN_OUTPUT) $^
 
 # import libraries and extensions
@@ -734,12 +541,24 @@ $(CSI_SHARED_EXECUTABLE): csi$(O) $(PRIMARY_LIBCHICKEN)
 	$(LINKER) $(LINKER_OPTIONS) $(LINKER_EXECUTABLE_OPTIONS) $< $(LINKER_OUTPUT) \
           $(LINKER_LIBRARY_PREFIX)chicken$(LINKER_LIBRARY_SUFFIX) $(LINKER_LINK_SHARED_PROGRAM_OPTIONS) $(LIBRARIES)
 
+ifneq ($(RC_COMPILER),)
+$(CHICKEN_INSTALL_PROGRAM)$(EXE): chicken-install$(O) chicken-install.rc$(O) $(PRIMARY_LIBCHICKEN)
+	$(LINKER) $(LINKER_OPTIONS) $(LINKER_EXECUTABLE_OPTIONS) $< chicken-install.rc$(O) $(LINKER_OUTPUT) \
+          $(LINKER_LIBRARY_PREFIX)chicken$(LINKER_LIBRARY_SUFFIX) $(LINKER_LINK_SHARED_PROGRAM_OPTIONS) $(LIBRARIES)
+else
 $(CHICKEN_INSTALL_PROGRAM)$(EXE): chicken-install$(O) $(PRIMARY_LIBCHICKEN)
 	$(LINKER) $(LINKER_OPTIONS) $(LINKER_EXECUTABLE_OPTIONS) $< $(LINKER_OUTPUT) \
           $(LINKER_LIBRARY_PREFIX)chicken$(LINKER_LIBRARY_SUFFIX) $(LINKER_LINK_SHARED_PROGRAM_OPTIONS) $(LIBRARIES)
+endif
+ifneq ($(RC_COMPILER),)
+$(CHICKEN_UNINSTALL_PROGRAM)$(EXE): chicken-uninstall$(O) chicken-uninstall.rc$(O) $(PRIMARY_LIBCHICKEN)
+	$(LINKER) $(LINKER_OPTIONS) $(LINKER_EXECUTABLE_OPTIONS) $< chicken-uninstall.rc$(O) $(LINKER_OUTPUT) \
+          $(LINKER_LIBRARY_PREFIX)chicken$(LINKER_LIBRARY_SUFFIX) $(LINKER_LINK_SHARED_PROGRAM_OPTIONS) $(LIBRARIES)
+else
 $(CHICKEN_UNINSTALL_PROGRAM)$(EXE): chicken-uninstall$(O) $(PRIMARY_LIBCHICKEN)
 	$(LINKER) $(LINKER_OPTIONS) $(LINKER_EXECUTABLE_OPTIONS) $< $(LINKER_OUTPUT) \
           $(LINKER_LIBRARY_PREFIX)chicken$(LINKER_LIBRARY_SUFFIX) $(LINKER_LINK_SHARED_PROGRAM_OPTIONS) $(LIBRARIES)
+endif
 $(CHICKEN_STATUS_PROGRAM)$(EXE): chicken-status$(O) $(PRIMARY_LIBCHICKEN)
 	$(LINKER) $(LINKER_OPTIONS) $(LINKER_EXECUTABLE_OPTIONS) $< $(LINKER_OUTPUT) \
           $(LINKER_LIBRARY_PREFIX)chicken$(LINKER_LIBRARY_SUFFIX) $(LINKER_LINK_SHARED_PROGRAM_OPTIONS) $(LIBRARIES)
@@ -771,32 +590,24 @@ $(CHICKEN_BUG_PROGRAM)$(EXE): chicken-bug$(O) libchicken$(A)
 
 install-libs:
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS) libchicken$(A) "$(DESTDIR)$(ILIBDIR)"
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS) libuchicken$(A) "$(DESTDIR)$(ILIBDIR)"
 ifneq ($(LIBCHICKEN_IMPORT_LIBRARY),) 
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS) $(LIBCHICKEN_IMPORT_LIBRARY) "$(DESTDIR)$(ILIBDIR)"
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS) $(LIBUCHICKEN_IMPORT_LIBRARY) "$(DESTDIR)$(ILIBDIR)"
 endif
 ifneq ($(POSTINSTALL_STATIC_LIBRARY),true)
 	$(POSTINSTALL_STATIC_LIBRARY) $(POSTINSTALL_STATIC_LIBRARY_FLAGS) \
 	  "$(ILIBDIR)$(SEP)libchicken$(A)"
-	$(POSTINSTALL_STATIC_LIBRARY) $(POSTINSTALL_STATIC_LIBRARY_FLAGS) \
-	  "$(ILIBDIR)$(SEP)libuchicken$(A)"
 endif
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)chicken.h "$(DESTDIR)$(IINCDIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(CHICKEN_CONFIG_H) "$(DESTDIR)$(IINCDIR)"
 ifndef STATICBUILD
 ifdef DLLSINPATH
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_SHARED_LIBRARY_OPTIONS) $(LIBCHICKEN_SO_FILE) "$(DESTDIR)$(IBINDIR)"
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_SHARED_LIBRARY_OPTIONS) $(LIBUCHICKEN_SO_FILE) "$(DESTDIR)$(IBINDIR)"
 else
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_SHARED_LIBRARY_OPTIONS) $(LIBCHICKEN_SO_FILE) \
 	  "$(DESTDIR)$(ILIBDIR)$(SEP)$(LIBCHICKEN_SO_FILE)$(SONAME_VERSION)"
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_SHARED_LIBRARY_OPTIONS) $(LIBUCHICKEN_SO_FILE) \
-	  "$(DESTDIR)$(ILIBDIR)$(SEP)$(LIBUCHICKEN_SO_FILE)$(SONAME_VERSION)"
 endif
 ifdef USES_SONAME
 	cd "$(DESTDIR)$(ILIBDIR)" && ln -sf $(LIBCHICKEN_SO_FILE).$(BINARYVERSION) libchicken$(SO)
-	cd "$(DESTDIR)$(ILIBDIR)" && ln -sf $(LIBUCHICKEN_SO_FILE).$(BINARYVERSION) libuchicken$(SO)
 endif
 endif
 
@@ -820,7 +631,7 @@ install:
 	  $(CSI_PROGRAM)$(EXE) $(CSC_PROGRAM)$(EXE) $(CHICKEN_PROFILE_PROGRAM)$(EXE) \
 	  $(CHICKEN_INSTALL_PROGRAM)$(EXE) $(CHICKEN_UNINSTALL_PROGRAM)$(EXE) \
 	  $(CHICKEN_STATUS_PROGRAM)$(EXE) \
-	  $(LIBCHICKEN_SO_FILE) $(LIBUCHICKEN_SO_FILE) \
+	  $(LIBCHICKEN_SO_FILE) \
 	  $(IMPORT_LIBRARIES:%=%.so) $(IMPORT_LIBRARIES:%=%.import.so)
 	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) CONFIG=$(CONFIG) NEEDS_RELINKING=no \
 	  RUNTIME_LINKER_PATH="$(LIBDIR)" SONAME_VERSION=.$(BINARYVERSION) install
@@ -907,6 +718,11 @@ endif
 endif
 ifeq ($(PLATFORM),macosx)
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)mac.r "$(DESTDIR)$(ISHAREDIR)"
+	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)CHICKEN.icns "$(DESTDIR)$(IDATADIR)"
+endif
+ifdef WINDOWS
+	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)chicken.ico "$(DESTDIR)$(IDATADIR)"
+	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)chicken.rc$(O) "$(DESTDIR)$(IDATADIR)"
 endif
 
 ifdef STATICBUILD
@@ -964,9 +780,6 @@ install-setup-files:
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)setup.defaults "$(DESTDIR)$(IDATADIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) setup-api.so "$(DESTDIR)$(IEGGDIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) setup-download.so "$(DESTDIR)$(IEGGDIR)"
-ifeq ($(PLATFORM),macosx)
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)CHICKEN.icns "$(DESTDIR)$(IDATADIR)"
-endif
 
 uninstall:
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(IBINDIR)$(SEP)$(CHICKEN_PROGRAM)$(EXE)" \
@@ -978,21 +791,16 @@ uninstall:
 	  "$(DESTDIR)$(IBINDIR)$(SEP)$(CSC_PROGRAM)$(EXE)" \
 	  "$(DESTDIR)$(IBINDIR)$(SEP)$(CHICKEN_BUG_PROGRAM)$(EXE)"
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)$(SEP)libchicken$(A) "
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)$(SEP)libuchicken$(A) "
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)$(SEP)libchicken$(SO)"
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)$(SEP)libuchicken$(SO)"
 ifdef USES_SONAME
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)$(SEP)libchicken$(SO).$(BINARYVERSION)"
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)$(SEP)libuchicken$(SO).$(BINARYVERSION)"
 endif
 ifdef WINDOWS
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(IBINDIR)$(SEP)libchicken$(SO)"
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(IBINDIR)$(SEP)libuchicken$(SO)"
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)$(SEP)$(LIBCHICKEN_IMPORT_LIBRARY)"
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)$(SEP)$(LIBUCHICKEN_IMPORT_LIBRARY)"
 endif
 ifdef ($(PLATFORM),cygwin)
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(IBINDIR)$(SEP)cygchicken*" "$(DESTDIR)$(IBINDIR)$(SEP)cyguchicken*"
+	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(IBINDIR)$(SEP)cygchicken*"
 endif
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(IMANDIR)$(SEP)chicken.1" "$(DESTDIR)$(IMANDIR)$(SEP)csi.1" \
 	  "$(DESTDIR)$(IMANDIR)$(SEP)csc.1" "$(DESTDIR)$(IMANDIR)$(SEP)chicken-profile.1" "$(DESTDIR)$(IMANDIR)$(SEP)chicken-install.1" \
@@ -1058,43 +866,6 @@ profiler.c: $(SRCDIR)profiler.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
 stub.c: $(SRCDIR)stub.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-
-ulibrary.c: $(SRCDIR)library.scm $(SRCDIR)version.scm $(SRCDIR)banner.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-ueval.c: $(SRCDIR)eval.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-udata-structures.c: $(SRCDIR)data-structures.scm $(SRCDIR)private-namespace.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm
-uports.c: $(SRCDIR)ports.scm $(SRCDIR)private-namespace.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@
-ufiles.c: $(SRCDIR)files.scm $(SRCDIR)private-namespace.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@
-uextras.c: $(SRCDIR)extras.scm $(SRCDIR)private-namespace.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm
-ulolevel.c: $(SRCDIR)lolevel.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-utcp.c: $(SRCDIR)tcp.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-usrfi-1.c: $(SRCDIR)srfi-1.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-usrfi-4.c: $(SRCDIR)srfi-4.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-usrfi-13.c: $(SRCDIR)srfi-13.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-usrfi-14.c: $(SRCDIR)srfi-14.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-usrfi-18.c: $(SRCDIR)srfi-18.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-usrfi-69.c: $(SRCDIR)srfi-69.scm $(SRCDIR)private-namespace.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm 
-uutils.c: $(SRCDIR)utils.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-uposixunix.c: $(SRCDIR)posixunix.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-uposixwin.c: $(SRCDIR)posixwin.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
-uregex.c: $(SRCDIR)regex.scm $(SRCDIR)irregex.scm $(SRCDIR)unsafe-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) $(CHICKEN_UNSAFE_OPTIONS) -output-file $@ 
 
 chicken.import.c: $(SRCDIR)chicken.import.scm
 	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
@@ -1204,9 +975,6 @@ distfiles: library.c eval.c expand.c chicken-syntax.c \
 	data-structures.c ports.c files.c extras.c lolevel.c utils.c \
 	tcp.c srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c \
 	posixunix.c posixwin.c regex.c scheduler.c profiler.c stub.c \
-	ulibrary.c ueval.c udata-structures.c uports.c ufiles.c uextras.c ulolevel.c \
-	uutils.c utcp.c usrfi-1.c usrfi-4.c usrfi-13.c usrfi-14.c \
-	usrfi-18.c usrfi-69.c uposixunix.c uposixwin.c uregex.c \
 	chicken-profile.c chicken-install.c chicken-uninstall.c chicken-status.c \
 	csc.c csi.c chicken.c batch-driver.c compiler.c optimizer.c  \
 	compiler-syntax.c scrutinizer.c unboxing.c support.c \
@@ -1226,30 +994,31 @@ html:
 
 clean:
 	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) chicken$(EXE) csi$(EXE) csc$(EXE) \
-	  chicken-profile$(EXE) csi-static$(EXE) \
-	  chicken-install$(EXE) chicken-uninstall$(EXE) chicken-status$(EXE) \
-	  csc-static$(EXE) chicken-static$(EXE) chicken-bug$(EXE) *$(O) \
-	  $(LIBCHICKEN_SO_FILE) $(LIBUCHICKEN_SO_FILE) \
-	  libchicken$(A) libuchicken$(A) libchicken$(SO) $(PROGRAM_IMPORT_LIBRARIES) \
-	  $(IMPORT_LIBRARIES:=.import.so) $(LIBCHICKEN_IMPORT_LIBRARY) $(LIBUCHICKEN_IMPORT_LIBRARY) \
+	  $(CHICKEN_PROFILE_PROGRAM)$(EXE) \
+	  $(CHICKEN_INSTALL_PROGRAM)$(EXE) \
+	  $(CHICKEN_UNINSTALL_PROGRAM)$(EXE) \
+	  $(CHICKEN_STATUS_PROGRAM)$(EXE) \
+	  $(CHICKEN_BUG_PROGRAM)$(EXE) *$(O) \
+	  $(LIBCHICKEN_SO_FILE) \
+	  libchicken$(A) libchicken$(SO) $(PROGRAM_IMPORT_LIBRARIES) \
+	  $(IMPORT_LIBRARIES:=.import.so) $(LIBCHICKEN_IMPORT_LIBRARY) \
 	  setup-api.so setup-api.import.scm setup-download.so \
-	  setup-download.import.scm
+	  setup-download.import.scm \
+	  setup-api.c setup-download.c
 ifdef USES_SONAME
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) libchicken.so.$(BINARYVERSION)
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) libuchicken.so.$(BINARYVERSION)
 endif
 
 confclean:
-	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) chicken-config.h chicken-defaults.h
+	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) \
+	  chicken-config.h chicken-defaults.h chicken-install.rc chicken-uninstall.rc
 
 spotless: distclean testclean
 	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) library.c eval.c data-structures.c \
 	  ports.c files.c extras.c lolevel.c utils.c chicken-syntax.c \
 	  tcp.c srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c expand.c \
 	  posixunix.c posixwin.c regex.c scheduler.c profiler.c stub.c \
-	  ulibrary.c ueval.c udata-structures.c uports.c ufiles.c uextras.c ulolevel.c \
-	  uutils.c utcp.c usrfi-1.c usrfi-4.c usrfi-13.c usrfi-14.c \
-	  usrfi-18.c usrfi-69.c uposixunix.c uposixwin.c uregex.c chicken-profile.c chicken-bug.c \
+	  chicken-profile.c chicken-bug.c \
 	  csc.c csi.c chicken-install.c chicken-uninstall.c chicken-status.c \
 	  chicken.c batch-driver.c compiler.c optimizer.c compiler-syntax.c \
 	  scrutinizer.c support.c unboxing.c \
@@ -1269,21 +1038,38 @@ testclean:
 check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 	cd tests; sh runtests.sh
 
-# bootstrap from C source tarball
 
-.PHONY: bootstrap bootstrap-files
+# 3-stage build
 
-bootstrap: 
-	$(COPY_COMMAND) $(SRCDIR)bootstrap$(SEP)* $(SRCDIR).
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) CONFIG=$(CONFIG) STATICBUILD=1 \
-	  DEBUGBUILD=1 PLATFORM=$(PLATFORM) chicken$(EXE)
-	$(COPY_COMMAND) chicken$(EXE) chicken-boot$(EXE)
-	touch *.scm
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) CONFIG=$(CONFIG) PLATFORM=$(PLATFORM) \
-	  confclean
+.PHONY: stage1 stage2 stage3
 
-bootstrap-files: distfiles
-	$(COPY_COMMAND) library.c eval.c data-structures.c ports.c files.c extras.c lolevel.c utils.c tcp.c \
-	  srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c posixunix.c posixwin.c regex.c \
-	  scheduler.c profiler.c stub.c expand.c chicken-syntax.c \
-	  $(COMPILER_OBJECTS_1:=.c) $(SRCDIR)bootstrap
+# stage1: build static compiler from current sources with whatever chicken is 
+#         currently available
+stage1:
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) \
+	  SRCDIR=$(SRCDIR) STATICBUILD=1 DEBUGBUILD=1 CHICKEN=$(CHICKEN) \
+	  confclean clean $(CHICKEN_PROGRAM)$(EXE)
+	$(COPY_COMMAND) $(CHICKEN_PROGRAM)$(EXE) $(CHICKEN_PROGRAM)-stage1$(EXE)
+	-chmod +x $(CHICKEN_PROGRAM)-stage1$(EXE)
+	-touch *.scm
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) SRCDIR=$(SRCDIR) stage2
+
+# stage2: build static chicken with compiler built from current sources, so that
+#         it supports all functionality that has recently been added
+stage2:
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) \
+	  SRCDIR=$(SRCDIR) STATICBUILD=1 DEBUGBUILD=1 \
+	  CHICKEN=./$(CHICKEN_PROGRAM)-stage1 clean $(CHICKEN_PROGRAM)$(EXE)
+	$(COPY_COMMAND) $(CHICKEN_PROGRAM) $(CHICKEN_PROGRAM)-stage2$(EXE)
+	-chmod +x $(CHICKEN_PROGRAM)-stage2$(EXE)
+	-touch *.scm
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) stage3
+
+# stage3: build whole system with compiler built from compiler built from current 
+#         sources - this should normally not be contaminated by old compilers
+#         or runtime libraries
+stage3:
+	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) \
+	  SRCDIR=$(SRCDIR) CONFIG=$(CONFIG) \
+	  CHICKEN=./$(CHICKEN_PROGRAM)-stage2 \
+	  confclean clean all

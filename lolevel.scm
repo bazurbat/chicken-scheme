@@ -45,7 +45,6 @@
 #endif
 
 #define C_w2b(x)                   C_fix(C_wordstobytes(C_unfix(x)))
-#define C_pointer_eqp(x, y)        C_mk_bool(C_c_pointer_nn(x) == C_c_pointer_nn(y))
 #define C_memmove_o(to, from, n, toff, foff) C_memmove((char *)(to) + (toff), (char *)(from) + (foff), (n))
 EOF
 ) )
@@ -142,25 +141,6 @@ EOF
      (and (pair? loc) (car loc))
      "bad argument type - not a pointer" x) ) )
 
-(cond-expand
-  [unsafe
-   (define-syntax ##sys#check-pointer
-     (syntax-rules ()
-       ((_ . _) (##core#undefined))))
-   (define-syntax ##sys#check-block
-     (syntax-rules ()
-       ((_ . _) (##core#undefined))))
-   (define-syntax ##sys#check-become-alist
-     (syntax-rules ()
-       ((_ . _) (##core#undefined))))
-   (define-syntax ##sys#check-generic-structure
-     (syntax-rules ()
-       ((_ . _) (##core#undefined))))
-   (define-syntax ##sys#check-generic-vector
-     (syntax-rules ()
-       ((_ . _) (##core#undefined)))) ]
-  [else] )
-
 
 ;;; Move arbitrary blocks of memory around:
 
@@ -185,21 +165,19 @@ EOF
 	(apply ##sys#error 'move-memory! "number of bytes to move too large" from to args))
       ;
       (define (checkn1 n nmax off)
-	(if (cond-expand [unsafe #t] [else (fx<= n (fx- nmax off))])
+	(if (fx<= n (fx- nmax off))
 	    n
 	    (sizerr n nmax) ) )
       ;
       (define (checkn2 n nmax nmax2 off1 off2)
-	(if (cond-expand [unsafe #t] [else (and (fx<= n (fx- nmax off1)) (fx<= n (fx- nmax2 off2)))])
+	(if (and (fx<= n (fx- nmax off1)) (fx<= n (fx- nmax2 off2)))
 	    n
 	    (sizerr n nmax nmax2) ) )
       ;
       (##sys#check-block from 'move-memory!)
       (##sys#check-block to 'move-memory!)
-      #+(not unsafe)
       (when (fx< foffset 0)
 	(##sys#error 'move-memory! "negative source offset" foffset))
-      #+(not unsafe)
       (when (fx< toffset 0)
 	(##sys#error 'move-memory! "negative destination offset" toffset))
       (let move ([from from] [to to])
@@ -269,7 +247,7 @@ EOF
 
 (define (null-pointer? ptr)
   (##sys#check-special ptr 'null-pointer?)
-  (eq? 0 (##sys#pointer->address ptr) ) )
+  (##core#inline "C_null_pointerp" ptr))
 
 (define (object->pointer x)
   (and (##core#inline "C_blockp" x)
@@ -357,54 +335,54 @@ EOF
 
 ;;; SRFI-4 number-vector:
 
-(define pointer-u8-set! (foreign-lambda* void ([c-pointer p] [int n]) "*((unsigned char *)p) = n;"))
-(define pointer-s8-set! (foreign-lambda* void ([c-pointer p] [int n]) "*((char *)p) = n;"))
-(define pointer-u16-set! (foreign-lambda* void ([c-pointer p] [int n]) "*((unsigned short *)p) = n;"))
-(define pointer-s16-set! (foreign-lambda* void ([c-pointer p] [int n]) "*((short *)p) = n;"))
-(define pointer-u32-set! (foreign-lambda* void ([c-pointer p] [int n]) "*((C_u32 *)p) = n;"))
-(define pointer-s32-set! (foreign-lambda* void ([c-pointer p] [int n]) "*((C_s32 *)p) = n;"))
-(define pointer-f32-set! (foreign-lambda* void ([c-pointer p] [double n]) "*((float *)p) = n;"))
-(define pointer-f64-set! (foreign-lambda* void ([c-pointer p] [float n]) "*((double *)p) = n;"))
+(define (pointer-u8-set! p n) (##core#inline "C_u_i_pointer_u8_set" p n))
+(define (pointer-s8-set! p n) (##core#inline "C_u_i_pointer_s8_set" p n))
+(define (pointer-u16-set! p n) (##core#inline "C_u_i_pointer_u16_set" p n))
+(define (pointer-s16-set! p n) (##core#inline "C_u_i_pointer_s16_set" p n))
+(define (pointer-u32-set! p n) (##core#inline "C_u_i_pointer_u32_set" p n))
+(define (pointer-s32-set! p n) (##core#inline "C_u_i_pointer_s32_set" p n))
+(define (pointer-f32-set! p n) (##core#inline "C_u_i_pointer_f32_set" p n))
+(define (pointer-f64-set! p n) (##core#inline "C_u_i_pointer_f64_set" p n))
 
 (define pointer-u8-ref
   (getter-with-setter
-   (foreign-lambda* int ([c-pointer p]) "return(*((unsigned char *)p));")
-   pointer-u8-set!) )
+   (lambda (p) (##core#inline "C_u_i_pointer_u8_ref" p))
+   pointer-u8-set!))
 
 (define pointer-s8-ref
   (getter-with-setter
-   (foreign-lambda* int ([c-pointer p]) "return(*((signed char *)p));")
-   pointer-s8-set!) )
+   (lambda (p) (##core#inline "C_u_i_pointer_s8_ref" p))
+   pointer-s8-set!))
 
 (define pointer-u16-ref
   (getter-with-setter
-   (foreign-lambda* int ([c-pointer p]) "return(*((unsigned short *)p));")
-   pointer-u16-set!) )
+   (lambda (p) (##core#inline "C_u_i_pointer_u16_ref" p))
+   pointer-u16-set!))
 
 (define pointer-s16-ref
   (getter-with-setter
-   (foreign-lambda* int ([c-pointer p]) "return(*((short *)p));")
-   pointer-s6-set!) )
+   (lambda (p) (##core#inline "C_u_i_pointer_s16_ref" p))
+   pointer-s16-set!))
 
 (define pointer-u32-ref
   (getter-with-setter
-   (foreign-lambda* integer ([c-pointer p]) "return(*((C_u32 *)p));")
-   pointer-u32-set!) )
+   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_u32_ref" 4) p)) ;XXX hardcoded size
+   pointer-u32-set!))
 
 (define pointer-s32-ref
   (getter-with-setter
-   (foreign-lambda* integer ([c-pointer p]) "return(*((C_s32 *)p));")
-   pointer-s32-set!) )
+   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_s32_ref" 4) p)) ;XXX hardcoded size
+   pointer-s32-set!))
 
 (define pointer-f32-ref
   (getter-with-setter
-   (foreign-lambda* float ([c-pointer p]) "return(*((float *)p));")
-   pointer-f32-set!) )
+   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_f32_ref" 4) p)) ;XXX hardcoded size
+   pointer-f32-set!))
 
 (define pointer-f64-ref
   (getter-with-setter
-   (foreign-lambda* double ([c-pointer p]) "return(*((double *)p));")
-   pointer-f64-set!) )
+   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_f64_ref" 4) p)) ;XXX hardcoded size
+   pointer-f64-set!))
 
 
 ;;; Procedures extended with data:
@@ -538,7 +516,7 @@ EOF
 	       y ) ] ) ) ) )
 
 (define (object-evict-to-location x ptr . limit)
-  (cond-expand [(not unsafe) (##sys#check-special ptr 'object-evict-to-location)] [else])
+  (##sys#check-special ptr 'object-evict-to-location)
   (let* ([limit (and (pair? limit)
 		     (let ([limit (car limit)])
 		       (##sys#check-exact limit 'object-evict-to-location)
@@ -639,7 +617,7 @@ EOF
 ;;; `become':
 
 (define (object-become! alst)
-  (cond-expand [(not unsafe) (##sys#check-become-alist alst 'object-become!)] [else])
+  (##sys#check-become-alist alst 'object-become!)
   (##sys#become! alst) )
 
 (define (mutate-procedure old proc)

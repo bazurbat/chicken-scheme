@@ -32,8 +32,10 @@
 (define-foreign-variable INSTALL_BIN_HOME c-string "C_INSTALL_BIN_HOME")
 (define-foreign-variable INSTALL_CC c-string "C_INSTALL_CC")
 (define-foreign-variable INSTALL_CXX c-string "C_INSTALL_CXX")
+(define-foreign-variable INSTALL_RC_COMPILER c-string "C_INSTALL_RC_COMPILER")
 (define-foreign-variable TARGET_CC c-string "C_TARGET_CC")
 (define-foreign-variable TARGET_CXX c-string "C_TARGET_CXX")
+(define-foreign-variable TARGET_RC_COMPILER c-string "C_TARGET_RC_COMPILER")
 (define-foreign-variable TARGET_CFLAGS c-string "C_TARGET_CFLAGS")
 (define-foreign-variable INSTALL_CFLAGS c-string "C_INSTALL_CFLAGS")
 (define-foreign-variable TARGET_LDFLAGS c-string "C_TARGET_LDFLAGS")
@@ -64,9 +66,10 @@
 (define msvc (eq? (build-platform) 'msvc))
 (define osx (eq? (software-version) 'macosx))
 (define win (or mingw msvc))
+(define netbsd (eq? (software-version) 'netbsd))
 
 (define elf
-  (memq (software-version) '(linux freebsd solaris openbsd)))
+  (memq (software-version) '(linux netbsd freebsd solaris openbsd)))
 
 (define (quit msg . args)
   (fprintf (current-error-port) "~a: ~?~%" CSC_PROGRAM msg args)
@@ -98,6 +101,7 @@
 
 (define compiler (quotewrap (if host-mode INSTALL_CC TARGET_CC)))
 (define c++-compiler (quotewrap (if host-mode INSTALL_CXX TARGET_CXX)))
+(define rc-compiler (quotewrap (if host-mode INSTALL_RC_COMPILER TARGET_RC_COMPILER)))
 (define linker (quotewrap (if msvc "link" (if host-mode INSTALL_CC TARGET_CC))))
 (define c++-linker (quotewrap (if msvc "link" (if host-mode INSTALL_CXX TARGET_CXX))))
 (define object-extension (if msvc "obj" "o"))
@@ -110,15 +114,11 @@
 (define default-translation-optimization-options '())
 (define pic-options (if (or mingw msvc) '("-DPIC") '("-fPIC" "-DPIC")))
 (define windows-shell WINDOWS_SHELL)
+(define generate-manifest #f)
 
 (define default-library
   (string-append
    (if msvc "libchicken-static." "libchicken.")
-   library-extension))
-
-(define default-unsafe-library
-  (string-append
-   (if msvc "libuchicken-static." "libuchicken.")
    library-extension))
 
 (define default-compilation-optimization-options (string-split (if host-mode INSTALL_CFLAGS TARGET_CFLAGS)))
@@ -135,7 +135,7 @@
     -analyze-only -keep-shadowed-macros -inline-global -ignore-repository
     -no-symbol-escape -no-parentheses-synonyms -r5rs-syntax
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
-    -emit-all-import-libraries -setup-mode -unboxing
+    -emit-all-import-libraries -setup-mode -unboxing -no-elevation
     -no-procedure-checks-for-usual-bindings))
 
 (define-constant complex-options
@@ -173,7 +173,9 @@
 (define scheme-files '())
 (define generated-scheme-files '())
 (define c-files '())
+(define rc-files '())
 (define generated-c-files '())
+(define generated-rc-files '())
 (define object-files '())
 (define generated-object-files '())
 (define cpp-mode #f)
@@ -187,6 +189,7 @@
 (define gui #f)
 (define deploy #f)
 (define deployed #f)
+(define rpath #f)
 
 (define extra-libraries
   (if host-mode
@@ -210,26 +213,6 @@
   (if msvc
       (list (string-append "libchicken." library-extension))
       '("-lchicken")))
-
-(define unsafe-libraries #f)
-
-(define unsafe-library-files
-  (list
-   (quotewrap 
-    (prefix default-unsafe-library "lib"
-	    (string-append 
-	     (if host-mode INSTALL_LIB_HOME TARGET_LIB_HOME)
-	     (string-append "/" default-unsafe-library)))) ))
-
-(define unsafe-shared-library-files
-  (if msvc
-      (list (string-append "libuchicken." library-extension))
-      '("-luchicken")))
-
-(define (use-unsafe-libraries)
-  (set! unsafe-libraries #t)
-  (set! library-files unsafe-library-files)
-  (set! shared-library-files unsafe-shared-library-files))
 
 (define library-files default-library-files)
 (define shared-library-files default-shared-library-files)
@@ -265,7 +248,7 @@
 	 (list
 	  (conc "-L\"" library-dir "\"")
 	  (conc " -Wl,-R\""
-		(if deployed
+		(if (and deployed (not netbsd))
 		    "\\$ORIGIN"
 		    (prefix "" "lib"
 			    (if host-mode
@@ -331,7 +314,7 @@ Usage: #{csc} FILENAME | OPTION ...
   Syntax related options:
 
     -i -case-insensitive           don't preserve case of read symbols    
-    -k  -keyword-style STYLE       enable alternative keyword-syntax
+    -K  -keyword-style STYLE       enable alternative keyword-syntax
                                     (prefix, suffix or none)
         -no-parentheses-synonyms   disables list delimiter synonyms
         -no-symbol-escape          disables support for escaped symbols
@@ -378,7 +361,6 @@ Usage: #{csc} FILENAME | OPTION ...
     -disable-interrupts            disable interrupts in compiled code
     -f  -fixnum-arithmetic         assume all numbers are fixnums
     -lambda-lift                   perform lambda-lifting
-    -unsafe-libraries              link with unsafe runtime system
     -disable-stack-overflow-checks disables detection of stack-overflows
     -inline                        enable inlining
     -inline-limit                  set inlining threshold
@@ -476,6 +458,8 @@ Usage: #{csc} FILENAME | OPTION ...
     -private-repository            load extensions from executable path
     -deployed                      compile support file to be used from a deployed 
                                     executable
+    -no-elevation                  embed manifest on Windows to supress elevation
+                                    warnings for programs named `install' or `setup'
 
   Options can be collapsed if unambiguous, so
 
@@ -530,12 +514,9 @@ EOF
 	     (when show-libs (print* (linker-libraries #t) #\space))
 	     (newline)
 	     (exit) )
-	   #; ;UNUSED
-	   (when (null? scheme-files)
-	     (set! scheme-files c-files)
-	     (set! c-files '()) )
 	   (cond [(null? scheme-files)
-		  (when (and (null? c-files) (null? object-files))
+		  (when (and (null? c-files) 
+			     (null? object-files))
 		    (quit "no source files specified") )
 		  (let ((f0 (last (if (null? c-files) object-files c-files))))
 		    (unless target-filename
@@ -640,10 +621,17 @@ EOF
 		(set! rest (cdr rest)) ]
 	       ((-private-repository)
 		(use-private-repository))
+	       ((-no-elevation)
+		(set! generate-manifest #t))
 	       [(-gui
 		 -windows |-W|)		;DEPRECATED
 		(set! gui #t)
 		(set! compile-options (cons "-DC_GUI" compile-options))
+		(set! object-files 
+		  (cons (make-pathname 
+			 INSTALL_SHARE_HOME "chicken.rc"
+			 object-extension) 
+			object-files))
 		(when (or msvc mingw)
 		  (cond
 		   (mingw
@@ -674,8 +662,6 @@ EOF
 	       [(|-O4|) (set! rest (cons* "-optimize-level" "4" rest))]
 	       [(|-O5|)
 		(set! rest (cons* "-optimize-level" "5" rest))
-		(t-options "-unsafe-libraries")
-		(use-unsafe-libraries)
 		(when (memq (build-platform) '(mingw32 cygwin gnu clang))
 		  (set! compile-options 
 		    (cons* "-O3" "-fomit-frame-pointer" compile-options)) ) ]
@@ -718,22 +704,18 @@ EOF
 		(check s rest)
 		(set! link-options (append link-options (string-split (car rest))))
 		(set! rest (cdr rest)) ]
-	       [(-unsafe-libraries)
-		(t-options arg)
-		(use-unsafe-libraries) ]
 	       [(-rpath)
 		(check s rest)
-		(when (memq (build-platform) '(gnu clang))
-		  (set! link-options (append link-options (list (string-append "-Wl,-R" (car rest)))))
+		(set! rpath (car rest))
+		(when (and (memq (build-platform) '(gnu clang))
+			   (not mingw))
+		  (set! link-options (append link-options (list (string-append "-Wl,-R" rpath))))
 		  (set! rest (cdr rest)) ) ]
 	       [(-host) #f]
 	       [(-) 
 		(set! target-filename (make-pathname #f "a" executable-extension))
 		(set! scheme-files (append scheme-files '("-")))]
 	       [else
-		(when (memq s '(-unsafe -benchmark-mode))
-		  (when (eq? s '-benchmark-mode)
-			(use-unsafe-libraries) ) )
 		(when (eq? s '-to-stdout) 
 		  (set! to-stdout #t)
 		  (set! translate-only #t) )
@@ -774,9 +756,12 @@ EOF
 			     [else (quit "invalid option `~A'" s)] ) ]
 		      [(file-exists? arg)
 		       (let-values ([(dirs name ext) (decompose-pathname arg)])
-			 (cond [(not ext) (set! scheme-files (append scheme-files (list arg)))]
+			 (cond [(not ext)
+				(set! scheme-files (append scheme-files (list arg)))]
 			       [(member ext '("h" "c"))
 				(set! c-files (append c-files (list arg))) ]
+			       ((string-ci=? ext "rc")
+				(set! rc-files (append rc-files (list arg))) )
 			       [(member ext '("cpp" "C" "cc" "cxx" "hpp"))
 				(when osx (set! compile-options (cons "-no-cpp-precomp" compile-options)))
 				(set! cpp-mode #t)
@@ -823,7 +808,7 @@ EOF
   (unless keep-files (for-each $delete-file generated-scheme-files)) )
 
 
-;;; Compile all C files:
+;;; Compile all C  and .rc files:
 
 (define (run-compilation)
   (let ((ofiles '()))
@@ -841,8 +826,24 @@ EOF
 	 (set! generated-object-files (cons fo generated-object-files))
 	 (set! ofiles (cons fo ofiles))))
      c-files)
+    (when (and generate-manifest (eq? 'windows (software-type)))
+      (let ((rcf (pathname-replace-extension target-filename "rc")))
+	(create-win-manifest (pathname-file target-filename) rcf)
+	(set! rc-files (cons rcf rc-files))
+	(set! generated-rc-files (cons rcf generated-rc-files))))
+    (for-each
+     (lambda (f)
+       (let ((fo (string-append f "." object-extension)))
+	 (command
+	  (string-intersperse
+	   (list rc-compiler (quotewrap f) (quotewrap fo))))
+	 (set! generated-object-files (cons fo generated-object-files))
+	 (set! ofiles (cons fo ofiles))))
+     rc-files)
     (set! object-files (append (reverse ofiles) object-files)) ; put generated object files first
-    (unless keep-files (for-each $delete-file generated-c-files)) ) )
+    (unless keep-files 
+      (for-each $delete-file generated-c-files)
+      (for-each $delete-file generated-rc-files))))
 
 (define (compiler-options)
   (string-intersperse
@@ -890,9 +891,9 @@ EOF
     (when (and osx (or (not cross-chicken) host-mode))
       (command
        (string-append
-	"install_name_tool -change lib" (if unsafe-libraries "u" "") "chicken.dylib "
+	"install_name_tool -change libchicken.dylib "
 	(quotewrap 
-	 (let ((lib (if unsafe-libraries "libuchicken.dylib" "libchicken.dylib")) )
+	 (let ((lib "libchicken.dylib"))
 	   (if deployed
 	       (make-pathname "@executable_path" lib)
 	       (make-pathname
@@ -925,9 +926,7 @@ EOF
 (define (copy-libraries targetdir)
   (let ((lib (make-pathname
 	      (lib-path) 
-	      (if unsafe-libraries
-		  "libuchicken"
-		  "libchicken")
+	      "libchicken"
 	      (cond (osx "dylib")
 		    (win "dll")
 		    (else (conc "so." BINARY_VERSION))))))
@@ -1045,6 +1044,7 @@ EOF
 	 d2)))
     (let ((pl (make-pathname d0 "Info.plist")))
       (unless (file-exists? pl)
+	(when verbose (print "generating " pl))
 	(with-output-to-file pl
 	  (cut print #<#EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -1066,6 +1066,28 @@ EOF
 EOF
 )))
       d)))
+
+(define (create-win-manifest prg rcfname)
+  (when verbose (print "generating " rcfname))
+  (with-output-to-file rcfname
+    (lambda ()
+      (print #<#EOF
+1 24 MOVEABLE PURE
+BEGIN
+  "<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>\r\n"
+  "<assembly xmlns=""urn:schemas-microsoft-com:asm.v1"" manifestVersion=""1.0"">\r\n"
+  "  <assemblyIdentity version=""1.0.0.0"" processorArchitecture=""*"" name=""#{prg}"" type=""win32""/>\r\n"
+  "  <ms_asmv2:trustInfo xmlns:ms_asmv2=""urn:schemas-microsoft-com:asm.v2"">\r\n"
+  "    <ms_asmv2:security>\r\n"
+  "      <ms_asmv2:requestedPrivileges>\r\n"
+  "        <ms_asmv2:requestedExecutionLevel level=""asInvoker"" uiAccess=""false""/>\r\n"
+  "      </ms_asmv2:requestedPrivileges>\r\n"
+  "    </ms_asmv2:security>\r\n"
+  "  </ms_asmv2:trustInfo>\r\n"
+  "</assembly>\r\n"
+END
+EOF
+) ) ) )
 
 
 ;;; Run it:

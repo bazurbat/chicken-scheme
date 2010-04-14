@@ -45,7 +45,7 @@ EXE = .exe
 
 # commands
 
-HOSTSYSTEM=mingw32
+HOSTSYSTEM ?= mingw32
 
 # options
 
@@ -63,7 +63,6 @@ C_COMPILER_SHARED_OPTIONS = -DPIC
 LINKER_LINK_SHARED_LIBRARY_OPTIONS = -shared
 LIBRARIES = -lm -lws2_32
 LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libchicken.dll.a
-LIBUCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libuchicken.dll.a
 LIBCHICKEN_SO_LIBRARIES = -lws2_32 
 LIBUCHICKEN_SO_LIBRARIES = -lws2_32 
 LIBCHICKEN_IMPORT_LIBRARY = libchicken.dll.a

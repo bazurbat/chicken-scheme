@@ -84,7 +84,7 @@
     profile inline keep-shadowed-macros ignore-repository
     fixnum-arithmetic disable-interrupts optimize-leaf-routines
     lambda-lift compile-syntax tag-pointers accumulate-profile
-    disable-stack-overflow-checks unsafe-libraries raw 
+    disable-stack-overflow-checks raw 
     emit-external-prototypes-first release local inline-global
     analyze-only dynamic scrutinize no-argc-checks no-procedure-checks
     no-bound-checks no-procedure-checks-for-usual-bindings no-compiler-syntax
@@ -125,7 +125,7 @@
 (define default-extended-bindings
   '(bitwise-and bitwise-ior bitwise-xor bitwise-not add1 sub1 fx+ fx- fx* fx/ fxmod o
     fx= fx> fx< fx>= fx<= fixnum? fxneg fxmax fxmin identity fp+ fp- fp* fp/ fpmin fpmax fpneg
-    fp> fp< fp= fp>= fp<= fxand fxnot fxior fxxor fxshr fxshl bit-set?
+    fp> fp< fp= fp>= fp<= fxand fxnot fxior fxxor fxshr fxshl bit-set? fxodd? fxeven?
     fpfloor fpceiling fptruncate fpround fpsin fpcos fptan fpasin fpacos fpatan
     fpatan2 fpexp fpexpt fplog fpsqrt fpabs fpinteger?
     arithmetic-shift void flush-output thread-specific thread-specific-set!
@@ -146,7 +146,12 @@
     u8vector-set! s8vector-set! u16vector-set! s16vector-set! u32vector-set! s32vector-set!
     locative-ref locative-set! locative->object locative? global-ref
     null-pointer? pointer->object flonum? finite? address->pointer pointer->address
-    printf sprintf format) )
+    pointer+ pointer=?
+    pointer-u8-ref pointer-s8-ref pointer-u16-ref pointer-s16-ref
+    pointer-u32-ref pointer-s32-ref pointer-f32-ref pointer-f64-ref
+    pointer-u8-set! pointer-s8-set! pointer-u16-set! pointer-s16-set!
+    pointer-u32-set! pointer-s32-set! pointer-f32-set! pointer-f64-set!
+    printf sprintf format get-keyword) )
 
 (define internal-bindings
   '(##sys#slot ##sys#setslot ##sys#block-ref ##sys#block-set!
@@ -158,7 +163,7 @@
     ##sys#fudge ##sys#immediate? ##sys#direct-return ##sys#context-switch
     ##sys#make-structure ##sys#apply ##sys#apply-values ##sys#continuation-graft
     ##sys#bytevector? ##sys#make-vector ##sys#setter ##sys#car ##sys#cdr ##sys#pair?
-    ##sys#eq? ##sys#list? ##sys#vector? ##sys#eqv?
+    ##sys#eq? ##sys#list? ##sys#vector? ##sys#eqv? ##sys#get-keyword
     ##sys#foreign-char-argument ##sys#foreign-fixnum-argument ##sys#foreign-flonum-argument
     ##sys#foreign-block-argument ##sys#foreign-number-vector-argument
     ##sys#foreign-string-argument ##sys#foreign-pointer-argument ##sys#void
@@ -181,7 +186,7 @@
     s32vector->blob/shared read-string read-string! o
     address->pointer pointer->address
     ##sys#make-structure print* ##sys#make-vector ##sys#apply ##sys#setislot ##sys#block-ref
-    ##sys#byte ##sys#setbyte 
+    ##sys#byte ##sys#setbyte ##sys#get-keyword get-keyword
     u8vector-length s8vector-length u16vector-length s16vector-length u32vector-length s32vector-length
     f32vector-length f64vector-length ##sys#apply-values ##sys#setter setter
     f32vector-set! f64vector-set!
@@ -780,10 +785,11 @@
 (rewrite 'odd? 14 'fixnum 1 "C_i_fixnumoddp" "C_i_fixnumoddp")
 (rewrite 'remainder 14 'fixnum 2 "C_fixnum_modulo" "C_fixnum_modulo")
 
-(rewrite 'even? 2 1 "C_i_evenp" #t)
-(rewrite 'even? 2 1 "C_u_i_evenp" #f)
-(rewrite 'odd? 2 1 "C_i_oddp" #t)
-(rewrite 'odd? 2 1 "C_u_i_oddp" #f)
+(rewrite 'even? 17 1 "C_i_evenp" "C_u_i_evenp")
+(rewrite 'odd? 17 1 "C_i_oddp" "C_u_i_oddp")
+
+(rewrite 'fxodd? 2 1 "C_fixnumoddp" #t)
+(rewrite 'fxeven? 2 1 "C_fixnumevenp" #t)
 
 (rewrite 'floor 15 'flonum 'fixnum 'fpfloor #f)
 (rewrite 'ceiling 15 'flonum 'fixnum 'fpceiling #f)
@@ -817,6 +823,25 @@
 (rewrite 'string 16 #f "C_a_i_string" #t #t) ; the last #t is actually too much, but we don't care
 (rewrite 'address->pointer 16 1 "C_a_i_address_to_pointer" #f 2)
 (rewrite 'pointer->address 16 1 "C_a_i_pointer_to_address" #f words-per-flonum)
+(rewrite 'pointer+ 16 2 "C_a_u_i_pointer_inc" #f 2)
+
+(rewrite 'pointer-u8-ref 2 1 "C_u_i_pointer_u8_ref" #f)
+(rewrite 'pointer-s8-ref 2 1 "C_u_i_pointer_s8_ref" #f)
+(rewrite 'pointer-u16-ref 2 1 "C_u_i_pointer_u16_ref" #f)
+(rewrite 'pointer-s16-ref 2 1 "C_u_i_pointer_s16_ref" #f)
+(rewrite 'pointer-u8-set! 2 2 "C_u_i_pointer_u8_set" #f)
+(rewrite 'pointer-s8-set! 2 2 "C_u_i_pointer_s8_set" #f)
+(rewrite 'pointer-u16-set! 2 2 "C_u_i_pointer_u16_set" #f)
+(rewrite 'pointer-s16-set! 2 2 "C_u_i_pointer_s16_set" #f)
+(rewrite 'pointer-u32-set! 2 2 "C_u_i_pointer_u32_set" #f)
+(rewrite 'pointer-s32-set! 2 2 "C_u_i_pointer_s32_set" #f)
+(rewrite 'pointer-f32-set! 2 2 "C_u_i_pointer_f32_set" #f)
+(rewrite 'pointer-f64-set! 2 2 "C_u_i_pointer_f64_set" #f)
+
+(rewrite 'pointer-u32-ref 16 1 "C_a_u_i_pointer_u32_ref" #f words-per-flonum)
+(rewrite 'pointer-s32-ref 16 1 "C_a_u_i_pointer_s32_ref" #f words-per-flonum)
+(rewrite 'pointer-f32-ref 16 1 "C_a_u_i_pointer_f32_ref" #f words-per-flonum)
+(rewrite 'pointer-f64-ref 16 1 "C_a_u_i_pointer_f64_ref" #f words-per-flonum)
 
 (rewrite
  '##sys#setslot 8
@@ -1083,3 +1108,6 @@
 (rewrite 'substring-ci=? 23 2 '##sys#substring-ci=? 0 0 #f)
 (rewrite 'substring-index 23 2 '##sys#substring-index 0)
 (rewrite 'substring-index-ci 23 2 '##sys#substring-index-ci 0)
+
+(rewrite 'get-keyword 7 2 "C_i_get_keyword" #f #t)
+(rewrite '##sys#get-keyword 7 2 "C_i_get_keyword" #f #t)

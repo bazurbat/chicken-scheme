@@ -51,14 +51,11 @@
     *hash-table-for-each *hash-table-fold
     hash-table-canonical-length hash-table-rehash! hash-table-check-resize! ) )
 
-(cond-expand
- [unsafe]
- [else
-   (declare
-     (bound-to-procedure
-       ##sys#check-string ##sys#check-symbol
-       ##sys#check-exact ##sy#check-inexact
-       ##sys#check-closure ##sys#check-structure ) ) ] )
+(declare
+  (bound-to-procedure
+   ##sys#check-string ##sys#check-symbol
+   ##sys#check-exact ##sy#check-inexact
+   ##sys#check-closure ##sys#check-structure ) )
 
 (include "unsafe-declarations.scm")
 

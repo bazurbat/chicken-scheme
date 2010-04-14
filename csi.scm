@@ -64,6 +64,7 @@ EOF
 
 (set! ##sys#repl-print-length-limit 2048)
 (set! ##sys#features (cons #:csi ##sys#features))
+(set! ##sys#notices-enabled #t)
 
 
 ;;; Print all sorts of information:
@@ -497,16 +498,22 @@ EOF
 	     (##sys#write-char-0 #\newline ##sys#standard-output) ]
 	    [(eq? x (##sys#slot '##sys#arbitrary-unbound-symbol 0))
 	     (fprintf out "unbound value~%") ]
-	    [(##sys#number? x) (fprintf out "number ~S~%" x)]
+	    [(flonum? x) (fprintf out "inexact number ~S~%" x)]
+	    [(number? x) (fprintf out "number ~S~%" x)]
 	    [(string? x) (descseq "string" ##sys#size string-ref 0)]
 	    [(vector? x) (descseq "vector" ##sys#size ##sys#slot 0)]
 	    [(symbol? x)
-	     (unless (##sys#symbol-has-toplevel-binding? x) (display "unbound " out))
+	     (unless (##sys#symbol-has-toplevel-binding? x)
+	       (display "unbound " out))
 	     (when (and (symbol? x) (fx= 0 (##sys#byte (##sys#slot x 1) 0)))
 	       (display "keyword " out) )
-	     (fprintf out "~asymbol with name ~S~%"
-		      (if (##sys#interned-symbol? x) "" "uninterned ")
-		      (##sys#symbol->string x))
+	     (let ((q (##sys#qualified-symbol? x)))
+	       (fprintf out "~a~asymbol with name ~S~%"
+		 (if (##sys#interned-symbol? x) "" "uninterned ")
+		 (if q "qualified " "")
+		 (if q 
+		     (##sys#symbol->qualified-string x)
+		     (##sys#symbol->string x))))
 	     (let ((plist (##sys#slot x 2)))
 	       (unless (null? plist)
 		 (display "  \nproperties:\n\n" out)
@@ -774,7 +781,8 @@ EOF
 	  (do ([x (read in) (read in)])
 	      ((eof-object? x))
 	    (rec (receive (eval x))) ) ) )
-      (when quietflag (set! ##sys#eval-debug-level 0))
+      (when quietflag
+	(set! ##sys#eval-debug-level 0))
       (when (member* '("-h" "-help" "--help") args)
 	(print-usage)
 	(exit 0) )
@@ -827,6 +835,8 @@ EOF
 	(parentheses-synonyms #f)
 	(symbol-escape #f) )
       (unless (or (member* '("-n" "-no-init") args) script) (loadinit))
+      (when batch 
+	(set! ##sys#notices-enabled #f))
       (do ([args args (cdr args)])
 	  ((null? args)
 	   (unless batch 
@@ -854,9 +864,18 @@ EOF
 		    arg 
 		    (and (equal? "-sx" scr)
 			 (lambda (x)
-			   (pretty-print x ##sys#standard-error)
-			   (newline ##sys#standard-error)
-			   (eval x)))
+			   (let* ((str (with-output-to-string (cut pretty-print x)))
+				  (len (string-length str)))
+			     (flush-output ##sys#standard-output)
+			     (display "\n; " ##sys#standard-error)
+			     (do ((i 0 (fx+ i 1)))
+				 ((fx>= i len))
+			       (let ((c (string-ref str i)))
+				 (write-char c ##sys#standard-error)
+				 (when (char=? #\newline c)
+				   (display "; " ##sys#standard-error))))
+			     (newline ##sys#standard-error)
+			     (eval x))))
 		    #f)
 		   (when (equal? "-ss" scr)
 		     (call-with-values (cut main (command-line-arguments))

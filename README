@@ -3,7 +3,7 @@
   (c) 2008-2009, The Chicken Team
   (c) 2000-2007, Felix L. Winkelmann
 
-  version 4.4.0rc1
+  version 4.5.0rc1
 
 
  1. Introduction:
@@ -76,16 +76,12 @@
         "make" invocation to override this setting. "CHICKEN" defaults
         to "$PREFIX/bin/chicken".
 
-        If you do not have a "chicken" binary installed, enter
+        If you do not have a "chicken" binary installed, you will have
+	to obtain a "bootstrapping" compiler, which can either be
+	built from a release tarball or by using a precompiled and
+	statically linked compiler binary from here:
 
-          make PLATFORM=<platform> PREFIX=<destination> bootstrap
-
-        which will copy precompiled C sources into the build-directory
-        that are recent enough to generate the current version. After
-        building a statically linked compiler executable (named
-        "chicken-boot") all *.scm files are marked for rebuild. By
-        passing "CHICKEN=./chicken-boot" to "make", you can force
-        using this bootstrapped compiler to build the system.
+	  http://chicken.wiki.br/chicken-projects/bootstrap/
 
         If CHICKEN is build successfully, you can install it on your
         system by entering
@@ -284,10 +280,11 @@
 
 	      make PLATFORM=macosx ARCH=universal
 
-	    On Leopard (10.5), an extra step is required before `make':
+	    On Leopard (10.5), an extra step is required before `make',
+	    and you must be sure to use GCC 4.0:
 
 	      export MACOSX_DEPLOYMENT_TARGET=10.4
-	      make PLATFORM=macosx ARCH=universal
+	      make C_COMPILER=gcc-4.0 PLATFORM=macosx ARCH=universal
 
 	  - On Mac OS X, Chicken can be built in 64-bit mode on Intel
 	    Core 2 Duo systems--basically, most recent machines.  The default

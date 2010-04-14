@@ -109,7 +109,6 @@
  emit-profile
  emit-syntax-trace-info
  emit-trace-info
- emit-unsafe-marker
  enable-inline-files
  encode-literal
  eq-inline-operator
@@ -132,7 +131,6 @@
  external-protos-first
  external-to-pointer
  external-variables
- extract-mutable-constants
  file-io-only
  file-requirements
  final-foreign-type
@@ -172,6 +170,7 @@
  immediate?
  immutable-constants
  import-libraries
+ read-info-hook
  initialize-analysis-database
  initialize-compiler
  inline-globally
@@ -195,8 +194,7 @@
  load-type-database
  local-definitions
  location-pointer-map
- loop-lambda-names
- make-argument-list
+  make-argument-list
  make-block-variable-literal
  make-random-name
  make-variable-list
@@ -231,7 +229,6 @@
  print-version
  process-command-line
  process-declaration
- process-lambda-documentation
  profile-info-vector-name
  profile-lambda-index
  profile-lambda-list
@@ -239,6 +236,7 @@
  put!
  qnode
  r-c-s
+ read/source-info
  real-name
  real-name-table
  real-name2
@@ -261,8 +259,8 @@
  simplify-named-call
  sort-symbols
  source-filename
- source-info->line
  source-info->string
+ source-info->line
  standalone-executable
  string->c-identifier
  string->expr

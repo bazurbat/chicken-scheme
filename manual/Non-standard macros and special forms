@@ -397,6 +397,11 @@ and updated using {{(NAME-SLOTNAME-set!}} {{STRUCT}} {{VALUE)}}.
 SRFI-9 record types. For more information see the documentation for
 [[http://srfi.schemers.org/srfi-9/srfi-9.html|SRFI-9]].
 
+As an extension the {{MODIFIER}} may have the form {{(setter PROCEDURE)}},
+which will define a SRFI-17 setter-procedure for the given {{PROCEDURE}}
+that sets the field value. Usually {{PROCEDURE}} has the same name
+is {{ACCESSOR}} (but it doesn't have to).
+
 
 ==== define-record-printer
 

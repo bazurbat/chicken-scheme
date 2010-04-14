@@ -123,17 +123,6 @@
 	   (newline))
 	 xs) ) )
 
-    (define (infohook class data val)
-      (let ([data2 ((or ##sys#default-read-info-hook (lambda (a b c) b)) class data val)])
-	(when (and (eq? 'list-info class) (symbol? (car data2)))
-	  (##sys#hash-table-set!
-	   ##sys#line-number-database
-	   (car data2)
-	   (alist-cons data2 val
-		       (or (##sys#hash-table-ref ##sys#line-number-database (car data2))
-			   '() ) ) ) )
-	data2) )
-
     (define (arg-val str)
       (let* ((len (string-length str))
 	     (len1 (- len 1)) )
@@ -156,9 +145,6 @@
     (define (end-time pass)
       (when time-breakdown
 	(printf "milliseconds needed for ~a: \t~s~%" pass (- (cputime) time0)) ) )
-
-    (define (read-form in)
-      (##sys#read in infohook) )
 
     (define (analyze pass node . args)
       (let-optionals args ((no 0) (contf #t))
@@ -213,14 +199,14 @@
       (set! inline-locally #t)
       (set! inline-globally #t))
     (set! disabled-warnings (map string->symbol (collect-options 'disable-warning)))
+    (when (or verbose do-scrutinize)
+      (set! ##sys#notices-enabled #t))
     (when (memq 'no-warnings options) 
       (dribble "Warnings are disabled")
       (set! ##sys#warnings-enabled #f) )
     (when (memq 'optimize-leaf-routines options) (set! optimize-leaf-routines #t))
     (when (memq 'unsafe options) 
       (set! unsafe #t) )
-    (when (and dynamic (memq 'unsafe-libraries options))
-      (set! emit-unsafe-marker #t) )
     (when (memq 'setup-mode options)
       (set! ##sys#setup-mode #t))
     (when (memq 'disable-interrupts options) (set! insert-timer-checks #f))
@@ -412,11 +398,13 @@
 			(let* ((f (car files))
 			       (in (check-and-open-input-file f)) )
 			  (fluid-let ((##sys#current-source-filename f))
-			    (let ((x1 (read-form in)) )
-			      (do ((x x1 (read-form in)))
-				  ((eof-object? x) 
-				   (close-checked-input-file in f) )
-				(set! forms (cons x forms)) ) ) ) ) ) ] ) ) )
+			    (let loop ()
+			      (let ((x (read/source-info in)))
+				(cond ((eof-object? x) 
+				       (close-checked-input-file in f) )
+				      (else
+				       (set! forms (cons x forms))
+				       (loop)))))))) ] ) ) )
 
 	   ;; Start compilation passes:
 	   (let ([proc (user-preprocessor-pass)])
@@ -427,7 +415,8 @@
 	   (print-expr "source" '|1| forms)
 	   (begin-time)
 	   (unless (null? uses-units)
-	     (set! ##sys#explicit-library-modules (append ##sys#explicit-library-modules uses-units))
+	     (set! ##sys#explicit-library-modules
+	       (append ##sys#explicit-library-modules uses-units))
 	     (set! forms (cons `(declare (uses ,@uses-units)) forms)) )
 	   (let* ([exps0 (map canonicalize-expression (append initforms forms))]
 		  [pvec (gensym)]
@@ -464,12 +453,8 @@
 	       (display-line-number-database) )
 
 	     (when (and unit-name dynamic)
-	       (compiler-warning 'usage "library unit `~a' compiled in dynamic mode" unit-name) )
-
-	     (when (and unsafe (feature? 'compiling-extension))
-	       (compiler-warning 
-		'style
-		"compiling extensions in unsafe mode is bad practice and should be avoided") )
+	       (##sys#notice 
+		(sprintf "library unit `~a' compiled in dynamic mode" unit-name) ) )
 
 	     (set! ##sys#line-number-database line-number-database-2)
 	     (set! line-number-database-2 #f)
@@ -612,7 +597,7 @@
 				       (> (- (cputime) start-time) funny-message-timeout))
 			      (display "(don't worry - still compiling...)\n") )
 			    (print-node "closure-converted" '|9| node2)
-			    (when unbox
+			    (when (and unbox unsafe)
 			      (debugging 'p "performing unboxing")
 			      (begin-time)
 			      (perform-unboxing! node2)

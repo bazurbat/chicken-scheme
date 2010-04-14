@@ -1,5 +1,8 @@
 #!/bin/sh
-# runtests.sh
+# runtests.sh - run CHICKEN testsuite
+#
+# - Note: this needs a proper shell, so it will not work with plain mingw
+#   (just the compiler and the Windows shell, without MSYS)
 
 set -e
 TEST_DIR=`pwd`
@@ -27,6 +30,8 @@ CHICKEN=../chicken
 
 if test -n "$MSYSTEM"; then
     CHICKEN="..\\chicken.exe"
+    # make compiled tests use proper library on Windows
+    cp ../libchicken.dll .
 fi
 
 compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
@@ -61,7 +66,7 @@ if test \! -f scrutiny.expected; then
     cp scrutiny.out scrutiny.expected
 fi
 
-diff -u scrutiny.out scrutiny.expected || true
+diff -u scrutiny.out scrutiny.expected
 
 echo "======================================== runtime tests ..."
 $interpret -s apply-test.scm
@@ -70,6 +75,9 @@ $compile test-gc-hooks.scm
 
 echo "======================================== library tests ..."
 $interpret -s library-tests.scm
+$interpret -s records-and-setters-test.scm
+$compile records-and-setters-test.scm
+./a.out
 
 echo "======================================== syntax tests ..."
 $interpret -s syntax-tests.scm
@@ -118,12 +126,25 @@ $interpret matchable.scm -s match-test.scm
 echo "======================================== syntax tests (loopy-loop) ..."
 $interpret -s loopy-test.scm
 
+echo "======================================== r4rstest ..."
+echo "(expect mult-float-print-test to fail)"
+$interpret -e '(set! ##sys#procedure->string (constantly "#<procedure>"))' \
+  -i -s r4rstest.scm >r4rstest.log
+
+if test -n "$MSYSTEM"; then
+    # the windows runtime library prints flonums differently
+    tail r4rstest.log
+else
+    diff -bu r4rstest.out r4rstest.log
+fi
+
 echo "======================================== syntax tests (r5rs_pitfalls) ..."
 echo "(expect two failures)"
 $interpret -i -s r5rs_pitfalls.scm
 
 echo "======================================== module tests ..."
 $interpret -include-path .. -s module-tests.scm
+$interpret -include-path .. -s module-tests-2.scm
 
 echo "======================================== module tests (compiled) ..."
 $compile module-tests-compiled.scm
@@ -164,7 +185,7 @@ $interpret -s srfi-4-tests.scm
 
 echo "======================================== srfi-18 tests ..."
 $interpret -s srfi-18-tests.scm
-echo "*** Skipping \"feeley-dynwind\" (for now) ***"
+echo "*** Skipping \"feeley-dynwind\" for now ***"
 # $interpret -s feeley-dynwind.scm
 
 echo "======================================== path tests ..."
@@ -176,18 +197,7 @@ $compile posix-tests.scm
 
 echo "======================================== regular expression tests ..."
 $interpret -bnq test-irregex.scm
-
-echo "======================================== r4rstest ..."
-echo "(expect mult-float-print-test to fail)"
-$interpret -e '(set! ##sys#procedure->string (constantly "#<procedure>"))' \
-  -i -s r4rstest.scm >r4rstest.log
-
-if test -n "$MSYSTEM"; then
-    # the windows runtime library prints flonums differently
-    tail r4rstest.log
-else
-    diff -bu r4rstest.out r4rstest.log || true
-fi
+$interpret -bnq test-glob.scm
 
 echo "======================================== compiler/nursery stress test ..."
 for s in 100000 120000 200000 250000 300000 350000 400000 450000 500000; do
@@ -209,6 +219,9 @@ $compile test-finalizers-2.scm
 echo "======================================== locative stress test ..."
 $compile locative-stress-test.scm
 ./a.out
+
+echo "======================================== syntax-rules stress test ..."
+time $interpret -bnq syntax-rule-stress-test.scm
 
 echo "======================================== embedding (1) ..."
 $compile embedded1.c

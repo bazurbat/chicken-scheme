@@ -899,16 +899,16 @@ EOF
 (define change-directory
   (lambda (name)
     (##sys#check-string name 'change-directory)
-    (let ((name (##sys#make-c-string (##sys#expand-home-path name))))
-      (unless (fx= 0 (##core#inline "C_chdir" name))
+    (let ((sname (##sys#make-c-string (##sys#expand-home-path name))))
+      (unless (fx= 0 (##core#inline "C_chdir" sname))
 	(posix-error #:file-error 'change-directory "cannot change current directory" name) )
       name)))
 
 (define delete-directory
   (lambda (name)
     (##sys#check-string name 'delete-directory)
-    (let ((name (##sys#make-c-string (##sys#expand-home-path name))))
-      (unless (fx= 0 (##core#inline "C_rmdir" name))
+    (let ((sname (##sys#make-c-string (##sys#expand-home-path name))))
+      (unless (fx= 0 (##core#inline "C_rmdir" sname))
 	(posix-error #:file-error 'delete-directory "cannot delete directory" name) )
       name)))
 
@@ -2084,13 +2084,13 @@ EOF
       (##sys#terminal-check 'terminal-size port)
       (let-location ((columns int)
 		     (rows int))
-		    (if (fx= 0
-			     (ttysize (##core#inline "C_C_fileno" port)
-				      (location columns)
-				      (location rows)))
-			(values columns rows)
-			(posix-error #:error 'terminal-size
-				     "Unable to get size of terminal" port))))))
+	(if (fx= 0
+		 (ttysize (##core#inline "C_C_fileno" port)
+			  (location columns)
+			  (location rows)))
+	    (values columns rows)
+	    (posix-error #:error 'terminal-size
+			 "Unable to get size of terminal" port))))))
   
 (define get-host-name
   (let ([getit

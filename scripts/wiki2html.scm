@@ -154,7 +154,7 @@
 		  (push-tag `(ol . ,(string-length (second m))) out)
 		  (set! *list-continuation* #t)
 		  (fprintf out "<li>~a~%" (inline (third m)))))
-	       (else (error "unknown block match" m))´)
+	       (else (error "unknown block match" m)))
 	 (loop))))))
 
 
