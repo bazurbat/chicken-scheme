@@ -45,6 +45,7 @@
      install-extension install-program install-script
      setup-verbose-mode setup-install-mode deployment-mode
      installation-prefix
+     destination-prefix
      chicken-prefix 			;XXX remove at some stage from exports
      find-library find-header 
      program-path remove-file* 
@@ -426,12 +427,12 @@
 (define (make-setup-info-pathname fn #!optional (rpath (repository-path)))
   (make-pathname rpath fn setup-file-extension) )
 
-(define installation-prefix (make-parameter #f))
+(define destination-prefix (make-parameter #f))
 
-(define real-installation-prefix
+(define installation-prefix
   (let ((prefix (get-environment-variable "CHICKEN_INSTALL_PREFIX")))
     (lambda ()
-      (or (installation-prefix)
+      (or (destination-prefix)
 	  prefix
 	  chicken-prefix))))
 
@@ -461,7 +462,7 @@
 	    (else (with-output-to-file setup-file (cut pp info))))
       (unless *windows-shell* (run (,*chmod-command* a+r ,(shellpath setup-file)))))))
 
-(define (copy-file from to #!optional (err #t) (prefix (real-installation-prefix)))
+(define (copy-file from to #!optional (err #t) (prefix (installation-prefix)))
   ;;XXX the prefix handling is completely bogus
   (let ((from (if (pair? from) (car from) from))
 	(to (let ((to-path (if (pair? from) (make-pathname to (cadr from)) to)))
@@ -564,7 +565,7 @@
      (if *windows-shell* "exe" #f) ) )
   (when (setup-install-mode)
     (let* ((files (check-filelist (if (list? files) files (list files))))
-	   (pre (real-installation-prefix))
+	   (pre (installation-prefix))
 	   (ppath (ensure-directory (make-pathname pre "bin")))
 	   (files (if *windows*
                       (map (lambda (f)
@@ -586,7 +587,7 @@
 (define (install-script id files #!optional (info '()))
   (when (setup-install-mode)
     (let* ((files (check-filelist (if (list? files) files (list files))))
-	   (pre (real-installation-prefix))
+	   (pre (installation-prefix))
 	   (ppath (ensure-directory (make-pathname pre "bin")))
 	   (pfiles (map (lambda (f)
 			  (let ((from (if (pair? f) (car f) f))
@@ -606,8 +607,8 @@
 (define (repo-path #!optional ddir?)
   (let ((p (if ddir?
 	       (if (deployment-mode)
-		   (real-installation-prefix) ; deploy: copy directly into destdir
-		   (let ((p (installation-prefix)))
+		   (installation-prefix) ; deploy: copy directly into destdir
+		   (let ((p (destination-prefix)))
 		     (if p		; installation-prefix changed: use it
 			 (make-pathname 
 			  p

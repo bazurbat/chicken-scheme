@@ -361,7 +361,7 @@
      (if (and *no-install* (not dep?)) " -e \"(setup-install-mode #f)\"" "")
      (if *host-extension* " -e \"(host-extension #t)\"" "")
      (if *prefix* 
-	 (sprintf " -e \"(installation-prefix \\\"~a\\\")\"" 
+	 (sprintf " -e \"(destination-prefix \\\"~a\\\")\"" 
 	   (normalize-pathname *prefix* 'unix))
 	 "")
      (if *deploy* " -e \"(deployment-mode #t)\"" "")
