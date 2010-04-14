@@ -272,10 +272,10 @@ The installation prefix specified when CHICKEN was built.
 
 ==== installation-prefix
 
-<parameter>installation-prefix</parameter>
+<procedure>(installation-prefix)</procedure>
 
 An alternative installation prefix that will be prepended to extension
-installation paths if specified. It is set by the {{-install-prefix}}
+installation paths if specified. It is set by the {{-prefix}}
 option or environment variable {{CHICKEN_INSTALL_PREFIX}}.
 
 ==== program-path
