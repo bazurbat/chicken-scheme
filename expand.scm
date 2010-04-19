@@ -369,11 +369,11 @@
 			     `((,%let*
 				,(map (lambda (k)
 					(let ([s (car k)])
-					  `(,s (##sys#get-keyword 
+					  `(,s (##sys#get-keyword
 						',(->keyword s) ,rvar
 						,@(if (pair? (cdr k)) 
 						      `((,%lambda () ,@(cdr k)))
-						      '() ) ) ) ) )
+						      '())))))
 				      (reverse key) )
 				,@body) ) ) ] )
 		    (cond [(null? opt) body]
@@ -594,10 +594,47 @@
 
 (define ##sys#line-number-database #f)
 (define ##sys#syntax-error-culprit #f)
+(define ##sys#unimported-syntax-context #f)
 
 (define (##sys#syntax-error-hook . args)
   (apply ##sys#signal-hook #:syntax-error
 	 (##sys#strip-syntax args)))
+
+(define ##sys#syntax-error/context
+  (let ((open-output-string open-output-string)
+	(get-output-string get-output-string))
+    (lambda (msg arg)
+      (cond (##sys#unimported-syntax-context 
+	     =>
+	     (lambda (cx)
+	       (let* ((cx (##sys#strip-syntax cx))
+		      (a (##sys#get cx '##core#db))
+		      (out (open-output-string)))
+		 (##sys#print msg #f out)
+		 (##sys#print ": " #f out)
+		 (##sys#print arg #t out)
+		 (##sys#print "\n\nPerhaps you intended to use the syntax `" #f out)
+		 (##sys#print cx #f out)
+		 (##sys#print "' without importing it first.\n" #f out)
+		 (if (= 1 (length a))
+		     (##sys#print 
+		      (string-append
+		       "Suggesting: `(import "
+		       (symbol->string (cadar a))
+		       ")'")
+		      #f out)
+		     (##sys#print
+		      (string-append
+		       "Suggesting one of:\n"
+		       (let loop ((lst a))
+			 (if (null? lst)
+			     ""
+			     (string-append
+			      "\n    (import " (symbol->string (cadar lst)) ")"
+			      (loop (cdr lst))))))
+		      #f out))
+		 (##sys#syntax-error-hook (get-output-string out)))))
+	    (else (##sys#syntax-error-hook msg arg))))))
 
 (define syntax-error ##sys#syntax-error-hook)
 
@@ -911,13 +948,13 @@
 		  (set! prims (cons imp prims)))
 		(and-let* ((a (assq id (import-env)))
 			   ((not (eq? aid (cdr a)))))
-		  (##sys#warn "re-importing already imported identifier" id))))
+		  (##sys#notice "re-importing already imported identifier" id))))
 	    vsv)
 	   (for-each
 	    (lambda (imp)
 	      (and-let* ((a (assq (car imp) (macro-env)))
 			 ((not (eq? (cdr imp) (cdr a)))))
-		(##sys#warn "re-importing already imported syntax" (car imp))) )
+		(##sys#notice "re-importing already imported syntax" (car imp))) )
 	    vss)
 	   (when reexp?
 	     (unless cm
@@ -1141,7 +1178,7 @@
 		     (expand rclauses #t)
 		     `(##core#begin ,@(cdr clause)))
 		    (else?
-		     (##sys#warn 
+		     (##sys#notice
 		      "non-`else' clause following `else' clause in `cond'"
 		      (##sys#strip-syntax clause))
 		     (expand rclauses #t)
@@ -1191,7 +1228,7 @@
 			   (expand rclauses #t)
 			   `(##core#begin ,@(cdr clause)) )
 			  (else?
-			   (##sys#warn 
+			   (##sys#notice
 			    "non-`else' clause following `else' clause in `case'"
 			    (##sys#strip-syntax clause))
 			   (expand rclauses #t)
@@ -1524,9 +1561,9 @@
 
 (define (check-for-redef sym env senv)
   (and-let* ((a (assq sym env)))
-    (##sys#warn "redefinition of imported value binding" sym) )
+    (##sys#notice "redefinition of imported value binding" sym) )
   (and-let* ((a (assq sym senv)))
-    (##sys#warn "redefinition of imported syntax binding" sym)))
+    (##sys#notice "redefinition of imported syntax binding" sym)))
 
 (define (##sys#register-export sym mod)
   (when mod
@@ -1824,7 +1861,7 @@
 		   (if (null? lst)
 		       ""
 		       (string-append
-			"Warning:     `(import " (symbol->string (cadar lst)) ")'\n"
+			"Warning:     (import " (symbol->string (cadar lst)) ")\n"
 			(loop (cdr lst)))))))))))
      (module-undefined-list mod))
     (when missing

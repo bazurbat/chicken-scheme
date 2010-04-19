@@ -266,10 +266,10 @@ Creates the directory given in the string {{PATH}}, with all parent directories 
 
 ==== installation-prefix
 
-<parameter>installation-prefix</parameter>
+<procedure>(installation-prefix)</procedure>
 
 An alternative installation prefix that will be prepended to extension
-installation paths if specified. It is set by the {{-install-prefix}}
+installation paths if specified. It is set by the {{-prefix}}
 option or environment variable {{CHICKEN_INSTALL_PREFIX}}.
 
 ==== program-path
@@ -327,6 +327,8 @@ macro.
 
 === Examples for extensions
 
+==== A simple library
+
 The simplest case is a single file that does not export any syntax. For example
 
 <enscript highlight=scheme>
@@ -378,11 +380,13 @@ execute the any files with the {{.setup}} extension it can find.
 Use it like any other CHICKEN extension:
 
  $ csi -q
- #;1> (require-extension hello)
+ #;1> (require-library hello)
  ; loading /usr/local/lib/chicken/4/hello.so ...
  #;2> (hello "me")
  Hello, me!
  #;3>
+
+==== An application
 
 Here we create a simple application:
 
@@ -424,10 +428,112 @@ normally be {{/usr/local/bin}}.  Note that you need write-permissions
 for those locations and may have to run {{chicken-install}} with
 administrative rights or use the {{-sudo}} option.
 
+The extension can be used from the command line:
+
+ $ hello2 one two three
+ Hello, 
+ one two three !
+
 De-installation is just as easy - use the {{chicken-uninstall}}
 program to remove one or more extensions from the local repository:
 
  $ chicken-uninstall hello2
+
+==== A module exporting syntax
+
+The hello module was just a shared library, and not a module.
+
+To create an extension that exports syntax see the chapter on
+[[http://chicken.wiki.br/man/4/Modules%20and%20macros|Modules and
+macros]].  We will show a simple example here: a module {{my-lib}}
+that exports one macro ({{prog1}}) and one procedure ({{my-sum}}):
+
+<enscript highlight=scheme>
+;;; my-lib.scm
+
+(module my-lib
+  *
+  (import scheme chicken)
+
+(define-syntax prog1
+  (syntax-rules ()
+    ((_ e1 e2 ...)
+     (let ((result e1))
+       (begin e2 ...)
+       result))))
+
+(define my-sum
+  (lambda (numbers)
+    (prog1
+      (apply + numbers)
+      (display "my-sum used one more time!")
+      (newline))))
+
+)
+</enscript>
+
+The {{prog1}} macro is similar to Common Lisp's {{prog1}}: it
+evaluates a list of forms, but returns the value of the first form.
+
+The meta file:
+
+<enscript highlight=scheme>
+;;; my-lib.meta
+
+((files "my-lib.setup"
+        "my-lib.scm")
+ (licence "BSD")
+ (author "Me again")
+ (synopsis "My own cool libraries"))
+</enscript>
+
+The setup file is:
+
+<enscript highlight=scheme>
+;;; my-lib.setup
+
+(compile -s -O3 -d1 "my-lib.scm" -j my-lib)
+(compile -c -O3 -d1 "my-lib.scm" -unit my-lib)
+(compile -s -O3 -d0 "my-lib.import.scm")
+
+(install-extension
+ 'my-lib
+ '("my-lib.o" "my-lib.so" "my-lib.import.so")
+ '((version 1.0)
+   (static "my-lib.o")))
+</enscript>
+
+The first line tells the compiler to create a shared ({{-s}}) library
+and to create an import file ({{my-lib.import.scm}}, because of the
+{{-j}} flag).  The second line creates a static library
+{{my-lib.o}}. The third line compiles the import file created by the
+first one.
+
+IMPORTANT: the module name exported by my-lib.scm must be the same
+module name passed to the compiler using the -j option, otherwise the
+imports file will not be generated!
+
+Running {{chicken-install}} on the same directory will install the extension.
+
+Next, it should be possible to load the library:
+
+ $ csi -q
+ #;1> (use my-lib)
+ ; loading /usr/local/lib/chicken/5/my-lib.import.so ...
+ ; loading /usr/local/lib/chicken/5/scheme.import.so ...
+ ; loading /usr/local/lib/chicken/5/chicken.import.so ...
+ ; loading /usr/local/lib/chicken/5/my-lib.so ...
+ #;2> (my-sum '(10 20 30))
+ my-sum used one more time!
+ 60
+ #;3> (my-sum '(-1 1 0))
+ my-sum used one more time!
+ 0
+ #;4> (prog1 (+ 2 2) (print "---"))
+ ---
+ 4
+
+==== Notes on chicken-install
 
 When running {{chicken-install}} with an argument {{NAME}}, for which
 no associated {{.setup}} file exists, then it will try to download the
@@ -494,16 +600,59 @@ code is going to be evaluated. When {{chicken-install}} is run as
 extension mechanism).
 
 Security-conscious users should never run {{chicken-install}} as root.
-A simple remedy is to set the environment variable
-{{CHICKEN_REPOSITORY}}, which will transparently place the repository
-at an arbitrary user-selected location (don't forget to initialize it
-first with {{chicken-install -init <directory>}}).  Alternatively
-obtain write/execute access to the default location of the repository
+A simple remedy is to keep the repository inside a user's home
+directory (see the section "Changing repository location" below).
+Alternatively obtain write/execute access to the default location of the repository
 (usually {{/usr/local/lib/chicken}}) to avoid running as
 root. {{chicken-install}} also provides a {{-sudo}} option to perform
 the last installation steps as root user, but do building and other
-.setup script processing as normal.
+.setup script processing as normal. A third solution is to 
+override {{VARDIR}} when building the system
+(for example by passing {{"VARDIR=/foo/bar"}} on the make command line,
+or by modifying {{config.make}}. Eggs will then be installed in
+{{$(VARDIR)/chicken/5}}.
 
+=== Changing repository location
+
+When Chicken is installed a repository for eggs is created and initialized
+in a default location (usually something like {{/usr/local/lib/chicken/5/}}).
+It is possible to keep an eggs repository in another location. This can be
+configured at build-time by passing {{VARDIR=<directory>}} to {{make(3)}}
+or by modifying the {{config.make}} configuration file. If you want to
+override this location after chicken is installed, you can create an
+initial repository directory with some default extensions and set the
+{{CHICKEN_REPOSITORY}} environment variable:
+
+First, initialize the new repository with
+
+  chicken-install -init ~/myeggs/lib/chicken/5
+
+Then set this environment variable:
+
+  export CHICKEN_REPOSITORY=~/myeggs/lib/chicken/5
+
+{{CHICKEN_REPOSITORY}} is the place where extensions are to be
+loaded from for all chicken-based programs (which includes all
+the tools).
+
+You can install eggs with
+
+  chicken-install -p ~/my_eggs <package>
+
+See that the argument to chicken-install is just {{~/myeggs}}, while everywhere else it's
+{{~/myeggs/lib/chicken/5}}.
+
+When you load eggs from the interpreter, you will see messages showing
+where libraries are being loaded from:
+
+ #;1> (use numbers)
+ ; loading /home/jdoe/myeggs/lib/chicken/5/numbers.import.so ...
+ ; loading /home/jdoe/myeggs/lib/chicken/5/scheme.import.so ...
+ ; loading /home/jdoe/myeggs/lib/chicken/5/chicken.import.so ...
+ ; loading /home/jdoe/myeggs/lib/chicken/5/foreign.import.so ...
+ ; loading /home/jdoe/myeggs/lib/chicken/5/regex.import.so ...
+ ; loading /home/jdoe/myeggs/lib/chicken/5/numbers.so ...
+ #;2> 
 
 === Other modes of installation
 

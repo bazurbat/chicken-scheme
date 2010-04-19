@@ -26,17 +26,14 @@
 
 
 (declare
-  (uses chicken-syntax srfi-1 srfi-4 utils files extras data-structures support
+  (uses chicken-syntax chicken-ffi-syntax 
+	srfi-1 srfi-4 utils files extras data-structures support
 	compiler optimizer unboxing compiler-syntax scrutinizer driver platform backend 
-	srfi-69)
-  (compile-syntax) )			
+	srfi-69))
 
 
 (include "compiler-namespace")
 (include "tweaks")
-
-(eval-when (load)
-  (include "chicken-ffi-syntax") )
 
 
 ;;; Prefix argument list with default options:

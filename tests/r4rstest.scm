@@ -1219,7 +1219,7 @@
 	 (and n (exact? n)))))
   (cond (have-inexacts?
 	 (test-inexact)
-	 (test-inexact-printing)))
+	 #;(test-inexact-printing)))
   (if have-bignums? (test-bignum))
   (if (and have-inexacts? have-bignums?)
       (test-numeric-predicates)))

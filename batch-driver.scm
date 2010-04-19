@@ -199,6 +199,8 @@
       (set! inline-locally #t)
       (set! inline-globally #t))
     (set! disabled-warnings (map string->symbol (collect-options 'disable-warning)))
+    (when (or verbose do-scrutinize)
+      (set! ##sys#notices-enabled #t))
     (when (memq 'no-warnings options) 
       (dribble "Warnings are disabled")
       (set! ##sys#warnings-enabled #f) )
@@ -451,7 +453,8 @@
 	       (display-line-number-database) )
 
 	     (when (and unit-name dynamic)
-	       (compiler-warning 'usage "library unit `~a' compiled in dynamic mode" unit-name) )
+	       (##sys#notice 
+		(sprintf "library unit `~a' compiled in dynamic mode" unit-name) ) )
 
 	     (set! ##sys#line-number-database line-number-database-2)
 	     (set! line-number-database-2 #f)

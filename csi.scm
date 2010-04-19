@@ -64,6 +64,7 @@ EOF
 
 (set! ##sys#repl-print-length-limit 2048)
 (set! ##sys#features (cons #:csi ##sys#features))
+(set! ##sys#notices-enabled #t)
 
 
 ;;; Print all sorts of information:
@@ -497,6 +498,7 @@ EOF
 	     (##sys#write-char-0 #\newline ##sys#standard-output) ]
 	    [(eq? x (##sys#slot '##sys#arbitrary-unbound-symbol 0))
 	     (fprintf out "unbound value~%") ]
+	    [(flonum? x) (fprintf out "inexact number ~S~%" x)]
 	    [(number? x) (fprintf out "number ~S~%" x)]
 	    [(string? x) (descseq "string" ##sys#size string-ref 0)]
 	    [(vector? x) (descseq "vector" ##sys#size ##sys#slot 0)]
@@ -779,7 +781,8 @@ EOF
 	  (do ([x (read in) (read in)])
 	      ((eof-object? x))
 	    (rec (receive (eval x))) ) ) )
-      (when quietflag (set! ##sys#eval-debug-level 0))
+      (when quietflag
+	(set! ##sys#eval-debug-level 0))
       (when (member* '("-h" "-help" "--help") args)
 	(print-usage)
 	(exit 0) )
@@ -832,6 +835,8 @@ EOF
 	(parentheses-synonyms #f)
 	(symbol-escape #f) )
       (unless (or (member* '("-n" "-no-init") args) script) (loadinit))
+      (when batch 
+	(set! ##sys#notices-enabled #f))
       (do ([args args (cdr args)])
 	  ((null? args)
 	   (unless batch 

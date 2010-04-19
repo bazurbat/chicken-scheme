@@ -529,7 +529,7 @@
 (pathname-replace-file (procedure pathname-replace-file (string string) string))
 (pathname-strip-directory (procedure pathname-strip-directory (string) string))
 (pathname-strip-extension (procedure pathname-strip-extension (string) string))
-(normalize-pathname (procedure normalize-pathname (string) string))
+(normalize-pathname (procedure normalize-pathname (string #!optional symbol) string))
 
 ;; irregex
 

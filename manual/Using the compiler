@@ -130,7 +130,7 @@ Possible options are:
 
 ; -inline-limit THRESHOLD : Sets the maximum size of a potentially inlinable procedure. The default threshold is {{20}}.
 
-; -keyword-style STYLE : Enables alternative keyword syntax, where {{STYLE}} may be either {{prefix}} (as in Common Lisp), {{suffix}} (as in DSSSL) or {{none}}. Any other value is ignored. The default is {{suffix}}.
+; -keyword-style STYLE : Enables alternative keyword syntax, where {{STYLE}} may be either {{prefix}} (as in Common Lisp, e.g. :keyword), {{suffix}} (as in DSSSL, e.g. keyword:) or {{none}}. Any other value is ignored. The default is {{suffix}}.
 
 ; -keep-shadowed-macros : Do not remove macro definitions with the same name as assigned toplevel variables (the default is to remove the macro definition).
 

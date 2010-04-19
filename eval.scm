@@ -106,7 +106,8 @@
 
 (define ##sys#core-library-modules
   '(extras lolevel utils files tcp regex posix srfi-1 srfi-4 srfi-13 
-	   srfi-14 srfi-18 srfi-69 data-structures ports chicken-syntax))
+	   srfi-14 srfi-18 srfi-69 data-structures ports chicken-syntax
+	   chicken-ffi-syntax))
 
 (define ##sys#explicit-library-modules '())
 
@@ -300,7 +301,8 @@
 				       (or (##sys#get j '##core#primitive) j))))
 			  (if ##sys#eval-environment
 			      (let ([loc (##sys#hash-table-location ##sys#eval-environment var #t)])
-				(unless loc (##sys#syntax-error-hook "reference to undefined identifier" var))
+				(unless loc
+				  (##sys#syntax-error-hook "reference to undefined identifier" var))
 				(if ##sys#unsafe-eval 
 				    (lambda v (##sys#slot loc 1))
 				    (lambda v 
@@ -333,7 +335,8 @@
 		   (eof-object? x)
 		   (string? x) )
 	       (lambda v x) ]
-	      [(not (pair? x)) (##sys#syntax-error-hook "illegal non-atomic object" x)]
+	      [(not (pair? x)) 
+	       (##sys#syntax-error/context "illegal non-atomic object" x)]
 	      [(symbol? (##sys#slot x 0))
 	       (emit-syntax-trace-info tf x cntr)
 	       (let ((x2 (##sys#expand x se #f)))
@@ -726,7 +729,9 @@
 			 [(##core#declare)
 			  (if (memq #:compiling ##sys#features)
 			      (for-each (lambda (d) (##compiler#process-declaration d se)) (cdr x)) 
-			      (##sys#warn "declarations are ignored in interpreted code" x) )
+			      (##sys#notice
+			       "declarations are ignored in interpreted code"
+			       x) )
 			  (compile '(##core#undefined) e #f tf cntr se) ]
 
 			 [(##core#define-inline ##core#define-constant)
@@ -742,11 +747,24 @@
 			 [(##core#app)
 			  (compile-call (cdr x) e tf cntr se) ]
 
-			 [else (compile-call x e tf cntr se)] ) ) ) ) ]
+			 (else
+			  (let ((msyntax (unimported-syntax head)))
+			    (if msyntax
+				(fluid-let ((##sys#unimported-syntax-context head))
+				  (compile-call x e tf cntr se))
+				(compile-call x e tf cntr se)) ) ) ) ) ) ) ]
 	      
 	      [else
 	       (emit-syntax-trace-info tf x cntr)
 	       (compile-call x e tf cntr se)] ) )
+
+      (define (unimported-syntax sym)
+	(let ((defs (##sys#get (##sys#strip-syntax sym) '##core#db)))
+	  (and defs
+	       (let loop ((defs defs))
+		 (and (pair? defs)
+		      (or (eq? 'syntax (caar defs))
+			  (loop (cdr defs))))))))
 
       (define (fudge-argument-list n alst)
 	(if (null? alst) 
@@ -774,7 +792,7 @@
 	       [argc (checked-length args)]
 	       [info x] )
 	  (case argc
-	    [(#f) (##sys#syntax-error-hook "malformed expression" x)]
+	    [(#f) (##sys#syntax-error/context "malformed expression" x)]
 	    [(0) (lambda (v)
 		   (emit-trace-info tf info cntr)
 		   ((fn v)))]

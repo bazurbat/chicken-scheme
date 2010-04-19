@@ -7303,6 +7303,9 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 	C_sprintf(p = buffer, "%x", (unsigned int)f);
 	goto fini;
 
+      case 10: break;		/* force output of decimal point to retain
+				   read/write invariance (the little we support) */
+
       default:
 	p = to_n_nary((unsigned int)f, radix);
 	goto fini;
@@ -8728,4 +8731,30 @@ C_putprop(C_word **ptr, C_word sym, C_word prop, C_word val)
   pl = C_pair(ptr, prop, pl);
   C_mutate(&C_block_item(sym, 2), pl);
   return val;
+}
+
+
+C_regparm C_word C_fcall
+C_i_get_keyword(C_word kw, C_word args, C_word def)
+{
+  while(!C_immediatep(args)) {
+    if(C_block_header(args) == C_PAIR_TAG) {
+      if(kw == C_u_i_car(args)) {
+	args = C_u_i_cdr(args);
+
+	if(C_immediatep(args) || C_block_header(args) != C_PAIR_TAG)
+	  return def;
+	else return C_u_i_car(args);
+      }
+      else {
+	args = C_u_i_cdr(args);
+
+	if(C_immediatep(args) || C_block_header(args) != C_PAIR_TAG)
+	  return def;
+	else args = C_u_i_cdr(args);
+      }
+    }
+  }
+
+  return def;
 }

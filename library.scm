@@ -202,10 +202,16 @@ EOF
       (##sys#signal-hook #:error #f)))
 
 (define ##sys#warnings-enabled #t)
+(define ##sys#notices-enabled (##sys#fudge 13))
 
 (define (##sys#warn msg . args)
   (when ##sys#warnings-enabled
     (apply ##sys#signal-hook #:warning msg args) ) )
+
+(define (##sys#notice msg . args)
+  (when (and ##sys#notices-enabled
+	     ##sys#warnings-enabled)
+    (apply ##sys#signal-hook #:notice msg args) ) )
 
 (define (enable-warnings . bool)
   (if (pair? bool) 
@@ -1223,15 +1229,14 @@ EOF
 	  (##sys#symbol->string kw)
 	  (##sys#signal-hook #:type-error 'keyword->string "bad argument type - not a keyword" kw) ) ) ) )
 
-(define (##sys#get-keyword key args0 . default)
-  (##sys#check-list args0 'get-keyword)
-  (let ([a (memq key args0)])
-    (if a
-	(let ([r (##sys#slot a 1)])
-	  (if (pair? r)
-	      (##sys#slot r 0)
-	      (##sys#error 'get-keyword "missing keyword argument" args0 key) ) )
-	(and (pair? default) ((car default))) ) ) )
+(define ##sys#get-keyword
+  (let ((tag (list 'tag)))
+    (lambda (key args #!optional thunk)
+      (##sys#check-list args 'get-keyword)
+      (let ((r (##core#inline "C_i_get_keyword" key args tag)))
+	(if (eq? r tag)
+	    (and thunk (thunk))
+	    r)))))
 
 (define get-keyword ##sys#get-keyword)
 
@@ -3519,8 +3524,10 @@ EOF
        'condition
        '(user-interrupt)
        '() ) ) ]
-    [(#:warning)
-     (##sys#print "\nWarning: " #f ##sys#standard-error)
+    [(#:warning #:notice)
+     (##sys#print 
+      (if (eq? mode #:warning) "\nWarning: " "\nNote: ")
+      #f ##sys#standard-error)
      (##sys#print msg #f ##sys#standard-error)
      (if (or (null? args) (fx> (length args) 1))
 	 (##sys#write-char-0 #\newline ##sys#standard-error)
@@ -4275,6 +4282,7 @@ EOF
       (let-optionals args ([port ##sys#standard-output]
 			   [header "Error"] )
 	(##sys#check-port port 'print-error-message)
+	(newline port)
 	(display header port)
 	(cond [(and (not (##sys#immediate? ex)) (eq? 'condition (##sys#slot ex 0)))
 	       (cond ((errmsg ex) =>

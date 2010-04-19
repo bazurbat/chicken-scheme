@@ -45,6 +45,7 @@
      install-extension install-program install-script
      setup-verbose-mode setup-install-mode deployment-mode
      installation-prefix
+     destination-prefix
      chicken-prefix 			;XXX remove at some stage from exports
      find-library find-header 
      program-path remove-file* 
@@ -428,10 +429,14 @@
 (define (make-setup-info-pathname fn #!optional (rpath (repository-path)))
   (make-pathname rpath fn setup-file-extension) )
 
+(define destination-prefix (make-parameter #f))
+
 (define installation-prefix
-  (make-parameter
-   (or (get-environment-variable "CHICKEN_INSTALL_PREFIX")
-       chicken-prefix)))
+  (let ((prefix (get-environment-variable "CHICKEN_INSTALL_PREFIX")))
+    (lambda ()
+      (or (destination-prefix)
+	  prefix
+	  chicken-prefix))))
 
 (define create-directory/parents
   (let ()
@@ -463,14 +468,21 @@
   ;;XXX the prefix handling is completely bogus
   (let ((from (if (pair? from) (car from) from))
 	(to (let ((to-path (if (pair? from) (make-pathname to (cadr from)) to)))
-	      (if (not (string-prefix? prefix to-path))
-		  (make-pathname prefix to-path) 
+	      (if (not (path-prefix? prefix to-path))
+		  (if (absolute-pathname? to-path)
+		      to-path
+		      (make-pathname prefix to-path) )
 		  to-path))))
     (ensure-directory to)
     (run (,*copy-command* ,(shellpath from) ,(shellpath to)))
     to))
 
 (define copy-file copy-file*)		;XXX DEPRECATED
+
+(define (path-prefix? pref path)
+  (string-prefix?
+   (normalize-pathname pref)
+   (normalize-pathname path)))
 
 (define (move-file from to)
   (let ((from  (if (pair? from) (car from) from))
@@ -601,10 +613,13 @@
 (define (repo-path #!optional ddir?)
   (let ((p (if ddir?
 	       (if (deployment-mode)
-		   (installation-prefix)
-		   (make-pathname 
-		    (installation-prefix) 
-		    (sprintf "lib/chicken/~a" (##sys#fudge 42))))
+		   (installation-prefix) ; deploy: copy directly into destdir
+		   (let ((p (destination-prefix)))
+		     (if p		; installation-prefix changed: use it
+			 (make-pathname 
+			  p
+			  (sprintf "lib/chicken/~a" (##sys#fudge 42)))
+			 (repository-path)))) ; otherwise use repo-path
 	       (repository-path))) )
     (ensure-directory p)
     p) )

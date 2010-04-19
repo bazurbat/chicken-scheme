@@ -515,14 +515,14 @@
 	  ((not-pair? x)
 	   (if (constant? x)
 	       `(quote ,x)
-	       (syntax-error "illegal atomic form" x)))
+	       (##sys#syntax-error/context "illegal atomic form" x)))
 	  ((symbol? (car x))
 	   (let ([ln (get-line x)])
 	     (emit-syntax-trace-info x #f)
 	     (unless (proper-list? x)
 	       (if ln
-		   (syntax-error (sprintf "(~a) - malformed expression" ln) x)
-		   (syntax-error "malformed expression" x)))
+		   (##sys#syntax-error/context (sprintf "(~a) - malformed expression" ln) x)
+		   (##sys#syntax-error/context "malformed expression" x)))
 	     (set! ##sys#syntax-error-culprit x)
 	     (let* ((name0 (lookup (car x) se))
 		    (name (or (and (symbol? name0) (##sys#get name0 '##core#primitive)) name0))
@@ -1191,9 +1191,13 @@
 			       (walk `(##sys#make-locative ,sym 0 #f 'location) e se #f) ) ) )
 				 
 			(else
-			 (let* ([x2 (mapwalk x e se)]
-				[head2 (car x2)]
-				[old (##sys#hash-table-ref line-number-database-2 head2)] )
+			 (let* ((msyntax (unimported-syntax name))
+				(x2 (if msyntax
+					(fluid-let ((##sys#unimported-syntax-context name))
+					  (mapwalk x e se))
+					(mapwalk x e se)))
+				(head2 (car x2))
+				(old (##sys#hash-table-ref line-number-database-2 head2)) )
 			   (when ln
 			     (##sys#hash-table-set!
 			      line-number-database-2
@@ -1202,7 +1206,7 @@
 			   x2) ) ) ] ) ) ) )
 
 	  ((not (proper-list? x))
-	   (syntax-error "malformed expression" x) )
+	   (##sys#syntax-error/context "malformed expression" x) )
 
 	  ((constant? (car x))
 	   (emit-syntax-trace-info x #f)
@@ -1218,6 +1222,14 @@
 		(,tmp ,@(cdr x)))
 	      e se dest)))))
   
+  (define (unimported-syntax sym)
+    (let ((defs (##sys#get (##sys#strip-syntax sym) '##core#db)))
+      (and defs
+	   (let loop ((defs defs))
+	     (and (pair? defs)
+		  (or (eq? 'syntax (caar defs))
+		      (loop (cdr defs))))))))
+
   (define (mapwalk xs e se)
     (map (lambda (x) (walk x e se #f)) xs) )
 
@@ -1909,7 +1921,8 @@
 	     (compiler-warning 'var "local assignment to unused variable `~S' may be unintended" sym) )
 	   (when (and (not (variable-visible? sym))
 		      (not (variable-mark sym '##compiler#constant)) )
-	     (compiler-warning 'var "global variable `~S' is never used" sym) ) )
+	     (##sys#notice 
+	      (sprintf "global variable `~S' is never used" sym) ) ) )
 
  	 ;; Make 'boxed, if 'assigned & 'captured:
 	 (when (and assigned captured)

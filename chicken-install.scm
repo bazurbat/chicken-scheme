@@ -27,7 +27,7 @@
 (require-library setup-download setup-api)
 (require-library srfi-1 posix data-structures utils regex ports extras srfi-13 files)
 (require-library chicken-syntax)	; in case an import library reexports chicken syntax
-
+(require-library chicken-ffi-syntax)	; same reason, also for filling modules.db
 
 (module main ()
 
@@ -115,8 +115,8 @@
 				 (cons from (cdr to)))))
 			   (cdr x)))))
 		  (else (broken x))))
-	      (read-file deff)))
-             (pair? *default-sources*) ) ) )
+	      (read-file deff))))
+      (pair? *default-sources*) ))
 
   (define (known-default-sources)
     (if (and *default-location* *default-transport*)
@@ -360,7 +360,10 @@
      (if *keep* " -e \"(keep-intermediates #t)\"" "")
      (if (and *no-install* (not dep?)) " -e \"(setup-install-mode #f)\"" "")
      (if *host-extension* " -e \"(host-extension #t)\"" "")
-     (if *prefix* (sprintf " -e \"(installation-prefix \\\"~a\\\")\"" *prefix*) "")
+     (if *prefix* 
+	 (sprintf " -e \"(destination-prefix \\\"~a\\\")\"" 
+	   (normalize-pathname *prefix* 'unix))
+	 "")
      (if *deploy* " -e \"(deployment-mode #t)\"" "")
      #\space
      (shellpath (make-pathname (cadr e+d+v) (car e+d+v) "setup"))) )
