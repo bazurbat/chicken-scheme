@@ -50,7 +50,9 @@
      program-path remove-file* 
      patch yes-or-no? abort-setup
      setup-root-directory create-directory/parents
-     test-compile try-compile copy-file run-verbose
+     test-compile try-compile run-verbose
+     copy-file move-file		;XXX DEPRECATED
+     copy-file* move-file*
      required-chicken-version required-extension-version cross-chicken
      sudo-install keep-intermediates
      version>=?
@@ -457,7 +459,7 @@
 	    (else (with-output-to-file setup-file (cut pp info))))
       (unless *windows-shell* (run (,*chmod-command* a+r ,(shellpath setup-file)))))))
 
-(define (copy-file from to #!optional (err #t) (prefix (installation-prefix)))
+(define (copy-file* from to #!optional (err #t) (prefix (installation-prefix)))
   ;;XXX the prefix handling is completely bogus
   (let ((from (if (pair? from) (car from) from))
 	(to (let ((to-path (if (pair? from) (make-pathname to (cadr from)) to)))
@@ -468,11 +470,15 @@
     (run (,*copy-command* ,(shellpath from) ,(shellpath to)))
     to))
 
+(define copy-file copy-file*)		;XXX DEPRECATED
+
 (define (move-file from to)
   (let ((from  (if (pair? from) (car from) from))
 	(to    (if (pair? from) (make-pathname to (cadr from)) to)))
     (ensure-directory to)
     (run (,*move-command* ,(shellpath from) ,(shellpath to)) ) ) )
+
+(define move-file move-file*)		;XXX DEPRECATED
 
 (define (remove-file* dir)
   (run (,*remove-command* ,(shellpath dir)) ) )

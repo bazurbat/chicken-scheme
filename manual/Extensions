@@ -212,14 +212,14 @@ overwritten. If {{WHICH}} is a list of the form {{OLD NEW}}, then a different fi
 
 ==== copy-file
 
-<procedure>(copy-file FROM TO)</procedure>
+<procedure>(copy-file* FROM TO)</procedure>
 
 Copies the file or directory (recursively) given in the string {{FROM}} to the destination
 file or directory {{TO}}.
 
 ==== move-file
 
-<procedure>(move-file FROM TO)</procedure>
+<procedure>(move-file* FROM TO)</procedure>
 
 Moves the file or directory (recursively) given in the string {{FROM}} to the destination
 file or directory {{TO}}.
@@ -228,7 +228,7 @@ file or directory {{TO}}.
 
 <procedure>(remove-file* PATH)</procedure>
 
-Removes the file or directory given in the string {{PATH}}.
+Removes the file or directory given in the string {{PATH}}, if it exists.
 
 
 ==== find-library
@@ -259,16 +259,10 @@ If the keyword argument {{c++}} is given and true, then the code will be compile
 
 ==== create-directory
 
-<procedure>(create-directory PATH)</procedure>
+<procedure>(create-directory/parents PATH)</procedure>
 
 Creates the directory given in the string {{PATH}}, with all parent directories as needed.
 
-
-==== chicken-prefix
-
-<parameter>chicken-prefix</parameter>
-
-The installation prefix specified when CHICKEN was built.
 
 ==== installation-prefix
 
