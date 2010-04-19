@@ -2130,7 +2130,7 @@
 					    (quit
 					     "~a: procedure `~a' called with wrong number of arguments" 
 					     (source-info->line name)
-					     (cadr name)))
+					     (if (pair? name) (cadr name) name)))
 					  (register-direct-call! id)
 					  (when custom (register-customizable! varname id)) 
 					  (list id custom) )
