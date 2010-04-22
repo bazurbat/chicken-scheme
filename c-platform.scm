@@ -38,7 +38,8 @@
 
 (define default-declarations
   '((always-bound
-     ##sys#standard-input ##sys#standard-output ##sys#standard-error)
+     ##sys#standard-input ##sys#standard-output ##sys#standard-error
+     ##sys#undefined-value)
     (bound-to-procedure
      ##sys#for-each ##sys#map ##sys#print ##sys#setter
      ##sys#setslot ##sys#dynamic-wind ##sys#call-with-values

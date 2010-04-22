@@ -1062,9 +1062,9 @@ contents are initialized to some unspecified value.
 
 ==== void
 
-<procedure>(void)</procedure>
+<procedure>(void ARGUMENT ...)</procedure>
 
-Returns an unspecified value.
+Ignores {{ARGUMENT ...}} and returns an unspecified value.
 
 
 

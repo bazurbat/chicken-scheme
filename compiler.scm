@@ -2008,14 +2008,16 @@
 			     (set! explicitly-consed (cons rest explicitly-consed))
 			     (put! db (first lparams) 'explicit-rest #t) ] ) ) ) ) ) ) ) )
 
-	 ;;  Make 'removable, if it has no references and is not assigned to, and if it has either a value that
-	 ;;    does not cause any side-effects or if it is 'undefined:
+	 ;; Make 'removable, if it has no references and is not assigned to, and if it 
+	 ;; has either a value that does not cause any side-effects or if it is 'undefined:
 	 (when (and (not assigned)
 		    (null? references)
 		    (or (and value
-			     (or (not (eq? '##core#variable (node-class value)))
-				 (not (get db (first (node-parameters value)) 'global)) )
-			     (not (expression-has-side-effects? value db)) )
+			     (if (eq? '##core#variable (node-class value))
+				 (let ((varname (first (node-parameters value))))
+				   (or (not (get db varname 'global))
+				       (not (variable-mark varname '##core#always-bound))))
+				 (not (expression-has-side-effects? value db)) ))
 			undefined) )
 	   (quick-put! plist 'removable #t) )
 

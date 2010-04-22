@@ -136,7 +136,7 @@ EOF
 	    [(pred (##sys#slot lst 0)) (loop (##sys#slot lst 1))]
 	    [else #f] ) ) ) )
 
-(define (noop . _) (void))
+(define (noop . _) (void))		;DEPRECATED
 
 (define (each . procs)
   (cond ((null? procs) (lambda _ (void)))

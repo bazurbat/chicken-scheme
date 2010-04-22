@@ -846,12 +846,15 @@
 	      cont
 	      (make-node '##core#inline (list (second classargs)) callargs) ) ) ) ) )
 
-    ;; (<op>) -> <var>
+    ;; (<op> ...) -> <var>
     ((3) ; classargs = (<var>)
      (and inline-substitutions-enabled
-	  (null? callargs)
 	  (intrinsic? name)
-	  (make-node '##core#call '(#t) (list cont (varnode (first classargs)))) ) )
+	  (fold-right
+	   (lambda (val body)
+	     (make-node 'let (list (gensym "t")) (list val body)) )
+	   (make-node '##core#call '(#t) (list cont (varnode (first classargs))))
+	   callargs)))
 
     ;; (<op> a b) -> (<primitiveop> a (quote <i>) b)
     ((4) ; classargs = (<primitiveop> <i>)

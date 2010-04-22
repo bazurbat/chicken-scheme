@@ -417,7 +417,7 @@
 (system (procedure system (string) fixnum))
 (unregister-feature! (procedure unregister-feature! (#!rest symbol) undefined))
 (vector-resize (procedure vector-resize (vector fixnum) vector))
-(void (procedure void () undefined))
+(void (procedure void (#!rest) undefined))
 (warning (procedure warning (#!rest) . *))
 (with-exception-handler (procedure with-exception-handler (procedure procedure) . *))
 
@@ -453,7 +453,7 @@
 (merge! (procedure merge! (list list (procedure (* *) *)) list))
 (never? (procedure never? (#!rest) boolean))
 (none? (procedure none? (*) boolean))
-(noop (procedure noop (#!rest) *))
+(noop deprecated)
 (o (procedure o (#!rest (procedure (*) *)) (procedure (*) *)))
 (project (procedure project (fixnum) procedure))
 (queue->list (procedure queue->list ((struct queue)) list))
