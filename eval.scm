@@ -387,7 +387,7 @@
 					  (compile '(##core#undefined) e #f tf cntr se) ) ] )
 			    (lambda (v) (if (##core#app test v) (##core#app cns v) (##core#app alt v))) ) ]
 
-			 [(##core#begin)
+			 [(##core#begin ##core#toplevel-begin)
 			  (let* ((body (##sys#slot x 1))
 				 (len (length body)) )
 			    (case len

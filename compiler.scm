@@ -109,6 +109,7 @@
 ; (##core#lambda ({<variable>}+ [. <variable>]) <body>)
 ; (##core#set! <variable> <exp>)
 ; (##core#begin <exp> ...)
+; (##core#toplevel-begin <exp> ...)
 ; (##core#include <string>)
 ; (##core#loop-lambda <llist> <body>)
 ; (##core#undefined)
@@ -957,7 +958,7 @@
 			 (eval/meta (cadr x))
 			 '(##core#undefined) )
 
-			((##core#begin) 
+			((##core#begin ##core#toplevel-begin) 
 			 (if (pair? (cdr x))
 			     (canonicalize-begin-body
 			      (let fold ([xs (cdr x)])
