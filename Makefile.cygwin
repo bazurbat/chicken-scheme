@@ -46,6 +46,7 @@ C_COMPILER = gcc
 CXX_COMPILER = g++
 RC_COMPILER = windres
 LINKER = gcc
+TARGET_RC_COMPILER ?= $(RC_COMPILER)
 
 
 C_COMPILER_OPTIONS ?= -fno-strict-aliasing -DHAVE_CHICKEN_CONFIG_H
@@ -87,6 +88,8 @@ LIBCHICKEN_SO_LIBRARIES = $(LIBRARIES)
 
 chicken-config.h: chicken-defaults.h
 	echo "/* GENERATED */" >$@
+	echo "#define C_INSTALL_RC_COMPILER \"$(RC_COMPILER)\"" >>$@
+	echo "#define C_TARGET_RC_COMPILER \"$(TARGET_RC_COMPILER)\"" >>$@
 	echo "#define HAVE_DIRENT_H 1" >>$@
 	echo "#define HAVE_INTTYPES_H 1" >>$@
 	echo "#define HAVE_LIMITS_H 1" >>$@

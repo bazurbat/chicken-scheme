@@ -109,6 +109,7 @@
 ; (##core#lambda ({<variable>}+ [. <variable>]) <body>)
 ; (##core#set! <variable> <exp>)
 ; (##core#begin <exp> ...)
+; (##core#toplevel-begin <exp> ...)
 ; (##core#include <string>)
 ; (##core#loop-lambda <llist> <body>)
 ; (##core#undefined)
@@ -957,7 +958,7 @@
 			 (eval/meta (cadr x))
 			 '(##core#undefined) )
 
-			((##core#begin) 
+			((##core#begin ##core#toplevel-begin) 
 			 (if (pair? (cdr x))
 			     (canonicalize-begin-body
 			      (let fold ([xs (cdr x)])
@@ -2130,7 +2131,7 @@
 					    (quit
 					     "~a: procedure `~a' called with wrong number of arguments" 
 					     (source-info->line name)
-					     (cadr name)))
+					     (if (pair? name) (cadr name) name)))
 					  (register-direct-call! id)
 					  (when custom (register-customizable! varname id)) 
 					  (list id custom) )

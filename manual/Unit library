@@ -463,48 +463,48 @@ The following composite conditions are additionally defined:
 
 <table>
 
-<tr><td> (exn arity)
+<tr><td> (exn arity) </td><td>
 
 Signaled when a procedure is called with the wrong number of arguments.
 
-</td></tr><tr><td> (exn type)
+</td></tr><tr><td> (exn type) </td><td>
 
 Signaled on type-mismatch errors, for example when an argument of the wrong
 type is passed to a built-in procedure.
 
-</td></tr><tr><td> (exn arithmetic)
+</td></tr><tr><td> (exn arithmetic) </td><td>
 
 Signaled on arithmetic errors, like division by zero.
 
-</td></tr><tr><td> (exn i/o)
+</td></tr><tr><td> (exn i/o) </td><td>
 
 Signaled on input/output errors.
 
-</td></tr><tr><td> (exn i/o file)
+</td></tr><tr><td> (exn i/o file) </td><td>
 
 Signaled on file-related errors.
 
-</td></tr><tr><td> (exn i/o net)
+</td></tr><tr><td> (exn i/o net) </td><td>
 
 Signaled on network errors.
 
-</td></tr><tr><td> (exn bounds)
+</td></tr><tr><td> (exn bounds) </td><td>
 
 Signaled on errors caused by accessing non-existent elements of a collection.
 
-</td></tr><tr><td> (exn runtime)
+</td></tr><tr><td> (exn runtime) </td><td>
 
 Signaled on low-level runtime-system error-situations.
 
-</td></tr><tr><td> (exn runtime limit)
+</td></tr><tr><td> (exn runtime limit) </td><td>
 
 Signaled when an internal limit is exceeded (like running out of memory).
 
-</td></tr><tr><td> (exn match)
+</td></tr><tr><td> (exn match) </td><td>
 
 Signaled on errors raised by failed matches (see the section on {{match}}).
 
-</td></tr><tr><td> (exn syntax)
+</td></tr><tr><td> (exn syntax) </td><td>
 
 Signaled on syntax errors.
 
