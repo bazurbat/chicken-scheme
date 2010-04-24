@@ -3166,24 +3166,6 @@ EOF
 		 (k pos2 (fx+ pos2 2)) )
 		(else (loop (fx+ pos2 1))) ) ) ) ) )
 
-; Scans a string, 'buf', from a start index, 'pos', to an end index,
-; 'lim'. During the scan the current position of the 'port' is updated to
-; reflect the rows & columns encountered.
-#; ;UNUSED (at the moment)
-(define (##sys#update-port-position/scan port buf pos lim)
-  (let loop ([pos pos])
-    (let ([bumper
-	   (lambda (cur ptr)
-	     (cond [(eq? cur ptr)	; at EOB
-		     (##sys#setislot port 5 (fx+ (##sys#slot port 5) (fx- cur pos)))
-		     #f ]
-		   [else		; at EOL
-		     (##sys#setislot port 4 (fx+ (##sys#slot port 4) 1))
-		     (##sys#setislot port 5 0)
-		     ptr ] ) ) ] )
-      (when pos
-	(loop (##sys#scan-buffer-line buf lim pos bumper)) ) ) ) )
-
 (define (open-input-string string)
   (##sys#check-string string 'open-input-string)
   (let ([port (##sys#make-port #t ##sys#string-port-class "(string)" 'string)])

@@ -36,8 +36,7 @@
 
 (module setup-api
 
-    (move-file 
-     (run execute)
+    ((run execute)
      compile
      standard-extension
      make make/proc
