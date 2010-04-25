@@ -495,11 +495,17 @@
 		  (let ((def (car body)))
 		    (loop 
 		     (cdr body) 
-		     (cons (if (pair? (cadr def))
-			       `(##core#define-syntax
-				 ,(caadr def)
-				 (##core#lambda ,(cdadr def) ,@(cddr def)))
-			       def)
+		     (cons (cond ((pair? (cadr def))
+				  `(define-syntax ; (the first element is actually ignored)
+				     ,(caadr def)
+				     (##core#lambda ,(cdadr def) ,@(cddr def))))
+				 ;; insufficient, if introduced by different expansions, but
+				 ;; better than nothing:
+				 ((eq? (car def) (cadr def))
+				  (##sys#syntax-error-hook
+				   "redefinition of `define-syntax' not allowed in syntax-definition"
+				   def))
+				 (else def))
 			   defs) 
 		     #f)))
 		 (else (loop body defs #t))))))		       
@@ -520,6 +526,10 @@
 			 (let ([head (cadr x)])
 			   (cond [(not (pair? head))
 				  (##sys#check-syntax 'define x '(_ variable . #(_ 0)) #f se)
+				  (when (eq? (car x) head) ; see above
+				    (##sys#syntax-error-hook
+				     "redefinition of `define' not allowed in body"
+				     x))
 				  (loop rest (cons head vars)
 					(cons (if (pair? (cddr x))
 						  (caddr x)
@@ -543,6 +553,7 @@
 		       (##sys#check-syntax 'define-syntax x '(_ _ . #(_ 1)) se)
 		       (fini/syntax vars vals mvars mvals body) )
 		      [(eq? 'define-values (or (lookup head se) head))
+		       ;;XXX check for any of the variables being `define-values' (?)
 		       (##sys#check-syntax 'define-values x '(_ #(_ 0) _) #f se)
 		       (loop rest vars vals (cons (cadr x) mvars) (cons (caddr x) mvals)) ]
 		      [(eq? '##core#begin head)
@@ -1054,6 +1065,10 @@
 	(cond ((not (pair? head))
 	       (##sys#check-syntax 'define form '(_ symbol . #(_ 0 1)))
 	       (##sys#register-export head (##sys#current-module))
+	       (when (eq? (car x) head)
+		 (##sys#syntax-error-hook
+		  "redefinition of `define' not allowed in definition"
+		  x))
 	       `(##core#set! 
 		 ,head 
 		 ,(if (pair? body) (car body) '(##core#undefined))) )
@@ -1075,10 +1090,18 @@
 	     (##sys#check-syntax 'define-syntax head 'symbol)
 	     (##sys#check-syntax 'define-syntax body '#(_ 1))
 	     (##sys#register-export head (##sys#current-module))
+	     (when (eq? (car form) head)
+	       (##sys#syntax-error-hook
+		"redefinition of `define-syntax' not allowed in syntax-definition"
+		form))
 	     `(##core#define-syntax ,head ,(car body)))
 	    (else
 	     (##sys#check-syntax 'define-syntax head '(_ . lambda-list))
 	     (##sys#check-syntax 'define-syntax body '#(_ 1))
+	     (when (eq? (car form) (car head))
+	       (##sys#syntax-error-hook
+		"redefinition of `define-syntax' not allowed in syntax-definition"
+		form))
 	     `(##core#define-syntax 
 	       ,(car head)
 	       (##core#lambda ,(cdr head) ,@body))))))))
