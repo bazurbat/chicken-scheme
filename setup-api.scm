@@ -483,7 +483,7 @@
    (normalize-pathname pref)
    (normalize-pathname path)))
 
-(define (move-file from to)
+(define (move-file* from to)
   (let ((from  (if (pair? from) (car from) from))
 	(to    (if (pair? from) (make-pathname to (cadr from)) to)))
     (ensure-directory to)
