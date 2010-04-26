@@ -213,6 +213,7 @@
    string->uninterned-symbol
    strip-syntax
    sub1
+   symbol-append
    symbol-escape
    symbol-plist
    syntax-error
