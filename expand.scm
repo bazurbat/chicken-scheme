@@ -437,7 +437,19 @@
 			    [else (err "invalid lambda list syntax")] ) ] ) ) ] ) ) ) ) ) )
 
 
+;;; Error message for redefinition of currently used defining form
+;
+; (i.e.`"(define define ...)")
+
+(define (##sys#defjam-error form)
+  (##sys#syntax-error-hook
+   "redefinition of currently used defining form" ; help me find something better
+   form))
+
+
 ;;; Expansion of bodies (and internal definitions)
+;
+; This code is disgustingly complex.
 
 (define ##sys#canonicalize-body
   (let ([reverse reverse]
@@ -502,9 +514,7 @@
 				 ;; insufficient, if introduced by different expansions, but
 				 ;; better than nothing:
 				 ((eq? (car def) (cadr def))
-				  (##sys#syntax-error-hook
-				   "redefinition of `define-syntax' not allowed in syntax-definition"
-				   def))
+				  (##sys#defjam-error def))
 				 (else def))
 			   defs) 
 		     #f)))
@@ -527,9 +537,7 @@
 			   (cond [(not (pair? head))
 				  (##sys#check-syntax 'define x '(_ variable . #(_ 0)) #f se)
 				  (when (eq? (car x) head) ; see above
-				    (##sys#syntax-error-hook
-				     "redefinition of `define' not allowed in body"
-				     x))
+				    (##sys#defjam-error x))
 				  (loop rest (cons head vars)
 					(cons (if (pair? (cddr x))
 						  (caddr x)
@@ -1066,9 +1074,7 @@
 	       (##sys#check-syntax 'define form '(_ symbol . #(_ 0 1)))
 	       (##sys#register-export head (##sys#current-module))
 	       (when (eq? (car x) head)
-		 (##sys#syntax-error-hook
-		  "redefinition of `define' not allowed in definition"
-		  x))
+		 (##sys#defjam-error x))
 	       `(##core#set! 
 		 ,head 
 		 ,(if (pair? body) (car body) '(##core#undefined))) )
@@ -1091,9 +1097,7 @@
 	     (##sys#check-syntax 'define-syntax body '#(_ 1))
 	     (##sys#register-export head (##sys#current-module))
 	     (when (eq? (car form) head)
-	       (##sys#syntax-error-hook
-		"redefinition of `define-syntax' not allowed in syntax-definition"
-		form))
+	       (##sys#defjam-error form))
 	     `(##core#define-syntax ,head ,(car body)))
 	    (else
 	     (##sys#check-syntax 'define-syntax head '(_ . lambda-list))
