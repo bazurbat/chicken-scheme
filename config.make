@@ -44,6 +44,9 @@
 # Specification of target (runtime) system for cross-compiling:
 #TARGETSYSTEM= 
 
+# Where the install-location of a cross-build is
+#TARGET_DESTDIR=
+
 # Specify that the sources are in a different directory than ".":
 #SRCDIR=
 

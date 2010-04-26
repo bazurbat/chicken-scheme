@@ -51,6 +51,7 @@
      patch yes-or-no? abort-setup
      setup-root-directory create-directory/parents
      test-compile try-compile run-verbose
+     extra-features
      copy-file move-file		;XXX DEPRECATED
      copy-file* move-file*
      required-chicken-version required-extension-version cross-chicken
@@ -108,12 +109,19 @@
 (define *csc-options* '())
 (define *base-directory* (current-directory))
 
-(define setup-root-directory      (make-parameter *base-directory*))
-(define setup-verbose-mode        (make-parameter #f))
-(define setup-install-mode        (make-parameter #t))
-(define deployment-mode           (make-parameter #f))
-(define program-path              (make-parameter *chicken-bin-path*))
-(define keep-intermediates (make-parameter #f))
+(define setup-root-directory (make-parameter *base-directory*))
+(define setup-verbose-mode   (make-parameter #f))
+(define setup-install-mode   (make-parameter #t))
+(define deployment-mode      (make-parameter #f))
+(define program-path         (make-parameter *chicken-bin-path*))
+(define keep-intermediates   (make-parameter #f))
+
+(define extra-features
+  (let ((xfs '()))
+    (lambda (#!optional fs)
+      (cond (fs (apply register-feature! fs)
+		(set! xfs fs))
+	    (else xfs)))))
 
 ; Setup shell commands
 
@@ -240,7 +248,11 @@
 	(if (keep-intermediates) "-k" "")
 	(if (host-extension) "-host" "")
 	(if (deployment-mode) "-deployed" "")
-	*csc-options*) 
+	(append
+	 (map (lambda (f)
+		(string-append "-feature "(symbol->string f)))
+	      (extra-features))
+	 *csc-options*) )
        " ")
       (find-program prg)))
 

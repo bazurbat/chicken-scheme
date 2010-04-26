@@ -69,7 +69,6 @@
 
   (define *keep* #f)
   (define *force* #f)
-  (define *prefix* #f)
   (define *host-extension* #f)
   (define *run-tests* #f)
   (define *retrieve-only* #f)
@@ -86,6 +85,12 @@
   (define *mappings* '())
   (define *deploy* #f)
   (define *trunk* #f)
+  (define *csc-features* '())
+
+  (define *prefix* 
+    (let ((p (foreign-value "C_TARGET_DESTDIR" c-string)))
+      (and (not (string=? p ""))
+	   p)))
 
   (define-constant +module-db+ "modules.db")
   (define-constant +defaults-file+ "setup.defaults")
@@ -364,6 +369,7 @@
 	 (sprintf " -e \"(destination-prefix \\\"~a\\\")\"" 
 	   (normalize-pathname *prefix* 'unix))
 	 "")
+     (sprintf " -e \"(extra-features '~s)\"" *csc-features*)
      (if *deploy* " -e \"(deployment-mode #t)\"" "")
      #\space
      (shellpath (make-pathname (cadr e+d+v) (car e+d+v) "setup"))) )
@@ -505,11 +511,12 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
        -repository              print path used for egg installation
        -deploy                  build extensions for deployment
        -trunk                   build trunk instead of tagged version (only local)
+  -D   -feature FEATURE         features to pass to sub-invocations of `csc'
 EOF
 );|
     (exit code))
 
-  (define *short-options* '(#\h #\k #\l #\t #\s #\p #\r #\n #\v #\i #\u))
+  (define *short-options* '(#\h #\k #\l #\t #\s #\p #\r #\n #\v #\i #\u #\D))
 
   (define (main args)
     (let ((defaults (load-defaults))
@@ -598,6 +605,11 @@ EOF
 			      (else
 			       (set! *proxy-host* (cadr args))
 			       (set! *proxy-port* 80)))
+			(loop (cddr args) eggs))
+		       ((or (string=? "-D" arg) (string=? "-feature" arg))
+                        (unless (pair? (cdr args)) (usage 1))
+			(set! *csc-features* 
+			  (cons (string->symbol (cadr args)) *csc-features*))
 			(loop (cddr args) eggs))
                        ((string=? "-test" arg)
                         (set! *run-tests* #t)
