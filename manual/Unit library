@@ -926,6 +926,13 @@ the new symbol is prefixed with that argument.
 Returns a newly created, unique symbol with the name {{STRING}}.
 
 
+==== symbol-append
+
+<procedure>(symbol-append SYMBOL1 ...)</procedure>
+
+Creates a new interned symbol from the concatenated names of the argument symbols
+{{(SYMBOL1 ...)}}.
+
 
 === Standard Input/Output
 

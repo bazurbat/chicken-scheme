@@ -80,6 +80,7 @@
 (assv (procedure assv (* list) *))
 (assoc (procedure assoc (* list #!optional (procedure (* *) *)) *))
 (symbol? (procedure symbol? (*) boolean))
+(symbol-append (procedure symbol-append (#!rest symbol) symbol))
 (symbol->string (procedure symbol->string (symbol) string))
 (string->symbol (procedure string->symbol (string) symbol))
 (number? (procedure number? (*) boolean))

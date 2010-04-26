@@ -1210,6 +1210,16 @@ EOF
 		    (err prefix) ) ) )
 	  (##sys#number->string counter) ) ) ) ) ) )
 
+(define symbol-append
+  (let ((string-append string-append))
+    (lambda ss
+      (##sys#intern-symbol
+       (apply
+	string-append 
+	(map (lambda (s)
+	       (##sys#check-symbol s 'symbol-append)
+	       (##sys#symbol->string s))
+	     ss))))))
 
 ;;; Keywords:
 
