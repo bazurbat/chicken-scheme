@@ -570,6 +570,7 @@ Available options:
 ; {{-u   -update-db}} : update export database
 ; {{-repository}} : print path to extension repository
 ; {{-deploy}} : install extension in the application directory for a deployed application (see [[Deployment]] for more information)
+: {{-D   -feature FEATURE}} : pass this on to subinvocations of {{csi}} and {{csc}} (when done via {{compile}} or {{(run (csc ...))}})
 
 
 === chicken-uninstall reference
