@@ -12,14 +12,6 @@ option.
 === Random numbers
 
 
-==== random-seed
-
-<procedure>(random-seed [SEED])</procedure>
-
-Seeds the random number generator with {{SEED}} (an {{integer}}) or 
-{{(current-seconds)}} if {{SEED}} is not given.
-
-
 ==== randomize
 
 <procedure>(randomize [SEED])</procedure>
