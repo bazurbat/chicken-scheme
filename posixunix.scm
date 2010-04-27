@@ -1620,7 +1620,7 @@ EOF
 (define ##sys#custom-input-port
   (let ([make-input-port make-input-port]
         [set-port-name! set-port-name!] )
-    (lambda (loc nam fd #!optional (nonblocking? #f) (bufi 1) (on-close noop) (more? #f))
+    (lambda (loc nam fd #!optional (nonblocking? #f) (bufi 1) (on-close void) (more? #f))
       (when nonblocking? (##sys#file-nonblocking! fd) )
       (let ([bufsiz (if (fixnum? bufi) bufi (##sys#size bufi))]
             [buf (if (fixnum? bufi) (##sys#make-string bufi) bufi)]
@@ -1746,7 +1746,7 @@ EOF
 (define ##sys#custom-output-port
   (let ([make-output-port make-output-port]
         [set-port-name! set-port-name!] )
-    (lambda (loc nam fd #!optional (nonblocking? #f) (bufi 0) (on-close noop))
+    (lambda (loc nam fd #!optional (nonblocking? #f) (bufi 0) (on-close void))
       (when nonblocking? (##sys#file-nonblocking! fd) )
       (letrec (
           [poke
