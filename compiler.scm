@@ -1919,7 +1919,8 @@
 		    (null? references)
 		    (not (variable-mark sym '##compiler#unused)))
 	   (when assigned-locally
-	     (compiler-warning 'var "local assignment to unused variable `~S' may be unintended" sym) )
+	     (##sys#notice 
+	      (sprintf "local assignment to unused variable `~S' may be unintended" sym) ) )
 	   (when (and (not (variable-visible? sym))
 		      (not (variable-mark sym '##compiler#constant)) )
 	     (##sys#notice 
