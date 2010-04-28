@@ -212,14 +212,14 @@ overwritten. If {{WHICH}} is a list of the form {{OLD NEW}}, then a different fi
 
 ==== copy-file
 
-<procedure>(copy-file* FROM TO)</procedure>
+<procedure>(copy-file FROM TO)</procedure>
 
 Copies the file or directory (recursively) given in the string {{FROM}} to the destination
 file or directory {{TO}}.
 
 ==== move-file
 
-<procedure>(move-file* FROM TO)</procedure>
+<procedure>(move-file FROM TO)</procedure>
 
 Moves the file or directory (recursively) given in the string {{FROM}} to the destination
 file or directory {{TO}}.
