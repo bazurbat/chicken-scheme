@@ -24,6 +24,31 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
+(declare 
+  (foreign-declare #<<EOF
+
+#define C_curdir(buf)       (getcwd(C_c_string(buf), 1024) ? C_fix(strlen(C_c_string(buf))) : C_SCHEME_FALSE)
+
+EOF
+))
+
+
+;;; Set or get current directory:
+
+(define current-directory
+  (let ([make-string make-string])
+    (lambda (#!optional dir)
+      (if dir
+	  (change-directory dir)
+	  (let* ([buffer (make-string 1024)]
+		 [len (##core#inline "C_curdir" buffer)] )
+	    #+(or unix cygwin)
+	    (##sys#update-errno)
+	    (if len
+		(##sys#substring buffer 0 len)
+		(##sys#signal-hook #:file-error 'current-directory "cannot retrieve current directory") ) ) ) ) ) )
+
+
 ;;; Find matching files:
 
 (define find-files

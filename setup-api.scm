@@ -53,13 +53,12 @@
      test-compile try-compile run-verbose
      extra-features
      copy-file move-file
-     required-chicken-version required-extension-version cross-chicken
+     required-chicken-version required-extension-version
      sudo-install keep-intermediates
      version>=?
      extension-name-and-version
      extension-name
      extension-version
-     create-temporary-directory
      remove-directory
      remove-extension
      read-info
@@ -752,17 +751,6 @@
   (with-input-from-file 
       (make-pathname (repository-path) egg ".setup-info")
     read))
-
-(define (create-temporary-directory)
-  (let ((dir (or (get-environment-variable "TMPDIR") 
-		 (get-environment-variable "TEMP")
-		 (get-environment-variable "TMP") 
-		 "/tmp")))
-    (let loop ()
-      (let* ((n (##sys#fudge 16))	; current milliseconds
-	     (pn (make-pathname dir (string-append "chicken-install-" (number->string n 16)) "tmp")))
-	(cond ((file-exists? pn) (loop))
-	      (else (create-directory pn) pn))))))
 
 (define (remove-directory dir #!optional (strict #t))
   (cond ((not (file-exists? dir))

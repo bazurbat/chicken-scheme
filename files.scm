@@ -42,8 +42,11 @@
   (hide chop-pds absolute-pathname-root root-origin root-directory split-directory)
   (disable-interrupts) 
   (foreign-declare #<<EOF
+#include <unistd.h>
+
 #ifndef _WIN32
-# define C_mkdir(str)        C_fix(mkdir(C_c_string(str), S_IRWXU | S_IRWXG | S_IRWXO))
+# include <sys/stat.h>
+# define C_mkdir(str)       C_fix(mkdir(C_c_string(str), S_IRWXU | S_IRWXG | S_IRWXO))
 #else
 # define C_mkdir(str)	    C_fix(mkdir(C_c_string(str)))
 #endif
@@ -211,6 +214,7 @@ EOF
 
 (define make-pathname)
 (define make-absolute-pathname)
+
 (let ([string-append string-append]
       [absolute-pathname? absolute-pathname?]
       [def-pds "/"] )
@@ -257,16 +261,16 @@ EOF
 
   (set! make-pathname
     (lambda (dirs file #!optional ext)
-      (_make-pathname 'make-pathname (canonicalize-dirs dirs pds) file ext pds)))
+      (_make-pathname 'make-pathname (canonicalize-dirs dirs def-pds) file ext def-pds)))
 
   (set! make-absolute-pathname
     (lambda (dirs file #!optional ext)
       (_make-pathname
        'make-absolute-pathname
-       (let ([dir (canonicalize-dirs dirs pds)])
+       (let ([dir (canonicalize-dirs dirs def-pds)])
 	 (if (absolute-pathname? dir)
 	     dir
-	     (##sys#string-append (or pds def-pds) dir)) )
+	     (##sys#string-append def-pds dir)) )
        file ext pds) ) ) )
 
 (define decompose-pathname
@@ -359,8 +363,7 @@ EOF
 	       (or (get-environment-variable "TMPDIR") 
 		   (get-environment-variable "TEMP")
 		   (get-environment-variable "TMP")
-		   (file-exists? "/tmp")
-		   (
+		   "/tmp")))
 	  (set! temp tmp)
 	  tmp)))
   (set! create-temporary-file

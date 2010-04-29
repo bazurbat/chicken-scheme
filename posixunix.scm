@@ -148,8 +148,6 @@ static C_TLS struct stat C_statbuf;
 #define C_readdir(h,e)      C_set_block_item(e, 0, (C_word) readdir((DIR *)C_block_item(h, 0)))
 #define C_foundfile(e,b)    (strcpy(C_c_string(b), ((struct dirent *) C_block_item(e, 0))->d_name), C_fix(strlen(((struct dirent *) C_block_item(e, 0))->d_name)))
 
-#define C_curdir(buf)       (getcwd(C_c_string(buf), 256) ? C_fix(strlen(C_c_string(buf))) : C_SCHEME_FALSE)
-
 #define open_binary_input_pipe(a, n, name)   C_mpointer(a, popen(C_c_string(name), "r"))
 #define open_text_input_pipe(a, n, name)     open_binary_input_pipe(a, n, name)
 #define open_binary_output_pipe(a, n, name)  C_mpointer(a, popen(C_c_string(name), "w"))
@@ -944,17 +942,6 @@ EOF
 (define (directory? fname)
   (##sys#check-string fname 'directory?)
   (*directory? 'directory? (##sys#expand-home-path fname)) )
-
-(define current-directory
-  (let ([make-string make-string])
-    (lambda (#!optional dir)
-      (if dir
-          (change-directory dir)
-          (let* ([buffer (make-string 256)]
-                 [len (##core#inline "C_curdir" buffer)] )
-            (if len
-                (##sys#substring buffer 0 len)
-                (posix-error #:file-error 'current-directory "cannot retrieve current directory") ) ) ) ) ) )
 
 
 ;;; Pipes:

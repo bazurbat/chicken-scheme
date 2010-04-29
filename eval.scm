@@ -29,8 +29,7 @@
   (unit eval)
   (uses expand)
   (disable-warning var)
-  (hide ##sys#split-at-separator
-	##sys#r4rs-environment ##sys#r5rs-environment 
+  (hide ##sys#r4rs-environment ##sys#r5rs-environment 
 	##sys#interaction-environment pds pdss pxss d) 
   (not inline ##sys#repl-eval-hook ##sys#repl-read-hook ##sys#repl-print-hook 
        ##sys#read-prompt-hook ##sys#alias-global-hook ##sys#user-read-hook
@@ -1064,18 +1063,6 @@
 	(##sys#error 'load-library "unable to load library" uname _dlerror) ) ) )
 
 (define load-library ##sys#load-library)
-
-(define ##sys#split-at-separator
-  (let ([reverse reverse] )
-    (lambda (str sep)
-      (let ([len (##sys#size str)])
-	(let loop ([items '()] [i 0] [j 0])
-	  (cond [(fx>= i len)
-		 (reverse (cons (##sys#substring str j len) items)) ]
-		[(char=? (##core#inline "C_subchar" str i) sep)
-		 (let ([i2 (fx+ i 1)])
-		   (loop (cons (##sys#substring str j i) items) i2 i2) ) ]
-		[else (loop items (fx+ i 1) j)] ) ) ) ) ) )
 
 (define ##sys#include-forms-from-file
   (let ((load-verbose load-verbose)
