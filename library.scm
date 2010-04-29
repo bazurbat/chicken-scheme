@@ -1244,7 +1244,7 @@ EOF
     (lambda (key args #!optional thunk)
       (##sys#check-list args 'get-keyword)
       (let ((r (##core#inline "C_i_get_keyword" key args tag)))
-	(if (eq? r tag)
+	(if (eq? r tag)			; not found
 	    (and thunk (thunk))
 	    r)))))
 

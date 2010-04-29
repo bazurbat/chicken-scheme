@@ -1279,81 +1279,6 @@ EOF
 		(##sys#signal-hook #:file-error 'current-directory "cannot retrieve current directory") ) ) ) ) ) )
 
 
-(define canonical-path                                  ;;DEPRECATED
-    (let ((null?      null?)
-          (char=?     char=?)
-          (string=?   string=?)
-          (alpha?     char-alphabetic?)
-          (sref       string-ref)
-          (ssplit     (cut string-split <> "/\\"))
-          (sappend    string-append)
-          (isperse    (cut string-intersperse <> "\\"))
-          (sep?       (lambda (c) (or (char=? #\/ c) (char=? #\\ c))))
-          (user       current-user-name)
-          (cwd        (let ((cw   current-directory))
-                          (lambda ()
-                              (condition-case (cw)
-                                  (var ()    "c:\\"))))))
-        (lambda (path)
-            (##sys#check-string path 'canonical-path)
-            (let ((p   (cond ((fx= 0 (##sys#size path))
-                                 (sappend (cwd) "\\"))
-                             ((and (fx< (##sys#size path) 3)
-                                   (sep? (sref path 0)))
-                                 (sappend
-                                     (##sys#substring (cwd) 0 2)
-                                     path))
-                             ((fx= 1 (##sys#size path))
-                                 (sappend (cwd) "\\" path))
-                             ((and (char=? #\~ (sref path 0))
-                                   (sep? (sref path 1)))
-                                 (sappend
-                                     (##sys#substring (cwd) 0 3)
-                                     "Documents and Settings\\"
-                                     (user)
-                                     (##sys#substring path 1
-                                         (##sys#size path))))
-                             ((fx= 2 (##sys#size path))
-                                 (sappend (cwd) "\\" path))
-                             ((and (alpha? (sref path 0))
-                                   (char=? #\: (sref path 1))
-                                   (sep? (sref path 2)))
-                                 path)
-                             ((and (char=? #\/ (sref path 0))
-                                   (alpha? (sref path 1))
-                                   (char=? #\: (sref path 2)))
-                                 (sappend
-                                     (##sys#substring path 1 3)
-                                     "\\"
-                                     (##sys#substring path 3
-                                         (##sys#size path))))
-                             ((sep? (sref path 0))
-                                 (sappend
-                                     (##sys#substring (cwd) 0 2)
-                                     path))
-                             (else
-                                 (sappend (cwd) "\\" path)))))
-                (let loop ((l   (ssplit (##sys#substring p 3 (##sys#size p))))
-                           (r   '()))
-                    (if (null? l)
-                        (if (null? r)
-                            (##sys#substring p 0 3)
-                            (if (sep? (sref p (- (##sys#size p) 1)))
-                                (sappend
-                                    (##sys#substring p 0 3)
-                                    (isperse (reverse (cons "" r))))
-                                (sappend
-                                    (##sys#substring p 0 3)
-                                    (isperse (reverse r)))))
-                        (loop
-                            (cdr l)
-                            (if (string=? ".." (car l))
-                                (cdr r)
-                                (if (string=? "." (car l))
-                                    r
-                                    (cons (car l) r))))))))))
-                           
-
 ;;; Pipes:
 
 (let ()
@@ -1707,7 +1632,6 @@ EOF
 		    (scan (fx+ j 1)) ) )
 	      '() ) ) ) ) ) )
 
-(define current-environment get-environment-variables) ; DEPRECATED
 
 ;;; Time related things:
 
@@ -2059,47 +1983,6 @@ EOF
 	(##sys#error 'current-user-name "cannot retrieve current user-name") ) ) )
 
 
-;;; Find matching files:
-
-(define find-files
-  (let ([glob glob]
-	[string-match string-match]
-	[make-pathname make-pathname]
-	[pathname-file pathname-file]
-	[directory? directory?] )
-    (lambda (dir pred . action-id-limit)
-      (let-optionals
-	  action-id-limit
-	  ([action (lambda (x y) (cons x y))] ; we want cons inlined
-	   [id '()]
-	   [limit #f] )
-	(##sys#check-string dir 'find-files)
-	(let* ([depth 0]
-	       [lproc
-		(cond [(not limit) (lambda _ #t)]
-		      [(fixnum? limit) (lambda _ (fx< depth limit))]
-		      [else limit] ) ]
-	       [pproc
-		(if (or (string? pred) (regexp? pred))
-		    (lambda (x) (string-match pred x))
-		    pred) ] )
-	  (let loop ([fs (glob (make-pathname dir "*"))]
-		     [r id] )
-	    (if (null? fs)
-		r
-		(let ([f (##sys#slot fs 0)]
-		      [rest (##sys#slot fs 1)] )
-		  (cond [(directory? f)
-			 (cond [(member (pathname-file f) '("." "..")) (loop rest r)]
-			       [(lproc f)
-				(loop rest
-				      (fluid-let ([depth (fx+ depth 1)])
-					(loop (glob (make-pathname f "*"))
-					      (if (pproc f) (action f r) r)) ) ) ]
-			       [else (loop rest (if (pproc f) (action f r) r))] ) ]
-			[(pproc f) (loop rest (action f r))]
-			[else (loop rest r)] ) ) ) ) ) ) ) ) )
-
 ;;; unimplemented stuff:
 
 (define-syntax define-unimplemented
@@ -2172,3 +2055,8 @@ EOF
 (define prot/none 0)
 (define prot/read 0)
 (define prot/write 0)
+
+
+;;; common code
+
+(include "posix-common.scm")

@@ -40,7 +40,15 @@
   (usual-integrations)
   (fixnum)
   (hide chop-pds absolute-pathname-root root-origin root-directory split-directory)
-  (disable-interrupts) )
+  (disable-interrupts) 
+  (foreign-declare #<<EOF
+#ifndef _WIN32
+# define C_mkdir(str)        C_fix(mkdir(C_c_string(str), S_IRWXU | S_IRWXG | S_IRWXO))
+#else
+# define C_mkdir(str)	    C_fix(mkdir(C_c_string(str)))
+#endif
+EOF
+))
 
 (cond-expand
  [paranoia]
@@ -248,11 +256,11 @@
        ext) ) )
 
   (set! make-pathname
-    (lambda (dirs file #!optional ext pds) ; The 'pds' argument is DEPRECATED
+    (lambda (dirs file #!optional ext)
       (_make-pathname 'make-pathname (canonicalize-dirs dirs pds) file ext pds)))
 
   (set! make-absolute-pathname
-    (lambda (dirs file #!optional ext pds) ; The 'pds' argument is DEPRECATED
+    (lambda (dirs file #!optional ext)
       (_make-pathname
        'make-absolute-pathname
        (let ([dir (canonicalize-dirs dirs pds)])
@@ -335,24 +343,55 @@
       (let-values ([(dir file _) (decompose-pathname pn)])
 	(make-pathname dir file ext) ) ) ) )
 
-(define create-temporary-file
-  (let ([get-environment-variable get-environment-variable]
-	[make-pathname make-pathname]
-	[file-exists? file-exists?]
-	[call-with-output-file call-with-output-file] )
-    (lambda ext
-      (let ((dir (or (get-environment-variable "TMPDIR") 
-		     (get-environment-variable "TEMP")
-		     (get-environment-variable "TMP")
-		     (file-exists? "/tmp")))
-	    (ext (if (pair? ext) (car ext) "tmp")))
-	(##sys#check-string ext 'create-temporary-file)
-	(let loop ()
-	  (let* ([n (##sys#fudge 16)]
-		 [pn (make-pathname dir (##sys#string-append "t" (number->string n 16)) ext)] )
-	    (if (file-exists? pn)
-		(loop)
-		(call-with-output-file pn (lambda (p) pn)) ) ) ) ) ) ) )
+(define create-temporary-file)
+(define create-temporary-directory)
+
+(let ((get-environment-variable get-environment-variable)
+      (make-pathname make-pathname)
+      (file-exists? file-exists?)
+      (directory-exists? directory-exists?)
+      (call-with-output-file call-with-output-file) 
+      (temp #f)
+      (temp-prefix "temp"))
+  (define (tempdir)
+    (or temp
+	(let ((tmp 
+	       (or (get-environment-variable "TMPDIR") 
+		   (get-environment-variable "TEMP")
+		   (get-environment-variable "TMP")
+		   (file-exists? "/tmp")
+		   (
+	  (set! temp tmp)
+	  tmp)))
+  (set! create-temporary-file
+    (lambda (#!optional (ext "tmp"))
+      (##sys#check-string ext 'create-temporary-file)
+      (let loop ()
+	(let* ((n (##sys#fudge 16))
+	       (pn (make-pathname 
+		    (tempdir)
+		    (##sys#string-append 
+		     temp-prefix
+		     (number->string n 16)) ext)) )
+	  (if (file-exists? pn)
+	      (loop)
+	      (call-with-output-file pn (lambda (p) pn)) ) ) ) ) )
+  (set! create-temporary-directory
+    (lambda ()
+      (let loop ()
+	(let* ((n (##sys#fudge 16))
+	       (pn (make-pathname 
+		    (tempdir)
+		    (string-append
+		     temp-prefix
+		     (number->string n 16)))))
+	  (if (directory-exists? pn) 
+	      (loop)
+	      (let ((r (##core#inline "C_mkdir" (##sys#make-c-string pn))))
+		(##sys#signal-hook 
+		 #:file-error 'create-temporary-directory
+		 (##sys#string-append "cannot create temporary directory - " strerror)
+		 name) )))))))
 
 
 ;;; normalize pathname for a particular platform
@@ -365,9 +404,9 @@
 	(display display)
 	(bldplt (if (memq (build-platform) '(msvc mingw32)) 'windows 'unix)) )
     (define (addpart part parts)
-      (cond ((string=? "." part)        parts )
-            ((string=? ".." part)       (if (null? parts) '("..") (cdr parts)) )
-            (else                       (cons part parts) ) ) )
+      (cond ((string=? "." part) parts)
+            ((string=? ".." part) (if (null? parts) '("..") (cdr parts)))
+            (else (cons part parts) ) ) )
     (lambda (path #!optional (platform bldplt))
       (let ((sep (if (eq? platform 'windows) #\\ #\/)))
 	(##sys#check-string path 'normalize-pathname)

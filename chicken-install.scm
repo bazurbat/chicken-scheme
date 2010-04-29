@@ -614,8 +614,7 @@ EOF
                        ((string=? "-test" arg)
                         (set! *run-tests* #t)
                         (loop (cdr args) eggs))
-                       ((or (string=? "-host" arg)
-			    (string=? "-host-extension" arg)) ; DEPRECATED
+                       ((string=? "-host" arg)
                         (set! *host-extension* #t)
                         (loop (cdr args) eggs))
 		       ((string=? "-deploy" arg)

@@ -103,8 +103,6 @@
 (define (shellpath str)
   (qs (normalize-pathname str)))
 
-(define (cross-chicken) (##sys#fudge 39)) ; DEPRECATED
-
 (define *csc-options* '())
 (define *base-directory* (current-directory))
 

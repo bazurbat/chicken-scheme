@@ -81,6 +81,7 @@ regex.scm
 irregex.scm
 posixunix.scm
 posixwin.scm
+posix-common.scm
 profiler.scm
 runtime.c
 scheduler.scm

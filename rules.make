@@ -860,9 +860,9 @@ srfi-69.c: $(SRCDIR)srfi-69.scm $(SRCDIR)private-namespace.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm
 utils.c: $(SRCDIR)utils.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-posixunix.c: $(SRCDIR)posixunix.scm
+posixunix.c: $(SRCDIR)posixunix.scm $(SRCDIR)posix-common.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-posixwin.c: $(SRCDIR)posixwin.scm
+posixwin.c: $(SRCDIR)posixwin.scm $(SRCDIR)posix-common.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
 regex.c: $(SRCDIR)regex.scm $(SRCDIR)irregex.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
