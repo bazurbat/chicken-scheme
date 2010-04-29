@@ -43,6 +43,7 @@
   (disable-interrupts) 
   (foreign-declare #<<EOF
 #include <unistd.h>
+#include <errno.h>
 
 #ifndef _WIN32
 # include <sys/stat.h>
@@ -71,6 +72,9 @@ EOF
 (include "unsafe-declarations.scm")
 
 (register-feature! 'files)
+
+
+(define-foreign-variable strerror c-string "strerror(errno)")
 
 
 ;;; Like `delete-file', but does nothing if the file doesn't exist:
@@ -394,7 +398,7 @@ EOF
 		(##sys#signal-hook 
 		 #:file-error 'create-temporary-directory
 		 (##sys#string-append "cannot create temporary directory - " strerror)
-		 name) )))))))
+		 pn) )))))))
 
 
 ;;; normalize pathname for a particular platform
