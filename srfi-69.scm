@@ -674,7 +674,7 @@
 (define hash-table-update!
   (let ([core-eq? eq?] )
     (lambda (ht key
-	     #!optional (func identity)
+	     #!optional (func (lambda (x) x))
 		        (thunk
 		         (let ([thunk (##sys#slot ht 9)])
 		           (or thunk
@@ -963,7 +963,7 @@
       (do ([lst (##sys#slot vec i) (##sys#slot lst 1)])
 	  [(null? lst)]
 	(let ([b (##sys#slot lst 0)])
-	  (*hash-table-update!/default ht1 (##sys#slot b 0) identity (##sys#slot b 1)) ) ) ) ) )
+	  (*hash-table-update!/default ht1 (##sys#slot b 0) (lambda (x) x) (##sys#slot b 1)) ) ) ) ) )
 
 (define (hash-table-merge! ht1 ht2)
   (##sys#check-structure ht1 'hash-table 'hash-table-merge!)
@@ -1000,7 +1000,7 @@
 	(for-each
 	 (lambda (x)
 	   (##sys#check-pair x 'alist->hash-table)
-	   (*hash-table-update!/default  ht (##sys#slot x 0) identity (##sys#slot x 1)) )
+	   (*hash-table-update!/default  ht (##sys#slot x 0) (lambda (x) x) (##sys#slot x 1)) )
 	 alist)
 	ht ) ) ) )
 
