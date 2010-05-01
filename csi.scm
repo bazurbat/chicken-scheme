@@ -54,7 +54,7 @@ EOF
   (always-bound
     ##sys#windows-platform)
   (hide parse-option-string bytevector-data member* canonicalize-args 
-	describer-table dirseparator? resolve-var
+	describer-table dirseparator?
 	findall command-table) )
 
 
@@ -354,9 +354,6 @@ EOF
 	     (receive rs (eval form)
 	       (history-add rs)
 	       (apply values rs) ) ) ) ) ) )
-
-(define (resolve-var str)
-  (##sys#strip-syntax (string->symbol str) (##sys#current-environment) #t))
 
 
 ;;; Parse options from string:
