@@ -395,10 +395,12 @@ EOF
 	  (if (directory-exists? pn) 
 	      (loop)
 	      (let ((r (##core#inline "C_mkdir" (##sys#make-c-string pn))))
-		(##sys#signal-hook 
-		 #:file-error 'create-temporary-directory
-		 (##sys#string-append "cannot create temporary directory - " strerror)
-		 pn) )))))))
+		(if (eq? r 0)
+		    pn
+		    (##sys#signal-hook 
+		     #:file-error 'create-temporary-directory
+		     (##sys#string-append "cannot create temporary directory - " strerror)
+		     pn) ))))))))
 
 
 ;;; normalize pathname for a particular platform
