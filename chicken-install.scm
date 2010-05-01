@@ -86,11 +86,17 @@
   (define *deploy* #f)
   (define *trunk* #f)
   (define *csc-features* '())
+  (define *prefix* #f)
+  (define *target-destdir* (foreign-value "C_TARGET_DESTDIR" c-string))
 
-  (define *prefix* 
-    (let ((p (foreign-value "C_TARGET_DESTDIR" c-string)))
-      (and (not (string=? p ""))
-	   p)))
+  (define (get-prefix)
+    (cond ((and (feature? #:cross-chicken)
+		(not *host-extension*))
+	   *prefix*)
+	  ((and *target-destdir*
+		(not (string=? *target-destdir* "")))
+	   *target-destdir*)
+	  (else #f)))
 
   (define-constant +module-db+ "modules.db")
   (define-constant +defaults-file+ "setup.defaults")
@@ -365,10 +371,11 @@
      (if *keep* " -e \"(keep-intermediates #t)\"" "")
      (if (and *no-install* (not dep?)) " -e \"(setup-install-mode #f)\"" "")
      (if *host-extension* " -e \"(host-extension #t)\"" "")
-     (if *prefix* 
-	 (sprintf " -e \"(destination-prefix \\\"~a\\\")\"" 
-	   (normalize-pathname *prefix* 'unix))
-	 "")
+     (let ((prefix (get-prefix)))
+       (if prefix
+	   (sprintf " -e \"(destination-prefix \\\"~a\\\")\"" 
+	     (normalize-pathname *prefix* 'unix))
+	   ""))
      (sprintf " -e \"(extra-features '~s)\"" *csc-features*)
      (if *deploy* " -e \"(deployment-mode #t)\"" "")
      #\space

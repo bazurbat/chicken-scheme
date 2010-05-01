@@ -926,7 +926,8 @@ EOF
 
 (define (target-lib-path)
   (let ((tdir TARGET_DESTDIR))
-    (if (not (string=? tdir ""))
+    (if (and (not (string=? tdir ""))
+	     (or (not cross-chicken) host-mode))
 	(make-pathname tdir "lib")
 	(lib-path))))
 
