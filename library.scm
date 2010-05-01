@@ -445,8 +445,10 @@ EOF
 	  ((eq? x (##sys#slot lst 0)) (##sys#slot lst 1))
 	  (else (cons (##sys#slot lst 0) (loop (##sys#slot lst 1)))) ) ) )
 
-(define (##sys#error-not-a-proper-list arg . loc)
-  (##sys#error-hook (foreign-value "C_NOT_A_PROPER_LIST_ERROR" int) (and (pair? loc) (car loc)) arg) )
+(define (##sys#error-not-a-proper-list arg #!optional loc)
+  (##sys#error-hook
+   (foreign-value "C_NOT_A_PROPER_LIST_ERROR" int) 
+   loc arg))
 
 (define ##sys#not-a-proper-list-error ##sys#error-not-a-proper-list) ;DEPRECATED
 

@@ -61,6 +61,7 @@
   (let ((%let (r 'let))
 	(%if (r 'if))
 	(%loop (r 'loop))
+	(%proc (gensym))
 	(%begin (r 'begin))
 	(%and (r 'and))
 	(%pair? (r 'pair?))
@@ -72,14 +73,19 @@
 		      (c %lambda (caadr x)))
 		 (symbol? (cadr x))))
 	(let ((vars (map (lambda _ (gensym)) lsts)))
-	  `(,%let ,%loop ,(map list vars lsts)
-		  (,%if (,%and ,@(map (lambda (v) `(,%pair? ,v)) vars))
-			(,%begin
-			 ((,%begin ,(cadr x))
-			  ,@(map (lambda (v) `(##sys#slot ,v 0)) vars))
-			 (##core#app 
-			  ,%loop
-			  ,@(map (lambda (v) `(##sys#slot ,v 1)) vars) ) ))))
+	  `(,%let ((,%proc ,(cadr x))
+		   ,@(map list vars lsts))
+		  ,@(map (lambda (var)
+			   `(##core#check (##sys#check-list ,var 'for-each)))
+			 vars)
+		  (,%let ,%loop ,(map list vars vars)
+			 (,%if (,%and ,@(map (lambda (v) `(,%pair? ,v)) vars))
+			       (,%begin
+				(,%proc
+				 ,@(map (lambda (v) `(##sys#slot ,v 0)) vars))
+				(##core#app 
+				 ,%loop
+				 ,@(map (lambda (v) `(##sys#slot ,v 1)) vars) ) )))))
 	x)))
 
 (define-internal-compiler-syntax ((map ##sys#map #%map) x r c)
@@ -87,11 +93,12 @@
   (let ((%let (r 'let))
 	(%if (r 'if))
 	(%loop (r 'loop))
-	(%res (r 'res))
+	(%res (gensym))
 	(%cons (r 'cons))
 	(%set! (r 'set!))
-	(%result (r 'result))
-	(%node (r 'node))
+	(%result (gensym))
+	(%node (gensym))
+	(%proc (gensym))
 	(%quote (r 'quote))
 	(%begin (r 'begin))
 	(%lambda (r 'lambda))
@@ -105,21 +112,27 @@
 		 (symbol? (cadr x))))
 	(let ((vars (map (lambda _ (gensym)) lsts)))
 	  `(,%let ((,%result (,%quote ()))
-		   (,%node #f))
-		  (,%let ,%loop ,(map list vars lsts)
-		       (,%if (,%and ,@(map (lambda (v) `(,%pair? ,v)) vars))
-			     (,%let ((,%res
-				      (,%cons
-				       ((,%begin ,(cadr x))
-					,@(map (lambda (v) `(##sys#slot ,v 0)) vars))
-				       (,%quote ()))))
-				    (,%if ,%node
-					  (##sys#setslot ,%node 1 ,%res)
-					  (,%set! ,%result ,%res))
-				    (,%set! ,%node ,%res)
-				    (,%loop
-				     ,@(map (lambda (v) `(##sys#slot ,v 1)) vars)))
-			     ,%result))))
+		   (,%node #f)
+		   (,%proc ,(cadr x))
+		   ,@(map list vars lsts))		   
+		  ,@(map (lambda (var)
+			   `(##core#check (##sys#check-list ,var 'map)))
+			 vars)
+		  (,%let ,%loop ,(map list vars vars)
+			 (,%if (,%and ,@(map (lambda (v) `(,%pair? ,v)) vars))
+			       (,%let ((,%res
+					(,%cons
+					 (,%proc
+					  ,@(map (lambda (v) `(##sys#slot ,v 0)) vars))
+					 (,%quote ()))))
+				      (,%if ,%node
+					    (##sys#setslot ,%node 1 ,%res)
+					    (,%set! ,%result ,%res))
+				      (,%set! ,%node ,%res)
+				      (##core#app
+				       ,%loop
+				       ,@(map (lambda (v) `(##sys#slot ,v 1)) vars)))
+			       ,%result))))
 	x)))
 
 (define-internal-compiler-syntax ((o #%o) x r c) ()
