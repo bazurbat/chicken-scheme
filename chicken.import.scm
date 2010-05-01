@@ -174,6 +174,7 @@
    open-input-string
    open-output-string
    parentheses-synonyms
+   port-closed?
    port-name
    port-position
    port?

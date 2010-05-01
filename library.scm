@@ -1667,6 +1667,10 @@ EOF
   (and (%port? x)
        (not (##sys#slot x 1)) ) )
 
+(define (port-closed? p)
+  (##sys#check-port p 'port-closed?)
+  (##sys#slot p 8))
+
 ;;; Port layout:
 ;
 ; 0:  FP (special)

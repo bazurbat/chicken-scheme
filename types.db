@@ -221,6 +221,7 @@
 (scheme-report-environment (procedure scheme-report-environment (#!optional fixnum) *))
 (null-environment (procedure null-environment (#!optional fixnum) *))
 (interaction-environment (procedure interaction-environment () *))
+(port-closed? (procedure port-closed? (port) boolean))
 
 ;; chicken
 
