@@ -41,7 +41,7 @@ endif
 
 SEP ?= /
 SRCDIR ?= .$(SEP)
-DESTDIR ?= $(TARGET_DESTDIR)
+DESTDIR ?=
 PREFIX ?= /usr/local
 BRANCHNAME ?= $(shell sh identify-branch.sh $(SRCDIR))
 
@@ -445,9 +445,6 @@ endif
 	echo "#endif" >>$@
 	echo "#ifndef C_TARGET_PREFIX" >>$@
 	echo "# define C_TARGET_PREFIX \"$(TARGET_PREFIX)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_TARGET_DESTDIR" >>$@
-	echo "# define C_TARGET_DESTDIR \"$(TARGET_DESTDIR)\"" >>$@
 	echo "#endif" >>$@
 	echo "#ifndef C_TARGET_BIN_HOME" >>$@
 	echo "# define C_TARGET_BIN_HOME \"$(TARGET_PREFIX)/bin\"" >>$@

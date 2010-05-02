@@ -45,7 +45,7 @@
 #TARGETSYSTEM= 
 
 # Where the install-location of a cross-build is
-#TARGET_DESTDIR=
+#TARGET_PREFIX=
 
 # Specify that the sources are in a different directory than ".":
 #SRCDIR=

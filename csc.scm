@@ -54,7 +54,6 @@
 (define-foreign-variable TARGET_INCLUDE_HOME c-string "C_TARGET_INCLUDE_HOME")
 (define-foreign-variable TARGET_STATIC_LIB_HOME c-string "C_TARGET_STATIC_LIB_HOME")
 (define-foreign-variable TARGET_RUN_LIB_HOME c-string "C_TARGET_RUN_LIB_HOME")
-(define-foreign-variable TARGET_DESTDIR c-string "C_TARGET_DESTDIR")
 (define-foreign-variable CHICKEN_PROGRAM c-string "C_CHICKEN_PROGRAM")
 (define-foreign-variable CSC_PROGRAM c-string "C_CSC_PROGRAM")
 (define-foreign-variable WINDOWS_SHELL bool "C_WINDOWS_SHELL")
@@ -925,10 +924,11 @@ EOF
 		  TARGET_RUN_LIB_HOME))))
 
 (define (target-lib-path)
-  (let ((tdir TARGET_DESTDIR))
+  (let ((tdir TARGET_LIB_HOME))
     (if (and (not (string=? tdir ""))
-	     (or (not cross-chicken) host-mode))
-	(make-pathname tdir "lib")
+	     cross-chicken
+	     (not host-mode))
+	tdir
 	(lib-path))))
 
 (define (copy-libraries targetdir)

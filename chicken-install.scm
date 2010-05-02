@@ -87,16 +87,13 @@
   (define *trunk* #f)
   (define *csc-features* '())
   (define *prefix* #f)
-  (define *target-destdir* (foreign-value "C_TARGET_DESTDIR" c-string))
 
   (define (get-prefix)
     (cond ((and (feature? #:cross-chicken)
 		(not *host-extension*))
-	   *prefix*)
-	  ((and *target-destdir*
-		(not (string=? *target-destdir* "")))
-	   *target-destdir*)
-	  (else #f)))
+	   (or *prefix*
+	       (foreign-value "C_TARGET_PREFIX" c-string)))
+	  (else *prefix*)))
 
   (define-constant +module-db+ "modules.db")
   (define-constant +defaults-file+ "setup.defaults")
@@ -374,7 +371,7 @@
      (let ((prefix (get-prefix)))
        (if prefix
 	   (sprintf " -e \"(destination-prefix \\\"~a\\\")\"" 
-	     (normalize-pathname *prefix* 'unix))
+	     (normalize-pathname prefix 'unix))
 	   ""))
      (sprintf " -e \"(extra-features '~s)\"" *csc-features*)
      (if *deploy* " -e \"(deployment-mode #t)\"" "")
