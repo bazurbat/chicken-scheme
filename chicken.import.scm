@@ -66,6 +66,7 @@
    define-reader-ctor
    delete-file
    enable-warnings
+   directory-exists?
    errno
    error
    exit
@@ -75,7 +76,7 @@
    feature?
    features
    file-exists?
-   directory-exists?
+   finite?
    fixnum-bits
    fixnum-precision
    fixnum?
