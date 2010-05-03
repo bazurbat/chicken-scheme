@@ -163,7 +163,7 @@ Possible options are:
 
 ; -optimize-level LEVEL : Enables certain sets of optimization options. {{LEVEL}} should be an integer.
 
-     -optimize-level 0          does nothing.
+     -optimize-level 0          is equivalent to -no-usual-integrations -no-compiler-syntax
      -optimize-level 1          is equivalent to -optimize-leaf-routines
      -optimize-level 2          is equivalent to -optimize-leaf-routines -inline
      -optimize-level 3          is equivalent to -optimize-leaf-routines -local -inline

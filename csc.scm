@@ -350,7 +350,7 @@ Usage: #{csc} FILENAME | OPTION ...
 
   Optimization options:
 
-    -O -O1 -O2 -O3 -O4 -O5 -optimize-level NUMBER
+    -O -O0 -O1 -O2 -O3 -O4 -O5 -optimize-level NUMBER
                                    enable certain sets of optimization options
     -optimize-leaf-routines        enable leaf routine optimization
     -N  -no-usual-integrations     standard procedures may be redefined
@@ -657,6 +657,7 @@ EOF
 		  (set! rest (cdr rest))
 		  (set! target-filename fn) ) ]
 	       [(|-O| |-O1|) (set! rest (cons* "-optimize-level" "1" rest))]
+	       [(|-O0|) (set! rest (cons* "-optimize-level" "0" rest))]
 	       [(|-O2|) (set! rest (cons* "-optimize-level" "2" rest))]
 	       [(|-O3|) (set! rest (cons* "-optimize-level" "3" rest))]
 	       [(|-O4|) (set! rest (cons* "-optimize-level" "4" rest))]

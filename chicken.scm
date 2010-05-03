@@ -53,12 +53,12 @@
 ; - convert options into symbols (without the initial hyphens)
 
 (define (process-command-line args)
-  (let loop ([args args] [options '()] [filename #f])
+  (let loop ((args args) (options '()) (filename #f))
     (if (null? args)
 	(values filename (reverse options))
-	(let* ([arg (car args)]
-	       [len (string-length arg)]
-	       [char0 (string-ref arg 0)] )
+	(let* ((arg (car args))
+	       (len (string-length arg))
+	       (char0 (string-ref arg 0)) )
 	  (if (and (char=? #\- char0) (> len 1))
 	      (if (and (> len 1) (char=? #\: (string-ref arg 1)))
 		  (loop (cdr args) options filename)
@@ -71,51 +71,53 @@
 ;;; Run compiler with command-line options:
 
 (receive (filename options) ((or (user-options-pass) process-command-line) compiler-arguments)
-  (let loop ([os options])
+  (let loop ((os options))
     (unless (null? os)
-      (let ([o (car os)]
-	    [rest (cdr os)] )
-	(cond [(eq? 'optimize-level o)
-	       (let ([level (string->number (car rest))])
+      (let ((o (car os))
+	    (rest (cdr os)) )
+	(cond ((eq? 'optimize-level o)
+	       (let ((level (string->number (car rest))))
 		 (case level
-		   [(0) #f]
-		   [(1)
-		    (set! options (cons 'optimize-leaf-routines options)) ]
-		   [(2)
-		    (set! options 
-		      (cons* 'optimize-leaf-routines 'inline options)) ] 
-		   [(3)
+		   ((0) 
 		    (set! options
-		      (cons* 'optimize-leaf-routines 'inline 'local options) ) ]
-		   [(4)
+		      (cons* 'no-compiler-syntax 'no-usual-integrations options)) )
+		   ((1)
+		    (set! options (cons 'optimize-leaf-routines options)) )
+		   ((2)
+		    (set! options 
+		      (cons* 'optimize-leaf-routines 'inline options)) ) 
+		   ((3)
+		    (set! options
+		      (cons* 'optimize-leaf-routines 'inline 'local options) ) )
+		   ((4)
 		    (set! options
 		      (cons* 'optimize-leaf-routines 'inline 'local 'unboxing 'unsafe
-			     options) ) ]
-		   [else
+			     options) ) )
+		   (else
 		    (when (>= level 5)
 		      (set! options 
 			(cons* 'disable-interrupts 'no-trace 'unsafe 'block
 			       'optimize-leaf-routines 'lambda-lift 'no-lambda-info
 			       'inline 'unboxing
-			       options) ) ) ] )
-		 (loop (cdr rest)) ) ]
-	      [(eq? 'debug-level o)
-	       (let ([level (string->number (car rest))])
+			       options) ) ) ) )
+		 (loop (cdr rest)) ) )
+	      ((eq? 'debug-level o)
+	       (let ((level (string->number (car rest))))
 		 (case level
-		   [(0) (set! options (cons* 'no-lambda-info 'no-trace options))]
-		   [(1) (set! options (cons 'no-trace options))]
-		   [(2) #f]
-		   [else (compiler-warning 'usage "invalid debug level ~S - ignored" (car rest))] )
-		 (loop (cdr rest)) ) ]
-	      [(memq o valid-compiler-options) (loop rest)]
-	      [(memq o valid-compiler-options-with-argument)
+		   ((0) (set! options (cons* 'no-lambda-info 'no-trace options)))
+		   ((1) (set! options (cons 'no-trace options)))
+		   ((2) #f)
+		   (else (compiler-warning 'usage "invalid debug level ~S - ignored" (car rest))) )
+		 (loop (cdr rest)) ) )
+	      ((memq o valid-compiler-options) (loop rest))
+	      ((memq o valid-compiler-options-with-argument)
 	       (if (pair? rest)
 		   (loop (cdr rest))
-		   (quit "missing argument to `-~s' option" o) ) ]
-	      [else
+		   (quit "missing argument to `-~s' option" o) ) )
+	      (else
 	       (compiler-warning 
 		'usage "invalid compiler option `~a' - ignored" 
 		(if (string? o) o (conc "-" o)) )
-	       (loop rest) ] ) ) ) )
+	       (loop rest) ) ) ) ) )
   (apply compile-source-file filename options)
   (exit) )
