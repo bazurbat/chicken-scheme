@@ -1495,10 +1495,10 @@
 	 exps)
 	(set-module-export-list! 
 	 mod
-	 (append 
-	  (let ((xl (module-export-list mod)))
-	    (if (eq? xl #t) '() xl))
-	  (map ##sys#strip-syntax exps))))
+	 (let ((xl (module-export-list mod)))
+	   (if (eq? xl #t) 
+	       #t
+	       (map ##sys#strip-syntax exps)))))
       '(##core#undefined)))))
 
 
