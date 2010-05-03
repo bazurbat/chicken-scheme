@@ -127,7 +127,7 @@
 (tan (procedure tan (number) float))
 (asin (procedure asin (number) float))
 (acos (procedure acos (number) float))
-(atan (procedure atan (number number) float))
+(atan (procedure atan (number #!optional number) float))
 (number->string (procedure number->string (number #!optional number) string))
 (string->number (procedure string->number (string #!optional number) (or number boolean)))
 (char? (procedure char? (*) boolean))
