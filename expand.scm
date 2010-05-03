@@ -981,7 +981,8 @@
 	     (set-module-export-list! 
 	      cm
 	      (append 
-	       (module-export-list cm) 
+	       (let ((xl (module-export-list cm) ))
+		 (if (eq? #t xl) '() xl))
 	       (map car vsv)
 	       (map car vss)))
 	     (when (pair? prims)
