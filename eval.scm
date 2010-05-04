@@ -1498,34 +1498,6 @@
 		  (else (loop (##sys#slot paths 1))) ) ) ) ) ) )
 
 
-;;; Print timing information (support for "time" macro):
-
-(define ##sys#display-times
-  (let* ((display display)
-	 (spaces 
-	  (lambda (n)
-	    (do ((i n (fx- i 1)))
-		((fx<= i 0))
-	      (display #\space) ) ) )
-	 (display-rj 
-	  (lambda (x w)
-	    (let* ((xs (if (zero? x) "0" (number->string x)))
-		   (xslen (##core#inline "C_block_size" xs)) )
-	      (spaces (fx- w xslen))
-	      (display xs) ) ) ) )
-    (lambda (info)
-      (display-rj (##sys#slot info 0) 8)
-      (display " seconds elapsed\n") 
-      (display-rj (##sys#slot info 1) 8)
-      (display " seconds in (major) GC\n")
-      (display-rj (##sys#slot info 2) 8)
-      (display " mutations\n")
-      (display-rj (##sys#slot info 3) 8)
-      (display " minor GCs\n")
-      (display-rj (##sys#slot info 4) 8)
-      (display " major GCs\n") ) ) )
-
-
 ;;; SRFI-0 support code:
 
 (set! ##sys#features

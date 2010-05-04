@@ -246,7 +246,11 @@ EOF
 (define ##sys#decode-seconds (##core#primitive "C_decode_seconds"))
 (define get-environment-variable (##core#primitive "C_get_environment_variable"))
 (define getenv get-environment-variable) ; DEPRECATED
-(define (##sys#start-timer) (##core#inline "C_start_timer"))
+
+(define (##sys#start-timer)
+  (##sys#gc #t)
+  (##core#inline "C_start_timer"))
+
 (define ##sys#stop-timer (##core#primitive "C_stop_timer"))
 (define (##sys#immediate? x) (not (##core#inline "C_blockp" x)))
 (define (##sys#message str) (##core#inline "C_message" str))
@@ -4624,3 +4628,22 @@ EOF
 	  (if (memq prop props)
 	      (values prop (##sys#slot tl 0) nxt)
 	      (loop nxt) ) ) ) ) )
+
+
+;;; Print timing information (support for "time" macro):
+
+(define (##sys#display-times info)
+  (define (pstr str) (##sys#print str #f ##sys#standard-error))
+  (define (pnum num)
+    (##sys#print (if (zero? num) "0" (##sys#number->string num)) #f ##sys#standard-error))
+  (##sys#flush-output ##sys#standard-output)
+  (pnum (##sys#slot info 0))
+  (pstr "s elapsed, ")
+  (pnum (##sys#slot info 1))
+  (pstr "s (major) GC, ")
+  (pnum (##sys#slot info 2))
+  (pstr " mutations, GCs: ")
+  (pnum (##sys#slot info 3))
+  (pstr " minor, ")
+  (pnum (##sys#slot info 4))
+  (pstr " major\n") )
