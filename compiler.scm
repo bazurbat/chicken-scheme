@@ -1192,11 +1192,8 @@
 			       (walk `(##sys#make-locative ,sym 0 #f 'location) e se #f) ) ) )
 				 
 			(else
-			 (let* ((msyntax (unimported-syntax name))
-				(x2 (if msyntax
-					(fluid-let ((##sys#unimported-syntax-context name))
-					  (mapwalk x e se))
-					(mapwalk x e se)))
+			 (let* ((x2 (fluid-let ((##sys#syntax-context (cons name ##sys#syntax-context)))
+				      (mapwalk x e se)))
 				(head2 (car x2))
 				(old (##sys#hash-table-ref line-number-database-2 head2)) )
 			   (when ln
@@ -1223,14 +1220,6 @@
 		(,tmp ,@(cdr x)))
 	      e se dest)))))
   
-  (define (unimported-syntax sym)
-    (let ((defs (##sys#get (##sys#strip-syntax sym) '##core#db)))
-      (and defs
-	   (let loop ((defs defs))
-	     (and (pair? defs)
-		  (or (eq? 'syntax (caar defs))
-		      (loop (cdr defs))))))))
-
   (define (mapwalk xs e se)
     (map (lambda (x) (walk x e se #f)) xs) )
 

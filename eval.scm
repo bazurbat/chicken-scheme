@@ -747,23 +747,12 @@
 			  (compile-call (cdr x) e tf cntr se) ]
 
 			 (else
-			  (let ((msyntax (unimported-syntax head)))
-			    (if msyntax
-				(fluid-let ((##sys#unimported-syntax-context head))
-				  (compile-call x e tf cntr se))
-				(compile-call x e tf cntr se)) ) ) ) ) ) ) ]
+			  (fluid-let ((##sys#syntax-context (cons head ##sys#syntax-context)))
+			    (compile-call x e tf cntr se)))))))]
 	      
 	      [else
 	       (emit-syntax-trace-info tf x cntr)
 	       (compile-call x e tf cntr se)] ) )
-
-      (define (unimported-syntax sym)
-	(let ((defs (##sys#get (##sys#strip-syntax sym) '##core#db)))
-	  (and defs
-	       (let loop ((defs defs))
-		 (and (pair? defs)
-		      (or (eq? 'syntax (caar defs))
-			  (loop (cdr defs))))))))
 
       (define (fudge-argument-list n alst)
 	(if (null? alst) 

@@ -613,7 +613,7 @@
 
 (define ##sys#line-number-database #f)
 (define ##sys#syntax-error-culprit #f)
-(define ##sys#unimported-syntax-context #f)
+(define ##sys#syntax-context '())
 
 (define (##sys#syntax-error-hook . args)
   (apply ##sys#signal-hook #:syntax-error
@@ -623,37 +623,52 @@
   (let ((open-output-string open-output-string)
 	(get-output-string get-output-string))
     (lambda (msg arg)
-      (cond (##sys#unimported-syntax-context 
-	     =>
-	     (lambda (cx)
-	       (let* ((cx (##sys#strip-syntax cx))
-		      (a (##sys#get cx '##core#db))
-		      (out (open-output-string)))
-		 (##sys#print msg #f out)
-		 (##sys#print ": " #f out)
-		 (##sys#print arg #t out)
-		 (##sys#print "\n\nPerhaps you intended to use the syntax `" #f out)
-		 (##sys#print cx #f out)
-		 (##sys#print "' without importing it first.\n" #f out)
-		 (if (= 1 (length a))
-		     (##sys#print 
-		      (string-append
-		       "Suggesting: `(import "
-		       (symbol->string (cadar a))
-		       ")'")
-		      #f out)
-		     (##sys#print
-		      (string-append
-		       "Suggesting one of:\n"
-		       (let loop ((lst a))
-			 (if (null? lst)
-			     ""
-			     (string-append
-			      "\n    (import " (symbol->string (cadar lst)) ")"
-			      (loop (cdr lst))))))
-		      #f out))
-		 (##sys#syntax-error-hook (get-output-string out)))))
-	    (else (##sys#syntax-error-hook msg arg))))))
+      (define (syntax-imports sym)
+	(let loop ((defs (or (##sys#get (##sys#strip-syntax sym) '##core#db) '())))
+	  (cond ((null? defs) '())
+		((eq? 'syntax (caar defs))
+		 (cons (cadar defs) (loop (cdr defs))))
+		(else (loop (cdr defs))))))		     
+      (if (null? ##sys#syntax-context)
+	  (##sys#syntax-error-hook msg arg)
+	  (let ((out (open-output-string)))
+	    (define (outstr str)
+	      (##sys#print str #f out))
+	    (let loop ((cx ##sys#syntax-context))
+	      (cond ((null? cx)	; no unimported syntax found
+		     (outstr msg)
+		     (outstr ": ")
+		     (##sys#print arg #t out)
+		     (outstr "\ninside expression `(")
+		     (##sys#print (##sys#strip-syntax (car ##sys#syntax-context)) #t out)
+		     (outstr " ...)'"))
+		    (else 
+		     (let* ((sym (##sys#strip-syntax (car cx)))
+			    (us (syntax-imports sym)))
+		       (cond ((pair? us)
+			      (outstr msg)
+			      (outstr ": ")
+			      (##sys#print arg #t out)
+			      (outstr "\n\n  Perhaps you intended to use the syntax `(")
+			      (##sys#print sym #t out)
+			      (outstr " ...)' without importing it first.\n")
+			      (if (fx= 1 (length us))
+				  (outstr
+				   (string-append
+				    "  Suggesting: `(import "
+				    (symbol->string (car us))
+				    ")'"))
+				  (outstr
+				   (string-append
+				    "  Suggesting one of:\n"
+				    (let loop ((lst us))
+				      (if (null? lst)
+					  ""
+					  (string-append
+					   "\n      (import " (symbol->string (car lst)) ")'"
+					   (loop (cdr lst)))))))))
+			     (else (loop (cdr cx))))))))
+	    (##sys#syntax-error-hook (get-output-string out)))))))
 
 (define syntax-error ##sys#syntax-error-hook)
 
