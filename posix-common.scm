@@ -33,15 +33,43 @@ EOF
 ))
 
 
+;;; File properties
+
+(define (file-size f) (##sys#stat f #f 'file-size) _stat_st_size)
+
+(define file-modification-time
+  (getter-with-setter 
+   (lambda (f)
+     (##sys#stat f #f 'file-modification-time) _stat_st_mtime)
+   (lambda (f t)
+     (##sys#check-number t 'set-file-modification-time)
+     (let ((r ((foreign-lambda int "set_file_mtime" c-string scheme-object)
+	       (##sys#expand-home-path f) t)))
+       (when (fx< r 0)
+	 (posix-error 
+	  #:file-error 'set-file-modification-time
+	  "cannot set file modification-time" f t))))))
+
+(define (file-access-time f) (##sys#stat f #f 'file-access-time) _stat_st_atime)
+(define (file-change-time f) (##sys#stat f #f 'file-change-time) _stat_st_ctime)
+(define (file-owner f) (##sys#stat f #f 'file-owner) _stat_st_uid)
+(define (file-permissions f) (##sys#stat f #f 'file-permissions) _stat_st_mode)
+
+(define (regular-file? fname)
+  (##sys#check-string fname 'regular-file?)
+  (let ((info (##sys#file-info (##sys#expand-home-path fname))))
+    (and info (fx= 0 (##sys#slot info 4))) ) )
+
+
 ;;; Set or get current directory:
 
 (define current-directory
-  (let ([make-string make-string])
+  (let ((make-string make-string))
     (lambda (#!optional dir)
       (if dir
 	  (change-directory dir)
-	  (let* ([buffer (make-string 1024)]
-		 [len (##core#inline "C_curdir" buffer)] )
+	  (let* ((buffer (make-string 1024))
+		 (len (##core#inline "C_curdir" buffer)) )
 	    #+(or unix cygwin)
 	    (##sys#update-errno)
 	    (if len
@@ -49,46 +77,69 @@ EOF
 		(##sys#signal-hook #:file-error 'current-directory "cannot retrieve current directory") ) ) ) ) ) )
 
 
+;;; Filename globbing:
+
+(define glob
+  (let ((regexp regexp)
+        (string-match string-match)
+        (glob->regexp glob->regexp)
+        (directory directory)
+        (make-pathname make-pathname)
+        (decompose-pathname decompose-pathname) )
+    (lambda paths
+      (let conc-loop ((paths paths))
+        (if (null? paths)
+            '()
+            (let ((path (car paths)))
+              (let-values (((dir fil ext) (decompose-pathname path)))
+                (let* ((patt (glob->regexp (make-pathname #f (or fil "*") ext)))
+                       (rx (regexp patt)))
+                  (let loop ((fns (directory (or dir ".") #t)))
+                    (cond ((null? fns) (conc-loop (cdr paths)))
+                          ((string-match rx (car fns))
+                           => (lambda (m) (cons (make-pathname dir (car m)) (loop (cdr fns)))) )
+                          (else (loop (cdr fns))) ) ) ) ) ) ) ) ) ) )
+
+
 ;;; Find matching files:
 
 (define find-files
-  (let ([glob glob]
-	[string-match string-match]
-	[make-pathname make-pathname]
-	[pathname-file pathname-file]
-	[directory? directory?] )
-    (lambda (dir pred . action-id-limit)
-      (let-optionals
-	  action-id-limit
-	  ([action (lambda (x y) (cons x y))] ; we want cons inlined
-	   [id '()]
-	   [limit #f] )
+  (let ((glob glob)
+	(string-match string-match)
+	(make-pathname make-pathname)
+	(pathname-file pathname-file)
+	(directory? directory?) )
+    (lambda (dir #!optional
+		 (pred (lambda _ #t))
+		 (action (lambda (x y) (cons x y))) ; we want cons inlined
+		 (id '())
+		 (limit #f) )
 	(##sys#check-string dir 'find-files)
-	(let* ([depth 0]
-	       [lproc
-		(cond [(not limit) (lambda _ #t)]
-		      [(fixnum? limit) (lambda _ (fx< depth limit))]
-		      [else limit] ) ]
-	       [pproc
+	(let* ((depth 0)
+	       (lproc
+		(cond ((not limit) (lambda _ #t))
+		      ((fixnum? limit) (lambda _ (fx< depth limit)))
+		      (else limit) ) )
+	       (pproc
 		(if (or (string? pred) (regexp? pred))
 		    (lambda (x) (string-match pred x))
-		    pred) ] )
-	  (let loop ([fs (glob (make-pathname dir "*"))]
-		     [r id] )
+		    pred) ) )
+	  (let loop ((fs (glob (make-pathname dir "*")))
+		     (r id) )
 	    (if (null? fs)
 		r
-		(let ([f (##sys#slot fs 0)]
-		      [rest (##sys#slot fs 1)] )
-		  (cond [(directory? f)
-			 (cond [(member (pathname-file f) '("." "..")) (loop rest r)]
-			       [(lproc f)
+		(let ((f (##sys#slot fs 0))
+		      (rest (##sys#slot fs 1)) )
+		  (cond ((directory? f)
+			 (cond ((member (pathname-file f) '("." "..")) (loop rest r))
+			       ((lproc f)
 				(loop rest
-				      (fluid-let ([depth (fx+ depth 1)])
+				      (fluid-let ((depth (fx+ depth 1)))
 					(loop (glob (make-pathname f "*"))
-					      (if (pproc f) (action f r) r)) ) ) ]
-			       [else (loop rest (if (pproc f) (action f r) r))] ) ]
-			[(pproc f) (loop rest (action f r))]
-			[else (loop rest r)] ) ) ) ) ) ) ) ) )
+					      (if (pproc f) (action f r) r)) ) ) )
+			       (else (loop rest (if (pproc f) (action f r) r))) ) )
+			((pproc f) (loop rest (action f r)))
+			(else (loop rest r)) ) ) ) ) ) ) ) )
 
 
 ;;; TODO: add more here...

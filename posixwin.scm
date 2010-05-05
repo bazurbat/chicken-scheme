@@ -1097,33 +1097,6 @@ EOF
 	  _stat_st_atime _stat_st_ctime _stat_st_mtime
 	  0 0 0 0) )
 
-(define (file-size f) (##sys#stat f) _stat_st_size)
-
-(define file-modification-time
-  (getter-with-setter 
-   (lambda (f)
-     (##sys#stat f) _stat_st_mtime)
-   (lambda (f t)
-     (##sys#check-string f 'set-file-modification-time)
-     (##sys#check-number t 'set-file-modification-time)
-     (let ((r ((foreign-lambda int "set_file_mtime" c-string scheme-object)
-	       (##sys#expand-home-path f) 
-	       t)))
-       (when (fx< r 0)
-	 (posix-error 
-	  #:file-error 'set-file-modification-time
-	  "cannot set file modification-time" f t))))))
-
-(define (file-access-time f) (##sys#stat f) _stat_st_atime)
-(define (file-change-time f) (##sys#stat f) _stat_st_ctime)
-(define (file-owner f) (##sys#stat f) _stat_st_uid)
-(define (file-permissions f) (##sys#stat f) _stat_st_mode)
-
-(define (regular-file? fname)
-  (##sys#check-string fname 'regular-file?)
-  (let ((info (##sys#file-info (##sys#expand-home-path fname))))
-    (and info (fx= 0 (##sys#slot info 4))) ) )
-
 (define (symbolic-link? fname)
   (##sys#check-string fname 'symbolic-link?)
   #f)
@@ -1706,30 +1679,6 @@ EOF
 		       -1)
 		   0)
 	  (##sys#error 'set-buffering-mode! "cannot set buffering mode" port mode size) ) ) ) )
-
-;;; Filename globbing:
-
-(define glob
-  (let ([regexp regexp]
-	[string-match string-match]
-	[glob->regexp glob->regexp]
-	[directory directory]
-	[make-pathname make-pathname]
-	[decompose-pathname decompose-pathname] )
-    (lambda paths
-      (let conc-loop ([paths paths])
-	(if (null? paths)
-	    '()
-	    (let ([path (car paths)])
-	      (let-values ([(dir fil ext) (decompose-pathname path)])
-		(let* ([patt (glob->regexp (make-pathname #f (or fil "*") ext))]
-		       [rx (regexp patt)])
-		  (let loop ([fns (directory (or dir ".") #t)])
-		    (cond [(null? fns) (conc-loop (cdr paths))]
-			  [(string-match rx (car fns))
-			   => (lambda (m) (cons (make-pathname dir (car m)) (loop (cdr fns)))) ]
-			  [else (loop (cdr fns))] ) ) ) ) ) ) ) ) ) )
-
 
 ;;; Process handling:
 
