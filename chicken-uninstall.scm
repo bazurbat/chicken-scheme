@@ -36,7 +36,7 @@
   (import srfi-1 posix data-structures utils ports regex srfi-13 files)
 
   (define-foreign-variable C_TARGET_LIB_HOME c-string)
-  (define-foreign-variable C_BINARY_VERSION c-string)
+  (define-foreign-variable C_BINARY_VERSION int)
 
   (define *host-extensions* #f)
 

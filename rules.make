@@ -758,7 +758,7 @@ ifeq ($(CROSS_CHICKEN)$(DESTDIR),0)
 	-$(IBINDIR)$(SEP)$(CHICKEN_INSTALL_PROGRAM) -update-db
 else
 	@echo
-	@echo "Warning: cannot run \`chicken-install -update-db' when DESTDIR is set"
+	@echo "Warning: cannot run \`$(CHICKEN_INSTALL_PROGRAM) -update-db' when cross-compiling or DESTDIR is set"
 	@echo
 endif
 endif
