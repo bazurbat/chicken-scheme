@@ -1275,6 +1275,9 @@ Usage: chicken FILENAME OPTION ...
     -no-procedure-checks-for-usual-bindings
                                  disable procedure call checks only for usual
                                   bindings
+    -no-procedure-checks-for-toplevel-bindings
+                                   disable procedure call checks for toplevel
+                                    bindings
 
   Configuration options:
 

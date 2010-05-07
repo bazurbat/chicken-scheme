@@ -364,7 +364,7 @@
 			    (lambda v c)))
 
 			 [(##core#global-ref)
-			  (let ([var (cadr x)])
+			  (let ([var (cadr x)]) ;XXX broken - should alias (see above)
 			    (if ##sys#eval-environment
 				(let ([loc (##sys#hash-table-location ##sys#eval-environment var #t)])
 				  (lambda v (##sys#slot loc 1)) )

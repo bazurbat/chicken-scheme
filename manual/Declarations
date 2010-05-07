@@ -207,6 +207,21 @@ Disables the bound-checking of toplevel bindings.
 Disables checking of values in operator position for being of procedure type.
 
 
+=== no-procedure-checks-for-usual-bindings
+
+ [declaration specifier] (no-procedure-checks-for-usual-bindings)
+
+Disables checking of procedures for the default standard- and extended toplevel bindings.
+
+
+=== no-procedure-checks-for-toplevel-bindings
+
+ [declaration specifier] (no-procedure-checks-for-toplevel-bindings)
+
+Disables checking of procedures for calls to procedures referenced via a toplevel variable
+(calls to explicitly named procedures).
+
+
 === post-process
 
  [declaration specifier] (post-process STRING ...)

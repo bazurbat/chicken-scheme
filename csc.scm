@@ -136,7 +136,8 @@
     -no-symbol-escape -no-parentheses-synonyms -r5rs-syntax
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
     -emit-all-import-libraries -setup-mode -unboxing -no-elevation
-    -no-procedure-checks-for-usual-bindings))
+    -no-procedure-checks-for-usual-bindings
+    -no-procedure-checks-for-toplevel-bindings))
 
 (define-constant complex-options
   '(-debug -output-file -heap-size -nursery -stack-size -compiler -unit -uses -keyword-style
@@ -374,6 +375,9 @@ Usage: #{csc} FILENAME | OPTION ...
     -no-procedure-checks           disable procedure call checks
     -no-procedure-checks-for-usual-bindings
                                    disable procedure call checks only for usual
+                                    bindings
+    -no-procedure-checks-for-toplevel-bindings
+                                   disable procedure call checks for toplevel
                                     bindings
 
   Configuration options:

@@ -150,6 +150,8 @@ Possible options are:
 
 ; -no-procedure-checks-for-usual-bindings :  disable procedure call checks only for usual bindings
 
+; -no-procedure-checks-for-toplevel-bindings :  disable bound and procedure call checks for calls to procedures referenced through a toplevel variable.
+
 ; -no-symbol-escape : Disables support for escaped symbols, the |...| form.
 
 ; -no-trace : Disable generation of tracing information. If a compiled executable should halt due to a runtime error, then a list of the name and the line-number (if available) of the last procedure calls is printed, unless {{-no-trace}} is specified. With this option the generated code is slightly faster.
@@ -188,7 +190,7 @@ Possible options are:
 ; -raw : Disables the generation of any implicit code that uses the Scheme libraries (that is all runtime system files besides {{runtime.c}} and {{chicken.h}}).
 
 ; -require-extension NAME : Loads the extension {{NAME}} before the compilation process commences. This is identical to adding {{(require-extension NAME)}} at the start of the compiled program. If {{-uses NAME}} is also given on the command line, then any occurrences of {{-require-extension NAME}} are replaced with {{(declare (uses NAME))}}. Multiple names may be given and should be separated by {{,}}.
-
+ 
 ; -setup-mode : When locating extension, search the current directory first. By default, extensions are located first in the ''extension repository'', where {{chicken-install}} stores compiled extensions and their associated metadata.
 
 ; -scrutinize : Enable simple flow-analysis to catch common type errors and argument/result mismatches. You can also use the {{scrutinize}} declaration to enable scrutiny.
