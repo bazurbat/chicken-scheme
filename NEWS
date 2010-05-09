@@ -1,5 +1,7 @@
 4.5.0
 
+- internal fixes of handling of alternative installation-prefix
+  in setup-api
 - certain compiler-warnings that are in really just notes
   and don't indicate a possible error (like reimport of
   identifiers) are only shown with -S or in verbose mode
