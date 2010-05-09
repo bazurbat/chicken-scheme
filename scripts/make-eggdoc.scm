@@ -28,16 +28,19 @@
     (for-each 
      (lambda (egg)
        (let ((meta (cdr egg)))
+	(d "processing meta ~s" meta)
 	 (cond 
 	  ((assq 'eggdoc meta) =>
 	   (lambda (edoc)
+	     (d "edoc is ~a" edoc)
 	     (let ((eggname (->string (car egg))))
 	     (d "creating HTML from eggdoc file ~a" (cadr edoc))
-	     (let* ((egg-dir    (locate-egg/local eggname dir))
-		    (eggref-dir (sprintf "~s/eggref/~a" *docroot* *major-version* ))
-		    (cmd        (sprintf "~a -s ~a > ~a" 
+	     (let* ((egg-dir     (locate-egg/local eggname dir))
+		    (eggref-dir  (sprintf "~s/eggref/~a" *docroot* *major-version* ))
+		    (cmd         (sprintf "~a -I ~a -s ~a > ~a" 
 					 csi
-					 (make-pathname egg-dir (->string (cadr edoc)))
+                                         egg-dir
+                                         (make-pathname egg-dir (->string (cadr edoc)))
 					 (make-pathname eggref-dir eggname "html"))))
 	       (d "~s" cmd)
 	       (system* cmd) )))))))
@@ -47,7 +50,6 @@
 
 (define (main args)
   (when *help* (usage 0))
-  (print "args = " args)
   (match args
     ((dir)  (make-eggdoc dir))
     (()     (make-eggdoc "."))
