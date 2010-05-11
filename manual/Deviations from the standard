@@ -13,9 +13,13 @@ to continuations captured using {{call-with-current-continuation}}
 is 120.  This is an implementation restriction that is unlikely
 to be lifted.
 
+[5.3] Redefining {{define}} with a value will silently create a
+variable binding and keep the syntax definition. R5RS states that
+such a redefinition is an error.
+
 [6.2.5] The {{numerator}} and {{denominator}} procedures cannot be
 applied to inexact numbers, and the procedure {{rationalize}} is not
-implemented at all.  This will be fixed in a later release.
+implemented at all.
 
 [6.2.4] The runtime system uses the numerical string-conversion
 routines of the underlying C library and so does only understand
@@ -26,8 +30,6 @@ read/write invariance to inexact numbers.
 
 [6.5] Code evaluated in {{scheme-report-environment}} or
 {{null-environment}} still sees non-standard syntax.
-
-== Unconfirmed deviations
 
 [6.6.2] The procedure {{char-ready?}} always returns {{#t}} for
 terminal ports.
@@ -72,7 +74,7 @@ numbers or extended-precision integers (bignums). The routines
 {{complex?}}, {{real?}} and {{rational?}} are identical to
 the standard procedure {{number?}}. The procedures {{make-rectangular}}
 and {{make-polar}} are not implemented. Fixnums are limited to
-±2<nowiki><sup>30</sup></nowiki> (or ±2<nowiki><sup>62</sup></nowiki>
+2^<nowiki><sup>30</sup></nowiki> (or 2^<nowiki><sup>62</sup></nowiki>
 on 64-bit hardware).  Support for the full numeric tower is available
 as a separate package, provided the GNU multiprecision library is installed.
 

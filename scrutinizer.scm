@@ -619,9 +619,9 @@
 	      (old (##sys#get name '##core#type))
 	      (new (cadr e)))
 	 (when (and old (not (equal? old new)))
-	   (compiler-warning 
-	    'scrutiny
-	    "type-definition `~a' for toplevel binding `~a' conflicts with previously loaded type `~a'"
-	    name new old))
+	   (##sys#notice
+	    (sprintf
+		"type-definition `~a' for toplevel binding `~a' conflicts with previously loaded type `~a'"
+		name new old)))
 	 (##sys#put! name '##core#type new)))
      (read-file dbfile))))

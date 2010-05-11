@@ -24,92 +24,9 @@ manual for more information.
 
 .SH OPTIONS
 
-.TP
-.B \-h,\ \-help      
-Shows a summary of options and exits.
-
-.TP
-.B \-v,\ \-version
-Shows tool version and exits.
-
-.TP
-.B \-force
-Do not ask when versions don't match, continue with the installation instead.
-
-.TP
-.BI \-i,\ \-init\ DIRECTORY
-Initialize empty alternative repository.
-
-.TP
-.B \-k,\ \-keep
-Keep temporary directories after an installation process finished
-(whether successfull or not).
-
-.TP
-.N \-n\-install
-Do not install the extension, just build it. Implies 
-.B \-keep
-
-.TP
-.BI \-l,\ \-location \ LOCATION
-Specifies the location from where to retrieve the extension sources.
-Defaults to the current official egg-repository suitable for this
-version of 
-.B CHICKEN
-Depending on the transport used (see below), the 
-.B LOCATION
-may be an svn(1) repository URL, a http URL or a location in the local
-file-system.
-
-.TP
-.BI \-t,\ \-transport \ TRANSPORT
-Selects the mechanism to use to download any extensions that are directly
-or indirectly to be installed. Currently the transports
-.B http
-(the default, retrieve files via the HTTP protocol),
-.B svn
-(retrieve by performing a checkout - requires the svn(1) client to be
-installed) and
-.B local
-(install directly from the local file-system).
-
-.TP
-.B \-s,\ \-sudo
-Perform any installation steps the install files by commands invoked
-with the sudo(1) tool.
-
-.TP
-.B \-u,\ \-update
-Scan all installed import libraries and generate module database file.
-
-.TP
-.B \-r,\ \-retrieve
-Only fetch the extensions, do not install them.
-
-.TP
-.BI \-p,\ \-prefix \ PREFIX
-Select an alternative installation prefix.
-
-.TP
-.B \-host\-extension
-Mark this extension as a "host" extension. This is mainly intended
-for cross-compilation.
-
-.TP
-.B \-test
-After successfull installation, invoke any accompanying test-suite,
-if found in the extension sources. When this option is given, additional
-dependencies configured in the 
-.B test\-depends
-meta property may be downloaded and installed, if necessary.
-
-.TP
-.BI \-username USERNAME
-Set username for transports that require authentification.
-
-.TP
-.BI \-password PASSWORD
-Set password for transports that require authentification.
+Enter
+.B chicken-install\ \-help
+for a list of supported command-line options.
 
 .SH ENVIRONMENT\ VARIABLES
 

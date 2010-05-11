@@ -54,7 +54,7 @@ EOF
   (always-bound
     ##sys#windows-platform)
   (hide parse-option-string bytevector-data member* canonicalize-args 
-	describer-table dirseparator? resolve-var
+	describer-table dirseparator?
 	findall command-table) )
 
 
@@ -355,9 +355,6 @@ EOF
 	       (history-add rs)
 	       (apply values rs) ) ) ) ) ) )
 
-(define (resolve-var str)
-  (##sys#strip-syntax (string->symbol str) (##sys#current-environment) #t))
-
 
 ;;; Parse options from string:
 
@@ -383,6 +380,7 @@ EOF
 	(sort sort)
 	(with-output-to-port with-output-to-port)
 	(current-output-port current-output-port) 
+	(argv argv)
 	(prefix
 	 (or (get-environment-variable "CHICKEN_PREFIX")
 	     (foreign-value "C_INSTALL_PREFIX" c-string) ) ))
@@ -414,7 +412,8 @@ EOF
                      Avg bucket length:\t~S~%  ~
                      Total symbol count:\t~S~%~
                    Memory:\theap size is ~S bytes~A with ~S bytes currently in use~%~  
-                     nursery size is ~S bytes, stack grows ~A~%"
+                     nursery size is ~S bytes, stack grows ~A~%~
+                   Command line:    \t~S~%"
 		    (machine-type)
 		    (if (##sys#fudge 3) "(64-bit)" "")
 		    (software-type)
@@ -430,7 +429,8 @@ EOF
 		    (if (##sys#fudge 17) " (fixed)" "")
 		    (vector-ref minfo 1)
 		    (vector-ref minfo 2)
-		    (if (= 1 (##sys#fudge 18)) "downward" "upward") )
+		    (if (= 1 (##sys#fudge 18)) "downward" "upward")
+		    (argv))
 	    (##sys#write-char-0 #\newline ##sys#standard-output)
 	    (when (##sys#fudge 14) (display "interrupts are enabled\n"))
 	    (when (##sys#fudge 15) (display "symbol gc is enabled\n")) 
@@ -644,12 +644,12 @@ EOF
 	(do ([j 0 (fx+ j 1)]
 	     [a a (fx+ a 1)] )
 	    ((or (fx>= j 16) (fx>= a len))
-	     (and-let* ([(fx>= a len)]
-			[o (fxmod len 16)]
-			[(not (fx= o 0))] )
-	       (do ([k (fx- 16 o) (fx- k 1)])
-		   ((fx= k 0))
-		 (display "   " out) ) ) )
+	     (when (fx>= a len)
+	       (let ((o (fxmod len 16)))
+		 (unless (fx= o 0)
+		   (do ((k (fx- 16 o) (fx- k 1)))
+		       ((fx= k 0))
+		     (display "   " out) ) ) ) ) ) 
 	  (write-char #\space out)
 	  (display (justify (ref bv a) 2 16 #\0) out) )
 	(write-char #\space out)

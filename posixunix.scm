@@ -148,8 +148,6 @@ static C_TLS struct stat C_statbuf;
 #define C_readdir(h,e)      C_set_block_item(e, 0, (C_word) readdir((DIR *)C_block_item(h, 0)))
 #define C_foundfile(e,b)    (strcpy(C_c_string(b), ((struct dirent *) C_block_item(e, 0))->d_name), C_fix(strlen(((struct dirent *) C_block_item(e, 0))->d_name)))
 
-#define C_curdir(buf)       (getcwd(C_c_string(buf), 256) ? C_fix(strlen(C_c_string(buf))) : C_SCHEME_FALSE)
-
 #define open_binary_input_pipe(a, n, name)   C_mpointer(a, popen(C_c_string(name), "r"))
 #define open_text_input_pipe(a, n, name)     open_binary_input_pipe(a, n, name)
 #define open_binary_output_pipe(a, n, name)  C_mpointer(a, popen(C_c_string(name), "w"))
@@ -787,31 +785,6 @@ EOF
           _stat_st_dev _stat_st_rdev
           _stat_st_blksize _stat_st_blocks) )
 
-(define (file-size f) (##sys#stat f #f 'file-size) _stat_st_size)
-
-(define file-modification-time
-  (getter-with-setter 
-   (lambda (f)
-     (##sys#stat f #f 'file-modification-time) _stat_st_mtime)
-   (lambda (f t)
-     (##sys#check-number t 'set-file-modification-time)
-     (let ((r ((foreign-lambda int "set_file_mtime" c-string scheme-object)
-	       (##sys#expand-home-path file) t)))
-       (when (fx< r 0)
-	 (posix-error 
-	  #:file-error 'set-file-modification-time
-	  "cannot set file modification-time" f t))))))
-
-(define (file-access-time f) (##sys#stat f #f 'file-access-time) _stat_st_atime)
-(define (file-change-time f) (##sys#stat f #f 'file-change-time) _stat_st_ctime)
-(define (file-owner f) (##sys#stat f #f 'file-owner) _stat_st_uid)
-(define (file-permissions f) (##sys#stat f #f 'file-permissions) _stat_st_mode)
-
-(define (regular-file? fname)
-  (##sys#check-string fname 'regular-file?)
-  (##sys#stat fname #t 'regular-file?)
-  (foreign-value "C_isreg" bool) )
-
 (define (symbolic-link? fname)
   (##sys#check-string fname 'symbolic-link?)
   (##sys#stat fname #t 'symbolic-link?)
@@ -945,83 +918,6 @@ EOF
   (##sys#check-string fname 'directory?)
   (*directory? 'directory? (##sys#expand-home-path fname)) )
 
-(define current-directory
-  (let ([make-string make-string])
-    (lambda (#!optional dir)
-      (if dir
-          (change-directory dir)
-          (let* ([buffer (make-string 256)]
-                 [len (##core#inline "C_curdir" buffer)] )
-            (if len
-                (##sys#substring buffer 0 len)
-                (posix-error #:file-error 'current-directory "cannot retrieve current directory") ) ) ) ) ) )
-
-(define canonical-path			; DEPRECATED
-    (let ((null?      null?)
-          (char=?     char=?)
-          (string=?   string=?)
-          (alpha?     char-alphabetic?)
-          (sref       string-ref)
-          (ssplit     (cut string-split <> "/\\"))
-          (sappend    string-append)
-          (isperse    (cut string-intersperse <> "/"))
-          (sep?       (lambda (c) (or (char=? #\/ c) (char=? #\\ c))))
-          (get-environment-variable     get-environment-variable)
-          (user       current-user-name)
-          (cwd        (let ((cw   current-directory))
-                          (lambda ()
-                              (condition-case (cw)
-                                  (var ()    "/"))))))
-        (lambda (path)
-            (##sys#check-string path 'canonical-path)
-            (let ((p   (cond ((fx= 0 (##sys#size path))
-                                 (sappend (cwd) "/"))
-                             ((and (fx< (##sys#size path) 3)
-                                   (sep? (sref path 0)))
-                                 path)
-                             ((fx= 1 (##sys#size path))
-                                 (sappend (cwd) "/" path))
-                             ((and (char=? #\~ (sref path 0))
-                                   (sep? (sref path 1)))
-                                 (sappend
-                                     (or (get-environment-variable "HOME")
-                                         (sappend "/home/" (user)))
-                                     (##sys#substring path 1
-                                         (##sys#size path))))
-                             ((fx= 2 (##sys#size path))
-                                 (sappend (cwd) "/" path))
-                             ((and (alpha? (sref path 0))
-                                   (char=? #\: (sref path 1))
-                                   (sep? (sref path 2)))
-                                 (##sys#substring path 3 (##sys#size path)))
-                             ((and (char=? #\/ (sref path 0))
-                                   (alpha? (sref path 1))
-                                   (char=? #\: (sref path 2)))
-                                 (##sys#substring path 3 (##sys#size path)))
-                             ((sep? (sref path 0))
-                                 path)
-                             (else
-                                 (sappend (cwd) "/" path)))))
-                (let loop ((l   (ssplit p))
-                           (r   '()))
-                    (if (null? l)
-                        (if (null? r)
-                            "/"
-                            (if (sep? (sref p (- (##sys#size p) 1)))
-                                (sappend
-                                    "/"
-                                    (isperse (reverse (cons "" r))))
-                                (sappend
-                                    "/"
-                                    (isperse (reverse r)))))
-                        (loop
-                            (cdr l)
-                            (if (string=? ".." (car l))
-                                (cdr r)
-                                (if (string=? "." (car l))
-                                    r
-                                    (cons (car l) r))))))))))
-                           
 
 ;;; Pipes:
 
@@ -1620,7 +1516,7 @@ EOF
 (define ##sys#custom-input-port
   (let ([make-input-port make-input-port]
         [set-port-name! set-port-name!] )
-    (lambda (loc nam fd #!optional (nonblocking? #f) (bufi 1) (on-close noop) (more? #f))
+    (lambda (loc nam fd #!optional (nonblocking? #f) (bufi 1) (on-close void) (more? #f))
       (when nonblocking? (##sys#file-nonblocking! fd) )
       (let ([bufsiz (if (fixnum? bufi) bufi (##sys#size bufi))]
             [buf (if (fixnum? bufi) (##sys#make-string bufi) bufi)]
@@ -1746,7 +1642,7 @@ EOF
 (define ##sys#custom-output-port
   (let ([make-output-port make-output-port]
         [set-port-name! set-port-name!] )
-    (lambda (loc nam fd #!optional (nonblocking? #f) (bufi 0) (on-close noop))
+    (lambda (loc nam fd #!optional (nonblocking? #f) (bufi 0) (on-close void))
       (when nonblocking? (##sys#file-nonblocking! fd) )
       (letrec (
           [poke
@@ -1903,8 +1799,6 @@ EOF
                           (loop (fx+ i 1)))
                     (scan (fx+ j 1)) ) )
               '() ) ) ) ) ) )
-
-(define current-environment get-environment-variables) ; DEPRECATED
 
 
 ;;; Memory mapped I/O:
@@ -2102,30 +1996,6 @@ EOF
         (unless host
           (posix-error #:error 'get-host-name "cannot retrieve host-name") )
         host) ) ) )
-
-
-;;; Filename globbing:
-
-(define glob
-  (let ([regexp regexp]
-        [string-match string-match]
-        [glob->regexp glob->regexp]
-        [directory directory]
-        [make-pathname make-pathname]
-        [decompose-pathname decompose-pathname] )
-    (lambda paths
-      (let conc-loop ([paths paths])
-        (if (null? paths)
-            '()
-            (let ([path (car paths)])
-              (let-values ([(dir fil ext) (decompose-pathname path)])
-                (let* ([patt (glob->regexp (make-pathname #f (or fil "*") ext))]
-                       [rx (regexp patt)])
-                  (let loop ([fns (directory (or dir ".") #t)])
-                    (cond [(null? fns) (conc-loop (cdr paths))]
-                          [(string-match rx (car fns))
-                           => (lambda (m) (cons (make-pathname dir (car m)) (loop (cdr fns)))) ]
-                          [else (loop (cdr fns))] ) ) ) ) ) ) ) ) ) )
 
 
 ;;; Process handling:
@@ -2357,47 +2227,6 @@ EOF
     (lambda (cmd #!optional args env)
       (%process 'process* #t cmd args env) )) )
 
-;;; Find matching files:
-
-(define find-files
-  (let ([glob glob]
-	[string-match string-match]
-	[make-pathname make-pathname]
-	[pathname-file pathname-file]
-	[directory? directory?] )
-    (lambda (dir pred . action-id-limit)
-      (let-optionals
-	  action-id-limit
-	  ([action (lambda (x y) (cons x y))] ; we want cons inlined
-	   [id '()]
-	   [limit #f] )
-	(##sys#check-string dir 'find-files)
-	(let* ([depth 0]
-	       [lproc
-		(cond [(not limit) (lambda _ #t)]
-		      [(fixnum? limit) (lambda _ (fx< depth limit))]
-		      [else limit] ) ]
-	       [pproc
-		(if (or (string? pred) (regexp? pred))
-		    (lambda (x) (string-match pred x))
-		    pred) ] )
-	  (let loop ([fs (glob (make-pathname dir "*"))]
-		     [r id] )
-	    (if (null? fs)
-		r
-		(let ([f (##sys#slot fs 0)]
-		      [rest (##sys#slot fs 1)] )
-		  (cond [(directory? f)
-			 (cond [(member (pathname-file f) '("." "..")) (loop rest r)]
-			       [(lproc f)
-				(loop rest
-				      (fluid-let ([depth (fx+ depth 1)])
-					(loop (glob (make-pathname f "*"))
-					      (if (pproc f) (action f r) r)) ) ) ]
-			       [else (loop rest (if (pproc f) (action f r) r))] ) ]
-			[(pproc f) (loop rest (action f r))]
-			[else (loop rest r)] ) ) ) ) ) ) ) ) )
-
 
 ;;; chroot:
 
@@ -2407,3 +2236,8 @@ EOF
       (##sys#check-string dir 'set-root-directory!)
       (when (fx< (chroot dir) 0)
         (posix-error #:file-error 'set-root-directory! "unable to change root directory" dir) ) ) ) )
+
+
+;;; common code
+
+(include "posix-common.scm")

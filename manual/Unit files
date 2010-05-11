@@ -110,7 +110,7 @@ Returns 3 values: the {{base-origin}}, {{base-directory}}, and the
 * On Windows {{(decompose-directory "c:foo/bar")}} => {{"c:" #f ("foo" "bar")}}
 
 
-=== Temporary files
+=== Temporary files and directories
 
 ==== create-temporary-file
 
@@ -119,7 +119,19 @@ Returns 3 values: the {{base-origin}}, {{base-directory}}, and the
 Creates an empty temporary file and returns its pathname. If
 {{EXTENSION}} is not given, then {{.tmp}} is used. If the
 environment variable {{TMPDIR, TEMP}} or {{TMP}} is set,
-then the pathname names a file in that directory.
+then the pathname names a file in that directory. If none of
+the environment variables is given the location of the
+temporary file defaults to {{/tmp}} if it exists or the 
+current-directory
+
+
+==== create-temporary-directory
+
+<procedure>(create-temporary-directory)</procedure>
+
+Creates an empty temporary directory and returns its pathname. If the
+environment variable {{TMPDIR, TEMP}} or {{TMP}} is set, then the
+temporary directory is created at that location.
 
 
 === Deleting a file without signalling an error

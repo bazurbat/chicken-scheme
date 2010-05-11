@@ -408,7 +408,12 @@ EOF
 		      #:network-error
 		      (##sys#string-append "cannot close socket input port - " strerror)
 		      fd) ) ) )
-	       #f
+	       (lambda ()
+		 (when (fx>= bufindex buflen)
+		   (read-input))
+		 (if (fx< bufindex buflen)
+		     (##core#inline "C_subchar" buf bufindex)
+		     #!eof))
 	       (lambda (p n dest start)	; read-string!
 		 (let loop ((n n) (m 0) (start start))
 		   (cond ((eq? n 0) m)

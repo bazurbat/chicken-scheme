@@ -64,6 +64,7 @@
 ; (no-bound-checks)
 ; (no-procedure-checks)
 ; (no-procedure-checks-for-usual-bindings)
+; (no-procedure-checks-for-toplevel-bindings)
 ; (post-process <string> ...)
 ; (profile <symbol> ...)
 ; (safe-globals)
@@ -109,6 +110,7 @@
 ; (##core#lambda ({<variable>}+ [. <variable>]) <body>)
 ; (##core#set! <variable> <exp>)
 ; (##core#begin <exp> ...)
+; (##core#toplevel-begin <exp> ...)
 ; (##core#include <string>)
 ; (##core#loop-lambda <llist> <body>)
 ; (##core#undefined)
@@ -314,6 +316,7 @@
 (define no-bound-checks #f)
 (define no-argc-checks #f)
 (define no-procedure-checks #f)
+(define no-global-procedure-checks #f)
 (define source-filename #f)
 (define safe-globals-flag #f)
 (define explicit-use-flag #f)
@@ -515,14 +518,14 @@
 	  ((not-pair? x)
 	   (if (constant? x)
 	       `(quote ,x)
-	       (syntax-error "illegal atomic form" x)))
+	       (##sys#syntax-error/context "illegal atomic form" x)))
 	  ((symbol? (car x))
 	   (let ([ln (get-line x)])
 	     (emit-syntax-trace-info x #f)
 	     (unless (proper-list? x)
 	       (if ln
-		   (syntax-error (sprintf "(~a) - malformed expression" ln) x)
-		   (syntax-error "malformed expression" x)))
+		   (##sys#syntax-error/context (sprintf "(~a) - malformed expression" ln) x)
+		   (##sys#syntax-error/context "malformed expression" x)))
 	     (set! ##sys#syntax-error-culprit x)
 	     (let* ((name0 (lookup (car x) se))
 		    (name (or (and (symbol? name0) (##sys#get name0 '##core#primitive)) name0))
@@ -957,7 +960,7 @@
 			 (eval/meta (cadr x))
 			 '(##core#undefined) )
 
-			((##core#begin) 
+			((##core#begin ##core#toplevel-begin) 
 			 (if (pair? (cdr x))
 			     (canonicalize-begin-body
 			      (let fold ([xs (cdr x)])
@@ -1191,9 +1194,10 @@
 			       (walk `(##sys#make-locative ,sym 0 #f 'location) e se #f) ) ) )
 				 
 			(else
-			 (let* ([x2 (mapwalk x e se)]
-				[head2 (car x2)]
-				[old (##sys#hash-table-ref line-number-database-2 head2)] )
+			 (let* ((x2 (fluid-let ((##sys#syntax-context (cons name ##sys#syntax-context)))
+				      (mapwalk x e se)))
+				(head2 (car x2))
+				(old (##sys#hash-table-ref line-number-database-2 head2)) )
 			   (when ln
 			     (##sys#hash-table-set!
 			      line-number-database-2
@@ -1202,7 +1206,7 @@
 			   x2) ) ) ] ) ) ) )
 
 	  ((not (proper-list? x))
-	   (syntax-error "malformed expression" x) )
+	   (##sys#syntax-error/context "malformed expression" x) )
 
 	  ((constant? (car x))
 	   (emit-syntax-trace-info x #f)
@@ -1309,6 +1313,8 @@
 	(for-each
 	 (cut mark-variable <> '##compiler#always-bound)
 	 (append default-standard-bindings default-extended-bindings)))
+       ((no-procedure-checks-for-toplevel-bindings)
+	(set! no-global-procedure-checks #t))
        ((bound-to-procedure)
 	(let ((vars (stripa (cdr spec))))
 	  (for-each (cut mark-variable <> '##compiler#always-bound-to-procedure) vars)
@@ -1906,7 +1912,8 @@
 		    (null? references)
 		    (not (variable-mark sym '##compiler#unused)))
 	   (when assigned-locally
-	     (compiler-warning 'var "local assignment to unused variable `~S' may be unintended" sym) )
+	     (##sys#notice 
+	      (sprintf "local assignment to unused variable `~S' may be unintended" sym) ) )
 	   (when (and (not (variable-visible? sym))
 		      (not (variable-mark sym '##compiler#constant)) )
 	     (##sys#notice 
@@ -1996,14 +2003,16 @@
 			     (set! explicitly-consed (cons rest explicitly-consed))
 			     (put! db (first lparams) 'explicit-rest #t) ] ) ) ) ) ) ) ) )
 
-	 ;;  Make 'removable, if it has no references and is not assigned to, and if it has either a value that
-	 ;;    does not cause any side-effects or if it is 'undefined:
+	 ;; Make 'removable, if it has no references and is not assigned to, and if it 
+	 ;; has either a value that does not cause any side-effects or if it is 'undefined:
 	 (when (and (not assigned)
 		    (null? references)
 		    (or (and value
-			     (or (not (eq? '##core#variable (node-class value)))
-				 (not (get db (first (node-parameters value)) 'global)) )
-			     (not (expression-has-side-effects? value db)) )
+			     (if (eq? '##core#variable (node-class value))
+				 (let ((varname (first (node-parameters value))))
+				   (or (not (get db varname 'global))
+				       (not (variable-mark varname '##core#always-bound))))
+				 (not (expression-has-side-effects? value db)) ))
 			undefined) )
 	   (quick-put! plist 'removable #t) )
 

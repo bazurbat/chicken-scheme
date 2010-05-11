@@ -136,7 +136,8 @@
     -no-symbol-escape -no-parentheses-synonyms -r5rs-syntax
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
     -emit-all-import-libraries -setup-mode -unboxing -no-elevation
-    -no-procedure-checks-for-usual-bindings))
+    -no-procedure-checks-for-usual-bindings
+    -no-procedure-checks-for-toplevel-bindings))
 
 (define-constant complex-options
   '(-debug -output-file -heap-size -nursery -stack-size -compiler -unit -uses -keyword-style
@@ -350,7 +351,7 @@ Usage: #{csc} FILENAME | OPTION ...
 
   Optimization options:
 
-    -O -O1 -O2 -O3 -O4 -O5 -optimize-level NUMBER
+    -O -O0 -O1 -O2 -O3 -O4 -O5 -optimize-level NUMBER
                                    enable certain sets of optimization options
     -optimize-leaf-routines        enable leaf routine optimization
     -N  -no-usual-integrations     standard procedures may be redefined
@@ -374,6 +375,9 @@ Usage: #{csc} FILENAME | OPTION ...
     -no-procedure-checks           disable procedure call checks
     -no-procedure-checks-for-usual-bindings
                                    disable procedure call checks only for usual
+                                    bindings
+    -no-procedure-checks-for-toplevel-bindings
+                                   disable procedure call checks for toplevel
                                     bindings
 
   Configuration options:
@@ -657,6 +661,7 @@ EOF
 		  (set! rest (cdr rest))
 		  (set! target-filename fn) ) ]
 	       [(|-O| |-O1|) (set! rest (cons* "-optimize-level" "1" rest))]
+	       [(|-O0|) (set! rest (cons* "-optimize-level" "0" rest))]
 	       [(|-O2|) (set! rest (cons* "-optimize-level" "2" rest))]
 	       [(|-O3|) (set! rest (cons* "-optimize-level" "3" rest))]
 	       [(|-O4|) (set! rest (cons* "-optimize-level" "4" rest))]
@@ -923,13 +928,21 @@ EOF
 		  INSTALL_LIB_HOME
 		  TARGET_RUN_LIB_HOME))))
 
+(define (target-lib-path)
+  (let ((tdir TARGET_LIB_HOME))
+    (if (and (not (string=? tdir ""))
+	     cross-chicken
+	     (not host-mode))
+	tdir
+	(lib-path))))
+
 (define (copy-libraries targetdir)
   (let ((lib (make-pathname
-	      (lib-path) 
+	      (target-lib-path) 
 	      "libchicken"
 	      (cond (osx "dylib")
 		    (win "dll")
-		    (else (conc "so." BINARY_VERSION))))))
+		    (else "so")))))
     (copy-files lib targetdir)))
 
 (define (copy-files from to)

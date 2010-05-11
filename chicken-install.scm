@@ -27,7 +27,7 @@
 (require-library setup-download setup-api)
 (require-library srfi-1 posix data-structures utils regex ports extras srfi-13 files)
 (require-library chicken-syntax)	; in case an import library reexports chicken syntax
-
+(require-library chicken-ffi-syntax)	; same reason, also for filling modules.db
 
 (module main ()
 
@@ -69,7 +69,6 @@
 
   (define *keep* #f)
   (define *force* #f)
-  (define *prefix* #f)
   (define *host-extension* #f)
   (define *run-tests* #f)
   (define *retrieve-only* #f)
@@ -86,6 +85,15 @@
   (define *mappings* '())
   (define *deploy* #f)
   (define *trunk* #f)
+  (define *csc-features* '())
+  (define *prefix* #f)
+
+  (define (get-prefix)
+    (cond ((and (feature? #:cross-chicken)
+		(not *host-extension*))
+	   (or *prefix*
+	       (foreign-value "C_TARGET_PREFIX" c-string)))
+	  (else *prefix*)))
 
   (define-constant +module-db+ "modules.db")
   (define-constant +defaults-file+ "setup.defaults")
@@ -115,8 +123,8 @@
 				 (cons from (cdr to)))))
 			   (cdr x)))))
 		  (else (broken x))))
-	      (read-file deff)))
-             (pair? *default-sources*) ) ) )
+	      (read-file deff))))
+      (pair? *default-sources*) ))
 
   (define (known-default-sources)
     (if (and *default-location* *default-transport*)
@@ -360,10 +368,12 @@
      (if *keep* " -e \"(keep-intermediates #t)\"" "")
      (if (and *no-install* (not dep?)) " -e \"(setup-install-mode #f)\"" "")
      (if *host-extension* " -e \"(host-extension #t)\"" "")
-     (if *prefix* 
-	 (sprintf " -e \"(destination-prefix \\\"~a\\\")\"" 
-	   (normalize-pathname *prefix* 'unix))
-	 "")
+     (let ((prefix (get-prefix)))
+       (if prefix
+	   (sprintf " -e \"(destination-prefix \\\"~a\\\")\"" 
+	     (normalize-pathname prefix 'unix))
+	   ""))
+     (sprintf " -e \"(extra-features '~s)\"" *csc-features*)
      (if *deploy* " -e \"(deployment-mode #t)\"" "")
      #\space
      (shellpath (make-pathname (cadr e+d+v) (car e+d+v) "setup"))) )
@@ -505,11 +515,12 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
        -repository              print path used for egg installation
        -deploy                  build extensions for deployment
        -trunk                   build trunk instead of tagged version (only local)
+  -D   -feature FEATURE         features to pass to sub-invocations of `csc'
 EOF
 );|
     (exit code))
 
-  (define *short-options* '(#\h #\k #\l #\t #\s #\p #\r #\n #\v #\i #\u))
+  (define *short-options* '(#\h #\k #\l #\t #\s #\p #\r #\n #\v #\i #\u #\D))
 
   (define (main args)
     (let ((defaults (load-defaults))
@@ -599,11 +610,15 @@ EOF
 			       (set! *proxy-host* (cadr args))
 			       (set! *proxy-port* 80)))
 			(loop (cddr args) eggs))
+		       ((or (string=? "-D" arg) (string=? "-feature" arg))
+                        (unless (pair? (cdr args)) (usage 1))
+			(set! *csc-features* 
+			  (cons (string->symbol (cadr args)) *csc-features*))
+			(loop (cddr args) eggs))
                        ((string=? "-test" arg)
                         (set! *run-tests* #t)
                         (loop (cdr args) eggs))
-                       ((or (string=? "-host" arg)
-			    (string=? "-host-extension" arg)) ; DEPRECATED
+                       ((string=? "-host" arg)
                         (set! *host-extension* #t)
                         (loop (cdr args) eggs))
 		       ((string=? "-deploy" arg)

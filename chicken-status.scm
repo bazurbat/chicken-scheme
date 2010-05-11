@@ -29,13 +29,23 @@
 
 (module main ()
   
-  (import scheme chicken)
+  (import scheme chicken foreign)
   (import srfi-1 posix data-structures utils ports regex
 	  files setup-api)
 
+  (define-foreign-variable C_TARGET_LIB_HOME c-string)
+  (define-foreign-variable C_BINARY_VERSION int)
+
+  (define *host-extensions* #f)
+
+  (define (repo-path)
+    (if (and (feature? #:cross-chicken) (not *host-extensions*))
+	(make-pathname C_TARGET_LIB_HOME (sprintf "chicken/~a" C_BINARY_VERSION))
+	(repository-path)))
+
   (define (gather-eggs patterns)
     (let ((eggs (map pathname-file 
-		     (glob (make-pathname (repository-path) "*" "setup-info")))))
+		     (glob (make-pathname (repo-path) "*" "setup-info")))))
       (delete-duplicates
        (concatenate (map (cut grep <> eggs) patterns))
        string=?)))
@@ -92,6 +102,7 @@ usage: chicken-status [OPTION | PATTERN] ...
   -h   -help                    show this message
   -v   -version                 show version and exit
   -f   -files                   list installed files
+       -host                    when cross-compiling, show status of host extensions
 EOF
 );|
     (exit code))
@@ -112,6 +123,9 @@ EOF
 			 (string=? arg "-h")
 			 (string=? arg "--help"))
 		     (usage 0))
+		    ((string=? arg "-host")
+		     (set! *host-extensions* #t)
+		     (loop (cdr args) pats))
 		    ((or (string=? arg "-f") (string=? arg "-files"))
 		     (set! files #t)
 		     (loop (cdr args) pats))

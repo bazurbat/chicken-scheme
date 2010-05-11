@@ -128,9 +128,10 @@
        (##sys#start-timer)
        (##sys#call-with-values 
 	(##core#lambda () ,@(cdr form))
-	(##core#lambda ,rvar
-		  (##sys#display-times (##sys#stop-timer))
-		  (##sys#apply ##sys#values ,rvar) ) ) ) ) ) ) )
+	(##core#lambda 
+	 ,rvar
+	 (##sys#display-times (##sys#stop-timer))
+	 (##sys#apply ##sys#values ,rvar) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'declare '()

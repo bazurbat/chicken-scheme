@@ -49,6 +49,7 @@ buildversion
 c-backend.scm
 c-platform.scm
 chicken-ffi-syntax.scm
+chicken-ffi-syntax.c
 chicken-profile.1
 chicken-profile.scm
 chicken.1
@@ -80,6 +81,7 @@ regex.scm
 irregex.scm
 posixunix.scm
 posixwin.scm
+posix-common.scm
 profiler.scm
 runtime.c
 scheduler.scm
@@ -112,14 +114,17 @@ tests/posix-tests.scm
 tests/r4rstest.out
 tests/port-tests.scm
 tests/test-gc-hooks.scm
+tests/test-glob.scm
 tests/matchable.scm
 tests/match-tests.scm
 tests/module-tests.scm
+tests/module-tests-2.scm
 tests/test-finalizers.scm
 tests/test-finalizers-2.scm
 tests/module-tests-compiled.scm
 tests/scrutiny-tests.scm
 tests/scrutiny.expected
+tests/syntax-rule-stress-test.scm
 tests/syntax-tests.scm
 tests/syntax-tests-2.scm
 tests/meta-syntax-test.scm

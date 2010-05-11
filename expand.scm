@@ -437,7 +437,19 @@
 			    [else (err "invalid lambda list syntax")] ) ] ) ) ] ) ) ) ) ) )
 
 
+;;; Error message for redefinition of currently used defining form
+;
+; (i.e.`"(define define ...)")
+
+(define (##sys#defjam-error form)
+  (##sys#syntax-error-hook
+   "redefinition of currently used defining form" ; help me find something better
+   form))
+
+
 ;;; Expansion of bodies (and internal definitions)
+;
+; This code is disgustingly complex.
 
 (define ##sys#canonicalize-body
   (let ([reverse reverse]
@@ -495,11 +507,15 @@
 		  (let ((def (car body)))
 		    (loop 
 		     (cdr body) 
-		     (cons (if (pair? (cadr def))
-			       `(##core#define-syntax
-				 ,(caadr def)
-				 (##core#lambda ,(cdadr def) ,@(cddr def)))
-			       def)
+		     (cons (cond ((pair? (cadr def))
+				  `(define-syntax ; (the first element is actually ignored)
+				     ,(caadr def)
+				     (##core#lambda ,(cdadr def) ,@(cddr def))))
+				 ;; insufficient, if introduced by different expansions, but
+				 ;; better than nothing:
+				 ((eq? (car def) (cadr def))
+				  (##sys#defjam-error def))
+				 (else def))
 			   defs) 
 		     #f)))
 		 (else (loop body defs #t))))))		       
@@ -520,6 +536,8 @@
 			 (let ([head (cadr x)])
 			   (cond [(not (pair? head))
 				  (##sys#check-syntax 'define x '(_ variable . #(_ 0)) #f se)
+				  (when (eq? (car x) head) ; see above
+				    (##sys#defjam-error x))
 				  (loop rest (cons head vars)
 					(cons (if (pair? (cddr x))
 						  (caddr x)
@@ -543,6 +561,7 @@
 		       (##sys#check-syntax 'define-syntax x '(_ _ . #(_ 1)) se)
 		       (fini/syntax vars vals mvars mvals body) )
 		      [(eq? 'define-values (or (lookup head se) head))
+		       ;;XXX check for any of the variables being `define-values' (?)
 		       (##sys#check-syntax 'define-values x '(_ #(_ 0) _) #f se)
 		       (loop rest vars vals (cons (cadr x) mvars) (cons (caddr x) mvals)) ]
 		      [(eq? '##core#begin head)
@@ -594,10 +613,62 @@
 
 (define ##sys#line-number-database #f)
 (define ##sys#syntax-error-culprit #f)
+(define ##sys#syntax-context '())
 
 (define (##sys#syntax-error-hook . args)
   (apply ##sys#signal-hook #:syntax-error
 	 (##sys#strip-syntax args)))
+
+(define ##sys#syntax-error/context
+  (let ((open-output-string open-output-string)
+	(get-output-string get-output-string))
+    (lambda (msg arg)
+      (define (syntax-imports sym)
+	(let loop ((defs (or (##sys#get (##sys#strip-syntax sym) '##core#db) '())))
+	  (cond ((null? defs) '())
+		((eq? 'syntax (caar defs))
+		 (cons (cadar defs) (loop (cdr defs))))
+		(else (loop (cdr defs))))))		     
+      (if (null? ##sys#syntax-context)
+	  (##sys#syntax-error-hook msg arg)
+	  (let ((out (open-output-string)))
+	    (define (outstr str)
+	      (##sys#print str #f out))
+	    (let loop ((cx ##sys#syntax-context))
+	      (cond ((null? cx)	; no unimported syntax found
+		     (outstr msg)
+		     (outstr ": ")
+		     (##sys#print arg #t out)
+		     (outstr "\ninside expression `(")
+		     (##sys#print (##sys#strip-syntax (car ##sys#syntax-context)) #t out)
+		     (outstr " ...)'"))
+		    (else 
+		     (let* ((sym (##sys#strip-syntax (car cx)))
+			    (us (syntax-imports sym)))
+		       (cond ((pair? us)
+			      (outstr msg)
+			      (outstr ": ")
+			      (##sys#print arg #t out)
+			      (outstr "\n\n  Perhaps you intended to use the syntax `(")
+			      (##sys#print sym #t out)
+			      (outstr " ...)' without importing it first.\n")
+			      (if (fx= 1 (length us))
+				  (outstr
+				   (string-append
+				    "  Suggesting: `(import "
+				    (symbol->string (car us))
+				    ")'"))
+				  (outstr
+				   (string-append
+				    "  Suggesting one of:\n"
+				    (let loop ((lst us))
+				      (if (null? lst)
+					  ""
+					  (string-append
+					   "\n      (import " (symbol->string (car lst)) ")'"
+					   (loop (cdr lst)))))))))
+			     (else (loop (cdr cx))))))))
+	    (##sys#syntax-error-hook (get-output-string out)))))))
 
 (define syntax-error ##sys#syntax-error-hook)
 
@@ -925,7 +996,8 @@
 	     (set-module-export-list! 
 	      cm
 	      (append 
-	       (module-export-list cm) 
+	       (let ((xl (module-export-list cm) ))
+		 (if (eq? #t xl) '() xl))
 	       (map car vsv)
 	       (map car vss)))
 	     (when (pair? prims)
@@ -1017,6 +1089,8 @@
 	(cond ((not (pair? head))
 	       (##sys#check-syntax 'define form '(_ symbol . #(_ 0 1)))
 	       (##sys#register-export head (##sys#current-module))
+	       (when (eq? (car x) head)
+		 (##sys#defjam-error x))
 	       `(##core#set! 
 		 ,head 
 		 ,(if (pair? body) (car body) '(##core#undefined))) )
@@ -1038,10 +1112,16 @@
 	     (##sys#check-syntax 'define-syntax head 'symbol)
 	     (##sys#check-syntax 'define-syntax body '#(_ 1))
 	     (##sys#register-export head (##sys#current-module))
+	     (when (eq? (car form) head)
+	       (##sys#defjam-error form))
 	     `(##core#define-syntax ,head ,(car body)))
 	    (else
 	     (##sys#check-syntax 'define-syntax head '(_ . lambda-list))
 	     (##sys#check-syntax 'define-syntax body '#(_ 1))
+	     (when (eq? (car form) (car head))
+	       (##sys#syntax-error-hook
+		"redefinition of `define-syntax' not allowed in syntax-definition"
+		form))
 	     `(##core#define-syntax 
 	       ,(car head)
 	       (##core#lambda ,(cdr head) ,@body))))))))
@@ -1430,8 +1510,10 @@
 	 exps)
 	(set-module-export-list! 
 	 mod
-	 (append (module-export-list mod) 
-		 (map ##sys#strip-syntax exps))))
+	 (let ((xl (module-export-list mod)))
+	   (if (eq? xl #t) 
+	       #t
+	       (map ##sys#strip-syntax exps)))))
       '(##core#undefined)))))
 
 
@@ -1824,7 +1906,7 @@
 		   (if (null? lst)
 		       ""
 		       (string-append
-			"Warning:     `(import " (symbol->string (cadar lst)) ")'\n"
+			"Warning:     (import " (symbol->string (cadar lst)) ")\n"
 			(loop (cdr lst)))))))))))
      (module-undefined-list mod))
     (when missing

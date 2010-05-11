@@ -66,6 +66,7 @@
    define-reader-ctor
    delete-file
    enable-warnings
+   directory-exists?
    errno
    error
    exit
@@ -75,7 +76,7 @@
    feature?
    features
    file-exists?
-   directory-exists?
+   finite?
    fixnum-bits
    fixnum-precision
    fixnum?
@@ -174,6 +175,7 @@
    open-input-string
    open-output-string
    parentheses-synonyms
+   port-closed?
    port-name
    port-position
    port?
@@ -213,6 +215,7 @@
    string->uninterned-symbol
    strip-syntax
    sub1
+   symbol-append
    symbol-escape
    symbol-plist
    syntax-error

@@ -124,7 +124,7 @@
 		 (install-egg egg dir)
 		 (report egg "<no .setup script>")) )
 	   (report egg "<no .meta file>")))))
- (directory *eggdir*))
+ (sort (directory *eggdir*) string<?))
 
 (print "\nSucceeded: " *succeeded* ", failed: " *failed* ", total: "
        (+ *succeeded* *failed*))
