@@ -234,7 +234,7 @@ EOF
 (define (argc+argv) (##sys#values main_argc main_argv))
 (define ##sys#make-structure (##core#primitive "C_make_structure"))
 (define ##sys#ensure-heap-reserve (##core#primitive "C_ensure_heap_reserve"))
-(define (##sys#fudge fudge-factor) (##core#inline "C_fudge" fudge-factor))
+(define (##sys#fudge index) (##core#inline "C_fudge" index))
 (define ##sys#call-host (##core#primitive "C_return_to_host"))
 (define return-to-host ##sys#call-host)
 (define ##sys#file-info (##core#primitive "C_file_info"))
@@ -3318,8 +3318,7 @@ EOF
 	    [else	  (err x)] ) ) ) )
 
 (define ##sys#features
-  '(#:chicken #:chicken-4
-    #:srfi-23 #:srfi-30 #:srfi-39 #:srfi-62 #:srfi-17 #:srfi-12 #:srfi-88 #:srfi-98))
+  '(#:chicken #:srfi-23 #:srfi-30 #:srfi-39 #:srfi-62 #:srfi-17 #:srfi-12 #:srfi-88 #:srfi-98))
 
 ;; Add system features:
 
@@ -3336,6 +3335,15 @@ EOF
 (when (##sys#fudge 24) (set! ##sys#features (cons #:dload ##sys#features)))
 (when (##sys#fudge 28) (set! ##sys#features (cons #:ptables ##sys#features)))
 (when (##sys#fudge 39) (set! ##sys#features (cons #:cross-chicken ##sys#features)))
+
+(set! ##sys#features
+  (let ((major (##sys#string-append "chicken-" (##sys#number->string (##sys#fudge 41)))))
+    (cons (##sys#->feature-id major)
+	  (cons (##sys#->feature-id 
+		 (string-append
+		  major "."
+		  (##sys#number->string (##sys#fudge 43))))
+		##sys#features))))
 
 (define (register-feature! . fs)
   (for-each

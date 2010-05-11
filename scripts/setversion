@@ -39,24 +39,37 @@ exec csi -s "$0" "$@"
   (string-match (rx "(\\d+)\\.(\\d+)\\.(\\d+)(.*)") v) )
 
 (define (main args)
-  (cond ((member "-set" args) =>
-	 (lambda (a) (set! buildversion (cadr a))) )
-	((not (member "-noinc" args))
-	 (let* ((v (parse-version buildversion))
-		(maj (cadr v))
-		(min (caddr v))
-		(pl (cadddr v))
-		(huh (car (cddddr v))))
-	   (set! buildversion (conc maj "." min "." (add1 (string->number pl)) huh)) ) ) )
-  (with-output-to-file "buildversion" (cut display buildversion) binary:)
-  (with-output-to-file "version.scm" 
-    (lambda ()
-      (write `(define-constant +build-version+ ,buildversion))
-      (newline) )
-    binary:)
-  (system* "cat version.scm")
-  (let ([vstr (sprintf "version ~A" buildversion)])
-    (for-each (cut patch <> (rx "version [0-9][-.0-9a-zA-Z]+") vstr) files) )
-  0)
+  (let ((major #f)
+	(minor #f))
+    (cond ((member "-set" args) =>
+	   (lambda (a) (set! buildversion (cadr a))) )
+	  ((not (member "-noinc" args))
+	   (let* ((v (parse-version buildversion))
+		  (maj (cadr v))
+		  (min (caddr v))
+		  (pl (cadddr v))
+		  (huh (car (cddddr v))))
+	     (set! major maj)
+	     (set! minor min)
+	     (set! buildversion
+	       (conc maj "." min "." (add1 (string->number pl)) huh)) ) ) )
+    (with-output-to-file "buildversion" (cut display buildversion) binary:)
+    (with-output-to-file "version.scm" 
+      (lambda ()
+	(write `(define-constant +build-version+ ,buildversion))
+	(newline) )
+      binary:)
+    (system* "cat version.scm")
+    (let ([vstr (sprintf "version ~A" buildversion)])
+      (for-each (cut patch <> (rx "version [0-9][-.0-9a-zA-Z]+") vstr) files) )
+    (patch 
+     "chicken.h"
+     (rx "C_MAJOR_VERSION[ \\t]+[0-9]+")
+     (sprintf "C_MAJOR_VERSION   ~a" major))
+    (patch 
+     "chicken.h"
+     (rx "C_MINOR_VERSION[ \\t]+[0-9]+")
+     (sprintf "C_MINOR_VERSION   ~a" minor))
+    0))
 
 (main (command-line-arguments))
