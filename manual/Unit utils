@@ -81,21 +81,6 @@ A parameter that holds a list of default options that should be given
 to {{csc}} after invocation of the {{compile-file}} procedure. 
 The initial default options are {{-scrutinize -O2 -d2}}.
 
-
-=== Shell argument quoting
-
-==== qs
-
-<procedure>(qs STRING [PLATFORM])</procedure>
-
-Escapes {{STRING}} suitably for passing to a shell command on {{PLATFORM}}.
-{{PLATFORM}} defaults to the value of {{(build-platform)}} and indicates in
-which style the argument should be quoted. On Windows systems, the string
-is simply enclosed in double-quote ({{"}}) characters, on UNIXish systems,
-characters that would have a special meaning to the shell are escaped
-using backslash ({{\}}).
-
-
 === Scanning through an input port
 
 ==== scan-input-lines

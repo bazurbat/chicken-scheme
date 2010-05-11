@@ -177,7 +177,7 @@
   (cond [(string=? fname "-") (current-input-port)]
 	[(file-exists? fname) (open-input-file fname)]
 	[(or (null? line) (not (car line))) (quit "Can not open file ~s" fname)]
-	[else (quit "Can not open file ~s in line ~s" fname (car line))] ) )
+	[else (quit "(~a) can not open file ~s" (car line) fname)] ) )
 
 (define (close-checked-input-file port fname)
   (unless (string=? fname "-") (close-input-port port)) )
@@ -261,15 +261,14 @@
 		(if (exn? ex) 
 		    (exn-msg ex)
 		    (->string ex) ) ) 
-	(let ([xs (with-input-from-string str (lambda () (unfold eof-object? values (lambda (x) (read)) (read))))])
+	(let ([xs (with-input-from-string
+		      str
+		    (lambda () (unfold eof-object? values (lambda (x) (read)) (read))))])
 	  (cond [(null? xs) '(##core#undefined)]
 		[(null? (cdr xs)) (car xs)]
 		[else `(begin ,@xs)] ) ) ) ) ) )
 
 (define decompose-lambda-list ##sys#decompose-lambda-list)
-
-(define (process-lambda-documentation id doc proc)
-  proc)					; Hook this
 
 (define (llist-length llist)
   (##core#inline "C_u_i_length" llist))
@@ -529,7 +528,8 @@
 			       [else #f] )
 			 (if ln
 			     (let ([rn (real-name name)])
-			       (list source-filename ln (or rn (##sys#symbol->qualified-string name))) )
+			       (list ln
+				     (or rn (##sys#symbol->qualified-string name))) )
 			     (##sys#symbol->qualified-string name) ) )
 		   (map walk x) ) ) ) ) )
 	    (else (make-node '##core#call '(#f) (map walk x))) ) )
@@ -610,6 +610,8 @@
 	    [params (node-parameters n)]
 	    [class (node-class n)] )
 	(case class
+	  ((quote)
+	   (make-node class params '()))
 	  [(##core#variable) 
 	   (let ((var (first params)))
 	     (when (get db var 'contractable)
@@ -1297,8 +1299,6 @@ Usage: chicken FILENAME OPTION ...
   Obscure options:
 
     -debug MODES                 display debugging output for the given modes
-    -unsafe-libraries            marks the generated file as being linked with
-                                  the unsafe runtime system
     -raw                         do not generate implicit init- and exit code                           
     -emit-external-prototypes-first
                                  emit prototypes for callbacks before foreign
@@ -1372,17 +1372,15 @@ EOF
 
 (define (source-info->string info)
   (if (list? info)
-      (let ((file (car info))
-	    (ln (cadr info))
-	    (name (caddr info)))
-	(let ((lns (->string ln)))
-	  (conc file ": " lns (make-string (max 0 (- 4 (string-length lns))) #\space) " " name) ) )
-      (and info (->string info))) )
+      (let ((ln (car info))
+	    (name (cadr info)))
+	(conc ln ":" (make-string (max 0 (- 4 (string-length ln))) #\space) " " name) )
+      info))
 
 (define (source-info->line info)
   (if (list? info)
-      (cadr info)
-      (and info (->string info))) )
+      (car info)
+      (and info (->string info))))
 
 
 ;;; We need this for constant folding:
@@ -1411,6 +1409,23 @@ EOF
 	  (write-char #\]) ) )
       (write-char #\>) ) )
   (newline) )
+
+
+;;; Hook for source information
+
+(define (read-info-hook class data val)
+  (when (and (eq? 'list-info class) (symbol? (car data)))
+    (##sys#hash-table-set!
+     ##sys#line-number-database
+     (car data)
+     (alist-cons 
+      data (conc ##sys#current-source-filename ":" val)
+      (or (##sys#hash-table-ref ##sys#line-number-database (car data))
+	  '() ) ) ) )
+  data)
+
+(define (read/source-info in)
+  (##sys#read in read-info-hook) )
 
 
 ;;; "#> ... <#" syntax:

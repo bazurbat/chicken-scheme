@@ -157,6 +157,11 @@ The latter is encoded in UTF-8 format.
 The third argument to {{substring}} is optional and defaults to the length
 of the string.
 
+=== Number/String conversions
+
+The optional "base" argument to {{string->number}} and {{number->string}}
+may be any integral value from 2 to 36.
+
 === {{force}}
 
 {{force}} called with an argument that is not a promise returns

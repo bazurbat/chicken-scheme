@@ -1,6 +1,9 @@
 ;;;; compiler-tests.scm
 
 
+(import foreign)
+
+
 ;; test dropping of previous toplevel assignments
 
 (define (foo) (define (bar) 1) (bar 2))	; will trigger error later
@@ -26,17 +29,16 @@
 ; - canonicalization of assignment to location didn't walk expansion recursively
 
 (define test-location
- (let-location
-  ((again bool #f))
-  (lambda ()
-     ((foreign-lambda*
-       int
-       (((c-pointer bool) again))
-       "*again=1; return(1);")
-      (location again))
-     again)))
+  (let-location ((again bool #f))
+    (lambda ()
+      ((foreign-lambda*
+	   int
+	   (((c-pointer bool) again))
+	 "*again=1; return(1);")
+       (location again))
+      again)))
 
-(print (test-location))
+(assert (test-location))
 
 
 ;;; rev. 12188 (reported by Jörg Wittenberger)
@@ -49,17 +51,18 @@
  (import scheme chicken foreign)
 
  (define (bar n)
-  (let-location
-   ((off integer 0))
-   (lambda () ((foreign-lambda*
-                void
-                (((c-pointer integer) i))
-                "(*i)++;")
-               (location off)) off)))
+  (let-location ((off integer 0))
+    (lambda () 
+      ((foreign-lambda*
+	   void
+	   (((c-pointer integer) i))
+	 "(*i)++;")
+       (location off))
+      off)))
 )
 
 (import x)
-(bar 42)
+(assert (= 1 ((bar 42))))
 
 ;;; rev. 14574 (reported by Peter Bex)
 ;

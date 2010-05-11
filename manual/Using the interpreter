@@ -79,7 +79,7 @@ The easiest way is to use the {{-script}} option like this:
                   read)))
 
  % chmod +x foo
- % foo "(+ 3 4)"
+ % ./foo "(+ 3 4)"
  7
 
 The parameter {{command-line-arguments}} is set to a list of the

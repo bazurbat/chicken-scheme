@@ -29,7 +29,7 @@
 ; This code is partially quite messy and the API is not overly consistent,
 ; mainly because it has grown "organically" while the old chicken-setup program
 ; evolved. The code was extracted and put into this module, without much
-; cleaning up. Nevertheless, it should work.
+; cleaning up.
 ;
 ; *windows-shell* and, to a lesser extent, 'sudo' processing knowledge is
 ; scattered in the code.
@@ -45,6 +45,7 @@
      install-extension install-program install-script
      setup-verbose-mode setup-install-mode deployment-mode
      installation-prefix
+     destination-prefix
      chicken-prefix 			;XXX remove at some stage from exports
      find-library find-header 
      program-path remove-file* 
@@ -61,6 +62,7 @@
      remove-directory
      remove-extension
      read-info
+     register-program find-program
      shellpath)
   
   (import scheme chicken foreign
@@ -71,12 +73,6 @@
 
 (define-constant setup-file-extension "setup-info")
 
-(define *installed-executables* 
-  `(("chicken" . ,(foreign-value "C_CHICKEN_PROGRAM" c-string))
-    ("csc" . ,(foreign-value "C_CSC_PROGRAM" c-string))
-    ("csi" . ,(foreign-value "C_CSI_PROGRAM" c-string))
-    ("chicken-bug" . ,(foreign-value "C_CHICKEN_BUG_PROGRAM" c-string))))
-
 (define *cc* (foreign-value "C_TARGET_CC" c-string))
 (define *cxx* (foreign-value "C_TARGET_CXX" c-string))
 (define *target-cflags* (foreign-value "C_TARGET_CFLAGS" c-string))
@@ -84,6 +80,7 @@
 (define *target-lib-home* (foreign-value "C_TARGET_LIB_HOME" c-string))
 (define *sudo* #f)
 (define *windows-shell* (foreign-value "C_WINDOWS_SHELL" bool))
+(define *registered-programs* '())
 
 (define *windows*
   (and (eq? (software-type) 'windows) 
@@ -127,16 +124,16 @@
 (define *mkdir-command*)
 
 (define (windows-user-install-setup)
-  (set! *copy-command*        'copy)
+  (set! *copy-command*        "copy")
   (set! *remove-command*      "del /Q /S")
-  (set! *move-command*        'move)
+  (set! *move-command*        "move")
   (set! *chmod-command*       "chmod")
   (set! *ranlib-command*      "ranlib") )
 
 (define (unix-user-install-setup)
   (set! *copy-command*        "cp -r")
   (set! *remove-command*      "rm -fr")
-  (set! *move-command*        'mv)
+  (set! *move-command*        "mv")
   (set! *chmod-command*       "chmod")
   (set! *ranlib-command*      "ranlib")
   (set! *mkdir-command*       "mkdir") )
@@ -207,25 +204,44 @@
 
 (define run-verbose (make-parameter #t))
 
+(define (register-program name #!optional
+			  (path (make-pathname *chicken-bin-path* (->string name))))
+  (set! *registered-programs* 
+    (alist-cons (->string name) path *registered-programs*)))
+
+(define (find-program name)
+  (let* ((name (->string name))
+	 (a (assoc name *registered-programs*)))
+    (if a
+	(shellpath (cdr a))
+	name)))
+
+(let ()
+  (define (reg name rname) 
+    (register-program name (make-pathname *chicken-bin-path* rname)))
+  (reg "chicken" (foreign-value "C_CHICKEN_PROGRAM" c-string))
+  (reg "csi" (foreign-value "C_CSI_PROGRAM" c-string))
+  (reg "csc" (foreign-value "C_CSC_PROGRAM" c-string))
+  (reg "chicken-install" (foreign-value "C_CHICKEN_INSTALL_PROGRAM" c-string))
+  (reg "chicken-uninstall" (foreign-value "C_CHICKEN_UNINSTALL_PROGRAM" c-string))
+  (reg "chicken-status" (foreign-value "C_CHICKEN_STATUS_PROGRAM" c-string))
+  (reg "chicken-bug" (foreign-value "C_CHICKEN_BUG_PROGRAM" c-string)))
+
 (define (fixpath prg)
-  (cond ((string=? prg "csc")
-	 (string-intersperse 
-	  (cons* (shellpath
-		  (make-pathname 
-		   *chicken-bin-path*
-		   (cdr (assoc prg *installed-executables*))))
-		 "-feature" "compiling-extension" 
-		 (if (and (feature? #:cross-chicken)
-			  (not (host-extension)))
-		     "" "-setup-mode")
-		 (if (keep-intermediates) "-k" "")
-		 (if (host-extension) "-host" "")
-		 (if (deployment-mode) "-deployed" "")
-		 *csc-options*) 
-	  " ") )
-	((assoc prg *installed-executables*) =>
-	 (lambda (a) (shellpath (make-pathname *chicken-bin-path* (cdr a)))))
-	(else prg) ) )
+  (if (string=? prg "csc")
+      (string-intersperse 
+       (cons*
+	(shellpath (find-program "csc"))
+	"-feature" "compiling-extension" 
+	(if (and (feature? #:cross-chicken)
+		 (not (host-extension)))
+	    "" "-setup-mode")
+	(if (keep-intermediates) "-k" "")
+	(if (host-extension) "-host" "")
+	(if (deployment-mode) "-deployed" "")
+	*csc-options*) 
+       " ")
+      (find-program prg)))
 
 (define (fixmaketarget file)
   (if (and (equal? "so" (pathname-extension file))
@@ -411,10 +427,14 @@
 (define (make-setup-info-pathname fn #!optional (rpath (repository-path)))
   (make-pathname rpath fn setup-file-extension) )
 
+(define destination-prefix (make-parameter #f))
+
 (define installation-prefix
-  (make-parameter
-   (or (get-environment-variable "CHICKEN_INSTALL_PREFIX")
-       chicken-prefix)))
+  (let ((prefix (get-environment-variable "CHICKEN_INSTALL_PREFIX")))
+    (lambda ()
+      (or (destination-prefix)
+	  prefix
+	  chicken-prefix))))
 
 (define create-directory/parents
   (let ()
@@ -446,12 +466,19 @@
   ;;XXX the prefix handling is completely bogus
   (let ((from (if (pair? from) (car from) from))
 	(to (let ((to-path (if (pair? from) (make-pathname to (cadr from)) to)))
-	      (if (not (string-prefix? prefix to-path))
-		  (make-pathname prefix to-path) 
+	      (if (not (path-prefix? prefix to-path))
+		  (if (absolute-pathname? to-path)
+		      to-path
+		      (make-pathname prefix to-path) )
 		  to-path))))
     (ensure-directory to)
     (run (,*copy-command* ,(shellpath from) ,(shellpath to)))
     to))
+
+(define (path-prefix? pref path)
+  (string-prefix?
+   (normalize-pathname pref)
+   (normalize-pathname path)))
 
 (define (move-file from to)
   (let ((from  (if (pair? from) (car from) from))
@@ -492,13 +519,13 @@
   (let* ((sname (->string name))
 	 (fname (make-pathname #f sname "scm"))
 	 (iname (make-pathname #f sname "import.scm")))
-    (compile -s -O2 -d1 ,fname -j ,name)
+    (compile -s -O3 -d1 ,fname -j ,name)
     (when static
-      (compile -c -O2 -d1 ,fname -j ,name -unit ,name))
-    (compile -s -O2 -d0 ,iname)
+      (compile -c -O3 -d1 ,fname -j ,name -unit ,name))
+    (compile -s -O3 -d0 ,iname)
     (install-extension
      name
-     (list fname 
+     (list (pathname-replace-extension fname "so")
 	   (pathname-replace-extension iname "so")
 	   (make-pathname #f sname "setup"))
      `((version ,version)
@@ -580,10 +607,13 @@
 (define (repo-path #!optional ddir?)
   (let ((p (if ddir?
 	       (if (deployment-mode)
-		   (installation-prefix)
-		   (make-pathname 
-		    (installation-prefix) 
-		    (sprintf "lib/chicken/~a" (##sys#fudge 42))))
+		   (installation-prefix) ; deploy: copy directly into destdir
+		   (let ((p (destination-prefix)))
+		     (if p		; installation-prefix changed: use it
+			 (make-pathname 
+			  p
+			  (sprintf "lib/chicken/~a" (##sys#fudge 42)))
+			 (repository-path)))) ; otherwise use repo-path
 	       (repository-path))) )
     (ensure-directory p)
     p) )
@@ -755,10 +785,16 @@
 		(string-append "\"" str "\"")	; double quotes, yes - thanks to Matthew Flatt
 		str))))
     (unless (zero? r)
-      (error "shell command failed with nonzero exit status" r str))))
+      (quit "shell command failed with nonzero exit status ~a:~%~%  ~a" r str))))
+
+(define (quit fstr . args)
+  (flush-output)
+  (fprintf (current-error-port) "~%~?~%" fstr args)
+  (reset))
 
 ;;; Module Setup
 
 ; User setup by default
 (user-install-setup)
+
 )

@@ -44,8 +44,9 @@ EXE = .exe
 
 C_COMPILER = gcc
 CXX_COMPILER = g++
+RC_COMPILER = windres
 LINKER = gcc
-
+TARGET_RC_COMPILER ?= $(RC_COMPILER)
 
 C_COMPILER_OPTIONS ?= -fno-strict-aliasing -DHAVE_CHICKEN_CONFIG_H
 ifdef DEBUGBUILD
@@ -67,17 +68,9 @@ LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libchicken.dll.a \
 	-Wl,--dll \
 	-Wl,--add-stdcall-alias \
 	-Wl,--no-whole-archive
-LIBUCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libuchicken.dll.a \
-	-Wl,--export-all-symbols \
-	-Wl,--enable-auto-import \
-	-Wl,--image-base=0x10000000 \
-	-Wl,--dll \
-	-Wl,--add-stdcall-alias \
-	-Wl,--no-whole-archive
 
 LIBRARIES = -lm 
 LIBCHICKEN_IMPORT_LIBRARY = libchicken.dll.a
-LIBUCHICKEN_IMPORT_LIBRARY = libuchicken.dll.a
 
 
 # special files
@@ -91,10 +84,11 @@ CUSTOM_CHICKEN_DEFAULTS=1
 include $(SRCDIR)/defaults.make
 
 LIBCHICKEN_SO_LIBRARIES = $(LIBRARIES)
-LIBUCHICKEN_SO_LIBRARIES = $(LIBRARIES)
 
 chicken-config.h: chicken-defaults.h
 	echo "/* GENERATED */" >$@
+	echo "#define C_INSTALL_RC_COMPILER \"$(RC_COMPILER)\"" >>$@
+	echo "#define C_TARGET_RC_COMPILER \"$(TARGET_RC_COMPILER)\"" >>$@
 	echo "#define HAVE_DIRENT_H 1" >>$@
 	echo "#define HAVE_INTTYPES_H 1" >>$@
 	echo "#define HAVE_LIMITS_H 1" >>$@
@@ -234,6 +228,15 @@ chicken-defaults.h:
 	echo "#endif" >>$@
 	echo "#ifndef C_CHICKEN_BUG_PROGRAM" >>$@
 	echo "# define C_CHICKEN_BUG_PROGRAM \"$(CHICKEN_BUG_PROGRAM)\"" >>$@
+	echo "#endif" >>$@
+	echo "#ifndef C_CHICKEN_INSTALL_PROGRAM" >>$@
+	echo "# define C_CHICKEN_INSTALL_PROGRAM \"$(CHICKEN_INSTALL_PROGRAM)\"" >>$@
+	echo "#endif" >>$@
+	echo "#ifndef C_CHICKEN_UNINSTALL_PROGRAM" >>$@
+	echo "# define C_CHICKEN_UNINSTALL_PROGRAM \"$(CHICKEN_UNINSTALL_PROGRAM)\"" >>$@
+	echo "#endif" >>$@
+	echo "#ifndef C_CHICKEN_STATUS_PROGRAM" >>$@
+	echo "# define C_CHICKEN_STATUS_PROGRAM \"$(CHICKEN_STATUS_PROGRAM)\"" >>$@
 	echo "#endif" >>$@
 	echo "#ifndef C_WINDOWS_SHELL" >>$@
 	echo "# define C_WINDOWS_SHELL 0" >>$@

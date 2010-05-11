@@ -424,6 +424,7 @@ The following extended bindings are handled specially:
 {{fx+}}
 {{fx-}} {{fx*}} {{fx/}} {{fxmod}}
 {{fx=}} {{fx>}} {{fx>=}} {{fixnum?}} {{fxneg}} {{fxmax}} {{fxmin}}
+{{fxodd?}} {{fxeven?}}
 {{fxand}} {{fxior}} {{fxxor}} {{fxnot}} {{fxshl}} {{fxshr}}
 {{finite?}} {{fp=}} {{fp>}} {{fp<}} {{fp>=}} {{fp<=}} {{fpinteger?}}
 {{flonum?}} {{fp+}}
@@ -463,6 +464,11 @@ The following extended bindings are handled specially:
 {{hash-table-ref}}
 {{block-set!}} {{number-of-slots}}
 {{first}} {{second}} {{third}} {{fourth}} {{null-pointer?}} {{pointer->object}}
+{{pointer+}} {{pointer=?}}
+{{pointer-u8-ref}} {{pointer-s8-ref}} {{pointer-u16-ref}} {{pointer-s16-ref}} 
+{{pointer-u32-ref}} {{pointer-s32-ref}} {{pointer-f32-ref}} {{pointer-f64-ref}} 
+{{pointer-u8-set!}} {{pointer-s8-set!}} {{pointer-u16-set!}} {{pointer-s16-set!}} 
+{{pointer-u32-set!}} {{pointer-s32-set!}} {{pointer-f32-set!}} {{pointer-f64-set!}} 
 {{make-record-instance}}
 {{locative-ref}} {{locative-set!}} {{locative?}} {{locative->object}} {{identity}}
 {{cpu-time}} {{error}} {{call/cc}} {{any?}}
@@ -590,15 +596,16 @@ See the [[Extensions]] chapter for more information.
 You can just set the {{CHICKEN_REPOSITORY}} environment variable.
 It should contain the path where you want eggs to be installed:
 
- $ export CHICKEN_REPOSITORY=~/chicken/
- $ chicken-install -init
- $ chicken-install extensionname
+ $ export CHICKEN_REPOSITORY=~/eggs/lib/chicken/5
+ $ chicken-install -init ~/eggs/lib/chicken/5
+ $ chicken-install -p ~/eggs/ extensionname
 
-In order to make programs (including csi) see these eggs, you should set this variable when you run them.
+In order to make programs (including csi) see these eggs, you should set this variable when you run them. See the [[http://chicken.wiki.br/man/4/Extensions#changing-repository-location|Extensions/Changing repository location]] section of the manual for more information on that.
+
 Alternatively, you can call the {{repository-path}} Scheme procedure before loading the eggs, as in:
 
 <enscript highlight=scheme>
-(repository-path "/home/azul/chicken")
+(repository-path "/home/azul/eggs")
 (use format-modular)
 </enscript>
 

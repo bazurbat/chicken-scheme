@@ -65,7 +65,7 @@
     (let ((eggs (gather-eggs pats)))
       (cond ((null? eggs)
 	     (print "nothing to remove.") )
-	    ((or *force* (equal? eggs pats) (ask eggs))
+	    ((or *force* (ask eggs))
 	     (for-each
 	      (lambda (e)
 		(print "removing " e)
@@ -108,7 +108,7 @@ EOF
 			(char=? #\- (string-ref arg 0)))
 		   (if (> (string-length arg) 2)
 		       (let ((sos (string->list (substring arg 1))))
-			 (if (null? (lset-intersection eq? *short-options* sos))
+			 (if (every (cut memq <> *short-options*) sos)
 			     (loop (append (map (cut string #\- <>) sos) (cdr args)) pats)
 			     (usage 1)))
 		       (usage 1)))

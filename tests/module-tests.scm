@@ -163,4 +163,38 @@
   (use (prefix (rename srfi-1 (filter f)) 99:))
   (print 99:f))
 
+
+;;; expansion of macros into modules:
+
+(module m16 (foo-module)
+
+(import scheme chicken)
+
+(define-syntax foo-module
+  (syntax-rules ()
+    ((_ name)
+     (module name (maker definer)
+       (import scheme chicken)
+       (define (maker) 'name)
+       (define-syntax definer
+         (syntax-rules () 
+           ((_) (define (name) 'name))))))))
+
+)
+
+(import m16)
+(foo-module abc)
+(import abc)
+
+(test-equal 
+ "function defined in module that is the result of an expansion"
+ 'abc (maker))
+
+(definer)
+
+(test-equal 
+ "syntax defined in module that is the result of an expansion"
+ 'abc (abc))
+
 (test-end "modules")
+

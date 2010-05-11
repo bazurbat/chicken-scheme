@@ -120,7 +120,11 @@
 
   (define (known-default-sources)
     (if (and *default-location* *default-transport*)
-        `(((location ,*default-location*)
+        `(((location 
+	    ,(if (and (eq? *default-transport* 'local)
+		      (not (absolute-pathname? *default-location*) ))
+		 (make-pathname (current-directory) *default-location*)
+		 *default-location*))
            (transport ,*default-transport*)))
         *default-sources* ) )
 
@@ -339,7 +343,7 @@
 		((eq? 'and (car p))
 		 (and (every loop (cdr p)) (fail)))
 		((eq? 'or (car p))
-		 (and (not (any? loop (cdr p))) (fail)))
+		 (and (not (any loop (cdr p))) (fail)))
 		(else (error "invalid `platform' property" name (cadr platform))))))))
 
   (define (make-install-command e+d+v dep?)
@@ -356,7 +360,10 @@
      (if *keep* " -e \"(keep-intermediates #t)\"" "")
      (if (and *no-install* (not dep?)) " -e \"(setup-install-mode #f)\"" "")
      (if *host-extension* " -e \"(host-extension #t)\"" "")
-     (if *prefix* (sprintf " -e \"(installation-prefix \\\"~a\\\")\"" *prefix*) "")
+     (if *prefix* 
+	 (sprintf " -e \"(destination-prefix \\\"~a\\\")\"" 
+	   (normalize-pathname *prefix* 'unix))
+	 "")
      (if *deploy* " -e \"(deployment-mode #t)\"" "")
      #\space
      (shellpath (make-pathname (cadr e+d+v) (car e+d+v) "setup"))) )
@@ -371,33 +378,35 @@
 	(pp dag)
 	(for-each
 	 (lambda (e+d+v i)
-	   (when (and (not depinstall-ok)
-		      (= i 1)
-		      (> num 1))
-	     (when (and *no-install*
-			(not (yes-or-no?
-			      (string-append
-			       "You specified `-no-install', but this extension has dependencies"
-			       " that are required for building. Do you still want to install them?"))))
-	       (print "aborting installation.")
-	       (cleanup)
-	       (exit 1)))
-	   (print "installing " (car e+d+v) #\: (caddr e+d+v) " ...")
-	   (print "changing current directory to " (cadr e+d+v))
-	   (parameterize ((current-directory (cadr e+d+v)))
-	     (let ((cmd (make-install-command e+d+v (< i num))))
-	       (print "  " cmd)
-	       ($system cmd))
-	     (when (and *run-tests*
-			(file-exists? "tests")
-			(directory? "tests")
-			(file-exists? "tests/run.scm") )
-	       (set! *running-test* #t)
-	       (current-directory "tests")
-	       (command "~a -s run.scm ~a" *csi* (car e+d+v))
-	       (set! *running-test* #f))))
+	   (let ((isdep (> i 1)))
+	     (when (and (not depinstall-ok)
+			isdep
+			(= i num))
+	       (when (and *no-install*
+			   (not (yes-or-no?
+				 (string-append
+				  "You specified `-no-install', but this extension has dependencies"
+				  " that are required for building. Do you still want to install them?"))))
+		 (print "aborting installation.")
+		 (cleanup)
+		 (exit 1)))
+	     (print "installing " (car e+d+v) #\: (caddr e+d+v) " ...")
+	     (print "changing current directory to " (cadr e+d+v))
+	     (parameterize ((current-directory (cadr e+d+v)))
+	       (let ((cmd (make-install-command e+d+v (> i 1))))
+		 (print "  " cmd)
+		 ($system cmd))
+	       (when (and *run-tests*
+			  (not isdep)
+			  (file-exists? "tests")
+			  (directory? "tests")
+			  (file-exists? "tests/run.scm") )
+		 (set! *running-test* #t)
+		 (current-directory "tests")
+		 (command "~a -s run.scm ~a" *csi* (car e+d+v))
+		 (set! *running-test* #f)))))
 	 (map (cut assoc <> *eggs+dirs+vers*) dag)
-	 (iota num 1)))))
+	 (iota num num -1)))))
 
   (define (cleanup)
     (unless *keep*
@@ -455,7 +464,8 @@
 		     (else (list egg))))
 	     eggs)
 	    string=?)))
-      (print "mapped " eggs " to " eggs2)
+      (unless (lset= same? eggs eggs2)
+	(print "mapped " eggs " to " eggs2))
       eggs2))
 
   (define ($system str)
@@ -513,11 +523,11 @@ EOF
                         (let ((setups (glob "*.setup")))
                           (cond ((pair? setups)
                                  (set! *eggs+dirs+vers*
-                                       (append
-                                        (map
-                                         (lambda (s) (cons (pathname-file s) (list "." "")))
-                                         setups)
-                                        *eggs+dirs+vers*)))
+				   (append
+				    (map
+				     (lambda (s) (cons (pathname-file s) (list "." "")))
+				     setups)
+				    *eggs+dirs+vers*)))
                                 (else
                                  (print "no setup-scripts to process")
                                  (exit 1))) ) )
@@ -614,8 +624,11 @@ EOF
                              (char=? #\- (string-ref arg 0)))
                         (if (> (string-length arg) 2)
                             (let ((sos (string->list (substring arg 1))))
-                              (if (null? (lset-intersection eq? *short-options* sos))
-                                  (loop (append (map (cut string #\- <>) sos) (cdr args)) eggs)
+                              (if (every (cut memq <> *short-options*) sos)
+                                  (loop (append 
+					 (map (cut string #\- <>) sos)
+					 (cdr args)) 
+					eggs)
                                   (usage 1)))
                             (usage 1)))
                        ((equal? "setup" (pathname-extension arg))

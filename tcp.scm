@@ -255,11 +255,8 @@ EOF
 
 (define (##net#bind-socket port style host)
   (##sys#check-exact port)
-  (cond-expand
-   (unsafe)
-   (else
-    (when (or (fx< port 0) (fx>= port 65535))
-      (##sys#signal-hook #:domain-error 'tcp-listen "invalid port number" port) ) ) )
+  (when (or (fx< port 0) (fx>= port 65535))
+    (##sys#signal-hook #:domain-error 'tcp-listen "invalid port number" port) )
   (let ((s (##net#socket _af_inet style 0)))
     (when (eq? _invalid_socket s)
       (##sys#update-errno)
@@ -411,7 +408,12 @@ EOF
 		      #:network-error
 		      (##sys#string-append "cannot close socket input port - " strerror)
 		      fd) ) ) )
-	       #f
+	       (lambda ()
+		 (when (fx>= bufindex buflen)
+		   (read-input))
+		 (if (fx< bufindex buflen)
+		     (##core#inline "C_subchar" buf bufindex)
+		     #!eof))
 	       (lambda (p n dest start)	; read-string!
 		 (let loop ((n n) (m 0) (start start))
 		   (cond ((eq? n 0) m)

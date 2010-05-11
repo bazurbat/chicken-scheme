@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# identify-branch - check for .git directory and obtain branchname (unless "master")
+# identify-branch.sh - check for .git directory and obtain branchname (unless "master")
 #
 # usage: identify-branch SOURCEDIR
 

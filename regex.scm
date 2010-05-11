@@ -38,7 +38,7 @@
     regexp? regexp
     string-match string-match-positions string-search string-search-positions
     string-split-fields string-substitute string-substitute*
-    glob? glob->regexp
+    glob->regexp
     grep
     regexp-escape 
 
@@ -72,15 +72,17 @@
 (define-record regexp x)
 
 (define (regexp pat #!optional caseless extended utf8)
-  (make-regexp
-   (apply
-    irregex 
-    pat 
-    (let ((opts '()))
-      (when caseless (set! opts (cons 'i opts)))
-      (when extended (set! opts (cons 'x opts)))
-      (when utf8 (set! opts (cons 'utf8 opts)))
-      opts))) )
+  (if (regexp? pat)
+      pat
+      (make-regexp
+       (apply
+	irregex 
+	pat 
+	(let ((opts '()))
+	  (when caseless (set! opts (cons 'i opts)))
+	  (when extended (set! opts (cons 'x opts)))
+	  (when utf8 (set! opts (cons 'utf8 opts)))
+	  opts))) ) )
 
 (define (unregexp x)
   (cond ((regexp? x) (regexp-x x))
@@ -112,25 +114,25 @@
 
 (define (string-search rx str #!optional (start 0) (range (string-length str)))
   (let ((rx (unregexp rx)))
-    (and-let* ((n (string-length str))
-	       (m (irregex-search rx str start (min n (fx+ start range)))))
-      (let loop ((i (irregex-match-num-submatches m))
-                 (res '()))
-        (if (fx< i 0)
-            res
-            (loop (fx- i 1) (cons (irregex-match-substring m i) res)))))))
+    (let ((n (string-length str)))
+      (and-let* ((m (irregex-search rx str start (min n (fx+ start range)))))
+	(let loop ((i (irregex-match-num-submatches m))
+		   (res '()))
+	  (if (fx< i 0)
+	      res
+	      (loop (fx- i 1) (cons (irregex-match-substring m i) res))))))))
 
 (define (string-search-positions rx str #!optional (start 0) (range (string-length str)))
   (let ((rx (unregexp rx)))
-    (and-let* ((n (string-length str))
-	       (m (irregex-search rx str start (min n (fx+ start range)))))
-      (let loop ((i (irregex-match-num-submatches m))
-                 (res '()))
-        (if (fx< i 0)
-            res
-            (loop (fx- i 1) (cons (list (irregex-match-start-index m i)
-                                        (irregex-match-end-index m i))
-                                  res)))))))
+    (let ((n (string-length str)))
+      (and-let* ((m (irregex-search rx str start (min n (fx+ start range)))))
+	(let loop ((i (irregex-match-num-submatches m))
+		   (res '()))
+	  (if (fx< i 0)
+	      res
+	      (loop (fx- i 1) (cons (list (irregex-match-start-index m i)
+					  (irregex-match-end-index m i))
+				    res))))))))
 
 
 ;;; Split string into fields:
@@ -246,50 +248,45 @@
 
 ;;; Glob support:
 
-(define (glob? str)			; DEPRECATED
-  (##sys#check-string str 'glob?)
-  (let loop ([idx (fx- (string-length str) 1)])
-    (and (fx<= 0 idx)
-         (case (string-ref str idx)
-           [(#\* #\] #\?)
-             (or (fx= 0 idx)
-                 (not (char=? #\\ (string-ref str (fx- idx 1))))
-                 (loop (fx- idx 2)))]
-           [else
-             (loop (fx- idx 1))]) ) ) )
-
 (define glob->regexp
-  (let ([list->string list->string]
-        [string->list string->list] )
-    (lambda (s)
+  (let ((list->string list->string)
+        (string->list string->list)
+	(regexp regexp))
+    (lambda (s #!optional sre?)
       (##sys#check-string s 'glob->regexp)
-      (list->string
-       (let loop ((cs (string->list s)))
-         (if (null? cs)
-             '()
-             (let ([c (car cs)]
-                   [rest (cdr cs)] )
-               (cond [(char=? c #\*)  `(#\. #\* ,@(loop rest))]
-                     [(char=? c #\?)  (cons '#\. (loop rest))]
-                     [(char=? c #\[)
-                      (cons
-                       #\[
-                       (let loop2 ((rest rest))
-                         (if (pair? rest)
-			     (cond ((char=? #\] (car rest))
-				    (cons #\] (loop (cdr rest))))
-				   ((and (char=? #\- (car rest)) (pair? (cdr rest)))
-				    `(#\- ,(cadr rest) ,@(loop2 (cddr rest))))
-				   ((and (pair? (cdr rest)) (pair? (cddr rest))
-					 (char=? #\- (cadr rest)) )
-				    `(,(car rest) #\- ,(caddr rest)
-				      ,@(loop2 (cdddr rest))))
-				   ((pair? rest)
-				    (cons (car rest) (loop2 (cdr rest))))
-				   ((null? rest)
-				    (error 'glob->regexp "unexpected end of character class" s))))))]
-                     [(or (char-alphabetic? c) (char-numeric? c)) (cons c (loop rest))]
-                     [else `(#\\ ,c ,@(loop rest))] ) ) ) ) ) ) ) )
+      (let ((sre
+	     (cons 
+	      ':
+	      (let loop ((cs (string->list s)) (dir #t))
+		(if (null? cs)
+		    '()
+		    (let ((c (car cs))
+			  (rest (cdr cs)) )
+		      (cond ((char=? c #\*) 
+			     (if dir
+				 `((or (: (~ ("./\\")) (* (~ ("/\\"))))
+				       (* (~ ("./\\"))))
+				   ,@(loop rest #f))
+				 `((* (~ ("/\\"))) ,@(loop rest #f))))
+			    ((char=? c #\?)  (cons 'any (loop rest #f)))
+			    ((char=? c #\[)
+			     (let loop2 ((rest rest) (s '()))
+			       (cond ((not (pair? rest))
+				      (error 'glob->regexp "unexpected end of character class" s))
+				     ((char=? #\] (car rest))
+				      `((or ,@s) ,@(loop (cdr rest) #f)))
+				     ((and (pair? (cdr rest))
+					   (pair? (cddr rest))
+					   (char=? #\- (cadr rest)) )
+				      (loop2 (cdddr rest) (cons `(/ ,(car rest) ,(caddr rest)) s)))
+				     ((and (pair? (cdr rest))
+					   (char=? #\- (car rest)))
+				      (loop2 (cddr rest)
+					     (cons `(~ ,(cadr rest)) s)))
+				     (else
+				      (loop2 (cdr rest) (cons (car rest) s))))))
+			    (else (cons c (loop rest (memq c '(#\\ #\/))))))))))))
+	(if sre? sre (regexp sre))))))
 
 
 ;;; Grep-like function on list:

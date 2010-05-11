@@ -48,11 +48,6 @@ set, or {{#f}} otherwise. The rightmost/least-significant bit is bit 0.
 <procedure>(fxneg N)</procedure>
 <procedure>(fxmin N1 N2)</procedure>
 <procedure>(fxmax N1 N2)</procedure>
-<procedure>(fx= N1 N2)</procedure>
-<procedure>(fx> N1 N2)</procedure>
-<procedure>(fx< N1 N2)</procedure>
-<procedure>(fx>= N1 N2)</procedure>
-<procedure>(fx<= N1 N2)</procedure>
 <procedure>(fxand N1 N2)</procedure>
 <procedure>(fxior N1 N2)</procedure>
 <procedure>(fxxor N1 N2)</procedure>
@@ -69,6 +64,18 @@ On division by zero, {{fx/}} and {{fxmod}} signal a condition of kind
 
 {{fxshl}} and {{fxshr}} perform arithmetic shift left and right,
 respectively.
+
+==== Fixnum comparison and predicates
+
+<procedure>(fxodd? N)</procedure>
+<procedure>(fxeven? N)</procedure>
+<procedure>(fx= N1 N2)</procedure>
+<procedure>(fx> N1 N2)</procedure>
+<procedure>(fx< N1 N2)</procedure>
+<procedure>(fx>= N1 N2)</procedure>
+<procedure>(fx<= N1 N2)</procedure>
+
+Comparison of fixnums and predicates on them.
 
 ==== fixnum?
 
@@ -124,7 +131,8 @@ application.
 <procedure>(fpabs X)</procedure>
 <procedure>(fpinteger? X)</procedure>
 
-Note: {{fpround}} implements POSIX, which is different from R5RS.
+Note: {{fpround}} uses the rounding mode that your C library
+implements, which is usually different from R5RS.
 
 ==== flonum?
 
@@ -455,48 +463,48 @@ The following composite conditions are additionally defined:
 
 <table>
 
-<tr><td> (exn arity)
+<tr><td> (exn arity) </td><td>
 
 Signaled when a procedure is called with the wrong number of arguments.
 
-</td></tr><tr><td> (exn type)
+</td></tr><tr><td> (exn type) </td><td>
 
 Signaled on type-mismatch errors, for example when an argument of the wrong
 type is passed to a built-in procedure.
 
-</td></tr><tr><td> (exn arithmetic)
+</td></tr><tr><td> (exn arithmetic) </td><td>
 
 Signaled on arithmetic errors, like division by zero.
 
-</td></tr><tr><td> (exn i/o)
+</td></tr><tr><td> (exn i/o) </td><td>
 
 Signaled on input/output errors.
 
-</td></tr><tr><td> (exn i/o file)
+</td></tr><tr><td> (exn i/o file) </td><td>
 
 Signaled on file-related errors.
 
-</td></tr><tr><td> (exn i/o net)
+</td></tr><tr><td> (exn i/o net) </td><td>
 
 Signaled on network errors.
 
-</td></tr><tr><td> (exn bounds)
+</td></tr><tr><td> (exn bounds) </td><td>
 
 Signaled on errors caused by accessing non-existent elements of a collection.
 
-</td></tr><tr><td> (exn runtime)
+</td></tr><tr><td> (exn runtime) </td><td>
 
 Signaled on low-level runtime-system error-situations.
 
-</td></tr><tr><td> (exn runtime limit)
+</td></tr><tr><td> (exn runtime limit) </td><td>
 
 Signaled when an internal limit is exceeded (like running out of memory).
 
-</td></tr><tr><td> (exn match)
+</td></tr><tr><td> (exn match) </td><td>
 
 Signaled on errors raised by failed matches (see the section on {{match}}).
 
-</td></tr><tr><td> (exn syntax)
+</td></tr><tr><td> (exn syntax) </td><td>
 
 Signaled on syntax errors.
 
@@ -680,20 +688,21 @@ subprocess is returned unaltered.
 
 On a UNIX system, that value is the raw return value of waitpid(2), which contains signal, core dump and exit status.    It is 0 on success.  To pull out the signal number or exit status portably requires POSIX calls, but in a pinch you can use something like this: 
 
- ;; Returns two values: #t if the process exited normally or #f otherwise;
- ;; and either the exit status, or the signal number if terminated via signal.
- (define (process-status rc)
-   (define (wait-signaled? x) (not (= 0 (bitwise-and x 127))))
-   (define (wait-signal x) (bitwise-and x 127))
-   (define (wait-exit-status x) (arithmetic-shift x -8))
-   (if (wait-signaled? rc)
-       (values #f (wait-signal rc))
-       (values #t (wait-exit-status rc))))
+<enscript highlight='scheme'>
+;; Returns two values: #t if the process exited normally or #f otherwise;
+;; and either the exit status, or the signal number if terminated via signal.
+(define (process-status rc)
+  (define (wait-signaled? x) (not (= 0 (bitwise-and x 127))))
+  (define (wait-signal x) (bitwise-and x 127))
+  (define (wait-exit-status x) (arithmetic-shift x -8))
+  (if (wait-signaled? rc)
+      (values #f (wait-signal rc))
+      (values #t (wait-exit-status rc))))
 
- #;> (process-status (system "exit 42"))
- #t
- 42
-
+#;> (process-status (system "exit 42"))
+#t
+42
+</enscript>
 === Execution time
 
 
@@ -1224,7 +1233,7 @@ be compared using {{eq?}}.
 
 ==== get
 
-  <procedure>(get SYMBOL PROPERTY [DEFAULT])</procedure>
+<procedure>(get SYMBOL PROPERTY [DEFAULT])</procedure>
 
 Returns the value stored under the key {{PROPERTY}} in the property
 list of {{SYMBOL}}. If no such property is stored, returns
@@ -1232,29 +1241,29 @@ list of {{SYMBOL}}. If no such property is stored, returns
 
 ==== put!
 
-  <procedure>(put! SYMBOL PROPERTY VALUE)</procedure>
-  [setter] (set! (get SYMBOL PROPERTY) VALUE)
+<procedure>(put! SYMBOL PROPERTY VALUE)</procedure>
+setter: (set! (get SYMBOL PROPERTY) VALUE)
 
 Stores {{VALUE}} under the key {{PROPERTY}} in the property list of
 {{SYMBOL}} replacing any previously stored value.
 
 ==== remprop!
 
-  <procedure>(remprop! SYMBOL PROPERTY)</procedure>
+<procedure>(remprop! SYMBOL PROPERTY)</procedure>
 
 Deletes the first property matching the key {{PROPERTY}} in the property list
 of {{SYMBOL}}. Returns {{#t}} when a deletion performed, and {{#f}} otherwise.
 
 ==== symbol-plist
 
-  <procedure>(symbol-plist SYMBOL)</procedure>
-  [setter] (set! (symbol-plist SYMBOL) LST)
+<procedure>(symbol-plist SYMBOL)</procedure>
+setter: (set! (symbol-plist SYMBOL) LST)
 
 Returns the property list of {{SYMBOL}} or sets it.
 
 ==== get-properties
 
-  <procedure>(get-properties SYMBOL PROPERTIES)</procedure>
+<procedure>(get-properties SYMBOL PROPERTIES)</procedure>
 
 Searches the property list of {{SYMBOL}} for the first property with a key in
 the list {{PROPERTIES}}. Returns 3 values: the matching property key, value,

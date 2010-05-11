@@ -328,18 +328,20 @@
 (fx> (procedure fx> (fixnum fixnum) boolean))
 (fx>= (procedure fx>= (fixnum fixnum) boolean))
 (fxand (procedure fxand (fixnum fixnum) fixnum))
+(fxeven? (procedure fxeven? (fixnum) boolean))
 (fxior (procedure fxior (fixnum fixnum) fixnum))
 (fxmax (procedure fxmax (fixnum fixnum) fixnum))
 (fxmin (procedure fxmin (fixnum fixnum) fixnum))
 (fxmod (procedure fxmod (fixnum fixnum) fixnum))
 (fxneg (procedure fxneg (fixnum) fixnum))
 (fxnot (procedure fxnot (fixnum) fixnum))
+(fxodd? (procedure fxodd? (fixnum) boolean))
 (fxshl (procedure fxshl (fixnum fixnum) fixnum))
 (fxshr (procedure fxshr (fixnum fixnum) fixnum))
 (fxxor (procedure fxxor (fixnum fixnum) fixnum))
 (gc (procedure gc (#!optional *) fixnum))
 (gensym (procedure gensym (#!optional *) symbol))
-(get (procedure get (symbol symbol) *))
+(get (procedure get (symbol symbol #!optional *) *))
 (get-call-chain (procedure get-call-chain (#!optional fixnum *) list))
 (get-condition-property (procedure get-condition-property ((struct condition) symbol symbol #!optional *) *))
 (get-environment-variable (procedure get-environment-variable (string) *))
@@ -461,7 +463,7 @@
 (queue-last (procedure queue-last ((struct queue)) *))
 (queue-push-back! (procedure queue-push-back! ((struct queue) *) undefined))
 (queue-push-back-list! (procedure queue-push-back-list! ((struct queue) list) undefined))
-(queue-remove! (procedure queue-remove! ((struct queue)) undefined))
+(queue-remove! (procedure queue-remove! ((struct queue)) *))
 (queue? (procedure queue? (*) boolean))
 (rassoc (procedure rassoc (* list #!optional (procedure (* *) *)) *))
 (right-section (procedure right-section (procedure #!rest) procedure))
@@ -527,7 +529,7 @@
 (pathname-replace-file (procedure pathname-replace-file (string string) string))
 (pathname-strip-directory (procedure pathname-strip-directory (string) string))
 (pathname-strip-extension (procedure pathname-strip-extension (string) string))
-(normalize-pathname (procedure normalize-pathname (string) string))
+(normalize-pathname (procedure normalize-pathname (string #!optional symbol) string))
 
 ;; irregex
 
@@ -889,7 +891,7 @@
 
 ;; regex
 
-(glob->regexp (procedure glob->regexp (string) string))
+(glob->regexp (procedure glob->regexp (string #!optional *) *))
 (glob? deprecated)
 (grep (procedure grep (* list #!optional (procedure (*) *)) list))
 (regexp (procedure regexp (* #!optional * * *) (struct regexp)))
@@ -1169,7 +1171,7 @@
 (condition-variable-specific-set! (procedure condition-variable-specific-set! ((struct condition-variable) *) undefined))
 (condition-variable? (procedure condition-variable? (*) boolean))
 (current-thread (procedure current-thread () (struct thread)))
-(current-time (procedure current-time () number))
+(current-time (procedure current-time () (struct time)))
 (join-timeout-exception? (procedure join-timeout-exception? (*) boolean))
 (make-condition-variable (procedure make-condition-variable (#!optional *) (struct condition-variable)))
 (make-mutex (procedure make-mutex (#!optional *) (struct mutex)))

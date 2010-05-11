@@ -30,11 +30,10 @@
   (fixnum)
   (hide match-expression
 	macro-alias module-indirect-exports
-	d dd dm dc map-se merge-se
+	d dd dm dx map-se merge-se
 	lookup check-for-redef) 
   (not inline ##sys#syntax-error-hook ##sys#compiler-syntax-hook
        ##sys#alias-global-hook ##sys#toplevel-definition-hook))
-
 
 
 (set! ##sys#features
@@ -48,7 +47,7 @@
 
 (define dd d)
 (define dm d)
-(define dc d)
+(define dx d)
 
 (cond-expand
  ((not debugbuild)
@@ -60,7 +59,13 @@
 (begin
   (define-syntax dd (syntax-rules () ((_ . _) (void))))
   (define-syntax dm (syntax-rules () ((_ . _) (void))))
-  (define-syntax dc (syntax-rules () ((_ . _) (void)))) )
+  (define-syntax dx (syntax-rules () ((_ . _) (void)))) )
+
+(define-inline (getp sym prop)
+  (##core#inline "C_i_getprop" sym prop #f))
+
+(define-inline (putp sym prop val)
+  (##core#inline_allocate ("C_a_i_putprop" 8) sym prop val))
 
 
 ;;; Syntactic environments
@@ -69,8 +74,8 @@
 (define ##sys#current-meta-environment (make-parameter '()))
 
 (define (lookup id se)
-  (cond ((assq id se) => cdr)
-	((##sys#get id '##core#macro-alias))
+  (cond ((##core#inline "C_u_i_assq" id se) => cdr)
+	((getp id '##core#macro-alias))
 	(else #f)))
 
 (define (macro-alias var se)
@@ -82,8 +87,8 @@
       var
       (let* ((alias (gensym var))
 	     (ua (or (lookup var se) var)))
-	(##sys#put! alias '##core#macro-alias ua)
-	(##sys#put! alias '##core#real-name var)
+	(putp alias '##core#macro-alias ua)
+	(putp alias '##core#real-name var)
 	(dd "aliasing " alias " (real: " var ") to " 
 	    (if (pair? ua)
 		'<macro>
@@ -104,8 +109,8 @@
            ((symbol? x)
             (let ((x2 (if se
                           (lookup x se)
-                          (get x '##core#macro-alias) ) ) )
-              (cond ((get x '##core#real-name))
+                          (getp x '##core#macro-alias) ) ) )
+              (cond ((getp x '##core#real-name))
                     ((and alias (not (assq x se)))
                      (##sys#alias-global-hook x #f))
                     ((not x2) x)
@@ -203,6 +208,7 @@
 	     ex) )
       (let ((exp2
 	     (if cs
+		 ;; compiler-syntax may "fall through"
 		 (fluid-let ((##sys#syntax-rules-mismatch (lambda (input) exp))) ; a bit of a hack
 		   (handler exp se dse))
 		 (handler exp se dse))) )
@@ -212,12 +218,12 @@
 	    "syntax transformer for `" (symbol->string name)
 	    "' returns original form, which would result in endless expansion")
 	   exp))
-	(dd `(,name --> ,exp2))
+	(dx `(,name --> ,exp2))
 	exp2)))
   (define (expand head exp mdef)
     (dd `(EXPAND: 
 	  ,head 
-	  ,(cond ((get head '##core#macro-alias) =>
+	  ,(cond ((getp head '##core#macro-alias) =>
 		  (lambda (a) (if (symbol? a) a '<macro>)) )
 		 (else '_))
 	  ,exp 
@@ -228,7 +234,7 @@
 	   (##sys#syntax-error-hook "invalid syntax in macro form" exp) )
 	  ((pair? mdef)
 	   (values 
-	    ;; force ref. opaqueness by passing dynamic se  [what is this comment meaning? I forgot]
+	    ;; force ref. opaqueness by passing dynamic se [what does this comment mean? I forgot ...]
 	    (call-handler head (cadr mdef) exp (car mdef) #f)
 	    #t))
 	  (else (values exp #f)) ) )
@@ -240,7 +246,7 @@
 	    (let ((head2 (or (lookup head dse) head)))
 	      (unless (pair? head2)
 		(set! head2 (or (lookup head2 (##sys#macro-environment)) head2)) )
-	      (cond [(memq head2 '(let ##core#let))
+	      (cond [(eq? head2 '##core#let)
 		     (##sys#check-syntax 'let body '#(_ 2) #f dse)
 		     (let ([bindings (car body)])
 		       (cond [(symbol? bindings) ; expand named let
@@ -249,22 +255,14 @@
 				(values
 				 `(##core#app
 				   (##core#letrec
-				    ([,bindings (##core#loop-lambda ,(map (lambda (b) (car b)) bs) ,@(cddr body))])
+				    ([,bindings 
+				      (##core#loop-lambda
+				       ,(map (lambda (b) (car b)) bs) ,@(cddr body))])
 				    ,bindings)
 				   ,@(##sys#map cadr bs) )
 				 #t) ) ]
 			     [else (values exp #f)] ) ) ]
-		    [(and (memq head2 '(set! ##core#set!)) ; "setter" syntax
-			  (pair? body)
-			  (pair? (car body)) )
-		     (let ([dest (car body)])
-		       (##sys#check-syntax 'set! body '(#(_ 1) _) #f dse)
-		       (values
-			(append (list (list '##sys#setter (car dest)))
-				(cdr dest)
-				(cdr body) ) 
-			#t) ) ]
-		    ((and cs? (symbol? head2) (##sys#get head2 '##compiler#compiler-syntax)) =>
+		    ((and cs? (symbol? head2) (getp head2 '##compiler#compiler-syntax)) =>
 		     (lambda (cs)
 		       (let ((result (call-handler head (car cs) exp (cdr cs) #t)))
 			 (cond ((eq? result exp) (expand head exp head2))
@@ -295,11 +293,11 @@
 	     (##sys#module-rename sym (module-name mod))))
 	  (else sym)))
   (cond ((##sys#qualified-symbol? sym) sym)
-	((##sys#get sym '##core#primitive) =>
+	((getp sym '##core#primitive) =>
 	 (lambda (p)
 	   (dm "(ALIAS) primitive: " p)
 	   p))
-	((##sys#get sym '##core#aliased) 
+	((getp sym '##core#aliased) 
 	 (dm "(ALIAS) marked: " sym)
 	 sym)
 	((assq sym (##sys#current-environment)) =>
@@ -308,7 +306,7 @@
 	   (let ((sym2 (cdr a)))
 	     (if (pair? sym2)		; macro (*** can this be?)
 		 (mrename sym)
-		 (or (##sys#get sym2 '##core#primitive) sym2)))))
+		 (or (getp sym2 '##core#primitive) sym2)))))
 	(else (mrename sym))))
 
 
@@ -371,11 +369,11 @@
 			     `((,%let*
 				,(map (lambda (k)
 					(let ([s (car k)])
-					  `(,s (##sys#get-keyword 
+					  `(,s (##sys#get-keyword
 						',(->keyword s) ,rvar
 						,@(if (pair? (cdr k)) 
 						      `((,%lambda () ,@(cdr k)))
-						      '() ) ) ) ) )
+						      '())))))
 				      (reverse key) )
 				,@body) ) ) ] )
 		    (cond [(null? opt) body]
@@ -465,8 +463,9 @@
 	    (let* ((vars (reverse vars))
 		   (result 
 		    `(##core#let
-		      ,(##sys#map (lambda (v) (##sys#list v (##sys#list '##core#undefined))) 
-				  (apply ##sys#append vars mvars) )
+		      ,(##sys#map
+			(lambda (v) (##sys#list v (##sys#list '##core#undefined))) 
+			(apply ##sys#append vars mvars) )
 		      ,@(map (lambda (v x) `(##core#set! ,v ,x)) vars (reverse vals))
 		      ,@(map (lambda (vs x)
 			       (let ([tmps (##sys#map gensym vs)])
@@ -486,7 +485,7 @@
 	(fini
 	 vars vals mvars mvals
 	 (let loop ((body body) (defs '()) (done #f))
-	   (cond (done `((,(macro-alias 'letrec-syntax se)
+	   (cond (done `((##core#letrec-syntax
 			  ,(map cdr (reverse defs)) ,@body) ))
 		 ((not (pair? body)) (loop body defs #t))
 		 ((and (list? (car body))
@@ -497,9 +496,9 @@
 		    (loop 
 		     (cdr body) 
 		     (cons (if (pair? (cadr def))
-			       `(,(macro-alias 'define-syntax se)
+			       `(##core#define-syntax
 				 ,(caadr def)
-				 (,(macro-alias 'lambda se) ,(cdadr def) ,@(cddr def)))
+				 (##core#lambda ,(cdadr def) ,@(cddr def)))
 			       def)
 			   defs) 
 		     #f)))
@@ -515,12 +514,12 @@
 				(symbol? exp1)
 				(or (lookup exp1 se) exp1))))
 		(cond [(not (symbol? head)) (fini vars vals mvars mvals body)]
-		      [(eq? 'define head)
-		       (##sys#check-syntax 'define x '(define _ . #(_ 0)) #f se)
+		      [(eq? 'define (or (lookup head se) head))
+		       (##sys#check-syntax 'define x '(_ _ . #(_ 0)) #f se)
 		       (let loop2 ([x x])
 			 (let ([head (cadr x)])
 			   (cond [(not (pair? head))
-				  (##sys#check-syntax 'define x '(define variable . #(_ 0)) #f se)
+				  (##sys#check-syntax 'define x '(_ variable . #(_ 0)) #f se)
 				  (loop rest (cons head vars)
 					(cons (if (pair? (cddr x))
 						  (caddr x)
@@ -528,25 +527,25 @@
 					      vals)
 					mvars mvals) ]
 				 [(pair? (car head))
-				  (##sys#check-syntax 'define x '(define (_ . lambda-list) . #(_ 1)) #f se)
-				  (loop2 (cons (macro-alias 'define se)
-					       (##sys#expand-curried-define head (cddr x) se))) ]
+				  (##sys#check-syntax
+				   'define x '(_ (_ . lambda-list) . #(_ 1)) #f se)
+				  (loop2
+				   (##sys#expand-curried-define head (cddr x) se)) ]
 				 [else
 				  (##sys#check-syntax
 				   'define x
-				   '(define (variable . lambda-list) . #(_ 1)) #f se)
+				   '(_ (variable . lambda-list) . #(_ 1)) #f se)
 				  (loop rest
 					(cons (car head) vars)
 					(cons `(##core#lambda ,(cdr head) ,@(cddr x)) vals)
 					mvars mvals) ] ) ) ) ]
-		      ((eq? 'define-syntax head)
-		       (##sys#check-syntax 'define-syntax x '(define-syntax _ . #(_ 1)) se)
+		      ((eq? 'define-syntax (or (lookup head se) head))
+		       (##sys#check-syntax 'define-syntax x '(_ _ . #(_ 1)) se)
 		       (fini/syntax vars vals mvars mvals body) )
-		      [(eq? 'define-values head)
-		       (##sys#check-syntax 'define-values x '(define-values #(_ 0) _) #f se)
+		      [(eq? 'define-values (or (lookup head se) head))
+		       (##sys#check-syntax 'define-values x '(_ #(_ 0) _) #f se)
 		       (loop rest vars vals (cons (cadr x) mvars) (cons (caddr x) mvals)) ]
-		      [(eq? 'begin head)
-		       (##sys#check-syntax 'begin x '(begin . #(_ 0)) #f se)
+		      [(eq? '##core#begin head)
 		       (loop (##sys#append (cdr x) rest) vars vals mvars mvals) ]
 		      ((or (memq head vars) (memq head mvars))
 		       (fini vars vals mvars mvals body))
@@ -588,7 +587,7 @@
 	    `(##core#lambda ,(cdr head) ,@body) )
 	  (loop (car head) `((##core#lambda ,(cdr head) ,@body)) ) ))
     (let ([exp (loop head body)])
-      (list name exp) ) ) )
+      (list 'define name exp) ) ) )
 
 
 ;;; General syntax checking routine:
@@ -633,8 +632,8 @@
 	       [ln (get-line-number sexp)] )
 	  (##sys#syntax-error-hook
 	   (if ln 
-	       (string-append "(" (symbol->string id) ") in line " (number->string ln) " - " msg)
-	       (string-append "(" (symbol->string id) ") " msg) )
+	       (string-append "(" ln ") in `" (symbol->string id) "' - " msg)
+	       (string-append "in `" (symbol->string id) "' - " msg) )
 	   exp) ) )
 
       (define (lambda-list? x)
@@ -747,16 +746,16 @@
 				     (f #t (compare (vector-ref s1 i) (vector-ref s2 i))))
 				    ((or (fx>= i len) (not f)) f))))))
 		   ((and (symbol? s1) (symbol? s2))
-		    (let ((ss1 (or (##sys#get s1 '##core#macro-alias)
+		    (let ((ss1 (or (getp s1 '##core#macro-alias)
 				   (lookup2 1 s1 dse)
 				   s1) )
-			  (ss2 (or (##sys#get s2 '##core#macro-alias)
+			  (ss2 (or (getp s2 '##core#macro-alias)
 				   (lookup2 2 s2 dse)
 				   s2) ) )
 		      (cond ((symbol? ss1)
 			     (cond ((symbol? ss2) 
-				    (eq? (or (##sys#get ss1 '##core#primitive) ss1)
-					 (or (##sys#get ss2 '##core#primitive) ss2)))
+				    (eq? (or (getp ss1 '##core#primitive) ss1)
+					 (or (getp ss2 '##core#primitive) ss2)))
 				   ((assq ss1 (##sys#macro-environment)) =>
 				    (lambda (a) (eq? (cdr a) ss2)))
 				   (else #f) ) )
@@ -907,18 +906,18 @@
 	    (lambda (imp)
 	      (let* ((id (car imp))
 		     (aid (cdr imp))
-		     (prim (##sys#get aid '##core#primitive)))
+		     (prim (getp aid '##core#primitive)))
 		(when prim
 		  (set! prims (cons imp prims)))
 		(and-let* ((a (assq id (import-env)))
 			   ((not (eq? aid (cdr a)))))
-		  (##sys#warn "re-importing already imported identifier" id))))
+		  (##sys#notice "re-importing already imported identifier" id))))
 	    vsv)
 	   (for-each
 	    (lambda (imp)
 	      (and-let* ((a (assq (car imp) (macro-env)))
 			 ((not (eq? (cdr imp) (cdr a)))))
-		(##sys#warn "re-importing already imported syntax" (car imp))) )
+		(##sys#notice "re-importing already imported syntax" (car imp))) )
 	    vss)
 	   (when reexp?
 	     (unless cm
@@ -943,7 +942,7 @@
 
 (define (##sys#mark-primitive prims)
   (for-each
-   (lambda (a) (##sys#put! (cdr a) '##core#primitive (car a)))
+   (lambda (a) (putp (cdr a) '##core#primitive (car a)))
    prims))
 
 (##sys#extend-macro-environment
@@ -967,28 +966,66 @@
 (define ##sys#initial-macro-environment (##sys#macro-environment))
 
 (##sys#extend-macro-environment
+ 'lambda
+ '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'lambda x '(_ lambda-list . #(_ 1)))
+    `(##core#lambda ,@(cdr x)))))
+
+(##sys#extend-macro-environment
+ 'quote
+ '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'quote x '(_ _))
+    `(##core#quote ,(cadr x)))))
+
+(##sys#extend-macro-environment
+ 'syntax
+ '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'syntax x '(_ _))
+    `(##core#syntax ,(cadr x)))))
+
+(##sys#extend-macro-environment
+ 'if
+ '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'if x '(_ _ _ . #(_)))
+    `(##core#if ,@(cdr x)))))
+
+(##sys#extend-macro-environment
+ 'begin
+ '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'begin x '(_ . #(_ 0)))
+    `(##core#begin ,@(cdr x)))))
+
+(##sys#extend-macro-environment
  'define
  '()
  (##sys#er-transformer
-  (lambda (form r c)
-    (let loop ((form (cdr form)))
-      (let ((head (car form))
-	    (body (cdr form)) )
+  (lambda (x r c)
+    (##sys#check-syntax 'define x '(_ . #(_ 1)))
+    (let loop ((form x))
+      (let ((head (cadr form))
+	    (body (cddr form)) )
 	(cond ((not (pair? head))
-	       (##sys#check-syntax 'define head 'symbol)
-	       (##sys#check-syntax 'define body '#(_ 0 1))
+	       (##sys#check-syntax 'define form '(_ symbol . #(_ 0 1)))
 	       (##sys#register-export head (##sys#current-module))
 	       `(##core#set! 
 		 ,head 
 		 ,(if (pair? body) (car body) '(##core#undefined))) )
 	      ((pair? (car head))
-	       (##sys#check-syntax 'define head '(_ . lambda-list))
-	       (##sys#check-syntax 'define body '#(_ 1))
-	       (loop (##sys#expand-curried-define head body '())) ) ;*** '() should be se
+	       (##sys#check-syntax 'define form '(_ (_ . lambda-list) . #(_ 1)))
+	       (loop (##sys#expand-curried-define head body '())) ) ;XXX '() should be se
 	      (else
-	       (##sys#check-syntax 'define head '(symbol . lambda-list))
-	       (##sys#check-syntax 'define body '#(_ 1))
-	       (loop (list (car head) `(,(r 'lambda) ,(cdr head) ,@body))))))))))
+	       (##sys#check-syntax 'define form '(_ (symbol . lambda-list) . #(_ 1)))
+	       (loop (list (car x) (car head) `(##core#lambda ,(cdr head) ,@body))))))))))
 
 (##sys#extend-macro-environment
  'define-syntax
@@ -1007,7 +1044,53 @@
 	     (##sys#check-syntax 'define-syntax body '#(_ 1))
 	     `(##core#define-syntax 
 	       ,(car head)
-	       (,(r 'lambda) ,(cdr head) ,@body))))))))
+	       (##core#lambda ,(cdr head) ,@body))))))))
+
+(##sys#extend-macro-environment
+ 'let
+ '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (if (and (pair? (cdr x)) (symbol? (cadr x)))
+	(##sys#check-syntax 'let x '(_ symbol #((symbol _) 0) . #(_ 1)))
+	(##sys#check-syntax 'let x '(_ #((symbol _) 0) . #(_ 1))))
+    `(##core#let ,@(cdr x)))))
+
+(##sys#extend-macro-environment
+ 'letrec
+ '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'letrec x '(_ #((symbol _) 0) . #(_ 1)))
+    `(##core#letrec ,@(cdr x)))))
+
+(##sys#extend-macro-environment
+ 'let-syntax
+ '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'let-syntax x '(_ #((symbol _) 0) . #(_ 1)))
+    `(##core#let-syntax ,@(cdr x)))))
+
+(##sys#extend-macro-environment
+ 'letrec-syntax
+ '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'letrec-syntax x '(_ #((symbol _) 0) . #(_ 1)))
+    `(##core#letrec-syntax ,@(cdr x)))))
+
+(##sys#extend-macro-environment
+ 'set!
+ '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'set! x '(_ _ _))
+    (let ((dest (cadr x))
+	  (val (caddr x)))
+      (cond ((pair? dest)
+	     `((##sys#setter ,(car dest)) ,@(cdr dest) ,val))
+	    (else `(##core#set! ,dest ,val)))))))
 
 (##sys#extend-macro-environment
  'and
@@ -1021,7 +1104,7 @@
 		(hbody (car body)) )
 	    (if (null? rbody)
 		hbody
-		`(,(r 'if) ,hbody (,(r 'and) ,@rbody) #f) ) ) ) ) ) ) )
+		`(##core#if ,hbody (,(r 'and) ,@rbody) #f) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'or 
@@ -1036,8 +1119,8 @@
 	   (if (null? rbody)
 	       hbody
 	       (let ((tmp (r 'tmp)))
-		 `(,(r 'let) ((,tmp ,hbody))
-		    (,(r 'if) ,tmp ,tmp (,(r 'or) ,@rbody)) ) ) ) ) ) ) ) ) )
+		 `(##core#let ((,tmp ,hbody))
+		    (##core#if ,tmp ,tmp (,(r 'or) ,@rbody)) ) ) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'cond
@@ -1045,38 +1128,45 @@
  (##sys#er-transformer
   (lambda (form r c)
     (let ((body (cdr form))
-	  (%let (r 'let))
-	  (%if (r 'if))
 	  (%=> (r '=>))
 	  (%or (r 'or))
-	  (%else (r 'else))
-	  (%lambda (r 'lambda)))
-      (let expand ((clauses body))
+	  (%else (r 'else)))
+      (let expand ((clauses body) (else? #f))
 	(if (not (pair? clauses))
 	    '(##core#undefined)
 	    (let ((clause (car clauses))
 		  (rclauses (cdr clauses)) )
 	      (##sys#check-syntax 'cond clause '#(_ 1))
-	      (cond ((c %else (car clause)) `(##core#begin ,@(cdr clause)))
-		    ((null? (cdr clause)) `(,%or ,(car clause) ,(expand rclauses)))
+	      (cond ((c %else (car clause))
+		     (expand rclauses #t)
+		     `(##core#begin ,@(cdr clause)))
+		    (else?
+		     (##sys#notice
+		      "non-`else' clause following `else' clause in `cond'"
+		      (##sys#strip-syntax clause))
+		     (expand rclauses #t)
+		     '(##core#begin))
+		    ((null? (cdr clause)) 
+		     `(,%or ,(car clause) ,(expand rclauses #f)))
 		    ((c %=> (cadr clause))
 		     (let ((tmp (r 'tmp)))
-		       `(,%let ((,tmp ,(car clause)))
-			       (,%if ,tmp
-				     (,(caddr clause) ,tmp)
-				     ,(expand rclauses) ) ) ) )
+		       `(##core#let ((,tmp ,(car clause)))
+				    (##core#if ,tmp
+					       (,(caddr clause) ,tmp)
+					       ,(expand rclauses #f) ) ) ) )
 		    ((and (list? clause) (fx= (length clause) 4)
 			  (c %=> (caddr clause)))
 		     (let ((tmp (r 'tmp)))
 		       `(##sys#call-with-values
-			 (,%lambda () ,(car clause))
-			 (,%lambda ,tmp
-				   (if (##sys#apply ,(cadr clause) ,tmp)
-				       (##sys#apply ,(cadddr clause) ,tmp)
-				       ,(expand rclauses) ) ) ) ) )
-		    (else `(,%if ,(car clause) 
-				 (##core#begin ,@(cdr clause))
-				 ,(expand rclauses) ) ) ) ) ) ) ) ) ))
+			 (##core#lambda () ,(car clause))
+			 (##core#lambda 
+			  ,tmp
+			  (if (##sys#apply ,(cadr clause) ,tmp)
+			      (##sys#apply ,(cadddr clause) ,tmp)
+			      ,(expand rclauses #f) ) ) ) ) )
+		    (else `(##core#if ,(car clause) 
+				      (##core#begin ,@(cdr clause))
+				      ,(expand rclauses #f) ) ) ) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'case
@@ -1087,22 +1177,31 @@
     (let ((exp (cadr form))
 	  (body (cddr form)) )
       (let ((tmp (r 'tmp))
-	    (%if (r 'if))
 	    (%or (r 'or))
+	    (%eqv? (r 'eqv?))
 	    (%else (r 'else)))
 	`(let ((,tmp ,exp))
-	   ,(let expand ((clauses body))
+	   ,(let expand ((clauses body) (else? #f))
 	      (if (not (pair? clauses))
 		  '(##core#undefined)
 		  (let ((clause (car clauses))
 			(rclauses (cdr clauses)) )
 		    (##sys#check-syntax 'case clause '#(_ 1))
-		    (if (c %else (car clause))
-			`(##core#begin ,@(cdr clause))
-			`(,%if (,%or ,@(##sys#map
-					(lambda (x) `(##sys#eqv? ,tmp ',x)) (car clause)))
-			       (##core#begin ,@(cdr clause)) 
-			       ,(expand rclauses) ) ) ) ) ) ) ) ) ) ) )
+		    (cond ((c %else (car clause))
+			   (expand rclauses #t)
+			   `(##core#begin ,@(cdr clause)) )
+			  (else?
+			   (##sys#notice
+			    "non-`else' clause following `else' clause in `case'"
+			    (##sys#strip-syntax clause))
+			   (expand rclauses #t)
+			   '(##core#begin))
+			  (else
+			   `(##core#if (,%or ,@(##sys#map
+						(lambda (x) `(,%eqv? ,tmp ',x))
+						(car clause)))
+				       (##core#begin ,@(cdr clause)) 
+				       ,(expand rclauses #f) ) ) ) ) ) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'let*
@@ -1111,12 +1210,11 @@
   (lambda (form r c)
     (##sys#check-syntax 'let* form '(_ #((symbol _) 0) . #(_ 1)))
     (let ((bindings (cadr form))
-	  (body (cddr form)) 
-	  (%let (r 'let)))
+	  (body (cddr form)) )
       (let expand ((bs bindings))
 	(if (eq? bs '())
-	    `(,%let () ,@body)
-	    `(,%let (,(car bs)) ,(expand (cdr bs))) ) ) ) ) ) )
+	    `(##core#let () ,@body)
+	    `(##core#let (,(car bs)) ,(expand (cdr bs))) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'do
@@ -1127,40 +1225,39 @@
     (let ((bindings (cadr form))
 	  (test (caddr form))
 	  (body (cdddr form))
-	  (dovar (r 'doloop))
-	  (%let (r 'let))
-	  (%if (r 'if)))
-      `(,%let ,dovar ,(##sys#map (lambda (b) (list (car b) (car (cdr b)))) bindings)
-	      (,%if ,(car test)
-		    ,(let ((tbody (cdr test)))
-		       (if (eq? tbody '())
-			   '(##core#undefined)
-			   `(##core#begin ,@tbody) ) )
-		    (##core#begin
-		     ,(if (eq? body '())
+	  (dovar (r 'doloop)))
+      `(##core#let 
+	,dovar
+	,(##sys#map (lambda (b) (list (car b) (car (cdr b)))) bindings)
+	(##core#if ,(car test)
+		   ,(let ((tbody (cdr test)))
+		      (if (eq? tbody '())
 			  '(##core#undefined)
-			  `(,%let () ,@body) )
-		     (##core#app
-		      ,dovar ,@(##sys#map (lambda (b) 
-					    (if (eq? (cdr (cdr b)) '())
-						(car b)
-						(car (cdr (cdr b))) ) )
-					  bindings) ) ) ) ) ) ) ) )
+			  `(##core#begin ,@tbody) ) )
+		   (##core#begin
+		    ,(if (eq? body '())
+			 '(##core#undefined)
+			 `(##core#let () ,@body) )
+		    (##core#app
+		     ,dovar ,@(##sys#map (lambda (b) 
+					   (if (eq? (cdr (cdr b)) '())
+					       (car b)
+					       (car (cdr (cdr b))) ) )
+					 bindings) ) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'quasiquote
  '()
  (##sys#er-transformer
   (lambda (form r c)
-    (let ((%quote (r 'quote))
-	  (%quasiquote (r 'quasiquote))
+    (let ((%quasiquote (r 'quasiquote))
 	  (%unquote (r 'unquote))
 	  (%unquote-splicing (r 'unquote-splicing)))
       (define (walk x n) (simplify (walk1 x n)))
       (define (walk1 x n)
 	(cond ((vector? x)
 	       `(##sys#list->vector ,(walk (vector->list x) n)) )
-	      ((not (pair? x)) `(,%quote ,x))
+	      ((not (pair? x)) `(##core#quote ,x))
 	      (else
 	       (let ((head (car x))
 		     (tail (cdr x)))
@@ -1169,14 +1266,14 @@
 			    (let ((hx (car tail)))
 			      (if (eq? n 0)
 				  hx
-				  (list '##sys#list `(,%quote ,%unquote)
+				  (list '##sys#list `(##core#quote ,%unquote)
 					(walk hx (fx- n 1)) ) ) )
-			    `(,%quote ,%unquote) ) )
+			    `(##core#quote ,%unquote) ) )
 		       ((c %quasiquote head)
 			(if (pair? tail)
-			    `(##sys#list (,%quote ,%quasiquote) 
+			    `(##sys#list (##core#quote ,%quasiquote) 
 					 ,(walk (car tail) (fx+ n 1)) ) 
-			    (list '##sys#cons (list %quote %quasiquote) 
+			    (list '##sys#cons (list '##core#quote %quasiquote) 
 				  (walk tail n)) ) )
 		       ((pair? head)
 			(let ((hx (car head))
@@ -1186,7 +1283,7 @@
 				(if (eq? n 0)
 				    `(##sys#append ,htx
 						   ,(walk tail n) )
-				    `(##sys#cons (##sys#list (,%quote ,%unquote-splicing)
+				    `(##sys#cons (##sys#list (##core#quote ,%unquote-splicing)
 							     ,(walk htx (fx- n 1)) )
 						 ,(walk tail n) ) ) )
 			      `(##sys#cons ,(walk head n) ,(walk tail n)) ) ) )
@@ -1214,7 +1311,7 @@
  (##sys#er-transformer
   (lambda (form r c)
     (##sys#check-syntax 'delay form '(_ _))
-    `(##sys#make-promise (lambda () ,(cadr form))))))
+    `(##sys#make-promise (##core#lambda () ,(cadr form))))))
 
 (##sys#extend-macro-environment
  'cond-expand
@@ -1297,7 +1394,12 @@
       ,(if (eq? '* (##sys#strip-syntax (caddr x))) 
 	   #t 
 	   (caddr x))
-      ,@(cdddr x)))))
+      ,@(let ((body (cdddr x)))
+	  (if (and (pair? body) 
+		   (null? (cdr body))
+		   (string? (car body)))
+	      `((##core#include ,(car body)))
+	      body))))))
 
 (##sys#extend-macro-environment
  'begin-for-syntax
@@ -1315,22 +1417,21 @@
   (lambda (x r c)
     (let ((exps (cdr x))
 	  (mod (##sys#current-module)))
-      (unless mod
-	(syntax-error 'export "`export' used outside module body"))
-      (for-each
-       (lambda (exp)
-	 (when (and (not (symbol? exp)) 
-		    (let loop ((iexp exp))
-		      (cond ((null? iexp) #f)
-			    ((not (pair? iexp)) #t)
-			    ((not (symbol? (car iexp))) #t)
-			    (else (loop (cdr iexp))))))
-	   (syntax-error 'export "invalid export syntax" exp (module-name mod))))
-       exps)
-      (set-module-export-list! 
-       mod
-       (append (module-export-list mod) 
-	       (map ##sys#strip-syntax exps)))
+      (when mod
+	(for-each
+	 (lambda (exp)
+	   (when (and (not (symbol? exp)) 
+		      (let loop ((iexp exp))
+			(cond ((null? iexp) #f)
+			      ((not (pair? iexp)) #t)
+			      ((not (symbol? (car iexp))) #t)
+			      (else (loop (cdr iexp))))))
+	     (syntax-error 'export "invalid export syntax" exp (module-name mod))))
+	 exps)
+	(set-module-export-list! 
+	 mod
+	 (append (module-export-list mod) 
+		 (map ##sys#strip-syntax exps))))
       '(##core#undefined)))))
 
 
@@ -1396,7 +1497,7 @@
   (import-forms module-import-forms set-module-import-forms!)	    ; (SPEC ...)
   (meta-import-forms module-meta-import-forms set-module-meta-import-forms!)	    ; (SPEC ...)
   (meta-expressions module-meta-expressions set-module-meta-expressions!) ; (EXP ...)
-  (vexports module-vexports set-module-vexports!)	      ; (SYMBOL . SYMBOL)
+  (vexports module-vexports set-module-vexports!)	      ; ((SYMBOL . SYMBOL) ...)
   (sexports module-sexports set-module-sexports!) )	      ; ((SYMBOL SE TRANSFORMER) ...)
 
 (define ##sys#module-name module-name)
@@ -1423,9 +1524,9 @@
 
 (define (check-for-redef sym env senv)
   (and-let* ((a (assq sym env)))
-    (##sys#warn "redefinition of imported value binding" sym) )
+    (##sys#notice "redefinition of imported value binding" sym) )
   (and-let* ((a (assq sym senv)))
-    (##sys#warn "redefinition of imported syntax binding" sym)))
+    (##sys#notice "redefinition of imported syntax binding" sym)))
 
 (define (##sys#register-export sym mod)
   (when mod
@@ -1481,7 +1582,7 @@
    (lambda (imp)
      (when (and (symbol? (cdr imp)) (not (eq? (car imp) (cdr imp))))
        (dm `(MARKING: ,(cdr imp)))
-       (##sys#put! (cdr imp) '##core#aliased #t)))
+       (putp (cdr imp) '##core#aliased #t)))
    se))
 
 (define (module-indirect-exports mod)
@@ -1628,7 +1729,7 @@
   (let ((palias 
 	 (##sys#string->symbol 
 	  (##sys#string-append "#%" (##sys#slot sym 1)))))
-    (##sys#put! palias '##core#primitive sym)
+    (putp palias '##core#primitive sym)
     palias))
 
 (define (##sys#register-primitive-module name vexports #!optional (sexports '()))
@@ -1710,7 +1811,7 @@
        (unless (memq u elist)
 	 (set! missing #t)
 	 (##sys#warn "reference to possibly unbound identifier" u)
-	 (and-let* ((a (##sys#get u '##core#db)))
+	 (and-let* ((a (getp u '##core#db)))
 	   (if (= 1 (length a))
 	       (##sys#warn
 		(string-append 

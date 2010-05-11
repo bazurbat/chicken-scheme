@@ -130,7 +130,7 @@ Possible options are:
 
 ; -inline-limit THRESHOLD : Sets the maximum size of a potentially inlinable procedure. The default threshold is {{20}}.
 
-; -keyword-style STYLE : Enables alternative keyword syntax, where {{STYLE}} may be either {{prefix}} (as in Common Lisp), {{suffix}} (as in DSSSL) or {{none}}. Any other value is ignored. The default is {{suffix}}.
+; -keyword-style STYLE : Enables alternative keyword syntax, where {{STYLE}} may be either {{prefix}} (as in Common Lisp, e.g. :keyword), {{suffix}} (as in DSSSL, e.g. keyword:) or {{none}}. Any other value is ignored. The default is {{suffix}}.
 
 ; -keep-shadowed-macros : Do not remove macro definitions with the same name as assigned toplevel variables (the default is to remove the macro definition).
 
@@ -201,13 +201,11 @@ Possible options are:
 
 ; -to-stdout : Write compiled code to standard output instead of creating a {{.c}} file.
 
-; -unboxing : try to use unboxed temporaries for numerical operations.
+; -unboxing : try to use unboxed temporaries for numerical operations. This optimization is only effective in unsafe mode.
 
 ; -unit NAME : Compile this file as a library unit. Equivalent to {{-prelude "(declare (unit NAME))"}}
 
 ; -unsafe : Disable runtime safety checks.
-
-; -unsafe-libraries : Marks the generated file for being linked with the unsafe runtime system. This should be used when generating shared object files that are to be loaded dynamically. If the marker is present, any attempt to load code compiled with this option will signal an error.
 
 ; -uses NAME : Use definitions from the library unit {{NAME}}. This is equivalent to {{-prelude "(declare (uses NAME))"}}. Multiple arguments may be given, separated by {{,}}.
 
@@ -241,6 +239,8 @@ compiler itself) accept a small set of runtime options:
 ; {{-:D}} : Prints some more debug-information at runtime.
 
 ; {{-:g}} : Prints information about garbage-collection.
+
+; {{-:G}} : Force GUI mode (show error messages in dialog box, suitable for platform).
 
 ; {{-:fNUMBER}} : Specifies the maximal number of currently pending finalizers before finalization is forced.
 

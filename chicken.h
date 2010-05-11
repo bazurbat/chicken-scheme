@@ -570,10 +570,9 @@ typedef unsigned __int64   uint64_t;
 #define C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR         30
 #define C_BAD_ARGUMENT_TYPE_NO_POINTER_ERROR          31
 #define C_BAD_ARGUMENT_TYPE_NO_TAGGED_POINTER_ERROR   32
-#define C_RUNTIME_UNSAFE_DLOAD_SAFE_ERROR             33
-#define C_RUNTIME_SAFE_DLOAD_UNSAFE_ERROR             34
-#define C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR           35
-#define C_BAD_ARGUMENT_TYPE_NO_CLOSURE_ERROR          36
+#define C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR           33
+#define C_BAD_ARGUMENT_TYPE_NO_CLOSURE_ERROR          34
+#define C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR            35
 
 
 /* Platform information */
@@ -1120,7 +1119,7 @@ extern double trunc(double);
 #define C_fetch_byte(x, p)              (((unsigned C_byte *)((C_SCHEME_BLOCK *)(x))->data)[ p ])
 #define C_poke_integer(x, i, n)         (C_set_block_item(x, C_unfix(i), C_num_to_int(n)), C_SCHEME_UNDEFINED)
 #define C_pointer_to_block(p, x)        (C_set_block_item(p, 0, (C_word)C_data_pointer(x)), C_SCHEME_UNDEFINED)
-#define C_null_pointerp(x)              C_mk_bool((void *)C_u_i_car(x) == NULL)
+#define C_null_pointerp(x)              C_mk_bool((void *)C_block_item(x, 0) == NULL)
 #define C_update_pointer(p, ptr)        (C_set_block_item(ptr, 0, C_num_to_unsigned_int(p)), C_SCHEME_UNDEFINED)
 #define C_copy_pointer(from, to)        (C_set_block_item(to, 0, C_u_i_car(from)), C_SCHEME_UNDEFINED)
 #define C_pointer_to_object(ptr)        C_block_item(ptr, 0)
@@ -1185,6 +1184,8 @@ extern double trunc(double);
 #define C_a_i_flonum(ptr, i, n)         C_flonum(ptr, n)
 #define C_a_i_data_mpointer(ptr, n, x)  C_mpointer(ptr, C_data_pointer(x))
 #define C_a_i_mpointer(ptr, n, x)       C_mpointer(ptr, (x))
+#define C_a_u_i_pointer_inc(ptr, n, p, i) C_mpointer(ptr, (C_char *)(p) + C_unfix(i))
+#define C_pointer_eqp(x, y)             C_mk_bool(C_c_pointer_nn(x) == C_c_pointer_nn(y))
 #define C_a_int_to_num(ptr, n, i)       C_int_to_num(ptr, i)
 #define C_a_unsigned_int_to_num(ptr, n, i)  C_unsigned_int_to_num(ptr, i)
 #define C_a_double_to_num(ptr, n)       C_double_to_number(C_flonum(ptr, n))
@@ -1194,6 +1195,7 @@ extern double trunc(double);
 #define C_i_set_i_slot(x, i, y)         (C_set_block_item(x, C_unfix(i), y), C_SCHEME_UNDEFINED)
 #define C_u_i_set_car(p, x)             (C_mutate(&C_u_i_car(p), x), C_SCHEME_UNDEFINED)
 #define C_u_i_set_cdr(p, x)             (C_mutate(&C_u_i_cdr(p), x), C_SCHEME_UNDEFINED)
+#define C_a_i_putprop(p, c, x, y, z)    C_putprop(p, x, y, z)
 
 #define C_i_not(x)                      (C_truep(x) ? C_SCHEME_FALSE : C_SCHEME_TRUE)
 #define C_i_equalp(x, y)                C_mk_bool(C_equalp((x), (y)))
@@ -1292,6 +1294,33 @@ extern double trunc(double);
 
 #define C_u_i_bit_setp(x, i)            C_mk_bool((C_unfix(x) & (1 << C_unfix(i))) != 0)
 
+#define C_u_i_pointer_u8_ref(ptr)         C_fix(*((unsigned char *)C_block_item(ptr, 0)))
+#define C_u_i_pointer_s8_ref(ptr)         C_fix(*((char *)C_block_item(ptr, 0)))
+#define C_u_i_pointer_u16_ref(ptr)        C_fix(*((unsigned short *)C_block_item(ptr, 0)))
+#define C_u_i_pointer_s16_ref(ptr)        C_fix(*((short *)C_block_item(ptr, 0)))
+#define C_a_u_i_pointer_u32_ref(ap, n, ptr)  \
+  C_unsigned_int_to_num(ap, *((C_u32 *)C_block_item(ptr, 0)))
+#define C_a_u_i_pointer_s32_ref(ap, n, ptr)  \
+  C_int_to_num(ap, *((C_s32 *)C_block_item(ptr, 0)))
+#define C_a_u_i_pointer_f32_ref(ap, n, ptr)  C_flonum(ap, *((float *)C_block_item(ptr, 0)))
+#define C_a_u_i_pointer_f64_ref(ap, n, ptr)  C_flonum(ap, *((double *)C_block_item(ptr, 0)))
+#define C_u_i_pointer_u8_set(ptr, x)  \
+  (*((unsigned char *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
+#define C_u_i_pointer_s8_set(ptr, x)  \
+  (*((char *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
+#define C_u_i_pointer_u16_set(ptr, x)  \
+  (*((unsigned short *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
+#define C_u_i_pointer_s16_set(ptr, x)  \
+  (*((short *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
+#define C_u_i_pointer_u32_set(ptr, x)  \
+  (*((C_u32 *)C_block_item(ptr, 0)) = C_num_to_unsigned_int(x), C_SCHEME_UNDEFINED)
+#define C_u_i_pointer_s32_set(ptr, x)  \
+  (*((C_s32 *)C_block_item(ptr, 0)) = C_num_to_int(x), C_SCHEME_UNDEFINED)
+#define C_u_i_pointer_f32_set(ptr, x)  \
+  (*((float *)C_block_item(ptr, 0)) = C_flonum_magnitude(x), C_SCHEME_UNDEFINED)
+#define C_u_i_pointer_f64_set(ptr, x)  \
+  (*((double *)C_block_item(ptr, 0)) = C_flonum_magnitude(x), C_SCHEME_UNDEFINED)
+
 #ifdef C_BIG_ENDIAN
 # ifdef C_SIXTY_FOUR
 #  define C_lihdr(x, y, z)              ((C_LAMBDA_INFO_TYPE >> 56) & 0xff), \
@@ -1320,6 +1349,27 @@ extern double trunc(double);
 #define C_ub_i_flonum_lessp(n1, n2)     ((n1) < (n2))
 #define C_ub_i_flonum_greater_or_equal_p(n1, n2)  ((n1) >= (n2))
 #define C_ub_i_flonum_less_or_equal_p(n1, n2)  ((n1) <= (n2))
+
+#define C_ub_i_pointer_inc(p, n)        ((void *)((unsigned char *)(p) + (n)))
+#define C_ub_i_pointer_eqp(p1, p2)      ((p1) == (p2))
+#define C_ub_i_null_pointerp(p)         ((p) == NULL)
+
+#define C_ub_i_pointer_u8_ref(p)        (*((unsigned char *)(p)))
+#define C_ub_i_pointer_s8_ref(p)        (*((char *)(p)))
+#define C_ub_i_pointer_u16_ref(p)       (*((unsigned short *)(p)))
+#define C_ub_i_pointer_s16_ref(p)       (*((short *)(p)))
+#define C_ub_i_pointer_u32_ref(p)       (*((C_u32 *)(p)))
+#define C_ub_i_pointer_s32_ref(p)       (*((C_s32 *)(p)))
+#define C_ub_i_pointer_f32_ref(p)       (*((float *)(p)))
+#define C_ub_i_pointer_f64_ref(p)       (*((double *)(p)))
+#define C_ub_i_pointer_u8_set(p, n)     (*((unsigned char *)(p)) = (n))
+#define C_ub_i_pointer_s8_set(p, n)     (*((char *)(p)) = (n))
+#define C_ub_i_pointer_u16_set(p, n)    (*((unsigned short *)(p)) = (n))
+#define C_ub_i_pointer_s16_set(p, n)    (*((short *)(p)) = (n))
+#define C_ub_i_pointer_u32_set(p, n)    (*((C_u32 *)(p)) = (n))
+#define C_ub_i_pointer_s32_set(p, n)    (*((C_s32 *)(p)) = (n))
+#define C_ub_i_pointer_f32_set(p, n)    (*((float *)(p)) = (n))
+#define C_ub_i_pointer_f64_set(p, n)    (*((double *)(p)) = (n))
 
 #define C_end_of_main
 
@@ -1671,7 +1721,6 @@ C_fctexport C_word C_fcall C_i_string_ref(C_word s, C_word i) C_regparm;
 C_fctexport C_word C_fcall C_i_vector_length(C_word v) C_regparm;
 C_fctexport C_word C_fcall C_i_string_length(C_word s) C_regparm;
 C_fctexport C_word C_fcall C_i_assq(C_word x, C_word lst) C_regparm;
-C_fctexport C_word C_fcall C_u_i_assq(C_word x, C_word lst) C_regparm;
 C_fctexport C_word C_fcall C_i_assv(C_word x, C_word lst) C_regparm;
 C_fctexport C_word C_fcall C_i_assoc(C_word x, C_word lst) C_regparm;
 C_fctexport C_word C_fcall C_i_memq(C_word x, C_word lst) C_regparm;
@@ -1732,6 +1781,9 @@ C_fctexport C_word C_fcall C_i_o_fixnum_and(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_o_fixnum_ior(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_o_fixnum_xor(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_a_i_flonum_round_proper(C_word **a, int c, C_word n) C_regparm;
+C_fctexport C_word C_fcall C_i_getprop(C_word sym, C_word prop, C_word def) C_regparm;
+C_fctexport C_word C_fcall C_putprop(C_word **a, C_word sym, C_word prop, C_word val) C_regparm;
+C_fctexport C_word C_fcall C_i_get_keyword(C_word key, C_word args, C_word def) C_regparm;
 
 C_fctexport C_word C_fcall C_i_foreign_char_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_fixnum_argumentp(C_word x) C_regparm;
@@ -2071,6 +2123,8 @@ C_inline C_word C_i_integerp(C_word x)
 {
   double dummy;
 
+  if(C_isnan(x) || C_isinf(x)) return C_SCHEME_FALSE;
+
   return C_mk_bool((x & C_FIXNUM_BIT) || 
 		   ((!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) &&
 		    C_modf(C_flonum_magnitude(x), &dummy) == 0.0 ) );
@@ -2131,6 +2185,21 @@ C_inline C_word C_i_safe_pointerp(C_word x)
   case C_SWIG_POINTER_TAG:
   case C_TAGGED_POINTER_TAG:
     return C_SCHEME_TRUE;
+  }
+
+  return C_SCHEME_FALSE;
+}
+
+
+C_inline C_word C_u_i_assq(C_word x, C_word lst)
+{
+  C_word a;
+
+  while(!C_immediatep(lst)) {
+    a = C_u_i_car(lst);
+
+    if(C_u_i_car(a) == x) return a;
+    else lst = C_u_i_cdr(lst);
   }
 
   return C_SCHEME_FALSE;

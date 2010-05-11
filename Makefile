@@ -35,7 +35,7 @@ endif
 
 STANDARD_TARGETS \
 	= all clean distclean spotless install uninstall confclean check \
-	  fullcheck dist libs bootstrap
+	  fullcheck dist libs
 
 SRCDIR = .
 
@@ -82,6 +82,4 @@ dist:
 	csi -s scripts/makedist.scm
 libs:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) libs
-bootstrap:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) bootstrap
 endif

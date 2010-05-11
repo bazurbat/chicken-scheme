@@ -1,3 +1,97 @@
+4.5.0
+
+- internal fixes of handling of alternative installation-prefix
+  in setup-api
+- certain compiler-warnings that are in really just notes
+  and don't indicate a possible error (like reimport of
+  identifiers) are only shown with -S or in verbose mode
+- fixed handling of VARDIR in `chicken-install' (thanks to
+  Davide Puricelli)
+- `chicken-install -test' doesn't runs tests for dependencies
+- when a non-else clause follows an else-clause in `cond', 
+  `case' or `select' a warning (note) is shown in verbose
+  mode
+- removed the deprecated `define-extension' and
+  `define-compiled-syntax'
+- `chicken-uninstall' now always asks before removing 
+  extensions, unless `-force' is given
+- improved performance of keyword-argument processing slightly
+- `export' outside of a module definition has no effect
+- `number->string' now accepts arbitrary bases between 2 and 16
+  (thanks to Christian Kellermann)
+- fixed `standard-extension' in `setup-api' module
+- literal constants keep their identity, even when inlined
+- Unit library: added `fxodd?' and `fxeven?'
+- All hardcoded special forms have been replaced with
+  syntax definitions that expand into internal forms, this
+  allows redefinition and shadowing of all Scheme core forms
+- faster implementations of `get' and `put!'
+- faster implementation of `assq' in unsafe mode
+- the `-sx' option prefixes each output line with `;'
+- slightly better expansion performance
+- more documentation of the C API (thanks to Peter Bex)
+- `module' supports a shorthand form that refers directly
+  to a file to be included as the module body
+- added runtime option `-:G' to force GUI mode (on platforms
+  that distinguish between GUI and non-GUI applications)
+- removed the unsafe runtime library (`libuchicken'), this
+  simplifies and speeds up the build and reduces the risk
+  of executables loading library units from different
+  variants of the runtime system
+- removed the `-unsafe-libraries' option from `chicken'
+  and `csc'
+- removed bootstrapping target and bootstrapping files from
+  development repository; to bootstrap the system, either
+  use a release or development-snapshot tarball or fetch
+  a statically linked precompiled `chicken' binary from
+  http://chicken.wiki.br/chicken-projects/bootstrap/
+- Jim Ursetto provided some fixes for building universal
+  binaries on Mac OS X
+- `csc' now compiles and links Windows resource (.rc) files
+  when given on the command line
+- `chicken-install' and `chicken-uninstall' have an embedded
+  manifest that suppresses the elevation dialog on Windows
+  Vista and later when UAC is activated (Thanks to Thomas Chust)
+- the `install' program is not used in the build on mingw
+  and mingw/MSYS platforms, since this is broken on older
+  mingw versions
+- line-number-information is now properly handled (in the
+  few places where it is used) correctly for included files;
+  the source file is given in trace-output in addition to
+  the line number
+- removed compiler warning for shared objects compiled in
+  unsafe mode
+- unboxing is now only done in unsafe mode
+- in unsafe mode, pointer-accessors from the `lolevel' unit
+  are now handled intrinsically by the compiler
+- `chicken-install' accepts now relative pathnames for the
+  `-prefix' option
+- `define-record-type' now optionally allows using SRFI-17
+  setters as record-field modifiers
+- `integer?' returns `#f' for NaN and infinite numbers
+- `csc' now has an `-no-elevation' option for embedding a
+  manifest that prevents the elevation dialog on Windows
+  Vista and later when IAC is activated
+- the `,d' csi command displays qualified symbols properly
+- symbols starting with the `#\#' character trigger an
+  error when encountered by the reader
+- Unit posix: `glob->regexp' now always returns a regular
+  expression object or optionally an SRE
+- Unit posix: `terminal-port?' and `terminal-size' have been
+   implemented for Windows, the latter always returns `0 0',
+  though (thanks to Jim Ursetto)
+- Unit regex: `regexp' now accepts a regular expression
+  object as argument
+- Unit regex: removed `glob?'
+- fixed bug in `chicken-install'/`chicken-uninstall' and
+  `chicken-status' that prevented collapsed command-line
+  options to be handled correctly.
+- disabled runpath-fix for deployed applications for netbsd
+  (but resurrected providing a runpath at all, thanks to 
+  Peter Bex)
+- Peter Bex provided documentation for the `C_closure' C API
+  function
+
 4.4.0
 
 - the system can now be built with llvm-gcc and/or "clang" (the

@@ -196,7 +196,7 @@ other useful documents. The list of eggs is at
 
 A very useful search facility for questions about Chicken is found at
 [[http://www.callcc.org]]. The Chicken issue tracker is at
-[[http://trac.callcc.org]]. 
+[[http://www.irp.oist.jp/trac/chicken/wiki]].
 
 The Chicken community has two major mailing lists. If you are a
 Chicken user, {{Chicken-Users}}
@@ -241,16 +241,6 @@ can pretty much ignore the C compiler once you have installed it.)
   that comes with mingw.  {{Makefile.mingw-msys}} 
   uses unix commands such as {{cp}} and {{rm}}.  The end product is the
   same.
-** Microsoft Visual Studio will soon be supported, including the
-  Express edition, which is a non-free but no-cost compiler suite
-  available from Microsoft
-  ([[http://www.microsoft.com/express/vc]]). Chicken supports
-  command-line building using the command-line C/C++ compiler. 
-*** Visual
-  Studio users will want to install the Unix Utilities, available at
-  [[http://www.call-with-current-continuation.org/tarballs/UnxUtils.zip]],
-  in order to get suitable versions of {{make}}, {{tar}}, {{gzip}}, and
-  similar commands.  
 
 Refer to the {{README}} file for the version you're installing for
 more information on the installation process. 
@@ -284,11 +274,8 @@ proportional fonts, in particular.)
 
 * Emacs ([[http://www.gnu.org/software/emacs]]) is an
 extensible, customizable, self-documenting editor available for
-Linux/Unix, Macintosh, and Windows systems; CHICKEN provides Emacs
-support out of the box, with the {{hen.el}} Emacs Lisp file. Consult
-the `Emacs Guide for Chicken Users' (which will be available on the
-Chicken Wiki soon) for information on setting up and using Emacs with
-Chicken.  
+Linux/Unix, Macintosh, and Windows systems; See
+[[/emacs]] for more information about the available options. 
 
 * Epsilon ([[http://www.lugaru.com]]) is a commercial (proprietary) text
 editor whose design was inspired by Emacs. Although Scheme support

@@ -60,6 +60,8 @@ lambda-expressions.
 
 == Non-deviations that might surprise you
 
+[4.3.1] {{let-syntax}} and {{letrec-syntax}} introduce a new scope.
+
 [6.1] {{equal?}} compares all structured data recursively, while R5RS
 specifies that {{eqv?}} is used for data other than pairs, strings and
 vectors.  However, R5RS does not dictate the treatment of data types
