@@ -257,7 +257,7 @@ linking options. If {{compile-only}} is true, then no linking step takes place.
 If the keyword argument {{c++}} is given and true, then the code will be compiled in C++ mode.
 
 
-==== create-directory
+==== create-directory/parents
 
 <procedure>(create-directory/parents PATH)</procedure>
 

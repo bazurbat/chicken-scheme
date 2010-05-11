@@ -13,10 +13,6 @@ to continuations captured using {{call-with-current-continuation}}
 is 120.  This is an implementation restriction that is unlikely
 to be lifted.
 
-[5.3] Redefining {{define}} with a value will silently create a
-variable binding and keep the syntax definition. R5RS states that
-such a redefinition is an error.
-
 [6.2.5] The {{numerator}} and {{denominator}} procedures cannot be
 applied to inexact numbers, and the procedure {{rationalize}} is not
 implemented at all.
