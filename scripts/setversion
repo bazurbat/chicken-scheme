@@ -39,10 +39,14 @@ exec csi -s "$0" "$@"
   (string-match (rx "(\\d+)\\.(\\d+)\\.(\\d+)(.*)") v) )
 
 (define (main args)
-  (let ((major #f)
-	(minor #f))
+  (let ((major (##sys#fudge 41))
+	(minor (##sys#fudge 43)))
     (cond ((member "-set" args) =>
-	   (lambda (a) (set! buildversion (cadr a))) )
+	   (lambda (a)
+	     (set! buildversion (cadr a))
+	     (let ((b (parse-version buildversion)))
+	       (set! major (cadr b))
+	       (set! minor (caddr b)))))
 	  ((not (member "-noinc" args))
 	   (let* ((v (parse-version buildversion))
 		  (maj (cadr v))
