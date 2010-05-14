@@ -29,8 +29,10 @@ echo -n "null ... "
 $compile null.scm -O5
 run
 
+echo -n "compilation ... "
+/usr/bin/time -f '%E elapsed, %U user, %S system' $compile compiler.scm -O5
+
 echo -n "compiler ... "
-$compile compiler.scm -O5
 run
 
 echo -n "slatex ... "
