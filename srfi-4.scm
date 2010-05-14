@@ -28,8 +28,6 @@
 (declare
  (unit srfi-4)
  (disable-interrupts)
- (disable-warning redef)
- (usual-integrations)
  (hide ##sys#u8vector-set! ##sys#s8vector-set! ##sys#u16vector-set! ##sys#s16vector-set!
        ##sys#u32vector-set! ##sys#s32vector-set! ##sys#f32vector-set! ##sys#f64vector-set!
        ##sys#u8vector-ref ##sys#s8vector-ref ##sys#u16vector-ref ##sys#s16vector-ref subvector
@@ -61,24 +59,7 @@
 EOF
 ) )
 
-(cond-expand
- [paranoia]
- [else
-  (declare
-    (no-bound-checks)
-    (no-procedure-checks-for-usual-bindings)
-    (bound-to-procedure
-     ##sys#check-exact ##sys#u8vector-ref ##sys#u8vector-set! ##sys#s8vector-ref ##sys#s8vector-set!
-     ##sys#u16vector-ref ##sys#u16vector-set!
-     ##sys#s16vector-ref ##sys#s16vector-set! ##sys#u32vector-ref ##sys#u32vector-set! ##sys#s32vector-ref
-     ##sys#s32vector-set! read list->f64vector list->s32vector list->u32vector list->u16vector list-s8vector
-     list->u8vector set-finalizer!
-     ##sys#f32vector-ref ##sys#f32vector-set! ##sys#f64vector-ref ##sys#f64vector-set! ##sys#check-exact-interval
-     ##sys#check-inexact-interval ##sys#check-number ##sys#check-structure ##sys#check-list
-     ##sys#check-range ##sys#error ##sys#signal-hook
-     ##sys#error-not-a-proper-list ##sys#print ##sys#allocate-vector) ) ] )
-
-(include "unsafe-declarations.scm")
+(include "common-declarations.scm")
 
 
 ;;; Helper routines:

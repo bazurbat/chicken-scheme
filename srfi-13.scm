@@ -5,46 +5,15 @@
   (unit srfi-13)
   (uses srfi-14)
   (fixnum)
-  (disable-warning redef)
   (hide %string-prefix? %string-hash %finish-string-concatenate-reverse %string-suffix-length %string-prefix-length
 	%string-map %string-copy! %string-compare %substring/shared %string-suffix? %multispan-repcopy!
 	%string-prefix-length-ci %string-suffix-length-ci %string-prefix-ci? %string-suffix-ci?
 	##srfi13#traverse
 	%string-titlecase! %string-map! %string-compare-ci ##srfi13#string-fill!)
-  (standard-bindings not boolean? apply call-with-current-continuation eq? eqv? equal? pair? cons car cdr caar cadr
-		     cdar cddr caaar caadr cadar caddr cdaar cdadr cddar cdddr caaaar caaadr caadar caaddr cadaar
-		     cadadr caddar cadddr cdaaar cdaadr cdadar cdaddr cddaar cddadr cdddar cddddr set-car! set-cdr!
-		     null? list list? length zero? * - error + / - > < >= <= current-output-port current-input-port
-		     write-char newline write display append symbol->string char? char->integer
-		     integer->char eof-object? vector-length string-length string-ref string-set! vector-ref 
-		     vector-set! char=? char<? char>? char>=? char<=? gcd lcm reverse symbol? string->symbol
-		     number? complex? real? integer? rational? odd? even? positive? negative? exact? inexact?
-		     max min quotient remainder modulo floor ceiling truncate round exact->inexact inexact->exact
-		     exp log sin expt sqrt cos tan asin acos atan number->string string->number char-ci=?
-		     char-ci<? char-ci>? char-ci>=? char-ci<=? char-alphabetic? char-whitespace? char-numeric?
-		     char-lower-case? char-upper-case? char-upcase char-downcase string? string=? string>? string<?
-		     string>=? string<=? string-ci=? string-ci<? string-ci>? string-ci<=? string-ci>=?
-		     string-append list->string vector? vector->list list->vector string read map for-each
-		     read-char substring vector-fill! make-string make-vector open-input-file
-		     open-output-file call-with-input-file call-with-output-file close-input-port close-output-port
-		     port? values call-with-values vector procedure? memq memv assq assv member assoc) 
-  (extended-bindings)
+  (not standard-bindings string-copy string->list string-fill!)
   (disable-interrupts) )
 
-(cond-expand
- [paranoia]
- [else
-  (declare
-    (no-procedure-checks-for-usual-bindings)
-    (bound-to-procedure
-     string-concatenate check-substring-spec ##srfi13#string-fill! string-parse-final-start+end
-     ##sys#substring string-index-right string-skip-right substring/shared
-     string-concatenate/shared make-kmp-restart-vector string-ci= string= char-set?
-     char-set-contains? string-fold char-set string-skip string-index string-downcase! char->int
-     string-parse-start+end substring-spec-ok?)
-    (no-bound-checks) ) ] )
-
-(include "unsafe-declarations.scm")
+(include "common-declarations.scm")
 
 (register-feature! 'srfi-13)
 

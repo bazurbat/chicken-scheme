@@ -65,7 +65,6 @@
   (unit posix)
   (uses scheduler regex extras utils files ports)
   (disable-interrupts)
-  (usual-integrations)
   (hide ##sys#stat posix-error
 	$quote-args-list $exec-setup $exec-teardown
 	check-time-vector)
@@ -921,18 +920,7 @@ static int set_file_mtime(char *filename, C_word tm)
 EOF
 ) )
 
-(cond-expand
- [paranoia]
- [else
-  (declare
-    (no-bound-checks)
-    (no-procedure-checks-for-usual-bindings)
-    (bound-to-procedure
-     ##sys#make-port ##sys#file-info ##sys#update-errno ##sys#fudge ##sys#make-c-string ##sys#check-port
-     ##sys#error ##sys#signal-hook ##sys#peek-unsigned-integer ##sys#process
-     ##sys#peek-fixnum ##sys#make-structure ##sys#check-structure ##sys#enable-interrupts) ) ] )
-
-(include "unsafe-declarations.scm")
+(include "common-declarations.scm")
 
 (register-feature! 'posix)
 

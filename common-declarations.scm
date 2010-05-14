@@ -1,7 +1,6 @@
-;;;; tweaks.scm - Some inline-routines and declarations
+;;;; common-declarations.scm - settings for core libraries
 ;
 ; Copyright (c) 2008-2010, The Chicken Team
-; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -25,32 +24,28 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
-;; This file contains some stuff to speed up basic node accessors, and also
-;; contains common declarations.
-
+(declare 
+  (disable-warning var redef)
+  (usual-integrations)
+  (hide d))
 
 (cond-expand
  (debugbuild
-  (declare
-    (fixnum)
-    (disable-interrupts) ))
+  (define (d arg1 . more)
+    (when (##sys#fudge 13)
+      (if (null? more)
+	  (pp arg1)
+	  (apply print arg1 more)))))
  (else
   (declare
-    (disable-interrupts)
     (no-bound-checks)
-    (no-procedure-checks)
-    (no-argc-checks))))
+    (no-procedure-checks-for-toplevel-bindings))
+  (define-syntax d (syntax-rules () ((_ . _) (void))))))
 
-(define-inline (node? x) (##sys#structure? x 'node))
-(define-inline (make-node c p s) (##sys#make-structure 'node c p s))
-(define-inline (node-class n) (##sys#slot n 1))
-(define-inline (node-parameters n) (##sys#slot n 2))
-(define-inline (node-subexpressions n) (##sys#slot n 3))
-
-(define-inline (intrinsic? sym) (##sys#get sym '##compiler#intrinsic))
-
-(define-inline (mark-variable var mark #!optional (val #t))
-  (##sys#put! var mark val) )
-
-(define-inline (variable-mark var mark)
-  (##sys#get var mark) )
+(define-syntax define-alias
+  (syntax-rules ()
+    ((_ new old)
+     (define-syntax new
+       (syntax-rules ___ ()
+	 ((_ args ___)
+	  (old args ___)))))))

@@ -5,25 +5,12 @@
   (unit srfi-14)
   (fixnum)
   (disable-interrupts)
-  (standard-bindings)
-  (extended-bindings) 
   (hide %char-set:s/check %string-iter %char-set-diff+intersection! %char->latin1 %latin1->char
 	%ucs-range->char-set! %string->char-set! %list->char-set! %set-char-set! %char-set-unfold!
 	%char-set-algebra %char-set-cursor-next %char-set-filter! %set-char-set c0 c1 %string-copy
 	%default-base) )
 
-(cond-expand 
- [paranoia]
- [else
-  (declare
-    (no-procedure-checks-for-usual-bindings)
-    (bound-to-procedure
-     char-set char-set-complement ucs-range->char-set! ucs-range->char-set char-set-union
-     char-set-adjoin string->char-set list->char-set string-copy make-char-set char-set-copy
-     char-set? char-set-size char-set:s)
-    (no-bound-checks) ) ] )
-
-(include "unsafe-declarations.scm")
+(include "common-declarations.scm")
 
 (register-feature! 'srfi-14)
 

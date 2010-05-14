@@ -28,19 +28,11 @@
 (declare
   (unit eval)
   (uses expand)
-  (disable-warning var)
   (hide ##sys#r4rs-environment ##sys#r5rs-environment 
 	##sys#interaction-environment pds pdss pxss d) 
   (not inline ##sys#repl-eval-hook ##sys#repl-read-hook ##sys#repl-print-hook 
        ##sys#read-prompt-hook ##sys#alias-global-hook ##sys#user-read-hook
        ##sys#syntax-error-hook))
-
-(define (d arg1 . more)
-  (if (null? more)
-      (pp arg1)
-      (apply print arg1 more)))
-
-(define-syntax d (syntax-rules () ((_ . _) (void))))
 
 #>
 #ifndef C_INSTALL_EGG_HOME
@@ -56,48 +48,7 @@
 #endif
 <#
 
-(cond-expand
- [paranoia]
- [else
-  (declare
-    ;***(no-bound-checks)
-    (no-procedure-checks-for-usual-bindings)
-    (bound-to-procedure 
-     ##sys#check-char ##sys#check-exact ##sys#check-port ##sys#check-string ##sys#load-library
-     ##sys#load-library-0
-     ##sys#for-each ##sys#map ##sys#setslot ##sys#allocate-vector ##sys#check-pair ##sys#error-not-a-proper-list
-     ##sys#check-symbol ##sys#check-vector 
-     ##sys#check-number ##sys#copy-env-table
-     ##sys#flonum-fraction ##sys#make-port ##sys#fetch-and-check-port-arg ##sys#print ##sys#check-structure 
-     ##sys#make-structure ##sys#feature?
-     ##sys#error-handler ##sys#hash-symbol ##sys#check-syntax
-     ##sys#hash-table-ref ##sys#hash-table-set! ##sys#canonicalize-body ##sys#decompose-lambda-list
-     ##sys#make-c-string ##sys#resolve-include-filename
-     ##sys#load ##sys#error ##sys#warn ##sys#hash-table-location ##sys#expand-home-path
-     ##sys#make-flonum ##sys#make-pointer ##sys#null-pointer ##sys#address->pointer 
-     ##sys#pointer->address ##sys#compile-to-closure ##sys#make-string ##sys#make-lambda-info
-     ##sys#number? ##sys#symbol->qualified-string ##sys#decorate-lambda ##sys#string-append
-     ##sys#ensure-heap-reserve ##sys#syntax-error-hook ##sys#read-prompt-hook
-     ##sys#repl-eval-hook ##sys#append ##sys#eval-decorator
-     open-output-string get-output-string make-parameter software-type software-version machine-type
-     build-platform ##sys#string->symbol list->vector get-environment-variable
-     extension-information syntax-error ->string chicken-home ##sys#expand-curried-define
-     vector->list store-string open-input-string eval ##sys#gc
-     with-exception-handler print-error-message read-char read ##sys#read-error
-     ##sys#reset-handler call-with-current-continuation ##sys#peek-char-0 ##sys#read-char-0
-     ##sys#clear-trace-buffer ##sys#write-char-0 print-call-chain ##sys#with-print-length-limit
-     repl-prompt ##sys#flush-output ##sys#extended-lambda-list? keyword? get-line-number
-     symbol->string string-append display ##sys#repository-path ##sys#file-info make-vector
-     ##sys#make-vector string-copy vector->list ##sys#do-the-right-thing ##sys#->feature-id
-     ##sys#extension-information ##sys#symbol->string ##sys#canonicalize-extension-path
-     file-exists? ##sys#load-extension ##sys#find-extension ##sys#substring reverse
-     dynamic-load-libraries ##sys#string->c-identifier load-verbose ##sys#load ##sys#get-keyword
-     port? ##sys#file-info ##sys#signal-hook ##sys#dload open-input-file close-input-port
-     read write newline ##sys#eval-handler ##sys#set-dlopen-flags! cadadr ##sys#lookup-runtime-requirements
-     map string->keyword ##sys#abort
-     ##sys#expand-0) ) ] )
-
-(include "unsafe-declarations.scm")
+(include "common-declarations.scm")
 
 (define-foreign-variable install-egg-home c-string "C_INSTALL_EGG_HOME")
 (define-foreign-variable installation-home c-string "C_INSTALL_SHARE_HOME")

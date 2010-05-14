@@ -27,47 +27,12 @@
 
 (declare
  (unit data-structures)
- (usual-integrations)
- (disable-warning redef)
  (foreign-declare #<<EOF
 #define C_mem_compare(to, from, n)   C_fix(C_memcmp(C_c_string(to), C_c_string(from), C_unfix(n)))
 EOF
 ) )
 
-(cond-expand
- [paranoia]
- [else
-  (declare
-    (no-bound-checks)
-    (no-procedure-checks-for-usual-bindings)
-    (bound-to-procedure
-      ##sys#check-char ##sys#check-exact ##sys#check-port ##sys#check-string
-      ##sys#substring ##sys#for-each ##sys#map ##sys#setslot
-      ##sys#allocate-vector ##sys#check-pair ##sys#error-not-a-proper-list
-      ##sys#member ##sys#assoc ##sys#error ##sys#signal-hook ##sys#read-string!
-      ##sys#check-symbol ##sys#check-vector 
-      ##sys#check-number
-      ##sys#flonum-fraction ##sys#make-port ##sys#fetch-and-check-port-arg
-      ##sys#print ##sys#check-structure ##sys#make-structure make-parameter
-      ##sys#flush-output ##sys#write-char-0 ##sys#number->string
-      ##sys#fragments->string ##sys#symbol->qualified-string
-      ##sys#number? ##sys#procedure->string
-      ##sys#pointer->string ##sys#user-print-hook ##sys#peek-char-0
-      ##sys#read-char-0 ##sys#write-char ##sys#string-append ##sys#gcd ##sys#lcm
-      ##sys#fudge ##sys#check-list ##sys#user-read-hook ##sys#check-closure ##sys#check-inexact
-      input-port? make-vector list->vector sort! merge! open-output-string floor
-      get-output-string current-output-port display write port? list->string
-      make-string string pretty-print-width newline char-name read random
-      open-input-string make-string call-with-input-file read-line reverse ) ) ] )
-
-(private data-structures
-  fprintf0 generic-write )
-
-(declare
-  (hide
-    fprintf0 generic-write ) )
-
-(include "unsafe-declarations.scm")
+(include "common-declarations.scm")
 
 (register-feature! 'data-structures)
 

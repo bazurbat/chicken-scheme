@@ -1425,7 +1425,7 @@
 	(cond ((null? (cdr spec))
 	       (set! profiled-procedures 'all) )
 	      (else
-	       (set! profiled-propcedures 'some)
+	       (set! profiled-procedures 'some)
 	       (for-each 
 		(cut mark-variable <> '##compiler#profile)
 		(stripa (cdr spec))))))
@@ -1917,7 +1917,7 @@
 	   (when (and (not (variable-visible? sym))
 		      (not (variable-mark sym '##compiler#constant)) )
 	     (##sys#notice 
-	      (sprintf "global variable `~S' is never used" sym) ) ) )
+	      (sprintf "global variable `~S' is only locally visible and never used" sym) ) ) )
 
  	 ;; Make 'boxed, if 'assigned & 'captured:
 	 (when (and assigned captured)

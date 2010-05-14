@@ -28,8 +28,6 @@
 (declare
   (unit library)
   (disable-interrupts)
-  (disable-warning var redef)
-  (usual-integrations)
   (hide ##sys#dynamic-unwind ##sys#find-symbol
 	##sys#grow-vector ##sys#default-parameter-vector 
 	print-length-limit current-print-length setter-tag read-marks
@@ -129,53 +127,8 @@ fast_read_string_from_file (C_word dest, C_word port, C_word len, C_word pos)
 EOF
 ) )
 
-(cond-expand
- [paranoia]
- [else
-  (declare
-    (no-bound-checks)
-    (no-procedure-checks-for-usual-bindings)
-    (bound-to-procedure
-     ##sys#check-char ##sys#check-exact ##sys#check-port ##sys#check-port* ##sys#check-string ##sys#substring ##sys#check-port-mode
-     ##sys#for-each ##sys#map ##sys#setslot ##sys#allocate-vector ##sys#check-pair 
-     ##sys#error-not-a-proper-list ##sys#error ##sys#warn ##sys#signal-hook
-     ##sys#check-symbol ##sys#check-vector  
-     ##sys#check-number ##sys#check-integer ##sys#check-special
-     ##sys#flonum-fraction ##sys#make-port ##sys#print 
-     ##sys#check-structure ##sys#make-structure ##sys#procedure->string
-     ##sys#gcd ##sys#lcm ##sys#ensure-heap-reserve ##sys#check-list 
-     ##sys#enable-interrupts ##sys#disable-interrupts ##sys#->feature-id
-     ##sys#fudge ##sys#user-read-hook ##sys#check-range ##sys#read
-     ##sys#string->symbol ##sys#symbol->string ##sys#dynamic-unwind ##sys#pathname-resolution
-     ##sys#platform-fixup-pathname ##sys#expand-home-path ##sys#string-append ##sys#symbol->qualified-string
-     ##sys#error-handler ##sys#signal ##sys#abort ##sys#port-data ##sys#set-port-data!
-     ##sys#reset-handler ##sys#exit-handler ##sys#dynamic-wind ##sys#port-line
-     ##sys#grow-vector ##sys#run-pending-finalizers ##sys#peek-char-0 ##sys#read-char-0
-     ##sys#read-char/port ##sys#write-char/port
-     ##sys#schedule ##sys#make-thread ##sys#print-to-string ##sys#scan-buffer-line
-     ##sys#update-thread-state-buffer ##sys#restore-thread-state-buffer ##sys#user-print-hook 
-     ##sys#current-exception-handler ##sys#default-exception-handler ##sys#abandon-mutexes ##sys#make-mutex
-     ##sys#port-has-file-pointer? ##sys#infix-list-hook char-name ##sys#open-file-port make-parameter
-     ##sys#intern-symbol ##sys#make-string ##sys#number? software-type build-platform
-     open-output-string get-output-string print-call-chain ##sys#symbol-has-toplevel-binding? repl
-     argv condition-property-accessor ##sys#decorate-lambda ##sys#become! ##sys#lambda-decoration
-     getter-with-setter ##sys#lambda-info ##sys#lambda-info->string open-input-string ##sys#gc
-     ##sys#memory-info ##sys#make-c-string ##sys#find-symbol-table display
-     newline string-append ##sys#with-print-length-limit write print vector-fill! ##sys#context-switch
-     ##sys#set-finalizer! open-output-string get-output-string read ##sys#make-pointer
-     ##sys#pointer->address number->string ##sys#flush-output
-     ##sys#apply-values ##sys#get-call-chain ##sys#really-print-call-chain
-     string->keyword keyword? string->keyword get-environment-variable ##sys#number->string ##sys#copy-bytes
-     call-with-current-continuation ##sys#string->number ##sys#inexact->exact ##sys#exact->inexact
-     ##sys#reverse-list->string reverse ##sys#inexact? list? string ##sys#char->utf8-string 
-     ##sys#unicode-surrogate? ##sys#surrogates->codepoint ##sys#write-char/port
-     ##sys#update-errno ##sys#file-info close-output-port close-input-port ##sys#peek-unsigned-integer
-     continuation-graft char-downcase string-copy remainder floor ##sys#exact? list->string
-     ##sys#append ##sys#list ##sys#cons ##sys#list->vector ##sys#apply ##sys#make-vector
-     ##sys#write-char ##sys#force-finalizers ##sys#cleanup-before-exit ##sys#write-char-0
-     ##sys#default-read-info-hook ##sys#read-error) ) ] )
 
-
+(include "common-declarations.scm")
 (include "version.scm")
 (include "banner.scm")
 
@@ -354,8 +307,6 @@ EOF
   (if (pair? loc)
       (##core#inline "C_i_check_closure_2" x (car loc))
       (##core#inline "C_i_check_closure" x) ) )
-
-(include "unsafe-declarations.scm")
 
 (define (##sys#force promise)
   (if (##sys#structure? promise 'promise)

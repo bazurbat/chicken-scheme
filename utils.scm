@@ -28,26 +28,11 @@
 (declare
   (unit utils)
   (uses extras srfi-13 posix files regex)
-  (usual-integrations)
   (fixnum)
   (hide chop-pds)
   (disable-interrupts) )
 
-(cond-expand
- [paranoia]
- [else
-  (declare
-    (always-bound
-      ##sys#windows-platform)
-    (bound-to-procedure
-      ##sys#check-port port? read-string read-line with-input-from-file
-      command-line-arguments
-      string-append
-      system)
-    (no-procedure-checks-for-usual-bindings)
-    (no-bound-checks))] )
-
-(include "unsafe-declarations.scm")
+(include "common-declarations.scm")
 
 (register-feature! 'utils)
 

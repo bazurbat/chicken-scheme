@@ -29,7 +29,6 @@
   (unit posix)
   (uses scheduler regex extras utils files ports)
   (disable-interrupts)
-  (usual-integrations)
   (hide ##sys#stat group-member _get-groups _ensure-groups posix-error
         ##sys#terminal-check
         check-time-vector)
@@ -488,28 +487,7 @@ static int set_file_mtime(char *filename, C_word tm)
 EOF
 ) )
 
-(cond-expand
- [paranoia]
- [else
-  (declare
-    (no-bound-checks)
-    (no-procedure-checks-for-usual-bindings)
-    (bound-to-procedure
-     string-match glob->regexp regexp 
-     ##sys#thread-yield! ##sys#make-string
-     ##sys#make-port ##sys#file-info ##sys#update-errno ##sys#fudge ##sys#make-c-string ##sys#check-port
-     ##sys#error ##sys#signal-hook ##sys#peek-unsigned-integer make-pathname glob directory?
-     pathname-file process-fork file-close duplicate-fileno process-execute get-environment-variable
-     make-string make-input-port make-output-port ##sys#thread-block-for-i/o create-pipe
-     process-wait pathname-strip-directory pathname-directory ##sys#expand-home-path directory
-     decompose-pathname ##sys#decode-seconds ##sys#null-pointer ##sys#pointer->address
-     ##sys#substring ##sys#context-switch close-input-pipe close-output-pipe change-directory
-     current-directory ##sys#make-pointer port? ##sys#schedule ##sys#process
-     ##sys#peek-fixnum ##sys#make-structure ##sys#check-structure ##sys#enable-interrupts
-     make-nonblocking-input-port make-nonblocking-output-port 
-     canonical-path) ) ] )
-
-(include "unsafe-declarations.scm")
+(include "common-declarations.scm")
 
 (register-feature! 'posix)
 

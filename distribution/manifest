@@ -184,7 +184,7 @@ expand.scm
 expand.c
 chicken-syntax.scm
 chicken-syntax.c
-unsafe-declarations.scm
+common-declarations.scm
 ports.import.scm
 ports.import.c
 files.import.scm

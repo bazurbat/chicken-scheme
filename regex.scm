@@ -25,12 +25,9 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
-(cond-expand
- [chicken-compile-shared]
- [else (declare (unit regex))] )
+(declare (unit regex))
 
 (declare
-  (usual-integrations)
   (disable-interrupts)
 ;  (disable-warning var)
   (fixnum)
@@ -53,14 +50,7 @@
     irregex-nfa irregex-flags irregex-submatches irregex-lengths irregex-names
     ))
 
-(cond-expand
- [paranoia]
- [else
-  (declare
-    (no-bound-checks)
-    (no-procedure-checks) ) ] )
-
-(include "unsafe-declarations.scm")
+(include "common-declarations.scm")
 
 (register-feature! 'regex 'irregex)
 
