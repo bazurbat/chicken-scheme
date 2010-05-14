@@ -7,11 +7,13 @@
 (define big-string
   (read-all (optional (command-line-arguments) "compiler.scm")))
 
+#|
 ;; hack for missing safe variants of fxmod
 
 (define-compiler-syntax fxmod
   (syntax-rules ()
     ((_ x y) (##core#inline "C_fixnum_modulo" x y))))
+|#
 
 (define-syntax bgrep
   (syntax-rules ()
@@ -26,13 +28,22 @@
 	      (scan-input-lines
 	       (lambda (line)
 		 (set! c (fx+ c 1))
-		 (when (zero? (fxmod c 100)) (print* "."))
+		 ;(when (zero? (fxmod c 500)) (print* "."))
 		 (when (string-search expr line)
 		   (set! h (fx+ h 1)))
 		 #f))
-	      (newline)
+	      ;(newline)
 	      h))))))))
 
+(define-syntax rx1
+  (syntax-rules ()
+    ((_) "\\((.*), (.*)\\)")))
+
+(define-syntax rx2
+  (syntax-rules ()
+    ((_) '(: #\( (submatch (* any)) ", " (submatch (* any))))))
+
+#|
 (define the-cache)
 
 (define-syntax (build-cache x r c)
@@ -70,32 +81,27 @@
 			   (##sys#slot ,%cache ,(add1 (* i 2)))
 			   ,(fold (add1 i))))))))
 
-(define-syntax rx1
-  (syntax-rules ()
-    ((_) "\\((.*), (.*)\\)")))
-
-(define-syntax rx2
-  (syntax-rules ()
-    ((_) '(: #\( (submatch (* any)) ", " (submatch (* any))))))
-
 (define (regexp2 rx)
   (build-cache 
    5 rx
    (regexp rx)))
 
-#|
-;; slow
-(print "baseline/literal")
-(bgrep 1 (rx1))
-
-(print "baseline/literal (SRE)")
-(bgrep 1 (rx2))
 |#
 
-(print "baseline/precompiled")
+;; slow
+;(print "literal")
+(bgrep 1 (rx1))
+
+#|
+(print "literal (SRE)")
+(bgrep 1 (rx2))
+
+(print "precompiled")
 (define rx (regexp (rx1)))
 (bgrep 1 rx)
+|#
 
+#|
 (print "test cache fill")
 (do ((lst (list-tabulate 10 number->string) (cdr lst)))
     ((null? lst))
@@ -139,5 +145,7 @@
 (bgrep 1 "\\((.*), (.*)\\)")
 (print "inline cached/literal (SRE)")
 (bgrep 1 '(: #\( (submatch (* any)) ", " (submatch (* any))))
+
+|#
 
 

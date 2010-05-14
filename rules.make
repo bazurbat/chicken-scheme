@@ -1050,7 +1050,7 @@ check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 .PHONY: bench
 
 bench: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
-	cd tests; sh runbench.sh
+	cd tests; date >>bench.log; sh runbench.sh | tee -a bench-log
 
 # 3-stage build
 

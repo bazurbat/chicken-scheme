@@ -2059,7 +2059,7 @@
 	 (expt 2 n))
 	(table
 	 (make-w (fx- n 1))))
-    (display (fx* two^n 2))(newline)
+    ;(display (fx* two^n 2))(newline)
     (let ((a
 	   (make-f64vector (fx* two^n 2) 0.)))
       (do ((i 0 (fx+ i 1)))
