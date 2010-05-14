@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# example settings used on galinha - change these for other machines
 export HENRIETTA=/home/chicken/henrietta
 export EGG_REPOSITORY=https://localhost/svn/chicken-eggs/release/4
 export LOGFILE=/home/chicken/henrietta.log
