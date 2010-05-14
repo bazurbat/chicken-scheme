@@ -835,7 +835,7 @@ EOF
 	(and (fx> len 0)
 	     (let loop ([ps 0]
 			[pe len] )
-	       (let ([p (fx+ ps (##core#inline "C_fixnum_divide" (fx- pe ps) 2))])
+	       (let ([p (fx+ ps (##core#inline "C_fixnum_shift_right" (fx- pe ps) 1))])
 		 (let* ([x (##sys#slot vec p)]
 			[r (proc x)] )
 		   (cond [(fx= r 0) p]

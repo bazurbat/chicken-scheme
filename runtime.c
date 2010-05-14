@@ -5206,6 +5206,22 @@ C_regparm C_word C_fcall C_i_fixnum_arithmetic_shift(C_word n, C_word c)
 }
 
 
+/* I */
+C_regparm C_word C_fcall C_fixnum_divide(C_word x, C_word y)
+{
+  if(y == C_fix(0)) barf(C_DIVISION_BY_ZERO_ERROR, "fx/");
+  else return C_u_fixnum_divide(x, y);
+}
+
+
+/* I */
+C_regparm C_word C_fcall C_fixnum_modulo(C_word x, C_word y)
+{
+  if(y == C_fix(0)) barf(C_DIVISION_BY_ZERO_ERROR, "fxmod");
+  else return C_u_fixnum_modulo(x, y);
+}
+
+
 C_regparm C_word C_fcall C_i_assq(C_word x, C_word lst)
 {
   C_word a;

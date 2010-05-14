@@ -599,7 +599,7 @@ EOF
   (##sys#check-structure v t loc)
   (let* ([bv (##sys#slot v 1)]
 	 [len (##sys#size bv)]
-	 [ilen (##core#inline "C_fixnum_divide" len es)] )
+	 [ilen (##core#inline "C_u_fixnum_divide" len es)] )
     (##sys#check-range from 0 (fx+ ilen 1) loc)
     (##sys#check-range to 0 (fx+ ilen 1) loc)
     (let* ([size2 (fx* es (fx- to from))]

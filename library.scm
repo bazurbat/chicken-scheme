@@ -749,11 +749,11 @@ EOF
 
 (define (fx/ x y)
   (fx-check-divison-by-zero x y 'fx/)
-  (##core#inline "C_fixnum_divide" x y) )
+  (##core#inline "C_u_fixnum_divide" x y) )
 
 (define (fxmod x y)
   (fx-check-divison-by-zero x y 'fxmod)
-  (##core#inline "C_fixnum_modulo" x y) )
+  (##core#inline "C_u_fixnum_modulo" x y) )
 
 (define maximum-flonum (foreign-value "DBL_MAX" double))
 (define minimum-flonum (foreign-value "DBL_MIN" double))

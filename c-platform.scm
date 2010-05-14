@@ -605,8 +605,6 @@
 (rewrite '##sys#size 2 1 "C_block_size" #t)
 (rewrite 'fxnot 2 1 "C_fixnum_not" #t)
 (rewrite 'fx* 2 2 "C_fixnum_times" #t)
-(rewrite 'fx/ 2 2 "C_fixnum_divide" #f)
-(rewrite 'fxmod 2 2 "C_fixnum_modulo" #f)
 (rewrite 'fx= 2 2 "C_eqp" #t)
 (rewrite 'fx> 2 2 "C_fixnum_greaterp" #t)
 (rewrite 'fx< 2 2 "C_fixnum_lessp" #t)
@@ -871,6 +869,8 @@
 (rewrite 'fxxor 17 2 "C_fixnum_xor" "C_fixnum_xor")
 (rewrite 'fxand 17 2 "C_fixnum_and" "C_u_fixnum_and")
 (rewrite 'fxior 17 2 "C_fixnum_or" "C_u_fixnum_or")
+(rewrite 'fx/ 17 2 "C_fixnum_divide" "C_u_fixnum_divide")
+(rewrite 'fxmod 17 2 "C_fixnum_modulo" "C_u_fixnum_modulo")
 
 (rewrite
  'arithmetic-shift 8

@@ -1047,8 +1047,8 @@ extern double trunc(double);
 #define C_fixnum_plus(n1, n2)           (C_u_fixnum_plus(n1, n2) | C_FIXNUM_BIT)
 #define C_u_fixnum_difference(n1, n2)   ((n1) - (n2) + C_FIXNUM_BIT)
 #define C_fixnum_difference(n1, n2)     (C_u_fixnum_difference(n1, n2) | C_FIXNUM_BIT)
-#define C_fixnum_divide(n1, n2)         (C_fix(C_unfix(n1) / C_unfix(n2)))
-#define C_fixnum_modulo(n1, n2)         (C_fix(C_unfix(n1) % C_unfix(n2)))
+#define C_u_fixnum_divide(n1, n2)       (C_fix(C_unfix(n1) / C_unfix(n2)))
+#define C_u_fixnum_modulo(n1, n2)       (C_fix(C_unfix(n1) % C_unfix(n2)))
 #define C_u_fixnum_and(n1, n2)          ((n1) & (n2))
 #define C_fixnum_and(n1, n2)            (C_u_fixnum_and(n1, n2) | C_FIXNUM_BIT)
 #define C_u_fixnum_or(n1, n2)           ((n1) | (n2))
@@ -1757,6 +1757,8 @@ C_fctexport C_word C_fcall C_i_null_list_p(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_string_null_p(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_null_pointerp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_fixnum_arithmetic_shift(C_word n, C_word c) C_regparm;
+C_fctexport C_word C_fcall C_fixnum_divide(C_word x, C_word y) C_regparm;
+C_fctexport C_word C_fcall C_fixnum_modulo(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_locative_set(C_word loc, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_locative_to_object(C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_a_i_make_locative(C_word **a, int c, C_word type, C_word object, C_word index, C_word weak) C_regparm;
