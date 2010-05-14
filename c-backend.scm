@@ -279,8 +279,10 @@
 			     (carg #f))
 			(gen #t "((C_proc" nf ")")
 			(cond (no-global-procedure-checks
-			       (set! carg 
-				 (string-append "*((C_word*)lf[" (number->string index) "]+1)"))
+			       (set! carg
+				 (if block
+				     (string-append "lf[" (number->string index) "]")
+				     (string-append "*((C_word*)lf[" (number->string index) "]+1)")))
 			       (gen "(void*)(*((C_word*)(" carg ")+1))"))
 			      (block
 			       (set! carg (string-append "lf[" (number->string index) "]"))

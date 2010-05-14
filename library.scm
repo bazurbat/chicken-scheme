@@ -2733,7 +2733,7 @@ EOF
   (##sys#print x #f port) )
 
 (define-inline (*print-each lst)
-  (for-each (cut ##sys#print <> #f ##sys#standard-output) lst) )
+  (for-each (lambda (x) (##sys#print x #f ##sys#standard-output)) lst) )
  
 (define (print . args)
   (*print-each args)
