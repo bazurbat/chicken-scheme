@@ -35,7 +35,7 @@ endif
 
 STANDARD_TARGETS \
 	= all clean distclean spotless install uninstall confclean check \
-	  fullcheck dist libs install-target
+	  fullcheck dist libs install-target bench
 
 SRCDIR = .
 
@@ -77,6 +77,8 @@ confclean:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) confclean
 check:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) check
+bench:
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) bench
 fullcheck:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) fullcheck
 dist:

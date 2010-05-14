@@ -1045,6 +1045,13 @@ check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 	cd tests; sh runtests.sh
 
 
+# benchmark
+
+.PHONY: bench
+
+bench: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
+	cd tests; sh runbench.sh
+
 # 3-stage build
 
 .PHONY: stage1 stage2 stage3
@@ -1079,3 +1086,13 @@ stage3:
 	  SRCDIR=$(SRCDIR) CONFIG=$(CONFIG) \
 	  CHICKEN=./$(CHICKEN_PROGRAM)-stage2 \
 	  confclean clean all
+
+# build current head in suib-directory
+
+.PHONY: buildhead
+
+buildhead:
+	rm -fr chicken-`cat buildversion`
+	git archive --format=tar --prefix=chicken-`cat buildversion`/ HEAD | tar x
+	cd chicken-`cat buildversion`; $(MAKE) -f Makefile.$(PLATFORM) \
+	  PLATFORM=$(PLATFORM) PREFIX=`pwd` CONFIG= CHICKEN=../$(CHICKEN) all install

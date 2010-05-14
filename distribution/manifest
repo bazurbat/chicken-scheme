@@ -101,7 +101,10 @@ tests/compiler-tests-3.scm
 tests/inlining-tests.scm
 tests/locative-stress-test.scm
 tests/r4rstest.scm
+tests/null.scm
+tests/sgrep.scm
 tests/runtests.sh
+tests/runbench.sh
 tests/srfi-4-tests.scm
 tests/srfi-18-tests.scm
 tests/hash-table-tests.scm
