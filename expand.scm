@@ -1204,7 +1204,7 @@
 		     (expand rclauses #t)
 		     `(##core#begin ,@(cdr clause)))
 		    (else?
-		     (##sys#notice
+		     (##sys#warn
 		      "non-`else' clause following `else' clause in `cond'"
 		      (##sys#strip-syntax clause))
 		     (expand rclauses #t)
@@ -1496,7 +1496,7 @@
 	 (let ((xl (module-export-list mod)))
 	   (if (eq? xl #t) 
 	       #t
-	       (map ##sys#strip-syntax exps)))))
+	       (append xl (map ##sys#strip-syntax exps))))))
       '(##core#undefined)))))
 
 
