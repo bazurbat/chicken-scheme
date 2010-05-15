@@ -22,6 +22,8 @@ run()
     /usr/bin/time -f '%E elapsed, %U user, %S system' ./a.out
 }
 
+echo
+
 compiler_options="-C -Wa,-W"
 compile="../csc -w -compiler $CHICKEN -I.. -L.. -include-path .. -o a.out $compiler_options"
 
