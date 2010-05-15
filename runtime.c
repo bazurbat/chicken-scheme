@@ -6407,15 +6407,16 @@ C_regparm C_word C_fcall C_i_nequalp(C_word x, C_word y)
     else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
       return C_mk_bool((double)C_unfix(x) == C_flonum_magnitude(y));
 
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "=", y);
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "=", y);
   }
   else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
     if(y & C_FIXNUM_BIT) return C_mk_bool(C_flonum_magnitude(x) == (double)C_unfix(y));
     else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
       return C_mk_bool(C_flonum_magnitude(x) == C_flonum_magnitude(y));
     
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "=", y);
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "=", y);
   }
+  else barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "=", x);
 
   return C_SCHEME_FALSE;
 }
@@ -6487,15 +6488,16 @@ C_regparm C_word C_fcall C_i_greaterp(C_word x, C_word y)
     else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
       return C_mk_bool((double)C_unfix(x) > C_flonum_magnitude(y));
 
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, ">", y);
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, ">", y);
   }
   else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
     if(y & C_FIXNUM_BIT) return C_mk_bool(C_flonum_magnitude(x) > (double)C_unfix(y));
     else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
       return C_mk_bool(C_flonum_magnitude(x) > C_flonum_magnitude(y));
     
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, ">", y);
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, ">", y);
   }
+  else barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, ">", x);
 
   return C_SCHEME_FALSE;
 }
@@ -6567,15 +6569,16 @@ C_regparm C_word C_fcall C_i_lessp(C_word x, C_word y)
     else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
       return C_mk_bool((double)C_unfix(x) < C_flonum_magnitude(y));
 
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "<", y);
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "<", y);
   }
   else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
     if(y & C_FIXNUM_BIT) return C_mk_bool(C_flonum_magnitude(x) < (double)C_unfix(y));
     else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
       return C_mk_bool(C_flonum_magnitude(x) < C_flonum_magnitude(y));
     
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "<", y);
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "<", y);
   }
+  else barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "<", x);
 
   return C_SCHEME_FALSE;
 }
@@ -6647,15 +6650,16 @@ C_regparm C_word C_fcall C_i_greater_or_equalp(C_word x, C_word y)
     else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
       return C_mk_bool((double)C_unfix(x) >= C_flonum_magnitude(y));
 
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, ">=", y);
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, ">=", y);
   }
   else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
     if(y & C_FIXNUM_BIT) return C_mk_bool(C_flonum_magnitude(x) >= (double)C_unfix(y));
     else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
       return C_mk_bool(C_flonum_magnitude(x) >= C_flonum_magnitude(y));
     
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, ">=", y);
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, ">=", y);
   }
+  else barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, ">=", x);
 
   return C_SCHEME_FALSE;
 }
@@ -6727,15 +6731,16 @@ C_regparm C_word C_fcall C_i_less_or_equalp(C_word x, C_word y)
     else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
       return C_mk_bool((double)C_unfix(x) <= C_flonum_magnitude(y));
 
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "<=", y);
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "<=", y);
   }
   else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
     if(y & C_FIXNUM_BIT) return C_mk_bool(C_flonum_magnitude(x) <= (double)C_unfix(y));
     else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
       return C_mk_bool(C_flonum_magnitude(x) <= C_flonum_magnitude(y));
     
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "<=", y);
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "<=", y);
   }
+  else barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "<=", x);
 
   return C_SCHEME_FALSE;
 }
