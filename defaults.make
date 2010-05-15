@@ -352,7 +352,7 @@ ifdef WINDOWS
 TARGETS += chicken.rc$(O)
 endif
 
-ifeq ($HEAD,)
+ifeq ($(HEAD),)
 HEAD = HEAD
 endif
 
