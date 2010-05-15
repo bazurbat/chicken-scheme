@@ -352,6 +352,11 @@ ifdef WINDOWS
 TARGETS += chicken.rc$(O)
 endif
 
+ifeq ($HEAD,)
+HEAD = HEAD
+endif
+
+
 # main rule
 
 .PHONY: all

@@ -1093,6 +1093,6 @@ stage3:
 
 buildhead:
 	rm -fr chicken-`cat buildversion`
-	git archive --format=tar --prefix=chicken-`cat buildversion`/ HEAD | tar x
+	git archive --format=tar --prefix=chicken-`cat buildversion`/ $(HEAD) | tar x
 	cd chicken-`cat buildversion`; $(MAKE) -f Makefile.$(PLATFORM) \
 	  PLATFORM=$(PLATFORM) PREFIX=`pwd` CONFIG= CHICKEN=$(CHICKEN) all install
