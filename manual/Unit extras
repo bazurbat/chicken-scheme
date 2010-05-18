@@ -25,10 +25,22 @@ random number generator is initialized with the current time.
 
 <procedure>(random N)</procedure>
 
-Returns a random {{integer}} in {{[0 N-1]}}. {{N}} is an {{integer}}.
+Returns a pseudo-random {{integer}} in {{[0, N-1]}}. {{N}} is an {{integer}}.
 
-On '''Windows''' {{N}} and the random value are {{exact integer}}.
+On Windows, {{N}} and the random value are {{exact integer}}.
 
+'''Warning''': This procedure uses ''rand(3)'' internally and exhibits
+its deficiencies, including low quality pseudo-randomness:
+
+* On Windows and Solaris, only 32768 unique random values can be
+generated in the range {{[0, N-1]}}.  If {{N >= 32768}}, there
+will be gaps in the result set.
+* On Mac OS X, Windows and some other platforms, little variance in output is seen
+with nearby seeds.  Since the random generator is seeded
+with {{current-seconds}} at startup, new processes may see similar or
+identical random sequences for up to a minute.
+* On Linux, ''rand(3)'' is an alias to ''random(3)'', which provides
+output of reasonable quality.
 
 
 === Formatted output
@@ -102,9 +114,10 @@ of {{(current-output-port)}}.
 
 
 ==== pretty-print-width
-(Parameter) Specifies the maximal line-width for pretty printing, after which line
-wrap will occur.
+<parameter>pretty-print-width</parameter>
 
+Specifies the maximal line-width for pretty printing, after which line
+wrap will occur.
 
 === Input/Output extensions
 

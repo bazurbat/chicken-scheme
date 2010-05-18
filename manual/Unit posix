@@ -1285,7 +1285,7 @@ Microsoft tools or with MinGW):
  map/...
  map-file-to-memory  unmap-file-from-memory  memory-mapped-file-pointer  memory-mapped-file?
  set-alarm!
- terminal-name
+ terminal-port?  terminal-name
  process-fork  process-signal
  parent-process-id
  set-root-directory!

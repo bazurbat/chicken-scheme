@@ -396,15 +396,25 @@ to procedures that are called to perform certain compilation passes
 instead of the usual processing (for more information about parameters
 see: [[Supported language]].
 
-; [parameter] user-options-pass : Holds a procedure that will be called with a list of command-line arguments and should return two values: the source filename and the actual list of options, where compiler switches have their leading {{-}} (hyphen) removed and are converted to symbols.  Note that this parameter is invoked '''before''' processing of the {{-extend}} option, and so can only be changed in compiled user passes.
+<parameter>user-options-pass</parameter>
 
-; [parameter] user-read-pass : Holds a procedure of three arguments. The first argument is a list of strings with the code passed to the compiler via {{-prelude}} options. The second argument is a list of source files including any files specified by {{-prologue}} and {{-epilogue}}. The third argument is a list of strings specified using {{-postlude}} options. The procedure should return a list of toplevel Scheme expressions.
+Holds a procedure that will be called with a list of command-line arguments and should return two values: the source filename and the actual list of options, where compiler switches have their leading {{-}} (hyphen) removed and are converted to symbols.  Note that this parameter is invoked '''before''' processing of the {{-extend}} option, and so can only be changed in compiled user passes.
 
-; [parameter] user-preprocessor-pass : Holds a procedure of one argument. This procedure is applied to each toplevel expression in the source file '''before''' macro-expansion. The result is macro-expanded and compiled in place of the original expression.
+<parameter>user-read-pass</parameter>
 
-; [parameter] user-pass : Holds a procedure of one argument. This procedure is applied to each toplevel expression '''after''' macro-expansion.  The result of the procedure is then compiled in place of the original expression. 
+Holds a procedure of three arguments. The first argument is a list of strings with the code passed to the compiler via {{-prelude}} options. The second argument is a list of source files including any files specified by {{-prologue}} and {{-epilogue}}. The third argument is a list of strings specified using {{-postlude}} options. The procedure should return a list of toplevel Scheme expressions.
 
-; [parameter] user-post-analysis-pass : Holds a procedure that will be called after every performed program analysis pass. The procedure (when defined) will be called with seven arguments: a symbol indicating the analysis pass, the program database, the current node graph, a getter and a setter-procedure which can be used to access and manipulate the program database, which holds various information about the compiled program, a pass iteration count, and an analysis continuation flag. The getter procedure should be called with two arguments: a symbol representing the binding for which information should be retrieved, and a symbol that specifies the database-entry. The current value of the database entry will be returned or {{#f}}, if no such entry is available. The setter procedure is called with three arguments: the symbol and key and the new value. The pass iteration count currently is meaningful only for the 'opt pass. The analysis continuation flag will be {{#f}} for the last 'opt pass. For information about the contents of the program database contact the author.
+<parameter>user-preprocessor-pass</parameter>
+
+Holds a procedure of one argument. This procedure is applied to each toplevel expression in the source file '''before''' macro-expansion. The result is macro-expanded and compiled in place of the original expression.
+
+<parameter>user-pass</parameter>
+
+Holds a procedure of one argument. This procedure is applied to each toplevel expression '''after''' macro-expansion.  The result of the procedure is then compiled in place of the original expression. 
+
+<parameter>user-post-analysis-pass</parameter>
+
+Holds a procedure that will be called after every performed program analysis pass. The procedure (when defined) will be called with seven arguments: a symbol indicating the analysis pass, the program database, the current node graph, a getter and a setter-procedure which can be used to access and manipulate the program database, which holds various information about the compiled program, a pass iteration count, and an analysis continuation flag. The getter procedure should be called with two arguments: a symbol representing the binding for which information should be retrieved, and a symbol that specifies the database-entry. The current value of the database entry will be returned or {{#f}}, if no such entry is available. The setter procedure is called with three arguments: the symbol and key and the new value. The pass iteration count currently is meaningful only for the 'opt pass. The analysis continuation flag will be {{#f}} for the last 'opt pass. For information about the contents of the program database contact the author.
 
 Loaded code (via the {{-extend}} option) has access to the library
 units {{extras, srfi-1, srfi-4, utils, regex}} and the pattern matching macros. 

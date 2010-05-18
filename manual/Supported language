@@ -1,4 +1,4 @@
-[[tags: manual]] 
+[[tags: manual]]
 
 == Supported language
 
@@ -10,6 +10,7 @@
 * [[Modules and macros]]
 * [[Declarations]]
 * [[Parameters]]
+* [[Exceptions]]
 * [[Unit library]] Basic Scheme definitions
 * [[Unit eval]] Evaluation
 * [[Unit expand]] Modules and macros handling

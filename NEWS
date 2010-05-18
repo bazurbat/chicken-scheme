@@ -1,10 +1,7 @@
-4.4.6
+4.5.0
 
 - internal fixes of handling of alternative installation-prefix
   in setup-api
-
-4.4.5
-
 - certain compiler-warnings that are in really just notes
   and don't indicate a possible error (like reimport of
   identifiers) are only shown with -S or in verbose mode
@@ -19,15 +16,11 @@
 - `chicken-uninstall' now always asks before removing 
   extensions, unless `-force' is given
 - improved performance of keyword-argument processing slightly
-- added `fxeven?' and `fxodd?'
 - `export' outside of a module definition has no effect
 - `number->string' now accepts arbitrary bases between 2 and 16
   (thanks to Christian Kellermann)
 - fixed `standard-extension' in `setup-api' module
 - literal constants keep their identity, even when inlined
-
-4.4.4
-
 - Unit library: added `fxodd?' and `fxeven?'
 - All hardcoded special forms have been replaced with
   syntax definitions that expand into internal forms, this
@@ -41,19 +34,12 @@
   to a file to be included as the module body
 - added runtime option `-:G' to force GUI mode (on platforms
   that distinguish between GUI and non-GUI applications)
-
-
-4.4.3
-
 - removed the unsafe runtime library (`libuchicken'), this
   simplifies and speeds up the build and reduces the risk
   of executables loading library units from different
   variants of the runtime system
 - removed the `-unsafe-libraries' option from `chicken'
   and `csc'
-
-4.4.2
-
 - removed bootstrapping target and bootstrapping files from
   development repository; to bootstrap the system, either
   use a release or development-snapshot tarball or fetch
@@ -97,12 +83,6 @@
 - Unit regex: `regexp' now accepts a regular expression
   object as argument
 - Unit regex: removed `glob?'
-
-Special thanks to Mark Carter for patient and thorough
-testing of the Cygwin and mingw builds.
-
-4.4.1
-
 - fixed bug in `chicken-install'/`chicken-uninstall' and
   `chicken-status' that prevented collapsed command-line
   options to be handled correctly.
