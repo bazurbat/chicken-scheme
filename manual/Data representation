@@ -1,6 +1,7 @@
 [[toc:]]
 [[tags: manual]]
 
+
 == Data representation
 
 There exist two different kinds of data objects in the CHICKEN system:
