@@ -56,7 +56,7 @@
    merge!
    never?
    none?
-   noop
+   noop					;DEPRECATED
    o
    project
    queue->list

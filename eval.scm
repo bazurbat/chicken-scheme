@@ -29,8 +29,7 @@
   (unit eval)
   (uses expand)
   (disable-warning var)
-  (hide ##sys#split-at-separator
-	##sys#r4rs-environment ##sys#r5rs-environment 
+  (hide ##sys#r4rs-environment ##sys#r5rs-environment 
 	##sys#interaction-environment pds pdss pxss d) 
   (not inline ##sys#repl-eval-hook ##sys#repl-read-hook ##sys#repl-print-hook 
        ##sys#read-prompt-hook ##sys#alias-global-hook ##sys#user-read-hook
@@ -106,7 +105,8 @@
 
 (define ##sys#core-library-modules
   '(extras lolevel utils files tcp regex posix srfi-1 srfi-4 srfi-13 
-	   srfi-14 srfi-18 srfi-69 data-structures ports chicken-syntax))
+	   srfi-14 srfi-18 srfi-69 data-structures ports chicken-syntax
+	   chicken-ffi-syntax))
 
 (define ##sys#explicit-library-modules '())
 
@@ -300,7 +300,8 @@
 				       (or (##sys#get j '##core#primitive) j))))
 			  (if ##sys#eval-environment
 			      (let ([loc (##sys#hash-table-location ##sys#eval-environment var #t)])
-				(unless loc (##sys#syntax-error-hook "reference to undefined identifier" var))
+				(unless loc
+				  (##sys#syntax-error-hook "reference to undefined identifier" var))
 				(if ##sys#unsafe-eval 
 				    (lambda v (##sys#slot loc 1))
 				    (lambda v 
@@ -333,7 +334,8 @@
 		   (eof-object? x)
 		   (string? x) )
 	       (lambda v x) ]
-	      [(not (pair? x)) (##sys#syntax-error-hook "illegal non-atomic object" x)]
+	      [(not (pair? x)) 
+	       (##sys#syntax-error/context "illegal non-atomic object" x)]
 	      [(symbol? (##sys#slot x 0))
 	       (emit-syntax-trace-info tf x cntr)
 	       (let ((x2 (##sys#expand x se #f)))
@@ -362,7 +364,7 @@
 			    (lambda v c)))
 
 			 [(##core#global-ref)
-			  (let ([var (cadr x)])
+			  (let ([var (cadr x)]) ;XXX broken - should alias (see above)
 			    (if ##sys#eval-environment
 				(let ([loc (##sys#hash-table-location ##sys#eval-environment var #t)])
 				  (lambda v (##sys#slot loc 1)) )
@@ -384,7 +386,7 @@
 					  (compile '(##core#undefined) e #f tf cntr se) ) ] )
 			    (lambda (v) (if (##core#app test v) (##core#app cns v) (##core#app alt v))) ) ]
 
-			 [(##core#begin)
+			 [(##core#begin ##core#toplevel-begin)
 			  (let* ((body (##sys#slot x 1))
 				 (len (length body)) )
 			    (case len
@@ -744,7 +746,9 @@
 			 [(##core#app)
 			  (compile-call (cdr x) e tf cntr se) ]
 
-			 [else (compile-call x e tf cntr se)] ) ) ) ) ]
+			 (else
+			  (fluid-let ((##sys#syntax-context (cons head ##sys#syntax-context)))
+			    (compile-call x e tf cntr se)))))))]
 	      
 	      [else
 	       (emit-syntax-trace-info tf x cntr)
@@ -776,7 +780,7 @@
 	       [argc (checked-length args)]
 	       [info x] )
 	  (case argc
-	    [(#f) (##sys#syntax-error-hook "malformed expression" x)]
+	    [(#f) (##sys#syntax-error/context "malformed expression" x)]
 	    [(0) (lambda (v)
 		   (emit-trace-info tf info cntr)
 		   ((fn v)))]
@@ -1048,18 +1052,6 @@
 	(##sys#error 'load-library "unable to load library" uname _dlerror) ) ) )
 
 (define load-library ##sys#load-library)
-
-(define ##sys#split-at-separator
-  (let ([reverse reverse] )
-    (lambda (str sep)
-      (let ([len (##sys#size str)])
-	(let loop ([items '()] [i 0] [j 0])
-	  (cond [(fx>= i len)
-		 (reverse (cons (##sys#substring str j len) items)) ]
-		[(char=? (##core#inline "C_subchar" str i) sep)
-		 (let ([i2 (fx+ i 1)])
-		   (loop (cons (##sys#substring str j i) items) i2 i2) ) ]
-		[else (loop items (fx+ i 1) j)] ) ) ) ) ) )
 
 (define ##sys#include-forms-from-file
   (let ((load-verbose load-verbose)
@@ -1493,34 +1485,6 @@
 					"/"
 					fname) ) )
 		  (else (loop (##sys#slot paths 1))) ) ) ) ) ) )
-
-
-;;; Print timing information (support for "time" macro):
-
-(define ##sys#display-times
-  (let* ((display display)
-	 (spaces 
-	  (lambda (n)
-	    (do ((i n (fx- i 1)))
-		((fx<= i 0))
-	      (display #\space) ) ) )
-	 (display-rj 
-	  (lambda (x w)
-	    (let* ((xs (if (zero? x) "0" (number->string x)))
-		   (xslen (##core#inline "C_block_size" xs)) )
-	      (spaces (fx- w xslen))
-	      (display xs) ) ) ) )
-    (lambda (info)
-      (display-rj (##sys#slot info 0) 8)
-      (display " seconds elapsed\n") 
-      (display-rj (##sys#slot info 1) 8)
-      (display " seconds in (major) GC\n")
-      (display-rj (##sys#slot info 2) 8)
-      (display " mutations\n")
-      (display-rj (##sys#slot info 3) 8)
-      (display " minor GCs\n")
-      (display-rj (##sys#slot info 4) 8)
-      (display " major GCs\n") ) ) )
 
 
 ;;; SRFI-0 support code:

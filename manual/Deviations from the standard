@@ -20,7 +20,7 @@ to be lifted.
 
 The {{numerator}} and {{denominator}} procedures cannot be
 applied to inexact numbers, and the procedure {{rationalize}} is not
-implemented at all.  This will be fixed in a later release.
+implemented at all.
 
 
 === Numeric string-conversion considerations
@@ -36,7 +36,6 @@ read/write invariance to inexact numbers.
 
 Code evaluated in {{scheme-report-environment}} or
 {{null-environment}} still sees non-standard syntax.
-
 
 
 == Unconfirmed deviations
@@ -105,7 +104,7 @@ numbers or extended-precision integers (bignums). The routines
 {{complex?}}, {{real?}} and {{rational?}} are identical to
 the standard procedure {{number?}}. The procedures {{make-rectangular}}
 and {{make-polar}} are not implemented. Fixnums are limited to
-±2<nowiki><sup>30</sup></nowiki> (or ±2<nowiki><sup>62</sup></nowiki>
+2^<nowiki><sup>30</sup></nowiki> (or 2^<nowiki><sup>62</sup></nowiki>
 on 64-bit hardware).  Support for the full numeric tower is available
 as a separate package, provided the GNU multiprecision library is installed.
 

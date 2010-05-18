@@ -246,7 +246,11 @@ EOF
 (define ##sys#decode-seconds (##core#primitive "C_decode_seconds"))
 (define get-environment-variable (##core#primitive "C_get_environment_variable"))
 (define getenv get-environment-variable) ; DEPRECATED
-(define (##sys#start-timer) (##core#inline "C_start_timer"))
+
+(define (##sys#start-timer)
+  (##sys#gc #t)
+  (##core#inline "C_start_timer"))
+
 (define ##sys#stop-timer (##core#primitive "C_stop_timer"))
 (define (##sys#immediate? x) (not (##core#inline "C_blockp" x)))
 (define (##sys#message str) (##core#inline "C_message" str))
@@ -445,8 +449,10 @@ EOF
 	  ((eq? x (##sys#slot lst 0)) (##sys#slot lst 1))
 	  (else (cons (##sys#slot lst 0) (loop (##sys#slot lst 1)))) ) ) )
 
-(define (##sys#error-not-a-proper-list arg . loc)
-  (##sys#error-hook (foreign-value "C_NOT_A_PROPER_LIST_ERROR" int) (and (pair? loc) (car loc)) arg) )
+(define (##sys#error-not-a-proper-list arg #!optional loc)
+  (##sys#error-hook
+   (foreign-value "C_NOT_A_PROPER_LIST_ERROR" int) 
+   loc arg))
 
 (define ##sys#not-a-proper-list-error ##sys#error-not-a-proper-list) ;DEPRECATED
 
@@ -1210,6 +1216,16 @@ EOF
 		    (err prefix) ) ) )
 	  (##sys#number->string counter) ) ) ) ) ) )
 
+(define symbol-append
+  (let ((string-append string-append))
+    (lambda ss
+      (##sys#intern-symbol
+       (apply
+	string-append 
+	(map (lambda (s)
+	       (##sys#check-symbol s 'symbol-append)
+	       (##sys#symbol->string s))
+	     ss))))))
 
 ;;; Keywords:
 
@@ -1234,7 +1250,7 @@ EOF
     (lambda (key args #!optional thunk)
       (##sys#check-list args 'get-keyword)
       (let ((r (##core#inline "C_i_get_keyword" key args tag)))
-	(if (eq? r tag)
+	(if (eq? r tag)			; not found
 	    (and thunk (thunk))
 	    r)))))
 
@@ -1656,6 +1672,10 @@ EOF
 (define (output-port? x)
   (and (%port? x)
        (not (##sys#slot x 1)) ) )
+
+(define (port-closed? p)
+  (##sys#check-port p 'port-closed?)
+  (##sys#slot p 8))
 
 ;;; Port layout:
 ;
@@ -3166,24 +3186,6 @@ EOF
 		 (k pos2 (fx+ pos2 2)) )
 		(else (loop (fx+ pos2 1))) ) ) ) ) )
 
-; Scans a string, 'buf', from a start index, 'pos', to an end index,
-; 'lim'. During the scan the current position of the 'port' is updated to
-; reflect the rows & columns encountered.
-#; ;UNUSED (at the moment)
-(define (##sys#update-port-position/scan port buf pos lim)
-  (let loop ([pos pos])
-    (let ([bumper
-	   (lambda (cur ptr)
-	     (cond [(eq? cur ptr)	; at EOB
-		     (##sys#setislot port 5 (fx+ (##sys#slot port 5) (fx- cur pos)))
-		     #f ]
-		   [else		; at EOL
-		     (##sys#setislot port 4 (fx+ (##sys#slot port 4) 1))
-		     (##sys#setislot port 5 0)
-		     ptr ] ) ) ] )
-      (when pos
-	(loop (##sys#scan-buffer-line buf lim pos bumper)) ) ) ) )
-
 (define (open-input-string string)
   (##sys#check-string string 'open-input-string)
   (let ([port (##sys#make-port #t ##sys#string-port-class "(string)" 'string)])
@@ -4282,6 +4284,7 @@ EOF
       (let-optionals args ([port ##sys#standard-output]
 			   [header "Error"] )
 	(##sys#check-port port 'print-error-message)
+	(newline port)
 	(display header port)
 	(cond [(and (not (##sys#immediate? ex)) (eq? 'condition (##sys#slot ex 0)))
 	       (cond ((errmsg ex) =>
@@ -4625,3 +4628,36 @@ EOF
 	  (if (memq prop props)
 	      (values prop (##sys#slot tl 0) nxt)
 	      (loop nxt) ) ) ) ) )
+
+
+;;; Print timing information (support for "time" macro):
+
+(define (##sys#display-times info)
+  (define (pstr str) (##sys#print str #f ##sys#standard-error))
+  (define (pnum num)
+    (##sys#print (if (zero? num) "0" (##sys#number->string num)) #f ##sys#standard-error))
+  (##sys#flush-output ##sys#standard-output)
+  (pnum (##sys#slot info 0))
+  (pstr "s elapsed")
+  (let ((gctime (##sys#slot info 1)))
+    (when (> gctime 0)
+      (pstr ", ")
+      (pnum gctime)
+      (pstr "s (major) GC")))
+  (let ((mut (##sys#slot info 2)))
+    (when (fx> mut 0)
+      (pstr ", ")
+      (pnum mut)
+      (pstr " mutations")))
+  (let ((minor (##sys#slot info 3)))
+    (when (fx> minor 0)
+      (pstr ", GCs: ")
+      (pnum minor)
+      (pstr " minor")))
+  (let ((major (##sys#slot info 4)))
+    (when (fx> major 0)
+      (pstr ", ")
+      (pnum major)
+      (pstr " major")))
+  (##sys#write-char-0 #\newline ##sys#standard-error))
+

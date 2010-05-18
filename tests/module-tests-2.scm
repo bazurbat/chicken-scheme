@@ -85,3 +85,18 @@
 (module m2 ()
   (import m1)
   ((lambda () (f1)))) ; should use new lambda (but should be folded by compiler)
+
+
+;;; local define should work even with redefined define
+
+(module m3 ()
+  (import (rename scheme (define s:define)))
+  (import chicken)
+  (define-syntax define
+    (syntax-rules ()
+      ((_) (display 'oink))))
+  (define)
+  (let ()
+    (define a 1)
+    (assert (= a 1)))
+  (define))

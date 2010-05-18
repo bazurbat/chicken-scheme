@@ -49,6 +49,7 @@ buildversion
 c-backend.scm
 c-platform.scm
 chicken-ffi-syntax.scm
+chicken-ffi-syntax.c
 chicken-profile.1
 chicken-profile.scm
 chicken.1
@@ -80,6 +81,7 @@ regex.scm
 irregex.scm
 posixunix.scm
 posixwin.scm
+posix-common.scm
 profiler.scm
 runtime.c
 scheduler.scm

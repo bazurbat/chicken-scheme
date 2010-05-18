@@ -36,8 +36,7 @@
 
 (module setup-api
 
-    (move-file 
-     (run execute)
+    ((run execute)
      compile
      standard-extension
      make make/proc
@@ -51,14 +50,15 @@
      program-path remove-file* 
      patch yes-or-no? abort-setup
      setup-root-directory create-directory/parents
-     test-compile try-compile copy-file run-verbose
-     required-chicken-version required-extension-version cross-chicken
+     test-compile try-compile run-verbose
+     extra-features
+     copy-file move-file
+     required-chicken-version required-extension-version
      sudo-install keep-intermediates
      version>=?
      extension-name-and-version
      extension-name
      extension-version
-     create-temporary-directory
      remove-directory
      remove-extension
      read-info
@@ -102,17 +102,22 @@
 (define (shellpath str)
   (qs (normalize-pathname str)))
 
-(define (cross-chicken) (##sys#fudge 39)) ; DEPRECATED
-
 (define *csc-options* '())
 (define *base-directory* (current-directory))
 
-(define setup-root-directory      (make-parameter *base-directory*))
-(define setup-verbose-mode        (make-parameter #f))
-(define setup-install-mode        (make-parameter #t))
-(define deployment-mode           (make-parameter #f))
-(define program-path              (make-parameter *chicken-bin-path*))
-(define keep-intermediates (make-parameter #f))
+(define setup-root-directory (make-parameter *base-directory*))
+(define setup-verbose-mode   (make-parameter #f))
+(define setup-install-mode   (make-parameter #t))
+(define deployment-mode      (make-parameter #f))
+(define program-path         (make-parameter *chicken-bin-path*))
+(define keep-intermediates   (make-parameter #f))
+
+(define extra-features
+  (let ((xfs '()))
+    (lambda (#!optional fs)
+      (cond (fs (apply register-feature! fs)
+		(set! xfs fs))
+	    (else xfs)))))
 
 ; Setup shell commands
 
@@ -239,7 +244,11 @@
 	(if (keep-intermediates) "-k" "")
 	(if (host-extension) "-host" "")
 	(if (deployment-mode) "-deployed" "")
-	*csc-options*) 
+	(append
+	 (map (lambda (f)
+		(string-append "-feature "(symbol->string f)))
+	      (extra-features))
+	 *csc-options*) )
        " ")
       (find-program prg)))
 
@@ -742,17 +751,6 @@
   (with-input-from-file 
       (make-pathname (repository-path) egg ".setup-info")
     read))
-
-(define (create-temporary-directory)
-  (let ((dir (or (get-environment-variable "TMPDIR") 
-		 (get-environment-variable "TEMP")
-		 (get-environment-variable "TMP") 
-		 "/tmp")))
-    (let loop ()
-      (let* ((n (##sys#fudge 16))	; current milliseconds
-	     (pn (make-pathname dir (string-append "chicken-install-" (number->string n 16)) "tmp")))
-	(cond ((file-exists? pn) (loop))
-	      (else (create-directory pn) pn))))))
 
 (define (remove-directory dir #!optional (strict #t))
   (cond ((not (file-exists? dir))

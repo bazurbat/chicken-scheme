@@ -84,7 +84,7 @@
 
 ;;; Random numbers:
 
-(define random-seed
+(define random-seed			;DEPRECATED
   (let ((srand (foreign-lambda void "srand" unsigned-integer)))
     (lambda n
       (let ((t (if (null? n) (current-seconds) (car n))))

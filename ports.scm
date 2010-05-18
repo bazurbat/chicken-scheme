@@ -101,7 +101,7 @@
 (define (make-broadcast-port . ports)
   (make-output-port
    (lambda (s) (for-each (cut write-string s #f <>) ports))
-   noop
+   void
    (lambda () (for-each flush-output ports)) ) )
 
 (define (make-concatenated-port p1 . ports)
@@ -119,7 +119,7 @@
      (lambda ()
        (and (not (null? ports))
 	    (char-ready? (car ports))))
-     noop
+     void
      (lambda ()
        (let loop ()
 	 (if (null? ports)

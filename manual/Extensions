@@ -228,7 +228,7 @@ file or directory {{TO}}.
 
 <procedure>(remove-file* PATH)</procedure>
 
-Removes the file or directory given in the string {{PATH}}.
+Removes the file or directory given in the string {{PATH}}, if it exists.
 
 
 ==== find-library
@@ -257,18 +257,12 @@ linking options. If {{compile-only}} is true, then no linking step takes place.
 If the keyword argument {{c++}} is given and true, then the code will be compiled in C++ mode.
 
 
-==== create-directory
+==== create-directory/parents
 
-<procedure>(create-directory PATH)</procedure>
+<procedure>(create-directory/parents PATH)</procedure>
 
 Creates the directory given in the string {{PATH}}, with all parent directories as needed.
 
-
-==== chicken-prefix
-
-<parameter>chicken-prefix</parameter>
-
-The installation prefix specified when CHICKEN was built.
 
 ==== installation-prefix
 
@@ -576,6 +570,7 @@ Available options:
 ; {{-u   -update-db}} : update export database
 ; {{-repository}} : print path to extension repository
 ; {{-deploy}} : install extension in the application directory for a deployed application (see [[Deployment]] for more information)
+: {{-D   -feature FEATURE}} : pass this on to subinvocations of {{csi}} and {{csc}} (when done via {{compile}} or {{(run (csc ...))}})
 
 
 === chicken-uninstall reference
@@ -584,6 +579,7 @@ Available options:
 ; {{-v   -version}} : show version and exit
 ; {{-force}} : don't ask, delete whatever matches
 ; {{-s   -sudo}} : use {{sudo(1)}} for deleting files
+; {{-host}} : when cross-compiling, remove extensions for host system (the default for cross-compiling is to remove the extensions of the target system).
 
 
 === chicken-status reference
@@ -591,6 +587,7 @@ Available options:
 ; {{-h   -help}} : show usage information and exit
 ; {{-v   -version}} : show version and exit
 ; {{-f   -files}} : list installed files
+; {{-host}} : when cross-compiling, show extensions for host system (the default for cross-compiling is to show the extensions of the target system).
 
 
 === Security

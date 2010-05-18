@@ -204,6 +204,7 @@
  membership-unfold-limit
  no-argc-checks
  no-bound-checks
+ no-global-procedure-checks
  no-procedure-checks
  node->sexpr
  non-foldable-bindings

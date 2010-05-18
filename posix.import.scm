@@ -29,7 +29,6 @@
  '(_exit
    call-with-input-pipe
    call-with-output-pipe
-   canonical-path			; DEPRECATED
    change-directory
    change-file-mode
    change-file-owner
@@ -44,7 +43,6 @@
    current-effective-group-id
    current-effective-user-id
    current-effective-user-name
-   current-environment			; DEPRECATED
    get-environment-variables
    current-group-id
    current-process-id

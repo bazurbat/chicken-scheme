@@ -558,7 +558,7 @@ is equivalent to
 </enscript>
 
 {{(each PROC)}} is equivalent to {{PROC}} and {{(each)}} is equivalent to
-{{noop}}.
+{{void}}.
 
 
 ==== flip
@@ -598,13 +598,6 @@ applied to a list of elements that all satisfy the predicate procedure
 ((list-of? even?) '(1 2 3))   ==> #f
 ((list-of? number?) '(1 2 3)) ==> #t
 </enscript>
-
-
-==== noop
-
-<procedure>(noop X ...)</procedure>
-
-Ignores its arguments, does nothing and returns an unspecified value.
 
 
 ==== o

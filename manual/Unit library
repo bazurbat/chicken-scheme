@@ -200,6 +200,11 @@ different behavior.
 Write buffered output to the given output-port. {{PORT}} defaults
 to the value of {{(current-output-port)}}.
 
+==== port-closed?
+
+<procedure>(port-closed? PORT)</procedure>
+
+Is the given {{PORT}} closed?
 
 ==== port-name
 
@@ -786,6 +791,13 @@ the new symbol is prefixed with that argument.
 Returns a newly created, unique symbol with the name {{STRING}}.
 
 
+==== symbol-append
+
+<procedure>(symbol-append SYMBOL1 ...)</procedure>
+
+Creates a new interned symbol from the concatenated names of the argument symbols
+{{(SYMBOL1 ...)}}.
+
 
 === Standard Input/Output
 
@@ -922,9 +934,9 @@ contents are initialized to some unspecified value.
 
 ==== void
 
-<procedure>(void)</procedure>
+<procedure>(void ARGUMENT ...)</procedure>
 
-Returns an unspecified value.
+Ignores {{ARGUMENT ...}} and returns an unspecified value.
 
 
 

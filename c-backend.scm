@@ -278,7 +278,11 @@
 			     (block (third gparams)) 
 			     (carg #f))
 			(gen #t "((C_proc" nf ")")
-			(cond (block
+			(cond (no-global-procedure-checks
+			       (set! carg 
+				 (string-append "*((C_word*)lf[" (number->string index) "]+1)"))
+			       (gen "(void*)(*((C_word*)(" carg ")+1))"))
+			      (block
 			       (set! carg (string-append "lf[" (number->string index) "]"))
 			       (if safe
 				   (gen "C_retrieve_proc(" carg ")")

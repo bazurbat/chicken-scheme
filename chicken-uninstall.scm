@@ -31,15 +31,25 @@
 
 (module main ()
   
-  (import scheme chicken)
+  (import scheme chicken foreign)
   (import setup-api)
   (import srfi-1 posix data-structures utils ports regex srfi-13 files)
+
+  (define-foreign-variable C_TARGET_LIB_HOME c-string)
+  (define-foreign-variable C_BINARY_VERSION int)
+
+  (define *host-extensions* #f)
+
+  (define (repo-path)
+    (if (and (feature? #:cross-chicken) (not *host-extensions*))
+	(make-pathname C_TARGET_LIB_HOME (sprintf "chicken/~a" C_BINARY_VERSION))
+	(repository-path)))
 
   (define *force* #f)
 
   (define (gather-eggs patterns)
     (let ((eggs (map pathname-file 
-		     (glob (make-pathname (repository-path) "*" "setup-info")))))
+		     (glob (make-pathname (repo-path) "*" "setup-info")))))
       (delete-duplicates
        (concatenate (map (cut grep <> eggs) patterns))
        string=?)))
@@ -80,6 +90,7 @@ usage: chicken-uninstall [OPTION | PATTERN] ...
   -v   -version                 show version and exit
        -force                   don't ask, delete whatever matches
   -s   -sudo                    use sudo(1) for deleting files
+       -host                    when cross-compiling, uninstall host extensions
 EOF
 );|
     (exit code))
@@ -98,6 +109,9 @@ EOF
 		  ((or (string=? arg "-v") (string=? arg "-version"))
 		   (print (chicken-version))
 		   (exit 0))
+		  ((string=? arg "-host")
+		   (set! *host-extensions* #t)
+		   (loop (cdr args) pats))
 		  ((string=? arg "-force")
 		   (set! *force* #t)
 		   (loop (cdr args) pats))

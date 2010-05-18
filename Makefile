@@ -35,7 +35,7 @@ endif
 
 STANDARD_TARGETS \
 	= all clean distclean spotless install uninstall confclean check \
-	  fullcheck dist libs
+	  fullcheck dist libs install-target install-dev
 
 SRCDIR = .
 
@@ -69,6 +69,10 @@ spotless:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) spotless
 install:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) install
+install-target:
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) install-target
+install-dev:
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) install-dev
 uninstall:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) uninstall
 confclean:

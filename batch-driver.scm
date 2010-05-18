@@ -265,6 +265,8 @@
       (set! no-bound-checks #t) )
     (when (memq 'no-procedure-checks options)
       (set! no-procedure-checks #t) )
+    (when (memq 'no-procedure-checks-for-toplevel-bindings options)
+      (set! no-global-procedure-checks #t) )
     (when (memq 'no-procedure-checks-for-usual-bindings options)
       (for-each 
        (lambda (v)

@@ -1069,7 +1069,7 @@ These variables contain error codes as returned by {{errno}}.
 
 ==== find-files
 
-<procedure>(find-files DIRECTORY PREDICATE [ACTION [IDENTITY [LIMIT]]])</procedure>
+<procedure>(find-files DIRECTORY [PREDICATE [ACTION [IDENTITY [LIMIT]]]])</procedure>
 
 Recursively traverses the contents of {{DIRECTORY}} (which should be a
 string) and invokes the procedure {{ACTION}} for all files in which
@@ -1077,7 +1077,8 @@ the procedure {{PREDICATE}} is true.  {{PREDICATE}} may be a procedure
 of one argument or a regular-expression string.  {{ACTION}} should be
 a procedure of two arguments: the currently encountered file and the
 result of the previous invocation of {{ACTION}}, or, if this is the
-first invocation, the value of {{IDENTITY}}. {{ACTION}} defaults to
+first invocation, the value of {{IDENTITY}}. {{PREDICATE}} defaults to
+{{(constantly #t)}}, {{ACTION}} defaults to
 {{cons}}, {{IDENTITY}} defaults to {{()}}.  {{LIMIT}} should be a
 procedure of one argument that is called for each nested directory and
 which should return true, if that directory is to be traversed
