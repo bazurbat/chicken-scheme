@@ -117,7 +117,8 @@ loading of compiled code. Currently Linux, BSD, Solaris, Windows (with Cygwin) a
 
 ==== repository-path
 
-; [parameter] repository-path :
+<parameter>repository-path</parameter>
+
 Contains a string naming the path to the extension repository, which defaults to
 either the value of the environment variable {{CHICKEN_REPOSITORY}}
 or the default library path

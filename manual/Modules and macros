@@ -167,11 +167,11 @@ references to {{exit}} in the body of the loop, so {{exit}} is not
 renamed.
 
   (define-syntax loop
-     (lambda (x r c)
-       (let ((body (cdr x)))
-         `(,(r 'call-with-current-continuation)
-           (,(r 'lambda) (exit)
-            (,(r 'let) ,(r 'f) () ,@body (,(r 'f))))))))
+    (lambda (x r c)
+      (let ((body (cdr x)))
+        `(,(r 'call-with-current-continuation)
+          (,(r 'lambda) (exit)
+           (,(r 'let) ,(r 'f) () ,@body (,(r 'f))))))))
 
 Suppose a {{while}} macro is implemented using {{loop}}, with the intent
 that {{exit}} may be used to escape from the {{while}} loop.  The {{while}}
@@ -189,12 +189,12 @@ inserted by the {{loop}} macro.  In other words, this {{while}} macro is
 not hygienic.  Like {{loop}}, it must be written using procedurally:
 
   (define-syntax while
-     (lambda (x r c)
-       (let ((test (cadr x))
-             (body (cddr x)))
-         `(,(r 'loop)
-           (,(r 'if) (,(r 'not) ,test) (exit #f))
-           ,@body))))
+    (lambda (x r c)
+      (let ((test (cadr x))
+            (body (cddr x)))
+        `(,(r 'loop)
+          (,(r 'if) (,(r 'not) ,test) (exit #f))
+          ,@body))))
 
 Note: this implementation of explicit-renaming macros allows passing
 arbitrary expressions to the renaming and comparison procedures. When
@@ -361,7 +361,7 @@ are kept separate correctly).
 
 ==== reexport
 
-  [syntax] (reexport IMPORT ...)
+<macro>(reexport IMPORT ...)</macro>
 
 Imports {{IMPORT ...}} and automatically exports all imported identifiers.
 This can be used to build ''compound modules'': modules that just extend

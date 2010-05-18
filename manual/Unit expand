@@ -36,7 +36,7 @@ Signals an exception of the kind {{(exn syntax)}}. Otherwise identical to
 
 ==== er-macro-transformer
 
-  [procedure] (er-macro-transformer TRANSFORMER)
+<procedure>(er-macro-transformer TRANSFORMER)</procedure>
 
 This procedure does nothing and is available for writing low-level
 macros in a more portable fashion, without hard-coding the signature

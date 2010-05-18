@@ -147,7 +147,7 @@ bytevectors ("blobs").  However, it does ''not'' return true for
 SRFI-4 vectors, as those are actually bytevectors wrapped in a
 structure with a type tag.
 
-===== C_vectorp
+===== C_bytevectorp
 
  [C macro] C_word C_bytevectorp(C_word x)
 
