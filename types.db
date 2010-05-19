@@ -1263,7 +1263,7 @@
 (make-u32vector (procedure make-u32vector (fixnum #!optional * * *) (struct u32vector)))
 (make-u8vector (procedure make-u8vector (fixnum #!optional * * *) (struct u8vector)))
 (read-u8vector (procedure read-u8vector (#!optional fixnum port) (struct u8vector)))
-(read-u8vector! (procedure read-u8vector! (fixnum (struct u8vector) #!optional port fixnum) (struct u8vector)))
+(read-u8vector! (procedure read-u8vector! (fixnum (struct u8vector) #!optional port fixnum) number))
 (release-number-vector (procedure release-number-vector (*) undefined))
 (s16vector (procedure s16vector (#!rest fixnum) (struct s16vector)))
 (s16vector->blob (procedure s16vector->blob ((struct s16vector)) blob))
