@@ -590,7 +590,7 @@ EOF
 	       [(-libs)
 		(set! inquiry-only #t)
 		(set! show-libs #t) ]
-	       [(-v)
+	       [(-v -verbose)
 		(when (and (number? verbose) (not msvc))
 		  (set! compile-options (cons* "-v" "-Q" compile-options))
 		  (set! link-options (cons (if msvc "-VERBOSE" "-v") link-options)) )
