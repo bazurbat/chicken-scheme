@@ -72,7 +72,7 @@ Possible options are:
 
      -debug-level 0             is equivalent to -no-trace -no-lambda-info
      -debug-level 1             is equivalent to -no-trace
-     -debug-level 2             does nothing (the default)
+     -debug-level 2             is equivalent to -scrutinize
 
 ; -disable-interrupts : Equivalent to the {{(disable-interrupts)}} declaration. No interrupt-checks are generated for compiled programs.
 

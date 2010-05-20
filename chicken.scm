@@ -106,7 +106,7 @@
 		 (case level
 		   ((0) (set! options (cons* 'no-lambda-info 'no-trace options)))
 		   ((1) (set! options (cons 'no-trace options)))
-		   ((2) #f)
+		   ((2) (set! options (cons 'scrutinize options)))
 		   (else (compiler-warning 'usage "invalid debug level ~S - ignored" (car rest))) )
 		 (loop (cdr rest)) ) )
 	      ((memq o valid-compiler-options) (loop rest))
