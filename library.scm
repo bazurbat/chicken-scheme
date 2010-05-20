@@ -2966,20 +2966,30 @@ EOF
     (##core#undefined) ) )
 
 (define (##sys#user-print-hook x readable port)
-  (let* ([type (##sys#slot x 0)]
-	 [a (assq type ##sys#record-printers)] )
-    (cond [a ((##sys#slot a 1) x port)]
-	  [else
+  (let* ((type (##sys#slot x 0))
+	 (a (assq type ##sys#record-printers)) )
+    (cond (a (handle-exceptions ex
+		(begin
+		  (##sys#print "#<Error in printer of record type `" #f port)
+		  (##sys#print (##sys#symbol->string type) #f port)
+		  (if (##sys#structure? ex 'condition)
+		      (and-let* ((a (member '(exn . message) (##sys#slot ex 2))))
+			(##sys#print "': " #f port)
+			(##sys#print (cadr a) #f port)
+			(##sys#write-char-0 #\> port))
+		      (##sys#print "'>" #f port)))
+	       ((##sys#slot a 1) x port)))
+	  (else
 	   (##sys#print "#<" #f port)
 	   (##sys#print (##sys#symbol->string type) #f port)
 	   (case type
-	     [(condition)
+	     ((condition)
 	      (##sys#print ": " #f port)
-	      (##sys#print (##sys#slot x 1) #f port) ]
-	     [(thread)
+	      (##sys#print (##sys#slot x 1) #f port) )
+	     ((thread)
 	      (##sys#print ": " #f port)
-	      (##sys#print (##sys#slot x 6) #f port) ] )
-	   (##sys#print #\> #f port) ] ) ) )
+	      (##sys#print (##sys#slot x 6) #f port) ) )
+	   (##sys#write-char-0 #\> port) ) ) ) )
 
 (define ##sys#with-print-length-limit
   (let ([call-with-current-continuation call-with-current-continuation])
