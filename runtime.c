@@ -7763,7 +7763,7 @@ void C_ccall C_machine_byte_order(C_word c, C_word closure, C_word k)
   C_cblock
     static C_word one_two_three = 123;
     str = (*((C_char *)&one_two_three) != 123) ? "big-endian" : "little-endian";
-  C_cblockend
+  C_cblockend;
 #endif
 
   a = C_alloc(2 + C_bytestowords(strlen(str)));
