@@ -94,6 +94,10 @@
 # include <sys/types.h>
 #endif
 
+#if defined(__HAIKU__)
+# include <kernel/image.h>
+#endif
+
 /* Byteorder in machine word */
 
 #if defined(__MINGW32__)
@@ -665,6 +669,8 @@ typedef unsigned __int64   uint64_t;
 # define C_SOFTWARE_VERSION "hpux"
 #elif defined(__DragonFly__)
 # define C_SOFTWARE_VERSION "dragonfly"
+#elif defined(__HAIKU__)
+# define C_SOFTWARE_VERSION "haiku"
 #elif defined(__sun__)
 # if defined(__svr4__)
 #   define C_SOFTWARE_VERSION "solaris"
@@ -2339,6 +2345,25 @@ C_path_to_executable(C_char *fname)
 
     return NULL;
   }
+# elif defined(__HAIKU__)
+{
+  image_info info;
+  int32 cookie = 0;
+  int32 i;
+
+  while (get_next_image_info(0, &cookie, &info) == B_OK) {
+    if (info.type == B_APP_IMAGE) {
+      C_strcat(buffer, info.name);
+
+      for(i = C_strlen(buffer); i >= 0 && buffer[ i ] != '/'; --i);
+
+      buffer[ i ] = '\0';
+
+      return buffer;
+    }
+  }
+}
+  return NULL;
 # else
   return NULL;
 # endif
