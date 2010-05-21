@@ -255,6 +255,13 @@
 
         Solaris:
 
+	  - By default, CHICKEN is build with the SunPro C compiler (`cc').
+	    To use `gcc' instead of `cc', pass 
+
+	      C_COMPILER=gcc
+
+	    to the "make" invocation.
+
 	  - Older versions of Solaris have a bug in ld.so that causes
 	    trouble with dynamic loading.  Patching Solaris fixes the
 	    problem. Solaris 7 needs patch 106950-18. Solaris 8 has an
