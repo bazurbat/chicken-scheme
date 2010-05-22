@@ -9,6 +9,7 @@ TEST_DIR=`pwd`
 OS_NAME=`uname -s`
 export DYLD_LIBRARY_PATH=${TEST_DIR}/..
 export LD_LIBRARY_PATH=${TEST_DIR}/..
+export LIBRARY_PATH=${TEST_DIR}/..:${LIBRARY_PATH}
 
 mkdir -p test-repository
 
