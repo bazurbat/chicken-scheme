@@ -338,10 +338,11 @@
 
  7. Compatibility notes
 
-        CHICKEN 4 uses a completely reimplemented hygienic macro and
-	module system, which has considerably more flexibility and power,
-	but will require rewriting macros in code that previously was
-	used with CHICKEN 3. Notably, `define-macro' is not available
+        In CHICKEN 4, the macro system has been reimplemented
+	completely and provides module system, which has considerably
+	more flexibility and power, but will require the
+	re-implementation of macros in code that previously was used
+	with CHICKEN 3. Notably, `define-macro' is not available
 	anymore. See the manual on how to translate such macros to
 	low-level hygienic macros or ask on the CHICKEN mailing list.
 

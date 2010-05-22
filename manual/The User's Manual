@@ -24,6 +24,8 @@ This is the manual for Chicken Scheme, version 4.5.1
 
 ; [[Deployment]] : Deploying programs developed with CHICKEN.
 
+; [[Cross development]] : Building software for a different architecture.
+
 ; [[Data representation]] : How Scheme data is internally represented.
 
 ; [[Bugs and limitations]] : Things that do not work yet.
