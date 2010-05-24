@@ -433,3 +433,17 @@
 (assert (= 3 (f1)))
 (assert (= 9 v1))
 (assert (= 10 v2))
+
+
+;;; redefining definition forms (disabled, since we can not catch this error easily)
+
+#|
+(module m0a () (import chicken) (reexport (only scheme define)))
+(module m0b () (import chicken) (reexport (only scheme define-syntax)))
+
+(module m1 ()
+(import (prefix scheme s:) (prefix m0b m:))
+;(s:define m:define 1)
+(s:define-syntax s:define-syntax (syntax-rules ()))
+)
+|#
