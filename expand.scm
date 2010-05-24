@@ -1864,7 +1864,7 @@
 				       (set! missing #t)
 				       (##sys#warn 
 					(string-append 
-					 "exported identifier for module `" 
+					 "exported identifier of module `" 
 					 (symbol->string name)
 					 "' has not been defined")
 					id)
