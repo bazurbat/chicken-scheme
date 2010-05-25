@@ -1471,8 +1471,7 @@
 	(call-with-current-continuation call-with-current-continuation)
 	(print-call-chain print-call-chain)
 	(flush-output flush-output)
-	(load-verbose load-verbose)
-	(reset reset) )
+	(load-verbose load-verbose))
     (lambda ()
 
       (define (write-err xs)
