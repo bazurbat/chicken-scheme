@@ -36,15 +36,8 @@ if test -n "$MSYSTEM"; then
     cp ../libchicken.dll .
 fi
 
-CSC_COMP_FLAGS=""
-if [ "$OS_NAME" = "SunOS" ]; then
-  if [ "$C_COMPILER" = "cc" ]; then
-    CSC_COMP_FLAGS="-cc cc -ld cc"
-  fi
-fi
-
-compile="../csc $CSC_COMP_FLAGS -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
-compile_s="../csc $CSC_COMP_FLAGS -s -compiler $CHICKEN -v -I.. -L.. -include-path .."
+compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
+compile_s="../csc -s -compiler $CHICKEN -v -I.. -L.. -include-path .."
 interpret="../csi -n -include-path .."
 
 echo "======================================== compiler tests ..."
@@ -241,23 +234,15 @@ $compile -e embedded2.scm
 ./a.out
 
 echo "======================================== private repository test ..."
-# Skip this test on Solaris/Sun CC
-if [ "$OS_NAME" != "SunOS" -o "$C_COMPILER" != "cc" ]; then
 mkdir -p tmp
 $compile private-repository-test.scm -private-repository -o tmp/xxx
 tmp/xxx $PWD/tmp
 PATH=$PWD/tmp:$PATH xxx $PWD/tmp
 # this may crash, if the PATH contains a non-matching libchicken.dll on Windows:
 #PATH=$PATH:$PWD/tmp xxx $PWD/tmp
-fi
 
 echo "======================================== timing compilation ..."
-if [ "$OS_NAME" = "SunOS" -o "$C_COMPILER" = "cc" ]; then
-  COMP_FLAGS=""
-else
-  COMP_FLAGS="-C -Wa,-W"
-fi
-time $compile compiler.scm -O5 -debug pb -v $COMP_FLAGS
+time $compile compiler.scm -O5 -debug pb -v
 echo "executing ..."
 time ./a.out
 

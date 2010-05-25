@@ -2226,13 +2226,17 @@ C_path_to_executable(C_char *fname)
 
   if(buffer == NULL) return NULL;
 
-# ifdef __linux__
+# if defined(__linux__) || defined(__sun)
   C_char linkname[64]; /* /proc/<pid>/exe */
   pid_t pid;
   int ret;
 	
   pid = C_getpid();
+#  ifdef __linux__
   C_sprintf(linkname, "/proc/%i/exe", pid);
+#  else
+  C_sprintf(linkname, "/proc/%i/path/a.out", pid); /* SunOS / Solaris */
+#  endif
   ret = C_readlink(linkname, buffer, C_MAX_PATH - 1);
 
   if(ret == -1 || ret >= C_MAX_PATH - 1)
