@@ -1705,7 +1705,7 @@
 		     ((not (get db var 'global)) 
 		      (put! db var 'global #t) ) ) ) ) )
 	  
-	  ((##core#global-ref)		; not really needed anymore
+	  ((##core#global-ref)
 	   (let ((var (first params)))
 	     (ref var n)
 	     (grow 1)
