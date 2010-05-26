@@ -262,6 +262,15 @@ Equivalent to the compiler option of the same name - macros defined in the compi
 runtime.
 
 
+=== safe-globals
+
+ [declaration specifier] (safe-globals)
+
+Assumes variables assigned in the current compilation unit are always bound and
+that any calls to these variables can always be assumed to be calls to proper
+procedures.
+
+
 === scrutinize
 
  [declaration specifier] (scrutinize)

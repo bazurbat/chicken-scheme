@@ -29,9 +29,12 @@ done
 "${TEST_DIR}/../chicken-install" -init test-repository export
 CHICKEN_REPOSITORY=${TEST_DIR}/test-repository
 CHICKEN=../chicken
+ASMFLAGS=
+FAST_OPTIONS="-O5 -d0 -b -disable-interrupts"
 
 if test -n "$MSYSTEM"; then
     CHICKEN="..\\chicken.exe"
+    ASMFLAGS=-Wa,-w
     # make compiled tests use proper library on Windows
     cp ../libchicken.dll .
 fi
@@ -242,22 +245,22 @@ PATH=$PWD/tmp:$PATH xxx $PWD/tmp
 #PATH=$PATH:$PWD/tmp xxx $PWD/tmp
 
 echo "======================================== timing compilation ..."
-time $compile compiler.scm -O5 -debug pb -v
+time $compile compiler.scm $FAST_OPTIONS -debug pb -v -C "$ASMFLAGS"
 echo "executing ..."
 time ./a.out
 
 echo "======================================== running slatex ..."
-$compile slatex.scm -O5
+$compile slatex.scm $FAST_OPTIONS
 mkdir -p slatexdir
 rm -f slatexdir/*
 time ./a.out
 
 echo "======================================== running floating-point benchmark ..."
 echo "boxed:"
-$compile fft.scm -O5
+$compile fft.scm $FAST_OPTIONS
 time ./a.out
 echo "unboxed:"
-$compile fft.scm -O5 -D unboxed -debug oxi | tee fft.out
+$compile fft.scm $FAST_OPTIONS -D unboxed -debug oxi | tee fft.out
 time ./a.out
 
 echo "======================================== done."

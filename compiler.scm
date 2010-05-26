@@ -59,7 +59,6 @@
 ; (inline-limit <limit>)
 ; (keep-shadowed-macros)
 ; (lambda-lift)
-; (link-options {<opt>})
 ; (no-argc-checks)
 ; (no-bound-checks)
 ; (no-procedure-checks)
@@ -921,17 +920,17 @@
 				    (when safe-globals-flag
 				      (mark-variable var '##compiler#always-bound-to-procedure)
 				      (mark-variable var '##compiler#always-bound)))
-				  (when (##sys#macro? var)
-				    (compiler-warning 
-				     'var "assigned global variable `~S' is a macro ~A"
-				     var
-				     (if ln (sprintf "(~a)" ln) "") )
-				    (when undefine-shadowed-macros (##sys#undefine-macro! var) ) )
+				  (cond ((##sys#macro? var)
+					 (compiler-warning 
+					  'var "assigned global variable `~S' is syntax ~A"
+					  var
+					  (if ln (sprintf "(~a)" ln) "") )
+					 (when undefine-shadowed-macros (##sys#undefine-macro! var) ) )
+					((and ##sys#notices-enabled
+					      (assq var (##sys#current-environment)))
+					 (##sys#notice "assignment to imported value binding" var)))
 				  (when (keyword? var)
 				    (compiler-warning 'syntax "assignment to keyword `~S'" var) )
-				  (when (pair? var) ; macro
-				    (syntax-error
-				     'set! "assignment to syntactic identifier" var))
 				  `(set! ,var ,(walk val e se var0))))))
 
 			((##core#inline)
@@ -1372,7 +1371,7 @@
 	       [(interrupts-enabled) (set! insert-timer-checks #f)]
 	       [(safe) (set! unsafe #t)]
 	       [else (compiler-warning 'syntax "illegal declaration specifier `~s'" id)]))]))
-       ((compile-syntax )
+       ((compile-syntax)
 	(set! ##sys#enable-runtime-macros #t))
        ((block-global hide) 
 	(let ([syms (stripa (cdr spec))])
@@ -1682,8 +1681,8 @@
 ;;; Perform source-code analysis:
 
 (define (analyze-expression node)
-  (let ([db (make-vector analysis-database-size '())]
-	[explicitly-consed '()] )
+  (let ((db (make-vector analysis-database-size '()))
+	(explicitly-consed '()) )
 
     (define (grow n)
       (set! current-program-size (+ current-program-size n)) )
@@ -1706,7 +1705,7 @@
 		     ((not (get db var 'global)) 
 		      (put! db var 'global #t) ) ) ) ) )
 	  
-	  ((##core#global-ref)
+	  ((##core#global-ref)		; not really needed anymore
 	   (let ((var (first params)))
 	     (ref var n)
 	     (grow 1)
@@ -1720,7 +1719,7 @@
 	   (grow 1)
 	   (let ([fun (car subs)])
 	     (when (eq? '##core#variable (node-class fun))
-	       (let ([name (first (node-parameters fun))])
+	       (let ((name (first (node-parameters fun))))
 		 (collect! db name 'call-sites (cons here n))))
 	     (walk (first subs) env localenv here #t)
 	     (walkeach (cdr subs) env localenv here #f) ) )
@@ -1778,8 +1777,8 @@
 		  (set-car! (cdddr (node-parameters n)) (- current-program-size size0)) ) ) ) ) )
 	  
 	  ((set! ##core#set!) 
-	   (let* ([var (first params)]
-		  [val (car subs)] )
+	   (let* ((var (first params))
+		  (val (car subs)) )
 	     (when first-analysis 
 	       (case (variable-mark var '##compiler#intrinsic)
 		 ((standard)
@@ -1799,7 +1798,7 @@
 	     (walk (car subs) env localenv here #f) ) )
 
 	  ((##core#primitive ##core#inline)
-	   (let ([id (first params)])
+	   (let ((id (first params)))
 	     (when (and first-analysis here (symbol? id) (##sys#hash-table-ref real-name-table id))
 	       (set-real-name! id here) )
 	     (walkeach subs env localenv here #f) ) )
@@ -2064,7 +2063,43 @@
     ;; Set original program-size, if this is the first analysis-pass:
     (unless original-program-size
       (set! original-program-size current-program-size) )
+
+    ;; return database
     db) )
+
+
+;;; Collect unsafe global procedure calls that are assigned:
+
+(define (check-for-unsafe-toplevel-procedure-calls node db)
+  (let ((procs '()))
+
+    (define (walk n)
+      (let ((subs (node-subexpressions n))
+	    (params (node-parameters n)) 
+	    (class (node-class n)) )
+	(case class
+	  ((##core#call)
+	   (let ((fun (first subs)))
+	     (when (memq (node-class fun) '(##core#variable ##core#global-ref))
+	       (let ((name (first (node-parameters fun))))
+		 (when (and ##sys#notices-enabled
+			    (get db name 'global)
+			    (get db name 'assigned)
+			    (or no-global-procedure-checks
+				(variable-mark name '##compiler#always-bound-to-procedure))
+			    (not unsafe))
+		   (set! procs (lset-adjoin eq? procs name))))))
+	   (for-each walk subs))
+	  (else (for-each walk subs)))))
+
+    (when ##sys#notices-enabled
+      (walk node)
+      (when (pair? procs)
+	(##sys#notice
+	 "the following non-intrinsic global procedures where declared to be safe but are externally visible:")
+	(newline (current-error-port))
+	(for-each (cute fprintf (current-error-port) "  ~S~%" <>) procs)
+	(flush-output (current-error-port))))))
 
 
 ;;; Convert closures to explicit data structures (effectively flattens function-binding structure):

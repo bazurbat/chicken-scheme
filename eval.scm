@@ -357,13 +357,18 @@
 			    (receive (i j) (lookup var e se)
 			      (let ((val (compile (caddr x) e var tf cntr se)))
 				(cond [(not i)
+				       (when ##sys#notices-enabled
+					 (and-let* ((a (assq var (##sys#current-environment)))
+						    ((symbol? (cdr a))))
+					   (##sys#notice "assignment to imported value binding" var)))
 				       (let ((var (##sys#alias-global-hook j #t)))
 					 (if ##sys#eval-environment
 					     (let ([loc (##sys#hash-table-location
 							 ##sys#eval-environment 
 							 var
 							 ##sys#environment-is-mutable) ] )
-					       (unless loc (##sys#error "assignment of undefined identifier" var))
+					       (unless loc
+						 (##sys#error "assignment to undefined identifier" var))
 					       (if (##sys#slot loc 2)
 						   (lambda (v) (##sys#setslot loc 1 (##core#app val v)))
 						   (lambda v (##sys#error "assignment to immutable variable" var)) ) )
