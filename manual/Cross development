@@ -230,6 +230,21 @@ Next, build and install it for the target:
   % ~/cross-chicken/arm-chicken-status
   matchable
 
+=== "Target-only" extensions
+
+Sometimes an extension will only be compilable for the target platform
+(for example libraries that use system-dependent features). In this
+case you will have to work around the problem that the host-compiler
+still may need compile-time information from the target-only
+extension, like the import library of modules. One option is to copy
+the import-library into the repository of the host compiler:
+
+{{
+# optionally, you can compile the import library:
+# ~/cross-chicken/arm-csc -O3 -d0 -s target-only-extension.import.scm
+cp target-only-extension.import.scm ~/cross-chicken/lib/chicken/5
+}}
+
 === Final notes
 
 Cross-development is a tricky process - it often involves countless

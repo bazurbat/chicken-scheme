@@ -1088,7 +1088,7 @@ stage3:
 	  CHICKEN=./$(CHICKEN_PROGRAM)-stage2 \
 	  confclean clean all
 
-# build current head in suib-directory
+# build current head in sub-directory
 
 .PHONY: buildhead
 
