@@ -1,10 +1,70 @@
-4.4.6
+4.5.1
+
+- added `install-target' and `install-dev' makefile target for
+  installing only target system libraries in cross-mode and
+  development files (static libraries and headers)
+- added `[-]no-procedure-checks-for-toplevel-bindings' compiler
+  option and declaration
+- usage of unimported syntax in modules gives more usable
+  error messages; in particular, used but unimported FFI forms are 
+  now detected
+- invalid syntactic forms (mostly `()') encountered by the compiler
+  or interpreter show the contextual form containing the expression,
+  or, if indicated by the context warns about missing imports
+- simplified manual pages of all core tools - they now refer to
+  the output shown by invoking `<tool> -help'
+- added new option `-feature FEATURE' to `chicken-install' tool
+  to pass feature-identifiers to invocations of `csc'
+- removed deprecated `-host-extension' option from `chicken-install'
+- `chicken-status' in a system built for cross-compilation now 
+  lists extensions installed in the target prefix, unless the
+  new `-host' option is given on the command line
+- `chicken-uninstall' in a system built for cross-compilation now 
+  removes extensions installed in the target prefix, unless the
+  new `-host' option is given on the command line
+- added missing entry for `finite?' to the `chicken' module
+  exports
+- added new procedure `port-closed?' to the `library' unit
+  (contributed by Peter Bex)
+- added new procedure `symbol-append' to the library unit
+- the compiler-option `-optimize-level 0' is equivalent to
+  `-no-compiler-syntax -no-usual-integrations`
+- internal rewritings of `map' and `for-each' ensure correct
+  evaluation order of the arguments and does a better job
+  at detecting non-list arguments (thanks to Jim Ursetto)
+- `void' now takes arbitrary arguments and ignores them
+- deprecated `noop' (from the `data-structures' unit) which
+  is now replaced by `void'
+- the `time' macro now performs a major garbage collection
+  before executing the contained expressions and writes
+  the timings in a more compact format to the port given
+  by `(current-error-port)' instead of the standard output
+  port
+- definitions of the form `(define define ...)' and
+  `(define-syntax define-syntax ...)' now trigger an error,
+  as required by R5RS (thanks to Jeronimo Pellegrini and Alex
+  Shinn)
+- deprecated `random-seed' from the `extras' unit, since it
+  is identical to `randomize'
+- added new procedure `create-temporary-directory' to the
+  `files' unit
+- deprecated the optional path separator argument to
+  `make-pathname'
+- slightly improved the performance of keyword argument
+  processing
+- the second argument to `find-files' from the `posix' unit
+  is now optional and defaults to `(constantly #t)'
+- removed the deprecated `canonical-path' and `current-environment'
+  procedures from the `posix' unit
+- warnings that mostly refer to programming style issues are
+  now coined `notes' and are only shown in the interpreter
+  or when debug-mode is enabled or when scrutiny is enabled
+  when compiling
+
+4.5.0
 
 - internal fixes of handling of alternative installation-prefix
   in setup-api
-
-4.4.5
-
 - certain compiler-warnings that are in really just notes
   and don't indicate a possible error (like reimport of
   identifiers) are only shown with -S or in verbose mode
@@ -19,15 +79,11 @@
 - `chicken-uninstall' now always asks before removing 
   extensions, unless `-force' is given
 - improved performance of keyword-argument processing slightly
-- added `fxeven?' and `fxodd?'
 - `export' outside of a module definition has no effect
 - `number->string' now accepts arbitrary bases between 2 and 16
   (thanks to Christian Kellermann)
 - fixed `standard-extension' in `setup-api' module
 - literal constants keep their identity, even when inlined
-
-4.4.4
-
 - Unit library: added `fxodd?' and `fxeven?'
 - All hardcoded special forms have been replaced with
   syntax definitions that expand into internal forms, this
@@ -41,19 +97,12 @@
   to a file to be included as the module body
 - added runtime option `-:G' to force GUI mode (on platforms
   that distinguish between GUI and non-GUI applications)
-
-
-4.4.3
-
 - removed the unsafe runtime library (`libuchicken'), this
   simplifies and speeds up the build and reduces the risk
   of executables loading library units from different
   variants of the runtime system
 - removed the `-unsafe-libraries' option from `chicken'
   and `csc'
-
-4.4.2
-
 - removed bootstrapping target and bootstrapping files from
   development repository; to bootstrap the system, either
   use a release or development-snapshot tarball or fetch
@@ -97,12 +146,6 @@
 - Unit regex: `regexp' now accepts a regular expression
   object as argument
 - Unit regex: removed `glob?'
-
-Special thanks to Mark Carter for patient and thorough
-testing of the Cygwin and mingw builds.
-
-4.4.1
-
 - fixed bug in `chicken-install'/`chicken-uninstall' and
   `chicken-status' that prevented collapsed command-line
   options to be handled correctly.

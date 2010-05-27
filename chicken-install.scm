@@ -528,7 +528,9 @@ EOF
           (rx (regexp "([^:]+):(.+)")))
       (let loop ((args args) (eggs '()))
         (cond ((null? args)
-               (cond (update (update-db))
+               (cond ((and *deploy* (not *prefix*))
+		      (error "`-deploy' only makes sense in combination with `-prefix DIRECTORY`"))
+		     (update (update-db))
                      (else
                       (when (null? eggs)
                         (let ((setups (glob "*.setup")))

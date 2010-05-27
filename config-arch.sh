@@ -27,7 +27,7 @@
 
 
 case "`uname -m`" in
-    i*86) echo "x86";;
+    i*86|BePC) echo "x86";;
     "Power Macintosh"|ppc|powerpc|macppc)
 	case "`uname -s`" in
 	    Darwin) echo "ppc.darwin";;

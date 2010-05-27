@@ -1070,16 +1070,17 @@ EOF
 (define-foreign-variable _stat_st_uid unsigned-int "C_statbuf.st_uid")
 (define-foreign-variable _stat_st_mode unsigned-int "C_statbuf.st_mode")
 
-(define (##sys#stat file)
+(define (##sys#stat file link loc)	; link is ignored
   (let ([r (cond [(fixnum? file) (##core#inline "C_fstat" file)]
 		 [(string? file) (##core#inline "C_stat" (##sys#make-c-string (##sys#expand-home-path file)))]
-		 [else (##sys#signal-hook #:type-error "bad argument type - not a fixnum or string" file)] ) ] )
+		 [else
+		  (##sys#signal-hook #:type-error loc "bad argument type - not a fixnum or string" file)] ) ] )
     (when (fx< r 0)
       (##sys#update-errno)
-      (##sys#signal-hook #:file-error "cannot access file" file) ) ) )
+      (##sys#signal-hook #:file-error loc "cannot access file" file) ) ) )
 
 (define (file-stat f #!optional link)
-  (##sys#stat f)
+  (##sys#stat f #f 'file-stat)
   (vector _stat_st_ino _stat_st_mode _stat_st_nlink
 	  _stat_st_uid _stat_st_gid _stat_st_size
 	  _stat_st_atime _stat_st_ctime _stat_st_mtime

@@ -173,6 +173,7 @@ Makefile.mingw-msys
 Makefile.solaris
 Makefile.bsd
 Makefile.cygwin
+Makefile.haiku
 Makefile.cross-linux-mingw
 config.make
 rules.make
@@ -253,6 +254,8 @@ manual/Bibliography
 manual/Bugs and limitations
 manual/C interface
 manual/Callbacks
+manual/Exceptions
+manual/Cross development
 manual/Data representation
 manual/Declarations
 manual/Deployment

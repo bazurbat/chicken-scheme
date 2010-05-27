@@ -73,3 +73,15 @@
   (assert (eq? 'zzz (pif)))
   (print (xxx))
   (assert (eq? 'zzz (xxx))))
+
+;;; local to module
+
+(define (f1 x) x)
+
+(module m3 ()
+(import scheme chicken)
+(define-compiler-syntax f1
+  (syntax-rules () ((_ x) (list x))))
+)
+
+(assert (= 2 (f1 2)))

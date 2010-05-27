@@ -160,7 +160,7 @@ files in {{FILELIST}} to executable (for installing shell-scripts).
 
 ==== standard-extension
 
- [procedure] (standard-extension ID VERSION #!key static info)
+<procedure>(standard-extension ID VERSION #!key static info)</procedure>
 
 A convenience procedure that combines the compilation and installation of 
 a simple single-file extension. This is roughly equivalent to:
@@ -257,7 +257,7 @@ linking options. If {{compile-only}} is true, then no linking step takes place.
 If the keyword argument {{c++}} is given and true, then the code will be compiled in C++ mode.
 
 
-==== create-directory
+==== create-directory/parents
 
 <procedure>(create-directory/parents PATH)</procedure>
 

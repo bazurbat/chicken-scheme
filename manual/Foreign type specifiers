@@ -281,7 +281,7 @@ struct NAME
 </td></tr><tr><td>(ref TYPE)</td><td>
 TYPE &
 </td></tr><tr><td>(template T1 T2 ...)</td><td>
-T1<T2, ...>
+T1&lt;T2, ...>
 </td></tr><tr><td>(union NAME)</td><td>
 union NAME
 </td></tr><tr><td>(function RTYPE (ATYPE ...) [CALLCONV])</td><td>

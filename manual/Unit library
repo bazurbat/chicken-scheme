@@ -85,21 +85,14 @@ Returns {{#t}} if {{X}} is a fixnum, or {{#f}} otherwise.
 
 ==== Fixnum limits
 
-{{most-positive-fixnum}}
+<constant>most-positive-fixnum</constant><br>
+<constant>most-negative-fixnum</constant><br>
+<constant>fixnum-bits</constant><br>
+<constant>fixnum-precision</constant><br>
 
-{{most-negative-fixnum}}
-
-{{fixnum-bits}}
-
-{{fixnum-precision}}
-
+Platform-specific fixnum limits.
 
 ==== Arithmetic floating-point operations
-
-In safe mode, these procedures throw a type error when given non-float
-arguments. In unsafe mode, these procedures do not check their
-arguments. A non-flonum argument in unsafe mode can crash the
-application.
 
 <procedure>(fp+ X Y)</procedure>
 <procedure>(fp- X Y)</procedure>
@@ -131,6 +124,13 @@ application.
 <procedure>(fpabs X)</procedure>
 <procedure>(fpinteger? X)</procedure>
 
+Arithmetic floating-point operations.
+
+In safe mode, these procedures throw a type error when given non-float
+arguments. In unsafe mode, these procedures do not check their
+arguments. A non-flonum argument in unsafe mode can crash the
+application.
+
 Note: {{fpround}} uses the rounding mode that your C library
 implements, which is usually different from R5RS.
 
@@ -142,25 +142,18 @@ Returns {{#t}} if {{X}} is a flonum, or {{#f}} otherwise.
 
 ==== Flonum limits
 
-{{maximum-flonum}}
+<constant>maximum-flonum</constant><br>
+<constant>minimum-flonum</constant><br>
+<constant>flonum-radix</constant><br>
+<constant>flonum-epsilon</constant><br>
+<constant>flonum-precision</constant><br>
+<constant>flonum-decimal-precision</constant><br>
+<constant>flonum-maximum-exponent</constant><br>
+<constant>flonum-minimum-exponent</constant><br>
+<constant>flonum-maximum-decimal-exponent</constant><br>
+<constant>flonum-minimum-decimal-exponent</constant><br>
 
-{{minimum-flonum}}
-
-{{flonum-radix}}
-
-{{flonum-epsilon}}
-
-{{flonum-precision}}
-
-{{flonum-decimal-precision}}
-
-{{flonum-maximum-exponent}}
-
-{{flonum-minimum-exponent}}
-
-{{flonum-maximum-decimal-exponent}}
-
-{{flonum-minimum-decimal-exponent}}
+Platform-specific flonum limits.
 
 ==== finite?
 
@@ -405,140 +398,7 @@ Transforms {{KEYWORD}} into a string.
 Returns a keyword with the name {{STRING}}.
 
 
-
-
-
-=== Exceptions
-
-
-CHICKEN implements the (currently withdrawn)
-[[http://srfi.schemers.org/srfi-12/srfi-12.html|SRFI-12]] exception system. For
-more information, see the
-[[http://srfi.schemers.org/srfi-12/srfi-12.html|SRFI-12]] document.
-
-
-
-==== condition-case
-
-<macro>(condition-case EXPRESSION CLAUSE ...)</macro>
-
-Evaluates {{EXPRESSION}} and handles any exceptions that are covered by
-{{CLAUSE ...}}, where {{CLAUSE}} should be of the following form:
-
-<enscript highlight=scheme>
-CLAUSE = ([VARIABLE] (KIND ...) BODY ...)
-</enscript>
-
-If provided, {{VARIABLE}} will be bound to the signaled exception
-object. {{BODY ...}} is executed when the exception is a property-
-or composite condition with the kinds given {{KIND ...}} (unevaluated).
-If no clause applies, the exception is re-signaled in the same dynamic
-context as the {{condition-case}} form.
-
-<enscript highlight=scheme>
-(define (check thunk)
-  (condition-case (thunk)
-    [(exn file) (print "file error")]
-    [(exn) (print "other error")]
-    [var () (print "something else")] ) )
-
-(check (lambda () (open-input-file "")))   ; -> "file error"
-(check (lambda () some-unbound-variable))  ; -> "othererror"
-(check (lambda () (signal 99)))            ; -> "something else"
-
-(condition-case some-unbound-variable
-  [(exn file) (print "ignored")] )      ; -> signals error
-
-</enscript>
-
-
-==== get-condition-property
-
-<procedure>(get-condition-property CONDITION KIND PROPERTY [DEFAULT])</procedure>
-
-A slightly more convenient condition property accessor, equivalent to
-
-  ((condition-property-accessor KIND PROPERTY [DEFAULT]) CONDITION)
-
-
-==== System conditions
-
-All error-conditions signaled by the system are of kind {{exn}}.
-The following composite conditions are additionally defined:
-
-<table>
-
-<tr><td> (exn arity) </td><td>
-
-Signaled when a procedure is called with the wrong number of arguments.
-
-</td></tr><tr><td> (exn type) </td><td>
-
-Signaled on type-mismatch errors, for example when an argument of the wrong
-type is passed to a built-in procedure.
-
-</td></tr><tr><td> (exn arithmetic) </td><td>
-
-Signaled on arithmetic errors, like division by zero.
-
-</td></tr><tr><td> (exn i/o) </td><td>
-
-Signaled on input/output errors.
-
-</td></tr><tr><td> (exn i/o file) </td><td>
-
-Signaled on file-related errors.
-
-</td></tr><tr><td> (exn i/o net) </td><td>
-
-Signaled on network errors.
-
-</td></tr><tr><td> (exn bounds) </td><td>
-
-Signaled on errors caused by accessing non-existent elements of a collection.
-
-</td></tr><tr><td> (exn runtime) </td><td>
-
-Signaled on low-level runtime-system error-situations.
-
-</td></tr><tr><td> (exn runtime limit) </td><td>
-
-Signaled when an internal limit is exceeded (like running out of memory).
-
-</td></tr><tr><td> (exn match) </td><td>
-
-Signaled on errors raised by failed matches (see the section on {{match}}).
-
-</td></tr><tr><td> (exn syntax) </td><td>
-
-Signaled on syntax errors.
-
-</td></tr>
-
-</table>
-
-Notes:
-
-* All error-exceptions (of the kind {{exn}}) are non-continuable.
-
-* Error-exceptions of the {{exn}} kind have additional {{arguments}} and
-{{location}} properties that contain the arguments passed to the
-exception-handler and the name of the procedure where the error occurred (if
-available).
-
-* When the {{posix}} unit is available and used, then a user-interrupt
-({{signal/int}}) signals an exception of the kind {{user-interrupt}}.
-
-* the procedure {{condition-property-accessor}} accepts an optional third
-argument. If the condition does not have a value for the desired property and
-if the optional argument is given, no error is signaled and the accessor
-returns the third argument.
-
-
-
 === Environment information and system interface
-
-
 
 ==== argv
 
@@ -1285,7 +1145,5 @@ all values are {{#f}}.
 {{PROPERTIES}} may also be an atom, in which case it is treated as a list of
 one element.
 
----
-Previous: [[Parameters]]
-
-Next: [[Unit eval]]
+----
+Previous: [[Exceptions]] Next: [[Unit eval]]

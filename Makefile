@@ -35,7 +35,7 @@ endif
 
 STANDARD_TARGETS \
 	= all clean distclean spotless install uninstall confclean check \
-	  fullcheck dist libs install-target bench
+	  fullcheck dist libs install-target install-dev bench
 
 SRCDIR = .
 
@@ -55,6 +55,7 @@ $(STANDARD_TARGETS):
 	@echo "  $(MAKE) PLATFORM=cygwin"
 	@echo "  $(MAKE) PLATFORM=solaris"
 	@echo "  $(MAKE) PLATFORM=cross-linux-mingw"
+	@echo "  $(MAKE) PLATFORM=haiku"
 	@echo ""
 	@echo "For more information, consult the README file."
 	@exit 1
@@ -70,7 +71,9 @@ spotless:
 install:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) install
 install-target:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) install
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) install-target
+install-dev:
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) install-dev
 uninstall:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) uninstall
 confclean:

@@ -123,3 +123,12 @@
 			(set! x #t)
 			f1)))))
     (for-each f1 '(1 2 3))))
+
+(newline)
+
+;; Test safety of ##sys#make-c-string
+(handle-exceptions exn (print "Good, unrepresentable C strings cause errors")
+                   (print "BUG! We got, without error, length = "
+                          ((foreign-lambda* int ((c-string str))
+                                            "C_return(strlen(str));")
+                           "foo\x00bar")))

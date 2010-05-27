@@ -1072,7 +1072,7 @@
 	(cond ((not (pair? head))
 	       (##sys#check-syntax 'define form '(_ symbol . #(_ 0 1)))
 	       (##sys#register-export head (##sys#current-module))
-	       (when (eq? (car x) head)
+	       (when (c (r 'define) head)
 		 (##sys#defjam-error x))
 	       `(##core#set! 
 		 ,head 
@@ -1095,7 +1095,7 @@
 	     (##sys#check-syntax 'define-syntax head 'symbol)
 	     (##sys#check-syntax 'define-syntax body '#(_ 1))
 	     (##sys#register-export head (##sys#current-module))
-	     (when (eq? (car form) head)
+	     (when (c (r 'define-syntax) head)
 	       (##sys#defjam-error form))
 	     `(##core#define-syntax ,head ,(car body)))
 	    (else

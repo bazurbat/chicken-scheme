@@ -131,6 +131,8 @@ dependencies, things will get complicated and will involve things like
 patching binaries or writing "trampoline" shell scripts to run your
 application.
 
+Deployment is fully compatible with "cross CHICKENs" (see [[Cross development]]).
+
 ==== Platform-specific notes
 
 ===== Linux
@@ -180,4 +182,4 @@ etc.
 ---
 Previous: [[Extensions]]
 
-Next: [[Data representation]]
+Next: [[Cross development]]

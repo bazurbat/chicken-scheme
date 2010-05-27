@@ -307,6 +307,7 @@ Defines what is usually called a ''compiler macro'' in Lisp: {{NAME}} should be 
 name of a globally or locally bound procedure. Any direct call to this procedure
 will be transformed before compilation, which allows arbitrary rewritings
 of function calls. 
+
 {{TRANSFORMER}} can be a {{syntax-rules}} expression or an explicit-renaming transforme
 procedure. Returning the original form in an explicit-renaming macro or simply
 "falling trough" all patterns in a {{syntax-rules}} form will keep the original
@@ -315,7 +316,8 @@ expression and compile it normally.
 In the interpreter this form does nothing and returns an unspecified value.
 
 Compiler-syntax is always local to the current compilation unit and can not be
-exported.
+exported. Compiler-syntax defined inside a module is not visible outside of that
+module.
 
 {{define-compiler-syntax}} should only be used at top-level. Local compiler-syntax
 can be defined with {{let-compiler-syntax}}.

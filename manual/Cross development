@@ -1,0 +1,268 @@
+[[tags: manual]]
+[[toc:]]
+
+
+== Cross Development
+
+Since CHICKEN generates C code, it is relatively easy to create
+programs and libraries for a different architecture than the one the
+compiler is executing on, a process commonly called ''cross
+compiling''. Basically you can simply compile Scheme code to C and
+then invoke your target-specific cross compiler.  To automate the
+process of invoking the correct C compiler with the correct settings
+and to simplify the use of extensions, CHICKEN can be built in a
+special "cross-compilation" mode.
+
+Note: in the following text we refer to the "target" as being the
+platform on which the software is intended to run in the end. We use
+the term "host" as the system that builds this software. Others use a
+different nomenclature or switch the meaning of the words.
+
+=== Preparations
+
+Make sure you have a cross-toolchain in your {{PATH}}. In this
+example, a Linux system is used to generate binaries for an ARM based
+embedded system.
+
+==== Building the target libraries
+
+First you need a version of the runtime system ({{libchicken}}),
+compiled for the target system. Obtain and unpack a tarball of the
+CHICKEN sources, or check out the code from the official code
+repository, then build the libraries and necessary development files:
+
+{{
+make ARCH= \
+     PREFIX=/usr \
+     PLATFORM=linux 
+     HOSTSYSTEM=arm-none-linux-gnueabi \
+     DESTDIR=$HOME/target \
+     libs install-dev
+}}
+
+This will build the CHICKEN libraries and install them in {{~/target}},
+which we use as a temporary place to store the target files. A few things
+to note:
+
+* {{ARCH}} is empty, since we don't want the build process to detect the
+architecture (since the target-architecture is likely to be different).
+
+* {{PREFIX}} gives the prefix ''on the target system'', under which the
+libraries will finally be installed. In this case it will be {{/usr/lib}}.
+
+* {{PLATFORM}} determines the target platform. It must be one of the officially
+supported platforms CHICKEN runs on.
+
+* {{HOSTSYSTEM}} is an identifier for the target system and will be used as
+the name prefix of the cross C compiler (in this case {{arm-none-linux-gnueabi-gcc}}).
+If your cross compiler does not follow this convention, pass {{C_COMPILER}} and
+{{LIBRARIAN}} to the {{make(1)}} invocation, with the names of the C compiler and
+{{ar(1)}} tool, respectively.
+
+* {{DESTDIR}} holds the directory where the compiled library files will temporarily
+installeds into.
+
+* If you obtained the sources from a source-code repository and not
+from an official release tarball, you will need a {{chicken}}
+executable to compile the Scheme sources of the runtime system. In
+this case pass yet another variable to the {{make(1)}} invocation:
+{{CHICKEN=<where the "chicken" executable is}}.
+
+* You can also put all those variables into a file, say {{config.mk}}
+and run {{make CONFIG=config.mk}}.
+
+You should now have these files on {{~/target}}:
+
+{{
+`-- usr
+    |-- include
+    |   |-- chicken-config.h
+    |   `-- chicken.h
+    |-- lib
+    |   |-- chicken
+    |   |   `-- 5
+    |   |       `-- types.db
+    |   |-- libchicken.a
+    |   `-- libchicken.so
+    `-- share
+}}
+
+You should now transfer {{libchicken.so}} to the target system, and place
+it in {{/usr}}.
+
+==== Building the "cross CHICKEN"
+
+Next, we will build another chicken, one that uses the cross C compiler to
+generate target-specific code that uses the target-specific runtime library
+we have just built.
+
+Again, unpack a CHICKEN release tarball or a source tree and run
+{{make(1)}} once again:
+
+{{
+make PLATFORM=linux \
+     PREFIX=$HOME/cross-chicken \
+     TARGETSYSTEM=arm-none-linux-gnueabi \
+     PROGRAM_PREFIX=arm- \
+     TARGET_PREFIX=$HOME/target/usr \
+     TARGET_RUN_PREFIX=/usr \
+     install
+}}
+
+* {{PREFIX}} gives the place where the "cross CHICKEN" should be installed
+into. It is recommended not to install into a standard location (like {{/usr/local}}
+or {{$HOME}}) - some files will conflict with a normal CHICKEN installation.
+
+* {{TARGETSYSTEM}} gives the name-prefix of the cross C compiler.
+
+* {{PROGRAM_PREFIX}} determines the name-prefix of the CHICKEN tools to be created.
+
+* {{TARGET_PREFIX}} specifies where the target-specific files (libraries and
+headers) are located. This is the location where we installed the runtime
+system into.
+
+* {{TARGET_RUN_PREFIX}} holds the PREFIX that will be effective at runtime
+(so {{libchicken.so}} will be found in {{$TARGET_RUN_PREFIX/lib}}).
+
+* Make sure to use the same version of the CHICKEN sources for the target and
+the cross build.
+
+* If you build the cross CHICKEN from repository sources, the same note
+about the {{CHICKEN}} variable applies as given above.
+
+In {{~/cross-chicken}}, you should find the following:
+
+{{
+|-- bin
+|   |-- arm-chicken
+|   |-- arm-chicken-bug
+|   |-- arm-chicken-install
+|   |-- arm-chicken-profile
+|   |-- arm-chicken-status
+|   |-- arm-chicken-uninstall
+|   |-- arm-csc
+|   `-- arm-csi
+|-- include
+|   |-- chicken-config.h
+|   `-- chicken.h
+|-- lib
+|   |-- chicken
+|   |   `-- 5
+|   |       :
+|   |
+|   |-- libchicken.a
+|   |-- libchicken.so -> libchicken.so.5
+|   `-- libchicken.so.5
+`-- share
+    |-- chicken
+    |   |-- doc
+    :   ;   :
+    |   |
+    |   `-- setup.defaults
+    `-- man
+        `-- man1
+            :
+}}
+
+To make sure that the right C compiler is used, we ask {{arm-csc}} to show
+the name of the cross C compiler:
+
+  % ~/cross-chicken/arm-csc -cc-name
+  arm-none-linux-gnueabi-gcc
+
+Looks good.
+
+=== Using it
+
+==== Compiling simple programs
+
+  % ~/cross-chicken/arm-csc -v hello.scm
+  /home/felix/cross-chicken/arm-cross-chicken/bin/arm-chicken hello.scm -output-file hello.c -quiet
+  arm-none-linux-gnueabi-gcc hello.c -o hello.o -c -fno-strict-aliasing -DHAVE_CHICKEN_CONFIG_H -g -Wall \
+    -Wno-unused -I /home/felix/cross-chicken/arm-chicken/include
+  rm hello.c
+  arm-none-linux-gnueabi-gcc hello.o -o hello -L/home/felix/cross-chicken/arm-chicken/lib  -Wl,-R/usr/lib -lm \
+    -ldl -lchicken
+  rm hello.o
+
+Is it an ARM binary?
+
+  % file hello
+  hello: ELF 32-bit LSB executable, ARM, version 1 (SYSV), for GNU/Linux 2.6.16, dynamically linked (uses shared libs), not stripped
+
+Yes, looks good.
+
+==== Compiling simple extensions
+
+Invoking the cross {{arm-chicken-install}} for simple extensions that
+only provide runtime code is quite straightforward. The only
+difference is that we don't want the extension to be installed in the
+extension repository of the cross CHICKEN: the generated binary is
+(usually) not executable on the build platform, and should
+additionally be moved into the repository path of the native
+CHICKEN. For this to work, we pass the {{-prefix}} option to
+{{chicken-install}}:
+
+  % ~/cross-chicken/arm-chicken-install -prefix $HOME/target/usr defstruct
+
+=== Compiling "host" extensions
+
+''Host'' extensions are extensions that have to execute on the build
+platform, like for example compiled macro extension packages. You also
+have to install all extensions that you intend to use on the target
+system for your cross CHICKEN as well, since compile-time information
+must be executable on the host (i.e. syntax definitions).
+
+Use the {{-host}} option to {{arm-chicken-install}} to force
+building and installing an extension for the cross CHICKEN (and not
+the native target):
+
+  % ~/cross-chicken/arm-chicken-install -host matchable
+
+Now {{matchable}} is installed for the cross CHICKEN:
+
+  % ~/cross-chicken/arm-chicken-status -host
+  matchable
+
+Next, build and install it for the target:
+
+  $ ~/cross-chicken/arm-chicken-install matchable
+  % ~/cross-chicken/arm-chicken-status
+  matchable
+
+=== "Target-only" extensions
+
+Sometimes an extension will only be compilable for the target platform
+(for example libraries that use system-dependent features). In this
+case you will have to work around the problem that the host-compiler
+still may need compile-time information from the target-only
+extension, like the import library of modules. One option is to copy
+the import-library into the repository of the host compiler:
+
+{{
+# optionally, you can compile the import library:
+# ~/cross-chicken/arm-csc -O3 -d0 -s target-only-extension.import.scm
+cp target-only-extension.import.scm ~/cross-chicken/lib/chicken/5
+}}
+
+=== Final notes
+
+Cross-development is a tricky process - it often involves countless
+manual steps and it is very easy to forget an important detail or mix
+up target and host systems. CHICKEN attempts to make this easier but
+the process still is rather low-level. Also, full 100% platform neutrality
+is hard to achieve - for example the ''features'' that you can test
+with {{feature?}} and {{cond-expand}} represent the host system, not
+the target system, so code like this will not work as intended,
+when cross compiled:
+
+<enscript highlite=scheme>
+(cond-expand
+  (x86 (do-something))
+  ...)
+</enscript>
+
+
+----
+Previous: [[Deployment]]
+Next: [[Data representation]]

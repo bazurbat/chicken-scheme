@@ -66,6 +66,7 @@
 #define C_close_file(p)	      (C_fclose((C_FILEPTR)(C_port_file(p))), C_SCHEME_UNDEFINED)
 #define C_a_f64peek(ptr, c, b, i)  C_flonum(ptr, ((double *)C_data_pointer(b))[ C_unfix(i) ])
 #define C_fetch_c_strlen(b, i) C_fix(strlen((C_char *)C_block_item(b, C_unfix(i))))
+#define C_asciiz_strlen(str) C_fix(strlen(C_c_string(str)))
 #define C_peek_c_string(b, i, to, len) (C_memcpy(C_data_pointer(to), (C_char *)C_block_item(b, C_unfix(i)), C_unfix(len)), C_SCHEME_UNDEFINED)
 #define C_free_mptr(p, i)     (C_free((void *)C_block_item(p, C_unfix(i))), C_SCHEME_UNDEFINED)
 #define C_free_sptr(p, i)     (C_free((void *)(((C_char **)C_block_item(p, 0))[ C_unfix(i) ])), C_SCHEME_UNDEFINED)
@@ -2966,20 +2967,30 @@ EOF
     (##core#undefined) ) )
 
 (define (##sys#user-print-hook x readable port)
-  (let* ([type (##sys#slot x 0)]
-	 [a (assq type ##sys#record-printers)] )
-    (cond [a ((##sys#slot a 1) x port)]
-	  [else
+  (let* ((type (##sys#slot x 0))
+	 (a (assq type ##sys#record-printers)) )
+    (cond (a (handle-exceptions ex
+		(begin
+		  (##sys#print "#<Error in printer of record type `" #f port)
+		  (##sys#print (##sys#symbol->string type) #f port)
+		  (if (##sys#structure? ex 'condition)
+		      (and-let* ((a (member '(exn . message) (##sys#slot ex 2))))
+			(##sys#print "': " #f port)
+			(##sys#print (cadr a) #f port)
+			(##sys#write-char-0 #\> port))
+		      (##sys#print "'>" #f port)))
+	       ((##sys#slot a 1) x port)))
+	  (else
 	   (##sys#print "#<" #f port)
 	   (##sys#print (##sys#symbol->string type) #f port)
 	   (case type
-	     [(condition)
+	     ((condition)
 	      (##sys#print ": " #f port)
-	      (##sys#print (##sys#slot x 1) #f port) ]
-	     [(thread)
+	      (##sys#print (##sys#slot x 1) #f port) )
+	     ((thread)
 	      (##sys#print ": " #f port)
-	      (##sys#print (##sys#slot x 6) #f port) ] )
-	   (##sys#print #\> #f port) ] ) ) )
+	      (##sys#print (##sys#slot x 6) #f port) ) )
+	   (##sys#write-char-0 #\> port) ) ) ) )
 
 (define ##sys#with-print-length-limit
   (let ([call-with-current-continuation call-with-current-continuation])
@@ -3727,10 +3738,16 @@ EOF
   ;; *** '4' is platform dependent!
   (##core#inline_allocate ("C_a_unsigned_int_to_num" 4) (##sys#slot ptr 0)) )
 
-(define (##sys#make-c-string str)
-  (##sys#string-append
-   str
-   (string (##core#inline "C_make_character" (##core#inline "C_unfix" 0)))) )
+(define (##sys#make-c-string str #!optional (loc '##sys#make-c-string))
+  (let* ([len (##sys#size str)]
+         [buf (##sys#make-string (fx+ len 1))] )
+    (##core#inline "C_substring_copy" str buf 0 len 0)
+    (##core#inline "C_setsubchar" buf len #\nul)
+    (if (fx= (##core#inline "C_asciiz_strlen" buf) len)
+        buf
+        (##sys#signal-hook #:type-error loc
+                           "cannot represent string with NUL bytes as C string"
+                           str))) )
 
 (define ##sys#peek-signed-integer (##core#primitive "C_peek_signed_integer"))
 (define ##sys#peek-unsigned-integer (##core#primitive "C_peek_unsigned_integer"))
@@ -4610,5 +4627,6 @@ EOF
       (pnum major)
       (pchr #\/)
       (pnum minor)
-      (pstr " GCs")
-      (pchr #\newline))))
+      (pstr " GCs")))
+  (##sys#write-char-0 #\newline ##sys#standard-error)
+  (##sys#flush-output ##sys#standard-error))

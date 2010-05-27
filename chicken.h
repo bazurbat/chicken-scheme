@@ -37,7 +37,7 @@
 #define ___CHICKEN
 
 #define C_MAJOR_VERSION   4
-#define C_MINOR_VERSION   4
+#define C_MINOR_VERSION   5
 
 /*
  * N.B. This file MUST not rely upon "chicken-config.h"
@@ -92,6 +92,10 @@
 # include <unistd.h>
 # include <inttypes.h>
 # include <sys/types.h>
+#endif
+
+#if defined(__HAIKU__)
+# include <kernel/image.h>
 #endif
 
 /* Byteorder in machine word */
@@ -665,6 +669,8 @@ typedef unsigned __int64   uint64_t;
 # define C_SOFTWARE_VERSION "hpux"
 #elif defined(__DragonFly__)
 # define C_SOFTWARE_VERSION "dragonfly"
+#elif defined(__HAIKU__)
+# define C_SOFTWARE_VERSION "haiku"
 #elif defined(__sun__)
 # if defined(__svr4__)
 #   define C_SOFTWARE_VERSION "solaris"
@@ -1570,6 +1576,7 @@ C_fctexport C_word C_fcall C_mutate(C_word *slot, C_word val) C_regparm;
 C_fctexport void C_fcall C_reclaim(void *trampoline, void *proc) C_regparm C_noret;
 C_fctexport void C_save_and_reclaim(void *trampoline, void *proc, int n, ...) C_noret;
 C_fctexport void C_fcall C_rereclaim2(C_uword size, int double_plus) C_regparm;
+C_fctexport void C_unbound_variable(C_word sym);
 C_fctexport C_word C_fcall C_retrieve(C_word sym) C_regparm;
 C_fctexport C_word C_fcall C_retrieve2(C_word val, char *name) C_regparm;
 C_fctexport void *C_fcall C_retrieve_proc(C_word closure) C_regparm;
@@ -1617,6 +1624,7 @@ C_fctexport void C_use_private_repository(C_char *path);
 C_fctexport C_char *C_private_repository_path();
 
 C_fctimport void C_ccall C_toplevel(C_word c, C_word self, C_word k) C_noret;
+C_fctimport void C_ccall C_invalid_procedure(int c, C_word self, ...) C_noret;
 C_fctexport void C_ccall C_stop_timer(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...) C_noret;
 C_fctexport void C_ccall C_do_apply(C_word n, C_word closure, C_word k) C_noret;
@@ -2209,6 +2217,35 @@ C_inline C_word C_u_i_assq(C_word x, C_word lst)
 }
 
 
+C_inline C_word
+C_fast_retrieve(C_word sym)
+{
+  C_word val = C_block_item(sym, 0);
+
+  if(val == C_SCHEME_UNBOUND)
+    C_unbound_variable(sym);
+
+  return val;
+}
+
+
+C_inline void *
+C_fast_retrieve_proc(C_word closure)
+{
+  if(C_immediatep(closure) || C_header_bits(closure) != C_CLOSURE_TYPE) 
+    return (void *)C_invalid_procedure;
+  else 
+    return (void *)C_block_item(closure, 0);
+}
+
+
+C_inline void *
+C_fast_retrieve_symbol_proc(C_word sym)
+{
+  return C_fast_retrieve_proc(C_fast_retrieve(sym));
+}
+
+
 #ifdef C_PRIVATE_REPOSITORY
 # if defined(C_MACOSX) && defined(C_GUI)
 #  include <CoreFoundation/CoreFoundation.h>
@@ -2220,13 +2257,17 @@ C_path_to_executable(C_char *fname)
 
   if(buffer == NULL) return NULL;
 
-# ifdef __linux__
+# if defined(__linux__) || defined(__sun)
   C_char linkname[64]; /* /proc/<pid>/exe */
   pid_t pid;
   int ret;
 	
   pid = C_getpid();
+#  ifdef __linux__
   C_sprintf(linkname, "/proc/%i/exe", pid);
+#  else
+  C_sprintf(linkname, "/proc/%i/path/a.out", pid); /* SunOS / Solaris */
+#  endif
   ret = C_readlink(linkname, buffer, C_MAX_PATH - 1);
 
   if(ret == -1 || ret >= C_MAX_PATH - 1)
@@ -2339,6 +2380,25 @@ C_path_to_executable(C_char *fname)
 
     return NULL;
   }
+# elif defined(__HAIKU__)
+{
+  image_info info;
+  int32 cookie = 0;
+  int32 i;
+
+  while (get_next_image_info(0, &cookie, &info) == B_OK) {
+    if (info.type == B_APP_IMAGE) {
+      C_strcat(buffer, info.name);
+
+      for(i = C_strlen(buffer); i >= 0 && buffer[ i ] != '/'; --i);
+
+      buffer[ i ] = '\0';
+
+      return buffer;
+    }
+  }
+}
+  return NULL;
 # else
   return NULL;
 # endif

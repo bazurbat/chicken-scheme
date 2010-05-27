@@ -90,7 +90,8 @@
 	     (scan val e)
 	     (let ((p (alist-ref var previous)))
 	       (when (and p (not (memq var unsafe)))
-		 (##sys#notice
+		 ;; disabled for the moment - this doesn't really look like it's helpful
+		 #;(##sys#notice
 		  (sprintf "dropping assignment of unused value to global variable `~s'"
 		    var))
 		 (copy-node!
