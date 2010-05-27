@@ -17,9 +17,14 @@ if test -n "$MSYSTEM"; then
     cp ../libchicken.dll .
 fi
 
+case `uname -s` in
+    *BSD*|*bsd*) timeopts="-c";;
+    *) timeopts="-f '%E elapsed, %U user, %S system'"
+esac
+
 run()
 {
-    /usr/bin/time -f '%E elapsed, %U user, %S system' ./a.out
+    /usr/bin/time $timeopts ./a.out
 }
 
 echo
@@ -32,7 +37,7 @@ $compile null.scm -O5
 run
 
 echo -n "compilation ... "
-/usr/bin/time -f '%E elapsed, %U user, %S system' $compile compiler.scm -O5
+/usr/bin/time $timeopts $compile compiler.scm -O5
 
 echo -n "compiler ... "
 run
