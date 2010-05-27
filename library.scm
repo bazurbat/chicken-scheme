@@ -4463,10 +4463,11 @@ EOF
 
 ;;; Function debug info:
 
+(define (##sys#lambda-info? x)
+  (and (not (##sys#immediate? x)) (##core#inline "C_lambdainfop" x)))
+
 (define (##sys#lambda-info proc)
-  (##sys#lambda-decoration 
-   proc 
-   (lambda (x) (and (not (##sys#immediate? x)) (##core#inline "C_lambdainfop" x))) ) )
+  (##sys#lambda-decoration proc ##sys#lambda-info?))
 
 (define (##sys#lambda-info->string info)
   (let* ((sz (##sys#size info))
@@ -4517,29 +4518,38 @@ EOF
 (define setter ##sys#setter)
 
 (define (getter-with-setter get set)
-  (##sys#decorate-lambda
-   get
-   setter?
-   (lambda (proc i)
-     (##sys#setslot proc i (cons setter-tag set))
-     proc) ) )
+  (let ((getdec (##sys#lambda-info get))
+	(p1 (##sys#decorate-lambda
+	     get
+	     setter?
+	     (lambda (proc i)
+	       (##sys#setslot proc i (cons setter-tag set))
+	       proc) )))
+    (if getdec
+	(##sys#decorate-lambda
+	 p1
+	 ##sys#lambda-info?
+	 (lambda (p i)
+	   (##sys#setslot p i getdec)
+	   p))
+	p1)))
 
-(define car (getter-with-setter car set-car!))
-(define cdr (getter-with-setter cdr set-cdr!))
-(define caar (getter-with-setter caar (lambda (x y) (set-car! (car x) y))))
-(define cadr (getter-with-setter cadr (lambda (x y) (set-car! (cdr x) y))))
-(define cdar (getter-with-setter cdar (lambda (x y) (set-cdr! (car x) y))))
-(define cddr (getter-with-setter cddr (lambda (x y) (set-cdr! (cdr x) y))))
-(define caaar (getter-with-setter caaar (lambda (x y) (set-car! (caar x) y))))
-(define caadr (getter-with-setter caadr (lambda (x y) (set-car! (cadr x) y))))
-(define cadar (getter-with-setter cadar (lambda (x y) (set-car! (cdar x) y))))
-(define caddr (getter-with-setter caddr (lambda (x y) (set-car! (cddr x) y))))
-(define cdaar (getter-with-setter cdaar (lambda (x y) (set-cdr! (caar x) y))))
-(define cdadr (getter-with-setter cdadr (lambda (x y) (set-cdr! (cadr x) y))))
-(define cddar (getter-with-setter cddar (lambda (x y) (set-cdr! (cdar x) y))))
-(define cdddr (getter-with-setter cdddr (lambda (x y) (set-cdr! (cddr x) y))))
-(define string-ref (getter-with-setter string-ref string-set!))
-(define vector-ref (getter-with-setter vector-ref vector-set!))
+(set! car (getter-with-setter car set-car!))
+(set! cdr (getter-with-setter cdr set-cdr!))
+(set! caar (getter-with-setter caar (lambda (x y) (set-car! (car x) y))))
+(set! cadr (getter-with-setter cadr (lambda (x y) (set-car! (cdr x) y))))
+(set! cdar (getter-with-setter cdar (lambda (x y) (set-cdr! (car x) y))))
+(set! cddr (getter-with-setter cddr (lambda (x y) (set-cdr! (cdr x) y))))
+(set! caaar (getter-with-setter caaar (lambda (x y) (set-car! (caar x) y))))
+(set! caadr (getter-with-setter caadr (lambda (x y) (set-car! (cadr x) y))))
+(set! cadar (getter-with-setter cadar (lambda (x y) (set-car! (cdar x) y))))
+(set! caddr (getter-with-setter caddr (lambda (x y) (set-car! (cddr x) y))))
+(set! cdaar (getter-with-setter cdaar (lambda (x y) (set-cdr! (caar x) y))))
+(set! cdadr (getter-with-setter cdadr (lambda (x y) (set-cdr! (cadr x) y))))
+(set! cddar (getter-with-setter cddar (lambda (x y) (set-cdr! (cdar x) y))))
+(set! cdddr (getter-with-setter cdddr (lambda (x y) (set-cdr! (cddr x) y))))
+(set! string-ref (getter-with-setter string-ref string-set!))
+(set! vector-ref (getter-with-setter vector-ref vector-set!))
 
 
 ;;; Property lists

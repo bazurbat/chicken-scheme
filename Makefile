@@ -35,7 +35,7 @@ endif
 
 STANDARD_TARGETS \
 	= all clean distclean spotless install uninstall confclean check \
-	  fullcheck dist libs install-target install-dev bench
+	  fullcheck dist libs install-target install-dev bench boot-chicken
 
 SRCDIR = .
 
@@ -89,4 +89,7 @@ dist:
 	csi -s scripts/makedist.scm
 libs:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) libs
+boot-chicken:
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) boot-chicken
+
 endif
