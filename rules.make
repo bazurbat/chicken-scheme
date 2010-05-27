@@ -1097,3 +1097,12 @@ buildhead:
 	git archive --format=tar --prefix=chicken-`cat buildversion`/ $(HEAD) | tar x
 	cd chicken-`cat buildversion`; $(MAKE) -f Makefile.$(PLATFORM) \
 	  PLATFORM=$(PLATFORM) PREFIX=`pwd` CONFIG= CHICKEN=$(CHICKEN) all install
+
+
+# build static bootstrapping chicken
+
+.PHONY: boot-chicken
+
+boot-chicken:
+	$(MAKE) -f Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) PREFIX=/nowhere CONFIG= \
+	  PROGRAM_SUFFIX=-boot STATICBUILD=1 confclean chicken-boot$(EXE) confclean
