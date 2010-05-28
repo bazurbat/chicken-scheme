@@ -148,37 +148,7 @@ for C libraries ([[http://www.swig.org]]).
 
 This chapter provides you with an overview of the entire system, with
 enough information to get started writing and running small Scheme
-programs. Subsequent chapters cover
-
-* [[Basic mode of operation]]: Compiling Scheme files.
-
-* [[Using the compiler]]: Explains how to use CHICKEN to compile
-  programs and execute them.
-
-* [[Using the interpreter]]: Invocation and usage of {{csi}}, the
-  CHICKEN interpreter
-
-* [[Supported language]]: The language implemented by CHICKEN
-  (deviations from the standard and extensions).
-
-* [[Interface to external functions and variables]]: Accessing C and
-  C++ code and data.
-
-* [[Extensions]]: Packaging and installing extension libraries.
-
-* [[Cross development]] : Building software for a different architecture.
-
-* [[Data representation]]: How Scheme data is internally represented.
-
-* [[Bugs and limitations]]: Things that do not work yet.
-
-* [[FAQ]]: A list of Frequently Asked Questions about CHICKEN (and
-  their answers!).
-
-* [[Acknowledgements]]: A list of some of the people that have
-  contributed to make CHICKEN what it is.
-
-* [[Bibliography]]: Links to documents that may be of interest.
+programs.
 
 === CHICKEN repositories, websites, and community
 
@@ -232,7 +202,7 @@ can pretty much ignore the C compiler once you have installed it.)
   Unix-style development/build environment, again ported from free
   software.
 *** You can build CHICKEN either with MinGW alone or with MinGW plus 
-  MSys. Both approaches produce a CHICKEN built against the mingw headers 
+  MSYS. Both approaches produce a CHICKEN built against the mingw headers 
   and import libraries.
   The only difference is the environment where you actually run make.
   {{Makefile.mingw}} is can be used in {{cmd.exe}} with the version of make

@@ -388,6 +388,6 @@ are registered as features during compile-time, so {{cond-expand}}
 knows about them.
 
 ---
-Previous: [[Modules and macros]]
+Previous: [[Modules]]
 
 Next: [[Parameters]]
