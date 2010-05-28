@@ -507,7 +507,7 @@ EOF
     (when osx
       (set! link-options (cons "-framework CoreFoundation" link-options))))
 
-  (let loop ([args args])
+  (let loop ((args args))
     (cond [(null? args)
 	   ;; Builtin search directory options do not override explict options
            (set! compile-options (append compile-options builtin-compile-options))
