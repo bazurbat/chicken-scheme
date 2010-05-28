@@ -167,7 +167,7 @@ C_confirmation_dialog(char *msg, char *caption, int def) { return -1; }
   (let ((dialog (foreign-lambda int "C_confirmation_dialog" c-string c-string int)))
     (lambda (str #!key default title (abort reset))
       (define (get-input)
-	(if C_HAS_MESSAGE_BOX
+	(if (and C_HAS_MESSAGE_BOX (not (##sys#fudge 4))) ; C_gui_mode
 	    (let ((r (dialog 
 		      str
 		      (or title "CHICKEN Runtime")
