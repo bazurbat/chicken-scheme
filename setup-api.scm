@@ -48,7 +48,7 @@
      chicken-prefix 			;XXX remove at some stage from exports
      find-library find-header 
      program-path remove-file* 
-     patch yes-or-no? abort-setup
+     patch abort-setup
      setup-root-directory create-directory/parents
      test-compile try-compile run-verbose
      extra-features
@@ -174,21 +174,6 @@
 
 (define abort-setup (make-parameter (cut exit 1)))
 
-(define (yes-or-no? str #!key default (abort (abort-setup)))
-  (let loop ()
-    (printf "~%~A (yes/no/abort) " str)
-    (when default (printf "[~A] " default))
-    (flush-output)
-    (let ((ln (read-line)))
-      (cond ((eof-object? ln) (set! ln "abort"))
-	    ((and default (string=? "" ln)) (set! ln default)) )
-      (cond ((string-ci=? "yes" ln) #t)
-	    ((string-ci=? "no" ln) #f)
-	    ((string-ci=? "abort" ln) (abort))
-	    (else
-	     (printf "~%Please enter \"yes\", \"no\" or \"abort\".~%")
-	     (loop) ) ) ) ) )
-  
 (define (patch which rx subst)
   (when (setup-verbose-mode) (printf "patching ~A ...~%" which))
   (if (list? which)
