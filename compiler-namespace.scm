@@ -58,7 +58,6 @@
  compiler-source-file
  compiler-syntax-enabled
  compiler-syntax-statistics
- compiler-warning
  compute-database-statistics
  constant-declarations
  constant-table

@@ -95,14 +95,6 @@ Disable timer-interrupts checks in the compiled program. Threads can
 not be preempted in main- or library-units that contain this declaration.
 
 
-=== disable-warning
-
- [declaration specifier] (disable-warning CLASS ...)
-
-Disable warnings of type {{CLASS ...}} (equivalent to the {{-disable-warning CLASS}}
-compiler option).
-
-
 === emit-import-library
 
  [declaration specifier] (emit-import-library MODULENAME | (MODULENAME FILENAME) ...)

@@ -142,7 +142,9 @@
 (define-constant complex-options
   '(-debug -output-file -heap-size -nursery -stack-size -compiler -unit -uses -keyword-style
     -optimize-level -include-path -database-size -extend -prelude -postlude -prologue -epilogue 
-    -inline-limit -profile-name -disable-warning -emit-inline-file -types
+    -inline-limit -profile-name
+    -disable-warning			; OBSOLETE
+    -emit-inline-file -types
     -feature -debug-level -heap-growth -heap-shrinkage -heap-initial-size -consult-inline-file
     -emit-import-library -static-extension))
 
@@ -337,7 +339,6 @@ Usage: #{csc} FILENAME | OPTION ...
   Debugging options:
 
     -w  -no-warnings               disable warnings
-    -disable-warning CLASS         disable specific class of warnings
     -d0 -d1 -d2 -debug-level NUMBER
                                    set level of available debugging information
     -no-trace                      disable rudimentary debugging information

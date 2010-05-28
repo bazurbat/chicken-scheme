@@ -25,7 +25,6 @@
 
 
 (declare 
-  (disable-warning var redef)
   (usual-integrations)
   (hide d))
 

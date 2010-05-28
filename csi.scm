@@ -29,7 +29,6 @@
   (uses chicken-syntax srfi-69 ports extras)
   (usual-integrations)
   (disable-interrupts)
-  (disable-warning var)
   (compile-syntax)
   (foreign-declare #<<EOF
 #if (defined(_MSC_VER) && defined(_WIN32)) || defined(HAVE_DIRECT_H)

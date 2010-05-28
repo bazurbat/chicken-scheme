@@ -76,18 +76,6 @@ the source text should be read from standard input.
 
 ; -disable-stack-overflow-checks : Disables detection of stack overflows. This is equivalent to running the compiled executable with the {{-:o}} runtime option.
 
-; -disable-warning CLASS : Disables specific class of warnings, may be given multiple times. The following classes are defined:
-
-     usage              warnings related to command-line arguments
-     type               warnings related to type-conversion
-     ext                warnings related to extension libraries
-     var                warnings related to variable- and syntax-definitions and use
-     const              warnings related to constant-definitions
-     syntax             syntax-related warnings
-     redef              warnings about redefinitions of standard- or extended-bindings
-     call               warnings related to known procedure calls
-     ffi                warnings related to the foreign function interface
-
 ; -dynamic : This option should be used when compiling files intended to be loaded dynamically into a running Scheme program.
 
 ; -epilogue FILENAME : Includes the file named {{FILENAME}} at the end of the compiled source file. The include-path is not searched. This option may be given multiple times.
