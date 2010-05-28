@@ -295,6 +295,8 @@ CSI ?= csi$(EXE)
 CHICKEN_OPTIONS = -optimize-level 2 -include-path . -include-path $(SRCDIR) -inline
 ifdef DEBUGBUILD
 CHICKEN_OPTIONS += -feature debugbuild -scrutinize -types $(SRCDIR)types.db
+else
+CHICKEN_OPTIONS += -no-warnings
 endif
 CHICKEN_OPTIONS += $(EXTRA_CHICKEN_OPTIONS)
 CHICKEN_LIBRARY_OPTIONS = $(CHICKEN_OPTIONS) -explicit-use -no-trace
