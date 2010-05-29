@@ -943,7 +943,7 @@
 (fifth (procedure fifth (pair) *))
 (filter (procedure filter ((procedure (*) *) list) list))
 (filter! (procedure filter! ((procedure (*) *) list) list))
-(filter-map (procedure filter-map ((procedure (*) *) list #!rest list) list))
+(filter-map (procedure filter-map ((procedure (* #!rest) *) list #!rest list) list))
 (find (procedure find ((procedure (*) *) list) *))
 (find-tail (procedure find-tail ((procedure (*) *) list) *))
 (first (procedure first (pair) *))
