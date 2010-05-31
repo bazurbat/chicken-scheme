@@ -974,10 +974,10 @@
 			(let ([tmp (gensym)])
 			  `(let ([,tmp ,param])
 			     (if ,tmp
-				 (slot-ref ,param 'this)
+				 (slot-value ,param 'this)
 				 '#f) ) ) ]
 		       [(nonnull-instance)
-			`(slot-ref ,param 'this) ]
+			`(slot-value ,param 'this) ]
 		       [(const) (repeat (cadr t))]
 		       [(enum)
 			(if unsafe param `(##sys#foreign-integer-argument ,param))]
