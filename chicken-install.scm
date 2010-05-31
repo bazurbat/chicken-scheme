@@ -397,7 +397,7 @@
 			   (not (yes-or-no?
 				 (string-append
 				  "You specified `-no-install', but this extension has dependencies"
-				  " that are required for building. Do you still want to install them?")
+				  " that are required for building.\nDo you still want to install them?")
 				 abort: abort-setup)))
 		 (print "aborting installation.")
 		 (cleanup)

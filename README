@@ -340,11 +340,14 @@
 	release tarball, unpack it, change into the extracted
 	directory and enter
 
-          make PLATFORM=<platform> boot-chicken
+          make PLATFORM=<platform> CHICKEN=<path-to-existing-chicken> \
+            boot-chicken
 
 	This will produce a statically linked binary with the name
 	"chicken-boot[.exe]" that can be given as the value of the
-	"CHICKEN" argument when invoking make(1).
+	"CHICKEN" argument when invoking make(1). Note that the path
+	to an existing `chicken' binary must be given to use it for
+	compiling the Scheme code of the runtime-system and compiler.
 
 
  7. Emacs support

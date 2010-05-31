@@ -1091,9 +1091,9 @@
 	  `(let ((,tmp ,body))
 	     (and ,tmp
 		  (not (##sys#null-pointer? ,tmp))
-		  (make ,(caddr type) 'this ,tmp) ) ) ) ]
+		  (make-instance ,(caddr type) 'this ,tmp) ) ) ) ]
        [(and (list? type) (= 3 (length type)) (eq? 'nonnull-instance (car type)))
-	`(make ,(caddr type) 'this ,body) ]
+	`(make-instance ,(caddr type) 'this ,body) ]
        [else body] ) ] ) )
 
 
