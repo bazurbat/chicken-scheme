@@ -855,11 +855,9 @@
 			     (gen #t "C_word ab[" demand "],*a=ab;") ) ]
 			[else
 			 (unless direct (gen #t "C_word *a;"))
-			 (when looping (gen #t "loop:")) 
 			 (when (and direct (not unsafe) (not disable-stack-overflow-checking))
-			   ;;XXX this can be lifted out of the loop, if the procedure
-			   ;;    does not allocate (suggested by Benedikt Rosenau):
-			   (gen #t "C_stack_check;") ) ] )
+			   (gen #t "C_stack_check;") )
+			 (when looping (gen #t "loop:")) ] )
 		  (when (and external (not unsafe) (not no-argc-checks) (not customizable))
 		    ;; (not customizable) implies empty-closure
 		    (if (eq? rest-mode 'none)
@@ -873,12 +871,6 @@
 	   (when (and (not (eq? 'toplevel id))
 		      (not direct)
 		      (or rest external (> demand 0)) )
-;; 	     (cond [(> nec 1)
-;; 		    (gen #t "C_adjust_stack(" nec ");")
-;; 		    (do ([i (if empty-closure 1 0) (+ i 1)])
-;; 			((>= i n))
-;; 		      (gen #t "C_rescue(t" i #\, (- n i 1) ");") ) ]
-;; 		   [(= nec 1) (gen #t "C_save(" (if empty-closure "t1" "t0") ");")] )
 	     (cond [rest
 		    (gen #t (if (> nec 0) "C_save_and_reclaim" "C_reclaim") "((void*)tr" n #\r)
 		    (gen ",(void*)" id "r")
