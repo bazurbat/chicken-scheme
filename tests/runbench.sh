@@ -21,12 +21,12 @@ fi
 case `uname -s` in
     *BSD*|*bsd*) timeopts="-c";;
     Darwin) timeopts="";;
-    *) timeopts="-f '%E elapsed, %U user, %S system'"
+    *) timeopts='-f "%E elapsed, %U user, %S system"'
 esac
 
 run()
 {
-    /usr/bin/time $timeopts ./a.out
+    /usr/bin/time "$timeopts" ./a.out
 }
 
 echo
@@ -39,7 +39,7 @@ $compile null.scm -O5
 run
 
 echo -n "compilation ... "
-/usr/bin/time $timeopts $compile compiler.scm
+/usr/bin/time "$timeopts" $compile compiler.scm
 
 echo -n "compiler ... "
 run
