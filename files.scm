@@ -378,7 +378,7 @@ EOF
 		     (number->string n 16)))))
 	  (if (directory-exists? pn) 
 	      (loop)
-	      (let ((r (##core#inline "C_mkdir" (##sys#make-c-string pn))))
+	      (let ((r (##core#inline "C_mkdir" (##sys#make-c-string pn 'create-temporary-directory))))
 		(if (eq? r 0)
 		    pn
 		    (##sys#signal-hook 

@@ -889,9 +889,9 @@
 	       (display " ...\n") 
 	       (flush-output)] )
 	(or (and fname
-		 (or (##sys#dload (##sys#make-c-string fname) topentry #t) 
+		 (or (##sys#dload (##sys#make-c-string fname 'load) topentry #t) 
 		     (and (not (has-sep? fname))
-			  (##sys#dload (##sys#make-c-string (##sys#string-append "./" fname)) topentry #t) ) ) )
+			  (##sys#dload (##sys#make-c-string (##sys#string-append "./" fname) 'load) topentry #t) ) ) )
 	    (call-with-current-continuation
 	     (lambda (abrt)
 	       (fluid-let ((##sys#read-error-with-line-number #t)
@@ -989,14 +989,14 @@
 		    (string-append 
 		     "C_"
 		     (##sys#string->c-identifier (##sys#slot uname 1)) 
-		     "_toplevel") ) ] )
+		     "_toplevel") 'load-library) ] )
 	      (when (load-verbose)
 		(display "; loading library ")
 		(display uname)
 		(display " ...\n") )
 	      (let loop ([libs libs])
 		(cond [(null? libs) #f]
-		      [(##sys#dload (##sys#make-c-string (##sys#slot libs 0)) top #f)
+		      [(##sys#dload (##sys#make-c-string (##sys#slot libs 0) 'load-library) top #f)
 		       (unless (memq id ##sys#features) (set! ##sys#features (cons id ##sys#features)))
 		       #t]
 		      [else (loop (##sys#slot libs 1))] ) ) ) ) ) ) ) )

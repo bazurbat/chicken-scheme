@@ -1953,7 +1953,7 @@ EOF
   (##sys#pathname-resolution
    filename
    (lambda (filename)
-     (unless (eq? 0 (##core#inline "C_delete_file" (##sys#make-c-string filename)))
+     (unless (eq? 0 (##core#inline "C_delete_file" (##sys#make-c-string filename 'delete-file)))
        (##sys#update-errno)
        (##sys#signal-hook
 	#:file-error 'delete-file
@@ -1970,7 +1970,7 @@ EOF
      (##sys#pathname-resolution
       new
       (lambda (new)
-	(unless (eq? 0 (##core#inline "C_rename_file" (##sys#make-c-string old) (##sys#make-c-string new)))
+	(unless (eq? 0 (##core#inline "C_rename_file" (##sys#make-c-string old 'rename-file) (##sys#make-c-string new)))
 	  (##sys#update-errno)
 	  (##sys#signal-hook
 	   #:file-error 'rename-file
@@ -4369,7 +4369,7 @@ EOF
 		    (cond [(symbol? prefix) (##sys#slot prefix 1)]
 			  [(string? prefix) prefix]
 			  [else (##sys#signal-hook #:type-error "bad argument type - invalid prefix" prefix)] ) ) ] )
-	  (let ([nsp (##sys#find-symbol-table (##sys#make-c-string (##sys#slot ns 1)))])
+	  (let ([nsp (##sys#find-symbol-table (##sys#make-c-string (##sys#slot ns 1) 'import))])
 	    (define (copy s str)
 	      (let ([s2 (##sys#intern-symbol
 			 (if prefix
@@ -4407,7 +4407,7 @@ EOF
 	    (cond [(symbol? sym) (##sys#slot sym 1)]
 		  [(string? sym) sym]
 		  [else (##sys#signal-hook #:type-error "bad argument type - not a valid import name" sym)] ) 
-	    (##sys#find-symbol-table (##sys#make-c-string (##sys#slot ns 1))) ) ] )
+	    (##sys#find-symbol-table (##sys#make-c-string (##sys#slot ns 1) '##sys#namespace-ref)) ) ] )
     (cond [s (##core#inline "C_retrieve" s)]
 	  [(pair? default) (car default)]
 	  [else (##sys#error "symbol not exported from namespace" sym ns)] ) ) )

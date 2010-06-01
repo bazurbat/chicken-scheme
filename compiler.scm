@@ -1144,7 +1144,8 @@
 						    nonnull-c-string))
 						 `((##sys#make-c-string
 						    (##core#let
-						     () ,@(cddr lam)))))
+						     () ,@(cddr lam))
+                                                    ',name)))
 						((member 
 						  rtype
 						  '((const c-string*)
@@ -1167,7 +1168,7 @@
 						    ((r (##core#let () ,@(cddr lam))))
 						    (,(macro-alias 'and se)
 						     r 
-						     (##sys#make-c-string r)) ) ) )
+						     (##sys#make-c-string r ',name)) ) ) )
 						(else (cddr lam)) ) )
 					   rtype) ) )
 				      e se #f) ) ) ) )
