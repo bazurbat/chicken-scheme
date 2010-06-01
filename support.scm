@@ -974,10 +974,10 @@
 			(let ([tmp (gensym)])
 			  `(let ([,tmp ,param])
 			     (if ,tmp
-				 (slot-value ,param 'this)
+				 (slot-ref ,param 'this)
 				 '#f) ) ) ]
 		       [(nonnull-instance)
-			`(slot-value ,param 'this) ]
+			`(slot-ref ,param 'this) ]
 		       [(const) (repeat (cadr t))]
 		       [(enum)
 			(if unsafe param `(##sys#foreign-integer-argument ,param))]
@@ -1091,9 +1091,9 @@
 	  `(let ((,tmp ,body))
 	     (and ,tmp
 		  (not (##sys#null-pointer? ,tmp))
-		  (make-instance ,(caddr type) 'this ,tmp) ) ) ) ]
+		  (make ,(caddr type) 'this ,tmp) ) ) ) ]
        [(and (list? type) (= 3 (length type)) (eq? 'nonnull-instance (car type)))
-	`(make-instance ,(caddr type) 'this ,body) ]
+	`(make ,(caddr type) 'this ,body) ]
        [else body] ) ] ) )
 
 
