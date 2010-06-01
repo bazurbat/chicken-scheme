@@ -1,3 +1,48 @@
+4.5.2
+
+- added `boot-chicken' makefile target to simplify bootstrapping
+  the system from sources and documented this in the README
+  (suggested by Jim Ursetto)
+- CHICKEN can now be built on haiku (contributed by Chris Roberts)
+- On Solaris, the system can be compiled with the SunPro C compiler
+  (thanks to Semih Cemiloglu)
+- removed the `-disable-warnings' compiler option and `disable-warnings'
+  declaration specifier
+- `fx/' and `fxmod' generate now faster code in safe mode
+- cleaned up manual pages
+- slightly optimized variable-value and procedure-access
+- in the compiler `-debug-level 2' implies `-scrutinize'
+- internal compiler-transformation for `for-each' and `map'
+  apply now with any expression as the procedure argument
+- the compiler warns about non-intrinsic exported toplevel variables
+  which are declared to be safe
+- `csc' didn't handle the `-verbose' option (thanks to Mario Goulart)
+- the `,d' command in `csi' now detects circular lists (thanks to
+  Christian Kellermann)
+- strings passed to C runtime functions and which are converted to
+  0-terminated C strings are now checked for not containing embedded
+  `\0' characters (thanks to Peter Bex)
+- errors in user-defined record printers are caught and shown in the 
+  output instead of throwing an error to avoid endless recursion when
+  an error message is printed
+- a feature identifier named `chicken-MAJOR.MINOR' is now defined 
+  to simplify conditionalization of code on the CHICKEN version
+- `getter-with-setter' copies the lambda-information (if available) from
+  the getter to the generated procedure
+- `time' uses a somewhat more concise output format and outputs timing
+  information to stderr instead of stdout
+- added a new chapter on cross-development to the manual
+- added the `safe-globals' declaration specifier
+- split up manual chapter `Modules and macros' into two chapters
+  (named `Modules' and `Macros', respectively - suggested by
+  Mario Goulart)
+- the last 5 non-precompiled regular expressions are now internally 
+  cached in compiled form, which speeds up repeated matching of
+  the same uncompiled regular expression dramatically
+- added the new procedure `yes-or-no?' to the `utils' library unit
+- added a `bench' makefile target that runs some non-trivial
+  benchmark programs
+
 4.5.1
 
 - added `install-target' and `install-dev' makefile target for
