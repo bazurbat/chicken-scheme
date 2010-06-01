@@ -26,38 +26,14 @@
 
 (declare
  (unit srfi-69)
- (usual-integrations)
- (disable-warning redef) ) ; hash-table-ref is an extended binding!
+ (hide
+  *eq?-hash *eqv?-hash *equal?-hash
+  *make-hash-table
+  *hash-table-copy *hash-table-merge! *hash-table-update!/default
+  *hash-table-for-each *hash-table-fold
+  hash-table-canonical-length hash-table-rehash! hash-table-check-resize! ) )
 
-(cond-expand
- [paranoia]
- [else
-  (declare
-    (no-bound-checks)
-    (no-procedure-checks-for-usual-bindings) ) ] )
-
-(declare
-  (bound-to-procedure
-    ##sys#signal-hook
-    ##sys#peek-fixnum
-    ##sys#make-structure
-    ##sys#size
-    ##sys#slot ##sys#setslot
-    *equal?-hash )
-  (hide
-    *eq?-hash *eqv?-hash *equal?-hash
-    *make-hash-table
-    *hash-table-copy *hash-table-merge! *hash-table-update!/default
-    *hash-table-for-each *hash-table-fold
-    hash-table-canonical-length hash-table-rehash! hash-table-check-resize! ) )
-
-(declare
-  (bound-to-procedure
-   ##sys#check-string ##sys#check-symbol
-   ##sys#check-exact ##sy#check-inexact
-   ##sys#check-closure ##sys#check-structure ) )
-
-(include "unsafe-declarations.scm")
+(include "common-declarations.scm")
 
 (register-feature! 'srfi-69)
 
@@ -492,7 +468,7 @@
 		(##sys#check-exact arg 'make-hash-table)
 		(unless (fx< 0 arg)
 		  (error 'make-hash-table "invalid size" arg) )
-		(set! size (fxmin hash-table-max-size arg))
+		(set! size (fxmin hash-table-max-length arg))
 		(set! arguments (cdr arguments)) ) ) )
 	  ; Process keyword arguments
 	  (let loop ([args arguments])
@@ -517,7 +493,7 @@
 			    (##sys#check-exact val 'make-hash-table)
 			    (unless (fx< 0 val)
 			      (error 'make-hash-table "invalid size" val) )
-			    (set! size (fxmin hash-table-max-size val))]
+			    (set! size (fxmin hash-table-max-length val))]
 			  [(#:initial)
 			    (set! initial (lambda () val))]
 			  [(#:min-load)

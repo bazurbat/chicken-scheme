@@ -8,15 +8,15 @@ Warning: in local procedure `c',
   expected value of type boolean in conditional but were given a value of
 type `number' which is always true:
 
-(if x2 '1 '2)
+(if x3 '1 '2)
 
 Warning: in toplevel procedure `foo':
   branches in conditional expression differ in the number of results:
 
-(if x3 (values '1 '2) (values '1 '2 (+ ...)))
+(if x5 (values '1 '2) (values '1 '2 (+ ...)))
 
 Warning: at toplevel:
-  scrutiny-tests.scm:18: in procedure call to `bar4', expected argument #2 of type `number', but where given an argument of type `symbol'
+  scrutiny-tests.scm:18: in procedure call to `bar6', expected argument #2 of type `number', but where given an argument of type `symbol'
 
 Warning: at toplevel:
   scrutiny-tests.scm:20: in procedure call to `pp', expected 1 argument, but where given 0 arguments
@@ -28,7 +28,7 @@ Warning: at toplevel:
   expected in argument #1 of procedure call `(print (values))' a single result, but were given zero results
 
 Warning: at toplevel:
-  scrutiny-tests.scm:26: in procedure call to `x5', expected a value of type `(procedure () *)', but were given a value of type `fixnum'
+  scrutiny-tests.scm:26: in procedure call to `x7', expected a value of type `(procedure () *)', but were given a value of type `fixnum'
 
 Warning: at toplevel:
   scrutiny-tests.scm:28: in procedure call to `+', expected argument #1 of type `number', but where given an argument of type `symbol'
@@ -40,9 +40,9 @@ Warning: at toplevel:
   assignment of value of type `fixnum' to toplevel variable `car' does not match declared type `(procedure car (pair) *)'
 
 Warning: at toplevel:
-  expected in `let' binding of `g6' a single result, but were given 2 results
+  expected in `let' binding of `g8' a single result, but were given 2 results
 
 Warning: at toplevel:
-  g67: in procedure call to `g67', expected a value of type `(procedure () *)', but were given a value of type `fixnum'
+  g89: in procedure call to `g89', expected a value of type `(procedure () *)', but were given a value of type `fixnum'
 
-Warning: redefinition of standard binding `car'
+Warning: redefinition of standard binding: car

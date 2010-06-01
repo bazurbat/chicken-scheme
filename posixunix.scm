@@ -29,7 +29,6 @@
   (unit posix)
   (uses scheduler regex extras utils files ports)
   (disable-interrupts)
-  (usual-integrations)
   (hide ##sys#stat group-member _get-groups _ensure-groups posix-error
         ##sys#terminal-check
         check-time-vector)
@@ -488,28 +487,7 @@ static int set_file_mtime(char *filename, C_word tm)
 EOF
 ) )
 
-(cond-expand
- [paranoia]
- [else
-  (declare
-    (no-bound-checks)
-    (no-procedure-checks-for-usual-bindings)
-    (bound-to-procedure
-     string-match glob->regexp regexp 
-     ##sys#thread-yield! ##sys#make-string
-     ##sys#make-port ##sys#file-info ##sys#update-errno ##sys#fudge ##sys#make-c-string ##sys#check-port
-     ##sys#error ##sys#signal-hook ##sys#peek-unsigned-integer make-pathname glob directory?
-     pathname-file process-fork file-close duplicate-fileno process-execute get-environment-variable
-     make-string make-input-port make-output-port ##sys#thread-block-for-i/o create-pipe
-     process-wait pathname-strip-directory pathname-directory ##sys#expand-home-path directory
-     decompose-pathname ##sys#decode-seconds ##sys#null-pointer ##sys#pointer->address
-     ##sys#substring ##sys#context-switch close-input-pipe close-output-pipe change-directory
-     current-directory ##sys#make-pointer port? ##sys#schedule ##sys#process
-     ##sys#peek-fixnum ##sys#make-structure ##sys#check-structure ##sys#enable-interrupts
-     make-nonblocking-input-port make-nonblocking-output-port 
-     canonical-path) ) ] )
-
-(include "unsafe-declarations.scm")
+(include "common-declarations.scm")
 
 (register-feature! 'posix)
 
@@ -637,7 +615,7 @@ EOF
         (##sys#check-string filename 'file-open)
         (##sys#check-exact flags 'file-open)
         (##sys#check-exact mode 'file-open)
-        (let ([fd (##core#inline "C_open" (##sys#make-c-string (##sys#expand-home-path filename)) flags mode)])
+        (let ([fd (##core#inline "C_open" (##sys#make-c-string (##sys#expand-home-path filename) 'file-open) flags mode)])
           (when (eq? -1 fd)
             (posix-error #:file-error 'file-open "cannot open file" filename flags mode) )
           fd) ) ) ) )
@@ -676,7 +654,7 @@ EOF
 (define file-mkstemp
   (lambda (template)
     (##sys#check-string template 'file-mkstemp)
-    (let* ([buf (##sys#make-c-string template)]
+    (let* ([buf (##sys#make-c-string template 'file-mkstemp)]
 	   [fd (##core#inline "C_mkstemp" buf)]
 	   [path-length (##sys#size buf)])
       (when (eq? -1 fd)
@@ -769,11 +747,13 @@ EOF
 (define (##sys#stat file link loc)
   (let ([r (cond [(fixnum? file) (##core#inline "C_fstat" file)]
                  [(string? file)
-                  (let ([path (##sys#make-c-string (##sys#expand-home-path file))])
+                  (let ([path (##sys#make-c-string (##sys#expand-home-path file) loc)])
 		    (if link
 			(##core#inline "C_lstat" path)
 			(##core#inline "C_stat" path) ) ) ]
-                 [else (##sys#signal-hook #:type-error "bad argument type - not a fixnum or string" file)] ) ] )
+                 [else
+		  (##sys#signal-hook
+		   #:type-error loc "bad argument type - not a fixnum or string" file)] ) ] )
     (when (fx< r 0)
       (posix-error #:file-error loc "cannot access file" file) ) ) )
 
@@ -846,11 +826,11 @@ EOF
 ;;; Directory stuff:
 
 (define-inline (*directory? loc name)
-  (and (fx= 0 (##core#inline "C_stat" (##sys#make-c-string name)))
+  (and (fx= 0 (##core#inline "C_stat" (##sys#make-c-string name loc)))
        (foreign-value "C_isdir" bool) ) )
 
 (define-inline (*create-directory loc name)
-  (unless (fx= 0 (##core#inline "C_mkdir" (##sys#make-c-string name)))
+  (unless (fx= 0 (##core#inline "C_mkdir" (##sys#make-c-string name loc)))
     (posix-error #:file-error loc "cannot create directory" name)) )
 
 (define create-directory
@@ -872,7 +852,7 @@ EOF
 (define change-directory
   (lambda (name)
     (##sys#check-string name 'change-directory)
-    (let ((sname (##sys#make-c-string (##sys#expand-home-path name))))
+    (let ((sname (##sys#make-c-string (##sys#expand-home-path name) 'change-directory)))
       (unless (fx= 0 (##core#inline "C_chdir" sname))
 	(posix-error #:file-error 'change-directory "cannot change current directory" name) )
       name)))
@@ -880,7 +860,7 @@ EOF
 (define delete-directory
   (lambda (name)
     (##sys#check-string name 'delete-directory)
-    (let ((sname (##sys#make-c-string (##sys#expand-home-path name))))
+    (let ((sname (##sys#make-c-string (##sys#expand-home-path name) 'delete-directory)))
       (unless (fx= 0 (##core#inline "C_rmdir" sname))
 	(posix-error #:file-error 'delete-directory "cannot delete directory" name) )
       name)))
@@ -894,7 +874,7 @@ EOF
       (let ([buffer (make-string 256)]
             [handle (##sys#make-pointer)]
             [entry (##sys#make-pointer)] )
-        (##core#inline "C_opendir" (##sys#make-c-string (##sys#expand-home-path spec)) handle)
+        (##core#inline "C_opendir" (##sys#make-c-string (##sys#expand-home-path spec) 'directory) handle)
         (if (##sys#null-pointer? handle)
             (posix-error #:file-error 'directory "cannot open directory" spec)
             (let loop ()
@@ -938,8 +918,8 @@ EOF
 	 'open-input-pipe
 	 cmd #t
 	 (case m
-	   ((#:text) (##core#inline_allocate ("open_text_input_pipe" 2) (##sys#make-c-string cmd)))
-	   ((#:binary) (##core#inline_allocate ("open_binary_input_pipe" 2) (##sys#make-c-string cmd)))
+	   ((#:text) (##core#inline_allocate ("open_text_input_pipe" 2) (##sys#make-c-string cmd 'open-input-pipe)))
+	   ((#:binary) (##core#inline_allocate ("open_binary_input_pipe" 2) (##sys#make-c-string cmd 'open-input-pipe)))
 	   (else (badmode m)) ) ) ) ) )
   (set! open-output-pipe
     (lambda (cmd . m)
@@ -949,8 +929,8 @@ EOF
 	 'open-output-pipe
 	 cmd #f
 	 (case m
-	   ((#:text) (##core#inline_allocate ("open_text_output_pipe" 2) (##sys#make-c-string cmd)))
-	   ((#:binary) (##core#inline_allocate ("open_binary_output_pipe" 2) (##sys#make-c-string cmd)))
+	   ((#:text) (##core#inline_allocate ("open_text_output_pipe" 2) (##sys#make-c-string cmd 'open-output-pipe)))
+	   ((#:binary) (##core#inline_allocate ("open_binary_output_pipe" 2) (##sys#make-c-string cmd 'open-output-pipe)))
 	   (else (badmode m)) ) ) ) ) )
   (set! close-input-pipe
     (lambda (port)
@@ -1203,7 +1183,7 @@ EOF
                (##core#inline "C_getpwuid" user)
                (begin
                  (##sys#check-string user 'user-information)
-                 (##core#inline "C_getpwnam" (##sys#make-c-string user)) ) ) ] )
+                 (##core#inline "C_getpwnam" (##sys#make-c-string user 'user-information)) ) ) ] )
     (and r
          ((if as-vector vector list)
           _user-name
@@ -1233,7 +1213,7 @@ EOF
                (##core#inline "C_getgrgid" group)
                (begin
                  (##sys#check-string group 'group-information)
-                 (##core#inline "C_getgrnam" (##sys#make-c-string group)) ) ) ] )
+                 (##core#inline "C_getgrnam" (##sys#make-c-string group 'group-information)) ) ) ] )
     (and r
          ((if as-vector vector list)
           _group-name
@@ -1369,7 +1349,7 @@ EOF
   (lambda (fname m)
     (##sys#check-string fname 'change-file-mode)
     (##sys#check-exact m 'change-file-mode)
-    (when (fx< (##core#inline "C_chmod" (##sys#make-c-string (##sys#expand-home-path fname)) m) 0)
+    (when (fx< (##core#inline "C_chmod" (##sys#make-c-string (##sys#expand-home-path fname) 'change-file-mode) m) 0)
       (posix-error #:file-error 'change-file-mode "cannot change file mode" fname m) ) ) )
 
 (define change-file-owner
@@ -1377,7 +1357,7 @@ EOF
     (##sys#check-string fn 'change-file-owner)
     (##sys#check-exact uid 'change-file-owner)
     (##sys#check-exact gid 'change-file-owner)
-    (when (fx< (##core#inline "C_chown" (##sys#make-c-string (##sys#expand-home-path fn)) uid gid) 0)
+    (when (fx< (##core#inline "C_chown" (##sys#make-c-string (##sys#expand-home-path fn) 'change-file-owner) uid gid) 0)
       (posix-error #:file-error 'change-file-owner "cannot change file owner" fn uid gid) ) ) )
 
 (define-foreign-variable _r_ok int "R_OK")
@@ -1387,7 +1367,7 @@ EOF
 (let ()
   (define (check filename acc loc)
     (##sys#check-string filename loc)
-    (let ([r (fx= 0 (##core#inline "C_test_access" (##sys#make-c-string (##sys#expand-home-path filename)) acc))])
+    (let ([r (fx= 0 (##core#inline "C_test_access" (##sys#make-c-string (##sys#expand-home-path filename) loc) acc))])
       (unless r (##sys#update-errno))
       r) )
   (set! file-read-access? (lambda (filename) (check filename _r_ok 'file-read-access?)))
@@ -1426,8 +1406,8 @@ EOF
     (##sys#check-string new 'create-symbolic-link)
     (when (fx< (##core#inline
               "C_symlink"
-              (##sys#make-c-string (##sys#expand-home-path old))
-              (##sys#make-c-string (##sys#expand-home-path new)) )
+              (##sys#make-c-string (##sys#expand-home-path old) 'create-symbolic-link)
+              (##sys#make-c-string (##sys#expand-home-path new) 'create-symbolic-link) )
              0)
       (posix-error #:file-error 'create-symbol-link "cannot create symbolic link" old new) ) ) )
 
@@ -1438,7 +1418,7 @@ EOF
         [buf (make-string (fx+ _filename_max 1))] )
     (lambda (fname #!optional canonicalize)
       (##sys#check-string fname 'read-symbolic-link)
-      (let ([len (##core#inline "C_do_readlink" (##sys#make-c-string (##sys#expand-home-path fname)) buf)])
+      (let ([len (##core#inline "C_do_readlink" (##sys#make-c-string (##sys#expand-home-path fname) 'read-symbolic-link) buf)])
       (when (fx< len 0)
         (posix-error #:file-error 'read-symbolic-link "cannot read symbolic link" fname) )
       (let ((pathname (substring buf 0 len)))
@@ -1466,7 +1446,7 @@ EOF
 (define fileno/stderr _stderr_fileno)
 
 (let ()
-  (define (mode inp m)
+  (define (mode inp m loc)
     (##sys#make-c-string
      (cond [(pair? m)
             (let ([m (car m)])
@@ -1474,7 +1454,8 @@ EOF
                 [(###append) (if (not inp) "a" (##sys#error "invalid mode for input file" m))]
                 [else (##sys#error "invalid mode argument" m)] ) ) ]
            [inp "r"]
-           [else "w"] ) ) )
+           [else "w"] )
+     loc) )
   (define (check loc fd inp r)
     (if (##sys#null-pointer? r)
         (posix-error #:file-error loc "cannot open file" fd)
@@ -1484,11 +1465,11 @@ EOF
   (set! open-input-file*
     (lambda (fd . m)
       (##sys#check-exact fd 'open-input-file*)
-      (check 'open-input-file* fd #t (##core#inline_allocate ("C_fdopen" 2) fd (mode #t m))) ) )
+      (check 'open-input-file* fd #t (##core#inline_allocate ("C_fdopen" 2) fd (mode #t m 'open-input-file*))) ) )
   (set! open-output-file*
     (lambda (fd . m)
       (##sys#check-exact fd 'open-output-file*)
-      (check 'open-output-file* fd #f (##core#inline_allocate ("C_fdopen" 2) fd (mode #f m)) ) ) ) )
+      (check 'open-output-file* fd #f (##core#inline_allocate ("C_fdopen" 2) fd (mode #f m 'open-output-file*)) ) ) ) )
 
 (define port->fileno
   (lambda (port)
@@ -1701,7 +1682,7 @@ EOF
 (define file-truncate
   (lambda (fname off)
     (##sys#check-number off 'file-truncate)
-    (when (fx< (cond [(string? fname) (##core#inline "C_truncate" (##sys#make-c-string (##sys#expand-home-path fname)) off)]
+    (when (fx< (cond [(string? fname) (##core#inline "C_truncate" (##sys#make-c-string (##sys#expand-home-path fname) 'file-truncate) off)]
 		     [(fixnum? fname) (##core#inline "C_ftruncate" fname off)]
 		     [else (##sys#error 'file-truncate "invalid file" fname)] )
 	       0)
@@ -1760,7 +1741,7 @@ EOF
     (##sys#check-string fname 'create-fifo)
     (let ([mode (if (pair? mode) (car mode) (fxior _s_irwxu (fxior _s_irwxg _s_irwxo)))])
       (##sys#check-exact mode 'create-fifo)
-      (when (fx< (##core#inline "C_mkfifo" (##sys#make-c-string (##sys#expand-home-path fname)) mode) 0)
+      (when (fx< (##core#inline "C_mkfifo" (##sys#make-c-string (##sys#expand-home-path fname) 'create-fifo) mode) 0)
       (posix-error #:file-error 'create-fifo "cannot create FIFO" fname mode) ) ) ) )
 
 (define fifo?
@@ -1778,12 +1759,12 @@ EOF
   (lambda (var val)
     (##sys#check-string var 'setenv)
     (##sys#check-string val 'setenv)
-    (##core#inline "C_setenv" (##sys#make-c-string var) (##sys#make-c-string val))
+    (##core#inline "C_setenv" (##sys#make-c-string var 'setenv) (##sys#make-c-string val 'setenv))
     (##core#undefined) ) )
 
 (define (unsetenv var)
   (##sys#check-string var 'unsetenv)
-  (##core#inline "C_unsetenv" (##sys#make-c-string var))
+  (##core#inline "C_unsetenv" (##sys#make-c-string var 'unsetenv))
   (##core#undefined) )
 
 (define get-environment-variables
@@ -1884,7 +1865,7 @@ EOF
       (if fmt
           (begin
             (##sys#check-string fmt 'time->string)
-            (or (strftime tm (##sys#make-c-string fmt))
+            (or (strftime tm (##sys#make-c-string fmt 'time->string))
                 (##sys#error 'time->string "time formatting overflows buffer" tm)) )
           (let ([str (asctime tm)])
             (if str
@@ -1896,7 +1877,7 @@ EOF
     (lambda (tim #!optional (fmt "%a %b %e %H:%M:%S %Z %Y"))
       (##sys#check-string tim 'string->time)
       (##sys#check-string fmt 'string->time)
-      (strptime (##sys#make-c-string tim) (##sys#make-c-string fmt) (make-vector 10 #f)) ) ) )
+      (strptime (##sys#make-c-string tim 'string->time) (##sys#make-c-string fmt) (make-vector 10 #f)) ) ) )
 
 (define (local-time->seconds tm)
   (check-time-vector 'local-time->seconds tm)
@@ -2033,7 +2014,7 @@ EOF
                (let ([s (car el)])
                  (##sys#check-string s 'process-execute)
                  (setenv i s (##sys#size s)) ) ) )
-           (let* ([prg (##sys#make-c-string (##sys#expand-home-path filename))]
+           (let* ([prg (##sys#make-c-string (##sys#expand-home-path filename) 'process-execute)]
                   [r (if envlist
                          (##core#inline "C_execve" prg)
                          (##core#inline "C_execvp" prg) )] )

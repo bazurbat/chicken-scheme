@@ -292,15 +292,16 @@ CSI ?= csi$(EXE)
 
 # Scheme compiler flags
 
-CHICKEN_OPTIONS = -optimize-level 2 -include-path . -include-path $(SRCDIR) -inline
+CHICKEN_OPTIONS = -optimize-level 2 -include-path . -include-path $(SRCDIR) -inline -ignore-repository
 ifdef DEBUGBUILD
 CHICKEN_OPTIONS += -feature debugbuild -scrutinize -types $(SRCDIR)types.db
+else
+CHICKEN_OPTIONS += -no-warnings
 endif
 CHICKEN_OPTIONS += $(EXTRA_CHICKEN_OPTIONS)
 CHICKEN_LIBRARY_OPTIONS = $(CHICKEN_OPTIONS) -explicit-use -no-trace
 CHICKEN_PROGRAM_OPTIONS = $(CHICKEN_OPTIONS) -no-lambda-info -local
 CHICKEN_COMPILER_OPTIONS = $(CHICKEN_PROGRAM_OPTIONS) -extend private-namespace.scm
-CHICKEN_UNSAFE_OPTIONS = -unsafe -no-lambda-info
 CHICKEN_DYNAMIC_OPTIONS = $(CHICKEN_OPTIONS) -feature chicken-compile-shared -dynamic
 CHICKEN_IMPORT_LIBRARY_OPTIONS = $(CHICKEN_DYNAMIC_OPTIONS) -no-trace
 
@@ -352,6 +353,11 @@ endif
 ifdef WINDOWS
 TARGETS += chicken.rc$(O)
 endif
+
+ifeq ($(HEAD),)
+HEAD = HEAD
+endif
+
 
 # main rule
 

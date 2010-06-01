@@ -191,8 +191,8 @@
 (output-port? (procedure output-port? (*) boolean))
 (current-input-port (procedure current-input-port (#!optional port) port))
 (current-output-port (procedure current-output-port (#!optional port) port))
-(call-with-input-file (procedure call-with-input-file (string (procedure (port) . *)) . *))
-(call-with-output-file (procedure call-with-output-file (string (procedure (port) . *)) . *))
+(call-with-input-file (procedure call-with-input-file (string (procedure (port) . *) #!rest) . *))
+(call-with-output-file (procedure call-with-output-file (string (procedure (port) . *) #!rest) . *))
 (open-input-file (procedure open-input-file (string #!rest symbol) port))
 (open-output-file (procedure open-output-file (string #!rest symbol) port))
 (close-input-port (procedure close-input-port (port) undefined))
@@ -943,7 +943,7 @@
 (fifth (procedure fifth (pair) *))
 (filter (procedure filter ((procedure (*) *) list) list))
 (filter! (procedure filter! ((procedure (*) *) list) list))
-(filter-map (procedure filter-map ((procedure (*) *) list #!rest list) list))
+(filter-map (procedure filter-map ((procedure (* #!rest) *) list #!rest list) list))
 (find (procedure find ((procedure (*) *) list) *))
 (find-tail (procedure find-tail ((procedure (*) *) list) *))
 (first (procedure first (pair) *))
@@ -1398,5 +1398,4 @@
 (compile-file (procedure compile-file (string #!rest) string))
 (compile-file-options (procedure compile-file-options (#!optional list) list))
 (scan-input-lines (procedure scan-input-lines (* #!optional port) *))
-
-;; missing: setup-api, setup-download
+(yes-or-no? (procedure yes-or-no? (string #!rest) *))

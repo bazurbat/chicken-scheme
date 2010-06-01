@@ -26,11 +26,9 @@
 
 
 (declare
-  (fixnum)
   (unit scheduler)
+  (fixnum)
   (disable-interrupts)
-  (usual-integrations)
-  (disable-warning var)
   (hide ##sys#ready-queue-head ##sys#ready-queue-tail ##sys#timeout-list
 	##sys#update-thread-state-buffer ##sys#restore-thread-state-buffer
 	##sys#remove-from-ready-queue ##sys#unblock-threads-for-i/o ##sys#force-primordial
@@ -81,16 +79,13 @@ static fd_set C_fdset_input, C_fdset_output, C_fdset_input_2, C_fdset_output_2;
 EOF
 ) )
 
-(cond-expand
- [paranoia]
- [else
-  (declare (unsafe)) ] )
+(declare (unsafe))
 
+(include "common-declarations.scm")
 
 (define-syntax dbg
   (syntax-rules ()
     ((_ . _) #f))) 
-
 
 (define (##sys#schedule)
   (define (switch thread)

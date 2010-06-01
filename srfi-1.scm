@@ -7,40 +7,11 @@
 (declare
   (unit srfi-1)
   (disable-interrupts)
-  (disable-warning redef)
   (hide ##srfi1#cars+cdrs/no-test ##srfi1#cdrs ##srfi1#cars+ ##srfi1#really-append-map ##srfi1#cars+cdrs+
 	##srfi1#cars+cdrs ##srfi1#lset2<=)
-  (extended-bindings)
-  (standard-bindings not boolean? apply call-with-current-continuation eq? eqv? equal? pair? cons car cdr caar cadr
-		     cdar cddr caaar caadr cadar caddr cdaar cdadr cddar cdddr caaaar caaadr caadar caaddr cadaar
-		     cadadr caddar cadddr cdaaar cdaadr cdadar cdaddr cddaar cddadr cdddar cddddr set-car! set-cdr!
-		     null? list list? length zero? * - error + / - > < >= <= current-output-port current-input-port
-		     write-char newline write display append symbol->string char? char->integer
-		     integer->char eof-object? vector-length string-length string-ref string-set! vector-ref 
-		     vector-set! char=? char<? char>? char>=? char<=? gcd lcm reverse symbol? string->symbol
-		     number? complex? real? integer? rational? odd? even? positive? negative? exact? inexact?
-		     max min quotient remainder modulo floor ceiling truncate round exact->inexact inexact->exact
-		     exp log sin expt sqrt cos tan asin acos atan number->string string->number char-ci=?
-		     char-ci<? char-ci>? char-ci>=? char-ci<=? char-alphabetic? char-whitespace? char-numeric?
-		     char-lower-case? char-upper-case? char-upcase char-downcase string? string=? string>? string<?
-		     string>=? string<=? string-ci=? string-ci<? string-ci>? string-ci<=? string-ci>=?
-		     string-append string->list list->string vector? vector->list list->vector string read
-		     read-char substring string-fill! vector-fill! make-string make-vector open-input-file
-		     open-output-file call-with-input-file call-with-output-file close-input-port close-output-port
-		     port? values call-with-values vector procedure? memq memv assq assv) )
+  (not standard-bindings member assoc))
 
-(cond-expand
- [paranoia]
- [else
-  (declare
-    (no-procedure-checks-for-usual-bindings)
-    (bound-to-procedure 
-     every any partition! reduce lset-difference! append! pair-fold lset-diff+intersection! fold
-     lset-difference filter! filter delete span! span find-tail find delete! pair-for-each car+cdr
-     reduce-right last-pair drop)
-    (no-bound-checks) ) ] )
-
-(include "unsafe-declarations.scm")
+(include "common-declarations.scm")
 
 (register-feature! 'srfi-1)
 

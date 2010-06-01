@@ -3,26 +3,24 @@
 
 == Using the compiler
 
-The interface to {{chicken}} is intentionally simple.  System
-dependent makefiles, shell-scripts or batch-files should perform
-any necessary steps before and after invocation of {{chicken}}.
-A program named {{csc}} provides a more convenient and concise
-interface to the Scheme- and C-compilers and linker. Enter
+The {{csc}} compiler driver provides a convenient interface to
+the basic Scheme-to-C translator ({{chicken}}) and takes care
+for compiliong and linking the generated C files into executable
+code. Enter
 
  csc -help
 
-on the command line for more information.
+on the command line for a list of options.
 
 === Compiler command line format
 
- chicken FILENAME {OPTION}
+ csc FILENAME-OR-OPTION
 
-{{FILENAME}} is the complete pathname of the source file that is to
-be translated into C. A filename argument of {{-}} specifies that
-the source text should be read from standard input. Note that the filename
-has to be the first argument to {{chicken}}.
+{{FILENAME}} is the pathname of the source file that is to
+be compiled. A filename argument of {{-}} specifies that
+the source text should be read from standard input.
 
-Possible options are:
+==== Basic command-line options
 
 ; -analyze-only : Stop compilation after first analysis pass.
 
@@ -72,23 +70,11 @@ Possible options are:
 
      -debug-level 0             is equivalent to -no-trace -no-lambda-info
      -debug-level 1             is equivalent to -no-trace
-     -debug-level 2             does nothing (the default)
+     -debug-level 2             is equivalent to -scrutinize
 
 ; -disable-interrupts : Equivalent to the {{(disable-interrupts)}} declaration. No interrupt-checks are generated for compiled programs.
 
 ; -disable-stack-overflow-checks : Disables detection of stack overflows. This is equivalent to running the compiled executable with the {{-:o}} runtime option.
-
-; -disable-warning CLASS : Disables specific class of warnings, may be given multiple times. The following classes are defined:
-
-     usage              warnings related to command-line arguments
-     type               warnings related to type-conversion
-     ext                warnings related to extension libraries
-     var                warnings related to variable- and syntax-definitions and use
-     const              warnings related to constant-definitions
-     syntax             syntax-related warnings
-     redef              warnings about redefinitions of standard- or extended-bindings
-     call               warnings related to known procedure calls
-     ffi                warnings related to the foreign function interface
 
 ; -dynamic : This option should be used when compiling files intended to be loaded dynamically into a running Scheme program.
 
@@ -219,6 +205,14 @@ Possible options are:
 
 The environment variable {{CHICKEN_OPTIONS}} can be set to a string
 with default command-line options for the compiler.
+
+==== Further options
+
+Enter 
+
+  csc -help
+
+to see a list of all supported options and short aliases to basic options. 
 
 === Runtime options
 
@@ -443,7 +437,7 @@ Let's take a simple example.
 (print "Hello, world!")
 </enscript>
 
-  % chicken hello.scm -optimize-level 3 -output-file hello.c
+  % csc -t hello.scm -optimize-level 3 -output-file hello.c
 
 Compiled to C, we get {{hello.c}}. We need the files {{chicken.h}} and
 {{runtime.c}}, which contain the basic runtime system, plus the three

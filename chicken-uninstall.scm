@@ -69,7 +69,8 @@
 	 '("About to delete the following extensions:\n\n")
 	 (map (cut string-append "  " <> "\n") eggs)
 	 '("\nDo you want to proceed?")))
-       default: "no")))
+       default: "no"
+       abort: abort-setup)))
 
   (define (uninstall pats)
     (let ((eggs (gather-eggs pats)))

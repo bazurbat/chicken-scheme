@@ -27,18 +27,9 @@
 
 (declare
   (unit profiler)
-  (usual-integrations)
   (hide ##sys#profile-name ##sys#profile-vector-list)
   (disable-interrupts)
   (fixnum-arithmetic) )
-
-(cond-expand
- [paranoia]
- [else
-  (declare
-    (bound-to-procedure
-     write-char write make-vector)
-    (no-bound-checks) ) ] )
 
 (foreign-declare #<<EOF
 #if !defined(_MSC_VER)
@@ -46,6 +37,8 @@
 #endif
 EOF
 )
+
+(include "common-declarations.scm")
 
 (define-foreign-variable profile-id int "getpid()")
 

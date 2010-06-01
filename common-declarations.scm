@@ -1,6 +1,6 @@
-;;;; utils.import.scm - import library for "utils" module
+;;;; common-declarations.scm - settings for core libraries
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2010, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -24,11 +24,27 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
-(##sys#register-primitive-module
- 'utils
- '(read-all
-   system*
-   qs
-   compile-file
-   scan-input-lines
-   yes-or-no?))
+(declare 
+  (usual-integrations)
+  (hide d))
+
+(cond-expand
+ (debugbuild
+  (define (d arg1 . more)
+    (when (##sys#fudge 13)
+      (if (null? more)
+	  (pp arg1)
+	  (apply print arg1 more)))))
+ (else
+  (declare
+    (safe-globals)
+    (no-bound-checks))
+  (define-syntax d (syntax-rules () ((_ . _) (void))))))
+
+(define-syntax define-alias
+  (syntax-rules ()
+    ((_ new old)
+     (define-syntax new
+       (syntax-rules ___ ()
+	 ((_ args ___)
+	  (old args ___)))))))

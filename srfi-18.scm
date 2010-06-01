@@ -28,29 +28,10 @@
 (declare
  (unit srfi-18)
  (uses scheduler)
- (disable-warning redef)
  (disable-interrupts)
- (usual-integrations)
  (hide ##sys#compute-time-limit) )
 
-(cond-expand
- [paranoia]
- [else
-  (declare
-    (no-bound-checks)
-    (no-procedure-checks-for-usual-bindings)
-    (bound-to-procedure
-     ##sys#thread-yield!
-     condition-property-accessor ##sys#tty-port? ##sys#thread-block-for-i/o thread-yield! ##sys#thread-unblock!
-     ##sys#thread-basic-unblock! gensym ##sys#thread-block-for-timeout! ##sys#thread-kill!
-     ##sys#thread-block-for-termination! make-thread ##sys#exact->inexact ##sys#flonum-fraction truncate
-     ##sys#add-to-ready-queue
-     ##sys#schedule ##sys#make-thread
-     ##sys#check-number ##sys#error ##sys#signal-hook ##sys#signal
-     ##sys#current-exception-handler ##sys#abandon-mutexes ##sys#check-structure ##sys#structure? ##sys#make-mutex
-     ##sys#delq ##sys#compute-time-limit ##sys#fudge) ) ] )
-
-(include "unsafe-declarations.scm")
+(include "common-declarations.scm")
 
 (register-feature! 'srfi-18)
 

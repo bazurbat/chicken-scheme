@@ -106,8 +106,7 @@
 		 (case level
 		   ((0) (set! options (cons* 'no-lambda-info 'no-trace options)))
 		   ((1) (set! options (cons 'no-trace options)))
-		   ((2) #f)
-		   (else (compiler-warning 'usage "invalid debug level ~S - ignored" (car rest))) )
+		   (else (set! options (cons 'scrutinize options))))
 		 (loop (cdr rest)) ) )
 	      ((memq o valid-compiler-options) (loop rest))
 	      ((memq o valid-compiler-options-with-argument)
@@ -115,8 +114,8 @@
 		   (loop (cdr rest))
 		   (quit "missing argument to `-~s' option" o) ) )
 	      (else
-	       (compiler-warning 
-		'usage "invalid compiler option `~a' - ignored" 
+	       (warning 
+		"invalid compiler option (gnored)" 
 		(if (string? o) o (conc "-" o)) )
 	       (loop rest) ) ) ) ) )
   (apply compile-source-file filename options)

@@ -37,7 +37,6 @@
 (declare
   (unit files)
   (uses regex data-structures)
-  (usual-integrations)
   (fixnum)
   (hide chop-pds absolute-pathname-root root-origin root-directory split-directory)
   (disable-interrupts) 
@@ -54,22 +53,7 @@
 EOF
 ))
 
-(cond-expand
- [paranoia]
- [else
-  (declare
-    (always-bound
-      ##sys#windows-platform)
-    (bound-to-procedure
-      string-match regexp
-      ##sys#string-append ##sys#substring  string-append
-      get-environment-variable
-      file-exists? delete-file
-      call-with-output-file read-string)
-    (no-procedure-checks-for-usual-bindings)
-    (no-bound-checks))] )
-
-(include "unsafe-declarations.scm")
+(include "common-declarations.scm")
 
 (register-feature! 'files)
 
@@ -394,7 +378,7 @@ EOF
 		     (number->string n 16)))))
 	  (if (directory-exists? pn) 
 	      (loop)
-	      (let ((r (##core#inline "C_mkdir" (##sys#make-c-string pn))))
+	      (let ((r (##core#inline "C_mkdir" (##sys#make-c-string pn 'create-temporary-directory))))
 		(if (eq? r 0)
 		    pn
 		    (##sys#signal-hook 

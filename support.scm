@@ -61,12 +61,6 @@
 	 (flush-output)
 	 #t) ) )
 
-(define (compiler-warning class msg . args)	       
-  (when (and ##sys#warnings-enabled (not (memq class disabled-warnings)))
-    (let ((out (current-error-port)))
-      (apply fprintf out (string-append "\nWarning: " msg) args)
-      (newline out) ) ) )
-
 (define (quit msg . args)
   (let ([out (current-error-port)])
     (apply fprintf out (string-append "\nError: " msg) args)
@@ -478,9 +472,8 @@
 				  (eq? 'fixnum number-type)
 				  (not (integer? c)) )
 			     (begin
-			       (compiler-warning
-				'type
-				"literal '~s' is out of range - will be truncated to integer" c)
+			       (warning
+				"literal is out of range - will be truncated to integer" c)
 			       (inexact->exact (truncate c)) )
 			     c) ) ) )
 	       ((let)
@@ -1235,7 +1228,6 @@ Usage: chicken FILENAME OPTION ...
   Debugging options:
 
     -no-warnings                 disable warnings
-    -disable-warning CLASS       disable specific class of warnings
     -debug-level NUMBER          set level of available debugging information
     -no-trace                    disable tracing information
     -profile                     executable emits profiling information 

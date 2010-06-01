@@ -2,8 +2,7 @@
 
 == Confirmed deviations
 
-Identifiers are by default case-sensitive (see
-[[http://chicken.wiki.br.br/Using%20the%20compiler#Compiler%20command%20line%20format|Compiler command line format]]).
+Identifiers are by default case-sensitive (see [[Using the compiler]]).
 
 === Number of arguments to procedures and macros
 

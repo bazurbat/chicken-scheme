@@ -10,12 +10,10 @@
 ;
 ;   Redistributions of source code must retain the above copyright
 ;   notice, this list of conditions and the following disclaimer.
-
 ;   Redistributions in binary form must reproduce the above copyright
 ;   notice, this list of conditions and the following disclaimer in
 ;   the documentation and/or other materials provided with the
 ;   distribution.
-
 ;   Neither the name of the author nor the names of its contributors
 ;   may be used to endorse or promote products derived from this
 ;   software without specific prior written permission.
@@ -35,38 +33,9 @@
 
 
 (declare
- (unit ports)
-; (uses data-structures)
- (usual-integrations)
- (disable-warning redef) )
+ (unit ports))
 
-(cond-expand
- [paranoia]
- [else
-  (declare
-    (no-bound-checks)
-    (no-procedure-checks-for-usual-bindings)
-    (bound-to-procedure
-      ##sys#check-char ##sys#check-exact ##sys#check-port ##sys#check-string
-      ##sys#substring ##sys#for-each ##sys#map ##sys#setslot
-      ##sys#allocate-vector ##sys#check-pair ##sys#error-not-a-proper-list
-      ##sys#member ##sys#assoc ##sys#error ##sys#signal-hook ##sys#read-string!
-      ##sys#check-symbol ##sys#check-vector ##sys#check-number
-      ##sys#flonum-fraction ##sys#make-port ##sys#fetch-and-check-port-arg
-      ##sys#print ##sys#check-structure ##sys#make-structure make-parameter
-      ##sys#flush-output ##sys#write-char-0 ##sys#number->string
-      ##sys#fragments->string ##sys#symbol->qualified-string
-      ##sys#number? ##sys#procedure->string
-      ##sys#pointer->string ##sys#user-print-hook ##sys#peek-char-0
-      ##sys#read-char-0 ##sys#write-char ##sys#string-append ##sys#gcd ##sys#lcm
-      ##sys#fudge ##sys#check-list ##sys#user-read-hook ##sys#check-closure ##sys#check-inexact
-      input-port? make-vector list->vector  open-output-string floor 
-      get-output-string current-output-port display write port? list->string
-      call-with-input-string with-input-from-string
-      make-string string newline char-name read 
-      open-input-string call-with-input-file reverse ) ) ] )
-
-(include "unsafe-declarations.scm")
+(include "common-declarations.scm")
 
 (register-feature! 'ports)
 

@@ -35,31 +35,14 @@
   (not inline ##sys#syntax-error-hook ##sys#compiler-syntax-hook
        ##sys#alias-global-hook ##sys#toplevel-definition-hook))
 
+(include "common-declarations.scm")
 
 (set! ##sys#features
   (append '(#:hygienic-macros #:syntax-rules) ##sys#features))
 
-(define (d arg1 . more)
-  (when (##sys#fudge 13)
-    (if (null? more)
-	(pp arg1)
-	(apply print arg1 more))) )
-
-(define dd d)
-(define dm d)
-(define dx d)
-
-(cond-expand
- ((not debugbuild)
-  (declare 
-    (no-bound-checks)
-    (no-procedure-checks)))
- (else))
-
-(begin
-  (define-syntax dd (syntax-rules () ((_ . _) (void))))
-  (define-syntax dm (syntax-rules () ((_ . _) (void))))
-  (define-syntax dx (syntax-rules () ((_ . _) (void)))) )
+(define-alias dd d)
+(define-alias dm d)
+(define-alias dx d)
 
 (define-inline (getp sym prop)
   (##core#inline "C_i_getprop" sym prop #f))
@@ -1089,7 +1072,7 @@
 	(cond ((not (pair? head))
 	       (##sys#check-syntax 'define form '(_ symbol . #(_ 0 1)))
 	       (##sys#register-export head (##sys#current-module))
-	       (when (eq? (car x) head)
+	       (when (c (r 'define) head)
 		 (##sys#defjam-error x))
 	       `(##core#set! 
 		 ,head 
@@ -1112,7 +1095,7 @@
 	     (##sys#check-syntax 'define-syntax head 'symbol)
 	     (##sys#check-syntax 'define-syntax body '#(_ 1))
 	     (##sys#register-export head (##sys#current-module))
-	     (when (eq? (car form) head)
+	     (when (c (r 'define-syntax) head)
 	       (##sys#defjam-error form))
 	     `(##core#define-syntax ,head ,(car body)))
 	    (else
@@ -1881,7 +1864,7 @@
 				       (set! missing #t)
 				       (##sys#warn 
 					(string-append 
-					 "exported identifier for module `" 
+					 "exported identifier of module `" 
 					 (symbol->string name)
 					 "' has not been defined")
 					id)

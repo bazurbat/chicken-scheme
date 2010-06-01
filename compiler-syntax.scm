@@ -68,10 +68,7 @@
 	(%lambda (r 'lambda))
 	(lsts (cddr x)))
     (if (and (memq 'for-each standard-bindings) ; we have to check this because the db (and thus 
-	     (> (length+ x) 2)			 ; intrinsic marks) isn't set up yet
-	     (or (and (pair? (cadr x))
-		      (c %lambda (caadr x)))
-		 (symbol? (cadr x))))
+	     (> (length+ x) 2))			 ; intrinsic marks) isn't set up yet
 	(let ((vars (map (lambda _ (gensym)) lsts)))
 	  `(,%let ((,%proc ,(cadr x))
 		   ,@(map list vars lsts))
@@ -106,10 +103,7 @@
 	(%pair? (r 'pair?))
 	(lsts (cddr x)))
     (if (and (memq 'map standard-bindings) ; s.a.
-	     (> (length+ x) 2)
-	     (or (and (pair? (cadr x))
-		      (c %lambda (caadr x)))
-		 (symbol? (cadr x))))
+	     (> (length+ x) 2))
 	(let ((vars (map (lambda _ (gensym)) lsts)))
 	  `(,%let ((,%result (,%quote ()))
 		   (,%node #f)
@@ -190,12 +184,11 @@
 		(args (cdr args)))
 	    (define (fail ret? msg . args)
 	      (let ((ln (get-line x)))
-		(compiler-warning 
-		 'syntax
-		 "`~a', in format string ~s~a, ~?" 
-		 func fstr 
-		 (if ln (sprintf "(~a)" ln) "")
-		 msg args) ) 
+		(warning 
+		 (sprintf "`~a', in format string ~s~a, ~?" 
+		   func fstr 
+		   (if ln (sprintf "(~a)" ln) "")
+		   msg args) ))
 	      (when ret? (return #f)))
 	    (let ((code '())
 		  (index 0)

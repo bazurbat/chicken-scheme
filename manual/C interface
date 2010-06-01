@@ -775,17 +775,21 @@ Calculate {{n1}} - {{n2}}.
 Like {{C_fixnum_difference}}, but unsafe (assumes no overflow/underflow).
 
 ===== C_fixnum_divide
+===== C_u_fixnum_divide
 
  [C macro] C_word C_fixnum_divide(C_word n1, C_word n2)
+ [C macro] C_word C_u_fixnum_divide(C_word n1, C_word n2)
 
 Divide {{n1}} by {{n2}}, returning the quotient (i.e., integer
-division).
+division). {{C_fixnum_divide}} signals an error if {{n2}} is zero.
 
 ===== C_fixnum_modulo
+===== C_u_fixnum_modulo
 
  [C macro] C_word C_fixnum_modulo(C_word n1, C_word n2)
+ [C macro] C_word C_u_fixnum_modulo(C_word n1, C_word n2)
 
-Calculate {{n1}} modulo {{n2}}.
+Calculate {{n1}} modulo {{n2}}. {{C_fixnum_modulo}} signals an error if {{n2}} is zero.
 
 ===== C_fixnum_and
 

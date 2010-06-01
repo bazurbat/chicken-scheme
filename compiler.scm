@@ -50,7 +50,6 @@
 ; (c-options {<opt>})
 ; (compile-syntax)
 ; (disable-interrupts)
-; (disable-warning <class> ...)
 ; (emit-import-library {<module> | (<module> <filename>)})
 ; (export {<name>})
 ; (fixnum-arithmetic)
@@ -59,7 +58,6 @@
 ; (inline-limit <limit>)
 ; (keep-shadowed-macros)
 ; (lambda-lift)
-; (link-options {<opt>})
 ; (no-argc-checks)
 ; (no-bound-checks)
 ; (no-procedure-checks)
@@ -257,8 +255,7 @@
 
 
 (declare
- (unit compiler)
- (disable-warning var) )
+ (unit compiler))
 
 
 (include "compiler-namespace")
@@ -511,9 +508,8 @@
     (cond ((symbol? x)
 	   (cond ((keyword? x) `(quote ,x))
 		 ((memq x unlikely-variables)
-		  (compiler-warning 
-		   'var
-		   "reference to variable `~s' possibly unintended" x) ))
+		  (warning 
+		   (sprintf "reference to variable `~s' possibly unintended" x) )))
 	   (resolve-variable x e se dest))
 	  ((not-pair? x)
 	   (if (constant? x)
@@ -604,8 +600,8 @@
 							    (##sys#canonicalize-extension-path 
 							     id 'require-extension)
 							    #f)) ) ) 
-					(compiler-warning 
-					 'ext "extension `~A' is currently not installed" id))
+					(warning 
+					 (sprintf "extension `~A' is currently not installed" id)))
 				      `(##core#begin ,exp ,(loop (cdr ids))) ) ) ) )
 			    e se dest) ) )
 
@@ -889,10 +885,9 @@
 				[ln (get-line x)]
 				[val (caddr x)] )
 			   (when (memq var unlikely-variables)
-			     (compiler-warning 
-			      'var
-			      "assignment to variable `~s' possibly unintended"
-			      var))
+			     (warning 
+			      (sprintf "assignment to variable `~s' possibly unintended"
+				var)))
 			   (cond ((assq var foreign-variables)
 				   => (lambda (fv)
 					(let ([type (second fv)]
@@ -921,17 +916,17 @@
 				    (when safe-globals-flag
 				      (mark-variable var '##compiler#always-bound-to-procedure)
 				      (mark-variable var '##compiler#always-bound)))
-				  (when (##sys#macro? var)
-				    (compiler-warning 
-				     'var "assigned global variable `~S' is a macro ~A"
-				     var
-				     (if ln (sprintf "(~a)" ln) "") )
-				    (when undefine-shadowed-macros (##sys#undefine-macro! var) ) )
+				  (cond ((##sys#macro? var)
+					 (warning 
+					  (sprintf "assigned global variable `~S' is syntax ~A"
+					    var
+					    (if ln (sprintf "(~a)" ln) "") ))
+					 (when undefine-shadowed-macros (##sys#undefine-macro! var) ) )
+					((and ##sys#notices-enabled
+					      (assq var (##sys#current-environment)))
+					 (##sys#notice "assignment to imported value binding" var)))
 				  (when (keyword? var)
-				    (compiler-warning 'syntax "assignment to keyword `~S'" var) )
-				  (when (pair? var) ; macro
-				    (syntax-error
-				     'set! "assignment to syntactic identifier" var))
+				    (warning (sprintf "assignment to keyword `~S'" var) ))
 				  `(set! ,var ,(walk val e se var0))))))
 
 			((##core#inline)
@@ -1149,7 +1144,8 @@
 						    nonnull-c-string))
 						 `((##sys#make-c-string
 						    (##core#let
-						     () ,@(cddr lam)))))
+						     () ,@(cddr lam))
+                                                    ',name)))
 						((member 
 						  rtype
 						  '((const c-string*)
@@ -1172,7 +1168,7 @@
 						    ((r (##core#let () ,@(cddr lam))))
 						    (,(macro-alias 'and se)
 						     r 
-						     (##sys#make-c-string r)) ) ) )
+						     (##sys#make-c-string r ',name)) ) ) )
 						(else (cddr lam)) ) )
 					   rtype) ) )
 				      e se #f) ) ) ) )
@@ -1210,7 +1206,7 @@
 
 	  ((constant? (car x))
 	   (emit-syntax-trace-info x #f)
-	   (compiler-warning 'syntax "literal in operator position: ~S" x) 
+	   (warning "literal in operator position" x) 
 	   (mapwalk x e se) )
 
 	  (else
@@ -1270,7 +1266,7 @@
 	(let* ([u (stripu (cadr spec))]
 	       [un (string->c-identifier (stringify u))] )
 	  (when (and unit-name (not (string=? unit-name un)))
-	    (compiler-warning 'usage "unit was already given a name (new name is ignored)") )
+	    (warning "unit was already given a name (new name is ignored)") )
 	  (set! unit-name un) ) )
        ((standard-bindings)
 	(if (null? (cdr spec))
@@ -1300,9 +1296,6 @@
        ((no-procedure-checks) (set! no-procedure-checks #t))
        ((interrupts-enabled) (set! insert-timer-checks #t))
        ((disable-interrupts) (set! insert-timer-checks #f))
-       ((disable-warning)
-	(set! disabled-warnings
-	  (append (strip (cdr spec)) disabled-warnings)))
        ((always-bound) 
 	(for-each (cut mark-variable <> '##compiler#always-bound) (stripa (cdr spec))))
        ((safe-globals) (set! safe-globals-flag #t))
@@ -1371,8 +1364,8 @@
 	     (case id
 	       [(interrupts-enabled) (set! insert-timer-checks #f)]
 	       [(safe) (set! unsafe #t)]
-	       [else (compiler-warning 'syntax "illegal declaration specifier `~s'" id)]))]))
-       ((compile-syntax )
+	       [else (warning "unsupported declaration specifier" id)]))]))
+       ((compile-syntax)
 	(set! ##sys#enable-runtime-macros #t))
        ((block-global hide) 
 	(let ([syms (stripa (cdr spec))])
@@ -1397,9 +1390,9 @@
 	(let ([n (cadr spec)])
 	  (if (number? n)
 	      (set! inline-max-size n)
-	      (compiler-warning 
-	       'syntax
-	       "invalid argument to `inline-limit' declaration: ~s" spec) ) ) )
+	      (warning 
+	       "invalid argument to `inline-limit' declaration"
+	       spec) ) ) )
        ((constant)
 	(let ((syms (cdr spec)))
 	  (if (every symbol? syms)
@@ -1416,16 +1409,15 @@
 			      (symbol? (car il)) (string (cadr il)))
 			 (cons (car il) (cadr il))) 
 			(else
-			 (compiler-warning 
-			  'syntax
-			  "invalid import-library specification: ~s" il))))
+			 (warning 
+			  "invalid import-library specification" il))))
 		(strip (cdr spec))))))
        ((profile)
 	(set! emit-profile #t)
 	(cond ((null? (cdr spec))
 	       (set! profiled-procedures 'all) )
 	      (else
-	       (set! profiled-propcedures 'some)
+	       (set! profiled-procedures 'some)
 	       (for-each 
 		(cut mark-variable <> '##compiler#profile)
 		(stripa (cdr spec))))))
@@ -1451,11 +1443,11 @@
 		  (##sys#put! (car spec) '##core#type (cadr spec))
 		  (##sys#put! (car spec) '##core#declared-type #t))
 		 (else
-		  (compiler-warning 'syntax "illegal `type' declaration item `~s'" spec))))
+		  (warning "illegal `type' declaration item" spec))))
 	 (cdr spec)))
        ((scrutinize)
 	(set! do-scrutinize #t))
-       (else (compiler-warning 'syntax "illegal declaration specifier `~s'" spec)) )
+       (else (warning "illegal declaration specifier" spec)) )
      '(##core#undefined) ) ) )
 
 
@@ -1682,8 +1674,8 @@
 ;;; Perform source-code analysis:
 
 (define (analyze-expression node)
-  (let ([db (make-vector analysis-database-size '())]
-	[explicitly-consed '()] )
+  (let ((db (make-vector analysis-database-size '()))
+	(explicitly-consed '()) )
 
     (define (grow n)
       (set! current-program-size (+ current-program-size n)) )
@@ -1720,7 +1712,7 @@
 	   (grow 1)
 	   (let ([fun (car subs)])
 	     (when (eq? '##core#variable (node-class fun))
-	       (let ([name (first (node-parameters fun))])
+	       (let ((name (first (node-parameters fun))))
 		 (collect! db name 'call-sites (cons here n))))
 	     (walk (first subs) env localenv here #t)
 	     (walkeach (cdr subs) env localenv here #f) ) )
@@ -1778,14 +1770,14 @@
 		  (set-car! (cdddr (node-parameters n)) (- current-program-size size0)) ) ) ) ) )
 	  
 	  ((set! ##core#set!) 
-	   (let* ([var (first params)]
-		  [val (car subs)] )
+	   (let* ((var (first params))
+		  (val (car subs)) )
 	     (when first-analysis 
 	       (case (variable-mark var '##compiler#intrinsic)
 		 ((standard)
-		  (compiler-warning 'redef "redefinition of standard binding `~S'" var) )
+		  (warning "redefinition of standard binding" var) )
 		 ((extended)
-		  (compiler-warning 'redef "redefinition of extended binding `~S'" var) ) )
+		  (warning "redefinition of extended binding" var) ) )
 	       (put! db var 'potential-value val) )
 	     (unless (memq var localenv)
 	       (grow 1)
@@ -1799,7 +1791,7 @@
 	     (walk (car subs) env localenv here #f) ) )
 
 	  ((##core#primitive ##core#inline)
-	   (let ([id (first params)])
+	   (let ((id (first params)))
 	     (when (and first-analysis here (symbol? id) (##sys#hash-table-ref real-name-table id))
 	       (set-real-name! id here) )
 	     (walkeach subs env localenv here #f) ) )
@@ -1917,7 +1909,7 @@
 	   (when (and (not (variable-visible? sym))
 		      (not (variable-mark sym '##compiler#constant)) )
 	     (##sys#notice 
-	      (sprintf "global variable `~S' is never used" sym) ) ) )
+	      (sprintf "global variable `~S' is only locally visible and never used" sym) ) ) )
 
  	 ;; Make 'boxed, if 'assigned & 'captured:
 	 (when (and assigned captured)
@@ -2064,7 +2056,43 @@
     ;; Set original program-size, if this is the first analysis-pass:
     (unless original-program-size
       (set! original-program-size current-program-size) )
+
+    ;; return database
     db) )
+
+
+;;; Collect unsafe global procedure calls that are assigned:
+
+(define (check-for-unsafe-toplevel-procedure-calls node db)
+  (let ((procs '()))
+
+    (define (walk n)
+      (let ((subs (node-subexpressions n))
+	    (params (node-parameters n)) 
+	    (class (node-class n)) )
+	(case class
+	  ((##core#call)
+	   (let ((fun (first subs)))
+	     (when (memq (node-class fun) '(##core#variable ##core#global-ref))
+	       (let ((name (first (node-parameters fun))))
+		 (when (and ##sys#notices-enabled
+			    (get db name 'global)
+			    (get db name 'assigned)
+			    (or no-global-procedure-checks
+				(variable-mark name '##compiler#always-bound-to-procedure))
+			    (not unsafe))
+		   (set! procs (lset-adjoin eq? procs name))))))
+	   (for-each walk subs))
+	  (else (for-each walk subs)))))
+
+    (when ##sys#notices-enabled
+      (walk node)
+      (when (pair? procs)
+	(##sys#notice
+	 "the following non-intrinsic global procedures where declared to be safe but are externally visible:")
+	(newline (current-error-port))
+	(for-each (cute fprintf (current-error-port) "  ~S~%" <>) procs)
+	(flush-output (current-error-port))))))
 
 
 ;;; Convert closures to explicit data structures (effectively flattens function-binding structure):
@@ -2559,9 +2587,10 @@
 		   ((number? c)
 		    (cond ((eq? 'fixnum number-type)
 			   (cond ((and (integer? c) (not (big-fixnum? c)))
-				  (compiler-warning 
-				   'type 
-				   "coerced inexact literal number `~S' to fixnum ~S" c (inexact->exact c))
+				  (warning 
+				   (sprintf 
+				       "coerced inexact literal number `~S' to fixnum ~S" 
+				     c (inexact->exact c)))
 				  (immediate-literal (inexact->exact c)) )
 				 (else (quit "cannot coerce inexact literal `~S' to fixnum" c)) ) )
 			  (else (make-node '##core#literal (list (literal c)) '())) ) )

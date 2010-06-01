@@ -28,8 +28,6 @@
 (declare
   (unit lolevel)
   (uses srfi-69)
-  (usual-integrations)
-  (disable-warning var redef)
   (hide ipc-hook-0 *set-invalid-procedure-call-handler! xproc-tag
    ##sys#check-block
    ##sys#check-become-alist
@@ -49,27 +47,7 @@
 EOF
 ) )
 
-(cond-expand
- [paranoia]
- [else
-  (declare
-    (no-bound-checks)
-    (no-procedure-checks-for-usual-bindings)
-    (bound-to-procedure
-     ##sys#check-pointer ##sys#check-closure ##sys#check-integer ##sys#check-special
-     ##sys#error ##sys#signal-hook ##sys#error-hook 
-     ##sys#error-not-a-proper-list
-     make-hash-table hash-table-ref/default hash-table-set!
-     ##sys#make-pointer ##sys#make-tagged-pointer ##sys#make-locative ##sys#locative?
-     ##sys#become!
-     ##sys#make-string ##sys#make-vector ##sys#vector->closure!
-     make-property-condition make-composite-condition signal
-     ##sys#generic-structure?
-     ##sys#set-pointer-address! ##sys#address->pointer ##sys#pointer->address
-     ##sys#lambda-decoration ##sys#decorate-lambda
-     extend-procedure ) ) ] )
-
-(include "unsafe-declarations.scm")
+(include "common-declarations.scm")
 
 (register-feature! 'lolevel)
 

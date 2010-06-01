@@ -142,7 +142,9 @@
 (define-constant complex-options
   '(-debug -output-file -heap-size -nursery -stack-size -compiler -unit -uses -keyword-style
     -optimize-level -include-path -database-size -extend -prelude -postlude -prologue -epilogue 
-    -inline-limit -profile-name -disable-warning -emit-inline-file -types
+    -inline-limit -profile-name
+    -disable-warning			; OBSOLETE
+    -emit-inline-file -types
     -feature -debug-level -heap-growth -heap-shrinkage -heap-initial-size -consult-inline-file
     -emit-import-library -static-extension))
 
@@ -337,7 +339,6 @@ Usage: #{csc} FILENAME | OPTION ...
   Debugging options:
 
     -w  -no-warnings               disable warnings
-    -disable-warning CLASS         disable specific class of warnings
     -d0 -d1 -d2 -debug-level NUMBER
                                    set level of available debugging information
     -no-trace                      disable rudimentary debugging information
@@ -506,7 +507,7 @@ EOF
     (when osx
       (set! link-options (cons "-framework CoreFoundation" link-options))))
 
-  (let loop ([args args])
+  (let loop ((args args))
     (cond [(null? args)
 	   ;; Builtin search directory options do not override explict options
            (set! compile-options (append compile-options builtin-compile-options))
@@ -590,7 +591,7 @@ EOF
 	       [(-libs)
 		(set! inquiry-only #t)
 		(set! show-libs #t) ]
-	       [(-v)
+	       [(-v -verbose)
 		(when (and (number? verbose) (not msvc))
 		  (set! compile-options (cons* "-v" "-Q" compile-options))
 		  (set! link-options (cons (if msvc "-VERBOSE" "-v") link-options)) )

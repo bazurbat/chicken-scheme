@@ -26,8 +26,7 @@
 
 
 (declare
-  (unit driver)
-  (disable-warning var))
+  (unit driver))
 
 (include "compiler-namespace")
 (include "tweaks")
@@ -198,7 +197,6 @@
       (set! enable-inline-files #t)
       (set! inline-locally #t)
       (set! inline-globally #t))
-    (set! disabled-warnings (map string->symbol (collect-options 'disable-warning)))
     (when (or verbose do-scrutinize)
       (set! ##sys#notices-enabled #t))
     (when (memq 'no-warnings options) 
@@ -228,8 +226,6 @@
       (dribble "Identifiers and symbols are case insensitive")
       (register-feature! 'case-insensitive)
       (case-sensitive #f) )
-    (when (memq 'compress-literals options)
-      (compiler-warning 'usage "`the -compress-literals' option is obsolete") )
     (when kwstyle
       (let ([val (option-arg kwstyle)])
 	(cond [(string=? "prefix" val) (keyword-style #:prefix)]
@@ -591,6 +587,7 @@
 			      (let ((f inline-output-file))
 				(dribble "Generating global inline file `~a' ..." f)
 				(emit-global-inline-file f db) ) )
+			    (check-for-unsafe-toplevel-procedure-calls node2 db)
 			    (begin-time)
 			    (set! node2 (perform-closure-conversion node2 db))
 			    (end-time "closure conversion")

@@ -28,8 +28,6 @@
 (declare
   (unit library)
   (disable-interrupts)
-  (disable-warning var redef)
-  (usual-integrations)
   (hide ##sys#dynamic-unwind ##sys#find-symbol
 	##sys#grow-vector ##sys#default-parameter-vector 
 	print-length-limit current-print-length setter-tag read-marks
@@ -68,6 +66,7 @@
 #define C_close_file(p)	      (C_fclose((C_FILEPTR)(C_port_file(p))), C_SCHEME_UNDEFINED)
 #define C_a_f64peek(ptr, c, b, i)  C_flonum(ptr, ((double *)C_data_pointer(b))[ C_unfix(i) ])
 #define C_fetch_c_strlen(b, i) C_fix(strlen((C_char *)C_block_item(b, C_unfix(i))))
+#define C_asciiz_strlen(str) C_fix(strlen(C_c_string(str)))
 #define C_peek_c_string(b, i, to, len) (C_memcpy(C_data_pointer(to), (C_char *)C_block_item(b, C_unfix(i)), C_unfix(len)), C_SCHEME_UNDEFINED)
 #define C_free_mptr(p, i)     (C_free((void *)C_block_item(p, C_unfix(i))), C_SCHEME_UNDEFINED)
 #define C_free_sptr(p, i)     (C_free((void *)(((C_char **)C_block_item(p, 0))[ C_unfix(i) ])), C_SCHEME_UNDEFINED)
@@ -129,53 +128,8 @@ fast_read_string_from_file (C_word dest, C_word port, C_word len, C_word pos)
 EOF
 ) )
 
-(cond-expand
- [paranoia]
- [else
-  (declare
-    (no-bound-checks)
-    (no-procedure-checks-for-usual-bindings)
-    (bound-to-procedure
-     ##sys#check-char ##sys#check-exact ##sys#check-port ##sys#check-port* ##sys#check-string ##sys#substring ##sys#check-port-mode
-     ##sys#for-each ##sys#map ##sys#setslot ##sys#allocate-vector ##sys#check-pair 
-     ##sys#error-not-a-proper-list ##sys#error ##sys#warn ##sys#signal-hook
-     ##sys#check-symbol ##sys#check-vector  
-     ##sys#check-number ##sys#check-integer ##sys#check-special
-     ##sys#flonum-fraction ##sys#make-port ##sys#print 
-     ##sys#check-structure ##sys#make-structure ##sys#procedure->string
-     ##sys#gcd ##sys#lcm ##sys#ensure-heap-reserve ##sys#check-list 
-     ##sys#enable-interrupts ##sys#disable-interrupts ##sys#->feature-id
-     ##sys#fudge ##sys#user-read-hook ##sys#check-range ##sys#read
-     ##sys#string->symbol ##sys#symbol->string ##sys#dynamic-unwind ##sys#pathname-resolution
-     ##sys#platform-fixup-pathname ##sys#expand-home-path ##sys#string-append ##sys#symbol->qualified-string
-     ##sys#error-handler ##sys#signal ##sys#abort ##sys#port-data ##sys#set-port-data!
-     ##sys#reset-handler ##sys#exit-handler ##sys#dynamic-wind ##sys#port-line
-     ##sys#grow-vector ##sys#run-pending-finalizers ##sys#peek-char-0 ##sys#read-char-0
-     ##sys#read-char/port ##sys#write-char/port
-     ##sys#schedule ##sys#make-thread ##sys#print-to-string ##sys#scan-buffer-line
-     ##sys#update-thread-state-buffer ##sys#restore-thread-state-buffer ##sys#user-print-hook 
-     ##sys#current-exception-handler ##sys#default-exception-handler ##sys#abandon-mutexes ##sys#make-mutex
-     ##sys#port-has-file-pointer? ##sys#infix-list-hook char-name ##sys#open-file-port make-parameter
-     ##sys#intern-symbol ##sys#make-string ##sys#number? software-type build-platform
-     open-output-string get-output-string print-call-chain ##sys#symbol-has-toplevel-binding? repl
-     argv condition-property-accessor ##sys#decorate-lambda ##sys#become! ##sys#lambda-decoration
-     getter-with-setter ##sys#lambda-info ##sys#lambda-info->string open-input-string ##sys#gc
-     ##sys#memory-info ##sys#make-c-string ##sys#find-symbol-table display
-     newline string-append ##sys#with-print-length-limit write print vector-fill! ##sys#context-switch
-     ##sys#set-finalizer! open-output-string get-output-string read ##sys#make-pointer
-     ##sys#pointer->address number->string ##sys#flush-output
-     ##sys#apply-values ##sys#get-call-chain ##sys#really-print-call-chain
-     string->keyword keyword? string->keyword get-environment-variable ##sys#number->string ##sys#copy-bytes
-     call-with-current-continuation ##sys#string->number ##sys#inexact->exact ##sys#exact->inexact
-     ##sys#reverse-list->string reverse ##sys#inexact? list? string ##sys#char->utf8-string 
-     ##sys#unicode-surrogate? ##sys#surrogates->codepoint ##sys#write-char/port
-     ##sys#update-errno ##sys#file-info close-output-port close-input-port ##sys#peek-unsigned-integer
-     continuation-graft char-downcase string-copy remainder floor ##sys#exact? list->string
-     ##sys#append ##sys#list ##sys#cons ##sys#list->vector ##sys#apply ##sys#make-vector
-     ##sys#write-char ##sys#force-finalizers ##sys#cleanup-before-exit ##sys#write-char-0
-     ##sys#default-read-info-hook ##sys#read-error) ) ] )
 
-
+(include "common-declarations.scm")
 (include "version.scm")
 (include "banner.scm")
 
@@ -234,7 +188,7 @@ EOF
 (define (argc+argv) (##sys#values main_argc main_argv))
 (define ##sys#make-structure (##core#primitive "C_make_structure"))
 (define ##sys#ensure-heap-reserve (##core#primitive "C_ensure_heap_reserve"))
-(define (##sys#fudge fudge-factor) (##core#inline "C_fudge" fudge-factor))
+(define (##sys#fudge index) (##core#inline "C_fudge" index))
 (define ##sys#call-host (##core#primitive "C_return_to_host"))
 (define return-to-host ##sys#call-host)
 (define ##sys#file-info (##core#primitive "C_file_info"))
@@ -354,8 +308,6 @@ EOF
   (if (pair? loc)
       (##core#inline "C_i_check_closure_2" x (car loc))
       (##core#inline "C_i_check_closure" x) ) )
-
-(include "unsafe-declarations.scm")
 
 (define (##sys#force promise)
   (if (##sys#structure? promise 'promise)
@@ -743,16 +695,10 @@ EOF
 (define (fxodd? x) (##core#inline "C_i_fixnumoddp" x))
 (define (fxeven? x) (##core#inline "C_i_fixnumevenp" x))
 
-(define-inline (fx-check-divison-by-zero x y loc)
-  (when (eq? 0 y)
-    (##sys#error-hook (foreign-value "C_DIVISION_BY_ZERO_ERROR" int) loc x y) ) )
-
 (define (fx/ x y)
-  (fx-check-divison-by-zero x y 'fx/)
   (##core#inline "C_fixnum_divide" x y) )
 
 (define (fxmod x y)
-  (fx-check-divison-by-zero x y 'fxmod)
   (##core#inline "C_fixnum_modulo" x y) )
 
 (define maximum-flonum (foreign-value "DBL_MAX" double))
@@ -2007,7 +1953,7 @@ EOF
   (##sys#pathname-resolution
    filename
    (lambda (filename)
-     (unless (eq? 0 (##core#inline "C_delete_file" (##sys#make-c-string filename)))
+     (unless (eq? 0 (##core#inline "C_delete_file" (##sys#make-c-string filename 'delete-file)))
        (##sys#update-errno)
        (##sys#signal-hook
 	#:file-error 'delete-file
@@ -2024,7 +1970,7 @@ EOF
      (##sys#pathname-resolution
       new
       (lambda (new)
-	(unless (eq? 0 (##core#inline "C_rename_file" (##sys#make-c-string old) (##sys#make-c-string new)))
+	(unless (eq? 0 (##core#inline "C_rename_file" (##sys#make-c-string old 'rename-file) (##sys#make-c-string new)))
 	  (##sys#update-errno)
 	  (##sys#signal-hook
 	   #:file-error 'rename-file
@@ -3021,20 +2967,30 @@ EOF
     (##core#undefined) ) )
 
 (define (##sys#user-print-hook x readable port)
-  (let* ([type (##sys#slot x 0)]
-	 [a (assq type ##sys#record-printers)] )
-    (cond [a ((##sys#slot a 1) x port)]
-	  [else
+  (let* ((type (##sys#slot x 0))
+	 (a (assq type ##sys#record-printers)) )
+    (cond (a (handle-exceptions ex
+		(begin
+		  (##sys#print "#<Error in printer of record type `" #f port)
+		  (##sys#print (##sys#symbol->string type) #f port)
+		  (if (##sys#structure? ex 'condition)
+		      (and-let* ((a (member '(exn . message) (##sys#slot ex 2))))
+			(##sys#print "': " #f port)
+			(##sys#print (cadr a) #f port)
+			(##sys#write-char-0 #\> port))
+		      (##sys#print "'>" #f port)))
+	       ((##sys#slot a 1) x port)))
+	  (else
 	   (##sys#print "#<" #f port)
 	   (##sys#print (##sys#symbol->string type) #f port)
 	   (case type
-	     [(condition)
+	     ((condition)
 	      (##sys#print ": " #f port)
-	      (##sys#print (##sys#slot x 1) #f port) ]
-	     [(thread)
+	      (##sys#print (##sys#slot x 1) #f port) )
+	     ((thread)
 	      (##sys#print ": " #f port)
-	      (##sys#print (##sys#slot x 6) #f port) ] )
-	   (##sys#print #\> #f port) ] ) ) )
+	      (##sys#print (##sys#slot x 6) #f port) ) )
+	   (##sys#write-char-0 #\> port) ) ) ) )
 
 (define ##sys#with-print-length-limit
   (let ([call-with-current-continuation call-with-current-continuation])
@@ -3318,8 +3274,7 @@ EOF
 	    [else	  (err x)] ) ) ) )
 
 (define ##sys#features
-  '(#:chicken #:chicken-4
-    #:srfi-23 #:srfi-30 #:srfi-39 #:srfi-62 #:srfi-17 #:srfi-12 #:srfi-88 #:srfi-98))
+  '(#:chicken #:srfi-23 #:srfi-30 #:srfi-39 #:srfi-62 #:srfi-17 #:srfi-12 #:srfi-88 #:srfi-98))
 
 ;; Add system features:
 
@@ -3336,6 +3291,15 @@ EOF
 (when (##sys#fudge 24) (set! ##sys#features (cons #:dload ##sys#features)))
 (when (##sys#fudge 28) (set! ##sys#features (cons #:ptables ##sys#features)))
 (when (##sys#fudge 39) (set! ##sys#features (cons #:cross-chicken ##sys#features)))
+
+(set! ##sys#features
+  (let ((major (##sys#string-append "chicken-" (##sys#number->string (##sys#fudge 41)))))
+    (cons (##sys#->feature-id major)
+	  (cons (##sys#->feature-id 
+		 (string-append
+		  major "."
+		  (##sys#number->string (##sys#fudge 43))))
+		##sys#features))))
 
 (define (register-feature! . fs)
   (for-each
@@ -3774,10 +3738,16 @@ EOF
   ;; *** '4' is platform dependent!
   (##core#inline_allocate ("C_a_unsigned_int_to_num" 4) (##sys#slot ptr 0)) )
 
-(define (##sys#make-c-string str)
-  (##sys#string-append
-   str
-   (string (##core#inline "C_make_character" (##core#inline "C_unfix" 0)))) )
+(define (##sys#make-c-string str #!optional (loc '##sys#make-c-string))
+  (let* ([len (##sys#size str)]
+         [buf (##sys#make-string (fx+ len 1))] )
+    (##core#inline "C_substring_copy" str buf 0 len 0)
+    (##core#inline "C_setsubchar" buf len #\nul)
+    (if (fx= (##core#inline "C_asciiz_strlen" buf) len)
+        buf
+        (##sys#signal-hook #:type-error loc
+                           "cannot represent string with NUL bytes as C string"
+                           str))) )
 
 (define ##sys#peek-signed-integer (##core#primitive "C_peek_signed_integer"))
 (define ##sys#peek-unsigned-integer (##core#primitive "C_peek_unsigned_integer"))
@@ -4399,7 +4369,7 @@ EOF
 		    (cond [(symbol? prefix) (##sys#slot prefix 1)]
 			  [(string? prefix) prefix]
 			  [else (##sys#signal-hook #:type-error "bad argument type - invalid prefix" prefix)] ) ) ] )
-	  (let ([nsp (##sys#find-symbol-table (##sys#make-c-string (##sys#slot ns 1)))])
+	  (let ([nsp (##sys#find-symbol-table (##sys#make-c-string (##sys#slot ns 1) 'import))])
 	    (define (copy s str)
 	      (let ([s2 (##sys#intern-symbol
 			 (if prefix
@@ -4437,7 +4407,7 @@ EOF
 	    (cond [(symbol? sym) (##sys#slot sym 1)]
 		  [(string? sym) sym]
 		  [else (##sys#signal-hook #:type-error "bad argument type - not a valid import name" sym)] ) 
-	    (##sys#find-symbol-table (##sys#make-c-string (##sys#slot ns 1))) ) ] )
+	    (##sys#find-symbol-table (##sys#make-c-string (##sys#slot ns 1) '##sys#namespace-ref)) ) ] )
     (cond [s (##core#inline "C_retrieve" s)]
 	  [(pair? default) (car default)]
 	  [else (##sys#error "symbol not exported from namespace" sym ns)] ) ) )
@@ -4493,10 +4463,11 @@ EOF
 
 ;;; Function debug info:
 
+(define (##sys#lambda-info? x)
+  (and (not (##sys#immediate? x)) (##core#inline "C_lambdainfop" x)))
+
 (define (##sys#lambda-info proc)
-  (##sys#lambda-decoration 
-   proc 
-   (lambda (x) (and (not (##sys#immediate? x)) (##core#inline "C_lambdainfop" x))) ) )
+  (##sys#lambda-decoration proc ##sys#lambda-info?))
 
 (define (##sys#lambda-info->string info)
   (let* ((sz (##sys#size info))
@@ -4547,29 +4518,38 @@ EOF
 (define setter ##sys#setter)
 
 (define (getter-with-setter get set)
-  (##sys#decorate-lambda
-   get
-   setter?
-   (lambda (proc i)
-     (##sys#setslot proc i (cons setter-tag set))
-     proc) ) )
+  (let ((getdec (##sys#lambda-info get))
+	(p1 (##sys#decorate-lambda
+	     get
+	     setter?
+	     (lambda (proc i)
+	       (##sys#setslot proc i (cons setter-tag set))
+	       proc) )))
+    (if getdec
+	(##sys#decorate-lambda
+	 p1
+	 ##sys#lambda-info?
+	 (lambda (p i)
+	   (##sys#setslot p i getdec)
+	   p))
+	p1)))
 
-(define car (getter-with-setter car set-car!))
-(define cdr (getter-with-setter cdr set-cdr!))
-(define caar (getter-with-setter caar (lambda (x y) (set-car! (car x) y))))
-(define cadr (getter-with-setter cadr (lambda (x y) (set-car! (cdr x) y))))
-(define cdar (getter-with-setter cdar (lambda (x y) (set-cdr! (car x) y))))
-(define cddr (getter-with-setter cddr (lambda (x y) (set-cdr! (cdr x) y))))
-(define caaar (getter-with-setter caaar (lambda (x y) (set-car! (caar x) y))))
-(define caadr (getter-with-setter caadr (lambda (x y) (set-car! (cadr x) y))))
-(define cadar (getter-with-setter cadar (lambda (x y) (set-car! (cdar x) y))))
-(define caddr (getter-with-setter caddr (lambda (x y) (set-car! (cddr x) y))))
-(define cdaar (getter-with-setter cdaar (lambda (x y) (set-cdr! (caar x) y))))
-(define cdadr (getter-with-setter cdadr (lambda (x y) (set-cdr! (cadr x) y))))
-(define cddar (getter-with-setter cddar (lambda (x y) (set-cdr! (cdar x) y))))
-(define cdddr (getter-with-setter cdddr (lambda (x y) (set-cdr! (cddr x) y))))
-(define string-ref (getter-with-setter string-ref string-set!))
-(define vector-ref (getter-with-setter vector-ref vector-set!))
+(set! car (getter-with-setter car set-car!))
+(set! cdr (getter-with-setter cdr set-cdr!))
+(set! caar (getter-with-setter caar (lambda (x y) (set-car! (car x) y))))
+(set! cadr (getter-with-setter cadr (lambda (x y) (set-car! (cdr x) y))))
+(set! cdar (getter-with-setter cdar (lambda (x y) (set-cdr! (car x) y))))
+(set! cddr (getter-with-setter cddr (lambda (x y) (set-cdr! (cdr x) y))))
+(set! caaar (getter-with-setter caaar (lambda (x y) (set-car! (caar x) y))))
+(set! caadr (getter-with-setter caadr (lambda (x y) (set-car! (cadr x) y))))
+(set! cadar (getter-with-setter cadar (lambda (x y) (set-car! (cdar x) y))))
+(set! caddr (getter-with-setter caddr (lambda (x y) (set-car! (cddr x) y))))
+(set! cdaar (getter-with-setter cdaar (lambda (x y) (set-cdr! (caar x) y))))
+(set! cdadr (getter-with-setter cdadr (lambda (x y) (set-cdr! (cadr x) y))))
+(set! cddar (getter-with-setter cddar (lambda (x y) (set-cdr! (cdar x) y))))
+(set! cdddr (getter-with-setter cdddr (lambda (x y) (set-cdr! (cddr x) y))))
+(set! string-ref (getter-with-setter string-ref string-set!))
+(set! vector-ref (getter-with-setter vector-ref vector-set!))
 
 
 ;;; Property lists
@@ -4634,30 +4614,29 @@ EOF
 
 (define (##sys#display-times info)
   (define (pstr str) (##sys#print str #f ##sys#standard-error))
+  (define (pchr chr) (##sys#write-char-0 chr ##sys#standard-error))
   (define (pnum num)
     (##sys#print (if (zero? num) "0" (##sys#number->string num)) #f ##sys#standard-error))
   (##sys#flush-output ##sys#standard-output)
   (pnum (##sys#slot info 0))
-  (pstr "s elapsed")
+  (pstr "s CPU time")
   (let ((gctime (##sys#slot info 1)))
     (when (> gctime 0)
       (pstr ", ")
       (pnum gctime)
-      (pstr "s (major) GC")))
+      (pstr "s GC time (major)")))
   (let ((mut (##sys#slot info 2)))
     (when (fx> mut 0)
       (pstr ", ")
       (pnum mut)
       (pstr " mutations")))
-  (let ((minor (##sys#slot info 3)))
-    (when (fx> minor 0)
-      (pstr ", GCs: ")
-      (pnum minor)
-      (pstr " minor")))
-  (let ((major (##sys#slot info 4)))
-    (when (fx> major 0)
+  (let ((minor (##sys#slot info 3))
+	(major (##sys#slot info 4)))
+    (when (or (fx> minor 0) (fx> major 0))
       (pstr ", ")
       (pnum major)
-      (pstr " major")))
-  (##sys#write-char-0 #\newline ##sys#standard-error))
-
+      (pchr #\/)
+      (pnum minor)
+      (pstr " GCs")))
+  (##sys#write-char-0 #\newline ##sys#standard-error)
+  (##sys#flush-output ##sys#standard-error))

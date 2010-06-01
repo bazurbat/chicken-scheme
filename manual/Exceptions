@@ -139,7 +139,7 @@ exception handler is invoked for a continuable exception, the continuation
 uses the handler's result(s) in an exception-specific way to continue.
 When an exception handler is invoked for a non-continuable exception,
 the continuation raises a non-continuable exception indicating that the
-exception handler returned.  On Chicken, system error exceptions
+exception handler returned.  On CHICKEN, system error exceptions
 (of kind {{exn}}) are non-continuable.
 
 === Exception Handlers
@@ -158,7 +158,7 @@ Example:
 
  (call-with-current-continuation
   (lambda (k)
-   (WITH-EXCEPTION-HANDLER (lambda (x) (k '()))
+   (with-exception-handler (lambda (x) (k '()))
                            (lambda () (car '())))))
  ;=> '()
 
@@ -167,37 +167,37 @@ Example:
 Evaluates the body expressions ''expr1'', ''expr2'', ... in sequence with
 an exception handler constructed from ''var'' and ''handle-expr''. Assuming
 no exception is raised, the result(s) of the last body expression is(are)
-the result(s) of the HANDLE-EXCEPTIONS expression.
+the result(s) of the {{handle-exceptions}} expression.
 
-The exception handler created by HANDLE-EXCEPTIONS restores the dynamic
-context (continuation, exception handler, etc.) of the HANDLE-EXCEPTIONS
+The exception handler created by {{handle-exceptions}} restores the dynamic
+context (continuation, exception handler, etc.) of the {{handle-exceptions}}
 expression, and then evaluates ''handle-expr'' with ''var'' bound to the
 value provided to the handler.
 
 Examples:
 
- (HANDLE-EXCEPTIONS exn
+ (handle-exceptions exn
 		    (begin
 		      (display "Went wrong")
 		      (newline))
   (car '()))
  ; displays "Went wrong"
  
- (HANDLE-EXCEPTIONS exn 
+ (handle-exceptions exn 
 		    (cond
 		     ((eq? exn 'one) 1)
 		     (else (ABORT exn)))
    (case (random-number)
     [(0) 'zero]
-    [(1) (ABORT 'one)]
-    [else (ABORT "Something else")]))
- ;=> 'zero, 1, or (ABORT "Something else")
+    [(1) (abort 'one)]
+    [else (abort "Something else")]))
+ ;=> 'zero, 1, or (abort "Something else")
 
 === Raising Exceptions
 
 <procedure>(abort obj)</procedure><br>
 
-Raises a non-continuable exception represented by ''obj''. The ABORT
+Raises a non-continuable exception represented by ''obj''. The {{abort}}
 procedure can be implemented as follows:
 
  (define (abort obj)
@@ -207,20 +207,20 @@ procedure can be implemented as follows:
 	    'message
 	    "Exception handler returned")))
 
-The ABORT procedure does not ensure that its argument is a condition.
-If its argument is a condition, ABORT does not ensure that the condition
+The {{abort}} procedure does not ensure that its argument is a condition.
+If its argument is a condition, {{abort}} does not ensure that the condition
 indicates a non-continuable exception.
 
 <procedure>(signal obj)</procedure><br>
 
-Raises a continuable exception represented by ''obj''. The SIGNAL procedure
+Raises a continuable exception represented by ''obj''. The {{signal}} procedure
 can be implemented as follows:
 
  (define (signal exn)
   ((current-exception-handler) exn))
 
-The SIGNAL procedure does not ensure that its argument is a condition.
-If its argument is a condition, SIGNAL does not ensure that the condition
+The {{signal}} procedure does not ensure that its argument is a condition.
+If its argument is a condition, {{signal}} does not ensure that the condition
 indicates a continuable exception.
 
 === Condition Objects
@@ -229,7 +229,7 @@ indicates a continuable exception.
 
 Returns #t if ''obj'' is a condition, otherwise returns #f. If any of
 the predicates listed in Section 3.2 of the R5RS is true of ''obj'', then
-CONDITION? is false of ''obj''.
+{{condition?}} is false of ''obj''.
 
 Rationale: Any Scheme object may be passed to an exception handler. This
 would cause ambiguity if conditions were not disjoint from all of Scheme's
@@ -247,28 +247,28 @@ precedes it. Returns a ''kind-key'' condition that associates the given
 <procedure>(make-composite-condition condition ...)</procedure><br>
 
 Returns a newly-allocated condition whose components correspond to the the
-given ''condition''s. A predicate created by CONDITION-PREDICATE returns
+given ''condition''s. A predicate created by {{condition-predicate}} returns
 true for the new condition if and only if it returns true for one or more
 of its component conditions.
 
 <procedure>(condition-predicate kind-key)</procedure><br>
 
 Returns a predicate that can be called with any object as its argument.
-Given a condition that was created by MAKE-PROPERTY-CONDITION, the
+Given a condition that was created by {{make-property-condition}}, the
 predicate returns #t if and only if ''kind-key'' is EQV? to the kind key
-that was passed to MAKE-PROPERTY-CONDITION. Given a composite condition
-created with MAKE-COMPOSITE-CONDITION, the predicate returns #t if and only
+that was passed to {{make-property-condition}}. Given a composite condition
+created with {{make-composite-condition}}, the predicate returns #t if and only
 if the predicate returns #t for at least one of its components.
 
 <procedure>(condition-property-accessor kind-key prop-key [default])</procedure><br>
 
 Returns a procedure that can be called with any condition that satisfies
-(CONDITION-PREDICATE ''kind-key''). Given a condition that was created
-by MAKE-PROPERTY-CONDITION and ''kind-key'', the procedure returns the
+{{(condition-predicate ''kind-key'')}}. Given a condition that was created
+by {{make-property-condition}} and ''kind-key'', the procedure returns the
 value that is associated with ''prop-key''. Given a composite condition
-created with MAKE-COMPOSITE-CONDITION, the procedure returns the value that
+created with {{make-composite-condition}}, the procedure returns the value that
 is associated with ''prop-key'' in one of the components that satisfies
-(CONDITION-PREDICATE ''kind-key'').
+{{(condition-predicate ''kind-key'')}}.
 
 On Chicken, this procedure accepts an optional third argument
 DEFAULT. If the condition does not have a value for the desired
@@ -290,7 +290,7 @@ then
 
 extracts the error message from ''exn''. Example:
 
- (HANDLE-EXCEPTIONS exn 
+ (handle-exceptions exn 
 		    (begin
 		      (display "Went wrong: ")
 		      (display
@@ -303,7 +303,7 @@ extracts the error message from ''exn''. Example:
 
  (define (try-car v)
   (let ((orig (current-exception-handler)))
-    (WITH-EXCEPTION-HANDLER
+    (with-exception-handler
      (lambda (exn)
        (orig (make-composite-condition
 	      (make-property-condition
@@ -316,7 +316,7 @@ extracts the error message from ''exn''. Example:
  (try-car '(1))
  ;=> 1
 
- (HANDLE-EXCEPTIONS exn
+ (handle-exceptions exn
 		    (if ((condition-predicate 'not-a-pair) exn)
 			(begin
 			 (display "Not a pair: ")

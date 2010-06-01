@@ -320,7 +320,8 @@
                                    (or *force*
                                        (yes-or-no?
                                         (make-replace-extension-question e+d+v upgrade)
-                                        "no") ) )
+                                        "no"
+					abort: abort-setup) ) )
                           (let ([ueggs (unzip1 upgrade)])
                             (print " upgrade: " (string-intersperse ueggs ", "))
                             (for-each
@@ -396,7 +397,8 @@
 			   (not (yes-or-no?
 				 (string-append
 				  "You specified `-no-install', but this extension has dependencies"
-				  " that are required for building. Do you still want to install them?"))))
+				  " that are required for building.\nDo you still want to install them?")
+				 abort: abort-setup)))
 		 (print "aborting installation.")
 		 (cleanup)
 		 (exit 1)))
@@ -528,7 +530,9 @@ EOF
           (rx (regexp "([^:]+):(.+)")))
       (let loop ((args args) (eggs '()))
         (cond ((null? args)
-               (cond (update (update-db))
+               (cond ((and *deploy* (not *prefix*))
+		      (error "`-deploy' only makes sense in combination with `-prefix DIRECTORY`"))
+		     (update (update-db))
                      (else
                       (when (null? eggs)
                         (let ((setups (glob "*.setup")))

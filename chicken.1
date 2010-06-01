@@ -3,25 +3,28 @@
 
 .SH NAME
 
-chicken \- A Scheme\-to\-C compiler
+chicken \- A Scheme\-to\-C translator
 
 .SH SYNOPSIS
 
 .B chicken
-.I pathname
+.I PATHNAME
 [
-.I option ...
+.I OPTION ...
 ]
 
 .SH DESCRIPTION
 
-.I Chicken
-is a compiler for the programming language
+.I CHICKEN
+is a compiler and interpreter for the programming language
 .I Scheme
 supporting most of the features as described in the
 .I Revised^5 Report on
 .I the Algorithmic Language Scheme
-\.
+\. The
+-B chicken
+program is the basic Scheme-to-C translator used in this system.
+For a more convenient interface, see the manual page for csc(1).
 
 .SH OPTIONS
 
@@ -48,135 +51,14 @@ Holds a string of default compiler options that should apply to every invocation
 .B chicken
 \.
 
-.SH RUNTIME\ OPTIONS
-After successful compilation a C source file is generated and can be compiled
-with a C compiler. Executables generated with 
-.B chicken
-(and the
-.B chicken
-program itself) accept a small set of runtime options.
-
-.TP
-.B \-:?
-Shows a list of the available runtime options and exits the program.
-
-.TP
-.B \-:aNUMBER
-Specifies the length of the buffer for recording a trace of the last invoked
-procedures. Defaults to 8.
-
-.TP
-.B \-:b
-Enter a read-eval-print-loop when an error is encountered.
-
-.TP
-.B \-:B
-Sounds a bell (ASCII 7) on every major garbage collection.
-
-.TP
-.B \-:c
-Forces console mode. Currently this is only used in the interpreter (csi) to
-force output of the
-.I #;N>
-prompt even if stdin is not a terminal (for example if running in an emacs buffer under Windows).
-
-.TP
-.B \-:d
-Prints some debug-information at runtime.
-
-.TP
-.B \-:D
-Prints some more debug-information at runtime.
-
-.TP
-.B \-:fNUMBER
-Specifies the maximal number of currently pending finalizers before finalization is forced.
-
-.TP
-.B \-:hNUMBER
-Specifies fixed heap size
-
-.TP
-.B \-:hgPERCENTAGE
-Sets the growth rate of the heap in percent. If the heap is exhausted, then it
-will grow by
-.B PERCENTAGE
-\. The default is 200.
-
-.TP
-.B \-:hiNUMBER
-Specifies the initial heap size
-
-.TP
-.B \-:hmNUMBER
-Specifies a maximal heap size. The default is (2GB - 15).
-
-.TP
-.B \-:hsPERCENTAGE
-Sets the shrink rate of the heap in percent. If no more than a quarter of
-.B PERCENTAGE
-of the heap is used, then it will shrink to
-.B PERCENTAGE
-\. The default
-is 50. Note: If you want to make sure that the heap never shrinks, specify a
-value of 0. (this can be useful in situations where an optimal heap-size is
-known in advance).
-
-.TP
-.B \-:o
-Disables detection of stack overflows at run-time.
-
-.TP
-.B \-:r
-Writes trace output to stderr. This option has no effect with in files compiled with the
-.B -no-trace
-options.
-
-.TP
-.B \-:sNUMBER
-Specifies stack size.
-
-.TP
-.B \-:tNUMBER
-Specifies symbol table size.
-
-.TP
-.B \-:w
-Enables garbage collection of unused symbols. By default unused and unbound
-symbols are not garbage collected.
-
-.TP
-.B \-:x
-Raises uncaught exceptions of separately spawned threads in primordial thread.
-By default uncaught exceptions in separate threads are not handled, unless the
-primordial one explicitly joins them. When warnings are enabled (the default)
-and
-.B \-:x
-is not given, a warning will be shown, though.
-
-.P
-The
-.B NUMBER
-argument values may be given in bytes, in kilobytes (suffixed with K or k),
-in megabytes (suffixed with M or m), or in gigabytes (suffixed with G or g).
-Runtime options may be combined, like
-.B \-:dc
-, but everything following a
-.B NUMBER
-argument is ignored. So 
-.B \-:wh64m
-is OK, but
-.B \-:h64mw
-will not enable GC of unused symbols.
-
 .SH DOCUMENTATION
 
 More information can be found in the
-.I Chicken\ User's\ Manual
+.I CHICKEN\ User's\ Manual
 
 .SH AUTHORS
 
-Felix L. Winkelmann and The Chicken Team.
+The CHICKEN Team.
 
 .SH SEE ALSO
 

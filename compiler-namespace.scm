@@ -44,6 +44,7 @@
  canonicalize-begin-body
  canonicalize-expression
  check-and-open-input-file
+ check-for-unsafe-toplevel-procedure-calls
  check-signature
  chop-extension
  chop-separator
@@ -57,7 +58,6 @@
  compiler-source-file
  compiler-syntax-enabled
  compiler-syntax-statistics
- compiler-warning
  compute-database-statistics
  constant-declarations
  constant-table

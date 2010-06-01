@@ -28,19 +28,18 @@
 ;; This file contains some stuff to speed up basic node accessors, and also
 ;; contains common declarations.
 
+
 (cond-expand
- [compiler-unsafe
+ (debugbuild
   (declare
     (fixnum)
+    (disable-interrupts) ))
+ (else
+  (declare
     (disable-interrupts)
     (no-bound-checks)
     (no-procedure-checks)
-    (no-argc-checks) ) ]
- [else
-  (declare
-    (fixnum)
-    (disable-interrupts) ) ] )
-
+    (no-argc-checks))))
 
 (define-inline (node? x) (##sys#structure? x 'node))
 (define-inline (make-node c p s) (##sys#make-structure 'node c p s))

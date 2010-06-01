@@ -386,10 +386,8 @@
 			   what n (multiples n)))
 		 (first tv))))))
   (define (report loc desc)
-    (compiler-warning
-     'scrutiny
-     "~a~a" 
-     (location-name loc) desc))
+    (warning
+     (conc (location-name loc) desc)))
   (define (location-name loc)
     (define (lname loc1)
       (if loc1

@@ -96,7 +96,9 @@
 (define valid-compiler-options-with-argument
   '(debug 
     output-file include-path heap-size stack-size unit uses keyword-style require-extension 
-    inline-limit profile-name disable-warning parenthesis-synonyms
+    inline-limit profile-name 
+    disable-warning			; OBSOLETE
+    parenthesis-synonyms
     prelude postlude prologue epilogue nursery extend feature types
     emit-import-library emit-inline-file static-extension consult-inline-file
     heap-growth heap-shrinkage heap-initial-size ffi-define ffi-include-path) )
@@ -605,8 +607,6 @@
 (rewrite '##sys#size 2 1 "C_block_size" #t)
 (rewrite 'fxnot 2 1 "C_fixnum_not" #t)
 (rewrite 'fx* 2 2 "C_fixnum_times" #t)
-(rewrite 'fx/ 2 2 "C_fixnum_divide" #f)
-(rewrite 'fxmod 2 2 "C_fixnum_modulo" #f)
 (rewrite 'fx= 2 2 "C_eqp" #t)
 (rewrite 'fx> 2 2 "C_fixnum_greaterp" #t)
 (rewrite 'fx< 2 2 "C_fixnum_lessp" #t)
@@ -617,8 +617,8 @@
 (rewrite 'fp< 2 2 "C_flonum_lessp" #f)
 (rewrite 'fp>= 2 2 "C_flonum_greater_or_equal_p" #f)
 (rewrite 'fp<= 2 2 "C_flonum_less_or_equal_p" #f)
-(rewrite 'fxmax 2 2 "C_i_fixnum_max" #f)
-(rewrite 'fxmin 2 2 "C_i_fixnum_min" #f)
+(rewrite 'fxmax 2 2 "C_i_fixnum_max" #t)
+(rewrite 'fxmin 2 2 "C_i_fixnum_min" #t)
 (rewrite 'fpmax 2 2 "C_i_flonum_max" #f)
 (rewrite 'fpmin 2 2 "C_i_flonum_min" #f)
 (rewrite 'char-numeric? 2 1 "C_u_i_char_numericp" #t)
@@ -871,6 +871,8 @@
 (rewrite 'fxxor 17 2 "C_fixnum_xor" "C_fixnum_xor")
 (rewrite 'fxand 17 2 "C_fixnum_and" "C_u_fixnum_and")
 (rewrite 'fxior 17 2 "C_fixnum_or" "C_u_fixnum_or")
+(rewrite 'fx/ 17 2 "C_fixnum_divide" "C_u_fixnum_divide")
+(rewrite 'fxmod 17 2 "C_fixnum_modulo" "C_u_fixnum_modulo")
 
 (rewrite
  'arithmetic-shift 8

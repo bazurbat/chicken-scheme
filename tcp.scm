@@ -28,20 +28,10 @@
 (declare
   (unit tcp)
   (uses extras scheduler)
-  (usual-integrations)
   (fixnum-arithmetic)
-  (no-bound-checks)
   (export tcp-close tcp-listen tcp-connect tcp-accept tcp-accept-ready? ##sys#tcp-port->fileno tcp-listener? tcp-addresses
 	  tcp-abandon-port tcp-listener-port tcp-listener-fileno tcp-port-numbers tcp-buffer-size
 	  tcp-read-timeout tcp-write-timeout tcp-accept-timeout tcp-connect-timeout)
-  (no-procedure-checks-for-usual-bindings)
-  (bound-to-procedure
-   ##net#socket ##net#bind ##net#connect ##net#listen ##net#accept make-parameter ##sys#string-append ##sys#tcp-port->fileno
-   ##sys#check-port ##sys#port-data ##sys#thread-block-for-i/o! make-string make-input-port make-output-port ##sys#substring
-   substring ##sys#make-c-string ##sys#schedule ##sys#set-port-data!
-   ##net#close ##net#recv ##net#send ##net#select ##net#select-write ##net#gethostaddr ##net#io-ports ##sys#update-errno
-   ##sys#error ##sys#signal-hook ##net#getservbyname ##net#parse-host ##net#fresh-addr
-   ##net#bind-socket ##net#shutdown)
   (foreign-declare #<<EOF
 #include <errno.h>
 #ifdef _WIN32
@@ -86,7 +76,7 @@ static char addr_buffer[ 20 ];
 EOF
 ) )
 
-(include "unsafe-declarations.scm")
+(include "common-declarations.scm")
 
 (register-feature! 'tcp)
 

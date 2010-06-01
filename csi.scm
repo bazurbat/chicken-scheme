@@ -29,7 +29,6 @@
   (uses chicken-syntax srfi-69 ports extras)
   (usual-integrations)
   (disable-interrupts)
-  (disable-warning var)
   (compile-syntax)
   (foreign-declare #<<EOF
 #if (defined(_MSC_VER) && defined(_WIN32)) || defined(HAVE_DIRECT_H)
@@ -54,7 +53,7 @@ EOF
   (always-bound
     ##sys#windows-platform)
   (hide parse-option-string bytevector-data member* canonicalize-args 
-	describer-table dirseparator?
+	describer-table dirseparator? circular-list?
 	findall command-table) )
 
 
@@ -449,6 +448,15 @@ EOF
     (f32vector "vector of 32-bit floats" f32vector-length f32vector-ref)
     (f64vector "vector of 64-bit floats" f64vector-length f64vector-ref) ) )
 
+(define (circular-list? x)
+  (let lp ((x x) (lag x))
+    (and (pair? x)
+	 (let ((x (cdr x)))
+	   (and (pair? x)
+		(let ((x   (cdr x))
+		      (lag (cdr lag)))
+		  (or (eq? x lag) (lp x lag))))))))
+
 (define-constant max-describe-lines 40)
 
 (define describer-table (make-vector 37 '()))
@@ -525,6 +533,15 @@ EOF
 		    (lambda ()
 		      (write (cadr plist) out) ) )
 		   (newline out) ) ) ) ]
+	    [(circular-list? x)
+	     (fprintf out "circular list: ")
+	     (let loop-print ((x x)
+			      (parsed '()))
+	       (if (not (memq (car x) parsed))
+		   (begin
+		     (fprintf out "~S -> " (car x))
+		     (loop-print (cdr x) (cons (car x) parsed)))
+		   (fprintf out " ~S (circle)~%" (car (memq (car x) parsed)))))]
 	    [(list? x) (descseq "list" length list-ref 0)]
 	    [(pair? x) (fprintf out "pair with car ~S and cdr ~S~%" (car x) (cdr x))]
 	    [(procedure? x)

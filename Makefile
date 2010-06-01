@@ -35,7 +35,7 @@ endif
 
 STANDARD_TARGETS \
 	= all clean distclean spotless install uninstall confclean check \
-	  fullcheck dist libs install-target install-dev
+	  fullcheck dist libs install-target install-dev bench boot-chicken
 
 SRCDIR = .
 
@@ -55,6 +55,7 @@ $(STANDARD_TARGETS):
 	@echo "  $(MAKE) PLATFORM=cygwin"
 	@echo "  $(MAKE) PLATFORM=solaris"
 	@echo "  $(MAKE) PLATFORM=cross-linux-mingw"
+	@echo "  $(MAKE) PLATFORM=haiku"
 	@echo ""
 	@echo "For more information, consult the README file."
 	@exit 1
@@ -79,6 +80,8 @@ confclean:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) confclean
 check:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) check
+bench:
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) bench
 fullcheck:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) fullcheck
 dist:
@@ -86,4 +89,7 @@ dist:
 	csi -s scripts/makedist.scm
 libs:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) libs
+boot-chicken:
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) boot-chicken
+
 endif

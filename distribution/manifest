@@ -101,7 +101,10 @@ tests/compiler-tests-3.scm
 tests/inlining-tests.scm
 tests/locative-stress-test.scm
 tests/r4rstest.scm
+tests/null.scm
+tests/sgrep.scm
 tests/runtests.sh
+tests/runbench.sh
 tests/srfi-4-tests.scm
 tests/srfi-18-tests.scm
 tests/hash-table-tests.scm
@@ -170,6 +173,7 @@ Makefile.mingw-msys
 Makefile.solaris
 Makefile.bsd
 Makefile.cygwin
+Makefile.haiku
 Makefile.cross-linux-mingw
 config.make
 rules.make
@@ -181,7 +185,7 @@ expand.scm
 expand.c
 chicken-syntax.scm
 chicken-syntax.c
-unsafe-declarations.scm
+common-declarations.scm
 ports.import.scm
 ports.import.c
 files.import.scm
@@ -251,6 +255,7 @@ manual/Bugs and limitations
 manual/C interface
 manual/Callbacks
 manual/Exceptions
+manual/Cross development
 manual/Data representation
 manual/Declarations
 manual/Deployment

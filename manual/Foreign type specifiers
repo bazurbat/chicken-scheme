@@ -205,9 +205,18 @@ they be result values. Pointers to unions are allowed, though.
 
 === (instance CNAME SCHEMECLASS)
 
-A pointer to a C++ class instance. {{CNAME}} should designate the name of the
-C++ class, and {{SCHEMECLASS}} should be the class that wraps the instance
-pointer. Normally {{SCHEMECLASS}} should be a subclass of {{<c++-object>}}.
+A pointer to a C++ class instance wrapped into a Scheme object
+instance. {{CNAME}} should designate the name of the C++ class, and
+{{SCHEMECLASS}} should be the class that wraps the instance pointer.
+
+To use this, an extension will be required that provides an
+object-creation- and access-interface compatible to
+[[/eggref/4/coops|coops]] or
+[[/eggref/4/tinyclos|tinyclos]]. Speecifically, it should provide the
+following operations:
+
+  (make SCHEMECLASS 'this POINTER)
+  (slot-ref INSTANCE 'this)
 
 === (instance-ref CNAME SCHEMECLASS)
 

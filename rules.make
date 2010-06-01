@@ -616,11 +616,12 @@ endif
 endif
 endif
 
-install-dev:
+install-dev: install-libs
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)"
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(ISHAREDIR)"
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IEGGDIR)"
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IINCDIR)"
+	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IDATADIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS) libchicken$(A) "$(DESTDIR)$(ILIBDIR)"
 ifneq ($(POSTINSTALL_STATIC_LIBRARY),true)
 	$(POSTINSTALL_STATIC_LIBRARY) $(POSTINSTALL_STATIC_LIBRARY_FLAGS) "$(ILIBDIR)$(SEP)libchicken$(A)"
@@ -824,53 +825,53 @@ endif
 setup-api.import.scm: setup-api.c
 setup-download.import.scm: setup-download.c
 
-library.c: $(SRCDIR)library.scm $(SRCDIR)version.scm $(SRCDIR)banner.scm
+library.c: $(SRCDIR)library.scm $(SRCDIR)version.scm $(SRCDIR)banner.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-eval.c: $(SRCDIR)eval.scm
+eval.c: $(SRCDIR)eval.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-expand.c: $(SRCDIR)expand.scm $(SRCDIR)synrules.scm
+expand.c: $(SRCDIR)expand.scm $(SRCDIR)synrules.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
-chicken-syntax.c: $(SRCDIR)chicken-syntax.scm
+chicken-syntax.c: $(SRCDIR)chicken-syntax.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
-chicken-ffi-syntax.c: $(SRCDIR)chicken-ffi-syntax.scm
+chicken-ffi-syntax.c: $(SRCDIR)chicken-ffi-syntax.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
-data-structures.c: $(SRCDIR)data-structures.scm $(SRCDIR)private-namespace.scm
+data-structures.c: $(SRCDIR)data-structures.scm $(SRCDIR)common-declarations.scm
+	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
+ports.c: $(SRCDIR)ports.scm $(SRCDIR)common-declarations.scm
+	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
+files.c: $(SRCDIR)files.scm $(SRCDIR)common-declarations.scm
+	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
+extras.c: $(SRCDIR)extras.scm $(SRCDIR)private-namespace.scm $(SRCDIR)common-declarations.scm
+	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
+lolevel.c: $(SRCDIR)lolevel.scm $(SRCDIR)common-declarations.scm
+	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+tcp.c: $(SRCDIR)tcp.scm $(SRCDIR)common-declarations.scm
+	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+srfi-1.c: $(SRCDIR)srfi-1.scm $(SRCDIR)common-declarations.scm
+	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+srfi-4.c: $(SRCDIR)srfi-4.scm $(SRCDIR)common-declarations.scm
+	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+srfi-13.c: $(SRCDIR)srfi-13.scm $(SRCDIR)common-declarations.scm
+	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+srfi-14.c: $(SRCDIR)srfi-14.scm $(SRCDIR)common-declarations.scm
+	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+srfi-18.c: $(SRCDIR)srfi-18.scm $(SRCDIR)common-declarations.scm
+	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+srfi-69.c: $(SRCDIR)srfi-69.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm
-ports.c: $(SRCDIR)ports.scm $(SRCDIR)private-namespace.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm
-files.c: $(SRCDIR)files.scm $(SRCDIR)private-namespace.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm
-extras.c: $(SRCDIR)extras.scm $(SRCDIR)private-namespace.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm
-lolevel.c: $(SRCDIR)lolevel.scm
+utils.c: $(SRCDIR)utils.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-tcp.c: $(SRCDIR)tcp.scm
+posixunix.c: $(SRCDIR)posixunix.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-srfi-1.c: $(SRCDIR)srfi-1.scm
+posixwin.c: $(SRCDIR)posixwin.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-srfi-4.c: $(SRCDIR)srfi-4.scm
+regex.c: $(SRCDIR)regex.scm $(SRCDIR)irregex.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-srfi-13.c: $(SRCDIR)srfi-13.scm
+scheduler.c: $(SRCDIR)scheduler.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-srfi-14.c: $(SRCDIR)srfi-14.scm
+profiler.c: $(SRCDIR)profiler.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-srfi-18.c: $(SRCDIR)srfi-18.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-srfi-69.c: $(SRCDIR)srfi-69.scm $(SRCDIR)private-namespace.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm
-utils.c: $(SRCDIR)utils.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-posixunix.c: $(SRCDIR)posixunix.scm $(SRCDIR)posix-common.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-posixwin.c: $(SRCDIR)posixwin.scm $(SRCDIR)posix-common.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-regex.c: $(SRCDIR)regex.scm $(SRCDIR)irregex.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-scheduler.c: $(SRCDIR)scheduler.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-profiler.c: $(SRCDIR)profiler.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-stub.c: $(SRCDIR)stub.scm
+stub.c: $(SRCDIR)stub.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
 
 chicken.import.c: $(SRCDIR)chicken.import.scm
@@ -1045,6 +1046,13 @@ check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 	cd tests; sh runtests.sh
 
 
+# benchmark
+
+.PHONY: bench
+
+bench: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
+	cd tests; echo >>bench.log; date >>bench.log; sh runbench.sh 2>&1 | tee -a bench.log
+
 # 3-stage build
 
 .PHONY: stage1 stage2 stage3
@@ -1079,3 +1087,22 @@ stage3:
 	  SRCDIR=$(SRCDIR) CONFIG=$(CONFIG) \
 	  CHICKEN=./$(CHICKEN_PROGRAM)-stage2 \
 	  confclean clean all
+
+# build current head in sub-directory
+
+.PHONY: buildhead
+
+buildhead:
+	rm -fr chicken-`cat buildversion`
+	git archive --format=tar --prefix=chicken-`cat buildversion`/ $(HEAD) | tar x
+	cd chicken-`cat buildversion`; $(MAKE) -f Makefile.$(PLATFORM) \
+	  PLATFORM=$(PLATFORM) PREFIX=`pwd` CONFIG= CHICKEN=$(CHICKEN) all install
+
+
+# build static bootstrapping chicken
+
+.PHONY: boot-chicken
+
+boot-chicken:
+	$(MAKE) -f Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) PREFIX=/nowhere CONFIG= \
+	  PROGRAM_SUFFIX=-boot STATICBUILD=1 confclean chicken-boot$(EXE)
