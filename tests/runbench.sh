@@ -10,6 +10,7 @@ export DYLD_LIBRARY_PATH=${TEST_DIR}/..
 export LD_LIBRARY_PATH=${TEST_DIR}/..
 
 CHICKEN=../chicken
+COMPILE_OPTIONS="-O5 -d0 -disable-interrupts -b"
 
 if test -n "$MSYSTEM"; then
     CHICKEN="..\\chicken.exe"
@@ -31,31 +32,31 @@ run()
 echo
 
 compiler_options="-C -Wa,-W"
-compile="../csc -w -compiler $CHICKEN -I.. -L.. -include-path .. -o a.out $compiler_options"
+compile="../csc -w -compiler $CHICKEN -I.. -L.. -include-path .. -o a.out $COMPILE_OPTIONS"
 
 echo -n "null ... "
 $compile null.scm -O5
 run
 
 echo -n "compilation ... "
-/usr/bin/time $timeopts $compile compiler.scm -O5
+/usr/bin/time $timeopts $compile compiler.scm
 
 echo -n "compiler ... "
 run
 
 echo -n "slatex ... "
-$compile slatex.scm -O5
+$compile slatex.scm
 mkdir -p slatexdir
 rm -f slatexdir/*
 run
 
 echo -n "grep ... "
-$compile sgrep.scm -O5
+$compile sgrep.scm
 run
 
 echo -n "fft/boxed ... "
-$compile fft.scm -O5
+$compile fft.scm
 run
 echo -n "fft/unboxed ... "
-$compile fft.scm -O5 -D unboxed
+$compile fft.scm -D unboxed
 run

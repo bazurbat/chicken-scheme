@@ -61,12 +61,6 @@
 	 (flush-output)
 	 #t) ) )
 
-(define (compiler-warning class msg . args)	       
-  (when (and ##sys#warnings-enabled (not (memq class disabled-warnings)))
-    (let ((out (current-error-port)))
-      (apply fprintf out (string-append "\nWarning: " msg) args)
-      (newline out) ) ) )
-
 (define (quit msg . args)
   (let ([out (current-error-port)])
     (apply fprintf out (string-append "\nError: " msg) args)
@@ -478,9 +472,8 @@
 				  (eq? 'fixnum number-type)
 				  (not (integer? c)) )
 			     (begin
-			       (compiler-warning
-				'type
-				"literal '~s' is out of range - will be truncated to integer" c)
+			       (warning
+				"literal is out of range - will be truncated to integer" c)
 			       (inexact->exact (truncate c)) )
 			     c) ) ) )
 	       ((let)
@@ -981,10 +974,10 @@
 			(let ([tmp (gensym)])
 			  `(let ([,tmp ,param])
 			     (if ,tmp
-				 (slot-ref ,param 'this)
+				 (slot-value ,param 'this)
 				 '#f) ) ) ]
 		       [(nonnull-instance)
-			`(slot-ref ,param 'this) ]
+			`(slot-value ,param 'this) ]
 		       [(const) (repeat (cadr t))]
 		       [(enum)
 			(if unsafe param `(##sys#foreign-integer-argument ,param))]
@@ -1098,9 +1091,9 @@
 	  `(let ((,tmp ,body))
 	     (and ,tmp
 		  (not (##sys#null-pointer? ,tmp))
-		  (make ,(caddr type) 'this ,tmp) ) ) ) ]
+		  (make-instance ,(caddr type) 'this ,tmp) ) ) ) ]
        [(and (list? type) (= 3 (length type)) (eq? 'nonnull-instance (car type)))
-	`(make ,(caddr type) 'this ,body) ]
+	`(make-instance ,(caddr type) 'this ,body) ]
        [else body] ) ] ) )
 
 
@@ -1235,7 +1228,6 @@ Usage: chicken FILENAME OPTION ...
   Debugging options:
 
     -no-warnings                 disable warnings
-    -disable-warning CLASS       disable specific class of warnings
     -debug-level NUMBER          set level of available debugging information
     -no-trace                    disable tracing information
     -profile                     executable emits profiling information 

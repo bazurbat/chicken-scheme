@@ -29,7 +29,6 @@
 
 (declare
   (disable-interrupts)
-;  (disable-warning var)
   (fixnum)
   (export
     regexp? regexp

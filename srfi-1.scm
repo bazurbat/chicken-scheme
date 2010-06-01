@@ -7,7 +7,6 @@
 (declare
   (unit srfi-1)
   (disable-interrupts)
-  (disable-warning redef)
   (hide ##srfi1#cars+cdrs/no-test ##srfi1#cdrs ##srfi1#cars+ ##srfi1#really-append-map ##srfi1#cars+cdrs+
 	##srfi1#cars+cdrs ##srfi1#lset2<=)
   (not standard-bindings member assoc))

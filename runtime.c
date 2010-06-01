@@ -3485,14 +3485,16 @@ void handle_interrupt(void *trampoline, void *proc)
 }
 
 
-C_regparm C_word C_fcall C_retrieve(C_word sym)
+void 
+C_unbound_variable(C_word sym)
 {
-  C_word val = C_block_item(sym, 0);
+  barf(C_UNBOUND_VARIABLE_ERROR, NULL, sym);
+}
 
-  if(val == C_SCHEME_UNBOUND)
-    barf(C_UNBOUND_VARIABLE_ERROR, NULL, sym);
 
-  return val;
+C_regparm C_word C_fcall C_retrieve(C_word sym) /* OBSOLETE */
+{
+  return C_fast_retrieve(sym);
 }
 
 
@@ -3506,17 +3508,22 @@ C_regparm C_word C_fcall C_retrieve2(C_word val, char *name)
     /* this is ok: we won't return from `C_retrieve2'
      * (or the value isn't needed). */
     p = C_alloc(C_SIZEOF_STRING(len));
-    barf(C_UNBOUND_VARIABLE_ERROR, NULL, C_string2(&p, name));
+    C_unbound_variable(C_string2(&p, name));
   }
 
   return val;
 }
 
 
-static C_word resolve_procedure(C_word closure, C_char *where)
+void C_ccall
+C_invalid_procedure(int c, C_word self, ...)
 {
-  C_word s;
+  barf(C_NOT_A_CLOSURE_ERROR, NULL, self);  
+}
 
+
+static C_word resolve_procedure(C_word closure, C_char *where) /* OBSOLETE */
+{
   if(C_immediatep(closure) || C_header_bits(closure) != C_CLOSURE_TYPE) {
     barf(C_NOT_A_CLOSURE_ERROR, where, closure);
   }
@@ -3525,29 +3532,25 @@ static C_word resolve_procedure(C_word closure, C_char *where)
 }
 
 
-C_regparm void *C_fcall C_retrieve_proc(C_word closure)
+C_regparm void *C_fcall C_retrieve_proc(C_word closure) /* OBSOLETE */
 {
-  closure = resolve_procedure(closure, NULL);
-  return (void *)C_block_item(closure, 0);
+  return C_fast_retrieve_proc(closure);
 }
 
 
-C_regparm void *C_fcall C_retrieve_symbol_proc(C_word sym)
+C_regparm void *C_fcall C_retrieve_symbol_proc(C_word sym) /* OBSOLETE */
 {
   C_word val = C_block_item(sym, 0);
-  C_word closure;
 
   if(val == C_SCHEME_UNBOUND)
     barf(C_UNBOUND_VARIABLE_ERROR, NULL, sym);
 
-  closure = resolve_procedure(val, NULL);
-  return (void *)C_block_item(closure, 0);
+  return C_fast_retrieve_proc(val);
 }
 
 
 C_regparm void *C_fcall C_retrieve2_symbol_proc(C_word val, char *name)
 {
-  C_word closure;
   C_word *p;
   int len;
 
@@ -3558,8 +3561,7 @@ C_regparm void *C_fcall C_retrieve2_symbol_proc(C_word val, char *name)
     barf(C_UNBOUND_VARIABLE_ERROR, NULL, C_string2(&p, name));
   }
 
-  closure = resolve_procedure(val, NULL);
-  return (void *)C_block_item(closure, 0);
+  return C_fast_retrieve_proc(val);
 }
 
 

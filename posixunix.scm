@@ -751,7 +751,8 @@ EOF
 		    (if link
 			(##core#inline "C_lstat" path)
 			(##core#inline "C_stat" path) ) ) ]
-                 [else (##sys#signal-hook #:type-error "bad argument type - not a fixnum or string" file)] ) ] )
+                 [else
+		  (##sys#signal-hook #:type-error loc "bad argument type - not a fixnum or string" file)] ) ] )
     (when (fx< r 0)
       (posix-error #:file-error loc "cannot access file" file) ) ) )
 

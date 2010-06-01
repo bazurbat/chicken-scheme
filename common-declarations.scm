@@ -1,6 +1,6 @@
 ;;;; common-declarations.scm - settings for core libraries
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2010, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -25,7 +25,6 @@
 
 
 (declare 
-  (disable-warning var redef)
   (usual-integrations)
   (hide d))
 
@@ -38,8 +37,8 @@
 	  (apply print arg1 more)))))
  (else
   (declare
-    (no-bound-checks)
-    (no-procedure-checks-for-toplevel-bindings))
+    (safe-globals)
+    (no-bound-checks))
   (define-syntax d (syntax-rules () ((_ . _) (void))))))
 
 (define-syntax define-alias

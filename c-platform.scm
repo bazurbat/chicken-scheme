@@ -96,7 +96,9 @@
 (define valid-compiler-options-with-argument
   '(debug 
     output-file include-path heap-size stack-size unit uses keyword-style require-extension 
-    inline-limit profile-name disable-warning parenthesis-synonyms
+    inline-limit profile-name 
+    disable-warning			; OBSOLETE
+    parenthesis-synonyms
     prelude postlude prologue epilogue nursery extend feature types
     emit-import-library emit-inline-file static-extension consult-inline-file
     heap-growth heap-shrinkage heap-initial-size ffi-define ffi-include-path) )

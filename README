@@ -1,12 +1,15 @@
 
   README file for the CHICKEN Scheme system
+  =========================================
+
+
   (c) 2008-2010, The Chicken Team
   (c) 2000-2007, Felix L. Winkelmann
 
   version 4.5.1
 
 
- 1. Introduction:
+ 1. Introduction
 
         CHICKEN is a Scheme-to-C compiler supporting the language
         features as defined in the 'Revised^5 Report on
@@ -37,7 +40,7 @@
         http://www.call-with-current-continuation.org)
 
 
- 2. Installation:
+ 2. Installation
 
         First unzip the package ("unzip chicken-<version>.zip" or "tar
         xzf chicken-<version>.tar.gz" on UNIX or use your favorite
@@ -69,17 +72,18 @@
 	*not* supported.
 
         If you build CHICKEN directly from the development sources out
-        of the subversion repository, you will need a "chicken"
-        executable to generate the compiled C files from the Scheme
-        library sources. If you have a recent version of CHICKEN
-        installed, then pass "CHICKEN=<chicken-executable>" to the
-        "make" invocation to override this setting. "CHICKEN" defaults
-        to "$PREFIX/bin/chicken".
+        of the git repository, you will need a "chicken" executable to
+        generate the compiled C files from the Scheme library
+        sources. If you have a recent version of CHICKEN installed,
+        then pass "CHICKEN=<chicken-executable>" to the "make"
+        invocation to override this setting. "CHICKEN" defaults to
+        "$PREFIX/bin/chicken".
 
         If you do not have a "chicken" binary installed, you will have
 	to obtain a "bootstrapping" compiler, which can either be
-	built from a release tarball or by using a precompiled and
-	statically linked compiler binary from here:
+	built from a release tarball (see below for instructions) or
+	by using a precompiled and statically linked compiler binary
+	from here:
 
 	  http://chicken.wiki.br/chicken-projects/bootstrap/
 
@@ -196,7 +200,7 @@
         to remove old configuration files.
 
 
- 3. Usage:
+ 3. Usage
 
         Documentation can be found in the directory
         PREFIX/share/chicken/doc in svnwiki format (see
@@ -206,7 +210,7 @@
         date documentation.
 
 
- 4. Extensions:
+ 4. Extensions
 
         A large number of extension libraries for CHICKEN are
         available at
@@ -221,9 +225,9 @@
         <http://www.call-with-current-continuation.org/tarballs/>.
 
         
- 5. Platform issues:
+ 5. Platform issues
 
-    	*BSD:
+    	FreeBSD/NetBSD/OpenBSD:
 
           - *BSD system users *must* use GNU make ("gmake") - the makefiles
             can not be processed by BSD make.
@@ -330,13 +334,29 @@
 	    warnings are bogus and can be ignored.
 
 
- 6. Emacs support:
+ 6. Bootstrapping
+
+	To build a bootstrapping compiler yourself, obtain a recent
+	release tarball, unpack it, change into the extracted
+	directory and enter
+
+          make PLATFORM=<platform> CHICKEN=<path-to-existing-chicken> \
+            boot-chicken
+
+	This will produce a statically linked binary with the name
+	"chicken-boot[.exe]" that can be given as the value of the
+	"CHICKEN" argument when invoking make(1). Note that the path
+	to an existing `chicken' binary must be given to use it for
+	compiling the Scheme code of the runtime-system and compiler.
+
+
+ 7. Emacs support
 
         See http://chicken.wiki.br/emacs for tips and links to emacs
 	extensions for Scheme and CHICKEN programming.
 
 
- 7. Compatibility notes
+ 8. Compatibility notes
 
         In CHICKEN 4, the macro system has been reimplemented
 	completely and provides module system, which has considerably
@@ -347,7 +367,7 @@
 	low-level hygienic macros or ask on the CHICKEN mailing list.
 
 
- 8. What's next?
+ 9. What's next?
 
         If you find any bugs, or want to report a problem, please consider
         using the "chicken-bug" tool to create a detailed bug report.

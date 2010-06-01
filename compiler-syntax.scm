@@ -184,12 +184,11 @@
 		(args (cdr args)))
 	    (define (fail ret? msg . args)
 	      (let ((ln (get-line x)))
-		(compiler-warning 
-		 'syntax
-		 "`~a', in format string ~s~a, ~?" 
-		 func fstr 
-		 (if ln (sprintf "(~a)" ln) "")
-		 msg args) ) 
+		(warning 
+		 (sprintf "`~a', in format string ~s~a, ~?" 
+		   func fstr 
+		   (if ln (sprintf "(~a)" ln) "")
+		   msg args) ))
 	      (when ret? (return #f)))
 	    (let ((code '())
 		  (index 0)

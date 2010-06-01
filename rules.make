@@ -621,6 +621,7 @@ install-dev: install-libs
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(ISHAREDIR)"
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IEGGDIR)"
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IINCDIR)"
+	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IDATADIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS) libchicken$(A) "$(DESTDIR)$(ILIBDIR)"
 ifneq ($(POSTINSTALL_STATIC_LIBRARY),true)
 	$(POSTINSTALL_STATIC_LIBRARY) $(POSTINSTALL_STATIC_LIBRARY_FLAGS) "$(ILIBDIR)$(SEP)libchicken$(A)"
@@ -1050,7 +1051,7 @@ check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 .PHONY: bench
 
 bench: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
-	cd tests; date >>bench.log; sh runbench.sh 2>&1 | tee -a bench.log
+	cd tests; echo >>bench.log; date >>bench.log; sh runbench.sh 2>&1 | tee -a bench.log
 
 # 3-stage build
 
@@ -1087,7 +1088,7 @@ stage3:
 	  CHICKEN=./$(CHICKEN_PROGRAM)-stage2 \
 	  confclean clean all
 
-# build current head in suib-directory
+# build current head in sub-directory
 
 .PHONY: buildhead
 
@@ -1096,3 +1097,12 @@ buildhead:
 	git archive --format=tar --prefix=chicken-`cat buildversion`/ $(HEAD) | tar x
 	cd chicken-`cat buildversion`; $(MAKE) -f Makefile.$(PLATFORM) \
 	  PLATFORM=$(PLATFORM) PREFIX=`pwd` CONFIG= CHICKEN=$(CHICKEN) all install
+
+
+# build static bootstrapping chicken
+
+.PHONY: boot-chicken
+
+boot-chicken:
+	$(MAKE) -f Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) PREFIX=/nowhere CONFIG= \
+	  PROGRAM_SUFFIX=-boot STATICBUILD=1 confclean chicken-boot$(EXE)

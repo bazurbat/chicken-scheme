@@ -191,7 +191,7 @@
 			  (gen "lf[" index "]")
 			  (gen "C_retrieve2(lf[" index "]," (c-ify-string (symbol->string (fourth params))) #\)) ) ]
 		     [safe (gen "*((C_word*)lf[" index "]+1)")]
-		     [else (gen "C_retrieve(lf[" index "])")] ) ) )
+		     [else (gen "C_fast_retrieve(lf[" index "])")] ) ) )
 
 	    ((##core#setglobal)
 	     (let ((index (first params))
@@ -287,17 +287,17 @@
 			      (block
 			       (set! carg (string-append "lf[" (number->string index) "]"))
 			       (if safe
-				   (gen "C_retrieve_proc(" carg ")")
+				   (gen "C_fast_retrieve_proc(" carg ")")
 				   (gen "C_retrieve2_symbol_proc(" carg "," 
 					(c-ify-string (symbol->string (fourth gparams))) #\)) ) )
 			      (safe 
 			       (set! carg 
 				 (string-append "*((C_word*)lf[" (number->string index) "]+1)"))
-			       (gen "C_retrieve_proc(" carg ")"))
+			       (gen "C_fast_retrieve_proc(" carg ")"))
 			      (else
 			       (set! carg 
 				 (string-append "*((C_word*)lf[" (number->string index) "]+1)"))
-			       (gen "C_retrieve_symbol_proc(lf[" index "])") ))
+			       (gen "C_fast_retrieve_symbol_proc(lf[" index "])") ))
 			(gen ")(" nf #\, carg #\,)
 			(expr-args args i)
 			(gen ");") ) )
@@ -308,7 +308,7 @@
 			   "((C_proc" nf ")")
 		      (if (or unsafe no-procedure-checks (first params))
 			  (gen "(void*)(*((C_word*)t" nc "+1))")
-			  (gen "C_retrieve_proc(t" nc ")") )
+			  (gen "C_fast_retrieve_proc(t" nc ")") )
 		      (gen ")(" nf ",t" nc #\,)
 		      (expr-args args i)
 		      (gen ");") ) ) ) )
@@ -855,11 +855,9 @@
 			     (gen #t "C_word ab[" demand "],*a=ab;") ) ]
 			[else
 			 (unless direct (gen #t "C_word *a;"))
-			 (when looping (gen #t "loop:")) 
 			 (when (and direct (not unsafe) (not disable-stack-overflow-checking))
-			   ;;XXX this can be lifted out of the loop, if the procedure
-			   ;;    does not allocate (suggested by Benedikt Rosenau):
-			   (gen #t "C_stack_check;") ) ] )
+			   (gen #t "C_stack_check;") )
+			 (when looping (gen #t "loop:")) ] )
 		  (when (and external (not unsafe) (not no-argc-checks) (not customizable))
 		    ;; (not customizable) implies empty-closure
 		    (if (eq? rest-mode 'none)
@@ -873,12 +871,6 @@
 	   (when (and (not (eq? 'toplevel id))
 		      (not direct)
 		      (or rest external (> demand 0)) )
-;; 	     (cond [(> nec 1)
-;; 		    (gen #t "C_adjust_stack(" nec ");")
-;; 		    (do ([i (if empty-closure 1 0) (+ i 1)])
-;; 			((>= i n))
-;; 		      (gen #t "C_rescue(t" i #\, (- n i 1) ");") ) ]
-;; 		   [(= nec 1) (gen #t "C_save(" (if empty-closure "t1" "t0") ");")] )
 	     (cond [rest
 		    (gen #t (if (> nec 0) "C_save_and_reclaim" "C_reclaim") "((void*)tr" n #\r)
 		    (gen ",(void*)" id "r")

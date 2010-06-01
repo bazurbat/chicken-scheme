@@ -30,4 +30,5 @@
    system*
    qs
    compile-file
-   scan-input-lines))
+   scan-input-lines
+   yes-or-no?))

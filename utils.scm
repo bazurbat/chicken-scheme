@@ -127,3 +127,69 @@
 	    (and (not (eof-object? ln))
 		 (or (rx ln)
 		     (loop)))))))))
+
+
+;; Ask for confirmation
+
+#>
+#if defined(_WIN32) && !defined(__CYGWIN__)
+# include <windows.h>
+# define C_HAS_MESSAGE_BOX 1
+static int
+C_confirmation_dialog(char *msg, char *caption, int def)
+{
+  int d = 0, r;
+
+  switch(def) {
+  case 0: d = MB_DEFBUTTON1; break;
+  case 1: d = MB_DEFBUTTON2; break;
+  case 2: d = MB_DEFBUTTON3;
+  }
+
+  r = MessageBox(NULL, msg, caption, MB_YESNOCANCEL | MB_ICONQUESTION | d);
+
+  switch(r) {
+  case IDYES: return 1;
+  case IDNO: return 0;
+  default: return -1;
+  }
+}
+#else
+# define C_HAS_MESSAGE_BOX 0
+static int
+C_confirmation_dialog(char *msg, char *caption, int def) { return -1; }
+#endif
+<#
+
+(define-foreign-variable C_HAS_MESSAGE_BOX bool)
+
+(define yes-or-no?
+  (let ((dialog (foreign-lambda int "C_confirmation_dialog" c-string c-string int)))
+    (lambda (str #!key default title (abort reset))
+      (define (get-input)
+	(if (and C_HAS_MESSAGE_BOX (not (##sys#fudge 4))) ; C_gui_mode
+	    (let ((r (dialog 
+		      str
+		      (or title "CHICKEN Runtime")
+		      (cond ((string-ci=? default "yes") 0)
+			    ((string-ci=? default "no") 1)
+			    (else 2)))))
+	      (case r
+		((0) "no")
+		((1) "yes")
+		(else "abort")))
+	    (string-trim-both (read-line))))
+      (let loop ()
+	(printf "~%~A (yes/no/abort) " str)
+	(when default (printf "[~A] " default))
+	(flush-output)
+	(let ((ln (get-input)))
+	  (cond ((eof-object? ln) (set! ln "abort"))
+		((and default (string=? "" ln)) (set! ln default)) )
+	  (cond ((string-ci=? "yes" ln) #t)
+		((string-ci=? "no" ln) #f)
+		((string-ci=? "abort" ln) (abort))
+		(else
+		 (printf "~%Please enter \"yes\", \"no\" or \"abort\".~%")
+		 (loop) ) ) ) ) ) ) )
+  
