@@ -525,8 +525,7 @@ EOF
   (define *short-options* '(#\h #\k #\l #\t #\s #\p #\r #\n #\v #\i #\u #\D))
 
   (define (main args)
-    (let ((defaults (load-defaults))
-          (update #f)
+    (let ((update #f)
           (rx (regexp "([^:]+):(.+)")))
       (let loop ((args args) (eggs '()))
         (cond ((null? args)
@@ -534,24 +533,25 @@ EOF
 		      (error "`-deploy' only makes sense in combination with `-prefix DIRECTORY`"))
 		     (update (update-db))
                      (else
-                      (when (null? eggs)
-                        (let ((setups (glob "*.setup")))
-                          (cond ((pair? setups)
-                                 (set! *eggs+dirs+vers*
-				   (append
-				    (map
-				     (lambda (s) (cons (pathname-file s) (list "." "")))
-				     setups)
-				    *eggs+dirs+vers*)))
-                                (else
-                                 (print "no setup-scripts to process")
-                                 (exit 1))) ) )
-                      (unless defaults
-                        (unless *default-transport*
-                          (error "no default transport defined - please use `-transport' option"))
-                        (unless *default-location*
-                          (error "no default location defined - please use `-location' option")))
-                      (install (apply-mappings (reverse eggs))))))
+		      (let ((defaults (load-defaults)))
+			(when (null? eggs)
+			  (let ((setups (glob "*.setup")))
+			    (cond ((pair? setups)
+				   (set! *eggs+dirs+vers*
+				     (append
+				      (map
+				       (lambda (s) (cons (pathname-file s) (list "." "")))
+				       setups)
+				      *eggs+dirs+vers*)))
+				  (else
+				   (print "no setup-scripts to process")
+				   (exit 1))) ) )
+			(unless defaults
+			  (unless *default-transport*
+			    (error "no default transport defined - please use `-transport' option"))
+			  (unless *default-location*
+			    (error "no default location defined - please use `-location' option")))
+			(install (apply-mappings (reverse eggs)))))))
               (else
                (let ((arg (car args)))
                  (cond ((or (string=? arg "-help")
