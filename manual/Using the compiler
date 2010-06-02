@@ -86,7 +86,7 @@ the source text should be read from standard input.
 
 ; -emit-import-library MODULE : Specifies that an import library named {{MODULE.import.scm}} for the named module should be generated (equivalent to using the {{emit-import-library}} declaration).
 
-; -emit-inline-file FILENAME : Write procedures that can be globally inlined in internal form to {{FILENAME}}, if global inlining is enabled. Implies {{-inline -local}}.
+; -emit-inline-file FILENAME : Write procedures that can be globally inlined in internal form to {{FILENAME}}, if global inlining is enabled. Implies {{-inline -local}}. If the inline-file would be empty (because no procedure would be inlinable) no file is generated and any existing inline-file with that name is deleted.
 
 ; -explicit-use : Disables automatic use of the units {{library, eval}} and {{extras}}. Use this option if compiling a library unit instead of an application unit.
 
