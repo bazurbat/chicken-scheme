@@ -512,16 +512,20 @@
 (define (standard-extension name version #!key (static #t) (info '()))
   (let* ((sname (->string name))
 	 (fname (make-pathname #f sname "scm"))
-	 (iname (make-pathname #f sname "import.scm")))
-    (compile -s -O3 -d1 ,fname -j ,name)
+	 (iname (make-pathname #f sname "import.scm"))
+	 (ilname (make-pathname #f sname "inline")))
+    (compile -dynamic -optimize-level 3 -debug-level 1 ,fname -emit-import-library ,name)
     (when static
-      (compile -c -O3 -d1 ,fname -j ,name -unit ,name))
-    (compile -s -O3 -d0 ,iname)
+      (compile -c -optimize-level 3 -debug-level 1 ,fname -emit-import-library
+	       ,name -unit ,name))
+    (compile -dynamic -optimize-level 3 -debug-level 0 ,iname)
     (install-extension
      name
-     (list (pathname-replace-extension fname "so")
-	   (pathname-replace-extension iname "so")
-	   (make-pathname #f sname "setup"))
+     `(,(pathname-replace-extension fname "so")
+       ,(pathname-replace-extension iname "so")
+       ,@(if (file-exists? ilname)
+	     (list ilname)
+	     '()))
      `((version ,version)
        ,@info
        ,@(if static `((static ,(make-pathname #f fname "o"))) '())))))
