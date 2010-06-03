@@ -2078,6 +2078,7 @@
 		 (when (and ##sys#notices-enabled
 			    (get db name 'global)
 			    (get db name 'assigned)
+			    (variable-visible? name)
 			    (or no-global-procedure-checks
 				(variable-mark name '##compiler#always-bound-to-procedure))
 			    (not unsafe))

@@ -583,7 +583,9 @@
 			   
 			   (else
 			    (print-node "optimized" '|7| node2)
-			    (when inline-output-file
+			    ;; inlining into a file with interrupts enabled would
+			    ;; change semantics
+			    (when (and inline-output-file insert-timer-checks)
 			      (let ((f inline-output-file))
 				(dribble "Generating global inline file `~a' ..." f)
 				(emit-global-inline-file f db) ) )
