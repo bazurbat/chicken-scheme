@@ -1234,10 +1234,12 @@
 			      ,@(if s `((##core#require-for-syntax ',id)) '())
 			      ,@(if (or nr (and (not rr) s))
 				    '()
-				    `((##sys#require
-				       ,@(map (lambda (id) `',id)
-					      (cond (rr (cdr rr))
-						    (else (list id)) ) ) ) ) ) )
+				    (begin
+				      (add-req id #f)
+				      `((##sys#require
+					 ,@(map (lambda (id) `',id)
+						(cond (rr (cdr rr))
+						      (else (list id)) ) ) ) ) ) ) )
 			    impid #f)
 			   #t) ) )
 		       (else
