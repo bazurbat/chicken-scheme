@@ -79,7 +79,7 @@
 	 (%tmp (r 'tmp))
 	 (%begin (r 'begin))
 	 (cache (make-vector (add1 n2) #f)))
-    (vector-set! cache n2 0)
+    (vector-set! cache n2 0)		; last slot: current index
     `(,%let* ((,%cache (,%quote ,cache))
 	      (,%arg ,arg))
 	     ,(let fold ((i 0))

@@ -4637,6 +4637,6 @@ EOF
       (pnum major)
       (pchr #\/)
       (pnum minor)
-      (pstr " GCs")))
+      (pstr " GCs (major/minor)")))
   (##sys#write-char-0 #\newline ##sys#standard-error)
   (##sys#flush-output ##sys#standard-error))
