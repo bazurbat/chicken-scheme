@@ -88,7 +88,7 @@
 		      (cons* 'optimize-leaf-routines 'inline options)) ) 
 		   ((3)
 		    (set! options
-		      (cons* 'optimize-leaf-routines 'inline 'local options) ) )
+		      (cons* 'optimize-leaf-routines 'inline 'inline-globally  options) ) )
 		   ((4)
 		    (set! options
 		      (cons* 'optimize-leaf-routines 'inline 'local 'unboxing 'unsafe
