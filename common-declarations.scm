@@ -1,6 +1,6 @@
 ;;;; common-declarations.scm - settings for core libraries
 ;
-; Copyright (c) 2010, The Chicken Team
+; Copyright (c) 2010, The CHICKEN Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -30,11 +30,13 @@
 
 (cond-expand
  (debugbuild
-  (define (d arg1 . more)
-    (when (##sys#fudge 13)
-      (if (null? more)
-	  (pp arg1)
-	  (apply print arg1 more)))))
+  (define-syntax d
+    (syntax-rules ()
+      ((_ arg1)
+       (when (##sys#fudge 13) (pp arg1))) ; debug-mode
+      ((_ arg1 more ...)
+       (when (##sys#fudge 13)
+	 (print arg1 more ...))))))
  (else
   (declare
     (safe-globals)
