@@ -537,7 +537,8 @@ by expression {{EXP}}.
 Performs a major garbage collection, evaluates {{EXP1 ...}} and prints
 elapsed CPU time and some values about GC use, like time spent in major
 GCs, number of minor and major GCs. The output is sent to the port
-that is the current value of {{(current-error-port)}}.
+that is the current value of {{(current-error-port)}}. Nested invocations
+of this form will give incorrect results for all output but the innermost.
 
 ---
 Previous: [[Non-standard read syntax]]

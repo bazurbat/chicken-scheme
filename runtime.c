@@ -367,8 +367,7 @@ static C_TLS C_byte
   *new_tospace_start,
   *new_tospace_top,
   *new_tospace_limit,
-  *heap_scan_top,
-  *timer_start_fromspace_top;
+  *heap_scan_top;
 static C_TLS size_t
   heapspace1_size,
   heapspace2_size;
@@ -410,8 +409,6 @@ static C_TLS int
   gc_mode,
   gc_count_1,
   gc_count_2,
-  timer_start_gc_count_1,
-  timer_start_gc_count_2,
   interrupt_reason,
   stack_size_changed,
   dlopen_flags,
@@ -422,13 +419,12 @@ static C_TLS int
 static C_TLS unsigned int
   mutation_count,
   stack_size,
-  heap_size,
-  timer_start_mutation_count;
+  heap_size;
 static C_TLS int chicken_is_initialized;
 static C_TLS jmp_buf gc_restart;
 static C_TLS long
   timer_start_ms,
-  timer_start_gc_ms,
+  gc_ms,
   timer_accumulated_gc_ms,
   interrupt_time,
   last_interrupt_latency;
@@ -710,7 +706,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   current_module_handle = NULL;
   reload_lf = NULL;
   callback_continuation_level = 0;
-  timer_start_gc_ms = 0;
+  gc_ms = 0;
   C_randomize(time(NULL));
   return 1;
 }
@@ -2863,7 +2859,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
   if(gc_mode == GC_MAJOR) {
     tgc = cpu_milliseconds() - tgc;
-    timer_start_gc_ms += tgc;
+    gc_ms += tgc;
     timer_accumulated_gc_ms += tgc;
   }
 
@@ -3860,12 +3856,11 @@ C_regparm C_word C_fcall C_set_gc_report(C_word flag)
 
 C_regparm C_word C_fcall C_start_timer(void)
 {
-  timer_start_mutation_count = mutation_count;
-  timer_start_gc_count_1 = gc_count_1;
-  timer_start_gc_count_2 = gc_count_2;
-  timer_start_fromspace_top = C_fromspace_top;
+  mutation_count = 0;
+  gc_count_1 = 0;
+  gc_count_2 = 0;
   timer_start_ms = cpu_milliseconds();
-  timer_start_gc_ms = 0;
+  gc_ms = 0;
   return C_SCHEME_UNDEFINED;
 }
 
@@ -3873,19 +3868,14 @@ C_regparm C_word C_fcall C_start_timer(void)
 void C_ccall C_stop_timer(C_word c, C_word closure, C_word k)
 {
   long t0 = cpu_milliseconds() - timer_start_ms;
-  int gc2 = gc_count_2 - timer_start_gc_count_2,
-      gc1 = gc2 ? gc_count_1 : (gc_count_1 - timer_start_gc_count_1),
-      mutations = mutation_count - timer_start_mutation_count,
-      from = gc2 ? ((C_uword)C_fromspace_top - (C_uword)fromspace_start)
-                 : ((C_uword)C_fromspace_top - (C_uword)timer_start_fromspace_top);
   C_word 
     ab[ WORDS_PER_FLONUM * 2 + 7 ], /* 2 flonums, 1 vector of 6 elements */
     *a = ab,
     elapsed = C_flonum(&a, (double)t0 / 1000.0),
-    gc_time = C_flonum(&a, (double)timer_start_gc_ms / 1000.0),
+    gc_time = C_flonum(&a, (double)gc_ms / 1000.0),
     info;
 
-  info = C_vector(&a, 6, elapsed, gc_time, C_fix(mutations), C_fix(gc1), C_fix(gc2), C_fix(from));
+  info = C_vector(&a, 6, elapsed, gc_time, C_fix(mutation_count), C_fix(gc_count_1), C_fix(gc_count_2));
   C_kontinue(k, info);
 }
 
