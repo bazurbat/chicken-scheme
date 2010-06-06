@@ -195,8 +195,7 @@
       (set! local-definitions #t))
     (when (memq 'inline-global options)
       (set! enable-inline-files #t)
-      (set! inline-locally #t)
-      (set! inline-globally #t))
+      (set! inline-locally #t))
     (when (or verbose do-scrutinize)
       (set! ##sys#notices-enabled #t))
     (when (memq 'no-warnings options) 
@@ -522,7 +521,6 @@
 		    (concatenate (map cdr req))) )
 		 (let ((ifs (collect-options 'consult-inline-file)))
 		   (unless (null? ifs)
-		     (set! inline-globally #t)
 		     (set! inline-locally #t)
 		     (for-each 
 		      (lambda (ilf)

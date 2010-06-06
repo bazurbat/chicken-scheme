@@ -1103,4 +1103,5 @@ buildhead:
 
 boot-chicken:
 	$(MAKE) -f Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) PREFIX=/nowhere CONFIG= \
-	  PROGRAM_SUFFIX=-boot STATICBUILD=1 confclean chicken-boot$(EXE)
+	  SRCDIR=$(SRCDIR) CHICKEN=$(CHICKEN) PROGRAM_SUFFIX=-boot STATICBUILD=1 \
+	  confclean chicken-boot$(EXE)

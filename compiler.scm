@@ -330,7 +330,6 @@
 (define all-import-libraries #f)
 (define standalone-executable #t)
 (define local-definitions #f)
-(define inline-globally #f)
 (define inline-locally #f)
 (define inline-output-file #f)
 (define do-scrutinize #f)
@@ -1353,11 +1352,10 @@
 		    (set! extended-bindings (lset-difference eq? default-extended-bindings syms)) ) ] ) ]
 	  ((inline-global)
 	   (set! enable-inline-files #t)
-	   (if (null? (cddr spec))
-	       (set! inline-globally #f)
-	       (for-each
-		(cut mark-variable <> '##compiler#inline-global 'no)
-		(stripa (cddr spec)))))
+	   (when (pair? (cddr spec))
+	     (for-each
+	      (cut mark-variable <> '##compiler#inline-global 'no)
+	      (stripa (cddr spec)))))
 	  [else
 	   (check-decl spec 1 1)
 	   (let ((id (strip (cadr spec))))
@@ -1431,11 +1429,10 @@
        ((inline-global)
 	(set! enable-inline-files #t)
 	(set! inline-locally #t)
-	(if (null? (cdr spec))
-	    (set! inline-globally #t)
-	    (for-each
-	     (cut mark-variable <> '##compiler#inline-global 'yes)
-	     (stripa (cdr spec)))))
+	(when (pair? (cdr spec))
+	  (for-each
+	   (cut mark-variable <> '##compiler#inline-global 'yes)
+	   (stripa (cdr spec)))))
        ((type)
 	(for-each
 	 (lambda (spec)

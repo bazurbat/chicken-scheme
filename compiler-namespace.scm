@@ -173,7 +173,6 @@
  read-info-hook
  initialize-analysis-database
  initialize-compiler
- inline-globally
  inline-lambda-bindings
  inline-locally
  inline-max-size
