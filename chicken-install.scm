@@ -87,6 +87,7 @@
   (define *trunk* #f)
   (define *csc-features* '())
   (define *prefix* #f)
+  (define *aliases* '())
 
   (define (get-prefix)
     (cond ((and (feature? #:cross-chicken)
@@ -122,9 +123,26 @@
 			       (let-values (((from to) (split-at m p)))
 				 (cons from (cdr to)))))
 			   (cdr x)))))
+		  ((alias)
+		   (set! *aliases*
+		     (append 
+		      *aliases*
+		      (map (lambda (a)
+			     (if (and (list? a) (= 2 (length a)) (every string? a))
+				 (cons (car a) (cadr a))
+				 (broken x)))
+			   (cdr x)))))
 		  (else (broken x))))
 	      (read-file deff))))
       (pair? *default-sources*) ))
+
+  (define (resolve-location name)
+    (cond ((assoc name *aliases*) => 
+	   (lambda (a)
+	     (let ((new (cdr a)))
+	       (print "resolving alias " name " to: " new)
+	       (resolve-location new))))
+	  (else name)))
 
   (define (known-default-sources)
     (if (and *default-location* *default-transport*)
@@ -248,8 +266,9 @@
       (if (null? defs)
           (values #f "")
           (let* ([def (car defs)]
-                 [locn (cadr (or (assq 'location def)
-                                 (error "missing location entry" def)))]
+                 [locn (resolve-location
+			(cadr (or (assq 'location def)
+				  (error "missing location entry" def))))]
                  [trans (cadr (or (assq 'transport def)
                                   (error "missing transport entry" def)))])
             (let-values ([(dir ver) (try-extension name version trans locn)])

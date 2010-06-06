@@ -1,12 +1,22 @@
 ;;;; setup.defaults - defaults for chicken-install -*- Scheme -*-
 
+
+;; list of servers in the order in which they will be processed
+;
+; (server (location URL) (transport TRANSPORT))
+
 (server
- (location "http://chicken.kitten-technologies.co.uk/henrietta.cgi")
+ (location "kitten-technologies")
  (transport http))
 
 (server
- (location "http://galinha.ucpel.tche.br/cgi-bin/henrietta")
+ (location "galinha")
  (transport http))
+
+
+;; extensions-mappings
+;
+; (map (EXTENSIONNAME ... -> OTHEREXTENSIONNAME ...))
 
 (map
  (data-structures 
@@ -14,3 +24,12 @@
   posix regex setup-api setup-download
   srfi-1 srfi-4 srfi-13 srfi-14 srfi-18 srfi-69 
   ->) )
+
+
+;; aliases for locations
+;
+; (alias (NAME REALNAME) ...)
+
+(alias 
+ ("galinha" "http://galinha.ucpel.tche.br/cgi-bin/henrietta")
+ ("kitten-technologies" "http://chicken.kitten-technologies.co.uk/henrietta.cgi"))
