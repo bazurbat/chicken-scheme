@@ -70,6 +70,7 @@
   (define *keep* #f)
   (define *force* #f)
   (define *host-extension* #f)
+  (define *target-extension* #f)	; means: target too?
   (define *run-tests* #f)
   (define *retrieve-only* #f)
   (define *no-install* #f)
@@ -89,9 +90,10 @@
   (define *csc-nonfeatures* '())
   (define *prefix* #f)
   (define *aliases* '())
+  (define *cross-chicken* (feature? #:cross-chicken))
 
   (define (get-prefix)
-    (cond ((and (feature? #:cross-chicken)
+    (cond ((and *cross-chicken*
 		(not *host-extension*))
 	   (or *prefix*
 	       (foreign-value "C_TARGET_PREFIX" c-string)))
@@ -360,7 +362,7 @@
   (define (check-platform name meta)
     (define (fail)
       (error "extension is not targeted for this system" name))
-    (unless (feature? #:cross-chicken)
+    (unless *cross-chicken*
       (and-let* ((platform (assq 'platform meta)))
 	(let loop ((p (cadr platform)))
 	  (cond ((symbol? p) 
@@ -379,7 +381,7 @@
     (conc
      *csi*
      " -bnq "
-     (if (and (feature? #:cross-chicken) ; disable -setup-mode when cross-compiling,
+     (if (and *cross-chicken* ; disable -setup-mode when cross-compiling,
 	      (not *host-extension*)) ; host-repo must always take precedence
 	 ""				
 	 "-setup-mode ")
@@ -428,20 +430,38 @@
 		 (cleanup)
 		 (exit 1)))
 	     (print "installing " (car e+d+v) #\: (caddr e+d+v) " ...")
-	     (print "changing current directory to " (cadr e+d+v))
-	     (parameterize ((current-directory (cadr e+d+v)))
-	       (let ((cmd (make-install-command e+d+v (> i 1))))
-		 (print "  " cmd)
-		 ($system cmd))
-	       (when (and *run-tests*
-			  (not isdep)
-			  (file-exists? "tests")
-			  (directory? "tests")
-			  (file-exists? "tests/run.scm") )
-		 (set! *running-test* #t)
-		 (current-directory "tests")
-		 (command "~a -s run.scm ~a" *csi* (car e+d+v))
-		 (set! *running-test* #f)))))
+	     (let ((tmpcopy (and *target-extension*
+				 *host-extension*
+				 (create-temporary-directory)))
+		   (eggdir (cadr e+d+v)))
+	       (when tmpcopy
+		 (print "copying sources for target installation")
+		 (command 
+		  "~a ~a ~a"
+		  (if *windows-shell* "xcopy" "cp -r")
+		  (make-pathname eggdir "*")
+		  tmpcopy))
+	       (let ((setup
+		      (lambda (dir)
+			(print "changing current directory to " dir)
+			(parameterize ((current-directory dir))
+			  (let ((cmd (make-install-command e+d+v (> i 1))))
+			    (print "  " cmd)
+			    ($system cmd))
+			  (when (and *run-tests*
+				     (not isdep)
+				     (file-exists? "tests")
+				     (directory? "tests")
+				     (file-exists? "tests/run.scm") )
+			    (set! *running-test* #t)
+			    (current-directory "tests")
+			    (command "~a -s run.scm ~a ~a" *csi* (car e+d+v) (caddr e+d+v))
+			    (set! *running-test* #f))))))
+		 (setup eggdir)
+		 (when (and *target-extension* *host-extension*)
+		   (print "installing for target ...")
+		   (fluid-let ((*host-extension* #f))
+		     (setup tmpcopy)))))))
 	 (map (cut assoc <> *eggs+dirs+vers*) dag)
 	 (iota num num -1)))))
 
@@ -534,6 +554,7 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
   -n   -no-install              do not install, just build (implies `-keep')
   -p   -prefix PREFIX           change installation prefix to PREFIX
        -host                    when cross-compiling, compile extension for host
+       -target                  when cross-compiling, compile extension for target (default)
        -test                    run included test-cases, if available
        -username USER           set username for transports that require this
        -password PASS           set password for transports that require this
@@ -654,6 +675,11 @@ EOF
                         (loop (cdr args) eggs))
                        ((string=? "-host" arg)
                         (set! *host-extension* #t)
+                        (loop (cdr args) eggs))
+                       ((string=? "-target" arg)
+			(unless *cross-chicken*
+			  (error "`-target' option is only valid for a cross-compilation setup"))
+                        (set! *target-extension* #t)
                         (loop (cdr args) eggs))
 		       ((string=? "-deploy" arg)
 			(set! *deploy* #t)
