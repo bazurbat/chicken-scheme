@@ -86,6 +86,7 @@
   (define *deploy* #f)
   (define *trunk* #f)
   (define *csc-features* '())
+  (define *csc-nonfeatures* '())
   (define *prefix* #f)
   (define *aliases* '())
 
@@ -393,7 +394,12 @@
 	   (sprintf " -e \"(destination-prefix \\\"~a\\\")\"" 
 	     (normalize-pathname prefix 'unix))
 	   ""))
-     (sprintf " -e \"(extra-features '~s)\"" *csc-features*)
+     (if (pair? *csc-features*)
+	 (sprintf " -e \"(extra-features '~s)\"" *csc-features*)
+	 "")
+     (if (pair? *csc-nonfeatures*)
+	 (sprintf " -e \"(extra-nonfeatures '~s)\"" *csc-nonfeatures*)
+	 "")
      (if *deploy* " -e \"(deployment-mode #t)\"" "")
      #\space
      (shellpath (make-pathname (cadr e+d+v) (car e+d+v) "setup"))) )
@@ -637,6 +643,11 @@ EOF
                         (unless (pair? (cdr args)) (usage 1))
 			(set! *csc-features* 
 			  (cons (string->symbol (cadr args)) *csc-features*))
+			(loop (cddr args) eggs))
+		       ((string=? "-no-feature" arg)
+                        (unless (pair? (cdr args)) (usage 1))
+			(set! *csc-nonfeatures* 
+			  (cons (string->symbol (cadr args)) *csc-nonfeatures*))
 			(loop (cddr args) eggs))
                        ((string=? "-test" arg)
                         (set! *run-tests* #t)

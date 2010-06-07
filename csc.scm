@@ -146,7 +146,7 @@
     -disable-warning			; OBSOLETE
     -emit-inline-file -types
     -feature -debug-level -heap-growth -heap-shrinkage -heap-initial-size -consult-inline-file
-    -emit-import-library -static-extension))
+    -emit-import-library -static-extension -no-feature))
 
 (define-constant shortcuts
   '((-h "-help")
@@ -159,7 +159,7 @@
     (-i "-case-insensitive")
     (|-K| "-keyword-style")
     (|-X| "-extend")
-    (|-N| "-no-usual-integrations")
+    (|-N| "-no-usual-integrations")	; DEPRECATED
     (|-J| "-emit-all-import-libraries")
     (-x "-explicit-use")
     (-u "-unsafe")
@@ -311,6 +311,7 @@ Usage: #{csc} FILENAME | OPTION ...
   Language options:
 
     -D  -DSYMBOL  -feature SYMBOL  register feature identifier
+    -no-feature SYMBOL             disable builtin feature identifier
     -c++                           compile via a C++ source file (.cpp) 
     -objc                          compile via Objective-C source file (.m)
 
@@ -355,7 +356,7 @@ Usage: #{csc} FILENAME | OPTION ...
     -O -O0 -O1 -O2 -O3 -O4 -O5 -optimize-level NUMBER
                                    enable certain sets of optimization options
     -optimize-leaf-routines        enable leaf routine optimization
-    -N  -no-usual-integrations     standard procedures may be redefined
+    -no-usual-integrations         standard procedures may be redefined
     -u  -unsafe                    disable safety checks
     -local                         assume globals are only modified in current
                                     file

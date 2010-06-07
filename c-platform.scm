@@ -99,7 +99,7 @@
     inline-limit profile-name 
     disable-warning			; OBSOLETE
     parenthesis-synonyms
-    prelude postlude prologue epilogue nursery extend feature types
+    prelude postlude prologue epilogue nursery extend feature no-feature types
     emit-import-library emit-inline-file static-extension consult-inline-file
     heap-growth heap-shrinkage heap-initial-size ffi-define ffi-include-path) )
 

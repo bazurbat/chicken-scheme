@@ -1209,6 +1209,7 @@ Usage: chicken FILENAME OPTION ...
   Language options:
 
     -feature SYMBOL              register feature identifier
+    -no-feature SYMBOL           disable built-in feature identifier
 
   Syntax related options:
 

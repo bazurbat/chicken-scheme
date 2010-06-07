@@ -1051,40 +1051,6 @@ check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 bench: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 	cd tests; echo >>bench.log; date >>bench.log; sh runbench.sh 2>&1 | tee -a bench.log
 
-# 3-stage build
-
-.PHONY: stage1 stage2 stage3
-
-# stage1: build static compiler from current sources with whatever chicken is 
-#         currently available
-stage1:
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) \
-	  SRCDIR=$(SRCDIR) STATICBUILD=1 DEBUGBUILD=1 CHICKEN=$(CHICKEN) \
-	  confclean clean $(CHICKEN_PROGRAM)$(EXE)
-	$(COPY_COMMAND) $(CHICKEN_PROGRAM)$(EXE) $(CHICKEN_PROGRAM)-stage1$(EXE)
-	-chmod +x $(CHICKEN_PROGRAM)-stage1$(EXE)
-	-touch *.scm
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) SRCDIR=$(SRCDIR) stage2
-
-# stage2: build static chicken with compiler built from current sources, so that
-#         it supports all functionality that has recently been added
-stage2:
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) \
-	  SRCDIR=$(SRCDIR) STATICBUILD=1 DEBUGBUILD=1 \
-	  CHICKEN=./$(CHICKEN_PROGRAM)-stage1 clean $(CHICKEN_PROGRAM)$(EXE)
-	$(COPY_COMMAND) $(CHICKEN_PROGRAM) $(CHICKEN_PROGRAM)-stage2$(EXE)
-	-chmod +x $(CHICKEN_PROGRAM)-stage2$(EXE)
-	-touch *.scm
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) stage3
-
-# stage3: build whole system with compiler built from compiler built from current 
-#         sources - this should normally not be contaminated by old compilers
-#         or runtime libraries
-stage3:
-	$(MAKE) -f $(SRCDIR)Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) \
-	  SRCDIR=$(SRCDIR) CONFIG=$(CONFIG) \
-	  CHICKEN=./$(CHICKEN_PROGRAM)-stage2 \
-	  confclean clean all
 
 # build current head in sub-directory
 
@@ -1103,5 +1069,20 @@ buildhead:
 
 boot-chicken:
 	$(MAKE) -f Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) PREFIX=/nowhere CONFIG= \
-	  SRCDIR=$(SRCDIR) CHICKEN=$(CHICKEN) PROGRAM_SUFFIX=-boot STATICBUILD=1 \
-	  confclean chicken-boot$(EXE)
+	  SRCDIR=$(SRCDIR) CHICKEN=$(CHICKEN) PROGRAM_SUFFIX=-boot-stage1 STATICBUILD=1 \
+	  C_COMPILER_OPTIMIZATION_OPTIONS= \
+	  confclean chicken-boot-stage1$(EXE)
+	$(MAKE) -f Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) PREFIX=/nowhere CONFIG= \
+	  SRCDIR=$(SRCDIR) CHICKEN=$(PWD)/chicken-boot-stage1$(EXE) PROGRAM_SUFFIX=-boot STATICBUILD=1 \
+	  C_COMPILER_OPTIMIZATION_OPTIONS= \
+	  touchfiles chicken-boot$(EXE) confclean
+
+.PHONY: touchfiles
+
+touchfiles:
+ifdef WINDOWS_SHELL
+	rem now is this funky or what?
+	for %x in (*.scm) do copy /b %x +,,
+else
+	touch *.scm
+endif

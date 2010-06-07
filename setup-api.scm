@@ -51,7 +51,7 @@
      patch abort-setup
      setup-root-directory create-directory/parents
      test-compile try-compile run-verbose
-     extra-features
+     extra-features extra-nonfeatures
      copy-file move-file
      required-chicken-version required-extension-version
      sudo-install keep-intermediates
@@ -116,6 +116,13 @@
   (let ((xfs '()))
     (lambda (#!optional fs)
       (cond (fs (apply register-feature! fs)
+		(set! xfs fs))
+	    (else xfs)))))
+
+(define extra-nonfeatures
+  (let ((xfs '()))
+    (lambda (#!optional fs)
+      (cond (fs (apply unregister-feature! fs)
 		(set! xfs fs))
 	    (else xfs)))))
 
@@ -231,8 +238,11 @@
 	(if (deployment-mode) "-deployed" "")
 	(append
 	 (map (lambda (f)
-		(string-append "-feature "(symbol->string f)))
+		(string-append "-feature " (symbol->string f)))
 	      (extra-features))
+	 (map (lambda (f)
+		(string-append "-no-feature " (symbol->string f)))
+	      (extra-nonfeatures))
 	 *csc-options*) )
        " ")
       (find-program prg)))

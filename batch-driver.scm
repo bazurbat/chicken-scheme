@@ -278,6 +278,9 @@
     (for-each 
      register-feature!
      (append-map (cut string-split <> ",") (collect-options 'feature)))
+    (for-each 
+     unregister-feature!
+     (append-map (cut string-split <> ",") (collect-options 'no-feature)))
 
     ;; Load extensions:
     (set! ##sys#features (cons #:compiler-extension ##sys#features))

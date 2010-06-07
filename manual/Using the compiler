@@ -128,6 +128,8 @@ the source text should be read from standard input.
 
 ; -no-bound-checks : disable bound variable checks
 
+; -no-feature SYMBOL : Disables the predefined feature-identifier {{SYMBOL}}. Multiple symbols may be given, if comma-separated.
+
 ; -no-lambda-info : Don't emit additional information for each {{lambda}} expression (currently the argument-list, after alpha-conversion/renaming).
 
 ; -no-parentheses-synonyms STYLE : Disables list delimiter synonyms, [..] and {...} for (...).

@@ -85,6 +85,7 @@ usage: csi [FILENAME | OPTION ...]
     -p  -print EXPRESSION         evaluate and print result(s)
     -P  -pretty-print EXPRESSION  evaluate and print result(s) prettily
     -D  -feature SYMBOL           register feature identifier
+        -no-feature SYMBOL        disable built-in feature identifier
     -q  -quiet                    do not print banner
 
 EOF
@@ -712,7 +713,7 @@ EOF
   '(#\k #\s #\v #\h #\D #\e #\i #\R #\b #\n #\q #\w #\- #\I #\p #\P) )
 
 (define-constant long-options
-  '("-ss" "-sx" "-script" "-version" "-help" "--help" "-feature" "-eval"
+  '("-ss" "-sx" "-script" "-version" "-help" "--help" "-feature" "-no-feature" "-eval"
     "-case-insensitive" "-keyword-style" "-no-parentheses-synonyms" "-no-symbol-escape"
     "-r5rs-syntax" "-setup-mode"
     "-require-extension" "-batch" "-quiet" "-no-warnings" "-no-init" 
@@ -823,6 +824,7 @@ EOF
 	(case-sensitive #f) )
       (for-each register-feature! (collect-options "-feature"))
       (for-each register-feature! (collect-options "-D"))
+      (for-each unregister-feature! (collect-options "-no-feature"))
       (set! ##sys#include-pathnames 
 	(deldups
 	 (append (map chop-separator (collect-options "-include-path"))
