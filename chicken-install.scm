@@ -69,8 +69,6 @@
 
   (define *keep* #f)
   (define *force* #f)
-  (define *host-extension* #f)
-  (define *target-extension* #f)	; means: target too?
   (define *run-tests* #f)
   (define *retrieve-only* #f)
   (define *no-install* #f)
@@ -91,6 +89,8 @@
   (define *prefix* #f)
   (define *aliases* '())
   (define *cross-chicken* (feature? #:cross-chicken))
+  (define *host-extension* *cross-chicken*)
+  (define *target-extension* *cross-chicken*)
 
   (define (get-prefix)
     (cond ((and *cross-chicken*
@@ -553,8 +553,8 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
   -r   -retrieve                only retrieve egg into current directory, don't install
   -n   -no-install              do not install, just build (implies `-keep')
   -p   -prefix PREFIX           change installation prefix to PREFIX
-       -host                    when cross-compiling, compile extension for host
-       -target                  when cross-compiling, compile extension for target (default)
+       -host                    when cross-compiling, compile extension only for host
+       -target                  when cross-compiling, compile extension only for target
        -test                    run included test-cases, if available
        -username USER           set username for transports that require this
        -password PASS           set password for transports that require this
@@ -674,12 +674,10 @@ EOF
                         (set! *run-tests* #t)
                         (loop (cdr args) eggs))
                        ((string=? "-host" arg)
-                        (set! *host-extension* #t)
+                        (set! *target-extension* #f)
                         (loop (cdr args) eggs))
                        ((string=? "-target" arg)
-			(unless *cross-chicken*
-			  (error "`-target' option is only valid for a cross-compilation setup"))
-                        (set! *target-extension* #t)
+                        (set! *host-extension* #f)
                         (loop (cdr args) eggs))
 		       ((string=? "-deploy" arg)
 			(set! *deploy* #t)
