@@ -309,7 +309,8 @@
 			   (decompose-lambda-list
 			    llist
 			    (lambda (vars argc rest)
-			      (let ([ifid (first lparams)])
+			      (let ((ifid (first lparams))
+				    (external (node? (variable-mark var '##compiler#inline-global))))
 				(cond [(and inline-locally 
 					    (test var 'inlinable)
 					    (not (test ifid 'inline-target)) ; inlinable procedure has changed
@@ -317,10 +318,10 @@
 					      ((yes) #t)
 					      ((no) #f)
 					      (else 
-					       (< (fourth lparams) inline-max-size) ) ))
+					       (or external (< (fourth lparams) inline-max-size)))))
 				       (debugging 
 					'i
-					(if (node? (variable-mark var '##compiler#inline-global))
+					(if external
 					    "global inlining" 
 					    "inlining")
 					var ifid (fourth lparams))
