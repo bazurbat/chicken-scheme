@@ -667,7 +667,7 @@
 (define (upgrade-message ext msg #!optional version)
   (error
    (sprintf
-    "the required extension `~s' ~a - please run~%~%  chicken-install ~a~a~%~%and repeat the current installation operation."
+    "the currently installed extension `~s' ~a - please run~%~%  chicken-install ~a~a~%~%and repeat the current installation operation."
     ext msg ext (if version (conc ":" version) "")) ) )
 
 (define (required-extension-version . args)
@@ -684,7 +684,7 @@
 			 ((and (version>=? version ver) (not (string=? (->string version) (->string ver))))
 			  (upgrade-message 
 			   ext
-			   (sprintf "is older than ~a, which is what this extension requires"
+			   (sprintf "is older than ~a, which is the minimum version that this extension requires"
 				    version) 
                            version) )
 			 (else (loop more)) ) ) 
