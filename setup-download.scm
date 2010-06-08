@@ -306,13 +306,13 @@
 	 (error "cannot retrieve extension unsupported transport" transport) ] ) ) )
 
   (define (list-extensions transport location #!key quiet username password)
-    (fluid-let ([*quiet* quiet])
+    (fluid-let ((*quiet* quiet))
       (case transport
-	[(local)
-	 (list-eggs/local location) ]
-	[(svn)
-	 (list-eggs/svn location username password) ]
-	[else
-	 (error "cannot list extensions - unsupported transport" transport) ] ) ) )
+	((local)
+	 (list-eggs/local location) )
+	((svn)
+	 (list-eggs/svn location username password) )
+	(else
+	 (error "cannot list extensions - unsupported transport" transport) ) ) ) )
 
 ) ;module setup-download

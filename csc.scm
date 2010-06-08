@@ -39,6 +39,7 @@
 (define-foreign-variable TARGET_CFLAGS c-string "C_TARGET_CFLAGS")
 (define-foreign-variable INSTALL_CFLAGS c-string "C_INSTALL_CFLAGS")
 (define-foreign-variable TARGET_LDFLAGS c-string "C_TARGET_LDFLAGS")
+(define-foreign-variable TARGET_FEATURES c-string "C_TARGET_FEATURES")
 (define-foreign-variable INSTALL_LDFLAGS c-string "C_INSTALL_LDFLAGS")
 (define-foreign-variable INSTALL_MORE_LIBS c-string "C_INSTALL_MORE_LIBS")
 (define-foreign-variable INSTALL_MORE_STATIC_LIBS c-string "C_INSTALL_MORE_STATIC_LIBS")
@@ -125,6 +126,7 @@
 (define best-compilation-optimization-options default-compilation-optimization-options)
 (define default-linking-optimization-options (string-split (if host-mode INSTALL_LDFLAGS TARGET_LDFLAGS)))
 (define best-linking-optimization-options default-linking-optimization-options)
+(define extra-features (if host-mode '() (string-split TARGET_FEATURES)))
 
 (define-constant simple-options
   '(-explicit-use -no-trace -no-warnings -no-usual-integrations -optimize-leaf-routines -unsafe
@@ -807,7 +809,11 @@ EOF
 		 (if to-stdout 
 		     '("-to-stdout")
 		     `("-output-file" ,(quotewrap fc)) )
-		 (map quote-option (append translate-options translation-optimization-options)) ) )
+		 (map quote-option
+		      (append 
+		       extra-features
+		       translate-options 
+		       translation-optimization-options)) ) )
 	 " ") )
        (set! c-files (append (list fc) c-files))
        (set! generated-c-files (append (list fc) generated-c-files))))
