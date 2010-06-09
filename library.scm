@@ -1913,12 +1913,12 @@ EOF
 (define (directory-exists? name)
   (##sys#check-string name 'directory-exists?)
   (##sys#pathname-resolution
-    name
-    (lambda (name)
-      (and-let* ((info (##sys#file-info (##sys#platform-fixup-pathname name)))
-		 ((eq? 1 (vector-ref info 4))))
-	name))
-    #:exists?) )
+   name
+   (lambda (name)
+     (and-let* ((info (##sys#file-info (##sys#platform-fixup-pathname name)))
+		((eq? 1 (vector-ref info 4))))
+       name))
+   #:exists?) )
 
 (define (##sys#flush-output port)
   ((##sys#slot (##sys#slot port 2) 5) port) ; flush-output
@@ -3358,7 +3358,7 @@ EOF
     (for-each
      (lambda (info) 
        (let ((more1 (##sys#slot info 1))
-	     (more2 (##sys#slot info 2)) 
+	     (more2 (##sys#slot info 2)) )
 	 (##sys#print "\n\t" #f port)
 	 (##sys#print (##sys#slot info 0) #f port)
 	 (##sys#print "\t\t" #f port)
