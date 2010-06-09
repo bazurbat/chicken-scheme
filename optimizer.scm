@@ -276,7 +276,7 @@
 				  (or (test var 'value)
 				      (test var 'local-value)))]
 		       [args (cdr subs)] )
-		  (cond [(test var 'contractable)
+		  (cond ((test var 'contractable)
 			 (let* ([lparams (node-parameters lval)]
 				[llist (third lparams)] )
 			   (check-signature var args llist)
@@ -285,24 +285,32 @@
 			   (for-each (cut put! db <> 'inline-target #t) fids)
 			   (walk
 			    (inline-lambda-bindings llist args (first (node-subexpressions lval)) #f db)
-			    fids) ) ]
-			[(memq var constant-declarations)
-			 (or (and-let* ((k (car args))
-					((eq? '##core#variable (node-class k)))
-					(kvar (first (node-parameters k)))
-					(lval (and (not (test kvar 'unknown)) (test kvar 'value))) 
-					((eq? '##core#lambda (node-class lval)))
-					(llist (third (node-parameters lval)))
-					((or (test (car llist) 'unused)
-					     (and (not (test (car llist) 'references))
-						  (not (test (car llist) 'assigned)))))
-					((not (any (cut expression-has-side-effects? <> db) (cdr args) ))))
-			       (debugging 'x "removed call to constant procedure with unused result" var)
-			       (make-node
-				'##core#call '(#t)
-				(list k (make-node '##core#undefined '() '())) ) ) 
-			     (walk-generic n class params subs fids)) ]
-			[(and lval
+			    fids) ) )
+			((variable-mark var '##compiler#pure) =>
+			 (lambda (pb)
+			   (or (and-let* ((k (car args))
+					  ((or (eq? #t pb) 
+					       (let ((im (variable-mark var '##compiler#intrinsic)))
+						 (or (eq? im 'internal) (eq? im pb)))))
+					  ((eq? '##core#variable (node-class k)))
+					  (kvar (first (node-parameters k)))
+					  (lval (and (not (test kvar 'unknown)) (test kvar 'value))) 
+					  ((eq? '##core#lambda (node-class lval)))
+					  (llist (third (node-parameters lval)))
+					  ((or (test (car llist) 'unused)
+					       (and (not (test (car llist) 'references))
+						    (not (test (car llist) 'assigned)))))
+					  ((not (any (cut expression-has-side-effects? <> db) (cdr args) ))))
+				 (debugging 
+				  'o
+				  "removed call to pure procedure with unused result"
+				  (or (source-info->string (and (pair? (cdr params)) (second params)))
+				      var))
+				 (make-node
+				  '##core#call '(#t)
+				  (list k (make-node '##core#undefined '() '())) ) ) 
+			       (walk-generic n class params subs fids)) ) )
+			((and lval
 			      (eq? '##core#lambda (node-class lval)))
 			 (let* ([lparams (node-parameters lval)]
 				[llist (third lparams)] )
@@ -311,7 +319,7 @@
 			    (lambda (vars argc rest)
 			      (let ((ifid (first lparams))
 				    (external (node? (variable-mark var '##compiler#inline-global))))
-				(cond [(and inline-locally 
+				(cond ((and inline-locally 
 					    (test var 'inlinable)
 					    (not (test ifid 'inline-target)) ; inlinable procedure has changed
 					    (case (variable-mark var '##compiler#inline) 
@@ -322,7 +330,7 @@
 				       (debugging 
 					'i
 					(if external
-					    "global inlining" 
+					    "global inlining" 	
 					    "inlining")
 					var ifid (fourth lparams))
 				       (for-each (cut put! db <> 'inline-target #t) fids)
@@ -331,8 +339,8 @@
 				       (touch)
 				       (walk
 					(inline-lambda-bindings llist args (first (node-subexpressions lval)) #t db)
-					fids) ]
-				      [(test ifid 'has-unused-parameters)
+					fids) )
+				      ((test ifid 'has-unused-parameters)
 				       (if (< (length args) argc) ; Expression was already optimized (should this happen?)
 					   (walk-generic n class params subs fids)
 					   (let loop ((vars vars) (argc argc) (args args) (used '()))
@@ -357,8 +365,8 @@
 						   [else (loop (cdr vars)
 							       (sub1 argc)
 							       (cdr args)
-							       (cons (car args) used) ) ] ) ) ) ]
-				      [(and (test ifid 'explicit-rest)
+							       (cons (car args) used) ) ] ) ) ) )
+				      ((and (test ifid 'explicit-rest)
 					    (not (memq n rest-consers)) ) ; make sure we haven't inlined rest-list already
 				       (let ([n (llist-length llist)])
 					 (if (< (length args) n)
@@ -381,9 +389,9 @@
 									      (list "C_a_i_list" (* 3 (length rargs)))
 									      rargs) ) ) ) ) ) ) ] )
 						   (set! rest-consers (cons n2 rest-consers))
-						   n2) ) ) ) ) ]
-				      [else (walk-generic n class params subs fids)] ) ) ) ) ) ]
-			[else (walk-generic n class params subs fids)] ) ) ]
+						   n2) ) ) ) ) )
+				      (else (walk-generic n class params subs fids)) ) ) ) ) ) )
+			(else (walk-generic n class params subs fids)) ) ) ]
 	       [(##core#lambda)
 		(if (first params)
 		    (walk-generic n class params subs fids)

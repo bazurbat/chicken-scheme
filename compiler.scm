@@ -89,6 +89,7 @@
 ;   ##compiler#profile -> BOOL
 ;   ##compiler#unused -> BOOL
 ;   ##compiler#foldable -> BOOL
+;   ##compiler#pure -> 'standard | 'extended | BOOL
 
 ; - Source language:
 ;
@@ -324,7 +325,6 @@
 (define inline-max-size default-inline-max-size)
 (define emit-closure-info #t)
 (define undefine-shadowed-macros #t)
-(define constant-declarations '())
 (define profiled-procedures #f)
 (define import-libraries '())
 (define all-import-libraries #f)
@@ -1394,7 +1394,7 @@
        ((constant)
 	(let ((syms (cdr spec)))
 	  (if (every symbol? syms)
-	      (set! constant-declarations (append syms constant-declarations))
+	      (for-each (cut mark-variable <> '##compiler#pure #t) syms)
 	      (quit "invalid arguments to `constant' declaration: ~S" spec)) ) )
        ((emit-import-library)
 	(set! import-libraries
@@ -2550,10 +2550,6 @@
 			 (make-node '##core#setlocal (list i) (list (walk val e here boxes)) ) ) )
 		   (else
 		    (let* ([cval (node-class val)]
-			   [safe (not (or no-bound-checks
-					  unsafe
-					  (variable-mark var '##compiler#always-bound)
-					  (intrinsic? var)))]
 			   [blockvar (not (variable-visible? var))]
 			   [immf (or (and (eq? cval 'quote) (immediate? (first (node-parameters val))))
 				     (eq? '##core#undefined cval) ) ] )

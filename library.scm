@@ -1915,8 +1915,8 @@ EOF
   (##sys#pathname-resolution
     name
     (lambda (name)
-      (and-let* ((info (##sys#file-info (##sys#platform-fixup-pathname name))))
-	(eq? 1 (vector-ref info 4))
+      (and-let* ((info (##sys#file-info (##sys#platform-fixup-pathname name)))
+		 ((eq? 1 (vector-ref info 4))))
 	name))
     #:exists?) )
 
@@ -3234,8 +3234,7 @@ EOF
 	    (string-append (symbol->string x) "-") ) )
       (string-append (str sv) (str st) (str bp) (##sys#symbol->string mt)) ) )
   (if full
-      (let ((rev (##sys#fudge 38))
-	    (spec (string-append
+      (let ((spec (string-append
 		   (if (##sys#fudge 3)	" 64bit" "")
 		   (if (##sys#fudge 15) " symbolgc" "")
 		   (if (##sys#fudge 40) " manyargs" "")
@@ -3360,7 +3359,6 @@ EOF
      (lambda (info) 
        (let ((more1 (##sys#slot info 1))
 	     (more2 (##sys#slot info 2)) 
-	     (t (##sys#slot info 3)))
 	 (##sys#print "\n\t" #f port)
 	 (##sys#print (##sys#slot info 0) #f port)
 	 (##sys#print "\t\t" #f port)
@@ -4141,8 +4139,7 @@ EOF
     (lambda (state)
       (unless working
 	(set! working #t)
-	(let* ([n (##sys#size ##sys#pending-finalizers)]
-	       [c (##sys#slot ##sys#pending-finalizers 0)] )
+	(let* ((c (##sys#slot ##sys#pending-finalizers 0)) )
 	  (when (##sys#fudge 13)
 	    (print "[debug] running " c " finalizers (" (##sys#fudge 26) " live, "
 		   (##sys#fudge 27) " allocated) ..."))

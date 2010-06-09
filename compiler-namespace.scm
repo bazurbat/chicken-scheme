@@ -59,7 +59,6 @@
  compiler-syntax-enabled
  compiler-syntax-statistics
  compute-database-statistics
- constant-declarations
  constant-table
  constant?
  constants-used
