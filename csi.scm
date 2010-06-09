@@ -749,7 +749,7 @@ EOF
     "-ss" "-sx" "-s" "-script") )
 
 (define-constant complex-options
-  '("-D" "-feature" "-I" "-include-path" "-K" "-keyword-style") )
+  '("-D" "-feature" "-I" "-include-path" "-K" "-keyword-style" "-no-feature") )
 
 (define (run)
   (let* ([extraopts (parse-option-string (or (get-environment-variable "CSI_OPTIONS") ""))]
@@ -862,7 +862,7 @@ EOF
 	     (repl)
 	     (##sys#write-char-0 #\newline ##sys#standard-output) ) )
 	(let* ((arg (car args)))
-	  (cond ((member arg simple-options) )
+	  (cond ((member arg simple-options))
 		((member arg complex-options)
 		 (set! args (cdr args)) )
 		((or (string=? "-R" arg) (string=? "-require-extension" arg))
