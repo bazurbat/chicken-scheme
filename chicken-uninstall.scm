@@ -38,10 +38,12 @@
   (define-foreign-variable C_TARGET_LIB_HOME c-string)
   (define-foreign-variable C_BINARY_VERSION int)
 
-  (define *host-extensions* #f)
+  (define *cross-chicken* (feature? #:cross-chicken))
+  (define *host-extensions* *cross-chicken*)
+  (define *target-extensions* *cross-chicken*)
 
   (define (repo-path)
-    (if (and (feature? #:cross-chicken) (not *host-extensions*))
+    (if (and *cross-chicken* (not *host-extensions*))
 	(make-pathname C_TARGET_LIB_HOME (sprintf "chicken/~a" C_BINARY_VERSION))
 	(repository-path)))
 
@@ -80,7 +82,11 @@
 	     (for-each
 	      (lambda (e)
 		(print "removing " e)
-		(remove-extension e) )
+		(when *host-extensions*
+		  (remove-extension e))
+		(when *target-extensions*
+		  (fluid-let ((*host-extensions* #f))
+		    (remove-extension e (repo-path)) )))
 	      eggs)))))
 
   (define (usage code)
@@ -91,7 +97,8 @@ usage: chicken-uninstall [OPTION | PATTERN] ...
   -v   -version                 show version and exit
        -force                   don't ask, delete whatever matches
   -s   -sudo                    use sudo(1) for deleting files
-       -host                    when cross-compiling, uninstall host extensions
+       -host                    when cross-compiling, uninstall host extensions only
+       -target                  when cross-compiling, uninstall target extensions only
 EOF
 );|
     (exit code))
@@ -110,8 +117,11 @@ EOF
 		  ((or (string=? arg "-v") (string=? arg "-version"))
 		   (print (chicken-version))
 		   (exit 0))
+		  ((string=? arg "-target")
+		   (set! *host-extensions* #f)
+		   (loop (cdr args) pats))
 		  ((string=? arg "-host")
-		   (set! *host-extensions* #t)
+		   (set! *target-extensions* #f)
 		   (loop (cdr args) pats))
 		  ((string=? arg "-force")
 		   (set! *force* #t)

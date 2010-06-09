@@ -771,10 +771,10 @@
 	      files)
 	     (delete-directory dir)))) ))
 
-(define (remove-extension egg)
+(define (remove-extension egg #!optional (repo (repository-path)))
   (and-let* ((files (assq 'files (read-info egg))))
     (for-each remove-file* (cdr files)))
-  (remove-file* (make-pathname (repository-path) egg "setup-info")))
+  (remove-file* (make-pathname repo egg "setup-info")))
 
 (define ($system str)
   (let ((r (system

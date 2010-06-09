@@ -36,10 +36,12 @@
   (define-foreign-variable C_TARGET_LIB_HOME c-string)
   (define-foreign-variable C_BINARY_VERSION int)
 
-  (define *host-extensions* #f)
+  (define *cross-chicken* (feature? #:cross-chicken))
+  (define *host-extensions* *cross-chicken*)
+  (define *target-extensions* *cross-chicken*)
 
   (define (repo-path)
-    (if (and (feature? #:cross-chicken) (not *host-extensions*))
+    (if (and *cross-chicken* (not *host-extensions*))
 	(make-pathname C_TARGET_LIB_HOME (sprintf "chicken/~a" C_BINARY_VERSION))
 	(repository-path)))
 
@@ -102,7 +104,8 @@ usage: chicken-status [OPTION | PATTERN] ...
   -h   -help                    show this message
   -v   -version                 show version and exit
   -f   -files                   list installed files
-       -host                    when cross-compiling, show status of host extensions
+       -host                    when cross-compiling, show status of host extensions only
+       -target                  when cross-compiling, show status of target extensions only
 EOF
 );|
     (exit code))
@@ -113,7 +116,15 @@ EOF
     (let ((files #f))
       (let loop ((args args) (pats '()))
 	(if (null? args)
-	    (let ((eggs (gather-eggs (if (null? pats) '(".*") pats))))
+	    (let* ((patterns (if (null? pats) '(".*") pats))
+		   (eggs1 (gather-eggs patterns))
+		   (eggs
+		    (if (and *host-extensions* *target-extensions*)
+			(append
+			 eggs1
+			 (fluid-let ((*host-extensions* #f))
+			   (gather-eggs patterns)))
+			eggs1)))
 	      (if (null? eggs)
 		  (print "(none)")
 		  ((if files list-installed-files list-installed-eggs)
@@ -124,7 +135,10 @@ EOF
 			 (string=? arg "--help"))
 		     (usage 0))
 		    ((string=? arg "-host")
-		     (set! *host-extensions* #t)
+		     (set! *target-extensions* #f)
+		     (loop (cdr args) pats))
+		    ((string=? arg "-target")
+		     (set! *host-extensions* #f)
 		     (loop (cdr args) pats))
 		    ((or (string=? arg "-f") (string=? arg "-files"))
 		     (set! files #t)
