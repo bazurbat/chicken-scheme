@@ -82,11 +82,11 @@
 	     (for-each
 	      (lambda (e)
 		(print "removing " e)
-		(when *host-extensions*
-		  (remove-extension e))
-		(when *target-extensions*
-		  (fluid-let ((*host-extensions* #f))
-		    (remove-extension e (repo-path)) )))
+		(cond ((and *host-extensions* *target-extensions*)
+		       (remove-extension e)
+		       (fluid-let ((*host-extensions* #f))
+			 (remove-extension e (repo-path)) ))
+		      (else (remove-extension e (repo-path)))))
 	      eggs)))))
 
   (define (usage code)

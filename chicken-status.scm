@@ -74,7 +74,7 @@
     (let ((w (quotient (- (get-terminal-width) 2) 2)))
       (for-each
        (lambda (egg)
-	 (let ((version (assq 'version (read-info egg))))
+	 (let ((version (assq 'version (read-info egg (repo-path)))))
 	   (if version
 	       (print
 		(format-string (string-append egg " ") w #f #\.)
@@ -90,7 +90,7 @@
      (sort
       (append-map
        (lambda (egg)
-	 (let ((files (assq 'files (read-info egg))))
+	 (let ((files (assq 'files (read-info egg (repo-path)))))
 	   (if files
 	       (cdr files)
 	       '())))
@@ -116,19 +116,19 @@ EOF
     (let ((files #f))
       (let loop ((args args) (pats '()))
 	(if (null? args)
-	    (let* ((patterns (if (null? pats) '(".*") pats))
-		   (eggs1 (gather-eggs patterns))
-		   (eggs
-		    (if (and *host-extensions* *target-extensions*)
-			(append
-			 eggs1
-			 (fluid-let ((*host-extensions* #f))
-			   (gather-eggs patterns)))
-			eggs1)))
-	      (if (null? eggs)
-		  (print "(none)")
-		  ((if files list-installed-files list-installed-eggs)
-		   eggs)))
+	    (let ((status
+		   (lambda ()
+		     (let* ((patterns (if (null? pats) '(".*") pats))
+			    (eggs (gather-eggs patterns)))
+		       (if (null? eggs)
+			   (print "(none)")
+			   ((if files list-installed-files list-installed-eggs)
+			    eggs))))))
+	      (cond ((and *host-extensions* *target-extensions*)
+		     (status)
+		     (fluid-let ((*host-extensions* #f))
+		       (status)))
+		    (else (status))))
 	    (let ((arg (car args)))
 	      (cond ((or (string=? arg "-help") 
 			 (string=? arg "-h")

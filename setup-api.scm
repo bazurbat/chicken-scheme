@@ -562,7 +562,7 @@
 					(equal? (cadr static) from) 
 					(equal? (pathname-extension to) "a"))
 			       (run (,*ranlib-command* ,(shellpath to)) ) ))
-			   (make-dest-pathname rpath f)))
+			   to))
 		       files) ) )
       (write-info id dests info) ) ) )
 
@@ -746,9 +746,9 @@
         (and defver (->string defver))
         ver ) ) )
 
-(define (read-info egg)
+(define (read-info egg #!optional (repo (repository-path)))
   (with-input-from-file 
-      (make-pathname (repository-path) egg ".setup-info")
+      (make-pathname repo egg setup-file-extension)
     read))
 
 (define (remove-directory dir #!optional (strict #t))
@@ -772,9 +772,9 @@
 	     (delete-directory dir)))) ))
 
 (define (remove-extension egg #!optional (repo (repository-path)))
-  (and-let* ((files (assq 'files (read-info egg))))
+  (and-let* ((files (assq 'files (read-info egg repo))))
     (for-each remove-file* (cdr files)))
-  (remove-file* (make-pathname repo egg "setup-info")))
+  (remove-file* (make-pathname repo egg setup-file-extension)))
 
 (define ($system str)
   (let ((r (system
