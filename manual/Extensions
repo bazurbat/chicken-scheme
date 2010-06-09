@@ -562,7 +562,8 @@ Available options:
 ; {{-r   -retrieve}} : only retrieve egg into current directory, don't install
 ; {{-n   -no-install}} : do not install, just build (implies {{-keep}})
 ; {{-p   -prefix PREFIX}} : change installation prefix to {{PREFIX}}
-; {{-host}} : when cross-compiling, compile extension for host
+; {{-host}} : when cross-compiling, compile extension for host only
+; {{-target}} : when cross-compiling, compile extension for target only
 ; {{-test}} : run included test-cases, if available
 ; {{-username USER}} : set username for transports that require this
 ; {{-password PASS}} : set password for transports that require this
@@ -579,7 +580,8 @@ Available options:
 ; {{-v   -version}} : show version and exit
 ; {{-force}} : don't ask, delete whatever matches
 ; {{-s   -sudo}} : use {{sudo(1)}} for deleting files
-; {{-host}} : when cross-compiling, remove extensions for host system (the default for cross-compiling is to remove the extensions of the target system).
+; {{-host}} : when cross-compiling, remove extensions for host system only
+; {{-target}} : when cross-compiling, remove extensions for target system only
 
 
 === chicken-status reference
@@ -587,7 +589,8 @@ Available options:
 ; {{-h   -help}} : show usage information and exit
 ; {{-v   -version}} : show version and exit
 ; {{-f   -files}} : list installed files
-; {{-host}} : when cross-compiling, show extensions for host system (the default for cross-compiling is to show the extensions of the target system).
+; {{-host}} : when cross-compiling, show extensions for host system only
+; {{-target}} : when cross-compiling, show extensions for target system only
 
 
 === Security
