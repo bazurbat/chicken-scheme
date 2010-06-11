@@ -1478,6 +1478,7 @@
 	(call-with-current-continuation call-with-current-continuation)
 	(print-call-chain print-call-chain)
 	(flush-output flush-output)
+	(string-append string-append)
 	(load-verbose load-verbose))
     (lambda ()
 
@@ -1488,7 +1489,11 @@
 	(cond ((null? xs)
 	       (##sys#print "; no values\n" #f ##sys#standard-output))
 	      ((not (eq? (##core#undefined) (car xs)))
-	       (for-each (cut ##sys#repl-print-hook <> ##sys#standard-output) xs) ) ) )
+	       (for-each (cut ##sys#repl-print-hook <> ##sys#standard-output) xs)
+	       (when (pair? (cdr xs))
+		 (##sys#print 
+		  (string-append "; " (##sys#number->string (length xs)) " values\n")
+		  #f ##sys#standard-output)))))
 
       (let ((stdin ##sys#standard-input)
 	    (stdout ##sys#standard-output)
