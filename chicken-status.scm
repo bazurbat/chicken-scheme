@@ -128,7 +128,7 @@ EOF
 		     (print "host at " (repo-path) ":\n")
 		     (status)
 		     (fluid-let ((*host-extensions* #f))
-		       (print "target at " (repo-path) ":\n")
+		       (print "\ntarget at " (repo-path) ":\n")
 		       (status)))
 		    (else (status))))
 	    (let ((arg (car args)))

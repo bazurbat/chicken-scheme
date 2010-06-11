@@ -2227,22 +2227,33 @@ EOF
 		    
 	  (define (r-list start end)
 	    (if (eq? (##sys#read-char-0 port) start)
-		(let ([first #f]
-		      [ln0 #f]
-		      [outer-container container] )
+		(let ((first #f)
+		      (ln0 #f)
+		      (outer-container container) )
+		  (define (starting-line msg)
+		    (if (and ln0 ##sys#read-error-with-line-number)
+			(string-append 
+			 msg ", starting in line "
+			 (##sys#number->string ln0))
+			msg))
 		  (##sys#call-with-current-continuation
 		   (lambda (return)
 		     (set! container
 		       (lambda (c)
 			 (if (eq? c end)
 			     (return #f)
-			     (##sys#read-error port "list-terminator mismatch" c end) ) ) )
+			     (##sys#read-error
+			      port
+			      (starting-line "list-terminator mismatch")
+			      c end) ) ) )
 		     (let loop ([last '()])
 		       (r-spaces)
 		       (unless first (set! ln0 (##sys#port-line port)))
 		       (let ([c (##sys#peek-char-0 port)])
 			 (cond ((##core#inline "C_eofp" c)
-				(##sys#read-error port "unterminated list") )
+				(##sys#read-error 
+				 port
+				 (starting-line "unterminated list") ) )
 			       ((eq? c end)
 				(##sys#read-char-0 port) )
 			       ((eq? c #\.)
@@ -2259,7 +2270,10 @@ EOF
 					 (##sys#setslot last 1 (readrec))
 					 (r-spaces)
 					 (unless (eq? (##sys#read-char-0 port) end)
-					   (##sys#read-error port "missing list terminator" end) ) ]
+					   (##sys#read-error
+					    port
+					    (starting-line "missing list terminator")
+					    end) ) ]
 					[else
 					 (let* ((tok (##sys#string-append "." (r-token)))
 						(n (and (char-numeric? c2) 
@@ -2283,7 +2297,7 @@ EOF
 		(##sys#read-error port "missing token" start) ) )
 	  
 	  (define (r-vector)
-	    (let ([lst (r-list #\( #\))])
+	    (let ((lst (r-list #\( #\))))
 	      (if (list? lst)
 		  (##sys#list->vector lst)
 		  (##sys#read-error port "invalid vector syntax" lst) ) ) )
