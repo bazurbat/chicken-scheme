@@ -573,6 +573,8 @@ Available options:
 ; {{-deploy}} : install extension in the application directory for a deployed application (see [[Deployment]] for more information)
 : {{-D   -feature FEATURE}} : pass this on to subinvocations of {{csi}} and {{csc}} (when done via {{compile}} or {{(run (csc ...))}})
 
+{{chicken-install}} recognizes the {{http_proxy}} environment variable, if set.
+
 
 === chicken-uninstall reference
 

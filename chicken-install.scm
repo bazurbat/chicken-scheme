@@ -572,11 +572,22 @@ EOF
 );|
     (exit code))
 
+  (define (setup-proxy uri)
+    (if (string? uri)
+        (cond ((string-match "(.+)\\:([0-9]+)" uri) =>
+               (lambda (m)
+                 (set! *proxy-host* (cadr m))
+                 (set! *proxy-port* (string->number (caddr m))))
+               (else
+                (set! *proxy-host* uri)
+                (set! *proxy-port* 80))))))
+  
   (define *short-options* '(#\h #\k #\l #\t #\s #\p #\r #\n #\v #\i #\u #\D))
 
   (define (main args)
     (let ((update #f)
           (rx (regexp "([^:]+):(.+)")))
+      (setup-proxy (get-environment-variable "http_proxy"))
       (let loop ((args args) (eggs '()))
         (cond ((null? args)
                (cond ((and *deploy* (not *prefix*))
@@ -656,13 +667,7 @@ EOF
                         (exit 0))
 		       ((string=? "-proxy" arg)
                         (unless (pair? (cdr args)) (usage 1))
-			(cond ((string-match "(.+)\\:([0-9]+)" (cadr args)) =>
-			       (lambda (m)
-				 (set! *proxy-host* (cadr m))
-				 (set! *proxy-port* (string->number (caddr m)))))
-			      (else
-			       (set! *proxy-host* (cadr args))
-			       (set! *proxy-port* 80)))
+			(setup-proxy (cadr args))
 			(loop (cddr args) eggs))
 		       ((or (string=? "-D" arg) (string=? "-feature" arg))
                         (unless (pair? (cdr args)) (usage 1))
