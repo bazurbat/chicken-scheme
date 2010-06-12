@@ -217,7 +217,7 @@
     fxand fxnot fxior fxxor fxshr fxshl fxodd? fxeven?
     void not-pair? atom? any? u8vector? s8vector? u16vector? s16vector?
     u32vector? s32vector? f32vector? f64vector?
-    locative? get-keyword) )
+    locative?) )
     
 (for-each
  (cut mark-variable <> '##compiler#pure '#t)
