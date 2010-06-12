@@ -1244,6 +1244,12 @@
   (define (strip x)			; raw symbol
     (##sys#strip-syntax x se))
   (define stripu ##sys#strip-syntax)
+  (define (globalize sym)
+    (let loop ((se se))			; ignores syntax bindings
+      (cond ((null? se) (##sys#alias-global-hook sym #f))
+	    ((and (eq? sym (caar se)) (symbol? (cdar se))) (cdar se))
+	    (else (loop (cdr se))))))
+  (define (globalize-all syms) (map globalize syms))
   (call-with-current-continuation
    (lambda (return)
      (unless (pair? spec)
@@ -1308,7 +1314,7 @@
        ((no-procedure-checks-for-toplevel-bindings)
 	(set! no-global-procedure-checks #t))
        ((bound-to-procedure)
-	(let ((vars (stripa (cdr spec))))
+	(let ((vars (globalize-all (cdr spec))))
 	  (for-each (cut mark-variable <> '##compiler#always-bound-to-procedure) vars)
 	  (for-each (cut mark-variable <> '##compiler#always-bound) vars)))
        ((foreign-declare)
@@ -1320,7 +1326,7 @@
        ((separate) (set! block-compilation #f))
        ((keep-shadowed-macros) (set! undefine-shadowed-macros #f))
        ((unused)
-	(for-each (cut mark-variable <> '##compiler#unused) (stripa (cdr spec))))
+	(for-each (cut mark-variable <> '##compiler#unused) (globalize-all (cdr spec))))
        ((not)
 	(check-decl spec 1)
 	(case (##sys#strip-syntax (second spec)) ; strip all
@@ -1341,7 +1347,7 @@
 	       (set! inline-locally #f)
 	       (for-each 
 		(cut mark-variable <> '##compiler#inline 'no)
-		(stripa (cddr spec)))) ]
+		(globalize-all (cddr spec)))) ]
 	  [(usual-integrations)      
 	   (cond [(null? (cddr spec))
 		  (set! standard-bindings '())
@@ -1355,7 +1361,7 @@
 	   (when (pair? (cddr spec))
 	     (for-each
 	      (cut mark-variable <> '##compiler#inline-global 'no)
-	      (stripa (cddr spec)))))
+	      (globalize-all (cddr spec)))))
 	  [else
 	   (check-decl spec 1 1)
 	   (let ((id (strip (cadr spec))))
@@ -1366,13 +1372,13 @@
        ((compile-syntax)
 	(set! ##sys#enable-runtime-macros #t))
        ((block-global hide) 
-	(let ([syms (stripa (cdr spec))])
+	(let ([syms (globalize-all (cdr spec))])
 	  (if (null? syms)
 	      (set! block-compilation #t)
 	      (for-each hide-variable syms))))
        ((export)
 	(set! block-compilation #t)
-	(let ((syms (stripa (cdr spec))))
+	(let ((syms (globalize-all (cdr spec))))
 	  (for-each export-variable syms)))
        ((emit-external-prototypes-first)
 	(set! external-protos-first #t) )
@@ -1382,7 +1388,7 @@
 	    (set! inline-locally #t)
 	    (for-each
 	     (cut mark-variable <> '##compiler#inline 'yes)
-	     (stripa (cdr spec)))))
+	     (globalize-all (cdr spec)))))
        ((inline-limit)
 	(check-decl spec 1 1)
 	(let ([n (cadr spec)])
@@ -1394,7 +1400,9 @@
        ((constant)
 	(let ((syms (cdr spec)))
 	  (if (every symbol? syms)
-	      (for-each (cut mark-variable <> '##compiler#pure #t) syms)
+	      (for-each 
+	       (cut mark-variable <> '##compiler#pure #t) 
+	       (globalize-all syms))
 	      (quit "invalid arguments to `constant' declaration: ~S" spec)) ) )
        ((emit-import-library)
 	(set! import-libraries
@@ -1418,7 +1426,7 @@
 	       (set! profiled-procedures 'some)
 	       (for-each 
 		(cut mark-variable <> '##compiler#profile)
-		(stripa (cdr spec))))))
+		(globalize-all (cdr spec))))))
        ((local)
 	(cond ((null? (cdr spec))
 	       (set! local-definitions #t) )
@@ -1432,7 +1440,7 @@
 	(when (pair? (cdr spec))
 	  (for-each
 	   (cut mark-variable <> '##compiler#inline-global 'yes)
-	   (stripa (cdr spec)))))
+	   (globalize-all (cdr spec)))))
        ((type)
 	(for-each
 	 (lambda (spec)
@@ -1441,7 +1449,7 @@
 		  (##sys#put! (car spec) '##core#declared-type #t))
 		 (else
 		  (warning "illegal `type' declaration item" spec))))
-	 (cdr spec)))
+	 (globalize-all (cdr spec))))
        ((scrutinize)
 	(set! do-scrutinize #t))
        (else (warning "illegal declaration specifier" spec)) )
