@@ -301,11 +301,15 @@
 					       (and (not (test (car llist) 'references))
 						    (not (test (car llist) 'assigned)))))
 					  ((not (any (cut expression-has-side-effects? <> db) (cdr args) ))))
-				 (debugging 
-				  'o
-				  "removed call to pure procedure with unused result"
-				  (or (source-info->string (and (pair? (cdr params)) (second params)))
-				      var))
+				 (let ((info (and (pair? (cdr params)) (second params))))
+				   (debugging 
+				    'o
+				    "removed call to pure procedure with unused result"
+				    (or (source-info->string info) var))
+				   (when (and (list? info) (memq pb '(standard extended)))
+				     (##sys#notice
+				      (sprintf "result of call to pure ~a procedure is not used: ~a"
+					pb (source-info->string info)))))
 				 (make-node
 				  '##core#call '(#t)
 				  (list k (make-node '##core#undefined '() '())) ) ) 
