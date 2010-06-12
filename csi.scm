@@ -544,7 +544,7 @@ EOF
 		     (loop-print (cdr x) (cons (car x) parsed)))
 		   (fprintf out " ~S (circle)~%" (car (memq (car x) parsed)))))]
 	    [(list? x) (descseq "list" length list-ref 0)]
-	    [(pair? x) (fprintf out "pair with car ~S and cdr ~S~%" (car x) (cdr x))]
+	    [(pair? x) (fprintf out "pair with car ~S~%and cdr ~S~%" (car x) (cdr x))]
 	    [(procedure? x)
 	     (let ([len (##sys#size x)])
 	       (if (and (> len 3)
