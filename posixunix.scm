@@ -820,7 +820,8 @@ EOF
        (when (< pos 0)
 	 (posix-error #:file-error 'file-position "cannot retrieve file position of port" port) )
        pos) )
-   set-file-position!) )		; doesn't accept WHENCE
+   set-file-position!		; doesn't accept WHENCE
+   "(file-position port)"))
 
 
 ;;; Directory stuff:
@@ -1142,7 +1143,8 @@ EOF
    (lambda (id)
      (when (fx< (##core#inline "C_setuid" id) 0)
        (##sys#update-errno)
-       (##sys#error 'set-user-id! "cannot set user ID" id) ) ) ) )
+       (##sys#error 'set-user-id! "cannot set user ID" id) ) )
+   "(current-user-id)"))
 
 (define current-effective-user-id
   (getter-with-setter
@@ -1151,7 +1153,8 @@ EOF
     (when (fx< (##core#inline "C_seteuid" id) 0)
       (##sys#update-errno)
       (##sys#error 
-	 'effective-user-id!-setter "cannot set effective user ID" id) ) ) ) )
+	 'effective-user-id!-setter "cannot set effective user ID" id) ) )
+   "(current-effective-used-id)"))
 
 (define current-group-id
   (getter-with-setter
@@ -1159,7 +1162,8 @@ EOF
    (lambda (id)
     (when (fx< (##core#inline "C_setgid" id) 0)
       (##sys#update-errno)
-      (##sys#error 'set-user-id! "cannot set group ID" id) ) ) ) )
+      (##sys#error 'set-user-id! "cannot set group ID" id) ) )
+   "(current-group-id)") )
 
 (define current-effective-group-id
   (getter-with-setter 
@@ -1168,7 +1172,8 @@ EOF
     (when (fx< (##core#inline "C_setegid" id) 0)
       (##sys#update-errno)
       (##sys#error 
-	 'effective-group-id!-setter "cannot set effective group ID" id) ) ) ) )
+	 'effective-group-id!-setter "cannot set effective group ID" id) ) )
+   "(current-effective-group-id)") )
 
 (define-foreign-variable _user-name nonnull-c-string "C_user->pw_name")
 (define-foreign-variable _user-passwd nonnull-c-string "C_user->pw_passwd")
@@ -1395,7 +1400,8 @@ EOF
      (##sys#check-exact pgid 'set-process-group-id!)
      (when (fx< (##core#inline "C_setpgid" pid pgid) 0)
        (##sys#update-errno)
-       (##sys#error 'set-process-group-id! "cannot set process group ID" pid pgid) ) ) ) )
+       (##sys#error 'set-process-group-id! "cannot set process group ID" pid pgid) ) )
+   "(process-group-id pid)"))
 
 
 ;;; Hard and symbolic links:

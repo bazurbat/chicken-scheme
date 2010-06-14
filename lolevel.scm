@@ -306,7 +306,13 @@ EOF
   (##sys#make-locative obj (optional index 0) #t 'make-weak-locative) )
 
 (define (locative-set! x y) (##core#inline "C_i_locative_set" x y))
-(define locative-ref (getter-with-setter (##core#primitive "C_locative_ref") locative-set!))
+
+(define locative-ref
+  (getter-with-setter 
+   (##core#primitive "C_locative_ref") 
+   locative-set!
+   "(locative-ref loc)"))
+
 (define (locative->object x) (##core#inline "C_i_locative_to_object" x))
 (define (locative? x) (and (##core#inline "C_blockp" x) (##core#inline "C_locativep" x)))
 
@@ -325,42 +331,50 @@ EOF
 (define pointer-u8-ref
   (getter-with-setter
    (lambda (p) (##core#inline "C_u_i_pointer_u8_ref" p))
-   pointer-u8-set!))
+   pointer-u8-set!
+   "(pointer-u8-ref p)"))
 
 (define pointer-s8-ref
   (getter-with-setter
    (lambda (p) (##core#inline "C_u_i_pointer_s8_ref" p))
-   pointer-s8-set!))
+   pointer-s8-set!
+   "(pointer-s8-ref p)"))
 
 (define pointer-u16-ref
   (getter-with-setter
    (lambda (p) (##core#inline "C_u_i_pointer_u16_ref" p))
-   pointer-u16-set!))
+   pointer-u16-set!
+   "(pointer-u16-ref p)"))
 
 (define pointer-s16-ref
   (getter-with-setter
    (lambda (p) (##core#inline "C_u_i_pointer_s16_ref" p))
-   pointer-s16-set!))
+   pointer-s16-set!
+   "(pointer-s16-ref p)"))
 
 (define pointer-u32-ref
   (getter-with-setter
    (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_u32_ref" 4) p)) ;XXX hardcoded size
-   pointer-u32-set!))
+   pointer-u32-set!
+   "(pointer-u32-ref p)"))
 
 (define pointer-s32-ref
   (getter-with-setter
    (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_s32_ref" 4) p)) ;XXX hardcoded size
-   pointer-s32-set!))
+   pointer-s32-set!
+   "(pointer-s32-ref p)"))
 
 (define pointer-f32-ref
   (getter-with-setter
    (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_f32_ref" 4) p)) ;XXX hardcoded size
-   pointer-f32-set!))
+   pointer-f32-set!
+   "(pointer-f32-ref p)"))
 
 (define pointer-f64-ref
   (getter-with-setter
    (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_f64_ref" 4) p)) ;XXX hardcoded size
-   pointer-f64-set!))
+   pointer-f64-set!
+   "(pointer-f64-ref p)"))
 
 
 ;;; Procedures extended with data:
@@ -402,7 +416,10 @@ EOF
 ;;; Accessors for arbitrary vector-like block objects:
 
 (define block-set! ##sys#block-set!)
-(define block-ref (getter-with-setter ##sys#block-ref ##sys#block-set!))
+
+(define block-ref 
+  (getter-with-setter
+   ##sys#block-ref ##sys#block-set! "(block-ref x i)"))
 
 (define (number-of-slots x)
   (##sys#check-generic-vector x 'number-of-slots)
@@ -454,7 +471,8 @@ EOF
      (##sys#check-generic-structure x 'record-instance-slot)
      (##sys#check-range i 0 (fx- (##sys#size x) 1) 'record-instance-slot)
      (##sys#slot x (fx+ i 1)) )
-   record-instance-slot-set!))
+   record-instance-slot-set!
+   "(record-instance-slot x i)"))
 
 (define (record->vector x)
   (##sys#check-generic-structure x 'record->vector)

@@ -351,7 +351,7 @@
 (get-output-string (procedure get-output-string (port) string))
 (get-properties (procedure get-properties (symbol list) symbol * list))
 (getenv deprecated)
-(getter-with-setter (procedure getter-with-setter (procedure procedure) procedure))
+(getter-with-setter (procedure getter-with-setter (procedure procedure #!optional string) procedure))
 (implicit-exit-handler (procedure implicit-exit-handler (#!optional procedure) procedure))
 (keyword->string (procedure keyword->string (symbol) string))
 (keyword-style (procedure keyword-style (#!optional *) *))

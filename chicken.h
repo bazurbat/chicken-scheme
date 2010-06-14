@@ -1282,6 +1282,14 @@ extern double trunc(double);
 #define C_u_i_16vector_length(x)        C_fix(C_header_size(C_block_item(x, 1)) >> 1)
 #define C_u_i_32vector_length(x)        C_fix(C_header_size(C_block_item(x, 1)) >> 2)
 #define C_u_i_64vector_length(x)        C_fix(C_header_size(C_block_item(x, 1)) >> 3)
+#define C_u_i_u8vector_length           C_u_i_8vector_length
+#define C_u_i_s8vector_length           C_u_i_8vector_length
+#define C_u_i_u16vector_length          C_u_i_16vector_length
+#define C_u_i_s16vector_length          C_u_i_16vector_length
+#define C_u_i_u32vector_length          C_u_i_32vector_length
+#define C_u_i_s32vector_length          C_u_i_32vector_length
+#define C_u_i_f32vector_length          C_u_i_32vector_length
+#define C_u_i_f64vector_length          C_u_i_64vector_length
 
 #define C_u_i_u8vector_ref(x, i)        C_fix(((unsigned char *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ])
 #define C_u_i_s8vector_ref(x, i)        C_fix(((char *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ])

@@ -48,7 +48,8 @@ EOF
        (when (fx< r 0)
 	 (posix-error 
 	  #:file-error 'set-file-modification-time
-	  "cannot set file modification-time" f t))))))
+	  "cannot set file modification-time" f t))))
+   "(file-modification-time f)"))
 
 (define (file-access-time f) (##sys#stat f #f 'file-access-time) _stat_st_atime)
 (define (file-change-time f) (##sys#stat f #f 'file-change-time) _stat_st_ctime)
