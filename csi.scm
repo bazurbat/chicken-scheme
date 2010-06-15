@@ -26,7 +26,7 @@
 
 
 (declare
-  (uses chicken-syntax srfi-69 ports extras)
+  (uses chicken-syntax ports extras)
   (usual-integrations)
   (disable-interrupts)
   (compile-syntax)
@@ -53,7 +53,7 @@ EOF
   (always-bound
     ##sys#windows-platform)
   (hide parse-option-string bytevector-data member* canonicalize-args 
-	describer-table dirseparator? circular-list?
+	describer-table dirseparator? circular-list? improper-pairs?
 	findall command-table) )
 
 
@@ -458,6 +458,12 @@ EOF
 		      (lag (cdr lag)))
 		  (or (eq? x lag) (lp x lag))))))))
 
+(define (improper-pairs? x)
+  (let lp ((x x))
+    (if (not (pair? x)) #f
+       (or (eq? x (car x))
+           (lp (cdr x))))))
+
 (define-constant max-describe-lines 40)
 
 (define describer-table (make-vector 37 '()))
@@ -534,15 +540,17 @@ EOF
 		    (lambda ()
 		      (write (cadr plist) out) ) )
 		   (newline out) ) ) ) ]
-	    [(circular-list? x)
-	     (fprintf out "circular list: ")
+	    [(or (circular-list? x) (improper-pairs? x))
+	     (fprintf out "circular structure: ")
 	     (let loop-print ((x x)
-			      (parsed '()))
-	       (if (not (memq (car x) parsed))
-		   (begin
-		     (fprintf out "~S -> " (car x))
-		     (loop-print (cdr x) (cons (car x) parsed)))
-		   (fprintf out " ~S (circle)~%" (car (memq (car x) parsed)))))]
+                              (cdr-refs (list x)))
+               (cond ((or (atom? x)
+                          (null? x)) (printf "eol~%"))
+                     ((memq (car x) cdr-refs)
+                      (fprintf out "(circle)~%" ))
+		     ((not (memq (car x) cdr-refs))
+		      (fprintf out "~S -> " (car x))
+		      (loop-print (cdr x) (cons (car x)  cdr-refs) ))))]
 	    [(list? x) (descseq "list" length list-ref 0)]
 	    [(pair? x) (fprintf out "pair with car ~S~%and cdr ~S~%" (car x) (cdr x))]
 	    [(procedure? x)
@@ -590,9 +598,16 @@ EOF
 	       (fprintf out "hash-table with ~S element~a~%  comparison procedure: ~A~%"
 			n (if (fx= n 1) "" "s")  (##sys#slot x 3)) )
 	     (fprintf out "  hash function: ~a~%" (##sys#slot x 4))
-	     (hash-table-walk		; blindly assumes it is bound
-	      x
-	      (lambda (k v) (fprintf out " ~S\t-> ~S~%" k v)) ) ]
+	     ;; this copies code out of srfi-69.scm, but we don't want to depend on it
+	     (let* ((vec (##sys#slot x 1))
+		    (len (##sys#size vec)) )
+	       (do ((i 0 (fx+ i 1)) )
+		   ((fx>= i len))
+		 (for-each
+		  (lambda (bucket)
+		    (fprintf out " ~S\t-> ~S~%"
+		      (##sys#slot bucket 0) (##sys#slot bucket 1)) )
+		  (##sys#slot vec i)) ) ) ]
 	    [(##sys#structure? x 'condition)
 	     (fprintf out "condition: ~s~%" (##sys#slot x 1))
 	     (for-each

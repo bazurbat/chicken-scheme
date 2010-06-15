@@ -46,7 +46,7 @@
 ;;; Helper routines:
 
 (define-inline (exactify n)
-  (if (##sys#immediate? x)
+  (if (##sys#immediate? n)
       n
       (##core#inline "C_i_inexact_to_exact" n)))
 
