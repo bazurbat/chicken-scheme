@@ -209,6 +209,15 @@ To enable it install the egg and put this in your {{~/.csirc}} file:
 More details are available in [[http://www.call-with-current-continuation.org/eggs/readline.html|the egg's documentation]].
 
 
+=== Note about libraries automatically loaded in the interpreter
+
+The interpreter {{csi}} internally requires some routines from the
+{{ports}} and {{extras}} library units and loads them automatically
+on startup. These libraries are not automatically loaded in compiled
+code, so there is an inconsistency between code that is executed
+in {{csi}} versus code that is compiled and executed.
+
+
 ---
 Previous: [[Using the compiler]]
 
