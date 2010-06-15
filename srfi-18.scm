@@ -45,12 +45,19 @@
 
 ;;; Helper routines:
 
+(define-inline (exactify n)
+  (if (##sys#immediate? x)
+      n
+      (##core#inline "C_i_inexact_to_exact" n)))
+
 (define ##sys#compute-time-limit
   (let ([truncate truncate])
     (lambda (tm)
       (and tm
 	   (cond [(##sys#structure? tm 'time) (##sys#slot tm 1)]
-		 [(number? tm) (fx+ (##sys#fudge 16) (inexact->exact (truncate (* tm 1000))))]
+		 [(number? tm) 
+		  (fx+ (##sys#fudge 16) 
+		       (exactify (truncate (* tm 1000))))]
 		 [else (##sys#signal-hook #:type-error "invalid timeout argument" tm)] ) ) ) ) )
 
 
@@ -73,7 +80,7 @@ EOF
 	 [ms C_ms] )
     (##sys#make-structure
      'time
-     (inexact->exact (truncate (+ (* (- s ss) 1000) C_ms)))
+     (exactify (truncate (+ (* (- s ss) 1000) C_ms)))
      s
      C_ms) ) )
 
@@ -85,7 +92,7 @@ EOF
 
 (define (time->milliseconds tm)
   (##sys#check-structure tm 'time 'time->milliseconds)
-  (+ (inexact->exact (* (- (##sys#slot tm 2) C_startup_time_seconds) 1000))
+  (+ (exactify (* (- (##sys#slot tm 2) C_startup_time_seconds) 1000))
      (##sys#slot tm 3) ) )
 
 (define (seconds->time n)
@@ -94,8 +101,8 @@ EOF
 	 [ms (truncate 
 	      (* 1000
 		 (##sys#flonum-fraction (##sys#exact->inexact n))))] ; milliseconds
-	 [n3 (inexact->exact (truncate (+ (* n2 1000) ms)))] ) ; milliseconds since startup
-    (##sys#make-structure 'time n3 (truncate n) (inexact->exact ms)) ) )
+	 [n3 (exactify (truncate (+ (* n2 1000) ms)))] ) ; milliseconds since startup
+    (##sys#make-structure 'time n3 (truncate n) (exactify ms)) ) )
 
 (define (milliseconds->time nms)
   (##sys#check-exact nms 'milliseconds->time)

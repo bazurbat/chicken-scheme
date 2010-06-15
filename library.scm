@@ -913,9 +913,11 @@ EOF
 	((< n 0) (if (##sys#exact? n) -1 -1.0))
 	(else (if (##sys#exact? n) 0 0.0) ) ) )
 
+;; hooks for numbers
 (define ##sys#exact->inexact (##core#primitive "C_exact_to_inexact"))
-(define exact->inexact ##sys#exact->inexact)
 (define (##sys#inexact->exact n) (##core#inline "C_i_inexact_to_exact" n))
+
+(define exact->inexact ##sys#exact->inexact)
 (define inexact->exact ##sys#inexact->exact)
 
 (define (floor x)
