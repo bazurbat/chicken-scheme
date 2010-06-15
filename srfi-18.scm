@@ -91,7 +91,9 @@ EOF
 (define (seconds->time n)
   (##sys#check-number n 'seconds->time)
   (let* ([n2 (max 0 (- n C_startup_time_seconds))] ; seconds since startup
-	 [ms (truncate (* 1000 (##sys#flonum-fraction (##sys#exact->inexact n))))] ; milliseconds
+	 [ms (truncate 
+	      (* 1000
+		 (##sys#flonum-fraction (##sys#exact->inexact n))))] ; milliseconds
 	 [n3 (inexact->exact (truncate (+ (* n2 1000) ms)))] ) ; milliseconds since startup
     (##sys#make-structure 'time n3 (truncate n) (inexact->exact ms)) ) )
 

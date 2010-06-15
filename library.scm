@@ -966,7 +966,7 @@ EOF
 (define max)
 (define min)
 
-(let ([> >]
+(let ([> >]				;XXX could use faster versions
       [< <] )
   (letrec ([maxmin
 	    (lambda (n1 ns pred)
@@ -978,7 +978,7 @@ EOF
 				(if (and (##core#inline "C_blockp" nbest) 
 					 (##core#inline "C_flonump" nbest) 
 					 (not (##core#inline "C_blockp" ni)) )
-				    (exact->inexact ni)
+				    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) ni)
 				    ni)
 				nbest)
 			    (##sys#slot ns 1) ) ) ) ) ) ] )
@@ -4541,9 +4541,10 @@ EOF
 (define setter ##sys#setter)
 
 (define (getter-with-setter get set #!optional info)
-  (let ((getdec (if info
-		    (##sys#make-lambda-info info)
-		    (##sys#lambda-info get)))
+  (let ((getdec (cond (info
+		       (##sys#check-string info 'getter-with-setter)
+		       (##sys#make-lambda-info info))
+		      (else (##sys#lambda-info get))))
 	(p1 (##sys#decorate-lambda
 	     get
 	     setter?
