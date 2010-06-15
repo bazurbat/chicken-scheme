@@ -808,7 +808,8 @@
 		        (if (test key (##sys#slot pare 0))
 			    (##sys#slot pare 1)
 			    (loop (##sys#slot bucket 1)) ) ) ) ) ) ) ) ) )
-   hash-table-set!) )
+   hash-table-set!
+   "(hash-table-ref ht key . def)") )
 
 (define hash-table-ref/default
   (let ([core-eq? eq?])

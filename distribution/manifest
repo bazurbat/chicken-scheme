@@ -246,6 +246,7 @@ setup-api.import.c
 setup-download.import.c
 types.db
 mac.r
+chicken.png
 CHICKEN.icns
 manual/Accessing external objects
 manual/Acknowledgements

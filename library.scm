@@ -2163,7 +2163,9 @@ EOF
 		(let* ([str (##sys#reverse-list->string seq)]
 		       [n (string->number str 16)])
 		  (or n
-		      (##sys#read-error port (string-append "invalid escape-sequence '\\" u str "\'")) ) )
+		      (##sys#read-error
+		       port
+		       (string-append "invalid escape-sequence '\\" u str "\'")) ) )
 		(let ([x (##sys#read-char-0 port)])
 		  (if (or (eof-object? x) (char=? #\" x))
 		    (##sys#read-error port "unterminated string constant") 
@@ -4472,6 +4474,16 @@ EOF
 	       (loop (fx- i 1)) ) ) ) ) )
 
 
+;;; Create lambda-info object
+
+(define (##sys#make-lambda-info str)
+  (let* ((sz (##sys#size str))
+	 (info (##sys#make-string sz)) )
+    (##core#inline "C_copy_memory" info str sz)
+    (##core#inline "C_string_to_lambdainfo" info)
+    info) )
+
+
 ;;; Function debug info:
 
 (define (##sys#lambda-info? x)
@@ -4528,8 +4540,10 @@ EOF
 
 (define setter ##sys#setter)
 
-(define (getter-with-setter get set)
-  (let ((getdec (##sys#lambda-info get))
+(define (getter-with-setter get set #!optional info)
+  (let ((getdec (if info
+		    (##sys#make-lambda-info info)
+		    (##sys#lambda-info get)))
 	(p1 (##sys#decorate-lambda
 	     get
 	     setter?
@@ -4545,22 +4559,22 @@ EOF
 	   p))
 	p1)))
 
-(set! car (getter-with-setter car set-car!))
-(set! cdr (getter-with-setter cdr set-cdr!))
-(set! caar (getter-with-setter caar (lambda (x y) (set-car! (car x) y))))
-(set! cadr (getter-with-setter cadr (lambda (x y) (set-car! (cdr x) y))))
-(set! cdar (getter-with-setter cdar (lambda (x y) (set-cdr! (car x) y))))
-(set! cddr (getter-with-setter cddr (lambda (x y) (set-cdr! (cdr x) y))))
-(set! caaar (getter-with-setter caaar (lambda (x y) (set-car! (caar x) y))))
-(set! caadr (getter-with-setter caadr (lambda (x y) (set-car! (cadr x) y))))
-(set! cadar (getter-with-setter cadar (lambda (x y) (set-car! (cdar x) y))))
-(set! caddr (getter-with-setter caddr (lambda (x y) (set-car! (cddr x) y))))
-(set! cdaar (getter-with-setter cdaar (lambda (x y) (set-cdr! (caar x) y))))
-(set! cdadr (getter-with-setter cdadr (lambda (x y) (set-cdr! (cadr x) y))))
-(set! cddar (getter-with-setter cddar (lambda (x y) (set-cdr! (cdar x) y))))
-(set! cdddr (getter-with-setter cdddr (lambda (x y) (set-cdr! (cddr x) y))))
-(set! string-ref (getter-with-setter string-ref string-set!))
-(set! vector-ref (getter-with-setter vector-ref vector-set!))
+(set! car (getter-with-setter car set-car! "(car p)"))
+(set! cdr (getter-with-setter cdr set-cdr! "(cdr p)"))
+(set! caar (getter-with-setter caar (lambda (x y) (set-car! (car x) y)) "(caar p)"))
+(set! cadr (getter-with-setter cadr (lambda (x y) (set-car! (cdr x) y)) "(cadr p)"))
+(set! cdar (getter-with-setter cdar (lambda (x y) (set-cdr! (car x) y)) "(cdar p)"))
+(set! cddr (getter-with-setter cddr (lambda (x y) (set-cdr! (cdr x) y)) "(cddr p)"))
+(set! caaar (getter-with-setter caaar (lambda (x y) (set-car! (caar x) y)) "(caaar p)"))
+(set! caadr (getter-with-setter caadr (lambda (x y) (set-car! (cadr x) y)) "(caadr p)"))
+(set! cadar (getter-with-setter cadar (lambda (x y) (set-car! (cdar x) y)) "(cadar p)"))
+(set! caddr (getter-with-setter caddr (lambda (x y) (set-car! (cddr x) y)) "(caddr p)"))
+(set! cdaar (getter-with-setter cdaar (lambda (x y) (set-cdr! (caar x) y)) "(cdaar p)"))
+(set! cdadr (getter-with-setter cdadr (lambda (x y) (set-cdr! (cadr x) y)) "(cdadr p)"))
+(set! cddar (getter-with-setter cddar (lambda (x y) (set-cdr! (cdar x) y)) "(cddar p)"))
+(set! cdddr (getter-with-setter cdddr (lambda (x y) (set-cdr! (cddr x) y)) "(cdddr p)"))
+(set! string-ref (getter-with-setter string-ref string-set! "(string-ref str i)"))
+(set! vector-ref (getter-with-setter vector-ref vector-set! "(vector-ref vec i)"))
 
 
 ;;; Property lists
@@ -4575,7 +4589,7 @@ EOF
   (##sys#check-symbol sym 'get)
   (##core#inline "C_i_getprop" sym prop default))
 
-(define get (getter-with-setter ##sys#get put!))
+(define get (getter-with-setter ##sys#get put! "(get sym prop . default)"))
 
 (define (remprop! sym prop)
   (##sys#check-symbol sym 'remprop!)
@@ -4603,7 +4617,8 @@ EOF
 	 (##sys#setslot sym 2 lst) 
 	 (##sys#signal-hook
 	  #:type-error "property-list must be of even length"
-	  lst sym)))))
+	  lst sym)))
+   "(symbol-plist sym)"))
 
 (define (get-properties sym props)
   (##sys#check-symbol sym 'get-properties)

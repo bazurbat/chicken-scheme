@@ -1133,7 +1133,8 @@ EOF
        (when (< pos 0)
 	 (posix-error #:file-error 'file-position "cannot retrieve file position of port" port) )
        pos) )
-   set-file-position!) )		; doesn't accept WHENCE
+   set-file-position!
+   "(file-position port)") )		; doesn't accept WHENCE
 
 
 ;;; Directory stuff:

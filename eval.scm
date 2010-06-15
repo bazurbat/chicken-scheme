@@ -1710,13 +1710,3 @@
 
 (define-external (CHICKEN_get_error_message ((c-pointer "char") buf) (int bufsize)) void
   (store-string (or last-error "No error") bufsize buf) )
-
-
-;;; Create lambda-info object
-
-(define (##sys#make-lambda-info str)
-  (let* ((sz (##sys#size str))
-	 (info (##sys#make-string sz)) )
-    (##core#inline "C_copy_memory" info str sz)
-    (##core#inline "C_string_to_lambdainfo" info)
-    info) )
