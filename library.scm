@@ -2342,16 +2342,18 @@ EOF
 		  [else (r-number 10)] ) )
 	
 	  (define (r-token)
-	    (let loop ([c (##sys#peek-char-0 port)] [lst '()])
-	      (cond [(or (eof-object? c)
+	    (let loop ((c (##sys#peek-char-0 port)) (lst '()))
+	      (cond ((or (eof-object? c)
 			 (char-whitespace? c)
 			 (memq c terminating-characters) )
-		     (##sys#reverse-list->string lst) ]
-		    [else
+		     (##sys#reverse-list->string lst) )
+		    ((or (char=? c #\x00) (char=? c #\xff))
+		     (##sys#read-error port "attempt to read expression from something that looks like binary data"))
+		    (else
 		     (when (char=? c #\/) (set! rat-flag #t))
 		     (read-unreserved-char-0 port)
 		     (loop (##sys#peek-char-0 port) 
-		           (cons (if csp c (char-downcase c)) lst) ) ] ) ) )
+		           (cons (if csp c (char-downcase c)) lst) ) ) ) ) )
 
 	  (define (r-digits)
 	    (let loop ((c (##sys#peek-char-0 port)) (lst '()))
