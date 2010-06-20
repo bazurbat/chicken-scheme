@@ -54,7 +54,7 @@ EOF
     ##sys#windows-platform)
   (hide parse-option-string bytevector-data member* canonicalize-args 
 	describer-table dirseparator? circular-list? improper-pairs?
-	findall command-table) )
+	findall command-table default-editor) )
 
 
 ;;; Parameters:
@@ -64,6 +64,15 @@ EOF
 (set! ##sys#repl-print-length-limit 2048)
 (set! ##sys#features (cons #:csi ##sys#features))
 (set! ##sys#notices-enabled #t)
+
+(define editor-command (make-parameter #f))
+
+(define default-editor 
+  (or (get-environment-variable "EDITOR")
+      (get-environment-variable "VISUAL")
+      (if (get-environment-variable "EMACS")
+	  "emacsclient"
+	  "vi")))			; shudder
 
 
 ;;; Print all sorts of information:
@@ -317,6 +326,13 @@ EOF
 			 (when ##sys#last-exception
 			   (history-add (list ##sys#last-exception))
 			   (describe ##sys#last-exception) ) )
+			((e)
+			 (let ((r (system
+				   (string-append 
+				    (or (editor-command) default-editor)
+				    " " (read-line)))))
+			   (if (not (zero? r))
+			       (printf "Editor returned with non-zero exit status ~a" r))))
 			((s)
 			 (let* ((str (read-line))
 				(r (system str)) )
@@ -335,6 +351,7 @@ EOF
  ,l FILENAME ...   Load one or more files
  ,ln FILENAME ...  Load one or more files and print result of each top-level expression
  ,r                Show system information
+ ,e FILENAME       Run external editor
  ,s TEXT ...       Execute shell-command
  ,exn              Describe last exception
  ,t EXP            Evaluate form and print elapsed time
