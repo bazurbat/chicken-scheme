@@ -913,9 +913,11 @@ EOF
 	((< n 0) (if (##sys#exact? n) -1 -1.0))
 	(else (if (##sys#exact? n) 0 0.0) ) ) )
 
+;; hooks for numbers
 (define ##sys#exact->inexact (##core#primitive "C_exact_to_inexact"))
-(define exact->inexact ##sys#exact->inexact)
 (define (##sys#inexact->exact n) (##core#inline "C_i_inexact_to_exact" n))
+
+(define exact->inexact ##sys#exact->inexact)
 (define inexact->exact ##sys#inexact->exact)
 
 (define (floor x)
@@ -966,7 +968,7 @@ EOF
 (define max)
 (define min)
 
-(let ([> >]
+(let ([> >]				;XXX could use faster versions
       [< <] )
   (letrec ([maxmin
 	    (lambda (n1 ns pred)
@@ -978,7 +980,7 @@ EOF
 				(if (and (##core#inline "C_blockp" nbest) 
 					 (##core#inline "C_flonump" nbest) 
 					 (not (##core#inline "C_blockp" ni)) )
-				    (exact->inexact ni)
+				    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) ni)
 				    ni)
 				nbest)
 			    (##sys#slot ns 1) ) ) ) ) ) ] )
@@ -2340,16 +2342,18 @@ EOF
 		  [else (r-number 10)] ) )
 	
 	  (define (r-token)
-	    (let loop ([c (##sys#peek-char-0 port)] [lst '()])
-	      (cond [(or (eof-object? c)
+	    (let loop ((c (##sys#peek-char-0 port)) (lst '()))
+	      (cond ((or (eof-object? c)
 			 (char-whitespace? c)
 			 (memq c terminating-characters) )
-		     (##sys#reverse-list->string lst) ]
-		    [else
+		     (##sys#reverse-list->string lst) )
+		    ((or (char=? c #\x00) (char=? c #\xff))
+		     (##sys#read-error port "attempt to read expression from something that looks like binary data"))
+		    (else
 		     (when (char=? c #\/) (set! rat-flag #t))
 		     (read-unreserved-char-0 port)
 		     (loop (##sys#peek-char-0 port) 
-		           (cons (if csp c (char-downcase c)) lst) ) ] ) ) )
+		           (cons (if csp c (char-downcase c)) lst) ) ) ) ) )
 
 	  (define (r-digits)
 	    (let loop ((c (##sys#peek-char-0 port)) (lst '()))
@@ -4541,9 +4545,10 @@ EOF
 (define setter ##sys#setter)
 
 (define (getter-with-setter get set #!optional info)
-  (let ((getdec (if info
-		    (##sys#make-lambda-info info)
-		    (##sys#lambda-info get)))
+  (let ((getdec (cond (info
+		       (##sys#check-string info 'getter-with-setter)
+		       (##sys#make-lambda-info info))
+		      (else (##sys#lambda-info get))))
 	(p1 (##sys#decorate-lambda
 	     get
 	     setter?

@@ -50,7 +50,7 @@ EOF
 	    (##core#inline "C_fixnum_greaterp" n to) )
 	(##sys#error loc "numeric value is not in expected range" n from to) ) ) )
 
-(define-inline (check-range i from to)
+(define-inline (check-range i from to loc)
   (##sys#check-exact i loc)
   (unless (and (fx<= from i) (fx< i to))
     (##sys#error-hook
@@ -157,7 +157,7 @@ EOF
      x i 
      (if (##core#inline "C_blockp" y)
 	 y
-	 (##sys#exact->inexact y)))))	;XXX use faster unsafe variant
+	 (##core#inline_allocate ("C_a_i_fix_to_flo" 4) y)))))
 
 (define (f64vector-set! x i y)
   (##sys#check-structure x 'f64vector 'f64vector-set!)
@@ -169,7 +169,7 @@ EOF
      x i 
      (if (##core#inline "C_blockp" y)
 	 y
-	 (##sys#exact->inexact y)))))	;XXX as above
+	 (##core#inline_allocate ("C_a_i_fix_to_flo" 4) y)))))
 
 (define u8vector-ref
   (getter-with-setter
@@ -370,7 +370,7 @@ EOF
 	    (begin
 	      (##sys#check-number init 'make-f32vector)
 	      (unless (##core#inline "C_blockp" init)
-		(set! init (exact->inexact init)) )
+		(set! init (##core#inline_allocate ("C_a_i_fix_to_flo" 4) init)) )
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##sys#f32vector-set! v i init) ) ) ) ) ) )
@@ -387,7 +387,7 @@ EOF
 	    (begin
 	      (##sys#check-number init 'make-f64vector)
 	      (unless (##core#inline "C_blockp" init)
-		(set! init (exact->inexact init)) )
+		(set! init (##core#inline_allocate ("C_a_i_fix_to_flo" 4) init)) )
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##core#inline "C_u_i_f64vector_set" v i init) ) ) ) ) ) ) )

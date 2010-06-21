@@ -217,7 +217,7 @@
     fxand fxnot fxior fxxor fxshr fxshl fxodd? fxeven?
     void not-pair? atom? any? u8vector? s8vector? u16vector? s16vector?
     u32vector? s32vector? f32vector? f64vector?
-    locative? get-keyword) )
+    locative?) )
     
 (for-each
  (cut mark-variable <> '##compiler#pure '#t)
@@ -720,7 +720,6 @@
 (rewrite '##sys#vector-length 2 1 "C_i_vector_length" #t)
 (rewrite 'string-length 2 1 "C_i_string_length" #t)
 (rewrite 'inexact->exact 2 1 "C_i_inexact_to_exact" #t)
-(rewrite '##sys#inexact->exact 2 1 "C_i_inexact_to_exact" #t)
 
 (rewrite '##sys#check-exact 2 1 "C_i_check_exact" #t)
 (rewrite '##sys#check-number 2 1 "C_i_check_number" #t)
@@ -799,7 +798,6 @@
 (rewrite '<= 13 "C_less_or_equal_p" #t)
 
 (rewrite 'exact->inexact 13 "C_exact_to_inexact" #t)
-(rewrite '##sys#exact->inexact 13 "C_exact_to_inexact" #t)
 (rewrite 'string->number 13 "C_string_to_number" #t)
 (rewrite 'number->string 13 "C_number_to_string" #t)
 (rewrite '##sys#call-with-current-continuation 13 "C_call_cc" #t)

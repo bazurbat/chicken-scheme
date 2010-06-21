@@ -26,4 +26,4 @@
 
 (##sys#register-primitive-module
  'csi
- '(toplevel-command set-describer!))
+ '(toplevel-command editor-command set-describer!))

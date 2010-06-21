@@ -78,6 +78,11 @@
 (define-inline (%subbyte bytvec i)
   (##core#inline "C_subbyte" bytvec i) )
 
+(define-inline (exactify n)
+  (if (##sys#immediate? n)
+      n
+      (##core#inline "C_i_inexact_to_exact" n)))
+
 
 ;;; Generation of hash-values:
 
@@ -607,8 +612,8 @@
         [min-load (##sys#slot ht 5)]
         [max-load (##sys#slot ht 6)] )
     (let ([len (##sys#size vec)] )
-      (let ([min-load-len (inexact->exact (floor (* len min-load)))]
-            [max-load-len (inexact->exact (floor (* len max-load)))] )
+      (let ([min-load-len (exactify (floor (* len min-load)))]
+            [max-load-len (exactify (floor (* len max-load)))] )
         (if (and (fx< len hash-table-max-length)
                  (fx<= min-load-len newsiz) (fx<= newsiz max-load-len))
           (hash-table-resize! ht vec len) ) ) ) ) )

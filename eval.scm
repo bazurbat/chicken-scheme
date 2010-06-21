@@ -739,7 +739,7 @@
 	    [(#f) (##sys#syntax-error/context "malformed expression" x)]
 	    [(0) (lambda (v)
 		   (emit-trace-info tf info cntr)
-		   ((fn v)))]
+		   ((##core#app fn v)))]
 	    [(1) (let ([a1 (compile (##sys#slot args 0) e #f tf cntr se)])
 		   (lambda (v)
 		     (emit-trace-info tf info cntr)
@@ -907,7 +907,12 @@
 		    (lambda ()
 		      (let ((c1 (peek-char in)))
 			(when (char=? c1 (integer->char 127))
-			  (##sys#error 'load "unable to load compiled module" fname _dlerror) ) )
+			  (##sys#error 
+			   'load 
+			   (##sys#string-append 
+			    "unable to load compiled module - " 
+			    (or _dlerror "unknown reason"))
+			   fname)))
 		      (let ((x1 (read in)))
 			(do ((x x1 (read in)))
 			    ((eof-object? x))
