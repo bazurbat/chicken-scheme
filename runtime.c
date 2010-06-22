@@ -92,7 +92,7 @@ static C_TLS int timezone;
 # define RTLD_LAZY                     0
 #endif
 
-#ifdef HAVE_WINDOWS_H
+#if defined(HAVE_WINDOWS_H) || (defined(_WIN32) && !defined(__CYGWIN__))
 # include <windows.h>
 #endif
 

@@ -1,3 +1,59 @@
+4.5.3
+
+- Added build-variable `TARGET_FEATURES', which can be used to pass
+  extra options enabling or disabling fetures for a system configured
+  for cross-compilation
+- Added compiler and interpreter option `-no-feature FEATURENAME' that
+  disables predefined feature identifiers
+- Code compiled with interrupts disabled will not emit inline files
+  for global inlining since they may execute in a context where 
+  interrupts are enabled
+- The `setup.defaults' file that holds download sources for 
+  `chicken-install' now allows aliases for locations
+- CHICKEN systems build from cross-compilation now by default 
+  transparently build and install extensions for both the host
+  and target parts of the cross-compilation setup; the options
+  `-host' and `-target' can now be used to selectively build
+  an extensions for the host- and the target system, respectively
+- Also added `-host' and `-target' options to `chicken-status' and
+  `chicken-uninstall'
+- `chicken-install' now respects the `http_proxy' environment variable
+  (contributed by Stephen Eilert)
+- The `srfi-4' library unit has been heavily cleaned up and optimized
+- Optimization-level 3 now enables global inlining
+- Fixed the case that declarations listing global identifiers did not
+  correctly rename them
+- Deprecated `-N' option shortcut for `-no-usual-integrations' option in
+  `csc'
+- `csi' now offers a toplevel command `,e' for invoking an external
+  editor (suggested by Oivind Binde)
+- The `describe' command in `csi' now detects many circular lists
+  (contributed by Christian Kellermann)
+- `csi' doesn't depend on the `srfi-69' library unit anymore
+- When a closing sequence delimiter is missing or incorrect, the
+  reader also reports the starting line of the sequence
+- The reader signals an error when a file contains certain characters
+  that indicate that it is a binary file
+- Procedure-information shown by the printer for procedures is now
+  corrected for some library procedures that where missing the correct
+  information; `getter-with-setter' copies procedure-information objects
+  into the newly created accessor procedure, if available
+- Calls to some known pure standard- or extended procedures are removed, if
+  the procedures are called with side-effect free arguments and the
+  result is not used (this can also by enabled for user procedures with
+  the `constant' declaration)
+- Fixed some build-system bugs related to installation
+- Fixed a problem in the C runtime code that prevented it to be compileable
+  without a configuration header-file
+- The makefile-target to build a bootstrapping `chicken' executable 
+  performs multi-stage build now
+- Fixed broken GC-counters shown in the expansion of the `time' syntax
+- Fixed broken `standard-extension' procedure in the `setup-api' module
+- Changed error message when required extension is out of date (thanks to
+  Mario Goulart)
+- Documented library units loaded by default in `csi' (thanks to Moritz
+  Heidkamp)
+
 4.5.2
 
 - added `boot-chicken' makefile target to simplify bootstrapping
