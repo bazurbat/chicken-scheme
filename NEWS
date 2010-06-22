@@ -1,3 +1,8 @@
+4.5.5
+
+- removed dependency on `symbol-append' in some macros used in
+  srfi-4.scm to be able to compile the system with older chickens
+
 4.5.4
 
 - fixed bug in script that generates development snapshot (ahem)
