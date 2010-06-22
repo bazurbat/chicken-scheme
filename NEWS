@@ -1,3 +1,7 @@
+4.5.4
+
+- fixed bug in script that generates development snapshot (ahem)
+
 4.5.3
 
 - Added build-variable `TARGET_FEATURES', which can be used to pass
