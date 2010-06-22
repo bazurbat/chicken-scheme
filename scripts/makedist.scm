@@ -1,6 +1,8 @@
 ;;;; makedist.scm - Make distribution tarballs
 
 
+(use srfi-69)
+
 (define *release* #f)
 
 (load-relative "tools.scm")
