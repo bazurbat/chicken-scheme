@@ -397,8 +397,10 @@ EOF
 
 (define-syntax (list->XXXvector x r c)
   (let* ((tag (##sys#strip-syntax (cadr x)))
-	 (name (symbol-append 'list-> tag))
-	 (make (symbol-append 'make- tag)))
+	 (tagstr (symbol->string tag))
+	 (name (string->symbol (string-append "list->" tagstr)))
+	 (make (string->symbol (string-append "make-" tagstr)))
+	 (set (string->symbol (string-append tagstr "-set!"))))
     `(define ,name
        (let ((,make ,make))
 	 (lambda (lst)
@@ -409,7 +411,7 @@ EOF
 		  (i 0 (##core#inline "C_fixnum_plus" i 1)) )
 		 ((##core#inline "C_eqp" p '()) v)
 	       (if (and (##core#inline "C_blockp" p) (##core#inline "C_pairp" p))
-		   (,(symbol-append tag '-set!) v i (##core#inline "C_slot" p 0))
+		   (,set v i (##core#inline "C_slot" p 0))
 		   (##sys#error-not-a-proper-list lst) ) ) ) )))))
 
 (list->XXXvector u8vector)
@@ -462,7 +464,7 @@ EOF
 (define-syntax (XXXvector->list x r c)
   (let* ((tag (##sys#strip-syntax (cadr x)))
 	 (alloc? (pair? (cddr x)))
-	 (name (symbol-append tag '->list)))
+	 (name (string->symbol (string-append (symbol->string tag) "->list"))))
     `(define (,name v)
        (##sys#check-structure v ',tag ',name)
        (let ((len (##core#inline ,(conc "C_u_i_" tag "_length") v)))
