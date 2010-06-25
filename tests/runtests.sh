@@ -87,7 +87,7 @@ $compile records-and-setters-test.scm
 echo "======================================== dynamic-wind tests ..."
 $interpret -s dwindtst.scm >dwindtst.out
 diff -bu dwindtst.expected dwindtst.out
-$compile dwindtest.scm
+$compile dwindtst.scm
 ./a.out >dwindtst.out
 diff -bu dwindtst.expected dwindtst.out
 echo "*** Skipping \"feeley-dynwind\" for now ***"
