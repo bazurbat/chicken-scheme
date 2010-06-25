@@ -84,6 +84,15 @@ $interpret -s records-and-setters-test.scm
 $compile records-and-setters-test.scm
 ./a.out
 
+echo "======================================== dynamic-wind tests ..."
+$interpret -s dwindtst.scm >dwindtst.out
+diff -bu dwindtst.expected dwindtst.out
+$compile dwindtest.scm
+./a.out >dwindtst.out
+diff -bu dwindtst.expected dwindtst.out
+echo "*** Skipping \"feeley-dynwind\" for now ***"
+# $interpret -s feeley-dynwind.scm
+
 echo "======================================== syntax tests ..."
 $interpret -s syntax-tests.scm
 
@@ -190,8 +199,6 @@ $interpret -s srfi-4-tests.scm
 
 echo "======================================== srfi-18 tests ..."
 $interpret -s srfi-18-tests.scm
-echo "*** Skipping \"feeley-dynwind\" for now ***"
-# $interpret -s feeley-dynwind.scm
 
 echo "======================================== path tests ..."
 $interpret -bnq path-tests.scm

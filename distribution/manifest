@@ -157,6 +157,8 @@ tests/slatex.sty
 tests/symbolgc-tests.scm
 tests/private-repository-test.scm
 tests/records-and-setters-test.scm
+tests/dwindtst.scm
+tests/dwindtst.expected
 tweaks.scm
 utils.scm
 apply-hack.x86.S
