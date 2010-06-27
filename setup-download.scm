@@ -49,6 +49,7 @@
   (define *quiet* #f)
   (define *chicken-install-user-agent* (conc "chicken-install " (chicken-version)))
   (define *trunk* #f)
+  (define *mode* 'default)
 
   (define (d fstr . args)
     (let ([port (if *quiet* (current-error-port) (current-output-port))])
@@ -105,7 +106,9 @@
 			   (cons (list 'version version)
 				 (handle-exceptions ex
 				     (begin
-				       (warning "extension has syntactically invalid .meta file" egg)
+				       (warning 
+					"extension has syntactically invalid .meta file" 
+					egg)
 				       (return #f))
 				   (with-input-from-file meta read))))))))))
        ls)))
@@ -126,7 +129,7 @@
          (map (lambda (s) (string-append (string-chomp s "/") "\n"))
               (with-input-from-pipe cmd read-lines))) ) ) )
 
-  (define (locate-egg/svn egg repo #!optional version destination username  password)
+  (define (locate-egg/svn egg repo #!optional version destination username password)
     (let* ([uarg (if username (string-append "--username='" username "'") "")]
 	   [parg (if password (string-append "--password='" password "'") "")]
 	   [cmd (make-svn-ls-cmd uarg parg (make-pathname repo egg) recursive?: #t)])
@@ -145,12 +148,26 @@
                             (if (member "trunk/" files)
                                 (values "trunk" "trunk")
                                 (values "" "") ) ) ) ] )
-          (let* ([tmpdir (make-pathname (or destination (get-temporary-directory)) egg)]
-                 [cmd (make-svn-export-cmd uarg parg (conc repo #\/ egg #\/ filedir) tmpdir)])
+          (let* ((tmpdir (make-pathname (or destination (get-temporary-directory)) egg))
+                 (cmd (make-svn-export-cmd 
+		       uarg parg
+		       (conc 
+			repo #\/ egg #\/
+			(if (eq? *mode* 'meta)
+			    (metafile filedir egg)
+			    filedir))
+		       (if (eq? *mode* 'meta)
+			   (begin
+			     (create-directory tmpdir)
+			     (metafile tmpdir egg))
+			   tmpdir))))
 	    (d "  ~a~%" cmd)
 	    (if (zero? (system cmd))
                 (values tmpdir ver)
 	        (values #f "") ) ) ) ) ) )
+
+  (define (metafile dir egg)
+    (conc dir #\/ egg ".meta"))
 
   (define (deconstruct-url url)
     (let ([m (string-match "(http://)?([^/:]+)(:([^:/]+))?(/.+)" url)])
@@ -170,6 +187,7 @@
 		     locn
 		     "?name=" egg
 		     (if version (string-append "&version=" version) "")
+		     "&mode=" (->string *mode*)
 		     (if tests "&tests=yes" ""))]
 	      [eggdir (make-pathname tmpdir egg) ] )
 	  (unless (file-exists? eggdir) (create-directory eggdir))
@@ -291,19 +309,20 @@
 
   (define (retrieve-extension name transport location
                               #!key version quiet destination username password tests
-			      proxy-host proxy-port trunk)
+			      proxy-host proxy-port trunk (mode 'default))
     (fluid-let ((*quiet* quiet)
-		(*trunk* trunk))
+		(*trunk* trunk)
+		(*mode* mode))
       (case transport
-	[(local)
+	((local)
 	 (when destination (warning "destination for transport `local' ignored"))
-	 (locate-egg/local name location version destination) ]
-	[(svn)
-	 (locate-egg/svn name location version destination username password) ]
-	[(http)
-	 (locate-egg/http name location version destination tests proxy-host proxy-port) ]
-	[else
-	 (error "cannot retrieve extension unsupported transport" transport) ] ) ) )
+	 (locate-egg/local name location version destination) )
+	((svn)
+	 (locate-egg/svn name location version destination username password) )
+	((http)
+	 (locate-egg/http name location version destination tests proxy-host proxy-port) )
+	(else
+	 (error "cannot retrieve extension unsupported transport" transport) ) ) ) )
 
   (define (list-extensions transport location #!key quiet username password)
     (fluid-let ((*quiet* quiet))

@@ -49,6 +49,7 @@
   (define *username* #f)
   (define *password* #f)
   (define *tests* #f)
+  (define *mode* 'default)
 
   (define (headers)
     (print "Connection: close\r\nContent-type: text/plain\r\n\r\n"))
@@ -77,6 +78,7 @@
 		  quiet: #t 
 		  destination: #f
 		  tests: *tests*
+		  mode: *mode*
 		  username: *username* 
 		  password: *password*))))
       (unless dir 
@@ -92,7 +94,8 @@
 			(print "\n#|-------------------- " version " |# \"" pf "/\" 0")
 			(walk ff pf))
 		       (else
-			(print "\n#|-------------------- " version " |# \"" pf "\" " (file-size ff))
+			(print "\n#|-------------------- " version " |# \"" pf "\" " 
+			       (file-size ff))
 			(display (read-all ff)))))))
 	   files)))
       (print "\n#!eof") ) )
@@ -145,6 +148,9 @@
 		  ((string=? ms "list")
 		   (headers)
 		   (listing))
+		  ((string=? ms "mode")
+		   (set! *mode* (string->symbol (apply substring qs (caddr m))))
+		   (loop rest))
 		  (else
 		   (warning "unrecognized query option" ms)
 		   (loop rest))))))))
