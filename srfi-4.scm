@@ -345,7 +345,7 @@ EOF
 	      (##sys#check-exact init 'make-u32vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
-		(##sys#u32vector-set! v i init) ) ) ) ) ) )
+		(##core#inline "C_u_i_u32vector_set" v i init) ) ) ) ) ) )
 
   (set! make-s32vector
     (lambda (len #!optional (init #f)  (ext? #f) (fin #t))
@@ -358,7 +358,7 @@ EOF
 	      (##sys#check-exact init 'make-s32vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
-		(##sys#s32vector-set! v i init) ) ) ) ) ) )
+		(##core#inline "C_u_i_s32vector_set" v i init) ) ) ) ) ) )
 
   (set! make-f32vector
     (lambda (len #!optional (init #f)  (ext? #f) (fin #t))
@@ -373,7 +373,7 @@ EOF
 		(set! init (##core#inline_allocate ("C_a_i_fix_to_flo" 4) init)) )
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
-		(##sys#f32vector-set! v i init) ) ) ) ) ) )
+		(##core#inline "C_u_i_f32vector_set" v i init) ) ) ) ) ) )
 
   (set! make-f64vector
     (lambda (len #!optional (init #f)  (ext? #f) (fin #t))
