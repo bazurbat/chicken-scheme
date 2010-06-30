@@ -447,3 +447,16 @@
 (s:define-syntax s:define-syntax (syntax-rules ()))
 )
 |#
+
+
+;;; renaming of keyword argument (#277)
+
+(define-syntax foo1
+  (syntax-rules ()
+    ((_ procname)
+     (define (procname #!key (who "world"))
+       (string-append "hello, " who)))))
+
+(foo1 bar)
+
+(assert (string=? "hello, XXX" (bar who: "XXX")))
