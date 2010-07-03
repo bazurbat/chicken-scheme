@@ -1778,14 +1778,14 @@ EOF
 	 [fixsuffix (eq? bp 'mingw32)])
     (lambda (name)
       (if fixsuffix
-	(let ([end (fx- (##sys#size name) 1)])
-	  (if (fx>= end 0)
-	    (let ([c (##core#inline "C_subchar" name end)])
-	      (if (or (eq? c #\\) (eq? c #\/))
-		(##sys#substring name 0 end)
+	  (let ([end (fx- (##sys#size name) 1)])
+	    (if (fx>= end 0)
+		(let ([c (##core#inline "C_subchar" name end)])
+		  (if (or (eq? c #\\) (eq? c #\/))
+		      (##sys#substring name 0 end)
+		      name) )
 		name) )
-	    name) )
-	name) ) ) )
+	  name) ) ) )
 
 (define (##sys#pathname-resolution name thunk . _)
   (thunk (##sys#expand-home-path name)) )
@@ -3093,7 +3093,7 @@ EOF
        (let ([position (##sys#slot p 10)]
 	     [string (##sys#slot p 12)]
 	     [len (##sys#slot p 11)] )
-	 (if (>= position len)
+	 (if (fx>= position len)
 	     #!eof
 	     (let ((c (##core#inline "C_subchar" string position)))
 	       (##sys#setislot p 10 (fx+ position 1))
