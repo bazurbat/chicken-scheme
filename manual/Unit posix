@@ -115,11 +115,10 @@ Files beginning with {{.}} are included only if {{SHOW-DOTFILES?}} is given and 
 
 ==== directory?
 
-<procedure>(directory? NAME)</procedure>
+<procedure>(directory? FILE)</procedure>
 
-Returns {{#t}} if there exists a file with the name {{NAME}}
-and if that file is a directory or a symbolic link pointing
-to a directory.  Otherwise, it returns {{#f}}.
+Returns {{#t}} if {{FILE}} designates directory. Otherwise, it returns {{#f}}.
+{{FILE}} may be a pathname or a file-descriptor.
 
 ==== glob
 
@@ -239,10 +238,10 @@ Creates a FIFO with the name {{FILENAME}} and the permission bits
 
 ==== fifo?
 
-<procedure>(fifo? FILENAME)</procedure>
+<procedure>(fifo? FILE)</procedure>
 
-Returns {{#t}} if the file with the name {{FILENAME}} names
-a FIFO.
+Returns {{#t}} if {{FILE}} names a FIFO. {{FILE}} may be a filename
+or a file-descriptor.
 
 
 === File descriptors and low-level I/O
@@ -452,18 +451,35 @@ These procedures return {{#t}} if the current user has read,
 write or execute permissions on the file named {{FILENAME}}.
 
 
+==== file-type
+
+<procedure>(file-type FILE [LINK])</procedure>
+
+Returns the file-type for {{FILE}}, which should be a filename or
+file-descriptor. If {{LINK}} is given and true, symbolic-links are
+not followed:
+
+  regular-file
+  directory
+  fifo
+  socket
+  symbolic-link
+  character-device
+  block-device
+
+Note that not all types are supported on every platform.
+
+
 ==== character-device?
 ==== block-device?
-==== fifo?
 ==== socket?
 
-<procedure>(character-device? FILENAME)</procedure><br>
-<procedure>(block-device? FILENAME)</procedure><br>
-<procedure>(fifo? FILENAME)</procedure><br>
-<procedure>(socket? FILENAME)</procedure>
+<procedure>(character-device? FILE)</procedure><br>
+<procedure>(block-device? FILE)</procedure><br>
+<procedure>(socket? FILE)</procedure>
 
-These procedures return {{#t}} if the {{FILENAME}} given is of the 
-appropriate type.
+These procedures return {{#t}} if {{FILE}} given is of the 
+appropriate type. {{FILE}} may be a filename or a file-descriptor.
 
 
 === Changing file attributes
