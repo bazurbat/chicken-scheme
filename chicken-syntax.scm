@@ -639,7 +639,7 @@
 	     (body-proc (r 'body))
 
 	     ;; A private var, bound to the value of the ARG-LIST expression.
-	     (rest-var (r '%rest))
+	     (rest-var (r '_%rest))
 
 	     (defaulter-names (map (lambda (var) (r (prefix-sym "def-" var)))
 				   vars))
