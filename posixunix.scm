@@ -470,20 +470,12 @@ static int set_file_mtime(char *filename, C_word tm)
 EOF
 ) )
 
-(include "common-declarations.scm")
+;; these are not available on Windows
 
-(register-feature! 'posix)
-
-(define posix-error
-  (let ([strerror (foreign-lambda c-string "strerror" int)]
-        [string-append string-append] )
-    (lambda (type loc msg . args)
-      (let ([rn (##sys#update-errno)])
-        (apply ##sys#signal-hook type loc (string-append msg " - " (strerror rn)) args) ) ) ) )
+(define-foreign-variable _stat_st_blksize unsigned-int "C_statbuf.st_blksize")
+(define-foreign-variable _stat_st_blocks unsigned-int "C_statbuf.st_blocks")
 
 ;; Faster versions of common operations
-
-(define ##sys#posix-error posix-error)
 
 (define ##sys#file-nonblocking!
   (foreign-lambda* bool ([int fd])
@@ -776,43 +768,6 @@ EOF
       (unless (fx= 0 (##core#inline "C_chdir" sname))
 	(posix-error #:file-error 'change-directory "cannot change current directory" name) )
       name)))
-
-(define delete-directory
-  (lambda (name)
-    (##sys#check-string name 'delete-directory)
-    (let ((sname (##sys#make-c-string (##sys#expand-home-path name) 'delete-directory)))
-      (unless (fx= 0 (##core#inline "C_rmdir" sname))
-	(posix-error #:file-error 'delete-directory "cannot delete directory" name) )
-      name)))
-
-(define ##sys#directory
-  (let ([make-string make-string])
-    (lambda (#!optional (spec (current-directory)) show-dotfiles?)
-      (##sys#check-string spec 'directory)
-      (let ([buffer (make-string 256)]
-            [handle (##sys#make-pointer)]
-            [entry (##sys#make-pointer)] )
-        (##core#inline "C_opendir" (##sys#make-c-string (##sys#expand-home-path spec) 'directory) handle)
-        (if (##sys#null-pointer? handle)
-            (posix-error #:file-error 'directory "cannot open directory" spec)
-            (let loop ()
-              (##core#inline "C_readdir" handle entry)
-              (if (##sys#null-pointer? entry)
-                  (begin
-                    (##core#inline "C_closedir" handle)
-                    '() )
-                  (let* ([flen (##core#inline "C_foundfile" entry buffer)]
-                         [file (##sys#substring buffer 0 flen)]
-                         [char1 (string-ref file 0)]
-                         [char2 (and (fx> flen 1) (string-ref file 1))] )
-                    (if (and (eq? #\. char1)
-                             (or (not char2)
-                                 (and (eq? #\. char2) (eq? 2 flen))
-                                 (not show-dotfiles?) ) )
-                        (loop)
-                        (cons file (loop)) ) ) ) ) ) ) ) ) )
-
-(define directory ##sys#directory)
 
 
 ;;; Pipes:

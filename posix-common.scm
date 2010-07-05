@@ -53,6 +53,18 @@ static C_TLS struct stat C_statbuf;
 EOF
 ))
 
+(include "common-declarations.scm")
+
+
+(define posix-error
+  (let ([strerror (foreign-lambda c-string "strerror" int)]
+	[string-append string-append] )
+    (lambda (type loc msg . args)
+      (let ([rn (##sys#update-errno)])
+	(apply ##sys#signal-hook type loc (string-append msg " - " (strerror rn)) args) ) ) ) )
+
+(define ##sys#posix-error posix-error)
+
 
 ;;; File properties
 
@@ -67,8 +79,6 @@ EOF
 (define-foreign-variable _stat_st_mode unsigned-int "C_statbuf.st_mode")
 (define-foreign-variable _stat_st_dev unsigned-int "C_statbuf.st_dev")
 (define-foreign-variable _stat_st_rdev unsigned-int "C_statbuf.st_rdev")
-(define-foreign-variable _stat_st_blksize unsigned-int "C_statbuf.st_blksize")
-(define-foreign-variable _stat_st_blocks unsigned-int "C_statbuf.st_blocks")
 
 (define-syntax (stat-mode x r c)
   ;; no need to rename here
@@ -179,6 +189,41 @@ EOF
 		(##sys#substring buffer 0 len)
 		(##sys#signal-hook #:file-error 'current-directory "cannot retrieve current directory") ) ) ) ) ) )
 
+(define delete-directory
+  (lambda (name)
+    (##sys#check-string name 'delete-directory)
+    (let ((sname (##sys#make-c-string (##sys#expand-home-path name) 'delete-directory)))
+      (unless (fx= 0 (##core#inline "C_rmdir" sname))
+	(posix-error #:file-error 'delete-directory "cannot delete directory" name) )
+      name)))
+
+(define directory
+  (let ([make-string make-string])
+    (lambda (#!optional (spec (current-directory)) show-dotfiles?)
+      (##sys#check-string spec 'directory)
+      (let ([buffer (make-string 256)]
+            [handle (##sys#make-pointer)]
+            [entry (##sys#make-pointer)] )
+        (##core#inline "C_opendir" (##sys#make-c-string (##sys#expand-home-path spec) 'directory) handle)
+        (if (##sys#null-pointer? handle)
+            (posix-error #:file-error 'directory "cannot open directory" spec)
+            (let loop ()
+              (##core#inline "C_readdir" handle entry)
+              (if (##sys#null-pointer? entry)
+                  (begin
+                    (##core#inline "C_closedir" handle)
+                    '() )
+                  (let* ([flen (##core#inline "C_foundfile" entry buffer)]
+                         [file (##sys#substring buffer 0 flen)]
+                         [char1 (string-ref file 0)]
+                         [char2 (and (fx> flen 1) (string-ref file 1))] )
+                    (if (and (eq? #\. char1)
+                             (or (not char2)
+                                 (and (eq? #\. char2) (eq? 2 flen))
+                                 (not show-dotfiles?) ) )
+                        (loop)
+                        (cons file (loop)) ) ) ) ) ) ) ) ) )
+
 
 ;;; Filename globbing:
 
@@ -186,6 +231,7 @@ EOF
   (let ((regexp regexp)
         (string-match string-match)
         (glob->regexp glob->regexp)
+	(directory directory)
         (make-pathname make-pathname)
         (decompose-pathname decompose-pathname) )
     (lambda paths
@@ -196,7 +242,7 @@ EOF
               (let-values (((dir fil ext) (decompose-pathname path)))
                 (let* ((patt (glob->regexp (make-pathname #f (or fil "*") ext)))
                        (rx (regexp patt)))
-                  (let loop ((fns (##sys#directory (or dir ".") #t)))
+                  (let loop ((fns (directory (or dir ".") #t)))
                     (cond ((null? fns) (conc-loop (cdr paths)))
                           ((string-match rx (car fns))
                            => (lambda (m) (cons (make-pathname dir (car m)) (loop (cdr fns)))) )

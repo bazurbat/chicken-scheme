@@ -903,18 +903,10 @@ static int set_file_mtime(char *filename, C_word tm)
 EOF
 ) )
 
-(include "common-declarations.scm")
 
-(register-feature! 'posix)
+;;; common code
 
-(define posix-error
-  (let ([strerror (foreign-lambda c-string "strerror" int)]
-	[string-append string-append] )
-    (lambda (type loc msg . args)
-      (let ([rn (##sys#update-errno)])
-	(apply ##sys#signal-hook type loc (string-append msg " - " (strerror rn)) args) ) ) ) )
-
-(define ##sys#posix-error posix-error)
+(include "posix-common.scm")
 
 
 ;;; Lo-level I/O:
@@ -1137,46 +1129,6 @@ EOF
 	(##sys#signal-hook
 	 #:file-error 'change-directory "cannot change current directory" name) )
       name)))
-
-(define delete-directory
-  (lambda (name)
-    (##sys#check-string name 'delete-directory)
-    (let ((sname (##sys#make-c-string (##sys#expand-home-path name) 'delete-directory)))
-      (unless (fx= 0 (##core#inline "C_rmdir" sname))
-	(##sys#update-errno)
-	(##sys#signal-hook #:file-error 'delete-directory "cannot delete directory" name) )
-      name)))
-
-(define directory
-  (let ([string-append string-append]
-	[make-string make-string]
-	[string string])
-    (lambda (#!optional (spec (current-directory)) show-dotfiles?)
-      (##sys#check-string spec 'directory)
-      (let ([buffer (make-string 256)]
-	    [handle (##sys#make-pointer)]
-	    [entry (##sys#make-pointer)] )
-	(##core#inline "C_opendir" (##sys#make-c-string (##sys#expand-home-path spec) 'directory) handle)
-	(if (##sys#null-pointer? handle)
-	    (begin
-	      (##sys#update-errno)
-	      (##sys#signal-hook #:file-error 'directory "cannot open directory" spec) )
-	    (let loop ()
-	      (##core#inline "C_readdir" handle entry)
-	      (if (##sys#null-pointer? entry)
-		  (begin
-		    (##core#inline "C_closedir" handle)
-		    '() )
-		  (let* ([flen (##core#inline "C_foundfile" entry buffer)]
-			 [file (##sys#substring buffer 0 flen)]
-			 [char1 (string-ref file 0)]
-			 [char2 (and (> flen 1) (string-ref file 1))] )
-		    (if (and (eq? char1 #\.)
-			     (or (not char2)
-				 (and (eq? char2 #\.) (eq? flen 2))
-				 (not show-dotfiles?) ) )
-			(loop)
-			(cons file (loop)) ) ) ) ) ) ) ) ) )
 
 
 ;;; Pipes:
@@ -1932,8 +1884,3 @@ EOF
 (define prot/none 0)
 (define prot/read 0)
 (define prot/write 0)
-
-
-;;; common code
-
-(include "posix-common.scm")
