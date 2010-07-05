@@ -25,7 +25,7 @@
 
 
 (declare 
-  (hide ##sys#stat posix-error check-time-vector)
+  (hide ##sys#stat posix-error check-time-vector ##sys#find-files)
   (foreign-declare #<<EOF
 
 #include <signal.h>
@@ -204,7 +204,9 @@ EOF
       (let ([buffer (make-string 256)]
             [handle (##sys#make-pointer)]
             [entry (##sys#make-pointer)] )
-        (##core#inline "C_opendir" (##sys#make-c-string (##sys#expand-home-path spec) 'directory) handle)
+        (##core#inline 
+	 "C_opendir"
+	 (##sys#make-c-string (##sys#expand-home-path spec) 'directory) handle)
         (if (##sys#null-pointer? handle)
             (posix-error #:file-error 'directory "cannot open directory" spec)
             (let loop ()
@@ -251,18 +253,15 @@ EOF
 
 ;;; Find matching files:
 
-(define find-files
+(define ##sys#find-files
   (let ((glob glob)
 	(string-match string-match)
 	(make-pathname make-pathname)
 	(pathname-file pathname-file)
+	(symbolic-link? symbolic-link?)
 	(directory? directory?) )
-    (lambda (dir #!optional
-		 (pred (lambda _ #t))
-		 (action (lambda (x y) (cons x y))) ; we want cons inlined
-		 (id '())
-		 (limit #f) )
-	(##sys#check-string dir 'find-files)
+    (lambda (dir pred action id limit follow dot loc)
+	(##sys#check-string dir loc)
 	(let* ((depth 0)
 	       (lproc
 		(cond ((not limit) (lambda _ #t))
@@ -270,9 +269,10 @@ EOF
 		      (else limit) ) )
 	       (pproc
 		(if (or (string? pred) (regexp? pred))
-		    (lambda (x) (string-match pred x))
+		    (let ((pred (regexp pred))) ; force compilation
+		      (lambda (x) (string-match pred x)))
 		    pred) ) )
-	  (let loop ((fs (glob (make-pathname dir "*")))
+	  (let loop ((fs (glob (make-pathname dir (if dot "?*" "*"))))
 		     (r id) )
 	    (if (null? fs)
 		r
@@ -289,5 +289,21 @@ EOF
 			((pproc f) (loop rest (action f r)))
 			(else (loop rest r)) ) ) ) ) ) ) ) )
 
-
-;;; TODO: add more here...
+(define (find-files dir . args)
+  (cond ((or (null? args) (not (keyword? (car args))))
+	 ;; old signature - DEPRECATED
+	 (let-optionals args ((pred (lambda _ #t))
+			      (action (lambda (x y) (cons x y))) ; we want `cons' inlined
+			      (id '())
+			      (limit #f) )
+	   (##sys#find-files dir pred action id limit #t #f 'find-files)))
+	(else
+	 (apply 
+	  (lambda (#!key (test (lambda _ #t))
+			 (action (lambda (x y) (cons x y))) ; s.a.
+			 (seed '())
+			 (limit #f)
+			 (dotfiles #f)
+			 (follow-symlinks #t))
+	    (##sys#find-files dir test action seed limit follow-symlinks dotfiles 'find-files))
+	  args))))
