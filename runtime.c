@@ -1336,8 +1336,7 @@ C_regparm void C_fcall initial_trampoline(void *proc)
 void C_ccall termination_continuation(C_word c, C_word self, C_word result)
 {
   if(debug_mode) {
-    C_dbg(C_text("debug"), C_text("application terminated normally (%d major collection%s).\n"), gc_count_2,
-	  gc_count_2 > 1 ? "s" : "");
+    C_dbg(C_text("debug"), C_text("application terminated normally\n"));
   }
 
   exit(0);
