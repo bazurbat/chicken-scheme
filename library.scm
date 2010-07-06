@@ -3488,7 +3488,7 @@ EOF
   (let ([ffp force-finalizers])
     (lambda ()
       (when (##sys#fudge 13)
-	(##sys#print "[debug] forcing finalizers...\n" #f ##sys#standard-output) )
+	(##sys#print "[debug] forcing finalizers...\n" #f ##sys#standard-error) )
       (when (ffp) (##sys#force-finalizers)) ) ) )
 
 (define (on-exit thunk)
