@@ -761,7 +761,7 @@
 (fileno/stderr fixnum)
 (fileno/stdin fixnum)
 (fileno/stdout fixnum)
-(find-files (procedure find-files (string #!optional * (procedure (string string) *) * fixnum) list))
+(find-files (procedure find-files (string #!rest) list))
 (get-groups (procedure get-groups () list))
 (get-host-name (procedure get-host-name () string))
 (glob (procedure glob (#!rest string) list))
