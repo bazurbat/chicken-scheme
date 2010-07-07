@@ -172,11 +172,10 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 # define FLONUM_PRINT_PRECISION         15
 #endif
 
-#define WORDS_PER_FLONUM              C_SIZEOF_FLONUM
-
+#define WORDS_PER_FLONUM               C_SIZEOF_FLONUM
 #define MAXIMAL_NUMBER_OF_COMMAND_LINE_ARGUMENTS 32
-
 #define INITIAL_TIMER_INTERRUPT_PERIOD 10000
+#define HDUMP_TABLE_SIZE               1001
 
 
 /* Constants: */
@@ -184,12 +183,12 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #ifdef C_SIXTY_FOUR
 # define ALIGNMENT_HOLE_MARKER         ((C_word)0xfffffffffffffffeL)
 # define FORWARDING_BIT_SHIFT          63
-# define UWORD_FORMAT_STRING           "0x%lx"
+# define UWORD_FORMAT_STRING           "0x%016lx"
 # define UWORD_COUNT_FORMAT_STRING     "%ld"
 #else
 # define ALIGNMENT_HOLE_MARKER         ((C_word)0xfffffffe)
 # define FORWARDING_BIT_SHIFT          31
-# define UWORD_FORMAT_STRING           "0x%x"
+# define UWORD_FORMAT_STRING           "0x%08x"
 # define UWORD_COUNT_FORMAT_STRING     "%d"
 #endif
 
@@ -303,6 +302,13 @@ typedef struct trace_info_struct
   C_char *raw;
   C_word cooked1, cooked2, thread;
 } TRACE_INFO;
+
+typedef struct hdump_bucket_struct
+{
+  C_word key;
+  int count, total;
+  struct hdump_bucket_struct *next;
+} HDUMP_BUCKET;
 
 
 /* Variables: */
@@ -447,6 +453,8 @@ static C_TLS FINALIZER_NODE
   **pending_finalizer_indices;
 static C_TLS void *current_module_handle;
 static C_TLS int flonum_print_precision = FLONUM_PRINT_PRECISION;
+static C_TLS HDUMP_BUCKET **hdump_table;
+
 
 /* Prototypes: */
 
@@ -491,6 +499,7 @@ static void callback_trampoline(void *dummy) C_noret;
 static C_ccall void callback_return_continuation(C_word c, C_word self, C_word r) C_noret;
 static void become_2(void *dummy) C_noret;
 static void copy_closure_2(void *dummy) C_noret;
+static void dump_heap_state_2(void *dummy) C_noret;
 
 static C_PTABLE_ENTRY *create_initial_ptable();
 
@@ -3084,8 +3093,12 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
 	  (C_uword)heap_size / 1000, size / 1000);
 
   if(gc_report_flag) {
-    C_dbg(C_text("GC"), C_text("(old) fromspace: \tstart=%08lx, \tlimit=%08lx\n"), (long)fromspace_start, (long)C_fromspace_limit);
-    C_dbg(C_text("GC"), C_text("(old) tospace:   \tstart=%08lx, \tlimit=%08lx\n"), (long)tospace_start, (long)tospace_limit);
+    C_dbg(C_text("GC"), C_text("(old) fromspace: \tstart=" UWORD_FORMAT_STRING 
+			       ", \tlimit=" UWORD_FORMAT_STRING "\n"),
+	  (long)fromspace_start, (long)C_fromspace_limit);
+    C_dbg(C_text("GC"), C_text("(old) tospace:   \tstart=" UWORD_FORMAT_STRING
+			       ", \tlimit=" UWORD_FORMAT_STRING "\n"),
+	  (long)tospace_start, (long)tospace_limit);
   }
 
   heap_size = size;
@@ -3198,8 +3211,12 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
 
   if(gc_report_flag) {
     C_dbg(C_text("GC"), C_text("resized heap to %d bytes\n"), heap_size);
-    C_dbg(C_text("GC"), C_text("(new) fromspace: \tstart=%08lx, \tlimit=%08lx\n"), (long)fromspace_start, (long)C_fromspace_limit);
-    C_dbg(C_text("GC"), C_text("(new) tospace:   \tstart=%08lx, \tlimit=%08lx\n"), (long)tospace_start, (long)tospace_limit);
+    C_dbg(C_text("GC"), C_text("(new) fromspace: \tstart=" UWORD_FORMAT_STRING 
+			       ", \tlimit=" UWORD_FORMAT_STRING "\n"),
+	  (long)fromspace_start, (long)C_fromspace_limit);
+    C_dbg(C_text("GC"), C_text("(new) tospace:   \tstart=" UWORD_FORMAT_STRING
+			       ", \tlimit=" UWORD_FORMAT_STRING "\n"),
+	  (long)tospace_start, (long)tospace_limit);
   }
 
   if(C_post_gc_hook != NULL) C_post_gc_hook(GC_REALLOC, 0);
@@ -8772,4 +8789,171 @@ C_i_get_keyword(C_word kw, C_word args, C_word def)
   }
 
   return def;
+}
+
+
+void C_ccall
+C_dump_heap_state(C_word c, C_word closure, C_word k)
+{
+  /* make sure heap is compacted */
+  C_save(k);
+  C_reclaim(dump_heap_state_2, NULL);
+}
+
+
+static unsigned long
+hdump_hash(C_word key)
+{
+  return (unsigned long)key % HDUMP_TABLE_SIZE;
+}
+
+
+static void
+hdump_count(C_word key, int n, int t)
+{
+  HDUMP_BUCKET **bp = hdump_table + hdump_hash(key);
+  HDUMP_BUCKET *b = *bp;
+
+  while(b != NULL) {
+    if(b->key == key) {
+      b->count += n;
+      b->total += t;
+      return;
+    }
+    else b = b->next;
+  }
+
+  b = (HDUMP_BUCKET *)C_malloc(sizeof(HDUMP_BUCKET));
+  
+  if(b == 0)
+    panic(C_text("out of memory - can not allocate heap-dump table-bucket"));
+
+  b->next = *bp;
+  b->key = key;
+  *bp = b;
+  b->count = n;
+  b->total = t;
+}
+
+
+static void 
+dump_heap_state_2(void *dummy)
+{
+  C_word k = C_restore;
+  HDUMP_BUCKET *b, *b2, **bp;
+  int n, bytes;
+  C_byte *scan;
+  C_SCHEME_BLOCK *sbp;
+  C_header h;
+  C_word x, key, *p;
+  int imm = 0, blk = 0;
+  
+  hdump_table = (HDUMP_BUCKET **)C_malloc(HDUMP_TABLE_SIZE * sizeof(HDUMP_BUCKET *));
+
+  if(hdump_table == NULL)
+    panic(C_text("out of memory - can not allocate heap-dump table"));
+
+  C_memset(hdump_table, 0, sizeof(HDUMP_BUCKET *) * HDUMP_TABLE_SIZE);
+
+  scan = fromspace_start;
+
+  while(scan < C_fromspace_top) {
+    ++blk;
+    sbp = (C_SCHEME_BLOCK *)scan;
+
+    if(*((C_word *)sbp) == ALIGNMENT_HOLE_MARKER) 
+      sbp = (C_SCHEME_BLOCK *)((C_word *)sbp + 1);
+
+    n = C_header_size(sbp);
+    h = sbp->header;
+    bytes = (h & C_BYTEBLOCK_BIT) ? n : n * sizeof(C_word);
+    key = (C_word)(h & C_HEADER_BITS_MASK);
+    p = sbp->data;
+
+    if(key == C_STRUCTURE_TYPE) key = *p;
+
+    hdump_count(key, 1, bytes);
+
+    if(n > 0 && (h & C_BYTEBLOCK_BIT) == 0) {
+      if((h & C_SPECIALBLOCK_BIT) != 0) {
+	--n;
+	++p;
+      }
+
+      while(n--) {
+	x = *(p++);
+
+	if(C_immediatep(x)) {
+	  ++imm;
+
+	  if((x & C_FIXNUM_BIT) != 0) key = C_fix(1);
+	  else {
+	    switch(x & C_IMMEDIATE_TYPE_BITS) {
+	    case C_BOOLEAN_BITS: key = C_SCHEME_TRUE; break;
+	    case C_CHARACTER_BITS: key = C_make_character('A'); break;
+	    default: key = x;
+	    }
+	  }
+
+	  hdump_count(key, 1, 0);
+	}
+      }
+    }
+
+    scan = (C_byte *)sbp + C_align(bytes) + sizeof(C_word);
+  }
+
+  bp = hdump_table;
+  
+  for(n = 0; n < HDUMP_TABLE_SIZE; ++n) {
+    for(b = bp[ n ]; b != NULL; b = b2) {
+      b2 = b->next;
+
+      switch(b->key) {
+      case C_fix(1): C_fprintf(C_stderr,              C_text("fixnum         ")); break;
+      case C_SCHEME_TRUE: C_fprintf(C_stderr,         C_text("boolean        ")); break;
+      case C_SCHEME_END_OF_LIST: C_fprintf(C_stderr,  C_text("null           ")); break;
+      case C_SCHEME_UNDEFINED  : C_fprintf(C_stderr,  C_text("void           ")); break;
+      case C_make_character('A'): C_fprintf(C_stderr, C_text("character      ")); break;
+      case C_SCHEME_END_OF_FILE: C_fprintf(C_stderr,  C_text("eof            ")); break;
+      case C_SCHEME_UNBOUND: C_fprintf(C_stderr,      C_text("unbound        ")); break;
+      case C_SYMBOL_TYPE: C_fprintf(C_stderr,         C_text("symbol         ")); break;
+      case C_STRING_TYPE: C_fprintf(C_stderr,         C_text("string         ")); break;
+      case C_PAIR_TYPE: C_fprintf(C_stderr,           C_text("pair           ")); break;
+      case C_CLOSURE_TYPE: C_fprintf(C_stderr,        C_text("closure        ")); break;
+      case C_FLONUM_TYPE: C_fprintf(C_stderr,         C_text("flonum         ")); break;
+      case C_PORT_TYPE: C_fprintf(C_stderr,           C_text("port           ")); break;
+      case C_POINTER_TYPE: C_fprintf(C_stderr,        C_text("pointer        ")); break;
+      case C_LOCATIVE_TYPE: C_fprintf(C_stderr,       C_text("locative       ")); break;
+      case C_TAGGED_POINTER_TYPE: C_fprintf(C_stderr, C_text("tagged pointer ")); break;
+      case C_SWIG_POINTER_TYPE: C_fprintf(C_stderr,   C_text("swig pointer   ")); break;
+      case C_LAMBDA_INFO_TYPE: C_fprintf(C_stderr,    C_text("lambda info    ")); break;
+      case C_BUCKET_TYPE: C_fprintf(C_stderr,         C_text("bucket         ")); break;
+      case C_VECTOR_TYPE: C_fprintf(C_stderr,         C_text("vector         ")); break;
+      case C_BYTEVECTOR_TYPE: C_fprintf(C_stderr,     C_text("bytevector     ")); break;
+      default:
+	x = b->key;
+
+	if(!C_immediatep(x) && C_header_bits(x) == C_SYMBOL_TYPE) {
+	  x = C_block_item(x, 1);
+	  C_fprintf(C_stderr, C_text("`%.*s'"), C_header_size(x), C_c_string(x));
+	}
+	else C_fprintf(C_stderr, C_text("unknown key " UWORD_FORMAT_STRING), b->key);
+      }
+
+      C_fprintf(C_stderr, C_text("\t" UWORD_COUNT_FORMAT_STRING), b->count);
+
+      if(b->total > 0) 
+	C_fprintf(C_stderr, C_text("\t" UWORD_COUNT_FORMAT_STRING " bytes"), b->total);
+
+      C_fputc('\n', C_stderr);
+      C_free(b);
+    }
+  }
+
+  C_fprintf(C_stderr, C_text("\ntotal number of blocks: " UWORD_COUNT_FORMAT_STRING
+			     ", immediates: " UWORD_COUNT_FORMAT_STRING "\n"),
+	    blk, imm);
+  C_free(hdump_table);
+  C_kontinue(k, C_SCHEME_UNDEFINED);
 }

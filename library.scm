@@ -4671,3 +4671,8 @@ EOF
       (pstr " GCs (major/minor)")))
   (##sys#write-char-0 #\newline ##sys#standard-error)
   (##sys#flush-output ##sys#standard-error))
+
+
+;;; Dump heap state to stderr:
+
+(define ##sys#dump-heap-state (##core#primitive "C_dump_heap_state"))
