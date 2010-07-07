@@ -199,6 +199,9 @@ chicken-defaults.h:
 	echo "#ifndef C_TARGET_LDFLAGS" >>$@
 	echo "# define C_TARGET_LDFLAGS \"$(TARGET_LINKER_OPTIONS) $(TARGET_LINKER_OPTIMIZATION_OPTIONS)\"" >>$@
 	echo "#endif" >>$@
+	echo "#ifndef C_TARGET_FEATURES" >>$@
+	echo "# define C_TARGET_FEATURES \"$(TARGET_FEATURES)\"" >>$@
+	echo "#endif" >>$@
 	echo "#ifndef C_CROSS_CHICKEN" >>$@
 	echo "# define C_CROSS_CHICKEN $(CROSS_CHICKEN)" >>$@
 	echo "#endif" >>$@
