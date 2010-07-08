@@ -264,6 +264,15 @@ If the keyword argument {{c++}} is given and true, then the code will be compile
 Creates the directory given in the string {{PATH}}, with all parent directories as needed.
 
 
+==== extension-name-and-version
+
+<parameter>extension-name-and-version</parameter>
+
+Returns a list containing the name and version of the currently installed
+extension as strings. If the setup script is not invoked via {{chicken-install}},
+then name and version will be empty.
+
+
 ==== installation-prefix
 
 <procedure>(installation-prefix)</procedure>
