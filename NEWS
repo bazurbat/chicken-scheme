@@ -1,3 +1,30 @@
+4.5.6
+
+- fixed missing change in Makefile.cygwin (thanks to John Cowan)
+- fixed bug in `let-optionals' macro that caused problems when the
+  rest-variable was actually named `rest' (thanks to Alejandro
+  Forero Cuervo)
+- when Scheme files are translated to C++ or Objective-C, `csc'
+  will define the feature-identifiers `chicken-scheme-to-c++'/
+  `chicken-scheme-to-objc' to the `chicken' executable
+- fixed bug in expansion of `#!key' parameters in lambda-lists
+- debug-output for forcing finalizers on exit goes to stderr now
+  (thanks to Joerg Wittenberger)
+- the installation routines for extensions automatically add
+  version-number information if none is given in the extension
+  property list (suggested by Alejandro)
+- `standard-extension' accepts `#f' now for the version number
+  and will use the version that has been obtained via
+  `chicken-install'
+- documented `extension-name-and-version'
+- added new procedure `file-type' to posix library unit
+- `fifo?', `symbolic-link?', `directory?', `regular-file?', `socket?',
+  `character-device?' and `block-device?' now accepts file-descriptors
+  or filenames
+- `find-files' takes keyword arguments, now (including the options
+  to process dotfiles and ignore symbolic links); the old argument
+  signature is still supported but deprecated
+
 4.5.5
 
 - removed dependency on `symbol-append' in some macros used in
