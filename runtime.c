@@ -8938,6 +8938,8 @@ dump_heap_state_2(void *dummy)
       case C_BUCKET_TYPE: C_fprintf(C_stderr,         C_text("bucket         ")); break;
       case C_VECTOR_TYPE: C_fprintf(C_stderr,         C_text("vector         ")); break;
       case C_BYTEVECTOR_TYPE: C_fprintf(C_stderr,     C_text("bytevector     ")); break;
+	/* XXX this is sort of funny: */
+      case C_BYTEBLOCK_BIT: C_fprintf(C_stderr,        C_text("blob           ")); break;
       default:
 	x = b->key;
 
