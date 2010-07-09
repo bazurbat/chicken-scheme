@@ -516,6 +516,18 @@
 	   ((equal? "a" ext) (if *windows-shell* "lib" "a"))
 	   (else ext)))))
 
+(define (what-version version)
+  (or version
+      (let ((n+v (extension-name-and-version)))
+	(if (and n+v (pair? n+v) (not (equal? "" (cadr n+v))))
+	    (cadr n+v)
+	    "unknown"))))
+
+(define (supply-version info version)
+  (if (assq 'version info)
+      info
+      (cons `(version ,(what-version version)) info)))
+
 
 ;;; Convenience function
 
@@ -536,8 +548,7 @@
        ,@(if (file-exists? ilname)
 	     (list ilname)
 	     '()))
-     `((version ,version)
-       ,@info
+     `(,@(supply-version info version)
        ,@(if static `((static ,(make-pathname #f fname "o"))) '())))))
 
 
@@ -564,7 +575,7 @@
 			       (run (,*ranlib-command* ,(shellpath to)) ) ))
 			   to))
 		       files) ) )
-      (write-info id dests info) ) ) )
+      (write-info id dests (supply-version info #f)) ) ) )
 
 (define (install-program id files #!optional (info '()))
   (define (exify f)
@@ -590,7 +601,7 @@
 				   (run (,*chmod-command* a+r ,(shellpath to))))
 			   to) )
 		       files) ) )
-      (write-info id dests info) ) ) )
+      (write-info id dests (supply-version info #f)) ) ) )
 
 (define (install-script id files #!optional (info '()))
   (when (setup-install-mode)
@@ -607,7 +618,7 @@
 			files) ) )
       (unless *windows-shell*
 	(run (,*chmod-command* a+rx ,(string-intersperse pfiles " "))) )
-      (write-info id pfiles info) ) ) )
+      (write-info id pfiles (supply-version info #f)) ) ) )
 
 
 ;;; More helper stuff

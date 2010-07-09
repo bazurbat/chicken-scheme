@@ -488,7 +488,7 @@
 			   `(##core#begin ,@(cdr clause)) )
 			  (else?
 			   (##sys#notice
-			    "non-`else' clause following `else' clause in `cond'"
+			    "non-`else' clause following `else' clause in `select'"
 			    (##sys#strip-syntax clause))
 			   (expand rclauses #t)
 			   '(##core#begin))

@@ -176,6 +176,10 @@ a simple single-file extension. This is roughly equivalent to:
      ... `INFO' ...
      (static "ID.o")))   ; if `static' is given and true
 
+{{VERSION}} may be {{#f}}, in that case the version obtained from where the
+extension has been retrieved wil be taken. If installed directly from a local
+directory, the version will default to {{"unknown"}}.
+
 
 ==== run
 
@@ -262,6 +266,15 @@ If the keyword argument {{c++}} is given and true, then the code will be compile
 <procedure>(create-directory/parents PATH)</procedure>
 
 Creates the directory given in the string {{PATH}}, with all parent directories as needed.
+
+
+==== extension-name-and-version
+
+<parameter>extension-name-and-version</parameter>
+
+Returns a list containing the name and version of the currently installed
+extension as strings. If the setup script is not invoked via {{chicken-install}},
+then name and version will be empty.
 
 
 ==== installation-prefix

@@ -25,17 +25,101 @@
 
 
 (declare 
+  (hide ##sys#stat posix-error check-time-vector ##sys#find-files)
   (foreign-declare #<<EOF
 
+#include <signal.h>
+#include <errno.h>
+#include <math.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+
+static int C_not_implemented(void);
+int C_not_implemented() { return -1; }
+
 #define C_curdir(buf)       (getcwd(C_c_string(buf), 1024) ? C_fix(strlen(C_c_string(buf))) : C_SCHEME_FALSE)
+
+static C_TLS struct stat C_statbuf;
+
+#define C_stat_type         (C_statbuf.st_mode & S_IFMT)
+#define C_stat(fn)          C_fix(stat((char *)C_data_pointer(fn), &C_statbuf))
+#define C_fstat(f)          C_fix(fstat(C_unfix(f), &C_statbuf))
+
+#ifndef S_IFSOCK
+# define S_IFSOCK           0140000
+#endif
 
 EOF
 ))
 
+(include "common-declarations.scm")
+
+
+(define posix-error
+  (let ([strerror (foreign-lambda c-string "strerror" int)]
+	[string-append string-append] )
+    (lambda (type loc msg . args)
+      (let ([rn (##sys#update-errno)])
+	(apply ##sys#signal-hook type loc (string-append msg " - " (strerror rn)) args) ) ) ) )
+
+(define ##sys#posix-error posix-error)
+
 
 ;;; File properties
 
-(define (file-size f) (##sys#stat f #f 'file-size) _stat_st_size)
+(define-foreign-variable _stat_st_ino unsigned-int "C_statbuf.st_ino")
+(define-foreign-variable _stat_st_nlink unsigned-int "C_statbuf.st_nlink")
+(define-foreign-variable _stat_st_gid unsigned-int "C_statbuf.st_gid")
+(define-foreign-variable _stat_st_size integer64 "C_statbuf.st_size")
+(define-foreign-variable _stat_st_mtime double "C_statbuf.st_mtime")
+(define-foreign-variable _stat_st_atime double "C_statbuf.st_atime")
+(define-foreign-variable _stat_st_ctime double "C_statbuf.st_ctime")
+(define-foreign-variable _stat_st_uid unsigned-int "C_statbuf.st_uid")
+(define-foreign-variable _stat_st_mode unsigned-int "C_statbuf.st_mode")
+(define-foreign-variable _stat_st_dev unsigned-int "C_statbuf.st_dev")
+(define-foreign-variable _stat_st_rdev unsigned-int "C_statbuf.st_rdev")
+
+(define-syntax (stat-mode x r c)
+  ;; no need to rename here
+  (let ((name (cadr x)))
+    `(##core#begin
+      (declare
+	(foreign-declare
+	 ,(sprintf "#ifndef ~a~%#define ~a S_IFREG~%#endif~%" name name)))
+      (define-foreign-variable ,name unsigned-int))))
+
+(stat-mode S_IFLNK)
+(stat-mode S_IFREG)
+(stat-mode S_IFDIR)
+(stat-mode S_IFCHR)
+(stat-mode S_IFBLK)
+(stat-mode S_IFSOCK)
+(stat-mode S_IFIFO)
+
+(define (##sys#stat file link loc)
+  (let ((r (cond ((fixnum? file) (##core#inline "C_fstat" file))
+                 ((string? file)
+                  (let ((path (##sys#make-c-string
+			       (##sys#platform-fixup-pathname
+				(##sys#expand-home-path file))
+			       loc)))
+		    (if link
+			(##core#inline "C_lstat" path)
+			(##core#inline "C_stat" path) ) ) )
+                 (else
+		  (##sys#signal-hook
+		   #:type-error loc "bad argument type - not a fixnum or string" file)) ) ) )
+    (when (fx< r 0)
+      (posix-error #:file-error loc "cannot access file" file) ) ) )
+
+(define (file-stat f #!optional link)
+  (##sys#stat f link 'file-stat)
+  (vector _stat_st_ino _stat_st_mode _stat_st_nlink
+          _stat_st_uid _stat_st_gid _stat_st_size
+          _stat_st_atime _stat_st_ctime _stat_st_mtime
+          _stat_st_dev _stat_st_rdev
+          _stat_st_blksize _stat_st_blocks) )
 
 (define file-modification-time
   (getter-with-setter 
@@ -55,11 +139,39 @@ EOF
 (define (file-change-time f) (##sys#stat f #f 'file-change-time) _stat_st_ctime)
 (define (file-owner f) (##sys#stat f #f 'file-owner) _stat_st_uid)
 (define (file-permissions f) (##sys#stat f #f 'file-permissions) _stat_st_mode)
+(define (file-size f) (##sys#stat f #f 'file-size) _stat_st_size)
 
-(define (regular-file? fname)
-  (##sys#check-string fname 'regular-file?)
-  (let ((info (##sys#file-info (##sys#expand-home-path fname))))
-    (and info (fx= 0 (##sys#slot info 4))) ) )
+(define (file-type file #!optional link)
+  (##sys#stat file link 'file-type)
+  (select (foreign-value "C_stat_type" unsigned-int)
+    ((S_IFLNK) 'symbolic-link)
+    ((S_IFDIR) 'directory)
+    ((S_IFCHR) 'character-device)
+    ((S_IFBLK) 'block-device)
+    ((S_IFIFO) 'fifo)
+    ((S_IFSOCK) 'socket)
+    (else 'regular-file)))
+
+(define (regular-file? file)
+  (eq? 'regular-file (file-type file)))
+
+(define (symbolic-link? file)
+  (eq? 'symbolic-link (file-type file)))
+
+(define (block-device? file)
+  (eq? 'block-device (file-type file)))
+
+(define (character-device? file)
+  (eq? 'character-device (file-type file)))
+
+(define (fifo? file)
+  (eq? 'fifo (file-type file)))
+
+(define (socket? file)
+  (eq? 'socket (file-type file)))
+
+(define (directory? file)
+  (eq? 'directory (file-type file)))
 
 
 ;;; Set or get current directory:
@@ -77,6 +189,43 @@ EOF
 		(##sys#substring buffer 0 len)
 		(##sys#signal-hook #:file-error 'current-directory "cannot retrieve current directory") ) ) ) ) ) )
 
+(define delete-directory
+  (lambda (name)
+    (##sys#check-string name 'delete-directory)
+    (let ((sname (##sys#make-c-string (##sys#expand-home-path name) 'delete-directory)))
+      (unless (fx= 0 (##core#inline "C_rmdir" sname))
+	(posix-error #:file-error 'delete-directory "cannot delete directory" name) )
+      name)))
+
+(define directory
+  (let ([make-string make-string])
+    (lambda (#!optional (spec (current-directory)) show-dotfiles?)
+      (##sys#check-string spec 'directory)
+      (let ([buffer (make-string 256)]
+            [handle (##sys#make-pointer)]
+            [entry (##sys#make-pointer)] )
+        (##core#inline 
+	 "C_opendir"
+	 (##sys#make-c-string (##sys#expand-home-path spec) 'directory) handle)
+        (if (##sys#null-pointer? handle)
+            (posix-error #:file-error 'directory "cannot open directory" spec)
+            (let loop ()
+              (##core#inline "C_readdir" handle entry)
+              (if (##sys#null-pointer? entry)
+                  (begin
+                    (##core#inline "C_closedir" handle)
+                    '() )
+                  (let* ([flen (##core#inline "C_foundfile" entry buffer)]
+                         [file (##sys#substring buffer 0 flen)]
+                         [char1 (string-ref file 0)]
+                         [char2 (and (fx> flen 1) (string-ref file 1))] )
+                    (if (and (eq? #\. char1)
+                             (or (not char2)
+                                 (and (eq? #\. char2) (eq? 2 flen))
+                                 (not show-dotfiles?) ) )
+                        (loop)
+                        (cons file (loop)) ) ) ) ) ) ) ) ) )
+
 
 ;;; Filename globbing:
 
@@ -84,7 +233,7 @@ EOF
   (let ((regexp regexp)
         (string-match string-match)
         (glob->regexp glob->regexp)
-        (directory directory)
+	(directory directory)
         (make-pathname make-pathname)
         (decompose-pathname decompose-pathname) )
     (lambda paths
@@ -104,18 +253,15 @@ EOF
 
 ;;; Find matching files:
 
-(define find-files
+(define ##sys#find-files
   (let ((glob glob)
 	(string-match string-match)
 	(make-pathname make-pathname)
 	(pathname-file pathname-file)
+	(symbolic-link? symbolic-link?)
 	(directory? directory?) )
-    (lambda (dir #!optional
-		 (pred (lambda _ #t))
-		 (action (lambda (x y) (cons x y))) ; we want cons inlined
-		 (id '())
-		 (limit #f) )
-	(##sys#check-string dir 'find-files)
+    (lambda (dir pred action id limit follow dot loc)
+	(##sys#check-string dir loc)
 	(let* ((depth 0)
 	       (lproc
 		(cond ((not limit) (lambda _ #t))
@@ -123,9 +269,10 @@ EOF
 		      (else limit) ) )
 	       (pproc
 		(if (or (string? pred) (regexp? pred))
-		    (lambda (x) (string-match pred x))
+		    (let ((pred (regexp pred))) ; force compilation
+		      (lambda (x) (string-match pred x)))
 		    pred) ) )
-	  (let loop ((fs (glob (make-pathname dir "*")))
+	  (let loop ((fs (glob (make-pathname dir (if dot "?*" "*"))))
 		     (r id) )
 	    (if (null? fs)
 		r
@@ -142,5 +289,21 @@ EOF
 			((pproc f) (loop rest (action f r)))
 			(else (loop rest r)) ) ) ) ) ) ) ) )
 
-
-;;; TODO: add more here...
+(define (find-files dir . args)
+  (cond ((or (null? args) (not (keyword? (car args))))
+	 ;; old signature - DEPRECATED
+	 (let-optionals args ((pred (lambda _ #t))
+			      (action (lambda (x y) (cons x y))) ; we want `cons' inlined
+			      (id '())
+			      (limit #f) )
+	   (##sys#find-files dir pred action id limit #t #f 'find-files)))
+	(else
+	 (apply 
+	  (lambda (#!key (test (lambda _ #t))
+			 (action (lambda (x y) (cons x y))) ; s.a.
+			 (seed '())
+			 (limit #f)
+			 (dotfiles #f)
+			 (follow-symlinks #t))
+	    (##sys#find-files dir test action seed limit follow-symlinks dotfiles 'find-files))
+	  args))))

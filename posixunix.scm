@@ -29,26 +29,23 @@
   (unit posix)
   (uses scheduler regex extras utils files ports)
   (disable-interrupts)
-  (hide ##sys#stat group-member _get-groups _ensure-groups posix-error
-        ##sys#terminal-check
-        check-time-vector)
-  (not inline ##sys#interrupt-hook ##sys#user-interrupt-hook)
+  (hide group-member _get-groups _ensure-groups posix-error ##sys#terminal-check)
+  (not inline ##sys#interrupt-hook ##sys#user-interrupt-hook))
+
+
+;;; common code
+
+(include "posix-common.scm")
+
+
+(declare
   (foreign-declare #<<EOF
-#include <signal.h>
-#include <errno.h>
-#include <math.h>
-
-static int C_not_implemented(void);
-int C_not_implemented() { return -1; }
-
 static C_TLS int C_wait_status;
 
 #include <unistd.h>
-#include <sys/types.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/utsname.h>
-#include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <dirent.h>
@@ -197,21 +194,7 @@ static C_TLS struct stat C_statbuf;
 #define C_close(fd)         C_fix(close(C_unfix(fd)))
 #define C_sleep             sleep
 
-#define C_stat(fn)          C_fix(stat((char *)C_data_pointer(fn), &C_statbuf))
 #define C_lstat(fn)         C_fix(lstat((char *)C_data_pointer(fn), &C_statbuf))
-#define C_fstat(f)          C_fix(fstat(C_unfix(f), &C_statbuf))
-
-#define C_islink            ((C_statbuf.st_mode & S_IFMT) == S_IFLNK)
-#define C_isreg             ((C_statbuf.st_mode & S_IFMT) == S_IFREG)
-#define C_isdir             ((C_statbuf.st_mode & S_IFMT) == S_IFDIR)
-#define C_ischr             ((C_statbuf.st_mode & S_IFMT) == S_IFCHR)
-#define C_isblk             ((C_statbuf.st_mode & S_IFMT) == S_IFBLK)
-#define C_isfifo            ((C_statbuf.st_mode & S_IFMT) == S_IFIFO)
-#ifdef S_IFSOCK
-#define C_issock            ((C_statbuf.st_mode & S_IFMT) == S_IFSOCK)
-#else
-#define C_issock            ((C_statbuf.st_mode & S_IFMT) == 0140000)
-#endif
 
 #ifdef C_GNU_ENV
 # define C_unsetenv(s)      (unsetenv((char *)C_data_pointer(s)), C_SCHEME_TRUE)
@@ -487,20 +470,12 @@ static int set_file_mtime(char *filename, C_word tm)
 EOF
 ) )
 
-(include "common-declarations.scm")
+;; these are not available on Windows
 
-(register-feature! 'posix)
-
-(define posix-error
-  (let ([strerror (foreign-lambda c-string "strerror" int)]
-        [string-append string-append] )
-    (lambda (type loc msg . args)
-      (let ([rn (##sys#update-errno)])
-        (apply ##sys#signal-hook type loc (string-append msg " - " (strerror rn)) args) ) ) ) )
+(define-foreign-variable _stat_st_blksize unsigned-int "C_statbuf.st_blksize")
+(define-foreign-variable _stat_st_blocks unsigned-int "C_statbuf.st_blocks")
 
 ;; Faster versions of common operations
-
-(define ##sys#posix-error posix-error)
 
 (define ##sys#file-nonblocking!
   (foreign-lambda* bool ([int fd])
@@ -730,66 +705,6 @@ EOF
 (define seek/end _seek_end)
 (define seek/cur _seek_cur)
 
-(define-foreign-variable _stat_st_ino unsigned-int "C_statbuf.st_ino")
-(define-foreign-variable _stat_st_nlink unsigned-int "C_statbuf.st_nlink")
-(define-foreign-variable _stat_st_gid unsigned-int "C_statbuf.st_gid")
-(define-foreign-variable _stat_st_size integer64 "C_statbuf.st_size")
-(define-foreign-variable _stat_st_mtime double "C_statbuf.st_mtime")
-(define-foreign-variable _stat_st_atime double "C_statbuf.st_atime")
-(define-foreign-variable _stat_st_ctime double "C_statbuf.st_ctime")
-(define-foreign-variable _stat_st_uid unsigned-int "C_statbuf.st_uid")
-(define-foreign-variable _stat_st_mode unsigned-int "C_statbuf.st_mode")
-(define-foreign-variable _stat_st_dev unsigned-int "C_statbuf.st_dev")
-(define-foreign-variable _stat_st_rdev unsigned-int "C_statbuf.st_rdev")
-(define-foreign-variable _stat_st_blksize unsigned-int "C_statbuf.st_blksize")
-(define-foreign-variable _stat_st_blocks unsigned-int "C_statbuf.st_blocks")
-
-(define (##sys#stat file link loc)
-  (let ([r (cond [(fixnum? file) (##core#inline "C_fstat" file)]
-                 [(string? file)
-                  (let ([path (##sys#make-c-string (##sys#expand-home-path file) loc)])
-		    (if link
-			(##core#inline "C_lstat" path)
-			(##core#inline "C_stat" path) ) ) ]
-                 [else
-		  (##sys#signal-hook
-		   #:type-error loc "bad argument type - not a fixnum or string" file)] ) ] )
-    (when (fx< r 0)
-      (posix-error #:file-error loc "cannot access file" file) ) ) )
-
-(define (file-stat f . link)
-  (##sys#stat f (optional link #f) 'file-stat)
-  (vector _stat_st_ino _stat_st_mode _stat_st_nlink
-          _stat_st_uid _stat_st_gid _stat_st_size
-          _stat_st_atime _stat_st_ctime _stat_st_mtime
-          _stat_st_dev _stat_st_rdev
-          _stat_st_blksize _stat_st_blocks) )
-
-(define (symbolic-link? fname)
-  (##sys#check-string fname 'symbolic-link?)
-  (##sys#stat fname #t 'symbolic-link?)
-  (foreign-value "C_islink" bool) )
-
-(define (character-device? fname)
-    (##sys#check-string fname 'character-device?)
-    (##sys#stat fname #f 'character-device?)
-    (foreign-value "C_ischr" bool))
-
-(define (block-device? fname)
-    (##sys#check-string fname 'block-device?)
-    (##sys#stat fname #f 'block-device?)
-    (foreign-value "C_isblk" bool))
-
-(define (fifo? fname)
-    (##sys#check-string fname 'stat-fifo?)
-    (##sys#stat fname #f 'stat-fifo?)
-    (foreign-value "C_isfifo" bool))
-
-(define (socket? fname)
-  (##sys#check-string fname 'socket?)
-  (##sys#stat fname #f 'socket?)
-  (foreign-value "C_issock" bool))
-
 (define set-file-position!
    (lambda (port pos . whence)
      (let ((whence (if (pair? whence) (car whence) _seek_set)))
@@ -826,10 +741,6 @@ EOF
 
 ;;; Directory stuff:
 
-(define-inline (*directory? loc name)
-  (and (fx= 0 (##core#inline "C_stat" (##sys#make-c-string name loc)))
-       (foreign-value "C_isdir" bool) ) )
-
 (define-inline (*create-directory loc name)
   (unless (fx= 0 (##core#inline "C_mkdir" (##sys#make-c-string name loc)))
     (posix-error #:file-error loc "cannot create directory" name)) )
@@ -840,11 +751,12 @@ EOF
     (lambda (name #!optional parents?)
       (##sys#check-string name 'create-directory)
       (let ((name (##sys#expand-home-path name)))
-        (unless (or (fx= 0 (##sys#size name)) (*directory? 'create-directory name))
+        (unless (or (fx= 0 (##sys#size name))
+		    (file-exists? name))
           (if parents?
               (let loop ((dir (let-values (((dir file ext) (decompose-pathname name)))
                                 (if file (make-pathname dir file ext) dir))))
-                (when (and dir (not (*directory? 'create-directory dir)))
+                (when (and dir (not (directory? dir)))
                   (loop (pathname-directory dir))
                   (*create-directory 'create-directory dir)) )
               (*create-directory 'create-directory name) ) )
@@ -857,47 +769,6 @@ EOF
       (unless (fx= 0 (##core#inline "C_chdir" sname))
 	(posix-error #:file-error 'change-directory "cannot change current directory" name) )
       name)))
-
-(define delete-directory
-  (lambda (name)
-    (##sys#check-string name 'delete-directory)
-    (let ((sname (##sys#make-c-string (##sys#expand-home-path name) 'delete-directory)))
-      (unless (fx= 0 (##core#inline "C_rmdir" sname))
-	(posix-error #:file-error 'delete-directory "cannot delete directory" name) )
-      name)))
-
-(define directory
-  (let ([string-ref string-ref]
-        [make-string make-string]
-        [string string] )
-    (lambda (#!optional (spec (current-directory)) show-dotfiles?)
-      (##sys#check-string spec 'directory)
-      (let ([buffer (make-string 256)]
-            [handle (##sys#make-pointer)]
-            [entry (##sys#make-pointer)] )
-        (##core#inline "C_opendir" (##sys#make-c-string (##sys#expand-home-path spec) 'directory) handle)
-        (if (##sys#null-pointer? handle)
-            (posix-error #:file-error 'directory "cannot open directory" spec)
-            (let loop ()
-              (##core#inline "C_readdir" handle entry)
-              (if (##sys#null-pointer? entry)
-                  (begin
-                    (##core#inline "C_closedir" handle)
-                    '() )
-                  (let* ([flen (##core#inline "C_foundfile" entry buffer)]
-                         [file (##sys#substring buffer 0 flen)]
-                         [char1 (string-ref file 0)]
-                         [char2 (and (fx> flen 1) (string-ref file 1))] )
-                    (if (and (eq? #\. char1)
-                             (or (not char2)
-                                 (and (eq? #\. char2) (eq? 2 flen))
-                                 (not show-dotfiles?) ) )
-                        (loop)
-                        (cons file (loop)) ) ) ) ) ) ) ) ) )
-
-(define (directory? fname)
-  (##sys#check-string fname 'directory?)
-  (*directory? 'directory? (##sys#expand-home-path fname)) )
 
 
 ;;; Pipes:
@@ -2223,8 +2094,3 @@ EOF
       (##sys#check-string dir 'set-root-directory!)
       (when (fx< (chroot dir) 0)
         (posix-error #:file-error 'set-root-directory! "unable to change root directory" dir) ) ) ) )
-
-
-;;; common code
-
-(include "posix-common.scm")

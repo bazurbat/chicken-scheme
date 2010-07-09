@@ -1692,6 +1692,7 @@ C_fctexport void C_ccall C_cpu_time(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_locative_ref(C_word c, C_word closure, C_word k, C_word loc) C_noret;
 C_fctexport void C_ccall C_call_with_cthulhu(C_word c, C_word self, C_word k, C_word proc) C_noret;
 C_fctexport void C_ccall C_copy_closure(C_word c, C_word closure, C_word k, C_word proc) C_noret;
+C_fctexport void C_ccall C_dump_heap_state(C_word x, C_word closure, C_word k) C_noret;
 
 #if !defined(__GNUC__) && !defined(__INTEL_COMPILER)
 C_fctexport C_word *C_a_i(C_word **a, int n);

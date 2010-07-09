@@ -115,11 +115,10 @@ Files beginning with {{.}} are included only if {{SHOW-DOTFILES?}} is given and 
 
 ==== directory?
 
-<procedure>(directory? NAME)</procedure>
+<procedure>(directory? FILE)</procedure>
 
-Returns {{#t}} if there exists a file with the name {{NAME}}
-and if that file is a directory or a symbolic link pointing
-to a directory.  Otherwise, it returns {{#f}}.
+Returns {{#t}} if {{FILE}} designates directory. Otherwise, it returns {{#f}}.
+{{FILE}} may be a pathname or a file-descriptor.
 
 ==== glob
 
@@ -239,10 +238,10 @@ Creates a FIFO with the name {{FILENAME}} and the permission bits
 
 ==== fifo?
 
-<procedure>(fifo? FILENAME)</procedure>
+<procedure>(fifo? FILE)</procedure>
 
-Returns {{#t}} if the file with the name {{FILENAME}} names
-a FIFO.
+Returns {{#t}} if {{FILE}} names a FIFO. {{FILE}} may be a filename
+or a file-descriptor.
 
 
 === File descriptors and low-level I/O
@@ -452,18 +451,35 @@ These procedures return {{#t}} if the current user has read,
 write or execute permissions on the file named {{FILENAME}}.
 
 
+==== file-type
+
+<procedure>(file-type FILE [LINK])</procedure>
+
+Returns the file-type for {{FILE}}, which should be a filename or
+file-descriptor. If {{LINK}} is given and true, symbolic-links are
+not followed:
+
+  regular-file
+  directory
+  fifo
+  socket
+  symbolic-link
+  character-device
+  block-device
+
+Note that not all types are supported on every platform.
+
+
 ==== character-device?
 ==== block-device?
-==== fifo?
 ==== socket?
 
-<procedure>(character-device? FILENAME)</procedure><br>
-<procedure>(block-device? FILENAME)</procedure><br>
-<procedure>(fifo? FILENAME)</procedure><br>
-<procedure>(socket? FILENAME)</procedure>
+<procedure>(character-device? FILE)</procedure><br>
+<procedure>(block-device? FILE)</procedure><br>
+<procedure>(socket? FILE)</procedure>
 
-These procedures return {{#t}} if the {{FILENAME}} given is of the 
-appropriate type.
+These procedures return {{#t}} if {{FILE}} given is of the 
+appropriate type. {{FILE}} may be a filename or a file-descriptor.
 
 
 === Changing file attributes
@@ -1069,34 +1085,43 @@ These variables contain error codes as returned by {{errno}}.
 
 ==== find-files
 
-<procedure>(find-files DIRECTORY [PREDICATE [ACTION [IDENTITY [LIMIT]]]])</procedure>
+<procedure>(find-files DIRECTORY #!key test action seed limit dotfiles follow-symlinks)</procedure>
 
 Recursively traverses the contents of {{DIRECTORY}} (which should be a
-string) and invokes the procedure {{ACTION}} for all files in which
-the procedure {{PREDICATE}} is true.  {{PREDICATE}} may be a procedure
-of one argument or a regular-expression string.  {{ACTION}} should be
-a procedure of two arguments: the currently encountered file and the
-result of the previous invocation of {{ACTION}}, or, if this is the
-first invocation, the value of {{IDENTITY}}. {{PREDICATE}} defaults to
-{{(constantly #t)}}, {{ACTION}} defaults to
-{{cons}}, {{IDENTITY}} defaults to {{()}}.  {{LIMIT}} should be a
-procedure of one argument that is called for each nested directory and
-which should return true, if that directory is to be traversed
-recursively. {{LIMIT}} may also be an exact integer that gives the
-maximum recursion depth. For example, a depth of {{0}} means that only
-files in the top-level, specified directory are to be traversed. In
-this case, all nested directories are ignored.  {{LIMIT}} may also be
-{{#f}} (the default), which is equivalent to {{(constantly #t)}}.
+string) and invokes the procedure {{action}} for all files in which
+the procedure {{test}} is true.  {{test}} may be a procedure of one
+argument or a regular-expression string that will be matched with a
+full pathname using {{string-match}}.  {{action}} should be a
+procedure of two arguments: the currently encountered file and the
+result of the previous invocation of {{action}}, or, if this is the
+first invocation, the value of {{seed}}. {{test}} defaults to
+{{(constantly #t)}}, {{action}} defaults to {{cons}}, {{seed}}
+defaults to {{()}}.  {{limit}} should be a procedure of one argument
+that is called for each nested directory and which should return true,
+if that directory is to be traversed recursively. {{limit}} may also
+be an exact integer that gives the maximum recursion depth. For
+example, a depth of {{0}} means that only files in the top-level,
+specified directory are to be traversed. In this case, all nested
+directories are ignored.  {{limit}} may also be {{#f}} (the default),
+which is equivalent to {{(constantly #t)}}. 
 
-Note that {{ACTION}} is called with the full pathname of each file,
+If {{dotfiles}} is given and true, then files starting with a "{{.}}"
+character will not be ignored (but note that "{{.}}" and "{{..}}"  are
+always ignored). if {{follow-symlinks}} is given and true, then the
+traversal of a symbolic link that points to a directory will
+recursively traverse the latter. By default, symbolic links are not
+followed.
+
+Note that {{action}} is called with the full pathname of each file,
 including the directory prefix.
 
-Also note that {{find-files}} will traverse symbolic links pointing to
-directories, which may lead to symlink loops or duplication of files.
-To avoid traversing symlinks, you can pass something like this as the
-{{LIMIT}} procedure:
+In older CHICKEN versions, {{find-files}} has a different argument
+signature:
 
- (lambda (x) (not (symbolic-link? x)))
+  (find-files DIRECTORY [TEST [ACTION [SEED [LIMIT]]]])
+
+This signature is still supported for compatibility reasons but is
+deprecated.
 
 === Getting the hostname and system information
 

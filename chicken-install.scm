@@ -383,10 +383,11 @@
      " -bnq "
      (if (and *cross-chicken* ; disable -setup-mode when cross-compiling,
 	      (not *host-extension*)) ; host-repo must always take precedence
-	 ""				
+	 ""
 	 "-setup-mode ")
      "-e \"(require-library setup-api)\" -e \"(import setup-api)\""
-     (sprintf " -e \"(extension-name-and-version '(\\\"~a\\\" \\\"~a\\\"))\"" (car e+d+v) (caddr e+d+v))
+     (sprintf " -e \"(extension-name-and-version '(\\\"~a\\\" \\\"~a\\\"))\""
+       (car e+d+v) (caddr e+d+v))
      (if (sudo-install) " -e \"(sudo-install #t)\"" "")
      (if *keep* " -e \"(keep-intermediates #t)\"" "")
      (if (and *no-install* (not dep?)) " -e \"(setup-install-mode #f)\"" "")

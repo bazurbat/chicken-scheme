@@ -6,7 +6,7 @@
   (c) 2008-2010, The Chicken Team
   (c) 2000-2007, Felix L. Winkelmann
 
-  version 4.5.5
+  version 4.5.6
 
 
  1. Introduction
@@ -315,8 +315,9 @@
 	    absolute path name (i.e. it must include the drive letter) and
 	    must use forward slashes (no backward slashes).
 
-	  - When installing under mingw, with a windows shell ("cmd.exe"),
-	    pass an absolute pathname as PREFIX and use forward slashes.
+	  - When installing under mingw, with a windows shell
+	    ("cmd.exe"), pass an absolute pathname (including the
+	    drive letter) as PREFIX and use forward slashes.
 
 	  - When installing under mingw without MSYS, make sure that the
 	    MSYS tools (in case you have some of them, in particular the

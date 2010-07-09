@@ -1778,14 +1778,14 @@ EOF
 	 [fixsuffix (eq? bp 'mingw32)])
     (lambda (name)
       (if fixsuffix
-	(let ([end (fx- (##sys#size name) 1)])
-	  (if (fx>= end 0)
-	    (let ([c (##core#inline "C_subchar" name end)])
-	      (if (or (eq? c #\\) (eq? c #\/))
-		(##sys#substring name 0 end)
+	  (let ([end (fx- (##sys#size name) 1)])
+	    (if (fx>= end 0)
+		(let ([c (##core#inline "C_subchar" name end)])
+		  (if (or (eq? c #\\) (eq? c #\/))
+		      (##sys#substring name 0 end)
+		      name) )
 		name) )
-	    name) )
-	name) ) ) )
+	  name) ) ) )
 
 (define (##sys#pathname-resolution name thunk . _)
   (thunk (##sys#expand-home-path name)) )
@@ -3093,7 +3093,7 @@ EOF
        (let ([position (##sys#slot p 10)]
 	     [string (##sys#slot p 12)]
 	     [len (##sys#slot p 11)] )
-	 (if (>= position len)
+	 (if (fx>= position len)
 	     #!eof
 	     (let ((c (##core#inline "C_subchar" string position)))
 	       (##sys#setislot p 10 (fx+ position 1))
@@ -3488,7 +3488,7 @@ EOF
   (let ([ffp force-finalizers])
     (lambda ()
       (when (##sys#fudge 13)
-	(##sys#print "[debug] forcing finalizers...\n" #f ##sys#standard-output) )
+	(##sys#print "[debug] forcing finalizers...\n" #f ##sys#standard-error) )
       (when (ffp) (##sys#force-finalizers)) ) ) )
 
 (define (on-exit thunk)
@@ -4671,3 +4671,8 @@ EOF
       (pstr " GCs (major/minor)")))
   (##sys#write-char-0 #\newline ##sys#standard-error)
   (##sys#flush-output ##sys#standard-error))
+
+
+;;; Dump heap state to stderr:
+
+(define ##sys#dump-heap-state (##core#primitive "C_dump_heap_state"))

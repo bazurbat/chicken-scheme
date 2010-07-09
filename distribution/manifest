@@ -109,6 +109,7 @@ tests/srfi-4-tests.scm
 tests/srfi-18-tests.scm
 tests/hash-table-tests.scm
 tests/apply-test.scm
+tests/man-or-boy.scm
 tests/embedded1.c
 tests/embedded2.scm
 tests/fixnum-tests.scm
@@ -157,6 +158,8 @@ tests/slatex.sty
 tests/symbolgc-tests.scm
 tests/private-repository-test.scm
 tests/records-and-setters-test.scm
+tests/dwindtst.scm
+tests/dwindtst.expected
 tweaks.scm
 utils.scm
 apply-hack.x86.S

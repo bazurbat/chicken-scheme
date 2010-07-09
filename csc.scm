@@ -576,10 +576,12 @@ EOF
 	       [(-objc) 
 		(set! objc-mode #t) ]
 	       [(-static) 
-		(set! translate-options (cons* "-feature" "chicken-compile-static" translate-options))
+		(set! translate-options
+		  (cons* "-feature" "chicken-compile-static" translate-options))
 		(set! static #t) ]
 	       [(-static-libs) 
-		(set! translate-options (cons* "-feature" "chicken-compile-static" translate-options))
+		(set! translate-options
+		  (cons* "-feature" "chicken-compile-static" translate-options))
 		(set! static-libs #t) ]
 	       [(-cflags)
 		(set! inquiry-only #t) 
@@ -813,6 +815,9 @@ EOF
 		      (append 
 		       extra-features
 		       translate-options 
+		       (cond (cpp-mode '("-feature" "chicken-scheme-to-c++"))
+			     (objc-mode '("-feature" "chicken-scheme-to-objc"))
+			     (else '()))
 		       translation-optimization-options)) ) )
 	 " ") )
        (set! c-files (append (list fc) c-files))
