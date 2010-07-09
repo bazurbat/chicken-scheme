@@ -410,6 +410,7 @@ static C_TLS int
   show_trace,
   fake_tty_flag,
   debug_mode,
+  dump_heap_on_exit,
   gc_bell,
   gc_report_flag = 0,
   gc_mode,
@@ -1154,6 +1155,7 @@ void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *st
 		 " -:B              sound bell on major GC\n"
 		 " -:G              force GUI mode\n"
 		 " -:aSIZE          set trace-buffer/call-chain size\n"
+		 " -:H              dump heap state on exit\n"
 		 "\n  SIZE may have a `k' (`K'), `m' (`M') or `g' (`G') suffix, meaning size\n"
 		 "  times 1024, 1048576, and 1073741824, respectively.\n\n");
 	  exit(0);
@@ -1190,6 +1192,10 @@ void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *st
 
 	case 'G':
 	  C_gui_mode = 1;
+	  break;
+
+	case 'H':
+	  dump_heap_on_exit = 1;
 	  break;
 
 	case 's':
@@ -4144,7 +4150,8 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
     debug_mode = !debug_mode;
     return C_mk_bool(debug_mode);
 
-    /* 37 */
+  case C_fix(37):
+    return C_mk_bool(dump_heap_on_exit);
 
   case C_fix(38):
 #ifdef C_SVN_REVISION

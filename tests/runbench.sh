@@ -26,7 +26,7 @@ esac
 
 run()
 {
-    /usr/bin/time "$timeopts" ./a.out "$1"
+    /usr/bin/time "$timeopts" ./a.out "$1" "$2" "$3"
 }
 
 echo
@@ -36,13 +36,13 @@ compile="../csc -w -compiler $CHICKEN -I.. -L.. -include-path .. -o a.out $COMPI
 
 echo -n "null ... "
 $compile null.scm -O5
-run
+run -:Hd
 
 echo -n "compilation ... "
 /usr/bin/time "$timeopts" $compile compiler.scm
 
 echo -n "compiler ... "
-run
+run -:Hd
 
 echo -n "slatex ... "
 $compile slatex.scm
@@ -52,7 +52,7 @@ run
 
 echo -n "grep ... "
 $compile sgrep.scm
-run
+run compiler.scm
 
 echo -n "fft/boxed ... "
 $compile fft.scm

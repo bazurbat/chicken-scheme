@@ -3487,6 +3487,9 @@ EOF
 (define ##sys#cleanup-before-exit
   (let ([ffp force-finalizers])
     (lambda ()
+      (when (##sys#fudge 37)
+	(##sys#print "\n" #f ##sys#standard-error)
+	(##sys#dump-heap-state))
       (when (##sys#fudge 13)
 	(##sys#print "[debug] forcing finalizers...\n" #f ##sys#standard-error) )
       (when (ffp) (##sys#force-finalizers)) ) ) )
