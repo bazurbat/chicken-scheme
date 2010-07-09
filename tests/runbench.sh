@@ -26,7 +26,7 @@ esac
 
 run()
 {
-    /usr/bin/time "$timeopts" ./a.out
+    /usr/bin/time "$timeopts" ./a.out "$1"
 }
 
 echo
@@ -60,3 +60,7 @@ run
 echo -n "fft/unboxed ... "
 $compile fft.scm -D unboxed
 run
+
+echo -n "man-or-oby ... "
+$compile man-or-boy.scm
+run -:d
