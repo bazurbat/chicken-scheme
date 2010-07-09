@@ -1,5 +1,6 @@
 4.5.6
 
+- added `-:H' runtime option to dump heap state on exit
 - fixed missing change in Makefile.cygwin (thanks to John Cowan)
 - fixed bug in `let-optionals' macro that caused problems when the
   rest-variable was actually named `rest' (thanks to Alejandro
