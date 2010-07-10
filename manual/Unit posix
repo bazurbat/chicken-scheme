@@ -422,7 +422,7 @@ return an inexact integer.
 
 <procedure>(regular-file? FILENAME)</procedure>
 
-Returns true, if {{FILENAME}} names a regular file (not a directory or symbolic link).
+Returns true, if {{FILENAME}} names a regular file.
 
 ==== file-owner
 
@@ -453,7 +453,7 @@ write or execute permissions on the file named {{FILENAME}}.
 
 ==== file-type
 
-<procedure>(file-type FILE [LINK])</procedure>
+<procedure>(file-type FILE [LINK [ERROR]])</procedure>
 
 Returns the file-type for {{FILE}}, which should be a filename or
 file-descriptor. If {{LINK}} is given and true, symbolic-links are
@@ -467,7 +467,9 @@ not followed:
   character-device
   block-device
 
-Note that not all types are supported on every platform.
+Note that not all types are supported on every platform. 
+If {{ERROR}} is given and false, {{file-type}} signals an
+error if the file does not exist.
 
 
 ==== character-device?
@@ -480,6 +482,8 @@ Note that not all types are supported on every platform.
 
 These procedures return {{#t}} if {{FILE}} given is of the 
 appropriate type. {{FILE}} may be a filename or a file-descriptor.
+Note that these operations follow symbolic links. If the file does
+not exist, {{#f}} is returned.
 
 
 === Changing file attributes
@@ -654,7 +658,8 @@ the session ID.
 
 <procedure>(symbolic-link? FILENAME)</procedure>
 
-Returns true, if {{FILENAME}} names a symbolic link.
+Returns true, if {{FILENAME}} names a symbolic link. If no such file exists, {{#f}}
+is returned.
 
 ==== create-symbolic-link
 
