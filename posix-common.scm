@@ -97,7 +97,7 @@ EOF
 (stat-mode S_IFSOCK)
 (stat-mode S_IFIFO)
 
-(define (##sys#stat file link loc)
+(define (##sys#stat file link err loc)
   (let ((r (cond ((fixnum? file) (##core#inline "C_fstat" file))
                  ((string? file)
                   (let ((path (##sys#make-c-string
@@ -110,11 +110,14 @@ EOF
                  (else
 		  (##sys#signal-hook
 		   #:type-error loc "bad argument type - not a fixnum or string" file)) ) ) )
-    (when (fx< r 0)
-      (posix-error #:file-error loc "cannot access file" file) ) ) )
+    (if (fx< r 0)
+	(if err
+	    (posix-error #:file-error loc "cannot access file" file) 
+	    #f)
+	#t)))
 
 (define (file-stat f #!optional link)
-  (##sys#stat f link 'file-stat)
+  (##sys#stat f link #t 'file-stat)
   (vector _stat_st_ino _stat_st_mode _stat_st_nlink
           _stat_st_uid _stat_st_gid _stat_st_size
           _stat_st_atime _stat_st_ctime _stat_st_mtime
@@ -124,7 +127,7 @@ EOF
 (define file-modification-time
   (getter-with-setter 
    (lambda (f)
-     (##sys#stat f #f 'file-modification-time) _stat_st_mtime)
+     (##sys#stat f #f #t 'file-modification-time) _stat_st_mtime)
    (lambda (f t)
      (##sys#check-number t 'set-file-modification-time)
      (let ((r ((foreign-lambda int "set_file_mtime" c-string scheme-object)
@@ -135,43 +138,43 @@ EOF
 	  "cannot set file modification-time" f t))))
    "(file-modification-time f)"))
 
-(define (file-access-time f) (##sys#stat f #f 'file-access-time) _stat_st_atime)
-(define (file-change-time f) (##sys#stat f #f 'file-change-time) _stat_st_ctime)
-(define (file-owner f) (##sys#stat f #f 'file-owner) _stat_st_uid)
-(define (file-permissions f) (##sys#stat f #f 'file-permissions) _stat_st_mode)
-(define (file-size f) (##sys#stat f #f 'file-size) _stat_st_size)
+(define (file-access-time f) (##sys#stat f #f #t 'file-access-time) _stat_st_atime)
+(define (file-change-time f) (##sys#stat f #f #t 'file-change-time) _stat_st_ctime)
+(define (file-owner f) (##sys#stat f #f #t 'file-owner) _stat_st_uid)
+(define (file-permissions f) (##sys#stat f #f #t 'file-permissions) _stat_st_mode)
+(define (file-size f) (##sys#stat f #f #t 'file-size) _stat_st_size)
 
-(define (file-type file #!optional link)
-  (##sys#stat file link 'file-type)
-  (select (foreign-value "C_stat_type" unsigned-int)
-    ((S_IFLNK) 'symbolic-link)
-    ((S_IFDIR) 'directory)
-    ((S_IFCHR) 'character-device)
-    ((S_IFBLK) 'block-device)
-    ((S_IFIFO) 'fifo)
-    ((S_IFSOCK) 'socket)
-    (else 'regular-file)))
+(define (file-type file #!optional link (err #t))
+  (and (##sys#stat file link err 'file-type)
+       (select (foreign-value "C_stat_type" unsigned-int)
+	 ((S_IFLNK) 'symbolic-link)
+	 ((S_IFDIR) 'directory)
+	 ((S_IFCHR) 'character-device)
+	 ((S_IFBLK) 'block-device)
+	 ((S_IFIFO) 'fifo)
+	 ((S_IFSOCK) 'socket)
+	 (else 'regular-file))))
 
 (define (regular-file? file)
-  (eq? 'regular-file (file-type file)))
+  (eq? 'regular-file (file-type file #f #f)))
 
 (define (symbolic-link? file)
-  (eq? 'symbolic-link (file-type file)))
+  (eq? 'symbolic-link (file-type file #t #f)))
 
 (define (block-device? file)
-  (eq? 'block-device (file-type file)))
+  (eq? 'block-device (file-type file #f #f)))
 
 (define (character-device? file)
-  (eq? 'character-device (file-type file)))
+  (eq? 'character-device (file-type file #f #f)))
 
 (define (fifo? file)
-  (eq? 'fifo (file-type file)))
+  (eq? 'fifo (file-type file #f #f)))
 
 (define (socket? file)
-  (eq? 'socket (file-type file)))
+  (eq? 'socket (file-type file #f #f)))
 
 (define (directory? file)
-  (eq? 'directory (file-type file)))
+  (eq? 'directory (file-type file #f #f)))
 
 
 ;;; Set or get current directory:
