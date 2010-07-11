@@ -183,13 +183,13 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #ifdef C_SIXTY_FOUR
 # define ALIGNMENT_HOLE_MARKER         ((C_word)0xfffffffffffffffeL)
 # define FORWARDING_BIT_SHIFT          63
-# define UWORD_FORMAT_STRING           "0x%016lx"
-# define UWORD_COUNT_FORMAT_STRING     "%ld"
+# define UWORD_FORMAT_STRING           "0x%016x"
+# define UWORD_COUNT_FORMAT_STRING     "%ud"
 #else
 # define ALIGNMENT_HOLE_MARKER         ((C_word)0xfffffffe)
 # define FORWARDING_BIT_SHIFT          31
 # define UWORD_FORMAT_STRING           "0x%08x"
-# define UWORD_COUNT_FORMAT_STRING     "%d"
+# define UWORD_COUNT_FORMAT_STRING     "%ud"
 #endif
 
 #define GC_MINOR           0
@@ -2893,14 +2893,14 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 #endif
 
     if(gc_mode == GC_MINOR) 
-      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), count);
+      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), (unsigned int)count);
 
     C_fputc('\n', C_stderr);
     C_dbg("GC", C_text(" from\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING),
 	  (C_uword)fromspace_start, (C_uword)C_fromspace_top, (C_uword)C_fromspace_limit);
 
     if(gc_mode == GC_MAJOR) 
-      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), count);
+      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), (unsigned)count);
 
     C_fputc('\n', C_stderr);
     C_dbg("GC", C_text("   to\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING" \n"), 
@@ -8945,15 +8945,16 @@ dump_heap_state_2(void *dummy)
 
 	if(!C_immediatep(x) && C_header_bits(x) == C_SYMBOL_TYPE) {
 	  x = C_block_item(x, 1);
-	  C_fprintf(C_stderr, C_text("`%.*s'"), C_header_size(x), C_c_string(x));
+	  C_fprintf(C_stderr, C_text("`%.*s'"), (int)C_header_size(x), C_c_string(x));
 	}
-	else C_fprintf(C_stderr, C_text("unknown key " UWORD_FORMAT_STRING), b->key);
+	else C_fprintf(C_stderr, C_text("unknown key " UWORD_FORMAT_STRING), (unsigned int)b->key);
       }
 
       C_fprintf(C_stderr, C_text("\t" UWORD_COUNT_FORMAT_STRING), b->count);
 
       if(b->total > 0) 
-	C_fprintf(C_stderr, C_text("\t" UWORD_COUNT_FORMAT_STRING " bytes"), b->total);
+	C_fprintf(C_stderr, C_text("\t" UWORD_COUNT_FORMAT_STRING " bytes"), 
+		  (unsigned int)b->total);
 
       C_fputc('\n', C_stderr);
       C_free(b);
@@ -8962,7 +8963,7 @@ dump_heap_state_2(void *dummy)
 
   C_fprintf(C_stderr, C_text("\ntotal number of blocks: " UWORD_COUNT_FORMAT_STRING
 			     ", immediates: " UWORD_COUNT_FORMAT_STRING "\n"),
-	    blk, imm);
+	    (unsigned int)blk, (unsigned int)imm);
   C_free(hdump_table);
   C_kontinue(k, C_SCHEME_UNDEFINED);
 }
