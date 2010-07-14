@@ -891,7 +891,11 @@
 	(or (and fname
 		 (or (##sys#dload (##sys#make-c-string fname 'load) topentry #t) 
 		     (and (not (has-sep? fname))
-			  (##sys#dload (##sys#make-c-string (##sys#string-append "./" fname) 'load) topentry #t) ) ) )
+			  (##sys#dload 
+			   (##sys#make-c-string
+			    (##sys#string-append "./" fname) 
+			    'load) 
+			   topentry #t) ) ) )
 	    (call-with-current-continuation
 	     (lambda (abrt)
 	       (fluid-let ((##sys#read-error-with-line-number #t)

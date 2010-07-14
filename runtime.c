@@ -184,12 +184,12 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 # define ALIGNMENT_HOLE_MARKER         ((C_word)0xfffffffffffffffeL)
 # define FORWARDING_BIT_SHIFT          63
 # define UWORD_FORMAT_STRING           "0x%016x"
-# define UWORD_COUNT_FORMAT_STRING     "%ud"
+# define UWORD_COUNT_FORMAT_STRING     "%u"
 #else
 # define ALIGNMENT_HOLE_MARKER         ((C_word)0xfffffffe)
 # define FORWARDING_BIT_SHIFT          31
 # define UWORD_FORMAT_STRING           "0x%08x"
-# define UWORD_COUNT_FORMAT_STRING     "%ud"
+# define UWORD_COUNT_FORMAT_STRING     "%u"
 #endif
 
 #define GC_MINOR           0
@@ -3721,6 +3721,8 @@ C_word C_fetch_trace(C_word starti, C_word buffer)
 
       /* outside-pointer, will be ignored by GC */
       C_mutate(&C_block_item(buffer, p++), (C_word)ptr->raw);
+
+      /* subject to GC */
       C_mutate(&C_block_item(buffer, p++), ptr->cooked1);
       C_mutate(&C_block_item(buffer, p++), ptr->cooked2);
       C_mutate(&C_block_item(buffer, p++), ptr->thread);

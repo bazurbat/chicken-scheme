@@ -149,20 +149,26 @@
 (##sys#extend-macro-environment
  'assert '()
  (##sys#er-transformer
-  (lambda (form r c)
-    (##sys#check-syntax 'assert form '#(_ 1))
-    (let* ((exp (cadr form))
-	   (msg-and-args (cddr form))
-	   (msg (if (eq? '() msg-and-args)
-		    `(##core#immutable '"assertion failed")
-		    (car msg-and-args) ) ) )
-      `(##core#if (##core#check ,exp)
-		  (##core#undefined)
-		  (##sys#error 
-		   ,msg 
-		   ,@(if (fx> (length msg-and-args) 1)
-			 (cdr msg-and-args)
-			 `((##core#quote ,(##sys#strip-syntax exp))))))))))
+  (let ((string-append string-append)
+	(get-line-number get-line-number))
+    (lambda (form r c)
+      (##sys#check-syntax 'assert form '#(_ 1))
+      (let* ((exp (cadr form))
+	     (ln (get-line-number form))
+	     (msg-and-args (cddr form))
+	     (msg  (if (null? msg-and-args)
+		       "assertion failed"
+		       (car msg-and-args)))
+	     (msg (if ln
+		      (string-append "(" ln ") " msg)
+		      msg)))
+	`(##core#if (##core#check ,exp)
+		    (##core#undefined)
+		    (##sys#error 
+		     ,msg 
+		     ,@(if (fx> (length msg-and-args) 1)
+			   (cdr msg-and-args)
+			   `((##core#quote ,(##sys#strip-syntax exp)))))))))))
 
 (##sys#extend-macro-environment
  'ensure

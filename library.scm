@@ -3354,23 +3354,29 @@ EOF
 
 ;;; Access backtrace:
 
+(define-constant +trace-buffer-entry-slot-count+ 4)
+
 (define ##sys#get-call-chain
-  (let ((extract (foreign-lambda* nonnull-c-string ((scheme-object x)) "return((C_char *)x);")))
+  (let ((extract
+	 (foreign-lambda* nonnull-c-string ((scheme-object x)) "return((C_char *)x);")))
     (lambda (#!optional (start 0) (thread ##sys#current-thread))
       (let* ((tbl (foreign-value "C_trace_buffer_size" int))
-	     (vec (##sys#make-vector (fx* 4 tbl) #f))
+	     ;; 4 slots: "raw" string, cooked1, cooked2, thread
+	     (c +trace-buffer-entry-slot-count+)
+	     (vec (##sys#make-vector (fx* c tbl) #f))
 	     (r (##core#inline "C_fetch_trace" start vec)) 
-	     (n (if (fixnum? r) r (fx* 4 tbl))) )
+	     (n (if (fixnum? r) r (fx* c tbl))) )
 	(let loop ((i 0))
 	  (if (fx>= i n) 
 	      '()
 	      (let ((t (##sys#slot vec (fx+ i 3))))
 		(if (or (not t) (not thread) (eq? thread t))
-		    (cons (vector (extract (##sys#slot vec i))
-				  (##sys#slot vec (fx+ i 1))
-				  (##sys#slot vec (fx+ i 2)) )
-			  (loop (fx+ i 4)) )
-		    (loop (fx+ i 4))) ) ) ) ) ) ) )
+		    (cons (vector
+			   (extract (##sys#slot vec i)) ; raw
+			   (##sys#slot vec (fx+ i 1))   ; cooked1
+			   (##sys#slot vec (fx+ i 2)) ) ; cooked2
+			  (loop (fx+ i c)) )
+		    (loop (fx+ i c))) ) ) ) ) ) ) )
 
 (define (##sys#really-print-call-chain port chain header)
   (when (pair? chain)
