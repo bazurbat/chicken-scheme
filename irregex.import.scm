@@ -26,11 +26,34 @@
 
 (##sys#register-primitive-module
  'irregex
- '(irregex string->irregex sre->irregex string->sre
-    irregex? irregex-match-data?
-    irregex-new-matches irregex-reset-matches!
-    irregex-match-start irregex-match-end irregex-match-substring
-    irregex-search irregex-search/matches irregex-match irregex-match-string
-    irregex-fold irregex-replace irregex-replace/all irregex-apply-match
-    irregex-dfa irregex-dfa/search irregex-dfa/extract
-    irregex-nfa irregex-flags irregex-submatches irregex-lengths irregex-names))
+ '(irregex 
+   irregex-apply-match
+   irregex-dfa 
+   irregex-dfa/extract
+   irregex-dfa/search
+   irregex-flags
+   irregex-fold
+   irregex-lengths
+   irregex-match
+   irregex-match-data?
+   irregex-match-end
+   irregex-match-end-index
+   irregex-match-num-submatches
+   irregex-match-start
+   irregex-match-start-index
+   irregex-match-string
+   irregex-match-substring
+   irregex-names
+   irregex-new-matches
+   irregex-nfa
+   irregex-replace
+   irregex-replace/all
+   irregex-reset-matches!
+   irregex-search
+   irregex-search/matches
+   irregex-submatches
+   irregex?
+   sre->irregex
+   string->irregex 
+   string->sre
+   ))
