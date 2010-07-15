@@ -406,7 +406,8 @@ and compiler settings:
 {{+}} {{*}} {{-}} {{/}} {{quotient}} {{eq?}} {{eqv?}} {{equal?}} {{apply}} {{c...r}} {{values}} {{call-with-values}}
 {{list-ref}} {{null?}} {{length}} {{not}} {{char?}} {{string?}} {{symbol?}} {{vector?}} {{pair?}} {{procedure?}}
 {{boolean?}} {{number?}} {{complex?}} {{rational?}} {{real?}} {{exact?}} {{inexact?}} {{list?}} {{eof-object?}}
-{{string-ref}} {{string-set!}} {{vector-ref}} {{vector-set!}} {{char=?}} {{char<?}} {{char>?}} {{char<=?}} {{char>=?}}
+{{string-ref}} {{string-set!}} {{vector-ref}} {{vector-set!}} 
+{{char=?}} {{char<?}} {{char>?}} {{char<=?}} {{char>=?}}
 {{char-numeric?}} {{char-alphabetic?}} {{char-whitespace?}} {{char-upper-case?}} {{for-each}}
 {{char-lower-case?}} {{char-upcae}} {{char-downcase}} {{list-tail}} {{assv}} {{memv}} {{memq}} {{assoc}}
 {{member}} {{set-car!}} {{set-cdr!}} {{abs}} {{exp}} {{sin}} {{cos}} {{tan}} {{log}} {{asin}} {{acos}} {{atan}} {{sqrt}}

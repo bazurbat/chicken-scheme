@@ -257,9 +257,9 @@ EOF
 (let* ([ext-alloc
 	(foreign-lambda* scheme-object ([int bytes])
 	  "C_word *buf = (C_word *)C_malloc(bytes + sizeof(C_header));"
-	  "if(buf == NULL) return(C_SCHEME_FALSE);"
+	  "if(buf == NULL) C_return(C_SCHEME_FALSE);"
 	  "C_block_header(buf) = C_make_header(C_BYTEVECTOR_TYPE, bytes);"
-	  "return(buf);") ]
+	  "C_return(buf);") ]
        [ext-free
 	(foreign-lambda* void ([scheme-object bv])
 	  "C_free((void *)C_block_item(bv, 1));") ]

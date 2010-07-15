@@ -229,7 +229,7 @@ EOF
 
 (define (object->pointer x)
   (and (##core#inline "C_blockp" x)
-       ((foreign-lambda* nonnull-c-pointer ((scheme-object x)) "return((void *)x);") x) ) )
+       ((foreign-lambda* nonnull-c-pointer ((scheme-object x)) "C_return((void *)x);") x) ) )
 
 (define (pointer->object ptr)
   (##sys#check-pointer ptr 'pointer->object)
@@ -242,7 +242,7 @@ EOF
 
 (define pointer+
   (foreign-lambda* nonnull-c-pointer ([c-pointer ptr] [integer off])
-    "return((unsigned char *)ptr + off);") )
+    "C_return((unsigned char *)ptr + off);") )
 
 (define pointer-offset pointer+)	; DEPRECATED
 

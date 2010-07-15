@@ -108,56 +108,57 @@ EOF
 (define ##net#connect (foreign-lambda int "connect" int scheme-pointer int))
 
 (define ##net#send
-  (foreign-lambda* int ((int s) (scheme-pointer msg) (int offset) (int len) (int flags))
-		   "return(send(s, (char *)msg+offset, len, flags));"))
+  (foreign-lambda* 
+      int ((int s) (scheme-pointer msg) (int offset) (int len) (int flags))
+    "C_return(send(s, (char *)msg+offset, len, flags));"))
 
 (define ##net#make-nonblocking
   (foreign-lambda* bool ((int fd))
     "int val = fcntl(fd, F_GETFL, 0);"
-    "if(val == -1) return(0);"
-    "return(fcntl(fd, F_SETFL, val | O_NONBLOCK) != -1);") )
+    "if(val == -1) C_return(0);"
+    "C_return(fcntl(fd, F_SETFL, val | O_NONBLOCK) != -1);") )
 
 (define ##net#getsockname 
   (foreign-lambda* c-string ((int s))
     "struct sockaddr_in sa;"
     "unsigned char *ptr;"
     "int len = sizeof(struct sockaddr_in);"
-    "if(getsockname(s, (struct sockaddr *)&sa, (socklen_t *)&len) != 0) return(NULL);"
+    "if(getsockname(s, (struct sockaddr *)&sa, (socklen_t *)&len) != 0) C_return(NULL);"
     "ptr = (unsigned char *)&sa.sin_addr;"
     "sprintf(addr_buffer, \"%d.%d.%d.%d\", ptr[ 0 ], ptr[ 1 ], ptr[ 2 ], ptr[ 3 ]);"
-    "return(addr_buffer);") )
+    "C_return(addr_buffer);") )
 
 (define ##net#getsockport
   (foreign-lambda* int ((int s))
     "struct sockaddr_in sa;"
     "int len = sizeof(struct sockaddr_in);"
-    "if(getsockname(s, (struct sockaddr *)&sa, (socklen_t *)(&len)) != 0) return(-1);"
-    "else return(ntohs(sa.sin_port));") )
+    "if(getsockname(s, (struct sockaddr *)&sa, (socklen_t *)(&len)) != 0) C_return(-1);"
+    "else C_return(ntohs(sa.sin_port));") )
 
 (define ##net#getpeerport
  (foreign-lambda* int ((int s))
    "struct sockaddr_in sa;"
    "int len = sizeof(struct sockaddr_in);"
-   "if(getpeername(s, (struct sockaddr *)&sa, (socklen_t *)(&len)) != 0) return(-1);"
-   "else return(ntohs(sa.sin_port));") )
+   "if(getpeername(s, (struct sockaddr *)&sa, (socklen_t *)(&len)) != 0) C_return(-1);"
+   "else C_return(ntohs(sa.sin_port));") )
 
 (define ##net#getpeername 
   (foreign-lambda* c-string ((int s))
     "struct sockaddr_in sa;"
     "unsigned char *ptr;"
     "unsigned int len = sizeof(struct sockaddr_in);"
-    "if(getpeername(s, (struct sockaddr *)&sa, ((unsigned int *)&len)) != 0) return(NULL);"
+    "if(getpeername(s, (struct sockaddr *)&sa, ((unsigned int *)&len)) != 0) C_return(NULL);"
     "ptr = (unsigned char *)&sa.sin_addr;"
     "sprintf(addr_buffer, \"%d.%d.%d.%d\", ptr[ 0 ], ptr[ 1 ], ptr[ 2 ], ptr[ 3 ]);"
-    "return(addr_buffer);") )
+    "C_return(addr_buffer);") )
 
 (define ##net#startup
   (foreign-lambda* bool () #<<EOF
 #ifdef _WIN32
-     return(WSAStartup(MAKEWORD(1, 1), &wsa) == 0);
+     C_return(WSAStartup(MAKEWORD(1, 1), &wsa) == 0);
 #else
      signal(SIGPIPE, SIG_IGN);
-     return(1);
+     C_return(1);
 #endif
 EOF
 ) )
@@ -168,8 +169,8 @@ EOF
 (define ##net#getservbyname 
   (foreign-lambda* int ((c-string serv) (c-string proto))
     "struct servent *se;
-     if((se = getservbyname(serv, proto)) == NULL) return(0);
-     else return(ntohs(se->s_port));") )     
+     if((se = getservbyname(serv, proto)) == NULL) C_return(0);
+     else C_return(ntohs(se->s_port));") )     
 
 (define ##net#select
   (foreign-lambda* int ((int fd))
@@ -181,7 +182,7 @@ EOF
      tm.tv_sec = tm.tv_usec = 0;
      rv = select(fd + 1, &in, NULL, NULL, &tm);
      if(rv > 0) { rv = FD_ISSET(fd, &in) ? 1 : 0; }
-     return(rv);") )
+     C_return(rv);") )
 
 (define ##net#select-write
   (foreign-lambda* int ((int fd))
@@ -193,18 +194,18 @@ EOF
      tm.tv_sec = tm.tv_usec = 0;
      rv = select(fd + 1, NULL, &out, NULL, &tm);
      if(rv > 0) { rv = FD_ISSET(fd, &out) ? 1 : 0; }
-     return(rv);") )
+     C_return(rv);") )
 
 (define ##net#gethostaddr
   (foreign-lambda* bool ((scheme-pointer saddr) (c-string host) (unsigned-short port))
     "struct hostent *he = gethostbyname(host);"
     "struct sockaddr_in *addr = (struct sockaddr_in *)saddr;"
-    "if(he == NULL) return(0);"
+    "if(he == NULL) C_return(0);"
     "memset(addr, 0, sizeof(struct sockaddr_in));"
     "addr->sin_family = AF_INET;"
     "addr->sin_port = htons((short)port);"
     "addr->sin_addr = *((struct in_addr *)he->h_addr);"
-    "return(1);") )
+    "C_return(1);") )
 
 (define (yield)
   (##sys#call-with-current-continuation
@@ -254,7 +255,7 @@ EOF
     ;; PLT makes this an optional arg to tcp-listen. Should we as well?
     (when (eq? -1 ((foreign-lambda* int ((int socket)) 
 		     "int yes = 1; 
-                      return(setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes, sizeof(int)));") 
+                      C_return(setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes, sizeof(int)));") 
 		   s) )
       (##sys#update-errno)
       (##sys#signal-hook 
@@ -551,8 +552,8 @@ EOF
     "int err, optlen;"
     "optlen = sizeof(err);"
     "if (typecorrect_getsockopt(socket, SOL_SOCKET, SO_ERROR, &err, (socklen_t *)&optlen) == -1)"
-    "return(-1);"
-    "return(err);"))
+    "C_return(-1);"
+    "C_return(err);"))
 
 (define general-strerror (foreign-lambda c-string "strerror" int))
 

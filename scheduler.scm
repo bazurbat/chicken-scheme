@@ -306,7 +306,7 @@ EOF
     "timeout.tv_usec = (tm % 1000) * 1000;"
     "C_fdset_input_2 = C_fdset_input;"
     "C_fdset_output_2 = C_fdset_output;"
-    "return(select(FD_SETSIZE, &C_fdset_input, &C_fdset_output, NULL, to ? &timeout : NULL));") )
+    "C_return(select(FD_SETSIZE, &C_fdset_input, &C_fdset_output, NULL, to ? &timeout : NULL));") )
 
 (define ##sys#fdset-restore
   (foreign-lambda* void ()

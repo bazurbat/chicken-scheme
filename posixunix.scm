@@ -480,8 +480,8 @@ EOF
 (define ##sys#file-nonblocking!
   (foreign-lambda* bool ([int fd])
     "int val = fcntl(fd, F_GETFL, 0);"
-    "if(val == -1) return(0);"
-    "return(fcntl(fd, F_SETFL, val | O_NONBLOCK) != -1);" ) )
+    "if(val == -1) C_return(0);"
+    "C_return(fcntl(fd, F_SETFL, val | O_NONBLOCK) != -1);" ) )
 
 (define ##sys#file-select-one
   (foreign-lambda* int ([int fd])
@@ -490,8 +490,8 @@ EOF
     "FD_ZERO(&in);"
     "FD_SET(fd, &in);"
     "tm.tv_sec = tm.tv_usec = 0;"
-    "if(select(fd + 1, &in, NULL, NULL, &tm) == -1) return(-1);"
-    "else return(FD_ISSET(fd, &in) ? 1 : 0);" ) )
+    "if(select(fd + 1, &in, NULL, NULL, &tm) == -1) C_return(-1);"
+    "else C_return(FD_ISSET(fd, &in) ? 1 : 0);" ) )
 
 
 ;;; Lo-level I/O:
@@ -1082,7 +1082,7 @@ EOF
 
 (define group-member
   (foreign-lambda* c-string ([int i])
-    "return(C_group->gr_mem[ i ]);") )
+    "C_return(C_group->gr_mem[ i ]);") )
 
 (define (group-information group #!optional as-vector)
   (let ([r (if (fixnum? group)
@@ -1103,14 +1103,14 @@ EOF
 
 (define _get-groups
   (foreign-lambda* int ([int n])
-    "return(getgroups(n, C_groups));") )
+    "C_return(getgroups(n, C_groups));") )
 
 (define _ensure-groups
   (foreign-lambda* bool ([int n])
     "if(C_groups != NULL) C_free(C_groups);"
     "C_groups = (gid_t *)C_malloc(sizeof(gid_t) * n);"
-    "if(C_groups == NULL) return(0);"
-    "else return(1);") )
+    "if(C_groups == NULL) C_return(0);"
+    "else C_return(1);") )
 
 (define (get-groups)
   (let ([n (foreign-value "getgroups(0, C_groups)" int)])
@@ -1779,7 +1779,7 @@ EOF
    "\n#else\n"
    "char *z = (daylight ? tzname[1] : tzname[0]);"
    "\n#endif\n"
-   "return(z);") )
+   "C_return(z);") )
 
 ;;; Other things:
 
@@ -1847,8 +1847,8 @@ EOF
 (define get-host-name
   (let ([getit
        (foreign-lambda* c-string ()
-         "if(gethostname(C_hostbuf, 256) == -1) return(NULL);"
-         "else return(C_hostbuf);") ] )
+         "if(gethostname(C_hostbuf, 256) == -1) C_return(NULL);"
+         "else C_return(C_hostbuf);") ] )
     (lambda ()
       (let ([host (getit)])
         (unless host
