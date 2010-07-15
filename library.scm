@@ -3358,7 +3358,7 @@ EOF
 
 (define ##sys#get-call-chain
   (let ((extract
-	 (foreign-lambda* nonnull-c-string ((scheme-object x)) "return((C_char *)x);")))
+	 (foreign-lambda* nonnull-c-string ((scheme-object x)) "C_return((C_char *)x);")))
     (lambda (#!optional (start 0) (thread ##sys#current-thread))
       (let* ((tbl (foreign-value "C_trace_buffer_size" int))
 	     ;; 4 slots: "raw" string, cooked1, cooked2, thread
@@ -3369,7 +3369,7 @@ EOF
 	(let loop ((i 0))
 	  (if (fx>= i n) 
 	      '()
-	      (let ((t (##sys#slot vec (fx+ i 3))))
+	      (let ((t (##sys#slot vec (fx+ i 3)))) ; thread
 		(if (or (not t) (not thread) (eq? thread t))
 		    (cons (vector
 			   (extract (##sys#slot vec i)) ; raw
@@ -3383,14 +3383,18 @@ EOF
     (##sys#print header #f port)
     (for-each
      (lambda (info) 
-       (let ((more1 (##sys#slot info 1))
-	     (more2 (##sys#slot info 2)) )
+       (let ((more1 (##sys#slot info 1)) ; cooked1 (expr/form)
+	     (more2 (##sys#slot info 2)) ) ; cooked2 (frameinfo)
 	 (##sys#print "\n\t" #f port)
-	 (##sys#print (##sys#slot info 0) #f port)
+	 (##sys#print (##sys#slot info 0) #f port) ; raw (mode)
 	 (##sys#print "\t\t" #f port)
 	 (when more2
 	   (##sys#write-char-0 #\[ port)
-	   (##sys#print more2 #f port)
+	   (##sys#print 
+	    (if (##sys#structure? more2 'frameinfo)
+		(##sys#slot more2 0)
+		more2)
+	    #f port)
 	   (##sys#print "] " #f port) )
 	 (when more1
 	   (##sys#with-print-length-limit

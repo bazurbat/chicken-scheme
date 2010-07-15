@@ -177,8 +177,8 @@
      p) ) )
 
 (define ##sys#unbound-in-eval #f)
-(define ##sys#eval-debug-level 1)
 (define ##sys#unsafe-eval #f)
+(define ##sys#eval-debug-level (make-parameter 1))
 
 (define ##sys#compile-to-closure
   (let ([write write]
@@ -214,13 +214,21 @@
 		((eq? x (##sys#slot lst 0)) i)
 		(else (loop (##sys#slot lst 1) (fx+ i 1))) ) ) )
 
-      (define (emit-trace-info tf info cntr) 
+      (define (emit-trace-info tf info cntr e v) 
 	(when tf
-	  (##core#inline "C_emit_eval_trace_info" info cntr ##sys#current-thread) ) )
-
+	  (##core#inline 
+	   "C_emit_eval_trace_info" 
+	   info
+	   (##sys#make-structure 'frameinfo cntr e v)
+	   ##sys#current-thread) ) )
+      
       (define (emit-syntax-trace-info tf info cntr) 
 	(when tf
-	  (##core#inline "C_emit_syntax_trace_info" info cntr ##sys#current-thread) ) )
+	  (##core#inline
+	   "C_emit_syntax_trace_info"
+	   info
+	   cntr
+	   ##sys#current-thread) ) )
 	
       (define (decorate p ll h cntr)
 	(##sys#eval-decorator p ll h cntr) )
@@ -738,36 +746,36 @@
 	  (case argc
 	    [(#f) (##sys#syntax-error/context "malformed expression" x)]
 	    [(0) (lambda (v)
-		   (emit-trace-info tf info cntr)
+		   (emit-trace-info tf info cntr e v)
 		   ((##core#app fn v)))]
 	    [(1) (let ([a1 (compile (##sys#slot args 0) e #f tf cntr se)])
 		   (lambda (v)
-		     (emit-trace-info tf info cntr)
+		     (emit-trace-info tf info cntr e v)
 		     ((##core#app fn v) (##core#app a1 v))) ) ]
 	    [(2) (let* ([a1 (compile (##sys#slot args 0) e #f tf cntr se)]
 			[a2 (compile (##core#inline "C_u_i_list_ref" args 1) e #f tf cntr se)] )
 		   (lambda (v)
-		     (emit-trace-info tf info cntr)
+		     (emit-trace-info tf info cntr e v)
 		     ((##core#app fn v) (##core#app a1 v) (##core#app a2 v))) ) ]
 	    [(3) (let* ([a1 (compile (##sys#slot args 0) e #f tf cntr se)]
 			[a2 (compile (##core#inline "C_u_i_list_ref" args 1) e #f tf cntr se)]
 			[a3 (compile (##core#inline "C_u_i_list_ref" args 2) e #f tf cntr se)] )
 		   (lambda (v)
-		     (emit-trace-info tf info cntr)
+		     (emit-trace-info tf info cntr e v)
 		     ((##core#app fn v) (##core#app a1 v) (##core#app a2 v) (##core#app a3 v))) ) ]
 	    [(4) (let* ([a1 (compile (##sys#slot args 0) e #f tf cntr se)]
 			[a2 (compile (##core#inline "C_u_i_list_ref" args 1) e #f tf cntr se)]
 			[a3 (compile (##core#inline "C_u_i_list_ref" args 2) e #f tf cntr se)] 
 			[a4 (compile (##core#inline "C_u_i_list_ref" args 3) e #f tf cntr se)] )
 		   (lambda (v)
-		     (emit-trace-info tf info cntr)
+		     (emit-trace-info tf info cntr e v)
 		     ((##core#app fn v) (##core#app a1 v) (##core#app a2 v) (##core#app a3 v) (##core#app a4 v))) ) ]
 	    [else (let ([as (##sys#map (lambda (a) (compile a e #f tf cntr se)) args)])
 		    (lambda (v)
-		      (emit-trace-info tf info cntr)
+		      (emit-trace-info tf info cntr e v)
 		      (apply (##core#app fn v) (##sys#map (lambda (a) (##core#app a v)) as))) ) ] ) ) )
 
-      (compile exp env #f (fx> ##sys#eval-debug-level 0) cntr se) ) ) )
+      (compile exp env #f (fx> (##sys#eval-debug-level) 0) cntr se) ) ) )
 
 (define ##sys#eval-handler 
   (make-parameter

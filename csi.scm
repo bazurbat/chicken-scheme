@@ -832,7 +832,7 @@ EOF
 	      ((eof-object? x))
 	    (rec (receive (eval x))) ) ) )
       (when quietflag
-	(set! ##sys#eval-debug-level 0))
+	(##sys#eval-debug-level 0))	;???
       (when (member* '("-h" "-help" "--help") args)
 	(print-usage)
 	(exit 0) )
