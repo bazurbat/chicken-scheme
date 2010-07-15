@@ -920,6 +920,8 @@ extern double round(double);
 extern double trunc(double);
 # endif
 #else
+/* provide this file and define C_PROVIDE_LIBC_STUBS if you want to use
+   your own libc-replacements or -wrappers */
 # include "chicken-libc-stubs.h"
 #endif
 
@@ -1722,7 +1724,9 @@ C_fctexport C_word C_fcall C_i_negativep(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_u_i_negativep(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_car(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_cdr(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_caar(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_cadr(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_cdar(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_cddr(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_caddr(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_cdddr(C_word x) C_regparm;

@@ -3606,17 +3606,7 @@ C_regparm void C_fcall C_trace(C_char *name)
 /* DEPRECATED: throw out at some stage: */
 C_regparm C_word C_fcall C_emit_trace_info(C_word x, C_word y, C_word t)
 {
-  if(trace_buffer_top >= trace_buffer_limit) {
-    trace_buffer_top = trace_buffer;
-    trace_buffer_full = 1;
-  }
-
-  trace_buffer_top->raw = "<eval>";
-  trace_buffer_top->cooked1 = x;
-  trace_buffer_top->cooked2 = y;
-  trace_buffer_top->thread = t;
-  ++trace_buffer_top;
-  return x;
+  return C_emit_trace_info2("<eval>", x, y, t);
 }
 
 
@@ -4647,6 +4637,21 @@ C_regparm C_word C_fcall C_i_cdr(C_word x)
 }
 
 
+C_regparm C_word C_fcall C_i_caar(C_word x)
+{
+  if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG) {
+  bad:
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "caar", x);
+  }
+
+  x = C_u_i_car(x);
+
+  if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG) goto bad;
+
+  return C_u_i_car(x);
+}
+
+
 C_regparm C_word C_fcall C_i_cadr(C_word x)
 {
   if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG) {
@@ -4655,9 +4660,25 @@ C_regparm C_word C_fcall C_i_cadr(C_word x)
   }
 
   x = C_u_i_cdr(x);
+
   if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG) goto bad;
 
   return C_u_i_car(x);
+}
+
+
+C_regparm C_word C_fcall C_i_cdar(C_word x)
+{
+  if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG) {
+  bad:
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "cdar", x);
+  }
+
+  x = C_u_i_car(x);
+
+  if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG) goto bad;
+
+  return C_u_i_cdr(x);
 }
 
 

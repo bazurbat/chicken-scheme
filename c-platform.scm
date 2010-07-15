@@ -566,6 +566,8 @@
 (rewrite 'cdddar 2 1 "C_u_i_cdddar" #f)
 (rewrite 'cddddr 2 1 "C_u_i_cddddr" #f)
 
+(rewrite 'caar 2 1 "C_i_caar" #t)
+(rewrite 'cdar 2 1 "C_i_cdar" #t)
 (rewrite 'cddr 2 1 "C_i_cddr" #t)
 (rewrite 'cdddr 2 1 "C_i_cdddr" #t)
 (rewrite 'cddddr 2 1 "C_i_cddddr" #t)
