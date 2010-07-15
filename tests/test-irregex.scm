@@ -43,19 +43,21 @@
                  (lp)))))))))))
 
 (define (test-re matcher line)
-  (match (string-split line "\t" #t)
-    ((pattern input result subst output)
-     (let ((name (sprintf "~A  ~A  ~A  ~A" pattern input result subst)))
-       (cond
-        ((equal? "c" result)
-         (test-error name (matcher pattern input)))
-        ((equal? "n" result)
-         (test-assert name (not (matcher pattern input))))
-        (else
-         (test name output
-           (subst-matches (matcher pattern input) subst))))))
-    (else
-     (warning "invalid regex test line" line))))
+  (let ((splt (string-split line "\t" #t)))
+    (if (list? splt)
+	(apply
+	 (lambda (pattern input result subst output)
+	   (let ((name (sprintf "~A  ~A  ~A  ~A" pattern input result subst)))
+	     (cond
+	      ((equal? "c" result)
+	       (test-error name (matcher pattern input)))
+	      ((equal? "n" result)
+	       (test-assert name (not (matcher pattern input))))
+	      (else
+	       (test-equal name output
+		     (subst-matches (matcher pattern input) subst))))))
+	 splt)
+	(warning "invalid regex test line" line))))
 
 (test-begin)
 
@@ -151,40 +153,43 @@
 
 (for-each
  (lambda (opts)
-   (test-group (sprintf "irregex/chunked - ~S" opts)
-     (with-input-from-file "re-tests.txt"
-       (lambda ()
-         (port-for-each
-          (lambda (line)
-            (match (string-split line "\t" #t)
-              ((pattern input result subst output)
-               (let ((name
-                      (sprintf "~A  ~A  ~A  ~A" pattern input result subst)))
-                 (cond
-                  ((equal? "c" result))
-                  ((equal? "n" result)
-                   (for-each
-                    (lambda (rope)
-                      (test-assert name
-                        (not (irregex-search/chunked pattern
-                                                     rope-chunker
-                                                     rope))))
-                    (append (make-ropes input)
-                            (make-shared-ropes input))))
-                  (else
-                   (for-each
-                    (lambda (rope)
-                      (test name output
-                        (subst-matches (irregex-search/chunked pattern
-                                                               rope-chunker
-                                                               rope)
-                                       subst)))
-                    (append (make-ropes input)
-                            (make-shared-ropes input)))))))
-              (else
-               (warning "invalid regex test line" line)))
-            )
-          read-line)))))
+   (test-group
+    (sprintf "irregex/chunked - ~S" opts)
+    (with-input-from-file "re-tests.txt"
+      (lambda ()
+	(port-for-each
+	 (lambda (line)
+	   (let ((splt (string-split line "\t" #t)))
+	     (if (list? splt)
+		 (apply 
+		  (lambda (pattern input result subst output)
+		    (let ((name
+			   (sprintf "~A  ~A  ~A  ~A" pattern input result subst)))
+		      (cond
+		       ((equal? "c" result))
+		       ((equal? "n" result)
+			(for-each
+			 (lambda (rope)
+			   (test-assert name
+					(not (irregex-search/chunked pattern
+								     rope-chunker
+								     rope))))
+			 (append (make-ropes input)
+				 (make-shared-ropes input))))
+		       (else
+			(for-each
+			 (lambda (rope)
+			   (test-equal
+			    name output
+			    (subst-matches (irregex-search/chunked pattern
+								   rope-chunker
+								   rope)
+					   subst)))
+			 (append (make-ropes input)
+				 (make-shared-ropes input)))))))
+		  splt)
+		 (warning "invalid regex test line" line))))
+	 read-line)))))
  '((backtrack)
    (fast)
    ))
@@ -252,32 +257,32 @@
   (test-assert (irregex-match-data? (irregex-match "a.*b" "axxxb")))
   (test-assert (not (irregex-match-data? (vector '*irregex-match-tag* #f #f #f #f #f #f #f #f #f))))
   (test-assert (not (irregex-match-data? (vector #f #f #f #f #f #f #f #f #f #f #f))))
-  (test 0 (irregex-num-submatches (irregex "a.*b")))
-  (test 1 (irregex-num-submatches (irregex "a(.*)b")))
-  (test 2 (irregex-num-submatches (irregex "(a(.*))b")))
-  (test 2 (irregex-num-submatches (irregex "a(.*)(b)")))
-  (test 10 (irregex-num-submatches (irregex "((((((((((a))))))))))")))
-  (test 0 (irregex-match-num-submatches (irregex-search "a.*b" "axxxb")))
-  (test 1 (irregex-match-num-submatches (irregex-search "a(.*)b" "axxxb")))
-  (test 2 (irregex-match-num-submatches (irregex-search "(a(.*))b" "axxxb")))
-  (test 2 (irregex-match-num-submatches (irregex-search "a(.*)(b)" "axxxb")))
-  (test 10 (irregex-match-num-submatches (irregex-search "((((((((((a))))))))))" "a")))
+  (test-equal 0 (irregex-num-submatches (irregex "a.*b")))
+  (test-equal 1 (irregex-num-submatches (irregex "a(.*)b")))
+  (test-equal 2 (irregex-num-submatches (irregex "(a(.*))b")))
+  (test-equal 2 (irregex-num-submatches (irregex "a(.*)(b)")))
+  (test-equal 10 (irregex-num-submatches (irregex "((((((((((a))))))))))")))
+  (test-equal 0 (irregex-match-num-submatches (irregex-search "a.*b" "axxxb")))
+  (test-equal 1 (irregex-match-num-submatches (irregex-search "a(.*)b" "axxxb")))
+  (test-equal 2 (irregex-match-num-submatches (irregex-search "(a(.*))b" "axxxb")))
+  (test-equal 2 (irregex-match-num-submatches (irregex-search "a(.*)(b)" "axxxb")))
+  (test-equal 10 (irregex-match-num-submatches (irregex-search "((((((((((a))))))))))" "a")))
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (test-group "utils"
-  (test "h*llo world"
+  (test-equal "h*llo world"
       (irregex-replace "[aeiou]" "hello world" "*"))
-  (test "h*ll* w*rld"
+  (test-equal "h*ll* w*rld"
       (irregex-replace/all "[aeiou]" "hello world" "*"))
-  (test '("bob@test.com" "fred@example.com")
+  (test-equal '("bob@test.com" "fred@example.com")
       (irregex-fold 'email
                     (lambda (i m s) (cons (irregex-match-substring m) s))
                     '()
                     "bob@test.com and fred@example.com"
                     (lambda (i s) (reverse s))))
-  (test '("bob@test.com" "fred@example.com")
+  (test-equal '("bob@test.com" "fred@example.com")
       (irregex-fold/chunked
        'email
        (lambda (src i m s) (cons (irregex-match-substring m) s))

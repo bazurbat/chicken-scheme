@@ -277,10 +277,10 @@ EOF
         (##sys#check-string pn 'decompose-pathname)
         (if (fx= 0 (##sys#size pn))
 	    (values #f #f #f)
-	    (let ([ms (string-match rx1 pn)])
+	    (let ([ms (string-search rx1 pn)])
 	      (if ms
 		  (values (strip-pds (cadr ms)) (caddr ms) (car (cddddr ms)))
-		  (let ([ms (string-match rx2 pn)])
+		  (let ([ms (string-search rx2 pn)])
 		    (if ms
 		        (values (strip-pds (cadr ms)) (caddr ms) #f)
 		        (values (strip-pds pn) #f #f) ) ) ) ) ) ) ) ) )
