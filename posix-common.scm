@@ -245,12 +245,12 @@ EOF
             '()
             (let ((path (car paths)))
               (let-values (((dir fil ext) (decompose-pathname path)))
-                (let* ((patt (glob->regexp (make-pathname #f (or fil "*") ext)))
-                       (rx (regexp patt)))
+                (let ((rx (glob->regexp (make-pathname #f (or fil "*") ext))))
                   (let loop ((fns (directory (or dir ".") #t)))
                     (cond ((null? fns) (conc-loop (cdr paths)))
                           ((string-match rx (car fns))
-                           => (lambda (m) (cons (make-pathname dir (car m)) (loop (cdr fns)))) )
+                           => (lambda (m)
+				(cons (make-pathname dir (car m)) (loop (cdr fns)))) )
                           (else (loop (cdr fns))) ) ) ) ) ) ) ) ) ) )
 
 

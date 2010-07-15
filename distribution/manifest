@@ -29,6 +29,7 @@ compiler-syntax.c
 scrutinizer.c
 unboxing.c
 regex.c
+irregex.c
 posixunix.c
 posixwin.c
 profiler.c
@@ -79,6 +80,7 @@ scrutinizer.scm
 unboxing.scm
 regex.scm
 irregex.scm
+irregex-core.scm
 posixunix.scm
 posixwin.scm
 posix-common.scm
@@ -289,6 +291,7 @@ manual/Unit lolevel
 manual/Unit ports
 manual/Unit posix
 manual/Unit regex
+manual/Unit irregex
 manual/Unit srfi-1
 manual/Unit srfi-13
 manual/Unit srfi-14
