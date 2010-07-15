@@ -325,7 +325,7 @@ IMPORT_LIBRARIES = chicken lolevel srfi-1 srfi-4 data-structures ports files pos
 	regex srfi-14 tcp foreign scheme srfi-18 utils csi irregex
 IMPORT_LIBRARIES += setup-api setup-download
 SCRUTINIZED_LIBRARIES = library eval data-structures ports files extras lolevel utils tcp srfi-1 srfi-4 srfi-13 \
-       srfi-14 srfi-18 srfi-69 $(POSIXFILE) regex scheduler \
+       srfi-14 srfi-18 srfi-69 $(POSIXFILE) regex irregex scheduler \
        profiler stub expand chicken-syntax chicken-ffi-syntax
 
 ifdef STATICBUILD

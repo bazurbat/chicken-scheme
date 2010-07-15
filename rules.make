@@ -30,7 +30,7 @@ VPATH=$(SRCDIR)
 
 LIBCHICKEN_OBJECTS_1 = \
        library eval data-structures ports files extras lolevel utils tcp srfi-1 srfi-4 srfi-13 \
-       srfi-14 srfi-18 srfi-69 $(POSIXFILE) regex scheduler \
+       srfi-14 srfi-18 srfi-69 $(POSIXFILE) regex irregex scheduler \
        profiler stub expand chicken-syntax chicken-ffi-syntax runtime
 LIBCHICKEN_SHARED_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=$(O))
 LIBCHICKEN_STATIC_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=-static$(O))
@@ -101,6 +101,10 @@ profiler$(O): profiler.c chicken.h $(CHICKEN_CONFIG_H)
 	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
 	  $(C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
 regex$(O): regex.c chicken.h $(CHICKEN_CONFIG_H) 
+	$(C_COMPILER) $(C_COMPILER_OPTIONS) \
+	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
+	  $(C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
+irregex$(O): irregex.c chicken.h $(CHICKEN_CONFIG_H) 
 	$(C_COMPILER) $(C_COMPILER_OPTIONS) \
 	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
 	  $(C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
@@ -216,6 +220,11 @@ profiler-static$(O): profiler.c chicken.h $(CHICKEN_CONFIG_H)
 	  $(C_COMPILER_STATIC_OPTIONS) \
 	  $(C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
 regex-static$(O): regex.c chicken.h $(CHICKEN_CONFIG_H) 
+	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
+	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
+	  $(C_COMPILER_STATIC_OPTIONS) \
+	  $(C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
+irregex-static$(O): irregex.c chicken.h $(CHICKEN_CONFIG_H) 
 	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
 	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
 	  $(C_COMPILER_STATIC_OPTIONS) \
@@ -864,8 +873,10 @@ posixunix.c: $(SRCDIR)posixunix.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-de
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
 posixwin.c: $(SRCDIR)posixwin.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-regex.c: $(SRCDIR)regex.scm $(SRCDIR)irregex.scm $(SRCDIR)common-declarations.scm
+regex.c: $(SRCDIR)regex.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+irregex.c: $(SRCDIR)irregex.scm $(SRCDIR)irregex-core.scm $(SRCDIR)common-declarations.scm
+	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
 scheduler.c: $(SRCDIR)scheduler.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
 profiler.c: $(SRCDIR)profiler.scm $(SRCDIR)common-declarations.scm
@@ -980,7 +991,7 @@ setup-download.c: $(SRCDIR)setup-download.scm setup-api.c
 distfiles: library.c eval.c expand.c chicken-syntax.c chicken-ffi-syntax.c \
 	data-structures.c ports.c files.c extras.c lolevel.c utils.c \
 	tcp.c srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c \
-	posixunix.c posixwin.c regex.c scheduler.c profiler.c stub.c \
+	posixunix.c posixwin.c regex.c irregex.c scheduler.c profiler.c stub.c \
 	chicken-profile.c chicken-install.c chicken-uninstall.c chicken-status.c \
 	csc.c csi.c chicken.c batch-driver.c compiler.c optimizer.c  \
 	compiler-syntax.c scrutinizer.c unboxing.c support.c \
@@ -1023,7 +1034,7 @@ spotless: distclean testclean
 	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) library.c eval.c data-structures.c \
 	  ports.c files.c extras.c lolevel.c utils.c chicken-syntax.c chicken-ffi-syntax.c \
 	  tcp.c srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c expand.c \
-	  posixunix.c posixwin.c regex.c scheduler.c profiler.c stub.c \
+	  posixunix.c posixwin.c regex.c irregex.c scheduler.c profiler.c stub.c \
 	  chicken-profile.c chicken-bug.c \
 	  csc.c csi.c chicken-install.c chicken-uninstall.c chicken-status.c \
 	  chicken.c batch-driver.c compiler.c optimizer.c compiler-syntax.c \

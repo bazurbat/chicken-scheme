@@ -28,6 +28,7 @@
 (declare (unit regex))
 
 (declare
+  (uses irregex)
   (disable-interrupts)
   (fixnum)
   (export
@@ -36,24 +37,12 @@
     string-split-fields string-substitute string-substitute*
     glob->regexp
     grep
-    regexp-escape 
-
-    irregex string->irregex sre->irregex string->sre
-    irregex? irregex-match-data?
-    irregex-new-matches irregex-reset-matches!
-    irregex-match-start irregex-match-end irregex-match-substring
-    irregex-match-num-submatches
-    irregex-search irregex-search/matches irregex-match irregex-match-string
-    irregex-fold irregex-replace irregex-replace/all irregex-apply-match
-    irregex-dfa irregex-dfa/search irregex-dfa/extract
-    irregex-nfa irregex-flags irregex-submatches irregex-lengths irregex-names
+    regexp-escape
     ))
 
-(include "common-declarations.scm")
+;(include "common-declarations.scm")
 
-(register-feature! 'regex 'irregex)
-
-(include "irregex.scm")
+(register-feature! 'regex)
 
 
 ;;; Record `regexp'
