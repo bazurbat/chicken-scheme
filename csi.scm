@@ -335,13 +335,13 @@ EOF
 				    " " (read-line)))))
 			   (if (not (zero? r))
 			       (printf "Editor returned with non-zero exit status ~a" r))))
-			((f)
+			((c)
 			 (show-frameinfo selected-frame)
 			 (##sys#void))
-			((nf)
+			((f)
 			 (select-frame (read))
 			 (##sys#void))
-			((cf)
+			((g)
 			 (copy-from-frame (read)))
 			((s)
 			 (let* ((str (read-line))
@@ -364,9 +364,9 @@ EOF
  ,e FILENAME       Run external editor
  ,s TEXT ...       Execute shell-command
  ,exn              Describe last exception
- ,f                Show frame information
- ,nf N             Select frame N
- ,cf NAME          Get variable NAME from current frame
+ ,c                Show call-chain of most recent error
+ ,f N              Select frame N
+ ,g NAME           Get variable NAME from current frame
  ,t EXP            Evaluate form and print elapsed time
  ,x EXP            Pretty print expanded expression EXP\n")
 			 (##sys#hash-table-for-each
@@ -756,22 +756,23 @@ EOF
 	    (printf "~a~a:~a\t~a\t  " 
 	      (if here #\* #\space)
 	      i
-	      (if (and finfo (pair? (##sys#slot data 2))) #\. #\space) ; e
+	      (if (and finfo (pair? (##sys#slot data 2))) "[]" "  ") ; e
 	      (##sys#slot info 0))	; raw
 	    (when cntr (printf "[~a] " cntr))
-	    (prin1 form)
+	    (when form (prin1 form))
 	    (newline)
-	    (if (and here finfo)
-		(for-each
-		 (lambda (e v)
-		   (do ((i 0 (fx+ i 1))
-			(be e (cdr be)))
-		       ((null? be))
-		     (printf "  ~s:\t  " (car be))
-		     (prin1 (##sys#slot v i))
-		     (newline)))
-		 (##sys#slot data 2)	   ; e
-		 (##sys#slot data 3)))))))))	   ; v
+	    (when (and here finfo)
+	      (for-each
+	       (lambda (e v)
+		 (display "  ---\n")
+		 (do ((i 0 (fx+ i 1))
+		      (be e (cdr be)))
+		     ((null? be))
+		   (printf "  ~s:\t  " (car be))
+		   (prin1 (##sys#slot v i))
+		   (newline)))
+	       (##sys#slot data 2)	   ; e
+	       (##sys#slot data 3)))))))))	   ; v
 	  
 (define select-frame
   (let ((display display))
