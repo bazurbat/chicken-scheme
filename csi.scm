@@ -54,6 +54,7 @@ EOF
     ##sys#windows-platform)
   (hide parse-option-string bytevector-data member* canonicalize-args 
 	describer-table dirseparator? circular-list? improper-pairs?
+	show-frameinfo selected-frame select-frame copy-from-frame
 	findall command-table default-editor) )
 
 
@@ -66,6 +67,7 @@ EOF
 (set! ##sys#notices-enabled #t)
 
 (define editor-command (make-parameter #f))
+(define selected-frame #f)
 
 (define default-editor 
   (or (get-environment-variable "EDITOR")
@@ -333,6 +335,14 @@ EOF
 				    " " (read-line)))))
 			   (if (not (zero? r))
 			       (printf "Editor returned with non-zero exit status ~a" r))))
+			((f)
+			 (show-frameinfo selected-frame)
+			 (##sys#void))
+			((nf)
+			 (select-frame (read))
+			 (##sys#void))
+			((cf)
+			 (copy-from-frame (read)))
 			((s)
 			 (let* ((str (read-line))
 				(r (system str)) )
@@ -354,6 +364,9 @@ EOF
  ,e FILENAME       Run external editor
  ,s TEXT ...       Execute shell-command
  ,exn              Describe last exception
+ ,f                Show frame information
+ ,nf N             Select frame N
+ ,cf NAME          Get variable NAME from current frame
  ,t EXP            Evaluate form and print elapsed time
  ,x EXP            Pretty print expanded expression EXP\n")
 			 (##sys#hash-table-for-each
@@ -710,7 +723,109 @@ EOF
 	    (if (and (fx>= c 32) (fx< c 128))
 		(write-char (integer->char c) out)
 		(write-char #\. out) ) ) ) 
-	(##sys#write-char-0 #\newline out) ) ) ) )
+	(write-char #\newline out) ) ) ) )
+
+
+;;; Frame-info operations:
+
+(define show-frameinfo
+  (let ((write-char write-char)
+	(newline newline)
+	(display display))
+    (lambda (fn)
+      (define (prin1 x)
+	(##sys#with-print-length-limit
+	 100
+	 (lambda ()
+	   (##sys#print x #t ##sys#standard-output))))
+      (let* ((ct (or ##sys#repl-recent-call-chain '()))
+	     (len (length ct)))
+	(set! selected-frame 
+	  (or (and (memq fn ct) fn)
+	      (and (fx> len 0)
+		   (list-ref ct (fx- len 1)))))
+	(do ((ct ct (cdr ct))
+	     (i (fx- len 1) (fx- i 1)))
+	    ((null? ct))
+	  (let* ((info (car ct))
+		 (here (eq? selected-frame info))
+		 (form (##sys#slot info 1)) ; cooked1 (expr/form)
+		 (data (##sys#slot info 2)) ; cooked2 (cntr/frameinfo)
+		 (finfo (##sys#structure? data 'frameinfo))
+		 (cntr (if finfo (##sys#slot data 1) data))) ; cntr
+	    (printf "~a~a:~a\t~a\t  " 
+	      (if here #\* #\space)
+	      i
+	      (if (and finfo (pair? (##sys#slot data 2))) #\. #\space) ; e
+	      (##sys#slot info 0))	; raw
+	    (when cntr (printf "[~a] " cntr))
+	    (prin1 form)
+	    (newline)
+	    (if (and here finfo)
+		(for-each
+		 (lambda (e v)
+		   (do ((i 0 (fx+ i 1))
+			(be e (cdr be)))
+		       ((null? be))
+		     (printf "  ~s:\t  " (car be))
+		     (prin1 (##sys#slot v i))
+		     (newline)))
+		 (##sys#slot data 2)	   ; e
+		 (##sys#slot data 3)))))))))	   ; v
+	  
+(define select-frame
+  (let ((display display))
+    (lambda (n)
+      (cond ((or (not (number? n))
+		 (not ##sys#repl-recent-call-chain)
+		 (fx< n 0)
+		 (fx>= n (length ##sys#repl-recent-call-chain)))
+	     (display "no such frame\n"))
+	    (else
+	     (set! selected-frame
+	       (list-ref 
+		##sys#repl-recent-call-chain
+		(fx- (length ##sys#repl-recent-call-chain) (fx+ n 1))))
+	     (show-frameinfo selected-frame))))))
+
+(define copy-from-frame
+  (let ((display display)
+	(call/cc call/cc))
+    (lambda (name)
+      (let* ((ct (or ##sys#repl-recent-call-chain '()))
+	     (len (length ct))
+	     (name 
+	      (cond ((symbol? name) (##sys#slot name 1)) ; name
+		    ((string? name) name)
+		    (else 
+		     (display "string or symbol required for `,cf'\n")
+		     #f))))
+	(if name
+	    (call/cc
+	     (lambda (return)
+	       (define (fail msg)
+		 (display msg)
+		 (return (##sys#void)))
+	       (do ((ct ct (cdr ct))
+		    (i (fx- len 1) (fx- i 1)))
+		   ((null? ct) (fail "no environment in frame\n")) 
+		 (let* ((info (car ct))
+			(here (eq? selected-frame info))
+			(data (##sys#slot info 2)) ; cooked2 (cntr/frameinfo)
+			(finfo (##sys#structure? data 'frameinfo))
+			(cntr (if finfo (##sys#slot data 1) data))) ; cntr
+		   (when (and here finfo)
+		     (for-each
+		      (lambda (e v)
+			(do ((i 0 (fx+ i 1))
+			     (be e (cdr be)))
+			    ((null? be) (fail "no such variable\n"))
+			  (when (string=? name (##sys#slot (car be) 1)) ; name
+			    (history-add (list (##sys#slot v i)))
+			    (return (##sys#slot v i)))))
+		      (##sys#slot data 2)	; e
+		      (##sys#slot data 3))))))) ; v
+	    (##sys#void))))))
 
 
 ;;; Start interpreting:

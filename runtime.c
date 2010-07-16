@@ -149,7 +149,7 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #define DEFAULT_FORWARDING_TABLE_SIZE  32
 #define DEFAULT_LOCATIVE_TABLE_SIZE    32
 #define DEFAULT_COLLECTIBLES_SIZE      1024
-#define DEFAULT_TRACE_BUFFER_SIZE      8
+#define DEFAULT_TRACE_BUFFER_SIZE      10
 
 #define MAX_HASH_PREFIX                64
 

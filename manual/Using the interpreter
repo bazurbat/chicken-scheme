@@ -143,6 +143,12 @@ The toplevel loop understands a number of special commands:
 
 ; ,exn : Describes the last exception that occurred and adds it to the result history (it can be accessed using the {{#}} notation).
 
+; ,f : Show call-trace items of the most recent error
+
+; ,nf N : Select call-trace item with the given number, where the number {{0}} indicates the last item in the trace
+
+; cf NAME : Returns the value of the local variable with the given name (which may be a symbol or string)
+
 ; ,q : Quit the interpreter.
 
 ; ,r : Show system information.

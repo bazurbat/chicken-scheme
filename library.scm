@@ -3383,16 +3383,17 @@ EOF
     (##sys#print header #f port)
     (for-each
      (lambda (info) 
-       (let ((more1 (##sys#slot info 1)) ; cooked1 (expr/form)
-	     (more2 (##sys#slot info 2)) ) ; cooked2 (frameinfo)
+       (let* ((more1 (##sys#slot info 1)) ; cooked1 (expr/form)
+	      (more2 (##sys#slot info 2)) ; cooked2 (cntr/frameinfo)
+	      (fi (##sys#structure? more2 'frameinfo)))
 	 (##sys#print "\n\t" #f port)
 	 (##sys#print (##sys#slot info 0) #f port) ; raw (mode)
-	 (##sys#print "\t\t" #f port)
+	 (##sys#print "\t  " #f port)
 	 (when more2
 	   (##sys#write-char-0 #\[ port)
 	   (##sys#print 
-	    (if (##sys#structure? more2 'frameinfo)
-		(##sys#slot more2 0)
+	    (if fi
+		(##sys#slot more2 1)	; cntr
 		more2)
 	    #f port)
 	   (##sys#print "] " #f port) )
@@ -3410,7 +3411,9 @@ EOF
   (##sys#check-port port 'print-call-chain)
   (##sys#check-exact start 'print-call-chain)
   (##sys#check-string header 'print-call-chain)
-  (##sys#really-print-call-chain port (##sys#get-call-chain start thread) header) )
+  (let ((ct (##sys#get-call-chain start thread)))
+    (##sys#really-print-call-chain port ct header)
+    ct))
 
 (define get-call-chain ##sys#get-call-chain)
 

@@ -1474,6 +1474,7 @@
 (define ##sys#repl-eval-hook #f)
 (define ##sys#repl-print-length-limit #f)
 (define ##sys#repl-read-hook #f)
+(define ##sys#repl-recent-call-chain #f)
 
 (define (##sys#repl-print-hook x port)
   (##sys#with-print-length-limit ##sys#repl-print-length-limit (cut ##sys#print x #t port))
@@ -1548,7 +1549,8 @@
 		  (begin
 		    (##sys#write-char-0 #\newline ##sys#standard-error)
 		    (write-err args) ) )
-	      (print-call-chain ##sys#standard-error)
+	      (set! ##sys#repl-recent-call-chain
+		(print-call-chain ##sys#standard-error))
 	      (flush-output ##sys#standard-error) ) ) )
 	 (lambda ()
 	   (let loop ()
