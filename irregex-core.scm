@@ -31,6 +31,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; History
 ;;
+;; 0.8.1: 2010/03/09 - backtracking irregex-match fix and other small fixes
 ;; 0.8.0: 2010/01/20 - optimizing DFA compilation, adding SRE escapes
 ;;                     inside PCREs, adding utility SREs
 ;; 0.7.5: 2009/08/31 - adding irregex-extract and irregex-split
@@ -118,9 +119,10 @@
        (internal
 	"##sys#make-structure"
 	'regexp-match
-	(make-vector (+ (* 4 (+ 2 count)) 3) #f)
-	names
-	#f))
+	(make-vector (+ (* 4 (+ 2 count)) 3) #f) ; #1: submatches
+	names					 ; #2: (guess)
+	#f					 ; #3: chunka
+	#f))					 ; #4: fail
      (define (irregex-new-matches irx)
        (make-irregex-match (irregex-num-submatches irx) (irregex-names irx)))
      (define (irregex-reset-matches! m)
@@ -137,12 +139,13 @@
 	       (vector-copy! v v2)
 	       v2)
 	     (internal "##sys#slot" m 2)
-	     (internal "##sys#slot" m 3))))
+	     (internal "##sys#slot" m 3)
+	     (internal "##sys#slot" m 4))))
      (define (irregex-match-data? obj)
        (internal "##sys#structure?" obj 'regexp-match))
      (define (irregex-match-num-submatches m)
        (internal "##sys#check-structure" m 'regexp-match 'irregex-match-num-submatches)
-       (- (quotient (vector-length (internal "##sys#slot" m 1)) 4) 2))
+       (- (fx/ (internal "##sys#size" (internal "##sys#slot" m 1)) 4) 2))
      (define (irregex-match-chunker m)
        (internal "##sys#slot" m 3))
      (define (irregex-match-names m)
@@ -157,7 +160,9 @@
      (define-inline (%irregex-match-end-chunk m n)
        (internal "##sys#slot" (internal "##sys#slot" m 1) (+ 2 (* n 4))))
      (define (%irregex-match-end-index m n)
-       (internal "##sys#slot" (internal "##sys#slot" m 1) (+ 3 (* n 4))))))
+       (internal "##sys#slot" (internal "##sys#slot" m 1) (+ 3 (* n 4))))
+     (define (%irregex-match-fail m) (internal "##sys#slot" m 4))
+     (define (%irregex-match-fail-set! m x) (internal "##sys#setslot" m 4 x))))
   (else
    (begin
      (define (irregex-new-matches irx)
@@ -178,7 +183,7 @@
 	    (>= (vector-length obj) 11)
 	    (eq? irregex-match-tag (vector-ref obj 0))))
      (define (make-irregex-match count names)
-       (let ((res (make-vector (+ (* 4 (+ 2 count)) 3) #f)))
+       (let ((res (make-vector (+ (* 4 (+ 2 count)) 4) #f)))
 	 (vector-set! res 0 irregex-match-tag)
 	 (vector-set! res 2 names)
 	 res))
@@ -193,7 +198,9 @@
      (define (%irregex-match-start-chunk m n) (vector-ref m (+ 3 (* n 4))))
      (define (%irregex-match-start-index m n) (vector-ref m (+ 4 (* n 4))))
      (define (%irregex-match-end-chunk m n)   (vector-ref m (+ 5 (* n 4))))
-     (define (%irregex-match-end-index m n)   (vector-ref m (+ 6 (* n 4)))))))
+     (define (%irregex-match-end-index m n)   (vector-ref m (+ 6 (* n 4))))
+     (define (%irregex-match-fail m) (vector-ref m (- (vector-length m) 1)))
+     (define (%irregex-match-fail-set! m x) (vector-set! m (- (vector-length m) 1) x)))))
 
 ;; public interface with error checking
 (define (irregex-match-start-chunk m n)
@@ -256,7 +263,7 @@
   (if (not (irregex-match-data? m))
       (error "irregex-match-valid-index?: not match data" m))
   (if (not (integer? n))
-      (error "irregex-match-valid-index?: not a valid index" n))
+      (error "irregex-match-valid-index?: not an integer" n))
   (%irregex-match-valid-index? m n))
 
 (define (irregex-match-substring m . opt)
@@ -630,7 +637,7 @@
            (define (collect)
              (if (= from i) res (cons (substring str from i) res)))
            (if (>= i end)
-               (error "unterminated string in embeded SRE" str)
+               (error "unterminated string in embedded SRE" str)
                (case (string-ref str i)
                  ((#\") (k (string-cat-reverse (collect)) (+ i 1)))
                  ((#\\) (scan (+ i 1) (+ i 2) (collect)))
@@ -849,7 +856,7 @@
                (cond
                 ((>= (+ i 1) end)
                  (error "unterminated parenthesis in regexp" str))
-                ((not (memq (string-ref str (+ i 1)) '(#\? #\*))) ; normal case
+                ((not (memv (string-ref str (+ i 1)) '(#\? #\*))) ; normal case
                  (lp (+ i 1) (+ i 1) (flag-join flags ~save?) '() (save)))
                 ((>= (+ i 2) end)
                  (error "unterminated parenthesis in regexp" str))
@@ -1574,7 +1581,7 @@
 ;;;; Compilation
 
 (cond-expand
-  (chicken
+  (building-chicken
    (define-syntax cached
      (syntax-rules ()
        ((_ arg fail) (build-cache 5 arg fail)))))
@@ -2007,32 +2014,37 @@
      (else
       #f)))
    (else
-    (let ((matcher (irregex-nfa irx))
-          (str ((chunker-get-str cnk) src))
-          (end ((chunker-get-end cnk) src))
-          (get-next (chunker-get-next cnk))
-          (init (cons src i)))
-      (if (flag-set? (irregex-flags irx) ~searcher?)
-          (matcher cnk init src str i end matches (lambda () #f))
-          (let lp ((src2 src)
-                   (str str)
-                   (i i)
-                   (end end))
-            (cond
-             ((matcher cnk init src2 str i end matches (lambda () #f))
-              (irregex-match-start-chunk-set! matches 0 src2)
-              (irregex-match-start-index-set! matches 0 i)
-              matches)
-             ((< i end)
-              (lp src2 str (+ i 1) end))
-             (else
-              (let ((src2 (get-next src2)))
-                (if src2
-                    (lp src2
-                        ((chunker-get-str cnk) src2)
-                        ((chunker-get-start cnk) src2)
-                        ((chunker-get-end cnk) src2))
-                    #f))))))))))
+    (let ((res (irregex-search/backtrack irx cnk src i matches)))
+      (if res (%irregex-match-fail-set! res #f))
+      res))))
+
+(define (irregex-search/backtrack irx cnk src i matches)
+  (let ((matcher (irregex-nfa irx))
+        (str ((chunker-get-str cnk) src))
+        (end ((chunker-get-end cnk) src))
+        (get-next (chunker-get-next cnk))
+        (init (cons src i)))
+    (if (flag-set? (irregex-flags irx) ~searcher?)
+        (matcher cnk init src str i end matches (lambda () #f))
+        (let lp ((src2 src)
+                 (str str)
+                 (i i)
+                 (end end))
+          (cond
+           ((matcher cnk init src2 str i end matches (lambda () #f))
+            (irregex-match-start-chunk-set! matches 0 src2)
+            (irregex-match-start-index-set! matches 0 i)
+            matches)
+           ((< i end)
+            (lp src2 str (+ i 1) end))
+           (else
+            (let ((src2 (get-next src2)))
+              (if src2
+                  (lp src2
+                      ((chunker-get-str cnk) src2)
+                      ((chunker-get-start cnk) src2)
+                      ((chunker-get-end cnk) src2))
+                  #f))))))))
 
 (define (irregex-match irx str . o)
   (if (not (string? str)) (error "irregex-match: not a string" str))
@@ -2069,12 +2081,21 @@
              (str ((chunker-get-str cnk) src))
              (i ((chunker-get-start cnk) src))
              (end ((chunker-get-end cnk) src))
-             (m (matcher cnk src src str i end matches (lambda () #f))))
-        (and m
-             (not ((chunker-get-next cnk) (%irregex-match-end-chunk m 0)))
-             (= ((chunker-get-end cnk) (%irregex-match-end-chunk m 0))
-                (%irregex-match-end-index m 0))
-             m))))))
+             (init (cons src i)))
+        (let lp ((m (matcher cnk init src str i end matches (lambda () #f))))
+          (and m
+               (cond
+                ((and (not ((chunker-get-next cnk)
+                            (%irregex-match-end-chunk m 0)))
+                      (= ((chunker-get-end cnk)
+                          (%irregex-match-end-chunk m 0))
+                         (%irregex-match-end-index m 0)))
+                 (%irregex-match-fail-set! m #f)
+                 m)
+                ((%irregex-match-fail m)
+                 (lp ((%irregex-match-fail m))))
+                (else
+                 #f)))))))))
 
 (define (irregex-match? . args)
   (and (apply irregex-match args) #t))
@@ -2523,9 +2544,11 @@
                 ;;                            (sre-sequence (cdddar ls)))))
                 ;;             (cdr ls))
                 ;;     n flags next))
-                (($ submatch => submatch-named)
                  ;; ignore submatches altogether
+                (($ submatch)
                  (lp (cons (sre-sequence (cdar ls)) (cdr ls)) n flags next))
+                ((=> submatch-named)
+                 (lp (cons (sre-sequence (cddar ls)) (cdr ls)) n flags next))
                 (else
                  (cond
                   ((assq (caar ls) sre-named-definitions)
@@ -2917,8 +2940,8 @@
      (define-inline (match-vector-set! m i x)
        (vector-set! (internal "##sys#slot" m 1) i x))))
   (else
-   (define match-vector-ref vector-ref)
-   (define match-vector-set! vector-set!)))
+   (define (match-vector-ref v i) (vector-ref v (+ 3 i)))
+   (define (match-vector-set! v i x) (vector-set! v (+ 3 i) x))))
 
 (define (sre-match-extractor sre num-submatches)
   (let* ((tmp (+ num-submatches 1))
@@ -3026,9 +3049,13 @@
              (lambda (cnk start i end j matches)
                (match-once cnk start i end j matches)
                #t)))
-          (($ submatch)
+          (($ submatch => submatch-named)
            (let ((match-one
-                  (lp (sre-sequence (cdr sre)) (+ n 1) #t))
+                  (lp (sre-sequence (if (memq (car sre) '($ submatch))
+                                        (cdr sre)
+                                        (cddr sre)))
+                      (+ n 1)
+                      #t))
                  (start-src-offset (* n 4))
                  (start-index-offset (+ 1 (* n 4)))
                  (end-src-offset (+ 2 (* n 4)))
@@ -3069,6 +3096,7 @@
                    (irregex-match-start-index-set! matches 0 (cdr init))
                    (irregex-match-end-chunk-set! matches 0 src)
                    (irregex-match-end-index-set! matches 0 i)
+		   (%irregex-match-fail-set! matches fail)
                    matches)))
     ;; XXXX this should be inlined
     (define (rec sre) (lp sre n flags next))
