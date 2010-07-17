@@ -56,69 +56,144 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Data Structures
 
-(define irregex-tag '*irregex-tag*)
+(cond-expand
+  (chicken
+   (begin
+     (define-syntax (internal x r c)
+       `(,(with-input-from-string (cadr x) read) ,@(cddr x)))
+     (define-inline (make-irregex dfa dfa/search dfa/extract nfa flags
+				  submatches lengths names)
+       (internal "##sys#make-structure" 'regexp dfa dfa/search dfa/extract nfa flags
+		 submatches lengths names))
+     (define (irregex? x)
+       (internal "##sys#structure?" x 'regexp))
+     (define (irregex-dfa x)
+       (internal "##sys#check-structure" x 'regexp 'irregex-dfa)
+       (internal "##sys#slot" x 1))
+     (define (irregex-dfa/search x)
+       (internal "##sys#check-structure" x 'regexp 'irregex-dfa/search)
+       (internal "##sys#slot" x 2))
+     (define (irregex-dfa/extract x)
+       (internal "##sys#check-structure" x 'regexp 'irregex-dfa/extract)
+       (internal "##sys#slot" x 3))
+     (define (irregex-nfa x)
+       (internal "##sys#check-structure" x 'regexp 'irregex-nfa)
+       (internal "##sys#slot" x 4))
+     (define (irregex-flags x)
+       (internal "##sys#check-structure" x 'regexp 'irregex-flags)
+       (internal "##sys#slot" x 5))
+     (define (irregex-num-submatches x)
+       (internal "##sys#check-structure" x 'regexp 'irregex-num-submatches)
+       (internal "##sys#slot" x 6))
+     (define (irregex-lengths x)
+       (internal "##sys#check-structure" x 'regexp 'irregex-lengths)
+       (internal "##sys#slot" x 7))
+     (define (irregex-names x)
+       (internal "##sys#check-structure" x 'regexp 'irregex-names)
+       (internal "##sys#slot" x 8))))
+  (else
+   (begin
+     (define irregex-tag '*irregex-tag*)
+     (define (make-irregex dfa dfa/search dfa/extract nfa flags
+			   submatches lengths names)
+       (vector irregex-tag dfa dfa/search dfa/extract nfa flags
+	       submatches lengths names))
+     (define (irregex? obj)
+       (and (vector? obj)
+	    (= 9 (vector-length obj))
+	    (eq? irregex-tag (vector-ref obj 0))))
+     (define (irregex-dfa x) (vector-ref x 1))
+     (define (irregex-dfa/search x) (vector-ref x 2))
+     (define (irregex-dfa/extract x) (vector-ref x 3))
+     (define (irregex-nfa x) (vector-ref x 4))
+     (define (irregex-flags x) (vector-ref x 5))
+     (define (irregex-num-submatches x) (vector-ref x 6))
+     (define (irregex-lengths x) (vector-ref x 7))
+     (define (irregex-names x) (vector-ref x 8)))))
 
-(define (make-irregex dfa dfa/search dfa/extract nfa flags
-                      submatches lengths names)
-  (vector irregex-tag dfa dfa/search dfa/extract nfa flags
-          submatches lengths names))
-
-(define (irregex? obj)
-  (and (vector? obj)
-       (= 9 (vector-length obj))
-       (eq? irregex-tag (vector-ref obj 0))))
-
-(define (irregex-dfa x) (vector-ref x 1))
-(define (irregex-dfa/search x) (vector-ref x 2))
-(define (irregex-dfa/extract x) (vector-ref x 3))
-(define (irregex-nfa x) (vector-ref x 4))
-(define (irregex-flags x) (vector-ref x 5))
-(define (irregex-num-submatches x) (vector-ref x 6))
-(define (irregex-lengths x) (vector-ref x 7))
-(define (irregex-names x) (vector-ref x 8))
-
-(define (irregex-new-matches irx)
-  (make-irregex-match (irregex-num-submatches irx) (irregex-names irx)))
-
-(define (irregex-reset-matches! m)
-  (do ((i (- (vector-length m) 1) (- i 1)))
-      ((<= i 3) m)
-    (vector-set! m i #f)))
-
-(define (irregex-copy-matches m)
-  (and (vector? m)
-       (let ((r (make-vector (vector-length m))))
-         (do ((i (- (vector-length m) 1) (- i 1)))
-             ((< i 0) r)
-           (vector-set! r i (vector-ref m i))))))
-
-(define irregex-match-tag '*irregex-match-tag*)
-
-(define (irregex-match-data? obj)
-  (and (vector? obj)
-       (>= (vector-length obj) 11)
-       (eq? irregex-match-tag (vector-ref obj 0))))
-
-(define (make-irregex-match count names)
-  (let ((res (make-vector (+ (* 4 (+ 2 count)) 3) #f)))
-    (vector-set! res 0 irregex-match-tag)
-    (vector-set! res 2 names)
-    res))
-
-(define (irregex-match-num-submatches m)
-  (- (quotient (- (vector-length m) 3) 4) 2))
-
-(define (irregex-match-chunker m)
-  (vector-ref m 1))
-(define (irregex-match-names m)
-  (vector-ref m 2))
-(define (irregex-match-chunker-set! m str)
-  (vector-set! m 1 str))
-
-(define (%irregex-match-start-chunk m n) (vector-ref m (+ 3 (* n 4))))
-(define (%irregex-match-start-index m n) (vector-ref m (+ 4 (* n 4))))
-(define (%irregex-match-end-chunk m n)   (vector-ref m (+ 5 (* n 4))))
-(define (%irregex-match-end-index m n)   (vector-ref m (+ 6 (* n 4))))
+(cond-expand
+  (chicken
+   (begin
+     (define (make-irregex-match count names)
+       (internal
+	"##sys#make-structure"
+	'regexp-match
+	(make-vector (+ (* 4 (+ 2 count)) 3) #f)
+	names
+	#f))
+     (define (irregex-new-matches irx)
+       (make-irregex-match (irregex-num-submatches irx) (irregex-names irx)))
+     (define (irregex-reset-matches! m)
+       (let ((v (internal "##sys#slot" m 1)))
+	 (vector-fill! v #f)
+	 m))
+     (define (irregex-copy-matches m)
+       (and (internal "##sys#structure?" m 'regexp-match)
+	    (internal
+	     "##sys#make-structure"
+	     'regexp-match
+	     (let* ((v (internal "##sys#slot" m 1))
+		    (v2 (make-vector (internal "##sys#size" v))))
+	       (vector-copy! v v2)
+	       v2)
+	     (internal "##sys#slot" m 2)
+	     (internal "##sys#slot" m 3))))
+     (define (irregex-match-data? obj)
+       (internal "##sys#structure?" obj 'regexp-match))
+     (define (irregex-match-num-submatches m)
+       (internal "##sys#check-structure" m 'regexp-match 'irregex-match-num-submatches)
+       (- (quotient (vector-length (internal "##sys#slot" m 1)) 4) 2))
+     (define (irregex-match-chunker m)
+       (internal "##sys#slot" m 3))
+     (define (irregex-match-names m)
+       (internal "##sys#check-structure" m 'regexp-match 'irregex-match-names)
+       (internal "##sys#slot" m 2))
+     (define (irregex-match-chunker-set! m str)
+       (internal "##sys#setslot" m 3 str))
+     (define-inline (%irregex-match-start-chunk m n)
+       (internal "##sys#slot" (internal "##sys#slot" m 1) (* n 4)))
+     (define-inline (%irregex-match-start-index m n)
+       (internal "##sys#slot" (internal "##sys#slot" m 1) (+ 1 (* n 4))))
+     (define-inline (%irregex-match-end-chunk m n)
+       (internal "##sys#slot" (internal "##sys#slot" m 1) (+ 2 (* n 4))))
+     (define (%irregex-match-end-index m n)
+       (internal "##sys#slot" (internal "##sys#slot" m 1) (+ 3 (* n 4))))))
+  (else
+   (begin
+     (define (irregex-new-matches irx)
+       (make-irregex-match (irregex-num-submatches irx) (irregex-names irx)))
+     (define (irregex-reset-matches! m)
+       (do ((i (- (vector-length m) 1) (- i 1)))
+	   ((<= i 3) m)
+	 (vector-set! m i #f)))
+     (define (irregex-copy-matches m)
+       (and (vector? m)
+	    (let ((r (make-vector (vector-length m))))
+	      (do ((i (- (vector-length m) 1) (- i 1)))
+		  ((< i 0) r)
+		(vector-set! r i (vector-ref m i))))))
+     (define irregex-match-tag '*irregex-match-tag*)
+     (define (irregex-match-data? obj)
+       (and (vector? obj)
+	    (>= (vector-length obj) 11)
+	    (eq? irregex-match-tag (vector-ref obj 0))))
+     (define (make-irregex-match count names)
+       (let ((res (make-vector (+ (* 4 (+ 2 count)) 3) #f)))
+	 (vector-set! res 0 irregex-match-tag)
+	 (vector-set! res 2 names)
+	 res))
+     (define (irregex-match-num-submatches m)
+       (- (quotient (- (vector-length m) 3) 4) 2))
+     (define (irregex-match-chunker m)
+       (vector-ref m 1))
+     (define (irregex-match-names m)
+       (vector-ref m 2))
+     (define (irregex-match-chunker-set! m str)
+       (vector-set! m 1 str))
+     (define (%irregex-match-start-chunk m n) (vector-ref m (+ 3 (* n 4))))
+     (define (%irregex-match-start-index m n) (vector-ref m (+ 4 (* n 4))))
+     (define (%irregex-match-end-chunk m n)   (vector-ref m (+ 5 (* n 4))))
+     (define (%irregex-match-end-index m n)   (vector-ref m (+ 6 (* n 4)))))))
 
 ;; public interface with error checking
 (define (irregex-match-start-chunk m n)
@@ -138,14 +213,26 @@
       (error "irregex-match-end-index: not a valid index" m n))
   (%irregex-match-end-index m n))
 
-(define (irregex-match-start-chunk-set! m n start)
-  (vector-set! m (+ 3 (* n 4)) start))
-(define (irregex-match-start-index-set! m n start)
-  (vector-set! m (+ 4 (* n 4)) start))
-(define (irregex-match-end-chunk-set! m n end)
-  (vector-set! m (+ 5 (* n 4)) end))
-(define (irregex-match-end-index-set! m n end)
-  (vector-set! m (+ 6 (* n 4)) end))
+(cond-expand
+  (chicken
+   (define-inline (irregex-match-start-chunk-set! m n start)
+     (vector-set! (internal "##sys#slot" m 1) (* n 4) start))
+   (define-inline (irregex-match-start-index-set! m n start)
+     (vector-set! (internal "##sys#slot" m 1) (+ 1 (* n 4)) start))
+   (define-inline (irregex-match-end-chunk-set! m n end)
+     (vector-set! (internal "##sys#slot" m 1) (+ 2 (* n 4)) end))
+   (define-inline (irregex-match-end-index-set! m n end)
+     (vector-set! (internal "##sys#slot" m 1) (+ 3 (* n 4)) end)))
+  (else
+   (begin
+     (define (irregex-match-start-chunk-set! m n start)
+       (vector-set! m (+ 3 (* n 4)) start))
+     (define (irregex-match-start-index-set! m n start)
+       (vector-set! m (+ 4 (* n 4)) start))
+     (define (irregex-match-end-chunk-set! m n end)
+       (vector-set! m (+ 5 (* n 4)) end))
+     (define (irregex-match-end-index-set! m n end)
+       (vector-set! m (+ 6 (* n 4)) end)))))
 
 (define (irregex-match-index m opt)
   (if (pair? opt)
@@ -154,15 +241,22 @@
             (else (error "unknown match name" (car opt))))
       0))
 
-(define (%irregex-match-valid-index? m n)
-  (and (< (+ 3 (* n 4)) (vector-length m))
-       (vector-ref m (+ 4 (* n 4)))))
+(cond-expand
+  (chicken
+   (define-inline (%irregex-match-valid-index? m n)
+     (let ((v (internal "##sys#slot" m 1)))
+       (and (< (* n 4) (vector-length v))
+	    (vector-ref v (+ 1 (* n 4)))))))
+  (else
+   (define (%irregex-match-valid-index? m n)
+     (and (< (+ 3 (* n 4)) (vector-length m))
+	  (vector-ref m (+ 4 (* n 4)))))))
 
 (define (irregex-match-valid-index? m n)
   (if (not (irregex-match-data? m))
       (error "irregex-match-valid-index?: not match data" m))
   (if (not (integer? n))
-      (error "irregex-match-valid-index?: not match data" n))
+      (error "irregex-match-valid-index?: not a valid index" n))
   (%irregex-match-valid-index? m n))
 
 (define (irregex-match-substring m . opt)
@@ -419,29 +513,35 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Flags
 
-(define (bit-shr n i)
-  (quotient n (expt 2 i)))
-
-(define (bit-shl n i)
-  (* n (expt 2 i)))
-
-(define (bit-not n) (- #xFFFF n))
-
-(define (bit-ior a b)
-  (cond
-   ((zero? a) b)
-   ((zero? b) a)
-   (else
-    (+ (if (or (odd? a) (odd? b)) 1 0)
-       (* 2 (bit-ior (quotient a 2) (quotient b 2)))))))
-
-(define (bit-and a b)
-  (cond
-   ((zero? a) 0)
-   ((zero? b) 0)
-   (else
-    (+ (if (and (odd? a) (odd? b)) 1 0)
-       (* 2 (bit-and (quotient a 2) (quotient b 2)))))))
+(cond-expand
+  (chicken
+   (begin
+     (define-inline (bit-shl n i) (arithmetic-shift n i))
+     (define-inline (bit-shr n i) (arithmetic-shift n (fxneg i)))
+     (define-inline (bit-not n) (bitwise-not n))
+     (define-inline (bit-ior a b) (bitwise-ior a b))
+     (define-inline (bit-and a b) (bitwise-and a b))))
+  (else
+   (begin
+     (define (bit-shr n i)
+       (quotient n (expt 2 i)))
+     (define (bit-shl n i)
+       (* n (expt 2 i)))
+     (define (bit-not n) (- #xFFFF n))
+     (define (bit-ior a b)
+       (cond
+	((zero? a) b)
+	((zero? b) a)
+	(else
+	 (+ (if (or (odd? a) (odd? b)) 1 0)
+	    (* 2 (bit-ior (quotient a 2) (quotient b 2)))))))
+     (define (bit-and a b)
+       (cond
+	((zero? a) 0)
+	((zero? b) 0)
+	(else
+	 (+ (if (and (odd? a) (odd? b)) 1 0)
+	    (* 2 (bit-and (quotient a 2) (quotient b 2))))))))))
 
 (define (integer-log n)
   (define (b8 n r)
@@ -1473,11 +1573,28 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Compilation
 
+(cond-expand
+  (chicken
+   (define-syntax cached
+     (syntax-rules ()
+       ((_ arg fail) (build-cache 5 arg fail)))))
+  (else
+   (define-syntax cached
+     (syntax-rules ()
+       ((_ arg fail) fail)))))
+
 (define (irregex x . o)
-  (cond
-   ((irregex? x) x)
-   ((string? x) (apply string->irregex x o))
-   (else (apply sre->irregex x o))))
+  (cond ((irregex? x) x)
+	((null? o)
+	 (cached
+	  x
+	  (if (string? x)
+	      (string->irregex x)
+	      (sre->irregex x))))
+	(else
+	 (if (string? x)
+	     (apply string->irregex x o)
+	     (apply sre->irregex x o)))))
 
 (define (string->irregex str . o)
   (apply sre->irregex (apply string->sre str o) o))
@@ -2792,10 +2909,21 @@
 ;;
 ;; See http://compilers.iecc.com/comparch/article/07-10-026
 
+(cond-expand
+  (chicken
+   (begin
+     (define-inline (match-vector-ref m i)
+       (vector-ref (internal "##sys#slot" m 1) i))
+     (define-inline (match-vector-set! m i x)
+       (vector-set! (internal "##sys#slot" m 1) i x))))
+  (else
+   (define match-vector-ref vector-ref)
+   (define match-vector-set! vector-set!)))
+
 (define (sre-match-extractor sre num-submatches)
   (let* ((tmp (+ num-submatches 1))
-         (tmp-end-src-offset (+ 5 (* tmp 4)))
-         (tmp-end-index-offset (+ 6 (* tmp 4))))
+         (tmp-end-src-offset (+ 2 (* tmp 4)))
+         (tmp-end-index-offset (+ 3 (* tmp 4))))
     (let lp ((sre sre) (n 1) (submatch-deps? #f))
       (cond
        ((not (sre-has-submatches? sre))
@@ -2826,25 +2954,25 @@
                                   best-src
                                   best-index)))
                           (best-src
-                           (vector-set! matches tmp-end-src-offset best-src)
-                           (vector-set! matches tmp-end-index-offset best-index)
+                           (match-vector-set! matches tmp-end-src-offset best-src)
+                           (match-vector-set! matches tmp-end-index-offset best-index)
                            #t)
                           (else
                            #f))
                          (if (and (match-left cnk start i end2 k matches)
-                                  (eq? end2 (vector-ref matches
+                                  (eq? end2 (match-vector-ref matches
                                                         tmp-end-src-offset))
-                                  (eqv? k (vector-ref matches
+                                  (eqv? k (match-vector-ref matches
                                                       tmp-end-index-offset))
                                   (match-right cnk end2 k end j matches))
                              (let ((right-src
-                                    (vector-ref matches tmp-end-src-offset))
+                                    (match-vector-ref matches tmp-end-src-offset))
                                    (right
-                                    (vector-ref matches tmp-end-index-offset)))
+                                    (match-vector-ref matches tmp-end-index-offset)))
                                (cond
                                 ((and (eq? end right-src) (eqv? j right))
-                                 (vector-set! matches tmp-end-src-offset end)
-                                 (vector-set! matches tmp-end-index-offset j)
+                                 (match-vector-set! matches tmp-end-src-offset end)
+                                 (match-vector-set! matches tmp-end-index-offset j)
                                  #t)
                                 ((or (not best-src)
                                      (if (eq? best-src right-src)
@@ -2868,8 +2996,8 @@
                            submatch-deps?)))
                  (lambda (cnk start i end j matches)
                    (or (and (match-first cnk start i end j matches)
-                            (eq? end (vector-ref matches tmp-end-src-offset))
-                            (eqv? j (vector-ref matches tmp-end-index-offset)))
+                            (eq? end (match-vector-ref matches tmp-end-src-offset))
+                            (eqv? j (match-vector-ref matches tmp-end-index-offset)))
                        (match-rest cnk start i end j matches))))))
           ((* +)
            (letrec ((match-once
@@ -2877,21 +3005,21 @@
                     (match-all
                      (lambda (cnk start i end j matches)
                        (if (match-once cnk start i end j matches)
-                           (let ((src (vector-ref matches tmp-end-src-offset))
-                                 (k (vector-ref matches tmp-end-index-offset)))
+                           (let ((src (match-vector-ref matches tmp-end-src-offset))
+                                 (k (match-vector-ref matches tmp-end-index-offset)))
                              (if (and src (or (not (eq? start src)) (< i k)))
                                  (match-all cnk src k end j matches)
                                  #t))
                            (begin
-                             (vector-set! matches tmp-end-src-offset start)
-                             (vector-set! matches tmp-end-index-offset i)
+                             (match-vector-set! matches tmp-end-src-offset start)
+                             (match-vector-set! matches tmp-end-index-offset i)
                              #t)))))
              (if (eq? '* (car sre))
                  match-all
                  (lambda (cnk start i end j matches)
                    (and (match-once cnk start i end j matches)
-                        (let ((src (vector-ref matches tmp-end-src-offset))
-                              (k (vector-ref matches tmp-end-index-offset)))
+                        (let ((src (match-vector-ref matches tmp-end-src-offset))
+                              (k (match-vector-ref matches tmp-end-index-offset)))
                           (match-all cnk src k end j matches)))))))
           ((?)
            (let ((match-once (lp (sre-sequence (cdr sre)) n #t)))
@@ -2901,19 +3029,19 @@
           (($ submatch)
            (let ((match-one
                   (lp (sre-sequence (cdr sre)) (+ n 1) #t))
-                 (start-src-offset (+ 3 (* n 4)))
-                 (start-index-offset (+ 4 (* n 4)))
-                 (end-src-offset (+ 5 (* n 4)))
-                 (end-index-offset (+ 6 (* n 4))))
+                 (start-src-offset (* n 4))
+                 (start-index-offset (+ 1 (* n 4)))
+                 (end-src-offset (+ 2 (* n 4)))
+                 (end-index-offset (+ 3 (* n 4))))
              (lambda (cnk start i end j matches)
                (cond
                 ((match-one cnk start i end j matches)
-                 (vector-set! matches start-src-offset start)
-                 (vector-set! matches start-index-offset i)
-                 (vector-set! matches end-src-offset
-                              (vector-ref matches tmp-end-src-offset))
-                 (vector-set! matches end-index-offset
-                              (vector-ref matches tmp-end-index-offset))
+                 (match-vector-set! matches start-src-offset start)
+                 (match-vector-set! matches start-index-offset i)
+                 (match-vector-set! matches end-src-offset
+                              (match-vector-ref matches tmp-end-src-offset))
+                 (match-vector-set! matches end-index-offset
+                              (match-vector-ref matches tmp-end-index-offset))
                  #t)
                 (else
                  #f)))))
