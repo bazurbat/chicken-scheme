@@ -9,7 +9,7 @@
 
 (define (subst-matches matches subst)
   (define (submatch n)
-    (if (vector? matches)
+    (if (irregex-match-data? matches)
         (irregex-match-substring matches n)
         (list-ref matches n)))
   (and

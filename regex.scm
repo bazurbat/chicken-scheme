@@ -40,118 +40,65 @@
     regexp-escape
     ))
 
-;(include "common-declarations.scm")
+(include "common-declarations.scm")
 
 (register-feature! 'regex)
 
 
 ;;; Record `regexp'
 
-(define-record regexp x)
-
-(define-syntax (build-cache x r c)
-  ;; (build-cache N ARG FAIL) 
-  (let* ((n (cadr x))
-	 (n2 (* n 2))
-	 (arg (caddr x))
-	 (fail (cadddr x))
-	 (%cache (r 'cache))
-	 (%index (r 'index))
-	 (%arg (r 'arg))
-	 (%let (r 'let))
-	 (%let* (r 'let*))
-	 (%if (r 'if))
-	 (%fx+ (r 'fx+))
-	 (%fxmod (r 'fxmod))
-	 (%equal? (r 'equal?))
-	 (%quote (r 'quote))
-	 (%tmp (r 'tmp))
-	 (%begin (r 'begin))
-	 (cache (make-vector (add1 n2) #f)))
-    (vector-set! cache n2 0)		; last slot: current index
-    `(,%let* ((,%cache (,%quote ,cache))
-	      (,%arg ,arg))
-	     ,(let fold ((i 0))
-		(if (>= i n)
-		    ;; this should be thread-safe: a context-switch can only
-		    ;; happen before this code and in the call to FAIL.
-		    `(,%let ((,%tmp ,fail)
-			     (,%index (##sys#slot ,%cache ,n2)))
-			    (##sys#setslot ,%cache ,%index ,%arg)
-			    (##sys#setslot ,%cache (,%fx+ ,%index 1) ,%tmp)
-			    (##sys#setislot 
-			     ,%cache ,n2
-			     (##core#inline "C_u_fixnum_modulo" (,%fx+ ,%index 2) ,n2))
-			    ,%tmp)
-		    `(,%if (,%equal? (##sys#slot ,%cache ,(* i 2)) ,%arg)
-			   (##sys#slot ,%cache ,(add1 (* i 2)))
-			   ,(fold (add1 i))))))))
-
 (define (regexp pat #!optional caseless extended utf8)
-  (if (regexp? pat)
-      pat
-      (make-regexp
-       (apply
-	irregex 
-	pat 
-	(let ((opts '()))
-	  (when caseless (set! opts (cons 'i opts)))
-	  (when extended (set! opts (cons 'x opts)))
-	  (when utf8 (set! opts (cons 'utf8 opts)))
-	  opts))) ) )
+  (apply
+   irregex 
+   pat 
+   (let ((opts '()))
+     (when caseless (set! opts (cons 'i opts)))
+     (when extended (set! opts (cons 'x opts)))
+     (when utf8 (set! opts (cons 'utf8 opts)))
+     opts)))
 
-(define (unregexp x)
-  (cond ((regexp? x) (regexp-x x))
-	((irregex? x) x)
-	(else
-	 (build-cache
-	  5 x
-	  (irregex x)))))
+(define regexp? irregex?)
 
 
 ;;; Basic `regexp' operations
 
 (define (string-match rx str)
-  (let ((rx (unregexp rx)))
-    (and-let* ((m (irregex-match rx str)))
-      (let loop ((i (irregex-match-num-submatches m))
-                 (res '()))
-        (if (fx<= i 0)
-            (cons str res)
-            (loop (fx- i 1) (cons (irregex-match-substring m i) res)))))))
+  (and-let* ((m (irregex-match rx str)))
+    (let loop ((i (irregex-match-num-submatches m))
+	       (res '()))
+      (if (fx<= i 0)
+	  (cons str res)
+	  (loop (fx- i 1) (cons (irregex-match-substring m i) res))))))
 
 (define (string-match-positions rx str)
-  (let ((rx (unregexp rx)))
-    (and-let* ((m (irregex-match rx str)))
-      (let loop ((i (irregex-match-num-submatches m))
-                 (res '()))
-        (if (fx<= i 0)
-            (cons (list 0 (string-length str)) res)
-            (loop (fx- i 1) (cons (list (irregex-match-start-index m i)
-                                        (irregex-match-end-index m i))
-                                  res)))))))
+  (and-let* ((m (irregex-match rx str)))
+    (let loop ((i (irregex-match-num-submatches m))
+	       (res '()))
+      (if (fx<= i 0)
+	  (cons (list 0 (string-length str)) res)
+	  (loop (fx- i 1) (cons (list (irregex-match-start-index m i)
+				      (irregex-match-end-index m i))
+				res))))))
 
 (define (string-search rx str #!optional (start 0) (range (string-length str)))
-  (let ((rx (unregexp rx)))
-    (let ((n (string-length str)))
-      (and-let* ((m (irregex-search rx str start (min n (fx+ start range)))))
-	(let loop ((i (irregex-match-num-submatches m))
-		   (res '()))
-	  (if (fx< i 0)
-	      res
-	      (loop (fx- i 1) (cons (irregex-match-substring m i) res))))))))
+  (let ((n (string-length str)))
+    (and-let* ((m (irregex-search rx str start (min n (fx+ start range)))))
+      (let loop ((i (irregex-match-num-submatches m))
+		 (res '()))
+	(if (fx< i 0)
+	    res
+	    (loop (fx- i 1) (cons (irregex-match-substring m i) res)))))))
 
 (define (string-search-positions rx str #!optional (start 0) (range (string-length str)))
-  (let ((rx (unregexp rx)))
-    (let ((n (string-length str)))
-      (and-let* ((m (irregex-search rx str start (min n (fx+ start range)))))
-	(let loop ((i (irregex-match-num-submatches m))
-		   (res '()))
-	  (if (fx< i 0)
-	      res
-	      (loop (fx- i 1) (cons (list (irregex-match-start-index m i)
-					  (irregex-match-end-index m i))
-				    res))))))))
+  (let ((n (string-length str)))
+    (and-let* ((m (irregex-search rx str start (min n (fx+ start range)))))
+      (let loop ((i (irregex-match-num-submatches m))
+		 (res '()))
+	(if (fx< i 0)
+	    res
+	    (loop (fx- i 1) (cons (list (irregex-match-start-index m i)
+					(irregex-match-end-index m i))
+				  res)))))))
 
 
 ;;; Split string into fields:
