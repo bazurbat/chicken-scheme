@@ -1245,10 +1245,12 @@
     (##sys#strip-syntax x se))
   (define stripu ##sys#strip-syntax)
   (define (globalize sym)
-    (let loop ((se se))			; ignores syntax bindings
-      (cond ((null? se) (##sys#alias-global-hook sym #f))
-	    ((and (eq? sym (caar se)) (symbol? (cdar se))) (cdar se))
-	    (else (loop (cdr se))))))
+    (if (symbol? sym)
+	(let loop ((se se))			; ignores syntax bindings
+	  (cond ((null? se) (##sys#alias-global-hook sym #f))
+		((and (eq? sym (caar se)) (symbol? (cdar se))) (cdar se))
+		(else (loop (cdr se)))))
+	sym))
   (define (globalize-all syms) (map globalize syms))
   (call-with-current-continuation
    (lambda (return)
