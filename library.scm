@@ -364,9 +364,9 @@ EOF
 (define (cadddr x) (##core#inline "C_i_cadddr" x))
 (define (cddddr x) (##core#inline "C_i_cddddr" x))
 
-(define (caar x) (car (car x)))
-(define (cdar x) (cdr (car x)))
-(define (cddr x) (cdr (cdr x)))
+(define (caar x) (##core#inline "C_i_caar" x))
+(define (cdar x) (##core#inline "C_i_cdar" x))
+(define (cddr x) (##core#inline "C_i_cddr" x))
 (define (caaar x) (car (car (car x))))
 (define (caadr x) (car (##core#inline "C_i_cadr" x)))
 (define (cadar x) (##core#inline "C_i_cadr" (car x)))
