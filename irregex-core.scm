@@ -162,7 +162,12 @@
      (define (%irregex-match-end-index m n)
        (internal "##sys#slot" (internal "##sys#slot" m 1) (+ 3 (* n 4))))
      (define (%irregex-match-fail m) (internal "##sys#slot" m 4))
-     (define (%irregex-match-fail-set! m x) (internal "##sys#setslot" m 4 x))))
+     (define (%irregex-match-fail-set! m x) (internal "##sys#setslot" m 4 x))
+     (define-record-printer (regexp-match m out)
+       (let ((n (irregex-match-num-submatches m)))
+	 (display "#<regexp-match (" out)
+	 (display n out)
+	 (display " submatches)>" out)))))
   (else
    (begin
      (define (irregex-new-matches irx)
@@ -243,9 +248,14 @@
 
 (define (irregex-match-index m opt)
   (if (pair? opt)
-      (cond ((number? (car opt)) (car opt))
-            ((assq (car opt) (irregex-match-names m)) => cdr)
-            (else (error "unknown match name" (car opt))))
+      (if (number? (car opt))
+          (car opt)
+	  (let lp ((ls (irregex-match-names m)))
+	    (cond ((null? ls) (error "unknown match name" (car opt)))
+		  ((and (eq? (car opt) (caar ls))
+			(%irregex-match-start-chunk m (cdar ls)))
+		   (cdar ls))
+		  (else (lp (cdr ls))))))
       0))
 
 (cond-expand

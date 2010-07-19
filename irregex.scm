@@ -28,10 +28,10 @@
 (declare (unit irregex))
 
 (declare
-  (disable-interrupts)
   (no-procedure-checks)
   (fixnum)
   (export
+   ##sys#glob->regexp
    irregex
    irregex-apply-match
    irregex-dfa
@@ -123,3 +123,45 @@
 			   ,(fold (add1 i))))))))
 
 (include "irregex-core.scm")
+
+(define ##sys#glob->regexp
+  (let ((list->string list->string)
+        (string->list string->list))
+    (lambda (s #!optional sre?)
+      (##sys#check-string s 'glob->regexp)
+      (let ((sre
+	     (cons 
+	      ':
+	      (let loop ((cs (string->list s)) (dir #t))
+		(if (null? cs)
+		    '()
+		    (let ((c (car cs))
+			  (rest (cdr cs)) )
+		      (cond ((char=? c #\*) 
+			     (if dir
+				 `((or (: (~ ("./\\"))
+					  (* (~ ("/\\"))))
+				       (* (~ ("./\\"))))
+				   ,@(loop rest #f))
+				 `((* (~ ("/\\"))) ,@(loop rest #f))))
+			    ((char=? c #\?)  (cons 'any (loop rest #f)))
+			    ((char=? c #\[)
+			     (let loop2 ((rest rest) (s '()))
+			       (cond ((not (pair? rest))
+				      (error 'glob->regexp
+					     "unexpected end of character class" s))
+				     ((char=? #\] (car rest))
+				      `((or ,@s) ,@(loop (cdr rest) #f)))
+				     ((and (pair? (cdr rest))
+					   (pair? (cddr rest))
+					   (char=? #\- (cadr rest)) )
+				      (loop2 (cdddr rest)
+					     (cons `(/ ,(car rest) ,(caddr rest)) s)))
+				     ((and (pair? (cdr rest))
+					   (char=? #\- (car rest)))
+				      (loop2 (cddr rest)
+					     (cons `(~ ,(cadr rest)) s)))
+				     (else
+				      (loop2 (cdr rest) (cons (car rest) s))))))
+			    (else (cons c (loop rest (memq c '(#\\ #\/))))))))))))
+	(if sre? sre (regexp sre))))))

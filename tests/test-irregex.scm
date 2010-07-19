@@ -1,11 +1,9 @@
 ;;;: test-irregex.scm
 
 
-(use extras regex)
+(use extras irregex)
 
 (include "test.scm")
-
-(import irregex)
 
 (define (subst-matches matches subst)
   (define (submatch n)
@@ -291,6 +289,25 @@
        (rope "bob@test.com and fred@example.com")
        (lambda (src i s) (reverse s))))
   )
+
+
+(define (extract name irx str)
+  (irregex-match-substring (irregex-match irx str) name))
+
+(test-group "named submatches"
+  (test-equal "matching alternative is used"
+        "first" (extract 'sub `(or (submatch-named sub "first")
+                                   (submatch-named sub "second"))
+                         "first"))
+  (test-equal "matching alternative is used (second match)"
+        "second" (extract 'sub `(or (submatch-named sub "first")
+                                    (submatch-named sub "second"))
+                         "second"))
+  (test-equal "last match is used with multiple matches for a name"
+        "second" (extract 'sub `(seq (submatch-named sub "first")
+                                     space
+                                     (submatch-named sub "second"))
+                         "first second")))
 
 (test-end)
 
