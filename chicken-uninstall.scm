@@ -26,14 +26,14 @@
 
 (require-library
  setup-api
- srfi-1 posix data-structures utils ports regex srfi-13 files)
+ srfi-1 posix data-structures utils ports irregex srfi-13 files)
 
 
 (module main ()
   
   (import scheme chicken foreign)
   (import setup-api)
-  (import srfi-1 posix data-structures utils ports regex srfi-13 files)
+  (import srfi-1 posix data-structures utils ports irregex srfi-13 files)
 
   (define-foreign-variable C_TARGET_LIB_HOME c-string)
   (define-foreign-variable C_BINARY_VERSION int)
@@ -48,6 +48,9 @@
 	(repository-path)))
 
   (define *force* #f)
+
+  (define (grep rx lst)
+    (filter (cut irregex-search rx <>) lst))
 
   (define (gather-eggs patterns)
     (let ((eggs (map pathname-file 
@@ -117,8 +120,8 @@ EOF
 		 (map
 		  (lambda (p)
 		    (if exact
-			(regexp (string-append "^" (regexp-escape p) "$"))
-			(glob->regexp p)))
+			(irregex (string-append "^" (irregex-quote p) "$"))
+			(##sys#glob->regexp p)))
 		  pats))))
 	      (else
 	       (let ((arg (car args)))

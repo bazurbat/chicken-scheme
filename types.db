@@ -920,22 +920,6 @@
 (with-input-from-pipe (procedure with-input-from-pipe (string (procedure () . *) #!optional symbol) . *))
 (with-output-to-pipe (procedure with-output-to-pipe (string (procedure () . *) #!optional symbol) . *))
 
-;; regex
-
-(glob->regexp (procedure glob->regexp (string #!optional *) *))
-(glob? deprecated)
-(grep (procedure grep (* list #!optional (procedure (*) *)) list))
-(regexp (procedure regexp (* #!optional * * *) (struct regexp)))
-(regexp-escape (procedure regexp-escape (string) string))
-(regexp? (procedure regexp? (*) boolean))
-(string-match (procedure string-match (* string) *))
-(string-match-positions (procedure string-match-positions (* string) *))
-(string-search (procedure string-search (* string #!optional fixnum fixnum) *))
-(string-search-positions (procedure string-search-positions (* string #!optional fixnum fixnum) *))
-(string-split-fields (procedure string-split-fields (* string #!optional * fixnum) list))
-(string-substitute (procedure string-substitute (* string string #!optional *) string))
-(string-substitute* (procedure string-substitute* (string list #!optional *) string))
-
 ;; srfi-1
 
 (alist-cons (procedure alist-cons (* * *) list))

@@ -55,7 +55,7 @@
 (define-foreign-variable binary-version int "C_BINARY_VERSION")
 
 (define ##sys#core-library-modules
-  '(extras lolevel utils files tcp regex irregex posix srfi-1 srfi-4 srfi-13 
+  '(extras lolevel utils files tcp irregex posix srfi-1 srfi-4 srfi-13 
 	   srfi-14 srfi-18 srfi-69 data-structures ports chicken-syntax
 	   chicken-ffi-syntax))
 
