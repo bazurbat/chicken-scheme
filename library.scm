@@ -2347,7 +2347,7 @@ EOF
 			 (char-whitespace? c)
 			 (memq c terminating-characters) )
 		     (##sys#reverse-list->string lst) )
-		    ((or (char=? c #\x00) (char=? c #\xff))
+		    ((char=? c #\x00)
 		     (##sys#read-error port "attempt to read expression from something that looks like binary data"))
 		    (else
 		     (when (char=? c #\/) (set! rat-flag #t))
