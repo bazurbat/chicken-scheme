@@ -608,29 +608,6 @@ A single value version of {{compose}} (slightly faster). {{(o)}} is equivalent
 to {{identity}}.
 
 
-==== left-section
-
-<procedure>(left-section PROC ARG0 ...)</procedure>
-
-Returns a procedure that partially applies some of its arguments starting from the left.
-
-{{PROC}} a procedure.
-
-{{ARG0 ...}} some prefix of the arguments for {{PROC}}.
-
-
-==== right-section
-
-<procedure>(right-section PROC ARG0 ...)</procedure>
-
-Returns a procedure that partially applies some of its arguments starting from the right.
-
-{{PROC}} a procedure.
-
-{{ARG0 ...}} some reversed suffix of the arguments for {{PROC}}.
-
-
-
 === Binary searching
 
 

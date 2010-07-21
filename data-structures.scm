@@ -125,12 +125,12 @@ EOF
 
 (define (never? . _) #f)
 
-(define (left-section proc . args)
+(define (left-section proc . args)	;DEPRECATED
   (##sys#check-closure proc 'left-section)
   (lambda xs
     (##sys#apply proc (##sys#append args xs)) ) )
 
-(define right-section
+(define right-section			;DEPRECATED
   (let ([##sys#reverse reverse])
     (lambda (proc . args)
       (##sys#check-closure proc 'right-section)
