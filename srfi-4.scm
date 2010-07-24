@@ -131,7 +131,7 @@ EOF
   (##sys#check-structure x 'u32vector 'u32vector-set!)
   (let ((len (##core#inline "C_u_i_32vector_length" x)))
     (##sys#check-integer y 'u32vector-set!)
-    (cond ((negative? y 0)
+    (cond ((negative? y)
 	   (##sys#error 'u32vector-set! "argument may not be negative" y) )
 	  ((not (##sys#fits-in-unsigned-int? y))
 	   (##sys#error 'u32vector-set! "argument exceeds integer range" y) ) )

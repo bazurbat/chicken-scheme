@@ -271,7 +271,8 @@ manual/Foreign type specifiers
 manual/Getting started
 manual/Interface to external functions and variables
 manual/Locations
-manual/Modules and macros
+manual/Modules
+manual/macros
 manual/Non-standard macros and special forms
 manual/Non-standard read syntax
 manual/Other support procedures
