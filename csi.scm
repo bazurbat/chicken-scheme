@@ -764,13 +764,14 @@ EOF
 	    (when (and here finfo)
 	      (for-each
 	       (lambda (e v)
-		 (display "  ---\n")
-		 (do ((i 0 (fx+ i 1))
-		      (be e (cdr be)))
-		     ((null? be))
-		   (printf "  ~s:\t  " (car be))
-		   (prin1 (##sys#slot v i))
-		   (newline)))
+		 (unless (null? e)
+		   (display "  ---\n")
+		   (do ((i 0 (fx+ i 1))
+			(be e (cdr be)))
+		       ((null? be))
+		     (printf "  ~s:\t  " (car be))
+		     (prin1 (##sys#slot v i))
+		     (newline))))
 	       (##sys#slot data 2)	   ; e
 	       (##sys#slot data 3)))))))))	   ; v
 	  
