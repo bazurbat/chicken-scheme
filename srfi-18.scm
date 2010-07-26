@@ -372,7 +372,8 @@ EOF
 	   (##sys#setislot mutex 4 #f)
 	   (##sys#setislot mutex 5 #f)
 	   (let ((t (##sys#slot mutex 2)))
-	     (##sys#setslot t 8 (##sys#delq mutex (##sys#slot t 8))))
+	     (when t
+	       (##sys#setslot t 8 (##sys#delq mutex (##sys#slot t 8)))))
 	   (when cvar
 	     (##sys#setslot cvar 2 (##sys#append (##sys#slot cvar 2) (##sys#list ct)))
 	     (##sys#setslot ct 11 cvar)
