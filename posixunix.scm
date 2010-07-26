@@ -308,10 +308,10 @@ static C_TLS sigset_t C_sigset;
 
 #define C_ctime(n)          (C_secs = (n), ctime(&C_secs))
 
-#if defined(__SVR4)
+#if defined(__SVR4) || defined(C_MACOSX)
 /* Seen here: http://lists.samba.org/archive/samba-technical/2002-November/025571.html */
 
-static time_t timegm(struct tm *t)
+static time_t C_timegm(struct tm *t)
 {
   time_t tl, tb;
   struct tm *tg;
@@ -338,6 +338,8 @@ static time_t timegm(struct tm *t)
     }
   return (tl - (tb - tl));
 }
+#else
+#define C_timegm timegm
 #endif
 
 #define cpy_tmvec_to_tmstc08(ptm, v) \
@@ -413,7 +415,7 @@ C_tm_get( C_word v )
 
 #define C_asctime(v)    (asctime(C_tm_set(v)))
 #define C_a_mktime(ptr, c, v)  C_flonum(ptr, mktime(C_tm_set(v)))
-#define C_a_timegm(ptr, c, v)  C_flonum(ptr, timegm(C_tm_set(v)))
+#define C_a_timegm(ptr, c, v)  C_flonum(ptr, C_timegm(C_tm_set(v)))
 
 #define TIME_STRING_MAXLENGTH 255
 static char C_time_string [TIME_STRING_MAXLENGTH + 1];
