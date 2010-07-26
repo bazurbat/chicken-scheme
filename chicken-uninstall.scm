@@ -53,7 +53,8 @@
     (let ((eggs (map pathname-file 
 		     (glob (make-pathname (repo-path) "*" "setup-info")))))
       (delete-duplicates
-       (concatenate (map (cut grep <> eggs) patterns))
+       (concatenate 
+	(map (cut grep <> eggs) patterns))
        string=?)))
 
   (define (quit code)
@@ -96,48 +97,63 @@ usage: chicken-uninstall [OPTION | PATTERN] ...
   -h   -help                    show this message and exit
   -v   -version                 show version and exit
        -force                   don't ask, delete whatever matches
+       -exact                   treat PATTERN as exact match (not a pattern)
   -s   -sudo                    use sudo(1) for deleting files
        -host                    when cross-compiling, uninstall host extensions only
        -target                  when cross-compiling, uninstall target extensions only
 EOF
-);|
+);| (sic)
     (exit code))
 
   (define *short-options* '(#\h #\s))
 
   (define (main args)
-    (let loop ((args args) (pats '()))
-      (if (null? args)
-	  (uninstall (if (null? pats) (usage 1) (reverse pats)))
-	  (let ((arg (car args)))
-	    (cond ((or (string=? arg "-help") 
-		       (string=? arg "-h")
-		       (string=? arg "--help"))
-		   (usage 0))
-		  ((or (string=? arg "-v") (string=? arg "-version"))
-		   (print (chicken-version))
-		   (exit 0))
-		  ((string=? arg "-target")
-		   (set! *host-extensions* #f)
-		   (loop (cdr args) pats))
-		  ((string=? arg "-host")
-		   (set! *target-extensions* #f)
-		   (loop (cdr args) pats))
-		  ((string=? arg "-force")
-		   (set! *force* #t)
-		   (loop (cdr args) pats))
-		  ((or (string=? arg "-s") (string=? arg "-sudo"))
-		   (sudo-install #t)
-		   (loop (cdr args) pats))
-		  ((and (positive? (string-length arg))
-			(char=? #\- (string-ref arg 0)))
-		   (if (> (string-length arg) 2)
-		       (let ((sos (string->list (substring arg 1))))
-			 (if (every (cut memq <> *short-options*) sos)
-			     (loop (append (map (cut string #\- <>) sos) (cdr args)) pats)
-			     (usage 1)))
-		       (usage 1)))
-		  (else (loop (cdr args) (cons (glob->regexp arg) pats))))))))
+    (let ((exact #f))
+      (let loop ((args args) (pats '()))
+	(cond ((null? args)
+	       (when (null? pats) (usage 1))
+	       (uninstall
+		(reverse 
+		 (map
+		  (lambda (p)
+		    (if exact
+			(regexp (string-append "^" (regexp-escape p) "$"))
+			(glob->regexp p)))
+		  pats))))
+	      (else
+	       (let ((arg (car args)))
+		 (cond ((or (string=? arg "-help") 
+			    (string=? arg "-h")
+			    (string=? arg "--help"))
+			(usage 0))
+		       ((or (string=? arg "-v") (string=? arg "-version"))
+			(print (chicken-version))
+			(exit 0))
+		       ((string=? arg "-target")
+			(set! *host-extensions* #f)
+			(loop (cdr args) pats))
+		       ((string=? arg "-host")
+			(set! *target-extensions* #f)
+			(loop (cdr args) pats))
+		       ((string=? arg "-force")
+			(set! *force* #t)
+			(loop (cdr args) pats))
+		       ((string=? arg "-exact")
+			(set! exact #t)
+			(loop (cdr args) pats))
+		       ((or (string=? arg "-s") (string=? arg "-sudo"))
+			(sudo-install #t)
+			(loop (cdr args) pats))
+		       ((and (positive? (string-length arg))
+			     (char=? #\- (string-ref arg 0)))
+			(if (> (string-length arg) 2)
+			    (let ((sos (string->list (substring arg 1))))
+			      (if (every (cut memq <> *short-options*) sos)
+				  (loop
+				   (append (map (cut string #\- <>) sos) (cdr args)) pats)
+				  (usage 1)))
+			    (usage 1)))
+		       (else (loop (cdr args) (cons arg pats))))))))))
 
   (main (command-line-arguments))
   
