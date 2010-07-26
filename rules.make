@@ -1082,7 +1082,6 @@ boot-chicken:
 
 touchfiles:
 ifdef WINDOWS_SHELL
-	rem now is this funky, or what?
 	for %x in (*.scm) do copy /b %x +,,
 else
 	touch *.scm
