@@ -166,14 +166,14 @@ Imports {{IMPORT ...}} and automatically exports all imported identifiers.
 This can be used to build ''compound modules'': modules that just extend
 other modules:
 
-<scheme>
+<enscript hightlight=scheme>
 (module r4rs ()
   (import scheme chicken)
   (reexport 
     (except scheme 
       dynamic-wind values call-with-values eval scheme-report-environment
       null-environment interaction-environment)))
-</scheme>
+</enscript>
 
 
 === import libraries
