@@ -355,7 +355,7 @@ static time_t C_timegm(struct tm *t)
     (ptm)->tm_isdst = (C_block_item((v), 8) != C_SCHEME_FALSE))
 
 #define cpy_tmvec_to_tmstc9(ptm, v) \
-    (((struct tm *)ptm)->tm_gmtoff = C_unfix(C_block_item((v), 9)))
+    (((struct tm *)ptm)->tm_gmtoff = -C_unfix(C_block_item((v), 9)))
 
 #define cpy_tmstc08_to_tmvec(v, ptm) \
     (C_set_block_item((v), 0, C_fix(((struct tm *)ptm)->tm_sec)), \
@@ -369,7 +369,7 @@ static time_t C_timegm(struct tm *t)
     C_set_block_item((v), 8, ((ptm)->tm_isdst ? C_SCHEME_TRUE : C_SCHEME_FALSE)))
 
 #define cpy_tmstc9_to_tmvec(v, ptm) \
-    (C_set_block_item((v), 9, C_fix((ptm)->tm_gmtoff)))
+    (C_set_block_item((v), 9, C_fix(-(ptm)->tm_gmtoff)))
 
 #define C_tm_set_08(v)  cpy_tmvec_to_tmstc08( &C_tm, (v) )
 #define C_tm_set_9(v)   cpy_tmvec_to_tmstc9( &C_tm, (v) )

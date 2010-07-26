@@ -7775,13 +7775,13 @@ void C_ccall C_decode_seconds(C_word c, C_word closure, C_word k, C_word secs, C
 		  C_fix(tmt->tm_mday), C_fix(tmt->tm_mon), C_fix(tmt->tm_year),
 		  C_fix(tmt->tm_wday), C_fix(tmt->tm_yday),
 		  tmt->tm_isdst > 0 ? C_SCHEME_TRUE : C_SCHEME_FALSE,
-#ifdef C_MACOSX
+#ifdef C_GNU_ENV
                   /* negative for west of UTC, but we want positive */
 		  C_fix(-tmt->tm_gmtoff)
 #elif defined(__CYGWIN__) || defined(__MINGW32__) || defined(_WIN32) || defined(__WINNT__)
-                  C_fix(_timezone)
+                  C_fix(mode == C_SCHEME_FALSE ? _timezone : 0) /* does not account for DST */
 #else
-                  C_fix(timezone)
+                  C_fix(mode == C_SCHEME_FALSE ? timezone : 0)  /* does not account for DST */
 #endif
 		  );
   C_kontinue(k, info);
