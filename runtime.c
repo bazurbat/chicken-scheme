@@ -1690,7 +1690,7 @@ long C_fcall cpu_milliseconds(void)
 
 int C_fcall C_save_callback_continuation(C_word **ptr, C_word k)
 {
-  C_word p = C_pair(ptr, k, C_block_item(callback_continuation_stack_symbol, 0));
+  C_word p = C_a_pair(ptr, k, C_block_item(callback_continuation_stack_symbol, 0));
   
   C_mutate(&C_block_item(callback_continuation_stack_symbol, 0), p);
   return ++callback_continuation_level;
@@ -2071,7 +2071,7 @@ C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stabl
   C_set_block_item(sym, 2, C_SCHEME_END_OF_LIST);
   *ptr = p;
   b2 = stable->table[ key ];	/* previous bucket */
-  bucket = C_pair(ptr, sym, b2); /* create new bucket */
+  bucket = C_a_pair(ptr, sym, b2); /* create new bucket */
   ((C_SCHEME_BLOCK *)bucket)->header = 
     (((C_SCHEME_BLOCK *)bucket)->header & ~C_HEADER_TYPE_BITS) | C_BUCKET_TYPE;
 
@@ -2344,6 +2344,7 @@ C_word C_fcall C_closure(C_word **ptr, int cells, C_word proc, ...)
 }
 
 
+/* obsolete: replaced by C_a_pair in chicken.h */
 C_regparm C_word C_fcall C_pair(C_word **ptr, C_word car, C_word cdr)
 {
   C_word *p = *ptr,
@@ -4364,7 +4365,7 @@ C_word C_a_i_list(C_word **a, int c, ...)
 
   for(last = C_SCHEME_UNDEFINED; c--; last = current) {
     x = va_arg(v, C_word);
-    current = C_pair(a, x, C_SCHEME_END_OF_LIST);
+    current = C_a_pair(a, x, C_SCHEME_END_OF_LIST);
 
     if(last != C_SCHEME_UNDEFINED)
       C_set_block_item(last, 1, current);
@@ -4387,7 +4388,7 @@ C_word C_h_list(int c, ...)
 
   for(last = C_SCHEME_UNDEFINED; c--; last = current) {
     x = va_arg(v, C_word);
-    current = C_pair(C_heaptop, x, C_SCHEME_END_OF_LIST);
+    current = C_a_pair(C_heaptop, x, C_SCHEME_END_OF_LIST);
 
     if(C_in_stackp(x)) 
       C_mutate(&C_u_i_car(current), x);
@@ -7444,7 +7445,7 @@ void get_argv_2(void *dummy)
          *a = C_alloc(cells),
          list, str;
   
-  for(list = C_SCHEME_END_OF_LIST; i--; list = C_pair(&a, str, list))
+  for(list = C_SCHEME_END_OF_LIST; i--; list = C_a_pair(&a, str, list))
     str = C_string2(&a, C_main_argv[ i ]);
 
   C_kontinue(k, list);
@@ -8789,8 +8790,8 @@ C_putprop(C_word **ptr, C_word sym, C_word prop, C_word val)
     else pl = C_u_i_cdr(C_u_i_cdr(pl));
   }
 
-  pl = C_pair(ptr, val, C_block_item(sym, 2));
-  pl = C_pair(ptr, prop, pl);
+  pl = C_a_pair(ptr, val, C_block_item(sym, 2));
+  pl = C_a_pair(ptr, prop, pl);
   C_mutate(&C_block_item(sym, 2), pl);
   return val;
 }

@@ -61,6 +61,6 @@ echo -n "fft/unboxed ... "
 $compile fft.scm -D unboxed
 run
 
-echo -n "man-or-oby ... "
+echo -n "man-or-boy ... "
 $compile man-or-boy.scm
 run -:d

@@ -1187,7 +1187,7 @@ extern double trunc(double);
 # define C_a_i_cons(a, n, car, cdr)     ({C_word tmp = (C_word)(*a); (*a)[0] = C_PAIR_TYPE | 2; *a += 3; \
                                           C_set_block_item(tmp, 0, car); C_set_block_item(tmp, 1, cdr); tmp;})
 #else
-# define C_a_i_cons(a, n, car, cdr)     C_pair(a, car, cdr)
+# define C_a_i_cons(a, n, car, cdr)     C_a_pair(a, car, cdr)
 #endif /* __GNUC__ */
 
 #define C_a_i_flonum(ptr, i, n)         C_flonum(ptr, n)
@@ -2257,6 +2257,345 @@ C_inline void *
 C_fast_retrieve_symbol_proc(C_word sym)
 {
   return C_fast_retrieve_proc(C_fast_retrieve(sym));
+}
+
+
+C_inline C_word C_a_i_vector1(C_word **ptr, int n, C_word x1)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_VECTOR_TYPE | 1;
+  *(p++) = x1;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_vector2(C_word **ptr, int n, C_word x1, C_word x2)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_VECTOR_TYPE | 2;
+  *(p++) = x1;
+  *(p++) = x2;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_vector3(C_word **ptr, int n, C_word x1, C_word x2, C_word x3)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_VECTOR_TYPE | 3;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_vector4(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_VECTOR_TYPE | 4;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *(p++) = x4;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_vector5(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+			      C_word x5)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_VECTOR_TYPE | 5;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *(p++) = x4;
+  *(p++) = x5;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_vector6(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+			      C_word x5, C_word x6)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_VECTOR_TYPE | 6;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *(p++) = x4;
+  *(p++) = x5;
+  *(p++) = x6;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_vector7(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+			      C_word x5, C_word x6, C_word x7)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_VECTOR_TYPE | 7;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *(p++) = x4;
+  *(p++) = x5;
+  *(p++) = x6;
+  *(p++) = x7;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_vector8(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+			      C_word x5, C_word x6, C_word x7, C_word x8)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_VECTOR_TYPE | 8;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *(p++) = x4;
+  *(p++) = x5;
+  *(p++) = x6;
+  *(p++) = x7;
+  *(p++) = x8;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_fcall C_a_pair(C_word **ptr, C_word car, C_word cdr)
+{
+  C_word *p = *ptr, *p0 = p;
+ 
+  *(p++) = C_PAIR_TYPE | (C_SIZEOF_PAIR - 1);
+  *(p++) = car;
+  *(p++) = cdr;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_list1(C_word **a, int n, C_word x1)
+{
+  return C_a_pair(a, x1, C_SCHEME_END_OF_LIST);
+}
+
+
+C_inline C_word C_a_i_list2(C_word **a, int n, C_word x1, C_word x2)
+{
+  C_word x = C_a_pair(a, x2, C_SCHEME_END_OF_LIST);
+
+  return C_a_pair(a, x1, x);
+}
+
+
+C_inline C_word C_a_i_list3(C_word **a, int n, C_word x1, C_word x2, C_word x3)
+{
+  C_word x = C_pair(a, x3, C_SCHEME_END_OF_LIST);
+
+  x = C_a_pair(a, x2, x);
+  return C_a_pair(a, x1, x);
+}
+
+
+C_inline C_word C_a_i_list4(C_word **a, int n, C_word x1, C_word x2, C_word x3, C_word x4)
+{
+  C_word x = C_pair(a, x4, C_SCHEME_END_OF_LIST);
+
+  x = C_a_pair(a, x3, x);
+  x = C_a_pair(a, x2, x);
+  return C_a_pair(a, x1, x);
+}
+
+
+C_inline C_word C_a_i_list5(C_word **a, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+			    C_word x5)
+{
+  C_word x = C_pair(a, x5, C_SCHEME_END_OF_LIST);
+
+  x = C_a_pair(a, x4, x);
+  x = C_a_pair(a, x3, x);
+  x = C_a_pair(a, x2, x);
+  return C_a_pair(a, x1, x);
+}
+
+
+C_inline C_word C_a_i_list6(C_word **a, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+			    C_word x5, C_word x6)
+{
+  C_word x = C_pair(a, x6, C_SCHEME_END_OF_LIST);
+
+  x = C_a_pair(a, x5, x);
+  x = C_a_pair(a, x4, x);
+  x = C_a_pair(a, x3, x);
+  x = C_a_pair(a, x2, x);
+  return C_a_pair(a, x1, x);
+}
+
+
+C_inline C_word C_a_i_list7(C_word **a, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+			    C_word x5, C_word x6, C_word x7)
+{
+  C_word x = C_pair(a, x7, C_SCHEME_END_OF_LIST);
+
+  x = C_a_pair(a, x6, x);
+  x = C_a_pair(a, x5, x);
+  x = C_a_pair(a, x4, x);
+  x = C_a_pair(a, x3, x);
+  x = C_a_pair(a, x2, x);
+  return C_a_pair(a, x1, x);
+}
+
+
+C_inline C_word C_a_i_list8(C_word **a, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+			    C_word x5, C_word x6, C_word x7, C_word x8)
+{
+  C_word x = C_pair(a, x8, C_SCHEME_END_OF_LIST);
+
+  x = C_a_pair(a, x7, x);
+  x = C_a_pair(a, x6, x);
+  x = C_a_pair(a, x5, x);
+  x = C_a_pair(a, x4, x);
+  x = C_a_pair(a, x3, x);
+  x = C_a_pair(a, x2, x);
+  return C_a_pair(a, x1, x);
+}
+
+
+C_inline C_word C_a_i_record1(C_word **ptr, int n, C_word x1)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_STRUCTURE_TYPE | 1;
+  *(p++) = x1;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_record2(C_word **ptr, int n, C_word x1, C_word x2)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_STRUCTURE_TYPE | 2;
+  *(p++) = x1;
+  *(p++) = x2;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_record3(C_word **ptr, int n, C_word x1, C_word x2, C_word x3)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_STRUCTURE_TYPE | 3;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_record4(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_STRUCTURE_TYPE | 4;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *(p++) = x4;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_record5(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+				 C_word x5)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_STRUCTURE_TYPE | 5;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *(p++) = x4;
+  *(p++) = x5;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_record6(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+				 C_word x5, C_word x6)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_STRUCTURE_TYPE | 6;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *(p++) = x4;
+  *(p++) = x5;
+  *(p++) = x6;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_record7(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+				 C_word x5, C_word x6, C_word x7)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_STRUCTURE_TYPE | 7;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *(p++) = x4;
+  *(p++) = x5;
+  *(p++) = x6;
+  *(p++) = x7;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_record8(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+				 C_word x5, C_word x6, C_word x7, C_word x8)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_STRUCTURE_TYPE | 8;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *(p++) = x4;
+  *(p++) = x5;
+  *(p++) = x6;
+  *(p++) = x7;
+  *(p++) = x8;
+  *ptr = p;
+  return (C_word)p0;
 }
 
 

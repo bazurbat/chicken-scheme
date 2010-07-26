@@ -460,3 +460,23 @@
 (foo1 bar)
 
 (assert (string=? "hello, XXX" (bar who: "XXX")))
+
+
+;;; import not seen, if explicitly exported and renamed:
+
+#|
+(module foo ((bar baz))
+(import scheme chicken)
+
+(define (baz x)
+  (print x))
+
+(define-syntax bar
+  (syntax-rules ()
+    ((_ x) (baz x))))
+
+)
+
+(import (prefix foo f:))
+(f:bar 1)
+|#
