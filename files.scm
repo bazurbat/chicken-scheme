@@ -259,7 +259,7 @@ EOF
 	 (if (absolute-pathname? dir)
 	     dir
 	     (##sys#string-append def-pds dir)) )
-       file ext pds) ) ) )
+       file ext def-pds) ) ) )
 
 (define decompose-pathname
   (let ((string-match string-match))

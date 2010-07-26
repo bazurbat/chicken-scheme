@@ -3930,7 +3930,7 @@ EOF
    q					; #9 quantum
    (##core#undefined)			; #10 specific
    #f					; #11 block object (type depends on blocking type)
-   '()					; #12 recipients (currently unused)
+   '()					; #12 recipients
    #f) )				; #13 unblocked by timeout?
 
 (define ##sys#primordial-thread (##sys#make-thread #f 'running 'primordial ##sys#default-thread-quantum))
@@ -3945,17 +3945,6 @@ EOF
    #f					; #4 abandoned
    #f					; #5 locked
    (##core#undefined) ) )		; #6 specific
-
-(define (##sys#abandon-mutexes thread)
-  (let ([ms (##sys#slot thread 8)])
-    (unless (null? ms)
-      (##sys#for-each
-       (lambda (m)
-	 (##sys#setislot m 2 #f)
-	 (##sys#setislot m 4 #t) 
-	 (##sys#setislot m 5 #f)
-	 (##sys#setislot m 3 '()) )
-       ms) ) ) )
 
 (define (##sys#schedule) ((##sys#slot ##sys#current-thread 1)))
 
