@@ -192,7 +192,7 @@
  load-type-database
  local-definitions
  location-pointer-map
-  make-argument-list
+ make-argument-list
  make-block-variable-literal
  make-random-name
  make-variable-list
@@ -203,6 +203,7 @@
  no-argc-checks
  no-bound-checks
  no-global-procedure-checks
+ no-import-libraries
  no-procedure-checks
  node->sexpr
  non-foldable-bindings

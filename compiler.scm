@@ -328,6 +328,7 @@
 (define profiled-procedures #f)
 (define import-libraries '())
 (define all-import-libraries #f)
+(define no-import-libraries #f)
 (define standalone-executable #t)
 (define local-definitions #f)
 (define inline-locally #f)
@@ -831,6 +832,10 @@
 							 (values 
 							  (reverse xs)
 							  '((##core#undefined)))))
+						      (no-import-libraries
+						       (values 
+							(reverse xs)
+							'((##core#undefined))))
 						      (else
 						       (values
 							(reverse xs)

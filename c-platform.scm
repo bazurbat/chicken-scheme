@@ -91,7 +91,7 @@
     no-procedure-checks-for-toplevel-bindings
     no-bound-checks no-procedure-checks-for-usual-bindings no-compiler-syntax
     no-parentheses-synonyms no-symbol-escape r5rs-syntax emit-all-import-libraries
-    setup-mode unboxing) )
+    setup-mode unboxing no-import-library) )
 
 (define valid-compiler-options-with-argument
   '(debug 
