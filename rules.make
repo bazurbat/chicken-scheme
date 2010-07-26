@@ -915,10 +915,10 @@ utils.import.c: $(SRCDIR)utils.import.scm
 	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
 setup-api.import.c: $(SRCDIR)setup-api.scm
 	$(CHICKEN) $(SRCDIR)setup-api.import.scm $(CHICKEN_IMPORT_LIBRARY_OPTIONS) \
-	  -ignore-repository -output-file $@ 
+	  -output-file $@ 
 setup-download.import.c: $(SRCDIR)setup-download.scm
 	$(CHICKEN) $(SRCDIR)setup-download.import.scm $(CHICKEN_IMPORT_LIBRARY_OPTIONS) \
-	  -ignore-repository -output-file $@ 
+	  -output-file $@ 
 
 chicken.c: $(SRCDIR)chicken.scm $(SRCDIR)compiler-namespace.scm \
 	  $(SRCDIR)private-namespace.scm $(SRCDIR)tweaks.scm
@@ -956,11 +956,11 @@ csi.c: $(SRCDIR)csi.scm $(SRCDIR)banner.scm $(SRCDIR)private-namespace.scm
 chicken-profile.c: $(SRCDIR)chicken-profile.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
 chicken-install.c: $(SRCDIR)chicken-install.scm setup-download.c setup-api.c
-	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -ignore-repository -output-file $@ 
+	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
 chicken-uninstall.c: $(SRCDIR)chicken-uninstall.scm
-	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -ignore-repository -output-file $@ 
+	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
 chicken-status.c: $(SRCDIR)chicken-status.scm
-	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -ignore-repository -output-file $@ 
+	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
 csc.c: $(SRCDIR)csc.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
 chicken-bug.c: $(SRCDIR)chicken-bug.scm
@@ -968,10 +968,10 @@ chicken-bug.c: $(SRCDIR)chicken-bug.scm
 
 setup-api.c: $(SRCDIR)setup-api.scm
 	$(CHICKEN) $< $(CHICKEN_DYNAMIC_OPTIONS) -emit-import-library setup-api \
-	  -ignore-repository -output-file $@ 
+	  -output-file $@ 
 setup-download.c: $(SRCDIR)setup-download.scm setup-api.c
 	$(CHICKEN) $< $(CHICKEN_DYNAMIC_OPTIONS) -emit-import-library setup-download \
-	  -ignore-repository -output-file $@ 
+	  -output-file $@ 
 
 # distribution files
 
