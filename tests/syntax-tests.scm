@@ -464,7 +464,6 @@
 
 ;;; import not seen, if explicitly exported and renamed:
 
-#|
 (module foo ((bar baz))
 (import scheme chicken)
 
@@ -479,4 +478,3 @@
 
 (import (prefix foo f:))
 (f:bar 1)
-|#
