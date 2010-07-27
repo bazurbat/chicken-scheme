@@ -852,7 +852,7 @@ posixunix.c: $(SRCDIR)posixunix.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-de
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
 posixwin.c: $(SRCDIR)posixwin.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
-irregex.c: $(SRCDIR)irregex.scm $(SRCDIR)irregex-core.scm $(SRCDIR)common-declarations.scm
+irregex.c: $(SRCDIR)irregex.scm $(SRCDIR)irregex-core.scm $(SRCDIR)irregex-utils.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
 scheduler.c: $(SRCDIR)scheduler.scm $(SRCDIR)common-declarations.scm
 	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 

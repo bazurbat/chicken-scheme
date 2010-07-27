@@ -76,6 +76,7 @@
    maybe-string->sre
    irregex-search/chunked
    sre->irregex
+   sre->string
    string->irregex
    string->sre
    ))
@@ -123,6 +124,7 @@
 			   ,(fold (add1 i))))))))
 
 (include "irregex-core.scm")
+(include "irregex-utils.scm")
 
 (define ##sys#glob->regexp
   (let ((list->string list->string)
