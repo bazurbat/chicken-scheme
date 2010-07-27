@@ -177,7 +177,7 @@
     (when (and (memq 'emit-all-import-libraries options)
 	       (not a-only))
       (set! all-import-libraries #t))
-    (set! no-import-libraries (memq 'no-import-library options))
+    (set! enable-module-registration (not (memq 'no-module-registration options)))
     (when (memq 'lambda-lift options) (set! do-lambda-lifting #t))
     (when (memq 'scrutinize options) (set! do-scrutinize #t))
     (when (memq 't debugging-chicken) (##sys#start-timer))

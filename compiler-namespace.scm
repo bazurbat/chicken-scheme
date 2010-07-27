@@ -203,7 +203,7 @@
  no-argc-checks
  no-bound-checks
  no-global-procedure-checks
- no-import-libraries
+ enable-module-registration
  no-procedure-checks
  node->sexpr
  non-foldable-bindings
