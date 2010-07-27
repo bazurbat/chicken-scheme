@@ -115,8 +115,8 @@ EOF
 
   (define (main args)
     (let ((files #f)
-	  (exact f))
-      (loop ((args args) (pats '()))
+	  (exact #f))
+      (let loop ((args args) (pats '()))
 	(if (null? args)
 	    (let ((status
 		   (lambda ()
@@ -126,7 +126,7 @@ EOF
 			      (cond ((null? pats) '(".*"))
 				    ;;XXX change for total-irregex branch:
 				    (exact (map (lambda (p)
-						  (string-append "^" (regexp-quote p) "$"))
+						  (string-append "^" (regexp-escape p) "$"))
 						pats))
 				    (else pats))))
 			    (eggs (gather-eggs patterns)))
@@ -151,6 +151,9 @@ EOF
 		     (loop (cdr args) pats))
 		    ((string=? arg "-target")
 		     (set! *host-extensions* #f)
+		     (loop (cdr args) pats))
+		    ((string=? arg "-exact")
+		     (set! exact #t)
 		     (loop (cdr args) pats))
 		    ((or (string=? arg "-f") (string=? arg "-files"))
 		     (set! files #t)
