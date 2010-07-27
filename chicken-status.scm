@@ -104,6 +104,7 @@ usage: chicken-status [OPTION | PATTERN] ...
   -h   -help                    show this message
   -v   -version                 show version and exit
   -f   -files                   list installed files
+       -exact                   treat PATTERN as exact match (not a pattern)
        -host                    when cross-compiling, show status of host extensions only
        -target                  when cross-compiling, show status of target extensions only
 EOF
@@ -113,12 +114,21 @@ EOF
   (define *short-options* '(#\h #\f))
 
   (define (main args)
-    (let ((files #f))
-      (let loop ((args args) (pats '()))
+    (let ((files #f)
+	  (exact f))
+      (loop ((args args) (pats '()))
 	(if (null? args)
 	    (let ((status
 		   (lambda ()
-		     (let* ((patterns (if (null? pats) '(".*") pats))
+		     (let* ((patterns
+			     (map
+			      regexp
+			      (cond ((null? pats) '(".*"))
+				    ;;XXX change for total-irregex branch:
+				    (exact (map (lambda (p)
+						  (string-append "^" (regexp-quote p) "$"))
+						pats))
+				    (else pats))))
 			    (eggs (gather-eggs patterns)))
 		       (if (null? eggs)
 			   (print "(none)")
