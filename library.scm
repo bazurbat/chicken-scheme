@@ -4681,3 +4681,4 @@ EOF
 ;;; Dump heap state to stderr:
 
 (define ##sys#dump-heap-state (##core#primitive "C_dump_heap_state"))
+(define ##sys#filter-heap-objects (##core#primitive "C_filter_heap_objects"))
