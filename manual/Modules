@@ -311,6 +311,12 @@ load it manually:
   #;1> (import test)
   #;2> 
 
+Note that you must us import libraries if you compile code
+that depends on other modules. The compiler will not execute
+the modules that are refered to by compiled code, and thus
+the binding information and exported syntax of the former
+must be available separately.
+
 
 === Caveats
 

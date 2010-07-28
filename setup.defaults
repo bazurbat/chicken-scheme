@@ -1,6 +1,9 @@
 ;;;; setup.defaults - defaults for chicken-install -*- Scheme -*-
 
 
+(version 1)
+
+
 ;; list of servers in the order in which they will be processed
 ;
 ; (server (location URL) (transport TRANSPORT))

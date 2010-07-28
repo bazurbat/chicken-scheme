@@ -22,12 +22,14 @@
   (if (<= k 0)
       (+ (x4) (x5))
       (B)))
- 
-(assert
- (= -175416
-    (A 20
-       (lambda () 1) 
-       (lambda () -1)
-       (lambda () -1)
-       (lambda () 1)
-       (lambda () 0))))
+
+(do ((i 1000 (sub1 i)))
+    ((zero? i))
+  (assert
+   (= -175416
+      (A 20
+	 (lambda () 1) 
+	 (lambda () -1)
+	 (lambda () -1)
+	 (lambda () 1)
+	 (lambda () 0)))))

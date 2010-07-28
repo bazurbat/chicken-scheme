@@ -62,6 +62,8 @@
       "irregex.import.so"
       "types.db"))
 
+  (define-constant +setup.defaults-version+ 1)
+
   (define *program-path*
     (or (and-let* ((p (get-environment-variable "CHICKEN_PREFIX")))
           (make-pathname p "bin") )
@@ -113,6 +115,16 @@
 		(unless (and (list? x) (positive? (length x)))
 		  (broken x))
 		(case (car x)
+		  ((version)
+		   (cond ((not (pair? (cdr x))) (broken x))
+			 ((not (= (cadr x) +setup.defaults-version+))
+			  (error 
+			   (sprintf 
+			       "version of installed `setup.defaults' does not match setup-API version (~a)"
+			     +setup.default-version+)
+			   (cadr x)))
+			 ;; ignored
+			 ))
 		  ((server)
 		   (set! *default-sources* 
 		     (append *default-sources* (list (cdr x)))))

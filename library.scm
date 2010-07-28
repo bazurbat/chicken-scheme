@@ -2575,10 +2575,6 @@ EOF
 					     (cond [(string=? "eof" tok) #!eof]
 						   [(member tok '("optional" "rest" "key"))
 						    (build-symbol (##sys#string-append "#!" tok)) ]
-						   [(string=? "current-line" tok)
-						       (##sys#slot port 4)]
-						   [(string=? "current-file" tok)
-						       (port-name port)]
 						   [else 
 						    (let ((a (assq (string->symbol tok) read-marks)))
 						      (if a
