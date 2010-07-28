@@ -166,4 +166,4 @@
 				     (else
 				      (loop2 (cdr rest) (cons (car rest) s))))))
 			    (else (cons c (loop rest (memq c '(#\\ #\/))))))))))))
-	(if sre? sre (regexp sre))))))
+	(if sre? sre (irregex sre))))))

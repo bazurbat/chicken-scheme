@@ -125,7 +125,7 @@ EOF
 		   (lambda ()
 		     (let* ((patterns
 			     (map
-			      regexp
+			      irregex
 			      (cond ((null? pats) '(".*"))
 				    (exact (map (lambda (p)
 						  (string-append "^" (irregex-quote p) "$"))

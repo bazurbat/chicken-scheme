@@ -31,6 +31,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; History
 ;;
+;; 0.8.1.1: 2010/07/28 (felix): added CHICKEN-specific hacks, conditionally
+;;                     compiled using `cond-expand'
 ;; 0.8.1: 2010/03/09 - backtracking irregex-match fix and other small fixes
 ;; 0.8.0: 2010/01/20 - optimizing DFA compilation, adding SRE escapes
 ;;                     inside PCREs, adding utility SREs
@@ -478,14 +480,16 @@
 ;; SRFI-1 extracts (simplified 1-ary versions)
 
 (define (find pred ls)
-  (cond ((find-tail pred ls) => car)
-	(else #f)))
+  (let lp ((ls ls))
+    (cond ((null? ls) #f)
+	  ((pred (car ls)) (car ls))
+	  (else (lp (cdr ls))))))
 
 (define (find-tail pred ls)
   (let lp ((ls ls))
     (cond ((null? ls) #f)
-          ((pred (car ls)) ls)
-          (else (lp (cdr ls))))))
+	  ((pred (car ls)) ls)
+	  (else (lp (cdr ls))))))
 
 (define (last ls)
   (if (not (pair? ls))
