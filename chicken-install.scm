@@ -62,7 +62,9 @@
       "irregex.import.so"
       "types.db"))
 
-  (define-constant +setup.defaults-version+ 1)
+  (define-constant +defaults-version+ 1)
+  (define-constant +module-db+ "modules.db")
+  (define-constant +defaults-file+ "setup.defaults")
 
   (define *program-path*
     (or (and-let* ((p (get-environment-variable "CHICKEN_PREFIX")))
@@ -101,9 +103,6 @@
 	       (foreign-value "C_TARGET_PREFIX" c-string)))
 	  (else *prefix*)))
 
-  (define-constant +module-db+ "modules.db")
-  (define-constant +defaults-file+ "setup.defaults")
-
   (define (load-defaults)
     (let ((deff (make-pathname (chicken-home) +defaults-file+)))
       (define (broken x)
@@ -117,11 +116,12 @@
 		(case (car x)
 		  ((version)
 		   (cond ((not (pair? (cdr x))) (broken x))
-			 ((not (= (cadr x) +setup.defaults-version+))
+			 ((not (= (cadr x) +defaults-version+))
 			  (error 
 			   (sprintf 
-			       "version of installed `setup.defaults' does not match setup-API version (~a)"
-			     +setup.default-version+)
+			       "version of installed `~a' does not match setup-API version (~a)"
+			     +defaults-file+
+			     +defaults-version+)
 			   (cadr x)))
 			 ;; ignored
 			 ))
