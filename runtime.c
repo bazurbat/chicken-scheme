@@ -8991,3 +8991,63 @@ dump_heap_state_2(void *dummy)
   C_free(hdump_table);
   C_kontinue(k, C_SCHEME_UNDEFINED);
 }
+
+
+static void 
+filter_heap_objects_2(void *dummy)
+{
+  void *func = C_pointer_address(C_restore);
+  C_word userarg = C_restore;
+  C_word vector = C_restore;
+  C_word k = C_restore;
+  int n, bytes;
+  C_byte *scan;
+  C_SCHEME_BLOCK *sbp;
+  C_header h;
+  C_word *p;
+  int vecsize = C_header_size(vector);
+  typedef int (*filterfunc)(C_word x, C_word userarg);
+  filterfunc ff = (filterfunc)func;
+  int vcount = 0;
+
+  scan = fromspace_start;
+
+  while(scan < C_fromspace_top) {
+    sbp = (C_SCHEME_BLOCK *)scan;
+
+    if(*((C_word *)sbp) == ALIGNMENT_HOLE_MARKER) 
+      sbp = (C_SCHEME_BLOCK *)((C_word *)sbp + 1);
+
+    n = C_header_size(sbp);
+    h = sbp->header;
+    bytes = (h & C_BYTEBLOCK_BIT) ? n : n * sizeof(C_word);
+    p = sbp->data;
+
+    if(ff((C_word)sbp, userarg)) {
+      if(vcount < vecsize) {
+	C_set_block_item(vector, vcount, (C_word)sbp);
+	++vcount;
+      }
+      else {
+	C_kontinue(k, C_fix(-1));
+      }
+    }
+
+    scan = (C_byte *)sbp + C_align(bytes) + sizeof(C_word);
+  }
+
+  C_kontinue(k, C_fix(vcount));
+}
+
+
+void C_ccall
+C_filter_heap_objects(C_word c, C_word closure, C_word k, C_word func, C_word vector, 
+		      C_word userarg)
+{
+  /* make sure heap is compacted */
+  C_save(k);
+  C_save(vector);
+  C_save(userarg);
+  C_save(func);
+  C_reclaim(filter_heap_objects_2, NULL);
+}

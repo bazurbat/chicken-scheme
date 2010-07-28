@@ -2577,10 +2577,6 @@ EOF
 					     (cond [(string=? "eof" tok) #!eof]
 						   [(member tok '("optional" "rest" "key"))
 						    (build-symbol (##sys#string-append "#!" tok)) ]
-						   [(string=? "current-line" tok)
-						       (##sys#slot port 4)]
-						   [(string=? "current-file" tok)
-						       (port-name port)]
 						   [else 
 						    (let ((a (assq (string->symbol tok) read-marks)))
 						      (if a
@@ -4683,3 +4679,4 @@ EOF
 ;;; Dump heap state to stderr:
 
 (define ##sys#dump-heap-state (##core#primitive "C_dump_heap_state"))
+(define ##sys#filter-heap-objects (##core#primitive "C_filter_heap_objects"))

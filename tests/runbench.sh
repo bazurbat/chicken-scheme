@@ -9,6 +9,8 @@ TEST_DIR=`pwd`
 export DYLD_LIBRARY_PATH=${TEST_DIR}/..
 export LD_LIBRARY_PATH=${TEST_DIR}/..
 
+echo 
+
 CHICKEN=../chicken
 COMPILE_OPTIONS="-O5 -d0 -disable-interrupts -b"
 
@@ -29,38 +31,34 @@ run()
     /usr/bin/time "$timeopts" ./a.out "$1" "$2" "$3"
 }
 
-echo
+echo "****************************************"
 
 compiler_options="-C -Wa,-W"
 compile="../csc -w -compiler $CHICKEN -I.. -L.. -include-path .. -o a.out $COMPILE_OPTIONS"
 
-echo -n "null ... "
+echo "======================================== null ... "
 $compile null.scm -O5
 run -:Hd
 
-echo -n "compilation ... "
+echo "======================================== compilation ... "
 /usr/bin/time "$timeopts" $compile compiler.scm
 
-echo -n "compiler ... "
+echo "======================================== compiler ... "
 run -:Hd
 
-echo -n "slatex ... "
+echo "======================================== slatex ... "
 $compile slatex.scm
 mkdir -p slatexdir
 rm -f slatexdir/*
 run
 
-echo -n "grep ... "
+echo "======================================== grep ... "
 $compile sgrep.scm
 run compiler.scm
 
-echo -n "fft/boxed ... "
+echo "======================================== fft/boxed ... "
 $compile fft.scm
 run
-echo -n "fft/unboxed ... "
+echo "======================================== fft/unboxed ... "
 $compile fft.scm -D unboxed
 run
-
-echo -n "man-or-boy ... "
-$compile man-or-boy.scm
-run -:d

@@ -464,17 +464,17 @@
 
 ;;; import not seen, if explicitly exported and renamed:
 
-(module foo ((bar baz))
+(module rfoo (rbar rbaz)
 (import scheme chicken)
 
-(define (baz x)
+(define (rbaz x)
   (print x))
 
-(define-syntax bar
+(define-syntax rbar
   (syntax-rules ()
-    ((_ x) (baz x))))
+    ((_ x) (rbaz x))))
 
 )
 
-(import (prefix foo f:))
-(f:bar 1)
+(import (prefix rfoo f:))
+(f:rbar 1)

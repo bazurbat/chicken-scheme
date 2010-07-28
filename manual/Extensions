@@ -606,6 +606,7 @@ Available options:
 ; {{-f   -files}} : list installed files
 ; {{-host}} : when cross-compiling, show extensions for host system only
 ; {{-target}} : when cross-compiling, show extensions for target system only
+; {{-exact}} : match extension-name exactly (do not match as pattern)
 
 
 === Security
