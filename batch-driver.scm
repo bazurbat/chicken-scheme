@@ -364,7 +364,9 @@
 	   (newline) )
 	  ((not filename)
 	   (print-version #t)
-	   (display "\nEnter \"chicken -help\" for information on how to use it.\n") )
+	   (display "\nEnter `chicken -help' for information on how to use the compiler,\n")
+	   (display "or try `csc' for a more convenient interface.\n")
+	   (display "\nRun `csi' to start the interactive interpreter.\n"))
 	  (else
 
 	   ;; Display header:

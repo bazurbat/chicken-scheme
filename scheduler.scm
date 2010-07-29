@@ -312,7 +312,7 @@ EOF
 	       (let ([o (open-output-string)])
 		 (display "Warning (" o)
 		 (display ct o)
-		 (display "): " o)
+		 (display ")" o)
 		 (print-error-message arg ##sys#standard-error (get-output-string o))
 		 (print-call-chain ##sys#standard-error 0 ct) ) ] )
 	(##sys#setslot ct 7 arg)
