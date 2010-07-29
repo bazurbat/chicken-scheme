@@ -64,7 +64,6 @@
    irregex-search/chunked
    irregex-search/matches
    irregex-split
-   irregex-submatches
    irregex?
    make-irregex-chunker
    maybe-string->sre
