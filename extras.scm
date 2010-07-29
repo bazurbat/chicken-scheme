@@ -64,7 +64,9 @@
 	(srand t) ) ) ) )
 
 (define (randomize . n)
-  (let ((nn (if (null? n) (##sys#fudge 2) (car n))))
+  (let ((nn (if (null? n)
+		(##sys#inexact->exact (fp/ (current-seconds) 1000)) 
+		(car n))))
     (##sys#check-exact nn 'randomize)
     (##core#inline "C_randomize" nn) ) )
 

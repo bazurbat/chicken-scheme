@@ -29,7 +29,7 @@
   (unit profiler)
   (hide ##sys#profile-name ##sys#profile-vector-list)
   (disable-interrupts)
-  (fixnum-arithmetic) )
+  (fixnum) )
 
 (foreign-declare #<<EOF
 #if !defined(_MSC_VER)
@@ -96,19 +96,25 @@ EOF
 	       ((eq? maxfix count) #f)
 	       (else (add1 count))))
 	(when (zero? ipc)
-	  (##sys#setislot vec it0 (##sys#fudge 6)) )
+	  (##sys#setislot 
+	   vec it0
+	   (##core#inline "C_i_current_cpu_milliseconds_as_fixnum" #f)))
 	(##sys#setislot vec ip (add1 ipc)) ) ) ) )
 
 (define (##sys#profile-exit index vec)
-  (let* ([i (* index profile-info-entry-size)]
-	 [it0 (+ i 2)] 
-	 [it (+ i 3)] 
-	 [ip (+ i 4)] 
+  (let* ([i (fx* index profile-info-entry-size)]
+	 [it0 (fx+ i 2)] 
+	 [it (fx+ i 3)] 
+	 [ip (fx+ i 4)] 
 	 [ipc (sub1 (##sys#slot vec ip))] )
     (##sys#setislot vec ip ipc)
     (when (zero? ipc)
-      (##sys#setislot vec it (+ (##sys#slot vec it) (- (##sys#fudge 6) (##sys#slot vec it0))))
-      (##sys#setislot vec it0 0) ) ) )
+      (##sys#setislot
+       vec it 
+       (fx+ (##sys#slot vec it)
+	    (fx- (##core#inline "C_i_current_cpu_milliseconds_as_fixnum" #f)
+		 (##sys#slot vec it0)))))
+    (##sys#setislot vec it0 0) ) )
 
 
 ;;; Generate profile:
@@ -126,14 +132,14 @@ EOF
 	 (for-each
 	  (lambda (vec)
 	    (let ([len (##sys#size vec)])
-	      (do ([i 0 (+ i profile-info-entry-size)])
-		  ((>= i len))
+	      (do ([i 0 (fx+ i profile-info-entry-size)])
+		  ((fx>= i len))
 		(write-char #\()
 		(write (##sys#slot vec i))
 		(write-char #\space)
-		(write (##sys#slot vec (add1 i)))
+		(write (##sys#slot vec (fx+ i 1)))
 		(write-char #\space)
-		(write (##sys#slot vec (+ i 3)))
+		(write (##sys#slot vec (fx+ i 3)))
 		(write-char #\))
 		(write-char #\newline) ) ) ) 
 	  ##sys#profile-vector-list) )

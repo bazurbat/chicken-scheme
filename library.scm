@@ -194,7 +194,7 @@ EOF
 (define ##sys#file-info (##core#primitive "C_file_info"))
 (define ##sys#symbol-table-info (##core#primitive "C_get_symbol_table_info"))
 (define ##sys#memory-info (##core#primitive "C_get_memory_info"))
-(define (current-milliseconds) (##sys#fudge 16))
+(define (current-milliseconds) (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f))
 (define (current-gc-milliseconds) (##sys#fudge 31))
 (define cpu-time (##core#primitive "C_cpu_time"))
 (define ##sys#decode-seconds (##core#primitive "C_decode_seconds"))

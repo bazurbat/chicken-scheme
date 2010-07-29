@@ -23,8 +23,9 @@
       (+ (x4) (x5))
       (B)))
 
-(do ((i 1000 (sub1 i)))
+(do ((i 1 (sub1 i)))
     ((zero? i))
+  (print i)
   (assert
    (= -175416
       (A 20

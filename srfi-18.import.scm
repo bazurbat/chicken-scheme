@@ -39,7 +39,7 @@
    make-condition-variable
    make-mutex
    make-thread
-   milliseconds->time
+   milliseconds->time			; DEPRECATED
    mutex-lock!
    mutex-name
    mutex-specific
@@ -68,7 +68,7 @@
    thread-wait-for-i/o!
    thread-yield!
    thread?
-   time->milliseconds
+   time->milliseconds			; DEPRECATED
    time->seconds
    time?
    uncaught-exception-reason

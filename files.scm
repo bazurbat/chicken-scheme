@@ -37,7 +37,6 @@
 (declare
   (unit files)
   (uses regex data-structures)
-  (fixnum)
   (hide chop-pds absolute-pathname-root root-origin root-directory split-directory)
   (disable-interrupts) 
   (foreign-declare #<<EOF
@@ -96,9 +95,9 @@ EOF
                                          "could not open newfile for write - "
                                          newfile)))))
            (s   (make-string blocksize)))
-        (let loop ((d   (read-string! blocksize s i))
-                   (l   0))
-            (if (= 0 d)
+        (let loop ((d (read-string! blocksize s i))
+                   (l 0))
+            (if (fx= 0 d)
                 (begin
                     (close-input-port i)
                     (close-output-port o)
@@ -111,7 +110,7 @@ EOF
                             (##sys#error (string-append
                                              "error writing file starting at "
                                              (number->string l)))))
-                    (loop (read-string! blocksize s i) (+ d l)))))))
+                    (loop (read-string! blocksize s i) (fx+ d l)))))))
 
 (define (file-move origfile newfile #!optional (clobber #f) (blocksize 1024))
     (##sys#check-string origfile 'file-move)
@@ -139,9 +138,9 @@ EOF
                                          "could not open newfile for write - "
                                          newfile)))))
            (s   (make-string blocksize)))
-        (let loop ((d   (read-string! blocksize s i))
-                   (l   0))
-            (if (= 0 d)
+        (let loop ((d (read-string! blocksize s i))
+                   (l 0))
+            (if (fx= 0 d)
                 (begin
                     (close-input-port i)
                     (close-output-port o)
@@ -159,7 +158,7 @@ EOF
                             (##sys#error (string-append
                                              "error writing file starting at "
                                              (number->string l)))))
-                    (loop (read-string! blocksize s i) (+ d l)))))))
+                    (loop (read-string! blocksize s i) (fx+ d l)))))))
 
 ;;; Pathname operations:
 
@@ -338,11 +337,7 @@ EOF
 (define create-temporary-file)
 (define create-temporary-directory)
 
-(let ((get-environment-variable get-environment-variable)
-      (make-pathname make-pathname)
-      (file-exists? file-exists?)
-      (directory-exists? directory-exists?)
-      (call-with-output-file call-with-output-file) 
+(let ((call-with-output-file call-with-output-file)
       (temp #f)
       (temp-prefix "temp"))
   (define (tempdir)
@@ -358,7 +353,7 @@ EOF
     (lambda (#!optional (ext "tmp"))
       (##sys#check-string ext 'create-temporary-file)
       (let loop ()
-	(let* ((n (##sys#fudge 16))
+	(let* ((n (##core#inline "C_random_fixnum" #x10000))
 	       (pn (make-pathname 
 		    (tempdir)
 		    (##sys#string-append 
@@ -370,7 +365,7 @@ EOF
   (set! create-temporary-directory
     (lambda ()
       (let loop ()
-	(let* ((n (##sys#fudge 16))
+	(let* ((n (##core#inline "C_random_fixnum" #x10000))
 	       (pn (make-pathname 
 		    (tempdir)
 		    (string-append
