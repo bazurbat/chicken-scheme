@@ -79,6 +79,7 @@ scrutinizer.scm
 unboxing.scm
 irregex.scm
 irregex-core.scm
+irregex-utils.scm
 posixunix.scm
 posixwin.scm
 posix-common.scm

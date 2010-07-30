@@ -76,6 +76,7 @@
    maybe-string->sre
    irregex-search/chunked
    sre->irregex
+   sre->string
    string->irregex
    string->sre
    ))
@@ -129,6 +130,7 @@
   (##core#inline "C_substring_compare" a b start1 start2 len))
 
 (include "irregex-core.scm")
+(include "irregex-utils.scm")
 
 (define ##sys#glob->regexp
   (let ((list->string list->string)

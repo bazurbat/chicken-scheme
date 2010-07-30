@@ -125,11 +125,10 @@ EOF
 		   (lambda ()
 		     (let* ((patterns
 			     (map
-			      regexp
+			      irregex
 			      (cond ((null? pats) '(".*"))
-				    ;;XXX change for total-irregex branch:
 				    (exact (map (lambda (p)
-						  (string-append "^" (regexp-escape p) "$"))
+						  (string-append "^" (irregex-quote p) "$"))
 						pats))
 				    (else pats))))
 			    (eggs (gather-eggs patterns)))

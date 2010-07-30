@@ -488,14 +488,16 @@
 ;; SRFI-1 extracts (simplified 1-ary versions)
 
 (define (find pred ls)
-  (cond ((find-tail pred ls) => car)
-	(else #f)))
+  (let lp ((ls ls))
+    (cond ((null? ls) #f)
+	  ((pred (car ls)) (car ls))
+	  (else (lp (cdr ls))))))
 
 (define (find-tail pred ls)
   (let lp ((ls ls))
     (cond ((null? ls) #f)
-          ((pred (car ls)) ls)
-          (else (lp (cdr ls))))))
+	  ((pred (car ls)) ls)
+	  (else (lp (cdr ls))))))
 
 (define (last ls)
   (if (not (pair? ls))
