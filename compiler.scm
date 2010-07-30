@@ -328,6 +328,7 @@
 (define profiled-procedures #f)
 (define import-libraries '())
 (define all-import-libraries #f)
+(define enable-module-registration #t)
 (define standalone-executable #t)
 (define local-definitions #f)
 (define inline-locally #f)
@@ -827,10 +828,15 @@
 						(cond ((or all-import-libraries
 							   (assq name import-libraries) ) =>
 						       (lambda (il)
-							 (emit-import-lib name il)
+							 (when enable-module-registration
+							   (emit-import-lib name il))
 							 (values 
 							  (reverse xs)
 							  '((##core#undefined)))))
+						      ((not enable-module-registration)
+						       (values 
+							(reverse xs)
+							'((##core#undefined))))
 						      (else
 						       (values
 							(reverse xs)

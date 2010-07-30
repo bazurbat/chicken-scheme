@@ -250,24 +250,4 @@ tmp/xxx $PWD/tmp
 PATH=$PWD/tmp:$PATH xxx $PWD/tmp
 # this may crash, if the PATH contains a non-matching libchicken.dll on Windows:
 #PATH=$PATH:$PWD/tmp xxx $PWD/tmp
-
-echo "======================================== timing compilation ..."
-time $compile compiler.scm $FAST_OPTIONS -debug pb -v -C "$ASMFLAGS"
-echo "executing ..."
-time ./a.out
-
-echo "======================================== running slatex ..."
-$compile slatex.scm $FAST_OPTIONS
-mkdir -p slatexdir
-rm -f slatexdir/*
-time ./a.out
-
-echo "======================================== running floating-point benchmark ..."
-echo "boxed:"
-$compile fft.scm $FAST_OPTIONS
-time ./a.out
-echo "unboxed:"
-$compile fft.scm $FAST_OPTIONS -D unboxed -debug oxi | tee fft.out
-time ./a.out
-
 echo "======================================== done."

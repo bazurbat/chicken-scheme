@@ -48,7 +48,7 @@
    identity
    intersperse
    join
-   left-section
+   left-section				; DEPRECATED
    list->queue
    list-of?
    make-queue
@@ -70,7 +70,7 @@
    queue?
    rassoc
    reverse-string-append
-   right-section
+   right-section			; DEPRECATED
    shuffle
    sort
    sort!

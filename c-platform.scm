@@ -91,7 +91,7 @@
     no-procedure-checks-for-toplevel-bindings
     no-bound-checks no-procedure-checks-for-usual-bindings no-compiler-syntax
     no-parentheses-synonyms no-symbol-escape r5rs-syntax emit-all-import-libraries
-    setup-mode unboxing) )
+    setup-mode unboxing no-module-registration) )
 
 (define valid-compiler-options-with-argument
   '(debug 
@@ -566,6 +566,8 @@
 (rewrite 'cdddar 2 1 "C_u_i_cdddar" #f)
 (rewrite 'cddddr 2 1 "C_u_i_cddddr" #f)
 
+(rewrite 'caar 2 1 "C_i_caar" #t)
+(rewrite 'cdar 2 1 "C_i_cdar" #t)
 (rewrite 'cddr 2 1 "C_i_cddr" #t)
 (rewrite 'cdddr 2 1 "C_i_cdddr" #t)
 (rewrite 'cddddr 2 1 "C_i_cddddr" #t)
@@ -842,11 +844,11 @@
 
 (rewrite 'cons 16 2 "C_a_i_cons" #t 3)
 (rewrite '##sys#cons 16 2 "C_a_i_cons" #t 3)
-(rewrite 'list 16 #f "C_a_i_list" #t '(3))
+(rewrite 'list 16 #f "C_a_i_list" #t '(3) #t)
 (rewrite '##sys#list 16 #f "C_a_i_list" #t '(3))
-(rewrite 'vector 16 #f "C_a_i_vector" #t #t)
+(rewrite 'vector 16 #f "C_a_i_vector" #t #t #t)
 (rewrite '##sys#vector 16 #f "C_a_i_vector" #t #t)
-(rewrite '##sys#make-structure 16 #f "C_a_i_record" #t #t)
+(rewrite '##sys#make-structure 16 #f "C_a_i_record" #t #t #t)
 (rewrite 'string 16 #f "C_a_i_string" #t #t) ; the last #t is actually too much, but we don't care
 (rewrite 'address->pointer 16 1 "C_a_i_address_to_pointer" #f 2)
 (rewrite 'pointer->address 16 1 "C_a_i_pointer_to_address" #f words-per-flonum)

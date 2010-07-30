@@ -1894,7 +1894,7 @@
      (module-undefined-list mod))
     (when missing
       (##sys#error "module unresolved" name))
-    (let* ((exports 
+    (let* ((iexports 
 	    (map (lambda (exp)
 		   (cond ((symbol? (cdr exp)) exp)
 			 ((assq (car exp) (##sys#macro-environment)))
@@ -1903,11 +1903,11 @@
 	   (new-se (merge-se 
 		    (##sys#macro-environment) 
 		    (##sys#current-environment) 
-		    exports)))
-      (##sys#mark-imported-symbols exports)
+		    iexports vexports sexports sdlist)))
+      (##sys#mark-imported-symbols iexports)
       (for-each
        (lambda (m)
-	 (let ((se (merge-se (cadr m) new-se)))
+	 (let ((se (merge-se (cadr m) new-se))) ;XXX needed?
 	   (dm `(FIXUP: ,(car m) ,@(map-se se)))
 	   (set-car! (cdr m) se)))
        sdlist)
@@ -1915,7 +1915,7 @@
 	    ,(module-name mod) 
 	    (DLIST: ,@dlist)
 	    (SDLIST: ,@(map-se sdlist))
-	    (IEXPORTS: ,@(map-se exports))
+	    (IEXPORTS: ,@(map-se iexports))
 	    (VEXPORTS: ,@(map-se vexports))
 	    (SEXPORTS: ,@(map-se sexports))))
       (set-module-vexports! mod vexports)

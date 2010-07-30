@@ -143,6 +143,12 @@ The toplevel loop understands a number of special commands:
 
 ; ,exn : Describes the last exception that occurred and adds it to the result history (it can be accessed using the {{#}} notation).
 
+; ,c : Show call-trace items of the most recent error
+
+; ,f N : Select call-trace item with the given number, where the number {{0}} indicates the last item in the trace
+
+; ,g NAME : Returns the value of the local variable with the given name (which may be a symbol or string)
+
 ; ,q : Quit the interpreter.
 
 ; ,r : Show system information.
@@ -156,6 +162,7 @@ The toplevel loop understands a number of special commands:
 You can define your own toplevel commands using the {{toplevel-command}}
 procedure:
 
+
 === toplevel-command
 
 <procedure>(toplevel-command SYMBOL PROC [HELPSTRING])</procedure>
@@ -164,6 +171,44 @@ Defines or redefines a toplevel interpreter command which can be invoked by ente
 {{,SYMBOL}}. {{PROC}} will be invoked when the command is entered and may
 read any required argument via {{read}} (or {{read-line}}). If the optional
 argument {{HELPSTRING}} is given, it will be listed by the {{,?}} command.
+
+
+=== Getting error information
+
+Interpreted code has some extended debugging information available
+that can be used to locate errors and obtaining information about the
+lexical environment that was effective at the point of error. When an
+error occurs in an evaluated expression, a "call trace" is printed -
+the list of calls up to the error location. Note that this does not
+follow a stack model: it is merely a list of recently made procedure
+calls where the last one in the list is (probably) the call of
+whatever procedure was executing before the error happened. You can
+use the {{,c}} command to show the call-trace of the last
+error. Depending on whether compiled or interpreted code was executing
+and how much debugging information is available, the call trace shows
+trace-buffer entries of the following shape:
+
+  <frame-number>:<environment?> <mode> <procedure-name> <form> 
+
+{{<frame-number>}} gives the number of the call-trace entry, counting
+from zero and beginning with the most recent entry. If a {{[]}}
+follows the frame-number, then this frame contains the lexical
+environment in effect when that procedure call took place. {{<mode>}}
+is optional and is either {{<syntax>}} or {{<eval>}} indicating
+whether this trace-buffer entry represents a syntax-expansion or an
+evaluation and is not given for compiled code. {{<form>}} is also only
+available for interpreted code and shows the procedure call
+expression, possibly following the name of the procedure containing
+the call expression.
+
+If the trace-buffer entry contains lexical environment information
+than the complete environment of the call site is shown.
+
+Use {{,f}} to select a frame by number, if you want to inspect the
+lexical environment of an earlier frame. The {{,g}} command lets you
+retrieve the value of a local or lexical variable from the currently
+selected frame. Note that the variables are renamed to simplify the
+variable lookup done internally by the interpreter.
 
 === Running an external editor
 

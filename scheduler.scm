@@ -34,7 +34,7 @@
 	##sys#remove-from-ready-queue ##sys#unblock-threads-for-i/o ##sys#force-primordial
 	##sys#fdset-input-set ##sys#fdset-output-set ##sys#fdset-clear
 	##sys#fdset-select-timeout ##sys#fdset-restore
-	##sys#clear-i/o-state-for-thread!) 
+	##sys#clear-i/o-state-for-thread! ##sys#abandon-mutexes) 
   (not inline ##sys#interrupt-hook)
   (foreign-declare #<<EOF
 #ifdef HAVE_ERRNO_H
@@ -241,15 +241,40 @@ EOF
       (##sys#setislot t 13 #f)
       (##sys#setslot t 11 t2) ) ) )
 
+(define (##sys#abandon-mutexes thread)
+  (let ((ms (##sys#slot thread 8)))
+    (unless (null? ms)
+      (##sys#for-each
+       (lambda (m)
+	 (##sys#setislot m 2 #f)
+	 (##sys#setislot m 4 #t) 
+	 (##sys#setislot m 5 #f)
+	 (let ((wts (##sys#slot m 3)))
+	   (unless (null? wts)
+	     (for-each
+	      (lambda (t2)
+		(dbg "  unblocking: " t2)
+		(##sys#thread-basic-unblock! t2) )
+	      wts) ) )
+	 (##sys#setislot m 3 '()) )
+       ms) ) ) )
+
 (define (##sys#thread-kill! t s)
   (dbg "killing: " t " -> " s ", recipients: " (##sys#slot t 12))
   (##sys#abandon-mutexes t)
+  (let ((blocked (##sys#slot t 11)))
+    (cond
+     ((##sys#structure? blocked 'condition-variable)
+      (##sys#setslot blocked 2 (##sys#delq thread (##sys#slot blocked 2))))
+     ((##sys#structure? blocked 'thread)
+      (##sys#setslot blocked 12 (##sys#delq thread (##sys#slot blocked 12))))) )
+  (##sys#remove-from-timeout-list t)
+  (##sys#clear-i/o-state-for-thread! t)
   (##sys#setslot t 3 s)
   (##sys#setislot t 4 #f)
   (##sys#setislot t 11 #f)
   (##sys#setislot t 8 '())
-  (##sys#remove-from-timeout-list t)
-  (let ([rs (##sys#slot t 12)])
+  (let ((rs (##sys#slot t 12)))
     (unless (null? rs)
       (for-each
        (lambda (t2)
@@ -287,7 +312,7 @@ EOF
 	       (let ([o (open-output-string)])
 		 (display "Warning (" o)
 		 (display ct o)
-		 (display "): " o)
+		 (display ")" o)
 		 (print-error-message arg ##sys#standard-error (get-output-string o))
 		 (print-call-chain ##sys#standard-error 0 ct) ) ] )
 	(##sys#setslot ct 7 arg)
@@ -306,7 +331,7 @@ EOF
     "timeout.tv_usec = (tm % 1000) * 1000;"
     "C_fdset_input_2 = C_fdset_input;"
     "C_fdset_output_2 = C_fdset_output;"
-    "return(select(FD_SETSIZE, &C_fdset_input, &C_fdset_output, NULL, to ? &timeout : NULL));") )
+    "C_return(select(FD_SETSIZE, &C_fdset_input, &C_fdset_output, NULL, to ? &timeout : NULL));") )
 
 (define ##sys#fdset-restore
   (foreign-lambda* void ()
@@ -461,7 +486,8 @@ EOF
 ;;; Unblock thread cleanly:
 
 (define (##sys#thread-unblock! t)
-  (when (eq? 'blocked (##sys#slot t 3))
+  (when (or (eq? 'blocked (##sys#slot t 3))
+	    (eq? 'sleeping (##sys#slot r 3)))
     (##sys#remove-from-timeout-list t)
     (set! ##sys#fd-list 
       (let loop ([fdl ##sys#fd-list])
@@ -472,5 +498,4 @@ EOF
 	       (cons (##sys#slot a 0)
 		     (##sys#delq t (##sys#slot a 1)) )
 	       (loop (##sys#slot fdl 1)) ) ) ) ) )
-    (##sys#setislot t 12 '())
     (##sys#thread-basic-unblock! t) ) )

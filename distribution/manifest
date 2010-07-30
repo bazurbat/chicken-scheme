@@ -109,7 +109,6 @@ tests/srfi-4-tests.scm
 tests/srfi-18-tests.scm
 tests/hash-table-tests.scm
 tests/apply-test.scm
-tests/man-or-boy.scm
 tests/embedded1.c
 tests/embedded2.scm
 tests/fixnum-tests.scm
@@ -269,7 +268,8 @@ manual/Foreign type specifiers
 manual/Getting started
 manual/Interface to external functions and variables
 manual/Locations
-manual/Modules and macros
+manual/Modules
+manual/macros
 manual/Non-standard macros and special forms
 manual/Non-standard read syntax
 manual/Other support procedures

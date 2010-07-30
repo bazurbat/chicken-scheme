@@ -663,7 +663,7 @@
 			   (if compile-only
 			       "" 
 			       (conc "-L" *target-lib-home* " " ldflags " " *target-libs*) )
-			   " >/dev/null "
+			   (if *windows* " >nul: " " >/dev/null ")
 			   (if verb "" "2>&1") ) ) )
 		 (when verb (print cmd " ..."))
 		 cmd) ) ) ) )

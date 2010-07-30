@@ -137,7 +137,7 @@
     -analyze-only -keep-shadowed-macros -inline-global -ignore-repository
     -no-symbol-escape -no-parentheses-synonyms -r5rs-syntax
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
-    -emit-all-import-libraries -setup-mode -unboxing -no-elevation
+    -emit-all-import-libraries -setup-mode -unboxing -no-elevation -no-module-registration
     -no-procedure-checks-for-usual-bindings
     -no-procedure-checks-for-toplevel-bindings))
 
@@ -330,6 +330,7 @@ Usage: #{csc} FILENAME | OPTION ...
     -j -emit-import-library MODULE write compile-time module information into
                                     separate file
     -J -emit-all-import-libraries  emit import-libraries for all defined modules
+    -no-module-registration        do not generate module registration code
     -no-compiler-syntax            disable expansion of compiler-macros
 
   Translation options:

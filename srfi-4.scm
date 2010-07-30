@@ -130,8 +130,8 @@ EOF
 (define (u32vector-set! x i y)
   (##sys#check-structure x 'u32vector 'u32vector-set!)
   (let ((len (##core#inline "C_u_i_32vector_length" x)))
-    (##sys#check-exact y 'u32vector-set!)
-    (cond ((fx< y 0)
+    (##sys#check-integer y 'u32vector-set!)
+    (cond ((negative? y)
 	   (##sys#error 'u32vector-set! "argument may not be negative" y) )
 	  ((not (##sys#fits-in-unsigned-int? y))
 	   (##sys#error 'u32vector-set! "argument exceeds integer range" y) ) )
@@ -141,7 +141,7 @@ EOF
 (define (s32vector-set! x i y)
   (##sys#check-structure x 's32vector 's32vector-set!)
   (let ((len (##core#inline "C_u_i_32vector_length" x)))
-    (##sys#check-exact y 's32vector-set!)
+    (##sys#check-integer y 's32vector-set!)
     (unless (##sys#fits-in-int? y)
       (##sys#error 's32vector-set! "argument exceeds integer range" y) )
     (check-range i 0 len 's32vector-set!)
@@ -257,9 +257,9 @@ EOF
 (let* ([ext-alloc
 	(foreign-lambda* scheme-object ([int bytes])
 	  "C_word *buf = (C_word *)C_malloc(bytes + sizeof(C_header));"
-	  "if(buf == NULL) return(C_SCHEME_FALSE);"
+	  "if(buf == NULL) C_return(C_SCHEME_FALSE);"
 	  "C_block_header(buf) = C_make_header(C_BYTEVECTOR_TYPE, bytes);"
-	  "return(buf);") ]
+	  "C_return(buf);") ]
        [ext-free
 	(foreign-lambda* void ([scheme-object bv])
 	  "C_free((void *)C_block_item(bv, 1));") ]

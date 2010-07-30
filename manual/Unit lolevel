@@ -315,7 +315,7 @@ A ''locative'' is an object that points to an element of a containing object,
 much like a ''pointer'' in low-level, imperative programming languages like ''C''. The element can
 be accessed and changed indirectly, by performing access or change operations
 on the locative. The container object can be computed by calling the
-{{location->object}} procedure.
+{{locative->object}} procedure.
 
 Locatives may be passed to foreign procedures that expect pointer arguments.
 The effect of creating locatives for evicted data (see {{object-evict}}) is undefined.

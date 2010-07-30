@@ -406,7 +406,8 @@ and compiler settings:
 {{+}} {{*}} {{-}} {{/}} {{quotient}} {{eq?}} {{eqv?}} {{equal?}} {{apply}} {{c...r}} {{values}} {{call-with-values}}
 {{list-ref}} {{null?}} {{length}} {{not}} {{char?}} {{string?}} {{symbol?}} {{vector?}} {{pair?}} {{procedure?}}
 {{boolean?}} {{number?}} {{complex?}} {{rational?}} {{real?}} {{exact?}} {{inexact?}} {{list?}} {{eof-object?}}
-{{string-ref}} {{string-set!}} {{vector-ref}} {{vector-set!}} {{char=?}} {{char<?}} {{char>?}} {{char<=?}} {{char>=?}}
+{{string-ref}} {{string-set!}} {{vector-ref}} {{vector-set!}} 
+{{char=?}} {{char<?}} {{char>?}} {{char<=?}} {{char>=?}}
 {{char-numeric?}} {{char-alphabetic?}} {{char-whitespace?}} {{char-upper-case?}} {{for-each}}
 {{char-lower-case?}} {{char-upcae}} {{char-downcase}} {{list-tail}} {{assv}} {{memv}} {{memq}} {{assoc}}
 {{member}} {{set-car!}} {{set-cdr!}} {{abs}} {{exp}} {{sin}} {{cos}} {{tan}} {{log}} {{asin}} {{acos}} {{atan}} {{sqrt}}
@@ -486,15 +487,46 @@ and thus allows inlining of them.
 
 ==== Can I load compiled code at runtime?
 
-Yes.
-You can load compiled at code at runtime with {{load}} just as
-well as you can load Scheme source code.
-Compiled code will, of course, run faster.
+Yes. You can load compiled at code at runtime with {{load}} just as
+well as you can load Scheme source code.  Compiled code will, of
+course, run faster.
 
-To do this, pass to {{load}} a path for a shared object.
-Use a form such as {{(load "foo.so")}} and run
-{{csc -shared foo.scm}} to produce {{foo.so}} from {{foo.scm}} (at
-which point {{foo.scm}} will no longer be required).
+To do this, pass to {{load}} a path for a shared object.  Use a form
+such as {{(load "foo.so")}} and run {{csc -shared foo.scm}} to produce
+{{foo.so}} from {{foo.scm}} (at which point {{foo.scm}} will no longer
+be required).
+
+If you have compiled code that contains a {{module}} definition, then
+executing the code will "register" the module to allow importing the
+bindings provided by the module into a running Scheme process.
+The information required to use a module is in this case embedded in
+the compiled code. Compiling another program that uses this (compiled) 
+module is more difficult: the used module will not necessarily be loaded
+into the compiler, so the registration will not be executed. In this
+case the information about what bindings the compiled module exports
+must be separated from the actual code that executes at runtime.
+To make this possible, compiling a module can be done in such a
+manner that an "import library" is created. This is a file that
+contains the binding information of the module and we can use it
+to compile a file that refers to that module. An example can perhaps
+make this clearer:
+
+  ;; my-module.scm
+  
+  (module my-module (...) ...)
+
+  ;; use-my-module.scm
+
+  (import my-module)
+  ...
+
+Compile the module and generate an import library for the "my-module" module:
+
+  % csc -s my-module.scm -emit-import-library my-module
+
+Compile the program that uses the module:
+
+  % csc use-my-module.scm
 
 ==== Why is my program which uses regular expressions so slow?
 

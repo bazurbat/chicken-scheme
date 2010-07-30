@@ -177,6 +177,7 @@
     (when (and (memq 'emit-all-import-libraries options)
 	       (not a-only))
       (set! all-import-libraries #t))
+    (set! enable-module-registration (not (memq 'no-module-registration options)))
     (when (memq 'lambda-lift options) (set! do-lambda-lifting #t))
     (when (memq 'scrutinize options) (set! do-scrutinize #t))
     (when (memq 't debugging-chicken) (##sys#start-timer))
@@ -363,7 +364,9 @@
 	   (newline) )
 	  ((not filename)
 	   (print-version #t)
-	   (display "\nEnter \"chicken -help\" for information on how to use it.\n") )
+	   (display "\nEnter `chicken -help' for information on how to use the compiler,\n")
+	   (display "or try `csc' for a more convenient interface.\n")
+	   (display "\nRun `csi' to start the interactive interpreter.\n"))
 	  (else
 
 	   ;; Display header:
