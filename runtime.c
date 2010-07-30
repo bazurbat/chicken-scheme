@@ -470,7 +470,7 @@ static void horror(C_char *msg) C_noret;
 static void C_fcall initial_trampoline(void *proc) C_regparm C_noret;
 static C_ccall void termination_continuation(C_word c, C_word self, C_word result) C_noret;
 static void C_fcall mark_system_globals(void) C_regparm;
-static void C_fcall mark(C_word *x) C_regparm;
+static void C_fcall really_mark(C_word *x) C_regparm;
 static WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word container) C_regparm;
 static C_ccall void values_continuation(C_word c, C_word closure, C_word dummy, ...) C_noret;
 static C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stable);
@@ -481,7 +481,7 @@ static C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word *f
 static long C_fcall milliseconds(void);
 static long C_fcall cpu_milliseconds(void);
 static void C_fcall remark_system_globals(void) C_regparm;
-static void C_fcall remark(C_word *x) C_regparm;
+static void C_fcall really_remark(C_word *x) C_regparm;
 static C_word C_fcall intern0(C_char *name) C_regparm;
 static void C_fcall update_locative_table(int mode) C_regparm;
 static LF_LIST *find_module_handle(C_char *name);
@@ -2608,6 +2608,13 @@ void C_save_and_reclaim(void *trampoline, void *proc, int n, ...)
 }
 
 
+#define mark(x)					\
+  C_cblock \
+    C_word *_x = (x), _val = *_x;			\
+    if(!C_immediatep(_val)) really_mark(_x);	\
+  C_cblockend
+
+
 C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 {
   int i, j, n, fcount, weakn;
@@ -2933,7 +2940,7 @@ C_regparm void C_fcall mark_system_globals(void)
 }
 
 
-C_regparm void C_fcall mark(C_word *x)
+C_regparm void C_fcall really_mark(C_word *x)
 {
   C_word val, item;
   C_uword n, bytes;
@@ -2942,8 +2949,6 @@ C_regparm void C_fcall mark(C_word *x)
   WEAK_TABLE_ENTRY *wep;
 
   val = *x;
-
-  if(C_immediatep(val)) return;
 
   p = (C_SCHEME_BLOCK *)val;
   
@@ -3064,6 +3069,13 @@ C_regparm void C_fcall mark(C_word *x)
     goto scavenge;
   }
 }
+
+
+#define remark(x)     \
+  C_cblock \
+    C_word *_x = (x), _val = *_x; \
+    if(!C_immediatep(_val)) really_remark(_x); \
+  C_cblockend
 
 
 /* Do a major GC into a freshly allocated heap: */
@@ -3240,7 +3252,7 @@ C_regparm void C_fcall remark_system_globals(void)
 }
 
 
-C_regparm void C_fcall remark(C_word *x)
+C_regparm void C_fcall really_remark(C_word *x)
 {
   C_word val, item;
   C_uword n, bytes;
@@ -3249,8 +3261,6 @@ C_regparm void C_fcall remark(C_word *x)
   WEAK_TABLE_ENTRY *wep;
 
   val = *x;
-
-  if(C_immediatep(val)) return;
 
   p = (C_SCHEME_BLOCK *)val;
   
@@ -7388,7 +7398,7 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 #endif
 
 #ifdef HAVE_GCVT
-    C_gcvt(f, flonum_print_precision, buffer);
+    p = C_gcvt(f, flonum_print_precision, buffer); /* p unused, but we want to avoid stupid warnings */
 #else
     C_sprintf(buffer, C_text("%.*g"), flonum_print_precision, f);
 #endif
