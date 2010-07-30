@@ -42,6 +42,8 @@
   (define-constant +default-tcp-connect-timeout+ 10000) ; 10 seconds
   (define-constant +default-tcp-read/write-timeout+ 20000) ; 20 seconds
 
+  (define-constant +url-regex+ "(http://)?([^/:]+)(:([^:/]+))?(/.+)")
+
   (tcp-connect-timeout +default-tcp-connect-timeout+)
   (tcp-read-timeout +default-tcp-read/write-timeout+)
   (tcp-write-timeout +default-tcp-read/write-timeout+)
@@ -172,7 +174,7 @@
     (conc dir #\/ egg ".meta"))
 
   (define (deconstruct-url url)
-    (let ([m (irregex-match "(http://)?([^/:]+)(:([^:/]+))?(/.+)" url)])
+    (let ([m (irregex-match +url-regex+ url)])
       (values
        (if m (irregex-match-substring m 2) url)
        (if (and m (irregex-match-substring m 3))

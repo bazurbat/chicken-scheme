@@ -31,6 +31,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; History
 ;;
+;; 0.8.2: 2010/07/30 - (...)? submatch extraction fix and alternate
+;;                     named submatches from Peter Bex
 ;; 0.8.1: 2010/03/09 - backtracking irregex-match fix and other small fixes
 ;; 0.8.0: 2010/01/20 - optimizing DFA compilation, adding SRE escapes
 ;;                     inside PCREs, adding utility SREs
@@ -424,22 +426,30 @@
 (define (char-alphanumeric? c)
   (or (char-alphabetic? c) (char-numeric? c)))
 
-(define (%substring=? a b start1 start2 len)
-  (let lp ((i 0))
-    (cond ((>= i len)
-           #t)
-          ((char=? (string-ref a (+ start1 i)) (string-ref b (+ start2 i)))
-           (lp (+ i 1)))
-          (else
-           #f))))
+(cond-expand
+  (building-chicken
+   (define-alias fast-substring=? %substring=?))
+  (else
+   (define (%substring=? a b start1 start2 len)
+     (let lp ((i 0))
+       (cond ((>= i len)
+	      #t)
+	     ((char=? (string-ref a (+ start1 i)) (string-ref b (+ start2 i)))
+	      (lp (+ i 1)))
+	     (else
+	      #f))))))
 
 ;; SRFI-13 extracts
 
-(define (%%string-copy! to tstart from fstart fend)
-  (do ((i fstart (+ i 1))
-       (j tstart (+ j 1)))
-      ((>= i fend))
-    (string-set! to j (string-ref from i))))
+(cond-expand
+  (building-chicken
+   (define-alias fast-string-copy %%string-copy!))
+  (else
+   (define (%%string-copy! to tstart from fstart fend)
+     (do ((i fstart (+ i 1))
+	  (j tstart (+ j 1)))
+	 ((>= i fend))
+       (string-set! to j (string-ref from i))))))
 
 (define (string-cat-reverse string-list)
   (string-cat-reverse/aux
@@ -3057,8 +3067,13 @@
           ((?)
            (let ((match-once (lp (sre-sequence (cdr sre)) n #t)))
              (lambda (cnk start i end j matches)
-               (match-once cnk start i end j matches)
-               #t)))
+               (cond
+		((match-once cnk start i end j matches)
+		 #t)
+		(else
+		 (match-vector-set! matches tmp-end-src-offset start)
+		 (match-vector-set! matches tmp-end-index-offset i)
+		 #t)))))
           (($ submatch => submatch-named)
            (let ((match-one
                   (lp (sre-sequence (if (memq (car sre) '($ submatch))

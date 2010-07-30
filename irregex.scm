@@ -122,6 +122,12 @@
 			   (##sys#slot ,%cache ,(add1 (* i 2)))
 			   ,(fold (add1 i))))))))
 
+(define-inline (fast-string-copy! to tstart from fstart fend)
+  (##core#inline "C_substring_copy" from to fstart fend tstart))
+
+(define-inline (fast-substring=? a b start1 start2 len)
+  (##core#inline "C_substring_compare" a b start1 start2 len))
+
 (include "irregex-core.scm")
 
 (define ##sys#glob->regexp
@@ -164,4 +170,4 @@
 				     (else
 				      (loop2 (cdr rest) (cons (car rest) s))))))
 			    (else (cons c (loop rest (memq c '(#\\ #\/))))))))))))
-	(if sre? sre (regexp sre))))))
+	(if sre? sre (irregex sre))))))
