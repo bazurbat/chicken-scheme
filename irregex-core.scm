@@ -428,7 +428,7 @@
 
 (cond-expand
   (building-chicken
-   (define-alias fast-substring=? %substring=?))
+   (define-alias %substring=? fast-substring=?))
   (else
    (define (%substring=? a b start1 start2 len)
      (let lp ((i 0))
@@ -443,7 +443,7 @@
 
 (cond-expand
   (building-chicken
-   (define-alias fast-string-copy %%string-copy!))
+   (define-alias %%string-copy! fast-string-copy!))
   (else
    (define (%%string-copy! to tstart from fstart fend)
      (do ((i fstart (+ i 1))
