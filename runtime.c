@@ -8283,7 +8283,6 @@ C_regparm C_word C_fcall C_a_i_make_locative(C_word **a, int c, C_word type, C_w
   }
 
   locative_table[ locative_table_count++ ] = (C_word)loc;
-
   return (C_word)loc;
 }
 

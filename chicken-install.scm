@@ -155,7 +155,7 @@
     (cond ((assoc name *aliases*) => 
 	   (lambda (a)
 	     (let ((new (cdr a)))
-	       (print "resolving alias " name " to: " new)
+	       (print "resolving alias `" name "' to: " new)
 	       (resolve-location new))))
 	  (else name)))
 
