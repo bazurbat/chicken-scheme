@@ -47,7 +47,7 @@ EOF
   parse-option-string chop-separator lookup-script-file
   report describe dump hexdump bytevector-data get-config
   deldups tty-input?
-  history-list history-count history-add history-ref)
+  history-list history-count history-add history-ref history-clear history-show)
 
 (declare
   (always-bound
@@ -233,6 +233,21 @@ EOF
 	(set! history-count (fx+ history-count 1))
 	x) ) ) )
 
+(define (history-clear)
+  (vector-fill! history-list (##sys#void)))
+
+(define history-show
+  (let ((newline newline))
+    (lambda ()
+      (do ((i 1 (fx+ i 1)))
+	  ((>= i history-count))
+	(printf "#~a: " i)
+	(##sys#with-print-length-limit
+	 80
+	 (lambda ()
+	   (##sys#print (vector-ref history-list i) #t ##sys#standard-output)))
+	(newline)))))
+
 (define (history-ref index)
   (let ([i (inexact->exact index)])
     (if (and (fx> i 0) (fx<= i history-count))
@@ -335,6 +350,12 @@ EOF
 				    " " (read-line)))))
 			   (if (not (zero? r))
 			       (printf "Editor returned with non-zero exit status ~a" r))))
+			((ch)
+			 (history-clear)
+			 (##sys#void))
+			((h)
+			 (history-show)
+			 (##sys#void))
 			((c)
 			 (show-frameinfo selected-frame)
 			 (##sys#void))
@@ -361,6 +382,8 @@ EOF
  ,l FILENAME ...   Load one or more files
  ,ln FILENAME ...  Load one or more files and print result of each top-level expression
  ,r                Show system information
+ ,h                Show history of expression results
+ ,ch               Clear history of expression results
  ,e FILENAME       Run external editor
  ,s TEXT ...       Execute shell-command
  ,exn              Describe last exception
