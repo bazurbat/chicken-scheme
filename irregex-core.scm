@@ -204,17 +204,14 @@
   (if (not (irregex-match-valid-index? m n))
       (error "irregex-match-start-chunk: not a valid index" m n))
   (%irregex-match-start-chunk m n))
-
 (define (irregex-match-start-index m n)
   (if (not (irregex-match-valid-index? m n))
       (error "irregex-match-start-index: not a valid index" m n))
   (%irregex-match-start-index m n))
-
 (define (irregex-match-end-chunk m n)
   (if (not (irregex-match-valid-index? m n))
       (error "irregex-match-end-chunk: not a valid index" m n))
   (%irregex-match-end-chunk m n))
-
 (define (irregex-match-end-index m n)
   (if (not (irregex-match-valid-index? m n))
       (error "irregex-match-end-index: not a valid index" m n))
@@ -222,13 +219,10 @@
 
 (define (irregex-match-start-chunk-set! m n start)
   (vector-set! m (+ 3 (* n 4)) start))
-
 (define (irregex-match-start-index-set! m n start)
   (vector-set! m (+ 4 (* n 4)) start))
-
 (define (irregex-match-end-chunk-set! m n end)
   (vector-set! m (+ 5 (* n 4)) end))
-
 (define (irregex-match-end-index-set! m n end)
   (vector-set! m (+ 6 (* n 4)) end))
 
@@ -417,11 +411,11 @@
 (define (%substring=? a b start1 start2 len)
   (let lp ((i 0))
     (cond ((>= i len)
-	   #t)
-	  ((char=? (string-ref a (+ start1 i)) (string-ref b (+ start2 i)))
-	   (lp (+ i 1)))
-	  (else
-	   #f))))
+	  #t)
+	 ((char=? (string-ref a (+ start1 i)) (string-ref b (+ start2 i)))
+          (lp (+ i 1)))
+         (else
+          #f))))
 
 ;; SRFI-13 extracts
 
