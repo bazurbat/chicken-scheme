@@ -415,6 +415,7 @@ static C_TLS int
   gc_report_flag = 0,
   gc_mode,
   gc_count_1,
+  gc_count_1_total,
   gc_count_2,
   interrupt_reason,
   stack_size_changed,
@@ -691,7 +692,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   dlopen_flags = 0;
 #endif
 
-  mutation_count = gc_count_1 = gc_count_2 = 0;
+  mutation_count = gc_count_1 = gc_count_1_total = gc_count_2 = 0;
   lf_list = NULL;
   C_register_lf2(NULL, 0, create_initial_ptable());
   C_restart_address = toplevel;
@@ -2736,6 +2737,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
   if(gc_mode == GC_MINOR) {
     count = (C_uword)C_fromspace_top - (C_uword)start;
     ++gc_count_1;
+    ++gc_count_1_total;
     update_locative_table(GC_MINOR);
   }
   else {
@@ -3885,7 +3887,7 @@ C_regparm C_word C_fcall C_set_gc_report(C_word flag)
 C_regparm C_word C_fcall C_start_timer(void)
 {
   mutation_count = 0;
-  gc_count_1 = 0;
+  gc_count_1_total = 0;
   gc_count_2 = 0;
   timer_start_ms = cpu_milliseconds();
   gc_ms = 0;
@@ -3903,7 +3905,7 @@ void C_ccall C_stop_timer(C_word c, C_word closure, C_word k)
     gc_time = C_flonum(&a, (double)gc_ms / 1000.0),
     info;
 
-  info = C_vector(&a, 6, elapsed, gc_time, C_fix(mutation_count), C_fix(gc_count_1), C_fix(gc_count_2));
+  info = C_vector(&a, 6, elapsed, gc_time, C_fix(mutation_count), C_fix(gc_count_1_total), C_fix(gc_count_2));
   C_kontinue(k, info);
 }
 
