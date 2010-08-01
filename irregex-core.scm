@@ -60,14 +60,11 @@
 ;;;; Data Structures
 
 (cond-expand
-  (chicken
+  (building-chicken
    (begin
      (define-syntax (internal x r c)
        `(,(with-input-from-string (cadr x) read) ,@(cddr x)))
-     (define-inline (make-irregex dfa dfa/search dfa/extract nfa flags
-				  submatches lengths names)
-       (internal "##sys#make-structure" 'regexp dfa dfa/search dfa/extract nfa flags
-		 submatches lengths names))
+     ;; make-irregex defined elsewhere
      (define (irregex? x)
        (internal "##sys#structure?" x 'regexp))
      (define (irregex-dfa x)
@@ -115,16 +112,9 @@
      (define (irregex-names x) (vector-ref x 8)))))
 
 (cond-expand
-  (chicken
+  (building-chicken
    (begin
-     (define (make-irregex-match count names)
-       (internal
-	"##sys#make-structure"
-	'regexp-match
-	(make-vector (+ (* 4 (+ 2 count)) 3) #f) ; #1: submatches
-	names					 ; #2: (guess)
-	#f					 ; #3: chunka
-	#f))					 ; #4: fail
+     ;; make-irregex-match defined elsewhere
      (define (irregex-new-matches irx)
        (make-irregex-match (irregex-num-submatches irx) (irregex-names irx)))
      (define (irregex-reset-matches! m)
@@ -214,58 +204,55 @@
   (if (not (irregex-match-valid-index? m n))
       (error "irregex-match-start-chunk: not a valid index" m n))
   (%irregex-match-start-chunk m n))
+
 (define (irregex-match-start-index m n)
   (if (not (irregex-match-valid-index? m n))
       (error "irregex-match-start-index: not a valid index" m n))
   (%irregex-match-start-index m n))
+
 (define (irregex-match-end-chunk m n)
   (if (not (irregex-match-valid-index? m n))
       (error "irregex-match-end-chunk: not a valid index" m n))
   (%irregex-match-end-chunk m n))
+
 (define (irregex-match-end-index m n)
   (if (not (irregex-match-valid-index? m n))
       (error "irregex-match-end-index: not a valid index" m n))
   (%irregex-match-end-index m n))
 
-(cond-expand
-  (chicken
-   (define-inline (irregex-match-start-chunk-set! m n start)
-     (vector-set! (internal "##sys#slot" m 1) (* n 4) start))
-   (define-inline (irregex-match-start-index-set! m n start)
-     (vector-set! (internal "##sys#slot" m 1) (+ 1 (* n 4)) start))
-   (define-inline (irregex-match-end-chunk-set! m n end)
-     (vector-set! (internal "##sys#slot" m 1) (+ 2 (* n 4)) end))
-   (define-inline (irregex-match-end-index-set! m n end)
-     (vector-set! (internal "##sys#slot" m 1) (+ 3 (* n 4)) end)))
-  (else
-   (begin
-     (define (irregex-match-start-chunk-set! m n start)
-       (vector-set! m (+ 3 (* n 4)) start))
-     (define (irregex-match-start-index-set! m n start)
-       (vector-set! m (+ 4 (* n 4)) start))
-     (define (irregex-match-end-chunk-set! m n end)
-       (vector-set! m (+ 5 (* n 4)) end))
-     (define (irregex-match-end-index-set! m n end)
-       (vector-set! m (+ 6 (* n 4)) end)))))
+(define (irregex-match-start-chunk-set! m n start)
+  (vector-set! m (+ 3 (* n 4)) start))
+
+(define (irregex-match-start-index-set! m n start)
+  (vector-set! m (+ 4 (* n 4)) start))
+
+(define (irregex-match-end-chunk-set! m n end)
+  (vector-set! m (+ 5 (* n 4)) end))
+
+(define (irregex-match-end-index-set! m n end)
+  (vector-set! m (+ 6 (* n 4)) end))
 
 (define (irregex-match-index m opt)
   (if (pair? opt)
       (if (number? (car opt))
           (car opt)
-	  (let lp ((ls (irregex-match-names m)))
-	    (cond ((null? ls) (error "unknown match name" (car opt)))
-		  ((and (eq? (car opt) (caar ls))
-			(%irregex-match-start-chunk m (cdar ls)))
-		   (cdar ls))
-		  (else (lp (cdr ls))))))
+	  (let lp ((ls (irregex-match-names m))
+                   (exists #f))
+	    (cond ((null? ls)
+                   (if exists #f (error "unknown match name" (car opt))))
+		  ((eq? (car opt) (caar ls))
+                   (if (%irregex-match-start-chunk m (cdar ls))
+                       (cdar ls)
+                       (lp (cdr ls) #t)))
+		  (else (lp (cdr ls) exists)))))
       0))
 
 (cond-expand
-  (chicken
+  (building-chicken
    (define-inline (%irregex-match-valid-index? m n)
      (let ((v (internal "##sys#slot" m 1)))
-       (and (< (* n 4) (vector-length v))
-	    (vector-ref v (+ 1 (* n 4)))))))
+       (and (< (* n 4) (internal "##sys#size" v))
+	    (internal "##sys#slot" v (+ 1 (* n 4)))))))
   (else
    (define (%irregex-match-valid-index? m n)
      (and (< (+ 3 (* n 4)) (vector-length m))
@@ -298,7 +285,8 @@
          (get-subchunk (chunker-get-subchunk cnk)))
     (if (not get-subchunk)
         (error "this chunk type does not support match subchunks")
-        (and (%irregex-match-valid-index? m n)
+        (and n
+             (%irregex-match-valid-index? m n)
              (get-subchunk
               (%irregex-match-start-chunk m n)
               (%irregex-match-start-index m n)
@@ -426,30 +414,22 @@
 (define (char-alphanumeric? c)
   (or (char-alphabetic? c) (char-numeric? c)))
 
-(cond-expand
-  (building-chicken
-   (define-alias %substring=? fast-substring=?))
-  (else
-   (define (%substring=? a b start1 start2 len)
-     (let lp ((i 0))
-       (cond ((>= i len)
-	      #t)
-	     ((char=? (string-ref a (+ start1 i)) (string-ref b (+ start2 i)))
-	      (lp (+ i 1)))
-	     (else
-	      #f))))))
+(define (%substring=? a b start1 start2 len)
+  (let lp ((i 0))
+    (cond ((>= i len)
+	   #t)
+	  ((char=? (string-ref a (+ start1 i)) (string-ref b (+ start2 i)))
+	   (lp (+ i 1)))
+	  (else
+	   #f))))
 
 ;; SRFI-13 extracts
 
-(cond-expand
-  (building-chicken
-   (define-alias %%string-copy! fast-string-copy!))
-  (else
-   (define (%%string-copy! to tstart from fstart fend)
-     (do ((i fstart (+ i 1))
-	  (j tstart (+ j 1)))
-	 ((>= i fend))
-       (string-set! to j (string-ref from i))))))
+(define (%%string-copy! to tstart from fstart fend)
+  (do ((i fstart (+ i 1))
+       (j tstart (+ j 1)))
+      ((>= i fend))
+    (string-set! to j (string-ref from i))))
 
 (define (string-cat-reverse string-list)
   (string-cat-reverse/aux
@@ -542,35 +522,29 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Flags
 
-(cond-expand
-  (chicken
-   (begin
-     (define-inline (bit-shl n i) (arithmetic-shift n i))
-     (define-inline (bit-shr n i) (arithmetic-shift n (fxneg i)))
-     (define-inline (bit-not n) (bitwise-not n))
-     (define-inline (bit-ior a b) (bitwise-ior a b))
-     (define-inline (bit-and a b) (bitwise-and a b))))
-  (else
-   (begin
-     (define (bit-shr n i)
-       (quotient n (expt 2 i)))
-     (define (bit-shl n i)
-       (* n (expt 2 i)))
-     (define (bit-not n) (- #xFFFF n))
-     (define (bit-ior a b)
-       (cond
-	((zero? a) b)
-	((zero? b) a)
-	(else
-	 (+ (if (or (odd? a) (odd? b)) 1 0)
-	    (* 2 (bit-ior (quotient a 2) (quotient b 2)))))))
-     (define (bit-and a b)
-       (cond
-	((zero? a) 0)
-	((zero? b) 0)
-	(else
-	 (+ (if (and (odd? a) (odd? b)) 1 0)
-	    (* 2 (bit-and (quotient a 2) (quotient b 2))))))))))
+(define (bit-shr n i)
+  (quotient n (expt 2 i)))
+
+(define (bit-shl n i)
+  (* n (expt 2 i)))
+  
+(define (bit-not n) (- #xFFFF n))
+
+(define (bit-ior a b)
+  (cond
+   ((zero? a) b)
+   ((zero? b) a)
+   (else
+    (+ (if (or (odd? a) (odd? b)) 1 0)
+       (* 2 (bit-ior (quotient a 2) (quotient b 2)))))))
+
+(define (bit-and a b)
+  (cond
+   ((zero? a) 0)
+   ((zero? b) 0)
+   (else
+    (+ (if (and (odd? a) (odd? b)) 1 0)
+       (* 2 (bit-and (quotient a 2) (quotient b 2)))))))
 
 (define (integer-log n)
   (define (b8 n r)
@@ -2954,16 +2928,9 @@
 ;;
 ;; See http://compilers.iecc.com/comparch/article/07-10-026
 
-(cond-expand
-  (chicken
-   (begin
-     (define-inline (match-vector-ref m i)
-       (vector-ref (internal "##sys#slot" m 1) i))
-     (define-inline (match-vector-set! m i x)
-       (vector-set! (internal "##sys#slot" m 1) i x))))
-  (else
-   (define (match-vector-ref v i) (vector-ref v (+ 3 i)))
-   (define (match-vector-set! v i x) (vector-set! v (+ 3 i) x))))
+(define (match-vector-ref v i) (vector-ref v (+ 3 i)))
+
+(define (match-vector-set! v i x) (vector-set! v (+ 3 i) x))
 
 (define (sre-match-extractor sre num-submatches)
   (let* ((tmp (+ num-submatches 1))

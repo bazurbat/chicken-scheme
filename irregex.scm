@@ -123,11 +123,84 @@
 			   (##sys#slot ,%cache ,(add1 (* i 2)))
 			   ,(fold (add1 i))))))))
 
-(define-inline (fast-string-copy! to tstart from fstart fend)
-  (##core#inline "C_substring_copy" from to fstart fend tstart))
+(define-compiler-syntax %%string-copy!
+  (syntax-rules ()
+    ((_ to tstart from fstart fend)
+     (let ((x to)
+	   (y tstart)
+	   (z from)
+	   (u fstart)
+	   (v fend))
+       (##core#inline "C_substring_copy" z x u v y)))))
 
-(define-inline (fast-substring=? a b start1 start2 len)
-  (##core#inline "C_substring_compare" a b start1 start2 len))
+(define-compiler-syntax %substring=?
+  (syntax-rules ()
+    ((_ a b start1 start2 len)
+     (##core#inline "C_substring_compare" a b start1 start2 len))))
+
+(define-compiler-syntax make-irregex 
+  (syntax-rules ()
+    ((_ dfa dfa/search dfa/extract nfa flags submatches lengths names)
+     (##sys#make-structure
+      'regexp dfa dfa/search dfa/extract nfa flags submatches lengths names))))
+
+(define-compiler-syntax make-irregex-match
+  (syntax-rules ()
+    ((_ count names)
+     (##sys#make-structure
+      'regexp-match
+      (make-vector (+ (* 4 (+ 2 count)) 3) #f) ; #1: submatches
+      names				       ; #2: (guess)
+      #f				       ; #3: chunka
+      #f))))				       ; #4: fail
+
+(define-compiler-syntax bit-shl
+  (syntax-rules ()
+    ((_ n i) (fxshl n i))))
+
+(define-compiler-syntax bit-shr
+  (syntax-rules ()
+    ((_ n i) (fxshr n i))))
+
+(define-compiler-syntax bit-not
+  (syntax-rules ()
+    ((_ n) (fxnot n))))
+
+(define-compiler-syntax bit-ior
+  (syntax-rules ()
+    ((_ a b) (fxior a b))))
+
+(define-compiler-syntax bit-and
+  (syntax-rules ()
+    ((_ a b) (fxand a b))))
+
+(define-compiler-syntax match-vector-ref
+  (syntax-rules ()
+    ((_ m i) (vector-ref (##sys#slot m 1) i))))
+
+(define-compiler-syntax match-vector-set!
+  (syntax-rules ()
+    ((_ m i x) (vector-set! (##sys#slot m 1) i x))))
+
+(define-compiler-syntax irregex-match-start-chunk-set!
+  (syntax-rules ()
+    ((_ m n start)
+     (vector-set! (##sys#slot m 1) (* n 4) start))))
+
+(define-compiler-syntax irregex-match-start-index-set!
+  (syntax-rules ()
+    ((_ m n start)
+     (vector-set! (##sys#slot m 1) (+ 1 (* n 4)) start))))
+
+(define-compiler-syntax irregex-match-end-chunk-set!
+  (syntax-rules ()
+    ((_ m n end)
+     (vector-set! (##sys#slot m 1) (+ 2 (* n 4)) end))))
+
+(define-compiler-syntax irregex-match-end-index-set!
+  (syntax-rules ()
+    ((_ m n end)
+     (vector-set! (##sys#slot m 1) (+ 3 (* n 4)) end))))
 
 (include "irregex-core.scm")
 (include "irregex-utils.scm")
