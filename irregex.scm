@@ -176,11 +176,11 @@
 
 (define-compiler-syntax match-vector-ref
   (syntax-rules ()
-    ((_ m i) (vector-ref (##sys#slot m 1) i))))
+    ((_ m i) (##sys#slot (##sys#slot m 1) i))))
 
 (define-compiler-syntax match-vector-set!
   (syntax-rules ()
-    ((_ m i x) (vector-set! (##sys#slot m 1) i x))))
+    ((_ m i x) (##sys#setslot (##sys#slot m 1) i x))))
 
 (define-compiler-syntax irregex-match-start-chunk-set!
   (syntax-rules ()
