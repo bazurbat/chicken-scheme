@@ -76,8 +76,7 @@
 #define C_a_get_current_seconds(ptr, c, dummy)  C_flonum(ptr, time(NULL))
 #define C_peek_c_string_at(ptr, i)    ((C_char *)(((C_char **)ptr)[ i ]))
 
-static C_word
-fast_read_line_from_file(C_word str, C_word port, C_word size) {
+static C_word fast_read_line_from_file(C_word str, C_word port, C_word size) {
   int n = C_unfix(size);
   int i;
   int c;
@@ -102,7 +101,7 @@ fast_read_line_from_file(C_word str, C_word port, C_word size) {
 }
 
 static C_word
-fast_read_string_from_file(C_word dest, C_word port, C_word len, C_word pos)
+fast_read_string_from_file (C_word dest, C_word port, C_word len, C_word pos)
 {
   int n = C_unfix (len);
   char * buf = ((char *)C_data_pointer (dest) + C_unfix (pos));
@@ -1732,8 +1731,7 @@ EOF
 
 (define (##sys#check-port x . loc)
   (unless (%port? x)
-    (##sys#signal-hook
-     #:type-error (and (pair? loc) (car loc)) "argument is not a port" x) ) )
+    (##sys#signal-hook #:type-error (and (pair? loc) (car loc)) "argument is not a port" x) ) )
 
 (define (##sys#check-port-mode port mode . loc)
   (unless (eq? mode (##sys#slot port 1))

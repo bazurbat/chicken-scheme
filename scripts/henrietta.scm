@@ -36,7 +36,7 @@
 ; list
 
 
-(require-library setup-download irregex extras utils ports srfi-1 posix)
+(require-library setup-download regex extras utils ports srfi-1 posix)
 
 
 (module main ()
@@ -65,8 +65,8 @@
       (remove-directory tmpdir)))
 
   (define test-file?
-    (let ((rx (irregex "(\\./)?tests(/.*)?")))
-      (lambda (path) (irregex-match rx path))))
+    (let ((rx (regexp "(\\./)?tests(/.*)?")))
+      (lambda (path) (string-match rx path))))
 
   (define (retrieve name version)
     (let ((dir (handle-exceptions ex 
@@ -113,8 +113,8 @@
 	  (display dir)
 	  (fail "unable to retrieve extension-list"))))
 
-  (define query-string-rx (irregex "[^?]+\\?(.+)"))
-  (define query-arg-rx (irregex "^&?(\\w+)=([^&]+)"))
+  (define query-string-rx (regexp "[^?]+\\?(.+)"))
+  (define query-arg-rx (regexp "^&?(\\w+)=([^&]+)"))
 
   (define (service)
     (let ((qs (getenv "QUERY_STRING"))
@@ -123,13 +123,13 @@
 	       (or ra "<unknown>") qs)
       (unless qs
 	(error "no QUERY_STRING set"))
-      (let ((m (irregex-match query-string-rx qs))
+      (let ((m (string-match query-string-rx qs))
 	    (egg #f)
 	    (version #f))
-	(let loop ((qs (if m (irregex-match-substring m 1) qs)))
-	  (let* ((m (irregex-search query-arg-rx qs))
-		 (ms (and m (irregex-match-substring m 1)))
-		 (rest (and m (substring qs (irregex-match-end-index m)))))
+	(let loop ((qs (if m (cadr m) qs)))
+	  (let* ((m (string-search-positions query-arg-rx qs))
+		 (ms (and m (apply substring qs (cadr m))))
+		 (rest (and m (substring qs (cadar m)))))
 	    (cond ((not m)
 		   (headers)		; from here on use `fail'
 		   (cond (egg
@@ -137,10 +137,10 @@
 			  (cleanup) )
 			 (else (fail "no extension name specified") ) ))
 		  ((string=? ms "version")
-		   (set! version (irregex-match-substring m 2))
+		   (set! version (apply substring qs (caddr m)))
 		   (loop rest))
 		  ((string=? ms "name")
-		   (set! egg (irregex-match-substring m 2))
+		   (set! egg (apply substring qs (caddr m)))
 		   (loop rest))
 		  ((string=? ms "tests")
 		   (set! *tests* #t)
@@ -149,7 +149,7 @@
 		   (headers)
 		   (listing))
 		  ((string=? ms "mode")
-		   (set! *mode* (string->symbol (irregex-match-substring m 2)))
+		   (set! *mode* (string->symbol (apply substring qs (caddr m))))
 		   (loop rest))
 		  (else
 		   (warning "unrecognized query option" ms)

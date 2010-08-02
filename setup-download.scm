@@ -24,7 +24,7 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
-(require-library extras irregex posix utils setup-api srfi-1 data-structures tcp srfi-13
+(require-library extras regex posix utils setup-api srfi-1 data-structures tcp srfi-13
 		 files)
 
 
@@ -37,12 +37,10 @@
 			temporary-directory)
 
   (import scheme chicken)
-  (import extras irregex posix utils srfi-1 data-structures tcp srfi-13 files setup-api)
+  (import extras regex posix utils srfi-1 data-structures tcp srfi-13 files setup-api)
 
   (define-constant +default-tcp-connect-timeout+ 10000) ; 10 seconds
   (define-constant +default-tcp-read/write-timeout+ 20000) ; 20 seconds
-
-  (define-constant +url-regex+ "(http://)?([^/:]+)(:([^:/]+))?(/.+)")
 
   (tcp-connect-timeout +default-tcp-connect-timeout+)
   (tcp-read-timeout +default-tcp-read/write-timeout+)
@@ -140,9 +138,7 @@
 	     [tagver (existing-version
 	              egg version
 	              (filter-map
-                       (lambda (f) 
-			 (and-let* ((m (irregex-search "^tags/([^/]+)/" f))) 
-			   (irregex-match-substring m 1)))
+                       (lambda (f) (and-let* ((m (string-search "^tags/([^/]+)/" f))) (cadr m)))
                        files))])
 	(let-values ([(filedir ver)
 	              (if tagver
@@ -174,15 +170,14 @@
     (conc dir #\/ egg ".meta"))
 
   (define (deconstruct-url url)
-    (let ([m (irregex-match +url-regex+ url)])
+    (let ([m (string-match "(http://)?([^/:]+)(:([^:/]+))?(/.+)" url)])
       (values
-       (if m (irregex-match-substring m 2) url)
-       (if (and m (irregex-match-substring m 3))
-	   (let ((port (irregex-match-substring m 4)))
-	     (or (string->number port)
-		 (error "not a valid port" port)))
+       (if m (caddr m) url)
+       (if (and m (cadddr m))
+	   (or (string->number (list-ref m 4))
+	       (error "not a valid port" (list-ref m 4)))
 	   80)
-       (if m (irregex-match-substring m 5) "/")) ) )
+       (if m (list-ref m 5) "/")) ) )
 
   (define (locate-egg/http egg url #!optional version destination tests
 			   proxy-host proxy-port)
@@ -231,13 +226,13 @@
 
   (define (match-http-response rsp)
     (and (string? rsp)
-         (irregex-match "HTTP/[0-9.]+\\s+([0-9]+)\\s+.*" rsp)) )
+         (string-match "HTTP/[0-9.]+\\s+([0-9]+)\\s+.*" rsp)) )
 
   (define (response-match-code? mrsp code)
-    (and mrsp (string=? (number->string code) (irregex-match-substring mrsp 1))) )
+    (and mrsp (string=? (number->string code) (cadr mrsp))) )
 
   (define (match-chunked-transfer-encoding ln)
-    (irregex-match "[Tt]ransfer-[Ee]ncoding:\\s*chunked.*" ln) )
+    (string-match "[Tt]ransfer-[Ee]ncoding:\\s*chunked.*" ln) )
 
   (define (http-fetch host port locn dest proxy-host proxy-port)
     (d "connecting to host ~s, port ~a ~a...~%" host port

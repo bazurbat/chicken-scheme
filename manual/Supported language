@@ -19,7 +19,7 @@
 * [[Unit ports]] I/O ports
 * [[Unit files]] File and pathname operations
 * [[Unit extras]] Useful utility definitions
-* [[Unit irregex]] Regular expressions
+* [[Unit regex]] Regular expressions
 * [[Unit srfi-1]] List Library
 * [[Unit srfi-4]] Homogeneous numeric vectors
 * [[Unit srfi-13]] String library

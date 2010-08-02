@@ -24,13 +24,13 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
-(require-library setup-api srfi-1 posix data-structures utils ports irregex files)
+(require-library setup-api srfi-1 posix data-structures utils ports regex files)
 
 
 (module main ()
   
   (import scheme chicken foreign)
-  (import srfi-1 posix data-structures utils ports irregex
+  (import srfi-1 posix data-structures utils ports regex
 	  files setup-api)
 
   (define-foreign-variable C_TARGET_LIB_HOME c-string)
@@ -44,9 +44,6 @@
     (if (and *cross-chicken* (not *host-extensions*))
 	(make-pathname C_TARGET_LIB_HOME (sprintf "chicken/~a" C_BINARY_VERSION))
 	(repository-path)))
-
-  (define (grep rx lst)
-    (filter (cut irregex-search rx <>) lst))
 
   (define (gather-eggs patterns)
     (let ((eggs (map pathname-file 
@@ -125,10 +122,11 @@ EOF
 		   (lambda ()
 		     (let* ((patterns
 			     (map
-			      irregex
+			      regexp
 			      (cond ((null? pats) '(".*"))
+				    ;;XXX change for total-irregex branch:
 				    (exact (map (lambda (p)
-						  (string-append "^" (irregex-quote p) "$"))
+						  (string-append "^" (regexp-escape p) "$"))
 						pats))
 				    (else pats))))
 			    (eggs (gather-eggs patterns)))

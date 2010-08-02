@@ -20,7 +20,7 @@ for x in setup-api.so setup-api.import.so setup-download.so \
       srfi-1.import.so srfi-4.import.so data-structures.import.so \
       ports.import.so files.import.so posix.import.so \
       srfi-13.import.so srfi-69.import.so extras.import.so \
-      irregex.import.so srfi-14.import.so tcp.import.so \
+      regex.import.so srfi-14.import.so tcp.import.so \
       foreign.import.so scheme.import.so srfi-18.import.so \
       utils.import.so csi.import.so irregex.import.so types.db; do
   cp ../$x test-repository

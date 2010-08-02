@@ -48,7 +48,6 @@
 ;       | (procedure [NAME] (VAL1 ... [#!optional VALOPT1 ...] [#!rest [VAL | values]]) . RESULTS)
 ;       | BASIC
 ;       | deprecated
-;       | (deprecated NAME)
 ;   BASIC = * | string | symbol | char | number | boolean | list | pair | 
 ;           procedure | vector | null | eof | undefined | port | 
 ;           blob | noreturn | pointer | locative | fixnum | float
@@ -90,14 +89,8 @@
 		   ((eq? a 'deprecated)
 		    (report
 		     loc
-		     (sprintf "use of deprecated library procedure `~a'" id) )
+		     (sprintf "use of deprecated toplevel identifier `~a'" id) )
 		    '*)
-		   ((and (pair? a) (eq? (car a) 'deprecated))
-		    (report 
-		     loc
-		     (sprintf "use of deprecated library procedure `~a' - consider using `~a' instead"
-		       id (cadr a)))
-		     '*)
 		   (else (list a)))))
 	  (else '*)))
   (define (variable-result id e loc)
@@ -476,8 +469,7 @@
 		      (every procedure-type? (cdr t)))))))
   (define (procedure-argument-types t n)
     (cond ((or (memq t '(* procedure)) 
-	       (not-pair? t) 
-	       (eq? 'deprecated (car t)))
+	       (not-pair? t) )
 	   (values (make-list n '*) #f))
 	  ((eq? 'procedure (car t))
 	   (let* ((vf #f)
@@ -581,10 +573,8 @@
 			    (walk (first subs) e loc var)
 			    loc))
 		       (b (assq var e)) )
-		  (when (and type
-			     (not b)
-			     (not (or (eq? type 'deprecated)
-				      (and (pair? type) (eq? 'deprecated (car type)))))
+		  (when (and type (not b)
+			     (not (eq? type 'deprecated))
 			     (not (match type rt)))
 		    (report
 		     loc

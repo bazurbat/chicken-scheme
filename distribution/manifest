@@ -28,7 +28,7 @@ optimizer.c
 compiler-syntax.c
 scrutinizer.c
 unboxing.c
-irregex.c
+regex.c
 posixunix.c
 posixwin.c
 profiler.c
@@ -77,9 +77,8 @@ optimizer.scm
 compiler-syntax.scm
 scrutinizer.scm
 unboxing.scm
+regex.scm
 irregex.scm
-irregex-core.scm
-irregex-utils.scm
 posixunix.scm
 posixwin.scm
 posix-common.scm
@@ -209,6 +208,7 @@ posix.import.scm
 srfi-13.import.scm
 srfi-69.import.scm
 extras.import.scm
+regex.import.scm
 irregex.import.scm
 srfi-14.import.scm
 tcp.import.scm
@@ -222,6 +222,7 @@ posix.import.c
 srfi-13.import.c
 srfi-69.import.c
 extras.import.c
+regex.import.c
 irregex.import.c
 srfi-14.import.c
 tcp.import.c
@@ -287,7 +288,7 @@ manual/Unit library
 manual/Unit lolevel
 manual/Unit ports
 manual/Unit posix
-manual/Unit irregex
+manual/Unit regex
 manual/Unit srfi-1
 manual/Unit srfi-13
 manual/Unit srfi-14

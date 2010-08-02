@@ -2,8 +2,9 @@
 
 (load-relative "tools.scm")
 
-(use setup-download matchable sxml-transforms data-structures irregex)
+(use setup-download matchable sxml-transforms data-structures regex)
 
+(import irregex)
 
 (define *help* #f)
 (define *major-version* (##sys#fudge 41))
@@ -223,24 +224,24 @@
                     (let* ((end (irregex-match-end m 0))
                            (acc (kons i m acc)))
                       (lp end acc))))))))
-    (irregex-fold
-     irx
-     (lambda (i m s)
-       (cons (matched (irregex-match-substring m 1))
-	     (cons (did-not-match
-		    (substring str i (irregex-match-start-index m 0)))
-		   s)))
-		  '()
-		  str
-		  (lambda (i s)
-		    (reverse (cons (did-not-match (substring str i))
-				   s)))))
+    (let ((irregex-match-start-index irregex-match-start)) ;; upcoming API change in irregex 0.7
+      (irregex-fold irx
+                    (lambda (i m s)
+                      (cons (matched (irregex-match-substring m 1))
+                            (cons (did-not-match
+                                   (substring str i (irregex-match-start-index m 0)))
+                                  s)))
+                    '()
+                    str
+                    (lambda (i s)
+                      (reverse (cons (did-not-match (substring str i))
+                                     s))))))
   (transform
    +link-regexp+
    str
    (lambda (name)  ;; wiki username
      `(a (@ (href ,(string-append "http://chicken.wiki.br/users/"
-                                  (irregex-replace/all " " name "-" name))))
+                                  (string-substitute " " "-" name 'global))))
          ,name))
    (lambda (x)     ;; raw HTML chunk
      `(literal ,x))))

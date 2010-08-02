@@ -27,7 +27,7 @@
 
 (declare
   (unit utils)
-  (uses extras srfi-13 posix files irregex)
+  (uses extras srfi-13 posix files regex)
   (fixnum)
   (hide chop-pds)
   (disable-interrupts) )
@@ -115,15 +115,18 @@
 ;;; Scan lines until regex or predicate matches
 
 (define scan-input-lines
-  (lambda (rx #!optional (port ##sys#standard-input))
-    (let ((rx (if (procedure? rx)
-		  rx
-		  (cute irregex-search (irregex rx) <>))))
-      (let loop ()
-	(let ((ln (read-line port)))
-	  (and (not (eof-object? ln))
-	       (or (rx ln)
-		   (loop))))))))
+  (let ((regexp regexp)
+	(read-line read-line)
+	(string-search string-search))
+    (lambda (rx #!optional (port ##sys#standard-input))
+      (let ((rx (if (procedure? rx)
+		    rx
+		    (cut string-search (regexp rx) <>))))
+	(let loop ()
+	  (let ((ln (read-line port)))
+	    (and (not (eof-object? ln))
+		 (or (rx ln)
+		     (loop)))))))))
 
 
 ;; Ask for confirmation

@@ -10,6 +10,10 @@ exec csi -s "$0" "$@"
 
 (define files '("README" "manual/The User's Manual"))
 
+(define-syntax rx
+  (syntax-rules ()
+    ((_ r) (force (delay (regexp r))))))
+
 (define (patch which rx subst)
   (cond ((and (list? which) (= 2 (length which)))
 	 (let ((from (car which))
@@ -22,17 +26,17 @@ exec csi -s "$0" "$@"
 		   (let loop ()
 		     (let ((ln (read-line)))
 		       (unless (eof-object? ln)
-			 (write-line (irregex-replace/all rx ln subst))
+			 (write-line (string-substitute rx subst ln #t)) 
 			 (loop) ) ) ) )
-		 #:binary) )
-	     #:binary)))
+		 binary:) )
+	     binary:)))
 	(else
 	 (let ((tmp (create-temporary-file)))
 	   (patch (list which tmp) rx subst)
 	   (system* "mv ~S ~S" tmp which) ) ) ) )
 
 (define (parse-version v)
-  (string-match (irregex "(\\d+)\\.(\\d+)\\.(\\d+)(.*)") v) )
+  (string-match (rx "(\\d+)\\.(\\d+)\\.(\\d+)(.*)") v) )
 
 (define (main args)
   (let ((major (##sys#fudge 41))
@@ -61,14 +65,14 @@ exec csi -s "$0" "$@"
       binary:)
     (system* "cat version.scm")
     (let ([vstr (sprintf "version ~A" buildversion)])
-      (for-each (cut patch <> (irregex "version [0-9][-.0-9a-zA-Z]+") vstr) files) )
+      (for-each (cut patch <> (rx "version [0-9][-.0-9a-zA-Z]+") vstr) files) )
     (patch 
      "chicken.h"
-     (irregex "C_MAJOR_VERSION[ \\t]+[0-9]+")
+     (rx "C_MAJOR_VERSION[ \\t]+[0-9]+")
      (sprintf "C_MAJOR_VERSION   ~a" major))
     (patch 
      "chicken.h"
-     (irregex "C_MINOR_VERSION[ \\t]+[0-9]+")
+     (rx "C_MINOR_VERSION[ \\t]+[0-9]+")
      (sprintf "C_MINOR_VERSION   ~a" minor))
     0))
 

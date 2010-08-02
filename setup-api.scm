@@ -24,7 +24,7 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
-(require-library srfi-1 irregex utils posix srfi-13 extras ports data-structures files)
+(require-library srfi-1 regex utils posix srfi-13 extras ports data-structures files)
 
 ; This code is partially quite messy and the API is not overly consistent,
 ; mainly because it has grown "organically" while the old chicken-setup program
@@ -66,7 +66,7 @@
      shellpath)
   
   (import scheme chicken foreign
-	  irregex utils posix ports extras data-structures
+	  regex utils posix ports extras data-structures
 	  srfi-1 srfi-13 files)
 
 ;;; Constants, variables and parameters
@@ -191,7 +191,7 @@
 	     (let loop ()
 	       (let ((ln (read-line)))
 		 (unless (eof-object? ln)
-		   (write-line (irregex-replace/all rx ln subst))
+		   (write-line (string-substitute rx subst ln #t)) 
 		   (loop) ) ) ) ) ) ) )
       (let ((tmp (create-temporary-file)))
 	(patch (list tmp tmp) rx subst)
@@ -718,7 +718,7 @@
 (define (version>=? v1 v2)
   (define (version->list v)
     (map (lambda (x) (or (string->number x) x))
-	 (irregex-split "[-\\._]" (->string v))))
+	 (string-split-fields "[-\\._]" (->string v) #:infix)))
   (let loop ((p1 (version->list v1))
 	     (p2 (version->list v2)))
     (cond ((null? p1) (null? p2))
