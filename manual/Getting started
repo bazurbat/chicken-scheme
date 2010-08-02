@@ -579,7 +579,7 @@ name), and that it returns an integer result (the {{int}} before.) Now we can in
  0 1 1 2 3 5 8 13 21 34 55 
 
 Those who are interfacing to substantial C libraries should consider
-using the [[easyffi]] egg. 
+using the [[bind]] egg. 
 
 ---
 

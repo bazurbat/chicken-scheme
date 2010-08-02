@@ -141,6 +141,10 @@ The toplevel loop understands a number of special commands:
 
 ; ,e FILENAME : Runs an external editor to edit the given {{FILENAME}} (see below for more information).
 
+; ,h : Shows all previously evaluated expression results.
+
+; ,ch : Clears stored expression results of previously evaluated expressions.
+
 ; ,exn : Describes the last exception that occurred and adds it to the result history (it can be accessed using the {{#}} notation).
 
 ; ,c : Show call-trace items of the most recent error
