@@ -8414,10 +8414,10 @@ C_regparm C_word C_fcall C_i_locative_to_object(C_word loc)
   if(C_immediatep(loc) || C_block_header(loc) != C_LOCATIVE_TAG)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "locative->object", loc);
 
-  ptr = (C_word *)C_u_i_car(loc);
+  ptr = (C_word *)C_block_item(loc, 0);
 
   if(ptr == NULL) return C_SCHEME_FALSE;
-  else return (C_word)ptr - C_unfix(C_u_i_cdr(loc));
+  else return (C_word)ptr - C_unfix(C_block_item(loc, 1));
 }
 
 
