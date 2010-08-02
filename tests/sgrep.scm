@@ -1,7 +1,7 @@
 ;;;; sgrep.scm - grepping benchmark
 
 
-(use regex extras utils posix srfi-1)
+(use irregex extras utils posix srfi-1)
 
 
 (define big-string
@@ -21,7 +21,7 @@
 	       (lambda (line)
 		 (set! c (fx+ c 1))
 		 ;(when (zero? (fxmod c 500)) (print* "."))
-		 (when (string-search expr line)
+		 (when (irregex-search expr line)
 		   (set! h (fx+ h 1)))
 		 #f))
 	      ;(newline)

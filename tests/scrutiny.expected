@@ -1,6 +1,6 @@
 
 Warning: at toplevel:
-  use of deprecated toplevel identifier `current-environment'
+  use of deprecated library procedure `current-environment'
 
 Warning: in local procedure `c',
   in local procedure `b',
