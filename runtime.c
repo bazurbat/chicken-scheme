@@ -8842,6 +8842,7 @@ C_dump_heap_state(C_word c, C_word closure, C_word k)
 {
   /* make sure heap is compacted */
   C_save(k);
+  C_fromspace_top = C_fromspace_limit; /* force major GC */
   C_reclaim(dump_heap_state_2, NULL);
 }
 
@@ -9063,5 +9064,6 @@ C_filter_heap_objects(C_word c, C_word closure, C_word k, C_word func, C_word ve
   C_save(vector);
   C_save(userarg);
   C_save(func);
+  C_fromspace_top = C_fromspace_limit; /* force major GC */
   C_reclaim(filter_heap_objects_2, NULL);
 }
