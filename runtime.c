@@ -742,7 +742,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_file_info);
   C_pte(C_get_symbol_table_info);
   C_pte(C_get_memory_info);
-  C_pte(C_cpu_time);
   C_pte(C_decode_seconds);
   C_pte(C_get_environment_variable);
   C_pte(C_stop_timer);
@@ -8206,24 +8205,28 @@ void become_2(void *dummy)
 }
 
 
-void C_ccall C_cpu_time(C_word c, C_word closure, C_word k)
+C_regparm C_word C_fcall
+C_a_i_cpu_time(C_word **a, int c, C_word buf)
 {
-  C_word u, s = 0;
+  C_word u, s = C_fix(0);
 
 #if defined(C_NONUNIX) || defined(__CYGWIN__)
   if(CLOCKS_PER_SEC == 1000) u = clock();
-  else u = ((double)clock() / (double)CLOCKS_PER_SEC) * 1000;
+  else u = C_number(a, ((double)clock() / (double)CLOCKS_PER_SEC) * 1000);
 #else
   struct rusage ru;
 
   if(C_getrusage(RUSAGE_SELF, &ru) == -1) u = 0;
   else {
-    u = ru.ru_utime.tv_sec * 1000 + ru.ru_utime.tv_usec / 1000;
-    s = ru.ru_stime.tv_sec * 1000 + ru.ru_stime.tv_usec / 1000;
+    u = C_number(a, (double)ru.ru_utime.tv_sec * 1000 + ru.ru_utime.tv_usec / 1000);
+    s = C_number(a, (double)ru.ru_stime.tv_sec * 1000 + ru.ru_stime.tv_usec / 1000);
   }
 #endif
-  
-  C_values(4, C_SCHEME_UNDEFINED, k, C_fix(u & C_MOST_POSITIVE_FIXNUM), C_fix(s & C_MOST_POSITIVE_FIXNUM));
+
+  /* buf must not be in nursery */
+  C_set_block_item(buf, 0, u);
+  C_set_block_item(buf, 1, s);
+  return buf;
 }
 
 
