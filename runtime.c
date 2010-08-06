@@ -791,6 +791,10 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_locative_ref);
   C_pte(C_call_with_cthulhu);
   C_pte(C_dunload);
+  C_pte(C_copy_closure);
+  C_pte(C_dump_heap_state);
+  C_pte(C_filter_heap_objects);
+  
   pt[ i ].id = NULL;
   return pt;
 }
