@@ -791,6 +791,10 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_locative_ref);
   C_pte(C_call_with_cthulhu);
   C_pte(C_dunload);
+  C_pte(C_copy_closure);
+  C_pte(C_dump_heap_state);
+  C_pte(C_filter_heap_objects);
+  
   pt[ i ].id = NULL;
   return pt;
 }
@@ -8842,6 +8846,7 @@ C_dump_heap_state(C_word c, C_word closure, C_word k)
 {
   /* make sure heap is compacted */
   C_save(k);
+  C_fromspace_top = C_fromspace_limit; /* force major GC */
   C_reclaim(dump_heap_state_2, NULL);
 }
 
@@ -9063,5 +9068,6 @@ C_filter_heap_objects(C_word c, C_word closure, C_word k, C_word func, C_word ve
   C_save(vector);
   C_save(userarg);
   C_save(func);
+  C_fromspace_top = C_fromspace_limit; /* force major GC */
   C_reclaim(filter_heap_objects_2, NULL);
 }
