@@ -196,7 +196,6 @@ EOF
 (define ##sys#memory-info (##core#primitive "C_get_memory_info"))
 (define (current-milliseconds) (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f))
 (define (current-gc-milliseconds) (##sys#fudge 31))
-(define cpu-time (##core#primitive "C_cpu_time"))
 (define ##sys#decode-seconds (##core#primitive "C_decode_seconds"))
 (define get-environment-variable (##core#primitive "C_get_environment_variable"))
 (define getenv get-environment-variable) ; DEPRECATED
@@ -231,6 +230,15 @@ EOF
 
 (define (current-seconds) 
   (##core#inline_allocate ("C_a_get_current_seconds" 4) #f))
+
+(define cpu-time
+  (let ((buf (vector #f #f)))
+    (lambda ()
+      ;; should be thread-safe as no context-switch will occur after
+      ;; function entry and `buf' contents will have been extracted
+      ;; before `values' gets called.
+      (##core#inline_allocate ("C_a_i_cpu_time" 8) buf)
+      (values (##sys#slot buf 0) (##sys#slot buf 1)))))
 
 (define (##sys#check-structure x y . loc) 
   (if (pair? loc)
