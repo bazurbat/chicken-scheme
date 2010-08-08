@@ -491,7 +491,7 @@
 
 ;; extras
 
-(format (procedure format (string #!rest) *))
+(format (procedure format (#!rest) *))
 (fprintf (procedure fprintf (port string #!rest) undefined))
 (pp (procedure pp (* #!optional port) undefined))
 (pretty-print (procedure pretty-print (* #!optional port) undefined))
