@@ -61,34 +61,31 @@
   (let ((title (sprintf "Eggs Unlimited (release branch ~a)" *major-version*))
 	(eggs (gather-egg-information dir)))
     (sxml->html
-     `((literal "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
-       (literal "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">")
-       (html
+     `((literal "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">")
+       (html (@ (xmlns "http://www.w3.org/1999/xhtml"))
         ,(header title)
         (body
-         ,(titlebar title)
-         ,(sidebar)
+         ,(menu)
          ,(content (prelude title)
                    (emit-egg-information eggs))
          ,(trailer)))))))
 
 (define (wiki-link path desc)
-  `(a (@ (href "http://chicken.wiki.br/" ,path))
-      ,desc))
+  `(a (@ (href "http://wiki.call-cc.org/" ,path)) ,desc))
 
-(define (sidebar)
-  `(div (@ (id "toc-links"))
-        (div (@ (id "toc"))
-             (p ,(wiki-link "" "Home") (br)
-                ,(wiki-link "manual/index" "Manual") (br)
-                ,(wiki-link "eggs" "Eggs") (br)
-                ,(wiki-link "users" "Users") (br)
-                ))))
+(define (menu)
+  `(div (@ (id "menu"))
+	(ul (li ,(wiki-link "" "Home"))
+	    (li (a (@ (href "http://code.call-cc.org")) "Download"))
+	    (li ,(wiki-link "manual/index" "Manual"))
+	    (li ,(wiki-link "eggs" "Eggs"))
+	    (li (a (@ (href "http://chickadee.call-cc.org")) "API Browser"))
+	    (li (a (@ (href "http://bugs.call-cc.org")) "Bugs"))
+	    )))
 
 (define (content . body)
-  `(div (@ (id "content-box"))
-        (div (@ (class "content"))
-             ,body)))
+  `(div (@ (id "content"))
+             ,body))
 
 (define (header title)
   `(head
@@ -96,18 +93,11 @@
 ;;       ,+stylesheet+)
     (link (@ (rel "stylesheet")
              (type "text/css")
-             (href "http://chicken.wiki.br/common-css")))
+             (href "http://wiki.call-cc.org/chicken.css")))
     (title ,title)))
 
-(define (titlebar title)
-  `(div (@ (id "header"))
-        (h1 (a (@ (href "http://chicken.wiki.br/eggs"))
-               ,title))))
-
 (define (prelude title)
-  `((p (img (@
-             (style "float: right;")
-             (src "http://www.call-with-current-continuation.org/eggs/3/egg.jpg"))))
+  `((h2 "Eggs Unlimited (release branch 4)")
     (p (b "Last updated: " ,(seconds->string (current-seconds))))
     (p "A library of extensions for the Chicken Scheme system.")
     (h2 "Installation")
@@ -129,7 +119,7 @@
     (p "For more information, enter")
     (pre "  chicken-install -help\n")
     (p "If you would like to access the subversion repository, see the "
-       (a (@ (href "http://chicken.wiki.br/eggs tutorial"))
+       (a (@ (href "http://wiki.call-cc.org/eggs tutorial"))
           "Egg tutorial") ".")
     (p "If you are looking for 3rd party libraries used by one of the extensions, "
        "check out the CHICKEN "
@@ -177,7 +167,7 @@
                 (h3 (a (@ (href "#category-list"))
                        ,catname))
 		(table
-		 (tr (th "Name") (th "Description") (th "License") (th "author") (th "maintainer") (th "version"))
+		 (tr (th "Name") (th "Description") (th "License") (th "Author") (th "Maintainer") (th "Version"))
 		 ,@eggs)))))))
    +categories+))
 
@@ -193,7 +183,7 @@
 	      (warning "extension has .meta entry of incorrect type and will not be listed" (car egg) p x)
 	      (return '()))))
      (d "  ~a   ~a" (car egg) (prop 'version "HEAD" any?))
-     `((tr (td (a (@ (href ,(sprintf "http://chicken.wiki.br/eggref/~a/~a" *major-version* (car egg))))
+     `((tr (td (a (@ (href ,(sprintf "http://wiki.call-cc.org/eggref/~a/~a" *major-version* (car egg))))
 		  ,(symbol->string (car egg))))
 	   (td ,(prop 'synopsis "unknown" string?))
 	   (td ,(prop 'license "unknown" name?))
@@ -240,7 +230,7 @@
    +link-regexp+
    str
    (lambda (name)  ;; wiki username
-     `(a (@ (href ,(string-append "http://chicken.wiki.br/users/"
+     `(a (@ (href ,(string-append "http://wiki.call-cc.org/users/"
                                   (string-substitute " " "-" name 'global))))
          ,name))
    (lambda (x)     ;; raw HTML chunk
