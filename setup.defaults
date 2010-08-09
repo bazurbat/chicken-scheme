@@ -13,7 +13,7 @@
  (transport http))
 
 (server
- (location "galinha")
+ (location "call-cc.org")
  (transport http))
 
 
@@ -34,5 +34,5 @@
 ; (alias (NAME REALNAME) ...)
 
 (alias 
- ("galinha" "http://galinha.ucpel.tche.br/cgi-bin/henrietta")
+ ("call-cc.org" "http://code.call-cc.org/cgi-bin/henrietta.cgi")
  ("kitten-technologies" "http://chicken.kitten-technologies.co.uk/henrietta.cgi"))
