@@ -294,7 +294,7 @@ given here:
   
   VAL --> (or VAL1 ...)
        |  (struct NAME)
-       |  (procedure (VAL1 ... [#!optional VALOPT1 ...] [#!rest [VAL]]) . RESULTS)
+       |  (procedure [NAME] (VAL1 ... [#!optional VALOPT1 ...] [#!rest [VAL]]) . RESULTS)
        |  BASIC
        |  deprecated
   

@@ -257,9 +257,9 @@ EOF
 (let* ([ext-alloc
 	(foreign-lambda* scheme-object ([int bytes])
 	  "C_word *buf = (C_word *)C_malloc(bytes + sizeof(C_header));"
-	  "if(buf == NULL) return(C_SCHEME_FALSE);"
+	  "if(buf == NULL) C_return(C_SCHEME_FALSE);"
 	  "C_block_header(buf) = C_make_header(C_BYTEVECTOR_TYPE, bytes);"
-	  "return(buf);") ]
+	  "C_return(buf);") ]
        [ext-free
 	(foreign-lambda* void ([scheme-object bv])
 	  "C_free((void *)C_block_item(bv, 1));") ]
@@ -293,7 +293,7 @@ EOF
 	      (##sys#check-exact-interval init 0 #xff 'make-u8vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
-		(##sys#u8vector-set! v i init) ) ) ) ) ) )
+		(##core#inline "C_u_i_u8vector_set" v i init) ) ) ) ) ) )
 
   (set! make-s8vector
     (lambda (len #!optional (init #f)  (ext? #f) (fin #t))
@@ -306,7 +306,7 @@ EOF
 	      (##sys#check-exact-interval init -128 127 'make-s8vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
-		(##sys#s8vector-set! v i init) ) ) ) ) ) )
+		(##core#inline "C_u_i_s8vector_set" v i init) ) ) ) ) ) )
 
   (set! make-u16vector
     (lambda (len #!optional (init #f)  (ext? #f) (fin #t))
@@ -319,7 +319,7 @@ EOF
 	      (##sys#check-exact-interval init 0 #xffff 'make-u16vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
-		(##sys#u16vector-set! v i init) ) ) ) ) ) )
+		(##core#inline "C_u_i_u16vector_set" v i init) ) ) ) ) ) )
 
   (set! make-s16vector
     (lambda (len #!optional (init #f)  (ext? #f) (fin #t))
@@ -332,7 +332,7 @@ EOF
 	      (##sys#check-exact-interval init -32768 32767 'make-s16vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
-		(##sys#s16vector-set! v i init) ) ) ) ) ) )
+		(##core#inline "C_u_i_s16vector_set" v i init) ) ) ) ) ) )
 
   (set! make-u32vector
     (lambda (len #!optional (init #f)  (ext? #f) (fin #t))

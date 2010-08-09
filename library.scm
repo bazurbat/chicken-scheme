@@ -364,9 +364,9 @@ EOF
 (define (cadddr x) (##core#inline "C_i_cadddr" x))
 (define (cddddr x) (##core#inline "C_i_cddddr" x))
 
-(define (caar x) (car (car x)))
-(define (cdar x) (cdr (car x)))
-(define (cddr x) (cdr (cdr x)))
+(define (caar x) (##core#inline "C_i_caar" x))
+(define (cdar x) (##core#inline "C_i_cdar" x))
+(define (cddr x) (##core#inline "C_i_cddr" x))
 (define (caaar x) (car (car (car x))))
 (define (caadr x) (car (##core#inline "C_i_cadr" x)))
 (define (cadar x) (##core#inline "C_i_cadr" (car x)))
@@ -2575,10 +2575,6 @@ EOF
 					     (cond [(string=? "eof" tok) #!eof]
 						   [(member tok '("optional" "rest" "key"))
 						    (build-symbol (##sys#string-append "#!" tok)) ]
-						   [(string=? "current-line" tok)
-						       (##sys#slot port 4)]
-						   [(string=? "current-file" tok)
-						       (port-name port)]
 						   [else 
 						    (let ((a (assq (string->symbol tok) read-marks)))
 						      (if a
@@ -3354,37 +3350,48 @@ EOF
 
 ;;; Access backtrace:
 
+(define-constant +trace-buffer-entry-slot-count+ 4)
+
 (define ##sys#get-call-chain
-  (let ((extract (foreign-lambda* nonnull-c-string ((scheme-object x)) "return((C_char *)x);")))
+  (let ((extract
+	 (foreign-lambda* nonnull-c-string ((scheme-object x)) "C_return((C_char *)x);")))
     (lambda (#!optional (start 0) (thread ##sys#current-thread))
       (let* ((tbl (foreign-value "C_trace_buffer_size" int))
-	     (vec (##sys#make-vector (fx* 4 tbl) #f))
+	     ;; 4 slots: "raw" string, cooked1, cooked2, thread
+	     (c +trace-buffer-entry-slot-count+)
+	     (vec (##sys#make-vector (fx* c tbl) #f))
 	     (r (##core#inline "C_fetch_trace" start vec)) 
-	     (n (if (fixnum? r) r (fx* 4 tbl))) )
+	     (n (if (fixnum? r) r (fx* c tbl))) )
 	(let loop ((i 0))
 	  (if (fx>= i n) 
 	      '()
-	      (let ((t (##sys#slot vec (fx+ i 3))))
+	      (let ((t (##sys#slot vec (fx+ i 3)))) ; thread
 		(if (or (not t) (not thread) (eq? thread t))
-		    (cons (vector (extract (##sys#slot vec i))
-				  (##sys#slot vec (fx+ i 1))
-				  (##sys#slot vec (fx+ i 2)) )
-			  (loop (fx+ i 4)) )
-		    (loop (fx+ i 4))) ) ) ) ) ) ) )
+		    (cons (vector
+			   (extract (##sys#slot vec i)) ; raw
+			   (##sys#slot vec (fx+ i 1))   ; cooked1
+			   (##sys#slot vec (fx+ i 2)) ) ; cooked2
+			  (loop (fx+ i c)) )
+		    (loop (fx+ i c))) ) ) ) ) ) ) )
 
 (define (##sys#really-print-call-chain port chain header)
   (when (pair? chain)
     (##sys#print header #f port)
     (for-each
      (lambda (info) 
-       (let ((more1 (##sys#slot info 1))
-	     (more2 (##sys#slot info 2)) )
+       (let* ((more1 (##sys#slot info 1)) ; cooked1 (expr/form)
+	      (more2 (##sys#slot info 2)) ; cooked2 (cntr/frameinfo)
+	      (fi (##sys#structure? more2 'frameinfo)))
 	 (##sys#print "\n\t" #f port)
-	 (##sys#print (##sys#slot info 0) #f port)
-	 (##sys#print "\t\t" #f port)
+	 (##sys#print (##sys#slot info 0) #f port) ; raw (mode)
+	 (##sys#print "\t  " #f port)
 	 (when more2
 	   (##sys#write-char-0 #\[ port)
-	   (##sys#print more2 #f port)
+	   (##sys#print 
+	    (if fi
+		(##sys#slot more2 1)	; cntr
+		more2)
+	    #f port)
 	   (##sys#print "] " #f port) )
 	 (when more1
 	   (##sys#with-print-length-limit
@@ -3400,7 +3407,9 @@ EOF
   (##sys#check-port port 'print-call-chain)
   (##sys#check-exact start 'print-call-chain)
   (##sys#check-string header 'print-call-chain)
-  (##sys#really-print-call-chain port (##sys#get-call-chain start thread) header) )
+  (let ((ct (##sys#get-call-chain start thread)))
+    (##sys#really-print-call-chain port ct header)
+    ct))
 
 (define get-call-chain ##sys#get-call-chain)
 
@@ -3917,7 +3926,7 @@ EOF
    q					; #9 quantum
    (##core#undefined)			; #10 specific
    #f					; #11 block object (type depends on blocking type)
-   '()					; #12 recipients (currently unused)
+   '()					; #12 recipients
    #f) )				; #13 unblocked by timeout?
 
 (define ##sys#primordial-thread (##sys#make-thread #f 'running 'primordial ##sys#default-thread-quantum))
@@ -3932,17 +3941,6 @@ EOF
    #f					; #4 abandoned
    #f					; #5 locked
    (##core#undefined) ) )		; #6 specific
-
-(define (##sys#abandon-mutexes thread)
-  (let ([ms (##sys#slot thread 8)])
-    (unless (null? ms)
-      (##sys#for-each
-       (lambda (m)
-	 (##sys#setislot m 2 #f)
-	 (##sys#setislot m 4 #t) 
-	 (##sys#setislot m 5 #f)
-	 (##sys#setislot m 3 '()) )
-       ms) ) ) )
 
 (define (##sys#schedule) ((##sys#slot ##sys#current-thread 1)))
 
@@ -4679,3 +4677,4 @@ EOF
 ;;; Dump heap state to stderr:
 
 (define ##sys#dump-heap-state (##core#primitive "C_dump_heap_state"))
+(define ##sys#filter-heap-objects (##core#primitive "C_filter_heap_objects"))

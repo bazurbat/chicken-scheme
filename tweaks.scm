@@ -30,16 +30,13 @@
 
 
 (cond-expand
- (debugbuild
-  (declare
-    (fixnum)
-    (disable-interrupts) ))
- (else
-  (declare
-    (disable-interrupts)
-    (no-bound-checks)
-    (no-procedure-checks)
-    (no-argc-checks))))
+  ((not debugbuild)
+   (declare
+     (disable-interrupts)
+     (no-bound-checks)
+     (no-procedure-checks)
+     (no-argc-checks)))
+  (else))
 
 (define-inline (node? x) (##sys#structure? x 'node))
 (define-inline (make-node c p s) (##sys#make-structure 'node c p s))

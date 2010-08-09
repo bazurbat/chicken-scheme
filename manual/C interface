@@ -655,12 +655,12 @@ root variables.
 
 If not {{NULL}}, the function pointed to by this variable will be
 called before each garbage collection with a flag indicating what kind
-of collection was performed (either {{0}} for a minor collection or
-{{2}} for a resizing collection). A "resizing" collection means a
-secondary collection that moves all live data into a enlarged (or
-shrinked) heap-space. Minor collections happen very frequently, so the
-hook function should not consume too much time. The hook function may
-not invoke Scheme callbacks.
+of collection was performed (either {{0}} for a minor or major
+collection or {{2}} for a resizing collection). A "resizing"
+collection means a secondary collection that moves all live data into
+a enlarged (or shrinked) heap-space. Minor collections happen very
+frequently, so the hook function should not consume too much time. The
+hook function may not invoke Scheme callbacks.
 
 Note that resizing collections may be nested in normal major collections.
 

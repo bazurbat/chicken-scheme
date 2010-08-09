@@ -45,7 +45,7 @@
 ;   SPEC = * | (VAL1 ...)
 ;   VAL = (or VAL1 ...)
 ;       | (struct NAME)
-;       | (procedure (VAL1 ... [#!optional VALOPT1 ...] [#!rest [VAL | values]]) . RESULTS)
+;       | (procedure [NAME] (VAL1 ... [#!optional VALOPT1 ...] [#!rest [VAL | values]]) . RESULTS)
 ;       | BASIC
 ;       | deprecated
 ;   BASIC = * | string | symbol | char | number | boolean | list | pair | 

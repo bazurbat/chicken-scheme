@@ -149,7 +149,7 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #define DEFAULT_FORWARDING_TABLE_SIZE  32
 #define DEFAULT_LOCATIVE_TABLE_SIZE    32
 #define DEFAULT_COLLECTIBLES_SIZE      1024
-#define DEFAULT_TRACE_BUFFER_SIZE      8
+#define DEFAULT_TRACE_BUFFER_SIZE      10
 
 #define MAX_HASH_PREFIX                64
 
@@ -183,13 +183,13 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #ifdef C_SIXTY_FOUR
 # define ALIGNMENT_HOLE_MARKER         ((C_word)0xfffffffffffffffeL)
 # define FORWARDING_BIT_SHIFT          63
-# define UWORD_FORMAT_STRING           "0x%016lx"
-# define UWORD_COUNT_FORMAT_STRING     "%ld"
+# define UWORD_FORMAT_STRING           "0x%016x"
+# define UWORD_COUNT_FORMAT_STRING     "%u"
 #else
 # define ALIGNMENT_HOLE_MARKER         ((C_word)0xfffffffe)
 # define FORWARDING_BIT_SHIFT          31
 # define UWORD_FORMAT_STRING           "0x%08x"
-# define UWORD_COUNT_FORMAT_STRING     "%d"
+# define UWORD_COUNT_FORMAT_STRING     "%u"
 #endif
 
 #define GC_MINOR           0
@@ -415,6 +415,7 @@ static C_TLS int
   gc_report_flag = 0,
   gc_mode,
   gc_count_1,
+  gc_count_1_total,
   gc_count_2,
   interrupt_reason,
   stack_size_changed,
@@ -470,7 +471,7 @@ static void horror(C_char *msg) C_noret;
 static void C_fcall initial_trampoline(void *proc) C_regparm C_noret;
 static C_ccall void termination_continuation(C_word c, C_word self, C_word result) C_noret;
 static void C_fcall mark_system_globals(void) C_regparm;
-static void C_fcall mark(C_word *x) C_regparm;
+static void C_fcall really_mark(C_word *x) C_regparm;
 static WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word container) C_regparm;
 static C_ccall void values_continuation(C_word c, C_word closure, C_word dummy, ...) C_noret;
 static C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stable);
@@ -481,7 +482,7 @@ static C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word *f
 static long C_fcall milliseconds(void);
 static long C_fcall cpu_milliseconds(void);
 static void C_fcall remark_system_globals(void) C_regparm;
-static void C_fcall remark(C_word *x) C_regparm;
+static void C_fcall really_remark(C_word *x) C_regparm;
 static C_word C_fcall intern0(C_char *name) C_regparm;
 static void C_fcall update_locative_table(int mode) C_regparm;
 static LF_LIST *find_module_handle(C_char *name);
@@ -691,7 +692,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   dlopen_flags = 0;
 #endif
 
-  mutation_count = gc_count_1 = gc_count_2 = 0;
+  mutation_count = gc_count_1 = gc_count_1_total = gc_count_2 = 0;
   lf_list = NULL;
   C_register_lf2(NULL, 0, create_initial_ptable());
   C_restart_address = toplevel;
@@ -790,6 +791,10 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_locative_ref);
   C_pte(C_call_with_cthulhu);
   C_pte(C_dunload);
+  C_pte(C_copy_closure);
+  C_pte(C_dump_heap_state);
+  C_pte(C_filter_heap_objects);
+  
   pt[ i ].id = NULL;
   return pt;
 }
@@ -1690,7 +1695,7 @@ long C_fcall cpu_milliseconds(void)
 
 int C_fcall C_save_callback_continuation(C_word **ptr, C_word k)
 {
-  C_word p = C_pair(ptr, k, C_block_item(callback_continuation_stack_symbol, 0));
+  C_word p = C_a_pair(ptr, k, C_block_item(callback_continuation_stack_symbol, 0));
   
   C_mutate(&C_block_item(callback_continuation_stack_symbol, 0), p);
   return ++callback_continuation_level;
@@ -2071,7 +2076,7 @@ C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stabl
   C_set_block_item(sym, 2, C_SCHEME_END_OF_LIST);
   *ptr = p;
   b2 = stable->table[ key ];	/* previous bucket */
-  bucket = C_pair(ptr, sym, b2); /* create new bucket */
+  bucket = C_a_pair(ptr, sym, b2); /* create new bucket */
   ((C_SCHEME_BLOCK *)bucket)->header = 
     (((C_SCHEME_BLOCK *)bucket)->header & ~C_HEADER_TYPE_BITS) | C_BUCKET_TYPE;
 
@@ -2344,6 +2349,7 @@ C_word C_fcall C_closure(C_word **ptr, int cells, C_word proc, ...)
 }
 
 
+/* obsolete: replaced by C_a_pair in chicken.h */
 C_regparm C_word C_fcall C_pair(C_word **ptr, C_word car, C_word cdr)
 {
   C_word *p = *ptr,
@@ -2607,6 +2613,13 @@ void C_save_and_reclaim(void *trampoline, void *proc, int n, ...)
 }
 
 
+#define mark(x)					\
+  C_cblock \
+    C_word *_x = (x), _val = *_x;			\
+    if(!C_immediatep(_val)) really_mark(_x);	\
+  C_cblockend
+
+
 C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 {
   int i, j, n, fcount, weakn;
@@ -2640,7 +2653,10 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
   /* Entry point for second-level GC (on explicit request or because of full fromspace): */
   if(C_setjmp(gc_restart) || (start = C_fromspace_top) >= C_fromspace_limit) {
-    if(gc_bell) C_putchar(7);
+    if(gc_bell) {
+      C_putchar(7);
+      C_fflush(stdout);
+    }
 
     tgc = cpu_milliseconds();
 
@@ -2725,6 +2741,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
   if(gc_mode == GC_MINOR) {
     count = (C_uword)C_fromspace_top - (C_uword)start;
     ++gc_count_1;
+    ++gc_count_1_total;
     update_locative_table(GC_MINOR);
   }
   else {
@@ -2893,14 +2910,14 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 #endif
 
     if(gc_mode == GC_MINOR) 
-      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), count);
+      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), (unsigned int)count);
 
     C_fputc('\n', C_stderr);
     C_dbg("GC", C_text(" from\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING),
 	  (C_uword)fromspace_start, (C_uword)C_fromspace_top, (C_uword)C_fromspace_limit);
 
     if(gc_mode == GC_MAJOR) 
-      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), count);
+      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), (unsigned)count);
 
     C_fputc('\n', C_stderr);
     C_dbg("GC", C_text("   to\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING" \n"), 
@@ -2932,7 +2949,7 @@ C_regparm void C_fcall mark_system_globals(void)
 }
 
 
-C_regparm void C_fcall mark(C_word *x)
+C_regparm void C_fcall really_mark(C_word *x)
 {
   C_word val, item;
   C_uword n, bytes;
@@ -2941,8 +2958,6 @@ C_regparm void C_fcall mark(C_word *x)
   WEAK_TABLE_ENTRY *wep;
 
   val = *x;
-
-  if(C_immediatep(val)) return;
 
   p = (C_SCHEME_BLOCK *)val;
   
@@ -3063,6 +3078,13 @@ C_regparm void C_fcall mark(C_word *x)
     goto scavenge;
   }
 }
+
+
+#define remark(x)     \
+  C_cblock \
+    C_word *_x = (x), _val = *_x; \
+    if(!C_immediatep(_val)) really_remark(_x); \
+  C_cblockend
 
 
 /* Do a major GC into a freshly allocated heap: */
@@ -3239,7 +3261,7 @@ C_regparm void C_fcall remark_system_globals(void)
 }
 
 
-C_regparm void C_fcall remark(C_word *x)
+C_regparm void C_fcall really_remark(C_word *x)
 {
   C_word val, item;
   C_uword n, bytes;
@@ -3248,8 +3270,6 @@ C_regparm void C_fcall remark(C_word *x)
   WEAK_TABLE_ENTRY *wep;
 
   val = *x;
-
-  if(C_immediatep(val)) return;
 
   p = (C_SCHEME_BLOCK *)val;
   
@@ -3606,17 +3626,7 @@ C_regparm void C_fcall C_trace(C_char *name)
 /* DEPRECATED: throw out at some stage: */
 C_regparm C_word C_fcall C_emit_trace_info(C_word x, C_word y, C_word t)
 {
-  if(trace_buffer_top >= trace_buffer_limit) {
-    trace_buffer_top = trace_buffer;
-    trace_buffer_full = 1;
-  }
-
-  trace_buffer_top->raw = "<eval>";
-  trace_buffer_top->cooked1 = x;
-  trace_buffer_top->cooked2 = y;
-  trace_buffer_top->thread = t;
-  ++trace_buffer_top;
-  return x;
+  return C_emit_trace_info2("<eval>", x, y, t);
 }
 
 
@@ -3721,6 +3731,8 @@ C_word C_fetch_trace(C_word starti, C_word buffer)
 
       /* outside-pointer, will be ignored by GC */
       C_mutate(&C_block_item(buffer, p++), (C_word)ptr->raw);
+
+      /* subject to GC */
       C_mutate(&C_block_item(buffer, p++), ptr->cooked1);
       C_mutate(&C_block_item(buffer, p++), ptr->cooked2);
       C_mutate(&C_block_item(buffer, p++), ptr->thread);
@@ -3879,7 +3891,7 @@ C_regparm C_word C_fcall C_set_gc_report(C_word flag)
 C_regparm C_word C_fcall C_start_timer(void)
 {
   mutation_count = 0;
-  gc_count_1 = 0;
+  gc_count_1_total = 0;
   gc_count_2 = 0;
   timer_start_ms = cpu_milliseconds();
   gc_ms = 0;
@@ -3897,7 +3909,7 @@ void C_ccall C_stop_timer(C_word c, C_word closure, C_word k)
     gc_time = C_flonum(&a, (double)gc_ms / 1000.0),
     info;
 
-  info = C_vector(&a, 6, elapsed, gc_time, C_fix(mutation_count), C_fix(gc_count_1), C_fix(gc_count_2));
+  info = C_vector(&a, 6, elapsed, gc_time, C_fix(mutation_count), C_fix(gc_count_1_total), C_fix(gc_count_2));
   C_kontinue(k, info);
 }
 
@@ -4372,7 +4384,7 @@ C_word C_a_i_list(C_word **a, int c, ...)
 
   for(last = C_SCHEME_UNDEFINED; c--; last = current) {
     x = va_arg(v, C_word);
-    current = C_pair(a, x, C_SCHEME_END_OF_LIST);
+    current = C_a_pair(a, x, C_SCHEME_END_OF_LIST);
 
     if(last != C_SCHEME_UNDEFINED)
       C_set_block_item(last, 1, current);
@@ -4395,7 +4407,7 @@ C_word C_h_list(int c, ...)
 
   for(last = C_SCHEME_UNDEFINED; c--; last = current) {
     x = va_arg(v, C_word);
-    current = C_pair(C_heaptop, x, C_SCHEME_END_OF_LIST);
+    current = C_a_pair(C_heaptop, x, C_SCHEME_END_OF_LIST);
 
     if(C_in_stackp(x)) 
       C_mutate(&C_u_i_car(current), x);
@@ -4645,6 +4657,21 @@ C_regparm C_word C_fcall C_i_cdr(C_word x)
 }
 
 
+C_regparm C_word C_fcall C_i_caar(C_word x)
+{
+  if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG) {
+  bad:
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "caar", x);
+  }
+
+  x = C_u_i_car(x);
+
+  if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG) goto bad;
+
+  return C_u_i_car(x);
+}
+
+
 C_regparm C_word C_fcall C_i_cadr(C_word x)
 {
   if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG) {
@@ -4653,9 +4680,25 @@ C_regparm C_word C_fcall C_i_cadr(C_word x)
   }
 
   x = C_u_i_cdr(x);
+
   if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG) goto bad;
 
   return C_u_i_car(x);
+}
+
+
+C_regparm C_word C_fcall C_i_cdar(C_word x)
+{
+  if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG) {
+  bad:
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "cdar", x);
+  }
+
+  x = C_u_i_car(x);
+
+  if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG) goto bad;
+
+  return C_u_i_cdr(x);
 }
 
 
@@ -7364,7 +7407,7 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 #endif
 
 #ifdef HAVE_GCVT
-    C_gcvt(f, flonum_print_precision, buffer);
+    p = C_gcvt(f, flonum_print_precision, buffer); /* p unused, but we want to avoid stupid warnings */
 #else
     C_sprintf(buffer, C_text("%.*g"), flonum_print_precision, f);
 #endif
@@ -7421,7 +7464,7 @@ void get_argv_2(void *dummy)
          *a = C_alloc(cells),
          list, str;
   
-  for(list = C_SCHEME_END_OF_LIST; i--; list = C_pair(&a, str, list))
+  for(list = C_SCHEME_END_OF_LIST; i--; list = C_a_pair(&a, str, list))
     str = C_string2(&a, C_main_argv[ i ]);
 
   C_kontinue(k, list);
@@ -7752,13 +7795,13 @@ void C_ccall C_decode_seconds(C_word c, C_word closure, C_word k, C_word secs, C
 		  C_fix(tmt->tm_mday), C_fix(tmt->tm_mon), C_fix(tmt->tm_year),
 		  C_fix(tmt->tm_wday), C_fix(tmt->tm_yday),
 		  tmt->tm_isdst > 0 ? C_SCHEME_TRUE : C_SCHEME_FALSE,
-#ifdef C_MACOSX
+#ifdef C_GNU_ENV
                   /* negative for west of UTC, but we want positive */
 		  C_fix(-tmt->tm_gmtoff)
 #elif defined(__CYGWIN__) || defined(__MINGW32__) || defined(_WIN32) || defined(__WINNT__)
-                  C_fix(_timezone)
+                  C_fix(mode == C_SCHEME_FALSE ? _timezone : 0) /* does not account for DST */
 #else
-                  C_fix(timezone)
+                  C_fix(mode == C_SCHEME_FALSE ? timezone : 0)  /* does not account for DST */
 #endif
 		  );
   C_kontinue(k, info);
@@ -8249,7 +8292,6 @@ C_regparm C_word C_fcall C_a_i_make_locative(C_word **a, int c, C_word type, C_w
   }
 
   locative_table[ locative_table_count++ ] = (C_word)loc;
-
   return (C_word)loc;
 }
 
@@ -8376,10 +8418,10 @@ C_regparm C_word C_fcall C_i_locative_to_object(C_word loc)
   if(C_immediatep(loc) || C_block_header(loc) != C_LOCATIVE_TAG)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "locative->object", loc);
 
-  ptr = (C_word *)C_u_i_car(loc);
+  ptr = (C_word *)C_block_item(loc, 0);
 
   if(ptr == NULL) return C_SCHEME_FALSE;
-  else return (C_word)ptr - C_unfix(C_u_i_cdr(loc));
+  else return (C_word)ptr - C_unfix(C_block_item(loc, 1));
 }
 
 
@@ -8766,8 +8808,8 @@ C_putprop(C_word **ptr, C_word sym, C_word prop, C_word val)
     else pl = C_u_i_cdr(C_u_i_cdr(pl));
   }
 
-  pl = C_pair(ptr, val, C_block_item(sym, 2));
-  pl = C_pair(ptr, prop, pl);
+  pl = C_a_pair(ptr, val, C_block_item(sym, 2));
+  pl = C_a_pair(ptr, prop, pl);
   C_mutate(&C_block_item(sym, 2), pl);
   return val;
 }
@@ -8804,6 +8846,7 @@ C_dump_heap_state(C_word c, C_word closure, C_word k)
 {
   /* make sure heap is compacted */
   C_save(k);
+  C_fromspace_top = C_fromspace_limit; /* force major GC */
   C_reclaim(dump_heap_state_2, NULL);
 }
 
@@ -8945,15 +8988,16 @@ dump_heap_state_2(void *dummy)
 
 	if(!C_immediatep(x) && C_header_bits(x) == C_SYMBOL_TYPE) {
 	  x = C_block_item(x, 1);
-	  C_fprintf(C_stderr, C_text("`%.*s'"), C_header_size(x), C_c_string(x));
+	  C_fprintf(C_stderr, C_text("`%.*s'"), (int)C_header_size(x), C_c_string(x));
 	}
-	else C_fprintf(C_stderr, C_text("unknown key " UWORD_FORMAT_STRING), b->key);
+	else C_fprintf(C_stderr, C_text("unknown key " UWORD_FORMAT_STRING), (unsigned int)b->key);
       }
 
       C_fprintf(C_stderr, C_text("\t" UWORD_COUNT_FORMAT_STRING), b->count);
 
       if(b->total > 0) 
-	C_fprintf(C_stderr, C_text("\t" UWORD_COUNT_FORMAT_STRING " bytes"), b->total);
+	C_fprintf(C_stderr, C_text("\t" UWORD_COUNT_FORMAT_STRING " bytes"), 
+		  (unsigned int)b->total);
 
       C_fputc('\n', C_stderr);
       C_free(b);
@@ -8962,7 +9006,68 @@ dump_heap_state_2(void *dummy)
 
   C_fprintf(C_stderr, C_text("\ntotal number of blocks: " UWORD_COUNT_FORMAT_STRING
 			     ", immediates: " UWORD_COUNT_FORMAT_STRING "\n"),
-	    blk, imm);
+	    (unsigned int)blk, (unsigned int)imm);
   C_free(hdump_table);
   C_kontinue(k, C_SCHEME_UNDEFINED);
+}
+
+
+static void 
+filter_heap_objects_2(void *dummy)
+{
+  void *func = C_pointer_address(C_restore);
+  C_word userarg = C_restore;
+  C_word vector = C_restore;
+  C_word k = C_restore;
+  int n, bytes;
+  C_byte *scan;
+  C_SCHEME_BLOCK *sbp;
+  C_header h;
+  C_word *p;
+  int vecsize = C_header_size(vector);
+  typedef int (*filterfunc)(C_word x, C_word userarg);
+  filterfunc ff = (filterfunc)func;
+  int vcount = 0;
+
+  scan = fromspace_start;
+
+  while(scan < C_fromspace_top) {
+    sbp = (C_SCHEME_BLOCK *)scan;
+
+    if(*((C_word *)sbp) == ALIGNMENT_HOLE_MARKER) 
+      sbp = (C_SCHEME_BLOCK *)((C_word *)sbp + 1);
+
+    n = C_header_size(sbp);
+    h = sbp->header;
+    bytes = (h & C_BYTEBLOCK_BIT) ? n : n * sizeof(C_word);
+    p = sbp->data;
+
+    if(ff((C_word)sbp, userarg)) {
+      if(vcount < vecsize) {
+	C_set_block_item(vector, vcount, (C_word)sbp);
+	++vcount;
+      }
+      else {
+	C_kontinue(k, C_fix(-1));
+      }
+    }
+
+    scan = (C_byte *)sbp + C_align(bytes) + sizeof(C_word);
+  }
+
+  C_kontinue(k, C_fix(vcount));
+}
+
+
+void C_ccall
+C_filter_heap_objects(C_word c, C_word closure, C_word k, C_word func, C_word vector, 
+		      C_word userarg)
+{
+  /* make sure heap is compacted */
+  C_save(k);
+  C_save(vector);
+  C_save(userarg);
+  C_save(func);
+  C_fromspace_top = C_fromspace_limit; /* force major GC */
+  C_reclaim(filter_heap_objects_2, NULL);
 }

@@ -1534,7 +1534,7 @@ EOF
 (define local-timezone-abbreviation
   (foreign-lambda* c-string ()
    "char *z = (_daylight ? _tzname[1] : _tzname[0]);\n"
-   "return(z);") )
+   "C_return(z);") )
 
 ;;; Other things:
 

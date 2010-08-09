@@ -14,10 +14,11 @@ option.
 <procedure>(get-line-number EXPR)</procedure>
 
 If {{EXPR}} is a pair with the car being a symbol, and line-number
-information is available for this expression, then this procedure returns
-the associated line number. If line-number information is not available,
-then {{#f}} is returned.  Note that line-number information for
-expressions is only available in the compiler.
+information is available for this expression, then this procedure
+returns the associated source file and line number as a string. If
+line-number information is not available, then {{#f}} is returned.
+Note that line-number information for expressions is only available in
+the compiler.
 
 ==== expand
 

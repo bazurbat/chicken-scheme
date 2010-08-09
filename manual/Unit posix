@@ -606,6 +606,9 @@ returns three values:
 * {{#t}} if the process exited normally or {{#f}} otherwise.
 * either the exit status, if the process terminated normally or the signal number that terminated/stopped the process.
 
+Note that suspending the current process implies that all threads
+are suspended as well.
+
 ==== process
 
 <procedure>(process COMMANDLINE)</procedure><br>
@@ -624,6 +627,11 @@ is invoked as a subprocess.
 is directly passed, as is {{ENVIRONMENT-LIST}}.
 
 Not using the shell may be preferrable for security reasons.
+
+Once both the input- and output ports are closed, an implicit
+{{waitpid(3)}} is done to wait for the subprocess to finish or to reap
+a subprocess that has terminated. If the subprocess has not finished,
+waiting for it will necessarily block all executing threads.
 
 ==== process*
 

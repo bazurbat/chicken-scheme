@@ -1224,6 +1224,7 @@ Usage: chicken FILENAME OPTION ...
     -emit-import-library MODULE  write compile-time module information into
                                   separate file
     -emit-all-import-libraries   emit import-libraries for all defined modules
+    -no-module-registration      do not generate module registration code
     -no-compiler-syntax          disable expansion of compiler-macros
 
   Translation options:

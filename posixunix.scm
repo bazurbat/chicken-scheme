@@ -308,10 +308,10 @@ static C_TLS sigset_t C_sigset;
 
 #define C_ctime(n)          (C_secs = (n), ctime(&C_secs))
 
-#if defined(__SVR4)
+#if defined(__SVR4) || defined(C_MACOSX)
 /* Seen here: http://lists.samba.org/archive/samba-technical/2002-November/025571.html */
 
-static time_t timegm(struct tm *t)
+static time_t C_timegm(struct tm *t)
 {
   time_t tl, tb;
   struct tm *tg;
@@ -338,6 +338,8 @@ static time_t timegm(struct tm *t)
     }
   return (tl - (tb - tl));
 }
+#else
+#define C_timegm timegm
 #endif
 
 #define cpy_tmvec_to_tmstc08(ptm, v) \
@@ -353,7 +355,7 @@ static time_t timegm(struct tm *t)
     (ptm)->tm_isdst = (C_block_item((v), 8) != C_SCHEME_FALSE))
 
 #define cpy_tmvec_to_tmstc9(ptm, v) \
-    (((struct tm *)ptm)->tm_gmtoff = C_unfix(C_block_item((v), 9)))
+    (((struct tm *)ptm)->tm_gmtoff = -C_unfix(C_block_item((v), 9)))
 
 #define cpy_tmstc08_to_tmvec(v, ptm) \
     (C_set_block_item((v), 0, C_fix(((struct tm *)ptm)->tm_sec)), \
@@ -367,7 +369,7 @@ static time_t timegm(struct tm *t)
     C_set_block_item((v), 8, ((ptm)->tm_isdst ? C_SCHEME_TRUE : C_SCHEME_FALSE)))
 
 #define cpy_tmstc9_to_tmvec(v, ptm) \
-    (C_set_block_item((v), 9, C_fix((ptm)->tm_gmtoff)))
+    (C_set_block_item((v), 9, C_fix(-(ptm)->tm_gmtoff)))
 
 #define C_tm_set_08(v)  cpy_tmvec_to_tmstc08( &C_tm, (v) )
 #define C_tm_set_9(v)   cpy_tmvec_to_tmstc9( &C_tm, (v) )
@@ -413,7 +415,7 @@ C_tm_get( C_word v )
 
 #define C_asctime(v)    (asctime(C_tm_set(v)))
 #define C_a_mktime(ptr, c, v)  C_flonum(ptr, mktime(C_tm_set(v)))
-#define C_a_timegm(ptr, c, v)  C_flonum(ptr, timegm(C_tm_set(v)))
+#define C_a_timegm(ptr, c, v)  C_flonum(ptr, C_timegm(C_tm_set(v)))
 
 #define TIME_STRING_MAXLENGTH 255
 static char C_time_string [TIME_STRING_MAXLENGTH + 1];
@@ -480,8 +482,8 @@ EOF
 (define ##sys#file-nonblocking!
   (foreign-lambda* bool ([int fd])
     "int val = fcntl(fd, F_GETFL, 0);"
-    "if(val == -1) return(0);"
-    "return(fcntl(fd, F_SETFL, val | O_NONBLOCK) != -1);" ) )
+    "if(val == -1) C_return(0);"
+    "C_return(fcntl(fd, F_SETFL, val | O_NONBLOCK) != -1);" ) )
 
 (define ##sys#file-select-one
   (foreign-lambda* int ([int fd])
@@ -490,8 +492,8 @@ EOF
     "FD_ZERO(&in);"
     "FD_SET(fd, &in);"
     "tm.tv_sec = tm.tv_usec = 0;"
-    "if(select(fd + 1, &in, NULL, NULL, &tm) == -1) return(-1);"
-    "else return(FD_ISSET(fd, &in) ? 1 : 0);" ) )
+    "if(select(fd + 1, &in, NULL, NULL, &tm) == -1) C_return(-1);"
+    "else C_return(FD_ISSET(fd, &in) ? 1 : 0);" ) )
 
 
 ;;; Lo-level I/O:
@@ -1082,7 +1084,7 @@ EOF
 
 (define group-member
   (foreign-lambda* c-string ([int i])
-    "return(C_group->gr_mem[ i ]);") )
+    "C_return(C_group->gr_mem[ i ]);") )
 
 (define (group-information group #!optional as-vector)
   (let ([r (if (fixnum? group)
@@ -1103,14 +1105,14 @@ EOF
 
 (define _get-groups
   (foreign-lambda* int ([int n])
-    "return(getgroups(n, C_groups));") )
+    "C_return(getgroups(n, C_groups));") )
 
 (define _ensure-groups
   (foreign-lambda* bool ([int n])
     "if(C_groups != NULL) C_free(C_groups);"
     "C_groups = (gid_t *)C_malloc(sizeof(gid_t) * n);"
-    "if(C_groups == NULL) return(0);"
-    "else return(1);") )
+    "if(C_groups == NULL) C_return(0);"
+    "else C_return(1);") )
 
 (define (get-groups)
   (let ([n (foreign-value "getgroups(0, C_groups)" int)])
@@ -1779,7 +1781,7 @@ EOF
    "\n#else\n"
    "char *z = (daylight ? tzname[1] : tzname[0]);"
    "\n#endif\n"
-   "return(z);") )
+   "C_return(z);") )
 
 ;;; Other things:
 
@@ -1847,8 +1849,8 @@ EOF
 (define get-host-name
   (let ([getit
        (foreign-lambda* c-string ()
-         "if(gethostname(C_hostbuf, 256) == -1) return(NULL);"
-         "else return(C_hostbuf);") ] )
+         "if(gethostname(C_hostbuf, 256) == -1) C_return(NULL);"
+         "else C_return(C_hostbuf);") ] )
     (lambda ()
       (let ([host (getit)])
         (unless host

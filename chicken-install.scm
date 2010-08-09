@@ -62,6 +62,10 @@
       "irregex.import.so"
       "types.db"))
 
+  (define-constant +defaults-version+ 1)
+  (define-constant +module-db+ "modules.db")
+  (define-constant +defaults-file+ "setup.defaults")
+
   (define *program-path*
     (or (and-let* ((p (get-environment-variable "CHICKEN_PREFIX")))
           (make-pathname p "bin") )
@@ -99,9 +103,6 @@
 	       (foreign-value "C_TARGET_PREFIX" c-string)))
 	  (else *prefix*)))
 
-  (define-constant +module-db+ "modules.db")
-  (define-constant +defaults-file+ "setup.defaults")
-
   (define (load-defaults)
     (let ((deff (make-pathname (chicken-home) +defaults-file+)))
       (define (broken x)
@@ -113,6 +114,17 @@
 		(unless (and (list? x) (positive? (length x)))
 		  (broken x))
 		(case (car x)
+		  ((version)
+		   (cond ((not (pair? (cdr x))) (broken x))
+			 ((not (= (cadr x) +defaults-version+))
+			  (error 
+			   (sprintf 
+			       "version of installed `~a' does not match setup-API version (~a)"
+			     +defaults-file+
+			     +defaults-version+)
+			   (cadr x)))
+			 ;; ignored
+			 ))
 		  ((server)
 		   (set! *default-sources* 
 		     (append *default-sources* (list (cdr x)))))
@@ -143,7 +155,7 @@
     (cond ((assoc name *aliases*) => 
 	   (lambda (a)
 	     (let ((new (cdr a)))
-	       (print "resolving alias " name " to: " new)
+	       (print "resolving alias `" name "' to: " new)
 	       (resolve-location new))))
 	  (else name)))
 

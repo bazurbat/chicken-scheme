@@ -47,13 +47,14 @@ EOF
   parse-option-string chop-separator lookup-script-file
   report describe dump hexdump bytevector-data get-config
   deldups tty-input?
-  history-list history-count history-add history-ref)
+  history-list history-count history-add history-ref history-clear history-show)
 
 (declare
   (always-bound
     ##sys#windows-platform)
   (hide parse-option-string bytevector-data member* canonicalize-args 
 	describer-table dirseparator? circular-list? improper-pairs?
+	show-frameinfo selected-frame select-frame copy-from-frame
 	findall command-table default-editor) )
 
 
@@ -66,6 +67,7 @@ EOF
 (set! ##sys#notices-enabled #t)
 
 (define editor-command (make-parameter #f))
+(define selected-frame #f)
 
 (define default-editor 
   (or (get-environment-variable "EDITOR")
@@ -231,6 +233,21 @@ EOF
 	(set! history-count (fx+ history-count 1))
 	x) ) ) )
 
+(define (history-clear)
+  (vector-fill! history-list (##sys#void)))
+
+(define history-show
+  (let ((newline newline))
+    (lambda ()
+      (do ((i 1 (fx+ i 1)))
+	  ((>= i history-count))
+	(printf "#~a: " i)
+	(##sys#with-print-length-limit
+	 80
+	 (lambda ()
+	   (##sys#print (vector-ref history-list i) #t ##sys#standard-output)))
+	(newline)))))
+
 (define (history-ref index)
   (let ([i (inexact->exact index)])
     (if (and (fx> i 0) (fx<= i history-count))
@@ -333,6 +350,20 @@ EOF
 				    " " (read-line)))))
 			   (if (not (zero? r))
 			       (printf "Editor returned with non-zero exit status ~a" r))))
+			((ch)
+			 (history-clear)
+			 (##sys#void))
+			((h)
+			 (history-show)
+			 (##sys#void))
+			((c)
+			 (show-frameinfo selected-frame)
+			 (##sys#void))
+			((f)
+			 (select-frame (read))
+			 (##sys#void))
+			((g)
+			 (copy-from-frame (read)))
 			((s)
 			 (let* ((str (read-line))
 				(r (system str)) )
@@ -351,9 +382,14 @@ EOF
  ,l FILENAME ...   Load one or more files
  ,ln FILENAME ...  Load one or more files and print result of each top-level expression
  ,r                Show system information
+ ,h                Show history of expression results
+ ,ch               Clear history of expression results
  ,e FILENAME       Run external editor
  ,s TEXT ...       Execute shell-command
  ,exn              Describe last exception
+ ,c                Show call-chain of most recent error
+ ,f N              Select frame N
+ ,g NAME           Get variable NAME from current frame
  ,t EXP            Evaluate form and print elapsed time
  ,x EXP            Pretty print expanded expression EXP\n")
 			 (##sys#hash-table-for-each
@@ -710,7 +746,111 @@ EOF
 	    (if (and (fx>= c 32) (fx< c 128))
 		(write-char (integer->char c) out)
 		(write-char #\. out) ) ) ) 
-	(##sys#write-char-0 #\newline out) ) ) ) )
+	(write-char #\newline out) ) ) ) )
+
+
+;;; Frame-info operations:
+
+(define show-frameinfo
+  (let ((write-char write-char)
+	(newline newline)
+	(display display))
+    (lambda (fn)
+      (define (prin1 x)
+	(##sys#with-print-length-limit
+	 100
+	 (lambda ()
+	   (##sys#print x #t ##sys#standard-output))))
+      (let* ((ct (or ##sys#repl-recent-call-chain '()))
+	     (len (length ct)))
+	(set! selected-frame 
+	  (or (and (memq fn ct) fn)
+	      (and (fx> len 0)
+		   (list-ref ct (fx- len 1)))))
+	(do ((ct ct (cdr ct))
+	     (i (fx- len 1) (fx- i 1)))
+	    ((null? ct))
+	  (let* ((info (car ct))
+		 (here (eq? selected-frame info))
+		 (form (##sys#slot info 1)) ; cooked1 (expr/form)
+		 (data (##sys#slot info 2)) ; cooked2 (cntr/frameinfo)
+		 (finfo (##sys#structure? data 'frameinfo))
+		 (cntr (if finfo (##sys#slot data 1) data))) ; cntr
+	    (printf "~a~a:~a\t~a\t  " 
+	      (if here #\* #\space)
+	      i
+	      (if (and finfo (pair? (##sys#slot data 2))) "[]" "  ") ; e
+	      (##sys#slot info 0))	; raw
+	    (when cntr (printf "[~a] " cntr))
+	    (when form (prin1 form))
+	    (newline)
+	    (when (and here finfo)
+	      (for-each
+	       (lambda (e v)
+		 (unless (null? e)
+		   (display "  ---\n")
+		   (do ((i 0 (fx+ i 1))
+			(be e (cdr be)))
+		       ((null? be))
+		     (printf "  ~s:\t  " (car be))
+		     (prin1 (##sys#slot v i))
+		     (newline))))
+	       (##sys#slot data 2)	   ; e
+	       (##sys#slot data 3)))))))))	   ; v
+	  
+(define select-frame
+  (let ((display display))
+    (lambda (n)
+      (cond ((or (not (number? n))
+		 (not ##sys#repl-recent-call-chain)
+		 (fx< n 0)
+		 (fx>= n (length ##sys#repl-recent-call-chain)))
+	     (display "no such frame\n"))
+	    (else
+	     (set! selected-frame
+	       (list-ref 
+		##sys#repl-recent-call-chain
+		(fx- (length ##sys#repl-recent-call-chain) (fx+ n 1))))
+	     (show-frameinfo selected-frame))))))
+
+(define copy-from-frame
+  (let ((display display)
+	(call/cc call/cc))
+    (lambda (name)
+      (let* ((ct (or ##sys#repl-recent-call-chain '()))
+	     (len (length ct))
+	     (name 
+	      (cond ((symbol? name) (##sys#slot name 1)) ; name
+		    ((string? name) name)
+		    (else 
+		     (display "string or symbol required for `,cf'\n")
+		     #f))))
+	(if name
+	    (call/cc
+	     (lambda (return)
+	       (define (fail msg)
+		 (display msg)
+		 (return (##sys#void)))
+	       (do ((ct ct (cdr ct))
+		    (i (fx- len 1) (fx- i 1)))
+		   ((null? ct) (fail "no environment in frame\n")) 
+		 (let* ((info (car ct))
+			(here (eq? selected-frame info))
+			(data (##sys#slot info 2)) ; cooked2 (cntr/frameinfo)
+			(finfo (##sys#structure? data 'frameinfo))
+			(cntr (if finfo (##sys#slot data 1) data))) ; cntr
+		   (when (and here finfo)
+		     (for-each
+		      (lambda (e v)
+			(do ((i 0 (fx+ i 1))
+			     (be e (cdr be)))
+			    ((null? be) (fail "no such variable\n"))
+			  (when (string=? name (##sys#slot (car be) 1)) ; name
+			    (history-add (list (##sys#slot v i)))
+			    (return (##sys#slot v i)))))
+		      (##sys#slot data 2)	; e
+		      (##sys#slot data 3))))))) ; v
+	    (##sys#void))))))
 
 
 ;;; Start interpreting:
@@ -832,7 +972,7 @@ EOF
 	      ((eof-object? x))
 	    (rec (receive (eval x))) ) ) )
       (when quietflag
-	(set! ##sys#eval-debug-level 0))
+	(##sys#eval-debug-level 0))	;???
       (when (member* '("-h" "-help" "--help") args)
 	(print-usage)
 	(exit 0) )

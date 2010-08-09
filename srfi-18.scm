@@ -307,8 +307,7 @@ EOF
     (let* ([limitsup (pair? ms-and-t)]
 	   [limit (and limitsup (##sys#compute-time-limit (car ms-and-t)))]
 	   [threadsup (fx> (length ms-and-t) 1)]
-	   [thread (and threadsup (cadr ms-and-t))] 
-	   [abd (##sys#slot mutex 4)] )
+	   [thread (and threadsup (cadr ms-and-t))] )
       (when thread (##sys#check-structure thread 'thread 'mutex-lock!))
       (##sys#call-with-current-continuation
        (lambda (return)
@@ -317,7 +316,7 @@ EOF
 	     (##sys#setslot mutex 3 (##sys#append (##sys#slot mutex 3) (list ct)))
 	     (##sys#schedule) )
 	   (define (check)
-	     (when abd
+	     (when (##sys#slot mutex 4)	; abandoned
 	       (return (##sys#signal (##sys#make-structure 'condition '(abandoned-mutex-exception) '()))) ) )
 	   (dbg ct ": locking " mutex)
 	   (cond [(not (##sys#slot mutex 5))
@@ -344,6 +343,7 @@ EOF
 		     (##sys#setslot mutex 3 (##sys#delq ct (##sys#slot mutex 3)))
 		     (unless (##sys#slot ct 13)  ; not unblocked by timeout
 		       (##sys#remove-from-timeout-list ct))
+		     (check)
 		     (##sys#setslot ct 8 (cons mutex (##sys#slot ct 8)))
 		     (##sys#setslot ct 11 #f)
 		     (##sys#setslot mutex 2 thread)
@@ -353,7 +353,7 @@ EOF
 		 [else
 		  (##sys#setslot ct 3 'sleeping)
 		  (##sys#setslot ct 11 mutex)
-		  (##sys#setslot ct 1 (lambda () (return #t)))
+		  (##sys#setslot ct 1 (lambda () (check) (return #t)))
 		  (switch) ] ) ) ) ) ) ) )
 
 (define mutex-unlock!
@@ -371,7 +371,9 @@ EOF
 	       [limit (and timeout (##sys#compute-time-limit timeout))] )
 	   (##sys#setislot mutex 4 #f)
 	   (##sys#setislot mutex 5 #f)
-	   (##sys#setslot ct 8 (##sys#delq mutex (##sys#slot ct 8)))
+	   (let ((t (##sys#slot mutex 2)))
+	     (when t
+	       (##sys#setslot t 8 (##sys#delq mutex (##sys#slot t 8)))))
 	   (when cvar
 	     (##sys#setslot cvar 2 (##sys#append (##sys#slot cvar 2) (##sys#list ct)))
 	     (##sys#setslot ct 11 cvar)
@@ -468,7 +470,9 @@ EOF
 	 ((##sys#structure? blocked 'condition-variable)
 	  (##sys#setslot blocked 2 (##sys#delq thread (##sys#slot blocked 2))))
 	 ((##sys#structure? blocked 'mutex)
-	  (##sys#setslot blocked 3 (##sys#delq thread (##sys#slot blocked 3)))))
+	  (##sys#setslot blocked 3 (##sys#delq thread (##sys#slot blocked 3))))
+	 ((##sys#structure? blocked 'thread)
+	  (##sys#setslot blocked 12 (##sys#delq thread (##sys#slot blocked 12)))))
 	(##sys#setslot
 	 thread 1
 	 (lambda ()
