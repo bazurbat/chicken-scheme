@@ -1,3 +1,47 @@
+4.5.7
+
+- the licenses used in all components of the core system have
+  been collected in the LICENSE file (Thanks to Peter Bex)
+- Added new compiler option `-no-module-registration' which
+  omits generation of module registration code, even when
+  generation of import libraries has not been enabled
+- running `chicken' without arguments now hints at the
+  existence of `csi' and `csc'
+- `caar', `cdar' abnd `cddr' generate faster code
+- calls to `list', `vector' and the internal structure
+  allocation primitive that take 1 to 8 arguments generate
+  faster code
+- `chicken-install' now checks the version of the setup
+  configuration file `setup.defaults'
+- added option `-exact' to `chicken-status' and `chicken-uninstall',
+  which treats the pattern argument as the literal name of the
+  extension to be listed/deinstalled
+- `assert' shows line-number information, if available
+  (suggested by Alejandro Forero Cuervo)
+- interpreted code records the lexical-environment at call-
+  sites, which can in case of an error be inspected with the
+  new `,c', `,f' and `,g' toplevel commands
+- the evaluation-result history in `csi' can be inspected and
+  cleared (to reduce memory load) with the toplevel commands
+  `,h' and `,ch'
+- unit `data-strutures': deprecated `left-section' and 
+  `right-section'
+- fixed bug that caused the static syntax-environment of 
+  syntax exported by a module to be incomplete
+- module `setup-api': Documented the `version>=?' procedure
+- unit `posix': `utc-time->seconds' is considerably 
+  faster on Mac OS X (thanks to Jim Ursetto)
+- the `time' macro now shows the correct number of minor
+  garbage collections
+- the immediate-object check inside the marking procedure
+  of the garbage collector has been manually inlined which
+  results in a significant GC speedup, depending on memory
+  load
+- unit `srfi-18' and `scheduler': various bugfixes (thanks
+  to Joerg Wittenberger)
+- unit `srfi-4': bugfix in 8-bit vector allocation routines
+  (thanks to Kon Lovett)
+
 4.5.6
 
 - added `-:H' runtime option to dump heap state on exit
