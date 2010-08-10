@@ -63,7 +63,8 @@
      remove-extension
      read-info
      register-program find-program
-     shellpath)
+     shellpath
+     setup-error-handling)
   
   (import scheme chicken foreign
 	  regex utils posix ports extras data-structures
@@ -180,6 +181,11 @@
         (else           (user-install-setup)) ) )
 
 (define abort-setup (make-parameter (cut exit 1)))
+
+(define-syntax ignore-errors
+  (syntax-rules ()
+    ((_ body ...)
+     (handle-exceptions ex #f body ...))))
 
 (define (patch which rx subst)
   (when (setup-verbose-mode) (printf "patching ~A ...~%" which))
@@ -318,7 +324,7 @@
 (define (make:check-argv argv)
   (or (string? argv)
       (every string? argv)
-      (error "argument is not a string or string list" argv)))
+      (error "argument-list to `make' is not a string or string list" argv)))
 
 (define (make:make/proc/helper spec argv)
   (when (vector? argv) (set! argv (vector->list argv)))
@@ -345,7 +351,11 @@
 				 (any (lambda (dep)
 					  (let ((dep2 (fixmaketarget dep)))
 					    (unless (file-exists? dep2)
-					      (error (sprintf "dependancy ~a was not made~%" dep2)))
+					      ;;XXX internal error?
+					      (error
+					       (sprintf
+						   "(make) dependency ~a was not made~%"
+						 dep2)))
 					    (and (> (file-modification-time dep2) date)
 						 dep2)) )
 					deps))))
@@ -375,7 +385,7 @@
 				    (signal exn) )
 				((car l))))))))
 		    (unless date
-		      (error (sprintf "don't know how to make ~a" s2))))))))
+		      (error (sprintf "(make) don't know how to make ~a" s2))))))))
     (cond
      ((string? argv) (make-file argv ""))
      ((null? argv) (make-file (caar spec) ""))
@@ -668,7 +678,7 @@
 		 (when verb (print cmd " ..."))
 		 cmd) ) ) ) )
     (when verb (print (if (zero? r) "succeeded." "failed.")))
-    ($system (sprintf "~A ~A" *remove-command* (shellpath fname)))
+    (ignore-errors ($system (sprintf "~A ~A" *remove-command* (shellpath fname))))
     (zero? r) ) )
 
 (define (required-chicken-version v)
@@ -768,7 +778,7 @@
 	     (error 'remove-directory "cannot remove - directory not found" dir)
 	     #f))
 	(*sudo*
-	 ($system (sprintf "sudo rm -fr ~a" (shellpath dir))))
+	 (ignore-errors ($system (sprintf "sudo rm -fr ~a" (shellpath dir)))))
 	(else
 	 (let walk ((dir dir))
 	   (let ((files (directory dir #t)))
@@ -790,15 +800,17 @@
 (define ($system str)
   (let ((r (system
 	    (if *windows-shell*
-		(string-append "\"" str "\"")	; double quotes, yes - thanks to Matthew Flatt
+		(string-append "\"" str "\"") ; (sic) thanks to Matthew Flatt
 		str))))
     (unless (zero? r)
-      (quit "shell command failed with nonzero exit status ~a:~%~%  ~a" r str))))
+      (error "shell command failed with nonzero exit status ~a:~%~%  ~a" r str))))
 
-(define (quit fstr . args)
-  (flush-output)
-  (fprintf (current-error-port) "~%~?~%" fstr args)
-  (reset))
+(define (setup-error-handling)
+  (current-exception-handler
+   (lambda (c)
+     (print-error-message c (current-error-port))
+     (reset))))
+
 
 ;;; Module Setup
 

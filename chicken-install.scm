@@ -95,6 +95,7 @@
   (define *cross-chicken* (feature? #:cross-chicken))
   (define *host-extension* *cross-chicken*)
   (define *target-extension* *cross-chicken*)
+  (define *debug-setup* #f)
 
   (define (get-prefix)
     (cond ((and *cross-chicken*
@@ -397,8 +398,11 @@
 	      (not *host-extension*)) ; host-repo must always take precedence
 	 ""
 	 "-setup-mode ")
-     "-e \"(require-library setup-api)\" -e \"(import setup-api)\""
-     (sprintf " -e \"(extension-name-and-version '(\\\"~a\\\" \\\"~a\\\"))\""
+     "-e \"(require-library setup-api)\" -e \"(import setup-api)\" "
+     (if *debug-setup*
+	 ""
+	 "-e \"(setup-error-handling)\" ")
+     (sprintf "-e \"(extension-name-and-version '(\\\"~a\\\" \\\"~a\\\"))\""
        (car e+d+v) (caddr e+d+v))
      (if (sudo-install) " -e \"(sudo-install #t)\"" "")
      (if *keep* " -e \"(keep-intermediates #t)\"" "")
@@ -581,6 +585,7 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
        -deploy                  build extensions for deployment
        -trunk                   build trunk instead of tagged version (only local)
   -D   -feature FEATURE         features to pass to sub-invocations of `csc'
+       -debug                   enable full display of error message information
 EOF
 );|
     (exit code))
@@ -604,7 +609,8 @@ EOF
       (let loop ((args args) (eggs '()))
         (cond ((null? args)
                (cond ((and *deploy* (not *prefix*))
-		      (error "`-deploy' only makes sense in combination with `-prefix DIRECTORY`"))
+		      (error 
+		       "`-deploy' only makes sense in combination with `-prefix DIRECTORY`"))
 		     (update (update-db))
                      (else
 		      (let ((defaults (load-defaults)))
@@ -622,9 +628,11 @@ EOF
 				   (exit 1))) ) )
 			(unless defaults
 			  (unless *default-transport*
-			    (error "no default transport defined - please use `-transport' option"))
+			    (error
+			     "no default transport defined - please use `-transport' option"))
 			  (unless *default-location*
-			    (error "no default location defined - please use `-location' option")))
+			    (error
+			     "no default location defined - please use `-location' option")))
 			(install (apply-mappings (reverse eggs)))))))
               (else
                (let ((arg (car args)))
@@ -701,6 +709,9 @@ EOF
                        ((string=? "-target" arg)
                         (set! *host-extension* #f)
                         (loop (cdr args) eggs))
+		       ((string=? "-debug" arg)
+			(set! *debug-setup* #t)
+			(loop (cdr args) eggs))
 		       ((string=? "-deploy" arg)
 			(set! *deploy* #t)
 			(loop (cdr args) eggs))

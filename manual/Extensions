@@ -189,11 +189,13 @@ Runs the shell command {{FORM}}, which is wrapped in an implicit {{quasiquote}}.
 {{(run (csc ...))}} is treated specially and passes {{-v}} (if {{-verbose}} has been given
 to {{chicken-install}}) and {{-feature compiling-extension}} options to the compiler.
 
+
 ==== compile
 
 <macro>(compile FORM ...)</macro>
 
 Equivalent to {{(run (csc FORM ...))}}.
+
 
 ==== make
 
@@ -599,6 +601,7 @@ Available options:
 ; {{-repository}} : print path to extension repository
 ; {{-deploy}} : install extension in the application directory for a deployed application (see [[Deployment]] for more information)
 : {{-D   -feature FEATURE}} : pass this on to subinvocations of {{csi}} and {{csc}} (when done via {{compile}} or {{(run (csc ...))}})
+: {{-debug}} : print full call-trace when encountering errors in the setup script
 
 {{chicken-install}} recognizes the {{http_proxy}} environment variable, if set.
 

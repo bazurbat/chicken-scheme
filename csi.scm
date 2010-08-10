@@ -915,7 +915,8 @@ EOF
 	     (loop (cdr chars))))))
 
 (define-constant simple-options
-  '("--" "-b" "-batch" "-q" "-quiet" "-n" "-no-init" "-w" "-no-warnings" "-i" "-case-insensitive"
+  '("--" "-b" "-batch" "-q" "-quiet" "-n" "-no-init" "-w" "-no-warnings" 
+    "-i" "-case-insensitive"
     "-no-parentheses-synonyms" "-no-symbol-escape" "-r5rs-syntax" "-setup-mode"
     ; Not "simple" but processed early
     "-ss" "-sx" "-s" "-script") )
