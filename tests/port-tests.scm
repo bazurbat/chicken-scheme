@@ -55,6 +55,9 @@ EOF
      (lambda (x port) (set! out (cons x out))))
     out)))
 
+;; fill buffers
+(read-all "compiler.scm") 
+
 (print "slow...")
 (time
  (with-input-from-file "compiler.scm"

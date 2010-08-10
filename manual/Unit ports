@@ -131,6 +131,7 @@ Reads all remaining data from port {{FROM}} using the reader procedure
 {{TO}} for being ports, so the reader and writer procedures may
 perform arbitrary operations as long as they can be invoked
 as {{(READ FROM)}} and {{(WRITE X TO)}}, respectively.
+{{copy-port}} returns an undefined value.
 
 
 === Funky ports

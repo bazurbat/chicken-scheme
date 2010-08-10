@@ -28,6 +28,7 @@
  'ports
  '(call-with-input-string
    call-with-output-string
+   copy-port
    make-input-port
    make-output-port
    port-for-each
