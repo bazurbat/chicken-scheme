@@ -120,6 +120,18 @@ Apply {{FN}} to successive results of calling the zero argument procedure {{THUN
 passing the {{ACC}} value as the second argument. The {{FN}} result becomes the new
 {{ACC}} value. When {{THUNK}} returns {{#!eof}}, the last {{FN}} result is returned.
 
+==== copy-port
+
+<procedure>(copy-port FROM TO [READ [WRITE]])</procedure>
+
+Reads all remaining data from port {{FROM}} using the reader procedure
+{{READ}} and writes it to port {{TO}} using the writer procedure
+{{WRITE}}. {{READ}} defaults to {{read-char}} and {{WRITE} to
+{{write-char}}. Note that this procedure does not check {{FROM}} and
+{{TO}} for being ports, so the reader and writer procedures may
+perform arbitrary operations as long as they can be invoked
+as {{(READ FROM)}} and {{(WRITE X TO)}}, respectively.
+
 
 === Funky ports
 
