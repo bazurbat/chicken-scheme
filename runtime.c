@@ -430,7 +430,7 @@ static C_TLS unsigned int
   heap_size;
 static C_TLS int chicken_is_initialized;
 static C_TLS jmp_buf gc_restart;
-static C_TLS long
+static C_TLS double
   timer_start_ms,
   gc_ms,
   timer_accumulated_gc_ms,
@@ -479,8 +479,6 @@ static int C_fcall hash_string(int len, C_char *str, unsigned int m) C_regparm;
 static C_word C_fcall lookup(C_word key, int len, C_char *str, C_SYMBOL_TABLE *stable) C_regparm;
 static double compute_symbol_table_load(double *avg_bucket_len, int *total);
 static C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word *fix, double *flo) C_regparm;
-static long C_fcall milliseconds(void);
-static long C_fcall cpu_milliseconds(void);
 static void C_fcall remark_system_globals(void) C_regparm;
 static void C_fcall really_remark(C_word *x) C_regparm;
 static C_word C_fcall intern0(C_char *name) C_regparm;
@@ -746,7 +744,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_file_info);
   C_pte(C_get_symbol_table_info);
   C_pte(C_get_memory_info);
-  C_pte(C_cpu_time);
   C_pte(C_decode_seconds);
   C_pte(C_get_environment_variable);
   C_pte(C_stop_timer);
@@ -1641,7 +1638,7 @@ C_word C_dbg_hook(C_word dummy)
 
 /* Timing routines: */
 
-long C_fcall milliseconds(void)
+C_regparm double C_fcall C_milliseconds(void)
 {
 #ifdef C_NONUNIX
     if(CLOCKS_PER_SEC == 1000) return clock();
@@ -1678,7 +1675,7 @@ C_regparm time_t C_fcall C_seconds(long *ms)
 }
 
 
-long C_fcall cpu_milliseconds(void)
+C_regparm double C_fcall C_cpu_milliseconds(void)
 {
 #if defined(C_NONUNIX) || defined(__CYGWIN__)
     if(CLOCKS_PER_SEC == 1000) return clock();
@@ -2633,7 +2630,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
   C_SCHEME_BLOCK *bp;
   C_GC_ROOT *gcrp;
   WEAK_TABLE_ENTRY *wep;
-  long tgc;
+  double tgc;
   C_SYMBOL_TABLE *stp;
   volatile int finalizers_checked;
   FINALIZER_NODE *flist;
@@ -2660,7 +2657,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
       C_fflush(stdout);
     }
 
-    tgc = cpu_milliseconds();
+    tgc = C_cpu_milliseconds();
 
     if(gc_mode == GC_REALLOC) {
       C_rereclaim2(percentage(heap_size, C_heap_growth), 0);
@@ -2891,7 +2888,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
   }
 
   if(gc_mode == GC_MAJOR) {
-    tgc = cpu_milliseconds() - tgc;
+    tgc = C_cpu_milliseconds() - tgc;
     gc_ms += tgc;
     timer_accumulated_gc_ms += tgc;
   }
@@ -2934,7 +2931,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
   if(gc_mode == GC_MAJOR) gc_count_1 = 0;
 
-  if(C_post_gc_hook != NULL) C_post_gc_hook(gc_mode, tgc);
+  if(C_post_gc_hook != NULL) C_post_gc_hook(gc_mode, (long)tgc);
 
   /* Jump from the Empire State Building... */
   C_longjmp(C_restart, 1);
@@ -3487,7 +3484,7 @@ void handle_interrupt(void *trampoline, void *proc)
 {
   C_word *p, x, n;
   int i;
-  long c;
+  double c;
 
   /* Build vector with context information: */
   n = C_temporary_stack_bottom - C_temporary_stack;
@@ -3517,7 +3514,7 @@ void handle_interrupt(void *trampoline, void *proc)
   if(C_immediatep(x))
     panic(C_text("`##sys#interrupt-hook' is not defined"));
 
-  c = cpu_milliseconds() - interrupt_time;
+  c = C_cpu_milliseconds() - interrupt_time;
   last_interrupt_latency = c;
   C_timer_interrupt_counter = C_initial_timer_interrupt_period;	/* just in case */
   /* <- no continuation is passed: "##sys#interrupt-hook" may not return! */
@@ -3895,7 +3892,7 @@ C_regparm C_word C_fcall C_start_timer(void)
   mutation_count = 0;
   gc_count_1_total = 0;
   gc_count_2 = 0;
-  timer_start_ms = cpu_milliseconds();
+  timer_start_ms = C_cpu_milliseconds();
   gc_ms = 0;
   return C_SCHEME_UNDEFINED;
 }
@@ -3903,15 +3900,16 @@ C_regparm C_word C_fcall C_start_timer(void)
 
 void C_ccall C_stop_timer(C_word c, C_word closure, C_word k)
 {
-  long t0 = cpu_milliseconds() - timer_start_ms;
+  double t0 = C_cpu_milliseconds() - timer_start_ms;
   C_word 
     ab[ WORDS_PER_FLONUM * 2 + 7 ], /* 2 flonums, 1 vector of 6 elements */
     *a = ab,
-    elapsed = C_flonum(&a, (double)t0 / 1000.0),
-    gc_time = C_flonum(&a, (double)gc_ms / 1000.0),
+    elapsed = C_flonum(&a, t0 / 1000.0),
+    gc_time = C_flonum(&a, gc_ms / 1000.0),
     info;
 
-  info = C_vector(&a, 6, elapsed, gc_time, C_fix(mutation_count), C_fix(gc_count_1_total), C_fix(gc_count_2));
+  info = C_vector(&a, 6, elapsed, gc_time, C_fix(mutation_count), C_fix(gc_count_1_total), 
+		  C_fix(gc_count_2));
   C_kontinue(k, info);
 }
 
@@ -4012,13 +4010,12 @@ C_regparm C_word C_fcall C_char_ready_p(C_word port)
 C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
 {
   int i, j;
-  long tgc;
+  double tgc;
 
   switch(fudge_factor) {
   case C_fix(1): return C_SCHEME_END_OF_FILE; /* eof object */
   case C_fix(2):			      /* get time */
-    /* can be considered broken (overflows into negatives), but is useful for randomize */
-    return C_fix(C_MOST_POSITIVE_FIXNUM & time(NULL));
+    panic(C_text("(##sys#fudge 2) [get time] not implemented"));
 
   case C_fix(3):		/* 64-bit system? */
 #ifdef C_SIXTY_FOUR
@@ -4042,7 +4039,7 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
     return C_fix(0);
 
   case C_fix(6): 		/* milliseconds CPU */
-    return C_fix(C_MOST_POSITIVE_FIXNUM & cpu_milliseconds());
+    panic(C_text("(##sys#fudge 6) [current CPU milliseconds] not implemented"));
 
   case C_fix(7):		/* wordsize */
     return C_fix(sizeof(C_word));
@@ -4076,7 +4073,7 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
     return C_mk_bool(C_enable_gcweak);
 
   case C_fix(16):		/* milliseconds (wall clock) */
-    return C_fix(C_MOST_POSITIVE_FIXNUM & milliseconds());
+    panic(C_text("(##sys#fudge 16) [current wall clock milliseconds] not implemented"));
 
   case C_fix(17):		/* fixed heap? */
     return(C_mk_bool(C_heap_size_is_fixed));
@@ -4225,7 +4222,7 @@ C_regparm void C_fcall C_raise_interrupt(int reason)
 #endif
 
     interrupt_reason = reason;
-    interrupt_time = cpu_milliseconds();
+    interrupt_time = C_cpu_milliseconds();
   }
 }
 
@@ -8229,24 +8226,28 @@ void become_2(void *dummy)
 }
 
 
-void C_ccall C_cpu_time(C_word c, C_word closure, C_word k)
+C_regparm C_word C_fcall
+C_a_i_cpu_time(C_word **a, int c, C_word buf)
 {
-  C_word u, s = 0;
+  C_word u, s = C_fix(0);
 
 #if defined(C_NONUNIX) || defined(__CYGWIN__)
   if(CLOCKS_PER_SEC == 1000) u = clock();
-  else u = ((double)clock() / (double)CLOCKS_PER_SEC) * 1000;
+  else u = C_number(a, ((double)clock() / (double)CLOCKS_PER_SEC) * 1000);
 #else
   struct rusage ru;
 
   if(C_getrusage(RUSAGE_SELF, &ru) == -1) u = 0;
   else {
-    u = ru.ru_utime.tv_sec * 1000 + ru.ru_utime.tv_usec / 1000;
-    s = ru.ru_stime.tv_sec * 1000 + ru.ru_stime.tv_usec / 1000;
+    u = C_number(a, (double)ru.ru_utime.tv_sec * 1000 + ru.ru_utime.tv_usec / 1000);
+    s = C_number(a, (double)ru.ru_stime.tv_sec * 1000 + ru.ru_stime.tv_usec / 1000);
   }
 #endif
-  
-  C_values(4, C_SCHEME_UNDEFINED, k, C_fix(u & C_MOST_POSITIVE_FIXNUM), C_fix(s & C_MOST_POSITIVE_FIXNUM));
+
+  /* buf must not be in nursery */
+  C_set_block_item(buf, 0, u);
+  C_set_block_item(buf, 1, s);
+  return buf;
 }
 
 

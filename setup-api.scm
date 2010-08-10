@@ -45,7 +45,7 @@
      setup-verbose-mode setup-install-mode deployment-mode
      installation-prefix
      destination-prefix
-     chicken-prefix 			;XXX remove at some stage from exports
+     chicken-prefix
      find-library find-header 
      program-path remove-file* 
      patch abort-setup

@@ -1459,6 +1459,14 @@ extern double trunc(double);
 #define C_a_i_flonum_sqrt(ptr, c, x)    C_flonum(ptr, C_sqrt(C_flonum_magnitude(x)))
 #define C_a_i_flonum_abs(ptr, c, x)     C_flonum(ptr, C_fabs(C_flonum_magnitude(x)))
 
+#define C_a_i_current_milliseconds(ptr, c, dummy) C_flonum(ptr, C_milliseconds())
+
+/* this is of course silly, but only used for profiling, where we can assume that
+   the process doesn't run for more than a week.
+
+   (now someone will do exactly that ...) */
+#define C_i_current_cpu_milliseconds_as_fixnum(dummy) C_fix(C_cpu_milliseconds())
+
 
 /* Variables: */
 
@@ -1690,7 +1698,6 @@ C_fctexport void C_ccall C_register_finalizer(C_word c, C_word closure, C_word k
 C_fctexport void C_ccall C_set_dlopen_flags(C_word c, C_word closure, C_word k, C_word now, C_word global) C_noret;
 C_fctexport void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word entry, C_word reloadable) C_noret;
 C_fctexport void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table) C_noret;
-C_fctexport void C_ccall C_cpu_time(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_locative_ref(C_word c, C_word closure, C_word k, C_word loc) C_noret;
 C_fctexport void C_ccall C_call_with_cthulhu(C_word c, C_word self, C_word k, C_word proc) C_noret;
 C_fctexport void C_ccall C_copy_closure(C_word c, C_word closure, C_word k, C_word proc) C_noret;
@@ -1811,6 +1818,9 @@ C_fctexport C_word C_fcall C_a_i_flonum_round_proper(C_word **a, int c, C_word n
 C_fctexport C_word C_fcall C_i_getprop(C_word sym, C_word prop, C_word def) C_regparm;
 C_fctexport C_word C_fcall C_putprop(C_word **a, C_word sym, C_word prop, C_word val) C_regparm;
 C_fctexport C_word C_fcall C_i_get_keyword(C_word key, C_word args, C_word def) C_regparm;
+C_fctexport double C_fcall C_milliseconds(void) C_regparm;
+C_fctexport double C_fcall C_cpu_milliseconds(void) C_regparm;
+C_fctexport C_word C_fcall C_a_i_cpu_time(C_word **a, int c, C_word buf) C_regparm;
 
 C_fctexport C_word C_fcall C_i_foreign_char_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_fixnum_argumentp(C_word x) C_regparm;
