@@ -1,4 +1,4 @@
-(require-extension srfi-1 ports)
+(require-extension srfi-1 ports utils)
 
 (define *text* #<<EOF
 this is a test
