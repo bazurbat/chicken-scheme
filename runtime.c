@@ -725,7 +725,8 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 
 static C_PTABLE_ENTRY *create_initial_ptable()
 {
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 61); /* take note of this, it's subtle */
+  /* hardcoded table size - this must match the number of C_pte calls! */
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 64);
   int i = 0;
 
   if(pt == NULL)
@@ -794,7 +795,8 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_copy_closure);
   C_pte(C_dump_heap_state);
   C_pte(C_filter_heap_objects);
-  
+
+  /* did you remember the hardcoded pte table size? */
   pt[ i ].id = NULL;
   return pt;
 }
