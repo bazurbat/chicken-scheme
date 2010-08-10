@@ -27,7 +27,6 @@
 
 (declare
   (unit scheduler)
-  (fixnum)
   (disable-interrupts)
   (hide ##sys#ready-queue-head ##sys#ready-queue-tail ##sys#timeout-list
 	##sys#update-thread-state-buffer ##sys#restore-thread-state-buffer
@@ -36,6 +35,7 @@
 	##sys#fdset-select-timeout ##sys#fdset-restore
 	##sys#clear-i/o-state-for-thread! ##sys#abandon-mutexes) 
   (not inline ##sys#interrupt-hook)
+  (unsafe)
   (foreign-declare #<<EOF
 #ifdef HAVE_ERRNO_H
 # include <errno.h>
@@ -79,8 +79,6 @@ static fd_set C_fdset_input, C_fdset_output, C_fdset_input_2, C_fdset_output_2;
 EOF
 ) )
 
-(declare (unsafe))
-
 (include "common-declarations.scm")
 
 (define-syntax dbg
@@ -107,17 +105,17 @@ EOF
     (let loop1 ()
       ;; Unblock threads waiting for timeout:
       (unless (null? ##sys#timeout-list)
-	(let ([now (##sys#fudge 16)])
+	(let ((now (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f)))
 	  (dbg "timeout (" now ") list: " ##sys#timeout-list)
-	  (let loop ([lst ##sys#timeout-list])
+	  (let loop ((lst ##sys#timeout-list))
 	    (if (null? lst)
 		(set! ##sys#timeout-list '())
 		(let* ([tmo1 (caar lst)]
 		       [tto (cdar lst)]
 		       [tmo2 (##sys#slot tto 4)] )
 		  (dbg "  " tto " -> " tmo2)
-		  (if (eq? tmo1 tmo2)
-		      (if (>= now tmo1)
+		  (if (= tmo1 tmo2)
+		      (if (fp>= now tmo1)
 			  (begin
 			    (##sys#setislot tto 13 #t) ; mark as being unblocked by timeout
 			    (##sys#clear-i/o-state-for-thread! tto)
@@ -132,10 +130,15 @@ EOF
 			    (when (and (null? ##sys#ready-queue-head)
 				       (null? ##sys#fd-list) 
 				       (pair? ##sys#timeout-list))
-			      (let ([tmo1 (caar ##sys#timeout-list)])
+			      (let ((tmo1 (caar ##sys#timeout-list)))
 				(set! eintr
-				  (and (not (##core#inline "C_msleep" (fxmax 0 (- tmo1 now))))
-				       (foreign-value "C_signal_interrupted_p" bool) ) ) ) ) ) )
+				  (and (not (##core#inline 
+					     "C_msleep" 
+					     (fxmax 
+					      0
+					      (##sys#inexact->exact (fp- tmo1 now)))))
+				       (foreign-value
+					"C_signal_interrupted_p" bool) ) ) ) ) ) )
 		      (loop (cdr lst)) ) ) ) ) ) )
       ;; Unblock threads blocked by I/O:
       (if eintr
@@ -223,14 +226,14 @@ EOF
   (dbg t " blocks for " tm)
   ;; This should really use a balanced tree:
   (let loop ([tl ##sys#timeout-list] [prev #f])
-    (if (or (null? tl) (< tm (caar tl)))
+    (if (or (null? tl) (fp< tm (caar tl)))
 	(if prev
 	    (set-cdr! prev (cons (cons tm t) tl))
 	    (set! ##sys#timeout-list (cons (cons tm t) tl)) )
 	(loop (cdr tl) tl) ) ) 
   (##sys#setslot t 3 'blocked)
   (##sys#setislot t 13 #f)
-  (##sys#setislot t 4 tm) )
+  (##sys#setslot t 4 tm) )
 
 (define (##sys#thread-block-for-termination! t t2)
   (dbg t " blocks for " t2)
@@ -298,7 +301,8 @@ EOF
 	[get-output-string get-output-string] )
     (lambda (arg)
       (let ([ct ##sys#current-thread])
-	(dbg "exception: " ct " -> " (if (##sys#structure? arg 'condition) (##sys#slot arg 2) arg))
+	(dbg "exception: " ct " -> " 
+	     (if (##sys#structure? arg 'condition) (##sys#slot arg 2) arg))
 	(cond [(foreign-value "C_abort_on_thread_exceptions" bool)
 	       (let* ([pt ##sys#primordial-thread]
 		      [ptx (##sys#slot pt 1)] )
@@ -325,10 +329,10 @@ EOF
 (define ##sys#fd-list '())
 
 (define ##sys#fdset-select-timeout
-  (foreign-lambda* int ([bool to] [unsigned-long tm])
+  (foreign-lambda* int ([bool to] [double tm])
     "struct timeval timeout;"
     "timeout.tv_sec = tm / 1000;"
-    "timeout.tv_usec = (tm % 1000) * 1000;"
+    "timeout.tv_usec = fmod(tm, 1000) * 1000;"
     "C_fdset_input_2 = C_fdset_input;"
     "C_fdset_output_2 = C_fdset_output;"
     "C_return(select(FD_SETSIZE, &C_fdset_input, &C_fdset_output, NULL, to ? &timeout : NULL));") )
@@ -381,10 +385,10 @@ EOF
 	 [n (##sys#fdset-select-timeout	; we use FD_SETSIZE, but really should use max fd
 	     (or rq? to?)
 	     (if (and to? (not rq?))	; no thread was unblocked by timeout, so wait
-		 (let* ([tmo1 (caar ##sys#timeout-list)]
-			[now (##sys#fudge 16)])
-		   (fxmax 0 (- tmo1 now)) )
-		 0) ) ] )		; otherwise immediate timeout.
+		 (let* ((tmo1 (caar ##sys#timeout-list))
+			(now (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f)))
+		   (fpmax 0.0 (fp- tmo1 now)) )
+		 0.0) ) ] )		; otherwise immediate timeout.
     (dbg n " fds ready")
     (cond [(eq? -1 n) 
 	   (##sys#force-primordial)]

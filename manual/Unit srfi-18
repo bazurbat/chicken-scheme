@@ -80,22 +80,6 @@ Suspends the current thread until input ({{MODE}} is {{#:input}}), output ({{MOD
 or both ({{MODE}} is {{#:all}}) is available. {{FD}} should be a file-descriptor (not a port!) open
 for input or output, respectively.
 
-<procedure>(time->milliseconds TIME)</procedure>
-
-Converts a time object (as created via {{current-time}}) into an exact integer representing
-the number of milliseconds since process startup.
-
-<procedure>(milliseconds->time ms)</procedure>
-
-Converts into a time object an exact integer representing
-the number of milliseconds since process startup.
-
-This procedure may be useful in combination with {{thread-sleep!}} when your compilation unit is using {{(declare fixnum-arithmetic)}}.  In that case you won't be able to pass an inexact value to {{thread-sleep!}}, but you can do the following:
-
- (define (thread-sleep!/ms ms)
-   (thread-sleep!
-    (milliseconds->time (+ ms (current-milliseconds)))))
-
 
 == SRFI-18 specification
 

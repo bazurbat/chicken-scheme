@@ -91,7 +91,7 @@
 	(upap #f)
 	(ssize (or (memq 'nursery options) (memq 'stack-size options))) )
 
-    (define (cputime) (##sys#fudge 6))
+    (define (cputime) (current-milliseconds))
 
     (define (dribble fstr . args)
       (when verbose (printf "~?~%~!" fstr args)))

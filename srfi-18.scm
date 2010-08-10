@@ -45,69 +45,35 @@
 
 ;;; Helper routines:
 
-(define-inline (exactify n)
-  (if (##sys#immediate? n)
-      n
-      (##core#inline "C_i_inexact_to_exact" n)))
-
-(define ##sys#compute-time-limit
-  (let ([truncate truncate])
-    (lambda (tm)
-      (and tm
-	   (cond [(##sys#structure? tm 'time) (##sys#slot tm 1)]
-		 [(number? tm) 
-		  (fx+ (##sys#fudge 16) 
-		       (exactify (truncate (* tm 1000))))]
-		 [else (##sys#signal-hook #:type-error "invalid timeout argument" tm)] ) ) ) ) )
+(define (##sys#compute-time-limit tm loc)
+  (cond ((not tm) #f)
+	((##sys#structure? tm 'time) (##sys#slot tm 1))
+	((number? tm) (+ (current-milliseconds) (* tm 1000)))
+	(else (##sys#signal-hook #:type-error loc "invalid timeout argument" tm))))
 
 
 ;;; Time objects:
 
-(declare
-  (foreign-declare #<<EOF
-static C_TLS long C_ms;
-#define C_get_seconds   C_seconds(&C_ms)
-EOF
-) )
-
-(define-foreign-variable C_get_seconds double)
-(define-foreign-variable C_startup_time_seconds double)
-(define-foreign-variable C_ms long)
-
 (define (current-time)
-  (let* ([s C_get_seconds]
-	 [ss C_startup_time_seconds] 
-	 [ms C_ms] )
-    (##sys#make-structure
-     'time
-     (exactify (truncate (+ (* (- s ss) 1000) C_ms)))
-     s
-     C_ms) ) )
+  (##sys#make-structure 'time (current-milliseconds)))
 
 (define srfi-18:current-time current-time)
 
 (define (time->seconds tm)
   (##sys#check-structure tm 'time 'time->seconds)
-  (+ (##sys#slot tm 2) (/ (##sys#slot tm 3) 1000)) )
+  (fp* (##sys#slot tm 1) 1000.0))
 
-(define (time->milliseconds tm)
+(define (time->milliseconds tm)		; DEPRECATED
   (##sys#check-structure tm 'time 'time->milliseconds)
-  (+ (exactify (* (- (##sys#slot tm 2) C_startup_time_seconds) 1000))
-     (##sys#slot tm 3) ) )
+  (##sys#slot tm 1))
 
 (define (seconds->time n)
   (##sys#check-number n 'seconds->time)
-  (let* ([n2 (max 0 (- n C_startup_time_seconds))] ; seconds since startup
-	 [ms (truncate 
-	      (* 1000
-		 (##sys#flonum-fraction (##sys#exact->inexact n))))] ; milliseconds
-	 [n3 (exactify (truncate (+ (* n2 1000) ms)))] ) ; milliseconds since startup
-    (##sys#make-structure 'time n3 (truncate n) (exactify ms)) ) )
+  (##sys#make-structure 'time (fp* (##sys#exact->inexact n) 1000)))
 
-(define (milliseconds->time nms)
-  (##sys#check-exact nms 'milliseconds->time)
-  (let ((s (+ C_startup_time_seconds (/ nms 1000))))
-    (##sys#make-structure 'time nms s 0) ) )
+(define (milliseconds->time nms)	; DEPRECATED
+  (##sys#check-number nms 'milliseconds->time)
+  (##sys#make-structure 'time (##sys#exact->inexact nms)))
 
 (define (time? x) (##sys#structure? x 'time))
 
@@ -205,7 +171,8 @@ EOF
 (define thread-join!
   (lambda (thread . timeout)
     (##sys#check-structure thread 'thread 'thread-join!)
-    (let* ((limit (and (pair? timeout) (##sys#compute-time-limit (##sys#slot timeout 0))))
+    (let* ((limit (and (pair? timeout) 
+		       (##sys#compute-time-limit (##sys#slot timeout 0) 'thread-join!)))
 	   (rest (and (pair? timeout) (##sys#slot timeout 1)))
 	   (tosupplied (and rest (pair? rest)))
 	   (toval (and tosupplied (##sys#slot rest 0))) )
@@ -261,7 +228,7 @@ EOF
     (##sys#add-to-ready-queue thread) ) )
 
 (define (thread-sleep! tm)
-  (define (sleep limit loc)
+  (define (sleep limit)
     (##sys#call-with-current-continuation
      (lambda (return)
        (let ((ct ##sys#current-thread))
@@ -269,7 +236,7 @@ EOF
 	 (##sys#thread-block-for-timeout! ct limit)
 	 (##sys#schedule) ) ) ) )
   (unless tm (##sys#signal-hook #:type-error 'thread-sleep! "invalid timeout argument" tm))
-  (sleep (##sys#compute-time-limit tm) 'thread-sleep!) )
+  (sleep (##sys#compute-time-limit tm 'thread-sleep!)) )
 
 
 ;;; Mutexes:
@@ -305,7 +272,7 @@ EOF
   (lambda (mutex . ms-and-t)
     (##sys#check-structure mutex 'mutex 'mutex-lock!)
     (let* ([limitsup (pair? ms-and-t)]
-	   [limit (and limitsup (##sys#compute-time-limit (car ms-and-t)))]
+	   [limit (and limitsup (##sys#compute-time-limit (car ms-and-t) 'mutex-lock!))]
 	   [threadsup (fx> (length ms-and-t) 1)]
 	   [thread (and threadsup (cadr ms-and-t))] )
       (when thread (##sys#check-structure thread 'thread 'mutex-lock!))
@@ -317,7 +284,9 @@ EOF
 	     (##sys#schedule) )
 	   (define (check)
 	     (when (##sys#slot mutex 4)	; abandoned
-	       (return (##sys#signal (##sys#make-structure 'condition '(abandoned-mutex-exception) '()))) ) )
+	       (return
+		(##sys#signal
+		 (##sys#make-structure 'condition '(abandoned-mutex-exception) '()))) ) )
 	   (dbg ct ": locking " mutex)
 	   (cond [(not (##sys#slot mutex 5))
 		  (if (and threadsup (not thread))
@@ -368,7 +337,7 @@ EOF
       (##sys#call-with-current-continuation
        (lambda (return)
 	 (let ([waiting (##sys#slot mutex 3)]
-	       [limit (and timeout (##sys#compute-time-limit timeout))] )
+	       [limit (and timeout (##sys#compute-time-limit timeout 'mutex-unlock!))] )
 	   (##sys#setislot mutex 4 #f)
 	   (##sys#setislot mutex 5 #f)
 	   (let ((t (##sys#slot mutex 2)))

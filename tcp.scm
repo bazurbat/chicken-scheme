@@ -28,7 +28,6 @@
 (declare
   (unit tcp)
   (uses extras scheduler)
-  (fixnum-arithmetic)
   (export tcp-close tcp-listen tcp-connect tcp-accept tcp-accept-ready? ##sys#tcp-port->fileno tcp-listener? tcp-addresses
 	  tcp-abandon-port tcp-listener-port tcp-listener-fileno tcp-port-numbers tcp-buffer-size
 	  tcp-read-timeout tcp-write-timeout tcp-accept-timeout tcp-connect-timeout)
@@ -224,7 +223,7 @@ EOF
 	      (let ((c (##core#inline "C_subchar" host i)))
 		(if (char=? c #\:)		    
 		    (values
-		     (substring host (add1 i) len)
+		     (substring host (fx+ i 1) len)
 		     (let* ((s (substring host 0 i))
 			    (p (##net#getservbyname s proto)) )
 		       (when (eq? 0 p)
@@ -316,16 +315,14 @@ EOF
   (define ((check loc) x)
     (when x (##sys#check-exact x loc))
     x)
-  (define minute (* 60 1000))
+  (define minute (fx* 60 1000))
   (set! tcp-read-timeout (make-parameter minute (check 'tcp-read-timeout)))
   (set! tcp-write-timeout (make-parameter minute (check 'tcp-write-timeout))) 
   (set! tcp-connect-timeout (make-parameter #f (check 'tcp-connect-timeout))) 
   (set! tcp-accept-timeout (make-parameter #f (check 'tcp-accept-timeout))) )
 
 (define ##net#io-ports
-  (let ((make-input-port make-input-port)
-	(make-output-port make-output-port) 
-	(tbs tcp-buffer-size)
+  (let ((tbs tcp-buffer-size)
 	(make-string make-string) )
     (lambda (fd)
       (unless (##net#make-nonblocking fd)
@@ -351,7 +348,7 @@ EOF
 				  (when tmr
 				    (##sys#thread-block-for-timeout! 
 				     ##sys#current-thread
-				     (fx+ (##sys#fudge 16) tmr) ) )
+				     (+ (current-milliseconds) tmr) ) )
 				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #t)
 				  (yield)
 				  (when (##sys#slot ##sys#current-thread 13)
@@ -459,7 +456,7 @@ EOF
 				  (when tmw
 				    (##sys#thread-block-for-timeout! 
 				     ##sys#current-thread
-				     (fx+ (##sys#fudge 16) tmw) ) )
+				     (+ (current-milliseconds) tmw) ) )
 				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #f)
 				  (yield) 
 				  (when (##sys#slot ##sys#current-thread 13)
@@ -527,7 +524,7 @@ EOF
 	    (when tma
 	      (##sys#thread-block-for-timeout! 
 	       ##sys#current-thread
-	       (fx+ (##sys#fudge 16) tma) ) )
+	       (+ (current-milliseconds) tma) ) )
 	    (##sys#thread-block-for-i/o! ##sys#current-thread fd #t)
 	    (yield)
 	    (when (##sys#slot ##sys#current-thread 13)
@@ -592,7 +589,7 @@ EOF
 		  (when tmc
 		    (##sys#thread-block-for-timeout!
 		     ##sys#current-thread
-		     (fx+ (##sys#fudge 16) tmc) ) )
+		     (+ (current-milliseconds) tmc) ) )
 		  (##sys#thread-block-for-i/o! ##sys#current-thread s #:all)
 		  (yield)
 		  (when (##sys#slot ##sys#current-thread 13)
@@ -603,12 +600,12 @@ EOF
 		  (loop) ) ) )
 	    (fail) ) )
       (let ((err (get-socket-error s)))
-	(cond ((= err -1)
+	(cond ((fx= err -1)
 	       (##net#close s)
 	       (##sys#signal-hook 
 		#:network-error 'tcp-connect
 		(##sys#string-append "getsockopt() failed - " strerror)))
-	      ((> err 0)
+	      ((fx> err 0)
 	       (##net#close s)
 	       (##sys#signal-hook 
 		#:network-error 'tcp-connect
