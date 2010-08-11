@@ -803,7 +803,8 @@
 		(string-append "\"" str "\"") ; (sic) thanks to Matthew Flatt
 		str))))
     (unless (zero? r)
-      (error "shell command failed with nonzero exit status ~a:~%~%  ~a" r str))))
+      (error
+       (sprintf "shell command failed with nonzero exit status ~a:~%~%  ~a" r str)))))
 
 (define (setup-error-handling)
   (current-exception-handler
