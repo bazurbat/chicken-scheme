@@ -2322,7 +2322,9 @@ EOF
 		  (let ([val (##sys#string->number tok (or radix 10))] )
 		    (cond [val
 			   (when (and (##sys#inexact? val) rat-flag)
-			     (##sys#read-warning port "cannot represent exact fraction - coerced to flonum" tok) )
+			     (##sys#read-warning 
+			      port
+			      "cannot represent exact fraction - coerced to flonum" tok) )
 			   val]
 			  [radix (##sys#read-error port "illegal number syntax" tok)]
 			  [else (resolve-symbol tok)] ) ) ) ) )
@@ -2331,10 +2333,14 @@ EOF
 	    (cond [(char=? #\# (##sys#peek-char-0 port))
 		   (##sys#read-char-0 port)
 		   (let ([c2 (##sys#read-char-0 port)])
-		     (cond [(eof-object? c2) (##sys#read-error port "unexpected end of numeric literal")]
+		     (cond [(eof-object? c2) 
+			    (##sys#read-error port "unexpected end of numeric literal")]
 			   [(char=? c2 #\i) (##sys#exact->inexact (r-number radix))]
 			   [(char=? c2 #\e) (##sys#inexact->exact (r-number radix))]
-			   [else (##sys#read-error port "illegal number syntax - invalid exactness prefix" c2)] ) ) ]
+			   [else
+			    (##sys#read-error
+			     port
+			     "illegal number syntax - invalid exactness prefix" c2)] ) ) ]
 		  [else (r-number radix)] ) )
 	  
 	  (define (r-number-with-radix)
@@ -2385,7 +2391,8 @@ EOF
 	  (define (r-xtoken)
 	    (if (char=? #\| (read-unreserved-char-0 port))
 		(let loop ((c (##sys#read-char-0 port)) (lst '()))
-		  (cond ((eof-object? c) (##sys#read-error port "unexpected end of `| ... |' symbol"))
+		  (cond ((eof-object? c)
+			 (##sys#read-error port "unexpected end of `| ... |' symbol"))
 			((char=? c #\\)
 			 (let ((c (##sys#read-char-0 port)))
 			   (loop (##sys#read-char-0 port) (cons c lst)) ) )
