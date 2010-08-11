@@ -112,7 +112,7 @@ context as the {{condition-case}} form.
 (check (lambda () (signal 99)))            ; -> "something else"
 
 (condition-case some-unbound-variable
-  [(exn file) (print "ignored")] )      ; -> signals error
+  ((exn file) (print "ignored")) )      ; -> signals error
 </enscript>
 
 <procedure>(get-condition-property CONDITION KIND PROPERTY [DEFAULT])</procedure>
@@ -144,9 +144,10 @@ exception handler returned.  On CHICKEN, system error exceptions
 
 === Exception Handlers
 
-<procedure>(current-exception-handler)</procedure><br>
+<parameter>(current-exception-handler [PROCEDURE])</parameter><br>
 
-Returns the current exception handler.
+Sets or returns the current exception handler, a procedure of one
+argument, the exception object.
 
 <procedure>(with-exception-handler handler thunk)</procedure><br>
 

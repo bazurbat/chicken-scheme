@@ -3598,21 +3598,21 @@ EOF
 
 (define ##sys#current-exception-handler
   ;; Exception-handler for the primordial thread:
-  (let ([string-append string-append])
+  (let ((string-append string-append))
     (lambda (c)
       (when (##sys#structure? c 'condition)
 	(set! ##sys#last-exception c)
-	(let ([kinds (##sys#slot c 1)])
-	  (cond [(memq 'exn kinds)
-		 (let* ([props (##sys#slot c 2)]
-			[msga (member '(exn . message) props)]
-			[argsa (member '(exn . arguments) props)]
-			[loca (member '(exn . location) props)] )
+	(let ((kinds (##sys#slot c 1)))
+	  (cond ((memq 'exn kinds)
+		 (let* ((props (##sys#slot c 2))
+			(msga (member '(exn . message) props))
+			(argsa (member '(exn . arguments) props))
+			(loca (member '(exn . location) props)) )
 		   (apply
 		    (##sys#error-handler)
 		    (if msga
-			(let ([msg (cadr msga)]
-			      [loc (and loca (cadr loca))] )
+			(let ((msg (cadr msga))
+			      (loc (and loca (cadr loca))) )
 			  (if (and loc (symbol? loc))
 			      (string-append
 			       "(" (##sys#symbol->qualified-string loc) ") " 
@@ -3624,15 +3624,16 @@ EOF
 		    (if argsa
 			(cadr argsa)
 			'() ) )
-		   ((##sys#reset-handler)) ) ]
-		[(eq? 'user-interrupt (##sys#slot kinds 0))
+		   ;; in case error-handler returns, which shouldn't happen:
+		   ((##sys#reset-handler)) ) )
+		((eq? 'user-interrupt (##sys#slot kinds 0))
 		 (##sys#print "\n*** user interrupt ***\n" #f ##sys#standard-error)
-		 ((##sys#reset-handler)) ] 
-		[(eq? 'uncaught-exception (##sys#slot kinds 0))
+		 ((##sys#reset-handler)) )
+		((eq? 'uncaught-exception (##sys#slot kinds 0))
 		 ((##sys#error-handler)
 		  "uncaught exception"
 		  (cadr (member '(uncaught-exception . reason) (##sys#slot c 2))) )
-		 ((##sys#reset-handler)) ] ) ) )
+		 ((##sys#reset-handler)) ) ) ) )
       (##sys#abort
        (##sys#make-structure
 	'condition 
@@ -3646,7 +3647,10 @@ EOF
       thunk
       (lambda () (set! ##sys#current-exception-handler oldh)) ) ) )
 
-(define (current-exception-handler) ##sys#current-exception-handler)
+(define (current-exception-handler #!optional proc)
+  (if proc
+      (set! ##sys#current-exception-handler proc)
+      ##sys#current-exception-handler))
 
 (define (make-property-condition kind . props)
   (##sys#make-structure
