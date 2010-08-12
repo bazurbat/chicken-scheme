@@ -261,7 +261,7 @@
 		(d "~a~%" ln)
 		(loop) ) ) ) )
 	(when chunked
-	  (d "reading chunks ...~%")
+	  (d "reading chunks ")
 	  (let ([data (read-chunks in)])
 	    (close-input-port in)
 	    (set! in (open-input-string data))) ) )
@@ -301,11 +301,14 @@
   (define (read-chunks in)
     (let get-chunks ([data '()])
       (let ([size (string->number (read-line in) 16)])
-	(if (zero? size)
-	    (string-concatenate-reverse data)
-	    (let ([chunk (read-string size in)])
-	      (read-line in)
-	      (get-chunks (cons chunk data)) ) ) ) ) )
+	(cond ((zero? size)
+	       (d "~%")
+	       (string-concatenate-reverse data))
+	      (else
+	       (let ([chunk (read-string size in)])
+		 (d ".")
+		 (read-line in)
+		 (get-chunks (cons chunk data)) ) ) ) ) ))
 
   (define (retrieve-extension name transport location
                               #!key version quiet destination username password tests

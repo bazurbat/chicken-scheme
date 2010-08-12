@@ -110,12 +110,12 @@ EOF
 	  (let loop ((lst ##sys#timeout-list))
 	    (if (null? lst)
 		(set! ##sys#timeout-list '())
-		(let* ([tmo1 (caar lst)]
-		       [tto (cdar lst)]
-		       [tmo2 (##sys#slot tto 4)] )
+		(let* ([tmo1 (caar lst)] ; timeout of thread on list
+		       [tto (cdar lst)]	 ; thread on list
+		       [tmo2 (##sys#slot tto 4)] ) ; timeout value stored in thread
 		  (dbg "  " tto " -> " tmo2)
-		  (if (= tmo1 tmo2)
-		      (if (fp>= now tmo1)
+		  (if (equal? tmo1 tmo2)  ;XXX why do we check this?
+		      (if (fp>= now tmo1) ; timeout reached?
 			  (begin
 			    (##sys#setislot tto 13 #t) ; mark as being unblocked by timeout
 			    (##sys#clear-i/o-state-for-thread! tto)
