@@ -96,6 +96,7 @@
   (define *host-extension* *cross-chicken*)
   (define *target-extension* *cross-chicken*)
   (define *debug-setup* #f)
+  (define *keep-going* #f)
 
   (define (get-prefix)
     (cond ((and *cross-chicken*
@@ -423,6 +424,20 @@
      #\space
      (shellpath (make-pathname (cadr e+d+v) (car e+d+v) "setup"))) )
 
+  (define-syntax keep-going
+    (syntax-rules ()
+      ((_ (name mode) body ...)
+       (let ((tmp (lambda () body ...)))
+	 (if *keep-going*
+	     (handle-exceptions ex
+		 (begin
+		   (print mode " extension `" name "' failed:")
+		   (print-error-message ex)
+		   (print "\nnevertheless trying to continue ...")
+		   #f)
+	       (tmp))
+	     (tmp))))))
+
   (define (install eggs)
     (retrieve eggs)
     (unless *retrieve-only*
@@ -462,18 +477,23 @@
 		      (lambda (dir)
 			(print "changing current directory to " dir)
 			(parameterize ((current-directory dir))
-			  (let ((cmd (make-install-command e+d+v (> i 1))))
+			  (let ((cmd (make-install-command e+d+v (> i 1)))
+				(name (car e+d+v)))
 			    (print "  " cmd)
-			    ($system cmd))
-			  (when (and *run-tests*
-				     (not isdep)
-				     (file-exists? "tests")
-				     (directory? "tests")
-				     (file-exists? "tests/run.scm") )
-			    (set! *running-test* #t)
-			    (current-directory "tests")
-			    (command "~a -s run.scm ~a ~a" *csi* (car e+d+v) (caddr e+d+v))
-			    (set! *running-test* #f))))))
+			    (keep-going 
+			     (name "installing")
+			     ($system cmd))
+			    (when (and *run-tests*
+				       (not isdep)
+				       (file-exists? "tests")
+				       (directory? "tests")
+				       (file-exists? "tests/run.scm") )
+			      (set! *running-test* #t)
+			      (current-directory "tests")
+			      (keep-going
+			       (name "testing")
+			       (command "~a -s run.scm ~a ~a" *csi* name (caddr e+d+v)))
+			      (set! *running-test* #f)))))))
 		 (if (and *target-extension* *host-extension*)
 		     (fluid-let ((*deploy* #f)
 				 (*prefix* #f))
@@ -586,6 +606,7 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
        -trunk                   build trunk instead of tagged version (only local)
   -D   -feature FEATURE         features to pass to sub-invocations of `csc'
        -debug                   enable full display of error message information
+       -keep-going              continue installation even if dependency fails
 EOF
 );|
     (exit code))
@@ -721,6 +742,9 @@ EOF
                         (loop (cddr args) eggs))
 		       ((string=? "-trunk" arg)
 			(set! *trunk* #t)
+			(loop (cdr args) eggs))
+		       ((string=? "-keep-going" arg)
+			(set! *keep-going* #t)
 			(loop (cdr args) eggs))
                        ((string=? "-password" arg)
                         (unless (pair? (cdr args)) (usage 1))
