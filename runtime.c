@@ -2612,11 +2612,18 @@ void C_save_and_reclaim(void *trampoline, void *proc, int n, ...)
 }
 
 
-#define mark(x)					\
-  C_cblock \
-    C_word *_x = (x), _val = *_x;			\
-    if(!C_immediatep(_val)) really_mark(_x);	\
+#ifdef __SUNPRO_C
+static void mark(C_word *x) { \
+  C_word *_x = (x), _val = *_x; \
+  if(!C_immediatep(_val)) really_mark(_x); \
+}
+#else
+# define mark(x)				\
+  C_cblock						\
+  C_word *_x = (x), _val = *_x;				\
+  if(!C_immediatep(_val)) really_mark(_x);		\
   C_cblockend
+#endif
 
 
 C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
@@ -3079,11 +3086,18 @@ C_regparm void C_fcall really_mark(C_word *x)
 }
 
 
-#define remark(x)     \
-  C_cblock \
-    C_word *_x = (x), _val = *_x; \
-    if(!C_immediatep(_val)) really_remark(_x); \
+#ifdef __SUNPRO_C
+static void remark(C_word *x) { \
+  C_word *_x = (x), _val = *_x;		     \
+  if(!C_immediatep(_val)) really_remark(_x); \
+}
+#else
+#define remark(x)				\
+  C_cblock					\
+  C_word *_x = (x), _val = *_x;			\
+  if(!C_immediatep(_val)) really_remark(_x);	\
   C_cblockend
+#endif
 
 
 /* Do a major GC into a freshly allocated heap: */

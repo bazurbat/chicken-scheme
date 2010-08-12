@@ -41,9 +41,9 @@ export INSTALL_PROGRAM ?= ginstall
 # options
 
 ifeq ($(C_COMPILER),cc)
-C_COMPILER_OPTIONS ?= -errtags -DHAVE_CHICKEN_CONFIG_H
-C_COMPILER_OPTIONS ?= -fno-strict-aliasing -DHAVE_CHICKEN_CONFIG_H
+C_COMPILER_OPTIONS ?= -errtags -xdebugformat=stabs -xannotate=no -DHAVE_CHICKEN_CONFIG_H 
 else
+C_COMPILER_OPTIONS ?= -fno-strict-aliasing -DHAVE_CHICKEN_CONFIG_H
 endif
 
 ifdef DEBUGBUILD
@@ -55,13 +55,13 @@ endif
 else
 ifdef OPTIMIZE_FOR_SPEED
 ifeq ($(C_COMPILER),cc)
-C_COMPILER_OPTIMIZATION_OPTIONS ?= -xdebugformat=stabs -xannotate=no -g -xO4
+C_COMPILER_OPTIMIZATION_OPTIONS += -g -xO4
 else
 C_COMPILER_OPTIMIZATION_OPTIONS ?= -O3 -fomit-frame-pointer
 endif
 else
 ifeq ($(C_COMPILER),cc)
-C_COMPILER_OPTIMIZATION_OPTIONS ?= -xannotate=no -xO3
+C_COMPILER_OPTIMIZATION_OPTIONS += -g -xO3
 else
 C_COMPILER_OPTIMIZATION_OPTIONS ?= -Os -fomit-frame-pointer
 endif
@@ -69,15 +69,15 @@ endif
 endif
 
 ifeq ($(C_COMPILER),cc)
-LINKER_LINK_SHARED_LIBRARY_OPTIONS = -G
-LINKER_LINK_SHARED_DLOADABLE_OPTIONS = -G
+LINKER_LINK_SHARED_LIBRARY_OPTIONS = -xannotate=no -G
+LINKER_LINK_SHARED_DLOADABLE_OPTIONS = -xannotate=no -G
 LINKER_LINK_SHARED_PROGRAM_OPTIONS =
 else
 LINKER_LINK_SHARED_LIBRARY_OPTIONS = -shared
 LINKER_LINK_SHARED_DLOADABLE_OPTIONS = -shared -Wl,-R"$(RUNTIME_LINKER_PATH)" -Wl,-L.
 LINKER_LINK_SHARED_PROGRAM_OPTIONS = -Wl,-R"$(RUNTIME_LINKER_PATH)"
 endif
-LIBRARIES = -lrt -lsocket -lnsl -lm -ldl
+LIBRARIES = -lsocket -lnsl -lm -ldl
 NEEDS_RELINKING = yes
 
 # special files
