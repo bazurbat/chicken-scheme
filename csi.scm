@@ -972,8 +972,6 @@ EOF
 	  (do ([x (read in) (read in)])
 	      ((eof-object? x))
 	    (rec (receive (eval x))) ) ) )
-      (when quietflag
-	(##sys#eval-debug-level 0))	;???
       (when (member* '("-h" "-help" "--help") args)
 	(print-usage)
 	(exit 0) )
