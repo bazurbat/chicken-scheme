@@ -137,6 +137,7 @@ tests/reexport-tests.scm
 tests/ec.scm
 tests/ec-tests.scm
 tests/test-chained-modules.scm
+tests/import-tests.scm
 tests/import-library-test1.scm
 tests/import-library-test2.scm
 tests/match-test.scm

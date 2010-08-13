@@ -1209,6 +1209,11 @@
 	  ,@(if (and imp? (or (not builtin?) (##sys#current-module)))
 		`((import ,id))		;XXX make hygienic
 		'())))
+      (define (srfi-id n)
+	(if (fixnum? n)
+	    (##sys#intern-symbol
+	     (##sys#string-append "srfi-" (##sys#number->string n)))
+	    (##sys#syntax-error 'require-extension "invalid SRFI number" n)))
       (define (doit id impid)
 	(cond ((or (memq id builtin-features)
 		   (if comp?
@@ -1273,21 +1278,19 @@
 		       (exp
 			`(##core#begin
 			  ,@(map (lambda (n)
-				   (unless (fixnum? n)
-				     (##sys#syntax-error 'require-extension "invalid SRFI number" n))
-				   (let ((rid (string->symbol (string-append "srfi-" (number->string n)))))
+				   (let ((rid (srfi-id n)))
 				     (let-values (((exp f2) (doit rid rid)))
 				       (set! f (or f f2))
 				       exp)))
 				 (cdr id)))))
 		  (values exp f)))
 	       ((rename except only prefix)
-		(doit
-		 (let follow ((id2 id))
-		   (if (and (pair? id2) (pair? (cdr id2)))
-		       (follow (cadr id2))
-		       id2))
-		 id))
+		(let follow ((id2 id))
+		  (if (and (pair? id2) (pair? (cdr id2)))
+		      (if (and (eq? 'srfi (car id2)) (null? (cddr id2))) ; only allow one number
+			  (doit (srfi-id (cadr id2)) id)
+			  (follow (cadr id2)))
+		      (doit id2 id))))
 	       (else (##sys#error "invalid extension specifier" id) ) ) )
 	    ((symbol? id)
 	     (doit id id))

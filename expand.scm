@@ -838,7 +838,8 @@
   (let ((%only (r 'only))
 	(%rename (r 'rename))
 	(%except (r 'except))
-	(%prefix (r 'prefix)))
+	(%prefix (r 'prefix))
+	(%srfi (r 'srfi)))
     (define (resolve sym)
       (or (lookup sym '()) sym))	;*** empty se?
     (define (tostr x)
@@ -871,12 +872,16 @@
       (cond ((symbol? spec) (import-name spec))
 	    ((or (not (list? spec)) (< (length spec) 2))
 	     (syntax-error loc "invalid import specification" spec))
+	    ((and (c %srfi (car spec)) (fixnum? (cadr spec)) (null? (cddr spec))) ; only one number
+	     (import-name 
+	      (##sys#intern-symbol
+	       (##sys#string-append "srfi-" (##sys#number->string (cadr spec))))))
 	    (else
 	     (let* ((s (car spec))
 		    (imp (import-spec (cadr spec)))
 		    (impv (car imp))
 		    (imps (cdr imp)))
-	       (cond ((c %only (car spec))
+	       (cond ((c %only s)
 		      (##sys#check-syntax loc spec '(_ _ . #(symbol 0)))
 		      (let ((ids (map resolve (cddr spec))))
 			(let loop ((ids ids) (v '()) (s '()))
@@ -888,7 +893,7 @@
 				 (lambda (a) 
 				   (loop (cdr ids) v (cons a s))))
 				(else (loop (cdr ids) v s))))))
-		     ((c %except (car spec))
+		     ((c %except s)
 		      (##sys#check-syntax loc spec '(_ _ . #(symbol 0)))
 		      (let ((ids (map resolve (cddr spec))))
 			(let loop ((impv impv) (v '()))
@@ -899,7 +904,7 @@
 					 (else (loop (cdr imps) (cons (car imps) s))))))
 				((memq (caar impv) ids) (loop (cdr impv) v))
 				(else (loop (cdr impv) (cons (car impv) v)))))))
-		     ((c %rename (car spec))
+		     ((c %rename s)
 		      (##sys#check-syntax loc spec '(_ _ . #((symbol symbol) 0)))
 		      (let loop ((impv impv) (imps imps) (v '()) (s '()) (ids (cddr spec)))
 			(cond ((null? impv) 
@@ -925,7 +930,7 @@
 			      (else (loop (cdr impv) imps
 					  (cons (car impv) v)
 					  s ids)))))
-		     ((c %prefix (car spec))
+		     ((c %prefix s)
 		      (##sys#check-syntax loc spec '(_ _ _))
 		      (let ((pref (tostr (caddr spec))))
 			(define (ren imp)

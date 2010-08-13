@@ -125,6 +125,9 @@ echo "======================================== compiler syntax tests ..."
 $compile compiler-syntax-tests.scm
 ./a.out
 
+echo "======================================== import tests ..."
+$interpret import-tests.scm
+
 echo "======================================== import library tests ..."
 rm -f ../foo.import.* foo.import.*
 $compile import-library-test1.scm -emit-import-library foo

@@ -105,7 +105,8 @@ compilation unit, if compiled and used outside of a module.
 Importing a module does not load or link it - this is a separate
 operation from importing its bindings.
 
-{{IMPORT}} may be a module name, or an ''import specifier''.
+{{IMPORT}} may be a module name or an ''import specifier'', where a
+module name is either a symbol or a list of the form {{(srfi N)}}.
 An {{IMPORT}} defines a set of bindings that are to be made visible
 in the current scope.
 
