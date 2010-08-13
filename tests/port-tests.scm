@@ -35,25 +35,46 @@ EOF
 (assert (= 20 (length (read-lines (open-input-string *text*)))))
 
 
-;;; port operations
+;;; copy-port
 
 (assert
  (string=? 
   *text*
   (with-output-to-string
     (lambda ()
-      (copy-port (open-input-string *text*) (current-output-port))))))
+      (copy-port (open-input-string *text*) (current-output-port)))))) ; read-char -> write-char
 
 (assert 
  (equal? 
   '(3 2 1)
   (let ((out '()))
-    (copy-port
+    (copy-port				; read -> custom
      (open-input-string "1 2 3")
      #f
      read
      (lambda (x port) (set! out (cons x out))))
     out)))
+
+(assert
+ (equal? 
+  "abc"
+  (let ((out (open-output-string)))
+    (copy-port				; read-char -> custom
+     (open-input-string "abc") 
+     out
+     read-char
+     (lambda (x out) (write-char x out)))
+    (get-output-string out))))
+
+(assert
+ (equal? 
+  "abc"
+  (let ((in (open-input-string "abc") )
+	(out (open-output-string)))
+    (copy-port				; custom -> write-char
+     in out
+     (lambda (in) (read-char in)))
+    (get-output-string out))))
 
 ;; fill buffers
 (read-all "compiler.scm") 

@@ -68,3 +68,14 @@
 (assert (= -42.0 (fpceiling -42.2)))
 (assert (not (fpinteger? 2.3)))
 (assert (fpinteger? 1.0))
+
+;; string->symbol
+
+;; by Jim Ursetto
+(assert 
+ (eq? '|3|
+      (with-input-from-string
+	  (with-output-to-string
+	    (lambda ()
+	      (write (string->symbol "3"))))
+	read)))

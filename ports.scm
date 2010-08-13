@@ -80,7 +80,7 @@
 (define (write-buf buf n port writer)
   (do ((i 0 (fx+ i 1)))
       ((fx>= i n))
-    (writer (integer->char (##sys#byte buf n)) port)))
+    (writer (integer->char (##sys#byte buf i)) port)))
 
 (define (read-and-write reader writer)
   (let loop ()
