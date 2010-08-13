@@ -73,6 +73,17 @@ fi
 
 diff -bu scrutiny.out scrutiny.expected
 
+echo "======================================== callback tests ..."
+$compile callback-tests.scm
+./a.out
+
+if ./a.out twice; then
+    echo "double-return from callback didn't fail"
+    exit 1
+else
+    echo "double-return from callback failed as it should."
+fi
+
 echo "======================================== runtime tests ..."
 $interpret -s apply-test.scm
 $compile test-gc-hooks.scm
@@ -126,7 +137,7 @@ $compile compiler-syntax-tests.scm
 ./a.out
 
 echo "======================================== import tests ..."
-$interpret import-tests.scm
+$interpret -bnq import-tests.scm
 
 echo "======================================== import library tests ..."
 rm -f ../foo.import.* foo.import.*

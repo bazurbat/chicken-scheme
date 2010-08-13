@@ -1737,7 +1737,7 @@ C_word C_fcall C_callback(C_word closure, int argc)
   jmp_buf prev;
   C_word 
     *a = C_alloc(2),
-    k = C_closure(&a, 1, (C_word)callback_return_continuation);
+    k = C_closure(&a, 2, (C_word)callback_return_continuation, C_SCHEME_FALSE);
   int old = chicken_is_running;
 
   if(old && C_block_item(callback_continuation_stack_symbol, 0) == C_SCHEME_END_OF_LIST)
@@ -1800,8 +1800,12 @@ C_word C_fcall C_callback_wrapper(void *proc, int argc)
 
 void C_ccall callback_return_continuation(C_word c, C_word self, C_word r)
 {
+  if(C_block_item(self, 1) == C_SCHEME_TRUE)
+    panic(C_text("callback returned twice"));
+
   assert(callback_returned_flag == 0);
   callback_returned_flag = 1;
+  C_set_block_item(self, 1, C_SCHEME_TRUE);
   C_save(r);
   C_reclaim(NULL, NULL);
 }
