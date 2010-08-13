@@ -3401,7 +3401,7 @@ EOF
 	 (##sys#print "\n\t" #f port)
 	 (##sys#print (##sys#slot info 0) #f port) ; raw (mode)
 	 (##sys#print "\t  " #f port)
-	 (when more2
+	 (when (and more2 (if fi (##sys#slot more2 1)))
 	   (##sys#write-char-0 #\[ port)
 	   (##sys#print 
 	    (if fi
