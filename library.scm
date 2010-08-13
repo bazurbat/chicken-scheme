@@ -2835,9 +2835,10 @@ EOF
 	  (let ((len (##sys#size str)))
 	    (cond ((eq? len 0) #f)
 		  ((eq? len 1)
-		   (case (##core#inline "C_subchar" str 0)
-		     ((#\. #\#) #f)
-		     (else #t) ) )
+		   (let ((c (##core#inline "C_subchar" str 0)))
+		     (cond ((or (eq? #\. c) (eq? #\# c)) #f)
+			   ((char-numeric? c) #f)
+			   (else #t))))
 		  (else
 		   (let loop ((i (fx- len 1)))
 		     (if (eq? i 0)
