@@ -24,7 +24,7 @@
 - the evaluation-result history in `csi' can be inspected and
   cleared (to reduce memory load) with the toplevel commands
   `,h' and `,ch'
-- unit `data-strutures': deprecated `left-section' and 
+- unit `data-structures': deprecated `left-section' and 
   `right-section'
 - fixed bug that caused the static syntax-environment of 
   syntax exported by a module to be incomplete
