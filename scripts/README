@@ -27,12 +27,6 @@ This directory contains a couple of things that might be useful:
 
     Creates a distribution tarball from a chicken svn checkout.
 
-  henrietta.scm
-  henrietta.cgi
-
-    A CGI script and sub-program that serves eggs from a local tree
-    or via svn over HTTP.
-
   mini-salmonella.scm
 
     A minimalistic version of `salmonella', the egg-test tool. It

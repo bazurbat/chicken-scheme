@@ -34,6 +34,7 @@
 			locate-egg/http
 			gather-egg-information
 			list-extensions
+			list-extension-versions
 			temporary-directory)
 
   (import scheme chicken)
@@ -78,6 +79,13 @@
 
   (define (list-eggs/local dir)
     (string-concatenate (map (cut string-append <> "\n") (directory dir))) )
+
+  (define (list-egg-versions/local name dir)
+    (let ((eggdir (make-pathname dir (string-append name "/tags"))))
+      (cond ((directory-exists? eggdir)
+	     (string-concatenate
+	      (map (cut string-append <> "\n") (directory eggdir))))
+	    (else "unknown\n"))))
 
   (define (locate-egg/local egg dir #!optional version destination)
     (let* ([eggdir (make-pathname dir egg)]
@@ -128,6 +136,17 @@
         (string-concatenate
          (map (lambda (s) (string-append (string-chomp s "/") "\n"))
               (with-input-from-pipe cmd read-lines))) ) ) )
+
+  (define (list-egg-versions/svn name repo #!optional username password)
+    (let* ((uarg (if username (string-append "--username='" username "'") ""))
+	   (parg (if password (string-append "--password='" password "'") ""))
+	   (cmd (make-svn-ls-cmd uarg parg (make-pathname repo (string-append name "/tags"))))
+	   (input (with-input-from-pipe cmd read-lines)))
+      (if (null? input)
+	  "unknown\n"
+	  (string-concatenate
+	   (map (lambda (s) (string-append (string-chomp s "/") "\n"))
+		(with-input-from-pipe cmd read-lines))) ) ))
 
   (define (locate-egg/svn egg repo #!optional version destination username password)
     (let* ([uarg (if username (string-append "--username='" username "'") "")]
@@ -334,6 +353,16 @@
 	 (list-eggs/local location) )
 	((svn)
 	 (list-eggs/svn location username password) )
+	(else
+	 (error "cannot list extensions - unsupported transport" transport) ) ) ) )
+
+  (define (list-extension-versions name transport location #!key quiet username password)
+    (fluid-let ((*quiet* quiet))
+      (case transport
+	((local)
+	 (list-egg-versions/local name location) )
+	((svn)
+	 (list-egg-versions/svn name location username password) )
 	(else
 	 (error "cannot list extensions - unsupported transport" transport) ) ) ) )
 

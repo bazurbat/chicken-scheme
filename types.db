@@ -258,7 +258,7 @@
 (copy-read-table (procedure copy-read-table ((struct read-table)) (struct read-table)))
 (cpu-time (procedure cpu-time () fixnum fixnum))
 (current-error-port (procedure current-error-port (#!optional port) port))
-(current-exception-handler (procedure current-exception-handler () procedure))
+(current-exception-handler (procedure current-exception-handler (#!optional procedure) procedure))
 (current-gc-milliseconds (procedure current-gc-milliseconds () fixnum))
 (current-milliseconds (procedure current-milliseconds () fixnum))
 (current-read-table (procedure current-read-table () (struct read-table)))
