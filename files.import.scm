@@ -34,6 +34,7 @@
    make-absolute-pathname
    create-temporary-directory
    create-temporary-file
+   decompose-directory
    decompose-pathname
    absolute-pathname?
    pathname-directory

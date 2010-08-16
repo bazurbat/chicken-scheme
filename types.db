@@ -522,6 +522,7 @@
 (make-absolute-pathname (procedure make-absolute-pathname (* * #!optional string string) string))
 (create-temporary-directory (procedure create-temporary-directory () string))
 (create-temporary-file (procedure create-temporary-file (#!optional string) string))
+(decompose-directory (procedure decompose-directory (string) * * *))
 (decompose-pathname (procedure decompose-pathname (string) * * *))
 (absolute-pathname? (procedure absolute-pathname? (string) boolean))
 (pathname-directory (procedure pathname-directory (string) *))
