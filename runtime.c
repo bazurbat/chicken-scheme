@@ -7220,11 +7220,11 @@ void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, 
   
   /* convert number and return result: */
   switch(convert_string_to_number(sptr, radix, &n, &fn)) {
-  case 0: 
+  case 0: 			/* failed */
     n = C_SCHEME_FALSE;
     break;
 
-  case 1:
+  case 1:			/* fixnum */
     if(sharpf || ratp || (exactpf && !exactf)) {
       n = C_flonum(&a, ratp ? fn1 / (double)n : (double)n);
 
@@ -7234,7 +7234,7 @@ void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, 
 
     break;
 
-  case 2:
+  case 2:			/* flonum */
     n = C_flonum(&a, ratp ? fn1 / fn : fn);
 
     if(exactpf && exactf) n = C_i_inexact_to_exact(n);
@@ -7244,6 +7244,29 @@ void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, 
 
  fini:
   C_kontinue(k, n);
+}
+
+
+static int from_n_nary(C_char *str, int base, double *r)
+{
+  double n = 0;
+  C_char *ptr = str;
+
+  while(*ptr != '\0') {
+    int c = C_tolower(*(ptr++));
+
+    if(c < '0') return 0;
+    else if(c >= '0' + base) {
+      if(base < 10) return 0;
+      else if(c < 'a') return 0;
+      else if(c >= 'a' + base) return 0;
+      else n = n * base + c - 'a' + 10;
+    }
+    else n = n * base + c - '0';
+  }
+
+  *r = n;
+  return 1;
 }
 
 
@@ -7282,17 +7305,8 @@ C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word
   n = C_strtol(str, &eptr, radix);
   
   if(((n == LONG_MAX || n == LONG_MIN) && errno == ERANGE) || *eptr != '\0') {
-    if(radix != 10) {
-      errno = 0;
-      ln = C_strtoul(str, &eptr, radix);
-      
-      if((ln == 0 && errno == EINVAL) || (ln == ULONG_MAX && errno == ERANGE) ||
-	 *eptr != '\0')
-	return 0;
-
-      *flo = (double)ln;
-      return 2;
-    }
+    if(radix != 10)
+      return from_n_nary(str, radix, flo) ? 2 : 0;
 
     errno = 0;
     fn = C_strtod(str, &eptr2);
@@ -7319,10 +7333,11 @@ C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word
   }
 }
 
+
 static char *to_n_nary(C_uword num, C_uword base)
 {
   char *p;
-  char digits[] ={ '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
+  static char digits[] ={ '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
   buffer [ 66 ] = '\0';
   p = buffer + 66;
 
