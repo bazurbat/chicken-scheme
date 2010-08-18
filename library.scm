@@ -2400,7 +2400,7 @@ EOF
 		       (##sys#reverse-list->string lst))
 		      (else
 		       (let ((c ((if esc read-unreserved-char-0 ##sys#read-char-0) port)))
-			 (case c
+			 (case (and sep c)
 			   ((#\|) (loop (not esc) lst))
 			   ((#\\)
 			    (let ((c (##sys#read-char-0 port)))
