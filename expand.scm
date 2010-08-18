@@ -857,9 +857,11 @@
 		     #t)))
 	    (cond (il (parameterize ((##sys#current-module #f)
 				     (##sys#current-environment '())
-				     (##sys#current-meta-environment (##sys#current-meta-environment))
+				     (##sys#current-meta-environment 
+				      (##sys#current-meta-environment))
 				     (##sys#macro-environment (##sys#meta-macro-environment)))
-			(##sys#load il #f #f))
+			(fluid-let ((##sys#notices-enabled #f)) ; to avoid re-import warnings
+			  (##sys#load il #f #f)))
 		      (set! mod (##sys#find-module mname)))
 		  (else
 		   (syntax-error
