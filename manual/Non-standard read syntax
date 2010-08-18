@@ -4,6 +4,17 @@
 
 == Non-standard read syntax
 
+=== Escapes in symbols
+
+{{| ... |}} may be used to escape a sequence of characters when reading a symbol.
+{{\X}} escapes a single character in a symbols name:
+
+  (symbol->string '|abc def|)       =>   "abc def"
+  (symbol->string '|abc||def|)      =>   "abcdef"
+  (symbol->string '|abc|xyz|def|)   =>   "abcxyzdef"
+  (symbol->string '|abc\|def|)      =>   "abc|def"
+  (symbol->string 'abc\ def)        =>   "abc def"
+
 === Multiline Block Comment
 
  #| ... |# 

@@ -2382,24 +2382,37 @@ EOF
 	    (r-token) )
 	  
 	  (define (r-symbol)
-	    (let ((s (resolve-symbol
-		      (if (char=? (##sys#peek-char-0 port) #\|)
-			  (r-xtoken)
-			  (r-token) ) ) ) )
+	    (let ((s (resolve-symbol (r-xtoken))))
 	      (info 'symbol-info s (##sys#port-line port)) ) )
 
 	  (define (r-xtoken)
-	    (if (char=? #\| (read-unreserved-char-0 port))
-		(let loop ((c (##sys#read-char-0 port)) (lst '()))
-		  (cond ((eof-object? c)
-			 (##sys#read-error port "unexpected end of `| ... |' symbol"))
-			((char=? c #\\)
-			 (let ((c (##sys#read-char-0 port)))
-			   (loop (##sys#read-char-0 port) (cons c lst)) ) )
-			((char=? c #\|)
-			 (##sys#reverse-list->string lst) )
-			(else (loop (##sys#read-char-0 port) (cons c lst))) ) )
-		(##sys#read-error port "missing \'|\'") ) )
+	    (let loop ((esc #f) (lst '()))
+	      (let ((c (##sys#peek-char-0 port)))
+		(cond ((eof-object? c) 
+		       (if esc
+			   (##sys#read-error 
+			    port 
+			    "unexpected end of file while reading token delimited by `| ... |'")
+			   (##sys#reverse-list->string lst)))
+		      ((and (not esc)
+			    (or (char-whitespace? c)
+				(memq c terminating-characters)))
+		       (##sys#reverse-list->string lst))
+		      (else
+		       (let ((c ((if esc read-unreserved-char-0 ##sys#read-char-0) port)))
+			 (case c
+			   ((#\|) (loop (not esc) lst))
+			   ((#\\)
+			    (let ((c (##sys#read-char-0 port)))
+			      (if (eof-object? c)
+				  (##sys#read-error
+				   port
+				   "unexpected end of file while reading escaped character")
+				  (loop esc (cons c lst)))))
+			   (else 
+			    (loop 
+			     esc 
+			     (cons (if (or esc csp) c (char-downcase c)) lst))))))))))
 	  
 	  (define (r-char)
 	    ;; Code contributed by Alex Shinn
@@ -2465,7 +2478,10 @@ EOF
 			 (set! tok (##sys#substring tok 0 namespace-max-id-len)) )
 		       (##sys#setbyte p 0 i)
 		       (##sys#intern-symbol
-			(string-append p (##sys#substring tok 0 i) (##sys#substring tok (fx+ i 1) toklen)) ) ]
+			(string-append
+			 p 
+			 (##sys#substring tok 0 i)
+			 (##sys#substring tok (fx+ i 1) toklen)) ) ]
 		      [else (loop (fx+ i 1))] ) ) ) )
 
 	  (define (resolve-symbol tok)
@@ -2594,10 +2610,12 @@ EOF
 						    (let ((a (assq (string->symbol tok) read-marks)))
 						      (if a
 							  ((##sys#slot a 1) port)
-							  (##sys#read-error port "invalid `#!' token" tok) ) ) ] ) ) ) ) ) )
+							  (##sys#read-error
+							   port
+							   "invalid `#!' token" tok) ) ) ] ) ) ) ) ) )
 				 (else (##sys#user-read-hook dchar port)) ) ) ) ) ) )
-		  ((#\( #;#\)) (r-list #\( #\)))
-		  ((#;#\( #\)) (##sys#read-char-0 port) (container c))
+		  ((#\() (r-list #\( #\)))
+		  ((#\)) (##sys#read-char-0 port) (container c))
 		  ((#\") (r-string #\"))
 		  ((#\.) (r-number #f))
 		  ((#\- #\+) (r-number #f))
@@ -2608,9 +2626,9 @@ EOF
 			  (reserved-character c))
 			 (else
 			  (case c
-			    ((#\[ #;#\]) (r-list #\[ #\]))
-			    ((#\{ #;#\}) (r-list #\{ #\}))
-			    ((#;#\[ #\] #;#\{ #\}) (##sys#read-char-0 port) (container c))
+			    ((#\[) (r-list #\[ #\]))
+			    ((#\{) (r-list #\{ #\}))
+			    ((#\] #\}) (##sys#read-char-0 port) (container c))
 			    (else (r-symbol) ) ) ) ) ) ) ) ) )
 	
 	(readrec) ) ) ) )
