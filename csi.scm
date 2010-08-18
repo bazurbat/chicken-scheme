@@ -570,11 +570,12 @@ EOF
 	    [(number? x) (fprintf out "number ~S~%" x)]
 	    [(string? x) (descseq "string" ##sys#size string-ref 0)]
 	    [(vector? x) (descseq "vector" ##sys#size ##sys#slot 0)]
+	    ((keyword? x)
+	     (fprintf out "keyword symbol with name ~s~%" 
+	       (##sys#symbol->string x)))
 	    [(symbol? x)
 	     (unless (##sys#symbol-has-toplevel-binding? x)
 	       (display "unbound " out))
-	     (when (and (symbol? x) (fx= 0 (##sys#byte (##sys#slot x 1) 0)))
-	       (display "keyword " out) )
 	     (let ((q (##sys#qualified-symbol? x)))
 	       (fprintf out "~a~asymbol with name ~S~%"
 		 (if (##sys#interned-symbol? x) "" "uninterned ")
