@@ -89,12 +89,12 @@
 		   ((eq? a 'deprecated)
 		    (report
 		     loc
-		     (sprintf "use of deprecated library procedure `~a'" id) )
+		     (sprintf "use of deprecated toplevel identifier `~a'" id) )
 		    '*)
 		   ((and (pair? a) (eq? (car a) 'deprecated))
 		    (report 
 		     loc
-		     (sprintf "use of deprecated library procedure `~a' - consider using `~a' instead"
+		     (sprintf "use of deprecated library toplevel identifier `~a' - consider using `~a' instead"
 		       id (cadr a)))
 		     '*)
 		   (else (list a)))))
