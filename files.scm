@@ -36,7 +36,8 @@
 
 (declare
   (unit files)
-  (uses regex data-structures)
+  (uses irregex data-structures)
+  (fixnum)
   (hide chop-pds absolute-pathname-root root-origin root-directory split-directory)
   (disable-interrupts) 
   (foreign-declare #<<EOF
@@ -171,20 +172,19 @@ EOF
 (define root-origin)
 (define root-directory)
 
-(let ((string-match string-match))
-  (if ##sys#windows-platform
-      (let ((rx (regexp "([A-Za-z]:)?([\\/\\\\]).*")))
-        (set! absolute-pathname-root (lambda (pn) (string-match rx pn)))
-        (set! root-origin (lambda (rt) (and rt (cadr rt))))
-        (set! root-directory (lambda (rt) (and rt (caddr rt)))) )
-      (let ((rx (regexp "([\\/\\\\]).*")))
-        (set! absolute-pathname-root (lambda (pn) (string-match rx pn)))
-        (set! root-origin (lambda (rt) #f))
-        (set! root-directory (lambda (rt) (and rt (cadr rt)))) ) ) )
+(if ##sys#windows-platform
+    (let ((rx (irregex "([A-Za-z]:)?([\\/\\\\]).*")))
+      (set! absolute-pathname-root (lambda (pn) (irregex-match rx pn)))
+      (set! root-origin (lambda (rt) (and rt (irregex-match-substring rt 1))))
+      (set! root-directory (lambda (rt) (and rt (irregex-match-substring rt 2)))) )
+    (let ((rx (irregex "([\\/\\\\]).*")))
+      (set! absolute-pathname-root (lambda (pn) (irregex-match rx pn)))
+      (set! root-origin (lambda (rt) #f))
+      (set! root-directory (lambda (rt) (and rt (irregex-match-substring rt 1)))) ) )
 
 (define (absolute-pathname? pn)
   (##sys#check-string pn 'absolute-pathname?)
-  (pair? (absolute-pathname-root pn)) )
+  (irregex-match-data? (absolute-pathname-root pn)) )
 
 (define-inline (*char-pds? ch) (memq ch '(#\\ #\/)))
 
@@ -261,28 +261,33 @@ EOF
        file ext def-pds) ) ) )
 
 (define decompose-pathname
-  (let ((string-match string-match))
-    (let* ([patt1 "^(.*[\\/\\\\])?([^\\/\\\\]+)(\\.([^\\/\\\\.]+))$"]
-	   [patt2 "^(.*[\\/\\\\])?((\\.)?[^\\/\\\\]+)$"]
-	   [rx1 (regexp patt1)]
-	   [rx2 (regexp patt2)]
-	   [strip-pds
-	     (lambda (dir)
-	       (and dir
-		    (if (member dir '("/" "\\"))
-		        dir
-		        (chop-pds dir #f) ) ) )] )
-      (lambda (pn)
-        (##sys#check-string pn 'decompose-pathname)
-        (if (fx= 0 (##sys#size pn))
-	    (values #f #f #f)
-	    (let ([ms (string-match rx1 pn)])
-	      (if ms
-		  (values (strip-pds (cadr ms)) (caddr ms) (car (cddddr ms)))
-		  (let ([ms (string-match rx2 pn)])
-		    (if ms
-		        (values (strip-pds (cadr ms)) (caddr ms) #f)
-		        (values (strip-pds pn) #f #f) ) ) ) ) ) ) ) ) )
+  (let* ([patt1 "^(.*[\\/\\\\])?([^\\/\\\\]+)(\\.([^\\/\\\\.]+))$"]
+	 [patt2 "^(.*[\\/\\\\])?((\\.)?[^\\/\\\\]+)$"]
+	 [rx1 (irregex patt1)]
+	 [rx2 (irregex patt2)]
+	 [strip-pds
+	  (lambda (dir)
+	    (and dir
+		 (if (member dir '("/" "\\"))
+		     dir
+		     (chop-pds dir #f) ) ) )] )
+    (lambda (pn)
+      (##sys#check-string pn 'decompose-pathname)
+      (if (fx= 0 (##sys#size pn))
+	  (values #f #f #f)
+	  (let ([ms (irregex-search rx1 pn)])
+	    (if ms
+		(values 
+		 (strip-pds (irregex-match-substring ms 1))
+		 (irregex-match-substring ms 2)
+		 (irregex-match-substring ms 4))
+		(let ([ms (irregex-search rx2 pn)])
+		  (if ms
+		      (values
+		       (strip-pds (irregex-match-substring ms 1))
+		       (irregex-match-substring ms 2) 
+		       #f)
+		      (values (strip-pds pn) #f #f) ) ) ) ) ) ) ) )
 
 (define pathname-directory)
 (define pathname-file)
@@ -337,7 +342,11 @@ EOF
 (define create-temporary-file)
 (define create-temporary-directory)
 
-(let ((call-with-output-file call-with-output-file)
+(let ((get-environment-variable get-environment-variable)
+      (make-pathname make-pathname)
+      (file-exists? file-exists?)
+      (directory-exists? directory-exists?)
+      (call-with-output-file call-with-output-file) 
       (temp #f)
       (temp-prefix "temp"))
   (define (tempdir)

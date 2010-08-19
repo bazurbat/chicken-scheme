@@ -538,30 +538,59 @@
 ;; irregex
 
 (irregex (procedure irregex (#!rest) *))
-(string->irregex (procedure string->irregex (string #!rest) *))
-(sre->irregex (procedure sre->irregex (#!rest) *))
-(string->sre (procedure string->sre (string #!rest) *))
-(irregex? (procedure irregex? (*) boolean))
-(irregex-match-data? (procedure irregex-match-data? (*) boolean))
-(irregex-new-matches (procedure irregex-new-matches (*) *))
-(irregex-reset-matches! (procedure irregex-reset-matches! (*) *))
-(irregex-match-start (procedure irregex-match-start (* #!optional *) *))
-(irregex-match-end (procedure irregex-match-end (* #!optional *) *))
-(irregex-match-substring (procedure irregex-match-substring (* #!optional *) *))
-(irregex-search (procedure irregex-search (* string #!optional fixnum fixnum) *))
-(irregex-search/matches (procedure irregex-search/matches (* string fixnum fixnum *) *))
+;irregex-apply-match
+(irregex-dfa (procedure irregex-dfa (*) *))
+(irregex-dfa/extract (procedure irregex-dfa/extract (*) *))
+(irregex-dfa/search (procedure irregex-dfa/search (*) *))
+(irregex-extract (procedure irregex-extract (* string #!optional fixnum fixnum) list))
+(irregex-flags (procedure irregex-flags (*) *))
+(irregex-fold (procedure irregex-fold (* (procedure (fixnum (struct regexp-match)) *) * string #!optional (procedure (fixnum *) *) fixnum fixnum) *))
+(irregex-fold/chunked (procedure irregex-fold/chunked (* (procedure (fixnum (struct regexp-match)) *) * procedure * #!optional (procedure (fixnum *) *) fixnum fixnum) *))
+(irregex-lengths (procedure irregex-lengths (*) *))
 (irregex-match (procedure irregex-match (* string) *))
+;irregex-match?
+(irregex-match-data? (procedure irregex-match-data? (*) boolean))
+(irregex-match-end (procedure irregex-match-end (* #!optional *) *))
+;irregex-match-end-chunk
+(irregex-match-end-index (procedure irregex-match-end-index ((struct regexp-match) #!optional *) fixnum))
+(irregex-match-names (procedure irregex-match-names ((struct regexp-match)) list))
+(irregex-match-num-submatches (procedure irregex-match-num-submatches ((struct regexp-match)) fixnum))
+(irregex-match-start (procedure irregex-match-start (* #!optional *) *))
+;irregex-match-start-chunk
+(irregex-match-start-index (procedure irregex-match-start-index ((struct regexp-match) #!optional *) fixnum))
 (irregex-match-string (procedure irregex-match-string (*) *))
+(irregex-match-subchunk (procedure irregex-match-subchunk ((struct regexp-match) #!optional *) *))
+(irregex-match-substring (procedure irregex-match-substring (* #!optional *) *))
+(irregex-match/chunked (procedure irregex-match/chunked (* * * #!optional fixnum) *))
+(irregex-names (procedure irregex-names (*) *))
+(irregex-new-matches (procedure irregex-new-matches (*) *))
+(irregex-nfa (procedure irregex-nfa (*) *))
+(irregex-num-submatches (procedure irregex-num-submatches (*) fixnum))
+(irregex-opt (procedure irregex-opt (list) *))
+(irregex-quote (procedure irregex-quote (string) string))
 (irregex-replace (procedure irregex-replace (* string #!rest) *))
 (irregex-replace/all (procedure irregex-replace/all (* string #!rest) *))
-(irregex-dfa (procedure irregex-dfa (*) *))
-(irregex-dfa/search (procedure irregex-dfa/search (*) *))
-(irregex-dfa/extract (procedure irregex-dfa/extract (*) *))
-(irregex-nfa (procedure irregex-nfa (*) *))
-(irregex-flags (procedure irregex-flags (*) *))
+(irregex-reset-matches! (procedure irregex-reset-matches! (*) *))
+(irregex-search (procedure irregex-search (* string #!optional fixnum fixnum) *))
+(irregex-search/matches (procedure irregex-search/matches (* string fixnum fixnum *) *))
+(irregex-split (procedure irregex-split (* string #!optional fixnum fixnum) list))
 (irregex-submatches (procedure irregex-submatches (*) *))
-(irregex-lengths (procedure irregex-lengths (*) *))
-(irregex-names (procedure irregex-names (*) *))
+(irregex-match-valid-index? irregex-match-valid-index? ((struct regexp-match) *) boolean)
+(irregex? (procedure irregex? (*) boolean))
+(make-irregex-chunker
+ (procedure make-irregex-chunker 
+	    ((procedure (*) *)
+	     (procedure (*) *)
+	     #!optional
+	     (procedure (*) *)
+	     (procedure (*) *)
+	     (procedure (* fixnum * fixnum) string)
+	     (procedure (* fixnum * fixnum) *))
+	    *))
+(maybe-string->sre (procedure maybe-string->sre (*) *))
+(sre->irregex (procedure sre->irregex (#!rest) *))
+(string->irregex (procedure string->irregex (string #!rest) *))
+(string->sre (procedure string->sre (string #!rest) *))
 
 ;; lolevel
 
@@ -893,22 +922,6 @@
 (utc-time->seconds (procedure utc-time->seconds (vector) number))
 (with-input-from-pipe (procedure with-input-from-pipe (string (procedure () . *) #!optional symbol) . *))
 (with-output-to-pipe (procedure with-output-to-pipe (string (procedure () . *) #!optional symbol) . *))
-
-;; regex
-
-(glob->regexp (procedure glob->regexp (string #!optional *) *))
-(glob? deprecated)
-(grep (procedure grep (* list #!optional (procedure (*) *)) list))
-(regexp (procedure regexp (* #!optional * * *) (struct regexp)))
-(regexp-escape (procedure regexp-escape (string) string))
-(regexp? (procedure regexp? (*) boolean))
-(string-match (procedure string-match (* string) *))
-(string-match-positions (procedure string-match-positions (* string) *))
-(string-search (procedure string-search (* string #!optional fixnum fixnum) *))
-(string-search-positions (procedure string-search-positions (* string #!optional fixnum fixnum) *))
-(string-split-fields (procedure string-split-fields (* string #!optional * fixnum) list))
-(string-substitute (procedure string-substitute (* string string #!optional *) string))
-(string-substitute* (procedure string-substitute* (string list #!optional *) string))
 
 ;; srfi-1
 

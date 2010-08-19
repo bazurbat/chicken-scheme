@@ -1104,7 +1104,7 @@ Recursively traverses the contents of {{DIRECTORY}} (which should be a
 string) and invokes the procedure {{action}} for all files in which
 the procedure {{test}} is true.  {{test}} may be a procedure of one
 argument or a regular-expression string that will be matched with a
-full pathname using {{string-match}}.  {{action}} should be a
+full pathname using {{irregex-match}}.  {{action}} should be a
 procedure of two arguments: the currently encountered file and the
 result of the previous invocation of {{action}}, or, if this is the
 first invocation, the value of {{seed}}. {{test}} defaults to

@@ -233,64 +233,54 @@ EOF
 ;;; Filename globbing:
 
 (define glob
-  (let ((regexp regexp)
-        (string-match string-match)
-        (glob->regexp glob->regexp)
-	(directory directory)
-        (make-pathname make-pathname)
-        (decompose-pathname decompose-pathname) )
-    (lambda paths
-      (let conc-loop ((paths paths))
-        (if (null? paths)
-            '()
-            (let ((path (car paths)))
-              (let-values (((dir fil ext) (decompose-pathname path)))
-                (let* ((patt (glob->regexp (make-pathname #f (or fil "*") ext)))
-                       (rx (regexp patt)))
-                  (let loop ((fns (directory (or dir ".") #t)))
-                    (cond ((null? fns) (conc-loop (cdr paths)))
-                          ((string-match rx (car fns))
-                           => (lambda (m) (cons (make-pathname dir (car m)) (loop (cdr fns)))) )
-                          (else (loop (cdr fns))) ) ) ) ) ) ) ) ) ) )
+  (lambda paths
+    (let conc-loop ((paths paths))
+      (if (null? paths)
+	  '()
+	  (let ((path (car paths)))
+	    (let-values (((dir fil ext) (decompose-pathname path)))
+	      (let ((rx (##sys#glob->regexp (make-pathname #f (or fil "*") ext))))
+		(let loop ((fns (directory (or dir ".") #t)))
+		  (cond ((null? fns) (conc-loop (cdr paths)))
+			((irregex-match rx (car fns))
+			 => (lambda (m)
+			      (cons 
+			       (make-pathname dir (irregex-match-substring m))
+			       (loop (cdr fns)))) )
+			(else (loop (cdr fns))) ) ) ) ) ) ) ) ) )
 
 
 ;;; Find matching files:
 
 (define ##sys#find-files
-  (let ((glob glob)
-	(string-match string-match)
-	(make-pathname make-pathname)
-	(pathname-file pathname-file)
-	(symbolic-link? symbolic-link?)
-	(directory? directory?) )
-    (lambda (dir pred action id limit follow dot loc)
-	(##sys#check-string dir loc)
-	(let* ((depth 0)
-	       (lproc
-		(cond ((not limit) (lambda _ #t))
-		      ((fixnum? limit) (lambda _ (fx< depth limit)))
-		      (else limit) ) )
-	       (pproc
-		(if (or (string? pred) (regexp? pred))
-		    (let ((pred (regexp pred))) ; force compilation
-		      (lambda (x) (string-match pred x)))
-		    pred) ) )
-	  (let loop ((fs (glob (make-pathname dir (if dot "?*" "*"))))
-		     (r id) )
-	    (if (null? fs)
-		r
-		(let ((f (##sys#slot fs 0))
-		      (rest (##sys#slot fs 1)) )
-		  (cond ((directory? f)
-			 (cond ((member (pathname-file f) '("." "..")) (loop rest r))
-			       ((lproc f)
-				(loop rest
-				      (fluid-let ((depth (fx+ depth 1)))
-					(loop (glob (make-pathname f "*"))
-					      (if (pproc f) (action f r) r)) ) ) )
-			       (else (loop rest (if (pproc f) (action f r) r))) ) )
-			((pproc f) (loop rest (action f r)))
-			(else (loop rest r)) ) ) ) ) ) ) ) )
+  (lambda (dir pred action id limit follow dot loc)
+    (##sys#check-string dir loc)
+    (let* ((depth 0)
+	   (lproc
+	    (cond ((not limit) (lambda _ #t))
+		  ((fixnum? limit) (lambda _ (fx< depth limit)))
+		  (else limit) ) )
+	   (pproc
+	    (if (or (string? pred) (irregex? pred))
+		(let ((pred (irregex pred))) ; force compilation
+		  (lambda (x) (irregex-match pred x)))
+		pred) ) )
+      (let loop ((fs (glob (make-pathname dir (if dot "?*" "*"))))
+		 (r id) )
+	(if (null? fs)
+	    r
+	    (let ((f (##sys#slot fs 0))
+		  (rest (##sys#slot fs 1)) )
+	      (cond ((directory? f)
+		     (cond ((member (pathname-file f) '("." "..")) (loop rest r))
+			   ((lproc f)
+			    (loop rest
+				  (fluid-let ((depth (fx+ depth 1)))
+				    (loop (glob (make-pathname f "*"))
+					  (if (pproc f) (action f r) r)) ) ) )
+			   (else (loop rest (if (pproc f) (action f r) r))) ) )
+		    ((pproc f) (loop rest (action f r)))
+		    (else (loop rest r)) ) ) ) ) ) ) )
 
 (define (find-files dir . args)
   (cond ((or (null? args) (not (keyword? (car args))))
