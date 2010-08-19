@@ -325,8 +325,7 @@
 	   [else (loop (cdr llist))] ) ) ) )
 
 (define ##sys#expand-extended-lambda-list
-  (let ([reverse reverse]
-	[gensym gensym] )
+  (let ([reverse reverse])
     (lambda (llist0 body errh se)
       (define (err msg) (errh msg llist0))
       (define (->keyword s) (string->keyword (##sys#slot s 1)))
@@ -435,8 +434,7 @@
 ; This code is disgustingly complex.
 
 (define ##sys#canonicalize-body
-  (let ([reverse reverse]
-	[map map] )
+  (let ([reverse reverse])
     (lambda (body #!optional (se (##sys#current-environment)) cs?)
       (define (fini vars vals mvars mvals body)
 	(if (and (null? vars) (null? mvars))
@@ -603,55 +601,53 @@
 	 (##sys#strip-syntax args)))
 
 (define ##sys#syntax-error/context
-  (let ((open-output-string open-output-string)
-	(get-output-string get-output-string))
-    (lambda (msg arg)
-      (define (syntax-imports sym)
-	(let loop ((defs (or (##sys#get (##sys#strip-syntax sym) '##core#db) '())))
-	  (cond ((null? defs) '())
-		((eq? 'syntax (caar defs))
-		 (cons (cadar defs) (loop (cdr defs))))
-		(else (loop (cdr defs))))))		     
-      (if (null? ##sys#syntax-context)
-	  (##sys#syntax-error-hook msg arg)
-	  (let ((out (open-output-string)))
-	    (define (outstr str)
-	      (##sys#print str #f out))
-	    (let loop ((cx ##sys#syntax-context))
-	      (cond ((null? cx)	; no unimported syntax found
-		     (outstr msg)
-		     (outstr ": ")
-		     (##sys#print arg #t out)
-		     (outstr "\ninside expression `(")
-		     (##sys#print (##sys#strip-syntax (car ##sys#syntax-context)) #t out)
-		     (outstr " ...)'"))
-		    (else 
-		     (let* ((sym (##sys#strip-syntax (car cx)))
-			    (us (syntax-imports sym)))
-		       (cond ((pair? us)
-			      (outstr msg)
-			      (outstr ": ")
-			      (##sys#print arg #t out)
-			      (outstr "\n\n  Perhaps you intended to use the syntax `(")
-			      (##sys#print sym #t out)
-			      (outstr " ...)' without importing it first.\n")
-			      (if (fx= 1 (length us))
-				  (outstr
-				   (string-append
-				    "  Suggesting: `(import "
-				    (symbol->string (car us))
-				    ")'"))
-				  (outstr
-				   (string-append
-				    "  Suggesting one of:\n"
-				    (let loop ((lst us))
-				      (if (null? lst)
-					  ""
-					  (string-append
-					   "\n      (import " (symbol->string (car lst)) ")'"
-					   (loop (cdr lst)))))))))
-			     (else (loop (cdr cx))))))))
-	    (##sys#syntax-error-hook (get-output-string out)))))))
+  (lambda (msg arg)
+    (define (syntax-imports sym)
+      (let loop ((defs (or (##sys#get (##sys#strip-syntax sym) '##core#db) '())))
+	(cond ((null? defs) '())
+	      ((eq? 'syntax (caar defs))
+	       (cons (cadar defs) (loop (cdr defs))))
+	      (else (loop (cdr defs))))))		     
+    (if (null? ##sys#syntax-context)
+	(##sys#syntax-error-hook msg arg)
+	(let ((out (open-output-string)))
+	  (define (outstr str)
+	    (##sys#print str #f out))
+	  (let loop ((cx ##sys#syntax-context))
+	    (cond ((null? cx)		; no unimported syntax found
+		   (outstr msg)
+		   (outstr ": ")
+		   (##sys#print arg #t out)
+		   (outstr "\ninside expression `(")
+		   (##sys#print (##sys#strip-syntax (car ##sys#syntax-context)) #t out)
+		   (outstr " ...)'"))
+		  (else 
+		   (let* ((sym (##sys#strip-syntax (car cx)))
+			  (us (syntax-imports sym)))
+		     (cond ((pair? us)
+			    (outstr msg)
+			    (outstr ": ")
+			    (##sys#print arg #t out)
+			    (outstr "\n\n  Perhaps you intended to use the syntax `(")
+			    (##sys#print sym #t out)
+			    (outstr " ...)' without importing it first.\n")
+			    (if (fx= 1 (length us))
+				(outstr
+				 (string-append
+				  "  Suggesting: `(import "
+				  (symbol->string (car us))
+				  ")'"))
+				(outstr
+				 (string-append
+				  "  Suggesting one of:\n"
+				  (let loop ((lst us))
+				    (if (null? lst)
+					""
+					(string-append
+					 "\n      (import " (symbol->string (car lst)) ")'"
+					 (loop (cdr lst)))))))))
+			   (else (loop (cdr cx))))))))
+	  (##sys#syntax-error-hook (get-output-string out))))))
 
 (define syntax-error ##sys#syntax-error-hook)
 
@@ -673,8 +669,6 @@
 
 (define ##sys#check-syntax
   (let ([string-append string-append]
-	[keyword? keyword?]
-	[get-line-number get-line-number]
 	[symbol->string symbol->string] )
     (lambda (id exp pat #!optional culprit (se (##sys#current-environment)))
 

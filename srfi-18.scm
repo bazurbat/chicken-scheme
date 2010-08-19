@@ -69,7 +69,7 @@
 
 (define (seconds->time n)
   (##sys#check-number n 'seconds->time)
-  (##sys#make-structure 'time (fp* (##sys#exact->inexact n) 1000)))
+  (##sys#make-structure 'time (fp* (##sys#exact->inexact n) 1000.0)))
 
 (define (milliseconds->time nms)	; DEPRECATED
   (##sys#check-number nms 'milliseconds->time)
@@ -107,24 +107,23 @@
 ;;; Threads:
 
 (define make-thread
-  (let ((gensym gensym))
-    (lambda (thunk . name)
-      (let ((thread
-	     (##sys#make-thread
-	      #f
-	      'created
-	      (if (pair? name) (##sys#slot name 0) (gensym 'thread))
-	      (##sys#slot ##sys#current-thread 9) ) ) )
-	(##sys#setslot 
-	 thread 1 
-	 (lambda () 
-	   (##sys#call-with-values
-	    thunk
-	    (lambda results
-	      (##sys#setslot thread 2 results)
-	      (##sys#thread-kill! thread 'dead)
-	      (##sys#schedule) ) ) ) )
-	thread) ) ) )
+  (lambda (thunk . name)
+    (let ((thread
+	   (##sys#make-thread
+	    #f
+	    'created
+	    (if (pair? name) (##sys#slot name 0) (gensym 'thread))
+	    (##sys#slot ##sys#current-thread 9) ) ) )
+      (##sys#setslot 
+       thread 1 
+       (lambda () 
+	 (##sys#call-with-values
+	  thunk
+	  (lambda results
+	    (##sys#setslot thread 2 results)
+	    (##sys#thread-kill! thread 'dead)
+	    (##sys#schedule) ) ) ) )
+      thread) ) )
 
 (define (thread? x) (##sys#structure? x 'thread))
 (define (current-thread) ##sys#current-thread)
@@ -155,16 +154,15 @@
   (##sys#slot x 6) )
 
 (define thread-start!
-  (let ([make-thread make-thread])
-    (lambda (thread)
-      (if (procedure? thread)
-	  (set! thread (make-thread thread))
-	  (##sys#check-structure thread 'thread 'thread-start!) )
-      (unless (eq? 'created (##sys#slot thread 3))
-	(##sys#error 'thread-start! "thread cannot be started a second time" thread) )
-      (##sys#setslot thread 3 'ready)
-      (##sys#add-to-ready-queue thread) 
-      thread) ) )
+  (lambda (thread)
+    (if (procedure? thread)
+	(set! thread (make-thread thread))
+	(##sys#check-structure thread 'thread 'thread-start!) )
+    (unless (eq? 'created (##sys#slot thread 3))
+      (##sys#error 'thread-start! "thread cannot be started a second time" thread) )
+    (##sys#setslot thread 3 'ready)
+    (##sys#add-to-ready-queue thread) 
+    thread) )
 
 (define thread-yield! ##sys#thread-yield!) ;In library.scm
 
@@ -244,11 +242,10 @@
 (define (mutex? x) (##sys#structure? x 'mutex))
 
 (define make-mutex
-  (let ((gensym gensym))
-    (lambda id
-      (let* ((id (if (pair? id) (car id) (gensym 'mutex)))
-	     (m (##sys#make-mutex id ##sys#current-thread)) )
-	m) ) ) )
+  (lambda id
+    (let* ((id (if (pair? id) (car id) (gensym 'mutex)))
+	   (m (##sys#make-mutex id ##sys#current-thread)) )
+      m) ) )
 
 (define (mutex-name x)
   (##sys#check-structure x 'mutex 'mutex-name) 
@@ -378,15 +375,14 @@
 ;;; Condition variables:
 
 (define make-condition-variable
-  (let ([gensym gensym])
-    (lambda name
-      (##sys#make-structure
-       'condition-variable 
-       (if (pair? name)			; #1 name
-	   (car name)
-	   (gensym 'condition-variable) )
-       '()				; #2 list of waiting threads
-       (##core#undefined) ) ) ) )	; #3 specific
+  (lambda name
+    (##sys#make-structure
+     'condition-variable 
+     (if (pair? name)			; #1 name
+	 (car name)
+	 (gensym 'condition-variable) )
+     '()				; #2 list of waiting threads
+     (##core#undefined) ) ) )		; #3 specific
 
 (define (condition-variable? x)
   (##sys#structure? x 'condition-variable) )
@@ -455,8 +451,7 @@
 
 (unless (eq? (build-platform) 'msvc)
   (set! ##sys#read-prompt-hook
-    (let ([old ##sys#read-prompt-hook]
-	  [thread-yield! thread-yield!] )
+    (let ([old ##sys#read-prompt-hook])
       (lambda ()
 	(when (or (##sys#fudge 12) (##sys#tty-port? ##sys#standard-input))
 	  (old)

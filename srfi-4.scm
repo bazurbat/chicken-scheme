@@ -263,7 +263,6 @@ EOF
        [ext-free
 	(foreign-lambda* void ([scheme-object bv])
 	  "C_free((void *)C_block_item(bv, 1));") ]
-       [set-finalizer! set-finalizer!]
        [alloc
 	(lambda (loc len ext?)
 	  (if ext?
@@ -427,36 +426,28 @@ EOF
 ;;; More constructors:
 
 (define u8vector
-  (let ((list->u8vector list->u8vector))
-    (lambda xs (list->u8vector xs)) ) )
+  (lambda xs (list->u8vector xs)) )
 
 (define s8vector
-  (let ((list->s8vector list->s8vector))
-    (lambda xs (list->s8vector xs)) ) )
+  (lambda xs (list->s8vector xs)) )
 
 (define u16vector
-  (let ((list->u16vector list->u16vector))
-    (lambda xs (list->u16vector xs)) ) )
+  (lambda xs (list->u16vector xs)) )
 
 (define s16vector
-  (let ((list->s16vector list->s16vector))
-    (lambda xs (list->s16vector xs)) ) )
+  (lambda xs (list->s16vector xs)) )
 
 (define u32vector
-  (let ((list->u32vector list->u32vector))
-    (lambda xs (list->u32vector xs)) ) )
+  (lambda xs (list->u32vector xs)) )
 
 (define s32vector
-  (let ((list->s32vector list->s32vector))
-    (lambda xs (list->s32vector xs)) ) )
+  (lambda xs (list->s32vector xs)) )
 
 (define f32vector
-  (let ((list->f32vector list->f32vector))
-    (lambda xs (list->f32vector xs)) ) )
+  (lambda xs (list->f32vector xs)) )
 
 (define f64vector
-  (let ((list->f64vector list->f64vector))
-    (lambda xs (list->f64vector xs)) ) )
+  (lambda xs (list->f64vector xs)) )
 
 
 ;;; Creating lists from a vector:
@@ -666,8 +657,7 @@ EOF
     (##sys#read-string! n dest port start) ) )
 
 (define read-u8vector
-  (let ((open-output-string open-output-string)
-	(get-output-string get-output-string) )
+  (let ()
     (define (wrap str n)
       (##sys#make-structure
        'u8vector

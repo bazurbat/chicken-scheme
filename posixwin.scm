@@ -1622,7 +1622,6 @@ EOF
 (define $exec-setup
   (let ([setarg (foreign-lambda void "C_set_exec_arg" int scheme-pointer int)]
 	[setenv (foreign-lambda void "C_set_exec_env" int scheme-pointer int)]
-	[pathname-strip-directory pathname-strip-directory]
 	[build-exec-argvec
 	  (lambda (loc lst argvec-setter idx)
 	    (if lst
@@ -1678,13 +1677,11 @@ EOF
   (list "/c" cmdlin) )
 
 (define process-run
-  (let ([process-spawn process-spawn]
-	[get-environment-variable get-environment-variable] )
-    (lambda (f . args)
-      (let ([args (if (pair? args) (car args) #f)])
-	(if args
-	    (process-spawn spawn/nowait f args)
-	    (process-spawn spawn/nowait (##sys#shell-command) (##sys#shell-command-arguments f)) ) ) ) ) )
+  (lambda (f . args)
+    (let ([args (if (pair? args) (car args) #f)])
+      (if args
+	  (process-spawn spawn/nowait f args)
+	  (process-spawn spawn/nowait (##sys#shell-command) (##sys#shell-command-arguments f)) ) ) ) )
 
 ;;; Run subprocess connected with pipes:
 (define-foreign-variable _rdbuf char "C_rdbuf")

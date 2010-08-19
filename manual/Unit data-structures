@@ -579,13 +579,6 @@ arguments swapped:
 Returns its sole argument {{X}}.
 
 
-==== project
-
-<procedure>(project N)</procedure>
-
-Returns a procedure that returns its {{N}}th argument (starting from 0).
-
-
 ==== list-of?
 
 <procedure>(list-of? PRED)</procedure>
