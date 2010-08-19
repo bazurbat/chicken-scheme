@@ -89,8 +89,14 @@
 		   ((eq? a 'deprecated)
 		    (report
 		     loc
-		     (sprintf "use of deprecated toplevel identifier `~a'" id) )
+		     (sprintf "use of deprecated library procedure `~a'" id) )
 		    '*)
+		   ((and (pair? a) (eq? (car a) 'deprecated))
+		    (report 
+		     loc
+		     (sprintf "use of deprecated library procedure `~a' - consider using `~a' instead"
+		       id (cadr a)))
+		     '*)
 		   (else (list a)))))
 	  (else '*)))
   (define (variable-result id e loc)
@@ -469,7 +475,8 @@
 		      (every procedure-type? (cdr t)))))))
   (define (procedure-argument-types t n)
     (cond ((or (memq t '(* procedure)) 
-	       (not-pair? t) )
+	       (not-pair? t)
+	       (eq? 'deprecated (car t)))
 	   (values (make-list n '*) #f))
 	  ((eq? 'procedure (car t))
 	   (let* ((vf #f)
