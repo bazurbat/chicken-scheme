@@ -636,7 +636,7 @@
 (set-procedure-data! (procedure set-procedure-data! (procedure *) undefined))
 (set-unbound-variable-value! (procedure set-unbound-variable-value! (*) undefined))
 (tag-pointer (procedure tag-pointer (pointer *) pointer))
-(tagged-pointer? (procedure tagged-pointer? (*) boolean))
+(tagged-pointer? (procedure tagged-pointer? (* #!optional *) boolean))
 (unbound-variable-value (procedure unbound-variable-value (#!optional *) undefined))
 (unbound-variable-given-value (procedure unbound-variable-given-value () *))
 (unbound-variable-signals-error? (procedure unbound-variable-signals-error? () boolean))
