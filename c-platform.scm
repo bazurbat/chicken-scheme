@@ -500,7 +500,7 @@
 
 (let ()
   (define (rewrite-c-w-v db classargs cont callargs)
-   ;; (call-with-values <var1> <var2>) -> (let ((k (lambda (r) (<var2> <k0> r)))) (<var1> k))
+   ;; (call-with-values <var1> <var2>) -> (let ((k (lambda (r) [<var2> <k0> r]))) [<var1> k])
    ;; - if <var2> is a known lambda of a single argument
    (and (= 2 (length callargs))
 	(let ((arg1 (car callargs))
@@ -512,7 +512,7 @@
 		 (and (eq? '##core#lambda (node-class val))
 		      (let ((llist (third (node-parameters val))))
 			(and (proper-list? llist)
-			     (= 2 (length (third (node-parameters val))))
+			     (= 2 (length llist))
 			     (let ((tmp (gensym))
 				   (tmpk (gensym 'r)) )
 			       (debugging 'o "removing single-valued `call-with-values'" (node-parameters val))
