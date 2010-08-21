@@ -748,21 +748,19 @@ EOF
     (posix-error #:file-error loc "cannot create directory" name)) )
 
 (define create-directory
-  (let ((decompose-pathname decompose-pathname)
-        (pathname-directory pathname-directory) )
-    (lambda (name #!optional parents?)
-      (##sys#check-string name 'create-directory)
-      (let ((name (##sys#expand-home-path name)))
-        (unless (or (fx= 0 (##sys#size name))
-		    (file-exists? name))
-          (if parents?
-              (let loop ((dir (let-values (((dir file ext) (decompose-pathname name)))
-                                (if file (make-pathname dir file ext) dir))))
-                (when (and dir (not (directory? dir)))
-                  (loop (pathname-directory dir))
-                  (*create-directory 'create-directory dir)) )
-              (*create-directory 'create-directory name) ) )
-	name))))
+  (lambda (name #!optional parents?)
+    (##sys#check-string name 'create-directory)
+    (let ((name (##sys#expand-home-path name)))
+      (unless (or (fx= 0 (##sys#size name))
+		  (file-exists? name))
+	(if parents?
+	    (let loop ((dir (let-values (((dir file ext) (decompose-pathname name)))
+			      (if file (make-pathname dir file ext) dir))))
+	      (when (and dir (not (directory? dir)))
+		(loop (pathname-directory dir))
+		(*create-directory 'create-directory dir)) )
+	    (*create-directory 'create-directory name) ) )
+      name)))
 
 (define change-directory
   (lambda (name)
@@ -814,46 +812,44 @@ EOF
 	r) ) )
   (set! close-output-pipe close-input-pipe) )
 
-(let ([open-input-pipe open-input-pipe]
-      [open-output-pipe open-output-pipe]
-      [close-input-pipe close-input-pipe]
-      [close-output-pipe close-output-pipe] )
-  (set! call-with-input-pipe
-    (lambda (cmd proc . mode)
-      (let ([p (apply open-input-pipe cmd mode)])
-	(##sys#call-with-values
-	 (lambda () (proc p))
-	 (lambda results
-	   (close-input-pipe p)
-	   (apply values results) ) ) ) ) )
-  (set! call-with-output-pipe
-    (lambda (cmd proc . mode)
-      (let ([p (apply open-output-pipe cmd mode)])
-	(##sys#call-with-values
-	 (lambda () (proc p))
-	 (lambda results
-	   (close-output-pipe p)
-	   (apply values results) ) ) ) ) )
-  (set! with-input-from-pipe
-    (lambda (cmd thunk . mode)
-      (let ([old ##sys#standard-input]
-	    [p (apply open-input-pipe cmd mode)] )
-	(set! ##sys#standard-input p)
-	(##sys#call-with-values thunk
-				(lambda results
-				  (close-input-pipe p)
-				  (set! ##sys#standard-input old)
-				  (apply values results) ) ) ) ) )
-  (set! with-output-to-pipe
-    (lambda (cmd thunk . mode)
-      (let ([old ##sys#standard-output]
-	    [p (apply open-output-pipe cmd mode)] )
-	(set! ##sys#standard-output p)
-	(##sys#call-with-values thunk
-				(lambda results
-				  (close-output-pipe p)
-				  (set! ##sys#standard-output old)
-				  (apply values results) ) ) ) ) ) )
+(define call-with-input-pipe
+  (lambda (cmd proc . mode)
+    (let ([p (apply open-input-pipe cmd mode)])
+      (##sys#call-with-values
+       (lambda () (proc p))
+       (lambda results
+	 (close-input-pipe p)
+	 (apply values results) ) ) ) ) )
+
+(define call-with-output-pipe
+  (lambda (cmd proc . mode)
+    (let ([p (apply open-output-pipe cmd mode)])
+      (##sys#call-with-values
+       (lambda () (proc p))
+       (lambda results
+	 (close-output-pipe p)
+	 (apply values results) ) ) ) ) )
+
+(define with-input-from-pipe
+  (lambda (cmd thunk . mode)
+    (let ([old ##sys#standard-input]
+	  [p (apply open-input-pipe cmd mode)] )
+      (set! ##sys#standard-input p)
+      (##sys#call-with-values thunk
+			      (lambda results
+				(close-input-pipe p)
+				(set! ##sys#standard-input old)
+				(apply values results) ) ) ) ) )
+(define with-output-to-pipe
+  (lambda (cmd thunk . mode)
+    (let ([old ##sys#standard-output]
+	  [p (apply open-output-pipe cmd mode)] )
+      (set! ##sys#standard-output p)
+      (##sys#call-with-values thunk
+			      (lambda results
+				(close-output-pipe p)
+				(set! ##sys#standard-output old)
+				(apply values results) ) ) ) ) )
 
 (define-foreign-variable _pipefd0 int "C_pipefds[ 0 ]")
 (define-foreign-variable _pipefd1 int "C_pipefds[ 1 ]")
@@ -1374,186 +1370,182 @@ EOF
       fd) ) )
 
 (define ##sys#custom-input-port
-  (let ([make-input-port make-input-port]
-        [set-port-name! set-port-name!] )
-    (lambda (loc nam fd #!optional (nonblocking? #f) (bufi 1) (on-close void) (more? #f))
-      (when nonblocking? (##sys#file-nonblocking! fd) )
-      (let ([bufsiz (if (fixnum? bufi) bufi (##sys#size bufi))]
-            [buf (if (fixnum? bufi) (##sys#make-string bufi) bufi)]
-            [buflen 0]
-            [bufpos 0] )
-        (let (
+  (lambda (loc nam fd #!optional (nonblocking? #f) (bufi 1) (on-close void) (more? #f))
+    (when nonblocking? (##sys#file-nonblocking! fd) )
+    (let ([bufsiz (if (fixnum? bufi) bufi (##sys#size bufi))]
+	  [buf (if (fixnum? bufi) (##sys#make-string bufi) bufi)]
+	  [buflen 0]
+	  [bufpos 0] )
+      (let (
             [ready?
-              (lambda ()
-                (let ((res (##sys#file-select-one fd)))
-                  (if (fx= -1 res)
-                      (if (fx= _errno _ewouldblock)
-                          #f
-                          (posix-error #:file-error loc "cannot select" fd nam))
-                      (fx= 1 res))))]
+	     (lambda ()
+	       (let ((res (##sys#file-select-one fd)))
+		 (if (fx= -1 res)
+		     (if (fx= _errno _ewouldblock)
+			 #f
+			 (posix-error #:file-error loc "cannot select" fd nam))
+		     (fx= 1 res))))]
             [peek
-              (lambda ()
-                (if (fx>= bufpos buflen)
-                    #!eof
-                    (##core#inline "C_subchar" buf bufpos)) )]
+	     (lambda ()
+	       (if (fx>= bufpos buflen)
+		   #!eof
+		   (##core#inline "C_subchar" buf bufpos)) )]
             [fetch
-              (lambda ()
-                (when (fx>= bufpos buflen)
-                  (let loop ()
-                    (let ([cnt (##core#inline "C_read" fd buf bufsiz)])
-                      (cond [(fx= cnt -1)
-                              (if (fx= _errno _ewouldblock)
-                                  (begin
-                                    (##sys#thread-block-for-i/o! ##sys#current-thread fd #t)
-                                    (##sys#thread-yield!)
-                                    (loop) )
-                                  (posix-error #:file-error loc "cannot read" fd nam) )]
-                            [(and more? (fx= cnt 0))
-                              ; When "more" keep trying, otherwise read once more
-                              ; to guard against race conditions
-                              (if (more?)
-                                  (begin
-                                    (##sys#thread-yield!)
-                                    (loop) )
-                                  (let ([cnt (##core#inline "C_read" fd buf bufsiz)])
-                                    (when (fx= cnt -1)
-                                      (if (fx= _errno _ewouldblock)
-                                          (set! cnt 0)
-                                          (posix-error #:file-error loc "cannot read" fd nam) ) )
-                                    (set! buflen cnt)
-                                    (set! bufpos 0) ) )]
-                            [else
-                              (set! buflen cnt)
-                              (set! bufpos 0)]) ) ) ) )] )
-          (letrec (
-              [this-port
-                (make-input-port
-                  (lambda ()                    ; read-char
-                    (fetch)
-                    (let ([ch (peek)])
-                      #; ; Allow increment since overflow is far, far away
-                      (unless (eof-object? ch) (set! bufpos (fx+ bufpos 1)))
-                      (set! bufpos (fx+ bufpos 1))
-                      ch ) )
-                  (lambda ()                    ; char-ready?
-                    (or (fx< bufpos buflen)
-                        (ready?)) )
-                  (lambda ()                    ; close
-                    ; Do nothing when closed already
-                    (unless (##sys#slot this-port 8)
-                      (when (fx< (##core#inline "C_close" fd) 0)
-                        (posix-error #:file-error loc "cannot close" fd nam) )
-                      (on-close) ) )
-                  (lambda ()                    ; peek-char
-                    (fetch)
-                    (peek) )
-                  (lambda (port n dest start)   ; read-string!
-                    (let loop ([n (or n (fx- (##sys#size dest) start))] [m 0] [start start])
-                      (cond [(eq? 0 n) m]
-                            [(fx< bufpos buflen)
+	     (lambda ()
+	       (when (fx>= bufpos buflen)
+		 (let loop ()
+		   (let ([cnt (##core#inline "C_read" fd buf bufsiz)])
+		     (cond [(fx= cnt -1)
+			    (if (fx= _errno _ewouldblock)
+				(begin
+				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #t)
+				  (##sys#thread-yield!)
+				  (loop) )
+				(posix-error #:file-error loc "cannot read" fd nam) )]
+			   [(and more? (fx= cnt 0))
+					; When "more" keep trying, otherwise read once more
+					; to guard against race conditions
+			    (if (more?)
+				(begin
+				  (##sys#thread-yield!)
+				  (loop) )
+				(let ([cnt (##core#inline "C_read" fd buf bufsiz)])
+				  (when (fx= cnt -1)
+				    (if (fx= _errno _ewouldblock)
+					(set! cnt 0)
+					(posix-error #:file-error loc "cannot read" fd nam) ) )
+				  (set! buflen cnt)
+				  (set! bufpos 0) ) )]
+			   [else
+			    (set! buflen cnt)
+			    (set! bufpos 0)]) ) ) ) )] )
+	(letrec (
+		 [this-port
+		  (make-input-port
+		   (lambda ()		; read-char
+		     (fetch)
+		     (let ([ch (peek)])
+		       #; ; Allow increment since overflow is far, far away
+		       (unless (eof-object? ch) (set! bufpos (fx+ bufpos 1)))
+		       (set! bufpos (fx+ bufpos 1))
+		       ch ) )
+		   (lambda ()		; char-ready?
+		     (or (fx< bufpos buflen)
+			 (ready?)) )
+		   (lambda ()	      ; close
+					; Do nothing when closed already
+		     (unless (##sys#slot this-port 8)
+		       (when (fx< (##core#inline "C_close" fd) 0)
+			 (posix-error #:file-error loc "cannot close" fd nam) )
+		       (on-close) ) )
+		   (lambda ()		; peek-char
+		     (fetch)
+		     (peek) )
+		   (lambda (port n dest start) ; read-string!
+		     (let loop ([n (or n (fx- (##sys#size dest) start))] [m 0] [start start])
+		       (cond [(eq? 0 n) m]
+			     [(fx< bufpos buflen)
                               (let* ([rest (fx- buflen bufpos)]
                                      [n2 (if (fx< n rest) n rest)])
                                 (##core#inline "C_substring_copy" buf dest bufpos (fx+ bufpos n2) start)
                                 (set! bufpos (fx+ bufpos n2))
                                 (loop (fx- n n2) (fx+ m n2) (fx+ start n2)) ) ]
-                            [else
+			     [else
                               (fetch)
                               (if (eq? 0 buflen) 
                                   m
                                   (loop n m start) ) ] ) ) )
-                  (lambda (port limit)          ; read-line
-                    (let loop ([str #f])
-                      (let ([bumper
-                             (lambda (cur ptr)
-                               (let* ([cnt (fx- cur bufpos)]
-                                      [dest
-                                       (if (eq? 0 cnt)
-                                           (or str "")
-                                           (let ([dest (##sys#make-string cnt)])
-                                             (##core#inline "C_substring_copy"
-                                              buf dest bufpos cur 0)
-                                             (##sys#setislot port 5
-                                              (fx+ (##sys#slot port 5) cnt))
-                                             (if str
-                                                 (##sys#string-append str dest)
-                                                 dest ) ) ) ] )
-                                 (set! bufpos ptr)
-                                 (cond [(eq? cur ptr)   ; no EOL encountered
+		   (lambda (port limit)	; read-line
+		     (let loop ([str #f])
+		       (let ([bumper
+			      (lambda (cur ptr)
+				(let* ([cnt (fx- cur bufpos)]
+				       [dest
+					(if (eq? 0 cnt)
+					    (or str "")
+					    (let ([dest (##sys#make-string cnt)])
+					      (##core#inline "C_substring_copy"
+							     buf dest bufpos cur 0)
+					      (##sys#setislot port 5
+							      (fx+ (##sys#slot port 5) cnt))
+					      (if str
+						  (##sys#string-append str dest)
+						  dest ) ) ) ] )
+				  (set! bufpos ptr)
+				  (cond [(eq? cur ptr) ; no EOL encountered
                                          (fetch)
                                          (values dest (fx< bufpos buflen)) ]
-                                        [else           ; at EOL
-                                          (##sys#setislot port 4 (fx+ (##sys#slot port 4) 1))
-                                          (##sys#setislot port 5 0)
-                                          (values dest #f) ] ) ) ) ] )
-                        (cond [(fx< bufpos buflen)
+                                        [else ; at EOL
+					 (##sys#setislot port 4 (fx+ (##sys#slot port 4) 1))
+					 (##sys#setislot port 5 0)
+					 (values dest #f) ] ) ) ) ] )
+			 (cond [(fx< bufpos buflen)
                                 (let-values ([(dest cont?)
                                               (##sys#scan-buffer-line buf buflen bufpos bumper)])
                                   (if cont?
                                       (loop dest)
                                       dest ) ) ]
-                              [else
+			       [else
                                 (fetch)
                                 (if (fx< bufpos buflen)
                                     (loop str)
                                     #!eof) ] ) ) ) ) ) ] )
-            (set-port-name! this-port nam)
-            this-port ) ) ) ) ) )
+	  (set-port-name! this-port nam)
+	  this-port ) ) ) ) )
 
 (define ##sys#custom-output-port
-  (let ([make-output-port make-output-port]
-        [set-port-name! set-port-name!] )
-    (lambda (loc nam fd #!optional (nonblocking? #f) (bufi 0) (on-close void))
-      (when nonblocking? (##sys#file-nonblocking! fd) )
+  (lambda (loc nam fd #!optional (nonblocking? #f) (bufi 0) (on-close void))
+    (when nonblocking? (##sys#file-nonblocking! fd) )
+    (letrec (
+	     [poke
+	      (lambda (str len)
+		(let ([cnt (##core#inline "C_write" fd str len)])
+		  (cond [(fx= -1 cnt)
+			 (if (fx= _errno _ewouldblock)
+			     (begin
+			       (##sys#thread-yield!)
+			       (poke str len) )
+			     (posix-error loc #:file-error "cannot write" fd nam) ) ]
+			[(fx< cnt len)
+			 (poke (##sys#substring str cnt len) (fx- len cnt)) ] ) ) )]
+	     [store
+	      (let ([bufsiz (if (fixnum? bufi) bufi (##sys#size bufi))])
+		(if (fx= 0 bufsiz)
+		    (lambda (str)
+		      (when str
+			(poke str (##sys#size str)) ) )
+		    (let ([buf (if (fixnum? bufi) (##sys#make-string bufi) bufi)]
+			  [bufpos 0])
+		      (lambda (str)
+			(if str
+			    (let loop ([rem (fx- bufsiz bufpos)] [start 0] [len (##sys#size str)])
+			      (cond [(fx= 0 rem)
+				     (poke buf bufsiz)
+				     (set! bufpos 0)
+				     (loop bufsiz 0 len)]
+				    [(fx< rem len)
+				     (##core#inline "C_substring_copy" str buf start rem bufpos)
+				     (loop 0 rem (fx- len rem))]
+				    [else
+				     (##core#inline "C_substring_copy" str buf start len bufpos)
+				     (set! bufpos (fx+ bufpos len))] ) )
+			    (when (fx< 0 bufpos)
+			      (poke buf bufpos) ) ) ) ) ) )])
       (letrec (
-          [poke
-            (lambda (str len)
-              (let ([cnt (##core#inline "C_write" fd str len)])
-                (cond [(fx= -1 cnt)
-                        (if (fx= _errno _ewouldblock)
-                            (begin
-                              (##sys#thread-yield!)
-                              (poke str len) )
-                            (posix-error loc #:file-error "cannot write" fd nam) ) ]
-                      [(fx< cnt len)
-                        (poke (##sys#substring str cnt len) (fx- len cnt)) ] ) ) )]
-          [store
-            (let ([bufsiz (if (fixnum? bufi) bufi (##sys#size bufi))])
-              (if (fx= 0 bufsiz)
-                  (lambda (str)
-                    (when str
-                      (poke str (##sys#size str)) ) )
-                  (let ([buf (if (fixnum? bufi) (##sys#make-string bufi) bufi)]
-                        [bufpos 0])
-                    (lambda (str)
-                      (if str
-                          (let loop ([rem (fx- bufsiz bufpos)] [start 0] [len (##sys#size str)])
-                            (cond [(fx= 0 rem)
-                                    (poke buf bufsiz)
-                                    (set! bufpos 0)
-                                    (loop bufsiz 0 len)]
-                                  [(fx< rem len)
-                                    (##core#inline "C_substring_copy" str buf start rem bufpos)
-                                    (loop 0 rem (fx- len rem))]
-                                  [else
-                                    (##core#inline "C_substring_copy" str buf start len bufpos)
-                                    (set! bufpos (fx+ bufpos len))] ) )
-                          (when (fx< 0 bufpos)
-                            (poke buf bufpos) ) ) ) ) ) )])
-        (letrec (
-            [this-port
-              (make-output-port
-                (lambda (str)           ; write-string
-                  (store str) )
-                (lambda ()              ; close
-                  ; Do nothing when closed already
-                  (unless (##sys#slot this-port 8)
-                    (when (fx< (##core#inline "C_close" fd) 0)
-                      (posix-error #:file-error loc "cannot close" fd nam) )
-                    (on-close) ) )
-                (lambda ()              ; flush
-                  (store #f) ) )] )
-          (set-port-name! this-port nam)
-          this-port ) ) ) ) )
+	       [this-port
+		(make-output-port
+		 (lambda (str)		; write-string
+		   (store str) )
+		 (lambda ()	      ; close
+					; Do nothing when closed already
+		   (unless (##sys#slot this-port 8)
+		     (when (fx< (##core#inline "C_close" fd) 0)
+		       (posix-error #:file-error loc "cannot close" fd nam) )
+		     (on-close) ) )
+		 (lambda ()		; flush
+		   (store #f) ) )] )
+	(set-port-name! this-port nam)
+	this-port ) ) ) )
 
 
 ;;; Other file operations:
@@ -1949,15 +1941,13 @@ EOF
   (list "-c" cmdlin) )
 
 (define process-run
-  (let ([process-fork process-fork]
-        [process-execute process-execute])
-    (lambda (f . args)
-      (let ([args (if (pair? args) (car args) #f)]
-            [pid (process-fork)] )
-        (cond [(not (eq? 0 pid)) pid]
-              [args (process-execute f args)]
-              [else
-               (process-execute (##sys#shell-command) (##sys#shell-command-arguments f)) ] ) ) ) ) )
+  (lambda (f . args)
+    (let ([args (if (pair? args) (car args) #f)]
+	  [pid (process-fork)] )
+      (cond [(not (eq? 0 pid)) pid]
+	    [args (process-execute f args)]
+	    [else
+	     (process-execute (##sys#shell-command) (##sys#shell-command-arguments f)) ] ) ) ) )
 
 ;;; Run subprocess connected with pipes:
 
@@ -1980,12 +1970,6 @@ EOF
 
 (define ##sys#process
   (let (
-      [create-pipe create-pipe]
-      [process-wait process-wait]
-      [process-fork process-fork]
-      [process-execute process-execute]
-      [duplicate-fileno duplicate-fileno]
-      [file-close file-close]
       [replace-fd
         (lambda (loc fd stdfd)
           (unless (fx= stdfd fd)

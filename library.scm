@@ -1799,26 +1799,25 @@ EOF
   (thunk (##sys#expand-home-path name)) )
 
 (define ##sys#expand-home-path
-  (let ((get-environment-variable get-environment-variable))
-    (lambda (path)
-      (let ((len (##sys#size path)))
-	(if (fx> len 0)
-	    (case (##core#inline "C_subchar" path 0)
-	      ((#\~) 
-	       (let ((rest (##sys#substring path 1 len)))
-		 (##sys#string-append (or (get-environment-variable "HOME") "") rest) ) )
-	      ((#\$) 
-	       (let loop ((i 1))
-		 (if (fx>= i len)
-		     path
-		     (let ((c (##core#inline "C_subchar" path i)))
-		       (if (or (eq? c #\/) (eq? c #\\))
-			   (##sys#string-append
-			    (or (get-environment-variable (##sys#substring path 1 i)) "")
-			    (##sys#substring path i len))
-			   (loop (fx+ i 1)) ) ) ) ) )
-	      (else path) )
-	    "") ) ) ) )
+  (lambda (path)
+    (let ((len (##sys#size path)))
+      (if (fx> len 0)
+	  (case (##core#inline "C_subchar" path 0)
+	    ((#\~) 
+	     (let ((rest (##sys#substring path 1 len)))
+	       (##sys#string-append (or (get-environment-variable "HOME") "") rest) ) )
+	    ((#\$) 
+	     (let loop ((i 1))
+	       (if (fx>= i len)
+		   path
+		   (let ((c (##core#inline "C_subchar" path i)))
+		     (if (or (eq? c #\/) (eq? c #\\))
+			 (##sys#string-append
+			  (or (get-environment-variable (##sys#substring path 1 i)) "")
+			  (##sys#substring path i len))
+			 (loop (fx+ i 1)) ) ) ) ) )
+	    (else path) )
+	  "") ) ) )
 
 (define open-input-file)
 (define open-output-file)
@@ -2114,19 +2113,13 @@ EOF
 	[list? list?]
 	[string-append string-append]
 	[string string]
-	[char-name char-name]
-	[csp case-sensitive]
-	[ksp keyword-style]
-	[psp parentheses-synonyms]
-	[sep symbol-escape]
-	[crt current-read-table]
 	[kwprefix (string (integer->char 0))])
     (lambda (port infohandler)
-      (let ([csp (csp)]
-	    [ksp (ksp)]
-	    [psp (psp)]
-	    [sep (sep)]
-	    [crt (crt)]
+      (let ([csp (case-sensitive)]
+	    [ksp (keyword-style)]
+	    [psp (parentheses-synonyms)]
+	    [sep (symbol-escape)]
+	    [crt (current-read-table)]
 	    [rat-flag #f]
 	    ; set below - needs more state to make a decision
 	    (terminating-characters '(#\, #\; #\( #\) #\' #\" #\[ #\] #\{ #\}))
@@ -2382,24 +2375,37 @@ EOF
 	    (r-token) )
 	  
 	  (define (r-symbol)
-	    (let ((s (resolve-symbol
-		      (if (char=? (##sys#peek-char-0 port) #\|)
-			  (r-xtoken)
-			  (r-token) ) ) ) )
+	    (let ((s (resolve-symbol (r-xtoken))))
 	      (info 'symbol-info s (##sys#port-line port)) ) )
 
 	  (define (r-xtoken)
-	    (if (char=? #\| (read-unreserved-char-0 port))
-		(let loop ((c (##sys#read-char-0 port)) (lst '()))
-		  (cond ((eof-object? c)
-			 (##sys#read-error port "unexpected end of `| ... |' symbol"))
-			((char=? c #\\)
-			 (let ((c (##sys#read-char-0 port)))
-			   (loop (##sys#read-char-0 port) (cons c lst)) ) )
-			((char=? c #\|)
-			 (##sys#reverse-list->string lst) )
-			(else (loop (##sys#read-char-0 port) (cons c lst))) ) )
-		(##sys#read-error port "missing \'|\'") ) )
+	    (let loop ((esc #f) (lst '()))
+	      (let ((c (##sys#peek-char-0 port)))
+		(cond ((eof-object? c) 
+		       (if esc
+			   (##sys#read-error 
+			    port 
+			    "unexpected end of file while reading token delimited by `| ... |'")
+			   (##sys#reverse-list->string lst)))
+		      ((and (not esc)
+			    (or (char-whitespace? c)
+				(memq c terminating-characters)))
+		       (##sys#reverse-list->string lst))
+		      (else
+		       (let ((c ((if esc read-unreserved-char-0 ##sys#read-char-0) port)))
+			 (case (and sep c)
+			   ((#\|) (loop (not esc) lst))
+			   ((#\\)
+			    (let ((c (##sys#read-char-0 port)))
+			      (if (eof-object? c)
+				  (##sys#read-error
+				   port
+				   "unexpected end of file while reading escaped character")
+				  (loop esc (cons c lst)))))
+			   (else 
+			    (loop 
+			     esc 
+			     (cons (if (or esc csp) c (char-downcase c)) lst))))))))))
 	  
 	  (define (r-char)
 	    ;; Code contributed by Alex Shinn
@@ -2465,7 +2471,10 @@ EOF
 			 (set! tok (##sys#substring tok 0 namespace-max-id-len)) )
 		       (##sys#setbyte p 0 i)
 		       (##sys#intern-symbol
-			(string-append p (##sys#substring tok 0 i) (##sys#substring tok (fx+ i 1) toklen)) ) ]
+			(string-append
+			 p 
+			 (##sys#substring tok 0 i)
+			 (##sys#substring tok (fx+ i 1) toklen)) ) ]
 		      [else (loop (fx+ i 1))] ) ) ) )
 
 	  (define (resolve-symbol tok)
@@ -2594,10 +2603,12 @@ EOF
 						    (let ((a (assq (string->symbol tok) read-marks)))
 						      (if a
 							  ((##sys#slot a 1) port)
-							  (##sys#read-error port "invalid `#!' token" tok) ) ) ] ) ) ) ) ) )
+							  (##sys#read-error
+							   port
+							   "invalid `#!' token" tok) ) ) ] ) ) ) ) ) )
 				 (else (##sys#user-read-hook dchar port)) ) ) ) ) ) )
-		  ((#\( #;#\)) (r-list #\( #\)))
-		  ((#;#\( #\)) (##sys#read-char-0 port) (container c))
+		  ((#\() (r-list #\( #\)))
+		  ((#\)) (##sys#read-char-0 port) (container c))
 		  ((#\") (r-string #\"))
 		  ((#\.) (r-number #f))
 		  ((#\- #\+) (r-number #f))
@@ -2608,9 +2619,9 @@ EOF
 			  (reserved-character c))
 			 (else
 			  (case c
-			    ((#\[ #;#\]) (r-list #\[ #\]))
-			    ((#\{ #;#\}) (r-list #\{ #\}))
-			    ((#;#\[ #\] #;#\{ #\}) (##sys#read-char-0 port) (container c))
+			    ((#\[) (r-list #\[ #\]))
+			    ((#\{) (r-list #\{ #\}))
+			    ((#\] #\}) (##sys#read-char-0 port) (container c))
 			    (else (r-symbol) ) ) ) ) ) ) ) ) )
 	
 	(readrec) ) ) ) )
@@ -2776,22 +2787,18 @@ EOF
 (define ##sys#print-exit (make-parameter #f))
 
 (define ##sys#print
-  (let ([char-name char-name]
-	[csp case-sensitive]
-	[ksp keyword-style]
-	[cpp current-print-length]
-	[string-append string-append])
+  (let ([string-append string-append])
     (lambda (x readable port)
       (##sys#check-port-mode port #f)
-      (let ([csp (csp)]
-	    [ksp (ksp)]
+      (let ([csp (case-sensitive)]
+	    [ksp (keyword-style)]
 	    [length-limit (print-length-limit)]
 	    [special-characters '(#\( #\) #\, #\[ #\] #\{ #\} #\' #\" #\; #\ #\` #\|)] )
 
 	(define (outstr port str)
 	  (if length-limit
 	      (let* ((len (##sys#size str))
-		     (cpp0 (cpp))
+		     (cpp0 (current-print-length))
 		     (cpl (fx+ cpp0 len)) )
 		(if (fx>= cpl length-limit)
 		    (cond ((fx> len 3)
@@ -2800,15 +2807,15 @@ EOF
 			     (outstr0 port "...") ) )
 			  (else (outstr0 port str)) )
 		    (outstr0 port str) )
-		(cpp cpl) )
+		(current-print-length cpl) )
 	      (outstr0 port str) ) )
 	       
 	(define (outstr0 port str)
 	  ((##sys#slot (##sys#slot port 2) 3) port str) )
 
 	(define (outchr port chr)
-	  (let ((cpp0 (cpp)))
-	    (cpp (fx+ cpp0 1))
+	  (let ((cpp0 (current-print-length)))
+	    (current-print-length (fx+ cpp0 1))
 	    (when (and length-limit (fx>= cpp0 length-limit))
 	      (outstr0 port "...")
 	      ((##sys#print-exit) #t) )
@@ -3290,8 +3297,7 @@ EOF
 ;;; Feature identifiers:
 
 (define ##sys#->feature-id
-  (let ([string->keyword string->keyword]
-	[keyword? keyword?] )
+  (let ()
     (define (err . args)
       (apply ##sys#signal-hook #:type-error "bad argument type - not a valid feature identifer" args) )
     (define (prefix s)
@@ -3447,10 +3453,7 @@ EOF
 
 (define ##sys#error-handler
   (make-parameter
-   (let ([string-append string-append]
-	 [open-output-string open-output-string]
-	 [get-output-string get-output-string] 
-	 [print-call-chain print-call-chain] )
+   (let ([string-append string-append])
      (lambda (msg . args)
        (##sys#error-handler (lambda args (##core#inline "C_halt" "error in error")))
        (cond ((##sys#fudge 4)
@@ -3510,14 +3513,13 @@ EOF
 (define force-finalizers (make-parameter #t))
 
 (define ##sys#cleanup-before-exit
-  (let ([ffp force-finalizers])
-    (lambda ()
-      (when (##sys#fudge 37)
-	(##sys#print "\n" #f ##sys#standard-error)
-	(##sys#dump-heap-state))
-      (when (##sys#fudge 13)
-	(##sys#print "[debug] forcing finalizers...\n" #f ##sys#standard-error) )
-      (when (ffp) (##sys#force-finalizers)) ) ) )
+  (lambda ()
+    (when (##sys#fudge 37)
+      (##sys#print "\n" #f ##sys#standard-error)
+      (##sys#dump-heap-state))
+    (when (##sys#fudge 13)
+      (##sys#print "[debug] forcing finalizers...\n" #f ##sys#standard-error) )
+    (when (force-finalizers) (##sys#force-finalizers)) ) )
 
 (define (on-exit thunk)
   (set! ##sys#cleanup-before-exit
@@ -3690,9 +3692,8 @@ EOF
 		   [else (car err-def)] ) ) ) ) ) )
 
 (define get-condition-property
-  (let ((condition-property-accessor condition-property-accessor))
-    (lambda (c kind prop . err-def)
-      ((condition-property-accessor kind prop err-def) c))))
+  (lambda (c kind prop . err-def)
+    ((condition-property-accessor kind prop err-def) c)))
 
 
 ;;; Error hook (called by runtime-system):
@@ -4003,8 +4004,6 @@ EOF
 
 (set! ##sys#user-read-hook
   (let ([old ##sys#user-read-hook]
-	[open-output-string open-output-string]
-	[get-output-string get-output-string] 
 	[reverse reverse]
 	[read read]
 	[display display] )
@@ -4156,26 +4155,24 @@ EOF
 (define ##sys#set-finalizer! (##core#primitive "C_register_finalizer"))
 
 (define set-finalizer! 
-  (let ((print print))
-    (lambda (x y)
-      (when (fx> (##sys#fudge 26) _max_pending_finalizers)
-	(if (##core#inline "C_resize_pending_finalizers" (fx* 2 _max_pending_finalizers))
-	    (begin
-	      (set! ##sys#pending-finalizers (##sys#grow-vector ##sys#pending-finalizers
-								(fx+ (fx* 2 _max_pending_finalizers) 1)
-								(##core#undefined)))
-	      (when (##sys#fudge 13)
-		(print "[debug] too many finalizers (" (##sys#fudge 26)
-		       "), resized max finalizers to " _max_pending_finalizers "...") ) )
-	    (begin
-	      (when (##sys#fudge 13)
-		(print "[debug] too many finalizers (" (##sys#fudge 26) "), forcing ...") )
-	      (##sys#force-finalizers) ) ) )
-      (##sys#set-finalizer! x y) ) ) )
+  (lambda (x y)
+    (when (fx> (##sys#fudge 26) _max_pending_finalizers)
+      (if (##core#inline "C_resize_pending_finalizers" (fx* 2 _max_pending_finalizers))
+	  (begin
+	    (set! ##sys#pending-finalizers (##sys#grow-vector ##sys#pending-finalizers
+							      (fx+ (fx* 2 _max_pending_finalizers) 1)
+							      (##core#undefined)))
+	    (when (##sys#fudge 13)
+	      (print "[debug] too many finalizers (" (##sys#fudge 26)
+		     "), resized max finalizers to " _max_pending_finalizers "...") ) )
+	  (begin
+	    (when (##sys#fudge 13)
+	      (print "[debug] too many finalizers (" (##sys#fudge 26) "), forcing ...") )
+	    (##sys#force-finalizers) ) ) )
+    (##sys#set-finalizer! x y) ) )
 
 (define ##sys#run-pending-finalizers
   (let ([vector-fill! vector-fill!]
-	[print print]
 	[working #f] )
     (lambda (state)
       (unless working
@@ -4265,10 +4262,9 @@ EOF
 ;;; Internal string-reader:
 
 (define ##sys#read-from-string 
-  (let ([open-input-string open-input-string])
-    (lambda (s)
-      (let ([i (open-input-string s)])
-	(read i) ) ) ) )
+  (lambda (s)
+    (let ([i (open-input-string s)])
+      (read i) ) ) )
 
 
 ;;; Convenient error printing:
@@ -4524,11 +4520,10 @@ EOF
     s) )
 
 (define procedure-information
-  (let ((open-input-string open-input-string))
-    (lambda (x)
-      (##sys#check-closure x 'procedure-information)
-      (and-let* ((info (##sys#lambda-info x)))
-	(##sys#read (open-input-string (##sys#lambda-info->string info)) #f) ) ) ) )
+  (lambda (x)
+    (##sys#check-closure x 'procedure-information)
+    (and-let* ((info (##sys#lambda-info x)))
+      (##sys#read (open-input-string (##sys#lambda-info->string info)) #f) ) ) )
 
 
 ;;; SRFI-17

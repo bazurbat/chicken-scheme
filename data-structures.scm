@@ -42,7 +42,7 @@ EOF
 
 (define (identity x) x)
 
-(define (project n)
+(define (project n)			; DEPRECATED
   (lambda args (list-ref args n)) )
 
 (define (conjoin . preds)
@@ -224,7 +224,6 @@ EOF
 	      [else (loop (##sys#slot blst 1) (##sys#slot lst 1))] ) ) ) ) )
 
 (define shuffle
-  ;; this should really shadow SORT! and RANDOM...
   (lambda (l random)
     (let ((len (length l)))
       (map cdr
@@ -305,10 +304,8 @@ EOF
 ;;; Anything->string conversion:
 
 (define ->string 
-  (let ([open-output-string open-output-string]
-	[display display]
-	[string string]
-	[get-output-string get-output-string] )
+  (let ([display display]
+	[string string])
     (lambda (x)
       (cond [(string? x) x]
 	    [(symbol? x) (symbol->string x)]

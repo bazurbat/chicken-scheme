@@ -186,32 +186,26 @@
 ;;; Extended string-port operations:
   
 (define call-with-input-string 
-  (let ([open-input-string open-input-string])
-    (lambda (str proc)
-      (let ((in (open-input-string str)))
-	(proc in) ) ) ) )
+  (lambda (str proc)
+    (let ((in (open-input-string str)))
+      (proc in) ) ) )
 
 (define call-with-output-string
-  (let ((open-output-string open-output-string)
-	(get-output-string get-output-string) )
-    (lambda (proc)
-      (let ((out (open-output-string)))
-	(proc out)
-	(get-output-string out) ) ) ) )
+  (lambda (proc)
+    (let ((out (open-output-string)))
+      (proc out)
+      (get-output-string out) ) ) )
 
 (define with-input-from-string
-  (let ((open-input-string open-input-string))
-    (lambda (str thunk)
-      (fluid-let ([##sys#standard-input (open-input-string str)])
-	(thunk) ) ) ) )
+  (lambda (str thunk)
+    (fluid-let ([##sys#standard-input (open-input-string str)])
+      (thunk) ) ) )
 
 (define with-output-to-string
-  (let ([open-output-string open-output-string]
-	[get-output-string get-output-string] )
-    (lambda (thunk)
-      (fluid-let ([##sys#standard-output (open-output-string)])
-	(thunk) 
-	(get-output-string ##sys#standard-output) ) ) ) )
+  (lambda (thunk)
+    (fluid-let ([##sys#standard-output (open-output-string)])
+      (thunk) 
+      (get-output-string ##sys#standard-output) ) ) )
 
 
 ;;; Custom ports:

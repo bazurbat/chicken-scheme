@@ -79,3 +79,24 @@
 	    (lambda ()
 	      (write (string->symbol "3"))))
 	read)))
+
+
+;;; escaped symbol syntax
+
+(assert (string=? "abc" (symbol->string '|abc|)))
+(assert (string=? "abcdef" (symbol->string '|abc||def|)))
+(assert (string=? "abcxyzdef" (symbol->string '|abc|xyz|def|)))
+(assert (string=? "abc|def" (symbol->string '|abc\|def|)))
+(assert (string=? "abc|def" (symbol->string '|abc\|def|)))
+(assert (string=? "abc" (symbol->string '|abc:|))) ; keyword
+(assert (string=? "abc" (symbol->string '|abc|:))) ; keyword
+(assert (string=? ":abc" (symbol->string ':|abc|)))
+(assert (string=? ":abc" (symbol->string '|:abc|)))
+(assert (string=? "abc" (symbol->string 'abc)))
+(assert (string=? "a c" (symbol->string 'a\ c)))
+(assert (string=? "aBc" (symbol->string 'aBc)))
+
+(parameterize ((case-sensitive #f))
+  (assert (string=? "abc" (symbol->string (with-input-from-string "aBc" read))))
+  (assert (string=? "aBc" (symbol->string (with-input-from-string "|aBc|" read))))
+  (assert (string=? "aBc" (symbol->string (with-input-from-string "a\\Bc" read)))))

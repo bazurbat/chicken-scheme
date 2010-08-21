@@ -149,8 +149,7 @@
 (##sys#extend-macro-environment
  'assert '()
  (##sys#er-transformer
-  (let ((string-append string-append)
-	(get-line-number get-line-number))
+  (let ((string-append string-append))
     (lambda (form r c)
       (##sys#check-syntax 'assert form '#(_ 1))
       (let* ((exp (cadr form))
