@@ -1540,7 +1540,15 @@
 		    (##sys#write-char-0 #\newline ##sys#standard-error)
 		    (write-err args) ) )
 	      (set! ##sys#repl-recent-call-chain
-		(print-call-chain ##sys#standard-error))
+		(or (and-let* ((lexn ##sys#last-exception) ;XXX not really right
+			       ((##sys#structure? lexn 'condition))
+			       (a (member '(exn . call-chain) (##sys#slot lexn 2))))
+		      (let ((ct (cadr a)))
+			(##sys#really-print-call-chain
+			 ##sys#standard-error ct
+			 "\n\tCall history:\n")
+			ct))
+		    (print-call-chain ##sys#standard-error)))
 	      (flush-output ##sys#standard-error) ) ) )
 	 (lambda ()
 	   (let loop ()

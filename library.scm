@@ -3579,6 +3579,7 @@ EOF
 	   [else			'(exn)] )
 	 (list '(exn . message) msg
 	       '(exn . arguments) args
+	       '(exn . call-chain) (##sys#get-call-chain)
 	       '(exn . location) loc) ) ) ) ] ) )
 
 (define (##sys#abort x)
