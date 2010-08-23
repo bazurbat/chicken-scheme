@@ -199,7 +199,7 @@
 				(let ((href (second m)))
 				  (if (string-match (rx +http-url+) href)
 				      href
-				      (string-append "http://chicken.wiki.br/" href))))
+				      (string-append "http://wiki.call-cc.org/" href))))
 			       "'>"
 			       (clean (or (third m) (second m)))
 			       "</a>")))

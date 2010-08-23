@@ -1,4 +1,4 @@
-4.5.7
+4.6.0
 
 - the licenses used in all components of the core system have
   been collected in the LICENSE file (Thanks to Peter Bex)
@@ -7,7 +7,7 @@
   generation of import libraries has not been enabled
 - running `chicken' without arguments now hints at the
   existence of `csi' and `csc'
-- `caar', `cdar' abnd `cddr' generate faster code
+- `caar', `cdar' and `cddr' generate faster code
 - calls to `list', `vector' and the internal structure
   allocation primitive that take 1 to 8 arguments generate
   faster code
@@ -20,7 +20,7 @@
   (suggested by Alejandro Forero Cuervo)
 - interpreted code records the lexical-environment at call-
   sites, which can in case of an error be inspected with the
-  new `,c', `,f' and `,g' toplevel commands
+  new `,c', `,f' and `,g' csi toplevel commands
 - the evaluation-result history in `csi' can be inspected and
   cleared (to reduce memory load) with the toplevel commands
   `,h' and `,ch'
@@ -28,9 +28,11 @@
   `right-section'
 - fixed bug that caused the static syntax-environment of 
   syntax exported by a module to be incomplete
-- module `setup-api': Documented the `version>=?' procedure
+- module `setup-api': Documented the `version>=?' and
+  `extension-name-and-version' proceedures
 - unit `posix': `utc-time->seconds' is considerably 
-  faster on Mac OS X (thanks to Jim Ursetto)
+  faster on Mac OS X (thanks to Jim Ursetto);
+  added new procedure `file-type'
 - the `time' macro now shows the correct number of minor
   garbage collections
 - the immediate-object check inside the marking procedure
@@ -41,113 +43,94 @@
   to Joerg Wittenberger)
 - unit `srfi-4': bugfix in 8-bit vector allocation routines
   (thanks to Kon Lovett)
-
-4.5.6
-
 - added `-:H' runtime option to dump heap state on exit
 - fixed missing change in Makefile.cygwin (thanks to John Cowan)
 - fixed bug in `let-optionals' macro that caused problems when the
   rest-variable was actually named `rest' (thanks to Alejandro
   Forero Cuervo)
 - when Scheme files are translated to C++ or Objective-C, `csc'
-  will define the feature-identifiers `chicken-scheme-to-c++'/
-  `chicken-scheme-to-objc' to the `chicken' executable
+  will register the feature-identifiers `chicken-scheme-to-c++'/
+  `chicken-scheme-to-objc' ar compile-time
 - fixed bug in expansion of `#!key' parameters in lambda-lists
 - debug-output for forcing finalizers on exit goes to stderr now
   (thanks to Joerg Wittenberger)
 - the installation routines for extensions automatically add
   version-number information if none is given in the extension
-  property list (suggested by Alejandro)
+  property list (suggested by Alejandro Forero Cuervo)
 - `standard-extension' accepts `#f' now for the version number
   and will use the version that has been obtained via
   `chicken-install'
-- documented `extension-name-and-version'
-- added new procedure `file-type' to posix library unit
 - `fifo?', `symbolic-link?', `directory?', `regular-file?', `socket?',
   `character-device?' and `block-device?' now accepts file-descriptors
   or filenames
 - `find-files' takes keyword arguments, now (including the options
   to process dotfiles and ignore symbolic links); the old argument
   signature is still supported but deprecated
-
-4.5.5
-
 - removed dependency on `symbol-append' in some macros used in
   srfi-4.scm to be able to compile the system with older chickens
-
-4.5.4
-
-- fixed bug in script that generates development snapshot (ahem)
-
-4.5.3
-
-- Added build-variable `TARGET_FEATURES', which can be used to pass
+- fixed bug in script that generates development snapshot
+- added build-variable `TARGET_FEATURES', which can be used to pass
   extra options enabling or disabling fetures for a system configured
   for cross-compilation
-- Added compiler and interpreter option `-no-feature FEATURENAME' that
+- added compiler and interpreter option `-no-feature FEATURENAME' that
   disables predefined feature identifiers
-- Code compiled with interrupts disabled will not emit inline files
+- code compiled with interrupts disabled will not emit inline files
   for global inlining since they may execute in a context where 
   interrupts are enabled
-- The `setup.defaults' file that holds download sources for 
+- the `setup.defaults' file that holds download sources for 
   `chicken-install' now allows aliases for locations
 - CHICKEN systems build from cross-compilation now by default 
   transparently build and install extensions for both the host
   and target parts of the cross-compilation setup; the options
   `-host' and `-target' can now be used to selectively build
   an extensions for the host- and the target system, respectively
-- Also added `-host' and `-target' options to `chicken-status' and
+- also added `-host' and `-target' options to `chicken-status' and
   `chicken-uninstall'
 - `chicken-install' now respects the `http_proxy' environment variable
   (contributed by Stephen Eilert)
-- The `srfi-4' library unit has been heavily cleaned up and optimized
-- Optimization-level 3 now enables global inlining
-- Fixed the case that declarations listing global identifiers did not
+- the `srfi-4' library unit has been heavily cleaned up and optimized
+- optimization-level 3 now enables global inlining
+- fixed the case that declarations listing global identifiers did not
   correctly rename them
-- Deprecated `-N' option shortcut for `-no-usual-integrations' option in
+- deprecated `-N' option shortcut for `-no-usual-integrations' option in
   `csc'
 - `csi' now offers a toplevel command `,e' for invoking an external
   editor (suggested by Oivind Binde)
-- The `describe' command in `csi' now detects many circular lists
+- the `describe' command in `csi' now detects many circular lists
   (contributed by Christian Kellermann)
 - `csi' doesn't depend on the `srfi-69' library unit anymore
-- When a closing sequence delimiter is missing or incorrect, the
+- when a closing sequence delimiter is missing or incorrect, the
   reader also reports the starting line of the sequence
-- The reader signals an error when a file contains certain characters
+- the reader signals an error when a file contains certain characters
   that indicate that it is a binary file
-- Procedure-information shown by the printer for procedures is now
+- procedure-information shown by the printer for procedures is now
   corrected for some library procedures that where missing the correct
   information; `getter-with-setter' copies procedure-information objects
   into the newly created accessor procedure, if available
-- Calls to some known pure standard- or extended procedures are removed, if
+- calls to some known pure standard- or extended procedures are removed, if
   the procedures are called with side-effect free arguments and the
   result is not used (this can also by enabled for user procedures with
   the `constant' declaration)
-- Fixed some build-system bugs related to installation
-- Fixed a problem in the C runtime code that prevented it to be compileable
+- fixed some build-system bugs related to installation
+- fixed a problem in the C runtime code that prevented it to be compileable
   without a configuration header-file
-- The makefile-target to build a bootstrapping `chicken' executable 
+- the makefile-target to build a bootstrapping `chicken' executable 
   performs multi-stage build now
-- Fixed broken GC-counters shown in the expansion of the `time' syntax
-- Fixed broken `standard-extension' procedure in the `setup-api' module
-- Changed error message when required extension is out of date (thanks to
+- changed error message when required extension is out of date (thanks to
   Mario Goulart)
-- Documented library units loaded by default in `csi' (thanks to Moritz
+- documented library units loaded by default in `csi' (thanks to Moritz
   Heidkamp)
-
-4.5.2
-
 - added `boot-chicken' makefile target to simplify bootstrapping
   the system from sources and documented this in the README
   (suggested by Jim Ursetto)
 - CHICKEN can now be built on haiku (contributed by Chris Roberts)
-- On Solaris, the system can be compiled with the SunPro C compiler
+- on Solaris, the system can be compiled with the SunPro C compiler
   (thanks to Semih Cemiloglu)
 - removed the `-disable-warnings' compiler option and `disable-warnings'
   declaration specifier
 - `fx/' and `fxmod' generate now faster code in safe mode
 - cleaned up manual pages
-- slightly optimized variable-value and procedure-access
+- slightly optimized variable- and procedure-access
 - in the compiler `-debug-level 2' implies `-scrutinize'
 - internal compiler-transformation for `for-each' and `map'
   apply now with any expression as the procedure argument
@@ -179,9 +162,6 @@
 - added the new procedure `yes-or-no?' to the `utils' library unit
 - added a `bench' makefile target that runs some non-trivial
   benchmark programs
-
-4.5.1
-
 - added `install-target' and `install-dev' makefile target for
   installing only target system libraries in cross-mode and
   development files (static libraries and headers)
@@ -234,8 +214,6 @@
   `make-pathname'
 - slightly improved the performance of keyword argument
   processing
-- the second argument to `find-files' from the `posix' unit
-  is now optional and defaults to `(constantly #t)'
 - removed the deprecated `canonical-path' and `current-environment'
   procedures from the `posix' unit
 - warnings that mostly refer to programming style issues are
