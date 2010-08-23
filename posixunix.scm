@@ -604,17 +604,16 @@ EOF
       (posix-error #:file-error 'file-close "cannot close file" fd) ) ) )
 
 (define file-read
-  (let ([make-string make-string] )
-    (lambda (fd size . buffer)
-      (##sys#check-exact fd 'file-read)
-      (##sys#check-exact size 'file-read)
-      (let ([buf (if (pair? buffer) (car buffer) (make-string size))])
-        (unless (and (##core#inline "C_blockp" buf) (##core#inline "C_byteblockp" buf))
-          (##sys#signal-hook #:type-error 'file-read "bad argument type - not a string or blob" buf) )
-        (let ([n (##core#inline "C_read" fd buf size)])
-          (when (eq? -1 n)
-            (posix-error #:file-error 'file-read "cannot read from file" fd size) )
-          (list buf n) ) ) ) ) )
+  (lambda (fd size . buffer)
+    (##sys#check-exact fd 'file-read)
+    (##sys#check-exact size 'file-read)
+    (let ([buf (if (pair? buffer) (car buffer) (make-string size))])
+      (unless (and (##core#inline "C_blockp" buf) (##core#inline "C_byteblockp" buf))
+	(##sys#signal-hook #:type-error 'file-read "bad argument type - not a string or blob" buf) )
+      (let ([n (##core#inline "C_read" fd buf size)])
+	(when (eq? -1 n)
+	  (posix-error #:file-error 'file-read "cannot read from file" fd size) )
+	(list buf n) ) ) ) )
 
 (define file-write
   (lambda (fd buffer . size)
@@ -708,20 +707,20 @@ EOF
 (define seek/cur _seek_cur)
 
 (define set-file-position!
-   (lambda (port pos . whence)
-     (let ((whence (if (pair? whence) (car whence) _seek_set)))
-       (##sys#check-exact pos 'set-file-position!)
-       (##sys#check-exact whence 'set-file-position!)
-       (when (negative? pos)
-         (##sys#signal-hook #:bounds-error 'set-file-position! "invalid negative port position" pos port))
-       (unless (cond ((port? port)
-		      (and (eq? (##sys#slot port 7) 'stream)
-			   (##core#inline "C_fseek" port pos whence) ) )
-		     ((fixnum? port)
-		      (##core#inline "C_lseek" port pos whence))
-		     (else
-		      (##sys#signal-hook #:type-error 'set-file-position! "invalid file" port)) )
-	 (posix-error #:file-error 'set-file-position! "cannot set file position" port pos) ) ) ) )
+  (lambda (port pos . whence)
+    (let ((whence (if (pair? whence) (car whence) _seek_set)))
+      (##sys#check-exact pos 'set-file-position!)
+      (##sys#check-exact whence 'set-file-position!)
+      (when (negative? pos)
+	(##sys#signal-hook #:bounds-error 'set-file-position! "invalid negative port position" pos port))
+      (unless (cond ((port? port)
+		     (and (eq? (##sys#slot port 7) 'stream)
+			  (##core#inline "C_fseek" port pos whence) ) )
+		    ((fixnum? port)
+		     (##core#inline "C_lseek" port pos whence))
+		    (else
+		     (##sys#signal-hook #:type-error 'set-file-position! "invalid file" port)) )
+	(posix-error #:file-error 'set-file-position! "cannot set file position" port pos) ) ) ) )
 
 (define file-position
   (getter-with-setter
@@ -1289,8 +1288,7 @@ EOF
 (define-foreign-variable _filename_max int "FILENAME_MAX")
 
 (define read-symbolic-link
-  (let ([substring substring]
-        [buf (make-string (fx+ _filename_max 1))] )
+  (let ([buf (make-string (fx+ _filename_max 1))] )
     (lambda (fname #!optional canonicalize)
       (##sys#check-string fname 'read-symbolic-link)
       (let ([len (##core#inline "C_do_readlink" (##sys#make-c-string (##sys#expand-home-path fname) 'read-symbolic-link) buf)])
@@ -1536,8 +1534,7 @@ EOF
 		(make-output-port
 		 (lambda (str)		; write-string
 		   (store str) )
-		 (lambda ()	      ; close
-					; Do nothing when closed already
+		 (lambda ()	      ; close - do nothing when closed already
 		   (unless (##sys#slot this-port 8)
 		     (when (fx< (##core#inline "C_close" fd) 0)
 		       (posix-error #:file-error loc "cannot close" fd nam) )
@@ -1790,20 +1787,20 @@ EOF
 (define-foreign-variable _bufsiz int "BUFSIZ")
 
 (define set-buffering-mode!
-    (lambda (port mode . size)
-      (##sys#check-port port 'set-buffering-mode!)
-      (let ([size (if (pair? size) (car size) _bufsiz)]
-            [mode (case mode
-                    [(###full) _iofbf]
-                    [(###line) _iolbf]
-                    [(###none) _ionbf]
-                    [else (##sys#error 'set-buffering-mode! "invalid buffering-mode" mode port)] ) ] )
-        (##sys#check-exact size 'set-buffering-mode!)
-        (when (fx< (if (eq? 'stream (##sys#slot port 7))
-                       (##core#inline "C_setvbuf" port mode size)
-                       -1)
-                   0)
-          (##sys#error 'set-buffering-mode! "cannot set buffering mode" port mode size) ) ) ) )
+  (lambda (port mode . size)
+    (##sys#check-port port 'set-buffering-mode!)
+    (let ([size (if (pair? size) (car size) _bufsiz)]
+	  [mode (case mode
+		  [(###full) _iofbf]
+		  [(###line) _iolbf]
+		  [(###none) _ionbf]
+		  [else (##sys#error 'set-buffering-mode! "invalid buffering-mode" mode port)] ) ] )
+      (##sys#check-exact size 'set-buffering-mode!)
+      (when (fx< (if (eq? 'stream (##sys#slot port 7))
+		     (##core#inline "C_setvbuf" port mode size)
+		     -1)
+		 0)
+	(##sys#error 'set-buffering-mode! "cannot set buffering mode" port mode size) ) ) ) )
 
 (define (terminal-port? port)
   (##sys#check-port port 'terminal-port?)
@@ -1840,9 +1837,9 @@ EOF
   
 (define get-host-name
   (let ([getit
-       (foreign-lambda* c-string ()
-         "if(gethostname(C_hostbuf, 256) == -1) C_return(NULL);"
-         "else C_return(C_hostbuf);") ] )
+	 (foreign-lambda* c-string ()
+	   "if(gethostname(C_hostbuf, 256) == -1) C_return(NULL);"
+	   "else C_return(C_hostbuf);") ] )
     (lambda ()
       (let ([host (getit)])
         (unless host
@@ -2047,6 +2044,7 @@ EOF
 
 (define process)
 (define process*)
+
 (let ([%process
         (lambda (loc err? cmd args env)
           (let ([chkstrlst

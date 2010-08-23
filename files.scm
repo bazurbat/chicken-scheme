@@ -68,47 +68,33 @@ EOF
 
 ;;; file-copy and file-move : they do what you'd think.
 (define (file-copy origfile newfile #!optional (clobber #f) (blocksize 1024))
-    (##sys#check-string origfile 'file-copy)
-    (##sys#check-string newfile 'file-copy)
-    (##sys#check-number blocksize 'file-copy)
-    (or (and (integer? blocksize) (> blocksize 0))
-        (##sys#error (string-append
-                         "invalid blocksize given: not a positive integer - "
-                         (number->string blocksize))))
-    (or (file-exists? origfile)
-        (##sys#error (string-append "origfile does not exist - " origfile)))
-    (and (file-exists? newfile)
-         (or clobber
-             (##sys#error (string-append
-                              "newfile exists but clobber is false - "
-                              newfile))))
-    (let* ((i   (condition-case (open-input-file origfile)
-                    (val ()
-                        (##sys#error (string-append
-                                         "could not open origfile for read - "
-                                         origfile)))))
-           (o   (condition-case (open-output-file newfile)
-                    (val ()
-                        (##sys#error (string-append
-                                         "could not open newfile for write - "
-                                         newfile)))))
-           (s   (make-string blocksize)))
-        (let loop ((d (read-string! blocksize s i))
-                   (l 0))
-            (if (fx= 0 d)
-                (begin
-                    (close-input-port i)
-                    (close-output-port o)
-                    l)
-                (begin
-                    (condition-case (write-string s d o)
-                        (val ()
-                            (close-input-port i)
-                            (close-output-port o)
-                            (##sys#error (string-append
-                                             "error writing file starting at "
-                                             (number->string l)))))
-                    (loop (read-string! blocksize s i) (fx+ d l)))))))
+  (##sys#check-string origfile 'file-copy)
+  (##sys#check-string newfile 'file-copy)
+  (##sys#check-number blocksize 'file-copy)
+  (or (and (integer? blocksize) (> blocksize 0))
+      (##sys#error (string-append
+		    "invalid blocksize given: not a positive integer - "
+		    (number->string blocksize))))
+  (or (file-exists? origfile)
+      (##sys#error (string-append "origfile does not exist - " origfile)))
+  (and (file-exists? newfile)
+       (or clobber
+	   (##sys#error (string-append
+			 "newfile exists but clobber is false - "
+			 newfile))))
+  (let* ((i (open-input-file origfile))
+	 (o (open-output-file newfile))
+	 (s   (make-string blocksize)))
+    (let loop ((d (read-string! blocksize s i))
+	       (l 0))
+      (if (fx= 0 d)
+	  (begin
+	    (close-input-port i)
+	    (close-output-port o)
+	    l)
+	  (begin
+	    (write-string s d o)
+	    (loop (read-string! blocksize s i) (fx+ d l)))))))
 
 (define (file-move origfile newfile #!optional (clobber #f) (blocksize 1024))
   (##sys#check-string origfile 'file-move)
@@ -125,16 +111,8 @@ EOF
 	   (##sys#error (string-append
 			 "newfile exists but clobber is false - "
 			 newfile))))
-  (let* ((i   (condition-case (open-input-file origfile)
-		(val ()
-		     (##sys#error (string-append
-				   "could not open origfile for read - "
-				   origfile)))))
-	 (o   (condition-case (open-output-file newfile)
-		(val ()
-		     (##sys#error (string-append
-				   "could not open newfile for write - "
-				   newfile)))))
+  (let* ((i (open-input-file origfile))
+	 (o (open-output-file newfile))
 	 (s   (make-string blocksize)))
     (let loop ((d (read-string! blocksize s i))
 	       (l 0))
@@ -142,20 +120,10 @@ EOF
 	  (begin
 	    (close-input-port i)
 	    (close-output-port o)
-	    (condition-case (delete-file origfile)
-	      (val ()
-		   (##sys#error (string-append
-				 "could not remove origfile - "
-				 origfile))))
+	    (delete-file origfile)
 	    l)
 	  (begin
-	    (condition-case (write-string s d o)
-	      (val ()
-		   (close-input-port i)
-		   (close-output-port o)
-		   (##sys#error (string-append
-				 "error writing file starting at "
-				 (number->string l)))))
+	    (write-string s d o)
 	    (loop (read-string! blocksize s i) (fx+ d l)))))))
 
 ;;; Pathname operations:
@@ -199,8 +167,7 @@ EOF
 (define make-pathname)
 (define make-absolute-pathname)
 
-(let ([string-append string-append]
-      [def-pds "/"] )
+(let ([def-pds "/"] )
 
   (define (conc-dirs dirs pds)
     (##sys#check-list dirs 'make-pathname)
@@ -322,8 +289,7 @@ EOF
 (define create-temporary-file)
 (define create-temporary-directory)
 
-(let ((call-with-output-file call-with-output-file)
-      (temp #f)
+(let ((temp #f)
       (temp-prefix "temp"))
   (define (tempdir)
     (or temp
@@ -370,9 +336,7 @@ EOF
 ;;; normalize pathname for a particular platform
 
 (define normalize-pathname
-  (let ((reverse reverse)
-	(display display)
-	(bldplt (if (memq (build-platform) '(msvc mingw32)) 'windows 'unix)) )
+  (let ((bldplt (if (memq (build-platform) '(msvc mingw32)) 'windows 'unix)) )
     (define (addpart part parts)
       (cond ((string=? "." part) parts)
             ((string=? ".." part) (if (null? parts) '("..") (cdr parts)))

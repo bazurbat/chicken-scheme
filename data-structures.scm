@@ -180,20 +180,19 @@ EOF
 		 (cons head (loop tail rest)) ) ) ] ) ) )
 
 (define chop
-  (let ([reverse reverse])
-    (lambda (lst n)
-      (##sys#check-exact n 'chop)
-      (when (fx<= n 0) (##sys#error 'chop "invalid numeric argument" n))
-      (let ([len (length lst)])
-	(let loop ([lst lst] [i len])
-	  (cond [(null? lst) '()]
-		[(fx< i n) (list lst)]
-		[else
-		 (do ([hd '() (cons (##sys#slot tl 0) hd)]
-		      [tl lst (##sys#slot tl 1)] 
-		      [c n (fx- c 1)] )
-		     ((fx= c 0)
-		      (cons (reverse hd) (loop tl (fx- i n))) ) ) ] ) ) ) ) ) )
+  (lambda (lst n)
+    (##sys#check-exact n 'chop)
+    (when (fx<= n 0) (##sys#error 'chop "invalid numeric argument" n))
+    (let ([len (length lst)])
+      (let loop ([lst lst] [i len])
+	(cond [(null? lst) '()]
+	      [(fx< i n) (list lst)]
+	      [else
+	       (do ([hd '() (cons (##sys#slot tl 0) hd)]
+		    [tl lst (##sys#slot tl 1)] 
+		    [c n (fx- c 1)] )
+		   ((fx= c 0)
+		    (cons (reverse hd) (loop tl (fx- i n))) ) ) ] ) ) ) ) )
 
 (define (join lsts . lst)
   (let ([lst (if (pair? lst) (car lst) '())])
@@ -304,22 +303,19 @@ EOF
 ;;; Anything->string conversion:
 
 (define ->string 
-  (let ([display display]
-	[string string])
-    (lambda (x)
-      (cond [(string? x) x]
-	    [(symbol? x) (symbol->string x)]
-	    [(char? x) (string x)]
-	    [(number? x) (##sys#number->string x)]
-	    [else 
-	     (let ([o (open-output-string)])
-	       (display x o)
-	       (get-output-string o) ) ] ) ) ) )
+  (lambda (x)
+    (cond [(string? x) x]
+	  [(symbol? x) (symbol->string x)]
+	  [(char? x) (string x)]
+	  [(number? x) (##sys#number->string x)]
+	  [else 
+	   (let ([o (open-output-string)])
+	     (display x o)
+	     (get-output-string o) ) ] ) ) )
 
 (define conc
-  (let ([string-append string-append])
-    (lambda args
-      (apply string-append (map ->string args)) ) ) )
+  (lambda args
+    (apply string-append (map ->string args)) ) )
 
 
 ;;; Search one string inside another:
@@ -478,55 +474,53 @@ EOF
 ;;; Translate elements of a string:
 
 (define string-translate 
-  (let ([make-string make-string]
-	[list->string list->string] )
-    (lambda (str from . to)
+  (lambda (str from . to)
 
-      (define (instring s)
-	(let ([len (##sys#size s)])
-	  (lambda (c)
-	    (let loop ([i 0])
-	      (cond [(fx>= i len) #f]
-		    [(eq? c (##core#inline "C_subchar" s i)) i]
-		    [else (loop (fx+ i 1))] ) ) ) ) )
+    (define (instring s)
+      (let ([len (##sys#size s)])
+	(lambda (c)
+	  (let loop ([i 0])
+	    (cond [(fx>= i len) #f]
+		  [(eq? c (##core#inline "C_subchar" s i)) i]
+		  [else (loop (fx+ i 1))] ) ) ) ) )
 
-      (let* ([from
-	      (cond [(char? from) (lambda (c) (eq? c from))]
-		    [(pair? from) (instring (list->string from))]
-		    [else
-		     (##sys#check-string from 'string-translate)
-		     (instring from) ] ) ]
-	     [to
-	      (and (pair? to)
-		   (let ([tx (##sys#slot to 0)])
-		     (cond [(char? tx) tx]
-			   [(pair? tx) (list->string tx)]
-			   [else
-			    (##sys#check-string tx 'string-translate)
-			    tx] ) ) ) ] 
-	     [tlen (and (string? to) (##sys#size to))] )
-	(##sys#check-string str 'string-translate)
-	(let* ([slen (##sys#size str)]
-	       [str2 (make-string slen)] )
-	  (let loop ([i 0] [j 0])
-	    (if (fx>= i slen)
-		(if (fx< j i)
-		    (##sys#substring str2 0 j)
-		    str2)
-		(let* ([ci (##core#inline "C_subchar" str i)]
-		       [found (from ci)] )
-		  (cond [(not found)
-			 (##core#inline "C_setsubchar" str2 j ci)
-			 (loop (fx+ i 1) (fx+ j 1)) ]
-			[(not to) (loop (fx+ i 1) j)]
-			[(char? to)
-			 (##core#inline "C_setsubchar" str2 j to)
-			 (loop (fx+ i 1) (fx+ j 1)) ]
-			[(fx>= found tlen)
-			 (##sys#error 'string-translate "invalid translation destination" i to) ]
-			[else 
-			 (##core#inline "C_setsubchar" str2 j (##core#inline "C_subchar" to found))
-			 (loop (fx+ i 1) (fx+ j 1)) ] ) ) ) ) ) ) ) ) )
+    (let* ([from
+	    (cond [(char? from) (lambda (c) (eq? c from))]
+		  [(pair? from) (instring (list->string from))]
+		  [else
+		   (##sys#check-string from 'string-translate)
+		   (instring from) ] ) ]
+	   [to
+	    (and (pair? to)
+		 (let ([tx (##sys#slot to 0)])
+		   (cond [(char? tx) tx]
+			 [(pair? tx) (list->string tx)]
+			 [else
+			  (##sys#check-string tx 'string-translate)
+			  tx] ) ) ) ] 
+	   [tlen (and (string? to) (##sys#size to))] )
+      (##sys#check-string str 'string-translate)
+      (let* ([slen (##sys#size str)]
+	     [str2 (make-string slen)] )
+	(let loop ([i 0] [j 0])
+	  (if (fx>= i slen)
+	      (if (fx< j i)
+		  (##sys#substring str2 0 j)
+		  str2)
+	      (let* ([ci (##core#inline "C_subchar" str i)]
+		     [found (from ci)] )
+		(cond [(not found)
+		       (##core#inline "C_setsubchar" str2 j ci)
+		       (loop (fx+ i 1) (fx+ j 1)) ]
+		      [(not to) (loop (fx+ i 1) j)]
+		      [(char? to)
+		       (##core#inline "C_setsubchar" str2 j to)
+		       (loop (fx+ i 1) (fx+ j 1)) ]
+		      [(fx>= found tlen)
+		       (##sys#error 'string-translate "invalid translation destination" i to) ]
+		      [else 
+		       (##core#inline "C_setsubchar" str2 j (##core#inline "C_subchar" to found))
+		       (loop (fx+ i 1) (fx+ j 1)) ] ) ) ) ) ) ) ) )
 
 (define (string-translate* str smap)
   (##sys#check-string str 'string-translate*)
@@ -788,21 +782,20 @@ EOF
 ;;; Binary search:
 
 (define binary-search
-  (let ([list->vector list->vector])
-    (lambda (vec proc)
-      (if (pair? vec)
-	  (set! vec (list->vector vec))
-	  (##sys#check-vector vec 'binary-search) )
-      (let ([len (##sys#size vec)])
-	(and (fx> len 0)
-	     (let loop ([ps 0]
-			[pe len] )
-	       (let ([p (fx+ ps (##core#inline "C_fixnum_shift_right" (fx- pe ps) 1))])
-		 (let* ([x (##sys#slot vec p)]
-			[r (proc x)] )
-		   (cond [(fx= r 0) p]
-			 [(fx< r 0) (and (not (fx= pe p)) (loop ps p))]
-			 [else (and (not (fx= ps p)) (loop p pe))] ) ) ) ) ) ) ) ) )
+  (lambda (vec proc)
+    (if (pair? vec)
+	(set! vec (list->vector vec))
+	(##sys#check-vector vec 'binary-search) )
+    (let ([len (##sys#size vec)])
+      (and (fx> len 0)
+	   (let loop ([ps 0]
+		      [pe len] )
+	     (let ([p (fx+ ps (##core#inline "C_fixnum_shift_right" (fx- pe ps) 1))])
+	       (let* ([x (##sys#slot vec p)]
+		      [r (proc x)] )
+		 (cond [(fx= r 0) p]
+		       [(fx< r 0) (and (not (fx= pe p)) (loop ps p))]
+		       [else (and (not (fx= ps p)) (loop p pe))] ) ) ) ) ) ) ) )
 
 
 
