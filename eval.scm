@@ -1467,7 +1467,7 @@
 (define ##sys#repl-eval-hook #f)
 (define ##sys#repl-print-length-limit #f)
 (define ##sys#repl-read-hook #f)
-(define ##sys#repl-recent-call-chain #f)
+(define ##sys#repl-recent-call-chain #f) ; used in csi for ,c command
 
 (define (##sys#repl-print-hook x port)
   (##sys#with-print-length-limit ##sys#repl-print-length-limit (cut ##sys#print x #t port))

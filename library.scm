@@ -3597,7 +3597,7 @@ EOF
 (define abort ##sys#abort)
 (define signal ##sys#signal)
 
-(define ##sys#last-exception #f)
+(define ##sys#last-exception #f)	; used in csi for ,exn command
 
 (define ##sys#current-exception-handler
   ;; Exception-handler for the primordial thread:
