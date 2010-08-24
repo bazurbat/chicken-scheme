@@ -67,24 +67,27 @@ EOF
     (and (file-exists? file) (delete-file file)) ) )
 
 ;;; file-copy and file-move : they do what you'd think.
+
 (define (file-copy origfile newfile #!optional (clobber #f) (blocksize 1024))
   (##sys#check-string origfile 'file-copy)
   (##sys#check-string newfile 'file-copy)
   (##sys#check-number blocksize 'file-copy)
-  (or (and (integer? blocksize) (> blocksize 0))
-      (##sys#error (string-append
-		    "invalid blocksize given: not a positive integer - "
-		    (number->string blocksize))))
-  (or (file-exists? origfile)
-      (##sys#error (string-append "origfile does not exist - " origfile)))
+  (unless (and (integer? blocksize) (> blocksize 0))
+    (##sys#error 
+     'file-copy 
+     "invalid blocksize given: not a positive integer"
+     blocksize))
   (and (file-exists? newfile)
        (or clobber
-	   (##sys#error (string-append
-			 "newfile exists but clobber is false - "
-			 newfile))))
+	   (##sys#error 
+	    'file-copy
+	    "newfile exists but clobber is false"
+	     newfile)))
+  (when (directory-exists? origfile)
+    (##sys#error 'file-copy "can not copy directories" origfile))
   (let* ((i (open-input-file origfile))
 	 (o (open-output-file newfile))
-	 (s   (make-string blocksize)))
+	 (s (make-string blocksize)))
     (let loop ((d (read-string! blocksize s i))
 	       (l 0))
       (if (fx= 0 d)
@@ -100,20 +103,22 @@ EOF
   (##sys#check-string origfile 'file-move)
   (##sys#check-string newfile 'file-move)
   (##sys#check-number blocksize 'file-move)
-  (or (and (integer? blocksize) (> blocksize 0))
-      (##sys#error (string-append
-		    "invalid blocksize given: not a positive integer - "
-		    (number->string blocksize))))
-  (or (file-exists? origfile)
-      (##sys#error (string-append "origfile does not exist - " origfile)))
+  (unless (and (integer? blocksize) (> blocksize 0))
+    (##sys#error
+     'file-move
+     "invalid blocksize given: not a positive integer"
+     blocksize))
+  (when (directory-exists? origfile)
+    (##sys#error 'file-move "can not move directories" origfile))
   (and (file-exists? newfile)
        (or clobber
-	   (##sys#error (string-append
-			 "newfile exists but clobber is false - "
-			 newfile))))
+	   (##sys#error 
+	    'file-move
+	    "newfile exists but clobber is false"
+	    newfile)))
   (let* ((i (open-input-file origfile))
 	 (o (open-output-file newfile))
-	 (s   (make-string blocksize)))
+	 (s (make-string blocksize)))
     (let loop ((d (read-string! blocksize s i))
 	       (l 0))
       (if (fx= 0 d)
