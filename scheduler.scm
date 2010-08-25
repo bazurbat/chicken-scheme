@@ -355,6 +355,8 @@ EOF
 
 (define ##sys#fdset-clear
   (foreign-lambda* void ([int fd])
+    "FD_CLR(fd, &C_fdset_input);"
+    "FD_CLR(fd, &C_fdset_input);"
     "FD_CLR(fd, &C_fdset_input_2);"
     "FD_CLR(fd, &C_fdset_output_2);") )
 
