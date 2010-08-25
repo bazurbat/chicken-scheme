@@ -65,7 +65,7 @@
 
 (define (randomize . n)
   (let ((nn (if (null? n)
-		(##sys#flo2fix (fp/ (current-seconds) 1000.0)) ; wall clock time
+		(##sys#inexact->exact (fp/ (current-seconds) 1000.0)) ; wall clock time
 		(car n))))
     (##sys#check-exact nn 'randomize)
     (##core#inline "C_randomize" nn) ) )
