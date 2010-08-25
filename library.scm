@@ -2388,8 +2388,13 @@ EOF
 		       (##sys#reverse-list->string lst))
 		      (else
 		       (let ((c ((if esc read-unreserved-char-0 ##sys#read-char-0) port)))
-			 (case (and sep c)
+			 (case (and sep c) ; is sep is false, esc will be as well
 			   ((#\|) (loop (not esc) lst))
+			   ((#\newline)
+			    (##sys#read-warning
+			     port "escaped symbol syntax spans multiple lines"
+			     (##sys#reverse-list->string lst))
+			    (loop esc (cons #\newline lst)))
 			   ((#\\)
 			    (let ((c (##sys#read-char-0 port)))
 			      (if (eof-object? c)
