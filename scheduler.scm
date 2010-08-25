@@ -119,7 +119,6 @@ EOF
 			  (begin
 			    (##sys#setislot tto 13 #t) ; mark as being unblocked by timeout
 			    (##sys#clear-i/o-state-for-thread! tto)
-			    ;;(pp `(CLEARED: ,tto ,@##sys#fd-list) ##sys#standard-error) ;***
 			    (##sys#thread-basic-unblock! tto)
 			    (loop (cdr lst)) )
 			  (begin
@@ -326,7 +325,7 @@ EOF
 
 ;;; `select()'-based blocking:
 
-(define ##sys#fd-list '())
+(define ##sys#fd-list '())		; ((FD THREAD1 ...) ...)
 
 (define ##sys#fdset-select-timeout
   (foreign-lambda* int ([bool to] [double tm])
@@ -342,9 +341,9 @@ EOF
     "C_fdset_input = C_fdset_input_2;"
     "C_fdset_output = C_fdset_output_2;") )
 
-((foreign-lambda* void ()
-   "FD_ZERO(&C_fdset_input);"
-   "FD_ZERO(&C_fdset_output);") )
+(foreign-code 
+ "FD_ZERO(&C_fdset_input);"
+ "FD_ZERO(&C_fdset_output);")
 
 (define ##sys#fdset-input-set
   (foreign-lambda* void ([int fd])
@@ -356,6 +355,8 @@ EOF
 
 (define ##sys#fdset-clear
   (foreign-lambda* void ([int fd])
+    "FD_CLR(fd, &C_fdset_input);"
+    "FD_CLR(fd, &C_fdset_input);"
     "FD_CLR(fd, &C_fdset_input_2);"
     "FD_CLR(fd, &C_fdset_output_2);") )
 
@@ -433,9 +434,7 @@ EOF
 		(if (eq? fd fd2)
 		    (let ((ts (##sys#delq t (##sys#slot a 1)))) ; remove from fd-list entry
 		      (cond ((null? ts)
-			     ;;(pp `(CLEAR FD: ,fd ,t) ##sys#standard-error)
 			     (##sys#fdset-clear fd) ; no more threads waiting for this fd
-			     (##sys#fdset-restore)
 			     (##sys#slot lst 1) )
 			    (else
 			     (##sys#setslot a 1 ts) ; fd-list entry is list with t removed
@@ -493,13 +492,5 @@ EOF
   (when (or (eq? 'blocked (##sys#slot t 3))
 	    (eq? 'sleeping (##sys#slot r 3)))
     (##sys#remove-from-timeout-list t)
-    (set! ##sys#fd-list 
-      (let loop ([fdl ##sys#fd-list])
-	(if (null? fdl)
-	    '()
-	    (let ([a (##sys#slot fdl 0)])
-	      (cons
-	       (cons (##sys#slot a 0)
-		     (##sys#delq t (##sys#slot a 1)) )
-	       (loop (##sys#slot fdl 1)) ) ) ) ) )
+    (##sys#clear-i/o-state-for-thread! t)
     (##sys#thread-basic-unblock! t) ) )
