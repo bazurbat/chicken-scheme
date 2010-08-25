@@ -231,29 +231,27 @@
   (reg "chicken-bug" (foreign-value "C_CHICKEN_BUG_PROGRAM" c-string)))
 
 (define (fixpath prg)
-  (cond ((string=? prg "csc")
-	 (string-intersperse 
-	  (cons*
-	   (shellpath (find-program "csc"))
-	   "-feature" "compiling-extension" 
-	   (if (and (feature? #:cross-chicken)
-		    (not (host-extension)))
-	       "" "-setup-mode")
-	   (if (keep-intermediates) "-k" "")
-	   (if (host-extension) "-host" "")
-	   (if (deployment-mode) "-deployed" "")
-	   (append
-	    (map (lambda (f)
-		   (string-append "-feature " (symbol->string f)))
-		 (extra-features))
-	    (map (lambda (f)
-		   (string-append "-no-feature " (symbol->string f)))
-		 (extra-nonfeatures))
-	    *csc-options*) )
-	  " ") )
-	((and (string-prefix? "./" prg) *windows-shell*)
-	 (shellpath (substring prg 2)))
-	(else (find-program prg))))
+  (if (string=? prg "csc")
+      (string-intersperse 
+       (cons*
+	(shellpath (find-program "csc"))
+	"-feature" "compiling-extension" 
+	(if (and (feature? #:cross-chicken)
+		 (not (host-extension)))
+	    "" "-setup-mode")
+	(if (keep-intermediates) "-k" "")
+	(if (host-extension) "-host" "")
+	(if (deployment-mode) "-deployed" "")
+	(append
+	 (map (lambda (f)
+		(string-append "-feature " (symbol->string f)))
+	      (extra-features))
+	 (map (lambda (f)
+		(string-append "-no-feature " (symbol->string f)))
+	      (extra-nonfeatures))
+	 *csc-options*) )
+       " ")
+      (find-program prg)))
 
 (define (fixmaketarget file)
   (if (and (equal? "so" (pathname-extension file))
