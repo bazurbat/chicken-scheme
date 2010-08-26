@@ -120,7 +120,6 @@ EOF
 			  (begin
 			    (##sys#setislot tto 13 #t) ; mark as being unblocked by timeout
 			    (##sys#clear-i/o-state-for-thread! tto)
-			    ;;(pp `(CLEARED: ,tto ,@##sys#fd-list) ##sys#standard-error) ;***
 			    (##sys#thread-basic-unblock! tto)
 			    (loop (cdr lst)) )
 			  (begin
@@ -427,15 +426,14 @@ EOF
   (when (pair? (##sys#slot t 11))
     (let ((fd (car (##sys#slot t 11))))
       (set! ##sys#fd-list
-	(let loop ([lst ##sys#fd-list])
+	(let loop ((lst ##sys#fd-list))
 	  (if (null? lst)
 	      '()
-	      (let* ([a (car lst)]
-		     [fd2 (car a)] )
+	      (let* ((a (car lst))
+		     (fd2 (car a)) )
 		(if (eq? fd fd2)
 		    (let ((ts (##sys#delq t (cdr a)))) ; remove from fd-list entry
-		      (cond ((null? ts)
-			     (cdr lst) )
+		      (cond ((null? ts) (cdr lst))
 			    (else
 			     (##sys#setslot a 1 ts) ; fd-list entry is list with t removed
 			     lst) ) )
@@ -492,13 +490,5 @@ EOF
   (when (or (eq? 'blocked (##sys#slot t 3))
 	    (eq? 'sleeping (##sys#slot t 3)))
     (##sys#remove-from-timeout-list t)
-    (set! ##sys#fd-list 
-      (let loop ([fdl ##sys#fd-list])
-	(if (null? fdl)
-	    '()
-	    (let ([a (##sys#slot fdl 0)])
-	      (cons
-	       (cons (##sys#slot a 0)
-		     (##sys#delq t (##sys#slot a 1)) )
-	       (loop (##sys#slot fdl 1)) ) ) ) ) )
+    (##sys#clear-i/o-state-for-thread! t)
     (##sys#thread-basic-unblock! t) ) )
