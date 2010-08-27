@@ -96,7 +96,7 @@ then {{(current-directory DIR)}} is equivalent to {{(change-directory DIR)}}.
 <procedure>(create-directory NAME #!optional PARENTS?)</procedure>
 
 Creates a directory with the pathname {{NAME}}.  If the {{PARENTS?}} argument
-is given and not false, any nonextant parent directories are also created.
+is given and not false, any nonexistent parent directories are also created.
 
 ==== delete-directory
 
@@ -422,7 +422,7 @@ return an inexact integer.
 
 <procedure>(regular-file? FILENAME)</procedure>
 
-Returns true, if {{FILENAME}} names a regular file.
+Returns true, if {{FILENAME}} names a regular file (not a directory or symbolic link).
 
 ==== file-owner
 

@@ -5,7 +5,7 @@
 
 The {{csc}} compiler driver provides a convenient interface to
 the basic Scheme-to-C translator ({{chicken}}) and takes care
-for compiliong and linking the generated C files into executable
+for compiling and linking the generated C files into executable
 code. Enter
 
  csc -help

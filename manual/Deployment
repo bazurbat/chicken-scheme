@@ -6,7 +6,7 @@
 
 CHICKEN generates fully native binaries that can be distributed like 
 normal C/C++ programs. There are various methods of deployment,
-depending on platform, linkage, external dependencies and wether
+depending on platform, linkage, external dependencies and whether
 the application should be built from sources or precompiled and
 whether the CHICKEN runtime-libraries are expected on the destination
 system or if the application should be completely self-contained.

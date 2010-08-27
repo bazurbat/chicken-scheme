@@ -473,7 +473,7 @@ program to remove one or more extensions from the local repository:
 The hello module was just a shared library, and not a module.
 
 To create an extension that exports syntax see the chapter on
-[[http://chicken.wiki.br/man/4/Modules%20and%20macros|Modules and
+[[http://wiki.call-cc.org/man/4/Modules%20and%20macros|Modules and
 macros]].  We will show a simple example here: a module {{my-lib}}
 that exports one macro ({{prog1}}) and one procedure ({{my-sum}}):
 
@@ -567,7 +567,7 @@ Next, it should be possible to load the library:
 When running {{chicken-install}} with an argument {{NAME}}, for which
 no associated {{.setup}} file exists, then it will try to download the
 extension via HTTP from the CHICKEN code repository at
-[[http://chicken.wiki.br/svn/chicken-eggs/]]. Extensions that are
+[[http://code.call-cc.org/svn/chicken-eggs/]]. Extensions that are
 required to compile and/or use the requested extension are downloaded
 and installed automatically.
 
@@ -677,7 +677,7 @@ the tools).
 
 You can install eggs with
 
-  chicken-install -p ~/my_eggs <package>
+  chicken-install -p ~/myeggs <package>
 
 See that the argument to chicken-install is just {{~/myeggs}}, while everywhere else it's
 {{~/myeggs/lib/chicken/5}}.
