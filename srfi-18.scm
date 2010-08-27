@@ -29,7 +29,7 @@
  (unit srfi-18)
  (uses scheduler)
  (disable-interrupts)
- (hide ##sys#compute-time-limit) )
+ (hide compute-time-limit) )
 
 (include "common-declarations.scm")
 
@@ -45,7 +45,7 @@
 
 ;;; Helper routines:
 
-(define (##sys#compute-time-limit tm loc)
+(define (compute-time-limit tm loc)
   (cond ((not tm) #f)
 	((##sys#structure? tm 'time) (##sys#slot tm 1))
 	((number? tm) (+ (current-milliseconds) (* tm 1000)))
@@ -170,7 +170,7 @@
   (lambda (thread . timeout)
     (##sys#check-structure thread 'thread 'thread-join!)
     (let* ((limit (and (pair? timeout) 
-		       (##sys#compute-time-limit (##sys#slot timeout 0) 'thread-join!)))
+		       (compute-time-limit (##sys#slot timeout 0) 'thread-join!)))
 	   (rest (and (pair? timeout) (##sys#slot timeout 1)))
 	   (tosupplied (and rest (pair? rest)))
 	   (toval (and tosupplied (##sys#slot rest 0))) )
@@ -234,7 +234,7 @@
 	 (##sys#thread-block-for-timeout! ct limit)
 	 (##sys#schedule) ) ) ) )
   (unless tm (##sys#signal-hook #:type-error 'thread-sleep! "invalid timeout argument" tm))
-  (sleep (##sys#compute-time-limit tm 'thread-sleep!)) )
+  (sleep (compute-time-limit tm 'thread-sleep!)) )
 
 
 ;;; Mutexes:
@@ -269,7 +269,7 @@
   (lambda (mutex . ms-and-t)
     (##sys#check-structure mutex 'mutex 'mutex-lock!)
     (let* ([limitsup (pair? ms-and-t)]
-	   [limit (and limitsup (##sys#compute-time-limit (car ms-and-t) 'mutex-lock!))]
+	   [limit (and limitsup (compute-time-limit (car ms-and-t) 'mutex-lock!))]
 	   [threadsup (fx> (length ms-and-t) 1)]
 	   [thread (and threadsup (cadr ms-and-t))] )
       (when thread (##sys#check-structure thread 'thread 'mutex-lock!))
@@ -334,7 +334,7 @@
       (##sys#call-with-current-continuation
        (lambda (return)
 	 (let ([waiting (##sys#slot mutex 3)]
-	       [limit (and timeout (##sys#compute-time-limit timeout 'mutex-unlock!))] )
+	       [limit (and timeout (compute-time-limit timeout 'mutex-unlock!))] )
 	   (##sys#setislot mutex 4 #f)
 	   (##sys#setislot mutex 5 #f)
 	   (let ((t (##sys#slot mutex 2)))
@@ -455,7 +455,7 @@
       (lambda ()
 	(when (or (##sys#fudge 12) (##sys#tty-port? ##sys#standard-input))
 	  (old)
-	  (##sys#thread-block-for-i/o! ##sys#current-thread 0 #t)
+	  (##sys#thread-block-for-i/o! ##sys#current-thread 0 #:input)
 	  (thread-yield!)))) ) )
 
 

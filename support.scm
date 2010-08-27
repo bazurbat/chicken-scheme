@@ -762,7 +762,9 @@
 	[(##core#variable quote ##core#undefined ##core#proc ##core#global-ref) #f]
 	[(##core#lambda) 
 	 (let ([id (first (node-parameters n))])
-	   (find (lambda (fs) (eq? id (foreign-callback-stub-id fs))) foreign-callback-stubs) ) ]
+	   (find (lambda (fs)
+		   (eq? id (foreign-callback-stub-id fs)))
+		 foreign-callback-stubs) ) ]
 	[(if let) (any walk subs)]
 	[else #t] ) ) ) )
 
