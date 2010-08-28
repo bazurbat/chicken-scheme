@@ -133,7 +133,7 @@
     fpfloor fpceiling fptruncate fpround fpsin fpcos fptan fpasin fpacos fpatan
     fpatan2 fpexp fpexpt fplog fpsqrt fpabs fpinteger?
     arithmetic-shift void flush-output thread-specific thread-specific-set!
-    not-pair? atom? null-list? print print* error cpu-time proper-list? call/cc
+    not-pair? atom? null-list? print print* error proper-list? call/cc
     blob-size u8vector->blob/shared s8vector->blob/shared u16vector->blob/shared
     s16vector->blob/shared u32vector->blob/shared s32vector->blob/shared
     f32vector->blob/shared f64vector->blob/shared
@@ -196,7 +196,7 @@
     f32vector-set! f64vector-set!
     u8vector-ref s8vector-ref u16vector-ref s16vector-ref u32vector-ref s32vector-ref
     u8vector-set! s8vector-set! u16vector-set! s16vector-set! u32vector-set! s32vector-set!
-    ##sys#intern-symbol ##sys#make-symbol make-record-instance error cpu-time ##sys#block-set!) )
+    ##sys#intern-symbol ##sys#make-symbol make-record-instance error ##sys#block-set!) )
 
 (define foldable-bindings
   (lset-difference 
@@ -536,7 +536,6 @@
 (rewrite 'call-with-values 13 "C_call_with_values" #t)
 (rewrite '##sys#call-with-values 13 "C_u_call_with_values" #f)
 (rewrite '##sys#call-with-values 13 "C_call_with_values" #t)
-(rewrite 'cpu-time 13 "C_cpu_time" #t)
 (rewrite 'locative-ref 13 "C_locative_ref" #t)
 (rewrite '##sys#continuation-graft 13 "C_continuation_graft" #t)
 
