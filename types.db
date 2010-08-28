@@ -260,7 +260,7 @@
 (current-error-port (procedure current-error-port (#!optional port) port))
 (current-exception-handler (procedure current-exception-handler (#!optional procedure) procedure))
 (current-gc-milliseconds (procedure current-gc-milliseconds () fixnum))
-(current-milliseconds (procedure current-milliseconds () fixnum))
+(current-milliseconds (procedure current-milliseconds () float))
 (current-read-table (procedure current-read-table () (struct read-table)))
 (current-seconds (procedure current-seconds () number))
 (define-reader-ctor (procedure define-reader-ctor (symbol procedure) undefined))
