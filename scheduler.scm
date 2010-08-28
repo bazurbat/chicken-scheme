@@ -82,14 +82,14 @@ EOF
 
 (include "common-declarations.scm")
 
-(define (dbg . args)
+#;(define (dbg . args)
   (for-each
    (lambda (x)
      (display x ##sys#standard-error))
    args)
   (newline ##sys#standard-error))
 
-#;(define-syntax dbg
+(define-syntax dbg
   (syntax-rules ()
     ((_ . _) #f))) 
 
