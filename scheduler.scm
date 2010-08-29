@@ -33,7 +33,7 @@
 	remove-from-ready-queue ##sys#unblock-threads-for-i/o ##sys#force-primordial
 	fdset-input-set fdset-output-set fdset-clear
 	fdset-select-timeout fdset-set fdset-test
-	create-fdset
+	create-fdset stderr
 	##sys#clear-i/o-state-for-thread! ##sys#abandon-mutexes) 
   (not inline ##sys#interrupt-hook)
   (unsafe)
@@ -82,12 +82,14 @@ EOF
 
 (include "common-declarations.scm")
 
-#;(define (dbg . args)
-  (for-each
-   (lambda (x)
-     (display x ##sys#standard-error))
-   args)
-  (newline ##sys#standard-error))
+#;(begin
+    (define stderr ##sys#standard-error) ; use default stderr port
+    (define (dbg . args)
+      (for-each
+       (lambda (x)
+	 (display x stderr))
+       args)
+      (newline stderr))
 
 (define-syntax dbg
   (syntax-rules ()
