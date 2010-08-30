@@ -356,7 +356,7 @@
 (keyword->string (procedure keyword->string (symbol) string))
 (keyword-style (procedure keyword-style (#!optional *) *))
 (keyword? (procedure keyword? (*) boolean))
-(load-library (procedure load-library (* string) undefined))
+(load-library (procedure load-library (symbol #!optional string) undefined))
 (load-relative (procedure load-relative (string #!optional procedure) undefined))
 (load-verbose (procedure load-verbose (#!optional *) *))
 (machine-byte-order (procedure machine-byte-order () symbol))
