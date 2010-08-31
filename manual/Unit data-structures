@@ -372,7 +372,7 @@ is equivalent to
 
 <procedure>(string-split STRING [DELIMITER-STRING [KEEPEMPTY]])</procedure>
 
-Split string into substrings separated by the given delimiters. If
+Split string into substrings delimited by any of the characters given in the delimiter string. If
 no delimiters are specified, a string comprising the tab, newline and space characters 
 is assumed. If the
 parameter {{KEEPEMPTY}} is given and not {{#f}}, then empty
@@ -381,6 +381,7 @@ substrings are retained:
 <enscript highlight=scheme>
 (string-split "one  two  three") ==> ("one" "two" "three")
 (string-split "foo:bar::baz:" ":" #t) ==> ("foo" "bar" "" "baz" "")
+(string-split "foo:bar:baz,quux,zot" ":," ) ==> ("foo" "bar" "baz" "quux" "zot")
 </enscript>
 
 

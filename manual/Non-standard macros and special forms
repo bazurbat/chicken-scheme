@@ -265,7 +265,7 @@ exist in the Scheme namespace and can be lexically shadowed.  If the
 value is mutable, then the compiler is careful to preserve its identity.
 {{CONST}} may be any constant expression, and may also refer to
 constants defined via {{define-constant}} previously.
-This for should only be used at top-level.
+This form should only be used at top-level.
 
 ==== define-inline
 
@@ -308,7 +308,7 @@ name of a globally or locally bound procedure. Any direct call to this procedure
 will be transformed before compilation, which allows arbitrary rewritings
 of function calls. 
 
-{{TRANSFORMER}} can be a {{syntax-rules}} expression or an explicit-renaming transforme
+{{TRANSFORMER}} can be a {{syntax-rules}} expression or an explicit-renaming transformer
 procedure. Returning the original form in an explicit-renaming macro or simply
 "falling trough" all patterns in a {{syntax-rules}} form will keep the original
 expression and compile it normally.
@@ -322,12 +322,12 @@ module.
 {{define-compiler-syntax}} should only be used at top-level. Local compiler-syntax
 can be defined with {{let-compiler-syntax}}.
 
-<scheme>
+<enscript highlight=scheme>
 (define-compiler-syntax +
   (syntax-rules ()
     ((_) 1)
     ((_ x 0) x) ) )
-</scheme>
+</enscript>
 
 If no transformer is given, then {{(define-compiler-syntax NAME)}} removes
 any compiler-syntax definitions for {{NAME}}.
@@ -338,7 +338,7 @@ any compiler-syntax definitions for {{NAME}}.
 <macro>(let-compiler-syntax ((NAME [TRANSFORMER]) ...) BODY ...)</macro>
 
 Allows definition local compiler macros, which are only applicable inside {{BODY ...}}.
-By not providing a transformer expression, compiler-syntax for specific identifiers
+By not providing a {{TRANSFORMER}} expression, compiler-syntax for specific identifiers
 can be temporarily disabled.
 
 
@@ -463,17 +463,22 @@ Expands by selecting feature clauses. This form is allowed to appear in non-topl
 
 Predefined feature-identifiers are "situation" specific:
 
-; compile : {{eval}}, {{library}}, {{match}}, {{compiling}}, {{srfi-11}}, {{srfi-15}}, {{srfi-31}}, {{srfi-26}}, {{srfi-16}}, {{utils}}, {{regex}}, {{srfi-4}}, {{match}}, {{srfi-1}}, {{srfi-69}}, {{srfi-28}}, {{extras}}, {{srfi-8}}, {{srfi-6}}, {{srfi-2}}, {{srfi-0}}, {{srfi-10}}, {{srfi-9}}, {{srfi-55}}, {{srfi-61}} {{chicken}}, {{srfi-23}}, {{srfi-30}}, {{srfi-39}}, {{srfi-62}}, {{srfi-17}}, {{srfi-12}}.
+; compile : {{chicken}}, {{compiling}}, {{library}}, {{eval}}, {{extras}}, {{utils}}, {{regex}}, {{srfi-0}}, {{srfi-1}}, {{srfi-2}}, {{srfi-4}}, {{srfi-6}}, {{srfi-8}}, {{srfi-9}}, {{srfi-10}}, {{srfi-11}}, {{srfi-12}}, {{srfi-15}}, {{srfi-16}}, {{srfi-17}}, {{srfi-23}}, {{srfi-26}}, {{srfi-28}}, {{srfi-30}}, {{srfi-31}}, {{srfi-39}}, {{srfi-55}}, {{srfi-61}}, {{srfi-62}}, {{srfi-69}}
 
-; load : {{srfi-69}}, {{srfi-28}}, {{extras}}, {{srfi-8}}, {{srfi-6}}, {{srfi-2}}, {{srfi-0}}, {{srfi-10}}, {{srfi-9}}, {{srfi-55}}, {{srfi-61}}, {{chicken}}, {{srfi-23}}, {{srfi-30}}, {{srfi-39}}, {{srfi-62}}, {{srfi-17}}, {{srfi-12}}. {{library}} is implicit.
+; load : {{chicken}}, {{extras}}, {{srfi-0}}, {{srfi-2}}, {{srfi-6}}, {{srfi-8}}, {{srfi-9}}, {{srfi-10}}, {{srfi-12}}, {{srfi-17}}, {{srfi-23}}, {{srfi-28}}, {{srfi-30}}, {{srfi-39}}, {{srfi-55}}, {{srfi-61}}, {{srfi-62}}, {{srfi-69}}. {{library}} is implicit.
 
-; eval : {{match}}, {{csi}}, {{srfi-11}}, {{srfi-15}}, {{srfi-31}}, {{srfi-26}}, {{srfi-16}}, {{srfi-69}}, {{srfi-28}}, {{extras}}, {{srfi-8}}, {{srfi-6}}, {{srfi-2}}, {{srfi-0}}, {{srfi-10}}, {{srfi-9}}, {{srfi-55}}, {{srfi-61}}, {{chicken}}, {{srfi-23}}, {{srfi-30}}, {{srfi-39}}, {{srfi-62}}, {{srfi-17}}, {{srfi-12}}. {{library}} is implicit.
+; eval : {{csi}}, {{chicken}}, {{extras}}, {{srfi-0}}, {{srfi-2}}, {{srfi-6}}, {{srfi-8}}, {{srfi-9}}, {{srfi-10}}, {{srfi-11}}, {{srfi-12}}, {{srfi-15}}, {{srfi-16}}, {{srfi-17}}, {{srfi-23}}, {{srfi-26}}, {{srfi-28}}, {{srfi-30}}, {{srfi-31}}, {{srfi-39}}, {{srfi-55}}, {{srfi-61}}, {{srfi-62}}, {{srfi-69}}. {{library}} is implicit.
 
-The following feature-identifiers are available in all situations: {{(machine-byte-order)}}, {{(machine-type)}}, {{(software-type)}}, {{(software-version)}}, where the actual feature-identifier is platform dependent.
+The following feature-identifier classes are available in all situations:
+{{(machine-byte-order)}}, {{(machine-type)}}, {{(software-type)}},
+{{(software-version)}}, where the actual feature-identifier is platform
+dependent.
 
-In addition the following feature-identifiers may exist: {{applyhook}}, {{extraslot}}, {{ptables}}, {{dload}}.
+In addition the following feature-identifiers may exist: {{cross-chicken}},
+{{dload}}, {{manyargs}}, {{ptables}}.
 
-For further information, see the documentation for [[http://srfi.schemers.org/srfi-0/srfi-0.html|SRFI-0]].
+For further information, see the documentation for
+[[http://srfi.schemers.org/srfi-0/srfi-0.html|SRFI-0]].
 
 ==== ensure
 
