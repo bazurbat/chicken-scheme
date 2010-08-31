@@ -683,7 +683,7 @@
     (ignore-errors ($system (sprintf "~A ~A" *remove-command* (shellpath fname))))
     (zero? r) ) )
 
-(define (required-chicken-version v)
+(define (required-chicken-version v)	;DEPRECATED
   (when (version>=? v (chicken-version) ) 
     (error (sprintf "CHICKEN version ~a or higher is required" v)) ) )
 
@@ -693,7 +693,7 @@
     "the currently installed extension `~s' ~a - please run~%~%  chicken-install ~a~a~%~%and repeat the current installation operation."
     ext msg ext (if version (conc ":" version) "")) ) )
 
-(define (required-extension-version . args)
+(define (required-extension-version . args) ;DEPRECATED
   (let loop ((args args))
     (cond ((null? args) #f)
 	  ((and (list? args) (>= (length args) 2))
@@ -704,11 +704,13 @@
 	     (if info
 		 (let ((ver (and (assq 'version info) (cadr (assq 'version info)))))
 		   (cond ((not ver) (upgrade-message ext "has no associated version information"))
-			 ((and (version>=? version ver) (not (string=? (->string version) (->string ver))))
+			 ((and (version>=? version ver) 
+			       (not (string=? (->string version) (->string ver))))
 			  (upgrade-message 
 			   ext
-			   (sprintf "is older than ~a, which is the minimum version that this extension requires"
-				    version) 
+			   (sprintf
+			       "is older than ~a, which is the minimum version that this extension requires"
+			     version) 
                            version) )
 			 (else (loop more)) ) ) 
 		 (upgrade-message ext "is not installed") ) ) )

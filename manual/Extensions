@@ -324,24 +324,6 @@ Contains the path of the directory where {{chicken-install}} was invoked.
 Reflects the setting of the {{-no-install}} option, i.e. is {{#f}}, if {{-no-install}} was
 given to {{chicken-install}}.
 
-==== required-chicken-version
-
-<procedure>(required-chicken-version VERSION)</procedure>
-
-Signals an error if the version of CHICKEN that this script runs under is lexicographically less than
-{{VERSION}} (the argument will be converted to a string, first).
-
-
-==== required-extension-version
-
-<procedure>(required-extension-version EXTENSION1 VERSION1 ...)</procedure>
-
-Checks whether the extensions {{EXTENSION1 ...}} are installed and at least of version {{VERSION1 ...}}.
-The test is made by lexicographically comparing the string-representations of the given version with the version 
-of the installed extension. If one of the listed extensions is not installed, has no associated version information
-or is of a version older than the one specified.
-
-
 ==== host-extension
 
 <parameter>host-extension</parameter>
