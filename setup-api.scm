@@ -53,7 +53,7 @@
      test-compile try-compile run-verbose
      extra-features extra-nonfeatures
      copy-file move-file
-     required-chicken-version required-extension-version
+     required-chicken-version required-extension-version ;DEPRECATED
      sudo-install keep-intermediates
      version>=?
      extension-name-and-version
