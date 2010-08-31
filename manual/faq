@@ -86,7 +86,7 @@ numbers) are more than sufficient;
 - Dispatching of arithmetic operations is more efficient.
 
 There is an extension based on the GNU Multiprecision Package that implements most of the full
-numeric tower, see [[http://chicken.wiki.br/egg/numbers|numbers]].
+numeric tower, see [[http://wiki.call-cc.org/egg/numbers|numbers]].
 
 
 ==== Does CHICKEN support native threads?
@@ -472,7 +472,7 @@ The following extended bindings are handled specially:
 {{pointer-u32-set!}} {{pointer-s32-set!}} {{pointer-f32-set!}} {{pointer-f64-set!}} 
 {{make-record-instance}}
 {{locative-ref}} {{locative-set!}} {{locative?}} {{locative->object}} {{identity}}
-{{cpu-time}} {{error}} {{call/cc}} {{any?}}
+{{error}} {{call/cc}} {{any?}}
 {{substring=?}} {{substring-ci=?}} {{substring-index}} {{substring-index-ci}}
 {{printf}} {{sprintf}} {{fprintf}} {{format}} {{o}}
 
@@ -632,7 +632,7 @@ It should contain the path where you want eggs to be installed:
  $ chicken-install -init ~/eggs/lib/chicken/5
  $ chicken-install -p ~/eggs/ extensionname
 
-In order to make programs (including csi) see these eggs, you should set this variable when you run them. See the [[http://chicken.wiki.br/man/4/Extensions#changing-repository-location|Extensions/Changing repository location]] section of the manual for more information on that.
+In order to make programs (including csi) see these eggs, you should set this variable when you run them. See the [[http://wiki.call-cc.org/man/4/Extensions#changing-repository-location|Extensions/Changing repository location]] section of the manual for more information on that.
 
 Alternatively, you can call the {{repository-path}} Scheme procedure before loading the eggs, as in:
 

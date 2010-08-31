@@ -12,7 +12,7 @@ and expressions interactively.
 
 where {{FILENAME}} specifies a file with Scheme source-code.  If the
 extension of the source file is {{.scm}}, it may be omitted. The
-runtime options described in [[http://galinha.ucpel.tche.br/Using%20the%20compiler#Compiler%20command%20line%20format|Compiler command line format]] are also available
+runtime options described in [[Using%20the%20compiler#Compiler%20command%20line%20format|Compiler command line format]] are also available
 for the interpreter.  If the environment variable {{CSI_OPTIONS}}
 is set to a list of options, then these options are additionally passed
 to every direct or indirect invocation of {{csi}}. Please note that
@@ -127,7 +127,7 @@ The toplevel loop understands a number of special commands:
 
 ; ,? : Show summary of available toplevel commands.
 
-; ,l FILENAME ... : Load files with given {{FILENAME}}s.
+; ,l FILENAME ... : Load files with given {{FILENAME}}s
 
 ; ,ln FILENAME ... : Load files and print result(s) of each top-level expression.
 
@@ -260,21 +260,18 @@ textual description of the object to the passed output-port. For example:
 On platforms that support it, it is possible to get auto-completion of symbols,
 history (over different {{csi}} sessions) and a more feature-full
 editor for the expressions you type
-using the [[http://www.call-with-current-continuation.org/eggs/readline.html]] egg by
+using the [[http://wiki.call-cc.org/eggref/4/readline]] egg by
 Tony Garnock Jones.
 It is very useful for interactive use of csi.
 
 To enable it install the egg and put this in your {{~/.csirc}} file:
 
- (use readline regex)
- (current-input-port (make-gnu-readline-port))
- (gnu-history-install-file-manager 
-   (string-append (or (getenv "HOME") ".") "/.csi.history"))
-
-More details are available in [[http://www.call-with-current-continuation.org/eggs/readline.html|the egg's documentation]].
-
-
-=== Note about libraries automatically loaded in the interpreter
+<enscript highlight=scheme>
+(use readline regex)
+(current-input-port (make-gnu-readline-port))
+(gnu-history-install-file-manager 
+  (string-append (or (getenv "HOME") ".") "/.csi.history"))
+</enscript>
 
 The interpreter {{csi}} internally requires some routines from the
 {{ports}} and {{extras}} library units and loads them automatically

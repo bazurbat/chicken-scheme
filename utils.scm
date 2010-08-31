@@ -40,13 +40,11 @@
 ;;; Like `system', but allows format-string and bombs on nonzero return code:
 
 (define system*
-  (let ([sprintf sprintf]
-	[system system] )
-    (lambda (fstr . args)
-      (let* ([str (apply sprintf fstr args)]
-	     [n (system str)] )
-	(unless (zero? n)
-	  (##sys#error "shell invocation failed with non-zero return status" str n) ) ) ) ) )
+  (lambda (fstr . args)
+    (let* ([str (apply sprintf fstr args)]
+	   [n (system str)] )
+      (unless (zero? n)
+	(##sys#error "shell invocation failed with non-zero return status" str n) ) ) ) )
 
 
 ;;; Read file as string from given filename or port:
@@ -83,8 +81,8 @@
 
 (define compile-file
   (let ((csc (foreign-value "C_CSC_PROGRAM" c-string))
-	(path (foreign-value "C_INSTALL_BIN_HOME" c-string)) 
-	(load-file load))
+	(load-file load)
+	(path (foreign-value "C_INSTALL_BIN_HOME" c-string)) )
     (lambda (filename #!key (options '()) output-file (load #t))
       (let ((cscpath (or (file-exists? (make-pathname path csc)) "csc"))
 	    (tmpfile (and (not output-file) (create-temporary-file "so")))

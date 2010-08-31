@@ -349,7 +349,7 @@
 	   (if acc
 	       '((set! ##sys#profile-append-mode #t))
 	       '() ) ) )
-	(dribble "Generating ~aprofile" (if acc "accumulated " "")) ) )
+	(dribble "generating ~aprofiled code" (if acc "accumulative " "")) ) )
 
     ;;*** hardcoded "modules.db" is bad (also used in chicken-install.scm)
     (load-identifier-database "modules.db")
@@ -591,7 +591,7 @@
 			    ;; change semantics
 			    (when (and inline-output-file insert-timer-checks)
 			      (let ((f inline-output-file))
-				(dribble "Generating global inline file `~a' ..." f)
+				(dribble "generating global inline file `~a' ..." f)
 				(emit-global-inline-file f db) ) )
 			    (check-for-unsafe-toplevel-procedure-calls node2 db)
 			    (begin-time)

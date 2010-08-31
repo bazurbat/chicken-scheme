@@ -35,48 +35,4 @@
   (syntax-rules ()
     ((_) '(: #\( (submatch (* any)) ", " (submatch (* any))))))
 
-;; slow
-;(print "literal")
 (bgrep 1 (rx1))
-
-#|
-(print "literal (SRE)")
-(bgrep 1 (rx2))
-
-(print "precompiled")
-(define rx (regexp (rx1)))
-(bgrep 1 rx)
-|#
-
-#|
-(define-compiler-syntax (string-search x r c)
-  (let ((%quote (r 'quote))
-	(%let (r 'let))
-	(%string-search (r 'string-search))
-	(%regexp (r 'regexp))
-	(%or (r 'or))
-	(%let* (r 'let*)))
-    (let ((rx (cadr x)))
-      (if (or (string? rx) 
-	      (and (pair? rx) (c (car rx) %quote)))
-	  (let ((cache (vector #f))
-		(%cache (r 'cache))
-		(%tmp (r 'tmp)))
-	    `(,%let* ((,%cache (,%quote ,cache))
-		      (,%tmp (##sys#slot ,%cache 0)))
-		     (,%string-search
-		      (,%or ,%tmp
-			    (,%let ((,%tmp (,%regexp ,rx)))
-				   (##sys#setslot ,%cache 0 ,%tmp)
-				   ,%tmp))
-		      ,@(cddr x))))
-	  x))))
-
-(print "inline cached/literal")
-(bgrep 1 "\\((.*), (.*)\\)")
-(print "inline cached/literal (SRE)")
-(bgrep 1 '(: #\( (submatch (* any)) ", " (submatch (* any))))
-
-|#
-
-

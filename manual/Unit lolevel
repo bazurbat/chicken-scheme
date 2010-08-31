@@ -15,9 +15,9 @@ This unit uses the {{srfi-4}} and {{extras}} units.
 
 The abstract class of ''pointer'' is divided into 2 categories: 
 
-; ''pointer object'' : is a foreign pointer object, a tagged foreign pointer object (see {{Tagged pointers}}), or a SWIG-pointer.
+; ''pointer object'' : is a foreign pointer object, a [[#Tagged pointers|tagged foreign pointer object]], or a SWIG-pointer.
 
-; ''pointer-like object'' " is a closure, port, locative (see {{Locatives}}, or a pointer object.
+; ''pointer-like object'' : is a closure, port, [[#Locatives|locative]], or a pointer object.
 
 SWIG-pointers are currently an issue due to "bitrot" in the SWIG Chicken
 translator. While they are considered a pointer object unexpected results are
@@ -486,7 +486,7 @@ static memory are copied back into garbage collected storage.
 <procedure>(move-memory! FROM TO [BYTES [FROM-OFFSET [TO-OFFSET]]])</procedure>
 
 Copies {{BYTES}} bytes of memory from {{FROM}} to {{TO}}. {{FROM}} and {{TO}}
-may be strings, blobs, SRFI-4 number-vectors (see: @ref{Unit srfi-4}), memory
+may be strings, blobs, [[Unit srfi-4|SRFI-4 number-vectors]], memory
 mapped files, foreign pointers (as obtained from a call to {{foreign-lambda}},
 for example), tagged-pointers or locatives. if {{BYTES}} is not given and the
 size of the source or destination operand is known then the maximal number of

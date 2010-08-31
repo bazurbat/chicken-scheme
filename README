@@ -6,7 +6,7 @@
   (c) 2008-2010, The Chicken Team
   (c) 2000-2007, Felix L. Winkelmann
 
-  version 4.5.8
+  version 4.6.1
 
 
  1. Introduction
@@ -42,20 +42,21 @@
 
  2. Installation
 
-        First unzip the package ("unzip chicken-<version>.zip" or "tar
-        xzf chicken-<version>.tar.gz" on UNIX or use your favorite
-        extraction program on Windows).
-
         Building CHICKEN requires GNU Make. Other "make" derivates are
         not supported. If you are using a Windows system and do not
-        have GNU Make, see below for a link to a precompiled set of
-        UNIX utilities, which among other useful tools contains "make".
+        have GNU Make, download
+        http://www.call-with-current-continuation.org/tarballs/UnxUtils.zip.
+        It contains a precompiled set of UNIX utilities, which among
+        other useful tools contains "make".
 
         Configuration and customization of the build process is done by 
         either setting makefile variables on the "make" command line or 
         by editing the platform-specific makefile.
 
-        Invoke "make" like this:
+        To build CHICKEN, first extract the archive ("tar xzf
+        chicken-<version>.tar.gz" on UNIX or use your favorite
+        extraction program on Windows), then change to the
+        chicken-<version> directory and invoke "make" like this:
 
           make PLATFORM=<platform> PREFIX=<destination>
 
@@ -85,7 +86,7 @@
 	by using a precompiled and statically linked compiler binary
 	from here:
 
-	  http://chicken.wiki.br/chicken-projects/bootstrap/
+	  http://code.call-cc.org/bootstrap/
 
         If CHICKEN is build successfully, you can install it on your
         system by entering
@@ -156,7 +157,7 @@
           "HOST" option mentioned above. More information about this
           process and the variables that you should set are provided
           in the CHICKEN wiki at
-          <http://chicken.wiki.br/cross-compilation>.
+          <http://wiki.call-cc.org/cross-compilation>.
 
         SRCDIR= 
           Specifies that CHICKEN should be built outside of its source
@@ -204,20 +205,19 @@
 
         Documentation can be found in the directory
         PREFIX/share/chicken/doc in svnwiki format (see
-        <http://wiki.freaks-unidos.net/svnwiki/> for more information
-        about the used syntax). The manual is maintained in a wiki at
-        <http://chicken.wiki.br/>. Go there to read the most up to
-        date documentation.
+        http://wiki.call-cc.org/edit-help for more information about
+        the used syntax). The manual is maintained in a wiki at
+        http://wiki.call-cc.org. Go there to read the most up to date
+        documentation.
 
 
  4. Extensions
 
         A large number of extension libraries for CHICKEN are
-        available at
-        <http://www.call-with-current-continuation.org/eggs/>. You can
+        available at http://wiki.call-cc.org/eggs. You can
         automatically download, compile and install extensions with
-        the "chicken-install" program. See the CHICKEN User's Manual for
-        more information.
+        the "chicken-install" program. See the CHICKEN User's Manual
+        for more information.
 
         A selection of 3rd party libraries, together with source and
         binary packages for tools helpful for development with CHICKEN
@@ -353,7 +353,7 @@
 
  7. Emacs support
 
-        See http://chicken.wiki.br/emacs for tips and links to emacs
+        See http://wiki.call-cc.org/emacs for tips and links to emacs
 	extensions for Scheme and CHICKEN programming.
 
 
@@ -375,5 +375,6 @@
 
         If you have any more questions or problems (even the slightest
         problems, or the most stupid questions), then please subscribe
-        to the "chicken-users" mailing list and ask for help. It will
-        be answered.
+        to the "chicken-users"
+        (http://lists.nongnu.org/mailman/listinfo/chicken-users)
+        mailing list and ask for help. It will be answered.

@@ -975,16 +975,15 @@
 			 (cons (cons (##sys#slot x 0) (##sys#slot x 1)) lst) ) ) ) ) ) ) ) )
 
 (define alist->hash-table
-  (let ([make-hash-table make-hash-table])
-    (lambda (alist . rest)
-      (##sys#check-list alist 'alist->hash-table)
-      (let ([ht (apply make-hash-table rest)])
-	(for-each
-	 (lambda (x)
-	   (##sys#check-pair x 'alist->hash-table)
-	   (*hash-table-update!/default  ht (##sys#slot x 0) (lambda (x) x) (##sys#slot x 1)) )
-	 alist)
-	ht ) ) ) )
+  (lambda (alist . rest)
+    (##sys#check-list alist 'alist->hash-table)
+    (let ([ht (apply make-hash-table rest)])
+      (for-each
+       (lambda (x)
+	 (##sys#check-pair x 'alist->hash-table)
+	 (*hash-table-update!/default  ht (##sys#slot x 0) (lambda (x) x) (##sys#slot x 1)) )
+       alist)
+      ht ) ) )
 
 ;; Hash-Table Keys & Values:
 

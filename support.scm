@@ -275,11 +275,11 @@
 	[args (gensym)] )
     (set! profile-lambda-list (alist-cons index name profile-lambda-list))
     (set! profile-lambda-index (add1 index))
-    `(lambda ,args
+    `(##core#lambda ,args
        (##sys#dynamic-wind
-	(lambda () (##sys#profile-entry ',index ,profile-info-vector-name))
-	(lambda () (apply (lambda ,llist ,body) ,args))
-	(lambda () (##sys#profile-exit ',index ,profile-info-vector-name)) ) ) ) )
+	(##core#lambda () (##sys#profile-entry ',index ,profile-info-vector-name))
+	(##core#lambda () (##sys#apply (##core#lambda ,llist ,body) ,args))
+	(##core#lambda () (##sys#profile-exit ',index ,profile-info-vector-name)) ) ) ) )
 
 
 ;;; Database operations:

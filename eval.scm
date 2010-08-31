@@ -183,8 +183,6 @@
 (define ##sys#compile-to-closure
   (let ([write write]
 	[reverse reverse]
-	[open-output-string open-output-string]
-	[get-output-string get-output-string] 
 	[with-input-from-file with-input-from-file]
 	[unbound (##sys#slot '##sys#arbitrary-unbound-symbol 0)]
 	[display display] )
@@ -850,12 +848,10 @@
       [write write]
       [display display]
       [newline newline]
-      (flush-output flush-output)
       [eval eval]
       [open-input-file open-input-file]
       [close-input-port close-input-port]
       [string-append string-append] 
-      [load-verbose load-verbose]
       [topentry (##sys#make-c-string "C_toplevel")] )
   (define (has-sep? str)
     (let loop ([i (fx- (##sys#size str) 1)])
@@ -989,9 +985,7 @@
        x) ) ) )
 
 (define ##sys#load-library-0
-  (let ([load-verbose load-verbose]
-	[string-append string-append]
-	[dynamic-load-libraries dynamic-load-libraries]
+  (let ([string-append string-append]
 	[display display] )
     (lambda (uname lib)
       (let ([id (##sys#->feature-id uname)])
@@ -1027,9 +1021,7 @@
 (define load-library ##sys#load-library)
 
 (define ##sys#include-forms-from-file
-  (let ((load-verbose load-verbose)
-	(print print)
-	(with-input-from-file with-input-from-file)
+  (let ((with-input-from-file with-input-from-file)
 	(read read)
 	(reverse reverse))
     (lambda (fname)
@@ -1095,8 +1087,7 @@
 (define ##sys#setup-mode #f)
 
 (define ##sys#find-extension
-  (let ((file-exists? file-exists?)
-	(string-append string-append) )
+  (let ((string-append string-append) )
     (lambda (p inc?)
       (let ((rp (##sys#repository-path)))
 	(define (check path)
@@ -1165,7 +1156,6 @@
 
 (define ##sys#extension-information
   (let ([with-input-from-file with-input-from-file]
-	[file-exists? file-exists?]
 	[string-append string-append]
 	[read read] )
     (lambda (id loc)
@@ -1477,7 +1467,7 @@
 (define ##sys#repl-eval-hook #f)
 (define ##sys#repl-print-length-limit #f)
 (define ##sys#repl-read-hook #f)
-(define ##sys#repl-recent-call-chain #f)
+(define ##sys#repl-recent-call-chain #f) ; used in csi for ,c command
 
 (define (##sys#repl-print-hook x port)
   (##sys#with-print-length-limit ##sys#repl-print-length-limit (cut ##sys#print x #t port))
@@ -1497,10 +1487,7 @@
   (let ((eval eval)
 	(read read)
 	(call-with-current-continuation call-with-current-continuation)
-	(print-call-chain print-call-chain)
-	(flush-output flush-output)
-	(string-append string-append)
-	(load-verbose load-verbose))
+	(string-append string-append))
     (lambda ()
 
       (define (write-err xs)
@@ -1553,7 +1540,15 @@
 		    (##sys#write-char-0 #\newline ##sys#standard-error)
 		    (write-err args) ) )
 	      (set! ##sys#repl-recent-call-chain
-		(print-call-chain ##sys#standard-error))
+		(or (and-let* ((lexn ##sys#last-exception) ;XXX not really right
+			       ((##sys#structure? lexn 'condition))
+			       (a (member '(exn . call-chain) (##sys#slot lexn 2))))
+		      (let ((ct (cadr a)))
+			(##sys#really-print-call-chain
+			 ##sys#standard-error ct
+			 "\n\tCall history:\n")
+			ct))
+		    (print-call-chain ##sys#standard-error)))
 	      (flush-output ##sys#standard-error) ) ) )
 	 (lambda ()
 	   (let loop ()

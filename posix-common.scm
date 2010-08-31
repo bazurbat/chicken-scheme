@@ -180,17 +180,18 @@ EOF
 ;;; Set or get current directory:
 
 (define current-directory
-  (let ((make-string make-string))
-    (lambda (#!optional dir)
-      (if dir
-	  (change-directory dir)
-	  (let* ((buffer (make-string 1024))
-		 (len (##core#inline "C_curdir" buffer)) )
-	    #+(or unix cygwin)
-	    (##sys#update-errno)
-	    (if len
-		(##sys#substring buffer 0 len)
-		(##sys#signal-hook #:file-error 'current-directory "cannot retrieve current directory") ) ) ) ) ) )
+  (lambda (#!optional dir)
+    (if dir
+	(change-directory dir)
+	(let* ((buffer (make-string 1024))
+	       (len (##core#inline "C_curdir" buffer)) )
+	  #+(or unix cygwin)
+	  (##sys#update-errno)
+	  (if len
+	      (##sys#substring buffer 0 len)
+	      (##sys#signal-hook
+	       #:file-error
+	       'current-directory "cannot retrieve current directory") ) ) ) ) )
 
 (define delete-directory
   (lambda (name)
@@ -201,33 +202,32 @@ EOF
       name)))
 
 (define directory
-  (let ([make-string make-string])
-    (lambda (#!optional (spec (current-directory)) show-dotfiles?)
-      (##sys#check-string spec 'directory)
-      (let ([buffer (make-string 256)]
-            [handle (##sys#make-pointer)]
-            [entry (##sys#make-pointer)] )
-        (##core#inline 
-	 "C_opendir"
-	 (##sys#make-c-string (##sys#expand-home-path spec) 'directory) handle)
-        (if (##sys#null-pointer? handle)
-            (posix-error #:file-error 'directory "cannot open directory" spec)
-            (let loop ()
-              (##core#inline "C_readdir" handle entry)
-              (if (##sys#null-pointer? entry)
-                  (begin
-                    (##core#inline "C_closedir" handle)
-                    '() )
-                  (let* ([flen (##core#inline "C_foundfile" entry buffer)]
-                         [file (##sys#substring buffer 0 flen)]
-                         [char1 (string-ref file 0)]
-                         [char2 (and (fx> flen 1) (string-ref file 1))] )
-                    (if (and (eq? #\. char1)
-                             (or (not char2)
-                                 (and (eq? #\. char2) (eq? 2 flen))
-                                 (not show-dotfiles?) ) )
-                        (loop)
-                        (cons file (loop)) ) ) ) ) ) ) ) ) )
+  (lambda (#!optional (spec (current-directory)) show-dotfiles?)
+    (##sys#check-string spec 'directory)
+    (let ([buffer (make-string 256)]
+	  [handle (##sys#make-pointer)]
+	  [entry (##sys#make-pointer)] )
+      (##core#inline 
+       "C_opendir"
+       (##sys#make-c-string (##sys#expand-home-path spec) 'directory) handle)
+      (if (##sys#null-pointer? handle)
+	  (posix-error #:file-error 'directory "cannot open directory" spec)
+	  (let loop ()
+	    (##core#inline "C_readdir" handle entry)
+	    (if (##sys#null-pointer? entry)
+		(begin
+		  (##core#inline "C_closedir" handle)
+		  '() )
+		(let* ([flen (##core#inline "C_foundfile" entry buffer)]
+		       [file (##sys#substring buffer 0 flen)]
+		       [char1 (string-ref file 0)]
+		       [char2 (and (fx> flen 1) (string-ref file 1))] )
+		  (if (and (eq? #\. char1)
+			   (or (not char2)
+			       (and (eq? #\. char2) (eq? 2 flen))
+			       (not show-dotfiles?) ) )
+		      (loop)
+		      (cons file (loop)) ) ) ) ) ) ) ) )
 
 
 ;;; Filename globbing:

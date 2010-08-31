@@ -324,24 +324,6 @@ Contains the path of the directory where {{chicken-install}} was invoked.
 Reflects the setting of the {{-no-install}} option, i.e. is {{#f}}, if {{-no-install}} was
 given to {{chicken-install}}.
 
-==== required-chicken-version
-
-<procedure>(required-chicken-version VERSION)</procedure>
-
-Signals an error if the version of CHICKEN that this script runs under is lexicographically less than
-{{VERSION}} (the argument will be converted to a string, first).
-
-
-==== required-extension-version
-
-<procedure>(required-extension-version EXTENSION1 VERSION1 ...)</procedure>
-
-Checks whether the extensions {{EXTENSION1 ...}} are installed and at least of version {{VERSION1 ...}}.
-The test is made by lexicographically comparing the string-representations of the given version with the version 
-of the installed extension. If one of the listed extensions is not installed, has no associated version information
-or is of a version older than the one specified.
-
-
 ==== host-extension
 
 <parameter>host-extension</parameter>
@@ -473,7 +455,7 @@ program to remove one or more extensions from the local repository:
 The hello module was just a shared library, and not a module.
 
 To create an extension that exports syntax see the chapter on
-[[http://chicken.wiki.br/man/4/Modules%20and%20macros|Modules and
+[[http://wiki.call-cc.org/man/4/Modules%20and%20macros|Modules and
 macros]].  We will show a simple example here: a module {{my-lib}}
 that exports one macro ({{prog1}}) and one procedure ({{my-sum}}):
 
@@ -567,7 +549,7 @@ Next, it should be possible to load the library:
 When running {{chicken-install}} with an argument {{NAME}}, for which
 no associated {{.setup}} file exists, then it will try to download the
 extension via HTTP from the CHICKEN code repository at
-[[http://chicken.wiki.br/svn/chicken-eggs/]]. Extensions that are
+[[http://code.call-cc.org/svn/chicken-eggs/]]. Extensions that are
 required to compile and/or use the requested extension are downloaded
 and installed automatically.
 
@@ -677,7 +659,7 @@ the tools).
 
 You can install eggs with
 
-  chicken-install -p ~/my_eggs <package>
+  chicken-install -p ~/myeggs <package>
 
 See that the argument to chicken-install is just {{~/myeggs}}, while everywhere else it's
 {{~/myeggs/lib/chicken/5}}.

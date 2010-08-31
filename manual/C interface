@@ -17,7 +17,7 @@ Saves the Scheme data object {{x}} on the temporary stack.
 
 ==== C_restore
 
- [C macro] void C_restore
+ [C macro] C_word C_restore
 
 Pops and returns the topmost value from the temporary stack.
 

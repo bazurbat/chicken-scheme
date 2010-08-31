@@ -64,102 +64,73 @@ EOF
 ;;; Like `delete-file', but does nothing if the file doesn't exist:
 
 (define delete-file*
-  (let ([file-exists? file-exists?]
-	[delete-file delete-file] )
-    (lambda (file)
-      (and (file-exists? file) (delete-file file)) ) ) )
+  (lambda (file)
+    (and (file-exists? file) (delete-file file)) ) )
 
 ;;; file-copy and file-move : they do what you'd think.
+
 (define (file-copy origfile newfile #!optional (clobber #f) (blocksize 1024))
-    (##sys#check-string origfile 'file-copy)
-    (##sys#check-string newfile 'file-copy)
-    (##sys#check-number blocksize 'file-copy)
-    (or (and (integer? blocksize) (> blocksize 0))
-        (##sys#error (string-append
-                         "invalid blocksize given: not a positive integer - "
-                         (number->string blocksize))))
-    (or (file-exists? origfile)
-        (##sys#error (string-append "origfile does not exist - " origfile)))
-    (and (file-exists? newfile)
-         (or clobber
-             (##sys#error (string-append
-                              "newfile exists but clobber is false - "
-                              newfile))))
-    (let* ((i   (condition-case (open-input-file origfile)
-                    (val ()
-                        (##sys#error (string-append
-                                         "could not open origfile for read - "
-                                         origfile)))))
-           (o   (condition-case (open-output-file newfile)
-                    (val ()
-                        (##sys#error (string-append
-                                         "could not open newfile for write - "
-                                         newfile)))))
-           (s   (make-string blocksize)))
-        (let loop ((d (read-string! blocksize s i))
-                   (l 0))
-            (if (fx= 0 d)
-                (begin
-                    (close-input-port i)
-                    (close-output-port o)
-                    l)
-                (begin
-                    (condition-case (write-string s d o)
-                        (val ()
-                            (close-input-port i)
-                            (close-output-port o)
-                            (##sys#error (string-append
-                                             "error writing file starting at "
-                                             (number->string l)))))
-                    (loop (read-string! blocksize s i) (fx+ d l)))))))
+  (##sys#check-string origfile 'file-copy)
+  (##sys#check-string newfile 'file-copy)
+  (##sys#check-number blocksize 'file-copy)
+  (unless (and (integer? blocksize) (> blocksize 0))
+    (##sys#error 
+     'file-copy 
+     "invalid blocksize given: not a positive integer"
+     blocksize))
+  (and (file-exists? newfile)
+       (or clobber
+	   (##sys#error 
+	    'file-copy
+	    "newfile exists but clobber is false"
+	     newfile)))
+  (when (directory-exists? origfile)
+    (##sys#error 'file-copy "can not copy directories" origfile))
+  (let* ((i (open-input-file origfile))
+	 (o (open-output-file newfile))
+	 (s (make-string blocksize)))
+    (let loop ((d (read-string! blocksize s i))
+	       (l 0))
+      (if (fx= 0 d)
+	  (begin
+	    (close-input-port i)
+	    (close-output-port o)
+	    l)
+	  (begin
+	    (write-string s d o)
+	    (loop (read-string! blocksize s i) (fx+ d l)))))))
 
 (define (file-move origfile newfile #!optional (clobber #f) (blocksize 1024))
-    (##sys#check-string origfile 'file-move)
-    (##sys#check-string newfile 'file-move)
-    (##sys#check-number blocksize 'file-move)
-    (or (and (integer? blocksize) (> blocksize 0))
-        (##sys#error (string-append
-                         "invalid blocksize given: not a positive integer - "
-                         (number->string blocksize))))
-    (or (file-exists? origfile)
-        (##sys#error (string-append "origfile does not exist - " origfile)))
-    (and (file-exists? newfile)
-         (or clobber
-             (##sys#error (string-append
-                              "newfile exists but clobber is false - "
-                              newfile))))
-    (let* ((i   (condition-case (open-input-file origfile)
-                    (val ()
-                        (##sys#error (string-append
-                                         "could not open origfile for read - "
-                                         origfile)))))
-           (o   (condition-case (open-output-file newfile)
-                    (val ()
-                        (##sys#error (string-append
-                                         "could not open newfile for write - "
-                                         newfile)))))
-           (s   (make-string blocksize)))
-        (let loop ((d (read-string! blocksize s i))
-                   (l 0))
-            (if (fx= 0 d)
-                (begin
-                    (close-input-port i)
-                    (close-output-port o)
-                    (condition-case (delete-file origfile)
-                        (val ()
-                            (##sys#error (string-append
-                                             "could not remove origfile - "
-                                             origfile))))
-                    l)
-                (begin
-                    (condition-case (write-string s d o)
-                        (val ()
-                            (close-input-port i)
-                            (close-output-port o)
-                            (##sys#error (string-append
-                                             "error writing file starting at "
-                                             (number->string l)))))
-                    (loop (read-string! blocksize s i) (fx+ d l)))))))
+  (##sys#check-string origfile 'file-move)
+  (##sys#check-string newfile 'file-move)
+  (##sys#check-number blocksize 'file-move)
+  (unless (and (integer? blocksize) (> blocksize 0))
+    (##sys#error
+     'file-move
+     "invalid blocksize given: not a positive integer"
+     blocksize))
+  (when (directory-exists? origfile)
+    (##sys#error 'file-move "can not move directories" origfile))
+  (and (file-exists? newfile)
+       (or clobber
+	   (##sys#error 
+	    'file-move
+	    "newfile exists but clobber is false"
+	    newfile)))
+  (let* ((i (open-input-file origfile))
+	 (o (open-output-file newfile))
+	 (s (make-string blocksize)))
+    (let loop ((d (read-string! blocksize s i))
+	       (l 0))
+      (if (fx= 0 d)
+	  (begin
+	    (close-input-port i)
+	    (close-output-port o)
+	    (delete-file origfile)
+	    l)
+	  (begin
+	    (write-string s d o)
+	    (loop (read-string! blocksize s i) (fx+ d l)))))))
 
 ;;; Pathname operations:
 
@@ -202,9 +173,7 @@ EOF
 (define make-pathname)
 (define make-absolute-pathname)
 
-(let ([string-append string-append]
-      [absolute-pathname? absolute-pathname?]
-      [def-pds "/"] )
+(let ([def-pds "/"] )
 
   (define (conc-dirs dirs pds)
     (##sys#check-list dirs 'make-pathname)
@@ -289,65 +258,50 @@ EOF
 		       #f)
 		      (values (strip-pds pn) #f #f) ) ) ) ) ) ) ) )
 
-(define pathname-directory)
-(define pathname-file)
-(define pathname-extension)
-(define pathname-strip-directory)
-(define pathname-strip-extension)
-(define pathname-replace-directory)
-(define pathname-replace-file)
-(define pathname-replace-extension)
-(let ([decompose-pathname decompose-pathname])
+(define pathname-directory
+  (lambda (pn)
+    (let-values ([(dir file ext) (decompose-pathname pn)])
+      dir) ) )
 
-  (set! pathname-directory
-    (lambda (pn)
-      (let-values ([(dir file ext) (decompose-pathname pn)])
-	dir) ) )
+(define pathname-file
+  (lambda (pn)
+    (let-values ([(dir file ext) (decompose-pathname pn)])
+      file) ) )
 
-  (set! pathname-file
-    (lambda (pn)
-      (let-values ([(dir file ext) (decompose-pathname pn)])
-	file) ) )
+(define pathname-extension
+  (lambda (pn)
+    (let-values ([(dir file ext) (decompose-pathname pn)])
+      ext) ) )
 
-  (set! pathname-extension
-    (lambda (pn)
-      (let-values ([(dir file ext) (decompose-pathname pn)])
-	ext) ) )
+(define pathname-strip-directory
+  (lambda (pn)
+    (let-values ([(dir file ext) (decompose-pathname pn)])
+      (make-pathname #f file ext) ) ) )
 
-  (set! pathname-strip-directory
-    (lambda (pn)
-      (let-values ([(dir file ext) (decompose-pathname pn)])
-	(make-pathname #f file ext) ) ) )
+(define pathname-strip-extension
+  (lambda (pn)
+    (let-values ([(dir file ext) (decompose-pathname pn)])
+      (make-pathname dir file) ) ) )
 
-  (set! pathname-strip-extension
-    (lambda (pn)
-      (let-values ([(dir file ext) (decompose-pathname pn)])
-	(make-pathname dir file) ) ) )
+(define pathname-replace-directory
+  (lambda (pn dir)
+    (let-values ([(_ file ext) (decompose-pathname pn)])
+      (make-pathname dir file ext) ) ) )
 
-  (set! pathname-replace-directory
-    (lambda (pn dir)
-      (let-values ([(_ file ext) (decompose-pathname pn)])
-	(make-pathname dir file ext) ) ) )
+(define pathname-replace-file
+  (lambda (pn file)
+    (let-values ([(dir _ ext) (decompose-pathname pn)])
+      (make-pathname dir file ext) ) ) )
 
-  (set! pathname-replace-file
-    (lambda (pn file)
-      (let-values ([(dir _ ext) (decompose-pathname pn)])
-	(make-pathname dir file ext) ) ) )
-
-  (set! pathname-replace-extension
-    (lambda (pn ext)
-      (let-values ([(dir file _) (decompose-pathname pn)])
-	(make-pathname dir file ext) ) ) ) )
+(define pathname-replace-extension
+  (lambda (pn ext)
+    (let-values ([(dir file _) (decompose-pathname pn)])
+      (make-pathname dir file ext) ) ) )
 
 (define create-temporary-file)
 (define create-temporary-directory)
 
-(let ((get-environment-variable get-environment-variable)
-      (make-pathname make-pathname)
-      (file-exists? file-exists?)
-      (directory-exists? directory-exists?)
-      (call-with-output-file call-with-output-file) 
-      (temp #f)
+(let ((temp #f)
       (temp-prefix "temp"))
   (define (tempdir)
     (or temp
@@ -394,12 +348,7 @@ EOF
 ;;; normalize pathname for a particular platform
 
 (define normalize-pathname
-  (let ((open-output-string open-output-string)
-	(get-output-string get-output-string)
-	(get-environment-variable get-environment-variable)
-	(reverse reverse)
-	(display display)
-	(bldplt (if (memq (build-platform) '(msvc mingw32)) 'windows 'unix)) )
+  (let ((bldplt (if (memq (build-platform) '(msvc mingw32)) 'windows 'unix)) )
     (define (addpart part parts)
       (cond ((string=? "." part) parts)
             ((string=? ".." part) (if (null? parts) '("..") (cdr parts)))
@@ -455,10 +404,9 @@ EOF
 ;; does arg check
 
 (define split-directory
-  (let ((string-split string-split) )
-    (lambda (loc dir keep?)
-      (##sys#check-string dir loc)
-      (string-split dir "/\\" keep?) ) ) )
+  (lambda (loc dir keep?)
+    (##sys#check-string dir loc)
+    (string-split dir "/\\" keep?) ) )
 
 ;; Directory string or list only contains path-separators
 ;; and/or current-directory (".") names.

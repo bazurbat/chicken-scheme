@@ -157,14 +157,14 @@ The master CHICKEN website is
 basic information about CHICKEN, downloads, and pointers to other key
 resources. 
 
-The CHICKEN wiki ([[http://chicken.wiki.br]]) contains the most
+The CHICKEN wiki ([[http://wiki.call-cc.org]]) contains the most
 current version of the User's manual, along with various tutorials and
 other useful documents. The list of eggs is at
-[[http://chicken.wiki.br/chicken-projects/egg-index-4.html#category-list]].
+[[http://wiki.call-cc.org/chicken-projects/egg-index-4.html#category-list]].
 
 A very useful search facility for questions about CHICKEN is found at
-[[http://www.callcc.org]]. The CHICKEN issue tracker is at
-[[http://www.irp.oist.jp/trac/chicken/wiki]].
+[[http://chickadee.call-cc.org]]. The CHICKEN issue tracker is at
+[[http://bugs.call-cc.org]].
 
 The CHICKEN community has two major mailing lists. If you are a
 CHICKEN user, {{chicken-users}}
@@ -318,7 +318,7 @@ We can now load this file and try out the function.
 The '''read-eval-print loop''' ('''REPL''') is the component of the
 Scheme system that ''reads'' a Scheme expression, ''eval''uates it,
 and ''prints'' out the result. The REPL's prompt can be customized
-(see the [[http:Using%20the%20interpreter|`Using the Interpreter']])
+(see the [[Using the Interpreter]])
 but the default prompt, showing the number of the form, is quite
 convenient. 
 

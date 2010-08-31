@@ -65,7 +65,7 @@
 
 (define (randomize . n)
   (let ((nn (if (null? n)
-		(##sys#inexact->exact (fp/ (current-seconds) 1000)) 
+		(##sys#flo2fix (fp/ (current-seconds) 1000.0)) ; wall clock time
 		(car n))))
     (##sys#check-exact nn 'randomize)
     (##core#inline "C_randomize" nn) ) )
@@ -80,7 +80,7 @@
 ;;; Line I/O:
 
 (define read-line
-  (let ([make-string make-string])
+  (let ()
     (define (fixup str len)
       (##sys#substring
        str 0
@@ -120,27 +120,24 @@
 				(loop (fx+ i 1)) ] ) ) ) ) ) ) ) ) ) ) ) )
 
 (define read-lines
-  (let ((read-line read-line)
-	(call-with-input-file call-with-input-file) 
-	(reverse reverse) )
-    (lambda port-and-max
-      (let* ((port (if (pair? port-and-max) (##sys#slot port-and-max 0) ##sys#standard-input))
-	     (rest (and (pair? port-and-max) (##sys#slot port-and-max 1)))
-	     (max (if (pair? rest) (##sys#slot rest 0) #f)) )
-	(define (doread port)
-	  (let loop ((lns '())
-		     (n (or max 1000000000)) ) ; this is silly
-	    (if (eq? n 0)
-		(reverse lns)
-		(let ((ln (read-line port)))
-		  (if (eof-object? ln)
-		      (reverse lns)
-		      (loop (cons ln lns) (fx- n 1)) ) ) ) ) )
-	(if (string? port)
-	    (call-with-input-file port doread)
-	    (begin
-	      (##sys#check-port port 'read-lines)
-	      (doread port) ) ) ) ) ) )
+  (lambda port-and-max
+    (let* ((port (if (pair? port-and-max) (##sys#slot port-and-max 0) ##sys#standard-input))
+	   (rest (and (pair? port-and-max) (##sys#slot port-and-max 1)))
+	   (max (if (pair? rest) (##sys#slot rest 0) #f)) )
+      (define (doread port)
+	(let loop ((lns '())
+		   (n (or max 1000000000)) ) ; this is silly
+	  (if (eq? n 0)
+	      (reverse lns)
+	      (let ((ln (read-line port)))
+		(if (eof-object? ln)
+		    (reverse lns)
+		    (loop (cons ln lns) (fx- n 1)) ) ) ) ) )
+      (if (string? port)
+	  (call-with-input-file port doread)
+	  (begin
+	    (##sys#check-port port 'read-lines)
+	    (doread port) ) ) ) ) )
 
 
 ;;; Extended I/O 
@@ -186,70 +183,63 @@
 (define-constant read-string-buffer-size 2048)
 
 (define ##sys#read-string/port
-  (let ((open-output-string open-output-string)
-	(get-output-string get-output-string) )
-    (lambda (n p)
-      (##sys#check-port p 'read-string)
-      (cond (n (##sys#check-exact n 'read-string)
-	       (let* ((str (##sys#make-string n))
-		      (n2 (##sys#read-string! n str p 0)) )
-		 (if (eq? n n2)
-		     str
-		     (##sys#substring str 0 n2))))
-	    (else
-	     (let ([out (open-output-string)]
-		   (buf (make-string read-string-buffer-size)))
-	       (let loop ()
-		 (let ((n (##sys#read-string! read-string-buffer-size
-					      buf p 0)))
-		   (cond ((eq? n 0)
-			  (get-output-string out))
-			 (else
-			  (write-string buf n out)
-			  (loop)))))))))))
+  (lambda (n p)
+    (##sys#check-port p 'read-string)
+    (cond (n (##sys#check-exact n 'read-string)
+	     (let* ((str (##sys#make-string n))
+		    (n2 (##sys#read-string! n str p 0)) )
+	       (if (eq? n n2)
+		   str
+		   (##sys#substring str 0 n2))))
+	  (else
+	   (let ([out (open-output-string)]
+		 (buf (make-string read-string-buffer-size)))
+	     (let loop ()
+	       (let ((n (##sys#read-string! read-string-buffer-size
+					    buf p 0)))
+		 (cond ((eq? n 0)
+			(get-output-string out))
+		       (else
+			(write-string buf n out)
+			(loop))))))))))
 
 (define (read-string #!optional n (port ##sys#standard-input))
   (##sys#read-string/port n port) )
 
 (define read-token
-  (let ([open-output-string open-output-string]
-	[get-output-string get-output-string] )
-    (lambda (pred . port)
-      (let ([port (optional port ##sys#standard-input)])
-	(##sys#check-port port 'read-token)
-	(let ([out (open-output-string)])
-	  (let loop ()
-	    (let ([c (##sys#peek-char-0 port)])
-	      (if (and (not (eof-object? c)) (pred c))
-		  (begin
-		    (##sys#write-char-0 (##sys#read-char-0 port) out)
-		    (loop) )
-		  (get-output-string out) ) ) ) ) ) ) ) )
+  (lambda (pred . port)
+    (let ([port (optional port ##sys#standard-input)])
+      (##sys#check-port port 'read-token)
+      (let ([out (open-output-string)])
+	(let loop ()
+	  (let ([c (##sys#peek-char-0 port)])
+	    (if (and (not (eof-object? c)) (pred c))
+		(begin
+		  (##sys#write-char-0 (##sys#read-char-0 port) out)
+		  (loop) )
+		(get-output-string out) ) ) ) ) ) ) )
 
 (define write-string 
-  (let ([display display])
-    (lambda (s . more)
-      (##sys#check-string s 'write-string)
-      (let-optionals more ([n #f] [port ##sys#standard-output])
-	(##sys#check-port port 'write-string)
-	(when n (##sys#check-exact n 'write-string))
-	(display 
-	 (if (and n (fx< n (##sys#size s)))
-	     (##sys#substring s 0 n)
-	     s)
-	 port) ) ) ) )
+  (lambda (s . more)
+    (##sys#check-string s 'write-string)
+    (let-optionals more ([n #f] [port ##sys#standard-output])
+      (##sys#check-port port 'write-string)
+      (when n (##sys#check-exact n 'write-string))
+      (display 
+       (if (and n (fx< n (##sys#size s)))
+	   (##sys#substring s 0 n)
+	   s)
+       port) ) ) )
 
 (define write-line
-  (let ((display display)
-	(newline newline) )
-    (lambda (str . port)
-      (let ((p (if (##core#inline "C_eqp" port '())
-		   ##sys#standard-output
-		   (##sys#slot port 0) ) ) )
-	(##sys#check-port p 'write-line)
-	(##sys#check-string str 'write-line)
-	(display str p)
-	(newline p) ) ) ) )
+  (lambda (str . port)
+    (let ((p (if (##core#inline "C_eqp" port '())
+		 ##sys#standard-output
+		 (##sys#slot port 0) ) ) )
+      (##sys#check-port p 'write-line)
+      (##sys#check-string str 'write-line)
+      (display str p)
+      (newline p) ) ) )
 
 
 ;;; Binary I/O
@@ -279,276 +269,274 @@
 ;
 
 (define generic-write
-  (let ([open-output-string open-output-string]
-	[get-output-string get-output-string] )
-    (lambda (obj display? width output)
+  (lambda (obj display? width output)
 
-      (define (read-macro? l)
-	(define (length1? l) (and (pair? l) (null? (cdr l))))
-	(let ((head (car l)) (tail (cdr l)))
-	  (case head
-	    ((quote quasiquote unquote unquote-splicing) (length1? tail))
-	    (else                                        #f))))
+    (define (read-macro? l)
+      (define (length1? l) (and (pair? l) (null? (cdr l))))
+      (let ((head (car l)) (tail (cdr l)))
+	(case head
+	  ((quote quasiquote unquote unquote-splicing) (length1? tail))
+	  (else                                        #f))))
 
-      (define (read-macro-body l)
-	(cadr l))
+    (define (read-macro-body l)
+      (cadr l))
 
-      (define (read-macro-prefix l)
-	(let ((head (car l)) (tail (cdr l)))
-	  (case head
-	    ((quote)            "'")
-	    ((quasiquote)       "`")
-	    ((unquote)          ",")
-	    ((unquote-splicing) ",@"))))
+    (define (read-macro-prefix l)
+      (let ((head (car l)) (tail (cdr l)))
+	(case head
+	  ((quote)            "'")
+	  ((quasiquote)       "`")
+	  ((unquote)          ",")
+	  ((unquote-splicing) ",@"))))
 
-      (define (out str col)
-	(and col (output str) (+ col (string-length str))))
+    (define (out str col)
+      (and col (output str) (+ col (string-length str))))
 
-      (define (wr obj col)
+    (define (wr obj col)
 
-	(define (wr-expr expr col)
-	  (if (read-macro? expr)
-	      (wr (read-macro-body expr) (out (read-macro-prefix expr) col))
-	      (wr-lst expr col)))
+      (define (wr-expr expr col)
+	(if (read-macro? expr)
+	    (wr (read-macro-body expr) (out (read-macro-prefix expr) col))
+	    (wr-lst expr col)))
 
-	(define (wr-lst l col)
-	  (if (pair? l)
-	      (let loop ((l (cdr l))
-			 (col (and col (wr (car l) (out "(" col)))))
-		(cond ((not col) col)
-		      ((pair? l)
-		       (loop (cdr l) (wr (car l) (out " " col))))
-		      ((null? l) (out ")" col))
-		      (else      (out ")" (wr l (out " . " col))))))
-	      (out "()" col)))
+      (define (wr-lst l col)
+	(if (pair? l)
+	    (let loop ((l (cdr l))
+		       (col (and col (wr (car l) (out "(" col)))))
+	      (cond ((not col) col)
+		    ((pair? l)
+		     (loop (cdr l) (wr (car l) (out " " col))))
+		    ((null? l) (out ")" col))
+		    (else      (out ")" (wr l (out " . " col))))))
+	    (out "()" col)))
 
-	(cond ((pair? obj)        (wr-expr obj col))
-	      ((null? obj)        (wr-lst obj col))
-	      ((eof-object? obj)  (out "#!eof" col))
-	      ((vector? obj)      (wr-lst (vector->list obj) (out "#" col)))
-	      ((boolean? obj)     (out (if obj "#t" "#f") col))
-	      ((##sys#number? obj)      (out (##sys#number->string obj) col))
-	      ((symbol? obj)
-	       (let ([s (open-output-string)])
-		 (##sys#print obj #t s)
-		 (out (get-output-string s) col) ) )
-	      ((procedure? obj)   (out (##sys#procedure->string obj) col))
-	      ((string? obj)      (if display?
-				      (out obj col)
-				      (let loop ((i 0) (j 0) (col (out "\"" col)))
-					(if (and col (< j (string-length obj)))
-					    (let ((c (string-ref obj j)))
-					      (if (or (char=? c #\\)
-						      (char=? c #\"))
-						  (loop j
-							(+ j 1)
-							(out "\\"
-							     (out (##sys#substring obj i j)
-								  col)))
-						  (loop i (+ j 1) col)))
-					    (out "\""
-						 (out (##sys#substring obj i j) col))))))
-	      ((char? obj)        (if display?
-				      (out (make-string 1 obj) col)
-				      (let ([code (char->integer obj)])
-					(out "#\\" col)
-					(cond [(char-name obj) 
-					       => (lambda (cn) 
-						    (out (##sys#slot cn 1) col) ) ]
-					      [(fx< code 32)
-					       (out "x" col)
-					       (out (number->string code 16) col) ]
-					      [(fx> code 255)
-					       (out (if (fx> code #xffff) "U" "u") col)
-					       (out (number->string code 16) col) ]
-					      [else (out (make-string 1 obj) col)] ) ) ) )
-	      ((eof-object? obj)  (out "#<eof>" col))
-	      ((##core#inline "C_undefinedp" obj) (out "#<unspecified>" col))
-	      ((##core#inline "C_anypointerp" obj) (out (##sys#pointer->string obj) col))
-	      ((eq? obj (##sys#slot '##sys#arbitrary-unbound-symbol 0))
-	       (out "#<unbound value>" col) )
-	      ((##sys#generic-structure? obj)
-	       (let ([o (open-output-string)])
-		 (##sys#user-print-hook obj #t o)
-		 (out (get-output-string o) col) ) )
-	      ((port? obj) (out (string-append "#<port " (##sys#slot obj 3) ">") col))
-	      ((##core#inline "C_bytevectorp" obj)
-	       (if (##core#inline "C_permanentp" obj)
-		   (out "#<static blob of size" col)
-		   (out "#<blob of size " col) )
-	       (out (number->string (##core#inline "C_block_size" obj)) col)
-	       (out ">" col) )
-	      ((##core#inline "C_lambdainfop" obj)
-	       (out "#<lambda info " col)
-	       (out (##sys#lambda-info->string obj) col)
-	       (out "#>" col) )
-	      (else (out "#<unprintable object>" col)) ) )
+      (cond ((pair? obj)        (wr-expr obj col))
+	    ((null? obj)        (wr-lst obj col))
+	    ((eof-object? obj)  (out "#!eof" col))
+	    ((vector? obj)      (wr-lst (vector->list obj) (out "#" col)))
+	    ((boolean? obj)     (out (if obj "#t" "#f") col))
+	    ((##sys#number? obj)      (out (##sys#number->string obj) col))
+	    ((symbol? obj)
+	     (let ([s (open-output-string)])
+	       (##sys#print obj #t s)
+	       (out (get-output-string s) col) ) )
+	    ((procedure? obj)   (out (##sys#procedure->string obj) col))
+	    ((string? obj)      (if display?
+				    (out obj col)
+				    (let loop ((i 0) (j 0) (col (out "\"" col)))
+				      (if (and col (< j (string-length obj)))
+					  (let ((c (string-ref obj j)))
+					    (if (or (char=? c #\\)
+						    (char=? c #\"))
+						(loop j
+						      (+ j 1)
+						      (out "\\"
+							   (out (##sys#substring obj i j)
+								col)))
+						(loop i (+ j 1) col)))
+					  (out "\""
+					       (out (##sys#substring obj i j) col))))))
+	    ((char? obj)        (if display?
+				    (out (make-string 1 obj) col)
+				    (let ([code (char->integer obj)])
+				      (out "#\\" col)
+				      (cond [(char-name obj) 
+					     => (lambda (cn) 
+						  (out (##sys#slot cn 1) col) ) ]
+					    [(fx< code 32)
+					     (out "x" col)
+					     (out (number->string code 16) col) ]
+					    [(fx> code 255)
+					     (out (if (fx> code #xffff) "U" "u") col)
+					     (out (number->string code 16) col) ]
+					    [else (out (make-string 1 obj) col)] ) ) ) )
+	    ((eof-object? obj)  (out "#<eof>" col))
+	    ((##core#inline "C_undefinedp" obj) (out "#<unspecified>" col))
+	    ((##core#inline "C_anypointerp" obj) (out (##sys#pointer->string obj) col))
+	    ((eq? obj (##sys#slot '##sys#arbitrary-unbound-symbol 0))
+	     (out "#<unbound value>" col) )
+	    ((##sys#generic-structure? obj)
+	     (let ([o (open-output-string)])
+	       (##sys#user-print-hook obj #t o)
+	       (out (get-output-string o) col) ) )
+	    ((port? obj) (out (string-append "#<port " (##sys#slot obj 3) ">") col))
+	    ((##core#inline "C_bytevectorp" obj)
+	     (if (##core#inline "C_permanentp" obj)
+		 (out "#<static blob of size" col)
+		 (out "#<blob of size " col) )
+	     (out (number->string (##core#inline "C_block_size" obj)) col)
+	     (out ">" col) )
+	    ((##core#inline "C_lambdainfop" obj)
+	     (out "#<lambda info " col)
+	     (out (##sys#lambda-info->string obj) col)
+	     (out "#>" col) )
+	    (else (out "#<unprintable object>" col)) ) )
 
-      (define (pp obj col)
+    (define (pp obj col)
 
-	(define (spaces n col)
-	  (if (> n 0)
-	      (if (> n 7)
-		  (spaces (- n 8) (out "        " col))
-		  (out (##sys#substring "        " 0 n) col))
-	      col))
+      (define (spaces n col)
+	(if (> n 0)
+	    (if (> n 7)
+		(spaces (- n 8) (out "        " col))
+		(out (##sys#substring "        " 0 n) col))
+	    col))
 
-	(define (indent to col)
-	  (and col
-	       (if (< to col)
-		   (and (out (make-string 1 #\newline) col) (spaces to 0))
-		   (spaces (- to col) col))))
+      (define (indent to col)
+	(and col
+	     (if (< to col)
+		 (and (out (make-string 1 #\newline) col) (spaces to 0))
+		 (spaces (- to col) col))))
 
-	(define (pr obj col extra pp-pair)
-	  (if (or (pair? obj) (vector? obj)) ; may have to split on multiple lines
-	      (let ((result '())
-		    (left (max (+ (- (- width col) extra) 1) max-expr-width)))
-		(generic-write obj display? #f
-			       (lambda (str)
-				 (set! result (cons str result))
-				 (set! left (- left (string-length str)))
-				 (> left 0)))
-		(if (> left 0)		; all can be printed on one line
-		    (out (reverse-string-append result) col)
-		    (if (pair? obj)
-			(pp-pair obj col extra)
-			(pp-list (vector->list obj) (out "#" col) extra pp-expr))))
-	      (wr obj col)))
+      (define (pr obj col extra pp-pair)
+	(if (or (pair? obj) (vector? obj)) ; may have to split on multiple lines
+	    (let ((result '())
+		  (left (max (+ (- (- width col) extra) 1) max-expr-width)))
+	      (generic-write obj display? #f
+			     (lambda (str)
+			       (set! result (cons str result))
+			       (set! left (- left (string-length str)))
+			       (> left 0)))
+	      (if (> left 0)	      ; all can be printed on one line
+		  (out (reverse-string-append result) col)
+		  (if (pair? obj)
+		      (pp-pair obj col extra)
+		      (pp-list (vector->list obj) (out "#" col) extra pp-expr))))
+	    (wr obj col)))
 
-	(define (pp-expr expr col extra)
-	  (if (read-macro? expr)
-	      (pr (read-macro-body expr)
-		  (out (read-macro-prefix expr) col)
-		  extra
-		  pp-expr)
-	      (let ((head (car expr)))
-		(if (symbol? head)
-		    (let ((proc (style head)))
-		      (if proc
-			  (proc expr col extra)
-			  (if (> (string-length (##sys#symbol->qualified-string head))
-				 max-call-head-width)
-			      (pp-general expr col extra #f #f #f pp-expr)
-			      (pp-call expr col extra pp-expr))))
-		    (pp-list expr col extra pp-expr)))))
+      (define (pp-expr expr col extra)
+	(if (read-macro? expr)
+	    (pr (read-macro-body expr)
+		(out (read-macro-prefix expr) col)
+		extra
+		pp-expr)
+	    (let ((head (car expr)))
+	      (if (symbol? head)
+		  (let ((proc (style head)))
+		    (if proc
+			(proc expr col extra)
+			(if (> (string-length (##sys#symbol->qualified-string head))
+			       max-call-head-width)
+			    (pp-general expr col extra #f #f #f pp-expr)
+			    (pp-call expr col extra pp-expr))))
+		  (pp-list expr col extra pp-expr)))))
 
 					; (head item1
 					;       item2
 					;       item3)
-	(define (pp-call expr col extra pp-item)
-	  (let ((col* (wr (car expr) (out "(" col))))
-	    (and col
-		 (pp-down (cdr expr) col* (+ col* 1) extra pp-item))))
+      (define (pp-call expr col extra pp-item)
+	(let ((col* (wr (car expr) (out "(" col))))
+	  (and col
+	       (pp-down (cdr expr) col* (+ col* 1) extra pp-item))))
 
 					; (item1
 					;  item2
 					;  item3)
-	(define (pp-list l col extra pp-item)
-	  (let ((col (out "(" col)))
-	    (pp-down l col col extra pp-item)))
+      (define (pp-list l col extra pp-item)
+	(let ((col (out "(" col)))
+	  (pp-down l col col extra pp-item)))
 
-	(define (pp-down l col1 col2 extra pp-item)
-	  (let loop ((l l) (col col1))
-	    (and col
-		 (cond ((pair? l)
-			(let ((rest (cdr l)))
-			  (let ((extra (if (null? rest) (+ extra 1) 0)))
-			    (loop rest
-				  (pr (car l) (indent col2 col) extra pp-item)))))
-		       ((null? l)
-			(out ")" col))
-		       (else
-			(out ")"
-			     (pr l
-				 (indent col2 (out "." (indent col2 col)))
-				 (+ extra 1)
-				 pp-item)))))))
+      (define (pp-down l col1 col2 extra pp-item)
+	(let loop ((l l) (col col1))
+	  (and col
+	       (cond ((pair? l)
+		      (let ((rest (cdr l)))
+			(let ((extra (if (null? rest) (+ extra 1) 0)))
+			  (loop rest
+				(pr (car l) (indent col2 col) extra pp-item)))))
+		     ((null? l)
+		      (out ")" col))
+		     (else
+		      (out ")"
+			   (pr l
+			       (indent col2 (out "." (indent col2 col)))
+			       (+ extra 1)
+			       pp-item)))))))
 
-	(define (pp-general expr col extra named? pp-1 pp-2 pp-3)
+      (define (pp-general expr col extra named? pp-1 pp-2 pp-3)
 
-	  (define (tail1 rest col1 col2 col3)
-	    (if (and pp-1 (pair? rest))
-		(let* ((val1 (car rest))
-		       (rest (cdr rest))
-		       (extra (if (null? rest) (+ extra 1) 0)))
-		  (tail2 rest col1 (pr val1 (indent col3 col2) extra pp-1) col3))
-		(tail2 rest col1 col2 col3)))
+	(define (tail1 rest col1 col2 col3)
+	  (if (and pp-1 (pair? rest))
+	      (let* ((val1 (car rest))
+		     (rest (cdr rest))
+		     (extra (if (null? rest) (+ extra 1) 0)))
+		(tail2 rest col1 (pr val1 (indent col3 col2) extra pp-1) col3))
+	      (tail2 rest col1 col2 col3)))
 
-	  (define (tail2 rest col1 col2 col3)
-	    (if (and pp-2 (pair? rest))
-		(let* ((val1 (car rest))
-		       (rest (cdr rest))
-		       (extra (if (null? rest) (+ extra 1) 0)))
-		  (tail3 rest col1 (pr val1 (indent col3 col2) extra pp-2)))
-		(tail3 rest col1 col2)))
+	(define (tail2 rest col1 col2 col3)
+	  (if (and pp-2 (pair? rest))
+	      (let* ((val1 (car rest))
+		     (rest (cdr rest))
+		     (extra (if (null? rest) (+ extra 1) 0)))
+		(tail3 rest col1 (pr val1 (indent col3 col2) extra pp-2)))
+	      (tail3 rest col1 col2)))
 
-	  (define (tail3 rest col1 col2)
-	    (pp-down rest col2 col1 extra pp-3))
+	(define (tail3 rest col1 col2)
+	  (pp-down rest col2 col1 extra pp-3))
 
-	  (let* ((head (car expr))
-		 (rest (cdr expr))
-		 (col* (wr head (out "(" col))))
-	    (if (and named? (pair? rest))
-		(let* ((name (car rest))
-		       (rest (cdr rest))
-		       (col** (wr name (out " " col*))))
-		  (tail1 rest (+ col indent-general) col** (+ col** 1)))
-		(tail1 rest (+ col indent-general) col* (+ col* 1)))))
+	(let* ((head (car expr))
+	       (rest (cdr expr))
+	       (col* (wr head (out "(" col))))
+	  (if (and named? (pair? rest))
+	      (let* ((name (car rest))
+		     (rest (cdr rest))
+		     (col** (wr name (out " " col*))))
+		(tail1 rest (+ col indent-general) col** (+ col** 1)))
+	      (tail1 rest (+ col indent-general) col* (+ col* 1)))))
 
-	(define (pp-expr-list l col extra)
-	  (pp-list l col extra pp-expr))
+      (define (pp-expr-list l col extra)
+	(pp-list l col extra pp-expr))
 
-	(define (pp-lambda expr col extra)
-	  (pp-general expr col extra #f pp-expr-list #f pp-expr))
+      (define (pp-lambda expr col extra)
+	(pp-general expr col extra #f pp-expr-list #f pp-expr))
 
-	(define (pp-if expr col extra)
-	  (pp-general expr col extra #f pp-expr #f pp-expr))
+      (define (pp-if expr col extra)
+	(pp-general expr col extra #f pp-expr #f pp-expr))
 
-	(define (pp-cond expr col extra)
-	  (pp-call expr col extra pp-expr-list))
+      (define (pp-cond expr col extra)
+	(pp-call expr col extra pp-expr-list))
 
-	(define (pp-case expr col extra)
-	  (pp-general expr col extra #f pp-expr #f pp-expr-list))
+      (define (pp-case expr col extra)
+	(pp-general expr col extra #f pp-expr #f pp-expr-list))
 
-	(define (pp-and expr col extra)
-	  (pp-call expr col extra pp-expr))
+      (define (pp-and expr col extra)
+	(pp-call expr col extra pp-expr))
 
-	(define (pp-let expr col extra)
-	  (let* ((rest (cdr expr))
-		 (named? (and (pair? rest) (symbol? (car rest)))))
-	    (pp-general expr col extra named? pp-expr-list #f pp-expr)))
+      (define (pp-let expr col extra)
+	(let* ((rest (cdr expr))
+	       (named? (and (pair? rest) (symbol? (car rest)))))
+	  (pp-general expr col extra named? pp-expr-list #f pp-expr)))
 
-	(define (pp-begin expr col extra)
-	  (pp-general expr col extra #f #f #f pp-expr))
+      (define (pp-begin expr col extra)
+	(pp-general expr col extra #f #f #f pp-expr))
 
-	(define (pp-do expr col extra)
-	  (pp-general expr col extra #f pp-expr-list pp-expr-list pp-expr))
+      (define (pp-do expr col extra)
+	(pp-general expr col extra #f pp-expr-list pp-expr-list pp-expr))
 
 					; define formatting style (change these to suit your style)
 
-	(define indent-general 2)
+      (define indent-general 2)
 
-	(define max-call-head-width 5)
+      (define max-call-head-width 5)
 
-	(define max-expr-width 50)
+      (define max-expr-width 50)
 
-	(define (style head)
-	  (case head
-	    ((lambda let* letrec define) pp-lambda)
-	    ((if set!)                   pp-if)
-	    ((cond)                      pp-cond)
-	    ((case)                      pp-case)
-	    ((and or)                    pp-and)
-	    ((let)                       pp-let)
-	    ((begin)                     pp-begin)
-	    ((do)                        pp-do)
-	    (else                        #f)))
+      (define (style head)
+	(case head
+	  ((lambda let* letrec define) pp-lambda)
+	  ((if set!)                   pp-if)
+	  ((cond)                      pp-cond)
+	  ((case)                      pp-case)
+	  ((and or)                    pp-and)
+	  ((let)                       pp-let)
+	  ((begin)                     pp-begin)
+	  ((do)                        pp-do)
+	  (else                        #f)))
 
-	(pr obj col 0 pp-expr))
+      (pr obj col 0 pp-expr))
 
-      (if width
-	  (out (make-string 1 #\newline) (pp obj 0))
-	  (wr obj 0)))) )
+    (if width
+	(out (make-string 1 #\newline) (pp obj 0))
+	(wr obj 0))))
 
 ; (pretty-print obj port) pretty prints 'obj' on 'port'.  The current
 ; output port is used if 'port' is not specified.
@@ -566,16 +554,11 @@
 ;;; Write simple formatted output:
 
 (define fprintf0
-  (let ((write write)
-	(newline newline)
-	(display display) 
-	(open-output-string open-output-string)
-	(get-output-string get-output-string))
-    (lambda (loc port msg args)
-      (when port (##sys#check-port port loc))
-      (let ((out (if (and port (##sys#tty-port? port))
-		     port
-		     (open-output-string))))
+  (lambda (loc port msg args)
+    (when port (##sys#check-port port loc))
+    (let ((out (if (and port (##sys#tty-port? port))
+		   port
+		   (open-output-string))))
       (let rec ([msg msg] [args args])
 	(##sys#check-string msg loc)
 	(let ((index 0)
@@ -621,7 +604,7 @@
 		(loop) ) ) ) ) )
       (cond ((not port) (get-output-string out))
 	    ((not (eq? out port))
-	     (##sys#print (get-output-string out) #f port) ) ) ) ) ) )
+	     (##sys#print (get-output-string out) #f port) ) ) ) ) )
 
 (define (fprintf port fstr . args)
   (fprintf0 'fprintf port fstr args) )
@@ -633,17 +616,14 @@
   (fprintf0 'sprintf #f fstr args) )
 
 (define format
-  (let ([fprintf fprintf]
-	[sprintf sprintf]
-	[printf printf] )
-    (lambda (fmt-or-dst . args)
-      (apply (cond [(not fmt-or-dst)		 sprintf]
-		   [(boolean? fmt-or-dst)	 printf]
-		   [(string? fmt-or-dst)	 (set! args (cons fmt-or-dst args)) sprintf]
-		   [(output-port? fmt-or-dst)	 (set! args (cons fmt-or-dst args)) fprintf]
-		   [else
-		    (##sys#error 'format "illegal destination" fmt-or-dst args)])
-	     args) ) ) )
+  (lambda (fmt-or-dst . args)
+    (apply (cond [(not fmt-or-dst)		 sprintf]
+		 [(boolean? fmt-or-dst)	 printf]
+		 [(string? fmt-or-dst)	 (set! args (cons fmt-or-dst args)) sprintf]
+		 [(output-port? fmt-or-dst)	 (set! args (cons fmt-or-dst args)) fprintf]
+		 [else
+		  (##sys#error 'format "illegal destination" fmt-or-dst args)])
+	   args) ) )
 
 (register-feature! 'srfi-28)
 

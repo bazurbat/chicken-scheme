@@ -42,8 +42,8 @@ is essentially equivalent to
 
  (make-locative X)
 
-(See the manual chapter or {{locatives}} for more information about
-locatives.
+(See the [[Unit lolevel#locatives|manual section on locatives]] for more
+information about locatives)
 
 Note that {{(location X)}} may be abbreviated as {{#$X}}.
 
@@ -51,7 +51,7 @@ Note that {{(location X)}} may be abbreviated as {{#$X}}.
 (define-external foo int)
 ((foreign-lambda* void (((c-pointer int) ip)) "*ip = 123;") 
   (location foo))
-foo                                                                               ==> 123
+foo                                                                    ==> 123
 </enscript>
 
 This facility is especially useful in situations, where a C function
@@ -70,7 +70,7 @@ returns more than one result value:
     (print "i=" i ", f=" f) ) )
 </enscript>
 
-See [[http://chicken.wiki.br/location-and-c-string-star|location and c-string*]] 
+See [[http://wiki.call-cc.org/location-and-c-string-star|location and c-string*]] 
 for a tip on returning a {{c-string*}} type.
 
 {{location}} returns a value of type {{c-pointer}}, when given

@@ -322,8 +322,7 @@ EOF
   (set! tcp-accept-timeout (make-parameter #f (check 'tcp-accept-timeout))) )
 
 (define ##net#io-ports
-  (let ((tbs tcp-buffer-size)
-	(make-string make-string) )
+  (let ((tbs tcp-buffer-size))
     (lambda (fd)
       (unless (##net#make-nonblocking fd)
 	(##sys#update-errno)
@@ -431,7 +430,7 @@ EOF
 			       (set! bufindex next)
 			       (cond ((eq? pos2 limit) ; no line-terminator, hit limit
 				      (if str (##sys#string-append str dest) dest))
-				     ((eq? pos2 next)  ; no line-terminator, hit buflen
+				     ((eq? pos2 next) ; no line-terminator, hit buflen
 				      (read-input)
 				      (if (fx>= bufindex buflen)
 					  (or str "")
