@@ -89,7 +89,7 @@ EOF
        (lambda (x)
 	 (display x stderr))
        args)
-      (newline stderr))
+      (newline stderr)))
 
 (define-syntax dbg
   (syntax-rules ()
