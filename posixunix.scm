@@ -1396,7 +1396,7 @@ EOF
 		     (cond [(fx= cnt -1)
 			    (if (fx= _errno _ewouldblock)
 				(begin
-				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #t)
+				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
 				  (##sys#thread-yield!)
 				  (loop) )
 				(posix-error #:file-error loc "cannot read" fd nam) )]

@@ -348,7 +348,7 @@ EOF
 				    (##sys#thread-block-for-timeout! 
 				     ##sys#current-thread
 				     (+ (current-milliseconds) tmr) ) )
-				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #t)
+				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
 				  (yield)
 				  (when (##sys#slot ##sys#current-thread 13)
 				    (##sys#signal-hook
@@ -456,7 +456,7 @@ EOF
 				    (##sys#thread-block-for-timeout! 
 				     ##sys#current-thread
 				     (+ (current-milliseconds) tmw) ) )
-				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #f)
+				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #:output)
 				  (yield) 
 				  (when (##sys#slot ##sys#current-thread 13)
 				    (##sys#signal-hook
@@ -524,7 +524,7 @@ EOF
 	      (##sys#thread-block-for-timeout! 
 	       ##sys#current-thread
 	       (+ (current-milliseconds) tma) ) )
-	    (##sys#thread-block-for-i/o! ##sys#current-thread fd #t)
+	    (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
 	    (yield)
 	    (when (##sys#slot ##sys#current-thread 13)
 	      (##sys#signal-hook
