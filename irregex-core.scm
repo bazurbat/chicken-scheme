@@ -31,10 +31,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; History
 ;;
-;; 0.8.2: 2010/08/03 - (...)? submatch extraction fix and alternate
+;; 0.8.2: 2010/08/06 - (...)? submatch extraction fix and alternate
 ;;                     named submatches from Peter Bex
-;;                     Added irregex-match-valid-index? to export list
-;;                     and made it accept named submatches.  The procedures
+;;                     Added irregex-split, irregex-extract,
+;;                     irregex-match-names and irregex-match-valid-index?
+;;                     to Chicken and Guile module export lists and made
+;;                     the latter accept named submatches.  The procedures
 ;;                     irregex-match-{start,end}-{index,chunk} now also
 ;;                     accept named submatches, with the index argument
 ;;                     made optional.  Improved argument type checks.
@@ -259,9 +261,11 @@
    (else
     (let ((n (car opt)))
       (if (number? n)
-          (or (and (irregex-match-valid-numeric-index? m n) n)
-              (and strict?
-                   (%irregex-error location "not a valid index" m n)))
+          (if (and (integer? n) (exact? n))
+              (or (and (irregex-match-valid-numeric-index? m n) n)
+                  (and strict?
+                       (%irregex-error location "not a valid index" m n)))
+              (%irregex-error location "not an exact integer" n))
           (let lp ((ls (irregex-match-names m))
                    (unknown? #t))
             (cond
@@ -278,7 +282,9 @@
   (if (not (irregex-match-data? m))
       (%irregex-error 'irregex-match-valid-index? "not match data" m))
   (if (integer? n)
-      (irregex-match-valid-numeric-index? m n)
+      (if (not (exact? n))
+          (%irregex-error 'irregex-match-valid-index? "not an exact integer" n)
+          (irregex-match-valid-numeric-index? m n))
       (irregex-match-valid-named-index? m n)))
 
 (define (irregex-match-substring m . opt)
@@ -1289,9 +1295,7 @@
                    (else
                     (let ((c (cond ((assv c posix-escape-sequences) => cdr)
                                    (else c))))
-                      (go (+ i 2)
-                          (cons (string-ref str (+ i 1)) (cons c chars))
-                          ranges))))))
+                      (go (+ i 2) (cons c chars) ranges))))))
               (else
                (if (and utf8? (<= #x80 (char->integer c) #xFF))
                    (let ((len (utf8-start-char->length c)))
@@ -1962,8 +1966,10 @@
   (if (not (string? str)) (%irregex-error 'irregex-search "not a string" str))
   (let ((start (or (and (pair? o) (car o)) 0))
         (end (or (and (pair? o) (pair? (cdr o)) (cadr o)) (string-length str))))
-    (if (not (integer? start)) (%irregex-error 'irregex-search "not an integer" start))
-    (if (not (integer? end)) (%irregex-error 'irregex-search "not an integer" end))
+    (if (not (and (integer? start) (exact? start)))
+        (%irregex-error 'irregex-search "not an exact integer" start))
+    (if (not (and (integer? end) (exact? end)))
+        (%irregex-error 'irregex-search "not an exact integer" end))
     (irregex-search/chunked x
                             irregex-basic-string-chunker
                             (list str start end)
@@ -2059,6 +2065,10 @@
   (if (not (string? str)) (%irregex-error 'irregex-match "not a string" str))
   (let ((start (or (and (pair? o) (car o)) 0))
         (end (or (and (pair? o) (pair? (cdr o)) (cadr o)) (string-length str))))
+    (if (not (and (integer? start) (exact? start)))
+        (%irregex-error 'irregex-match "not an exact integer" start))
+    (if (not (and (integer? end) (exact? end)))
+        (%irregex-error 'irregex-match "not an exact integer" end))
     (irregex-match/chunked irx
                            irregex-basic-string-chunker
                            (list str start end))))
@@ -3755,8 +3765,10 @@
          (end (if (and (pair? o) (pair? (cdr o)) (pair? (cddr o)))
                   (caddr o)
                   (string-length str))))
-    (if (not (integer? start)) (%irregex-error 'irregex-fold "not an integer" start))
-    (if (not (integer? end)) (%irregex-error 'irregex-fold "not an integer" end))
+    (if (not (and (integer? start) (exact? start)))
+        (%irregex-error 'irregex-fold "not an exact integer" start))
+    (if (not (and (integer? end) (exact? end)))
+        (%irregex-error 'irregex-fold "not an exact integer" end))
     (irregex-match-chunker-set! matches irregex-basic-string-chunker)
     (let lp ((i start) (acc knil))
       (if (>= i end)
