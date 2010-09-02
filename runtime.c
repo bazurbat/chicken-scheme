@@ -8585,7 +8585,11 @@ C_regparm C_word C_fcall C_i_o_fixnum_plus(C_word n1, C_word n2)
   x2 = C_unfix(n2);
   s = x1 + x2;
 
+#ifdef C_SIXTY_FOUR
+  if((((s ^ x1) & (s ^ x2)) >> 62) != 0) return C_SCHEME_FALSE;
+#else
   if((((s ^ x1) & (s ^ x2)) >> 30) != 0) return C_SCHEME_FALSE;
+#endif
   else return C_fix(s);
 }
 
@@ -8600,7 +8604,11 @@ C_regparm C_word C_fcall C_i_o_fixnum_difference(C_word n1, C_word n2)
   x2 = C_unfix(n2);
   s = x1 - x2;
   
+#ifdef C_SIXTY_FOUR
+  if((((s ^ x1) & ~(s ^ x2)) >> 62) != 0) return C_SCHEME_FALSE;
+#else
   if((((s ^ x1) & ~(s ^ x2)) >> 30) != 0) return C_SCHEME_FALSE;
+#endif
   else return C_fix(s);
 }
 
