@@ -957,18 +957,11 @@ EOF
 (define remainder 
   (lambda (x y) (- x (* (quotient x y) y))) )
 
-(define modulo
-  (let ([floor floor])
-    (lambda (x y)
-      (let ((div (/ x y)))
-	(- x (* (if (integer? div)
-		    div
-		    (let* ([fd (floor div)]
-			   [fdx (##core#inline "C_quickflonumtruncate" fd)] )
-		      (if (= fd fdx)
-			  fdx
-			  fd) ) )
-		y) ) ) ) ) )
+(define (modulo a b)			   ; copied from chibi scheme without asking Alex
+  (let ((res (- a (* (quotient a b) b))) ) ; remainder
+    (if (< b 0)
+        (if (<= res 0) res (+ res b))
+        (if (>= res 0) res (+ res b)))))
 
 (define (even? n) (##core#inline "C_i_evenp" n))
 (define (odd? n) (##core#inline "C_i_oddp" n))
