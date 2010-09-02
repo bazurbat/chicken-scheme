@@ -560,7 +560,7 @@ EOF
 	    [(eof-object? x) (fprintf out "end-of-file object~%")]
 	    [(eq? (##sys#void) x) (fprintf out "unspecified object~%")]
 	    [(fixnum? x)
-	     (fprintf out "exact integer ~S, #x~X, #o~O, #b~B" x x x x)
+	     (fprintf out "exact integer ~S~%  #x~X~%  #o~O~%  #b~B" x x x x)
 	     (let ([code (integer->char x)])
 	       (when (fx< x #x10000) (fprintf out ", character ~S" code)) )
 	     (##sys#write-char-0 #\newline ##sys#standard-output) ]
