@@ -1029,7 +1029,7 @@ EOF
 	(keyword-style #:none)
 	(parentheses-synonyms #f)
 	(symbol-escape #f) )
-      (unless (or (member* '("-n" "-no-init") args) script) (loadinit))
+      (unless (or (member* '("-n" "-no-init") args) script eval?) (loadinit))
       (when batch 
 	(set! ##sys#notices-enabled #f))
       (do ([args args (cdr args)])
