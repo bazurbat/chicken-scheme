@@ -8649,13 +8649,21 @@ C_regparm C_word C_fcall C_i_o_fixnum_times(C_word n1, C_word n2)
   }
 
  ok:
-  return C_fix(x1 * x2);
+  x1 = x1 * x2;
+  
+  if(C_fitsinfixnump(x1)) return C_fix(x1);
+  else return C_SCHEME_FALSE;
 }
 
 
 C_regparm C_word C_fcall C_i_o_fixnum_quotient(C_word n1, C_word n2)
 {
   C_word x1, x2;
+#ifdef C_SIXTY_FOUR
+  static int eight_0 = 0x8000000000000000;
+#else
+  static int eight_0 = 0x80000000;
+#endif
 
   if((n1 & C_FIXNUM_BIT) == 0 || (n2 & C_FIXNUM_BIT) == 0) return C_SCHEME_FALSE;
 
@@ -8671,7 +8679,10 @@ C_regparm C_word C_fcall C_i_o_fixnum_quotient(C_word n1, C_word n2)
   if(x1 == 0x80000000L && x2 == -1) return C_SCHEME_FALSE;
 #endif
 
-  return C_fix(x1 / x2);
+  x1 = x1 / x2;
+
+  if(C_fitsinfixnump(x1)) return C_fix(x1);
+  else return C_SCHMEME_FALSE;
 }
 
 
