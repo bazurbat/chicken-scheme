@@ -8613,6 +8613,68 @@ C_regparm C_word C_fcall C_i_o_fixnum_difference(C_word n1, C_word n2)
 }
 
 
+C_regparm C_word C_fcall C_i_o_fixnum_times(C_word n1, C_word n2)
+{
+  C_word x1, x2;
+  /* otherwise gcc tries to be smart (and naturally fails) */
+#ifdef C_SIXTY_FOUR
+  static int seven_f = 0x7fffffffffffffff;
+  static int eight_0 = 0x8000000000000000;
+#else
+  static int seven_f = 0x7fffffff;
+  static int eight_0 = 0x80000000;
+#endif
+
+  if((n1 & C_FIXNUM_BIT) == 0 || (n2 & C_FIXNUM_BIT) == 0) return C_SCHEME_FALSE;
+
+  x1 = C_unfix(n1);
+  x2 = C_unfix(n2);
+
+  if(x1 > 0) {
+    if(x2 > 0) {
+      if(x1 > (seven_f / x2)) return C_SCHEME_FALSE;
+      else goto ok;
+    }
+    else {
+      if(x2 < (eight_0 / x2)) return C_SCHEME_FALSE;
+      else goto ok;
+    }
+  }
+  else if(x2 > 0) {
+    if(x1 < (eight_0 / x2)) return C_SCHEME_FALSE;
+    else goto ok;
+  }
+  else {
+    if(x1 != 0 && x2 < (seven_f / x1)) return C_SCHEME_FALSE;
+  }
+
+ ok:
+  return C_fix(x1 * x2);
+}
+
+
+C_regparm C_word C_fcall C_i_o_fixnum_quotient(C_word n1, C_word n2)
+{
+  C_word x1, x2;
+
+  if((n1 & C_FIXNUM_BIT) == 0 || (n2 & C_FIXNUM_BIT) == 0) return C_SCHEME_FALSE;
+
+  x1 = C_unfix(n1);
+  x2 = C_unfix(n2);
+
+  if(x2 == 0)
+    barf(C_DIVISION_BY_ZERO_ERROR, "fx/?");
+
+#ifdef C_SIXYT_FOUR
+  if(x1 == 0x8000000000000000L && x2 == -1) return C_SCHEME_FALSE;
+#else
+  if(x1 == 0x80000000L && x2 == -1) return C_SCHEME_FALSE;
+#endif
+
+  return C_fix(x1 / x2);
+}
+
+
 C_regparm C_word C_fcall C_i_o_fixnum_and(C_word n1, C_word n2)
 {
   C_uword x1, x2, r;

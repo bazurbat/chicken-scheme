@@ -702,12 +702,14 @@ EOF
 (define (fxshr x y) (##core#inline "C_fixnum_shift_right" x y))
 (define (fxodd? x) (##core#inline "C_i_fixnumoddp" x))
 (define (fxeven? x) (##core#inline "C_i_fixnumevenp" x))
+(define (fx/ x y) (##core#inline "C_fixnum_divide" x y) )
+(define (fxmod x y) (##core#inline "C_fixnum_modulo" x y) )
 
-(define (fx/ x y)
-  (##core#inline "C_fixnum_divide" x y) )
-
-(define (fxmod x y)
-  (##core#inline "C_fixnum_modulo" x y) )
+;; these are currently undocumented
+(define (fx+? x y) (##core#inline "C_i_o_fixnum_plus" x y) )
+(define (fx-? x y) (##core#inline "C_i_o_fixnum_difference" x y) )
+(define (fx*? x y) (##core#inline "C_i_o_fixnum_times" x y) )
+(define (fx/? x y) (##core#inline "C_i_o_fixnum_quotient" x y) )
 
 (define maximum-flonum (foreign-value "DBL_MAX" double))
 (define minimum-flonum (foreign-value "DBL_MIN" double))
@@ -969,25 +971,22 @@ EOF
 (define max)
 (define min)
 
-(let ([> >]				;XXX could use faster versions
-      [< <] )
-  (letrec ([maxmin
-	    (lambda (n1 ns pred)
-	      (let loop ((nbest n1) (ns ns))
-		(if (eq? ns '())
-		    nbest
-		    (let ([ni (##sys#slot ns 0)])
-		      (loop (if (pred ni nbest)
-				(if (and (##core#inline "C_blockp" nbest) 
-					 (##core#inline "C_flonump" nbest) 
-					 (not (##core#inline "C_blockp" ni)) )
-				    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) ni)
-				    ni)
-				nbest)
-			    (##sys#slot ns 1) ) ) ) ) ) ] )
-
-    (set! max (lambda (n1 . ns) (maxmin n1 ns >)))
-    (set! min (lambda (n1 . ns) (maxmin n1 ns <))) ) )
+(letrec ((maxmin
+	  (lambda (n1 ns pred)
+	    (let loop ((nbest n1) (ns ns))
+	      (if (eq? ns '())
+		  nbest
+		  (let ([ni (##sys#slot ns 0)])
+		    (loop (if (pred ni nbest)
+			      (if (and (##core#inline "C_blockp" nbest) 
+				       (##core#inline "C_flonump" nbest) 
+				       (not (##core#inline "C_blockp" ni)) )
+				  (##core#inline_allocate ("C_a_i_fix_to_flo" 4) ni)
+				  ni)
+			      nbest)
+			  (##sys#slot ns 1) ) ) ) ) ) ) )
+  (set! max (lambda (n1 . ns) (maxmin n1 ns >)))
+  (set! min (lambda (n1 . ns) (maxmin n1 ns <))) )
 
 (define (exp n)
   (##core#inline_allocate ("C_a_i_exp" 4) n) )
