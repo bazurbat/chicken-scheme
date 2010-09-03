@@ -1587,9 +1587,9 @@
 
 (define (check-for-redef sym env senv)
   (and-let* ((a (assq sym env)))
-    (##sys#notice "redefinition of imported value binding" sym) )
+    (##sys#warn "redefinition of imported value binding" sym) )
   (and-let* ((a (assq sym senv)))
-    (##sys#notice "redefinition of imported syntax binding" sym)))
+    (##sys#warn "redefinition of imported syntax binding" sym)))
 
 (define (##sys#register-export sym mod)
   (when mod
