@@ -33,62 +33,35 @@ ifneq ($(CONFIG),)
 include $(CONFIG)
 endif
 
-STANDARD_TARGETS \
-	= all clean distclean spotless install uninstall confclean check \
-	  fullcheck dist libs install-target install-dev bench boot-chicken
-
-SRCDIR = .
-
-.PHONY: $(STANDARD_TARGETS)
-
 ifndef PLATFORM
-$(STANDARD_TARGETS):
-	@echo "no PLATFORM given."
+no-platform:
+	@echo "No PLATFORM given."
 	@echo ""
 	@echo "Please select your target platform by running one of the following commands:"
 	@echo ""
-	@echo "  $(MAKE) PLATFORM=linux"
-	@echo "  $(MAKE) PLATFORM=bsd"
-	@echo "  $(MAKE) PLATFORM=macosx"
-	@echo "  $(MAKE) PLATFORM=mingw-msys"
-	@echo "  $(MAKE) PLATFORM=mingw"
-	@echo "  $(MAKE) PLATFORM=cygwin"
-	@echo "  $(MAKE) PLATFORM=solaris"
-	@echo "  $(MAKE) PLATFORM=cross-linux-mingw"
-	@echo "  $(MAKE) PLATFORM=haiku"
+	@for mf in Makefile.*; do \
+		echo "  $(MAKE) PLATFORM=$${mf#Makefile.}"; \
+		done
 	@echo ""
 	@echo "For more information, consult the README file."
 	@exit 1
+%: no-platform ;
 else
-all:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) all
-clean:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) clean
-distclean:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) distclean
-spotless:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) spotless
-install:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) install
-install-target:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) install-target
-install-dev:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) install-dev
-uninstall:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) uninstall
-confclean:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) confclean
-check:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) check
-bench:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) bench
-fullcheck:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) fullcheck
+SRCDIR = .
+
+STANDARD_TARGETS \
+	= all clean distclean spotless install uninstall confclean check \
+	  fullcheck libs install-target install-dev bench
+
+.PHONY: $(STANDARD_TARGETS) dist boot-chicken
+
+$(STANDARD_TARGETS):
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) $@
+
 dist:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) distfiles
 	csi -s scripts/makedist.scm
-libs:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) libs
+
 boot-chicken:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) boot-chicken
 
