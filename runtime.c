@@ -8682,7 +8682,7 @@ C_regparm C_word C_fcall C_i_o_fixnum_quotient(C_word n1, C_word n2)
   x1 = x1 / x2;
 
   if(C_fitsinfixnump(x1)) return C_fix(x1);
-  else return C_SCHMEME_FALSE;
+  else return C_SCHEME_FALSE;
 }
 
 
