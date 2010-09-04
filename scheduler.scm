@@ -375,8 +375,8 @@ EOF
 (define (fdset-set fd i/o)
   (dbg "setting fdset for " fd " to " i/o)
   (case i/o
-    ((#:input) (fdset-input-set fd))
-    ((#:output) (fdset-output-set fd))
+    ((#t #:input) (fdset-input-set fd))
+    ((#f #:output) (fdset-output-set fd))
     ((#:all)
      (fdset-input-set fd)
      (fdset-output-set fd) )
@@ -384,8 +384,8 @@ EOF
 
 (define (fdset-test inf outf i/o)
   (case i/o
-    ((#:input) inf)
-    ((#:output) outf)
+    ((#t #:input) inf)
+    ((#f #:output) outf)
     ((#:all) (or inf outf))
     (else (panic "fdset-test: invalid i/o direction"))))
 
