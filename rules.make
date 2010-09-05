@@ -67,6 +67,15 @@ ALWAYS_STATIC_UTILITY_PROGRAM_OBJECTS_1 = \
 MANPAGES = chicken.1 csc.1 csi.1 chicken-install.1 chicken-uninstall.1 \
 	chicken-status.1 chicken-profile.1 chicken-bug.1
 
+DISTFILES = library.c eval.c expand.c chicken-syntax.c chicken-ffi-syntax.c \
+	data-structures.c ports.c files.c extras.c lolevel.c utils.c \
+	tcp.c srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c \
+	posixunix.c posixwin.c regex.c scheduler.c profiler.c stub.c \
+	chicken-profile.c chicken-install.c chicken-uninstall.c chicken-status.c \
+	csc.c csi.c chicken.c batch-driver.c compiler.c optimizer.c  \
+	compiler-syntax.c scrutinizer.c unboxing.c support.c \
+	c-platform.c c-backend.c chicken-bug.c $(IMPORT_LIBRARIES:=.import.c)
+
 # library objects
 
 define declare-shared-library-object # reused in the setup API bit
@@ -467,6 +476,19 @@ eval.c: $(SRCDIR)eval.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 expand.c: $(SRCDIR)expand.scm $(SRCDIR)synrules.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
+extras.c: $(SRCDIR)extras.scm $(SRCDIR)private-namespace.scm $(SRCDIR)common-declarations.scm
+	$(bootstrap-lib)
+posixunix.c: $(SRCDIR)posixunix.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
+	$(bootstrap-lib) 
+posixwin.c: $(SRCDIR)posixwin.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
+	$(bootstrap-lib) 
+srfi-69.c: $(SRCDIR)srfi-69.scm $(SRCDIR)common-declarations.scm
+	$(bootstrap-lib) -extend $(SRCDIR)private-namespace.scm
+regex.c: $(SRCDIR)regex.scm $(SRCDIR)irregex.scm $(SRCDIR)common-declarations.scm
+	$(bootstrap-lib)
+#
+# The ones below just depend on their matching .scm file and common-declarations
+#
 chicken-syntax.c: $(SRCDIR)chicken-syntax.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 chicken-ffi-syntax.c: $(SRCDIR)chicken-ffi-syntax.scm $(SRCDIR)common-declarations.scm
@@ -476,8 +498,6 @@ data-structures.c: $(SRCDIR)data-structures.scm $(SRCDIR)common-declarations.scm
 ports.c: $(SRCDIR)ports.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 files.c: $(SRCDIR)files.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib)
-extras.c: $(SRCDIR)extras.scm $(SRCDIR)private-namespace.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 lolevel.c: $(SRCDIR)lolevel.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
@@ -493,15 +513,7 @@ srfi-14.c: $(SRCDIR)srfi-14.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 srfi-18.c: $(SRCDIR)srfi-18.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
-srfi-69.c: $(SRCDIR)srfi-69.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) -extend $(SRCDIR)private-namespace.scm
 utils.c: $(SRCDIR)utils.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) 
-posixunix.c: $(SRCDIR)posixunix.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) 
-posixwin.c: $(SRCDIR)posixwin.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) 
-regex.c: $(SRCDIR)regex.scm $(SRCDIR)irregex.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 scheduler.c: $(SRCDIR)scheduler.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
@@ -561,15 +573,6 @@ setup-download.c: $(SRCDIR)setup-download.scm setup-api.c
 # distribution files
 
 .PHONY: distfiles dist html
-
-DISTFILES = library.c eval.c expand.c chicken-syntax.c chicken-ffi-syntax.c \
-	data-structures.c ports.c files.c extras.c lolevel.c utils.c \
-	tcp.c srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c \
-	posixunix.c posixwin.c regex.c scheduler.c profiler.c stub.c \
-	chicken-profile.c chicken-install.c chicken-uninstall.c chicken-status.c \
-	csc.c csi.c chicken.c batch-driver.c compiler.c optimizer.c  \
-	compiler-syntax.c scrutinizer.c unboxing.c support.c \
-	c-platform.c c-backend.c chicken-bug.c $(IMPORT_LIBRARIES:=.import.c)
 
 distfiles: $(DISTFILES)
 
