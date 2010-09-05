@@ -56,15 +56,12 @@ COMPILER_OBJECTS_1 = \
 COMPILER_OBJECTS        = $(COMPILER_OBJECTS_1:=$(O))
 COMPILER_STATIC_OBJECTS = $(COMPILER_OBJECTS_1:=-static$(O))
 
-# This excludes the compiler (the "chicken" binary) itself
-UTILITY_PROGRAMS = \
+# "Utility programs" is arbitrary. It includes anything but the chicken binary
+UTILITY_PROGRAM_OBJECTS_1 = \
 	csc csi chicken-install chicken-uninstall chicken-status chicken-profile
 
-# TODO: It looks like csi-static is never built, and not installed either.
-# probably a relic from earlier versions
-ALWAYS_STATIC_UTILITY_PROGRAMS = \
+ALWAYS_STATIC_UTILITY_PROGRAM_OBJECTS_1 = \
 	chicken-bug csi-static
-
 
 # library objects
 
@@ -159,7 +156,7 @@ $(1)(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
 	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$< $$(C_COMPILER_OUTPUT)
 endef
 
-$(foreach obj, $(UTILITY_PROGRAMS),\
+$(foreach obj, $(UTILITY_PROGRAM_OBJECTS_1),\
           $(eval $(call declare-utility-program-object,$(obj))))
 
 
@@ -172,7 +169,7 @@ $(1)(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
 	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$< $$(C_COMPILER_OUTPUT)
 endef
 
-$(foreach obj, $(ALWAYS_STATIC_UTILITY_PROGRAMS),\
+$(foreach obj, $(ALWAYS_STATIC_UTILITY_PROGRAM_OBJECTS_1),\
           $(eval $(call declare-always-static-utility-program-object,$(obj))))
 
 # resource objects
