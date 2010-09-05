@@ -1,3 +1,5 @@
+# See GNUmakefile for the actual makefile used by gmake
+
 all:
 	@echo "Sorry, Chicken can only be built with GNU Make."
 	@echo ""
