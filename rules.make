@@ -268,7 +268,7 @@ $(1): $(2)$(O) libchicken$(A)
 endef
 
 $(eval $(call declare-program-from-object,$(CSI_STATIC_EXECUTABLE),csi))
-$(eval $(call declare-program-from-object,$(CSI_BUG_PROGRAM)$(EXE),chicken-bug))
+$(eval $(call declare-program-from-object,$(CHICKEN_BUG_PROGRAM)$(EXE),chicken-bug))
 
 
 # installation
