@@ -65,8 +65,12 @@ MANPAGES = \
 # care of which programs should actually be installed/uninstalled
 INSTALLED_PROGRAMS = \
 	$(CHICKEN_PROGRAM) $(CSI_PROGRAM) $(CHICKEN_PROFILE_PROGRAM) \
-	$(CSC_PROGRAM) $(CHICKEN_BUG_PROGRAM) $(CHICKEN_STATUS_PROGRAM)\
+	$(CSC_PROGRAM) $(CHICKEN_BUG_PROGRAM)
+
+ifndef STATICBUILD
+INSTALLED_PROGRAMS += $(CHICKEN_STATUS_PROGRAM) \
 	$(CHICKEN_INSTALL_PROGRAM) $(CHICKEN_UNINSTALL_PROGRAM)
+endif
 
 DISTFILES = library.c eval.c expand.c chicken-syntax.c chicken-ffi-syntax.c \
 	data-structures.c ports.c files.c extras.c lolevel.c utils.c \
@@ -327,18 +331,6 @@ install-bin:
 # 	$(MAKE_WRITABLE_COMMAND) $(CHICKEN_STATUS_PROGRAM)$(EXE)
 # endif
 else
-  ifdef STATICBUILD
-    define install-import-lib
-      $(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(1).import.scm "$(DESTDIR)$(IEGGDIR)"
-      $(NL)
-    endef
-  else
-    define install-import-lib
-      $(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) $(1).import.so "$(DESTDIR)$(IEGGDIR)"
-      $(NL)
-    endef
-  endif
-
 install-bin: $(TARGETS) install-libs install-dev
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IBINDIR)"
 
@@ -346,11 +338,20 @@ install-bin: $(TARGETS) install-libs install-dev
 		$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) \
 		$(prog)$(EXE) "$(DESTDIR)$(IBINDIR)" $(NL))
 
-	$(foreach obj,$(IMPORT_LIBRARIES),\
-	          $(call install-import-lib,$(obj)))
+ifdef STATICBUILD
+	$(foreach lib,$(IMPORT_LIBRARIES),\
+		$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) \
+		$(lib).import.scm "$(DESTDIR)$(IEGGDIR)" $(NL))
+else
+	$(foreach lib,$(IMPORT_LIBRARIES),\
+		$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) \
+		$(lib).import.so "$(DESTDIR)$(IEGGDIR)" $(NL))
+endif
 
+# XXX Shouldn't this be part of the non-static lib part?
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) setup-api.so "$(DESTDIR)$(IEGGDIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) setup-download.so "$(DESTDIR)$(IEGGDIR)"
+
 ifndef STATICBUILD
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) $(CHICKEN_INSTALL_PROGRAM)$(EXE) "$(DESTDIR)$(IBINDIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) $(CHICKEN_UNINSTALL_PROGRAM)$(EXE) "$(DESTDIR)$(IBINDIR)"
