@@ -320,14 +320,17 @@ install-bin:
 # 	$(MAKE_WRITABLE_COMMAND) $(CHICKEN_STATUS_PROGRAM)$(EXE)
 # endif
 else
-  define install-import-lib
-    ifdef STATICBUILD
+  ifdef STATICBUILD
+    define install-import-lib
       $(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(1).import.scm "$(DESTDIR)$(IEGGDIR)"
-    else
-      $(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) $(1).import.so "$(DESTDIR)$(IEGGDIR)"
-    endif
 
-  endef # Newline at the end is needed
+    endef # Newline at the end is needed
+  else
+    define install-import-lib
+      $(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) $(1).import.so "$(DESTDIR)$(IEGGDIR)"
+
+    endef # Newline at the end is needed
+  endif
 
 install-bin: $(TARGETS) install-libs install-dev
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IBINDIR)"
