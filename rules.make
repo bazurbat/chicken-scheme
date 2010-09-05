@@ -28,6 +28,12 @@ VPATH=$(SRCDIR)
 
 # object files
 
+IMPORT_LIB_OBJECTS_1 = \
+	chicken lolevel srfi-1  srfi-4 data-structures \
+	ports files posix srfi-13 srfi-69 extras \
+	regex irregex srfi-14 tcp foreign scheme \
+	csi srfi-18 utils
+
 LIBCHICKEN_OBJECTS_1 = \
        library eval data-structures ports files extras lolevel utils tcp srfi-1 srfi-4 srfi-13 \
        srfi-14 srfi-18 srfi-69 $(POSIXFILE) regex scheduler \
@@ -44,31 +50,43 @@ COMPILER_STATIC_OBJECTS = $(COMPILER_OBJECTS_1:=-static$(O))
 
 # library objects
 
-%$(O): %.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
+define declare-libchicken-object
+$(1)$(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
+	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) $$(INCLUDES) \
+	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$(C_COMPILER_SHARED_OPTIONS) \
+	  $$(C_COMPILER_BUILD_RUNTIME_OPTIONS) $$< $$(C_COMPILER_OUTPUT)
+endef
+
+$(foreach obj, $(LIBCHICKEN_OBJECTS_1),\
+          $(eval $(call declare-libchicken-object,$(obj))))
 
 # static versions
-%-static$(O): %.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(C_COMPILER_OUTPUT)
+
+define declare-static-libchicken-object
+$(1)-static$(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
+	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) $$(INCLUDES) \
+	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) \
+	  $$(C_COMPILER_STATIC_OPTIONS) \
+	  $$(C_COMPILER_BUILD_RUNTIME_OPTIONS) $$< $$(C_COMPILER_OUTPUT)
+endef
+
+$(foreach obj, $(LIBCHICKEN_OBJECTS_1),\
+          $(eval $(call declare-static-libchicken-object,$(obj))))
 
 # import library objects
 
-scheme.import$(O): scheme.import.c chicken.h $(CHICKEN_CONFIG_H)
-	$(HOST_C_COMPILER) $(HOST_C_COMPILER_OPTIONS) $(HOST_C_COMPILER_PTABLES_OPTIONS) $(HOST_INCLUDES) -DC_SHARED \
-	  $(HOST_C_COMPILER_COMPILE_OPTION) $(HOST_C_COMPILER_OPTIMIZATION_OPTIONS) $(HOST_C_COMPILER_SHARED_OPTIONS) \
-	  $(HOST_C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(HOST_C_COMPILER_OUTPUT)
+define declare-import-lib-object
+$(1).import$(O): $(1).import.c chicken.h $$(CHICKEN_CONFIG_H)
+	$$(HOST_C_COMPILER) $$(HOST_C_COMPILER_OPTIONS) $$(HOST_C_COMPILER_PTABLES_OPTIONS) $$(INCLUDES) -DC_SHARED \
+	  $$(HOST_C_COMPILER_COMPILE_OPTION) $$(HOST_C_COMPILER_OPTIMIZATION_OPTIONS) $$(HOST_C_COMPILER_SHARED_OPTIONS) \
+	  $$(HOST_C_COMPILER_BUILD_RUNTIME_OPTIONS) $$< $$(HOST_C_COMPILER_OUTPUT)
+endef
 
-%.import$(O): %.import.c chicken.h $(CHICKEN_CONFIG_H)
-	$(HOST_C_COMPILER) $(HOST_C_COMPILER_OPTIONS) $(HOST_C_COMPILER_PTABLES_OPTIONS) $(INCLUDES) -DC_SHARED \
-	  $(HOST_C_COMPILER_COMPILE_OPTION) $(HOST_C_COMPILER_OPTIMIZATION_OPTIONS) $(HOST_C_COMPILER_SHARED_OPTIONS) \
-	  $(HOST_C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(HOST_C_COMPILER_OUTPUT)
+$(foreach obj,$(IMPORT_LIB_OBJECTS_1),\
+          $(eval $(call declare-import-lib-object,$(obj))))
 
 # setup extension objects
+
 setup-api$(O): setup-api.c chicken.h $(CHICKEN_CONFIG_H)
 	$(HOST_C_COMPILER) $(HOST_C_COMPILER_OPTIONS) $(HOST_C_COMPILER_PTABLES_OPTIONS) $(INCLUDES) -DC_SHARED \
 	  $(HOST_C_COMPILER_COMPILE_OPTION) $(HOST_C_COMPILER_OPTIMIZATION_OPTIONS) $(HOST_C_COMPILER_SHARED_OPTIONS) \
@@ -80,89 +98,27 @@ setup-download$(O): setup-download.c chicken.h $(CHICKEN_CONFIG_H)
 
 # compiler objects
 
-batch-driver$(O): batch-driver.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) $< \
-	  $(C_COMPILER_OUTPUT)
-c-backend$(O): c-backend.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) $< \
-	  $(C_COMPILER_OUTPUT)
-c-platform$(O): c-platform.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) $< \
-	  $(C_COMPILER_OUTPUT)
-optimizer$(O): optimizer.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) $< \
-	  $(C_COMPILER_OUTPUT)
-compiler-syntax$(O): compiler-syntax.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) $< \
-	  $(C_COMPILER_OUTPUT)
-scrutinizer$(O): scrutinizer.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) $< \
-	  $(C_COMPILER_OUTPUT)
-unboxing$(O): unboxing.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) $< \
-	  $(C_COMPILER_OUTPUT)
-chicken$(O): chicken.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) $< \
-	  $(C_COMPILER_OUTPUT)
-compiler$(O): compiler.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) $< \
-	  $(C_COMPILER_OUTPUT)
-support$(O): support.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $(C_COMPILER_SHARED_OPTIONS) $< \
-	  $(C_COMPILER_OUTPUT)
+define declare-compiler-object
+$(1)$(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
+	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) $$(INCLUDES) \
+	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$(C_COMPILER_SHARED_OPTIONS) $$< \
+	  $$(C_COMPILER_OUTPUT)
+endef
+
+$(foreach obj, $(COMPILER_OBJECTS_1),\
+          $(eval $(call declare-compiler-object,$(obj))))
 
 # static compiler objects
 
-batch-driver-static$(O): batch-driver.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
-c-backend-static$(O): c-backend.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
-c-platform-static$(O): c-platform.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
-chicken-static$(O): chicken.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
-compiler-static$(O): compiler.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
-support-static$(O): support.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
-optimizer-static$(O): optimizer.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
-compiler-syntax-static$(O): compiler-syntax.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
-scrutinizer-static$(O): scrutinizer.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
-unboxing-static$(O): unboxing.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
+define declare-static-compiler-object
+$(1)-static$(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
+	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) $$(INCLUDES) \
+	  $$(C_COMPILER_STATIC_OPTIONS) \
+	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$< $$(C_COMPILER_OUTPUT)
+endef
+
+$(foreach obj, $(COMPILER_OBJECTS_1),\
+          $(eval $(call declare-static-compiler-object,$(obj))))
 
 # assembler objects
 
@@ -364,11 +320,14 @@ install-bin:
 # 	$(MAKE_WRITABLE_COMMAND) $(CHICKEN_STATUS_PROGRAM)$(EXE)
 # endif
 else
-  ifdef STATICBUILD
-install-import-lib = $(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(1).import.scm "$(DESTDIR)$(IEGGDIR)"
-  else
-install-import-lib = $(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) $(1).import.so "$(DESTDIR)$(IEGGDIR)"
-  endif
+  define install-import-lib
+    ifdef STATICBUILD
+      $(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(1).import.scm "$(DESTDIR)$(IEGGDIR)"
+    else
+      $(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) $(1).import.so "$(DESTDIR)$(IEGGDIR)"
+    endif
+
+  endef # Newline at the end is needed
 
 install-bin: $(TARGETS) install-libs install-dev
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IBINDIR)"
@@ -377,26 +336,8 @@ install-bin: $(TARGETS) install-libs install-dev
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) $(CHICKEN_PROFILE_PROGRAM)$(EXE) "$(DESTDIR)$(IBINDIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) $(CSC_PROGRAM)$(EXE) "$(DESTDIR)$(IBINDIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) $(CHICKEN_BUG_PROGRAM)$(EXE) "$(DESTDIR)$(IBINDIR)"
-	$(call install-import-lib, scheme)
-	$(call install-import-lib, chicken)
-	$(call install-import-lib, lolevel)
-	$(call install-import-lib, srfi-1)
-	$(call install-import-lib, srfi-4)
-	$(call install-import-lib, data-structures)
-	$(call install-import-lib, ports)
-	$(call install-import-lib, files)
-	$(call install-import-lib, posix)
-	$(call install-import-lib, srfi-13)
-	$(call install-import-lib, srfi-69)
-	$(call install-import-lib, extras)
-	$(call install-import-lib, regex)
-	$(call install-import-lib, srfi-14)
-	$(call install-import-lib, tcp)
-	$(call install-import-lib, foreign)
-	$(call install-import-lib, srfi-18)
-	$(call install-import-lib, utils)
-	$(call install-import-lib, csi)
-	$(call install-import-lib, irregex)
+	$(foreach obj,$(IMPORT_LIB_OBJECTS_1),\
+	          $(call install-import-lib,$(obj)))
 	$(call install-import-lib, setup-api)
 	$(call install-import-lib, setup-download)
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) setup-api.so "$(DESTDIR)$(IEGGDIR)"
@@ -561,50 +502,15 @@ profiler.c: $(SRCDIR)profiler.scm $(SRCDIR)common-declarations.scm
 stub.c: $(SRCDIR)stub.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 
-bootstrap-import-lib = $(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@
+define declare-bootstrap-import-lib
+$(1).import.c: $$(SRCDIR)$(1).import.scm
+	$$(CHICKEN) $$< $$(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $$@
+endef
 
-chicken.import.c: $(SRCDIR)chicken.import.scm
-	$(bootstrap-import-lib)
-lolevel.import.c: $(SRCDIR)lolevel.import.scm
-	$(bootstrap-import-lib)
-srfi-1.import.c: $(SRCDIR)srfi-1.import.scm
-	$(bootstrap-import-lib)
-srfi-4.import.c: $(SRCDIR)srfi-4.import.scm
-	$(bootstrap-import-lib)
-data-structures.import.c: $(SRCDIR)data-structures.import.scm
-	$(bootstrap-import-lib)
-ports.import.c: $(SRCDIR)ports.import.scm
-	$(bootstrap-import-lib)
-files.import.c: $(SRCDIR)files.import.scm
-	$(bootstrap-import-lib)
-posix.import.c: $(SRCDIR)posix.import.scm
-	$(bootstrap-import-lib)
-srfi-13.import.c: $(SRCDIR)srfi-13.import.scm
-	$(bootstrap-import-lib)
-srfi-69.import.c: $(SRCDIR)srfi-69.import.scm
-	$(bootstrap-import-lib)
-extras.import.c: $(SRCDIR)extras.import.scm
-	$(bootstrap-import-lib)
-regex.import.c: $(SRCDIR)regex.import.scm
-	$(bootstrap-import-lib)
-irregex.import.c: $(SRCDIR)irregex.import.scm
-	$(bootstrap-import-lib)
-srfi-14.import.c: $(SRCDIR)srfi-14.import.scm
-	$(bootstrap-import-lib)
-tcp.import.c: $(SRCDIR)tcp.import.scm
-	$(bootstrap-import-lib)
-foreign.import.c: $(SRCDIR)foreign.import.scm
-	$(bootstrap-import-lib)
-scheme.import.c: $(SRCDIR)scheme.import.scm
-	$(bootstrap-import-lib)
-csi.import.c: $(SRCDIR)csi.import.scm
-	$(bootstrap-import-lib)
-srfi-18.import.c: $(SRCDIR)srfi-18.import.scm
-	$(bootstrap-import-lib)
-utils.import.c: $(SRCDIR)utils.import.scm
-	$(bootstrap-import-lib)
+$(foreach obj, $(IMPORT_LIB_OBJECTS_1),\
+          $(eval $(call declare-bootstrap-import-lib,$(obj))))
 
-# Exceptions
+# bootstrap setup API
 setup-api.import.c: $(SRCDIR)setup-api.scm
 	$(CHICKEN) $(SRCDIR)setup-api.import.scm $(CHICKEN_IMPORT_LIBRARY_OPTIONS) \
 	  -output-file $@ 
@@ -612,36 +518,15 @@ setup-download.import.c: $(SRCDIR)setup-download.scm
 	$(CHICKEN) $(SRCDIR)setup-download.import.scm $(CHICKEN_IMPORT_LIBRARY_OPTIONS) \
 	  -output-file $@ 
 
-chicken.c: $(SRCDIR)chicken.scm $(SRCDIR)compiler-namespace.scm \
-	  $(SRCDIR)private-namespace.scm $(SRCDIR)tweaks.scm
-	$(CHICKEN) $< $(CHICKEN_COMPILER_OPTIONS) -output-file $@ 
-support.c: $(SRCDIR)support.scm $(SRCDIR)banner.scm $(SRCDIR)compiler-namespace.scm \
-	  $(SRCDIR)private-namespace.scm $(SRCDIR)tweaks.scm
-	$(CHICKEN) $< $(CHICKEN_COMPILER_OPTIONS) -output-file $@ 
-compiler.c: $(SRCDIR)compiler.scm $(SRCDIR)compiler-namespace.scm \
-	  $(SRCDIR)private-namespace.scm $(SRCDIR)tweaks.scm
-	$(CHICKEN) $< $(CHICKEN_COMPILER_OPTIONS) -output-file $@ 
-optimizer.c: $(SRCDIR)optimizer.scm $(SRCDIR)compiler-namespace.scm \
-	  $(SRCDIR)private-namespace.scm $(SRCDIR)tweaks.scm
-	$(CHICKEN) $< $(CHICKEN_COMPILER_OPTIONS) -output-file $@ 
-compiler-syntax.c: $(SRCDIR)compiler-syntax.scm $(SRCDIR)compiler-namespace.scm \
-	  $(SRCDIR)private-namespace.scm $(SRCDIR)tweaks.scm
-	$(CHICKEN) $< $(CHICKEN_COMPILER_OPTIONS) -output-file $@ 
-scrutinizer.c: $(SRCDIR)scrutinizer.scm $(SRCDIR)compiler-namespace.scm \
-	  $(SRCDIR)private-namespace.scm $(SRCDIR)tweaks.scm
-	$(CHICKEN) $< $(CHICKEN_COMPILER_OPTIONS) -output-file $@ 
-unboxing.c: $(SRCDIR)unboxing.scm $(SRCDIR)compiler-namespace.scm \
-	  $(SRCDIR)private-namespace.scm $(SRCDIR)tweaks.scm
-	$(CHICKEN) $< $(CHICKEN_COMPILER_OPTIONS) -output-file $@ 
-batch-driver.c: $(SRCDIR)batch-driver.scm $(SRCDIR)compiler-namespace.scm \
-	  $(SRCDIR)private-namespace.scm $(SRCDIR)tweaks.scm
-	$(CHICKEN) $< $(CHICKEN_COMPILER_OPTIONS) -output-file $@ 
-c-platform.c: $(SRCDIR)c-platform.scm $(SRCDIR)compiler-namespace.scm \
-	  $(SRCDIR)private-namespace.scm $(SRCDIR)tweaks.scm
-	$(CHICKEN) $< $(CHICKEN_COMPILER_OPTIONS) -output-file $@ 
-c-backend.c: $(SRCDIR)c-backend.scm $(SRCDIR)compiler-namespace.scm \
-	  $(SRCDIR)private-namespace.scm $(SRCDIR)tweaks.scm
-	$(CHICKEN) $< $(CHICKEN_COMPILER_OPTIONS) -output-file $@ 
+define declare-compiler-object
+$(1).c: $$(SRCDIR)$(1).scm $$(SRCDIR)compiler-namespace.scm \
+	  $$(SRCDIR)private-namespace.scm $$(SRCDIR)tweaks.scm
+	$$(CHICKEN) $$< $$(CHICKEN_COMPILER_OPTIONS) -output-file $$@ 
+endef
+
+$(foreach obj, $(COMPILER_OBJECTS_1),\
+          $(eval $(call declare-compiler-object,$(obj))))
+
 
 csi.c: $(SRCDIR)csi.scm $(SRCDIR)banner.scm $(SRCDIR)private-namespace.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm
