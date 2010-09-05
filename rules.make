@@ -86,13 +86,20 @@ DISTFILES = library.c eval.c expand.c chicken-syntax.c chicken-ffi-syntax.c \
 
 # library objects
 
-define declare-shared-library-object # reused in the setup API bit
+## Any variable that starts with "declare-" is a meta-rule. When $(call)ed
+## it produces output that represents an instantiated rule and recipe.
+## This output then needs to be $(eval)ed in order to be added to the
+## ruleset evaluated by Make.  This allows us to automatically generate
+## similar rules for long lists of targets.
+
+define declare-shared-library-object
 $(1)$(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
 	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) $$(INCLUDES) \
 	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$(C_COMPILER_SHARED_OPTIONS) \
 	  $$(C_COMPILER_BUILD_RUNTIME_OPTIONS) $$< $$(C_COMPILER_OUTPUT)
 endef
 
+# The above meta-rule is reused in the setup API stuff below, so we alias it
 declare-libchicken-object = $(declare-shared-library-object)
 
 $(foreach obj, $(LIBCHICKEN_OBJECTS_1),\
@@ -241,6 +248,8 @@ $(1): $(2)$(O) $$(PRIMARY_LIBCHICKEN) $$($(1)-RC_FILE)
           $$(LINKER_LINK_SHARED_PROGRAM_OPTIONS) $$(LIBRARIES)
 endef
 
+# Unfortunately, we can't loop over INSTALLED_PROGRAMS here because of
+# the possible name mangling and EXE suffixing in there :(
 $(eval $(call declare-program-from-object,$(CSI_SHARED_EXECUTABLE),csi))
 $(eval $(call declare-program-from-object,$(CHICKEN_INSTALL_PROGRAM)$(EXE),chicken-install,true))
 $(eval $(call declare-program-from-object,$(CHICKEN_UNINSTALL_PROGRAM)$(EXE),chicken-uninstall,true))
@@ -264,7 +273,7 @@ $(eval $(call declare-program-from-object,$(CSI_BUG_PROGRAM)$(EXE),chicken-bug))
 
 # installation
 
-.PHONY: install uninstall install-libs install-import-libs
+.PHONY: install uninstall install-libs
 .PHONY: install-target install-dev install-bin install-other-files
 
 install: $(TARGETS) install-target install-bin install-libs install-dev install-other-files
