@@ -75,14 +75,14 @@ endif
 
 # These generated files make up a bootstrapped distribution build.
 # They are not cleaned by the 'clean' target, but only by 'spotless'.
-DISTFILES = library.c eval.c expand.c chicken-syntax.c chicken-ffi-syntax.c \
-	data-structures.c ports.c files.c extras.c lolevel.c utils.c \
-	tcp.c srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c \
-	posixunix.c posixwin.c regex.c scheduler.c profiler.c stub.c \
-	chicken-profile.c chicken-install.c chicken-uninstall.c chicken-status.c \
-	csc.c csi.c chicken.c batch-driver.c compiler.c optimizer.c  \
-	compiler-syntax.c scrutinizer.c unboxing.c support.c \
-	c-platform.c c-backend.c chicken-bug.c $(IMPORT_LIBRARIES:=.import.c)
+DISTFILES = $(LIBCHICKEN_OBJECTS:=.c) \
+	$(UTILITY_PROGRAM_OBJECTS_1:=.c) \
+	$(ALWAYS_STATIC_UTILITY_PROGRAM_OBJECTS_1:=.c) \
+	$(COMPILER_OBJECTS_1:=.c) \
+	$(IMPORT_LIBRARIES:=.import.c) \
+	posixunix.c posixwin.c
+# Remove the duplicate $(POSIXFILE) entry:
+DISTFILES = $(sort $(DISTFILES))
 
 # library objects
 
