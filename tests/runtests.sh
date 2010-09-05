@@ -104,6 +104,9 @@ diff -bu dwindtst.expected dwindtst.out
 echo "*** Skipping \"feeley-dynwind\" for now ***"
 # $interpret -s feeley-dynwind.scm
 
+#echo "======================================== arithmetic tests ..."
+#$interpret -D check -s arithmetic-tests.scm
+
 echo "======================================== syntax tests ..."
 $interpret -s syntax-tests.scm
 

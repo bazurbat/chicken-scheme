@@ -127,7 +127,9 @@
     list-ref abs char-ready? peek-char list->string string->list) )
 
 (define default-extended-bindings
-  '(bitwise-and bitwise-ior bitwise-xor bitwise-not add1 sub1 fx+ fx- fx* fx/ fxmod o
+  '(bitwise-and 
+    bitwise-ior bitwise-xor bitwise-not add1 sub1 fx+ fx- fx* fx/
+    fx+? fx-? fx*? fx/? fxmod o
     fx= fx> fx< fx>= fx<= fixnum? fxneg fxmax fxmin identity fp+ fp- fp* fp/ fpmin fpmax fpneg
     fp> fp< fp= fp>= fp<= fxand fxnot fxior fxxor fxshr fxshl bit-set? fxodd? fxeven?
     fpfloor fpceiling fptruncate fpround fpsin fpcos fptan fpasin fpacos fpatan
@@ -212,7 +214,7 @@
  
 (for-each
  (cut mark-variable <> '##compiler#pure 'extended)
- '(fx+ fx- fx* fx/ fxmod
+ '(fx+ fx- fx* fx/ fxmod fx+? fx*? fx/? fx-?
        fx= fx> fx< fx>= fx<= fixnum? fxneg fxmax fxmin identity
     fxand fxnot fxior fxxor fxshr fxshl fxodd? fxeven?
     void not-pair? atom? any? u8vector? s8vector? u16vector? s16vector?
@@ -633,6 +635,10 @@
 (rewrite '##sys#size 2 1 "C_block_size" #t)
 (rewrite 'fxnot 2 1 "C_fixnum_not" #t)
 (rewrite 'fx* 2 2 "C_fixnum_times" #t)
+(rewrite 'fx+? 2 2 "C_i_o_fixnum_plus" #t)
+(rewrite 'fx-? 2 2 "C_i_o_fixnum_difference" #t)
+(rewrite 'fx*? 2 2 "C_i_o_fixnum_times" #t)
+(rewrite 'fx/? 2 2 "C_i_o_fixnum_quotient" #t)
 (rewrite 'fx= 2 2 "C_eqp" #t)
 (rewrite 'fx> 2 2 "C_fixnum_greaterp" #t)
 (rewrite 'fx< 2 2 "C_fixnum_lessp" #t)

@@ -13,9 +13,12 @@
   (list 0 1 -1 2 -2
 	most-positive-fixnum most-negative-fixnum
 	(add1 most-positive-fixnum) (sub1 most-negative-fixnum)
-	1103515245
-	631629065
-	12345
+	1103515245			; random
+	631629065			; random
+	;;697012302412595925 came up in test-case by Jeronimo Pellegrini
+	9007199254740992   ; but these are sufficient, since they mark
+	-9007199254740992 ; the precision-limit of IEEE doubles on 64-bit systems
+	12345				; random
 	(expt 2 32)))
 
 (cond-expand
@@ -24,8 +27,8 @@
 
 (define (push c total opname args res)
   (let ((x (list (cons c total) (cons opname args) '-> res)))
-    (pp x)
-    (set! result (append result (list x)))))
+    #+(not check) (pp x)
+    (set! result (cons x result))))
 
 (define (test-permutations opname op points)
   (let* ((np (length points))
@@ -66,7 +69,46 @@
  (lambda (oo)
    (let ((args (append oo (list points))))
      (apply test-permutations args)))
- `((+ ,+)
-   (- ,-)
-   (* ,*)
-   (/ ,/)))
+ (cond-expand
+   (fx-ops
+    `((fx+? ,fx+?)
+      (fx-? ,fx-?)
+      (fx*? ,fx*?)
+      (fx/? ,fx/?)))
+   (else
+    `((+ ,+)
+      (- ,-)
+      (* ,*)
+      (/ ,/)))))
+
+(define (same? x y)
+  (cond ((and (number? x) (number? y)) 
+	 (or (= x y)
+	     (and (flonum? x) (flonum? y)
+		  (string=? (number->string x) (number->string y)))))
+	((pair? x)
+	 (and (pair? y)
+	      (same? (car x) (car y))
+	      (same? (cdr x) (cdr y))))
+	((vector? x)
+	 (and (vector? y)
+	      (same? (vector->list x) (vector->list y))))
+	(else (equal? x y))))
+
+(set! result (reverse result))
+
+#+check
+(load 
+ "arithmetic-test.expected"
+ (lambda (x)
+   (apply
+    (lambda (c/total1 exp1 _ res1)
+      (apply
+       (lambda (c/total2 exp2 _ res2)
+	 (assert (equal? c/total1 c/total2) "output differs in the number of cases"
+		 c/total1 c/total2)
+	 (unless (same? res1 res2)
+	   (print "FAIL: " c/total1 " " exp1 " -> expected: " res1 ", but got: " res2)))
+       (car result))
+      (set! result (cdr result)))
+    x)))
