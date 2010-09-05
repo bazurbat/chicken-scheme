@@ -82,7 +82,7 @@ DISTFILES = $(LIBCHICKEN_OBJECTS:=.c) \
 	$(IMPORT_LIBRARIES:=.import.c) \
 	posixunix.c posixwin.c
 # Remove the duplicate $(POSIXFILE) entry:
-DISTFILES = $(sort $(DISTFILES))
+DISTFILES := $(sort $(DISTFILES))
 
 # library objects
 
