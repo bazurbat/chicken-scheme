@@ -36,7 +36,7 @@ endif
 ifndef PLATFORM
 $(info Please select your target platform by running one of the following commands:)
 $(info )
-$(foreach mf, $(wildcard Makefile.*), $(info $(MAKE) PLATFORM=$(mf)))
+$(foreach mf, $(wildcard Makefile.*), $(info $(MAKE) PLATFORM=$(mf:Makefile.%=%)))
 $(info )
 $(info For more information, consult the README file.)
 $(error No PLATFORM given.)
