@@ -241,10 +241,15 @@ $(eval $(call declare-program-from-object,$(CSC_PROGRAM)$(EXE),csc))
 
 $(CHICKEN_STATIC_EXECUTABLE): $(COMPILER_STATIC_OBJECTS) libchicken$(A)
 	$(LINKER) $(LINKER_OPTIONS) $(LINKER_STATIC_OPTIONS) $(COMPILER_STATIC_OBJECTS) $(LINKER_OUTPUT) libchicken$(A) $(LIBRARIES)
-$(CSI_STATIC_EXECUTABLE): csi$(O) libchicken$(A)
-	$(LINKER) $(LINKER_OPTIONS) $(LINKER_STATIC_OPTIONS) $< $(LINKER_OUTPUT) libchicken$(A) $(LIBRARIES)
-$(CHICKEN_BUG_PROGRAM)$(EXE): chicken-bug$(O) libchicken$(A)
-	$(LINKER) $(LINKER_OPTIONS) $(LINKER_STATIC_OPTIONS) $< $(LINKER_OUTPUT) libchicken$(A) $(LIBRARIES)
+
+define declare-static-program-from-object
+$(1): $(2)$(O) libchicken$(A)
+	$$(LINKER) $$(LINKER_OPTIONS) $$(LINKER_STATIC_OPTIONS) $$< $$(LINKER_OUTPUT) libchicken$(A) $$(LIBRARIES)
+endef
+
+$(eval $(call declare-program-from-object,$(CSI_STATIC_EXECUTABLE),csi))
+$(eval $(call declare-program-from-object,$(CSI_BUG_PROGRAM)$(EXE),chicken-bug))
+
 
 # installation
 
