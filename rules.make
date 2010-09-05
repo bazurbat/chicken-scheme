@@ -26,6 +26,10 @@
 
 VPATH=$(SRCDIR)
 
+# Clear Make's default rules for C programs
+%.o : %.c
+%: %.o
+
 # object files
 
 IMPORT_LIB_OBJECTS_1 = \
@@ -33,6 +37,9 @@ IMPORT_LIB_OBJECTS_1 = \
 	ports files posix srfi-13 srfi-69 extras \
 	regex irregex srfi-14 tcp foreign scheme \
 	csi srfi-18 utils
+
+SETUP_API_IMPORT_LIB_OBJECTS_1 = \
+	setup-api setup-download
 
 LIBCHICKEN_OBJECTS_1 = \
        library eval data-structures ports files extras lolevel utils tcp srfi-1 srfi-4 srfi-13 \
@@ -95,6 +102,9 @@ setup-download$(O): setup-download.c chicken.h $(CHICKEN_CONFIG_H)
 	$(HOST_C_COMPILER) $(HOST_C_COMPILER_OPTIONS) $(HOST_C_COMPILER_PTABLES_OPTIONS) $(INCLUDES) -DC_SHARED \
 	  $(HOST_C_COMPILER_COMPILE_OPTION) $(HOST_C_COMPILER_OPTIMIZATION_OPTIONS) $(HOST_C_COMPILER_SHARED_OPTIONS) \
 	  $(HOST_C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(HOST_C_COMPILER_OUTPUT)
+
+$(foreach obj,$(SETUP_API_IMPORT_LIB_OBJECTS_1),\
+          $(eval $(call declare-import-lib-object,$(obj))))
 
 # compiler objects
 
