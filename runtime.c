@@ -8616,7 +8616,7 @@ C_regparm C_word C_fcall C_i_o_fixnum_difference(C_word n1, C_word n2)
 C_regparm C_word C_fcall C_i_o_fixnum_times(C_word n1, C_word n2)
 {
   C_word x1, x2;
-  /* otherwise gcc tries to be smart (and naturally fails) */
+  /* otherwise gcc tries to be smart in constant-folding and screws up the signs */
 #ifdef C_SIXTY_FOUR
   static int seven_f = 0x7fffffffffffffff;
   static int eight_0 = 0x8000000000000000;
@@ -8636,6 +8636,7 @@ C_regparm C_word C_fcall C_i_o_fixnum_times(C_word n1, C_word n2)
       else goto ok;
     }
     else {
+      /*XXX gives SIGFPE on x86 with x2 == -1 */
       if(x2 < (eight_0 / x2)) return C_SCHEME_FALSE;
       else goto ok;
     }
