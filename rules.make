@@ -41,6 +41,8 @@ IMPORT_LIB_OBJECTS_1 = \
 SETUP_API_IMPORT_LIB_OBJECTS_1 = \
 	setup-api setup-download
 
+SETUP_API_OBJECTS = $(SETUP_API_IMPORT_LIB_OBJECTS)
+
 LIBCHICKEN_OBJECTS_1 = \
        library eval data-structures ports files extras lolevel utils tcp srfi-1 srfi-4 srfi-13 \
        srfi-14 srfi-18 srfi-69 $(POSIXFILE) regex scheduler \
@@ -54,28 +56,41 @@ COMPILER_OBJECTS_1 = \
 COMPILER_OBJECTS        = $(COMPILER_OBJECTS_1:=$(O))
 COMPILER_STATIC_OBJECTS = $(COMPILER_OBJECTS_1:=-static$(O))
 
+# This excludes the compiler (the "chicken" binary) itself
+UTILITY_PROGRAMS = \
+	csc csi chicken-install chicken-uninstall chicken-status chicken-profile
+
+# TODO: It looks like csi-static is never built, and not installed either.
+# probably a relic from earlier versions
+ALWAYS_STATIC_UTILITY_PROGRAMS = \
+	chicken-bug csi-static
+
 
 # library objects
 
-define declare-libchicken-object
+define declare-shared-library-object # reused in the setup API bit
 $(1)$(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
 	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) $$(INCLUDES) \
 	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$(C_COMPILER_SHARED_OPTIONS) \
 	  $$(C_COMPILER_BUILD_RUNTIME_OPTIONS) $$< $$(C_COMPILER_OUTPUT)
 endef
 
+declare-libchicken-object = $(declare-shared-library-object)
+
 $(foreach obj, $(LIBCHICKEN_OBJECTS_1),\
           $(eval $(call declare-libchicken-object,$(obj))))
 
 # static versions
 
-define declare-static-libchicken-object
+define declare-static-library-object
 $(1)-static$(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
 	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) $$(INCLUDES) \
 	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) \
 	  $$(C_COMPILER_STATIC_OPTIONS) \
 	  $$(C_COMPILER_BUILD_RUNTIME_OPTIONS) $$< $$(C_COMPILER_OUTPUT)
 endef
+
+declare-static-libchicken-object = $(declare-static-library-object)
 
 $(foreach obj, $(LIBCHICKEN_OBJECTS_1),\
           $(eval $(call declare-static-libchicken-object,$(obj))))
@@ -94,17 +109,16 @@ $(foreach obj,$(IMPORT_LIB_OBJECTS_1),\
 
 # setup extension objects
 
-setup-api$(O): setup-api.c chicken.h $(CHICKEN_CONFIG_H)
-	$(HOST_C_COMPILER) $(HOST_C_COMPILER_OPTIONS) $(HOST_C_COMPILER_PTABLES_OPTIONS) $(INCLUDES) -DC_SHARED \
-	  $(HOST_C_COMPILER_COMPILE_OPTION) $(HOST_C_COMPILER_OPTIMIZATION_OPTIONS) $(HOST_C_COMPILER_SHARED_OPTIONS) \
-	  $(HOST_C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(HOST_C_COMPILER_OUTPUT)
-setup-download$(O): setup-download.c chicken.h $(CHICKEN_CONFIG_H)
-	$(HOST_C_COMPILER) $(HOST_C_COMPILER_OPTIONS) $(HOST_C_COMPILER_PTABLES_OPTIONS) $(INCLUDES) -DC_SHARED \
-	  $(HOST_C_COMPILER_COMPILE_OPTION) $(HOST_C_COMPILER_OPTIMIZATION_OPTIONS) $(HOST_C_COMPILER_SHARED_OPTIONS) \
-	  $(HOST_C_COMPILER_BUILD_RUNTIME_OPTIONS) $< $(HOST_C_COMPILER_OUTPUT)
+declare-setup-api-object = $(declare-shared-library-object)
+
+$(foreach obj,$(SETUP_API_OBJECTS_1),\
+          $(eval $(call declare-setup-api-object,$(obj))))
+
+
+declare-setup-api-import-lib-object = $(declare-import-lib-object)
 
 $(foreach obj,$(SETUP_API_IMPORT_LIB_OBJECTS_1),\
-          $(eval $(call declare-import-lib-object,$(obj))))
+          $(eval $(call declare-setup-api-import-lib-object,$(obj))))
 
 # compiler objects
 
@@ -139,35 +153,27 @@ endif
 
 # program objects
 
-chicken-profile$(O): chicken-profile.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
-chicken-install$(O): chicken-install.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
-chicken-uninstall$(O): chicken-uninstall.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
-chicken-status$(O): chicken-status.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
-csc$(O): csc.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
-csi$(O): csi.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) $(C_COMPILER_SHARED_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
+define declare-utility-program-object
+$(1)(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
+	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) $$(INCLUDES) $$(C_COMPILER_SHARED_OPTIONS) \
+	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$< $$(C_COMPILER_OUTPUT)
+endef
+
+$(foreach obj, $(UTILITY_PROGRAMS),\
+          $(eval $(call declare-utility-program-object,$(obj))))
+
 
 # static program objects
 
-csi-static$(O): csi.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS) $(INCLUDES) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
-chicken-bug$(O): chicken-bug.c chicken.h $(CHICKEN_CONFIG_H)
-	$(C_COMPILER) $(C_COMPILER_OPTIONS)  $(INCLUDES) \
-	  $(C_COMPILER_STATIC_OPTIONS) \
-	  $(C_COMPILER_COMPILE_OPTION) $(C_COMPILER_OPTIMIZATION_OPTIONS) $< $(C_COMPILER_OUTPUT)
+define declare-always-static-utility-program-object
+$(1)(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
+	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) $$(INCLUDES) \
+	  $$(C_COMPILER_STATIC_OPTIONS) \
+	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$< $$(C_COMPILER_OUTPUT)
+endef
+
+$(foreach obj, $(ALWAYS_STATIC_UTILITY_PROGRAMS),\
+          $(eval $(call declare-always-static-utility-program-object,$(obj))))
 
 # resource objects
 
