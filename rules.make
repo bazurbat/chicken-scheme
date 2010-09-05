@@ -32,16 +32,8 @@ VPATH=$(SRCDIR)
 
 # object files
 
-IMPORT_LIB_OBJECTS_1 = \
-	chicken lolevel srfi-1 srfi-4 data-structures \
-	ports files posix srfi-13 srfi-69 extras \
-	regex irregex srfi-14 tcp foreign scheme \
-	csi srfi-18 utils
-
-SETUP_API_IMPORT_LIB_OBJECTS_1 = \
+SETUP_API_OBJECTS = \
 	setup-api setup-download
-
-SETUP_API_OBJECTS = $(SETUP_API_IMPORT_LIB_OBJECTS)
 
 LIBCHICKEN_OBJECTS_1 = \
        library eval data-structures ports files extras lolevel utils tcp srfi-1 srfi-4 srfi-13 \
@@ -122,7 +114,7 @@ $(1).import$(O): $(1).import.c chicken.h $$(CHICKEN_CONFIG_H)
 	  $$(HOST_C_COMPILER_BUILD_RUNTIME_OPTIONS) $$< $$(HOST_C_COMPILER_OUTPUT)
 endef
 
-$(foreach obj,$(IMPORT_LIB_OBJECTS_1),\
+$(foreach obj,$(IMPORT_LIBRARIES),\
           $(eval $(call declare-import-lib-object,$(obj))))
 
 # setup extension objects
@@ -131,12 +123,6 @@ declare-setup-api-object = $(declare-shared-library-object)
 
 $(foreach obj,$(SETUP_API_OBJECTS_1),\
           $(eval $(call declare-setup-api-object,$(obj))))
-
-
-declare-setup-api-import-lib-object = $(declare-import-lib-object)
-
-$(foreach obj,$(SETUP_API_IMPORT_LIB_OBJECTS_1),\
-          $(eval $(call declare-setup-api-import-lib-object,$(obj))))
 
 # compiler objects
 
@@ -363,11 +349,8 @@ install-bin: $(TARGETS) install-libs install-dev
 		$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) \
 		$(prog)$(EXE) "$(DESTDIR)$(IBINDIR)" $(NL))
 
-	$(foreach obj,$(IMPORT_LIB_OBJECTS_1),\
+	$(foreach obj,$(IMPORT_LIBRARIES),\
 	          $(call install-import-lib,$(obj)))
-
-	$(call install-import-lib, setup-api)
-	$(call install-import-lib, setup-download)
 
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) setup-api.so "$(DESTDIR)$(IEGGDIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) setup-download.so "$(DESTDIR)$(IEGGDIR)"
@@ -384,11 +367,7 @@ ifneq ($(POSTINSTALL_PROGRAM),true)
 		$(POSTINSTALL_PROGRAM) $(POSTINSTALL_PROGRAM_FLAGS)
 		"$(DESTDIR)$(IEGGDIR)$(SEP)$(apilib).so" $(NL))
 
-	$(foreach api-importlib,$(SETUP_API_IMPORT_LIB_OBJECTS),\
-		$(POSTINSTALL_PROGRAM) $(POSTINSTALL_PROGRAM_FLAGS)
-		"$(DESTDIR)$(IEGGDIR)$(SEP)$(api-importlib).import.so" $(NL))
-
-	$(foreach import-lib,$(IMPORT_LIB_OBJECTS_1),\
+	$(foreach import-lib,$(IMPORT_LIBRARIES),\
 		$(POSTINSTALL_PROGRAM) $(POSTINSTALL_PROGRAM_FLAGS) \
 		"$(DESTDIR)$(IEGGDIR)$(SEP)$(import-lib).import.so" $(NL))
 endif
@@ -516,16 +495,10 @@ $(1).import.c: $$(SRCDIR)$(1).import.scm
 	$$(CHICKEN) $$< $$(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $$@
 endef
 
-$(foreach obj, $(IMPORT_LIB_OBJECTS_1),\
+$(foreach obj, $(IMPORT_LIBRARIES),\
           $(eval $(call declare-bootstrap-import-lib,$(obj))))
 
-# bootstrap setup API
-setup-api.import.c: $(SRCDIR)setup-api.scm
-	$(CHICKEN) $(SRCDIR)setup-api.import.scm $(CHICKEN_IMPORT_LIBRARY_OPTIONS) \
-	  -output-file $@ 
-setup-download.import.c: $(SRCDIR)setup-download.scm
-	$(CHICKEN) $(SRCDIR)setup-download.import.scm $(CHICKEN_IMPORT_LIBRARY_OPTIONS) \
-	  -output-file $@ 
+# Bootstrap compiler objects
 
 define declare-compiler-object
 $(1).c: $$(SRCDIR)$(1).scm $$(SRCDIR)compiler-namespace.scm \
