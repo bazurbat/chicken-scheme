@@ -510,95 +510,101 @@ endif
 setup-api.import.scm: setup-api.c
 setup-download.import.scm: setup-download.c
 
+bootstrap-lib = $(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
+
 library.c: $(SRCDIR)library.scm $(SRCDIR)version.scm $(SRCDIR)banner.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-lib)
 eval.c: $(SRCDIR)eval.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-lib)
 expand.c: $(SRCDIR)expand.scm $(SRCDIR)synrules.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
+	$(bootstrap-lib)
 chicken-syntax.c: $(SRCDIR)chicken-syntax.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
+	$(bootstrap-lib)
 chicken-ffi-syntax.c: $(SRCDIR)chicken-ffi-syntax.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
+	$(bootstrap-lib)
 data-structures.c: $(SRCDIR)data-structures.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
+	$(bootstrap-lib)
 ports.c: $(SRCDIR)ports.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
+	$(bootstrap-lib)
 files.c: $(SRCDIR)files.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
+	$(bootstrap-lib)
 extras.c: $(SRCDIR)extras.scm $(SRCDIR)private-namespace.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
+	$(bootstrap-lib)
 lolevel.c: $(SRCDIR)lolevel.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-lib) 
 tcp.c: $(SRCDIR)tcp.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-lib) 
 srfi-1.c: $(SRCDIR)srfi-1.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-lib) 
 srfi-4.c: $(SRCDIR)srfi-4.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-lib) 
 srfi-13.c: $(SRCDIR)srfi-13.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-lib) 
 srfi-14.c: $(SRCDIR)srfi-14.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-lib) 
 srfi-18.c: $(SRCDIR)srfi-18.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-lib) 
 srfi-69.c: $(SRCDIR)srfi-69.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm
+	$(bootstrap-lib) -extend $(SRCDIR)private-namespace.scm
 utils.c: $(SRCDIR)utils.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-lib) 
 posixunix.c: $(SRCDIR)posixunix.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-lib) 
 posixwin.c: $(SRCDIR)posixwin.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-lib) 
 regex.c: $(SRCDIR)regex.scm $(SRCDIR)irregex.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-lib) 
 scheduler.c: $(SRCDIR)scheduler.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-lib) 
 profiler.c: $(SRCDIR)profiler.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-lib) 
 stub.c: $(SRCDIR)stub.scm $(SRCDIR)common-declarations.scm
-	$(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-lib) 
+
+bootstrap-import-lib = $(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@
 
 chicken.import.c: $(SRCDIR)chicken.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 lolevel.import.c: $(SRCDIR)lolevel.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 srfi-1.import.c: $(SRCDIR)srfi-1.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 srfi-4.import.c: $(SRCDIR)srfi-4.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 data-structures.import.c: $(SRCDIR)data-structures.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 ports.import.c: $(SRCDIR)ports.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 files.import.c: $(SRCDIR)files.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 posix.import.c: $(SRCDIR)posix.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 srfi-13.import.c: $(SRCDIR)srfi-13.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 srfi-69.import.c: $(SRCDIR)srfi-69.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 extras.import.c: $(SRCDIR)extras.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 regex.import.c: $(SRCDIR)regex.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 irregex.import.c: $(SRCDIR)irregex.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 srfi-14.import.c: $(SRCDIR)srfi-14.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 tcp.import.c: $(SRCDIR)tcp.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 foreign.import.c: $(SRCDIR)foreign.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 scheme.import.c: $(SRCDIR)scheme.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 csi.import.c: $(SRCDIR)csi.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 srfi-18.import.c: $(SRCDIR)srfi-18.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
 utils.import.c: $(SRCDIR)utils.import.scm
-	$(CHICKEN) $< $(CHICKEN_IMPORT_LIBRARY_OPTIONS) -output-file $@ 
+	$(bootstrap-import-lib)
+
+# Exceptions
 setup-api.import.c: $(SRCDIR)setup-api.scm
 	$(CHICKEN) $(SRCDIR)setup-api.import.scm $(CHICKEN_IMPORT_LIBRARY_OPTIONS) \
 	  -output-file $@ 
