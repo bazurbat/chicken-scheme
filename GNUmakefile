@@ -34,19 +34,14 @@ include $(CONFIG)
 endif
 
 ifndef PLATFORM
-no-platform:
-	@echo "No PLATFORM given."
-	@echo ""
-	@echo "Please select your target platform by running one of the following commands:"
-	@echo ""
-	@for mf in Makefile.*; do \
-		echo "  $(MAKE) PLATFORM=$${mf#Makefile.}"; \
-		done
-	@echo ""
-	@echo "For more information, consult the README file."
-	@exit 1
-%: no-platform ;
-else
+$(info Please select your target platform by running one of the following commands:)
+$(info )
+$(foreach mf, $(wildcard Makefile.*), $(info $(MAKE) PLATFORM=$(mf)))
+$(info )
+$(info For more information, consult the README file.)
+$(error No PLATFORM given.)
+endif
+
 SRCDIR = .
 
 STANDARD_TARGETS \
@@ -64,5 +59,3 @@ dist:
 
 boot-chicken:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) boot-chicken
-
-endif
