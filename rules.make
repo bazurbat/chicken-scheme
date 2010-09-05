@@ -27,6 +27,7 @@
 VPATH=$(SRCDIR)
 
 # Clear Make's default rules for C programs
+.SUFFIXES:
 %.o : %.c
 %: %.o
 
@@ -181,8 +182,6 @@ $(foreach obj, $(ALWAYS_STATIC_UTILITY_PROGRAM_OBJECTS_1),\
 
 # resource objects
 
-.SUFFIXES: .rc
-
 %.rc.o: %.rc
 	$(RC_COMPILER) $< $@
 
@@ -213,8 +212,6 @@ libchicken$(A): $(APPLY_HACK_OBJECT) $(LIBCHICKEN_STATIC_OBJECTS)
 	$(LIBRARIAN) $(LIBRARIAN_OPTIONS) $(LIBRARIAN_OUTPUT) $^
 
 # import libraries and extensions
-
-.SUFFIXES: .so
 
 %.so: %.o
 	$(HOST_LINKER) $(HOST_LINKER_OPTIONS) $(HOST_LINKER_LINK_SHARED_DLOADABLE_OPTIONS) $^ $(HOST_LINKER_OUTPUT_OPTION) $@ \
@@ -430,7 +427,6 @@ endif
 
 # bootstrapping c sources
 
-.SUFFIXES: .scm
 .SECONDARY: setup-api.import.scm setup-download.import.scm
 
 setup-api.import.scm: setup-api.c
