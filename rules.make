@@ -669,7 +669,7 @@ setup-download.c: $(SRCDIR)setup-download.scm setup-api.c
 
 .PHONY: distfiles dist html
 
-distfiles: library.c eval.c expand.c chicken-syntax.c chicken-ffi-syntax.c \
+DISTFILES = library.c eval.c expand.c chicken-syntax.c chicken-ffi-syntax.c \
 	data-structures.c ports.c files.c extras.c lolevel.c utils.c \
 	tcp.c srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c \
 	posixunix.c posixwin.c regex.c scheduler.c profiler.c stub.c \
@@ -677,6 +677,8 @@ distfiles: library.c eval.c expand.c chicken-syntax.c chicken-ffi-syntax.c \
 	csc.c csi.c chicken.c batch-driver.c compiler.c optimizer.c  \
 	compiler-syntax.c scrutinizer.c unboxing.c support.c \
 	c-platform.c c-backend.c chicken-bug.c $(IMPORT_LIBRARIES:=.import.c)
+
+distfiles: $(DISTFILES)
 
 dist: distfiles
 	CSI=$(CSI) $(CSI) -s $(SRCDIR)scripts$(SEP)makedist.scm --platform=$(PLATFORM) CHICKEN=$(CHICKEN)
@@ -712,16 +714,7 @@ confclean:
 	  chicken-config.h chicken-defaults.h chicken-install.rc chicken-uninstall.rc
 
 spotless: distclean testclean
-	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) library.c eval.c data-structures.c \
-	  ports.c files.c extras.c lolevel.c utils.c chicken-syntax.c chicken-ffi-syntax.c \
-	  tcp.c srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c expand.c \
-	  posixunix.c posixwin.c regex.c scheduler.c profiler.c stub.c \
-	  chicken-profile.c chicken-bug.c \
-	  csc.c csi.c chicken-install.c chicken-uninstall.c chicken-status.c \
-	  chicken.c batch-driver.c compiler.c optimizer.c compiler-syntax.c \
-	  scrutinizer.c support.c unboxing.c \
-	  c-platform.c c-backend.c setup-api.c setup-download.c \
-	  $(IMPORT_LIBRARIES:=.import.c)
+	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) $(DISTFILES)
 
 distclean: clean confclean
 
