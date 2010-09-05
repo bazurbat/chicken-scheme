@@ -63,6 +63,10 @@ UTILITY_PROGRAM_OBJECTS_1 = \
 ALWAYS_STATIC_UTILITY_PROGRAM_OBJECTS_1 = \
 	chicken-bug csi-static
 
+## TODO: Shouldn't these manpages match their program names (ie CSI_PROGRAM etc)?
+MANPAGES = chicken.1 csc.1 csi.1 chicken-install.1 chicken-uninstall.1 \
+	chicken-status.1 chicken-profile.1 chicken-bug.1
+
 # library objects
 
 define declare-shared-library-object # reused in the setup API bit
@@ -279,6 +283,11 @@ endif
 endif
 endif
 
+define NL
+
+
+endef # A newline, used to inject recipe lines in a loop. Ugly, but necessary
+
 install-dev: install-libs
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)"
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(ISHAREDIR)"
@@ -325,13 +334,13 @@ else
   ifdef STATICBUILD
     define install-import-lib
       $(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(1).import.scm "$(DESTDIR)$(IEGGDIR)"
-
-    endef # Newline at the end is needed
+      $(NL)
+    endef
   else
     define install-import-lib
       $(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) $(1).import.so "$(DESTDIR)$(IEGGDIR)"
-
-    endef # Newline at the end is needed
+      $(NL)
+    endef
   endif
 
 install-bin: $(TARGETS) install-libs install-dev
@@ -402,14 +411,9 @@ install-other-files:
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IMANDIR)"
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IDOCDIR)"
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IDATADIR)"
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)chicken.1 "$(DESTDIR)$(IMANDIR)"
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)csi.1 "$(DESTDIR)$(IMANDIR)"
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)csc.1 "$(DESTDIR)$(IMANDIR)"
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)chicken-install.1 "$(DESTDIR)$(IMANDIR)"
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)chicken-uninstall.1 "$(DESTDIR)$(IMANDIR)"
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)chicken-status.1 "$(DESTDIR)$(IMANDIR)"
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)chicken-profile.1 "$(DESTDIR)$(IMANDIR)"
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)chicken-bug.1 "$(DESTDIR)$(IMANDIR)"
+	$(foreach obj, $(MANPAGES), \
+		$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) \
+		$(SRCDIR)$(obj) "$(DESTDIR)$(IMANDIR)" $(NL))
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IDOCDIR)$(SEP)manual"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)manual$(SEP)* "$(DESTDIR)$(IDOCDIR)$(SEP)manual"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)README "$(DESTDIR)$(IDOCDIR)"
@@ -438,10 +442,9 @@ endif
 ifeq ($(PLATFORM),cygwin)
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(IBINDIR)$(SEP)cygchicken*"
 endif
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(IMANDIR)$(SEP)chicken.1" "$(DESTDIR)$(IMANDIR)$(SEP)csi.1" \
-	  "$(DESTDIR)$(IMANDIR)$(SEP)csc.1" "$(DESTDIR)$(IMANDIR)$(SEP)chicken-profile.1" "$(DESTDIR)$(IMANDIR)$(SEP)chicken-install.1" \
-	  "$(DESTDIR)$(IMANDIR)$(SEP)chicken-bug.1" "$(DESTDIR)$(IMANDIR)$(SEP)chicken-uninstall.1" \
-	  "$(DESTDIR)$(IMANDIR)$(SEP)chicken-status.1"
+	$(foreach obj,$(MANPAGES),\
+		$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) \
+		"$(DESTDIR)$(IMANDIR)$(SEP)$(obj)" $(NL))
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(IINCDIR)$(SEP)chicken.h $(DESTDIR)$(IINCDIR)$(SEP)chicken-config.h"
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_RECURSIVE_OPTIONS) "$(DESTDIR)$(IDATADIR)"
 ifdef WINDOWS_SHELL
