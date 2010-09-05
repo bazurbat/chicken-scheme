@@ -362,7 +362,7 @@ endif
 
 # XXX Shouldn't this be part of the non-static lib part?
 	$(foreach setup-lib,$(SETUP_API_OBJECTS_1),\
-		$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS)
+		$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) \
 		$(setup-lib).so "$(DESTDIR)$(IEGGDIR)" $(NL))
 
 ifndef STATICBUILD
@@ -372,7 +372,7 @@ ifneq ($(POSTINSTALL_PROGRAM),true)
 		"$(DESTDIR)$(IBINDIR)$(SEP)$(prog)" $(NL))
 
 	$(foreach apilib,$(SETUP_API_OBJECTS_1),\
-		$(POSTINSTALL_PROGRAM) $(POSTINSTALL_PROGRAM_FLAGS)
+		$(POSTINSTALL_PROGRAM) $(POSTINSTALL_PROGRAM_FLAGS) \
 		"$(DESTDIR)$(IEGGDIR)$(SEP)$(apilib).so" $(NL))
 
 	$(foreach import-lib,$(IMPORT_LIBRARIES),\
