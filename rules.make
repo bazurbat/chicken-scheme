@@ -33,8 +33,7 @@ VPATH=$(SRCDIR)
 
 # object files
 
-SETUP_API_OBJECTS = \
-	setup-api setup-download
+SETUP_API_OBJECTS_1 = setup-api setup-download
 
 LIBCHICKEN_OBJECTS_1 = \
        library eval data-structures ports files extras lolevel utils tcp srfi-1 srfi-4 srfi-13 \
@@ -49,7 +48,9 @@ COMPILER_OBJECTS_1 = \
 COMPILER_OBJECTS        = $(COMPILER_OBJECTS_1:=$(O))
 COMPILER_STATIC_OBJECTS = $(COMPILER_OBJECTS_1:=-static$(O))
 
-# "Utility programs" is arbitrary. It includes anything but the chicken binary
+# "Utility programs" is arbitrary. It includes anything but the "chicken" binary.
+# We can't use the INSTALLED_PROGRAMS below because of the possible $(EXE)
+# suffix and other possible mangling requested by the user. (is this supported?)
 UTILITY_PROGRAM_OBJECTS_1 = \
 	csc csi chicken-install chicken-uninstall chicken-status chicken-profile
 
@@ -72,6 +73,8 @@ INSTALLED_PROGRAMS += $(CHICKEN_STATUS_PROGRAM) \
 	$(CHICKEN_INSTALL_PROGRAM) $(CHICKEN_UNINSTALL_PROGRAM)
 endif
 
+# These generated files make up a bootstrapped distribution build.
+# They are not cleaned by the 'clean' target, but only by 'spotless'.
 DISTFILES = library.c eval.c expand.c chicken-syntax.c chicken-ffi-syntax.c \
 	data-structures.c ports.c files.c extras.c lolevel.c utils.c \
 	tcp.c srfi-1.c srfi-4.c srfi-13.c srfi-14.c srfi-18.c srfi-69.c \
@@ -349,8 +352,9 @@ else
 endif
 
 # XXX Shouldn't this be part of the non-static lib part?
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) setup-api.so "$(DESTDIR)$(IEGGDIR)"
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) setup-download.so "$(DESTDIR)$(IEGGDIR)"
+	$(foreach setup-lib,$(SETUP_API_OBJECTS_1),\
+		$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS)
+		$(setup-lib).so "$(DESTDIR)$(IEGGDIR)" $(NL))
 
 ifndef STATICBUILD
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_EXECUTABLE_OPTIONS) $(CHICKEN_INSTALL_PROGRAM)$(EXE) "$(DESTDIR)$(IBINDIR)"
@@ -361,7 +365,7 @@ ifneq ($(POSTINSTALL_PROGRAM),true)
 		$(POSTINSTALL_PROGRAM) $(POSTINSTALL_PROGRAM_FLAGS) \
 		"$(DESTDIR)$(IBINDIR)$(SEP)$(prog)" $(NL))
 
-	$(foreach apilib,$(SETUP_API_OBJECTS),\
+	$(foreach apilib,$(SETUP_API_OBJECTS_1),\
 		$(POSTINSTALL_PROGRAM) $(POSTINSTALL_PROGRAM_FLAGS)
 		"$(DESTDIR)$(IEGGDIR)$(SEP)$(apilib).so" $(NL))
 
@@ -428,10 +432,13 @@ endif
 
 # bootstrapping c sources
 
-.SECONDARY: setup-api.import.scm setup-download.import.scm
+define declare-emitted-import-lib-dependency
+.SECONDARY: $(1).import.scm
+$(1).import.scm: $(1).c
+endef
 
-setup-api.import.scm: setup-api.c
-setup-download.import.scm: setup-download.c
+$(foreach lib, $(SETUP_API_OBJECTS_1),\
+          $(eval $(call declare-emitted-import-lib-dependency,$(lib))))
 
 bootstrap-lib = $(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
 
