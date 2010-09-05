@@ -75,7 +75,7 @@ endif
 
 # These generated files make up a bootstrapped distribution build.
 # They are not cleaned by the 'clean' target, but only by 'spotless'.
-DISTFILES = $(LIBCHICKEN_OBJECTS:=.c) \
+DISTFILES = $(LIBCHICKEN_OBJECTS_1:=.c) \
 	$(UTILITY_PROGRAM_OBJECTS_1:=.c) \
 	$(ALWAYS_STATIC_UTILITY_PROGRAM_OBJECTS_1:=.c) \
 	$(COMPILER_OBJECTS_1:=.c) \
