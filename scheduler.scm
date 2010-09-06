@@ -393,7 +393,7 @@ EOF
 
 (define (##sys#thread-block-for-i/o! t fd i/o)
   (dbg t " blocks for I/O " fd " in mode " i/o)
-  (unless (memq i/o '(#:all #:input #:output))
+  #;(unless (memq i/o '(#:all #:input #:output))
     (panic "##sys#thread-block-for-i/o!: invalid i/o mode"))
   (let loop ([lst ##sys#fd-list])
     (if (null? lst) 
