@@ -8616,42 +8616,24 @@ C_regparm C_word C_fcall C_i_o_fixnum_difference(C_word n1, C_word n2)
 C_regparm C_word C_fcall C_i_o_fixnum_times(C_word n1, C_word n2)
 {
   C_word x1, x2;
-  /* otherwise gcc tries to be smart in constant-folding and screws up the signs */
+  C_uword x1u, x2u;
 #ifdef C_SIXTY_FOUR
-  static int seven_f = 0x7fffffffffffffff;
-  static int eight_0 = 0x8000000000000000;
+  C_uword c = 1UL<<63UL;
 #else
-  static int seven_f = 0x7fffffff;
-  static int eight_0 = 0x80000000;
+  C_uword c = 1UL<<31UL;
 #endif
 
-  if((n1 & C_FIXNUM_BIT) == 0 || (n2 & C_FIXNUM_BIT) == 0) return C_SCHEME_FALSE;
+  if((n1 & C_INT_SIGN_BIT) == (n2 & C_INT_SIGN_BIT)) --c;
 
   x1 = C_unfix(n1);
   x2 = C_unfix(n2);
+  x1u = x1 < 0 ? -x1 : x1;
+  x2u = x2 < 0 ? -x2 : x2;
 
-  if(x1 > 0) {
-    if(x2 > 0) {
-      if(x1 > (seven_f / x2)) return C_SCHEME_FALSE;
-      else goto ok;
-    }
-    else {
-      /*XXX gives SIGFPE on x86 with x2 == -1 */
-      if(x2 < (eight_0 / x2)) return C_SCHEME_FALSE;
-      else goto ok;
-    }
-  }
-  else if(x2 > 0) {
-    if(x1 < (eight_0 / x2)) return C_SCHEME_FALSE;
-    else goto ok;
-  }
-  else {
-    if(x1 != 0 && x2 < (seven_f / x1)) return C_SCHEME_FALSE;
-  }
-
- ok:
-  x1 = x1 * x2;
+  if(x2u != 0 && x1u > (c / x2u)) return C_SCHEME_FALSE;
   
+  x1 = x1 * x2;
+
   if(C_fitsinfixnump(x1)) return C_fix(x1);
   else return C_SCHEME_FALSE;
 }
