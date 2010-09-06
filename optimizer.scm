@@ -190,8 +190,8 @@
 				  (unless odirty (set! dirty #f))
 				  (set! broken-constant-nodes (lset-adjoin eq? broken-constant-nodes n1))
 				  n1)
+			      (debugging 'o "folding constant expression" form)
 			      (let ((x (eval form)))
-				(debugging 'o "folding constant expression" form)
 				(touch)
 				(make-node ; Build call to continuation with new result...
 				 '##core#call
