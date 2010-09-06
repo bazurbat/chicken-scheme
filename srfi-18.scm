@@ -132,13 +132,16 @@
   (##sys#check-structure thread 'thread 'thread-state)
   (##sys#slot thread 3) )
 
-(define (thread-specific thread)
-  (##sys#check-structure thread 'thread 'thread-specific)
-  (##sys#slot thread 10) )
-
 (define (thread-specific-set! thread x)
   (##sys#check-structure thread 'thread 'thread-specific-set!)
   (##sys#setslot thread 10 x) )
+
+(define thread-specific
+  (getter-with-setter
+   (lambda (thread)
+     (##sys#check-structure thread 'thread 'thread-specific)
+     (##sys#slot thread 10) )
+   thread-specific-set!))
 
 (define (thread-quantum thread)
   (##sys#check-structure thread 'thread 'thread-quantum)
