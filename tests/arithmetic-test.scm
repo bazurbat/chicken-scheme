@@ -60,7 +60,13 @@
 	(do ((i 10 (sub1 i)))
 	    ((zero? i))
 	  (let* ((args (list (+ x (random random-range)) (+ y (random random-range))))
-		 (res (apply op args)))
+		 (res
+		  (and (cond-expand
+			 (fx-ops
+			  (and (fixnum? (car args))
+			       (fixnum? (cadr args))))
+			 (else #t))
+		       (apply op args))))
 	    (push opname args res))))
       points))
    points))
