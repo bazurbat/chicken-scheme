@@ -451,6 +451,9 @@
   (parameters node-parameters node-parameters-set!) ; (value...)
   (subexpressions node-subexpressions node-subexpressions-set!)) ; (node...)
 
+(define-record-printer (node n out)
+  (fprintf out "#<node ~a>" (node-class n)))
+
 (define (make-node c p s)
   (##sys#make-structure 'node c p s) ) ; this kludge is for allowing the inlined `make-node'
 
@@ -1389,10 +1392,22 @@ EOF
       (and info (->string info))))
 
 
-;;; We need this for constant folding:
+;;; constant folding support:
 
 (define (string-null? x) 
   (##core#inline "C_i_string_null_p" s))
+
+(define (constant-form-eval op argnodes k)
+  (let* ((args (map (lambda (n) (first (node-parameters n))) argnodes))
+	 (form (cons op (map (lambda (arg) `(quote ,arg)) args))))
+    (handle-exceptions ex 
+	(begin
+	  (debugging 'o "folding constant expression failed" form)
+	  (k #f form #f))
+      ;; op must have toplevel binding, result must be single-valued
+      (let ((result (apply (##sys#slot op 0) args)))
+	(debugging 'o "folded constant expression" form)
+	(k #t form result)))))
 
 
 ;;; Dump node structure:
