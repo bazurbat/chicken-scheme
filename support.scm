@@ -1269,7 +1269,7 @@ Usage: chicken FILENAME OPTION ...
                                   -inline -disable-interrupts'
     -disable-stack-overflow-checks  disables detection of stack-overflows
     -inline                      enable inlining
-    -inline-limit                set inlining threshold
+    -inline-limit LIMIT          set inlining threshold
     -inline-global               enable cross-module inlining
     -unboxing                    use unboxed temporaries if possible
     -emit-inline-file FILENAME   generate file with globally inlinable
