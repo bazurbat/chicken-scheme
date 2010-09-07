@@ -246,7 +246,7 @@
 	  (remove
 	   (lambda (x)
 	     (and (eq? 'quote (node-class x))
-		  (= 1 (first (node-parameters x))) ) ) 
+		  (eq? 1 (first (node-parameters x))) ) ) 
 	   callargs) ] )
      (cond [(null? callargs) (make-node '##core#call '(#t) (list cont (qnode 0)))]
 	   [(null? (cdr callargs))
@@ -258,7 +258,7 @@
 	      cont
 	      (fold-inner
 	       (lambda (x y)
-		 (if (and (eq? 'quote (node-class y)) (= 2 (first (node-parameters y))))
+		 (if (and (eq? 'quote (node-class y)) (eq? 2 (first (node-parameters y))))
 		     (make-node '##core#inline '("C_fixnum_shift_left") (list x (qnode 1)))
 		     (make-node '##core#inline '("C_fixnum_times") (list x y)) ) )
 	       callargs) ) ) ]
@@ -314,7 +314,7 @@
 		     (remove
 		      (lambda (x)
 			(and (eq? 'quote (node-class x))
-			     (= 1 (first (node-parameters x))) ) ) 
+			     (eq? 1 (first (node-parameters x))) ) ) 
 		      (cdr callargs) ) ) ] )
 	  (and (eq? number-type 'fixnum)
 	       (>= (length callargs) 2)
@@ -324,7 +324,7 @@
 		 cont
 		 (fold-inner
 		  (lambda (x y)
-		    (if (and (eq? 'quote (node-class y)) (= 2 (first (node-parameters y))))
+		    (if (and (eq? 'quote (node-class y)) (eq? 2 (first (node-parameters y))))
 			(make-node '##core#inline '("C_fixnum_shift_right") (list x (qnode 1)))
 			(make-node '##core#inline '("C_fixnum_divide") (list x y)) ) )
 		  callargs) ) ) ) ) ) ) )
@@ -342,7 +342,7 @@
 	     (let ([arg2 (second callargs)])
 	       (list cont 
 		     (if (and (eq? 'quote (node-class arg2)) 
-			      (= 2 (first (node-parameters arg2))) )
+			      (eq? 2 (first (node-parameters arg2))) )
 			 (make-node 
 			  '##core#inline '("C_fixnum_shift_right") 
 			  (list (first callargs) (qnode 1)) )
