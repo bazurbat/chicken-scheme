@@ -1405,9 +1405,12 @@ EOF
 	  (debugging 'o "folding constant expression failed" form)
 	  (k #f form #f))
       ;; op must have toplevel binding, result must be single-valued
-      (let ((result (apply (##sys#slot op 0) args)))
-	(debugging 'o "folded constant expression" form)
-	(k #t form result)))))
+      (let ((proc (##sys#slot op 0)))
+	(if (procedure? proc)
+	    (let ((result (apply proc args)))
+	      (debugging 'o "folded constant expression" form)
+	      (k #t form result))
+	    (bomb "attempt to constant-fold call to non-procedure" form))))))
 
 
 ;;; Dump node structure:
