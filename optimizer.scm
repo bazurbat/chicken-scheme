@@ -167,7 +167,7 @@
 		  (subs (node-subexpressions n1)) )
 	     (case (node-class n1)
 
-	       ((if)			; (This can be done by the simplificator...)
+	       ((if)			; (This can be done by the simplifier...)
 		(cond ((constant-node? (car subs))
 		       (set! removed-ifs (+ removed-ifs 1))
 		       (touch)
@@ -183,20 +183,24 @@
 		      (if (and (intrinsic? var)
 			       (foldable? var)
 			       (every constant-node? (cddr subs)) )
-			  (let ((form (cons var (map (lambda (arg) `(quote ,(node-value arg)))
-						     (cddr subs) ) ) ) )
-			    (handle-exceptions ex
-				(begin
-				  (unless odirty (set! dirty #f))
-				  (set! broken-constant-nodes (lset-adjoin eq? broken-constant-nodes n1))
-				  n1)
-			      (let ((x (eval form)))
-				(debugging 'o "folding constant expression" form)
-				(touch)
-				(make-node ; Build call to continuation with new result...
-				 '##core#call
-				 '(#t)
-				 (list (cadr subs) (qnode x)) ) ) ) )
+			  (constant-form-eval
+			   var
+			   (cddr subs)
+			   (lambda (ok form result)
+			     (cond ((not ok)
+				    (unless odirty (set! dirty #f))
+				    (set! broken-constant-nodes
+				      (lset-adjoin eq? broken-constant-nodes n1))
+				    n1)
+				   (else
+				    (touch)
+				    ;; Build call to continuation with new result...
+				    (let ((n2 (qnode result)))
+				      (register-cfold var (cddr subs) form n2)
+				      (make-node
+				       '##core#call
+				       '(#t)
+				       (list (cadr subs) n2) ) ) ) )))
 			  n1) )
 		    n1) )
 
