@@ -585,38 +585,6 @@ Returns the number of bytes that would be needed to evict the data object
 
 
 
-=== Accessing toplevel variables
-
-
-==== global-bound?
-
-<procedure>(global-bound? SYMBOL)</procedure>
-
-Returns {{#t}}, if the global (''toplevel'') variable with the name {{SYMBOL}}
-is bound to a value, or {{#f}} otherwise.
-
-
-==== global-ref
-
-<procedure>(global-ref SYMBOL)</procedure>
-
-Returns the value of the global variable {{SYMBOL}}.
-If no variable under that name is bound, an error is signalled.
-
-Note that it is not possible to access a toplevel binding with {{global-ref}} or
-{{global-set!}} if it has been hidden in compiled code via {{(declare (hide ...))}},
-or if the code has been compiled in {{block}} mode.
-
-
-==== global-set!
-
-<procedure>(global-set! SYMBOL X)</procedure><br>
-<procedure>(set! (global-ref SYMBOL) X)</procedure>
-
-Sets the global variable named {{SYMBOL}} to the value {{X}}.
-
-
-
 === Record instance
 
 
