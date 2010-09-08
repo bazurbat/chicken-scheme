@@ -6194,22 +6194,27 @@ void C_ccall C_minus(C_word c, C_word closure, C_word k, C_word n1, ...)
   C_word x, y;
   C_word iresult;
   double fresult;
+  int ff = 0;
   C_alloc_flonum;
 
   if(c < 3) C_bad_min_argc(c, 3);
 
   if(n1 & C_FIXNUM_BIT) iresult = n1;
-  else if(!C_immediatep(n1) && C_block_header(n1) == C_FLONUM_TAG)
+  else if(!C_immediatep(n1) && C_block_header(n1) == C_FLONUM_TAG) {
     fresult = C_flonum_magnitude(n1);
+    ff = 1;
+  }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "-", n1);
 
   if(c == 3) {
-    if(n1 & C_FIXNUM_BIT) C_kontinue(k, C_fix(-C_unfix(n1)));
+    if(!ff) C_kontinue(k, C_fix(-C_unfix(n1)));
     else C_kontinue_flonum(k, -fresult);
   }
 
   va_start(v, n1);
   c -= 3;
+
+  if(ff) goto flonum_result;
 
   while(c--) {
     x = va_arg(v, C_word);
@@ -6276,124 +6281,143 @@ C_regparm C_word C_fcall C_2_minus(C_word **ptr, C_word x, C_word y)
 }
 
 
+
 void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...)
 {
   va_list v;
-  C_word x, y;
+  C_word n2;
   C_word iresult;
-  double fresult, f;
-  int ff = 0;
+  int fflag;
+  double fresult, f2;
   C_alloc_flonum;
 
   if(c < 3) C_bad_min_argc(c, 3);
 
-  if(n1 & C_FIXNUM_BIT) iresult = n1;
+  if(n1 & C_FIXNUM_BIT) {
+    iresult = C_unfix(n1);
+    fflag = 0;
+  }
   else if(!C_immediatep(n1) && C_block_header(n1) == C_FLONUM_TAG) {
     fresult = C_flonum_magnitude(n1);
-    ff = 1;
+    fflag = 1;
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "/", n1);
 
   if(c == 3) {
-    if(!ff) {
-      if(n1 == C_fix(0)) barf(C_DIVISION_BY_ZERO_ERROR, "/");
-      else if(n1 == C_fix(1)) C_kontinue(k, C_fix(1));
-      else C_kontinue_flonum(k, 1 / (double)C_unfix(n1));
+    if(fflag) {
+      if(fresult == 0) barf(C_DIVISION_BY_ZERO_ERROR, "/");
+
+      fresult = 1.0 / fresult;
     }
-    else if(fresult == 0) barf(C_DIVISION_BY_ZERO_ERROR, "/");
-    else C_kontinue_flonum(k, 1 / fresult);
+    else {
+      if(iresult == 0) barf(C_DIVISION_BY_ZERO_ERROR, "/");
+      else if(iresult == 1) C_kontinue(k, C_fix(1));
+
+      fresult = 1.0 / (double)iresult;
+      fflag = 1;
+    }
+
+    goto cont;
   }
 
   va_start(v, n1);
   c -= 3;
 
-  if(ff) goto flonum_result;
-
   while(c--) {
-    x = va_arg(v, C_word);
+    n1 = va_arg(v, C_word);
     
-    if(x & C_FIXNUM_BIT) {
-      if(x == C_fix(0)) barf(C_DIVISION_BY_ZERO_ERROR, "/");
-      else y = C_i_o_fixnum_quotient(iresult, x);
+    if(n1 & C_FIXNUM_BIT) {
+      if(fflag) {
+	if((n1 = C_unfix(n1)) == 0) 
+	  barf(C_DIVISION_BY_ZERO_ERROR, "/");
 
-      if(y == C_SCHEME_FALSE) {
-	fresult = (double)C_unfix(iresult) / (double)C_unfix(x);
-	goto flonum_result;
+	fresult /= n1;
       }
-      else iresult = y;
-    }
-    else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-      f = C_flonum_magnitude(x);
+      else {
+	if((n2 = C_unfix(n1)) == 0)
+	  barf(C_DIVISION_BY_ZERO_ERROR, "/");
 
-      if(f == 0) barf(C_DIVISION_BY_ZERO_ERROR, "/");
-
-      fresult = (double)C_unfix(iresult) / f;
-      goto flonum_result;
+	if((fresult = (double)iresult / (double)n2) != (iresult /= n2))
+	  fflag = 1;
+      }
     }
-    else barf(C_BAD_ARGUMENT_TYPE_ERROR, "/", x);
+    else if(!C_immediatep(n1) && C_block_header(n1) == C_FLONUM_TAG) {
+      if(fflag) {
+	if((f2 = C_flonum_magnitude(n1)) == 0)
+	  barf(C_DIVISION_BY_ZERO_ERROR, "/");
+
+	fresult /= f2;
+      }
+      else {
+	fflag = 1;
+
+	if((f2 = C_flonum_magnitude(n1)) == 0)
+	  barf(C_DIVISION_BY_ZERO_ERROR, "/");
+
+	fresult = (double)iresult / f2;
+      }
+    }
+    else barf(C_BAD_ARGUMENT_TYPE_ERROR, "/", n1);
   }
 
   va_end(v);
-  C_kontinue(k, iresult);
-
- flonum_result:
-  while(c--) {
-    x = va_arg(v, C_word);
-
-    if(x & C_FIXNUM_BIT) {
-      if(x == C_fix(0)) barf(C_DIVISION_BY_ZERO_ERROR, "/");
-      else fresult /= (double)C_unfix(x);
-    }
-    else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-      f = C_flonum_magnitude(x);
-
-      if(f == 0) barf(C_DIVISION_BY_ZERO_ERROR, "/");
-      else fresult /= f;
-    }
-    else barf(C_BAD_ARGUMENT_TYPE_ERROR, "/", x);
+  
+ cont:
+  if(fflag) {
+    C_kontinue_flonum(k, fresult);
   }
+  else n1 = C_fix(iresult);
 
-  va_end(v);
-  C_kontinue_flonum(k, fresult);
+  C_kontinue(k, n1);
 }
 
 
 C_regparm C_word C_fcall C_2_divide(C_word **ptr, C_word x, C_word y)
 {
   C_word iresult;
-  double f;
+  double fresult;
+  int fflag = 0;
 
   if(x & C_FIXNUM_BIT) {
     if(y & C_FIXNUM_BIT) {
-      if(y == C_fix(0)) barf(C_DIVISION_BY_ZERO_ERROR, "/");
-      else iresult = C_i_o_fixnum_quotient(x, y);
+      if((iresult = C_unfix(y)) == 0) barf(C_DIVISION_BY_ZERO_ERROR, "/");
 
-      if(iresult == C_SCHEME_FALSE)
-	return C_flonum(ptr, (double)C_unfix(x) / (double)C_unfix(y));
-      else return iresult;
+      fresult = (double)C_unfix(x) / (double)iresult;
+      iresult = C_unfix(x) / iresult;
     }
     else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG) {
-      f = C_flonum_magnitude(y);
+      if((fresult = C_flonum_magnitude(y)) == 0.0)
+	barf(C_DIVISION_BY_ZERO_ERROR, "/");
 
-      if(f == 0) barf(C_DIVISION_BY_ZERO_ERROR, "/");
-      else return C_flonum(ptr, (double)C_unfix(x) - f);
+      fresult = (double)C_unfix(x) / fresult;
+      fflag = 1;
     }
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "/", y);
   }
   else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
+    fflag = 1;
+
     if(y & C_FIXNUM_BIT) {
-      if(y == C_fix(0)) barf(C_DIVISION_BY_ZERO_ERROR, "/");
-      return C_flonum(ptr, C_flonum_magnitude(x) / (double)C_unfix(y));
+      fresult = C_flonum_magnitude(x);
+
+      if((iresult = C_unfix(y)) == 0) barf(C_DIVISION_BY_ZERO_ERROR, "/");
+
+      fresult = fresult / (double)iresult;
     }
     else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG) {
-      f = C_flonum_magnitude(y);
+      if((fresult = C_flonum_magnitude(y)) == 0.0) barf(C_DIVISION_BY_ZERO_ERROR, "/");
       
-      if(f == 0) barf(C_DIVISION_BY_ZERO_ERROR, "/");
-      else return C_flonum(ptr, C_flonum_magnitude(x) - f);
+      fresult = C_flonum_magnitude(x) / fresult;
     }
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "/", y);
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "/", x);
+
+  iresult = C_fix(iresult);
+
+  if(fflag || (double)C_unfix(iresult) != fresult) return C_flonum(ptr, fresult);
+  
+  return iresult;
 }
 
 
