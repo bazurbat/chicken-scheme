@@ -43,6 +43,8 @@
 (assert (zero? (+)))
 (assert (= 1 (*)))
 
+(assert (= 2.5 (/ 5 2)))
+
 
 ;; number->string conversion
 

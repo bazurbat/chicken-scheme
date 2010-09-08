@@ -6282,17 +6282,20 @@ void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...)
   C_word x, y;
   C_word iresult;
   double fresult, f;
+  int ff = 0;
   C_alloc_flonum;
 
   if(c < 3) C_bad_min_argc(c, 3);
 
   if(n1 & C_FIXNUM_BIT) iresult = n1;
-  else if(!C_immediatep(n1) && C_block_header(n1) == C_FLONUM_TAG)
+  else if(!C_immediatep(n1) && C_block_header(n1) == C_FLONUM_TAG) {
     fresult = C_flonum_magnitude(n1);
+    ff = 1;
+  }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "/", n1);
 
   if(c == 3) {
-    if(n1 & C_FIXNUM_BIT) {
+    if(!ff) {
       if(n1 == C_fix(0)) barf(C_DIVISION_BY_ZERO_ERROR, "/");
       else if(n1 == C_fix(1)) C_kontinue(k, C_fix(1));
       else C_kontinue_flonum(k, 1 / (double)C_unfix(n1));
@@ -6303,6 +6306,8 @@ void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...)
 
   va_start(v, n1);
   c -= 3;
+
+  if(ff) goto flonum_result;
 
   while(c--) {
     x = va_arg(v, C_word);
