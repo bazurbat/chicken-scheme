@@ -85,20 +85,23 @@
 		    (set! options (cons 'optimize-leaf-routines options)) )
 		   ((2)
 		    (set! options 
-		      (cons* 'optimize-leaf-routines 'inline options)) ) 
+		      (cons* 'optimize-leaf-routines 'inline 'unboxing 
+			     options)) ) 
 		   ((3)
 		    (set! options
-		      (cons* 'optimize-leaf-routines 'inline 'inline-global  options) ) )
+		      (cons* 'optimize-leaf-routines 'inline 'inline-global 'unboxing 'local
+			     options) ) )
 		   ((4)
 		    (set! options
-		      (cons* 'optimize-leaf-routines 'inline 'local 'unboxing 'unsafe
+		      (cons* 'optimize-leaf-routines 'inline 'inline-global 'unboxing 
+			     'local 'unsafe
 			     options) ) )
 		   (else
 		    (when (>= level 5)
 		      (set! options 
 			(cons* 'disable-interrupts 'no-trace 'unsafe 'block
 			       'optimize-leaf-routines 'lambda-lift 'no-lambda-info
-			       'inline 'unboxing
+			       'inline 'inline-global 'unboxing
 			       options) ) ) ) )
 		 (loop (cdr rest)) ) )
 	      ((eq? 'debug-level o)
