@@ -263,13 +263,6 @@ that any calls to these variables can always be assumed to be calls to proper
 procedures.
 
 
-=== scrutinize
-
- [declaration specifier] (scrutinize)
-
-Enables scrutiny. This is equivalent to passing the {{-scrutinize}} option to the compiler.
-
-
 === standard-bindings
 
  [declaration specifier] (standard-bindings SYMBOL ...)

@@ -845,6 +845,7 @@
 
     ;; (<op> ...) -> (##core#inline <iop> ...)
     ((2) ; classargs = (<argc> <iop> <safe>)
+     ;; - <safe> by be 'specialized (see rule #16 below)
      (and inline-substitutions-enabled
 	  (= (length callargs) (first classargs))
 	  (intrinsic? name)
@@ -1042,14 +1043,20 @@
      ;;   number of arguments plus 1.
      ;; - if <counted> is given and true and <argc> is between 1-8, append "<count>"
      ;;   to the name of the inline routine.
+     ;; - if <safe> is 'specialized and `unsafe-specialized-arithmetic' is declared,
+     ;;   then assume it is safe
      (let ((argc (first classargs))
 	   (rargc (length callargs))
+	   (safe (third classargs))
 	   (w (fourth classargs))
 	   (counted (and (pair? (cddddr classargs)) (fifth classargs))))
        (and inline-substitutions-enabled
 	    (or (not argc) (= rargc argc))
 	    (intrinsic? name)
-	    (or (third classargs) unsafe)
+	    (or unsafe
+		(if (eq? safe 'specialized)
+		    unchecked-specialized-arithmetic
+		    safe))
 	    (make-node
 	     '##core#call '(#t)
 	     (list cont 
