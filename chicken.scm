@@ -85,7 +85,7 @@
 		    (set! options (cons 'optimize-leaf-routines options)) )
 		   ((2)
 		    (set! options 
-		      (cons* 'optimize-leaf-routines 'inline 'unboxing 
+		      (cons* 'optimize-leaf-routines 'inline 'unboxing
 			     options)) ) 
 		   ((3)
 		    (set! options

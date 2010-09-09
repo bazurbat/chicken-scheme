@@ -380,6 +380,18 @@ expressions are evaluated before A's.  Furthermore, the used symbols
 are registered as features during compile-time, so {{cond-expand}}
 knows about them.
 
+
+=== unsafe-specialized-arithmetic
+
+ [declaration specifier] (unsafe-specialized-arithmetic)
+
+Assume specialized arithmetic operations like {{fp+}}, {{fpsin}}, etc. 
+are always called with arguments of correct type and perform
+unboxing of intermediate results if possible and if the {{-unboxing}}
+compiler-option has been enabled (done by default on optimization
+levels 2 and higher).
+
+
 ---
 Previous: [[Modules]]
 
