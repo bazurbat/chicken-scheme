@@ -7253,7 +7253,7 @@ static int from_n_nary(C_char *str, int base, double *r)
   C_char *ptr = str;
 
   while(*ptr != '\0') {
-    int c = C_tolower(*(ptr++));
+    int c = C_tolower((int)(*(ptr++)));
 
     if(c < '0') return 0;
     else if(c >= '0' + base) {

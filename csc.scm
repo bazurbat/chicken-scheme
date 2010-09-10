@@ -68,6 +68,7 @@
 (define osx (eq? (software-version) 'macosx))
 (define win (or mingw msvc))
 (define netbsd (eq? (software-version) 'netbsd))
+(define cygwin (eq? (build-platform) 'cygwin))
 
 (define elf
   (memq (software-version) '(linux netbsd freebsd solaris openbsd)))
@@ -113,7 +114,7 @@
 (define nonstatic-compilation-options '())
 (define shared-library-extension ##sys#load-dynamic-extension)
 (define default-translation-optimization-options '())
-(define pic-options (if (or mingw msvc) '("-DPIC") '("-fPIC" "-DPIC")))
+(define pic-options (if (or mingw msvc cygwin) '("-DPIC") '("-fPIC" "-DPIC")))
 (define windows-shell WINDOWS_SHELL)
 (define generate-manifest #f)
 
