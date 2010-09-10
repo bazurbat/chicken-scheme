@@ -216,7 +216,7 @@ cygchicken-0.dll: $(LIBCHICKEN_SHARED_OBJECTS) $(APPLY_HACK_OBJECT)
 	gcc -shared -o $(LIBCHICKEN_SO_FILE) -Wl,--dll -Wl,--add-stdcall-alias \
 	    -Wl,--enable-stdcall-fixup -Wl,--warn-unresolved-symbols \
 	    -Wl,--dll-search-prefix=cyg -Wl,--allow-multiple-definition \
-	    -Wl,--allow-shlib-undefined -Wl,--export-dynamic \
+	    -Wl,--allow-shlib-undefined \
 	    -Wl,--out-implib=libchicken.dll.a -Wl,--export-all-symbols \
 	    -Wl,--enable-auto-import \
 	    -Wl,--whole-archive $(LIBCHICKEN_SHARED_OBJECTS) $(APPLY_HACK_OBJECT) \
