@@ -8661,7 +8661,7 @@ C_regparm C_word C_fcall C_i_o_fixnum_quotient(C_word n1, C_word n2)
   if(x2 == 0)
     barf(C_DIVISION_BY_ZERO_ERROR, "fx/?");
 
-#ifdef C_SIXYT_FOUR
+#ifdef C_SIXTY_FOUR
   if(x1 == 0x8000000000000000L && x2 == -1) return C_SCHEME_FALSE;
 #else
   if(x1 == 0x80000000L && x2 == -1) return C_SCHEME_FALSE;
