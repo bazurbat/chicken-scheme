@@ -513,14 +513,14 @@ $(foreach obj, $(IMPORT_LIBRARIES),\
 
 # Bootstrap compiler objects
 
-define declare-compiler-object
+define declare-bootstrap-compiler-object
 $(1).c: $$(SRCDIR)$(1).scm $$(SRCDIR)compiler-namespace.scm \
 	  $$(SRCDIR)private-namespace.scm $$(SRCDIR)tweaks.scm
 	$$(CHICKEN) $$< $$(CHICKEN_COMPILER_OPTIONS) -output-file $$@ 
 endef
 
 $(foreach obj, $(COMPILER_OBJECTS_1),\
-          $(eval $(call declare-compiler-object,$(obj))))
+          $(eval $(call declare-bootstrap-compiler-object,$(obj))))
 
 
 csi.c: $(SRCDIR)csi.scm $(SRCDIR)banner.scm $(SRCDIR)private-namespace.scm
