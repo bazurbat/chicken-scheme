@@ -196,7 +196,6 @@
 				    (touch)
 				    ;; Build call to continuation with new result...
 				    (let ((n2 (qnode result)))
-				      (register-cfold var (cddr subs) form n2)
 				      (make-node
 				       '##core#call
 				       '(#t)
