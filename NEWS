@@ -1,3 +1,26 @@
+4.6.1
+
+- record-definitions are now made local to the module in which
+  they are defined (thanks to Jim Ursetto)
+- added new declaration `unsafe-specialized-arithmetic' which
+  allows optimiizing unboxed floating-point arithmetic in safe
+  mode
+- optimization-levels 3 and higher imply `-unboxing -inline-global'
+- removed `scrutinize' declaration
+- the csi options `-p' and `-P' and `-e' imply `-no-init'
+- in csi, the call-trace reported will not include exception-
+  handler code anymore (suggested by Christian Kellermann)
+- `file-copy' and `file-move' (`files' unit) check whether the 
+  source-file is a directory
+- the file-descriptor handling in the scheduler has been simplified
+  and performs some sanity checks
+- `global-bound?', `global-ref`, `global-set!' and `global-make-unbound!'
+  (`lolevel' unit) have been deprecated
+- `required-extension-version' and `required-chicken-version'
+  (`setup-api' module) have been deprecated
+- constant-folding in the compiler has been simplified and
+  is more reliable (thanks to Sven Hartrumpf)
+
 4.6.0
 
 - the licenses used in all components of the core system have
