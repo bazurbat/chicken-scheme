@@ -702,12 +702,14 @@ EOF
 (define (fxshr x y) (##core#inline "C_fixnum_shift_right" x y))
 (define (fxodd? x) (##core#inline "C_i_fixnumoddp" x))
 (define (fxeven? x) (##core#inline "C_i_fixnumevenp" x))
+(define (fx/ x y) (##core#inline "C_fixnum_divide" x y) )
+(define (fxmod x y) (##core#inline "C_fixnum_modulo" x y) )
 
-(define (fx/ x y)
-  (##core#inline "C_fixnum_divide" x y) )
-
-(define (fxmod x y)
-  (##core#inline "C_fixnum_modulo" x y) )
+;; these are currently undocumented
+(define (fx+? x y) (##core#inline "C_i_o_fixnum_plus" x y) )
+(define (fx-? x y) (##core#inline "C_i_o_fixnum_difference" x y) )
+(define (fx*? x y) (##core#inline "C_i_o_fixnum_times" x y) )
+(define (fx/? x y) (##core#inline "C_i_o_fixnum_quotient" x y) )
 
 (define maximum-flonum (foreign-value "DBL_MAX" double))
 (define minimum-flonum (foreign-value "DBL_MIN" double))
@@ -957,18 +959,11 @@ EOF
 (define remainder 
   (lambda (x y) (- x (* (quotient x y) y))) )
 
-(define modulo
-  (let ([floor floor])
-    (lambda (x y)
-      (let ((div (/ x y)))
-	(- x (* (if (integer? div)
-		    div
-		    (let* ([fd (floor div)]
-			   [fdx (##core#inline "C_quickflonumtruncate" fd)] )
-		      (if (= fd fdx)
-			  fdx
-			  fd) ) )
-		y) ) ) ) ) )
+(define (modulo a b)			   ; copied from chibi scheme without asking Alex
+  (let ((res (- a (* (quotient a b) b))) ) ; remainder
+    (if (< b 0)
+        (if (<= res 0) res (+ res b))
+        (if (>= res 0) res (+ res b)))))
 
 (define (even? n) (##core#inline "C_i_evenp" n))
 (define (odd? n) (##core#inline "C_i_oddp" n))
@@ -976,25 +971,22 @@ EOF
 (define max)
 (define min)
 
-(let ([> >]				;XXX could use faster versions
-      [< <] )
-  (letrec ([maxmin
-	    (lambda (n1 ns pred)
-	      (let loop ((nbest n1) (ns ns))
-		(if (eq? ns '())
-		    nbest
-		    (let ([ni (##sys#slot ns 0)])
-		      (loop (if (pred ni nbest)
-				(if (and (##core#inline "C_blockp" nbest) 
-					 (##core#inline "C_flonump" nbest) 
-					 (not (##core#inline "C_blockp" ni)) )
-				    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) ni)
-				    ni)
-				nbest)
-			    (##sys#slot ns 1) ) ) ) ) ) ] )
-
-    (set! max (lambda (n1 . ns) (maxmin n1 ns >)))
-    (set! min (lambda (n1 . ns) (maxmin n1 ns <))) ) )
+(letrec ((maxmin
+	  (lambda (n1 ns pred)
+	    (let loop ((nbest n1) (ns ns))
+	      (if (eq? ns '())
+		  nbest
+		  (let ([ni (##sys#slot ns 0)])
+		    (loop (if (pred ni nbest)
+			      (if (and (##core#inline "C_blockp" nbest) 
+				       (##core#inline "C_flonump" nbest) 
+				       (not (##core#inline "C_blockp" ni)) )
+				  (##core#inline_allocate ("C_a_i_fix_to_flo" 4) ni)
+				  ni)
+			      nbest)
+			  (##sys#slot ns 1) ) ) ) ) ) ) )
+  (set! max (lambda (n1 . ns) (maxmin n1 ns >)))
+  (set! min (lambda (n1 . ns) (maxmin n1 ns <))) )
 
 (define (exp n)
   (##core#inline_allocate ("C_a_i_exp" 4) n) )
@@ -1494,49 +1486,47 @@ EOF
 (define for-each)
 (define map)
 
-(let ([car car]
-      [cdr cdr] )
-  (letrec ((mapsafe
-	    (lambda (p lsts start loc)
-	      (if (eq? lsts '())
-		  lsts
-		  (let ((item (##sys#slot lsts 0)))
-		    (cond ((eq? item '())
-			   (check lsts start loc))
-			  ((pair? item)
-			   (cons (p item) (mapsafe p (##sys#slot lsts 1) #f loc)) )
-			  (else (##sys#error-not-a-proper-list item loc)) ) ) ) ) )
-	   (check 
-	    (lambda (lsts start loc)
-	      (if (or (not start)
-		      (let loop ((lsts lsts))
-			(and (not (eq? lsts '()))
-			     (not (eq? (##sys#slot lsts 0) '()))
-			     (loop (##sys#slot lsts 1)) ) ) )
-		  (##sys#error loc "lists are not of same length" lsts) ) ) ) )
+(letrec ((mapsafe
+	  (lambda (p lsts start loc)
+	    (if (eq? lsts '())
+		lsts
+		(let ((item (##sys#slot lsts 0)))
+		  (cond ((eq? item '())
+			 (check lsts start loc))
+			((pair? item)
+			 (cons (p item) (mapsafe p (##sys#slot lsts 1) #f loc)) )
+			(else (##sys#error-not-a-proper-list item loc)) ) ) ) ) )
+	 (check 
+	  (lambda (lsts start loc)
+	    (if (or (not start)
+		    (let loop ((lsts lsts))
+		      (and (not (eq? lsts '()))
+			   (not (eq? (##sys#slot lsts 0) '()))
+			   (loop (##sys#slot lsts 1)) ) ) )
+		(##sys#error loc "lists are not of same length" lsts) ) ) ) )
 
-    (set! for-each
-	  (lambda (fn lst1 . lsts)
-	    (if (null? lsts)
-		(##sys#for-each fn lst1)
-		(let loop ((all (cons lst1 lsts)))
-		  (let ((first (##sys#slot all 0)))
-		    (cond ((pair? first)
-			   (apply fn (mapsafe car all #t 'for-each))
-			   (loop (mapsafe cdr all #t 'for-each)) )
-			  (else (check all #t 'for-each)) ) ) ) ) ) )
+  (set! for-each
+    (lambda (fn lst1 . lsts)
+      (if (null? lsts)
+	  (##sys#for-each fn lst1)
+	  (let loop ((all (cons lst1 lsts)))
+	    (let ((first (##sys#slot all 0)))
+	      (cond ((pair? first)
+		     (apply fn (mapsafe (lambda (x) (car x)) all #t 'for-each)) ; ensure inlining
+		     (loop (mapsafe (lambda (x) (cdr x)) all #t 'for-each)) )
+		    (else (check all #t 'for-each)) ) ) ) ) ) )
 
-    (set! map
-	  (lambda (fn lst1 . lsts)
-	    (if (null? lsts)
-		(##sys#map fn lst1)
-		(let loop ((all (cons lst1 lsts)))
-		  (let ((first (##sys#slot all 0)))
-		    (cond ((pair? first)
-			   (cons (apply fn (mapsafe car all #t 'map))
-				 (loop (mapsafe cdr all #t 'map)) ) )
-			  (else (check (##core#inline "C_i_cdr" all) #t 'map)
-				'() ) ) ) ) ) ) ) ) )
+  (set! map
+    (lambda (fn lst1 . lsts)
+      (if (null? lsts)
+	  (##sys#map fn lst1)
+	  (let loop ((all (cons lst1 lsts)))
+	    (let ((first (##sys#slot all 0)))
+	      (cond ((pair? first)
+		     (cons (apply fn (mapsafe (lambda (x) (car x)) all #t 'map))
+			   (loop (mapsafe (lambda (x) (cdr x)) all #t 'map)) ) )
+		    (else (check (##core#inline "C_i_cdr" all) #t 'map)
+			  '() ) ) ) ) ) ) ) )
 
 
 ;;; dynamic-wind:
@@ -1607,10 +1597,9 @@ EOF
     (##sys#continuation-graft k thunk) ) )
 
 (define continuation-return
-  (let ([continuation-graft continuation-graft])
-    (lambda (k . vals)
-      (##sys#check-structure k 'continuation 'continuation-return)
-      (continuation-graft k (lambda () (apply values vals))) ) ) )
+  (lambda (k . vals)
+    (##sys#check-structure k 'continuation 'continuation-return)
+    (continuation-graft k (lambda () (apply values vals))) ) )
 
 
 ;;; Ports:
@@ -2110,9 +2099,7 @@ EOF
 
 (define ##sys#read
   (let ([reverse reverse]
-	[list? list?]
 	[string-append string-append]
-	[string string]
 	[kwprefix (string (integer->char 0))])
     (lambda (port infohandler)
       (let ([csp (case-sensitive)]
@@ -2393,8 +2380,13 @@ EOF
 		       (##sys#reverse-list->string lst))
 		      (else
 		       (let ((c ((if esc read-unreserved-char-0 ##sys#read-char-0) port)))
-			 (case (and sep c)
+			 (case (and sep c) ; is sep is false, esc will be as well
 			   ((#\|) (loop (not esc) lst))
+			   ((#\newline)
+			    (##sys#read-warning
+			     port "escaped symbol syntax spans multiple lines"
+			     (##sys#reverse-list->string lst))
+			    (loop esc (cons #\newline lst)))
 			   ((#\\)
 			    (let ((c (##sys#read-char-0 port)))
 			      (if (eof-object? c)
@@ -3291,8 +3283,6 @@ EOF
 	 +build-tag+))
       +build-version+) )
 
-(define ##sys#pathname-directory-separator #\/) ; DEPRECATED
-
 
 ;;; Feature identifiers:
 
@@ -3579,6 +3569,7 @@ EOF
 	   [else			'(exn)] )
 	 (list '(exn . message) msg
 	       '(exn . arguments) args
+	       '(exn . call-chain) (##sys#get-call-chain)
 	       '(exn . location) loc) ) ) ) ] ) )
 
 (define (##sys#abort x)
@@ -3597,7 +3588,7 @@ EOF
 (define abort ##sys#abort)
 (define signal ##sys#signal)
 
-(define ##sys#last-exception #f)
+(define ##sys#last-exception #f)	; used in csi for ,exn command
 
 (define ##sys#current-exception-handler
   ;; Exception-handler for the primordial thread:

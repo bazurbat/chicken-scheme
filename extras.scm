@@ -80,7 +80,7 @@
 ;;; Line I/O:
 
 (define read-line
-  (let ([make-string make-string])
+  (let ()
     (define (fixup str len)
       (##sys#substring
        str 0
@@ -120,26 +120,24 @@
 				(loop (fx+ i 1)) ] ) ) ) ) ) ) ) ) ) ) ) )
 
 (define read-lines
-  (let ((call-with-input-file call-with-input-file) 
-	(reverse reverse) )
-    (lambda port-and-max
-      (let* ((port (if (pair? port-and-max) (##sys#slot port-and-max 0) ##sys#standard-input))
-	     (rest (and (pair? port-and-max) (##sys#slot port-and-max 1)))
-	     (max (if (pair? rest) (##sys#slot rest 0) #f)) )
-	(define (doread port)
-	  (let loop ((lns '())
-		     (n (or max 1000000000)) ) ; this is silly
-	    (if (eq? n 0)
-		(reverse lns)
-		(let ((ln (read-line port)))
-		  (if (eof-object? ln)
-		      (reverse lns)
-		      (loop (cons ln lns) (fx- n 1)) ) ) ) ) )
-	(if (string? port)
-	    (call-with-input-file port doread)
-	    (begin
-	      (##sys#check-port port 'read-lines)
-	      (doread port) ) ) ) ) ) )
+  (lambda port-and-max
+    (let* ((port (if (pair? port-and-max) (##sys#slot port-and-max 0) ##sys#standard-input))
+	   (rest (and (pair? port-and-max) (##sys#slot port-and-max 1)))
+	   (max (if (pair? rest) (##sys#slot rest 0) #f)) )
+      (define (doread port)
+	(let loop ((lns '())
+		   (n (or max 1000000000)) ) ; this is silly
+	  (if (eq? n 0)
+	      (reverse lns)
+	      (let ((ln (read-line port)))
+		(if (eof-object? ln)
+		    (reverse lns)
+		    (loop (cons ln lns) (fx- n 1)) ) ) ) ) )
+      (if (string? port)
+	  (call-with-input-file port doread)
+	  (begin
+	    (##sys#check-port port 'read-lines)
+	    (doread port) ) ) ) ) )
 
 
 ;;; Extended I/O 
@@ -222,29 +220,26 @@
 		(get-output-string out) ) ) ) ) ) ) )
 
 (define write-string 
-  (let ([display display])
-    (lambda (s . more)
-      (##sys#check-string s 'write-string)
-      (let-optionals more ([n #f] [port ##sys#standard-output])
-	(##sys#check-port port 'write-string)
-	(when n (##sys#check-exact n 'write-string))
-	(display 
-	 (if (and n (fx< n (##sys#size s)))
-	     (##sys#substring s 0 n)
-	     s)
-	 port) ) ) ) )
+  (lambda (s . more)
+    (##sys#check-string s 'write-string)
+    (let-optionals more ([n #f] [port ##sys#standard-output])
+      (##sys#check-port port 'write-string)
+      (when n (##sys#check-exact n 'write-string))
+      (display 
+       (if (and n (fx< n (##sys#size s)))
+	   (##sys#substring s 0 n)
+	   s)
+       port) ) ) )
 
 (define write-line
-  (let ((display display)
-	(newline newline) )
-    (lambda (str . port)
-      (let ((p (if (##core#inline "C_eqp" port '())
-		   ##sys#standard-output
-		   (##sys#slot port 0) ) ) )
-	(##sys#check-port p 'write-line)
-	(##sys#check-string str 'write-line)
-	(display str p)
-	(newline p) ) ) ) )
+  (lambda (str . port)
+    (let ((p (if (##core#inline "C_eqp" port '())
+		 ##sys#standard-output
+		 (##sys#slot port 0) ) ) )
+      (##sys#check-port p 'write-line)
+      (##sys#check-string str 'write-line)
+      (display str p)
+      (newline p) ) ) )
 
 
 ;;; Binary I/O
@@ -559,14 +554,11 @@
 ;;; Write simple formatted output:
 
 (define fprintf0
-  (let ((write write)
-	(newline newline)
-	(display display) )
-    (lambda (loc port msg args)
-      (when port (##sys#check-port port loc))
-      (let ((out (if (and port (##sys#tty-port? port))
-		     port
-		     (open-output-string))))
+  (lambda (loc port msg args)
+    (when port (##sys#check-port port loc))
+    (let ((out (if (and port (##sys#tty-port? port))
+		   port
+		   (open-output-string))))
       (let rec ([msg msg] [args args])
 	(##sys#check-string msg loc)
 	(let ((index 0)
@@ -612,7 +604,7 @@
 		(loop) ) ) ) ) )
       (cond ((not port) (get-output-string out))
 	    ((not (eq? out port))
-	     (##sys#print (get-output-string out) #f port) ) ) ) ) ) )
+	     (##sys#print (get-output-string out) #f port) ) ) ) ) )
 
 (define (fprintf port fstr . args)
   (fprintf0 'fprintf port fstr args) )

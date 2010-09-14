@@ -368,10 +368,13 @@ Returns the content of the {{thread}}'s specific field.
 Stores {{obj}} into the {{thread}}'s specific field.
 {{thread-specific-set!}} returns an unspecified value.
 
-
      (thread-specific-set! (current-thread) "hello")  ==>  ''unspecified''
   
      (thread-specific (current-thread))               ==>  "hello"
+
+Alternatively, you can use
+
+     (set! (thread-specific (current-thread)) "hello")
 
 <procedure>(thread-start! thread)</procedure><br>
 

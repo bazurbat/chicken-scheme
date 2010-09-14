@@ -403,14 +403,13 @@ EOF
 	 (##sys#slot d 1) ) ) )
 
 (define set-procedure-data!
-  (let ((extend-procedure extend-procedure))
-    (lambda (proc x)
-      (let ((p2 (extend-procedure proc x)))
-	(if (eq? p2 proc)
-	    proc
-	    (##sys#signal-hook
-	     #:type-error 'set-procedure-data!
-	     "bad argument type - not an extended procedure" proc) ) ) ) ) )
+  (lambda (proc x)
+    (let ((p2 (extend-procedure proc x)))
+      (if (eq? p2 proc)
+	  proc
+	  (##sys#signal-hook
+	   #:type-error 'set-procedure-data!
+	   "bad argument type - not an extended procedure" proc) ) ) ) )
 
 
 ;;; Accessors for arbitrary vector-like block objects:
@@ -626,20 +625,24 @@ EOF
     new ) )
 
 
-;;; Access computed globals:
+;;; Access computed globals: 
 
+;;DEPRECATED
 (define (global-ref sym)
   (##sys#check-symbol sym 'global-ref)
   (##core#inline "C_retrieve" sym) )
 
+;;DEPRECATED
 (define (global-set! sym x)
   (##sys#check-symbol sym 'global-set!)
   (##sys#setslot sym 0 x) )
 
+;;DEPRECATED
 (define (global-bound? sym)
   (##sys#check-symbol sym 'global-bound?)
   (##sys#symbol-has-toplevel-binding? sym) )
 
+;;DEPRECATED
 (define (global-make-unbound! sym)
   (##sys#check-symbol sym 'global-make-unbound!)
   (##sys#setslot sym 0 (##sys#slot '##sys#arbitrary-unbound-symbol 0))

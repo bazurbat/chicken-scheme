@@ -72,7 +72,7 @@
 ; (unsafe)
 ; (unused <symbol> ...)
 ; (uses {<unitname>})
-; (scrutinize)
+; (unsafe-specialized-arithmetic)
 ;
 ;   <type> = fixnum | generic
 
@@ -336,6 +336,7 @@
 (define do-scrutinize #f)
 (define enable-inline-files #f)
 (define compiler-syntax-enabled #t)
+(define unchecked-specialized-arithmetic #f)
 
 
 ;;; These are here so that the backend can access them:
@@ -1467,8 +1468,8 @@
 		 (else
 		  (warning "illegal `type' declaration item" spec))))
 	 (globalize-all (cdr spec))))
-       ((scrutinize)
-	(set! do-scrutinize #t))
+       ((unsafe-specialized-arithmetic)
+	(set! unchecked-specialized-arithmetic #t))
        (else (warning "illegal declaration specifier" spec)) )
      '(##core#undefined) ) ) )
 
@@ -2112,7 +2113,7 @@
       (walk node)
       (when (pair? procs)
 	(##sys#notice
-	 "the following non-intrinsic global procedures where declared to be unsafe but are externally visible:")
+	 "access to the following non-intrinsic global procedures was declared to be unsafe even though they are externally visible:")
 	(newline (current-error-port))
 	(for-each (cute fprintf (current-error-port) "  ~S~%" <>) procs)
 	(flush-output (current-error-port))))))

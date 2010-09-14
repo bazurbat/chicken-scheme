@@ -157,10 +157,10 @@ the source text should be read from standard input.
 
      -optimize-level 0          is equivalent to -no-usual-integrations -no-compiler-syntax
      -optimize-level 1          is equivalent to -optimize-leaf-routines
-     -optimize-level 2          is equivalent to -optimize-leaf-routines -inline
-     -optimize-level 3          is equivalent to -optimize-leaf-routines -local -inline -inline-global
-     -optimize-level 4          is equivalent to -optimize-leaf-routines -local -inline -unsafe -unboxing
-     -optimize-level 5          is equivalent to -optimize-leaf-routines -block -inline -unsafe -unboxing -lambda-lift -disable-interrupts -no-trace -no-lambda-info
+     -optimize-level 2          is equivalent to -optimize-leaf-routines -inline -unboxing
+     -optimize-level 3          is equivalent to -optimize-leaf-routines -local -inline -inline-global -unboxing
+     -optimize-level 4          is equivalent to -optimize-leaf-routines -local -inline -inline-global -unboxing -unsafe
+     -optimize-level 5          is equivalent to -optimize-leaf-routines -block -inline -inline-global -unsafe -unboxing -lambda-lift -disable-interrupts -no-trace -no-lambda-info
 
 ; -output-file FILENAME : Specifies the pathname of the generated C file. Default is {{FILENAME.c}}.
 

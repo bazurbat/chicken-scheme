@@ -28,11 +28,12 @@
 (declare
   (unit scheduler)
   (disable-interrupts)
-  (hide ##sys#ready-queue-head ##sys#ready-queue-tail ##sys#timeout-list
+  (hide ready-queue-head ready-queue-tail ##sys#timeout-list
 	##sys#update-thread-state-buffer ##sys#restore-thread-state-buffer
-	##sys#remove-from-ready-queue ##sys#unblock-threads-for-i/o ##sys#force-primordial
-	##sys#fdset-input-set ##sys#fdset-output-set ##sys#fdset-clear
-	##sys#fdset-select-timeout ##sys#fdset-restore
+	remove-from-ready-queue ##sys#unblock-threads-for-i/o ##sys#force-primordial
+	fdset-input-set fdset-output-set fdset-clear
+	fdset-select-timeout fdset-set fdset-test
+	create-fdset stderr
 	##sys#clear-i/o-state-for-thread! ##sys#abandon-mutexes) 
   (not inline ##sys#interrupt-hook)
   (unsafe)
@@ -73,7 +74,7 @@ C_word C_msleep(C_word ms) {
   return C_SCHEME_TRUE;
 }
 #endif
-static fd_set C_fdset_input, C_fdset_output, C_fdset_input_2, C_fdset_output_2;
+static fd_set C_fdset_input, C_fdset_output;
 #define C_fd_test_input(fd)  C_mk_bool(FD_ISSET(C_unfix(fd), &C_fdset_input))
 #define C_fd_test_output(fd)  C_mk_bool(FD_ISSET(C_unfix(fd), &C_fdset_output))
 EOF
@@ -81,9 +82,22 @@ EOF
 
 (include "common-declarations.scm")
 
+#;(begin
+    (define stderr ##sys#standard-error) ; use default stderr port
+    (define (dbg . args)
+      (for-each
+       (lambda (x)
+	 (display x stderr))
+       args)
+      (newline stderr)))
+
 (define-syntax dbg
   (syntax-rules ()
     ((_ . _) #f))) 
+
+(define-syntax panic
+  (syntax-rules ()
+    ((_ msg) (##core#inline "C_halt" msg))))
 
 (define (##sys#schedule)
   (define (switch thread)
@@ -96,7 +110,7 @@ EOF
   (let* ([ct ##sys#current-thread]
 	 [eintr #f]
 	 [cts (##sys#slot ct 3)] )
-    (dbg "scheduling, current: " ct ", ready: " ##sys#ready-queue-head)
+    (dbg "==================== scheduling, current: " ct ", ready: " ready-queue-head)
     (##sys#update-thread-state-buffer ct)
     ;; Put current thread on ready-queue:
     (when (or (eq? cts 'running) (eq? cts 'ready)) ; should ct really be 'ready? - normally not.
@@ -106,20 +120,18 @@ EOF
       ;; Unblock threads waiting for timeout:
       (unless (null? ##sys#timeout-list)
 	(let ((now (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f)))
-	  (dbg "timeout (" now ") list: " ##sys#timeout-list)
 	  (let loop ((lst ##sys#timeout-list))
 	    (if (null? lst)
 		(set! ##sys#timeout-list '())
 		(let* ([tmo1 (caar lst)] ; timeout of thread on list
 		       [tto (cdar lst)]	 ; thread on list
 		       [tmo2 (##sys#slot tto 4)] ) ; timeout value stored in thread
-		  (dbg "  " tto " -> " tmo2)
+		  (dbg "timeout: " tto " -> " tmo2 " (now: " now ")")
 		  (if (equal? tmo1 tmo2)  ;XXX why do we check this?
 		      (if (fp>= now tmo1) ; timeout reached?
 			  (begin
 			    (##sys#setislot tto 13 #t) ; mark as being unblocked by timeout
 			    (##sys#clear-i/o-state-for-thread! tto)
-			    ;;(pp `(CLEARED: ,tto ,@##sys#fd-list) ##sys#standard-error) ;***
 			    (##sys#thread-basic-unblock! tto)
 			    (loop (cdr lst)) )
 			  (begin
@@ -127,7 +139,7 @@ EOF
 			    ;; If there are no threads blocking on a select call (fd-list)
 			    ;; but there are threads in the timeout list then sleep for
 			    ;; the number of milliseconds of next thread to wake up.
-			    (when (and (null? ##sys#ready-queue-head)
+			    (when (and (null? ready-queue-head)
 				       (null? ##sys#fd-list) 
 				       (pair? ##sys#timeout-list))
 			      (let ((tmo1 (caar ##sys#timeout-list)))
@@ -148,7 +160,7 @@ EOF
 	      (##sys#unblock-threads-for-i/o) ) ) )
       ;; Fetch and activate next ready thread:
       (let loop2 ()
-	(let ([nt (##sys#remove-from-ready-queue)])
+	(let ([nt (remove-from-ready-queue)])
 	  (cond [(not nt) 
 		 (if (and (null? ##sys#timeout-list) (null? ##sys#fd-list))
 		     (##sys#signal-hook #:runtime-error "deadlock")
@@ -160,25 +172,25 @@ EOF
   (dbg "primordial thread forced due to interrupt")
   (##sys#thread-unblock! ##sys#primordial-thread) )
 
-(define ##sys#ready-queue-head '())
-(define ##sys#ready-queue-tail '())
+(define ready-queue-head '())
+(define ready-queue-tail '())
 
-(define (##sys#ready-queue) ##sys#ready-queue-head)
+(define (##sys#ready-queue) ready-queue-head)
 
 (define (##sys#add-to-ready-queue thread)
   (##sys#setslot thread 3 'ready)
   (let ((new-pair (cons thread '())))
-    (cond ((eq? '() ##sys#ready-queue-head) 
-	   (set! ##sys#ready-queue-head new-pair))
-	  (else (set-cdr! ##sys#ready-queue-tail new-pair)) )
-    (set! ##sys#ready-queue-tail new-pair) ) )
+    (cond ((eq? '() ready-queue-head) 
+	   (set! ready-queue-head new-pair))
+	  (else (set-cdr! ready-queue-tail new-pair)) )
+    (set! ready-queue-tail new-pair) ) )
 
-(define (##sys#remove-from-ready-queue)
-  (let ((first-pair ##sys#ready-queue-head))
+(define (remove-from-ready-queue)
+  (let ((first-pair ready-queue-head))
     (and (not (null? first-pair))
 	 (let ((first-cdr (cdr first-pair)))
-	   (set! ##sys#ready-queue-head first-cdr)
-	   (when (eq? '() first-cdr) (set! ##sys#ready-queue-tail '()))
+	   (set! ready-queue-head first-cdr)
+	   (when (eq? '() first-cdr) (set! ready-queue-tail '()))
 	   (car first-pair) ) ) ) )
 
 (define (##sys#update-thread-state-buffer thread)
@@ -223,7 +235,9 @@ EOF
 	      (loop r l))))))
 
 (define (##sys#thread-block-for-timeout! t tm)
-  (dbg t " blocks for " tm)
+  (dbg t " blocks for timeout " tm)
+  (unless (flonum? tm)
+    (panic "##sys#thread-block-for-timeout!: invalid timeout"))
   ;; This should really use a balanced tree:
   (let loop ([tl ##sys#timeout-list] [prev #f])
     (if (or (null? tl) (fp< tm (caar tl)))
@@ -289,7 +303,7 @@ EOF
 
 (define (##sys#thread-basic-unblock! t)
   (dbg "unblocking: " t)
-  (##sys#setislot t 11 #f)
+  (##sys#setislot t 11 #f)		; (FD . RWFLAGS)
   (##sys#setislot t 4 #f)
   (##sys#add-to-ready-queue t) )
 
@@ -326,41 +340,61 @@ EOF
 
 ;;; `select()'-based blocking:
 
-(define ##sys#fd-list '())
+(define ##sys#fd-list '())		; ((FD1 THREAD1 ...) ...)
 
-(define ##sys#fdset-select-timeout
+(define (create-fdset)
+  (fdset-clear)
+  (let loop ((lst ##sys#fd-list))
+    (unless (null? lst)
+      (let ((fd (caar lst)))
+	(for-each
+	 (lambda (t)
+	   (let ((p (##sys#slot t 11)))
+	     (fdset-set fd (cdr p))))
+	 (cdar lst))
+	(loop (cdr lst))))))
+
+(define fdset-select-timeout
   (foreign-lambda* int ([bool to] [double tm])
     "struct timeval timeout;"
     "timeout.tv_sec = tm / 1000;"
     "timeout.tv_usec = fmod(tm, 1000) * 1000;"
-    "C_fdset_input_2 = C_fdset_input;"
-    "C_fdset_output_2 = C_fdset_output;"
     "C_return(select(FD_SETSIZE, &C_fdset_input, &C_fdset_output, NULL, to ? &timeout : NULL));") )
 
-(define ##sys#fdset-restore
+(define fdset-clear
   (foreign-lambda* void ()
-    "C_fdset_input = C_fdset_input_2;"
-    "C_fdset_output = C_fdset_output_2;") )
+    "FD_ZERO(&C_fdset_input);"
+    "FD_ZERO(&C_fdset_output);") )
 
-((foreign-lambda* void ()
-   "FD_ZERO(&C_fdset_input);"
-   "FD_ZERO(&C_fdset_output);") )
-
-(define ##sys#fdset-input-set
+(define fdset-input-set
   (foreign-lambda* void ([int fd])
     "FD_SET(fd, &C_fdset_input);" ) )
 
-(define ##sys#fdset-output-set
+(define fdset-output-set
   (foreign-lambda* void ([int fd])
     "FD_SET(fd, &C_fdset_output);" ) )
 
-(define ##sys#fdset-clear
-  (foreign-lambda* void ([int fd])
-    "FD_CLR(fd, &C_fdset_input_2);"
-    "FD_CLR(fd, &C_fdset_output_2);") )
+(define (fdset-set fd i/o)
+  (dbg "setting fdset for " fd " to " i/o)
+  (case i/o
+    ((#t #:input) (fdset-input-set fd))
+    ((#f #:output) (fdset-output-set fd))
+    ((#:all)
+     (fdset-input-set fd)
+     (fdset-output-set fd) )
+    (else (panic "fdset-set: invalid i/o direction"))))
+
+(define (fdset-test inf outf i/o)
+  (case i/o
+    ((#t #:input) inf)
+    ((#f #:output) outf)
+    ((#:all) (or inf outf))
+    (else (panic "fdset-test: invalid i/o direction"))))
 
 (define (##sys#thread-block-for-i/o! t fd i/o)
-  (dbg t " blocks for I/O " fd)
+  (dbg t " blocks for I/O " fd " in mode " i/o)
+  #;(unless (memq i/o '(#:all #:input #:output))
+    (panic "##sys#thread-block-for-i/o!: invalid i/o mode"))
   (let loop ([lst ##sys#fd-list])
     (if (null? lst) 
 	(set! ##sys#fd-list (cons (list fd t) ##sys#fd-list)) 
@@ -368,79 +402,80 @@ EOF
 	  (if (fx= fd (car a)) 
 	      (##sys#setslot a 1 (cons t (cdr a)))
 	      (loop (cdr lst)) ) ) ) )
-  (case i/o
-    ((#t #:input) (##sys#fdset-input-set fd))
-    ((#f #:output) (##sys#fdset-output-set fd))
-    ((#:all)
-     (##sys#fdset-input-set fd)
-     (##sys#fdset-output-set fd) ) )
   (##sys#setslot t 3 'blocked)
   (##sys#setislot t 13 #f)
   (##sys#setslot t 11 (cons fd i/o)) )
 
 (define (##sys#unblock-threads-for-i/o)
   (dbg "fd-list: " ##sys#fd-list)
-  (let* ([to? (pair? ##sys#timeout-list)]
-	 [rq? (pair? ##sys#ready-queue-head)]
-	 [n (##sys#fdset-select-timeout	; we use FD_SETSIZE, but really should use max fd
-	     (or rq? to?)
-	     (if (and to? (not rq?))	; no thread was unblocked by timeout, so wait
-		 (let* ((tmo1 (caar ##sys#timeout-list))
-			(now (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f)))
-		   (fpmax 0.0 (fp- tmo1 now)) )
-		 0.0) ) ] )		; otherwise immediate timeout.
-    (dbg n " fds ready")
-    (cond [(eq? -1 n) 
-	   (##sys#force-primordial)]
-	  [(fx> n 0)
-	   (set! ##sys#fd-list
-	     (let loop ([n n] [lst ##sys#fd-list])
-	       (if (or (zero? n) (null? lst))
-		   lst
-		   (let* ([a (car lst)]
-			  [fd (car a)]
-			  [inf (##core#inline "C_fd_test_input" fd)]
-			  [outf (##core#inline "C_fd_test_output" fd)] )
-		     (dbg "fd " fd " ready: input=" inf ", output=" outf)
-		     (if (or inf outf)
-			 (let loop2 ([threads (cdr a)])
-			   (if (null? threads) 
-			       (begin
-				 (##sys#fdset-clear fd)
-				 (loop (sub1 n) (cdr lst)) )
-			       (let* ([t (car threads)]
-				      [p (##sys#slot t 11)] )
-				 (when (and (pair? p)
-					    (eq? fd (car p))
-					    (not (##sys#slot t 13) ) ) ; not unblocked by timeout
-				   (##sys#thread-basic-unblock! t) )
-				 (loop2 (cdr threads)) ) ) )
-			 (cons a (loop n (cdr lst))) ) ) ) ) ) ] )
-    (##sys#fdset-restore) ) )
+  (create-fdset)
+  (let* ((to? (pair? ##sys#timeout-list))
+	 (rq? (pair? ready-queue-head))
+	 (tmo (if (and to? (not rq?)) ; no thread was unblocked by timeout, so wait
+		  (let* ((tmo1 (caar ##sys#timeout-list))
+			 (now (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f)))
+		    (fpmax 0.0 (fp- tmo1 now)) )
+		  0.0) ) )		; otherwise immediate timeout.
+    (dbg "waiting for I/O with timeout " tmo)
+    (let ((n (fdset-select-timeout ; we use FD_SETSIZE, but really should use max fd
+	      (or rq? to?)
+	      tmo)))
+      (dbg n " fds ready")
+      (cond [(eq? -1 n) 
+	     (##sys#force-primordial)]
+	    [(fx> n 0)
+	     (set! ##sys#fd-list
+	       (let loop ([n n] [lst ##sys#fd-list])
+		 (if (or (zero? n) (null? lst))
+		     lst
+		     (let* ([a (car lst)]
+			    [fd (car a)]
+			    [inf (##core#inline "C_fd_test_input" fd)]
+			    [outf (##core#inline "C_fd_test_output" fd)] )
+		       (dbg "fd " fd " ready: input=" inf ", output=" outf)
+		       (if (or inf outf)
+			   (let loop2 ((threads (cdr a)) (keep '()))
+			     (if (null? threads)
+				 (if (null? keep)
+				     (loop (sub1 n) (cdr lst))
+				     (cons (cons fd keep) (loop (sub1 n) (cdr lst))))
+				 (let* ((t (car threads))
+					(p (##sys#slot t 11)) )
+				   (dbg "checking " t " " p)
+				   (cond ((##sys#slot t 13) ; unblocked by timeout?
+					  (dbg t " unblocked by timeout")
+					  (loop2 (cdr threads) keep))
+					 ((not (pair? p)) ; not blocked for I/O?
+					  (panic 
+					   "##sys#unblock-threads-for-i/o: thread on fd-list is not blocked for I/O"))
+					 ((not (eq? fd (car p)))
+					  (panic
+					   "##sys#unblock-threads-for-i/o: thread on fd-list has wrong FD"))
+					 ((fdset-test inf outf (cdr p))
+					  (##sys#thread-basic-unblock! t) 
+					  (loop2 (cdr threads) keep))
+					 (else (loop2 (cdr threads) (cons t keep)))))))
+			   (cons a (loop n (cdr lst))) ) ) ) ) ) ] ))) )
 
 
 ;;; Clear I/O state for unblocked thread
 
 (define (##sys#clear-i/o-state-for-thread! t)
   (when (pair? (##sys#slot t 11))
-    (let ((fd (##sys#slot (##sys#slot t 11) 0)))
+    (let ((fd (car (##sys#slot t 11))))
       (set! ##sys#fd-list
-	(let loop ([lst ##sys#fd-list])
+	(let loop ((lst ##sys#fd-list))
 	  (if (null? lst)
 	      '()
-	      (let* ([a (##sys#slot lst 0)]
-		     [fd2 (##sys#slot a 0)] )
+	      (let* ((a (car lst))
+		     (fd2 (car a)) )
 		(if (eq? fd fd2)
-		    (let ((ts (##sys#delq t (##sys#slot a 1)))) ; remove from fd-list entry
-		      (cond ((null? ts)
-			     ;;(pp `(CLEAR FD: ,fd ,t) ##sys#standard-error)
-			     (##sys#fdset-clear fd) ; no more threads waiting for this fd
-			     (##sys#fdset-restore)
-			     (##sys#slot lst 1) )
+		    (let ((ts (##sys#delq t (cdr a)))) ; remove from fd-list entry
+		      (cond ((null? ts) (cdr lst))
 			    (else
 			     (##sys#setslot a 1 ts) ; fd-list entry is list with t removed
 			     lst) ) )
-		    (cons a (loop (##sys#slot lst 1)))))))))))
+		    (cons a (loop (cdr lst)))))))))))
 
 
 ;;; Get list of all threads that are ready or waiting for timeout or waiting for I/O:
@@ -451,7 +486,7 @@ EOF
 			   (cns (lambda (queue arg val init)
 				  (cons val init)))
 			   (init '()))
-  (let loop ((l ##sys#ready-queue-head) (i init))
+  (let loop ((l ready-queue-head) (i init))
     (if (pair? l)
 	(loop (cdr l) (cns 'ready #f (car l) i))
 	(let loop ((l ##sys#fd-list) (i i))
@@ -470,9 +505,9 @@ EOF
 ;;; Remove all waiting threads from the relevant queues with the exception of the current thread:
 
 (define (##sys#fetch-and-clear-threads)
-  (let ([all (vector ##sys#ready-queue-head ##sys#ready-queue-tail ##sys#fd-list ##sys#timeout-list)])
-    (set! ##sys#ready-queue-head '())
-    (set! ##sys#ready-queue-tail '())
+  (let ([all (vector ready-queue-head ready-queue-tail ##sys#fd-list ##sys#timeout-list)])
+    (set! ready-queue-head '())
+    (set! ready-queue-tail '())
     (set! ##sys#fd-list '())
     (set! ##sys#timeout-list '()) 
     all) )
@@ -481,8 +516,8 @@ EOF
 ;;; Restore list of waiting threads:
 
 (define (##sys#restore-threads vec)
-  (set! ##sys#ready-queue-head (##sys#slot vec 0))
-  (set! ##sys#ready-queue-tail (##sys#slot vec 1))
+  (set! ready-queue-head (##sys#slot vec 0))
+  (set! ready-queue-tail (##sys#slot vec 1))
   (set! ##sys#fd-list (##sys#slot vec 2))
   (set! ##sys#timeout-list (##sys#slot vec 3)) )
 
@@ -491,15 +526,7 @@ EOF
 
 (define (##sys#thread-unblock! t)
   (when (or (eq? 'blocked (##sys#slot t 3))
-	    (eq? 'sleeping (##sys#slot r 3)))
+	    (eq? 'sleeping (##sys#slot t 3)))
     (##sys#remove-from-timeout-list t)
-    (set! ##sys#fd-list 
-      (let loop ([fdl ##sys#fd-list])
-	(if (null? fdl)
-	    '()
-	    (let ([a (##sys#slot fdl 0)])
-	      (cons
-	       (cons (##sys#slot a 0)
-		     (##sys#delq t (##sys#slot a 1)) )
-	       (loop (##sys#slot fdl 1)) ) ) ) ) )
+    (##sys#clear-i/o-state-for-thread! t)
     (##sys#thread-basic-unblock! t) ) )

@@ -370,7 +370,7 @@ Usage: #{csc} FILENAME | OPTION ...
     -lambda-lift                   perform lambda-lifting
     -disable-stack-overflow-checks disables detection of stack-overflows
     -inline                        enable inlining
-    -inline-limit                  set inlining threshold
+    -inline-limit LIMIT            set inlining threshold
     -inline-global                 enable cross-module inlining
     -unboxing                      use unboxed temporaries if possible
     -n -emit-inline-file FILENAME  generate file with globally inlinable

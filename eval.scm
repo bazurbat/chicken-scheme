@@ -1467,7 +1467,7 @@
 (define ##sys#repl-eval-hook #f)
 (define ##sys#repl-print-length-limit #f)
 (define ##sys#repl-read-hook #f)
-(define ##sys#repl-recent-call-chain #f)
+(define ##sys#repl-recent-call-chain #f) ; used in csi for ,c command
 
 (define (##sys#repl-print-hook x port)
   (##sys#with-print-length-limit ##sys#repl-print-length-limit (cut ##sys#print x #t port))
@@ -1540,7 +1540,15 @@
 		    (##sys#write-char-0 #\newline ##sys#standard-error)
 		    (write-err args) ) )
 	      (set! ##sys#repl-recent-call-chain
-		(print-call-chain ##sys#standard-error))
+		(or (and-let* ((lexn ##sys#last-exception) ;XXX not really right
+			       ((##sys#structure? lexn 'condition))
+			       (a (member '(exn . call-chain) (##sys#slot lexn 2))))
+		      (let ((ct (cadr a)))
+			(##sys#really-print-call-chain
+			 ##sys#standard-error ct
+			 "\n\tCall history:\n")
+			ct))
+		    (print-call-chain ##sys#standard-error)))
 	      (flush-output ##sys#standard-error) ) ) )
 	 (lambda ()
 	   (let loop ()

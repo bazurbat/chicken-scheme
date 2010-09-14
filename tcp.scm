@@ -322,8 +322,7 @@ EOF
   (set! tcp-accept-timeout (make-parameter #f (check 'tcp-accept-timeout))) )
 
 (define ##net#io-ports
-  (let ((tbs tcp-buffer-size)
-	(make-string make-string) )
+  (let ((tbs tcp-buffer-size))
     (lambda (fd)
       (unless (##net#make-nonblocking fd)
 	(##sys#update-errno)
@@ -349,7 +348,7 @@ EOF
 				    (##sys#thread-block-for-timeout! 
 				     ##sys#current-thread
 				     (+ (current-milliseconds) tmr) ) )
-				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #t)
+				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
 				  (yield)
 				  (when (##sys#slot ##sys#current-thread 13)
 				    (##sys#signal-hook
@@ -431,7 +430,7 @@ EOF
 			       (set! bufindex next)
 			       (cond ((eq? pos2 limit) ; no line-terminator, hit limit
 				      (if str (##sys#string-append str dest) dest))
-				     ((eq? pos2 next)  ; no line-terminator, hit buflen
+				     ((eq? pos2 next) ; no line-terminator, hit buflen
 				      (read-input)
 				      (if (fx>= bufindex buflen)
 					  (or str "")
@@ -457,7 +456,7 @@ EOF
 				    (##sys#thread-block-for-timeout! 
 				     ##sys#current-thread
 				     (+ (current-milliseconds) tmw) ) )
-				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #f)
+				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #:output)
 				  (yield) 
 				  (when (##sys#slot ##sys#current-thread 13)
 				    (##sys#signal-hook
@@ -525,7 +524,7 @@ EOF
 	      (##sys#thread-block-for-timeout! 
 	       ##sys#current-thread
 	       (+ (current-milliseconds) tma) ) )
-	    (##sys#thread-block-for-i/o! ##sys#current-thread fd #t)
+	    (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
 	    (yield)
 	    (when (##sys#slot ##sys#current-thread 13)
 	      (##sys#signal-hook

@@ -221,6 +221,9 @@ echo "======================================== posix tests ..."
 $compile posix-tests.scm
 ./a.out
 
+echo "======================================== record-renaming tests ..."
+$interpret -bnq record-rename-test.scm
+
 echo "======================================== regular expression tests ..."
 $interpret -bnq test-irregex.scm
 $interpret -bnq test-glob.scm

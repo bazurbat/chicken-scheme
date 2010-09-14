@@ -434,127 +434,126 @@
 ; This code is disgustingly complex.
 
 (define ##sys#canonicalize-body
-  (let ([reverse reverse])
-    (lambda (body #!optional (se (##sys#current-environment)) cs?)
-      (define (fini vars vals mvars mvals body)
-	(if (and (null? vars) (null? mvars))
-	    (let loop ([body2 body] [exps '()])
-	      (if (not (pair? body2)) 
-		  (cons 
-		   '##core#begin
-		   body) ; no more defines, otherwise we would have called `expand'
-		  (let ([x (car body2)])
-		    (if (and (pair? x) 
-			     (let ((d (car x)))
-			       (and (symbol? d)
-				    (or (eq? (or (lookup d se) d) 'define)
-					(eq? (or (lookup d se) d) 'define-values)))) )
-			(cons
-			 '##core#begin
-			 (##sys#append (reverse exps) (list (expand body2))))
-			(loop (cdr body2) (cons x exps)) ) ) ) )
-	    (let* ((vars (reverse vars))
-		   (result 
-		    `(##core#let
-		      ,(##sys#map
-			(lambda (v) (##sys#list v (##sys#list '##core#undefined))) 
-			(apply ##sys#append vars mvars) )
-		      ,@(map (lambda (v x) `(##core#set! ,v ,x)) vars (reverse vals))
-		      ,@(map (lambda (vs x)
-			       (let ([tmps (##sys#map gensym vs)])
-				 `(##sys#call-with-values
-				   (##core#lambda () ,x)
-				   (##core#lambda 
-				    ,tmps 
-				    ,@(map (lambda (v t)
-					     `(##core#set! ,v ,t)) 
-					   vs tmps) ) ) ) ) 
-			     (reverse mvars)
-			     (reverse mvals) )
-		      ,@body) ) )
-	      (dd `(BODY: ,result))
-	      result)))
-      (define (fini/syntax vars vals mvars mvals body)
-	(fini
-	 vars vals mvars mvals
-	 (let loop ((body body) (defs '()) (done #f))
-	   (cond (done `((##core#letrec-syntax
-			  ,(map cdr (reverse defs)) ,@body) ))
-		 ((not (pair? body)) (loop body defs #t))
-		 ((and (list? (car body))
-		       (>= 3 (length (car body))) 
-		       (symbol? (caar body))
-		       (eq? 'define-syntax (or (lookup (caar body) se) (caar body))))
-		  (let ((def (car body)))
-		    (loop 
-		     (cdr body) 
-		     (cons (cond ((pair? (cadr def))
-				  `(define-syntax ; (the first element is actually ignored)
-				     ,(caadr def)
-				     (##core#lambda ,(cdadr def) ,@(cddr def))))
-				 ;; insufficient, if introduced by different expansions, but
-				 ;; better than nothing:
-				 ((eq? (car def) (cadr def))
-				  (##sys#defjam-error def))
-				 (else def))
-			   defs) 
-		     #f)))
-		 (else (loop body defs #t))))))		       
-      (define (expand body)
-	(let loop ([body body] [vars '()] [vals '()] [mvars '()] [mvals '()])
-	  (if (not (pair? body))
-	      (fini vars vals mvars mvals body)
-	      (let* ((x (car body))
-		     (rest (cdr body))
-		     (exp1 (and (pair? x) (car x)))
-		     (head (and exp1
-				(symbol? exp1)
-				(or (lookup exp1 se) exp1))))
-		(cond [(not (symbol? head)) (fini vars vals mvars mvals body)]
-		      [(eq? 'define (or (lookup head se) head))
-		       (##sys#check-syntax 'define x '(_ _ . #(_ 0)) #f se)
-		       (let loop2 ([x x])
-			 (let ([head (cadr x)])
-			   (cond [(not (pair? head))
-				  (##sys#check-syntax 'define x '(_ variable . #(_ 0)) #f se)
-				  (when (eq? (car x) head) ; see above
-				    (##sys#defjam-error x))
-				  (loop rest (cons head vars)
-					(cons (if (pair? (cddr x))
-						  (caddr x)
-						  '(##core#undefined) )
-					      vals)
-					mvars mvals) ]
-				 [(pair? (car head))
-				  (##sys#check-syntax
-				   'define x '(_ (_ . lambda-list) . #(_ 1)) #f se)
-				  (loop2
-				   (##sys#expand-curried-define head (cddr x) se)) ]
-				 [else
-				  (##sys#check-syntax
-				   'define x
-				   '(_ (variable . lambda-list) . #(_ 1)) #f se)
-				  (loop rest
-					(cons (car head) vars)
-					(cons `(##core#lambda ,(cdr head) ,@(cddr x)) vals)
-					mvars mvals) ] ) ) ) ]
-		      ((eq? 'define-syntax (or (lookup head se) head))
-		       (##sys#check-syntax 'define-syntax x '(_ _ . #(_ 1)) se)
-		       (fini/syntax vars vals mvars mvals body) )
-		      [(eq? 'define-values (or (lookup head se) head))
-		       ;;XXX check for any of the variables being `define-values' (?)
-		       (##sys#check-syntax 'define-values x '(_ #(_ 0) _) #f se)
-		       (loop rest vars vals (cons (cadr x) mvars) (cons (caddr x) mvals)) ]
-		      [(eq? '##core#begin head)
-		       (loop (##sys#append (cdr x) rest) vars vals mvars mvals) ]
-		      ((or (memq head vars) (memq head mvars))
-		       (fini vars vals mvars mvals body))
-		      [else
-		       (let ([x2 (##sys#expand-0 x se cs?)])
-			 (if (eq? x x2)
-			     (fini vars vals mvars mvals body)
-			     (loop (cons x2 rest) vars vals mvars mvals) ) ) ] ) ) ) ) )
-      (expand body) ) ) )
+  (lambda (body #!optional (se (##sys#current-environment)) cs?)
+    (define (fini vars vals mvars mvals body)
+      (if (and (null? vars) (null? mvars))
+	  (let loop ([body2 body] [exps '()])
+	    (if (not (pair? body2)) 
+		(cons 
+		 '##core#begin
+		 body) ; no more defines, otherwise we would have called `expand'
+		(let ([x (car body2)])
+		  (if (and (pair? x) 
+			   (let ((d (car x)))
+			     (and (symbol? d)
+				  (or (eq? (or (lookup d se) d) 'define)
+				      (eq? (or (lookup d se) d) 'define-values)))) )
+		      (cons
+		       '##core#begin
+		       (##sys#append (reverse exps) (list (expand body2))))
+		      (loop (cdr body2) (cons x exps)) ) ) ) )
+	  (let* ((vars (reverse vars))
+		 (result 
+		  `(##core#let
+		    ,(##sys#map
+		      (lambda (v) (##sys#list v (##sys#list '##core#undefined))) 
+		      (apply ##sys#append vars mvars) )
+		    ,@(map (lambda (v x) `(##core#set! ,v ,x)) vars (reverse vals))
+		    ,@(map (lambda (vs x)
+			     (let ([tmps (##sys#map gensym vs)])
+			       `(##sys#call-with-values
+				 (##core#lambda () ,x)
+				 (##core#lambda 
+				  ,tmps 
+				  ,@(map (lambda (v t)
+					   `(##core#set! ,v ,t)) 
+					 vs tmps) ) ) ) ) 
+			   (reverse mvars)
+			   (reverse mvals) )
+		    ,@body) ) )
+	    (dd `(BODY: ,result))
+	    result)))
+    (define (fini/syntax vars vals mvars mvals body)
+      (fini
+       vars vals mvars mvals
+       (let loop ((body body) (defs '()) (done #f))
+	 (cond (done `((##core#letrec-syntax
+			,(map cdr (reverse defs)) ,@body) ))
+	       ((not (pair? body)) (loop body defs #t))
+	       ((and (list? (car body))
+		     (>= 3 (length (car body))) 
+		     (symbol? (caar body))
+		     (eq? 'define-syntax (or (lookup (caar body) se) (caar body))))
+		(let ((def (car body)))
+		  (loop 
+		   (cdr body) 
+		   (cons (cond ((pair? (cadr def))
+				`(define-syntax ; (the first element is actually ignored)
+				   ,(caadr def)
+				   (##core#lambda ,(cdadr def) ,@(cddr def))))
+			       ;; insufficient, if introduced by different expansions, but
+			       ;; better than nothing:
+			       ((eq? (car def) (cadr def))
+				(##sys#defjam-error def))
+			       (else def))
+			 defs) 
+		   #f)))
+	       (else (loop body defs #t))))))		       
+    (define (expand body)
+      (let loop ([body body] [vars '()] [vals '()] [mvars '()] [mvals '()])
+	(if (not (pair? body))
+	    (fini vars vals mvars mvals body)
+	    (let* ((x (car body))
+		   (rest (cdr body))
+		   (exp1 (and (pair? x) (car x)))
+		   (head (and exp1
+			      (symbol? exp1)
+			      (or (lookup exp1 se) exp1))))
+	      (cond [(not (symbol? head)) (fini vars vals mvars mvals body)]
+		    [(eq? 'define (or (lookup head se) head))
+		     (##sys#check-syntax 'define x '(_ _ . #(_ 0)) #f se)
+		     (let loop2 ([x x])
+		       (let ([head (cadr x)])
+			 (cond [(not (pair? head))
+				(##sys#check-syntax 'define x '(_ variable . #(_ 0)) #f se)
+				(when (eq? (car x) head) ; see above
+				  (##sys#defjam-error x))
+				(loop rest (cons head vars)
+				      (cons (if (pair? (cddr x))
+						(caddr x)
+						'(##core#undefined) )
+					    vals)
+				      mvars mvals) ]
+			       [(pair? (car head))
+				(##sys#check-syntax
+				 'define x '(_ (_ . lambda-list) . #(_ 1)) #f se)
+				(loop2
+				 (##sys#expand-curried-define head (cddr x) se)) ]
+			       [else
+				(##sys#check-syntax
+				 'define x
+				 '(_ (variable . lambda-list) . #(_ 1)) #f se)
+				(loop rest
+				      (cons (car head) vars)
+				      (cons `(##core#lambda ,(cdr head) ,@(cddr x)) vals)
+				      mvars mvals) ] ) ) ) ]
+		    ((eq? 'define-syntax (or (lookup head se) head))
+		     (##sys#check-syntax 'define-syntax x '(_ _ . #(_ 1)) se)
+		     (fini/syntax vars vals mvars mvals body) )
+		    [(eq? 'define-values (or (lookup head se) head))
+		     ;;XXX check for any of the variables being `define-values' (?)
+		     (##sys#check-syntax 'define-values x '(_ #(_ 0) _) #f se)
+		     (loop rest vars vals (cons (cadr x) mvars) (cons (caddr x) mvals)) ]
+		    [(eq? '##core#begin head)
+		     (loop (##sys#append (cdr x) rest) vars vals mvars mvals) ]
+		    ((or (memq head vars) (memq head mvars))
+		     (fini vars vals mvars mvals body))
+		    [else
+		     (let ([x2 (##sys#expand-0 x se cs?)])
+		       (if (eq? x x2)
+			   (fini vars vals mvars mvals body)
+			   (loop (cons x2 rest) vars vals mvars mvals) ) ) ] ) ) ) ) )
+    (expand body) ) )
 
 
 ;;; A simple expression matcher
@@ -668,85 +667,83 @@
 (define-constant +default-argument-count-limit+ 99999)
 
 (define ##sys#check-syntax
-  (let ([string-append string-append]
-	[symbol->string symbol->string] )
-    (lambda (id exp pat #!optional culprit (se (##sys#current-environment)))
+  (lambda (id exp pat #!optional culprit (se (##sys#current-environment)))
 
-      (define (test x pred msg)
-	(unless (pred x) (err msg)) )
+    (define (test x pred msg)
+      (unless (pred x) (err msg)) )
 
-      (define (err msg)
-	(let* ([sexp ##sys#syntax-error-culprit]
-	       [ln (get-line-number sexp)] )
-	  (##sys#syntax-error-hook
-	   (if ln 
-	       (string-append "(" ln ") in `" (symbol->string id) "' - " msg)
-	       (string-append "in `" (symbol->string id) "' - " msg) )
-	   exp) ) )
+    (define (err msg)
+      (let* ([sexp ##sys#syntax-error-culprit]
+	     [ln (get-line-number sexp)] )
+	(##sys#syntax-error-hook
+	 (if ln 
+	     (string-append "(" ln ") in `" (symbol->string id) "' - " msg)
+	     (string-append "in `" (symbol->string id) "' - " msg) )
+	 exp) ) )
 
-      (define (lambda-list? x)
-	(or (##sys#extended-lambda-list? x)
-	    (let loop ((x x))
-	      (cond ((null? x))
-		    ((symbol? x) (not (keyword? x)))
-		    ((pair? x)
-		     (let ((s (car x)))
-		       (and (symbol? s) (not (keyword? s))
-			    (loop (cdr x)) ) ) )
-		    (else #f) ) ) ) )
+    (define (lambda-list? x)
+      (or (##sys#extended-lambda-list? x)
+	  (let loop ((x x))
+	    (cond ((null? x))
+		  ((symbol? x) (not (keyword? x)))
+		  ((pair? x)
+		   (let ((s (car x)))
+		     (and (symbol? s) (not (keyword? s))
+			  (loop (cdr x)) ) ) )
+		  (else #f) ) ) ) )
 
-      (define (proper-list? x)
-	(let loop ((x x))
-	  (cond ((eq? x '()))
-		((pair? x) (loop (cdr x)))
-		(else #f) ) ) )
+    (define (proper-list? x)
+      (let loop ((x x))
+	(cond ((eq? x '()))
+	      ((pair? x) (loop (cdr x)))
+	      (else #f) ) ) )
 
-      (when culprit (set! ##sys#syntax-error-culprit culprit))
-      (let walk ((x exp) (p pat))
-	(cond ((vector? p)
-	       (let* ((p2 (vector-ref p 0))
-		      (vlen (##sys#size p))
-		      (min (if (fx> vlen 1) 
-			       (vector-ref p 1)
-			       0) )
-		      (max (cond ((eq? vlen 1) 1)
-				 ((fx> vlen 2) (vector-ref p 2))
-				 (else +default-argument-count-limit+) ) ) )
-		 (do ((x x (cdr x))
-		      (n 0 (fx+ n 1)) )
-		     ((eq? x '())
-		      (if (fx< n min)
-			  (err "not enough arguments") ) )
-		   (cond ((fx>= n max) 
-			  (err "too many arguments") )
-			 ((not (pair? x))
-			  (err "not a proper list") )
-			 (else (walk (car x) p2) ) ) ) ) )
-	      ((##sys#immediate? p)
-	       (if (not (eq? p x)) (err "unexpected object")) )
-	      ((symbol? p)
-	       (case p
-		 ((_) #t)
-		 ((pair) (test x pair? "pair expected"))
-		 ((variable) (test x symbol? "identifier expected"))
-		 ((symbol) (test x symbol? "symbol expected"))
-		 ((list) (test x proper-list? "proper list expected"))
-		 ((number) (test x number? "number expected"))
-		 ((string) (test x string? "string expected"))
-		 ((lambda-list) (test x lambda-list? "lambda-list expected"))
-		 (else
-		  (test
-		   x
-		   (lambda (y)
-		     (let ((y2 (and (symbol? y) (lookup y se))))
-		       (eq? (if (symbol? y2) y2 y) p)))
-		   "missing keyword")) ) )
-	      ((not (pair? p))
-	       (err "incomplete form") )
-	      ((not (pair? x)) (err "pair expected"))
-	      (else
-	       (walk (car x) (car p))
-	       (walk (cdr x) (cdr p)) ) ) ) ) ) )
+    (when culprit (set! ##sys#syntax-error-culprit culprit))
+    (let walk ((x exp) (p pat))
+      (cond ((vector? p)
+	     (let* ((p2 (vector-ref p 0))
+		    (vlen (##sys#size p))
+		    (min (if (fx> vlen 1) 
+			     (vector-ref p 1)
+			     0) )
+		    (max (cond ((eq? vlen 1) 1)
+			       ((fx> vlen 2) (vector-ref p 2))
+			       (else +default-argument-count-limit+) ) ) )
+	       (do ((x x (cdr x))
+		    (n 0 (fx+ n 1)) )
+		   ((eq? x '())
+		    (if (fx< n min)
+			(err "not enough arguments") ) )
+		 (cond ((fx>= n max) 
+			(err "too many arguments") )
+		       ((not (pair? x))
+			(err "not a proper list") )
+		       (else (walk (car x) p2) ) ) ) ) )
+	    ((##sys#immediate? p)
+	     (if (not (eq? p x)) (err "unexpected object")) )
+	    ((symbol? p)
+	     (case p
+	       ((_) #t)
+	       ((pair) (test x pair? "pair expected"))
+	       ((variable) (test x symbol? "identifier expected"))
+	       ((symbol) (test x symbol? "symbol expected"))
+	       ((list) (test x proper-list? "proper list expected"))
+	       ((number) (test x number? "number expected"))
+	       ((string) (test x string? "string expected"))
+	       ((lambda-list) (test x lambda-list? "lambda-list expected"))
+	       (else
+		(test
+		 x
+		 (lambda (y)
+		   (let ((y2 (and (symbol? y) (lookup y se))))
+		     (eq? (if (symbol? y2) y2 y) p)))
+		 "missing keyword")) ) )
+	    ((not (pair? p))
+	     (err "incomplete form") )
+	    ((not (pair? x)) (err "pair expected"))
+	    (else
+	     (walk (car x) (car p))
+	     (walk (cdr x) (cdr p)) ) ) ) ) )
 
 
 ;;; explicit-renaming transformer
@@ -1590,9 +1587,9 @@
 
 (define (check-for-redef sym env senv)
   (and-let* ((a (assq sym env)))
-    (##sys#notice "redefinition of imported value binding" sym) )
+    (##sys#warn "redefinition of imported value binding" sym) )
   (and-let* ((a (assq sym senv)))
-    (##sys#notice "redefinition of imported syntax binding" sym)))
+    (##sys#warn "redefinition of imported syntax binding" sym)))
 
 (define (##sys#register-export sym mod)
   (when mod

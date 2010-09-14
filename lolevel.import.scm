@@ -34,10 +34,10 @@
    extend-procedure
    extended-procedure?
    free
-   global-bound?
-   global-make-unbound!
-   global-ref
-   global-set!
+   global-bound?			;DEPRECATED
+   global-make-unbound!			;DEPRECATED
+   global-ref				;DEPRECATED
+   global-set!				;DEPRECATED
    locative->object
    locative-ref
    locative-set!

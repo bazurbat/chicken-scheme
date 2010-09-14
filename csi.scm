@@ -560,7 +560,7 @@ EOF
 	    [(eof-object? x) (fprintf out "end-of-file object~%")]
 	    [(eq? (##sys#void) x) (fprintf out "unspecified object~%")]
 	    [(fixnum? x)
-	     (fprintf out "exact integer ~S, #x~X, #o~O, #b~B" x x x x)
+	     (fprintf out "exact integer ~S~%  #x~X~%  #o~O~%  #b~B" x x x x)
 	     (let ([code (integer->char x)])
 	       (when (fx< x #x10000) (fprintf out ", character ~S" code)) )
 	     (##sys#write-char-0 #\newline ##sys#standard-output) ]
@@ -670,7 +670,11 @@ EOF
 		(let loop ((props (##sys#slot x 2)))
 		  (unless (null? props)
 		    (when (eq? k (caar props))
-		      (fprintf out "\t~s: ~s~%" (cdar props) (cadr props)) )
+		      (##sys#with-print-length-limit
+		       100
+		       (lambda ()
+			 (fprintf out "\t~s: ~s" (cdar props) (cadr props)) ))
+		      (newline out))
 		    (loop (cddr props)) ) ) )
 	      (##sys#slot x 1) ) ]
 	    [(and (##sys#structure? x 'meroon-instance) (provided? 'meroon)) ; XXX put this into meroon egg (really!)
@@ -1025,7 +1029,7 @@ EOF
 	(keyword-style #:none)
 	(parentheses-synonyms #f)
 	(symbol-escape #f) )
-      (unless (or (member* '("-n" "-no-init") args) script) (loadinit))
+      (unless (or (member* '("-n" "-no-init") args) script eval?) (loadinit))
       (when batch 
 	(set! ##sys#notices-enabled #f))
       (do ([args args (cdr args)])

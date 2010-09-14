@@ -283,7 +283,12 @@
 		 a))
 
 	      ((##core#inline ##core#inline_allocate)
-	       (let* ((rw (##sys#get (symbolify (first params)) '##compiler#unboxed-op))
+	       (let* ((rw1 (##sys#get (symbolify (first params)) '##compiler#unboxed-op))
+		      (rw (and rw1 
+			       (or unsafe
+				   (and (fourth rw1)
+					unchecked-specialized-arithmetic))
+			       rw1))
 		      (args (map (cut walk <> #f rw pass2?) subs)))
 		 (cond ((not rw) #f)
 		       ((or (not pass2?)
@@ -376,7 +381,7 @@
     
     (walk-lambda #f '() node)
     (when (and any-rewrites
-	       (debugging 'x #;'o "unboxed rewrites:")) ;XXX
+	       (debugging 'o "unboxed rewrites:"))
       (##sys#hash-table-for-each
        (lambda (k v)
 	 (printf "  ~a\t~a~%" k v) )
@@ -386,19 +391,31 @@
   (syntax-rules ()
     ((_ (name atypes rtype alt) ...)
      (begin
-       (register-unboxed-op 'name 'atypes 'rtype 'alt) ...))))
+       (register-unboxed-op 'name 'atypes 'rtype 'alt #f) ...))))
 
-(define (register-unboxed-op name atypes rtype alt)
-  (##sys#put! (symbolify name) '##compiler#unboxed-op (list alt atypes rtype)))
+(define-syntax define-unboxed-arithmetic-ops
+  (syntax-rules ()
+    ((_ (name atypes rtype alt) ...)
+     (begin
+       (register-unboxed-op 'name 'atypes 'rtype 'alt #t) ...))))
+
+(define (register-unboxed-op name atypes rtype alt arithmetic)
+  (##sys#put! (symbolify name) '##compiler#unboxed-op (list alt atypes rtype arithmetic)))
 
 
 ;; unboxed rewrites
 
-(define-unboxed-ops 
+(define-unboxed-arithmetic-ops 
   (C_a_i_flonum_plus (flonum flonum) flonum "C_ub_i_flonum_plus")
   (C_a_i_flonum_difference (flonum flonum) flonum "C_ub_i_flonum_difference")
   (C_a_i_flonum_times (flonum flonum) flonum "C_ub_i_flonum_times") 
   (C_a_i_flonum_quotient (flonum flonum) flonum "C_ub_i_flonum_quotient") 
+  (C_u_i_fpintegerp (flonum) bool "C_ub_i_fpintegerp")
+  (C_flonum_equalp (flonum flonum) bool "C_ub_i_flonum_equalp")
+  (C_flonum_greaterp (flonum flonum) bool "C_ub_i_flonum_greaterp")
+  (C_flonum_lessp (flonum flonum) bool "C_ub_i_flonum_lessp")
+  (C_flonum_greater_or_equal_p (flonum flonum) bool "C_ub_i_flonum_greater_or_equal_p")
+  (C_flonum_less_or_equal_p (flonum flonum) bool "C_ub_i_flonum_less_or_equal_p")
   (C_a_i_flonum_sin (flonum) flonum "C_sin")
   (C_a_i_flonum_cos (flonum) flonum "C_cos")
   (C_a_i_flonum_tan (flonum) flonum "C_tab")
@@ -414,17 +431,13 @@
   (C_a_i_flonum_truncate (flonum) flonum "C_trunc")
   (C_a_i_flonum_ceiling (flonum) flonum "C_ceil")
   (C_a_i_flonum_floor (flonum) flonum "C_floor")
-  (C_a_i_flonum_round (flonum) flonum "C_round")
+  (C_a_i_flonum_round (flonum) flonum "C_round"))
+
+(define-unboxed-ops 
   (C_u_i_f32vector_set (* fixnum flonum) fixnum "C_ub_i_f32vector_set")
   (C_u_i_f64vector_set (* fixnum flonum) fixnum "C_ub_i_f64vector_set")
   (C_a_i_f32vector_ref (* fixnum) flonum "C_ub_i_f32vector_ref")
   (C_a_i_f64vector_ref (* fixnum) flonum "C_ub_i_f64vector_ref")
-  (C_u_i_fpintegerp (flonum) bool "C_ub_i_fpintegerp")
-  (C_flonum_equalp (flonum flonum) bool "C_ub_i_flonum_equalp")
-  (C_flonum_greaterp (flonum flonum) bool "C_ub_i_flonum_greaterp")
-  (C_flonum_lessp (flonum flonum) bool "C_ub_i_flonum_lessp")
-  (C_flonum_greater_or_equal_p (flonum flonum) bool "C_ub_i_flonum_greater_or_equal_p")
-  (C_flonum_less_or_equal_p (flonum flonum) bool "C_ub_i_flonum_less_or_equal_p")
   (C_a_u_i_pointer_inc (pointer fixnum) pointer "C_ub_i_pointer_inc")
   (C_pointer_eqp (pointer pointer) bool "C_ub_i_pointer_eqp")
   (C_u_i_pointer_u8_ref (pointer) fixnum "C_ub_i_pointer_u8_ref")
@@ -443,5 +456,4 @@
   (C_u_i_pointer_s32_set (pointer fixnum) fixnum "C_ub_i_pointer_s32_ref")
   (C_u_i_pointer_f32_set (pointer flonum) flonum "C_ub_i_pointer_f32_ref")
   (C_u_i_pointer_f64_set (pointer flonum) flonum "C_ub_i_pointer_f64_ref")
-  (C_null_pointerp (pointer) bool "C_ub_i_null_pointerp")
-  )
+  (C_null_pointerp (pointer) bool "C_ub_i_null_pointerp"))

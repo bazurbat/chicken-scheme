@@ -59,8 +59,11 @@
   (lambda (x r c)
     (##sys#check-syntax 'define-record x '(_ symbol . #(symbol 0)))
     (let* ((name (cadr x))
-	   (slots (cddr x))
 	   (prefix (symbol->string name))
+	   (name (if (##sys#current-module)
+		     (##sys#module-rename name (##sys#module-name (##sys#current-module)))
+		     name))
+	   (slots (cddr x))
 	   (setters (memq #:record-setters ##sys#features))
 	   (%define (r 'define))
 	   (%getter-with-setter (r 'getter-with-setter)))
@@ -822,11 +825,21 @@
 	      'define-record-printer (cons head body)
 	      '((symbol symbol symbol) . #(_ 1)))
 	     `(##sys#register-record-printer 
-	       ',(##sys#slot head 0)
+	       ',(if (##sys#current-module)
+		     (##sys#module-rename (##sys#slot head 0)
+					  (##sys#module-name
+					   (##sys#current-module)))
+		     (##sys#slot head 0))
 	       (##core#lambda ,(##sys#slot head 1) ,@body)) ]
-	    [else
+	    (else
 	     (##sys#check-syntax 'define-record-printer (cons head body) '(symbol _))
-	     `(##sys#register-record-printer ',head ,@body) ] ) ))))
+	     `(##sys#register-record-printer
+               ',(if (##sys#current-module)
+                     (##sys#module-rename head
+                                          (##sys#module-name
+                                           (##sys#current-module)))
+                     head)
+               ,@body) ) ) ))))
 
 
 ;;; Exceptions:
@@ -897,7 +910,11 @@
      'define-record-type 
      form
      '(_ variable #(variable 1) variable . _)) 
-    (let* ((t (cadr form))
+    (let* ((t (if (##sys#current-module)
+		     (##sys#module-rename (cadr form)
+					  (##sys#module-name
+					   (##sys#current-module)))
+		     (cadr form)))
 	   (conser (caddr form))
 	   (pred (cadddr form))
 	   (slots (cddddr form))

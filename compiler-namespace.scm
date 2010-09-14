@@ -59,6 +59,7 @@
  compiler-syntax-enabled
  compiler-syntax-statistics
  compute-database-statistics
+ constant-form-eval
  constant-table
  constant?
  constants-used
@@ -277,6 +278,7 @@
  toplevel-scope
  transform-direct-lambdas!
  tree-copy
+ unchecked-specialized-arithmetic
  undefine-shadowed-macros
  unique-id
  unit-name

@@ -167,7 +167,7 @@
 		  (subs (node-subexpressions n1)) )
 	     (case (node-class n1)
 
-	       ((if)			; (This can be done by the simplificator...)
+	       ((if)			; (This can be done by the simplifier...)
 		(cond ((constant-node? (car subs))
 		       (set! removed-ifs (+ removed-ifs 1))
 		       (touch)
@@ -183,20 +183,24 @@
 		      (if (and (intrinsic? var)
 			       (foldable? var)
 			       (every constant-node? (cddr subs)) )
-			  (let ((form (cons var (map (lambda (arg) `(quote ,(node-value arg)))
-						     (cddr subs) ) ) ) )
-			    (handle-exceptions ex
-				(begin
-				  (unless odirty (set! dirty #f))
-				  (set! broken-constant-nodes (lset-adjoin eq? broken-constant-nodes n1))
-				  n1)
-			      (debugging 'o "folding constant expression" form)
-			      (let ((x (eval form)))
-				(touch)
-				(make-node ; Build call to continuation with new result...
-				 '##core#call
-				 '(#t)
-				 (list (cadr subs) (qnode x)) ) ) ) )
+			  (constant-form-eval
+			   var
+			   (cddr subs)
+			   (lambda (ok form result)
+			     (cond ((not ok)
+				    (unless odirty (set! dirty #f))
+				    (set! broken-constant-nodes
+				      (lset-adjoin eq? broken-constant-nodes n1))
+				    n1)
+				   (else
+				    (touch)
+				    ;; Build call to continuation with new result...
+				    (let ((n2 (qnode result)))
+				      (register-cfold var (cddr subs) form n2)
+				      (make-node
+				       '##core#call
+				       '(#t)
+				       (list (cadr subs) n2) ) ) ) )))
 			  n1) )
 		    n1) )
 
@@ -845,6 +849,7 @@
 
     ;; (<op> ...) -> (##core#inline <iop> ...)
     ((2) ; classargs = (<argc> <iop> <safe>)
+     ;; - <safe> by be 'specialized (see rule #16 below)
      (and inline-substitutions-enabled
 	  (= (length callargs) (first classargs))
 	  (intrinsic? name)
@@ -1042,14 +1047,20 @@
      ;;   number of arguments plus 1.
      ;; - if <counted> is given and true and <argc> is between 1-8, append "<count>"
      ;;   to the name of the inline routine.
+     ;; - if <safe> is 'specialized and `unsafe-specialized-arithmetic' is declared,
+     ;;   then assume it is safe
      (let ((argc (first classargs))
 	   (rargc (length callargs))
+	   (safe (third classargs))
 	   (w (fourth classargs))
 	   (counted (and (pair? (cddddr classargs)) (fifth classargs))))
        (and inline-substitutions-enabled
 	    (or (not argc) (= rargc argc))
 	    (intrinsic? name)
-	    (or (third classargs) unsafe)
+	    (or unsafe
+		(if (eq? safe 'specialized)
+		    unchecked-specialized-arithmetic
+		    safe))
 	    (make-node
 	     '##core#call '(#t)
 	     (list cont 

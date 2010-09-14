@@ -986,18 +986,17 @@ EOF
       (##sys#signal-hook #:file-error 'file-close "cannot close file" fd) ) ) )
 
 (define file-read
-  (let ([make-string make-string] )
-    (lambda (fd size . buffer)
-      (##sys#check-exact fd 'file-read)
-      (##sys#check-exact size 'file-read)
-      (let ([buf (if (pair? buffer) (car buffer) (make-string size))])
-	(unless (and (##core#inline "C_blockp" buf) (##core#inline "C_byteblockp" buf))
-	  (##sys#signal-hook #:type-error 'file-read "bad argument type - not a string or blob" buf) )
-	(let ([n (##core#inline "C_read" fd buf size)])
-	  (when (eq? -1 n)
-	    (##sys#update-errno)
-	    (##sys#signal-hook #:file-error 'file-read "cannot read from file" fd size) )
-	  (list buf n) ) ) ) ) )
+  (lambda (fd size . buffer)
+    (##sys#check-exact fd 'file-read)
+    (##sys#check-exact size 'file-read)
+    (let ([buf (if (pair? buffer) (car buffer) (make-string size))])
+      (unless (and (##core#inline "C_blockp" buf) (##core#inline "C_byteblockp" buf))
+	(##sys#signal-hook #:type-error 'file-read "bad argument type - not a string or blob" buf) )
+      (let ([n (##core#inline "C_read" fd buf size)])
+	(when (eq? -1 n)
+	  (##sys#update-errno)
+	  (##sys#signal-hook #:file-error 'file-read "cannot read from file" fd size) )
+	(list buf n) ) ) ) )
 
 (define file-write
   (lambda (fd buffer . size)
@@ -1013,16 +1012,15 @@ EOF
 	n) ) ) )
 
 (define file-mkstemp
-  (let ([string-length string-length])
-    (lambda (template)
-      (##sys#check-string template 'file-mkstemp)
-      (let* ([buf (##sys#make-c-string template 'file-mkstemp)]
-	     [fd (##core#inline "C_mkstemp" buf)]
-	     [path-length (string-length buf)])
-	(when (eq? -1 fd)
-	  (##sys#update-errno)
-	  (##sys#signal-hook #:file-error 'file-mkstemp "cannot create temporary file" template) )
-	(values fd (##sys#substring buf 0 (fx- path-length 1) ) ) ) ) ) )
+  (lambda (template)
+    (##sys#check-string template 'file-mkstemp)
+    (let* ([buf (##sys#make-c-string template 'file-mkstemp)]
+	   [fd (##core#inline "C_mkstemp" buf)]
+	   [path-length (string-length buf)])
+      (when (eq? -1 fd)
+	(##sys#update-errno)
+	(##sys#signal-hook #:file-error 'file-mkstemp "cannot create temporary file" template) )
+      (values fd (##sys#substring buf 0 (fx- path-length 1) ) ) ) ) )
 
 
 ;;; File attribute access:
@@ -1092,15 +1090,15 @@ EOF
 		       "cannot create directory" name)))
 
 (define-inline (create-directory-check name)
-    (if (file-exists? name)
-        (let ((i   (##sys#file-info name)))
-            (and i
-                 (fx= 1 (##sys#slot i 4))))
-        #f))
+  (if (file-exists? name)
+      (let ((i   (##sys#file-info name)))
+	(and i
+	     (fx= 1 (##sys#slot i 4))))
+      #f))
 
 (define-inline (create-directory-helper-silent name)
-    (unless (create-directory-check name)
-      (create-directory-helper name)))
+  (unless (create-directory-check name)
+    (create-directory-helper name)))
 
 (define-inline (create-directory-helper-parents name)
   (let* ((l   (string-split name "/\\"))
@@ -1171,46 +1169,47 @@ EOF
 	(when (eq? -1 r) (##sys#signal-hook #:file-error 'close-input-pipe "error while closing pipe" port)) ) ) )
   (set! close-output-pipe close-input-pipe) )
 
-(let ([open-input-pipe open-input-pipe]
-      [open-output-pipe open-output-pipe]
-      [close-input-pipe close-input-pipe]
-      [close-output-pipe close-output-pipe] )
-  (set! call-with-input-pipe
-    (lambda (cmd proc . mode)
-      (let ([p (apply open-input-pipe cmd mode)])
-	(##sys#call-with-values
-	 (lambda () (proc p))
-	 (lambda results
-	   (close-input-pipe p)
-	   (apply values results) ) ) ) ) )
-  (set! call-with-output-pipe
-    (lambda (cmd proc . mode)
-      (let ([p (apply open-output-pipe cmd mode)])
-	(##sys#call-with-values
-	 (lambda () (proc p))
-	 (lambda results
-	   (close-output-pipe p)
-	   (apply values results) ) ) ) ) )
-  (set! with-input-from-pipe
-    (lambda (cmd thunk . mode)
-      (let ([old ##sys#standard-input]
-	    [p (apply open-input-pipe cmd mode)] )
-	(set! ##sys#standard-input p)
-	(##sys#call-with-values thunk
-	  (lambda results
-	    (close-input-pipe p)
-	    (set! ##sys#standard-input old)
-	    (apply values results) ) ) ) ) )
-  (set! with-output-to-pipe
-    (lambda (cmd thunk . mode)
-      (let ([old ##sys#standard-output]
-	    [p (apply open-output-pipe cmd mode)] )
-	(set! ##sys#standard-output p)
-	(##sys#call-with-values thunk
-	  (lambda results
-	    (close-output-pipe p)
-	    (set! ##sys#standard-output old)
-	    (apply values results) ) ) ) ) ) )
+(define call-with-input-pipe
+  (lambda (cmd proc . mode)
+    (let ([p (apply open-input-pipe cmd mode)])
+      (##sys#call-with-values
+       (lambda () (proc p))
+       (lambda results
+	 (close-input-pipe p)
+	 (apply values results) ) ) ) ) )
+
+(define call-with-output-pipe
+  (lambda (cmd proc . mode)
+    (let ([p (apply open-output-pipe cmd mode)])
+      (##sys#call-with-values
+       (lambda () (proc p))
+       (lambda results
+	 (close-output-pipe p)
+	 (apply values results) ) ) ) ) )
+
+(define with-input-from-pipe
+  (lambda (cmd thunk . mode)
+    (let ([old ##sys#standard-input]
+	  [p (apply open-input-pipe cmd mode)] )
+      (set! ##sys#standard-input p)
+      (##sys#call-with-values
+       thunk
+       (lambda results
+	 (close-input-pipe p)
+	 (set! ##sys#standard-input old)
+	 (apply values results) ) ) ) ) )
+
+(define with-output-to-pipe
+  (lambda (cmd thunk . mode)
+    (let ([old ##sys#standard-output]
+	  [p (apply open-output-pipe cmd mode)] )
+      (set! ##sys#standard-output p)
+      (##sys#call-with-values
+       thunk
+       (lambda results
+	 (close-output-pipe p)
+	 (set! ##sys#standard-output old)
+	 (apply values results) ) ) ) ) )
 
 
 ;;; Pipe primitive:
@@ -1219,11 +1218,11 @@ EOF
 (define-foreign-variable _pipefd1 int "C_pipefds[ 1 ]")
 
 (define create-pipe
-    (lambda (#!optional (mode (fxior open/binary open/noinherit)))
-      (when (fx< (##core#inline "C_pipe" #f mode) 0)
-	(##sys#update-errno)
-	(##sys#signal-hook #:file-error 'create-pipe "cannot create pipe") )
-      (values _pipefd0 _pipefd1) ) )
+  (lambda (#!optional (mode (fxior open/binary open/noinherit)))
+    (when (fx< (##core#inline "C_pipe" #f mode) 0)
+      (##sys#update-errno)
+      (##sys#signal-hook #:file-error 'create-pipe "cannot create pipe") )
+    (values _pipefd0 _pipefd1) ) )
 
 ;;; Signal processing:
 
@@ -1473,8 +1472,7 @@ EOF
   (##core#undefined) )
 
 (define get-environment-variables
-  (let ([get (foreign-lambda c-string "C_getenventry" int)]
-	[substring substring] )
+  (let ([get (foreign-lambda c-string "C_getenventry" int)])
     (lambda ()
       (let loop ([i 0])
 	(let ([entry (get i)])
@@ -1559,20 +1557,20 @@ EOF
 (define-foreign-variable _bufsiz int "BUFSIZ")
 
 (define set-buffering-mode!
-    (lambda (port mode . size)
-      (##sys#check-port port 'set-buffering-mode!)
-      (let ([size (if (pair? size) (car size) _bufsiz)]
-	    [mode (case mode
-		    [(###full) _iofbf]
-		    [(###line) _iolbf]
-		    [(###none) _ionbf]
-		    [else (##sys#error 'set-buffering-mode! "invalid buffering-mode" mode port)] ) ] )
-	(##sys#check-exact size 'set-buffering-mode!)
-	(when (fx< (if (eq? 'stream (##sys#slot port 7))
-		       (##core#inline "C_setvbuf" port mode size)
-		       -1)
-		   0)
-	  (##sys#error 'set-buffering-mode! "cannot set buffering mode" port mode size) ) ) ) )
+  (lambda (port mode . size)
+    (##sys#check-port port 'set-buffering-mode!)
+    (let ([size (if (pair? size) (car size) _bufsiz)]
+	  [mode (case mode
+		  [(###full) _iofbf]
+		  [(###line) _iolbf]
+		  [(###none) _ionbf]
+		  [else (##sys#error 'set-buffering-mode! "invalid buffering-mode" mode port)] ) ] )
+      (##sys#check-exact size 'set-buffering-mode!)
+      (when (fx< (if (eq? 'stream (##sys#slot port 7))
+		     (##core#inline "C_setvbuf" port mode size)
+		     -1)
+		 0)
+	(##sys#error 'set-buffering-mode! "cannot set buffering mode" port mode size) ) ) ) )
 
 ;;; Process handling:
 
@@ -1592,32 +1590,28 @@ EOF
 ; arguments with embedded whitespace will parse incorrectly. Must
 ; string-quote such arguments.
 (define $quote-args-list
-  (let ([char-whitespace? char-whitespace?]
-	[string-length string-length]
-	[string-ref string-ref]
-	[string-append string-append])
-    (lambda (lst exactf)
-      (if exactf
+  (lambda (lst exactf)
+    (if exactf
 	lst
 	(let ([needs-quoting?
-		; This is essentially (string-any char-whitespace? s) but we don't
-		; want a SRFI-13 dependency. (Do we?)
-		(lambda (s)
-		  (let ([len (string-length s)])
-		    (let loop ([i 0])
-		      (cond
-			[(fx= i len) #f]
-			[(char-whitespace? (string-ref s i)) #t]
-			[else (loop (fx+ i 1))]))))])
-	    (let loop ([ilst lst] [olst '()])
-	      (if (null? ilst)
+					; This is essentially (string-any char-whitespace? s) but we don't
+					; want a SRFI-13 dependency. (Do we?)
+	       (lambda (s)
+		 (let ([len (string-length s)])
+		   (let loop ([i 0])
+		     (cond
+		      [(fx= i len) #f]
+		      [(char-whitespace? (string-ref s i)) #t]
+		      [else (loop (fx+ i 1))]))))])
+	  (let loop ([ilst lst] [olst '()])
+	    (if (null? ilst)
 		(reverse olst)
 		(let ([str (car ilst)])
 		  (loop
-		    (cdr ilst)
-		    (cons
-		      (if (needs-quoting? str) (string-append "\"" str "\"") str)
-		      olst)) ) ) ) ) ) ) ) )
+		   (cdr ilst)
+		   (cons
+		    (if (needs-quoting? str) (string-append "\"" str "\"") str)
+		    olst)) ) ) ) ) ) ) )
 
 (define $exec-setup
   (let ([setarg (foreign-lambda void "C_set_exec_arg" int scheme-pointer int)]
@@ -1729,6 +1723,7 @@ EOF
 
 (define process)
 (define process*)
+
 (let ([%process
 	(lambda (loc err? cmd args env exactf)
 	  (let ([chkstrlst

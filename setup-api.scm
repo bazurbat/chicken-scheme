@@ -53,7 +53,7 @@
      test-compile try-compile run-verbose
      extra-features extra-nonfeatures
      copy-file move-file
-     required-chicken-version required-extension-version
+     required-chicken-version required-extension-version ;DEPRECATED
      sudo-install keep-intermediates
      version>=?
      extension-name-and-version
@@ -231,27 +231,29 @@
   (reg "chicken-bug" (foreign-value "C_CHICKEN_BUG_PROGRAM" c-string)))
 
 (define (fixpath prg)
-  (if (string=? prg "csc")
-      (string-intersperse 
-       (cons*
-	(shellpath (find-program "csc"))
-	"-feature" "compiling-extension" 
-	(if (and (feature? #:cross-chicken)
-		 (not (host-extension)))
-	    "" "-setup-mode")
-	(if (keep-intermediates) "-k" "")
-	(if (host-extension) "-host" "")
-	(if (deployment-mode) "-deployed" "")
-	(append
-	 (map (lambda (f)
-		(string-append "-feature " (symbol->string f)))
-	      (extra-features))
-	 (map (lambda (f)
-		(string-append "-no-feature " (symbol->string f)))
-	      (extra-nonfeatures))
-	 *csc-options*) )
-       " ")
-      (find-program prg)))
+  (cond ((string=? prg "csc")
+	 (string-intersperse 
+	  (cons*
+	   (shellpath (find-program "csc"))
+	   "-feature" "compiling-extension" 
+	   (if (and (feature? #:cross-chicken)
+		    (not (host-extension)))
+	       "" "-setup-mode")
+	   (if (keep-intermediates) "-k" "")
+	   (if (host-extension) "-host" "")
+	   (if (deployment-mode) "-deployed" "")
+	   (append
+	    (map (lambda (f)
+		   (string-append "-feature " (symbol->string f)))
+		 (extra-features))
+	    (map (lambda (f)
+		   (string-append "-no-feature " (symbol->string f)))
+		 (extra-nonfeatures))
+	    *csc-options*) )
+	  " ") )
+	((and (string-prefix? "./" prg) *windows-shell*)
+	 (shellpath (substring prg 2)))
+	(else (find-program prg))))
 
 (define (fixmaketarget file)
   (if (and (equal? "so" (pathname-extension file))
@@ -681,7 +683,7 @@
     (ignore-errors ($system (sprintf "~A ~A" *remove-command* (shellpath fname))))
     (zero? r) ) )
 
-(define (required-chicken-version v)
+(define (required-chicken-version v)	;DEPRECATED
   (when (version>=? v (chicken-version) ) 
     (error (sprintf "CHICKEN version ~a or higher is required" v)) ) )
 
@@ -691,7 +693,7 @@
     "the currently installed extension `~s' ~a - please run~%~%  chicken-install ~a~a~%~%and repeat the current installation operation."
     ext msg ext (if version (conc ":" version) "")) ) )
 
-(define (required-extension-version . args)
+(define (required-extension-version . args) ;DEPRECATED
   (let loop ((args args))
     (cond ((null? args) #f)
 	  ((and (list? args) (>= (length args) 2))
@@ -702,11 +704,13 @@
 	     (if info
 		 (let ((ver (and (assq 'version info) (cadr (assq 'version info)))))
 		   (cond ((not ver) (upgrade-message ext "has no associated version information"))
-			 ((and (version>=? version ver) (not (string=? (->string version) (->string ver))))
+			 ((and (version>=? version ver) 
+			       (not (string=? (->string version) (->string ver))))
 			  (upgrade-message 
 			   ext
-			   (sprintf "is older than ~a, which is the minimum version that this extension requires"
-				    version) 
+			   (sprintf
+			       "is older than ~a, which is the minimum version that this extension requires"
+			     version) 
                            version) )
 			 (else (loop more)) ) ) 
 		 (upgrade-message ext "is not installed") ) ) )

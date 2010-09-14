@@ -263,13 +263,6 @@ that any calls to these variables can always be assumed to be calls to proper
 procedures.
 
 
-=== scrutinize
-
- [declaration specifier] (scrutinize)
-
-Enables scrutiny. This is equivalent to passing the {{-scrutinize}} option to the compiler.
-
-
 === standard-bindings
 
  [declaration specifier] (standard-bindings SYMBOL ...)
@@ -386,6 +379,18 @@ declaration. If a library unit A uses another unit B, then B's toplevel
 expressions are evaluated before A's.  Furthermore, the used symbols
 are registered as features during compile-time, so {{cond-expand}}
 knows about them.
+
+
+=== unsafe-specialized-arithmetic
+
+ [declaration specifier] (unsafe-specialized-arithmetic)
+
+Assume specialized arithmetic operations like {{fp+}}, {{fpsin}}, etc. 
+are always called with arguments of correct type and perform
+unboxing of intermediate results if possible and if the {{-unboxing}}
+compiler-option has been enabled (done by default on optimization
+levels 2 and higher).
+
 
 ---
 Previous: [[Modules]]
