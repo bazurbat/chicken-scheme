@@ -712,3 +712,7 @@ EOF
      (pv-buf-ref (##sys#slot pv 2) i))	; buf
    pointer-vector-set!
    "(pointer-vector-ref pv i)"))
+
+(define (pointer-vector-length pv)
+  (##sys#check-structure pv 'pointer-vector 'pointer-vector-length)
+  (##sys#slot pv 1))

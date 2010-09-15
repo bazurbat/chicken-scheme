@@ -273,3 +273,16 @@
 (assert (not (eq? foo new-foo)))
 
 (assert (equal? '(hello 1 2) (foo 1 2)))
+
+; pointer vectors
+
+(define pv (make-pointer-vector 42 #f))
+(assert (= 42 (pointer-vector-length pv)))
+(pointer-vector-set! pv 1 (address->pointer 999))
+(set! (pointer-vector-ref pv 40) (address->pointer 777))
+(assert (not (pointer-vector-ref pv 0)))
+(assert (not (pointer-vector-ref pv 41)))
+(assert (= (pointer->address (pointer-vector-ref pv 1)) 999))
+(assert (= (pointer->address (pointer-vector-ref pv 40)) 777))
+(pointer-vector-fill! pv (address->pointer 1))
+(assert (= 1 (pointer-vector-ref pv 0)))

@@ -614,6 +614,7 @@
 (pointer-vector (procedure pointer-vector (#!rest pointer-vector) boolean))
 (pointer-vector? (procedure pointer-vector? (*) boolean))
 (pointer-vector-fill! (procedure pointer-vector-fill! (pointer-vector pointer) undefined))
+(pointer-vector-length (procedure pointer-vector-length (pointer-vector) fixnum))
 (pointer-vector-ref (procedure pointer-vector-ref (pointer-vector fixnum) pointer))
 (pointer-vector-set! (procedure pointer-vector-set! (pointer-vector fixnum pointer) pointer))
 (pointer-s16-ref (procedure pointer-s16-ref (pointer) fixnum))
