@@ -286,3 +286,18 @@
 (assert (= (pointer->address (pointer-vector-ref pv 40)) 777))
 (pointer-vector-fill! pv (address->pointer 1))
 (assert (= 1 (pointer-vector-ref pv 0)))
+
+(define pv1
+  (foreign-lambda* scheme-object ((pointer-vector pv))
+    "C_return(C_mk_bool(pv == NULL));"))
+
+(define pv2
+  (foreign-lambda* c-pointer ((pointer-vector pv) (bool f))
+    "static void *xx;"
+    "if(!f) C_return(xx[ 0 ]);"
+    "else pv[ 0 ] = xx;"
+    "C_return(xx);"))
+
+(assert (eq? #t (pv1 #f)))
+(define p (pv2 #t))
+(assert (pointer=? p (pv2 #f)))
