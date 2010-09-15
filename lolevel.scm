@@ -32,7 +32,8 @@
    ##sys#check-block
    ##sys#check-become-alist
    ##sys#check-generic-structure
-   ##sys#check-generic-vector )
+   ##sys#check-generic-vector
+   pv-buf-ref pv-buf-set!)
   (not inline ipc-hook-0 ##sys#invalid-procedure-call-hook)
   (foreign-declare #<<EOF
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
@@ -647,3 +648,67 @@ EOF
   (##sys#check-symbol sym 'global-make-unbound!)
   (##sys#setslot sym 0 (##sys#slot '##sys#arbitrary-unbound-symbol 0))
   sym )
+
+
+;;; pointer vectors
+
+(define make-pointer-vector
+  (let ((unset (list 'unset)))
+    (lambda (n #!optional (init unset))
+      (##sys#check-exact n 'make-pointer-vector)
+      (let* ((mul (if (##sys#fudge 3) 8 4)) ; 64-bit?
+	     (size (fx* n mul))
+	     (buf (##sys#make-blob size)))
+	(unless (eq? init unset)
+	  (when init
+	    (##sys#check-pointer init 'make-pointer-vector)
+	    (do ((i 0 (fx+ i 1)))
+		((fx>= i n))
+	      (pv-buf-set! buf i init))))
+	(##sys#make-structure 'pointer-vector n buf)))))
+
+(define (pointer-vector? x) 
+  (##sys#structure? x 'pointer-vector))
+
+(define (pointer-vector . ptrs)
+  (let* ((n (length ptrs))
+	 (pv (make-pointer-vector n))
+	 (buf (##sys#slot pv 2)))	; buf
+    (do ((ptrs ptrs (cdr ptrs))
+	 (i 0 (fx+ i 1)))
+	((null? ptrs) pv)
+      (pv-buf-set! buf i (car ptrs)))))
+
+(define (pointer-vector-fill! pv ptr)
+  (##sys#check-structure pv 'pointer-vector 'pointer-vector-fill!)
+  (when ptr (##sys#check-pointer ptr 'pointer-vector-fill!))
+  (let ((buf (##sys#slot pv 2))		; buf
+	(n (##sys#slot pv 1)))		; n
+    (do ((i 0 (fx+ i 1)))
+	((fx>= i n))
+      (pv-buf-set! buf i ptr))))
+
+(define pv-buf-ref
+  (foreign-lambda* c-pointer ((scheme-object buf) (unsigned-int i))
+    "C_return(*(C_data_pointer(buf) + i));"))
+
+(define pv-buf-set!
+  (foreign-lambda* void ((scheme-object buf) (unsigned-int i) (c-pointer ptr))
+    "*(C_data_pointer(buf) + i) = ptr;"))
+
+(define (pointer-vector-set! pv i ptr)
+  (##sys#check-structure pv 'pointer-vector 'pointer-vector-ref)
+  (##sys#check-exact i 'pointer-vector-ref)
+  (##sys#check-range i 0 (##sys#slot pv 1)) ; len
+  (when ptr (##sys#check-pointer ptr 'pointer-vector-set!))
+  (pv-buf-set! (##sys#slot pv 2) i ptr))
+
+(define pointer-vector-ref
+  (getter-with-setter
+   (lambda (pv i)
+     (##sys#check-structure pv 'pointer-vector 'pointer-vector-ref)
+     (##sys#check-exact i 'pointer-vector-ref)
+     (##sys#check-range i 0 (##sys#slot pv 1)) ; len
+     (pv-buf-ref (##sys#slot pv 2) i))	; buf
+   pointer-vector-set!
+   "(pointer-vector-ref pv i)"))

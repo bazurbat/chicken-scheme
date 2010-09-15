@@ -900,10 +900,10 @@
 ;;; Create foreign type checking expression:
 
 (define foreign-type-check
-  (let ([tmap '((nonnull-u8vector . u8vector) (nonnull-u16vector . u16vector)
+  (let ((tmap '((nonnull-u8vector . u8vector) (nonnull-u16vector . u16vector)
 		(nonnull-s8vector . s8vector) (nonnull-s16vector . s16vector)
 		(nonnull-u32vector . u32vector) (nonnull-s32vector . s32vector)
-		(nonnull-f32vector . f32vector) (nonnull-f64vector . f64vector) ) ] )
+		(nonnull-f32vector . f32vector) (nonnull-f64vector . f64vector))))
     (lambda (param type)
       (follow-without-loop
        type
@@ -926,6 +926,18 @@
 	      (if unsafe
 		  param
 		  `(##sys#foreign-block-argument ,param) ) ]
+	     ((pointer-vector)
+	      (let ([tmp (gensym)])
+		`(let ([,tmp ,param])
+		   (if ,tmp
+		       ,(if unsafe
+			    tmp
+			    `(##sys#foreign-pointer-vector-argument ,tmp) )
+		       '#f) ) ) )
+	     ((nonnull-pointer-vector)
+	      (if unsafe
+		  param
+		  `(##sys#foreign-pointer-vector-argument ,param) ) ]
 	     [(u8vector u16vector s8vector s16vector u32vector s32vector f32vector f64vector)
 	      (let ([tmp (gensym)])
 		`(let ([,tmp ,param])

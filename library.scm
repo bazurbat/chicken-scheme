@@ -3910,6 +3910,10 @@ EOF
 (define (##sys#foreign-integer-argument x) (##core#inline "C_i_foreign_integer_argumentp" x))
 (define (##sys#foreign-unsigned-integer-argument x) (##core#inline "C_i_foreign_unsigned_integer_argumentp" x))
 
+(define (##sys#foreign-pointer-vector-argument x) ; not optimized yet
+  (##sys#check-structure x 'pointer-vector)
+  x)
+
 
 ;;; Low-level threading interface:
 
@@ -4362,6 +4366,7 @@ EOF
 	    (let ([v (##sys#slot obj 1)])
 	      (##sys#check-range index 0 (##sys#size v) loc)
 	      (##core#inline_allocate ("C_a_i_make_locative" 5) 9 v index weak?) ) ]
+	   ;;XXX pointer-vector currently not supported
 	   [else 
 	    (##sys#check-range index 0 (fx- (##sys#size obj) 1) loc)
 	    (##core#inline_allocate ("C_a_i_make_locative" 5) 0 obj (fx+ index 1) weak?) ] ) ]
