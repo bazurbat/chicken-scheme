@@ -932,25 +932,25 @@
 		   (if ,tmp
 		       ,(if unsafe
 			    tmp
-			    `(##sys#foreign-pointer-vector-argument ,tmp) )
+			    `(##sys#foreign-struct-wrapper-argument 'pointer-vector ,tmp) )
 		       '#f) ) ) )
 	     ((nonnull-pointer-vector)
 	      (if unsafe
 		  param
-		  `(##sys#foreign-pointer-vector-argument ,param) ) ]
+		  `(##sys#foreign-struct-wrapper-argument 'pointer-vector ,param) ) )
 	     [(u8vector u16vector s8vector s16vector u32vector s32vector f32vector f64vector)
 	      (let ([tmp (gensym)])
 		`(let ([,tmp ,param])
 		   (if ,tmp
 		       ,(if unsafe
 			    tmp
-			    `(##sys#foreign-number-vector-argument ',t ,tmp) )
+			    `(##sys#foreign-struct-wrapper-argument ',t ,tmp) )
 		       '#f) ) ) ]
 	     [(nonnull-u8vector nonnull-u16vector nonnull-s8vector nonnull-s16vector nonnull-u32vector nonnull-s32vector 
 				nonnull-f32vector nonnull-f64vector)
 	      (if unsafe
 		  param
-		  `(##sys#foreign-number-vector-argument 
+		  `(##sys#foreign-struct-wrapper-argument 
 		    ',(##sys#slot (assq t tmap) 1)
 		    ,param) ) ]
 	     [(integer long integer32) (if unsafe param `(##sys#foreign-integer-argument ,param))]

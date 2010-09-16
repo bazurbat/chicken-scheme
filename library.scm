@@ -3902,17 +3902,17 @@ EOF
 (define (##sys#foreign-fixnum-argument x) (##core#inline "C_i_foreign_fixnum_argumentp" x))
 (define (##sys#foreign-flonum-argument x) (##core#inline "C_i_foreign_flonum_argumentp" x))
 (define (##sys#foreign-block-argument x) (##core#inline "C_i_foreign_block_argumentp" x))
-(define (##sys#foreign-number-vector-argument t x) (##core#inline "C_i_foreign_number_vector_argumentp" t x))
+
+(define (##sys#foreign-struct-wrapper-argument t x) 
+  (##core#inline "C_i_foreign_struct_wrapper_argumentp" t x))
+
+(define ##sys#foreign-number-vector-argument ##sys#foreign-struct-wrapper-argument) ;OBSOLETE
 (define (##sys#foreign-string-argument x) (##core#inline "C_i_foreign_string_argumentp" x))
 (define (##sys#foreign-symbol-argument x) (##core#inline "C_i_foreign_symbol_argumentp" x))
 (define (##sys#foreign-pointer-argument x) (##core#inline "C_i_foreign_pointer_argumentp" x))
 (define (##sys#foreign-tagged-pointer-argument x tx) (##core#inline "C_i_foreign_tagged_pointer_argumentp" x tx))
 (define (##sys#foreign-integer-argument x) (##core#inline "C_i_foreign_integer_argumentp" x))
 (define (##sys#foreign-unsigned-integer-argument x) (##core#inline "C_i_foreign_unsigned_integer_argumentp" x))
-
-(define (##sys#foreign-pointer-vector-argument x) ; not optimized yet
-  (##sys#check-structure x 'pointer-vector)
-  x)
 
 
 ;;; Low-level threading interface:

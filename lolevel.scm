@@ -656,15 +656,15 @@ EOF
   (let ((unset (list 'unset)))
     (lambda (n #!optional (init unset))
       (##sys#check-exact n 'make-pointer-vector)
-      (let* ((mul (if (##sys#fudge 3) 8 4)) ; 64-bit?
+      (let* ((mul (##sys#fudge 7))	; wordsize
 	     (size (fx* n mul))
 	     (buf (##sys#make-blob size)))
 	(unless (eq? init unset)
 	  (when init
-	    (##sys#check-pointer init 'make-pointer-vector)
-	    (do ((i 0 (fx+ i 1)))
-		((fx>= i n))
-	      (pv-buf-set! buf i init))))
+	    (##sys#check-pointer init 'make-pointer-vector))
+	  (do ((i 0 (fx+ i 1)))
+	      ((fx>= i n))
+	    (pv-buf-set! buf i init)))
 	(##sys#make-structure 'pointer-vector n buf)))))
 
 (define (pointer-vector? x) 
@@ -677,7 +677,9 @@ EOF
     (do ((ptrs ptrs (cdr ptrs))
 	 (i 0 (fx+ i 1)))
 	((null? ptrs) pv)
-      (pv-buf-set! buf i (car ptrs)))))
+      (let ((ptr (car ptrs)))
+	(##sys#check-pointer ptr 'pointer-vector)
+	(pv-buf-set! buf i ptr)))))
 
 (define (pointer-vector-fill! pv ptr)
   (##sys#check-structure pv 'pointer-vector 'pointer-vector-fill!)
@@ -690,11 +692,11 @@ EOF
 
 (define pv-buf-ref
   (foreign-lambda* c-pointer ((scheme-object buf) (unsigned-int i))
-    "C_return(*(C_data_pointer(buf) + i));"))
+    "C_return(*((void **)C_data_pointer(buf) + i));"))
 
 (define pv-buf-set!
   (foreign-lambda* void ((scheme-object buf) (unsigned-int i) (c-pointer ptr))
-    "*(C_data_pointer(buf) + i) = ptr;"))
+    "*((void **)C_data_pointer(buf) + i) = ptr;"))
 
 (define (pointer-vector-set! pv i ptr)
   (##sys#check-structure pv 'pointer-vector 'pointer-vector-ref)

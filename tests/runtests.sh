@@ -104,6 +104,11 @@ diff -bu dwindtst.expected dwindtst.out
 echo "*** Skipping \"feeley-dynwind\" for now ***"
 # $interpret -s feeley-dynwind.scm
 
+echo "======================================== lolevel tests ..."
+$interpret -s lolevel-tests.scm
+$compile lolevel-tests.scm
+./a.out
+
 echo "======================================== syntax tests ..."
 $interpret -s syntax-tests.scm
 
@@ -197,9 +202,6 @@ $interpret -bnq ec.so ec-tests.scm
 
 echo "======================================== hash-table tests ..."
 $interpret -s hash-table-tests.scm
-
-echo "======================================== lolevel tests ..."
-$interpret -s lolevel-tests.scm
 
 echo "======================================== port tests ..."
 $interpret -s port-tests.scm
