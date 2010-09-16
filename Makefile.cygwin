@@ -48,7 +48,7 @@ RC_COMPILER = windres
 LINKER = gcc
 TARGET_RC_COMPILER ?= $(RC_COMPILER)
 
-C_COMPILER_OPTIONS ?= -fno-strict-aliasing -DHAVE_CHICKEN_CONFIG_H
+C_COMPILER_OPTIONS ?= -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H
 ifdef DEBUGBUILD
 C_COMPILER_OPTIMIZATION_OPTIONS ?= -g -Wall -Wno-unused
 else
