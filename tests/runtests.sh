@@ -212,7 +212,8 @@ echo "======================================== srfi-4 tests ..."
 $interpret -s srfi-4-tests.scm
 
 echo "======================================== srfi-18 tests ..."
-$interpret -s srfi-18-tests.scm
+$interpret -s simple-thread-test.scm
+$interpret -s mutex-test.scm
 
 echo "======================================== path tests ..."
 $interpret -bnq path-tests.scm
