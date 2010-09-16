@@ -22,7 +22,7 @@
 (t 3 3)
 
 (f abc)
-
+#|
 (f (t 3 4))
 
 ;; test syntax-rules
@@ -478,3 +478,45 @@
 
 (import (prefix rfoo f:))
 (f:rbar 1)
+|#
+;;; SRFI-26
+
+;; Cut
+(t '() ((cut list)))
+(t '() ((cut list <...>)))
+(t '(1) ((cut list 1)))
+(t '(1) ((cut list <>) 1))
+(t '(1) ((cut list <...>) 1))
+(t '(1 2) ((cut list 1 2)))
+(t '(1 2) ((cut list 1 <>) 2))
+(t '(1 2) ((cut list 1 <...>) 2))
+(t '(1 2 3 4) ((cut list 1 <...>) 2 3 4))
+(t '(1 2 3 4) ((cut list 1 <> 3 <>) 2 4))
+(t '(1 2 3 4 5 6) ((cut list 1 <> 3 <...>) 2 4 5 6))
+(t '(ok) (let* ((x 'wrong)
+                (y (cut list x)))
+           (set! x 'ok)
+           (y)))
+(t 2 (let ((a 0))
+       (map (cut + (begin (set! a (+ a 1)) a) <>)
+            '(1 2))
+       a))
+(f (eval '((cut + <...> 1) 1)))
+
+;; Cute
+(t '() ((cute list)))
+(t '() ((cute list <...>)))
+(t '(1) ((cute list 1)))
+(t '(1) ((cute list <>) 1))
+(t '(1) ((cute list <...>) 1))
+(t '(1 2) ((cute list 1 2)))
+(t '(1 2) ((cute list 1 <>) 2))
+(t '(1 2) ((cute list 1 <...>) 2))
+(t '(1 2 3 4) ((cute list 1 <...>) 2 3 4))
+(t '(1 2 3 4) ((cute list 1 <> 3 <>) 2 4))
+(t '(1 2 3 4 5 6) ((cute list 1 <> 3 <...>) 2 4 5 6))
+(t 1 (let ((a 0))
+       (map (cute + (begin (set! a (+ a 1)) a) <>)
+            '(1 2))
+       a))
+(f (eval '((cute + <...> 1) 1)))

@@ -1035,7 +1035,7 @@ spotless: distclean testclean
 distclean: clean confclean
 
 testclean:
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) $(SRCDIR)tests$(SEP)a.out $(SRCDIR)tests$(SEP)scrutiny.out \
+	$(REMOVE_COMMAND) $(REMOVE_COMMAND_RECURSIVE_OPTIONS) $(SRCDIR)tests$(SEP)a.out $(SRCDIR)tests$(SEP)scrutiny.out \
 	  $(SRCDIR)tests$(SEP)tmp* $(SRCDIR)tests$(SEP)*.so $(SRCDIR)tests$(SEP)*.import.scm $(SRCDIR)tests$(SEP)repository
 
 # run tests

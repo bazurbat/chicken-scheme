@@ -543,7 +543,7 @@
 
 ;;; Convenience function
 
-(define (standard-extension name version #!key (static #t) (info '()))
+(define (standard-extension name #!optional version #!key (static #t) (info '()))
   (let* ((sname (->string name))
 	 (fname (make-pathname #f sname "scm"))
 	 (iname (make-pathname #f sname "import.scm"))
