@@ -30,7 +30,7 @@
   (disable-interrupts)
   (hide ##sys#dynamic-unwind ##sys#find-symbol
 	##sys#grow-vector ##sys#default-parameter-vector 
-	print-length-limit current-print-length setter-tag read-marks
+	current-print-length setter-tag read-marks
 	##sys#print-exit
 	##sys#format-here-doc-warning)
   (not inline ##sys#user-read-hook ##sys#error-hook ##sys#signal-hook ##sys#schedule
@@ -2783,7 +2783,7 @@ EOF
   (void) )
 
 (define current-print-length (make-parameter 0))
-(define print-length-limit (make-parameter #f))
+(define ##sys#print-length-limit (make-parameter #f))
 (define ##sys#print-exit (make-parameter #f))
 
 (define ##sys#print
@@ -2792,7 +2792,7 @@ EOF
       (##sys#check-port-mode port #f)
       (let ([csp (case-sensitive)]
 	    [ksp (keyword-style)]
-	    [length-limit (print-length-limit)]
+	    [length-limit (##sys#print-length-limit)]
 	    [special-characters '(#\( #\) #\, #\[ #\] #\{ #\} #\' #\" #\; #\ #\` #\|)] )
 
 	(define (outstr port str)
@@ -2814,12 +2814,13 @@ EOF
 	  ((##sys#slot (##sys#slot port 2) 3) port str) )
 
 	(define (outchr port chr)
-	  (let ((cpp0 (current-print-length)))
-	    (current-print-length (fx+ cpp0 1))
-	    (when (and length-limit (fx>= cpp0 length-limit))
-	      (outstr0 port "...")
-	      ((##sys#print-exit) #t) )
-	    ((##sys#slot (##sys#slot port 2) 2) port chr) ) )
+	  (when length-limit
+	    (let ((cpp0 (current-print-length)))
+	      (current-print-length (fx+ cpp0 1))
+	      (when (fx>= cpp0 length-limit)
+		(outstr0 port "...")
+		((##sys#print-exit) #t) )))
+	  ((##sys#slot (##sys#slot port 2) 2) port chr))
 
 	(define (specialchar? chr)
 	  (let ([c (char->integer chr)])
@@ -3036,7 +3037,7 @@ EOF
     (lambda (limit thunk)
       (call-with-current-continuation
        (lambda (return)
-	 (parameterize ((print-length-limit limit)
+	 (parameterize ((##sys#print-length-limit limit)
 			(##sys#print-exit return)
 			(current-print-length 0))
 	   (thunk)))))))
