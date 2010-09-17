@@ -107,7 +107,8 @@ tests/sgrep.scm
 tests/runtests.sh
 tests/runbench.sh
 tests/srfi-4-tests.scm
-tests/srfi-18-tests.scm
+tests/simple-thread-test.scm
+tests/mutex-test.scm
 tests/hash-table-tests.scm
 tests/apply-test.scm
 tests/embedded1.c
