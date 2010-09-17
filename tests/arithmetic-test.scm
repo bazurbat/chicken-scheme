@@ -105,9 +105,12 @@
 
 #+check
 (load 
- (if (##sys#fudge 3)
-     "arithmetic-test.64.expected"
-     "arithmetic-test.32.expected")
+ (cond-expand
+   (check-numbers "arithmetic-test.numbers.expected")
+   (else
+    (if (##sys#fudge 3)
+	"arithmetic-test.64.expected"
+	"arithmetic-test.32.expected")))
  (lambda (x)
    (apply
     (lambda (c/total1 exp1 _ res1)
