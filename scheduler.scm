@@ -85,7 +85,7 @@ EOF
 (begin
   (define stderr ##sys#standard-error) ; use default stderr port
   (define (dbg . args)
-    (fluid-let ((print-length-limit #f))
+    (parameterize ((print-length-limit #f))
       (for-each
        (lambda (x)
 	 (display x stderr))
