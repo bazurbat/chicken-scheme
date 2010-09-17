@@ -1,4 +1,10 @@
 ;;;; arithmetic-test.scm
+;
+; - switches:
+;
+; use-numbers
+; check
+; fx-ops
 
 
 (use extras)
