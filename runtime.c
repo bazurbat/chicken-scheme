@@ -2573,7 +2573,8 @@ C_regparm C_word C_fcall C_mutate(C_word *slot, C_word val)
 {
   int mssize;
 
-  if(!C_immediatep(val)) {
+  if(*slot == val) return val;
+  else if(!C_immediatep(val)) {
 #ifdef C_GC_HOOKS
     if(C_gc_mutation_hook != NULL && C_gc_mutation_hook(slot, val)) return val;
 #endif
