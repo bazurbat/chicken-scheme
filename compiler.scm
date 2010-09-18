@@ -1912,16 +1912,16 @@
 	 (set! value (and (not unknown) value))
 	 (set! local-value (and (not unknown) local-value))
 
-	 ;; If this is the first analysis, register known local or potentially known global lambda-value id's
-	 ;;  along with their names:
+	 ;; If this is the first analysis, register known local or potentially known global
+	 ;;  lambda-value id's along with their names:
 	 (when (and first-analysis 
 		    (eq? '##core#lambda
 			 (and-let* ([val (or value (and global pvalue))])
 			   (node-class val) ) ) )
 	   (set-real-name! (first (node-parameters (or value pvalue))) sym) )
 
-	 ;; If this is the first analysis and the variable is global and has no references and we are
-	 ;;  in block mode, then issue warning:
+	 ;; If this is the first analysis and the variable is global and has no references
+	 ;;  and we are in block mode, then issue warning:
 	 (when (and first-analysis 
 		    global
 		    (null? references)
@@ -1932,14 +1932,16 @@
 	   (when (and (not (variable-visible? sym))
 		      (not (variable-mark sym '##compiler#constant)) )
 	     (##sys#notice 
-	      (sprintf "global variable `~S' is only locally visible and never used" sym) ) ) )
+	      (sprintf "global variable `~S' is only locally visible and never used"
+		sym) ) ) )
 
  	 ;; Make 'boxed, if 'assigned & 'captured:
 	 (when (and assigned captured)
 	   (quick-put! plist 'boxed #t) )
 
-	 ;; Make 'contractable, if it has a procedure as known value, has only one use and one call-site and
-	 ;;  if the lambda has no free non-global variables or is an internal lambda. Make 'inlinable if
+	 ;; Make 'contractable, if it has a procedure as known value, has only one use
+	 ;;  and one call-site and if the lambda has no free non-global variables 
+	 ;;  or is an internal lambda. Make 'inlinable if
 	 ;;  use/call count is not 1:
 	 (cond (value
 		(let ((valparams (node-parameters value)))
@@ -1969,7 +1971,8 @@
 		  (when (node? n)
 		    (cond (assigned
 			   (debugging
-			    'i "global inlining candidate was assigned and will not be inlined"
+			    'i
+			    "global inlining candidate was assigned and will not be inlined"
 			    sym)
 			   (mark-variable sym '##compiler#inline-global 'no))
 			  (else

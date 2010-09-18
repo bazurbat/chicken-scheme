@@ -2023,9 +2023,10 @@ C_regparm C_word C_fcall lookup(C_word key, int len, C_char *str, C_SYMBOL_TABLE
 {
   C_word bucket, sym, s;
 
-  for(bucket = stable->table[ key ]; bucket != C_SCHEME_END_OF_LIST; bucket = C_u_i_cdr(bucket)) {
+  for(bucket = stable->table[ key ]; bucket != C_SCHEME_END_OF_LIST; 
+      bucket = C_u_i_cdr(bucket)) {
     sym = C_u_i_car(bucket);
-    s = C_u_i_cdr(sym);
+    s = C_block_item(sym, 1);
 
     if(C_header_size(s) == (C_word)len
        && !C_memcmp(str, (C_char *)((C_SCHEME_BLOCK *)s)->data, len))

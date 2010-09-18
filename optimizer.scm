@@ -287,7 +287,8 @@
 			   (touch)
 			   (for-each (cut put! db <> 'inline-target #t) fids)
 			   (walk
-			    (inline-lambda-bindings llist args (first (node-subexpressions lval)) #f db)
+			    (inline-lambda-bindings
+			     llist args (first (node-subexpressions lval)) #f db)
 			    fids) ) )
 			((variable-mark var '##compiler#pure) =>
 			 (lambda (pb)
@@ -341,7 +342,8 @@
 				       (debugging 'o "inlining procedure" var)
 				       (touch)
 				       (walk
-					(inline-lambda-bindings llist args (first (node-subexpressions lval)) #t db)
+					(inline-lambda-bindings
+					 llist args (first (node-subexpressions lval)) #t db)
 					fids) )
 				      ((test ifid 'has-unused-parameters)
 				       (if (< (length args) argc) ; Expression was already optimized (should this happen?)

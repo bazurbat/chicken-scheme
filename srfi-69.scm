@@ -654,8 +654,7 @@
 
 (define hash-table-update!
   (let ([core-eq? eq?] )
-    (lambda (ht key
-		(func (lambda (x) x))
+    (lambda (ht key func
 		#!optional
 		(thunk
 		 (let ([thunk (##sys#slot ht 9)])
