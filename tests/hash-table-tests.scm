@@ -55,7 +55,7 @@
 (assert (eq? (hash-table-ref ht 23.0) 'bar))
 
 (print "HT - Insert with update!")
-(hash-table-update! ht 'baz)
+(hash-table-update! ht 'baz identity (lambda () 'foo))
 (assert (eq? (hash-table-ref ht 'baz) 'foo))
 (assert (= (hash-table-size ht) 2))
 
