@@ -22,7 +22,6 @@
 (t 3 3)
 
 (f abc)
-#|
 (f (t 3 4))
 
 ;; test syntax-rules
@@ -478,7 +477,7 @@
 
 (import (prefix rfoo f:))
 (f:rbar 1)
-|#
+
 ;;; SRFI-26
 
 ;; Cut
