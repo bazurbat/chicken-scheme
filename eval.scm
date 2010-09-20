@@ -1573,9 +1573,8 @@
 		     (let loop ((vars ##sys#unbound-in-eval) (u '()))
 		       (cond ((null? vars)
 			      (when (pair? u)
-				(##sys#print 
-				 "Warning: the following toplevel variables are referenced but unbound:\n" 
-				 #f ##sys#standard-error)
+				(##sys#notice
+				 "the following toplevel variables are referenced but unbound:\n")
 				(for-each 
 				 (lambda (v)
 				   (##sys#print "  " #f ##sys#standard-error)

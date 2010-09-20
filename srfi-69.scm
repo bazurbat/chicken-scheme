@@ -654,15 +654,16 @@
 
 (define hash-table-update!
   (let ([core-eq? eq?] )
-    (lambda (ht key
-	     #!optional (func (lambda (x) x))
-		        (thunk
-		         (let ([thunk (##sys#slot ht 9)])
-		           (or thunk
-			       (lambda ()
-			         (##sys#signal-hook #:access-error
-			          'hash-table-update!
-			          "hash-table does not contain key" key ht))))))
+    (lambda (ht key func
+		#!optional
+		(thunk
+		 (let ([thunk (##sys#slot ht 9)])
+		   (or thunk
+		       (lambda ()
+			 (##sys#signal-hook
+			  #:access-error
+			  'hash-table-update!
+			  "hash-table does not contain key" key ht))))))
       (##sys#check-structure ht 'hash-table 'hash-table-update!)
       (##sys#check-closure func 'hash-table-update!)
       (##sys#check-closure thunk 'hash-table-update!)

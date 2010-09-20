@@ -1807,7 +1807,9 @@
 	       (map (lambda (se)
 		      (if (symbol? se)
 			  (or (assq se me)
-			      (##sys#error "unknown macro referenced while registering module" se name))
+			      (##sys#error
+			       "unknown syntax referenced while registering module" 
+			       se name))
 			  se))
 		    sexports))))
     (set! ##sys#module-table (cons (cons name mod) ##sys#module-table)) 

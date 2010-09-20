@@ -381,11 +381,14 @@
 ;;; Display analysis database:
 
 (define display-analysis-database
-  (let ((names '((captured . cpt) (assigned . set) (boxed . box) (global . glo) (assigned-locally . stl)
-		 (contractable . con) (standard-binding . stb) (simple . sim) (inlinable . inl)
+  (let ((names '((captured . cpt) (assigned . set) (boxed . box) (global . glo)
+		 (assigned-locally . stl)
+		 (contractable . con) (standard-binding . stb) (simple . sim)
+		 (inlinable . inl)
 		 (collapsable . col) (removable . rem) (constant . con)
 		 (inline-target . ilt) (inline-transient . itr)
-		 (undefined . und) (replacing . rpg) (unused . uud) (extended-binding . xtb) (inline-export . ilx)
+		 (undefined . und) (replacing . rpg) (unused . uud) (extended-binding . xtb)
+		 (inline-export . ilx) (hidden-refs . hrf)
 		 (customizable . cst) (has-unused-parameters . hup) (boxed-rest . bxr) ) ) 
 	(omit #f))
     (lambda (db)
@@ -592,7 +595,10 @@
 	       'let (list (last rlist))
 	       (list (if (null? rargs)
 			 (qnode '())
-			 (make-node '##core#inline_allocate (list "C_a_i_list" (* 3 (length rargs))) rargs) )
+			 (make-node
+			  '##core#inline_allocate
+			  (list "C_a_i_list" (* 3 (length rargs))) 
+			  rargs) )
 		     body) )
 	      body)
 	  (take rlist argc)
@@ -611,6 +617,7 @@
 	  [(##core#variable) 
 	   (let ((var (first params)))
 	     (when (get db var 'contractable)
+	       (debugging 'i "unmarking copied reference to contractable procedure" var)
 	       (put! db var 'contractable #f) )
 	     (varnode (rename var rl))) ]
 	  [(set!) 
@@ -1161,7 +1168,7 @@
       (for-each (lambda (n) (walk n e)) ns) )
 
     (walk node '())
-    (values vars hvars) ) )
+    (values vars hvars) ) )		; => freevars hiddenvars
 
 
 ;;; Some pathname operations:

@@ -1355,7 +1355,7 @@
 (hash-table-remove! (procedure hash-table-remove! ((struct hash-table) (procedure (* *) *)) undefined))
 (hash-table-set! (procedure hash-table-set! ((struct hash-table) * *) undefined))
 (hash-table-size (procedure hash-table-size ((struct hash-table)) fixnum))
-(hash-table-update! (procedure hash-table-update! ((struct hash-table) * #!optional (procedure (*) *) (procedure () *)) *))
+(hash-table-update! (procedure hash-table-update! ((struct hash-table) * (procedure (*) *) #!optional (procedure () *)) *))
 (hash-table-update!/default (procedure hash-table-update!/default ((struct hash-table) * (procedure (*) *) *) *))
 (hash-table-values (procedure hash-table-values ((struct hash-table)) list))
 (hash-table-walk (procedure hash-table-walk ((struct hash-table) (procedure (* *) . *)) undefined))
