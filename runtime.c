@@ -8618,8 +8618,8 @@ C_regparm C_word C_fcall C_i_o_fixnum_times(C_word n1, C_word n2)
   C_word x1, x2;
   /* otherwise gcc tries to be smart (and naturally fails) */
 #ifdef C_SIXTY_FOUR
-  static int seven_f = 0x7fffffffffffffff;
-  static int eight_0 = 0x8000000000000000;
+  static long seven_f = 0x7fffffffffffffffL;
+  static long eight_0 = 0x8000000000000000L;
 #else
   static int seven_f = 0x7fffffff;
   static int eight_0 = 0x80000000;
@@ -8660,7 +8660,7 @@ C_regparm C_word C_fcall C_i_o_fixnum_quotient(C_word n1, C_word n2)
 {
   C_word x1, x2;
 #ifdef C_SIXTY_FOUR
-  static int eight_0 = 0x8000000000000000;
+  static long eight_0 = 0x8000000000000000L;
 #else
   static int eight_0 = 0x80000000;
 #endif
