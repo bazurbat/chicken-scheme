@@ -550,8 +550,13 @@
         (remove-directory tmpdir))))
 
   (define (apply-mappings eggs)
+    (define (canonical x)
+      (cond ((symbol? x) (cons (symbol->string x) #f))
+	    ((string? x) (cons x #f))
+	    ((pair? x) x)
+	    (else (error "internal error - bad egg spec" x))))
     (define (same? e1 e2)
-      (string=? (->string e1) (->string e2)))
+      (equal? (car (canonical e1)) (car (canonical e2))))
     (let ((eggs2
 	   (delete-duplicates
 	    (append-map
@@ -561,7 +566,7 @@
 			    (lambda (m) (map ->string (cdr m))))
 		     (else (list egg))))
 	     eggs)
-	    string=?)))
+	    same?)))
       (unless (lset= same? eggs eggs2)
 	(print "mapped " eggs " to " eggs2))
       eggs2))
