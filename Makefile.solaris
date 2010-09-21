@@ -41,7 +41,12 @@ export INSTALL_PROGRAM ?= ginstall
 # options
 
 ifeq ($(C_COMPILER),cc)
-C_COMPILER_OPTIONS ?= -errtags -xdebugformat=stabs -xannotate=no -DHAVE_CHICKEN_CONFIG_H 
+ifneq (,$(filter-out x86 x86-64,$(ARCH))) # -xannotate=no is not supported on x86/x86-64
+DISABLE_ANNOTATIONS=-xannotate=no
+else
+DISABLE_ANNOTATIONS=
+endif
+C_COMPILER_OPTIONS ?= -errtags -xdebugformat=stabs $(DISABLE_ANNOTATIONS) -DHAVE_CHICKEN_CONFIG_H
 else
 C_COMPILER_OPTIONS ?= -fno-strict-aliasing -DHAVE_CHICKEN_CONFIG_H
 endif
@@ -69,11 +74,6 @@ endif
 endif
 
 ifeq ($(C_COMPILER),cc) # Assuming 'cc' means SunW/SunStudio compiler
-ifneq (,$(filter-out x86 x86-64,$(ARCH))) # -xannotate=no is not supported on x86/x86-64
-DISABLE_ANNOTATIONS=-xannotate=no
-else
-DISABLE_ANNOTATIONS=
-endif
 LINKER_LINK_SHARED_LIBRARY_OPTIONS = -G $(DISABLE_ANNOTATIONS)
 LINKER_LINK_SHARED_DLOADABLE_OPTIONS = -G $(DISABLE_ANNOTATIONS) -R"$(RUNTIME_LINKER_PATH)" -L.
 LINKER_LINK_SHARED_PROGRAM_OPTIONS = -R"$(RUNTIME_LINKER_PATH)"
