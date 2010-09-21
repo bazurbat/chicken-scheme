@@ -579,14 +579,14 @@
 	 (list (proc (first vars) (second vars))
 	       (fold (cdr vars)) ) ) ) ) )
 
-(define (inline-lambda-bindings llist args body copy? db)
+(define (inline-lambda-bindings llist args body copy? db cfk)
   (decompose-lambda-list
    llist
    (lambda (vars argc rest)
      (receive (largs rargs) (split-at args argc)
        (let* ([rlist (if copy? (map gensym vars) vars)]
 	      [body (if copy? 
-			(copy-node-tree-and-rename body vars rlist db)
+			(copy-node-tree-and-rename body vars rlist db cfk)
 			body) ] )
 	 (fold-right
 	  (lambda (var val body) (make-node 'let (list var) (list val body)) )
@@ -604,7 +604,7 @@
 	  (take rlist argc)
 	  largs) ) ) ) ) )
 
-(define (copy-node-tree-and-rename node vars aliases db)
+(define (copy-node-tree-and-rename node vars aliases db cfk)
   (let ([rlist (map cons vars aliases)])
     (define (rename v rl) (alist-ref v rl eq? v))
     (define (walk n rl)
@@ -617,8 +617,7 @@
 	  [(##core#variable) 
 	   (let ((var (first params)))
 	     (when (get db var 'contractable)
-	       (debugging 'i "unmarking copied reference to contractable procedure" var)
-	       (put! db var 'contractable #f) )
+	       (cfk var))
 	     (varnode (rename var rl))) ]
 	  [(set!) 
 	   (make-node
