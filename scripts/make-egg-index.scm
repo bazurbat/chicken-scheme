@@ -2,9 +2,8 @@
 
 (load-relative "tools.scm")
 
-(use setup-download matchable sxml-transforms data-structures regex)
+(use setup-download matchable sxml-transforms data-structures irregex)
 
-(import irregex)
 
 (define *help* #f)
 (define *major-version* (##sys#fudge 41))
