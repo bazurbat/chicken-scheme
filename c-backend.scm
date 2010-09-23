@@ -1178,6 +1178,7 @@
       [(s32vector nonnull-s32vector) (str "int *")]
       [(f32vector nonnull-f32vector) (str "float *")]
       [(f64vector nonnull-f64vector) (str "double *")]
+      ((pointer-vector nonnull-pointer-vector) (str "void **"))
       [(nonnull-c-string c-string nonnull-c-string* c-string* symbol) 
        (str "char *")]
       [(nonnull-unsigned-c-string nonnull-unsigned-c-string* unsigned-c-string unsigned-c-string*)
@@ -1284,6 +1285,8 @@
       ((nonnull-f32vector) "C_c_f32vector(")
       ((f64vector) "C_c_f64vector_or_null(")
       ((nonnull-f64vector) "C_c_f64vector(")
+      ((pointer-vector) "C_c_pointer_vector_or_null(")
+      ((nonnull-pointer-vector) "C_c_pointer_vector(")
       ((c-string c-string* unsigned-c-string unsigned-c-string*) "C_string_or_null(")
       ((nonnull-c-string nonnull-c-string* nonnull-unsigned-c-string 
 			 nonnull-unsigned-c-string* symbol) "C_c_string(")

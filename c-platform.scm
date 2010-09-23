@@ -169,7 +169,7 @@
     ##sys#bytevector? ##sys#make-vector ##sys#setter ##sys#car ##sys#cdr ##sys#pair?
     ##sys#eq? ##sys#list? ##sys#vector? ##sys#eqv? ##sys#get-keyword
     ##sys#foreign-char-argument ##sys#foreign-fixnum-argument ##sys#foreign-flonum-argument
-    ##sys#foreign-block-argument ##sys#foreign-number-vector-argument
+    ##sys#foreign-block-argument ##sys#foreign-struct-wrapper-argument
     ##sys#foreign-string-argument ##sys#foreign-pointer-argument ##sys#void
     ##sys#foreign-integer-argument ##sys#foreign-unsigned-integer-argument ##sys#double->number
     ##sys#peek-fixnum ##sys#setislot ##sys#poke-integer ##sys#permanent? ##sys#values ##sys#poke-double
@@ -953,7 +953,7 @@
 (rewrite '##sys#foreign-char-argument 17 1 "C_i_foreign_char_argumentp")
 (rewrite '##sys#foreign-flonum-argument 17 1 "C_i_foreign_flonum_argumentp")
 (rewrite '##sys#foreign-block-argument 17 1 "C_i_foreign_block_argumentp")
-(rewrite '##sys#foreign-number-vector-argument 17 2 "C_i_foreign_number_vector_argumentp")
+(rewrite '##sys#foreign-struct-wrapper-argument 17 2 "C_i_foreign_struct_wrapper_argumentp")
 (rewrite '##sys#foreign-string-argument 17 1 "C_i_foreign_string_argumentp")
 (rewrite '##sys#foreign-pointer-argument 17 1 "C_i_foreign_pointer_argumentp")
 (rewrite '##sys#foreign-integer-argument 17 1 "C_i_foreign_integer_argumentp")

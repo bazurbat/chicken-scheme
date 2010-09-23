@@ -85,6 +85,15 @@ a return value, a {{NULL}} pointer will be returned as {{#f}}.
 
 As {{c-pointer}}, but guaranteed not to be {{#f/NULL}}.
 
+=== pointer-vector
+
+A vector of foreign pointer objects. {{#f}} is allowed and passed as a
+{{NULL}} pointer.
+
+=== nonnull-pointer-vector
+
+As {{pointer-vector}}, but guaranteed not to be {{#f/NULL}}.
+
 === blob
 
 A blob object, passed as a pointer to its contents. Arguments of type {{blob}}
@@ -253,6 +262,8 @@ double
 double
 </td></tr><tr><td>[nonnull-]c-pointer</td><td>
 void *
+</td></tr><tr><td>[nonnull-]pointer-vector</td><td>
+void **
 </td></tr><tr><td>[nonnull-]blob</td><td>
 unsigned char *
 </td></tr><tr><td>[nonnull-]u8vector</td><td>

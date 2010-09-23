@@ -44,6 +44,7 @@
    locative?
    make-locative
    make-record-instance
+   make-pointer-vector
    make-weak-locative
    move-memory!
    mutate-procedure
@@ -75,6 +76,11 @@
    pointer-s32-set!
    pointer-s8-ref
    pointer-s8-set!
+   pointer-vector
+   pointer-vector?
+   pointer-vector-length
+   pointer-vector-ref
+   pointer-vector-set!
    pointer-tag
    pointer-u16-ref
    pointer-u16-set!
