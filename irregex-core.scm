@@ -456,11 +456,11 @@
   (let ((res (make-string len)))
     (let lp ((i len) (ls string-list))
       (if (pair? ls)
-	  (let* ((s (car ls))
-		 (slen (string-length s))
-		 (i (- i slen)))
-	    (%%string-copy! res i s 0 slen)
-	    (lp i (cdr ls)))))
+          (let* ((s (car ls))
+                 (slen (string-length s))
+                 (i (- i slen)))
+            (%%string-copy! res i s 0 slen)
+            (lp i (cdr ls)))))
     res))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -486,8 +486,8 @@
 (define (find pred ls)
   (let lp ((ls ls))
     (cond ((null? ls) #f)
-	  ((pred (car ls)) (car ls))
-	  (else (lp (cdr ls))))))
+          ((pred (car ls)) (car ls))
+          (else (lp (cdr ls))))))
 
 (define (find-tail pred ls)
   (let lp ((ls ls))
@@ -3060,12 +3060,12 @@
            (let ((match-once (lp (sre-sequence (cdr sre)) n #t)))
              (lambda (cnk start i end j matches)
                (cond
-		((match-once cnk start i end j matches)
-		 #t)
-		(else
-		 (match-vector-set! matches tmp-end-src-offset start)
-		 (match-vector-set! matches tmp-end-index-offset i)
-		 #t)))))
+                ((match-once cnk start i end j matches)
+                 #t)
+                (else
+                 (match-vector-set! matches tmp-end-src-offset start)
+                 (match-vector-set! matches tmp-end-index-offset i)
+                 #t)))))
           (($ submatch => submatch-named)
            (let ((match-one
                   (lp (sre-sequence (if (memq (car sre) '($ submatch))
