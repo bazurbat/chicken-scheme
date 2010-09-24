@@ -109,6 +109,9 @@ $interpret -s lolevel-tests.scm
 $compile lolevel-tests.scm
 ./a.out
 
+echo "======================================== arithmetic tests ..."
+$interpret -D check -s arithmetic-test.scm
+
 echo "======================================== syntax tests ..."
 $interpret -s syntax-tests.scm
 

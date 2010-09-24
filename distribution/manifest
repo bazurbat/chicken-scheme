@@ -95,6 +95,9 @@ srfi-4.scm
 stub.scm
 support.scm
 tcp.scm
+tests/arithmetic-test.scm
+tests/arithmetic-test.32.expected
+tests/arithmetic-test.64.expected
 tests/library-tests.scm
 tests/compiler-tests.scm
 tests/compiler-tests-2.scm

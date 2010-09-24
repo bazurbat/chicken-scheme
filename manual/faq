@@ -422,8 +422,9 @@ The following extended bindings are handled specially:
 
 {{bitwise-and}} {{bitwise-ior}} {{bitwise-xor}} {{bitwise-not}} 
 {{bit-set?}} {{add1}} {{sub1}}
-{{fx+}}
-{{fx-}} {{fx*}} {{fx/}} {{fxmod}}
+{{fx+}} {{fx-}} {{fx*}} {{fx/}}
+{{fx+?}} {{fx-?}} {{fx*?}} {{fx/?}}
+{{fxmod}}
 {{fx=}} {{fx>}} {{fx>=}} {{fixnum?}} {{fxneg}} {{fxmax}} {{fxmin}}
 {{fxodd?}} {{fxeven?}}
 {{fxand}} {{fxior}} {{fxxor}} {{fxnot}} {{fxshl}} {{fxshr}}

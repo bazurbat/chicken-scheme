@@ -43,7 +43,7 @@ export INSTALL_PROGRAM ?= ginstall
 ifeq ($(C_COMPILER),cc)
 C_COMPILER_OPTIONS ?= -errtags -xdebugformat=stabs -xannotate=no -DHAVE_CHICKEN_CONFIG_H 
 else
-C_COMPILER_OPTIONS ?= -fno-strict-aliasing -DHAVE_CHICKEN_CONFIG_H
+C_COMPILER_OPTIONS ?= -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H
 endif
 
 ifdef DEBUGBUILD
