@@ -748,9 +748,7 @@
 
 ;;; explicit-renaming transformer
 
-(define (er-macro-transformer x) x)
-
-(define ((##sys#er-transformer handler) form se dse)
+(define ((make-er/ir-transformer handler explicit-renaming?) form se dse)
   (let ((renv '()))			; keep rename-environment for this expansion
     (define (rename sym)
       (cond ((pair? sym)
@@ -820,8 +818,38 @@
 		r)
 	    ")")
 	r))
-    (handler form rename compare) ) )
+    (define (mirror-rename sym)
+      (cond ((pair? sym)
+	     (cons (mirror-rename (car sym)) (mirror-rename (cdr sym))))
+	    ((vector? sym)
+	     (list->vector (mirror-rename (vector->list sym))))
+	    ((not (symbol? sym)) sym)
+            (else                       ; Code stolen from ##sys#strip-syntax
+             (let ((renamed (lookup sym se) ) )
+               (cond ((getp sym '##core#real-name) =>
+                      (lambda (name)
+                        (dd "STRIP SYNTAX ON " sym " ---> " name)
+                        name))
+                     ((not renamed)
+                      (dd "IMPLICITLY RENAMED: " sym) (rename sym))
+                     ((pair? renamed)
+                      (dd "MACRO: " sym) (rename sym))
+                     (else (dd "BUILTIN ALIAS:" renamed) renamed))))))
+    (if explicit-renaming?
+        ;; Let the user handle renaming
+        (handler form rename compare)
+        ;; Implicit renaming:
+        ;; Rename everything in the input first, feed it to the transformer
+        ;; and then swap out all renamed identifiers by their non-renamed
+        ;; versions, and vice versa.  User can decide when to inject code
+        ;; unhygienically this way.
+        (mirror-rename (handler (rename form) rename compare)) ) ) )
 
+(define (##sys#er-transformer handler) (make-er/ir-transformer handler #t))
+(define (##sys#ir-transformer handler) (make-er/ir-transformer handler #f))
+
+(define (er-macro-transformer x) x)
+(define ir-macro-transformer ##sys#ir-transformer)
 
 ;;; Macro definitions:
 

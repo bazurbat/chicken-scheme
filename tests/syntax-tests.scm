@@ -402,6 +402,138 @@
 (let-syntax ((s1 (syntax-rules () ((_ x) x))))
   (assert (equal? '#((99)) (s2 99))))
 
+;; IR macros
+
+(define-syntax loop2
+  (ir-macro-transformer
+   (lambda (x i c)
+     (let ((body (cdr x)))
+       `(call/cc
+         (lambda (,(i 'exit))
+           (let f () ,@body (f))))))))
+
+(let ((n 10))
+  (loop2
+   (print* n " ") 
+   (set! n (sub1 n))
+   (when (zero? n) (exit #f)))
+  (newline))
+
+(define-syntax while20
+  (syntax-rules ()
+    ((_ t b ...)
+     (loop2 (if (not t) (exit #f)) 
+	    b ...))))
+
+(f (while20 #f (print "no.")))
+
+(define-syntax while2
+  (ir-macro-transformer
+   (lambda (x i c)
+     `(loop 
+       (if (not ,(cadr x)) (,(i 'exit) #f))
+       ,@(cddr x)))))
+
+(let ((n 10))
+  (while2 (not (zero? n))
+          (print* n " ")
+          (set! n (- n 1)) )
+  (newline))
+
+(module m2 (s3 s4)
+
+  (import chicken scheme)
+
+  (define-syntax s3 (syntax-rules () ((_ x) (list x))))
+
+  (define-syntax s4
+    (ir-macro-transformer
+     (lambda (x r c)
+       `(vector (s3 ,(cadr x)))))) ) ; without implicit renaming the local version
+                                     ; of `s3' below would be captured 
+
+(import m2)
+
+(let-syntax ((s3 (syntax-rules () ((_ x) x))))
+  (t '#((99)) (s4 99)))
+
+(let ((vector list))
+  (t '#((one)) (s4 'one)))
+
+(define-syntax nest-me
+  (ir-macro-transformer
+   (lambda (x i c)
+     `(let ((,(i 'captured) 1))
+        ,@(cdr x)))))
+
+(t '(1 #(1 #(1)))
+   (nest-me (list captured
+                  (let ((captured 2)
+                        (let 'not-captured)
+                        (list vector))
+                    (nest-me (list captured
+                                   (nest-me (list captured))))))))
+
+(define-syntax cond-test
+  (ir-macro-transformer
+   (lambda (x i c)
+     (let lp ((exprs (cdr x)))
+       (cond
+        ((null? exprs) '(void))
+        ((c (caar exprs) 'else)
+         `(begin ,@(cdar exprs)))
+        ((c (cadar exprs) '=>)
+         `(let ((tmp ,(caar exprs)))
+            (if tmp
+                (,(caddar exprs) tmp)
+                ,(lp (cdr exprs)))))
+        ((c (cadar exprs) (i '==>)) ;; ==> is an Unhygienic variant of =>
+         `(let ((tmp ,(caar exprs)))
+            (if tmp
+                (,(caddar exprs) tmp)
+                ,(lp (cdr exprs)))))
+        (else
+         `(if ,(caar exprs)
+              (begin ,@(cdar exprs))
+              ,(lp (cdr exprs)))))))))
+
+(t 'yep
+   (cond-test
+    (#f 'false)
+    (else 'yep)))
+
+(t 1
+   (cond-test
+    (#f 'false)
+    (1 => (lambda (x) x))
+    (else 'yep)))
+
+(let ((=> #f))
+  (t 'a-procedure
+     (cond-test
+      (#f 'false)
+      (1 => 'a-procedure)
+      (else 'yep))))
+
+(let ((else #f))
+  (t (void)
+     (cond-test
+      (#f 'false)
+      (else 'nope))))
+
+(t 1
+   (cond-test
+    (#f 'false)
+    (1 ==> (lambda (x) x))
+    (else 'yep)))
+
+(let ((==> #f))
+  (t 1
+     (cond-test
+      (#f 'false)
+      (1 ==> (lambda (x) x))
+      (else 'yep))))
+
 
 ;;; local definitions
 

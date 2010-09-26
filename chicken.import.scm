@@ -226,6 +226,7 @@
    warning
    eval-handler
    er-macro-transformer
+   ir-macro-transformer
    dynamic-load-libraries
    with-exception-handler)
  ##sys#chicken-macro-environment)       ;*** incorrect - won't work in compiled executable that does expansion
