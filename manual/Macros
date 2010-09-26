@@ -149,7 +149,7 @@ as
                   (else `(,(rename 'if)
                           ,test
                            (,(rename 'begin) ,@(cdr first))
-                           (cond ,@rest))))))))
+                           (,(r 'cond) ,@rest))))))))
 
 In this example the identifier {{else}} is renamed before being passed
 to the comparison predicate, so the comparison will be true if and
@@ -159,6 +159,9 @@ as {{else}} denotes in the syntactic environment in which the {{cond}}
 macro was defined.  If {{else}} were not renamed before being passed to
 the comparison predicate, then it would match a local variable that
 happened to be named {{else}}, and the macro would not be hygienic.
+The final recursive call to {{cond}} also needs to be renamed because
+someone might create an alias for this macro and use it in a {{let}}
+where {{cond}} is an ordinary variable.
 
 Some macros are non-hygienic by design.  For example, the
 following defines a {{loop}} macro that implicitly binds {{exit}} to an
@@ -196,12 +199,89 @@ not hygienic.  Like {{loop}}, it must be written using procedurally:
           (,(r 'if) (,(r 'not) ,test) (exit #f))
           ,@body))))
 
+Think about it: If we ''did'' rename {{exit}}, it would refer to an
+{{exit}} procedure existing in the context of the macro's definition.
+That one [[Unit library#exit|actually exists]]; it is the procedure
+that exits the Scheme interpreter.  Definitely ''not'' the one we want :)
+So now we make it refer to an {{exit}} that's locally bound in the
+environment where the macro is expanded.
+
 Note: this implementation of explicit-renaming macros allows passing
 arbitrary expressions to the renaming and comparison procedures. When
 being renamed, a fresh copy of the expression will be produced, with all
 identifiers renamed appropriately. Comparison also supports arbitrary
 expressions as arguments.
 
+=== Implicit renaming macros
+
+Explicit renaming macros generally require the user to perform quite a
+few renames, because most identifiers that aren't taken from the input
+expression should generally be inserted hygienically.  It would make
+more sense to give the output expression as-is, and only explicitly
+convert those identifiers that you want to treat as ''unhygienic''.
+
+This can be done with implicit renaming macros.  They just swap the
+default insertion "mode" from unhygienic to hygienic, so to speak.
+Here's the {{cond}} example from the previous section as an ir-macro:
+
+
+  (ir-macro-transformer
+    (lambda (exp inject compare)
+      (let ((clauses (cdr exp)))
+        (if (null? clauses)
+            `(quote unspecified)
+            (let* ((first (car clauses))
+                   (rest (cdr clauses))
+                   (test (car first)))
+              (cond ((and (symbol? test)
+                          (compare test 'else))
+                     `(begin ,@(cdr first)))
+                    (else `(if ,test
+                               (begin ,@(cdr first))
+                               (cond ,@rest)))))))))
+
+In this example the identifier {{else}} does ''not'' need to be renamed
+before being passed to the comparison predicate because it is already
+''implicitly'' renamed.  This comparison will also be true if and
+only if the test expression is an identifier that denotes the same
+thing in the syntactic environment of the expression being transformed
+as {{else}} denotes in the syntactic environment in which the {{cond}}
+macro was defined.  If {{else}} were not renamed before being passed to
+the comparison predicate, then it would match a local variable that
+happened to be named {{else}}, and the macro would not be hygienic.
+
+As you can see, the code is a lot clearer because it isn't obscured
+by excessive renaming.
+
+Here's the {{loop}} macro so you can see how hygiene can be broken
+with implicit renaming macros:
+
+  (define-syntax loop
+    (ir-macro-transformer
+      (lambda (expr inject compare)
+        (let ((body (cdr expr)))
+          `(call-with-current-continuation
+            (lambda (,(inject 'exit))
+             (let f () ,@body (f))))))))
+
+The {{while}} macro is a little trickier: do we inject the call to
+{{exit}} or not?  Just like the explicit renaming macro version
+did ''not'' rename it, we must inject it to allow it to be captured
+by the {{loop}} macro:
+
+  (define-syntax while
+    (ir-macro-transformer
+      (lambda (expr inject compare)
+        (let ((test (cadr expr))
+              (body (cddr expr)))
+          `(loop
+            (if (not ,test) (,(inject 'exit) #f))
+            ,@body)))))
+
+Note: Just like explicit renaming macros, this implementation of
+implicit renaming macros allow passing arbitrary expressions to
+the injection and comparison procedures.  The injection procedure
+also return fresh copies of its input.
 
 ---
 Previous: [[Non-standard macros and special forms]]
