@@ -307,6 +307,51 @@ is any other kind of pointer-like object {{#f}} is returned. Otherwise an
 error is signalled.
 
 
+=== Pointer vectors
+
+/Pointer-vectors/ are specialized and space-efficient vectors or
+foreign pointer objects. All procedures defined below that accept
+a pointer object allow {{#f}} as an alternative representation of
+the {{NULL}}-pointer.
+
+==== make-pointer-vector 
+
+<procedure>(make-pointer-vector LENGTH [INIT])</procedure>
+
+Creates a pointer-vector of the given length and optionally initializes each
+element to {{INIT}}, which should be a pointer or {{#f}, which represents the
+{{NULL}} pointer.
+
+==== pointer-vector?
+
+<procedure>(pointer-vector? X)</procedure>
+
+Returns {{#t}} if {{X}} is a pointer-vector or {{#f}} otherwise.
+
+==== pointer-vector
+
+<procedure>(pointer-vector POINTER ...)</procedure>
+
+Returns a pointer-vector from the given pointer arguments.
+
+==== pointer-vector-ref
+
+<procedure>(pointer-vector-ref POINTERVECTOR INDEX)</procedure>
+
+Returns the pointer at {{INDEX}} in the given pointer-vector or
+{{#f}} if the element is a {{NULL}}- pointer.
+
+==== pointer-vector-set!
+
+<procedure>(pointer-vector-set! POINTERVECTOR INDEX POINTER)</procedure>
+
+Sets the element at the position {{INDEX}} in the given pointer-vector to
+{{POINTER}}. The alternative syntax
+
+  (set! (pointer-vector-ref POINTERVECTOR INDEX) POINTER)
+
+is also allowed.
+
 
 === Locatives
 

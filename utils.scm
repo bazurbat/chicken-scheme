@@ -27,7 +27,7 @@
 
 (declare
   (unit utils)
-  (uses extras srfi-13 posix files regex)
+  (uses extras srfi-13 posix files irregex)
   (fixnum)
   (hide chop-pds)
   (disable-interrupts) )
@@ -116,7 +116,7 @@
   (lambda (rx #!optional (port ##sys#standard-input))
     (let ((rx (if (procedure? rx)
 		  rx
-		  (cut string-search (regexp rx) <>))))
+		  (cute irregex-search (irregex rx) <>))))
       (let loop ()
 	(let ((ln (read-line port)))
 	  (and (not (eof-object? ln))

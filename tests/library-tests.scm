@@ -20,6 +20,31 @@
 (assert (not (rational? +inf.)))
 (assert (not (rational? 'foo)))
 
+(define-syntax assert-fail
+  (syntax-rules ()
+    ((_ exp)
+     (assert (handle-exceptions ex #t exp #f)))))
+
+(assert-fail (/ 1 1 0))
+(assert-fail (/ 1 1 0.0))
+(assert-fail (/ 1 0.0))
+(assert-fail (/ 1 0))
+(assert-fail (/ 0))
+(assert-fail (/ 0.0))
+
+(assert (fixnum? (/ 1)))
+
+(assert (= -3 (- 3)))
+(assert (= 3 (- -3)))
+(assert (= 2 (- 5 3)))
+(assert (> 1 (/ 3)))
+(assert (> 1 (/ 3.0)))
+(assert (= 2 (/ 8 4)))
+(assert (zero? (+)))
+(assert (= 1 (*)))
+
+(assert (= 2.5 (/ 5 2)))
+
 
 ;; number->string conversion
 

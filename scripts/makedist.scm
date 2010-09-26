@@ -1,7 +1,7 @@
 ;;;; makedist.scm - Make distribution tarballs
 
 
-(use srfi-69)
+(use srfi-69 irregex)
 
 (define *release* #f)
 
@@ -15,7 +15,7 @@
 
 (define *platform* 
   (let ((sv (symbol->string (software-version))))
-    (cond ((string-match ".*bsd" sv) "bsd")
+    (cond ((irregex-match ".*bsd" sv) "bsd")
 	  (else
 	   (case (build-platform)
 	     ((mingw32) 

@@ -986,6 +986,7 @@ extern double trunc(double);
 #define C_c_f32vector_or_null(x)   ((float *)C_srfi_4_vector_or_null(x))
 #define C_c_f64vector(x)           ((double *)C_data_pointer(C_u_i_cdr(x)))
 #define C_c_f64vector_or_null(x)   ((double *)C_srfi_4_vector_or_null(x))
+#define C_c_pointer_vector(x)      ((void **)C_data_pointer(C_block_item((x), 2)))
 
 #define C_isnan(f)                 (!((f) == (f)))
 #define C_isinf(f)                 ((f) == (f) + (f) && (f) != 0.0)
@@ -1828,7 +1829,8 @@ C_fctexport C_word C_fcall C_i_foreign_char_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_fixnum_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_flonum_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_block_argumentp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_foreign_number_vector_argumentp(C_word t, C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_foreign_number_vector_argumentp(C_word t, C_word x) C_regparm; /* OBSOLETE */
+C_fctexport C_word C_fcall C_i_foreign_struct_wrapper_argumentp(C_word t, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_string_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_symbol_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_tagged_pointer_argumentp(C_word x, C_word t) C_regparm;
@@ -2030,6 +2032,12 @@ C_inline void *C_data_pointer_or_null(C_word x)
 C_inline void *C_srfi_4_vector_or_null(C_word x) 
 {
   return C_truep(x) ? C_data_pointer(C_block_item(x, 1)) : NULL;
+}
+
+
+C_inline void *C_c_pointer_vector_or_null(C_word x) 
+{
+  return C_truep(x) ? C_data_pointer(C_block_item(x, 2)) : NULL;
 }
 
 

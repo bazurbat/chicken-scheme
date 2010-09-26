@@ -1,4 +1,5 @@
 [[tags: manual]]
+[[toc:]]
 
 == Unit srfi-1
 
@@ -1515,6 +1516,6 @@ arguments.
 
 ----
 
-Previous: [[Unit regex]]
+Previous: [[Unit irregex]]
 
 Next: [[Unit srfi-4]]

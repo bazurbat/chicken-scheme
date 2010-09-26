@@ -650,3 +650,5 @@
   (display my-check-wrong)
   (newline)
   (newline) )
+
+(exit my-check-wrong)

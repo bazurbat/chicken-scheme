@@ -76,7 +76,8 @@
 #define C_a_get_current_seconds(ptr, c, dummy)  C_flonum(ptr, time(NULL))
 #define C_peek_c_string_at(ptr, i)    ((C_char *)(((C_char **)ptr)[ i ]))
 
-static C_word fast_read_line_from_file(C_word str, C_word port, C_word size) {
+static C_word
+fast_read_line_from_file(C_word str, C_word port, C_word size) {
   int n = C_unfix(size);
   int i;
   int c;
@@ -101,7 +102,7 @@ static C_word fast_read_line_from_file(C_word str, C_word port, C_word size) {
 }
 
 static C_word
-fast_read_string_from_file (C_word dest, C_word port, C_word len, C_word pos)
+fast_read_string_from_file(C_word dest, C_word port, C_word len, C_word pos)
 {
   int n = C_unfix (len);
   char * buf = ((char *)C_data_pointer (dest) + C_unfix (pos));
@@ -1728,7 +1729,8 @@ EOF
 
 (define (##sys#check-port x . loc)
   (unless (%port? x)
-    (##sys#signal-hook #:type-error (and (pair? loc) (car loc)) "argument is not a port" x) ) )
+    (##sys#signal-hook
+     #:type-error (and (pair? loc) (car loc)) "argument is not a port" x) ) )
 
 (define (##sys#check-port-mode port mode . loc)
   (unless (eq? mode (##sys#slot port 1))
@@ -3902,7 +3904,11 @@ EOF
 (define (##sys#foreign-fixnum-argument x) (##core#inline "C_i_foreign_fixnum_argumentp" x))
 (define (##sys#foreign-flonum-argument x) (##core#inline "C_i_foreign_flonum_argumentp" x))
 (define (##sys#foreign-block-argument x) (##core#inline "C_i_foreign_block_argumentp" x))
-(define (##sys#foreign-number-vector-argument t x) (##core#inline "C_i_foreign_number_vector_argumentp" t x))
+
+(define (##sys#foreign-struct-wrapper-argument t x) 
+  (##core#inline "C_i_foreign_struct_wrapper_argumentp" t x))
+
+(define ##sys#foreign-number-vector-argument ##sys#foreign-struct-wrapper-argument) ;OBSOLETE
 (define (##sys#foreign-string-argument x) (##core#inline "C_i_foreign_string_argumentp" x))
 (define (##sys#foreign-symbol-argument x) (##core#inline "C_i_foreign_symbol_argumentp" x))
 (define (##sys#foreign-pointer-argument x) (##core#inline "C_i_foreign_pointer_argumentp" x))
@@ -4362,6 +4368,7 @@ EOF
 	    (let ([v (##sys#slot obj 1)])
 	      (##sys#check-range index 0 (##sys#size v) loc)
 	      (##core#inline_allocate ("C_a_i_make_locative" 5) 9 v index weak?) ) ]
+	   ;;XXX pointer-vector currently not supported
 	   [else 
 	    (##sys#check-range index 0 (fx- (##sys#size obj) 1) loc)
 	    (##core#inline_allocate ("C_a_i_make_locative" 5) 0 obj (fx+ index 1) weak?) ] ) ]

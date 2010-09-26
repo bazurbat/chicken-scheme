@@ -239,12 +239,14 @@ EOF
 	  '()
 	  (let ((path (car paths)))
 	    (let-values (((dir fil ext) (decompose-pathname path)))
-	      (let* ((patt (glob->regexp (make-pathname #f (or fil "*") ext)))
-		     (rx (regexp patt)))
+	      (let ((rx (##sys#glob->regexp (make-pathname #f (or fil "*") ext))))
 		(let loop ((fns (directory (or dir ".") #t)))
 		  (cond ((null? fns) (conc-loop (cdr paths)))
-			((string-match rx (car fns))
-			 => (lambda (m) (cons (make-pathname dir (car m)) (loop (cdr fns)))) )
+			((irregex-match rx (car fns))
+			 => (lambda (m)
+			      (cons 
+			       (make-pathname dir (irregex-match-substring m))
+			       (loop (cdr fns)))) )
 			(else (loop (cdr fns))) ) ) ) ) ) ) ) ) )
 
 
@@ -259,9 +261,9 @@ EOF
 		  ((fixnum? limit) (lambda _ (fx< depth limit)))
 		  (else limit) ) )
 	   (pproc
-	    (if (or (string? pred) (regexp? pred))
-		(let ((pred (regexp pred))) ; force compilation
-		  (lambda (x) (string-match pred x)))
+	    (if (or (string? pred) (irregex? pred))
+		(let ((pred (irregex pred))) ; force compilation
+		  (lambda (x) (irregex-match pred x)))
 		pred) ) )
       (let loop ((fs (glob (make-pathname dir (if dot "?*" "*"))))
 		 (r id) )

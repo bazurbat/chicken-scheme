@@ -50,7 +50,8 @@
 ;       | deprecated
 ;   BASIC = * | string | symbol | char | number | boolean | list | pair | 
 ;           procedure | vector | null | eof | undefined | port | 
-;           blob | noreturn | pointer | locative | fixnum | float
+;           blob | noreturn | pointer | locative | fixnum | float |
+;           pointer-vector
 ;   RESULTS = * 
 ;           | (VAL1 ...)
 

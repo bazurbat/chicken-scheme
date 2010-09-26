@@ -20,7 +20,7 @@ for x in setup-api.so setup-api.import.so setup-download.so \
       srfi-1.import.so srfi-4.import.so data-structures.import.so \
       ports.import.so files.import.so posix.import.so \
       srfi-13.import.so srfi-69.import.so extras.import.so \
-      regex.import.so srfi-14.import.so tcp.import.so \
+      irregex.import.so srfi-14.import.so tcp.import.so \
       foreign.import.so scheme.import.so srfi-18.import.so \
       utils.import.so csi.import.so irregex.import.so types.db; do
   cp ../$x test-repository
@@ -103,6 +103,14 @@ $compile dwindtst.scm
 diff -bu dwindtst.expected dwindtst.out
 echo "*** Skipping \"feeley-dynwind\" for now ***"
 # $interpret -s feeley-dynwind.scm
+
+echo "======================================== lolevel tests ..."
+$interpret -s lolevel-tests.scm
+$compile lolevel-tests.scm
+./a.out
+
+echo "======================================== arithmetic tests ..."
+$interpret -D check -s arithmetic-test.scm
 
 echo "======================================== syntax tests ..."
 $interpret -s syntax-tests.scm
@@ -197,9 +205,6 @@ $interpret -bnq ec.so ec-tests.scm
 
 echo "======================================== hash-table tests ..."
 $interpret -s hash-table-tests.scm
-
-echo "======================================== lolevel tests ..."
-$interpret -s lolevel-tests.scm
 
 echo "======================================== port tests ..."
 $interpret -s port-tests.scm
