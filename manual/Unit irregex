@@ -368,6 +368,9 @@ You can use {{w/case}} to switch back to case-sensitivity inside a
 (irregex-search '(w/nocase "small" (w/case "big")) "smallBIGsmall") => #f
 </enscript>
 
+''Important:'' characters outside the ASCII range (ie, UTF8 chars) are
+'''not''' matched case insensitively!
+
 Of course, literal strings by themselves aren't very interesting
 regular expressions, so we want to be able to compose them.  The most
 basic way to do this is with the {{seq}} operator (or its abbreviation

@@ -246,6 +246,30 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(test-group "Case sensitivity"
+  (test-assert
+   (not (irregex-match '(seq "abc") "ABC")))
+  (test-assert
+   (irregex-match (irregex '(seq "abc") 'case-insensitive) "ABC"))
+  (test-assert
+   (irregex-match '(w/nocase "abc") "ABC"))
+  (test-assert
+   (not (irregex-match '(w/nocase (w/case "abc")) "ABC")))
+  (test-assert
+   (irregex-match '(w/nocase (* ("abc"))) "ABC"))
+  (test-assert
+   (not (irregex-match '(w/nocase (w/case (* ("abc")))) "ABC")))
+  (test-assert
+   (irregex-match '(w/nocase (* (/ #\a #\c))) "ABC"))
+  (test-assert
+   (not (irregex-match '(w/nocase (w/case (/ #\a #\c))) "ABC")))
+  (test-assert
+   (not (irregex-match '(w/nocase (* (~ (/ #\a #\c)))) "abc")))
+  (test-assert
+   (not (irregex-match '(w/nocase (* (~ (/ #\a #\c)))) "ABC"))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (test-group "API"
   (test-assert (irregex? (irregex "a.*b")))
   (test-assert (irregex? (irregex '(: "a" (* any) "b"))))
@@ -443,9 +467,7 @@
 (test-assert (irregex-search "(?u:<[あ-ん]*>)" "<あん>"))
 (test-assert (irregex-search "(?u:<[あ-ん]*>)" "<ひらがな>"))
 (test-assert (not (irregex-search "(?u:<[あ-ん]*>)" "<ひらgがな>")))
+(test-assert (not (irregex-search "(?u:<[^あ-ん語]*>)" "<語>")))
 
-(test-end)
-
-
-(test-exit)
+(test-end)(test-exit)
 
