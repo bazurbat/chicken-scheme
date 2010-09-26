@@ -39,9 +39,14 @@ Signals an exception of the kind {{(exn syntax)}}. Otherwise identical to
 
 <procedure>(er-macro-transformer TRANSFORMER)</procedure>
 
-This procedure does nothing and is available for writing low-level
-macros in a more portable fashion, without hard-coding the signature
-of a transformer procedure.
+Returns an explicit-renaming macro transformer procedure created from
+the procedural macro body {{TRANSFORMER}}, which is a procedure of
+three arguments. 
+
+Implementation note: this procedure currently just returns its
+argument unchanged and is available for writing low-level macros in a
+more portable fashion, without hard-coding the signature of a
+transformer procedure.
 
 ==== ir-macro-transformer
 

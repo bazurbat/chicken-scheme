@@ -69,20 +69,22 @@ where symbols have all context-information removed.
 === Explicit renaming macros
 
 The low-level macro facility that CHICKEN provides is called "explicit
-renaming" and allows writing hygienic or non-hygienic macros procedurally.
-When given a lambda-expression instead of a {{syntax-rules}} form,
+renaming" and allows writing hygienic or non-hygienic macros
+procedurally.  When given a lambda-expression or the return value of
+the procedure {{er-macro-transformer}} (to be preferred for
+portability reasons) instead of a {{syntax-rules}} form,
 {{define-syntax}} evaluates the procedure in a distinct expansion
-environment (initially having access to the exported identifiers
-of the {{scheme}} module). The procedure takes an expression and two
-other arguments and returns a transformed expression. 
+environment (initially having access to the exported identifiers of
+the {{scheme}} module). The procedure takes an expression and two
+other arguments and returns a transformed expression.
 
-For example, the transformation
-procedure for a {{call}} macro such that
-{{(call proc arg ...)}} expands
-into {{(proc arg ...)}} can be written as
+For example, the transformation procedure for a {{call}} macro such
+that {{(call proc arg ...)}} expands into {{(proc arg ...)}} can be
+written as
 
-  (lambda (exp rename compare)
-    (cdr exp))
+  (er-macro-transformer
+    (lambda (exp rename compare)
+      (cdr exp)))
 
 Expressions are represented as lists in the traditional manner,
 except that identifiers are represented as special uninterned symbols.
@@ -93,25 +95,26 @@ representation of a fresh identifier that occurs nowhere else in the
 program.  For example, the transformation procedure for a simplified
 version of the {{let}} macro might be written as
 
-  (lambda (exp rename compare)
-    (let ((vars (map car (cadr exp)))
-          (inits (map cadr (cadr exp)))
-          (body (cddr exp)))
-      `((lambda ,vars ,@body)
-        ,@inits)))
+  (er-macro-transformer
+    (lambda (exp rename compare)
+      (let ((vars (map car (cadr exp)))
+            (inits (map cadr (cadr exp)))
+            (body (cddr exp)))
+        `((lambda ,vars ,@body)
+          ,@inits))))
 
-This would not be hygienic, however.  A
-hygienic {{let}} macro must rename the identifier {{lambda}} to protect it
-from being captured by a local binding.  The renaming effectively
-creates a fresh alias for {{lambda}}, one that cannot be captured by
-any subsequent binding:
+This would not be hygienic, however.  A hygienic {{let}} macro must
+rename the identifier {{lambda}} to protect it from being captured by
+a local binding.  The renaming effectively creates a fresh alias for
+{{lambda}}, one that cannot be captured by any subsequent binding:
 
-  (lambda (exp rename compare)
-    (let ((vars (map car (cadr exp)))
-          (inits (map cadr (cadr exp)))
-          (body (cddr exp)))
-      `((,(rename 'lambda) ,vars ,@body)
-        ,@inits)))
+  (er-macro-transformer
+    (lambda (exp rename compare)
+      (let ((vars (map car (cadr exp)))
+            (inits (map cadr (cadr exp)))
+            (body (cddr exp)))
+        `((,(rename 'lambda) ,vars ,@body)
+          ,@inits))))
 
 The expression returned by the transformation procedure will be
 expanded in the syntactic environment obtained from the syntactic
@@ -136,20 +139,21 @@ transformed macro application.  For example, the transformation
 procedure for a simplified version of the {{cond}} macro can be written
 as
 
-  (lambda (exp rename compare)
-    (let ((clauses (cdr exp)))
-      (if (null? clauses)
-          `(,(rename 'quote) unspecified)
-          (let* ((first (car clauses))
-                 (rest (cdr clauses))
-                 (test (car first)))
-            (cond ((and (symbol? test)
-                        (compare test (rename 'else)))
-                   `(,(rename 'begin) ,@(cdr first)))
-                  (else `(,(rename 'if)
-                          ,test
-                           (,(rename 'begin) ,@(cdr first))
-                           (,(r 'cond) ,@rest))))))))
+  (er-macro-transformer
+    (lambda (exp rename compare)
+      (let ((clauses (cdr exp)))
+	(if (null? clauses)
+	    `(,(rename 'quote) unspecified)
+	    (let* ((first (car clauses))
+		   (rest (cdr clauses))
+		   (test (car first)))
+	      (cond ((and (symbol? test)
+			  (compare test (rename 'else)))
+		     `(,(rename 'begin) ,@(cdr first)))
+		    (else `(,(rename 'if)
+			    ,test
+			     (,(rename 'begin) ,@(cdr first))
+			     (,(r 'cond) ,@rest)))))))))
 
 In this example the identifier {{else}} is renamed before being passed
 to the comparison predicate, so the comparison will be true if and
@@ -170,11 +174,12 @@ references to {{exit}} in the body of the loop, so {{exit}} is not
 renamed.
 
   (define-syntax loop
-    (lambda (x r c)
-      (let ((body (cdr x)))
-        `(,(r 'call-with-current-continuation)
-          (,(r 'lambda) (exit)
-           (,(r 'let) ,(r 'f) () ,@body (,(r 'f))))))))
+    (er-macro-transformer
+      (lambda (x r c)
+        (let ((body (cdr x)))
+          `(,(r 'call-with-current-continuation)
+            (,(r 'lambda) (exit)
+             (,(r 'let) ,(r 'f) () ,@body (,(r 'f)))))))))
 
 Suppose a {{while}} macro is implemented using {{loop}}, with the intent
 that {{exit}} may be used to escape from the {{while}} loop.  The {{while}}
@@ -192,12 +197,13 @@ inserted by the {{loop}} macro.  In other words, this {{while}} macro is
 not hygienic.  Like {{loop}}, it must be written using procedurally:
 
   (define-syntax while
-    (lambda (x r c)
-      (let ((test (cadr x))
-            (body (cddr x)))
-        `(,(r 'loop)
-          (,(r 'if) (,(r 'not) ,test) (exit #f))
-          ,@body))))
+    (er-macro-transformer
+      (lambda (x r c)
+        (let ((test (cadr x))
+              (body (cddr x)))
+          `(,(r 'loop)
+            (,(r 'if) (,(r 'not) ,test) (exit #f))
+            ,@body)))))
 
 Think about it: If we ''did'' rename {{exit}}, it would refer to an
 {{exit}} procedure existing in the context of the macro's definition.
