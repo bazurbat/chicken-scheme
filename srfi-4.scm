@@ -295,7 +295,7 @@ EOF
 		(##core#inline "C_u_i_u8vector_set" v i init) ) ) ) ) ) )
 
   (set! make-s8vector
-    (lambda (len #!optional (init #f)  (ext? #f) (fin #t))
+    (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
       (##sys#check-exact len 'make-s8vector)
       (let ((v (##sys#make-structure 's8vector (alloc 'make-s8vector len ext?))))
 	(when (and ext? fin?) (set-finalizer! v ext-free))
@@ -308,7 +308,7 @@ EOF
 		(##core#inline "C_u_i_s8vector_set" v i init) ) ) ) ) ) )
 
   (set! make-u16vector
-    (lambda (len #!optional (init #f)  (ext? #f) (fin #t))
+    (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
       (##sys#check-exact len 'make-u16vector)
       (let ((v (##sys#make-structure 'u16vector (alloc 'make-u16vector (##core#inline "C_fixnum_shift_left" len 1) ext?))))
 	(when (and ext? fin?) (set-finalizer! v ext-free))
@@ -321,7 +321,7 @@ EOF
 		(##core#inline "C_u_i_u16vector_set" v i init) ) ) ) ) ) )
 
   (set! make-s16vector
-    (lambda (len #!optional (init #f)  (ext? #f) (fin #t))
+    (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
       (##sys#check-exact len 'make-s16vector)
       (let ((v (##sys#make-structure 's16vector (alloc 'make-s16vector (##core#inline "C_fixnum_shift_left" len 1) ext?))))
 	(when (and ext? fin?) (set-finalizer! v ext-free))
@@ -334,7 +334,7 @@ EOF
 		(##core#inline "C_u_i_s16vector_set" v i init) ) ) ) ) ) )
 
   (set! make-u32vector
-    (lambda (len #!optional (init #f)  (ext? #f) (fin #t))
+    (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
       (##sys#check-exact len 'make-u32vector)
       (let ((v (##sys#make-structure 'u32vector (alloc 'make-u32vector (##core#inline "C_fixnum_shift_left" len 2) ext?))))
 	(when (and ext? fin?) (set-finalizer! v ext-free))
@@ -347,7 +347,7 @@ EOF
 		(##core#inline "C_u_i_u32vector_set" v i init) ) ) ) ) ) )
 
   (set! make-s32vector
-    (lambda (len #!optional (init #f)  (ext? #f) (fin #t))
+    (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
       (##sys#check-exact len 'make-s32vector)
       (let ((v (##sys#make-structure 's32vector (alloc 'make-s32vector (##core#inline "C_fixnum_shift_left" len 2) ext?))))
 	(when (and ext? fin?) (set-finalizer! v ext-free))
@@ -360,7 +360,7 @@ EOF
 		(##core#inline "C_u_i_s32vector_set" v i init) ) ) ) ) ) )
 
   (set! make-f32vector
-    (lambda (len #!optional (init #f)  (ext? #f) (fin #t))
+    (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
       (##sys#check-exact len 'make-f32vector)
       (let ((v (##sys#make-structure 'f32vector (alloc 'make-f32vector (##core#inline "C_fixnum_shift_left" len 2) ext?))))
 	(when (and ext? fin?) (set-finalizer! v ext-free))
@@ -375,7 +375,7 @@ EOF
 		(##core#inline "C_u_i_f32vector_set" v i init) ) ) ) ) ) )
 
   (set! make-f64vector
-    (lambda (len #!optional (init #f)  (ext? #f) (fin #t))
+    (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
       (##sys#check-exact len 'make-f64vector)
       (let ((v (##sys#make-structure
 		'f64vector
