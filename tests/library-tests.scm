@@ -125,3 +125,15 @@
   (assert (string=? "abc" (symbol->string (with-input-from-string "aBc" read))))
   (assert (string=? "aBc" (symbol->string (with-input-from-string "|aBc|" read))))
   (assert (string=? "aBc" (symbol->string (with-input-from-string "a\\Bc" read)))))
+
+
+;;; setters
+
+(define x '(a b c))
+(define kar car)
+(set! (kar (cdr x)) 99)
+(assert (equal? '(a 99 c) x))
+(define p (make-parameter 100))
+(assert (= 100 (p)))
+(set! (p) 1000)
+(assert (= 1000 (p)))
