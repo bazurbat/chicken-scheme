@@ -120,6 +120,51 @@
            y)))
 )
 
+;; From Al* Petrofsky's "An Advanced Syntax-Rules Primer for the Mildly Insane"
+(let ((a 1))
+  (letrec-syntax
+      ((foo (syntax-rules ()
+              ((_ b)
+               (bar a b))))
+       (bar (syntax-rules ()
+              ((_ c d)
+               (cons c (let ((c 3))
+                         (list d c 'c)))))))
+    (let ((a 2))
+      (t '(1 2 3 a) (foo a)))))
+
+;; ER equivalent
+(let ((a 1))
+  (letrec-syntax
+      ((foo (er-macro-transformer
+             (lambda (x r c)
+               `(,(r 'bar) ,(r 'a) ,(cadr x)))))
+       (bar (er-macro-transformer
+             (lambda (x r c)
+               (let ((c (cadr x))
+                     (d (caddr x)))
+                `(,(r 'cons) ,c
+                  (,(r 'let) ((,c 3))
+                   (,(r 'list) ,d ,c ',c))))))))
+    (let ((a 2))
+      (t '(1 2 3 a) (foo a)))))
+
+;; IR equivalent
+(let ((a 1))
+  (letrec-syntax
+      ((foo (ir-macro-transformer
+             (lambda (x i c)
+               `(bar a ,(cadr x)))))
+       (bar (ir-macro-transformer
+             (lambda (x i c)
+               (let ((c (cadr x))
+                     (d (caddr x)))
+                 `(cons ,c
+                        (let ((,c 3))
+                          (list ,d ,c ',c))))))))
+    (let ((a 2))
+      (t '(1 2 3 a) (foo a)))))
+
 (define-syntax kw
   (syntax-rules (baz)
     ((_ baz) "baz")

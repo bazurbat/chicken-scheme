@@ -116,6 +116,12 @@
 
 (define strip-syntax ##sys#strip-syntax)
 
+(define (##sys#extend-se se vars #!optional (aliases (map gensym vars)))
+  (for-each 
+   (cut ##sys#put! <> '##core#real-name <>) 
+   aliases vars)
+  (append (map cons vars aliases) se))
+
 
 ;;; Macro handling
 

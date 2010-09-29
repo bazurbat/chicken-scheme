@@ -392,7 +392,7 @@
 				 [vars (map (lambda (x) (car x)) bindings)] 
 				 (aliases (map gensym vars))
 				 [e2 (cons aliases e)]
-				 (se2 (append (map cons vars aliases) se))
+				 (se2 (##sys#extend-se se vars aliases))
 				 [body (##sys#compile-to-closure
 					(##sys#canonicalize-body (cddr x) se2 #f)
 					e2
@@ -465,7 +465,7 @@
 			     llist
 			     (lambda (vars argc rest)
 			       (let* ((aliases (map gensym vars))
-				      (se2 (append (map cons vars aliases) se))
+				      (se2 (##sys#extend-se se vars aliases))
 				      (e2 (cons aliases e))
 				      (body 
 				       (##sys#compile-to-closure

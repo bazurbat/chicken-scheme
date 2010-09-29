@@ -610,7 +610,7 @@
 			 (let* ((bindings (cadr x))
 				(vars (unzip1 bindings))
 				(aliases (map gensym vars))
-				(se2 (append (map cons vars aliases) se)) )
+				(se2 (##sys#extend-se se vars aliases)))
 			   (set-real-names! aliases vars)
 			   `(let
 			     ,(map (lambda (alias b)
@@ -647,7 +647,7 @@
 			    llist
 			    (lambda (vars argc rest)
 			      (let* ((aliases (map gensym vars))
-				     (se2 (append (map cons vars aliases) se))
+				     (se2 (##sys#extend-se se vars aliases))
 				     (body0 (##sys#canonicalize-body 
 					     obody se2 compiler-syntax-enabled))
 				     (body (walk body0 (append aliases e) se2 #f #f))
@@ -881,7 +881,7 @@
 			(let* ([vars (cadr x)]
 			       [obody (cddr x)]
 			       [aliases (map gensym vars)]
-			       (se2 (append (map cons vars aliases) se))
+			       (se2 (##sys#extend-se se vars aliases))
 			       [body 
 				(walk 
 				 (##sys#canonicalize-body obody se2 compiler-syntax-enabled)
