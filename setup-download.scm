@@ -53,6 +53,7 @@
   (define *chicken-install-user-agent* (conc "chicken-install " (chicken-version)))
   (define *trunk* #f)
   (define *mode* 'default)
+  (define *windows-shell* (foreign-value "C_WINDOWS_SHELL" bool))
 
   (define (d fstr . args)
     (let ([port (if *quiet* (current-error-port) (current-output-port))])
@@ -90,18 +91,32 @@
 	    (else "unknown\n"))))
 
   (define (locate-egg/local egg dir #!optional version destination)
-    (let* ([eggdir (make-pathname dir egg)]
-	   [tagdir (make-pathname eggdir "tags")]
-           [tagver (and (not *trunk*)
+    (let* ((eggdir (make-pathname dir egg))
+	   (tagdir (make-pathname eggdir "tags"))
+           (tagver (and (not *trunk*)
 			(file-exists? tagdir) (directory? tagdir)
-                        (existing-version egg version (directory tagdir)) ) ] )
-      (if tagver
-          (values (make-pathname tagdir tagver) tagver)
-          (let ([trunkdir (make-pathname eggdir "trunk")])
-            (when-no-such-version-warning egg version)
-            (if (and (file-exists? trunkdir) (directory? trunkdir))
-                (values trunkdir "trunk")
-                (values eggdir "") ) ) ) ) )
+                        (existing-version egg version (directory tagdir)) ) )
+	   (dest (and destination (make-pathname destination egg))))
+      (let-values (((src ver)
+		     (if tagver
+			 (values (make-pathname tagdir tagver) tagver)
+			 (let ((trunkdir (make-pathname eggdir "trunk")))
+			   (when-no-such-version-warning egg version)
+			   (if (and (file-exists? trunkdir) (directory? trunkdir))
+			       (values trunkdir "trunk")
+			       (values eggdir "") ) ) ) ) )
+	(cond (dest
+	       (create-directory dest)
+	       (let ((qdest (qs (normalize-pathname dest)))
+		     (qsrc (qs (normalize-pathname src)))
+		     (cmd (if *windows-shell*
+			      (sprintf "xcopy ~a ~a" src dest)
+			      (sprintf "cp -r ~a/* ~a" src dest))))
+		 (d "  ~a~%" cmd)
+		 (if (zero? (system cmd))
+		     (values #f "")
+		     (values dest ver))))
+	      (else (values src ver))))))
 
   (define (gather-egg-information dir)
     (let ((ls (directory dir)))
@@ -342,7 +357,6 @@
 		(*mode* mode))
       (case transport
 	((local)
-	 (when destination (warning "destination for transport `local' ignored"))
 	 (locate-egg/local name location version destination) )
 	((svn)
 	 (locate-egg/svn name location version destination username password) )
