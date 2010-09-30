@@ -37,7 +37,7 @@
 			list-extension-versions
 			temporary-directory)
 
-  (import scheme chicken)
+  (import scheme chicken foreign)
   (import extras irregex posix utils srfi-1 data-structures tcp srfi-13 files setup-api)
 
   (define-constant +default-tcp-connect-timeout+ 10000) ; 10 seconds
@@ -114,8 +114,8 @@
 			      (sprintf "cp -r ~a/* ~a" src dest))))
 		 (d "  ~a~%" cmd)
 		 (if (zero? (system cmd))
-		     (values #f "")
-		     (values dest ver))))
+		     (values dest ver)
+		     (values #f ""))))
 	      (else (values src ver))))))
 
   (define (gather-egg-information dir)
