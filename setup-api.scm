@@ -45,6 +45,7 @@
      setup-verbose-mode setup-install-mode deployment-mode
      installation-prefix
      destination-prefix
+     runtime-prefix
      chicken-prefix
      find-library find-header 
      program-path remove-file* 
@@ -229,6 +230,10 @@
   (reg "chicken-uninstall" (foreign-value "C_CHICKEN_UNINSTALL_PROGRAM" c-string))
   (reg "chicken-status" (foreign-value "C_CHICKEN_STATUS_PROGRAM" c-string))
   (reg "chicken-bug" (foreign-value "C_CHICKEN_BUG_PROGRAM" c-string)))
+
+(define (target-prefix fname)
+  (and-let* ((tp (runtime-prefix)))
+    (make-pathname tp fname)))
 
 (define (fixpath prg)
   (cond ((string=? prg "csc")
@@ -444,6 +449,7 @@
   (make-pathname rpath fn setup-file-extension) )
 
 (define destination-prefix (make-parameter #f))
+(define runtime-prefix (make-parameter #f))
 
 (define installation-prefix
   (let ((prefix (get-environment-variable "CHICKEN_INSTALL_PREFIX")))
@@ -574,9 +580,6 @@
 	   (dests (map (lambda (f)
 			 (let ((from (if (pair? f) (car f) f))
 			       (to (make-dest-pathname rpathd f)) )
-			   (when (and (not *windows*) 
-				      (equal? "so" (pathname-extension to)))
-			     (run (,*remove-command* ,(shellpath to)) ))
 			   (copy-file from to)
 			   (unless *windows-shell*
 			     (run (,*chmod-command* a+r ,(shellpath to))))
@@ -585,7 +588,9 @@
 					(equal? (cadr static) from) 
 					(equal? (pathname-extension to) "a"))
 			       (run (,*ranlib-command* ,(shellpath to)) ) ))
-			   to))
+			   (if (deployment-mode)
+			       f
+			       (or (target-prefix f) to))))
 		       files) ) )
       (write-info id dests (supply-version info #f)) ) ) )
 

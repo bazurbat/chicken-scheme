@@ -97,10 +97,10 @@
   (define *debug-setup* #f)
   (define *keep-going* #f)
 
-  (define (get-prefix)
+  (define (get-prefix #!optional runtime)
     (cond ((and *cross-chicken*
 		(not *host-extension*))
-	   (or *prefix*
+	   (or (and (not runtime) *prefix*)
 	       (foreign-value "C_TARGET_PREFIX" c-string)))
 	  (else *prefix*)))
 
@@ -411,6 +411,11 @@
      (let ((prefix (get-prefix)))
        (if prefix
 	   (sprintf " -e \"(destination-prefix \\\"~a\\\")\"" 
+	     (normalize-pathname prefix 'unix))
+	   ""))
+     (let ((prefix (get-prefix #t)))
+       (if prefix
+	   (sprintf " -e \"(runtime-prefix \\\"~a\\\")\"" 
 	     (normalize-pathname prefix 'unix))
 	   ""))
      (if (pair? *csc-features*)
