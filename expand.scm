@@ -95,7 +95,7 @@
                           (getp x '##core#macro-alias) ) ) )
               (cond ((getp x '##core#real-name))
                     ((and alias (not (assq x se)))
-                     (##sys#alias-global-hook x #f))
+                     (##sys#alias-global-hook x #f #f))
                     ((not x2) x)
                     ((pair? x2) x)
                     (else x2))))
@@ -273,12 +273,13 @@
     "#" 
     (##sys#slot sym 1) ) ) )
 
-(define (##sys#alias-global-hook sym assign)
+(define (##sys#alias-global-hook sym assign where)
   (define (mrename sym)
     (cond ((##sys#current-module) => 
 	   (lambda (mod)
 	     (dm "(ALIAS) global alias " sym " in " (module-name mod))
-	     (unless assign (##sys#register-undefined sym mod))
+	     (unless assign 
+	       (##sys#register-undefined sym mod where))
 	     (##sys#module-rename sym (module-name mod))))
 	  (else sym)))
   (cond ((##sys#qualified-symbol? sym) sym)
@@ -1590,7 +1591,7 @@
   (defined-list module-defined-list set-module-defined-list!) ; ((SYMBOL . VALUE) ...)    - *exported* value definitions
   (exist-list module-exist-list set-module-exist-list!)	      ; (SYMBOL ...)    - only for checking refs to undef'd
   (defined-syntax-list module-defined-syntax-list set-module-defined-syntax-list!) ; ((SYMBOL . VALUE) ...)
-  (undefined-list module-undefined-list set-module-undefined-list!) ; (SYMBOL ...)
+  (undefined-list module-undefined-list set-module-undefined-list!) ; ((SYMBOL WHERE1 ...) ...)
   (import-forms module-import-forms set-module-import-forms!)	    ; (SPEC ...)
   (meta-import-forms module-meta-import-forms set-module-meta-import-forms!)	    ; (SPEC ...)
   (meta-expressions module-meta-expressions set-module-meta-expressions!) ; (EXP ...)
@@ -1633,8 +1634,8 @@
       (##sys#toplevel-definition-hook	; in compiler, hides unexported bindings
        (##sys#module-rename sym (module-name mod)) 
        mod exp #f)
-      (when (memq sym ulist)
-	(set-module-undefined-list! mod (##sys#delq sym ulist)))
+      (and-let* ((a (assq sym ulist)))
+	(set-module-undefined-list! mod (##sys#delq a ulist)))
       (check-for-redef sym (##sys#current-environment) (##sys#macro-environment))
       (set-module-exist-list! mod (cons sym (module-exist-list mod)))
       (when exp
@@ -1650,8 +1651,8 @@
 		   (##sys#find-export sym mod #t)))
 	  (ulist (module-undefined-list mod))
 	  (mname (module-name mod)))
-      (when (memq sym ulist)
-	(##sys#warn "use of syntax precedes definition" sym))
+      (when (assq sym ulist)	    
+	(##sys#warn "use of syntax precedes definition" sym)) ;XXX could report locations
       (check-for-redef sym (##sys#current-environment) (##sys#macro-environment))
       (dm "defined syntax: " sym)
       (when exp
@@ -1663,11 +1664,17 @@
        mod
        (cons (cons sym val) (module-defined-syntax-list mod))))))
 
-(define (##sys#register-undefined sym mod)
+(define (##sys#register-undefined sym mod where)
   (when mod
     (let ((ul (module-undefined-list mod)))
-      (unless (memq sym ul)
-	(set-module-undefined-list! mod (cons sym ul))))))
+      (cond ((assq sym ul) =>
+	     (lambda (a)
+	       (when (and where (not (memq where (cdr a))))
+		 (set-cdr! a (cons where (cdr a))))))
+	    (else
+	     (set-module-undefined-list!
+	      mod
+	      (cons (cons sym (if where (list where) '())) ul)))))))
 
 (define (##sys#register-module name explist #!optional (vexports '()) (sexports '()))
   (let ((mod (make-module name explist vexports sexports)))
@@ -1860,99 +1867,113 @@
 		 (loop (cdr xl))))
 	    (else (loop (cdr xl)))))))
 
-(define (##sys#finalize-module mod)
-  (let* ((explist (module-export-list mod))
-	 (name (module-name mod))
-	 (dlist (module-defined-list mod))
-	 (elist (module-exist-list mod))
-	 (missing #f)
-	 (sdlist (map (lambda (sym) (assq (car sym) (##sys#macro-environment)))
-		      (module-defined-syntax-list mod)))
-	 (sexports
-	  (if (eq? #t explist)
-	      sdlist
-	      (let loop ((me (##sys#macro-environment)))
-		(cond ((null? me) '())
-		      ((##sys#find-export (caar me) mod #f)
-		       (cons (car me) (loop (cdr me))))
-		      (else (loop (cdr me)))))))
-	 (vexports
-	  (let loop ((xl (if (eq? #t explist) elist explist)))
-	    (if (null? xl)
-		'()
-		(let* ((h (car xl))
-		       (id (if (symbol? h) h (car h))))
-		  (if (assq id sexports) 
-		      (loop (cdr xl))
-		      (cons 
-		       (cons 
-			id
-			(let ((def (assq id dlist)))
-			  (if (and def (symbol? (cdr def))) 
-			      (cdr def)
-			      (let ((a (assq id (##sys#current-environment))))
-				(cond ((and a (symbol? (cdr a))) 
-				       (dm "reexporting: " id " -> " (cdr a))
-				       (cdr a)) 
-				      ((not def)
-				       (set! missing #t)
-				       (##sys#warn 
-					(string-append 
-					 "exported identifier of module `" 
-					 (symbol->string name)
-					 "' has not been defined")
-					id)
-				       #f)
-				      (else (##sys#module-rename id name)))))))
-		       (loop (cdr xl)))))))))
-    (for-each
-     (lambda (u)
-       (unless (memq u elist)
-	 (set! missing #t)
-	 (##sys#warn "reference to possibly unbound identifier" u)
-	 (and-let* ((a (getp u '##core#db)))
-	   (if (= 1 (length a))
-	       (##sys#warn
-		(string-append 
-		 "  suggesting: `(import " (symbol->string (cadar a)) 
-		 ")'"))
-	       (##sys#warn
-		(string-append
-		 "  suggesting one of:\n"
-		 (let loop ((lst a))
-		   (if (null? lst)
-		       ""
-		       (string-append
-			"Warning:     (import " (symbol->string (cadar lst)) ")\n"
-			(loop (cdr lst)))))))))))
-     (module-undefined-list mod))
-    (when missing
-      (##sys#error "module unresolved" name))
-    (let* ((iexports 
-	    (map (lambda (exp)
-		   (cond ((symbol? (cdr exp)) exp)
-			 ((assq (car exp) (##sys#macro-environment)))
-			 (else (##sys#error "(internal) indirect export not found" (car exp)))) )
-		 (module-indirect-exports mod)))
-	   (new-se (merge-se 
-		    (##sys#macro-environment) 
-		    (##sys#current-environment) 
-		    iexports vexports sexports sdlist)))
-      (##sys#mark-imported-symbols iexports)
-      (for-each
-       (lambda (m)
-	 (let ((se (merge-se (cadr m) new-se))) ;XXX needed?
-	   (dm `(FIXUP: ,(car m) ,@(map-se se)))
-	   (set-car! (cdr m) se)))
-       sdlist)
-      (dm `(EXPORTS: 
-	    ,(module-name mod) 
-	    (DLIST: ,@dlist)
-	    (SDLIST: ,@(map-se sdlist))
-	    (IEXPORTS: ,@(map-se iexports))
-	    (VEXPORTS: ,@(map-se vexports))
-	    (SEXPORTS: ,@(map-se sexports))))
-      (set-module-vexports! mod vexports)
-      (set-module-sexports! mod sexports))))
+(define ##sys#finalize-module 
+  (let ((display display)
+	(write-char write-char))
+    (lambda (mod)
+      (let* ((explist (module-export-list mod))
+	     (name (module-name mod))
+	     (dlist (module-defined-list mod))
+	     (elist (module-exist-list mod))
+	     (missing #f)
+	     (sdlist (map (lambda (sym) (assq (car sym) (##sys#macro-environment)))
+			  (module-defined-syntax-list mod)))
+	     (sexports
+	      (if (eq? #t explist)
+		  sdlist
+		  (let loop ((me (##sys#macro-environment)))
+		    (cond ((null? me) '())
+			  ((##sys#find-export (caar me) mod #f)
+			   (cons (car me) (loop (cdr me))))
+			  (else (loop (cdr me)))))))
+	     (vexports
+	      (let loop ((xl (if (eq? #t explist) elist explist)))
+		(if (null? xl)
+		    '()
+		    (let* ((h (car xl))
+			   (id (if (symbol? h) h (car h))))
+		      (if (assq id sexports) 
+			  (loop (cdr xl))
+			  (cons 
+			   (cons 
+			    id
+			    (let ((def (assq id dlist)))
+			      (if (and def (symbol? (cdr def))) 
+				  (cdr def)
+				  (let ((a (assq id (##sys#current-environment))))
+				    (cond ((and a (symbol? (cdr a))) 
+					   (dm "reexporting: " id " -> " (cdr a))
+					   (cdr a)) 
+					  ((not def)
+					   (set! missing #t)
+					   (##sys#warn 
+					    (string-append 
+					     "exported identifier of module `" 
+					     (symbol->string name)
+					     "' has not been defined")
+					    id)
+					   #f)
+					  (else (##sys#module-rename id name)))))))
+			   (loop (cdr xl)))))))))
+	(for-each
+	 (lambda (u)
+	   (let* ((where (cdr u))
+		  (u (car u)))
+	     (unless (memq u elist)
+	       (let ((out (open-output-string)))
+		 (set! missing #t)
+		 (display "reference to possibly unbound identifier `" out)
+		 (display u out)
+		 (write-char #\' out)
+		 (when (pair? where)
+		   (display " in:" out)
+		   (for-each
+		    (lambda (sym)
+		      (display "\nWarning:    " out)
+		      (display sym out))
+		    where))
+		 (and-let* ((a (getp u '##core#db)))
+		   (cond ((= 1 (length a))
+			  (display "\nWarning:    suggesting: `(import " out)
+			  (display (cadar a) out)
+			  (display ")'" out))
+			 (else
+			  (display "\nWarning:    suggesting one of:" out)
+			  (for-each
+			   (lambda (a)
+			     (display "\nWarning:    (import " out)
+			     (display (cadr a) out)
+			     (write-char #\) out))
+			   a))))
+		 (##sys#warn (get-output-string out))))))
+	 (module-undefined-list mod))
+	(when missing
+	  (##sys#error "module unresolved" name))
+	(let* ((iexports 
+		(map (lambda (exp)
+		       (cond ((symbol? (cdr exp)) exp)
+			     ((assq (car exp) (##sys#macro-environment)))
+			     (else (##sys#error "(internal) indirect export not found" (car exp)))) )
+		     (module-indirect-exports mod)))
+	       (new-se (merge-se 
+			(##sys#macro-environment) 
+			(##sys#current-environment) 
+			iexports vexports sexports sdlist)))
+	  (##sys#mark-imported-symbols iexports)
+	  (for-each
+	   (lambda (m)
+	     (let ((se (merge-se (cadr m) new-se))) ;XXX needed?
+	       (dm `(FIXUP: ,(car m) ,@(map-se se)))
+	       (set-car! (cdr m) se)))
+	   sdlist)
+	  (dm `(EXPORTS: 
+		,(module-name mod) 
+		(DLIST: ,@dlist)
+		(SDLIST: ,@(map-se sdlist))
+		(IEXPORTS: ,@(map-se iexports))
+		(VEXPORTS: ,@(map-se vexports))
+		(SEXPORTS: ,@(map-se sexports))))
+	  (set-module-vexports! mod vexports)
+	  (set-module-sexports! mod sexports))))))
 
 (define ##sys#module-table '())
