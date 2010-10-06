@@ -1,3 +1,33 @@
+4.6.2
+
+- the `regex' library unit has been removed and is separately
+  available as an extension which should be fully backwards-
+  compatible
+- `irregex' is now a core library unit and replaces the 
+  `regex' API
+- `-frwapv' has been added to the default C compiler options
+- configuration-header fix for BSD systems (thanks to Peter Bex
+  and Christian Kellermann)
+- added support for `pointer-vectors' (unit `lolevel'):
+  make-pointer-vector
+  pointer-vector?
+  pointer-vector-length
+  pointer-vector-ref
+  pointer-vector-set!
+- added new foreign type `poiner-vector' which maps to `void **'
+- new "implicit renaming" macro facility contributed by Peter Bex
+  (see `ir-macro-transformer')
+- the warning shown when unimported identifiers are used in 
+  compiled modules now also shows the name of the procedure where
+  the identifier is referenced (suggested by Alaric Snell-Pym)
+- the deprecated `random-seed' function has been removed
+- parameters are now settable and can be modified using `set!'
+  (SRFI-17)
+- the impementation of overflow-detection for arithmetic operations
+  on fixnums have been replaced and now allow using the full 63-bit
+  range of fixnums on 64-bit systems
+- fixed serious inlining-bug (thanks to SVen Hartrumpf)
+
 4.6.1
 
 - record-definitions are now made local to the module in which
