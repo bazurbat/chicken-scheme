@@ -498,7 +498,6 @@
 (pretty-print-width (procedure pretty-print-width (#!optional *) *))
 (printf (procedure printf (string #!rest) undefined))
 (random (procedure random (number) number))
-(random-seed deprecated)
 (randomize (procedure randomize (#!optional number) undefined))
 (read-byte (procedure read-byte (#!optional port) fixnum))
 (read-file (procedure read-file (#!optional (or port string) (procedure (port) *) fixnum) list))

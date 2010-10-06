@@ -33,7 +33,6 @@
    pretty-print-width
    printf
    random
-   random-seed				; DEPRECATED
    randomize
    read-byte
    read-file
