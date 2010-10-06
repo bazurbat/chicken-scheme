@@ -986,6 +986,7 @@ extern double trunc(double);
 #define C_c_f32vector_or_null(x)   ((float *)C_srfi_4_vector_or_null(x))
 #define C_c_f64vector(x)           ((double *)C_data_pointer(C_u_i_cdr(x)))
 #define C_c_f64vector_or_null(x)   ((double *)C_srfi_4_vector_or_null(x))
+#define C_c_pointer_vector(x)      ((void **)C_data_pointer(C_block_item((x), 2)))
 
 #define C_isnan(f)                 (!((f) == (f)))
 #define C_isinf(f)                 ((f) == (f) + (f) && (f) != 0.0)
@@ -1295,7 +1296,7 @@ extern double trunc(double);
 #define C_u_i_f64vector_length          C_u_i_64vector_length
 
 #define C_u_i_u8vector_ref(x, i)        C_fix(((unsigned char *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ])
-#define C_u_i_s8vector_ref(x, i)        C_fix(((char *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ])
+#define C_u_i_s8vector_ref(x, i)        C_fix(((signed char *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ])
 #define C_u_i_u16vector_ref(x, i)       C_fix(((unsigned short *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ])
 #define C_u_i_s16vector_ref(x, i)       C_fix(((short *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ])
 #define C_u_i_u32vector_ref(x, i)       C_fix(((C_u32 *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ])
@@ -1304,7 +1305,7 @@ extern double trunc(double);
 #define C_a_i_s32vector_ref(ptr, c, x, i)  C_int_to_num(ptr, ((C_s32 *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ])
 
 #define C_u_i_u8vector_set(x, i, v)     ((((unsigned char *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ] = C_unfix(v)), C_SCHEME_UNDEFINED)
-#define C_u_i_s8vector_set(x, i, v)     ((((char *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ] = C_unfix(v)), C_SCHEME_UNDEFINED)
+#define C_u_i_s8vector_set(x, i, v)     ((((signed char *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ] = C_unfix(v)), C_SCHEME_UNDEFINED)
 #define C_u_i_u16vector_set(x, i, v)    ((((unsigned short *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ] = C_unfix(v)), C_SCHEME_UNDEFINED)
 #define C_u_i_s16vector_set(x, i, v)    ((((short *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ] = C_unfix(v)), C_SCHEME_UNDEFINED)
 #define C_u_i_u32vector_set(x, i, v)    ((((C_u32 *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ] = C_num_to_unsigned_int(v)), C_SCHEME_UNDEFINED)
@@ -1313,7 +1314,7 @@ extern double trunc(double);
 #define C_u_i_bit_setp(x, i)            C_mk_bool((C_unfix(x) & (1 << C_unfix(i))) != 0)
 
 #define C_u_i_pointer_u8_ref(ptr)         C_fix(*((unsigned char *)C_block_item(ptr, 0)))
-#define C_u_i_pointer_s8_ref(ptr)         C_fix(*((char *)C_block_item(ptr, 0)))
+#define C_u_i_pointer_s8_ref(ptr)         C_fix(*((signed char *)C_block_item(ptr, 0)))
 #define C_u_i_pointer_u16_ref(ptr)        C_fix(*((unsigned short *)C_block_item(ptr, 0)))
 #define C_u_i_pointer_s16_ref(ptr)        C_fix(*((short *)C_block_item(ptr, 0)))
 #define C_a_u_i_pointer_u32_ref(ap, n, ptr)  \
@@ -1325,7 +1326,7 @@ extern double trunc(double);
 #define C_u_i_pointer_u8_set(ptr, x)  \
   (*((unsigned char *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
 #define C_u_i_pointer_s8_set(ptr, x)  \
-  (*((char *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
+  (*((signed char *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
 #define C_u_i_pointer_u16_set(ptr, x)  \
   (*((unsigned short *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
 #define C_u_i_pointer_s16_set(ptr, x)  \
@@ -1828,7 +1829,8 @@ C_fctexport C_word C_fcall C_i_foreign_char_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_fixnum_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_flonum_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_block_argumentp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_foreign_number_vector_argumentp(C_word t, C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_foreign_number_vector_argumentp(C_word t, C_word x) C_regparm; /* OBSOLETE */
+C_fctexport C_word C_fcall C_i_foreign_struct_wrapper_argumentp(C_word t, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_string_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_symbol_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_tagged_pointer_argumentp(C_word x, C_word t) C_regparm;
@@ -2030,6 +2032,12 @@ C_inline void *C_data_pointer_or_null(C_word x)
 C_inline void *C_srfi_4_vector_or_null(C_word x) 
 {
   return C_truep(x) ? C_data_pointer(C_block_item(x, 1)) : NULL;
+}
+
+
+C_inline void *C_c_pointer_vector_or_null(C_word x) 
+{
+  return C_truep(x) ? C_data_pointer(C_block_item(x, 2)) : NULL;
 }
 
 

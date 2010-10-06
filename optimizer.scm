@@ -287,7 +287,9 @@
 			   (touch)
 			   (for-each (cut put! db <> 'inline-target #t) fids)
 			   (walk
-			    (inline-lambda-bindings llist args (first (node-subexpressions lval)) #f db)
+			    (inline-lambda-bindings
+			     llist args (first (node-subexpressions lval)) #f db
+			     void)
 			    fids) ) )
 			((variable-mark var '##compiler#pure) =>
 			 (lambda (pb)
@@ -339,10 +341,19 @@
 				       (for-each (cut put! db <> 'inline-target #t) fids)
 				       (check-signature var args llist)
 				       (debugging 'o "inlining procedure" var)
-				       (touch)
-				       (walk
-					(inline-lambda-bindings llist args (first (node-subexpressions lval)) #t db)
-					fids) )
+				       (call/cc
+					(lambda (return)
+					  (define (cfk cvar)
+					    (debugging 
+					     'i
+					     "not inlining procedure because it refers to contractable"
+					     var cvar)
+					    (return (walk-generic n class params subs fids)))
+					  (let ((n2 (inline-lambda-bindings
+						     llist args (first (node-subexpressions lval))
+						     #t db cfk)))
+					    (touch)
+					    (walk n2 fids)))))
 				      ((test ifid 'has-unused-parameters)
 				       (if (< (length args) argc) ; Expression was already optimized (should this happen?)
 					   (walk-generic n class params subs fids)
@@ -403,9 +414,14 @@
 
 	  ((set!)
 	   (let ([var (first params)])
-	     (cond [(or (test var 'contractable) (test var 'replacable))
+	     (cond ((test var 'contractable)
 		    (touch)
-		    (make-node '##core#undefined '() '()) ]
+		    (when (test var 'global)
+		      (debugging 'i "removing global contractable" var))
+		    (make-node '##core#undefined '() '()) )
+		   ((test var 'replacable)
+		    (touch)
+		    (make-node '##core#undefined '() '()) )
 		   [(and (or (not (test var 'global))
 			     (not (variable-visible? var)))
 			 (not (test var 'inline-transient))

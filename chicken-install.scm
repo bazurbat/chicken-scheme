@@ -25,13 +25,13 @@
 
 
 (require-library setup-download setup-api)
-(require-library srfi-1 posix data-structures utils regex ports extras srfi-13 files)
+(require-library srfi-1 posix data-structures utils irregex ports extras srfi-13 files)
 (require-library chicken-syntax)	; in case an import library reexports chicken syntax
 (require-library chicken-ffi-syntax)	; same reason, also for filling modules.db
 
 (module main ()
 
-  (import scheme chicken srfi-1 posix data-structures utils regex ports extras
+  (import scheme chicken srfi-1 posix data-structures utils irregex ports extras
           srfi-13 files)
   (import setup-download setup-api)
 
@@ -51,7 +51,6 @@
       "srfi-13.import.so"
       "srfi-69.import.so"
       "extras.import.so"
-      "regex.import.so"
       "srfi-14.import.so"
       "tcp.import.so"
       "foreign.import.so"
@@ -98,10 +97,10 @@
   (define *debug-setup* #f)
   (define *keep-going* #f)
 
-  (define (get-prefix)
+  (define (get-prefix #!optional runtime)
     (cond ((and *cross-chicken*
 		(not *host-extension*))
-	   (or *prefix*
+	   (or (and (not runtime) *prefix*)
 	       (foreign-value "C_TARGET_PREFIX" c-string)))
 	  (else *prefix*)))
 
@@ -414,6 +413,11 @@
 	   (sprintf " -e \"(destination-prefix \\\"~a\\\")\"" 
 	     (normalize-pathname prefix 'unix))
 	   ""))
+     (let ((prefix (get-prefix #t)))
+       (if prefix
+	   (sprintf " -e \"(runtime-prefix \\\"~a\\\")\"" 
+	     (normalize-pathname prefix 'unix))
+	   ""))
      (if (pair? *csc-features*)
 	 (sprintf " -e \"(extra-features '~s)\"" *csc-features*)
 	 "")
@@ -515,17 +519,17 @@
     (let* ((files (glob (make-pathname (repository-path) "*.import.*")))
            (tmpdir (create-temporary-directory))
            (dbfile (make-pathname tmpdir +module-db+))
-           (rx (regexp ".*/([^/]+)\\.import\\.(scm|so)")))
+           (rx (irregex ".*/([^/]+)\\.import\\.(scm|so)")))
       (print "loading import libraries ...")
       (fluid-let ((##sys#warnings-enabled #f))
         (for-each
          (lambda (f)
-           (let ((m (string-match rx f)))
+           (let ((m (irregex-match rx f)))
 	     (handle-exceptions ex
 		 (print-error-message 
 		  ex (current-error-port) 
 		  (sprintf "Failed to import from `~a'" f))
-	       (eval `(import ,(string->symbol (cadr m)))))))
+	       (eval `(import ,(string->symbol (irregex-match-substring m 1)))))))
          files))
       (print "generating database")
       (let ((db
@@ -618,10 +622,10 @@ EOF
 
   (define (setup-proxy uri)
     (if (string? uri)
-        (cond ((string-match "(.+)\\:([0-9]+)" uri) =>
+        (cond ((irregex-match "(.+)\\:([0-9]+)" uri) =>
                (lambda (m)
-                 (set! *proxy-host* (cadr m))
-                 (set! *proxy-port* (string->number (caddr m))))
+                 (set! *proxy-host* (irregex-match-substring m 1))
+                 (set! *proxy-port* (string->number (irregex-match-substring m 2))))
                (else
                 (set! *proxy-host* uri)
                 (set! *proxy-port* 80))))))
@@ -630,7 +634,7 @@ EOF
 
   (define (main args)
     (let ((update #f)
-          (rx (regexp "([^:]+):(.+)")))
+          (rx (irregex "([^:]+):(.+)")))
       (setup-proxy (get-environment-variable "http_proxy"))
       (let loop ((args args) (eggs '()))
         (cond ((null? args)
@@ -781,9 +785,14 @@ EOF
                               "")
                              *eggs+dirs+vers*))
                           (loop (cdr args) (cons egg eggs))))
-                       ((string-match rx arg) =>
+                       ((irregex-match rx arg) =>
                         (lambda (m)
-                          (loop (cdr args) (alist-cons (cadr m) (caddr m) eggs))))
+                          (loop 
+			   (cdr args) 
+			   (alist-cons
+			    (irregex-match-substring m 1)
+			    (irregex-match-substring m 2)
+			    eggs))))
                        (else (loop (cdr args) (cons arg eggs))))))))))
 
   (register-feature! 'chicken-install)

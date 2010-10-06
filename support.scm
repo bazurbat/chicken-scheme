@@ -381,11 +381,14 @@
 ;;; Display analysis database:
 
 (define display-analysis-database
-  (let ((names '((captured . cpt) (assigned . set) (boxed . box) (global . glo) (assigned-locally . stl)
-		 (contractable . con) (standard-binding . stb) (simple . sim) (inlinable . inl)
+  (let ((names '((captured . cpt) (assigned . set) (boxed . box) (global . glo)
+		 (assigned-locally . stl)
+		 (contractable . con) (standard-binding . stb) (simple . sim)
+		 (inlinable . inl)
 		 (collapsable . col) (removable . rem) (constant . con)
 		 (inline-target . ilt) (inline-transient . itr)
-		 (undefined . und) (replacing . rpg) (unused . uud) (extended-binding . xtb) (inline-export . ilx)
+		 (undefined . und) (replacing . rpg) (unused . uud) (extended-binding . xtb)
+		 (inline-export . ilx) (hidden-refs . hrf)
 		 (customizable . cst) (has-unused-parameters . hup) (boxed-rest . bxr) ) ) 
 	(omit #f))
     (lambda (db)
@@ -576,14 +579,14 @@
 	 (list (proc (first vars) (second vars))
 	       (fold (cdr vars)) ) ) ) ) )
 
-(define (inline-lambda-bindings llist args body copy? db)
+(define (inline-lambda-bindings llist args body copy? db cfk)
   (decompose-lambda-list
    llist
    (lambda (vars argc rest)
      (receive (largs rargs) (split-at args argc)
        (let* ([rlist (if copy? (map gensym vars) vars)]
 	      [body (if copy? 
-			(copy-node-tree-and-rename body vars rlist db)
+			(copy-node-tree-and-rename body vars rlist db cfk)
 			body) ] )
 	 (fold-right
 	  (lambda (var val body) (make-node 'let (list var) (list val body)) )
@@ -592,13 +595,16 @@
 	       'let (list (last rlist))
 	       (list (if (null? rargs)
 			 (qnode '())
-			 (make-node '##core#inline_allocate (list "C_a_i_list" (* 3 (length rargs))) rargs) )
+			 (make-node
+			  '##core#inline_allocate
+			  (list "C_a_i_list" (* 3 (length rargs))) 
+			  rargs) )
 		     body) )
 	      body)
 	  (take rlist argc)
 	  largs) ) ) ) ) )
 
-(define (copy-node-tree-and-rename node vars aliases db)
+(define (copy-node-tree-and-rename node vars aliases db cfk)
   (let ([rlist (map cons vars aliases)])
     (define (rename v rl) (alist-ref v rl eq? v))
     (define (walk n rl)
@@ -611,7 +617,7 @@
 	  [(##core#variable) 
 	   (let ((var (first params)))
 	     (when (get db var 'contractable)
-	       (put! db var 'contractable #f) )
+	       (cfk var))
 	     (varnode (rename var rl))) ]
 	  [(set!) 
 	   (make-node
@@ -900,10 +906,10 @@
 ;;; Create foreign type checking expression:
 
 (define foreign-type-check
-  (let ([tmap '((nonnull-u8vector . u8vector) (nonnull-u16vector . u16vector)
+  (let ((tmap '((nonnull-u8vector . u8vector) (nonnull-u16vector . u16vector)
 		(nonnull-s8vector . s8vector) (nonnull-s16vector . s16vector)
 		(nonnull-u32vector . u32vector) (nonnull-s32vector . s32vector)
-		(nonnull-f32vector . f32vector) (nonnull-f64vector . f64vector) ) ] )
+		(nonnull-f32vector . f32vector) (nonnull-f64vector . f64vector))))
     (lambda (param type)
       (follow-without-loop
        type
@@ -926,19 +932,31 @@
 	      (if unsafe
 		  param
 		  `(##sys#foreign-block-argument ,param) ) ]
+	     ((pointer-vector)
+	      (let ([tmp (gensym)])
+		`(let ([,tmp ,param])
+		   (if ,tmp
+		       ,(if unsafe
+			    tmp
+			    `(##sys#foreign-struct-wrapper-argument 'pointer-vector ,tmp) )
+		       '#f) ) ) )
+	     ((nonnull-pointer-vector)
+	      (if unsafe
+		  param
+		  `(##sys#foreign-struct-wrapper-argument 'pointer-vector ,param) ) )
 	     [(u8vector u16vector s8vector s16vector u32vector s32vector f32vector f64vector)
 	      (let ([tmp (gensym)])
 		`(let ([,tmp ,param])
 		   (if ,tmp
 		       ,(if unsafe
 			    tmp
-			    `(##sys#foreign-number-vector-argument ',t ,tmp) )
+			    `(##sys#foreign-struct-wrapper-argument ',t ,tmp) )
 		       '#f) ) ) ]
 	     [(nonnull-u8vector nonnull-u16vector nonnull-s8vector nonnull-s16vector nonnull-u32vector nonnull-s32vector 
 				nonnull-f32vector nonnull-f64vector)
 	      (if unsafe
 		  param
-		  `(##sys#foreign-number-vector-argument 
+		  `(##sys#foreign-struct-wrapper-argument 
 		    ',(##sys#slot (assq t tmap) 1)
 		    ,param) ) ]
 	     [(integer long integer32) (if unsafe param `(##sys#foreign-integer-argument ,param))]
@@ -1161,7 +1179,7 @@
       (for-each (lambda (n) (walk n e)) ns) )
 
     (walk node '())
-    (values vars hvars) ) )
+    (values vars hvars) ) )		; => freevars hiddenvars
 
 
 ;;; Some pathname operations:

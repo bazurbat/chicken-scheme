@@ -63,7 +63,7 @@
 
 (declare
   (unit posix)
-  (uses scheduler regex extras utils files ports)
+  (uses scheduler irregex extras utils files ports)
   (disable-interrupts)
   (hide $quote-args-list $exec-setup $exec-teardown)
   (not inline ##sys#interrupt-hook ##sys#user-interrupt-hook)

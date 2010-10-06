@@ -969,6 +969,8 @@
     (let ((%<> (r '<>))
 	  (%<...> (r '<...>))
 	  (%apply (r 'apply)))
+      (when (null? (cdr form))
+        (syntax-error 'cut "you need to supply at least a procedure" form))
       (let loop ([xs (cdr form)] [vars '()] [vals '()] [rest #f])
 	(if (null? xs)
 	    (let ([rvars (reverse vars)]
@@ -982,7 +984,12 @@
 	    (cond ((c %<> (car xs))
 		   (let ([v (r (gensym))])
 		     (loop (cdr xs) (cons v vars) (cons v vals) #f) ) )
-		  ((c %<...> (car xs)) (loop '() vars vals #t))
+		  ((c %<...> (car xs))
+                   (if (null? (cdr xs))
+                       (loop '() vars vals #t)
+                       (syntax-error 'cut
+                                     "tail patterns after <...> are not supported"
+                                     form)))
 		  (else (loop (cdr xs) vars (cons (car xs) vals) #f)) ) ) ) ) )))
 
 (##sys#extend-macro-environment
@@ -993,6 +1000,8 @@
     (let ((%apply (r 'apply))
 	  (%<> (r '<>))
 	  (%<...> (r '<...>)))
+      (when (null? (cdr form))
+        (syntax-error 'cute "you need to supply at least a procedure" form))
       (let loop ([xs (cdr form)] [vars '()] [bs '()] [vals '()] [rest #f])
 	(if (null? xs)
 	    (let ([rvars (reverse vars)]
@@ -1008,7 +1017,12 @@
 	    (cond ((c %<> (car xs))
 		   (let ([v (r (gensym))])
 		     (loop (cdr xs) (cons v vars) bs (cons v vals) #f) ) )
-		  ((c %<...> (car xs)) (loop '() vars bs vals #t))
+		  ((c %<...> (car xs))
+                   (if (null? (cdr xs))
+                       (loop '() vars bs vals #t)
+                       (syntax-error 'cute
+                                     "tail patterns after <...> are not supported"
+                                     form)))
 		  (else 
 		   (let ([v (r (gensym))])
 		     (loop (cdr xs) 

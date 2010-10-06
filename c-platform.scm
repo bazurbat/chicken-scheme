@@ -127,7 +127,9 @@
     list-ref abs char-ready? peek-char list->string string->list) )
 
 (define default-extended-bindings
-  '(bitwise-and bitwise-ior bitwise-xor bitwise-not add1 sub1 fx+ fx- fx* fx/ fxmod o
+  '(bitwise-and 
+    bitwise-ior bitwise-xor bitwise-not add1 sub1 fx+ fx- fx* fx/
+    fx+? fx-? fx*? fx/? fxmod o
     fx= fx> fx< fx>= fx<= fixnum? fxneg fxmax fxmin identity fp+ fp- fp* fp/ fpmin fpmax fpneg
     fp> fp< fp= fp>= fp<= fxand fxnot fxior fxxor fxshr fxshl bit-set? fxodd? fxeven?
     fpfloor fpceiling fptruncate fpround fpsin fpcos fptan fpasin fpacos fpatan
@@ -169,7 +171,7 @@
     ##sys#bytevector? ##sys#make-vector ##sys#setter ##sys#car ##sys#cdr ##sys#pair?
     ##sys#eq? ##sys#list? ##sys#vector? ##sys#eqv? ##sys#get-keyword
     ##sys#foreign-char-argument ##sys#foreign-fixnum-argument ##sys#foreign-flonum-argument
-    ##sys#foreign-block-argument ##sys#foreign-number-vector-argument
+    ##sys#foreign-block-argument ##sys#foreign-struct-wrapper-argument
     ##sys#foreign-string-argument ##sys#foreign-pointer-argument ##sys#void
     ##sys#foreign-integer-argument ##sys#foreign-unsigned-integer-argument ##sys#double->number
     ##sys#peek-fixnum ##sys#setislot ##sys#poke-integer ##sys#permanent? ##sys#values ##sys#poke-double
@@ -212,7 +214,7 @@
  
 (for-each
  (cut mark-variable <> '##compiler#pure 'extended)
- '(fx+ fx- fx* fx/ fxmod
+ '(fx+ fx- fx* fx/ fxmod fx+? fx*? fx/? fx-?
        fx= fx> fx< fx>= fx<= fixnum? fxneg fxmax fxmin identity
     fxand fxnot fxior fxxor fxshr fxshl fxodd? fxeven?
     void not-pair? atom? any? u8vector? s8vector? u16vector? s16vector?
@@ -633,6 +635,10 @@
 (rewrite '##sys#size 2 1 "C_block_size" #t)
 (rewrite 'fxnot 2 1 "C_fixnum_not" #t)
 (rewrite 'fx* 2 2 "C_fixnum_times" #t)
+(rewrite 'fx+? 2 2 "C_i_o_fixnum_plus" #t)
+(rewrite 'fx-? 2 2 "C_i_o_fixnum_difference" #t)
+(rewrite 'fx*? 2 2 "C_i_o_fixnum_times" #t)
+(rewrite 'fx/? 2 2 "C_i_o_fixnum_quotient" #t)
 (rewrite 'fx= 2 2 "C_eqp" #t)
 (rewrite 'fx> 2 2 "C_fixnum_greaterp" #t)
 (rewrite 'fx< 2 2 "C_fixnum_lessp" #t)
@@ -953,7 +959,7 @@
 (rewrite '##sys#foreign-char-argument 17 1 "C_i_foreign_char_argumentp")
 (rewrite '##sys#foreign-flonum-argument 17 1 "C_i_foreign_flonum_argumentp")
 (rewrite '##sys#foreign-block-argument 17 1 "C_i_foreign_block_argumentp")
-(rewrite '##sys#foreign-number-vector-argument 17 2 "C_i_foreign_number_vector_argumentp")
+(rewrite '##sys#foreign-struct-wrapper-argument 17 2 "C_i_foreign_struct_wrapper_argumentp")
 (rewrite '##sys#foreign-string-argument 17 1 "C_i_foreign_string_argumentp")
 (rewrite '##sys#foreign-pointer-argument 17 1 "C_i_foreign_pointer_argumentp")
 (rewrite '##sys#foreign-integer-argument 17 1 "C_i_foreign_integer_argumentp")

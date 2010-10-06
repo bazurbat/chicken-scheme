@@ -55,7 +55,7 @@
 (define-foreign-variable binary-version int "C_BINARY_VERSION")
 
 (define ##sys#core-library-modules
-  '(extras lolevel utils files tcp regex posix srfi-1 srfi-4 srfi-13 
+  '(extras lolevel utils files tcp irregex posix srfi-1 srfi-4 srfi-13 
 	   srfi-14 srfi-18 srfi-69 data-structures ports chicken-syntax
 	   chicken-ffi-syntax))
 
@@ -253,7 +253,7 @@
 	       (receive (i j) (lookup x e se)
 		 (cond [(not i)
 			(let ((var (if (not (assq x se)) ; global?
-				       (##sys#alias-global-hook j #f)
+				       (##sys#alias-global-hook j #f cntr)
 				       (or (##sys#get j '##core#primitive) j))))
 			  (if ##sys#eval-environment
 			      (let ([loc (##sys#hash-table-location ##sys#eval-environment var #t)])
@@ -367,7 +367,7 @@
 					 (and-let* ((a (assq var (##sys#current-environment)))
 						    ((symbol? (cdr a))))
 					   (##sys#notice "assignment to imported value binding" var)))
-				       (let ((var (##sys#alias-global-hook j #t)))
+				       (let ((var (##sys#alias-global-hook j #t cntr)))
 					 (if ##sys#eval-environment
 					     (let ([loc (##sys#hash-table-location
 							 ##sys#eval-environment 
@@ -392,7 +392,7 @@
 				 [vars (map (lambda (x) (car x)) bindings)] 
 				 (aliases (map gensym vars))
 				 [e2 (cons aliases e)]
-				 (se2 (append (map cons vars aliases) se))
+				 (se2 (##sys#extend-se se vars aliases))
 				 [body (##sys#compile-to-closure
 					(##sys#canonicalize-body (cddr x) se2 #f)
 					e2
@@ -465,7 +465,7 @@
 			     llist
 			     (lambda (vars argc rest)
 			       (let* ((aliases (map gensym vars))
-				      (se2 (append (map cons vars aliases) se))
+				      (se2 (##sys#extend-se se vars aliases))
 				      (e2 (cons aliases e))
 				      (body 
 				       (##sys#compile-to-closure
@@ -1573,9 +1573,8 @@
 		     (let loop ((vars ##sys#unbound-in-eval) (u '()))
 		       (cond ((null? vars)
 			      (when (pair? u)
-				(##sys#print 
-				 "Warning: the following toplevel variables are referenced but unbound:\n" 
-				 #f ##sys#standard-error)
+				(##sys#notice
+				 "the following toplevel variables are referenced but unbound:\n")
 				(for-each 
 				 (lambda (v)
 				   (##sys#print "  " #f ##sys#standard-error)

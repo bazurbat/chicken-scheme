@@ -24,7 +24,7 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
-(require-library extras regex posix utils setup-api srfi-1 data-structures tcp srfi-13
+(require-library extras irregex posix utils setup-api srfi-1 data-structures tcp srfi-13
 		 files)
 
 
@@ -37,11 +37,13 @@
 			list-extension-versions
 			temporary-directory)
 
-  (import scheme chicken)
-  (import extras regex posix utils srfi-1 data-structures tcp srfi-13 files setup-api)
+  (import scheme chicken foreign)
+  (import extras irregex posix utils srfi-1 data-structures tcp srfi-13 files setup-api)
 
   (define-constant +default-tcp-connect-timeout+ 10000) ; 10 seconds
   (define-constant +default-tcp-read/write-timeout+ 20000) ; 20 seconds
+
+  (define-constant +url-regex+ "(http://)?([^/:]+)(:([^:/]+))?(/.+)")
 
   (tcp-connect-timeout +default-tcp-connect-timeout+)
   (tcp-read-timeout +default-tcp-read/write-timeout+)
@@ -51,6 +53,7 @@
   (define *chicken-install-user-agent* (conc "chicken-install " (chicken-version)))
   (define *trunk* #f)
   (define *mode* 'default)
+  (define *windows-shell* (foreign-value "C_WINDOWS_SHELL" bool))
 
   (define (d fstr . args)
     (let ([port (if *quiet* (current-error-port) (current-output-port))])
@@ -88,18 +91,32 @@
 	    (else "unknown\n"))))
 
   (define (locate-egg/local egg dir #!optional version destination)
-    (let* ([eggdir (make-pathname dir egg)]
-	   [tagdir (make-pathname eggdir "tags")]
-           [tagver (and (not *trunk*)
+    (let* ((eggdir (make-pathname dir egg))
+	   (tagdir (make-pathname eggdir "tags"))
+           (tagver (and (not *trunk*)
 			(file-exists? tagdir) (directory? tagdir)
-                        (existing-version egg version (directory tagdir)) ) ] )
-      (if tagver
-          (values (make-pathname tagdir tagver) tagver)
-          (let ([trunkdir (make-pathname eggdir "trunk")])
-            (when-no-such-version-warning egg version)
-            (if (and (file-exists? trunkdir) (directory? trunkdir))
-                (values trunkdir "trunk")
-                (values eggdir "") ) ) ) ) )
+                        (existing-version egg version (directory tagdir)) ) )
+	   (dest (and destination (make-pathname destination egg))))
+      (let-values (((src ver)
+		     (if tagver
+			 (values (make-pathname tagdir tagver) tagver)
+			 (let ((trunkdir (make-pathname eggdir "trunk")))
+			   (when-no-such-version-warning egg version)
+			   (if (and (file-exists? trunkdir) (directory? trunkdir))
+			       (values trunkdir "trunk")
+			       (values eggdir "") ) ) ) ) )
+	(cond (dest
+	       (create-directory dest)
+	       (let ((qdest (qs (normalize-pathname dest)))
+		     (qsrc (qs (normalize-pathname src)))
+		     (cmd (if *windows-shell*
+			      (sprintf "xcopy ~a ~a" src dest)
+			      (sprintf "cp -r ~a/* ~a" src dest))))
+		 (d "  ~a~%" cmd)
+		 (if (zero? (system cmd))
+		     (values dest ver)
+		     (values #f ""))))
+	      (else (values src ver))))))
 
   (define (gather-egg-information dir)
     (let ((ls (directory dir)))
@@ -157,7 +174,9 @@
 	     [tagver (existing-version
 	              egg version
 	              (filter-map
-                       (lambda (f) (and-let* ((m (string-search "^tags/([^/]+)/" f))) (cadr m)))
+                       (lambda (f) 
+			 (and-let* ((m (irregex-search "^tags/([^/]+)/" f))) 
+			   (irregex-match-substring m 1)))
                        files))])
 	(let-values ([(filedir ver)
 	              (if tagver
@@ -189,14 +208,15 @@
     (conc dir #\/ egg ".meta"))
 
   (define (deconstruct-url url)
-    (let ([m (string-match "(http://)?([^/:]+)(:([^:/]+))?(/.+)" url)])
+    (let ([m (irregex-match +url-regex+ url)])
       (values
-       (if m (caddr m) url)
-       (if (and m (cadddr m))
-	   (or (string->number (list-ref m 4))
-	       (error "not a valid port" (list-ref m 4)))
+       (if m (irregex-match-substring m 2) url)
+       (if (and m (irregex-match-substring m 3))
+	   (let ((port (irregex-match-substring m 4)))
+	     (or (string->number port)
+		 (error "not a valid port" port)))
 	   80)
-       (if m (list-ref m 5) "/")) ) )
+       (if m (irregex-match-substring m 5) "/")) ) )
 
   (define (locate-egg/http egg url #!optional version destination tests
 			   proxy-host proxy-port)
@@ -245,13 +265,13 @@
 
   (define (match-http-response rsp)
     (and (string? rsp)
-         (string-match "HTTP/[0-9.]+\\s+([0-9]+)\\s+.*" rsp)) )
+         (irregex-match "HTTP/[0-9.]+\\s+([0-9]+)\\s+.*" rsp)) )
 
   (define (response-match-code? mrsp code)
-    (and mrsp (string=? (number->string code) (cadr mrsp))) )
+    (and mrsp (string=? (number->string code) (irregex-match-substring mrsp 1))) )
 
   (define (match-chunked-transfer-encoding ln)
-    (string-match "[Tt]ransfer-[Ee]ncoding:\\s*chunked.*" ln) )
+    (irregex-match "[Tt]ransfer-[Ee]ncoding:\\s*chunked.*" ln) )
 
   (define (http-fetch host port locn dest proxy-host proxy-port)
     (d "connecting to host ~s, port ~a ~a...~%" host port
@@ -337,7 +357,6 @@
 		(*mode* mode))
       (case transport
 	((local)
-	 (when destination (warning "destination for transport `local' ignored"))
 	 (locate-egg/local name location version destination) )
 	((svn)
 	 (locate-egg/svn name location version destination username password) )

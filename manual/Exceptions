@@ -163,6 +163,11 @@ Example:
                            (lambda () (car '())))))
  ;=> '()
 
+Note that the handler procedure must somehow return non-locally out of
+the dynamic extent of the {{with-exception-handler}} form, because
+returning normally will signal yet another exception and thus result
+in non-termination.
+
 <macro>(handle-exceptions var handle-expr expr1 expr2 ...)</macro><br>
 
 Evaluates the body expressions ''expr1'', ''expr2'', ... in sequence with

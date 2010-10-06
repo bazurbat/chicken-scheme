@@ -56,13 +56,6 @@
 
 ;;; Random numbers:
 
-(define random-seed			;DEPRECATED
-  (let ((srand (foreign-lambda void "srand" unsigned-integer)))
-    (lambda n
-      (let ((t (if (null? n) (current-seconds) (car n))))
-	(##sys#check-integer t 'random-seed)
-	(srand t) ) ) ) )
-
 (define (randomize . n)
   (let ((nn (if (null? n)
 		(##sys#flo2fix (fp/ (current-seconds) 1000.0)) ; wall clock time

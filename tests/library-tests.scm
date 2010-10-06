@@ -20,6 +20,31 @@
 (assert (not (rational? +inf.)))
 (assert (not (rational? 'foo)))
 
+(define-syntax assert-fail
+  (syntax-rules ()
+    ((_ exp)
+     (assert (handle-exceptions ex #t exp #f)))))
+
+(assert-fail (/ 1 1 0))
+(assert-fail (/ 1 1 0.0))
+(assert-fail (/ 1 0.0))
+(assert-fail (/ 1 0))
+(assert-fail (/ 0))
+(assert-fail (/ 0.0))
+
+(assert (fixnum? (/ 1)))
+
+(assert (= -3 (- 3)))
+(assert (= 3 (- -3)))
+(assert (= 2 (- 5 3)))
+(assert (> 1 (/ 3)))
+(assert (> 1 (/ 3.0)))
+(assert (= 2 (/ 8 4)))
+(assert (zero? (+)))
+(assert (= 1 (*)))
+
+(assert (= 2.5 (/ 5 2)))
+
 
 ;; number->string conversion
 
@@ -100,3 +125,15 @@
   (assert (string=? "abc" (symbol->string (with-input-from-string "aBc" read))))
   (assert (string=? "aBc" (symbol->string (with-input-from-string "|aBc|" read))))
   (assert (string=? "aBc" (symbol->string (with-input-from-string "a\\Bc" read)))))
+
+
+;;; setters
+
+(define x '(a b c))
+(define kar car)
+(set! (kar (cdr x)) 99)
+(assert (equal? '(a 99 c) x))
+(define p (make-parameter 100))
+(assert (= 100 (p)))
+(set! (p) 1000)
+(assert (= 1000 (p)))

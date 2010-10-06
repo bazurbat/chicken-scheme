@@ -76,7 +76,8 @@
 #define C_a_get_current_seconds(ptr, c, dummy)  C_flonum(ptr, time(NULL))
 #define C_peek_c_string_at(ptr, i)    ((C_char *)(((C_char **)ptr)[ i ]))
 
-static C_word fast_read_line_from_file(C_word str, C_word port, C_word size) {
+static C_word
+fast_read_line_from_file(C_word str, C_word port, C_word size) {
   int n = C_unfix(size);
   int i;
   int c;
@@ -101,7 +102,7 @@ static C_word fast_read_line_from_file(C_word str, C_word port, C_word size) {
 }
 
 static C_word
-fast_read_string_from_file (C_word dest, C_word port, C_word len, C_word pos)
+fast_read_string_from_file(C_word dest, C_word port, C_word len, C_word pos)
 {
   int n = C_unfix (len);
   char * buf = ((char *)C_data_pointer (dest) + C_unfix (pos));
@@ -1728,7 +1729,8 @@ EOF
 
 (define (##sys#check-port x . loc)
   (unless (%port? x)
-    (##sys#signal-hook #:type-error (and (pair? loc) (car loc)) "argument is not a port" x) ) )
+    (##sys#signal-hook
+     #:type-error (and (pair? loc) (car loc)) "argument is not a port" x) ) )
 
 (define (##sys#check-port-mode port mode . loc)
   (unless (eq? mode (##sys#slot port 1))
@@ -1977,38 +1979,175 @@ EOF
    #:rename new) )
 
 
+;;; Decorate procedure with arbitrary data
+
+(define (##sys#decorate-lambda proc pred decorator)
+  (let ((len (##sys#size proc)))
+    (let loop ((i (fx- len 1)))
+      (cond ((zero? i)
+	     (let ((p2 (make-vector (fx+ len 1))))
+	       (do ((i 1 (fx+ i 1)))
+		   ((fx>= i len)
+		    (##core#inline "C_vector_to_closure" p2)
+		    (##core#inline "C_copy_pointer" proc p2)
+		    (decorator p2 i) )
+		 (##sys#setslot p2 i (##sys#slot proc i)) ) ) )
+	    (else
+	     (let ((x (##sys#slot proc i)))
+	       (if (pred x)
+		   (decorator proc i)
+		   (loop (fx- i 1)) ) ) ) ) ) ) )
+
+(define (##sys#lambda-decoration proc pred)
+  (let loop ((i (fx- (##sys#size proc) 1)))
+    (and (fx> i 0)
+	 (let ((x (##sys#slot proc i)))
+	   (if (pred x)
+	       x
+	       (loop (fx- i 1)) ) ) ) ) )
+
+
+;;; Create lambda-info object
+
+(define (##sys#make-lambda-info str)
+  (let* ((sz (##sys#size str))
+	 (info (##sys#make-string sz)) )
+    (##core#inline "C_copy_memory" info str sz)
+    (##core#inline "C_string_to_lambdainfo" info)
+    info) )
+
+
+;;; Function debug info:
+
+(define (##sys#lambda-info? x)
+  (and (not (##sys#immediate? x)) (##core#inline "C_lambdainfop" x)))
+
+(define (##sys#lambda-info proc)
+  (##sys#lambda-decoration proc ##sys#lambda-info?))
+
+(define (##sys#lambda-info->string info)
+  (let* ((sz (##sys#size info))
+	 (s (##sys#make-string sz)) )
+    (##core#inline "C_copy_memory" s info sz)
+    s) )
+
+(define procedure-information
+  (lambda (x)
+    (##sys#check-closure x 'procedure-information)
+    (and-let* ((info (##sys#lambda-info x)))
+      (##sys#read (open-input-string (##sys#lambda-info->string info)) #f) ) ) )
+
+
+;;; SRFI-17
+
+(define setter-tag (vector 'setter))
+
+(define-inline (setter? x) 
+  (and (pair? x) (eq? setter-tag (##sys#slot x 0))) )
+
+(define ##sys#setter
+  (##sys#decorate-lambda 
+   (lambda (proc)
+     (or (and-let* (((procedure? proc))
+		    (d (##sys#lambda-decoration proc setter?)) )
+	   (##sys#slot d 1) )
+	 (##sys#error 'setter "no setter defined" proc) ) )
+   setter?
+   (lambda (proc i)
+     (##sys#setslot 
+      proc i
+      (cons 
+       setter-tag
+       (lambda (get set)
+	 (if (procedure? get)
+	     (let ((get2 (##sys#decorate-lambda
+			  get
+			  setter?
+			  (lambda (proc i) (##sys#setslot proc i (cons setter-tag set)) proc))))
+	       (if (eq? get get2)
+		   get
+		   (##sys#become! (list (cons get get2))) ) )
+	     (error "can't set setter of non-procedure" get) ) ) ) )
+     proc) ) )
+
+(define setter ##sys#setter)
+
+(define (getter-with-setter get set #!optional info)
+  (let ((getdec (cond (info
+		       (##sys#check-string info 'getter-with-setter)
+		       (##sys#make-lambda-info info))
+		      (else (##sys#lambda-info get))))
+	(p1 (##sys#decorate-lambda
+	     get
+	     setter?
+	     (lambda (proc i)
+	       (##sys#setslot proc i (cons setter-tag set))
+	       proc) )))
+    (if getdec
+	(##sys#decorate-lambda
+	 p1
+	 ##sys#lambda-info?
+	 (lambda (p i)
+	   (##sys#setslot p i getdec)
+	   p))
+	p1)))
+
+(set! car (getter-with-setter car set-car! "(car p)"))
+(set! cdr (getter-with-setter cdr set-cdr! "(cdr p)"))
+(set! caar (getter-with-setter caar (lambda (x y) (set-car! (car x) y)) "(caar p)"))
+(set! cadr (getter-with-setter cadr (lambda (x y) (set-car! (cdr x) y)) "(cadr p)"))
+(set! cdar (getter-with-setter cdar (lambda (x y) (set-cdr! (car x) y)) "(cdar p)"))
+(set! cddr (getter-with-setter cddr (lambda (x y) (set-cdr! (cdr x) y)) "(cddr p)"))
+(set! caaar (getter-with-setter caaar (lambda (x y) (set-car! (caar x) y)) "(caaar p)"))
+(set! caadr (getter-with-setter caadr (lambda (x y) (set-car! (cadr x) y)) "(caadr p)"))
+(set! cadar (getter-with-setter cadar (lambda (x y) (set-car! (cdar x) y)) "(cadar p)"))
+(set! caddr (getter-with-setter caddr (lambda (x y) (set-car! (cddr x) y)) "(caddr p)"))
+(set! cdaar (getter-with-setter cdaar (lambda (x y) (set-cdr! (caar x) y)) "(cdaar p)"))
+(set! cdadr (getter-with-setter cdadr (lambda (x y) (set-cdr! (cadr x) y)) "(cdadr p)"))
+(set! cddar (getter-with-setter cddar (lambda (x y) (set-cdr! (cdar x) y)) "(cddar p)"))
+(set! cdddr (getter-with-setter cdddr (lambda (x y) (set-cdr! (cddr x) y)) "(cdddr p)"))
+(set! string-ref (getter-with-setter string-ref string-set! "(string-ref str i)"))
+(set! vector-ref (getter-with-setter vector-ref vector-set! "(vector-ref vec i)"))
+
+
 ;;; Parameters:
 
 (define ##sys#default-parameter-vector (##sys#make-vector default-parameter-vector-size))
 (define ##sys#current-parameter-vector '#())
 
 (define make-parameter
-  (let ([count 0])
+  (let ((count 0))
     (lambda (init . guard)
-      (let* ([guard (if (pair? guard) (car guard) (lambda (x) x))]
-	     [val (guard init)] 
-	     [i count] )
+      (let* ((guard (if (pair? guard) (car guard) (lambda (x) x)))
+	     (val (guard init))
+	     (i count))
 	(set! count (fx+ count 1))
 	(when (fx>= i (##sys#size ##sys#default-parameter-vector))
 	  (set! ##sys#default-parameter-vector 
 	    (##sys#grow-vector ##sys#default-parameter-vector (fx+ i 1) (##core#undefined)) ) )
 	(##sys#setslot ##sys#default-parameter-vector i val)
-	(lambda arg
-	  (let ([n (##sys#size ##sys#current-parameter-vector)])
-	    (cond [(pair? arg)
-		   (when (fx>= i n)
-		     (set! ##sys#current-parameter-vector
-		       (##sys#grow-vector ##sys#current-parameter-vector (fx+ i 1) ##sys#snafu) ) )
-		   (##sys#setslot ##sys#current-parameter-vector i (guard (##sys#slot arg 0)))
-		   (##core#undefined) ]
-		  [(fx>= i n)
-		   (##sys#slot ##sys#default-parameter-vector i) ]
-		  [else
-		   (let ([val (##sys#slot ##sys#current-parameter-vector i)])
-		     (if (eq? val ##sys#snafu)
-			 (##sys#slot ##sys#default-parameter-vector i) 
-			 val) ) ] ) ) ) ) ) ) )
-
+	(let ((assign 
+	       (lambda (val n)
+		 (when (fx>= i n)
+		   (set! ##sys#current-parameter-vector
+		     (##sys#grow-vector ##sys#current-parameter-vector (fx+ i 1) ##sys#snafu) ) )
+		 (##sys#setslot ##sys#current-parameter-vector i (guard val))
+		 (##core#undefined) )))
+	  (getter-with-setter
+	   (lambda arg
+	     (let ((n (##sys#size ##sys#current-parameter-vector)))
+	       (cond ((pair? arg) (assign (car arg) n))
+		     ((fx>= i n)
+		      (##sys#slot ##sys#default-parameter-vector i) )
+		     (else
+		      (let ((val (##sys#slot ##sys#current-parameter-vector i)))
+			(if (eq? val ##sys#snafu)
+			    (##sys#slot ##sys#default-parameter-vector i) 
+			    val) ) ) ) ) )
+	   (lambda (val)
+	     (let ((n (##sys#size ##sys#current-parameter-vector)))
+	       (assign val n)))))))))
+  
 
 ;;; Input:
 
@@ -3902,7 +4041,11 @@ EOF
 (define (##sys#foreign-fixnum-argument x) (##core#inline "C_i_foreign_fixnum_argumentp" x))
 (define (##sys#foreign-flonum-argument x) (##core#inline "C_i_foreign_flonum_argumentp" x))
 (define (##sys#foreign-block-argument x) (##core#inline "C_i_foreign_block_argumentp" x))
-(define (##sys#foreign-number-vector-argument t x) (##core#inline "C_i_foreign_number_vector_argumentp" t x))
+
+(define (##sys#foreign-struct-wrapper-argument t x) 
+  (##core#inline "C_i_foreign_struct_wrapper_argumentp" t x))
+
+(define ##sys#foreign-number-vector-argument ##sys#foreign-struct-wrapper-argument) ;OBSOLETE
 (define (##sys#foreign-string-argument x) (##core#inline "C_i_foreign_string_argumentp" x))
 (define (##sys#foreign-symbol-argument x) (##core#inline "C_i_foreign_symbol_argumentp" x))
 (define (##sys#foreign-pointer-argument x) (##core#inline "C_i_foreign_pointer_argumentp" x))
@@ -4362,6 +4505,7 @@ EOF
 	    (let ([v (##sys#slot obj 1)])
 	      (##sys#check-range index 0 (##sys#size v) loc)
 	      (##core#inline_allocate ("C_a_i_make_locative" 5) 9 v index weak?) ) ]
+	   ;;XXX pointer-vector currently not supported
 	   [else 
 	    (##sys#check-range index 0 (fx- (##sys#size obj) 1) loc)
 	    (##core#inline_allocate ("C_a_i_make_locative" 5) 0 obj (fx+ index 1) weak?) ] ) ]
@@ -4456,137 +4600,6 @@ EOF
 	 [info (##sys#memory-info)] 
 	 [hsize (##sys#slot info 0)] )
     (vector hsize (fx- hsize free) (##sys#slot info 1)) ) )
-
-
-;;; Decorate procedure with arbitrary data
-
-(define (##sys#decorate-lambda proc pred decorator)
-  (let ((len (##sys#size proc)))
-    (let loop ((i (fx- len 1)))
-      (cond ((zero? i)
-	     (let ((p2 (make-vector (fx+ len 1))))
-	       (do ((i 1 (fx+ i 1)))
-		   ((fx>= i len)
-		    (##core#inline "C_vector_to_closure" p2)
-		    (##core#inline "C_copy_pointer" proc p2)
-		    (decorator p2 i) )
-		 (##sys#setslot p2 i (##sys#slot proc i)) ) ) )
-	    (else
-	     (let ((x (##sys#slot proc i)))
-	       (if (pred x)
-		   (decorator proc i)
-		   (loop (fx- i 1)) ) ) ) ) ) ) )
-
-(define (##sys#lambda-decoration proc pred)
-  (let loop ((i (fx- (##sys#size proc) 1)))
-    (and (fx> i 0)
-	 (let ((x (##sys#slot proc i)))
-	   (if (pred x)
-	       x
-	       (loop (fx- i 1)) ) ) ) ) )
-
-
-;;; Create lambda-info object
-
-(define (##sys#make-lambda-info str)
-  (let* ((sz (##sys#size str))
-	 (info (##sys#make-string sz)) )
-    (##core#inline "C_copy_memory" info str sz)
-    (##core#inline "C_string_to_lambdainfo" info)
-    info) )
-
-
-;;; Function debug info:
-
-(define (##sys#lambda-info? x)
-  (and (not (##sys#immediate? x)) (##core#inline "C_lambdainfop" x)))
-
-(define (##sys#lambda-info proc)
-  (##sys#lambda-decoration proc ##sys#lambda-info?))
-
-(define (##sys#lambda-info->string info)
-  (let* ((sz (##sys#size info))
-	 (s (##sys#make-string sz)) )
-    (##core#inline "C_copy_memory" s info sz)
-    s) )
-
-(define procedure-information
-  (lambda (x)
-    (##sys#check-closure x 'procedure-information)
-    (and-let* ((info (##sys#lambda-info x)))
-      (##sys#read (open-input-string (##sys#lambda-info->string info)) #f) ) ) )
-
-
-;;; SRFI-17
-
-(define setter-tag (vector 'setter))
-
-(define-inline (setter? x) 
-  (and (pair? x) (eq? setter-tag (##sys#slot x 0))) )
-
-(define ##sys#setter
-  (##sys#decorate-lambda 
-   (lambda (proc)
-     (or (and-let* (((procedure? proc))
-		    (d (##sys#lambda-decoration proc setter?)) )
-	   (##sys#slot d 1) )
-	 (##sys#error 'setter "no setter defined" proc) ) )
-   setter?
-   (lambda (proc i)
-     (##sys#setslot 
-      proc i
-      (cons 
-       setter-tag
-       (lambda (get set)
-	 (if (procedure? get)
-	     (let ((get2 (##sys#decorate-lambda
-			  get
-			  setter?
-			  (lambda (proc i) (##sys#setslot proc i (cons setter-tag set)) proc))))
-	       (if (eq? get get2)
-		   get
-		   (##sys#become! (list (cons get get2))) ) )
-	     (error "can't set setter of non-procedure" get) ) ) ) )
-     proc) ) )
-
-(define setter ##sys#setter)
-
-(define (getter-with-setter get set #!optional info)
-  (let ((getdec (cond (info
-		       (##sys#check-string info 'getter-with-setter)
-		       (##sys#make-lambda-info info))
-		      (else (##sys#lambda-info get))))
-	(p1 (##sys#decorate-lambda
-	     get
-	     setter?
-	     (lambda (proc i)
-	       (##sys#setslot proc i (cons setter-tag set))
-	       proc) )))
-    (if getdec
-	(##sys#decorate-lambda
-	 p1
-	 ##sys#lambda-info?
-	 (lambda (p i)
-	   (##sys#setslot p i getdec)
-	   p))
-	p1)))
-
-(set! car (getter-with-setter car set-car! "(car p)"))
-(set! cdr (getter-with-setter cdr set-cdr! "(cdr p)"))
-(set! caar (getter-with-setter caar (lambda (x y) (set-car! (car x) y)) "(caar p)"))
-(set! cadr (getter-with-setter cadr (lambda (x y) (set-car! (cdr x) y)) "(cadr p)"))
-(set! cdar (getter-with-setter cdar (lambda (x y) (set-cdr! (car x) y)) "(cdar p)"))
-(set! cddr (getter-with-setter cddr (lambda (x y) (set-cdr! (cdr x) y)) "(cddr p)"))
-(set! caaar (getter-with-setter caaar (lambda (x y) (set-car! (caar x) y)) "(caaar p)"))
-(set! caadr (getter-with-setter caadr (lambda (x y) (set-car! (cadr x) y)) "(caadr p)"))
-(set! cadar (getter-with-setter cadar (lambda (x y) (set-car! (cdar x) y)) "(cadar p)"))
-(set! caddr (getter-with-setter caddr (lambda (x y) (set-car! (cddr x) y)) "(caddr p)"))
-(set! cdaar (getter-with-setter cdaar (lambda (x y) (set-cdr! (caar x) y)) "(cdaar p)"))
-(set! cdadr (getter-with-setter cdadr (lambda (x y) (set-cdr! (cadr x) y)) "(cdadr p)"))
-(set! cddar (getter-with-setter cddar (lambda (x y) (set-cdr! (cdar x) y)) "(cddar p)"))
-(set! cdddr (getter-with-setter cdddr (lambda (x y) (set-cdr! (cddr x) y)) "(cdddr p)"))
-(set! string-ref (getter-with-setter string-ref string-set! "(string-ref str i)"))
-(set! vector-ref (getter-with-setter vector-ref vector-set! "(vector-ref vec i)"))
 
 
 ;;; Property lists
