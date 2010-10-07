@@ -39,12 +39,10 @@
    irregex-match
    irregex-match?
    irregex-match-data?
-   irregex-match-end
    irregex-match-end-chunk
    irregex-match-end-index
    irregex-match-names
    irregex-match-num-submatches
-   irregex-match-start
    irregex-match-start-chunk
    irregex-match-start-index
    irregex-match-string
@@ -69,7 +67,6 @@
    make-irregex-chunker
    maybe-string->sre
    sre->irregex
-   sre->string
    string->irregex 
    string->sre
    ))
