@@ -195,7 +195,7 @@ C_confirmation_dialog(char *msg, char *caption, int def, int abort) { return -1;
 		  ((and abort (string-ci=? "abort" ln)) (abort))
 		  (else
 		   (if abort
-		       (printf "~%Please enter \"yes\" or \"no\".~%")
-		       (printf "~%Please enter \"yes\", \"no\" or \"abort\".~%"))
+		       (printf "~%Please enter \"yes\", \"no\" or \"abort\".~%")
+		       (printf "~%Please enter \"yes\" or \"no\".~%"))
 		   (loop) ) ) ) ) ) ) ) )
   
