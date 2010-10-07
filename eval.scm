@@ -1122,7 +1122,7 @@
 		   (and err?
 			(##sys#error loc "cannot load core library" id))))
 	      (else
-	       (let ([id2 (##sys#find-extension p #t)])
+	       (let ([id2 (##sys#find-extension p #f)])
 		 (cond (id2
 			(##sys#load id2 #f #f)
 			(set! ##sys#loaded-extensions (cons p ##sys#loaded-extensions)) 

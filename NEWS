@@ -23,10 +23,10 @@
 - the deprecated `random-seed' function has been removed
 - parameters are now settable and can be modified using `set!'
   (SRFI-17)
-- the impementation of overflow-detection for arithmetic operations
+- the implementation of overflow-detection for arithmetic operations
   on fixnums have been replaced and now allow using the full 63-bit
   range of fixnums on 64-bit systems
-- fixed serious inlining-bug (thanks to SVen Hartrumpf)
+- fixed serious inlining-bug (thanks to Sen Hartrumpf)
 
 4.6.1
 
