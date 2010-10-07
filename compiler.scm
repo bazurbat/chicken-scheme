@@ -573,7 +573,7 @@
 			((##core#inline_loc_ref)
 			 `(##core#inline_loc_ref 
 			   ,(##sys#strip-syntax (cadr x))
-			   ,(walk (caddr x) e se dest ldes ht)))
+			   ,(walk (caddr x) e se dest ldest h)))
 
 			((##core#require-for-syntax)
 			 (let ([ids (map eval (cdr x))])
