@@ -356,7 +356,7 @@
                                        (yes-or-no?
                                         (make-replace-extension-question e+d+v upgrade)
                                         "no"
-					abort: abort-setup) ) )
+					abort: (abort-setup) ) ) )
                           (let ([ueggs (unzip1 upgrade)])
                             (print " upgrade: " (string-intersperse ueggs ", "))
                             (for-each
@@ -461,7 +461,7 @@
 				 (string-append
 				  "You specified `-no-install', but this extension has dependencies"
 				  " that are required for building.\nDo you still want to install them?")
-				 abort: abort-setup)))
+				 abort: (abort-setup))))
 		 (print "aborting installation.")
 		 (cleanup)
 		 (exit 1)))
