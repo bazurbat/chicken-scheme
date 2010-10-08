@@ -90,7 +90,7 @@
 	      (map (cut string-append <> "\n") (directory eggdir))))
 	    (else "unknown\n"))))
 
-  (define (locate-egg/local egg dir #!optional version destination)
+  (define (locate-egg/local egg dir #!optional version destination clean)
     (let* ((eggdir (make-pathname dir egg))
 	   (tagdir (make-pathname eggdir "tags"))
            (tagver (and (not *trunk*)
@@ -116,8 +116,18 @@
 		 (if (zero? (system cmd))
 		     (values dest ver)
 		     (values #f ""))))
-	      (else (values src ver))))))
+	      (else
+	       ;; remove *.so files in toplevel dir, just for being careful
+	       (when clean
+		 (let ((sos (filter (cut string-suffix? ".so" <>) (directory src))))
+		   (for-each
+		    (lambda (f)
+		      (d " deleting leftover ~a from local directory~%" f)
+		      (delete-file* f))
+		    sos)))
+	       (values src ver))))))
 
+;;XXX is this used anywhere?
   (define (gather-egg-information dir)
     (let ((ls (directory dir)))
       (filter-map
@@ -351,13 +361,13 @@
 
   (define (retrieve-extension name transport location
                               #!key version quiet destination username password tests
-			      proxy-host proxy-port trunk (mode 'default))
+			      proxy-host proxy-port trunk (mode 'default) clean)
     (fluid-let ((*quiet* quiet)
 		(*trunk* trunk)
 		(*mode* mode))
       (case transport
 	((local)
-	 (locate-egg/local name location version destination) )
+	 (locate-egg/local name location version destination clean) )
 	((svn)
 	 (locate-egg/svn name location version destination username password) )
 	((http)

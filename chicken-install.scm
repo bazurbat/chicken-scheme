@@ -263,7 +263,8 @@
          password: *password*
 	 trunk: *trunk*
 	 proxy-host: *proxy-host*
-	 proxy-port: *proxy-port*)
+	 proxy-port: *proxy-port*
+	 clean: (not *retrieve-only*))
       [(exn net)
        (print "TCP connect timeout")
        (values #f "") ]
