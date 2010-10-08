@@ -949,7 +949,10 @@ EOF
 	   [batch (or script (member* '("-b" "-batch") args) eval?)]
 	   [quietflag (member* '("-q" "-quiet") args)]
 	   [quiet (or script quietflag eval?)]
-	   [ipath (map chop-separator (string-split (or (get-environment-variable "CHICKEN_INCLUDE_PATH") "") ";"))] )      
+	   [ipath (map chop-separator 
+		       (string-split 
+			(or (get-environment-variable "CHICKEN_INCLUDE_PATH") "") 
+			";"))] )      
       (define (collect-options opt)
 	(let loop ([opts args])
 	  (cond [(member opt opts) 
