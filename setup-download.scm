@@ -122,7 +122,7 @@
 		 (let ((sos (filter (cut string-suffix? ".so" <>) (directory src))))
 		   (for-each
 		    (lambda (f)
-		      (d " deleting leftover ~a from local directory~%" f)
+		      (d " deleting stale file `~a' from local build directory~%" f)
 		      (delete-file* f))
 		    sos)))
 	       (values src ver))))))
