@@ -959,8 +959,9 @@
 		  `(##sys#foreign-struct-wrapper-argument 
 		    ',(##sys#slot (assq t tmap) 1)
 		    ,param) ) ]
-	     [(integer long integer32) (if unsafe param `(##sys#foreign-integer-argument ,param))]
-	     [(unsigned-integer unsigned-integer32 unsigned-long)
+	     [(integer long integer32 integer64)
+	      (if unsafe param `(##sys#foreign-integer-argument ,param))]
+	     [(unsigned-integer unsigned-integer32 unsigned-long unsigned-integer64)
 	      (if unsafe
 		  param
 		  `(##sys#foreign-unsigned-integer-argument ,param) ) ]
@@ -1061,7 +1062,7 @@
 	(words->bytes 3) )
        ((unsigned-integer long integer unsigned-long integer32 unsigned-integer32)
 	(words->bytes 4) )
-       ((float double number integer64) 
+       ((float double number integer64 unsigned-integer64) 
 	(words->bytes 4) )		; possibly 8-byte aligned 64-bit double
        (else
 	(cond [(and (symbol? t) (##sys#hash-table-ref foreign-type-table t))

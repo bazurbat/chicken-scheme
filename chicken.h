@@ -349,7 +349,7 @@ typedef unsigned __int64   uint64_t;
 
 #define C_TIMER_INTERRUPTS
 
-/* For the easy FFI: */
+/* For the `bind' (and the obsolete `easyffi'): */
 
 #define ___fixnum           int
 #define ___number           double
@@ -358,6 +358,7 @@ typedef unsigned __int64   uint64_t;
 #define ___scheme_value     C_word
 #define ___scheme_pointer   void *
 #define ___byte_vector      unsigned char *
+#define ___pointer_vector   void **
 #define ___symbol           char *
 #define ___safe
 #define ___declare(x, y)
@@ -525,8 +526,10 @@ typedef unsigned __int64   uint64_t;
 
 #if defined(_MSC_VER) || defined (__MINGW32__)
 # define C_s64                    __int64
+# define C_u64                    unsigned __int64
 #else
 # define C_s64                    int64_t
+# define C_u64                    uint64_t
 #endif
 
 #define C_char                    char
@@ -1963,6 +1966,13 @@ C_inline C_s64 C_num_to_int64(C_word x)
 {
   if(x & C_FIXNUM_BIT) return (C_s64)C_unfix(x);
   else return (C_s64)C_flonum_magnitude(x);
+}
+
+
+C_inline C_u64 C_num_to_uint64(C_word x)
+{
+  if(x & C_FIXNUM_BIT) return (C_u64)C_unfix(x);
+  else return (C_u64)C_flonum_magnitude(x);
 }
 
 

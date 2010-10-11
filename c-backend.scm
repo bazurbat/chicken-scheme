@@ -1089,7 +1089,7 @@
 		  byte unsigned-byte)
 	    ns]
 	   [(float double c-pointer unsigned-integer unsigned-integer32 long integer integer32 unsigned-long 
-		   nonnull-c-pointer number integer64 c-string-list c-string-list*)
+		   nonnull-c-pointer number unsigned-integer64 integer64 c-string-list c-string-list*)
 	    (string-append ns "+3") ]
 	   [(c-string c-string* unsigned-c-string unsigned-c-string unsigned-c-string*)
 	    (string-append ns "+2+(" var "==NULL?1:C_bytestowords(C_strlen(" var ")))") ]
@@ -1158,6 +1158,7 @@
       [(int integer bool) (str "int")]
       [(int32 integer32) (str "C_s32")]
       [(integer64) (str "C_s64")]
+      [(unsigned-integer64) (str "C_u64")]
       [(short) (str "short")]
       [(long) (str "long")]
       [(unsigned-short) (str "unsigned short")]
@@ -1255,6 +1256,7 @@
       ((double number float) "C_c_double(")
       ((integer integer32) "C_num_to_int(")
       ((integer64) "C_num_to_int64(")
+      ((unsigned-integer64) "C_num_to_uint64(")
       ((long) "C_num_to_long(")
       ((unsigned-integer unsigned-integer32) "C_num_to_unsigned_int(")
       ;; pointer and nonnull-pointer are DEPRECATED
