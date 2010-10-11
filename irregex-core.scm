@@ -218,7 +218,8 @@
      (define (%irregex-match-fail-set! m x) (vector-set! m (- (vector-length m) 1) x))
      (define (irregex-match-valid-numeric-index? m n)
        (and (>= n 0) (< (+ 3 (* n 4)) (vector-length m))
-	    (vector-ref m (+ 4 (* n 4))))))))
+	    (vector-ref m (+ 4 (* n 4)))
+            #t)))))
 
 (define (irregex-match-valid-named-index? m n)
   (and (assq n (irregex-match-names m))
