@@ -236,7 +236,7 @@ EOF
 
 (define (##sys#thread-block-for-timeout! t tm)
   (dbg t " blocks for timeout " tm)
-  (unless (flonum? tm)
+  (unless (flonum? tm)			; to catch old code that uses fixum timeouts
     (panic "##sys#thread-block-for-timeout!: invalid timeout"))
   ;; This should really use a balanced tree:
   (let loop ([tl ##sys#timeout-list] [prev #f])
@@ -271,7 +271,7 @@ EOF
 	     (for-each
 	      (lambda (t2)
 		(dbg "  unblocking: " t2)
-		(##sys#thread-basic-unblock! t2) )
+		(##sys#thread-unblock! t2) )
 	      wts) ) )
 	 (##sys#setislot m 3 '()) )
        ms) ) ) )
@@ -453,6 +453,8 @@ EOF
 					  (panic
 					   "##sys#unblock-threads-for-i/o: thread on fd-list has wrong FD"))
 					 ((fdset-test inf outf (cdr p))
+					  (when (##sys#slot t 4) ; also blocked for timeout?
+					    (##sys#remove-from-timeout-list t))
 					  (##sys#thread-basic-unblock! t) 
 					  (loop2 (cdr threads) keep))
 					 (else (loop2 (cdr threads) (cons t keep)))))))
