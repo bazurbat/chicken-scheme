@@ -82,7 +82,7 @@ EOF
 
 (include "common-declarations.scm")
 
-(begin
+#;(begin
   (define stderr ##sys#standard-error) ; use default stderr port
   (define (dbg . args)
     (parameterize ((##sys#print-length-limit #f))
@@ -92,7 +92,7 @@ EOF
        args)
       (newline stderr))))
 
-#;(define-syntax dbg
+(define-syntax dbg
   (syntax-rules ()
     ((_ . _) #f))) 
 
