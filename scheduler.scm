@@ -82,16 +82,17 @@ EOF
 
 (include "common-declarations.scm")
 
-#;(begin
-    (define stderr ##sys#standard-error) ; use default stderr port
-    (define (dbg . args)
+(begin
+  (define stderr ##sys#standard-error) ; use default stderr port
+  (define (dbg . args)
+    (parameterize ((##sys#print-length-limit #f))
       (for-each
        (lambda (x)
 	 (display x stderr))
        args)
-      (newline stderr)))
+      (newline stderr))))
 
-(define-syntax dbg
+#;(define-syntax dbg
   (syntax-rules ()
     ((_ . _) #f))) 
 
@@ -154,16 +155,15 @@ EOF
 		      (loop (cdr lst)) ) ) ) ) ) )
       ;; Unblock threads blocked by I/O:
       (if eintr
-	  (##sys#force-primordial)
-	  (begin
-	    (unless (null? ##sys#fd-list)
-	      (##sys#unblock-threads-for-i/o) ) ) )
+	  (##sys#force-primordial)	; force it to handle user-interrupt
+	  (unless (null? ##sys#fd-list)
+	    (##sys#unblock-threads-for-i/o) ) )
       ;; Fetch and activate next ready thread:
       (let loop2 ()
 	(let ([nt (remove-from-ready-queue)])
 	  (cond [(not nt) 
 		 (if (and (null? ##sys#timeout-list) (null? ##sys#fd-list))
-		     (##sys#signal-hook #:runtime-error "deadlock")
+		     (##sys#halt "deadlock")
 		     (loop1) ) ]
 		[(eq? (##sys#slot nt 3) 'ready) (switch nt)]
 		[else (loop2)] ) ) ) ) ) )
@@ -421,7 +421,8 @@ EOF
 	      (or rq? to?)
 	      tmo)))
       (dbg n " fds ready")
-      (cond [(eq? -1 n) 
+      (cond [(eq? -1 n)
+	     (dbg "select(2) returned with result -1" )
 	     (##sys#force-primordial)]
 	    [(fx> n 0)
 	     (set! ##sys#fd-list
@@ -432,7 +433,7 @@ EOF
 			    [fd (car a)]
 			    [inf (##core#inline "C_fd_test_input" fd)]
 			    [outf (##core#inline "C_fd_test_output" fd)] )
-		       (dbg "fd " fd " ready: input=" inf ", output=" outf)
+		       (dbg "fd " fd " state: input=" inf ", output=" outf)
 		       (if (or inf outf)
 			   (let loop2 ((threads (cdr a)) (keep '()))
 			     (if (null? threads)
