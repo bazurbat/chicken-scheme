@@ -1557,6 +1557,7 @@ C_fctexport void C_fcall C_clear_trace_buffer(void) C_regparm;
 C_fctexport C_word C_fetch_trace(C_word start, C_word buffer);
 C_fctexport C_word C_fcall C_string(C_word **ptr, int len, C_char *str) C_regparm;
 C_fctexport C_word C_fcall C_static_string(C_word **ptr, int len, C_char *str) C_regparm;
+C_fctexport C_word C_fcall C_static_bytevector(C_word **ptr, int len, C_char *str) C_regparm;
 C_fctexport C_word C_fcall C_static_lambda_info(C_word **ptr, int len, C_char *str) C_regparm;
 C_fctexport C_word C_fcall C_bytevector(C_word **ptr, int len, C_char *str) C_regparm;
 C_fctexport C_word C_fcall C_pbytevector(int len, C_char *str) C_regparm;

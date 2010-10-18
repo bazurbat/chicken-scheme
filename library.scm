@@ -2790,6 +2790,30 @@ EOF
 	      (fxior (fxshl (fxand hi #b111111) 10)
 		     (fxand lo #b1111111111)))) )
 
+(define (##sys#read-bytevector-literal port)
+  (define (hex c)
+    (let ((c (char-downcase c)))
+      (cond ((and (char>=? c #\a) (char<=? c #\f))
+	     (fx- (char->integer c) 87)	) ; - #\a + 10
+	    ((and (char>=? c #\0) (char<=? c #\9))
+	     (fx- (char->integer c) 48))
+	    (else (##sys#read-error port "invalid hex-code in blob-literal")))))
+  (let loop ((lst '()) (h #f))
+    (let ((c (##sys#read-char-0 port)))
+      (cond ((eof-object? c)
+	     (##sys#read-error port "unexpected end of blob literal"))
+	    ((char=? #\} c)
+	     (let ((str (##sys#reverse-list->string
+			 (if h
+			     (cons (integer->char h) lst)
+			     lst))))
+	       (##core#inline "C_string_to_bytevector" str)
+	       str))
+	    ((char-whitespace? c) (loop lst h))
+	    (h (loop (cons (integer->char (fxior h (hex c))) lst) #f))
+	    (else (loop lst (fxshl (hex c) 4)))))))
+	      
+
 ;;; Hooks for user-defined read-syntax:
 ;
 ; - Redefine this to handle new read-syntaxes. If 'char' doesn't match
@@ -2799,9 +2823,10 @@ EOF
 (define (##sys#user-read-hook char port)
   (case char
     ;; I put it here, so the SRFI-4 unit can intercept '#f...'
-    [(#\f #\F) (##sys#read-char-0 port) #f ]
-    [(#\t #\T) (##sys#read-char-0 port) #t ]
-    [else (##sys#read-error port "invalid sharp-sign read syntax" char) ] ) )
+    ((#\f #\F) (##sys#read-char-0 port) #f)
+    ((#\t #\T) (##sys#read-char-0 port) #t)
+    ((#\{) (##sys#read-char-0 port) (##sys#read-bytevector-literal port))
+    (else (##sys#read-error port "invalid sharp-sign read syntax" char) ) ) )
 
 
 ;;; Table for specially handled read-syntax:

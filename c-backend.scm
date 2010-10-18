@@ -702,7 +702,7 @@
 	       (gen "C_h_intern(&" to #\, len #\, cstr ");") ) )
 	    ((null? lit) 
 	     (gen #t to "=C_SCHEME_END_OF_LIST;") )
-	    ((and (not (##sys#immediate? lit))
+	    ((and (not (##sys#immediate? lit)) ; nop
 		  (##core#inline "C_lambdainfop" lit)))
 	    ((or (fixnum? lit) (not (##sys#immediate? lit)))
 	     (gen #t to "=C_decode_literal(C_heaptop,")

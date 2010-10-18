@@ -2270,6 +2270,15 @@ C_regparm C_word C_fcall C_bytevector(C_word **ptr, int len, C_char *str)
 }
 
 
+C_regparm C_word C_fcall C_static_bytevector(C_word **ptr, int len, C_char *str)
+{
+  C_word strblock = C_static_string(ptr, len, str);
+
+  ((C_SCHEME_BLOCK *)strblock)->header = C_BYTEVECTOR_TYPE | len;
+  return strblock;
+}
+
+
 C_regparm C_word C_fcall C_pbytevector(int len, C_char *str)
 {
   C_SCHEME_BLOCK *pbv = C_malloc(len + sizeof(C_header));
@@ -8833,6 +8842,12 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
   case C_STRING_TYPE:
     /* strings are always allocated statically */
     val = C_static_string(ptr, size, *str);
+    *str += size;
+    break;
+    
+  case C_BYTEVECTOR_TYPE:
+    /* ... as are bytevectors (blobs) */
+    val = C_static_bytevector(ptr, size, *str);
     *str += size;
     break;
     
