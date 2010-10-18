@@ -34,8 +34,8 @@ SRCDIR = ./
 # platform configuration
 
 ARCH ?= $(shell sh $(SRCDIR)/config-arch.sh)
-# default to SunPro CC
-export C_COMPILER ?= cc
+# default to gcc - use "make ... C_COMPILER=cc ..." to use SunPro CC
+export C_COMPILER ?= gcc
 export INSTALL_PROGRAM ?= ginstall
 
 # options
