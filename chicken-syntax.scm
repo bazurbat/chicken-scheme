@@ -57,48 +57,67 @@
  'define-record '()
  (##sys#er-transformer
   (lambda (x r c)
-    (##sys#check-syntax 'define-record x '(_ symbol . #(symbol 0)))
+    (##sys#check-syntax 'define-record x '(_ symbol . _))
     (let* ((name (cadr x))
 	   (slots (cddr x))
 	   (prefix (symbol->string name))
-	   (setters (memq #:record-setters ##sys#features))
 	   (%define (r 'define))
-	   (%getter-with-setter (r 'getter-with-setter)))
+	   (%setter (r 'setter))
+	   (%getter-with-setter (r 'getter-with-setter))
+	   (slotnames
+	    (map (lambda (slot)
+		   (cond ((symbol? slot) slot)
+			 ((and (pair? slot)
+			       (c (car slot) %setter) 
+			       (pair? (cdr slot))
+			       (symbol? (cadr slot))
+			       (null? (cddr slot)))
+			  (cadr slot))
+			 (else
+			  (syntax-error 
+			   'define-record "invalid slot specification" slot))))
+		 slots)))
       `(##core#begin
-	  (,%define 
-	   ,(string->symbol (string-append "make-" prefix))
-	   (##core#lambda ,slots (##sys#make-structure (##core#quote ,name) ,@slots)) )
-	  (,%define
-	   ,(string->symbol (string-append prefix "?"))
-	   (##core#lambda (x) (##sys#structure? x ',name)) )
-	  ,@(let mapslots ((slots slots) (i 1))
-	      (if (eq? slots '())
-		  slots
-		  (let* ((slotname (symbol->string (##sys#slot slots 0)))
-			 (setr (string->symbol (string-append prefix "-" slotname "-set!")))
-			 (getr (string->symbol (string-append prefix "-" slotname)) ) )
-		    (cons
-		     `(##core#begin
-			(,%define
-			 ,setr
-			 (##core#lambda 
+	(,%define 
+	 ,(string->symbol (string-append "make-" prefix))
+	 (##core#lambda 
+	  ,slotnames
+	  (##sys#make-structure (##core#quote ,name) ,@slotnames)))
+	(,%define
+	 ,(string->symbol (string-append prefix "?"))
+	 (##core#lambda (x) (##sys#structure? x ',name)) )
+	,@(let mapslots ((slots slots) (i 1))
+	    (if (eq? slots '())
+		slots
+		(let* ((a (car slots))
+		       (has-setter (not (symbol? a)))
+		       (slotname (symbol->string (if has-setter (cadr a) a)))
+		       (setr (string->symbol (string-append prefix "-" slotname "-set!")))
+		       (getr (string->symbol (string-append prefix "-" slotname)))
+		       (setrcode
+			`(##core#lambda 
 			  (x val)
 			  (##core#check (##sys#check-structure x (##core#quote ,name)))
-			  (##sys#block-set! x ,i val) ) )
-			(,%define
-			 ,getr
-			 ,(if setters
-			      `(,%getter-with-setter
-				(##core#lambda
-				 (x) 
-				 (##core#check (##sys#check-structure x (##core#quote ,name)))
-				 (##sys#block-ref x ,i) )
-				,setr)
-			      `(##core#lambda 
-				(x)
-				(##core#check (##sys#check-structure x (##core#quote ,name)))
-				(##sys#block-ref x ,i) ) ) ) )
-		     (mapslots (##sys#slot slots 1) (fx+ i 1)) ) ) ) ) ) ) ) ) )
+			  (##sys#block-set! x ,i val) ) ))
+		  (cons
+		   `(##core#begin
+		     ,@(if has-setter
+			   '()
+			   `((,%define ,setr ,setrcode)))
+		     (,%define
+		      ,getr
+		      ,(if has-setter
+			   `(,%getter-with-setter
+			     (##core#lambda
+			      (x) 
+			      (##core#check (##sys#check-structure x (##core#quote ,name)))
+			      (##sys#block-ref x ,i) )
+			     ,setrcode)
+			   `(##core#lambda 
+			     (x)
+			     (##core#check (##sys#check-structure x (##core#quote ,name)))
+			     (##sys#block-ref x ,i) ) ) ) )
+		   (mapslots (##sys#slot slots 1) (fx+ i 1)) ) ) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'receive
