@@ -2166,7 +2166,13 @@
 			(cons name
 			      (if varfn
 				  (let* ([varname (first (node-parameters fn))]
-					 [val (and (not (test varname 'unknown)) (test varname 'value))] )
+					 [val (and (not (test varname 'unknown)) 
+						   (not (eq? 
+							 'no
+							 (variable-mark
+							  varname '##compiler#inline)))
+						   (or (test varname 'value)
+						       (test varname 'local-value)))] )
 				    (if (and val (eq? '##core#lambda (node-class val)))
 					(let* ([params (node-parameters val)]
 					       [llist (third params)]
@@ -2176,6 +2182,7 @@
 					       [custom
 						(and refs sites
 						     (= (length refs) (length sites)) 
+						     (test varname 'value)
 						     (proper-list? llist) ) ] )
 					  (when (and name 
 						     custom
