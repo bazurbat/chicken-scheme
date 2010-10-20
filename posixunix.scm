@@ -33,6 +33,12 @@
   (not inline ##sys#interrupt-hook ##sys#user-interrupt-hook))
 
 
+;; these are not available on Windows
+
+(define-foreign-variable _stat_st_blksize unsigned-int "C_statbuf.st_blksize")
+(define-foreign-variable _stat_st_blocks unsigned-int "C_statbuf.st_blocks")
+
+
 ;;; common code
 
 (include "posix-common.scm")
@@ -471,11 +477,6 @@ static int set_file_mtime(char *filename, C_word tm)
 
 EOF
 ) )
-
-;; these are not available on Windows
-
-(define-foreign-variable _stat_st_blksize unsigned-int "C_statbuf.st_blksize")
-(define-foreign-variable _stat_st_blocks unsigned-int "C_statbuf.st_blocks")
 
 ;; Faster versions of common operations
 
