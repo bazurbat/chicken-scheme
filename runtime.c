@@ -3930,13 +3930,13 @@ void C_ccall C_stop_timer(C_word c, C_word closure, C_word k)
 {
   double t0 = C_cpu_milliseconds() - timer_start_ms;
   C_word 
-    ab[ WORDS_PER_FLONUM * 2 + 7 ], /* 2 flonums, 1 vector of 6 elements */
+    ab[ WORDS_PER_FLONUM * 2 + 6 ], /* 2 flonums, 1 vector of 5 elements */
     *a = ab,
     elapsed = C_flonum(&a, t0 / 1000.0),
     gc_time = C_flonum(&a, gc_ms / 1000.0),
     info;
 
-  info = C_vector(&a, 6, elapsed, gc_time, C_fix(mutation_count), C_fix(gc_count_1_total), 
+  info = C_vector(&a, 5, elapsed, gc_time, C_fix(mutation_count), C_fix(gc_count_1_total), 
 		  C_fix(gc_count_2));
   C_kontinue(k, info);
 }
