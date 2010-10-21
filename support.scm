@@ -1089,7 +1089,7 @@
               unsigned-c-string unsigned-c-string* nonnull-unsigned-c-string*
 	      nonnull-c-string c-string* nonnull-c-string* c-string-list c-string-list*) ; pointer and nonnull-pointer are DEPRECATED
 	(words->bytes 1) )
-       ((double number)
+       ((double number integer64 unsigned-integer64)
 	(words->bytes 2) )
        (else
 	(cond [(and (symbol? t) (##sys#hash-table-ref foreign-type-table t))
