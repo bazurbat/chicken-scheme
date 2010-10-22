@@ -100,10 +100,10 @@ is given and not false, any nonexistent parent directories are also created.
 
 ==== delete-directory
 
-<procedure>(delete-directory NAME)</procedure>
+<procedure>(delete-directory NAME [RECURSIVE])</procedure>
 
-Deletes the directory with the pathname {{NAME}}. The directory has
-to be empty.
+Deletes the directory with the pathname {{NAME}}. If {{RECURSIVE}} is
+not given or false, then the directory has to be empty.
 
 ==== directory
 

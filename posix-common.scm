@@ -56,6 +56,50 @@ EOF
 (include "common-declarations.scm")
 
 
+;;; Error codes:
+
+(define-foreign-variable _errno int "errno")
+
+(define-foreign-variable _eperm int "EPERM")
+(define-foreign-variable _enoent int "ENOENT")
+(define-foreign-variable _esrch int "ESRCH")
+(define-foreign-variable _eintr int "EINTR")
+(define-foreign-variable _eio int "EIO")
+(define-foreign-variable _enoexec int "ENOEXEC")
+(define-foreign-variable _ebadf int "EBADF")
+(define-foreign-variable _echild int "ECHILD")
+(define-foreign-variable _enomem int "ENOMEM")
+(define-foreign-variable _eacces int "EACCES")
+(define-foreign-variable _efault int "EFAULT")
+(define-foreign-variable _ebusy int "EBUSY")
+(define-foreign-variable _eexist int "EEXIST")
+(define-foreign-variable _enotdir int "ENOTDIR")
+(define-foreign-variable _eisdir int "EISDIR")
+(define-foreign-variable _einval int "EINVAL")
+(define-foreign-variable _emfile int "EMFILE")
+(define-foreign-variable _enospc int "ENOSPC")
+(define-foreign-variable _espipe int "ESPIPE")
+(define-foreign-variable _epipe int "EPIPE")
+(define-foreign-variable _eagain int "EAGAIN")
+(define-foreign-variable _erofs int "EROFS")
+(define-foreign-variable _enxio int "ENXIO")
+(define-foreign-variable _e2big int "E2BIG")
+(define-foreign-variable _exdev int "EXDEV")
+(define-foreign-variable _enodev int "ENODEV")
+(define-foreign-variable _enfile int "ENFILE")
+(define-foreign-variable _enotty int "ENOTTY")
+(define-foreign-variable _efbig int "EFBIG")
+(define-foreign-variable _emlink int "EMLINK")
+(define-foreign-variable _edom int "EDOM")
+(define-foreign-variable _erange int "ERANGE")
+(define-foreign-variable _edeadlk int "EDEADLK")
+(define-foreign-variable _enametoolong int "ENAMETOOLONG")
+(define-foreign-variable _enolck int "ENOLCK")
+(define-foreign-variable _enosys int "ENOSYS")
+(define-foreign-variable _enotempty int "ENOTEMPTY")
+(define-foreign-variable _eilseq int "EILSEQ")
+(define-foreign-variable _ewouldblock int "EWOULDBLOCK")
+
 (define posix-error
   (let ([strerror (foreign-lambda c-string "strerror" int)]
 	[string-append string-append] )
@@ -194,12 +238,21 @@ EOF
 	       'current-directory "cannot retrieve current directory") ) ) ) ) )
 
 (define delete-directory
-  (lambda (name)
+  (lambda (name #!optional recursive)
+    (define (rmdir dir)
+      (let ((sname (##sys#make-c-string dir)))
+	(unless (fx= 0 (##core#inline "C_rmdir" sname))
+	  (posix-error #:file-error 'delete-directory "cannot delete directory" dir) )))
     (##sys#check-string name 'delete-directory)
-    (let ((sname (##sys#make-c-string (##sys#expand-home-path name) 'delete-directory)))
-      (unless (fx= 0 (##core#inline "C_rmdir" sname))
-	(posix-error #:file-error 'delete-directory "cannot delete directory" name) )
-      name)))
+    (let ((name (##sys#expand-home-path name)))
+      (if recursive
+	  (let ((files (find-files name))) ; relies on `find-files' lists dir-contents before dir
+	    (for-each
+	     (lambda (f)
+	       ((if (directory? f) rmdir delete-file) f))
+	     files)
+	    (rmdir name))
+	  (rmdir name)))))
 
 (define directory
   (lambda (#!optional (spec (current-directory)) show-dotfiles?)
