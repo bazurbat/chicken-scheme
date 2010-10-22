@@ -574,7 +574,8 @@
 (irregex-search/matches (procedure irregex-search/matches (* string fixnum fixnum *) *))
 (irregex-split (procedure irregex-split (* string #!optional fixnum fixnum) list))
 (irregex-submatches (procedure irregex-submatches (*) *))
-(irregex-match-valid-index? irregex-match-valid-index? ((struct regexp-match) *) boolean)
+(irregex-match-valid-index? 
+ (procedure irregex-match-valid-index? ((struct regexp-match) *) boolean))
 (irregex? (procedure irregex? (*) boolean))
 (make-irregex-chunker
  (procedure make-irregex-chunker 

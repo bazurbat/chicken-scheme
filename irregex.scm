@@ -238,7 +238,10 @@
 				      (error 'glob->regexp
 					     "unexpected end of character class" s))
 				     ((char=? #\] (car rest))
-				      `((or ,@s) ,@(loop (cdr rest) #f)))
+				      `(,(if (> (length s) 1)
+					     `(or ,@s) 
+					     (car s))
+					,@(loop (cdr rest) #f)))
 				     ((and (pair? (cdr rest))
 					   (pair? (cddr rest))
 					   (char=? #\- (cadr rest)) )
