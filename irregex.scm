@@ -150,10 +150,10 @@
     ((_ count names)
      (##sys#make-structure
       'regexp-match
-      (make-vector (+ (* 4 (+ 2 count)) 3) #f) ; #1: submatches
-      names				       ; #2: (guess)
-      #f				       ; #3: chunka
-      #f))))				       ; #4: fail
+      (make-vector (* 4 (+ 2 count)) #f) ; #1: submatches
+      names                              ; #2: (guess)
+      #f                                 ; #3: chunka
+      #f))))                             ; #4: fail
 
 (define-compiler-syntax bit-shl
   (syntax-rules ()
