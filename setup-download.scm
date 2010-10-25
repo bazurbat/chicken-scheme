@@ -229,7 +229,7 @@
        (if m (irregex-match-substring m 5) "/")) ) )
 
   (define (locate-egg/http egg url #!optional version destination tests
-			   proxy-host proxy-port)
+			   proxy-host proxy-port proxy-user-pass)
     (let ([tmpdir (or destination (get-temporary-directory))])
       (let-values ([(host port locn) (deconstruct-url url)])
 	(let ([locn (string-append
@@ -240,7 +240,7 @@
 		     (if tests "&tests=yes" ""))]
 	      [eggdir (make-pathname tmpdir egg) ] )
 	  (unless (file-exists? eggdir) (create-directory eggdir))
-	  (http-fetch host port locn eggdir proxy-host proxy-port)
+	  (http-fetch host port locn eggdir proxy-host proxy-port proxy-user-pass)
 	  ; If we get here then version of egg exists
 	  (values eggdir (or version "")) ) ) ) )
 
@@ -259,7 +259,7 @@
                              (connection "close")
                              (accept "*")
                              (content-length 0)
-			     proxy-host proxy-port)
+			     proxy-host proxy-port proxy-user-pass)
     (conc
      "GET " 
      (if proxy-host 
@@ -270,6 +270,9 @@
      "User-Agent: " user-agent "\r\n"
      "Accept: " accept "\r\n"
      "Host: " host #\: port "\r\n"
+     (if proxy-user-pass
+         (string-append "Proxy-Authorization: Basic " proxy-user-pass "\r\n")
+         "")
      "Content-length: " content-length "\r\n"
      "\r\n") )
 
@@ -283,12 +286,12 @@
   (define (match-chunked-transfer-encoding ln)
     (irregex-match "[Tt]ransfer-[Ee]ncoding:\\s*chunked.*" ln) )
 
-  (define (http-fetch host port locn dest proxy-host proxy-port)
+  (define (http-fetch host port locn dest proxy-host proxy-port proxy-user-pass)
     (d "connecting to host ~s, port ~a ~a...~%" host port
        (if proxy-host
 	   (sprintf "(via ~a:~a) " proxy-host proxy-port)
 	   ""))
-    (let-values ([(in out) (tcp-connect (or proxy-host host) (or proxy-port port))])
+    (let-values (((in out) (tcp-connect (or proxy-host host) (or proxy-port port))))
       (d "requesting ~s ...~%" locn)
       (display
        (make-HTTP-GET/1.1 locn *chicken-install-user-agent* host port: port accept: "*/*"
@@ -301,8 +304,17 @@
 	       [response-match (match-http-response h1)])
 	  (d "~a~%" h1)
 	  ;;*** handle redirects here
-	  (unless (response-match-code? response-match 200)
-	    (network-failure "invalid response from server" h1) )
+	  (if (response-match-code? response-match 407)
+	      (let-values (((inpx outpx) (tcp-connect proxy-host proxy-port)))
+		(set! in inpx) (set! out outpx)
+		(display
+		 (make-HTTP-GET/1.1 
+		  locn *chicken-install-user-agent* host port: port accept: "*/*"
+		  proxy-host: proxy-host proxy-port: proxy-port 
+		  proxy-user-pass: proxy-user-pass)
+		 out))
+	      (unless (response-match-code? response-match 200)
+		(network-failure "invalid response from server" h1)))
 	  (let loop ()
 	    (let ([ln (read-line in)])
 	      (unless (string-null? ln)
@@ -361,7 +373,8 @@
 
   (define (retrieve-extension name transport location
                               #!key version quiet destination username password tests
-			      proxy-host proxy-port trunk (mode 'default) clean)
+			      proxy-host proxy-port proxy-user-pass
+			      trunk (mode 'default) clean)
     (fluid-let ((*quiet* quiet)
 		(*trunk* trunk)
 		(*mode* mode))
@@ -371,7 +384,7 @@
 	((svn)
 	 (locate-egg/svn name location version destination username password) )
 	((http)
-	 (locate-egg/http name location version destination tests proxy-host proxy-port) )
+	 (locate-egg/http name location version destination tests proxy-host proxy-port proxy-user-pass) )
 	(else
 	 (error "cannot retrieve extension unsupported transport" transport) ) ) ) )
 

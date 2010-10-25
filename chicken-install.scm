@@ -83,6 +83,7 @@
   (define *windows-shell* (foreign-value "C_WINDOWS_SHELL" bool))
   (define *proxy-host* #f)
   (define *proxy-port* #f)
+  (define *proxy-user-pass* #f)
   (define *running-test* #f)
   (define *mappings* '())
   (define *deploy* #f)
@@ -264,6 +265,7 @@
 	 trunk: *trunk*
 	 proxy-host: *proxy-host*
 	 proxy-port: *proxy-port*
+	 proxy-user-pass: *proxy-user-pass*
 	 clean: (and (not *retrieve-only*) (not *keep*)))
       [(exn net)
        (print "TCP connect timeout")
@@ -623,13 +625,15 @@ EOF
 
   (define (setup-proxy uri)
     (if (string? uri)
-        (cond ((irregex-match "(.+)\\:([0-9]+)" uri) =>
-               (lambda (m)
-                 (set! *proxy-host* (irregex-match-substring m 1))
-                 (set! *proxy-port* (string->number (irregex-match-substring m 2))))
-               (else
-                (set! *proxy-host* uri)
-                (set! *proxy-port* 80))))))
+        (begin 
+          (set! *proxy-user-pass* (get-environment-variable "proxy_auth"))
+          (cond ((irregex-match "(.+)\\:([0-9]+)" uri) =>
+                 (lambda (m)
+                   (set! *proxy-host* (irregex-match-substring m 1))
+                   (set! *proxy-port* (string->number (irregex-match-substring m 2))))
+                 (else
+                  (set! *proxy-host* uri)
+                  (set! *proxy-port* 80)))))))
   
   (define *short-options* '(#\h #\k #\l #\t #\s #\p #\r #\n #\v #\i #\u #\D))
 
