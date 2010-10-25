@@ -283,9 +283,9 @@ EOF
   (let ((blocked (##sys#slot t 11)))
     (cond
      ((##sys#structure? blocked 'condition-variable)
-      (##sys#setslot blocked 2 (##sys#delq thread (##sys#slot blocked 2))))
+      (##sys#setslot blocked 2 (##sys#delq t (##sys#slot blocked 2))))
      ((##sys#structure? blocked 'thread)
-      (##sys#setslot blocked 12 (##sys#delq thread (##sys#slot blocked 12))))) )
+      (##sys#setslot blocked 12 (##sys#delq t (##sys#slot blocked 12))))) )
   (##sys#remove-from-timeout-list t)
   (##sys#clear-i/o-state-for-thread! t)
   (##sys#setslot t 3 s)
