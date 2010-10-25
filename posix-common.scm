@@ -252,10 +252,9 @@ EOF
 			follow-symlinks: #f)))
 	    (for-each
 	     (lambda (f)
-	       ((case (file-type f)
-		  ((symbolic-link) delete-file)
-		  ((directory) rmdir)
-		  (else delete-file))
+	       ((cond ((symbolic-link? f) delete-file)
+		      ((directory? f) rmdir)
+		      (else delete-file))
 		f))
 	     files)
 	    (rmdir name))
