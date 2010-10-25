@@ -137,3 +137,12 @@
 (assert (= 100 (p)))
 (set! (p) 1000)
 (assert (= 1000 (p)))
+
+
+;;; blob-literal syntax
+
+(assert (equal? '#${a} '#${0a}))
+(assert (equal? '#${ab cd} '#${abcd}))
+(assert (equal? '#${ab c} '#${ab0c}))
+(assert (equal? '#${abc} '#${ab0c}))
+(assert (equal? '#${a b c} '#${0a0b0c}))

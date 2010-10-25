@@ -2809,11 +2809,14 @@ EOF
 	    ((char=? #\} c)
 	     (let ((str (##sys#reverse-list->string
 			 (if h
-			     (cons (integer->char h) lst)
+			     (cons (integer->char (fxshr h 4)) lst)
 			     lst))))
 	       (##core#inline "C_string_to_bytevector" str)
 	       str))
-	    ((char-whitespace? c) (loop lst h))
+	    ((char-whitespace? c) 
+	     (if h
+		 (loop (cons (integer->char (fxshr h 4)) lst) #f)
+		 (loop lst h)))
 	    (h (loop (cons (integer->char (fxior h (hex c))) lst) #f))
 	    (else (loop lst (fxshl (hex c) 4)))))))
 	      
