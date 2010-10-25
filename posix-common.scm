@@ -246,10 +246,17 @@ EOF
     (##sys#check-string name 'delete-directory)
     (let ((name (##sys#expand-home-path name)))
       (if recursive
-	  (let ((files (find-files name))) ; relies on `find-files' lists dir-contents before dir
+	  (let ((files (find-files ; relies on `find-files' to list dir-contents before dir
+			name 
+			dotfiles: #t
+			follow-symlinks: #f)))
 	    (for-each
 	     (lambda (f)
-	       ((if (directory? f) rmdir delete-file) f))
+	       ((case (file-type f)
+		  ((symbolic-link) delete-file)
+		  ((directory) rmdir)
+		  (else delete-file))
+		f))
 	     files)
 	    (rmdir name))
 	  (rmdir name)))))
@@ -326,6 +333,8 @@ EOF
 		  (rest (##sys#slot fs 1)) )
 	      (cond ((directory? f)
 		     (cond ((member (pathname-file f) '("." "..")) (loop rest r))
+			   ((and (symbolic-link? f) (not follow))
+			    (loop rest (if (pproc f) (action f r) r)))
 			   ((lproc f)
 			    (loop rest
 				  (fluid-let ((depth (fx+ depth 1)))

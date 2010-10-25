@@ -226,6 +226,11 @@ $interpret -bnq path-tests.scm
 echo "======================================== posix tests ..."
 $compile posix-tests.scm
 ./a.out
+rm -fr tmpdir
+mkdir tmpdir
+touch tmpdir/.dotfile
+ln -s /usr tmpdir/symlink
+$interpret -R posix -e '(delete-directory "tmpdir" #t)'
 
 echo "======================================== regular expression tests ..."
 $interpret -bnq test-irregex.scm
