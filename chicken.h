@@ -1116,6 +1116,7 @@ extern double trunc(double);
                                         C_mk_bool(C_strncasecmp((C_char *)C_data_pointer(s1) + C_unfix(start1), \
                                                                 (C_char *)C_data_pointer(s2) + C_unfix(start2), \
                                                                 C_unfix(len) ) == 0)
+/* this does not use C_mutate: */
 #define C_subvector_copy(v1, v2, start1, end1, start2) \
                                         (C_memcpy_slots((C_char *)C_data_pointer(v2) + C_unfix(start2), \
                                                   (C_char *)C_data_pointer(v1) + C_unfix(start1), \
@@ -1161,7 +1162,7 @@ extern double trunc(double);
 #define C_poke_pointer_or_null(b, i, x) (C_set_block_item(b, C_unfix(i), (C_word)C_data_pointer_or_null(x)), C_SCHEME_UNDEFINED)
 #define C_qfree(ptr)                    (C_free(C_c_pointer_nn(ptr)), C_SCHEME_UNDEFINED)
 
-#define C_tty_portp(p)                 C_mk_bool(isatty(fileno(C_port_file(p))))
+#define C_tty_portp(p)                  C_mk_bool(isatty(fileno(C_port_file(p))))
 
 #define C_emit_eval_trace_info(x, y, z) C_emit_trace_info2("<eval>", x, y, z)
 #define C_emit_syntax_trace_info(x, y, z) C_emit_trace_info2("<syntax>", x, y, z)
