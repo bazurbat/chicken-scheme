@@ -1,5 +1,7 @@
+;;;; test-optional.scm - by Alan Post
+
+
 (define (test baseline result)
-  (print baseline " = " result)
   (assert (equal? baseline result)))
 
 ;;
