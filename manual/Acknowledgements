@@ -20,9 +20,9 @@ Ghuloum, Joey Gibson, Stephen C. Gilardi, Mario Domenech Goulart,
 Joshua Griffith, Johannes Groedem, Damian Gryski, Andreas Gustafsson,
 Sven Hartrumpf, Jun-ichiro itojun Hagino, Ahdi Hargo, Matthias Heiler,
 Karl M. Hegbloom, William P. Heinemann, Bill Hoffman, Bruce Hoult,
-Hans Huebner, Markus Huelsmann, Goetz Isenmann, Paulo Jabardo,
-Wietse Jacobs, David Janssens, Christian Jaeger, Matt Jones, Dale
-Jordan, Valentin Kamyshenko, Daishi Kato, Peter Keller, Brad Kind, Ron
+Hans Huebner, Markus Huelsmann, Goetz Isenmann, Paulo Jabardo, Wietse
+Jacobs, David Janssens, Christian Jaeger, Matt Jones, Dale Jordan,
+Valentin Kamyshenko, Daishi Kato, Peter Keller, Brad Kind, Ron
 Kneusel, Matthias Koeppe, Krysztof Kowalczyk, Andre Kuehne, Todd
 R. Kueny Sr, Goran Krampe, David Krentzlin, Ben Kurtz, Micky
 Latowicki, John Lenz, Kirill Lisovsky, Juergen Lorenz, Kon Lovett, Lam
@@ -32,22 +32,22 @@ G. Miller, Mikael, Bruce Mitchener, Fadi Moukayed, Chris Moline, Eric
 E. Moore, Julian Morrison, Dan Muresan, David N. Murray, "nicktick",
 Lars Nilsson, Ian Oversby, "o.t.", Gene Pavlovsky, Levi Pearson,
 Jeronimo Pellegrini, Nicolas Pelletier, Derrell Piper, Carlos Pita,
-Robin Lee Powell, "Pupeno", Davide Puricelli, "presto", Doug Quale,
-Imran Rafique, Eric Raible, Ivan Raikov, Joel Reymont, Chris Roberts,
-Eric Rochester, Paul Romanchenko, Andreas Rottman, David Rush, Lars
-Rustemeier, Daniel Sadilek, Oskar Schirmer, Burton Samograd, Reed
-Sheridan, Ronald Schroeder, Spencer Schumann, Ivan Shcheklein, Alex
-Shinn, Ivan Shmakov, "Shmul", Tony Sidaway, Jeffrey B. Siegal, Andrey
-Sidorenko, Michele Simionato, Volker Stolz, Jon Strait, Dorai Sitaram,
-Robert Skeels, Jason Songhurst, Clifford Stein, Sunnan, Zbigniew
-Szadkowski, Rick Taube, Nathan Thern, Mike Thomas, Minh Thu, Christian
-Tismer, Andre van Tonder, John Tobey, Henrik Tramberend, Vladimir
-Tsichevsky, Neil van Dyke, Sam Varner, Taylor Venable, Sander Vesik,
-Jaques Vidrine, Panagiotis Vossos, Shawn Wagner, Peter Wang, Ed
-Watkeys, Brad Watson, Thomas Weidner, Goeran Weinholt, Matthew
-Welland, Drake Wilson, Joerg Wittenberger, Peter Wright, Mark Wutka,
-Richard Zidlicky and Houman Zolfaghari for bug-fixes, tips and
-suggestions.
+Robin Lee Powell, Alan Post, "Pupeno", Davide Puricelli, "presto",
+Doug Quale, Imran Rafique, Eric Raible, Ivan Raikov, Joel Reymont,
+Chris Roberts, Eric Rochester, Paul Romanchenko, Andreas Rottman,
+David Rush, Lars Rustemeier, Daniel Sadilek, Oskar Schirmer, Burton
+Samograd, Reed Sheridan, Ronald Schroeder, Spencer Schumann, Ivan
+Shcheklein, Alex Shinn, Ivan Shmakov, "Shmul", Tony Sidaway, Jeffrey
+B. Siegal, Andrey Sidorenko, Michele Simionato, Volker Stolz, Jon
+Strait, Dorai Sitaram, Robert Skeels, Jason Songhurst, Clifford Stein,
+Sunnan, Zbigniew Szadkowski, Rick Taube, Nathan Thern, Mike Thomas,
+Minh Thu, Christian Tismer, Andre van Tonder, John Tobey, Henrik
+Tramberend, Vladimir Tsichevsky, Neil van Dyke, Sam Varner, Taylor
+Venable, Sander Vesik, Jaques Vidrine, Panagiotis Vossos, Shawn
+Wagner, Peter Wang, Ed Watkeys, Brad Watson, Thomas Weidner, Goeran
+Weinholt, Matthew Welland, Drake Wilson, Joerg Wittenberger, Peter
+Wright, Mark Wutka, Richard Zidlicky and Houman Zolfaghari for
+bug-fixes, tips and suggestions.
 
 CHICKEN uses the "irregex" regular expression package written by Alex Shinn.
 
