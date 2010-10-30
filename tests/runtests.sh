@@ -156,6 +156,11 @@ $interpret -s import-library-test2.scm
 $compile import-library-test2.scm
 ./a.out
 
+echo "======================================== optionals test ..."
+$interpret -s test-optional.scm
+$compile test-optional.scm
+./a.out
+
 echo "======================================== syntax tests (matchable) ..."
 $interpret matchable.scm -s match-test.scm
 
