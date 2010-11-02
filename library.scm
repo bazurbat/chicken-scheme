@@ -2109,6 +2109,12 @@ EOF
 (set! string-ref (getter-with-setter string-ref string-set! "(string-ref str i)"))
 (set! vector-ref (getter-with-setter vector-ref vector-set! "(vector-ref vec i)"))
 
+(set! list-ref 
+  (getter-with-setter 
+   list-ref
+   (lambda (x i y) (set-car! (list-tail x i) y))
+   "(list-ref lst i)"))
+
 
 ;;; Parameters:
 
