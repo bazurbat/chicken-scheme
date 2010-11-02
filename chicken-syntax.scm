@@ -1108,15 +1108,6 @@
      (##core#let-compiler-syntax (binding ...) body ...)))))
 
 
-;;; Just in case someone forgets
-
-(##sys#extend-macro-environment
- 'define-macro '()
- (##sys#er-transformer
-  (lambda (form r c)
-    (syntax-error 'define-macro "`define-macro' is not supported - please use `define-syntax'"))))
-
-
 (##sys#macro-subset me0 ##sys#default-macro-environment)))
 
 ;; register features
