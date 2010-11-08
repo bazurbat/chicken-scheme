@@ -94,9 +94,10 @@ DISTFILES := $(sort $(DISTFILES))
 
 define declare-shared-library-object
 $(1)$(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
-	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) $$(INCLUDES) \
+	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) \
 	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$(C_COMPILER_SHARED_OPTIONS) \
-	  $$(C_COMPILER_BUILD_RUNTIME_OPTIONS) $$< $$(C_COMPILER_OUTPUT)
+	  $$(C_COMPILER_BUILD_RUNTIME_OPTIONS) $$< $$(C_COMPILER_OUTPUT) \
+	  $$(INCLUDES)
 endef
 
 # The above meta-rule is reused in the setup API stuff below, so we alias it
@@ -109,10 +110,11 @@ $(foreach obj, $(LIBCHICKEN_OBJECTS_1),\
 
 define declare-static-library-object
 $(1)-static$(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
-	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) $$(INCLUDES) \
+	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) \
 	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) \
 	  $$(C_COMPILER_STATIC_OPTIONS) \
-	  $$(C_COMPILER_BUILD_RUNTIME_OPTIONS) $$< $$(C_COMPILER_OUTPUT)
+	  $$(C_COMPILER_BUILD_RUNTIME_OPTIONS) $$< $$(C_COMPILER_OUTPUT) \
+	  $$(INCLUDES)
 endef
 
 declare-static-libchicken-object = $(declare-static-library-object)
@@ -125,9 +127,10 @@ $(foreach obj, $(LIBCHICKEN_OBJECTS_1),\
 define declare-import-lib-object
 $(1).import$(O): $(1).import.c chicken.h $$(CHICKEN_CONFIG_H)
 	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) $$(C_COMPILER_PTABLES_OPTIONS) \
-	  $$(INCLUDES) -DC_SHARED $$(C_COMPILER_COMPILE_OPTION) \
+	  -DC_SHARED $$(C_COMPILER_COMPILE_OPTION) \
 	  $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$(C_COMPILER_SHARED_OPTIONS) \
-	  $$(C_COMPILER_BUILD_RUNTIME_OPTIONS) $$< $$(C_COMPILER_OUTPUT)
+	  $$(C_COMPILER_BUILD_RUNTIME_OPTIONS) $$< $$(C_COMPILER_OUTPUT) \
+	  $$(INCLUDES)
 endef
 
 $(foreach obj,$(IMPORT_LIBRARIES),\
@@ -144,9 +147,9 @@ $(foreach obj,$(SETUP_API_OBJECTS_1),\
 
 define declare-compiler-object
 $(1)$(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
-	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) $$(INCLUDES) \
+	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) \
 	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$(C_COMPILER_SHARED_OPTIONS) $$< \
-	  $$(C_COMPILER_OUTPUT)
+	  $$(C_COMPILER_OUTPUT) $$(INCLUDES)
 endef
 
 $(foreach obj, $(COMPILER_OBJECTS_1),\
@@ -156,9 +159,10 @@ $(foreach obj, $(COMPILER_OBJECTS_1),\
 
 define declare-static-compiler-object
 $(1)-static$(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
-	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) $$(INCLUDES) \
+	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) \
 	  $$(C_COMPILER_STATIC_OPTIONS) \
-	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$< $$(C_COMPILER_OUTPUT)
+	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$< $$(C_COMPILER_OUTPUT) \
+	  $$(INCLUDES)
 endef
 
 $(foreach obj, $(COMPILER_OBJECTS_1),\
@@ -175,8 +179,9 @@ endif
 
 define declare-utility-program-object
 $(1)$(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
-	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) $$(INCLUDES) $$(C_COMPILER_SHARED_OPTIONS) \
-	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$< $$(C_COMPILER_OUTPUT)
+	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) $$(C_COMPILER_SHARED_OPTIONS) \
+	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$< $$(C_COMPILER_OUTPUT) \
+	 $$(INCLUDES) 
 endef
 
 $(foreach obj, $(UTILITY_PROGRAM_OBJECTS_1),\
@@ -187,9 +192,10 @@ $(foreach obj, $(UTILITY_PROGRAM_OBJECTS_1),\
 
 define declare-always-static-utility-program-object
 $(1)$(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
-	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) $$(INCLUDES) \
+	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) \
 	  $$(C_COMPILER_STATIC_OPTIONS) \
 	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$< $$(C_COMPILER_OUTPUT)
+	  $$(INCLUDES)
 endef
 
 $(foreach obj, $(ALWAYS_STATIC_UTILITY_PROGRAM_OBJECTS_1),\
