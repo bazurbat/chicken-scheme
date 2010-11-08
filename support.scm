@@ -959,7 +959,7 @@
 		  `(##sys#foreign-struct-wrapper-argument 
 		    ',(##sys#slot (assq t tmap) 1)
 		    ,param) ) ]
-	     [(integer long integer32 integer64)
+	     [(integer long size_t integer32 integer64)
 	      (if unsafe param `(##sys#foreign-integer-argument ,param))]
 	     [(unsigned-integer unsigned-integer32 unsigned-long unsigned-integer64)
 	      (if unsafe
@@ -1060,7 +1060,7 @@
                   unsigned-c-string unsigned-c-string* nonnull-unsigned-c-string*
 		  c-string-list c-string-list*)
 	(words->bytes 3) )
-       ((unsigned-integer long integer unsigned-long integer32 unsigned-integer32)
+       ((unsigned-integer long integer size_t unsigned-long integer32 unsigned-integer32)
 	(words->bytes 4) )
        ((float double number integer64 unsigned-integer64) 
 	(words->bytes 4) )		; possibly 8-byte aligned 64-bit double
@@ -1086,7 +1086,7 @@
        ((char int short bool unsigned-short unsigned-char unsigned-int long unsigned-long byte unsigned-byte
 	      c-pointer pointer nonnull-c-pointer unsigned-integer integer float c-string symbol
 	      scheme-pointer nonnull-scheme-pointer int32 unsigned-int32 integer32 unsigned-integer32
-              unsigned-c-string unsigned-c-string* nonnull-unsigned-c-string*
+              unsigned-c-string unsigned-c-string* nonnull-unsigned-c-string* size_t
 	      nonnull-c-string c-string* nonnull-c-string* c-string-list c-string-list*) ; pointer and nonnull-pointer are DEPRECATED
 	(words->bytes 1) )
        ((double number integer64 unsigned-integer64)
