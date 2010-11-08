@@ -146,3 +146,27 @@
 (assert (equal? '#${ab c} '#${ab0c}))
 (assert (equal? '#${abc} '#${ab0c}))
 (assert (equal? '#${a b c} '#${0a0b0c}))
+
+
+;;; getter-with-setter
+
+(define foo
+  (let ((m 2))
+    (getter-with-setter
+     (lambda (x) (* x m))
+     (lambda (x) 
+       (set! m x)))))
+
+(assert (= 6 (foo 3)))
+(set! (foo) 4)
+(assert (= 20 (foo 5)))
+
+(define bar
+  (getter-with-setter
+   foo
+   (lambda (x)
+     (+ x 99))))
+
+(assert (= 12 (bar 3)))
+(assert (= 100 (set! (bar) 1)))
+(assert (= 12 (foo 3)))

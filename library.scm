@@ -1980,6 +1980,8 @@ EOF
 
 
 ;;; Decorate procedure with arbitrary data
+;
+; warning: may modify proc, if it already has a suitable decoration!
 
 (define (##sys#decorate-lambda proc pred decorator)
   (let ((len (##sys#size proc)))
@@ -2078,7 +2080,7 @@ EOF
 		       (##sys#make-lambda-info info))
 		      (else (##sys#lambda-info get))))
 	(p1 (##sys#decorate-lambda
-	     get
+	     (##sys#copy-closure get)
 	     setter?
 	     (lambda (proc i)
 	       (##sys#setslot proc i (cons setter-tag set))
