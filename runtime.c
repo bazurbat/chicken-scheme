@@ -8583,6 +8583,7 @@ static void copy_closure_2(void *dummy)
     *p = ptr;
 
   *(p++) = C_CLOSURE_TYPE | cells;
+  /* this is only allowed because the storage is freshly allocated: */
   C_memcpy_slots(p, C_data_pointer(proc), cells);
   C_kontinue(k, (C_word)ptr);
 }
