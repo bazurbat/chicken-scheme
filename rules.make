@@ -92,6 +92,12 @@ DISTFILES := $(sort $(DISTFILES))
 ## ruleset evaluated by Make.  This allows us to automatically generate
 ## similar rules for long lists of targets.
 
+## Note: in some of the rules that follow it is important to add
+## $(INCLUDES) last, because on raw mingw (using the DOS shell) the
+## backslash in "-I.\" seems to be interpreted as a line-terminator.
+## This may be caused by cmd.exe-stupidness or a bug in mingw32-make
+## or some other obscure reason.
+
 define declare-shared-library-object
 $(1)$(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
 	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) \
