@@ -2991,7 +2991,6 @@ EOF
 	(define (specialchar? chr)
 	  (let ([c (char->integer chr)])
 	    (or (fx<= c 32)
-		(fx>= c 128)
 		(memq chr special-characters) ) ) )
 
 	(define (outreadablesym port str)
