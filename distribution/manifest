@@ -185,6 +185,7 @@ Makefile.bsd
 Makefile.cygwin
 Makefile.haiku
 Makefile.cross-linux-mingw
+GNUmakefile
 config.make
 rules.make
 defaults.make
