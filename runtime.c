@@ -4816,6 +4816,9 @@ C_regparm C_word C_fcall C_i_list_tail(C_word lst, C_word i)
   C_word lst0 = lst;
   int n;
 
+  if(lst != C_SCHEME_END_OF_LIST && C_block_header(lst) != C_PAIR_TAG)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "list-tail", lst);
+
   if(i & C_FIXNUM_BIT) n = C_unfix(i);
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "list-tail", i);
 
@@ -8580,6 +8583,7 @@ static void copy_closure_2(void *dummy)
     *p = ptr;
 
   *(p++) = C_CLOSURE_TYPE | cells;
+  /* this is only allowed because the storage is freshly allocated: */
   C_memcpy_slots(p, C_data_pointer(proc), cells);
   C_kontinue(k, (C_word)ptr);
 }

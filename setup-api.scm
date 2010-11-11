@@ -549,15 +549,13 @@
 
 ;;; Convenience function
 
-(define (standard-extension name #!optional version #!key (static #t) (info '()))
+(define (standard-extension name #!optional version #!key static (info '()))
+  ;; `static' is ignored
   (let* ((sname (->string name))
 	 (fname (make-pathname #f sname "scm"))
 	 (iname (make-pathname #f sname "import.scm"))
 	 (ilname (make-pathname #f sname "inline")))
     (compile -dynamic -optimize-level 3 -debug-level 1 ,fname -emit-import-library ,name)
-    (when static
-      (compile -c -optimize-level 3 -debug-level 1 ,fname -emit-import-library
-	       ,name -unit ,name))
     (compile -dynamic -optimize-level 3 -debug-level 0 ,iname)
     (install-extension
      name
@@ -566,8 +564,7 @@
        ,@(if (file-exists? ilname)
 	     (list ilname)
 	     '()))
-     `(,@(supply-version info version)
-       ,@(if static `((static ,(make-pathname #f fname "o"))) '())))))
+     `(,@(supply-version info version)))))
 
 
 ;;; Installation
