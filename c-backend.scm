@@ -702,7 +702,7 @@
 	       (gen "C_h_intern(&" to #\, len #\, cstr ");") ) )
 	    ((null? lit) 
 	     (gen #t to "=C_SCHEME_END_OF_LIST;") )
-	    ((and (not (##sys#immediate? lit))
+	    ((and (not (##sys#immediate? lit)) ; nop
 		  (##core#inline "C_lambdainfop" lit)))
 	    ((or (fixnum? lit) (not (##sys#immediate? lit)))
 	     (gen #t to "=C_decode_literal(C_heaptop,")
@@ -1088,8 +1088,10 @@
 	   [(char int int32 short bool void unsigned-short scheme-object unsigned-char unsigned-int unsigned-int32
 		  byte unsigned-byte)
 	    ns]
-	   [(float double c-pointer unsigned-integer unsigned-integer32 long integer integer32 unsigned-long 
-		   nonnull-c-pointer number integer64 c-string-list c-string-list*)
+	   [(float double c-pointer unsigned-integer unsigned-integer32 long integer integer32 
+		   unsigned-long size_t
+		   nonnull-c-pointer number unsigned-integer64 integer64 c-string-list
+		   c-string-list*)
 	    (string-append ns "+3") ]
 	   [(c-string c-string* unsigned-c-string unsigned-c-string unsigned-c-string*)
 	    (string-append ns "+2+(" var "==NULL?1:C_bytestowords(C_strlen(" var ")))") ]
@@ -1156,8 +1158,10 @@
       [(unsigned-int unsigned-integer) (str "unsigned int")]
       [(unsigned-int32 unsigned-integer32) (str "C_u32")]
       [(int integer bool) (str "int")]
+      [(size_t) (str "size_t")]
       [(int32 integer32) (str "C_s32")]
       [(integer64) (str "C_s64")]
+      [(unsigned-integer64) (str "C_u64")]
       [(short) (str "short")]
       [(long) (str "long")]
       [(unsigned-short) (str "unsigned short")]
@@ -1255,6 +1259,8 @@
       ((double number float) "C_c_double(")
       ((integer integer32) "C_num_to_int(")
       ((integer64) "C_num_to_int64(")
+      ((size_t) "(size_t)C_num_to_int(")
+      ((unsigned-integer64) "C_num_to_uint64(")
       ((long) "C_num_to_long(")
       ((unsigned-integer unsigned-integer32) "C_num_to_unsigned_int(")
       ;; pointer and nonnull-pointer are DEPRECATED
@@ -1337,6 +1343,7 @@
       ((c-pointer) (sprintf "C_mpointer_or_false(&~a,(void*)" dest))
       ((integer integer32) (sprintf "C_int_to_num(&~a," dest))
       ((integer64) (sprintf "C_a_double_to_num(&~a," dest))
+      ((size_t) (sprintf "C_int_to_num(%~a,(int)" dest))
       ((unsigned-integer unsigned-integer32) (sprintf "C_unsigned_int_to_num(&~a," dest))
       ((long) (sprintf "C_long_to_num(&~a," dest))
       ((unsigned-long) (sprintf "C_unsigned_long_to_num(&~a," dest))

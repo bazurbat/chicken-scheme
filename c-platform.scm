@@ -769,11 +769,6 @@
 (rewrite 'vector-set! 11 3 '##sys#setslot #f)
 (rewrite 'vector-set! 2 3 "C_i_vector_set" #t)
 
-(rewrite '##sys#vector->list 11 1 'vector->list #t)
-(rewrite '##sys#list->vector 11 1 'list->vector #t)
-(rewrite '##sys#>= 11 2 '>= #t)
-(rewrite '##sys#= 11 2 '= #t)
-
 (rewrite 'gcd 12 '##sys#gcd #t 2)
 (rewrite 'lcm 12 '##sys#lcm #t 2)
 (rewrite 'identity 12 #f #t 1)

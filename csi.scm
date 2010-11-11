@@ -609,13 +609,9 @@ EOF
 	    [(pair? x) (fprintf out "pair with car ~S~%and cdr ~S~%" (car x) (cdr x))]
 	    [(procedure? x)
 	     (let ([len (##sys#size x)])
-	       (if (and (> len 3)
-			(memq #:tinyclos ##sys#features)
-			(eq? ##tinyclos#entity-tag (##sys#slot x (fx- len 1))) ) ;XXX handle this in tinyclos egg (difficult)
-		   (describe-object x out)
-		   (descseq 
-		    (sprintf "procedure with code pointer ~X" (##sys#peek-unsigned-integer x 0))
-		    ##sys#size ##sys#slot 1) ) ) ]
+	       (descseq 
+		(sprintf "procedure with code pointer ~X" (##sys#peek-unsigned-integer x 0))
+		##sys#size ##sys#slot 1) ) ]
 	    [(port? x)
 	     (fprintf out
 		      "~A port of type ~A with name ~S and file pointer ~X~%"
@@ -623,8 +619,6 @@ EOF
 		      (##sys#slot x 7)
 		      (##sys#slot x 3)
 		      (##sys#peek-unsigned-integer x 0) ) ]
-	    [(and (memq #:tinyclos ##sys#features) (instance? x)) ; XXX put into tinyclos egg
-	     (describe-object x out) ]
 	    [(##sys#locative? x)
 	     (fprintf out "locative~%  pointer ~X~%  index ~A~%  type ~A~%"
 		      (##sys#peek-unsigned-integer x 0)
@@ -955,7 +949,10 @@ EOF
 	   [batch (or script (member* '("-b" "-batch") args) eval?)]
 	   [quietflag (member* '("-q" "-quiet") args)]
 	   [quiet (or script quietflag eval?)]
-	   [ipath (map chop-separator (string-split (or (get-environment-variable "CHICKEN_INCLUDE_PATH") "") ";"))] )      
+	   [ipath (map chop-separator 
+		       (string-split 
+			(or (get-environment-variable "CHICKEN_INCLUDE_PATH") "") 
+			";"))] )      
       (define (collect-options opt)
 	(let loop ([opts args])
 	  (cond [(member opt opts) 

@@ -34,14 +34,19 @@ SRCDIR = ./
 # platform configuration
 
 ARCH ?= $(shell sh $(SRCDIR)/config-arch.sh)
-# default to SunPro CC
-export C_COMPILER ?= cc
+# default to gcc - use "make ... C_COMPILER=cc ..." to use SunPro CC
+export C_COMPILER ?= gcc
 export INSTALL_PROGRAM ?= ginstall
 
 # options
 
 ifeq ($(C_COMPILER),cc)
-C_COMPILER_OPTIONS ?= -errtags -xdebugformat=stabs -xannotate=no -DHAVE_CHICKEN_CONFIG_H 
+ifneq (,$(filter-out x86 x86-64,$(ARCH))) # -xannotate=no is not supported on x86/x86-64
+DISABLE_ANNOTATIONS=-xannotate=no
+else
+DISABLE_ANNOTATIONS=
+endif
+C_COMPILER_OPTIONS ?= -errtags -xdebugformat=stabs $(DISABLE_ANNOTATIONS) -DHAVE_CHICKEN_CONFIG_H
 else
 C_COMPILER_OPTIONS ?= -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H
 endif
@@ -68,10 +73,10 @@ endif
 endif
 endif
 
-ifeq ($(C_COMPILER),cc)
-LINKER_LINK_SHARED_LIBRARY_OPTIONS = -xannotate=no -G
-LINKER_LINK_SHARED_DLOADABLE_OPTIONS = -xannotate=no -G
-LINKER_LINK_SHARED_PROGRAM_OPTIONS =
+ifeq ($(C_COMPILER),cc) # Assuming 'cc' means SunW/SunStudio compiler
+LINKER_LINK_SHARED_LIBRARY_OPTIONS = -G $(DISABLE_ANNOTATIONS)
+LINKER_LINK_SHARED_DLOADABLE_OPTIONS = -G $(DISABLE_ANNOTATIONS) -R"$(RUNTIME_LINKER_PATH)" -L.
+LINKER_LINK_SHARED_PROGRAM_OPTIONS = -R"$(RUNTIME_LINKER_PATH)"
 else
 LINKER_LINK_SHARED_LIBRARY_OPTIONS = -shared
 LINKER_LINK_SHARED_DLOADABLE_OPTIONS = -shared -Wl,-R"$(RUNTIME_LINKER_PATH)" -Wl,-L.

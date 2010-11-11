@@ -6,7 +6,7 @@
   (c) 2008-2010, The Chicken Team
   (c) 2000-2007, Felix L. Winkelmann
 
-  version 4.6.2
+  version 4.6.3
 
 
  1. Introduction
@@ -259,10 +259,10 @@
 
         Solaris:
 
-	  - By default, CHICKEN is build with the SunPro C compiler (`cc').
-	    To use `gcc' instead of `cc', pass 
+	  - By default, CHICKEN is build with the GNU C compiler (`gcc').
+	    To use the SunPro C compiler (`cc') instead, pass
 
-	      C_COMPILER=gcc
+	      C_COMPILER=cc
 
 	    to the "make" invocation.
 
