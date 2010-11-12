@@ -55,7 +55,7 @@ UTILITY_PROGRAM_OBJECTS_1 = \
 	csc csi chicken-install chicken-uninstall chicken-status chicken-profile
 
 ALWAYS_STATIC_UTILITY_PROGRAM_OBJECTS_1 = \
-	chicken-bug csi-static
+	chicken-bug
 
 ## TODO: Shouldn't these manpages match their program names (ie CSI_PROGRAM etc)?
 MANPAGES = \
