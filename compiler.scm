@@ -2185,7 +2185,6 @@
 						     (test varname 'value)
 						     (proper-list? llist) ) ] )
 					  (when (and name 
-						     custom
 						     (not (= (llist-length llist) (length (cdr subs)))))
 					    (quit
 					     "~a: procedure `~a' called with wrong number of arguments" 
