@@ -216,7 +216,7 @@
 (define (thread-suspend! thread)
   (##sys#check-structure thread 'thread 'thread-suspend!)
   (##sys#setslot thread 3 'suspended)
-  (when (eq? thread ##sys#current-thread)
+  (when (eq? thread ##sys#current-thread) ;XXX what if thread is ready or blocked?
     (##sys#call-with-current-continuation
      (lambda (return)
        (##sys#setslot thread 1 (lambda () (return (##core#undefined))))
@@ -224,7 +224,7 @@
 
 (define (thread-resume! thread)
   (##sys#check-structure thread 'thread 'thread-resume!)
-  (when (eq? (##sys#slot thread 3) 'suspended)
+  (when (eq? (##sys#slot thread 3) 'suspended) ;XXX what if thread is ready or blocked?
     (##sys#setslot thread 3 'ready)
     (##sys#add-to-ready-queue thread) ) )
 

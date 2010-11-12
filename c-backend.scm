@@ -733,6 +733,7 @@
 	((flonum) "double")
 	((char) "char")
 	((pointer) "void *")
+	((int) "int")
 	((bool) "int")
 	(else (bomb "invalid unboxed type" t))))
 
