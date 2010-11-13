@@ -2270,6 +2270,15 @@ C_regparm C_word C_fcall C_bytevector(C_word **ptr, int len, C_char *str)
 }
 
 
+C_regparm C_word C_fcall C_static_bytevector(C_word **ptr, int len, C_char *str)
+{
+  C_word strblock = C_static_string(ptr, len, str);
+
+  ((C_SCHEME_BLOCK *)strblock)->header = C_BYTEVECTOR_TYPE | len;
+  return strblock;
+}
+
+
 C_regparm C_word C_fcall C_pbytevector(int len, C_char *str)
 {
   C_SCHEME_BLOCK *pbv = C_malloc(len + sizeof(C_header));
@@ -3921,13 +3930,13 @@ void C_ccall C_stop_timer(C_word c, C_word closure, C_word k)
 {
   double t0 = C_cpu_milliseconds() - timer_start_ms;
   C_word 
-    ab[ WORDS_PER_FLONUM * 2 + 7 ], /* 2 flonums, 1 vector of 6 elements */
+    ab[ WORDS_PER_FLONUM * 2 + 6 ], /* 2 flonums, 1 vector of 5 elements */
     *a = ab,
     elapsed = C_flonum(&a, t0 / 1000.0),
     gc_time = C_flonum(&a, gc_ms / 1000.0),
     info;
 
-  info = C_vector(&a, 6, elapsed, gc_time, C_fix(mutation_count), C_fix(gc_count_1_total), 
+  info = C_vector(&a, 5, elapsed, gc_time, C_fix(mutation_count), C_fix(gc_count_1_total), 
 		  C_fix(gc_count_2));
   C_kontinue(k, info);
 }
@@ -4806,6 +4815,9 @@ C_regparm C_word C_fcall C_i_list_tail(C_word lst, C_word i)
 {
   C_word lst0 = lst;
   int n;
+
+  if(lst != C_SCHEME_END_OF_LIST && C_block_header(lst) != C_PAIR_TAG)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "list-tail", lst);
 
   if(i & C_FIXNUM_BIT) n = C_unfix(i);
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "list-tail", i);
@@ -8571,6 +8583,7 @@ static void copy_closure_2(void *dummy)
     *p = ptr;
 
   *(p++) = C_CLOSURE_TYPE | cells;
+  /* this is only allowed because the storage is freshly allocated: */
   C_memcpy_slots(p, C_data_pointer(proc), cells);
   C_kontinue(k, (C_word)ptr);
 }
@@ -8833,6 +8846,12 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
   case C_STRING_TYPE:
     /* strings are always allocated statically */
     val = C_static_string(ptr, size, *str);
+    *str += size;
+    break;
+    
+  case C_BYTEVECTOR_TYPE:
+    /* ... as are bytevectors (blobs) */
+    val = C_static_bytevector(ptr, size, *str);
     *str += size;
     break;
     

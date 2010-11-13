@@ -33,6 +33,12 @@
   (not inline ##sys#interrupt-hook ##sys#user-interrupt-hook))
 
 
+;; these are not available on Windows
+
+(define-foreign-variable _stat_st_blksize unsigned-int "C_statbuf.st_blksize")
+(define-foreign-variable _stat_st_blocks unsigned-int "C_statbuf.st_blocks")
+
+
 ;;; common code
 
 (include "posix-common.scm")
@@ -471,11 +477,6 @@ static int set_file_mtime(char *filename, C_word tm)
 
 EOF
 ) )
-
-;; these are not available on Windows
-
-(define-foreign-variable _stat_st_blksize unsigned-int "C_statbuf.st_blksize")
-(define-foreign-variable _stat_st_blocks unsigned-int "C_statbuf.st_blocks")
 
 ;; Faster versions of common operations
 
@@ -1149,32 +1150,6 @@ EOF
 
 ;;; More errno codes:
 
-(define-foreign-variable _errno int "errno")
-
-(define-foreign-variable _eperm int "EPERM")
-(define-foreign-variable _enoent int "ENOENT")
-(define-foreign-variable _esrch int "ESRCH")
-(define-foreign-variable _eintr int "EINTR")
-(define-foreign-variable _eio int "EIO")
-(define-foreign-variable _efault int "EFAULT")
-(define-foreign-variable _echild int "ECHILD")
-(define-foreign-variable _enoexec int "ENOEXEC")
-(define-foreign-variable _ebadf int "EBADF")
-(define-foreign-variable _enomem int "ENOMEM")
-(define-foreign-variable _eacces int "EACCES")
-(define-foreign-variable _ebusy int "EBUSY")
-(define-foreign-variable _eexist int "EEXIST")
-(define-foreign-variable _enotdir int "ENOTDIR")
-(define-foreign-variable _eisdir int "EISDIR")
-(define-foreign-variable _einval int "EINVAL")
-(define-foreign-variable _emfile int "EMFILE")
-(define-foreign-variable _enospc int "ENOSPC")
-(define-foreign-variable _espipe int "ESPIPE")
-(define-foreign-variable _epipe int "EPIPE")
-(define-foreign-variable _eagain int "EAGAIN")
-(define-foreign-variable _erofs int "EROFS")
-(define-foreign-variable _ewouldblock int "EWOULDBLOCK")
-
 (define errno/perm _eperm)
 (define errno/noent _enoent)
 (define errno/srch _esrch)
@@ -1288,16 +1263,20 @@ EOF
 (define-foreign-variable _filename_max int "FILENAME_MAX")
 
 (define read-symbolic-link
-  (let ([buf (make-string (fx+ _filename_max 1))] )
+  (let ((buf (make-string (fx+ _filename_max 1))))
     (lambda (fname #!optional canonicalize)
       (##sys#check-string fname 'read-symbolic-link)
-      (let ([len (##core#inline "C_do_readlink" (##sys#make-c-string (##sys#expand-home-path fname) 'read-symbolic-link) buf)])
-      (when (fx< len 0)
-        (posix-error #:file-error 'read-symbolic-link "cannot read symbolic link" fname) )
-      (let ((pathname (substring buf 0 len)))
-        (if (and canonicalize (symbolic-link? pathname))
-            (read-symbolic-link pathname 'canonicalize)
-            pathname ) ) ) ) ) )
+      (let ((len (##core#inline 
+		  "C_do_readlink"
+		  (##sys#make-c-string (##sys#expand-home-path fname) 'read-symbolic-link) buf)))
+	(if (fx< len 0)
+	    (if canonicalize
+		fname
+		(posix-error #:file-error 'read-symbolic-link "cannot read symbolic link" fname))
+	    (let ((pathname (substring buf 0 len)))
+	      (if (and canonicalize (symbolic-link? pathname))
+		  (read-symbolic-link pathname 'canonicalize)
+		  pathname ) ) ) ) ) ) )
 
 (define file-link
   (let ([link (foreign-lambda int "link" c-string c-string)])

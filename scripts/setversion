@@ -3,7 +3,7 @@
 exec csi -s "$0" "$@"
 |#
 
-(use srfi-1 utils posix)
+(use srfi-1 utils posix irregex)
 
 (define buildversion (->string (car (read-file "buildversion"))))
 (define buildbinaryversion (car (read-file "buildbinaryversion")))
@@ -32,7 +32,11 @@ exec csi -s "$0" "$@"
 	   (system* "mv ~S ~S" tmp which) ) ) ) )
 
 (define (parse-version v)
-  (string-match (irregex "(\\d+)\\.(\\d+)\\.(\\d+)(.*)") v) )
+  (let ((m (irregex-match "(\\d+)\\.(\\d+)\\.(\\d+)(.*)" v)))
+    (list (irregex-match-substring m 0)
+	  (irregex-match-substring m 1)
+	  (irregex-match-substring m 2)
+	  (irregex-match-substring m 3))))
 
 (define (main args)
   (let ((major (##sys#fudge 41))

@@ -125,25 +125,6 @@ does not require code to be loaded at runtime.
 
 Specifies version string.
 
-===== static
-
- [extension property] (static STRING)
-
-If the extension also provides a static library, then STRING should
-contain the name of that library. Used by {{csc}} when compiling with
-the {{-static-extension}} option.
-
-===== static-options
-
- [extension property] (static-options STRING)
-
-Additional options that should be passed to the linker when linking
-with the static version of an extension (see {{static}} above). Used
-by {{csc}} when compiling with the {{-static-extension}} option.
-
-All other properties are currently ignored. The {{FILELIST}} argument may also be a single
-string.
-
 ==== install-program
 
 <procedure>(install-program ID FILELIST [INFOLIST])</procedure>
@@ -160,13 +141,12 @@ files in {{FILELIST}} to executable (for installing shell-scripts).
 
 ==== standard-extension
 
-<procedure>(standard-extension ID [VERSION] #!key static info)</procedure>
+<procedure>(standard-extension ID [VERSION] #!key info)</procedure>
 
 A convenience procedure that combines the compilation and installation of 
 a simple single-file extension. This is roughly equivalent to:
 
   (compile -s -O2 -d1 ID.scm -j ID)
-  (compile -c -O2 -d1 ID.scm -j ID -unit ID)  ; if STATIC is not given or true
   (compile -s -O2 -d0 ID.import.scm)
   
   (install-extension
@@ -174,7 +154,7 @@ a simple single-file extension. This is roughly equivalent to:
    '("ID.o" "ID.so" "ID.import.so")
    '((version 1.0)
      ... `INFO' ...
-     (static "ID.o")))   ; if `static' is given and true
+     ))
 
 {{VERSION}} may be {{#f}} or can be omitted, in that case the version
 obtained from where the extension has been retrieved wil be taken. If
@@ -505,20 +485,17 @@ The setup file is:
 ;;; my-lib.setup
 
 (compile -s -O3 -d1 "my-lib.scm" -j my-lib)
-(compile -c -O3 -d1 "my-lib.scm" -unit my-lib)
 (compile -s -O3 -d0 "my-lib.import.scm")
 
 (install-extension
  'my-lib
  '("my-lib.o" "my-lib.so" "my-lib.import.so")
- '((version 1.0)
-   (static "my-lib.o")))
+ '((version 1.0)))
 </enscript>
 
 The first line tells the compiler to create a shared ({{-s}}) library
 and to create an import file ({{my-lib.import.scm}}, because of the
-{{-j}} flag).  The second line creates a static library
-{{my-lib.o}}. The third line compiles the import file created by the
+{{-j}} flag).  The second line compiles the import file created by the
 first one.
 
 IMPORTANT: the module name exported by my-lib.scm must be the same
@@ -700,40 +677,6 @@ try alternative locations, as listed in the file.
 Dependency information, which is necessary to ensure required
 extensions are also installed, is processed automatically.
 
-=== Linking extensions statically
-
-The compiler and {{chicken-install}} support statically linked 
-eggs. The general approach is to generate an object file or static
-library (in addition to the usual
-shared library) in your {{.setup}} script and install it along with the
-dynamically loadable extension. The setup properties {{static}} 
-should contain the name of the object file (or static library) to be
-linked, when {{csc}} gets passed the {{-static-extension}} option:
-
-<enscript highlight=scheme>
- (compile -s -O2 -d1 my-ext.scm)   ; dynamically loadable "normal" version
- (compile -c -O2 -d1 my-ext -unit my-ext)  ; statically linkable version
- (install-extension
-   'my-ext
-   '("my-ext.so" "my-ext.o")
-   '((static "my-ext.o")) )
-</enscript>
-
-Note the use of the {{-unit}} option in the second compilation step: static
-linking must use static library units. {{chicken-install}} will perform 
-platform-dependent file-extension translation for the file list, but does currently
-not do that for the {{static}} extension property.
-
-To actually link with the static version of {{my-ext}}, do:
-
- % csc -static-extension my-ext my-program.scm
-
-The compiler will try to do the right thing, but can not handle all
-extensions, since the ability to statically link eggs is relatively
-new. Eggs that support static linking are designated as being able to
-do so. If you require a statically linkable version of an egg that has
-not been converted yet, contact the extension author or the CHICKEN 
-mailing list.
 
 ---
 Previous: [[Interface to external functions and variables]]

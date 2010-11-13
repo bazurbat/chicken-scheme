@@ -828,7 +828,7 @@ EOF
   (unless keep-files (for-each $delete-file generated-scheme-files)) )
 
 
-;;; Compile all C  and .rc files:
+;;; Compile all C/C++  and .rc files:
 
 (define (run-compilation)
   (let ((ofiles '()))
@@ -842,6 +842,9 @@ EOF
 		 (quotewrap f)
 		 (string-append compile-output-flag (quotewrap fo)) 
 		 compile-only-flag
+		 (if (and cpp-mode (string=? "g++" c++-compiler))
+		     "-Wno-write-strings"
+		     "")
 		 (compiler-options) ) ) )
 	 (set! generated-object-files (cons fo generated-object-files))
 	 (set! ofiles (cons fo ofiles))))

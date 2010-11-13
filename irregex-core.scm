@@ -159,8 +159,11 @@
 	 (display " submatches)>" out)))
      (define-inline (irregex-match-valid-numeric-index? m n)
        (let ((v (internal "##sys#slot" m 1)))
-	 (and (>= n 0) (< (* n 4) (internal "##sys#size" v))
-	      (internal "##sys#slot" v (+ 1 (* n 4))))))))
+	 (and (>= n 0) (< (* n 4) (- (internal "##sys#size" v) 4)))))
+     (define-inline (irregex-match-matched-numeric-index? m n)
+       (let ((v (internal "##sys#slot" m 1)))
+         (and (internal "##sys#slot" v (+ 1 (* n 4)))
+              #t)))))
   (else
    (begin
      (define irregex-tag '*irregex-tag*)
@@ -198,7 +201,7 @@
 	    (>= (vector-length obj) 11)
 	    (eq? irregex-match-tag (vector-ref obj 0))))
      (define (make-irregex-match count names)
-       (let ((res (make-vector (+ (* 4 (+ 2 count)) 4) #f)))
+       (let ((res (make-vector (+ (* 4 (+ 2 count)) 3) #f)))
 	 (vector-set! res 0 irregex-match-tag)
 	 (vector-set! res 2 names)
 	 res))
@@ -217,8 +220,10 @@
      (define (%irregex-match-fail m) (vector-ref m (- (vector-length m) 1)))
      (define (%irregex-match-fail-set! m x) (vector-set! m (- (vector-length m) 1) x))
      (define (irregex-match-valid-numeric-index? m n)
-       (and (>= n 0) (< (+ 3 (* n 4)) (vector-length m))
-	    (vector-ref m (+ 4 (* n 4))))))))
+       (and (>= n 0) (< (+ 3 (* n 4)) (- (vector-length m) 4))))
+     (define (irregex-match-matched-numeric-index? m n)
+       (and (vector-ref m (+ 4 (* n 4)))
+            #t)))))
 
 (define (irregex-match-valid-named-index? m n)
   (and (assq n (irregex-match-names m))
@@ -226,17 +231,17 @@
 
 ;; public interface with error checking
 (define (irregex-match-start-chunk m . opt)
-  (let ((n (irregex-match-numeric-index 'irregex-match-start-chunk m opt #t)))
-    (%irregex-match-start-chunk m n)))
+  (let ((n (irregex-match-numeric-index 'irregex-match-start-chunk m opt)))
+    (and n (%irregex-match-start-chunk m n))))
 (define (irregex-match-start-index m . opt)
-  (let ((n (irregex-match-numeric-index 'irregex-match-start-index m opt #t)))
-    (%irregex-match-start-index m n)))
+  (let ((n (irregex-match-numeric-index 'irregex-match-start-index m opt)))
+    (and n (%irregex-match-start-index m n))))
 (define (irregex-match-end-chunk m . opt)
-  (let ((n (irregex-match-numeric-index 'irregex-match-end-chunk m opt #t)))
-    (%irregex-match-end-chunk m n)))
+  (let ((n (irregex-match-numeric-index 'irregex-match-end-chunk m opt)))
+    (and n (%irregex-match-end-chunk m n))))
 (define (irregex-match-end-index m . opt)
-  (let ((n (irregex-match-numeric-index 'irregex-match-end-index m opt #t)))
-    (%irregex-match-end-index m n)))
+  (let ((n (irregex-match-numeric-index 'irregex-match-end-index m opt)))
+    (and n (%irregex-match-end-index m n))))
 
 (define (irregex-match-start-chunk-set! m n start)
   (vector-set! m (+ 3 (* n 4)) start))
@@ -250,10 +255,9 @@
 ;; Helper procedure to convert any type of index from a rest args list
 ;; to a numeric index.  Named submatches are converted to their corresponding
 ;; numeric index, and numeric submatches are checked for validity.
-;; If strict? is true, an error is raised for invalid numeric indices.
-;; #f is returned if strict? is false, but unknown named submatches always
-;; cause an error, regardless of strict?ness
-(define (irregex-match-numeric-index location m opt strict?)
+;; An error is raised for invalid numeric or named indices, #f is returned
+;; for defined but nonmatching indices.
+(define (irregex-match-numeric-index location m opt)
   (cond
    ((not (irregex-match-data? m))
     (%irregex-error location "not match data" m))
@@ -264,9 +268,9 @@
     (let ((n (car opt)))
       (if (number? n)
           (if (and (integer? n) (exact? n))
-              (or (and (irregex-match-valid-numeric-index? m n) n)
-                  (and strict?
-                       (%irregex-error location "not a valid index" m n)))
+              (if (irregex-match-valid-numeric-index? m n)
+                  (and (irregex-match-matched-numeric-index? m n) n)
+                  (%irregex-error location "not a valid index" m n))
               (%irregex-error location "not an exact integer" n))
           (let lp ((ls (irregex-match-names m))
                    (unknown? #t))
@@ -290,7 +294,7 @@
       (irregex-match-valid-named-index? m n)))
 
 (define (irregex-match-substring m . opt)
-  (let* ((n (irregex-match-numeric-index 'irregex-match-substring m opt #f))
+  (let* ((n (irregex-match-numeric-index 'irregex-match-substring m opt))
          (cnk (irregex-match-chunker m)))
     (and n
          ((chunker-get-substring cnk)
@@ -300,7 +304,7 @@
           (%irregex-match-end-index m n)))))
 
 (define (irregex-match-subchunk m . opt)
-  (let* ((n (irregex-match-numeric-index 'irregex-match-subchunk m opt #f))
+  (let* ((n (irregex-match-numeric-index 'irregex-match-subchunk m opt))
          (cnk (irregex-match-chunker m))
          (get-subchunk (chunker-get-subchunk cnk)))
     (if (not get-subchunk)

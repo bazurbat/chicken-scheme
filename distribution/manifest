@@ -95,6 +95,7 @@ srfi-4.scm
 stub.scm
 support.scm
 tcp.scm
+tests/test-optional.scm
 tests/arithmetic-test.scm
 tests/arithmetic-test.32.expected
 tests/arithmetic-test.64.expected
@@ -184,6 +185,7 @@ Makefile.bsd
 Makefile.cygwin
 Makefile.haiku
 Makefile.cross-linux-mingw
+GNUmakefile
 config.make
 rules.make
 defaults.make

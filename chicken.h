@@ -349,7 +349,7 @@ typedef unsigned __int64   uint64_t;
 
 #define C_TIMER_INTERRUPTS
 
-/* For the easy FFI: */
+/* For the `bind' (and the obsolete `easyffi'): */
 
 #define ___fixnum           int
 #define ___number           double
@@ -358,6 +358,7 @@ typedef unsigned __int64   uint64_t;
 #define ___scheme_value     C_word
 #define ___scheme_pointer   void *
 #define ___byte_vector      unsigned char *
+#define ___pointer_vector   void **
 #define ___symbol           char *
 #define ___safe
 #define ___declare(x, y)
@@ -525,8 +526,10 @@ typedef unsigned __int64   uint64_t;
 
 #if defined(_MSC_VER) || defined (__MINGW32__)
 # define C_s64                    __int64
+# define C_u64                    unsigned __int64
 #else
 # define C_s64                    int64_t
+# define C_u64                    uint64_t
 #endif
 
 #define C_char                    char
@@ -1113,6 +1116,7 @@ extern double trunc(double);
                                         C_mk_bool(C_strncasecmp((C_char *)C_data_pointer(s1) + C_unfix(start1), \
                                                                 (C_char *)C_data_pointer(s2) + C_unfix(start2), \
                                                                 C_unfix(len) ) == 0)
+/* this does not use C_mutate: */
 #define C_subvector_copy(v1, v2, start1, end1, start2) \
                                         (C_memcpy_slots((C_char *)C_data_pointer(v2) + C_unfix(start2), \
                                                   (C_char *)C_data_pointer(v1) + C_unfix(start1), \
@@ -1158,7 +1162,7 @@ extern double trunc(double);
 #define C_poke_pointer_or_null(b, i, x) (C_set_block_item(b, C_unfix(i), (C_word)C_data_pointer_or_null(x)), C_SCHEME_UNDEFINED)
 #define C_qfree(ptr)                    (C_free(C_c_pointer_nn(ptr)), C_SCHEME_UNDEFINED)
 
-#define C_tty_portp(p)                 C_mk_bool(isatty(fileno(C_port_file(p))))
+#define C_tty_portp(p)                  C_mk_bool(isatty(fileno(C_port_file(p))))
 
 #define C_emit_eval_trace_info(x, y, z) C_emit_trace_info2("<eval>", x, y, z)
 #define C_emit_syntax_trace_info(x, y, z) C_emit_trace_info2("<syntax>", x, y, z)
@@ -1554,6 +1558,7 @@ C_fctexport void C_fcall C_clear_trace_buffer(void) C_regparm;
 C_fctexport C_word C_fetch_trace(C_word start, C_word buffer);
 C_fctexport C_word C_fcall C_string(C_word **ptr, int len, C_char *str) C_regparm;
 C_fctexport C_word C_fcall C_static_string(C_word **ptr, int len, C_char *str) C_regparm;
+C_fctexport C_word C_fcall C_static_bytevector(C_word **ptr, int len, C_char *str) C_regparm;
 C_fctexport C_word C_fcall C_static_lambda_info(C_word **ptr, int len, C_char *str) C_regparm;
 C_fctexport C_word C_fcall C_bytevector(C_word **ptr, int len, C_char *str) C_regparm;
 C_fctexport C_word C_fcall C_pbytevector(int len, C_char *str) C_regparm;
@@ -1963,6 +1968,13 @@ C_inline C_s64 C_num_to_int64(C_word x)
 {
   if(x & C_FIXNUM_BIT) return (C_s64)C_unfix(x);
   else return (C_s64)C_flonum_magnitude(x);
+}
+
+
+C_inline C_u64 C_num_to_uint64(C_word x)
+{
+  if(x & C_FIXNUM_BIT) return (C_u64)C_unfix(x);
+  else return (C_u64)C_flonum_magnitude(x);
 }
 
 

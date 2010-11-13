@@ -574,7 +574,8 @@
 (irregex-search/matches (procedure irregex-search/matches (* string fixnum fixnum *) *))
 (irregex-split (procedure irregex-split (* string #!optional fixnum fixnum) list))
 (irregex-submatches (procedure irregex-submatches (*) *))
-(irregex-match-valid-index? irregex-match-valid-index? ((struct regexp-match) *) boolean)
+(irregex-match-valid-index? 
+ (procedure irregex-match-valid-index? ((struct regexp-match) *) boolean))
 (irregex? (procedure irregex? (*) boolean))
 (make-irregex-chunker
  (procedure make-irregex-chunker 
@@ -1211,7 +1212,7 @@
 (raise (procedure raise (*) noreturn))
 (seconds->time (procedure seconds->time (number) (struct time)))
 (terminated-thread-exception? (procedure terminated-thread-exception? (*) boolean))
-(thread-join! (procedure thread-join! ((struct thread) #!optional *) *))
+(thread-join! (procedure thread-join! ((struct thread) #!optional * *) *))
 (thread-name (procedure thread-name ((struct thread)) *))
 (thread-quantum (procedure thread-quantum ((struct thread)) fixnum))
 (thread-quantum-set! (procedure thread-quantum-set! ((struct thread) fixnum) undefined))

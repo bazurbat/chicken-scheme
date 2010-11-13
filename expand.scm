@@ -341,7 +341,6 @@
 	    (%let* (macro-alias 'let* se))
 	    (%lambda '##core#lambda)
 	    (%opt (macro-alias 'optional se))
-	    (%let-optionals (macro-alias 'let-optionals se))
 	    (%let-optionals* (macro-alias 'let-optionals* se))
 	    (%let (macro-alias 'let se)))
 	(let loop ([mode 0]		; req=0, opt=1, rest=2, key=3, end=4
@@ -371,7 +370,7 @@
 			      ([,(caar opt) (,%opt ,rvar ,(cadar opt))])
 			      ,@body) ) ]
 			  [(and (not hasrest) (null? key))
-			   `((,%let-optionals
+			   `((,%let-optionals*
 			      ,rvar ,(reverse opt) ,@body))]
 			  [else 
 			   `((,%let-optionals*

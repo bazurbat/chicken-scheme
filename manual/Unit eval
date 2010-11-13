@@ -156,10 +156,7 @@ extension library and load it. If {{ID}} names a library-unit of
 the base system, then it is loaded via {{load-library}}. If no
 extension library is available for the given ID, then an attempt is
 made to load the file {{ID.so}} or {{ID.scm}} (in that order)
-from one of the following locations:
-
-* the current include path, which defaults to the pathnames given in {{CHICKEN_INCLUDE_PATH}}.
-* the current directory
+in the current directory.
 
 {{ID}} should be a string or a symbol.
 

@@ -39,6 +39,17 @@ Allows user-defined extension of external representations. (For more information
 
 An abbreviation for {{(location EXPRESSION)}}.
 
+=== "Blob" literals
+
+ #${HEX ...}
+
+Syntax for literal "blobs" (byte-sequences). Expects hexadecimal digits and ignores
+any whitespace characters:
+
+  #;1> ,d '${deadbee f}
+  blob of size 4:
+     0: de ad be ef                                     ....
+
 === Keyword
 
  #:SYMBOL

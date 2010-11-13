@@ -392,6 +392,14 @@ and updated using {{(NAME-SLOTNAME-set!}} {{STRUCT}} {{VALUE)}}.
 (point-y p1)                     ==> 99
 </enscript>
 
+{{SLOTNAME}} may alternatively also be of the form
+
+  (setter SLOTNAME)
+
+In this case the slot can be read with {{(NAME-SLOTNAME STRUCT)}}
+and written with {{(set! (NAME-SLOTNAME STRUCT) VALUE)}} (the slot-accessor
+has an associated SRFI-17 "setter" procedure).
+
 ==== define-record-type
 
 <macro>(define-record-type NAME (CONSTRUCTOR TAG ...) PREDICATE (FIELD ACCESSOR [MODIFIER]) ...)</macro>

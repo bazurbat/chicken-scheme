@@ -30,7 +30,7 @@
   (disable-interrupts)
   (hide ##sys#dynamic-unwind ##sys#find-symbol
 	##sys#grow-vector ##sys#default-parameter-vector 
-	print-length-limit current-print-length setter-tag read-marks
+	current-print-length setter-tag read-marks
 	##sys#print-exit
 	##sys#format-here-doc-warning)
   (not inline ##sys#user-read-hook ##sys#error-hook ##sys#signal-hook ##sys#schedule
@@ -1980,6 +1980,8 @@ EOF
 
 
 ;;; Decorate procedure with arbitrary data
+;
+; warning: may modify proc, if it already has a suitable decoration!
 
 (define (##sys#decorate-lambda proc pred decorator)
   (let ((len (##sys#size proc)))
@@ -2078,7 +2080,7 @@ EOF
 		       (##sys#make-lambda-info info))
 		      (else (##sys#lambda-info get))))
 	(p1 (##sys#decorate-lambda
-	     get
+	     (##sys#copy-closure get)
 	     setter?
 	     (lambda (proc i)
 	       (##sys#setslot proc i (cons setter-tag set))
@@ -2108,6 +2110,12 @@ EOF
 (set! cdddr (getter-with-setter cdddr (lambda (x y) (set-cdr! (cddr x) y)) "(cdddr p)"))
 (set! string-ref (getter-with-setter string-ref string-set! "(string-ref str i)"))
 (set! vector-ref (getter-with-setter vector-ref vector-set! "(vector-ref vec i)"))
+
+(set! list-ref 
+  (getter-with-setter 
+   list-ref
+   (lambda (x i y) (set-car! (list-tail x i) y))
+   "(list-ref lst i)"))
 
 
 ;;; Parameters:
@@ -2309,52 +2317,50 @@ EOF
 		  (lp (fx+ i 1) (cons (##core#inline "C_subchar" s i) lst))))))
 
 	  (define (r-string term)
-	    (if (eq? (##sys#read-char-0 port) term)
-		(let loop ((c (##sys#read-char-0 port)) (lst '()))
-		  (cond ((##core#inline "C_eofp" c) 
-			 (##sys#read-error port "unterminated string") )
-			((eq? #\\ c)
-			 (set! c (##sys#read-char-0 port))
-			 (case c
-			   ((#\t) (loop (##sys#read-char-0 port) (cons #\tab lst)))
-			   ((#\r) (loop (##sys#read-char-0 port) (cons #\return lst)))
-			   ((#\b) (loop (##sys#read-char-0 port) (cons #\backspace lst)))
-			   ((#\n) (loop (##sys#read-char-0 port) (cons #\newline lst)))
-			   ((#\a) (loop (##sys#read-char-0 port) (cons (integer->char 7) lst)))
-			   ((#\v) (loop (##sys#read-char-0 port) (cons (integer->char 11) lst)))
-			   ((#\f) (loop (##sys#read-char-0 port) (cons (integer->char 12) lst)))
-			   ((#\x) 
-			    (let ([ch (integer->char (r-usequence "x" 2))])
-			      (loop (##sys#read-char-0 port) (cons ch lst)) ) )
-			   ((#\u)
-			    (let ([n (r-usequence "u" 4)])
-			      (if (##sys#unicode-surrogate? n)
-				  (if (and (eqv? #\\ (##sys#read-char-0 port))
-					   (eqv? #\u (##sys#read-char-0 port)))
-				      (let* ((m (r-usequence "u" 4))
-					     (cp (##sys#surrogates->codepoint n m)))
-					(if cp
-					    (loop (##sys#read-char-0 port)
-						  (r-cons-codepoint cp lst))
-					    (##sys#read-error port "bad surrogate pair" n m)))
-				      (##sys#read-error port "unpaired escaped surrogate" n))
-				  (loop (##sys#read-char-0 port) (r-cons-codepoint n lst)) ) ))
-			   ((#\U)
-			    (let ([n (r-usequence "U" 8)])
-			      (if (##sys#unicode-surrogate? n)
-				  (##sys#read-error port (string-append "invalid escape (surrogate)" n))
-				  (loop (##sys#read-char-0 port) (r-cons-codepoint n lst)) )))
-			   ((#\\ #\' #\")
-			    (loop (##sys#read-char-0 port) (cons c lst)))
-			   (else
-			    (##sys#read-warning 
-			     port 
-			     "undefined escape sequence in string - probably forgot backslash"
-			     c)
-			    (loop (##sys#read-char-0 port) (cons c lst))) ) )
-			((eq? term c) (##sys#reverse-list->string lst))
-			(else (loop (##sys#read-char-0 port) (cons c lst))) ) )
-		(##sys#read-error port (string-append "missing `" (string term) "'")) ) )
+	    (let loop ((c (##sys#read-char-0 port)) (lst '()))
+	      (cond ((##core#inline "C_eofp" c) 
+		     (##sys#read-error port "unterminated string") )
+		    ((eq? #\\ c)
+		     (set! c (##sys#read-char-0 port))
+		     (case c
+		       ((#\t) (loop (##sys#read-char-0 port) (cons #\tab lst)))
+		       ((#\r) (loop (##sys#read-char-0 port) (cons #\return lst)))
+		       ((#\b) (loop (##sys#read-char-0 port) (cons #\backspace lst)))
+		       ((#\n) (loop (##sys#read-char-0 port) (cons #\newline lst)))
+		       ((#\a) (loop (##sys#read-char-0 port) (cons (integer->char 7) lst)))
+		       ((#\v) (loop (##sys#read-char-0 port) (cons (integer->char 11) lst)))
+		       ((#\f) (loop (##sys#read-char-0 port) (cons (integer->char 12) lst)))
+		       ((#\x) 
+			(let ([ch (integer->char (r-usequence "x" 2))])
+			  (loop (##sys#read-char-0 port) (cons ch lst)) ) )
+		       ((#\u)
+			(let ([n (r-usequence "u" 4)])
+			  (if (##sys#unicode-surrogate? n)
+			      (if (and (eqv? #\\ (##sys#read-char-0 port))
+				       (eqv? #\u (##sys#read-char-0 port)))
+				  (let* ((m (r-usequence "u" 4))
+					 (cp (##sys#surrogates->codepoint n m)))
+				    (if cp
+					(loop (##sys#read-char-0 port)
+					      (r-cons-codepoint cp lst))
+					(##sys#read-error port "bad surrogate pair" n m)))
+				  (##sys#read-error port "unpaired escaped surrogate" n))
+			      (loop (##sys#read-char-0 port) (r-cons-codepoint n lst)) ) ))
+		       ((#\U)
+			(let ([n (r-usequence "U" 8)])
+			  (if (##sys#unicode-surrogate? n)
+			      (##sys#read-error port (string-append "invalid escape (surrogate)" n))
+			      (loop (##sys#read-char-0 port) (r-cons-codepoint n lst)) )))
+		       ((#\\ #\' #\" #\|)
+			(loop (##sys#read-char-0 port) (cons c lst)))
+		       (else
+			(##sys#read-warning 
+			 port 
+			 "undefined escape sequence in string - probably forgot backslash"
+			 c)
+			(loop (##sys#read-char-0 port) (cons c lst))) ) )
+		    ((eq? term c) (##sys#reverse-list->string lst))
+		    (else (loop (##sys#read-char-0 port) (cons c lst))) ) ))
 		    
 	  (define (r-list start end)
 	    (if (eq? (##sys#read-char-0 port) start)
@@ -2505,38 +2511,36 @@ EOF
 	      (info 'symbol-info s (##sys#port-line port)) ) )
 
 	  (define (r-xtoken)
-	    (let loop ((esc #f) (lst '()))
+	    (let loop ((lst '()))
 	      (let ((c (##sys#peek-char-0 port)))
-		(cond ((eof-object? c) 
-		       (if esc
-			   (##sys#read-error 
-			    port 
-			    "unexpected end of file while reading token delimited by `| ... |'")
-			   (##sys#reverse-list->string lst)))
-		      ((and (not esc)
-			    (or (char-whitespace? c)
-				(memq c terminating-characters)))
+		(cond ((or (eof-object? c) 
+			   (char-whitespace? c)
+			   (memq c terminating-characters))
 		       (##sys#reverse-list->string lst))
 		      (else
-		       (let ((c ((if esc read-unreserved-char-0 ##sys#read-char-0) port)))
-			 (case (and sep c) ; is sep is false, esc will be as well
-			   ((#\|) (loop (not esc) lst))
+		       (let ((c (##sys#read-char-0 port)))
+			 (case (and sep c)
+			   ((#\|) 
+			    (let ((part (r-string #\|)))
+			      (string-append
+			       (##sys#reverse-list->string lst)
+			       part
+			       (loop '()))))
 			   ((#\newline)
 			    (##sys#read-warning
 			     port "escaped symbol syntax spans multiple lines"
 			     (##sys#reverse-list->string lst))
-			    (loop esc (cons #\newline lst)))
+			    (loop (cons #\newline lst)))
 			   ((#\\)
 			    (let ((c (##sys#read-char-0 port)))
 			      (if (eof-object? c)
 				  (##sys#read-error
 				   port
 				   "unexpected end of file while reading escaped character")
-				  (loop esc (cons c lst)))))
+				  (loop (cons c lst)))))
 			   (else 
 			    (loop 
-			     esc 
-			     (cons (if (or esc csp) c (char-downcase c)) lst))))))))))
+			     (cons (if csp c (char-downcase c)) lst))))))))))
 	  
 	  (define (r-char)
 	    ;; Code contributed by Alex Shinn
@@ -2709,7 +2713,11 @@ EOF
 				  (list 'quasisyntax (readrec)) )
 				 ((#\$)
 				  (##sys#read-char-0 port)
-				  (list 'location (readrec)) )
+				  (let ((c (##sys#peek-char-0 port)))
+				    (cond ((char=? c #\{)
+					   (##sys#read-char-0 port)
+					   (##sys#read-bytevector-literal port))
+					  (else (list 'location (readrec)) ))))
 				 ((#\:) 
 				  (##sys#read-char-0 port)
 				  (build-keyword (r-token)) )
@@ -2740,7 +2748,7 @@ EOF
 				 (else (##sys#user-read-hook dchar port)) ) ) ) ) ) )
 		  ((#\() (r-list #\( #\)))
 		  ((#\)) (##sys#read-char-0 port) (container c))
-		  ((#\") (r-string #\"))
+		  ((#\") (##sys#read-char-0 port) (r-string #\"))
 		  ((#\.) (r-number #f))
 		  ((#\- #\+) (r-number #f))
 		  (else
@@ -2790,6 +2798,33 @@ EOF
 	      (fxior (fxshl (fxand hi #b111111) 10)
 		     (fxand lo #b1111111111)))) )
 
+(define (##sys#read-bytevector-literal port)
+  (define (hex c)
+    (let ((c (char-downcase c)))
+      (cond ((and (char>=? c #\a) (char<=? c #\f))
+	     (fx- (char->integer c) 87)	) ; - #\a + 10
+	    ((and (char>=? c #\0) (char<=? c #\9))
+	     (fx- (char->integer c) 48))
+	    (else (##sys#read-error port "invalid hex-code in blob-literal")))))
+  (let loop ((lst '()) (h #f))
+    (let ((c (##sys#read-char-0 port)))
+      (cond ((eof-object? c)
+	     (##sys#read-error port "unexpected end of blob literal"))
+	    ((char=? #\} c)
+	     (let ((str (##sys#reverse-list->string
+			 (if h
+			     (cons (integer->char (fxshr h 4)) lst)
+			     lst))))
+	       (##core#inline "C_string_to_bytevector" str)
+	       str))
+	    ((char-whitespace? c) 
+	     (if h
+		 (loop (cons (integer->char (fxshr h 4)) lst) #f)
+		 (loop lst h)))
+	    (h (loop (cons (integer->char (fxior h (hex c))) lst) #f))
+	    (else (loop lst (fxshl (hex c) 4)))))))
+	      
+
 ;;; Hooks for user-defined read-syntax:
 ;
 ; - Redefine this to handle new read-syntaxes. If 'char' doesn't match
@@ -2799,9 +2834,9 @@ EOF
 (define (##sys#user-read-hook char port)
   (case char
     ;; I put it here, so the SRFI-4 unit can intercept '#f...'
-    [(#\f #\F) (##sys#read-char-0 port) #f ]
-    [(#\t #\T) (##sys#read-char-0 port) #t ]
-    [else (##sys#read-error port "invalid sharp-sign read syntax" char) ] ) )
+    ((#\f #\F) (##sys#read-char-0 port) #f)
+    ((#\t #\T) (##sys#read-char-0 port) #t)
+    (else (##sys#read-error port "invalid sharp-sign read syntax" char) ) ) )
 
 
 ;;; Table for specially handled read-syntax:
@@ -2914,7 +2949,7 @@ EOF
   (void) )
 
 (define current-print-length (make-parameter 0))
-(define print-length-limit (make-parameter #f))
+(define ##sys#print-length-limit (make-parameter #f))
 (define ##sys#print-exit (make-parameter #f))
 
 (define ##sys#print
@@ -2923,7 +2958,7 @@ EOF
       (##sys#check-port-mode port #f)
       (let ([csp (case-sensitive)]
 	    [ksp (keyword-style)]
-	    [length-limit (print-length-limit)]
+	    [length-limit (##sys#print-length-limit)]
 	    [special-characters '(#\( #\) #\, #\[ #\] #\{ #\} #\' #\" #\; #\ #\` #\|)] )
 
 	(define (outstr port str)
@@ -2945,29 +2980,36 @@ EOF
 	  ((##sys#slot (##sys#slot port 2) 3) port str) )
 
 	(define (outchr port chr)
-	  (let ((cpp0 (current-print-length)))
-	    (current-print-length (fx+ cpp0 1))
-	    (when (and length-limit (fx>= cpp0 length-limit))
-	      (outstr0 port "...")
-	      ((##sys#print-exit) #t) )
-	    ((##sys#slot (##sys#slot port 2) 2) port chr) ) )
+	  (when length-limit
+	    (let ((cpp0 (current-print-length)))
+	      (current-print-length (fx+ cpp0 1))
+	      (when (fx>= cpp0 length-limit)
+		(outstr0 port "...")
+		((##sys#print-exit) #t) )))
+	  ((##sys#slot (##sys#slot port 2) 2) port chr))
 
 	(define (specialchar? chr)
 	  (let ([c (char->integer chr)])
 	    (or (fx<= c 32)
-		(fx>= c 128)
 		(memq chr special-characters) ) ) )
 
 	(define (outreadablesym port str)
-	  (let ([len (##sys#size str)])
+	  (let ((len (##sys#size str)))
 	    (outchr port #\|)
-	    (let loop ([i 0])
+	    (let loop ((i 0))
 	      (if (fx>= i len)
 		  (outchr port #\|)
-		  (let ([c (##core#inline "C_subchar" str i)])
-		    (when (or (eq? c #\|) (eq? c #\\)) (outchr port #\\))
-		    (outchr port c)
-		    (loop (fx+ i 1)) ) ) ) ) )
+		  (let ((c (##core#inline "C_subchar" str i)))
+		    (cond ((or (char<? c #\space) (char>? c #\~))
+			   (outstr port "\\x")
+			   (let ((n (char->integer c)))
+			     (when (fx< n 16) (outchr port #\0))
+			     (outstr port (##sys#number->string n 16))
+			     (loop (fx+ i 1))))
+			  (else
+			   (when (or (eq? c #\|) (eq? c #\\)) (outchr port #\\))
+			   (outchr port c)
+			   (loop (fx+ i 1)) ) ) ) ) )))
 
 	(define (sym-is-readable? str)
 	  (let ((len (##sys#size str)))
@@ -3086,11 +3128,15 @@ EOF
 		   (outchr port #\space)
 		   (out (##sys#slot x 0)) ) )
 		((##core#inline "C_bytevectorp" x)
-		 (if (##core#inline "C_permanentp" x)
-		     (outstr port "#<static blob of size")
-		     (outstr port "#<blob of size ") )
-		 (outstr port (number->string (##core#inline "C_block_size" x)))
-		 (outchr port #\>) )
+		 (outstr port "#${")
+		 (let ((len (##sys#size x)))
+		   (do ((i 0 (fx+ i 1)))
+		       ((fx>= i len))
+		     (let ((b (##sys#byte x i)))
+		       (when (fx< b 16)
+			 (outchr port #\0))
+		       (outstr port (##sys#number->string b 16)))))
+		 (outchr port #\}) )
 		((##core#inline "C_structurep" x) (##sys#user-print-hook x readable port))
 		((##core#inline "C_closurep" x) (outstr port (##sys#procedure->string x)))
 		((##core#inline "C_locativep" x) (outstr port "#<locative>"))
@@ -3167,7 +3213,7 @@ EOF
     (lambda (limit thunk)
       (call-with-current-continuation
        (lambda (return)
-	 (parameterize ((print-length-limit limit)
+	 (parameterize ((##sys#print-length-limit limit)
 			(##sys#print-exit return)
 			(current-print-length 0))
 	   (thunk)))))))
