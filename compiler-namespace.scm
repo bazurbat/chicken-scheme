@@ -188,6 +188,7 @@
  line-number-database-2
  line-number-database-size
  llist-length
+ llist-match?
  load-identifier-database
  load-inline-file
  load-type-database
