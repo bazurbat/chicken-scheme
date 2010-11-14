@@ -65,4 +65,8 @@ run
 
 echo "======================================== threads ... "
 $compile thread-list.scm -O4 -d0 -fb
-run
+run 1000000
+
+echo "======================================== allocation ... "
+$compile gobble.scm -O4 -d0 -b
+run 1000000000
