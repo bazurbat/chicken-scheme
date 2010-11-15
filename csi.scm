@@ -814,6 +814,7 @@ EOF
 
 (define copy-from-frame
   (let ((display display)
+	(newline newline)
 	(call/cc call/cc))
     (lambda (name)
       (let* ((ct (or ##sys#repl-recent-call-chain '()))
@@ -822,33 +823,39 @@ EOF
 	      (cond ((symbol? name) (##sys#slot name 1)) ; name
 		    ((string? name) name)
 		    (else 
-		     (display "string or symbol required for `,cf'\n")
+		     (display "string or symbol required for `,g'\n")
 		     #f))))
+	(define (compare sym)
+	  (let ((str (##sys#slot sym 1))) ; name
+	    (string=?
+	     name
+	     (substring str 0 (min (string-length name) (string-length str))))))
 	(if name
 	    (call/cc
 	     (lambda (return)
 	       (define (fail msg)
 		 (display msg)
+		 (newline)
 		 (return (##sys#void)))
-	       (do ((ct ct (cdr ct))
-		    (i (fx- len 1) (fx- i 1)))
-		   ((null? ct) (fail "no environment in frame\n")) 
+	       (do ((ct ct (cdr ct)))
+		   ((null? ct) (fail "no environment in frame")) 
+		 ;;XXX this should be refactored as it duplicates the code above
 		 (let* ((info (car ct))
 			(here (eq? selected-frame info))
 			(data (##sys#slot info 2)) ; cooked2 (cntr/frameinfo)
-			(finfo (##sys#structure? data 'frameinfo))
-			(cntr (if finfo (##sys#slot data 1) data))) ; cntr
+			(finfo (##sys#structure? data 'frameinfo)))
 		   (when (and here finfo)
 		     (for-each
 		      (lambda (e v)
 			(do ((i 0 (fx+ i 1))
 			     (be e (cdr be)))
-			    ((null? be) (fail "no such variable\n"))
-			  (when (string=? name (##sys#slot (car be) 1)) ; name
+			    ((null? be))
+			  (when (compare (car be))
 			    (history-add (list (##sys#slot v i)))
 			    (return (##sys#slot v i)))))
 		      (##sys#slot data 2)	; e
-		      (##sys#slot data 3))))))) ; v
+		      (##sys#slot data 3))	; v
+		     (fail (##sys#string-append "no such variable: " name)))))))
 	    (##sys#void))))))
 
 
