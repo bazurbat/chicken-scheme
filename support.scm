@@ -265,7 +265,14 @@
 (define decompose-lambda-list ##sys#decompose-lambda-list)
 
 (define (llist-length llist)
-  (##core#inline "C_u_i_length" llist))
+  (##core#inline "C_u_i_length" llist))	; stops at non-pair node
+
+(define (llist-match? llist args)	; assumes #!optional/#!rest/#!key have been expanded
+  (let loop ((llist llist) (args args))
+    (cond ((null? llist) (null? args))
+	  ((symbol? llist))
+	  ((null? args) #f)
+	  (else (loop (cdr llist) (cdr args))))))
 
 
 ;;; Profiling instrumentation:
