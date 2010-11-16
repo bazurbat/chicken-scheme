@@ -851,6 +851,9 @@ EOF
 			     (be e (cdr be)))
 			    ((null? be))
 			  (when (compare (car be))
+			    (display "; getting ")
+			    (display (car be))
+			    (newline)
 			    (history-add (list (##sys#slot v i)))
 			    (return (##sys#slot v i)))))
 		      (##sys#slot data 2)	; e
