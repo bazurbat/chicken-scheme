@@ -271,7 +271,7 @@
   (let loop ((llist llist) (args args))
     (cond ((null? llist) (null? args))
 	  ((symbol? llist))
-	  ((null? args) #f)
+	  ((null? args) (atom? llist))
 	  (else (loop (cdr llist) (cdr args))))))
 
 
@@ -692,7 +692,6 @@
 			   (not (eq? 'unknown (cdr val))))))
 		    ((assq 'inlinable plist))
 		    (lparams (node-parameters (cdr val)))
-		    ;;((get db (first lparams) 'simple)) 
 		    ((not (get db sym 'hidden-refs)))
 		    ((case (variable-mark sym '##compiler#inline)
 		       ((yes) #t)
