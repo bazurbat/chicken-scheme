@@ -170,6 +170,7 @@ EOF
 
 (define (##sys#force-primordial)
   (dbg "primordial thread forced due to interrupt")
+  (##sys#setislot ##sys#primordial-thread 13 #f)
   (##sys#thread-unblock! ##sys#primordial-thread) )
 
 (define ready-queue-head '())
