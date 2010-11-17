@@ -244,11 +244,8 @@
 
 (define (mutex? x) (##sys#structure? x 'mutex))
 
-(define make-mutex
-  (lambda id
-    (let* ((id (if (pair? id) (car id) (gensym 'mutex)))
-	   (m (##sys#make-mutex id ##sys#current-thread)) )
-      m) ) )
+(define (make-mutex #!optional (id (gensym 'mutex)))
+  (##sys#make-mutex id #f))
 
 (define (mutex-name x)
   (##sys#check-structure x 'mutex 'mutex-name) 
