@@ -448,8 +448,12 @@ EOF
 					  (dbg t " unblocked by timeout")
 					  (loop2 (cdr threads) keep))
 					 ((not (pair? p)) ; not blocked for I/O?
-					  (panic 
-					   "##sys#unblock-threads-for-i/o: thread on fd-list is not blocked for I/O"))
+					  ;; thread on fd-list is not blocked for I/O - this
+					  ;; is incorrect but will be ignored, just let it run
+					  (when (##sys#slot t 4) ; also blocked for timeout?
+					    (##sys#remove-from-timeout-list t))
+					  (##sys#thread-basic-unblock! t) 
+					  (loop2 (cdr threads) keep))
 					 ((not (eq? fd (car p)))
 					  (panic
 					   "##sys#unblock-threads-for-i/o: thread on fd-list has wrong FD"))

@@ -151,7 +151,7 @@ The toplevel loop understands a number of special commands:
 
 ; ,f N : Select call-trace item with the given number, where the number {{0}} indicates the last item in the trace
 
-; ,g NAME : Returns the value of the local variable with the given name (which may be a symbol or string)
+; ,g NAME : Returns the value of the local variable with the given name (which may be a symbol or string); you don't have to give the complete name - {{,g}} will return the first variable that matches the prefix given
 
 ; ,q : Quit the interpreter.
 
@@ -226,7 +226,7 @@ The {{,e}} command runs the editor given by:
 
 * If the environment variable {{EMACS}} is set, the editor chosen is {{emacsclient}}.
 
-* As a last resort, {{vi}} is used.
+* As a truly last resort, {{vi}} is used.
 
 === History access
 
