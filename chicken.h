@@ -1041,6 +1041,7 @@ extern double trunc(double);
 #define C_specialp(x)             C_mk_bool(C_header_bits(x) & C_SPECIALBLOCK_BIT)
 #define C_byteblockp(x)           C_mk_bool(C_header_bits(x) & C_BYTEBLOCK_BIT)
 #define C_anyp(x)                 C_SCHEME_TRUE
+#define C_sametypep(x, y)         C_mk_bool(C_header_bits(x) == C_header_bits(y))
 #define C_eqp(x, y)               C_mk_bool((x) == (y))
 #define C_vemptyp(x)              C_mk_bool(C_header_size(x) == 0)
 #define C_notvemptyp(x)           C_mk_bool(C_header_size(x) > 0)
