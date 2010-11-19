@@ -45,4 +45,9 @@ Warning: at toplevel:
 Warning: at toplevel:
   g89: in procedure call to `g89', expected a value of type `(procedure () *)', but were given a value of type `fixnum'
 
+Warning: in toplevel procedure `foo':
+  conditional in tail-position has branch with undefined result:
+
+(if x15 '1 (##core#undefined))
+
 Warning: redefinition of standard binding: car

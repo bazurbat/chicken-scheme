@@ -38,3 +38,6 @@
   (if x
       (values 42 43)
       (fail)))
+
+(define (foo x)
+  (if x 1))
