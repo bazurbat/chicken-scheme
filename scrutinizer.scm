@@ -518,11 +518,11 @@
 	(and (pair? t)
 	     (eq? 'or (car t))
 	     (any noreturn-type? (cdr t)))))
-  (define (walk n e loc dest)		; returns result specifier
+  (define (walk n e loc dest tail)		; returns result specifier
     (let ((subs (node-subexpressions n))
 	  (params (node-parameters n)) 
 	  (class (node-class n)) )
-      (d "walk: ~a ~a (loc: ~a, dest: ~a)" class params loc dest)
+      (d "walk: ~a ~a (loc: ~a, dest: ~a, tail: ~a)" class params loc dest tail)
       (let ((results
 	     (case class
 	       ((quote) (list (constant-result (first params))))
@@ -530,30 +530,40 @@
 	       ((##core#proc) '(procedure))
 	       ((##core#global-ref) (global-result (first params) loc))
 	       ((##core#variable) (variable-result (first params) e loc))
-	       ((if) (let ((rt (single "in conditional" (walk (first subs) e loc dest) loc)))
-		       (always-true rt loc n)
-		       (let ((r1 (walk (second subs) e loc dest))
-			     (r2 (walk (third subs) e loc dest)))
-			 (cond ((and (not (eq? r1 '*)) 
-				     (not (eq? '* r2)) )
-				(when (and (not (any noreturn-type? r1))
-					   (not (any noreturn-type? r2))
-					   (not (= (length r1) (length r2))))
-				  (report 
-				   loc
-				   (sprintf
-				    "branches in conditional expression differ in the number of results:~%~%~a"
-				    (pp-fragment n))))
-				(map (lambda (t1 t2) (simplify `(or ,t1 ,t2)))
-				     r1 r2))
-			       (else '*)))))
+	       ((if)
+		(let ((rt (single "in conditional" (walk (first subs) e loc dest #f) loc))
+		      (c (second subs))
+		      (a (third subs)))
+		  (always-true rt loc n)
+		  (let ((r1 (walk c e loc dest tail))
+			(r2 (walk a e loc dest tail)))
+		    (when (and tail
+			       (if (eq? '##core#undefined (node-class c))
+				   (not (eq? '##core#undefined (node-class a)))
+				   (eq? '##core#undefined (node-class a))))
+		      (report
+		       loc
+		       (sprintf "conditional in tail-position has branch with undefined result:~%~%~a"
+			 (pp-fragment n))))
+		    (cond ((and (not (eq? '* r1)) (not (eq? '* r2)))
+			   (when (and (not (any noreturn-type? r1))
+				      (not (any noreturn-type? r2))
+				      (not (= (length r1) (length r2))))
+			     (report 
+			      loc
+			      (sprintf
+				  "branches in conditional expression differ in the number of results:~%~%~a"
+				(pp-fragment n))))
+			   (map (lambda (t1 t2) (simplify `(or ,t1 ,t2)))
+				r1 r2))
+			  (else '*)))))
 	       ((let)
 		(let loop ((vars params) (body subs) (e2 '()))
 		  (if (null? vars)
-		      (walk (car body) (append e2 e) loc dest)
+		      (walk (car body) (append e2 e) loc dest tail)
 		      (let ((t (single 
 				(sprintf "in `let' binding of `~a'" (real-name (car vars)))
-				(walk (car body) e loc (car vars)) loc)))
+				(walk (car body) e loc (car vars) #f) loc)))
 			(loop (cdr vars) (cdr body) (alist-cons (car vars) t e2))))))
 	       ((##core#lambda lambda)
 		(decompose-lambda-list
@@ -567,7 +577,7 @@
 			  (r (walk (first subs)
 				   (if rest (alist-cons rest 'list e2) e2)
 				   (add-loc dest loc)
-				   #f)))
+				   #f #t)))
 		     (list 
 		      (append
 		       '(procedure) 
@@ -579,7 +589,7 @@
 		       (type (##sys#get var '##core#type))
 		       (rt (single 
 			    (sprintf "in assignment to `~a'" var)
-			    (walk (first subs) e loc var)
+			    (walk (first subs) e loc var #f)
 			    loc))
 		       (b (assq var e)) )
 		  (when (and type (not b)
@@ -604,17 +614,17 @@
 					  "operator position"
 					  (sprintf "argument #~a" i))
 				      f)
-				     (walk n e loc #f) loc))
+				     (walk n e loc #f #f) loc))
 				  subs (iota (length subs)))))
 		  (call-result args e loc (first subs) params)))
 	       ((##core#switch ##core#cond)
 		(bomb "unexpected node class: ~a" class))
 	       (else
-		(for-each (lambda (n) (walk n e loc #f)) subs)
+		(for-each (lambda (n) (walk n e loc #f #f)) subs)
 		'*))))
 	(d "  -> ~a" results)
 	results)))
-  (walk (first (node-subexpressions node)) '() '() #f))
+  (walk (first (node-subexpressions node)) '() '() #f #f))
 
 (define (load-type-database name #!optional (path (repository-path)))
   (and-let* ((dbfile (file-exists? (make-pathname path name))))
