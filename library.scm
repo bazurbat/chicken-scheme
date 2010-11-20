@@ -213,7 +213,7 @@ EOF
 (define (##sys#void . _) (##core#undefined))
 (define void ##sys#void)
 (define ##sys#undefined-value (##core#undefined))
-(define (##sys#halt) (##core#inline "C_halt" #f))
+(define (##sys#halt msg) (##core#inline "C_halt" msg))
 (define (##sys#flo2fix n) (##core#inline "C_quickflonumtruncate" n))
 (define ##sys#become! (##core#primitive "C_become"))
 (define (##sys#block-ref x i) (##core#inline "C_i_block_ref" x i))

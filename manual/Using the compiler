@@ -122,7 +122,7 @@ the source text should be read from standard input.
 
 ; -lambda-lift : Enable the optimization known as lambda-lifting.
 
-; -local : Assume toplevel variables defined in the current compilation unit are not externally modified.
+; -local : Assume toplevel variables defined in the current compilation unit are not externally modified. This gives the compiler more opportunities for inlining.
 
 ; -no-argc-checks : disable argument count checks
 
