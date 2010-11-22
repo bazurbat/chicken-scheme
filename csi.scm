@@ -444,15 +444,24 @@ EOF
 	  (let ([sinfo (##sys#symbol-table-info)]
 		[minfo (memory-statistics)] )
 	    (define (shorten n) (/ (truncate (* n 100)) 100))
-	    (printf "Features:\n")
-	    (for-each
-	     (lambda (lst) 
-	       (display "\n  ")
-	       (for-each 
-		(lambda (f)
-		  (printf "~a~a" f (make-string (fxmax 1 (fx- 16 (string-length f))) #\space)) )
-		lst) )
-	     (chop (sort (map keyword->string ##sys#features) string<?) 5))
+	    (printf "Features:~%~%")
+	    (let ((fs (sort (map keyword->string ##sys#features) string<?))
+		  (c 0))
+	      (for-each
+	       (lambda (f)
+		 (printf "  ~a" f)
+		 (let* ((len (string-length f))
+			(pad (- 16 len)))
+		   (set! c (add1 c))
+		   (when (<= pad 0)
+		     (set! c (add1 c))
+		     (set! pad (+ pad 18)))
+		   (cond ((>= c 3)
+			  (display "\n")
+			  (set! c 0))
+			 (else 
+			  (display (make-string pad #\space))))))
+	       fs))
 	    (printf "~%~%~
                    Machine type:    \t~A ~A~%~
                    Software type:   \t~A~%~
