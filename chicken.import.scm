@@ -65,8 +65,9 @@
    current-seconds
    define-reader-ctor
    delete-file
-   enable-warnings
    directory-exists?
+   enable-warnings
+   equal=?
    errno
    error
    exit

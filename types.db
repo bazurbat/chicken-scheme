@@ -266,6 +266,7 @@
 (define-reader-ctor (procedure define-reader-ctor (symbol procedure) undefined))
 (delete-file (procedure delete-file (string) string))
 (enable-warnings (procedure enable-warnings (#!optional *) *))
+(equal=? (procedure equal=? (* *) boolean))
 (errno (procedure errno () fixnum))
 (error (procedure error (#!rest) noreturn))
 (exit (procedure exit (#!optional fixnum) noreturn))
