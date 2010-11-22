@@ -175,7 +175,8 @@ Enables lambda-lifting (equivalent to the {{-lambda-lift}} option).
 
 Declares that the listed (or all) toplevel variables defined in the
 current compilation unit are not modified from code outside of this
-compilation unit.
+compilation unit. See also the documentation for the {{-local}}
+compiler option about the implications of this.
 
 
 === no-argc-checks
