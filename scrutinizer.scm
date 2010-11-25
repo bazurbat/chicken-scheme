@@ -537,7 +537,8 @@
 		  (always-true rt loc n)
 		  (let ((r1 (walk c e loc dest tail))
 			(r2 (walk a e loc dest tail)))
-		    (when (and tail
+		    ;;XXX this is too heavy
+		    #;(when (and tail
 			       (if (eq? '##core#undefined (node-class c))
 				   (not (eq? '##core#undefined (node-class a)))
 				   (eq? '##core#undefined (node-class a))))
