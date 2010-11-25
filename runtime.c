@@ -763,7 +763,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_quotient);
   C_pte(C_flonum_fraction);
   C_pte(C_expt);
-  C_pte(C_exact_to_inexact);
+  C_pte(C_exact_to_inexact);	/*XXX left for binary compatbility */
   C_pte(C_string_to_number);
   C_pte(C_number_to_string);
   C_pte(C_make_symbol);
@@ -7071,6 +7071,7 @@ void C_ccall C_flonum_fraction(C_word c, C_word closure, C_word k, C_word n)
 }
 
 
+/* XXX left for binary compatibility */
 void C_ccall C_exact_to_inexact(C_word c, C_word closure, C_word k, C_word n)
 {
   C_alloc_flonum;
@@ -7084,6 +7085,18 @@ void C_ccall C_exact_to_inexact(C_word c, C_word closure, C_word k, C_word n)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "exact->inexact", n);
  
   C_kontinue(k, n);
+}
+
+
+C_regparm C_word C_fcall 
+C_a_i_exact_to_inexact(C_word **a, int c, C_word n)
+{
+  if(n & C_FIXNUM_BIT) 
+    return C_flonum(a, (double)C_unfix(n));
+  else if(C_immediatep(n) || C_block_header(n) != C_FLONUM_TAG)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "exact->inexact", n);
+
+  return n;
 }
 
 
@@ -7155,24 +7168,16 @@ void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2
 }
 
 
-void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, ...)
+C_regparm C_word C_fcall
+C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix0)
 {
   int radix, radixpf = 0, sharpf = 0, ratp = 0, exactf, exactpf = 0, periodf = 0;
-  C_word n1, n, *a = C_alloc(WORDS_PER_FLONUM);
+  C_word n1, n;
   C_char *sptr, *eptr;
   double fn1, fn;
-  va_list v;
 
-  if(c == 3) radix = 10;	/* default radix is 10 */
-  else if(c == 4) {
-    va_start(v, str);
-    radix = va_arg(v, C_word);
-    va_end(v);
-    
-    if(radix & C_FIXNUM_BIT) radix = C_unfix(radix);
-    else barf(C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR, "string->number", radix);
-  }
-  else C_bad_argc(c, 3);
+  if(radix0 & C_FIXNUM_BIT) radix = C_unfix(radix0);
+  else barf(C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR, "string->number", radix0);
 
   if(C_immediatep(str) || C_header_bits(str) != C_STRING_TYPE)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "string->number", str);
@@ -7254,7 +7259,7 @@ void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, 
 
   case 1:			/* fixnum */
     if(sharpf || ratp || (exactpf && !exactf)) {
-      n = C_flonum(&a, ratp ? fn1 / (double)n : (double)n);
+      n = C_flonum(a, ratp ? fn1 / (double)n : (double)n);
 
       if(exactpf && exactf) n = C_i_inexact_to_exact(n);
     }
@@ -7263,7 +7268,7 @@ void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, 
     break;
 
   case 2:			/* flonum */
-    n = C_flonum(&a, ratp ? fn1 / fn : fn);
+    n = C_flonum(a, ratp ? fn1 / fn : fn);
 
     if(exactpf && exactf) n = C_i_inexact_to_exact(n);
 
@@ -7271,7 +7276,27 @@ void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, 
   }
 
  fini:
-  C_kontinue(k, n);
+  return n;
+}
+
+
+/* only left for backwards-compatibility */
+void C_ccall
+C_string_to_number(C_word c, C_word closure, C_word k, C_word str, ...)
+{
+  va_list va;
+  C_word data[ C_SIZEOF_FLONUM + 2 ]; /* alignment */
+  C_word *a = data;
+  C_word radix = C_fix(10);
+
+  if(c == 4) {
+    va_start(va, str);
+    radix = va_arg(va, C_word);
+    va_end(va);
+  }
+  else if(c != 3) C_bad_argc(c, 3);
+
+  C_kontinue(k, C_a_i_string_to_number(&a, 2, str, radix));
 }
 
 

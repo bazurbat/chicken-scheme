@@ -925,7 +925,7 @@ EOF
 	(else (if (##sys#exact? n) 0 0.0) ) ) )
 
 ;; hooks for numbers
-(define ##sys#exact->inexact (##core#primitive "C_exact_to_inexact"))
+(define (##sys#exact->inexact n) (##core#inline_allocate ("C_a_i_exact_to_inexact" 4) n))
 (define (##sys#inexact->exact n) (##core#inline "C_i_inexact_to_exact" n))
 
 (define exact->inexact ##sys#exact->inexact)
@@ -1059,7 +1059,9 @@ EOF
 		  (##sys#lcm head (##sys#slot next 0))
 		  (##sys#slot next 1)) #f) ) ) ) ) ) )
 
-(define ##sys#string->number (##core#primitive "C_string_to_number"))
+(define (##sys#string->number str #!optional (radix 10))
+  (##core#inline_allocate ("C_a_i_string_to_number" 4) str radix))
+
 (define string->number ##sys#string->number)
 (define ##sys#number->string (##core#primitive "C_number_to_string"))
 (define number->string ##sys#number->string)
