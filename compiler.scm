@@ -2117,7 +2117,7 @@
       (walk node)
       (when (pair? procs)
 	(##sys#notice
-	 "access to the following non-intrinsic global procedures was declared to be unsafe even though they are externally visible:")
+	 "calls to the following non-intrinsic global procedures were declared to be unsafe even though they are externally visible:")
 	(newline (current-error-port))
 	(for-each (cute fprintf (current-error-port) "  ~S~%" <>) procs)
 	(flush-output (current-error-port))))))
