@@ -80,7 +80,7 @@
 ;;;; Data Structures
 
 (cond-expand
-  (building-chicken
+  (chicken-bootstrap
    (begin
      (define-syntax (internal x r c)
        `(,(with-input-from-string (cadr x) read) ,@(cddr x)))
@@ -1559,7 +1559,7 @@
 ;;;; Compilation
 
 (cond-expand
-  (building-chicken
+  (chicken-bootstrap
    (define-syntax cached
      (syntax-rules ()
        ((_ arg fail) (build-cache 5 arg fail)))))

@@ -34,6 +34,7 @@
  block-compilation
  block-variable-literal-name
  block-variable-literal?
+ bootstrap-mode
  bomb
  broken-constant-nodes
  build-expression-tree

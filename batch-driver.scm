@@ -295,7 +295,6 @@
        (lambda (f) (load (##sys#resolve-include-filename f #f #t))) 
        extends) )
     (set! ##sys#features (delete #:compiler-extension ##sys#features eq?))
-
     (set! ##sys#features (cons '#:compiling ##sys#features))
     (set! upap (user-post-analysis-pass))
 
@@ -333,6 +332,7 @@
 	    ssize) ) )
     (set! emit-trace-info (not (memq 'no-trace options)))
     (set! disable-stack-overflow-checking (memq 'disable-stack-overflow-checks options))
+    (set! bootstrap-mode (feature? #:chicken-bootstrap))
     (when (memq 'm debugging-chicken) (set-gc-report! #t))
     (unless (memq 'no-usual-integrations options)
       (set! standard-bindings default-standard-bindings)

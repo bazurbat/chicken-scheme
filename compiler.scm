@@ -337,6 +337,7 @@
 (define enable-inline-files #f)
 (define compiler-syntax-enabled #t)
 (define unchecked-specialized-arithmetic #f)
+(define bootstrap-mode #f)
 
 
 ;;; These are here so that the backend can access them:
@@ -1796,7 +1797,7 @@
 	  ((set! ##core#set!) 
 	   (let* ((var (first params))
 		  (val (car subs)) )
-	     (when first-analysis 
+	     (when (and first-analysis (not bootstrap-mode))
 	       (case (variable-mark var '##compiler#intrinsic)
 		 ((standard)
 		  (warning "redefinition of standard binding" var) )
