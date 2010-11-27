@@ -518,6 +518,16 @@
 	(and (pair? t)
 	     (eq? 'or (car t))
 	     (any noreturn-type? (cdr t)))))
+  (define (self-call? node loc)
+    (case (node-class node)
+      ((##core#call)
+       (and (pair? loc)
+	    (let ((op (first (node-subexpressions node))))
+	      (and (eq? '##core#variable (node-class op))
+		   (eq? (car loc) (first (node-parameters op)))))))
+      ((let)
+       (self-call? (last (node-subexpressions node)) loc))
+      (else #f)))
   (define (walk n e loc dest tail)		; returns result specifier
     (let ((subs (node-subexpressions n))
 	  (params (node-parameters n)) 
@@ -539,10 +549,12 @@
 			(r2 (walk a e loc dest tail)))
 		    ;;XXX this is too heavy, perhaps provide "style" warnings?
 		    ;;XXX this could also check for noreturn (same as undefined)
-		    #;(when (and tail
+		    (when (and tail
 			       (if (eq? '##core#undefined (node-class c))
-				   (not (eq? '##core#undefined (node-class a)))
-				   (eq? '##core#undefined (node-class a))))
+				   (and (not (eq? '##core#undefined (node-class a)))
+					(not (self-call? a loc)))
+				   (and (eq? '##core#undefined (node-class a))
+					(not (self-call? c loc)))))
 		      (report
 		       loc
 		       (sprintf "conditional in tail-position has branch with undefined result:~%~%~a"
