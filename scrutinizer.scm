@@ -549,7 +549,7 @@
 			(r2 (walk a e loc dest tail)))
 		    ;;XXX this is too heavy, perhaps provide "style" warnings?
 		    ;;XXX this could also check for noreturn (same as undefined)
-		    (when (and tail
+		    #;(when (and tail
 			       (if (eq? '##core#undefined (node-class c))
 				   (and (not (eq? '##core#undefined (node-class a)))
 					(not (self-call? a loc)))
