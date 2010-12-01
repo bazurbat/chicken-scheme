@@ -149,7 +149,7 @@ EOF
 					     "C_msleep" 
 					     (fxmax 
 					      0
-					      (##sys#inexact->exact (fp- tmo1 now)))))
+					      (##core#inline "C_quickflonumtruncate" (fp- tmo1 now)))))
 				       (foreign-value
 					"C_signal_interrupted_p" bool) ) ) ) ) ) )
 		      (loop (cdr lst)) ) ) ) ) ) )
