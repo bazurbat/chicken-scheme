@@ -259,53 +259,53 @@ types.db
 mac.r
 chicken.png
 CHICKEN.icns
-manual/Accessing external objects
-manual/Acknowledgements
-manual/Basic mode of operation
-manual/Bibliography
-manual/Bugs and limitations
-manual/C interface
-manual/Callbacks
-manual/Exceptions
-manual/Cross development
-manual/Data representation
-manual/Declarations
-manual/Deployment
-manual/Deviations from the standard
-manual/Embedding
-manual/Extensions
-manual/Extensions to the standard
-manual/Foreign type specifiers
-manual/Getting started
-manual/Interface to external functions and variables
-manual/Locations
-manual/Modules
-manual/macros
-manual/Non-standard macros and special forms
-manual/Non-standard read syntax
-manual/Other support procedures
-manual/Parameters
-manual/Supported language
-manual/The R5RS standard
-manual/The User's Manual
-manual/Unit data-structures
-manual/Unit eval
-manual/Unit expand
-manual/Unit extras
-manual/Unit files
-manual/Unit library
-manual/Unit lolevel
-manual/Unit ports
-manual/Unit posix
-manual/Unit irregex
-manual/Unit srfi-1
-manual/Unit srfi-13
-manual/Unit srfi-14
-manual/Unit srfi-18
-manual/Unit srfi-4
-manual/Unit srfi-69
-manual/Unit tcp
-manual/Unit utils
-manual/Using the compiler
-manual/Using the interpreter
-manual/faq
+manual/Accessing external objects.html
+manual/Acknowledgements.html
+manual/Basic mode of operation.html
+manual/Bibliography.html
+manual/Bugs and limitations.html
+manual/C interface.html
+manual/Callbacks.html
+manual/Exceptions.html
+manual/Cross development.html
+manual/Data representation.html
+manual/Declarations.html
+manual/Deployment.html
+manual/Deviations from the standard.html
+manual/Embedding.html
+manual/Extensions.html
+manual/Extensions to the standard.html
+manual/Foreign type specifiers.html
+manual/Getting started.html
+manual/Interface to external functions and variables.html
+manual/Locations.html
+manual/Modules.html
+manual/macros.html
+manual/Non-standard macros and special forms.html
+manual/Non-standard read syntax.html
+manual/Other support procedures.html
+manual/Parameters.html
+manual/Supported language.html
+manual/The R5RS standard.html
+manual/The User's Manual.html
+manual/Unit data-structures.html
+manual/Unit eval.html
+manual/Unit expand.html
+manual/Unit extras.html
+manual/Unit files.html
+manual/Unit library.html
+manual/Unit lolevel.html
+manual/Unit ports.html
+manual/Unit posix.html
+manual/Unit irregex.html
+manual/Unit srfi-1.html
+manual/Unit srfi-13.html
+manual/Unit srfi-14.html
+manual/Unit srfi-18.html
+manual/Unit srfi-4.html
+manual/Unit srfi-69.html
+manual/Unit tcp.html
+manual/Unit utils.html
+manual/Using the compiler.html
+manual/Using the interpreter.html
+manual/faq.html
