@@ -181,7 +181,6 @@
 	       (not a-only))
       (set! all-import-libraries #t))
     (set! enable-module-registration (not (memq 'no-module-registration options)))
-    (when (memq 'lambda-lift options) (set! do-lambda-lifting #t))
     (when (memq 'scrutinize options) (set! do-scrutinize #t))
     (when (memq 't debugging-chicken) (##sys#start-timer))
     (when (memq 'b debugging-chicken) (set! time-breakdown #t))
@@ -502,19 +501,6 @@
 		 (end-time "scrutiny")
 		 (set! first-analysis #t) )
 
-	       (when do-lambda-lifting
-		 (begin-time)
-		 (unless do-scrutinize	; no need to do analysis if already done above
-		   (set! first-analysis #f)
-		   (set! db (analyze 'lift node0))
-		   (print-db "analysis" '|0| db 0)
-		   (end-time "pre-analysis (lambda-lift)"))
-		 (begin-time)
-		 (perform-lambda-lifting! node0 db)
-		 (end-time "lambda lifting")
-		 (print-node "lambda lifted" '|L| node0) 
-		 (set! first-analysis #t) )
-	       
 	       (let ((req (concatenate (vector->list file-requirements))))
 		 (when (debugging 'M "; requirements:")
 		   (pp req))

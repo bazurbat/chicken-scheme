@@ -161,13 +161,6 @@ Normally, when a toplevel variable is assigned or defined that has the same name
 will be removed (in addition to showing a warning). This declaration will disable the removal of the macro.
 
 
-=== lambda-lift
-
- [declaration specifier] (lambda-lift)
-
-Enables lambda-lifting (equivalent to the {{-lambda-lift}} option).
-
-
 === local
 
  [declaration specifier] (local)
