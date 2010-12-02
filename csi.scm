@@ -680,8 +680,6 @@ EOF
 		      (newline out))
 		    (loop (cddr props)) ) ) )
 	      (##sys#slot x 1) ) ]
-	    [(and (##sys#structure? x 'meroon-instance) (provided? 'meroon)) ; XXX put this into meroon egg (really!)
-	     (unveil x out) ]
 	    [(##sys#generic-structure? x)
 	     (let ([st (##sys#slot x 0)])
 	       (cond ((##sys#hash-table-ref describer-table st) => (cut <> x out))
@@ -955,7 +953,8 @@ EOF
 	     (##sys#error "missing or invalid script argument"))
 	   (program-name (cadr script))
 	   (command-line-arguments (cddr script))
-	   (register-feature! 'script)
+	   (register-feature! 'script)	; DEPRECATED
+	   (register-feature! 'chicken-script)
 	   (set-cdr! (cdr script) '()) 
 	   (when ##sys#windows-platform
 	     (and-let* ((sname (lookup-script-file (cadr script))))
