@@ -548,13 +548,11 @@
 				     r1 r2))
 			       (else '*)))))
 	       ((let)
-		(let loop ((vars params) (body subs) (e2 '()))
-		  (if (null? vars)
-		      (walk (car body) (append e2 e) loc dest)
-		      (let ((t (single 
-				(sprintf "in `let' binding of `~a'" (real-name (car vars)))
-				(walk (car body) e loc (car vars)) loc)))
-			(loop (cdr vars) (cdr body) (alist-cons (car vars) t e2))))))
+		(assert (= 2 (length body))) ;XXX should always be the case
+		(let ((t (single 
+			  (sprintf "in `let' binding of `~a'" (real-name (first params)))
+			  (walk (first body) e loc (first vars)) loc)))
+		  (walk (second body) (append (alist-cons (car vars) t e2) e) loc dest)))
 	       ((##core#lambda lambda)
 		(decompose-lambda-list
 		 (first params)
