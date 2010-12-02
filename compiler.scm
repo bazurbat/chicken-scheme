@@ -1400,7 +1400,7 @@
 	  (for-each export-variable syms)))
        ((emit-external-prototypes-first)
 	(set! external-protos-first #t) )
-       ((lambda-lift) #f)		;XXX removed, remove this as well later
+       ((lambda-lift) #f)		; OBSOLETE
        ((inline)
 	(if (null? (cdr spec))
 	    (set! inline-locally #t)

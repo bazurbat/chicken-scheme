@@ -133,7 +133,7 @@
   '(-explicit-use -no-trace -no-warnings -no-usual-integrations -optimize-leaf-routines -unsafe
     -block -disable-interrupts -fixnum-arithmetic -to-stdout -profile -raw -accumulate-profile
     -check-syntax -case-insensitive -shared -compile-syntax -no-lambda-info
-    -lambda-lift			;XXX removed
+    -lambda-lift			; OBSOLETE
     -dynamic -disable-stack-overflow-checks -local
     -emit-external-prototypes-first -inline -release -scrutinize
     -analyze-only -keep-shadowed-macros -inline-global -ignore-repository

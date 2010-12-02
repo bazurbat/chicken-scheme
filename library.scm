@@ -801,7 +801,7 @@ EOF
   (fp-check-flonum x 'fpceiling)
   (##core#inline_allocate ("C_a_i_flonum_ceiling" 4) x))
 
-(define ##sys#floor fpfloor) ;XXX needed for backwards compatibility with "numbers" egg
+(define ##sys#floor fpfloor) ;XXX needed for backwards compatibility with "numbers" egg (really?)
 (define ##sys#truncate fptruncate)
 (define ##sys#ceiling fpceiling)
 
