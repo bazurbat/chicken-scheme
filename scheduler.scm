@@ -149,7 +149,7 @@ EOF
 					     "C_msleep" 
 					     (fxmax 
 					      0
-					      (##sys#inexact->exact (fp- tmo1 now)))))
+					      (##core#inline "C_quickflonumtruncate" (fp- tmo1 now)))))
 				       (foreign-value
 					"C_signal_interrupted_p" bool) ) ) ) ) ) )
 		      (loop (cdr lst)) ) ) ) ) ) )
@@ -170,6 +170,7 @@ EOF
 
 (define (##sys#force-primordial)
   (dbg "primordial thread forced due to interrupt")
+  (##sys#setislot ##sys#primordial-thread 13 #f)
   (##sys#thread-unblock! ##sys#primordial-thread) )
 
 (define ready-queue-head '())
@@ -448,8 +449,12 @@ EOF
 					  (dbg t " unblocked by timeout")
 					  (loop2 (cdr threads) keep))
 					 ((not (pair? p)) ; not blocked for I/O?
-					  (panic 
-					   "##sys#unblock-threads-for-i/o: thread on fd-list is not blocked for I/O"))
+					  ;; thread on fd-list is not blocked for I/O - this
+					  ;; is incorrect but will be ignored, just let it run
+					  (when (##sys#slot t 4) ; also blocked for timeout?
+					    (##sys#remove-from-timeout-list t))
+					  (##sys#thread-basic-unblock! t) 
+					  (loop2 (cdr threads) keep))
 					 ((not (eq? fd (car p)))
 					  (panic
 					   "##sys#unblock-threads-for-i/o: thread on fd-list has wrong FD"))

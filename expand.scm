@@ -111,7 +111,7 @@
               (set! seen (cons (cons x vec) seen))
               (do ((i 0 (fx+ i 1)))
                   ((fx>= i len) vec)
-                (##sys#setslot vec i (##sys#slot x i)))))
+                (##sys#setslot vec i (walk (##sys#slot x i))))))
            (else x)))))
 
 (define strip-syntax ##sys#strip-syntax)

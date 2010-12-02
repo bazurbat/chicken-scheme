@@ -1,4 +1,4 @@
-# Makefile - toplevel makefile
+# GNUmakefile - toplevel makefile
 #
 # Copyright (c) 2008-2010, The Chicken Team
 # Copyright (c) 2007, Felix L. Winkelmann

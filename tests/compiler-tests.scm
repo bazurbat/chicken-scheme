@@ -132,3 +132,14 @@
                           ((foreign-lambda* int ((c-string str))
                                             "C_return(strlen(str));")
                            "foo\x00bar")))
+
+
+;; failed compile-time argument count check (reported by Alan Post)
+;; cbb27fe380ff8e45cdf04d812e1ec649bf45ca47
+
+(define (foo)
+  (define (bar #!key a)
+    (define (baz)
+      (bar a: #t))
+    baz)
+  bar)

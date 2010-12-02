@@ -165,6 +165,13 @@
     (let ((a 2))
       (t '(1 2 3 a) (foo a)))))
 
+;; Strip-syntax on vectors:
+(let-syntax
+    ((foo (syntax-rules ()
+            ((_)
+             '#(b)))))
+  (t '#(b) (foo)))
+
 (define-syntax kw
   (syntax-rules (baz)
     ((_ baz) "baz")

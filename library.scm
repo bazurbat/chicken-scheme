@@ -213,7 +213,7 @@ EOF
 (define (##sys#void . _) (##core#undefined))
 (define void ##sys#void)
 (define ##sys#undefined-value (##core#undefined))
-(define (##sys#halt) (##core#inline "C_halt" #f))
+(define (##sys#halt msg) (##core#inline "C_halt" msg))
 (define (##sys#flo2fix n) (##core#inline "C_quickflonumtruncate" n))
 (define ##sys#become! (##core#primitive "C_become"))
 (define (##sys#block-ref x i) (##core#inline "C_i_block_ref" x i))
@@ -925,7 +925,7 @@ EOF
 	(else (if (##sys#exact? n) 0 0.0) ) ) )
 
 ;; hooks for numbers
-(define ##sys#exact->inexact (##core#primitive "C_exact_to_inexact"))
+(define (##sys#exact->inexact n) (##core#inline_allocate ("C_a_i_exact_to_inexact" 4) n))
 (define (##sys#inexact->exact n) (##core#inline "C_i_inexact_to_exact" n))
 
 (define exact->inexact ##sys#exact->inexact)
@@ -1059,7 +1059,9 @@ EOF
 		  (##sys#lcm head (##sys#slot next 0))
 		  (##sys#slot next 1)) #f) ) ) ) ) ) )
 
-(define ##sys#string->number (##core#primitive "C_string_to_number"))
+(define (##sys#string->number str #!optional (radix 10))
+  (##core#inline_allocate ("C_a_i_string_to_number" 4) str radix))
+
 (define string->number ##sys#string->number)
 (define ##sys#number->string (##core#primitive "C_number_to_string"))
 (define number->string ##sys#number->string)
@@ -1070,6 +1072,44 @@ EOF
       (##sys#check-exact prec 'flonum-print-precision)
       (##core#inline "C_set_print_precision" prec) )
     prev ) )
+
+(define (equal=? x y)
+  (define (compare-slots x y start)
+    (let ((l1 (##sys#size x))
+	  (l2 (##sys#size y)))
+      (and (eq? l1 l2)
+	   (or (fx<= l1 start)
+	       (let ((l1n (fx- l1 1)))
+		 (let loop ((i start))
+		   (if (fx= i l1n)
+		       (walk (##sys#slot x i) (##sys#slot y i)) ; tailcall
+		       (and (walk (##sys#slot x i) (##sys#slot y i))
+			    (loop (fx+ i 1))))))))))
+  (define (walk x y)
+    (cond ((eq? x y))
+	  ((fixnum? x) 
+	   (if (flonum? y)
+	       (= x y)
+	       (eq? x y)))
+	  ((flonum? x)
+	   (and (or (fixnum? y) (flonum? y))
+		(= x y)))
+	  ((not (##core#inline "C_blockp" x)) #f)
+	  ((not (##core#inline "C_blockp" y)) #f)
+	  ((not (##core#inline "C_sametypep" x y)) #f)
+	  ((##core#inline "C_specialp" x)
+	   (and (##core#inline "C_specialp" y)
+		(compare-slots x y 1)))
+	  ((##core#inline "C_byteblockp" x)
+	   (and (##core#inline "C_byteblockp" y)
+		(let ((s1 (##sys#size x)))
+		  (and (eq? s1 (##sys#size y))
+		       (##core#inline "C_substring_compare" x y 0 0 s1)))))
+	  (else
+	   (let ((s1 (##sys#size x)))
+	     (and (eq? s1 (##sys#size y))
+		  (compare-slots x y 0))))))
+  (walk x y))
 
 
 ;;; Symbols:
@@ -2991,7 +3031,6 @@ EOF
 	(define (specialchar? chr)
 	  (let ([c (char->integer chr)])
 	    (or (fx<= c 32)
-		(fx>= c 128)
 		(memq chr special-characters) ) ) )
 
 	(define (outreadablesym port str)
@@ -3487,7 +3526,8 @@ EOF
 	    [else	  (err x)] ) ) ) )
 
 (define ##sys#features
-  '(#:chicken #:srfi-23 #:srfi-30 #:srfi-39 #:srfi-62 #:srfi-17 #:srfi-12 #:srfi-88 #:srfi-98))
+  '(#:chicken #:srfi-23 #:srfi-30 #:srfi-39 #:srfi-62 #:srfi-17 #:srfi-12 #:srfi-88 #:srfi-98
+	      #:irregex-is-core-unit))
 
 ;; Add system features:
 

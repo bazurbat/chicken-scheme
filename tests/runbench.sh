@@ -62,3 +62,11 @@ run
 echo "======================================== fft/unboxed ... "
 $compile fft.scm -D unboxed
 run
+
+echo "======================================== threads ... "
+$compile thread-list.scm -O4 -d0 -fb
+run 1000000
+
+echo "======================================== allocation ... "
+$compile gobble.scm -O4 -d0 -b
+run 1000000000

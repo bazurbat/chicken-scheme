@@ -3,8 +3,12 @@
 
 == Unit library
 
-This unit contains basic Scheme definitions. This unit is used by default,
+This unit contains basic library definitions. This unit is used by default,
 unless the program is compiled with the {{-explicit-use}} option.
+
+In addition to standard Scheme functions, this unit provides quite 
+a number of additional operations.
+
 
 === Arithmetic
 
@@ -568,6 +572,8 @@ On a UNIX system, that value is the raw return value of waitpid(2), which contai
 #t
 42
 </enscript>
+
+
 === Execution time
 
 
@@ -690,13 +696,6 @@ Displays a warning message (if warnings are enabled with {{enable-warnings}}) an
 continues execution.
 
 
-==== singlestep
-
-<procedure>(singlestep THUNK)</procedure>
-
-Executes the code in the zero-procedure {{THUNK}} in single-stepping mode.
-
-
 
 === Garbage collection
 
@@ -749,7 +748,7 @@ switches statistics off.
 
 
 
-=== Other control structures
+=== Other predicates and comparison operations
 
 
 
@@ -759,6 +758,15 @@ switches statistics off.
 
 Returns {{#t}} if {{X}} is a promise returned by {{delay}}, or
 {{#f}} otherwise.
+
+
+==== equal=?
+
+<procedure>(equal=? X y)</procedure>
+
+Similar to the standard parocedure {{equal?}}, but compares numbers
+using the {{=}} operator, so {{equal=?}} allows structural comparison
+in combination with comparison of numerical data by value.
 
 
 

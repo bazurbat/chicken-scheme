@@ -34,6 +34,7 @@
  block-compilation
  block-variable-literal-name
  block-variable-literal?
+ bootstrap-mode
  bomb
  broken-constant-nodes
  build-expression-tree
@@ -187,6 +188,7 @@
  line-number-database-2
  line-number-database-size
  llist-length
+ llist-match?
  load-identifier-database
  load-inline-file
  load-type-database

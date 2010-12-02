@@ -335,6 +335,7 @@
 (define enable-inline-files #f)
 (define compiler-syntax-enabled #t)
 (define unchecked-specialized-arithmetic #f)
+(define bootstrap-mode #f)
 
 
 ;;; These are here so that the backend can access them:
@@ -1794,7 +1795,7 @@
 	  ((set! ##core#set!) 
 	   (let* ((var (first params))
 		  (val (car subs)) )
-	     (when first-analysis 
+	     (when (and first-analysis (not bootstrap-mode))
 	       (case (variable-mark var '##compiler#intrinsic)
 		 ((standard)
 		  (warning "redefinition of standard binding" var) )
@@ -2115,7 +2116,7 @@
       (walk node)
       (when (pair? procs)
 	(##sys#notice
-	 "access to the following non-intrinsic global procedures was declared to be unsafe even though they are externally visible:")
+	 "calls to the following non-intrinsic global procedures were declared to be unsafe even though they are externally visible:")
 	(newline (current-error-port))
 	(for-each (cute fprintf (current-error-port) "  ~S~%" <>) procs)
 	(flush-output (current-error-port))))))
@@ -2183,8 +2184,7 @@
 						     (test varname 'value)
 						     (proper-list? llist) ) ] )
 					  (when (and name 
-						     custom
-						     (not (= (llist-length llist) (length (cdr subs)))))
+						     (not (llist-match? llist (cdr subs))))
 					    (quit
 					     "~a: procedure `~a' called with wrong number of arguments" 
 					     (source-info->line name)

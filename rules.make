@@ -55,7 +55,7 @@ UTILITY_PROGRAM_OBJECTS_1 = \
 	csc csi chicken-install chicken-uninstall chicken-status chicken-profile
 
 ALWAYS_STATIC_UTILITY_PROGRAM_OBJECTS_1 = \
-	chicken-bug csi-static
+	chicken-bug
 
 ## TODO: Shouldn't these manpages match their program names (ie CSI_PROGRAM etc)?
 MANPAGES = \
@@ -200,7 +200,7 @@ define declare-always-static-utility-program-object
 $(1)$(O): $(1).c chicken.h $$(CHICKEN_CONFIG_H)
 	$$(C_COMPILER) $$(C_COMPILER_OPTIONS) \
 	  $$(C_COMPILER_STATIC_OPTIONS) \
-	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$< $$(C_COMPILER_OUTPUT)
+	  $$(C_COMPILER_COMPILE_OPTION) $$(C_COMPILER_OPTIMIZATION_OPTIONS) $$< $$(C_COMPILER_OUTPUT) \
 	  $$(INCLUDES)
 endef
 

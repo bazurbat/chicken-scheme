@@ -170,3 +170,20 @@
 (assert (= 12 (bar 3)))
 (assert (= 100 (set! (bar) 1)))
 (assert (= 12 (foo 3)))
+
+
+;;; equal=?
+
+(assert (not (equal=? 1 2)))
+(assert (equal=? 1 1))
+(assert (equal=? 1 1.0))
+(assert (not (equal=? 1 1.2)))
+(assert (equal=? 1.0 1))
+(assert (equal=? '#(1) '#(1.0)))
+(assert (not (equal=? 'a "a")))
+(assert (equal=? "abc" "abc"))
+(assert (equal=? '(1 2.0 3) '(1 2 3)))
+(assert (equal=? '#(1 2.0 3) '#(1 2 3)))
+(assert (equal=? '#(1 2 (3)) '#(1 2 (3))))
+(assert (not (equal=? '#(1 2 (4)) '#(1 2 (3)))))
+(assert (not (equal=? 123 '(123))))

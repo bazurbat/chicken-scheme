@@ -1,3 +1,56 @@
+4.6.3
+
+- Peter Bex has cleaned up the makefiles heavily, making the
+  build more maintainable and easier to modify; thanks to all
+  who helped testing this new build
+- renamed the makefile to `GNUmakefile' to catch using the
+  a make(3) other than GNU make
+- `-fwrapv' is disabled on OpenBSD, since the default compiler
+  does not support this option (thanks to Christian Kellermann)
+- on Solaris `gcc' is used by default, override `C_COMPILER'
+  to use the Sun compiler instead
+- added the new foreign type `size_t' (suggested by Moritz 
+  Heidkamp)
+- added the missing `unsigned-integer64' foreign type (thanks
+  to Moritz for catching this)
+- added support for proxy-authentification to `chicken-install'
+  (thanks to Iruata Souza)
+- `define-record' now allows defining SRFI-17 setter procedures
+  for accessing slots
+- removed the stub definition for `define-macro'
+- added new foreign type `pointer-vector' which maps to `void **'
+  and provided a low-level API in the `lolevel' library unit
+  for manipulating pointer vectors
+- declaring a function `notinline' will prevent direct-call
+  optimization for known procedure calls
+- when compiling in C++ mode, the compiler will be called with
+  the `-Wno-write-strings' option
+- the expansion of DSSSL lambda-lists uses now `let-optionals*'
+  internally instead of `let-optionals' and so allows back-references
+  to earlier formal variables; this also results in faster and
+  more compact code for argument-list destructuring (thanks to Alan
+  Post)
+- Peter Bex has contributed various bugfixes and performance
+  enhancements to the `irregex' library unit
+- fixed bug in `getter-with-setter' that modified the first argument
+  if it already had a setter procedure attached
+- added a SRFI-17 setter to `list-ref'
+- control-characters in symbol-names are now properly escaped if
+  the symbol is printed readably (thanks to Alaric Snell-Pym Blagrave 
+  for pointing this out)
+- added literal blob syntax ("#{ ... }")
+- `delete-directory' now optionally deletes directories recursively
+- fixed incorrect size of internal data vector used in `time'
+  (thanks to Kon Lovett)
+- `list-tail' gives now a better error message when passed a non-list
+  argument
+- deadlock in the scheduler now terminates the process instead of
+  attempting to throw an error
+- added some sanity checks to the scheduler
+- when installing from a local directory `chicken-install' now removes
+  existing `*.so' files in that location to avoid stale binaries when
+  the `make' syntax is used in setup scripts
+
 4.6.2
 
 - the `regex' library unit has been removed and is separately
@@ -26,7 +79,7 @@
 - the implementation of overflow-detection for arithmetic operations
   on fixnums have been replaced and now allow using the full 63-bit
   range of fixnums on 64-bit systems
-- fixed serious inlining-bug (thanks to Sen Hartrumpf)
+- fixed serious inlining-bug (thanks to Sven Hartrumpf)
 
 4.6.1
 

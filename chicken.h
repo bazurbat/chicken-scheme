@@ -1041,6 +1041,7 @@ extern double trunc(double);
 #define C_specialp(x)             C_mk_bool(C_header_bits(x) & C_SPECIALBLOCK_BIT)
 #define C_byteblockp(x)           C_mk_bool(C_header_bits(x) & C_BYTEBLOCK_BIT)
 #define C_anyp(x)                 C_SCHEME_TRUE
+#define C_sametypep(x, y)         C_mk_bool(C_header_bits(x) == C_header_bits(y))
 #define C_eqp(x, y)               C_mk_bool((x) == (y))
 #define C_vemptyp(x)              C_mk_bool(C_header_size(x) == 0)
 #define C_notvemptyp(x)           C_mk_bool(C_header_size(x) > 0)
@@ -1675,9 +1676,9 @@ C_fctexport void C_ccall C_allocate_vector(C_word c, C_word closure, C_word k, C
 C_fctexport void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word string) C_noret;
 C_fctexport void C_ccall C_build_symbol(C_word c, C_word closure, C_word k, C_word string) C_noret;
 C_fctexport void C_ccall C_flonum_fraction(C_word c, C_word closure, C_word k, C_word n) C_noret;
-C_fctexport void C_ccall C_exact_to_inexact(C_word c, C_word closure, C_word k, C_word n) C_noret;
+C_fctexport void C_ccall C_exact_to_inexact(C_word c, C_word closure, C_word k, C_word n) C_noret; /*XXX left for binary compatibility */
 C_fctexport void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2) C_noret;
-C_fctexport void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, ...) C_noret;
+C_fctexport void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, ...) C_noret; /*XXX left for binary compatibility */
 C_fctexport void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, ...) C_noret;
 C_fctexport void C_ccall C_get_argv(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_make_structure(C_word c, C_word closure, C_word k, C_word type, ...) C_noret;
@@ -1829,6 +1830,8 @@ C_fctexport C_word C_fcall C_i_get_keyword(C_word key, C_word args, C_word def) 
 C_fctexport double C_fcall C_milliseconds(void) C_regparm;
 C_fctexport double C_fcall C_cpu_milliseconds(void) C_regparm;
 C_fctexport C_word C_fcall C_a_i_cpu_time(C_word **a, int c, C_word buf) C_regparm;
+C_fctexport C_word C_fcall C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix) C_regparm;
+C_fctexport C_word C_fcall C_a_i_exact_to_inexact(C_word **a, int c, C_word n) C_regparm;
 
 C_fctexport C_word C_fcall C_i_foreign_char_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_fixnum_argumentp(C_word x) C_regparm;

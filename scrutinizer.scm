@@ -518,11 +518,21 @@
 	(and (pair? t)
 	     (eq? 'or (car t))
 	     (any noreturn-type? (cdr t)))))
-  (define (walk n e loc dest)		; returns result specifier
+  (define (self-call? node loc)
+    (case (node-class node)
+      ((##core#call)
+       (and (pair? loc)
+	    (let ((op (first (node-subexpressions node))))
+	      (and (eq? '##core#variable (node-class op))
+		   (eq? (car loc) (first (node-parameters op)))))))
+      ((let)
+       (self-call? (last (node-subexpressions node)) loc))
+      (else #f)))
+  (define (walk n e loc dest tail)		; returns result specifier
     (let ((subs (node-subexpressions n))
 	  (params (node-parameters n)) 
 	  (class (node-class n)) )
-      (d "walk: ~a ~a (loc: ~a, dest: ~a)" class params loc dest)
+      (d "walk: ~a ~a (loc: ~a, dest: ~a, tail: ~a)" class params loc dest tail)
       (let ((results
 	     (case class
 	       ((quote) (list (constant-result (first params))))
@@ -530,29 +540,43 @@
 	       ((##core#proc) '(procedure))
 	       ((##core#global-ref) (global-result (first params) loc))
 	       ((##core#variable) (variable-result (first params) e loc))
-	       ((if) (let ((rt (single "in conditional" (walk (first subs) e loc dest) loc)))
-		       (always-true rt loc n)
-		       (let ((r1 (walk (second subs) e loc dest))
-			     (r2 (walk (third subs) e loc dest)))
-			 (cond ((and (not (eq? r1 '*)) 
-				     (not (eq? '* r2)) )
-				(when (and (not (any noreturn-type? r1))
-					   (not (any noreturn-type? r2))
-					   (not (= (length r1) (length r2))))
-				  (report 
-				   loc
-				   (sprintf
-				    "branches in conditional expression differ in the number of results:~%~%~a"
-				    (pp-fragment n))))
-				(map (lambda (t1 t2) (simplify `(or ,t1 ,t2)))
-				     r1 r2))
-			       (else '*)))))
+	       ((if)
+		(let ((rt (single "in conditional" (walk (first subs) e loc dest #f) loc))
+		      (c (second subs))
+		      (a (third subs)))
+		  (always-true rt loc n)
+		  (let ((r1 (walk c e loc dest tail))
+			(r2 (walk a e loc dest tail)))
+		    ;;XXX this is too heavy, perhaps provide "style" warnings?
+		    ;;XXX this could also check for noreturn (same as undefined)
+		    #;(when (and tail
+			       (if (eq? '##core#undefined (node-class c))
+				   (and (not (eq? '##core#undefined (node-class a)))
+					(not (self-call? a loc)))
+				   (and (eq? '##core#undefined (node-class a))
+					(not (self-call? c loc)))))
+		      (report
+		       loc
+		       (sprintf "conditional in tail-position has branch with undefined result:~%~%~a"
+			 (pp-fragment n))))
+		    (cond ((and (not (eq? '* r1)) (not (eq? '* r2)))
+			   (when (and (not (any noreturn-type? r1))
+				      (not (any noreturn-type? r2))
+				      (not (= (length r1) (length r2))))
+			     (report 
+			      loc
+			      (sprintf
+				  "branches in conditional expression differ in the number of results:~%~%~a"
+				(pp-fragment n))))
+			   (map (lambda (t1 t2) (simplify `(or ,t1 ,t2)))
+				r1 r2))
+			  (else '*)))))
 	       ((let)
 		(assert (= 2 (length body))) ;XXX should always be the case
 		(let ((t (single 
 			  (sprintf "in `let' binding of `~a'" (real-name (first params)))
-			  (walk (first body) e loc (first vars)) loc)))
-		  (walk (second body) (append (alist-cons (car vars) t e2) e) loc dest)))
+			  (walk (first body) e loc (first vars) #f) loc)))
+		  (walk (second body) (append (alist-cons (car vars) t e2) e) loc dest tail)))
 	       ((##core#lambda lambda)
 		(decompose-lambda-list
 		 (first params)
@@ -565,7 +589,7 @@
 			  (r (walk (first subs)
 				   (if rest (alist-cons rest 'list e2) e2)
 				   (add-loc dest loc)
-				   #f)))
+				   #f #t)))
 		     (list 
 		      (append
 		       '(procedure) 
@@ -577,7 +601,7 @@
 		       (type (##sys#get var '##core#type))
 		       (rt (single 
 			    (sprintf "in assignment to `~a'" var)
-			    (walk (first subs) e loc var)
+			    (walk (first subs) e loc var #f)
 			    loc))
 		       (b (assq var e)) )
 		  (when (and type (not b)
@@ -602,17 +626,17 @@
 					  "operator position"
 					  (sprintf "argument #~a" i))
 				      f)
-				     (walk n e loc #f) loc))
+				     (walk n e loc #f #f) loc))
 				  subs (iota (length subs)))))
 		  (call-result args e loc (first subs) params)))
 	       ((##core#switch ##core#cond)
 		(bomb "unexpected node class: ~a" class))
 	       (else
-		(for-each (lambda (n) (walk n e loc #f)) subs)
+		(for-each (lambda (n) (walk n e loc #f #f)) subs)
 		'*))))
 	(d "  -> ~a" results)
 	results)))
-  (walk (first (node-subexpressions node)) '() '() #f))
+  (walk (first (node-subexpressions node)) '() '() #f #f))
 
 (define (load-type-database name #!optional (path (repository-path)))
   (and-let* ((dbfile (file-exists? (make-pathname path name))))
