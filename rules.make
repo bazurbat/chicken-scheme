@@ -416,7 +416,7 @@ install-other-files:
 		$(SRCDIR)$(obj) "$(DESTDIR)$(IMANDIR)" $(NL))
 
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IDOCDIR)$(SEP)manual"
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)manual$(SEP)* "$(DESTDIR)$(IDOCDIR)$(SEP)manual"
+	-$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)manual-html$(SEP)* "$(DESTDIR)$(IDOCDIR)$(SEP)manual"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)README "$(DESTDIR)$(IDOCDIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)LICENSE "$(DESTDIR)$(IDOCDIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)setup.defaults "$(DESTDIR)$(IDATADIR)"
@@ -565,13 +565,13 @@ setup-download.c: $(SRCDIR)setup-download.scm setup-api.c
 
 distfiles: $(DISTFILES)
 
-dist: distfiles
+dist: distfiles html
 	CSI=$(CSI) $(CSI) -s $(SRCDIR)scripts$(SEP)makedist.scm --platform=$(PLATFORM) CHICKEN=$(CHICKEN)
 
+# Jim's `manual-labor' must be installed (just run "chicken-install manual-labor")
 html:
-	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) $(SRCDIR)html
-	$(COPY_COMMAND) $(SRCDIR)misc$(SEP)manual.css $(SRCDIR)html
-	$(CSI) -s $(SRCDIR)scripts$(SEP)wiki2html.scm --outdir=html manual$(SEP)*
+	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) $(SRCDIR)manual-html
+	manual-labor $(SRCDIR)manual $(SRCDIR)manual-html
 
 # cleaning up
 

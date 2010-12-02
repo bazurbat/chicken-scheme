@@ -25,7 +25,10 @@
 	     ((msvc) "msvc")
 	     (else sv))))))
 
-(define *make* "make")
+(define *make* 
+  (cond ((string=? "bsd" *platform*) "gmake")
+	((string=? "mingw32" *platform*) "mingw32-make")
+	(else "make")))
 
 (define (release full?)
   (let* ((files (read-lines "distribution/manifest"))
