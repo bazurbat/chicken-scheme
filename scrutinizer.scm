@@ -153,7 +153,7 @@
 		(else (bomb "invalid type: ~a" t))))
 	     (else (bomb "invalid type: ~a" t))))))
   (define (argument-string args)
-    (let ((len (length args))
+    (let* ((len (length args))
 	  (m (multiples len)))
       (if (zero? len)
 	  "zero arguments"
@@ -164,7 +164,7 @@
   (define (result-string results)
     (if (eq? '* results) 
 	"an unknown number of values"
-	(let ((len (length results))
+	(let* ((len (length results))
 	      (m (multiples len)))
 	  (if (zero? len)
 	      "zero values"
@@ -572,11 +572,15 @@
 				r1 r2))
 			  (else '*)))))
 	       ((let)
-		(assert (= 2 (length subs))) ;XXX should always be the case
-		(let ((t (single 
-			  (sprintf "in `let' binding of `~a'" (real-name (first params)))
-			  (walk (first subs) e loc (first params) #f) loc)))
-		  (walk (second subs) (append (alist-cons (car params) t e) e) loc dest tail)))
+		;; before CPS-conversion, `let'-nodes may have multiple bindings
+		(let loop ((vars params) (body subs) (e2 '()))
+		  (if (null? vars)
+		      (walk (car body) (append e2 e) loc dest tail)
+		      (let ((t (single 
+				(sprintf "in `let' binding of `~a'" (real-name (car vars)))
+				(walk (car body) e loc (car vars) #f) 
+				loc)))
+			(loop (cdr vars) (cdr body) (alist-cons (car vars) t e2))))))
 	       ((##core#lambda lambda)
 		(decompose-lambda-list
 		 (first params)
