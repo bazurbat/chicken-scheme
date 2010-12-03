@@ -572,11 +572,11 @@
 				r1 r2))
 			  (else '*)))))
 	       ((let)
-		(assert (= 2 (length body))) ;XXX should always be the case
+		(assert (= 2 (length subs))) ;XXX should always be the case
 		(let ((t (single 
 			  (sprintf "in `let' binding of `~a'" (real-name (first params)))
-			  (walk (first body) e loc (first vars) #f) loc)))
-		  (walk (second body) (append (alist-cons (car vars) t e2) e) loc dest tail)))
+			  (walk (first subs) e loc (first vars) #f) loc)))
+		  (walk (second subs) (append (alist-cons (car vars) t e2) e) loc dest tail)))
 	       ((##core#lambda lambda)
 		(decompose-lambda-list
 		 (first params)
