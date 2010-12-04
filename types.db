@@ -482,7 +482,7 @@
 (string-compare3-ci (procedure string-compare3-ci (string string) fixnum))
 (string-intersperse (procedure string-intersperse (list #!optional string) string))
 (string-split (procedure string-split (string #!optional string *) list))
-(string-translate (procedure string-translate (string string #!optional string) string))
+(string-translate (procedure string-translate (string * #!optional *) string))
 (string-translate* (procedure string-translate* (string list) string))
 (substring-ci=? (procedure substring-ci=? (string string #!optional fixnum fixnum fixnum) boolean))
 (substring-index (procedure substring-index (string string #!optional fixnum) *))
