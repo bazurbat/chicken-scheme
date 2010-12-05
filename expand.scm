@@ -120,7 +120,7 @@
   (for-each 
    (cut ##sys#put! <> '##core#real-name <>) 
    aliases vars)
-  (append (map cons vars aliases) se))
+  (append (map (lambda (x y) (cons x y)) vars aliases) se)) ; inline cons
 
 
 ;;; Macro handling
