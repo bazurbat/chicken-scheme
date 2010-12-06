@@ -1601,6 +1601,11 @@ void barf(int code, char *loc, ...)
     c = 1;
     break;
 
+  case C_CIRCULAR_DATA_ERROR:
+    msg = C_text("recursion too deep or circular data encountered");
+    c = 0;
+    break;
+
   default: panic(C_text("illegal internal error code"));
   }
   
@@ -2200,6 +2205,12 @@ void C_bad_min_argc_2(int c, int n, C_word closure)
 
 
 void C_stack_overflow(void)
+{
+  barf(C_STACK_OVERFLOW_ERROR, NULL);
+}
+
+
+void C_stack_overflow_with_msg(C_char *msg)
 {
   barf(C_STACK_OVERFLOW_ERROR, NULL);
 }
@@ -3865,7 +3876,8 @@ C_regparm C_word C_fcall C_equalp(C_word x, C_word y)
   C_header header;
   C_word bits, n, i;
 
-  C_stack_check;
+  if(C_stack_test)
+    barf(C_CIRCULAR_DATA_ERROR, "equal?");
 
  loop:
   if(x == y) return 1;

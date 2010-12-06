@@ -3970,6 +3970,7 @@ EOF
 	((33) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a flonum" args))
 	((34) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a procedure" args))
 	((35) (apply ##sys#signal-hook #:type-error loc "bad argument type - invalid base" args))
+	((36) (apply ##sys#signal-hook #:limit-error loc "recursion too deep or circular data encountered" args))
 	(else (apply ##sys#signal-hook #:runtime-error loc "unknown internal error" args)) ) ) ) )
 
 

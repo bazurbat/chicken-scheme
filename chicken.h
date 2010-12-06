@@ -581,6 +581,7 @@ typedef unsigned __int64   uint64_t;
 #define C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR           33
 #define C_BAD_ARGUMENT_TYPE_NO_CLOSURE_ERROR          34
 #define C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR            35
+#define C_CIRCULAR_DATA_ERROR                         36
 
 
 /* Platform information */
@@ -1004,12 +1005,14 @@ extern double trunc(double);
 #if C_STACK_GROWS_DOWNWARD
 # define C_demand(n)              (C_stress && ((C_word)(C_stack_pointer - C_stack_limit) > (n)))
 # define C_stack_probe(p)         (C_stress && ((C_word *)(p) >= C_stack_limit))
-# define C_stack_check            if(!C_disable_overflow_check && (C_byte*)(C_stack_pointer) + C_STACK_RESERVE < (C_byte *)C_stack_limit) C_stack_overflow()
+# define C_stack_test             (!C_disable_overflow_check && (C_byte*)(C_stack_pointer) + C_STACK_RESERVE < (C_byte *)C_stack_limit)
 #else
 # define C_demand(n)              (C_stress && ((C_word)(C_stack_limit - C_stack_pointer) > (n)))
 # define C_stack_probe(p)         (C_stress && ((C_word *)(p) < C_stack_limit))
-# define C_stack_check            if(!C_disable_overflow_check && (C_byte*)(C_stack_pointer) - C_STACK_RESERVE > (C_byte *)C_stack_limit) C_stack_overflow()
+# define C_stack_test             (!C_disable_overflow_check && (C_byte*)(C_stack_pointer) - C_STACK_RESERVE > (C_byte *)C_stack_limit)
 #endif
+
+#define C_stack_check             if(C_stack_test) C_stack_overflow()
 
 #define C_zero_length_p(x)        C_mk_bool(C_header_size(x) == 0)
 #define C_boundp(x)               C_mk_bool(((C_SCHEME_BLOCK *)(x))->data[ 0 ] != C_SCHEME_UNBOUND)
