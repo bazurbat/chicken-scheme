@@ -98,6 +98,7 @@
  display-analysis-database
  display-line-number-database
  display-real-name-table
+ do-lambda-lifting
  do-scrutinize
  dump-defined-globals
  dump-global-refs
@@ -219,6 +220,7 @@
  perform-cps-conversion
  perform-high-level-optimizations
  perform-inlining!
+ perform-lambda-lifting!
  perform-pre-optimization!
  perform-unboxing!
  posq

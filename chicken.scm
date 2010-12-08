@@ -100,7 +100,7 @@
 		    (when (>= level 5)
 		      (set! options 
 			(cons* 'disable-interrupts 'no-trace 'unsafe 'block
-			       'optimize-leaf-routines 'no-lambda-info
+			       'optimize-leaf-routines 'lambda-lift 'no-lambda-info
 			       'inline 'inline-global 'unboxing
 			       options) ) ) ) )
 		 (loop (cdr rest)) ) )

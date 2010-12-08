@@ -84,8 +84,7 @@
     check-syntax to-stdout no-usual-integrations case-insensitive no-lambda-info 
     profile inline keep-shadowed-macros ignore-repository
     fixnum-arithmetic disable-interrupts optimize-leaf-routines
-    lambda-lift				; OBSOLETE
-    compile-syntax tag-pointers accumulate-profile
+    lambda-lift compile-syntax tag-pointers accumulate-profile
     disable-stack-overflow-checks raw 
     emit-external-prototypes-first release local inline-global
     analyze-only dynamic scrutinize no-argc-checks no-procedure-checks

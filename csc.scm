@@ -133,8 +133,7 @@
   '(-explicit-use -no-trace -no-warnings -no-usual-integrations -optimize-leaf-routines -unsafe
     -block -disable-interrupts -fixnum-arithmetic -to-stdout -profile -raw -accumulate-profile
     -check-syntax -case-insensitive -shared -compile-syntax -no-lambda-info
-    -lambda-lift			; OBSOLETE
-    -dynamic -disable-stack-overflow-checks -local
+    -lambda-lift -dynamic -disable-stack-overflow-checks -local
     -emit-external-prototypes-first -inline -release -scrutinize
     -analyze-only -keep-shadowed-macros -inline-global -ignore-repository
     -no-symbol-escape -no-parentheses-synonyms -r5rs-syntax
@@ -372,6 +371,7 @@ Usage: #{csc} FILENAME | OPTION ...
     -b  -block                     enable block-compilation
     -disable-interrupts            disable interrupts in compiled code
     -f  -fixnum-arithmetic         assume all numbers are fixnums
+    -lambda-lift                   perform lambda-lifting
     -disable-stack-overflow-checks disables detection of stack-overflows
     -inline                        enable inlining
     -inline-limit LIMIT            set inlining threshold
