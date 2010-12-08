@@ -1683,7 +1683,8 @@ C_fctexport void C_ccall C_exact_to_inexact(C_word c, C_word closure, C_word k, 
 C_fctexport void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2) C_noret;
 C_fctexport void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, ...) C_noret; /*XXX left for binary compatibility */
 C_fctexport void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, ...) C_noret;
-C_fctexport void C_ccall C_get_argv(C_word c, C_word closure, C_word k) C_noret;
+C_fctexport void C_ccall C_get_argv(C_word c, C_word closure, C_word k) C_noret; /* OBSOLETE */
+C_fctexport void C_ccall C_get_argument(C_word c, C_word closure, C_word k, C_word index) C_noret;
 C_fctexport void C_ccall C_make_structure(C_word c, C_word closure, C_word k, C_word type, ...) C_noret;
 C_fctexport void C_ccall C_make_symbol(C_word c, C_word closure, C_word k, C_word name) C_noret;
 C_fctexport void C_ccall C_make_pointer(C_word c, C_word closure, C_word k) C_noret;

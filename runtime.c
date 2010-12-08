@@ -173,9 +173,12 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #endif
 
 #define WORDS_PER_FLONUM               C_SIZEOF_FLONUM
-#define MAXIMAL_NUMBER_OF_COMMAND_LINE_ARGUMENTS 32
 #define INITIAL_TIMER_INTERRUPT_PERIOD 10000
 #define HDUMP_TABLE_SIZE               1001
+
+/* only for relevant for Windows: */
+
+#define MAXIMAL_NUMBER_OF_COMMAND_LINE_ARGUMENTS 256
 
 
 /* Constants: */
@@ -489,7 +492,8 @@ static C_ccall void call_cc_wrapper(C_word c, C_word closure, C_word k, C_word r
 static C_ccall void call_cc_values_wrapper(C_word c, C_word closure, C_word k, ...) C_noret;
 static void gc_2(void *dummy) C_noret;
 static void allocate_vector_2(void *dummy) C_noret;
-static void get_argv_2(void *dummy) C_noret;
+static void get_argv_2(void *dummy) C_noret; /* OBSOLETE */
+static void get_argument_2(void *dummy) C_noret;
 static void make_structure_2(void *dummy) C_noret;
 static void generic_trampoline(void *dummy) C_noret;
 static void file_info_2(void *dummy) C_noret;
@@ -724,7 +728,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* hardcoded table size - this must match the number of C_pte calls! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 64);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 65);
   int i = 0;
 
   if(pt == NULL)
@@ -737,7 +741,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(call_cc_wrapper);
   C_pte(C_gc);
   C_pte(C_allocate_vector);
-  C_pte(C_get_argv);
+  C_pte(C_get_argv);		/* OBSOLETE */
   C_pte(C_make_structure);
   C_pte(C_ensure_heap_reserve);
   C_pte(C_return_to_host);
@@ -763,7 +767,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_quotient);
   C_pte(C_flonum_fraction);
   C_pte(C_expt);
-  C_pte(C_exact_to_inexact);	/*XXX left for binary compatbility */
+  C_pte(C_exact_to_inexact);	/* OBSOLETE */
   C_pte(C_string_to_number);
   C_pte(C_number_to_string);
   C_pte(C_make_symbol);
@@ -792,6 +796,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_copy_closure);
   C_pte(C_dump_heap_state);
   C_pte(C_filter_heap_objects);
+  C_pte(C_get_argument);
 
   /* did you remember the hardcoded pte table size? */
   pt[ i ].id = NULL;
@@ -7532,6 +7537,7 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 }
 
 
+/* OBSOLETE */
 void C_ccall C_get_argv(C_word c, C_word closure, C_word k)
 {
   int i, cells;
@@ -7553,6 +7559,7 @@ void C_ccall C_get_argv(C_word c, C_word closure, C_word k)
 }
 
 
+/* OBSOLETE */
 void get_argv_2(void *dummy)
 {
   int cells = C_unfix(C_restore),
@@ -7565,6 +7572,39 @@ void get_argv_2(void *dummy)
     str = C_string2(&a, C_main_argv[ i ]);
 
   C_kontinue(k, list);
+}
+
+
+void C_ccall C_get_argument(C_word c, C_word closure, C_word k, C_word index)
+{
+  int i = C_unfix(index);
+  int cells;
+
+  if(i >= C_main_argc)
+    C_kontinue(k, C_SCHEME_FALSE);
+
+  cells = C_SIZEOF_STRING(C_strlen(C_main_argv[ i ]));
+  C_save(k);
+  C_save(C_fix(cells));
+  C_save(index);
+
+  if(!C_demand(cells)) C_reclaim(get_argument_2, NULL);
+
+  get_argument_2(NULL);
+}
+
+
+void get_argument_2(void *dummy)
+{
+  int i = C_unfix(C_restore);
+  int cells = C_unfix(C_restore);
+  C_word
+    k = C_restore, 
+    *a = C_alloc(cells),
+    str;
+  
+  str = C_string2(&a, C_main_argv[ i ]);
+  C_kontinue(k, str);
 }
 
 

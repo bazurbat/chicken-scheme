@@ -185,7 +185,6 @@ EOF
 (define (##sys#setslot x i y) (##core#inline "C_i_setslot" x i y))
 (define (##sys#setislot x i y) (##core#inline "C_i_set_i_slot" x i y))
 (define ##sys#allocate-vector (##core#primitive "C_allocate_vector"))
-(define argv (##core#primitive "C_get_argv"))
 (define (argc+argv) (##sys#values main_argc main_argv))
 (define ##sys#make-structure (##core#primitive "C_make_structure"))
 (define ##sys#ensure-heap-reserve (##core#primitive "C_ensure_heap_reserve"))
@@ -1099,6 +1098,7 @@ EOF
 	  ((not (##core#inline "C_sametypep" x y)) #f)
 	  ((##core#inline "C_specialp" x)
 	   (and (##core#inline "C_specialp" y)
+		(not (##core#inline "C_closurep" x))
 		(compare-slots x y 1)))
 	  ((##core#inline "C_byteblockp" x)
 	   (and (##core#inline "C_byteblockp" y)
@@ -4336,12 +4336,25 @@ EOF
 	       [else (##sys#read-error port "unreadable object")] ) ] ) ) ) )
 
 
-;;; Script invocation:
+;;; command-line handling
+
+(define ##sys#get-argument (##core#primitive "C_get_argument"))
+
+(define argv				; includes program name
+  (let ((cache #f))
+    (lambda ()
+      (or cache
+	  (let ((v (let loop ((i 0))
+		     (let ((arg (##sys#get-argument i)))
+		       (if arg
+			   (cons arg (loop (fx+ i 1)))
+			   '())))))
+	    (set! cache v)
+	    v)))))
 
 (define program-name
   (make-parameter
-   (let* ((av (argv)))
-     (if (pair? av) (car av) "<unknown>") )
+   (or (##sys#get-argument 0) "<unknown>") ; may happen if embedded in C application
    (lambda (x)
      (##sys#check-string x 'program-name)
      x) ) )
