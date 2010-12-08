@@ -1256,6 +1256,7 @@ Usage: chicken FILENAME OPTION ...
     -emit-all-import-libraries   emit import-libraries for all defined modules
     -no-module-registration      do not generate module registration code
     -no-compiler-syntax          disable expansion of compiler-macros
+    -module                      wrap compiled code into implicit module
 
   Translation options:
 
@@ -1326,8 +1327,6 @@ Usage: chicken FILENAME OPTION ...
     -epilogue FILENAME           include file after main source file
     -dynamic                     compile as dynamically loadable code
     -require-extension NAME      require and import extension NAME
-    -static-extension NAME       import extension NAME but link statically
-                                  (if available)
 
   Obscure options:
 

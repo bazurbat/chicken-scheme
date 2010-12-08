@@ -92,6 +92,7 @@
 	(dumpnodes #f)
 	(start-time #f)
 	(upap #f)
+	(wrap-module (memq 'module options))
 	(ssize (or (memq 'nursery options) (memq 'stack-size options))) )
 
     (define (cputime) (current-milliseconds))
@@ -423,7 +424,13 @@
 	     (set! ##sys#explicit-library-modules
 	       (append ##sys#explicit-library-modules uses-units))
 	     (set! forms (cons `(declare (uses ,@uses-units)) forms)) )
-	   (let* ([exps0 (map canonicalize-expression (append initforms forms))]
+	   (let* ((exps0 (map canonicalize-expression
+			      (let ((forms (append initforms forms)))
+				(if wrap-module
+				    `((##core#module main () 
+						     (import scheme chicken)
+						     ,@forms))
+				    forms))))
 		  [pvec (gensym)]
 		  [plen (length profile-lambda-list)]
 		  [exps (append

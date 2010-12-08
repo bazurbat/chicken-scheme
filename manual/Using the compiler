@@ -119,6 +119,8 @@ the source text should be read from standard input.
 
 ; -local : Assume toplevel variables defined in the current compilation unit are not externally modified. This gives the compiler more opportunities for inlining. Note that this may result in counter-intuitive and non-standard behaviour: an asssignment to an exported toplevel variable executed in a different compilation unit or in evaluated code will possibly not be seen by code executing in the current compilation unit.
 
+; -module : wraps the compiled code in an implicit module named {{main}}, importing the {{scheme}} and {{chicken}} modules.
+
 ; -no-argc-checks : disable argument count checks
 
 ; -no-bound-checks : disable bound variable checks

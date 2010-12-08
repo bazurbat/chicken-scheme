@@ -140,7 +140,7 @@
     -no-symbol-escape -no-parentheses-synonyms -r5rs-syntax
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
     -emit-all-import-libraries -setup-mode -unboxing -no-elevation -no-module-registration
-    -no-procedure-checks-for-usual-bindings
+    -no-procedure-checks-for-usual-bindings -module
     -no-procedure-checks-for-toplevel-bindings))
 
 (define-constant complex-options
@@ -150,12 +150,15 @@
     -disable-warning			; OBSOLETE
     -emit-inline-file -types
     -feature -debug-level -heap-growth -heap-shrinkage -heap-initial-size -consult-inline-file
-    -emit-import-library -static-extension -no-feature))
+    -emit-import-library
+    -static-extension 			; DEPRECATED
+    -no-feature))
 
 (define-constant shortcuts
   '((-h "-help")
     (-s "-shared")
     (-S "-scrutinize")
+    (-M "-module")
     (|-P| "-check-syntax")
     (|-V| "-version")
     (-f "-fixnum-arithmetic")
@@ -322,11 +325,11 @@ Usage: #{csc} FILENAME | OPTION ...
   Syntax related options:
 
     -i -case-insensitive           don't preserve case of read symbols    
-    -K  -keyword-style STYLE       enable alternative keyword-syntax
+    -K -keyword-style STYLE        enable alternative keyword-syntax
                                     (prefix, suffix or none)
-        -no-parentheses-synonyms   disables list delimiter synonyms
-        -no-symbol-escape          disables support for escaped symbols
-        -r5rs-syntax               disables the Chicken extensions to
+       -no-parentheses-synonyms    disables list delimiter synonyms
+       -no-symbol-escape           disables support for escaped symbols
+       -r5rs-syntax                disables the Chicken extensions to
                                     R5RS syntax
     -compile-syntax                macros are made available at run-time
     -j -emit-import-library MODULE write compile-time module information into
@@ -334,6 +337,7 @@ Usage: #{csc} FILENAME | OPTION ...
     -J -emit-all-import-libraries  emit import-libraries for all defined modules
     -no-module-registration        do not generate module registration code
     -no-compiler-syntax            disable expansion of compiler-macros
+    -M -module                     wrap compiled code into implicit module
 
   Translation options:
 
@@ -432,8 +436,6 @@ Usage: #{csc} FILENAME | OPTION ...
     -static-libs                   link with static CHICKEN libraries
     -static                        generate completely statically linked
                                     executable
-    -static-extension NAME         link extension NAME statically
-                                    (if available)
     -F<DIR>                        pass \"-F<DIR>\" to C compiler
                                     (add framework header path on Mac OS X)
     -framework NAME                passed to linker on Mac OS X
@@ -626,7 +628,7 @@ EOF
 		(set! required-extensions (append required-extensions (list (car rest))))
 		(t-options "-require-extension" (car rest))
 		(set! rest (cdr rest)) ]
-	       [(-static-extension)
+	       [(-static-extension)	;DEPRECATED
 		(check s rest)
 		(set! static-extensions (append static-extensions (list (car rest))))
 		(t-options "-static-extension" (car rest))

@@ -408,11 +408,11 @@ Returns a keyword with the name {{STRING}}.
 
 <procedure>(argv)</procedure>
 
-Return a list of all supplied command-line arguments. The first item in
-the list is a string containing the name of the executing program. The
-other items are the arguments passed to the application. This list is
-freshly created on every invocation of {{(argv)}}. It depends on
-the host-shell whether arguments are expanded ('globbed') or not.
+Return a list of all supplied command-line arguments. The first item
+in the list is a string containing the name of the executing
+program. The other items are the arguments passed to the
+application. It depends on the host-shell whether arguments are
+expanded ('globbed') or not.
 
 
 ==== exit
