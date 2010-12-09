@@ -1275,7 +1275,8 @@ Usage: chicken FILENAME OPTION ...
     -accumulate-profile          executable emits profiling information in
                                   append mode
     -no-lambda-info              omit additional procedure-information
-    -scrutinize                  perform local flow analysis
+    -scrutinize                  perform local flow analysis for static checks
+    -picky                       perform more static checks (implies -scrutinize)
     -types FILENAME              load additional type database
 
   Optimization options:

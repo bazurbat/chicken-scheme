@@ -139,7 +139,7 @@
     -no-symbol-escape -no-parentheses-synonyms -r5rs-syntax
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
     -emit-all-import-libraries -setup-mode -unboxing -no-elevation -no-module-registration
-    -no-procedure-checks-for-usual-bindings -module
+    -no-procedure-checks-for-usual-bindings -module -picky
     -no-procedure-checks-for-toplevel-bindings))
 
 (define-constant complex-options
@@ -357,6 +357,7 @@ Usage: #{csc} FILENAME | OPTION ...
     -profile-name FILENAME         name of the generated profile information
                                     file
     -S  -scrutinize                perform local flow analysis
+    -picky                         perform more static checks (implies -scrutinize)
     -types FILENAME                load additional type database
 
   Optimization options:

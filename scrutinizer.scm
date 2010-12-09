@@ -532,7 +532,7 @@
     (let ((subs (node-subexpressions n))
 	  (params (node-parameters n)) 
 	  (class (node-class n)) )
-      (d "walk: ~a ~a (loc: ~a, dest: ~a, tail: ~a)" class params loc dest tail)
+      (d "walk: ~a ~a (loc: ~a, dest: ~a, tail: ~a, e: ~a)" class params loc dest tail e)
       (let ((results
 	     (case class
 	       ((quote) (list (constant-result (first params))))
@@ -541,15 +541,16 @@
 	       ((##core#global-ref) (global-result (first params) loc))
 	       ((##core#variable) (variable-result (first params) e loc))
 	       ((if)
-		(let ((rt (single "in conditional" (walk (first subs) e loc dest #f) loc))
+		(let ((rt (single "in conditional" (walk (first subs) e loc #f #f) loc))
 		      (c (second subs))
 		      (a (third subs)))
 		  (always-true rt loc n)
 		  (let ((r1 (walk c e loc dest tail))
 			(r2 (walk a e loc dest tail)))
-		    ;;XXX this is too heavy, perhaps provide "style" warnings?
 		    ;;XXX this could also check for noreturn (same as undefined)
-		    #;(when (and tail
+		    (when (and tail
+			       (eq? 'picky do-scrutinize)
+			       (<= (length loc) 1)
 			       (if (eq? '##core#undefined (node-class c))
 				   (and (not (eq? '##core#undefined (node-class a)))
 					(not (self-call? a loc)))
