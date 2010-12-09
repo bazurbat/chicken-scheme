@@ -174,7 +174,7 @@
     (-b "-block") ) )
 
 (define short-options
-  (string->list "PHhsfiENxubvwAOeWkctgSJ") )
+  (string->list "PHhsfiENxubvwAOeWkctgSJM") )
 
 
 ;;; Variables:
