@@ -79,6 +79,8 @@ DISTFILES = $(filter-out runtime.c,$(LIBCHICKEN_OBJECTS_1:=.c)) \
 	$(UTILITY_PROGRAM_OBJECTS_1:=.c) \
 	$(ALWAYS_STATIC_UTILITY_PROGRAM_OBJECTS_1:=.c) \
 	$(COMPILER_OBJECTS_1:=.c) \
+	$(SETUP_API_OBJECTS_1:=.c) \
+	$(SETUP_API_OBJECTS_1:=.import.scm) $(SETUP_API_OBJECTS_1:=.import.c) \
 	$(IMPORT_LIBRARIES:=.import.c) \
 	posixunix.c posixwin.c
 # Remove the duplicate $(POSIXFILE) entry:
@@ -587,9 +589,7 @@ clean:
 	  $(LIBCHICKEN_SO_FILE) \
 	  libchicken$(A) libchicken$(SO) $(PROGRAM_IMPORT_LIBRARIES) \
 	  $(IMPORT_LIBRARIES:=.import.so) $(LIBCHICKEN_IMPORT_LIBRARY) \
-	  setup-api.so setup-api.import.scm setup-download.so \
-	  setup-download.import.scm \
-	  setup-api.c setup-download.c
+	  $(SETUP_API_OBJECTS_1:=.so) $(SETUP_API_OBJECTS_1:=.import.so)
 ifdef USES_SONAME
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) libchicken.so.$(BINARYVERSION)
 endif
