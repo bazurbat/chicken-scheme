@@ -134,11 +134,13 @@
     (cond ((lookup name me) =>
 	   (lambda (a)
 	     (set-car! a se)
-	     (set-car! (cdr a) handler) ) )
+	     (set-car! (cdr a) handler)
+	     a))
 	  (else 
-	   (##sys#macro-environment
-	    (cons (list name se handler)
-		  me))))))
+	   (let ((data (list se handler)))
+	     (##sys#macro-environment
+	      (cons (cons name data) me))
+	     data)))))
 
 (define (##sys#copy-macro old new)
   (let ((def (lookup old (##sys#macro-environment))))
@@ -504,7 +506,7 @@
 			       (else def))
 			 defs) 
 		   #f)))
-	       (else (loop body defs #t))))))		       
+	       (else (loop body defs #t))))))
     (define (expand body)
       (let loop ([body body] [vars '()] [vals '()] [mvars '()] [mvals '()])
 	(if (not (pair? body))
@@ -515,8 +517,10 @@
 		   (head (and exp1
 			      (symbol? exp1)
 			      (or (lookup exp1 se) exp1))))
-	      (cond [(not (symbol? head)) (fini vars vals mvars mvals body)]
-		    [(eq? 'define (or (lookup head se) head))
+	      (if (not (symbol? head))
+		  (fini vars vals mvars mvals body)
+		  (case head
+		    ((define)
 		     (##sys#check-syntax 'define x '(_ _ . #(_ 0)) #f se)
 		     (let loop2 ([x x])
 		       (let ([head (cadr x)])
@@ -542,23 +546,24 @@
 				(loop rest
 				      (cons (car head) vars)
 				      (cons `(##core#lambda ,(cdr head) ,@(cddr x)) vals)
-				      mvars mvals) ] ) ) ) ]
-		    ((eq? 'define-syntax (or (lookup head se) head))
+				      mvars mvals) ] ) ) ) )
+		    ((define-syntax)
 		     (##sys#check-syntax 'define-syntax x '(_ _ . #(_ 1)) se)
 		     (fini/syntax vars vals mvars mvals body) )
-		    [(eq? 'define-values (or (lookup head se) head))
-		     ;;XXX check for any of the variables being `define-values' (?)
+		    ((define-values)
+		     ;;XXX check for any of the variables being `define-values'
 		     (##sys#check-syntax 'define-values x '(_ #(_ 0) _) #f se)
-		     (loop rest vars vals (cons (cadr x) mvars) (cons (caddr x) mvals)) ]
-		    [(eq? '##core#begin head)
-		     (loop (##sys#append (cdr x) rest) vars vals mvars mvals) ]
-		    ((or (memq head vars) (memq head mvars))
-		     (fini vars vals mvars mvals body))
-		    [else
-		     (let ([x2 (##sys#expand-0 x se cs?)])
-		       (if (eq? x x2)
-			   (fini vars vals mvars mvals body)
-			   (loop (cons x2 rest) vars vals mvars mvals) ) ) ] ) ) ) ) )
+		     (loop rest vars vals (cons (cadr x) mvars) (cons (caddr x) mvals)))
+		    ((##core#begin)
+		     (loop (##sys#append (cdr x) rest) vars vals mvars mvals) )
+		    (else
+		     (if (or (memq head vars) (memq head mvars))
+			 (fini vars vals mvars mvals body)
+			 (let ((x2 (##sys#expand-0 x se cs?)))
+			   (if (eq? x x2)
+			       (fini vars vals mvars mvals body)
+			       (loop (cons x2 rest)
+				     vars vals mvars mvals) ) ) ) ) ) ) ) ) ) )
     (expand body) ) )
 
 
