@@ -2809,12 +2809,16 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
       else {
 	j = fcount = 0;
 
+	/* move into pending */
 	for(flist = finalizer_list; flist != NULL; flist = flist->next) {
 	  if(j < C_max_pending_finalizers) {
 	    if(!is_fptr(C_block_header(flist->item))) 
 	      pending_finalizer_indices[ j++ ] = flist;
 	  }
+	}
 
+	/* mark */
+	for(flist = finalizer_list; flist != NULL; flist = flist->next) {
 	  mark(&flist->item);
 	  mark(&flist->finalizer);
 	}
@@ -2829,7 +2833,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
       finalizers_checked = 1;
 
       if(pending_finalizer_count > 0 && gc_report_flag)
-	C_dbg(C_text("GC"), C_text("finalizers pending for rescan:\t %d (%d live)\n"), 
+	C_dbg(C_text("GC"), C_text("%d finalizer(s) pending (%d live)\n"), 
 	      pending_finalizer_count, live_finalizer_count);
 
       goto rescan;
@@ -2839,7 +2843,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 	 (and release finalizer node): */
       if(pending_finalizer_count > 0) {
 	if(gc_report_flag)
-	  C_dbg(C_text("GC"), C_text("queueing %d finalizers\n"), pending_finalizer_count);
+	  C_dbg(C_text("GC"), C_text("queueing %d finalizer(s)\n"), pending_finalizer_count);
 
 	last = C_block_item(pending_finalizers_symbol, 0);
 	assert(C_u_i_car(last) == C_fix(0));
