@@ -397,7 +397,7 @@
 (reset-handler (procedure reset-handler (#!optional procedure) procedure))
 (return-to-host (procedure return-to-host () . *))
 (reverse-list->string (procedure reverse-list->string (list) string))
-(set-finalizer! (procedure set-finalizer! (* (procedure (*) . *)) undefined))
+(set-finalizer! (procedure set-finalizer! (* (procedure (*) . *)) *))
 (set-gc-report! (procedure set-gc-report! (*) undefined))
 (set-parameterized-read-syntax! (procedure set-parameterized-read-syntax! (char procedure) undefined))
 (set-port-name! (procedure set-port-name! (port string) undefined))
