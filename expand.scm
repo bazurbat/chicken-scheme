@@ -94,6 +94,7 @@
                           (lookup x se)
                           (getp x '##core#macro-alias) ) ) )
               (cond ((getp x '##core#real-name))
+                    ((getp x '##core#primitive))
                     ((and alias (not (assq x se)))
                      (##sys#alias-global-hook x #f #f))
                     ((not x2) x)

@@ -99,6 +99,32 @@
   (strlen-safe-macro* "hello, world")
   (strlen-primitive-macro "hello, world"))
 
+;; Type specifiers and variable names in foreign-lambda in macros
+;; are incorrectly renamed in modules, too.
+(foreign-declare "void foo(void *abc) { printf(\"hi\\n\"); }")
+
+(module foo ()
+  (import chicken scheme foreign) ; "chicken" includes an export for "void"
+  
+  (let-syntax ((fl
+                (syntax-rules ()
+                  ((_)
+                   (foreign-lambda void foo (c-pointer void)))))
+               (fl*
+                (syntax-rules ()
+                  ((_)
+                   (foreign-lambda* void (((c-pointer void) a))
+                                    "C_return(a);"))))
+               (fp
+                (syntax-rules ()
+                  ((_)
+                   (foreign-primitive void (((c-pointer void) a))
+                                      "C_return(a);")))))
+    (fl)
+    (fl*)
+    (fp)))
+
+
 ;;; compiler-syntax for map/for-each must be careful when the
 ;   operator may have side-effects (currently only lambda exprs and symbols
 ;   are allowed)
