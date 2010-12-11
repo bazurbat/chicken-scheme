@@ -737,7 +737,8 @@ are called on normal program exit. Finalizers are not run on
 abnormal program exit. A normal program exit does not run finalizers
 that are still reachable from global data. 
 
-Multiple finalizers can be registered for the same object.
+Multiple finalizers can be registered for the same object. The order
+in which the finalizers run is undefined.
 
 
 ==== set-gc-report!
