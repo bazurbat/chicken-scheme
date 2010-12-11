@@ -775,6 +775,7 @@
 	     (lambda (a)
 	       (cond ((symbol? a)
 		      (dd `(RENAME/LOOKUP: ,sym --> ,a))
+                      (set! renv (cons (cons sym a) renv))
 		      a)
 		     (else
 		      (let ((a2 (macro-alias sym se)))
@@ -829,6 +830,11 @@
 		r)
 	    ")")
 	r))
+    (define (assq-reverse s l)
+      (cond
+       ((null? l) #f)
+       ((eq? (cdar l) s) (car l))
+       (else (assq-reverse s (cdr l)))))
     (define (mirror-rename sym)
       (cond ((pair? sym)
 	     (cons (mirror-rename (car sym)) (mirror-rename (cdr sym))))
@@ -841,6 +847,9 @@
                       (lambda (name)
                         (dd "STRIP SYNTAX ON " sym " ---> " name)
                         name))
+                     ((assq-reverse sym renv) =>
+                      (lambda (a)
+                        (dd "REVERSING RENAME: " sym " --> " (car a)) (car a)))
                      ((not renamed)
                       (dd "IMPLICITLY RENAMED: " sym) (rename sym))
                      ((pair? renamed)

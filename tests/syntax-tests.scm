@@ -587,6 +587,16 @@
       (1 ==> (lambda (x) x))
       (else 'yep))))
 
+;; Literal quotation of a symbol, injected or not, should always result in that symbol
+(module ir-se-test (run)
+  (import chicken scheme)
+  (define-syntax run
+    (ir-macro-transformer
+     (lambda (e i c)
+       `(quote ,(i 'void))))))
+
+(import ir-se-test)
+(t 'void (run))
 
 ;;; local definitions
 
