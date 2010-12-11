@@ -15,9 +15,10 @@
 (define-syntax f
   (syntax-rules ()
     ((_ x)
-     (handle-exceptions ex (void)
-       x
-       (error "test returned, but should have failed" 'x) ))))
+     (let ((got-error #f))
+      (handle-exceptions ex (set! got-error #t) x)
+      (unless got-error
+        (error "test returned, but should have failed" 'x) )))))
 
 (t 3 3)
 
