@@ -426,7 +426,7 @@ install-other-files:
 
 install-wrappers:
 	$(foreach prg, $(INSTALLED_PROGRAMS), \
-		$(CSI) -s $(SRCDIR)scripts$(SEP)make-wrapper.scm $(prg) "$(IBINDIR)"
+		$(CSI) -s $(SRCDIR)scripts$(SEP)make-wrapper.scm $(prg) "$(WRAPPERDIR)"
 
 uninstall:
 	$(foreach prog,$(INSTALLED_PROGRAMS),\
