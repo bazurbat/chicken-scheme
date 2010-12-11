@@ -54,8 +54,7 @@ $(STANDARD_TARGETS):
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) $@
 
 dist:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) distfiles
-	csi -s scripts/makedist.scm
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) dist
 
 boot-chicken:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) boot-chicken
