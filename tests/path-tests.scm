@@ -53,6 +53,7 @@
 (test "a/b" (normalize-pathname "a/./././b" 'unix))
 (test "a/b" (normalize-pathname "a/b/c/d/../.." 'unix))
 (test "a/b/" (normalize-pathname "a/b/c/d/../../" 'unix))
+(test "../../foo" (normalize-pathname "../../foo" 'unix))
 
 (define home (get-environment-variable "HOME"))
 
