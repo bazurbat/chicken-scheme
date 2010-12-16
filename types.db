@@ -776,6 +776,7 @@
 (file-change-time (procedure file-change-time ((or string fixnum)) number))
 (file-close (procedure file-close (fixnum) undefined))
 (file-control (procedure file-control (fixnum fixnum #!optional fixnum) fixnum))
+(file-creation-mode (procedure file-creation-mode () fixnum))
 (file-execute-access? (procedure file-execute-access? (string) boolean))
 (file-link (procedure file-link (string string) undefined))
 (file-lock (procedure file-lock (port #!optional fixnum *) (struct lock)))

@@ -304,6 +304,8 @@ C_free_arg_string(char **where) {
 
 #define C_flushall()	    C_fix(_flushall())
 
+#define C_umask(m)          C_fix(_umask(C_unfix(m)))
+
 #define C_ctime(n)	    (C_secs = (n), ctime(&C_secs))
 
 #define C_tm_set_08(v) \
