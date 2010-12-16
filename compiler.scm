@@ -1923,7 +1923,7 @@
 	   (set-real-name! (first (node-parameters (or value pvalue))) sym) )
 
 	 ;; If this is the first analysis and the variable is global and has no references
-	 ;;  and we are in block mode, then issue warning:
+	 ;;  then issue warning:
 	 (when (and first-analysis 
 		    global
 		    (null? references)
