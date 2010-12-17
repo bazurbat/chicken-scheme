@@ -742,9 +742,9 @@ EOF
 		      [(memq s simple-options) (t-options arg)]
 		      [(memq s complex-options) 
 		       (check s rest)
-		       (let* ([n (car rest)]
-			      [ns (string->number n)] )
-			 (t-options arg n)
+		       (let* ((n (car rest))
+			      (ns (string->number n)) )
+			 (t-options arg (qs n))
 			 (set! rest (cdr rest)) ) ]
 		      [(and (> (string-length arg) 2) (string=? "-:" (substring arg 0 2)))
 		       (t-options arg) ]
