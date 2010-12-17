@@ -547,19 +547,6 @@
 		  (always-true rt loc n)
 		  (let ((r1 (walk c e loc dest tail))
 			(r2 (walk a e loc dest tail)))
-		    ;;XXX this could also check for noreturn (same as undefined)
-		    (when (and tail
-			       (eq? 'picky do-scrutinize)
-			       (<= (length loc) 1)
-			       (if (eq? '##core#undefined (node-class c))
-				   (and (not (eq? '##core#undefined (node-class a)))
-					(not (self-call? a loc)))
-				   (and (eq? '##core#undefined (node-class a))
-					(not (self-call? c loc)))))
-		      (report
-		       loc
-		       (sprintf "conditional in tail-position has branch with undefined result:~%~%~a"
-			 (pp-fragment n))))
 		    (cond ((and (not (eq? '* r1)) (not (eq? '* r2)))
 			   (when (and (not (any noreturn-type? r1))
 				      (not (any noreturn-type? r2))

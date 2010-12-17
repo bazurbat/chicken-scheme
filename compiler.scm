@@ -1923,19 +1923,16 @@
 	   (set-real-name! (first (node-parameters (or value pvalue))) sym) )
 
 	 ;; If this is the first analysis and the variable is global and has no references
-	 ;;  then issue warning:
+	 ;;  and is hidden then issue warning:
 	 (when (and first-analysis 
 		    global
 		    (null? references)
-		    (not (variable-mark sym '##compiler#unused)))
-	   (when assigned-locally
-	     (##sys#notice 
-	      (sprintf "local assignment to unused variable `~S' may be unintended" sym) ) )
-	   (when (and (not (variable-visible? sym))
-		      (not (variable-mark sym '##compiler#constant)) )
-	     (##sys#notice 
-	      (sprintf "global variable `~S' is only locally visible and never used"
-		sym) ) ) )
+		    (not (variable-mark sym '##compiler#unused))
+		    (not (variable-visible? sym))
+		    (not (variable-mark sym '##compiler#constant)) )
+	   (##sys#notice 
+	    (sprintf "global variable `~S' is only locally visible and never used"
+	      sym) ) )
 
  	 ;; Make 'boxed, if 'assigned & 'captured:
 	 (when (and assigned captured)
