@@ -57,11 +57,9 @@
 (define (current-time)
   (##sys#make-structure 'time (current-milliseconds)))
 
-(define srfi-18:current-time current-time)    ; DEPRECATED
-
 (define (time->seconds tm)
   (##sys#check-structure tm 'time 'time->seconds)
-  (fp* (##sys#slot tm 1) 1000.0))
+  (fp/ (##sys#slot tm 1) 1000.0))
 
 (define (time->milliseconds tm)		; DEPRECATED
   (##sys#check-structure tm 'time 'time->milliseconds)
@@ -76,8 +74,6 @@
   (##sys#make-structure 'time (##sys#exact->inexact nms)))
 
 (define (time? x) (##sys#structure? x 'time))
-
-(define srfi-18:time? time?)    ; DEPRECATED
 
 
 ;;; Exception handling:
