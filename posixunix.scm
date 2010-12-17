@@ -199,6 +199,7 @@ static C_TLS struct stat C_statbuf;
 #define C_test_access(fn, m)     C_fix(access((char *)C_data_pointer(fn), C_unfix(m)))
 #define C_close(fd)         C_fix(close(C_unfix(fd)))
 #define C_sleep             sleep
+#define C_umask(m)          C_fix(umask(C_unfix(m)))
 
 #define C_lstat(fn)         C_fix(lstat((char *)C_data_pointer(fn), &C_statbuf))
 

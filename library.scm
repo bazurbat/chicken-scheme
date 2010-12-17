@@ -4414,7 +4414,7 @@ EOF
 	(set! working #t)
 	(let* ((c (##sys#slot ##sys#pending-finalizers 0)) )
 	  (when (##sys#fudge 13)
-	    (print "[debug] running " c " finalizers (" (##sys#fudge 26) " live, "
+	    (print "[debug] running " c " finalizer(s) (" (##sys#fudge 26) " live, "
 		   (##sys#fudge 27) " allocated) ..."))
 	  (do ([i 0 (fx+ i 1)])
 	      ((fx>= i c))

@@ -289,7 +289,7 @@ $(eval $(call declare-program-from-object,$(CHICKEN_BUG_PROGRAM)$(EXE),chicken-b
 # installation
 
 .PHONY: install uninstall install-libs
-.PHONY: install-target install-dev install-bin install-other-files
+.PHONY: install-target install-dev install-bin install-other-files install-wrappers
 
 install: $(TARGETS) install-target install-bin install-libs install-dev install-other-files
 
@@ -423,6 +423,10 @@ install-other-files:
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)LICENSE "$(DESTDIR)$(IDOCDIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)setup.defaults "$(DESTDIR)$(IDATADIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)chicken.png "$(DESTDIR)$(IDATADIR)"
+
+install-wrappers:
+	$(foreach prg, $(INSTALLED_PROGRAMS), \
+		$(CSI) -s $(SRCDIR)scripts$(SEP)make-wrapper.scm $(prg) "$(WRAPPERDIR)"
 
 uninstall:
 	$(foreach prog,$(INSTALLED_PROGRAMS),\
@@ -574,6 +578,8 @@ dist: distfiles html
 html:
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) $(SRCDIR)manual-html
 	manual-labor $(SRCDIR)manual $(SRCDIR)manual-html
+	$(COPY_COMMAND) $(SRCDIR)chicken.png manual-html
+	$(COPY_COMMAND) $(SRCDIR)index.html manual-html
 
 # cleaning up
 

@@ -15,9 +15,10 @@
 (define-syntax f
   (syntax-rules ()
     ((_ x)
-     (handle-exceptions ex (void)
-       x
-       (error "test returned, but should have failed" 'x) ))))
+     (let ((got-error #f))
+      (handle-exceptions ex (set! got-error #t) x)
+      (unless got-error
+        (error "test returned, but should have failed" 'x) )))))
 
 (t 3 3)
 
@@ -586,6 +587,16 @@
       (1 ==> (lambda (x) x))
       (else 'yep))))
 
+;; Literal quotation of a symbol, injected or not, should always result in that symbol
+(module ir-se-test (run)
+  (import chicken scheme)
+  (define-syntax run
+    (ir-macro-transformer
+     (lambda (e i c)
+       `(quote ,(i 'void))))))
+
+(import ir-se-test)
+(t 'void (run))
 
 ;;; local definitions
 

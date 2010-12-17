@@ -732,7 +732,13 @@ the finalizer will '''not''' be called while interrupts are disabled.
 This procedure returns {{X}}.
 
 Finalizers are invoked asynchronously, in the thread that happens
-to be currently running.
+to be currently running. Finalizers for data that has become garbage
+are called on normal program exit. Finalizers are not run on
+abnormal program exit. A normal program exit does not run finalizers
+that are still reachable from global data. 
+
+Multiple finalizers can be registered for the same object. The order
+in which the finalizers run is undefined.
 
 
 ==== set-gc-report!

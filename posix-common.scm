@@ -361,3 +361,16 @@ EOF
 			 (follow-symlinks #t))
 	    (##sys#find-files dir test action seed limit follow-symlinks dotfiles 'find-files))
 	  args))))
+
+
+;;; umask
+
+(define file-creation-mode
+  (getter-with-setter
+   (lambda ()
+     (let ((um (##core#inline "C_umask" 0)))
+       (##core#inline "C_umask" um)
+       um))
+   (lambda (um)
+     (##core#inline "C_umask" um))
+   "(file-creation-mode mode)"))

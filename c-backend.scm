@@ -1344,7 +1344,7 @@
       ((c-pointer) (sprintf "C_mpointer_or_false(&~a,(void*)" dest))
       ((integer integer32) (sprintf "C_int_to_num(&~a," dest))
       ((integer64) (sprintf "C_a_double_to_num(&~a," dest))
-      ((size_t) (sprintf "C_int_to_num(%~a,(int)" dest))
+      ((size_t) (sprintf "C_int_to_num(&~a,(int)" dest))
       ((unsigned-integer unsigned-integer32) (sprintf "C_unsigned_int_to_num(&~a," dest))
       ((long) (sprintf "C_long_to_num(&~a," dest))
       ((unsigned-long) (sprintf "C_unsigned_long_to_num(&~a," dest))

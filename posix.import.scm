@@ -99,6 +99,7 @@
    fifo?
    file-access-time
    file-change-time
+   file-creation-mode
    file-close
    file-control
    file-execute-access?

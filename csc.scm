@@ -816,6 +816,9 @@ EOF
 		 (if to-stdout 
 		     '("-to-stdout")
 		     `("-output-file" ,(quotewrap fc)) )
+		 (if (##sys#fudge 13)
+		     '("-:d")
+		     '())
 		 (map quote-option
 		      (append 
 		       extra-features
