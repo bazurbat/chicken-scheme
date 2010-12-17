@@ -367,10 +367,12 @@ EOF
 
 (define file-creation-mode
   (getter-with-setter
-   (lambda ()
-     (let ((um (##core#inline "C_umask" 0)))
-       (##core#inline "C_umask" um)
-       um))
+   (lambda (#!optional um)
+     (when um (##sys#check-exact um 'file-creation-mode))
+     (let ((um2 (##core#inline "C_umask" um)))
+       (unless um (##core#inline "C_umask" um2)
+       um2)))
    (lambda (um)
+     (##sys#check-exact um 'file-creation-mode)
      (##core#inline "C_umask" um))
    "(file-creation-mode mode)"))

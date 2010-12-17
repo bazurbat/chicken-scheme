@@ -538,6 +538,10 @@ Returns the initial file permissions used for newly created files
 
   (set! (file-creation-mode) MODE)
 
+or
+
+  (file-creation-mode MODE)
+
 where {{MODE}} is a bitwise combination of one or more of
 the {{perm/...}} flags.
 
