@@ -45,7 +45,6 @@
  canonicalize-begin-body
  canonicalize-expression
  check-and-open-input-file
- check-for-unsafe-toplevel-procedure-calls
  check-signature
  chop-extension
  chop-separator

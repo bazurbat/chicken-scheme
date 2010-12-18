@@ -974,7 +974,7 @@
 				(let ([x (car xs)]
 				      [r (cdr xs)] )
 				  (if (null? r)
-				      (list (walk x e se dest #f h))
+				      (list (walk x e se dest ldest h))
 				      (cons (walk x e se #f #f h) (fold r)) ) ) ) )
 			     '(##core#undefined) ) )
 
@@ -2087,39 +2087,6 @@
 
 
 ;;; Collect unsafe global procedure calls that are assigned:
-
-(define (check-for-unsafe-toplevel-procedure-calls node db)
-  (let ((procs '()))
-
-    (define (walk n)
-      (let ((subs (node-subexpressions n))
-	    (params (node-parameters n)) 
-	    (class (node-class n)) )
-	(case class
-	  ((##core#call)
-	   (let ((fun (first subs)))
-	     (when (memq (node-class fun) '(##core#variable ##core#global-ref))
-	       (let ((name (first (node-parameters fun))))
-		 (when (and ##sys#notices-enabled
-			    (get db name 'global)
-			    (get db name 'assigned)
-			    (variable-visible? name)
-			    (or no-global-procedure-checks
-				(variable-mark name '##compiler#always-bound-to-procedure))
-			    (not unsafe))
-		   (set! procs (lset-adjoin eq? procs name))))))
-	   (for-each walk subs))
-	  (else (for-each walk subs)))))
-
-    (when ##sys#notices-enabled
-      (walk node)
-      (when (pair? procs)
-	(##sys#notice
-	 "calls to the following non-intrinsic global procedures were declared to be unsafe even though they are externally visible:")
-	(newline (current-error-port))
-	(for-each (cute fprintf (current-error-port) "  ~S~%" <>) procs)
-	(flush-output (current-error-port))))))
-
 
 ;;; Convert closures to explicit data structures (effectively flattens function-binding structure):
 

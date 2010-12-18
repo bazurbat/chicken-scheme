@@ -604,7 +604,6 @@
 			      (let ((f inline-output-file))
 				(dribble "generating global inline file `~a' ..." f)
 				(emit-global-inline-file f db) ) )
-			    (check-for-unsafe-toplevel-procedure-calls node2 db)
 			    (begin-time)
 			    (set! node2 (perform-closure-conversion node2 db))
 			    (end-time "closure conversion")

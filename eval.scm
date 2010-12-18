@@ -1295,7 +1295,7 @@
     (do ((i 0 (fx+ i 1)))
 	((fx>= i n) (get-output-string out))
       (let ((c (string-ref str i)))
-	(if (and (not (char-alphabetic? c)) 
+	(if (and (not (char-alphabetic? c))
 		 (or (not (char-numeric? c)) (fx= i 0)))
 	    (let ((i (char->integer c)))
 	      (write-char #\_ out)
