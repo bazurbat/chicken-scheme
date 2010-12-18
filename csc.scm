@@ -743,7 +743,7 @@ EOF
 		       (check s rest)
 		       (let* ((n (car rest))
 			      (ns (string->number n)) )
-			 (t-options arg (qs n))
+			 (t-options arg n)
 			 (set! rest (cdr rest)) ) ]
 		      [(and (> (string-length arg) 2) (string=? "-:" (substring arg 0 2)))
 		       (t-options arg) ]
@@ -1014,7 +1014,7 @@ EOF
 
 ;;; Helper procedures:
 
-(define-constant +hairy-chars+ '(#\\ #\#))
+(define-constant +hairy-chars+ '(#\\ #\# #\$ #\?))
 
 (define (cleanup s)
   (let* ((q #f)
