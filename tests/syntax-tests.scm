@@ -714,3 +714,23 @@
             '(1 2))
        a))
 (f (eval '((cute + <...> 1) 1)))
+
+;; Let's internal defines properly compared to core define procedure when renamed
+(f (eval '(let-syntax ((foo (syntax-rules () ((_ x) (begin (define x 1))))))
+            (let () (foo a))
+            (print "1: " a))))
+
+(t '(a 1) (letrec-syntax ((define (syntax-rules () ((_ x y) (list 'x y))))
+                          (foo (syntax-rules () ((_ x) (define x 1)))))
+            (let () (foo a))))
+
+(t '(1) (let-syntax ((define (syntax-rules () ((_ x) (list x)))))
+          (let () (define 1))))
+
+;; Local override: not a macro
+(t '(1) (let ((define list)) (define 1)))
+
+;; Toplevel (no SE)
+(define-syntax foo (syntax-rules () ((_ x) (begin (define x 1)))))
+(foo a)
+(t 1 a)

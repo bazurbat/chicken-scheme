@@ -339,13 +339,14 @@
 				    `(##core#set! ,v ,a))
 				  vars aliases) ) ) ) ) ) ))))
 
-(##sys#extend-macro-environment
- 'define-values '()
- (##sys#er-transformer
-  (lambda (form r c)
-    (##sys#check-syntax 'define-values form '(_ #(variable 0) _))
-    (for-each (cut ##sys#register-export <> (##sys#current-module)) (cadr form))
-    `(,(r 'set!-values) ,@(cdr form)))))
+(set! ##sys#define-values-definition
+  (##sys#extend-macro-environment
+   'define-values '()
+   (##sys#er-transformer
+    (lambda (form r c)
+      (##sys#check-syntax 'define-values form '(_ #(variable 0) _))
+      (for-each (cut ##sys#register-export <> (##sys#current-module)) (cadr form))
+      `(,(r 'set!-values) ,@(cdr form))))))
 
 (##sys#extend-macro-environment
  'let-values '()

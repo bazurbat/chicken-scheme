@@ -442,8 +442,20 @@
 ;
 ; This code is disgustingly complex.
 
+(define ##sys#define-definition)
+(define ##sys#define-syntax-definition)
+(define ##sys#define-values-definition)
+
 (define ##sys#canonicalize-body
   (lambda (body #!optional (se (##sys#current-environment)) cs?)
+    (define (comp s id)
+      (let ((f (lookup id se)))
+	(or (eq? s f)
+	    (case s
+	      ((define) (if f (eq? f ##sys#define-definition) (eq? s id)))
+	      ((define-syntax) (if f (eq? f ##sys#define-syntax-definition) (eq? s id)))
+	      ((define-values) (if f (eq? f ##sys#define-values-definition) (eq? s id)))
+	      (else (eq? s id))))))
     (define (fini vars vals mvars mvals body)
       (if (and (null? vars) (null? mvars))
 	  (let loop ([body2 body] [exps '()])
@@ -455,8 +467,8 @@
 		  (if (and (pair? x) 
 			   (let ((d (car x)))
 			     (and (symbol? d)
-				  (or (eq? (or (lookup d se) d) 'define)
-				      (eq? (or (lookup d se) d) 'define-values)))) )
+				  (or (comp 'define d)
+				      (comp 'define-values d)))))
 		      (cons
 		       '##core#begin
 		       (##sys#append (reverse exps) (list (expand body2))))
@@ -492,7 +504,7 @@
 	       ((and (list? (car body))
 		     (>= 3 (length (car body))) 
 		     (symbol? (caar body))
-		     (eq? 'define-syntax (or (lookup (caar body) se) (caar body))))
+		     (comp 'define-syntax (caar body)))
 		(let ((def (car body)))
 		  (loop 
 		   (cdr body) 
@@ -515,13 +527,11 @@
 	    (let* ((x (car body))
 		   (rest (cdr body))
 		   (exp1 (and (pair? x) (car x)))
-		   (head (and exp1
-			      (symbol? exp1)
-			      (or (lookup exp1 se) exp1))))
+		   (head (and exp1 (symbol? exp1) exp1)))
 	      (if (not (symbol? head))
 		  (fini vars vals mvars mvals body)
-		  (case head
-		    ((define)
+		  (cond
+		   ((comp 'define head)
 		     (##sys#check-syntax 'define x '(_ _ . #(_ 0)) #f se)
 		     (let loop2 ([x x])
 		       (let ([head (cadr x)])
@@ -548,14 +558,14 @@
 				      (cons (car head) vars)
 				      (cons `(##core#lambda ,(cdr head) ,@(cddr x)) vals)
 				      mvars mvals) ] ) ) ) )
-		    ((define-syntax)
+		    ((comp 'define-syntax head)
 		     (##sys#check-syntax 'define-syntax x '(_ _ . #(_ 1)) se)
 		     (fini/syntax vars vals mvars mvals body) )
-		    ((define-values)
+		    ((comp 'define-values head)
 		     ;;XXX check for any of the variables being `define-values'
 		     (##sys#check-syntax 'define-values x '(_ #(_ 0) _) #f se)
 		     (loop rest vars vals (cons (cadr x) mvars) (cons (caddr x) mvals)))
-		    ((##core#begin)
+		    ((comp '##core#begin head)
 		     (loop (##sys#append (cdr x) rest) vars vals mvars mvals) )
 		    (else
 		     (if (or (memq head vars) (memq head mvars))
@@ -1107,54 +1117,56 @@
     (##sys#check-syntax 'begin x '(_ . #(_ 0)))
     `(##core#begin ,@(cdr x)))))
 
-(##sys#extend-macro-environment
- 'define
- '()
- (##sys#er-transformer
-  (lambda (x r c)
-    (##sys#check-syntax 'define x '(_ . #(_ 1)))
-    (let loop ((form x))
+(set! ##sys#define-definition
+  (##sys#extend-macro-environment
+   'define
+   '()
+   (##sys#er-transformer
+    (lambda (x r c)
+      (##sys#check-syntax 'define x '(_ . #(_ 1)))
+      (let loop ((form x))
+	(let ((head (cadr form))
+	      (body (cddr form)) )
+	  (cond ((not (pair? head))
+		 (##sys#check-syntax 'define form '(_ symbol . #(_ 0 1)))
+		 (##sys#register-export head (##sys#current-module))
+		 (when (c (r 'define) head)
+		   (##sys#defjam-error x))
+		 `(##core#set! 
+		   ,head 
+		   ,(if (pair? body) (car body) '(##core#undefined))) )
+		((pair? (car head))
+		 (##sys#check-syntax 'define form '(_ (_ . lambda-list) . #(_ 1)))
+		 (loop (##sys#expand-curried-define head body '())) ) ;XXX '() should be se
+		(else
+		 (##sys#check-syntax 'define form '(_ (symbol . lambda-list) . #(_ 1)))
+		 (loop (list (car x) (car head) `(##core#lambda ,(cdr head) ,@body)))))))))))
+
+(set! ##sys#define-syntax-definition
+  (##sys#extend-macro-environment
+   'define-syntax
+   '()
+   (##sys#er-transformer
+    (lambda (form r c)
       (let ((head (cadr form))
 	    (body (cddr form)) )
 	(cond ((not (pair? head))
-	       (##sys#check-syntax 'define form '(_ symbol . #(_ 0 1)))
+	       (##sys#check-syntax 'define-syntax head 'symbol)
+	       (##sys#check-syntax 'define-syntax body '#(_ 1))
 	       (##sys#register-export head (##sys#current-module))
-	       (when (c (r 'define) head)
-		 (##sys#defjam-error x))
-	       `(##core#set! 
-		 ,head 
-		 ,(if (pair? body) (car body) '(##core#undefined))) )
-	      ((pair? (car head))
-	       (##sys#check-syntax 'define form '(_ (_ . lambda-list) . #(_ 1)))
-	       (loop (##sys#expand-curried-define head body '())) ) ;XXX '() should be se
+	       (when (c (r 'define-syntax) head)
+		 (##sys#defjam-error form))
+	       `(##core#define-syntax ,head ,(car body)))
 	      (else
-	       (##sys#check-syntax 'define form '(_ (symbol . lambda-list) . #(_ 1)))
-	       (loop (list (car x) (car head) `(##core#lambda ,(cdr head) ,@body))))))))))
-
-(##sys#extend-macro-environment
- 'define-syntax
- '()
- (##sys#er-transformer
-  (lambda (form r c)
-    (let ((head (cadr form))
-	  (body (cddr form)) )
-      (cond ((not (pair? head))
-	     (##sys#check-syntax 'define-syntax head 'symbol)
-	     (##sys#check-syntax 'define-syntax body '#(_ 1))
-	     (##sys#register-export head (##sys#current-module))
-	     (when (c (r 'define-syntax) head)
-	       (##sys#defjam-error form))
-	     `(##core#define-syntax ,head ,(car body)))
-	    (else
-	     (##sys#check-syntax 'define-syntax head '(_ . lambda-list))
-	     (##sys#check-syntax 'define-syntax body '#(_ 1))
-	     (when (eq? (car form) (car head))
-	       (##sys#syntax-error-hook
-		"redefinition of `define-syntax' not allowed in syntax-definition"
-		form))
-	     `(##core#define-syntax 
-	       ,(car head)
-	       (##core#lambda ,(cdr head) ,@body))))))))
+	       (##sys#check-syntax 'define-syntax head '(_ . lambda-list))
+	       (##sys#check-syntax 'define-syntax body '#(_ 1))
+	       (when (eq? (car form) (car head))
+		 (##sys#syntax-error-hook
+		  "redefinition of `define-syntax' not allowed in syntax-definition"
+		  form))
+	       `(##core#define-syntax 
+		 ,(car head)
+		 (##core#lambda ,(cdr head) ,@body)))))))))
 
 (##sys#extend-macro-environment
  'let
