@@ -71,6 +71,10 @@ static WSADATA wsa;
 #include <sys/sockio.h>
 #endif
 
+#ifndef h_addr
+# define h_addr  h_addr_list[ 0 ]
+#endif
+
 static char addr_buffer[ 20 ];
 EOF
 ) )
