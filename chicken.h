@@ -39,6 +39,18 @@
 #define C_MAJOR_VERSION   4
 #define C_MINOR_VERSION   6
 
+#ifndef _ISOC99_SOURCE
+# define _ISOC99_SOURCE
+#endif
+
+#ifndef _BSD_SOURCE
+# define _BSD_SOURCE
+#endif
+
+#ifndef _SVID_SOURCE
+# define _SVID_SOURCE
+#endif
+
 /*
  * N.B. This file MUST not rely upon "chicken-config.h"
  */
@@ -98,6 +110,11 @@
 # include <kernel/image.h>
 #endif
 
+#ifndef _MSC_VAR
+# include <strings.h>
+#endif
+
+
 /* Byteorder in machine word */
 
 #if defined(__MINGW32__)
@@ -132,18 +149,12 @@
 # if HAVE_ALLOCA_H
 #  define alloca            _alloca
 # endif
-#elif !defined(__GNUC__) && !defined(__WATCOMC__)
-# if HAVE_ALLOCA_H
-#  include <alloca.h>
-# elif defined(_AIX)
-#   pragma alloca
-# elif !defined(alloca) /* predefined by HP cc +Olibcalls */
-    char *alloca ();
-# endif
-#elif (defined(__sun__) && defined(__svr4__)) || defined(__sgi__)
-# if HAVE_ALLOCA_H
-#  include <alloca.h>
-# endif
+#endif
+
+#ifdef HAVE_ALLOCA_H
+# include <alloca.h>
+#elif !defined(alloca) /* predefined by HP cc +Olibcalls */
+   char *alloca ();
 #endif
 
 
@@ -795,7 +806,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 #define CHICKEN_global_ref(root)       C_u_i_car(((C_GC_ROOT *)(root))->value)
 #define CHICKEN_global_set(root, x)    C_mutate(&C_u_i_car(((C_GC_ROOT *)(root))->value), (x))
 
-#define CHICKEN_default_toplevel       ((void *)C_default_stub_toplevel)
+#define CHICKEN_default_toplevel       ((void *)C_default_5fstub_toplevel)
 
 #define C_align4(n)                (((n) + 3) & ~3)
 #define C_align8(n)                (((n) + 7) & ~7)
@@ -992,8 +1003,8 @@ extern double trunc(double);
 #define C_c_f64vector_or_null(x)   ((double *)C_srfi_4_vector_or_null(x))
 #define C_c_pointer_vector(x)      ((void **)C_data_pointer(C_block_item((x), 2)))
 
-#define C_isnan(f)                 (!((f) == (f)))
-#define C_isinf(f)                 ((f) == (f) + (f) && (f) != 0.0)
+#define C_isnan(f)                 isnan(f)
+#define C_isinf(f)                 isinf(f)
 
 #ifdef C_STRESS_TEST
 # define C_STRESS_FAILURE          3
@@ -1878,7 +1889,7 @@ C_fctexport  int  CHICKEN_eval_string(char * str,C_word *result);
 C_fctexport  int  CHICKEN_eval(C_word exp,C_word *result);
 C_fctexport  int  CHICKEN_yield();
 
-C_fctexport void C_default_stub_toplevel(C_word c,C_word d,C_word k) C_noret;
+C_fctexport void C_default_5fstub_toplevel(C_word c,C_word d,C_word k) C_noret;
 
 
 /* Inline functions: */
