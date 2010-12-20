@@ -107,7 +107,6 @@ chicken-config.h: chicken-defaults.h
 	echo "#define HAVE_WINDOWS_H 1" >>$@
 	echo "#define HAVE__STRTOI64 1" >>$@
 	echo "#define STDC_HEADERS 1" >>$@
-	echo "#define HAVE_ALLOCA_H 1" >>$@
 	echo "#define HAVE_DIRECT_H 1" >>$@
 	echo "#define HAVE_ERRNO_H 1" >>$@
 	echo "#define HAVE_GCVT 1" >>$@
