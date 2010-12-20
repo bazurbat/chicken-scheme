@@ -154,7 +154,7 @@
 #ifdef HAVE_ALLOCA_H
 # include <alloca.h>
 #elif !defined(alloca) /* predefined by HP cc +Olibcalls */
-   char *alloca ();
+void *alloca ();
 #endif
 
 
