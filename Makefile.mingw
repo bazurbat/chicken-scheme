@@ -166,7 +166,7 @@ endif
 	echo # define C_INSTALL_LIB_HOME "$(LIBDIR)" >>$@
 	echo #endif >>$@
 	echo #ifndef C_INSTALL_LIB_NAME >>$@
-	echo # define C_INSTALL_LIB_NAME "$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX))" >>$@
+	echo # define C_INSTALL_LIB_NAME "$(INSTALL_LIB_NAME)" >>$@
 	echo #endif >>$@
 	echo #ifndef C_INSTALL_STATIC_LIB_HOME >>$@
 	echo # define C_INSTALL_STATIC_LIB_HOME "$(LIBDIR)" >>$@
@@ -226,7 +226,7 @@ endif
 	echo # define C_TARGET_LIB_HOME "$(TARGET_PREFIX)/lib" >>$@
 	echo #endif >>$@
 	echo #ifndef C_TARGET_LIB_NAME >>$@
-	echo # define C_TARGET_LIB_NAME "$(INSTALL_LIB_NAME)" >>$@
+	echo # define C_TARGET_LIB_NAME "$(TARGET_LIB_NAME)" >>$@
 	echo #endif >>$@
 	echo #ifndef C_TARGET_RUN_LIB_HOME >>$@
 	echo # define C_TARGET_RUN_LIB_HOME "$(TARGET_PREFIX)/lib" >>$@

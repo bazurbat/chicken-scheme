@@ -83,6 +83,7 @@ ICHICKENLIBDIR = $(CHICKENLIBDIR)
 IEGGDIR = $(EGGDIR)
 endif
 
+INSTALL_LIB_NAME = $(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
 RUNTIME_LINKER_PATH ?= .
 
 # commands
@@ -140,6 +141,7 @@ TARGET_LIBRARIES ?= $(LIBRARIES)
 TARGET_LINKER_OPTIONS ?= $(LINKER_OPTIONS)
 TARGET_LINKER_OPTIMIZATION_OPTIONS ?= $(LINKER_OPTIMIZATION_OPTIONS)
 TARGET_FEATURES ?=
+TARGET_LIB_NAME ?= $(INSTALL_LIB_NAME)
 
 ifneq ($(TARGET_C_COMPILER),$(C_COMPILER))
 CROSS_CHICKEN = 1
@@ -381,7 +383,7 @@ endif
 	echo "# define C_INSTALL_LIB_HOME \"$(LIBDIR)\"" >>$@
 	echo "#endif" >>$@
 	echo "#ifndef C_INSTALL_LIB_NAME" >>$@
-	echo "# define C_INSTALL_LIB_NAME \"$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX))\"" >>$@
+	echo "# define C_INSTALL_LIB_NAME \"$(INSTALL_LIB_NAME)\"" >>$@
 	echo "#endif" >>$@
 	echo "#ifndef C_INSTALL_STATIC_LIB_HOME" >>$@
 	echo "# define C_INSTALL_STATIC_LIB_HOME \"$(LIBDIR)\"" >>$@
@@ -441,7 +443,7 @@ endif
 	echo "# define C_TARGET_LIB_HOME \"$(TARGET_PREFIX)/lib\"" >>$@
 	echo "#endif" >>$@
 	echo "#ifndef C_TARGET_LIB_NAME" >>$@
-	echo "# define C_TARGET_LIB_NAME \"$(INSTALL_LIB_NAME)\"" >>$@
+	echo "# define C_TARGET_LIB_NAME \"$(TARGET_LIB_NAME)\"" >>$@
 	echo "#endif" >>$@
 	echo "#ifndef C_TARGET_RUN_LIB_HOME" >>$@
 	echo "# define C_TARGET_RUN_LIB_HOME \"$(TARGET_RUN_PREFIX)/lib\"" >>$@

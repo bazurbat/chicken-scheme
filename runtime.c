@@ -5790,11 +5790,9 @@ void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...)
   buf[ 2 ] = k;
   C_memcpy(&buf[ 3 ], C_temporary_stack_limit, n * sizeof(C_word));
   proc = (void *)C_block_item(fn2, 0);
-# ifdef __GNUC__
   C_do_apply_hack(proc, buf, n + 3);
-# else
+#else
   C_do_apply(n, fn2, k);
-# endif
 #endif
 }
 
