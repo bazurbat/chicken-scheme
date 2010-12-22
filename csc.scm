@@ -633,8 +633,7 @@ EOF
 		(use-private-repository))
 	       ((-no-elevation)
 		(set! generate-manifest #t))
-	       [(-gui
-		 -windows |-W|)		;DEPRECATED
+	       [(-gui)
 		(set! gui #t)
 		(set! compile-options (cons "-DC_GUI" compile-options))
 		(set! object-files 

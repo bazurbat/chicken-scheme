@@ -42,9 +42,6 @@ EOF
 
 (define (identity x) x)
 
-(define (project n)			; DEPRECATED
-  (lambda args (list-ref args n)) )
-
 (define (conjoin . preds)
   (lambda (x)
     (let loop ([preds preds])

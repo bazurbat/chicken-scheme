@@ -39,7 +39,6 @@
    make-condition-variable
    make-mutex
    make-thread
-   milliseconds->time			; DEPRECATED
    mutex-lock!
    mutex-name
    mutex-specific
@@ -49,8 +48,6 @@
    mutex?
    raise
    seconds->time
-   srfi-18:current-time
-   srfi-18:time?
    terminated-thread-exception?
    thread-join!
    thread-name
@@ -68,7 +65,6 @@
    thread-wait-for-i/o!
    thread-yield!
    thread?
-   time->milliseconds			; DEPRECATED
    time->seconds
    time?
    uncaught-exception-reason

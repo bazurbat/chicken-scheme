@@ -61,17 +61,9 @@
   (##sys#check-structure tm 'time 'time->seconds)
   (fp/ (##sys#slot tm 1) 1000.0))
 
-(define (time->milliseconds tm)		; DEPRECATED
-  (##sys#check-structure tm 'time 'time->milliseconds)
-  (##sys#slot tm 1))
-
 (define (seconds->time n)
   (##sys#check-number n 'seconds->time)
   (##sys#make-structure 'time (fp* (##sys#exact->inexact n) 1000.0)))
-
-(define (milliseconds->time nms)	; DEPRECATED
-  (##sys#check-number nms 'milliseconds->time)
-  (##sys#make-structure 'time (##sys#exact->inexact nms)))
 
 (define (time? x) (##sys#structure? x 'time))
 

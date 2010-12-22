@@ -58,7 +58,6 @@
    none?
    noop					;DEPRECATED
    o
-   project
    queue->list
    queue-add!
    queue-empty?

@@ -626,30 +626,6 @@ EOF
     new ) )
 
 
-;;; Access computed globals: 
-
-;;DEPRECATED
-(define (global-ref sym)
-  (##sys#check-symbol sym 'global-ref)
-  (##core#inline "C_retrieve" sym) )
-
-;;DEPRECATED
-(define (global-set! sym x)
-  (##sys#check-symbol sym 'global-set!)
-  (##sys#setslot sym 0 x) )
-
-;;DEPRECATED
-(define (global-bound? sym)
-  (##sys#check-symbol sym 'global-bound?)
-  (##sys#symbol-has-toplevel-binding? sym) )
-
-;;DEPRECATED
-(define (global-make-unbound! sym)
-  (##sys#check-symbol sym 'global-make-unbound!)
-  (##sys#setslot sym 0 (##sys#slot '##sys#arbitrary-unbound-symbol 0))
-  sym )
-
-
 ;;; pointer vectors
 
 (define make-pointer-vector
