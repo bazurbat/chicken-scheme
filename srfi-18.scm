@@ -445,14 +445,13 @@
 
 ;;; Don't block in the repl: (by Chris Double)
 
-(unless (eq? (build-platform) 'msvc)
-  (set! ##sys#read-prompt-hook
-    (let ([old ##sys#read-prompt-hook])
-      (lambda ()
-	(when (or (##sys#fudge 12) (##sys#tty-port? ##sys#standard-input))
-	  (old)
-	  (##sys#thread-block-for-i/o! ##sys#current-thread 0 #:input)
-	  (thread-yield!)))) ) )
+(set! ##sys#read-prompt-hook
+  (let ([old ##sys#read-prompt-hook])
+    (lambda ()
+      (when (or (##sys#fudge 12) (##sys#tty-port? ##sys#standard-input))
+	(old)
+	(##sys#thread-block-for-i/o! ##sys#current-thread 0 #:input)
+	(thread-yield!)))) )
 
 
 ;;; Waiting for I/O on file-descriptor

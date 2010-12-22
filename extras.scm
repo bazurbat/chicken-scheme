@@ -343,7 +343,6 @@
 					     (out (if (fx> code #xffff) "U" "u") col)
 					     (out (number->string code 16) col) ]
 					    [else (out (make-string 1 obj) col)] ) ) ) )
-	    ((eof-object? obj)  (out "#<eof>" col))
 	    ((##core#inline "C_undefinedp" obj) (out "#<unspecified>" col))
 	    ((##core#inline "C_anypointerp" obj) (out (##sys#pointer->string obj) col))
 	    ((eq? obj (##sys#slot '##sys#arbitrary-unbound-symbol 0))

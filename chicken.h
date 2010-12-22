@@ -83,7 +83,7 @@
 # define C_GNU_ENV
 #endif
 
-#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__WATCOMC__) || defined(__MWERKS__) || defined(__DJGPP__)
+#if defined(__MINGW32__) || defined(__WATCOMC__) || defined(__MWERKS__)
 # define C_NONUNIX
 #endif
 
@@ -135,21 +135,11 @@
 # include <sys/byteorder.h>
 #endif
 
-#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__WATCOMC__)
+#if defined(__MINGW32__) || defined(__WATCOMC__)
 # include <malloc.h>
 #endif
 
-#ifdef _MSC_VER
-# include <io.h>
-#endif
-
 /* Much better with stack allocation API */
-
-#if defined(_MSC_VER)
-# if HAVE_ALLOCA_H
-#  define alloca            _alloca
-# endif
-#endif
 
 #ifdef HAVE_ALLOCA_H
 # include <alloca.h>
@@ -182,20 +172,6 @@ void *alloca ();
 
 /* Make sure some common C identifiers are availble w/ Windows */
 
-#ifdef _MSC_VER
-# define strncasecmp       strnicmp
-# define isatty            _isatty
-typedef __int8             int8_t;
-typedef unsigned __int8    uint8_t;
-typedef __int16            int16_t;
-typedef unsigned  __int16  uint16_t;
-typedef __int32            int32_t;
-typedef unsigned __int32   uint32_t;
-typedef __int64            int64_t;
-typedef unsigned __int64   uint64_t;
-# pragma warning(disable: 4101)
-#endif
-
 /* Could be used by C++ source */
 
 #ifdef __cplusplus
@@ -222,23 +198,6 @@ typedef unsigned __int64   uint64_t;
 #  ifndef C_BUILDING_LIBCHICKEN
 #   undef  C_varextern
 #   define C_varextern             C_extern __declspec(dllimport)
-#  endif
-# elif defined(_MSC_VER)
-#  undef  C_fctimport
-#  define C_fctimport              __declspec(dllexport)
-#  undef  C_externimport
-#  undef  C_externexport
-#  define C_externexport           C_extern __declspec(dllexport)
-#  undef  C_varextern
-#  undef  C_fctexport
-#  ifdef C_BUILDING_LIBCHICKEN
-#   define C_varextern             C_extern __declspec(dllexport)
-#   define C_fctexport             __declspec(dllexport)
-#   define C_externimport          C_extern __declspec(dllexport)
-#  else
-#   define C_varextern             C_extern __declspec(dllimport)
-#   define C_fctexport             __declspec(dllimport)
-#   define C_externimport          C_extern __declspec(dllimport)
 #  endif
 # elif defined(__WATCOMC__)
 #  undef  C_fctimport
@@ -276,8 +235,6 @@ typedef unsigned __int64   uint64_t;
 # if defined(__i386__) && !defined(__clang__)
 #  define C_regparm               __attribute__ ((regparm(3)))
 # endif
-#elif defined(_MSC_VER)
-# define C_fcall                  __fastcall
 #elif defined(__WATCOMC__)
 # define C_ccall                  __cdecl
 #endif
@@ -317,8 +274,6 @@ typedef unsigned __int64   uint64_t;
 #ifdef C_ENABLE_TLS
 # if defined(__GNUC__)
 #  define C_TLS                    __thread
-# elif defined(_MSC_VER)
-#  define C_TLS                    __declspec(thread)
 # endif
 #endif
 
@@ -535,7 +490,7 @@ typedef unsigned __int64   uint64_t;
 # define C_s32                    int
 #endif
 
-#if defined(_MSC_VER) || defined (__MINGW32__)
+#if defined (__MINGW32__)
 # define C_s64                    __int64
 # define C_u64                    unsigned __int64
 #else
@@ -640,8 +595,6 @@ typedef unsigned __int64   uint64_t;
 
 #if defined(__CYGWIN__)
 # define C_BUILD_PLATFORM "cygwin"
-#elif defined(_MSC_VER)
-# define C_BUILD_PLATFORM "msvc"
 #elif defined(__SUNPRO_C)
 # define C_BUILD_PLATFORM "sun"
 #elif defined(__MINGW32__)
@@ -658,16 +611,6 @@ typedef unsigned __int64   uint64_t;
 # define C_BUILD_PLATFORM "watcom"
 #else
 # define C_BUILD_PLATFORM "unknown"
-#endif
-
-#if defined(_MSC_VER)
-# if defined(_DLL)
-#   define C_RUNTIME_VERSION "dynamic"
-# else
-#   define C_RUNTIME_VERSION "static"
-# endif
-#else
-# define C_RUNTIME_VERSION "unknown"
 #endif
 
 #if defined(__linux__)
@@ -1715,7 +1658,6 @@ C_fctexport void C_ccall C_machine_type(C_word c, C_word closure, C_word k) C_no
 C_fctexport void C_ccall C_machine_byte_order(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_software_version(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_build_platform(C_word c, C_word closure, C_word k) C_noret;
-C_fctexport void C_ccall C_c_runtime(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_register_finalizer(C_word c, C_word closure, C_word k, C_word x, C_word proc) C_noret;
 C_fctexport void C_ccall C_set_dlopen_flags(C_word c, C_word closure, C_word k, C_word now, C_word global) C_noret;
 C_fctexport void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word entry, C_word reloadable) C_noret;

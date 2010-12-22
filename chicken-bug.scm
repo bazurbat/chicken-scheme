@@ -35,7 +35,7 @@
 
 (define (user-id)
   (cond-expand
-   ((or mingw32 msvc) "<not available>")
+   (mingw32 "<not available>")
    (else (user-information (current-user-id)))))
 
 (define (collect-info)

@@ -47,9 +47,7 @@
 # include <sysexits.h>
 #endif
 
-#if !defined(_MSC_VER)
-# include <unistd.h>
-#endif
+#include <unistd.h>
 
 #ifndef EX_SOFTWARE
 # define EX_SOFTWARE	70
@@ -3469,9 +3467,7 @@ EOF
   (let ([sym (string->symbol ((##core#primitive "C_build_platform")))])
     (lambda () sym) ) )
 
-(define c-runtime
-  (let ([sym (string->symbol ((##core#primitive "C_c_runtime")))])
-    (lambda () sym) ) )
+(define (c-runtime) 'unknown)		; DEPRECATED
 
 (define ##sys#windows-platform
   (and (eq? 'windows (software-type))

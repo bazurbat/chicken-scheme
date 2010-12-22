@@ -31,7 +31,7 @@
   (disable-interrupts)
   (compile-syntax)
   (foreign-declare #<<EOF
-#if (defined(_MSC_VER) && defined(_WIN32)) || defined(HAVE_DIRECT_H)
+#if defined(HAVE_DIRECT_H)
 # include <direct.h>
 #else
 # define _getcwd(buf, len)       NULL

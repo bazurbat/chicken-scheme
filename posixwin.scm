@@ -72,7 +72,7 @@
 # define WIN32_LEAN_AND_MEAN
 #endif
 
-#if (_MSC_VER > 1300) || (defined(HAVE_WINSOCK2_H) && defined(HAVE_WS2TCPIP_H))
+#if (defined(HAVE_WINSOCK2_H) && defined(HAVE_WS2TCPIP_H))
 # include <winsock2.h>
 # include <ws2tcpip.h>
 #else

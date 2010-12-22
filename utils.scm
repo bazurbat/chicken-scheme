@@ -60,7 +60,7 @@
 
 (define (qs str #!optional (platform (build-platform)))
   (case platform
-    ((mingw32 msvc)
+    ((mingw32)
      (string-append "\"" str "\""))
     (else
      (if (zero? (string-length str))
@@ -86,7 +86,7 @@
     (lambda (filename #!key (options '()) output-file (load #t))
       (let ((cscpath (or (file-exists? (make-pathname path csc)) "csc"))
 	    (tmpfile (and (not output-file) (create-temporary-file "so")))
-	    (crapshell (memq (build-platform) '(mingw32 msvc))))
+	    (crapshell (eq? (build-platform) 'mingw32)))
 	(print "; compiling " filename " ...")
 	(system* 
 	 "~a~a -s ~a ~a -o ~a~a" 

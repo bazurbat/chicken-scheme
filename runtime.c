@@ -110,23 +110,12 @@ static C_TLS int timezone;
 # endif
 #endif
 
-#ifdef _MSC_VER
-# define S_IFMT             _S_IFMT
-# define S_IFDIR            _S_IFDIR
-# define timezone           _timezone
-# if defined(_M_IX86)
-#  ifndef C_HACKED_APPLY
-#   define C_HACKED_APPLY
-#  endif
-# endif
-#else
-# ifdef C_HACKED_APPLY
-#  if defined(__MACH__) || defined(__MINGW32__) || defined(__CYGWIN__)
-extern void C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
-#  else
-extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
-#   define C_do_apply_hack _C_do_apply_hack
-#  endif
+#ifdef C_HACKED_APPLY
+# if defined(__MACH__) || defined(__MINGW32__) || defined(__CYGWIN__)
+etern void C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
+# else
+etern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
+#  define C_do_apply_hack _C_do_apply_hack
 # endif
 #endif
 
@@ -596,7 +585,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   /*FIXME Should have C_tzset in chicken.h? */
 #ifdef C_NONUNIX
   C_startup_time_seconds = (time_t)0;
-# if defined(_MSC_VER) || defined(__MINGW32__)
+# if defined(__MINGW32__)
   /* Make sure _tzname, _timezone, and _daylight are set */
   _tzset();
 # endif
@@ -728,7 +717,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* hardcoded table size - this must match the number of C_pte calls! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 65);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 62);
   int i = 0;
 
   if(pt == NULL)
@@ -741,7 +730,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(call_cc_wrapper);
   C_pte(C_gc);
   C_pte(C_allocate_vector);
-  C_pte(C_get_argv);		/* OBSOLETE */
   C_pte(C_make_structure);
   C_pte(C_ensure_heap_reserve);
   C_pte(C_return_to_host);
@@ -767,7 +755,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_quotient);
   C_pte(C_flonum_fraction);
   C_pte(C_expt);
-  C_pte(C_exact_to_inexact);	/* OBSOLETE */
   C_pte(C_string_to_number);
   C_pte(C_number_to_string);
   C_pte(C_make_symbol);
@@ -783,7 +770,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_machine_byte_order);
   C_pte(C_software_version);
   C_pte(C_build_platform);
-  C_pte(C_c_runtime);
   C_pte(C_make_pointer);
   C_pte(C_make_tagged_pointer);
   C_pte(C_peek_signed_integer);
@@ -4174,11 +4160,7 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
     return C_fix(C_trace_buffer_size);
 
   case C_fix(30):
-#ifdef _MSC_VER
-    return C_fix(_MSC_VER);
-#else
     return C_SCHEME_FALSE;
-#endif
 
   case C_fix(31):
     tgc = timer_accumulated_gc_ms;
@@ -5808,18 +5790,12 @@ void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...)
   buf[ 2 ] = k;
   C_memcpy(&buf[ 3 ], C_temporary_stack_limit, n * sizeof(C_word));
   proc = (void *)C_block_item(fn2, 0);
-# ifdef _MSC_VER
-  __asm { 
-    mov eax, proc
-    mov esp, buf
-    call eax
-  }
-# elif defined(__GNUC__)
+# ifdef __GNUC__
   C_do_apply_hack(proc, buf, n + 3);
+# else
+  C_do_apply(n, fn2, k);
 # endif
 #endif
-
-  C_do_apply(n, fn2, k);
 }
 
 
@@ -7732,12 +7708,7 @@ void file_info_2(void *dummy)
       t, f1, f2, f3;
   int len = C_header_size(name);
   char *buffer2;
-
-#ifdef _MSC_VER
-  struct _stat buf;
-#else
   struct stat buf;
-#endif
 
   buffer2 = buffer;
   if(len >= sizeof(buffer)) {
@@ -7747,19 +7718,13 @@ void file_info_2(void *dummy)
   C_strncpy(buffer2, C_c_string(name), len);
   buffer2[ len ] = '\0';
 
-#ifdef _MSC_VER
-  if(_stat(buffer2, &buf) != 0) v = C_SCHEME_FALSE;
-#else
   if(stat(buffer2, &buf) != 0) v = C_SCHEME_FALSE;
-#endif
   else {
     switch(buf.st_mode & S_IFMT) {
     case S_IFDIR: t = 1; break;
-#if !defined(_MSC_VER)
     case S_IFIFO: t = 3; break;
-# if !defined(__MINGW32__)
+#if !defined(__MINGW32__)
     case S_IFSOCK: t = 4; break;
-# endif
 #endif
     default: t = 0;
     }
@@ -7778,37 +7743,8 @@ void file_info_2(void *dummy)
 }
 
 
-/* The following code was contributed by Sergey Khorev: */
-#if defined(_MSC_VER) && !defined(_DLL)
-/* we're using static C runtime
- * each module has its own environment block
- * use WinAPI to have consistent look to environment */
-
-# define ENV_SIZE 32767
-static char *envbuf;
-static char *C_do_getenv(const char *var)
-{
-  envbuf = (char *)malloc(ENV_SIZE);
-  if(!envbuf)
-    return NULL;
-  if(!GetEnvironmentVariable(var, envbuf, ENV_SIZE))
-  {
-    free(envbuf);
-    return NULL;
-  }
-  else
-    return envbuf;
-}
-
-
-static void C_free_envbuf()
-{
-  free(envbuf);
-}
-#else
-# define C_do_getenv(v) C_getenv(v)
-# define C_free_envbuf() {}
-#endif
+#define C_do_getenv(v) C_getenv(v)
+#define C_free_envbuf() {}
 
 
 void C_ccall C_get_environment_variable(C_word c, C_word closure, C_word k, C_word name)
@@ -8006,20 +7942,6 @@ void C_ccall C_build_platform(C_word c, C_word closure, C_word k)
 
   a = C_alloc(2 + C_bytestowords(strlen(C_BUILD_PLATFORM)));
   s = C_string2(&a, C_BUILD_PLATFORM);
-
- C_kontinue(k, s);
-}
-
-
-/* By Sergey Khorev: */
-void C_ccall C_c_runtime(C_word c, C_word closure, C_word k)
-{
-  C_word *a, s;
-
-  if(c != 2) C_bad_argc(c, 2);
-
-  a = C_alloc(2 + C_bytestowords(strlen(C_RUNTIME_VERSION)));
-  s = C_string2(&a, C_RUNTIME_VERSION);
 
  C_kontinue(k, s);
 }

@@ -34,11 +34,11 @@
   (foreign-declare #<<EOF
 #include <errno.h>
 #ifdef _WIN32
-# if _MSC_VER > 1300
-# include <winsock2.h>
-# include <ws2tcpip.h>
+# if (defined(HAVE_WINSOCK2_H) && defined(HAVE_WS2TCPIP_H))
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
 # else
-# include <winsock.h>
+#  include <winsock.h>
 # endif
 /* Beware: winsock2.h must come BEFORE windows.h */
 # define socklen_t       int

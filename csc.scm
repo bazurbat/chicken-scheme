@@ -66,9 +66,8 @@
 ;;; Parameters:
 
 (define mingw (eq? (build-platform) 'mingw32))
-(define msvc (eq? (build-platform) 'msvc))
 (define osx (eq? (software-version) 'macosx))
-(define win (or mingw msvc))
+(define win mingw)
 (define netbsd (eq? (software-version) 'netbsd))
 (define cygwin (eq? (build-platform) 'cygwin))
 
@@ -106,24 +105,22 @@
 (define compiler (quotewrap (if host-mode INSTALL_CC TARGET_CC)))
 (define c++-compiler (quotewrap (if host-mode INSTALL_CXX TARGET_CXX)))
 (define rc-compiler (quotewrap (if host-mode INSTALL_RC_COMPILER TARGET_RC_COMPILER)))
-(define linker (quotewrap (if msvc "link" (if host-mode INSTALL_CC TARGET_CC))))
-(define c++-linker (quotewrap (if msvc "link" (if host-mode INSTALL_CXX TARGET_CXX))))
-(define object-extension (if msvc "obj" "o"))
-(define library-extension (if msvc "lib" "a"))
-(define link-output-flag (if msvc "-out:" "-o "))
-(define executable-extension (if msvc "exe" ""))
-(define compile-output-flag (if msvc "-Fo" "-o "))
+(define linker (quotewrap (if host-mode INSTALL_CC TARGET_CC)))
+(define c++-linker (quotewrap (if host-mode INSTALL_CXX TARGET_CXX)))
+(define object-extension "o")
+(define library-extension "a")
+(define link-output-flag "-o ")
+(define executable-extension "")
+(define compile-output-flag "-o ")
 (define nonstatic-compilation-options '())
 (define shared-library-extension ##sys#load-dynamic-extension)
 (define default-translation-optimization-options '())
-(define pic-options (if (or mingw msvc cygwin) '("-DPIC") '("-fPIC" "-DPIC")))
+(define pic-options (if (or mingw cygwin) '("-DPIC") '("-fPIC" "-DPIC")))
 (define windows-shell WINDOWS_SHELL)
 (define generate-manifest #f)
 
 (define default-library
-  (string-append
-   (if msvc "libchicken-static." "libchicken.")
-   library-extension))
+  (string-append "libchicken." library-extension))
 
 (define default-compilation-optimization-options (string-split (if host-mode INSTALL_CFLAGS TARGET_CFLAGS)))
 (define best-compilation-optimization-options default-compilation-optimization-options)
