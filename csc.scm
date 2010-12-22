@@ -45,6 +45,7 @@
 (define-foreign-variable INSTALL_MORE_STATIC_LIBS c-string "C_INSTALL_MORE_STATIC_LIBS")
 (define-foreign-variable INSTALL_SHARE_HOME c-string "C_INSTALL_SHARE_HOME")
 (define-foreign-variable INSTALL_LIB_HOME c-string "C_INSTALL_LIB_HOME")
+(define-foreign-variable INSTALL_LIB_NAME c-string "C_INSTALL_LIB_NAME")
 (define-foreign-variable INSTALL_INCLUDE_HOME c-string "C_INSTALL_INCLUDE_HOME")
 (define-foreign-variable INSTALL_STATIC_LIB_HOME c-string "C_INSTALL_STATIC_LIB_HOME")
 (define-foreign-variable TARGET_MORE_LIBS c-string "C_TARGET_MORE_LIBS")
@@ -52,6 +53,7 @@
 (define-foreign-variable TARGET_BIN_HOME c-string "C_TARGET_BIN_HOME")
 (define-foreign-variable TARGET_SHARE_HOME c-string "C_TARGET_SHARE_HOME")
 (define-foreign-variable TARGET_LIB_HOME c-string "C_TARGET_LIB_HOME")
+(define-foreign-variable TARGET_LIB_NAME c-string "C_TARGET_LIB_NAME")
 (define-foreign-variable TARGET_INCLUDE_HOME c-string "C_TARGET_INCLUDE_HOME")
 (define-foreign-variable TARGET_STATIC_LIB_HOME c-string "C_TARGET_STATIC_LIB_HOME")
 (define-foreign-variable TARGET_RUN_LIB_HOME c-string "C_TARGET_RUN_LIB_HOME")
@@ -219,9 +221,7 @@
 	     (string-append "/" default-library)))) ))
 
 (define default-shared-library-files 
-  (if msvc
-      (list (string-append "libchicken." library-extension))
-      '("-lchicken")))
+  (list (string-append "-l" (if host-mode INSTALL_LIB_NAME TARGET_LIB_NAME))))
 
 (define library-files default-library-files)
 (define shared-library-files default-shared-library-files)
@@ -505,7 +505,6 @@ EOF
     (set! link-options
       (cons (cond
              (osx (if lib "-dynamiclib" "-bundle"))
-             (msvc "-dll")
              (else "-shared")) link-options))
     (set! shared #t) )
 
@@ -601,9 +600,9 @@ EOF
 		(set! inquiry-only #t)
 		(set! show-libs #t) ]
 	       [(-v -verbose)
-		(when (and (number? verbose) (not msvc))
+		(when (number? verbose)
 		  (set! compile-options (cons* "-v" "-Q" compile-options))
-		  (set! link-options (cons (if msvc "-VERBOSE" "-v") link-options)) )
+		  (set! link-options (cons "-v" link-options)) )
 		(cond (verbose
 		       (t-options "-verbose") 
 		       (set! verbose 2)) 
@@ -646,15 +645,10 @@ EOF
 			 INSTALL_SHARE_HOME "chicken.rc"
 			 object-extension) 
 			object-files))
-		(when (or msvc mingw)
-		  (cond
-		   (mingw
-		    (set! link-options
-		      (cons* "-lkernel32" "-luser32" "-lgdi32" "-mwindows"
-			     link-options)))
-		   (msvc
-		    (set! link-options
-		      (cons* "kernel32.lib" "user32.lib" "gdi32.lib" link-options)))))]
+		(when mingw
+		  (set! link-options
+		    (cons* "-lkernel32" "-luser32" "-lgdi32" "-mwindows"
+			   link-options)))]
 	       ((-deploy)
 		(set! deploy #t)
 		(set! deployed #t))
@@ -998,7 +992,7 @@ EOF
    (string-intersperse
     (append linking-optimization-options link-options
 	    (nth-value 1 (static-extension-info)) ) )
-   (if (and static (not mingw) (not msvc) (not osx)) " -static" "") ) )
+   (if (and static (not mingw) (not osx)) " -static" "") ) )
 
 (define (linker-libraries #!optional staticexts)
   (string-intersperse
