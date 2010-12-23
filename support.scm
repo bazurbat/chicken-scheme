@@ -926,7 +926,7 @@
 	     [(int unsigned-int short unsigned-short byte unsigned-byte int32 unsigned-int32)
 	      (if unsafe param `(##sys#foreign-fixnum-argument ,param))]
 	     [(float double number) (if unsafe param `(##sys#foreign-flonum-argument ,param))]
-	     [(pointer byte-vector blob scheme-pointer) ; pointer and byte-vector are DEPRECATED
+	     [(blob scheme-pointer)
 	      (let ([tmp (gensym)])
 		`(let ([,tmp ,param])
 		   (if ,tmp
@@ -934,7 +934,7 @@
 			    tmp
 			    `(##sys#foreign-block-argument ,tmp) )
 		       '#f) ) ) ]
-	     [(nonnull-pointer nonnull-scheme-pointer nonnull-blob nonnull-byte-vector) ; nonnull-pointer and nonnull-byte-vector are DEPRECATED
+	     [(nonnull-scheme-pointer nonnull-blob)
 	      (if unsafe
 		  param
 		  `(##sys#foreign-block-argument ,param) ) ]
@@ -1090,10 +1090,10 @@
    (lambda (t next)
      (case t
        ((char int short bool unsigned-short unsigned-char unsigned-int long unsigned-long byte unsigned-byte
-	      c-pointer pointer nonnull-c-pointer unsigned-integer integer float c-string symbol
+	      c-pointer nonnull-c-pointer unsigned-integer integer float c-string symbol
 	      scheme-pointer nonnull-scheme-pointer int32 unsigned-int32 integer32 unsigned-integer32
               unsigned-c-string unsigned-c-string* nonnull-unsigned-c-string* size_t
-	      nonnull-c-string c-string* nonnull-c-string* c-string-list c-string-list*) ; pointer and nonnull-pointer are DEPRECATED
+	      nonnull-c-string c-string* nonnull-c-string* c-string-list c-string-list*)
 	(words->bytes 1) )
        ((double number integer64 unsigned-integer64)
 	(words->bytes 2) )

@@ -48,7 +48,6 @@
    identity
    intersperse
    join
-   left-section				; DEPRECATED
    list->queue
    list-of?
    make-queue
@@ -56,7 +55,6 @@
    merge!
    never?
    none?
-   noop					;DEPRECATED
    o
    queue->list
    queue-add!
@@ -69,7 +67,6 @@
    queue?
    rassoc
    reverse-string-append
-   right-section			; DEPRECATED
    shuffle
    sort
    sort!

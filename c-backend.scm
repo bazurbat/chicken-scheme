@@ -1169,12 +1169,8 @@
       [(unsigned-long) (str "unsigned long")]
       [(float) (str "float")]
       [(double number) (str "double")]
-      ;; pointer and nonnull-pointer are DEPRECATED
-      [(pointer nonnull-pointer) (str "void *")]
       [(c-pointer nonnull-c-pointer scheme-pointer nonnull-scheme-pointer) (str "void *")]
       [(c-string-list c-string-list*) "C_char **"]
-      ;; byte-vector and nonnull-byte-vector are DEPRECATED
-      [(byte-vector nonnull-byte-vector) (str "unsigned char *")]
       [(blob nonnull-blob u8vector nonnull-u8vector) (str "unsigned char *")]
       [(u16vector nonnull-u16vector) (str "unsigned short *")]
       [(s8vector nonnull-s8vector) (str "char *")]
@@ -1264,18 +1260,12 @@
       ((unsigned-integer64) "C_num_to_uint64(")
       ((long) "C_num_to_long(")
       ((unsigned-integer unsigned-integer32) "C_num_to_unsigned_int(")
-      ;; pointer and nonnull-pointer are DEPRECATED
-      ((pointer) "C_data_pointer_or_null(")
-      ((nonnull-pointer) "C_data_pointer(")
       ((scheme-pointer) "C_data_pointer_or_null(")
       ((nonnull-scheme-pointer) "C_data_pointer(")
       ((c-pointer) "C_c_pointer_or_null(")
       ((nonnull-c-pointer) "C_c_pointer_nn(")
       ((blob) "C_c_bytevector_or_null(")
       ((nonnull-blob) "C_c_bytevector(")
-      ;; byte-vector and nonnull-byte-vector are DEPRECATED
-      ((byte-vector) "C_c_bytevector_or_null(")
-      ((nonnull-byte-vector) "C_c_bytevector(")
       ((u8vector) "C_c_u8vector_or_null(")
       ((nonnull-u8vector) "C_c_u8vector(")
       ((u16vector) "C_c_u16vector_or_null(")
@@ -1304,9 +1294,6 @@
 		   (foreign-argument-conversion (if (vector? t) (vector-ref t 0) t)) ) ]
 	     [(and (list? type) (>= (length type) 2))
 	      (case (car type)
-	       ;; pointer and nonnull-pointer are DEPRECATED
-	       ((pointer) "C_c_pointer_or_null(")
-	       ((nonnull-pointer) "C_c_pointer_nn(")
 	       ((c-pointer) "C_c_pointer_or_null(")
 	       ((nonnull-c-pointer) "C_c_pointer_nn(")
 	       ((instance) "C_c_pointer_or_null(")

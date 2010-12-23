@@ -145,11 +145,9 @@
   '(-debug -output-file -heap-size -nursery -stack-size -compiler -unit -uses -keyword-style
     -optimize-level -include-path -database-size -extend -prelude -postlude -prologue -epilogue 
     -inline-limit -profile-name
-    -disable-warning			; OBSOLETE
     -emit-inline-file -types
     -feature -debug-level -heap-growth -heap-shrinkage -heap-initial-size -consult-inline-file
     -emit-import-library
-    -static-extension 			; DEPRECATED
     -no-feature))
 
 (define-constant shortcuts
@@ -164,7 +162,6 @@
     (-i "-case-insensitive")
     (|-K| "-keyword-style")
     (|-X| "-extend")
-    (|-N| "-no-usual-integrations")	; DEPRECATED
     (|-J| "-emit-all-import-libraries")
     (-x "-explicit-use")
     (-u "-unsafe")
@@ -273,7 +270,6 @@
 (define shared #f)
 (define static #f)
 (define static-libs #f)
-(define static-extensions '())
 (define required-extensions '())
 
 
@@ -519,7 +515,7 @@ EOF
 	   (when inquiry-only
 	     (when show-cflags (print* (compiler-options) #\space))
 	     (when show-ldflags (print* (linker-options) #\space))
-	     (when show-libs (print* (linker-libraries #t) #\space))
+	     (when show-libs (print* (linker-libraries) #\space))
 	     (newline)
 	     (exit) )
 	   (cond [(null? scheme-files)
@@ -623,11 +619,6 @@ EOF
 		(check s rest)
 		(set! required-extensions (append required-extensions (list (car rest))))
 		(t-options "-require-extension" (car rest))
-		(set! rest (cdr rest)) ]
-	       [(-static-extension)	;DEPRECATED
-		(check s rest)
-		(set! static-extensions (append static-extensions (list (car rest))))
-		(t-options "-static-extension" (car rest))
 		(set! rest (cdr rest)) ]
 	       ((-private-repository)
 		(use-private-repository))
@@ -875,9 +866,7 @@ EOF
 ;;; Link object files and libraries:
 
 (define (run-linking)
-  (let* ((files (map quotewrap
-		     (append object-files
-			     (nth-value 0 (static-extension-info)) ) ) )
+  (let* ((files (map quotewrap object-files))
 	 (target (quotewrap target-filename))
 	 (targetdir #f))
     (when deploy
@@ -905,7 +894,7 @@ EOF
 	      files
 	      (list (string-append link-output-flag (quotewrap target-filename))
 		    (linker-options)
-		    (linker-libraries #f) ) ) ) ) )
+		    (linker-libraries) ) ) ) ) )
     (when (and osx (or (not cross-chicken) host-mode))
       (command
        (string-append
@@ -967,33 +956,15 @@ EOF
      (quotewrap from)
      (quotewrap to))))
 
-(define (static-extension-info)
-  (let ((rpath (repository-path)))
-    (if (and rpath (pair? static-extensions))
-	(let loop ((exts static-extensions) (libs '()) (opts '()))
-	  (if (null? exts)
-	      (values (reverse libs) (reverse opts))
-	      (let ((info (extension-information (car exts))))
-		(if info
-		    (let ((a (assq 'static info)) 
-			  (o (assq 'static-options info)) )
-		      (loop (cdr exts) 
-			(if a (cons (make-pathname rpath (cadr a)) libs) libs)
-			(if o (cons (cadr o) opts) opts) ) ) 
-		    (loop (cdr exts) libs opts)) ) ) )
-	(values '() '()) ) ) )
-
 (define (linker-options)
   (string-append
    (string-intersperse
-    (append linking-optimization-options link-options
-	    (nth-value 1 (static-extension-info)) ) )
+    (append linking-optimization-options link-options))
    (if (and static (not mingw) (not osx)) " -static" "") ) )
 
-(define (linker-libraries #!optional staticexts)
+(define (linker-libraries)
   (string-intersperse
    (append
-    (if staticexts (nth-value 0 (static-extension-info)) '())
     (if (or static static-libs)
         library-files
         shared-library-files)

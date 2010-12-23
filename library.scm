@@ -196,7 +196,6 @@ EOF
 (define (current-gc-milliseconds) (##sys#fudge 31))
 (define ##sys#decode-seconds (##core#primitive "C_decode_seconds"))
 (define get-environment-variable (##core#primitive "C_get_environment_variable"))
-(define getenv get-environment-variable) ; DEPRECATED
 
 (define (##sys#start-timer)
   (##sys#gc #t)

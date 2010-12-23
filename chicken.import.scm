@@ -152,7 +152,6 @@
    get-keyword
    get-output-string
    get-properties
-   getenv				; DEPRECATED
    getter-with-setter
    implicit-exit-handler
    keyword->string
