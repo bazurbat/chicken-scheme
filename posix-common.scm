@@ -50,6 +50,9 @@ static C_TLS struct stat C_statbuf;
 # define S_IFSOCK           0140000
 #endif
 
+#define C_strftime(v, f) \
+        (strftime(C_time_string, sizeof(C_time_string), C_c_string(f), C_tm_set(v)) ? C_time_string : NULL)
+
 EOF
 ))
 
@@ -376,3 +379,51 @@ EOF
      (##sys#check-exact um 'file-creation-mode)
      (##core#inline "C_umask" um))
    "(file-creation-mode mode)"))
+
+
+;;; Time related things:
+
+(define (check-time-vector loc tm)
+  (##sys#check-vector tm loc)
+  (when (fx< (##sys#size tm) 10)
+    (##sys#error loc "time vector too short" tm) ) )
+
+(define (seconds->local-time #!optional (secs (current-seconds)))
+  (##sys#check-number secs 'seconds->local-time)
+  (##sys#decode-seconds secs #f) )
+
+(define (seconds->utc-time #!optional (secs (current-seconds)))
+  (##sys#check-number secs 'seconds->utc-time)
+  (##sys#decode-seconds secs #t) )
+
+(define seconds->string
+  (let ([ctime (foreign-lambda c-string "C_ctime" integer)])
+    (lambda (#!optional (secs (current-seconds)))
+      (##sys#check-number secs 'seconds->string)
+      (let ([str (ctime secs)])
+        (if str
+            (##sys#substring str 0 (fx- (##sys#size str) 1))
+            (##sys#error 'seconds->string "cannot convert seconds to string" secs) ) ) ) ) )
+
+(define (local-time->seconds tm)
+  (check-time-vector 'local-time->seconds tm)
+  (let ((t (##core#inline_allocate ("C_a_mktime" 4) tm)))
+    (if (fp= -1.0 t)
+	(##sys#error 'local-time->seconds "cannot convert time vector to seconds" tm)
+	t)))
+
+(define time->string
+  (let ([asctime (foreign-lambda c-string "C_asctime" scheme-object)]
+        [strftime (foreign-lambda c-string "C_strftime" scheme-object scheme-object)])
+    (lambda (tm #!optional fmt)
+      (check-time-vector 'time->string tm)
+      (if fmt
+          (begin
+            (##sys#check-string fmt 'time->string)
+            (or (strftime tm (##sys#make-c-string fmt 'time->string))
+                (##sys#error 'time->string "time formatting overflows buffer" tm)) )
+          (let ([str (asctime tm)])
+            (if str
+                (##sys#substring str 0 (fx- (##sys#size str) 1))
+                (##sys#error 'time->string "cannot convert time vector to string" tm) ) ) ) ) ) )
+
