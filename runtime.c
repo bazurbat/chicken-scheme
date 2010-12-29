@@ -112,9 +112,9 @@ static C_TLS int timezone;
 
 #ifdef C_HACKED_APPLY
 # if defined(__MACH__) || defined(__MINGW32__) || defined(__CYGWIN__)
-etern void C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
+extern void C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 # else
-etern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
+extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #  define C_do_apply_hack _C_do_apply_hack
 # endif
 #endif
