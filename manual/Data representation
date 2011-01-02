@@ -96,8 +96,14 @@ slots contain the actual record items.
 '''pointers''': special vector objects with type bits
 {{C_POINTER_TYPE}}, currently 1001. The single slot contains a machine pointer.
 
-'''locatives''': special vector objects with type bits {{C_LOCATIVE_TYPE}}, currently 1010.
-FIXME FIXME FIXME.
+'''locatives''': special vector objects with type bits
+{{C_LOCATIVE_TYPE}}, currently 1010.  A locative object holds 4 slots:
+a raw pointer to the location inside the object referred to by the locative,
+the offset in bytes from the start of the object referred to, the type of
+the location (whether it refers to an unboxed numeric value or a normal
+object slot that holds a pointer to Scheme data) and a flag indicating
+whether this locative is "weak". If the locative is non-weak, slot #4 holds
+a pointer to the object referred to.
 
 '''tagged pointers''': special vector objects with type bits 
 {{C_TAGGED_POINTER_TYPE}}, currently 1011, Tagged pointers are similar to pointers,
