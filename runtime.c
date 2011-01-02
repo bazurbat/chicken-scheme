@@ -3891,7 +3891,10 @@ C_regparm C_word C_fcall C_equalp(C_word x, C_word y)
     n = header & C_HEADER_SIZE_MASK;
 
     if(bits & C_SPECIALBLOCK_BIT) {
-      if(C_u_i_car(x) != C_u_i_car(y)) return 0;
+      /* do not recurse into closures */
+      if((bits & C_CLOSURE_TYPE) != 0) 
+	return !C_memcmp(x, y, n * sizeof(C_word));
+      else if(C_block_item(x, 0) != C_block_item(y, 0)) return 0;
       else ++i;
 
       if(n == 1) return 1;

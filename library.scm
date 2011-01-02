@@ -124,6 +124,16 @@ fast_read_string_from_file(C_word dest, C_word port, C_word len, C_word pos)
 
   return C_fix (m);
 }
+
+static C_word
+shallow_equal(C_word x, C_word y)
+{
+  /* assumes x and y are non-immediate */
+  int i, len = C_header_size(x);
+
+  if(C_header_size(y) != len) return C_SCHEME_FALSE;      
+  else return C_mk_bool(!C_memcmp((void *)x, (void *)y, len * sizeof(C_word)));
+}
 EOF
 ) )
 
@@ -1095,8 +1105,9 @@ EOF
 	  ((not (##core#inline "C_sametypep" x y)) #f)
 	  ((##core#inline "C_specialp" x)
 	   (and (##core#inline "C_specialp" y)
-		(not (##core#inline "C_closurep" x))
-		(compare-slots x y 1)))
+		(if (##core#inline "C_closurep" x)
+		    (##core#inline "shallow_equal" x y)
+		    (compare-slots x y 1))))
 	  ((##core#inline "C_byteblockp" x)
 	   (and (##core#inline "C_byteblockp" y)
 		(let ((s1 (##sys#size x)))
