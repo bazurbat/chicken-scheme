@@ -1,6 +1,6 @@
 /* apply-hack.ppc.s
 ;
-; Copyright (c) 2008-2010, Peter Bex
+; Copyright (c) 2008-2011, Peter Bex
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following

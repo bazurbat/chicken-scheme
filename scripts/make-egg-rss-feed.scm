@@ -66,7 +66,7 @@
       (link "http://wiki.call-cc.org/chicken-projects/egg-rss-feed-4.xml")
       (description "RSS feed for publishing latest CHICKEN extensions")
       (language "en-us")
-      (copyright "(c)2010 The CHICKEN Team")
+      (copyright "(c)2011 The CHICKEN Team")
       (pubDate ,date)
       (lastBuildDate ,date))))
 

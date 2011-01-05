@@ -1,6 +1,6 @@
 ;;;; utils.scm - Utilities for scripting and file stuff
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
