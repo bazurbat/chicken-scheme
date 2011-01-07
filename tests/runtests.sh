@@ -221,6 +221,9 @@ $compile fixnum-tests.scm
 echo "======================================== srfi-4 tests ..."
 $interpret -s srfi-4-tests.scm
 
+echo "======================================== condition tests ..."
+$interpret -s condition-tests.scm
+
 echo "======================================== srfi-18 tests ..."
 $interpret -s simple-thread-test.scm
 $interpret -s mutex-test.scm

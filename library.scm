@@ -3896,6 +3896,22 @@ EOF
 
 (define (condition? x) (##sys#structure? x 'condition))
 
+(define (condition->list x)
+  (or (condition? x)
+      (##sys#signal-hook
+       #:type-error 'condition->list
+       "argument is not a condition object" x))
+  (map
+   (lambda (k)
+     (cons k (let loop ((props (##sys#slot x 2))
+			(res '()))
+	       (cond ((null? props)
+		      res)
+		     ((eq? k (caar props))
+		      (loop (cddr props) (cons (list (cdar props) (cadr props)) res)))
+		     (else (loop (cddr props) res))))))
+   (##sys#slot x 1)))
+
 (define (condition-predicate kind)
   (lambda (c) 
     (##sys#check-structure c 'condition)
