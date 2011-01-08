@@ -284,13 +284,13 @@ a toplevel variable and {{TYPESPEC}} should be a type specification, following t
 given here:
 
   TYPESPEC --> *
-            |  ( VAL1 ... )
+            |  deprecated
+            |  VAL
   
   VAL --> (or VAL1 ...)
        |  (struct NAME)
        |  (procedure [NAME] (VAL1 ... [#!optional VALOPT1 ...] [#!rest [VAL]]) . RESULTS)
        |  BASIC
-       |  deprecated
   
   BASIC --> * 
          |  string 
@@ -310,12 +310,14 @@ given here:
          |  locative
          |  fixnum
          |  float
+         |  pointer-vector
   
   RESULTS --> * 
            |  (RVAL1 ...)
   
   RVAL --> undefined
         |  noreturn
+        |  VAL
 
 A type-declaration overrides any previous declaration for the same identifier.
 

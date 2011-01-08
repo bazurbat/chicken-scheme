@@ -790,7 +790,7 @@
 (file-read (procedure file-read (fixnum fixnum #!optional *) list))
 (file-read-access? (procedure file-read-access? (string) boolean))
 (file-select (procedure file-select (list list #!optional fixnum) list list))
-(file-size (procedure file-size ((or string fixnum)) fixnum))
+(file-size (procedure file-size ((or string fixnum)) number))
 (file-stat (procedure file-stat ((or string fixnum) #!optional *) vector))
 (file-test-lock (procedure file-test-lock (port #!optional fixnum *) boolean))
 (file-truncate (procedure file-truncate ((or string fixnum) fixnum) undefined))
