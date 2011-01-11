@@ -222,6 +222,7 @@
    system
    unregister-feature!
    vector-resize
+   vector-copy!
    void
    warning
    eval-handler
