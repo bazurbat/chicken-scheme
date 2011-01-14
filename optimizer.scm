@@ -1255,6 +1255,7 @@
     ;;  - All calls are either to the direct continuation or (tail-) recursive calls.
     ;;  - No allocation, no rest parameter.
     ;;  - The lambda has a known container variable and all it's call-sites are known.
+    ;;  - The lambda is not marked as a callback lambda
 
     (define (walk d n dn)
       (let ([params (node-parameters n)]
@@ -1269,7 +1270,11 @@
 		      (and-let* ([val (get db d 'value)]
 				 [refs (get-list db d 'references)]
 				 [sites (get-list db d 'call-sites)] )
+			;; val must be lambda, since `sites' is set
 			(and (eq? n val)
+			     (not (variable-mark
+				   (first (node-parameters val))
+				   '##compiler#callback-lambda))
 			     (= (length refs) (length sites))
 			     (scan (first subs) (first llist) d dn (cons d llist)) ) ) )
 		 (transform n d inner-ks hoistable dn allocated) 

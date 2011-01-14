@@ -1622,6 +1622,8 @@
 	       [lam (first subs)] )
 	   (set! foreign-callback-stubs
 	     (cons (apply make-foreign-callback-stub id params) foreign-callback-stubs) )
+	   ;; mark to avoid leaf-routine optimization
+	   (mark-variable id '##compiler#callback-lambda)
 	   (cps-lambda id (first (node-parameters lam)) (node-subexpressions lam) k) ) )
 	((##core#inline ##core#inline_allocate ##core#inline_ref ##core#inline_update ##core#inline_loc_ref 
 			##core#inline_loc_update)
