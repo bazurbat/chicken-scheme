@@ -158,7 +158,7 @@
  (##sys#er-transformer
   (lambda (form r c)
     (##sys#check-syntax 'foreign-value form '(_ _ _))
-    (let ((tmp (gensym 'code_))
+    (let ((tmp (gensym "code_"))
 	  (code (cadr form)))
       `(##core#begin
 	(##core#define-foreign-variable ,tmp
@@ -230,6 +230,22 @@
  (##sys#er-transformer
   (lambda (form r c)
     `(##core#foreign-safe-lambda* ,@(cdr form)))))
+
+(##sys#extend-macro-environment
+ 'foreign-type-size
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    (##sys#check-syntax 'foreign-type-size form '(_ _))
+    (let* ((t (##sys#strip-syntax (cadr form)))
+	   (tmp (gensym "code_"))
+	   (decl
+	    (if (string? t)
+		t
+		(##compiler#foreign-type-declaration t ""))))
+      `(##core#begin
+	(##core#define-foreign-variable ,tmp size_t ,(string-append "sizeof(" decl ")"))
+	,tmp) ) ) ) )
 
 
 (##sys#macro-subset me0)))

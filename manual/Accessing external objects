@@ -70,6 +70,21 @@ they are defined, so use {{include}} to use the same definitions
 in multiple files.
 
 
+=== foreign-type-size
+
+<macro>(foreign-type-size TYPE)</macro>
+
+Returns the size of the storage required to hold values of the
+given foreign type {{TYPE}}. This is basically equivalent to
+
+<enscript highlight=scheme>
+(foreign-value "sizeof(TYPE)" size_t)
+</enscript>
+
+but also handles user-defined types and allows "TYPE" to be a string,
+which will be given literally to the {{sizeof}} operator.
+
+
 === define-foreign-variable
 
 <macro>(define-foreign-variable NAME TYPE [STRING])</macro>
