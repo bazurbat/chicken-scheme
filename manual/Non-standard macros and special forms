@@ -230,6 +230,12 @@ Binds the parameters {{PARAMETER1 ...}} dynamically to the values
 {{make-parameter}} in [[Parameters]]). Note that {{PARAMETER}} may be any
 expression that evaluates to a parameter procedure.
 
+Note: due to a bug in the implementation of {{parameterize}},
+restoring the previous parameter values does reinvoke the guard
+procedure of the parameter, if it has any. If the guard procedure
+performs a conversion, then the conversion will be reinvoked
+on restoration of the old value.
+
 ==== receive
 
 <macro>(receive (NAME ...) VALUEEXP BODY ...)</macro><br>

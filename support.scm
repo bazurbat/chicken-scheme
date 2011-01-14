@@ -965,12 +965,18 @@
 		  `(##sys#foreign-struct-wrapper-argument 
 		    ',(##sys#slot (assq t tmap) 1)
 		    ,param) ) ]
-	     [(integer long size_t integer32 integer64)
+	     [(integer long size_t integer32)
 	      (if unsafe param `(##sys#foreign-integer-argument ,param))]
-	     [(unsigned-integer unsigned-integer32 unsigned-long unsigned-integer64)
+	     [(integer64)
+	      (if unsafe param `(##sys#foreign-integer64-argument ,param))]
+	     [(unsigned-integer unsigned-integer32 unsigned-long)
 	      (if unsafe
 		  param
 		  `(##sys#foreign-unsigned-integer-argument ,param) ) ]
+	     [(unsigned-integer32)
+	      (if unsafe
+		  param
+		  `(##sys#foreign-unsigned-integer64-argument ,param) ) ]
 	     [(c-pointer c-string-list c-string-list*)
 	      (let ([tmp (gensym)])
 		`(let ([,tmp ,param])

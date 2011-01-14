@@ -776,6 +776,10 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_UWORD_MAX               UINT_MAX
 #endif
 
+#define C_WORD64_MIN               LLONG_MIN
+#define C_WORD64_MAX               LLONG_MAX
+#define C_UWORD64_MAX              ULLONG_MAX
+
 #ifndef C_PROVIDE_LIBC_STUBS
 # define C_FILEPTR                  FILE *
 
@@ -1803,6 +1807,8 @@ C_fctexport C_word C_fcall C_i_foreign_pointer_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_scheme_or_c_pointer_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_integer_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_foreign_integer64_argumentp(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_foreign_unsigned_integer64_argumentp(C_word x) C_regparm;
 
 C_fctexport C_char *C_lookup_procedure_id(void *ptr);
 C_fctexport void *C_lookup_procedure_ptr(C_char *id);
