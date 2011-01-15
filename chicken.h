@@ -776,10 +776,6 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_UWORD_MAX               UINT_MAX
 #endif
 
-#define C_WORD64_MIN               LLONG_MIN
-#define C_WORD64_MAX               LLONG_MAX
-#define C_UWORD64_MAX              ULLONG_MAX
-
 #ifndef C_PROVIDE_LIBC_STUBS
 # define C_FILEPTR                  FILE *
 
