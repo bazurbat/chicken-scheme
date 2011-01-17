@@ -273,6 +273,10 @@ echo "======================================== embedding (2) ..."
 $compile -e embedded2.scm
 ./a.out
 
+echo "======================================== embedding (3) ..."
+$compile -e embedded3.c embedded4.scm
+./a.out
+
 echo "======================================== private repository test ..."
 mkdir -p tmp
 $compile private-repository-test.scm -private-repository -o tmp/xxx

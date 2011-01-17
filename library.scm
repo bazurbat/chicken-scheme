@@ -1062,7 +1062,7 @@ EOF
 		(##sys#check-integer n2 'lcm)
 		(loop
 		 (cons
-		  (##sys#lcm head (##sys#slot next 0))
+		  (##sys#lcm head n2)
 		  (##sys#slot next 1)) #f) ) ) ) ) ) )
 
 (define (##sys#string->number str #!optional (radix 10))
