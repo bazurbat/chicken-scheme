@@ -3892,7 +3892,7 @@ C_regparm C_word C_fcall C_equalp(C_word x, C_word y)
 
     if(bits & C_SPECIALBLOCK_BIT) {
       /* do not recurse into closures */
-      if((bits & C_CLOSURE_TYPE) != 0) 
+      if(C_header_bits(x) == C_CLOSURE_TYPE)
 	return !C_memcmp((void *)x, (void *)y, n * sizeof(C_word));
       else if(C_block_item(x, 0) != C_block_item(y, 0)) return 0;
       else ++i;
