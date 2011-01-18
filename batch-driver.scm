@@ -31,7 +31,6 @@
 (include "compiler-namespace")
 (include "tweaks")
 
-(define-constant default-profile-name "PROFILE")
 (define-constant funny-message-timeout 60000)
 
 (define user-options-pass (make-parameter #f))
@@ -77,8 +76,11 @@
 	(time-breakdown #f)
 	(forms '())
 	(cleanup-forms '(((##sys#implicit-exit-handler))))
-	(profile (or (memq 'profile options) (memq 'accumulate-profile options) (memq 'profile-name options)))
-	(profile-name (or (and-let* ((pn (memq 'profile-name options))) (cadr pn)) default-profile-name))
+	(profile (or (memq 'profile options)
+		     (memq 'accumulate-profile options) 
+		     (memq 'profile-name options)))
+	(profile-name 
+	 (and-let* ((pn (memq 'profile-name options))) (cadr pn)))
 	(hsize (memq 'heap-size options))
 	(hisize (memq 'heap-initial-size options))
 	(hgrowth (memq 'heap-growth options))
@@ -344,7 +346,10 @@
 		 "calltrace"
 		 "none") )
     (when profile
-      (let ([acc (eq? 'accumulate-profile (car profile))])
+      (let ((acc (eq? 'accumulate-profile (car profile))))
+	(when (and acc (not profile-name))
+	  (quit
+	   "you need to specify -profile-name if using accumulated profiling runs"))
 	(set! emit-profile #t)
 	(set! profiled-procedures 'all)
 	(set! initforms
@@ -354,7 +359,7 @@
 	   (if acc
 	       '((set! ##sys#profile-append-mode #t))
 	       '() ) ) )
-	(dribble "generating ~aprofiled code" (if acc "accumulative " "")) ) )
+	(dribble "generating ~aprofiled code" (if acc "accumulative " "")) ))
 
     ;;*** hardcoded "modules.db" is bad (also used in chicken-install.scm)
     (load-identifier-database "modules.db")
@@ -442,7 +447,8 @@
 			     `((set! ,profile-info-vector-name 
 				 (##sys#register-profile-info
 				  ',plen
-				  ',(if unit-name #f profile-name))))
+				  ',(and (not unit-name)
+					 (or profile-name #t)))))
 			     '() )
 			 (map (lambda (pl)
 				`(##sys#set-profile-info-vector!
