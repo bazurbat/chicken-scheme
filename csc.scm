@@ -627,12 +627,12 @@ EOF
 	       [(-gui)
 		(set! gui #t)
 		(set! compile-options (cons "-DC_GUI" compile-options))
-		(set! object-files 
-		  (cons (make-pathname 
-			 INSTALL_SHARE_HOME "chicken.rc"
-			 object-extension) 
-			object-files))
 		(when mingw
+		  (set! object-files 
+		    (cons (make-pathname 
+			   INSTALL_SHARE_HOME "chicken.rc"
+			   object-extension) 
+			  object-files))
 		  (set! link-options
 		    (cons* "-lkernel32" "-luser32" "-lgdi32" "-mwindows"
 			   link-options)))]
