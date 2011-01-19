@@ -324,6 +324,7 @@ void *alloca ();
 #define ___scheme_value     C_word
 #define ___scheme_pointer   void *
 #define ___byte_vector      unsigned char *
+#define ___blob             void *
 #define ___pointer_vector   void **
 #define ___symbol           char *
 #define ___safe
