@@ -323,6 +323,7 @@ void *alloca ();
 #define ___byte             char
 #define ___scheme_value     C_word
 #define ___scheme_pointer   void *
+/* `___byte_vector' is DEPRECATED */
 #define ___byte_vector      unsigned char *
 #define ___blob             void *
 #define ___pointer_vector   void **
