@@ -20,8 +20,8 @@
 (define *tty* 
   (and (##sys#tty-port? (current-output-port)) 
        (not (feature? #:mingw32))
-       (not (equal? (getenv "EMACS") "t"))
-       (not (equal? (getenv "TERM") "dumb"))))
+       (not (equal? (get-environment-variable "EMACS") "t"))
+       (not (equal? (get-environment-variable "TERM") "dumb"))))
 
 (define *tty-width*
   (or (and *tty*
@@ -390,7 +390,7 @@
 (define -x (conjoin file-exists? file-execute-access?))
 
 (define cwd current-directory)
-(define (cd #!optional d) (if d (current-directory d) (getenv "HOME")))
+(define (cd #!optional d) (if d (current-directory d) (get-environment-variable "HOME")))
 
 (define (with-cwd dir thunk)
   (if (or (not dir) (equal? "." dir))
