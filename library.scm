@@ -1696,6 +1696,7 @@ EOF
 ; 6:  (char-ready? PORT) -> BOOL
 ; 7:  (read-string! PORT COUNT STRING START) -> COUNT'
 ; 8:  (read-line PORT LIMIT) -> STRING | EOF
+; 9:  (read-buffered PORT) -> STRING
 
 (define (##sys#make-port i/o class name type)
   (let ([port (##core#inline_allocate ("C_a_i_port" 17))])
@@ -1762,8 +1763,9 @@ EOF
 			   (##sys#string-append result (##sys#substring buffer 0 n))]
 			[else
 			 (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1))
-			 (##sys#substring buffer 0 n)] ) ) ) ) )          
- ) )
+			 (##sys#substring buffer 0 n)] ) ) ) ) )
+	  #f	; read-buffered
+	  ) )
 
 (define ##sys#open-file-port (##core#primitive "C_open_file_port"))
 
@@ -3391,7 +3393,17 @@ EOF
 		(let ((dest (##sys#make-string (fx- pos2 pos))))
 		  (##core#inline "C_substring_copy" buf dest pos pos2 0)
 		  (##sys#setislot p 10 next)
-		  dest) ) ) ) ) ) ) ) )
+		  dest) ) ) ) ) )
+     (lambda (p)			; read-buffered
+       (let ((pos (##sys#slot p 10))
+	     (string (##sys#slot p 12))
+	     (len (##sys#slot p 11)) )
+	 (if (fx>= pos len)
+	     ""
+	     (let ((buffered (##sys#substring string pos len)))
+	       (##sys#setislot p 10 len)
+	       buffered))))
+     )))
 
 ; Invokes the eol handler when EOL or EOS is reached.
 (define (##sys#scan-buffer-line buf limit pos k)

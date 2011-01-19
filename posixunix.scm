@@ -1351,8 +1351,7 @@ EOF
 	  [buf (if (fixnum? bufi) (##sys#make-string bufi) bufi)]
 	  [buflen 0]
 	  [bufpos 0] )
-      (let (
-            [ready?
+      (let ([ready?
 	     (lambda ()
 	       (let ((res (##sys#file-select-one fd)))
 		 (if (fx= -1 res)
@@ -1394,8 +1393,7 @@ EOF
 			   [else
 			    (set! buflen cnt)
 			    (set! bufpos 0)]) ) ) ) )] )
-	(letrec (
-		 [this-port
+	(letrec ([this-port
 		  (make-input-port
 		   (lambda ()		; read-char
 		     (fetch)
@@ -1464,7 +1462,14 @@ EOF
                                 (fetch)
                                 (if (fx< bufpos buflen)
                                     (loop str)
-                                    #!eof) ] ) ) ) ) ) ] )
+                                    #!eof) ] ) ) ) )
+		   (lambda (port)		; read-buffered
+		     (if (fx>= bufpos buflen)
+			 ""
+			 (let ((str (##sys#substring buf bufpos buflen)))
+			   (set! bufpos buflen)
+			   str)))
+		   ) ] )
 	  (set-port-name! this-port nam)
 	  this-port ) ) ) ) )
 

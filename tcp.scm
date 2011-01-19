@@ -447,7 +447,14 @@ EOF
 			  (read-input)
 			  (if (fx< bufindex buflen)
 			      (loop str limit)
-			      #!eof) ) ) ) ) ) )
+			      #!eof) ) ) ) )
+	       (lambda (p)		; read-buffered
+		 (if (fx>= bufindex buflen)
+		     ""
+		     (let ((str (##sys#substring buf bufpos buflen)))
+		       (set! bufpos buflen)
+		       str)))
+	       ) )
 	     (output
 	      (lambda (s)
 		(let loop ((len (##sys#size s))
