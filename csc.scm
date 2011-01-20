@@ -138,7 +138,7 @@
     -no-symbol-escape -no-parentheses-synonyms -r5rs-syntax
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
     -emit-all-import-libraries -setup-mode -unboxing -no-elevation -no-module-registration
-    -no-procedure-checks-for-usual-bindings -module
+    -no-procedure-checks-for-usual-bindings -module -specialize
     -no-procedure-checks-for-toplevel-bindings))
 
 (define-constant complex-options
@@ -370,6 +370,7 @@ Usage: #{csc} FILENAME | OPTION ...
     -inline-limit LIMIT            set inlining threshold
     -inline-global                 enable cross-module inlining
     -unboxing                      use unboxed temporaries if possible
+    -specialize                    perform type-based specialization of primitive calls
     -n -emit-inline-file FILENAME  generate file with globally inlinable
                                     procedures (implies -inline -local)
     -consult-inline-file FILENAME  explicitly load inline file

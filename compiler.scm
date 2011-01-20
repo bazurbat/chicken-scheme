@@ -333,7 +333,6 @@
 (define local-definitions #f)
 (define inline-locally #f)
 (define inline-output-file #f)
-(define do-scrutinize #f)
 (define enable-inline-files #f)
 (define compiler-syntax-enabled #t)
 (define unchecked-specialized-arithmetic #f)
@@ -1464,9 +1463,11 @@
        ((type)
 	(for-each
 	 (lambda (spec)
-	   (cond ((and (list? spec) (symbol? (car spec)) (= 2 (length spec)))
+	   (cond ((and (list? spec) (symbol? (car spec)) (>= 2 (length spec)))
 		  (##sys#put! (car spec) '##core#type (cadr spec))
-		  (##sys#put! (car spec) '##core#declared-type #t))
+		  (##sys#put! (car spec) '##core#declared-type #t)
+		  (when (pair? (cddr spec))
+		    (##sys#put! (car spec) '##core#specializations (cddr spec))))
 		 (else
 		  (warning "illegal `type' declaration item" spec))))
 	 (globalize-all (cdr spec))))

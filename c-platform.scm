@@ -85,7 +85,7 @@
     profile inline keep-shadowed-macros ignore-repository
     fixnum-arithmetic disable-interrupts optimize-leaf-routines
     lambda-lift compile-syntax tag-pointers accumulate-profile
-    disable-stack-overflow-checks raw 
+    disable-stack-overflow-checks raw specialize
     emit-external-prototypes-first release local inline-global
     analyze-only dynamic scrutinize no-argc-checks no-procedure-checks
     no-procedure-checks-for-toplevel-bindings module

@@ -91,6 +91,8 @@
 	(a-only (memq 'analyze-only options))
 	(dynamic (memq 'dynamic options))
 	(unbox (memq 'unboxing options))
+	(do-scrutinize (when (memq 'scrutinize options))
+	(do-specialize (when (memq 'specialize options))
 	(dumpnodes #f)
 	(start-time #f)
 	(upap #f)
@@ -185,8 +187,6 @@
       (set! all-import-libraries #t))
     (set! enable-module-registration (not (memq 'no-module-registration options)))
     (when (memq 'lambda-lift options) (set! do-lambda-lifting #t))
-    (when (memq 'scrutinize options)
-      (set! do-scrutinize #t))
     (when (memq 't debugging-chicken) (##sys#start-timer))
     (when (memq 'b debugging-chicken) (set! time-breakdown #t))
     (when (memq 'emit-exports options)
@@ -500,8 +500,8 @@
 	       (print-node "initial node tree" '|T| node0)
 	       (initialize-analysis-database)
 
-	       (when do-scrutinize
-		 ;;;*** hardcoded database file name
+	       (when (or do-scrutinize do-specialize)
+		 ;;;XXX hardcoded database file name
 		 (unless (memq 'ignore-repository options)
 		   (load-type-database "types.db"))
 		 (for-each (cut load-type-database <> #f) (collect-options 'types))
@@ -512,14 +512,14 @@
 		 (end-time "pre-analysis")
 		 (begin-time)
 		 (debugging 'p "performing scrutiny")
-		 (scrutinize node0 db)
+		 (scrutinize node0 db do-scrutinize do-specialize)
 		 (end-time "scrutiny")
 		 (set! first-analysis #t) )
 
 	       (when do-lambda-lifting
 		 (begin-time)
-		 (unless do-scrutinize	; no need to do analysis if already done above
-		   (set! first-analysis #f)
+		 (unless do-scrutinize ; no need to do analysis if already done
+		   (set! first-analysis #f) ; (and not specialized)
 		   (set! db (analyze 'lift node0))
 		   (print-db "analysis" '|0| db 0)
 		   (end-time "pre-analysis (lambda-lift)"))

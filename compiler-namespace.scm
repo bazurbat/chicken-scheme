@@ -98,7 +98,6 @@
  display-line-number-database
  display-real-name-table
  do-lambda-lifting
- do-scrutinize
  dump-defined-globals
  dump-global-refs
  dump-nodes

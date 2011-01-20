@@ -24,7 +24,9 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
-(declare (unit scrutinizer))
+(declare
+  (unit scrutinizer)
+  (hide match-specialization specialize-node!))
 
 
 (include "compiler-namespace")
@@ -59,11 +61,20 @@
 ;
 ;   ##core#type           ->  <typespec>
 ;   ##core#declared-type  ->  <bool>
+;   ##core#specializations -> (SPECIALIZATION ...)
+;
+; specialization specifiers:
+;
+;   SPECIALIZATION = ((VAL ... [#!rest VAL]) TEMPLATE)
+;   TEMPLATE = INTEGER | SYMBOL | STRING
+;            | (quote CONSTANT)
+;            | (TEMPLATE . TEMPLATE)
+
 
 (define-constant +fragment-max-length+ 5)
 (define-constant +fragment-max-depth+ 3)
 
-(define (scrutinize node db)
+(define (scrutinize node db complain specialize)
   (define (constant-result lit)
     (cond ((string? lit) 'string)
 	  ((symbol? lit) 'symbol)
@@ -394,8 +405,9 @@
 			   what n (multiples n)))
 		 (first tv))))))
   (define (report loc desc)
-    (warning
-     (conc (location-name loc) desc)))
+    (when complain
+      (warning
+       (conc (location-name loc) desc))))
   (define (location-name loc)
     (define (lname loc1)
       (if loc1
@@ -423,7 +435,7 @@
      (with-output-to-string
        (lambda ()
 	 (pp (fragment x))))))
-  (define (call-result args e loc x params)
+  (define (call-result node args e loc params)
     (define (pname)
       (sprintf "~ain procedure call to `~s', " 
 	  (if (and (pair? params) (pair? (cdr params)))
@@ -432,7 +444,7 @@
 		    (sprintf "~a: " n)
 		    ""))
 	      "")
-	(fragment x)))
+	(fragment (first (node-subexpressions node)))))
     (d "call-result: ~a (~a)" args loc)
     (let* ((ptype (car args))
 	   (nargs (length (cdr args)))
@@ -446,7 +458,7 @@
 	  (pname) 
 	  xptype
 	  ptype)))
-      (let-values (((atypes values-rest) (procedure-argument-types ptype (length (cdr args)))))
+      (let-values (((atypes values-rest) (procedure-argument-types ptype nargs)))
 	(d "  argument-types: ~a (~a)" atypes values-rest)
 	(unless (= (length atypes) nargs)
 	  (let ((alen (length atypes)))
@@ -468,6 +480,15 @@
 	      (pname) i (car atypes) (car args)))))
 	(let ((r (procedure-result-types ptype values-rest (cdr args))))
 	  (d  "  result-types: ~a" r)
+	  (when specialize
+	    ;;XXX we should check whether this is a standard- or extended bindng
+	    (and-let* ((pn (procedure-name ptype))
+		       (specs (##sys#get pn '##core#specializations)))
+	      (for-each
+	       (lambda (spec)
+		 (when (match-specialization (car spec) (cdr args) match)
+		   (specialize-node! node (cadr spec))))
+	       specs)))
 	  r))))
   (define (procedure-type? t)
     (or (eq? 'procedure t)
@@ -475,6 +496,11 @@
 	     (or (eq? 'procedure (car t))
 		 (and (eq? 'or (car t))
 		      (every procedure-type? (cdr t)))))))
+  (define (procedure-name t)
+    (and (pair? t)
+	 (eq? 'procedure (car t))
+	 (or (string? (cadr t)) (symbol? (cadr t)))
+	 (->string (cadr t))))
   (define (procedure-argument-types t n)
     (cond ((or (memq t '(* procedure)) 
 	       (not-pair? t)
@@ -620,7 +646,7 @@
 				      f)
 				     (walk n e loc #f #f) loc))
 				  subs (iota (length subs)))))
-		  (call-result args e loc (first subs) params)))
+		  (call-result n args e loc params)))
 	       ((##core#switch ##core#cond)
 		(bomb "unexpected node class: ~a" class))
 	       (else
@@ -638,11 +664,32 @@
      (lambda (e)
        (let* ((name (car e))
 	      (old (##sys#get name '##core#type))
-	      (new (cadr e)))
+	      (new (cadr e))
+	      (specs (and (pair? (cddr e)) (cddr e))))
 	 (when (and old (not (equal? old new)))
 	   (##sys#notice
 	    (sprintf
 		"type-definition `~a' for toplevel binding `~a' conflicts with previously loaded type `~a'"
 		name new old)))
-	 (##sys#put! name '##core#type new)))
+	 (##sys#put! name '##core#type new)
+	 (when specs
+	   (##sys#put! name '##core#specializations specs))))
      (read-file dbfile))))
+
+(define (match-specialization typelist atypes match)
+  (let loop ((tl typelist) (atypes atypes))
+    (cond ((null? tl) (null? atypes))
+	  ((null? atypes) #f)
+	  ((eq? (car tl) '#!rest)
+	   (every (cute match (cadr tl) <>) atypes))
+	  ((match (car tl) (car atypes)) (loop (cdr tl) (cdr atypes)))
+	  (else #f))))
+
+(define (specialize-node! node template)
+  (let ((args (cdr (node-subexpressions node))))
+    (define (subst x)
+      (cond ((fixnum? x) (list-ref args x))
+	    ((not (pair? x)) x)
+	    ((eq? 'quote (car x)) x)
+	    (else (cons (subst (car x)) (subst (cdr x))))))
+    (copy-node! (build-node-graph (subst template)) node)))
