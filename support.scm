@@ -474,6 +474,7 @@
   (let ([count 0])
     (define (walk x)
       (cond ((symbol? x) (varnode x))
+	    ((node? x) x)
 	    ((not-pair? x) (bomb "bad expression" x))
 	    ((symbol? (car x))
 	     (case (car x)

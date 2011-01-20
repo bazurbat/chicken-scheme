@@ -695,5 +695,8 @@
 (define (specialize-node! node template)
   (let ((args (cdr (node-subexpressions node))))
     (define (subst x)
-      ...)				;XXX
-    (copy-node! (subst (build-node-graph template)) node)))
+      (cond ((integer? x) (list-ref args (sub1 x)))
+	    ((not (pair? x)) x)
+	    ((eq? 'quote (car x)) x)	; to handle numeric constants
+	    (else (cons (subst (car x)) (subst (cdr x))))))
+    (copy-node! (build-node-graph (subst template)) node)))
