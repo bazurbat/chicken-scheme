@@ -1463,13 +1463,13 @@
        ((type)
 	(for-each
 	 (lambda (spec)
-	   (cond ((and (list? spec) (symbol? (car spec)) (>= 2 (length spec)))
+	   (cond ((and (list? spec) (symbol? (car spec)) (>= (length spec) 2))
 		  (##sys#put! (car spec) '##core#type (cadr spec))
 		  (##sys#put! (car spec) '##core#declared-type #t)
 		  (when (pair? (cddr spec))
 		    (##sys#put! (car spec) '##core#specializations (cddr spec))))
 		 (else
-		  (warning "illegal `type' declaration item" spec))))
+		  (warning "illegal type declaration item" spec))))
 	 (globalize-all (cdr spec))))
        ((unsafe-specialized-arithmetic)
 	(set! unchecked-specialized-arithmetic #t))

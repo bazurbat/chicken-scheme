@@ -80,7 +80,11 @@
 	  ((symbol? lit) 'symbol)
 	  ((fixnum? lit) 'fixnum)
 	  ((flonum? lit) 'float)
-	  ((number? lit) 'number)	; in case...
+	  ((number? lit) 
+	   (case number-type 
+	     ((fixnum) 'fixnum)
+	     ((flonum) 'flonum)
+	     (else 'number)))	; in case...
 	  ((boolean? lit) 'boolean)
 	  ((list? lit) 'list)
 	  ((pair? lit) 'pair)
@@ -487,6 +491,7 @@
 	      (for-each
 	       (lambda (spec)
 		 (when (match-specialization (car spec) (cdr args) match)
+		   (debugging 'x "specializing call" (cons pn (car spec)))
 		   (specialize-node! node (cadr spec))))
 	       specs)))
 	  r))))
@@ -499,8 +504,10 @@
   (define (procedure-name t)
     (and (pair? t)
 	 (eq? 'procedure (car t))
-	 (or (string? (cadr t)) (symbol? (cadr t)))
-	 (->string (cadr t))))
+	 (let ((n (cadr t)))
+	   (cond ((string? n) (string->symbol n))
+		 ((symbol? n) n)
+		 (else #f)))))
   (define (procedure-argument-types t n)
     (cond ((or (memq t '(* procedure)) 
 	       (not-pair? t)
@@ -688,8 +695,5 @@
 (define (specialize-node! node template)
   (let ((args (cdr (node-subexpressions node))))
     (define (subst x)
-      (cond ((fixnum? x) (list-ref args x))
-	    ((not (pair? x)) x)
-	    ((eq? 'quote (car x)) x)
-	    (else (cons (subst (car x)) (subst (cdr x))))))
-    (copy-node! (build-node-graph (subst template)) node)))
+      ...)				;XXX
+    (copy-node! (subst (build-node-graph template)) node)))
