@@ -119,6 +119,9 @@ tests/hash-table-tests.scm
 tests/apply-test.scm
 tests/embedded1.c
 tests/embedded2.scm
+tests/embedded3.c
+tests/embedded4.scm
+tests/condition-tests.scm
 tests/fixnum-tests.scm
 tests/path-tests.scm
 tests/posix-tests.scm
