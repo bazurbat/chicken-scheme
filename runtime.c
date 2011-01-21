@@ -3781,7 +3781,6 @@ C_regparm C_word C_fcall C_hash_string(C_word str)
   unsigned C_word key = 0;
   int len = C_header_size(str);
   C_byte *ptr = C_data_pointer(str);
-// *(ptr++) means you run off the edge.  
   while(len--) key = (key << 4) + (*ptr++);
 
   return C_fix(key & C_MOST_POSITIVE_FIXNUM);
