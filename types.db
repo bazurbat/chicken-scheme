@@ -252,6 +252,7 @@
 (condition-predicate (procedure condition-predicate (symbol) (procedure ((struct condition)) boolean)))
 (condition-property-accessor (procedure condition-property-accessor (symbol symbol #!optional *) (procedure ((struct condition)) *)))
 (condition? (procedure condition? (*) boolean))
+(condition->list (procedure condition->list ((struct condition)) list))
 (continuation-capture (procedure continuation-capture ((procedure ((struct continuation)) . *)) *))
 (continuation-graft (procedure continuation-graft ((struct continuation) (procedure () . *)) *))
 (continuation-return (procedure continuation-return (procedure #!rest) . *)) ;XXX make return type more specific?
@@ -501,6 +502,7 @@
 (printf (procedure printf (string #!rest) undefined))
 (random (procedure random (number) number))
 (randomize (procedure randomize (#!optional number) undefined))
+(read-buffered (procedure read-buffered (#!otional port) string))
 (read-byte (procedure read-byte (#!optional port) fixnum))
 (read-file (procedure read-file (#!optional (or port string) (procedure (port) *) fixnum) list))
 (read-line (procedure read-line (#!optional port fixnum) *))
