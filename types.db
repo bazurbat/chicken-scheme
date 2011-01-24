@@ -502,7 +502,7 @@
 (printf (procedure printf (string #!rest) undefined))
 (random (procedure random (number) number))
 (randomize (procedure randomize (#!optional number) undefined))
-(read-buffered (procedure read-buffered (#!otional port) string))
+(read-buffered (procedure read-buffered (#!optional port) string))
 (read-byte (procedure read-byte (#!optional port) fixnum))
 (read-file (procedure read-file (#!optional (or port string) (procedure (port) *) fixnum) list))
 (read-line (procedure read-line (#!optional port fixnum) *))
