@@ -715,6 +715,88 @@
        a))
 (f (eval '((cute + <...> 1) 1)))
 
+;;; (quasi-)quotation
+
+(f (eval '(let ((a 1)) (unquote a))))
+(t 'unquote (quasiquote unquote))
+(f (eval '(quasiquote (a unquote . 1)))) ; "Bad syntax". Also ok: '(a unquote . 1)
+(t 'a (quasiquote a))
+(f (eval '(quasiquote a b)))
+(f (eval '(quote a b)))
+(f (eval '(quasiquote)))
+(f (eval '(quote)))
+(f (eval '(quasiquote . a)))
+(f (eval '(quote . a)))
+(t '(foo . 1) (let ((bar 1))
+                (quasiquote (foo . (unquote bar)))))
+(f (eval '(let ((a 1)
+                (b 2))
+            (quasiquote (unquote a b))))) ; > 1 arg
+
+(t '(quasiquote (unquote a)) (quasiquote (quasiquote (unquote a))))
+(t '(quasiquote x y) (quasiquote (quasiquote x y)))
+
+(t '(unquote-splicing a) (quasiquote (unquote-splicing a)))
+(t '(1 2) (let ((a (list 2))) (quasiquote (1 (unquote-splicing a)))))
+(f (eval '(let ((a 1))                  ; a is not a list
+            (quasiquote (1 (unquote-splicing a))))))
+(f (eval '(let ((a (list 1))
+                (b (list 2)))
+            (quasiquote (1 (unquote-splicing a b)))))) ; > 1 arg
+
+;; level counting
+(define x (list 1 2))
+
+;; Testing R5RS-compliance:
+(t '(quasiquote (unquote (1 2)))
+   (quasiquote (quasiquote (unquote (unquote x)))))
+(t '(quasiquote (unquote-splicing (1 2)))
+   (quasiquote (quasiquote (unquote-splicing (unquote x)))))
+(t '(quasiquote (unquote 1 2))
+   (quasiquote (quasiquote (unquote (unquote-splicing x)))))
+(t 'x
+   (quasiquote (unquote (quasiquote x))))
+(t '(quasiquote (unquote-splicing (quasiquote (unquote x))))
+   (quasiquote (quasiquote (unquote-splicing (quasiquote (unquote x))))))
+(t '(quasiquote (unquote (quasiquote (unquote-splicing x))))
+   (quasiquote (quasiquote (unquote (quasiquote (unquote-splicing x))))))
+(t '(quasiquote (unquote (quasiquote (unquote (1 2)))))
+   (quasiquote (quasiquote (unquote (quasiquote (unquote (unquote x)))))))
+
+;; The following are explicitly left undefined by R5RS. For consistency
+;; we define any unquote-(splicing) or quasiquote that occurs in the CAR of
+;; a pair to decrease, respectively increase the level count by one.
+  
+(t '(quasiquote . #(1 (unquote x) 3))   ; cdr is not a pair
+   (quasiquote (quasiquote . #(1 (unquote x) 3))))
+(t '(quasiquote #(1 (unquote x) 3))     ; cdr is a list of one
+   (quasiquote (quasiquote #(1 (unquote x) 3))))
+(t '(quasiquote a #(1 (unquote x) 3) b) ; cdr is longer
+   (quasiquote (quasiquote a #(1 (unquote x) 3) b)))
+
+(t '(quasiquote (unquote . #(1 (1 2) 3))) ; cdr is not a pair
+   (quasiquote (quasiquote (unquote . #(1 (unquote x) 3)))))
+(t '(quasiquote (unquote #(1 (1 2) 3))) ; cdr is a list of one
+   (quasiquote (quasiquote (unquote #(1 (unquote x) 3)))))
+(t '(quasiquote (unquote a #(1 (1 2) 3) b)) ; cdr is longer
+   (quasiquote (quasiquote (unquote a #(1 (unquote x) 3) b))))
+
+(t '(quasiquote (unquote-splicing . #(1 (1 2) 3))) ; cdr is not a pair
+   (quasiquote (quasiquote (unquote-splicing . #(1 (unquote x) 3)))))
+(t '(quasiquote (unquote-splicing #(1 (1 2) 3))) ; cdr is a list of one
+   (quasiquote (quasiquote (unquote-splicing #(1 (unquote x) 3)))))
+(t '(quasiquote (unquote-splicing a #(1 (1 2) 3) b)) ; cdr is longer
+   (quasiquote (quasiquote (unquote-splicing a #(1 (unquote x) 3) b))))
+
+(t 'quasiquote (quasiquote quasiquote))
+(t 'unquote (quasiquote unquote))
+(t 'unquote-splicing (quasiquote unquote-splicing))
+(t '(x quasiquote) (quasiquote (x quasiquote)))
+; (quasiquote (x unquote)) is identical to (quasiquote (x . (unquote)))....
+;; It's either this (error) or make all calls to unquote with more or less
+;; than one argument resolve to a literal unquote.
+(f (eval '(quasiquote (x unquote))))
+(t '(x unquote-splicing) (quasiquote (x unquote-splicing)))
 ;; Let's internal defines properly compared to core define procedure when renamed
 (f (eval '(let-syntax ((foo (syntax-rules () ((_ x) (begin (define x 1))))))
             (let () (foo a))
