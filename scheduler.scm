@@ -455,10 +455,13 @@ EOF
 					    (##sys#remove-from-timeout-list t))
 					  (##sys#thread-basic-unblock! t) 
 					  (loop2 (cdr threads) keep))
-					 ((not (eq? fd (car p)))
-					  (panic
-					   "##sys#unblock-threads-for-i/o: thread on fd-list has wrong FD"))
-					 ((fdset-test inf outf (cdr p))
+					 ((or (not (eq? fd (car p)))
+					      ;; thread on fd-list has incorrect
+					      ;; file-descriptor registered. 
+					      ;; We just assume this is the right one and
+					      ;; unblock.
+					      ;; XXX Needs to be investigated...
+					      (fdset-test inf outf (cdr p)))
 					  (when (##sys#slot t 4) ; also blocked for timeout?
 					    (##sys#remove-from-timeout-list t))
 					  (##sys#thread-basic-unblock! t) 
