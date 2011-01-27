@@ -65,7 +65,8 @@
 ;
 ; specialization specifiers:
 ;
-;   SPECIALIZATION = ((VAL ... [#!rest VAL]) TEMPLATE)
+;   SPECIALIZATION = ((MVAL ... [#!rest MVAL]) TEMPLATE)
+;   MVAL = VAL | (not VAL) | (or VAL ...)
 ;   TEMPLATE = INTEGER | SYMBOL | STRING
 ;            | (quote CONSTANT)
 ;            | (TEMPLATE . TEMPLATE)
@@ -490,7 +491,7 @@
 		       (specs (##sys#get pn '##core#specializations)))
 	      (for-each
 	       (lambda (spec)
-		 (when (match-specialization (car spec) (cdr args) match)
+		 (when (match-specialization (car spec) (cdr args))
 		   (debugging 'x "specializing call" (cons pn (car spec)))
 		   (specialize-node! node (cadr spec))))
 	       specs)))
@@ -683,7 +684,14 @@
 	   (##sys#put! name '##core#specializations specs))))
      (read-file dbfile))))
 
-(define (match-specialization typelist atypes match)
+(define (match-specialization typelist atypes)
+  (define (match st t)
+    (if (pair? st)
+	(case (car st)
+	  ((not) (not (equal? (cadr st) t)))
+	  ((or) (any (cut equal? <> t) (cdr st)))
+	  (else (equal? st t)))
+	(eq? st t)))
   (let loop ((tl typelist) (atypes atypes))
     (cond ((null? tl) (null? atypes))
 	  ((null? atypes) #f)
