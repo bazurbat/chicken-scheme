@@ -185,9 +185,9 @@
 	    (define (fail ret? msg . args)
 	      (let ((ln (get-line x)))
 		(warning 
-		 (sprintf "`~a', in format string ~s~a, ~?" 
+		 (sprintf "~a`~a', in format string ~s, ~?" 
+		   (if ln (sprintf "(~a) " ln) "")
 		   func fstr 
-		   (if ln (sprintf "(~a)" ln) "")
 		   msg args) ))
 	      (when ret? (return #f)))
 	    (let ((code '())

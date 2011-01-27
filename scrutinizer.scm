@@ -26,7 +26,7 @@
 
 (declare
   (unit scrutinizer)
-  (hide match-specialization specialize-node!))
+  (hide match-specialization specialize-node! specialization-statistics))
 
 
 (include "compiler-namespace")
@@ -67,13 +67,16 @@
 ;
 ;   SPECIALIZATION = ((MVAL ... [#!rest MVAL]) TEMPLATE)
 ;   MVAL = VAL | (not VAL) | (or VAL ...)
-;   TEMPLATE = INTEGER | SYMBOL | STRING
+;   TEMPLATE = #(INDEX)
+;            | INTEGER | SYMBOL | STRING
 ;            | (quote CONSTANT)
 ;            | (TEMPLATE . TEMPLATE)
 
 
 (define-constant +fragment-max-length+ 5)
 (define-constant +fragment-max-depth+ 3)
+
+(define specialization-statistics '())
 
 (define (scrutinize node db complain specialize)
   (define (constant-result lit)
@@ -492,7 +495,12 @@
 	      (for-each
 	       (lambda (spec)
 		 (when (match-specialization (car spec) (cdr args))
-		   (debugging 'x "specializing call" (cons pn (car spec)))
+		   (let ((op (cons pn (car spec))))
+		     (cond ((assoc op specialization-statistics) =>
+			    (lambda (a) (set-cdr! a (add1 (cdr a)))))
+			   (else
+			    (set! specialization-statistics
+			      (cons (cons op 1) specialization-statistics)))))
 		   (specialize-node! node (cadr spec))))
 	       specs)))
 	  r))))
@@ -662,7 +670,13 @@
 		'*))))
 	(d "  -> ~a" results)
 	results)))
-  (walk (first (node-subexpressions node)) '() '() #f #f))
+  (let ((rn (walk (first (node-subexpressions node)) '() '() #f #f)))
+    (when (debugging 'x "specializations:")
+      (for-each 
+       (lambda (ss)
+	 (printf "  ~a ~s~%" (cdr ss) (car ss)))
+       specialization-statistics))
+    rn))
 
 (define (load-type-database name #!optional (path (repository-path)))
   (and-let* ((dbfile (file-exists? (make-pathname path name))))
@@ -703,7 +717,10 @@
 (define (specialize-node! node template)
   (let ((args (cdr (node-subexpressions node))))
     (define (subst x)
-      (cond ((integer? x) (list-ref args (sub1 x)))
+      (cond ((and (vector? x)
+		  (= 1 (vector-length x)) 
+		  (integer? (vector-ref x 0)))
+	     (list-ref args (sub1 (vector-ref x 0))))
 	    ((not (pair? x)) x)
 	    ((eq? 'quote (car x)) x)	; to handle numeric constants
 	    (else (cons (subst (car x)) (subst (cdr x))))))
