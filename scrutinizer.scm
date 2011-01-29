@@ -67,7 +67,7 @@
 ;
 ;   SPECIALIZATION = ((MVAL ... [#!rest MVAL]) TEMPLATE)
 ;   MVAL = VAL | (not VAL) | (or VAL ...)
-;   TEMPLATE = #(INDEX)
+;   TEMPLATE = #(INDEX [...])
 ;            | INTEGER | SYMBOL | STRING
 ;            | (quote CONSTANT)
 ;            | (TEMPLATE . TEMPLATE)
@@ -721,6 +721,11 @@
 		  (= 1 (vector-length x)) 
 		  (integer? (vector-ref x 0)))
 	     (list-ref args (sub1 (vector-ref x 0))))
+	    ((and (vector? x)
+		  (= 2 (vector-length x))
+		  (integer? (vector-ref x 0))
+		  (eq? '... (vector-ref x 1)))
+	     (list-tail args (sub1 (vector-ref x 0))))
 	    ((not (pair? x)) x)
 	    ((eq? 'quote (car x)) x)	; to handle numeric constants
 	    (else (cons (subst (car x)) (subst (cdr x))))))
