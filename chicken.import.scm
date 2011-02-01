@@ -215,6 +215,7 @@
    string->uninterned-symbol
    strip-syntax
    sub1
+   subvector
    symbol-append
    symbol-escape
    symbol-plist

@@ -266,20 +266,18 @@ EOF
 ; (reverse-string-append l) = (apply string-append (reverse l))
 
 (define (reverse-string-append l)
-
   (define (rev-string-append l i)
     (if (pair? l)
       (let* ((str (car l))
 	     (len (string-length str))
-	     (result (rev-string-append (cdr l) (+ i len))))
-	(let loop ((j 0) (k (- (- (string-length result) i) len)))
-	  (if (< j len)
+	     (result (rev-string-append (cdr l) (fx+ i len))))
+	(let loop ((j 0) (k (fx- (fx- (string-length result) i) len)))
+	  (if (fx< j len)
 	    (begin
 	      (string-set! result k (string-ref str j))
-	      (loop (+ j 1) (+ k 1)))
+	      (loop (fx+ j 1) (fx+ k 1)))
 	    result)))
       (make-string i)))
-
   (rev-string-append l 0))
 
 ;;; Anything->string conversion:
