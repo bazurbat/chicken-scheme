@@ -1282,7 +1282,6 @@ Usage: chicken FILENAME OPTION ...
                                   append mode
     -no-lambda-info              omit additional procedure-information
     -scrutinize                  perform local flow analysis for static checks
-    -picky                       perform more static checks (implies -scrutinize)
     -types FILENAME              load additional type database
 
   Optimization options:
