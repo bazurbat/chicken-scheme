@@ -1,6 +1,6 @@
 ;;;; csi.scm - Interpreter stub for CHICKEN
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -31,7 +31,7 @@
   (disable-interrupts)
   (compile-syntax)
   (foreign-declare #<<EOF
-#if (defined(_MSC_VER) && defined(_WIN32)) || defined(HAVE_DIRECT_H)
+#if defined(HAVE_DIRECT_H)
 # include <direct.h>
 #else
 # define _getcwd(buf, len)       NULL
@@ -444,15 +444,24 @@ EOF
 	  (let ([sinfo (##sys#symbol-table-info)]
 		[minfo (memory-statistics)] )
 	    (define (shorten n) (/ (truncate (* n 100)) 100))
-	    (printf "Features:\n")
-	    (for-each
-	     (lambda (lst) 
-	       (display "\n  ")
-	       (for-each 
-		(lambda (f)
-		  (printf "~a~a" f (make-string (fxmax 1 (fx- 16 (string-length f))) #\space)) )
-		lst) )
-	     (chop (sort (map keyword->string ##sys#features) string<?) 5))
+	    (printf "Features:~%~%")
+	    (let ((fs (sort (map keyword->string ##sys#features) string<?))
+		  (c 0))
+	      (for-each
+	       (lambda (f)
+		 (printf "  ~a" f)
+		 (let* ((len (string-length f))
+			(pad (- 16 len)))
+		   (set! c (add1 c))
+		   (when (<= pad 0)
+		     (set! c (add1 c))
+		     (set! pad (+ pad 18)))
+		   (cond ((>= c 3)
+			  (display "\n")
+			  (set! c 0))
+			 (else 
+			  (display (make-string pad #\space))))))
+	       fs))
 	    (printf "~%~%~
                    Machine type:    \t~A ~A~%~
                    Software type:   \t~A~%~
@@ -671,8 +680,6 @@ EOF
 		      (newline out))
 		    (loop (cddr props)) ) ) )
 	      (##sys#slot x 1) ) ]
-	    [(and (##sys#structure? x 'meroon-instance) (provided? 'meroon)) ; XXX put this into meroon egg (really!)
-	     (unveil x out) ]
 	    [(##sys#generic-structure? x)
 	     (let ([st (##sys#slot x 0)])
 	       (cond ((##sys#hash-table-ref describer-table st) => (cut <> x out))
@@ -814,6 +821,7 @@ EOF
 
 (define copy-from-frame
   (let ((display display)
+	(newline newline)
 	(call/cc call/cc))
     (lambda (name)
       (let* ((ct (or ##sys#repl-recent-call-chain '()))
@@ -822,33 +830,42 @@ EOF
 	      (cond ((symbol? name) (##sys#slot name 1)) ; name
 		    ((string? name) name)
 		    (else 
-		     (display "string or symbol required for `,cf'\n")
+		     (display "string or symbol required for `,g'\n")
 		     #f))))
+	(define (compare sym)
+	  (let ((str (##sys#slot sym 1))) ; name
+	    (string=?
+	     name
+	     (substring str 0 (min (string-length name) (string-length str))))))
 	(if name
 	    (call/cc
 	     (lambda (return)
 	       (define (fail msg)
 		 (display msg)
+		 (newline)
 		 (return (##sys#void)))
-	       (do ((ct ct (cdr ct))
-		    (i (fx- len 1) (fx- i 1)))
-		   ((null? ct) (fail "no environment in frame\n")) 
+	       (do ((ct ct (cdr ct)))
+		   ((null? ct) (fail "no environment in frame")) 
+		 ;;XXX this should be refactored as it duplicates the code above
 		 (let* ((info (car ct))
 			(here (eq? selected-frame info))
 			(data (##sys#slot info 2)) ; cooked2 (cntr/frameinfo)
-			(finfo (##sys#structure? data 'frameinfo))
-			(cntr (if finfo (##sys#slot data 1) data))) ; cntr
+			(finfo (##sys#structure? data 'frameinfo)))
 		   (when (and here finfo)
 		     (for-each
 		      (lambda (e v)
 			(do ((i 0 (fx+ i 1))
 			     (be e (cdr be)))
-			    ((null? be) (fail "no such variable\n"))
-			  (when (string=? name (##sys#slot (car be) 1)) ; name
+			    ((null? be))
+			  (when (compare (car be))
+			    (display "; getting ")
+			    (display (car be))
+			    (newline)
 			    (history-add (list (##sys#slot v i)))
 			    (return (##sys#slot v i)))))
 		      (##sys#slot data 2)	; e
-		      (##sys#slot data 3))))))) ; v
+		      (##sys#slot data 3))	; v
+		     (fail (##sys#string-append "no such variable: " name)))))))
 	    (##sys#void))))))
 
 
@@ -936,7 +953,8 @@ EOF
 	     (##sys#error "missing or invalid script argument"))
 	   (program-name (cadr script))
 	   (command-line-arguments (cddr script))
-	   (register-feature! 'script)
+	   (register-feature! 'script)	; DEPRECATED
+	   (register-feature! 'chicken-script)
 	   (set-cdr! (cdr script) '()) 
 	   (when ##sys#windows-platform
 	     (and-let* ((sname (lookup-script-file (cadr script))))

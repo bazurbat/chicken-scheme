@@ -38,3 +38,10 @@
   (if x
       (values 42 43)
       (fail)))
+
+(define (foo)
+  (define (bar) (if foo 1))		; should not warn (local)
+  (for-each void '(1 2 3))		; should not warn (self-call)
+  (if foo 2)				; not in tail position
+  (if bar 3))				; should warn
+

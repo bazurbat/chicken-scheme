@@ -1,6 +1,6 @@
 ;;;; posixunix.scm - Miscellaneous file- and process-handling routines
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -199,6 +199,7 @@ static C_TLS struct stat C_statbuf;
 #define C_test_access(fn, m)     C_fix(access((char *)C_data_pointer(fn), C_unfix(m)))
 #define C_close(fd)         C_fix(close(C_unfix(fd)))
 #define C_sleep             sleep
+#define C_umask(m)          C_fix(umask(C_unfix(m)))
 
 #define C_lstat(fn)         C_fix(lstat((char *)C_data_pointer(fn), &C_statbuf))
 
@@ -431,9 +432,6 @@ static char C_time_string [TIME_STRING_MAXLENGTH + 1];
 extern char *strptime(const char *s, const char *format, struct tm *tm);
 extern pid_t getpgid(pid_t pid);
 #endif
-
-#define C_strftime(v, f) \
-        (strftime(C_time_string, sizeof(C_time_string), C_c_string(f), C_tm_set(v)) ? C_time_string : NULL)
 
 #define C_strptime(s, f, v) \
         (strptime(C_c_string(s), C_c_string(f), &C_tm) ? C_tm_get(v) : C_SCHEME_FALSE)
@@ -1353,8 +1351,7 @@ EOF
 	  [buf (if (fixnum? bufi) (##sys#make-string bufi) bufi)]
 	  [buflen 0]
 	  [bufpos 0] )
-      (let (
-            [ready?
+      (let ([ready?
 	     (lambda ()
 	       (let ((res (##sys#file-select-one fd)))
 		 (if (fx= -1 res)
@@ -1396,8 +1393,7 @@ EOF
 			   [else
 			    (set! buflen cnt)
 			    (set! bufpos 0)]) ) ) ) )] )
-	(letrec (
-		 [this-port
+	(letrec ([this-port
 		  (make-input-port
 		   (lambda ()		; read-char
 		     (fetch)
@@ -1466,7 +1462,14 @@ EOF
                                 (fetch)
                                 (if (fx< bufpos buflen)
                                     (loop str)
-                                    #!eof) ] ) ) ) ) ) ] )
+                                    #!eof) ] ) ) ) )
+		   (lambda (port)		; read-buffered
+		     (if (fx>= bufpos buflen)
+			 ""
+			 (let ((str (##sys#substring buf bufpos buflen)))
+			   (set! bufpos buflen)
+			   str)))
+		   ) ] )
 	  (set-port-name! this-port nam)
 	  this-port ) ) ) ) )
 
@@ -1682,28 +1685,6 @@ EOF
 
 ;;; Time related things:
 
-(define (check-time-vector loc tm)
-  (##sys#check-vector tm loc)
-  (when (fx< (##sys#size tm) 10)
-    (##sys#error loc "time vector too short" tm) ) )
-
-(define (seconds->local-time #!optional (secs (current-seconds)))
-  (##sys#check-number secs 'seconds->local-time)
-  (##sys#decode-seconds secs #f) )
-
-(define (seconds->utc-time #!optional (secs (current-seconds)))
-  (##sys#check-number secs 'seconds->utc-time)
-  (##sys#decode-seconds secs #t) )
-
-(define seconds->string
-  (let ([ctime (foreign-lambda c-string "C_ctime" integer)])
-    (lambda (#!optional (secs (current-seconds)))
-      (##sys#check-number secs 'seconds->string)
-      (let ([str (ctime secs)])
-        (if str
-            (##sys#substring str 0 (fx- (##sys#size str) 1))
-            (##sys#error 'seconds->string "cannot convert seconds to string" secs) ) ) ) ) )
-
 (define time->string
   (let ([asctime (foreign-lambda c-string "C_asctime" scheme-object)]
         [strftime (foreign-lambda c-string "C_strftime" scheme-object scheme-object)])
@@ -1726,13 +1707,6 @@ EOF
       (##sys#check-string fmt 'string->time)
       (strptime (##sys#make-c-string tim 'string->time) (##sys#make-c-string fmt) (make-vector 10 #f)) ) ) )
 
-(define (local-time->seconds tm)
-  (check-time-vector 'local-time->seconds tm)
-  (let ((t (##core#inline_allocate ("C_a_mktime" 4) tm)))
-    (if (fp= -1.0 t)
-	(##sys#error 'local-time->seconds "cannot convert time vector to seconds" tm)
-	t)))
-
 (define (utc-time->seconds tm)
   (check-time-vector 'utc-time->seconds tm)
   (let ((t (##core#inline_allocate ("C_a_timegm" 4) tm)))
@@ -1750,6 +1724,7 @@ EOF
    "char *z = (daylight ? tzname[1] : tzname[0]);"
    "\n#endif\n"
    "C_return(z);") )
+
 
 ;;; Other things:
 

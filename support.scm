@@ -1,6 +1,6 @@
 ;;;; support.scm - Miscellaneous support code for the CHICKEN compiler
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -271,7 +271,7 @@
   (let loop ((llist llist) (args args))
     (cond ((null? llist) (null? args))
 	  ((symbol? llist))
-	  ((null? args) #f)
+	  ((null? args) (atom? llist))
 	  (else (loop (cdr llist) (cdr args))))))
 
 
@@ -692,7 +692,6 @@
 			   (not (eq? 'unknown (cdr val))))))
 		    ((assq 'inlinable plist))
 		    (lparams (node-parameters (cdr val)))
-		    ;;((get db (first lparams) 'simple)) 
 		    ((not (get db sym 'hidden-refs)))
 		    ((case (variable-mark sym '##compiler#inline)
 		       ((yes) #t)
@@ -927,7 +926,7 @@
 	     [(int unsigned-int short unsigned-short byte unsigned-byte int32 unsigned-int32)
 	      (if unsafe param `(##sys#foreign-fixnum-argument ,param))]
 	     [(float double number) (if unsafe param `(##sys#foreign-flonum-argument ,param))]
-	     [(pointer byte-vector blob scheme-pointer) ; pointer and byte-vector are DEPRECATED
+	     [(blob scheme-pointer)
 	      (let ([tmp (gensym)])
 		`(let ([,tmp ,param])
 		   (if ,tmp
@@ -935,7 +934,7 @@
 			    tmp
 			    `(##sys#foreign-block-argument ,tmp) )
 		       '#f) ) ) ]
-	     [(nonnull-pointer nonnull-scheme-pointer nonnull-blob nonnull-byte-vector) ; nonnull-pointer and nonnull-byte-vector are DEPRECATED
+	     [(nonnull-scheme-pointer nonnull-blob)
 	      (if unsafe
 		  param
 		  `(##sys#foreign-block-argument ,param) ) ]
@@ -966,12 +965,18 @@
 		  `(##sys#foreign-struct-wrapper-argument 
 		    ',(##sys#slot (assq t tmap) 1)
 		    ,param) ) ]
-	     [(integer long size_t integer32 integer64)
+	     [(integer long size_t integer32)
 	      (if unsafe param `(##sys#foreign-integer-argument ,param))]
-	     [(unsigned-integer unsigned-integer32 unsigned-long unsigned-integer64)
+	     [(integer64)
+	      (if unsafe param `(##sys#foreign-integer64-argument ,param))]
+	     [(unsigned-integer unsigned-integer32 unsigned-long)
 	      (if unsafe
 		  param
 		  `(##sys#foreign-unsigned-integer-argument ,param) ) ]
+	     [(unsigned-integer32)
+	      (if unsafe
+		  param
+		  `(##sys#foreign-unsigned-integer64-argument ,param) ) ]
 	     [(c-pointer c-string-list c-string-list*)
 	      (let ([tmp (gensym)])
 		`(let ([,tmp ,param])
@@ -1091,10 +1096,10 @@
    (lambda (t next)
      (case t
        ((char int short bool unsigned-short unsigned-char unsigned-int long unsigned-long byte unsigned-byte
-	      c-pointer pointer nonnull-c-pointer unsigned-integer integer float c-string symbol
+	      c-pointer nonnull-c-pointer unsigned-integer integer float c-string symbol
 	      scheme-pointer nonnull-scheme-pointer int32 unsigned-int32 integer32 unsigned-integer32
               unsigned-c-string unsigned-c-string* nonnull-unsigned-c-string* size_t
-	      nonnull-c-string c-string* nonnull-c-string* c-string-list c-string-list*) ; pointer and nonnull-pointer are DEPRECATED
+	      nonnull-c-string c-string* nonnull-c-string* c-string-list c-string-list*)
 	(words->bytes 1) )
        ((double number integer64 unsigned-integer64)
 	(words->bytes 2) )
@@ -1257,6 +1262,7 @@ Usage: chicken FILENAME OPTION ...
     -emit-all-import-libraries   emit import-libraries for all defined modules
     -no-module-registration      do not generate module registration code
     -no-compiler-syntax          disable expansion of compiler-macros
+    -module                      wrap compiled code into implicit module
 
   Translation options:
 
@@ -1275,7 +1281,7 @@ Usage: chicken FILENAME OPTION ...
     -accumulate-profile          executable emits profiling information in
                                   append mode
     -no-lambda-info              omit additional procedure-information
-    -scrutinize                  perform local flow analysis
+    -scrutinize                  perform local flow analysis for static checks
     -types FILENAME              load additional type database
 
   Optimization options:
@@ -1328,8 +1334,6 @@ Usage: chicken FILENAME OPTION ...
     -epilogue FILENAME           include file after main source file
     -dynamic                     compile as dynamically loadable code
     -require-extension NAME      require and import extension NAME
-    -static-extension NAME       import extension NAME but link statically
-                                  (if available)
 
   Obscure options:
 

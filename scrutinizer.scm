@@ -1,6 +1,6 @@
 ;;;; scrutinizer.scm - The CHICKEN Scheme compiler (local flow analysis)
 ;
-; Copyright (c) 2009-2010, The Chicken Team
+; Copyright (c) 2009-2011, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -153,7 +153,7 @@
 		(else (bomb "invalid type: ~a" t))))
 	     (else (bomb "invalid type: ~a" t))))))
   (define (argument-string args)
-    (let ((len (length args))
+    (let* ((len (length args))
 	  (m (multiples len)))
       (if (zero? len)
 	  "zero arguments"
@@ -164,7 +164,7 @@
   (define (result-string results)
     (if (eq? '* results) 
 	"an unknown number of values"
-	(let ((len (length results))
+	(let* ((len (length results))
 	      (m (multiples len)))
 	  (if (zero? len)
 	      "zero values"
@@ -346,10 +346,10 @@
 		(case (car t1)
 		  ((or) (every (cut type<=? <> t2) (cdr t1)))
 		  ((procedure)
-		   (let ((args1 (if (pair? (cadr t1)) (cadr t1) (caddr t1)))
-			 (args2 (if (pair? (cadr t2)) (cadr t2) (caddr t2)))
-			 (res1 (if (pair? (cadr t1)) (cddr t1) (cdddr t1)))
-			 (res2 (if (pair? (cadr t2)) (cddr t2) (cdddr t2))) )
+		   (let ((args1 (if (named? t1) (caddr t1) (cadr t1)))
+			 (args2 (if (named? t2) (caddr t2) (cadr t2)))
+			 (res1 (if (named? t1) (cdddr t1) (cddr t1)))
+			 (res2 (if (named? t2) (cdddr t2) (cddr t2))) )
 		     (let loop1 ((args1 args1)
 				 (args2 args2)
 				 (m1 0) 
@@ -518,11 +518,21 @@
 	(and (pair? t)
 	     (eq? 'or (car t))
 	     (any noreturn-type? (cdr t)))))
-  (define (walk n e loc dest)		; returns result specifier
+  (define (self-call? node loc)
+    (case (node-class node)
+      ((##core#call)
+       (and (pair? loc)
+	    (let ((op (first (node-subexpressions node))))
+	      (and (eq? '##core#variable (node-class op))
+		   (eq? (car loc) (first (node-parameters op)))))))
+      ((let)
+       (self-call? (last (node-subexpressions node)) loc))
+      (else #f)))
+  (define (walk n e loc dest tail)		; returns result specifier
     (let ((subs (node-subexpressions n))
 	  (params (node-parameters n)) 
 	  (class (node-class n)) )
-      (d "walk: ~a ~a (loc: ~a, dest: ~a)" class params loc dest)
+      (d "walk: ~a ~a (loc: ~a, dest: ~a, tail: ~a, e: ~a)" class params loc dest tail e)
       (let ((results
 	     (case class
 	       ((quote) (list (constant-result (first params))))
@@ -530,30 +540,34 @@
 	       ((##core#proc) '(procedure))
 	       ((##core#global-ref) (global-result (first params) loc))
 	       ((##core#variable) (variable-result (first params) e loc))
-	       ((if) (let ((rt (single "in conditional" (walk (first subs) e loc dest) loc)))
-		       (always-true rt loc n)
-		       (let ((r1 (walk (second subs) e loc dest))
-			     (r2 (walk (third subs) e loc dest)))
-			 (cond ((and (not (eq? r1 '*)) 
-				     (not (eq? '* r2)) )
-				(when (and (not (any noreturn-type? r1))
-					   (not (any noreturn-type? r2))
-					   (not (= (length r1) (length r2))))
-				  (report 
-				   loc
-				   (sprintf
-				    "branches in conditional expression differ in the number of results:~%~%~a"
-				    (pp-fragment n))))
-				(map (lambda (t1 t2) (simplify `(or ,t1 ,t2)))
-				     r1 r2))
-			       (else '*)))))
+	       ((if)
+		(let ((rt (single "in conditional" (walk (first subs) e loc #f #f) loc))
+		      (c (second subs))
+		      (a (third subs)))
+		  (always-true rt loc n)
+		  (let ((r1 (walk c e loc dest tail))
+			(r2 (walk a e loc dest tail)))
+		    (cond ((and (not (eq? '* r1)) (not (eq? '* r2)))
+			   (when (and (not (any noreturn-type? r1))
+				      (not (any noreturn-type? r2))
+				      (not (= (length r1) (length r2))))
+			     (report 
+			      loc
+			      (sprintf
+				  "branches in conditional expression differ in the number of results:~%~%~a"
+				(pp-fragment n))))
+			   (map (lambda (t1 t2) (simplify `(or ,t1 ,t2)))
+				r1 r2))
+			  (else '*)))))
 	       ((let)
+		;; before CPS-conversion, `let'-nodes may have multiple bindings
 		(let loop ((vars params) (body subs) (e2 '()))
 		  (if (null? vars)
-		      (walk (car body) (append e2 e) loc dest)
+		      (walk (car body) (append e2 e) loc dest tail)
 		      (let ((t (single 
 				(sprintf "in `let' binding of `~a'" (real-name (car vars)))
-				(walk (car body) e loc (car vars)) loc)))
+				(walk (car body) e loc (car vars) #f) 
+				loc)))
 			(loop (cdr vars) (cdr body) (alist-cons (car vars) t e2))))))
 	       ((##core#lambda lambda)
 		(decompose-lambda-list
@@ -567,7 +581,7 @@
 			  (r (walk (first subs)
 				   (if rest (alist-cons rest 'list e2) e2)
 				   (add-loc dest loc)
-				   #f)))
+				   #f #t)))
 		     (list 
 		      (append
 		       '(procedure) 
@@ -579,7 +593,7 @@
 		       (type (##sys#get var '##core#type))
 		       (rt (single 
 			    (sprintf "in assignment to `~a'" var)
-			    (walk (first subs) e loc var)
+			    (walk (first subs) e loc var #f)
 			    loc))
 		       (b (assq var e)) )
 		  (when (and type (not b)
@@ -604,17 +618,17 @@
 					  "operator position"
 					  (sprintf "argument #~a" i))
 				      f)
-				     (walk n e loc #f) loc))
+				     (walk n e loc #f #f) loc))
 				  subs (iota (length subs)))))
 		  (call-result args e loc (first subs) params)))
 	       ((##core#switch ##core#cond)
 		(bomb "unexpected node class: ~a" class))
 	       (else
-		(for-each (lambda (n) (walk n e loc #f)) subs)
+		(for-each (lambda (n) (walk n e loc #f #f)) subs)
 		'*))))
 	(d "  -> ~a" results)
 	results)))
-  (walk (first (node-subexpressions node)) '() '() #f))
+  (walk (first (node-subexpressions node)) '() '() #f #f))
 
 (define (load-type-database name #!optional (path (repository-path)))
   (and-let* ((dbfile (file-exists? (make-pathname path name))))

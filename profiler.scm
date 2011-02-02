@@ -1,6 +1,6 @@
 ;;;; profiler.scm - Support code for profiling applications
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -32,9 +32,7 @@
   (fixnum) )
 
 (foreign-declare #<<EOF
-#if !defined(_MSC_VER)
-# include <unistd.h>
-#endif
+#include <unistd.h>
 EOF
 )
 
@@ -51,15 +49,16 @@ EOF
 (define ##sys#profile-name #f)
 (define ##sys#profile-append-mode #f)
 
-
 ;;; Initialize profile counter vector:
 
 (define ##sys#register-profile-info
-  (let ([make-vector make-vector])
+  (let ((make-vector make-vector))
     (lambda (size filename)
       (when filename
-	(set! ##sys#profile-name
-	  (string-append filename "." (number->string profile-id)))
+	(set! ##sys#profile-name 
+	  (if (string? filename)
+	      filename
+	      (string-append "PROFILE." (number->string profile-id))))
 	(let ([oldeh (##sys#exit-handler)]
 	      [oldieh (##sys#implicit-exit-handler)] )
 	  (##sys#exit-handler
@@ -71,7 +70,7 @@ EOF
 	     (##sys#finish-profile)
 	     (oldieh) ) ) ) )
       ;; entry: [name, count, time0, total, pending]
-      (let ([vec (make-vector (* size profile-info-entry-size) 0)])
+      (let ((vec (make-vector (* size profile-info-entry-size) 0)))
 	(set! ##sys#profile-vector-list (cons vec ##sys#profile-vector-list))
 	vec) ) ) )
 
@@ -144,5 +143,5 @@ EOF
 		(write-char #\newline) ) ) ) 
 	  ##sys#profile-vector-list) )
        (if ##sys#profile-append-mode
-	   '(append:)
+	   '(#:append)
 	   '() ) ) ) ) )

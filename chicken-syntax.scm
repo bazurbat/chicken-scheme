@@ -1,6 +1,6 @@
 ;;;; chicken-syntax.scm - non-standard syntax extensions
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -339,13 +339,14 @@
 				    `(##core#set! ,v ,a))
 				  vars aliases) ) ) ) ) ) ))))
 
-(##sys#extend-macro-environment
- 'define-values '()
- (##sys#er-transformer
-  (lambda (form r c)
-    (##sys#check-syntax 'define-values form '(_ #(variable 0) _))
-    (for-each (cut ##sys#register-export <> (##sys#current-module)) (cadr form))
-    `(,(r 'set!-values) ,@(cdr form)))))
+(set! ##sys#define-values-definition
+  (##sys#extend-macro-environment
+   'define-values '()
+   (##sys#er-transformer
+    (lambda (form r c)
+      (##sys#check-syntax 'define-values form '(_ #(variable 0) _))
+      (for-each (cut ##sys#register-export <> (##sys#current-module)) (cadr form))
+      `(,(r 'set!-values) ,@(cdr form))))))
 
 (##sys#extend-macro-environment
  'let-values '()

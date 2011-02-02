@@ -90,10 +90,10 @@ lambda-expressions.
 
 === {{equal?}} compares all structured data recursively
 
-{{equal?}} compares all structured data recursively, while R5RS
-specifies that {{eqv?}} is used for data other than pairs, strings and
-vectors.  However, R5RS does not dictate the treatment of data types
-that are not specified by R5RS.
+{{equal?}} compares all structured data with the exception of
+procedures recursively, while R5RS specifies that {{eqv?}} is used for
+data other than pairs, strings and vectors.  However, R5RS does not
+dictate the treatment of data types that are not specified by R5RS
 
 
 === No built-in support for bignums

@@ -1,6 +1,6 @@
 # GNUmakefile - toplevel makefile
 #
-# Copyright (c) 2008-2010, The Chicken Team
+# Copyright (c) 2008-2011, The Chicken Team
 # Copyright (c) 2007, Felix L. Winkelmann
 # All rights reserved.
 #
@@ -54,8 +54,7 @@ $(STANDARD_TARGETS):
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) $@
 
 dist:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) distfiles
-	csi -s scripts/makedist.scm
+	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) dist
 
 boot-chicken:
 	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) boot-chicken

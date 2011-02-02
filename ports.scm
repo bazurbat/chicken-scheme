@@ -1,6 +1,6 @@
 ;;; ports.scm - Optional non-standard ports
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -32,9 +32,7 @@
 ; OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-(declare
- (unit ports)
- (hide read-and-write write-buf read-buf read-and-write-buf))
+(declare (unit ports))
 
 
 (include "common-declarations.scm")
@@ -68,43 +66,39 @@
 
 (define-constant +buf-size+ 1024)
 
-(define (read-buf port writer)
-  (let ((buf (make-string +buf-size+)))
-    (let loop ()
-      (let ((n (read-string! +buf-size+ buf port)))
-	(unless (eq? n 0)
-	  (writer buf n)
-	  (loop))))))
-
-(define (write-buf buf n port writer)
-  (do ((i 0 (fx+ i 1)))
-      ((fx>= i n))
-    (writer (integer->char (##sys#byte buf i)) port)))
-
-(define (read-and-write reader writer)
-  (let loop ()
-    (let ((x (reader)))
-      (unless (eof-object? x)
-	(writer x)
-	(loop)))))
-
-(define (read-and-write-buf src dest reader)
-  (let ((buf (make-string +buf-size+)))
-    (let loop ((n 0))
-      (when (fx>= n +buf-size+)
-	(write-string buf +buf-size+ dest)
-	(set! n 0))
-      (let ((c (reader src)))
-	(cond ((eof-object? c)
-	       (when (fx>= n 0)
-		 (write-string buf n dest)))
-	      (else
-	       (##sys#setbyte buf n (char->integer c))
-	       (loop (fx+ n 1))))))))
-
 (define copy-port 
-  (let ((read-char read-char)		; shadow here
+  (let ((read-char read-char)
 	(write-char write-char))
+    (define (read-buf port writer)
+      (let ((buf (make-string +buf-size+)))
+	(let loop ()
+	  (let ((n (read-string! +buf-size+ buf port)))
+	    (unless (eq? n 0)
+	      (writer buf n)
+	      (loop))))))
+    (define (write-buf buf n port writer)
+      (do ((i 0 (fx+ i 1)))
+	  ((fx>= i n))
+	(writer (integer->char (##sys#byte buf i)) port)))
+    (define (read-and-write reader writer)
+      (let loop ()
+	(let ((x (reader)))
+	  (unless (eof-object? x)
+	    (writer x)
+	    (loop)))))
+    (define (read-and-write-buf src dest reader)
+      (let ((buf (make-string +buf-size+)))
+	(let loop ((n 0))
+	  (when (fx>= n +buf-size+)
+	    (write-string buf +buf-size+ dest)
+	    (set! n 0))
+	  (let ((c (reader src)))
+	    (cond ((eof-object? c)
+		   (when (fx>= n 0)
+		     (write-string buf n dest)))
+		  (else
+		   (##sys#setbyte buf n (char->integer c))
+		   (loop (fx+ n 1))))))))
     (lambda (src dest #!optional (read read-char) (write write-char))
       ;; does not check port args intentionally
       (cond ((eq? read read-char)
@@ -131,6 +125,7 @@
 
 (define (make-concatenated-port p1 . ports)
   (let ((ports (cons p1 ports)))
+    ;;XXX should also forward other port-methods
     (make-input-port
      (lambda ()
        (let loop ()
@@ -214,7 +209,7 @@
 ;   10: last
 
 (define make-input-port
-  (lambda (read ready? close #!optional peek read-string read-line)
+  (lambda (read ready? close #!optional peek read-string read-line read-buffered)
     (let* ((class
 	    (vector 
 	     (lambda (p)		; read-char
@@ -241,7 +236,8 @@
 	     (lambda (p)		; char-ready?
 	       (ready?) )
 	     read-string		; read-string!
-	     read-line) )		; read-line
+	     read-line			; read-line
+	     read-buffered))
 	   (data (vector #f))
 	   (port (##sys#make-port #t class "(custom)" 'custom)) )
       (##sys#set-port-data! port data) 

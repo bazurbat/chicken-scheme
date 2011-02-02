@@ -1,6 +1,6 @@
 ;;;; eval.scm - Interpreter for CHICKEN
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -1289,16 +1289,19 @@
 
 ;;; Convert string into valid C-identifier:
 
-(define ##sys#string->c-identifier
-  (let ([string-copy string-copy])
-    (lambda (str)
-      (let* ([s2 (string-copy str)]
-	     [n (##sys#size s2)] )
-	(do ([i 0 (fx+ i 1)])
-	    ((fx>= i n) s2)
-	  (let ([c (##core#inline "C_subchar" s2 i)])
-	    (when (and (not (char-alphabetic? c)) (or (not (char-numeric? c)) (fx= i 0)))
-	      (##core#inline "C_setsubchar" s2 i #\_) ) ) ) ) ) ) )
+(define (##sys#string->c-identifier str)
+  (let ((out (open-output-string))
+	(n (string-length str)))
+    (do ((i 0 (fx+ i 1)))
+	((fx>= i n) (get-output-string out))
+      (let ((c (string-ref str i)))
+	(if (and (not (char-alphabetic? c))
+		 (or (not (char-numeric? c)) (fx= i 0)))
+	    (let ((i (char->integer c)))
+	      (write-char #\_ out)
+	      (when (fx< i 16) (write-char #\0 out))
+	      (display (number->string i 16) out))
+	    (write-char c out))))))
 
 
 ;;; Environments:

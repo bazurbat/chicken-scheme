@@ -1,6 +1,6 @@
 # Makefile.macosx - configuration for Apple Macintosh OS X -*- Makefile -*-
 #
-# Copyright (c) 2008-2010, The Chicken Team
+# Copyright (c) 2008-2011, The Chicken Team
 # Copyright (c) 2007, Felix L. Winkelmann
 # All rights reserved.
 #
@@ -52,7 +52,7 @@ C_COMPILER_OPTIMIZATION_OPTIONS ?= -Os -fomit-frame-pointer
 endif
 endif
 LINKER_LINK_SHARED_LIBRARY_OPTIONS = -dynamiclib -compatibility_version 1 -current_version 1.0 -install_name $@
-POSTINSTALL_PROGRAM_FLAGS = -change libchicken$(SO) $(LIBDIR)/libchicken$(SO)
+POSTINSTALL_PROGRAM_FLAGS = -change lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(SO) $(LIBDIR)/lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(SO)
 LIBRARIAN_OPTIONS = scru
 LINKER_LINK_SHARED_DLOADABLE_OPTIONS = -bundle -L.
 ASSEMBLER_OPTIONS =

@@ -1,6 +1,6 @@
 ;;;; files.scm - File and pathname operations
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -348,10 +348,14 @@ EOF
 ;;; normalize pathname for a particular platform
 
 (define normalize-pathname
-  (let ((bldplt (if (memq (build-platform) '(msvc mingw32)) 'windows 'unix)) )
+  (let ((bldplt (if (eq? (build-platform) 'mingw32) 'windows 'unix)) )
     (define (addpart part parts)
       (cond ((string=? "." part) parts)
-            ((string=? ".." part) (if (null? parts) '("..") (cdr parts)))
+            ((string=? ".." part) 
+	     (if (or (null? parts)
+		     (string=? ".." (car parts)))
+		 (cons part parts)
+		 (cdr parts)))
             (else (cons part parts) ) ) )
     (lambda (path #!optional (platform bldplt))
       (let ((sep (if (eq? platform 'windows) #\\ #\/)))

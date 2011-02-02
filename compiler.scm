@@ -5,7 +5,7 @@
 ;
 ;
 ;--------------------------------------------------------------------------------------------------
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -337,6 +337,7 @@
 (define enable-inline-files #f)
 (define compiler-syntax-enabled #t)
 (define unchecked-specialized-arithmetic #f)
+(define bootstrap-mode #f)
 
 
 ;;; These are here so that the backend can access them:
@@ -973,7 +974,7 @@
 				(let ([x (car xs)]
 				      [r (cdr xs)] )
 				  (if (null? r)
-				      (list (walk x e se dest #f h))
+				      (list (walk x e se dest ldest h))
 				      (cons (walk x e se #f #f h) (fold r)) ) ) ) )
 			     '(##core#undefined) ) )
 
@@ -1621,6 +1622,8 @@
 	       [lam (first subs)] )
 	   (set! foreign-callback-stubs
 	     (cons (apply make-foreign-callback-stub id params) foreign-callback-stubs) )
+	   ;; mark to avoid leaf-routine optimization
+	   (mark-variable id '##compiler#callback-lambda)
 	   (cps-lambda id (first (node-parameters lam)) (node-subexpressions lam) k) ) )
 	((##core#inline ##core#inline_allocate ##core#inline_ref ##core#inline_update ##core#inline_loc_ref 
 			##core#inline_loc_update)
@@ -1796,7 +1799,7 @@
 	  ((set! ##core#set!) 
 	   (let* ((var (first params))
 		  (val (car subs)) )
-	     (when first-analysis 
+	     (when (and first-analysis (not bootstrap-mode))
 	       (case (variable-mark var '##compiler#intrinsic)
 		 ((standard)
 		  (warning "redefinition of standard binding" var) )
@@ -1922,19 +1925,16 @@
 	   (set-real-name! (first (node-parameters (or value pvalue))) sym) )
 
 	 ;; If this is the first analysis and the variable is global and has no references
-	 ;;  and we are in block mode, then issue warning:
+	 ;;  and is hidden then issue warning:
 	 (when (and first-analysis 
 		    global
 		    (null? references)
-		    (not (variable-mark sym '##compiler#unused)))
-	   (when assigned-locally
-	     (##sys#notice 
-	      (sprintf "local assignment to unused variable `~S' may be unintended" sym) ) )
-	   (when (and (not (variable-visible? sym))
-		      (not (variable-mark sym '##compiler#constant)) )
-	     (##sys#notice 
-	      (sprintf "global variable `~S' is only locally visible and never used"
-		sym) ) ) )
+		    (not (variable-mark sym '##compiler#unused))
+		    (not (variable-visible? sym))
+		    (not (variable-mark sym '##compiler#constant)) )
+	   (##sys#notice 
+	    (sprintf "global variable `~S' is only locally visible and never used"
+	      sym) ) )
 
  	 ;; Make 'boxed, if 'assigned & 'captured:
 	 (when (and assigned captured)
@@ -2089,39 +2089,6 @@
 
 
 ;;; Collect unsafe global procedure calls that are assigned:
-
-(define (check-for-unsafe-toplevel-procedure-calls node db)
-  (let ((procs '()))
-
-    (define (walk n)
-      (let ((subs (node-subexpressions n))
-	    (params (node-parameters n)) 
-	    (class (node-class n)) )
-	(case class
-	  ((##core#call)
-	   (let ((fun (first subs)))
-	     (when (memq (node-class fun) '(##core#variable ##core#global-ref))
-	       (let ((name (first (node-parameters fun))))
-		 (when (and ##sys#notices-enabled
-			    (get db name 'global)
-			    (get db name 'assigned)
-			    (variable-visible? name)
-			    (or no-global-procedure-checks
-				(variable-mark name '##compiler#always-bound-to-procedure))
-			    (not unsafe))
-		   (set! procs (lset-adjoin eq? procs name))))))
-	   (for-each walk subs))
-	  (else (for-each walk subs)))))
-
-    (when ##sys#notices-enabled
-      (walk node)
-      (when (pair? procs)
-	(##sys#notice
-	 "access to the following non-intrinsic global procedures was declared to be unsafe even though they are externally visible:")
-	(newline (current-error-port))
-	(for-each (cute fprintf (current-error-port) "  ~S~%" <>) procs)
-	(flush-output (current-error-port))))))
-
 
 ;;; Convert closures to explicit data structures (effectively flattens function-binding structure):
 

@@ -175,7 +175,8 @@ Enables lambda-lifting (equivalent to the {{-lambda-lift}} option).
 
 Declares that the listed (or all) toplevel variables defined in the
 current compilation unit are not modified from code outside of this
-compilation unit.
+compilation unit. See also the documentation for the {{-local}}
+compiler option about the implications of this.
 
 
 === no-argc-checks
@@ -283,13 +284,13 @@ a toplevel variable and {{TYPESPEC}} should be a type specification, following t
 given here:
 
   TYPESPEC --> *
-            |  ( VAL1 ... )
+            |  deprecated
+            |  VAL
   
   VAL --> (or VAL1 ...)
        |  (struct NAME)
        |  (procedure [NAME] (VAL1 ... [#!optional VALOPT1 ...] [#!rest [VAL]]) . RESULTS)
        |  BASIC
-       |  deprecated
   
   BASIC --> * 
          |  string 
@@ -309,12 +310,14 @@ given here:
          |  locative
          |  fixnum
          |  float
+         |  pointer-vector
   
   RESULTS --> * 
            |  (RVAL1 ...)
   
   RVAL --> undefined
         |  noreturn
+        |  VAL
 
 A type-declaration overrides any previous declaration for the same identifier.
 

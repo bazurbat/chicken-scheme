@@ -1,6 +1,6 @@
 # Makefile.cygwin - configuration for Linux -*- Makefile -*-
 #
-# Copyright (c) 2008-2010, The Chicken Team
+# Copyright (c) 2008-2011, The Chicken Team
 # Copyright (c) 2007, Felix L. Winkelmann
 # All rights reserved.
 #
@@ -61,7 +61,7 @@ endif
 C_COMPILER_SHARED_OPTIONS = -DPIC
 LINKER_LINK_SHARED_LIBRARY_OPTIONS = -shared 
 LINKER_LINK_SHARED_PROGRAM_OPTIONS = -Wl,--dll-search-prefix=cyg
-LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libchicken.dll.a \
+LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX).dll.a \
 	-Wl,--export-all-symbols \
 	-Wl,--enable-auto-import \
 	-Wl,--image-base=0x10000000 \
@@ -70,7 +70,7 @@ LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libchicken.dll.a \
 	-Wl,--no-whole-archive
 
 LIBRARIES = -lm 
-LIBCHICKEN_IMPORT_LIBRARY = libchicken.dll.a
+LIBCHICKEN_IMPORT_LIBRARY = lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX).dll.a
 
 
 # special files

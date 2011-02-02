@@ -1,6 +1,6 @@
 ;;; data-structures.scm - Optional data structures extensions
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without
@@ -41,9 +41,6 @@ EOF
 ;;; Combinators:
 
 (define (identity x) x)
-
-(define (project n)			; DEPRECATED
-  (lambda args (list-ref args n)) )
 
 (define (conjoin . preds)
   (lambda (x)
@@ -101,8 +98,6 @@ EOF
 	    [(pred (##sys#slot lst 0)) (loop (##sys#slot lst 1))]
 	    [else #f] ) ) ) )
 
-(define (noop . _) (void))		;DEPRECATED
-
 (define (each . procs)
   (cond ((null? procs) (lambda _ (void)))
 	((null? (##sys#slot procs 1)) (##sys#slot procs 0))
@@ -124,19 +119,6 @@ EOF
 (define (always? . _) #t)
 
 (define (never? . _) #f)
-
-(define (left-section proc . args)	;DEPRECATED
-  (##sys#check-closure proc 'left-section)
-  (lambda xs
-    (##sys#apply proc (##sys#append args xs)) ) )
-
-(define right-section			;DEPRECATED
-  (let ([##sys#reverse reverse])
-    (lambda (proc . args)
-      (##sys#check-closure proc 'right-section)
-      (let ([revdargs (##sys#reverse args)])
-        (lambda xs
-          (##sys#apply proc (##sys#reverse (##sys#append revdargs (##sys#reverse xs)))) ) ) ) ) )
 
 
 ;;; List operators:

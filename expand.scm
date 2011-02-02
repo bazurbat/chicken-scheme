@@ -1,6 +1,6 @@
 ;;;; expand.scm - The HI/LO expander
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -94,6 +94,7 @@
                           (lookup x se)
                           (getp x '##core#macro-alias) ) ) )
               (cond ((getp x '##core#real-name))
+                    ((getp x '##core#primitive))
                     ((and alias (not (assq x se)))
                      (##sys#alias-global-hook x #f #f))
                     ((not x2) x)
@@ -111,7 +112,7 @@
               (set! seen (cons (cons x vec) seen))
               (do ((i 0 (fx+ i 1)))
                   ((fx>= i len) vec)
-                (##sys#setslot vec i (##sys#slot x i)))))
+                (##sys#setslot vec i (walk (##sys#slot x i))))))
            (else x)))))
 
 (define strip-syntax ##sys#strip-syntax)
@@ -134,11 +135,13 @@
     (cond ((lookup name me) =>
 	   (lambda (a)
 	     (set-car! a se)
-	     (set-car! (cdr a) handler) ) )
+	     (set-car! (cdr a) handler)
+	     a))
 	  (else 
-	   (##sys#macro-environment
-	    (cons (list name se handler)
-		  me))))))
+	   (let ((data (list se handler)))
+	     (##sys#macro-environment
+	      (cons (cons name data) me))
+	     data)))))
 
 (define (##sys#copy-macro old new)
   (let ((def (lookup old (##sys#macro-environment))))
@@ -439,8 +442,20 @@
 ;
 ; This code is disgustingly complex.
 
+(define ##sys#define-definition)
+(define ##sys#define-syntax-definition)
+(define ##sys#define-values-definition)
+
 (define ##sys#canonicalize-body
   (lambda (body #!optional (se (##sys#current-environment)) cs?)
+    (define (comp s id)
+      (let ((f (lookup id se)))
+	(or (eq? s f)
+	    (case s
+	      ((define) (if f (eq? f ##sys#define-definition) (eq? s id)))
+	      ((define-syntax) (if f (eq? f ##sys#define-syntax-definition) (eq? s id)))
+	      ((define-values) (if f (eq? f ##sys#define-values-definition) (eq? s id)))
+	      (else (eq? s id))))))
     (define (fini vars vals mvars mvals body)
       (if (and (null? vars) (null? mvars))
 	  (let loop ([body2 body] [exps '()])
@@ -452,8 +467,8 @@
 		  (if (and (pair? x) 
 			   (let ((d (car x)))
 			     (and (symbol? d)
-				  (or (eq? (or (lookup d se) d) 'define)
-				      (eq? (or (lookup d se) d) 'define-values)))) )
+				  (or (comp 'define d)
+				      (comp 'define-values d)))))
 		      (cons
 		       '##core#begin
 		       (##sys#append (reverse exps) (list (expand body2))))
@@ -489,7 +504,7 @@
 	       ((and (list? (car body))
 		     (>= 3 (length (car body))) 
 		     (symbol? (caar body))
-		     (eq? 'define-syntax (or (lookup (caar body) se) (caar body))))
+		     (comp 'define-syntax (caar body)))
 		(let ((def (car body)))
 		  (loop 
 		   (cdr body) 
@@ -504,7 +519,7 @@
 			       (else def))
 			 defs) 
 		   #f)))
-	       (else (loop body defs #t))))))		       
+	       (else (loop body defs #t))))))
     (define (expand body)
       (let loop ([body body] [vars '()] [vals '()] [mvars '()] [mvals '()])
 	(if (not (pair? body))
@@ -512,11 +527,11 @@
 	    (let* ((x (car body))
 		   (rest (cdr body))
 		   (exp1 (and (pair? x) (car x)))
-		   (head (and exp1
-			      (symbol? exp1)
-			      (or (lookup exp1 se) exp1))))
-	      (cond [(not (symbol? head)) (fini vars vals mvars mvals body)]
-		    [(eq? 'define (or (lookup head se) head))
+		   (head (and exp1 (symbol? exp1) exp1)))
+	      (if (not (symbol? head))
+		  (fini vars vals mvars mvals body)
+		  (cond
+		   ((comp 'define head)
 		     (##sys#check-syntax 'define x '(_ _ . #(_ 0)) #f se)
 		     (let loop2 ([x x])
 		       (let ([head (cadr x)])
@@ -542,23 +557,24 @@
 				(loop rest
 				      (cons (car head) vars)
 				      (cons `(##core#lambda ,(cdr head) ,@(cddr x)) vals)
-				      mvars mvals) ] ) ) ) ]
-		    ((eq? 'define-syntax (or (lookup head se) head))
+				      mvars mvals) ] ) ) ) )
+		    ((comp 'define-syntax head)
 		     (##sys#check-syntax 'define-syntax x '(_ _ . #(_ 1)) se)
 		     (fini/syntax vars vals mvars mvals body) )
-		    [(eq? 'define-values (or (lookup head se) head))
-		     ;;XXX check for any of the variables being `define-values' (?)
+		    ((comp 'define-values head)
+		     ;;XXX check for any of the variables being `define-values'
 		     (##sys#check-syntax 'define-values x '(_ #(_ 0) _) #f se)
-		     (loop rest vars vals (cons (cadr x) mvars) (cons (caddr x) mvals)) ]
-		    [(eq? '##core#begin head)
-		     (loop (##sys#append (cdr x) rest) vars vals mvars mvals) ]
-		    ((or (memq head vars) (memq head mvars))
-		     (fini vars vals mvars mvals body))
-		    [else
-		     (let ([x2 (##sys#expand-0 x se cs?)])
-		       (if (eq? x x2)
-			   (fini vars vals mvars mvals body)
-			   (loop (cons x2 rest) vars vals mvars mvals) ) ) ] ) ) ) ) )
+		     (loop rest vars vals (cons (cadr x) mvars) (cons (caddr x) mvals)))
+		    ((comp '##core#begin head)
+		     (loop (##sys#append (cdr x) rest) vars vals mvars mvals) )
+		    (else
+		     (if (or (memq head vars) (memq head mvars))
+			 (fini vars vals mvars mvals body)
+			 (let ((x2 (##sys#expand-0 x se cs?)))
+			   (if (eq? x x2)
+			       (fini vars vals mvars mvals body)
+			       (loop (cons x2 rest)
+				     vars vals mvars mvals) ) ) ) ) ) ) ) ) ) )
     (expand body) ) )
 
 
@@ -770,6 +786,7 @@
 	     (lambda (a)
 	       (cond ((symbol? a)
 		      (dd `(RENAME/LOOKUP: ,sym --> ,a))
+                      (set! renv (cons (cons sym a) renv))
 		      a)
 		     (else
 		      (let ((a2 (macro-alias sym se)))
@@ -824,6 +841,11 @@
 		r)
 	    ")")
 	r))
+    (define (assq-reverse s l)
+      (cond
+       ((null? l) #f)
+       ((eq? (cdar l) s) (car l))
+       (else (assq-reverse s (cdr l)))))
     (define (mirror-rename sym)
       (cond ((pair? sym)
 	     (cons (mirror-rename (car sym)) (mirror-rename (cdr sym))))
@@ -836,6 +858,9 @@
                       (lambda (name)
                         (dd "STRIP SYNTAX ON " sym " ---> " name)
                         name))
+                     ((assq-reverse sym renv) =>
+                      (lambda (a)
+                        (dd "REVERSING RENAME: " sym " --> " (car a)) (car a)))
                      ((not renamed)
                       (dd "IMPLICITLY RENAMED: " sym) (rename sym))
                      ((pair? renamed)
@@ -1092,54 +1117,56 @@
     (##sys#check-syntax 'begin x '(_ . #(_ 0)))
     `(##core#begin ,@(cdr x)))))
 
-(##sys#extend-macro-environment
- 'define
- '()
- (##sys#er-transformer
-  (lambda (x r c)
-    (##sys#check-syntax 'define x '(_ . #(_ 1)))
-    (let loop ((form x))
+(set! ##sys#define-definition
+  (##sys#extend-macro-environment
+   'define
+   '()
+   (##sys#er-transformer
+    (lambda (x r c)
+      (##sys#check-syntax 'define x '(_ . #(_ 1)))
+      (let loop ((form x))
+	(let ((head (cadr form))
+	      (body (cddr form)) )
+	  (cond ((not (pair? head))
+		 (##sys#check-syntax 'define form '(_ symbol . #(_ 0 1)))
+		 (##sys#register-export head (##sys#current-module))
+		 (when (c (r 'define) head)
+		   (##sys#defjam-error x))
+		 `(##core#set! 
+		   ,head 
+		   ,(if (pair? body) (car body) '(##core#undefined))) )
+		((pair? (car head))
+		 (##sys#check-syntax 'define form '(_ (_ . lambda-list) . #(_ 1)))
+		 (loop (##sys#expand-curried-define head body '())) ) ;XXX '() should be se
+		(else
+		 (##sys#check-syntax 'define form '(_ (symbol . lambda-list) . #(_ 1)))
+		 (loop (list (car x) (car head) `(##core#lambda ,(cdr head) ,@body)))))))))))
+
+(set! ##sys#define-syntax-definition
+  (##sys#extend-macro-environment
+   'define-syntax
+   '()
+   (##sys#er-transformer
+    (lambda (form r c)
       (let ((head (cadr form))
 	    (body (cddr form)) )
 	(cond ((not (pair? head))
-	       (##sys#check-syntax 'define form '(_ symbol . #(_ 0 1)))
+	       (##sys#check-syntax 'define-syntax head 'symbol)
+	       (##sys#check-syntax 'define-syntax body '#(_ 1))
 	       (##sys#register-export head (##sys#current-module))
-	       (when (c (r 'define) head)
-		 (##sys#defjam-error x))
-	       `(##core#set! 
-		 ,head 
-		 ,(if (pair? body) (car body) '(##core#undefined))) )
-	      ((pair? (car head))
-	       (##sys#check-syntax 'define form '(_ (_ . lambda-list) . #(_ 1)))
-	       (loop (##sys#expand-curried-define head body '())) ) ;XXX '() should be se
+	       (when (c (r 'define-syntax) head)
+		 (##sys#defjam-error form))
+	       `(##core#define-syntax ,head ,(car body)))
 	      (else
-	       (##sys#check-syntax 'define form '(_ (symbol . lambda-list) . #(_ 1)))
-	       (loop (list (car x) (car head) `(##core#lambda ,(cdr head) ,@body))))))))))
-
-(##sys#extend-macro-environment
- 'define-syntax
- '()
- (##sys#er-transformer
-  (lambda (form r c)
-    (let ((head (cadr form))
-	  (body (cddr form)) )
-      (cond ((not (pair? head))
-	     (##sys#check-syntax 'define-syntax head 'symbol)
-	     (##sys#check-syntax 'define-syntax body '#(_ 1))
-	     (##sys#register-export head (##sys#current-module))
-	     (when (c (r 'define-syntax) head)
-	       (##sys#defjam-error form))
-	     `(##core#define-syntax ,head ,(car body)))
-	    (else
-	     (##sys#check-syntax 'define-syntax head '(_ . lambda-list))
-	     (##sys#check-syntax 'define-syntax body '#(_ 1))
-	     (when (eq? (car form) (car head))
-	       (##sys#syntax-error-hook
-		"redefinition of `define-syntax' not allowed in syntax-definition"
-		form))
-	     `(##core#define-syntax 
-	       ,(car head)
-	       (##core#lambda ,(cdr head) ,@body))))))))
+	       (##sys#check-syntax 'define-syntax head '(_ . lambda-list))
+	       (##sys#check-syntax 'define-syntax body '#(_ 1))
+	       (when (eq? (car form) (car head))
+		 (##sys#syntax-error-hook
+		  "redefinition of `define-syntax' not allowed in syntax-definition"
+		  form))
+	       `(##core#define-syntax 
+		 ,(car head)
+		 (##core#lambda ,(cdr head) ,@body)))))))))
 
 (##sys#extend-macro-environment
  'let
@@ -1357,31 +1384,23 @@
 	       (let ((head (car x))
 		     (tail (cdr x)))
 		 (cond ((c %unquote head)
-			(if (pair? tail)
-			    (let ((hx (car tail)))
-			      (if (eq? n 0)
-				  hx
-				  (list '##sys#list `(##core#quote ,%unquote)
-					(walk hx (fx- n 1)) ) ) )
-			    `(##core#quote ,%unquote) ) )
+                        (cond ((eq? n 0)
+                               (##sys#check-syntax 'unquote x '(_ _))
+                               (car tail))
+                              (else (list '##sys#cons `(##core#quote ,%unquote)
+                                          (walk tail (fx- n 1)) ) )))
 		       ((c %quasiquote head)
-			(if (pair? tail)
-			    `(##sys#list (##core#quote ,%quasiquote) 
-					 ,(walk (car tail) (fx+ n 1)) ) 
-			    (list '##sys#cons (list '##core#quote %quasiquote) 
-				  (walk tail n)) ) )
-		       ((pair? head)
-			(let ((hx (car head))
-			      (tx (cdr head)))
-			  (if (and (c hx %unquote-splicing) (pair? tx))
-			      (let ((htx (car tx)))
-				(if (eq? n 0)
-				    `(##sys#append ,htx
-						   ,(walk tail n) )
-				    `(##sys#cons (##sys#list (##core#quote ,%unquote-splicing)
-							     ,(walk htx (fx- n 1)) )
-						 ,(walk tail n) ) ) )
-			      `(##sys#cons ,(walk head n) ,(walk tail n)) ) ) )
+			(list '##sys#cons `(##core#quote ,%quasiquote) 
+                              (walk tail (fx+ n 1)) ) )
+		       ((and (pair? head) (c %unquote-splicing (car head)))
+                        (cond ((eq? n 0)
+                               (##sys#check-syntax 'unquote-splicing head '(_ _))
+                               `(##sys#append ,(cadr head) ,(walk tail n)))
+                              (else
+                               `(##sys#cons
+                                 (##sys#cons (##core#quote ,%unquote-splicing)
+                                             ,(walk (cdr head) (fx- n 1)) )
+                                 ,(walk tail n)))))
 		       (else
 			`(##sys#cons ,(walk head n) ,(walk tail n)) ) ) ) ) ) )
       (define (simplify x)

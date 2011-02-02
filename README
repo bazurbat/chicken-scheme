@@ -3,10 +3,10 @@
   =========================================
 
 
-  (c) 2008-2010, The Chicken Team
+  (c) 2008-2011, The Chicken Team
   (c) 2000-2007, Felix L. Winkelmann
 
-  version 4.6.3
+  version 4.6.4
 
 
  1. Introduction
@@ -204,11 +204,9 @@
  3. Usage
 
         Documentation can be found in the directory
-        PREFIX/share/chicken/doc in svnwiki format (see
-        http://wiki.call-cc.org/edit-help for more information about
-        the used syntax). The manual is maintained in a wiki at
-        http://wiki.call-cc.org. Go there to read the most up to date
-        documentation.
+        PREFIX/share/chicken/doc in HTML format. The manual is
+        maintained in a wiki at http://wiki.call-cc.org. Go there to
+        read the most up to date documentation.
 
 
  4. Extensions

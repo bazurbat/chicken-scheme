@@ -1,6 +1,6 @@
 ;;;; lolevel.scm - Low-level routines for CHICKEN
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -624,30 +624,6 @@ EOF
 	 [new (##core#inline "C_copy_block" old (##sys#make-vector words))] )
     (##sys#become! (list (cons old (proc new))))
     new ) )
-
-
-;;; Access computed globals: 
-
-;;DEPRECATED
-(define (global-ref sym)
-  (##sys#check-symbol sym 'global-ref)
-  (##core#inline "C_retrieve" sym) )
-
-;;DEPRECATED
-(define (global-set! sym x)
-  (##sys#check-symbol sym 'global-set!)
-  (##sys#setslot sym 0 x) )
-
-;;DEPRECATED
-(define (global-bound? sym)
-  (##sys#check-symbol sym 'global-bound?)
-  (##sys#symbol-has-toplevel-binding? sym) )
-
-;;DEPRECATED
-(define (global-make-unbound! sym)
-  (##sys#check-symbol sym 'global-make-unbound!)
-  (##sys#setslot sym 0 (##sys#slot '##sys#arbitrary-unbound-symbol 0))
-  sym )
 
 
 ;;; pointer vectors

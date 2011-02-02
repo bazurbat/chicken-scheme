@@ -1,6 +1,6 @@
 # rules.make - basic build rules -*- Makefile -*-
 #
-# Copyright (c) 2008-2010, The Chicken Team
+# Copyright (c) 2008-2011, The Chicken Team
 # Copyright (c) 2000-2007, Felix L. Winkelmann
 # All rights reserved.
 #
@@ -79,6 +79,8 @@ DISTFILES = $(filter-out runtime.c,$(LIBCHICKEN_OBJECTS_1:=.c)) \
 	$(UTILITY_PROGRAM_OBJECTS_1:=.c) \
 	$(ALWAYS_STATIC_UTILITY_PROGRAM_OBJECTS_1:=.c) \
 	$(COMPILER_OBJECTS_1:=.c) \
+	$(SETUP_API_OBJECTS_1:=.c) \
+	$(SETUP_API_OBJECTS_1:=.import.scm) $(SETUP_API_OBJECTS_1:=.import.c) \
 	$(IMPORT_LIBRARIES:=.import.c) \
 	posixunix.c posixwin.c
 # Remove the duplicate $(POSIXFILE) entry:
@@ -218,14 +220,14 @@ $(foreach obj, $(ALWAYS_STATIC_UTILITY_PROGRAM_OBJECTS_1),\
 
 libs: $(TARGETLIBS)
 
-libchicken$(SO): $(LIBCHICKEN_SHARED_OBJECTS) $(APPLY_HACK_OBJECT)
+lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(SO): $(LIBCHICKEN_SHARED_OBJECTS) $(APPLY_HACK_OBJECT)
 	$(LINKER) $(LINKER_OPTIONS) $(LINKER_LINK_SHARED_LIBRARY_OPTIONS) $(LIBCHICKEN_SO_LINKER_OPTIONS) \
 	  $(LINKER_OUTPUT) $^ $(LIBCHICKEN_SO_LIBRARIES)
 ifdef USES_SONAME
 	ln -sf $(LIBCHICKEN_SO_FILE) $(LIBCHICKEN_SO_FILE).$(BINARYVERSION)
 endif
 
-cygchicken-0.dll: $(LIBCHICKEN_SHARED_OBJECTS) $(APPLY_HACK_OBJECT)
+cyg$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)-0.dll: $(LIBCHICKEN_SHARED_OBJECTS) $(APPLY_HACK_OBJECT)
 	gcc -shared -o $(LIBCHICKEN_SO_FILE) -Wl,--dll -Wl,--add-stdcall-alias \
 	    -Wl,--enable-stdcall-fixup -Wl,--warn-unresolved-symbols \
 	    -Wl,--dll-search-prefix=cyg -Wl,--allow-multiple-definition \
@@ -235,21 +237,21 @@ cygchicken-0.dll: $(LIBCHICKEN_SHARED_OBJECTS) $(APPLY_HACK_OBJECT)
 	    -Wl,--whole-archive $(LIBCHICKEN_SHARED_OBJECTS) $(APPLY_HACK_OBJECT) \
 	    -Wl,--no-whole-archive $(LIBCHICKEN_SO_LIBRARIES)
 
-libchicken$(A): $(APPLY_HACK_OBJECT) $(LIBCHICKEN_STATIC_OBJECTS)
+lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(A): $(APPLY_HACK_OBJECT) $(LIBCHICKEN_STATIC_OBJECTS)
 	$(LIBRARIAN) $(LIBRARIAN_OPTIONS) $(LIBRARIAN_OUTPUT) $^
 
 # import libraries and extensions
 
 %.so: %.o
 	$(LINKER) $(LINKER_OPTIONS) $(LINKER_LINK_SHARED_DLOADABLE_OPTIONS) $^ $(LINKER_OUTPUT_OPTION) $@ \
-	  $(LINKER_LIBRARY_PREFIX)chicken$(LINKER_LIBRARY_SUFFIX) \
+	  $(LINKER_LIBRARY_PREFIX)$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(LINKER_LIBRARY_SUFFIX) \
 	  $(LIBRARIES)
 
 # executables
 
 $(CHICKEN_SHARED_EXECUTABLE): $(COMPILER_OBJECTS) $(PRIMARY_LIBCHICKEN)
 	$(LINKER) $(LINKER_OPTIONS) $(LINKER_EXECUTABLE_OPTIONS) $(COMPILER_OBJECTS) $(LINKER_OUTPUT) \
-          $(LINKER_LIBRARY_PREFIX)chicken$(LINKER_LIBRARY_SUFFIX) $(LINKER_LINK_SHARED_PROGRAM_OPTIONS) $(LIBRARIES)
+          $(LINKER_LIBRARY_PREFIX)$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(LINKER_LIBRARY_SUFFIX) $(LINKER_LINK_SHARED_PROGRAM_OPTIONS) $(LIBRARIES)
 
 define declare-program-from-object
 $(1)-RC_FILE = $(if $(and $(RC_COMPILER),$(3)),$(2).rc$(O))
@@ -257,7 +259,7 @@ $(1)-RC_FILE = $(if $(and $(RC_COMPILER),$(3)),$(2).rc$(O))
 $(1): $(2)$(O) $$(PRIMARY_LIBCHICKEN) $$($(1)-RC_FILE)
 	$$(LINKER) $$(LINKER_OPTIONS) $$(LINKER_EXECUTABLE_OPTIONS) $$< \
           $$($(1)-RC_FILE) $$(LINKER_OUTPUT) \
-          $$(LINKER_LIBRARY_PREFIX)chicken$$(LINKER_LIBRARY_SUFFIX) \
+          $$(LINKER_LIBRARY_PREFIX)$$(PROGRAM_PREFIX)chicken$$(PROGRAM_SUFFIX)$$(LINKER_LIBRARY_SUFFIX) \
           $$(LINKER_LINK_SHARED_PROGRAM_OPTIONS) $$(LIBRARIES)
 endef
 
@@ -272,12 +274,12 @@ $(eval $(call declare-program-from-object,$(CSC_PROGRAM)$(EXE),csc))
 
 # static executables
 
-$(CHICKEN_STATIC_EXECUTABLE): $(COMPILER_STATIC_OBJECTS) libchicken$(A)
-	$(LINKER) $(LINKER_OPTIONS) $(LINKER_STATIC_OPTIONS) $(COMPILER_STATIC_OBJECTS) $(LINKER_OUTPUT) libchicken$(A) $(LIBRARIES)
+$(CHICKEN_STATIC_EXECUTABLE): $(COMPILER_STATIC_OBJECTS) lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(A)
+	$(LINKER) $(LINKER_OPTIONS) $(LINKER_STATIC_OPTIONS) $(COMPILER_STATIC_OBJECTS) $(LINKER_OUTPUT) lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(A) $(LIBRARIES)
 
 define declare-static-program-from-object
-$(1): $(2)$(O) libchicken$(A)
-	$$(LINKER) $$(LINKER_OPTIONS) $$(LINKER_STATIC_OPTIONS) $$< $$(LINKER_OUTPUT) libchicken$(A) $$(LIBRARIES)
+$(1): $(2)$(O) lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(A)
+	$$(LINKER) $$(LINKER_OPTIONS) $$(LINKER_STATIC_OPTIONS) $$< $$(LINKER_OUTPUT) lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(A) $$(LIBRARIES)
 endef
 
 $(eval $(call declare-program-from-object,$(CSI_STATIC_EXECUTABLE),csi))
@@ -287,7 +289,7 @@ $(eval $(call declare-program-from-object,$(CHICKEN_BUG_PROGRAM)$(EXE),chicken-b
 # installation
 
 .PHONY: install uninstall install-libs
-.PHONY: install-target install-dev install-bin install-other-files
+.PHONY: install-target install-dev install-bin install-other-files install-wrappers
 
 install: $(TARGETS) install-target install-bin install-libs install-dev install-other-files
 
@@ -307,7 +309,7 @@ else
 endif
 ifdef USES_SONAME
 ifeq ($(DESTDIR),)
-	cd "$(DESTDIR)$(ILIBDIR)" && ln -sf $(LIBCHICKEN_SO_FILE).$(BINARYVERSION) libchicken$(SO)
+	cd "$(DESTDIR)$(ILIBDIR)" && ln -sf $(LIBCHICKEN_SO_FILE).$(BINARYVERSION) lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(SO)
 endif
 endif
 endif
@@ -323,7 +325,7 @@ install-dev: install-libs
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IEGGDIR)"
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IINCDIR)"
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IDATADIR)"
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS) libchicken$(A) "$(DESTDIR)$(ILIBDIR)"
+	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS) lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(A) "$(DESTDIR)$(ILIBDIR)"
 ifneq ($(POSTINSTALL_STATIC_LIBRARY),true)
 	$(POSTINSTALL_STATIC_LIBRARY) $(POSTINSTALL_STATIC_LIBRARY_FLAGS) "$(ILIBDIR)$(SEP)libchicken$(A)"
 endif
@@ -416,11 +418,15 @@ install-other-files:
 		$(SRCDIR)$(obj) "$(DESTDIR)$(IMANDIR)" $(NL))
 
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) "$(DESTDIR)$(IDOCDIR)$(SEP)manual"
-	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)manual$(SEP)* "$(DESTDIR)$(IDOCDIR)$(SEP)manual"
+	-$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)manual-html$(SEP)* "$(DESTDIR)$(IDOCDIR)$(SEP)manual"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)README "$(DESTDIR)$(IDOCDIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)LICENSE "$(DESTDIR)$(IDOCDIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)setup.defaults "$(DESTDIR)$(IDATADIR)"
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)chicken.png "$(DESTDIR)$(IDATADIR)"
+
+install-wrappers:
+	$(foreach prg, $(INSTALLED_PROGRAMS), \
+		$(CSI) -s $(SRCDIR)scripts$(SEP)make-wrapper.scm $(prg) "$(WRAPPERDIR)"
 
 uninstall:
 	$(foreach prog,$(INSTALLED_PROGRAMS),\
@@ -429,17 +435,17 @@ uninstall:
 
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_RECURSIVE_OPTIONS) "$(DESTDIR)$(IEGGDIR)"
 
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)$(SEP)libchicken$(A)"
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)$(SEP)libchicken$(SO)"
+	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)$(SEP)lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(A)"
+	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)$(SEP)lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(SO)"
 ifdef USES_SONAME
-	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)$(SEP)libchicken$(SO).$(BINARYVERSION)"
+	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)$(SEP)lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(SO).$(BINARYVERSION)"
 endif
 ifdef WINDOWS
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(IBINDIR)$(SEP)libchicken$(SO)"
+	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(IBINDIR)$(SEP)lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(SO)"
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(ILIBDIR)$(SEP)$(LIBCHICKEN_IMPORT_LIBRARY)"
 endif
 ifeq ($(PLATFORM),cygwin)
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(IBINDIR)$(SEP)cygchicken*"
+	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(IBINDIR)$(SEP)cyg$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)*"
 endif
 
 	$(foreach obj,$(MANPAGES),\
@@ -565,33 +571,34 @@ setup-download.c: $(SRCDIR)setup-download.scm setup-api.c
 
 distfiles: $(DISTFILES)
 
-dist: distfiles
+dist: distfiles html
 	CSI=$(CSI) $(CSI) -s $(SRCDIR)scripts$(SEP)makedist.scm --platform=$(PLATFORM) CHICKEN=$(CHICKEN)
 
+# Jim's `manual-labor' must be installed (just run "chicken-install manual-labor")
 html:
-	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) $(SRCDIR)html
-	$(COPY_COMMAND) $(SRCDIR)misc$(SEP)manual.css $(SRCDIR)html
-	$(CSI) -s $(SRCDIR)scripts$(SEP)wiki2html.scm --outdir=html manual$(SEP)*
+	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) $(SRCDIR)manual-html
+	manual-labor $(SRCDIR)manual $(SRCDIR)manual-html
+	$(COPY_COMMAND) $(SRCDIR)chicken.png manual-html
+	$(COPY_COMMAND) $(SRCDIR)index.html manual-html
 
 # cleaning up
 
 .PHONY: clean distclean spotless confclean testclean
 
 clean:
-	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) chicken$(EXE) csi$(EXE) csc$(EXE) \
+	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) $(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(EXE) $(PROGRAM_PREFIX)csi$(PROGRAM_SUFFIX)$(EXE) $(PROGRAM_PREFIX)csc$(PROGRAM_SUFFIX)$(EXE) \
 	  $(CHICKEN_PROFILE_PROGRAM)$(EXE) \
 	  $(CHICKEN_INSTALL_PROGRAM)$(EXE) \
 	  $(CHICKEN_UNINSTALL_PROGRAM)$(EXE) \
 	  $(CHICKEN_STATUS_PROGRAM)$(EXE) \
 	  $(CHICKEN_BUG_PROGRAM)$(EXE) *$(O) \
 	  $(LIBCHICKEN_SO_FILE) \
-	  libchicken$(A) libchicken$(SO) $(PROGRAM_IMPORT_LIBRARIES) \
+	  lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(A) \
+	  lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(SO) $(PROGRAM_IMPORT_LIBRARIES) \
 	  $(IMPORT_LIBRARIES:=.import.so) $(LIBCHICKEN_IMPORT_LIBRARY) \
-	  setup-api.so setup-api.import.scm setup-download.so \
-	  setup-download.import.scm \
-	  setup-api.c setup-download.c
+	  $(SETUP_API_OBJECTS_1:=.so) $(SETUP_API_OBJECTS_1:=.import.so)
 ifdef USES_SONAME
-	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) libchicken.so.$(BINARYVERSION)
+	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX).so.$(BINARYVERSION)
 endif
 
 confclean:

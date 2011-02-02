@@ -1,6 +1,6 @@
 ;;;; posixwin.scm - Miscellaneous file- and process-handling routines, available on Windows
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -72,7 +72,7 @@
 # define WIN32_LEAN_AND_MEAN
 #endif
 
-#if (_MSC_VER > 1300) || (defined(HAVE_WINSOCK2_H) && defined(HAVE_WS2TCPIP_H))
+#if (defined(HAVE_WINSOCK2_H) && defined(HAVE_WS2TCPIP_H))
 # include <winsock2.h>
 # include <ws2tcpip.h>
 #else
@@ -304,6 +304,8 @@ C_free_arg_string(char **where) {
 
 #define C_flushall()	    C_fix(_flushall())
 
+#define C_umask(m)          C_fix(_umask(C_unfix(m)))
+
 #define C_ctime(n)	    (C_secs = (n), ctime(&C_secs))
 
 #define C_tm_set_08(v) \
@@ -326,9 +328,6 @@ C_free_arg_string(char **where) {
 #define TIME_STRING_MAXLENGTH 255
 static char C_time_string [TIME_STRING_MAXLENGTH + 1];
 #undef TIME_STRING_MAXLENGTH
-
-#define C_strftime(v, f) \
-        (strftime(C_time_string, sizeof(C_time_string), C_c_string(f), C_tm_set(v)) ? C_time_string : NULL)
 
 /*
   mapping from Win32 error codes to errno
@@ -1446,53 +1445,11 @@ EOF
 
 ;;; Time related things:
 
-(define (check-time-vector loc tm)
-  (##sys#check-vector tm loc)
-  (when (fx< (##sys#size tm) 10)
-    (##sys#error loc "time vector too short" tm) ) )
-
-(define (seconds->local-time #!optional (secs (current-seconds)))
-  (##sys#check-number secs 'seconds->local-time)
-  (##sys#decode-seconds secs #f) )
-
-(define (seconds->utc-time #!optional (secs (current-seconds)))
-  (##sys#check-number secs 'seconds->utc-time)
-  (##sys#decode-seconds secs #t) )
-
-(define seconds->string
-  (let ([ctime (foreign-lambda c-string "C_ctime" integer)])
-    (lambda (#!optional (secs (current-seconds)))
-      (let ([str (ctime secs)])
-        (if str
-            (##sys#substring str 0 (fx- (##sys#size str) 1))
-            (##sys#error 'seconds->string "cannot convert seconds to string" secs) ) ) ) ) )
-
-(define time->string
-  (let ([asctime (foreign-lambda c-string "C_asctime" scheme-object)]
-        [strftime (foreign-lambda c-string "C_strftime" scheme-object scheme-object)])
-    (lambda (tm #!optional fmt)
-      (check-time-vector 'time->string tm)
-      (if fmt
-          (begin
-            (##sys#check-string fmt 'time->string)
-            (or (strftime tm (##sys#make-c-string fmt 'time->string))
-                (##sys#error 'time->string "time formatting overflows buffer" tm)) )
-          (let ([str (asctime tm)])
-            (if str
-                (##sys#substring str 0 (fx- (##sys#size str) 1))
-                (##sys#error 'time->string "cannot convert time vector to string" tm) ) ) ) ) ) )
-
-(define (local-time->seconds tm)
-  (check-time-vector 'local-time->seconds tm)
-  (let ((t (##core#inline_allocate ("C_a_mktime" 4) tm)))
-    (if (fp= t -1.0)
-	(##sys#error 'local-time->seconds "cannot convert time vector to seconds" tm) 
-	t)))
-
 (define local-timezone-abbreviation
   (foreign-lambda* c-string ()
    "char *z = (_daylight ? _tzname[1] : _tzname[0]);\n"
    "C_return(z);") )
+
 
 ;;; Other things:
 

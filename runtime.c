@@ -1,6 +1,6 @@
 /* runtime.c - Runtime code for compiler generated executables
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -110,23 +110,12 @@ static C_TLS int timezone;
 # endif
 #endif
 
-#ifdef _MSC_VER
-# define S_IFMT             _S_IFMT
-# define S_IFDIR            _S_IFDIR
-# define timezone           _timezone
-# if defined(_M_IX86)
-#  ifndef C_HACKED_APPLY
-#   define C_HACKED_APPLY
-#  endif
-# endif
-#else
-# ifdef C_HACKED_APPLY
-#  if defined(__MACH__) || defined(__MINGW32__) || defined(__CYGWIN__)
+#ifdef C_HACKED_APPLY
+# if defined(__MACH__) || defined(__MINGW32__) || defined(__CYGWIN__)
 extern void C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
-#  else
+# else
 extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
-#   define C_do_apply_hack _C_do_apply_hack
-#  endif
+#  define C_do_apply_hack _C_do_apply_hack
 # endif
 #endif
 
@@ -149,7 +138,7 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #define DEFAULT_FORWARDING_TABLE_SIZE  32
 #define DEFAULT_LOCATIVE_TABLE_SIZE    32
 #define DEFAULT_COLLECTIBLES_SIZE      1024
-#define DEFAULT_TRACE_BUFFER_SIZE      10
+#define DEFAULT_TRACE_BUFFER_SIZE      16
 
 #define MAX_HASH_PREFIX                64
 
@@ -173,9 +162,12 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #endif
 
 #define WORDS_PER_FLONUM               C_SIZEOF_FLONUM
-#define MAXIMAL_NUMBER_OF_COMMAND_LINE_ARGUMENTS 32
 #define INITIAL_TIMER_INTERRUPT_PERIOD 10000
 #define HDUMP_TABLE_SIZE               1001
+
+/* only for relevant for Windows: */
+
+#define MAXIMAL_NUMBER_OF_COMMAND_LINE_ARGUMENTS 256
 
 
 /* Constants: */
@@ -489,7 +481,8 @@ static C_ccall void call_cc_wrapper(C_word c, C_word closure, C_word k, C_word r
 static C_ccall void call_cc_values_wrapper(C_word c, C_word closure, C_word k, ...) C_noret;
 static void gc_2(void *dummy) C_noret;
 static void allocate_vector_2(void *dummy) C_noret;
-static void get_argv_2(void *dummy) C_noret;
+static void get_argv_2(void *dummy) C_noret; /* OBSOLETE */
+static void get_argument_2(void *dummy) C_noret;
 static void make_structure_2(void *dummy) C_noret;
 static void generic_trampoline(void *dummy) C_noret;
 static void file_info_2(void *dummy) C_noret;
@@ -592,7 +585,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   /*FIXME Should have C_tzset in chicken.h? */
 #ifdef C_NONUNIX
   C_startup_time_seconds = (time_t)0;
-# if defined(_MSC_VER) || defined(__MINGW32__)
+# if defined(__MINGW32__)
   /* Make sure _tzname, _timezone, and _daylight are set */
   _tzset();
 # endif
@@ -724,7 +717,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* hardcoded table size - this must match the number of C_pte calls! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 64);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 62);
   int i = 0;
 
   if(pt == NULL)
@@ -737,7 +730,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(call_cc_wrapper);
   C_pte(C_gc);
   C_pte(C_allocate_vector);
-  C_pte(C_get_argv);
   C_pte(C_make_structure);
   C_pte(C_ensure_heap_reserve);
   C_pte(C_return_to_host);
@@ -763,7 +755,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_quotient);
   C_pte(C_flonum_fraction);
   C_pte(C_expt);
-  C_pte(C_exact_to_inexact);
   C_pte(C_string_to_number);
   C_pte(C_number_to_string);
   C_pte(C_make_symbol);
@@ -779,7 +770,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_machine_byte_order);
   C_pte(C_software_version);
   C_pte(C_build_platform);
-  C_pte(C_c_runtime);
   C_pte(C_make_pointer);
   C_pte(C_make_tagged_pointer);
   C_pte(C_peek_signed_integer);
@@ -792,6 +782,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_copy_closure);
   C_pte(C_dump_heap_state);
   C_pte(C_filter_heap_objects);
+  C_pte(C_get_argument);
 
   /* did you remember the hardcoded pte table size? */
   pt[ i ].id = NULL;
@@ -1601,6 +1592,11 @@ void barf(int code, char *loc, ...)
     c = 1;
     break;
 
+  case C_CIRCULAR_DATA_ERROR:
+    msg = C_text("recursion too deep or circular data encountered");
+    c = 0;
+    break;
+
   default: panic(C_text("illegal internal error code"));
   }
   
@@ -2205,6 +2201,12 @@ void C_stack_overflow(void)
 }
 
 
+void C_stack_overflow_with_msg(C_char *msg)
+{
+  barf(C_STACK_OVERFLOW_ERROR, NULL);
+}
+
+
 void C_unbound_error(C_word sym)
 {
   barf(C_UNBOUND_VARIABLE_ERROR, NULL, sym);
@@ -2793,12 +2795,16 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
       else {
 	j = fcount = 0;
 
+	/* move into pending */
 	for(flist = finalizer_list; flist != NULL; flist = flist->next) {
 	  if(j < C_max_pending_finalizers) {
 	    if(!is_fptr(C_block_header(flist->item))) 
 	      pending_finalizer_indices[ j++ ] = flist;
 	  }
+	}
 
+	/* mark */
+	for(flist = finalizer_list; flist != NULL; flist = flist->next) {
 	  mark(&flist->item);
 	  mark(&flist->finalizer);
 	}
@@ -2813,7 +2819,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
       finalizers_checked = 1;
 
       if(pending_finalizer_count > 0 && gc_report_flag)
-	C_dbg(C_text("GC"), C_text("finalizers pending for rescan:\t %d (%d live)\n"), 
+	C_dbg(C_text("GC"), C_text("%d finalizer(s) pending (%d live)\n"), 
 	      pending_finalizer_count, live_finalizer_count);
 
       goto rescan;
@@ -2823,7 +2829,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 	 (and release finalizer node): */
       if(pending_finalizer_count > 0) {
 	if(gc_report_flag)
-	  C_dbg(C_text("GC"), C_text("queueing %d finalizers\n"), pending_finalizer_count);
+	  C_dbg(C_text("GC"), C_text("queueing %d finalizer(s)\n"), pending_finalizer_count);
 
 	last = C_block_item(pending_finalizers_symbol, 0);
 	assert(C_u_i_car(last) == C_fix(0));
@@ -3775,7 +3781,6 @@ C_regparm C_word C_fcall C_hash_string(C_word str)
   unsigned C_word key = 0;
   int len = C_header_size(str);
   C_byte *ptr = C_data_pointer(str);
-// *(ptr++) means you run off the edge.  
   while(len--) key = (key << 4) + (*ptr++);
 
   return C_fix(key & C_MOST_POSITIVE_FIXNUM);
@@ -3865,7 +3870,8 @@ C_regparm C_word C_fcall C_equalp(C_word x, C_word y)
   C_header header;
   C_word bits, n, i;
 
-  C_stack_check;
+  if(C_stack_test)
+    barf(C_CIRCULAR_DATA_ERROR, "equal?");
 
  loop:
   if(x == y) return 1;
@@ -3884,7 +3890,10 @@ C_regparm C_word C_fcall C_equalp(C_word x, C_word y)
     n = header & C_HEADER_SIZE_MASK;
 
     if(bits & C_SPECIALBLOCK_BIT) {
-      if(C_u_i_car(x) != C_u_i_car(y)) return 0;
+      /* do not recurse into closures */
+      if(C_header_bits(x) == C_CLOSURE_TYPE)
+	return !C_memcmp((void *)x, (void *)y, n * sizeof(C_word));
+      else if(C_block_item(x, 0) != C_block_item(y, 0)) return 0;
       else ++i;
 
       if(n == 1) return 1;
@@ -4153,11 +4162,7 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
     return C_fix(C_trace_buffer_size);
 
   case C_fix(30):
-#ifdef _MSC_VER
-    return C_fix(_MSC_VER);
-#else
     return C_SCHEME_FALSE;
-#endif
 
   case C_fix(31):
     tgc = timer_accumulated_gc_ms;
@@ -5669,6 +5674,18 @@ C_regparm C_word C_fcall C_i_foreign_integer_argumentp(C_word x)
 }
 
 
+C_regparm C_word C_fcall C_i_foreign_integer64_argumentp(C_word x)
+{
+  double m;
+
+  if((x & C_FIXNUM_BIT) != 0 || (!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG))
+    return x;
+
+  barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, NULL, x);
+  return C_SCHEME_UNDEFINED;
+}
+
+
 C_regparm C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x)
 {
   double m;
@@ -5680,6 +5697,20 @@ C_regparm C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x)
 
     if(m >= 0 && m <= C_UWORD_MAX) return x;
   }
+
+  barf(C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR, NULL, x);
+  return C_SCHEME_UNDEFINED;
+}
+
+
+C_regparm C_word C_fcall C_i_foreign_unsigned_integer64_argumentp(C_word x)
+{
+  double m;
+
+  if((x & C_FIXNUM_BIT) != 0) return x;
+
+  if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG)
+    return C_flonum_magnitude(x);
 
   barf(C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR, NULL, x);
   return C_SCHEME_UNDEFINED;
@@ -5787,18 +5818,10 @@ void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...)
   buf[ 2 ] = k;
   C_memcpy(&buf[ 3 ], C_temporary_stack_limit, n * sizeof(C_word));
   proc = (void *)C_block_item(fn2, 0);
-# ifdef _MSC_VER
-  __asm { 
-    mov eax, proc
-    mov esp, buf
-    call eax
-  }
-# elif defined(__GNUC__)
   C_do_apply_hack(proc, buf, n + 3);
-# endif
-#endif
-
+#else
   C_do_apply(n, fn2, k);
+#endif
 }
 
 
@@ -7071,6 +7094,7 @@ void C_ccall C_flonum_fraction(C_word c, C_word closure, C_word k, C_word n)
 }
 
 
+/* XXX left for binary compatibility */
 void C_ccall C_exact_to_inexact(C_word c, C_word closure, C_word k, C_word n)
 {
   C_alloc_flonum;
@@ -7084,6 +7108,18 @@ void C_ccall C_exact_to_inexact(C_word c, C_word closure, C_word k, C_word n)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "exact->inexact", n);
  
   C_kontinue(k, n);
+}
+
+
+C_regparm C_word C_fcall 
+C_a_i_exact_to_inexact(C_word **a, int c, C_word n)
+{
+  if(n & C_FIXNUM_BIT) 
+    return C_flonum(a, (double)C_unfix(n));
+  else if(C_immediatep(n) || C_block_header(n) != C_FLONUM_TAG)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "exact->inexact", n);
+
+  return n;
 }
 
 
@@ -7155,24 +7191,16 @@ void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2
 }
 
 
-void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, ...)
+C_regparm C_word C_fcall
+C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix0)
 {
   int radix, radixpf = 0, sharpf = 0, ratp = 0, exactf, exactpf = 0, periodf = 0;
-  C_word n1, n, *a = C_alloc(WORDS_PER_FLONUM);
+  C_word n1, n;
   C_char *sptr, *eptr;
   double fn1, fn;
-  va_list v;
 
-  if(c == 3) radix = 10;	/* default radix is 10 */
-  else if(c == 4) {
-    va_start(v, str);
-    radix = va_arg(v, C_word);
-    va_end(v);
-    
-    if(radix & C_FIXNUM_BIT) radix = C_unfix(radix);
-    else barf(C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR, "string->number", radix);
-  }
-  else C_bad_argc(c, 3);
+  if(radix0 & C_FIXNUM_BIT) radix = C_unfix(radix0);
+  else barf(C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR, "string->number", radix0);
 
   if(C_immediatep(str) || C_header_bits(str) != C_STRING_TYPE)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "string->number", str);
@@ -7254,7 +7282,7 @@ void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, 
 
   case 1:			/* fixnum */
     if(sharpf || ratp || (exactpf && !exactf)) {
-      n = C_flonum(&a, ratp ? fn1 / (double)n : (double)n);
+      n = C_flonum(a, ratp ? fn1 / (double)n : (double)n);
 
       if(exactpf && exactf) n = C_i_inexact_to_exact(n);
     }
@@ -7263,7 +7291,7 @@ void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, 
     break;
 
   case 2:			/* flonum */
-    n = C_flonum(&a, ratp ? fn1 / fn : fn);
+    n = C_flonum(a, ratp ? fn1 / fn : fn);
 
     if(exactpf && exactf) n = C_i_inexact_to_exact(n);
 
@@ -7271,7 +7299,27 @@ void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, 
   }
 
  fini:
-  C_kontinue(k, n);
+  return n;
+}
+
+
+/* only left for backwards-compatibility */
+void C_ccall
+C_string_to_number(C_word c, C_word closure, C_word k, C_word str, ...)
+{
+  va_list va;
+  C_word data[ C_SIZEOF_FLONUM + 2 ]; /* alignment */
+  C_word *a = data;
+  C_word radix = C_fix(10);
+
+  if(c == 4) {
+    va_start(va, str);
+    radix = va_arg(va, C_word);
+    va_end(va);
+  }
+  else if(c != 3) C_bad_argc(c, 3);
+
+  C_kontinue(k, C_a_i_string_to_number(&a, 2, str, radix));
 }
 
 
@@ -7495,6 +7543,7 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 }
 
 
+/* OBSOLETE */
 void C_ccall C_get_argv(C_word c, C_word closure, C_word k)
 {
   int i, cells;
@@ -7516,6 +7565,7 @@ void C_ccall C_get_argv(C_word c, C_word closure, C_word k)
 }
 
 
+/* OBSOLETE */
 void get_argv_2(void *dummy)
 {
   int cells = C_unfix(C_restore),
@@ -7528,6 +7578,39 @@ void get_argv_2(void *dummy)
     str = C_string2(&a, C_main_argv[ i ]);
 
   C_kontinue(k, list);
+}
+
+
+void C_ccall C_get_argument(C_word c, C_word closure, C_word k, C_word index)
+{
+  int i = C_unfix(index);
+  int cells;
+
+  if(i >= C_main_argc)
+    C_kontinue(k, C_SCHEME_FALSE);
+
+  cells = C_SIZEOF_STRING(C_strlen(C_main_argv[ i ]));
+  C_save(k);
+  C_save(C_fix(cells));
+  C_save(index);
+
+  if(!C_demand(cells)) C_reclaim(get_argument_2, NULL);
+
+  get_argument_2(NULL);
+}
+
+
+void get_argument_2(void *dummy)
+{
+  int i = C_unfix(C_restore);
+  int cells = C_unfix(C_restore);
+  C_word
+    k = C_restore, 
+    *a = C_alloc(cells),
+    str;
+  
+  str = C_string2(&a, C_main_argv[ i ]);
+  C_kontinue(k, str);
 }
 
 
@@ -7651,12 +7734,7 @@ void file_info_2(void *dummy)
       t, f1, f2, f3;
   int len = C_header_size(name);
   char *buffer2;
-
-#ifdef _MSC_VER
-  struct _stat buf;
-#else
   struct stat buf;
-#endif
 
   buffer2 = buffer;
   if(len >= sizeof(buffer)) {
@@ -7666,19 +7744,13 @@ void file_info_2(void *dummy)
   C_strncpy(buffer2, C_c_string(name), len);
   buffer2[ len ] = '\0';
 
-#ifdef _MSC_VER
-  if(_stat(buffer2, &buf) != 0) v = C_SCHEME_FALSE;
-#else
   if(stat(buffer2, &buf) != 0) v = C_SCHEME_FALSE;
-#endif
   else {
     switch(buf.st_mode & S_IFMT) {
     case S_IFDIR: t = 1; break;
-#if !defined(_MSC_VER)
     case S_IFIFO: t = 3; break;
-# if !defined(__MINGW32__)
+#if !defined(__MINGW32__)
     case S_IFSOCK: t = 4; break;
-# endif
 #endif
     default: t = 0;
     }
@@ -7697,37 +7769,8 @@ void file_info_2(void *dummy)
 }
 
 
-/* The following code was contributed by Sergey Khorev: */
-#if defined(_MSC_VER) && !defined(_DLL)
-/* we're using static C runtime
- * each module has its own environment block
- * use WinAPI to have consistent look to environment */
-
-# define ENV_SIZE 32767
-static char *envbuf;
-static char *C_do_getenv(const char *var)
-{
-  envbuf = (char *)malloc(ENV_SIZE);
-  if(!envbuf)
-    return NULL;
-  if(!GetEnvironmentVariable(var, envbuf, ENV_SIZE))
-  {
-    free(envbuf);
-    return NULL;
-  }
-  else
-    return envbuf;
-}
-
-
-static void C_free_envbuf()
-{
-  free(envbuf);
-}
-#else
-# define C_do_getenv(v) C_getenv(v)
-# define C_free_envbuf() {}
-#endif
+#define C_do_getenv(v) C_getenv(v)
+#define C_free_envbuf() {}
 
 
 void C_ccall C_get_environment_variable(C_word c, C_word closure, C_word k, C_word name)
@@ -7925,20 +7968,6 @@ void C_ccall C_build_platform(C_word c, C_word closure, C_word k)
 
   a = C_alloc(2 + C_bytestowords(strlen(C_BUILD_PLATFORM)));
   s = C_string2(&a, C_BUILD_PLATFORM);
-
- C_kontinue(k, s);
-}
-
-
-/* By Sergey Khorev: */
-void C_ccall C_c_runtime(C_word c, C_word closure, C_word k)
-{
-  C_word *a, s;
-
-  if(c != 2) C_bad_argc(c, 2);
-
-  a = C_alloc(2 + C_bytestowords(strlen(C_RUNTIME_VERSION)));
-  s = C_string2(&a, C_RUNTIME_VERSION);
 
  C_kontinue(k, s);
 }

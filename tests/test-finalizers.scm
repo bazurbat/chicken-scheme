@@ -50,3 +50,16 @@ a fix that unfortunately disables finalizers in the interpreter
 
 (gc #t)
 (assert foo-f)
+
+
+;; double finalizer
+
+(define n 0)
+(define (bump . _) (set! n (add1 n)))
+(define x (vector 1))
+(set-finalizer! x bump)
+(set-finalizer! x bump)
+(set! x #f)
+(gc #t)
+(print n)
+(assert (= 2 n))

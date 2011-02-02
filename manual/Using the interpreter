@@ -121,6 +121,27 @@ to the shell. Any non-numeric result exits with status zero:
  0
  #;3>
 
+When {{csi}} is started with the {{-script}} option, the feature identifier {{chicken-script}}
+is defined, so can conditionally execute code depending on wether the file is
+executed as a script or normally loaded into the interpreter, say for debugging purposes:
+
+<enscript highlight=scheme>
+#!/bin/sh
+#| demonstrates a slightly different way to run a script on UNIX systems
+exec csi -s "$@"
+|#
+
+(define (main args) ...)
+
+(cond-expand
+  (chicken-script
+    (main (command-line-arguments)))
+  (else))
+</enscript>
+
+See also the documentation for the {{-ss}} option above.
+
+
 === Toplevel commands
 
 The toplevel loop understands a number of special commands:
@@ -151,7 +172,7 @@ The toplevel loop understands a number of special commands:
 
 ; ,f N : Select call-trace item with the given number, where the number {{0}} indicates the last item in the trace
 
-; ,g NAME : Returns the value of the local variable with the given name (which may be a symbol or string)
+; ,g NAME : Returns the value of the local variable with the given name (which may be a symbol or string); you don't have to give the complete name - {{,g}} will return the first variable that matches the prefix given
 
 ; ,q : Quit the interpreter.
 
@@ -226,7 +247,7 @@ The {{,e}} command runs the editor given by:
 
 * If the environment variable {{EMACS}} is set, the editor chosen is {{emacsclient}}.
 
-* As a last resort, {{vi}} is used.
+* As a truly last resort, {{vi}} is used.
 
 === History access
 

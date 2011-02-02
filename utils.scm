@@ -1,6 +1,6 @@
 ;;;; utils.scm - Utilities for scripting and file stuff
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -60,7 +60,7 @@
 
 (define (qs str #!optional (platform (build-platform)))
   (case platform
-    ((mingw32 msvc)
+    ((mingw32)
      (string-append "\"" str "\""))
     (else
      (if (zero? (string-length str))
@@ -68,8 +68,8 @@
 	 (string-concatenate
 	  (map (lambda (c)
 		 (if (or (char-whitespace? c)
-			 (memq c '(#\# #\" #\' #\` #\´ #\~ #\& #\% #\$ #\! #\* #\; #\< #\> #\\
-				   #\( #\) #\[ #\] #\{ #\})))
+			 (memq c '(#\# #\" #\' #\` #\´ #\~ #\& #\% #\$ #\! #\* #\;
+				   #\< #\> #\\ #\( #\) #\[ #\] #\{ #\} #\?)))
 		     (string #\\ c)
 		     (string c)))
 	       (string->list str)))))))
@@ -83,31 +83,34 @@
   (let ((csc (foreign-value "C_CSC_PROGRAM" c-string))
 	(load-file load)
 	(path (foreign-value "C_INSTALL_BIN_HOME" c-string)) )
-    (lambda (filename #!key (options '()) output-file (load #t))
-      (let ((cscpath (or (file-exists? (make-pathname path csc)) "csc"))
-	    (tmpfile (and (not output-file) (create-temporary-file "so")))
-	    (crapshell (memq (build-platform) '(mingw32 msvc))))
+    (lambda (filename #!key (options '()) output-file (load #t) verbose)
+      (let* ((cscpath (or (file-exists? (make-pathname path csc)) "csc"))
+	     (tmpfile (and (not output-file) (create-temporary-file "so")))
+	     (crapshell (eq? (build-platform) 'mingw32))
+	     (cmd (sprintf "~a~a -s ~a ~a -o ~a~a" 
+		    (if crapshell "\"" "")
+		    (qs cscpath)
+		    (string-intersperse (append (compile-file-options) options) " ")
+		    (qs filename)
+		    (qs (or output-file tmpfile))
+		    (if crapshell "\"" ""))))
 	(print "; compiling " filename " ...")
-	(system* 
-	 "~a~a -s ~a ~a -o ~a~a" 
-	 (if crapshell "\"" "")
-	 (qs cscpath)
-	 (string-intersperse (append (compile-file-options) options) " ")
-	 (qs filename)
-	 (qs (or output-file tmpfile))
-	 (if crapshell "\"" ""))
-	(unless output-file 
-	  (on-exit
-	   (lambda ()
-	     (handle-exceptions ex #f (delete-file* tmpfile)))))
-	(when load
-	  (let ((f (or output-file tmpfile)))
-	    (handle-exceptions ex
-		(begin
-		  (delete-file* f)
-		  (abort ex))
-	      (load-file f)
-	      f)))))))
+	(when verbose (print "  " cmd))
+	(let ((status (system cmd)))
+	  (cond ((zero? status)
+		 (unless output-file 
+		   (on-exit
+		    (lambda ()
+		      (handle-exceptions ex #f (delete-file* tmpfile)))))
+		 (when load
+		   (let ((f (or output-file tmpfile)))
+		     (handle-exceptions ex
+			 (begin
+			   (delete-file* f)
+			   (abort ex))
+		       (load-file f)
+		       f))))
+		(else #f)))))))
 
 
 ;;; Scan lines until regex or predicate matches

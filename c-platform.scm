@@ -1,6 +1,6 @@
 ;;;; c-platform.scm - Platform specific parameters and definitions
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -88,7 +88,7 @@
     disable-stack-overflow-checks raw 
     emit-external-prototypes-first release local inline-global
     analyze-only dynamic scrutinize no-argc-checks no-procedure-checks
-    no-procedure-checks-for-toplevel-bindings
+    no-procedure-checks-for-toplevel-bindings module
     no-bound-checks no-procedure-checks-for-usual-bindings no-compiler-syntax
     no-parentheses-synonyms no-symbol-escape r5rs-syntax emit-all-import-libraries
     setup-mode unboxing no-module-registration) )
@@ -783,6 +783,8 @@
 (rewrite '+ 16 2 "C_a_i_plus" #t 4)	; words-per-flonum
 (rewrite '- 16 2 "C_a_i_minus" #t 4)	; words-per-flonum
 (rewrite '/ 16 2 "C_a_i_divide" #t 4)	; words-per-flonum
+(rewrite 'exact->inexact 16 1 "C_a_i_exact_to_inexact" #t 4) ; words-per-flonum
+
 (rewrite '= 17 2 "C_i_nequalp")
 (rewrite '> 17 2 "C_i_greaterp")
 (rewrite '< 17 2 "C_i_lessp")
@@ -799,8 +801,6 @@
 (rewrite '>= 13 "C_greater_or_equal_p" #t)
 (rewrite '<= 13 "C_less_or_equal_p" #t)
 
-(rewrite 'exact->inexact 13 "C_exact_to_inexact" #t)
-(rewrite 'string->number 13 "C_string_to_number" #t)
 (rewrite 'number->string 13 "C_number_to_string" #t)
 (rewrite '##sys#call-with-current-continuation 13 "C_call_cc" #t)
 (rewrite '##sys#allocate-vector 13 "C_allocate_vector" #t)
@@ -841,6 +841,24 @@
 (rewrite 'fpround 16 1 "C_a_i_flonum_truncate" 'specialized words-per-flonum)
 (rewrite 'fpceiling 16 1 "C_a_i_flonum_truncate" 'specialized words-per-flonum)
 (rewrite 'fpround 16 1 "C_a_i_flonum_truncate" 'specialized words-per-flonum)
+
+(rewrite
+ 'string->number 8
+ (lambda (db classargs cont callargs)
+   ;; (string->number X) -> (##core#inline_allocate ("C_a_i_string_to_number" 4) X 10)
+   ;; (string->number X Y) -> (##core#inline_allocate ("C_a_i_string_to_number" 4) X Y)
+   (define (build x y)
+     (make-node
+      '##core#call '(#t)
+      (list cont
+	    (make-node
+	     '##core#inline_allocate 
+	     '("C_a_i_string_to_number" 4) ; words-per-flonum
+	     (list x y)))))
+   (case (length callargs)
+     ((1) (build (first callargs) (qnode 10)))
+     ((2) (build (first callargs) (second callargs)))
+     (else #f))))
 
 (rewrite 'cons 16 2 "C_a_i_cons" #t 3)
 (rewrite '##sys#cons 16 2 "C_a_i_cons" #t 3)

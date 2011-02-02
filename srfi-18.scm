@@ -1,6 +1,6 @@
 ;;;; srfi-18.scm - Simple thread unit - felix
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -57,27 +57,15 @@
 (define (current-time)
   (##sys#make-structure 'time (current-milliseconds)))
 
-(define srfi-18:current-time current-time)    ; DEPRECATED
-
 (define (time->seconds tm)
   (##sys#check-structure tm 'time 'time->seconds)
-  (fp* (##sys#slot tm 1) 1000.0))
-
-(define (time->milliseconds tm)		; DEPRECATED
-  (##sys#check-structure tm 'time 'time->milliseconds)
-  (##sys#slot tm 1))
+  (fp/ (##sys#slot tm 1) 1000.0))
 
 (define (seconds->time n)
   (##sys#check-number n 'seconds->time)
   (##sys#make-structure 'time (fp* (##sys#exact->inexact n) 1000.0)))
 
-(define (milliseconds->time nms)	; DEPRECATED
-  (##sys#check-number nms 'milliseconds->time)
-  (##sys#make-structure 'time (##sys#exact->inexact nms)))
-
 (define (time? x) (##sys#structure? x 'time))
-
-(define srfi-18:time? time?)    ; DEPRECATED
 
 
 ;;; Exception handling:
@@ -216,7 +204,7 @@
 (define (thread-suspend! thread)
   (##sys#check-structure thread 'thread 'thread-suspend!)
   (##sys#setslot thread 3 'suspended)
-  (when (eq? thread ##sys#current-thread)
+  (when (eq? thread ##sys#current-thread) ;XXX what if thread is ready or blocked?
     (##sys#call-with-current-continuation
      (lambda (return)
        (##sys#setslot thread 1 (lambda () (return (##core#undefined))))
@@ -224,7 +212,7 @@
 
 (define (thread-resume! thread)
   (##sys#check-structure thread 'thread 'thread-resume!)
-  (when (eq? (##sys#slot thread 3) 'suspended)
+  (when (eq? (##sys#slot thread 3) 'suspended) ;XXX what if thread is ready or blocked?
     (##sys#setslot thread 3 'ready)
     (##sys#add-to-ready-queue thread) ) )
 
@@ -244,11 +232,8 @@
 
 (define (mutex? x) (##sys#structure? x 'mutex))
 
-(define make-mutex
-  (lambda id
-    (let* ((id (if (pair? id) (car id) (gensym 'mutex)))
-	   (m (##sys#make-mutex id ##sys#current-thread)) )
-      m) ) )
+(define (make-mutex #!optional (id (gensym 'mutex)))
+  (##sys#make-mutex id #f))
 
 (define (mutex-name x)
   (##sys#check-structure x 'mutex 'mutex-name) 
@@ -452,14 +437,13 @@
 
 ;;; Don't block in the repl: (by Chris Double)
 
-(unless (eq? (build-platform) 'msvc)
-  (set! ##sys#read-prompt-hook
-    (let ([old ##sys#read-prompt-hook])
-      (lambda ()
-	(when (or (##sys#fudge 12) (##sys#tty-port? ##sys#standard-input))
-	  (old)
-	  (##sys#thread-block-for-i/o! ##sys#current-thread 0 #:input)
-	  (thread-yield!)))) ) )
+(set! ##sys#read-prompt-hook
+  (let ([old ##sys#read-prompt-hook])
+    (lambda ()
+      (when (or (##sys#fudge 12) (##sys#tty-port? ##sys#standard-input))
+	(old)
+	(##sys#thread-block-for-i/o! ##sys#current-thread 0 #:input)
+	(thread-yield!)))) )
 
 
 ;;; Waiting for I/O on file-descriptor

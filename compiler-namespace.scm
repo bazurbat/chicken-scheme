@@ -1,6 +1,6 @@
 ;;;; compiler-namespace.scm - private namespace declarations for compiler units
 ;
-; Copyright (c) 2009-2010, The Chicken Team
+; Copyright (c) 2009-2011, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -34,6 +34,7 @@
  block-compilation
  block-variable-literal-name
  block-variable-literal?
+ bootstrap-mode
  bomb
  broken-constant-nodes
  build-expression-tree
@@ -44,7 +45,6 @@
  canonicalize-begin-body
  canonicalize-expression
  check-and-open-input-file
- check-for-unsafe-toplevel-procedure-calls
  check-signature
  chop-extension
  chop-separator

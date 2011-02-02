@@ -1,6 +1,6 @@
 ;;;; tcp.scm - Networking stuff
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -34,11 +34,11 @@
   (foreign-declare #<<EOF
 #include <errno.h>
 #ifdef _WIN32
-# if _MSC_VER > 1300
-# include <winsock2.h>
-# include <ws2tcpip.h>
+# if (defined(HAVE_WINSOCK2_H) && defined(HAVE_WS2TCPIP_H))
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
 # else
-# include <winsock.h>
+#  include <winsock.h>
 # endif
 /* Beware: winsock2.h must come BEFORE windows.h */
 # define socklen_t       int
@@ -69,6 +69,10 @@ static WSADATA wsa;
 
 #ifdef ECOS
 #include <sys/sockio.h>
+#endif
+
+#ifndef h_addr
+# define h_addr  h_addr_list[ 0 ]
 #endif
 
 static char addr_buffer[ 20 ];
@@ -443,7 +447,14 @@ EOF
 			  (read-input)
 			  (if (fx< bufindex buflen)
 			      (loop str limit)
-			      #!eof) ) ) ) ) ) )
+			      #!eof) ) ) ) )
+	       (lambda (p)		; read-buffered
+		 (if (fx>= bufindex buflen)
+		     ""
+		     (let ((str (##sys#substring buf bufpos buflen)))
+		       (set! bufpos buflen)
+		       str)))
+	       ) )
 	     (output
 	      (lambda (s)
 		(let loop ((len (##sys#size s))

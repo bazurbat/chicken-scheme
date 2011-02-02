@@ -1,6 +1,6 @@
 ;;;; csc.scm - Driver program for the CHICKEN compiler - felix -*- Scheme -*-
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -45,6 +45,7 @@
 (define-foreign-variable INSTALL_MORE_STATIC_LIBS c-string "C_INSTALL_MORE_STATIC_LIBS")
 (define-foreign-variable INSTALL_SHARE_HOME c-string "C_INSTALL_SHARE_HOME")
 (define-foreign-variable INSTALL_LIB_HOME c-string "C_INSTALL_LIB_HOME")
+(define-foreign-variable INSTALL_LIB_NAME c-string "C_INSTALL_LIB_NAME")
 (define-foreign-variable INSTALL_INCLUDE_HOME c-string "C_INSTALL_INCLUDE_HOME")
 (define-foreign-variable INSTALL_STATIC_LIB_HOME c-string "C_INSTALL_STATIC_LIB_HOME")
 (define-foreign-variable TARGET_MORE_LIBS c-string "C_TARGET_MORE_LIBS")
@@ -52,6 +53,7 @@
 (define-foreign-variable TARGET_BIN_HOME c-string "C_TARGET_BIN_HOME")
 (define-foreign-variable TARGET_SHARE_HOME c-string "C_TARGET_SHARE_HOME")
 (define-foreign-variable TARGET_LIB_HOME c-string "C_TARGET_LIB_HOME")
+(define-foreign-variable TARGET_LIB_NAME c-string "C_TARGET_LIB_NAME")
 (define-foreign-variable TARGET_INCLUDE_HOME c-string "C_TARGET_INCLUDE_HOME")
 (define-foreign-variable TARGET_STATIC_LIB_HOME c-string "C_TARGET_STATIC_LIB_HOME")
 (define-foreign-variable TARGET_RUN_LIB_HOME c-string "C_TARGET_RUN_LIB_HOME")
@@ -64,9 +66,8 @@
 ;;; Parameters:
 
 (define mingw (eq? (build-platform) 'mingw32))
-(define msvc (eq? (build-platform) 'msvc))
 (define osx (eq? (software-version) 'macosx))
-(define win (or mingw msvc))
+(define win mingw)
 (define netbsd (eq? (software-version) 'netbsd))
 (define cygwin (eq? (build-platform) 'cygwin))
 
@@ -104,24 +105,22 @@
 (define compiler (quotewrap (if host-mode INSTALL_CC TARGET_CC)))
 (define c++-compiler (quotewrap (if host-mode INSTALL_CXX TARGET_CXX)))
 (define rc-compiler (quotewrap (if host-mode INSTALL_RC_COMPILER TARGET_RC_COMPILER)))
-(define linker (quotewrap (if msvc "link" (if host-mode INSTALL_CC TARGET_CC))))
-(define c++-linker (quotewrap (if msvc "link" (if host-mode INSTALL_CXX TARGET_CXX))))
-(define object-extension (if msvc "obj" "o"))
-(define library-extension (if msvc "lib" "a"))
-(define link-output-flag (if msvc "-out:" "-o "))
-(define executable-extension (if msvc "exe" ""))
-(define compile-output-flag (if msvc "-Fo" "-o "))
+(define linker (quotewrap (if host-mode INSTALL_CC TARGET_CC)))
+(define c++-linker (quotewrap (if host-mode INSTALL_CXX TARGET_CXX)))
+(define object-extension "o")
+(define library-extension "a")
+(define link-output-flag "-o ")
+(define executable-extension "")
+(define compile-output-flag "-o ")
 (define nonstatic-compilation-options '())
 (define shared-library-extension ##sys#load-dynamic-extension)
 (define default-translation-optimization-options '())
-(define pic-options (if (or mingw msvc cygwin) '("-DPIC") '("-fPIC" "-DPIC")))
+(define pic-options (if (or mingw cygwin) '("-DPIC") '("-fPIC" "-DPIC")))
 (define windows-shell WINDOWS_SHELL)
 (define generate-manifest #f)
 
 (define default-library
-  (string-append
-   (if msvc "libchicken-static." "libchicken.")
-   library-extension))
+  (string-append "libchicken." library-extension))
 
 (define default-compilation-optimization-options (string-split (if host-mode INSTALL_CFLAGS TARGET_CFLAGS)))
 (define best-compilation-optimization-options default-compilation-optimization-options)
@@ -139,22 +138,23 @@
     -no-symbol-escape -no-parentheses-synonyms -r5rs-syntax
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
     -emit-all-import-libraries -setup-mode -unboxing -no-elevation -no-module-registration
-    -no-procedure-checks-for-usual-bindings
+    -no-procedure-checks-for-usual-bindings -module
     -no-procedure-checks-for-toplevel-bindings))
 
 (define-constant complex-options
   '(-debug -output-file -heap-size -nursery -stack-size -compiler -unit -uses -keyword-style
     -optimize-level -include-path -database-size -extend -prelude -postlude -prologue -epilogue 
     -inline-limit -profile-name
-    -disable-warning			; OBSOLETE
     -emit-inline-file -types
     -feature -debug-level -heap-growth -heap-shrinkage -heap-initial-size -consult-inline-file
-    -emit-import-library -static-extension -no-feature))
+    -emit-import-library
+    -no-feature))
 
 (define-constant shortcuts
   '((-h "-help")
     (-s "-shared")
     (-S "-scrutinize")
+    (-M "-module")
     (|-P| "-check-syntax")
     (|-V| "-version")
     (-f "-fixnum-arithmetic")
@@ -162,7 +162,6 @@
     (-i "-case-insensitive")
     (|-K| "-keyword-style")
     (|-X| "-extend")
-    (|-N| "-no-usual-integrations")	; DEPRECATED
     (|-J| "-emit-all-import-libraries")
     (-x "-explicit-use")
     (-u "-unsafe")
@@ -171,7 +170,7 @@
     (-b "-block") ) )
 
 (define short-options
-  (string->list "PHhsfiENxubvwAOeWkctgSJ") )
+  (string->list "PHhsfiENxubvwAOeWkctgSJM") )
 
 
 ;;; Variables:
@@ -216,9 +215,7 @@
 	     (string-append "/" default-library)))) ))
 
 (define default-shared-library-files 
-  (if msvc
-      (list (string-append "libchicken." library-extension))
-      '("-lchicken")))
+  (list (string-append "-l" (if host-mode INSTALL_LIB_NAME TARGET_LIB_NAME))))
 
 (define library-files default-library-files)
 (define shared-library-files default-shared-library-files)
@@ -273,7 +270,6 @@
 (define shared #f)
 (define static #f)
 (define static-libs #f)
-(define static-extensions '())
 (define required-extensions '())
 
 
@@ -321,11 +317,11 @@ Usage: #{csc} FILENAME | OPTION ...
   Syntax related options:
 
     -i -case-insensitive           don't preserve case of read symbols    
-    -K  -keyword-style STYLE       enable alternative keyword-syntax
+    -K -keyword-style STYLE        enable alternative keyword-syntax
                                     (prefix, suffix or none)
-        -no-parentheses-synonyms   disables list delimiter synonyms
-        -no-symbol-escape          disables support for escaped symbols
-        -r5rs-syntax               disables the Chicken extensions to
+       -no-parentheses-synonyms    disables list delimiter synonyms
+       -no-symbol-escape           disables support for escaped symbols
+       -r5rs-syntax                disables the Chicken extensions to
                                     R5RS syntax
     -compile-syntax                macros are made available at run-time
     -j -emit-import-library MODULE write compile-time module information into
@@ -333,6 +329,7 @@ Usage: #{csc} FILENAME | OPTION ...
     -J -emit-all-import-libraries  emit import-libraries for all defined modules
     -no-module-registration        do not generate module registration code
     -no-compiler-syntax            disable expansion of compiler-macros
+    -M -module                     wrap compiled code into implicit module
 
   Translation options:
 
@@ -432,8 +429,6 @@ Usage: #{csc} FILENAME | OPTION ...
     -static-libs                   link with static CHICKEN libraries
     -static                        generate completely statically linked
                                     executable
-    -static-extension NAME         link extension NAME statically
-                                    (if available)
     -F<DIR>                        pass \"-F<DIR>\" to C compiler
                                     (add framework header path on Mac OS X)
     -framework NAME                passed to linker on Mac OS X
@@ -503,7 +498,6 @@ EOF
     (set! link-options
       (cons (cond
              (osx (if lib "-dynamiclib" "-bundle"))
-             (msvc "-dll")
              (else "-shared")) link-options))
     (set! shared #t) )
 
@@ -521,7 +515,7 @@ EOF
 	   (when inquiry-only
 	     (when show-cflags (print* (compiler-options) #\space))
 	     (when show-ldflags (print* (linker-options) #\space))
-	     (when show-libs (print* (linker-libraries #t) #\space))
+	     (when show-libs (print* (linker-libraries) #\space))
 	     (newline)
 	     (exit) )
 	   (cond [(null? scheme-files)
@@ -599,9 +593,9 @@ EOF
 		(set! inquiry-only #t)
 		(set! show-libs #t) ]
 	       [(-v -verbose)
-		(when (and (number? verbose) (not msvc))
+		(when (number? verbose)
 		  (set! compile-options (cons* "-v" "-Q" compile-options))
-		  (set! link-options (cons (if msvc "-VERBOSE" "-v") link-options)) )
+		  (set! link-options (cons "-v" link-options)) )
 		(cond (verbose
 		       (t-options "-verbose") 
 		       (set! verbose 2)) 
@@ -626,33 +620,22 @@ EOF
 		(set! required-extensions (append required-extensions (list (car rest))))
 		(t-options "-require-extension" (car rest))
 		(set! rest (cdr rest)) ]
-	       [(-static-extension)
-		(check s rest)
-		(set! static-extensions (append static-extensions (list (car rest))))
-		(t-options "-static-extension" (car rest))
-		(set! rest (cdr rest)) ]
 	       ((-private-repository)
 		(use-private-repository))
 	       ((-no-elevation)
 		(set! generate-manifest #t))
-	       [(-gui
-		 -windows |-W|)		;DEPRECATED
+	       [(-gui)
 		(set! gui #t)
 		(set! compile-options (cons "-DC_GUI" compile-options))
-		(set! object-files 
-		  (cons (make-pathname 
-			 INSTALL_SHARE_HOME "chicken.rc"
-			 object-extension) 
-			object-files))
-		(when (or msvc mingw)
-		  (cond
-		   (mingw
-		    (set! link-options
-		      (cons* "-lkernel32" "-luser32" "-lgdi32" "-mwindows"
-			     link-options)))
-		   (msvc
-		    (set! link-options
-		      (cons* "kernel32.lib" "user32.lib" "gdi32.lib" link-options)))))]
+		(when mingw
+		  (set! object-files 
+		    (cons (make-pathname 
+			   INSTALL_SHARE_HOME "chicken.rc"
+			   object-extension) 
+			  object-files))
+		  (set! link-options
+		    (cons* "-lkernel32" "-luser32" "-lgdi32" "-mwindows"
+			   link-options)))]
 	       ((-deploy)
 		(set! deploy #t)
 		(set! deployed #t))
@@ -739,8 +722,8 @@ EOF
 		      [(memq s simple-options) (t-options arg)]
 		      [(memq s complex-options) 
 		       (check s rest)
-		       (let* ([n (car rest)]
-			      [ns (string->number n)] )
+		       (let* ((n (car rest))
+			      (ns (string->number n)) )
 			 (t-options arg n)
 			 (set! rest (cdr rest)) ) ]
 		      [(and (> (string-length arg) 2) (string=? "-:" (substring arg 0 2)))
@@ -813,6 +796,9 @@ EOF
 		 (if to-stdout 
 		     '("-to-stdout")
 		     `("-output-file" ,(quotewrap fc)) )
+		 (if (##sys#fudge 13)
+		     '("-:d")
+		     '())
 		 (map quote-option
 		      (append 
 		       extra-features
@@ -880,9 +866,7 @@ EOF
 ;;; Link object files and libraries:
 
 (define (run-linking)
-  (let* ((files (map quotewrap
-		     (append object-files
-			     (nth-value 0 (static-extension-info)) ) ) )
+  (let* ((files (map quotewrap object-files))
 	 (target (quotewrap target-filename))
 	 (targetdir #f))
     (when deploy
@@ -910,7 +894,7 @@ EOF
 	      files
 	      (list (string-append link-output-flag (quotewrap target-filename))
 		    (linker-options)
-		    (linker-libraries #f) ) ) ) ) )
+		    (linker-libraries) ) ) ) ) )
     (when (and osx (or (not cross-chicken) host-mode))
       (command
        (string-append
@@ -972,33 +956,15 @@ EOF
      (quotewrap from)
      (quotewrap to))))
 
-(define (static-extension-info)
-  (let ((rpath (repository-path)))
-    (if (and rpath (pair? static-extensions))
-	(let loop ((exts static-extensions) (libs '()) (opts '()))
-	  (if (null? exts)
-	      (values (reverse libs) (reverse opts))
-	      (let ((info (extension-information (car exts))))
-		(if info
-		    (let ((a (assq 'static info)) 
-			  (o (assq 'static-options info)) )
-		      (loop (cdr exts) 
-			(if a (cons (make-pathname rpath (cadr a)) libs) libs)
-			(if o (cons (cadr o) opts) opts) ) ) 
-		    (loop (cdr exts) libs opts)) ) ) )
-	(values '() '()) ) ) )
-
 (define (linker-options)
   (string-append
    (string-intersperse
-    (append linking-optimization-options link-options
-	    (nth-value 1 (static-extension-info)) ) )
-   (if (and static (not mingw) (not msvc) (not osx)) " -static" "") ) )
+    (append linking-optimization-options link-options))
+   (if (and static (not mingw) (not osx)) " -static" "") ) )
 
-(define (linker-libraries #!optional staticexts)
+(define (linker-libraries)
   (string-intersperse
    (append
-    (if staticexts (nth-value 0 (static-extension-info)) '())
     (if (or static static-libs)
         library-files
         shared-library-files)

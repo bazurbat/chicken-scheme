@@ -1,6 +1,6 @@
 ;;; c-backend.scm - C-generating backend for the CHICKEN compiler
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -733,6 +733,7 @@
 	((flonum) "double")
 	((char) "char")
 	((pointer) "void *")
+	((int) "int")
 	((bool) "int")
 	(else (bomb "invalid unboxed type" t))))
 
@@ -1168,12 +1169,8 @@
       [(unsigned-long) (str "unsigned long")]
       [(float) (str "float")]
       [(double number) (str "double")]
-      ;; pointer and nonnull-pointer are DEPRECATED
-      [(pointer nonnull-pointer) (str "void *")]
       [(c-pointer nonnull-c-pointer scheme-pointer nonnull-scheme-pointer) (str "void *")]
       [(c-string-list c-string-list*) "C_char **"]
-      ;; byte-vector and nonnull-byte-vector are DEPRECATED
-      [(byte-vector nonnull-byte-vector) (str "unsigned char *")]
       [(blob nonnull-blob u8vector nonnull-u8vector) (str "unsigned char *")]
       [(u16vector nonnull-u16vector) (str "unsigned short *")]
       [(s8vector nonnull-s8vector) (str "char *")]
@@ -1263,18 +1260,12 @@
       ((unsigned-integer64) "C_num_to_uint64(")
       ((long) "C_num_to_long(")
       ((unsigned-integer unsigned-integer32) "C_num_to_unsigned_int(")
-      ;; pointer and nonnull-pointer are DEPRECATED
-      ((pointer) "C_data_pointer_or_null(")
-      ((nonnull-pointer) "C_data_pointer(")
       ((scheme-pointer) "C_data_pointer_or_null(")
       ((nonnull-scheme-pointer) "C_data_pointer(")
       ((c-pointer) "C_c_pointer_or_null(")
       ((nonnull-c-pointer) "C_c_pointer_nn(")
       ((blob) "C_c_bytevector_or_null(")
       ((nonnull-blob) "C_c_bytevector(")
-      ;; byte-vector and nonnull-byte-vector are DEPRECATED
-      ((byte-vector) "C_c_bytevector_or_null(")
-      ((nonnull-byte-vector) "C_c_bytevector(")
       ((u8vector) "C_c_u8vector_or_null(")
       ((nonnull-u8vector) "C_c_u8vector(")
       ((u16vector) "C_c_u16vector_or_null(")
@@ -1303,9 +1294,6 @@
 		   (foreign-argument-conversion (if (vector? t) (vector-ref t 0) t)) ) ]
 	     [(and (list? type) (>= (length type) 2))
 	      (case (car type)
-	       ;; pointer and nonnull-pointer are DEPRECATED
-	       ((pointer) "C_c_pointer_or_null(")
-	       ((nonnull-pointer) "C_c_pointer_nn(")
 	       ((c-pointer) "C_c_pointer_or_null(")
 	       ((nonnull-c-pointer) "C_c_pointer_nn(")
 	       ((instance) "C_c_pointer_or_null(")
@@ -1342,8 +1330,8 @@
        (sprintf "C_mpointer(&~a,(void*)" dest) )
       ((c-pointer) (sprintf "C_mpointer_or_false(&~a,(void*)" dest))
       ((integer integer32) (sprintf "C_int_to_num(&~a," dest))
-      ((integer64) (sprintf "C_a_double_to_num(&~a," dest))
-      ((size_t) (sprintf "C_int_to_num(%~a,(int)" dest))
+      ((integer64 unsigned-integer64) (sprintf "C_a_double_to_num(&~a," dest))
+      ((size_t) (sprintf "C_int_to_num(&~a,(int)" dest))
       ((unsigned-integer unsigned-integer32) (sprintf "C_unsigned_int_to_num(&~a," dest))
       ((long) (sprintf "C_long_to_num(&~a," dest))
       ((unsigned-long) (sprintf "C_unsigned_long_to_num(&~a," dest))

@@ -529,6 +529,23 @@ the user- and group-ids {{UID}} and {{GID}} (which should be
 exact integers) using the {{chown()}} system call.
 
 
+==== file-creation-mode
+
+<procedure>(file-creation-mode MODE)</procedure>
+
+Returns the initial file permissions used for newly created files
+(as with {{umask(2)}}. You can set the mode by executing
+
+  (set! (file-creation-mode) MODE)
+
+or
+
+  (file-creation-mode MODE)
+
+where {{MODE}} is a bitwise combination of one or more of
+the {{perm/...}} flags.
+
+
 === Processes
 
 ==== current-process-id
@@ -1212,6 +1229,7 @@ always returns {{0}}, {{0}}.
 ; {{file-close}} : {{close}}
 ; {{file-access-time}} : {{stat}}
 ; {{file-change-time}} : {{stat}}
+; {{file-creation-mode}} : {{umask}}
 ; {{file-modification-time}} : {{stat}}
 ; {{file-execute-access?}} : {{access}}
 ; {{file-open}} : {{open}}

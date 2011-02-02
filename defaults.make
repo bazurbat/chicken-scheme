@@ -1,6 +1,6 @@
 # defaults.make - default settings -*- Makefile -*-
 #
-# Copyright (c) 2008-2010, The Chicken Team
+# Copyright (c) 2008-2011, The Chicken Team
 # Copyright (c) 2007, Felix L. Winkelmann
 # All rights reserved.
 #
@@ -27,7 +27,7 @@
 
 # basic parameters
 
-BINARYVERSION = 5
+BINARYVERSION = 6
 STACKDIRECTION ?= 1
 CROSS_CHICKEN ?= 0
 
@@ -48,13 +48,13 @@ BRANCHNAME ?= $(shell sh identify-branch.sh $(SRCDIR))
 BINDIR = $(PREFIX)/bin
 LIBDIR = $(PREFIX)/lib
 SHAREDIR = $(PREFIX)/share
-DATADIR = $(SHAREDIR)/chicken
+DATADIR = $(SHAREDIR)/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
 TOPMANDIR = $(SHAREDIR)/man
 MANDIR = $(TOPMANDIR)/man1
-INCDIR = $(PREFIX)/include
+INCDIR = $(PREFIX)/include/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
 DOCDIR = $(DATADIR)/doc
 VARDIR ?= $(LIBDIR)
-CHICKENLIBDIR = $(VARDIR)/chicken
+CHICKENLIBDIR = $(VARDIR)/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
 EGGDIR = $(CHICKENLIBDIR)/$(BINARYVERSION)
 
 ifdef WINDOWS_SHELL
@@ -62,12 +62,12 @@ SPREFIX = $(subst /,$(SEP),$(PREFIX))
 IBINDIR = $(SPREFIX)$(SEP)bin
 ILIBDIR = $(SPREFIX)$(SEP)lib
 ISHAREDIR = $(SPREFIX)$(SEP)share
-IDATADIR = $(ISHAREDIR)$(SEP)chicken
+IDATADIR = $(ISHAREDIR)$(SEP)$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
 ITOPMANDIR = $(ISHAREDIR)$(SEP)man
 IMANDIR = $(ITOPMANDIR)$(SEP)man1
-IINCDIR = $(SPREFIX)$(SEP)include
+IINCDIR = $(SPREFIX)$(SEP)include$(SEP)$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
 IDOCDIR = $(IDATADIR)$(SEP)doc
-ICHICKENLIBDIR = $(ILIBDIR)$(SEP)chicken
+ICHICKENLIBDIR = $(ILIBDIR)$(SEP)$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
 IEGGDIR = $(ICHICKENLIBDIR)$(SEP)$(BINARYVERSION)
 else
 SPREFIX = $(PREFIX)
@@ -83,6 +83,7 @@ ICHICKENLIBDIR = $(CHICKENLIBDIR)
 IEGGDIR = $(EGGDIR)
 endif
 
+INSTALL_LIB_NAME = $(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
 RUNTIME_LINKER_PATH ?= .
 
 # commands
@@ -140,6 +141,7 @@ TARGET_LIBRARIES ?= $(LIBRARIES)
 TARGET_LINKER_OPTIONS ?= $(LINKER_OPTIONS)
 TARGET_LINKER_OPTIMIZATION_OPTIONS ?= $(LINKER_OPTIMIZATION_OPTIONS)
 TARGET_FEATURES ?=
+TARGET_LIB_NAME ?= $(INSTALL_LIB_NAME)
 
 ifneq ($(TARGET_C_COMPILER),$(C_COMPILER))
 CROSS_CHICKEN = 1
@@ -210,14 +212,14 @@ ASSEMBLER_OUTPUT_OPTION ?= -o
 ASSEMBLER_OUTPUT ?= $(ASSEMBLER_OUTPUT_OPTION) $@
 ASSEMBLER_COMPILE_OPTION ?= -c
 ifdef STATICBUILD
-PRIMARY_LIBCHICKEN ?= libchicken$(A)
+PRIMARY_LIBCHICKEN ?= lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(A)
 else
 ifeq ($(PLATFORM),cygwin)
-PRIMARY_LIBCHICKEN = cygchicken-0.dll
-LIBCHICKEN_SO_FILE = cygchicken-0.dll
+PRIMARY_LIBCHICKEN = cyg$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)-0.dll
+LIBCHICKEN_SO_FILE = cyg$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)-0.dll
 else
-PRIMARY_LIBCHICKEN ?= libchicken$(SO)
-LIBCHICKEN_SO_FILE ?= libchicken$(SO)
+PRIMARY_LIBCHICKEN ?= lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(SO)
+LIBCHICKEN_SO_FILE ?= lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(SO)
 endif
 endif
 LIBCHICKEN_SO_LIBRARIES ?= $(LIBRARIES)
@@ -271,7 +273,7 @@ CSI ?= csi$(EXE)
 
 # Scheme compiler flags
 
-CHICKEN_OPTIONS = -optimize-level 2 -include-path . -include-path $(SRCDIR) -inline -ignore-repository -feature building-chicken
+CHICKEN_OPTIONS = -optimize-level 2 -include-path . -include-path $(SRCDIR) -inline -ignore-repository -feature chicken-bootstrap
 ifdef DEBUGBUILD
 CHICKEN_OPTIONS += -feature debugbuild -scrutinize -types $(SRCDIR)types.db
 else
@@ -308,7 +310,7 @@ CHICKEN_STATIC_EXECUTABLE = $(CHICKEN_PROGRAM)$(EXE)
 CSI_STATIC_EXECUTABLE = $(CSI_PROGRAM)$(EXE)
 CHICKEN_SHARED_EXECUTABLE = $(CHICKEN_PROGRAM)-shared$(EXE)
 CSI_SHARED_EXECUTABLE = $(CSI_PROGRAM)-shared$(EXE)
-TARGETLIBS ?= libchicken$(A)
+TARGETLIBS ?= lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(A)
 TARGETS += $(TARGETLIBS) $(CHICKEN_STATIC_EXECUTABLE) \
 	$(CSI_STATIC_EXECUTABLE) $(CHICKEN_PROFILE_PROGRAM)$(EXE) \
 	$(CSC_PROGRAM)$(EXE) \
@@ -318,7 +320,7 @@ CHICKEN_STATIC_EXECUTABLE = $(CHICKEN_PROGRAM)-static$(EXE)
 CSI_STATIC_EXECUTABLE = $(CSI_PROGRAM)-static$(EXE)
 CHICKEN_SHARED_EXECUTABLE = $(CHICKEN_PROGRAM)$(EXE)
 CSI_SHARED_EXECUTABLE = $(CSI_PROGRAM)$(EXE)
-TARGETLIBS ?= libchicken$(A) $(LIBCHICKEN_SO_FILE)
+TARGETLIBS ?= lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(A) $(LIBCHICKEN_SO_FILE)
 TARGETS += $(TARGETLIBS) $(CHICKEN_SHARED_EXECUTABLE) \
 	$(CSI_SHARED_EXECUTABLE) $(CHICKEN_PROFILE_PROGRAM)$(EXE) \
 	$(CSC_PROGRAM)$(EXE) $(CHICKEN_INSTALL_PROGRAM)$(EXE) $(CHICKEN_UNINSTALL_PROGRAM)$(EXE) \
@@ -380,6 +382,9 @@ endif
 	echo "#ifndef C_INSTALL_LIB_HOME" >>$@
 	echo "# define C_INSTALL_LIB_HOME \"$(LIBDIR)\"" >>$@
 	echo "#endif" >>$@
+	echo "#ifndef C_INSTALL_LIB_NAME" >>$@
+	echo "# define C_INSTALL_LIB_NAME \"$(INSTALL_LIB_NAME)\"" >>$@
+	echo "#endif" >>$@
 	echo "#ifndef C_INSTALL_STATIC_LIB_HOME" >>$@
 	echo "# define C_INSTALL_STATIC_LIB_HOME \"$(LIBDIR)\"" >>$@
 	echo "#endif" >>$@
@@ -437,6 +442,9 @@ endif
 	echo "#ifndef C_TARGET_LIB_HOME" >>$@
 	echo "# define C_TARGET_LIB_HOME \"$(TARGET_PREFIX)/lib\"" >>$@
 	echo "#endif" >>$@
+	echo "#ifndef C_TARGET_LIB_NAME" >>$@
+	echo "# define C_TARGET_LIB_NAME \"$(TARGET_LIB_NAME)\"" >>$@
+	echo "#endif" >>$@
 	echo "#ifndef C_TARGET_RUN_LIB_HOME" >>$@
 	echo "# define C_TARGET_RUN_LIB_HOME \"$(TARGET_RUN_PREFIX)/lib\"" >>$@
 	echo "#endif" >>$@
@@ -444,7 +452,7 @@ endif
 	echo "# define C_TARGET_SHARE_HOME \"$(TARGET_PREFIX)/share\"" >>$@
 	echo "#endif" >>$@
 	echo "#ifndef C_TARGET_INCLUDE_HOME" >>$@
-	echo "# define C_TARGET_INCLUDE_HOME \"$(TARGET_PREFIX)/include\"" >>$@
+	echo "# define C_TARGET_INCLUDE_HOME \"$(TARGET_PREFIX)/include/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)\"" >>$@
 	echo "#endif" >>$@
 	echo "#ifndef C_TARGET_STATIC_LIB_HOME" >>$@
 	echo "# define C_TARGET_STATIC_LIB_HOME \"$(TARGET_PREFIX)/lib\"" >>$@

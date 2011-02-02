@@ -1,6 +1,6 @@
 ; scheduler.scm - Basic scheduler for multithreading
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -46,11 +46,11 @@
 #endif
 
 #ifdef _WIN32
-# if _MSC_VER > 1300
-# include <winsock2.h>
-# include <ws2tcpip.h>
+# if (defined(HAVE_WINSOCK2_H) && defined(HAVE_WS2TCPIP_H))
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
 # else
-# include <winsock.h>
+#  include <winsock.h>
 # endif
 /* Beware: winsock2.h must come BEFORE windows.h */
 # define C_msleep(n)     (Sleep(C_unfix(n)), C_SCHEME_TRUE)
@@ -170,6 +170,7 @@ EOF
 
 (define (##sys#force-primordial)
   (dbg "primordial thread forced due to interrupt")
+  (##sys#setislot ##sys#primordial-thread 13 #f)
   (##sys#thread-unblock! ##sys#primordial-thread) )
 
 (define ready-queue-head '())
@@ -448,12 +449,19 @@ EOF
 					  (dbg t " unblocked by timeout")
 					  (loop2 (cdr threads) keep))
 					 ((not (pair? p)) ; not blocked for I/O?
-					  (panic 
-					   "##sys#unblock-threads-for-i/o: thread on fd-list is not blocked for I/O"))
-					 ((not (eq? fd (car p)))
-					  (panic
-					   "##sys#unblock-threads-for-i/o: thread on fd-list has wrong FD"))
-					 ((fdset-test inf outf (cdr p))
+					  ;; thread on fd-list is not blocked for I/O - this
+					  ;; is incorrect but will be ignored, just let it run
+					  (when (##sys#slot t 4) ; also blocked for timeout?
+					    (##sys#remove-from-timeout-list t))
+					  (##sys#thread-basic-unblock! t) 
+					  (loop2 (cdr threads) keep))
+					 ((or (not (eq? fd (car p)))
+					      ;; thread on fd-list has incorrect
+					      ;; file-descriptor registered. 
+					      ;; We just assume this is the right one and
+					      ;; unblock.
+					      ;; XXX Needs to be investigated...
+					      (fdset-test inf outf (cdr p)))
 					  (when (##sys#slot t 4) ; also blocked for timeout?
 					    (##sys#remove-from-timeout-list t))
 					  (##sys#thread-basic-unblock! t) 

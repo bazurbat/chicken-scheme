@@ -1,6 +1,6 @@
 /* chicken.h - General headerfile for compiler generated executables
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -39,6 +39,18 @@
 #define C_MAJOR_VERSION   4
 #define C_MINOR_VERSION   6
 
+#ifndef _ISOC99_SOURCE
+# define _ISOC99_SOURCE
+#endif
+
+#ifndef _BSD_SOURCE
+# define _BSD_SOURCE
+#endif
+
+#ifndef _SVID_SOURCE
+# define _SVID_SOURCE
+#endif
+
 /*
  * N.B. This file MUST not rely upon "chicken-config.h"
  */
@@ -71,7 +83,7 @@
 # define C_GNU_ENV
 #endif
 
-#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__WATCOMC__) || defined(__MWERKS__) || defined(__DJGPP__)
+#if defined(__MINGW32__) || defined(__WATCOMC__) || defined(__MWERKS__)
 # define C_NONUNIX
 #endif
 
@@ -98,6 +110,11 @@
 # include <kernel/image.h>
 #endif
 
+#ifndef _MSC_VAR
+# include <strings.h>
+#endif
+
+
 /* Byteorder in machine word */
 
 #if defined(__MINGW32__)
@@ -118,32 +135,16 @@
 # include <sys/byteorder.h>
 #endif
 
-#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__WATCOMC__)
+#if defined(__MINGW32__) || defined(__WATCOMC__)
 # include <malloc.h>
-#endif
-
-#ifdef _MSC_VER
-# include <io.h>
 #endif
 
 /* Much better with stack allocation API */
 
-#if defined(_MSC_VER)
-# if HAVE_ALLOCA_H
-#  define alloca            _alloca
-# endif
-#elif !defined(__GNUC__) && !defined(__WATCOMC__)
-# if HAVE_ALLOCA_H
-#  include <alloca.h>
-# elif defined(_AIX)
-#   pragma alloca
-# elif !defined(alloca) /* predefined by HP cc +Olibcalls */
-    char *alloca ();
-# endif
-#elif (defined(__sun__) && defined(__svr4__)) || defined(__sgi__)
-# if HAVE_ALLOCA_H
-#  include <alloca.h>
-# endif
+#ifdef HAVE_ALLOCA_H
+# include <alloca.h>
+#elif !defined(alloca) /* predefined by HP cc +Olibcalls */
+void *alloca ();
 #endif
 
 
@@ -171,20 +172,6 @@
 
 /* Make sure some common C identifiers are availble w/ Windows */
 
-#ifdef _MSC_VER
-# define strncasecmp       strnicmp
-# define isatty            _isatty
-typedef __int8             int8_t;
-typedef unsigned __int8    uint8_t;
-typedef __int16            int16_t;
-typedef unsigned  __int16  uint16_t;
-typedef __int32            int32_t;
-typedef unsigned __int32   uint32_t;
-typedef __int64            int64_t;
-typedef unsigned __int64   uint64_t;
-# pragma warning(disable: 4101)
-#endif
-
 /* Could be used by C++ source */
 
 #ifdef __cplusplus
@@ -211,23 +198,6 @@ typedef unsigned __int64   uint64_t;
 #  ifndef C_BUILDING_LIBCHICKEN
 #   undef  C_varextern
 #   define C_varextern             C_extern __declspec(dllimport)
-#  endif
-# elif defined(_MSC_VER)
-#  undef  C_fctimport
-#  define C_fctimport              __declspec(dllexport)
-#  undef  C_externimport
-#  undef  C_externexport
-#  define C_externexport           C_extern __declspec(dllexport)
-#  undef  C_varextern
-#  undef  C_fctexport
-#  ifdef C_BUILDING_LIBCHICKEN
-#   define C_varextern             C_extern __declspec(dllexport)
-#   define C_fctexport             __declspec(dllexport)
-#   define C_externimport          C_extern __declspec(dllexport)
-#  else
-#   define C_varextern             C_extern __declspec(dllimport)
-#   define C_fctexport             __declspec(dllimport)
-#   define C_externimport          C_extern __declspec(dllimport)
 #  endif
 # elif defined(__WATCOMC__)
 #  undef  C_fctimport
@@ -265,8 +235,6 @@ typedef unsigned __int64   uint64_t;
 # if defined(__i386__) && !defined(__clang__)
 #  define C_regparm               __attribute__ ((regparm(3)))
 # endif
-#elif defined(_MSC_VER)
-# define C_fcall                  __fastcall
 #elif defined(__WATCOMC__)
 # define C_ccall                  __cdecl
 #endif
@@ -306,8 +274,6 @@ typedef unsigned __int64   uint64_t;
 #ifdef C_ENABLE_TLS
 # if defined(__GNUC__)
 #  define C_TLS                    __thread
-# elif defined(_MSC_VER)
-#  define C_TLS                    __declspec(thread)
 # endif
 #endif
 
@@ -357,7 +323,9 @@ typedef unsigned __int64   uint64_t;
 #define ___byte             char
 #define ___scheme_value     C_word
 #define ___scheme_pointer   void *
+/* `___byte_vector' is DEPRECATED */
 #define ___byte_vector      unsigned char *
+#define ___blob             void *
 #define ___pointer_vector   void **
 #define ___symbol           char *
 #define ___safe
@@ -524,7 +492,7 @@ typedef unsigned __int64   uint64_t;
 # define C_s32                    int
 #endif
 
-#if defined(_MSC_VER) || defined (__MINGW32__)
+#if defined (__MINGW32__)
 # define C_s64                    __int64
 # define C_u64                    unsigned __int64
 #else
@@ -581,6 +549,7 @@ typedef unsigned __int64   uint64_t;
 #define C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR           33
 #define C_BAD_ARGUMENT_TYPE_NO_CLOSURE_ERROR          34
 #define C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR            35
+#define C_CIRCULAR_DATA_ERROR                         36
 
 
 /* Platform information */
@@ -628,8 +597,6 @@ typedef unsigned __int64   uint64_t;
 
 #if defined(__CYGWIN__)
 # define C_BUILD_PLATFORM "cygwin"
-#elif defined(_MSC_VER)
-# define C_BUILD_PLATFORM "msvc"
 #elif defined(__SUNPRO_C)
 # define C_BUILD_PLATFORM "sun"
 #elif defined(__MINGW32__)
@@ -646,16 +613,6 @@ typedef unsigned __int64   uint64_t;
 # define C_BUILD_PLATFORM "watcom"
 #else
 # define C_BUILD_PLATFORM "unknown"
-#endif
-
-#if defined(_MSC_VER)
-# if defined(_DLL)
-#   define C_RUNTIME_VERSION "dynamic"
-# else
-#   define C_RUNTIME_VERSION "static"
-# endif
-#else
-# define C_RUNTIME_VERSION "unknown"
 #endif
 
 #if defined(__linux__)
@@ -794,7 +751,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 #define CHICKEN_global_ref(root)       C_u_i_car(((C_GC_ROOT *)(root))->value)
 #define CHICKEN_global_set(root, x)    C_mutate(&C_u_i_car(((C_GC_ROOT *)(root))->value), (x))
 
-#define CHICKEN_default_toplevel       ((void *)C_default_stub_toplevel)
+#define CHICKEN_default_toplevel       ((void *)C_default_5fstub_toplevel)
 
 #define C_align4(n)                (((n) + 3) & ~3)
 #define C_align8(n)                (((n) + 7) & ~7)
@@ -991,8 +948,8 @@ extern double trunc(double);
 #define C_c_f64vector_or_null(x)   ((double *)C_srfi_4_vector_or_null(x))
 #define C_c_pointer_vector(x)      ((void **)C_data_pointer(C_block_item((x), 2)))
 
-#define C_isnan(f)                 (!((f) == (f)))
-#define C_isinf(f)                 ((f) == (f) + (f) && (f) != 0.0)
+#define C_isnan(f)                 isnan(f)
+#define C_isinf(f)                 isinf(f)
 
 #ifdef C_STRESS_TEST
 # define C_STRESS_FAILURE          3
@@ -1004,12 +961,14 @@ extern double trunc(double);
 #if C_STACK_GROWS_DOWNWARD
 # define C_demand(n)              (C_stress && ((C_word)(C_stack_pointer - C_stack_limit) > (n)))
 # define C_stack_probe(p)         (C_stress && ((C_word *)(p) >= C_stack_limit))
-# define C_stack_check            if(!C_disable_overflow_check && (C_byte*)(C_stack_pointer) + C_STACK_RESERVE < (C_byte *)C_stack_limit) C_stack_overflow()
+# define C_stack_test             (!C_disable_overflow_check && (C_byte*)(C_stack_pointer) + C_STACK_RESERVE < (C_byte *)C_stack_limit)
 #else
 # define C_demand(n)              (C_stress && ((C_word)(C_stack_limit - C_stack_pointer) > (n)))
 # define C_stack_probe(p)         (C_stress && ((C_word *)(p) < C_stack_limit))
-# define C_stack_check            if(!C_disable_overflow_check && (C_byte*)(C_stack_pointer) - C_STACK_RESERVE > (C_byte *)C_stack_limit) C_stack_overflow()
+# define C_stack_test             (!C_disable_overflow_check && (C_byte*)(C_stack_pointer) - C_STACK_RESERVE > (C_byte *)C_stack_limit)
 #endif
+
+#define C_stack_check             if(C_stack_test) C_stack_overflow()
 
 #define C_zero_length_p(x)        C_mk_bool(C_header_size(x) == 0)
 #define C_boundp(x)               C_mk_bool(((C_SCHEME_BLOCK *)(x))->data[ 0 ] != C_SCHEME_UNBOUND)
@@ -1041,6 +1000,7 @@ extern double trunc(double);
 #define C_specialp(x)             C_mk_bool(C_header_bits(x) & C_SPECIALBLOCK_BIT)
 #define C_byteblockp(x)           C_mk_bool(C_header_bits(x) & C_BYTEBLOCK_BIT)
 #define C_anyp(x)                 C_SCHEME_TRUE
+#define C_sametypep(x, y)         C_mk_bool(C_header_bits(x) == C_header_bits(y))
 #define C_eqp(x, y)               C_mk_bool((x) == (y))
 #define C_vemptyp(x)              C_mk_bool(C_header_size(x) == 0)
 #define C_notvemptyp(x)           C_mk_bool(C_header_size(x) > 0)
@@ -1675,11 +1635,12 @@ C_fctexport void C_ccall C_allocate_vector(C_word c, C_word closure, C_word k, C
 C_fctexport void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word string) C_noret;
 C_fctexport void C_ccall C_build_symbol(C_word c, C_word closure, C_word k, C_word string) C_noret;
 C_fctexport void C_ccall C_flonum_fraction(C_word c, C_word closure, C_word k, C_word n) C_noret;
-C_fctexport void C_ccall C_exact_to_inexact(C_word c, C_word closure, C_word k, C_word n) C_noret;
+C_fctexport void C_ccall C_exact_to_inexact(C_word c, C_word closure, C_word k, C_word n) C_noret; /*XXX left for binary compatibility */
 C_fctexport void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2) C_noret;
-C_fctexport void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, ...) C_noret;
+C_fctexport void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, ...) C_noret; /*XXX left for binary compatibility */
 C_fctexport void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, ...) C_noret;
-C_fctexport void C_ccall C_get_argv(C_word c, C_word closure, C_word k) C_noret;
+C_fctexport void C_ccall C_get_argv(C_word c, C_word closure, C_word k) C_noret; /* OBSOLETE */
+C_fctexport void C_ccall C_get_argument(C_word c, C_word closure, C_word k, C_word index) C_noret;
 C_fctexport void C_ccall C_make_structure(C_word c, C_word closure, C_word k, C_word type, ...) C_noret;
 C_fctexport void C_ccall C_make_symbol(C_word c, C_word closure, C_word k, C_word name) C_noret;
 C_fctexport void C_ccall C_make_pointer(C_word c, C_word closure, C_word k) C_noret;
@@ -1699,7 +1660,6 @@ C_fctexport void C_ccall C_machine_type(C_word c, C_word closure, C_word k) C_no
 C_fctexport void C_ccall C_machine_byte_order(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_software_version(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_build_platform(C_word c, C_word closure, C_word k) C_noret;
-C_fctexport void C_ccall C_c_runtime(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_register_finalizer(C_word c, C_word closure, C_word k, C_word x, C_word proc) C_noret;
 C_fctexport void C_ccall C_set_dlopen_flags(C_word c, C_word closure, C_word k, C_word now, C_word global) C_noret;
 C_fctexport void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word entry, C_word reloadable) C_noret;
@@ -1829,6 +1789,8 @@ C_fctexport C_word C_fcall C_i_get_keyword(C_word key, C_word args, C_word def) 
 C_fctexport double C_fcall C_milliseconds(void) C_regparm;
 C_fctexport double C_fcall C_cpu_milliseconds(void) C_regparm;
 C_fctexport C_word C_fcall C_a_i_cpu_time(C_word **a, int c, C_word buf) C_regparm;
+C_fctexport C_word C_fcall C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix) C_regparm;
+C_fctexport C_word C_fcall C_a_i_exact_to_inexact(C_word **a, int c, C_word n) C_regparm;
 
 C_fctexport C_word C_fcall C_i_foreign_char_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_fixnum_argumentp(C_word x) C_regparm;
@@ -1843,6 +1805,8 @@ C_fctexport C_word C_fcall C_i_foreign_pointer_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_scheme_or_c_pointer_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_integer_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_foreign_integer64_argumentp(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_foreign_unsigned_integer64_argumentp(C_word x) C_regparm;
 
 C_fctexport C_char *C_lookup_procedure_id(void *ptr);
 C_fctexport void *C_lookup_procedure_ptr(C_char *id);
@@ -1871,7 +1835,7 @@ C_fctexport  int  CHICKEN_eval_string(char * str,C_word *result);
 C_fctexport  int  CHICKEN_eval(C_word exp,C_word *result);
 C_fctexport  int  CHICKEN_yield();
 
-C_fctexport void C_default_stub_toplevel(C_word c,C_word d,C_word k) C_noret;
+C_fctexport void C_default_5fstub_toplevel(C_word c,C_word d,C_word k) C_noret;
 
 
 /* Inline functions: */

@@ -1,6 +1,6 @@
 ;;;; lolevel.import.scm - import library for "lolevel" module
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -34,10 +34,6 @@
    extend-procedure
    extended-procedure?
    free
-   global-bound?			;DEPRECATED
-   global-make-unbound!			;DEPRECATED
-   global-ref				;DEPRECATED
-   global-set!				;DEPRECATED
    locative->object
    locative-ref
    locative-set!

@@ -230,28 +230,6 @@
 
 ; object-unevict
 
-; global-ref
-
-(assert (pointer? (global-ref 'some-chunk)))
-
-; global-set!
-
-(global-set! 'some-chunk 34)
-
-(assert (not (pointer? (global-ref 'some-chunk))))
-
-(assert (atom? (global-ref 'some-chunk)))
-
-; global-bound?
-
-(assert (global-bound? 'some-chunk))
-
-; global-make-unbound!
-
-(global-make-unbound! 'some-chunk)
-
-(assert (not (global-bound? 'some-chunk)))
-
 ; object-become!
 
 (define some-foo '#(1 2 3))

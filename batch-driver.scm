@@ -1,6 +1,6 @@
 ;;;; batch-driver.scm - Driver procedure for the compiler
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -31,7 +31,6 @@
 (include "compiler-namespace")
 (include "tweaks")
 
-(define-constant default-profile-name "PROFILE")
 (define-constant funny-message-timeout 60000)
 
 (define user-options-pass (make-parameter #f))
@@ -77,8 +76,11 @@
 	(time-breakdown #f)
 	(forms '())
 	(cleanup-forms '(((##sys#implicit-exit-handler))))
-	(profile (or (memq 'profile options) (memq 'accumulate-profile options) (memq 'profile-name options)))
-	(profile-name (or (and-let* ((pn (memq 'profile-name options))) (cadr pn)) default-profile-name))
+	(profile (or (memq 'profile options)
+		     (memq 'accumulate-profile options) 
+		     (memq 'profile-name options)))
+	(profile-name 
+	 (and-let* ((pn (memq 'profile-name options))) (cadr pn)))
 	(hsize (memq 'heap-size options))
 	(hisize (memq 'heap-initial-size options))
 	(hgrowth (memq 'heap-growth options))
@@ -92,6 +94,7 @@
 	(dumpnodes #f)
 	(start-time #f)
 	(upap #f)
+	(wrap-module (memq 'module options))
 	(ssize (or (memq 'nursery options) (memq 'stack-size options))) )
 
     (define (cputime) (current-milliseconds))
@@ -182,7 +185,8 @@
       (set! all-import-libraries #t))
     (set! enable-module-registration (not (memq 'no-module-registration options)))
     (when (memq 'lambda-lift options) (set! do-lambda-lifting #t))
-    (when (memq 'scrutinize options) (set! do-scrutinize #t))
+    (when (memq 'scrutinize options)
+      (set! do-scrutinize #t))
     (when (memq 't debugging-chicken) (##sys#start-timer))
     (when (memq 'b debugging-chicken) (set! time-breakdown #t))
     (when (memq 'emit-exports options)
@@ -295,7 +299,6 @@
        (lambda (f) (load (##sys#resolve-include-filename f #f #t))) 
        extends) )
     (set! ##sys#features (delete #:compiler-extension ##sys#features eq?))
-
     (set! ##sys#features (cons '#:compiling ##sys#features))
     (set! upap (user-post-analysis-pass))
 
@@ -333,6 +336,7 @@
 	    ssize) ) )
     (set! emit-trace-info (not (memq 'no-trace options)))
     (set! disable-stack-overflow-checking (memq 'disable-stack-overflow-checks options))
+    (set! bootstrap-mode (feature? #:chicken-bootstrap))
     (when (memq 'm debugging-chicken) (set-gc-report! #t))
     (unless (memq 'no-usual-integrations options)
       (set! standard-bindings default-standard-bindings)
@@ -342,7 +346,10 @@
 		 "calltrace"
 		 "none") )
     (when profile
-      (let ([acc (eq? 'accumulate-profile (car profile))])
+      (let ((acc (eq? 'accumulate-profile (car profile))))
+	(when (and acc (not profile-name))
+	  (quit
+	   "you need to specify -profile-name if using accumulated profiling runs"))
 	(set! emit-profile #t)
 	(set! profiled-procedures 'all)
 	(set! initforms
@@ -352,7 +359,7 @@
 	   (if acc
 	       '((set! ##sys#profile-append-mode #t))
 	       '() ) ) )
-	(dribble "generating ~aprofiled code" (if acc "accumulative " "")) ) )
+	(dribble "generating ~aprofiled code" (if acc "accumulative " "")) ))
 
     ;;*** hardcoded "modules.db" is bad (also used in chicken-install.scm)
     (load-identifier-database "modules.db")
@@ -424,7 +431,13 @@
 	     (set! ##sys#explicit-library-modules
 	       (append ##sys#explicit-library-modules uses-units))
 	     (set! forms (cons `(declare (uses ,@uses-units)) forms)) )
-	   (let* ([exps0 (map canonicalize-expression (append initforms forms))]
+	   (let* ((exps0 (map canonicalize-expression
+			      (let ((forms (append initforms forms)))
+				(if wrap-module
+				    `((##core#module main () 
+						     (import scheme chicken)
+						     ,@forms))
+				    forms))))
 		  [pvec (gensym)]
 		  [plen (length profile-lambda-list)]
 		  [exps (append
@@ -434,7 +447,8 @@
 			     `((set! ,profile-info-vector-name 
 				 (##sys#register-profile-info
 				  ',plen
-				  ',(if unit-name #f profile-name))))
+				  ',(and (not unit-name)
+					 (or profile-name #t)))))
 			     '() )
 			 (map (lambda (pl)
 				`(##sys#set-profile-info-vector!
@@ -596,7 +610,6 @@
 			      (let ((f inline-output-file))
 				(dribble "generating global inline file `~a' ..." f)
 				(emit-global-inline-file f db) ) )
-			    (check-for-unsafe-toplevel-procedure-calls node2 db)
 			    (begin-time)
 			    (set! node2 (perform-closure-conversion node2 db))
 			    (end-time "closure conversion")

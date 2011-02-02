@@ -19,13 +19,16 @@
 	  (else
 	   (case (build-platform)
 	     ((mingw32) 
-	      (if (string=? (getenv "MSYSTEM") "MINGW32")
+	      (if (string=? (get-environment-variable "MSYSTEM") "MINGW32")
 		  "mingw-msys"
 		  "mingw32"))
 	     ((msvc) "msvc")
 	     (else sv))))))
 
-(define *make* "make")
+(define *make* 
+  (cond ((string=? "bsd" *platform*) "gmake")
+	((string=? "mingw32" *platform*) "mingw32-make")
+	(else "make")))
 
 (define (release full?)
   (let* ((files (read-lines "distribution/manifest"))

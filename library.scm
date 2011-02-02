@@ -1,6 +1,6 @@
 ;;;; library.scm - R5RS library for the CHICKEN compiler
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -47,9 +47,7 @@
 # include <sysexits.h>
 #endif
 
-#if !defined(_MSC_VER)
-# include <unistd.h>
-#endif
+#include <unistd.h>
 
 #ifndef EX_SOFTWARE
 # define EX_SOFTWARE	70
@@ -126,6 +124,16 @@ fast_read_string_from_file(C_word dest, C_word port, C_word len, C_word pos)
 
   return C_fix (m);
 }
+
+static C_word
+shallow_equal(C_word x, C_word y)
+{
+  /* assumes x and y are non-immediate */
+  int i, len = C_header_size(x);
+
+  if(C_header_size(y) != len) return C_SCHEME_FALSE;      
+  else return C_mk_bool(!C_memcmp((void *)x, (void *)y, len * sizeof(C_word)));
+}
 EOF
 ) )
 
@@ -185,7 +193,6 @@ EOF
 (define (##sys#setslot x i y) (##core#inline "C_i_setslot" x i y))
 (define (##sys#setislot x i y) (##core#inline "C_i_set_i_slot" x i y))
 (define ##sys#allocate-vector (##core#primitive "C_allocate_vector"))
-(define argv (##core#primitive "C_get_argv"))
 (define (argc+argv) (##sys#values main_argc main_argv))
 (define ##sys#make-structure (##core#primitive "C_make_structure"))
 (define ##sys#ensure-heap-reserve (##core#primitive "C_ensure_heap_reserve"))
@@ -199,7 +206,6 @@ EOF
 (define (current-gc-milliseconds) (##sys#fudge 31))
 (define ##sys#decode-seconds (##core#primitive "C_decode_seconds"))
 (define get-environment-variable (##core#primitive "C_get_environment_variable"))
-(define getenv get-environment-variable) ; DEPRECATED
 
 (define (##sys#start-timer)
   (##sys#gc #t)
@@ -801,7 +807,7 @@ EOF
   (fp-check-flonum x 'fpceiling)
   (##core#inline_allocate ("C_a_i_flonum_ceiling" 4) x))
 
-(define ##sys#floor fpfloor) ;XXX needed for backwards compatibility with "numbers" egg
+(define ##sys#floor fpfloor) ;XXX needed for backwards compatibility with "numbers" egg (really?)
 (define ##sys#truncate fptruncate)
 (define ##sys#ceiling fpceiling)
 
@@ -925,7 +931,7 @@ EOF
 	(else (if (##sys#exact? n) 0 0.0) ) ) )
 
 ;; hooks for numbers
-(define ##sys#exact->inexact (##core#primitive "C_exact_to_inexact"))
+(define (##sys#exact->inexact n) (##core#inline_allocate ("C_a_i_exact_to_inexact" 4) n))
 (define (##sys#inexact->exact n) (##core#inline "C_i_inexact_to_exact" n))
 
 (define exact->inexact ##sys#exact->inexact)
@@ -1056,10 +1062,12 @@ EOF
 		(##sys#check-integer n2 'lcm)
 		(loop
 		 (cons
-		  (##sys#lcm head (##sys#slot next 0))
+		  (##sys#lcm head n2)
 		  (##sys#slot next 1)) #f) ) ) ) ) ) )
 
-(define ##sys#string->number (##core#primitive "C_string_to_number"))
+(define (##sys#string->number str #!optional (radix 10))
+  (##core#inline_allocate ("C_a_i_string_to_number" 4) str radix))
+
 (define string->number ##sys#string->number)
 (define ##sys#number->string (##core#primitive "C_number_to_string"))
 (define number->string ##sys#number->string)
@@ -1070,6 +1078,46 @@ EOF
       (##sys#check-exact prec 'flonum-print-precision)
       (##core#inline "C_set_print_precision" prec) )
     prev ) )
+
+(define (equal=? x y)
+  (define (compare-slots x y start)
+    (let ((l1 (##sys#size x))
+	  (l2 (##sys#size y)))
+      (and (eq? l1 l2)
+	   (or (fx<= l1 start)
+	       (let ((l1n (fx- l1 1)))
+		 (let loop ((i start))
+		   (if (fx= i l1n)
+		       (walk (##sys#slot x i) (##sys#slot y i)) ; tailcall
+		       (and (walk (##sys#slot x i) (##sys#slot y i))
+			    (loop (fx+ i 1))))))))))
+  (define (walk x y)
+    (cond ((eq? x y))
+	  ((fixnum? x) 
+	   (if (flonum? y)
+	       (= x y)
+	       (eq? x y)))
+	  ((flonum? x)
+	   (and (or (fixnum? y) (flonum? y))
+		(= x y)))
+	  ((not (##core#inline "C_blockp" x)) #f)
+	  ((not (##core#inline "C_blockp" y)) #f)
+	  ((not (##core#inline "C_sametypep" x y)) #f)
+	  ((##core#inline "C_specialp" x)
+	   (and (##core#inline "C_specialp" y)
+		(if (##core#inline "C_closurep" x)
+		    (##core#inline "shallow_equal" x y)
+		    (compare-slots x y 1))))
+	  ((##core#inline "C_byteblockp" x)
+	   (and (##core#inline "C_byteblockp" y)
+		(let ((s1 (##sys#size x)))
+		  (and (eq? s1 (##sys#size y))
+		       (##core#inline "C_substring_compare" x y 0 0 s1)))))
+	  (else
+	   (let ((s1 (##sys#size x)))
+	     (and (eq? s1 (##sys#size y))
+		  (compare-slots x y 0))))))
+  (walk x y))
 
 
 ;;; Symbols:
@@ -1648,6 +1696,7 @@ EOF
 ; 6:  (char-ready? PORT) -> BOOL
 ; 7:  (read-string! PORT COUNT STRING START) -> COUNT'
 ; 8:  (read-line PORT LIMIT) -> STRING | EOF
+; 9:  (read-buffered PORT) -> STRING
 
 (define (##sys#make-port i/o class name type)
   (let ([port (##core#inline_allocate ("C_a_i_port" 17))])
@@ -1714,8 +1763,9 @@ EOF
 			   (##sys#string-append result (##sys#substring buffer 0 n))]
 			[else
 			 (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1))
-			 (##sys#substring buffer 0 n)] ) ) ) ) )          
- ) )
+			 (##sys#substring buffer 0 n)] ) ) ) ) )
+	  #f	; read-buffered
+	  ) )
 
 (define ##sys#open-file-port (##core#primitive "C_open_file_port"))
 
@@ -3016,7 +3066,7 @@ EOF
 	    (cond ((eq? len 0) #f)
 		  ((eq? len 1)
 		   (let ((c (##core#inline "C_subchar" str 0)))
-		     (cond ((or (eq? #\. c) (eq? #\# c)) #f)
+		     (cond ((or (eq? #\. c) (eq? #\# c) (eq? #\; c) (eq? #\, c)) #f)
 			   ((char-numeric? c) #f)
 			   (else #t))))
 		  (else
@@ -3343,7 +3393,17 @@ EOF
 		(let ((dest (##sys#make-string (fx- pos2 pos))))
 		  (##core#inline "C_substring_copy" buf dest pos pos2 0)
 		  (##sys#setislot p 10 next)
-		  dest) ) ) ) ) ) ) ) )
+		  dest) ) ) ) ) )
+     (lambda (p)			; read-buffered
+       (let ((pos (##sys#slot p 10))
+	     (string (##sys#slot p 12))
+	     (len (##sys#slot p 11)) )
+	 (if (fx>= pos len)
+	     ""
+	     (let ((buffered (##sys#substring string pos len)))
+	       (##sys#setislot p 10 len)
+	       buffered))))
+     )))
 
 ; Invokes the eol handler when EOL or EOS is reached.
 (define (##sys#scan-buffer-line buf limit pos k)
@@ -3429,9 +3489,7 @@ EOF
   (let ([sym (string->symbol ((##core#primitive "C_build_platform")))])
     (lambda () sym) ) )
 
-(define c-runtime
-  (let ([sym (string->symbol ((##core#primitive "C_c_runtime")))])
-    (lambda () sym) ) )
+(define (c-runtime) 'unknown)		; DEPRECATED
 
 (define ##sys#windows-platform
   (and (eq? 'windows (software-type))
@@ -3486,7 +3544,8 @@ EOF
 	    [else	  (err x)] ) ) ) )
 
 (define ##sys#features
-  '(#:chicken #:srfi-23 #:srfi-30 #:srfi-39 #:srfi-62 #:srfi-17 #:srfi-12 #:srfi-88 #:srfi-98))
+  '(#:chicken #:srfi-23 #:srfi-30 #:srfi-39 #:srfi-62 #:srfi-17 #:srfi-12 #:srfi-88 #:srfi-98
+	      #:irregex-is-core-unit))
 
 ;; Add system features:
 
@@ -3849,6 +3908,22 @@ EOF
 
 (define (condition? x) (##sys#structure? x 'condition))
 
+(define (condition->list x)
+  (or (condition? x)
+      (##sys#signal-hook
+       #:type-error 'condition->list
+       "argument is not a condition object" x))
+  (map
+   (lambda (k)
+     (cons k (let loop ((props (##sys#slot x 2))
+			(res '()))
+	       (cond ((null? props)
+		      res)
+		     ((eq? k (caar props))
+		      (loop (cddr props) (cons (list (cdar props) (cadr props)) res)))
+		     (else (loop (cddr props) res))))))
+   (##sys#slot x 1)))
+
 (define (condition-predicate kind)
   (lambda (c) 
     (##sys#check-structure c 'condition)
@@ -3929,6 +4004,7 @@ EOF
 	((33) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a flonum" args))
 	((34) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a procedure" args))
 	((35) (apply ##sys#signal-hook #:type-error loc "bad argument type - invalid base" args))
+	((36) (apply ##sys#signal-hook #:limit-error loc "recursion too deep or circular data encountered" args))
 	(else (apply ##sys#signal-hook #:runtime-error loc "unknown internal error" args)) ) ) ) )
 
 
@@ -4097,7 +4173,13 @@ EOF
 (define (##sys#foreign-pointer-argument x) (##core#inline "C_i_foreign_pointer_argumentp" x))
 (define (##sys#foreign-tagged-pointer-argument x tx) (##core#inline "C_i_foreign_tagged_pointer_argumentp" x tx))
 (define (##sys#foreign-integer-argument x) (##core#inline "C_i_foreign_integer_argumentp" x))
-(define (##sys#foreign-unsigned-integer-argument x) (##core#inline "C_i_foreign_unsigned_integer_argumentp" x))
+(define (##sys#foreign-integer64-argument x) (##core#inline "C_i_foreign_integer64_argumentp" x))
+
+(define (##sys#foreign-unsigned-integer64-argument x)
+  (##core#inline "C_i_foreign_unsigned_integer64_argumentp" x))
+
+(define (##sys#foreign-unsigned-integer64-argument x)
+  (##core#inline "C_i_foreign_unsigned_integer64_argumentp" x))
 
 
 ;;; Low-level threading interface:
@@ -4294,12 +4376,25 @@ EOF
 	       [else (##sys#read-error port "unreadable object")] ) ] ) ) ) )
 
 
-;;; Script invocation:
+;;; command-line handling
+
+(define ##sys#get-argument (##core#primitive "C_get_argument"))
+
+(define argv				; includes program name
+  (let ((cache #f))
+    (lambda ()
+      (or cache
+	  (let ((v (let loop ((i 0))
+		     (let ((arg (##sys#get-argument i)))
+		       (if arg
+			   (cons arg (loop (fx+ i 1)))
+			   '())))))
+	    (set! cache v)
+	    v)))))
 
 (define program-name
   (make-parameter
-   (let* ((av (argv)))
-     (if (pair? av) (car av) "<unknown>") )
+   (or (##sys#get-argument 0) "<unknown>") ; may happen if embedded in C application
    (lambda (x)
      (##sys#check-string x 'program-name)
      x) ) )
@@ -4359,7 +4454,7 @@ EOF
 	(set! working #t)
 	(let* ((c (##sys#slot ##sys#pending-finalizers 0)) )
 	  (when (##sys#fudge 13)
-	    (print "[debug] running " c " finalizers (" (##sys#fudge 26) " live, "
+	    (print "[debug] running " c " finalizer(s) (" (##sys#fudge 26) " live, "
 		   (##sys#fudge 27) " allocated) ..."))
 	  (do ([i 0 (fx+ i 1)])
 	      ((fx>= i c))

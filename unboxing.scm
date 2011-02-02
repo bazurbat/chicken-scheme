@@ -1,6 +1,6 @@
 ;;;; unboxing.scm - The CHICKEN Scheme compiler (local flow-analysis with number boxing/unboxing)
 ;
-; Copyright (c) 2009-2010, The Chicken Team
+; Copyright (c) 2009-2011, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -117,6 +117,10 @@
 				 (make-node
 				  '##core#inline_allocate (list "C_a_i_flonum" 4) ; hardcoded size
 				  (list (make-node '##core#unboxed_ref (list tmp rtype) '()))))
+				((int)
+				 (make-node
+				  '##core#inline_allocate (list "C_a_int_to_num" 4) ; hardcoded size
+				  (list (make-node '##core#unboxed_ref (list tmp rtype) '()))))
 				((pointer)
 				 (make-node
 				  '##core#inline_allocate (list "C_a_i_mpointer" 2) ; hardcoded size
@@ -151,6 +155,7 @@
 				      ((char) "C_character_code")
 				      ((fixnum) "C_unfix")
 				      ((flonum) "C_flonum_magnitude")
+				      ((int) "C_num_to_int")
 				      ((pointer) "C_pointer_address")
 				      ((bool) "C_truep")
 				      ((*) "C_id")

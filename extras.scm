@@ -1,6 +1,6 @@
 ;;; extras.scm - Optional non-standard extensions
 ;
-; Copyright (c) 2008-2010, The Chicken Team
+; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -107,7 +107,8 @@
 				      (##sys#substring buffer 0 i) ) ) ]
 			       [else
 				(when (fx>= i buffer-len)
-				  (set! buffer (##sys#string-append buffer (make-string buffer-len)))
+				  (set! buffer
+				    (##sys#string-append buffer (make-string buffer-len)))
 				  (set! buffer-len (fx+ buffer-len buffer-len)) )
 				(##core#inline "C_setsubchar" buffer i c)
 				(loop (fx+ i 1)) ] ) ) ) ) ) ) ) ) ) ) ) )
@@ -131,6 +132,16 @@
 	  (begin
 	    (##sys#check-port port 'read-lines)
 	    (doread port) ) ) ) ) )
+
+(define write-line
+  (lambda (str . port)
+    (let ((p (if (##core#inline "C_eqp" port '())
+		 ##sys#standard-output
+		 (##sys#slot port 0) ) ) )
+      (##sys#check-port p 'write-line)
+      (##sys#check-string str 'write-line)
+      (display str p)
+      (newline p) ) ) )
 
 
 ;;; Extended I/O 
@@ -199,6 +210,23 @@
 (define (read-string #!optional n (port ##sys#standard-input))
   (##sys#read-string/port n port) )
 
+;; <procedure>(read-buffered [PORT])</procedure>
+;;
+;; Reads any remaining data buffered after previous read operations on
+;; {{PORT}}. If no remaining data is currently buffered, an empty string
+;; is returned. This procedure will never block. Currently only useful for
+;; string-, process- and tcp ports.
+
+(define (read-buffered #!optional (port ##sys#standard-input))
+  (##sys#check-port port 'read-buffered)
+  (let ((rb (##sys#slot (##sys#slot port 2) 9))) ; read-buffered method
+    (if rb
+	(rb port)
+	"")))
+
+
+;;; read token of characters that satisfy a predicate
+
 (define read-token
   (lambda (pred . port)
     (let ([port (optional port ##sys#standard-input)])
@@ -223,16 +251,6 @@
 	   (##sys#substring s 0 n)
 	   s)
        port) ) ) )
-
-(define write-line
-  (lambda (str . port)
-    (let ((p (if (##core#inline "C_eqp" port '())
-		 ##sys#standard-output
-		 (##sys#slot port 0) ) ) )
-      (##sys#check-port p 'write-line)
-      (##sys#check-string str 'write-line)
-      (display str p)
-      (newline p) ) ) )
 
 
 ;;; Binary I/O
@@ -343,7 +361,6 @@
 					     (out (if (fx> code #xffff) "U" "u") col)
 					     (out (number->string code 16) col) ]
 					    [else (out (make-string 1 obj) col)] ) ) ) )
-	    ((eof-object? obj)  (out "#<eof>" col))
 	    ((##core#inline "C_undefinedp" obj) (out "#<unspecified>" col))
 	    ((##core#inline "C_anypointerp" obj) (out (##sys#pointer->string obj) col))
 	    ((eq? obj (##sys#slot '##sys#arbitrary-unbound-symbol 0))

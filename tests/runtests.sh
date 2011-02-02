@@ -221,6 +221,9 @@ $compile fixnum-tests.scm
 echo "======================================== srfi-4 tests ..."
 $interpret -s srfi-4-tests.scm
 
+echo "======================================== condition tests ..."
+$interpret -s condition-tests.scm
+
 echo "======================================== srfi-18 tests ..."
 $interpret -s simple-thread-test.scm
 $interpret -s mutex-test.scm
@@ -271,6 +274,10 @@ $compile embedded1.c
 
 echo "======================================== embedding (2) ..."
 $compile -e embedded2.scm
+./a.out
+
+echo "======================================== embedding (3) ..."
+$compile -e embedded3.c embedded4.scm
 ./a.out
 
 echo "======================================== private repository test ..."

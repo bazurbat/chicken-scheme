@@ -1,6 +1,6 @@
 # Makefile.mingw - configuration for MinGW (no MSYS) -*- Makefile -*-
 #
-# Copyright (c) 2008-2010, The Chicken Team
+# Copyright (c) 2008-2011, The Chicken Team
 # Copyright (c) 2007, Felix L. Winkelmann
 # All rights reserved.
 #
@@ -70,9 +70,9 @@ RC_COMPILER ?= windres
 LINKER_LINK_SHARED_LIBRARY_OPTIONS = -shared
 LIBRARIES = -lm -lws2_32
 LINKER_OPTIONS += -Wl,--enable-auto-import
-LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,libchicken.dll.a
+LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,--out-implib,lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX).dll.a
 LIBCHICKEN_SO_LIBRARIES = -lm -lws2_32 
-LIBCHICKEN_IMPORT_LIBRARY = libchicken.dll.a
+LIBCHICKEN_IMPORT_LIBRARY = lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX).dll.a
 MAKEDIR_COMMAND_OPTIONS =
 CUSTOM_RC_FILE = 1
 
@@ -109,7 +109,6 @@ chicken-config.h: chicken-defaults.h
 	echo #define HAVE_WINDOWS_H 1 >>$@
 	echo #define HAVE__STRTOI64 1 >>$@
 	echo #define STDC_HEADERS 1 >>$@
-	echo #define HAVE_ALLOCA_H 1 >>$@
 	echo #define HAVE_DIRECT_H 1 >>$@
 	echo #define HAVE_ERRNO_H 1 >>$@
 	echo #define HAVE_GCVT 1 >>$@
@@ -165,6 +164,9 @@ endif
 	echo #endif >>$@
 	echo #ifndef C_INSTALL_LIB_HOME >>$@
 	echo # define C_INSTALL_LIB_HOME "$(LIBDIR)" >>$@
+	echo #endif >>$@
+	echo #ifndef C_INSTALL_LIB_NAME >>$@
+	echo # define C_INSTALL_LIB_NAME "$(INSTALL_LIB_NAME)" >>$@
 	echo #endif >>$@
 	echo #ifndef C_INSTALL_STATIC_LIB_HOME >>$@
 	echo # define C_INSTALL_STATIC_LIB_HOME "$(LIBDIR)" >>$@
@@ -223,6 +225,9 @@ endif
 	echo #ifndef C_TARGET_LIB_HOME >>$@
 	echo # define C_TARGET_LIB_HOME "$(TARGET_PREFIX)/lib" >>$@
 	echo #endif >>$@
+	echo #ifndef C_TARGET_LIB_NAME >>$@
+	echo # define C_TARGET_LIB_NAME "$(TARGET_LIB_NAME)" >>$@
+	echo #endif >>$@
 	echo #ifndef C_TARGET_RUN_LIB_HOME >>$@
 	echo # define C_TARGET_RUN_LIB_HOME "$(TARGET_PREFIX)/lib" >>$@
 	echo #endif >>$@
@@ -230,7 +235,7 @@ endif
 	echo # define C_TARGET_SHARE_HOME "$(TARGET_PREFIX)/share" >>$@
 	echo #endif >>$@
 	echo #ifndef C_TARGET_INCLUDE_HOME >>$@
-	echo # define C_TARGET_INCLUDE_HOME "$(TARGET_PREFIX)/include" >>$@
+	echo # define C_TARGET_INCLUDE_HOME "$(TARGET_PREFIX)/include/chicken" >>$@
 	echo #endif >>$@
 	echo #ifndef C_TARGET_STATIC_LIB_HOME >>$@
 	echo # define C_TARGET_STATIC_LIB_HOME "$(TARGET_PREFIX)/lib" >>$@
