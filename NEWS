@@ -1,3 +1,99 @@
+4.6.4.
+
+- Build system
+  - the PROGRAM_PREFIX and PROGRAM_SUFFIX configuration settings
+    are applied to generated files and directories which allows
+    perform differently named installations into the same PREFIX
+  - increaded binary-compatibility version from 5 to 6, which
+    means installed extensions in an existing installations will 
+    have to be re-installed
+- Compiler
+  - the `-accumulate-profile' option did not provide a way to
+    specify the target profile data file - now `-profile-name'
+    must always be given when accumulated profiling is done (XXX ack)
+  - added `-module' option, which wraps the code into an implicit
+    module
+  - removed check for unsafe toplevel calls in safe mode
+  - `exact->inexact' intrinsic now generates better code
+  - fixed bug in leaf-routine optimization (XXX ack)
+  - unit-toplevel entry-points are now named differently, which
+    may break binary-compatibility with existing compiled Scheme
+    code modules
+  - fixed invalid dropping of unused external entry-points in
+    block-mode (XXX ack)
+  - fixed bug in scrutinizer (XXX ack)
+  - Kon Lovett reported numerous bugs in the type-database used
+    by the scrutinizer
+- Syntax expander
+  - Peter Bex provided a bugfix for resolution of primitive
+    imports
+  - handling of internal definitions with shadowed defining
+    forms is now done correctly - fix once again from Peter Bex
+  - corrected non-standard behaviour of quasiquote with respect
+    to nested quasiquotations - another bugfix by our mighty macro
+    master
+- Foreign function interface
+  - removed deprecated `pointer', `nonnull-pointer', `byte-vector'
+    and `nonnull-byte-vector' types
+  - added missing result-type handling for `unsigned-integer64'
+    (thanks to Moritz Heidkamp)
+  - added `foreign-type-size' macro
+- Runtime system
+  - fixed incorrect use of alloca.h on OpenBSD (thanks to
+    Christian Kellermann and Alan Post)
+  - checks for NaN and infinity are now done using ISO C99
+    operations, which required various changes to `chicken.h'
+    to make the code compile in ISO C99 mode
+  - remaining debris regarding MSVC builds has been removed
+  - fixed bug in argument-type check for 64-bit integer (thanks
+    to Kon Lovett)
+  - increased default trace-buffer size from 10 to 16
+  - XXX: ack scheduler fix(es) by Joerg
+  - the scheduler handles violations of internal invariants
+    regarding threads slightly more gracefully
+- Tools
+  - chicken-bug
+    - removed disabled e-mail support
+  - csc
+    - removed `-static-extension' option
+    - removed deprecated `-windows' option
+    - fixed incorrect use of `chicken.rc' on non-Windows platforms
+      in `-gui' mode (XXX ack)
+  - csi
+    - fixed broken `,g' toplevel command
+    - deprecated `script' feature identifier (use `chicken-script'
+      instead)
+- Libraries
+  - unit `library'
+    - added `condition->list', contributed by Christian Kellermann
+    - added `equal=?'
+    - removed deprecated `getenv', `left-section', `right-section',
+      `project', `c-runtime' and `noop'
+    - added missing import-library entry for `vector-copy!' (XXX ack)
+    - fixed incorrect handling of #\, and #\; (XXX ack, explain)
+    - circular or excessively deeply nested data generates a more
+      useful error message when encountered by `equal?'
+  - unit `files'
+    - fixed bug in `normalize-pathname' (XXX ack)
+  - unit `lolevel'
+    - removed deprecated `global-bound?', `global-make-unbound',
+      `global-ref' and `global-set!' procedures
+  - unit `posix'
+    - added `file-creation-mode' (suggested by Mario Domenech Goulart)
+  - unit `srfi-18'
+    - removed deprecated `milliseconds->time' and `time->milliseconds'
+      procedures
+    - `make-mutex' incorrectly created mutexes as initially owned by
+      the current threads (thanks to Joerg Wittenberger) 
+  - unit `utils'
+    - `compile-file' now returns `#f' when the compilation fails,
+       instead of raising an error
+- Documentation
+  - The manual is now installed in HTML format in
+    PREFIX/share/chicken/doc, many thanks to Jim Ursetto for
+    contributing is excellent `manual-labor' extension which made
+    this possible
+
 4.6.3
 
 - Peter Bex has cleaned up the makefiles heavily, making the
