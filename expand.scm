@@ -1995,3 +1995,27 @@
 	  (set-module-sexports! mod sexports))))))
 
 (define ##sys#module-table '())
+
+
+;; Used by the syntax-rules implementation (and possibly handy elsewhere)
+;; (kindly contributed by Peter Bex)
+
+(define (##sys#drop-right input temp)
+  ;;XXX use unsafe accessors
+  (let loop ((len (length input))
+	     (input input))
+    (cond
+     ((> len temp)
+      (cons (car input)
+	    (loop (- len 1) (cdr input))))
+     (else '()))))
+
+(define (##sys#take-right input temp)
+  ;;XXX use unsafe accessors
+  (let loop ((len (length input))
+	     (input input))
+    (cond
+     ((> len temp)
+      (loop (- len 1) (cdr input)))
+     (else input))))
+
