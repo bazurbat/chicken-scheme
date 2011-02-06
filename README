@@ -69,7 +69,7 @@
         Enter "make" without any options to see a list of supported 
         platforms.
 
-	Note that parallel builds (using the "-j" make(1) option) is
+	Note that parallel builds (using the "-j" make(1) option) are
 	*not* supported.
 
         If you build CHICKEN directly from the development sources out
