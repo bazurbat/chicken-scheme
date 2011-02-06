@@ -269,12 +269,17 @@ EOF
     (lambda ()
       (when (tty-input?) (old)) ) ) )
 
-(define command-table (make-vector 37 '()))
+(define command-table '())
 
 (define (toplevel-command name proc #!optional help)
   (##sys#check-symbol name 'toplevel-command)
   (when help (##sys#check-string help 'toplevel-command))
-  (##sys#hash-table-set! command-table name (cons proc help)) )
+  (cond ((assq name command-table) =>
+	 (lambda (a)
+	   (set-cdr! a (list proc help)) ))
+	(else
+	 (set! command-table (cons (list name proc help) command-table))))
+  (##sys#void))
 
 (set! ##sys#repl-eval-hook
   (let ((eval eval)
@@ -295,9 +300,9 @@ EOF
 	    ((and (pair? form)
 		  (eq? 'unquote (##sys#slot form 0)) )
 	     (let ((cmd (cadr form)))
-	       (cond ((and (symbol? cmd) (##sys#hash-table-ref command-table cmd)) =>
+	       (cond ((assq cmd command-table) =>
 		      (lambda (p)
-			((car p))
+			((cadr p))
 			(##sys#void) ) )
 		     (else
 		      (case cmd
@@ -392,9 +397,9 @@ EOF
  ,g NAME           Get variable NAME from current frame
  ,t EXP            Evaluate form and print elapsed time
  ,x EXP            Pretty print expanded expression EXP\n")
-			 (##sys#hash-table-for-each
-			  (lambda (k v) 
-			    (let ((help (cdr v)))
+			 (for-each
+			  (lambda (a) 
+			    (let ((help (caddr v)))
 			      (if help
 				  (print #\space help)
 				  (print " ," k) ) ) )
