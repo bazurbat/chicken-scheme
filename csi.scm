@@ -130,8 +130,8 @@ EOF
 
 (define (print-banner)
   (newline)
-  #; ;UNUSED
-  (when (and (tty-input?) (##sys#fudge 11))
+  ;;UNUSED
+  #;(when (and (tty-input?) (##sys#fudge 11))
     (let* ((t (string-copy +product+))
 	   (len (string-length t))
 	   (c (make-string len #\x08)))
@@ -255,9 +255,14 @@ EOF
 	(##sys#error "history entry index out of range" index) ) ) )
 
 (repl-prompt
- (let ([sprintf sprintf])
+ (let ((sprintf sprintf))
    (lambda ()
-     (sprintf "#;~A> " history-count) ) ) )
+     (sprintf "#;~A~A> "
+       (let ((m (##sys#current-module)))
+	 (if m
+	     (sprintf "~a:" (##sys#module-name m))
+	     ""))
+       history-count))))
 
 (define (tty-input?)
   (or (##sys#fudge 12) (##sys#tty-port? ##sys#standard-input)) )
@@ -305,6 +310,7 @@ EOF
 			((cadr p))
 			(##sys#void) ) )
 		     (else
+		      ;;XXX use `toplevel-command' to define as many as possible of these
 		      (case cmd
 			((x)
 			 (let ([x (read)])
@@ -354,7 +360,7 @@ EOF
 				    (or (editor-command) default-editor)
 				    " " (read-line)))))
 			   (if (not (zero? r))
-			       (printf "Editor returned with non-zero exit status ~a" r))))
+			       (printf "editor returned with non-zero exit status ~a" r))))
 			((ch)
 			 (history-clear)
 			 (##sys#void))
@@ -399,19 +405,39 @@ EOF
  ,x EXP            Pretty print expanded expression EXP\n")
 			 (for-each
 			  (lambda (a) 
-			    (let ((help (caddr v)))
+			    (let ((help (caddr a)))
 			      (if help
 				  (print #\space help)
-				  (print " ," k) ) ) )
+				  (print " ," (car a)) ) ) )
 			  command-table)
 			 (##sys#void) )
 			(else
-			 (printf "Undefined toplevel command ~s - enter `,?' for help~%" form) 
+			 (printf "undefined toplevel command ~s - enter `,?' for help~%" form) 
 			 (##sys#void) ) ) ) ) ) )
 	    (else
 	     (receive rs (eval form)
 	       (history-add rs)
 	       (apply values rs) ) ) ) ) ) )
+
+
+;;; Builtin toplevel commands:
+
+(toplevel-command
+ 'm 
+ (let ((printf printf))
+   (lambda ()
+     (let ((name (read)))
+       (cond ((string? name)
+	      (set! name (##sys#string->symbol name)))
+	     ((not (symbol? name))
+	      (printf "invalid module name `~a'~%" name))
+	     ((##sys#find-module name #f) =>
+	      (lambda (m)
+		(##sys#current-module m)
+		(printf "; switching current module to `~a'~%" name)))
+	     (else
+	      (printf "undefined module `~a'~%" name))))))
+ ",m MODULE         switch to module with name `MODULE'")
 
 
 ;;; Parse options from string:
