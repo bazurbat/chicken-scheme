@@ -1615,7 +1615,7 @@ EOF
 (define ##sys#process
   (let ([c-process
 	  (foreign-lambda bool "C_process" c-string c-string c-pointer
-	    (pointer int) (pointer int) (pointer int) (pointer int) int)])
+	    (c-pointer int) (c-pointer int) (c-pointer int) (c-pointer int) int)])
     ; The environment list must be sorted & include current directory
     ; information for the system drives. i.e !C:=...
     ; For now any environment is ignored.
