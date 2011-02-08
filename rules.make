@@ -576,6 +576,7 @@ html:
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) $(SRCDIR)manual-html
 	manual-labor $(SRCDIR)manual $(SRCDIR)manual-html
 	$(COPY_COMMAND) $(SRCDIR)chicken.png manual-html
+	$(COPY_COMMAND) $(SRCDIR)manual.css manual-html
 	$(COPY_COMMAND) $(SRCDIR)index.html manual-html
 
 # cleaning up
