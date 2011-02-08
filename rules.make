@@ -649,7 +649,7 @@ boot-chicken:
 	  C_COMPILER_OPTIMIZATION_OPTIONS= C_HACKED_APPLY= \
 	  confclean chicken-boot-stage1$(EXE)
 	$(MAKE) -f Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) PREFIX=/nowhere CONFIG= \
-	  SRCDIR=$(SRCDIR) CHICKEN=$(PWD)/chicken-boot-stage1$(EXE) PROGRAM_SUFFIX=-boot \
+	  SRCDIR=$(SRCDIR) CHICKEN=`pwd`/chicken-boot-stage1$(EXE) PROGRAM_SUFFIX=-boot \
 	  STATICBUILD=1 C_COMPILER_OPTIMIZATION_OPTIONS= \
 	  touchfiles chicken-boot$(EXE) confclean
 
