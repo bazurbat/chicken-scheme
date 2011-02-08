@@ -196,7 +196,7 @@
       (bar foo))))
 )
 
-;;; alternative ellipsis test
+;;; alternative ellipsis test (SRFI-46)
 
 (define-syntax foo
   (syntax-rules 
@@ -217,6 +217,56 @@
 (defalias inc add1)
 
 (t 3 (inc 2))
+
+;;; Rest patterns after ellipsis (SRFI-46)
+
+(define-syntax foo
+  (syntax-rules ()
+    ((_ (a ... b) ... (c d))
+     (list (list (list a ...) ... b ...) c d))
+    ((_ #(a ... b) ... #(c d) #(e f))
+     (list (list (vector a ...) ... b ...) c d e f))
+    ((_ #(a ... b) ... #(c d))
+     (list (list (vector a ...) ... b ...) c d))))
+
+(t '(() 1 2)
+   (foo (1 2)))
+
+(t '(((1) 2) 3 4)
+   (foo (1 2) (3 4)))
+
+(t '(((1 2) (4) 3 5) 6 7)
+   (foo (1 2 3) (4 5) (6 7)))
+
+(t '(() 1 2)
+   (foo #(1 2)))
+
+(t '((#() 1) 2 3)
+   (foo #(1) #(2 3)))
+
+(t '((#(1 2) 3) 4 5)
+   (foo #(1 2 3) #(4 5)))
+
+(t '((#(1 2) 3) 4 5 6 7)
+   (foo #(1 2 3) #(4 5) #(6 7)))
+
+(t '(() 1 2 3 4)
+   (foo #(1 2) #(3 4)))
+
+(t '((#(1) 2) 3 4 5 6)
+   (foo #(1 2) #(3 4) #(5 6)))
+
+(t '((#(1 2) #(4) 3 5) 6 7 8 9)
+   (foo #(1 2 3) #(4 5) #(6 7) #(8 9)))
+
+;;; Bug discovered during implementation of SRFI-46 rest patterns:
+
+(define-syntax foo
+  (syntax-rules ()
+    ((_ #((a) ...)) (list a ...))))
+
+(t '(1)
+   (foo #((1))))
 
 ;;;
 

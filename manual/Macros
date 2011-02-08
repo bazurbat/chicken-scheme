@@ -42,9 +42,15 @@ is expanded into
     (letrec-syntax ((foo ...) (bar ...))
       ...) )
 
-{{syntax-rules}} partially supports [[http://srfi.schemers.org/srfi-46/|SRFI-46]]
+{{syntax-rules}} supports [[http://srfi.schemers.org/srfi-46/|SRFI-46]]
 in allowing the ellipsis identifier to be user-defined by passing it as the first
-argument to the {{syntax-rules}} form.
+argument to the {{syntax-rules}} form. Also, "tail" patterns of the form
+
+  (syntax-rules ()
+    ((_ (a b ... c) 
+      ...
+
+are supported.
 
 The effect of destructively modifying the s-expression passed to a
 transformer procedure is undefined.
