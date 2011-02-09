@@ -38,7 +38,10 @@
 (include "common-declarations.scm")
 
 (set! ##sys#features
-  (append '(#:hygienic-macros #:syntax-rules) ##sys#features))
+  (append '(#:hygienic-macros 
+	    #:syntax-rules 
+	    #:srfi-0 #:srfi-2 #:srfi-6 #:srfi-9 #:srfi-46 #:srfi-55 #:srfi-61) 
+	  ##sys#features))
 
 (define-alias dd d)
 (define-alias dm d)

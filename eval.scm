@@ -1458,13 +1458,6 @@
 		  (else (loop (##sys#slot paths 1))) ) ) ) ) ) )
 
 
-;;; SRFI-0 support code:
-
-(set! ##sys#features
-  (append '(#:srfi-8 #:srfi-6 #:srfi-2 #:srfi-0 #:srfi-10 #:srfi-9 #:srfi-55 #:srfi-61) 
-	  ##sys#features))
-
-
 ;;;; Read-Eval-Print loop:
 
 (define ##sys#repl-eval-hook #f)

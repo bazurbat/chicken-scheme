@@ -3545,6 +3545,7 @@ EOF
 
 (define ##sys#features
   '(#:chicken #:srfi-23 #:srfi-30 #:srfi-39 #:srfi-62 #:srfi-17 #:srfi-12 #:srfi-88 #:srfi-98
+	      #:srfi-6 #:srfi-10
 	      #:irregex-is-core-unit))
 
 ;; Add system features:
