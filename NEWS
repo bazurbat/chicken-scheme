@@ -32,8 +32,10 @@
   - Kon Lovett reported numerous bugs in the type-database used
     by the scrutinizer
 - Syntax expander
-  - Peter Bex provided a bugfix for resolution of primitive
-    imports
+  - `syntax-rules' now supports tail-patterns and is now fully
+    SRFI-46 compatible - many thanks to Peter Bex for implementing
+    this
+  - Peter Bex provided a bugfix for resolution of primitive imports
   - handling of internal definitions with shadowed defining
     forms is now done correctly - fix once again from Peter Bex
   - corrected non-standard behaviour of quasiquote with respect
