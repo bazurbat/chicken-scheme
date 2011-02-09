@@ -66,11 +66,14 @@
 ; specialization specifiers:
 ;
 ;   SPECIALIZATION = ((MVAL ... [#!rest MVAL]) TEMPLATE)
-;   MVAL = VAL | (not VAL) | (or VAL ...)
+;   MVAL = VAL | (not VAL) | (or VAL ...) | (and VAL ...)
 ;   TEMPLATE = #(INDEX [...])
 ;            | INTEGER | SYMBOL | STRING
 ;            | (quote CONSTANT)
 ;            | (TEMPLATE . TEMPLATE)
+;
+;   - (not number) succeeds for fixnum and flonum
+;   - (not list) succeeds for pair and null
 
 
 (define-constant +fragment-max-length+ 5)
@@ -700,16 +703,18 @@
 
 (define (match-specialization typelist atypes)
   (define (match st t)
-    (if (pair? st)
-	(case (car st)
-	  ((not) 
-	   (cond ((and (pair? t) (eq? 'or (car t)))
-		  (not (any (cute match (cadr st) <>) (cdr t))))
-		 ((eq? '* t) #f)
-		 (else (not (match (cadr st) t)))))
-	  ((or) (any (cut match <> t) (cdr st)))
-	  (else (equal? st t)))
-	(eq? st t)))
+    (cond ((pair? st)
+	   (case (car st)
+	     ((not) 
+	      (cond ((and (pair? t) (eq? 'or (car t)))
+		     (not (any (cute match (cadr st) <>) (cdr t))))
+		    ((eq? '* t) #f)
+		    (else (not (match (cadr st) t)))))
+	     ((or) (any (cut match <> t) (cdr st)))
+	     ((and) (every (cut match <> t) (cdr st)))
+	     (else (equal? st t))))
+	  ((eq? st '*))
+	  (else (eq? st t))))
   (let loop ((tl typelist) (atypes atypes))
     (cond ((null? tl) (null? atypes))
 	  ((null? atypes) #f)
