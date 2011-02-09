@@ -148,11 +148,9 @@ The toplevel loop understands a number of special commands:
 
 ; ,? : Show summary of available toplevel commands.
 
-; ,l FILENAME ... : Load files with given {{FILENAME}}s
+; ,c : Show call-trace items of the most recent error
 
-; ,ln FILENAME ... : Load files and print result(s) of each top-level expression.
-
-; ,p EXP : Pretty-print evaluated expression {{EXP}}.
+; ,ch : Clears stored expression results of previously evaluated expressions.
 
 ; ,d EXP : Describe result of evaluated expression {{EXP}}.
 
@@ -162,17 +160,21 @@ The toplevel loop understands a number of special commands:
 
 ; ,e FILENAME : Runs an external editor to edit the given {{FILENAME}} (see below for more information).
 
-; ,h : Shows all previously evaluated expression results.
-
-; ,ch : Clears stored expression results of previously evaluated expressions.
-
 ; ,exn : Describes the last exception that occurred and adds it to the result history (it can be accessed using the {{#}} notation).
-
-; ,c : Show call-trace items of the most recent error
 
 ; ,f N : Select call-trace item with the given number, where the number {{0}} indicates the last item in the trace
 
 ; ,g NAME : Returns the value of the local variable with the given name (which may be a symbol or string); you don't have to give the complete name - {{,g}} will return the first variable that matches the prefix given
+
+; ,h : Shows all previously evaluated expression results.
+
+; ,l FILENAME ... : Load files with given {{FILENAME}}s
+
+; ,ln FILENAME ... : Load files and print result(s) of each top-level expression.
+
+; ,m MODULENAME : switches the "current module" to {{MODULENAME}}, so expressions will be evaluated in the context of the given module.
+
+; ,p EXP : Pretty-print evaluated expression {{EXP}}.
 
 ; ,q : Quit the interpreter.
 

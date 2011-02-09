@@ -100,10 +100,6 @@ every object has to be accessed via a thread synchronization
 protocol. Such a design would make native threads in Chicken
 essentially equivalent to Unix processes and shared memory.
 
-For a different approach to concurrency, please see the
-[[http://www.call-with-current-continuation.org/eggs/3/mpi.html|mpi]]
-egg.
-
 ==== Does CHICKEN support Unicode strings?
 
 The system does not directly support Unicode, but an extension for UTF8 strings

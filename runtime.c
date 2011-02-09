@@ -139,6 +139,7 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #define DEFAULT_LOCATIVE_TABLE_SIZE    32
 #define DEFAULT_COLLECTIBLES_SIZE      1024
 #define DEFAULT_TRACE_BUFFER_SIZE      16
+#define MIN_TRACE_BUFFER_SIZE          3
 
 #define MAX_HASH_PREFIX                64
 
@@ -606,7 +607,9 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   C_panic_hook = usual_panic;
   symbol_table_list = NULL;
 
-  if((symbol_table = C_new_symbol_table(".", symbols ? symbols : DEFAULT_SYMBOL_TABLE_SIZE)) == NULL)
+  symbol_table = C_new_symbol_table(".", symbols ? symbols : DEFAULT_SYMBOL_TABLE_SIZE);
+
+  if(symbol_table == NULL)
     return 0;
 
   page_size = 0;
@@ -671,11 +674,14 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   gc_root_list = NULL;
  
   /* Initialize global variables: */
-  if(C_heap_growth == 0) C_heap_growth = DEFAULT_HEAP_GROWTH;
+  if(C_trace_buffer_size < MIN_TRACE_BUFFER_SIZE)
+    C_trace_buffer_size = MIN_TRACE_BUFFER_SIZE;
 
-  if(C_heap_shrinkage == 0) C_heap_shrinkage = DEFAULT_HEAP_SHRINKAGE;
+  if(C_heap_growth <= 0) C_heap_growth = DEFAULT_HEAP_GROWTH;
 
-  if(C_maximal_heap_size == 0) C_maximal_heap_size = DEFAULT_MAXIMAL_HEAP_SIZE;
+  if(C_heap_shrinkage <= 0) C_heap_shrinkage = DEFAULT_HEAP_SHRINKAGE;
+
+  if(C_maximal_heap_size <= 0) C_maximal_heap_size = DEFAULT_MAXIMAL_HEAP_SIZE;
 
 #if !defined(NO_DLOAD2) && defined(HAVE_DLFCN_H)
   dlopen_flags = RTLD_LAZY | RTLD_GLOBAL;
@@ -1050,8 +1056,10 @@ void C_set_or_change_heap_size(C_word heap, int reintern)
 			   size, &ptr2a)) == NULL)
     panic(C_text("out of memory - cannot allocate heap"));
 
-  heapspace1 = ptr1, heapspace1_size = size;
-  heapspace2 = ptr2, heapspace2_size = size;
+  heapspace1 = ptr1;
+  heapspace1_size = size;
+  heapspace2 = ptr2;
+  heapspace2_size = size;
   fromspace_start = ptr1a;
   C_fromspace_top = fromspace_start;
   C_fromspace_limit = fromspace_start + size;
@@ -1253,30 +1261,35 @@ void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *st
 
 C_word arg_val(C_char *arg)
 {
-      int len;
+  int len;
+  char *end;
+  long val, mul = 1;
+
+  if (arg == NULL) panic(C_text("illegal runtime-option argument"));
       
-      if (arg == NULL) panic(C_text("illegal runtime-option argument"));
+  len = C_strlen(arg);
       
-      len = C_strlen(arg);
+  if(len < 1) panic(C_text("illegal runtime-option argument"));
       
-      if(len < 1) panic(C_text("illegal runtime-option argument"));
-      
-      switch(arg[ len - 1 ]) {
-      case 'k':
-      case 'K':
- 	  return atol(arg) * 1024;
+  switch(arg[ len - 1 ]) {
+  case 'k':
+  case 'K': mul = 1024; break;
  	  
-      case 'm':
-      case 'M':
- 	  return atol(arg) * 1024 * 1024;
+  case 'm':
+  case 'M': mul = 1024 * 1024; break;
  	  
-      case 'g':
-      case 'G':
- 	  return atol(arg) * 1024 * 1024 * 1024;
- 	  
-      default:
- 	  return atol(arg);
-      }
+  case 'g':
+  case 'G': mul = 1024 * 1024 * 1024; break;
+
+  default:
+    return 0;
+  }
+
+  val = strtol(arg, &end, 10);
+
+  if(*end != '\0') return 0;
+
+  return val * mul;
 }
 
 

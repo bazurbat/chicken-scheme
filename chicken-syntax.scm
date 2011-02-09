@@ -1000,6 +1000,7 @@
 		    `(##core#lambda
 		      (,@rvars . ,rv)
 		      (,%apply ,(car rvals) ,@(cdr rvals) ,rv) ) )
+		  ;;XXX should we drop the begin?
 		  `(##core#lambda ,rvars ((##core#begin ,(car rvals)) ,@(cdr rvals)) ) ) )
 	    (cond ((c %<> (car xs))
 		   (let ([v (r (gensym))])
