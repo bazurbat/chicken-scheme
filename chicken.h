@@ -156,6 +156,8 @@ void *alloca ();
 # define C_BIG_ENDIAN
 #elif defined(__BIG_ENDIAN__)
 # define C_BIG_ENDIAN
+#if defined(__MIPSEL__) || defined(__MIPSEL)
+# define C_LITTLE_ENDIAN
 #elif defined(__sparc__) || defined(__POWERPC__) || defined(__MC68K__) || defined(__mips__)
 # define C_BIG_ENDIAN
 #endif
