@@ -14,7 +14,7 @@
   - the `-accumulate-profile' option did not provide a way to
     specify the target profile data file - now `-profile-name'
     must always be given when accumulated profiling is done
-    (thanks to Tayler Venable)
+    (thanks to Taylor Venable)
   - added `-module' option, which wraps the code into an implicit
     module
   - removed check for unsafe toplevel calls in safe mode

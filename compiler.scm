@@ -863,7 +863,8 @@
 				   (canonicalize-begin-body
 				    (append
 				     (parameterize ((##sys#current-module #f)
-						    (##sys#macro-environment (##sys#meta-macro-environment)))
+						    (##sys#macro-environment 
+						     (##sys#meta-macro-environment)))
 				       (map
 					(lambda (x)
 					  (walk 
