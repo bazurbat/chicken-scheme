@@ -234,11 +234,13 @@
       (define (eval/meta form)
 	(parameterize ((##sys#current-module #f)
 		       (##sys#macro-environment (##sys#meta-macro-environment)))
-	    ((##sys#compile-to-closure
-	      form
-	      '() 
-	      (##sys#current-meta-environment))
-	     '() ) ))
+	  ;;XXX definitions extending the macro-env will be lost after
+	  ;;    this body exits, or not?
+	  ((##sys#compile-to-closure
+	    form
+	    '() 
+	    (##sys#current-meta-environment))
+	   '() ) ))
 
       (define (eval/elab form)
 	((##sys#compile-to-closure

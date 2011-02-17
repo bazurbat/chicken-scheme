@@ -1262,7 +1262,7 @@ void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *st
 C_word arg_val(C_char *arg)
 {
   int len;
-  char *end;
+  C_char *end;
   long val, mul = 1;
 
   if (arg == NULL) panic(C_text("illegal runtime-option argument"));
@@ -1287,7 +1287,8 @@ C_word arg_val(C_char *arg)
 
   val = strtol(arg, &end, 10);
 
-  if(*end != '\0') return 0;
+  if((mul != 1 ? end[ 1 ] != '\0' : end[ 0 ] != '\0')) 
+    panic(C_text("invalid runtime-option argument suffix"));
 
   return val * mul;
 }

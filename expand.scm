@@ -912,7 +912,8 @@
 				     (##sys#current-environment '())
 				     (##sys#current-meta-environment 
 				      (##sys#current-meta-environment))
-				     (##sys#macro-environment (##sys#meta-macro-environment)))
+				     (##sys#macro-environment
+				      (##sys#meta-macro-environment)))
 			(fluid-let ((##sys#notices-enabled #f)) ; to avoid re-import warnings
 			  (##sys#load il #f #f)))
 		      (set! mod (##sys#find-module mname)))
@@ -1069,7 +1070,8 @@
 (##sys#extend-macro-environment
  'import-for-syntax '() 
  (##sys#er-transformer 
-  (cut ##sys#expand-import <> <> <> ##sys#current-meta-environment ##sys#meta-macro-environment 
+  (cut ##sys#expand-import <> <> <> ##sys#current-meta-environment 
+       ##sys#meta-macro-environment 
        #t #f 'import-for-syntax) ) )
 
 (##sys#extend-macro-environment
