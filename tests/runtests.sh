@@ -95,6 +95,9 @@ $interpret -s records-and-setters-test.scm
 $compile records-and-setters-test.scm
 ./a.out
 
+echo "======================================== reader tests ..."
+$interpret -s reader-tests.scm
+
 echo "======================================== dynamic-wind tests ..."
 $interpret -s dwindtst.scm >dwindtst.out
 diff -bu dwindtst.expected dwindtst.out
