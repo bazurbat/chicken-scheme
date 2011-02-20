@@ -172,6 +172,7 @@ tests/records-and-setters-test.scm
 tests/dwindtst.scm
 tests/dwindtst.expected
 tests/callback-tests.scm
+tests/reader-tests.scm
 tweaks.scm
 utils.scm
 apply-hack.x86.S
