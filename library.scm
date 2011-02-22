@@ -4499,6 +4499,7 @@ EOF
 
 (define ##sys#list->vector list->vector)
 (define ##sys#list list)
+(define ##sys#length length)
 (define ##sys#cons cons)
 (define ##sys#append append)
 (define ##sys#vector vector)

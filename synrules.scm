@@ -65,18 +65,15 @@
   (define %and (r 'and))
   (define %car '##sys#car)
   (define %cdr '##sys#cdr)
-  (define %length (r 'length))
+  (define %length '##sys#length)
   (define %vector? '##sys#vector?)
   (define %vector-length '##sys#vector-length)
   (define %vector-ref '##sys#vector-ref)
   (define %vector->list '##sys#vector->list)
   (define %list->vector '##sys#list->vector)
   (define %>= '##sys#>=)
-  (define %> (r '>))
   (define %= '##sys#=)
   (define %+ '##sys#+)
-  (define %- '-)
-  (define %i (r 'i))
   (define %compare (r 'compare))
   (define %cond (r 'cond))
   (define %cons '##sys#cons)
@@ -90,7 +87,6 @@
   (define %let (r 'let))
   (define %let* (r 'let*))
   (define %list? '##sys#list?)
-  (define %list (r 'list))
   (define %loop (r 'loop))
   (define %map1 '##sys#map)
   (define %map '##sys#map-n)
@@ -165,7 +161,7 @@
                               ,@(process-match %l (cddr pattern) #t))
                              (,%else
                               (,%and ,@conjuncts
-                                     (,%loop (,%cdr ,%l) (,%- ,%len 1))))))))))))
+                                     (,%loop (,%cdr ,%l) (,%+ ,%len -1))))))))))))
 
   ;; Generate code to take apart the input expression
   ;; This is pretty bad, but it seems to work (can't say why).

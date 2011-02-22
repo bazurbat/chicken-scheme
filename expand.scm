@@ -87,19 +87,15 @@
 	 (cons (car a) (if (symbol? (cdr a)) (cdr a) '<macro>)))
        se))
 
-(define (##sys#strip-syntax exp #!optional se alias)
+(define (##sys#strip-syntax exp)
  ;; if se is given, retain bound vars
  (let ((seen '()))
    (let walk ((x exp))
      (cond ((assq x seen) => cdr)
            ((symbol? x)
-            (let ((x2 (if se
-                          (lookup x se)
-                          (getp x '##core#macro-alias) ) ) )
+            (let ((x2 (getp x '##core#macro-alias) ) )
               (cond ((getp x '##core#real-name))
                     ((getp x '##core#primitive))
-                    ((and alias (not (assq x se)))
-                     (##sys#alias-global-hook x #f #f))
                     ((not x2) x)
                     ((pair? x2) x)
                     (else x2))))
