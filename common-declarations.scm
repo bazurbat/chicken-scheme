@@ -25,8 +25,7 @@
 
 
 (declare 
-  (usual-integrations)
-  (hide d))
+  (usual-integrations))
 
 (cond-expand
  (debugbuild

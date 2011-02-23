@@ -28,18 +28,30 @@
  
 (not (procedure not (*) boolean)
      (((not boolean)) '#t))
+
 (boolean? (procedure boolean? (*) boolean)
 	  ((boolean) '#t)
 	  (((not boolean)) '#f))
+
 (eq? (procedure eq? (* *) boolean))
+
 (eqv? (procedure eqv? (* *) boolean)
       (((and (not number) (not flonum)) *) (eq? #(1) #(2)))
       ((* (and (not number) (not flonum))) (eq? #(1) #(2))))
-(equal? (procedure equal? (* *) boolean))
-(pair? (procedure pair? (*) boolean))
+
+(equal? (procedure equal? (* *) boolean)
+	(((or fixnum symbol char eof null undefined) *) (eq? #(1) #(2)))
+	((* (or fixnum symbol char eof null undefined) (eq? #(1) #(2)))))
+
+(pair? (procedure pair? (*) boolean)
+       ((pair) '#t)
+       (((not pair)) '#f))
+
 (cons (procedure cons (* *) pair))
-(car (procedure car (pair) *))
-(cdr (procedure cdr (pair) *))
+
+(car (procedure car (pair) *) ((pair) (##core#inline "C_u_i_car" #(1))))
+(cdr (procedure cdr (pair) *) ((pair) (##core#inline "C_u_i_cdr" #(1))))
+
 (caar (procedure caar (pair) *))
 (cadr (procedure cadr (pair) *))
 (cdar (procedure cdar (pair) *))
@@ -68,10 +80,14 @@
 (cddadr (procedure cddadr (pair) *))
 (cdddar (procedure cdddar (pair) *))
 (cddddr (procedure cddddr (pair) *))
-(set-car! (procedure set-car! (pair *) undefined))
-(set-cdr! (procedure set-cdr! (pair *) undefined))
-(null? (procedure null? (*) boolean))
-(list? (procedure list? (*) boolean))
+
+(set-car! (procedure set-car! (pair *) undefined) ((pair *) (##sys#setslot #(1) 0 #(2))))
+(set-cdr! (procedure set-cdr! (pair *) undefined) ((pair *) (##sys#setslot #(1) 1 #(2))))
+
+(null? (procedure null? (*) boolean) ((null) #t) ((not null) #f))
+(list? (procedure list? (*) boolean) (((or null pair list)) #t) (((not (or null pair list))) #f))
+
+;;;XXX...
 (list (procedure list (#!rest) list))
 (length (procedure length (list) fixnum))
 (list-tail (procedure list-tail (list fixnum) *))
