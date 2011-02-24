@@ -86,33 +86,57 @@
 
 (null? (procedure null? (*) boolean) ((null) #t) ((not null) #f))
 (list? (procedure list? (*) boolean) (((or null pair list)) #t) (((not (or null pair list))) #f))
-
-;;;XXX...
 (list (procedure list (#!rest) list))
-(length (procedure length (list) fixnum))
+(length (procedure length (list) fixnum) ((list) (##core#inline "C_u_i_length" #(1))))
 (list-tail (procedure list-tail (list fixnum) *))
 (list-ref (procedure list-ref (list fixnum) *))
 (append (procedure append (list #!rest) list))
 (reverse (procedure reverse (list) list))
-(memq (procedure memq (* list) *))	; result type: (or list boolean) ?
+(memq (procedure memq (* list) *) ((* list) (##core#inline "C_u_i_memq" #(1) #(2))))
 (memv (procedure memv (* list) *))
 (member (procedure member (* list #!optional (procedure (* *) *)) *))
-(assq (procedure assq (* list) *))
+(assq (procedure assq (* list) *) ((* list) (##core#inline "C_u_i_assq" #(1) #(2))))
 (assv (procedure assv (* list) *))
 (assoc (procedure assoc (* list #!optional (procedure (* *) *)) *))
-(symbol? (procedure symbol? (*) boolean))
+
+(symbol? (procedure symbol? (*) boolean)
+	 ((symbol) #t)
+	 (((not symbol)) #f))
+
 (symbol-append (procedure symbol-append (#!rest symbol) symbol))
 (symbol->string (procedure symbol->string (symbol) string))
 (string->symbol (procedure string->symbol (string) symbol))
-(number? (procedure number? (*) boolean))
+
+(number? (procedure number? (*) boolean)
+	 (((or fixnum float number)) #t)
+	 (((not (or fixnum float number)) #f)))
+
 (integer? (procedure integer? (*) boolean)
+	  ((fixnum) #t)
 	  ((float) (fpinteger? #(1))))
-(exact? (procedure exact? (*) boolean))
-(real? (procedure real? (*) boolean))
-(complex? (procedure complex? (*) boolean))
-(inexact? (procedure inexact? (*) boolean))
-(rational? (procedure rational? (*) boolean))
-(zero? (procedure zero? (number) boolean))
+
+(exact? (procedure exact? (*) boolean)
+	((fixnum) #t)
+	((float) #f))
+
+(real? (procedure real? (*) boolean)
+       (((or fixnum float number)) #t))
+
+(complex? (procedure complex? (*) boolean)
+	  (((or fixnum float number)) #t)
+	  (((not (or fixnum float number))) #f))
+
+(inexact? (procedure inexact? (*) boolean)
+	  ((fixnum) #f)
+	  ((float) #t))
+
+(rational? (procedure rational? (*) boolean)
+	   ((fixnum) #t))
+
+(zero? (procedure zero? (number) boolean)
+       ((fixnum) (eq? #(1) 0)))
+
+;;XXX...
 (odd? (procedure odd? (number) boolean))
 (even? (procedure even? (number) boolean))
 (positive? (procedure positive? (number) boolean))
