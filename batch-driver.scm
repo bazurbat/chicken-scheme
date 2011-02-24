@@ -500,22 +500,54 @@
 	       (print-node "initial node tree" '|T| node0)
 	       (initialize-analysis-database)
 
-	       (when do-scrutinize
-		 ;;;*** hardcoded database file name
-		 (unless (memq 'ignore-repository options)
-		   (load-type-database "types.db"))
-		 (for-each (cut load-type-database <> #f) (collect-options 'types))
-		 (begin-time)
-		 (set! first-analysis #f)
-		 (set! db (analyze 'scrutiny node0))
-		 (print-db "analysis" '|0| db 0)
-		 (end-time "pre-analysis")
-		 (begin-time)
-		 (debugging 'p "performing scrutiny")
-		 (scrutinize node0 db)
-		 (end-time "scrutiny")
-		 (set! first-analysis #t) )
+	       ;; collect requirements and load inline and types files
+	       (let* ((req (concatenate (vector->list file-requirements)))
+		      (mreq (concatenate (map cdr req))))
+		 (when (debugging 'M "; requirements:")
+		   (pp req))
+		 (when enable-inline-files
+		   (for-each
+		    (lambda (id)
+		      (and-let* ((ifile (##sys#resolve-include-filename 
+					 (make-pathname #f (symbol->string id) "inline")
+					 #f #t))
+				 ((file-exists? ifile)))
+			(dribble "Loading inline file ~a ..." ifile)
+			(load-inline-file ifile)))
+		    mreq))
+		 (let ((ifs (collect-options 'consult-inline-file)))
+		   (unless (null? ifs)
+		     (set! inline-locally #t)
+		     (for-each 
+		      (lambda (ilf)
+			(dribble "Loading inline file ~a ..." ilf)
+			(load-inline-file ilf) )
+		      ifs)))
+		 (when do-scrutinize
+		   ;;*** hardcoded database file name
+		   (unless (memq 'ignore-repository options)
+		     (load-type-database "types.db"))
+		   (for-each (cut load-type-database <> #f) (collect-options 'types))
+		   (for-each
+		    (lambda (id)
+		      (and-let* ((tfile (##sys#resolve-include-filename 
+					 (make-pathname #f (symbol->string id) "types")
+					 #f #t))
+				 ((file-exists? tfile)))
+			(load-type-database tfile)))
+		    mreq)
+		   (begin-time)
+		   (set! first-analysis #f)
+		   (set! db (analyze 'scrutiny node0))
+		   (print-db "analysis" '|0| db 0)
+		   (end-time "pre-analysis")
+		   (begin-time)
+		   (debugging 'p "performing scrutiny")
+		   (scrutinize node0 db)
+		   (end-time "scrutiny")
+		   (set! first-analysis #t) ) )
 
+	       ;; lambda-lifting
 	       (when do-lambda-lifting
 		 (begin-time)
 		 (unless do-scrutinize	; no need to do analysis if already done above
@@ -529,28 +561,6 @@
 		 (print-node "lambda lifted" '|L| node0) 
 		 (set! first-analysis #t) )
 	       
-	       (let ((req (concatenate (vector->list file-requirements))))
-		 (when (debugging 'M "; requirements:")
-		   (pp req))
-		 (when enable-inline-files
-		   (for-each
-		    (lambda (id)
-		      (and-let* ((ifile (##sys#resolve-include-filename 
-					 (make-pathname #f (symbol->string id) "inline")
-					 #f #t))
-				 ((file-exists? ifile)))
-			(dribble "Loading inline file ~a ..." ifile)
-			(load-inline-file ifile)))
-		    (concatenate (map cdr req))) )
-		 (let ((ifs (collect-options 'consult-inline-file)))
-		   (unless (null? ifs)
-		     (set! inline-locally #t)
-		     (for-each 
-		      (lambda (ilf)
-			(dribble "Loading inline file ~a ..." ilf)
-			(load-inline-file ilf) )
-		      ifs))))
-
 	       (set! ##sys#line-number-database #f)
 	       (set! constant-table #f)
 	       (set! inline-table #f)
