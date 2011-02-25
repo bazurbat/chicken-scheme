@@ -126,11 +126,11 @@ echo "======================================== syntax tests (2, compiled) ..."
 $compile syntax-tests-2.scm
 ./a.out
 
-#echo "======================================== meta-syntax tests ..."
-#$interpret -bnq meta-syntax-test.scm -e '(import foo)' -e '(bar 1 2)'
-#$compile_s meta-syntax-test.scm -j foo
-#$compile_s foo.import.scm
-#$interpret -bnq -e '(require-library meta-syntax-test)' -e '(import foo)' -e '(bar 1 2)'
+echo "======================================== meta-syntax tests ..."
+$interpret -bnq meta-syntax-test.scm -e '(import foo)' -e "(assert (equal? '((1)) (bar 1 2)))"
+$compile_s meta-syntax-test.scm -j foo
+$compile_s foo.import.scm
+$interpret -bnq -e '(require-library meta-syntax-test)' -e '(import foo)' -e "(assert (equal? '((1)) (bar 1 2)))"
 
 echo "======================================== reexport tests ..."
 $interpret -bnq reexport-tests.scm
