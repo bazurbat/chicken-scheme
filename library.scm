@@ -2344,19 +2344,20 @@ EOF
 		     (##sys#read-char-0 port)
 		     (loop (##sys#peek-char-0 port)) ) ) ) )
 
-	  (define (r-usequence u n)
-	    (let loop ([seq '()] [n n])
+	  (define (r-usequence u n base)
+	    (let loop ((seq '()) (n n))
 	      (if (eq? n 0)
-		(let* ([str (##sys#reverse-list->string seq)]
-		       [n (string->number str 16)])
-		  (or n
-		      (##sys#read-error
-		       port
-		       (string-append "invalid escape-sequence '\\" u str "\'")) ) )
-		(let ([x (##sys#read-char-0 port)])
-		  (if (or (eof-object? x) (char=? #\" x))
-		    (##sys#read-error port "unterminated string constant") 
-		    (loop (cons x seq) (fx- n 1)) ) ) ) ) )
+		  (let* ((str (##sys#reverse-list->string seq))
+			 (n (string->number str base)))
+		    (or n
+			(##sys#read-error
+			 port
+			 (string-append
+			  "invalid escape-sequence '\\" u str "\'")) ) )
+		  (let ((x (##sys#read-char-0 port)))
+		    (if (or (eof-object? x) (char=? #\" x))
+			(##sys#read-error port "unterminated string constant") 
+			(loop (cons x seq) (fx- n 1)) ) ) ) ) )
 
 	  (define (r-cons-codepoint cp lst)
 	    (let* ((s (##sys#char->utf8-string (integer->char cp)))
@@ -2381,10 +2382,10 @@ EOF
 		       ((#\v) (loop (##sys#read-char-0 port) (cons (integer->char 11) lst)))
 		       ((#\f) (loop (##sys#read-char-0 port) (cons (integer->char 12) lst)))
 		       ((#\x) 
-			(let ([ch (integer->char (r-usequence "x" 2))])
+			(let ([ch (integer->char (r-usequence "x" 2 16))])
 			  (loop (##sys#read-char-0 port) (cons ch lst)) ) )
 		       ((#\u)
-			(let ([n (r-usequence "u" 4)])
+			(let ([n (r-usequence "u" 4 16)])
 			  (if (##sys#unicode-surrogate? n)
 			      (if (and (eqv? #\\ (##sys#read-char-0 port))
 				       (eqv? #\u (##sys#read-char-0 port)))
@@ -2404,11 +2405,15 @@ EOF
 		       ((#\\ #\' #\" #\|)
 			(loop (##sys#read-char-0 port) (cons c lst)))
 		       (else
-			(##sys#read-warning 
-			 port 
-			 "undefined escape sequence in string - probably forgot backslash"
-			 c)
-			(loop (##sys#read-char-0 port) (cons c lst))) ) )
+			(cond ((char-numeric? c)
+			       (let ((ch (integer->char (r-usequence "" 2 8))))
+				 (loop (##sys#read-char-0 port) (cons ch lst)) ))
+			      (else
+			       (##sys#read-warning 
+				port 
+				"undefined escape sequence in string - probably forgot backslash"
+				c)
+			       (loop (##sys#read-char-0 port) (cons )c lst))) ) ))
 		    ((eq? term c) (##sys#reverse-list->string lst))
 		    (else (loop (##sys#read-char-0 port) (cons c lst))) ) ))
 		    
