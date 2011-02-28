@@ -1861,6 +1861,30 @@ unspecified.
 
 <procedure>(caar pair)</procedure><br>
 <procedure>(cadr pair)</procedure><br>
+<procedure>(cdar pair)</procedure><br>
+<procedure>(cddr pair)</procedure><br>
+<procedure>(caaar pair)</procedure><br>
+<procedure>(caadr pair)</procedure><br>
+<procedure>(cadar pair)</procedure><br>
+<procedure>(caddr pair)</procedure><br>
+<procedure>(cdaar pair)</procedure><br>
+<procedure>(cdadr pair)</procedure><br>
+<procedure>(cddar pair)</procedure><br>
+<procedure>(cdddr pair)</procedure><br>
+<procedure>(caaaar pair)</procedure><br>
+<procedure>(caaadr pair)</procedure><br>
+<procedure>(caadar pair)</procedure><br>
+<procedure>(caaddr pair)</procedure><br>
+<procedure>(cadaar pair)</procedure><br>
+<procedure>(cadadr pair)</procedure><br>
+<procedure>(caddar pair)</procedure><br>
+<procedure>(cadddr pair)</procedure><br>
+<procedure>(cdaaar pair)</procedure><br>
+<procedure>(cdaadr pair)</procedure><br>
+<procedure>(cdadar pair)</procedure><br>
+<procedure>(cdaddr pair)</procedure><br>
+<procedure>(cddaar pair)</procedure><br>
+<procedure>(cddadr pair)</procedure><br>
 <procedure>(cdddar pair)</procedure><br>
 <procedure>(cddddr pair)</procedure><br>
 
@@ -1868,9 +1892,6 @@ These procedures are compositions of car and cdr, where for example
 caddr could be defined by
 
  (define caddr (lambda (x) (car (cdr (cdr x))))).
-
-Arbitrary compositions, up to four deep, are provided. There are
-twenty-eight of these procedures in all.
 
 <procedure>(null? obj)</procedure><br>
 
