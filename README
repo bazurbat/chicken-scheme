@@ -175,8 +175,9 @@
 	CONFIG=
 	  If you build CHICKEN often, passing all those make variables
 	  can get annoying. An alternative is to create a configuration
-	  file defining the required variables and passing "CONFIG=<configfile>"
-	  to make(1). Even simpler is editing the included "config.make"
+	  file defining the required variables and passing 
+          "CONFIG=<configfile>" to make(1).
+          Even simpler is editing the included "config.make"
 	  and just invoke make(1) without any extra parameters.
 
         C_COMPILER=
@@ -211,6 +212,7 @@
 	|   |-- chicken-profile
 	|   |-- chicken-status
 	|   |-- chicken-uninstall
+ 	|   |-- libchicken.dll                        (Windows)
 	|   |-- csc
 	|   `-- csi
 	|-- include
@@ -246,13 +248,16 @@
 	|   |       |-- types.db
 	|   |       `-- utils.import.so
 	|   |-- libchicken.a
-	|   |-- libchicken.so -> libchicken.so.6
-	|   `-- libchicken.so.6
+	|   |-- libchicken.dll.a                      (Windows)
+	|   |-- libchicken.so -> libchicken.so.6      (Unix)
+	|   `-- libchicken.so.6			      (Unix)
 	`-- share
 	    |-- chicken
 	    |   |-- doc
+	    |   |   |-- CHICKEN.icns                  (Macintosh)
 	    |   |   |-- LICENSE
 	    |   |   |-- README
+	    |   |   |-- mac.r			      (Macintosh)
 	    |   |   |-- manual-html
 	    |   |   `-- *.html
 	    |   `-- setup.defaults
