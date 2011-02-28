@@ -540,7 +540,8 @@
 		   (map walk x) ) ) ) ) )
 	    (else (make-node '##core#call '(#f) (map walk x))) ) )
     (let ([exp2 (walk exp)])
-      (debugging 'o "eliminated procedure checks" count)
+      (when (positive? count)
+	(debugging 'o "eliminated procedure checks" count))
       exp2) ) )
 
 (define (build-expression-tree node)

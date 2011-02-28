@@ -2355,7 +2355,8 @@
 
     (debugging 'p "closure conversion gathering phase...")
     (gather node #f '())
-    (debugging 'o "customizable procedures" customizable)
+    (when (pair? customizable)
+      (debugging 'o "customizable procedures" customizable))
     (debugging 'p "closure conversion transformation phase...")
     (let ((node2 (transform node #f #f)))
       (unless (zero? direct-calls)
@@ -2681,7 +2682,10 @@
     
     (debugging 'p "preparation phase...")
     (let ((node2 (walk node '() #f '())))
-      (debugging 'o "fast box initializations" fastinits)
-      (debugging 'o "fast global references" fastrefs)
-      (debugging 'o "fast global assignments" fastsets)
+      (when (positive? fastinits)
+	(debugging 'o "fast box initializations" fastinits))
+      (when (positive? fastrefs)
+	(debugging 'o "fast global references" fastrefs))
+      (when (positive? fastsets)
+	(debugging 'o "fast global assignments" fastsets))
       (values node2 literals lambda-info-literals lambdas) ) ) )
