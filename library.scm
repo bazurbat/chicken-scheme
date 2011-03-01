@@ -2978,7 +2978,8 @@ EOF
 ;;; Output:
 
 (define (##sys#write-char-0 c p)
-  ((##sys#slot (##sys#slot p 2) 2) p c) )
+  ((##sys#slot (##sys#slot p 2) 2) p c) 
+  (##sys#void))
 
 (define (##sys#write-char/port c port)
   (##sys#check-port* port 'write-char)
@@ -3230,7 +3231,8 @@ EOF
 			       (outchr port #\)) )
 			    (outchr port #\space)
 			    (out (##sys#slot x i)) ) ) ) ) )
-		(else (##sys#error "unprintable non-immediate object encountered")) ) ) ) ) ) )
+		(else (##sys#error "unprintable non-immediate object encountered")))))
+      (##sys#void))))
 
 (define ##sys#procedure->string 
   (let ((string-append string-append))
