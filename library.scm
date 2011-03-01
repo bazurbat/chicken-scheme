@@ -2389,7 +2389,7 @@ EOF
 			  (if (##sys#unicode-surrogate? n)
 			      (if (and (eqv? #\\ (##sys#read-char-0 port))
 				       (eqv? #\u (##sys#read-char-0 port)))
-				  (let* ((m (r-usequence "u" 4))
+				  (let* ((m (r-usequence "u" 4 16))
 					 (cp (##sys#surrogates->codepoint n m)))
 				    (if cp
 					(loop (##sys#read-char-0 port)
@@ -2398,7 +2398,7 @@ EOF
 				  (##sys#read-error port "unpaired escaped surrogate" n))
 			      (loop (##sys#read-char-0 port) (r-cons-codepoint n lst)) ) ))
 		       ((#\U)
-			(let ([n (r-usequence "U" 8)])
+			(let ([n (r-usequence "U" 8 16)])
 			  (if (##sys#unicode-surrogate? n)
 			      (##sys#read-error port (string-append "invalid escape (surrogate)" n))
 			      (loop (##sys#read-char-0 port) (r-cons-codepoint n lst)) )))
@@ -2413,7 +2413,7 @@ EOF
 				port 
 				"undefined escape sequence in string - probably forgot backslash"
 				c)
-			       (loop (##sys#read-char-0 port) (cons )c lst))) ) ))
+			       (loop (##sys#read-char-0 port) (cons c lst))) ) )))
 		    ((eq? term c) (##sys#reverse-list->string lst))
 		    (else (loop (##sys#read-char-0 port) (cons c lst))) ) ))
 		    
