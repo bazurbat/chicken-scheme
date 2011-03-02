@@ -27,11 +27,11 @@
 ;; scheme
  
 (not (procedure not (*) boolean)
-     (((not boolean)) '#t))
+     (((not boolean)) (let ((#:tmp #(1))) '#t)))
 
 (boolean? (procedure boolean? (*) boolean)
-	  ((boolean) '#t)
-	  (((not boolean)) '#f))
+	  ((boolean) (let ((#:tmp #(1))) '#t))
+	  (((not boolean)) (let ((#:tmp #(1))) '#f)))
 
 (eq? (procedure eq? (* *) boolean))
 
@@ -44,8 +44,8 @@
 	((* (or fixnum symbol char eof null undefined) (eq? #(1) #(2)))))
 
 (pair? (procedure pair? (*) boolean)
-       ((pair) '#t)
-       (((not pair)) '#f))
+       ((pair) (let ((#:tmp #(1))) '#t))
+       (((not pair)) (let ((#:tmp #(1))) '#f)))
 
 (cons (procedure cons (* *) pair))
 
@@ -84,8 +84,8 @@
 (set-car! (procedure set-car! (pair *) undefined) ((pair *) (##sys#setslot #(1) 0 #(2))))
 (set-cdr! (procedure set-cdr! (pair *) undefined) ((pair *) (##sys#setslot #(1) 1 #(2))))
 
-(null? (procedure null? (*) boolean) ((null) #t) ((not null) #f))
-(list? (procedure list? (*) boolean) (((or null pair list)) #t) (((not (or null pair list))) #f))
+(null? (procedure null? (*) boolean) ((null) (let ((#:tmp #(1))) #t)) ((not null) (let ((#:tmp #(1))) #f)))
+(list? (procedure list? (*) boolean) (((or null pair list)) (let ((#:tmp #(1))) #t)) (((not (or null pair list))) (let ((#:tmp #(1))) #f)))
 (list (procedure list (#!rest) list))
 (length (procedure length (list) fixnum) ((list) (##core#inline "C_u_i_length" #(1))))
 (list-tail (procedure list-tail (list fixnum) *))
@@ -100,38 +100,38 @@
 (assoc (procedure assoc (* list #!optional (procedure (* *) *)) *))
 
 (symbol? (procedure symbol? (*) boolean)
-	 ((symbol) #t)
-	 (((not symbol)) #f))
+	 ((symbol) (let ((#:tmp #(1))) #t))
+	 (((not symbol)) (let ((#:tmp #(1))) #f)))
 
 (symbol-append (procedure symbol-append (#!rest symbol) symbol))
 (symbol->string (procedure symbol->string (symbol) string))
 (string->symbol (procedure string->symbol (string) symbol))
 
 (number? (procedure number? (*) boolean)
-	 (((or fixnum float number)) #t)
-	 (((not (or fixnum float number)) #f)))
+	 (((or fixnum float number)) (let ((#:tmp #(1))) #t))
+	 (((not (or fixnum float number)) (let ((#:tmp #(1))) #f))))
 
 (integer? (procedure integer? (*) boolean)
-	  ((fixnum) #t)
+	  ((fixnum) (let ((#:tmp #(1))) #t))
 	  ((float) (fpinteger? #(1))))
 
 (exact? (procedure exact? (*) boolean)
-	((fixnum) #t)
-	((float) #f))
+	((fixnum) (let ((#:tmp #(1))) #t))
+	((float) (let ((#:tmp #(1))) #f)))
 
 (real? (procedure real? (*) boolean)
-       (((or fixnum float number)) #t))
+       (((or fixnum float number)) (let ((#:tmp #(1))) #t)))
 
 (complex? (procedure complex? (*) boolean)
-	  (((or fixnum float number)) #t)
-	  (((not (or fixnum float number))) #f))
+	  (((or fixnum float number)) (let ((#:tmp #(1))) #t))
+	  (((not (or fixnum float number))) (let ((#:tmp #(1))) #f)))
 
 (inexact? (procedure inexact? (*) boolean)
-	  ((fixnum) #f)
-	  ((float) #t))
+	  ((fixnum) (let ((#:tmp #(1))) #f))
+	  ((float) (let ((#:tmp #(1))) #t)))
 
 (rational? (procedure rational? (*) boolean)
-	   ((fixnum) #t))
+	   ((fixnum) (let ((#:tmp #(1))) #t)))
 
 (zero? (procedure zero? (number) boolean)
        ((fixnum) (eq? #(1) 0)))
@@ -363,7 +363,7 @@
 (fixnum-bits fixnum)
 (fixnum-precision fixnum)
 (fixnum? (procedure fixnum? (*) boolean)
-	 ((fixnum) #t))
+	 ((fixnum) (let ((#:tmp #(1))) #t)))
 (flonum-decimal-precision fixnum)
 (flonum-epsilon float)
 (flonum-maximum-decimal-exponent fixnum)
@@ -374,7 +374,7 @@
 (flonum-print-precision (procedure (#!optional fixnum) fixnum))
 (flonum-radix fixnum)
 (flonum? (procedure flonum? (*) boolean)
-	 ((float) #t))
+	 ((float) (let ((#:tmp #(1))) #t)))
 (flush-output (procedure flush-output (#!optional port) undefined))
 (force-finalizers (procedure force-finalizers () undefined))
 (fp- (procedure fp- (float float) float))

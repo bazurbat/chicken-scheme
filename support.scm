@@ -495,7 +495,11 @@
 		      [body (caddr x)] )
 		  (if (null? bs)
 		      (walk body)
-		      (make-node 'let (unzip1 bs)
+		      (make-node 'let 
+				 (map (lambda (v) 
+					;; for temporaries introduced by specialization
+					(if (eq? '#:tmp v) (gensym) v))
+				      (unzip1 bs))
 				 (append (map (lambda (b) (walk (cadr b))) (cadr x))
 					 (list (walk body)) ) ) ) ) )
 	       ((lambda ##core#lambda) 
@@ -541,7 +545,8 @@
 		   (map walk x) ) ) ) ) )
 	    (else (make-node '##core#call '(#f) (map walk x))) ) )
     (let ([exp2 (walk exp)])
-      (debugging 'o "eliminated procedure checks" count)
+      (when (positive? count)
+	(debugging 'o "eliminated procedure checks" count))
       exp2) ) )
 
 (define (build-expression-tree node)

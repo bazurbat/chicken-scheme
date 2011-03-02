@@ -53,6 +53,7 @@ the source text should be read from standard input.
      0          show database before lambda-lifting pass
      S          show applications of compiler syntax
      T          show expressions after converting to node tree
+     P          show expressions after specialization
      L          show expressions after lambda-lifting
      U          show expressions after unboxing
      M          show syntax-/runtime-requirements

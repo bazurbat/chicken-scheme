@@ -514,6 +514,8 @@
 		 (debugging 'p "performing scrutiny")
 		 (scrutinize node0 db do-scrutinize do-specialize)
 		 (end-time "scrutiny")
+		 (when do-specialize
+		   (print-node "specialization" '|P| node0))
 		 (set! first-analysis #t) )
 
 	       (when do-lambda-lifting
