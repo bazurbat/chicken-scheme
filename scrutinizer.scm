@@ -714,6 +714,10 @@
 	     ((and) (every (cut match <> t) (cdr st)))
 	     (else (equal? st t))))
 	  ((eq? st '*))
+	  ((eq? st 'procedure)
+	   (or (eq? t 'procedure)
+	       (and (pair? t) (eq? 'procedure (car t)))))
+	  ;;XXX match number with fixnum and float?
 	  (else (eq? st t))))
   (let loop ((tl typelist) (atypes atypes))
     (cond ((null? tl) (null? atypes))
