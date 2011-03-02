@@ -196,7 +196,7 @@
       (bar foo))))
 )
 
-;;; alternative ellipsis test
+;;; alternative ellipsis test (SRFI-46)
 
 (define-syntax foo
   (syntax-rules 
@@ -217,6 +217,56 @@
 (defalias inc add1)
 
 (t 3 (inc 2))
+
+;;; Rest patterns after ellipsis (SRFI-46)
+
+(define-syntax foo
+  (syntax-rules ()
+    ((_ (a ... b) ... (c d))
+     (list (list (list a ...) ... b ...) c d))
+    ((_ #(a ... b) ... #(c d) #(e f))
+     (list (list (vector a ...) ... b ...) c d e f))
+    ((_ #(a ... b) ... #(c d))
+     (list (list (vector a ...) ... b ...) c d))))
+
+(t '(() 1 2)
+   (foo (1 2)))
+
+(t '(((1) 2) 3 4)
+   (foo (1 2) (3 4)))
+
+(t '(((1 2) (4) 3 5) 6 7)
+   (foo (1 2 3) (4 5) (6 7)))
+
+(t '(() 1 2)
+   (foo #(1 2)))
+
+(t '((#() 1) 2 3)
+   (foo #(1) #(2 3)))
+
+(t '((#(1 2) 3) 4 5)
+   (foo #(1 2 3) #(4 5)))
+
+(t '((#(1 2) 3) 4 5 6 7)
+   (foo #(1 2 3) #(4 5) #(6 7)))
+
+(t '(() 1 2 3 4)
+   (foo #(1 2) #(3 4)))
+
+(t '((#(1) 2) 3 4 5 6)
+   (foo #(1 2) #(3 4) #(5 6)))
+
+(t '((#(1 2) #(4) 3 5) 6 7 8 9)
+   (foo #(1 2 3) #(4 5) #(6 7) #(8 9)))
+
+;;; Bug discovered during implementation of SRFI-46 rest patterns:
+
+(define-syntax foo
+  (syntax-rules ()
+    ((_ #((a) ...)) (list a ...))))
+
+(t '(1)
+   (foo #((1))))
 
 ;;;
 
@@ -673,6 +723,16 @@
 (import (prefix rfoo f:))
 (f:rbar 1)
 
+;;; Internal hash-prefixed names shouldn't work within modules
+
+(module one (always-one)
+  (import scheme)
+  (define (always-one) 1))
+
+(f (eval '(module two ()
+            (import scheme)
+            (define (always-two) (+ (one#always-one) 1)))))
+
 ;;; SRFI-26
 
 ;; Cut
@@ -715,6 +775,88 @@
        a))
 (f (eval '((cute + <...> 1) 1)))
 
+;;; (quasi-)quotation
+
+(f (eval '(let ((a 1)) (unquote a))))
+(t 'unquote (quasiquote unquote))
+(f (eval '(quasiquote (a unquote . 1)))) ; "Bad syntax". Also ok: '(a unquote . 1)
+(t 'a (quasiquote a))
+(f (eval '(quasiquote a b)))
+(f (eval '(quote a b)))
+(f (eval '(quasiquote)))
+(f (eval '(quote)))
+(f (eval '(quasiquote . a)))
+(f (eval '(quote . a)))
+(t '(foo . 1) (let ((bar 1))
+                (quasiquote (foo . (unquote bar)))))
+(f (eval '(let ((a 1)
+                (b 2))
+            (quasiquote (unquote a b))))) ; > 1 arg
+
+(t '(quasiquote (unquote a)) (quasiquote (quasiquote (unquote a))))
+(t '(quasiquote x y) (quasiquote (quasiquote x y)))
+
+(t '(unquote-splicing a) (quasiquote (unquote-splicing a)))
+(t '(1 2) (let ((a (list 2))) (quasiquote (1 (unquote-splicing a)))))
+(f (eval '(let ((a 1))                  ; a is not a list
+            (quasiquote (1 (unquote-splicing a))))))
+(f (eval '(let ((a (list 1))
+                (b (list 2)))
+            (quasiquote (1 (unquote-splicing a b)))))) ; > 1 arg
+
+;; level counting
+(define x (list 1 2))
+
+;; Testing R5RS-compliance:
+(t '(quasiquote (unquote (1 2)))
+   (quasiquote (quasiquote (unquote (unquote x)))))
+(t '(quasiquote (unquote-splicing (1 2)))
+   (quasiquote (quasiquote (unquote-splicing (unquote x)))))
+(t '(quasiquote (unquote 1 2))
+   (quasiquote (quasiquote (unquote (unquote-splicing x)))))
+(t 'x
+   (quasiquote (unquote (quasiquote x))))
+(t '(quasiquote (unquote-splicing (quasiquote (unquote x))))
+   (quasiquote (quasiquote (unquote-splicing (quasiquote (unquote x))))))
+(t '(quasiquote (unquote (quasiquote (unquote-splicing x))))
+   (quasiquote (quasiquote (unquote (quasiquote (unquote-splicing x))))))
+(t '(quasiquote (unquote (quasiquote (unquote (1 2)))))
+   (quasiquote (quasiquote (unquote (quasiquote (unquote (unquote x)))))))
+
+;; The following are explicitly left undefined by R5RS. For consistency
+;; we define any unquote-(splicing) or quasiquote that occurs in the CAR of
+;; a pair to decrease, respectively increase the level count by one.
+  
+(t '(quasiquote . #(1 (unquote x) 3))   ; cdr is not a pair
+   (quasiquote (quasiquote . #(1 (unquote x) 3))))
+(t '(quasiquote #(1 (unquote x) 3))     ; cdr is a list of one
+   (quasiquote (quasiquote #(1 (unquote x) 3))))
+(t '(quasiquote a #(1 (unquote x) 3) b) ; cdr is longer
+   (quasiquote (quasiquote a #(1 (unquote x) 3) b)))
+
+(t '(quasiquote (unquote . #(1 (1 2) 3))) ; cdr is not a pair
+   (quasiquote (quasiquote (unquote . #(1 (unquote x) 3)))))
+(t '(quasiquote (unquote #(1 (1 2) 3))) ; cdr is a list of one
+   (quasiquote (quasiquote (unquote #(1 (unquote x) 3)))))
+(t '(quasiquote (unquote a #(1 (1 2) 3) b)) ; cdr is longer
+   (quasiquote (quasiquote (unquote a #(1 (unquote x) 3) b))))
+
+(t '(quasiquote (unquote-splicing . #(1 (1 2) 3))) ; cdr is not a pair
+   (quasiquote (quasiquote (unquote-splicing . #(1 (unquote x) 3)))))
+(t '(quasiquote (unquote-splicing #(1 (1 2) 3))) ; cdr is a list of one
+   (quasiquote (quasiquote (unquote-splicing #(1 (unquote x) 3)))))
+(t '(quasiquote (unquote-splicing a #(1 (1 2) 3) b)) ; cdr is longer
+   (quasiquote (quasiquote (unquote-splicing a #(1 (unquote x) 3) b))))
+
+(t 'quasiquote (quasiquote quasiquote))
+(t 'unquote (quasiquote unquote))
+(t 'unquote-splicing (quasiquote unquote-splicing))
+(t '(x quasiquote) (quasiquote (x quasiquote)))
+; (quasiquote (x unquote)) is identical to (quasiquote (x . (unquote)))....
+;; It's either this (error) or make all calls to unquote with more or less
+;; than one argument resolve to a literal unquote.
+(f (eval '(quasiquote (x unquote))))
+(t '(x unquote-splicing) (quasiquote (x unquote-splicing)))
 ;; Let's internal defines properly compared to core define procedure when renamed
 (f (eval '(let-syntax ((foo (syntax-rules () ((_ x) (begin (define x 1))))))
             (let () (foo a))

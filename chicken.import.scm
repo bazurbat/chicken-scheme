@@ -51,6 +51,7 @@
    condition-predicate
    condition-property-accessor
    condition?
+   condition->list
    continuation-capture
    continuation-graft
    continuation-return

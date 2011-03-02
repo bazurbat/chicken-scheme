@@ -65,6 +65,7 @@
   (define %and (r 'and))
   (define %car '##sys#car)
   (define %cdr '##sys#cdr)
+  (define %length '##sys#length)
   (define %vector? '##sys#vector?)
   (define %vector-length '##sys#vector-length)
   (define %vector-ref '##sys#vector-ref)
@@ -73,7 +74,6 @@
   (define %>= '##sys#>=)
   (define %= '##sys#=)
   (define %+ '##sys#+)
-  (define %i (r 'i))
   (define %compare (r 'compare))
   (define %cond (r 'cond))
   (define %cons '##sys#cons)
@@ -82,11 +82,11 @@
   (define %equal? '##sys#equal?)
   (define %input (r 'input))
   (define %l (r 'l))
+  (define %len (r 'len))
   (define %lambda (r 'lambda))
   (define %let (r 'let))
   (define %let* (r 'let*))
   (define %list? '##sys#list?)
-  (define %list (r 'list))
   (define %loop (r 'loop))
   (define %map1 '##sys#map)
   (define %map '##sys#map-n)
@@ -116,107 +116,83 @@
 	     (null? (cddr rule)))
 	(let ((pattern (cdar rule))
 	      (template (cadr rule)))
-	  `((,%and ,@(process-match %tail pattern))
+	  `((,%and ,@(process-match %tail pattern #f))
 	    (,%let* ,(process-pattern pattern
 				      %tail
-				      (lambda (x) x))
+				      (lambda (x) x) #f)
 		    ,(process-template template
 				       0
-				       (meta-variables pattern 0 '())))))
+				       (meta-variables pattern 0 '() #f)))))
 	(##sys#syntax-error-hook "ill-formed syntax rule" rule)))
 
   ;; Generate code to test whether input expression matches pattern
 
-  (define (process-match input pattern)
+  (define (process-match input pattern seen-segment?)
     (cond ((symbol? pattern)
 	   (if (memq pattern subkeywords)
 	       `((,%compare ,input (,%rename (##core#syntax ,pattern))))
 	       `()))
-	  ((segment-pattern? pattern)
-	   (process-segment-match input (car pattern)))
+	  ((segment-pattern? pattern seen-segment?)
+	   (process-segment-match input pattern))
 	  ((pair? pattern)
 	   `((,%let ((,%temp ,input))
-		    (,%and (,%pair? ,%temp)
-			   ,@(process-match `(,%car ,%temp) (car pattern))
-			   ,@(process-match `(,%cdr ,%temp) (cdr pattern))))))
+               (,%and (,%pair? ,%temp)
+                      ,@(process-match `(,%car ,%temp) (car pattern) #f)
+                      ,@(process-match `(,%cdr ,%temp) (cdr pattern) #f)))))
 	  ((vector? pattern)
-	   (process-vector-match input pattern))
+           `((,%let ((,%temp ,input))
+              (,%and (,%vector? ,%temp)
+                     ,@(process-match `(,%vector->list ,%temp)
+                                      (vector->list pattern) #f)))))
 	  ((or (null? pattern) (boolean? pattern) (char? pattern))
 	   `((,%eq? ,input ',pattern)))
 	  (else
 	   `((,%equal? ,input ',pattern)))))
 
   (define (process-segment-match input pattern)
-    (let ((conjuncts (process-match `(,%car ,%l) pattern)))
-      (if (null? conjuncts)
-	  `((,%list? ,input))		;+++
-	  `((,%let ,%loop ((,%l ,input))
-		   (,%or (,%null? ,%l)
-			 (,%and (,%pair? ,%l)
-				,@conjuncts
-				(,%loop (,%cdr ,%l)))))))))
+    (let ((conjuncts (process-match `(,%car ,%l) (car pattern) #f)))
+      `((,%and (,%list? ,input) ; Can't ask for its length if not a proper list
+               (,%let ((,%len (,%length ,input)))
+                 (,%and (,%>= ,%len ,(length (cddr pattern)))
+                        (,%let ,%loop ((,%l ,input)
+                                       (,%len ,%len))
+                           (,%cond
+                             ((,%= ,%len ,(length (cddr pattern)))
+                              ,@(process-match %l (cddr pattern) #t))
+                             (,%else
+                              (,%and ,@conjuncts
+                                     (,%loop (,%cdr ,%l) (,%+ ,%len -1))))))))))))
 
-   (define (process-vector-match input pattern)
-     (let* ((len (vector-length pattern))
-            (segment? (and (>= len 2)
-                           (ellipsis? (vector-ref pattern (- len 1))))))
-       `((,%let ((,%temp ,input))
-          (,%and (,%vector? ,%temp)
-                 ,(if segment?
-                      `(,%>= (,%vector-length ,%temp) ,(- len 2))
-                      `(,%= (,%vector-length ,%temp) ,len))
-                 ,@(let lp ((i 0))
-                     (cond
-                      ((>= i len)
-                       '())
-                      ((and (= i (- len 2)) segment?)
-                       `((,%let ,%loop ((,%i ,i))
-                            (,%or (,%>= ,%i ,len)
-                                  (,%and ,@(process-match
-                                            `(,%vector-ref ,%temp ,%i)
-                                            (vector-ref pattern (- len 2)))
-                                         (,%loop (,%+ ,%i 1)))))))
-                      (else
-                       (append (process-match `(,%vector-ref ,%temp ,i)
-                                              (vector-ref pattern i))
-                               (lp (+ i 1)))))))))))
- 
   ;; Generate code to take apart the input expression
   ;; This is pretty bad, but it seems to work (can't say why).
 
-  (define (process-pattern pattern path mapit)
+  (define (process-pattern pattern path mapit seen-segment?)
     (cond ((symbol? pattern)
 	   (if (memq pattern subkeywords)
 	       '()
 	       (list (list pattern (mapit path)))))
-	  ((segment-pattern? pattern)
-	   (process-pattern (car pattern)
-			    %temp
-			    (lambda (x)	;temp is free in x
-			      (mapit (if (eq? %temp x)
-					 path ;+++
-					 `(,%map1 (,%lambda (,%temp) ,x)
-						  ,path))))))
+	  ((segment-pattern? pattern seen-segment?)
+           (let* ((tail-length (length (cddr pattern)))
+                  (%match (if (zero? tail-length) ; Simple segment?
+                              path  ; No list traversing overhead at runtime!
+                              `(##sys#drop-right ,path ,tail-length))))
+             (append
+              (process-pattern (car pattern)
+                               %temp
+                               (lambda (x) ;temp is free in x
+                                 (mapit
+                                  (if (eq? %temp x)
+                                      %match ; Optimization: no map+lambda
+                                      `(,%map1 (,%lambda (,%temp) ,x) ,%match))))
+                               #f)
+              (process-pattern (cddr pattern)
+                               `(##sys#take-right ,path ,tail-length) mapit #t))))
 	  ((pair? pattern)
-	   (append (process-pattern (car pattern) `(,%car ,path) mapit)
-		   (process-pattern (cdr pattern) `(,%cdr ,path) mapit)))
+	   (append (process-pattern (car pattern) `(,%car ,path) mapit #f)
+		   (process-pattern (cdr pattern) `(,%cdr ,path) mapit #f)))
           ((vector? pattern)
-           (let* ((len (vector-length pattern))
-                  (segment? (and (>= len 2)
-                                 (ellipsis? (vector-ref pattern (- len 1))))))
-             (if segment?
-                 (process-pattern (vector->list pattern) 
-                                  `(,%vector->list ,path)
-                                  mapit)
-                 (let lp ((i 0))
-                   (cond
-                    ((>= i len)
-                     '())
-                    (else
-                     (append (process-pattern (vector-ref pattern i)
-                                              `(,%vector-ref ,path ,i)
-                                              mapit)
-                             (lp (+ i 1)))))))))
+           (process-pattern (vector->list pattern)
+                            `(,%vector->list ,path) mapit #f))
 	  (else '())))
 
   ;; Generate code to compose the output expression according to template
@@ -266,18 +242,19 @@
 
   ;; Return an association list of (var . dim)
 
-  (define (meta-variables pattern dim vars)
+  (define (meta-variables pattern dim vars seen-segment?)
     (cond ((symbol? pattern)
 	   (if (memq pattern subkeywords)
 	       vars
 	       (cons (cons pattern dim) vars)))
-	  ((segment-pattern? pattern)
-	   (meta-variables (car pattern) (+ dim 1) vars))
+	  ((segment-pattern? pattern seen-segment?)
+	   (meta-variables (car pattern) (+ dim 1)
+                           (meta-variables (cddr pattern) dim vars #t) #f))
 	  ((pair? pattern)
 	   (meta-variables (car pattern) dim
-			   (meta-variables (cdr pattern) dim vars)))
+			   (meta-variables (cdr pattern) dim vars #f) #f))
 	  ((vector? pattern)
-	   (meta-variables (vector->list pattern) dim vars))
+	   (meta-variables (vector->list pattern) dim vars #f))
 	  (else vars)))
 
   ;; Return a list of meta-variables of given higher dim
@@ -303,10 +280,14 @@
 	   (free-meta-variables (vector->list template) dim env free))
 	  (else free)))
 
-  (define (segment-pattern? pattern)
-    (and (segment-template? pattern)
-	 (or (null? (cddr pattern))
-	     (##sys#syntax-error-hook "segment matching not implemented" pattern))))
+  (define (segment-pattern? p seen-segment?)
+    (and (segment-template? p)
+         (cond
+          (seen-segment?
+           (##sys#syntax-error-hook "Only one segment per level is allowed" p))
+          ((not (list? p))              ; Improper list
+           (##sys#syntax-error-hook "Cannot combine dotted tail and ellipsis" p))
+          (else #t))))
 
   (define (segment-template? pattern)
     (and (pair? pattern)

@@ -734,7 +734,7 @@
 		       ((##core#define-compiler-syntax)
 			(let* ((var (cadr x))
 			       (body (caddr x))
-			       (name (##sys#strip-syntax var se #f)))
+			       (name (lookup var se)))
 			  (when body
 			    (set! compiler-syntax
 			      (alist-cons
@@ -762,7 +762,7 @@
 			(let ((bs (map
 				   (lambda (b)
 				     (##sys#check-syntax 'let-compiler-syntax b '(symbol . #(_ 0 1)))
-				     (let ((name (##sys#strip-syntax (car b) se #f)))
+				     (let ((name (lookup (car b) se)))
 				       (list 
 					name 
 					(and (pair? (cdr b))
@@ -862,7 +862,8 @@
 				   (canonicalize-begin-body
 				    (append
 				     (parameterize ((##sys#current-module #f)
-						    (##sys#macro-environment (##sys#meta-macro-environment)))
+						    (##sys#macro-environment 
+						     (##sys#meta-macro-environment)))
 				       (map
 					(lambda (x)
 					  (walk 
@@ -1257,9 +1258,9 @@
       (if (or (< n minlen) (> n (optional maxlen 99999)))
 	  (syntax-error "invalid declaration" spec) ) ) )  
   (define (stripa x)			; global aliasing
-    (##sys#strip-syntax x se #t))
+    (globalize x))
   (define (strip x)			; raw symbol
-    (##sys#strip-syntax x se))
+    (##sys#strip-syntax x))
   (define stripu ##sys#strip-syntax)
   (define (globalize sym)
     (if (symbol? sym)

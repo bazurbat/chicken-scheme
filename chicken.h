@@ -156,6 +156,8 @@ void *alloca ();
 # define C_BIG_ENDIAN
 #elif defined(__BIG_ENDIAN__)
 # define C_BIG_ENDIAN
+#elif defined(__MIPSEL__) || defined(__MIPSEL)
+# define C_LITTLE_ENDIAN
 #elif defined(__sparc__) || defined(__POWERPC__) || defined(__MC68K__) || defined(__mips__)
 # define C_BIG_ENDIAN
 #endif
@@ -1054,7 +1056,7 @@ extern double trunc(double);
 #define C_a_i_flonum_negate(ptr, c, n)  C_flonum(ptr, -C_flonum_magnitude(n))
 
 #define C_a_i_address_to_pointer(ptr, c, addr)  C_mpointer(ptr, (void *)C_num_to_unsigned_int(addr))
-#define C_a_i_pointer_to_address(ptr, c, pptr)  C_unsigned_int_to_num(ptr, (unsigned int)pptr)
+#define C_a_i_pointer_to_address(ptr, c, pptr)  C_unsigned_int_to_num(ptr, (unsigned int)C_c_pointer_nn(pptr))
 
 #define C_display_fixnum(p, n)          (C_fprintf(C_port_file(p), C_text("%d"), C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_display_char(p, c)            (C_fputc(C_character_code(c), C_port_file(p)), C_SCHEME_UNDEFINED)

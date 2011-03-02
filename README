@@ -6,7 +6,7 @@
   (c) 2008-2011, The Chicken Team
   (c) 2000-2007, Felix L. Winkelmann
 
-  version 4.6.4
+  version 4.6.6
 
 
  1. Introduction
@@ -69,7 +69,7 @@
         Enter "make" without any options to see a list of supported 
         platforms.
 
-	Note that parallel builds (using the "-j" make(1) option) is
+	Note that parallel builds (using the "-j" make(1) option) are
 	*not* supported.
 
         If you build CHICKEN directly from the development sources out

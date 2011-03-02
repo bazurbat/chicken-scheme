@@ -38,7 +38,10 @@
 (include "common-declarations.scm")
 
 (set! ##sys#features
-  (append '(#:hygienic-macros #:syntax-rules) ##sys#features))
+  (append '(#:hygienic-macros 
+	    #:syntax-rules 
+	    #:srfi-0 #:srfi-2 #:srfi-6 #:srfi-9 #:srfi-46 #:srfi-55 #:srfi-61) 
+	  ##sys#features))
 
 (define-alias dd d)
 (define-alias dm d)
@@ -84,19 +87,15 @@
 	 (cons (car a) (if (symbol? (cdr a)) (cdr a) '<macro>)))
        se))
 
-(define (##sys#strip-syntax exp #!optional se alias)
+(define (##sys#strip-syntax exp)
  ;; if se is given, retain bound vars
  (let ((seen '()))
    (let walk ((x exp))
      (cond ((assq x seen) => cdr)
            ((symbol? x)
-            (let ((x2 (if se
-                          (lookup x se)
-                          (getp x '##core#macro-alias) ) ) )
+            (let ((x2 (getp x '##core#macro-alias) ) )
               (cond ((getp x '##core#real-name))
                     ((getp x '##core#primitive))
-                    ((and alias (not (assq x se)))
-                     (##sys#alias-global-hook x #f #f))
                     ((not x2) x)
                     ((pair? x2) x)
                     (else x2))))
@@ -909,7 +908,8 @@
 				     (##sys#current-environment '())
 				     (##sys#current-meta-environment 
 				      (##sys#current-meta-environment))
-				     (##sys#macro-environment (##sys#meta-macro-environment)))
+				     (##sys#macro-environment
+				      (##sys#meta-macro-environment)))
 			(fluid-let ((##sys#notices-enabled #f)) ; to avoid re-import warnings
 			  (##sys#load il #f #f)))
 		      (set! mod (##sys#find-module mname)))
@@ -1066,7 +1066,8 @@
 (##sys#extend-macro-environment
  'import-for-syntax '() 
  (##sys#er-transformer 
-  (cut ##sys#expand-import <> <> <> ##sys#current-meta-environment ##sys#meta-macro-environment 
+  (cut ##sys#expand-import <> <> <> ##sys#current-meta-environment 
+       ##sys#meta-macro-environment 
        #t #f 'import-for-syntax) ) )
 
 (##sys#extend-macro-environment
@@ -1384,31 +1385,23 @@
 	       (let ((head (car x))
 		     (tail (cdr x)))
 		 (cond ((c %unquote head)
-			(if (pair? tail)
-			    (let ((hx (car tail)))
-			      (if (eq? n 0)
-				  hx
-				  (list '##sys#list `(##core#quote ,%unquote)
-					(walk hx (fx- n 1)) ) ) )
-			    `(##core#quote ,%unquote) ) )
+                        (cond ((eq? n 0)
+                               (##sys#check-syntax 'unquote x '(_ _))
+                               (car tail))
+                              (else (list '##sys#cons `(##core#quote ,%unquote)
+                                          (walk tail (fx- n 1)) ) )))
 		       ((c %quasiquote head)
-			(if (pair? tail)
-			    `(##sys#list (##core#quote ,%quasiquote) 
-					 ,(walk (car tail) (fx+ n 1)) ) 
-			    (list '##sys#cons (list '##core#quote %quasiquote) 
-				  (walk tail n)) ) )
-		       ((pair? head)
-			(let ((hx (car head))
-			      (tx (cdr head)))
-			  (if (and (c hx %unquote-splicing) (pair? tx))
-			      (let ((htx (car tx)))
-				(if (eq? n 0)
-				    `(##sys#append ,htx
-						   ,(walk tail n) )
-				    `(##sys#cons (##sys#list (##core#quote ,%unquote-splicing)
-							     ,(walk htx (fx- n 1)) )
-						 ,(walk tail n) ) ) )
-			      `(##sys#cons ,(walk head n) ,(walk tail n)) ) ) )
+			(list '##sys#cons `(##core#quote ,%quasiquote) 
+                              (walk tail (fx+ n 1)) ) )
+		       ((and (pair? head) (c %unquote-splicing (car head)))
+                        (cond ((eq? n 0)
+                               (##sys#check-syntax 'unquote-splicing head '(_ _))
+                               `(##sys#append ,(cadr head) ,(walk tail n)))
+                              (else
+                               `(##sys#cons
+                                 (##sys#cons (##core#quote ,%unquote-splicing)
+                                             ,(walk (cdr head) (fx- n 1)) )
+                                 ,(walk tail n)))))
 		       (else
 			`(##sys#cons ,(walk head n) ,(walk tail n)) ) ) ) ) ) )
       (define (simplify x)
@@ -2003,3 +1996,27 @@
 	  (set-module-sexports! mod sexports))))))
 
 (define ##sys#module-table '())
+
+
+;; Used by the syntax-rules implementation (and possibly handy elsewhere)
+;; (kindly contributed by Peter Bex)
+
+(define (##sys#drop-right input temp)
+  ;;XXX use unsafe accessors
+  (let loop ((len (length input))
+	     (input input))
+    (cond
+     ((> len temp)
+      (cons (car input)
+	    (loop (- len 1) (cdr input))))
+     (else '()))))
+
+(define (##sys#take-right input temp)
+  ;;XXX use unsafe accessors
+  (let loop ((len (length input))
+	     (input input))
+    (cond
+     ((> len temp)
+      (loop (- len 1) (cdr input)))
+     (else input))))
+

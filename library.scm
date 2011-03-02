@@ -2703,12 +2703,14 @@ EOF
 	                '(#\[ #\] #\{ #\} #\|))))
 
 	  (r-spaces)
-	  (let* ([c (##sys#peek-char-0 port)]
-		 [srst (##sys#slot crt 1)]
-		 [h (and srst (##sys#slot srst (char->integer c)) ) ] )
+	  (let* ((c (##sys#peek-char-0 port))
+		 (srst (##sys#slot crt 1))
+		 (h (and srst (##sys#slot srst (char->integer c)) ) ) )
 	    (if h
 	        ;then handled by read-table entry
-		(h c port)
+		(##sys#call-with-values
+		 (lambda () (h c port))
+		 (lambda xs (if (null? xs) (readrec) (car xs))))
 		;otherwise chicken extended r5rs syntax
 		(case c
 		  ((#\')
@@ -2732,15 +2734,23 @@ EOF
 				(spdrst (##sys#slot crt 3)) 
 				(h (and spdrst (##sys#slot spdrst (char->integer dchar)) ) ) )
 	                         ;#<num> handled by parameterized # read-table entry?
-			   (cond (h (h dchar port n))
+			   (cond (h (##sys#call-with-values
+				     (lambda () (h dchar port n))
+				     (lambda xs (if (null? xs) (readrec) (car xs)))))
 			         ;#<num>?
-				 ((or (eq? dchar #\)) (char-whitespace? dchar)) (##sys#sharp-number-hook port n))
-				 (else (##sys#read-error port "invalid parameterized read syntax" dchar n) ) ) )
+				 ((or (eq? dchar #\)) (char-whitespace? dchar)) 
+				  (##sys#sharp-number-hook port n))
+				 (else (##sys#read-error
+					port
+					"invalid parameterized read syntax" 
+					dchar n) ) ) )
 			 (let* ((sdrst (##sys#slot crt 2))
 				(h (and sdrst (##sys#slot sdrst (char->integer dchar)) ) ) )
 			   (if h
 	                       ;then handled by # read-table entry
-			       (h dchar port)
+			       (##sys#call-with-values
+				(lambda () (h dchar port))
+				(lambda xs (if (null? xs) (readrec) (car xs))))
                 	       ;otherwise chicken extended r5rs syntax
 			       (case (char-downcase dchar)
 				 ((#\x) (##sys#read-char-0 port) (r-number-with-exactness 16))
@@ -2807,7 +2817,9 @@ EOF
 							  (##sys#read-error
 							   port
 							   "invalid `#!' token" tok) ) ) ] ) ) ) ) ) )
-				 (else (##sys#user-read-hook dchar port)) ) ) ) ) ) )
+				 (else
+				  (##sys#call-with-values (lambda () (##sys#user-read-hook dchar port))
+							  (lambda xs (if (null? xs) (readrec) (car xs)))) ) ) ) ) ) ) )
 		  ((#\() (r-list #\( #\)))
 		  ((#\)) (##sys#read-char-0 port) (container c))
 		  ((#\") (##sys#read-char-0 port) (r-string #\"))
@@ -3557,6 +3569,7 @@ EOF
 
 (define ##sys#features
   '(#:chicken #:srfi-23 #:srfi-30 #:srfi-39 #:srfi-62 #:srfi-17 #:srfi-12 #:srfi-88 #:srfi-98
+	      #:srfi-6 #:srfi-10
 	      #:irregex-is-core-unit))
 
 ;; Add system features:
@@ -4498,6 +4511,7 @@ EOF
 
 (define ##sys#list->vector list->vector)
 (define ##sys#list list)
+(define ##sys#length length)
 (define ##sys#cons cons)
 (define ##sys#append append)
 (define ##sys#vector vector)

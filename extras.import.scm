@@ -34,6 +34,7 @@
    printf
    random
    randomize
+   read-buffered
    read-byte
    read-file
    read-line

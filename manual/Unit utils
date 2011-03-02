@@ -62,7 +62,7 @@ as additional command line options to {{csc}}. If {{output-file}} is
 not given, then the compiled file is stored in a temporary location
 and will be deleted when the process exits successfully.
 When compilation and loading succeeds, the name of the compiled file
-is returned.
+is returned, otherwise {{#f}} is returned.
 
 Notes:
 

@@ -232,13 +232,23 @@
 	(##sys#eval-decorator p ll h cntr) )
 
       (define (eval/meta form)
-	(parameterize ((##sys#current-module #f)
-		       (##sys#macro-environment (##sys#meta-macro-environment)))
-	    ((##sys#compile-to-closure
-	      form
-	      '() 
-	      (##sys#current-meta-environment))
-	     '() ) ))
+	(let ((oldcm (##sys#current-module))
+	      (oldme (##sys#macro-environment))
+	      (mme (##sys#meta-macro-environment)))
+	  (dynamic-wind
+	      (lambda () 
+		(##sys#current-module #f)
+		(##sys#macro-environment mme))
+	      (lambda ()
+		((##sys#compile-to-closure
+		  form
+		  '() 
+		  (##sys#current-meta-environment))
+		 '() ) )
+	      (lambda ()
+		(##sys#current-module oldcm)
+		(##sys#meta-macro-environment (##sys#macro-environment))
+		(##sys#macro-environment oldme)))))
 
       (define (eval/elab form)
 	((##sys#compile-to-closure
@@ -1456,13 +1466,6 @@
 					"/"
 					fname) ) )
 		  (else (loop (##sys#slot paths 1))) ) ) ) ) ) )
-
-
-;;; SRFI-0 support code:
-
-(set! ##sys#features
-  (append '(#:srfi-8 #:srfi-6 #:srfi-2 #:srfi-0 #:srfi-10 #:srfi-9 #:srfi-55 #:srfi-61) 
-	  ##sys#features))
 
 
 ;;;; Read-Eval-Print loop:
