@@ -67,7 +67,7 @@
 	  [(##core#variable)
 	   (let ((var (first params)))
 	     (when (and (not (memq var e)) 
-			(not (memq var safe)))
+			(not (memq var unsafe)))
 	       (set! unsafe (cons var unsafe)) )
 	     (set! previous (remove (lambda (p) (eq? (car p) var)) previous)))]
 
@@ -77,12 +77,12 @@
 	   (scan-each (cdr subs) e)]
 
 	  [(let)
-	   (scan (first subs) e)
-	   (scan (second subs) (append params e)) ]
+	   (scan-each (butlast subs) e)
+	   (scan (last subs) (append params e)) ]
 
-	  [(lambda ##core#lambda ##core#callunit) #f]
+	  [(lambda ##core#lambda) #f]
 
-	  [(##core#call) (touch)]
+	  [(##core#call ##core#callunit) (touch)]
 
 	  [(set!)
 	   (let ((var (first params))
@@ -94,6 +94,7 @@
 		 #;(##sys#notice
 		  (sprintf "dropping assignment of unused value to global variable `~s'"
 		    var))
+		 (debugging 'o "dropping redundant toplevel assignment" var)
 		 (copy-node!
 		  (make-node '##core#undefined '() '())
 		  p))

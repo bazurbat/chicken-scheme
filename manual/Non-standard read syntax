@@ -93,6 +93,27 @@ prints
  and substituted expressions: (+ three 99) ==> 102
  (three is "3")
 
+=== String escape sequences
+
+String-literals may contain the following of the escape sequences:
+
+<table>
+<tr><th>Escape sequence</th><th>Character</th></tr>
+<tr><td>\n</td><td>line feed / newline</td></tr>
+<tr><td>\t</td><td>tab</td></tr>
+<tr><td>\r</td><td>carriage return</td></tr>
+<tr><td>\b</td><td>backspace</td></tr>
+<tr><td>\a</td><td>bell</td></tr>
+<tr><td>\v</td><td>vertical tab</td></tr>
+<tr><td>\f</td><td>form feed</td></tr>
+<tr><td>\xXX</td><td>hexadecimal 8-bit character</td></tr>
+<tr><td>\uXXXX</td><td>hexadecimal 16-bit UNICODE character</td></tr>
+<tr><td>\UXXXXXXXX</td><td>hexadecimal 32-bit UNICODE character</td></tr>
+<tr><td>\OOO</td><td>octal 8-bit character</td></tr>
+<tr><td>\| \" \\ \'</td><td>represents escaped character</td></tr>
+</table>
+
+
 === Foreign Declare
 
  #> ... <#
@@ -126,6 +147,7 @@ Interpretation depends on the directly following characters. Only the following 
 ==== Read Mark Invocation
 
 * If a ''read mark'' with the same name as the token is registered, then its procedure is called and the result of the read-mark procedure will be returned
+(see {{set-read-syntax!}} for more information about read-marks).
 
 === Case Sensitive Expression
 

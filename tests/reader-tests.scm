@@ -1,6 +1,9 @@
 ;;;; reader-tests.scm
 
 
+(use utils)
+
+
 (set-sharp-read-syntax! #\& (lambda (p) (read p) (values)))
 (set-sharp-read-syntax! #\^ (lambda (p) (read p)))
 (set-read-syntax! #\! (lambda (p) (read-line p) (values)))
@@ -19,3 +22,4 @@
 !! bye
 
 (assert (string=? output "hi\nfoo\nbaz\nbye\n"))
+(assert (string=? "   ." (with-input-from-string "\x20\u0020\U00000020\056" read-all)))

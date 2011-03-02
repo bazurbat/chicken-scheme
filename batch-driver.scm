@@ -562,11 +562,7 @@
 		   (for-each (cut load-type-database <> #f) (collect-options 'types))
 		   (for-each
 		    (lambda (id)
-		      (and-let* ((tfile (##sys#resolve-include-filename 
-					 (make-pathname #f (symbol->string id) "types")
-					 #f #t))
-				 ((file-exists? tfile)))
-			(load-type-database tfile)))
+		      (load-type-database (make-pathname #f (symbol->string id) "types")))
 		    mreq)
 		   (begin-time)
 		   (set! first-analysis #f)

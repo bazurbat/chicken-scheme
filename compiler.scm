@@ -474,13 +474,23 @@
 	    (else x))))
   
   (define (eval/meta form)
-    (parameterize ((##sys#current-module #f)
-		   (##sys#macro-environment (##sys#meta-macro-environment)))
-      ((##sys#compile-to-closure
-	form
-	'() 
-	(##sys#current-meta-environment))
-       '() ) ))
+    (let ((oldcm (##sys#current-module))
+	  (oldme (##sys#macro-environment))
+	  (mme (##sys#meta-macro-environment)))
+      (dynamic-wind
+	  (lambda () 
+	    (##sys#current-module #f)
+	    (##sys#macro-environment mme))
+	  (lambda ()
+	    ((##sys#compile-to-closure
+	      form
+	      '() 
+	      (##sys#current-meta-environment))
+	     '() ) )
+	  (lambda ()
+	    (##sys#current-module oldcm)
+	    (##sys#meta-macro-environment (##sys#macro-environment))
+	    (##sys#macro-environment oldme)))))
 
   (define (emit-import-lib name il)
     (let* ((fname (if all-import-libraries
@@ -2346,7 +2356,8 @@
 
     (debugging 'p "closure conversion gathering phase...")
     (gather node #f '())
-    (debugging 'o "customizable procedures" customizable)
+    (when (pair? customizable)
+      (debugging 'o "customizable procedures" customizable))
     (debugging 'p "closure conversion transformation phase...")
     (let ((node2 (transform node #f #f)))
       (unless (zero? direct-calls)
@@ -2672,7 +2683,10 @@
     
     (debugging 'p "preparation phase...")
     (let ((node2 (walk node '() #f '())))
-      (debugging 'o "fast box initializations" fastinits)
-      (debugging 'o "fast global references" fastrefs)
-      (debugging 'o "fast global assignments" fastsets)
+      (when (positive? fastinits)
+	(debugging 'o "fast box initializations" fastinits))
+      (when (positive? fastrefs)
+	(debugging 'o "fast global references" fastrefs))
+      (when (positive? fastsets)
+	(debugging 'o "fast global assignments" fastsets))
       (values node2 literals lambda-info-literals lambdas) ) ) )

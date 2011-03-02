@@ -87,7 +87,7 @@
 (define (install-egg egg dir)
   (let ((command
 	 (conc
-	  *chicken-install* " "
+	  *chicken-install* " -force "
 	  (if *run-tests* "-test " "")
 	  (if *trunk* "-trunk " "")
 	  (if *download* 
