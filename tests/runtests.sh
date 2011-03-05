@@ -127,10 +127,10 @@ $compile syntax-tests-2.scm
 ./a.out
 
 echo "======================================== meta-syntax tests ..."
-$interpret -bnq meta-syntax-test.scm -e '(import foo)' -e "(assert (equal? '((1)) (bar 1 2)))"
+$interpret -bnq meta-syntax-test.scm -e '(import foo)' -e "(assert (equal? '((1)) (bar 1 2)))" -e "(assert (equal? '(list 1 2 3) (listify)))"
 $compile_s meta-syntax-test.scm -j foo
 $compile_s foo.import.scm
-$interpret -bnq -e '(require-library meta-syntax-test)' -e '(import foo)' -e "(assert (equal? '((1)) (bar 1 2)))"
+$interpret -bnq -e '(require-library meta-syntax-test)' -e '(import foo)' -e "(assert (equal? '((1)) (bar 1 2)))" -e "(assert (equal? '(list 1 2 3) (listify)))"
 
 echo "======================================== reexport tests ..."
 $interpret -bnq reexport-tests.scm
@@ -158,6 +158,7 @@ $compile_s foo.import.scm -o foo.import.so
 $interpret -s import-library-test2.scm
 $compile import-library-test2.scm
 ./a.out
+rm -f foo.import.*
 
 echo "======================================== optionals test ..."
 $interpret -s test-optional.scm
