@@ -25,7 +25,9 @@
 
 
 ;; scheme
- 
+
+;;XXX (fp... - rewrites should directly expand into unsafe ##core#inline[_allocate] uses
+
 (not (procedure not (*) boolean)
      (((not boolean)) (let ((#:tmp #(1))) '#t)))
 
@@ -394,13 +396,15 @@
 
 ;; chicken
 
-;;XXX...
-
 (abort (procedure abort (*) noreturn))
-(add1 (procedure add1 (number) number))
+(add1 (procedure add1 (number) number)
+      ((flonum) (fp+ #(1) 1.0)))
 (argc+argv (procedure argc+argv () fixnum list))
 (argv (procedure argv () list))
 (arithmetic-shift (procedure arithmetic-shift (number number) number))
+
+;;XXX...
+
 (bit-set? (procedure bit-set? (number fixnum) boolean))
 (bitwise-and (procedure bitwise-and (#!rest number) number)
 	     ((fixnum fixnum) (fxand #(1) #(2))))
