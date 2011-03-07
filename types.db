@@ -26,8 +26,6 @@
 
 ;; scheme
 
-;;XXX (fp... - rewrites should directly expand into unsafe ##core#inline[_allocate] uses
-
 (not (procedure not (*) boolean)
      (((not boolean)) (let ((#:tmp #(1))) '#t)))
 
@@ -115,7 +113,7 @@
 
 (integer? (procedure integer? (*) boolean)
 	  ((fixnum) (let ((#:tmp #(1))) #t))
-	  ((float) (fpinteger? #(1))))
+	  ((float) (##core#inline "C_u_i_fpintegerp" #(1))))
 
 (exact? (procedure exact? (*) boolean)
 	((fixnum) (let ((#:tmp #(1))) #t))
@@ -152,49 +150,52 @@
 
 (max (procedure max (#!rest number) number)
      ((fixnum fixnum) (fxmax #(1) #(2)))
-     ((float float) (fpmax #(1) #(2))))
+     ((float float) (##core#inline "C_i_flonum_max" #(1) #(2))))
 
 (min (procedure min (#!rest number) number)
      ((fixnum fixnum) (fxmin #(1) #(2)))
-     ((float float) (fpmin #(1) #(2))))
+     ((float float) (##core#inline "C_i_flonum_min" #(1) #(2))))
 
 (+ (procedure + (#!rest number) number)
    ((fixnum fixnum) (##core#inline "C_u_fixnum_plus" #(1) #(2)))
-   ((float float) (fp+ #(1) #(2))))
+   ((float float) (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) #(2))))
 
 (- (procedure - (number #!rest number) number)
    ((fixnum fixnum) (##core#inline "C_i_fixnum_difference" #(1) #(2)))
    ((fixnum) (##core#inline "C_u_fixnum_negate" #(1)))
-   ((float float) (fp- #(1) #(2)))
-   ((float) (fpneg #(1))))
+   ((float float) (##core#inline_allocate ("C_a_i_flonum_difference" 4) 
+					  #(1) #(2)))
+   ((float) (##core#inline_allocate ("C_a_i_flonum_negate" 4) #(1))))
 
 (* (procedure * (#!rest number) number)
    ((fixnum fixnum) (##core#inline "C_fixnum_times" #(1) #(2)))
-   ((float float) (fp* #(1) #(2))))
+   ((float float) (##core#inline_allocate ("C_a_i_flonum_times" 4) 
+					  #(1) #(2))))
 
 (/ (procedure / (number #!rest number) number)
    ((fixnum fixnum) (##core#inline "C_fixnum_divide" #(1) #(2)))
-   ((float float) (fp/ #(1) #(2))))
+   ((float float) (##core#inline_allocate ("C_a_i_flonum_quotient" 4) 
+					  #(1) #(2))))
 
 (= (procedure = (#!rest number) boolean)
    ((fixnum fixnum) (eq? #(1) #(2)))
-   ((float float) (fp= #(1) #(2))))
+   ((float float) (##core#inline "C_flonum_equalp" #(1) #(2))))
 
 (> (procedure > (#!rest number) boolean)
    ((fixnum fixnum) (fx> #(1) #(2)))
-   ((float float) (fp> #(1) #(2))))
+   ((float float) (##core#inline "C_flonum_greaterp" #(1) #(2))))
 
 (< (procedure < (#!rest number) boolean)
    ((fixnum fixnum) (fx< #(1) #(2)))
-   ((float float) (fp< #(1) #(2))))
+   ((float float) (##core#inline "C_flonum_lessp" #(1) #(2))))
 
 (>= (procedure >= (#!rest number) boolean)
     ((fixnum fixnum) (fx>= #(1) #(2)))
-    ((float float) (fp>= #(1) #(2))))
+    ((float float) (##core#inline "C_flonum_greater_or_equal_p" #(1) #(2))))
 
 (<= (procedure <= (#!rest number) boolean)
     ((fixnum fixnum) (fx<= #(1) #(2)))
-    ((float float) (fp<= #(1) #(2))))
+    ((float float) (##core#inline "C_flonum_less_or_equal_p" #(1) #(2))))
 
 (quotient (procedure quotient (number number) number)
 	  ((fixnum fixnum) (##core#inline "C_fixnum_divide" #(1) #(2))))
@@ -209,40 +210,58 @@
 
 (abs (procedure abs (number) number)
      ((fixnum) (##core#inline "C_fixnum_abs" #(1)))
-     ((float) (fpabs #(1))))
+     ((float) (##core#inline_allocate ("C_a_i_flonum_abs" 4) #(1))))
 
 (floor (procedure floor (number) number)
        ((fixnum) #(1))
-       ((float) (fpfloor #(1))))
+       ((float) (##core#inline_allocate ("C_a_i_flonum_floor" 4) #(1))))
 
 (ceiling (procedure ceiling (number) number)
 	 ((fixnum) #(1))
-	 ((float) (fpceiling #(1))))
+	 ((float) (##core#inline_allocate ("C_a_i_flonum_ceiling" 4) #(1))))
 
 (truncate (procedure truncate (number) number)
 	  ((fixnum) #(1))
-	  ((float) (fptruncate #(1))))
+	  ((float) (##core#inline_allocate ("C_a_i_flonum_truncate" 4) #(1))))
 
 (round (procedure round (number) number)
        ((fixnum) #(1))
-       ((float) (fpround #(1))))
+       ((float) (##core#inline_allocate ("C_a_i_flonum_round" 4) #(1))))
 
-(exact->inexact (procedure exact->inexact (number) number) ((float) #(1)))
+(exact->inexact (procedure exact->inexact (number) number) ((float) #(1))
 (inexact->exact (procedure inexact->exact (number) number) ((fixnum) #(1)))
 
-(exp (procedure exp (number) float) ((float) (fpexp #(1))))
-(log (procedure log (number) float) ((float) (fplog #(1))))
-(expt (procedure expt (number number) number) ((float) (fpexpt #(1))))
-(sqrt (procedure sqrt (number) float) ((float) (fpsqrt #(1))))
-(sin (procedure sin (number) float) ((float) (fpsin #(1))))
-(cos (procedure cos (number) float) ((float) (fpcos #(1))))
-(tan (procedure tan (number) float) ((float) (fptan #(1))))
-(asin (procedure asin (number) float) ((float) (fpasin #(1))))
-(acos (procedure acos (number) float) ((float) (fpacos #(1))))
+(exp (procedure exp (number) float)
+     ((float) (##core#inline_allocate ("C_a_i_flonum_exp" 4) #(1))))
+
+(log (procedure log (number) float)
+     ((float) (##core#inline_allocate ("C_a_i_flonum_log" 4) #(1))))
+
+(expt (procedure expt (number number) number)
+      ((float float) (##core#inline_allocate ("C_a_i_flonum_expt" 4) 
+					     #(1) #(2))))
+
+(sqrt (procedure sqrt (number) float)
+      ((float) (##core#inline_allocate ("C_a_i_flonum_sqrt" 4) #(1))))
+
+(sin (procedure sin (number) float)
+     ((float) (##core#inline_allocate ("C_a_i_flonum_sin" 4) #(1))))
+
+(cos (procedure cos (number) float)
+     ((float) (##core#inline_allocate ("C_a_i_flonum_cos" 4) #(1))))
+
+(tan (procedure tan (number) float)
+     ((float) (##core#inline_allocate ("C_a_i_flonum_tan" 4) #(1))))
+
+(asin (procedure asin (number) float) 
+      ((float) (##core#inline_allocate ("C_a_i_flonum_asin" 4) #(1))))
+
+(acos (procedure acos (number) float)
+      ((float) (##core#inline_allocate ("C_a_i_flonum_acos" 4) #(1))))
 
 (atan (procedure atan (number #!optional number) float)
-      ((float) (fpatan #(1)))
-      ((float float) (fpatan2 #(1) #(2))))
+      ((float) (##core#inline_allocate ("C_a_i_flonum_atan" 4) #(1)))
+      ((float float) (##core#inline_allocate ("C_a_i_flonum_atan2" 4) #(1))))
 
 (number->string (procedure number->string (number #!optional number) string))
 (string->number (procedure string->number (string #!optional number) (or number boolean)))
@@ -379,7 +398,7 @@
 
 (magnitude (procedure magnitude (number) number)
 	   ((fixnum) (##core#inline "C_fixnum_abs" #(1)))
-	   ((float) (fpabs #(1))))
+	   ((float) (##core#inline_allocate ("C_a_i_flonum_abs" 4) #(1))))
 
 (numerator (procedure numerator (number) number)
 	   ((fixnum) #(1)))
@@ -397,29 +416,43 @@
 ;; chicken
 
 (abort (procedure abort (*) noreturn))
+
 (add1 (procedure add1 (number) number)
-      ((flonum) (fp+ #(1) 1.0)))
+      ((float) (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) 1.0)))
+
 (argc+argv (procedure argc+argv () fixnum list))
 (argv (procedure argv () list))
 (arithmetic-shift (procedure arithmetic-shift (number number) number))
 
-;;XXX...
+(bit-set? (procedure bit-set? (number fixnum) boolean)
+	  ((fixnum fixnum) 
+	   (not (eq? 0 (##core#inline 
+			"C_fixnum_and" #(1)
+			(##core#inline "C_fixnum_shift_left" 1 #(2)))))))
 
-(bit-set? (procedure bit-set? (number fixnum) boolean))
 (bitwise-and (procedure bitwise-and (#!rest number) number)
-	     ((fixnum fixnum) (fxand #(1) #(2))))
+	     ((fixnum fixnum) (##core#inline "C_fixnum_and" #(1) #(2))))
+
 (bitwise-ior (procedure bitwise-ior (#!rest number) number)
-	     ((fixnum fixnum) (fxior #(1) #(2))))
+	     ((fixnum fixnum) (##core#inline "C_fixnum_or" #(1) #(2))))
+
 (bitwise-not (procedure bitwise-not (number) number))
+
 (bitwise-xor (procedure bitwise-xor (#!rest number) number)
-	     ((fixnum fixnum) (fxxor #(1) #(2))))
+	     ((fixnum fixnum) (##core#inline "C_fixnum_xor" #(1) #(2))))
+
 (blob->string (procedure blob->string (blob) string))
-(blob-size (procedure blob-size (blob) fixnum))
-(blob? (procedure blob? (*) boolean))
+
+(blob-size (procedure blob-size (blob) fixnum)
+	   ((blob) (##sys#size #(1))))
+
+(blob? (procedure blob? (*) boolean)
+       ((blob) (let ((#:tmp #(1))) #t))
+       (((not blob)) (let ((#:tmp #(1))) #f)))
+
 (blob=? (procedure blob=? (blob blob) boolean))
 (breakpoint (procedure breakpoint (#!optional *) . *))
 (build-platform (procedure build-platform () symbol))
-(c-runtime (procedure c-runtime () symbol))
 (call/cc (procedure call/cc (procedure) . *))
 (case-sensitive (procedure case-sensitive (#!optional *) *))
 (char-name (procedure char-name ((or char symbol) #!optional char) *))
@@ -428,16 +461,32 @@
 (command-line-arguments (procedure command-line-arguments (#!optional list) list))
 (condition-predicate (procedure condition-predicate (symbol) (procedure ((struct condition)) boolean)))
 (condition-property-accessor (procedure condition-property-accessor (symbol symbol #!optional *) (procedure ((struct condition)) *)))
-(condition? (procedure condition? (*) boolean))
+
+(condition? (procedure condition? (*) boolean)
+	    (((struct condition)) (let ((#:tmp #(1))) #t))
+	    (((not (struct condition))) (let ((#:tmp #(1))) #f)))
+
 (condition->list (procedure condition->list ((struct condition)) list))
 (continuation-capture (procedure continuation-capture ((procedure ((struct continuation)) . *)) *))
 (continuation-graft (procedure continuation-graft ((struct continuation) (procedure () . *)) *))
 (continuation-return (procedure continuation-return (procedure #!rest) . *)) ;XXX make return type more specific?
-(continuation? (procedure continuation? (*) boolean))
+
+(continuation? (procedure continuation? (*) boolean)
+	       (((struct continuation)) (let ((#:tmp #(1))) #t))
+	       (((not (struct continuation))) (let ((#:tmp #(1))) #f)))
+
 (copy-read-table (procedure copy-read-table ((struct read-table)) (struct read-table)))
 (cpu-time (procedure cpu-time () fixnum fixnum))
-(current-error-port (procedure current-error-port (#!optional port) port))
-(current-exception-handler (procedure current-exception-handler (#!optional procedure) procedure))
+
+(current-error-port (procedure current-error-port (#!optional port) port)
+		    ((port) (set! ##sys#standard-error #(1)))
+		    (() ##sys#standard-error))
+
+(current-exception-handler
+ (procedure current-exception-handler (#!optional procedure) procedure)
+ ((procedure) (set! ##sys#current-exception-handler #(1)))
+ (() ##sys#current-exception-handler))
+
 (current-gc-milliseconds (procedure current-gc-milliseconds () fixnum))
 (current-milliseconds (procedure current-milliseconds () float))
 (current-read-table (procedure current-read-table () (struct read-table)))
@@ -458,8 +507,10 @@
 (directory-exists? (procedure directory-exists? (string) *))
 (fixnum-bits fixnum)
 (fixnum-precision fixnum)
+
 (fixnum? (procedure fixnum? (*) boolean)
 	 ((fixnum) (let ((#:tmp #(1))) #t)))
+
 (flonum-decimal-precision fixnum)
 (flonum-epsilon float)
 (flonum-maximum-decimal-exponent fixnum)
@@ -469,39 +520,106 @@
 (flonum-precision fixnum)
 (flonum-print-precision (procedure (#!optional fixnum) fixnum))
 (flonum-radix fixnum)
+
 (flonum? (procedure flonum? (*) boolean)
 	 ((float) (let ((#:tmp #(1))) #t)))
+
 (flush-output (procedure flush-output (#!optional port) undefined))
 (force-finalizers (procedure force-finalizers () undefined))
-(fp- (procedure fp- (float float) float))
-(fp* (procedure fp* (float float) float))
-(fp/ (procedure fp/ (float float) float))
-(fp+ (procedure fp+ (float float) float))
-(fp< (procedure fp< (float float) boolean))
-(fp<= (procedure fp<= (float float) boolean))
-(fp= (procedure fp= (float float) boolean))
-(fp> (procedure fp> (float float) boolean))
-(fp>= (procedure fp>= (float float) boolean))
-(fpabs (procedure fpabs (float) float))
-(fpacos (procedure fpacos (float) float))
-(fpasin (procedure fpasin (float) float))
-(fpatan (procedure fpatan (float) float))
-(fpatan2 (procedure fpatan2 (float float) float))
-(fpceiling (procedure fpceiling (float) float))
-(fpcos (procedure fpcos (float) float))
-(fpexp (procedure fpexp (float) float))
-(fpexpt (procedure fpexpt (float float) float))
-(fpfloor (procedure fpfloor (float) float))
-(fpinteger? (procedure fpinteger? (float) boolean))
-(fplog (procedure fplog (float) float))
-(fpmax (procedure fpmax (float float) float))
-(fpmin (procedure fpmin (float float) float))
-(fpneg (procedure fpneg (float) float))
-(fpround (procedure fpround (float) float))
-(fpsin (procedure fpsin (float) float))
-(fpsqrt (procedure fpsqrt (float) float))
-(fptan (procedure fptan (float) float))
-(fptruncate (procedure fptruncate (float) float))
+
+(fp- (procedure fp- (float float) float)
+     ((float float) (##core#inline_allocate ("C_a_i_flonum_difference" 4)
+					    #(1) #(2)) ))
+
+(fp* (procedure fp* (float float) float)
+     ((float float) (##core#inline_allocate ("C_a_i_flonum_times" 4)
+					    #(1) #(2)) ))
+
+(fp/ (procedure fp/ (float float) float)
+     ((float float) (##core#inline_allocate ("C_a_i_flonum_quotient" 4)
+					    #(1) #(2)) ))
+
+(fp+ (procedure fp+ (float float) float)
+     ((float float) (##core#inline_allocate ("C_a_i_flonum_plus" 4)
+					    #(1) #(2)) ))
+
+(fp< (procedure fp< (float float) boolean)
+     ((float float) (##core#inline "C_flonum_lessp" #(1) #(2)) ))
+
+(fp<= (procedure fp<= (float float) boolean)
+      ((float float) (##core#inline "C_flonum_less_or_equal_p" #(1) #(2)) ))
+
+(fp= (procedure fp= (float float) boolean)
+     ((float float) (##core#inline "C_flonum_equalp" #(1) #(2)) ))
+
+(fp> (procedure fp> (float float) boolean)
+     ((float float) (##core#inline "C_flonum_greaterp" #(1) #(2)) ))
+
+(fp>= (procedure fp>= (float float) boolean)
+      ((float float) (##core#inline "C_flonum_greater_or_equal_p" #(1) #(2)) ))
+
+(fpabs (procedure fpabs (float) float)
+       ((float) (##core#inline_allocate ("C_a_i_flonum_abs" 4) #(1) )))
+
+(fpacos (procedure fpacos (float) float)
+       ((float) (##core#inline_allocate ("C_a_i_flonum_acos" 4) #(1) )))
+
+(fpasin (procedure fpasin (float) float)
+	((float) (##core#inline_allocate ("C_a_i_flonum_asin" 4) #(1) )))
+
+(fpatan (procedure fpatan (float) float)
+	((float) (##core#inline_allocate ("C_a_i_flonum_atan" 4) #(1) )))
+
+(fpatan2 (procedure fpatan2 (float float) float)
+	 ((float float) (##core#inline_allocate ("C_a_i_flonum_atan2" 4)
+						#(1) #(2))))
+(fpceiling (procedure fpceiling (float) float)
+	   ((float) (##core#inline_allocate ("C_a_i_flonum_ceiling" 4) #(1) )))
+
+(fpcos (procedure fpcos (float) float)
+       ((float) (##core#inline_allocate ("C_a_i_flonum_cos" 4) #(1) )))
+
+(fpexp (procedure fpexp (float) float)
+       ((float) (##core#inline_allocate ("C_a_i_flonum_exp" 4) #(1) )))
+
+(fpexpt (procedure fpexpt (float float) float)
+	((float float) (##core#inline_allocate ("C_a_i_flonum_expt" 4)
+					       #(1) #(2))))
+
+(fpfloor (procedure fpfloor (float) float)
+	 ((float) (##core#inline_allocate ("C_a_i_flonum_floor" 4) #(1) )))
+
+(fpinteger? (procedure fpinteger? (float) boolean)
+	    ((float) (##core#inline "C_u_i_flonum_intergerp" #(1) )))
+
+(fplog (procedure fplog (float) float)
+       ((float) (##core#inline_allocate ("C_a_i_flonum_log" 4) #(1) )))
+
+(fpmax (procedure fpmax (float float) float)
+       ((float float) (##core#inline "C_i_flonum_max" #(1) #(2))))
+
+(fpmin (procedure fpmin (float float) float)
+       ((float float) (##core#inline "C_i_flonum_min" #(1) #(2))))
+
+(fpneg (procedure fpneg (float) float)
+       ((float) (##core#inline_allocate ("C_a_i_flonum_negate" 4) #(1) )))
+
+(fpround (procedure fpround (float) float)
+	 ((float) (##core#inline_allocate ("C_a_i_flonum_round" 4) #(1) )))
+
+(fpsin (procedure fpsin (float) float)
+       ((float) (##core#inline_allocate ("C_a_i_flonum_sin" 4) #(1) )))
+
+(fpsqrt (procedure fpsqrt (float) float)
+	((float) (##core#inline_allocate ("C_a_i_flonum_sqrt" 4) #(1) )))
+
+(fptan (procedure fptan (float) float)
+       ((float) (##core#inline_allocate ("C_a_i_flonum_tan" 4) #(1) )))
+
+(fptruncate (procedure fptruncate (float) float)
+	    ((float) (##core#inline_allocate ("C_a_i_flonum_truncate" 4) 
+					     #(1) )))
+
 (fx- (procedure fx- (fixnum fixnum) fixnum))
 (fx* (procedure fx* (fixnum fixnum) fixnum))
 (fx/ (procedure fx/ (fixnum fixnum) fixnum))
@@ -525,14 +643,16 @@
 (fxxor (procedure fxxor (fixnum fixnum) fixnum))
 (gc (procedure gc (#!optional *) fixnum))
 (gensym (procedure gensym (#!optional *) symbol))
-(get (procedure get (symbol symbol #!optional *) *))
+
+(get (procedure get (symbol symbol #!optional *) *)
+     ((symbol symbol *) (##core#inline "C_i_getprop" #(1) #(2) #(3))))
+
 (get-call-chain (procedure get-call-chain (#!optional fixnum *) list))
 (get-condition-property (procedure get-condition-property ((struct condition) symbol symbol #!optional *) *))
 (get-environment-variable (procedure get-environment-variable (string) *))
 (get-keyword (procedure get-keyword (symbol list #!optional *) *))
 (get-output-string (procedure get-output-string (port) string))
 (get-properties (procedure get-properties (symbol list) symbol * list))
-(getenv (deprecated get-environment-variable))
 (getter-with-setter (procedure getter-with-setter (procedure procedure #!optional string) procedure))
 (implicit-exit-handler (procedure implicit-exit-handler (#!optional procedure) procedure))
 (keyword->string (procedure keyword->string (symbol) string))
@@ -543,7 +663,10 @@
 (load-verbose (procedure load-verbose (#!optional *) *))
 (machine-byte-order (procedure machine-byte-order () symbol))
 (machine-type (procedure machine-type () symbol))
-(make-blob (procedure make-blob (fixnum) blob))
+
+(make-blob (procedure make-blob (fixnum) blob)
+	   ((fixnum) (##sys#make-blob #(1))))
+
 (make-composite-condition (procedure make-composite-condition (#!rest (struct condition)) (struct condition)))
 (make-parameter (procedure make-parameter (* #!optional procedure) procedure))
 (make-property-condition (procedure make-property-condition (symbol #!rest *) (struct condition)))
@@ -556,9 +679,16 @@
 (open-input-string (procedure open-input-string (string #!rest) port))
 (open-output-string (procedure open-output-string (#!rest) port))
 (parentheses-synonyms (procedure parentheses-synonyms (#!optional *) *))
-(port-name (procedure port-name (#!optional port) *))
+
+(port-name (procedure port-name (#!optional port) *)
+	   ((port) (##sys#slot #(1) 3)))
+
 (port-position (procedure port-position (#!optional port) fixnum))
-(port? (procedure port? (*) boolean))
+
+(port? (procedure port? (*) boolean)
+       ((port) (let ((#:tmp #(1))) #t))
+       (((not port)) (let ((#:tmp #(1))) #f)))
+
 (print (procedure print (#!rest *) undefined))
 (print-call-chain (procedure print-call-chain (#!optional port fixnum * string) undefined))
 (print-error-message (procedure print-error-message (* #!optional port string) undefined))
@@ -566,7 +696,11 @@
 (procedure-information (procedure procedure-information (procedure) *))
 (program-name (procedure program-name (#!optional string) string))
 (promise? (procedure promise? (*) boolean))
-(put! (procedure put! (symbol symbol *) undefined))
+
+(put! (procedure put! (symbol symbol *) undefined)
+      ((symbol symbol *)
+       (##core#inline_allocate ("C_a_i_putprop" 8) #(1) #(2) #(3))))
+
 (register-feature! (procedure register-feature! (#!rest symbol) undefined))
 (remprop! (procedure remprop! (symbol symbol) undefined))
 (rename-file (procedure rename-file (string string) string))
@@ -581,7 +715,10 @@
 (set-finalizer! (procedure set-finalizer! (* (procedure (*) . *)) *))
 (set-gc-report! (procedure set-gc-report! (*) undefined))
 (set-parameterized-read-syntax! (procedure set-parameterized-read-syntax! (char procedure) undefined))
-(set-port-name! (procedure set-port-name! (port string) undefined))
+
+(set-port-name! (procedure set-port-name! (port string) undefined)
+		((port string) (##sys#setslot #(1) 3 #(2))))
+
 (set-read-syntax! (procedure set-read-syntax! (char procedure) undefined))
 (set-sharp-read-syntax! (procedure set-sharp-read-syntax! (char procedure) undefined))
 (setter (procedure setter (procedure) procedure))
@@ -594,10 +731,17 @@
 (string->keyword (procedure string->keyword (string) symbol))
 (string->uninterned-symbol (procedure string->uninterned-symbol (string) symbol))
 (strip-syntax (procedure strip-syntax (*) *))
-(sub1 (procedure sub1 (number) number))
+
+(sub1 (procedure sub1 (number) number)
+      ((float) (##core#inline_allocate ("C_a_i_flonum_difference" 4) 
+				       #(1) 1.0)))
+
 (subvector (procedure subvector (vector fixnum #!optional fixnum) vector))
 (symbol-escape (procedure symbol-escape (#!optional *) *))
-(symbol-plist (procedure symbol-plist (symbol) list))
+
+(symbol-plist (procedure symbol-plist (symbol) list)
+	      ((symbol) (##sys#slot #(1) 2)))
+
 (syntax-error (procedure syntax-error (#!rest) noreturn))
 (system (procedure system (string) fixnum))
 (unregister-feature! (procedure unregister-feature! (#!rest symbol) undefined))
@@ -608,12 +752,20 @@
 
 ;; data-structures
 
-(->string (procedure ->string (*) string))
+(->string (procedure ->string (*) string)
+	  ((string) #(1)))
+
 (alist-ref (procedure alist-ref (* list #!optional (procedure (* *) *) *) *))
 (alist-update! (procedure alist-update! (* * list #!optional (procedure (* *) *)) *))
 (always? (procedure always? (#!rest) boolean))
-(any? (procedure any? (*) boolean))
-(atom? (procedure atom? (*) boolean))
+
+(any? (procedure any? (*) boolean)
+      ((*) (let ((#:tmp #(1))) #t)))
+
+(atom? (procedure atom? (*) boolean)
+       ((pair) (let ((#:tmp #(1))) #f))
+       (((not pair)) (let ((#:tmp #(1))) #t)))
+
 (binary-search (procedure binary-search (vector (procedure (*) *)) *))
 (butlast (procedure butlast (pair) list))
 (chop (procedure chop (list fixnum) list))
@@ -630,18 +782,21 @@
 (identity (procedure identity (*) *))
 (intersperse (procedure intersperse (list *) list))
 (join (procedure join (list list) list))
-(left-section deprecated)
 (list->queue (procedure list->queue (list) (struct queue)))
 (list-of? (procedure list-of? ((procedure (*) *)) (procedure (list) boolean)))
 (make-queue (procedure make-queue () (struct queue)))
 (merge (procedure merge (list list (procedure (* *) *)) list))
 (merge! (procedure merge! (list list (procedure (* *) *)) list))
 (never? (procedure never? (#!rest) boolean))
-(none? (procedure none? (*) boolean))
-(noop (deprecated void))
+
+(none? (procedure none? (*) boolean)
+       ((*) (let ((#:tmp #(1))) #f)))
+
 (o (procedure o (#!rest (procedure (*) *)) (procedure (*) *)))
-(project (procedure project (fixnum) procedure))
-(queue->list (procedure queue->list ((struct queue)) list))
+
+(queue->list (procedure queue->list ((struct queue)) list)
+	     (((struct queue)) (##sys#slot #(1) 1)))
+
 (queue-add! (procedure queue-add! ((struct queue) *) undefined))
 (queue-empty? (procedure queue-empty? ((struct queue)) boolean))
 (queue-first (procedure queue-first ((struct queue)) *))
@@ -649,9 +804,12 @@
 (queue-push-back! (procedure queue-push-back! ((struct queue) *) undefined))
 (queue-push-back-list! (procedure queue-push-back-list! ((struct queue) list) undefined))
 (queue-remove! (procedure queue-remove! ((struct queue)) *))
-(queue? (procedure queue? (*) boolean))
+
+(queue? (procedure queue? (*) boolean)
+	(((struct queue)) (let ((#:tmp #(1))) #t))
+	(((not (struct queue))) (let ((#:tmp #(1))) #f)))
+
 (rassoc (procedure rassoc (* list #!optional (procedure (* *) *)) *))
-(right-section deprecated)
 (reverse-string-append (procedure reverse-string-append (list) string))
 (shuffle (procedure shuffle (list (procedure (fixnum) fixnum)) list))
 (sort (procedure sort ((or list vector) (procedure (* *) *)) (or list vector)))
@@ -691,7 +849,12 @@
 (read-string! (procedure read-string! (fixnum string #!optional port fixnum) fixnum))
 (read-token (procedure read-token ((procedure (char) *) #!optional port) string))
 (sprintf (procedure sprintf (string #!rest) string))
-(write-byte (procedure write-byte (fixnum #!optional port) undefined))
+
+(write-byte (procedure write-byte (fixnum #!optional port) undefined)
+	    ((fixnum port) (##sys#write-char-0 (integer->char #(1)) #(2)))
+	    ((fixnum) (##sys#write-char-0 (integer->char #(1))
+					  ##sys#standard-output)))
+
 (write-line (procedure write-line (string #!optional port) undefined))
 (write-string (procedure write-string (string #!optional * port) undefined))
 
@@ -722,21 +885,40 @@
 
 (irregex (procedure irregex (#!rest) *))
 ;irregex-apply-match
-(irregex-dfa (procedure irregex-dfa (*) *))
-(irregex-dfa/extract (procedure irregex-dfa/extract (*) *))
-(irregex-dfa/search (procedure irregex-dfa/search (*) *))
+
+(irregex-dfa (procedure irregex-dfa ((struct regexp)) *)
+	     (((struct regexp)) (##sys#slot #(1) 1)))
+
+(irregex-dfa/extract (procedure irregex-dfa/extract ((struct regexp)) *)
+		     (((struct regexp)) (##sys#slot #(1) 3)))
+
+(irregex-dfa/search (procedure irregex-dfa/search ((struct regexp)) *)
+		    (((struct regexp)) (##sys#slot #(1) 2)))
+
 (irregex-extract (procedure irregex-extract (* string #!optional fixnum fixnum) list))
-(irregex-flags (procedure irregex-flags (*) *))
+(irregex-flags (procedure irregex-flags ((struct regexp)) *)
+	       (((struct regexp)) (##sys#slot #(1) 5)))
+
 (irregex-fold (procedure irregex-fold (* (procedure (fixnum (struct regexp-match)) *) * string #!optional (procedure (fixnum *) *) fixnum fixnum) *))
 (irregex-fold/chunked (procedure irregex-fold/chunked (* (procedure (fixnum (struct regexp-match)) *) * procedure * #!optional (procedure (fixnum *) *) fixnum fixnum) *))
-(irregex-lengths (procedure irregex-lengths (*) *))
+
+(irregex-lengths (procedure irregex-lengths ((struct regexp)) *)
+		 (((struct regexp)) (##sys#slot #(1) 7)))
+
 (irregex-match (procedure irregex-match (* string) *))
 ;irregex-match?
-(irregex-match-data? (procedure irregex-match-data? (*) boolean))
+
+(irregex-match-data? (procedure irregex-match-data? (*) boolean)
+		     (((struct regexp-match)) (let ((#:tmp #(1))) #t))
+		     (((not (struct regexp-match))) (let ((#:tmp #(1))) #f)))
+
 (irregex-match-end (procedure irregex-match-end (* #!optional *) *))
 ;irregex-match-end-chunk
 (irregex-match-end-index (procedure irregex-match-end-index ((struct regexp-match) #!optional *) fixnum))
-(irregex-match-names (procedure irregex-match-names ((struct regexp-match)) list))
+
+(irregex-match-names (procedure irregex-match-names ((struct regexp-match)) list)
+		     (((struct regexp-match)) (##sys#slot #(1) 2)))
+
 (irregex-match-num-submatches (procedure irregex-match-num-submatches ((struct regexp-match)) fixnum))
 (irregex-match-start (procedure irregex-match-start (* #!optional *) *))
 ;irregex-match-start-chunk
@@ -745,10 +927,19 @@
 (irregex-match-subchunk (procedure irregex-match-subchunk ((struct regexp-match) #!optional *) *))
 (irregex-match-substring (procedure irregex-match-substring (* #!optional *) *))
 (irregex-match/chunked (procedure irregex-match/chunked (* * * #!optional fixnum) *))
-(irregex-names (procedure irregex-names (*) *))
+
+(irregex-names (procedure irregex-names ((struct regexp)) *)
+	       (((struct regexp)) (##sys#slot #(1) 8)))
+
 (irregex-new-matches (procedure irregex-new-matches (*) *))
-(irregex-nfa (procedure irregex-nfa (*) *))
-(irregex-num-submatches (procedure irregex-num-submatches (*) fixnum))
+
+(irregex-nfa (procedure irregex-nfa ((struct regexp)) *)
+	     (((struct regexp)) (##sys#slot #(1) 4)))
+
+(irregex-num-submatches (procedure irregex-num-submatches ((struct regexp))
+				   fixnum)
+			(((struct regexp)) (##sys#slot #(1) 6)))
+
 (irregex-opt (procedure irregex-opt (list) *))
 (irregex-quote (procedure irregex-quote (string) string))
 (irregex-replace (procedure irregex-replace (* string #!rest) *))
@@ -757,10 +948,13 @@
 (irregex-search (procedure irregex-search (* string #!optional fixnum fixnum) *))
 (irregex-search/matches (procedure irregex-search/matches (* string fixnum fixnum *) *))
 (irregex-split (procedure irregex-split (* string #!optional fixnum fixnum) list))
-(irregex-submatches (procedure irregex-submatches (*) *))
 (irregex-match-valid-index? 
  (procedure irregex-match-valid-index? ((struct regexp-match) *) boolean))
-(irregex? (procedure irregex? (*) boolean))
+
+(irregex? (procedure irregex? (*) boolean)
+	  (((struct regexp)) (let ((#:tmp #(1))) #t))
+	  (((not (struct regexp))) (let ((#:tmp #(1))) #f)))
+
 (make-irregex-chunker
  (procedure make-irregex-chunker 
 	    ((procedure (*) *)
@@ -778,6 +972,7 @@
 
 ;; lolevel
 
+;;XXX...
 (address->pointer (procedure address->pointer (fixnum) pointer))
 (align-to-word (procedure align-to-word (*) *))
 (allocate (procedure allocate (fixnum) pointer))
