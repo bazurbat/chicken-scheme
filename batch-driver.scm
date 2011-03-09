@@ -517,7 +517,7 @@
 		 (set! first-analysis #f)
 		 (set! db (analyze 'scrutiny node0))
 		 (print-db "analysis" '|0| db 0)
-		 (end-time "pre-analysis")
+		 (end-time "pre-analysis (scrutiny)")
 		 (begin-time)
 		 (debugging 'p "performing scrutiny")
 		 (scrutinize node0 db do-scrutinize do-specialize)
@@ -561,26 +561,7 @@
 		      (lambda (ilf)
 			(dribble "Loading inline file ~a ..." ilf)
 			(load-inline-file ilf) )
-		      ifs)))
-		 (when do-scrutinize
-		   ;;*** hardcoded database file name
-		   (unless (memq 'ignore-repository options)
-		     (load-type-database "types.db"))
-		   (for-each (cut load-type-database <> #f) (collect-options 'types))
-		   (for-each
-		    (lambda (id)
-		      (load-type-database (make-pathname #f (symbol->string id) "types")))
-		    mreq)
-		   (begin-time)
-		   (set! first-analysis #f)
-		   (set! db (analyze 'scrutiny node0))
-		   (print-db "analysis" '|0| db 0)
-		   (end-time "pre-analysis")
-		   (begin-time)
-		   (debugging 'p "performing scrutiny")
-		   (scrutinize node0 db)
-		   (end-time "scrutiny")
-		   (set! first-analysis #t) ) )
+		      ifs))))
 
 	       ;; lambda-lifting
 	       (when do-lambda-lifting

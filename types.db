@@ -138,7 +138,7 @@
        ((number) (##core#inline "C_u_i_zerop" #(1))))
 
 (odd? (procedure odd? (number) boolean) ((fixnum) (fxodd? #(1))))
-(even? (procedure even? (number) boolean) ((fixnum) (fxeven? #(1)))
+(even? (procedure even? (number) boolean) ((fixnum) (fxeven? #(1))))
 
 (positive? (procedure positive? (number) boolean)
 	   ((fixnum) (##core#inline "C_fixnum_greaterp" #(1) 0))
@@ -157,6 +157,7 @@
      ((float float) (##core#inline "C_i_flonum_min" #(1) #(2))))
 
 (+ (procedure + (#!rest number) number)
+   (((or fixnum flonum number)) #(1))
    ((fixnum fixnum) (##core#inline "C_u_fixnum_plus" #(1) #(2)))
    ((float float) (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) #(2))))
 
@@ -168,6 +169,7 @@
    ((float) (##core#inline_allocate ("C_a_i_flonum_negate" 4) #(1))))
 
 (* (procedure * (#!rest number) number)
+   (((or fixnum float number)) #(1))
    ((fixnum fixnum) (##core#inline "C_fixnum_times" #(1) #(2)))
    ((float float) (##core#inline_allocate ("C_a_i_flonum_times" 4) 
 					  #(1) #(2))))
@@ -228,7 +230,7 @@
        ((fixnum) #(1))
        ((float) (##core#inline_allocate ("C_a_i_flonum_round" 4) #(1))))
 
-(exact->inexact (procedure exact->inexact (number) number) ((float) #(1))
+(exact->inexact (procedure exact->inexact (number) number) ((float) #(1)))
 (inexact->exact (procedure inexact->exact (number) number) ((fixnum) #(1)))
 
 (exp (procedure exp (number) float)
