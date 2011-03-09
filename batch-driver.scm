@@ -508,38 +508,7 @@
 	       (print-node "initial node tree" '|T| node0)
 	       (initialize-analysis-database)
 
-	       (when (or do-scrutinize do-specialize)
-		 ;;;XXX hardcoded database file name
-		 (unless (memq 'ignore-repository options)
-		   (load-type-database "types.db"))
-		 (for-each (cut load-type-database <> #f) (collect-options 'types))
-		 (begin-time)
-		 (set! first-analysis #f)
-		 (set! db (analyze 'scrutiny node0))
-		 (print-db "analysis" '|0| db 0)
-		 (end-time "pre-analysis (scrutiny)")
-		 (begin-time)
-		 (debugging 'p "performing scrutiny")
-		 (scrutinize node0 db do-scrutinize do-specialize)
-		 (end-time "scrutiny")
-		 (when do-specialize
-		   (print-node "specialization" '|P| node0))
-		 (set! first-analysis #t) )
-
-	       (when do-lambda-lifting
-		 (begin-time)
-		 (unless do-scrutinize ; no need to do analysis if already done
-		   (set! first-analysis #f) ; (and not specialized)
-		   (set! db (analyze 'lift node0))
-		   (print-db "analysis" '|0| db 0)
-		   (end-time "pre-analysis (lambda-lift)"))
-		 (begin-time)
-		 (perform-lambda-lifting! node0 db)
-		 (end-time "lambda lifting")
-		 (print-node "lambda lifted" '|L| node0) 
-		 (set! first-analysis #t) )
-	       
-	       ;; collect requirements and load inline and types files
+	       ;; collect requirements and load inline files
 	       (let* ((req (concatenate (vector->list file-requirements)))
 		      (mreq (concatenate (map cdr req))))
 		 (when (debugging 'M "; requirements:")
@@ -561,8 +530,43 @@
 		      (lambda (ilf)
 			(dribble "Loading inline file ~a ..." ilf)
 			(load-inline-file ilf) )
-		      ifs))))
+		      ifs)))
 
+		 (when (or do-scrutinize do-specialize)
+		   ;;XXX hardcoded database file name
+		   (unless (memq 'ignore-repository options)
+		     (load-type-database "types.db"))
+		   (for-each (cut load-type-database <> #f) (collect-options 'types))
+		   (for-each
+		    (lambda (id)
+		      (load-type-database (make-pathname #f (symbol->string id) "types")))
+		    mreq)
+		   (begin-time)
+		   (set! first-analysis #f)
+		   (set! db (analyze 'scrutiny node0))
+		   (print-db "analysis" '|0| db 0)
+		   (end-time "pre-analysis (scrutiny)")
+		   (begin-time)
+		   (debugging 'p "performing scrutiny")
+		   (scrutinize node0 db do-scrutinize do-specialize)
+		   (end-time "scrutiny")
+		   (when do-specialize
+		     (print-node "specialization" '|P| node0))
+		   (set! first-analysis #t) ) )
+
+	       (when do-lambda-lifting
+		 (begin-time)
+		 (unless do-scrutinize ; no need to do analysis if already done
+		   (set! first-analysis #f) ; (and not specialized)
+		   (set! db (analyze 'lift node0))
+		   (print-db "analysis" '|0| db 0)
+		   (end-time "pre-analysis (lambda-lift)"))
+		 (begin-time)
+		 (perform-lambda-lifting! node0 db)
+		 (end-time "lambda lifting")
+		 (print-node "lambda lifted" '|L| node0) 
+		 (set! first-analysis #t) )
+	       
 	       ;; lambda-lifting
 	       (when do-lambda-lifting
 		 (begin-time)

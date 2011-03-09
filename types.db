@@ -158,11 +158,9 @@
 
 (+ (procedure + (#!rest number) number)
    (((or fixnum flonum number)) #(1))
-   ((fixnum fixnum) (##core#inline "C_u_fixnum_plus" #(1) #(2)))
    ((float float) (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) #(2))))
 
 (- (procedure - (number #!rest number) number)
-   ((fixnum fixnum) (##core#inline "C_i_fixnum_difference" #(1) #(2)))
    ((fixnum) (##core#inline "C_u_fixnum_negate" #(1)))
    ((float float) (##core#inline_allocate ("C_a_i_flonum_difference" 4) 
 					  #(1) #(2)))
@@ -170,14 +168,10 @@
 
 (* (procedure * (#!rest number) number)
    (((or fixnum float number)) #(1))
-   ((fixnum fixnum) (##core#inline "C_fixnum_times" #(1) #(2)))
-   ((float float) (##core#inline_allocate ("C_a_i_flonum_times" 4) 
-					  #(1) #(2))))
+   ((float float) (##core#inline_allocate ("C_a_i_flonum_times" 4) #(1) #(2))))
 
 (/ (procedure / (number #!rest number) number)
-   ((fixnum fixnum) (##core#inline "C_fixnum_divide" #(1) #(2)))
-   ((float float) (##core#inline_allocate ("C_a_i_flonum_quotient" 4) 
-					  #(1) #(2))))
+   ((float float) (##core#inline_allocate ("C_a_i_flonum_quotient" 4) #(1) #(2))))
 
 (= (procedure = (#!rest number) boolean)
    ((fixnum fixnum) (eq? #(1) #(2)))
