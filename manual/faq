@@ -416,6 +416,7 @@ and compiler settings:
 
 The following extended bindings are handled specially: 
 
+{{alist-cons}}
 {{bitwise-and}} {{bitwise-ior}} {{bitwise-xor}} {{bitwise-not}} 
 {{bit-set?}} {{add1}} {{sub1}}
 {{fx+}} {{fx-}} {{fx*}} {{fx/}}
@@ -472,6 +473,7 @@ The following extended bindings are handled specially:
 {{error}} {{call/cc}} {{any?}}
 {{substring=?}} {{substring-ci=?}} {{substring-index}} {{substring-index-ci}}
 {{printf}} {{sprintf}} {{fprintf}} {{format}} {{o}}
+{{xcons}}
 
 ==== What's the difference betweem "block" and "local" mode?
 

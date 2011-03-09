@@ -127,7 +127,7 @@
     list-ref abs char-ready? peek-char list->string string->list) )
 
 (define default-extended-bindings
-  '(bitwise-and 
+  '(bitwise-and alist-cons xcons
     bitwise-ior bitwise-xor bitwise-not add1 sub1 fx+ fx- fx* fx/
     fx+? fx-? fx*? fx/? fxmod o
     fx= fx> fx< fx>= fx<= fixnum? fxneg fxmax fxmin identity fp+ fp- fp* fp/ fpmin fpmax fpneg
@@ -1160,3 +1160,31 @@
 
 (rewrite 'get-keyword 7 2 "C_i_get_keyword" #f #t)
 (rewrite '##sys#get-keyword 7 2 "C_i_get_keyword" #f #t)
+
+(rewrite 
+ 'alist-cons 8
+ (lambda (db classargs cont callargs)
+   (and (= 3 (length callargs))
+	(make-node
+	 '##core#call '(#t)
+	 (list cont
+	       (make-node
+		'##core#inline_allocate
+		'("C_a_i_cons" 3) 
+		(list (make-node
+		       '##core#inline_allocate
+		       '("C_a_i_cons" 3)
+		       (list (first callargs) (second callargs)))
+		      (third callargs))))))))
+
+(rewrite 
+ 'xcons 8
+ (lambda (db classargs cont callargs)
+   (and (= 2 (length callargs))
+	(make-node
+	 '##core#call '(#t)
+	 (list cont
+	       (make-node
+		'##core#inline_allocate
+		'("C_a_i_cons" 3) 
+		(reverse callargs)))))))
