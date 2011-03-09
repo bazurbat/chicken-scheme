@@ -328,7 +328,7 @@
 (string->list (procedure string->list (string) list))
 (list->string (procedure list->string (list) string))
 (substring (procedure substring (string fixnum #!optional fixnum) string))
-(string-fill! (procedure string-fill! (string char) string))
+;(string-fill! (procedure string-fill! (string char) string)) - s.a.
 (string (procedure string (#!rest char) string))
 
 (vector? (procedure vector? (*) boolean)
@@ -1442,19 +1442,32 @@
 
 ;; srfi-13
 
-;;XXX...
 (check-substring-spec (procedure check-substring-spec (* string fixnum fixnum) undefined))
 (kmp-step (procedure kmp-step (string vector char fixnum (procedure (char char) *) fixnum) fixnum))
 (make-kmp-restart-vector (procedure make-kmp-restart-vector (string #!optional (procedure (* *) *) fixnum fixnum) vector))
-(string->list (procedure string->list (string) list))
 (string-any (procedure string-any (* string #!optional fixnum fixnum) boolean))
-(string-append/shared (procedure string-append/shared (#!rest string) string))
-(string-ci< (procedure string-ci< (string string #!optional fixnum fixnum) boolean))
-(string-ci<= (procedure string-ci<= (string string #!optional fixnum fixnum) boolean))
-(string-ci<> (procedure string-ci<> (string string #!optional fixnum fixnum) boolean))
-(string-ci= (procedure string-ci= (string string #!optional fixnum fixnum) boolean))
-(string-ci> (procedure string-ci> (string string #!optional fixnum fixnum) boolean))
-(string-ci>= (procedure string-ci>= (string string #!optional fixnum fixnum) boolean))
+
+(string-append/shared (procedure string-append/shared (#!rest string) string)
+		      ((string string) (##sys#string-append #(1) #(2))))
+
+(string-ci< (procedure string-ci< (string string #!optional fixnum fixnum) boolean)
+	    ((string string) (string-ci<? #(1) #(2))))
+
+(string-ci<= (procedure string-ci<= (string string #!optional fixnum fixnum) boolean)
+	     ((string string) (string-ci<=? #(1) #(2))))
+
+(string-ci<> (procedure string-ci<> (string string #!optional fixnum fixnum) boolean)
+	     ((string string) (not (##core#inline "C_i_string_ci_equal_p" #(1) #(2)))))
+
+(string-ci= (procedure string-ci= (string string #!optional fixnum fixnum) boolean)
+	    ((string string) (##core#inline "C_i_string_ci_equal_p" #(1) #(2))))
+
+(string-ci> (procedure string-ci> (string string #!optional fixnum fixnum) boolean)
+	    ((string string) (string-ci>? #(1) #(2))))
+
+(string-ci>= (procedure string-ci>= (string string #!optional fixnum fixnum) boolean)
+	     ((string string) (string-ci>=? #(1) #(2))))
+
 (string-compare (procedure string-compare (string string (procedure (fixnum) *) (procedure (fixnum) *) (procedure (fixnum) *) #!optional fixnum fixnum fixnum fixnum) *))
 (string-compare-ci (procedure string-compare (string string (procedure (fixnum) *) (procedure (fixnum) *) (procedure (fixnum) *) #!optional fixnum fixnum fixnum fixnum) *))
 (string-concatenate (procedure string-concatenate (list) string))
@@ -1472,7 +1485,7 @@
 (string-drop (procedure string-drop (string fixnum) string))
 (string-drop-right (procedure string-drop-right (string fixnum) string))
 (string-every (procedure string-every (* string #!optional fixnum fixnum) boolean))
-(string-fill! (procedure string-fill! (string char) string))
+(string-fill! (procedure string-fill! (string char #!optional fixnum fixnum) string))
 (string-filter (procedure string-filter (* string #!optional fixnum fixnum) string))
 (string-fold (procedure string-fold ((procedure (char *) *) * string #!optional fixnum fixnum) *))
 (string-fold-right (procedure string-fold-right ((procedure (char *) *) * string #!optional fixnum fixnum) *))
@@ -1484,7 +1497,10 @@
 (string-kmp-partial-search (procedure string-kmp-partial-search (string vector string fixnum #!optional (procedure (char char) *) fixnum fixnum fixnum) fixnum))
 (string-map (procedure string-map ((procedure (char) char) string #!optional fixnum fixnum) string))
 (string-map! (procedure string-map! ((procedure (char) char) string #!optional fixnum fixnum) string))
-(string-null? (procedure string-null? (string) boolean))
+
+(string-null? (procedure string-null? (string) boolean)
+	      ((string) (##core#inline "C_zero_length_p" #(1))))
+
 (string-pad (procedure string-pad (string fixnum #!optional char fixnum fixnum) string))
 (string-pad-right (procedure string-pad-right (string fixnum #!optional char fixnum fixnum) string))
 (string-parse-final-start+end (procedure string-parse-final-start+end (procedure string #!rest) . *))
@@ -1516,19 +1532,36 @@
 (string-upcase (procedure string-upcase (string #!optional fixnum fixnum) string))
 (string-upcase! (procedure string-upcase! (string #!optional fixnum fixnum) string))
 (string-xcopy! (procedure string-xcopy! (string string string fixnum #!optional fixnum fixnum fixnum) string))
-(string< (procedure string< (string string #!optional fixnum fixnum fixnum fixnum) boolean))
-(string<= (procedure string<= (string string #!optional fixnum fixnum fixnum fixnum) boolean))
-(string<> (procedure string<> (string string #!optional fixnum fixnum fixnum fixnum) boolean))
-(string= (procedure string= (string string #!optional fixnum fixnum fixnum fixnum) boolean))
-(string> (procedure string> (string string #!optional fixnum fixnum fixnum fixnum) boolean))
-(string>= (procedure string>= (string string #!optional fixnum fixnum fixnum fixnum) boolean))
+
+(string< (procedure string< (string string #!optional fixnum fixnum fixnum fixnum) boolean)
+	 ((string string) (string<? #(1) #(2))))
+
+(string<= (procedure string<= (string string #!optional fixnum fixnum fixnum fixnum) boolean)
+	  ((string string) (string<=? #(1) #(2))))
+
+(string<> (procedure string<> (string string #!optional fixnum fixnum fixnum fixnum) boolean)
+	  ((string string) (not (##core#inline "C_i_string_equal_p" #(1) #(2)))))
+
+(string= (procedure string= (string string #!optional fixnum fixnum fixnum fixnum) boolean)
+	 ((string string) (##core#inline "C_i_string_equal_p" #(1) #(2))))
+
+(string> (procedure string> (string string #!optional fixnum fixnum fixnum fixnum) boolean)
+	 ((string string) (string>? #(1) #(2))))
+
+(string>= (procedure string>= (string string #!optional fixnum fixnum fixnum fixnum) boolean)
+	  ((string string) (string>=? #(1) #(2))))
+
 (substring-spec-ok? (procedure substring-spec-ok? (string fixnum fixnum) boolean))
 (substring/shared (procedure substring/shared (string fixnum #!optional fixnum) string))
 (xsubstring (procedure xsubstring (string fixnum #!optional fixnum fixnum fixnum) string))
 
 ;; srfi-14
 
-(->char-set (procedure ->char-set (*) (struct char-set)))
+(->char-set (procedure ->char-set (*) (struct char-set))
+	    (((struct char-set)) #(1))
+	    ((string) (string->char-set #(1)))
+	    ((char) (char-set #(1))))
+
 (char-set (procedure char-set (#!rest char) (struct char-set)))
 (char-set->list (procedure char-set->list ((struct char-set)) list))
 (char-set->string (procedure char-set->string ((struct char-set)) string))
@@ -1584,7 +1617,11 @@
 (char-set:whitespace (struct char-set))
 (char-set<= (procedure char-set<= (#!rest (struct char-set)) boolean))
 (char-set= (procedure char-set= (#!rest (struct char-set)) boolean))
-(char-set? (procedure char-set? (*) boolean))
+
+(char-set? (procedure char-set? (*) boolean)
+	   (((struct char-set)) (let ((#:tmp #(1))) #t))
+	   (((not (struct char-set))) (let ((#:tmp #(1))) #f)))
+
 (end-of-char-set? (procedure end-of-char-set? (fixnum) boolean))
 (list->char-set (procedure list->char-set (list #!optional (struct char-set)) (struct char-set)))
 (list->char-set! (procedure list->char-set! (list #!optional (struct char-set)) (struct char-set)))
@@ -1601,8 +1638,13 @@
 (condition-variable-signal! (procedure condition-variable-signal! ((struct condition-variable)) undefined))
 (condition-variable-specific (procedure condition-variable-specific ((struct condition-variable)) *))
 (condition-variable-specific-set! (procedure condition-variable-specific-set! ((struct condition-variable) *) undefined))
-(condition-variable? (procedure condition-variable? (*) boolean))
-(current-thread (procedure current-thread () (struct thread)))
+
+(condition-variable? (procedure condition-variable? (*) boolean)
+		     (((struct condition-variable)) (let ((#:tmp #(1))) #t))
+		     (((not (struct condition-variable))) (let ((#:tmp #(1))) #f)))
+
+(current-thread (procedure current-thread () (struct thread))) ;XXX
+
 (current-time (procedure current-time () (struct time)))
 (join-timeout-exception? (procedure join-timeout-exception? (*) boolean))
 (make-condition-variable (procedure make-condition-variable (#!optional *) (struct condition-variable)))
@@ -1610,34 +1652,66 @@
 (make-thread (procedure make-thread ((procedure () . *) #!optional *) (struct thread)))
 (milliseconds->time deprecated)
 (mutex-lock! (procedure mutex-lock! ((struct mutex) #!optional * (struct thread)) boolean))
-(mutex-name (procedure mutex-name ((struct mutex)) *))
-(mutex-specific (procedure mutex-specific ((struct mutex)) *))
-(mutex-specific-set! (procedure mutex-specific-set! ((struct mutex) *) undefined))
+
+(mutex-name (procedure mutex-name ((struct mutex)) *)
+	    (((struct mutex)) (##sys#slot #(1) 1)))
+
+(mutex-specific (procedure mutex-specific ((struct mutex)) *)
+		(((struct mutex)) (##sys#slot #(1) 6)))
+
+(mutex-specific-set! (procedure mutex-specific-set! ((struct mutex) *) undefined)
+		     (((struct mutex) *) (##sys#setslot #(1) 6 #(2))))
+
 (mutex-state (procedure mutex-state ((struct mutex)) symbol))
 (mutex-unlock! (procedure mutex-unlock! ((struct mutex) #!optional (struct condition-variable) *) undefined))
-(mutex? (procedure mutex? (*) boolean))
+
+(mutex? (procedure mutex? (*) boolean)
+	(((struct mutex)) (let ((#:tmp #(1))) #t))
+	(((not (struct mutex))) (let ((#:tmp #(1))) #f)))
+
 (raise (procedure raise (*) noreturn))
 (seconds->time (procedure seconds->time (number) (struct time)))
 (terminated-thread-exception? (procedure terminated-thread-exception? (*) boolean))
 (thread-join! (procedure thread-join! ((struct thread) #!optional * *) *))
-(thread-name (procedure thread-name ((struct thread)) *))
-(thread-quantum (procedure thread-quantum ((struct thread)) fixnum))
+
+(thread-name (procedure thread-name ((struct thread)) *)
+	     (((struct thread)) (##sys#slot #(1) 6)))
+
+(thread-quantum (procedure thread-quantum ((struct thread)) fixnum)
+		(((struct thread)) (##sys#slot #(1) 9)))
+
 (thread-quantum-set! (procedure thread-quantum-set! ((struct thread) fixnum) undefined))
 (thread-resume! (procedure thread-resume! ((struct thread)) undefined))
 (thread-signal! (procedure thread-signal! ((struct thread) *) undefined))
 (thread-sleep! (procedure thread-sleep! (*) undefined))
-(thread-specific (procedure thread-specific ((struct thread)) *))
-(thread-specific-set! (procedure thread-specific-set! ((struct thread) *) undefined))
+
+(thread-specific (procedure thread-specific ((struct thread)) *)
+		 (((struct thread)) (##sys#slot #(1) 10)))
+
+(thread-specific-set! (procedure thread-specific-set! ((struct thread) *) undefined)
+		      (((struct thread) *) (##sys#setslot #(1) 10 #(2))))
+
 (thread-start! (procedure thread-start! ((or (struct thread) (procedure () . *))) (struct thread)))
-(thread-state (procedure thread-state ((struct thread)) symbol))
+
+(thread-state (procedure thread-state ((struct thread)) symbol)
+	      (((struct thread)) (##sys#slot #(1) 3)))
+
 (thread-suspend! (procedure thread-suspend! ((struct thread)) undefined))
 (thread-terminate! (procedure thread-terminate! ((struct thread)) undefined))
 (thread-wait-for-i/o! (procedure thread-wait-for-i/o! (fixnum #!optional symbol) undefined))
 (thread-yield! (procedure thread-yield! () undefined))
-(thread? (procedure thread? (*) boolean))
+
+(thread? (procedure thread? (*) boolean)
+	 (((struct thread)) (let ((#:tmp #(1))) #t))
+	 (((not (struct thread))) (let ((#:tmp #(1))) #f)))
+
 (time->milliseconds deprecated)
 (time->seconds (procedure time->seconds ((struct time)) number))
-(time? (procedure time? (*) boolean))
+
+(time? (procedure time? (*) boolean)
+       (((struct time)) (let ((#:tmp #(1))) #t))
+       (((not (struct time))) (let ((#:tmp #(1))) #f)))
+
 (uncaught-exception-reason (procedure uncaught-exception-reason ((struct condition)) *))
 (uncaught-exception? (procedure uncaught-exception? (*) boolean))
 
@@ -1663,18 +1737,32 @@
 (f32vector->blob (procedure f32vector->blob ((struct f32vector)) blob))
 (f32vector->blob/shared (procedure f32vector->blob/shared ((struct f232vector)) blob))
 (f32vector->list (procedure f32vector->list ((struct f32vector)) list))
-(f32vector-length (procedure f32vector-length ((struct f32vector)) fixnum))
+
+(f32vector-length (procedure f32vector-length ((struct f32vector)) fixnum)
+		  (((struct f32vector)) (##core#inline "C_u_i_32vector_length" #(1))))
+
 (f32vector-ref (procedure f32vector-ref ((struct f32vector) fixnum) float))
 (f32vector-set! (procedure f32vector-set! ((struct f32vector) fixnum number) undefined))
-(f32vector? (procedure f32vector? (*) boolean))
+
+(f32vector? (procedure f32vector? (*) boolean)
+	    (((struct f32vector)) (let ((#:tmp #(1))) #t))
+	    (((not (struct f32vector))) (let ((#:tmp #(1))) #f)))
+
 (f64vector (procedure f64vector (#!rest number) (struct f64vector)))
 (f64vector->blob (procedure f64vector->blob ((struct f32vector)) blob))
 (f64vector->blob/shared (procedure f64vector->blob/shared ((struct f64vector)) blob))
 (f64vector->list (procedure f64vector->list ((struct f64vector)) blob))
-(f64vector-length (procedure f64vector-length ((struct f64vector)) fixnum))
+
+(f64vector-length (procedure f64vector-length ((struct f64vector)) fixnum)
+		  (((struct f32vector)) (##core#inline "C_u_i_64vector_length" #(1))))
+
 (f64vector-ref (procedure f64vector-ref ((struct f64vector) fixnum) float))
 (f64vector-set! (procedure f64vector-set! ((struct f64vector) fixnum number) undefined))
-(f64vector? (procedure f64vector? (*) boolean))
+
+(f64vector? (procedure f64vector? (*) boolean)
+	    (((struct f64vector)) (let ((#:tmp #(1))) #t))
+	    (((not (struct f64vector))) (let ((#:tmp #(1))) #f)))
+
 (list->f32vector (procedure list->f32vector (list) (struct f32vector)))
 (list->f64vector (procedure list->f64vector (list) (struct f64vector)))
 (list->s16vector (procedure list->s16vector (list) (struct s16vector)))
@@ -1698,26 +1786,47 @@
 (s16vector->blob (procedure s16vector->blob ((struct s16vector)) blob))
 (s16vector->blob/shared (procedure s16vector->blob/shared ((struct s16vector)) blob))
 (s16vector->list (procedure s16vector->list ((struct s16vector)) list))
-(s16vector-length (procedure s16vector-length ((struct s16vector)) fixnum))
+
+(s16vector-length (procedure s16vector-length ((struct s16vector)) fixnum)
+		  (((struct s16vector)) (##core#inline "C_u_i_16vector_length" #(1))))
+
 (s16vector-ref (procedure s16vector-ref ((struct s16vector) fixnum) fixnum))
 (s16vector-set! (procedure s16vector-set! ((struct s16vewctor) fixnum fixnum) undefined))
-(s16vector? (procedure s16vector? (*) boolean))
+
+(s16vector? (procedure s16vector? (*) boolean)
+	    (((struct s16vector)) (let ((#:tmp #(1))) #t))
+	    (((not (struct s16vector))) (let ((#:tmp #(1))) #f)))
+
 (s32vector (procedure s32vector (#!rest number) (struct s32vector)))
 (s32vector->blob (procedure s32vector->blob ((structs 32vector)) blob))
 (s32vector->blob/shared (procedure s32vector->blob/shared ((struct s32vector)) blob))
 (s32vector->list (procedure s32vector->list ((struct s32vector)) list))
+
 (s32vector-length (procedure s32vector-length ((struct s32vector)) fixnum))
+		  (((struct s32vector)) (##core#inline "C_u_i_32vector_length" #(1))))
+
 (s32vector-ref (procedure s32vector-ref ((struct s32vector) fixnum) number))
 (s32vector-set! (procedure s32vector-set! ((struct s32vector) fixnum number) undefined))
-(s32vector? (procedure s32vector? (*) boolean))
+
+(s32vector? (procedure s32vector? (*) boolean)
+	    (((struct s32vector)) (let ((#:tmp #(1))) #t))
+	    (((not (struct s32vector))) (let ((#:tmp #(1))) #f)))
+
 (s8vector (procedure s8vector (#!rest fixnum) (struct s8vector)))
 (s8vector->blob (procedure s8vector->blob ((struct s8vector)) blob))
 (s8vector->blob/shared (procedure s8vector->blob/shared ((struct s8vector)) blob))
 (s8vector->list (procedure s8vector->list ((struct s8vector)) list))
-(s8vector-length (procedure s8vector-length ((struct s8vector)) fixnum))
+
+(s8vector-length (procedure s8vector-length ((struct s8vector)) fixnum)
+		 (((struct s8vector)) (##core#inline "C_u_i_8vector_length" #(1))))
+
 (s8vector-ref (procedure s8vector-ref ((struct s18vector) fixnum) fixnum))
 (s8vector-set! (procedure s8vector-set! ((struct s8vector) fixnum fixnum) undefined))
-(s8vector? (procedure s8vector? (*) boolean))
+
+(s8vector? (procedure s8vector? (*) boolean)
+	   (((struct s8vector)) (let ((#:tmp #(1))) #t))
+	   (((not (struct s8vector))) (let ((#:tmp #(1))) #f)))
+
 (subf32vector (procedure subf32vector ((struct f32vector) fixnum fixnum) (struct f32vector)))
 (subf64vector (procedure subf64vector ((struct f64vector) fixnum fixnum) (struct f64vector)))
 (subs16vector (procedure subs16vector ((struct s16vector) fixnum fixnum) (struct s16vector)))
@@ -1730,26 +1839,47 @@
 (u16vector->blob (procedure u16vector->blob ((struct u16vector)) blob))
 (u16vector->blob/shared (procedure u16vector->blob/shared ((struct u16vector)) blob))
 (u16vector->list (procedure u16vector->list ((struct u16vector)) list))
-(u16vector-length (procedure u16vector-length ((struct u16vector)) fixnum))
+
+(u16vector-length (procedure u16vector-length ((struct u16vector)) fixnum)
+		  (((struct u16vector)) (##core#inline "C_u_i_16vector_length" #(1))))
+
 (u16vector-ref (procedure u16vector-ref ((struct u16vector) fixnum) fixnum))
 (u16vector-set! (procedure u16vector-set! ((struct u16vector) fixnum fixnum) undefined))
-(u16vector? (procedure u16vector? (*) boolean))
+
+(u16vector? (procedure u16vector? (*) boolean)
+	    (((struct u16vector)) (let ((#:tmp #(1))) #t))
+	    (((not (struct u16vector))) (let ((#:tmp #(1))) #f)))
+
 (u32vector (procedure u32vector (#!rest number) (struct u32vector)))
 (u32vector->blob (procedure u32vector->blob ((struct u32vector)) blob))
 (u32vector->blob/shared (procedure u32vector->blob/shared ((struct u32vector)) blob))
 (u32vector->list (procedure u32vector->list ((struct u32vector)) list))
-(u32vector-length (procedure u32vector-length ((struct u32vector)) fixnum))
+
+(u32vector-length (procedure u32vector-length ((struct u32vector)) fixnum)
+		  (((struct u32vector)) (##core#inline "C_u_i_32vector_length" #(1))))
+
 (u32vector-ref (procedure u32vector-ref ((struct u32vector) fixnum) number))
 (u32vector-set! (procedure u32vector-set! ((struct u32vector) fixnum number) undefined))
-(u32vector? (procedure u32vector? (*) boolean))
+
+(u32vector? (procedure u32vector? (*) boolean)
+	    (((struct u32vector)) (let ((#:tmp #(1))) #t))
+	    (((not (struct u32vector))) (let ((#:tmp #(1))) #f)))
+
 (u8vector (procedure u8vector (#!rest fixnum) (struct u8vector)))
 (u8vector->blob (procedure u8vector->blob ((struct u8vector)) blob))
 (u8vector->blob/shared (procedure u8vector->blob/shared ((struct u8vector)) blob))
 (u8vector->list (procedure u8vector->list ((struct u8vector)) list))
-(u8vector-length (procedure u8vector-length ((struct u8vector)) fixnum))
+
+(u8vector-length (procedure u8vector-length ((struct u8vector)) fixnum)
+		 (((struct u8vector)) (##core#inline "C_u_i_8vector_length" #(1))))
+
 (u8vector-ref (procedure u8vector-ref ((struct u8vector) fixnum) fixnum))
 (u8vector-set! (procedure u8vector-set! ((struct u8vector) fixnum fixnum) undefined))
-(u8vector? (procedure u8vector? (*) boolean))
+
+(u8vector? (procedure u8vector? (*) boolean)
+	   (((struct fu8vector)) (let ((#:tmp #(1))) #t))
+	   (((not (struct u8vector))) (let ((#:tmp #(1))) #f)))
+
 (write-u8vector (procedure write-u8vector ((struct u8vector) #!optional port fixnum fixnum) undefined))
 
 ;; srfi-69
@@ -1768,28 +1898,53 @@
 (hash-table-exists? (procedure hash-table-exists? ((struct hash-table) *) boolean))
 (hash-table-fold (procedure hash-table-fold ((struct hash-table) (procedure (* * *) *) *) *))
 (hash-table-for-each (procedure hash-table-for-each ((struct hash-table) (procedure (* *) . *)) undefined))
-(hash-table-has-initial? (procedure hash-table-has-initial? ((struct hash-table)) boolean))
-(hash-table-hash-function (procedure hash-table-hash-function ((struct hash-table)) (procedure (* fixnum) fixnum)))
+
+(hash-table-has-initial? (procedure hash-table-has-initial? ((struct hash-table)) boolean)
+			 (((struct hash-table)) (##sys#slot #(1) 9))) ;XXX might return other than #t
+
+(hash-table-hash-function (procedure hash-table-hash-function ((struct hash-table)) (procedure (* fixnum) fixnum))
+			  (((struct hash-table)) (##sys#slot #(1) 4)))
+
 (hash-table-initial (procedure hash-table-initial ((struct hash-table)) *))
 (hash-table-keys (procedure hash-table-keys ((struct hash-table)) list))
 (hash-table-map (procedure hash-table-map ((struct hash-table) (procedure (* *) *)) list))
-(hash-table-max-load (procedure hash-table-max-load ((struct hash-table)) fixnum))
+
+(hash-table-max-load (procedure hash-table-max-load ((struct hash-table)) fixnum)
+		     (((struct hash-table)) (##sys#slot #(1) 6)))
+
 (hash-table-merge (procedure hash-table-merge ((struct hash-table) (struct hash-table)) (struct hash-table)))
 (hash-table-merge! (procedure hash-table-merge! ((struct hash-table) (struct hash-table)) undefined))
-(hash-table-min-load (procedure hash-table-min-load ((struct hash-table)) fixnum))
+
+(hash-table-min-load (procedure hash-table-min-load ((struct hash-table)) fixnum)
+		     (((struct hash-table)) (##sys#slot #(1) 5)))
+
 (hash-table-ref (procedure hash-table-ref ((struct hash-table) * #!optional (procedure () *)) *))
 (hash-table-ref/default (procedure hash-table-ref/default ((struct hash-table) * *) *))
 (hash-table-remove! (procedure hash-table-remove! ((struct hash-table) (procedure (* *) *)) undefined))
 (hash-table-set! (procedure hash-table-set! ((struct hash-table) * *) undefined))
-(hash-table-size (procedure hash-table-size ((struct hash-table)) fixnum))
+
+(hash-table-size (procedure hash-table-size ((struct hash-table)) fixnum)
+		 (((struct hash-table)) (##sys#slot #(1) 2)))
+
 (hash-table-update! (procedure hash-table-update! ((struct hash-table) * (procedure (*) *) #!optional (procedure () *)) *))
 (hash-table-update!/default (procedure hash-table-update!/default ((struct hash-table) * (procedure (*) *) *) *))
 (hash-table-values (procedure hash-table-values ((struct hash-table)) list))
 (hash-table-walk (procedure hash-table-walk ((struct hash-table) (procedure (* *) . *)) undefined))
-(hash-table-weak-keys (procedure hash-table-weak-keys ((struct hash-table)) boolean))
-(hash-table-weak-values (procedure hash-table-weak-values ((struct hash-table)) boolean))
-(hash-table? (procedure hash-table? (*) boolean))
+
+(hash-table-weak-keys (procedure hash-table-weak-keys ((struct hash-table)) boolean)
+		      (((struct hash-table)) (##sys#slot #(1) 7)))
+
+(hash-table-weak-values (procedure hash-table-weak-values ((struct hash-table)) boolean)
+			(((struct hash-table)) (##sys#slot #(1) 8)))
+
+(hash-table? (procedure hash-table? (*) boolean)
+	     (((struct hash-table)) (let ((#:tmp #(1))) #t))
+	     (((not (struct hash-table))) (let ((#:tmp #(1))) #f)))
+
+;;XXX if we want to hardcode hash-default-bound here, we could rewrite the 1-arg case...
+;     (applies to all hash-functions)
 (keyword-hash (procedure keyword-hash (* #!optional fixnum) fixnum))
+
 (make-hash-table (procedure make-hash-table (#!rest) (struct hash-table)))
 (number-hash (procedure number-hash (fixnum #!optional fixnum) fixnum))
 (object-uid-hash (procedure object-uid-hash (* #!optional fixnum) fixnum))
@@ -1810,9 +1965,16 @@
 (tcp-connect (procedure tcp-connect (string #!optional fixnum) port port))
 (tcp-connect-timeout (procedure tcp-connect-timeout (#!optional number) number))
 (tcp-listen (procedure tcp-listen (fixnum #!optional fixnum *) (struct tcp-listener)))
-(tcp-listener-fileno (procedure tcp-listener-fileno ((struct tcp-listener)) fixnum))
+
+(tcp-listener-fileno (procedure tcp-listener-fileno ((struct tcp-listener)) fixnum)
+		     (((struct tcp-listener)) (##sys#slot #(1) 1)))
+
 (tcp-listener-port (procedure tcp-listener-port ((struct tcp-listener)) fixnum))
-(tcp-listener? (procedure tcp-listener? (*) boolean))
+
+(tcp-listener? (procedure tcp-listener? (*) boolean)
+	       (((struct tcp-listener)) (let ((#:tmp #(1))) #t))
+	       (((not (struct tcp-listener))) (let ((#:tmp #(1))) #f)))
+
 (tcp-port-numbers (procedure tcp-port-numbers (port) fixnum fixnum))
 (tcp-read-timeout (procedure tcp-read-timeout (#!optional number) number))
 (tcp-write-timeout (procedure tcp-write-timeout (#!optional number) number))
