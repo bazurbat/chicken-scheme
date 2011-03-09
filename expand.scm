@@ -123,6 +123,17 @@
   (append (map (lambda (x y) (cons x y)) vars aliases) se)) ; inline cons
 
 
+;;; resolve symbol to global name
+
+(define (##sys#globalize sym se)
+  (if (symbol? sym)
+      (let loop ((se se))			; ignores syntax bindings
+	(cond ((null? se) (##sys#alias-global-hook sym #f #f)) ;XXX could hint at decl (3rd arg)
+	      ((and (eq? sym (caar se)) (symbol? (cdar se))) (cdar se))
+	      (else (loop (cdr se)))))
+      sym))
+
+
 ;;; Macro handling
 
 (define ##sys#macro-environment (make-parameter '()))

@@ -425,10 +425,7 @@
 (arithmetic-shift (procedure arithmetic-shift (number number) number))
 
 (bit-set? (procedure bit-set? (number fixnum) boolean)
-	  ((fixnum fixnum) 
-	   (not (eq? 0 (##core#inline 
-			"C_fixnum_and" #(1)
-			(##core#inline "C_fixnum_shift_left" 1 #(2)))))))
+	  ((fixnum fixnum) (##core#inline "C_u_i_bit_setp" #(1) #(2))))
 
 (bitwise-and (procedure bitwise-and (#!rest number) number)
 	     ((fixnum fixnum) (##core#inline "C_fixnum_and" #(1) #(2))))
@@ -1324,7 +1321,6 @@
 
 ;; srfi-1
 
-;;XXX...
 (alist-cons (procedure alist-cons (* * *) list))
 (alist-copy (procedure alist-copy (list) list))
 (alist-delete (procedure alist-delete (* list #!optional (procedure (* *) *)) list))
@@ -1339,7 +1335,10 @@
 (break! (procedure break! ((procedure (*) *) list) list list))
 (car+cdr (procedure car+cdr (pair) * *))
 (circular-list (procedure circular-list (#!rest) list))
-(circular-list? (procedure circular-list? (*) boolean))
+
+(circular-list? (procedure circular-list? (*) boolean)
+		((null) (let ((#:tmp #(1))) #f)))
+
 (concatenate (procedure concatenate (list) list))
 (concatenate! (procedure concatenate! (list) list))
 (cons* (procedure cons* (* #!rest) pair))
@@ -1361,7 +1360,10 @@
 (filter-map (procedure filter-map ((procedure (* #!rest) *) list #!rest list) list))
 (find (procedure find ((procedure (*) *) list) *))
 (find-tail (procedure find-tail ((procedure (*) *) list) *))
-(first (procedure first (pair) *))
+
+(first (procedure first (pair) *)
+       ((pair) (##core#inline "C_u_i_car" #(1))))
+
 (fold (procedure fold ((procedure (* #!rest) *) * #!rest list) *))
 (fold-right (procedure fold-right ((procedure (* #!rest) *) * #!rest list) *))
 (fourth (procedure fourth (pair) *))
@@ -1390,14 +1392,25 @@
 (map! (procedure map! ((procedure (*) *) list #!rest list) list))
 (map-in-order (procedure map-in-order ((procedure (*) *) list #!rest list) list))
 (ninth (procedure ninth (pair) *))
-(not-pair? (procedure not-pair? (*) boolean))
-(null-list? (procedure null-list? (list) boolean))
+
+(not-pair? (procedure not-pair? (*) boolean)
+	   ((pair) (let ((#:tmp #(1))) #f))
+	   (((not pair)) (let ((#:tmp #(1))) #t)))
+
+(null-list? (procedure null-list? (list) boolean)
+	    ((pair) (let ((#:tmp #(1))) #f))
+	    ((list) (let ((#:tmp #(1))) #f))
+	    ((null) (let ((#:tmp #(1))) #t)))
+
 (pair-fold (procedure pair-fold (procedure * list #!rest list) *))
 (pair-fold-right (procedure pair-fold-right (procedure * list #!rest list) *))
 (pair-for-each (procedure pair-for-each ((procedure (#!rest) . *) list #!rest list) undefined))
 (partition (procedure partition ((procedure (*) *) list) list list))
 (partition! (procedure partition! ((procedure (*) *) list) list list))
-(proper-list? (procedure proper-list? (*) boolean))
+
+(proper-list? (procedure proper-list? (*) boolean)
+	      ((null) (let ((#:tmp #(1))) #t)))
+
 (reduce (procedure reduce ((procedure (* *) *) * list) *))
 (reduce-right (procedure reduce-right ((procedure (* *) *) * list) *))
 (remove (procedure remove ((procedure (*) *) list) list))
@@ -1424,11 +1437,12 @@
 (unzip3 (procedure unzip3 (list) list list list))
 (unzip4 (procedure unzip4 (list) list list list list))
 (unzip5 (procedure unzip5 (list) list list list list list))
-(xcons (procedure xcons (* *) pair))
+(xcons (procedure xcons (* *) pair)
 (zip (procedure zip (list #!rest list) list))
 
 ;; srfi-13
 
+;;XXX...
 (check-substring-spec (procedure check-substring-spec (* string fixnum fixnum) undefined))
 (kmp-step (procedure kmp-step (string vector char fixnum (procedure (char char) *) fixnum) fixnum))
 (make-kmp-restart-vector (procedure make-kmp-restart-vector (string #!optional (procedure (* *) *) fixnum fixnum) vector))

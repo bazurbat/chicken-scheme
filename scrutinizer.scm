@@ -743,3 +743,28 @@
 	    ((eq? 'quote (car x)) x)	; to handle numeric constants
 	    (else (cons (subst (car x)) (subst (cdr x))))))
     (copy-node! (build-node-graph (subst template)) node)))
+
+(define (validate-type type name)
+  (define (validate t)
+    (cond ((memq t '(* string symbol char number boolean list pair
+		       procedure vector null eof undefined port blob
+		       pointer locative fixnum float pointer-vector deprecated)))
+	  ((not (pair? t)) #f)
+	  ((eq? 'or (car t)) 
+	   (and (list t)
+		(every validate (cdr t))))
+	  ((eq? 'struct (car t))
+	   (and (= 2 (length t)) (symbol? (cadr t))))
+	  ((eq? 'procedure (car t))
+	   (and (pair? (cdr t))
+		(let ((t (if (symbol? (cadr t)) (cddr t) (cdr t))))
+		  (and (pair? t)
+		       (list? (car t))
+		       (every
+			validate
+			(remove (cut memq <> '(#!optional #!rest values)) (car t)))
+		       (or (eq? '* (cddr t))
+			   (and (list? (cddr t))
+				(every validate (cddr t))))))))
+	  (else #f)))
+  (validate type))

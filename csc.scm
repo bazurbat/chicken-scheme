@@ -145,7 +145,7 @@
   '(-debug -output-file -heap-size -nursery -stack-size -compiler -unit -uses -keyword-style
     -optimize-level -include-path -database-size -extend -prelude -postlude -prologue -epilogue 
     -inline-limit -profile-name
-    -emit-inline-file -types
+    -emit-inline-file -types -emit-type-file
     -feature -debug-level -heap-growth -heap-shrinkage -heap-initial-size -consult-inline-file
     -emit-import-library
     -no-feature))
@@ -374,6 +374,7 @@ Usage: #{csc} FILENAME | OPTION ...
     -n -emit-inline-file FILENAME  generate file with globally inlinable
                                     procedures (implies -inline -local)
     -consult-inline-file FILENAME  explicitly load inline file
+    -emit-type-file FILENAME       write type-declaration information into file
     -no-argc-checks                disable argument count checks
     -no-bound-checks               disable bound variable checks
     -no-procedure-checks           disable procedure call checks

@@ -1110,6 +1110,25 @@
      (##core#let-compiler-syntax (binding ...) body ...)))))
 
 
+;;; type-declaration syntax
+
+(##sys#extend-macro-environment		;XXX not documented yet
+ ': '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax ': x '(_ symbol _))
+    (let ((name (##sys#globalize (cadr x)))
+	  (type (##sys#strip-syntax (caddr x))))
+      (validate-type type name)
+      (cond ((memq #:csi ##sys#features) '(##core#undefined))
+	    (else
+	     (when (and (pair? type) 
+			(eq? 'procedure (car type))
+			(not (symbol? (cadr type))))
+	       (set! type `(procedure ,(##sys#strip-syntax name) ,@(cdr type))))
+	     `(##core#declare (type (,name ,type)))))))))
+
+
 (##sys#macro-subset me0 ##sys#default-macro-environment)))
 
 ;; register features

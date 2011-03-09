@@ -108,6 +108,7 @@
  emit-profile
  emit-syntax-trace-info
  emit-trace-info
+ emit-type-file
  enable-inline-files
  encode-literal
  eq-inline-operator
@@ -165,6 +166,7 @@
  get-line
  get-line-2
  get-list
+ globalize
  hide-variable
  immediate?
  immutable-constants
@@ -175,7 +177,6 @@
  inline-lambda-bindings
  inline-locally
  inline-max-size
- inline-output-file
  inline-substitutions-enabled
  inline-table
  inline-table-used
@@ -199,6 +200,7 @@
  make-variable-list
  mark-variable
  match-node
+ match-specialization
  membership-test-operators
  membership-unfold-limit
  no-argc-checks
@@ -262,6 +264,7 @@
  source-filename
  source-info->string
  source-info->line
+ specialize-node!
  standalone-executable
  string->c-identifier
  string->expr
@@ -287,6 +290,7 @@
  update-line-number-database
  update-line-number-database!
  used-units
+ validate-type
  valid-c-identifier?
  valid-compiler-options
  valid-compiler-options-with-argument
