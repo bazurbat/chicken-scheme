@@ -24,6 +24,16 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
+;;; Notes:
+;
+; - numeric types are disjoint, "fixnum" or "float" will not match "number" in the
+;   rewrite rules
+; - for a description of the type-specifier syntax, see "scrutinizer.scm" (top of file)
+; - in templates, "#(INDEX)" refers to the INDEXth argument (starting from 1)
+; - in templates "(let ((#:tmp X)) ...)" binds X to a temporary variable, you can not
+;   refer to this variable inside the template
+
+
 ;; scheme
 
 (not (procedure not (*) boolean)
@@ -36,8 +46,8 @@
 (eq? (procedure eq? (* *) boolean))
 
 (eqv? (procedure eqv? (* *) boolean)
-      (((and (not number) (not flonum)) *) (eq? #(1) #(2)))
-      ((* (and (not number) (not flonum))) (eq? #(1) #(2))))
+      (((and (not number) (not float)) *) (eq? #(1) #(2)))
+      ((* (and (not number) (not float))) (eq? #(1) #(2))))
 
 (equal? (procedure equal? (* *) boolean)
 	(((or fixnum symbol char eof null undefined) *) (eq? #(1) #(2)))
@@ -157,43 +167,116 @@
      ((float float) (##core#inline "C_i_flonum_min" #(1) #(2))))
 
 (+ (procedure + (#!rest number) number)
-   (((or fixnum flonum number)) #(1))
+   (((or fixnum float number)) #(1))
+   ((float fixnum) (##core#inline_allocate 
+		    ("C_a_i_flonum_plus" 4) 
+		    #(1) 
+		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
+   ((fixnum float) (##core#inline_allocate 
+		    ("C_a_i_flonum_plus" 4) 
+		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
+		    #(2)))
    ((float float) (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) #(2))))
 
 (- (procedure - (number #!rest number) number)
    ((fixnum) (##core#inline "C_u_fixnum_negate" #(1)))
+   ((float fixnum) (##core#inline_allocate 
+		    ("C_a_i_flonum_difference" 4) 
+		    #(1) 
+		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
+   ((fixnum float) (##core#inline_allocate 
+		    ("C_a_i_flonum_difference" 4) 
+		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
+		    #(2)))
    ((float float) (##core#inline_allocate ("C_a_i_flonum_difference" 4) 
 					  #(1) #(2)))
    ((float) (##core#inline_allocate ("C_a_i_flonum_negate" 4) #(1))))
 
 (* (procedure * (#!rest number) number)
    (((or fixnum float number)) #(1))
+   ((float fixnum) (##core#inline_allocate 
+		    ("C_a_i_flonum_times" 4) 
+		    #(1) 
+		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
+   ((fixnum float) (##core#inline_allocate 
+		    ("C_a_i_flonum_times" 4) 
+		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
+		    #(2)))
    ((float float) (##core#inline_allocate ("C_a_i_flonum_times" 4) #(1) #(2))))
 
 (/ (procedure / (number #!rest number) number)
+   ((float fixnum) (##core#inline_allocate 
+		    ("C_a_i_flonum_quotient" 4) 
+		    #(1) 
+		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
+   ((fixnum float) (##core#inline_allocate 
+		    ("C_a_i_flonum_quotient" 4) 
+		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
+		    #(2)))
    ((float float) (##core#inline_allocate ("C_a_i_flonum_quotient" 4) #(1) #(2))))
 
 (= (procedure = (#!rest number) boolean)
    ((fixnum fixnum) (eq? #(1) #(2)))
+   ((float fixnum) (##core#inline
+		    "C_flonum_equalp"
+		    #(1) 
+		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
+   ((fixnum float) (##core#inline
+		    "C_flonum_equalp"
+		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
+		    #(2)))
    ((float float) (##core#inline "C_flonum_equalp" #(1) #(2))))
 
 (> (procedure > (#!rest number) boolean)
    ((fixnum fixnum) (fx> #(1) #(2)))
+   ((float fixnum) (##core#inline
+		    "C_flonum_greaterp"
+		    #(1) 
+		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
+   ((fixnum float) (##core#inline
+		    "C_flonum_greaterp"
+		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
+		    #(2)))
    ((float float) (##core#inline "C_flonum_greaterp" #(1) #(2))))
 
 (< (procedure < (#!rest number) boolean)
    ((fixnum fixnum) (fx< #(1) #(2)))
+   ((float fixnum) (##core#inline
+		    "C_flonum_lessp"
+		    #(1) 
+		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
+   ((fixnum float) (##core#inline
+		    "C_flonum_lessp"
+		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
+		    #(2)))
    ((float float) (##core#inline "C_flonum_lessp" #(1) #(2))))
 
 (>= (procedure >= (#!rest number) boolean)
     ((fixnum fixnum) (fx>= #(1) #(2)))
+    ((float fixnum) (##core#inline
+		     "C_flonum_greater_or_equal_p"
+		     #(1) 
+		     (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
+    ((fixnum float) (##core#inline
+		     "C_flonum_greater_or_equal_p"
+		     (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
+		     #(2)))
     ((float float) (##core#inline "C_flonum_greater_or_equal_p" #(1) #(2))))
 
 (<= (procedure <= (#!rest number) boolean)
     ((fixnum fixnum) (fx<= #(1) #(2)))
+    ((float fixnum) (##core#inline
+		     "C_flonum_less_or_equal_p"
+		     #(1) 
+		     (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
+    ((fixnum float) (##core#inline
+		     "C_flonum_less_or_equal_p"
+		     (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
+		     #(2)))
     ((float float) (##core#inline "C_flonum_less_or_equal_p" #(1) #(2))))
 
 (quotient (procedure quotient (number number) number)
+	  ;;XXX flonum/mixed case
 	  ((fixnum fixnum) (##core#inline "C_fixnum_divide" #(1) #(2))))
 
 (remainder (procedure remainder (number number) number)
@@ -224,7 +307,10 @@
        ((fixnum) #(1))
        ((float) (##core#inline_allocate ("C_a_i_flonum_round" 4) #(1))))
 
-(exact->inexact (procedure exact->inexact (number) number) ((float) #(1)))
+(exact->inexact (procedure exact->inexact (number) number)
+		((float) #(1))
+		((fixnum) (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))))
+
 (inexact->exact (procedure inexact->exact (number) number) ((fixnum) #(1)))
 
 (exp (procedure exp (number) float)
