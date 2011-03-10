@@ -125,7 +125,8 @@
     read-char substring string-fill! vector-fill! make-string make-vector open-input-file
     open-output-file call-with-input-file call-with-output-file close-input-port close-output-port
     values call-with-values vector procedure? memq memv member assq assv assoc list-tail
-    list-ref abs char-ready? peek-char list->string string->list) )
+    list-ref abs char-ready? peek-char list->string string->list
+    current-input-port current-output-port) )
 
 (define default-extended-bindings
   '(bitwise-and alist-cons xcons
@@ -146,7 +147,8 @@
     block-ref block-set! number-of-slots substring-index substring-index-ci
     hash-table-ref any? read-string substring=? substring-ci=?
     first second third fourth make-record-instance
-    u8vector-length s8vector-length u16vector-length s16vector-length u32vector-length s32vector-length
+    u8vector-length s8vector-length u16vector-length s16vector-length u32vector-length 
+    s32vector-length
     f32vector-length f64vector-length setter
     u8vector-ref s8vector-ref u16vector-ref s16vector-ref u32vector-ref s32vector-ref
     f32vector-ref f64vector-ref f32vector-set! f64vector-set!
@@ -158,6 +160,7 @@
     pointer-u32-ref pointer-s32-ref pointer-f32-ref pointer-f64-ref
     pointer-u8-set! pointer-s8-set! pointer-u16-set! pointer-s16-set!
     pointer-u32-set! pointer-s32-set! pointer-f32-set! pointer-f64-set!
+    current-error-port current-thread
     printf sprintf format get-keyword) )
 
 (define internal-bindings
@@ -1121,8 +1124,12 @@
 			 '##core#call '(#t)
 			 (list cont (varnode (cdr a))) ) ) ) ) ) ) ) ) )
 			       
-(rewrite 'void 3 '##sys#undefined-value)
-(rewrite '##sys#void 3 '##sys#undefined-value)
+(rewrite 'void 3 '##sys#undefined-value 0)
+(rewrite '##sys#void 3 '##sys#undefined-value #f)
+(rewrite 'current-thread 3 '##sys#current-thread 0)
+(rewrite 'current-input-port 3 '##sys#standard-input 0)
+(rewrite 'current-output-port 3 '##sys#standard-output 0)
+(rewrite 'current-error-port 3 '##sys#standard-error 0)
 
 (rewrite
  'any? 8
@@ -1182,10 +1189,15 @@
  'xcons 8
  (lambda (db classargs cont callargs)
    (and (= 2 (length callargs))
-	(make-node
-	 '##core#call '(#t)
-	 (list cont
-	       (make-node
-		'##core#inline_allocate
-		'("C_a_i_cons" 3) 
-		(reverse callargs)))))))
+	(let ((tmp (gensym)))
+	  (make-node 
+	   'let (list tmp)		; preserve order of argument evaluation
+	   (list
+	    (first callargs)
+	    (make-node
+	     '##core#call '(#t)
+	     (list cont
+		   (make-node
+		    '##core#inline_allocate
+		    '("C_a_i_cons" 3) 
+		    (list (varnode tmp) (second callargs)))))))))))
