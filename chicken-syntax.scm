@@ -1117,15 +1117,14 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax ': x '(_ symbol _))
-    (let ((name (##sys#globalize (cadr x)))
-	  (type (##sys#strip-syntax (caddr x))))
-      (validate-type type name)
-      (cond ((memq #:csi ##sys#features) '(##core#undefined))
+    (let* ((name (##sys#globalize (cadr x)))
+	   (type1 (##sys#strip-syntax (caddr x)))
+	   (name1 (##sys#strip-syntax (cadr x)))
+	   (type (validate-type type1 name1)))
+      (cond ((not type)
+	     (syntax-error ': "invalid type syntax" name1 type1))
+	    ((memq #:csi ##sys#features) '(##core#undefined))
 	    (else
-	     (when (and (pair? type) 
-			(eq? 'procedure (car type))
-			(not (symbol? (cadr type))))
-	       (set! type `(procedure ,(##sys#strip-syntax name) ,@(cdr type))))
 	     `(##core#declare (type (,name ,type)))))))))
 
 

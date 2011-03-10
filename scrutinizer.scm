@@ -745,26 +745,62 @@
     (copy-node! (build-node-graph (subst template)) node)))
 
 (define (validate-type type name)
+  ;; - returns converted type or #f
+  ;; - also converts "(... -> ...)" types
+  (define (upto lst p)
+    (let loop ((lst lst))
+      (cond ((eq? lst p) '())
+	    (else (cons (car lst) (loop (cdr lst)))))))
   (define (validate t)
     (cond ((memq t '(* string symbol char number boolean list pair
 		       procedure vector null eof undefined port blob
-		       pointer locative fixnum float pointer-vector deprecated)))
-	  ((not (pair? t)) #f)
+		       pointer locative fixnum float pointer-vector
+		       deprecated))
+	   t)
+	  ((not (pair? t)) t)
 	  ((eq? 'or (car t)) 
 	   (and (list t)
-		(every validate (cdr t))))
+		(let ((ts (map validate (cdr t))))
+		  (and (every identity ts)
+		       `(or ,@ts)))))
 	  ((eq? 'struct (car t))
-	   (and (= 2 (length t)) (symbol? (cadr t))))
+	   (and (= 2 (length t))
+		(symbol? (cadr t))
+		t))
 	  ((eq? 'procedure (car t))
 	   (and (pair? (cdr t))
-		(let ((t (if (symbol? (cadr t)) (cddr t) (cdr t))))
-		  (and (pair? t)
-		       (list? (car t))
-		       (every
-			validate
-			(remove (cut memq <> '(#!optional #!rest values)) (car t)))
-		       (or (eq? '* (cddr t))
-			   (and (list? (cddr t))
-				(every validate (cddr t))))))))
+		(let* ((name (if (symbol? (cadr t))
+				 (cadr t)
+				 name))
+		       (t2 (if (symbol? (cadr t)) (cddr t) (cdr t))))
+		  (and (pair? t2)
+		       (list? (car t2))
+		       (let ((ts (map (lambda (x)
+					(if (memq 
+					     x
+					     '(#!optional #!rest values))
+					    x
+					    (validate x)))
+				      (car t2))))
+			 (and (every identity ts)
+			      (let ((rt (if (eq? '* (cddr t2))
+					    (cddr t2)
+					    (and (list? (cddr t2))
+						 (let ((rts
+							(map
+							 validate
+							 (cddr t2))))
+						   (and (every identity rts)
+							rts))))))
+				(and rt
+				     `(procedure 
+				       ,@(if name (list name) '())
+				       ,ts
+				       ,@rt)))))))))
+	  ((and (pair? (cdr t)) (memq '-> (cadr t))) =>
+	   (lambda (p)
+	     (validate
+	      `(procedure ,(upto t p) ,@(cdr p))
+	      name)))
 	  (else #f)))
   (validate type))

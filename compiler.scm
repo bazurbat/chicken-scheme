@@ -1471,14 +1471,16 @@
 	       (let ((name (globalize (car spec)))
 		     (type (##sys#strip-syntax (cadr spec))))
 		 (cond ((validate-type type name)
-			(##sys#put! name '##core#type type)
-			(##sys#put! name '##core#declared-type #t)
+			(mark-variable name '##core#type type)
+			(mark-variable name '##core#declared-type)
 			(when (pair? (cddr spec))
-			  (##sys#put! 
+			  (mark-variable
 			   name '##core#specializations
 			   (##sys#strip-syntax (cddr spec)))))
 		       (else
-			(warning "illegal type declaration" (##sys#strip-syntax spec)))))))
+			(warning 
+			 "illegal type declaration"
+			 (##sys#strip-syntax spec)))))))
 	 (cdr spec)))
        ((unsafe-specialized-arithmetic)
 	(set! unchecked-specialized-arithmetic #t))
