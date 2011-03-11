@@ -944,7 +944,9 @@ EOF
 	      "libchicken"
 	      (cond (osx "dylib")
 		    (win "dll")
-		    (else "so")))))
+		    (else (string-append
+                           "so."
+                           (number->string BINARY_VERSION)))))))
     (copy-files lib targetdir)))
 
 (define (copy-files from to)
