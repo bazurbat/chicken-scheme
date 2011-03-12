@@ -73,6 +73,14 @@ fi
 
 diff -bu scrutiny.out scrutiny.expected
 
+echo "======================================== specialization tests ..."
+rm foo.types
+$compile specialization-test-1.scm -emit-type-file foo.types -specialize \
+  -debug ox
+./a.out
+$compile specialization-test-2.scm -types foo.types -specialize -debug ox
+./a.out
+
 echo "======================================== callback tests ..."
 $compile callback-tests.scm
 ./a.out

@@ -1466,7 +1466,9 @@
        ((type)
 	(for-each
 	 (lambda (spec)
-	   (if (not (and (list? spec) (>= 2 (length spec)) (symbol? (car spec))))
+	   (if (not (and (list? spec)
+			 (>= 2 (length spec))
+			 (symbol? (car spec))))
 	       (warning "illegal type declaration" (##sys#strip-syntax spec))
 	       (let ((name (globalize (car spec)))
 		     (type (##sys#strip-syntax (cadr spec))))

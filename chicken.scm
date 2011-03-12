@@ -89,18 +89,24 @@
 			     options)) ) 
 		   ((3)
 		    (set! options
-		      (cons* 'optimize-leaf-routines 'inline 'inline-global 'unboxing 'local
+		      (cons* 'optimize-leaf-routines 'inline 'inline-global
+			     'unboxing 'local
+			     ;;XXX 'specialize
 			     options) ) )
 		   ((4)
 		    (set! options
-		      (cons* 'optimize-leaf-routines 'inline 'inline-global 'unboxing 
+		      (cons* 'optimize-leaf-routines 'inline 'inline-global
+			     'unboxing 
+			     ;;XXX 'specialize
 			     'local 'unsafe
 			     options) ) )
 		   (else
 		    (when (>= level 5)
 		      (set! options 
 			(cons* 'disable-interrupts 'no-trace 'unsafe 'block
-			       'optimize-leaf-routines 'lambda-lift 'no-lambda-info
+			       'optimize-leaf-routines 'lambda-lift 
+			       'no-lambda-info
+			       ;;XXX 'specialize
 			       'inline 'inline-global 'unboxing
 			       options) ) ) ) )
 		 (loop (cdr rest)) ) )

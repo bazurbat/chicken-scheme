@@ -747,7 +747,8 @@
        (lambda (sym plist)
 	 (when (variable-visible? sym)
 	   (and-let* ((type (variable-mark sym '##core#declared-type)))
-	     (let ((specs (or (variable-mark sym '##core#specializations) '())))
+	     (let ((specs
+		    (or (variable-mark sym '##core#specializations) '())))
 	       (pp (cons* sym type specs))))))
        db)
       (print "; END OF FILE"))))
