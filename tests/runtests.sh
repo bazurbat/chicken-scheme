@@ -43,6 +43,8 @@ compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
 compile_s="../csc -s -compiler $CHICKEN -v -I.. -L.. -include-path .."
 interpret="../csi -n -include-path .."
 
+rm -f *.exe *.so *.o *.import.* a.out
+
 echo "======================================== compiler tests ..."
 $compile compiler-tests.scm
 ./a.out
@@ -124,6 +126,8 @@ $compile syntax-tests.scm
 
 echo "======================================== syntax tests (2, compiled) ..."
 $compile syntax-tests-2.scm
+./a.out
+$compile trav2.scm
 ./a.out
 
 echo "======================================== meta-syntax tests ..."
