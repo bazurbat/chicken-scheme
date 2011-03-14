@@ -39,6 +39,8 @@ if test -n "$MSYSTEM"; then
     cp ../libchicken.dll .
 fi
 
+rm -f a.out *.exe *.import.* *.so
+
 compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
 compile_s="../csc -s -compiler $CHICKEN -v -I.. -L.. -include-path .."
 interpret="../csi -n -include-path .."
