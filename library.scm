@@ -3920,7 +3920,9 @@ EOF
 
 (define (make-composite-condition c1 . conds)
   (let ([conds (cons c1 conds)])
-    (for-each (lambda (c) (##sys#check-structure c 'condition 'make-composite-condition)) conds)
+    (for-each
+     (lambda (c) (##sys#check-structure c 'condition 'make-composite-condition)) 
+     conds)
     (##sys#make-structure
      'condition
      (apply ##sys#append (map (lambda (c) (##sys#slot c 1)) conds))
