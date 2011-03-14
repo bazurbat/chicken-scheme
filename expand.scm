@@ -269,11 +269,12 @@
 (define ##sys#enable-runtime-macros #f)
 
 (define (##sys#module-rename sym prefix)
-  (##sys#string->symbol 
-   (string-append 
-    (##sys#slot prefix 1)
-    "#" 
-    (##sys#slot sym 1) ) ) )
+  (let ((qualified-symbol (##sys#string->symbol (string-append
+                                                 (##sys#slot prefix 1)
+                                                 "#"
+                                                 (##sys#slot sym 1) ) )))
+    (putp qualified-symbol '##core#real-name sym)
+    qualified-symbol) )
 
 (define (##sys#alias-global-hook sym assign where)
   (define (mrename sym)
@@ -1388,18 +1389,15 @@
                         (cond ((eq? n 0)
                                (##sys#check-syntax 'unquote x '(_ _))
                                (car tail))
-                              (else
-			       `(##sys#cons (##core#quote ,%unquote)
-					    ,(walk tail (fx- n 1)) ) )))
+                              (else (list '##sys#cons `(##core#quote ,%unquote)
+                                          (walk tail (fx- n 1)) ) )))
 		       ((c %quasiquote head)
-			`(##sys#cons (##core#quote ,%quasiquote) 
-				     ,(walk tail (fx+ n 1)) ) )
+			(list '##sys#cons `(##core#quote ,%quasiquote) 
+                              (walk tail (fx+ n 1)) ) )
 		       ((and (pair? head) (c %unquote-splicing (car head)))
                         (cond ((eq? n 0)
                                (##sys#check-syntax 'unquote-splicing head '(_ _))
-                               (walk 
-				`(##sys#append ,(walk (cadr head) 0) ,(walk tail 0))
-				0))
+                               `(##sys#append ,(cadr head) ,(walk tail n)))
                               (else
                                `(##sys#cons
                                  (##sys#cons (##core#quote ,%unquote-splicing)
@@ -1408,9 +1406,17 @@
 		       (else
 			`(##sys#cons ,(walk head n) ,(walk tail n)) ) ) ) ) ) )
       (define (simplify x)
-	(cond ((match-expression x '(##sys#append a (##core#quote ())) '(a))
-	       => (lambda (env) 
-		    (simplify (cdr (assq 'a env))) ))
+	(cond ((match-expression x '(##sys#cons a '()) '(a))
+	       => (lambda (env) (simplify `(##sys#list ,(##sys#slot (assq 'a env) 1)))) )
+	      ((match-expression x '(##sys#cons a (##sys#list . b)) '(a b))
+	       => (lambda (env)
+		    (let ([bxs (assq 'b env)])
+		      (if (fx< (length bxs) 32)
+			  (simplify `(##sys#list ,(##sys#slot (assq 'a env) 1)
+						 ,@(cdr bxs) ) ) 
+			  x) ) ) )
+	      ((match-expression x '(##sys#append a '()) '(a))
+	       => (lambda (env) (##sys#slot (assq 'a env) 1)) )
 	      (else x) ) )
       (##sys#check-syntax 'quasiquote form '(_ _))
       (walk (cadr form) 0) ) ) ) )
