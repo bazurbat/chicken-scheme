@@ -95,7 +95,6 @@
            ((symbol? x)
             (let ((x2 (getp x '##core#macro-alias) ) )
               (cond ((getp x '##core#real-name))
-                    ((getp x '##core#primitive))
                     ((not x2) x)
                     ((pair? x2) x)
                     (else x2))))

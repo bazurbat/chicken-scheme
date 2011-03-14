@@ -209,8 +209,17 @@
    (lambda (e r c)
      `',(strip-syntax (r 'bar)))))
 
-(t 'bar (baz bar))
-(t 'bar (baz void))
+(t "bar" (symbol->string (baz bar)))
+(t "bar" (symbol->string (baz void)))
+
+;; Fully qualified symbols are not mangled - these names are internal
+;; and not documented, but shouldn't be messed with by the expander
+
+(t "foo#bar" (symbol->string 'foo#bar))
+(t "#%void" (symbol->string '#%void))
+
+(t "foo#bar" (symbol->string (strip-syntax 'foo#bar)))
+(t "#%void" (symbol->string (strip-syntax '#%void)))
 
 ;;; alternative ellipsis test (SRFI-46)
 
