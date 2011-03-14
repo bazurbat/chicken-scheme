@@ -181,7 +181,7 @@
 (vector->list (procedure vector->list (vector) list))
 (list->vector (procedure list->vector (list) vector))
 (vector-fill! (procedure vector-fill! (vector *) vector))
-(vector-copy! (procedure vector-copy! (vector vector fixnum) undefined))
+(vector-copy! (procedure vector-copy! (vector vector #!optional fixnum) undefined))
 (procedure? (procedure procedure? (*) boolean))
 (map (procedure map (procedure #!rest list) list))
 (for-each (procedure for-each (procedure #!rest list) undefined))
