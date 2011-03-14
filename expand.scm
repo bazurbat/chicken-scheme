@@ -1390,14 +1390,16 @@
                                (car tail))
                               (else
 			       `(##sys#cons (##core#quote ,%unquote)
-					    (walk tail (fx- n 1)) ) )))
+					    ,(walk tail (fx- n 1)) ) )))
 		       ((c %quasiquote head)
 			`(##sys#cons (##core#quote ,%quasiquote) 
-				     (walk tail (fx+ n 1)) ) )
+				     ,(walk tail (fx+ n 1)) ) )
 		       ((and (pair? head) (c %unquote-splicing (car head)))
                         (cond ((eq? n 0)
                                (##sys#check-syntax 'unquote-splicing head '(_ _))
-                               `(##sys#append ,(cadr head) ,(walk tail n)))
+                               (walk 
+				`(##sys#append ,(walk (cadr head) 0) ,(walk tail 0))
+				0))
                               (else
                                `(##sys#cons
                                  (##sys#cons (##core#quote ,%unquote-splicing)
@@ -1406,12 +1408,7 @@
 		       (else
 			`(##sys#cons ,(walk head n) ,(walk tail n)) ) ) ) ) ) )
       (define (simplify x)
-	(cond ((match-expression x '(##sys#cons a b) '(a b))
-	       => (lambda (env) 
-		    `(##sys#cons 
-		      ,(simplify (cdr (assq 'a env)))
-		      ,(simplify (cdr (assq 'b env))))))
-	      ((match-expression x '(##sys#append a (##core#quote ())) '(a))
+	(cond ((match-expression x '(##sys#append a (##core#quote ())) '(a))
 	       => (lambda (env) 
 		    (simplify (cdr (assq 'a env))) ))
 	      (else x) ) )
