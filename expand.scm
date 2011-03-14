@@ -269,12 +269,11 @@
 (define ##sys#enable-runtime-macros #f)
 
 (define (##sys#module-rename sym prefix)
-  (let ((qualified-symbol (##sys#string->symbol (string-append
-                                                 (##sys#slot prefix 1)
-                                                 "#"
-                                                 (##sys#slot sym 1) ) )))
-    (putp qualified-symbol '##core#real-name sym)
-    qualified-symbol) )
+  (##sys#string->symbol 
+   (string-append 
+    (##sys#slot prefix 1)
+    "#" 
+    (##sys#slot sym 1) ) ) )
 
 (define (##sys#alias-global-hook sym assign where)
   (define (mrename sym)

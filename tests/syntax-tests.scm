@@ -196,22 +196,6 @@
       (bar foo))))
 )
 
-;;; strip-syntax on renamed module identifiers, as well as core identifiers
-(module foo (bar)
-  (import chicken scheme)
-
-  (define bar 1))
-
-(import foo)
-
-(define-syntax baz
-  (er-macro-transformer
-   (lambda (e r c)
-     `',(strip-syntax (r 'bar)))))
-
-(t 'bar (baz bar))
-(t 'bar (baz void))
-
 ;;; alternative ellipsis test (SRFI-46)
 
 (define-syntax foo
