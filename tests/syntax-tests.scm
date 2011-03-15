@@ -824,7 +824,7 @@
 (t '(unquote-splicing a) (quasiquote (unquote-splicing a)))
 (t '(1 2) (let ((a (list 2))) (quasiquote (1 (unquote-splicing a)))))
 (f (eval '(let ((a 1))                  ; a is not a list
-            (quasiquote (1 (unquote-splicing a))))))
+            (quasiquote (1 (unquote-splicing a) 2)))))
 (f (eval '(let ((a (list 1))
                 (b (list 2)))
             (quasiquote (1 (unquote-splicing a b)))))) ; > 1 arg
