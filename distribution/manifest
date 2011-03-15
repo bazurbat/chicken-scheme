@@ -97,7 +97,6 @@ support.scm
 tcp.scm
 tests/thread-list.scm
 tests/gobble.scm
-tests/trav2.scm
 tests/test-optional.scm
 tests/arithmetic-test.scm
 tests/arithmetic-test.32.expected

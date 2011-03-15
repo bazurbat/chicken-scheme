@@ -127,8 +127,6 @@ $compile syntax-tests.scm
 echo "======================================== syntax tests (2, compiled) ..."
 $compile syntax-tests-2.scm
 ./a.out
-$compile trav2.scm
-./a.out
 
 echo "======================================== meta-syntax tests ..."
 $interpret -bnq meta-syntax-test.scm -e '(import foo)' -e "(assert (equal? '((1)) (bar 1 2)))" -e "(assert (equal? '(list 1 2 3) (listify)))"

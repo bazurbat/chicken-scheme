@@ -892,3 +892,12 @@
 (define-syntax foo (syntax-rules () ((_ x) (begin (define x 1)))))
 (foo a)
 (t 1 a)
+
+
+;; ,@ in tail pos with circular object - found in trav2 benchmark and
+;; reported by syn:
+
+(let ((a '(1)))
+  (set-cdr! a a)
+  `(1 ,@a))
+
