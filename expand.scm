@@ -95,7 +95,6 @@
            ((symbol? x)
             (let ((x2 (getp x '##core#macro-alias) ) )
               (cond ((getp x '##core#real-name))
-                    ((getp x '##core#primitive))
                     ((not x2) x)
                     ((pair? x2) x)
                     (else x2))))
@@ -269,12 +268,10 @@
 (define ##sys#enable-runtime-macros #f)
 
 (define (##sys#module-rename sym prefix)
-  (let ((qualified-symbol (##sys#string->symbol (string-append
-                                                 (##sys#slot prefix 1)
-                                                 "#"
-                                                 (##sys#slot sym 1) ) )))
-    (putp qualified-symbol '##core#real-name sym)
-    qualified-symbol) )
+  (##sys#string->symbol (string-append
+                         (##sys#slot prefix 1)
+                         "#"
+                         (##sys#slot sym 1) ) ) )
 
 (define (##sys#alias-global-hook sym assign where)
   (define (mrename sym)
@@ -785,9 +782,18 @@
 	    ((lookup sym se) => 
 	     (lambda (a)
 	       (cond ((symbol? a)
-		      (dd `(RENAME/LOOKUP: ,sym --> ,a))
-                      (set! renv (cons (cons sym a) renv))
-		      a)
+                      ;; Add an extra level of indirection for already aliased
+                      ;; symbols.  This prevents aliased symbols from popping up
+                      ;; in syntax-stripped output.
+                      (cond ((or (getp a '##core#aliased)
+                                 (getp a '##core#primitive))
+                             (let ((a2 (macro-alias sym se)))
+                               (dd `(RENAME/LOOKUP/ALIASED: ,sym --> ,a ==> ,a2))
+                               (set! renv (cons (cons sym a2) renv))
+                               a2))
+                            (else (dd `(RENAME/LOOKUP: ,sym --> ,a))
+                                  (set! renv (cons (cons sym a) renv))
+                                  a)))
 		     (else
 		      (let ((a2 (macro-alias sym se)))
 			(dd `(RENAME/LOOKUP/MACRO: ,sym --> ,a2))
