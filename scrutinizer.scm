@@ -747,10 +747,26 @@
 (define (validate-type type name)
   ;; - returns converted type or #f
   ;; - also converts "(... -> ...)" types
+  ;; - drops "#!key ..." args by converting to #!rest
   (define (upto lst p)
     (let loop ((lst lst))
       (cond ((eq? lst p) '())
 	    (else (cons (car lst) (loop (cdr lst)))))))
+  (define (validate-llist llist)
+    (cond ((null? llist) '())
+	  ((symbol? llist) '(#!rest *))
+	  ((not (pair? llist)) #f)
+	  ((eq? '#!optional (car llist))
+	   (cons '#!optional (validate-llist (cdr llist))))
+	  ((eq? '#!rest (car llist))
+	   (cond ((null? (cdr llist)) '(#!rest *))
+		 ((not (pair? (cdr llist))) #f)
+		 ((and (pair? (cddr llist))
+		       (eq? '#!key (caddr llist)))
+		  `(#!rest ,(validate (cadr llist))))
+		 (else #f)))
+	  ((eq? '#!key (car llist)) '(#!rest *))
+	  (else (cons (validate (car llist)) (validate-llist (cdr llist))))))
   (define (validate t)
     (cond ((memq t '(* string symbol char number boolean list pair
 		       procedure vector null eof undefined port blob
@@ -775,14 +791,9 @@
 		       (t2 (if (symbol? (cadr t)) (cddr t) (cdr t))))
 		  (and (pair? t2)
 		       (list? (car t2))
-		       (let ((ts (map (lambda (x)
-					(if (memq 
-					     x
-					     '(#!optional #!rest values))
-					    x
-					    (validate x)))
-				      (car t2))))
-			 (and (every identity ts)
+		       (let ((ts (validate-llist (car t2))))
+			 (and ts
+			      (every identity ts)
 			      (let ((rt (if (eq? '* (cddr t2))
 					    (cddr t2)
 					    (and (list? (cddr t2))
