@@ -1470,7 +1470,7 @@
 			 (>= 2 (length spec))
 			 (symbol? (car spec))))
 	       (warning "illegal type declaration" (##sys#strip-syntax spec))
-	       (let ((name (globalize (car spec)))
+	       (let ((name (##sys#globalize (car spec)))
 		     (type (##sys#strip-syntax (cadr spec))))
 		 (cond ((validate-type type name)
 			(mark-variable name '##core#type type)

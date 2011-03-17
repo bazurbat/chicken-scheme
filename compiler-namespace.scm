@@ -166,7 +166,6 @@
  get-line
  get-line-2
  get-list
- globalize
  hide-variable
  immediate?
  immutable-constants

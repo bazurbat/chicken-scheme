@@ -196,6 +196,31 @@
       (bar foo))))
 )
 
+;;; strip-syntax on renamed module identifiers, as well as core identifiers
+(module foo (bar)
+  (import chicken scheme)
+
+  (define bar 1))
+
+(import foo)
+
+(define-syntax baz
+  (er-macro-transformer
+   (lambda (e r c)
+     `',(strip-syntax (r 'bar)))))
+
+(t "bar" (symbol->string (baz bar)))
+(t "bar" (symbol->string (baz void)))
+
+;; Fully qualified symbols are not mangled - these names are internal
+;; and not documented, but shouldn't be messed with by the expander
+
+(t "foo#bar" (symbol->string 'foo#bar))
+(t "#%void" (symbol->string '#%void))
+
+(t "foo#bar" (symbol->string (strip-syntax 'foo#bar)))
+(t "#%void" (symbol->string (strip-syntax '#%void)))
+
 ;;; alternative ellipsis test (SRFI-46)
 
 (define-syntax foo
@@ -799,7 +824,7 @@
 (t '(unquote-splicing a) (quasiquote (unquote-splicing a)))
 (t '(1 2) (let ((a (list 2))) (quasiquote (1 (unquote-splicing a)))))
 (f (eval '(let ((a 1))                  ; a is not a list
-            (quasiquote (1 (unquote-splicing a))))))
+            (quasiquote (1 (unquote-splicing a) 2)))))
 (f (eval '(let ((a (list 1))
                 (b (list 2)))
             (quasiquote (1 (unquote-splicing a b)))))) ; > 1 arg
@@ -876,3 +901,12 @@
 (define-syntax foo (syntax-rules () ((_ x) (begin (define x 1)))))
 (foo a)
 (t 1 a)
+
+
+;; ,@ in tail pos with circular object - found in trav2 benchmark and
+;; reported by syn:
+
+(let ((a '(1)))
+  (set-cdr! a a)
+  `(1 ,@a))
+

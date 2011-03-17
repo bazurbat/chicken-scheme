@@ -429,12 +429,12 @@
 (vector->list (procedure vector->list (vector) list))
 (list->vector (procedure list->vector (list) vector))
 (vector-fill! (procedure vector-fill! (vector *) vector))
-(vector-copy! (procedure vector-copy! (vector vector fixnum) undefined))
 
 (procedure? (procedure procedure? (*) boolean)
 	    ((procedure) (let ((#:tmp #(1))) #t))
 	    (((not procedure) (let ((#:tmp #(1))) #f)))) ;XXX test this!
 
+(vector-copy! (procedure vector-copy! (vector vector #!optional fixnum) undefined))
 (map (procedure map (procedure #!rest list) list))
 (for-each (procedure for-each (procedure #!rest list) undefined))
 (apply (procedure apply (procedure #!rest) . *))
