@@ -1313,17 +1313,18 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax 'module x '(_ symbol _ . #(_ 0)))
-    `(##core#module 
-      ,(cadr x)
-      ,(if (eq? '* (##sys#strip-syntax (caddr x))) 
-	   #t 
-	   (caddr x))
-      ,@(let ((body (cdddr x)))
-	  (if (and (pair? body) 
-		   (null? (cdr body))
-		   (string? (car body)))
-	      `((##core#include ,(car body)))
-	      body))))))
+    (let ((exports (##sys#validate-exports (##sys#strip-syntax (caddr x)) (cadr x))))
+      `(##core#module 
+	,(cadr x)
+	,(if (eq? '* exports)
+	     #t 
+	     (caddr x))
+	,@(let ((body (cdddr x)))
+	    (if (and (pair? body) 
+		     (null? (cdr body))
+		     (string? (car body)))
+		`((##core#include ,(car body)))
+		body)))))))
 
 (##sys#extend-macro-environment
  'begin-for-syntax
