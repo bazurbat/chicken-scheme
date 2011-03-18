@@ -200,6 +200,8 @@ compiler-namespace.scm
 synrules.scm
 expand.scm
 expand.c
+modules.scm
+modules.c
 chicken-syntax.scm
 chicken-syntax.c
 common-declarations.scm

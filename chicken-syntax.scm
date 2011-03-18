@@ -1110,6 +1110,25 @@
      (##core#let-compiler-syntax (binding ...) body ...)))))
 
 
+;;; interface definition
+
+(##sys#extend-macro-environment
+ 'define-interface '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'define-interface x '(_ symbol _))
+    (let ((name (##sys#strip-syntax (cadr x))))
+      `(,(r 'begin-for-syntax)
+	(##sys#register-interface
+	 ',name
+	 ',(let ((exps (##sys#strip-syntax (caddr x))))
+	     (cond ((eq? '* exps) '*)
+		   ((symbol? exps) `(#:interface ,exps))
+		   ((list? exps) (##sys#validate-exports exps 'define-interface))
+		   (else (##sys#syntax-error-hook
+			  'define-interface "invalid exports" (caddr x)))))))))))
+
+
 (##sys#macro-subset me0 ##sys#default-macro-environment)))
 
 ;; register features
