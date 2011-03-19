@@ -775,7 +775,7 @@
 	   t)
 	  ((not (pair? t)) t)
 	  ((eq? 'or (car t)) 
-	   (and (list t)
+	   (and (list? t)
 		(let ((ts (map validate (cdr t))))
 		  (and (every identity ts)
 		       `(or ,@ts)))))
@@ -811,7 +811,6 @@
 	  ((and (pair? (cdr t)) (memq '-> (cadr t))) =>
 	   (lambda (p)
 	     (validate
-	      `(procedure ,(upto t p) ,@(cdr p))
-	      name)))
+	      `(procedure ,(upto t p) ,@(cdr p)))))
 	  (else #f)))
   (validate type))

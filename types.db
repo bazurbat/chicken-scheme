@@ -94,8 +94,8 @@
 (set-car! (procedure set-car! (pair *) undefined) ((pair *) (##sys#setslot #(1) 0 #(2))))
 (set-cdr! (procedure set-cdr! (pair *) undefined) ((pair *) (##sys#setslot #(1) 1 #(2))))
 
-(null? (procedure null? (*) boolean) ((null) (let ((#:tmp #(1))) #t)) ((not null) (let ((#:tmp #(1))) #f)))
-(list? (procedure list? (*) boolean) (((or null pair list)) (let ((#:tmp #(1))) #t)) (((not (or null pair list))) (let ((#:tmp #(1))) #f)))
+(null? (procedure null? (*) boolean) ((null) (let ((#:tmp #(1))) '#t)) ((not null) (let ((#:tmp #(1))) '#f)))
+(list? (procedure list? (*) boolean) (((or null pair list)) (let ((#:tmp #(1))) '#t)) (((not (or null pair list))) (let ((#:tmp #(1))) '#f)))
 (list (procedure list (#!rest) list))
 (length (procedure length (list) fixnum) ((list) (##core#inline "C_u_i_length" #(1))))
 (list-tail (procedure list-tail (list fixnum) *))
@@ -110,38 +110,38 @@
 (assoc (procedure assoc (* list #!optional (procedure (* *) *)) *))
 
 (symbol? (procedure symbol? (*) boolean)
-	 ((symbol) (let ((#:tmp #(1))) #t))
-	 (((not symbol)) (let ((#:tmp #(1))) #f)))
+	 ((symbol) (let ((#:tmp #(1))) '#t))
+	 (((not symbol)) (let ((#:tmp #(1))) '#f)))
 
 (symbol-append (procedure symbol-append (#!rest symbol) symbol))
 (symbol->string (procedure symbol->string (symbol) string))
 (string->symbol (procedure string->symbol (string) symbol))
 
 (number? (procedure number? (*) boolean)
-	 (((or fixnum float number)) (let ((#:tmp #(1))) #t))
-	 (((not (or fixnum float number)) (let ((#:tmp #(1))) #f))))
+	 (((or fixnum float number)) (let ((#:tmp #(1))) '#t))
+	 (((not (or fixnum float number)) (let ((#:tmp #(1))) '#f))))
 
 (integer? (procedure integer? (*) boolean)
-	  ((fixnum) (let ((#:tmp #(1))) #t))
+	  ((fixnum) (let ((#:tmp #(1))) '#t))
 	  ((float) (##core#inline "C_u_i_fpintegerp" #(1))))
 
 (exact? (procedure exact? (*) boolean)
-	((fixnum) (let ((#:tmp #(1))) #t))
-	((float) (let ((#:tmp #(1))) #f)))
+	((fixnum) (let ((#:tmp #(1))) '#t))
+	((float) (let ((#:tmp #(1))) '#f)))
 
 (real? (procedure real? (*) boolean)
-       (((or fixnum float number)) (let ((#:tmp #(1))) #t)))
+       (((or fixnum float number)) (let ((#:tmp #(1))) '#t)))
 
 (complex? (procedure complex? (*) boolean)
-	  (((or fixnum float number)) (let ((#:tmp #(1))) #t))
-	  (((not (or fixnum float number))) (let ((#:tmp #(1))) #f)))
+	  (((or fixnum float number)) (let ((#:tmp #(1))) '#t))
+	  (((not (or fixnum float number))) (let ((#:tmp #(1))) '#f)))
 
 (inexact? (procedure inexact? (*) boolean)
-	  ((fixnum) (let ((#:tmp #(1))) #f))
-	  ((float) (let ((#:tmp #(1))) #t)))
+	  ((fixnum) (let ((#:tmp #(1))) '#f))
+	  ((float) (let ((#:tmp #(1))) '#t)))
 
 (rational? (procedure rational? (*) boolean)
-	   ((fixnum) (let ((#:tmp #(1))) #t)))
+	   ((fixnum) (let ((#:tmp #(1))) '#t)))
 
 (zero? (procedure zero? (number) boolean) 
        ((fixnum) (eq? #(1) 0))
@@ -349,8 +349,8 @@
 (string->number (procedure string->number (string #!optional number) (or number boolean)))
 
 (char? (procedure char? (*) boolean)
-       ((char) (let ((#:tmp #(1))) #t))
-       (((not char)) (let ((#:tmp #(1))) #f)))
+       ((char) (let ((#:tmp #(1))) '#t))
+       (((not char)) (let ((#:tmp #(1))) '#f)))
 
 (char=? (procedure char=? (char char) boolean))
 (char>? (procedure char>? (char char) boolean))
@@ -373,8 +373,8 @@
 (integer->char (procedure integer->char (fixnum) char))
 
 (string? (procedure string? (*) boolean)
-	 ((string) (let ((#:tmp #(1))) #t))
-	 (((not string)) (let ((#:tmp #(1))) #f)))
+	 ((string) (let ((#:tmp #(1))) '#t))
+	 (((not string)) (let ((#:tmp #(1))) '#f)))
 
 (string=? (procedure string=? (string string) boolean)
 	  ((string string) (##core#inline "C_u_i_string_equal_p" #(1) #(2))))
@@ -414,8 +414,8 @@
 (string (procedure string (#!rest char) string))
 
 (vector? (procedure vector? (*) boolean)
-	 ((vector) (let ((#:tmp #(1))) #t))
-	 (((not vector)) (let ((#:tmp #(1))) #f)))
+	 ((vector) (let ((#:tmp #(1))) '#t))
+	 (((not vector)) (let ((#:tmp #(1))) '#f)))
 
 (make-vector (procedure make-vector (fixnum #!optional *) vector))
 
@@ -431,8 +431,8 @@
 (vector-fill! (procedure vector-fill! (vector *) vector))
 
 (procedure? (procedure procedure? (*) boolean)
-	    ((procedure) (let ((#:tmp #(1))) #t))
-	    (((not procedure) (let ((#:tmp #(1))) #f)))) ;XXX test this!
+	    ((procedure) (let ((#:tmp #(1))) '#t))
+	    (((not procedure) (let ((#:tmp #(1))) '#f)))) ;XXX test this!
 
 (vector-copy! (procedure vector-copy! (vector vector #!optional fixnum) undefined))
 (map (procedure map (procedure #!rest list) list))
@@ -454,7 +454,7 @@
 (read (procedure read (#!optional port) *))
 
 (eof-object? (procedure eof-object? (*) boolean)
-	     (((not eof)) (let ((#:tmp #(1))) #f)))
+	     (((not eof)) (let ((#:tmp #(1))) '#f)))
 
 ;;XXX if we had input/output port distinction, we could specialize these:
 (read-char (procedure read-char (#!optional port) *)) ; result (or eof char) ?
@@ -473,7 +473,7 @@
 (char-ready? (procedure char-ready? (#!optional port) boolean))
 
 (imag-part (procedure imag-part (number) number)
-	   ((or fixnum float number) (let ((#:tmp #(1))) 0)))
+	   ((or fixnum float number) (let ((#:tmp #(1))) '0)))
 
 (real-part (procedure real-part (number) number)
 	   ((or fixnum float number) #(1)))
@@ -486,7 +486,7 @@
 	   ((fixnum) #(1)))
 	   
 (denominator (procedure denominator (number) number)
-	     ((fixnum) (let ((#:tmp #(1))) 1)))
+	     ((fixnum) (let ((#:tmp #(1))) '1)))
 
 (scheme-report-environment (procedure scheme-report-environment (#!optional fixnum) *))
 (null-environment (procedure null-environment (#!optional fixnum) *))
@@ -526,8 +526,8 @@
 	   ((blob) (##sys#size #(1))))
 
 (blob? (procedure blob? (*) boolean)
-       ((blob) (let ((#:tmp #(1))) #t))
-       (((not blob)) (let ((#:tmp #(1))) #f)))
+       ((blob) (let ((#:tmp #(1))) '#t))
+       (((not blob)) (let ((#:tmp #(1))) '#f)))
 
 (blob=? (procedure blob=? (blob blob) boolean))
 (breakpoint (procedure breakpoint (#!optional *) . *))
@@ -542,8 +542,8 @@
 (condition-property-accessor (procedure condition-property-accessor (symbol symbol #!optional *) (procedure ((struct condition)) *)))
 
 (condition? (procedure condition? (*) boolean)
-	    (((struct condition)) (let ((#:tmp #(1))) #t))
-	    (((not (struct condition))) (let ((#:tmp #(1))) #f)))
+	    (((struct condition)) (let ((#:tmp #(1))) '#t))
+	    (((not (struct condition))) (let ((#:tmp #(1))) '#f)))
 
 (condition->list (procedure condition->list ((struct condition)) list))
 (continuation-capture (procedure continuation-capture ((procedure ((struct continuation)) . *)) *))
@@ -551,8 +551,8 @@
 (continuation-return (procedure continuation-return (procedure #!rest) . *)) ;XXX make return type more specific?
 
 (continuation? (procedure continuation? (*) boolean)
-	       (((struct continuation)) (let ((#:tmp #(1))) #t))
-	       (((not (struct continuation))) (let ((#:tmp #(1))) #f)))
+	       (((struct continuation)) (let ((#:tmp #(1))) '#t))
+	       (((not (struct continuation))) (let ((#:tmp #(1))) '#f)))
 
 (copy-read-table (procedure copy-read-table ((struct read-table)) (struct read-table)))
 (cpu-time (procedure cpu-time () fixnum fixnum))
@@ -588,7 +588,7 @@
 (fixnum-precision fixnum)
 
 (fixnum? (procedure fixnum? (*) boolean)
-	 ((fixnum) (let ((#:tmp #(1))) #t)))
+	 ((fixnum) (let ((#:tmp #(1))) '#t)))
 
 (flonum-decimal-precision fixnum)
 (flonum-epsilon float)
@@ -601,7 +601,7 @@
 (flonum-radix fixnum)
 
 (flonum? (procedure flonum? (*) boolean)
-	 ((float) (let ((#:tmp #(1))) #t)))
+	 ((float) (let ((#:tmp #(1))) '#t)))
 
 (flush-output (procedure flush-output (#!optional port) undefined))
 (force-finalizers (procedure force-finalizers () undefined))
@@ -765,8 +765,8 @@
 (port-position (procedure port-position (#!optional port) fixnum))
 
 (port? (procedure port? (*) boolean)
-       ((port) (let ((#:tmp #(1))) #t))
-       (((not port)) (let ((#:tmp #(1))) #f)))
+       ((port) (let ((#:tmp #(1))) '#t))
+       (((not port)) (let ((#:tmp #(1))) '#f)))
 
 (print (procedure print (#!rest *) undefined))
 (print-call-chain (procedure print-call-chain (#!optional port fixnum * string) undefined))
@@ -839,11 +839,11 @@
 (always? (procedure always? (#!rest) boolean))
 
 (any? (procedure any? (*) boolean)
-      ((*) (let ((#:tmp #(1))) #t)))
+      ((*) (let ((#:tmp #(1))) '#t)))
 
 (atom? (procedure atom? (*) boolean)
-       ((pair) (let ((#:tmp #(1))) #f))
-       (((not pair)) (let ((#:tmp #(1))) #t)))
+       ((pair) (let ((#:tmp #(1))) '#f))
+       (((not pair)) (let ((#:tmp #(1))) '#t)))
 
 (binary-search (procedure binary-search (vector (procedure (*) *)) *))
 (butlast (procedure butlast (pair) list))
@@ -869,7 +869,7 @@
 (never? (procedure never? (#!rest) boolean))
 
 (none? (procedure none? (*) boolean)
-       ((*) (let ((#:tmp #(1))) #f)))
+       ((*) (let ((#:tmp #(1))) '#f)))
 
 (o (procedure o (#!rest (procedure (*) *)) (procedure (*) *)))
 
@@ -885,8 +885,8 @@
 (queue-remove! (procedure queue-remove! ((struct queue)) *))
 
 (queue? (procedure queue? (*) boolean)
-	(((struct queue)) (let ((#:tmp #(1))) #t))
-	(((not (struct queue))) (let ((#:tmp #(1))) #f)))
+	(((struct queue)) (let ((#:tmp #(1))) '#t))
+	(((not (struct queue))) (let ((#:tmp #(1))) '#f)))
 
 (rassoc (procedure rassoc (* list #!optional (procedure (* *) *)) *))
 (reverse-string-append (procedure reverse-string-append (list) string))
@@ -988,8 +988,8 @@
 ;irregex-match?
 
 (irregex-match-data? (procedure irregex-match-data? (*) boolean)
-		     (((struct regexp-match)) (let ((#:tmp #(1))) #t))
-		     (((not (struct regexp-match))) (let ((#:tmp #(1))) #f)))
+		     (((struct regexp-match)) (let ((#:tmp #(1))) '#t))
+		     (((not (struct regexp-match))) (let ((#:tmp #(1))) '#f)))
 
 (irregex-match-end (procedure irregex-match-end (* #!optional *) *))
 ;irregex-match-end-chunk
@@ -1031,8 +1031,8 @@
  (procedure irregex-match-valid-index? ((struct regexp-match) *) boolean))
 
 (irregex? (procedure irregex? (*) boolean)
-	  (((struct regexp)) (let ((#:tmp #(1))) #t))
-	  (((not (struct regexp))) (let ((#:tmp #(1))) #f)))
+	  (((struct regexp)) (let ((#:tmp #(1))) '#t))
+	  (((not (struct regexp))) (let ((#:tmp #(1))) '#f)))
 
 (make-irregex-chunker
  (procedure make-irregex-chunker 
@@ -1106,8 +1106,8 @@
 (pointer-vector (procedure pointer-vector (#!rest pointer-vector) boolean))
 
 (pointer-vector? (procedure pointer-vector? (*) boolean)
-		 ((pointer-vector) (let ((#:tmp #(1))) #t))
-		 (((not pointer-vector)) (let ((#:tmp #(1))) #f)))
+		 ((pointer-vector) (let ((#:tmp #(1))) '#t))
+		 (((not pointer-vector)) (let ((#:tmp #(1))) '#f)))
 
 (pointer-vector-fill! (procedure pointer-vector-fill! (pointer-vector pointer) undefined))
 
@@ -1134,8 +1134,8 @@
 	   ((pointer pointer) (##core#inline "C_pointer_eqp" #(1) #(2))))
 
 (pointer? (procedure pointer? (*) boolean)
-	  ((pointer) (let ((#:tmp #(1))) #t))
-	  (((not pointer)) (let ((#:tmp #(1))) #f)))
+	  ((pointer) (let ((#:tmp #(1))) '#t))
+	  (((not pointer)) (let ((#:tmp #(1))) '#f)))
 
 (procedure-data (procedure procedure-data (procedure) *))
 (record->vector (procedure record->vector (*) vector))
@@ -1419,7 +1419,7 @@
 (circular-list (procedure circular-list (#!rest) list))
 
 (circular-list? (procedure circular-list? (*) boolean)
-		((null) (let ((#:tmp #(1))) #f)))
+		((null) (let ((#:tmp #(1))) '#f)))
 
 (concatenate (procedure concatenate (list) list))
 (concatenate! (procedure concatenate! (list) list))
@@ -1476,13 +1476,13 @@
 (ninth (procedure ninth (pair) *))
 
 (not-pair? (procedure not-pair? (*) boolean)
-	   ((pair) (let ((#:tmp #(1))) #f))
-	   (((not pair)) (let ((#:tmp #(1))) #t)))
+	   ((pair) (let ((#:tmp #(1))) '#f))
+	   (((not pair)) (let ((#:tmp #(1))) '#t)))
 
 (null-list? (procedure null-list? (list) boolean)
-	    ((pair) (let ((#:tmp #(1))) #f))
-	    ((list) (let ((#:tmp #(1))) #f))
-	    ((null) (let ((#:tmp #(1))) #t)))
+	    ((pair) (let ((#:tmp #(1))) '#f))
+	    ((list) (let ((#:tmp #(1))) '#f))
+	    ((null) (let ((#:tmp #(1))) '#t)))
 
 (pair-fold (procedure pair-fold (procedure * list #!rest list) *))
 (pair-fold-right (procedure pair-fold-right (procedure * list #!rest list) *))
@@ -1491,7 +1491,7 @@
 (partition! (procedure partition! ((procedure (*) *) list) list list))
 
 (proper-list? (procedure proper-list? (*) boolean)
-	      ((null) (let ((#:tmp #(1))) #t)))
+	      ((null) (let ((#:tmp #(1))) '#t)))
 
 (reduce (procedure reduce ((procedure (* *) *) * list) *))
 (reduce-right (procedure reduce-right ((procedure (* *) *) * list) *))
@@ -1701,8 +1701,8 @@
 (char-set= (procedure char-set= (#!rest (struct char-set)) boolean))
 
 (char-set? (procedure char-set? (*) boolean)
-	   (((struct char-set)) (let ((#:tmp #(1))) #t))
-	   (((not (struct char-set))) (let ((#:tmp #(1))) #f)))
+	   (((struct char-set)) (let ((#:tmp #(1))) '#t))
+	   (((not (struct char-set))) (let ((#:tmp #(1))) '#f)))
 
 (end-of-char-set? (procedure end-of-char-set? (fixnum) boolean))
 (list->char-set (procedure list->char-set (list #!optional (struct char-set)) (struct char-set)))
@@ -1722,8 +1722,8 @@
 (condition-variable-specific-set! (procedure condition-variable-specific-set! ((struct condition-variable) *) undefined))
 
 (condition-variable? (procedure condition-variable? (*) boolean)
-		     (((struct condition-variable)) (let ((#:tmp #(1))) #t))
-		     (((not (struct condition-variable))) (let ((#:tmp #(1))) #f)))
+		     (((struct condition-variable)) (let ((#:tmp #(1))) '#t))
+		     (((not (struct condition-variable))) (let ((#:tmp #(1))) '#f)))
 
 (current-thread (procedure current-thread () (struct thread))) ;XXX
 
@@ -1748,8 +1748,8 @@
 (mutex-unlock! (procedure mutex-unlock! ((struct mutex) #!optional (struct condition-variable) *) undefined))
 
 (mutex? (procedure mutex? (*) boolean)
-	(((struct mutex)) (let ((#:tmp #(1))) #t))
-	(((not (struct mutex))) (let ((#:tmp #(1))) #f)))
+	(((struct mutex)) (let ((#:tmp #(1))) '#t))
+	(((not (struct mutex))) (let ((#:tmp #(1))) '#f)))
 
 (raise (procedure raise (*) noreturn))
 (seconds->time (procedure seconds->time (number) (struct time)))
@@ -1784,15 +1784,15 @@
 (thread-yield! (procedure thread-yield! () undefined))
 
 (thread? (procedure thread? (*) boolean)
-	 (((struct thread)) (let ((#:tmp #(1))) #t))
-	 (((not (struct thread))) (let ((#:tmp #(1))) #f)))
+	 (((struct thread)) (let ((#:tmp #(1))) '#t))
+	 (((not (struct thread))) (let ((#:tmp #(1))) '#f)))
 
 (time->milliseconds deprecated)
 (time->seconds (procedure time->seconds ((struct time)) number))
 
 (time? (procedure time? (*) boolean)
-       (((struct time)) (let ((#:tmp #(1))) #t))
-       (((not (struct time))) (let ((#:tmp #(1))) #f)))
+       (((struct time)) (let ((#:tmp #(1))) '#t))
+       (((not (struct time))) (let ((#:tmp #(1))) '#f)))
 
 (uncaught-exception-reason (procedure uncaught-exception-reason ((struct condition)) *))
 (uncaught-exception? (procedure uncaught-exception? (*) boolean))
@@ -1827,8 +1827,8 @@
 (f32vector-set! (procedure f32vector-set! ((struct f32vector) fixnum number) undefined))
 
 (f32vector? (procedure f32vector? (*) boolean)
-	    (((struct f32vector)) (let ((#:tmp #(1))) #t))
-	    (((not (struct f32vector))) (let ((#:tmp #(1))) #f)))
+	    (((struct f32vector)) (let ((#:tmp #(1))) '#t))
+	    (((not (struct f32vector))) (let ((#:tmp #(1))) '#f)))
 
 (f64vector (procedure f64vector (#!rest number) (struct f64vector)))
 (f64vector->blob (procedure f64vector->blob ((struct f32vector)) blob))
@@ -1842,8 +1842,8 @@
 (f64vector-set! (procedure f64vector-set! ((struct f64vector) fixnum number) undefined))
 
 (f64vector? (procedure f64vector? (*) boolean)
-	    (((struct f64vector)) (let ((#:tmp #(1))) #t))
-	    (((not (struct f64vector))) (let ((#:tmp #(1))) #f)))
+	    (((struct f64vector)) (let ((#:tmp #(1))) '#t))
+	    (((not (struct f64vector))) (let ((#:tmp #(1))) '#f)))
 
 (list->f32vector (procedure list->f32vector (list) (struct f32vector)))
 (list->f64vector (procedure list->f64vector (list) (struct f64vector)))
@@ -1876,8 +1876,8 @@
 (s16vector-set! (procedure s16vector-set! ((struct s16vewctor) fixnum fixnum) undefined))
 
 (s16vector? (procedure s16vector? (*) boolean)
-	    (((struct s16vector)) (let ((#:tmp #(1))) #t))
-	    (((not (struct s16vector))) (let ((#:tmp #(1))) #f)))
+	    (((struct s16vector)) (let ((#:tmp #(1))) '#t))
+	    (((not (struct s16vector))) (let ((#:tmp #(1))) '#f)))
 
 (s32vector (procedure s32vector (#!rest number) (struct s32vector)))
 (s32vector->blob (procedure s32vector->blob ((structs 32vector)) blob))
@@ -1891,8 +1891,8 @@
 (s32vector-set! (procedure s32vector-set! ((struct s32vector) fixnum number) undefined))
 
 (s32vector? (procedure s32vector? (*) boolean)
-	    (((struct s32vector)) (let ((#:tmp #(1))) #t))
-	    (((not (struct s32vector))) (let ((#:tmp #(1))) #f)))
+	    (((struct s32vector)) (let ((#:tmp #(1))) '#t))
+	    (((not (struct s32vector))) (let ((#:tmp #(1))) '#f)))
 
 (s8vector (procedure s8vector (#!rest fixnum) (struct s8vector)))
 (s8vector->blob (procedure s8vector->blob ((struct s8vector)) blob))
@@ -1906,8 +1906,8 @@
 (s8vector-set! (procedure s8vector-set! ((struct s8vector) fixnum fixnum) undefined))
 
 (s8vector? (procedure s8vector? (*) boolean)
-	   (((struct s8vector)) (let ((#:tmp #(1))) #t))
-	   (((not (struct s8vector))) (let ((#:tmp #(1))) #f)))
+	   (((struct s8vector)) (let ((#:tmp #(1))) '#t))
+	   (((not (struct s8vector))) (let ((#:tmp #(1))) '#f)))
 
 (subf32vector (procedure subf32vector ((struct f32vector) fixnum fixnum) (struct f32vector)))
 (subf64vector (procedure subf64vector ((struct f64vector) fixnum fixnum) (struct f64vector)))
@@ -1929,8 +1929,8 @@
 (u16vector-set! (procedure u16vector-set! ((struct u16vector) fixnum fixnum) undefined))
 
 (u16vector? (procedure u16vector? (*) boolean)
-	    (((struct u16vector)) (let ((#:tmp #(1))) #t))
-	    (((not (struct u16vector))) (let ((#:tmp #(1))) #f)))
+	    (((struct u16vector)) (let ((#:tmp #(1))) '#t))
+	    (((not (struct u16vector))) (let ((#:tmp #(1))) '#f)))
 
 (u32vector (procedure u32vector (#!rest number) (struct u32vector)))
 (u32vector->blob (procedure u32vector->blob ((struct u32vector)) blob))
@@ -1944,8 +1944,8 @@
 (u32vector-set! (procedure u32vector-set! ((struct u32vector) fixnum number) undefined))
 
 (u32vector? (procedure u32vector? (*) boolean)
-	    (((struct u32vector)) (let ((#:tmp #(1))) #t))
-	    (((not (struct u32vector))) (let ((#:tmp #(1))) #f)))
+	    (((struct u32vector)) (let ((#:tmp #(1))) '#t))
+	    (((not (struct u32vector))) (let ((#:tmp #(1))) '#f)))
 
 (u8vector (procedure u8vector (#!rest fixnum) (struct u8vector)))
 (u8vector->blob (procedure u8vector->blob ((struct u8vector)) blob))
@@ -1959,8 +1959,8 @@
 (u8vector-set! (procedure u8vector-set! ((struct u8vector) fixnum fixnum) undefined))
 
 (u8vector? (procedure u8vector? (*) boolean)
-	   (((struct fu8vector)) (let ((#:tmp #(1))) #t))
-	   (((not (struct u8vector))) (let ((#:tmp #(1))) #f)))
+	   (((struct fu8vector)) (let ((#:tmp #(1))) '#t))
+	   (((not (struct u8vector))) (let ((#:tmp #(1))) '#f)))
 
 (write-u8vector (procedure write-u8vector ((struct u8vector) #!optional port fixnum fixnum) undefined))
 
@@ -2020,8 +2020,8 @@
 			(((struct hash-table)) (##sys#slot #(1) 8)))
 
 (hash-table? (procedure hash-table? (*) boolean)
-	     (((struct hash-table)) (let ((#:tmp #(1))) #t))
-	     (((not (struct hash-table))) (let ((#:tmp #(1))) #f)))
+	     (((struct hash-table)) (let ((#:tmp #(1))) '#t))
+	     (((not (struct hash-table))) (let ((#:tmp #(1))) '#f)))
 
 ;;XXX if we want to hardcode hash-default-bound here, we could rewrite the 1-arg case...
 ;     (applies to all hash-functions)
@@ -2054,8 +2054,8 @@
 (tcp-listener-port (procedure tcp-listener-port ((struct tcp-listener)) fixnum))
 
 (tcp-listener? (procedure tcp-listener? (*) boolean)
-	       (((struct tcp-listener)) (let ((#:tmp #(1))) #t))
-	       (((not (struct tcp-listener))) (let ((#:tmp #(1))) #f)))
+	       (((struct tcp-listener)) (let ((#:tmp #(1))) '#t))
+	       (((not (struct tcp-listener))) (let ((#:tmp #(1))) '#f)))
 
 (tcp-port-numbers (procedure tcp-port-numbers (port) fixnum fixnum))
 (tcp-read-timeout (procedure tcp-read-timeout (#!optional number) number))

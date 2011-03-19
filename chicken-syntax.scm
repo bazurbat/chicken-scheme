@@ -1126,7 +1126,7 @@
 	    ((memq #:csi ##sys#features) '(##core#undefined))
 	    (else
 	     `(##core#declare 
-	       (type (,name ,type ,@(cdddr x)))))))))
+	       (type (,name ,type ,@(cdddr x))))))))))
 
 
 (##sys#macro-subset me0 ##sys#default-macro-environment)))
