@@ -289,10 +289,10 @@
  update-line-number-database
  update-line-number-database!
  used-units
- validate-type
  valid-c-identifier?
  valid-compiler-options
  valid-compiler-options-with-argument
+ validate-type
  variable-mark
  variable-visible?
  varnode

@@ -794,21 +794,19 @@
 		       (let ((ts (validate-llist (car t2))))
 			 (and ts
 			      (every identity ts)
-			      (let ((rt (if (eq? '* (cddr t2))
-					    (cddr t2)
-					    (and (list? (cddr t2))
-						 (let ((rts
-							(map
-							 validate
-							 (cddr t2))))
-						   (and (every identity rts)
-							rts))))))
+			      (let* ((rt2 (cdr t2))
+				     (rt (if (eq? '* rt2) 
+					     rt2
+					     (and (list? rt2)
+						  (let ((rts (map validate rt2)))
+						    (and (every identity rts)
+							 rts))))))
 				(and rt
 				     `(procedure 
 				       ,@(if name (list name) '())
 				       ,ts
 				       ,@rt)))))))))
-	  ((and (pair? (cdr t)) (memq '-> (cadr t))) =>
+	  ((and (pair? (cdr t)) (memq '-> (cdr t))) =>
 	   (lambda (p)
 	     (validate
 	      `(procedure ,(upto t p) ,@(cdr p)))))

@@ -1117,16 +1117,17 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax ': x '(_ symbol _ . _))
-    (let* ((name (##sys#globalize (cadr x)))
-	   (type1 (##sys#strip-syntax (caddr x)))
-	   (name1 (##sys#strip-syntax (cadr x)))
-	   (type (validate-type type1 name1)))
-      (cond ((not type)
-	     (syntax-error ': "invalid type syntax" name1 type1))
-	    ((memq #:csi ##sys#features) '(##core#undefined))
-	    (else
-	     `(##core#declare 
-	       (type (,name ,type ,@(cdddr x))))))))))
+    (if (memq #:csi ##sys#features) 
+	'(##core#undefined)
+	(let* ((name (cadr x))
+	       (type1 (##sys#strip-syntax (caddr x)))
+	       (name1 (##sys#strip-syntax (cadr x)))
+	       (type (##compiler#validate-type type1 name1)))
+	  (cond ((not type)
+		 (syntax-error ': "invalid type syntax" name1 type1))
+		(else
+		 `(##core#declare 
+		   (type (,name ,type ,@(cdddr x)))))))))))
 
 
 (##sys#macro-subset me0 ##sys#default-macro-environment)))
