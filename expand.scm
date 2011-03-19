@@ -37,6 +37,8 @@
 
 (include "common-declarations.scm")
 
+(define-syntax d (syntax-rules () ((_ . _) (void))))
+
 (set! ##sys#features
   (append '(#:hygienic-macros 
 	    #:syntax-rules 
