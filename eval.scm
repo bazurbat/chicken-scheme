@@ -614,9 +614,18 @@
 			     ,@(##sys#include-forms-from-file (cadr x)))
 			   e #f tf cntr se))
 
+			 ((##core#let-module-alias)
+			  (fluid-let ((##sys#module-alias-environment
+				       (cons 
+					(##sys#strip-syntax 
+					 (map (lambda (b) (cons (car b) (cadr b)))
+					      (cadr x)))
+					##sys#module-alias-environment)))
+			    (walk `(##core#begin ,@(cddr x)) e #f tf cntr se)))
+
 			 ((##core#module)
 			  (let* ((x (##sys#strip-syntax x))
-				 (name (##sys#strip-syntax (cadr x)))
+				 (name (cadr x))
 				 (exports 
 				  (or (eq? #t (caddr x))
 				      (map (lambda (exp)
@@ -631,7 +640,7 @@
 						    (##sys#syntax-error-hook
 						     'module
 						     "invalid export syntax" exp name))))
-					   (##sys#strip-syntax (caddr x))))))
+					   (caddr x)))))
 			    (when (##sys#current-module)
 			      (##sys#syntax-error-hook 'module "modules may not be nested" name))
 			    (parameterize ((##sys#current-module 
@@ -646,12 +655,12 @@
 					  (let loop2 ((xs xs))
 					    (if (null? xs)
 						(##sys#void)
-						(let ((n (##sys#slot xs 1)))
+						(let ((n (cdr xs)))
 						  (cond ((pair? n)
-							 ((##sys#slot xs 0) v)
+							 ((car xs) v)
 							 (loop2 n))
 							(else
-							 ((##sys#slot xs 0) v))))))))
+							 ((car xs) v))))))))
 				      (loop 
 				       (cdr body)
 				       (cons (compile 

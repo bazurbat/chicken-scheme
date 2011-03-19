@@ -57,6 +57,7 @@
 
 (define ##sys#meta-macro-environment (make-parameter (##sys#macro-environment)))
 (define ##sys#current-module (make-parameter #f))
+(define ##sys#module-alias-environment '())
 
 (declare 
   (hide make-module module? %make-module
@@ -98,9 +99,19 @@
 (define (make-module name explist vexports sexports)
   (%make-module name explist '() '() '() '() '() '() '() vexports sexports))
 
-(define (##sys#find-module name #!optional (err #t))
+(define (##sys#resolve-module-name name loc)
+  (let loop ((n name) (done '()))
+    (cond ((assq n ##sys#module-alias-environment) =>
+	   (lambda (a)
+	     (let ((n2 (cdr a)))
+	       (if (memq n2 done)
+		   (error loc "module alias refers to itself" name)
+		   (loop n2 (cons n2 done))))))
+	  (else n))))
+
+(define (##sys#find-module name #!optional (err #t) loc)
   (cond ((assq name ##sys#module-table) => cdr)
-	(err (error 'import "module not found" name))
+	(err (error loc "module not found" name))
 	(else #f)))
 
 (define (##sys#toplevel-definition-hook sym mod exp val) #f)
@@ -485,10 +496,10 @@
 	    ((number? x) (number->string x))
 	    (else (##sys#syntax-error-hook loc "invalid prefix" ))))
     (define (import-name spec)
-      (let* ((mname (##sys#strip-syntax spec))
-	     (mod (##sys#find-module mname #f)))
+      (let* ((mname (##sys#resolve-module-name (##sys#strip-syntax spec) 'import))
+	     (mod (##sys#find-module mname #f 'import)))
 	(unless mod
-	  (let ((il (##sys#find-extension
+	  (let* ((il (##sys#find-extension
 		     (string-append (symbol->string mname) ".import")
 		     #t)))
 	    (cond (il (parameterize ((##sys#current-module #f)
@@ -499,7 +510,7 @@
 				      (##sys#meta-macro-environment)))
 			(fluid-let ((##sys#notices-enabled #f)) ; to avoid re-import warnings
 			  (##sys#load il #f #f)))
-		      (set! mod (##sys#find-module mname)))
+		      (set! mod (##sys#find-module mname 'import)))
 		  (else
 		   (##sys#syntax-error-hook
 		    loc "cannot import from undefined module" 

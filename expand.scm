@@ -1312,8 +1312,10 @@
  '()
  (##sys#er-transformer
   (lambda (x r c)
+    ;;XXX module alias + functor application
     (##sys#check-syntax 'module x '(_ symbol _ . #(_ 0)))
-    (let ((exports (##sys#validate-exports (##sys#strip-syntax (caddr x)) (cadr x))))
+    ;;XXX use module name in "loc" argument?
+    (let ((exports (##sys#validate-exports (##sys#strip-syntax (caddr x)) 'module)))
       `(##core#module 
 	,(cadr x)
 	,(if (eq? '* exports)

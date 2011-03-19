@@ -143,6 +143,7 @@
 ; (##core#define-compiler-syntax <symbol> <expr>)
 ; (##core#let-compiler-syntax ((<symbol> <expr>) ...) <expr> ...)
 ; (##core#module <symbol> #t | (<name> | (<name> ...) ...) <body>)
+; (##core#let-module-alias ((<alias> <name>) ...) <body>)
 ; (<exp> {<exp>})
 
 ; - Core language:
@@ -806,9 +807,18 @@
 			       (##sys#include-forms-from-file (cadr x))))
 			 e se dest ldest h))
 
+		       ((##core#let-module-alias)
+			(fluid-let ((##sys#module-alias-environment
+				     (cons 
+				      (##sys#strip-syntax 
+				       (map (lambda (b) (cons (car b) (cadr b)))
+					    (cadr x)))
+				      ##sys#module-alias-environment)))
+			  (walk `(##core#begin ,@(cddr x)) e se dest ldest h)))
+
 		       ((##core#module)
 			(let* ((x (##sys#strip-syntax x))
-			       (name (##sys#strip-syntax (cadr x)))
+			       (name (cadr x))
 			       (exports 
 				(or (eq? #t (caddr x))
 				    (map (lambda (exp)
@@ -823,7 +833,7 @@
 						  (##sys#syntax-error-hook
 						   'module
 						   "invalid export syntax" exp name))))
-					 (##sys#strip-syntax (caddr x)))))
+					 (caddr x))))
 			       (csyntax compiler-syntax))
 			  (when (##sys#current-module)
 			    (##sys#syntax-error-hook
