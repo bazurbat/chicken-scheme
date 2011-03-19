@@ -391,7 +391,7 @@
 
 (make-string (procedure make-string (fixnum #!optional char) string)
 	     ((fixnum char) (##sys#make-string #(1) #(2)))
-	     ((fixnum) (##sys#make-string #(1) #\space)))
+	     ((fixnum) (##sys#make-string #(1) '#\space)))
 
 (string-length (procedure string-length (string) fixnum)
 	       ((string) (##sys#size #(1))))

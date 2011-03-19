@@ -2067,4 +2067,8 @@
 	(direct-fft-recursive-4 a table)
 	(inverse-fft-recursive-4 a table)))))
 
-(test 2000 11)
+(let-optionals (command-line-arguments)
+    ((iters "2000")
+     (n "11"))
+  (test (string->number iters) (string->number n)))
+
