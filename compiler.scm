@@ -602,10 +602,11 @@
 			    (let loop ([ids (##sys#strip-syntax (cadr x))])
 			      (if (null? ids)
 				  '(##core#undefined)
-				  (let ([id (car ids)])
+				  (let ((id (##sys#resolve-module-name (car ids) #f)))
 				    (let-values ([(exp f)
 						  (##sys#do-the-right-thing
-						   id #t imp?)])
+						   (##sys#resolve-module-name id #f)
+						   #t imp?)])
 				      (unless (or f 
 						  (and (symbol? id)
 						       (or (feature? id)
@@ -808,13 +809,13 @@
 			 e se dest ldest h))
 
 		       ((##core#let-module-alias)
-			(fluid-let ((##sys#module-alias-environment
-				     (cons 
-				      (##sys#strip-syntax 
-				       (map (lambda (b) (cons (car b) (cadr b)))
-					    (cadr x)))
-				      ##sys#module-alias-environment)))
-			  (walk `(##core#begin ,@(cddr x)) e se dest ldest h)))
+			(##sys#with-module-aliases
+			 (map (lambda (b)
+				(##sys#check-syntax 'functor b '(symbol symbol))
+				(##sys#strip-syntax b))
+			      (cadr x))
+			 (lambda ()
+			   (walk `(##core#begin ,@(cddr x)) e se dest ldest h))))
 
 		       ((##core#module)
 			(let* ((x (##sys#strip-syntax x))
@@ -857,7 +858,7 @@
 						       (lambda (il)
 							 (when enable-module-registration
 							   (emit-import-lib name il))
-							 (values 
+							 (values
 							  (reverse xs)
 							  '((##core#undefined)))))
 						      ((not enable-module-registration)
@@ -869,7 +870,8 @@
 							(reverse xs)
 							(if standalone-executable
 							    '()
-							    (##sys#compiled-module-registration (##sys#current-module)))))))
+							    (##sys#compiled-module-registration 
+							     (##sys#current-module)))))))
 					       (else
 						(loop 
 						 (cdr body)
@@ -1162,7 +1164,9 @@
 						   (list 
 						    var
 						    (foreign-type-convert-result
-						     (finish-foreign-result (final-foreign-type type) var)
+						     (finish-foreign-result
+						      (final-foreign-type type) 
+						      var)
 						     type) )
 						   (loop (cdr vars) (cdr types)) ) ) ) )
 					 ,(foreign-type-convert-argument

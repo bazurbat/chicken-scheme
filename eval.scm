@@ -615,13 +615,13 @@
 			   e #f tf cntr se))
 
 			 ((##core#let-module-alias)
-			  (fluid-let ((##sys#module-alias-environment
-				       (cons 
-					(##sys#strip-syntax 
-					 (map (lambda (b) (cons (car b) (cadr b)))
-					      (cadr x)))
-					##sys#module-alias-environment)))
-			    (walk `(##core#begin ,@(cddr x)) e #f tf cntr se)))
+			  (##sys#with-module-aliases
+			   (map (lambda (b)
+				  (##sys#check-syntax 'functor b '(symbol symbol))
+				  (##sys#strip-syntax b))
+				(cadr x))
+			   (lambda ()
+			     (compile `(##core#begin ,@(cddr x)) e #f tf cntr se))))
 
 			 ((##core#module)
 			  (let* ((x (##sys#strip-syntax x))
@@ -692,7 +692,8 @@
 				   '(##core#undefined)
 				   (let-values ([(exp _) 
 						 (##sys#do-the-right-thing
-						  (car ids) #f imp?)])
+						  (##sys#resolve-module-name (car ids) #f)
+						  #f imp?)])
 				     `(##core#begin ,exp ,(loop (cdr ids))) ) ) )
 			     e #f tf cntr se) ) ]
 

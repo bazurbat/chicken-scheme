@@ -55,7 +55,6 @@
 
 ;;; low-level module support
 
-(define ##sys#meta-macro-environment (make-parameter (##sys#macro-environment)))
 (define ##sys#current-module (make-parameter #f))
 (define ##sys#module-alias-environment '())
 
@@ -98,6 +97,17 @@
 
 (define (make-module name explist vexports sexports)
   (%make-module name explist '() '() '() '() '() '() '() vexports sexports))
+
+(define (##sys#register-module-alias alias name)
+  (set! ##sys#module-alias-environment
+    (cons (cons alias name) ##sys#module-alias-environment)))
+
+(define (##sys#with-module-aliases bindings thunk)
+  (fluid-let ((##sys#module-alias-environment
+	       (append
+		(map (lambda (b) (cons (car b) (cadr b))) bindings)
+		##sys#module-alias-environment)))
+    (thunk)))
 
 (define (##sys#resolve-module-name name loc)
   (let loop ((n name) (done '()))
@@ -715,3 +725,47 @@
 				      (err "invalid interface specification" x exps)))
 			       (err "invalid interface specification" x exps)))
 			  (else (err "invalid export" x exps))))))))))
+
+(define (##sys#register-functor name fargs body)
+  (putp name '##core#functor (cons fargs body)))
+
+(define (##sys#instantiate-functor name fname args exports)
+  (let ((funcdef (getp fname '##core#functor)))
+    (define (err . args)
+      (apply ##sys#syntax-error-hook name args))
+    (unless funcdef (err "instantation of undefined functor" fname))
+    (let ((fargs (car funcdef))
+	  (body (cdr funcdef)))
+      (define (merr)
+	(err "argument list mismatch in functor instantiation" 
+	     (cons name args) (cons fname (map car fargs))))
+      `(##core#let-module-alias
+	,(let loop ((as args) (fas fargs))
+	   (cond ((null? as) (if (null? fas) '() (merr)))
+		 ((null? fas) (merr))
+		 (else
+		  (let* ((p (car fas))
+			 (alias (car p))
+			 (mname (car as))
+			 (exps (cdr p)))
+		    (##sys#match-functor-argument alias mname exps name)
+		    (cons (list alias mname) (loop (cdr as) (cdr fas)))))))
+	(##core#module
+	 ,name
+	 ,(if (eq? '* exports) #t exports)
+	 ,@body)))))
+
+(define (##sys#match-functor-argument alias mname exps loc)
+  (let ((mod (##sys#find-module (##sys#resolve-module-name mname loc) #t loc)))
+    (unless (eq? exps '*)
+      (let ((missing '()))
+	(for-each
+	 (lambda (exp)
+	   (let ((sym (if (symbol? exp) exp (car exp))))
+	     (unless (##sys#find-export sym mod #f)
+	       (set! missing (cons sym missing)))))
+	 exps)
+	(when (pair? missing)
+	  (##sys#syntax-error-hook
+	   loc "argument module does not match required signature"
+	   mname alias))))))

@@ -1312,21 +1312,38 @@
  '()
  (##sys#er-transformer
   (lambda (x r c)
-    ;;XXX module alias + functor application
-    (##sys#check-syntax 'module x '(_ symbol _ . #(_ 0)))
-    ;;XXX use module name in "loc" argument?
-    (let ((exports (##sys#validate-exports (##sys#strip-syntax (caddr x)) 'module)))
-      `(##core#module 
-	,(cadr x)
-	,(if (eq? '* exports)
-	     #t 
-	     (caddr x))
-	,@(let ((body (cdddr x)))
-	    (if (and (pair? body) 
-		     (null? (cdr body))
-		     (string? (car body)))
-		`((##core#include ,(car body)))
-		body)))))))
+    (let ((len (length x)))
+      (cond ((and (fx>= len 2) (pair? (cadr x)))
+	     (##sys#check-syntax 'module x '(_ (symbol (symbol . #(_ 1))) . #(_ 0 1)))
+	     (let* ((x (##sys#strip-syntax x))
+		    (head (cadr x)))
+	       (##sys#instantiate-functor
+		(car head)
+		(caadr head)
+		(cdadr head)
+		(if (null? (cddr x))
+		    '*
+		    (##sys#validate-exports (caddr x) (car head))))))
+	    ((and (fx= len 3) (symbol? (cadr x)))
+	     (##sys#check-syntax 'module x '(_ symbol symbol))
+	     (let ((x (##sys#strip-syntax x)))
+	       (##sys#register-module-alias (cadr x) (caddr x))
+	       '(##core#undefined)))
+	    (else
+	     (##sys#check-syntax 'module x '(_ symbol _ . #(_ 0)))
+	     ;;XXX use module name in "loc" argument?
+	     (let ((exports (##sys#validate-exports (##sys#strip-syntax (caddr x)) 'module)))
+	       `(##core#module 
+		 ,(cadr x)
+		 ,(if (eq? '* exports)
+		      #t 
+		      exports)
+		 ,@(let ((body (cdddr x)))
+		     (if (and (pair? body) 
+			      (null? (cdr body))
+			      (string? (car body)))
+			 `((##core#include ,(car body)))
+			 body))))))))))
 
 (##sys#extend-macro-environment
  'begin-for-syntax
@@ -1394,6 +1411,8 @@
 (define ##sys#default-macro-environment
   (##sys#fixup-macro-environment (##sys#macro-environment)))
 
+(define ##sys#meta-macro-environment (make-parameter (##sys#macro-environment)))
+
 
 ;; Used by the syntax-rules implementation (and possibly handy elsewhere)
 ;; (kindly contributed by Peter Bex)
@@ -1416,4 +1435,3 @@
      ((> len temp)
       (loop (- len 1) (cdr input)))
      (else input))))
-

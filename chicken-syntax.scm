@@ -1117,19 +1117,51 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax 'define-interface x '(_ symbol _))
-    (let ((name (##sys#strip-syntax (cadr x))))
+    (let ((name (##sys#strip-syntax (cadr x)))
+	  (%quote (r 'quote)))
       `(,(r 'begin-for-syntax)
 	(##sys#register-interface
-	 ',name
-	 ',(let ((exps (##sys#strip-syntax (caddr x))))
-	     (cond ((eq? '* exps) '*)
-		   ((symbol? exps) `(#:interface ,exps))
-		   ((list? exps) (##sys#validate-exports exps 'define-interface))
-		   (else (##sys#syntax-error-hook
-			  'define-interface "invalid exports" (caddr x)))))))))))
+	 (,%quote ,name)
+	 (,%quote ,(let ((exps (##sys#strip-syntax (caddr x))))
+		     (cond ((eq? '* exps) '*)
+			   ((symbol? exps) `(#:interface ,exps))
+			   ((list? exps) (##sys#validate-exports exps 'define-interface))
+			   (else (##sys#syntax-error-hook
+				  'define-interface "invalid exports" (caddr x))))))))))))
 
+
+;;; functor definition
+
+(##sys#extend-macro-environment
+ 'functor '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'functor x '(_ (symbol . #((symbol _) 0)) . _))
+    (let* ((x (##sys#strip-syntax x))
+	   (head (cadr x))
+	   (name (car head))
+	   (body (cddr x))
+	   (%quote (r 'quote))
+	   (registration
+	    `(##sys#register-functor
+	      ',name
+	      ',(map (lambda (arg)
+		       (let ((argname (car arg))
+			     (exps (##sys#validate-exports (cadr arg) 'functor)))
+			 (cons argname exps)))
+		     (cdr head))
+	      ',body)))
+      `(##core#module
+	,name
+	#t
+	(import scheme chicken)
+	(begin-for-syntax ,registration))))))
+
+
+;; capture current macro env
 
 (##sys#macro-subset me0 ##sys#default-macro-environment)))
+
 
 ;; register features
 
