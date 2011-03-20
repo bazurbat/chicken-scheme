@@ -1313,17 +1313,18 @@
  (##sys#er-transformer
   (lambda (x r c)
     (let ((len (length x)))
-      (cond ((and (fx>= len 2) (pair? (cadr x)))
-	     (##sys#check-syntax 'module x '(_ (symbol (symbol . #(_ 1))) . #(_ 0 1)))
+      (cond ((and (fx>= len 4) (c (r '=) (caddr x)))
+	     (##sys#check-syntax 'module x '(_ symbol _ (symbol . #(_ 1)) . #(_ 0 1)))
 	     (let* ((x (##sys#strip-syntax x))
-		    (head (cadr x)))
+		    (name (cadr x))
+		    (app (cadddr x)))
 	       (##sys#instantiate-functor
-		(car head)
-		(caadr head)
-		(cdadr head)
-		(if (null? (cddr x))
+		name
+		(car app)		; functor name
+		(cdr app)		; functor arguments
+		(if (null? (cddddr x))
 		    '*
-		    (##sys#validate-exports (caddr x) (car head))))))
+		    (##sys#validate-exports (car (cddddr x)) name)))))
 	    ((and (fx= len 3) (symbol? (cadr x)))
 	     (##sys#check-syntax 'module x '(_ symbol symbol))
 	     (let ((x (##sys#strip-syntax x)))
