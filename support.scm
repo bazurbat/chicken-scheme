@@ -746,10 +746,10 @@
       (##sys#hash-table-for-each
        (lambda (sym plist)
 	 (when (variable-visible? sym)
-	   (and-let* ((type (variable-mark sym '##core#declared-type)))
+	   (when (variable-mark sym '##core#declared-type)
 	     (let ((specs
 		    (or (variable-mark sym '##core#specializations) '())))
-	       (pp (cons* sym type specs))))))
+	       (pp (cons* sym (variable-mark sym '##core#type) specs))))))
        db)
       (print "; END OF FILE"))))
 

@@ -227,7 +227,7 @@
       (set! local-definitions #t)
       (set! inline-output-file (option-arg ifile)))
     (and-let* ((tfile (memq 'emit-type-file options)))
-      (set! type-outout-file (option-arg tfile)))
+      (set! type-output-file (option-arg tfile)))
     (and-let* ([inlimit (memq 'inline-limit options)])
       (set! inline-max-size 
 	(let ([arg (option-arg inlimit)])
@@ -488,10 +488,6 @@
 
 	     (when (memq 'check-syntax options) (exit))
 
-	     (when type-output-file
-	       (dribble "generating type file `~a' ..." type-output-file)
-	       (emit-type-file type-output-file db))
-
 	     (let ([proc (user-pass)])
 	       (when proc
 		 (dribble "User pass...")
@@ -504,7 +500,6 @@
 			   (list (build-node-graph
 				  (canonicalize-begin-body exps) ) ) ) ) 
 		   (db #f))
-
 	       (print-node "initial node tree" '|T| node0)
 	       (initialize-analysis-database)
 
@@ -603,7 +598,11 @@
 		       (when (memq 'd debugging-chicken)
 			 (dump-defined-globals db))
 		       (when (memq 'v debugging-chicken)
-			 (dump-global-refs db)) )
+			 (dump-global-refs db))
+		       ;; do this here, because we must make sure we have a db
+		       (when type-output-file
+			 (dribble "generating type file `~a' ..." type-output-file)
+			 (emit-type-file type-output-file db)))
 		     (set! first-analysis #f)
 		     (end-time "analysis")
 		     (print-db "analysis" '|4| db i)

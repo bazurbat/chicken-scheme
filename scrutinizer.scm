@@ -742,7 +742,8 @@
 	    ((not (pair? x)) x)
 	    ((eq? 'quote (car x)) x)	; to handle numeric constants
 	    (else (cons (subst (car x)) (subst (cdr x))))))
-    (copy-node! (build-node-graph (subst template)) node)))
+    (let ((spec (subst template)))
+      (copy-node! (build-node-graph spec) node))))
 
 (define (validate-type type name)
   ;; - returns converted type or #f
