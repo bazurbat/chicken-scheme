@@ -702,7 +702,7 @@
   (define (err . args)
     (apply ##sys#syntax-error-hook loc args))
   (cond ((eq? '* exps) exps)
-	((not (pair? exps))
+	((not (list? exps))
 	 (err "invalid exports" exps))
 	(else
 	 (let loop ((xps exps))
