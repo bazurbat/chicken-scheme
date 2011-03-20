@@ -1,8 +1,14 @@
-(declare (standard-bindings)
-	 (extended-bindings)
-	 (block)
-	 (not safe)
-	 )
+;;;; fft.scm - fft benchmark, by Bradley Lucier
+
+
+(cond-expand
+  ((not chicken)			; disable in CHICKEN to test specialization in safe mode
+   (declare
+     (standard-bindings)
+     (extended-bindings)
+     (block)
+     (not safe)))
+  (else))
 
 ;;; All the following redefinitions are *ignored* by the Gambit compiler
 ;;; because of the declarations above.
@@ -2067,8 +2073,10 @@
 	(direct-fft-recursive-4 a table)
 	(inverse-fft-recursive-4 a table)))))
 
-(let-optionals (command-line-arguments)
-    ((iters "2000")
-     (n "11"))
-  (test (string->number iters) (string->number n)))
-
+(cond-expand
+  (chicken
+   (let-optionals (command-line-arguments)
+       ((iters "2000")
+	(n "11"))
+     (test (string->number iters) (string->number n))))
+  (else (test 2000 11)))

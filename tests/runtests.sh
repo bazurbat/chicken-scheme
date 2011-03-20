@@ -57,6 +57,12 @@ echo "======================================== compiler tests (unboxing) ..."
 $compile compiler-tests-3.scm -unsafe -unboxing
 ./a.out
 
+echo "======================================== compiler tests (specialization) ..."
+$compile fft.scm -O3 -d0 -disable-interrupts -b -o fft1
+$compile fft.scm -O3 -d0 -disable-interrupts -b -o fft2 -specialize
+/usr/bin/time fft1 1000 7
+/usr/bin/time fft2 1000 7
+
 echo "======================================== compiler inlining tests  ..."
 $compile inlining-tests.scm -optimize-level 3
 ./a.out
