@@ -722,7 +722,7 @@
 				      (lambda (iface)
 					(append iface (loop (cdr xps)))))
 				     (else
-				      (err "invalid interface specification" x exps)))
+				      (err "unknown interface" x exps)))
 			       (err "invalid interface specification" x exps)))
 			  (else (err "invalid export" x exps))))))))))
 
@@ -748,15 +748,15 @@
 			 (alias (car p))
 			 (mname (car as))
 			 (exps (cdr p)))
-		    (##sys#match-functor-argument alias mname exps name)
+		    (##sys#match-functor-argument alias name mname exps fname)
 		    (cons (list alias mname) (loop (cdr as) (cdr fas)))))))
 	(##core#module
 	 ,name
 	 ,(if (eq? '* exports) #t exports)
 	 ,@body)))))
 
-(define (##sys#match-functor-argument alias mname exps loc)
-  (let ((mod (##sys#find-module (##sys#resolve-module-name mname loc) #t loc)))
+(define (##sys#match-functor-argument alias name mname exps fname)
+  (let ((mod (##sys#find-module (##sys#resolve-module-name mname 'module) #t 'module)))
     (unless (eq? exps '*)
       (let ((missing '()))
 	(for-each
@@ -767,5 +767,9 @@
 	 exps)
 	(when (pair? missing)
 	  (##sys#syntax-error-hook
-	   loc "argument module does not match required signature"
-	   mname alias))))))
+	   'module 
+	   (string-append 
+	    "argument module `" (symbol->string mname) "' does not match required signature "
+	    "in instantiation `" (symbol->string name) "' of functor `"
+	    (symbol->string fname) "'")))))))
+
