@@ -465,7 +465,7 @@
 	(report
 	 loc
 	 (sprintf
-	  "~aexpected a value of type `~a', but were given a value of type `~a'"
+	  "~aexpected a value of type `~a', but was given a value of type `~a'"
 	  (pname) 
 	  xptype
 	  ptype)))
@@ -476,7 +476,7 @@
 	    (report 
 	     loc
 	     (sprintf
-	      "~aexpected ~a argument~a, but where given ~a argument~a"
+	      "~aexpected ~a argument~a, but was given ~a argument~a"
 	      (pname) alen (multiples alen)
 	      nargs (multiples nargs)))))
 	(do ((args (cdr args) (cdr args))
@@ -487,7 +487,7 @@
 	    (report
 	     loc
 	     (sprintf
-	      "~aexpected argument #~a of type `~a', but where given an argument of type `~a'"
+	      "~aexpected argument #~a of type `~a', but was given an argument of type `~a'"
 	      (pname) i (car atypes) (car args)))))
 	(let ((r (procedure-result-types ptype values-rest (cdr args))))
 	  (d  "  result-types: ~a" r)
