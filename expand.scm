@@ -1360,25 +1360,17 @@
  '()
  (##sys#er-transformer
   (lambda (x r c)
-    (let ((exps (cdr x))
+    (let ((exps 
+	   (##sys#validate-exports 
+	    (##sys#strip-syntax (cdr x))
+	    'export))
 	  (mod (##sys#current-module)))
       (when mod
-	(for-each
-	 (lambda (exp)
-	   (when (and (not (symbol? exp)) 
-		      (let loop ((iexp exp))
-			(cond ((null? iexp) #f)
-			      ((not (pair? iexp)) #t)
-			      ((not (symbol? (car iexp))) #t)
-			      (else (loop (cdr iexp))))))
-	     (##sys#syntax-error-hook 'export "invalid export syntax" exp (module-name mod))))
-	 exps)
 	(set-module-export-list! 
 	 mod
 	 (let ((xl (module-export-list mod)))
-	   (if (eq? xl #t) 
-	       #t
-	       (append xl (map ##sys#strip-syntax exps))))))
+	   (or (eq? xl #t) 		; ==> #t
+	       (append xl exps)))))
       '(##core#undefined)))))
 
 

@@ -772,4 +772,3 @@
 	    "argument module `" (symbol->string mname) "' does not match required signature "
 	    "in instantiation `" (symbol->string name) "' of functor `"
 	    (symbol->string fname) "'")))))))
-
