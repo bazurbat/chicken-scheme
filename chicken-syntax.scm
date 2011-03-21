@@ -1119,15 +1119,20 @@
     (##sys#check-syntax 'define-interface x '(_ symbol _))
     (let ((name (##sys#strip-syntax (cadr x)))
 	  (%quote (r 'quote)))
+      (when (eq? '* name)
+	(##sys#syntax-error-hook
+	 'define-interface "`*' is not allowed as a name for an interface"))
       `(,(r 'begin-for-syntax)
 	(##sys#register-interface
 	 (,%quote ,name)
 	 (,%quote ,(let ((exps (##sys#strip-syntax (caddr x))))
 		     (cond ((eq? '* exps) '*)
 			   ((symbol? exps) `(#:interface ,exps))
-			   ((list? exps) (##sys#validate-exports exps 'define-interface))
-			   (else (##sys#syntax-error-hook
-				  'define-interface "invalid exports" (caddr x))))))))))))
+			   ((list? exps) 
+			    (##sys#validate-exports exps 'define-interface))
+			   (else
+			    (##sys#syntax-error-hook
+			     'define-interface "invalid exports" (caddr x))))))))))))
 
 
 ;;; functor definition

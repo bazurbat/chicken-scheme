@@ -701,7 +701,11 @@
   ;; expects "exps" to be stripped
   (define (err . args)
     (apply ##sys#syntax-error-hook loc args))
+  (define (iface name)
+    (or (getp name '##core#interface)
+	(err "unknown interface" x exps)))
   (cond ((eq? '* exps) exps)
+	((symbol? exps) (iface exps))
 	((not (list? exps))
 	 (err "invalid exports" exps))
 	(else
@@ -718,11 +722,7 @@
 			   (cons (cdr x) (loop (cdr xps)))) ; currently not used
 			  ((eq? #:interface (car x))
 			   (if (and (pair? (cdr x)) (symbol? (cadr x)))
-			       (cond ((getp (cadr x) '##core#interface) =>
-				      (lambda (iface)
-					(append iface (loop (cdr xps)))))
-				     (else
-				      (err "unknown interface" x exps)))
+			       (iface (cadr x))
 			       (err "invalid interface specification" x exps)))
 			  (else (err "invalid export" x exps))))))))))
 

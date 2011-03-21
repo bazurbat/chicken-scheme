@@ -173,6 +173,13 @@ tests/dwindtst.scm
 tests/dwindtst.expected
 tests/callback-tests.scm
 tests/reader-tests.scm
+tests/simple-functors-test.scm
+tests/breadth-first.scm
+tests/QUEUE.scm
+tests/test-queue.scm
+tests/functor-tests.scm
+tests/square-functor.scm
+tests/use-square-functor.scm
 tweaks.scm
 utils.scm
 apply-hack.x86.S

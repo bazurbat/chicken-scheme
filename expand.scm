@@ -1322,15 +1322,17 @@
 		      '(##core#undefined))
 		     (else
 		      (##sys#check-syntax 
-		       'module x '(_ symbol _ (symbol . #(_ 1)) . #(_ 0 1)))
+		       'module x '(_ symbol _ (symbol . #(_ 1))))
 		      (##sys#instantiate-functor
 		       name
-		       (car app)		; functor name
-		       (cdr app)))))); functor arguments
+		       (car app)	; functor name
+		       (cdr app))))))	; functor arguments
 	    (else
 	     (##sys#check-syntax 'module x '(_ symbol _ . #(_ 0)))
 	     ;;XXX use module name in "loc" argument?
-	     (let ((exports (##sys#validate-exports (##sys#strip-syntax (caddr x)) 'module)))
+	     (let ((exports
+		    (##sys#validate-exports
+		     (##sys#strip-syntax (caddr x)) 'module)))
 	       `(##core#module 
 		 ,(cadr x)
 		 ,(if (eq? '* exports)

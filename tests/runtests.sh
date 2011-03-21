@@ -145,6 +145,18 @@ $interpret -s reexport-m2.scm
 $compile reexport-m2.scm
 ./a.out
 
+echo "======================================== functor tests ..."
+$interpret -bnq simple-functors-test.scm
+$compile simple-functors-test.scm
+./a.out
+$interpret -bnq functor-tests.scm
+$compile -bnq functor-tests.scm
+./a.out
+$compile -s square-functor.scm -J
+$compile -s square-functor.import.scm
+$compile run-square-functor.scm
+./a.out
+
 echo "======================================== compiler syntax tests ..."
 $compile compiler-syntax-tests.scm
 ./a.out
