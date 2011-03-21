@@ -1136,12 +1136,12 @@
  'functor '()
  (##sys#er-transformer
   (lambda (x r c)
-    (##sys#check-syntax 'functor x '(_ (symbol . #((symbol _) 0)) . _))
+    (##sys#check-syntax 'functor x '(_ (symbol . #((symbol _) 0)) _ . _))
     (let* ((x (##sys#strip-syntax x))
 	   (head (cadr x))
 	   (name (car head))
-	   (body (cddr x))
-	   (%quote (r 'quote))
+	   (exps (caddr x))
+	   (body (cdddr x))
 	   (registration
 	    `(##sys#register-functor
 	      ',name
@@ -1150,6 +1150,7 @@
 			     (exps (##sys#validate-exports (cadr arg) 'functor)))
 			 (cons argname exps)))
 		     (cdr head))
+	      ',(##sys#validate-exports exps 'functor)
 	      ',body)))
       `(##core#module
 	,name

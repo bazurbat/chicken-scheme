@@ -726,16 +726,17 @@
 			       (err "invalid interface specification" x exps)))
 			  (else (err "invalid export" x exps))))))))))
 
-(define (##sys#register-functor name fargs body)
-  (putp name '##core#functor (cons fargs body)))
+(define (##sys#register-functor name fargs fexps body)
+  (putp name '##core#functor (cons fargs (cons fexps body))))
 
-(define (##sys#instantiate-functor name fname args exports)
+(define (##sys#instantiate-functor name fname args)
   (let ((funcdef (getp fname '##core#functor)))
     (define (err . args)
       (apply ##sys#syntax-error-hook name args))
     (unless funcdef (err "instantation of undefined functor" fname))
     (let ((fargs (car funcdef))
-	  (body (cdr funcdef)))
+	  (exports (cadr funcdef))
+	  (body (cddr funcdef)))
       (define (merr)
 	(err "argument list mismatch in functor instantiation" 
 	     (cons name args) (cons fname (map car fargs))))

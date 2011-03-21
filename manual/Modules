@@ -341,15 +341,52 @@ must be available separately.
 
 === Functors
 
-A ''functor'' is a higher-order module that expands can be
-parameterized with other modules. A functor defines the body of a
-module for a set or argument modules and can be instantiated with
-concrete module names specializing the code contained in the
-functor. This is best explained with an example:
+A ''functor'' is a higher-order module that can be parameterized with
+other modules. A functor defines the body of a module for a set or
+argument modules and can be instantiated with concrete module names
+specializing the code contained in the functor. This is best explained
+with an example:
 
 <enscript highlight=scheme>
 XXX need example here...
 </enscript>
+
+The general syntax of a functor definition looks like this:
+
+<enscript highlight=scheme>
+(functor (FUNCTORNAME (ARGUMENTMODULE1 EXPORTS1) ...) 
+  FUNCTOREXPORTS
+  BODY)
+</enscript>
+
+This functor definition does not generate any code. This is done
+by ''instantiating'' the functor for specific input modules:
+
+<enscript highlight=scheme>
+(module MODULENAME = (FUNCTORNAME MODULENAME1 ...))
+</enscript>
+
+Inside {{BODY}}, references to {{ARGUMENTMODULE}} will be replaced by
+the corresponding {{MODUELNAME}} argument. The instantiation expands
+into the complete functor-code {{BODY}} and as such can be considered
+a particular sort of macro-expansion. Note that there is no
+requirement that a specific export of an argument-module must be
+syntax or non-syntax - it can be syntax in one instantiation and a
+function definition in another.
+
+A "degenerate" form of module assignment is
+
+<enscript highlight=scheme>
+(module MODULENAME1 = MODULENAME2)
+</enscript>
+
+which just defines the alias {{MODULENAME1}} for the module {{MODULENAME2}}.
+
+Since functors exist at compile time, they can be stored in
+import-libraries via {{-emit-import-library FUNCTORNAME}} or
+{{-emit-all-import-libraries}} (see [[Using the compiler]] for more
+information about this). That allows you to import functors for later
+instantiation.
 
 
 ---
