@@ -144,18 +144,18 @@
 	   ((fixnum) (let ((#:tmp #(1))) '#t)))
 
 (zero? (procedure zero? (number) boolean) 
-       ((fixnum) (eq? #(1) 0))
+       ((fixnum) (eq? #(1) '0))
        ((number) (##core#inline "C_u_i_zerop" #(1))))
 
 (odd? (procedure odd? (number) boolean) ((fixnum) (fxodd? #(1))))
 (even? (procedure even? (number) boolean) ((fixnum) (fxeven? #(1))))
 
 (positive? (procedure positive? (number) boolean)
-	   ((fixnum) (##core#inline "C_fixnum_greaterp" #(1) 0))
+	   ((fixnum) (##core#inline "C_fixnum_greaterp" #(1) '0))
 	   ((number) (##core#inline "C_u_i_positivep" #(1))))
 
 (negative? (procedure negative? (number) boolean)
-	   ((fixnum) (##core#inline "C_fixnum_lessp" #(1) 0))
+	   ((fixnum) (##core#inline "C_fixnum_lessp" #(1) '0))
 	   ((number) (##core#inline "C_u_i_negativep" #(1))))
 
 (max (procedure max (#!rest number) number)
@@ -500,7 +500,7 @@
 (abort (procedure abort (*) noreturn))
 
 (add1 (procedure add1 (number) number)
-      ((float) (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) 1.0)))
+      ((float) (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) '1.0)))
 
 (argc+argv (procedure argc+argv () fixnum list))
 (argv (procedure argv () list))
@@ -813,7 +813,7 @@
 
 (sub1 (procedure sub1 (number) number)
       ((float) (##core#inline_allocate ("C_a_i_flonum_difference" 4) 
-				       #(1) 1.0)))
+				       #(1) '1.0)))
 
 (subvector (procedure subvector (vector fixnum #!optional fixnum) vector))
 (symbol-escape (procedure symbol-escape (#!optional *) *))

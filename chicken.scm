@@ -91,13 +91,13 @@
 		    (set! options
 		      (cons* 'optimize-leaf-routines 'inline 'inline-global
 			     'unboxing 'local
-			     ;;XXX 'specialize
+			     'specialize
 			     options) ) )
 		   ((4)
 		    (set! options
 		      (cons* 'optimize-leaf-routines 'inline 'inline-global
 			     'unboxing 
-			     ;;XXX 'specialize
+			     'specialize
 			     'local 'unsafe
 			     options) ) )
 		   (else
@@ -106,7 +106,7 @@
 			(cons* 'disable-interrupts 'no-trace 'unsafe 'block
 			       'optimize-leaf-routines 'lambda-lift 
 			       'no-lambda-info
-			       ;;XXX 'specialize
+			       'specialize
 			       'inline 'inline-global 'unboxing
 			       options) ) ) ) )
 		 (loop (cdr rest)) ) )

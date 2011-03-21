@@ -674,7 +674,8 @@
 	(d "  -> ~a" results)
 	results)))
   (let ((rn (walk (first (node-subexpressions node)) '() '() #f #f)))
-    (when (debugging 'x "specializations:")
+    (when (and (pair? specialization-statistics)
+	       (debugging 'x "specializations:"))
       (for-each 
        (lambda (ss)
 	 (printf "  ~a ~s~%" (cdr ss) (car ss)))

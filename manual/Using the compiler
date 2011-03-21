@@ -161,9 +161,9 @@ the source text should be read from standard input.
      -optimize-level 0          is equivalent to -no-usual-integrations -no-compiler-syntax
      -optimize-level 1          is equivalent to -optimize-leaf-routines
      -optimize-level 2          is equivalent to -optimize-leaf-routines -inline -unboxing
-     -optimize-level 3          is equivalent to -optimize-leaf-routines -local -inline -inline-global -unboxing
-     -optimize-level 4          is equivalent to -optimize-leaf-routines -local -inline -inline-global -unboxing -unsafe
-     -optimize-level 5          is equivalent to -optimize-leaf-routines -block -inline -inline-global -unsafe -unboxing -lambda-lift -disable-interrupts -no-trace -no-lambda-info
+     -optimize-level 3          is equivalent to -optimize-leaf-routines -local -inline -inline-global -unboxing -specialize
+     -optimize-level 4          is equivalent to -optimize-leaf-routines -local -inline -inline-global -unboxing -specialize -unsafe
+     -optimize-level 5          is equivalent to -optimize-leaf-routines -block -inline -inline-global -unboxing -specialize -unsafe -lambda-lift -disable-interrupts -no-trace -no-lambda-info
 
 ; -output-file FILENAME : Specifies the pathname of the generated C file. Default is {{FILENAME.c}}.
 
@@ -187,6 +187,8 @@ the source text should be read from standard input.
 ; -setup-mode : When locating extension, search the current directory first. By default, extensions are located first in the ''extension repository'', where {{chicken-install}} stores compiled extensions and their associated metadata.
 
 ; -scrutinize : Enable simple flow-analysis to catch common type errors and argument/result mismatches. You can also use the {{scrutinize}} declaration to enable scrutiny.
+
+; -specialize : Enable simple flow-analysis for doing some type-directed optimizations.
 
 ; -static-extension NAME : similar to {{-require-extension NAME}}, but links extension statically (also applies for an explicit {{(require-extension NAME)}}).
 
