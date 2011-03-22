@@ -1514,7 +1514,6 @@ Usage: chicken FILENAME OPTION ...
 
     -optimize-level NUMBER       enable certain sets of optimization options
     -optimize-leaf-routines      enable leaf routine optimization
-    -lambda-lift                 enable lambda-lifting
     -no-usual-integrations       standard procedures may be redefined
     -unsafe                      disable all safety checks
     -local                       assume globals are only modified in current
@@ -1522,9 +1521,6 @@ Usage: chicken FILENAME OPTION ...
     -block                       enable block-compilation
     -disable-interrupts          disable interrupts in compiled code
     -fixnum-arithmetic           assume all numbers are fixnums
-    -benchmark-mode              equivalent to 'block -optimize-level 4
-                                  -debug-level 0 -fixnum-arithmetic -lambda-lift
-                                  -inline -disable-interrupts'
     -disable-stack-overflow-checks  disables detection of stack-overflows
     -inline                      enable inlining
     -inline-limit LIMIT          set inlining threshold
