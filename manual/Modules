@@ -357,11 +357,53 @@ A ''functor'' is a higher-order module that can be parameterized with
 other modules. A functor defines the body of a module for a set or
 argument modules and can be instantiated with concrete module names
 specializing the code contained in the functor. This is best explained
-with an example:
+with a silly and pointless example:
 
 <enscript highlight=scheme>
-XXX need example here...
+(functor (squaring-functor (M (multiply))) (square)
+  (import scheme M)
+  (define (square x) (multiply x x)))
 </enscript>
+
+This defines a generic "squaring" operation that uses {{multiply}}, a
+procedure (or macro!) exported by the as-yet-unknown module {{M}}. Now
+let's instantiate the functor for a specific input module:
+
+<enscript highlight=scheme>
+(module nums (multiply)
+  (import scheme)
+  (define (multiply x y) (* x y)))
+
+(module number-squarer = (squaring-functor nums))
+
+(import number-squarer)
+(square 3)                ===>  9
+</enscript>
+
+We can easily instantiate the functor for other inputs:
+
+<enscript highlight=scheme>
+(module stars (multiply)
+  (import scheme)
+  (use srfi-1)
+  (define (multiply x y) 
+    (list-tabulate x (lambda _ (list-tabulate y (lambda _ '*))))))
+
+(module star-squarer = (squaring-functor stars))
+
+(import star-squarer)
+(square 3)                ===>  ((* * *)
+                                 (* * *)
+                                 (* * *))
+</enscript>
+
+So whenever you have a generic algorithm it can be packaged into a
+functor and specialized for specific input modules.  The instantiation
+will check that the argument modules match the required signature,
+{{(multiply)}} in the case above.  The argument module must export at
+least the signature given in the functor definition. You can use
+{{define-interface}} to reduce typing and give a more meaningful name
+to a set of exports.
 
 The general syntax of a functor definition looks like this:
 
@@ -384,13 +426,17 @@ into the complete functor-code {{BODY}} and as such can be considered
 a particular sort of macro-expansion. Note that there is no
 requirement that a specific export of an argument-module must be
 syntax or non-syntax - it can be syntax in one instantiation and a
-function definition in another.
+procedure definition in another.
 
 Since functors exist at compile time, they can be stored in
 import-libraries via {{-emit-import-library FUNCTORNAME}} or
 {{-emit-all-import-libraries}} (see [[Using the compiler]] for more
 information about this). That allows you to import functors for later
-instantiation.
+instantiation. Internally, a functor-definition also defines a module
+with the same name, but importing this module has no effect. It also
+has no runtime code, so it is sufficient to merely {{import}} it (as
+opposed to using {{require-extension}} or one of its variants, which
+also loads the run-time part of a module).
 
 
 ---
