@@ -58,8 +58,8 @@ $compile compiler-tests-3.scm -unsafe -unboxing
 ./a.out
 
 echo "======================================== compiler tests (specialization) ..."
-$compile fft.scm -O3 -d0 -disable-interrupts -b -o fft1
-$compile fft.scm -O3 -d0 -disable-interrupts -b -o fft2 -specialize
+$compile fft.scm -O2 -local -d0 -disable-interrupts -b -o fft1
+$compile fft.scm -O2 -local -specialize -debug x -d0 -disable-interrupts -b -o fft2 -specialize
 /usr/bin/time fft1 1000 7
 /usr/bin/time fft2 1000 7
 
@@ -82,12 +82,13 @@ fi
 diff -bu scrutiny.out scrutiny.expected
 
 echo "======================================== specialization tests ..."
-rm foo.types
+rm -f foo.types foo.import.*
 $compile specialization-test-1.scm -emit-type-file foo.types -specialize \
-  -debug ox
+  -debug ox -emit-import-library foo
 ./a.out
 $compile specialization-test-2.scm -types foo.types -specialize -debug ox
 ./a.out
+rm -f foo.types foo.import.*
 
 echo "======================================== callback tests ..."
 $compile callback-tests.scm

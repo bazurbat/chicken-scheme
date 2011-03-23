@@ -2,7 +2,7 @@
 
 
 (module main ()
-(import scheme chicken foreign)
+(import scheme chicken foreign foo)
 
 #>
 static int inlined(int i) {
@@ -11,11 +11,6 @@ n += i;
 return n;}
 <#
 
-(define (foo i)
-  (print "foo: " i)
-  0)
-
-(assert (zero? (foo 1.0)))
 (assert (= 1 (foo 1)))
 
 )

@@ -1467,12 +1467,19 @@
 	(for-each
 	 (lambda (spec)
 	   (if (not (and (list? spec)
-			 (>= 2 (length spec))
+			 (>= (length spec) 2)
 			 (symbol? (car spec))))
 	       (warning "illegal type declaration" (##sys#strip-syntax spec))
 	       (let ((name (##sys#globalize (car spec) se))
 		     (type (##sys#strip-syntax (cadr spec))))
 		 (cond ((validate-type type name)
+			;; HACK: since `:' doesn't have access to the SE, we
+			;; fixup the procedure name if type is a named procedure type
+			;; (We only have access to the SE for ##sys#globalize in here).
+			;; Quote terrible.
+			(when (and (pair? type) (eq? 'procedure (car type)) (symbol? (cadr type)))
+			  (set-car! (cdr type) name))
+			(print "mark: " name " -> " type)
 			(mark-variable name '##core#type type)
 			(mark-variable name '##core#declared-type)
 			(when (pair? (cddr spec))

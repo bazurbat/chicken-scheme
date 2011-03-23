@@ -1,7 +1,7 @@
 ;;;; specialization-test-1.scm
 
 
-(module main ()
+(module foo (foo)
 (import scheme chicken foreign)
 
 #>
@@ -13,6 +13,7 @@ return n;}
 
 (: foo (fixnum -> fixnum)
    ((fixnum) (##core#inline "inlined" #(1))))
+
 (define (foo i)
   (print "foo: " i)
   0)

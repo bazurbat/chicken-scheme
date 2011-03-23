@@ -59,8 +59,8 @@
 
 ; global symbol properties:
 ;
-;   ##core#type           ->  <typespec>
-;   ##core#declared-type  ->  <bool>
+;   ##core#type           ->  TYPESPEC
+;   ##core#declared-type  ->  BOOL
 ;   ##core#specializations -> (SPECIALIZATION ...)
 ;
 ; specialization specifiers:
@@ -105,11 +105,7 @@
   (define (global-result id loc)
     (cond ((##sys#get id '##core#type) =>
 	   (lambda (a) 
-	     (cond #;((and (get db id 'assigned)      ; remove assigned global from type db
-			 (not (##sys#get id '##core#declared-type)))
-		    (##sys#put! id '##core#type #f)
-		    '*)
-		   ((eq? a 'deprecated)
+	     (cond ((eq? a 'deprecated)
 		    (report
 		     loc
 		     (sprintf "use of deprecated library procedure `~a'" id) )
@@ -125,7 +121,7 @@
 	  (else '*)))
   (define (variable-result id e loc)
     (cond ((and (get db id 'assigned) 
-		(not (##sys#get id '##core#declared-type)) )
+		(not (##sys#get id '##core#declared-type)))
 	   '*)
 	  ((assq id e) =>
 	   (lambda (a)
