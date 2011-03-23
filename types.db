@@ -55,7 +55,7 @@
 
 (pair? (procedure pair? (*) boolean)
        ((pair) (let ((#:tmp #(1))) '#t))
-       (((not pair)) (let ((#:tmp #(1))) '#f)))
+       (((not (or pair list))) (let ((#:tmp #(1))) '#f)))
 
 (cons (procedure cons (* *) pair))
 
@@ -94,8 +94,13 @@
 (set-car! (procedure set-car! (pair *) undefined) ((pair *) (##sys#setslot #(1) '0 #(2))))
 (set-cdr! (procedure set-cdr! (pair *) undefined) ((pair *) (##sys#setslot #(1) '1 #(2))))
 
-(null? (procedure null? (*) boolean) ((null) (let ((#:tmp #(1))) '#t)) ((not null) (let ((#:tmp #(1))) '#f)))
-(list? (procedure list? (*) boolean) (((or null pair list)) (let ((#:tmp #(1))) '#t)) (((not (or null pair list))) (let ((#:tmp #(1))) '#f)))
+(null? (procedure null? (*) boolean)
+       ((null) (let ((#:tmp #(1))) '#t)) ((not null) (let ((#:tmp #(1))) '#f)))
+
+(list? (procedure list? (*) boolean) 
+       (((or null pair list)) (let ((#:tmp #(1))) '#t))
+       (((not (or null pair list))) (let ((#:tmp #(1))) '#f)))
+
 (list (procedure list (#!rest) list))
 (length (procedure length (list) fixnum) ((list) (##core#inline "C_u_i_length" #(1))))
 (list-tail (procedure list-tail (list fixnum) *))
@@ -843,7 +848,7 @@
 
 (atom? (procedure atom? (*) boolean)
        ((pair) (let ((#:tmp #(1))) '#f))
-       (((not pair)) (let ((#:tmp #(1))) '#t)))
+       (((not (or pair list))) (let ((#:tmp #(1))) '#t)))
 
 (binary-search (procedure binary-search (vector (procedure (*) *)) *))
 (butlast (procedure butlast (pair) list))
@@ -1477,7 +1482,7 @@
 
 (not-pair? (procedure not-pair? (*) boolean)
 	   ((pair) (let ((#:tmp #(1))) '#f))
-	   (((not pair)) (let ((#:tmp #(1))) '#t)))
+	   (((not (or pair list))) (let ((#:tmp #(1))) '#t)))
 
 (null-list? (procedure null-list? (list) boolean)
 	    ((pair) (let ((#:tmp #(1))) '#f))
