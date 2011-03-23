@@ -18,5 +18,5 @@
 (module bar = (do-things f))
 
 (import bar)
-(assert (equal? '(1 2) (doit)))
+(assert (equal? '(1 2) (do-it)))
 

@@ -109,14 +109,6 @@ diff -bu dwindtst.expected dwindtst.out
 echo "*** Skipping \"feeley-dynwind\" for now ***"
 # $interpret -s feeley-dynwind.scm
 
-echo "======================================== lolevel tests ..."
-$interpret -s lolevel-tests.scm
-$compile lolevel-tests.scm
-./a.out
-
-echo "======================================== arithmetic tests ..."
-$interpret -D check -s arithmetic-test.scm
-
 echo "======================================== syntax tests ..."
 $interpret -s syntax-tests.scm
 
@@ -150,11 +142,12 @@ $interpret -bnq simple-functors-test.scm
 $compile simple-functors-test.scm
 ./a.out
 $interpret -bnq functor-tests.scm
-$compile -bnq functor-tests.scm
+$compile functor-tests.scm
 ./a.out
 $compile -s square-functor.scm -J
 $compile -s square-functor.import.scm
-$compile run-square-functor.scm
+$interpret -bnq use-square-functor.scm
+$compile use-square-functor.scm
 ./a.out
 
 echo "======================================== compiler syntax tests ..."
@@ -226,6 +219,9 @@ $interpret -bnq ec.so ec-tests.scm
 # $compile ec-tests.scm
 # ./a.out        # takes ages to compile
 
+echo "======================================== arithmetic tests ..."
+$interpret -D check -s arithmetic-test.scm
+
 echo "======================================== hash-table tests ..."
 $interpret -s hash-table-tests.scm
 
@@ -257,6 +253,11 @@ mkdir tmpdir
 touch tmpdir/.dotfile
 ln -s /usr tmpdir/symlink
 $interpret -R posix -e '(delete-directory "tmpdir" #t)'
+
+echo "======================================== lolevel tests ..."
+$interpret -s lolevel-tests.scm
+$compile lolevel-tests.scm
+./a.out
 
 echo "======================================== regular expression tests ..."
 $interpret -bnq test-irregex.scm

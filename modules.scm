@@ -724,7 +724,11 @@
 			   (if (and (pair? (cdr x)) (symbol? (cadr x)))
 			       (iface (cadr x))
 			       (err "invalid interface specification" x exps)))
-			  (else (err "invalid export" x exps))))))))))
+			  (else
+			   (let loop2 ((lst x))
+			     (cond ((null? lst) (cons x (loop (cdr xps))))
+				   ((symbol? (car lst)) (loop2 (cdr lst)))
+				   (else (err "invalid export" x exps)))))))))))))
 
 (define (##sys#register-functor name fargs fexps body)
   (putp name '##core#functor (cons fargs (cons fexps body))))

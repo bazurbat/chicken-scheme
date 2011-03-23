@@ -1,7 +1,7 @@
 ;;;; functor-tests.scm
 
 
-(use srfi-1 data-structures)
+(use srfi-1 data-structures extras)
 
 
 (include "test-queue")
@@ -33,7 +33,9 @@
       (if (empty? q2) (entry-x q) (head q2))))
   (define (dequeue q) 
     (let ((q2 (entry-q q)))
-      (if (empty? q2) empty-queue (make-queue (dequeue q) x)))) )
+      (if (empty? q2) 
+	  empty-queue 
+	  (make-entry (dequeue q2) (entry-x q)))) ))
 
 
 (module queue3 QUEUE
@@ -61,14 +63,14 @@
 (import (rename test-q2 (list->queue l2q2) (queue->list q2l2)))
 (import (rename test-q3 (list->queue l2q3) (queue->list q2l3)))
 
-(define long-list (list-tabulate 10000 identity))
+(define long-list (list-tabulate 1000 identity))
 
 (print "Queue representation #1:")
 (time (q2l1 (l2q1 long-list)))
 (print "Queue representation #2:")
 (time (q2l2 (l2q2 long-list)))
 (print "Queue representation #3:")
-(time (q2l3 (q2l3 long-list)))
+(time (q2l3 (l2q3 long-list)))
 
 (module breadth = (breadth-first queue3))
 (import breadth)
@@ -79,4 +81,5 @@
 (define (show n csq) 
   (map list->string (take csq 1)))
 
+;;XXX shows (""), which looks wrong:
 (pp (show 8 (search next-char '())))	;XXX assert

@@ -9,7 +9,7 @@
   (use srfi-1)
   
   (define (list->queue lst)
-    (fold (lambda (x q) (enqueue q x)) empty-queue l))
+    (fold (lambda (x q) (enqueue q x)) empty-queue lst))
 
   (define (queue->list q)
     (if (empty? q)

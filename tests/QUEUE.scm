@@ -2,8 +2,8 @@
 
 
 (define-interface QUEUE
-  empty-queue
-  enqueue
-  head
-  empty?
-  dequeue)
+  (empty-queue
+   enqueue
+   head
+   empty?
+   dequeue))
