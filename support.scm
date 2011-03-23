@@ -1151,17 +1151,27 @@
     [(c-string-list) `(##sys#peek-c-string-list ,body '#f)]
     [(c-string-list*) `(##sys#peek-and-free-c-string-list ,body '#f)]
     [else
-     (cond 
-       [(and (list? type) (= 3 (length type)) 
-	     (memq (car type) '(instance instance-ref)))
-	(let ((tmp (gensym)))
-	  `(let ((,tmp ,body))
-	     (and ,tmp
-		  (not (##sys#null-pointer? ,tmp))
-		  (make ,(caddr type) 'this ,tmp) ) ) ) ]
-       [(and (list? type) (= 3 (length type)) (eq? 'nonnull-instance (car type)))
-	`(make ,(caddr type) 'this ,body) ]
-       [else body] ) ] ) )
+     (if (list? type)
+	 (if (and (eq? (car type) 'const)
+		  (= 2 (length type))
+		  (memq (cadr type) '(c-string c-string* unsigned-c-string
+					       unsigned-c-string* nonnull-c-string
+					       nonnull-c-string*
+					       nonnull-unsigned-string*)))
+	     (finish-foreign-result (cadr type) body)
+	     (if (= 3 (length type))
+		 (case (car type)
+		   ((instance instance-ref)
+		    (let ((tmp (gensym)))
+		      `(let ((,tmp ,body))
+			 (and ,tmp
+			      (not (##sys#null-pointer? ,tmp))
+			      (make ,(caddr type) 'this ,tmp) ) ) ) )
+		   ((nonnull-instance)
+		    `(make ,(caddr type) 'this ,body) )
+		   (else body))
+		 body))
+	 body)]))
 
 
 ;;; Scan expression-node for variable usage:
@@ -1528,7 +1538,6 @@ Usage: chicken FILENAME OPTION ...
 
     -optimize-level NUMBER       enable certain sets of optimization options
     -optimize-leaf-routines      enable leaf routine optimization
-    -lambda-lift                 enable lambda-lifting
     -no-usual-integrations       standard procedures may be redefined
     -unsafe                      disable all safety checks
     -local                       assume globals are only modified in current
@@ -1536,9 +1545,6 @@ Usage: chicken FILENAME OPTION ...
     -block                       enable block-compilation
     -disable-interrupts          disable interrupts in compiled code
     -fixnum-arithmetic           assume all numbers are fixnums
-    -benchmark-mode              equivalent to 'block -optimize-level 4
-                                  -debug-level 0 -fixnum-arithmetic -lambda-lift
-                                  -inline -disable-interrupts'
     -disable-stack-overflow-checks  disables detection of stack-overflows
     -inline                      enable inlining
     -inline-limit LIMIT          set inlining threshold
