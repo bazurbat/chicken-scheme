@@ -1313,13 +1313,36 @@
  (##sys#er-transformer
   (lambda (x r c)
     (let ((len (length x)))
+      (##sys#check-syntax 'module x '(_ symbol _ . #(_ 1)))
       (cond ((and (fx>= len 4) (c (r '=) (caddr x)))
 	     (let* ((x (##sys#strip-syntax x))
 		    (name (cadr x))
 		    (app (cadddr x)))
 	       (cond ((symbol? app)
-		      (##sys#register-module-alias name app)
-		      '(##core#undefined))
+		      (cond ((fx> len 4)
+			     ;; suggested by syn
+			     ;;
+			     ;; (module NAME = FUNCTORNAME BODY ...)
+			     ;; ~>
+			     ;; (begin
+			     ;;   (module _NAME * BODY ...)
+			     ;;   (module NAME = (FUNCTORNAME _NAME)))
+			     ;;
+			     ;; - the use of "_NAME" is a bit stupid, but it must be
+			     ;;   externally visible to generate an import library from
+			     ;;   and compiling "NAME" separately may need an import-lib
+			     ;;   for stuff in "BODY" (say, syntax needed by syntax exported
+			     ;;   from the functor, or something like this...)
+			     (let ((mtmp (string->symbol 
+					  (##sys#string-append 
+					   "_"
+					   (symbol->string name)))))
+			       `(##core#begin
+				 (,(r 'module) ,mtmp * ,@(cddddr x))
+				 (##core#module ,name = (,app ,mtmp)))))
+			    (else
+			     (##sys#register-module-alias name app)
+			     '(##core#undefined))))
 		     (else
 		      (##sys#check-syntax 
 		       'module x '(_ symbol _ (symbol . #(_ 1))))
@@ -1328,7 +1351,6 @@
 		       (car app)	; functor name
 		       (cdr app))))))	; functor arguments
 	    (else
-	     (##sys#check-syntax 'module x '(_ symbol _ . #(_ 0)))
 	     ;;XXX use module name in "loc" argument?
 	     (let ((exports
 		    (##sys#validate-exports
