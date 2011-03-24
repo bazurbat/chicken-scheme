@@ -4,6 +4,12 @@
 (use srfi-1 data-structures extras)
 
 
+(include "test.scm")
+(test-begin)
+
+;;
+
+
 (include "test-queue")
 (include "breadth-first")
 
@@ -83,3 +89,43 @@
 
 ;;XXX shows (""), which looks wrong:
 (pp (show 8 (search next-char '())))	;XXX assert
+
+;; Test for errors
+
+(module m1 ())
+
+(test-error 
+ "argument mismatch"
+ (module m2 = (breadth-first m1)))
+
+(test-error
+ "undefined module"
+ (module m2 = (breadth-first hunoz)))
+
+(test-error
+ "undefined interface"
+ (module m2 HUNOZ))
+
+(test-error
+ "undefined interface in functor"
+ (functor (f1 (X HUNOZ)) ()))
+
+(test-error
+ "undefined interface in functor result"
+ (functor (f1 (X ())) HUNOZ))
+
+
+;; Test alternative instantiation syntax:
+
+(functor (frob (X (yibble))) *
+  (import chicken X) yibble)
+
+(test-equal?
+ "alternative functor instantiation syntax"
+ (module yabble = frob (import scheme) (define yibble 99))
+ 99)
+
+
+;;
+
+(test-end)

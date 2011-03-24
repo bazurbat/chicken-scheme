@@ -1320,7 +1320,7 @@
 		    (app (cadddr x)))
 	       (cond ((symbol? app)
 		      (cond ((fx> len 4)
-			     ;; suggested by syn
+			     ;; feature suggested by syn:
 			     ;;
 			     ;; (module NAME = FUNCTORNAME BODY ...)
 			     ;; ~>
