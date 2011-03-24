@@ -843,7 +843,10 @@
 					(parameterize ((##sys#current-module 
 							(##sys#register-module name exports) )
 						       (##sys#current-environment '())
-						       (##sys#macro-environment ##sys#initial-macro-environment))
+						       (##sys#macro-environment
+							##sys#initial-macro-environment)
+						       (##sys#module-alias-environment
+							(##sys#module-alias-environment)))
 					    (let loop ((body (cdddr x)) (xs '()))
 					      (cond 
 					       ((null? body)

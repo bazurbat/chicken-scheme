@@ -79,7 +79,8 @@ like {{(include FILENAME)}}.
 
 The syntax {{(module NAME1 = NAME2)}} defines an alias {{NAME1}}
 for the module {{NAME2}}, so {{NAME1}} can be used in place of 
-{{NAME2}} in all forms that accept module names.
+{{NAME2}} in all forms that accept module names. Module aliases
+defined inside a module are local to that module.
 
 {{(module NAME = (FUNCTORNAME MODULENAME1 ...))}} instantiates
 a ''functor'' (see below for information about functors).
@@ -207,6 +208,8 @@ Defines an ''interface'', a group of exports that can be used in
 module-definitions using the {{(interface: INTERFACE)}} syntax.
 See the definition of {{module}} above for an explanation of
 {{EXPORT}} specifications.
+
+Interface names use a distinct global namespace.
 
 
 === import libraries

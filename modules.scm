@@ -56,7 +56,7 @@
 ;;; low-level module support
 
 (define ##sys#current-module (make-parameter #f))
-(define ##sys#module-alias-environment '())
+(define ##sys#module-alias-environment (make-parameter '()))
 
 (declare 
   (hide make-module module? %make-module
@@ -99,19 +99,19 @@
   (%make-module name explist '() '() '() '() '() '() '() vexports sexports))
 
 (define (##sys#register-module-alias alias name)
-  (set! ##sys#module-alias-environment
-    (cons (cons alias name) ##sys#module-alias-environment)))
+  (##sys#module-alias-environment
+    (cons (cons alias name) (##sys#module-alias-environment))))
 
 (define (##sys#with-module-aliases bindings thunk)
-  (fluid-let ((##sys#module-alias-environment
-	       (append
-		(map (lambda (b) (cons (car b) (cadr b))) bindings)
-		##sys#module-alias-environment)))
+  (parameterize ((##sys#module-alias-environment
+		  (append
+		   (map (lambda (b) (cons (car b) (cadr b))) bindings)
+		   (##sys#module-alias-environment))))
     (thunk)))
 
 (define (##sys#resolve-module-name name loc)
   (let loop ((n name) (done '()))
-    (cond ((assq n ##sys#module-alias-environment) =>
+    (cond ((assq n (##sys#module-alias-environment)) =>
 	   (lambda (a)
 	     (let ((n2 (cdr a)))
 	       (if (memq n2 done)

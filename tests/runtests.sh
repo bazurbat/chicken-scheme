@@ -43,7 +43,7 @@ compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
 compile_s="../csc -s -compiler $CHICKEN -v -I.. -L.. -include-path .."
 interpret="../csi -n -include-path .."
 
-rm -f *.exe *.so *.o *.import.* a.out
+rm -f *.exe *.so *.o *.import.* a.out ../foo.import.*
 
 echo "======================================== compiler tests ..."
 $compile compiler-tests.scm
