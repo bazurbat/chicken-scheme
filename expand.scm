@@ -1336,10 +1336,11 @@
 			     (let ((mtmp (string->symbol 
 					  (##sys#string-append 
 					   "_"
-					   (symbol->string name)))))
+					   (symbol->string name))))
+				   (%module (r 'module)))
 			       `(##core#begin
-				 (,(r 'module) ,mtmp * ,@(cddddr x))
-				 (##core#module ,name = (,app ,mtmp)))))
+				 (,%module ,mtmp * ,@(cddddr x))
+				 (,%module ,name = (,app ,mtmp)))))
 			    (else
 			     (##sys#register-module-alias name app)
 			     '(##core#undefined))))
