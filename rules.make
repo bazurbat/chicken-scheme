@@ -420,8 +420,14 @@ install-other-files:
 	$(INSTALL_PROGRAM) $(INSTALL_PROGRAM_FILE_OPTIONS) $(SRCDIR)setup.defaults "$(DESTDIR)$(IDATADIR)"
 
 install-wrappers:
+ifeq ($(WRAPPERDIR),)
+	@echo 
+	@echo Error: WRAPPERDIR is not set
+	@echo
+	@exit 1
+endif
 	$(foreach prg, $(INSTALLED_PROGRAMS), \
-		$(CSI) -s $(SRCDIR)scripts$(SEP)make-wrapper.scm $(prg) "$(WRAPPERDIR)"
+		$(CSI) -s $(SRCDIR)scripts$(SEP)make-wrapper.scm $(prg) "$(WRAPPERDIR)" $(NL))
 
 uninstall:
 	$(foreach prog,$(INSTALLED_PROGRAMS),\
