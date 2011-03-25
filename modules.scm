@@ -368,7 +368,7 @@
 
 (define (##sys#find-export sym mod indirect)
   (let ((exports (module-export-list mod)))
-    (let loop ((xl (if (eq? #t exports) (module-exists-list mod) exports)))
+    (let loop ((xl (if (eq? #t exports) (module-exist-list mod) exports)))
       (cond ((null? xl) #f)
 	    ((eq? sym (car xl)))
 	    ((pair? (car xl))
@@ -773,7 +773,9 @@
 	(when (pair? missing)
 	  (##sys#syntax-error-hook
 	   'module 
-	   (string-append 
-	    "argument module `" (symbol->string mname) "' does not match required signature "
+	   (apply
+	    string-append 
+	    "argument module `" (symbol->string mname) "' does not match required signature\n"
 	    "in instantiation `" (symbol->string name) "' of functor `"
-	    (symbol->string fname) "'")))))))
+	    (symbol->string fname) "', because the following required exports are missing:\n"
+	    (map (lambda (s) (string-append "\n  " (symbol->string s))) missing))))))))

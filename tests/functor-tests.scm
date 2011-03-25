@@ -69,7 +69,7 @@
 (import (rename test-q2 (list->queue l2q2) (queue->list q2l2)))
 (import (rename test-q3 (list->queue l2q3) (queue->list q2l3)))
 
-(define long-list (list-tabulate 1000 identity))
+(define long-list (list-tabulate (cond-expand (csi 500) (else 1000)) identity))
 
 (print "Queue representation #1:")
 (time (q2l1 (l2q1 long-list)))
@@ -92,35 +92,41 @@
 
 ;; Test for errors
 
+#+csi
+(begin
+
 (module m1 ())
 
 (test-error 
  "argument mismatch"
- (module m2 = (breadth-first m1)))
+ (eval '(module m2 = (breadth-first m1))))
 
 (test-error
  "undefined module"
- (module m2 = (breadth-first hunoz)))
+ (eval '(module m2 = (breadth-first hunoz))))
 
 (test-error
  "undefined interface"
- (module m2 HUNOZ))
+ (eval '(module m2 HUNOZ)))
 
 (test-error
  "undefined interface in functor"
- (functor (f1 (X HUNOZ)) ()))
+ (eval '(functor (f1 (X HUNOZ)) ())))
 
 (test-error
  "undefined interface in functor result"
- (functor (f1 (X ())) HUNOZ))
+ (eval '(functor (f1 (X ())) HUNOZ)))
+
+)
 
 
 ;; Test alternative instantiation syntax:
 
 (functor (frob (X (yibble))) *
-  (import chicken X) yibble)
+  (import chicken X)
+  yibble)
 
-(test-equal?
+(test-equal
  "alternative functor instantiation syntax"
  (module yabble = frob (import scheme) (define yibble 99))
  99)

@@ -1313,7 +1313,7 @@
  (##sys#er-transformer
   (lambda (x r c)
     (let ((len (length x)))
-      (##sys#check-syntax 'module x '(_ symbol _ . #(_ 1)))
+      (##sys#check-syntax 'module x '(_ symbol _ . #(_ 0)))
       (cond ((and (fx>= len 4) (c (r '=) (caddr x)))
 	     (let* ((x (##sys#strip-syntax x))
 		    (name (cadr x))
