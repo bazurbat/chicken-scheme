@@ -478,6 +478,7 @@ Usage: #{csc} FILENAME | OPTION ...
   every invocation of `#{csc}'.
 
 EOF
+;|        (for emacs font-lock)
   ) ) )
 
 
@@ -504,11 +505,12 @@ EOF
   (define (use-private-repository)
     (set! compile-options (cons "-DC_PRIVATE_REPOSITORY" compile-options))
     (when osx
+      ;; needed for C_path_to_executable (see chicken.h):
       (set! link-options (cons "-framework CoreFoundation" link-options))))
 
   (let loop ((args args))
     (cond [(null? args)
-	   ;; Builtin search directory options do not override explict options
+	   ;; Builtin search directory options do not override explicit options
            (set! compile-options (append compile-options builtin-compile-options))
            (set! link-options (append link-options (builtin-link-options)))
 	   ;;
