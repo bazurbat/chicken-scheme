@@ -139,6 +139,7 @@
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
     -emit-all-import-libraries -setup-mode -unboxing -no-elevation -no-module-registration
     -no-procedure-checks-for-usual-bindings -module
+    -lambda-lift			; OBSOLETE
     -no-procedure-checks-for-toplevel-bindings))
 
 (define-constant complex-options

@@ -188,8 +188,10 @@
       (set! do-scrutinize #t))
     (when (memq 't debugging-chicken) (##sys#start-timer))
     (when (memq 'b debugging-chicken) (set! time-breakdown #t))
-    (when (memq 'emit-exports options)
-      (warning "deprecated compiler option: emit-exports") )
+    (when (memq 'emit-exports options)	; OBSOLETE
+      (warning "obsolete compiler option: emit-exports") )
+    (when (memq 'lambda-lift options)	; OBSOLETE
+      (warning "obsolete compiler option: emit-exports") )
     (when (memq 'raw options)
       (set! explicit-use-flag #t)
       (set! cleanup-forms '())
