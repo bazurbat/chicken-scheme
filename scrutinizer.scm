@@ -734,7 +734,7 @@
 				  subs 
 				  (iota len)))
 		       (fn (car args)))
-		  (let ((r (call-result args e loc (first subs) params)))
+		  (let ((r (call-result n args e loc params)))
 		    (invalidate-blist)
 		    (for-each
 		     (lambda (arg argr)
