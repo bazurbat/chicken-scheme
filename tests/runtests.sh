@@ -53,6 +53,14 @@ echo "======================================== compiler tests (unboxing) ..."
 $compile compiler-tests-3.scm -unsafe -unboxing
 ./a.out
 
+echo "======================================== compiler tests (specialization) ..."
+$compile fft.scm -O2 -local -d0 -disable-interrupts -b -o fft1
+$compile fft.scm -O2 -local -specialize -debug x -d0 -disable-interrupts -b -o fft2 -specialize
+echo "normal:"
+/usr/bin/time fft1 1000 7
+echo "specialized:"
+/usr/bin/time fft2 1000 7
+
 echo "======================================== compiler inlining tests  ..."
 $compile inlining-tests.scm -optimize-level 3
 ./a.out
@@ -70,6 +78,15 @@ if test \! -f scrutiny.expected; then
 fi
 
 diff -bu scrutiny.out scrutiny.expected
+
+echo "======================================== specialization tests ..."
+rm -f foo.types foo.import.*
+$compile specialization-test-1.scm -emit-type-file foo.types -specialize \
+  -debug ox -emit-import-library foo
+./a.out
+$compile specialization-test-2.scm -types foo.types -specialize -debug ox
+./a.out
+rm -f foo.types foo.import.*
 
 echo "======================================== callback tests ..."
 $compile callback-tests.scm

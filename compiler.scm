@@ -330,8 +330,6 @@
 (define standalone-executable #t)
 (define local-definitions #f)
 (define inline-locally #f)
-(define inline-output-file #f)
-(define do-scrutinize #f)
 (define enable-inline-files #f)
 (define compiler-syntax-enabled #t)
 (define unchecked-specialized-arithmetic #f)
@@ -1261,24 +1259,17 @@
    '() (##sys#current-environment) #f #f #f) ) )
 
 
-(define (process-declaration spec se)	; se unused in the moment
+(define (process-declaration spec se)
   (define (check-decl spec minlen . maxlen)
     (let ([n (length (cdr spec))])
       (if (or (< n minlen) (> n (optional maxlen 99999)))
 	  (syntax-error "invalid declaration" spec) ) ) )  
   (define (stripa x)			; global aliasing
-    (globalize x))
+    (##sys#globalize x se))
   (define (strip x)			; raw symbol
     (##sys#strip-syntax x))
   (define stripu ##sys#strip-syntax)
-  (define (globalize sym)
-    (if (symbol? sym)
-	(let loop ((se se))			; ignores syntax bindings
-	  (cond ((null? se) (strip (##sys#alias-global-hook sym #f #f))) ;XXX could hint at decl (3rd arg)
-		((and (eq? sym (caar se)) (symbol? (cdar se))) (cdar se))
-		(else (loop (cdr se)))))
-	sym))
-  (define (globalize-all syms) (map globalize syms))
+  (define (globalize-all syms) (map (cut ##sys#globalize <> se) syms))
   (call-with-current-continuation
    (lambda (return)
      (unless (pair? spec)
@@ -1472,20 +1463,47 @@
        ((type)
 	(for-each
 	 (lambda (spec)
-	   (cond ((and (list? spec) (symbol? (car spec)) (= 2 (length spec)))
-		  (##sys#put! (car spec) '##compiler#type (cadr spec))
-		  (##sys#put! (car spec) '##compiler#declared-type #t))
-		 (else
-		  (warning "illegal `type' declaration item" spec))))
-	 (globalize-all (cdr spec))))
+	   (if (not (and (list? spec)
+			 (>= (length spec) 2)
+			 (symbol? (car spec))))
+	       (warning "illegal type declaration" (##sys#strip-syntax spec))
+	       (let ((name (##sys#globalize (car spec) se))
+		     (type (##sys#strip-syntax (cadr spec))))
+		 (cond ((validate-type type name) =>
+			(lambda (type)
+			  ;; HACK: since `:' doesn't have access to the SE, we
+			  ;; fixup the procedure name if type is a named procedure type
+			  ;; (We only have access to the SE for ##sys#globalize in here).
+			  ;; Quite terrible.
+			  (when (and (pair? type) 
+				     (eq? 'procedure (car type)) 
+				     (symbol? (cadr type)))
+			    (set-car! (cdr type) name))
+			  (mark-variable name '##core#type type)
+			  (mark-variable name '##core#declared-type)
+			  (when (pair? (cddr spec))
+			    (mark-variable
+			     name '##compiler#specializations
+			     (##sys#strip-syntax (cddr spec)))))
+			(else
+			 (warning 
+			  "illegal `type' declaration"
+			  (##sys#strip-syntax spec))))))))
+	 (cdr spec)))
        ((predicate)
 	(for-each
 	 (lambda (spec)
 	   (cond ((and (list? spec) (symbol? (car spec)) (= 2 (length spec)))
-		  (##sys#put! (car spec) '##compiler#predicate (cadr spec)))
+		  (let ((name (##sys#globalize (car spec) se))
+			(type (##sys#strip-syntax (cadr spec))))
+		    (cond ((validate-type type name) =>
+			   (lambda (type)
+			     (##sys#put! name '##compiler#predicate type)))
+			  (else
+			   (warning "illegal `predicate' declaration" spec)))))
 		 (else
-		  (warning "illegal `predicate' declaration item" spec))))
-	 (globalize-all (cdr spec))))
+		  (warning "illegal `predicate' declaration" spec))))
+	 (cdr spec)))
        ((unsafe-specialized-arithmetic)
 	(set! unchecked-specialized-arithmetic #t))
        (else (warning "illegal declaration specifier" spec)) )

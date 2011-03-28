@@ -35,10 +35,11 @@ VPATH=$(SRCDIR)
 
 SETUP_API_OBJECTS_1 = setup-api setup-download
 
-LIBCHICKEN_OBJECTS_1 = \
+LIBCHICKEN_SCHEME_OBJECTS_1 = \
        library eval data-structures ports files extras lolevel utils tcp srfi-1 srfi-4 srfi-13 \
        srfi-14 srfi-18 srfi-69 $(POSIXFILE) irregex scheduler \
-       profiler stub expand chicken-syntax chicken-ffi-syntax runtime
+       profiler stub expand chicken-syntax chicken-ffi-syntax
+LIBCHICKEN_OBJECTS_1 = $(LIBCHICKEN_SCHEME_OBJECTS_1) runtime
 LIBCHICKEN_SHARED_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=$(O))
 LIBCHICKEN_STATIC_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=-static$(O))
 
@@ -595,8 +596,9 @@ clean:
 	  $(CHICKEN_STATUS_PROGRAM)$(EXE) \
 	  $(CHICKEN_BUG_PROGRAM)$(EXE) *$(O) \
 	  $(LIBCHICKEN_SO_FILE) \
+	  $(PRIMARY_LIBCHICKEN) \
 	  lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(A) \
-	  lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(SO) $(PROGRAM_IMPORT_LIBRARIES) \
+	  $(PROGRAM_IMPORT_LIBRARIES) \
 	  $(IMPORT_LIBRARIES:=.import.so) $(LIBCHICKEN_IMPORT_LIBRARY) \
 	  $(SETUP_API_OBJECTS_1:=.so) $(SETUP_API_OBJECTS_1:=.import.so)
 ifdef USES_SONAME
@@ -665,3 +667,17 @@ ifdef WINDOWS_SHELL
 else
 	touch *.scm
 endif
+
+
+# compile all core modules (for testing)
+
+.PHONY: compile-all
+
+COMPILE_ALL_FILES = $(LIBCHICKEN_SCHEME_OBJECTS_1) $(COMPILER_OBJECTS_1)
+
+# use EXTRA_CHICKEN_OPTIONS to test particular compiler options:
+compile-all:
+	@for x in $(COMPILE_ALL_FILES:=.scm); do \
+	  echo "$(CHICKEN) $$x $(CHICKEN_LIBRARY_OPTIONS)"; \
+	  $(CHICKEN) $$x $(CHICKEN_LIBRARY_OPTIONS) -output-file out.c || exit 1; \
+	done

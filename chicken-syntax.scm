@@ -1110,6 +1110,25 @@
      (##core#let-compiler-syntax (binding ...) body ...)))))
 
 
+;;; type-declaration syntax
+
+(##sys#extend-macro-environment		;XXX not documented yet
+ ': '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax ': x '(_ symbol _ . _))
+    (if (memq #:csi ##sys#features) 
+	'(##core#undefined)
+	(let* ((type1 (##sys#strip-syntax (caddr x)))
+	       (name1 (cadr x))
+	       (type (##compiler#validate-type type1 (##sys#strip-syntax name1))))
+	  (cond ((not type)
+		 (syntax-error ': "invalid type syntax" name1 type1))
+		(else
+		 `(##core#declare 
+		   (type (,name1 ,type ,@(cdddr x)))))))))))
+
+
 (##sys#macro-subset me0 ##sys#default-macro-environment)))
 
 ;; register features

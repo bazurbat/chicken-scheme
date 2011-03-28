@@ -1349,17 +1349,29 @@ EOF
 (define (vector-copy! from to . n)
   (##sys#check-vector from 'vector-copy!)
   (##sys#check-vector to 'vector-copy!)
-  (let* ([len-from (##sys#size from)]
-	 [len-to (##sys#size to)] 
-	 [n (if (pair? n) (car n) (fxmin len-to len-from))] )
+  (let* ((len-from (##sys#size from))
+	 (len-to (##sys#size to))
+	 (n (if (pair? n) (car n) (fxmin len-to len-from))) )
     (##sys#check-exact n 'vector-copy!)
     (when (or (fx> n len-to) (fx> n len-from))
       (##sys#signal-hook 
        #:bounds-error 'vector-copy!
        "cannot copy vector - count exceeds length" from to n) )
-    (do ([i 0 (fx+ i 1)])
+    (do ((i 0 (fx+ i 1)))
 	((fx>= i n))
       (##sys#setslot to i (##sys#slot from i)) ) ) )
+
+(define (subvector v i #!optional j)
+  (##sys#check-vector v 'subvector)
+  (let* ((len (##sys#size v))
+	 (j (or j len))
+	 (len2 (fx- j i)))
+    (##sys#check-range i 0 len 'subvector)
+    (##sys#check-range j 0 len 'subvector)
+    (let ((v2 (make-vector len2)))
+      (do ((k 0 (fx+ k 1)))
+	  ((fx>= k len2) v2)
+	(##sys#setslot v2 k (##sys#slot v (fx+ k i)))))))
 
 (define (vector-resize v n #!optional init)
   (##sys#check-vector v 'vector-resize)

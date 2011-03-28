@@ -25,8 +25,7 @@
 
 
 (declare 
-  (usual-integrations)
-  (hide d))
+  (usual-integrations))
 
 (cond-expand
  (debugbuild
@@ -38,10 +37,11 @@
        (when (##sys#fudge 13)
 	 (print arg1 more ...))))))
  (else
-  (declare
-    (safe-globals)
-    (no-bound-checks))
-  (define-syntax d (syntax-rules () ((_ . _) (void))))))
+  (begin
+    (declare
+      (safe-globals)
+      (no-bound-checks))
+    (define-syntax d (syntax-rules () ((_ . _) (void)))))))
 
 (define-syntax define-alias
   (syntax-rules ()

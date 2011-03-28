@@ -75,6 +75,8 @@
 	(time0 #f)
 	(time-breakdown #f)
 	(forms '())
+	(inline-output-file #f)
+	(type-output-file #f)
 	(cleanup-forms '(((##sys#implicit-exit-handler))))
 	(profile (or (memq 'profile options)
 		     (memq 'accumulate-profile options) 
@@ -91,6 +93,8 @@
 	(a-only (memq 'analyze-only options))
 	(dynamic (memq 'dynamic options))
 	(unbox (memq 'unboxing options))
+	(do-scrutinize (memq 'scrutinize options))
+	(do-specialize (memq 'specialize options))
 	(dumpnodes #f)
 	(start-time #f)
 	(upap #f)
@@ -225,6 +229,8 @@
       (set! inline-locally #t)		; otherwise this option makes no sense
       (set! local-definitions #t)
       (set! inline-output-file (option-arg ifile)))
+    (and-let* ((tfile (memq 'emit-type-file options)))
+      (set! type-output-file (option-arg tfile)))
     (and-let* ([inlimit (memq 'inline-limit options)])
       (set! inline-max-size 
 	(let ([arg (option-arg inlimit)])
@@ -497,11 +503,10 @@
 			   (list (build-node-graph
 				  (canonicalize-begin-body exps) ) ) ) ) 
 		   (db #f))
-
 	       (print-node "initial node tree" '|T| node0)
 	       (initialize-analysis-database)
 
-	       ;; collect requirements and load inline and types files
+	       ;; collect requirements and load inline files
 	       (let* ((req (concatenate (vector->list file-requirements)))
 		      (mreq (concatenate (map cdr req))))
 		 (when (debugging 'M "; requirements:")
@@ -524,8 +529,9 @@
 			(dribble "Loading inline file ~a ..." ilf)
 			(load-inline-file ilf) )
 		      ifs)))
-		 (when do-scrutinize
-		   ;;*** hardcoded database file name
+
+		 (when (or do-scrutinize do-specialize)
+		   ;;XXX hardcoded database file name
 		   (unless (memq 'ignore-repository options)
 		     (load-type-database "types.db"))
 		   (for-each (cut load-type-database <> #f) (collect-options 'types))
@@ -537,11 +543,13 @@
 		   (set! first-analysis #f)
 		   (set! db (analyze 'scrutiny node0))
 		   (print-db "analysis" '|0| db 0)
-		   (end-time "pre-analysis")
+		   (end-time "pre-analysis (scrutiny)")
 		   (begin-time)
 		   (debugging 'p "performing scrutiny")
-		   (scrutinize node0 db)
+		   (scrutinize node0 db do-scrutinize do-specialize)
 		   (end-time "scrutiny")
+		   (when do-specialize
+		     (print-node "specialization" '|P| node0))
 		   (set! first-analysis #t) ) )
 
 	       (set! ##sys#line-number-database #f)
@@ -566,7 +574,11 @@
 		       (when (memq 'd debugging-chicken)
 			 (dump-defined-globals db))
 		       (when (memq 'v debugging-chicken)
-			 (dump-global-refs db)) )
+			 (dump-global-refs db))
+		       ;; do this here, because we must make sure we have a db
+		       (when type-output-file
+			 (dribble "generating type file `~a' ..." type-output-file)
+			 (emit-type-file type-output-file db)))
 		     (set! first-analysis #f)
 		     (end-time "analysis")
 		     (print-db "analysis" '|4| db i)

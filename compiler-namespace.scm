@@ -97,7 +97,11 @@
  display-analysis-database
  display-line-number-database
  display-real-name-table
+<<<<<<< HEAD
+ do-lambda-lifting
+=======
  do-scrutinize
+>>>>>>> experimental
  dump-defined-globals
  dump-global-refs
  dump-nodes
@@ -108,6 +112,7 @@
  emit-profile
  emit-syntax-trace-info
  emit-trace-info
+ emit-type-file
  enable-inline-files
  encode-literal
  eq-inline-operator
@@ -175,7 +180,6 @@
  inline-lambda-bindings
  inline-locally
  inline-max-size
- inline-output-file
  inline-substitutions-enabled
  inline-table
  inline-table-used
@@ -199,6 +203,7 @@
  make-variable-list
  mark-variable
  match-node
+ match-specialization
  membership-test-operators
  membership-unfold-limit
  no-argc-checks
@@ -261,6 +266,7 @@
  source-filename
  source-info->string
  source-info->line
+ specialize-node!
  standalone-executable
  string->c-identifier
  string->expr
@@ -289,6 +295,7 @@
  valid-c-identifier?
  valid-compiler-options
  valid-compiler-options-with-argument
+ validate-type
  variable-mark
  variable-visible?
  varnode
