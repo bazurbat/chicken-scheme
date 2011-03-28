@@ -64,55 +64,57 @@
 (define-constant +fragment-max-depth+ 3)
 
 (define (scrutinize node db)
-  (define (constant-result lit)
-    (cond ((string? lit) 'string)
-	  ((symbol? lit) 'symbol)
-	  ((fixnum? lit) 'fixnum)
-	  ((flonum? lit) 'float)
-	  ((number? lit) 'number)	; in case...
-	  ((boolean? lit) 'boolean)
-	  ((list? lit) 'list)
-	  ((pair? lit) 'pair)
-	  ((eof-object? lit) 'eof)
-	  ((vector? lit) 'vector)
-	  ((and (not (##sys#immediate? lit)) ##sys#generic-structure? lit)
-	   `(struct ,(##sys#slot lit 0)))
-	  ((null? lit) 'null)
-	  ((char? lit) 'char)
-	  (else '*)))
-  (define (global-result id loc)
-    (cond ((##sys#get id '##core#type) =>
-	   (lambda (a) 
-	     (cond #;((and (get db id 'assigned)      ; remove assigned global from type db
-			 (not (##sys#get id '##core#declared-type)))
-		    (##sys#put! id '##core#type #f)
-		    '*)
-		   ((eq? a 'deprecated)
-		    (report
-		     loc
-		     (sprintf "use of deprecated library procedure `~a'" id) )
-		    '*)
-		   ((and (pair? a) (eq? (car a) 'deprecated))
-		    (report 
-		     loc
-		     (sprintf 
-			 "use of deprecated library procedure `~a' - consider using `~a' instead"
-		       id (cadr a)))
-		     '*)
-		   (else (list a)))))
-	  (else '*)))
-  (define (variable-result id e loc)
-    (cond ((and (get db id 'assigned) 
+  (let ((blist '()))
+    (define (constant-result lit)
+      (cond ((string? lit) 'string)
+	    ((symbol? lit) 'symbol)
+	    ((fixnum? lit) 'fixnum)
+	    ((flonum? lit) 'float)
+	    ((number? lit) 'number)	; in case...
+	    ((boolean? lit) 'boolean)
+	    ((list? lit) 'list)
+	    ((pair? lit) 'pair)
+	    ((eof-object? lit) 'eof)
+	    ((vector? lit) 'vector)
+	    ((and (not (##sys#immediate? lit)) ##sys#generic-structure? lit)
+	     `(struct ,(##sys#slot lit 0)))
+	    ((null? lit) 'null)
+	    ((char? lit) 'char)
+	    (else '*)))
+    (define (global-result id loc)
+      (cond ((##sys#get id '##core#type) =>
+	     (lambda (a) 
+	       (cond #;((and (get db id 'assigned)      ; remove assigned global from type db
+		(not (##sys#get id '##core#declared-type)))
+	       (##sys#put! id '##core#type #f)
+	       '*)
+	       ((eq? a 'deprecated)
+		(report
+		 loc
+		 (sprintf "use of deprecated library procedure `~a'" id) )
+		'(*))
+	       ((and (pair? a) (eq? (car a) 'deprecated))
+		(report 
+		 loc
+		 (sprintf 
+		     "use of deprecated library procedure `~a' - consider using `~a' instead"
+		   id (cadr a)))
+		'(*))
+	       (else (list a)))))
+      (else '(*))))
+  (define (variable-result id e loc flow)
+    (cond ((find (lambda (b) (memq (cdr b) flow)) blist) => cdr)
+	  ((and (get db id 'assigned) 
 		(not (##sys#get id '##core#declared-type)) )
-	   '*)
+	   '(*))
 	  ((assq id e) =>
 	   (lambda (a)
 	     (cond ((eq? 'undefined (cdr a))
 		    (report 
 		     loc
 		     (sprintf "access to variable `~a' which has an undefined value"
-			      (real-name id db)))
-		    '*)
+		       (real-name id db)))
+		    '(*))
 		   (else (list (cdr a))))))
 	  (else (global-result id loc))))
   (define (always-true1 t)
@@ -126,9 +128,9 @@
 	(report 
 	 loc
 	 (sprintf
-	  "expected value of type boolean in conditional but were given a value of\ntype `~a' which is always true:~%~%~a"
-	  t
-	  (pp-fragment x))))
+	     "expected value of type boolean in conditional but were given a value of\ntype `~a' which is always true:~%~%~a"
+	   t
+	   (pp-fragment x))))
       f))
   (define (typename t)
     (case t
@@ -142,8 +144,8 @@
 		 (if (or (string? (cadr t)) (symbol? (cadr t)))
 		     (->string (cadr t))
 		     (sprintf "a procedure with ~a returning ~a"
-			      (argument-string (cadr t))
-			      (result-string (cddr t)))))
+		       (argument-string (cadr t))
+		       (result-string (cddr t)))))
 		((or)
 		 (string-intersperse
 		  (map typename (cdr t))
@@ -154,24 +156,24 @@
 	     (else (bomb "invalid type: ~a" t))))))
   (define (argument-string args)
     (let* ((len (length args))
-	  (m (multiples len)))
+	   (m (multiples len)))
       (if (zero? len)
 	  "zero arguments"
 	  (sprintf 
-	   "~a argument~a of type~a ~a"
-	   len m m
-	   (map typename args)))))
+	      "~a argument~a of type~a ~a"
+	    len m m
+	    (map typename args)))))
   (define (result-string results)
     (if (eq? '* results) 
 	"an unknown number of values"
 	(let* ((len (length results))
-	      (m (multiples len)))
+	       (m (multiples len)))
 	  (if (zero? len)
 	      "zero values"
 	      (sprintf 
-	       "~a value~a of type~a ~a"
-	       len m m
-	       (map typename results))))))
+		  "~a value~a of type~a ~a"
+		len m m
+		(map typename results))))))
   (define (simplify t)
     (let ((t2 (simplify1 t)))
       (d "simplify: ~a -> ~a" t t2)
@@ -207,7 +209,7 @@
 				   (let ((t (simplify t)))
 				     (cond ((and (pair? t) (eq? 'or (car t)))
 					    (cdr t))
-					   ;((eq? t 'noreturn) '())
+					;((eq? t 'noreturn) '())
 					   ((eq? t 'undefined) (return 'undefined))
 					   (else (list t)))))
 				 (cdr t)))
@@ -254,7 +256,7 @@
 		    ,(simplify 
 		      `(or ,(rest-type (cdr ts1))
 			   ,(rest-type (cdr ts2))))))
-		 (else '(#!rest))))		;XXX giving up
+		 (else '(#!rest))))	;XXX giving up
 	  ((eq? '#!optional (car ts1))
 	   (cond ((and (pair? ts2) (eq? '#!optional (car ts2)))
 		  `(#!optional 
@@ -263,7 +265,7 @@
 		 (else '(#!rest))))	;XXX
 	  (else (cons (simplify `(or ,(car ts1) ,(car ts2)))
 		      (merge-argument-types (cdr ts1) (cdr ts2))))))
-  (define (merge-result-types ts1 ts2)	;XXX possibly overly conservative
+  (define (merge-result-types ts1 ts2) ;XXX possibly overly conservative
     (cond ((null? ts1) ts2)
 	  ((null? ts2) ts1)
 	  ((or (atom? ts1) (atom? ts2)) '*)
@@ -391,7 +393,7 @@
 		 (report 
 		  loc
 		  (sprintf "expected ~a a single result, but were given ~a result~a"
-			   what n (multiples n)))
+		    what n (multiples n)))
 		 (first tv))))))
   (define (report loc desc)
     (warning
@@ -426,12 +428,12 @@
   (define (call-result args e loc x params)
     (define (pname)
       (sprintf "~ain procedure call to `~s', " 
-	  (if (and (pair? params) (pair? (cdr params)))
-	      (let ((n (source-info->line (cadr params))))
-		(if n
-		    (sprintf "~a: " n)
-		    ""))
-	      "")
+	(if (and (pair? params) (pair? (cdr params)))
+	    (let ((n (source-info->line (cadr params))))
+	      (if n
+		  (sprintf "~a: " n)
+		  ""))
+	    "")
 	(fragment x)))
     (d "call-result: ~a (~a)" args loc)
     (let* ((ptype (car args))
@@ -442,10 +444,10 @@
 	(report
 	 loc
 	 (sprintf
-	  "~aexpected a value of type `~a', but were given a value of type `~a'"
-	  (pname) 
-	  xptype
-	  ptype)))
+	     "~aexpected a value of type `~a', but were given a value of type `~a'"
+	   (pname) 
+	   xptype
+	   ptype)))
       (let-values (((atypes values-rest) (procedure-argument-types ptype (length (cdr args)))))
 	(d "  argument-types: ~a (~a)" atypes values-rest)
 	(unless (= (length atypes) nargs)
@@ -453,9 +455,9 @@
 	    (report 
 	     loc
 	     (sprintf
-	      "~aexpected ~a argument~a, but where given ~a argument~a"
-	      (pname) alen (multiples alen)
-	      nargs (multiples nargs)))))
+		 "~aexpected ~a argument~a, but where given ~a argument~a"
+	       (pname) alen (multiples alen)
+	       nargs (multiples nargs)))))
 	(do ((args (cdr args) (cdr args))
 	     (atypes atypes (cdr atypes))
 	     (i 1 (add1 i)))
@@ -464,8 +466,8 @@
 	    (report
 	     loc
 	     (sprintf
-	      "~aexpected argument #~a of type `~a', but where given an argument of type `~a'"
-	      (pname) i (car atypes) (car args)))))
+		 "~aexpected argument #~a of type `~a', but where given an argument of type `~a'"
+	       (pname) i (car atypes) (car args)))))
 	(let ((r (procedure-result-types ptype values-rest (cdr args))))
 	  (d  "  result-types: ~a" r)
 	  r))))
@@ -528,25 +530,38 @@
       ((let)
        (self-call? (last (node-subexpressions node)) loc))
       (else #f)))
-  (define (walk n e loc dest tail)		; returns result specifier
+  (define tag
+    (let ((n 0))
+      (lambda () 
+	(set! n (add1 n))
+	n)))
+  (define (invalidate-blist)
+    (for-each
+     (lambda (b)
+       (when (get db (car b) 'assigned)
+	 (set-cdr! b '*)))
+     blist))
+  (define (walk n e loc dest tail flow ctags) ; returns result specifier
     (let ((subs (node-subexpressions n))
 	  (params (node-parameters n)) 
 	  (class (node-class n)) )
-      (d "walk: ~a ~a (loc: ~a, dest: ~a, tail: ~a, e: ~a)" class params loc dest tail e)
+      (d "walk: ~a ~a (loc: ~a, dest: ~a, tail: ~a, flow: ~a, e: ~a)"
+	 class params loc dest tail flow e)
       (let ((results
 	     (case class
 	       ((quote) (list (constant-result (first params))))
 	       ((##core#undefined) '(*))
 	       ((##core#proc) '(procedure))
 	       ((##core#global-ref) (global-result (first params) loc))
-	       ((##core#variable) (variable-result (first params) e loc))
+	       ((##core#variable) (variable-result (first params) e loc flow))
 	       ((if)
-		(let ((rt (single "in conditional" (walk (first subs) e loc #f #f) loc))
-		      (c (second subs))
-		      (a (third subs)))
+		(let* ((tags (cons (tag) (tag)))
+		       (rt (single "in conditional" (walk (first subs) e loc #f #f flow tags) loc))
+		       (c (second subs))
+		       (a (third subs)))
 		  (always-true rt loc n)
-		  (let ((r1 (walk c e loc dest tail))
-			(r2 (walk a e loc dest tail)))
+		  (let ((r1 (walk c e loc dest tail (cons (car tags) flow) #f))
+			(r2 (walk a e loc dest tail (cons (cdr tags) flow) #f)))
 		    (cond ((and (not (eq? '* r1)) (not (eq? '* r2)))
 			   (when (and (not (any noreturn-type? r1))
 				      (not (any noreturn-type? r2))
@@ -563,10 +578,10 @@
 		;; before CPS-conversion, `let'-nodes may have multiple bindings
 		(let loop ((vars params) (body subs) (e2 '()))
 		  (if (null? vars)
-		      (walk (car body) (append e2 e) loc dest tail)
+		      (walk (car body) (append e2 e) loc dest tail flow #f)
 		      (let ((t (single 
 				(sprintf "in `let' binding of `~a'" (real-name (car vars)))
-				(walk (car body) e loc (car vars) #f) 
+				(walk (car body) e loc (car vars) #f flow #f) 
 				loc)))
 			(loop (cdr vars) (cdr body) (alist-cons (car vars) t e2))))))
 	       ((##core#lambda lambda)
@@ -577,23 +592,24 @@
 			  (args (append (make-list argc '*) (if rest '(#!rest) '()))) 
 			  (e2 (append (map (lambda (v) (cons v '*)) 
 					   (if rest (butlast vars) vars))
-				      e))
-			  (r (walk (first subs)
-				   (if rest (alist-cons rest 'list e2) e2)
-				   (add-loc dest loc)
-				   #f #t)))
-		     (list 
-		      (append
-		       '(procedure) 
-		       name
-		       (list args)
-		       r))))))
+				      e)))
+		     (fluid-let ((blist '()))
+		       (let ((r (walk (first subs)
+				      (if rest (alist-cons rest 'list e2) e2)
+				      (add-loc dest loc)
+				      #f #t (list (tag)) #f)))
+			 (list 
+			  (append
+			   '(procedure) 
+			   name
+			   (list args)
+			   r))))))))
 	       ((set! ##core#set!)
 		(let* ((var (first params))
 		       (type (##sys#get var '##core#type))
 		       (rt (single 
 			    (sprintf "in assignment to `~a'" var)
-			    (walk (first subs) e loc var #f)
+			    (walk (first subs) e loc var #f flow #f)
 			    loc))
 		       (b (assq var e)) )
 		  (when (and type (not b)
@@ -602,10 +618,12 @@
 		    (report
 		     loc
 		     (sprintf 
-		      "assignment of value of type `~a' to toplevel variable `~a' does not match declared type `~a'"
-		      rt var type)))
+			 "assignment of value of type `~a' to toplevel variable `~a' does not match declared type `~a'"
+		       rt var type)))
 		  (when (and b (eq? 'undefined (cdr b)))
 		    (set-cdr! b rt))
+		  (when b
+		    (set! blist (alist-cons (cons var (car flow)) rt blist)))
 		  '(undefined)))
 	       ((##core#primitive ##core#inline_ref) '*)
 	       ((##core#call)
@@ -613,22 +631,40 @@
 		       (args (map (lambda (n i)
 				    (single 
 				     (sprintf 
-				      "in ~a of procedure call `~s'"
-				      (if (zero? i)
-					  "operator position"
-					  (sprintf "argument #~a" i))
-				      f)
-				     (walk n e loc #f #f) loc))
+					 "in ~a of procedure call `~s'"
+				       (if (zero? i)
+					   "operator position"
+					   (sprintf "argument #~a" i))
+				       f)
+				     (walk n e loc #f #f flow #f) loc))
 				  subs (iota (length subs)))))
-		  (call-result args e loc (first subs) params)))
+		  (let ((r (call-result args e loc (first subs) params))
+			(f #f))
+		    (invalidate-blist)
+		    (for-each
+		     (lambda (arg argr)
+		       (when (eq? '##core#variable (node-class arg))
+			 (let* ((var (first (node-parameters arg)))
+				(a (assq var e)))
+			   (when a
+			     (set! blist 
+			       (alist-cons
+				(cons var (car flow))
+				(merge-result-types 
+				 (list (if f argr (if (eq? '* argr) 'procedure argr)))
+				 (list argr))
+				blist)))))
+		       (set! f #t))
+		     subs args)
+		    r)))
 	       ((##core#switch ##core#cond)
 		(bomb "unexpected node class: ~a" class))
 	       (else
-		(for-each (lambda (n) (walk n e loc #f #f)) subs)
+		(for-each (lambda (n) (walk n e loc #f #f flow #f)) subs)
 		'*))))
 	(d "  -> ~a" results)
 	results)))
-  (walk (first (node-subexpressions node)) '() '() #f #f))
+  (walk (first (node-subexpressions node)) '() '() #f #f (list (tag)) #f)))
 
 (define (load-type-database name #!optional (path (repository-path)))
   (and-let* ((dbfile (file-exists? (make-pathname path name))))
