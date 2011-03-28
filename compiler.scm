@@ -1473,10 +1473,18 @@
 	(for-each
 	 (lambda (spec)
 	   (cond ((and (list? spec) (symbol? (car spec)) (= 2 (length spec)))
-		  (##sys#put! (car spec) '##core#type (cadr spec))
-		  (##sys#put! (car spec) '##core#declared-type #t))
+		  (##sys#put! (car spec) '##compiler#type (cadr spec))
+		  (##sys#put! (car spec) '##compiler#declared-type #t))
 		 (else
 		  (warning "illegal `type' declaration item" spec))))
+	 (globalize-all (cdr spec))))
+       ((predicate)
+	(for-each
+	 (lambda (spec)
+	   (cond ((and (list? spec) (symbol? (car spec)) (= 2 (length spec)))
+		  (##sys#put! (car spec) '##compiler#predicate (cadr spec)))
+		 (else
+		  (warning "illegal `predicate' declaration item" spec))))
 	 (globalize-all (cdr spec))))
        ((unsafe-specialized-arithmetic)
 	(set! unchecked-specialized-arithmetic #t))

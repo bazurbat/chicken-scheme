@@ -47,6 +47,8 @@
 (define-alias dm d)
 (define-alias dx d)
 
+(define-syntax d (syntax-rules () ((_ . _) (void))))
+
 (define-inline (getp sym prop)
   (##core#inline "C_i_getprop" sym prop #f))
 

@@ -1,35 +1,35 @@
 ;;;; scrutiny-tests.scm
 
 
-(pp (current-environment))
+(pp (current-environment))		; deprecated
 
 (define (a)
   (define (b)
     (define (c)
       (let ((x (+ 3 4)))
-	(if x 1 2)))))
+	(if x 1 2)))))			; expected boolean but got number in conditional
 
 (define (foo x)
-  (if x 
+  (if x 				; branches return differing number of results
       (values 1 2)
       (values 1 2 (+ (+ (+ (+  3)))))))
 
 (let ((bar +))
-  (bar 3 'a))
+  (bar 3 'a))				; expected number, got symbol
 
-(pp)
+(pp)					; expected 1 argument, got 0
 
-(print (cpu-time))
-(print (values))
+(print (cpu-time))			; expected 1 result, got 2
+(print (values))			; expected 1 result, got 0
 
 (let ((x 100))
-  (x))
+  (x))					; expected procedure, got fixnum
 
-(print (+ 'a 'b))
+(print (+ 'a 'b))			; expected 2 numbers, but got symbols
 
-(set! car 33)
+(set! car 33)				; 33 does not match type of car
 
-((values 1 2))
+((values 1 2))				; expected procedure, got fixnum (canonicalizes to 1 result)
 
 ; this should *not* signal a warning:
 

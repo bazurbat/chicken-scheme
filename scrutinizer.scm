@@ -35,7 +35,7 @@
   (when (##sys#fudge 13)
     (printf "[debug] ~?~%" fstr args)) )
 
-(define-syntax d (syntax-rules () ((_ . _) (void))))
+;(define-syntax d (syntax-rules () ((_ . _) (void))))
 
 
 ;;; Walk node tree, keeping type and binding information
@@ -54,11 +54,12 @@
 ;           pointer-vector
 ;   RESULTS = * 
 ;           | (VAL1 ...)
-
+;
 ; global symbol properties:
 ;
-;   ##core#type           ->  <typespec>
-;   ##core#declared-type  ->  <bool>
+;   ##compiler#type           ->  <typespec>
+;   ##compiler#declared-type  ->  <bool>
+;   ##compiler#predicate      ->  <typespec>
 
 (define-constant +fragment-max-length+ 5)
 (define-constant +fragment-max-depth+ 3)
@@ -82,12 +83,13 @@
 	    ((char? lit) 'char)
 	    (else '*)))
     (define (global-result id loc)
-      (cond ((##sys#get id '##core#type) =>
+      (cond ((##sys#get id '##compiler#type) =>
 	     (lambda (a) 
-	       (cond #;((and (get db id 'assigned)      ; remove assigned global from type db
+	       (cond
+		#;((and (get db id 'assigned)      ; remove assigned global from type db
 		(not (##sys#get id '##core#declared-type)))
-	       (##sys#put! id '##core#type #f)
-	       '*)
+		(##sys#put! id '##compiler#type #f)
+		'*)
 	       ((eq? a 'deprecated)
 		(report
 		 loc
@@ -103,7 +105,11 @@
 	       (else (list a)))))
       (else '(*))))
   (define (variable-result id e loc flow)
-    (cond ((find (lambda (b) (memq (cdr b) flow)) blist) => cdr)
+    (cond ((find (lambda (b) 
+		   (and (eq? id (caar b))
+			(memq (cdar b) flow)) )
+		 blist)
+	   => (o list cdr))
 	  ((and (get db id 'assigned) 
 		(not (##sys#get id '##core#declared-type)) )
 	   '(*))
@@ -435,7 +441,7 @@
 		  ""))
 	    "")
 	(fragment x)))
-    (d "call-result: ~a (~a)" args loc)
+    (d "call-result: ~a" args)
     (let* ((ptype (car args))
 	   (nargs (length (cdr args)))
 	   (xptype `(procedure ,(make-list nargs '*) *)))
@@ -449,7 +455,6 @@
 	   xptype
 	   ptype)))
       (let-values (((atypes values-rest) (procedure-argument-types ptype (length (cdr args)))))
-	(d "  argument-types: ~a (~a)" atypes values-rest)
 	(unless (= (length atypes) nargs)
 	  (let ((alen (length atypes)))
 	    (report 
@@ -538,15 +543,16 @@
   (define (invalidate-blist)
     (for-each
      (lambda (b)
-       (when (get db (car b) 'assigned)
+       (when (get db (caar b) 'assigned)
+	 (d "invalidating: ~a" b)
 	 (set-cdr! b '*)))
      blist))
   (define (walk n e loc dest tail flow ctags) ; returns result specifier
     (let ((subs (node-subexpressions n))
 	  (params (node-parameters n)) 
 	  (class (node-class n)) )
-      (d "walk: ~a ~a (loc: ~a, dest: ~a, tail: ~a, flow: ~a, e: ~a)"
-	 class params loc dest tail flow e)
+      (d "walk: ~a ~a (loc: ~a, dest: ~a, tail: ~a, flow: ~a, blist: ~a, e: ~a)"
+	 class params loc dest tail flow blist e)
       (let ((results
 	     (case class
 	       ((quote) (list (constant-result (first params))))
@@ -578,7 +584,7 @@
 		;; before CPS-conversion, `let'-nodes may have multiple bindings
 		(let loop ((vars params) (body subs) (e2 '()))
 		  (if (null? vars)
-		      (walk (car body) (append e2 e) loc dest tail flow #f)
+		      (walk (car body) (append e2 e) loc dest tail flow ctags)
 		      (let ((t (single 
 				(sprintf "in `let' binding of `~a'" (real-name (car vars)))
 				(walk (car body) e loc (car vars) #f flow #f) 
@@ -606,7 +612,7 @@
 			   r))))))))
 	       ((set! ##core#set!)
 		(let* ((var (first params))
-		       (type (##sys#get var '##core#type))
+		       (type (##sys#get var '##compiler#type))
 		       (rt (single 
 			    (sprintf "in assignment to `~a'" var)
 			    (walk (first subs) e loc var #f flow #f)
@@ -628,6 +634,7 @@
 	       ((##core#primitive ##core#inline_ref) '*)
 	       ((##core#call)
 		(let* ((f (fragment n))
+		       (len (length subs))
 		       (args (map (lambda (n i)
 				    (single 
 				     (sprintf 
@@ -637,25 +644,28 @@
 					   (sprintf "argument #~a" i))
 				       f)
 				     (walk n e loc #f #f flow #f) loc))
-				  subs (iota (length subs)))))
-		  (let ((r (call-result args e loc (first subs) params))
-			(f #f))
+				  subs 
+				  (iota len)))
+		       (fn (car args)))
+		  (let ((r (call-result args e loc (first subs) params)))
 		    (invalidate-blist)
 		    (for-each
 		     (lambda (arg argr)
 		       (when (eq? '##core#variable (node-class arg))
+			 ;;XXX figure out procedure name and check for "##compiler#predicate"
+			 ;;    property, then push blist entry for car of ctags and argument
+			 ;;    variable
 			 (let* ((var (first (node-parameters arg)))
 				(a (assq var e)))
 			   (when a
-			     (set! blist 
-			       (alist-cons
-				(cons var (car flow))
-				(merge-result-types 
-				 (list (if f argr (if (eq? '* argr) 'procedure argr)))
-				 (list argr))
-				blist)))))
-		       (set! f #t))
-		     subs args)
+			     (let ((ar (cond ((get db var 'assigned) '*)
+					     ((eq? '* argr) (cdr a))
+					     (else argr))))
+			       (d "assuming: ~a -> ~a (flow: ~a)" var ar (car flow))
+			       (set! blist 
+				 (alist-cons (cons var (car flow)) ar blist)))))))
+		     subs 
+		     (cons fn (procedure-argument-types fn (sub1 len))))
 		    r)))
 	       ((##core#switch ##core#cond)
 		(bomb "unexpected node class: ~a" class))
@@ -673,12 +683,13 @@
     (for-each
      (lambda (e)
        (let* ((name (car e))
-	      (old (##sys#get name '##core#type))
+	      (old (##sys#get name '##compiler#type))
 	      (new (cadr e)))
 	 (when (and old (not (equal? old new)))
 	   (##sys#notice
 	    (sprintf
 		"type-definition `~a' for toplevel binding `~a' conflicts with previously loaded type `~a'"
 		name new old)))
-	 (##sys#put! name '##core#type new)))
+	 ;;XXX detect predicate declarations
+	 (##sys#put! name '##compiler#type new)))
      (read-file dbfile))))
