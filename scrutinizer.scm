@@ -482,6 +482,11 @@
 	     (or (eq? 'procedure (car t))
 		 (and (eq? 'or (car t))
 		      (every procedure-type? (cdr t)))))))
+  (define (procedure-name t)
+    (and (pair? t)
+	 (eq? 'procedure (car t))
+	 (symbol? (cadr t))
+	 (cadr t)))
   (define (procedure-argument-types t n)
     (cond ((or (memq t '(* procedure)) 
 	       (not-pair? t)
@@ -652,11 +657,15 @@
 		    (for-each
 		     (lambda (arg argr)
 		       (when (eq? '##core#variable (node-class arg))
-			 ;;XXX figure out procedure name and check for "##compiler#predicate"
-			 ;;    property, then push blist entry for car of ctags and argument
-			 ;;    variable
-			 (let* ((var (first (node-parameters arg)))
+			 (let* ((pn (procedure-name fn))
+				(var (first (node-parameters arg)))
+				(pt (and pn (##sys#get pn '##compiler#predicate)))
 				(a (assq var e)))
+			   (when (and pt ctags)
+			     (d "predicate `~a' indicates `~a' is ~a in flow ~a" pn var pt
+				(car ctags))
+			     (set! blist 
+			       (alist-cons (cons var (car ctags)) pt blist)))
 			   (when a
 			     (let ((ar (cond ((get db var 'assigned) '*)
 					     ((eq? '* argr) (cdr a))
@@ -682,14 +691,16 @@
       (printf "loading type database ~a ...~%" dbfile))
     (for-each
      (lambda (e)
-       (let* ((name (car e))
-	      (old (##sys#get name '##compiler#type))
-	      (new (cadr e)))
-	 (when (and old (not (equal? old new)))
-	   (##sys#notice
-	    (sprintf
-		"type-definition `~a' for toplevel binding `~a' conflicts with previously loaded type `~a'"
-		name new old)))
-	 ;;XXX detect predicate declarations
-	 (##sys#put! name '##compiler#type new)))
+       (cond ((eq? 'predicate (car e))
+	      (##sys#put! (cadr e) '##compiler#predicate (caddr e)))
+	     (else
+	      (let* ((name (car e))
+		     (old (##sys#get name '##compiler#type))
+		     (new (cadr e)))
+		(when (and old (not (equal? old new)))
+		  (##sys#notice
+		   (sprintf
+		       "type-definition `~a' for toplevel binding `~a' conflicts with previously loaded type `~a'"
+		     name new old)))
+		(##sys#put! name '##compiler#type new)))))
      (read-file dbfile))))
