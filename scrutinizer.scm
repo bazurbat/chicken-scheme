@@ -134,7 +134,7 @@
 	   => (o list cdr))
 	  ((and (get db id 'assigned) 
 		(not (##sys#get id '##core#declared-type)))
-	   '(*)
+	   '(*))
 	  ((assq id e) =>
 	   (lambda (a)
 	     (cond ((eq? 'undefined (cdr a))
