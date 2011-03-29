@@ -63,6 +63,7 @@
 ;   ##compiler#declared-type   ->  BOOL
 ;   ##compiler#predicate       ->  TYPESPEC
 ;   ##compiler#specializations -> (SPECIALIZATION ...)
+;   ##compiler#enforce-argument-types -> BOOL
 ;
 ; specialization specifiers:
 ;
@@ -713,6 +714,7 @@
 				  (iota len)))
 		       (fn (car args))
 		       (pn (procedure-name fn))
+		       (enforces (and pn (##sys#get pn '##compiler#enforce-argument-types)))
 		       (pt (and pn (##sys#get pn '##compiler#predicate))))
 		  (let ((r (call-result n args e loc params)))
 		    (invalidate-blist)
@@ -728,13 +730,13 @@
 				  (set! blist 
 				    (alist-cons (cons var (car ctags)) pt blist)))
 				 (a
-				  ;;XXX do this only if declared "enforce-argument-types"
-				  (let ((ar (cond ((get db var 'assigned) '*)
-						  ((eq? '* argr) (cdr a))
-						  (else argr))))
-				    (d "assuming: ~a -> ~a (flow: ~a)" var ar (car flow))
-				    (set! blist 
-				      (alist-cons (cons var (car flow)) ar blist))))))))
+				  (when enforces
+				    (let ((ar (cond ((get db var 'assigned) '*)
+						    ((eq? '* argr) (cdr a))
+						    (else argr))))
+				      (d "assuming: ~a -> ~a (flow: ~a)" var ar (car flow))
+				      (set! blist 
+					(alist-cons (cons var (car flow)) ar blist)))))))))
 		     subs
 		     (cons fn (procedure-argument-types fn (sub1 len))))
 		    r)))
