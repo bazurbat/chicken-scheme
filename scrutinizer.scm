@@ -81,56 +81,6 @@
 (define-constant +fragment-max-depth+ 3)
 
 
-(define (scrutinize node db)
-  (let ((blist '()))
-    (define (constant-result lit)
-      (cond ((string? lit) 'string)
-	    ((symbol? lit) 'symbol)
-	    ((fixnum? lit) 'fixnum)
-	    ((flonum? lit) 'float)
-	    ((number? lit) 'number)	; in case...
-	    ((boolean? lit) 'boolean)
-	    ((list? lit) 'list)
-	    ((pair? lit) 'pair)
-	    ((eof-object? lit) 'eof)
-	    ((vector? lit) 'vector)
-	    ((and (not (##sys#immediate? lit)) ##sys#generic-structure? lit)
-	     `(struct ,(##sys#slot lit 0)))
-	    ((null? lit) 'null)
-	    ((char? lit) 'char)
-	    (else '*)))
-    (define (global-result id loc)
-      (cond ((##sys#get id '##compiler#type) =>
-	     (lambda (a) 
-	       (cond
-		#;((and (get db id 'assigned)      ; remove assigned global from type db
-		(not (##sys#get id '##core#declared-type)))
-		(##sys#put! id '##compiler#type #f)
-		'*)
-	       ((eq? a 'deprecated)
-		(report
-		 loc
-		 (sprintf "use of deprecated library procedure `~a'" id) )
-		'(*))
-	       ((and (pair? a) (eq? (car a) 'deprecated))
-		(report 
-		 loc
-		 (sprintf 
-		     "use of deprecated library procedure `~a' - consider using `~a' instead"
-		   id (cadr a)))
-		'(*))
-	       (else (list a)))))
-      (else '(*))))
-  (define (variable-result id e loc flow)
-    (cond ((find (lambda (b) 
-		   (and (eq? id (caar b))
-			(memq (cdar b) flow)) )
-		 blist)
-	   => (o list cdr))
-	  ((and (get db id 'assigned) 
-		(not (##sys#get id '##core#declared-type)) )
-	   '(*))
-=======
 (define specialization-statistics '())
 
 (define (scrutinize node db complain specialize)
@@ -155,27 +105,36 @@
 	  ((char? lit) 'char)
 	  (else '*)))
   (define (global-result id loc)
-    (cond ((##sys#get id '##core#type) =>
+    (cond ((##sys#get id '##compiler#type) =>
 	   (lambda (a) 
-	     (cond ((eq? a 'deprecated)
-		    (report
-		     loc
-		     (sprintf "use of deprecated library procedure `~a'" id) )
-		    '*)
-		   ((and (pair? a) (eq? (car a) 'deprecated))
-		    (report 
-		     loc
-		     (sprintf 
-			 "use of deprecated library procedure `~a' - consider using `~a' instead"
-		       id (cadr a)))
-		     '*)
-		   (else (list a)))))
-	  (else '*)))
-  (define (variable-result id e loc)
-    (cond ((and (get db id 'assigned) 
+	     (cond
+	      #;((and (get db id 'assigned)      ; remove assigned global from type db
+	      (not (##sys#get id '##compiler#declared-type)))
+	      (##sys#put! id '##compiler#type #f)
+	      '(*))
+	      ((eq? a 'deprecated)
+	       (report
+		loc
+		(sprintf "use of deprecated library procedure `~a'" id) )
+	       '(*))
+	      ((and (pair? a) (eq? (car a) 'deprecated))
+	       (report 
+		loc
+		(sprintf 
+		    "use of deprecated library procedure `~a' - consider using `~a' instead"
+		  id (cadr a)))
+	       '(*))
+	      (else (list a)))))
+	  (else '(*))))
+  (define (variable-result id e loc flow)
+    (cond ((find (lambda (b) 
+		   (and (eq? id (caar b))
+			(memq (cdar b) flow)) )
+		 blist)
+	   => (o list cdr))
+	  ((and (get db id 'assigned) 
 		(not (##sys#get id '##core#declared-type)))
-	   '*)
->>>>>>> specialization
+	   '(*)
 	  ((assq id e) =>
 	   (lambda (a)
 	     (cond ((eq? 'undefined (cdr a))
