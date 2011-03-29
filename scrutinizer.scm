@@ -84,48 +84,49 @@
 (define specialization-statistics '())
 
 (define (scrutinize node db complain specialize)
-  (define (constant-result lit)
-    (cond ((string? lit) 'string)
-	  ((symbol? lit) 'symbol)
-	  ((fixnum? lit) 'fixnum)
-	  ((flonum? lit) 'float)
-	  ((number? lit) 
-	   (case number-type 
-	     ((fixnum) 'fixnum)
-	     ((flonum) 'flonum)
-	     (else 'number)))	; in case...
-	  ((boolean? lit) 'boolean)
-	  ((null? lit) 'null)
-	  ((pair? lit) 'pair)
-	  ((list? lit) 'list)
-	  ((eof-object? lit) 'eof)
-	  ((vector? lit) 'vector)
-	  ((and (not (##sys#immediate? lit)) ##sys#generic-structure? lit)
-	   `(struct ,(##sys#slot lit 0)))
-	  ((char? lit) 'char)
-	  (else '*)))
-  (define (global-result id loc)
-    (cond ((##sys#get id '##compiler#type) =>
-	   (lambda (a) 
-	     (cond
-	      #;((and (get db id 'assigned)      ; remove assigned global from type db
-	      (not (##sys#get id '##compiler#declared-type)))
-	      (##sys#put! id '##compiler#type #f)
-	      '(*))
-	      ((eq? a 'deprecated)
-	       (report
-		loc
-		(sprintf "use of deprecated library procedure `~a'" id) )
+  (let ((blist '()))
+    (define (constant-result lit)
+      (cond ((string? lit) 'string)
+	    ((symbol? lit) 'symbol)
+	    ((fixnum? lit) 'fixnum)
+	    ((flonum? lit) 'float)
+	    ((number? lit) 
+	     (case number-type 
+	       ((fixnum) 'fixnum)
+	       ((flonum) 'flonum)
+	       (else 'number)))		; in case...
+	    ((boolean? lit) 'boolean)
+	    ((null? lit) 'null)
+	    ((pair? lit) 'pair)
+	    ((list? lit) 'list)
+	    ((eof-object? lit) 'eof)
+	    ((vector? lit) 'vector)
+	    ((and (not (##sys#immediate? lit)) ##sys#generic-structure? lit)
+	     `(struct ,(##sys#slot lit 0)))
+	    ((char? lit) 'char)
+	    (else '*)))
+    (define (global-result id loc)
+      (cond ((##sys#get id '##compiler#type) =>
+	     (lambda (a) 
+	       (cond
+		#;((and (get db id 'assigned)      ; remove assigned global from type db
+		(not (##sys#get id '##compiler#declared-type)))
+	       (##sys#put! id '##compiler#type #f)
 	       '(*))
-	      ((and (pair? a) (eq? (car a) 'deprecated))
-	       (report 
-		loc
-		(sprintf 
-		    "use of deprecated library procedure `~a' - consider using `~a' instead"
-		  id (cadr a)))
-	       '(*))
-	      (else (list a)))))
-	  (else '(*))))
+	       ((eq? a 'deprecated)
+		(report
+		 loc
+		 (sprintf "use of deprecated library procedure `~a'" id) )
+		'(*))
+	       ((and (pair? a) (eq? (car a) 'deprecated))
+		(report 
+		 loc
+		 (sprintf 
+		     "use of deprecated library procedure `~a' - consider using `~a' instead"
+		   id (cadr a)))
+		'(*))
+	       (else (list a)))))
+      (else '(*))))
   (define (variable-result id e loc flow)
     (cond ((find (lambda (b) 
 		   (and (eq? id (caar b))
@@ -457,12 +458,12 @@
   (define (call-result node args e loc params)
     (define (pname)
       (sprintf "~ain procedure call to `~s', " 
-	  (if (and (pair? params) (pair? (cdr params)))
-	      (let ((n (source-info->line (cadr params))))
-		(if n
-		    (sprintf "~a: " n)
-		    ""))
-	      "")
+	(if (and (pair? params) (pair? (cdr params)))
+	    (let ((n (source-info->line (cadr params))))
+	      (if n
+		  (sprintf "~a: " n)
+		  ""))
+	    "")
 	(fragment (first (node-subexpressions node)))))
     (d "call-result: ~a " args)
     (let* ((ptype (car args))
@@ -473,10 +474,10 @@
 	(report
 	 loc
 	 (sprintf
-	  "~aexpected a value of type `~a', but was given a value of type `~a'"
-	  (pname) 
-	  xptype
-	  ptype)))
+	     "~aexpected a value of type `~a', but was given a value of type `~a'"
+	   (pname) 
+	   xptype
+	   ptype)))
       (let-values (((atypes values-rest) (procedure-argument-types ptype nargs)))
 	(d "  argument-types: ~a (~a)" atypes values-rest)
 	(unless (= (length atypes) nargs)
@@ -484,9 +485,9 @@
 	    (report 
 	     loc
 	     (sprintf
-	      "~aexpected ~a argument~a, but was given ~a argument~a"
-	      (pname) alen (multiples alen)
-	      nargs (multiples nargs)))))
+		 "~aexpected ~a argument~a, but was given ~a argument~a"
+	       (pname) alen (multiples alen)
+	       nargs (multiples nargs)))))
 	(do ((args (cdr args) (cdr args))
 	     (atypes atypes (cdr atypes))
 	     (i 1 (add1 i)))
@@ -495,8 +496,8 @@
 	    (report
 	     loc
 	     (sprintf
-	      "~aexpected argument #~a of type `~a', but was given an argument of type `~a'"
-	      (pname) i (car atypes) (car args)))))
+		 "~aexpected argument #~a of type `~a', but was given an argument of type `~a'"
+	       (pname) i (car atypes) (car args)))))
 	(let ((r (procedure-result-types ptype values-rest (cdr args))))
 	  (d  "  result-types: ~a" r)
 	  (when specialize
@@ -731,7 +732,7 @@
        (lambda (ss)
 	 (printf "  ~a ~s~%" (cdr ss) (car ss)))
        specialization-statistics))
-    rn))
+    rn)))
 
 (define (load-type-database name #!optional (path (repository-path)))
   (and-let* ((dbfile (file-exists? (make-pathname path name))))
