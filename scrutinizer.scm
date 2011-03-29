@@ -134,7 +134,7 @@
 		 blist)
 	   => (o list cdr))
 	  ((and (get db id 'assigned) 
-		(not (##sys#get id '##core#declared-type)))
+		(not (##sys#get id '##compiler#declared-type)))
 	   '(*))
 	  ((assq id e) =>
 	   (lambda (a)
@@ -502,19 +502,37 @@
 	  (d  "  result-types: ~a" r)
 	  (when specialize
 	    ;;XXX we should check whether this is a standard- or extended bindng
-	    (and-let* ((pn (procedure-name ptype))
-		       (specs (##sys#get pn '##compiler#specializations)))
-	      (for-each
-	       (lambda (spec)
-		 (when (match-specialization (car spec) (cdr args))
-		   (let ((op (cons pn (car spec))))
-		     (cond ((assoc op specialization-statistics) =>
-			    (lambda (a) (set-cdr! a (add1 (cdr a)))))
-			   (else
-			    (set! specialization-statistics
-			      (cons (cons op 1) specialization-statistics)))))
-		   (specialize-node! node (cadr spec))))
-	       specs)))
+	    (let ((pn (procedure-name ptype))
+		  (op #f))
+	      (when pn
+		(cond ((and (fx= 1 nargs) 
+			    (##sys#get pn '##compiler#predicate)) =>
+			    (lambda (pt)
+			      (cond ((match-specialization (list pt) (cdr args))
+				     (specialize-node!
+				      node
+				      `(let ((#:tmp #(1))) '#t))
+				     (set! op (list pn pt)))
+				    ((match-specialization (list `(not ,pt)) (cdr args))
+				     (specialize-node!
+				      node
+				      `(let ((#:tmp #(1))) '#f))
+				     (set! op (list pt `(not ,pt)))))))
+		      ((##sys#get pn '##compiler#specializations) =>
+		       (lambda (specs)
+			 (for-each
+			  (lambda (spec)
+			    (when (match-specialization (car spec) (cdr args))
+			      (set! op (cons pn (car spec)))
+			      (specialize-node! node (cadr spec))))
+			  specs))))
+		(when op
+		  (cond ((assoc op specialization-statistics) =>
+			 (lambda (a) (set-cdr! a (add1 (cdr a)))))
+			(else
+			 (set! specialization-statistics
+			   (cons (cons op 1) 
+				 specialization-statistics))))))))
 	  r))))
   (define (procedure-type? t)
     (or (eq? 'procedure t)
@@ -693,29 +711,31 @@
 				     (walk n e loc #f #f flow #f) loc))
 				  subs 
 				  (iota len)))
-		       (fn (car args)))
+		       (fn (car args))
+		       (pn (procedure-name fn))
+		       (pt (and pn (##sys#get pn '##compiler#predicate))))
 		  (let ((r (call-result n args e loc params)))
 		    (invalidate-blist)
 		    (for-each
 		     (lambda (arg argr)
 		       (when (eq? '##core#variable (node-class arg))
-			 (let* ((pn (procedure-name fn))
-				(var (first (node-parameters arg)))
-				(pt (and pn (##sys#get pn '##compiler#predicate)))
-				(a (assq var e)))
-			   (when (and pt ctags)
-			     (d "predicate `~a' indicates `~a' is ~a in flow ~a" pn var pt
-				(car ctags))
-			     (set! blist 
-			       (alist-cons (cons var (car ctags)) pt blist)))
-			   (when a
-			     (let ((ar (cond ((get db var 'assigned) '*)
-					     ((eq? '* argr) (cdr a))
-					     (else argr))))
-			       (d "assuming: ~a -> ~a (flow: ~a)" var ar (car flow))
-			       (set! blist 
-				 (alist-cons (cons var (car flow)) ar blist)))))))
-		     subs 
+			 (let* ((var (first (node-parameters arg)))
+				(a (assq var e))
+				(pred (and pt ctags (not (eq? arg (car subs))))))
+			   (cond (pred
+				  (d "predicate `~a' indicates `~a' is ~a in flow ~a" pn var pt
+				     (car ctags))
+				  (set! blist 
+				    (alist-cons (cons var (car ctags)) pt blist)))
+				 (a
+				  ;;XXX do this only if declared "enforce-argument-types"
+				  (let ((ar (cond ((get db var 'assigned) '*)
+						  ((eq? '* argr) (cdr a))
+						  (else argr))))
+				    (d "assuming: ~a -> ~a (flow: ~a)" var ar (car flow))
+				    (set! blist 
+				      (alist-cons (cons var (car flow)) ar blist))))))))
+		     subs
 		     (cons fn (procedure-argument-types fn (sub1 len))))
 		    r)))
 	       ((##core#switch ##core#cond)
@@ -752,6 +772,9 @@
 		   (sprintf
 		       "type-definition `~a' for toplevel binding `~a' conflicts with previously loaded type `~a'"
 		     name new old)))
+		(when (and (pair? new) (eq? 'procedure! (car new)))
+		  (##sys#put! name '##compiler#enforce-argument-types #t)
+		  (set-car! new 'procedure))
 		(##sys#put! name '##compiler#type new)
 		(when specs
 		  (##sys#put! name '##compiler#specializations specs))))))
