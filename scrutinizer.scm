@@ -407,6 +407,10 @@
 			     ((type<=? (car args1) (car args2)) 
 			      (loop1 (cdr args1) (cdr args2) m1 m2))
 			     (else #f)))))))))))
+  (define (most-specialized-type t1 t2)
+    (if (type<=? t1 t2)
+	t1
+	t2))
   (define (multiples n)
     (if (= n 1) "" "s"))
   (define (single what tv loc)
@@ -731,9 +735,11 @@
 				    (alist-cons (cons var (car ctags)) pt blist)))
 				 (a
 				  (when enforces
-				    (let ((ar (cond ((get db var 'assigned) '*)
-						    ((eq? '* argr) (cdr a))
-						    (else argr))))
+				    ;;XXX when ctags is set, add blist entries for both flows
+				    (let ((ar (most-specialized-type
+					       (cdr a)
+					       (cond ((get db var 'assigned) '*)
+						     (else argr)))))
 				      (d "assuming: ~a -> ~a (flow: ~a)" var ar (car flow))
 				      (set! blist 
 					(alist-cons (cons var (car flow)) ar blist)))))))))
