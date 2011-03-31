@@ -515,11 +515,21 @@
 			      (##sys#get pn '##compiler#predicate)) =>
 			      (lambda (pt)
 				(cond ((match-specialization (list pt) (cdr args))
+				       (report
+					loc
+					(sprintf 
+					    "~apredicate is called with an argument of type `~a' and will always return true"
+					  (pname) pt))
 				       (specialize-node!
 					node
 					`(let ((#:tmp #(1))) '#t))
 				       (set! op (list pn pt)))
 				      ((match-specialization (list `(not ,pt)) (cdr args))
+				       (report
+					loc
+					(sprintf 
+					    "~apredicate is called with an argument of type `~a' and will always return false"
+					  (pname) (car args)))
 				       (specialize-node!
 					node
 					`(let ((#:tmp #(1))) '#f))
