@@ -37,7 +37,10 @@
   (when (##sys#fudge 13)
     (printf "[debug] ~?~%" fstr args)) )
 
+(define dd d)
+
 ;(define-syntax d (syntax-rules () ((_ . _) (void))))
+(define-syntax dd (syntax-rules () ((_ . _) (void))))
 
 
 ;;; Walk node tree, keeping type and binding information
@@ -138,7 +141,7 @@
 	     => (o list cdr))
 	    (else #f)))
     (define (variable-result id e loc flow)
-      (cond ((vblist-type id flow))
+      (cond ((blist-type id flow))
 	    ((and (get db id 'assigned) 
 		  (not (##sys#get id '##compiler#declared-type)))
 	     '(*))
@@ -211,7 +214,7 @@
 		  (map typename results))))))
     (define (simplify t)
       (let ((t2 (simplify1 t)))
-	(d "simplify: ~a -> ~a" t t2)
+	(dd "simplify: ~a -> ~a" t t2)
 	t2))
     (define (simplify1 t)
       (call/cc 
@@ -258,7 +261,7 @@
 					   (else (loop (cdr ts) (cons (car ts) done)))))))
 			 (cond ((equal? ts2 (cdr t)) t)
 			       (else
-				(d "  or-simplify: ~a" ts2)
+				(dd "  or-simplify: ~a" ts2)
 				(simplify `(or ,@(if (any (cut eq? <> '*) ts2) '(*) ts2)))))))) )
 	       ((procedure)
 		(let* ((name (and (named? t) (cadr t)))
@@ -308,7 +311,7 @@
 			(merge-result-types (cdr ts1) (cdr ts2))))))
     (define (match t1 t2)
       (let ((m (match1 t1 t2)))
-	(d "match ~a <-> ~a -> ~a" t1 t2 m)
+	(dd "match ~a <-> ~a -> ~a" t1 t2 m)
 	m))
     (define (match1 t1 t2)
       (cond ((eq? t1 t2))
@@ -471,7 +474,7 @@
 		    ""))
 	      "")
 	  (fragment (first (node-subexpressions node)))))
-      (d "call-result: ~a " args)
+      (d "  call-result: ~a " args)
       (let* ((ptype (car args))
 	     (nargs (length (cdr args)))
 	     (xptype `(procedure ,(make-list nargs '*) *)))
@@ -625,7 +628,7 @@
       (for-each
        (lambda (b)
 	 (when (get db (caar b) 'assigned)
-	   (d "invalidating: ~a" b)
+	   (dd "invalidating: ~a" b)
 	   (set-cdr! b '*)))
        blist))
     (define (walk n e loc dest tail flow ctags) ; returns result specifier
@@ -740,7 +743,7 @@
 				  (a (assq var e))
 				  (pred (and pt ctags (not (eq? arg (car subs))))))
 			     (cond (pred
-				    (d "predicate `~a' indicates `~a' is ~a in flow ~a" pn var pt
+				    (d "  predicate `~a' indicates `~a' is ~a in flow ~a" pn var pt
 				       (car ctags))
 				    (set! blist 
 				      (alist-cons (cons var (car ctags)) pt blist)))
@@ -755,7 +758,7 @@
 						      ((get db var 'assigned) '*)
 						      ((type<=? (cdr a) argr) (cdr a))
 						      (else argr))))
-					(d "assuming: ~a -> ~a (flow: ~a)" var ar (car flow))
+					(d "  assuming: ~a -> ~a (flow: ~a)" var ar (car flow))
 					(set! blist 
 					  (alist-cons (cons var (car flow)) ar blist)))))))))
 		       subs
@@ -766,7 +769,7 @@
 		 (else
 		  (for-each (lambda (n) (walk n e loc #f #f flow #f)) subs)
 		  '*))))
-	  (d "  -> ~a" results)
+	  (dd "  -> ~a" results)
 	  results)))
     (let ((rn (walk (first (node-subexpressions node)) '() '() #f #f (list (tag)) #f)))
       (when (and (pair? specialization-statistics)
@@ -790,14 +793,14 @@
 		     (old (##sys#get name '##compiler#type))
 		     (new (cadr e))
 		     (specs (and (pair? (cddr e)) (cddr e))))
+		(when (and (pair? new) (eq? 'procedure! (car new)))
+		  (##sys#put! name '##compiler#enforce-argument-types #t)
+		  (set-car! new 'procedure))
 		(when (and old (not (equal? old new)))
 		  (##sys#notice
 		   (sprintf
 		       "type-definition `~a' for toplevel binding `~a' conflicts with previously loaded type `~a'"
 		     name new old)))
-		(when (and (pair? new) (eq? 'procedure! (car new)))
-		  (##sys#put! name '##compiler#enforce-argument-types #t)
-		  (set-car! new 'procedure))
 		(##sys#put! name '##compiler#type new)
 		(when specs
 		  (##sys#put! name '##compiler#specializations specs))))))

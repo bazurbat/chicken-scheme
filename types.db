@@ -1155,7 +1155,6 @@
 (with-input-from-string (procedure! with-input-from-string (string (procedure () . *)) . *))
 (with-output-to-port (procedure! with-output-to-port (port (procedure () . *)) . *))
 (with-output-to-string (procedure! with-output-to-string ((procedure () . *)) . *))
-(with-error-output-to-port (procedure! with-error-output-to-port (port (procedure () . *)) . *))
 
 ;; posix
 
