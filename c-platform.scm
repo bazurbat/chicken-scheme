@@ -626,11 +626,11 @@
 (rewrite 'string-set! 2 3 "C_i_string_set" #t)
 (rewrite 'vector-ref 2 2 "C_slot" #f)
 (rewrite 'vector-ref 2 2 "C_i_vector_ref" #t)
-(rewrite 'char=? 2 2 "C_eqp" #t)
-(rewrite 'char>? 2 2 "C_fixnum_greaterp" #t)
-(rewrite 'char<? 2 2 "C_fixnum_lessp" #t)
-(rewrite 'char>=? 2 2 "C_fixnum_greater_or_equal_p" #t)
-(rewrite 'char<=? 2 2 "C_fixnum_less_or_equal_p" #t)
+(rewrite 'char=? 2 2 "C_i_char_equalp" #t)   ; a bit of a lie: won't crash but accepts garbage
+(rewrite 'char>? 2 2 "C_i_char_greaterp" #t)
+(rewrite 'char<? 2 2 "C_i_char_lessp" #t)
+(rewrite 'char>=? 2 2 "C_i_char_greater_or_equal_p" #t)
+(rewrite 'char<=? 2 2 "C_i_char_less_or_equal_p" #t)
 (rewrite '##sys#slot 2 2 "C_slot" #t)		; consider as safe, the primitive is unsafe anyway.
 (rewrite '##sys#block-ref 2 2 "C_i_block_ref" #t) ;*** must be safe for pattern matcher (anymore?)
 (rewrite '##sys#size 2 1 "C_block_size" #t)
