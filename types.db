@@ -1074,7 +1074,7 @@
 (number-of-slots (procedure number-of-slots (*) fixnum)) ;XXX
 
 (object->pointer (procedure object->pointer (*) *))
-(object-become! (procedure! object-become! (list) *))
+(object-become! (procedure object-become! (list) *))
 (object-copy (procedure object-copy (*) *))
 (object-evict (procedure! object-evict (* #!optional (procedure (fixnum) pointer)) *))
 (object-evict-to-location (procedure! object-evict-to-location (* pointer #!optional fixnum) * pointer))
