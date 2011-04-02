@@ -126,7 +126,7 @@ EOF
     --                            ignore all following options
 
 EOF
-) )
+) ) ;|  <--- for emacs font-lock
 
 (define (print-banner)
   (newline)
@@ -427,7 +427,10 @@ EOF
  (let ((printf printf))
    (lambda ()
      (let ((name (read)))
-       (cond ((string? name)
+       (cond ((not name)
+	      (##sys#current-module #f)
+	      (printf "; resetting current module to toplevel~%"))
+	     ((string? name)
 	      (set! name (##sys#string->symbol name)))
 	     ((not (symbol? name))
 	      (printf "invalid module name `~a'~%" name))

@@ -1389,27 +1389,27 @@ EOF
 (define (char=? c1 c2)
   (##sys#check-char c1 'char=?)
   (##sys#check-char c2 'char=?)
-  (eq? c1 c2) )
+  (##core#inline "C_i_char_equalp" c1 c2) )
 
 (define (char>? c1 c2)
   (##sys#check-char c1 'char>?)
   (##sys#check-char c2 'char>?)
-  (fx> c1 c2) )
+  (##core#inline "C_i_char_greaterp" c1 c2) )
 
 (define (char<? c1 c2)
   (##sys#check-char c1 'char<?)
   (##sys#check-char c2 'char<?)
-  (fx< c1 c2) )
+  (##core#inline "C_i_char_lessp" c1 c2) )
 
 (define (char>=? c1 c2)
   (##sys#check-char c1 'char>=?)
   (##sys#check-char c2 'char>=?)
-  (fx>= c1 c2) )
+  (##core#inline "C_i_char_greater_or_equal_p" c1 c2) )
 
 (define (char<=? c1 c2)
   (##sys#check-char c1 'char<=?)
   (##sys#check-char c2 'char<=?)
-  (fx<= c1 c2) )
+  (##core#inline "C_i_char_less_or_equal_p" c1 c2) )
 
 (define (char-upcase c)
   (##sys#check-char c 'char-upcase)
@@ -2344,19 +2344,20 @@ EOF
 		     (##sys#read-char-0 port)
 		     (loop (##sys#peek-char-0 port)) ) ) ) )
 
-	  (define (r-usequence u n)
-	    (let loop ([seq '()] [n n])
+	  (define (r-usequence u n base)
+	    (let loop ((seq '()) (n n))
 	      (if (eq? n 0)
-		(let* ([str (##sys#reverse-list->string seq)]
-		       [n (string->number str 16)])
-		  (or n
-		      (##sys#read-error
-		       port
-		       (string-append "invalid escape-sequence '\\" u str "\'")) ) )
-		(let ([x (##sys#read-char-0 port)])
-		  (if (or (eof-object? x) (char=? #\" x))
-		    (##sys#read-error port "unterminated string constant") 
-		    (loop (cons x seq) (fx- n 1)) ) ) ) ) )
+		  (let* ((str (##sys#reverse-list->string seq))
+			 (n (string->number str base)))
+		    (or n
+			(##sys#read-error
+			 port
+			 (string-append
+			  "invalid escape-sequence '\\" u str "\'")) ) )
+		  (let ((x (##sys#read-char-0 port)))
+		    (if (or (eof-object? x) (char=? #\" x))
+			(##sys#read-error port "unterminated string constant") 
+			(loop (cons x seq) (fx- n 1)) ) ) ) ) )
 
 	  (define (r-cons-codepoint cp lst)
 	    (let* ((s (##sys#char->utf8-string (integer->char cp)))
@@ -2381,14 +2382,14 @@ EOF
 		       ((#\v) (loop (##sys#read-char-0 port) (cons (integer->char 11) lst)))
 		       ((#\f) (loop (##sys#read-char-0 port) (cons (integer->char 12) lst)))
 		       ((#\x) 
-			(let ([ch (integer->char (r-usequence "x" 2))])
+			(let ([ch (integer->char (r-usequence "x" 2 16))])
 			  (loop (##sys#read-char-0 port) (cons ch lst)) ) )
 		       ((#\u)
-			(let ([n (r-usequence "u" 4)])
+			(let ([n (r-usequence "u" 4 16)])
 			  (if (##sys#unicode-surrogate? n)
 			      (if (and (eqv? #\\ (##sys#read-char-0 port))
 				       (eqv? #\u (##sys#read-char-0 port)))
-				  (let* ((m (r-usequence "u" 4))
+				  (let* ((m (r-usequence "u" 4 16))
 					 (cp (##sys#surrogates->codepoint n m)))
 				    (if cp
 					(loop (##sys#read-char-0 port)
@@ -2397,18 +2398,22 @@ EOF
 				  (##sys#read-error port "unpaired escaped surrogate" n))
 			      (loop (##sys#read-char-0 port) (r-cons-codepoint n lst)) ) ))
 		       ((#\U)
-			(let ([n (r-usequence "U" 8)])
+			(let ([n (r-usequence "U" 8 16)])
 			  (if (##sys#unicode-surrogate? n)
 			      (##sys#read-error port (string-append "invalid escape (surrogate)" n))
 			      (loop (##sys#read-char-0 port) (r-cons-codepoint n lst)) )))
 		       ((#\\ #\' #\" #\|)
 			(loop (##sys#read-char-0 port) (cons c lst)))
 		       (else
-			(##sys#read-warning 
-			 port 
-			 "undefined escape sequence in string - probably forgot backslash"
-			 c)
-			(loop (##sys#read-char-0 port) (cons c lst))) ) )
+			(cond ((char-numeric? c)
+			       (let ((ch (integer->char (r-usequence "" 2 8))))
+				 (loop (##sys#read-char-0 port) (cons ch lst)) ))
+			      (else
+			       (##sys#read-warning 
+				port 
+				"undefined escape sequence in string - probably forgot backslash"
+				c)
+			       (loop (##sys#read-char-0 port) (cons c lst))) ) )))
 		    ((eq? term c) (##sys#reverse-list->string lst))
 		    (else (loop (##sys#read-char-0 port) (cons c lst))) ) ))
 		    
@@ -2691,12 +2696,14 @@ EOF
 	                '(#\[ #\] #\{ #\} #\|))))
 
 	  (r-spaces)
-	  (let* ([c (##sys#peek-char-0 port)]
-		 [srst (##sys#slot crt 1)]
-		 [h (and srst (##sys#slot srst (char->integer c)) ) ] )
+	  (let* ((c (##sys#peek-char-0 port))
+		 (srst (##sys#slot crt 1))
+		 (h (and srst (##sys#slot srst (char->integer c)) ) ) )
 	    (if h
 	        ;then handled by read-table entry
-		(h c port)
+		(##sys#call-with-values
+		 (lambda () (h c port))
+		 (lambda xs (if (null? xs) (readrec) (car xs))))
 		;otherwise chicken extended r5rs syntax
 		(case c
 		  ((#\')
@@ -2720,15 +2727,23 @@ EOF
 				(spdrst (##sys#slot crt 3)) 
 				(h (and spdrst (##sys#slot spdrst (char->integer dchar)) ) ) )
 	                         ;#<num> handled by parameterized # read-table entry?
-			   (cond (h (h dchar port n))
+			   (cond (h (##sys#call-with-values
+				     (lambda () (h dchar port n))
+				     (lambda xs (if (null? xs) (readrec) (car xs)))))
 			         ;#<num>?
-				 ((or (eq? dchar #\)) (char-whitespace? dchar)) (##sys#sharp-number-hook port n))
-				 (else (##sys#read-error port "invalid parameterized read syntax" dchar n) ) ) )
+				 ((or (eq? dchar #\)) (char-whitespace? dchar)) 
+				  (##sys#sharp-number-hook port n))
+				 (else (##sys#read-error
+					port
+					"invalid parameterized read syntax" 
+					dchar n) ) ) )
 			 (let* ((sdrst (##sys#slot crt 2))
 				(h (and sdrst (##sys#slot sdrst (char->integer dchar)) ) ) )
 			   (if h
 	                       ;then handled by # read-table entry
-			       (h dchar port)
+			       (##sys#call-with-values
+				(lambda () (h dchar port))
+				(lambda xs (if (null? xs) (readrec) (car xs))))
                 	       ;otherwise chicken extended r5rs syntax
 			       (case (char-downcase dchar)
 				 ((#\x) (##sys#read-char-0 port) (r-number-with-exactness 16))
@@ -2795,7 +2810,9 @@ EOF
 							  (##sys#read-error
 							   port
 							   "invalid `#!' token" tok) ) ) ] ) ) ) ) ) )
-				 (else (##sys#user-read-hook dchar port)) ) ) ) ) ) )
+				 (else
+				  (##sys#call-with-values (lambda () (##sys#user-read-hook dchar port))
+							  (lambda xs (if (null? xs) (readrec) (car xs)))) ) ) ) ) ) ) )
 		  ((#\() (r-list #\( #\)))
 		  ((#\)) (##sys#read-char-0 port) (container c))
 		  ((#\") (##sys#read-char-0 port) (r-string #\"))
@@ -2961,7 +2978,8 @@ EOF
 ;;; Output:
 
 (define (##sys#write-char-0 c p)
-  ((##sys#slot (##sys#slot p 2) 2) p c) )
+  ((##sys#slot (##sys#slot p 2) 2) p c) 
+  (##sys#void))
 
 (define (##sys#write-char/port c port)
   (##sys#check-port* port 'write-char)
@@ -3066,7 +3084,7 @@ EOF
 	    (cond ((eq? len 0) #f)
 		  ((eq? len 1)
 		   (let ((c (##core#inline "C_subchar" str 0)))
-		     (cond ((or (eq? #\. c) (eq? #\# c) (eq? #\; c) (eq? #\, c)) #f)
+		     (cond ((or (eq? #\. c) (eq? #\# c) (eq? #\; c) (eq? #\, c) (eq? #\| c)) #f)
 			   ((char-numeric? c) #f)
 			   (else #t))))
 		  (else
@@ -3213,7 +3231,8 @@ EOF
 			       (outchr port #\)) )
 			    (outchr port #\space)
 			    (out (##sys#slot x i)) ) ) ) ) )
-		(else (##sys#error "unprintable non-immediate object encountered")) ) ) ) ) ) )
+		(else (##sys#error "unprintable non-immediate object encountered")))))
+      (##sys#void))))
 
 (define ##sys#procedure->string 
   (let ((string-append string-append))
@@ -3545,6 +3564,7 @@ EOF
 
 (define ##sys#features
   '(#:chicken #:srfi-23 #:srfi-30 #:srfi-39 #:srfi-62 #:srfi-17 #:srfi-12 #:srfi-88 #:srfi-98
+	      #:srfi-6 #:srfi-10
 	      #:irregex-is-core-unit))
 
 ;; Add system features:
@@ -4486,6 +4506,7 @@ EOF
 
 (define ##sys#list->vector list->vector)
 (define ##sys#list list)
+(define ##sys#length length)
 (define ##sys#cons cons)
 (define ##sys#append append)
 (define ##sys#vector vector)

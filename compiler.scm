@@ -57,7 +57,6 @@
 ; (hide {<name>})
 ; (inline-limit <limit>)
 ; (keep-shadowed-macros)
-; (lambda-lift)
 ; (no-argc-checks)
 ; (no-bound-checks)
 ; (no-procedure-checks)
@@ -321,7 +320,6 @@
 (define disable-stack-overflow-checking #f)
 (define require-imports-flag #f)
 (define external-protos-first #f)
-(define do-lambda-lifting #f)
 (define inline-max-size default-inline-max-size)
 (define emit-closure-info #t)
 (define undefine-shadowed-macros #t)
@@ -475,13 +473,23 @@
 	    (else x))))
   
   (define (eval/meta form)
-    (parameterize ((##sys#current-module #f)
-		   (##sys#macro-environment (##sys#meta-macro-environment)))
-      ((##sys#compile-to-closure
-	form
-	'() 
-	(##sys#current-meta-environment))
-       '() ) ))
+    (let ((oldcm (##sys#current-module))
+	  (oldme (##sys#macro-environment))
+	  (mme (##sys#meta-macro-environment)))
+      (dynamic-wind
+	  (lambda () 
+	    (##sys#current-module #f)
+	    (##sys#macro-environment mme))
+	  (lambda ()
+	    ((##sys#compile-to-closure
+	      form
+	      '() 
+	      (##sys#current-meta-environment))
+	     '() ) )
+	  (lambda ()
+	    (##sys#current-module oldcm)
+	    (##sys#meta-macro-environment (##sys#macro-environment))
+	    (##sys#macro-environment oldme)))))
 
   (define (emit-import-lib name il)
     (let* ((fname (if all-import-libraries
@@ -735,7 +743,7 @@
 		       ((##core#define-compiler-syntax)
 			(let* ((var (cadr x))
 			       (body (caddr x))
-			       (name (##sys#strip-syntax var se #f)))
+			       (name (lookup var se)))
 			  (when body
 			    (set! compiler-syntax
 			      (alist-cons
@@ -763,7 +771,7 @@
 			(let ((bs (map
 				   (lambda (b)
 				     (##sys#check-syntax 'let-compiler-syntax b '(symbol . #(_ 0 1)))
-				     (let ((name (##sys#strip-syntax (car b) se #f)))
+				     (let ((name (lookup (car b) se)))
 				       (list 
 					name 
 					(and (pair? (cdr b))
@@ -863,7 +871,8 @@
 				   (canonicalize-begin-body
 				    (append
 				     (parameterize ((##sys#current-module #f)
-						    (##sys#macro-environment (##sys#meta-macro-environment)))
+						    (##sys#macro-environment 
+						     (##sys#meta-macro-environment)))
 				       (map
 					(lambda (x)
 					  (walk 
@@ -1258,14 +1267,14 @@
       (if (or (< n minlen) (> n (optional maxlen 99999)))
 	  (syntax-error "invalid declaration" spec) ) ) )  
   (define (stripa x)			; global aliasing
-    (##sys#strip-syntax x se #t))
+    (globalize x))
   (define (strip x)			; raw symbol
-    (##sys#strip-syntax x se))
+    (##sys#strip-syntax x))
   (define stripu ##sys#strip-syntax)
   (define (globalize sym)
     (if (symbol? sym)
 	(let loop ((se se))			; ignores syntax bindings
-	  (cond ((null? se) (##sys#alias-global-hook sym #f #f)) ;XXX could hint at decl (3rd arg)
+	  (cond ((null? se) (strip (##sys#alias-global-hook sym #f #f))) ;XXX could hint at decl (3rd arg)
 		((and (eq? sym (caar se)) (symbol? (cdar se))) (cdar se))
 		(else (loop (cdr se)))))
 	sym))
@@ -1402,7 +1411,6 @@
 	  (for-each export-variable syms)))
        ((emit-external-prototypes-first)
 	(set! external-protos-first #t) )
-       ((lambda-lift) (set! do-lambda-lifting #t))
        ((inline)
 	(if (null? (cdr spec))
 	    (set! inline-locally #t)
@@ -2344,7 +2352,8 @@
 
     (debugging 'p "closure conversion gathering phase...")
     (gather node #f '())
-    (debugging 'o "customizable procedures" customizable)
+    (when (pair? customizable)
+      (debugging 'o "customizable procedures" customizable))
     (debugging 'p "closure conversion transformation phase...")
     (let ((node2 (transform node #f #f)))
       (unless (zero? direct-calls)
@@ -2670,7 +2679,10 @@
     
     (debugging 'p "preparation phase...")
     (let ((node2 (walk node '() #f '())))
-      (debugging 'o "fast box initializations" fastinits)
-      (debugging 'o "fast global references" fastrefs)
-      (debugging 'o "fast global assignments" fastsets)
+      (when (positive? fastinits)
+	(debugging 'o "fast box initializations" fastinits))
+      (when (positive? fastrefs)
+	(debugging 'o "fast global references" fastrefs))
+      (when (positive? fastsets)
+	(debugging 'o "fast global assignments" fastsets))
       (values node2 literals lambda-info-literals lambdas) ) ) )

@@ -184,13 +184,14 @@
 	       (not a-only))
       (set! all-import-libraries #t))
     (set! enable-module-registration (not (memq 'no-module-registration options)))
-    (when (memq 'lambda-lift options) (set! do-lambda-lifting #t))
     (when (memq 'scrutinize options)
       (set! do-scrutinize #t))
     (when (memq 't debugging-chicken) (##sys#start-timer))
     (when (memq 'b debugging-chicken) (set! time-breakdown #t))
-    (when (memq 'emit-exports options)
-      (warning "deprecated compiler option: emit-exports") )
+    (when (memq 'emit-exports options)	; OBSOLETE
+      (warning "obsolete compiler option: -emit-exports") )
+    (when (memq 'lambda-lift options)	; OBSOLETE
+      (warning "obsolete compiler option: -lambda-lift") )
     (when (memq 'raw options)
       (set! explicit-use-flag #t)
       (set! cleanup-forms '())
@@ -500,36 +501,9 @@
 	       (print-node "initial node tree" '|T| node0)
 	       (initialize-analysis-database)
 
-	       (when do-scrutinize
-		 ;;;*** hardcoded database file name
-		 (unless (memq 'ignore-repository options)
-		   (load-type-database "types.db"))
-		 (for-each (cut load-type-database <> #f) (collect-options 'types))
-		 (begin-time)
-		 (set! first-analysis #f)
-		 (set! db (analyze 'scrutiny node0))
-		 (print-db "analysis" '|0| db 0)
-		 (end-time "pre-analysis")
-		 (begin-time)
-		 (debugging 'p "performing scrutiny")
-		 (scrutinize node0 db)
-		 (end-time "scrutiny")
-		 (set! first-analysis #t) )
-
-	       (when do-lambda-lifting
-		 (begin-time)
-		 (unless do-scrutinize	; no need to do analysis if already done above
-		   (set! first-analysis #f)
-		   (set! db (analyze 'lift node0))
-		   (print-db "analysis" '|0| db 0)
-		   (end-time "pre-analysis (lambda-lift)"))
-		 (begin-time)
-		 (perform-lambda-lifting! node0 db)
-		 (end-time "lambda lifting")
-		 (print-node "lambda lifted" '|L| node0) 
-		 (set! first-analysis #t) )
-	       
-	       (let ((req (concatenate (vector->list file-requirements))))
+	       ;; collect requirements and load inline and types files
+	       (let* ((req (concatenate (vector->list file-requirements)))
+		      (mreq (concatenate (map cdr req))))
 		 (when (debugging 'M "; requirements:")
 		   (pp req))
 		 (when enable-inline-files
@@ -541,7 +515,7 @@
 				 ((file-exists? ifile)))
 			(dribble "Loading inline file ~a ..." ifile)
 			(load-inline-file ifile)))
-		    (concatenate (map cdr req))) )
+		    mreq))
 		 (let ((ifs (collect-options 'consult-inline-file)))
 		   (unless (null? ifs)
 		     (set! inline-locally #t)
@@ -549,7 +523,26 @@
 		      (lambda (ilf)
 			(dribble "Loading inline file ~a ..." ilf)
 			(load-inline-file ilf) )
-		      ifs))))
+		      ifs)))
+		 (when do-scrutinize
+		   ;;*** hardcoded database file name
+		   (unless (memq 'ignore-repository options)
+		     (load-type-database "types.db"))
+		   (for-each (cut load-type-database <> #f) (collect-options 'types))
+		   (for-each
+		    (lambda (id)
+		      (load-type-database (make-pathname #f (symbol->string id) "types")))
+		    mreq)
+		   (begin-time)
+		   (set! first-analysis #f)
+		   (set! db (analyze 'scrutiny node0))
+		   (print-db "analysis" '|0| db 0)
+		   (end-time "pre-analysis")
+		   (begin-time)
+		   (debugging 'p "performing scrutiny")
+		   (scrutinize node0 db)
+		   (end-time "scrutiny")
+		   (set! first-analysis #t) ) )
 
 	       (set! ##sys#line-number-database #f)
 	       (set! constant-table #f)

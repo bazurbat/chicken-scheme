@@ -132,13 +132,14 @@
   '(-explicit-use -no-trace -no-warnings -no-usual-integrations -optimize-leaf-routines -unsafe
     -block -disable-interrupts -fixnum-arithmetic -to-stdout -profile -raw -accumulate-profile
     -check-syntax -case-insensitive -shared -compile-syntax -no-lambda-info
-    -lambda-lift -dynamic -disable-stack-overflow-checks -local
+    -dynamic -disable-stack-overflow-checks -local
     -emit-external-prototypes-first -inline -release -scrutinize
     -analyze-only -keep-shadowed-macros -inline-global -ignore-repository
     -no-symbol-escape -no-parentheses-synonyms -r5rs-syntax
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
     -emit-all-import-libraries -setup-mode -unboxing -no-elevation -no-module-registration
     -no-procedure-checks-for-usual-bindings -module
+    -lambda-lift			; OBSOLETE
     -no-procedure-checks-for-toplevel-bindings))
 
 (define-constant complex-options
@@ -364,7 +365,6 @@ Usage: #{csc} FILENAME | OPTION ...
     -b  -block                     enable block-compilation
     -disable-interrupts            disable interrupts in compiled code
     -f  -fixnum-arithmetic         assume all numbers are fixnums
-    -lambda-lift                   perform lambda-lifting
     -disable-stack-overflow-checks disables detection of stack-overflows
     -inline                        enable inlining
     -inline-limit LIMIT            set inlining threshold
@@ -478,6 +478,7 @@ Usage: #{csc} FILENAME | OPTION ...
   every invocation of `#{csc}'.
 
 EOF
+;|        (for emacs font-lock)
   ) ) )
 
 
@@ -504,11 +505,12 @@ EOF
   (define (use-private-repository)
     (set! compile-options (cons "-DC_PRIVATE_REPOSITORY" compile-options))
     (when osx
+      ;; needed for C_path_to_executable (see chicken.h):
       (set! link-options (cons "-framework CoreFoundation" link-options))))
 
   (let loop ((args args))
     (cond [(null? args)
-	   ;; Builtin search directory options do not override explict options
+	   ;; Builtin search directory options do not override explicit options
            (set! compile-options (append compile-options builtin-compile-options))
            (set! link-options (append link-options (builtin-link-options)))
 	   ;;
@@ -944,7 +946,9 @@ EOF
 	      "libchicken"
 	      (cond (osx "dylib")
 		    (win "dll")
-		    (else "so")))))
+		    (else (string-append
+                           "so."
+                           (number->string BINARY_VERSION)))))))
     (copy-files lib targetdir)))
 
 (define (copy-files from to)

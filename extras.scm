@@ -335,16 +335,21 @@
 	    ((string? obj)      (if display?
 				    (out obj col)
 				    (let loop ((i 0) (j 0) (col (out "\"" col)))
-				      (if (and col (< j (string-length obj)))
+				      (if (and col (fx< j (string-length obj)))
 					  (let ((c (string-ref obj j)))
-					    (if (or (char=? c #\\)
-						    (char=? c #\"))
-						(loop j
-						      (+ j 1)
-						      (out "\\"
-							   (out (##sys#substring obj i j)
-								col)))
-						(loop i (+ j 1) col)))
+					    (cond ((assq c '((#\\ . "\\")
+							     (#\" . "\\\"")
+							     (#\tab . "\\t")
+							     (#\newline . "\\n")
+							     (#\return . "\\r")))
+						   =>
+						   (lambda (a)
+						     (let ((col2 
+							    (out (##sys#substring obj i j) col)))
+						       (loop (fx+ j 1)
+							     (fx+ j 1)
+							     (out (cdr a) col2)))))
+						  (else (loop i (fx+ j 1) col))))
 					  (out "\""
 					       (out (##sys#substring obj i j) col))))))
 	    ((char? obj)        (if display?

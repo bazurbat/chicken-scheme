@@ -127,8 +127,7 @@
 		    sos)))
 	       (values src ver))))))
 
-;;XXX is this used anywhere?
-  (define (gather-egg-information dir)
+  (define (gather-egg-information dir)	; used by salmonella
     (let ((ls (directory dir)))
       (filter-map
        (lambda (egg)

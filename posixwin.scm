@@ -1165,7 +1165,9 @@ EOF
       (##sys#check-port port 'close-input-pipe)
       (let ((r (##core#inline "close_pipe" port)))
 	(##sys#update-errno)
-	(when (eq? -1 r) (##sys#signal-hook #:file-error 'close-input-pipe "error while closing pipe" port)) ) ) )
+	(when (eq? -1 r)
+	  (##sys#signal-hook #:file-error 'close-input-pipe "error while closing pipe" port) )
+	r)))
   (set! close-output-pipe close-input-pipe) )
 
 (define call-with-input-pipe

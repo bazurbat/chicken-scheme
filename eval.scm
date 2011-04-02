@@ -232,13 +232,23 @@
 	(##sys#eval-decorator p ll h cntr) )
 
       (define (eval/meta form)
-	(parameterize ((##sys#current-module #f)
-		       (##sys#macro-environment (##sys#meta-macro-environment)))
-	    ((##sys#compile-to-closure
-	      form
-	      '() 
-	      (##sys#current-meta-environment))
-	     '() ) ))
+	(let ((oldcm (##sys#current-module))
+	      (oldme (##sys#macro-environment))
+	      (mme (##sys#meta-macro-environment)))
+	  (dynamic-wind
+	      (lambda () 
+		(##sys#current-module #f)
+		(##sys#macro-environment mme))
+	      (lambda ()
+		((##sys#compile-to-closure
+		  form
+		  '() 
+		  (##sys#current-meta-environment))
+		 '() ) )
+	      (lambda ()
+		(##sys#current-module oldcm)
+		(##sys#meta-macro-environment (##sys#macro-environment))
+		(##sys#macro-environment oldme)))))
 
       (define (eval/elab form)
 	((##sys#compile-to-closure
@@ -251,7 +261,7 @@
 	(cond ((keyword? x) (lambda v x))
 	      ((symbol? x)
 	       (receive (i j) (lookup x e se)
-		 (cond [(not i)
+		 (cond ((not i)
 			(let ((var (if (not (assq x se)) ; global?
 				       (##sys#alias-global-hook j #f cntr)
 				       (or (##sys#get j '##core#primitive) j))))
@@ -273,9 +283,26 @@
 						(not (##sys#symbol-has-toplevel-binding? var)))
 				       (set! ##sys#unbound-in-eval
 					 (cons (cons var cntr) ##sys#unbound-in-eval)) )
-				     (lambda v (##core#inline "C_retrieve" var))))))]
-		       [(zero? i) (lambda (v) (##sys#slot (##sys#slot v 0) j))]
-		       [else (lambda (v) (##sys#slot (##core#inline "C_u_i_list_ref" v i) j))] ) ) )
+				     (lambda v (##core#inline "C_retrieve" var)))))))
+                      (else
+                       (case i
+                         ((0) (lambda (v) 
+                                (##sys#slot (##sys#slot v 0) j)))
+                         ((1) (lambda (v) 
+                                (##sys#slot (##sys#slot (##sys#slot v 1) 0) j)))
+                         ((2) (lambda (v) 
+                                (##sys#slot 
+                                 (##sys#slot (##sys#slot (##sys#slot v 1) 1) 0)
+                                 j)))
+                         ((3) (lambda (v) 
+                                (##sys#slot 
+                                 (##sys#slot
+                                  (##sys#slot (##sys#slot (##sys#slot v 1) 1) 1)
+                                  0)
+                                 j)))
+                         (else
+                          (lambda (v)
+                            (##sys#slot (##core#inline "C_u_i_list_ref" v i) j))))))))
 	      [(##sys#number? x)
 	       (case x
 		 [(-1) (lambda v -1)]
@@ -1456,13 +1483,6 @@
 					"/"
 					fname) ) )
 		  (else (loop (##sys#slot paths 1))) ) ) ) ) ) )
-
-
-;;; SRFI-0 support code:
-
-(set! ##sys#features
-  (append '(#:srfi-8 #:srfi-6 #:srfi-2 #:srfi-0 #:srfi-10 #:srfi-9 #:srfi-55 #:srfi-61) 
-	  ##sys#features))
 
 
 ;;;; Read-Eval-Print loop:

@@ -43,12 +43,10 @@ compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
 compile_s="../csc -s -compiler $CHICKEN -v -I.. -L.. -include-path .."
 interpret="../csi -n -include-path .."
 
+rm -f *.exe *.so *.o *.import.* a.out
+
 echo "======================================== compiler tests ..."
 $compile compiler-tests.scm
-./a.out
-
-echo "======================================== compiler tests (lambda-lift) ..."
-$compile compiler-tests-2.scm -lambda-lift
 ./a.out
 
 echo "======================================== compiler tests (unboxing) ..."
@@ -95,6 +93,9 @@ $interpret -s records-and-setters-test.scm
 $compile records-and-setters-test.scm
 ./a.out
 
+echo "======================================== reader tests ..."
+$interpret -s reader-tests.scm
+
 echo "======================================== dynamic-wind tests ..."
 $interpret -s dwindtst.scm >dwindtst.out
 diff -bu dwindtst.expected dwindtst.out
@@ -123,11 +124,11 @@ echo "======================================== syntax tests (2, compiled) ..."
 $compile syntax-tests-2.scm
 ./a.out
 
-#echo "======================================== meta-syntax tests ..."
-#$interpret -bnq meta-syntax-test.scm -e '(import foo)' -e '(bar 1 2)'
-#$compile_s meta-syntax-test.scm -j foo
-#$compile_s foo.import.scm
-#$interpret -bnq -e '(require-library meta-syntax-test)' -e '(import foo)' -e '(bar 1 2)'
+echo "======================================== meta-syntax tests ..."
+$interpret -bnq meta-syntax-test.scm -e '(import foo)' -e "(assert (equal? '((1)) (bar 1 2)))" -e "(assert (equal? '(list 1 2 3) (listify)))"
+$compile_s meta-syntax-test.scm -j foo
+$compile_s foo.import.scm
+$interpret -bnq -e '(require-library meta-syntax-test)' -e '(import foo)' -e "(assert (equal? '((1)) (bar 1 2)))" -e "(assert (equal? '(list 1 2 3) (listify)))"
 
 echo "======================================== reexport tests ..."
 $interpret -bnq reexport-tests.scm
@@ -155,6 +156,7 @@ $compile_s foo.import.scm -o foo.import.so
 $interpret -s import-library-test2.scm
 $compile import-library-test2.scm
 ./a.out
+rm -f foo.import.*
 
 echo "======================================== optionals test ..."
 $interpret -s test-optional.scm

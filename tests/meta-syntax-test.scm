@@ -1,11 +1,19 @@
-;;; currently disabled, need to compile matchable properly
+;;;; meta-syntax-test.scm
 
-(module foo (bar)
+
+(module foo (bar listify)
   (import scheme chicken)
-  (import-for-syntax matchable)
   (begin-for-syntax
    (define (baz x) 
-     (match x
-       ((_ y) (list y)))))
+     (list (cadr x))))
   (define-syntax (bar x r c)
-    `(,(r 'print) (,(r 'list) (baz (list 1 ,(cadr x)))))))
+    `(,(r 'list) (baz (list 1 ,(cadr x)))))
+  (begin-for-syntax
+   (define-syntax call-it-123
+     (syntax-rules ()
+       ((_ x)
+        '(x 'x 1 2 3)))))
+  (define-syntax listify
+    (lambda (e r c)
+      (call-it-123 list))))
+

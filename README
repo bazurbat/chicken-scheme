@@ -6,7 +6,7 @@
   (c) 2008-2011, The Chicken Team
   (c) 2000-2007, Felix L. Winkelmann
 
-  version 4.6.5
+  version 4.6.6
 
 
  1. Introduction
@@ -88,7 +88,7 @@
 
 	  http://code.call-cc.org/bootstrap/
 
-        If CHICKEN is build successfully, you can install it on your
+        If CHICKEN is built successfully, you can install it on your
         system by entering
 
           make PLATFORM=<platform> PREFIX=<destination> install
@@ -175,8 +175,9 @@
 	CONFIG=
 	  If you build CHICKEN often, passing all those make variables
 	  can get annoying. An alternative is to create a configuration
-	  file defining the required variables and passing "CONFIG=<configfile>"
-	  to make(1). Even simpler is editing the included "config.make"
+	  file defining the required variables and passing 
+          "CONFIG=<configfile>" to make(1).
+          Even simpler is editing the included "config.make"
 	  and just invoke make(1) without any extra parameters.
 
         C_COMPILER=
@@ -199,6 +200,77 @@
             make PLATFORM=<platform> confclean
 
         to remove old configuration files.
+
+	These files will be installed under the prefix given during
+	build and installation:
+
+        <PREFIX>
+	|-- bin
+	|   |-- chicken
+	|   |-- chicken-bug
+	|   |-- chicken-install
+	|   |-- chicken-profile
+	|   |-- chicken-status
+	|   |-- chicken-uninstall
+ 	|   |-- libchicken.dll                        (Windows)
+	|   |-- csc
+	|   `-- csi
+	|-- include
+	|   `-- chicken
+	|       |-- chicken-config.h
+	|       `-- chicken.h
+	|-- lib
+	|   |-- chicken
+	|   |   `-- 6
+	|   |       |-- chicken.import.so
+	|   |       |-- csi.import.so
+	|   |       |-- data-structures.import.so
+	|   |       |-- extras.import.so
+	|   |       |-- files.import.so
+	|   |       |-- foreign.import.so
+	|   |       |-- irregex.import.so
+	|   |       |-- lolevel.import.so
+	|   |       |-- modules.db
+	|   |       |-- ports.import.so
+	|   |       |-- posix.import.so
+	|   |       |-- scheme.import.so
+	|   |       |-- setup-api.import.so
+	|   |       |-- setup-api.so
+	|   |       |-- setup-download.import.so
+	|   |       |-- setup-download.so
+	|   |       |-- srfi-1.import.so
+	|   |       |-- srfi-13.import.so
+	|   |       |-- srfi-14.import.so
+	|   |       |-- srfi-18.import.so
+	|   |       |-- srfi-4.import.so
+	|   |       |-- srfi-69.import.so
+	|   |       |-- tcp.import.so
+	|   |       |-- types.db
+	|   |       `-- utils.import.so
+	|   |-- libchicken.a
+	|   |-- libchicken.dll.a                      (Windows)
+	|   |-- libchicken.so -> libchicken.so.6      (Unix)
+	|   `-- libchicken.so.6			      (Unix)
+	`-- share
+	    |-- chicken
+	    |   |-- doc
+	    |   |   |-- CHICKEN.icns                  (Macintosh)
+	    |   |   |-- LICENSE
+	    |   |   |-- README
+	    |   |   |-- mac.r			      (Macintosh)
+	    |   |   |-- manual-html
+	    |   |   `-- *.html
+	    |   `-- setup.defaults
+	    `-- man
+		`-- man1
+		    |-- chicken-bug.1
+		    |-- chicken-install.1
+		    |-- chicken-profile.1
+		    |-- chicken-status.1
+		    |-- chicken-uninstall.1
+		    |-- chicken.1
+		    |-- csc.1
+		    `-- csi.1
 
 
  3. Usage

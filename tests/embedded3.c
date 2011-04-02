@@ -38,7 +38,7 @@ int main() {
   assert(status);
   printf("-> %s\n", buffer);
  
-  printf("->` %g\n", baz(22));
+  printf("-> %g\n", baz(22));
  
   return 0;
 }

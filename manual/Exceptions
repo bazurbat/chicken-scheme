@@ -121,6 +121,17 @@ A slightly more convenient condition property accessor, equivalent to
 
  ((condition-property-accessor KIND PROPERTY [DEFAULT]) CONDITION)
 
+
+<procedure>(condition->list CONDITION)</procedure>
+
+This procedure converts a condition object into a list holding all the
+conditions that are represented by the ''CONDITION'' object.  It is
+formatted as follows:
+
+ ((KIND1 (PROPERTY1 VALUE1) (PROPERTY2 VALUE2) ...) (KIND2 ... ) ... )
+
+There is no guaranteed order within the list.
+
 == SRFI-12 specification
 
 A Scheme implementation ("the system") raises an exception whenever an

@@ -1281,8 +1281,7 @@ C_word arg_val(C_char *arg)
   case 'g':
   case 'G': mul = 1024 * 1024 * 1024; break;
 
-  default:
-    return 0;
+  default: mul = 1;
   }
 
   val = strtol(arg, &end, 10);

@@ -38,7 +38,10 @@
 (include "common-declarations.scm")
 
 (set! ##sys#features
-  (append '(#:hygienic-macros #:syntax-rules) ##sys#features))
+  (append '(#:hygienic-macros 
+	    #:syntax-rules 
+	    #:srfi-0 #:srfi-2 #:srfi-6 #:srfi-9 #:srfi-46 #:srfi-55 #:srfi-61) 
+	  ##sys#features))
 
 (define-alias dd d)
 (define-alias dm d)
@@ -84,19 +87,14 @@
 	 (cons (car a) (if (symbol? (cdr a)) (cdr a) '<macro>)))
        se))
 
-(define (##sys#strip-syntax exp #!optional se alias)
+(define (##sys#strip-syntax exp)
  ;; if se is given, retain bound vars
  (let ((seen '()))
    (let walk ((x exp))
      (cond ((assq x seen) => cdr)
            ((symbol? x)
-            (let ((x2 (if se
-                          (lookup x se)
-                          (getp x '##core#macro-alias) ) ) )
+            (let ((x2 (getp x '##core#macro-alias) ) )
               (cond ((getp x '##core#real-name))
-                    ((getp x '##core#primitive))
-                    ((and alias (not (assq x se)))
-                     (##sys#alias-global-hook x #f #f))
                     ((not x2) x)
                     ((pair? x2) x)
                     (else x2))))
@@ -270,11 +268,10 @@
 (define ##sys#enable-runtime-macros #f)
 
 (define (##sys#module-rename sym prefix)
-  (##sys#string->symbol 
-   (string-append 
-    (##sys#slot prefix 1)
-    "#" 
-    (##sys#slot sym 1) ) ) )
+  (##sys#string->symbol (string-append
+                         (##sys#slot prefix 1)
+                         "#"
+                         (##sys#slot sym 1) ) ) )
 
 (define (##sys#alias-global-hook sym assign where)
   (define (mrename sym)
@@ -785,9 +782,18 @@
 	    ((lookup sym se) => 
 	     (lambda (a)
 	       (cond ((symbol? a)
-		      (dd `(RENAME/LOOKUP: ,sym --> ,a))
-                      (set! renv (cons (cons sym a) renv))
-		      a)
+                      ;; Add an extra level of indirection for already aliased
+                      ;; symbols.  This prevents aliased symbols from popping up
+                      ;; in syntax-stripped output.
+                      (cond ((or (getp a '##core#aliased)
+                                 (getp a '##core#primitive))
+                             (let ((a2 (macro-alias sym se)))
+                               (dd `(RENAME/LOOKUP/ALIASED: ,sym --> ,a ==> ,a2))
+                               (set! renv (cons (cons sym a2) renv))
+                               a2))
+                            (else (dd `(RENAME/LOOKUP: ,sym --> ,a))
+                                  (set! renv (cons (cons sym a) renv))
+                                  a)))
 		     (else
 		      (let ((a2 (macro-alias sym se)))
 			(dd `(RENAME/LOOKUP/MACRO: ,sym --> ,a2))
@@ -909,7 +915,8 @@
 				     (##sys#current-environment '())
 				     (##sys#current-meta-environment 
 				      (##sys#current-meta-environment))
-				     (##sys#macro-environment (##sys#meta-macro-environment)))
+				     (##sys#macro-environment
+				      (##sys#meta-macro-environment)))
 			(fluid-let ((##sys#notices-enabled #f)) ; to avoid re-import warnings
 			  (##sys#load il #f #f)))
 		      (set! mod (##sys#find-module mname)))
@@ -1066,7 +1073,8 @@
 (##sys#extend-macro-environment
  'import-for-syntax '() 
  (##sys#er-transformer 
-  (cut ##sys#expand-import <> <> <> ##sys#current-meta-environment ##sys#meta-macro-environment 
+  (cut ##sys#expand-import <> <> <> ##sys#current-meta-environment 
+       ##sys#meta-macro-environment 
        #t #f 'import-for-syntax) ) )
 
 (##sys#extend-macro-environment
@@ -1404,17 +1412,17 @@
 		       (else
 			`(##sys#cons ,(walk head n) ,(walk tail n)) ) ) ) ) ) )
       (define (simplify x)
-	(cond ((match-expression x '(##sys#cons a '()) '(a))
-	       => (lambda (env) (simplify `(##sys#list ,(##sys#slot (assq 'a env) 1)))) )
+	(cond ((match-expression x '(##sys#cons a (##core#quote ())) '(a))
+	       => (lambda (env) (simplify `(##sys#list ,(cdr (assq 'a env))))) )
 	      ((match-expression x '(##sys#cons a (##sys#list . b)) '(a b))
 	       => (lambda (env)
-		    (let ([bxs (assq 'b env)])
+		    (let ((bxs (assq 'b env)))
 		      (if (fx< (length bxs) 32)
-			  (simplify `(##sys#list ,(##sys#slot (assq 'a env) 1)
+			  (simplify `(##sys#list ,(cdr (assq 'a env))
 						 ,@(cdr bxs) ) ) 
 			  x) ) ) )
-	      ((match-expression x '(##sys#append a '()) '(a))
-	       => (lambda (env) (##sys#slot (assq 'a env) 1)) )
+	      ((match-expression x '(##sys#append a (##core#quote ())) '(a))
+	       => (lambda (env) (cdr (assq 'a env))) )
 	      (else x) ) )
       (##sys#check-syntax 'quasiquote form '(_ _))
       (walk (cadr form) 0) ) ) ) )
