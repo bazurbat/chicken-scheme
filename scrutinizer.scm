@@ -750,7 +750,6 @@
 				      (alist-cons (cons var (car ctags)) pt blist)))
 				   (a
 				    (when enforces
-				      ;;XXX when ctags is set, add blist entries for both flows
 				      (let ((ar (cond ((blist-type var flow) =>
 						       (lambda (t)
 							 (if (type<=? t argr)
@@ -760,8 +759,15 @@
 						      ((type<=? (cdr a) argr) (cdr a))
 						      (else argr))))
 					(d "  assuming: ~a -> ~a (flow: ~a)" var ar (car flow))
-					(set! blist 
-					  (alist-cons (cons var (car flow)) ar blist)))))))))
+					(set! blist
+					  (alist-cons (cons var (car flow)) ar blist))
+					(when ctags
+					  (set! blist
+					    (alist-cons
+					     (cons var (car ctags)) ar
+					     (alist-cons
+					      (cons var (cdr ctags)) ar
+					      blist)))))))))))
 		       subs
 		       (cons fn (procedure-argument-types fn (sub1 len))))
 		      r)))
