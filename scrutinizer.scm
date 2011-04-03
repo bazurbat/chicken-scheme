@@ -433,8 +433,8 @@
 		    (sprintf "expected ~a a single result, but were given ~a result~a"
 		      what n (multiples n)))
 		   (first tv))))))
-    (define (report loc desc)
-      (when complain
+    (define (report loc desc #!optional (show complain))
+      (when show
 	(warning
 	 (conc (location-name loc) desc))))
     (define (location-name loc)
@@ -709,7 +709,8 @@
 		       loc
 		       (sprintf 
 			   "assignment of value of type `~a' to toplevel variable `~a' does not match declared type `~a'"
-			 rt var type)))
+			 rt var type)
+		       #t))
 		    (when (and b (eq? 'undefined (cdr b)))
 		      (set-cdr! b rt))
 		    (when b
