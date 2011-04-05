@@ -477,6 +477,7 @@
     (when (setup-verbose-mode) (printf "writing info ~A -> ~S ...~%" id info))
     (let* ((sid (->string id))
 	   (setup-file (make-setup-info-pathname sid (repo-path #t))))
+      (ensure-directory setup-file)
       (cond (*sudo*
 	     (let ((tmp (create-temporary-file)))
 	       (with-output-to-file tmp (cut pp info))
