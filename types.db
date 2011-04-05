@@ -55,8 +55,9 @@
 	(((or fixnum symbol char eof null undefined) *) (eq? #(1) #(2)))
 	((* (or fixnum symbol char eof null undefined) (eq? #(1) #(2)))))
 
-(pair? (procedure pair? (*) boolean))
-(predicate pair? pair)
+(pair? (procedure pair? (*) boolean)
+       ((pair) (let ((#:tmp #(1))) '#t))
+       (((and (not pair) (not list))) (let ((#:tmp #(1))) '#f)))
 
 (cons (procedure cons (* *) pair))
 
@@ -95,9 +96,10 @@
 (set-car! (procedure! set-car! (pair *) undefined) ((pair *) (##sys#setslot #(1) '0 #(2))))
 (set-cdr! (procedure! set-cdr! (pair *) undefined) ((pair *) (##sys#setslot #(1) '1 #(2))))
 
-(null? (procedure null? (*) boolean))
-(predicate null? null)
-
+(null? (procedure null? (*) boolean)
+       ((null) (let ((#:tmp #(1))) '#t))
+       (((and (not list) (not null))) (let ((#:tmp #(1))) '#f)))
+				     
 (list? (procedure list? (*) boolean) 
        (((or null pair list)) (let ((#:tmp #(1))) '#t))
        (((not (or null pair list))) (let ((#:tmp #(1))) '#f)))

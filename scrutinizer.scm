@@ -521,7 +521,7 @@
 				       (report
 					loc
 					(sprintf 
-					    "~apredicate is called with an argument of type `~a' and will always return true"
+					    "~athe predicate is called with an argument of type `~a' and will always return true"
 					  (pname) pt))
 				       (specialize-node!
 					node
@@ -531,8 +531,8 @@
 				       (report
 					loc
 					(sprintf 
-					    "~apredicate is called with an argument of type `~a' and will always return false"
-					  (pname) (car args)))
+					    "~athe predicate is called with an argument of type `~a' and will always return false"
+					  (pname) (cadr args)))
 				       (specialize-node!
 					node
 					`(let ((#:tmp #(1))) '#f))
@@ -814,8 +814,10 @@
      (read-file dbfile))))
 
 (define (match-specialization typelist atypes)
+  ;; does not accept complex procedure types in typelist!
   (define (match st t)
-    (cond ((pair? st)
+    (cond ((eq? st t))
+	  ((pair? st)
 	   (case (car st)
 	     ((not) 
 	      (cond ((and (pair? t) (eq? 'or (car t)))
@@ -830,7 +832,7 @@
 	   (or (eq? t 'procedure)
 	       (and (pair? t) (eq? 'procedure (car t)))))
 	  ;;XXX match number with fixnum and float?
-	  (else (eq? st t))))
+	  (else #f)))
   (let loop ((tl typelist) (atypes atypes))
     (cond ((null? tl) (null? atypes))
 	  ((null? atypes) #f)
