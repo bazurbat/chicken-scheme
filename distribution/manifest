@@ -258,6 +258,8 @@ setup-download.c
 setup-api.c
 setup-api.import.c
 setup-download.import.c
+setup-api.import.scm
+setup-download.import.scm
 types.db
 mac.r
 chicken.png
