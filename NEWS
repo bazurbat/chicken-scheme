@@ -15,8 +15,7 @@
 - Syntax expander
   - For-syntax syntax definitions where top correctly retained inside
     modules
-  - Several bugfixes and simplifications have been applied, many
-    thanks to Peter Bex for this
+  - Peter Bex fixed various critical bugs in the expander
   - The incorrect simplification for quasiquote expressions was unable
     to handle certain circular data (reported by Moritz Heidkamp)
 - Interpreter
