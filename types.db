@@ -48,16 +48,15 @@
 (eq? (procedure eq? (* *) boolean))
 
 (eqv? (procedure eqv? (* *) boolean)
-      (((and (not number) (not float)) *) (eq? #(1) #(2)))
-      ((* (and (not number) (not float))) (eq? #(1) #(2))))
+      (((not float) *) (eq? #(1) #(2)))
+      ((* (not float)) (eq? #(1) #(2))))
 
 (equal? (procedure equal? (* *) boolean)
 	(((or fixnum symbol char eof null undefined) *) (eq? #(1) #(2)))
 	((* (or fixnum symbol char eof null undefined) (eq? #(1) #(2)))))
 
-(pair? (procedure pair? (*) boolean)
-       ((pair) (let ((#:tmp #(1))) '#t))
-       (((and (not pair) (not list))) (let ((#:tmp #(1))) '#f)))
+(pair? (procedure pair? (*) boolean))
+(predicate pair? pair)
 
 (cons (procedure cons (* *) pair))
 
@@ -96,19 +95,17 @@
 (set-car! (procedure! set-car! (pair *) undefined) ((pair *) (##sys#setslot #(1) '0 #(2))))
 (set-cdr! (procedure! set-cdr! (pair *) undefined) ((pair *) (##sys#setslot #(1) '1 #(2))))
 
-(null? (procedure null? (*) boolean)
-       ((null) (let ((#:tmp #(1))) '#t))
-       (((and (not list) (not null))) (let ((#:tmp #(1))) '#f)))
-				     
-(list? (procedure list? (*) boolean) 
-       (((or null pair list)) (let ((#:tmp #(1))) '#t))
-       (((not (or null pair list))) (let ((#:tmp #(1))) '#f)))
+(null? (procedure null? (*) boolean))
+(predicate null? null)
+
+(list? (procedure list? (*) boolean))
+(predicate list? list)
 
 (list (procedure list (#!rest) list))
 (length (procedure! length (list) fixnum) ((list) (##core#inline "C_u_i_length" #(1))))
 (list-tail (procedure! list-tail (list fixnum) *))
 (list-ref (procedure! list-ref (list fixnum) *))
-(append (procedure append (list #!rest) list))
+(append (procedure append (list #!rest) *))
 (reverse (procedure! reverse (list) list))
 (memq (procedure memq (* list) *) ((* list) (##core#inline "C_u_i_memq" #(1) #(2))))
 (memv (procedure memv (* list) *))
@@ -124,28 +121,24 @@
 (symbol->string (procedure! symbol->string (symbol) string))
 (string->symbol (procedure! string->symbol (string) symbol))
 
-(number? (procedure number? (*) boolean)
-	 (((or fixnum float number)) (let ((#:tmp #(1))) '#t))
-	 (((not (or fixnum float number)) (let ((#:tmp #(1))) '#f))))
+(number? (procedure number? (*) boolean))
+(predicate number? number)
 
 (integer? (procedure integer? (*) boolean)
 	  ((fixnum) (let ((#:tmp #(1))) '#t))
 	  ((float) (##core#inline "C_u_i_fpintegerp" #(1))))
 
-(exact? (procedure exact? (*) boolean)
-	((fixnum) (let ((#:tmp #(1))) '#t))
-	((float) (let ((#:tmp #(1))) '#f)))
+(exact? (procedure exact? (*) boolean))
+(predicate exact? fixnum)
 
-(real? (procedure real? (*) boolean)
-       (((or fixnum float number)) (let ((#:tmp #(1))) '#t)))
+(real? (procedure real? (*) boolean))
+(predicate real? number)
 
-(complex? (procedure complex? (*) boolean)
-	  (((or fixnum float number)) (let ((#:tmp #(1))) '#t))
-	  (((not (or fixnum float number))) (let ((#:tmp #(1))) '#f)))
+(complex? (procedure complex? (*) boolean))
+(predicate complex? number)
 
-(inexact? (procedure inexact? (*) boolean)
-	  ((fixnum) (let ((#:tmp #(1))) '#f))
-	  ((float) (let ((#:tmp #(1))) '#t)))
+(inexact? (procedure inexact? (*) boolean))
+(predicate inexact? float)
 
 (rational? (procedure rational? (*) boolean)
 	   ((fixnum) (let ((#:tmp #(1))) '#t)))
@@ -975,7 +968,7 @@
 (irregex-flags (procedure! irregex-flags ((struct regexp)) *)
 	       (((struct regexp)) (##sys#slot #(1) '5)))
 
-(irregex-fold (procedure! irregex-fold (* (procedure (fixnum (struct regexp-match)) *) * string #!optional (procedure! (fixnum *) *) fixnum fixnum) *))
+(irregex-fold (procedure! irregex-fold (* (procedure (fixnum (struct regexp-match)) *) * string #!optional (procedure (fixnum *) *) fixnum fixnum) *))
 (irregex-fold/chunked (procedure! irregex-fold/chunked (* (procedure (fixnum (struct regexp-match)) *) * procedure * #!optional (procedure (fixnum *) *) fixnum fixnum) *))
 
 (irregex-lengths (procedure! irregex-lengths ((struct regexp)) *)
@@ -1790,7 +1783,7 @@
 (blob->f64vector/shared (procedure! blob->f64vector/shared (blob) (struct f64vector)))
 (blob->s16vector (procedure! blob->s16vector (blob) (struct s16vector)))
 (blob->s16vector/shared (procedure! blob->s16vector/shared (blob) (struct s16vector)))
-(blob->s32vector (procedure! blob->s32vector (blob) (strucrt s32vector)))
+(blob->s32vector (procedure! blob->s32vector (blob) (struct s32vector)))
 (blob->s32vector/shared (procedure! blob->s32vector/shared (blob) (struct s32vector)))
 (blob->s8vector (procedure! blob->s8vector (blob) (struct u8vector)))
 (blob->s8vector/shared (procedure! blob->s8vector/shared (blob) (struct u8vector)))

@@ -88,7 +88,8 @@
 (define specialization-statistics '())
 
 (define (scrutinize node db complain specialize)
-  (let ((blist '()))
+  (let ((blist '())
+	(safe-calls 0))
     (define (constant-result lit)
       (cond ((string? lit) 'string)
 	    ((symbol? lit) 'symbol)
@@ -110,13 +111,13 @@
 	    ((char? lit) 'char)
 	    (else '*)))
     (define (global-result id loc)
-      (cond ((##sys#get id '##compiler#type) =>
+      (cond ((variable-mark id '##compiler#type) =>
 	     (lambda (a) 
 	       (cond
 		#|
 		((and (get db id 'assigned) ; remove assigned global from type db
-		(not (##sys#get id '##compiler#declared-type)))
-		(##sys#put! id '##compiler#type #f)
+		(not (variable-mark id '##compiler#declared-type)))
+		(mark-variable id '##compiler#type #f)
 		'(*))
 		|#
 		((eq? a 'deprecated)
@@ -143,7 +144,7 @@
     (define (variable-result id e loc flow)
       (cond ((blist-type id flow))
 	    ((and (get db id 'assigned) 
-		  (not (##sys#get id '##compiler#declared-type)))
+		  (not (variable-mark id '##compiler#declared-type)))
 	     '(*))
 	    ((assq id e) =>
 	     (lambda (a)
@@ -510,12 +511,12 @@
 	  (let ((r (procedure-result-types ptype values-rest (cdr args))))
 	    (d  "  result-types: ~a" r)
 	    (when specialize
-	      ;;XXX we should check whether this is a standard- or extended bindng
+	      ;;XXX we should check whether this is a standard- or extended binding
 	      (let ((pn (procedure-name ptype))
 		    (op #f))
 		(when pn
 		  (cond ((and (fx= 1 nargs) 
-			      (##sys#get pn '##compiler#predicate)) =>
+			      (variable-mark pn '##compiler#predicate)) =>
 			      (lambda (pt)
 				(cond ((match-specialization (list pt) (cdr args))
 				       (report
@@ -537,7 +538,7 @@
 					node
 					`(let ((#:tmp #(1))) '#f))
 				       (set! op (list pt `(not ,pt)))))))
-			((##sys#get pn '##compiler#specializations) =>
+			((variable-mark pn '##compiler#specializations) =>
 			 (lambda (specs)
 			   (for-each
 			    (lambda (spec)
@@ -551,7 +552,10 @@
 			  (else
 			   (set! specialization-statistics
 			     (cons (cons op 1) 
-				   specialization-statistics))))))))
+				   specialization-statistics))))))
+		(when (and (not op) (procedure-type? ptype))
+		  (set-car! (node-parameters node) #t)
+		  (set! safe-calls (add1 safe-calls)))))
 	    r))))
     (define (procedure-type? t)
       (or (eq? 'procedure t)
@@ -696,7 +700,7 @@
 			     r))))))))
 		 ((set! ##core#set!)
 		  (let* ((var (first params))
-			 (type (##sys#get var '##compiler#type))
+			 (type (variable-mark var '##compiler#type))
 			 (rt (single 
 			      (sprintf "in assignment to `~a'" var)
 			      (walk (first subs) e loc var #f flow #f)
@@ -713,6 +717,8 @@
 		       #t))
 		    (when (and b (eq? 'undefined (cdr b)))
 		      (set-cdr! b rt))
+		    ;;XXX we could set the ##compiler#type property here for hidden
+		    ;;    globals that are only assigned once
 		    (when b
 		      (set! blist (alist-cons (cons var (car flow)) rt blist)))
 		    '(undefined)))
@@ -733,8 +739,8 @@
 				    (iota len)))
 			 (fn (car args))
 			 (pn (procedure-name fn))
-			 (enforces (and pn (##sys#get pn '##compiler#enforce-argument-types)))
-			 (pt (and pn (##sys#get pn '##compiler#predicate))))
+			 (enforces (and pn (variable-mark pn '##compiler#enforce-argument-types)))
+			 (pt (and pn (variable-mark pn '##compiler#predicate))))
 		    (let ((r (call-result n args e loc params)))
 		      (invalidate-blist)
 		      (for-each
@@ -785,6 +791,8 @@
 	 (lambda (ss)
 	   (printf "  ~a ~s~%" (cdr ss) (car ss)))
 	 specialization-statistics))
+      (when (positive? safe-calls)
+	(debugging 'x "safe calls" safe-calls))
       rn)))
 
 (define (load-type-database name #!optional (path (repository-path)))
@@ -794,23 +802,28 @@
     (for-each
      (lambda (e)
        (cond ((eq? 'predicate (car e))
-	      (##sys#put! (cadr e) '##compiler#predicate (caddr e)))
+	      (mark-variable (cadr e) '##compiler#predicate (caddr e)))
 	     (else
 	      (let* ((name (car e))
-		     (old (##sys#get name '##compiler#type))
+		     (old (variable-mark name '##compiler#type))
 		     (new (cadr e))
 		     (specs (and (pair? (cddr e)) (cddr e))))
 		(when (and (pair? new) (eq? 'procedure! (car new)))
-		  (##sys#put! name '##compiler#enforce-argument-types #t)
+		  (mark-variable name '##compiler#enforce-argument-types #t)
 		  (set-car! new 'procedure))
+		(cond-expand
+		  (debugbuild
+		   (unless (validate-type new name)
+		     (warning "invalid type specification" name new)))
+		  (else))
 		(when (and old (not (equal? old new)))
 		  (##sys#notice
 		   (sprintf
 		       "type-definition `~a' for toplevel binding `~a' conflicts with previously loaded type `~a'"
 		     name new old)))
-		(##sys#put! name '##compiler#type new)
+		(mark-variable name '##compiler#type new)
 		(when specs
-		  (##sys#put! name '##compiler#specializations specs))))))
+		  (mark-variable name '##compiler#specializations specs))))))
      (read-file dbfile))))
 
 (define (match-specialization typelist atypes)
@@ -828,11 +841,19 @@
 	     ((and) (every (cut match <> t) (cdr st)))
 	     (else (equal? st t))))
 	  ((eq? st '*))
+	  ((eq? st 'list) (match '(or null pair) t))
+	  ((eq? st 'number) (match '(or fixnum float) t))
+	  ((eq? t 'list) (match st '(or null pair)))
+	  ((eq? t 'number) (match st '(or fixnum float)))
 	  ((eq? st 'procedure)
 	   (or (eq? t 'procedure)
-	       (and (pair? t) (eq? 'procedure (car t)))))
-	  ;;XXX match number with fixnum and float?
-	  (else #f)))
+	       (and (pair? t) (eq? 'procedure (car t))))) ; doesn't match argument/result types
+	  ((pair? t)
+	   (case (car t)
+	     ((or) (every (cut match st <>) (cdr t))) ; must match every option
+	     ((and) #f)			; should not happen...
+	     (else (equal? st t))))
+	  (else (equal? st t))))
   (let loop ((tl typelist) (atypes atypes))
     (cond ((null? tl) (null? atypes))
 	  ((null? atypes) #f)
@@ -872,16 +893,19 @@
 	  ((symbol? llist) '(#!rest *))
 	  ((not (pair? llist)) #f)
 	  ((eq? '#!optional (car llist))
-	   (cons '#!optional (validate-llist (cdr llist))))
+	   (let ((l1 (validate-llist (cdr llist))))
+	     (and l1 (cons '#!optional l1))))
 	  ((eq? '#!rest (car llist))
 	   (cond ((null? (cdr llist)) '(#!rest *))
 		 ((not (pair? (cdr llist))) #f)
-		 ((and (pair? (cddr llist))
-		       (eq? '#!key (caddr llist)))
-		  `(#!rest ,(validate (cadr llist))))
-		 (else #f)))
+		 (else
+		  (let ((l1 (validate (cadr llist))))
+		    (and l1 `(#!rest ,l1))))))
 	  ((eq? '#!key (car llist)) '(#!rest *))
-	  (else (cons (validate (car llist)) (validate-llist (cdr llist))))))
+	  (else
+	   (let* ((l1 (validate (car llist)))
+		  (l2 (validate-llist (cdr llist))))
+	     (and l1 l2 (cons l1 l2))))))
   (define (validate t)
     (cond ((memq t '(* string symbol char number boolean list pair
 		       procedure vector null eof undefined port blob
