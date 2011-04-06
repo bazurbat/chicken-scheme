@@ -1535,6 +1535,7 @@ Usage: chicken FILENAME OPTION ...
     -no-lambda-info              omit additional procedure-information
     -scrutinize                  perform local flow analysis for static checks
     -types FILENAME              load additional type database
+    -strict-types                assume variable do not change their type
     -emit-type-file FILENAME     write type-declaration information into file
 
   Optimization options:

@@ -91,6 +91,7 @@
     no-procedure-checks-for-toplevel-bindings module
     no-bound-checks no-procedure-checks-for-usual-bindings no-compiler-syntax
     no-parentheses-synonyms no-symbol-escape r5rs-syntax emit-all-import-libraries
+    strict-types
     lambda-lift				; OBSOLETE
     setup-mode unboxing no-module-registration) )
 

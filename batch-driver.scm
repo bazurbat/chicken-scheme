@@ -259,6 +259,7 @@
       (parentheses-synonyms #f)
       (symbol-escape #f) )
     (set! verbose-mode verbose)
+    (set! strict-variable-types (memq 'strict-types options))
     (set! ##sys#read-error-with-line-number #t)
     (set! ##sys#include-pathnames
       (append (map chop-separator (collect-options 'include-path))
@@ -530,7 +531,7 @@
 			(load-inline-file ilf) )
 		      ifs)))
 
-		 (when (or do-scrutinize do-specialize)
+		 (when (or strict-variable-types do-scrutinize do-specialize)
 		   ;;XXX hardcoded database file name
 		   (unless (memq 'ignore-repository options)
 		     (load-type-database "types.db"))

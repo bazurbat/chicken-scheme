@@ -334,6 +334,7 @@
 (define compiler-syntax-enabled #t)
 (define unchecked-specialized-arithmetic #f)
 (define bootstrap-mode #f)
+(define struct-variable-types #f)
 
 
 ;;; These are here so that the backend can access them:

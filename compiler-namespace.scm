@@ -268,6 +268,7 @@
  source-info->line
  specialize-node!
  standalone-executable
+ strict-variable-types
  string->c-identifier
  string->expr
  stringify

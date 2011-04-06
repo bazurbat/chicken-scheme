@@ -87,6 +87,7 @@
 
 (define specialization-statistics '())
 
+
 (define (scrutinize node db complain specialize)
   (let ((blist '())
 	(safe-calls 0))
@@ -375,6 +376,9 @@
 	    ((match (car results1) (car results2)) 
 	     (match-results (cdr results1) (cdr results2)))
 	    (else #f)))
+    (define (compatible-types? t1 t2)
+      (or (type<=? t1 t2)
+	  (type<=? t2 t1)))
     (define (type<=? t1 t2)
       (or (eq? t1 t2)
 	  (memq t2 '(* undefined))
@@ -715,11 +719,19 @@
 			   "assignment of value of type `~a' to toplevel variable `~a' does not match declared type `~a'"
 			 rt var type)
 		       #t))
-		    (when (and b (eq? 'undefined (cdr b)))
-		      (set-cdr! b rt))
 		    ;;XXX we could set the ##compiler#type property here for hidden
 		    ;;    globals that are only assigned once
 		    (when b
+		      (cond ((eq? 'undefined (cdr b)) (set-cdr! b rt))
+			    (strict-variable-types
+			     (let ((ot (or (blist-type var flow) (cdr b))))
+			       (unless (compatible-types? ot rt)
+				 (report
+				  loc
+				  (sprintf 
+				      "variable `~a' of type `~a' was modified to a value of type `~a'"
+				    var ot rt)
+				  #t)))))
 		      (set! blist (alist-cons (cons var (car flow)) rt blist)))
 		    '(undefined)))
 		 ((##core#primitive ##core#inline_ref) '*)
@@ -742,7 +754,8 @@
 			 (enforces (and pn (variable-mark pn '##compiler#enforce-argument-types)))
 			 (pt (and pn (variable-mark pn '##compiler#predicate))))
 		    (let ((r (call-result n args e loc params)))
-		      (invalidate-blist)
+		      (unless strict-variable-types
+			(invalidate-blist))
 		      (for-each
 		       (lambda (arg argr)
 			 (when (eq? '##core#variable (node-class arg))

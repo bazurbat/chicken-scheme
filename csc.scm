@@ -139,7 +139,7 @@
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
     -emit-all-import-libraries -setup-mode -unboxing -no-elevation -no-module-registration
     -no-procedure-checks-for-usual-bindings -module
-    -specialize
+    -specialize -strict-types
     -lambda-lift			; OBSOLETE
     -no-procedure-checks-for-toplevel-bindings))
 
@@ -353,6 +353,7 @@ Usage: #{csc} FILENAME | OPTION ...
                                     file
     -S  -scrutinize                perform local flow analysis
     -types FILENAME                load additional type database
+    -strict-types                  assume variable do not change their type
 
   Optimization options:
 
