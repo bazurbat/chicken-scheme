@@ -4552,7 +4552,7 @@ C_word C_fcall C_a_i_smart_mpointer(C_word **ptr, int c, C_word x)
   void *mp;
 
   if(C_immediatep(x)) mp = NULL;
-  else if((C_header_bits(x) && C_SPECIALBLOCK_BIT) != 0) mp = C_pointer_address(x);
+  else if((C_header_bits(x) & C_SPECIALBLOCK_BIT) != 0) mp = C_pointer_address(x);
   else mp = C_data_pointer(x);
 
   *(p++) = C_POINTER_TYPE | 1;
