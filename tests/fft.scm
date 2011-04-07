@@ -13,16 +13,27 @@
 ;;; All the following redefinitions are *ignored* by the Gambit compiler
 ;;; because of the declarations above.
 
+(define-syntax defalias
+  (syntax-rules ()
+    ((_ one two) 
+     (define-syntax one
+       (syntax-rules ()
+	 ((_ . args) (two . args))))))) 
+
 (cond-expand
+ (generic
+  (begin
+    (defalias fixnum->flonum exact->inexact)
+    (defalias fxodd? odd?)
+    (defalias fxeven? even?)
+    (defalias fxarithmetic-shift-right fxshr)
+    (defalias fxarithmetic-shift-left  fxshl)
+    (defalias fl* *)
+    (defalias fl/ /)
+    (defalias fl+ +)
+    (defalias fl- -)))
  (chicken
   (begin
-    (use srfi-4)
-    (define-syntax defalias
-      (syntax-rules ()
-	((_ one two) 
-	 (define-syntax one
-	   (syntax-rules ()
-	     ((_ . args) (two . args))))))) 
     (defalias fixnum->flonum exact->inexact)
     (defalias fxodd? odd?)
     (defalias fxeven? even?)
@@ -43,6 +54,8 @@
     (defalias f64vector-ref vector-ref)
     (defalias list->f64vector list->vector)
     (defalias f64vector-length vector-length)) )
+ (chicken
+  (use srfi-4))
  (else) )
 
 ;;; end of *ignored* definitions
