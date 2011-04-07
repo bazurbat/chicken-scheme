@@ -514,52 +514,53 @@
 		 (pname) i (car atypes) (car args)))))
 	  (let ((r (procedure-result-types ptype values-rest (cdr args))))
 	    (d  "  result-types: ~a" r)
-	    (when specialize
-	      ;;XXX we should check whether this is a standard- or extended binding
-	      (let ((pn (procedure-name ptype))
-		    (op #f))
-		(when pn
-		  (cond ((and (fx= 1 nargs) 
-			      (variable-mark pn '##compiler#predicate)) =>
-			      (lambda (pt)
-				(cond ((match-specialization (list pt) (cdr args))
-				       (report
-					loc
-					(sprintf 
-					    "~athe predicate is called with an argument of type `~a' and will always return true"
-					  (pname) pt))
+	    ;;XXX we should check whether this is a standard- or extended binding
+	    (let ((pn (procedure-name ptype))
+		  (op #f))
+	      (when pn
+		(cond ((and (fx= 1 nargs) 
+			    (variable-mark pn '##compiler#predicate)) =>
+			    (lambda (pt)
+			      (cond ((match-specialization (list pt) (cdr args))
+				     (report
+				      loc
+				      (sprintf 
+					  "~athe predicate is called with an argument of type `~a' and will always return true"
+					(pname) pt))
+				     (when specialize
 				       (specialize-node!
 					node
 					`(let ((#:tmp #(1))) '#t))
-				       (set! op (list pn pt)))
-				      ((match-specialization (list `(not ,pt)) (cdr args))
-				       (report
-					loc
-					(sprintf 
-					    "~athe predicate is called with an argument of type `~a' and will always return false"
-					  (pname) (cadr args)))
+				       (set! op (list pn pt))))
+				    ((match-specialization (list `(not ,pt)) (cdr args))
+				     (report
+				      loc
+				      (sprintf 
+					  "~athe predicate is called with an argument of type `~a' and will always return false"
+					(pname) (cadr args)))
+				     (when specialize
 				       (specialize-node!
 					node
 					`(let ((#:tmp #(1))) '#f))
-				       (set! op (list pt `(not ,pt)))))))
-			((variable-mark pn '##compiler#specializations) =>
-			 (lambda (specs)
-			   (for-each
-			    (lambda (spec)
-			      (when (match-specialization (car spec) (cdr args))
-				(set! op (cons pn (car spec)))
-				(specialize-node! node (cadr spec))))
-			    specs))))
-		  (when op
-		    (cond ((assoc op specialization-statistics) =>
-			   (lambda (a) (set-cdr! a (add1 (cdr a)))))
-			  (else
-			   (set! specialization-statistics
-			     (cons (cons op 1) 
-				   specialization-statistics))))))
-		(when (and (not op) (procedure-type? ptype))
-		  (set-car! (node-parameters node) #t)
-		  (set! safe-calls (add1 safe-calls)))))
+				       (set! op (list pt `(not ,pt))))))))
+		      ((and specialize (variable-mark pn '##compiler#specializations)) =>
+		       (lambda (specs)
+			 (for-each
+			  (lambda (spec)
+			    (when (match-specialization (car spec) (cdr args))
+			      (set! op (cons pn (car spec)))
+			      (specialize-node! node (cadr spec))))
+			  specs))))
+		(when op
+		  (cond ((assoc op specialization-statistics) =>
+			 (lambda (a) (set-cdr! a (add1 (cdr a)))))
+			(else
+			 (set! specialization-statistics
+			   (cons (cons op 1) 
+				 specialization-statistics))))))
+	      (when (and specialize (not op) (procedure-type? ptype))
+		(set-car! (node-parameters node) #t)
+		(set! safe-calls (add1 safe-calls))))
 	    r))))
     (define (procedure-type? t)
       (or (eq? 'procedure t)
@@ -862,8 +863,12 @@
 	     (else (equal? st t))))
 	  (else (equal? st t))))
   (define (matchnot st t)
-    (cond ((eq? 'list t) (matchnot st '(or null pair)))
+    (cond ((eq? st t) #f)
+	  ((eq? 'list t) (matchnot st '(or null pair)))
+	  ((eq? 'number t) (matchnot st '(or fixnum float)))
 	  ((eq? '* t) #f)
+	  ((eq? 'list st) (not (match t '(or null pair))))
+	  ((eq? 'number st) (not (match t '(or fixnum float))))
 	  ((pair? t)
 	   (case (car t)
 	     ((or) (every (cut matchnot st <>) (cdr t)))

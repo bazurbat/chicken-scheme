@@ -79,6 +79,9 @@ fi
 
 diff -bu scrutiny.out scrutiny.expected
 
+$compile scrutiny-tests-2.scm -scrutinize -analyze-only -ignore-repository -types ../types.db
+./a.out
+
 echo "======================================== specialization tests ..."
 rm -f foo.types foo.import.*
 $compile specialization-test-1.scm -emit-type-file foo.types -specialize \

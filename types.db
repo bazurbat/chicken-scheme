@@ -580,8 +580,8 @@
 (fixnum-bits fixnum)
 (fixnum-precision fixnum)
 
-(fixnum? (procedure fixnum? (*) boolean)
-	 ((fixnum) (let ((#:tmp #(1))) '#t)))
+(fixnum? (procedure fixnum? (*) boolean))
+(predicate fixnum? fixnum)
 
 (flonum-decimal-precision fixnum)
 (flonum-epsilon float)
@@ -593,8 +593,8 @@
 (flonum-print-precision (procedure! (#!optional fixnum) fixnum))
 (flonum-radix fixnum)
 
-(flonum? (procedure flonum? (*) boolean)
-	 ((float) (let ((#:tmp #(1))) '#t)))
+(flonum? (procedure flonum? (*) boolean))
+(predicate flonum? float)
 
 (flush-output (procedure! flush-output (#!optional port) undefined))
 (force-finalizers (procedure force-finalizers () undefined))

@@ -353,7 +353,6 @@ Usage: #{csc} FILENAME | OPTION ...
                                     file
     -S  -scrutinize                perform local flow analysis
     -types FILENAME                load additional type database
-    -strict-types                  assume variable do not change their type
 
   Optimization options:
 
@@ -386,6 +385,7 @@ Usage: #{csc} FILENAME | OPTION ...
     -no-procedure-checks-for-toplevel-bindings
                                    disable procedure call checks for toplevel
                                     bindings
+    -strict-types                  assume variable do not change their type
 
   Configuration options:
 
