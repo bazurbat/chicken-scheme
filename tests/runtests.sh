@@ -111,7 +111,10 @@ $compile lolevel-tests.scm
 ./a.out
 
 echo "======================================== arithmetic tests ..."
-$interpret -D check -s arithmetic-test.scm
+if test -z "$MSYSTEM"; then
+    # the windows runtime library prints flonums differently
+    $interpret -D check -s arithmetic-test.scm
+fi
 
 echo "======================================== pretty-printer tests ..."
 $interpret -s pp-test.scm
@@ -242,7 +245,11 @@ $compile posix-tests.scm
 rm -fr tmpdir
 mkdir tmpdir
 touch tmpdir/.dotfile
-ln -s /usr tmpdir/symlink
+
+if test -z "$MSYSTEM"; then
+    ln -s /usr tmpdir/symlink
+fi
+
 $interpret -R posix -e '(delete-directory "tmpdir" #t)'
 
 echo "======================================== regular expression tests ..."
