@@ -113,6 +113,9 @@ $compile lolevel-tests.scm
 echo "======================================== arithmetic tests ..."
 $interpret -D check -s arithmetic-test.scm
 
+echo "======================================== pretty-printer tests ..."
+$interpret -s pp-test.scm
+
 echo "======================================== syntax tests ..."
 $interpret -s syntax-tests.scm
 
