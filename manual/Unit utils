@@ -18,7 +18,7 @@ This unit uses the {{extras}} and {{srfi-13}} units.
 <procedure>(system* FORMATSTRING ARGUMENT1 ...)</procedure>
 
 Similar to {{(system (sprintf FORMATSTRING ARGUMENT1 ...))}},
-but signals an error if the invoked program should return a nonzero
+but signals an error should the invoked program return a nonzero
 exit status.
 
 === Reading a file's contents

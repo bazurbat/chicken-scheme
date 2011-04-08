@@ -28,10 +28,10 @@ for the existence of CHICKEN are:
 
 ==== What should I do if I find a bug?
 
-Send e-mail to felix@call-with-current-continuation.org
-with some hints about the problem, like
-version/build of the compiler, platform, system configuration, code that
-causes the bug, etc.
+Fill a ticket at [[http://bugs.call-cc.org|bugs.call-cc.org]] with
+some hints about the problem, like version/build of the compiler,
+platform, system configuration, code that causes the bug, etc.
+
 
 === Specific
 
@@ -100,11 +100,12 @@ every object has to be accessed via a thread synchronization
 protocol. Such a design would make native threads in Chicken
 essentially equivalent to Unix processes and shared memory.
 
+For a different approach to concurrency, please see the
+[[/egg/mpi|mpi]] egg.
+
 ==== Does CHICKEN support Unicode strings?
 
-The system does not directly support Unicode, but an extension for UTF8 strings
-exists for CHICKEN 3, which may be ported to the current CHICKEN version at some
-stage.
+The system does not directly support Unicode, but there is an extension for UTF-8 strings: [[http://wiki.call-cc.org/egg/utf8|utf8]].
 
 === Why are `dynamic-wind' thunks not executed when a SRFI-18 thread signals an error?
 
@@ -235,7 +236,7 @@ just like source files (see {{load}} in the User's Manual).
 With CHICKEN 4, the macro-expansion subsystem is now hygienic where old Lisp-style low-level macros
 are not available anymore. {{define-syntax}} can define hygienic macros using {{syntax-rules}}
 or low-level macros with user-controlled hygienic with ''explicit renaming'' macros. Translating
-old-style macros into ER-macros isn't that hard, see [[Modules and macros]] for more information.
+old-style macros into ER-macros isn't that hard, see [[Macros]] for more information.
 
 ==== Why are low-level macros defined with {{define-syntax}} complaining about unbound variables?
 
@@ -469,7 +470,7 @@ The following extended bindings are handled specially:
 {{pointer-u32-set!}} {{pointer-s32-set!}} {{pointer-f32-set!}} {{pointer-f64-set!}} 
 {{make-record-instance}}
 {{locative-ref}} {{locative-set!}} {{locative?}} {{locative->object}} {{identity}}
-{{error}} {{call/cc}} {{any?}}
+{{cpu-time}} {{error}} {{call/cc}} {{any?}}
 {{substring=?}} {{substring-ci=?}} {{substring-index}} {{substring-index-ci}}
 {{printf}} {{sprintf}} {{fprintf}} {{format}} {{o}}
 
@@ -584,7 +585,7 @@ and wrap calls to {{set-finalizer!}} in it.
 
 ==== Does CSI support history and autocompletion?
 
-CSI doesn't support it natively but it can be activated with the [[http://www.call-with-current-continuation.org/eggs/readline.html]] egg.
+CSI doesn't support it natively but it can be activated with the [[http://wiki.call-cc.org/egg/readline|readline]] egg.
 After installing the egg, add the following to your {{~/.csirc}} or equivalent file:
 
 <enscript highlight=scheme>
@@ -629,7 +630,7 @@ It should contain the path where you want eggs to be installed:
  $ chicken-install -init ~/eggs/lib/chicken/5
  $ chicken-install -p ~/eggs/ extensionname
 
-In order to make programs (including csi) see these eggs, you should set this variable when you run them. See the [[http://wiki.call-cc.org/man/4/Extensions#changing-repository-location|Extensions/Changing repository location]] section of the manual for more information on that.
+In order to make programs (including csi) see these eggs, you should set this variable when you run them. See the [[/man/4/Extensions#Changing repository location|Extensions/Changing repository location]] section of the manual for more information on that.
 
 Alternatively, you can call the {{repository-path}} Scheme procedure before loading the eggs, as in:
 

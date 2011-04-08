@@ -1,5 +1,7 @@
 [[tags: manual]]
 
+[[toc:]]
+
 == Extensions to the standard
 
 === Identifiers
@@ -110,7 +112,7 @@ Local sequences of {{define-syntax}} forms are translated into equivalent
 {{letrec-syntax}} forms that enclose the following forms as the body of
 the expression.
 
-=== {{define}}
+=== Curried definitions
 
 {{define}} with a single argument is allowed and initializes the toplevel or local binding
 to an unspecified value. CHICKEN supports ''curried'' definitions, where the variable name

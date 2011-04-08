@@ -15,7 +15,7 @@ be made available in the interpreter ({{csi}}) by entering
 </enscript>
 
 This library provides only the Latin-1 character set.  To get Unicode
-semantics, see the [[utf8]] egg.  However, information on Unicode
+semantics, see the [[/egg/utf8|utf8]] egg.  However, information on Unicode
 character sets is still provided in this document.
 
 == Specification

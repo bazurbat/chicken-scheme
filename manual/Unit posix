@@ -422,7 +422,7 @@ return an inexact integer.
 
 <procedure>(regular-file? FILENAME)</procedure>
 
-Returns true, if {{FILENAME}} names a regular file (not a directory or symbolic link).
+Returns true, if {{FILENAME}} names a regular file (not a directory, socket, etc.)  This operation follows symbolic links; use either {{symbolic-link?}} or {{file-type}} if you need to test for symlinks.
 
 ==== file-owner
 
@@ -684,7 +684,7 @@ the session ID.
 <procedure>(symbolic-link? FILENAME)</procedure>
 
 Returns true, if {{FILENAME}} names a symbolic link. If no such file exists, {{#f}}
-is returned.
+is returned.  This operation does not follow symbolic links itself.
 
 ==== create-symbolic-link
 
@@ -920,7 +920,7 @@ These variables contain signal codes for use with {{process-signal}},  {{set-sig
 
 === Environment access
 
-==== current-environment
+==== get-environment-variables
 
 <procedure>(get-environment-variables)</procedure>
 
@@ -946,6 +946,8 @@ nothing happens.
 
 === Memory mapped I/O
 
+Memory mapped I/O takes the contents of a file descriptor and places them in memory.
+ 
 ==== memory-mapped-file?
 
 <procedure>(memory-mapped-file? X)</procedure>
@@ -986,6 +988,44 @@ Unmaps the section of a file mapped to memory using the C function
 by the procedure {{map-file-to-memory}}.  The optional argument
 {{LEN}} specifies the length of the section to be unmapped and
 defaults to the complete length given when the file was mapped.
+
+==== Memory Mapped I/O Example
+
+<enscript highlight=scheme>
+;; example-mmap.scm
+;;
+;; basic example of memory mapped I/O
+;;
+;; This example does no error checking or cleanup, and serves
+;; only to demonstrate how the mmap functions work together.
+;;
+(use posix)
+(use lolevel)
+
+       ; open a file using the posix module, so we have the file descriptor.
+(let* ((fd   (file-open "example-mmap.scm" (+ open/rdonly open/nonblock)))
+       ; fstat(2) the file descriptor fd to determine its size
+       (size (file-size fd))
+       ; mmap(2) the file for reading.
+       (mmap (map-file-to-memory #f
+                                 size
+                                 prot/read
+                                 (+ map/file map/shared)
+                                 fd))
+       ; return a pointer object to the beginning of the memory map.
+       (buf  (memory-mapped-file-pointer mmap))
+       ; allocate a string the same size as the file.
+       (str  (make-string size)))
+  ; copy the mapped memory into a string
+  (move-memory! buf str size)
+  (display str)
+  ; alternately, print the string byte-by-byte without copying.
+  (let loop ((p buf)
+             (i 0))
+    (unless (= i size)
+      (display (integer->char (pointer-s8-ref p)))
+      (loop (pointer+ p 1) (+ i 1)))))
+</enscript>
 
 
 === Date and time routines
@@ -1145,12 +1185,12 @@ followed.
 Note that {{action}} is called with the full pathname of each file,
 including the directory prefix.
 
-In older CHICKEN versions, {{find-files}} has a different argument
-signature:
+This procedure's signature was changed in CHICKEN 4.6.   In older versions, {{find-files}}
+has a different signature:
 
   (find-files DIRECTORY [TEST [ACTION [SEED [LIMIT]]]])
 
-This signature is still supported for compatibility reasons but is
+The old signature is still supported in CHICKEN 4.6 for compatibility reasons, but is
 deprecated.
 
 === Getting the hostname and system information
@@ -1198,12 +1238,12 @@ Returns {{#t}} if {{PORT}} is connected to a terminal and
 
 ==== terminal-size
 
-<procedure>(terminal-size)</procedure>
+<procedure>(terminal-size PORT)</procedure>
 
-Returns two values, the number of columns and rows of the
-current terminal window or {{0}}, {{0}} if the terminal
-size can not be obtained. On Windows, this procedure
-always returns {{0}}, {{0}}.
+Returns two values, the number of columns and rows of the terminal
+that is connected to {{PORT}} or {{0}}, {{0}} if the terminal size can
+not be obtained. On Windows, this procedure always returns {{0}},
+{{0}}.
 
 
 === How Scheme procedures relate to UNIX C functions

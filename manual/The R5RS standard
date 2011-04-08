@@ -50,7 +50,7 @@ equivalent in all respects.
  '()                          ===>  ()
  '(+ 1 2)                     ===>  (+ 1 2)
  '(quote a)                   ===>  (quote a)
- "a                           ===>  (quote a)
+ ''a                          ===>  (quote a)
 
 Numerical constants, string constants, character constants, and boolean
 constants evaluate "to themselves"; they need not be quoted.

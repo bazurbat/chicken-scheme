@@ -4,10 +4,7 @@
 == Unit extras
 
 This unit contains a collection of useful utility definitions. The unit is
-used by default, unless the program is compiled with the {{-explicit-use}}
-option.
-
-
+used in {{csi}} by default.
 
 === Random numbers
 

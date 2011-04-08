@@ -31,7 +31,7 @@ done code point by code point.
 
 Chicken's native strings are simple byte sequences (not Unicode code points).
 Comparison or reversal is done byte-wise.  If Unicode semantics are
-desired, see the [[utf8]] egg.
+desired, see the [[/egg/utf8|utf8]] egg.
 
 === Case mapping and case-folding
 
@@ -337,7 +337,7 @@ in some implementations, proper substrings may share memory with S.
 
 [R5RS+] Stores CHAR in every element of S.
 
-{{string-fill}} is extended from the R5RS definition to take optional
+{{string-fill!}} is extended from the R5RS definition to take optional
 START/END arguments.
 
 
@@ -1108,7 +1108,7 @@ If any of the checks fail, an error condition is raised, and PROC is used
 as part of the error condition -- it should be the client procedure whose
 argument list {{string-parse-start+end}} is parsing.
 
-{{string-parse-final-start+end}} is exactly the same, except that the args
+{{string-parse-final-start+end}} is exactly the same, except that the ARGS
 list passed to it is required to be of length two or less; if it is longer,
 an error condition is raised. It may be used when the optional START/END
 parameters are final arguments to the procedure.
@@ -1311,7 +1311,7 @@ non-empty -- PLEN > 0.)
 Hence:
 
 
-* A negative return value indicates success, and says where in the string the match occured. 
+* A negative return value indicates success, and says where in the string the match occurred. 
 * A non-negative return value provides the I to use for continued search in a following string. 
 
 This utility is designed to allow searching for occurrences of a fixed

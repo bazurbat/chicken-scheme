@@ -60,7 +60,6 @@ or other languages. These can be found on the CHICKEN wiki.
 
 CHICKEN is an implementation of Scheme that has many advantages.
 
-<blockquote>
 CHICKEN Scheme combines an optimising compiler with a reasonably fast
 interpreter.  It supports almost all of R5RS and the important SRFIs.
 The compiler generates portable C code that supports tail recursion,
@@ -70,7 +69,6 @@ hundreds of contributed CHICKEN libraries that make the programmer's
 task easier.  The interpreter allows interactive use, fast prototyping,
 debugging, and scripting.  The active and helpful CHICKEN community
 fixes bugs and provides support.  Extensive documentation is supplied.
-</blockquote>
 
 CHICKEN was developed by Felix L. Winkelmann over the period from 2000
 through 2007. In early 2008, Felix
@@ -213,6 +211,10 @@ can pretty much ignore the C compiler once you have installed it.)
 Refer to the {{README}} file for the version you're installing for
 more information on the installation process. 
 
+Alternatively, third party packages in binary format are available.
+Se [[http://wiki.call-cc.org/platforms]] for information about how to
+obtain them.
+
 === Development environments
 
 The simplest development environment is a text editor and terminal
@@ -285,12 +287,15 @@ CHICKEN code.
 
 To invoke the CHICKEN interpreter, you use the {{csi}} command. 
 
+
  $ csi
+ 
  CHICKEN
- (c)2008 The CHICKEN Team
+ (c)2008-2010 The Chicken Team
  (c)2000-2007 Felix L. Winkelmann
- Version 3.1.2 - macosx-unix-gnu-x86	[ manyargs dload ptables applyhook ]
- SVN rev. 10185	compiled 2008-03-27 on argyre.local (Darwin)
+ Version 4.6.0
+ macosx-unix-gnu-x86 [ manyargs dload ptables ]
+ 
  #;1>
 
 This brings up a brief banner, and then the prompt. You can use this
@@ -318,7 +323,7 @@ We can now load this file and try out the function.
 The '''read-eval-print loop''' ('''REPL''') is the component of the
 Scheme system that ''reads'' a Scheme expression, ''eval''uates it,
 and ''prints'' out the result. The REPL's prompt can be customized
-(see the [[Using the Interpreter]])
+(see the [[Using the interpreter]])
 but the default prompt, showing the number of the form, is quite
 convenient. 
 
@@ -345,14 +350,41 @@ actually a Scheme ''form''.
 ==== Scripts
 
 You can use the interpreter to run a Scheme program from the command
-line. Here we create a program that does a quick search-and-replace on
-an input file; the arguments are a regular expression and a
-replacement string.
+line. For the following example we create a program that does a quick
+search-and-replace on an input file; the arguments are a regular
+expression and a replacement string. First create a file to hold the "data" called ''quickrep.dat'' with your favorite editor holding these lines:
 
- $ cat quickrep.dat
  xyzabcghi
  abxawxcgh
  foonly 
+
+Next create the scheme code in a file called ''quickrep.scm'' with the
+following little program:
+
+<enscript highlight=scheme>
+
+(use irregex) ; irregex, the regular expression library, is one of the
+     	      ; libraries included with CHICKEN.
+
+(define (process-line line re rplc) 
+  (string-substitute re rplc line 'all))
+
+(define (quickrep re rplc) 
+  (let ((line (read-line)))
+    (if (not (eof-object? line))
+        (begin 
+          (display (process-line line re rplc))
+          (newline)
+          (quickrep re rplc)))))
+
+;;; Does a lousy job of error checking!
+(define (main args)
+  (quickrep (regexp (car args)) (cadr args)))
+</enscript>
+
+
+To run it enter this in your shell:
+
  $ csi -ss quickrep.scm <quickrep.dat 'a.*c' A
  xyzAghi
  Agh
@@ -362,23 +394,6 @@ The {{-ss}} option sets several options that work smoothly together to
 execute a script. You can make the command directly executable from
 the shell by inserting a `[[Using the interpreter#Writing Scheme scripts|shebang line]]' at the beginning of the
 program.
-
-{{regex}}, the regular expression library, is one of the libraries
-included with CHICKEN. 
-
- (use regex) 
- (define (process-line line re rplc) 
-   (string-substitute re rplc line 'all))
- (define (quickrep re rplc) 
-   (let ((line (read-line)))
-     (if (not (eof-object? line))
-         (begin 
-           (display (process-line line re rplc))
-           (newline)
-           (quickrep re rplc)))))
- ;;; Does a lousy job of error checking!
- (define (main args)
-   (quickrep (regexp (car args)) (cadr args)))
 
 The {{-ss}} option arranges to call a procedure named {{main}}, with
 the command line arguments, packed in a list, as its arguments. (There
@@ -424,20 +439,22 @@ On any system, we can just compile a program directly into an
 executable. Here's a program that tells you whether its argument is a
 palindrome. 
 
- (define (palindrome? x)
-   (define (check left right)
-     (if (>= left right)
-         #t
-         (and (char=? (string-ref x left) (string-ref x right))
-              (check (add1 left) (sub1 right)))))
-   (check 0 (sub1 (string-length x))))
- (let ((arg (car (command-line-arguments))))
-   (display 
-    (string-append arg 
-                   (if (palindrome? arg) 
-                       " is a palindrome\n"
-                       " isn't a palindrome\n"))))
-  
+<enscript highlight=scheme>
+(define (palindrome? x)
+  (define (check left right)
+    (if (>= left right)
+        #t
+        (and (char=? (string-ref x left) (string-ref x right))
+             (check (add1 left) (sub1 right)))))
+  (check 0 (sub1 (string-length x))))
+(let ((arg (car (command-line-arguments))))
+  (display 
+   (string-append arg 
+                  (if (palindrome? arg) 
+                      " is a palindrome\n"
+                      " isn't a palindrome\n"))))
+</enscript>
+
 We can compile this program using {{csc}}, creating an executable
 named {{palindrome}}. 
 
@@ -457,27 +474,31 @@ CHICKEN. (Units deal with separate compilation, but don't involve
 separated namespaces; namespaced module systems are available as
 eggs.)
 
- ;;; Library pal-proc.scm
- (declare (unit pal-proc))
- (define (palindrome? x)
-   (define (check left right)
-     (if (>= left right)
-         #t
-         (and (char=? (string-ref x left) (string-ref x right))
-              (check (add1 left) (sub1 right)))))
-   (check 0 (sub1 (string-length x))))
+<enscript highlight=scheme>
+;;; Library pal-proc.scm
+(declare (unit pal-proc))
+(define (palindrome? x)
+  (define (check left right)
+    (if (>= left right)
+        #t
+        (and (char=? (string-ref x left) (string-ref x right))
+             (check (add1 left) (sub1 right)))))
+  (check 0 (sub1 (string-length x))))
+</enscript>
 
 Next we have some  client code that `uses' this separately-compiled
 module.  
 
- ;;; Client pal-user.scm
- (declare (uses pal-proc))
- (let ((arg (car (command-line-arguments))))
-   (display 
-    (string-append arg 
-                   (if (palindrome? arg) 
-                       " is a palindrome\n"
-                       " isn't a palindrome\n"))))
+<enscript highlight=scheme>
+;;; Client pal-user.scm
+(declare (uses pal-proc))
+(let ((arg (car (command-line-arguments))))
+  (display 
+   (string-append arg 
+                  (if (palindrome? arg) 
+                      " is a palindrome\n"
+                      " isn't a palindrome\n"))))
+</enscript>
 
 Now we can compile and link everything together. (We show the compile
 and link operations separately, but they can of course be combined
@@ -497,35 +518,39 @@ Solaris, and Windows).  The command {{chicken-install}} will fetch an
 egg from the master CHICKEN repository, and install it on your local
 system.
 
-In this example, we install the {{uri}} egg, for parsing Uniform
-Resource Identifiers. The installation produces a lot of output, which
-we have edited for space reasons.
+In this example, we install the {{uri-common}} egg, for parsing
+Uniform Resource Identifiers. The installation produces a lot of
+output, which we have edited for space.
 
- $ chicken-install uri
+ $ chicken-install uri-common
+ 
+ retrieving ...
+ resolving alias `kitten-technologies' to: http://chicken.kitten-technologies.co.uk/henrietta.cgi
+ connecting to host "chicken.kitten-technologies.co.uk", port 80 ...
+ requesting "/henrietta.cgi?name=uri-common&mode=default" ...
+ reading response ...
+ [...]
+ /usr/bin/csc -feature compiling-extension -setup-mode    -s -O2 uri-common.scm -j uri-common
+ /usr/bin/csc -feature compiling-extension -setup-mode    -s -O2 uri-common.import.scm
+ cp -r uri-common.so /usr/lib/chicken/5/uri-common.so
+ chmod a+r /usr/lib/chicken/5/uri-common.so
+ cp -r uri-common.import.so /usr/lib/chicken/5/uri-common.import.so
+ chmod a+r /usr/lib/chicken/5/uri-common.import.so
+ chmod a+r /usr/lib/chicken/5/uri-common.setup-info
 
- The extension uri does not exist.
- Do you want to download it ? (yes/no/abort) [yes] yes
- downloading uri.egg from (www.call-with-current-continuation.org eggs/3 80) 
-   gzip -d -c ../uri.egg | tar xf -
- .  /Users/vmanis/local/bin/csc -feature compiling-extension 
-      -s -O2 -d1 uri.scm -o uri.so -check-imports -emit-exports uri.exports
- ... (lots of stuff elided)
- .  rm -fr /Users/vmanis/project/chicken/uri.egg
-
-First, {{chicken-install}} asks us if we want to download the egg. It
-then uncompresses the egg, compiles the code, and installs the egg in
-the local CHICKEN repository. 
+{{chicken-install}} connects to a mirror of the egg repository and
+retrieves the egg contents.  If the egg has any uninstalled
+dependencies, it recursively installs them.  Then it builds the egg
+code and installs the resulting extension into the 
+local CHICKEN repository.
 
 Now we can use our new egg. 
 
- #;1> (use uri)
- ; loading /Users/vmanis/local/lib/chicken/3/uri.so ...
- ; loading /Users/vmanis/local/lib/chicken/3/coerce-support.so ...
- ; loading /Users/vmanis/local/lib/chicken/3/misc-extn-list-support.so ...
- ; loading /Users/vmanis/local/lib/chicken/3/synch-support.so ...
- ; loading /Users/vmanis/local/lib/chicken/3/lookup-table.so ...
- ; loading /Users/vmanis/local/lib/chicken/3/misc-extn-control-support.so ...
- #;2> (uri-host (uri "http://www.foobar.org/blah"))
+ #;1> (use uri-common)
+ ; loading /usr/lib/chicken/5/uri-common.import.so ...
+ ; [... other loaded files omitted for clarity ...]
+ 
+ #;2> (uri-host (uri-reference "http://www.foobar.org/blah"))
  "www.foobar.org"
 
 === Accessing C libraries 
@@ -579,7 +604,7 @@ name), and that it returns an integer result (the {{int}} before.) Now we can in
  0 1 1 2 3 5 8 13 21 34 55 
 
 Those who are interfacing to substantial C libraries should consider
-using the [[bind]] egg. 
+using the [[/egg/bind|bind egg]]. 
 
 ---
 

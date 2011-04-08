@@ -12,7 +12,7 @@ and expressions interactively.
 
 where {{FILENAME}} specifies a file with Scheme source-code.  If the
 extension of the source file is {{.scm}}, it may be omitted. The
-runtime options described in [[Using%20the%20compiler#Compiler%20command%20line%20format|Compiler command line format]] are also available
+runtime options described in [[Using the compiler#Compiler command line format|Compiler command line format]] are also available
 for the interpreter.  If the environment variable {{CSI_OPTIONS}}
 is set to a list of options, then these options are additionally passed
 to every direct or indirect invocation of {{csi}}. Please note that
@@ -280,21 +280,17 @@ textual description of the object to the passed output-port. For example:
 
 === Auto-completion and edition
 
-On platforms that support it, it is possible to get auto-completion of symbols,
-history (over different {{csi}} sessions) and a more feature-full
-editor for the expressions you type
-using the [[http://wiki.call-cc.org/eggref/4/readline]] egg by
-Tony Garnock Jones.
-It is very useful for interactive use of csi.
-
-To enable it install the egg and put this in your {{~/.csirc}} file:
-
-<enscript highlight=scheme>
-(use readline regex)
-(current-input-port (make-gnu-readline-port))
-(gnu-history-install-file-manager 
-  (string-append (or (getenv "HOME") ".") "/.csi.history"))
-</enscript>
+On platforms that support it, it is possible to get auto-completion of
+symbols, history (over different {{csi}} sessions) and a more
+feature-full editor for the expressions you type using the
+[[http://wiki.call-cc.org/eggref/4/readline|readline]] egg by Tony
+Garnock Jones.  It is very useful for interactive use of csi. See the
+egg's documentation on how to set it up. If readline is not available
+on your system consider using the self-contained
+[[http://wiki.call-cc.org/eggref/4/linenoise|linenoise]] egg
+instead. It should work on almost any system but is not as
+feature-rich as readline (e.g. it lacks reverse-i-search and
+auto-completion).
 
 The interpreter {{csi}} internally requires some routines from the
 {{ports}} and {{extras}} library units and loads them automatically

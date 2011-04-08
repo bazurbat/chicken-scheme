@@ -81,14 +81,14 @@ The {{HASH-TABLE}} maximum load factor.
 
 <procedure>(hash-table-weak-keys HASH-TABLE)</procedure>
 
-Does the {{HASH-TABLE}} weak references for keys?
+Does the {{HASH-TABLE}} use weak references for keys?
 
 
 ==== hash-table-weak-values
 
 <procedure>(hash-table-weak-values HASH-TABLE)</procedure>
 
-Does the {{HASH-TABLE}} weak references for values?
+Does the {{HASH-TABLE}} use weak references for values?
 
 
 ==== hash-table-has-initial?
@@ -172,12 +172,12 @@ is equivalent to
 
 ==== hash-table-update!
 
-<procedure>(hash-table-update! HASH-TABLE KEY UPDATE-FUNCTION [DEFAULT-VALUE-FUNCTION])</procedure>
+<procedure>(hash-table-update! HASH-TABLE KEY [UPDATE-FUNCTION [DEFAULT-VALUE-FUNCTION]])</procedure>
 
 Sets or replaces the {{VALUE}} for {{KEY}} in the {{HASH-TABLE}}.
 
 The {{UPDATE-FUNCTION}} takes the existing {{VALUE}} for {{KEY}} and returns
-the new {{VALUE}}.
+the new {{VALUE}}. The default is {{identity}}
 
 The {{DEFAULT-VALUE-FUNCTION}} is called when the entry for {{KEY}} is missing.
 The default uses the {{(hash-table-initial-value)}}, if provided. Otherwise
