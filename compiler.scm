@@ -142,6 +142,7 @@
 ; (##core#define-compiler-syntax <symbol> <expr>)
 ; (##core#let-compiler-syntax ((<symbol> <expr>) ...) <expr> ...)
 ; (##core#module <symbol> #t | (<name> | (<name> ...) ...) <body>)
+; (##core#let-module-alias ((<alias> <name>) ...) <body>)
 ; (<exp> {<exp>})
 
 ; - Core language:
@@ -599,10 +600,11 @@
 			    (let loop ([ids (##sys#strip-syntax (cadr x))])
 			      (if (null? ids)
 				  '(##core#undefined)
-				  (let ([id (car ids)])
+				  (let ((id (##sys#resolve-module-name (car ids) #f)))
 				    (let-values ([(exp f)
 						  (##sys#do-the-right-thing
-						   id #t imp?)])
+						   (##sys#resolve-module-name id #f)
+						   #t imp?)])
 				      (unless (or f 
 						  (and (symbol? id)
 						       (or (feature? id)
@@ -804,9 +806,18 @@
 			       (##sys#include-forms-from-file (cadr x))))
 			 e se dest ldest h))
 
+		       ((##core#let-module-alias)
+			(##sys#with-module-aliases
+			 (map (lambda (b)
+				(##sys#check-syntax 'functor b '(symbol symbol))
+				(##sys#strip-syntax b))
+			      (cadr x))
+			 (lambda ()
+			   (walk `(##core#begin ,@(cddr x)) e se dest ldest h))))
+
 		       ((##core#module)
 			(let* ((x (##sys#strip-syntax x))
-			       (name (##sys#strip-syntax (cadr x)))
+			       (name (cadr x))
 			       (exports 
 				(or (eq? #t (caddr x))
 				    (map (lambda (exp)
@@ -821,7 +832,7 @@
 						  (##sys#syntax-error-hook
 						   'module
 						   "invalid export syntax" exp name))))
-					 (##sys#strip-syntax (caddr x)))))
+					 (caddr x))))
 			       (csyntax compiler-syntax))
 			  (when (##sys#current-module)
 			    (##sys#syntax-error-hook
@@ -830,7 +841,10 @@
 					(parameterize ((##sys#current-module 
 							(##sys#register-module name exports) )
 						       (##sys#current-environment '())
-						       (##sys#macro-environment ##sys#initial-macro-environment))
+						       (##sys#macro-environment
+							##sys#initial-macro-environment)
+						       (##sys#module-alias-environment
+							(##sys#module-alias-environment)))
 					    (let loop ((body (cdddr x)) (xs '()))
 					      (cond 
 					       ((null? body)
@@ -845,7 +859,7 @@
 						       (lambda (il)
 							 (when enable-module-registration
 							   (emit-import-lib name il))
-							 (values 
+							 (values
 							  (reverse xs)
 							  '((##core#undefined)))))
 						      ((not enable-module-registration)
@@ -857,7 +871,8 @@
 							(reverse xs)
 							(if standalone-executable
 							    '()
-							    (##sys#compiled-module-registration (##sys#current-module)))))))
+							    (##sys#compiled-module-registration 
+							     (##sys#current-module)))))))
 					       (else
 						(loop 
 						 (cdr body)
@@ -1150,7 +1165,9 @@
 						   (list 
 						    var
 						    (foreign-type-convert-result
-						     (finish-foreign-result (final-foreign-type type) var)
+						     (finish-foreign-result
+						      (final-foreign-type type) 
+						      var)
 						     type) )
 						   (loop (cdr vars) (cdr types)) ) ) ) )
 					 ,(foreign-type-convert-argument

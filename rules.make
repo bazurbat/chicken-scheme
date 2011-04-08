@@ -38,7 +38,7 @@ SETUP_API_OBJECTS_1 = setup-api setup-download
 LIBCHICKEN_OBJECTS_1 = \
        library eval data-structures ports files extras lolevel utils tcp srfi-1 srfi-4 srfi-13 \
        srfi-14 srfi-18 srfi-69 $(POSIXFILE) irregex scheduler \
-       profiler stub expand chicken-syntax chicken-ffi-syntax runtime
+       profiler stub expand modules chicken-syntax chicken-ffi-syntax runtime
 LIBCHICKEN_SHARED_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=$(O))
 LIBCHICKEN_STATIC_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=-static$(O))
 
@@ -478,6 +478,8 @@ library.c: $(SRCDIR)library.scm $(SRCDIR)version.scm $(SRCDIR)banner.scm $(SRCDI
 eval.c: $(SRCDIR)eval.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 expand.c: $(SRCDIR)expand.scm $(SRCDIR)synrules.scm $(SRCDIR)common-declarations.scm
+	$(bootstrap-lib)
+modules.c: $(SRCDIR)modules.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 extras.c: $(SRCDIR)extras.scm $(SRCDIR)private-namespace.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)

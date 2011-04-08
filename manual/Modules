@@ -36,6 +36,7 @@ CHICKEN's module system has the following features and shortcomings:
 * Supports batch-compilation of separate compilation units
 * No separate "identifier" type is used, all identifiers appearing in code and processed in expansions are symbols
 * The module system is fully optional
+* Parameterized modules are supported
 
 
 ==== module
@@ -43,34 +44,57 @@ CHICKEN's module system has the following features and shortcomings:
 <macro>(module NAME (EXPORT ...) BODY ...)</macro><br>
 <macro>(module NAME (EXPORT ...) FILENAME)</macro>
 <macro>(module NAME * BODY ...)</macro>
+<macro>(module NAME1 = NAME2 [BODY ...])</macro>
+<macro>(module NAME = (FUNCTORNAME MODULENAME1 ...))</macro>
 
 Defines a module with the name {{NAME}}, a set of exported bindings
 and a contained sequence of toplevel expressions that are evaluated in
-an empty syntactical environment. {{EXPORT}} may be a symbol or a list
-of the form {{(IDENTIFIER1 IDENTIFIER2 ...)}}. In the former case the
-identifier given is exported from the module and can be imported at
-the toplevel or in other modules. The latter case exports
+an empty syntactical environment. 
+
+{{(EXPORT ...)}} should be an export-specification which holds a list
+of identifiers to be exported from the module and which should be
+visible when imported into another module or the toplevel
+environment. {{EXPORT}} may have any of the following forms:
+
+{{IDENTIFIER}} names a value- or syntax binding to be exported.
+
+{{(IDENTIFIER1 ...)}} or {{(syntax: IDENTIFIER1 ...)}} exports
 {{IDENTIFIER1}} (which should name a macro) and also arranges for the
 remaining identifiers in the list to be visible in the expansion of
 the macro (this is a hint to the module expander to export bindings
 referenced by syntax-definitions which make use of them, but which
 would normally be internal to the module - which gives more
-opportunities for optimization).
+opportunities for optimization). 
 
-When the {{BODY}} consists of a single string, it is handled
-as {{(include FILENAME)}}.
+{{(interface: INTERFACENAME)}} adds all exports defined for the given
+interface to be added to the list of exported identifiers of this
+module.
+
+As a special case, specifying {{*}} instead of an export-list will
+export all definitions. As another special case, the export-list may
+be a symbol naming an interface.
+
+When the {{BODY}} consists of a single string, it is treated
+like {{(include FILENAME)}}.
+
+{{(module NAME = (FUNCTORNAME MODULENAME1 ...))}} instantiates
+a ''functor'' (see below for information about functors).
+
+The syntax {{(module NAME1 = NAME2)}} defines an alias {{NAME1}} for
+the module {{NAME2}}, so {{NAME1}} can be used in place of {{NAME2}}
+in all forms that accept module names. Module aliases defined inside a
+module are local to that module. If followed by a module body, then
+this is a special form of ''functor instantiation''.
 
 Nested modules, modules not at toplevel (i.e. local modules) or
-mutually recursive modules are not supported.
+mutually recursive modules are not supported. As an exception
+module alias definitions are allowed inside a module definition.
 
 When compiled, the module information, including exported macros
 is stored in the generated binary and available when loading
 it into interpreted or compiled code. Note that this is different
 to normal macros (outside of module declarations), which are normally
 not exported from compiled code.
-
-As a special case, specifying {{*}} instead of an export-list
-will export all definitions.
 
 Note that the module system is only a device for controlling the
 mapping of identifiers to value or syntax bindings. Modules do not
@@ -175,6 +199,18 @@ other modules:
       dynamic-wind values call-with-values eval scheme-report-environment
       null-environment interaction-environment)))
 </enscript>
+
+
+=== define-interface
+
+<macro>(define-interface INTERFACENAME (EXPORT ...))</macro>
+
+Defines an ''interface'', a group of exports that can be used in
+module-definitions using the {{(interface: INTERFACE)}} syntax.
+See the definition of {{module}} above for an explanation of
+{{EXPORT}} specifications.
+
+Interface names use a distinct global namespace.
 
 
 === import libraries
@@ -319,16 +355,110 @@ the binding information and exported syntax of the former
 must be available separately.
 
 
-=== Caveats
+=== Functors
 
-The macro- and module system has been implemented relatively
-recently and is likely to contain bugs. Please contact the
-maintainers if you encounter behavior that you think is
-not correct or that triggers an error where there shouldn't
-be one.
+A ''functor'' is a higher-order module that can be parameterized with
+other modules. A functor defines the body of a module for a set or
+argument modules and can be instantiated with concrete module names
+specializing the code contained in the functor. This is best explained
+with a silly and pointless example:
 
-* In evaluated code, loading a file containing module information and importing from a module contained in that file will not work when the loading and import is performed in the same toplevel expression (this does not apply, when import libraries are used) 
-* Currently value bindings imported by {{import}} and {{import-for-syntax}} share the same import-environment.
+<enscript highlight=scheme>
+(functor (squaring-functor (M (multiply))) (square)
+  (import scheme M)
+  (define (square x) (multiply x x)))
+</enscript>
+
+This defines a generic "squaring" operation that uses {{multiply}}, a
+procedure (or macro!) exported by the as-yet-unknown module {{M}}. Now
+let's instantiate the functor for a specific input module:
+
+<enscript highlight=scheme>
+(module nums (multiply)
+  (import scheme)
+  (define (multiply x y) (* x y)))
+
+(module number-squarer = (squaring-functor nums))
+
+(import number-squarer)
+(square 3)                ===>  9
+</enscript>
+
+We can easily instantiate the functor for other inputs:
+
+<enscript highlight=scheme>
+(module stars (multiply)
+  (import scheme)
+  (use srfi-1)
+  (define (multiply x y) 
+    (list-tabulate x (lambda _ (list-tabulate y (lambda _ '*))))))
+
+(module star-squarer = (squaring-functor stars))
+
+(import star-squarer)
+(square 3)                ===>  ((* * *)
+                                 (* * *)
+                                 (* * *))
+</enscript>
+
+So whenever you have a generic algorithm it can be packaged into a
+functor and specialized for specific input modules.  The instantiation
+will check that the argument modules match the required signature,
+{{(multiply)}} in the case above.  The argument module must export at
+least the signature given in the functor definition. You can use
+{{define-interface}} to reduce typing and give a more meaningful name
+to a set of exports.
+
+The general syntax of a functor definition looks like this:
+
+<enscript highlight=scheme>
+(functor (FUNCTORNAME (ARGUMENTMODULE1 EXPORTS1) ...) 
+  FUNCTOREXPORTS
+  BODY)
+</enscript>
+
+This functor definition does not generate any code. This is done
+by ''instantiating'' the functor for specific input modules:
+
+<enscript highlight=scheme>
+(module MODULENAME = (FUNCTORNAME MODULENAME1 ...))
+</enscript>
+
+Inside {{BODY}}, references to {{ARGUMENTMODULE}} will be replaced by
+the corresponding {{MODUELNAME}} argument. The instantiation expands
+into the complete functor-code {{BODY}} and as such can be considered
+a particular sort of macro-expansion. Note that there is no
+requirement that a specific export of an argument-module must be
+syntax or non-syntax - it can be syntax in one instantiation and a
+procedure definition in another.
+
+The common case of using a functor with a single argument module
+that is not used elsewhere can be expressed in the following way:
+
+<enscript highlight=scheme>
+(module NAME = FUNCTORNAME BODY ...)
+</enscript>
+
+which is the same as
+
+<enscript highlight=scheme>
+(begin
+  (module _NAME * BODY ...)
+  (module NAME = (FUNCTORNAME _NAME)))
+</enscript>
+
+Since functors exist at compile time, they can be stored in
+import-libraries via {{-emit-import-library FUNCTORNAME}} or
+{{-emit-all-import-libraries}} (see [[Using the compiler]] for more
+information about this). That allows you to import functors for later
+instantiation. Internally, a functor-definition also defines a module
+with the same name, but importing this module has no effect. It also
+has no runtime code, so it is sufficient to merely {{import}} it (as
+opposed to using {{require-extension}} or one of its variants, which
+also loads the run-time part of a module).
+
+Note that functor-instantiation creates a complete copy of the
+functor body.
 
 
 ---

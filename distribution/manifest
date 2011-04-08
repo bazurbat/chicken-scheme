@@ -172,7 +172,13 @@ tests/dwindtst.scm
 tests/dwindtst.expected
 tests/callback-tests.scm
 tests/reader-tests.scm
-tests/pp-test.scm
+tests/simple-functors-test.scm
+tests/breadth-first.scm
+tests/QUEUE.scm
+tests/test-queue.scm
+tests/functor-tests.scm
+tests/square-functor.scm
+tests/use-square-functor.scm
 tweaks.scm
 utils.scm
 apply-hack.x86.S
@@ -200,6 +206,8 @@ compiler-namespace.scm
 synrules.scm
 expand.scm
 expand.c
+modules.scm
+modules.c
 chicken-syntax.scm
 chicken-syntax.c
 common-declarations.scm

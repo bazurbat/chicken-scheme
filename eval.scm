@@ -631,9 +631,18 @@
 			     ,@(##sys#include-forms-from-file (cadr x)))
 			   e #f tf cntr se))
 
+			 ((##core#let-module-alias)
+			  (##sys#with-module-aliases
+			   (map (lambda (b)
+				  (##sys#check-syntax 'functor b '(symbol symbol))
+				  (##sys#strip-syntax b))
+				(cadr x))
+			   (lambda ()
+			     (compile `(##core#begin ,@(cddr x)) e #f tf cntr se))))
+
 			 ((##core#module)
 			  (let* ((x (##sys#strip-syntax x))
-				 (name (##sys#strip-syntax (cadr x)))
+				 (name (cadr x))
 				 (exports 
 				  (or (eq? #t (caddr x))
 				      (map (lambda (exp)
@@ -648,14 +657,17 @@
 						    (##sys#syntax-error-hook
 						     'module
 						     "invalid export syntax" exp name))))
-					   (##sys#strip-syntax (caddr x))))))
+					   (caddr x)))))
 			    (when (##sys#current-module)
 			      (##sys#syntax-error-hook 'module "modules may not be nested" name))
 			    (parameterize ((##sys#current-module 
 					    (##sys#register-module name exports))
 					   (##sys#current-environment '())
-					   (##sys#macro-environment ##sys#initial-macro-environment))
-				(let loop ((body (cdddr x)) (xs '()))
+					   (##sys#macro-environment 
+					    ##sys#initial-macro-environment)
+					   (##sys#module-alias-environment
+					    (##sys#module-alias-environment)))
+			      (let loop ((body (cdddr x)) (xs '()))
 				  (if (null? body)
 				      (let ((xs (reverse xs)))
 					(##sys#finalize-module (##sys#current-module))
@@ -663,12 +675,12 @@
 					  (let loop2 ((xs xs))
 					    (if (null? xs)
 						(##sys#void)
-						(let ((n (##sys#slot xs 1)))
+						(let ((n (cdr xs)))
 						  (cond ((pair? n)
-							 ((##sys#slot xs 0) v)
+							 ((car xs) v)
 							 (loop2 n))
 							(else
-							 ((##sys#slot xs 0) v))))))))
+							 ((car xs) v))))))))
 				      (loop 
 				       (cdr body)
 				       (cons (compile 
@@ -700,7 +712,8 @@
 				   '(##core#undefined)
 				   (let-values ([(exp _) 
 						 (##sys#do-the-right-thing
-						  (car ids) #f imp?)])
+						  (##sys#resolve-module-name (car ids) #f)
+						  #f imp?)])
 				     `(##core#begin ,exp ,(loop (cdr ids))) ) ) )
 			     e #f tf cntr se) ) ]
 

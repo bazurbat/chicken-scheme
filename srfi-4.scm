@@ -394,7 +394,7 @@ EOF
 
 ;;; Creating vectors from a list:
 
-(define-syntax (list->XXXvector x r c)
+(define-syntax (list->NNNvector x r c)
   (let* ((tag (##sys#strip-syntax (cadr x)))
 	 (tagstr (symbol->string tag))
 	 (name (string->symbol (string-append "list->" tagstr)))
@@ -413,14 +413,14 @@ EOF
 		   (,set v i (##core#inline "C_slot" p 0))
 		   (##sys#error-not-a-proper-list lst) ) ) ) )))))
 
-(list->XXXvector u8vector)
-(list->XXXvector s8vector)
-(list->XXXvector u16vector)
-(list->XXXvector s16vector)
-(list->XXXvector u32vector)
-(list->XXXvector s32vector)
-(list->XXXvector f32vector)
-(list->XXXvector f64vector)
+(list->NNNvector u8vector)
+(list->NNNvector s8vector)
+(list->NNNvector u16vector)
+(list->NNNvector s16vector)
+(list->NNNvector u32vector)
+(list->NNNvector s32vector)
+(list->NNNvector f32vector)
+(list->NNNvector f64vector)
 
 
 ;;; More constructors:
@@ -452,7 +452,7 @@ EOF
 
 ;;; Creating lists from a vector:
 
-(define-syntax (XXXvector->list x r c)
+(define-syntax (NNNvector->list x r c)
   (let* ((tag (##sys#strip-syntax (cadr x)))
 	 (alloc? (pair? (cddr x)))
 	 (name (string->symbol (string-append (symbol->string tag) "->list"))))
@@ -468,14 +468,14 @@ EOF
 		     `(##core#inline ,(conc "C_u_i_" tag "_ref") v i))
 		(loop (fx+ i 1)) ) ) ) ) ) ) )
 
-(XXXvector->list u8vector)
-(XXXvector->list s8vector)
-(XXXvector->list u16vector)
-(XXXvector->list s16vector)
-(XXXvector->list u32vector #t)
-(XXXvector->list s32vector #t)
-(XXXvector->list f32vector #t)
-(XXXvector->list f64vector #t)
+(NNNvector->list u8vector)
+(NNNvector->list s8vector)
+(NNNvector->list u16vector)
+(NNNvector->list s16vector)
+(NNNvector->list u32vector #t)
+(NNNvector->list s32vector #t)
+(NNNvector->list f32vector #t)
+(NNNvector->list f64vector #t)
 
 
 ;;; Predicates:

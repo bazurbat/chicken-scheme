@@ -1110,7 +1110,64 @@
      (##core#let-compiler-syntax (binding ...) body ...)))))
 
 
+;;; interface definition
+
+(##sys#extend-macro-environment
+ 'define-interface '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'define-interface x '(_ symbol _))
+    (let ((name (##sys#strip-syntax (cadr x)))
+	  (%quote (r 'quote)))
+      (when (eq? '* name)
+	(##sys#syntax-error-hook
+	 'define-interface "`*' is not allowed as a name for an interface"))
+      `(,(r 'begin-for-syntax)
+	(##sys#register-interface
+	 (,%quote ,name)
+	 (,%quote ,(let ((exps (##sys#strip-syntax (caddr x))))
+		     (cond ((eq? '* exps) '*)
+			   ((symbol? exps) `(#:interface ,exps))
+			   ((list? exps) 
+			    (##sys#validate-exports exps 'define-interface))
+			   (else
+			    (##sys#syntax-error-hook
+			     'define-interface "invalid exports" (caddr x))))))))))))
+
+
+;;; functor definition
+
+(##sys#extend-macro-environment
+ 'functor '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'functor x '(_ (symbol . #((symbol _) 0)) _ . _))
+    (let* ((x (##sys#strip-syntax x))
+	   (head (cadr x))
+	   (name (car head))
+	   (exps (caddr x))
+	   (body (cdddr x))
+	   (registration
+	    `(##sys#register-functor
+	      ',name
+	      ',(map (lambda (arg)
+		       (let ((argname (car arg))
+			     (exps (##sys#validate-exports (cadr arg) 'functor)))
+			 (cons argname exps)))
+		     (cdr head))
+	      ',(##sys#validate-exports exps 'functor)
+	      ',body)))
+      `(##core#module
+	,name
+	#t
+	(import scheme chicken)
+	(begin-for-syntax ,registration))))))
+
+
+;; capture current macro env
+
 (##sys#macro-subset me0 ##sys#default-macro-environment)))
+
 
 ;; register features
 
