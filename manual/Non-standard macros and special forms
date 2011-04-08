@@ -185,20 +185,23 @@ Defines several variables at once, with the result values of expression
 
 Binds the variables {{VAR1 ...}} dynamically to the values {{X1 ...}} 
 during execution of {{BODY ...}}.
+This implements [[http://srfi.schemers.org/srfi-15/srfi-15.html|SRFI-15]].
 
 ==== let-values
 
 <macro>(let-values (((NAME ...) EXP) ...) BODY ...)</macro>
 
-SRFI 11.  Binds multiple variables to the result values of {{EXP ...}}.
+Binds multiple variables to the result values of {{EXP ...}}.
 All variables are bound simultaneously.
+This implements [[http://srfi.schemers.org/srfi-11/srfi-11.html|SRFI-11]].
 
 ==== let*-values
 
 <macro>(let*-values (((NAME ...) EXP) ...) BODY ...)</macro>
 
-SRFI 11.  Binds multiple variables to the result values of {{EXP ...}}.
+Binds multiple variables to the result values of {{EXP ...}}.
 The variables are bound sequentially.
+This is also part of [[http://srfi.schemers.org/srfi-11/srfi-11.html|SRFI-11]].
 
 <enscript highlight=scheme>
 (let*-values (((a b) (values 2 3))
@@ -230,19 +233,14 @@ Binds the parameters {{PARAMETER1 ...}} dynamically to the values
 {{make-parameter}} in [[Parameters]]). Note that {{PARAMETER}} may be any
 expression that evaluates to a parameter procedure.
 
-Note: due to a bug in the implementation of {{parameterize}},
-restoring the previous parameter values does reinvoke the guard
-procedure of the parameter, if it has any. If the guard procedure
-performs a conversion, then the conversion will be reinvoked
-on restoration of the old value.
-
 ==== receive
 
 <macro>(receive (NAME ...) VALUEEXP BODY ...)</macro><br>
 <macro>(receive (NAME1 ... NAMEn . NAMEn+1) VALUEEXP BODY ...)</macro><br>
 <macro>(receive VALUEEXP)</macro>
 
-SRFI-8. Syntactic sugar for {{call-with-values}}. Binds variables
+[[http://srfi.schemers.org/srfi-8/srfi-8.html|SRFI-8]].
+Syntactic sugar for {{call-with-values}}. Binds variables
 to the result values of {{VALUEEXP}} and evaluates {{BODY ...}}.
 
 {{(receive VALUEEXP)}} is equivalent to {{(receive _ VALUEEXP _)}}.

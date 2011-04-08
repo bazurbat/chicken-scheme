@@ -60,7 +60,7 @@ If {{PRINTER}} is given and not false, then each expression is
 printed before evaluation by applying the expression to the value of this
 argument, which should be a one-argument procedure.
 
-See also the [[http://wiki.call-cc.org/Parameters#load-verbose|load-verbose]] parameter.
+See also the [[Parameters#load-verbose|load-verbose]] parameter.
 ==== load-library
 
 <procedure>(load-library UNIT [LIBRARYFILE])</procedure>
@@ -156,7 +156,10 @@ extension library and load it. If {{ID}} names a library-unit of
 the base system, then it is loaded via {{load-library}}. If no
 extension library is available for the given ID, then an attempt is
 made to load the file {{ID.so}} or {{ID.scm}} (in that order)
-in the current directory.
+from one of the following locations:
+
+* the current include path, which defaults to the pathnames given in {{CHICKEN_INCLUDE_PATH}}.
+* the current directory
 
 {{ID}} should be a string or a symbol.
 
