@@ -178,6 +178,9 @@
 	 (map (lambda (c) (string->symbol (string c)))
 	      (string->list do) ) )
        (collect-options 'debug) ) )
+    (when (memq '? debugging-chicken)
+      (print-debug-options)
+      (exit))
     (set! dumpnodes (memq '|D| debugging-chicken))
     (set! import-libraries
       (map (lambda (il)

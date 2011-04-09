@@ -1598,3 +1598,43 @@ Usage: chicken FILENAME OPTION ...
 
 EOF
 ) )
+
+(define (print-debug-options)
+  (display #<<EOF
+
+Available debugging options:
+
+     t          show time needed for compilation
+     b          show breakdown of time needed for each compiler pass
+     o          show performed optimizations
+     r          show invocation parameters
+     s          show program-size information and other statistics
+     a          show node-matching during simplification
+     p          show execution of compiler sub-passes
+     m          show GC statistics during compilation
+     n          print the line-number database 
+     c          print every expression before macro-expansion
+     u          lists all unassigned global variable references
+     d          lists all assigned global variables
+     x          display information about experimental features
+     D          when printing nodes, use node-tree output
+     N          show the real-name mapping table
+     S          show applications of compiler syntax
+     T          show expressions after converting to node tree
+     P          show expressions after specialization
+     U          show expressions after unboxing
+     M          show syntax-/runtime-requirements
+     1          show source expressions
+     2          show canonicalized expressions
+     3          show expressions converted into CPS
+     4          show database after each analysis pass
+     5          show expressions after each optimization pass
+     6          show expressions after each inlining pass
+     7          show expressions after complete optimization
+     8          show database after final analysis
+     9          show expressions after closure conversion
+     ?          you already figured that out
+
+
+EOF
+))
