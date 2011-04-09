@@ -7556,6 +7556,25 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 }
 
 
+/* special case for fixnum arg and decimal radix */
+void C_ccall 
+C_fixnum_to_string(C_word c, C_word self, C_word k, C_word num)
+{
+  C_word *a, s;
+  int n;
+
+#ifdef C_SIXTY_FOUR
+  C_sprintf(buffer, C_text("%ld"), C_unfix(num));
+#else
+  C_sprintf(buffer, C_text("%d"), C_unfix(num));
+#endif
+  n = C_strlen(buffer);
+  a = C_alloc(C_bytestowords(n) + 1);
+  s = C_string2(&a, buffer);
+  C_kontinue(k, s);
+}
+
+
 /* OBSOLETE */
 void C_ccall C_get_argv(C_word c, C_word closure, C_word k)
 {

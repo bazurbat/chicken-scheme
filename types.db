@@ -167,53 +167,71 @@
      ((float float) (##core#inline "C_i_flonum_min" #(1) #(2))))
 
 (+ (procedure! + (#!rest number) number)
-   (((or fixnum float number)) #(1))
-   ((float fixnum) (##core#inline_allocate 
-		    ("C_a_i_flonum_plus" 4) 
-		    #(1) 
-		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
-   ((fixnum float) (##core#inline_allocate 
-		    ("C_a_i_flonum_plus" 4) 
-		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
-		    #(2)))
-   ((float float) (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) #(2))))
+   ((fixnum) (fixnum) #(1))
+   ((float) (float) #(1))
+   ((number) #(1))
+   ((float fixnum) (float)
+    (##core#inline_allocate 
+     ("C_a_i_flonum_plus" 4) 
+     #(1) 
+     (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
+   ((fixnum float)
+    (float)
+    (##core#inline_allocate 
+     ("C_a_i_flonum_plus" 4) 
+     (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
+     #(2)))
+   ((float float) (float)
+    (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) #(2))))
 
 (- (procedure! - (number #!rest number) number)
-   ((fixnum) (##core#inline "C_u_fixnum_negate" #(1)))
-   ((float fixnum) (##core#inline_allocate 
-		    ("C_a_i_flonum_difference" 4) 
-		    #(1) 
-		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
-   ((fixnum float) (##core#inline_allocate 
-		    ("C_a_i_flonum_difference" 4) 
-		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
-		    #(2)))
-   ((float float) (##core#inline_allocate ("C_a_i_flonum_difference" 4) 
-					  #(1) #(2)))
-   ((float) (##core#inline_allocate ("C_a_i_flonum_negate" 4) #(1))))
+   ((fixnum) (fixnum)
+    (##core#inline "C_u_fixnum_negate" #(1)))
+   ((float fixnum) (float)
+    (##core#inline_allocate 
+     ("C_a_i_flonum_difference" 4) 
+     #(1) 
+     (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
+   ((fixnum float) (float)
+    (##core#inline_allocate 
+     ("C_a_i_flonum_difference" 4) 
+     (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
+     #(2)))
+   ((float float) (float)
+    (##core#inline_allocate ("C_a_i_flonum_difference" 4) #(1) #(2)))
+   ((float) (float) 
+    (##core#inline_allocate ("C_a_i_flonum_negate" 4) #(1))))
 
 (* (procedure! * (#!rest number) number)
-   (((or fixnum float number)) #(1))
-   ((float fixnum) (##core#inline_allocate 
-		    ("C_a_i_flonum_times" 4) 
-		    #(1) 
-		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
-   ((fixnum float) (##core#inline_allocate 
-		    ("C_a_i_flonum_times" 4) 
-		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
-		    #(2)))
-   ((float float) (##core#inline_allocate ("C_a_i_flonum_times" 4) #(1) #(2))))
+   ((fixnum) (fixnum) #(1))
+   ((float) (float) #(1))
+   ((number) (number) #(1))
+   ((float fixnum) (float)
+    (##core#inline_allocate 
+     ("C_a_i_flonum_times" 4) 
+     #(1) 
+     (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
+   ((fixnum float) (float)
+    (##core#inline_allocate 
+     ("C_a_i_flonum_times" 4) 
+     (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
+     #(2)))
+   ((float float) (float)
+    (##core#inline_allocate ("C_a_i_flonum_times" 4) #(1) #(2))))
 
 (/ (procedure! / (number #!rest number) number)
-   ((float fixnum) (##core#inline_allocate 
-		    ("C_a_i_flonum_quotient" 4) 
-		    #(1) 
-		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
-   ((fixnum float) (##core#inline_allocate 
-		    ("C_a_i_flonum_quotient" 4) 
-		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
-		    #(2)))
-   ((float float) (##core#inline_allocate ("C_a_i_flonum_quotient" 4) #(1) #(2))))
+   ((float fixnum) (float)
+    (##core#inline_allocate 
+     ("C_a_i_flonum_quotient" 4) 
+     #(1) 
+     (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
+   ((fixnum float) (float)
+    (##core#inline_allocate 
+     ("C_a_i_flonum_quotient" 4) 
+     (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
+     #(2)))
+   ((float float) (float)
+    (##core#inline_allocate ("C_a_i_flonum_quotient" 4) #(1) #(2))))
 
 (= (procedure! = (#!rest number) boolean)
    ((fixnum fixnum) (eq? #(1) #(2)))
@@ -277,10 +295,13 @@
 
 (quotient (procedure! quotient (number number) number)
 	  ;;XXX flonum/mixed case
-	  ((fixnum fixnum) (##core#inline "C_fixnum_divide" #(1) #(2))))
+	  ((fixnum fixnum) (fixnum)
+	   (##core#inline "C_fixnum_divide" #(1) #(2))))
 
 (remainder (procedure! remainder (number number) number)
-	   ((fixnum fixnum) (##core#inline "C_fixnum_modulo" #(1) #(2))))
+	   ;;XXX flonum/mixed case
+	   ((fixnum fixnum) (fixnum)
+	    (##core#inline "C_fixnum_modulo" #(1) #(2))))
 
 (modulo (procedure! modulo (number number) number))
 
@@ -288,30 +309,36 @@
 (lcm (procedure! lcm (#!rest number) number) ((* *) (##sys#lcm #(1) #(2))))
 
 (abs (procedure! abs (number) number)
-     ((fixnum) (##core#inline "C_fixnum_abs" #(1)))
-     ((float) (##core#inline_allocate ("C_a_i_flonum_abs" 4) #(1))))
+     ((fixnum) (fixnum)
+      (##core#inline "C_fixnum_abs" #(1)))
+     ((float) (float)
+      (##core#inline_allocate ("C_a_i_flonum_abs" 4) #(1))))
 
 (floor (procedure! floor (number) number)
-       ((fixnum) #(1))
-       ((float) (##core#inline_allocate ("C_a_i_flonum_floor" 4) #(1))))
+       ((fixnum) (fixnum) #(1))
+       ((float) (float)
+	(##core#inline_allocate ("C_a_i_flonum_floor" 4) #(1))))
 
 (ceiling (procedure! ceiling (number) number)
-	 ((fixnum) #(1))
-	 ((float) (##core#inline_allocate ("C_a_i_flonum_ceiling" 4) #(1))))
+	 ((fixnum) (fixnum) #(1))
+	 ((float) (float)
+	  (##core#inline_allocate ("C_a_i_flonum_ceiling" 4) #(1))))
 
 (truncate (procedure! truncate (number) number)
-	  ((fixnum) #(1))
-	  ((float) (##core#inline_allocate ("C_a_i_flonum_truncate" 4) #(1))))
+	  ((fixnum) (fixnum) #(1))
+	  ((float) (float)
+	   (##core#inline_allocate ("C_a_i_flonum_truncate" 4) #(1))))
 
 (round (procedure! round (number) number)
-       ((fixnum) #(1))
-       ((float) (##core#inline_allocate ("C_a_i_flonum_round" 4) #(1))))
+       ((fixnum) (fixnum) #(1))
+       ((float) (float)
+	(##core#inline_allocate ("C_a_i_flonum_round" 4) #(1))))
 
-(exact->inexact (procedure! exact->inexact (number) number)
+(exact->inexact (procedure! exact->inexact (number) float)
 		((float) #(1))
 		((fixnum) (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))))
 
-(inexact->exact (procedure! inexact->exact (number) number) ((fixnum) #(1)))
+(inexact->exact (procedure! inexact->exact (number) fixnum) ((fixnum) #(1)))
 
 (exp (procedure! exp (number) float)
      ((float) (##core#inline_allocate ("C_a_i_flonum_exp" 4) #(1))))
@@ -320,8 +347,8 @@
      ((float) (##core#inline_allocate ("C_a_i_flonum_log" 4) #(1))))
 
 (expt (procedure! expt (number number) number)
-      ((float float) (##core#inline_allocate ("C_a_i_flonum_expt" 4) 
-					     #(1) #(2))))
+      ((float float) (float)
+       (##core#inline_allocate ("C_a_i_flonum_expt" 4) #(1) #(2))))
 
 (sqrt (procedure! sqrt (number) float)
       ((float) (##core#inline_allocate ("C_a_i_flonum_sqrt" 4) #(1))))
@@ -345,17 +372,21 @@
       ((float) (##core#inline_allocate ("C_a_i_flonum_atan" 4) #(1)))
       ((float float) (##core#inline_allocate ("C_a_i_flonum_atan2" 4) #(1))))
 
-(number->string (procedure! number->string (number #!optional number) string))
+(number->string (procedure! number->string (number #!optional number) string)
+		((fixnum) (##sys#fixnum->string #(1))))
+
 (string->number (procedure! string->number (string #!optional number) (or number boolean)))
 
 (char? (procedure char? (*) boolean))
 (predicate char? char)
 
+;; we could rewrite these, but this is done by the optimizer anyway (safe)
 (char=? (procedure! char=? (char char) boolean))
 (char>? (procedure! char>? (char char) boolean))
 (char<? (procedure! char<? (char char) boolean))
 (char>=? (procedure! char>=? (char char) boolean))
 (char<=? (procedure! char<=? (char char) boolean))
+
 (char-ci=? (procedure! char-ci=? (char char) boolean))
 (char-ci<? (procedure! char-ci<? (char char) boolean))
 (char-ci>? (procedure! char-ci>? (char char) boolean))
@@ -368,6 +399,7 @@
 (char-lower-case? (procedure! char-lower-case? (char) boolean))
 (char-upcase (procedure! char-upcase (char) char))
 (char-downcase (procedure! char-downcase (char) char))
+
 (char->integer (procedure! char->integer (char) fixnum))
 (integer->char (procedure! integer->char (fixnum) char))
 
@@ -475,14 +507,16 @@
 	   ((or fixnum float number) #(1)))
 
 (magnitude (procedure! magnitude (number) number)
-	   ((fixnum) (##core#inline "C_fixnum_abs" #(1)))
-	   ((float) (##core#inline_allocate ("C_a_i_flonum_abs" 4) #(1))))
+	   ((fixnum) (fixnum)
+	    (##core#inline "C_fixnum_abs" #(1)))
+	   ((float) (float)
+	    (##core#inline_allocate ("C_a_i_flonum_abs" 4) #(1))))
 
 (numerator (procedure! numerator (number) number)
-	   ((fixnum) #(1)))
+	   ((fixnum) (fixnum) #(1)))
 	   
 (denominator (procedure! denominator (number) number)
-	     ((fixnum) (let ((#:tmp #(1))) '1)))
+	     ((fixnum) (fixnum) (let ((#:tmp #(1))) '1)))
 
 (scheme-report-environment (procedure! scheme-report-environment (#!optional fixnum) *))
 (null-environment (procedure! null-environment (#!optional fixnum) *))
@@ -496,7 +530,8 @@
 (abort (procedure abort (*) noreturn))
 
 (add1 (procedure! add1 (number) number)
-      ((float) (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) '1.0)))
+      ((float) (float) 
+       (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) '1.0)))
 
 (argc+argv (procedure argc+argv () fixnum list))
 (argv (procedure argv () list))
@@ -506,15 +541,18 @@
 	  ((fixnum fixnum) (##core#inline "C_u_i_bit_setp" #(1) #(2))))
 
 (bitwise-and (procedure! bitwise-and (#!rest number) number)
-	     ((fixnum fixnum) (##core#inline "C_fixnum_and" #(1) #(2))))
+	     ((fixnum fixnum) (fixnum)
+	      (##core#inline "C_fixnum_and" #(1) #(2))))
 
 (bitwise-ior (procedure! bitwise-ior (#!rest number) number)
-	     ((fixnum fixnum) (##core#inline "C_fixnum_or" #(1) #(2))))
+	     ((fixnum fixnum) (fixnum)
+	      (##core#inline "C_fixnum_or" #(1) #(2))))
 
 (bitwise-not (procedure! bitwise-not (number) number))
 
 (bitwise-xor (procedure! bitwise-xor (#!rest number) number)
-	     ((fixnum fixnum) (##core#inline "C_fixnum_xor" #(1) #(2))))
+	     ((fixnum fixnum) (fixnum) 
+	      (##core#inline "C_fixnum_xor" #(1) #(2))))
 
 (blob->string (procedure! blob->string (blob) string))
 
@@ -600,20 +638,16 @@
 (force-finalizers (procedure force-finalizers () undefined))
 
 (fp- (procedure! fp- (float float) float)
-     ((float float) (##core#inline_allocate ("C_a_i_flonum_difference" 4)
-					    #(1) #(2)) ))
+     ((float float) (##core#inline_allocate ("C_a_i_flonum_difference" 4) #(1) #(2)) ))
 
 (fp* (procedure! fp* (float float) float)
-     ((float float) (##core#inline_allocate ("C_a_i_flonum_times" 4)
-					    #(1) #(2)) ))
+     ((float float) (##core#inline_allocate ("C_a_i_flonum_times" 4) #(1) #(2)) ))
 
 (fp/ (procedure! fp/ (float float) float)
-     ((float float) (##core#inline_allocate ("C_a_i_flonum_quotient" 4)
-					    #(1) #(2)) ))
+     ((float float) (##core#inline_allocate ("C_a_i_flonum_quotient" 4) #(1) #(2)) ))
 
 (fp+ (procedure! fp+ (float float) float)
-     ((float float) (##core#inline_allocate ("C_a_i_flonum_plus" 4)
-					    #(1) #(2)) ))
+     ((float float) (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) #(2)) ))
 
 (fp< (procedure! fp< (float float) boolean)
      ((float float) (##core#inline "C_flonum_lessp" #(1) #(2)) ))
@@ -689,8 +723,7 @@
        ((float) (##core#inline_allocate ("C_a_i_flonum_tan" 4) #(1) )))
 
 (fptruncate (procedure! fptruncate (float) float)
-	    ((float) (##core#inline_allocate ("C_a_i_flonum_truncate" 4) 
-					     #(1) )))
+	    ((float) (##core#inline_allocate ("C_a_i_flonum_truncate" 4) #(1) )))
 
 (fx- (procedure fx- (fixnum fixnum) fixnum))
 (fx* (procedure fx* (fixnum fixnum) fixnum))
@@ -803,8 +836,8 @@
 (strip-syntax (procedure strip-syntax (*) *))
 
 (sub1 (procedure! sub1 (number) number)
-      ((float) (##core#inline_allocate ("C_a_i_flonum_difference" 4) 
-				       #(1) '1.0)))
+      ((float) (float)
+       (##core#inline_allocate ("C_a_i_flonum_difference" 4) #(1) '1.0)))
 
 (subvector (procedure! subvector (vector fixnum #!optional fixnum) vector))
 (symbol-escape (procedure symbol-escape (#!optional *) *))
@@ -921,8 +954,7 @@
 
 (write-byte (procedure! write-byte (fixnum #!optional port) undefined)
 	    ((fixnum port) (##sys#write-char-0 (integer->char #(1)) #(2)))
-	    ((fixnum) (##sys#write-char-0 (integer->char #(1))
-					  ##sys#standard-output)))
+	    ((fixnum) (##sys#write-char-0 (integer->char #(1)) ##sys#standard-output)))
 
 (write-line (procedure! write-line (string #!optional port) undefined))
 (write-string (procedure! write-string (string #!optional * port) undefined))

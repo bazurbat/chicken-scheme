@@ -28,21 +28,23 @@
   (unit scrutinizer)
   (hide match-specialization specialize-node! specialization-statistics
 	procedure-type? named? procedure-result-types procedure-argument-types
-	noreturn-type? rest-type procedure-name))
+	noreturn-type? rest-type procedure-name d-depth))
 
 
 (include "compiler-namespace")
 (include "tweaks")
 
 
+(define d-depth 0)
+
 (define (d fstr . args)
   (when (##sys#fudge 13)
-    (printf "[debug] ~?~%" fstr args)) )
+    (printf "[debug] ~a~?~%" (make-string d-depth #\space) fstr args)) )
 
 (define dd d)
 
 ;(define-syntax d (syntax-rules () ((_ . _) (void))))
-(define-syntax dd (syntax-rules () ((_ . _) (void))))
+;(define-syntax dd (syntax-rules () ((_ . _) (void))))
 
 
 ;;; Walk node tree, keeping type and binding information
@@ -69,8 +71,7 @@
 ;   ##compiler#predicate       ->  TYPESPEC
 ;   ##compiler#specializations ->  (SPECIALIZATION ...)
 ;   ##compiler#enforce-argument-types -> BOOL
-;   ##compiler#special-result-type -> PROCEDURE: NODE SYMBOL PROCEDURE-TYPE RESULT-TYPES -> 
-;                                     RESULT-TYPES'
+;   ##compiler#special-result-type -> PROCEDURE
 ;
 ; specialization specifiers:
 ;
@@ -310,7 +311,7 @@
 			(merge-result-types (cdr ts1) (cdr ts2))))))
     (define (match t1 t2)
       (let ((m (match1 t1 t2)))
-	(dd "match ~a <-> ~a -> ~a" t1 t2 m)
+	(dd "    match ~a <-> ~a -> ~a" t1 t2 m)
 	m))
     (define (match1 t1 t2)
       (cond ((eq? t1 t2))
@@ -510,7 +511,6 @@
 		   "~aexpected argument #~a of type `~a', but was given an argument of type `~a'"
 		 (pname) i (car atypes) (car args)))))
 	  (let ((r (procedure-result-types ptype values-rest (cdr args))))
-	    (d  "  result-types: ~a" r)
 	    ;;XXX we should check whether this is a standard- or extended binding
 	    (let* ((pn (procedure-name ptype))
 		   (op #f))
@@ -542,12 +542,16 @@
 				       (set! op (list pt `(not ,pt))))))))
 		      ((and specialize (variable-mark pn '##compiler#specializations)) =>
 		       (lambda (specs)
-			 (for-each
-			  (lambda (spec)
-			    (when (match-specialization (car spec) (cdr args))
-			      (set! op (cons pn (car spec)))
-			      (specialize-node! node (cadr spec))))
-			  specs))))
+			 (let loop ((specs specs))
+			   (cond ((null? specs))
+				 ((match-specialization (first (car specs)) (cdr args))
+				  (let ((spec (car specs)))
+				    (set! op (cons pn (car spec)))
+				    (let* ((r2 (and (pair? (cddr spec)) (second spec)))
+					   (rewrite (if r2 (third spec) (second spec))))
+				      (specialize-node! node rewrite)
+				      (when r2 (set! r r2)))))
+				 (else (loop (cdr specs))))))))
 		(when op
 		  (cond ((assoc op specialization-statistics) =>
 			 (lambda (a) (set-cdr! a (add1 (cdr a)))))
@@ -558,6 +562,7 @@
 	      (when (and specialize (not op) (procedure-type? ptype))
 		(set-car! (node-parameters node) #t)
 		(set! safe-calls (add1 safe-calls))))
+	    (d  "  result-types: ~a" r)
 	    r))))
     (define (self-call? node loc)
       (case (node-class node)
@@ -577,16 +582,21 @@
     (define (invalidate-blist)
       (for-each
        (lambda (b)
-	 (when (get db (caar b) 'assigned)
-	   (dd "invalidating: ~a" b)
-	   (set-cdr! b '*)))
+	 (let ((var (caar b)))
+	   (when (and (get db var 'assigned)
+		      ;; if it has a known value, then it only assigned once
+		      (or (get db var 'unknown)
+			  (not (get db var 'value))))
+	     (dd "invalidating: ~a" b)
+	     (set-cdr! b '*))))
        blist))
     (define (walk n e loc dest tail flow ctags) ; returns result specifier
       (let ((subs (node-subexpressions n))
 	    (params (node-parameters n)) 
 	    (class (node-class n)) )
-	(d "walk: ~a ~a (loc: ~a, dest: ~a, tail: ~a, flow: ~a, blist: ~a, e: ~a)"
-	   class params loc dest tail flow blist e)
+	(dd "walk: ~a ~a (loc: ~a, dest: ~a, tail: ~a, flow: ~a, blist: ~a, e: ~a)"
+	    class params loc dest tail flow blist e)
+	(set! d-depth (add1 d-depth))
 	(let ((results
 	       (case class
 		 ((quote) (list (constant-result (first params))))
@@ -687,9 +697,7 @@
 		      (and-let* ((val (or (get db var 'value)
 					  (get db var 'local-value))))
 			(when (eq? val (first subs))
-			  (debugging 
-			   'x "implicitly declaring toplevel variable type"
-			   var rt)
+			  (debugging 'x (sprintf "~a : ~a" var rt))
 			  (mark-variable var '##compiler#declared-type)
 			  (mark-variable var '##compiler#type rt))))
 		    (when b
@@ -732,12 +740,16 @@
 			 (when (eq? '##core#variable (node-class arg))
 			   (let* ((var (first (node-parameters arg)))
 				  (a (assq var e))
-				  (pred (and pt ctags (not (eq? arg (car subs))))))
+				  (oparg? (eq? arg (first subs)))
+				  (pred (and pt ctags (not oparg?))))
 			     (cond (pred
 				    (d "  predicate `~a' indicates `~a' is ~a in flow ~a" pn var pt
 				       (car ctags))
 				    (set! blist 
-				      (alist-cons (cons var (car ctags)) pt blist)))
+				      (alist-cons
+				       (cons var (car ctags)) 
+				       (if (and a (type<=? (cdr a) pt)) (cdr a) pt)
+				       blist)))
 				   (a
 				    (when enforces
 				      (let ((ar (cond ((blist-type var flow) =>
@@ -757,7 +769,12 @@
 					     (cons var (car ctags)) ar
 					     (alist-cons
 					      (cons var (cdr ctags)) ar
-					      blist)))))))))))
+					      blist)))))))
+				   ((and oparg?
+					 (variable-mark var '##compiler#special-result-type))
+				    => (lambda (srt)
+					 (dd "  hardcoded special case: ~a" var)
+					 (set! r (srt n r))))))))
 		       subs
 		       (cons fn (procedure-argument-types fn (sub1 len))))
 		      r)))
@@ -766,6 +783,7 @@
 		 (else
 		  (for-each (lambda (n) (walk n e loc #f #f flow #f)) subs)
 		  '*))))
+	  (set! d-depth (sub1 d-depth))
 	  (dd "  -> ~a" results)
 	  results)))
     (let ((rn (walk (first (node-subexpressions node)) '() '() #f #f (list (tag)) #f)))
@@ -878,6 +896,7 @@
 		     name new old)))
 		(mark-variable name '##compiler#type new)
 		(when specs
+		  ;;XXX validate types in specs
 		  (mark-variable name '##compiler#specializations specs))))))
      (read-file dbfile))))
 
@@ -1015,9 +1034,6 @@
 	  (else #f)))
   (validate type))
 
-
-#|XXX not used, yet:
-
 (define-syntax define-special-case
   (syntax-rules ()
     ((_ name handler)
@@ -1027,13 +1043,12 @@
 ;;; hardcoded result types for certain primitives
 
 (define-special-case ##sys#make-structure
-  (lambda (node name ptype rtypes)
+  (lambda (node rtypes)
     (or (let ((subs (node-subexpressions node)))
-	  (and (pair? subs)
-	       (let ((arg1 (first subs)))
+	  (and (>= (length subs) 2)
+	       (let ((arg1 (second subs)))
 		 (and (eq? 'quote (node-class arg1))
 		      (let ((val (first (node-parameters arg1))))
 			(and (symbol? val)
-			     `(struct ,val)))))))
+			     `((struct ,val))))))))
 	rtypes)))
-|#

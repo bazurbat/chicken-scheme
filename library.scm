@@ -1070,6 +1070,7 @@ EOF
 
 (define string->number ##sys#string->number)
 (define ##sys#number->string (##core#primitive "C_number_to_string"))
+(define ##sys#fixnum->string (##core#primitive "C_fixnum_to_string"))
 (define number->string ##sys#number->string)
 
 (define (flonum-print-precision #!optional prec)
