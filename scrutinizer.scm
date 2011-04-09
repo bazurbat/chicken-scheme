@@ -656,9 +656,8 @@
 					(cons
 					 (cond ((eq? (cdr a) '*) '*)
 					       (else
-						(debugging 
-						 'x "adjusting procedure argument type"
-						 (car vars) (cdr a))
+						(d "adjusting procedure argument type for `~a' to: ~a"
+						   (car vars) (cdr a))
 						(cdr a) ))
 					 (loop (sub1 argc) (cdr vars) (cdr args)))))
 				     (else 
@@ -897,7 +896,8 @@
 	     ((procedure) (bomb "match-specialization: invalid complex procedure type" st))
 	     (else (equal? st t))))
 	  ((eq? st '*))
-	  ((eq? st 'list) (match '(or pair null) t))
+	  ;; "list" different from "number": a pair is not necessarily a list:
+	  ((eq? st 'list) (eq? t 'list))
 	  ((eq? st 'number) (match '(or fixnum float) t))
 	  ((pair? t)
 	   (case (car t)
