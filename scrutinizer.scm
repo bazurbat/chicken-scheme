@@ -26,7 +26,9 @@
 
 (declare
   (unit scrutinizer)
-  (hide match-specialization specialize-node! specialization-statistics))
+  (hide match-specialization specialize-node! specialization-statistics
+	procedure-type? named? procedure-result-types procedure-argument-types
+	noreturn-type? rest-type procedure-name))
 
 
 (include "compiler-namespace")
@@ -280,14 +282,6 @@
 		       (map simplify rtypes)))))
 	       (else t))
 	     t))))
-    (define (named? t)
-      (and (pair? t) 
-	   (eq? 'procedure (car t))
-	   (not (or (null? (cadr t)) (pair? (cadr t))))))
-    (define (rest-type r)
-      (cond ((null? r) '*)
-	    ((eq? 'values (car r)) '*)
-	    (else (car r))))
     (define (merge-argument-types ts1 ts2) 
       (cond ((null? ts1) 
 	     (cond ((null? ts2) '())
@@ -532,7 +526,7 @@
 				      loc
 				      (sprintf 
 					  "~athe predicate is called with an argument of type `~a' and will always return true"
-					(pname) pt))
+					(pname) (cadr args)))
 				     (when specialize
 				       (specialize-node!
 					node
@@ -568,19 +562,6 @@
 		(set-car! (node-parameters node) #t)
 		(set! safe-calls (add1 safe-calls))))
 	    r))))
-    (define (procedure-type? t)
-      (or (eq? 'procedure t)
-	  (and (pair? t) 
-	       (or (eq? 'procedure (car t))
-		   (and (eq? 'or (car t))
-			(every procedure-type? (cdr t)))))))
-    (define (procedure-name t)
-      (and (pair? t)
-	   (eq? 'procedure (car t))
-	   (let ((n (cadr t)))
-	     (cond ((string? n) (string->symbol n))
-		   ((symbol? n) n)
-		   (else #f)))))
     (define (self-call? node loc)
       (case (node-class node)
 	((##core#call)
@@ -650,7 +631,7 @@
 		  (decompose-lambda-list
 		   (first params)
 		   (lambda (vars argc rest)
-		     (let* ((name (if dest (list dest) '()))
+		     (let* ((namelst (if dest (list dest) '()))
 			    (args (append (make-list argc '*) (if rest '(#!rest) '()))) 
 			    (e2 (append (map (lambda (v) (cons v '*)) 
 					     (if rest (butlast vars) vars))
@@ -664,24 +645,26 @@
 			   (list 
 			    (append
 			     '(procedure) 
-			     name
-			     (let loop ((argc argc) (vars vars) (args args))
-			       (cond ((zero? argc) args)
-				     ((and (not (get db (car vars) 'assigned))
-					   (assoc (cons var initial-tag) blist))
+			     namelst
+			     (list
+			      (let loop ((argc argc) (vars vars) (args args))
+				(cond ((zero? argc) args)
+				      ((and (not (get db (car vars) 'assigned))
+					   (assoc (cons (car vars) initial-tag) blist))
 				      =>
 				      (lambda (a)
-					(unless (eq? (cdr a) '*)
-					  (debugging 
-					   'x "adjusting procedure argument type"
-					   (car vars) (cdr a))
-					  (cons 
-					   (cdr a) 
-					   (loop (sub1 argc) (cdr vars) (cdr args))))))
+					(cons
+					 (cond ((eq? (cdr a) '*) '*)
+					       (else
+						(debugging 
+						 'x "adjusting procedure argument type"
+						 (car vars) (cdr a))
+						(cdr a) ))
+					 (loop (sub1 argc) (cdr vars) (cdr args)))))
 				     (else 
 				      (cons 
 				       (car args)
-				       (loop (sub1 argc) (cdr vars) (cdr args))))))
+				       (loop (sub1 argc) (cdr vars) (cdr args)))))))
 			     r))))))))
 		 ((set! ##core#set!)
 		  (let* ((var (first params))
@@ -711,6 +694,7 @@
 			  (debugging 
 			   'x "implicitly declaring toplevel variable type"
 			   var rt)
+			  (mark-variable var '##compiler#declared-type)
 			  (mark-variable var '##compiler#type rt))))
 		    (when b
 		      (cond ((eq? 'undefined (cdr b)) (set-cdr! b rt))
@@ -799,6 +783,21 @@
 	(debugging 'x "safe calls" safe-calls))
       rn)))
 
+(define (procedure-type? t)
+  (or (eq? 'procedure t)
+      (and (pair? t) 
+	   (or (eq? 'procedure (car t))
+	       (and (eq? 'or (car t))
+		    (every procedure-type? (cdr t)))))))
+
+(define (procedure-name t)
+  (and (pair? t)
+       (eq? 'procedure (car t))
+       (let ((n (cadr t)))
+	 (cond ((string? n) (string->symbol n))
+	       ((symbol? n) n)
+	       (else #f)))))
+
 (define (procedure-argument-types t n)
   (cond ((or (memq t '(* procedure)) 
 	     (not-pair? t)
@@ -838,6 +837,16 @@
 		    ((eq? '* rt) (return '*))
 		    (else (cons (car rt) (loop (cdr rt)))))))))
 	(else (bomb "not a procedure type: ~a" t))))
+
+(define (named? t)
+  (and (pair? t) 
+       (eq? 'procedure (car t))
+       (not (or (null? (cadr t)) (pair? (cadr t))))))
+
+(define (rest-type r)
+  (cond ((null? r) '*)
+	((eq? 'values (car r)) '*)
+	(else (car r))))
 
 (define (noreturn-type? t)
   (or (eq? 'noreturn t)
@@ -888,8 +897,8 @@
 	     ((procedure) (bomb "match-specialization: invalid complex procedure type" st))
 	     (else (equal? st t))))
 	  ((eq? st '*))
-	  ((eq? st 'list) (eq? t 'list))
-	  ((eq? st 'number) (eq? t 'number))
+	  ((eq? st 'list) (match '(or pair null) t))
+	  ((eq? st 'number) (match '(or fixnum float) t))
 	  ((pair? t)
 	   (case (car t)
 	     ((or) (any (cut match st <>) (cdr t)))
@@ -903,8 +912,8 @@
 	  ((eq? 'list t) (matchnot st '(or null pair)))
 	  ((eq? 'number t) (matchnot st '(or fixnum float)))
 	  ((eq? '* t) #f)
-	  ((eq? 'list st) (not (match t '(or null pair))))
-	  ((eq? 'number st) (not (match t '(or fixnum float))))
+	  ((eq? 'list st) (not (match '(or null pair) t)))
+	  ((eq? 'number st) (not (match '(or fixnum float) t)))
 	  ((pair? t)
 	   (case (car t)
 	     ((or) (every (cut matchnot st <>) (cdr t)))

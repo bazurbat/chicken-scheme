@@ -229,6 +229,7 @@
  postponed-initforms
  pprint-expressions-to-file
  prepare-for-code-generation
+ print-debug-options
  print-program-statistics
  print-usage
  print-version
