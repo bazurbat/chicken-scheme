@@ -65,8 +65,10 @@
 ;   ##compiler#type            ->  TYPESPEC
 ;   ##compiler#declared-type   ->  BOOL
 ;   ##compiler#predicate       ->  TYPESPEC
-;   ##compiler#specializations -> (SPECIALIZATION ...)
+;   ##compiler#specializations ->  (SPECIALIZATION ...)
 ;   ##compiler#enforce-argument-types -> BOOL
+;   ##compiler#special-result-type -> PROCEDURE: NODE SYMBOL PROCEDURE-TYPE RESULT-TYPES -> 
+;                                     RESULT-TYPES'
 ;
 ; specialization specifiers:
 ;
@@ -264,7 +266,8 @@
 			 (cond ((equal? ts2 (cdr t)) t)
 			       (else
 				(dd "  or-simplify: ~a" ts2)
-				(simplify `(or ,@(if (any (cut eq? <> '*) ts2) '(*) ts2)))))))) )
+				(simplify 
+				 `(or ,@(if (any (cut eq? <> '*) ts2) '(*) ts2)))))))) )
 	       ((procedure)
 		(let* ((name (and (named? t) (cadr t)))
 		       (rtypes (if name (cdddr t) (cddr t))))
@@ -515,9 +518,12 @@
 	  (let ((r (procedure-result-types ptype values-rest (cdr args))))
 	    (d  "  result-types: ~a" r)
 	    ;;XXX we should check whether this is a standard- or extended binding
-	    (let ((pn (procedure-name ptype))
-		  (op #f))
+	    (let* ((pn (procedure-name ptype))
+		   (op #f))
 	      (when pn
+		(let ((hardcoded (variable-mark pn '##compiler#special-result-type)))
+		  (when hardcoded
+		    (set! r (hardcoded node pn ptype r))))
 		(cond ((and (fx= 1 nargs) 
 			    (variable-mark pn '##compiler#predicate)) =>
 			    (lambda (pt)
@@ -575,49 +581,6 @@
 	     (cond ((string? n) (string->symbol n))
 		   ((symbol? n) n)
 		   (else #f)))))
-    (define (procedure-argument-types t n)
-      (cond ((or (memq t '(* procedure)) 
-		 (not-pair? t)
-		 (eq? 'deprecated (car t)))
-	     (values (make-list n '*) #f))
-	    ((eq? 'procedure (car t))
-	     (let* ((vf #f)
-		    (llist
-		     (let loop ((at (if (or (string? (second t)) (symbol? (second t)))
-					(third t)
-					(second t)))
-				(m n)
-				(opt #f))
-		       (cond ((null? at) '())
-			     ((eq? '#!optional (car at)) 
-			      (loop (cdr at) m #t) )
-			     ((eq? '#!rest (car at))
-			      (set! vf (and (pair? (cdr at)) (eq? 'values (cadr at))))
-			      (make-list m (rest-type (cdr at))))
-			     ((and opt (<= m 0)) '())
-			     (else (cons (car at) (loop (cdr at) (sub1 m) opt)))))))
-	       (values llist vf)))
-	    (else (bomb "not a procedure type" t))))
-    (define (procedure-result-types t values-rest? args)
-      (cond (values-rest? args)
-	    ((or (memq t '(* procedure))
-		 (not-pair? t) )
-	     '*)
-	    ((eq? 'procedure (car t))
-	     (call/cc
-	      (lambda (return)
-		(let loop ((rt (if (or (string? (second t)) (symbol? (second t)))
-				   (cdddr t)
-				   (cddr t))))
-		  (cond ((null? rt) '())
-			((eq? '* rt) (return '*))
-			(else (cons (car rt) (loop (cdr rt)))))))))
-	    (else (bomb "not a procedure type: ~a" t))))
-    (define (noreturn-type? t)
-      (or (eq? 'noreturn t)
-	  (and (pair? t)
-	       (eq? 'or (car t))
-	       (any noreturn-type? (cdr t)))))
     (define (self-call? node loc)
       (case (node-class node)
 	((##core#call)
@@ -693,15 +656,32 @@
 					     (if rest (butlast vars) vars))
 					e)))
 		       (fluid-let ((blist '()))
-			 (let ((r (walk (first subs)
-					(if rest (alist-cons rest 'list e2) e2)
-					(add-loc dest loc)
-					#f #t (list (tag)) #f)))
+			 (let* ((initial-tag (tag))
+				(r (walk (first subs)
+					 (if rest (alist-cons rest 'list e2) e2)
+					 (add-loc dest loc)
+					 #f #t (list initial-tag) #f)))
 			   (list 
 			    (append
 			     '(procedure) 
 			     name
-			     (list args)
+			     (let loop ((argc argc) (vars vars) (args args))
+			       (cond ((zero? argc) args)
+				     ((and (not (get db (car vars) 'assigned))
+					   (assoc (cons var initial-tag) blist))
+				      =>
+				      (lambda (a)
+					(unless (eq? (cdr a) '*)
+					  (debugging 
+					   'x "adjusting procedure argument type"
+					   (car vars) (cdr a))
+					  (cons 
+					   (cdr a) 
+					   (loop (sub1 argc) (cdr vars) (cdr args))))))
+				     (else 
+				      (cons 
+				       (car args)
+				       (loop (sub1 argc) (cdr vars) (cdr args))))))
 			     r))))))))
 		 ((set! ##core#set!)
 		  (let* ((var (first params))
@@ -720,8 +700,18 @@
 			   "assignment of value of type `~a' to toplevel variable `~a' does not match declared type `~a'"
 			 rt var type)
 		       #t))
-		    ;;XXX we could set the ##compiler#type property here for hidden
-		    ;;    globals that are only assigned once
+		    (when (and (not type)
+			       (not b)
+			       (not (eq? '* rt))
+			       (not (variable-visible? var))
+			       (not (get db var 'unknown)))
+		      (and-let* ((val (or (get db var 'value)
+					  (get db var 'local-value))))
+			(when (eq? val (first subs))
+			  (debugging 
+			   'x "implicitly declaring toplevel variable type"
+			   var rt)
+			  (mark-variable var '##compiler#type rt))))
 		    (when b
 		      (cond ((eq? 'undefined (cdr b)) (set-cdr! b rt))
 			    (strict-variable-types
@@ -808,6 +798,52 @@
       (when (positive? safe-calls)
 	(debugging 'x "safe calls" safe-calls))
       rn)))
+
+(define (procedure-argument-types t n)
+  (cond ((or (memq t '(* procedure)) 
+	     (not-pair? t)
+	     (eq? 'deprecated (car t)))
+	 (values (make-list n '*) #f))
+	((eq? 'procedure (car t))
+	 (let* ((vf #f)
+		(llist
+		 (let loop ((at (if (or (string? (second t)) (symbol? (second t)))
+				    (third t)
+				    (second t)))
+			    (m n)
+			    (opt #f))
+		   (cond ((null? at) '())
+			 ((eq? '#!optional (car at)) 
+			  (loop (cdr at) m #t) )
+			 ((eq? '#!rest (car at))
+			  (set! vf (and (pair? (cdr at)) (eq? 'values (cadr at))))
+			  (make-list m (rest-type (cdr at))))
+			 ((and opt (<= m 0)) '())
+			 (else (cons (car at) (loop (cdr at) (sub1 m) opt)))))))
+	   (values llist vf)))
+	(else (bomb "not a procedure type" t))))
+
+(define (procedure-result-types t values-rest? args)
+  (cond (values-rest? args)
+	((or (memq t '(* procedure))
+	     (not-pair? t) )
+	 '*)
+	((eq? 'procedure (car t))
+	 (call/cc
+	  (lambda (return)
+	    (let loop ((rt (if (or (string? (second t)) (symbol? (second t)))
+			       (cdddr t)
+			       (cddr t))))
+	      (cond ((null? rt) '())
+		    ((eq? '* rt) (return '*))
+		    (else (cons (car rt) (loop (cdr rt)))))))))
+	(else (bomb "not a procedure type: ~a" t))))
+
+(define (noreturn-type? t)
+  (or (eq? 'noreturn t)
+      (and (pair? t)
+	   (eq? 'or (car t))
+	   (any noreturn-type? (cdr t)))))
 
 (define (load-type-database name #!optional (path (repository-path)))
   (and-let* ((dbfile (file-exists? (make-pathname path name))))
@@ -972,3 +1008,22 @@
 	      `(procedure ,(upto t p) ,@(cdr p)))))
 	  (else #f)))
   (validate type))
+
+(define-syntax define-special-case
+  (syntax-rules ()
+    ((_ name handler)
+     (##sys#put! 'name '##compiler#special-result-type handler))))
+
+
+;;; hardcoded result types for certain primitives
+
+(define-special-case ##sys#make-structure
+  (lambda (node name ptype rtypes)
+    (or (let ((subs (node-subexpressions node)))
+	  (and (pair? subs)
+	       (let ((arg1 (first subs)))
+		 (and (eq? 'quote (node-class arg1))
+		      (let ((val (first (node-parameters arg1))))
+			(and (symbol? val)
+			     `(struct ,val)))))))
+	rtypes)))
