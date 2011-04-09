@@ -515,9 +515,6 @@
 	    (let* ((pn (procedure-name ptype))
 		   (op #f))
 	      (when pn
-		(let ((hardcoded (variable-mark pn '##compiler#special-result-type)))
-		  (when hardcoded
-		    (set! r (hardcoded node pn ptype r))))
 		(cond ((and (fx= 1 nargs) 
 			    (variable-mark pn '##compiler#predicate)) =>
 			    (lambda (pt)
@@ -657,7 +654,7 @@
 					 (cond ((eq? (cdr a) '*) '*)
 					       (else
 						(d "adjusting procedure argument type for `~a' to: ~a"
-						   (car vars) (cdr a))
+						 (car vars) (cdr a))
 						(cdr a) ))
 					 (loop (sub1 argc) (cdr vars) (cdr args)))))
 				     (else 
@@ -1018,6 +1015,9 @@
 	  (else #f)))
   (validate type))
 
+
+#|XXX not used, yet:
+
 (define-syntax define-special-case
   (syntax-rules ()
     ((_ name handler)
@@ -1036,3 +1036,4 @@
 			(and (symbol? val)
 			     `(struct ,val)))))))
 	rtypes)))
+|#
