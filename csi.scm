@@ -434,7 +434,7 @@ EOF
 	      (set! name (##sys#string->symbol name)))
 	     ((not (symbol? name))
 	      (printf "invalid module name `~a'~%" name))
-	     ((##sys#find-module name #f) =>
+	     ((##sys#find-module (##sys#resolve-module-name name #f) #f) =>
 	      (lambda (m)
 		(##sys#current-module m)
 		(printf "; switching current module to `~a'~%" name)))

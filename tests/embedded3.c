@@ -26,7 +26,7 @@ int main() {
   assert(!status);
  
   CHICKEN_get_error_message(buffer, 255);
-  printf("ouch: %s\n", buffer);
+  printf("ouch (expected): %s\n", buffer);
  
   status = CHICKEN_eval_string_to_string("(bar 23)", buffer, 255);
   assert(status);

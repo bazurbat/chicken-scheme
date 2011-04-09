@@ -17,16 +17,23 @@
 
 === Multiline Block Comment
 
+<read>#|</read>
+
  #| ... |# 
 
-A multiline ''block'' comment. May be nested. Implements [[http://srfi.schemers.org/srfi-30/srfi-30.html|SRFI-30]]
+A multiline ''block'' comment. May be nested. Implements [[http://srfi.schemers.org/srfi-30/srfi-30.html|SRFI-30]].
 
 === Expression Comment
 
+<read>#;</read>
+
  #;EXPRESSION
 
-Treats {{EXPRESSION}} as a comment.  That is, the comment runs through the whole S-expression, regardless of newlines, which saves you from having to comment out every line, or add a newline in the middle of your parens to make the commenting of the last line work, or other things like that.
+Treats {{EXPRESSION}} as a comment.  That is, the comment runs through the whole S-expression, regardless of newlines, which saves you from having to comment out every line, or add a newline in the middle of your parens to make the commenting of the last line work, or other things like that. Implements [[http://srfi.schemers.org/srfi-62/srfi-62.html|SRFI-62]].
+
 === External Representation
+
+<read>#,</read>
 
  #,(CONSTRUCTORNAME DATUM ...)
 
@@ -39,9 +46,11 @@ Allows user-defined extension of external representations. (For more information
 
 An abbreviation for {{(location EXPRESSION)}}.
 
-=== "Blob" literals
+=== Blob literals
 
- #${HEX ...}
+<read>#{</read>
+
+  #{ HEX ... }
 
 Syntax for literal "blobs" (byte-sequences). Expects hexadecimal digits and ignores
 any whitespace characters:
@@ -52,6 +61,8 @@ any whitespace characters:
 
 === Keyword
 
+<read>#:</read>
+
  #:SYMBOL
  SYMBOL:
  :SYMBOL
@@ -59,6 +70,8 @@ any whitespace characters:
 Syntax for keywords. Keywords are symbols that evaluate to themselves, and as such don't have to be quoted.  Either {{SYMBOL:}} or {{:SYMBOL}} is accepted, depending on the setting of the {{keyword-style}} parameter, but never both.  {{#:SYMBOL}} is always accepted.
 
 === Multiline String Constant
+
+<read>#<<</read>
 
  #<<TAG
 
@@ -74,6 +87,8 @@ is equivalent to
  (define msg "\"Hello, world!\", she said.")
 
 === Multiline String Constant with Embedded Expressions
+
+<read>#<</read>
 
  #<#TAG
 
@@ -92,6 +107,14 @@ prints
  This is a simple string with an embedded `#' character
  and substituted expressions: (+ three 99) ==> 102
  (three is "3")
+
+=== Foreign Declare
+
+<read>#></read>
+
+ #> ... <#
+
+Abbreviation for {{(foreign-declare " ... ")}}.
 
 === String escape sequences
 
@@ -122,34 +145,31 @@ Abbreviation for {{foreign-declare " ... ")}}.
 
 === Sharp Prefixed Symbol
 
+<read>#%</read>
+
  #%... 
 
 Reads like a normal symbol.
 
 === Bang
 
+<read>#!</read>
+
  #!... 
 
 Interpretation depends on the directly following characters. Only the following are recognized. Any other case results in a read error.
 
-==== Line Comment
+; Line Comment : If followed by whitespace or a slash, then everything up the end of the current line is ignored
 
-* If followed by whitespace or a slash, then everything up the end of the current line is ignored
+; Eof Object : If followed by the character sequence {{eof}}, then the (self-evaluating) end-of-file object is returned
 
-==== Eof Object
+; DSSSL Formal Parameter List Annotation : If followed by any of the character sequences {{optional}}, {{rest}} or {{key}}, then a symbol with the same name (and prefixed with {{#!}}) is returned
 
-* If followed by the character sequence {{eof}}, then the (self-evaluating) end-of-file object is returned
-
-==== DSSSL Formal Parameter List Annotation
-
-* If followed by any of the character sequences {{optional}}, {{rest}} or {{key}}, then a symbol with the same name (and prefixed with {{#!}}) is returned
-
-==== Read Mark Invocation
-
-* If a ''read mark'' with the same name as the token is registered, then its procedure is called and the result of the read-mark procedure will be returned
-(see {{set-read-syntax!}} for more information about read-marks).
+; Read Mark Invocation : If a ''read mark'' with the same name as the token is registered, then its procedure is called and the result of the read-mark procedure will be returned
 
 === Case Sensitive Expression
+
+<read>#cs</read>
 
  #cs...
 
@@ -157,17 +177,24 @@ Read the next expression in case-sensitive mode (regardless of the current globa
 
 === Case Insensitive Expression
 
+<read>#ci</read>
+
  #ci...
 
 Read the next expression in case-insensitive mode (regardless of the current global setting).
 
 === Conditional Expansion
 
+<read>#+</read>
+
  #+FEATURE EXPR
 
-Equivalent to 
+Rewrites to
 
  (cond-expand (FEATURE EXPR) (else))
+
+and performs the feature test at macroexpansion time.  Therefore, it may not
+work as expected when used within a macro form.
 
 ---
 Previous: [[Extensions to the standard]]

@@ -3,12 +3,8 @@
 
 == Unit library
 
-This unit contains basic library definitions. This unit is used by default,
+This unit contains basic Scheme definitions. This unit is used by default,
 unless the program is compiled with the {{-explicit-use}} option.
-
-In addition to standard Scheme functions, this unit provides quite 
-a number of additional operations.
-
 
 === Arithmetic
 
@@ -408,11 +404,11 @@ Returns a keyword with the name {{STRING}}.
 
 <procedure>(argv)</procedure>
 
-Return a list of all supplied command-line arguments. The first item
-in the list is a string containing the name of the executing
-program. The other items are the arguments passed to the
-application. It depends on the host-shell whether arguments are
-expanded ('globbed') or not.
+Return a list of all supplied command-line arguments. The first item in
+the list is a string containing the name of the executing program. The
+other items are the arguments passed to the application. This list is
+freshly created on every invocation of {{(argv)}}. It depends on
+the host-shell whether arguments are expanded ('globbed') or not.
 
 
 ==== exit
@@ -655,22 +651,21 @@ the call-chain will only be constructed for calls performed by this thread.
 
 ==== print-call-chain
 
-<procedure>(print-call-chain [PORT [START [THREAD]]])</procedure>
+<procedure>(print-call-chain [PORT [START [THREAD [HEADER]]]])</procedure>
 
 Prints a backtrace of the procedure call history to {{PORT}},
-which defaults to {{(current-output-port)}}.
+which defaults to {{(current-output-port)}}. The output is prefixed by the
+{{HEADER}}, which defaults to {{"\n\tCall history:\n"}}.
 
 
 ==== print-error-message
 
-<procedure>(print-error-message EXN [PORT [STRING]])</procedure>
+<procedure>(print-error-message EXN [PORT [HEADER]])</procedure>
 
-Prints an appropriate error message to {{PORT}} (which defaults to the
-value of {{(current-output-port)}} for the object {{EXN}}.
-{{EXN}} may be a condition, a string or any other object.
-If the optional argument {{STRING}} is given, it is printed before the
-error-message. {{STRING}} defaults to {{"Error:"}}.
-
+Prints an appropriate error message to {{PORT}} (which defaults to the value of
+{{(current-output-port)}} for the object {{EXN}}. {{EXN}} may be a condition, a
+string or any other object. The output is prefixed by the {{HEADER}}, which
+defaults to {{"Error:"}}.
 
 
 ==== procedure-information

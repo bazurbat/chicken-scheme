@@ -349,7 +349,7 @@ void *alloca ();
 
 /* Constants: */
 
-#define C_STACK_RESERVE                   4096
+#define C_STACK_RESERVE                   0x10000
 #define C_DEFAULT_MAX_PENDING_FINALIZERS  2048
 
 #define C_IMMEDIATE_MARK_BITS     0x00000003
@@ -914,7 +914,7 @@ extern double trunc(double);
 #define C_fix(n)                   (((C_word)(n) << C_FIXNUM_SHIFT) | C_FIXNUM_BIT)
 #define C_unfix(x)                 ((x) >> C_FIXNUM_SHIFT)
 #define C_make_character(c)        ((((c) & C_CHAR_BIT_MASK) << C_CHAR_SHIFT) | C_CHARACTER_BITS)
-#define C_character_code(x)        (((x) >> C_CHAR_SHIFT) & C_CHAR_BIT_MASK)
+#define C_character_code(x)        (((C_word)(x) >> C_CHAR_SHIFT) & C_CHAR_BIT_MASK)
 #define C_flonum_magnitude(x)      (*((double *)(((C_SCHEME_BLOCK *)(x))->data)))
 #define C_c_string(x)              ((C_char *)(((C_SCHEME_BLOCK *)(x))->data))
 #define C_c_pointer(x)             ((void *)(x))
@@ -1066,6 +1066,11 @@ extern double trunc(double);
 
 #define C_fix_to_char(x)                (C_make_character(C_unfix(x)))
 #define C_char_to_fix(x)                (C_fix(C_character_code(x)))
+#define C_i_char_equalp(x, y)           C_mk_bool(C_character_code(x) == C_character_code(y))
+#define C_i_char_greaterp(x, y)         C_mk_bool(C_character_code(x) > C_character_code(y))
+#define C_i_char_lessp(x, y)            C_mk_bool(C_character_code(x) < C_character_code(y))
+#define C_i_char_greater_or_equal_p(x, y)  C_mk_bool(C_character_code(x) >= C_character_code(y))
+#define C_i_char_less_or_equal_p(x, y)  C_mk_bool(C_character_code(x) <= C_character_code(y))
 #define C_substring_copy(s1, s2, start1, end1, start2) \
                                         (C_memcpy((C_char *)C_data_pointer(s2) + C_unfix(start2), \
                                                   (C_char *)C_data_pointer(s1) + C_unfix(start1), \

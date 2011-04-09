@@ -75,7 +75,7 @@ The documentation and examples for explicit renaming macros was taken from
 the following paper:
 
 William D. Clinger. 
-[["Hygienic macros through explicit renaming"|ftp://ftp.cs.indiana.edu/pub/scheme-repository/doc/prop/exrename.ps.gz]] 
+[[ftp://ftp.cs.indiana.edu/pub/scheme-repository/doc/prop/exrename.ps.gz|''Hygienic macros through explicit renaming'']].
 Lisp Pointers. IV(4). December 1991.
 
 ---

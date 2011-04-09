@@ -30,6 +30,7 @@ Defines a lexically bound location.
 
 <macro>(location NAME)</macro><br>
 <macro>(location X)</macro>
+<read>#$</read>
 
 This form returns a pointer object
 that contains the address of the variable {{NAME}}. 

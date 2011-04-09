@@ -31,15 +31,13 @@ compiled for the target system. Obtain and unpack a tarball of the
 CHICKEN sources, or check out the code from the official code
 repository, then build the libraries and necessary development files:
 
-{{
-make ARCH= \
+ make ARCH= \
      PREFIX=/usr \
      PLATFORM=linux 
      HOSTSYSTEM=arm-none-linux-gnueabi \
      DESTDIR=$HOME/target \
      TARGET_FEATURES="-no-feature x86 -feature arm" \
      libs install-dev
-}}
 
 This will build the CHICKEN libraries and install them in {{~/target}},
 which we use as a temporary place to store the target files. A few things
@@ -84,8 +82,7 @@ and run {{make CONFIG=config.mk}}.
 
 You should now have these files on {{~/target}}:
 
-{{
-`-- usr
+  `-- usr
     |-- include
     |   |-- chicken-config.h
     |   `-- chicken.h
@@ -96,7 +93,6 @@ You should now have these files on {{~/target}}:
     |   |-- libchicken.a
     |   `-- libchicken.so
     `-- share
-}}
 
 You should now transfer {{libchicken.so}} to the target system, and place
 it in {{/usr}}.
@@ -110,15 +106,13 @@ we have just built.
 Again, unpack a CHICKEN release tarball or a source tree and run
 {{make(1)}} once again:
 
-{{
-make PLATFORM=linux \
+ make PLATFORM=linux \
      PREFIX=$HOME/cross-chicken \
      TARGETSYSTEM=arm-none-linux-gnueabi \
      PROGRAM_PREFIX=arm- \
      TARGET_PREFIX=$HOME/target/usr \
      TARGET_RUN_PREFIX=/usr \
      install
-}}
 
 * {{PREFIX}} gives the place where the "cross chicken" should be installed
 into. It is recommended not to install into a standard location (like {{/usr/local}}
@@ -143,37 +137,35 @@ about the {{CHICKEN}} variable applies as given above.
 
 In {{~/cross-chicken}}, you should find the following:
 
-{{
-|-- bin
-|   |-- arm-chicken
-|   |-- arm-chicken-bug
-|   |-- arm-chicken-install
-|   |-- arm-chicken-profile
-|   |-- arm-chicken-status
-|   |-- arm-chicken-uninstall
-|   |-- arm-csc
-|   `-- arm-csi
-|-- include
-|   |-- chicken-config.h
-|   `-- chicken.h
-|-- lib
-|   |-- chicken
-|   |   `-- 5
-|   |       :
-|   |
-|   |-- libchicken.a
-|   |-- libchicken.so -> libchicken.so.5
-|   `-- libchicken.so.5
-`-- share
-    |-- chicken
-    |   |-- doc
-    :   ;   :
-    |   |
-    |   `-- setup.defaults
-    `-- man
-        `-- man1
-            :
-}}
+ |-- bin
+ |   |-- arm-chicken
+ |   |-- arm-chicken-bug
+ |   |-- arm-chicken-install
+ |   |-- arm-chicken-profile
+ |   |-- arm-chicken-status
+ |   |-- arm-chicken-uninstall
+ |   |-- arm-csc
+ |   `-- arm-csi
+ |-- include
+ |   |-- chicken-config.h
+ |   `-- chicken.h
+ |-- lib
+ |   |-- chicken
+ |   |   `-- 5
+ |   |       :
+ |   |
+ |   |-- libchicken.a
+ |   |-- libchicken.so -> libchicken.so.5
+ |   `-- libchicken.so.5
+ `-- share
+     |-- chicken
+     |   |-- doc
+     :   ;   :
+     |   |
+     |   `-- setup.defaults
+     `-- man
+         `-- man1
+             :
 
 To make sure that the right C compiler is used, we ask {{arm-csc}} to show
 the name of the cross C compiler:
@@ -221,11 +213,9 @@ still may need compile-time information from the target-only
 extension, like the import library of modules. One option is to copy
 the import-library into the repository of the host compiler:
 
-{{
-# optionally, you can compile the import library:
-# ~/cross-chicken/arm-csc -O3 -d0 -s target-only-extension.import.scm
-cp target-only-extension.import.scm ~/cross-chicken/lib/chicken/5
-}}
+ # optionally, you can compile the import library:
+ # ~/cross-chicken/arm-csc -O3 -d0 -s target-only-extension.import.scm
+ cp target-only-extension.import.scm ~/cross-chicken/lib/chicken/5
 
 === Final notes
 

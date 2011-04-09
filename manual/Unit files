@@ -166,7 +166,7 @@ platform-dependent.
 
 Moves {{ORIGFILE}} (a string denoting some filename) to {{NEWFILE}}, with
 the same semantics as {{file-copy}}, above.  {{file-move}} is safe across
-filesystems and devices (unlike {{file-rename}}).  It is possible for an
+filesystems and devices (unlike {{rename-file}}).  It is possible for an
 error to be signalled despite partial success if {{NEWFILE}} could be created
 and fully written but removing {{ORIGFILE}} fails.
 

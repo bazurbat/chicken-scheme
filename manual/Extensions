@@ -76,6 +76,8 @@ extracted the files, the setup script will be invoked. There are no
 additional constraints on the structure of the archive, but the setup
 script has to be in the root path of the archive.
 
+For more details on creating extensions, see the [[/eggs tutorial|eggs tutorial]].
+
 
 === Procedures and macros available in setup scripts
 
@@ -185,7 +187,7 @@ Equivalent to {{(run (csc FORM ...))}}.
 A ''make'' macro that executes the expressions {{COMMAND ...}}, when any of the dependents
 {{DEPENDENT ...}} have changed, to build {{TARGET}}. This is the same as the {{make}}
 extension, which is available separately. For more information, see
-[[http://www.call-with-current-continuation.org/eggs/make.html|make]].
+[[http://wiki.call-cc.org/egg/make|make]].
 
 
 ==== patch
@@ -354,7 +356,8 @@ Lastly, we need a file {{hello.meta}} defining a minimal set of properties:
  (files "hello.scm" "hello.setup"))
 </enscript>
 
-(for more information about available properties, see {{Metafile reference}})
+(for more information about available properties, see
+[[/Metafile reference|the metafile reference]])
 
 After entering 
 
@@ -560,6 +563,7 @@ Available options:
 ; {{-u   -update-db}} : update export database
 ; {{-repository}} : print path to extension repository
 ; {{-deploy}} : install extension in the application directory for a deployed application (see [[Deployment]] for more information)
+; {{-trunk}} : build trunk instead of tagged version (only local)
 ; {{-D   -feature FEATURE}} : pass this on to subinvocations of {{csi}} and {{csc}} (when done via {{compile}} or {{(run (csc ...))}})
 ; {{-debug}} : print full call-trace when encountering errors in the setup script
 ; {{-keep-going}} : continue installation, even if a dependency fails
@@ -635,7 +639,8 @@ Then set this environment variable:
 loaded from for all chicken-based programs (which includes all
 the tools).
 
-You can install eggs with
+If you want to install eggs somewhere other than the default or
+your environment variable, you can use
 
   chicken-install -p ~/myeggs <package>
 
@@ -657,7 +662,7 @@ where libraries are being loaded from:
 === Other modes of installation
 
 It is possible to install extensions directly from a
-[[http://subversion.tigris.org|Subversion]] repository or from a local
+[[http://subversion.apache.org/|Subversion]] repository or from a local
 checkout of the repository tree by using the {{-transport}} and
 {{-location}} options when invoking {{chicken-install}}. Three possible
 transport mechanisms are currently supported:

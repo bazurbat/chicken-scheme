@@ -68,6 +68,8 @@ allowed as return type). The value {{#f}} is also allowed and is passed as a
 Don't confuse this type with {{(c-pointer ...)}} which means something
 different (a machine-pointer object).
 
+{{scheme-pointer}} is typically used to get a pointer to the raw byte content of strings and blobs.  But if you pass in a SRFI-4 vector, you will get a pointer to a blob object (''not'' the blob's contents), which is almost certainly wrong.  Instead, convert to a blob beforehand, or use a SRFI-4 specific type.
+
 === nonnull-scheme-pointer
 
 As {{scheme-pointer}}, but guaranteed not to be {{#f}}.
@@ -245,6 +247,8 @@ Foreign types are mapped to C types in the following manner:
 <tr><td>bool</td><td>
 int
 </td></tr><tr><td>[unsigned-]char</td><td>
+[unsigned] char
+</td></tr><tr><td>[unsigned-]byte</td><td>
 [unsigned] char
 </td></tr><tr><td>[unsigned-]short</td><td>
 [unsigned] short

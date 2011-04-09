@@ -196,5 +196,34 @@
  "syntax defined in module that is the result of an expansion"
  'abc (abc))
 
+(module m17 (a) (import scheme) (define a 1))
+(module m18 = m17)
+(module m19 (a) (import scheme) (define a 2))
+
+(test-equal
+ "global module alias scope (1)"
+ (module m20 ()
+   (import scheme) 
+   (import m18)
+   a)
+ 1)
+
+(test-equal
+ "local module alias scope"
+ (module m21 ()
+   (import scheme)
+   (module m18 = m19)
+   (import m18)
+   a)
+ 2)
+
+(test-equal
+ "global module alias scope (2)"
+ (module m20 ()
+   (import scheme) 
+   (import m18)
+   a)
+ 1)
+
 (test-end "modules")
 

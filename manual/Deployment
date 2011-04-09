@@ -137,17 +137,16 @@ Deployment is fully compatible with "cross CHICKENs" (see [[Cross development]])
 
 ===== Linux
 
-Deployment is fully suppored on Linux
+Deployment is fully supported on Linux
 
 ===== Windows
 
-Deployment is fully supported on Windows. Since Windows looks up dynamic link
-libraries in the programs original location by default, adding third-party
-libraries to the application directory is no problem. The freely available
-{{depends}} tool is helpful to find out what DLLs your application depends
-on:
-
-  [[http://dependencywalker.com/]]
+Deployment is fully supported on Windows. Since Windows looks up
+dynamic link libraries in the programs original location by default,
+adding third-party libraries to the application directory is no
+problem. The freely available [[http://dependencywalker.com|Dependency
+Walker]] tool is helpful to find out what DLLs your application
+depends on.
 
 ===== MacOS X
 

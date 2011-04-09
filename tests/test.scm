@@ -85,7 +85,8 @@
     ((_ name expr)
      (run-equal
       name
-      (lambda () (handle-exceptions ex *fail-token* expr)) *fail-token* eq?) )
+      (lambda () (handle-exceptions ex *fail-token* expr))
+      *fail-token* eq?) )
     ((_ expr) (test-error 'expr expr))))
 
 (define-syntax test-assert

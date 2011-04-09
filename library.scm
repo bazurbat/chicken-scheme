@@ -1401,27 +1401,27 @@ EOF
 (define (char=? c1 c2)
   (##sys#check-char c1 'char=?)
   (##sys#check-char c2 'char=?)
-  (eq? c1 c2) )
+  (##core#inline "C_i_char_equalp" c1 c2) )
 
 (define (char>? c1 c2)
   (##sys#check-char c1 'char>?)
   (##sys#check-char c2 'char>?)
-  (fx> c1 c2) )
+  (##core#inline "C_i_char_greaterp" c1 c2) )
 
 (define (char<? c1 c2)
   (##sys#check-char c1 'char<?)
   (##sys#check-char c2 'char<?)
-  (fx< c1 c2) )
+  (##core#inline "C_i_char_lessp" c1 c2) )
 
 (define (char>=? c1 c2)
   (##sys#check-char c1 'char>=?)
   (##sys#check-char c2 'char>=?)
-  (fx>= c1 c2) )
+  (##core#inline "C_i_char_greater_or_equal_p" c1 c2) )
 
 (define (char<=? c1 c2)
   (##sys#check-char c1 'char<=?)
   (##sys#check-char c2 'char<=?)
-  (fx<= c1 c2) )
+  (##core#inline "C_i_char_less_or_equal_p" c1 c2) )
 
 (define (char-upcase c)
   (##sys#check-char c 'char-upcase)

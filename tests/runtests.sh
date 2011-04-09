@@ -43,7 +43,7 @@ compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
 compile_s="../csc -s -compiler $CHICKEN -v -I.. -L.. -include-path .."
 interpret="../csi -n -include-path .."
 
-rm -f *.exe *.so *.o *.import.* a.out
+rm -f *.exe *.so *.o *.import.* a.out ../foo.import.*
 
 echo "======================================== compiler tests ..."
 $compile compiler-tests.scm
@@ -131,7 +131,13 @@ $compile lolevel-tests.scm
 ./a.out
 
 echo "======================================== arithmetic tests ..."
-$interpret -D check -s arithmetic-test.scm
+if test -z "$MSYSTEM"; then
+    # the windows runtime library prints flonums differently
+    $interpret -D check -s arithmetic-test.scm
+fi
+
+echo "======================================== pretty-printer tests ..."
+$interpret -s pp-test.scm
 
 echo "======================================== syntax tests ..."
 $interpret -s syntax-tests.scm
@@ -159,6 +165,19 @@ $compile_s reexport-m1.scm -J
 $compile_s reexport-m1.import.scm
 $interpret -s reexport-m2.scm
 $compile reexport-m2.scm
+./a.out
+
+echo "======================================== functor tests ..."
+$interpret -bnq simple-functors-test.scm
+$compile simple-functors-test.scm
+./a.out
+$interpret -bnq functor-tests.scm
+$compile functor-tests.scm
+./a.out
+$compile -s square-functor.scm -J
+$compile -s square-functor.import.scm
+$interpret -bnq use-square-functor.scm
+$compile use-square-functor.scm
 ./a.out
 
 echo "======================================== compiler syntax tests ..."
@@ -230,6 +249,9 @@ $interpret -bnq ec.so ec-tests.scm
 # $compile ec-tests.scm
 # ./a.out        # takes ages to compile
 
+echo "======================================== arithmetic tests ..."
+$interpret -D check -s arithmetic-test.scm
+
 echo "======================================== hash-table tests ..."
 $interpret -s hash-table-tests.scm
 
@@ -259,8 +281,17 @@ $compile posix-tests.scm
 rm -fr tmpdir
 mkdir tmpdir
 touch tmpdir/.dotfile
-ln -s /usr tmpdir/symlink
+
+if test -z "$MSYSTEM"; then
+    ln -s /usr tmpdir/symlink
+fi
+
 $interpret -R posix -e '(delete-directory "tmpdir" #t)'
+
+echo "======================================== lolevel tests ..."
+$interpret -s lolevel-tests.scm
+$compile lolevel-tests.scm
+./a.out
 
 echo "======================================== regular expression tests ..."
 $interpret -bnq test-irregex.scm
