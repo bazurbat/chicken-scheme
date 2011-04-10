@@ -35,7 +35,7 @@
   (when (##sys#fudge 13)
     (printf "[debug] ~?~%" fstr args)) )
 
-(define-syntax d (syntax-rules () ((_ . _) (void))))
+;(define-syntax d (syntax-rules () ((_ . _) (void))))
 
 
 (define (perform-unboxing! node)
@@ -105,6 +105,7 @@
 		    (let ((n2 (make-node
 			       '##core#inline_unboxed (list alt)
 			       (reverse iargs))))
+		      (pp (build-expression-tree n2))
 		      (if (and dest (cdr dest))
 			  n2
 			  (let ((tmp (gensym "tu")))
@@ -462,3 +463,25 @@
   (C_u_i_pointer_f32_set (pointer flonum) flonum "C_ub_i_pointer_f32_set")
   (C_u_i_pointer_f64_set (pointer flonum) flonum "C_ub_i_pointer_f64_set")
   (C_null_pointerp (pointer) bool "C_ub_i_null_pointerp"))
+
+
+;;;
+
+#|XXX
+
+This breaks:
+
+(use srfi-4)
+
+(define (foo)
+  (let ((v (f64vector 1.0 2.0))
+	(n (f64vector-ref v 0))
+	(m (f64vector-ref v 1)))
+    (print (fp+ (fp* n m) (fp* n m)))))
+
+(foo)
+
+- fp* gets unboxed before fp+ and will result incorrectly nested ##core#let_unboxed
+  forms in argument position of the final ##core#inline_unboxed form.
+
+|#
