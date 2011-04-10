@@ -697,7 +697,7 @@
 		      (and-let* ((val (or (get db var 'value)
 					  (get db var 'local-value))))
 			(when (eq? val (first subs))
-			  (debugging 'x (sprintf "~a : ~a" var rt))
+			  (debugging 'x (sprintf "(: ~s ~s)" var rt))
 			  (mark-variable var '##compiler#declared-type)
 			  (mark-variable var '##compiler#type rt))))
 		    (when b
