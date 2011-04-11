@@ -1145,36 +1145,37 @@
 ;;; Convert result value, if a string:
 
 (define (finish-foreign-result type body)
-  (case type
-    [(c-string unsigned-c-string) `(##sys#peek-c-string ,body '0)]
-    [(nonnull-c-string) `(##sys#peek-nonnull-c-string ,body '0)]
-    [(c-string* unsigned-c-string*) `(##sys#peek-and-free-c-string ,body '0)]
-    [(nonnull-c-string* nonnull-unsigned-c-string*) `(##sys#peek-and-free-nonnull-c-string ,body '0)]
-    [(symbol) `(##sys#intern-symbol (##sys#peek-c-string ,body '0))]
-    [(c-string-list) `(##sys#peek-c-string-list ,body '#f)]
-    [(c-string-list*) `(##sys#peek-and-free-c-string-list ,body '#f)]
-    [else
-     (if (list? type)
-	 (if (and (eq? (car type) 'const)
-		  (= 2 (length type))
-		  (memq (cadr type) '(c-string c-string* unsigned-c-string
-					       unsigned-c-string* nonnull-c-string
-					       nonnull-c-string*
-					       nonnull-unsigned-string*)))
-	     (finish-foreign-result (cadr type) body)
-	     (if (= 3 (length type))
-		 (case (car type)
-		   ((instance instance-ref)
-		    (let ((tmp (gensym)))
-		      `(let ((,tmp ,body))
-			 (and ,tmp
-			      (not (##sys#null-pointer? ,tmp))
-			      (make ,(caddr type) 'this ,tmp) ) ) ) )
-		   ((nonnull-instance)
-		    `(make ,(caddr type) 'this ,body) )
-		   (else body))
-		 body))
-	 body)]))
+  (let ((type (##sys#strip-syntax type)))
+    (case type
+      [(c-string unsigned-c-string) `(##sys#peek-c-string ,body '0)]
+      [(nonnull-c-string) `(##sys#peek-nonnull-c-string ,body '0)]
+      [(c-string* unsigned-c-string*) `(##sys#peek-and-free-c-string ,body '0)]
+      [(nonnull-c-string* nonnull-unsigned-c-string*) `(##sys#peek-and-free-nonnull-c-string ,body '0)]
+      [(symbol) `(##sys#intern-symbol (##sys#peek-c-string ,body '0))]
+      [(c-string-list) `(##sys#peek-c-string-list ,body '#f)]
+      [(c-string-list*) `(##sys#peek-and-free-c-string-list ,body '#f)]
+      [else
+       (if (list? type)
+	   (if (and (eq? (car type) 'const)
+		    (= 2 (length type))
+		    (memq (cadr type) '(c-string c-string* unsigned-c-string
+						 unsigned-c-string* nonnull-c-string
+						 nonnull-c-string*
+						 nonnull-unsigned-string*)))
+	       (finish-foreign-result (cadr type) body)
+	       (if (= 3 (length type))
+		   (case (car type)
+		     ((instance instance-ref)
+		      (let ((tmp (gensym)))
+			`(let ((,tmp ,body))
+			   (and ,tmp
+				(not (##sys#null-pointer? ,tmp))
+				(make ,(caddr type) 'this ,tmp) ) ) ) )
+		     ((nonnull-instance)
+		      `(make ,(caddr type) 'this ,body) )
+		     (else body))
+		   body))
+	   body)])))
 
 
 ;;; Scan expression-node for variable usage:
