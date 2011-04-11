@@ -19,7 +19,7 @@
     headers, it is recommended to completely remove any old
     installation before installing the new version
 - Compiler
-  - Removed irreliable lambda-lifting optimization (now, really!);
+  - Removed unreliable lambda-lifting optimization (now, really!);
     the "-lambda-lift" option is still accepted but produces a
     warning
   - When "-scrutinize" is given, installed ".types" files will be
