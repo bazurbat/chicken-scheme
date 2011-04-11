@@ -97,6 +97,7 @@
 (define (scrutinize node db complain specialize)
   (let ((blist '())
 	(safe-calls 0))
+
     (define (constant-result lit)
       (cond ((string? lit) 'string)
 	    ((symbol? lit) 'symbol)
@@ -117,6 +118,7 @@
 	     `(struct ,(##sys#slot lit 0)))
 	    ((char? lit) 'char)
 	    (else '*)))
+
     (define (global-result id loc)
       (cond ((variable-mark id '##compiler#type) =>
 	     (lambda (a) 
@@ -141,6 +143,7 @@
 		'(*))
 	       (else (list a)))))
 	    (else '(*))))
+
     (define (blist-type id flow)
       (cond ((find (lambda (b) 
 		     (and (eq? id (caar b))
@@ -148,6 +151,7 @@
 		   blist)
 	     => cdr)
 	    (else #f)))
+
     (define (variable-result id e loc flow)
       (cond ((blist-type id flow) => list)
 	    ((and (get db id 'assigned) 
@@ -163,11 +167,13 @@
 		      '(*))
 		     (else (list (cdr a))))))
 	    (else (global-result id loc))))
+
     (define (always-true1 t)
       (cond ((and (pair? t) (eq? 'or (car t)))
 	     (every always-true1 (cdr t)))
 	    ((memq t '(* boolean undefined noreturn)) #f)
 	    (else #t)))
+
     (define (always-true t loc x)
       (let ((f (always-true1 t)))
 	(when f
@@ -178,6 +184,7 @@
 	     t
 	     (pp-fragment x))))
 	f))
+
     (define (typename t)
       (case t
 	((*) "anything")
@@ -200,6 +207,7 @@
 		   (sprintf "a structure of type ~a" (cadr t)))
 		  (else (bomb "invalid type: ~a" t))))
 	       (else (bomb "invalid type: ~a" t))))))
+
     (define (argument-string args)
       (let* ((len (length args))
 	     (m (multiples len)))
@@ -209,6 +217,7 @@
 		"~a argument~a of type~a ~a"
 	      len m m
 	      (map typename args)))))
+
     (define (result-string results)
       (if (eq? '* results) 
 	  "an unknown number of values"
@@ -220,10 +229,12 @@
 		    "~a value~a of type~a ~a"
 		  len m m
 		  (map typename results))))))
+
     (define (simplify t)
       (let ((t2 (simplify1 t)))
 	(dd "simplify: ~a -> ~a" t t2)
 	t2))
+
     (define (simplify1 t)
       (call/cc 
        (lambda (return)
@@ -284,6 +295,7 @@
 		       (map simplify rtypes)))))
 	       (else t))
 	     t))))
+
     (define (merge-argument-types ts1 ts2) 
       (cond ((null? ts1) 
 	     (cond ((null? ts2) '())
@@ -304,16 +316,19 @@
 		   (else '(#!rest))))	;XXX
 	    (else (cons (simplify `(or ,(car ts1) ,(car ts2)))
 			(merge-argument-types (cdr ts1) (cdr ts2))))))
+
     (define (merge-result-types ts1 ts2) ;XXX possibly overly conservative
       (cond ((null? ts1) ts2)
 	    ((null? ts2) ts1)
 	    ((or (atom? ts1) (atom? ts2)) '*)
 	    (else (cons (simplify `(or ,(car ts1) ,(car ts2)))
 			(merge-result-types (cdr ts1) (cdr ts2))))))
+
     (define (match t1 t2)
       (let ((m (match1 t1 t2)))
 	(dd "    match ~a <-> ~a -> ~a" t1 t2 m)
 	m))
+
     (define (match1 t1 t2)
       (cond ((eq? t1 t2))
 	    ((eq? t1 '*))
@@ -340,6 +355,7 @@
 	       ((struct) (equal? t1 t2))
 	       (else #f) ) )
 	    (else #f)))
+
     (define (match-args args1 args2)
       (d "match-args: ~s <-> ~s" args1 args2)
       (define (match-rest rtype args opt) ;XXX currently ignores `opt'
@@ -367,6 +383,7 @@
 	       (match-rest (rest-type (cdr args2)) args1 opt1))
 	      ((match (car args1) (car args2)) (loop (cdr args1) (cdr args2) opt1 opt2))
 	      (else #f))))
+
     (define (match-results results1 results2)
       (cond ((null? results1) (atom? results2))
 	    ((eq? '* results1))
@@ -375,8 +392,10 @@
 	    ((match (car results1) (car results2)) 
 	     (match-results (cdr results1) (cdr results2)))
 	    (else #f)))
+
     (define (multiples n)
       (if (= n 1) "" "s"))
+
     (define (single what tv loc)
       (if (eq? '* tv)
 	  '*
@@ -393,10 +412,12 @@
 		    (sprintf "expected ~a a single result, but were given ~a result~a"
 		      what n (multiples n)))
 		   (first tv))))))
+
     (define (report loc desc #!optional (show complain))
       (when show
 	(warning
 	 (conc (location-name loc) desc))))
+
     (define (location-name loc)
       (define (lname loc1)
 	(if loc1
@@ -410,7 +431,9 @@
 	       (if (null? (cdr loc))
 		   (location-name loc)
 		   (sprintf "in local ~a,\n  ~a" (lname (car loc)) (rec (cdr loc))))))))
+
     (define add-loc cons)
+
     (define (fragment x)
       (let ((x (build-expression-tree x)))
 	(let walk ((x x) (d 0))
@@ -419,11 +442,13 @@
 		((list? x)
 		 (map (cute walk <> (add1 d)) (take x (min +fragment-max-length+ (length x)))))
 		(else x)))))
+
     (define (pp-fragment x)
       (string-chomp
        (with-output-to-string
 	 (lambda ()
 	   (pp (fragment x))))))
+
     (define (call-result node args e loc params)
       (define (pname)
 	(sprintf "~ain procedure call to `~s', " 
@@ -521,6 +546,7 @@
 		(set! safe-calls (add1 safe-calls))))
 	    (d  "  result-types: ~a" r)
 	    r))))
+
     (define (self-call? node loc)
       (case (node-class node)
 	((##core#call)
@@ -531,11 +557,13 @@
 	((let)
 	 (self-call? (last (node-subexpressions node)) loc))
 	(else #f)))
+
     (define tag
       (let ((n 0))
 	(lambda () 
 	  (set! n (add1 n))
 	  n)))
+
     (define (invalidate-blist)
       (for-each
        (lambda (b)
@@ -547,6 +575,7 @@
 	     (dd "invalidating: ~a" b)
 	     (set-cdr! b '*))))
        blist))
+
     (define (walk n e loc dest tail flow ctags) ; returns result specifier
       (let ((subs (node-subexpressions n))
 	    (params (node-parameters n)) 
@@ -743,6 +772,7 @@
 	  (set! d-depth (sub1 d-depth))
 	  (dd "  -> ~a" results)
 	  results)))
+
     (let ((rn (walk (first (node-subexpressions node)) '() '() #f #f (list (tag)) #f)))
       (when (and (pair? specialization-statistics)
 		 (debugging 'x "specializations:"))

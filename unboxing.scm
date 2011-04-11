@@ -24,16 +24,20 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
-(declare (unit unboxing))
+(declare
+  (unit unboxing)
+  (hide d-depth))
 
 
 (include "compiler-namespace")
 (include "tweaks")
 
 
+(define d-depth 0)
+
 (define (d fstr . args)
   (when (##sys#fudge 13)
-    (printf "[debug] ~?~%" fstr args)) )
+    (printf "[debug] ~a~?~%" (make-string d-depth #\space) fstr args)) )
 
 ;(define-syntax d (syntax-rules () ((_ . _) (void))))
 
@@ -46,7 +50,7 @@
     (define (walk-lambda id e body)
       (let ((ae '()))
 
-	(define (boxed! v)		; 'boxed is sticky
+	(define (boxed! v)		; boxed is sticky
 	  (d "boxing ~a" v )
 	  (cond ((assq v e) =>
 		 (lambda (a)
@@ -74,13 +78,14 @@
 	(define (unboxed-value? x)
 	  (and x (cdr x)))
 
-	(define (invalidate r) ; if result is variable, mark it 'boxed
+	(define (invalidate r) ; if result is variable, mark it boxed
 	  (when (and (pair? r) (car r))
 	    (boxed! (car r))))
 
 	(define (alias v)
 	  (alist-ref v ae eq? v) )
 
+	;; merge results at control-flow join (i.e. conditional)
 	(define (merge r1 r2)
 	  (cond ((or (not r1) (not (cdr r1)))
 		 (invalidate r2)
@@ -105,7 +110,6 @@
 		    (let ((n2 (make-node
 			       '##core#inline_unboxed (list alt)
 			       (reverse iargs))))
-		      ;(pp (build-expression-tree n2))
 		      (if (and dest (cdr dest))
 			  n2
 			  (let ((tmp (gensym "tu")))
@@ -136,7 +140,8 @@
 				((bool)
 				 (make-node
 				  '##core#inline '("C_mk_bool")
-				  (list (make-node '##core#unboxed_ref (list tmp rtype) '()))))
+				  (list
+				   (make-node '##core#unboxed_ref (list tmp rtype) '()))))
 				((*) (bomb "unboxed type `*' not allowed as result"))
 				(else (bomb "invalid unboxed type" rtype))))))))) 
 		   ((or (eq? (car atypes) '*) 
@@ -146,7 +151,14 @@
 			  (cdr atypes)
 			  (cons (car anodes) iargs)))
 		   (else
-		    ;; introduce unboxed temporary
+		    ;; introduce unboxed temporary for argument
+		    ;;
+		    ;;XXX this is suboptimal: we could reuse unboxed temporaries
+		    ;;    that are in scope. Currently the same are will be unboxed
+		    ;;    repeatedly.
+		    ;;    (But we must make sure there are not intermediate side
+		    ;;    effects - possibly only reuse unboxed value if unassigned
+		    ;;    local or lexical variable ref, or literal)
 		    (let ((tmp (gensym "tu")))
 		      (make-node
 		       '##core#let_unboxed (list tmp (car atypes))
@@ -160,7 +172,8 @@
 				      ((pointer) "C_pointer_address")
 				      ((bool) "C_truep")
 				      ((*) "C_id")
-				      (else (bomb "invalid unboxed argument type" (car atypes)))))
+				      (else 
+				       (bomb "invalid unboxed argument type" (car atypes)))))
 			      (list (car anodes)))
 			     (loop (cdr args)
 				   (cdr anodes)
@@ -255,134 +268,145 @@
 	       n))
 	    n))
 
+	;; walk node and return either "(<var> . <type>)" or #f
+	;; - at second pass: rewrite "##core#inline[_allocate]" nodes
 	(define (walk n dest udest pass2?)
 	  (let ((subs (node-subexpressions n))
 		(params (node-parameters n))
 		(class (node-class n)) )
-	    (d "walk: (~a) ~a ~a" pass2? class params)
-	    (case class
+	    (d "walk: (~a) ~a ~a" (if pass2? 2 1) class params)
+	    (set! d-depth (add1 d-depth))
+	    (let ((result
+		   (case class
 
-	      ((##core#undefined
-		##core#proc
-		##core#global-ref
-		##core#inline_ref
-		##core#inline_loc_ref) #f)
+		     ((##core#undefined
+		       ##core#proc
+		       ##core#global-ref
+		       ##core#inline_ref
+		       ##core#inline_loc_ref) #f)
 
-	      ((##core#lambda ##core#direct_lambda)
-	       (decompose-lambda-list
-		(third params)
-		(lambda (vars argc rest)
-		  (unless pass2?
-		    (walk-lambda
-		     (first params) 
-		     (map (cut cons <> #f) vars)
-		     (first subs)) )
-		  #f)))
+		     ((##core#lambda ##core#direct_lambda)
+		      (decompose-lambda-list
+		       (third params)
+		       (lambda (vars argc rest)
+			 (unless pass2?
+			   (walk-lambda
+			    (first params) 
+			    (map (cut cons <> #f) vars)
+			    (first subs)) )
+			 #f)))
 
-	      ((##core#variable)
-	       (let* ((v (first params))
-		      (a (assq v e)))
-		 (cond (pass2?
-			(when (and a (cdr a))
-			  (copy-node!
-			   (make-node '##core#unboxed_ref (list (alias v) (cdr a)) '())
-			   n)))
-		       ((not a) #f)	; global
-		       ((not udest) (boxed! v)))
-		 a))
+		     ((##core#variable)
+		      (let* ((v (first params))
+			     (a (assq v e)))
+			(cond (pass2?
+			       (when (and a (cdr a))
+				 (copy-node!
+				  (make-node
+				   '##core#unboxed_ref
+				   (list (alias v) (cdr a))
+				   '())
+				  n)))
+			      ((not a) #f) ; global
+			      ((not udest) (boxed! v)))
+			a))
 
-	      ((##core#inline ##core#inline_allocate)
-	       (let* ((rw1 (##sys#get (symbolify (first params)) '##compiler#unboxed-op))
-		      (rw (and rw1 
-			       (or unsafe
-				   (and (fourth rw1)
-					unchecked-specialized-arithmetic))
-			       rw1))
-		      (args (map (cut walk <> #f rw pass2?) subs)))
-		 (cond ((not rw) #f)
-		       ((or (not pass2?)
-			    (and dest (unboxed? dest))
-			    (any unboxed-value? args))
-			(let ((alt (first rw))
-			      (atypes (second rw))
-			      (rtype (third rw)))
-			  ;; result or arguments are unboxed - rewrite node to alternative
+		     ((##core#inline ##core#inline_allocate)
+		      (let* ((rw1 (##sys#get 
+				   (symbolify (first params))
+				   '##compiler#unboxed-op))
+			     (rw (and rw1 
+				      (or unsafe
+					  (and (fourth rw1)
+					       unchecked-specialized-arithmetic))
+				      rw1))
+			     (args (map (cut walk <> #f rw pass2?) subs)))
+			(cond ((not rw) #f)
+			      ((or (not pass2?)
+				   (and dest (unboxed? dest))
+				   (any unboxed-value? args))
+			       (let ((alt (first rw))
+				     (atypes (second rw))
+				     (rtype (third rw)))
+				 ;; result or arguments are unboxed - rewrite node to alternative
+				 (when pass2?
+				   (rewrite! 
+				    n alt subs args atypes rtype 
+				    (and dest (assq dest e))))
+				 (cons #f rtype)) )
+			      (else
+			       (let ((rtype (third rw)))
+				 ;; mark argument-vars and dest as unboxed if alternative exists
+				 (unless pass2?
+				   (for-each
+				    (lambda (a)
+				      (when (and a (car a) (cdr a))
+					(unboxed! (car a) (cdr a))))
+				    args)
+				   (when dest
+				     (unboxed! dest rtype)))
+				 (cons #f rtype))))))
+
+		     ((let)
+		      (let* ((v (first params))
+			     (r1 (walk (first subs) v #t pass2?)))
+			(when (and (not pass2?) r1 (cdr r1))
+			  (unboxed! (first params) (cdr r1)))
+			(let ((r (walk (second subs) dest udest pass2?)))
 			  (when pass2?
-			    (rewrite! 
-			     n alt subs args atypes rtype 
-			     (and dest (assq dest e))))
-			  (cons #f rtype)) )
-		       (else
-			(let ((rtype (third rw)))
-			  ;; mark argument-vars and dest as unboxed if alternative exists
-			  (unless pass2?
-			    (for-each
-			     (lambda (a)
-			       (when (and a (car a) (cdr a))
-				 (unboxed! (car a) (cdr a))))
-			     args)
-			    (when dest
-			      (unboxed! dest rtype)))
-			  (cons #f rtype))))))
+			    (let ((a (assq v e)))
+			      (if (and a (cdr a))
+				  (rebind-unboxed! n (cdr a))
+				  (straighten-binding! n))) )
+			  r)))
 
-	      ((let)
-	       (let* ((v (first params))
-		      (r1 (walk (first subs) v #t pass2?)))
-		 (when (and (not pass2?) r1 (cdr r1))
-		   (unboxed! (first params) (cdr r1)))
-		 (let ((r (walk (second subs) dest udest pass2?)))
-		   (when pass2?
-		     (let ((a (assq v e)))
-		       (if (and a (cdr a))
-			   (rebind-unboxed! n (cdr a))
-			   (straighten-binding! n))) )
-		   r)))
+		     ((set!)
+		      (let* ((var (first params))
+			     (a (assq var e))
+			     (val (walk (first subs) var (and a (cdr a)) pass2?)))
+			(cond (pass2?
+			       (when (and a (cdr a)) ; may have mutated
+				 (copy-node!
+				  (make-node
+				   '##core#unboxed_set! (list (alias var) (cdr a)) subs)
+				  n)))
+			      ((and val (cdr val))
+			       (unboxed! var (cdr val)))
+			      (else 
+			       (boxed! var)
+			       (invalidate val) ) )
+			#f))
 
-	      ((set!)
-	       (let* ((var (first params))
-		      (a (assq var e))
-		      (val (walk (first subs) var (and a (cdr a)) pass2?)))
-		 (cond (pass2?
-			(when (and a (cdr a)) ; may have mutated
-			  (copy-node!
-			   (make-node
-			    '##core#unboxed_set! (list (alias var) (cdr a)) subs)
-			   n)))
-		       ((and val (cdr val))
-			(unboxed! var (cdr val)))
-		       (else 
-			(boxed! var)
-			(invalidate val) ) )
-		 #f))
+		     ((quote) #f)
 
-	      ((quote) #f)
+		     ((if ##core#cond)
+		      (invalidate (walk (first subs) #f #f pass2?))
+		      (straighten-conditional! n)
+		      (let ((r1 (walk (second subs) dest udest pass2?))
+			    (r2 (walk (third subs) dest udest pass2?)))
+			(merge r1 r2)))
 
-	      ((if ##core#cond)
-	       (invalidate (walk (first subs) #f #f pass2?))
-	       (straighten-conditional! n)
-	       (let ((r1 (walk (second subs) dest udest pass2?))
-		     (r2 (walk (third subs) dest udest pass2?)))
-		 (merge r1 r2)))
+		     ((##core#switch)
+		      (invalidate (walk (first subs) #f #f pass2?))
+		      (do ((clauses (cdr subs) (cddr clauses))
+			   (r 'none 
+			      (if (eq? r 'none)
+				  (walk (second clauses) dest udest pass2?)
+				  (merge r (walk (second clauses) dest udest pass2?)))))
+			  ((null? (cdr clauses))
+			   (merge r (walk (car clauses) dest udest pass2?))) ) )
 
-	      ((##core#switch)
-	       (invalidate (walk (first subs) #f #f pass2?))
-	       (do ((clauses (cdr subs) (cddr clauses))
-		    (r 'none 
-		       (if (eq? r 'none)
-			   (walk (second clauses) dest udest pass2?)
-			   (merge r (walk (second clauses) dest udest pass2?)))))
-		   ((null? (cdr clauses))
-		    (merge r (walk (car clauses) dest udest pass2?))) ) )
+		     ((##core#call ##core#direct_call)
+		      (for-each (o invalidate (cut walk <> #f #f pass2?)) subs)
+		      (when pass2?
+			(straighten-call! n))
+		      #f)
 
-	      ((##core#call ##core#direct_call)
-	       (for-each (o invalidate (cut walk <> #f #f pass2?)) subs)
-	       (when pass2?
-		 (straighten-call! n))
-	       #f)
-
-	      (else
-	       (for-each (o invalidate (cut walk <> #f #f pass2?)) subs)
-	       #f))))
+		     (else
+		      (for-each (o invalidate (cut walk <> #f #f pass2?)) subs)
+		      #f))))
+	      (set! d-depth (sub1 d-depth))
+	      result)))
 
 	(d "walk lambda: ~a (pass 1)" id)
 	;; walk once and mark boxed/unboxed variables in environment
