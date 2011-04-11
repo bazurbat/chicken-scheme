@@ -12,6 +12,12 @@
 - Build system
   - On BSD, libchicken.so is linked with -lpthread, as this seems
     to be required for linking libraries that require pthreads
+  - The C header-files are now installed in a subdirectory below
+    the "PRFIX/include" directory to allow installation of multiple
+    chickens with different PROGRAM_PREFIX/PROGRAM_SUFFIX settings
+    in the same prefix; to avoid conflicts with existing CHICKEN
+    headers, it is recommended to completely remove any old
+    installation before installing the new version
 - Compiler
   - Removed irreliable lambda-lifting optimization (now, really!);
     the "-lambda-lift" option is still accepted but produces a
@@ -22,10 +28,10 @@
     bindings which could result in toplevel assignments being
     silently dropped (reported by Moritz Heidkamp)
 - Syntax expander
-  - For-syntax syntax definitions where top correctly retained inside
+  - For-syntax syntax definitions where not correctly retained inside
     modules
   - Peter Bex fixed various critical bugs in the expander
-  - The incorrect simplification for quasiquote expressions was unable
+  - The simplification for quasiquote expressions was unable
     to handle certain circular data (reported by Moritz Heidkamp)
 - Interpreter
   - The ",m" toplevel command now accepts "#f" to switch back to
@@ -37,14 +43,14 @@
       literals
     - Read-syntax can return zero values to indicate ignored objects
     - R5RS output output routines now always return a "void" result
-    - "\|" was not correctly printed escaped when occurring inside
+    - "\|" was not correctly escaped when occurring inside
       symbol print names
   - "extras" unit
     - The pretty printer did not escape some control characters correctly
       (reported by Alan Post) 
   - "posix" unit
-    - "close-input-pipe" did not return status code of process on
-      Windows (reported by Mario Domenech Goulart)
+    - "close-input-pipe" did not return the status code of a
+      terminated process on Windows (reported by Mario Domenech Goulart)
   - "tcp" unit
     - Fixed bug in "tcp-abandon-port" (reported by Jim Ursetto)
 - Tools

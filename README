@@ -259,6 +259,7 @@
 	    |   |   |-- README
 	    |   |   |-- mac.r			      (Macintosh)
 	    |   |   |-- manual-html
+            |   |   |-- chicken.png
 	    |   |   `-- *.html
 	    |   `-- setup.defaults
 	    `-- man
