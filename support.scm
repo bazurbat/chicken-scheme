@@ -749,10 +749,10 @@
       (##sys#hash-table-for-each
        (lambda (sym plist)
 	 (when (variable-visible? sym)
-	   (when (variable-mark sym '##core#declared-type)
+	   (when (variable-mark sym '##compiler#declared-type)
 	     (let ((specs
 		    (or (variable-mark sym '##compiler#specializations) '())))
-	       (pp (cons* sym (variable-mark sym '##core#type) specs))))))
+	       (pp (cons* sym (variable-mark sym '##compiler#type) specs))))))
        db)
       (print "; END OF FILE"))))
 
@@ -1616,6 +1616,7 @@ Available debugging options:
      c          print every expression before macro-expansion
      u          lists all unassigned global variable references
      d          lists all assigned global variables
+     i          show inferred type information for unexported globals
      x          display information about experimental features
      D          when printing nodes, use node-tree output
      N          show the real-name mapping table
@@ -1633,7 +1634,7 @@ Available debugging options:
      7          show expressions after complete optimization
      8          show database after final analysis
      9          show expressions after closure conversion
-     ?          you already figured that out
+     h          you already figured that out
 
 
 EOF

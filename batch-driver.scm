@@ -178,7 +178,7 @@
 	 (map (lambda (c) (string->symbol (string c)))
 	      (string->list do) ) )
        (collect-options 'debug) ) )
-    (when (memq '? debugging-chicken)
+    (when (memq 'h debugging-chicken)
       (print-debug-options)
       (exit))
     (set! dumpnodes (memq '|D| debugging-chicken))

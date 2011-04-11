@@ -45,4 +45,10 @@ Warning: at toplevel:
 Warning: at toplevel:
   g89: in procedure call to `g89', expected a value of type `(procedure () *)', but was given a value of type `fixnum'
 
+Warning: in toplevel procedure `foo':
+  expected value of type boolean in conditional but were given a value of
+type `(procedure bar24 () *)' which is always true:
+
+(if bar24 '3 (##core#undefined))
+
 Warning: redefinition of standard binding: car

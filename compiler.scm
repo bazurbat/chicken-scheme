@@ -1497,8 +1497,8 @@
 				     (eq? 'procedure (car type)) 
 				     (symbol? (cadr type)))
 			    (set-car! (cdr type) name))
-			  (mark-variable name '##core#type type)
-			  (mark-variable name '##core#declared-type)
+			  (mark-variable name '##compiler#type type)
+			  (mark-variable name '##compiler#declared-type)
 			  (when (pair? (cddr spec))
 			    (mark-variable
 			     name '##compiler#specializations
@@ -1731,8 +1731,8 @@
   (define (atomic? n)
     (let ((class (node-class n)))
       (or (memq class '(quote ##core#variable ##core#undefined ##core#global-ref))
-	  (and (memq class '(##core#inline ##core#inline_allocate ##core#inline_ref ##core#inline_update
-					   ##core#inline_loc_ref ##core#inline_loc_update))
+	  (and (memq class '(##core#inline_ref ##core#inline_update ##core#inline_loc_ref
+					       ##core#inline_loc_update))
 	       (every atomic? (node-subexpressions n)) ) ) ) )
   
   (walk node values) )

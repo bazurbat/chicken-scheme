@@ -52,6 +52,12 @@
 	((getp id '##core#macro-alias))
 	(else #f)))
 
+#+debugbuild
+(define (map-se se)
+  (map (lambda (a) 
+	 (cons (car a) (if (symbol? (cdr a)) (cdr a) '<macro>)))
+       se))
+
 
 ;;; low-level module support
 
