@@ -125,6 +125,19 @@
     (fp)))
 
 
+;; "const" qualifier should have no visible effect in Scheme
+(define-syntax generate-external
+  (syntax-rules ()
+    ((_) (define-external
+           (print_foo ((const c-string) foo))
+           void
+           (assert (string? foo))
+           (print foo)))))
+(generate-external)
+((foreign-safe-lambda* void () 
+   "print_foo(\"bar\");"))
+
+
 ;;; compiler-syntax for map/for-each must be careful when the
 ;   operator may have side-effects (currently only lambda exprs and symbols
 ;   are allowed)
