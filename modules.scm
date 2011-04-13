@@ -68,12 +68,13 @@
 	module-meta-import-forms set-module-meta-import-forms!
 	module-exist-list set-module-exist-list!
 	module-meta-expressions set-module-meta-expressions!
-	module-defined-syntax-list set-module-defined-syntax-list!))
+	module-defined-syntax-list set-module-defined-syntax-list!
+	module-saved-environments set-module-saved-environments!))
 
 (define-record-type module
   (%make-module name export-list defined-list exist-list defined-syntax-list
 		undefined-list import-forms meta-import-forms meta-expressions 
-		vexports sexports) 
+		vexports sexports saved-environments) 
   module?
   (name module-name)			; SYMBOL
   (export-list module-export-list set-module-export-list!) ; (SYMBOL | (SYMBOL ...) ...)
@@ -85,7 +86,8 @@
   (meta-import-forms module-meta-import-forms set-module-meta-import-forms!)	    ; (SPEC ...)
   (meta-expressions module-meta-expressions set-module-meta-expressions!) ; (EXP ...)
   (vexports module-vexports set-module-vexports!)	      ; ((SYMBOL . SYMBOL) ...)
-  (sexports module-sexports set-module-sexports!) )	      ; ((SYMBOL SE TRANSFORMER) ...)
+  (sexports module-sexports set-module-sexports!)	      ; ((SYMBOL SE TRANSFORMER) ...)
+  (saved-environments module-saved-environments set-module-saved-environments!)) ; for csi's ",m" command, holds (<env> . <macroenv>)
 
 (define ##sys#module-name module-name)
 
@@ -96,7 +98,7 @@
    (module-sexports m)))
 
 (define (make-module name explist vexports sexports)
-  (%make-module name explist '() '() '() '() '() '() '() vexports sexports))
+  (%make-module name explist '() '() '() '() '() '() '() vexports sexports #f))
 
 (define (##sys#register-module-alias alias name)
   (##sys#module-alias-environment
@@ -123,6 +125,21 @@
   (cond ((assq name ##sys#module-table) => cdr)
 	(err (error loc "module not found" name))
 	(else #f)))
+
+(define ##sys#switch-module
+  (let ((saved-default-envs #f))
+    (lambda (mod)
+      (let ((now (cons (##sys#current-environment) (##sys#macro-environment))))
+	(cond ((##sys#current-module) =>
+	       (lambda (m)
+		 (set-module-saved-environments! m now)))
+	      (else 
+	       (set! saved-default-envs now)))
+	(let ((saved (if mod (module-saved-environments mod) saved-default-envs)))
+	  (when saved
+	    (##sys#current-environment (car saved))
+	    (##sys#macro-environment (cdr saved))
+	    (##sys#current-module mod)))))))
 
 (define (##sys#toplevel-definition-hook sym mod exp val) #f)
 
@@ -484,7 +501,11 @@
 		(VEXPORTS: ,@(map-se vexports))
 		(SEXPORTS: ,@(map-se sexports))))
 	  (set-module-vexports! mod vexports)
-	  (set-module-sexports! mod sexports))))))
+	  (set-module-sexports! mod sexports)
+	  (set-module-saved-environments!
+	   mod
+	   (cons (##sys#current-environment)
+		 (##sys#macro-environment))))))))
 
 (define ##sys#module-table '())
 
