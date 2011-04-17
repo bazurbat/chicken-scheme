@@ -669,8 +669,7 @@
 		       (sprintf 
 			   "assignment of value of type `~a' to toplevel variable `~a' does not match declared type `~a'"
 			 rt var type)
-		       #t)
-		      (mark-variable var '##compiler#type #f))
+		       #t))
 		    (when (and (not type)
 			       (not b)
 			       (not (eq? '* rt))
@@ -686,7 +685,10 @@
 		      (cond ((eq? 'undefined (cdr b)) (set-cdr! b rt))
 			    (strict-variable-types
 			     (let ((ot (or (blist-type var flow) (cdr b))))
-			       (unless (compatible-types? ot rt)
+			       ;;XXX compiler-syntax for "map" will introduce
+			       ;;    assignments that trigger this warning, so this
+			       ;;    is currently disabled
+			       #;(unless (compatible-types? ot rt)
 				 (report
 				  loc
 				  (sprintf 
@@ -924,7 +926,7 @@
 		(when (and old (not (equal? old new)))
 		  (##sys#notice
 		   (sprintf
-		       "type-deifnition `~a' for toplevel binding `~a' conflicts with previously loaded type `~a'"
+		       "type-definition `~a' for toplevel binding `~a' conflicts with previously loaded type `~a'"
 		     name new old)))
 		(mark-variable name '##compiler#type new)
 		(when specs
