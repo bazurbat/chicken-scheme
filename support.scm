@@ -528,7 +528,7 @@
 					##core#inline_loc_ref ##core#inline_loc_update)
 		(make-node (first x) (second x) (map walk (cddr x))) )
 	       ((##core#app)
-		(make-node '##core#call '(#t) (map walk (cdr x))) )
+		(make-node '##core#call (list #t) (map walk (cdr x))) )
 	       (else
 		(receive (name ln) (get-line-2 x)
 		  (make-node
@@ -543,7 +543,7 @@
 				     (or rn (##sys#symbol->qualified-string name))) )
 			     (##sys#symbol->qualified-string name) ) )
 		   (map walk x) ) ) ) ) )
-	    (else (make-node '##core#call '(#f) (map walk x))) ) )
+	    (else (make-node '##core#call (list #f) (map walk x))) ) )
     (let ([exp2 (walk exp)])
       (when (positive? count)
 	(debugging 'o "eliminated procedure checks" count))

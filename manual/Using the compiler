@@ -128,7 +128,7 @@ the source text should be read from standard input.
      -optimize-level 2          is equivalent to -optimize-leaf-routines -inline -unboxing
      -optimize-level 3          is equivalent to -optimize-leaf-routines -local -inline -inline-global -unboxing -specialize
      -optimize-level 4          is equivalent to -optimize-leaf-routines -local -inline -inline-global -unboxing -specialize -unsafe
-     -optimize-level 5          is equivalent to -optimize-leaf-routines -block -inline -inline-global -unboxing -specialize -unsafe -disable-interrupts -no-trace -no-lambda-info
+     -optimize-level 5          is equivalent to -optimize-leaf-routines -block -inline -inline-global -unboxing -specialize -unsafe -disable-interrupts -no-trace -no-lambda-info -strict-types
 
 ; -output-file FILENAME : Specifies the pathname of the generated C file. Default is {{FILENAME.c}}.
 
@@ -157,7 +157,7 @@ the source text should be read from standard input.
 
 ; -static-extension NAME : similar to {{-require-extension NAME}}, but links extension statically (also applies for an explicit {{(require-extension NAME)}}).
 
-; -strict-types : Assume that the type of variables does not change during their lifetime. This gives more type-information during specialization, but violating this assumption will result in unsafe and incorrectly behaving code.
+; -strict-types : Assume that the type of variables does not change because of assignments. This gives more type-information during specialization, but violating this assumption will result in unsafe and incorrectly behaving code.
 
 ; -types FILENAME : load additional type database from {{FILENAME}}. Type-definitions in {{FILENAME}} will override previous type-definitions.
 

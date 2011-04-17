@@ -199,7 +199,7 @@
 				    (let ((n2 (qnode result)))
 				      (make-node
 				       '##core#call
-				       '(#t)
+				       (list #t)
 				       (list (cadr subs) n2) ) ) ) )))
 			  n1) )
 		    n1) )
@@ -313,7 +313,7 @@
 				    "removed call to pure procedure with unused result"
 				    (or (source-info->string info) var)))
 				 (make-node
-				  '##core#call '(#t)
+				  '##core#call (list #t)
 				  (list k (make-node '##core#undefined '() '())) ) ) 
 			       (walk-generic n class params subs fids)) ) )
 			((and lval
@@ -857,10 +857,10 @@
 		     (and (eq? '##core#variable (node-class arg1))
 			  (eq? '##core#variable (node-class arg2))
 			  (equal? (node-parameters arg1) (node-parameters arg2))
-			  (make-node '##core#call '(#t) (list cont (qnode #t))) ) ) )
+			  (make-node '##core#call (list #t) (list cont (qnode #t))) ) ) )
 	      (and inline-substitutions-enabled
 		   (make-node
-		    '##core#call '(#t) 
+		    '##core#call (list #t) 
 		    (list cont (make-node '##core#inline (list (second classargs)) callargs)) ) ) ) ) )
 
     ;; (<op> ...) -> (##core#inline <iop> ...)
@@ -872,7 +872,7 @@
 	  (or (third classargs) unsafe)
 	  (let ((arg1 (first callargs)))
 	    (make-node
-	     '##core#call '(#t)
+	     '##core#call (list #t)
 	     (list 
 	      cont
 	      (make-node '##core#inline (list (second classargs)) callargs) ) ) ) ) )
@@ -886,7 +886,7 @@
 	  (fold-right
 	   (lambda (val body)
 	     (make-node 'let (list (gensym)) (list val body)) )
-	   (make-node '##core#call '(#t) (list cont (varnode (first classargs))))
+	   (make-node '##core#call (list #t) (list cont (varnode (first classargs))))
 	   callargs)))
 
     ;; (<op> a b) -> (<primitiveop> a (quote <i>) b)
@@ -910,7 +910,7 @@
 	  (= 1 (length callargs))
 	  (let ((ntype (third classargs)))
 	    (or (not ntype) (eq? ntype number-type)) )
-	  (make-node '##core#call '(#t)
+	  (make-node '##core#call (list #t)
 		     (list cont
 			   (make-node '##core#inline (list (first classargs))
 				      (list (first callargs)
@@ -922,7 +922,7 @@
 	   inline-substitutions-enabled
 	   (= 1 (length callargs))
 	   (intrinsic? name)
-	   (make-node '##core#call '(#t)
+	   (make-node '##core#call (list #t)
 		      (list cont
 			    (make-node '##core#inline (list (first classargs))
 				       (list (make-node '##core#inline (list (second classargs))
@@ -934,7 +934,7 @@
 	  inline-substitutions-enabled
 	  (= (length callargs) (first classargs))
 	  (intrinsic? name)
-	  (make-node '##core#call '(#t)
+	  (make-node '##core#call (list #t)
 		     (list cont
 			   (make-node '##core#inline (list (second classargs))
 				      (append callargs
@@ -952,7 +952,7 @@
      (and inline-substitutions-enabled
 	  (intrinsic? name)
 	  (if (< (length callargs) 2)
-	      (make-node '##core#call '(#t) (list cont (qnode #t)))
+	      (make-node '##core#call (list #t) (list cont (qnode #t)))
 	      (and (or (and unsafe (not (eq? number-type 'generic)))
 		       (and (eq? number-type 'fixnum) (third classargs))
 		       (and (eq? number-type 'flonum) (fourth classargs)) )
@@ -961,7 +961,7 @@
 		     (fold-right
 		      (lambda (x n y) (make-node 'let (list n) (list x y)))
 		      (make-node
-		       '##core#call '(#t)
+		       '##core#call (list #t)
 		       (list 
 			cont
 			(let ([op (list
@@ -1012,7 +1012,7 @@
 	  (let ((n (length callargs)))
 	    (and (<= n (third classargs))
 		 (case n
-		   ((1) (make-node '##core#call '(#t) (cons cont callargs)))
+		   ((1) (make-node '##core#call (list #t) (cons cont callargs)))
 		   (else (make-node '##core#call (list #t (first classargs))
 				    (cons* (varnode (first classargs))
 					   cont callargs) ) ) ) ) ) ) )
@@ -1035,7 +1035,7 @@
 	  (eq? number-type (first classargs))
 	  (or (fourth classargs) unsafe)
 	  (make-node
-	   '##core#call '(#t)
+	   '##core#call (list #t)
 	   (list cont
 		 (make-node
 		  '##core#inline
@@ -1053,7 +1053,7 @@
 		 (make-node '##core#call (list #t (third classargs))
 			    (cons* (varnode (third classargs)) cont callargs) ) )
 		((eq? number-type (second classargs))
-		 (make-node '##core#call '(#t) (cons cont callargs)) )
+		 (make-node '##core#call (list #t) (cons cont callargs)) )
 		(else #f) ) ) )
 
     ;; (<alloc-op> ...) -> (##core#inline_allocate (<aiop> <words>) ...)
@@ -1080,7 +1080,7 @@
 		    unchecked-specialized-arithmetic
 		    safe))
 	    (make-node
-	     '##core#call '(#t)
+	     '##core#call (list #t)
 	     (list cont 
 		   (make-node
 		    '##core#inline_allocate
@@ -1098,7 +1098,7 @@
 	  (= (length callargs) (first classargs))
 	  (intrinsic? name)
 	  (make-node
-	   '##core#call '(#t)
+	   '##core#call (list #t)
 	   (list cont
 		 (make-node '##core#inline
 			    (list (if (and unsafe (pair? (cddr classargs)))
@@ -1111,7 +1111,7 @@
      (and inline-substitutions-enabled
 	  (null? callargs)
 	  (intrinsic? name)
-	  (make-node '##core#call '(#t) (list cont (qnode (first classargs))) ) ) )
+	  (make-node '##core#call (list #t) (list cont (qnode (first classargs))) ) ) )
 
     ;; (<op>) -> <id>
     ;; (<op> <x>) -> <x>
@@ -1129,12 +1129,12 @@
 		     (and (eq? 'quote (node-class x))
 			  (eq? id (first (node-parameters x))) ) ) 
 		   callargs) ] )
-	    (cond [(null? callargs) (make-node '##core#call '(#t) (list cont (qnode id)))]
+	    (cond [(null? callargs) (make-node '##core#call (list #t) (list cont (qnode id)))]
 		  [(null? (cdr callargs))
-		   (make-node '##core#call '(#t) (list cont (first callargs))) ]
+		   (make-node '##core#call (list #t) (list cont (first callargs))) ]
 		  [(or (fourth classargs) (eq? number-type 'fixnum))
 		   (make-node
-		    '##core#call '(#t)
+		    '##core#call (list #t)
 		    (list
 		     cont
 		     (fold-inner
@@ -1151,7 +1151,7 @@
 	    (= n (first classargs))
 	    (intrinsic? name)
 	    (make-node
-	     '##core#call '(#t)
+	     '##core#call (list #t)
 	     (list cont
 		   (make-node 
 		    '##core#inline (list (second classargs))
@@ -1178,12 +1178,12 @@
 		     (and (eq? 'quote (node-class x))
 			  (eq? id (first (node-parameters x))) ) ) 
 		   callargs) ] )
-	    (cond [(null? callargs) (make-node '##core#call '(#t) (list cont (qnode id)))]
+	    (cond [(null? callargs) (make-node '##core#call (list #t) (list cont (qnode id)))]
 		  [(null? (cdr callargs))
-		   (make-node '##core#call '(#t) (list cont (first callargs))) ]
+		   (make-node '##core#call (list #t) (list cont (first callargs))) ]
 		  [else
 		   (make-node
-		    '##core#call '(#t)
+		    '##core#call (list #t)
 		    (list
 		     cont
 		     (fold-inner
@@ -1204,7 +1204,7 @@
 	    (intrinsic? name)
 	    (or (third classargs) unsafe)
 	    (make-node
-	     '##core#call '(#t)
+	     '##core#call (list #t)
 	     (list cont 
 		   (if (eq? number-type 'fixnum)
 		       (make-node

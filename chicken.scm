@@ -121,6 +121,7 @@
 			       'inline
 			       'inline-global
 			       'unboxing
+			       'strict-types
 			       options) ) ) ) )
 		 (loop (cdr rest)) ) )
 	      ((eq? 'debug-level o)

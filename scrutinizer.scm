@@ -28,8 +28,8 @@
   (unit scrutinizer)
   (hide match-specialization specialize-node! specialization-statistics
 	procedure-type? named? procedure-result-types procedure-argument-types
-	noreturn-type? rest-type procedure-name d-depth
-	compatible-types? type<=?))
+	noreturn-type? rest-type procedure-name d-depth generate-type-checks!
+	compatible-types? type<=? initial-argument-types))
 
 
 (include "compiler-namespace")
@@ -82,9 +82,6 @@
 ;            | INTEGER | SYMBOL | STRING
 ;            | (quote CONSTANT)
 ;            | (TEMPLATE . TEMPLATE)
-;
-;   - (not number) succeeds for fixnum and flonum
-;   - (not list) succeeds for pair and null
 
 
 (define-constant +fragment-max-length+ 5)
@@ -154,7 +151,8 @@
 
     (define (variable-result id e loc flow)
       (cond ((blist-type id flow) => list)
-	    ((and (get db id 'assigned) 
+	    ((and (not strict-variable-types)
+		  (get db id 'assigned) 
 		  (not (variable-mark id '##compiler#declared-type)))
 	     '(*))
 	    ((assq id e) =>
@@ -564,18 +562,6 @@
 	  (set! n (add1 n))
 	  n)))
 
-    (define (invalidate-blist)
-      (for-each
-       (lambda (b)
-	 (let ((var (caar b)))
-	   (when (and (get db var 'assigned)
-		      ;; if it has a known value, then it only assigned once
-		      (or (get db var 'unknown)
-			  (not (get db var 'value))))
-	     (dd "invalidating: ~a" b)
-	     (set-cdr! b '*))))
-       blist))
-
     (define (walk n e loc dest tail flow ctags) ; returns result specifier
       (let ((subs (node-subexpressions n))
 	    (params (node-parameters n)) 
@@ -625,17 +611,26 @@
 		   (first params)
 		   (lambda (vars argc rest)
 		     (let* ((namelst (if dest (list dest) '()))
-			    (args (append (make-list argc '*) (if rest '(#!rest) '()))) 
-			    (e2 (append (map (lambda (v) (cons v '*)) 
-					     (if rest (butlast vars) vars))
+			    (inits (initial-argument-types dest vars argc))
+			    (args (append inits (if rest '(#!rest) '())))
+			    (e2 (append (map (lambda (v i) (cons v i))
+					     (if rest (butlast vars) vars)
+					     inits)
 					e)))
+		       (when dest 
+			 (d "~a: initial-argument types: ~a" dest inits))
 		       (fluid-let ((blist '()))
 			 (let* ((initial-tag (tag))
 				(r (walk (first subs)
 					 (if rest (alist-cons rest 'list e2) e2)
 					 (add-loc dest loc)
 					 #f #t (list initial-tag) #f)))
-			   (list 
+			   (when (and specialize
+				      dest
+				      (not strict-variable-types) 
+				      (not unsafe))
+			     (generate-type-checks! n dest vars inits))
+			   (list
 			    (append
 			     '(procedure) 
 			     namelst
@@ -643,7 +638,7 @@
 			      (let loop ((argc argc) (vars vars) (args args))
 				(cond ((zero? argc) args)
 				      ((and (not (get db (car vars) 'assigned))
-					   (assoc (cons (car vars) initial-tag) blist))
+					    (assoc (cons (car vars) initial-tag) blist))
 				      =>
 				      (lambda (a)
 					(cons
@@ -674,7 +669,8 @@
 		       (sprintf 
 			   "assignment of value of type `~a' to toplevel variable `~a' does not match declared type `~a'"
 			 rt var type)
-		       #t))
+		       #t)
+		      (mark-variable var '##compiler#type #f))
 		    (when (and (not type)
 			       (not b)
 			       (not (eq? '* rt))
@@ -697,7 +693,8 @@
 				      "variable `~a' of type `~a' was modified to a value of type `~a'"
 				    var ot rt)
 				  #t)))))
-		      (set! blist (alist-cons (cons var (car flow)) rt blist)))
+		      (when strict-variable-types
+			(set! blist (alist-cons (cons var (car flow)) rt blist))))
 		    '(undefined)))
 		 ((##core#primitive ##core#inline_ref) '*)
 		 ((##core#call)
@@ -719,15 +716,13 @@
 			 (enforces (and pn (variable-mark pn '##compiler#enforce-argument-types)))
 			 (pt (and pn (variable-mark pn '##compiler#predicate))))
 		    (let ((r (call-result n args e loc params)))
-		      (unless strict-variable-types
-			(invalidate-blist))
 		      (for-each
 		       (lambda (arg argr)
 			 (when (eq? '##core#variable (node-class arg))
 			   (let* ((var (first (node-parameters arg)))
 				  (a (assq var e))
 				  (oparg? (eq? arg (first subs)))
-				  (pred (and pt ctags (not oparg?))))
+				  (pred (and pt ctags (not (get db var 'assigned)) (not oparg?))))
 			     (cond (pred
 				    (d "  predicate `~a' indicates `~a' is ~a in flow ~a" pn var pt
 				       (car ctags))
@@ -762,7 +757,7 @@
 					 (dd "  hardcoded special case: ~a" var)
 					 (set! r (srt n r))))))))
 		       subs
-		       (cons fn (procedure-argument-types fn (sub1 len))))
+		       (cons fn (nth-value 0 (procedure-argument-types fn (sub1 len)))))
 		      r)))
 		 ((##core#switch ##core#cond)
 		  (bomb "unexpected node class: ~a" class))
@@ -845,7 +840,7 @@
 	       ((symbol? n) n)
 	       (else #f)))))
 
-(define (procedure-argument-types t n)
+(define (procedure-argument-types t n #!optional norest)
   (cond ((or (memq t '(* procedure)) 
 	     (not-pair? t)
 	     (eq? 'deprecated (car t)))
@@ -859,11 +854,15 @@
 			    (m n)
 			    (opt #f))
 		   (cond ((null? at) '())
-			 ((eq? '#!optional (car at)) 
-			  (loop (cdr at) m #t) )
+			 ((eq? '#!optional (car at))
+			  (if norest
+			      '()
+			      (loop (cdr at) m #t) ))
 			 ((eq? '#!rest (car at))
-			  (set! vf (and (pair? (cdr at)) (eq? 'values (cadr at))))
-			  (make-list m (rest-type (cdr at))))
+			  (cond (norest '())
+				(else
+				 (set! vf (and (pair? (cdr at)) (eq? 'values (cadr at))))
+				 (make-list m (rest-type (cdr at))))))
 			 ((and opt (<= m 0)) '())
 			 (else (cons (car at) (loop (cdr at) (sub1 m) opt)))))))
 	   (values llist vf)))
@@ -925,7 +924,7 @@
 		(when (and old (not (equal? old new)))
 		  (##sys#notice
 		   (sprintf
-		       "type-definition `~a' for toplevel binding `~a' conflicts with previously loaded type `~a'"
+		       "type-deifnition `~a' for toplevel binding `~a' conflicts with previously loaded type `~a'"
 		     name new old)))
 		(mark-variable name '##compiler#type new)
 		(when specs
@@ -1067,13 +1066,78 @@
 	  (else #f)))
   (validate type))
 
+(define (initial-argument-types dest vars argc)
+  (if (and dest (variable-mark dest '##compiler#declared-type))
+      (let ((ptype (variable-mark dest '##compiler#type)))
+	(if (procedure-type? ptype)
+	    (nth-value 0 (procedure-argument-types ptype argc #t))
+	    (make-list argc '*)))
+      (make-list argc '*)))
+
+
+;;; generate type-checks for formal variables
+
+(define (generate-type-checks! node loc vars inits)
+  (let ((body (first (node-subexpressions node))))
+    (let loop ((vars (reverse vars)) (inits (reverse inits)) (b body))
+      (cond ((null? inits)
+	     (if (eq? b body)
+		 body
+		 (copy-node!
+		  (make-node 
+		   (node-class node)	; lambda
+		   (node-parameters node)
+		   (list b))
+		  node)))
+	    ((eq? '* (car inits))
+	     (loop (cdr vars) (cdr inits) b))
+	    (else
+	     (loop
+	      (cdr vars)
+	      (cdr inits)
+	      (make-node
+	       'let (list (gensym))
+	       (list
+		(build-node-graph
+		 (let ((t (car inits))
+		       (v (car vars)))
+		   (case t
+		     ((null) `(if (not (null? ,v))
+				  (##core#app ##sys#error ',loc "bad argument type - not null" v)))
+		     ((eof) `(if (not (eof-object? ,v))
+				 (##core#app ##sys#error ',loc "bad argument type - not eof" v)))
+		     ((string) `(##core#app ##sys#check-string ,v ',loc))
+		     ((fixnum) `(##core#app ##sys#check-exact ,v ',loc))
+		     ((float) `(##core#app ##sys#check-inexact ,v ',loc))
+		     ((char) `(##core#app ##sys#check-char ,v ',loc))
+		     ((number) `(##core#app ##sys#check-number ,v ',loc))
+		     ((list) `(##core#app ##sys#check-list ,v ',loc))
+		     ((symbol) `(##core#app ##sys#check-symbol ,v ',loc))
+		     ((pair) `(##core#app ##sys#check-pair ,v ',loc))
+		     ((boolean) `(##core#app ##sys#check-boolean ,v ',loc))
+		     ((procedure) `(##core#app ##sys#check-closure ,v ',loc))
+		     ((vector) `(##core#app ##sys#check-vector ,v ',loc))
+		     ((pointer) `(##core#app ##sys#check-pointer ,v ',loc))
+		     ((blob) `(##core#app ##sys#check-blob ,v ',loc))
+		     ((locative) `(##core#app ##sys#check-locative ,v ',loc))
+		     ((port) `(##core#app ##sys#check-port ,v ',loc))
+		     ((pointer-vector) `(##core#app ##sys#check-structure ,v 'pointer-vector ',loc))
+		     (else
+		      (if (pair? t)
+			  (case (car t)
+			    ((procedure) `(##core#app ##sys#check-closure ,v ',loc))
+			    ((struct) `(##core#app ##sys#check-structure ,v ',(cadr t) ',loc))
+			    (else (bomb "can not generate type-check for `~a'" t)))
+			  (bomb "can not generate type-check for `~a'" t))))))
+		b))))))))
+
+
+;;; hardcoded result types for certain primitives
+
 (define-syntax define-special-case
   (syntax-rules ()
     ((_ name handler)
      (##sys#put! 'name '##compiler#special-result-type handler))))
-
-
-;;; hardcoded result types for certain primitives
 
 (define-special-case ##sys#make-structure
   (lambda (node rtypes)

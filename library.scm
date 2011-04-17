@@ -304,6 +304,16 @@ EOF
       (##core#inline "C_i_check_char_2" x (car loc))
       (##core#inline "C_i_check_char" x) ) )
 
+(define (##sys#check-boolean x . loc)
+  (If (pair? loc)
+      (##core#inline "C_i_check_boolean_2" x (car loc))
+      (##core#inline "C_i_check_boolean" x) ) )
+
+(define (##sys#check-locative x . loc)
+  (If (pair? loc)
+      (##core#inline "C_i_check_locative_2" x (car loc))
+      (##core#inline "C_i_check_locative" x) ) )
+
 (define (##sys#check-integer x . loc)
   (unless (##core#inline "C_i_integerp" x) 
     (##sys#error-hook (foreign-value "C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR" int)
@@ -4041,6 +4051,8 @@ EOF
 	((34) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a procedure" args))
 	((35) (apply ##sys#signal-hook #:type-error loc "bad argument type - invalid base" args))
 	((36) (apply ##sys#signal-hook #:limit-error loc "recursion too deep or circular data encountered" args))
+	((37) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a boolean" args))
+	((38) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a locative" args))
 	(else (apply ##sys#signal-hook #:runtime-error loc "unknown internal error" args)) ) ) ) )
 
 
