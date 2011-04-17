@@ -169,7 +169,8 @@
   '(##sys#slot ##sys#setslot ##sys#block-ref ##sys#block-set!
     ##sys#call-with-current-continuation ##sys#size ##sys#byte ##sys#setbyte
     ##sys#pointer? ##sys#generic-structure? ##sys#structure? ##sys#check-structure
-    ##sys#check-exact ##sys#check-number ##sys#check-list ##sys#check-pair ##sys#check-string ##sys#check-symbol ##sys#check-boolean
+    ##sys#check-exact ##sys#check-number ##sys#check-list ##sys#check-pair ##sys#check-string
+    ##sys#check-symbol ##sys#check-boolean ##sys#check-locative
     ##sys#check-char ##sys#check-vector ##sys#check-byte-vector ##sys#list ##sys#cons
     ##sys#call-with-values ##sys#fits-in-int? ##sys#fits-in-unsigned-int? ##sys#flonum-in-fixnum-range? 
     ##sys#fudge ##sys#immediate? ##sys#direct-return ##sys#context-switch
