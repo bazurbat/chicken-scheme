@@ -320,6 +320,8 @@ given here:
         |  VAL
 
 A type-declaration overrides any previous declaration for the same identifier.
+See also [[Types]] for more information about using type-information and
+a more convenient type-declaration syntax ({{:}}).
 
 
 === extended-bindings
@@ -396,6 +398,6 @@ levels 2 and higher).
 
 
 ---
-Previous: [[Modules]]
+Previous: [[Types]]
 
 Next: [[Parameters]]

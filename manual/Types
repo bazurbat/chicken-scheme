@@ -1,0 +1,84 @@
+[[tags: manual]]
+[[toc:]]
+
+
+=== Types
+
+A dynamically typed language like Scheme does not restrict the type of
+values bound or assigned to variables to be constant troughout the
+run-time of a program. This provides a lot of flexibility and makes it
+easy to get code up and running quickly, but can make maintenance of
+larger code bases more difficult as the implicit assignment of types
+to variables done by the programmer has to be "recovered" when the
+code is inspected or debugged again. Statically typed languages
+enforce distinct types for all variables, optionally providing
+type-inference to compute types without requiring the user to specify
+explicit type declarations in many cases.
+
+If the compiler has some knowledge of the types of local or global
+variables then it can help in catching type-related errors like
+passing a value of the wrong type to a user-defined or built-in
+procedure. Type-information also can be used to generate more
+efficient code by omitting unnecessary type-checks.
+
+CHICKEN provides an intra-procedural flow-analysis pass and two
+compiler options for using type-information in this manner:
+
+{{-scrutinize}} will look for possibly incorrectly typed arguments to
+library procedure calls and generate warnings in such cases.
+
+{{-specialize}} will replace certain generic library procedure calls
+with faster type-specific operations.
+
+Note that the interpreter will always ignore type-declarations
+and will not perform any flow-analysis of interpreted code.
+
+
+==== Declaring types
+
+Type information for all core library units is available by default.
+User-defined global variables can be declared to have a type using
+the {{(declare (type ...))}} or {{:}} syntax.
+
+
+===== :
+
+<syntax>(: IDENTIFIER TYPE)</syntax>
+
+Declares that the global variable {{IDENTIFIER}} is of the given type.
+
+If {{IDENTIFIER}} names a {{define}}d procedure, then all required
+arguments are checked at runtime on procedure-entry whether they have
+the correct types (type for optional or "rest" arguments are currently
+not checked).  If the code is compiled with the {{-strict-types}}
+option or if it is compiled in unsafe mode, then no type-checks will
+be generated.
+
+
+==== Type syntax
+
+XXX ...
+
+
+==== Using type information in extensions
+
+XXX ... -emit-type-file, -types
+
+
+==== Optimizations done by specialization
+
+If argument types are known, then calls to known library procedures
+are replaced with non-checking variants (if available). Additionally,
+procedure checks can be omitted in cases where the value in operator
+position of a procedure call is known to be a procedure. Performance
+results will vary greatly depending on the nature of the compiled
+code. In general, specialization will not make code that is compiled
+in unsafe mode any faster: compilation in unsafe mode will omit most
+type checks anyway. But specialization can often improve the
+performance of code compiled in safe (default) mode.
+
+
+---
+Previous: [[Modules]]
+
+Next: [[Declarations]]

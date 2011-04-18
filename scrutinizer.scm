@@ -203,8 +203,8 @@
 		    " OR "))
 		  ((struct)
 		   (sprintf "a structure of type ~a" (cadr t)))
-		  (else (bomb "invalid type: ~a" t))))
-	       (else (bomb "invalid type: ~a" t))))))
+		  (else (bomb "invalid type" t))))
+	       (else (bomb "invalid type" t))))))
 
     (define (argument-string args)
       (let* ((len (length args))
@@ -683,12 +683,12 @@
 			  (mark-variable var '##compiler#type rt))))
 		    (when b
 		      (cond ((eq? 'undefined (cdr b)) (set-cdr! b rt))
-			    (strict-variable-types
+			    #;(strict-variable-types
 			     (let ((ot (or (blist-type var flow) (cdr b))))
 			       ;;XXX compiler-syntax for "map" will introduce
 			       ;;    assignments that trigger this warning, so this
 			       ;;    is currently disabled
-			       #;(unless (compatible-types? ot rt)
+			       (unless (compatible-types? ot rt)
 				 (report
 				  loc
 				  (sprintf 
@@ -762,7 +762,7 @@
 		       (cons fn (nth-value 0 (procedure-argument-types fn (sub1 len)))))
 		      r)))
 		 ((##core#switch ##core#cond)
-		  (bomb "unexpected node class: ~a" class))
+		  (bomb "unexpected node class" class))
 		 (else
 		  (for-each (lambda (n) (walk n e loc #f #f flow #f)) subs)
 		  '*))))
@@ -884,7 +884,7 @@
 	      (cond ((null? rt) '())
 		    ((eq? '* rt) (return '*))
 		    (else (cons (car rt) (loop (cdr rt)))))))))
-	(else (bomb "not a procedure type: ~a" t))))
+	(else (bomb "not a procedure type" t))))
 
 (define (named? t)
   (and (pair? t) 
@@ -1080,6 +1080,69 @@
 ;;; generate type-checks for formal variables
 
 (define (generate-type-checks! node loc vars inits)
+  ;; assumes type is validated
+  (define (test t v)
+    (case t
+      ((null) `(##core#inline "C_eqp" ,v '()))
+      ((eof) `(##core#inline "C_eofp" ,v))
+      ((string) `(if (##core#inline "C_blockp" ,v)
+		     (##core#inline "C_stringp" ,v)
+		     '#f))
+      ((float) `(if (##core#inline "C_blockp" ,v)
+		    (##core#inline "C_flonump" ,v)
+		    '#f))
+      ((char) `(##core#inline "C_charp" ,v))
+      ((fixnum) `(##core#inline "C_fixnump" ,v))
+      ((number) `(##core#inline "C_i_numberp" ,v))
+      ((list) `(##core#inline "C_i_listp" ,v))
+      ((symbol) `(if (##core#inline "C_blockp" ,v)
+		     (##core#inline "C_symbolp" ,v)
+		     '#f))
+      ((pair) `(if (##core#inline "C_blockp" ,v)
+		   (##core#inline "C_pairp" ,v)
+		   '#f))
+      ((boolean) `(##core#inline "C_booleanp" ,v))
+      ((procedure) `(if (##core#inline "C_blockp" ,v)
+			(##core#inline "C_closurep" ,v)
+			'#f))
+      ((vector) `(if (##core#inline "C_blockp" ,v)
+		     (##core#inline "C_vectorp" ,v)
+		     '#f))
+      ((pointer) `(if (##core#inline "C_blockp" ,v)
+		      (##core#inline "C_pointerp" ,v)
+		      '#f))
+      ((blob) `(if (##core#inline "C_blockp" ,v)
+		   (##core#inline "C_byteblockp" ,v)
+		   '#f))
+      ((pointer-vector) `(##core#inline "C_i_structurep" ,v 'pointer-vector))
+      ((port) `(if (##core#inline "C_blockp" ,v)
+		   (##core#inline "C_portp" ,v)
+		   '#f))
+      ((locative) `(if (##core#inline "C_blockp" ,v)
+		       (##core#inline "C_locativep" ,v)
+		       '#f))
+      (else
+       (case (car t)
+	 ((procedure) `(if (##core#inline "C_blockp" ,v)
+			   (##core#inline "C_closurep" ,v)
+			   '#f))
+	 ((or) 
+	  (cond ((null? (cdr t)) '(##core#undefined))
+		((null? (cddr t)) (test (cadr t) v))
+		(else 
+		 `(if ,(test (cadr t) v)
+		      '#t
+		      ,(test `(or ,@(cddr t)) v)))))
+	 ((and)
+	  (cond ((null? (cdr t)) '(##core#undefined))
+		((null? (cddr t)) (test (cadr t) v))
+		(else
+		 `(if ,(test (cadr t) v)
+		      ,(test `(and ,@(cddr t)) v)
+		      '#f))))
+	 ((not)
+	  `(not ,(test (cadr t) v)))
+	 (else (bomb "invalid type" t v))))))
   (let ((body (first (node-subexpressions node))))
     (let loop ((vars (reverse vars)) (inits (reverse inits)) (b body))
       (cond ((null? inits)
@@ -1095,42 +1158,19 @@
 	     (loop (cdr vars) (cdr inits) b))
 	    (else
 	     (loop
-	      (cdr vars)
-	      (cdr inits)
+	      (cdr vars) (cdr inits)
 	      (make-node
 	       'let (list (gensym))
 	       (list
 		(build-node-graph
 		 (let ((t (car inits))
 		       (v (car vars)))
-		   (case t
-		     ((null) `(if (not (null? ,v))
-				  (##core#app ##sys#error ',loc "bad argument type - not null" v)))
-		     ((eof) `(if (not (eof-object? ,v))
-				 (##core#app ##sys#error ',loc "bad argument type - not eof" v)))
-		     ((string) `(##core#app ##sys#check-string ,v ',loc))
-		     ((fixnum) `(##core#app ##sys#check-exact ,v ',loc))
-		     ((float) `(##core#app ##sys#check-inexact ,v ',loc))
-		     ((char) `(##core#app ##sys#check-char ,v ',loc))
-		     ((number) `(##core#app ##sys#check-number ,v ',loc))
-		     ((list) `(##core#app ##sys#check-list ,v ',loc))
-		     ((symbol) `(##core#app ##sys#check-symbol ,v ',loc))
-		     ((pair) `(##core#app ##sys#check-pair ,v ',loc))
-		     ((boolean) `(##core#app ##sys#check-boolean ,v ',loc))
-		     ((procedure) `(##core#app ##sys#check-closure ,v ',loc))
-		     ((vector) `(##core#app ##sys#check-vector ,v ',loc))
-		     ((pointer) `(##core#app ##sys#check-pointer ,v ',loc))
-		     ((blob) `(##core#app ##sys#check-blob ,v ',loc))
-		     ((locative) `(##core#app ##sys#check-locative ,v ',loc))
-		     ((port) `(##core#app ##sys#check-port ,v ',loc))
-		     ((pointer-vector) `(##core#app ##sys#check-structure ,v 'pointer-vector ',loc))
-		     (else
-		      (if (pair? t)
-			  (case (car t)
-			    ((procedure) `(##core#app ##sys#check-closure ,v ',loc))
-			    ((struct) `(##core#app ##sys#check-structure ,v ',(cadr t) ',loc))
-			    (else (bomb "can not generate type-check for `~a'" t)))
-			  (bomb "can not generate type-check for `~a'" t))))))
+		   `(if ,(test t v)
+			(##core#undefined)
+			(##core#app 
+			 ##sys#error ',loc 
+			 '"type check failed"
+			 ',t ',v))))
 		b))))))))
 
 
