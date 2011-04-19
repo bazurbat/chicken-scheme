@@ -178,7 +178,7 @@
 ; [##core#bind {<count>} <exp-v>... <exp>]
 ; [##core#let_unboxed {<name> <utype>} <exp1> <exp2>]
 ; [##core#undefined {}]
-; [##core#unboxed_ref {<name> <utype>}]
+; [##core#unboxed_ref {<name> [<utype>]}]
 ; [##core#unboxed_set! {<name> <utype>} <exp>]
 ; [##core#inline {<op>} <exp>...]
 ; [##core#inline_allocate {<op <words>} <exp>...]

@@ -24,6 +24,9 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
+;; I don't understand this code anymore. It needs cleanup and simplification.
+
+
 (declare
   (unit unboxing)
   (hide d-depth))
@@ -113,6 +116,7 @@
 		      (if (and dest (cdr dest))
 			  n2
 			  (let ((tmp (gensym "tu")))
+			    ;; introduce unboxed temporary for result
 			    (make-node
 			     '##core#let_unboxed (list tmp rtype)
 			     (list
@@ -144,7 +148,7 @@
 				   (make-node '##core#unboxed_ref (list tmp rtype) '()))))
 				((*) (bomb "unboxed type `*' not allowed as result"))
 				(else (bomb "invalid unboxed type" rtype))))))))) 
-		   ((or (eq? (car atypes) '*) 
+		   ((or (eq? (car atypes) '*) ; already unboxed argument -> just pass it unchanged
 			(unboxed-value? (car args)))
 		    (loop (cdr args)
 			  (cdr anodes)
@@ -159,6 +163,8 @@
 		    ;;    (But we must make sure there are not intermediate side
 		    ;;    effects - possibly only reuse unboxed value if unassigned
 		    ;;    local or lexical variable ref, or literal)
+		    ;;
+		    ;;    (See also comment below, after "walk-lambda")
 		    (let ((tmp (gensym "tu")))
 		      (make-node
 		       '##core#let_unboxed (list tmp (car atypes))
@@ -178,7 +184,7 @@
 			     (loop (cdr args)
 				   (cdr anodes)
 				   (cdr atypes)
-				   (cons (make-node '##core#unboxed_ref (list tmp) '())
+				   (cons (make-node '##core#unboxed_ref (list tmp (car atypes)) '())
 					 iargs))))))))
 	   n)
 	  (straighten-binding! n))
@@ -321,6 +327,7 @@
 					       unchecked-specialized-arithmetic))
 				      rw1))
 			     (args (map (cut walk <> #f rw pass2?) subs)))
+			;; rewrite inline operation to unboxed one, if possible
 			(cond ((not rw) #f)
 			      ((or (not pass2?)
 				   (and dest (unboxed? dest))
@@ -414,7 +421,32 @@
 	;; walk a second time and rewrite
 	(d "walk lambda: ~a (pass 2)" id)
 	(walk body #f #f #t)))
+
+    ;;XXX Note: lexical references ("##core#ref" nodes) are unboxed
+    ;;    repeatedly which is sub-optimal: the unboxed temporaries bound
+    ;;    via "##core#let_unboxed" could be re-used in many cases.
+    ;;    One possible approach would be an additional "cleanup" pass
+    ;;    that replaces
+    ;;
+    ;;    (##core#let_unboxed (TU TYPE) X (##core#ref VAR (SLOT)) Y)
+    ;;
+    ;;    with
+    ;;
+    ;;    (##core#let_unboxed (TU TYPE) (##core#unboxed_ref TU1) Y)
     
+    ;;XXX Note: we could improve this by using float-constants directly
+    ;;    in generated code, i.e.:
+    ;;
+    ;;    [##core#unboxed_const {STRING}]
+    ;;
+    ;;    Introduced could these by the mentioned cleanup pass:
+    ;;
+    ;;    (##core#inline "C_flonum_magnitude" (quote NUM))
+    ;;
+    ;;    ~>
+    ;;
+    ;;    (##core#unboxed_ref NUM TYPE)
+
     (walk-lambda #f '() node)
     (when (and any-rewrites
 	       (debugging 'o "unboxed rewrites:"))
