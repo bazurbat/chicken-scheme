@@ -30,6 +30,10 @@ library procedure calls and generate warnings in such cases.
 {{-specialize}} will replace certain generic library procedure calls
 with faster type-specific operations.
 
+{{-strict-types}} makes type-analysis more optimistic and gives
+more opportunities for specialization, but may result in unsafe
+code.
+
 Note that the interpreter will always ignore type-declarations
 and will not perform any flow-analysis of interpreted code.
 
@@ -47,22 +51,97 @@ the {{(declare (type ...))}} or {{:}} syntax.
 
 Declares that the global variable {{IDENTIFIER}} is of the given type.
 
-If {{IDENTIFIER}} names a {{define}}d procedure, then all required
-arguments are checked at runtime on procedure-entry whether they have
-the correct types (type for optional or "rest" arguments are currently
-not checked).  If the code is compiled with the {{-strict-types}}
-option or if it is compiled in unsafe mode, then no type-checks will
-be generated.
+If {{IDENTIFIER}} names a {{define}}d toplevel procedure, then all
+required arguments are checked at runtime on procedure-entry whether
+they have the correct types (type for optional or "rest" arguments are
+currently not checked).  If the code is compiled with the
+{{-strict-types}} option or if it is compiled in unsafe mode, then no
+type-checks will be generated.
 
 
 ==== Type syntax
 
-XXX ...
+Types declared with the {{type}} declaration (see [[Declarations]])
+or {{:}} should follow the syntax given below:
+
+<table>
+<tr><th>TYPE</th><th>meaning</th></tr>
+<tr><td>{{*}}</td><td>any value</td></tr>
+<tr><td>{{deprecated}}</td><td>any use of this variable will generate a warning</td></tr>
+<tr><td>VALUETYPE</td><td></td></tr>
+</table>
+
+<table>  
+<tr><th>VALUETYPE</th><th>meaning</th></tr>
+<tr><td>{{(or VALUETYPE ...)}}</td><td>"union" or "sum" type</td></tr>
+<tr><td>{{(struct STRUCTURENAME)}}</td><td>record structure of given kind</td></tr>
+<tr><td>{{(procedure [NAME] (VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]]) . RESULTS)}}</td><td>procedure type, optionally with name</td></tr>
+<tr><td>{{(VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]] -> . RESULTS)}}</td><td>alternative procedure type syntax</td></tr>
+<tr><td>BASICTYPE</td><td></td></tr>
+</table>
+
+<table>
+<tr><th>BASICTYPE</th><th>meaning</th></tr>
+<tr><td>{{*}}</td><td>any value</td></tr>
+<tr><td>{{string}}</td><td>string</td></tr>
+<tr><td>{{symbol}}</td><td>symbol</td></tr>
+<tr><td>{{char}}</td><td>character</td></tr>
+<tr><td>{{boolean}}</td><td>boolean</td></tr>
+<tr><td>{{list}}</td><td>null or pair</td></tr>
+<tr><td>{{pair}}</td><td>pair</td></tr>
+<tr><td>{{null}}</td><td>empty list</td></tr>
+<tr><td>{{procedure}}</td><td>unspecific procedure</td></tr>
+<tr><td>{{vector}}</td><td>vector</td></tr>
+<tr><td>{{eof}}</td><td>end-of-file object</td></tr>
+<tr><td>{{port}}</td><td>input- or output-port</td></tr>
+<tr><td>{{blob}}</td><td>byte vector</td></tr>
+<tr><td>{{pointer}}</td><td>native pointer</td></tr>
+<tr><td>{{pointer-vector}}</td><td>vector or native pointers</td></tr>
+<tr><td>{{locative}}</td><td>locative object</td></tr>
+<tr><td>{{fixnum}}</td><td>word-sized integer</td></tr>
+<tr><td>{{float}}</td><td>floating-point number</td></tr>
+<tr><td>{{number}}</td><td>fixnum or float</td></tr>
+</table>
+
+<table>  
+<tr><th>RESULTS</th><th>meaning</th></tr>
+<tr><td>{{*}}</td><td>any number of unspecific results</td></tr>
+<tr><td>{{(RESULTTYPE ...)}}</td><td>specific number of results with given types</td></tr>
+</table>
+  
+<table>  
+<tr><th>RESULTTYPE</th><th>meaning</th></tr>
+<tr><td>{{undefined}}</td><td>a single undefined result</td></tr>
+<tr><td>{{noreturn}}</td><td>procedure does not return normally</td></tr>
+<tr><td>VALUETYPE</td><td></td></tr>
+</table>
 
 
 ==== Using type information in extensions
 
-XXX ... -emit-type-file, -types
+Type information of declared toplevel variables can be used in client
+code that refers to the definitions in a compiled file. The following
+compiler options allow saving type-declarations to a file and consulting
+the type declarations retained in this manner:
+
+{{-emit-type-file FILENAME}} writes the type-information for all declared
+definitions in an internal format to {{FILENAME}}.
+
+{{-types FILENAME}} loads and registers the type-information in
+{{FILENAME}} which should be a file generated though a previous use of
+{{-emit-type-file}}.
+
+If library code is used with {{require-extension}} or {{(declare (unit
+...))}}  and a {{.types}} file of the same name exists in the
+extension repository path, then it is automatically consulted. This
+allows code using these libraries to take advantage of type-information
+for library definitions.
+
+Note that procedure-definitions in dynamically loaded code that was
+compiled with {{-strict-types}} will not check the types of their
+arguments which will result in unsafe code. Invoking such procedures
+with incorrectly typed arguments will crash the program or produce
+random results.
 
 
 ==== Optimizations done by specialization

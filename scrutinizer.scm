@@ -664,6 +664,7 @@
 		    (when (and type (not b)
 			       (not (eq? type 'deprecated))
 			       (not (match type rt)))
+		      ;;XXX make this an error with strict-types?
 		      (report
 		       loc
 		       (sprintf 
