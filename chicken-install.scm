@@ -38,6 +38,7 @@
   (import foreign)
 
   (define +default-repository-files+
+    ;;XXX keep this up-to-date!
     '("setup-api.so" "setup-api.import.so"
       "setup-download.so" "setup-download.import.so"
       "chicken.import.so"
@@ -578,6 +579,12 @@
 	(print "mapped " eggs " to " eggs2))
       eggs2))
 
+  (define (scan-directory dir)
+    (for-each
+     (lambda (info)
+       (pp (cons (car info) (cadr info))))
+     (gather-egg-information dir)))      
+
   (define ($system str)
     (let ((r (system
               (if *windows-shell*
@@ -619,6 +626,7 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
   -D   -feature FEATURE         features to pass to sub-invocations of `csc'
        -debug                   enable full display of error message information
        -keep-going              continue installation even if dependency fails
+       -scan DIRECTORY          scan local directory for highest available egg versions
 EOF
 );|
     (exit code))
@@ -639,6 +647,7 @@ EOF
 
   (define (main args)
     (let ((update #f)
+	  (scan #f)
           (rx (irregex "([^:]+):(.+)")))
       (setup-proxy (get-environment-variable "http_proxy"))
       (let loop ((args args) (eggs '()))
@@ -647,6 +656,7 @@ EOF
 		      (error 
 		       "`-deploy' only makes sense in combination with `-prefix DIRECTORY`"))
 		     (update (update-db))
+		     (scan (scan-directory scan))
                      (else
 		      (let ((defaults (load-defaults)))
 			(when (null? eggs)
@@ -754,6 +764,10 @@ EOF
                         (unless (pair? (cdr args)) (usage 1))
                         (set! *username* (cadr args))
                         (loop (cddr args) eggs))
+		       ((string=? "-scan" arg)
+                        (unless (pair? (cdr args)) (usage 1))
+			(set! scan (cadr args))
+			(loop (cddr args) eggs))
 		       ((string=? "-trunk" arg)
 			(set! *trunk* #t)
 			(loop (cdr args) eggs))

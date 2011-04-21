@@ -127,7 +127,7 @@
 		    sos)))
 	       (values src ver))))))
 
-  (define (gather-egg-information dir)	; used by salmonella
+  (define (gather-egg-information dir)	; used by salmonella (among others)
     (let ((ls (directory dir)))
       (filter-map
        (lambda (egg)
