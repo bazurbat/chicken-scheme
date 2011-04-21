@@ -567,6 +567,7 @@ Available options:
 ; {{-D   -feature FEATURE}} : pass this on to subinvocations of {{csi}} and {{csc}} (when done via {{compile}} or {{(run (csc ...))}})
 ; {{-debug}} : print full call-trace when encountering errors in the setup script
 ; {{-keep-going}} : continue installation, even if a dependency fails
+; {{-scan DIRECTORY}} : scan local egg source repository or highest available versions
 
 {{chicken-install}} recognizes the {{http_proxy}} environment variable, if set.
 
@@ -589,6 +590,7 @@ Available options:
 ; {{-host}} : when cross-compiling, show extensions for host system only
 ; {{-target}} : when cross-compiling, show extensions for target system only
 ; {{-exact}} : match extension-name exactly (do not match as pattern)
+; {{-list}} : list installed egg version in format suitable for {{chicken-install -override}}
 
 
 === Security
