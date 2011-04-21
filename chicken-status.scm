@@ -31,7 +31,7 @@
   
   (import scheme chicken foreign)
   (import srfi-1 posix data-structures utils ports irregex
-	  files setup-api)
+	  files setup-api extras)
 
   (define-foreign-variable C_TARGET_LIB_HOME c-string)
   (define-foreign-variable C_BINARY_VERSION int)
@@ -49,11 +49,13 @@
     (filter (cut irregex-search rx <>) lst))
 
   (define (gather-eggs patterns)
-    (let ((eggs (map pathname-file 
-		     (glob (make-pathname (repo-path) "*" "setup-info")))))
+    (let ((eggs (gather-all-eggs)))
       (delete-duplicates
        (concatenate (map (cut grep <> eggs) patterns))
        string=?)))
+
+  (define (gather-all-eggs)
+    (map pathname-file (glob (make-pathname (repo-path) "*" "setup-info"))))
 
   (define (format-string str cols #!optional right (padc #\space))
     (let* ((len (string-length str))
@@ -100,6 +102,13 @@
        eggs)
       string<?)))
 
+  (define (dump-installed-versions)
+    (for-each
+     (lambda (egg)
+       (let ((version (assq 'version (read-info egg (repo-path)))))
+	 (pp (list egg (and version (cadr version))))))
+     (gather-all-eggs)))
+
   (define (usage code)
     (print #<<EOF
 usage: chicken-status [OPTION | PATTERN] ...
@@ -110,6 +119,7 @@ usage: chicken-status [OPTION | PATTERN] ...
        -exact                   treat PATTERN as exact match (not a pattern)
        -host                    when cross-compiling, show status of host extensions only
        -target                  when cross-compiling, show status of target extensions only
+       -list                    dump installed eggs and their versions in "override" format
 EOF
 );|
     (exit code))
@@ -118,6 +128,7 @@ EOF
 
   (define (main args)
     (let ((files #f)
+	  (dump #f)
 	  (exact #f))
       (let loop ((args args) (pats '()))
 	(if (null? args)
@@ -136,7 +147,8 @@ EOF
 			   (print "(none)")
 			   ((if files list-installed-files list-installed-eggs)
 			    eggs))))))
-	      (cond ((and *host-extensions* *target-extensions*)
+	      (cond (dump (dump-installed-versions))
+	            ((and *host-extensions* *target-extensions*)
 		     (print "host at " (repo-path) ":\n")
 		     (status)
 		     (fluid-let ((*host-extensions* #f))
@@ -156,6 +168,9 @@ EOF
 		     (loop (cdr args) pats))
 		    ((string=? arg "-exact")
 		     (set! exact #t)
+		     (loop (cdr args) pats))
+		    ((string=? arg "-list")
+		     (set! dump #t)
 		     (loop (cdr args) pats))
 		    ((or (string=? arg "-f") (string=? arg "-files"))
 		     (set! files #t)
