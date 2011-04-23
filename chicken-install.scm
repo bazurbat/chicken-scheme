@@ -325,18 +325,21 @@
 		 " (" (let ((v (assq 'version (extension-information (car e))))) 
 			(if v (cadr v) "???"))
 		 " -> " (cdr e) ")"
-		 #\newline) )
-	       upgrade)
-	 '("\nDo you want to replace the existing extensions?"))) )))
+		 #\newline) )))
+       upgrade)
+      '("\nDo you want to replace the existing extensions?"))))
 
   (define (override-version egg)
     (let ((name (string->symbol (if (pair? egg) (car egg) egg))))
       (cond ((assq name *override*) =>
 	     (lambda (a)
-	       (when (and (pair? egg) (not (equal? (cadr a) (cdr egg))))
-		 (warning
-		  (sprintf "version `~a' of extension `~a' overrides explicitly given version `~a'"
-		    (cadr a) name (cdr egg))))
+	       (cond ((and (pair? egg) (not (equal? (cadr a) (cdr egg))))
+		      (warning
+		       (sprintf 
+			   "version `~a' of extension `~a' overrides explicitly given version `~a'"
+			 (cadr a) name (cdr egg))))
+		     (else
+		      (print "overriding: " a)))
 	       (cadr a)))
 	    ((pair? egg) (cdr egg))
 	    (else #f))))
@@ -609,7 +612,7 @@
   (define (scan-directory dir)
     (for-each
      (lambda (info)
-       (pp (cons (car info) (cadr info))))
+       (pp (cons (car info) (cadadr info))))
      (gather-egg-information dir)))      
 
   (define ($system str)
@@ -799,7 +802,7 @@ EOF
 		       ((string=? "-override" arg)
                         (unless (pair? (cdr args)) (usage 1))
 			(set! *override* (read-file (cadr args)))
-			(loop (cddr args) eggs))			
+			(loop (cddr args) eggs))
 		       ((string=? "-trunk" arg)
 			(set! *trunk* #t)
 			(loop (cdr args) eggs))

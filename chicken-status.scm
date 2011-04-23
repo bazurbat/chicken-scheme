@@ -106,7 +106,7 @@
     (for-each
      (lambda (egg)
        (let ((version (assq 'version (read-info egg (repo-path)))))
-	 (pp (list (string->symbol egg) (and version (cadr version))))))
+	 (pp (list (string->symbol egg) (->string (and version (cadr version)))))))
      (gather-all-eggs)))
 
   (define (usage code)
