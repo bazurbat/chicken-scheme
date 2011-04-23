@@ -85,6 +85,20 @@
 	  (when (and (pair? r) (car r))
 	    (boxed! (car r))))
 
+	(define (literal-type x)
+	  (cond ((char? x) 'char)
+		((flonum? x) 'flonum)
+		((fixnum? x) 'fixnum)
+		((boolean? x) 'bool)
+		(else #f)))
+
+	(define (unboxed-literal x)
+	  (cond ((char? x)
+		 (sprintf "\'\\~a\'" (string-pad (number->string (char->integer x) 8) 3 #\0)))
+		((number? x) (number->string x))
+		((boolean? x) (if x "1" "0"))
+		(else (bomb "(unboxing) unexpected literal type" x))))
+
 	(define (alias v)
 	  (alist-ref v ae eq? v) )
 
@@ -154,6 +168,19 @@
 			  (cdr anodes)
 			  (cdr atypes)
 			  (cons (car anodes) iargs)))
+		   ;; if literal of correct type, pass directly as ##core#unboxed_ref
+		   ((and (eq? (node-class (car anodes)) 'quote)
+			 (eq? (literal-type (first (node-parameters (car anodes)))) (car atypes)))
+		    ;;XXX what if type does not match? error? warning?
+		    (loop (cdr args)
+			  (cdr anodes)
+			  (cdr atypes)
+			  (cons (make-node
+				 '##core#unboxed_ref 
+				 (list (unboxed-literal (first (node-parameters (car anodes))))
+				       (car atypes))
+				 '())
+				iargs)))
 		   (else
 		    ;; introduce unboxed temporary for argument
 		    ;;
@@ -434,19 +461,6 @@
     ;;
     ;;    (##core#let_unboxed (TU TYPE) (##core#unboxed_ref TU1) Y)
     
-    ;;XXX Note: we could improve this by using float-constants directly
-    ;;    in generated code, i.e.:
-    ;;
-    ;;    [##core#unboxed_const {STRING}]
-    ;;
-    ;;    Introduced could these by the mentioned cleanup pass:
-    ;;
-    ;;    (##core#inline "C_flonum_magnitude" (quote NUM))
-    ;;
-    ;;    ~>
-    ;;
-    ;;    (##core#unboxed_ref NUM TYPE)
-
     (walk-lambda #f '() node)
     (when (and any-rewrites
 	       (debugging 'o "unboxed rewrites:"))
