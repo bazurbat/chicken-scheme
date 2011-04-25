@@ -360,8 +360,10 @@
 
   (define (read-chunks in)
     (let get-chunks ([data '()])
-      (let ([size (string->number (read-line in) 16)])
-	(cond ((zero? size)
+      (let ((size (string->number (read-line in) 16)))
+	(cond ((not size)
+	       (error "invalid response from server - please try again"))
+              ((zero? size)
 	       (d "~%")
 	       (string-concatenate-reverse data))
 	      (else
