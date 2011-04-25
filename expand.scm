@@ -1388,11 +1388,7 @@
 	    'export))
 	  (mod (##sys#current-module)))
       (when mod
-	(set-module-export-list! 
-	 mod
-	 (let ((xl (module-export-list mod)))
-	   (or (eq? xl #t) 		; ==> #t
-	       (append xl exps)))))
+	(##sys#add-to-export-list mod exps))
       '(##core#undefined)))))
 
 

@@ -141,6 +141,13 @@
 	    (##sys#macro-environment (cdr saved))
 	    (##sys#current-module mod)))))))
 
+(define (##sys#add-to-export-list mod exps)
+  (set-module-export-list! 
+   mod
+   (let ((xl (module-export-list mod)))
+     (or (eq? xl #t) 		; ==> #t
+	 (append xl exps)))))
+
 (define (##sys#toplevel-definition-hook sym mod exp val) #f)
 
 (define (##sys#register-meta-expression exp)
