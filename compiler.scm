@@ -178,7 +178,7 @@
 ; [##core#bind {<count>} <exp-v>... <exp>]
 ; [##core#let_unboxed {<name> <utype>} <exp1> <exp2>]
 ; [##core#undefined {}]
-; [##core#unboxed_ref {<name> <utype>}]
+; [##core#unboxed_ref {<name> [<utype>]}]
 ; [##core#unboxed_set! {<name> <utype>} <exp>]
 ; [##core#inline {<op>} <exp>...]
 ; [##core#inline_allocate {<op <words>} <exp>...]
@@ -1631,7 +1631,7 @@
 	  '##core#lambda (list id #t (cons t1 llist) 0)
 	  (list (walk (car subs)
 		      (lambda (r) 
-			(make-node '##core#call '(#t) (list (varnode t1) r)) ) ) ) ) ) ) )
+			(make-node '##core#call (list #t) (list (varnode t1) r)) ) ) ) ) ) ) )
   
   (define (walk n k)
     (let ((subs (node-subexpressions n))
@@ -1641,7 +1641,7 @@
 	((##core#variable quote ##core#undefined ##core#primitive ##core#global-ref) (k n))
 	((if) (let* ((t1 (gensym 'k))
 		     (t2 (gensym 'r))
-		     (k1 (lambda (r) (make-node '##core#call '(#t) (list (varnode t1) r)))) )
+		     (k1 (lambda (r) (make-node '##core#call (list #t) (list (varnode t1) r)))) )
 		(make-node 
 		 'let
 		 (list t1)

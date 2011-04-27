@@ -56,6 +56,8 @@ the source text should be read from standard input.
 
 ; -emit-inline-file FILENAME : Write procedures that can be globally inlined in internal form to {{FILENAME}}, if global inlining is enabled. Implies {{-inline -local}}. If the inline-file would be empty (because no procedure would be inlinable) no file is generated and any existing inline-file with that name is deleted.
 
+; -emit-type-file FILENAME : Write type-information for declarations of user-defined and globally visible variables to a file of the given name. The generated file is suitable for use with the {{-types}} option.
+
 ; -explicit-use : Disables automatic use of the units {{library, eval}} and {{extras}}. Use this option if compiling a library unit instead of an application unit.
 
 ; -extend FILENAME : Loads a Scheme source file or compiled Scheme program (on systems that support it) before compilation commences. This feature can be used to extend the compiler.  This option may be given multiple times. The file is also searched in the current include path and in the extension-repository.
@@ -157,7 +159,7 @@ the source text should be read from standard input.
 
 ; -static-extension NAME : similar to {{-require-extension NAME}}, but links extension statically (also applies for an explicit {{(require-extension NAME)}}).
 
-; -strict-types : Assume that the type of variables does not change during their lifetime. This gives more type-information during specialization, but violating this assumption will result in unsafe and incorrectly behaving code.
+; -strict-types : Assume that the type of variables does not change because of assignments. This gives more type-information during specialization, but violating this assumption will result in unsafe and incorrectly behaving code.
 
 ; -types FILENAME : load additional type database from {{FILENAME}}. Type-definitions in {{FILENAME}} will override previous type-definitions.
 

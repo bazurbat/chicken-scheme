@@ -24,6 +24,9 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
+;; I don't understand this code anymore. It needs cleanup and simplification.
+
+
 (declare
   (unit unboxing)
   (hide d-depth))
@@ -82,6 +85,20 @@
 	  (when (and (pair? r) (car r))
 	    (boxed! (car r))))
 
+	(define (literal-type x)
+	  (cond ((char? x) 'char)
+		((flonum? x) 'flonum)
+		((fixnum? x) 'fixnum)
+		((boolean? x) 'bool)
+		(else #f)))
+
+	(define (unboxed-literal x)
+	  (cond ((char? x)
+		 (sprintf "\'\\~a\'" (string-pad (number->string (char->integer x) 8) 3 #\0)))
+		((number? x) (number->string x))
+		((boolean? x) (if x "1" "0"))
+		(else (bomb "(unboxing) unexpected literal type" x))))
+
 	(define (alias v)
 	  (alist-ref v ae eq? v) )
 
@@ -113,6 +130,7 @@
 		      (if (and dest (cdr dest))
 			  n2
 			  (let ((tmp (gensym "tu")))
+			    ;; introduce unboxed temporary for result
 			    (make-node
 			     '##core#let_unboxed (list tmp rtype)
 			     (list
@@ -144,12 +162,25 @@
 				   (make-node '##core#unboxed_ref (list tmp rtype) '()))))
 				((*) (bomb "unboxed type `*' not allowed as result"))
 				(else (bomb "invalid unboxed type" rtype))))))))) 
-		   ((or (eq? (car atypes) '*) 
+		   ((or (eq? (car atypes) '*) ; already unboxed argument -> just pass it unchanged
 			(unboxed-value? (car args)))
 		    (loop (cdr args)
 			  (cdr anodes)
 			  (cdr atypes)
 			  (cons (car anodes) iargs)))
+		   ;; if literal of correct type, pass directly as ##core#unboxed_ref
+		   ((and (eq? (node-class (car anodes)) 'quote)
+			 (eq? (literal-type (first (node-parameters (car anodes)))) (car atypes)))
+		    ;;XXX what if type does not match? error? warning?
+		    (loop (cdr args)
+			  (cdr anodes)
+			  (cdr atypes)
+			  (cons (make-node
+				 '##core#unboxed_ref 
+				 (list (unboxed-literal (first (node-parameters (car anodes))))
+				       (car atypes))
+				 '())
+				iargs)))
 		   (else
 		    ;; introduce unboxed temporary for argument
 		    ;;
@@ -159,6 +190,8 @@
 		    ;;    (But we must make sure there are not intermediate side
 		    ;;    effects - possibly only reuse unboxed value if unassigned
 		    ;;    local or lexical variable ref, or literal)
+		    ;;
+		    ;;    (See also comment below, after "walk-lambda")
 		    (let ((tmp (gensym "tu")))
 		      (make-node
 		       '##core#let_unboxed (list tmp (car atypes))
@@ -178,7 +211,7 @@
 			     (loop (cdr args)
 				   (cdr anodes)
 				   (cdr atypes)
-				   (cons (make-node '##core#unboxed_ref (list tmp) '())
+				   (cons (make-node '##core#unboxed_ref (list tmp (car atypes)) '())
 					 iargs))))))))
 	   n)
 	  (straighten-binding! n))
@@ -321,6 +354,7 @@
 					       unchecked-specialized-arithmetic))
 				      rw1))
 			     (args (map (cut walk <> #f rw pass2?) subs)))
+			;; rewrite inline operation to unboxed one, if possible
 			(cond ((not rw) #f)
 			      ((or (not pass2?)
 				   (and dest (unboxed? dest))
@@ -414,6 +448,18 @@
 	;; walk a second time and rewrite
 	(d "walk lambda: ~a (pass 2)" id)
 	(walk body #f #f #t)))
+
+    ;;XXX Note: lexical references ("##core#ref" nodes) are unboxed
+    ;;    repeatedly which is sub-optimal: the unboxed temporaries bound
+    ;;    via "##core#let_unboxed" could be re-used in many cases.
+    ;;    One possible approach would be an additional "cleanup" pass
+    ;;    that replaces
+    ;;
+    ;;    (##core#let_unboxed (TU TYPE) X (##core#ref VAR (SLOT)) Y)
+    ;;
+    ;;    with
+    ;;
+    ;;    (##core#let_unboxed (TU TYPE) (##core#unboxed_ref TU1) Y)
     
     (walk-lambda #f '() node)
     (when (and any-rewrites

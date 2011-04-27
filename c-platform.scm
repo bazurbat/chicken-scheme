@@ -169,7 +169,8 @@
   '(##sys#slot ##sys#setslot ##sys#block-ref ##sys#block-set!
     ##sys#call-with-current-continuation ##sys#size ##sys#byte ##sys#setbyte
     ##sys#pointer? ##sys#generic-structure? ##sys#structure? ##sys#check-structure
-    ##sys#check-exact ##sys#check-number ##sys#check-list ##sys#check-pair ##sys#check-string ##sys#check-symbol 
+    ##sys#check-exact ##sys#check-number ##sys#check-list ##sys#check-pair ##sys#check-string
+    ##sys#check-symbol ##sys#check-boolean ##sys#check-locative
     ##sys#check-char ##sys#check-vector ##sys#check-byte-vector ##sys#list ##sys#cons
     ##sys#call-with-values ##sys#fits-in-int? ##sys#fits-in-unsigned-int? ##sys#flonum-in-fixnum-range? 
     ##sys#fudge ##sys#immediate? ##sys#direct-return ##sys#context-switch
@@ -256,12 +257,12 @@
 	     (and (eq? 'quote (node-class x))
 		  (eq? 1 (first (node-parameters x))) ) ) 
 	   callargs) ] )
-     (cond [(null? callargs) (make-node '##core#call '(#t) (list cont (qnode 0)))]
+     (cond [(null? callargs) (make-node '##core#call (list #t) (list cont (qnode 0)))]
 	   [(null? (cdr callargs))
-	    (make-node '##core#call '(#t) (list cont (first callargs))) ]
+	    (make-node '##core#call (list #t) (list cont (first callargs))) ]
 	   [(eq? number-type 'fixnum)
 	    (make-node 
-	     '##core#call '(#t)
+	     '##core#call (list #t)
 	     (list
 	      cont
 	      (fold-inner
@@ -284,7 +285,7 @@
    (cond [(null? callargs) #f]
 	 [(and (null? (cdr callargs)) (eq? number-type 'fixnum))
 	  (make-node
-	   '##core#call '(#t)
+	   '##core#call (list #t)
 	   (list cont
 		 (make-node '##core#inline
 			    (if unsafe '("C_u_fixnum_negate") '("C_fixnum_negate"))
@@ -300,7 +301,7 @@
 	    (and (eq? number-type 'fixnum)
 		 (>= (length callargs) 2)
 		 (make-node
-		  '##core#call '(#t)
+		  '##core#call (list #t)
 		  (list 
 		   cont
 		   (fold-inner
@@ -327,7 +328,7 @@
 	  (and (eq? number-type 'fixnum)
 	       (>= (length callargs) 2)
 	       (make-node
-		'##core#call '(#t)
+		'##core#call (list #t)
 		(list
 		 cont
 		 (fold-inner
@@ -346,7 +347,7 @@
    (and (= (length callargs) 2)
 	(if (eq? 'fixnum number-type)
 	    (make-node
-	     '##core#call '(#t)
+	     '##core#call (list #t)
 	     (let ([arg2 (second callargs)])
 	       (list cont 
 		     (if (and (eq? 'quote (node-class arg2)) 
@@ -356,7 +357,7 @@
 			  (list (first callargs) (qnode 1)) )
 			 (make-node '##core#inline '("C_fixnum_divide") callargs) ) ) ) )
 	    (make-node
-	     '##core#call '(#t)
+	     '##core#call (list #t)
 	     (cons* (make-node '##core#proc '("C_quotient" #t) '()) cont callargs) ) ) ) ) )
 
 (let ()
@@ -369,7 +370,7 @@
   (define ((op1 fiop ufiop aiop) db classargs cont callargs)
     (and (= (length callargs) 1)
 	 (make-node
-	  '##core#call '(#t)
+	  '##core#call (list #t)
 	  (list 
 	   cont
 	   (if (eq? 'fixnum number-type)
@@ -390,13 +391,13 @@
 	   (or (and (eq? '##core#variable (node-class arg1))
 		    (eq? '##core#variable (node-class arg2))
 		    (equal? (node-parameters arg1) (node-parameters arg2))
-		    (make-node '##core#call '(#t) (list cont (qnode #t))) )
+		    (make-node '##core#call (list #t) (list cont (qnode #t))) )
 	       (and (or (and (eq? 'quote (node-class arg1))
 			     (not (flonum? (first (node-parameters arg1)))) )
 			(and (eq? 'quote (node-class arg2))
 			     (not (flonum? (first (node-parameters arg2)))) ) )
 		    (make-node
-		     '##core#call '(#t) 
+		     '##core#call (list #t) 
 		     (list cont (make-node '##core#inline '("C_eqp") callargs)) ) ) ) ) ) )
   (rewrite 'eqv? 8 eqv?-id)
   (rewrite '##sys#eqv? 8 eqv?-id))
@@ -413,7 +414,7 @@
 	  (or (and (eq? '##core#variable (node-class arg1))
 		   (eq? '##core#variable (node-class arg2))
 		   (equal? (node-parameters arg1) (node-parameters arg2))
-		   (make-node '##core#call '(#t) (list cont (qnode #t))) )
+		   (make-node '##core#call (list #t) (list cont (qnode #t))) )
 	      (and (or (and (eq? 'quote (node-class arg1))
 			    (let ([f (first (node-parameters arg1))])
 			      (or (immediate? f) (symbol? f)) ) )
@@ -421,10 +422,10 @@
 			    (let ([f (first (node-parameters arg2))])
 			      (or (immediate? f) (symbol? f)) ) ) )
 		   (make-node
-		    '##core#call '(#t) 
+		    '##core#call (list #t) 
 		    (list cont (make-node '##core#inline '("C_eqp") callargs)) ) )
 	      (make-node
-	       '##core#call '(#t) 
+	       '##core#call (list #t) 
 	       (list cont (make-node '##core#inline '("C_i_equalp") callargs)) ) ) ) ) ) )
 
 (let ()
@@ -438,7 +439,7 @@
 	       [proc (car callargs)] )
 	   (if (eq? 'quote (node-class lastarg))
 	       (make-node
-		'##core#call '(#f)
+		'##core#call (list #f)
 		(cons* (first callargs)
 		       cont 
 		       (append (cdr (butlast callargs)) (map qnode (first (node-parameters lastarg)))) ) )
@@ -448,12 +449,12 @@
 			  (and (memq name '(values ##sys#values))
 			       (intrinsic? name)
 			       (make-node
-				'##core#call '(#t)
+				'##core#call (list #t)
 				(list (make-node '##core#proc '("C_apply_values" #t) '())
 				      cont
 				      (cadr callargs) ) ) ) ) ) 
 		   (make-node
-		    '##core#call '(#t)
+		    '##core#call (list #t)
 		    (cons* (make-node '##core#proc '("C_apply" #t) '())
 			   cont callargs) ) ) ) ) ) )
   (rewrite 'apply 8 rewrite-apply)
@@ -472,7 +473,7 @@
 	     (lambda (return)
 	       (let ([arg (first callargs)])
 		 (make-node
-		  '##core#call '(#t)
+		  '##core#call (list #t)
 		  (list
 		   cont
 		   (cond [(and (eq? '##core#variable (node-class arg))
@@ -502,7 +503,7 @@
        (lambda (db classargs cont callargs)
 	 ;; (values <x>) -> <x>
 	 (and (= (length callargs) 1)
-	      (make-node '##core#call '(#t) (cons cont callargs) ) ) ) ] )
+	      (make-node '##core#call (list #t) (cons cont callargs) ) ) ) ] )
   (rewrite 'values 8 rvalues)
   (rewrite '##sys#values 8 rvalues) )
 
@@ -530,10 +531,10 @@
 				       '##core#lambda
 				       (list (gensym 'f_) #f (list tmpk) 0)
 				       (list (make-node
-					      '##core#call '(#t)
+					      '##core#call (list #t)
 					      (list arg2 cont (varnode tmpk)) ) ) ) 
 				      (make-node
-				       '##core#call '(#t)
+				       '##core#call (list #t)
 				       (list arg1 (varnode tmp)) ) ) ) ) ) ) ) ) ) ) ) )
   (rewrite 'call-with-values 8 rewrite-c-w-v)
   (rewrite '##sys#call-with-values 8 rewrite-c-w-v) )
@@ -738,6 +739,8 @@
 (rewrite '##sys#check-number 2 1 "C_i_check_number" #t)
 (rewrite '##sys#check-list 2 1 "C_i_check_list" #t)
 (rewrite '##sys#check-pair 2 1 "C_i_check_pair" #t)
+(rewrite '##sys#check-boolean 2 1 "C_i_check_boolean" #t)
+(rewrite '##sys#check-locative 2 1 "C_i_check_locative" #t)
 (rewrite '##sys#check-symbol 2 1 "C_i_check_symbol" #t)
 (rewrite '##sys#check-string 2 1 "C_i_check_string" #t)
 (rewrite '##sys#check-byte-vector 2 1 "C_i_check_bytevector" #t)
@@ -748,6 +751,8 @@
 (rewrite '##sys#check-number 2 2 "C_i_check_number_2" #t)
 (rewrite '##sys#check-list 2 2 "C_i_check_list_2" #t)
 (rewrite '##sys#check-pair 2 2 "C_i_check_pair_2" #t)
+(rewrite '##sys#check-boolean 2 2 "C_i_check_boolean_2" #t)
+(rewrite '##sys#check-locative 2 2 "C_i_check_locative_2" #t)
 (rewrite '##sys#check-symbol 2 2 "C_i_check_symbol_2" #t)
 (rewrite '##sys#check-string 2 2 "C_i_check_string_2" #t)
 (rewrite '##sys#check-byte-vector 2 2 "C_i_check_bytevector_2" #t)
@@ -855,7 +860,7 @@
    ;; (string->number X Y) -> (##core#inline_allocate ("C_a_i_string_to_number" 4) X Y)
    (define (build x y)
      (make-node
-      '##core#call '(#t)
+      '##core#call (list #t)
       (list cont
 	    (make-node
 	     '##core#inline_allocate 
@@ -903,7 +908,7 @@
    ;; (##sys#setslot <x> <y> <z>) -> (##core#inline "C_i_setslot" <x> <y> <z>)
    (and (= (length callargs) 3)
 	(make-node 
-	 '##core#call '(#t)
+	 '##core#call (list #t)
 	 (list cont
 	       (make-node
 		'##core#inline
@@ -935,7 +940,7 @@
    (and (= 2 (length callargs))
 	(let ([val (second callargs)])
 	  (make-node
-	   '##core#call '(#t)
+	   '##core#call (list #t)
 	   (list cont
 		 (or (and-let* ([(eq? 'quote (node-class val))]
 				[(eq? number-type 'fixnum)]
@@ -1049,7 +1054,7 @@
 			    (list tmp)
 			    (list val
 				  (make-node
-				   '##core#call '(#t)
+				   '##core#call (list #t)
 				   (list cont
 					 (make-node
 					  '##core#inline_allocate 
@@ -1079,7 +1084,7 @@
 				   (not (get db var 'assigned)) 
 				   (not (get db var 'inline-transient))
 				   (make-node
-				    '##core#call '(#t)
+				    '##core#call (list #t)
 				    (list val cont (qnode #f)) ) ) ) ) ) ) ) ) ) ) ) )
   (rewrite 'call-with-current-continuation 8 rewrite-call/cc)
   (rewrite 'call/cc 8 rewrite-call/cc) )
@@ -1123,7 +1128,7 @@
 		 (and (intrinsic? sym)
 		      (and-let* ((a (assq sym setter-map)))
 			(make-node
-			 '##core#call '(#t)
+			 '##core#call (list #t)
 			 (list cont (varnode (cdr a))) ) ) ) ) ) ) ) ) )
 			       
 (rewrite 'void 3 '##sys#undefined-value 0)
@@ -1139,7 +1144,7 @@
    (and (= 1 (length callargs))
 	(let ((arg (car callargs)))
 	  (make-node
-	   '##core#call '(#t) 
+	   '##core#call (list #t) 
 	   (list cont
 		 (if (and (eq? '##core#variable (node-class arg))
 			  (not (get db (car (node-parameters arg)) 'global)) )
@@ -1153,7 +1158,7 @@
  (lambda (db classargs cont callargs)
    (and (= 2 (length callargs))
 	(make-node
-	 '##core#call '(#t)
+	 '##core#call (list #t)
 	 (list cont
 	       (make-node
 		'##core#inline 
@@ -1176,7 +1181,7 @@
  (lambda (db classargs cont callargs)
    (and (= 3 (length callargs))
 	(make-node
-	 '##core#call '(#t)
+	 '##core#call (list #t)
 	 (list cont
 	       (make-node
 		'##core#inline_allocate
@@ -1197,7 +1202,7 @@
 	   (list
 	    (first callargs)
 	    (make-node
-	     '##core#call '(#t)
+	     '##core#call (list #t)
 	     (list cont
 		   (make-node
 		    '##core#inline_allocate

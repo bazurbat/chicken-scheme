@@ -277,49 +277,14 @@ redefined.
 
 === type
 
-  [declaration specifier] (type (SYMBOL TYPESPEC) ...)
+  [declaration specifier] (type (SYMBOL TYPE) ...)
 
-Declares toplevel procedures to have a specific type for scrutiny. {{SYMBOL}} should name
-a toplevel variable and {{TYPESPEC}} should be a type specification, following the syntax
-given here:
-
-  TYPESPEC --> *
-            |  deprecated
-            |  VAL
-  
-  VAL --> (or VAL1 ...)
-       |  (struct NAME)
-       |  (procedure [NAME] (VAL1 ... [#!optional VALOPT1 ...] [#!rest [VAL]]) . RESULTS)
-       |  BASIC
-  
-  BASIC --> * 
-         |  string 
-         |  symbol 
-         |  char 
-         |  number 
-         |  boolean 
-         |  list 
-         |  pair 
-         |  procedure 
-         |  vector 
-         |  null 
-         |  eof 
-         |  port
-         |  blob 
-         |  pointer
-         |  locative
-         |  fixnum
-         |  float
-         |  pointer-vector
-  
-  RESULTS --> * 
-           |  (RVAL1 ...)
-  
-  RVAL --> undefined
-        |  noreturn
-        |  VAL
-
-A type-declaration overrides any previous declaration for the same identifier.
+Declares toplevel procedures to have a specific type for
+scrutiny. {{SYMBOL}} should name a toplevel variable and {{TYPE}}
+should be a type specification.  A type-declaration overrides any
+previous declaration for the same identifier.  See also [[Types]] for
+more information about using types, the syntax of type-specifiers and
+a more convenient type-declaration syntax ({{:}}).
 
 
 === extended-bindings
@@ -396,6 +361,6 @@ levels 2 and higher).
 
 
 ---
-Previous: [[Modules]]
+Previous: [[Types]]
 
 Next: [[Parameters]]

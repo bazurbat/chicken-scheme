@@ -1515,6 +1515,16 @@ void barf(int code, char *loc, ...)
     c = 1;
     break;
 
+  case C_BAD_ARGUMENT_TYPE_NO_BOOLEAN_ERROR:
+    msg = C_text("bad argument type - not a boolean");
+    c = 1;
+    break;
+
+  case C_BAD_ARGUMENT_TYPE_NO_LOCATIVE_ERROR:
+    msg = C_text("bad argument type - not a locative");
+    c = 1;
+    break;
+
   case C_BAD_ARGUMENT_TYPE_NO_LIST_ERROR:
     msg = C_text("bad argument type - not a list");
     c = 1;
@@ -5535,6 +5545,28 @@ C_regparm C_word C_fcall C_i_check_pair_2(C_word x, C_word loc)
   if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG) {
     error_location = loc;
     barf(C_BAD_ARGUMENT_TYPE_NO_PAIR_ERROR, NULL, x);
+  }
+
+  return C_SCHEME_UNDEFINED;
+}
+
+
+C_regparm C_word C_fcall C_i_check_boolean_2(C_word x, C_word loc)
+{
+  if((x & C_IMMEDIATE_TYPE_BITS) != C_BOOLEAN_BITS) {
+    error_location = loc;
+    barf(C_BAD_ARGUMENT_TYPE_NO_BOOLEAN_ERROR, NULL, x);
+  }
+
+  return C_SCHEME_UNDEFINED;
+}
+
+
+C_regparm C_word C_fcall C_i_check_locative_2(C_word x, C_word loc)
+{
+  if(C_immediatep(x) || C_block_header(x) != C_LOCATIVE_TAG) {
+    error_location = loc;
+    barf(C_BAD_ARGUMENT_TYPE_NO_LOCATIVE_ERROR, NULL, x);
   }
 
   return C_SCHEME_UNDEFINED;

@@ -552,6 +552,8 @@ void *alloca ();
 #define C_BAD_ARGUMENT_TYPE_NO_CLOSURE_ERROR          34
 #define C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR            35
 #define C_CIRCULAR_DATA_ERROR                         36
+#define C_BAD_ARGUMENT_TYPE_NO_BOOLEAN_ERROR          37
+#define C_BAD_ARGUMENT_TYPE_NO_LOCATIVE_ERROR         38
 
 
 /* Platform information */
@@ -1249,6 +1251,8 @@ extern double trunc(double);
 #define C_i_check_symbol(x)             C_i_check_symbol_2(x, C_SCHEME_FALSE)
 #define C_i_check_list(x)               C_i_check_list_2(x, C_SCHEME_FALSE)
 #define C_i_check_pair(x)               C_i_check_pair_2(x, C_SCHEME_FALSE)
+#define C_i_check_locative(x)           C_i_check_locative_2(x, C_SCHEME_FALSE)
+#define C_i_check_boolean(x)            C_i_check_boolean_2(x, C_SCHEME_FALSE)
 #define C_i_check_vector(x)             C_i_check_vector_2(x, C_SCHEME_FALSE)
 #define C_i_check_structure(x, st)      C_i_check_structure_2(x, (st), C_SCHEME_FALSE)
 #define C_i_check_char(x)               C_i_check_char_2(x, C_SCHEME_FALSE)
@@ -1745,6 +1749,8 @@ C_fctexport C_word C_fcall C_i_check_bytevector_2(C_word x, C_word loc) C_regpar
 C_fctexport C_word C_fcall C_i_check_symbol_2(C_word x, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_list_2(C_word x, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_pair_2(C_word x, C_word loc) C_regparm;
+C_fctexport C_word C_fcall C_i_check_boolean_2(C_word x, C_word loc) C_regparm;
+C_fctexport C_word C_fcall C_i_check_locative_2(C_word x, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_vector_2(C_word x, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_structure_2(C_word x, C_word st, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_char_2(C_word x, C_word loc) C_regparm;
