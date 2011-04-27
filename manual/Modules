@@ -41,7 +41,7 @@ CHICKEN's module system has the following features and shortcomings:
 
 ==== module
 
-<macro>(module NAME (EXPORT ...) BODY ...)</macro><br>
+<macro>(module NAME (EXPORT ...) BODY ...)</macro>
 <macro>(module NAME (EXPORT ...) FILENAME)</macro>
 <macro>(module NAME * BODY ...)</macro>
 <macro>(module NAME1 = NAME2 [BODY ...])</macro>
