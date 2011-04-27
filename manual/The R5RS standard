@@ -2211,6 +2211,10 @@ and x and y are in the domain of integer->char, then
  (char<=? (integer->char x)
           (integer->char y))             ===>  #t
 
+Note that {{integer->char}} does currently not detect
+a negative argument and will quietly convert {{-1}} to
+{{#x1ffff}} in CHICKEN.
+
 <procedure>(char-upcase char)</procedure><br>
 <procedure>(char-downcase char)</procedure><br>
 
