@@ -2,7 +2,7 @@
 
 
 (module main ()
-(import scheme chicken foreign foo)
+(import scheme chicken foreign foo)	; note: does not load foo!
 
 #>
 static int inlined(int i) {
@@ -11,6 +11,6 @@ n += i;
 return n;}
 <#
 
-(assert (= 1 (foo 1)))
+(assert (= 1 (bar 1)))
 
 )
