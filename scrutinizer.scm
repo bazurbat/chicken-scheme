@@ -1170,8 +1170,9 @@
 			(##core#undefined)
 			(##core#app 
 			 ##sys#error ',loc 
-			 '"type check failed"
-			 ',t ',v))))
+			 ',(sprintf "expected argument `~a' to by of type `~s'"
+			     v t)
+			 ,v))))
 		b))))))))
 
 
