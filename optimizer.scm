@@ -381,7 +381,7 @@
 							       (sub1 argc)
 							       (cdr args)
 							       (cons (car args) used) ) ] ) ) ) )
-				      ((and (test ifid 'explicit-rest)
+				      #;((and (test ifid 'explicit-rest)
 					    (not (memq n rest-consers)) ) ; make sure we haven't inlined rest-list already
 				       (let ([n (llist-length llist)])
 					 (if (< (length args) n)

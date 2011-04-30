@@ -360,9 +360,6 @@
 
   (define (read-chunks in)
     (let get-chunks ([data '()])
-	(cond ((not size)
-	       (error "invalid response from server - please try again"))
-              ((zero? size)
       (let* ((szln (read-line in))
 	     ;;XXX workaround for "read-line" dropping the "\n" in certain situations
 	     ;;    (#568)
