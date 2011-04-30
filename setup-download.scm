@@ -360,10 +360,16 @@
 
   (define (read-chunks in)
     (let get-chunks ([data '()])
-      (let ((size (string->number (read-line in) 16)))
 	(cond ((not size)
 	       (error "invalid response from server - please try again"))
               ((zero? size)
+      (let* ((szln (read-line in))
+	     ;;XXX workaround for "read-line" dropping the "\n" in certain situations
+	     ;;    (#568)
+	     (size (string->number (string-chomp szln "\r") 16)))
+	(cond ((not size)
+	       (error "invalid response from server - please try again"))
+	      ((zero? size)
 	       (d "~%")
 	       (string-concatenate-reverse data))
 	      (else
