@@ -360,7 +360,10 @@
 
   (define (read-chunks in)
     (let get-chunks ([data '()])
-      (let ([size (string->number (read-line in) 16)])
+      (let* ((szln (read-line in))
+	     ;;XXX workaround for "read-line" dropping the "\n" in certain situations
+	     ;;    (#568)
+	     (size (string->number (string-chomp szln "\r") 16)))
 	(cond ((zero? size)
 	       (d "~%")
 	       (string-concatenate-reverse data))
