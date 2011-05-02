@@ -40,8 +40,8 @@
   (import scheme chicken foreign)
   (import extras irregex posix utils srfi-1 data-structures tcp srfi-13 files setup-api)
 
-  (define-constant +default-tcp-connect-timeout+ 10000) ; 10 seconds
-  (define-constant +default-tcp-read/write-timeout+ 20000) ; 20 seconds
+  (define-constant +default-tcp-connect-timeout+ 30000) ; 30 seconds
+  (define-constant +default-tcp-read/write-timeout+ 30000) ; 30 seconds
 
   (define-constant +url-regex+ "(http://)?([^/:]+)(:([^:/]+))?(/.+)")
 
