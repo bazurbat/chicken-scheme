@@ -38,6 +38,7 @@
   (import foreign)
 
   (define +default-repository-files+
+    ;;XXX keep this up-to-date!
     '("setup-api.so" "setup-api.import.so"
       "setup-download.so" "setup-download.import.so"
       "chicken.import.so"
@@ -97,6 +98,7 @@
   (define *target-extension* *cross-chicken*)
   (define *debug-setup* #f)
   (define *keep-going* #f)
+  (define *override* '())
 
   (define (get-prefix #!optional runtime)
     (cond ((and *cross-chicken*
@@ -149,6 +151,11 @@
 				 (cons (car a) (cadr a))
 				 (broken x)))
 			   (cdr x)))))
+		  ((override)
+		   (set! *override* 
+		     (if (and (pair? (cdr x)) (string? (cadr x)))
+			 (read-file (cadr x))
+			 (cdr x))))
 		  (else (broken x))))
 	      (read-file deff))))
       (pair? *default-sources*) ))
@@ -303,15 +310,39 @@
       (list "The following installed extensions are outdated, because `"
             (car e+d+v)
             "' requires later versions:\n")
-      (map
+      (filter-map
        (lambda (e)
-         (conc
-          "  " (car e)
-          " (" (let ([v (assq 'version (extension-information (car e)))]) (if v (cadr v) "???"))
-               " -> " (cdr e) ")"
-          #\newline) )
+	 (cond ((assq (string->symbol (car e)) *override*) =>
+		(lambda (a)
+		  (unless (equal? (cadr a) (cdr e))
+		    (warning
+		     (sprintf "version `~a' of extension `~a' overrides required version `~a'"
+		       (cadr a) (car a) (cdr e))))
+		  #f))
+	       (else
+		(conc
+		 "  " (car e)
+		 " (" (let ((v (assq 'version (extension-information (car e))))) 
+			(if v (cadr v) "???"))
+		 " -> " (cdr e) ")"
+		 #\newline) )))
        upgrade)
-      '("\nDo you want to replace the existing extensions?"))) )
+      '("\nDo you want to replace the existing extensions?"))))
+
+  (define (override-version egg)
+    (let ((name (string->symbol (if (pair? egg) (car egg) egg))))
+      (cond ((assq name *override*) =>
+	     (lambda (a)
+	       (cond ((and (pair? egg) (not (equal? (cadr a) (cdr egg))))
+		      (warning
+		       (sprintf 
+			   "version `~a' of extension `~a' overrides explicitly given version `~a'"
+			 (cadr a) name (cdr egg))))
+		     (else
+		      (print "overriding: " a)))
+	       (cadr a)))
+	    ((pair? egg) (cdr egg))
+	    (else #f))))
 
   (define (retrieve eggs)
     (print "retrieving ...")
@@ -322,9 +353,9 @@
                 ;; push to front
                 (set! *eggs+dirs+vers* (cons a (delete a *eggs+dirs+vers* eq?))) ) ]
              [else
-              (let ([name (if (pair? egg) (car egg) egg)]
-                    [version (and (pair? egg) (cdr egg))])
-                (let-values ([(dir ver) (try-default-sources name version)])
+              (let ((name (if (pair? egg) (car egg) egg))
+                    (version (override-version egg)))
+                (let-values (((dir ver) (try-default-sources name version)))
                   (unless dir (error "extension or version not found"))
                   (print " " name " located at " dir)
                   (set! *eggs+dirs+vers* (cons (list name dir ver) *eggs+dirs+vers*)) ) ) ] ) )
@@ -334,13 +365,13 @@
        (lambda (e+d+v)
          (unless (member (car e+d+v) *checked*)
            (set! *checked* (cons (car e+d+v) *checked*))
-           (let ([mfile (make-pathname (cadr e+d+v) (car e+d+v) "meta")])
+           (let ((mfile (make-pathname (cadr e+d+v) (car e+d+v) "meta")))
              (cond [(file-exists? mfile)
-                    (let ([meta (with-input-from-file mfile read)])
+                    (let ((meta (with-input-from-file mfile read)))
 		      (print "checking platform for `" (car e+d+v) "' ...")
 		      (check-platform (car e+d+v) meta)
                       (print "checking dependencies for `" (car e+d+v) "' ...")
-                      (let-values ([(missing upgrade) (outdated-dependencies meta)])
+                      (let-values (((missing upgrade) (outdated-dependencies meta)))
 			(set! missing (apply-mappings missing)) ;XXX only missing - wrong?
 			(set! *dependencies*
 			  (cons
@@ -455,7 +486,9 @@
 	(pp dag)
 	(for-each
 	 (lambda (e+d+v i)
-	   (let ((isdep (> i 1)))
+	   (let ((isdep (not (find (lambda (e)
+				     (equal? (if (pair? e) (car e) e) (car e+d+v)))
+				   eggs))))
 	     (when (and (not depinstall-ok)
 			isdep
 			(= i num))
@@ -578,6 +611,12 @@
 	(print "mapped " eggs " to " eggs2))
       eggs2))
 
+  (define (scan-directory dir)
+    (for-each
+     (lambda (info)
+       (pp (cons (car info) (cadadr info))))
+     (gather-egg-information dir)))      
+
   (define ($system str)
     (let ((r (system
               (if *windows-shell*
@@ -619,6 +658,8 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
   -D   -feature FEATURE         features to pass to sub-invocations of `csc'
        -debug                   enable full display of error message information
        -keep-going              continue installation even if dependency fails
+       -scan DIRECTORY          scan local directory for highest available egg versions
+       -override FILENAME       override versions for installed eggs with information from file
 EOF
 );|
     (exit code))
@@ -639,6 +680,7 @@ EOF
 
   (define (main args)
     (let ((update #f)
+	  (scan #f)
           (rx (irregex "([^:]+):(.+)")))
       (setup-proxy (get-environment-variable "http_proxy"))
       (let loop ((args args) (eggs '()))
@@ -647,6 +689,7 @@ EOF
 		      (error 
 		       "`-deploy' only makes sense in combination with `-prefix DIRECTORY`"))
 		     (update (update-db))
+		     (scan (scan-directory scan))
                      (else
 		      (let ((defaults (load-defaults)))
 			(when (null? eggs)
@@ -754,6 +797,14 @@ EOF
                         (unless (pair? (cdr args)) (usage 1))
                         (set! *username* (cadr args))
                         (loop (cddr args) eggs))
+		       ((string=? "-scan" arg)
+                        (unless (pair? (cdr args)) (usage 1))
+			(set! scan (cadr args))
+			(loop (cddr args) eggs))
+		       ((string=? "-override" arg)
+                        (unless (pair? (cdr args)) (usage 1))
+			(set! *override* (read-file (cadr args)))
+			(loop (cddr args) eggs))
 		       ((string=? "-trunk" arg)
 			(set! *trunk* #t)
 			(loop (cdr args) eggs))

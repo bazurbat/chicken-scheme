@@ -328,6 +328,7 @@
 				(cond ((and inline-locally 
 					    (test var 'inlinable)
 					    (not (test ifid 'inline-target)) ; inlinable procedure has changed
+					    (not (test ifid 'explicit-rest))
 					    (case (variable-mark var '##compiler#inline) 
 					      ((yes) #t)
 					      ((no) #f)

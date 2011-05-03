@@ -40,8 +40,8 @@
   (import scheme chicken foreign)
   (import extras irregex posix utils srfi-1 data-structures tcp srfi-13 files setup-api)
 
-  (define-constant +default-tcp-connect-timeout+ 10000) ; 10 seconds
-  (define-constant +default-tcp-read/write-timeout+ 20000) ; 20 seconds
+  (define-constant +default-tcp-connect-timeout+ 30000) ; 30 seconds
+  (define-constant +default-tcp-read/write-timeout+ 30000) ; 30 seconds
 
   (define-constant +url-regex+ "(http://)?([^/:]+)(:([^:/]+))?(/.+)")
 
@@ -127,7 +127,7 @@
 		    sos)))
 	       (values src ver))))))
 
-  (define (gather-egg-information dir)	; used by salmonella
+  (define (gather-egg-information dir)	; used by salmonella (among others)
     (let ((ls (directory dir)))
       (filter-map
        (lambda (egg)
@@ -360,8 +360,13 @@
 
   (define (read-chunks in)
     (let get-chunks ([data '()])
-      (let ([size (string->number (read-line in) 16)])
-	(cond ((zero? size)
+      (let* ((szln (read-line in))
+	     ;;XXX workaround for "read-line" dropping the "\n" in certain situations
+	     ;;    (#568)
+	     (size (string->number (string-chomp szln "\r") 16)))
+	(cond ((not size)
+	       (error "invalid response from server - please try again"))
+	      ((zero? size)
 	       (d "~%")
 	       (string-concatenate-reverse data))
 	      (else
