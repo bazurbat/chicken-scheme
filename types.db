@@ -1883,7 +1883,7 @@
 (s16vector-ref (procedure! s16vector-ref ((struct s16vector) fixnum) fixnum))
 (s16vector-set! (procedure! s16vector-set! ((struct s16vector) fixnum fixnum) undefined))
 
-(s16vector? (procedure s16vector? (*) boolean)
+(s16vector? (procedure s16vector? (*) boolean))
 (predicate s16vector? (struct s16vector))
 
 (s32vector (procedure! s32vector (#!rest number) (struct s32vector)))
@@ -1891,7 +1891,7 @@
 (s32vector->blob/shared (procedure! s32vector->blob/shared ((struct s32vector)) blob))
 (s32vector->list (procedure! s32vector->list ((struct s32vector)) list))
 
-(s32vector-length (procedure! s32vector-length ((struct s32vector)) fixnum))
+(s32vector-length (procedure! s32vector-length ((struct s32vector)) fixnum)
 		  (((struct s32vector)) (##core#inline "C_u_i_32vector_length" #(1))))
 
 (s32vector-ref (procedure! s32vector-ref ((struct s32vector) fixnum) number))
