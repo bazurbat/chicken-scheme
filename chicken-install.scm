@@ -72,6 +72,7 @@
         (foreign-value "C_INSTALL_BIN_HOME" c-string) ) )
 
   (define *keep* #f)
+  (define *keep-existing* #f)
   (define *force* #f)
   (define *run-tests* #f)
   (define *retrieve-only* #f)
@@ -477,6 +478,11 @@
 	     (tmp))))))
 
   (define (install eggs)
+    (when *keep-existing*
+      (set! eggs
+	(remove 
+	 (lambda (egg) (extension-information (if (pair? egg) (car egg) egg)))
+	 eggs)))
     (retrieve eggs)
     (unless *retrieve-only*
       (let* ((dag (reverse (topological-sort *dependencies* string=?)))
@@ -638,6 +644,7 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
   -v   -version                 show version and exit
        -force                   don't ask, install even if versions don't match
   -k   -keep                    keep temporary files
+  -x   -keep-installed          install only if not already installed
   -l   -location LOCATION       install from given location instead of default
   -t   -transport TRANSPORT     use given transport instead of default
        -proxy HOST[:PORT]       download via HTTP proxy
@@ -805,6 +812,9 @@ EOF
                         (unless (pair? (cdr args)) (usage 1))
 			(set! *override* (read-file (cadr args)))
 			(loop (cddr args) eggs))
+		       ((or (string=? "-x") (string=? "-keep-installed" arg))
+			(set! *keep-existing* #t)
+			(loop (cdr args) eggs))
 		       ((string=? "-trunk" arg)
 			(set! *trunk* #t)
 			(loop (cdr args) eggs))
