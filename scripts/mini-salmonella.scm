@@ -107,7 +107,7 @@
 	    (else
 	     (report egg "FAILED")
 	     (set! *failed* (add1 *failed*))
-	     (copy-log egg *tmplogfile*))))))
+	     (unless *debug* (copy-log egg *tmplogfile*)))))))
 
 (delete-file* *errlogfile*)
 (delete-file* *logfile*)
