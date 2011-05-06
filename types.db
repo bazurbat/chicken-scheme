@@ -1000,8 +1000,8 @@
 (irregex-flags (procedure! irregex-flags ((struct regexp)) *)
 	       (((struct regexp)) (##sys#slot #(1) '5)))
 
-(irregex-fold (procedure! irregex-fold (* (procedure (fixnum (struct regexp-match)) *) * string #!optional (procedure (fixnum *) *) fixnum fixnum) *))
-(irregex-fold/chunked (procedure! irregex-fold/chunked (* (procedure (fixnum (struct regexp-match)) *) * procedure * #!optional (procedure (fixnum *) *) fixnum fixnum) *))
+(irregex-fold (procedure! irregex-fold (* (procedure (fixnum (struct regexp-match) *) *) * string #!optional (procedure (fixnum *) *) fixnum fixnum) *))
+(irregex-fold/chunked (procedure! irregex-fold/chunked (* (procedure (fixnum (struct regexp-match) *) *) * procedure * #!optional (procedure (fixnum *) *) fixnum fixnum) *))
 
 (irregex-lengths (procedure! irregex-lengths ((struct regexp)) *)
 		 (((struct regexp)) (##sys#slot #(1) '7)))
@@ -1828,7 +1828,7 @@
 (blob->u8vector/shared (procedure! blob->u8vector/shared (blob) (struct u8vector)))
 (f32vector (procedure! f32vector (#!rest number) (struct f32vector)))
 (f32vector->blob (procedure! f32vector->blob ((struct f32vector)) blob))
-(f32vector->blob/shared (procedure! f32vector->blob/shared ((struct f232vector)) blob))
+(f32vector->blob/shared (procedure! f32vector->blob/shared ((struct f32vector)) blob))
 (f32vector->list (procedure! f32vector->list ((struct f32vector)) list))
 
 (f32vector-length (procedure! f32vector-length ((struct f32vector)) fixnum)

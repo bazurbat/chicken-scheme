@@ -264,7 +264,6 @@
 				     (let ((t (simplify t)))
 				       (cond ((and (pair? t) (eq? 'or (car t)))
 					      (cdr t))
-					;((eq? t 'noreturn) '())
 					     ((eq? t 'undefined) (return 'undefined))
 					     (else (list t)))))
 				   (cdr t)))
@@ -294,11 +293,14 @@
 	       (else t))
 	     t))))
 
+    ;;XXX this could be better done by combining non-matching arguments/llists
+    ;;    into "(or (procedure ...) (procedure ...))"
     (define (merge-argument-types ts1 ts2) 
       (cond ((null? ts1) 
 	     (cond ((null? ts2) '())
 		   ((memq (car ts2) '(#!rest #!optional)) ts2)
 		   (else '(#!rest))))
+	    ((null? ts2) '(#!rest))	;XXX giving up
 	    ((eq? '#!rest (car ts1))
 	     (cond ((and (pair? ts2) (eq? '#!rest (car ts2)))
 		    `(#!rest
@@ -339,8 +341,9 @@
 	    ((eq? 'procedure t2) (and (pair? t1) (eq? 'procedure (car t1))))
 	    ((and (pair? t1) (eq? 'or (car t1))) (any (cut match <> t2) (cdr t1)))
 	    ((and (pair? t2) (eq? 'or (car t2))) (any (cut match t1 <>) (cdr t2)))
-	    ((memq t1 '(pair list)) (memq t2 '(pair list)))
-	    ((memq t1 '(null list)) (memq t2 '(null list)))
+	    ((eq? t1 'pair) (memq t2 '(pair list)))
+	    ((eq? t1 'list) (memq t2 '(pair list null)))
+	    ((eq? t1 'null) (memq t2 '(null list)))
 	    ((and (pair? t1) (pair? t2) (eq? (car t1) (car t2)))
 	     (case (car t1)
 	       ((procedure)
@@ -459,92 +462,94 @@
 	  (fragment (first (node-subexpressions node)))))
       (d "  call-result: ~a " args)
       (let* ((ptype (car args))
+	     (pptype? (procedure-type? ptype))
 	     (nargs (length (cdr args)))
 	     (xptype `(procedure ,(make-list nargs '*) *)))
-	(when (and (not (procedure-type? ptype))
-		   (not (match xptype ptype)))
-	  (report
-	   loc
-	   (sprintf
-	       "~aexpected a value of type `~a', but was given a value of type `~a'"
-	     (pname) 
-	     xptype
-	     ptype)))
-	(let-values (((atypes values-rest) (procedure-argument-types ptype nargs)))
-	  (d "  argument-types: ~a (~a)" atypes values-rest)
-	  (unless (= (length atypes) nargs)
-	    (let ((alen (length atypes)))
-	      (report 
-	       loc
-	       (sprintf
-		   "~aexpected ~a argument~a, but was given ~a argument~a"
-		 (pname) alen (multiples alen)
-		 nargs (multiples nargs)))))
-	  (do ((args (cdr args) (cdr args))
-	       (atypes atypes (cdr atypes))
-	       (i 1 (add1 i)))
-	      ((or (null? args) (null? atypes)))
-	    (unless (match (car atypes) (car args))
-	      (report
-	       loc
-	       (sprintf
-		   "~aexpected argument #~a of type `~a', but was given an argument of type `~a'"
-		 (pname) i (car atypes) (car args)))))
-	  (let ((r (procedure-result-types ptype values-rest (cdr args))))
-	    ;;XXX we should check whether this is a standard- or extended binding
-	    (let* ((pn (procedure-name ptype))
-		   (op #f))
-	      (when pn
-		(cond ((and (fx= 1 nargs) 
-			    (variable-mark pn '##compiler#predicate)) =>
-			    (lambda (pt)
-			      (cond ((match-specialization (list pt) (cdr args))
-				     (report
-				      loc
-				      (sprintf 
-					  "~athe predicate is called with an argument of type `~a' and will always return true"
-					(pname) (cadr args)))
-				     (when specialize
-				       (specialize-node!
-					node
-					`(let ((#:tmp #(1))) '#t))
-				       (set! op (list pn pt))))
-				    ((match-specialization (list `(not ,pt)) (cdr args))
-				     (report
-				      loc
-				      (sprintf 
-					  "~athe predicate is called with an argument of type `~a' and will always return false"
-					(pname) (cadr args)))
-				     (when specialize
-				       (specialize-node!
-					node
-					`(let ((#:tmp #(1))) '#f))
-				       (set! op (list pt `(not ,pt))))))))
-		      ((and specialize (variable-mark pn '##compiler#specializations)) =>
-		       (lambda (specs)
-			 (let loop ((specs specs))
-			   (cond ((null? specs))
-				 ((match-specialization (first (car specs)) (cdr args))
-				  (let ((spec (car specs)))
-				    (set! op (cons pn (car spec)))
-				    (let* ((r2 (and (pair? (cddr spec)) (second spec)))
-					   (rewrite (if r2 (third spec) (second spec))))
-				      (specialize-node! node rewrite)
-				      (when r2 (set! r r2)))))
-				 (else (loop (cdr specs))))))))
-		(when op
-		  (cond ((assoc op specialization-statistics) =>
-			 (lambda (a) (set-cdr! a (add1 (cdr a)))))
-			(else
-			 (set! specialization-statistics
-			   (cons (cons op 1) 
-				 specialization-statistics))))))
-	      (when (and specialize (not op) (procedure-type? ptype))
-		(set-car! (node-parameters node) #t)
-		(set! safe-calls (add1 safe-calls))))
-	    (d  "  result-types: ~a" r)
-	    r))))
-
+	(cond ((and (not pptype?) (not (match xptype ptype)))
+	       (report
+		loc
+		(sprintf
+		    "~aexpected a value of type `~a', but was given a value of type `~a'"
+		  (pname) 
+		  xptype
+		  ptype))
+	       '*)
+	      (else
+	       (let-values (((atypes values-rest) (procedure-argument-types ptype nargs)))
+		 (d "  argument-types: ~a (~a)" atypes values-rest)
+		 (unless (= (length atypes) nargs)
+		   (let ((alen (length atypes)))
+		     (report 
+		      loc
+		      (sprintf
+			  "~aexpected ~a argument~a, but was given ~a argument~a"
+			(pname) alen (multiples alen)
+			nargs (multiples nargs)))))
+		 (do ((args (cdr args) (cdr args))
+		      (atypes atypes (cdr atypes))
+		      (i 1 (add1 i)))
+		     ((or (null? args) (null? atypes)))
+		   (unless (match (car atypes) (car args))
+		     (report
+		      loc
+		      (sprintf
+			  "~aexpected argument #~a of type `~a', but was given an argument of type `~a'"
+			(pname) i (car atypes) (car args)))))
+		 (let ((r (procedure-result-types ptype values-rest (cdr args))))
+		   ;;XXX we should check whether this is a standard- or extended binding
+		   (let* ((pn (procedure-name ptype))
+			  (op #f))
+		     (when pn
+		       (cond ((and (fx= 1 nargs) 
+				   (variable-mark pn '##compiler#predicate)) =>
+				   (lambda (pt)
+				     (cond ((match-specialization (list pt) (cdr args))
+					    (report
+					     loc
+					     (sprintf 
+						 "~athe predicate is called with an argument of type `~a' and will always return true"
+					       (pname) (cadr args)))
+					    (when specialize
+					      (specialize-node!
+					       node
+					       `(let ((#:tmp #(1))) '#t))
+					      (set! op (list pn pt))))
+					   ((match-specialization (list `(not ,pt)) (cdr args))
+					    (report
+					     loc
+					     (sprintf 
+						 "~athe predicate is called with an argument of type `~a' and will always return false"
+					       (pname) (cadr args)))
+					    (when specialize
+					      (specialize-node!
+					       node
+					       `(let ((#:tmp #(1))) '#f))
+					      (set! op (list pt `(not ,pt))))))))
+			     ((and specialize (variable-mark pn '##compiler#specializations)) =>
+			      (lambda (specs)
+				(let loop ((specs specs))
+				  (cond ((null? specs))
+					((match-specialization (first (car specs)) (cdr args))
+					 (let ((spec (car specs)))
+					   (set! op (cons pn (car spec)))
+					   (let* ((r2 (and (pair? (cddr spec)) (second spec)))
+						  (rewrite (if r2 (third spec) (second spec))))
+					     (specialize-node! node rewrite)
+					     (when r2 (set! r r2)))))
+					(else (loop (cdr specs))))))))
+		       (when op
+			 (cond ((assoc op specialization-statistics) =>
+				(lambda (a) (set-cdr! a (add1 (cdr a)))))
+			       (else
+				(set! specialization-statistics
+				  (cons (cons op 1) 
+					specialization-statistics))))))
+		     (when (and specialize (not op) (procedure-type? ptype))
+		       (set-car! (node-parameters node) #t)
+		       (set! safe-calls (add1 safe-calls))))
+		   (d  "  result-types: ~a" r)
+		   r))))))
+    
     (define (self-call? node loc)
       (case (node-class node)
 	((##core#call)
@@ -844,11 +849,7 @@
 	       (else #f)))))
 
 (define (procedure-argument-types t n #!optional norest)
-  (cond ((or (memq t '(* procedure)) 
-	     (not-pair? t)
-	     (eq? 'deprecated (car t)))
-	 (values (make-list n '*) #f))
-	((eq? 'procedure (car t))
+  (cond ((and (pair? t) (eq? 'procedure (car t)))
 	 (let* ((vf #f)
 		(llist
 		 (let loop ((at (if (or (string? (second t)) (symbol? (second t)))
@@ -869,23 +870,20 @@
 			 ((and opt (<= m 0)) '())
 			 (else (cons (car at) (loop (cdr at) (sub1 m) opt)))))))
 	   (values llist vf)))
-	(else (bomb "not a procedure type" t))))
+	(else (values (make-list n '*) #f))))
 
 (define (procedure-result-types t values-rest? args)
   (cond (values-rest? args)
-	((or (memq t '(* procedure))
-	     (not-pair? t) )
-	 '*)
-	((eq? 'procedure (car t))
+	((and (pair? t) (eq? 'procedure (car t)))
 	 (call/cc
 	  (lambda (return)
 	    (let loop ((rt (if (or (string? (second t)) (symbol? (second t)))
 			       (cdddr t)
 			       (cddr t))))
 	      (cond ((null? rt) '())
-		    ((eq? '* rt) (return '*))
+		    ((memq rt '(* noreturn)) (return '*))
 		    (else (cons (car rt) (loop (cdr rt)))))))))
-	(else (bomb "not a procedure type" t))))
+	(else '*)))
 
 (define (named? t)
   (and (pair? t) 
