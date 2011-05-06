@@ -1089,6 +1089,7 @@
 (make-pointer-vector (procedure! make-pointer-vector (fixnum #!optional pointer) pointer-vector))
 (make-record-instance (procedure make-record-instance (* #!rest) *))
 (make-weak-locative (procedure! make-weak-locative (* #!optional fixnum) locative))
+;;XXX move-memory! could be rewritten according to argumejnt types and supplied args
 (move-memory! (procedure! move-memory! (* * #!optional fixnum fixnum fixnum) *))
 (mutate-procedure (procedure! mutate-procedure (procedure procedure) procedure))
 (null-pointer (procedure null-pointer () pointer))
