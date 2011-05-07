@@ -1528,7 +1528,7 @@
 	(set! enable-specialization #t))
        ((unsafe-specialized-arithmetic)
 	(set! unchecked-specialized-arithmetic #t))
-       (else (warning "illegal declaration specifier" spec)) )
+       (else (warning "unknown declaration specifier" spec)) )
      '(##core#undefined) ) ) )
 
 
