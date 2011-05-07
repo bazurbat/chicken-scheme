@@ -95,7 +95,7 @@
 			     'inline
 			     'inline-global
 			     'unboxing 'local
-			     ;'specialize
+			     'specialize
 			     options) ) )
 		   ((4)
 		    (set! options
@@ -103,7 +103,7 @@
 			     'inline 
 			     'inline-global
 			     'unboxing 
-			     ;'specialize
+			     'specialize
 			     'local 'unsafe
 			     options) ) )
 		   (else
@@ -115,7 +115,7 @@
 			       'block
 			       'optimize-leaf-routines
 			       'no-lambda-info
-			       ;'specialize
+			       'specialize
 			       'optimize-leaf-routines 
 			       'no-lambda-info
 			       'inline
