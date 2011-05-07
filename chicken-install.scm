@@ -66,10 +66,17 @@
   (define-constant +module-db+ "modules.db")
   (define-constant +defaults-file+ "setup.defaults")
 
+  (define-foreign-variable C_TARGET_LIB_HOME c-string)
+  (define-foreign-variable C_INSTALL_BIN_HOME c-string)
+  (define-foreign-variable C_TARGET_PREFIX c-string)
+  (define-foreign-variable C_BINARY_VERSION int)
+  (define-foreign-variable C_WINDOWS_SHELL bool)
+  (define-foreign-variable C_CSI_PROGRAM c-string)
+
   (define *program-path*
     (or (and-let* ((p (get-environment-variable "CHICKEN_PREFIX")))
           (make-pathname p "bin") )
-        (foreign-value "C_INSTALL_BIN_HOME" c-string) ) )
+        C_INSTALL_BIN_HOME))
 
   (define *keep* #f)
   (define *keep-existing* #f)
@@ -82,7 +89,7 @@
   (define *default-sources* '())
   (define *default-location* #f)
   (define *default-transport* 'http)
-  (define *windows-shell* (foreign-value "C_WINDOWS_SHELL" bool))
+  (define *windows-shell* C_WINDOWS_SHELL)
   (define *proxy-host* #f)
   (define *proxy-port* #f)
   (define *proxy-user-pass* #f)
@@ -100,12 +107,18 @@
   (define *debug-setup* #f)
   (define *keep-going* #f)
   (define *override* '())
+  (define *reinstall* #f)
+
+  (define (repo-path)
+    (if (and *cross-chicken* (not *host-extension*))
+	(make-pathname C_TARGET_LIB_HOME (sprintf "chicken/~a" C_BINARY_VERSION))
+	(repository-path)))
 
   (define (get-prefix #!optional runtime)
     (cond ((and *cross-chicken*
 		(not *host-extension*))
 	   (or (and (not runtime) *prefix*)
-	       (foreign-value "C_TARGET_PREFIX" c-string)))
+	       C_TARGET_PREFIX))
 	  (else *prefix*)))
 
   (define (load-defaults)
@@ -259,7 +272,7 @@
   (define *checked* '())
 
   (define *csi* 
-    (shellpath (make-pathname *program-path* (foreign-value "C_CSI_PROGRAM" c-string))))
+    (shellpath (make-pathname *program-path* C_CSI_PROGRAM)))
 
   (define (try-extension name version trans locn)
     (condition-case
@@ -631,6 +644,11 @@
       (unless (zero? r)
         (error "shell command terminated with nonzero exit code" r str))))
 
+  (define (installed-extensions)
+    (map (lambda (sf)
+	   (cons (pathname-file sf) (first (read-file sf))))
+	 (glob (make-pathname (repo-path) "*" "setup-info"))))
+
   (define (command fstr . args)
     (let ((cmd (apply sprintf fstr args)))
       (print "  " cmd)
@@ -682,6 +700,12 @@ EOF
                  (else
                   (set! *proxy-host* uri)
                   (set! *proxy-port* 80)))))))
+
+  (define (info->egg info)
+    (let ((version (assq 'version (cdr info))))
+      (if version
+	  (cons (car info) (->string (cadr version)))
+	  (car info))))
   
   (define *short-options* '(#\h #\k #\l #\t #\s #\p #\r #\n #\v #\i #\u #\D))
 
@@ -699,6 +723,17 @@ EOF
 		     (scan (scan-directory scan))
                      (else
 		      (let ((defaults (load-defaults)))
+			(when (null? eggs)
+			  (if *reinstall*
+			      (let ((egginfos (installed-extensions)))
+				(if (or *force*
+					(yes-or-no? 
+					 (sprintf
+					     "About to re-install all ~a currently installed extensions - do you want to proceed?"
+					   (length egginfos))
+					 abort: #f))
+				    (set! eggs (map info->egg egginfos))
+				    (exit 1)))))
 			(when (null? eggs)
 			  (let ((setups (glob "*.setup")))
 			    (cond ((pair? setups)
@@ -812,8 +847,11 @@ EOF
                         (unless (pair? (cdr args)) (usage 1))
 			(set! *override* (read-file (cadr args)))
 			(loop (cddr args) eggs))
-		       ((or (string=? "-x") (string=? "-keep-installed" arg))
+		       ((or (string=? "-x" arg) (string=? "-keep-installed" arg))
 			(set! *keep-existing* #t)
+			(loop (cdr args) eggs))
+		       ((string=? "-reinstall" arg)
+			(set! *reinstall* #t)
 			(loop (cdr args) eggs))
 		       ((string=? "-trunk" arg)
 			(set! *trunk* #t)
