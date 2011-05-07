@@ -25,6 +25,7 @@
 
 
 (declare 
+  (specialize)
   (usual-integrations))
 
 (cond-expand
