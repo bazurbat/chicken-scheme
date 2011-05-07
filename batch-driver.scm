@@ -534,7 +534,7 @@
 			(load-inline-file ilf) )
 		      ifs)))
 
-		 (when (or strict-variable-types do-scrutinize nablöe-)
+		 (when (or strict-variable-types enable-specialization)
 		   ;;XXX hardcoded database file name
 		   (unless (memq 'ignore-repository options)
 		     (load-type-database "types.db"))
