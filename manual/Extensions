@@ -67,6 +67,11 @@ switch passes the -R option directly to the linker, which causes the
 library path to get hardcoded into the resulting extension file (for
 systems that do not use {{ld.so.conf}}).
 
+The environment variables {{CHICKEN_C_INCLUDE_PATH}} and {{CHICKEN_C_LIBRARY_PATH}}
+can also be used to override include- and linker-paths. Each of these variables
+may contain one or more directory names, separated by {{:}} or {{;}} and will
+be passed using {{-I}} and {{-L}} to the C compiler.
+
 === Creating extensions
 
 Extensions can be created by creating an (optionally gzipped) {{tar}}
