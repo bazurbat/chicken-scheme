@@ -264,6 +264,13 @@ procedures.
 Enables scrutiny. This is equivalent to passing the {{-scrutinize}} option to the compiler.
 
 
+=== specializat
+
+ [declaration specifier] (specialize)
+
+Enables specialization. This is equivalent to passing the {{-specialize}} option to the compiler.
+
+
 === standard-bindings
 
  [declaration specifier] (standard-bindings SYMBOL ...)

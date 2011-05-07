@@ -72,6 +72,7 @@
 ; (unused <symbol> ...)
 ; (uses {<unitname>})
 ; (unsafe-specialized-arithmetic)
+; (specialize)
 ;
 ;   <type> = fixnum | generic
 
@@ -336,6 +337,7 @@
 (define unchecked-specialized-arithmetic #f)
 (define bootstrap-mode #f)
 (define struct-variable-types #f)
+(define enable-specialization #f)
 
 
 ;;; These are here so that the backend can access them:
@@ -1522,6 +1524,8 @@
 		 (else
 		  (warning "illegal `predicate' declaration" spec))))
 	 (cdr spec)))
+       ((specialize)
+	(set! enable-specialization #t))
        ((unsafe-specialized-arithmetic)
 	(set! unchecked-specialized-arithmetic #t))
        (else (warning "illegal declaration specifier" spec)) )

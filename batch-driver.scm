@@ -94,7 +94,6 @@
 	(dynamic (memq 'dynamic options))
 	(unbox (memq 'unboxing options))
 	(do-scrutinize (memq 'scrutinize options))
-	(do-specialize (memq 'specialize options))
 	(dumpnodes #f)
 	(start-time #f)
 	(upap #f)
@@ -172,6 +171,7 @@
     (when (memq 'ignore-repository options)
       (set! ##sys#dload-disabled #t)
       (repository-path #f))
+    (set! enable-specialization (memq 'specialize options))
     (set! debugging-chicken 
       (append-map
        (lambda (do)
@@ -534,7 +534,7 @@
 			(load-inline-file ilf) )
 		      ifs)))
 
-		 (when (or strict-variable-types do-scrutinize do-specialize)
+		 (when (or strict-variable-types do-scrutinize nablöe-)
 		   ;;XXX hardcoded database file name
 		   (unless (memq 'ignore-repository options)
 		     (load-type-database "types.db"))
@@ -550,9 +550,9 @@
 		   (end-time "pre-analysis (scrutiny)")
 		   (begin-time)
 		   (debugging 'p "performing scrutiny")
-		   (scrutinize node0 db do-scrutinize do-specialize)
+		   (scrutinize node0 db do-scrutinize enable-specialization)
 		   (end-time "scrutiny")
-		   (when do-specialize
+		   (when enable-specialization
 		     (print-node "specialization" '|P| node0))
 		   (set! first-analysis #t) ) )
 

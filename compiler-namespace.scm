@@ -97,11 +97,6 @@
  display-analysis-database
  display-line-number-database
  display-real-name-table
-<<<<<<< HEAD
- do-lambda-lifting
-=======
- do-scrutinize
->>>>>>> experimental
  dump-defined-globals
  dump-global-refs
  dump-nodes
@@ -114,6 +109,7 @@
  emit-trace-info
  emit-type-file
  enable-inline-files
+ enable-specialization
  encode-literal
  eq-inline-operator
  error-is-extended-binding
