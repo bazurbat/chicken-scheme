@@ -316,14 +316,16 @@ EOF
 
 (define (##sys#check-integer x . loc)
   (unless (##core#inline "C_i_integerp" x) 
-    (##sys#error-hook (foreign-value "C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR" int)
-		      (and (pair? loc) (car loc)) x) ) )
+    (##sys#error-hook
+     (foreign-value "C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR" int)
+     (and (pair? loc) (car loc)) x) ) )
 
 (define (##sys#check-range i from to . loc)
   (##sys#check-exact i loc)
   (unless (and (fx<= from i) (fx< i to))
-    (##sys#error-hook (foreign-value "C_OUT_OF_RANGE_ERROR" int)
-		      (and (pair? loc) (car loc)) i from to) ) )
+    (##sys#error-hook
+     (foreign-value "C_OUT_OF_RANGE_ERROR" int)
+     (and (pair? loc) (car loc)) i from to) ) )
 
 (define (##sys#check-special ptr . loc)
   (unless (and (##core#inline "C_blockp" ptr) (##core#inline "C_specialp" ptr))
@@ -2285,7 +2287,7 @@ EOF
 (define (##sys#infix-list-hook lst) lst)
 
 (define (##sys#sharp-number-hook port n)
-  (##sys#read-error port "invalid parameterized read syntax" n) )
+  (##sys#read-error port "invalid `#...' read syntax" n) )
 
 (define case-sensitive (make-parameter #t))
 (define keyword-style (make-parameter #:suffix))
