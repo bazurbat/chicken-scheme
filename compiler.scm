@@ -71,7 +71,6 @@
 ; (unsafe)
 ; (unused <symbol> ...)
 ; (uses {<unitname>})
-; (unsafe-specialized-arithmetic)
 ;
 ;   <type> = fixnum | generic
 
@@ -335,7 +334,6 @@
 (define do-scrutinize #f)
 (define enable-inline-files #f)
 (define compiler-syntax-enabled #t)
-(define unchecked-specialized-arithmetic #f)
 (define bootstrap-mode #f)
 
 
@@ -1495,8 +1493,6 @@
 		 (else
 		  (warning "illegal `type' declaration item" spec))))
 	 (globalize-all (cdr spec))))
-       ((unsafe-specialized-arithmetic)
-	(set! unchecked-specialized-arithmetic #t))
        (else (warning "illegal declaration specifier" spec)) )
      '(##core#undefined) ) ) )
 
