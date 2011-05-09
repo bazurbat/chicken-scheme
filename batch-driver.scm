@@ -263,6 +263,7 @@
       (symbol-escape #f) )
     (set! verbose-mode verbose)
     (set! strict-variable-types (memq 'strict-types options))
+    (when strict-variable-types (set! enable-specialization #t))
     (set! ##sys#read-error-with-line-number #t)
     (set! ##sys#include-pathnames
       (append (map chop-separator (collect-options 'include-path))
