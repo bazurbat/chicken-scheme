@@ -71,7 +71,6 @@
 ; (unsafe)
 ; (unused <symbol> ...)
 ; (uses {<unitname>})
-; (unsafe-specialized-arithmetic)
 ; (specialize)
 ;
 ;   <type> = fixnum | generic
@@ -334,7 +333,6 @@
 (define inline-locally #f)
 (define enable-inline-files #f)
 (define compiler-syntax-enabled #t)
-(define unchecked-specialized-arithmetic #f)
 (define bootstrap-mode #f)
 (define struct-variable-types #f)
 (define enable-specialization #f)
@@ -1522,12 +1520,10 @@
 			  (else
 			   (warning "illegal `predicate' declaration" spec)))))
 		 (else
-		  (warning "illegal `predicate' declaration" spec))))
-	 (cdr spec)))
+		  (warning "illegal `type' declaration item" spec))))
+	 (globalize-all (cdr spec))))
        ((specialize)
 	(set! enable-specialization #t))
-       ((unsafe-specialized-arithmetic)
-	(set! unchecked-specialized-arithmetic #t))
        (else (warning "unknown declaration specifier" spec)) )
      '(##core#undefined) ) ) )
 

@@ -233,7 +233,12 @@
 (define compile-options '())
 
 (define builtin-compile-options
-  (if include-dir (list (conc "-I\"" include-dir "\"")) '()))
+  (append
+   (if include-dir (list (conc "-I\"" include-dir "\"")) '())
+   (cond ((get-environment-variable "CHICKEN_C_INCLUDE_PATH") => 
+	  (lambda (path) 
+	    (map (cut string-append "-I\"" <> "\"") (string-split path ":;"))))
+	 (else '()))))
 
 (define compile-only-flag "-c")
 (define translation-optimization-options default-translation-optimization-options)
@@ -249,19 +254,24 @@
 (define link-options '())
 
 (define (builtin-link-options)
-  (cond (elf
-	 (list
-	  (conc "-L\"" library-dir "\"")
-	  (conc " -Wl,-R\""
-		(if (and deployed (not netbsd))
-		    "\\$ORIGIN"
-		    (prefix "" "lib"
-			    (if host-mode
-				INSTALL_LIB_HOME
-				TARGET_RUN_LIB_HOME)))
-		"\"")) )
-	(else
-	 (list (conc "-L\"" library-dir "\"")))))
+  (append
+   (cond (elf
+	  (list
+	   (conc "-L\"" library-dir "\"")
+	   (conc " -Wl,-R\""
+		 (if (and deployed (not netbsd))
+		     "\\$ORIGIN"
+		     (prefix "" "lib"
+			     (if host-mode
+				 INSTALL_LIB_HOME
+				 TARGET_RUN_LIB_HOME)))
+		 "\"")) )
+	 (else
+	  (list (conc "-L\"" library-dir "\""))))
+   (cond ((get-environment-variable "CHICKEN_C_LIBRARY_PATH") => 
+	  (lambda (path) 
+	    (map (cut string-append "-L\"" <> "\"") (string-split path ":;"))))
+	 (else '()))))
 	
 (define target-filename #f)
 (define verbose #f)

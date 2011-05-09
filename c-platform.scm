@@ -828,8 +828,8 @@
 (rewrite 'even? 17 1 "C_i_evenp" "C_u_i_evenp")
 (rewrite 'odd? 17 1 "C_i_oddp" "C_u_i_oddp")
 
-(rewrite 'fxodd? 2 1 "C_fixnumoddp" #t)
-(rewrite 'fxeven? 2 1 "C_fixnumevenp" #t)
+(rewrite 'fxodd? 2 1 "C_i_fixnumoddp" #t)
+(rewrite 'fxeven? 2 1 "C_i_fixnumevenp" #t)
 
 (rewrite 'floor 15 'flonum 'fixnum 'fpfloor #f)
 (rewrite 'ceiling 15 'flonum 'fixnum 'fpceiling #f)

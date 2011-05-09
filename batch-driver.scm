@@ -627,7 +627,7 @@
 				       (> (- (cputime) start-time) funny-message-timeout))
 			      (display "(don't worry - still compiling...)\n") )
 			    (print-node "closure-converted" '|9| node2)
-			    (when (and unbox (or unsafe unchecked-specialized-arithmetic))
+			    (when (and unbox unsafe)
 			      (debugging 'p "performing unboxing")
 			      (begin-time)
 			      (perform-unboxing! node2)

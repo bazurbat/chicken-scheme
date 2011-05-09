@@ -348,11 +348,7 @@
 		      (let* ((rw1 (##sys#get 
 				   (symbolify (first params))
 				   '##compiler#unboxed-op))
-			     (rw (and rw1 
-				      (or unsafe
-					  (and (fourth rw1)
-					       unchecked-specialized-arithmetic))
-				      rw1))
+			     (rw (and unsafe rw1))
 			     (args (map (cut walk <> #f rw pass2?) subs)))
 			;; rewrite inline operation to unboxed one, if possible
 			(cond ((not rw) #f)
@@ -387,7 +383,6 @@
 			(when (and (not pass2?) r1 (cdr r1))
 			  (unboxed! (first params) (cdr r1)))
 			(let ((r (walk (second subs) dest udest pass2?)))
-			  (when pass2?
 			    (let ((a (assq v e)))
 			      (if (and a (cdr a))
 				  (rebind-unboxed! n (cdr a))
@@ -473,21 +468,16 @@
   (syntax-rules ()
     ((_ (name atypes rtype alt) ...)
      (begin
-       (register-unboxed-op 'name 'atypes 'rtype 'alt #f) ...))))
+       (register-unboxed-op 'name 'atypes 'rtype 'alt) ...))))
 
-(define-syntax define-unboxed-arithmetic-ops
-  (syntax-rules ()
-    ((_ (name atypes rtype alt) ...)
-     (begin
-       (register-unboxed-op 'name 'atypes 'rtype 'alt #t) ...))))
-
-(define (register-unboxed-op name atypes rtype alt arithmetic)
-  (##sys#put! (symbolify name) '##compiler#unboxed-op (list alt atypes rtype arithmetic)))
+(define (register-unboxed-op name atypes rtype alt)
+  (##sys#put! (symbolify name) '##compiler#unboxed-op (list alt atypes rtype)))
 
 
-;; unboxed rewrites
+;;; unboxed rewrites
 
-(define-unboxed-arithmetic-ops 
+;; arithmetic
+(define-unboxed-ops 
   (C_a_i_flonum_plus (flonum flonum) flonum "C_ub_i_flonum_plus")
   (C_a_i_flonum_difference (flonum flonum) flonum "C_ub_i_flonum_difference")
   (C_a_i_flonum_times (flonum flonum) flonum "C_ub_i_flonum_times") 
@@ -515,6 +505,7 @@
   (C_a_i_flonum_floor (flonum) flonum "C_floor")
   (C_a_i_flonum_round (flonum) flonum "C_round"))
 
+;; others
 (define-unboxed-ops 
   (C_u_i_f32vector_set (* fixnum flonum) fixnum "C_ub_i_f32vector_set")
   (C_u_i_f64vector_set (* fixnum flonum) fixnum "C_ub_i_f64vector_set")
