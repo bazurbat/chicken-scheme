@@ -679,7 +679,7 @@
 		    (when (and (not type)
 			       (not b)
 			       (not (eq? '* rt))
-			       (not (variable-visible? var))
+			       (not (variable-visible? var)) ;XXX needed?
 			       (not (get db var 'unknown)))
 		      (and-let* ((val (or (get db var 'value)
 					  (get db var 'local-value))))
