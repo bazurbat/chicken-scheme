@@ -205,7 +205,16 @@
     f32vector-set! f64vector-set!
     u8vector-ref s8vector-ref u16vector-ref s16vector-ref u32vector-ref s32vector-ref
     u8vector-set! s8vector-set! u16vector-set! s16vector-set! u32vector-set! s32vector-set!
-    ##sys#intern-symbol ##sys#make-symbol make-record-instance error ##sys#block-set!) )
+    ##sys#intern-symbol ##sys#make-symbol make-record-instance error ##sys#block-set!
+    current-error-port current-thread
+    pointer-u8-ref pointer-u8-set!
+    pointer-s8-ref pointer-s8-set!
+    pointer-u16-ref pointer-u16-set!
+    pointer-s16-ref pointer-s16-set!
+    pointer-u32-ref pointer-u32-set!
+    pointer-s32-ref pointer-s32-set!
+    pointer-f32-ref pointer-f32-set!
+    pointer-f64-ref pointer-f64-set!))
 
 (define foldable-bindings
   (lset-difference 
