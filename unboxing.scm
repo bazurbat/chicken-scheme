@@ -311,7 +311,7 @@
 	    (set! d-depth (add1 d-depth))
 	    (let ((result
 		   (case class
-
+		     
 		     ((##core#undefined
 		       ##core#proc
 		       ##core#global-ref
@@ -383,10 +383,11 @@
 			(when (and (not pass2?) r1 (cdr r1))
 			  (unboxed! (first params) (cdr r1)))
 			(let ((r (walk (second subs) dest udest pass2?)))
+			  (when pass2?
 			    (let ((a (assq v e)))
 			      (if (and a (cdr a))
 				  (rebind-unboxed! n (cdr a))
-				  (straighten-binding! n))) )
+				  (straighten-binding! n))))
 			  r)))
 
 		     ((set!)
@@ -434,6 +435,7 @@
 		     (else
 		      (for-each (o invalidate (cut walk <> #f #f pass2?)) subs)
 		      #f))))
+
 	      (set! d-depth (sub1 d-depth))
 	      result)))
 

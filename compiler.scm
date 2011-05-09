@@ -334,7 +334,7 @@
 (define enable-inline-files #f)
 (define compiler-syntax-enabled #t)
 (define bootstrap-mode #f)
-(define struct-variable-types #f)
+(define strict-variable-types #f)
 (define enable-specialization #f)
 
 
