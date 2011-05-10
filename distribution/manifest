@@ -179,6 +179,11 @@ tests/test-queue.scm
 tests/functor-tests.scm
 tests/square-functor.scm
 tests/use-square-functor.scm
+tests/pp-test.scm
+tests/reverser/reverser.meta
+tests/reverser/reverser.setup
+tests/reverser/reverser.scm
+tests/rev-app.scm
 tweaks.scm
 utils.scm
 apply-hack.x86.S
