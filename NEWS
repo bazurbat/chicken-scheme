@@ -1,3 +1,10 @@
+4.7.0rc2
+
+- Extensions
+  - "chicken-install -deploy" does not compile deployed extensions with
+    "-setup-mode" anymore to avoid problems with dynamic loading on some
+    platforms (specifically Mac OS X)
+
 4.6.7
 
 - Core libraries
