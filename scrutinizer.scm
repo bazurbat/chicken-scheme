@@ -75,7 +75,7 @@
 	  ((pair? lit) 'pair)
 	  ((eof-object? lit) 'eof)
 	  ((vector? lit) 'vector)
-	  ((and (not (##sys#immediate? lit)) ##sys#generic-structure? lit)
+	  ((and (not (##sys#immediate? lit)) (##sys#generic-structure? lit))
 	   `(struct ,(##sys#slot lit 0)))
 	  ((null? lit) 'null)
 	  ((char? lit) 'char)
