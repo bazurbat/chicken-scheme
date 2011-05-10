@@ -71,6 +71,7 @@
 ; (unsafe)
 ; (unused <symbol> ...)
 ; (uses {<unitname>})
+; (strict-types)
 ; (specialize)
 ;
 ;   <type> = fixnum | generic
@@ -1524,6 +1525,8 @@
 	 (globalize-all (cdr spec))))
        ((specialize)
 	(set! enable-specialization #t))
+       ((strict-types)
+	(set! strict-variable-types #t))
        (else (warning "unknown declaration specifier" spec)) )
      '(##core#undefined) ) ) )
 

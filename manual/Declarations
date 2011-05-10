@@ -264,7 +264,7 @@ procedures.
 Enables scrutiny. This is equivalent to passing the {{-scrutinize}} option to the compiler.
 
 
-=== specializat
+=== specialize
 
  [declaration specifier] (specialize)
 
@@ -280,6 +280,13 @@ Declares that all given standard procedures (or all if no symbols are
 specified) are never globally redefined.  If {{not}} is specified,
 then all but the given standard bindings are assumed to be never
 redefined.
+
+
+=== strict-types
+
+ [declaration specifier] (strict-types)
+
+Declares that the type of variables is not changed by assignment. Equivalent to giving the {{-strict-types}} compiler option.
 
 
 === type
