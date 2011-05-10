@@ -242,6 +242,7 @@
 	   (shellpath (find-program "csc"))
 	   "-feature" "compiling-extension" 
 	   (if (and (feature? #:cross-chicken)
+		    (not (deployment-mode))
 		    (not (host-extension)))
 	       "" "-setup-mode")
 	   (if (keep-intermediates) "-k" "")
