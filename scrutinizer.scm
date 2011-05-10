@@ -111,7 +111,7 @@
 	    ((list? lit) 'list)
 	    ((eof-object? lit) 'eof)
 	    ((vector? lit) 'vector)
-	    ((and (not (##sys#immediate? lit)) ##sys#generic-structure? lit)
+	    ((and (not (##sys#immediate? lit)) (##sys#generic-structure? lit))
 	     `(struct ,(##sys#slot lit 0)))
 	    ((char? lit) 'char)
 	    (else '*)))
