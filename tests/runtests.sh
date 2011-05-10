@@ -26,11 +26,13 @@ for x in setup-api.so setup-api.import.so setup-download.so \
   cp ../$x test-repository
 done
 
-"${TEST_DIR}/../chicken-install" -init test-repository export
 CHICKEN_REPOSITORY=${TEST_DIR}/test-repository
 CHICKEN=../chicken
+CHICKEN_INSTALL=${TEST_DIR}/../chicken-install
 ASMFLAGS=
 FAST_OPTIONS="-O5 -d0 -b -disable-interrupts"
+
+$CHICKEN_INSTALL -init ${TEST_DIR}/test-repository
 
 if test -n "$MSYSTEM"; then
     CHICKEN="..\\chicken.exe"
@@ -40,6 +42,7 @@ if test -n "$MSYSTEM"; then
 fi
 
 compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
+compile2="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .."
 compile_s="../csc -s -compiler $CHICKEN -v -I.. -L.. -include-path .."
 interpret="../csi -n -include-path .."
 
@@ -320,4 +323,16 @@ tmp/xxx $PWD/tmp
 PATH=$PWD/tmp:$PATH xxx $PWD/tmp
 # this may crash, if the PATH contains a non-matching libchicken.dll on Windows:
 #PATH=$PATH:$PWD/tmp xxx $PWD/tmp
+
+echo "======================================== deployment tests"
+rm -fr rev-app rev-app-2 reverser/*.import.* reverser/*.so
+mkdir rev-app
+CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR reverser
+CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $compile2 -deploy rev-app.scm
+CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -deploy -prefix rev-app -t local -l $TEST_DIR reverser
+unset LD_LIBRARY_PATH DYLD_LIBRARY_PATH CHICKEN_REPOSITORY
+rev-app/rev-app
+mv rev-app rev-app-2
+rev-app-2/rev-app
+
 echo "======================================== done."
