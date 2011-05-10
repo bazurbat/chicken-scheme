@@ -173,6 +173,10 @@ tests/dwindtst.expected
 tests/callback-tests.scm
 tests/reader-tests.scm
 tests/pp-test.scm
+tests/reverser/reverser.meta
+tests/reverser/reverser.setup
+tests/reverser/reverser.scm
+tests/rev-app.scm
 tweaks.scm
 utils.scm
 apply-hack.x86.S
