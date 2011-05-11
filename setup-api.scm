@@ -544,9 +544,17 @@
 	    "unknown"))))
 
 (define (supply-version info version)
-  (if (assq 'version info)
-      info
-      (cons `(version ,(what-version version)) info)))
+  (cond ((assq 'version info) => 
+	 (lambda (a)
+	   (cons 
+	    `(egg-name-and-version (,(extension-name) ,(->string (cadr a))))
+	    info)))
+	(else
+	 (let ((v (what-version version)))
+	   (cons*
+	    `(version ,v)
+	    `(egg-name-and-version (,(extension-name) ,(->string v)))
+	    info)))))
 
 
 ;;; Convenience function
@@ -763,8 +771,7 @@
                    [ensure-string (lambda (x) (if (or (not x) (null? x)) "" (->string x)))])
                (list (ensure-string nam) (ensure-string ver)) ) ]
             [else
-             (warning "invalid extension-name-and-version" x)
-             (extension-name-and-version) ] ) ) ) )
+             (error "invalid extension-name-and-version" x)]))))
 
 (define (extension-name)
   (car (extension-name-and-version)) )

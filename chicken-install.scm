@@ -645,9 +645,18 @@
         (error "shell command terminated with nonzero exit code" r str))))
 
   (define (installed-extensions)
-    (map (lambda (sf)
-	   (cons (pathname-file sf) (first (read-file sf))))
-	 (glob (make-pathname (repo-path) "*" "setup-info"))))
+    (delete-duplicates
+     (filter-map
+      (lambda (sf) 
+	(let ((info (first (read-file sf))))
+	  (cond ((assq 'egg-name-and-version info) => cadr)
+		(else 
+		 (warning 
+		  "installed extension has no information about the egg it belongs to"
+		  (pathname-file sf))
+		 #f))))
+      (glob (make-pathname (repo-path) "*" "setup-info")))
+     equal?))
 
   (define (command fstr . args)
     (let ((cmd (apply sprintf fstr args)))
@@ -702,10 +711,9 @@ EOF
                   (set! *proxy-port* 80)))))))
 
   (define (info->egg info)
-    (let ((version (assq 'version (cdr info))))
-      (if version
-	  (cons (car info) (->string (cadr version)))
-	  (car info))))
+    (if (member (cadr info) '("" "unknown" "trunk"))
+	(car info)
+	(cons (car info) (cadr info))))
   
   (define *short-options* '(#\h #\k #\l #\t #\s #\p #\r #\n #\v #\i #\u #\D))
 
