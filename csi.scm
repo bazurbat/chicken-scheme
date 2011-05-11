@@ -727,7 +727,7 @@ EOF
       (##sys#void) ) ) )
 
 (define (set-describer! tag proc)
-  (##sys#check-symbol tag 'symbol 'set-describer!)
+  (##sys#check-symbol tag 'set-describer!)
   (##sys#hash-table-set! describer-table tag proc) )
 
 
