@@ -5595,6 +5595,7 @@ C_regparm C_word C_fcall C_i_check_list_2(C_word x, C_word loc)
 }
 
 
+/*XXX these are not correctly named */
 C_regparm C_word C_fcall C_i_foreign_char_argumentp(C_word x)
 {
   if((x & C_IMMEDIATE_TYPE_BITS) != C_CHARACTER_BITS)
