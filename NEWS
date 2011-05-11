@@ -1,21 +1,5 @@
 4.7.0rc2
 
-- Extensions
-  - "chicken-install -deploy" does not compile deployed extensions with
-    "-setup-mode" anymore to avoid problems with dynamic loading on some
-    platforms (specifically Mac OS X)
-
-4.6.7
-
-- Core libraries
-  - Fixed pretty-printer output of certain escaped character sequences
-    inside strings (thanks to Mario Domenech Goulart, thanks to Kon Lovett
-    for pointing out a missing test-file)
-- Runtime system
-  - Fixed typo in "runtime.c" (thanks to Sven Hartrumpf)
-
-4.6.6
-
 - Build system
   - On BSD, libchicken.so is linked with -lpthread, as this seems
     to be required for linking libraries that require pthreads
@@ -25,64 +9,6 @@
     in the same prefix; to avoid conflicts with existing CHICKEN
     headers, it is recommended to completely remove any old
     installation before installing the new version
-- Compiler
-  - Removed unreliable lambda-lifting optimization (now, really!);
-    the "-lambda-lift" option is still accepted but produces a
-    warning
-  - When "-scrutinize" is given, installed ".types" files will be
-    automatically consulted for extensions and used units
-  - Fixed optimizer bug in handling of "let" forms with multiple
-    bindings which could result in toplevel assignments being
-    silently dropped (reported by Moritz Heidkamp)
-- Syntax expander
-  - For-syntax syntax definitions where not correctly retained inside
-    modules
-  - Peter Bex fixed various critical bugs in the expander
-  - The simplification for quasiquote expressions was unable
-    to handle certain circular data (reported by Moritz Heidkamp)
-- Interpreter
-  - The ",m" toplevel command now accepts "#f" to switch back to
-    the initial empty module context (suggested by Christian Kellermann)
-- Core libraries
-  - "library" unit
-    - Added "condition->list" (thanks to Christian Kellermann)
-    - The reader accepts now escaped octal character codes in string 
-      literals
-    - Read-syntax can return zero values to indicate ignored objects
-    - R5RS output output routines now always return a "void" result
-    - "\|" was not correctly escaped when occurring inside
-      symbol print names
-  - "extras" unit
-    - The pretty printer did not escape some control characters correctly
-      (reported by Alan Post) 
-  - "posix" unit
-    - "close-input-pipe" did not return the status code of a
-      terminated process on Windows (reported by Mario Domenech Goulart)
-  - "tcp" unit
-    - Fixed bug in "tcp-abandon-port" (reported by Jim Ursetto)
-- Tools
-  - The "-deploy" option did not copy the correct library (including
-    the version-number) (thanks to Christian Kellermann)
-- Runtime-system
-  - Little-endian detection on MIPS systems was not correct (thanks
-    to Christian Kellermann)
-  - Fixed bug in handling of runtime-options with arguments (also
-    reported by Christian Kellermann)
-- Foreign function interface
-  - Added support for missing "(const [XXX-]c-string)" foreign type
-    (thanks to Moritz Heidkamp)
-- Documentation
-  - Added list of installed files to README
-  - Documented remaining "c...r" standard procedures (thanks to 
-    Juergen Lorenz)
-
-4.6.5.
-
-- NEWS file corrections
-
-4.6.4
-
-- Build system
   - the PROGRAM_PREFIX and PROGRAM_SUFFIX configuration settings
     are applied to generated files and directories which allows
     perform differently named installations into the same PREFIX
@@ -92,7 +18,102 @@
   - bugfixes in mingw/msys makefiles
   - Sven Hartrumpf contributed a bugfix to the internal helper
     script for creating distribution directories
+  - Peter Bex has cleaned up the makefiles heavily, making the
+    build more maintainable and easier to modify; thanks to all
+    who helped testing this new build
+  - renamed the makefile to `GNUmakefile' to catch using the
+    a make(3) other than GNU make
+  - configuration-header fix for BSD systems (thanks to Peter Bex
+    and Christian Kellermann)
+
+
+- Core libraries
+  - the `regex' library unit has been removed and is separately
+    available as an extension which should be fully backwards-
+    compatible
+  - `irregex' is now a core library unit and replaces the  `regex' API
+  - "extras" unit
+    - fixed pretty-printer output of certain escaped character
+      sequences inside strings (thanks to Mario Domenech Goulart,
+      thanks to Kon Lovett for pointing out a missing test-file)
+    - The pretty printer did not escape some control characters correctly
+      (reported by Alan Post) 
+    - control-characters in symbol-names are now properly escaped if
+     the symbol is printed readably (thanks to Alaric Snell-Pym
+     for pointing this out)
+    - the deprecated `random-seed' function has been removed
+  - "files" unit
+    - fixed bug in `normalize-pathname'
+    - `file-copy' and `file-move' check whether the source-file is a
+      directory
+    - `delete-directory' now optionally deletes directories recursively
+  - "irregex" unit
+    - Peter Bex has contributed various bugfixes and performance
+      enhancements
+  - "library" unit
+    - Added "condition->list" (thanks to Christian Kellermann)
+    - The reader accepts now escaped octal character codes in string 
+      literals
+    - Read-syntax can return zero values to indicate ignored objects
+    - R5RS output output routines now always return a "void" result
+    - "\|" was not correctly escaped when occurring inside
+      symbol print names
+    - added `condition->list', contributed by Christian Kellermann
+    - added `equal=?'
+    - removed deprecated `getenv', `left-section', `right-section',
+      `project', `c-runtime' and `noop'
+    - added missing import-library entry for `vector-copy!' (thanks
+      to Jules Altfas)
+    - circular or excessively deeply nested data generates a more
+      useful error message when encountered by `equal?'
+    - `list-tail' gives now a better error message when passed a
+      non-list argument
+    - fixed bug in `getter-with-setter' that modified the first
+      argument if it already had a setter procedure attached
+    - fixed incorrect size of internal data vector used in `time'
+      (thanks to Kon Lovett)
+  - "lolevel" unit
+    - removed deprecated `global-bound?', `global-make-unbound',
+      `global-ref' and `global-set!' procedures
+    - added support for `pointer-vectors':
+      -  make-pointer-vector
+      -  pointer-vector?
+      -  pointer-vector-length
+      -  pointer-vector-ref
+      -  pointer-vector-set!
+  - "posix" unit
+    - "close-input-pipe" did not return the status code of a
+      terminated process on Windows (reported by Mario Domenech Goulart)
+    - added `file-creation-mode' (suggested by Mario Domenech Goulart)
+  - "setup-api" unit 
+    - `required-extension-version' and `required-chicken-version' have
+       been deprecated
+  - "srfi-18" unit
+    - removed deprecated `milliseconds->time' and `time->milliseconds'
+      procedures
+    - `make-mutex' incorrectly created mutexes as initially owned by
+      the current threads (thanks to Joerg Wittenberger) 
+    - the file-descriptor handling in the scheduler has been simplified
+      and performs some sanity checks
+    - deadlock in the scheduler now terminates the process instead of
+      attempting to throw an error
+    - added some sanity checks to the scheduler
+  - "tcp" unit
+    - Fixed bug in "tcp-abandon-port" (reported by Jim Ursetto)
+  - "utils" unit
+    - `compile-file' now returns `#f' when the compilation fails,
+       instead of raising an error
+
+
 - Compiler
+  - Removed unreliable lambda-lifting optimization (now, really!);
+    the "-lambda-lift" option is still accepted but produces a
+    warning
+  - When "-scrutinize" is given, installed ".types" files will be
+    automatically consulted for extensions and used units
+  - Fixed optimizer bug in handling of "let" forms with multiple
+    bindings which could result in toplevel assignments being
+    silently dropped (reported by Moritz Heidkamp)
   - the `-accumulate-profile' option did not provide a way to
     specify the target profile data file - now `-profile-name'
     must always be given when accumulated profiling is done
@@ -113,27 +134,60 @@
     Alan Post)
   - Kon Lovett reported numerous bugs in the type-database used
     by the scrutinizer
-- Syntax expander
-  - `syntax-rules' now supports tail-patterns and is now fully
-    SRFI-46 compatible - many thanks to Peter Bex for implementing
-    this
-  - Peter Bex provided a bugfix for resolution of primitive imports
-  - handling of internal definitions with shadowed defining
-    forms is now done correctly - fix once again from Peter Bex
-  - corrected non-standard behaviour of quasiquote with respect
-    to nested quasiquotations - another bugfix by our mighty macro
-    master
-  - removed stub-implementation of `define-macro'
-  - handled case where a global redefinition of `cons' influenced
-    a non-inlined internal use in the expander (thanks to David
-    Steiner)
+  - `-fwrapv' is disabled on OpenBSD, since the default compiler
+     does not support this option (thanks to Christian Kellermann)
+  - on Solaris `gcc' is used by default, override `C_COMPILER'
+    to use the Sun compiler instead
+  - declaring a function `notinline' will prevent direct-call
+    optimization for known procedure calls
+  - the implementation of overflow-detection for arithmetic operations
+    on fixnums have been replaced and now allow using the full 63-bit
+    range of fixnums on 64-bit systems
+  - fixed serious inlining-bug (thanks to Sven Hartrumpf)
+  - constant-folding in the compiler has been simplified and
+    is more reliable (thanks to Sven Hartrumpf)
+  - optimization-levels 3 and higher imply `-unboxing -inline-global'
+  - added new declaration `unsafe-specialized-arithmetic' which allows
+    optimizing unboxed floating-point arithmetic in safe mode
+  - removed `scrutinize' declaration
+  - the warning shown when unimported identifiers are used in compiled
+    modules now also shows the name of the procedure where the
+    identifier is referenced (suggested by Alaric Snell-Pym)
+
+
+- Documentation
+  - Added list of installed files to README
+  - Documented remaining "c...r" standard procedures (thanks to 
+    Juergen Lorenz)
+  - The manual is now installed in HTML format in
+    PREFIX/share/chicken/doc, many thanks to Jim Ursetto for
+    contributing is excellent `manual-labor' extension which made
+    this possible
+
+
 - Foreign function interface
+  - Added support for missing "(const [XXX-]c-string)" foreign type
+    (thanks to Moritz Heidkamp)
   - removed deprecated `pointer', `nonnull-pointer', `byte-vector'
     and `nonnull-byte-vector' types
   - added missing result-type handling for `unsigned-integer64'
     (thanks to Moritz Heidkamp)
   - added `foreign-type-size' macro
+  - added the new foreign type `size_t' (suggested by Moritz 
+    Heidkamp)
+  - added the missing `unsigned-integer64' foreign type (thanks
+    to Moritz for catching this)
+  - added new foreign type `pointer-vector' which maps to `void **'
+    and provided a low-level API in the `lolevel' library unit for
+    manipulating pointer vectors
+
+
 - Runtime system
+  - Fixed typo in "runtime.c" (thanks to Sven Hartrumpf)
+  - Little-endian detection on MIPS systems was not correct (thanks
+    to Christian Kellermann)
+  - Fixed bug in handling of runtime-options with arguments (also
+    reported by Christian Kellermann)
   - `equal?' does not compare procedures recursively anymore
   - fixed incorrect use of alloca.h on OpenBSD (thanks to
     Christian Kellermann and Alan Post)
@@ -153,7 +207,55 @@
   - repaired broken handling of multiple finalizers that referred
     to the same object (reported by Moritz Heidkamp)
   - fixed problem with reader and escaping of single-char symbols
+
+
+- Syntax expander
+  - For-syntax syntax definitions where not correctly retained inside
+    modules
+  - Peter Bex fixed various critical bugs in the expander
+  - The simplification for quasiquote expressions was unable
+    to handle certain circular data (reported by Moritz Heidkamp)
+  - `syntax-rules' now supports tail-patterns and is now fully
+    SRFI-46 compatible - many thanks to Peter Bex for implementing
+    this
+  - Peter Bex provided a bugfix for resolution of primitive imports
+  - handling of internal definitions with shadowed defining
+    forms is now done correctly - fix once again from Peter Bex
+  - corrected non-standard behaviour of quasiquote with respect
+    to nested quasiquotations - another bugfix by our mighty macro
+    master
+  - removed stub-implementation of `define-macro'
+  - handled case where a global redefinition of `cons' influenced
+    a non-inlined internal use in the expander (thanks to David
+    Steiner)
+  - `define-record' now allows defining SRFI-17 setter procedures
+    for accessing slots
+  - the expansion of DSSSL lambda-lists uses now `let-optionals*'
+    internally instead of `let-optionals' and so allows
+    back-references to earlier formal variables; this also results in
+    faster and more compact code for argument-list destructuring
+    (thanks to Alan Post)
+  - new "implicit renaming" macro facility contributed by Peter Bex
+    (see `ir-macro-transformer')
+  - record-definitions are now made local to the module in which
+    they are defined (thanks to Jim Ursetto)
+  - parameters are now settable and can be modified using `set!'
+    (SRFI-17)
+  - added a SRFI-17 setter to `list-ref'
+  - added literal blob syntax ("#{ ... }")
+
+
 - Tools
+  - chicken-install
+    - option "-deploy" does not compile deployed extensions with
+      "-setup-mode" anymore to avoid problems with dynamic loading on
+      some platforms (specifically Mac OS X)
+    - option "-deploy" option did not copy the correct library
+      (including the version-number) (thanks to Christian Kellermann)
+    - added support for proxy-authentification (thanks to Iruata Souza)
+    - when installing from a local directory `chicken-install' now
+      removes existing `*.so' files in that location to avoid stale
+      binaries when the `make' syntax is used in setup scripts
   - chicken-bug
     - removed disabled e-mail support
   - csc
@@ -161,146 +263,20 @@
     - removed deprecated `-windows' option
     - fixed incorrect use of `chicken.rc' on non-Windows platforms
       in `-gui' mode (thanks to "ddp")
+    - when compiling in C++ mode, the compiler will be called with the
+      `-Wno-write-strings' option
+    - `-frwapv' has been added to the default C compiler options
   - csi
+    - the ",m" toplevel command now accepts "#f" to switch back to
+      the initial empty module context (suggested by Christian Kellermann)
     - fixed broken `,g' toplevel command
     - deprecated `script' feature identifier (use `chicken-script'
       instead)
-- Libraries
-  - unit `library'
-    - added `condition->list', contributed by Christian Kellermann
-    - added `equal=?'
-    - removed deprecated `getenv', `left-section', `right-section',
-      `project', `c-runtime' and `noop'
-    - added missing import-library entry for `vector-copy!' (thanks
-      to Jules Altfas)
-    - circular or excessively deeply nested data generates a more
-      useful error message when encountered by `equal?'
-  - unit `files'
-    - fixed bug in `normalize-pathname'
-  - unit `lolevel'
-    - removed deprecated `global-bound?', `global-make-unbound',
-      `global-ref' and `global-set!' procedures
-  - unit `posix'
-    - added `file-creation-mode' (suggested by Mario Domenech Goulart)
-  - unit `srfi-18'
-    - removed deprecated `milliseconds->time' and `time->milliseconds'
-      procedures
-    - `make-mutex' incorrectly created mutexes as initially owned by
-      the current threads (thanks to Joerg Wittenberger) 
-  - unit `utils'
-    - `compile-file' now returns `#f' when the compilation fails,
-       instead of raising an error
-- Documentation
-  - The manual is now installed in HTML format in
-    PREFIX/share/chicken/doc, many thanks to Jim Ursetto for
-    contributing is excellent `manual-labor' extension which made
-    this possible
+    - options `-p' and `-P' and `-e' imply `-no-init'
+    - the call-trace reported will not include exception-handler code
+      anymore (suggested by Christian Kellermann)
 
-4.6.3
 
-- Peter Bex has cleaned up the makefiles heavily, making the
-  build more maintainable and easier to modify; thanks to all
-  who helped testing this new build
-- renamed the makefile to `GNUmakefile' to catch using the
-  a make(3) other than GNU make
-- `-fwrapv' is disabled on OpenBSD, since the default compiler
-  does not support this option (thanks to Christian Kellermann)
-- on Solaris `gcc' is used by default, override `C_COMPILER'
-  to use the Sun compiler instead
-- added the new foreign type `size_t' (suggested by Moritz 
-  Heidkamp)
-- added the missing `unsigned-integer64' foreign type (thanks
-  to Moritz for catching this)
-- added support for proxy-authentification to `chicken-install'
-  (thanks to Iruata Souza)
-- `define-record' now allows defining SRFI-17 setter procedures
-  for accessing slots
-- removed the stub definition for `define-macro'
-- added new foreign type `pointer-vector' which maps to `void **'
-  and provided a low-level API in the `lolevel' library unit
-  for manipulating pointer vectors
-- declaring a function `notinline' will prevent direct-call
-  optimization for known procedure calls
-- when compiling in C++ mode, the compiler will be called with
-  the `-Wno-write-strings' option
-- the expansion of DSSSL lambda-lists uses now `let-optionals*'
-  internally instead of `let-optionals' and so allows back-references
-  to earlier formal variables; this also results in faster and
-  more compact code for argument-list destructuring (thanks to Alan
-  Post)
-- Peter Bex has contributed various bugfixes and performance
-  enhancements to the `irregex' library unit
-- fixed bug in `getter-with-setter' that modified the first argument
-  if it already had a setter procedure attached
-- added a SRFI-17 setter to `list-ref'
-- control-characters in symbol-names are now properly escaped if
-  the symbol is printed readably (thanks to Alaric Snell-Pym Blagrave 
-  for pointing this out)
-- added literal blob syntax ("#{ ... }")
-- `delete-directory' now optionally deletes directories recursively
-- fixed incorrect size of internal data vector used in `time'
-  (thanks to Kon Lovett)
-- `list-tail' gives now a better error message when passed a non-list
-  argument
-- deadlock in the scheduler now terminates the process instead of
-  attempting to throw an error
-- added some sanity checks to the scheduler
-- when installing from a local directory `chicken-install' now removes
-  existing `*.so' files in that location to avoid stale binaries when
-  the `make' syntax is used in setup scripts
-
-4.6.2
-
-- the `regex' library unit has been removed and is separately
-  available as an extension which should be fully backwards-
-  compatible
-- `irregex' is now a core library unit and replaces the 
-  `regex' API
-- `-frwapv' has been added to the default C compiler options
-- configuration-header fix for BSD systems (thanks to Peter Bex
-  and Christian Kellermann)
-- added support for `pointer-vectors' (unit `lolevel'):
-  make-pointer-vector
-  pointer-vector?
-  pointer-vector-length
-  pointer-vector-ref
-  pointer-vector-set!
-- added new foreign type `poiner-vector' which maps to `void **'
-- new "implicit renaming" macro facility contributed by Peter Bex
-  (see `ir-macro-transformer')
-- the warning shown when unimported identifiers are used in 
-  compiled modules now also shows the name of the procedure where
-  the identifier is referenced (suggested by Alaric Snell-Pym)
-- the deprecated `random-seed' function has been removed
-- parameters are now settable and can be modified using `set!'
-  (SRFI-17)
-- the implementation of overflow-detection for arithmetic operations
-  on fixnums have been replaced and now allow using the full 63-bit
-  range of fixnums on 64-bit systems
-- fixed serious inlining-bug (thanks to Sven Hartrumpf)
-
-4.6.1
-
-- record-definitions are now made local to the module in which
-  they are defined (thanks to Jim Ursetto)
-- added new declaration `unsafe-specialized-arithmetic' which
-  allows optimiizing unboxed floating-point arithmetic in safe
-  mode
-- optimization-levels 3 and higher imply `-unboxing -inline-global'
-- removed `scrutinize' declaration
-- the csi options `-p' and `-P' and `-e' imply `-no-init'
-- in csi, the call-trace reported will not include exception-
-  handler code anymore (suggested by Christian Kellermann)
-- `file-copy' and `file-move' (`files' unit) check whether the 
-  source-file is a directory
-- the file-descriptor handling in the scheduler has been simplified
-  and performs some sanity checks
-- `global-bound?', `global-ref`, `global-set!' and `global-make-unbound!'
-  (`lolevel' unit) have been deprecated
-- `required-extension-version' and `required-chicken-version'
-  (`setup-api' module) have been deprecated
-- constant-folding in the compiler has been simplified and
-  is more reliable (thanks to Sven Hartrumpf)
 
 4.6.0
 
