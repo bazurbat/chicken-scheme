@@ -442,8 +442,9 @@
     (conc
      *csi*
      " -bnq "
-     (if (and *cross-chicken* ; disable -setup-mode when cross-compiling,
-	      (not *host-extension*)) ; host-repo must always take precedence
+     (if (or *deploy*
+	     (and *cross-chicken* ; disable -setup-mode when cross-compiling,
+		  (not *host-extension*))) ; host-repo must always take precedence
 	 ""
 	 "-setup-mode ")
      "-e \"(require-library setup-api)\" -e \"(import setup-api)\" "
