@@ -62,21 +62,6 @@ This procedure could be defined as follows:
 </enscript>
 
 
-==== null-pointer
-
-<procedure>(null-pointer)</procedure>
-
-Another way to say {{(address->pointer 0)}}.
-
-
-==== null-pointer?
-
-<procedure>(null-pointer? POINTER*)</procedure>
-
-Returns {{#t}} if the pointer-like object {{POINTER*}} contains a {{NULL}} pointer,
-or {{#f}} otherwise.
-
-
 ==== object->pointer
 
 <procedure>(object->pointer X)</procedure>
