@@ -602,6 +602,10 @@
 				  r1 r2))
 			    (else '*)))))
 		 ((let)
+		  ;;XXX it would be nice to have some sort of alias-information:
+		  ;;    binding a variable to another variable could propagate
+		  ;;    type-information from the former to the latter.
+		  ;;
 		  ;; before CPS-conversion, `let'-nodes may have multiple bindings
 		  (let loop ((vars params) (body subs) (e2 '()))
 		    (if (null? vars)
@@ -679,7 +683,6 @@
 		    (when (and (not type)
 			       (not b)
 			       (not (eq? '* rt))
-			       (not (variable-visible? var)) ;XXX needed?
 			       (not (get db var 'unknown)))
 		      (and-let* ((val (or (get db var 'value)
 					  (get db var 'local-value))))
