@@ -93,6 +93,7 @@
 
 (define (scrutinize node db complain specialize)
   (let ((blist '())
+	(aliased '())
 	(safe-calls 0))
 
     (define (constant-result lit)
@@ -567,6 +568,14 @@
 	  (set! n (add1 n))
 	  n)))
 
+    (define (add-to-blist var flow type)
+      (let loop ((var var))
+	(set! blist (alist-cons (cons var flow) type blist))
+	(let ((a (assq var aliased)))
+	  (when a
+	    (d "  applying to alias: ~a -> ~a" (cdr a) type)
+	    (loop (cdr a))))))
+
     (define (walk n e loc dest tail flow ctags) ; returns result specifier
       (let ((subs (node-subexpressions n))
 	    (params (node-parameters n)) 
@@ -602,18 +611,21 @@
 				  r1 r2))
 			    (else '*)))))
 		 ((let)
-		  ;;XXX it would be nice to have some sort of alias-information:
-		  ;;    binding a variable to another variable could propagate
-		  ;;    type-information from the former to the latter.
-		  ;;
 		  ;; before CPS-conversion, `let'-nodes may have multiple bindings
 		  (let loop ((vars params) (body subs) (e2 '()))
 		    (if (null? vars)
 			(walk (car body) (append e2 e) loc dest tail flow ctags)
-			(let ((t (single 
-				  (sprintf "in `let' binding of `~a'" (real-name (car vars)))
-				  (walk (car body) e loc (car vars) #f flow #f) 
-				  loc)))
+			(let* ((var (car vars))
+			       (val (car body))
+			       (t (single 
+				   (sprintf "in `let' binding of `~a'" (real-name var))
+				   (walk val e loc var #f flow #f) 
+				   loc)))
+			  (when (and (eq? (node-class val) '##core#variable)
+				     (not (get db var 'assigned)))
+			    (let ((var2 (first (node-parameters val))))
+			      (unless (get db var2 'assigned) ;XXX too conservative?
+				(set! aliased (alist-cons var var2 aliased)))))
 			  (loop (cdr vars) (cdr body) (alist-cons (car vars) t e2))))))
 		 ((##core#lambda lambda)
 		  (decompose-lambda-list
@@ -628,7 +640,8 @@
 					e)))
 		       (when dest 
 			 (d "~a: initial-argument types: ~a" dest inits))
-		       (fluid-let ((blist '()))
+		       (fluid-let ((blist '())
+				   (aliased '()))
 			 (let* ((initial-tag (tag))
 				(r (walk (first subs)
 					 (if rest (alist-cons rest 'list e2) e2)
@@ -648,19 +661,19 @@
 				(cond ((zero? argc) args)
 				      ((and (not (get db (car vars) 'assigned))
 					    (assoc (cons (car vars) initial-tag) blist))
-				      =>
-				      (lambda (a)
-					(cons
-					 (cond ((eq? (cdr a) '*) '*)
-					       (else
-						(d "adjusting procedure argument type for `~a' to: ~a"
-						 (car vars) (cdr a))
-						(cdr a) ))
-					 (loop (sub1 argc) (cdr vars) (cdr args)))))
-				     (else 
-				      (cons 
-				       (car args)
-				       (loop (sub1 argc) (cdr vars) (cdr args)))))))
+				       =>
+				       (lambda (a)
+					 (cons
+					  (cond ((eq? (cdr a) '*) '*)
+						(else
+						 (d "adjusting procedure argument type for `~a' to: ~a"
+						    (car vars) (cdr a))
+						 (cdr a) ))
+					  (loop (sub1 argc) (cdr vars) (cdr args)))))
+				      (else 
+				       (cons 
+					(car args)
+					(loop (sub1 argc) (cdr vars) (cdr args)))))))
 			     r))))))))
 		 ((set! ##core#set!)
 		  (let* ((var (first params))
@@ -705,6 +718,7 @@
 				    var ot rt)
 				  #t)))))
 		      (when strict-variable-types
+			;; don't use "add-to-blist" since this does not affect aliases
 			(set! blist (alist-cons (cons var (car flow)) rt blist))))
 		    '(undefined)))
 		 ((##core#primitive ##core#inline_ref) '*)
@@ -737,11 +751,9 @@
 			     (cond (pred
 				    (d "  predicate `~a' indicates `~a' is ~a in flow ~a" pn var pt
 				       (car ctags))
-				    (set! blist 
-				      (alist-cons
-				       (cons var (car ctags)) 
-				       (if (and a (type<=? (cdr a) pt)) (cdr a) pt)
-				       blist)))
+				    (add-to-blist 
+				     var (car ctags)
+				     (if (and a (type<=? (cdr a) pt)) (cdr a) pt)))
 				   (a
 				    (when enforces
 				      (let ((ar (cond ((blist-type var flow) =>
@@ -753,15 +765,10 @@
 						      ((type<=? (cdr a) argr) (cdr a))
 						      (else argr))))
 					(d "  assuming: ~a -> ~a (flow: ~a)" var ar (car flow))
-					(set! blist
-					  (alist-cons (cons var (car flow)) ar blist))
+					(add-to-blist var (car flow) ar)
 					(when ctags
-					  (set! blist
-					    (alist-cons
-					     (cons var (car ctags)) ar
-					     (alist-cons
-					      (cons var (cdr ctags)) ar
-					      blist)))))))
+					  (add-to-blist var (car ctags) ar)
+					  (add-to-blist var (cdr ctags) ar)))))
 				   ((and oparg?
 					 (variable-mark var '##compiler#special-result-type))
 				    => (lambda (srt)
