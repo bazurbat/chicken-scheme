@@ -29,6 +29,7 @@ done
 CHICKEN_REPOSITORY=${TEST_DIR}/test-repository
 CHICKEN=../chicken
 CHICKEN_INSTALL=${TEST_DIR}/../chicken-install
+CHICKEN_UNINSTALL=${TEST_DIR}/../chicken-uninstall
 ASMFLAGS=
 FAST_OPTIONS="-O5 -d0 -b -disable-interrupts"
 
@@ -323,16 +324,25 @@ tmp/xxx $PWD/tmp
 PATH=$PWD/tmp:$PATH xxx $PWD/tmp
 # this may crash, if the PATH contains a non-matching libchicken.dll on Windows:
 #PATH=$PATH:$PWD/tmp xxx $PWD/tmp
+rm -fr rev-app rev-app-2 reverser/*.import.* reverser/*.so
+
+echo "======================================== reinstall tests"
+CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_UNINSTALL -force reverser
+CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR reverser:1.0 \
+ -csi ${TEST_DIR}/../csi
+CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $interpret -bnq rev-app.scm 1.0
+CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR -reinstall -force \
+ -csi ${TEST_DIR}/../csi
+CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $interpret -bnq rev-app.scm 1.0
 
 echo "======================================== deployment tests"
-rm -fr rev-app rev-app-2 reverser/*.import.* reverser/*.so
 mkdir rev-app
 CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR reverser
 CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $compile2 -deploy rev-app.scm
 CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -deploy -prefix rev-app -t local -l $TEST_DIR reverser
 unset LD_LIBRARY_PATH DYLD_LIBRARY_PATH CHICKEN_REPOSITORY
-rev-app/rev-app
+rev-app/rev-app 1.1
 mv rev-app rev-app-2
-rev-app-2/rev-app
+rev-app-2/rev-app 1.1
 
 echo "======================================== done."

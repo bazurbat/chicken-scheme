@@ -648,12 +648,15 @@
   (define (installed-extensions)
     (delete-duplicates
      (filter-map
-      (lambda (sf) 
-	(let ((info (first (read-file sf))))
-	  (cond ((assq 'egg-name-and-version info) => cadr)
+      (lambda (sf)
+	(let* ((info (first (read-file sf)))
+	       (v (cond ((assq 'version info) => cadr)
+			(else ""))))
+	  (cond ((assq 'egg-name info) => 
+		 (lambda (a) (cons (cadr a) (->string v))))
 		(else 
 		 (warning 
-		  "installed extension has no information about the egg it belongs to"
+		  "installed extension has no information about which egg it belongs to"
 		  (pathname-file sf))
 		 #f))))
       (glob (make-pathname (repo-path) "*" "setup-info")))
@@ -695,6 +698,7 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
        -keep-going              continue installation even if dependency fails
        -scan DIRECTORY          scan local directory for highest available egg versions
        -override FILENAME       override versions for installed eggs with information from file
+       -csi FILENAME            use given pathname for invocations of "csi"
 EOF
 );|
     (exit code))
@@ -712,9 +716,9 @@ EOF
                   (set! *proxy-port* 80)))))))
 
   (define (info->egg info)
-    (if (member (cadr info) '("" "unknown" "trunk"))
+    (if (member (cdr info) '("" "unknown" "trunk"))
 	(car info)
-	(cons (car info) (cadr info))))
+	info))
   
   (define *short-options* '(#\h #\k #\l #\t #\s #\p #\r #\n #\v #\i #\u #\D))
 
@@ -868,6 +872,10 @@ EOF
 		       ((string=? "-keep-going" arg)
 			(set! *keep-going* #t)
 			(loop (cdr args) eggs))
+		       ((string=? "-csi" arg)
+			(unless (pair? (cdr args)) (usage 1))
+			(set! *csi* (cadr args))
+			(loop (cddr args) eggs))
                        ((string=? "-password" arg)
                         (unless (pair? (cdr args)) (usage 1))
                         (set! *password* (cadr args))

@@ -547,13 +547,13 @@
   (cond ((assq 'version info) => 
 	 (lambda (a)
 	   (cons 
-	    `(egg-name-and-version (,(extension-name) ,(->string (cadr a))))
+	    `(egg-name ,(extension-name))
 	    info)))
 	(else
 	 (let ((v (what-version version)))
 	   (cons*
 	    `(version ,v)
-	    `(egg-name-and-version (,(extension-name) ,(->string v)))
+	    `(egg-name ,(extension-name))
 	    info)))))
 
 
