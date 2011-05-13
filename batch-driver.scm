@@ -306,7 +306,7 @@
     ;; Insert postponed initforms:
     (set! initforms (append initforms postponed-initforms))
 
-    (let ((se (map string->symbol (collect-options 'static-extension))))
+    (let ((se (map string->symbol (collect-options 'static-extension)))) ; DEPRECATED
       ;; Append required extensions to initforms:
       (set! initforms
 	(append 
