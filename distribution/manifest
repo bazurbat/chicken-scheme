@@ -281,6 +281,9 @@ types.db
 mac.r
 chicken.png
 CHICKEN.icns
+scripts/reconstruct-egg-name.scm
+scripts/mini-salmonella.scm
+scripts/make-wrapper.scm
 manual-html/Accessing external objects.html
 manual-html/Acknowledgements.html
 manual-html/Basic mode of operation.html
