@@ -77,7 +77,7 @@ if test \! -f scrutiny.expected; then
     cp scrutiny.out scrutiny.expected
 fi
 
-diff -bu scrutiny.out scrutiny.expected
+diff -bu scrutiny.expected scrutiny.out
 
 $compile scrutiny-tests-2.scm -scrutinize -analyze-only -ignore-repository -types ../types.db
 ./a.out

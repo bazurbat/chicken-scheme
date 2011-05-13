@@ -94,6 +94,7 @@
 (define (scrutinize node db complain specialize)
   (let ((blist '())
 	(aliased '())
+	(noreturn #f)
 	(safe-calls 0))
 
     (define (constant-result lit)
@@ -496,6 +497,14 @@
 		      (sprintf
 			  "~aexpected argument #~a of type `~a', but was given an argument of type `~a'"
 			(pname) i (car atypes) (car args)))))
+		 (when (and (pair? ptype) ;XXX move this into helper procedure
+			    (eq? 'procedure (car ptype))
+			    (list? ptype)
+			    (eq? 'noreturn 
+				 (if (symbol? (second ptype)) 
+				     (fourth ptype)
+				     (third ptype))))
+		   (set! noreturn #t))
 		 (let ((r (procedure-result-types ptype values-rest (cdr args))))
 		   ;;XXX we should check whether this is a standard- or extended binding
 		   (let* ((pn (procedure-name ptype))
@@ -596,20 +605,33 @@
 			 (c (second subs))
 			 (a (third subs)))
 		    (always-true rt loc n)
-		    (let ((r1 (walk c e loc dest tail (cons (car tags) flow) #f))
-			  (r2 (walk a e loc dest tail (cons (cdr tags) flow) #f)))
-		      (cond ((and (not (eq? '* r1)) (not (eq? '* r2)))
-			     (when (and (not (any noreturn-type? r1))
-					(not (any noreturn-type? r2))
-					(not (= (length r1) (length r2))))
-			       (report 
-				loc
-				(sprintf
-				    "branches in conditional expression differ in the number of results:~%~%~a"
-				  (pp-fragment n))))
-			     (map (lambda (t1 t2) (simplify `(or ,t1 ,t2)))
-				  r1 r2))
-			    (else '*)))))
+		    (fluid-let ((noreturn #f))
+		      (let* ((r1 (walk c e loc dest tail (cons (car tags) flow) #f))
+			     (nor1 noreturn))
+			(set! noreturn #f)
+			(let ((r2 (walk a e loc dest tail (cons (cdr tags) flow) #f)))
+			  ;; when only one branch is noreturn, add blist entries for
+			  ;; all in other branch:
+			  (unless (eq? nor1 noreturn)
+			    (let ((yestag (if nor1 (cdr tags) (car tags))))
+			      (for-each
+			       (lambda (ble)
+				 (when (eq? (cdar ble) yestag)
+				   (d "adding blist entry ~a for returning conditional branch"
+				      ble)
+				   (add-to-blist (caar ble) (car flow) (cdr ble))))
+			       blist)))
+			  (cond ((and (not (eq? '* r1)) (not (eq? '* r2)))
+				 (when (and (not nor1) (not noreturn)
+					    (not (= (length r1) (length r2))))
+				   (report 
+				    loc
+				    (sprintf
+					"branches in conditional expression differ in the number of results:~%~%~a"
+				      (pp-fragment n))))
+				 (map (lambda (t1 t2) (simplify `(or ,t1 ,t2)))
+				      r1 r2))
+				(else '*)))))))
 		 ((let)
 		  ;; before CPS-conversion, `let'-nodes may have multiple bindings
 		  (let loop ((vars params) (body subs) (e2 '()))
