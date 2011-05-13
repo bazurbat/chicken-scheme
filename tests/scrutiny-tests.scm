@@ -32,7 +32,6 @@
 ((values 1 2))				; expected procedure, got fixnum (canonicalizes to 1 result)
 
 ; this should *not* signal a warning:
-
 (define (test-values x)
   (define (fail) (error "failed"))
   (if x
@@ -44,4 +43,28 @@
   (for-each void '(1 2 3))		; should not warn (self-call)
   (if foo 2)				; not in tail position
   (if bar 3))				; should warn
+
+;; noreturn conditional branch enforces "number" on x
+(define (foo2 x)
+  (if (string? x) (error "foo") (+ x 3))
+  (string-append x "abc"))
+
+;; implicit declaration of foo3
+(declare (hide foo3))
+
+(define (foo3 x)
+  (string-append x "abc"))
+
+(foo3 99)
+
+;; predicate
+(define (foo4 x)
+  (if (string? x)
+      (+ x 1)
+      (+ x 2)))				; ok
+
+;; enforcement
+(define (foo5 x)
+  (string-append x "abc")
+  (+ x 3))
 
