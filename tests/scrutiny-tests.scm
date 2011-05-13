@@ -68,3 +68,9 @@
   (string-append x "abc")
   (+ x 3))
 
+;; aliasing
+(define (foo6 x)
+  (let ((y x))
+    (string-append x "abc")
+    (+ x 3)))				;XXX (+ y 3) does not work yet
+
