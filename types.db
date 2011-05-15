@@ -600,7 +600,7 @@
 
 (address->pointer (procedure address->pointer (fixnum) pointer))
 (align-to-word (procedure align-to-word (*) *))
-(allocate (procedure allocate (fixnum) pointer))
+(allocate (procedure allocate (fixnum) (or boolean pointer)))
 (block-ref (procedure block-ref (* fixnum) *))
 (block-set! (procedure block-set! (* fixnum *) *))
 (clear-unbound-variable-value! (procedure clear-unbound-variable-value! () undefined))
