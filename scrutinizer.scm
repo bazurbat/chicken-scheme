@@ -29,6 +29,7 @@
   (hide match-specialization specialize-node! specialization-statistics
 	procedure-type? named? procedure-result-types procedure-argument-types
 	noreturn-type? rest-type procedure-name d-depth generate-type-checks!
+	noreturn-procedure-type?
 	compatible-types? type<=? initial-argument-types))
 
 
@@ -497,13 +498,7 @@
 		      (sprintf
 			  "~aexpected argument #~a of type `~a', but was given an argument of type `~a'"
 			(pname) i (car atypes) (car args)))))
-		 (when (and (pair? ptype) ;XXX move this into helper procedure
-			    (eq? 'procedure (car ptype))
-			    (list? ptype)
-			    (eq? 'noreturn 
-				 (if (symbol? (second ptype)) 
-				     (fourth ptype)
-				     (third ptype))))
+		 (when (noreturn-procedure-type? ptype)
 		   (set! noreturn #t))
 		 (let ((r (procedure-result-types ptype values-rest (cdr args))))
 		   ;;XXX we should check whether this is a standard- or extended binding
@@ -513,7 +508,9 @@
 		       (cond ((and (fx= 1 nargs) 
 				   (variable-mark pn '##compiler#predicate)) =>
 				   (lambda (pt)
-				     (cond ((match-specialization (list pt) (cdr args))
+				     (cond ((match-specialization (list pt) (cdr args) #t)
+					    ;;XXX incorrect: (or ... T ...) will return #t
+					    ;;    but arg(s) must match pt exactly
 					    (report
 					     loc
 					     (sprintf 
@@ -524,7 +521,7 @@
 					       node
 					       `(let ((#:tmp #(1))) '#t))
 					      (set! op (list pn pt))))
-					   ((match-specialization (list `(not ,pt)) (cdr args))
+					   ((match-specialization (list `(not ,pt)) (cdr args) #t)
 					    (report
 					     loc
 					     (sprintf 
@@ -539,7 +536,7 @@
 			      (lambda (specs)
 				(let loop ((specs specs))
 				  (cond ((null? specs))
-					((match-specialization (first (car specs)) (cdr args))
+					((match-specialization (first (car specs)) (cdr args) #f)
 					 (let ((spec (car specs)))
 					   (set! op (cons pn (car spec)))
 					   (let* ((r2 (and (pair? (cddr spec)) (second spec)))
@@ -933,6 +930,15 @@
 	   (eq? 'or (car t))
 	   (any noreturn-type? (cdr t)))))
 
+(define (noreturn-procedure-type? ptype)
+  (and (pair? ptype)
+       (eq? 'procedure (car ptype))
+       (list? ptype)
+       (eq? 'noreturn 
+	    (if (symbol? (second ptype)) 
+		(fourth ptype)
+		(third ptype)))))
+
 (define (load-type-database name #!optional (path (repository-path)))
   (and-let* ((dbfile (file-exists? (make-pathname path name))))
     (when verbose-mode
@@ -965,8 +971,9 @@
 		  (mark-variable name '##compiler#specializations specs))))))
      (read-file dbfile))))
 
-(define (match-specialization typelist atypes)
-  ;; does not accept complex procedure types in typelist!
+(define (match-specialization typelist atypes exact)
+  ;; - does not accept complex procedure types in typelist!
+  ;; - "exact" means: "or"-type in atypes is not allowed
   (define (match st t)
     (cond ((eq? st t))
 	  ((pair? st)
@@ -982,7 +989,7 @@
 	  ((eq? st 'number) (match '(or fixnum float) t))
 	  ((pair? t)
 	   (case (car t)
-	     ((or) (any (cut match st <>) (cdr t)))
+	     ((or) (and (not exact) (any (cut match st <>) (cdr t))))
 	     ((and) (every (cut match st <>) (cdr t)))
 	     ((procedure) (match st 'procedure))
 	     ;; (not ...) should not occur
@@ -998,7 +1005,7 @@
 	  ((pair? t)
 	   (case (car t)
 	     ((or) (every (cut matchnot st <>) (cdr t)))
-	     ((and) (any (cut matchnot st <>) (cdr t)))
+	     ((and) (any (cut matchnot st <>) (cdr t))) ;XXX test for "exact" here, too?
 	     (else (not (match st t)))))
 	  (else (not (match st t)))))
   (let loop ((tl typelist) (atypes atypes))
@@ -1221,5 +1228,9 @@
 		 (and (eq? 'quote (node-class arg1))
 		      (let ((val (first (node-parameters arg1))))
 			(and (symbol? val)
-			     `((struct ,val))))))))
+			     ;;XXX a bit of a hack - we should remove the distinct
+			     ;;    "pointer-vector" type.
+			     (if (eq? 'pointer-vector val)
+				 'pointer-vector
+				 `((struct ,val)))))))))
 	rtypes)))

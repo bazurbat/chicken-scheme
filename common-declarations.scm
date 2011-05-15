@@ -25,7 +25,7 @@
 
 
 (declare 
-  (specialize)
+;  (specialize)  XXX enable later
   (usual-integrations))
 
 (cond-expand
