@@ -268,8 +268,8 @@ are defined. Names of constants still exist in the Scheme namespace
 and can be lexically shadowed.  If the value is mutable, then the
 compiler is careful to preserve its identity.  {{CONST}} may be any
 constant expression, and may also refer to constants defined via
-{{define-constant}} previouslym, but it must be possible to
-evaulate the expression at compile-time.
+{{define-constant}} previously, but it must be possible to
+evaluate the expression at compile-time.
 
 ==== define-inline
 
