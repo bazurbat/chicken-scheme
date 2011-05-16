@@ -583,7 +583,10 @@ EOF
 		   (let ((v (pref x (fx+ start i))))
 		     (let loop2 ((n 1) (j (fx+ i (fx+ start 1))))
 		       (cond ((fx>= j len)
-			      (fprintf out " ~S: ~S" i v)
+			      (##sys#with-print-length-limit
+			       1000
+			       (lambda ()
+				 (fprintf out " ~S: ~S" i v)))
 			      (if (fx> n 1)
 				  (fprintf out "\t(followed by ~A identical instance~a)~% ...~%" 
 					   (fx- n 1)
