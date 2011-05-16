@@ -389,7 +389,7 @@
 	    ((##core#inline "C_lambdainfop" obj)
 	     (out "#<lambda info " col)
 	     (out (##sys#lambda-info->string obj) col)
-	     (out "#>" col) )
+	     (out ">" col) )
 	    (else (out "#<unprintable object>" col)) ) )
 
     (define (pp obj col)
