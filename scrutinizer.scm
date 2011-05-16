@@ -86,7 +86,7 @@
 
 
 (define-constant +fragment-max-length+ 5)
-(define-constant +fragment-max-depth+ 3)
+(define-constant +fragment-max-depth+ 4)
 
 
 (define specialization-statistics '())
@@ -268,6 +268,7 @@
 				       (cond ((and (pair? t) (eq? 'or (car t)))
 					      (cdr t))
 					     ((eq? t 'undefined) (return 'undefined))
+					     ((eq? t 'noreturn) '())
 					     (else (list t)))))
 				   (cdr t)))
 			      (ts2 (let loop ((ts ts) (done '()))
@@ -324,6 +325,8 @@
       (cond ((null? ts1) ts2)
 	    ((null? ts2) ts1)
 	    ((or (atom? ts1) (atom? ts2)) '*)
+	    ((eq? 'noreturn (car ts1)) ts2)
+	    ((eq? 'noreturn (car ts2)) ts1)
 	    (else (cons (simplify `(or ,(car ts1) ,(car ts2)))
 			(merge-result-types (cdr ts1) (cdr ts2))))))
 
@@ -509,8 +512,6 @@
 				   (variable-mark pn '##compiler#predicate)) =>
 				   (lambda (pt)
 				     (cond ((match-specialization (list pt) (cdr args) #t)
-					    ;;XXX incorrect: (or ... T ...) will return #t
-					    ;;    but arg(s) must match pt exactly
 					    (report
 					     loc
 					     (sprintf 
@@ -600,35 +601,46 @@
 		  (let* ((tags (cons (tag) (tag)))
 			 (rt (single "in conditional" (walk (first subs) e loc #f #f flow tags) loc))
 			 (c (second subs))
-			 (a (third subs)))
+			 (a (third subs))
+			 (nor0 noreturn))
 		    (always-true rt loc n)
-		    (fluid-let ((noreturn #f))
-		      (let* ((r1 (walk c e loc dest tail (cons (car tags) flow) #f))
-			     (nor1 noreturn))
-			(set! noreturn #f)
-			(let ((r2 (walk a e loc dest tail (cons (cdr tags) flow) #f)))
-			  ;; when only one branch is noreturn, add blist entries for
-			  ;; all in other branch:
-			  (unless (eq? nor1 noreturn)
-			    (let ((yestag (if nor1 (cdr tags) (car tags))))
-			      (for-each
-			       (lambda (ble)
-				 (when (eq? (cdar ble) yestag)
-				   (d "adding blist entry ~a for returning conditional branch"
-				      ble)
-				   (add-to-blist (caar ble) (car flow) (cdr ble))))
-			       blist)))
-			  (cond ((and (not (eq? '* r1)) (not (eq? '* r2)))
-				 (when (and (not nor1) (not noreturn)
-					    (not (= (length r1) (length r2))))
-				   (report 
-				    loc
-				    (sprintf
-					"branches in conditional expression differ in the number of results:~%~%~a"
-				      (pp-fragment n))))
-				 (map (lambda (t1 t2) (simplify `(or ,t1 ,t2)))
-				      r1 r2))
-				(else '*)))))))
+		    (set! noreturn #f)
+		    (let* ((r1 (walk c e loc dest tail (cons (car tags) flow) #f))
+			   (nor1 noreturn))
+		      (set! noreturn #f)
+		      (let* ((r2 (walk a e loc dest tail (cons (cdr tags) flow) #f))
+			     (nor2 noreturn))
+			(set! noreturn 
+			  (if nor1
+			      (if nor2 
+				  (if nor0 #t 'some)
+				  'some)
+			      (if nor2 
+				  'some
+				  nor0)))
+			;; when only one branch is noreturn, add blist entries for
+			;; all in other branch:
+			(when (or (and (eq? #t nor1) (not nor2))
+				  (and (eq? #t nor2) (not nor1)))
+			  (let ((yestag (if nor1 (cdr tags) (car tags))))
+			    (for-each
+			     (lambda (ble)
+			       (when (eq? (cdar ble) yestag)
+				 (d "adding blist entry ~a for single returning conditional branch"
+				    ble)
+				 (add-to-blist (caar ble) (car flow) (cdr ble))))
+			     blist)))
+			(cond ((and (not (eq? '* r1)) (not (eq? '* r2)))
+			       (when (and (not nor1) (not nor2)
+					  (not (= (length r1) (length r2))))
+				 (report 
+				  loc
+				  (sprintf
+				      "branches in conditional expression differ in the number of results:~%~%~a"
+				    (pp-fragment n))))
+			       (map (lambda (t1 t2) (simplify `(or ,t1 ,t2)))
+				    r1 r2))
+			      (else '*))))))
 		 ((let)
 		  ;; before CPS-conversion, `let'-nodes may have multiple bindings
 		  (let loop ((vars params) (body subs) (e2 '()))
@@ -989,7 +1001,7 @@
 	  ((eq? st 'number) (match '(or fixnum float) t))
 	  ((pair? t)
 	   (case (car t)
-	     ((or) (and (not exact) (any (cut match st <>) (cdr t))))
+	     ((or) ((if exact every any) (cut match st <>) (cdr t)))
 	     ((and) (every (cut match st <>) (cdr t)))
 	     ((procedure) (match st 'procedure))
 	     ;; (not ...) should not occur

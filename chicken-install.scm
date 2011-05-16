@@ -275,8 +275,6 @@
     (shellpath (make-pathname *program-path* C_CSI_PROGRAM)))
 
   (define (try-extension name version trans locn)
-    ;;XXX this gives a warning in the scrutinizer (different number
-    ;;    of results)
     (condition-case
         (retrieve-extension
          name trans locn

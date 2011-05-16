@@ -38,6 +38,13 @@
       (values 42 43)
       (fail)))
 
+; same case, but nested
+(define (test-values2 x y)
+  (define (fail) (error "failed"))
+  (if x
+      (values 42 43)
+      (if y (values 99 100) (fail))))
+
 (define (foo)
   (define (bar) (if foo 1))		; should not warn (local)
   (for-each void '(1 2 3))		; should not warn (self-call)
@@ -73,4 +80,3 @@
   (let ((y x))
     (string-append x "abc")
     (+ x 3)))				;XXX (+ y 3) does not work yet
-
