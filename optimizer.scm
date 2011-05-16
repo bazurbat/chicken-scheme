@@ -1074,10 +1074,7 @@
        (and inline-substitutions-enabled
 	    (or (not argc) (= rargc argc))
 	    (intrinsic? name)
-	    (or unsafe
-		(if (eq? safe 'specialized)
-		    unchecked-specialized-arithmetic
-		    safe))
+	    (or unsafe safe)
 	    (make-node
 	     '##core#call '(#t)
 	     (list cont 

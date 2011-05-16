@@ -182,8 +182,6 @@ the source text should be read from standard input.
 
 ; -scrutinize : Enable simple flow-analysis to catch common type errors and argument/result mismatches. You can also use the {{scrutinize}} declaration to enable scrutiny.
 
-; -static-extension NAME : similar to {{-require-extension NAME}}, but links extension statically (also applies for an explicit {{(require-extension NAME)}}).
-
 ; -types FILENAME : load additional type database from {{FILENAME}}. Type-definitions in {{FILENAME}} will override previous type-definitions.
 
 ; -compile-syntax : Makes macros also available at run-time. By default macros are not available at run-time.

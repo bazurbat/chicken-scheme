@@ -277,7 +277,6 @@
  toplevel-scope
  transform-direct-lambdas!
  tree-copy
- unchecked-specialized-arithmetic
  undefine-shadowed-macros
  unique-id
  unit-name

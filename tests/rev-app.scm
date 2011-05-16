@@ -1,0 +1,5 @@
+(use reverser srfi-1)
+(assert (equal? "oof" (rev "foo")))
+(assert (equal? '(a b c) (rev '(c b a))))
+(assert (= rev-version (string->number (last (command-line-arguments)))))
+(exit)

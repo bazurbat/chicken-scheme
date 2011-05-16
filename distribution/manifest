@@ -179,6 +179,14 @@ tests/test-queue.scm
 tests/functor-tests.scm
 tests/square-functor.scm
 tests/use-square-functor.scm
+tests/pp-test.scm
+tests/reverser/tags/1.0/reverser.meta
+tests/reverser/tags/1.0/reverser.setup
+tests/reverser/tags/1.0/reverser.scm
+tests/reverser/tags/1.1/reverser.meta
+tests/reverser/tags/1.1/reverser.setup
+tests/reverser/tags/1.1/reverser.scm
+tests/rev-app.scm
 tweaks.scm
 utils.scm
 apply-hack.x86.S
@@ -273,6 +281,9 @@ types.db
 mac.r
 chicken.png
 CHICKEN.icns
+scripts/reconstruct-egg-name.scm
+scripts/mini-salmonella.scm
+scripts/make-wrapper.scm
 manual-html/Accessing external objects.html
 manual-html/Acknowledgements.html
 manual-html/Basic mode of operation.html
