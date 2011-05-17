@@ -222,9 +222,9 @@ EOF
   (##sys#check-special ptr 'pointer->address)
   (##sys#pointer->address ptr) )
 
-(define null-pointer ##sys#null-pointer)
+(define null-pointer ##sys#null-pointer) ; DEPRECATED
 
-(define (null-pointer? ptr)
+(define (null-pointer? ptr)		; DEPRECATED
   (##sys#check-special ptr 'null-pointer?)
   (##core#inline "C_null_pointerp" ptr))
 

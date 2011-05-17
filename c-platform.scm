@@ -843,7 +843,6 @@
 (rewrite 'floor 15 'flonum 'fixnum 'fpfloor #f)
 (rewrite 'ceiling 15 'flonum 'fixnum 'fpceiling #f)
 (rewrite 'truncate 15 'flonum 'fixnum 'fptruncate #f)
-(rewrite 'round 15 'flonum 'fixnum 'fpround #f)
 
 (rewrite 'fpsin 16 1 "C_a_i_flonum_sin" #f words-per-flonum)
 (rewrite 'fpcos 16 1 "C_a_i_flonum_cos" #f words-per-flonum)
@@ -858,9 +857,9 @@
 (rewrite 'fpsqrt 16 1 "C_a_i_flonum_sqrt" #f words-per-flonum)
 (rewrite 'fpabs 16 1 "C_a_i_flonum_abs" #f words-per-flonum)
 (rewrite 'fptruncate 16 1 "C_a_i_flonum_truncate" #f words-per-flonum)
-(rewrite 'fpround 16 1 "C_a_i_flonum_truncate" #f words-per-flonum)
-(rewrite 'fpceiling 16 1 "C_a_i_flonum_truncate" #f words-per-flonum)
-(rewrite 'fpround 16 1 "C_a_i_flonum_truncate" #f words-per-flonum)
+(rewrite 'fpround 16 1 "C_a_i_flonum_round" #f words-per-flonum)
+(rewrite 'fpceiling 16 1 "C_a_i_flonum_ceiling" #f words-per-flonum)
+(rewrite 'fpround 16 1 "C_a_i_flonum_floor" #f words-per-flonum)
 
 (rewrite
  'string->number 8

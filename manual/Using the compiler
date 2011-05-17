@@ -157,8 +157,6 @@ the source text should be read from standard input.
 
 ; -specialize : Enable simple flow-analysis for doing some type-directed optimizations.
 
-; -static-extension NAME : similar to {{-require-extension NAME}}, but links extension statically (also applies for an explicit {{(require-extension NAME)}}).
-
 ; -strict-types : Assume that the type of variables is not changed by assignments. This gives more type-information during specialization, but violating this assumption will result in unsafe and incorrectly behaving code.
 
 ; -types FILENAME : load additional type database from {{FILENAME}}. Type-definitions in {{FILENAME}} will override previous type-definitions.

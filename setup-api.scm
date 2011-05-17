@@ -242,6 +242,7 @@
 	   (shellpath (find-program "csc"))
 	   "-feature" "compiling-extension" 
 	   (if (and (feature? #:cross-chicken)
+		    (not (deployment-mode))
 		    (not (host-extension)))
 	       "" "-setup-mode")
 	   (if (keep-intermediates) "-k" "")
@@ -543,9 +544,17 @@
 	    "unknown"))))
 
 (define (supply-version info version)
-  (if (assq 'version info)
-      info
-      (cons `(version ,(what-version version)) info)))
+  (cond ((assq 'version info) => 
+	 (lambda (a)
+	   (cons 
+	    `(egg-name ,(extension-name))
+	    info)))
+	(else
+	 (let ((v (what-version version)))
+	   (cons*
+	    `(version ,v)
+	    `(egg-name ,(extension-name))
+	    info)))))
 
 
 ;;; Convenience function
@@ -762,8 +771,7 @@
                    [ensure-string (lambda (x) (if (or (not x) (null? x)) "" (->string x)))])
                (list (ensure-string nam) (ensure-string ver)) ) ]
             [else
-             (warning "invalid extension-name-and-version" x)
-             (extension-name-and-version) ] ) ) ) )
+             (error "invalid extension-name-and-version" x)]))))
 
 (define (extension-name)
   (car (extension-name-and-version)) )

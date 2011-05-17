@@ -258,18 +258,18 @@ variables.
 
 <macro>(define-constant NAME CONST)</macro>
 
-Define a variable with a constant value, evaluated at compile-time. 
-Any reference to such a
-constant should appear textually '''after''' its definition. This
-construct is equivalent to {{define}} when evaluated or interpreted.
-Constant definitions should only appear at toplevel. Note that constants
-are local to the current compilation unit and are not available outside
-of the source file in which they are defined. Names of constants still
-exist in the Scheme namespace and can be lexically shadowed.  If the
-value is mutable, then the compiler is careful to preserve its identity.
-{{CONST}} may be any constant expression, and may also refer to
-constants defined via {{define-constant}} previously.
-This form should only be used at top-level.
+Define a variable with a constant value, evaluated at compile-time.
+Any reference to such a constant should appear textually '''after'''
+its definition. This construct is equivalent to {{define}} when
+evaluated or interpreted.  Constant definitions should only appear at
+toplevel. Note that constants are local to the current compilation
+unit and are not available outside of the source file in which they
+are defined. Names of constants still exist in the Scheme namespace
+and can be lexically shadowed.  If the value is mutable, then the
+compiler is careful to preserve its identity.  {{CONST}} may be any
+constant expression, and may also refer to constants defined via
+{{define-constant}} previously, but it must be possible to
+evaluate the expression at compile-time.
 
 ==== define-inline
 

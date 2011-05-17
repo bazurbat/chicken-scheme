@@ -1130,7 +1130,7 @@
 		  ((fixnum) (##sys#address->pointer #(1))))
 
 (align-to-word (procedure align-to-word (*) *))
-(allocate (procedure! allocate (fixnum) pointer))
+(allocate (procedure! allocate (fixnum) (or boolean pointer)))
 (block-ref (procedure! block-ref (* fixnum) *))
 (block-set! (procedure! block-set! (* fixnum *) *))
 (extend-procedure (procedure! extend-procedure (procedure *) procedure))
@@ -1160,15 +1160,10 @@
 	       (##core#inline "C_copy_ptr_memory" #(2) #(1) #(3) #(5) #(4))))
 
 (mutate-procedure (procedure! mutate-procedure (procedure procedure) procedure))
-(null-pointer (procedure null-pointer () pointer))
-
-(null-pointer? (procedure! null-pointer? (pointer) boolean)
-	       ((pointer) (##core#inline "C_null_pointerp" #(1))))
-
+(null-pointer deprecated)
+(null-pointer? deprecated)
 (number-of-bytes (procedure number-of-bytes (*) fixnum))
-
 (number-of-slots (procedure number-of-slots (*) fixnum)) ;XXX
-
 (object->pointer (procedure object->pointer (*) *))
 (object-become! (procedure object-become! (list) *))
 (object-copy (procedure object-copy (*) *))

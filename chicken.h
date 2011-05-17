@@ -1368,8 +1368,6 @@ extern double trunc(double);
 #define C_ub_i_pointer_f32_set(p, n)    (*((float *)(p)) = (n))
 #define C_ub_i_pointer_f64_set(p, n)    (*((double *)(p)) = (n))
 
-#define C_end_of_main
-
 #ifdef C_PRIVATE_REPOSITORY
 # define C_private_repository(fname)     C_use_private_repository(C_path_to_executable(fname))
 #else
@@ -1393,7 +1391,7 @@ extern double trunc(double);
     C_gui_mode = 1; \
     C_private_repository(NULL);		      \
     return CHICKEN_main(0, NULL, (void *)C_toplevel); \
-  } C_end_of_main 
+  }
 # else
 #  define C_main_entry_point            \
   int main(int argc, char *argv[]) \
@@ -1401,7 +1399,7 @@ extern double trunc(double);
     C_set_gui_mode; \
     C_private_repository(argv[ 0 ]);			\
     return CHICKEN_main(argc, argv, (void*)C_toplevel); \
-  } C_end_of_main
+  }
 # endif
 #else
 # define C_main_entry_point

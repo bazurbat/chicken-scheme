@@ -225,7 +225,7 @@
 ;   undefined -> <boolean>                   If true: variable is unknown yet but can be known later
 ;   value -> <node>                          Variable has a known value
 ;   local-value -> <node>                    Variable is declared local and has value
-;   potential-value -> <node>                Global variable was assigned this value
+;   potential-value -> <node>                Global variable was assigned this value (used for lambda-info)
 ;   references -> (<node> ...)               Nodes that are accesses of this variable (##core#variable nodes)
 ;   boxed -> <boolean>                       If true: variable has to be boxed after closure-conversion
 ;   contractable -> <boolean>                If true: variable names contractable procedure
@@ -1108,7 +1108,8 @@
 					 ;; could show line number here
 					 (quit "error in constant evaluation of ~S for named constant ~S" 
 					       valexp name)
-				       (if (collapsable-literal? valexp)
+				       (if (and (not (symbol? valexp))
+						(collapsable-literal? valexp))
 					   valexp
 					   (eval
 					    `(##core#let
@@ -1811,9 +1812,9 @@
 		     (walk val env localenv here #f) 
 		     (loop (cdr vars) (cdr vals)) ) ) ) ) )
 
-	  ((lambda)			; why do we have 2 cases for lambda?
-	   (grow 1)			; the reason for this should be tracked down
-	   (decompose-lambda-list	; and this case removed
+	  ((lambda) ; this is an intermediate lambda, slightly different
+	   (grow 1) ; from '##core#lambda nodes (params = (LLIST));
+	   (decompose-lambda-list	; CPS will convert this into ##core#lambda
 	    (first params)
 	    (lambda (vars argc rest)
 	      (for-each 
@@ -1859,8 +1860,8 @@
 		 ((standard)
 		  (warning "redefinition of standard binding" var) )
 		 ((extended)
-		  (warning "redefinition of extended binding" var) ) )
-	       (put! db var 'potential-value val) )
+		  (warning "redefinition of extended binding" var) ) ))
+	     (put! db var 'potential-value val)
 	     (unless (memq var localenv)
 	       (grow 1)
 	       (cond ((memq var env) 
