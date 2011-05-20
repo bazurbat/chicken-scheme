@@ -546,7 +546,7 @@
 	    (else (make-node '##core#call (list #f) (map walk x))) ) )
     (let ([exp2 (walk exp)])
       (when (positive? count)
-	(debugging 'o "eliminated procedure checks" count))
+	(debugging 'o "eliminated procedure checks" count)) ;XXX perhaps throw this out
       exp2) ) )
 
 (define (build-expression-tree node)

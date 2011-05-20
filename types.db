@@ -37,6 +37,9 @@
 ;   but declares the procedure as "argument-type enforcing"
 
 
+;;XXX use some other name than "predicate" ("#%predicate" ?)
+
+
 ;; scheme
 
 (not (procedure not (*) boolean)
