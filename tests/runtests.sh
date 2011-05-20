@@ -83,8 +83,19 @@ fi
 
 diff -bu scrutiny.expected scrutiny.out
 
-$compile scrutiny-tests-2.scm -scrutinize -analyze-only -ignore-repository -types ../types.db
+$compile scrutiny-tests-2.scm -scrutinize -analyze-only -ignore-repository -types ../types.db 2>scrutiny-2.out
 ./a.out
+
+if test -n "$MSYSTEM"; then
+    dos2unix scrutiny.out
+fi
+
+# this is sensitive to gensym-names, so make it optional
+if test \! -f scrutiny-2.expected; then
+    cp scrutiny-2.out scrutiny-2.expected
+fi
+
+diff -bu scrutiny-2.expected scrutiny-2.out
 
 echo "======================================== specialization tests ..."
 rm -f foo.types foo.import.*

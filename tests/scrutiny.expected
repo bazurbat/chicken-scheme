@@ -13,7 +13,7 @@ type `number' which is always true:
 Warning: in toplevel procedure `foo':
   branches in conditional expression differ in the number of results:
 
-(if x5 (values '1 '2) (values '1 '2 (+ ...)))
+(if x5 (values '1 '2) (values '1 '2 (+ (+ ...))))
 
 Warning: at toplevel:
   scrutiny-tests.scm:18: in procedure call to `bar6', expected argument #2 of type `number', but was given an argument of type `symbol'
@@ -44,5 +44,20 @@ Warning: at toplevel:
 
 Warning: at toplevel:
   g89: in procedure call to `g89', expected a value of type `(procedure () *)', but was given a value of type `fixnum'
+
+Warning: in toplevel procedure `foo2':
+  scrutiny-tests.scm:57: in procedure call to `string-append', expected argument #1 of type `string', but was given an argument of type `number'
+
+Warning: at toplevel:
+  scrutiny-tests.scm:65: in procedure call to `foo3', expected argument #1 of type `string', but was given an argument of type `fixnum'
+
+Warning: in toplevel procedure `foo4':
+  scrutiny-tests.scm:70: in procedure call to `+', expected argument #1 of type `number', but was given an argument of type `string'
+
+Warning: in toplevel procedure `foo5':
+  scrutiny-tests.scm:76: in procedure call to `+', expected argument #1 of type `number', but was given an argument of type `string'
+
+Warning: in toplevel procedure `foo6':
+  scrutiny-tests.scm:82: in procedure call to `+', expected argument #1 of type `number', but was given an argument of type `string'
 
 Warning: redefinition of standard binding: car

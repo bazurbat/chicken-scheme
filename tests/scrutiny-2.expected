@@ -1,0 +1,69 @@
+
+Warning: at toplevel:
+  pair?: in procedure call to `pair?', the predicate is called with an argument of type `pair' and will always return true
+
+Warning: at toplevel:
+  pair?: in procedure call to `pair?', the predicate is called with an argument of type `null' and will always return false
+
+Warning: at toplevel:
+  pair?: in procedure call to `pair?', the predicate is called with an argument of type `fixnum' and will always return false
+
+Warning: at toplevel:
+  pair?: in procedure call to `pair?', the predicate is called with an argument of type `float' and will always return false
+
+Warning: at toplevel:
+  list?: in procedure call to `list?', the predicate is called with an argument of type `list' and will always return true
+
+Warning: at toplevel:
+  list?: in procedure call to `list?', the predicate is called with an argument of type `fixnum' and will always return false
+
+Warning: at toplevel:
+  list?: in procedure call to `list?', the predicate is called with an argument of type `float' and will always return false
+
+Warning: at toplevel:
+  null?: in procedure call to `null?', the predicate is called with an argument of type `null' and will always return true
+
+Warning: at toplevel:
+  null?: in procedure call to `null?', the predicate is called with an argument of type `pair' and will always return false
+
+Warning: at toplevel:
+  null?: in procedure call to `null?', the predicate is called with an argument of type `fixnum' and will always return false
+
+Warning: at toplevel:
+  null?: in procedure call to `null?', the predicate is called with an argument of type `float' and will always return false
+
+Warning: at toplevel:
+  fixnum?: in procedure call to `fixnum?', the predicate is called with an argument of type `fixnum' and will always return true
+
+Warning: at toplevel:
+  fixnum?: in procedure call to `fixnum?', the predicate is called with an argument of type `float' and will always return false
+
+Warning: at toplevel:
+  exact?: in procedure call to `exact?', the predicate is called with an argument of type `fixnum' and will always return true
+
+Warning: at toplevel:
+  exact?: in procedure call to `exact?', the predicate is called with an argument of type `float' and will always return false
+
+Warning: at toplevel:
+  flonum?: in procedure call to `flonum?', the predicate is called with an argument of type `float' and will always return true
+
+Warning: at toplevel:
+  flonum?: in procedure call to `flonum?', the predicate is called with an argument of type `fixnum' and will always return false
+
+Warning: at toplevel:
+  inexact?: in procedure call to `inexact?', the predicate is called with an argument of type `float' and will always return true
+
+Warning: at toplevel:
+  inexact?: in procedure call to `inexact?', the predicate is called with an argument of type `fixnum' and will always return false
+
+Warning: at toplevel:
+  number?: in procedure call to `number?', the predicate is called with an argument of type `fixnum' and will always return true
+
+Warning: at toplevel:
+  number?: in procedure call to `number?', the predicate is called with an argument of type `float' and will always return true
+
+Warning: at toplevel:
+  number?: in procedure call to `number?', the predicate is called with an argument of type `number' and will always return true
+
+Warning: at toplevel:
+  number?: in procedure call to `number?', the predicate is called with an argument of type `null' and will always return false
