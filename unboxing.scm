@@ -301,6 +301,51 @@
 	       n))
 	    n))
 
+	(define (straighten-unboxed-assignment! n)
+	  ;; change `(##core#unboxed_set! <v> <type> (let (...) <x>))' and
+	  ;;        `(let (...) (##core#unboxed_set! <v> <type> <x>))' 
+	  ;; (also for "##core#let_unboxed")
+	  (let* ((class (node-class n))
+		 (subs (node-subexpressions n))
+		 (params (node-parameters n))
+		 (arg1 (first subs))
+		 (letsubs (node-subexpressions arg1)))
+	    (when (memq (node-class arg1) '(let ##core#let_unboxed))
+	      (d "straighten unboxed assignment: ~a" params)
+	      (let-values (((bvals body) (split-at letsubs (sub1 (length letsubs)))))
+		(copy-node!
+		 (make-node
+		  (node-class arg1)
+		  (node-parameters arg1)
+		  (append
+		   bvals
+		   (list 
+		    (straighten-unboxed-assignment! (make-node class params body)))))
+		 n)))
+	    n))
+
+	(define (straighten-assignment! n)
+	  ;; change `(set! <v> (##core#let_unboxed (...) <x>))' to
+	  ;;        `(##core#let_unboxed (...) (set! <v> <x>))' 
+	  (let* ((class (node-class n))
+		 (subs (node-subexpressions n))
+		 (params (node-parameters n))
+		 (arg1 (first subs))
+		 (letsubs (node-subexpressions arg1)))
+	    (when (eq? (node-class arg1) '##core#let_unboxed)
+	      (d "straighten assignment: ~a" params)
+	      (let-values (((bvals body) (split-at letsubs (sub1 (length letsubs)))))
+		(copy-node!
+		 (make-node
+		  '##core#let_unboxed
+		  (node-parameters arg1)
+		  (append
+		   bvals
+		   (list 
+		    (straighten-assignment! (make-node class params body)))))
+		 n)))
+	    n))
+
 	;; walk node and return either "(<var> . <type>)" or #f
 	;; - at second pass: rewrite "##core#inline[_allocate]" nodes
 	(define (walk n dest udest pass2?)
@@ -395,12 +440,15 @@
 			     (a (assq var e))
 			     (val (walk (first subs) var (and a (cdr a)) pass2?)))
 			(cond (pass2?
-			       (when (and a (cdr a)) ; may have mutated
-				 (copy-node!
-				  (make-node
-				   '##core#unboxed_set! (list (alias var) (cdr a)) subs)
-				  n)))
-			      ((and val (cdr val))
+			       (cond ((and a (cdr a)) ; may have mutated in walk above
+				      (copy-node!
+				       (make-node
+					'##core#unboxed_set! (list (alias var) (cdr a)) subs)
+				       n)
+				      (straighten-unboxed-assignment! n))
+				     (else
+				      (straighten-assignment! n))))
+			      ((and a val (cdr val))
 			       (unboxed! var (cdr val)))
 			      (else 
 			       (boxed! var)
@@ -505,7 +553,8 @@
   (C_a_i_flonum_truncate (flonum) flonum "C_trunc")
   (C_a_i_flonum_ceiling (flonum) flonum "C_ceil")
   (C_a_i_flonum_floor (flonum) flonum "C_floor")
-  (C_a_i_flonum_round (flonum) flonum "C_round"))
+  (C_a_i_flonum_round (flonum) flonum "C_round")
+  (C_a_i_fix_to_flo (fixnum) flonum "C_cast_to_flonum"))
 
 ;; others
 (define-unboxed-ops 
