@@ -85,7 +85,7 @@
 ;            | (TEMPLATE . TEMPLATE)
 
 
-(define-constant +fragment-max-length+ 5)
+(define-constant +fragment-max-length+ 6)
 (define-constant +fragment-max-depth+ 4)
 
 
@@ -447,7 +447,11 @@
 	  (cond ((atom? x) x)
 		((>= d +fragment-max-depth+) '...)
 		((list? x)
-		 (map (cute walk <> (add1 d)) (take x (min +fragment-max-length+ (length x)))))
+		 (let* ((len (length x))
+			(xs (if (< +fragment-max-length+ len)
+				(append (take x +fragment-max-length+) '(...))
+				x)))
+		   (map (cute walk <> (add1 d)) xs)))
 		(else x)))))
 
     (define (pp-fragment x)
@@ -1243,6 +1247,6 @@
 			     ;;XXX a bit of a hack - we should remove the distinct
 			     ;;    "pointer-vector" type.
 			     (if (eq? 'pointer-vector val)
-				 'pointer-vector
+				 '(pointer-vector)
 				 `((struct ,val)))))))))
 	rtypes)))
