@@ -3922,8 +3922,6 @@ C_regparm C_word C_fcall C_equalp(C_word x, C_word y)
     y = C_block_item(y, i);
     goto loop;
   }
-    
-  return 1;
 }
 
 
@@ -6943,7 +6941,7 @@ void C_ccall C_gc(C_word c, C_word closure, C_word k, ...)
   }
   else if(f) C_fromspace_top = C_fromspace_limit;
 
-  C_reclaim(gc_2, NULL);
+  C_reclaim((void *)gc_2, NULL);
 }
 
 
@@ -7018,7 +7016,7 @@ void C_ccall C_allocate_vector(C_word c, C_word closure, C_word k, C_word size, 
       C_fromspace_top = C_fromspace_limit; /* trigger major GC */
   
     C_save(C_SCHEME_TRUE);
-    C_reclaim(allocate_vector_2, NULL);
+    C_reclaim((void *)allocate_vector_2, NULL);
   }
 
   C_save(C_SCHEME_FALSE);
@@ -7572,7 +7570,7 @@ void C_ccall C_get_argv(C_word c, C_word closure, C_word k)
   C_save(k);
   C_save(C_fix(cells));
 
-  if(!C_demand(cells)) C_reclaim(get_argv_2, NULL);
+  if(!C_demand(cells)) C_reclaim((void *)get_argv_2, NULL);
 
   get_argv_2(NULL);
 }
@@ -7607,7 +7605,7 @@ void C_ccall C_get_argument(C_word c, C_word closure, C_word k, C_word index)
   C_save(C_fix(cells));
   C_save(index);
 
-  if(!C_demand(cells)) C_reclaim(get_argument_2, NULL);
+  if(!C_demand(cells)) C_reclaim((void *)get_argument_2, NULL);
 
   get_argument_2(NULL);
 }
@@ -7641,7 +7639,7 @@ void C_ccall C_make_structure(C_word c, C_word closure, C_word k, C_word type, .
   C_save(k);
 
   if(!C_demand(c - 1)) 
-    C_reclaim(make_structure_2, NULL);
+    C_reclaim((void *)make_structure_2, NULL);
 
   make_structure_2(NULL);
 }
@@ -7705,7 +7703,7 @@ void C_ccall C_ensure_heap_reserve(C_word c, C_word closure, C_word k, C_word n)
   C_save(k);
 
   if(!C_demand(C_bytestowords(C_unfix(n))))
-    C_reclaim(generic_trampoline, NULL);
+    C_reclaim((void *)generic_trampoline, NULL);
 
   generic_trampoline(NULL);
 }
@@ -7723,7 +7721,7 @@ void C_ccall C_return_to_host(C_word c, C_word closure, C_word k)
 {
   return_to_host = 1;
   C_save(k);
-  C_reclaim(generic_trampoline, NULL);
+  C_reclaim((void *)generic_trampoline, NULL);
 }
 
 
@@ -7732,7 +7730,7 @@ void C_ccall C_file_info(C_word c, C_word closure, C_word k, C_word name)
   C_save(k);
   C_save(name);
   
-  if(!C_demand(FILE_INFO_SIZE + 1 + C_SIZEOF_FLONUM * 3)) C_reclaim(file_info_2, NULL);
+  if(!C_demand(FILE_INFO_SIZE + 1 + C_SIZEOF_FLONUM * 3)) C_reclaim((void *)file_info_2, NULL);
 
   file_info_2(NULL);
 }
@@ -7808,7 +7806,7 @@ void C_ccall C_get_environment_variable(C_word c, C_word closure, C_word k, C_wo
   
   len = C_strlen(save_string);
   if(!C_demand(1 + C_bytestowords(len + 1)))
-    C_reclaim(get_environment_variable_2, NULL);
+    C_reclaim((void *)get_environment_variable_2, NULL);
 
   get_environment_variable_2(NULL);
 }
@@ -9024,7 +9022,7 @@ C_dump_heap_state(C_word c, C_word closure, C_word k)
   /* make sure heap is compacted */
   C_save(k);
   C_fromspace_top = C_fromspace_limit; /* force major GC */
-  C_reclaim(dump_heap_state_2, NULL);
+  C_reclaim((void *)dump_heap_state_2, NULL);
 }
 
 
@@ -9246,5 +9244,5 @@ C_filter_heap_objects(C_word c, C_word closure, C_word k, C_word func, C_word ve
   C_save(userarg);
   C_save(func);
   C_fromspace_top = C_fromspace_limit; /* force major GC */
-  C_reclaim(filter_heap_objects_2, NULL);
+  C_reclaim((void *)filter_heap_objects_2, NULL);
 }
