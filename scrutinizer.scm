@@ -961,7 +961,7 @@
       (printf "loading type database ~a ...~%" dbfile))
     (for-each
      (lambda (e)
-       (cond ((eq? 'predicate (car e))
+       (cond ((eq? '#%predicate (car e))
 	      (mark-variable (cadr e) '##compiler#predicate (caddr e)))
 	     (else
 	      (let* ((name (car e))
