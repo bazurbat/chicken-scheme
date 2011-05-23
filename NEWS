@@ -1,4 +1,4 @@
-4.7.0rc2
+4.7.0
 
 - Build system
   - On BSD, libchicken.so is linked with -lpthread, as this seems
