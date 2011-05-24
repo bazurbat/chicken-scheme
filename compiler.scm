@@ -223,7 +223,7 @@
 ;   undefined -> <boolean>                   If true: variable is unknown yet but can be known later
 ;   value -> <node>                          Variable has a known value
 ;   local-value -> <node>                    Variable is declared local and has value
-;   potential-value -> <node>                Global variable was assigned this value (later turns into 'value)
+;   potential-value -> <node>                Global variable was assigned this value (used for lambda-info)
 ;   references -> (<node> ...)               Nodes that are accesses of this variable (##core#variable nodes)
 ;   boxed -> <boolean>                       If true: variable has to be boxed after closure-conversion
 ;   contractable -> <boolean>                If true: variable names contractable procedure
@@ -1764,8 +1764,18 @@
 		     (walk val env localenv here #f) 
 		     (loop (cdr vars) (cdr vals)) ) ) ) ) )
 
-	  ((lambda)
-	   (bomb "somebody used unprefixed `lambda'!"))
+	  ((lambda) ; this is an intermediate lambda, slightly different
+	   (grow 1) ; from '##core#lambda nodes (params = (LLIST));
+	   (decompose-lambda-list	; CPS will convert this into ##core#lambda
+	    (first params)
+	    (lambda (vars argc rest)
+	      (for-each 
+	       (lambda (var) (put! db var 'unknown #t))
+	       vars)
+	      (let ([tl toplevel-scope])
+		(set! toplevel-scope #f)
+		(walk (car subs) (append localenv env) vars #f #f)
+		(set! toplevel-scope tl) ) ) ) )
 
 	  ((##core#lambda ##core#direct_lambda)
 	   (grow 1)
