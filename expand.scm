@@ -416,7 +416,7 @@
 			       [(1) (loop 1 req (cons (list var #f) opt) '() r)]
 			       [(2) (err "invalid lambda list syntax after `#!rest' marker")]
 			       [else (loop 3 req opt (cons (list var) key) r)] ) ]
-			    [(and (list? var) (eq? 2 (length var)))
+			    [(and (list? var) (eq? 2 (length var)) (symbol? (car var)))
 			     (case mode
 			       [(0) (err "invalid required argument syntax")]
 			       [(1) (loop 1 req (cons var opt) '() r)]

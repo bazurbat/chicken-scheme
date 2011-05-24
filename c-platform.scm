@@ -818,13 +818,12 @@
 (rewrite 'even? 17 1 "C_i_evenp" "C_u_i_evenp")
 (rewrite 'odd? 17 1 "C_i_oddp" "C_u_i_oddp")
 
-(rewrite 'fxodd? 2 1 "C_fixnumoddp" #t)
-(rewrite 'fxeven? 2 1 "C_fixnumevenp" #t)
+(rewrite 'fxodd? 2 1 "C_i_fixnumoddp" #t)
+(rewrite 'fxeven? 2 1 "C_i_fixnumevenp" #t)
 
 (rewrite 'floor 15 'flonum 'fixnum 'fpfloor #f)
 (rewrite 'ceiling 15 'flonum 'fixnum 'fpceiling #f)
 (rewrite 'truncate 15 'flonum 'fixnum 'fptruncate #f)
-(rewrite 'round 15 'flonum 'fixnum 'fpround #f)
 
 (rewrite 'fpsin 16 1 "C_a_i_flonum_sin" 'specialized words-per-flonum)
 (rewrite 'fpcos 16 1 "C_a_i_flonum_cos" 'specialized words-per-flonum)
@@ -839,9 +838,9 @@
 (rewrite 'fpsqrt 16 1 "C_a_i_flonum_sqrt" 'specialized words-per-flonum)
 (rewrite 'fpabs 16 1 "C_a_i_flonum_abs" 'specialized words-per-flonum)
 (rewrite 'fptruncate 16 1 "C_a_i_flonum_truncate" 'specialized words-per-flonum)
-(rewrite 'fpround 16 1 "C_a_i_flonum_truncate" 'specialized words-per-flonum)
-(rewrite 'fpceiling 16 1 "C_a_i_flonum_truncate" 'specialized words-per-flonum)
-(rewrite 'fpround 16 1 "C_a_i_flonum_truncate" 'specialized words-per-flonum)
+(rewrite 'fpround 16 1 "C_a_i_flonum_round" 'specialized words-per-flonum)
+(rewrite 'fpceiling 16 1 "C_a_i_flonum_ceiling" 'specialized words-per-flonum)
+(rewrite 'fpfloor 16 1 "C_a_i_flonum_floor" 'specialized words-per-flonum)
 
 (rewrite
  'string->number 8

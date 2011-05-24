@@ -440,6 +440,10 @@
   (import scheme chicken)
   ((lambda (#!key string) (assert (not string))))) ; refered to R5RS `string'
 
+;;; Missing check for keyword and optional variable types in DSSSL llists
+
+(f (eval '(lambda (foo #!key (0 1)) x)))
+(f (eval '(lambda (foo #!optional (0 1)) x)))
 
 ;;; compiler didn't resolve expansion into local variable
 ;;; (reported by Alex Shinn, #15)
