@@ -32,7 +32,7 @@
 ; - in templates, "#(INDEX)" refers to the INDEXth argument (starting from 1)
 ; - in templates "(let ((#:tmp X)) ...)" binds X to a temporary variable, you can not
 ;   refer to this variable inside the template
-; - the entry "(predicate NAME TYPE)" specifies a predicate over the given type
+; - the entry "(#%predicate NAME TYPE)" specifies a predicate over the given type
 ; - a type of the form "(procedure! ...)" is internally treated like "(procedure ..."
 ;   but declares the procedure as "argument-type enforcing"
 
@@ -1041,6 +1041,7 @@
 
 (irregex (procedure irregex (#!rest) *))
 ;irregex-apply-match
+
 (irregex-dfa (procedure! irregex-dfa ((struct regexp)) *)
 	     (((struct regexp)) (##sys#slot #(1) '1)))
 
