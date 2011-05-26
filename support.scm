@@ -1606,6 +1606,7 @@ Available debugging options:
      t          show time needed for compilation
      b          show breakdown of time needed for each compiler pass
      o          show performed optimizations
+     i          show information about inlining
      r          show invocation parameters
      s          show program-size information and other statistics
      a          show node-matching during simplification
@@ -1615,7 +1616,7 @@ Available debugging options:
      c          print every expression before macro-expansion
      u          lists all unassigned global variable references
      d          lists all assigned global variables
-     i          show inferred type information for unexported globals
+     I          show inferred type information for unexported globals
      x          display information about experimental features
      D          when printing nodes, use node-tree output
      N          show the real-name mapping table
