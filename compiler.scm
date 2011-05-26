@@ -1493,8 +1493,8 @@
 	       (warning "illegal type declaration" (##sys#strip-syntax spec))
 	       (let ((name (##sys#globalize (car spec) se))
 		     (type (##sys#strip-syntax (cadr spec))))
-		 (cond ((validate-type type name) =>
-			(lambda (type)
+		 (let-values (((type pred) (validate-type type name)))
+		   (cond (type
 			  ;; HACK: since `:' doesn't have access to the SE, we
 			  ;; fixup the procedure name if type is a named procedure type
 			  ;; (We only have access to the SE for ##sys#globalize in here).
@@ -1505,14 +1505,16 @@
 			    (set-car! (cdr type) name))
 			  (mark-variable name '##compiler#type type)
 			  (mark-variable name '##compiler#declared-type)
+			  (when pred
+			    (mark-variable name '##compiler#predicate pred))
 			  (when (pair? (cddr spec))
 			    (mark-variable
 			     name '##compiler#specializations
 			     (##sys#strip-syntax (cddr spec)))))
-			(else
-			 (warning 
-			  "illegal `type' declaration"
-			  (##sys#strip-syntax spec))))))))
+			 (else
+			  (warning 
+			   "illegal `type' declaration"
+			   (##sys#strip-syntax spec))))))))
 	 (cdr spec)))
        ((predicate)
 	(for-each
@@ -1520,11 +1522,10 @@
 	   (cond ((and (list? spec) (symbol? (car spec)) (= 2 (length spec)))
 		  (let ((name (##sys#globalize (car spec) se))
 			(type (##sys#strip-syntax (cadr spec))))
-		    (cond ((validate-type type name) =>
-			   (lambda (type)
-			     (##sys#put! name '##compiler#predicate type)))
-			  (else
-			   (warning "illegal `predicate' declaration" spec)))))
+		    (let-values (((type pred) (validate-type type name)))
+		      (if (and type (not pred))
+			  (mark-variable name '##compiler#predicate type)
+			  (warning "illegal `predicate' declaration" spec)))))
 		 (else
 		  (warning "illegal `type' declaration item" spec))))
 	 (globalize-all (cdr spec))))

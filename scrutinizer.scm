@@ -321,14 +321,17 @@
 	    (else (cons (simplify `(or ,(car ts1) ,(car ts2)))
 			(merge-argument-types (cdr ts1) (cdr ts2))))))
 
-    (define (merge-result-types ts1 ts2) ;XXX possibly overly conservative
-      (cond ((null? ts1) ts2)
-	    ((null? ts2) ts1)
-	    ((or (atom? ts1) (atom? ts2)) '*)
-	    ((eq? 'noreturn (car ts1)) ts2)
-	    ((eq? 'noreturn (car ts2)) ts1)
-	    (else (cons (simplify `(or ,(car ts1) ,(car ts2)))
-			(merge-result-types (cdr ts1) (cdr ts2))))))
+    (define (merge-result-types ts11 ts21) ;XXX possibly overly conservative
+      (call/cc
+       (lambda (return)
+	 (let loop ((ts1 ts11) (ts2 ts21))
+	   (cond ((null? ts1) ts2)
+		 ((null? ts2) ts1)
+		 ((or (atom? ts1) (atom? ts2)) (return '*))
+		 ((eq? 'noreturn (car ts1)) (loop (cdr ts1) ts2))
+		 ((eq? 'noreturn (car ts2)) (loop ts1 (cdr ts2)))
+		 (else (cons (simplify `(or ,(car ts1) ,(car ts2)))
+			     (loop (cdr ts1) (cdr ts2)))))))))
 
     (define (match t1 t2)
       (let ((m (match1 t1 t2)))
@@ -973,8 +976,9 @@
 		  (set-car! new 'procedure))
 		(cond-expand
 		  (debugbuild
-		   (unless (validate-type new name)
-		     (warning "invalid type specification" name new)))
+		   (let-values (((t _) (validate-type new name)))
+		     (unless t
+		       (warning "invalid type specification" name new))))
 		  (else))
 		(when (and old (not (equal? old new)))
 		  (##sys#notice
@@ -1054,73 +1058,87 @@
   ;; - returns converted type or #f
   ;; - also converts "(... -> ...)" types
   ;; - drops "#!key ..." args by converting to #!rest
-  (define (upto lst p)
-    (let loop ((lst lst))
-      (cond ((eq? lst p) '())
-	    (else (cons (car lst) (loop (cdr lst)))))))
-  (define (validate-llist llist)
-    (cond ((null? llist) '())
-	  ((symbol? llist) '(#!rest *))
-	  ((not (pair? llist)) #f)
-	  ((eq? '#!optional (car llist))
-	   (let ((l1 (validate-llist (cdr llist))))
-	     (and l1 (cons '#!optional l1))))
-	  ((eq? '#!rest (car llist))
-	   (cond ((null? (cdr llist)) '(#!rest *))
-		 ((not (pair? (cdr llist))) #f)
-		 (else
-		  (let ((l1 (validate (cadr llist))))
-		    (and l1 `(#!rest ,l1))))))
-	  ((eq? '#!key (car llist)) '(#!rest *))
-	  (else
-	   (let* ((l1 (validate (car llist)))
-		  (l2 (validate-llist (cdr llist))))
-	     (and l1 l2 (cons l1 l2))))))
-  (define (validate t)
-    (cond ((memq t '(* string symbol char number boolean list pair
-		       procedure vector null eof undefined port blob
-		       pointer locative fixnum float pointer-vector
-		       deprecated))
-	   t)
-	  ((not (pair? t)) t)
-	  ((eq? 'or (car t)) 
-	   (and (list? t)
-		(let ((ts (map validate (cdr t))))
-		  (and (every identity ts)
-		       `(or ,@ts)))))
-	  ((eq? 'struct (car t))
-	   (and (= 2 (length t))
-		(symbol? (cadr t))
-		t))
-	  ((eq? 'procedure (car t))
-	   (and (pair? (cdr t))
-		(let* ((name (if (symbol? (cadr t))
-				 (cadr t)
-				 name))
-		       (t2 (if (symbol? (cadr t)) (cddr t) (cdr t))))
-		  (and (pair? t2)
-		       (list? (car t2))
-		       (let ((ts (validate-llist (car t2))))
-			 (and ts
-			      (every identity ts)
-			      (let* ((rt2 (cdr t2))
-				     (rt (if (eq? '* rt2) 
-					     rt2
-					     (and (list? rt2)
-						  (let ((rts (map validate rt2)))
-						    (and (every identity rts)
-							 rts))))))
-				(and rt
-				     `(procedure 
-				       ,@(if name (list name) '())
-				       ,ts
-				       ,@rt)))))))))
-	  ((and (pair? (cdr t)) (memq '-> (cdr t))) =>
-	   (lambda (p)
-	     (validate
-	      `(procedure ,(upto t p) ,@(cdr p)))))
-	  (else #f)))
-  (validate type))
+  ;; - handles "(T1 -> T2 : T3)" (predicate) 
+  (let ((ptype #f))			; (T . PT) | #f
+    (define (upto lst p)
+      (let loop ((lst lst))
+	(cond ((eq? lst p) '())
+	      (else (cons (car lst) (loop (cdr lst)))))))
+    (define (validate-llist llist)
+      (cond ((null? llist) '())
+	    ((symbol? llist) '(#!rest *))
+	    ((not (pair? llist)) #f)
+	    ((eq? '#!optional (car llist))
+	     (let ((l1 (validate-llist (cdr llist))))
+	       (and l1 (cons '#!optional l1))))
+	    ((eq? '#!rest (car llist))
+	     (cond ((null? (cdr llist)) '(#!rest *))
+		   ((not (pair? (cdr llist))) #f)
+		   (else
+		    (let ((l1 (validate (cadr llist))))
+		      (and l1 `(#!rest ,l1))))))
+	    ((eq? '#!key (car llist)) '(#!rest *))
+	    (else
+	     (let* ((l1 (validate (car llist)))
+		    (l2 (validate-llist (cdr llist))))
+	       (and l1 l2 (cons l1 l2))))))
+    (define (validate t)
+      (cond ((memq t '(* string symbol char number boolean list pair
+			 procedure vector null eof undefined port blob
+			 pointer locative fixnum float pointer-vector
+			 deprecated))
+	     t)
+	    ((not (pair? t)) t)
+	    ((eq? 'or (car t)) 
+	     (and (list? t)
+		  (let ((ts (map validate (cdr t))))
+		    (and (every identity ts)
+			 `(or ,@ts)))))
+	    ((eq? 'struct (car t))
+	     (and (= 2 (length t))
+		  (symbol? (cadr t))
+		  t))
+	    ((eq? 'procedure (car t))
+	     (and (pair? (cdr t))
+		  (let* ((name (if (symbol? (cadr t))
+				   (cadr t)
+				   name))
+			 (t2 (if (symbol? (cadr t)) (cddr t) (cdr t))))
+		    (and (pair? t2)
+			 (list? (car t2))
+			 (let ((ts (validate-llist (car t2))))
+			   (and ts
+				(every identity ts)
+				(let* ((rt2 (cdr t2))
+				       (rt (if (eq? '* rt2) 
+					       rt2
+					       (and (list? rt2)
+						    (let ((rts (map validate rt2)))
+						      (and (every identity rts)
+							   rts))))))
+				  (and rt
+				       `(procedure 
+					 ,@(if name (list name) '())
+					 ,ts
+					 ,@rt)))))))))
+	    ((and (pair? (cdr t)) (memq '-> (cdr t))) =>
+	     (lambda (p)
+	       (let ((cp (memq ': (cdr t))))
+		 (cond ((not cp) 
+			(validate
+			 `(procedure ,(upto t p) ,@(cdr p))))
+		       ((and (= 5 (length t))
+			     (eq? p (cdr t))
+			     (eq? cp (cdddr t)))
+			(set! t (validate `(procedure (,(first t)) ,(third t))))
+			;; we do it this way to distinguish the "outermost" predicate
+			;; procedure type
+			(set! ptype (cons t (validate (cadr cp))))
+			t)
+		       (else #f)))))
+	    (else #f)))
+    (let ((type (validate type)))
+      (values type (and ptype (eq? (car ptype) type) (cdr ptype))))))
 
 (define (initial-argument-types dest vars argc)
   (if (and dest (variable-mark dest '##compiler#declared-type))

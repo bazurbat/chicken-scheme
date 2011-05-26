@@ -1120,13 +1120,15 @@
     (if (memq #:csi ##sys#features) 
 	'(##core#undefined)
 	(let* ((type1 (##sys#strip-syntax (caddr x)))
-	       (name1 (cadr x))
-	       (type (##compiler#validate-type type1 (##sys#strip-syntax name1))))
-	  (cond ((not type)
-		 (syntax-error ': "invalid type syntax" name1 type1))
-		(else
-		 `(##core#declare 
-		   (type (,name1 ,type ,@(cdddr x)))))))))))
+	       (name1 (cadr x)))
+	  (let-values (((type pred)
+			(##compiler#validate-type type1 (##sys#strip-syntax name1))))
+	    (cond ((not type)
+		   (syntax-error ': "invalid type syntax" name1 type1))
+		  (else
+		   `(##core#declare 
+		     (type (,name1 ,type ,@(cdddr x)))
+		     ,@(if pred `((predicate (,name1 ,pred))) '()))))))))))
 
 
 ;;; interface definition
