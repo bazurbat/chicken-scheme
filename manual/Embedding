@@ -68,8 +68,9 @@ or {{CHICKEN_continue}}.
 
 After {{return-to-host}} has been executed and once {{CHICKEN_run}} returns,
 you can invoke callbacks which have been defined with {{define-external}}.
-The {{eval}} library unit also provides ''boilerplate'' callbacks, that simplify invoking Scheme
-code embedded in a C or C++ application a lot.
+
+The {{eval}} library unit also provides boilerplate callbacks, that simplify invoking Scheme
+code embedded in a C or C++ application:
 
 === CHICKEN_eval
 

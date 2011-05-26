@@ -30,7 +30,7 @@ A short integer number.
 
 An small integer number in fixnum range (at least 30 bit).
 
-=== integer unsigned-integer integer32 unsigned-integer32 integer64
+=== integer unsigned-integer integer32 unsigned-integer32 integer64 unsigned-integer64
 
 Either a fixnum or a flonum in the range of a (unsigned) machine ''int''
 or with 32/64 bit width.
@@ -223,7 +223,7 @@ instance. {{CNAME}} should designate the name of the C++ class, and
 To use this, an extension will be required that provides an
 object-creation- and access-interface compatible to
 [[/eggref/4/coops|coops]] or
-[[/eggref/4/tinyclos|tinyclos]]. Speecifically, it should provide the
+[[/eggref/4/tinyclos|tinyclos]]. Specifically, it should provide the
 following operations:
 
   (make SCHEMECLASS 'this POINTER)
