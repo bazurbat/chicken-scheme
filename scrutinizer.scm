@@ -72,8 +72,9 @@
 ;   ##compiler#declared-type   ->  BOOL
 ;   ##compiler#predicate       ->  TYPESPEC
 ;   ##compiler#specializations ->  (SPECIALIZATION ...)
-;   ##compiler#enforce-argument-types -> BOOL
+;   ##compiler#enforce         ->  BOOL
 ;   ##compiler#special-result-type -> PROCEDURE
+;   ##compiler#escape          ->  #f | 'yes | 'no
 ;
 ; specialization specifiers:
 ;
@@ -687,7 +688,10 @@
 					 #f #t (list initial-tag) #f)))
 			   (when (and specialize
 				      dest
-				      (not strict-variable-types) 
+				      (not 
+				       (eq? 'no
+					    (variable-mark dest '##compiler#escape)))
+				      escaping-procedures
 				      (not unsafe))
 			     (generate-type-checks! n dest vars inits))
 			   (list
@@ -776,7 +780,8 @@
 				    (iota len)))
 			 (fn (car args))
 			 (pn (procedure-name fn))
-			 (enforces (and pn (variable-mark pn '##compiler#enforce-argument-types)))
+			 (enforces
+			  (and pn (variable-mark pn '##compiler#enforce)))
 			 (pt (and pn (variable-mark pn '##compiler#predicate))))
 		    (let ((r (call-result n args e loc params)))
 		      (for-each
@@ -857,10 +862,22 @@
 		       (res2 (if (named? t2) (cdddr t2) (cddr t2))) )
 		   (let loop1 ((args1 args1)
 			       (args2 args2)
+			       (rtype1 #f)
+			       (rtype2 #f)
 			       (m1 0) 
 			       (m2 0))
-		     (cond ((null? args1) 
-			    (and (or (null? args2) (> m2 0))
+		     (cond ((null? args1)
+			    (and (cond ((null? args2)
+					(or (and rtype2 (not rtype1))
+					    (and rtype1 rtype2
+						 (type<=? rtype1 rtype2))))
+				       ((eq? '#!optional (car args2))
+					(not rtype1))
+				       ((eq? '#!rest (car args2))
+					(or (null? (cdr args2))
+					    rtype1
+					    (type<=? rtype1 (cadr args2))))
+				       (else (>= m2 m1)))
 				 (let loop2 ((res1 res1) (res2 res2))
 				   (cond ((eq? '* res2) #t)
 					 ((null? res2) (null? res1))
@@ -868,17 +885,26 @@
 					 ((type<=? (car res1) (car res2))
 					  (loop2 (cdr res1) (cdr res2)))
 					 (else #f)))))
-			   ((null? args2) #f)
 			   ((eq? (car args1) '#!optional)
-			    (loop1 (cdr args1) args2 1 m2))
-			   ((eq? (car args2) '#!optional)
-			    (loop1 args1 (cdr args2) m1 1))
+			    (loop1 (cdr args1) args2 #f rtype2 1 m2))
 			   ((eq? (car args1) '#!rest)
-			    (loop1 (cdr args1) args2 2 m2))
+			     (if (null? (cdr args1))
+				 (loop1 '() args2 '* rtype2 2 m2)
+				 (loop1 '() args2 (cadr args1) rtype2 2 m2)))
+			   ((null? args2) 
+			    (and rtype2
+				 (type<=? (car args1) rtype2)
+				 (loop1 (cdr args1) '() rtype1 rtype2 m1 m2)))
+			   ((eq? (car args2) '#!optional)
+			    (loop1 args1 (cdr args2) rtype1 #f m1 1))
 			   ((eq? (car args2) '#!rest)
-			    (loop1 args1 (cdr args2) m1 2))
-			   ((type<=? (car args1) (car args2)) 
-			    (loop1 (cdr args1) (cdr args2) m1 m2))
+			    (if (null? (cdr args2))
+				(loop1 args1 '() rtype1 '* m1 2)
+				(loop1 args1 '() rtype1 (cadr args2) m1 2)))
+			   ((type<=?
+			     (or rtype1 (car args1))
+			     (or rtype2 (car args2)))
+			    (loop1 (cdr args1) (cdr args2) rtype1 rtype2 m1 m2))
 			   (else #f)))))))))))
 
 (define (procedure-type? t)
@@ -972,7 +998,7 @@
 		     (new (cadr e))
 		     (specs (and (pair? (cddr e)) (cddr e))))
 		(when (and (pair? new) (eq? 'procedure! (car new)))
-		  (mark-variable name '##compiler#enforce-argument-types #t)
+		  (mark-variable name '##compiler#enforce #t)
 		  (set-car! new 'procedure))
 		(cond-expand
 		  (debugbuild
@@ -980,7 +1006,7 @@
 		     (unless t
 		       (warning "invalid type specification" name new))))
 		  (else))
-		(when (and old (not (equal? old new)))
+		(when (and old (not (compatible-types? old new)))
 		  (##sys#notice
 		   (sprintf
 		       "type-definition `~a' for toplevel binding `~a' conflicts with previously loaded type `~a'"

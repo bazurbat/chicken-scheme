@@ -62,7 +62,6 @@
 ; (no-procedure-checks)
 ; (no-procedure-checks-for-usual-bindings)
 ; (no-procedure-checks-for-toplevel-bindings)
-; (post-process <string> ...)
 ; (profile <symbol> ...)
 ; (safe-globals)
 ; (separate)
@@ -73,6 +72,8 @@
 ; (uses {<unitname>})
 ; (strict-types)
 ; (specialize)
+; ([not] escape [<symbol> ...])
+; (enforce-argument-types [<symbol> ...])
 ;
 ;   <type> = fixnum | generic
 
@@ -337,6 +338,7 @@
 (define bootstrap-mode #f)
 (define strict-variable-types #f)
 (define enable-specialization #f)
+(define escaping-procedures #t)
 
 
 ;;; These are here so that the backend can access them:
@@ -1371,6 +1373,16 @@
        ((keep-shadowed-macros) (set! undefine-shadowed-macros #f))
        ((unused)
 	(for-each (cut mark-variable <> '##compiler#unused) (globalize-all (cdr spec))))
+       ((escape)
+	(if (null (cdr spec))
+	    (set! escaping-procedures #t)
+	    (for-each 
+	     (cut mark-variable <> '##compiler#escape 'yes)
+	     (globalize-all (cdr spec)))))
+       ((enforce-argument-types)
+	(for-each
+	 (cut mark-variable <> '##compiler#enforce)
+	 (globalize-all (cdr spec))))
        ((not)
 	(check-decl spec 1)
 	(case (##sys#strip-syntax (second spec)) ; strip all
@@ -1406,6 +1418,12 @@
 	     (for-each
 	      (cut mark-variable <> '##compiler#inline-global 'no)
 	      (globalize-all (cddr spec)))))
+	  ((escape)
+	   (if (null? (cddr spec))
+	       (set! escaping-procedures #f)
+	       (for-each
+		(cut mark-variable <> '##compiler#escape 'no)
+		(globalize-all (cddr spec)))))
 	  [else
 	   (check-decl spec 1 1)
 	   (let ((id (strip (cadr spec))))

@@ -87,3 +87,11 @@
 
 (when (foo7 x)
   (+ x 1))				; will warn about "x" being a string
+
+;; declared procedure types are enforcing
+(: foo8 (string -> symbol))
+(define (foo8 x) (string->symbol x))
+
+(define (foo9 x)
+  (foo8 x)
+  (+ x 1))				; foo8 enforces x

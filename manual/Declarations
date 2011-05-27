@@ -69,6 +69,23 @@ Declares the procedures with the names {{SYMBOL ...}} as constant, that is, as n
 side effects. This can help the compiler to remove non-side-effecting expressions.
 
 
+=== enforce-argument-types
+
+ [declaration-specifier] (enforce-argument-types IDENTIFIER ...)
+
+Declares that the toplevel procedures listed check the type of their arguments
+(either explicitly or by calling other enforcing procedures) and so a successfull
+invocation will indicate the the arguments are of the types declared.
+
+
+=== escape
+
+ [declaration specifier] ([not] escape [IDENTIFIER ...])
+
+Declares the toplevel procedures of this compilation unit do not escape, i.e. are not
+returned or passed to code outside of the current compilation unit.
+
+
 === export
 
  [declaration specifier] (export SYMBOL ...)
@@ -208,16 +225,11 @@ Disables checking of procedures for calls to procedures referenced via a topleve
 (calls to explicitly named procedures).
 
 
-=== post-process
+=== predicate
 
- [declaration specifier] (post-process STRING ...)
+ [declaration specifier] (predicate (IDENTIFIER TYPE) ...)
 
-Arranges for the shell commands {{STRING ...}} to be invoked after the current
-file has been translated to C. Any occurrences of the substring {{$@@}} in the
-strings given for this declaration will be replaced by the pathname of the currently
-compiled file, without the file-extension.
-This declaration will only work if the source file is compiled
-with the {{csc}} compiler driver.
+Marks the global procedure {{IDENTIFIER}} as a predicate on {{TYPE}}.
 
 
 === profile

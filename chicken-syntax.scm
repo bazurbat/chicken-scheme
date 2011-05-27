@@ -1112,7 +1112,7 @@
 
 ;;; type-declaration syntax
 
-(##sys#extend-macro-environment		;XXX not documented yet
+(##sys#extend-macro-environment
  ': '()
  (##sys#er-transformer
   (lambda (x r c)
@@ -1128,6 +1128,7 @@
 		  (else
 		   `(##core#declare 
 		     (type (,name1 ,type ,@(cdddr x)))
+		     (enforce-argument-types ,name1)
 		     ,@(if pred `((predicate (,name1 ,pred))) '()))))))))))
 
 
