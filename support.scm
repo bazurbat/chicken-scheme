@@ -749,8 +749,17 @@
 	 (when (variable-visible? sym)
 	   (when (variable-mark sym '##compiler#declared-type)
 	     (let ((specs
-		    (or (variable-mark sym '##compiler#specializations) '())))
-	       (pp (cons* sym (variable-mark sym '##compiler#type) specs))))))
+		    (or (variable-mark sym '##compiler#specializations) '()))
+		   (type (variable-mark sym '##compiler#type)))
+	       (pp (cons*
+		    sym
+		    (if (and (pair? type) (eq? 'procedure (car type))
+			     (variable-mark sym '##compiler#enforce))
+			`(procedure! ,@(cdr type))
+			type)
+		    specs))
+	       (and-let* ((ptype (variable-mark sym '##compiler#predicate)))
+		 (pp `(#%predicate ,sym ,ptype)))))))
        db)
       (print "; END OF FILE"))))
 
