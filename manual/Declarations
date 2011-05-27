@@ -20,7 +20,7 @@ syntax extensions loaded via {{require-extension}}).
 
 === always-bound
 
- [declaration specifier] (always-bound SYMBOL ...)
+ [declaration specifier] (always-bound IDENTIFIER ...)
 
 Declares that the given variables are always bound and
 accesses to those have not to be checked.
@@ -37,10 +37,10 @@ specifying the {{-block}} option.
 === block-global
 === hide
 
- [declaration specifier] (block-global SYMBOL ...)
- [declaration specifier] (hide SYMBOL ...)
+ [declaration specifier] (block-global IDENTIFIER ...)
+ [declaration specifier] (hide IDENTIFIER ...)
 
-Declares that the toplevel bindings for {{SYMBOL ...}}
+Declares that the toplevel bindings for {{IDENTIFIER ...}}
 should not be accessible from code in other compilation units or by
 {{eval}}. Access to toplevel bindings declared as block global is
 also more efficient. {{(declare (hide))}} is equivalent to {{(declare (block))}}.
@@ -48,7 +48,7 @@ also more efficient. {{(declare (hide))}} is equivalent to {{(declare (block))}}
 
 === bound-to-procedure
 
- [declaration specifier] (bound-to-procedure SYMBOL ...)
+ [declaration specifier] (bound-to-procedure IDENTIFIER ...)
 
 Declares that the given identifiers are always bound to procedure values.
 
@@ -63,9 +63,9 @@ Enables or disables syntax-checking of embedded C/C++ code fragments. Checking C
 
 === constant
 
- [declaration specifier] (constant SYMBOL ...)
+ [declaration specifier] (constant IDENTIFIER ...)
 
-Declares the procedures with the names {{SYMBOL ...}} as constant, that is, as not having any
+Declares the procedures with the names {{IDENTIFIER ...}} as constant, that is, as not having any
 side effects. This can help the compiler to remove non-side-effecting expressions.
 
 
@@ -88,7 +88,7 @@ returned or passed to code outside of the current compilation unit.
 
 === export
 
- [declaration specifier] (export SYMBOL ...)
+ [declaration specifier] (export IDENTIFIER ...)
 
 The opposite of {{hide}}. All given identifiers will be exported and all toplevel variables
 not listed will be hidden and not be accessible outside of this compilation unit.
@@ -181,7 +181,7 @@ will be removed (in addition to showing a warning). This declaration will disabl
 === local
 
  [declaration specifier] (local)
- [declaration specifier] (local SYMBOL ...)
+ [declaration specifier] (local IDENTIFIER ...)
 
 Declares that the listed (or all) toplevel variables defined in the
 current compilation unit are not modified from code outside of this
@@ -285,8 +285,8 @@ Enables specialization. This is equivalent to passing the {{-specialize}} option
 
 === standard-bindings
 
- [declaration specifier] (standard-bindings SYMBOL ...)
- [declaration specifier] (not standard-bindings SYMBOL ...)
+ [declaration specifier] (standard-bindings IDENTIFIER ...)
+ [declaration specifier] (not standard-bindings IDENTIFIER ...)
 
 Declares that all given standard procedures (or all if no symbols are
 specified) are never globally redefined.  If {{not}} is specified,
@@ -303,10 +303,10 @@ Declares that the type of variables is not changed by assignment. Equivalent to 
 
 === type
 
-  [declaration specifier] (type (SYMBOL TYPE) ...)
+  [declaration specifier] (type (IDENTIFIER TYPE) ...)
 
 Declares toplevel procedures to have a specific type for
-scrutiny. {{SYMBOL}} should name a toplevel variable and {{TYPE}}
+scrutiny. {{IDENTIFIER}} should name a toplevel variable and {{TYPE}}
 should be a type specification.  A type-declaration overrides any
 previous declaration for the same identifier.  See also [[Types]] for
 more information about using types, the syntax of type-specifiers and
@@ -315,8 +315,8 @@ a more convenient type-declaration syntax ({{:}}).
 
 === extended-bindings
 
- [declaration specifier] (extended-bindings SYMBOL ...)
- [declaration specifier] (not extended-bindings SYMBOL ...)
+ [declaration specifier] (extended-bindings IDENTIFIER ...)
+ [declaration specifier] (not extended-bindings IDENTIFIER ...)
 
 Declares that all given non-standard and CHICKEN-specific procedures (or all if no symbols are specified) are never globally redefined.
 If {{not}} is specified, then all but the given extended bindings
@@ -325,8 +325,8 @@ are assumed to be never redefined.
 
 === usual-integrations
 
- [declaration specifier] (usual-integrations SYMBOL ...)
- [declaration specifier] (not usual-integrations SYMBOL ...)
+ [declaration specifier] (usual-integrations IDENTIFIER ...)
+ [declaration specifier] (not usual-integrations IDENTIFIER ...)
 
 Declares that all given standard and extended bindings (or all if no
 symbols are specified) are never globally redefined.  If {{not}}
@@ -337,7 +337,7 @@ unless the {{-no-usual-integrations}} option has been given.
 
 === unit
 
- [declaration specifier] (unit SYMBOL)
+ [declaration specifier] (unit IDENTIFIER)
 
 Specify compilation unit-name (if this is a library)
 
@@ -356,15 +356,15 @@ Do not generate safety-checks. This is the same as specifying the
 
 === unused
 
- [declaration specifier] (unused SYMBOL ...)
+ [declaration specifier] (unused IDENTIFIER ...)
 
-Disables any warnings when the global variable {{SYMBOL}} is not defined but used, 
+Disables any warnings when the global variable {{IDENTIFIER}} is not defined but used, 
 or defined but never used and not exported.
 
 
 === uses
 
- [declaration specifier] (uses SYMBOL ...)
+ [declaration specifier] (uses IDENTIFIER ...)
 
 Gives a list of used library-units. Before the toplevel-expressions
 of the main-module are executed, all used units evaluate their
