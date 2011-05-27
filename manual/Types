@@ -54,9 +54,8 @@ Declares that the global variable {{IDENTIFIER}} is of the given type.
 If {{IDENTIFIER}} names a {{define}}d toplevel procedure, then all
 required arguments are checked at runtime on procedure-entry whether
 they have the correct types (type for optional or "rest" arguments are
-currently not checked).  If the code is compiled with the
-{{-strict-types}} option or if it is compiled in unsafe mode, then no
-type-checks will be generated.
+currently not checked).  {{(declare (not escape IDENTIFIER))}}
+compiling the code in unsafe mode will not generate type-checks.
 
 
 ==== Type syntax
