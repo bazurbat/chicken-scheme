@@ -60,4 +60,10 @@ Warning: in toplevel procedure `foo5':
 Warning: in toplevel procedure `foo6':
   scrutiny-tests.scm:82: in procedure call to `+', expected argument #1 of type `number', but was given an argument of type `string'
 
+Warning: at toplevel:
+  scrutiny-tests.scm:89: in procedure call to `+', expected argument #1 of type `number', but was given an argument of type `string'
+
+Warning: in toplevel procedure `foo9':
+  scrutiny-tests.scm:97: in procedure call to `+', expected argument #1 of type `number', but was given an argument of type `string'
+
 Warning: redefinition of standard binding: car

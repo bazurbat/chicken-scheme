@@ -82,8 +82,8 @@
     (+ x 3)))				;XXX (+ y 3) does not work yet
 
 ;; user-defined predicate
-(: foo7 (* -> bool : string))
-(define (foo7 x) (string x))
+(: foo7 (* -> boolean : string))
+(define (foo7 x) (string? x))
 
 (when (foo7 x)
   (+ x 1))				; will warn about "x" being a string

@@ -32,9 +32,11 @@
 ; - in templates, "#(INDEX)" refers to the INDEXth argument (starting from 1)
 ; - in templates "(let ((#:tmp X)) ...)" binds X to a temporary variable, you can not
 ;   refer to this variable inside the template
-; - the entry "(#%predicate NAME TYPE)" specifies a predicate over the given type
 ; - a type of the form "(procedure! ...)" is internally treated like "(procedure ..."
 ;   but declares the procedure as "argument-type enforcing"
+; - a type of the form "(procedure? TYPE  ...)" is internally treated like "(procedure ..."
+;   but declares the procedure as a predicate over TYPE.
+; - a type of the form "(procedure!? TYPE ...)" or "(procedure?! TYPE ...)" is the obvious.
 
 
 ;; scheme
@@ -42,8 +44,7 @@
 (not (procedure not (*) boolean)
      (((not boolean)) (let ((#:tmp #(1))) '#t)))
 
-(boolean? (procedure boolean? (*) boolean))
-(#%predicate boolean? boolean)
+(boolean? (procedure? boolean boolean? (*) boolean))
 
 (eq? (procedure eq? (* *) boolean))
 
@@ -55,8 +56,7 @@
 	(((or fixnum symbol char eof null undefined) *) (eq? #(1) #(2)))
 	((* (or fixnum symbol char eof null undefined) (eq? #(1) #(2)))))
 
-(pair? (procedure pair? (*) boolean))
-(#%predicate pair? pair)
+(pair? (procedure? pair pair? (*) boolean))
 
 (cons (procedure cons (* *) pair))
 
@@ -95,11 +95,9 @@
 (set-car! (procedure! set-car! (pair *) undefined) ((pair *) (##sys#setslot #(1) '0 #(2))))
 (set-cdr! (procedure! set-cdr! (pair *) undefined) ((pair *) (##sys#setslot #(1) '1 #(2))))
 
-(null? (procedure null? (*) boolean))
-(#%predicate null? null)
+(null? (procedure? null null? (*) boolean))
 
-(list? (procedure list? (*) boolean))
-(#%predicate list? list)
+(list? (procedure? list list? (*) boolean))
 
 (list (procedure list (#!rest) list))
 (length (procedure! length (list) fixnum) ((list) (##core#inline "C_u_i_length" #(1))))
@@ -114,32 +112,25 @@
 (assv (procedure assv (* list) *))
 (assoc (procedure assoc (* list #!optional (procedure (* *) *)) *))
 
-(symbol? (procedure symbol? (*) boolean))
-(#%predicate symbol? symbol)
+(symbol? (procedure? symbol symbol? (*) boolean))
 
 (symbol-append (procedure! symbol-append (#!rest symbol) symbol))
 (symbol->string (procedure! symbol->string (symbol) string))
 (string->symbol (procedure! string->symbol (string) symbol))
 
-(number? (procedure number? (*) boolean))
-(#%predicate number? number)
+(number? (procedure? number number? (*) boolean))
 
+;;XXX predicate?
 (integer? (procedure integer? (*) boolean)
 	  ((fixnum) (let ((#:tmp #(1))) '#t))
 	  ((float) (##core#inline "C_u_i_fpintegerp" #(1))))
 
-(exact? (procedure exact? (*) boolean))
-(#%predicate exact? fixnum)
+(exact? (procedure? fixnum exact? (*) boolean))
+(real? (procedure? number real? (*) boolean))
+(complex? (procedure? number complex? (*) boolean))
+(inexact? (procedure? float inexact? (*) boolean))
 
-(real? (procedure real? (*) boolean))
-(#%predicate real? number)
-
-(complex? (procedure complex? (*) boolean))
-(#%predicate complex? number)
-
-(inexact? (procedure inexact? (*) boolean))
-(#%predicate inexact? float)
-
+;;XXX predicate?
 (rational? (procedure rational? (*) boolean)
 	   ((fixnum) (let ((#:tmp #(1))) '#t)))
 
@@ -377,8 +368,7 @@
 
 (string->number (procedure! string->number (string #!optional number) (or number boolean)))
 
-(char? (procedure char? (*) boolean))
-(#%predicate char? char)
+(char? (procedure? char char? (*) boolean))
 
 ;; we could rewrite these, but this is done by the optimizer anyway (safe)
 (char=? (procedure! char=? (char char) boolean))
@@ -403,8 +393,7 @@
 (char->integer (procedure! char->integer (char) fixnum))
 (integer->char (procedure! integer->char (fixnum) char))
 
-(string? (procedure string? (*) boolean))
-(#%predicate string? string)
+(string? (procedure? string string? (*) boolean))
 
 (string=? (procedure! string=? (string string) boolean)
 	  ((string string) (##core#inline "C_u_i_string_equal_p" #(1) #(2))))
@@ -443,8 +432,7 @@
 ;(string-fill! (procedure! string-fill! (string char) string)) - s.a.
 (string (procedure! string (#!rest char) string))
 
-(vector? (procedure vector? (*) boolean))
-(#%predicate vector? vector)
+(vector? (procedure? vector vector? (*) boolean))
 
 (make-vector (procedure! make-vector (fixnum #!optional *) vector))
 
@@ -459,8 +447,7 @@
 (list->vector (procedure! list->vector (list) vector))
 (vector-fill! (procedure! vector-fill! (vector *) vector))
 
-(procedure? (procedure procedure? (*) boolean))
-(#%predicate procedure? procedure)
+(procedure? (procedure? procedure procedure? (*) boolean))
 
 (vector-copy! (procedure! vector-copy! (vector vector #!optional fixnum) undefined))
 (map (procedure! map (procedure #!rest list) list))
@@ -481,8 +468,7 @@
 (load (procedure load (string #!optional procedure) undefined))
 (read (procedure! read (#!optional port) *))
 
-(eof-object? (procedure eof-object? (*) boolean))
-(#%predicate eof-object? eof)
+(eof-object? (procedure? eof eof-object? (*) boolean))
 
 ;;XXX if we had input/output port distinction, we could specialize these:
 (read-char (procedure! read-char (#!optional port) *)) ; result (or eof char) ?
@@ -559,8 +545,7 @@
 (blob-size (procedure! blob-size (blob) fixnum)
 	   ((blob) (##sys#size #(1))))
 
-(blob? (procedure blob? (*) boolean))
-(#%predicate blob? blob)
+(blob? (procedure? blob blob? (*) boolean))
 
 (blob=? (procedure! blob=? (blob blob) boolean))
 (breakpoint (procedure breakpoint (#!optional *) . *))
@@ -574,16 +559,14 @@
 (condition-predicate (procedure! condition-predicate (symbol) (procedure ((struct condition)) boolean)))
 (condition-property-accessor (procedure! condition-property-accessor (symbol symbol #!optional *) (procedure ((struct condition)) *)))
 
-(condition? (procedure condition? (*) boolean))
-(#%predicate condition? (struct condition))
+(condition? (procedure? (struct condition) condition? (*) boolean))
 
 (condition->list (procedure! condition->list ((struct condition)) list))
 (continuation-capture (procedure! continuation-capture ((procedure ((struct continuation)) . *)) *))
 (continuation-graft (procedure! continuation-graft ((struct continuation) (procedure () . *)) *))
 (continuation-return (procedure! continuation-return (procedure #!rest) . *)) ;XXX make return type more specific?
 
-(continuation? (procedure continuation? (*) boolean))
-(#%predicate continuation (struct continuation))
+(continuation? (procedure? (struct continuation) continuation? (*) boolean))
 
 (copy-read-table (procedure! copy-read-table ((struct read-table)) (struct read-table)))
 (cpu-time (procedure cpu-time () fixnum fixnum))
@@ -618,8 +601,7 @@
 (fixnum-bits fixnum)
 (fixnum-precision fixnum)
 
-(fixnum? (procedure fixnum? (*) boolean))
-(#%predicate fixnum? fixnum)
+(fixnum? (procedure? fixnum fixnum? (*) boolean))
 
 (flonum-decimal-precision fixnum)
 (flonum-epsilon float)
@@ -631,8 +613,7 @@
 (flonum-print-precision (procedure! (#!optional fixnum) fixnum))
 (flonum-radix fixnum)
 
-(flonum? (procedure flonum? (*) boolean))
-(#%predicate flonum? float)
+(flonum? (procedure? float flonum? (*) boolean))
 
 (flush-output (procedure! flush-output (#!optional port) undefined))
 (force-finalizers (procedure force-finalizers () undefined))
@@ -790,8 +771,7 @@
 
 (port-position (procedure! port-position (#!optional port) fixnum))
 
-(port? (procedure port? (*) boolean))
-(#%predicate port? port)
+(port? (procedure? port port? (*) boolean))
 
 (print (procedure print (#!rest *) undefined))
 (print-call-chain (procedure! print-call-chain (#!optional port fixnum * string) undefined))
@@ -956,15 +936,16 @@
 	     (((struct queue)) (##sys#slot #(1) '1)))
 
 (queue-add! (procedure! queue-add! ((struct queue) *) undefined))
-(queue-empty? (procedure! queue-empty? ((struct queue)) boolean))
+
+(queue-empty? (procedure! queue-empty? ((struct queue)) boolean)
+	      (((struct queue)) (##core#inline "C_i_nullp" (##sys#slot #(1) '1))))
+
 (queue-first (procedure! queue-first ((struct queue)) *))
 (queue-last (procedure! queue-last ((struct queue)) *))
 (queue-push-back! (procedure! queue-push-back! ((struct queue) *) undefined))
 (queue-push-back-list! (procedure! queue-push-back-list! ((struct queue) list) undefined))
 (queue-remove! (procedure! queue-remove! ((struct queue)) *))
-
-(queue? (procedure queue? (*) boolean))
-(#%predicate queue? (struct queue))
+(queue? (procedure? (struct queue) queue? (*) boolean))
 
 (rassoc (procedure! rassoc (* list #!optional (procedure (* *) *)) *))
 (reverse-string-append (procedure! reverse-string-append (list) string))
@@ -982,8 +963,15 @@
 (string-translate (procedure! string-translate (string * #!optional *) string))
 (string-translate* (procedure! string-translate* (string list) string))
 (substring-ci=? (procedure! substring-ci=? (string string #!optional fixnum fixnum fixnum) boolean))
-(substring-index (procedure! substring-index (string string #!optional fixnum) *))
-(substring-index-ci (procedure! substring-index-ci (string string #!optional fixnum) *))
+
+(substring-index (procedure! substring-index (string string #!optional fixnum) *)
+		 ((* *) (##sys#substring-index #(1) #(2) '0))
+		 ((* * *) (##sys#substring-index #(1) #(2) #(3))))
+
+(substring-index-ci (procedure! substring-index-ci (string string #!optional fixnum) *)
+		    ((* *) (##sys#substring-index-ci #(1) #(2) '0))
+		    ((* * *) (##sys#substring-index-ci #(1) #(2) #(3))))
+
 (substring=? (procedure! substring=? (string string #!optional fixnum fixnum fixnum) boolean))
 (tail? (procedure tail? (* *) boolean))
 
@@ -1065,8 +1053,7 @@
 (irregex-match (procedure! irregex-match (* string) *))
 ;irregex-match?
 
-(irregex-match-data? (procedure irregex-match-data? (*) boolean))
-(#%predicate irregex-match-data? (struct regexp-match))
+(irregex-match-data? (procedure? (struct regexp-match) irregex-match-data? (*) boolean))
 
 (irregex-match-end (procedure irregex-match-end (* #!optional *) *))
 ;irregex-match-end-chunk
@@ -1108,8 +1095,7 @@
 (irregex-match-valid-index? 
  (procedure! irregex-match-valid-index? ((struct regexp-match) *) boolean))
 
-(irregex? (procedure irregex? (*) boolean))
-(#%predicate irregex? (struct regexp))
+(irregex? (procedure? (struct regexp) irregex? (*) boolean))
 
 (make-irregex-chunker
  (procedure! make-irregex-chunker 
@@ -1190,8 +1176,7 @@
 (pointer-f64-set! (procedure! pointer-f64-set! (pointer number) undefined))
 (pointer-vector (procedure! pointer-vector (#!rest pointer-vector) boolean))
 
-(pointer-vector? (procedure pointer-vector? (*) boolean))
-(#%predicate pointer-vector? pointer-vector)
+(pointer-vector? (procedure? pointer-vector pointer-vector? (*) boolean))
 
 (pointer-vector-fill! (procedure! pointer-vector-fill! (pointer-vector pointer) undefined))
 
@@ -1217,8 +1202,7 @@
 (pointer=? (procedure! pointer=? (pointer pointer) boolean)
 	   ((pointer pointer) (##core#inline "C_pointer_eqp" #(1) #(2))))
 
-(pointer? (procedure pointer? (*) boolean))
-(#%predicate pointer? pointer)
+(pointer? (procedure? pointer pointer? (*) boolean))
 
 (procedure-data (procedure! procedure-data (procedure) *))
 (record->vector (procedure record->vector (*) vector))
@@ -1781,8 +1765,7 @@
 (char-set<= (procedure! char-set<= (#!rest (struct char-set)) boolean))
 (char-set= (procedure! char-set= (#!rest (struct char-set)) boolean))
 
-(char-set? (procedure char-set? (*) boolean))
-(#%predicate char-set? (struct char-set))
+(char-set? (procedure? (struct char-set) char-set? (*) boolean))
 
 (end-of-char-set? (procedure! end-of-char-set? (fixnum) boolean))
 (list->char-set (procedure! list->char-set (list #!optional (struct char-set)) (struct char-set)))
@@ -1801,8 +1784,8 @@
 (condition-variable-specific (procedure! condition-variable-specific ((struct condition-variable)) *))
 (condition-variable-specific-set! (procedure! condition-variable-specific-set! ((struct condition-variable) *) undefined))
 
-(condition-variable? (procedure! condition-variable? (*) boolean))
-(#%predicate condition-variable? (struct condition-variable))
+(condition-variable? (procedure? (struct condition-variable) condition-variable? (*) 
+				 boolean))
 
 (current-thread (procedure current-thread () (struct thread))) ;XXX
 
@@ -1826,8 +1809,7 @@
 (mutex-state (procedure! mutex-state ((struct mutex)) symbol))
 (mutex-unlock! (procedure! mutex-unlock! ((struct mutex) #!optional (struct condition-variable) *) undefined))
 
-(mutex? (procedure mutex? (*) boolean))
-(#%predicate mutex? (struct mutex))
+(mutex? (procedure? (struct mutex) mutex? (*) boolean))
 
 (raise (procedure raise (*) noreturn))
 (seconds->time (procedure! seconds->time (number) (struct time)))
@@ -1861,14 +1843,12 @@
 (thread-wait-for-i/o! (procedure! thread-wait-for-i/o! (fixnum #!optional symbol) undefined))
 (thread-yield! (procedure thread-yield! () undefined))
 
-(thread? (procedure thread? (*) boolean))
-(#%predicate thread? (struct thread))
+(thread? (procedure? (struct thread) thread? (*) boolean))
 
 (time->milliseconds deprecated)
 (time->seconds (procedure! time->seconds ((struct time)) number))
 
-(time? (procedure time? (*) boolean))
-(#%predicate time? (struct time))
+(time? (procedure? (struct time) time? (*) boolean))
 
 (uncaught-exception-reason (procedure! uncaught-exception-reason ((struct condition)) *))
 (uncaught-exception? (procedure uncaught-exception? (*) boolean))
@@ -1902,8 +1882,7 @@
 (f32vector-ref (procedure! f32vector-ref ((struct f32vector) fixnum) float))
 (f32vector-set! (procedure! f32vector-set! ((struct f32vector) fixnum number) undefined))
 
-(f32vector? (procedure f32vector? (*) boolean))
-(#%predicate f32vector? (struct f32vector))
+(f32vector? (procedure? (struct f32vector) f32vector? (*) boolean))
 
 (f64vector (procedure! f64vector (#!rest number) (struct f64vector)))
 (f64vector->blob (procedure! f64vector->blob ((struct f32vector)) blob))
@@ -1916,8 +1895,7 @@
 (f64vector-ref (procedure! f64vector-ref ((struct f64vector) fixnum) float))
 (f64vector-set! (procedure! f64vector-set! ((struct f64vector) fixnum number) undefined))
 
-(f64vector? (procedure f64vector? (*) boolean))
-(#%predicate f64vector? (struct f64vector))
+(f64vector? (procedure? (struct f64vector) f64vector? (*) boolean))
 
 (list->f32vector (procedure! list->f32vector (list) (struct f32vector)))
 (list->f64vector (procedure! list->f64vector (list) (struct f64vector)))
@@ -1949,8 +1927,7 @@
 (s16vector-ref (procedure! s16vector-ref ((struct s16vector) fixnum) fixnum))
 (s16vector-set! (procedure! s16vector-set! ((struct s16vector) fixnum fixnum) undefined))
 
-(s16vector? (procedure s16vector? (*) boolean))
-(#%predicate s16vector? (struct s16vector))
+(s16vector? (procedure? (struct s16vector) s16vector? (*) boolean))
 
 (s32vector (procedure! s32vector (#!rest number) (struct s32vector)))
 (s32vector->blob (procedure! s32vector->blob ((struct 32vector)) blob))
@@ -1963,8 +1940,7 @@
 (s32vector-ref (procedure! s32vector-ref ((struct s32vector) fixnum) number))
 (s32vector-set! (procedure! s32vector-set! ((struct s32vector) fixnum number) undefined))
 
-(s32vector? (procedure s32vector? (*) boolean))
-(#%predicate s32vector? (struct s32vector))
+(s32vector? (procedure? (struct s32vector) s32vector? (*) boolean))
 
 (s8vector (procedure! s8vector (#!rest fixnum) (struct s8vector)))
 (s8vector->blob (procedure! s8vector->blob ((struct s8vector)) blob))
@@ -1977,8 +1953,7 @@
 (s8vector-ref (procedure! s8vector-ref ((struct s8vector) fixnum) fixnum))
 (s8vector-set! (procedure! s8vector-set! ((struct s8vector) fixnum fixnum) undefined))
 
-(s8vector? (procedure s8vector? (*) boolean))
-(#%predicate s8vector? (struct s8vector))
+(s8vector? (procedure? (struct s8vector) s8vector? (*) boolean))
 
 (subf32vector (procedure! subf32vector ((struct f32vector) fixnum fixnum) (struct f32vector)))
 (subf64vector (procedure! subf64vector ((struct f64vector) fixnum fixnum) (struct f64vector)))
@@ -1999,8 +1974,7 @@
 (u16vector-ref (procedure! u16vector-ref ((struct u16vector) fixnum) fixnum))
 (u16vector-set! (procedure! u16vector-set! ((struct u16vector) fixnum fixnum) undefined))
 
-(u16vector? (procedure u16vector? (*) boolean))
-(#%predicate u16vector? (struct u16vector))
+(u16vector? (procedure? (struct u16vector) u16vector? (*) boolean))
 
 (u32vector (procedure! u32vector (#!rest number) (struct u32vector)))
 (u32vector->blob (procedure! u32vector->blob ((struct u32vector)) blob))
@@ -2013,8 +1987,7 @@
 (u32vector-ref (procedure! u32vector-ref ((struct u32vector) fixnum) number))
 (u32vector-set! (procedure! u32vector-set! ((struct u32vector) fixnum number) undefined))
 
-(u32vector? (procedure u32vector? (*) boolean))
-(#%predicate u32vector? (struct u32vector))
+(u32vector? (procedure? (struct u32vector) u32vector? (*) boolean))
 
 (u8vector (procedure! u8vector (#!rest fixnum) (struct u8vector)))
 (u8vector->blob (procedure! u8vector->blob ((struct u8vector)) blob))
@@ -2027,8 +2000,7 @@
 (u8vector-ref (procedure! u8vector-ref ((struct u8vector) fixnum) fixnum))
 (u8vector-set! (procedure! u8vector-set! ((struct u8vector) fixnum fixnum) undefined))
 
-(u8vector? (procedure u8vector? (*) boolean))
-(#%predicate u8vector? (struct u8vector))
+(u8vector? (procedure? (struct u8vector) u8vector? (*) boolean))
 
 (write-u8vector (procedure! write-u8vector ((struct u8vector) #!optional port fixnum fixnum) undefined))
 
@@ -2087,8 +2059,7 @@
 (hash-table-weak-values (procedure! hash-table-weak-values ((struct hash-table)) boolean)
 			(((struct hash-table)) (##sys#slot #(1) '8)))
 
-(hash-table? (procedure hash-table? (*) boolean))
-(#%predicate hash-table? (struct hash-table))
+(hash-table? (procedure? (struct hash-table) hash-table? (*) boolean))
 
 ;;XXX if we want to hardcode hash-default-bound here, we could rewrite the 1-arg case...
 ;     (applies to all hash-functions)
@@ -2120,8 +2091,7 @@
 
 (tcp-listener-port (procedure! tcp-listener-port ((struct tcp-listener)) fixnum))
 
-(tcp-listener? (procedure tcp-listener? (*) boolean))
-(#%predicate tcp-listener? (struct tcp-listener))
+(tcp-listener? (procedure? (struct tcp-listener) tcp-listener? (*) boolean))
 
 (tcp-port-numbers (procedure! tcp-port-numbers (port) fixnum fixnum))
 (tcp-read-timeout (procedure! tcp-read-timeout (#!optional number) number))
