@@ -38,7 +38,7 @@
     (macros "Macros and meta-syntax")
     (misc "Miscellaneous")
     (hell "Concurrency and parallelism")
-    (uncategorized "Uncategorized")
+    (uncategorized "Uncategorized or invalid category")
     (obsolete "Unsupported or redundant") ) )
 
 (define (d fstr . args)
@@ -145,30 +145,36 @@
         (p "Generated with Chicken " ,(chicken-version))))
 
 (define (emit-egg-information eggs)
-  (append-map
-   (match-lambda
-     ((cat catname)
-      (let ((eggs (append-map
-		   make-egg-entry
-		   (sort
-		    (filter (lambda (info) 
-			      (and (eq? cat (cadr (or (assq 'category (cdr info))
-						      '(#f uncategorized))))
-				   (not (assq 'hidden (cdr info)))))
-			    eggs) 
-		    (lambda (e1 e2)
-		      (string<? (symbol->string (car e1)) (symbol->string (car e2))))))))
-	(if (null? eggs)
-	    '()
-	    (begin
-	      (d "category: ~a" catname)
-	      `((a (@ (name ,cat)))
-                (h3 (a (@ (href "#category-list"))
-                       ,catname))
-		(table
-		 (tr (th "Name") (th "Description") (th "License") (th "Author") (th "Maintainer") (th "Version"))
-		 ,@eggs)))))))
-   +categories+))
+  (let ((catnames (map car +categories+)))
+    (append-map
+     (match-lambda
+      ((cat catname)
+       (let ((eggs (append-map
+                    make-egg-entry
+                    (sort
+                     (filter (lambda (info) 
+                               (let* ((egg-cat (assq 'category (cdr info)))
+                                      (catname (or (and egg-cat
+                                                        (memq (cadr egg-cat)
+							      catnames)
+							(cadr egg-cat))
+                                                   'uncategorized)))
+                                 (and (eq? cat catname)
+                                      (not (assq 'hidden (cdr info))))))
+                             eggs)
+                     (lambda (e1 e2)
+                       (string<? (symbol->string (car e1)) (symbol->string (car e2))))))))
+	 (if (null? eggs)
+	     '()
+	     (begin
+	       (d "category: ~a" catname)
+	       `((a (@ (name ,cat)))
+		 (h3 (a (@ (href "#category-list"))
+			,catname))
+		 (table
+		  (tr (th "Name") (th "Description") (th "License") (th "Author") (th "Maintainer") (th "Version"))
+		  ,@eggs)))))))
+     +categories+)))
 
 (define (make-egg-entry egg)
   (call/cc 
@@ -178,9 +184,10 @@
 	     (else def)))
      (define (check pred x p)
        (cond ((pred x) x)
-	     (else
-	      (warning "extension has .meta entry of incorrect type and will not be listed" (car egg) p x)
-	      (return '()))))
+             (else `(span (em (@ (class "meta-file-error"))
+                              "Invalid meta-file property '" ,p "'")
+                          " " (& "mdash")
+			  " please contact this egg's author!"))))
      (d "  ~a   ~a" (car egg) (prop 'version "HEAD" any?))
      `((tr (td (a (@ (href ,(sprintf "http://wiki.call-cc.org/eggref/~a/~a" *major-version* (car egg))))
 		  ,(symbol->string (car egg))))
@@ -191,7 +198,7 @@
 	   (td ,(prop 'version "" version?)))))))
 
 ;; Names are either raw HTML, or [[user name]] denoting a wiki link.
-(define (linkify-names str)
+(define (linkify-names sxml)
   ;; Call MATCHED on (sub)matches and DID-NOT-MATCH on non-matches in STR,
   ;; and collect into a list.
   (define (transform irx str matched did-not-match)
@@ -210,30 +217,31 @@
               (let ((m (irregex-search irx str i end)))
                 (if (not m)
                     (finish i acc)
-                    (let* ((end (irregex-match-end m 0))
+                    (let* ((end (irregex-match-end-index m 0))
                            (acc (kons i m acc)))
                       (lp end acc))))))))
-    (let ((irregex-match-start-index irregex-match-start)) ;; upcoming API change in irregex 0.7
-      (irregex-fold irx
-                    (lambda (i m s)
-                      (cons (matched (irregex-match-substring m 1))
-                            (cons (did-not-match
-                                   (substring str i (irregex-match-start-index m 0)))
-                                  s)))
-                    '()
-                    str
-                    (lambda (i s)
-                      (reverse (cons (did-not-match (substring str i))
-                                     s))))))
-  (transform
-   +link-regexp+
-   str
-   (lambda (name)  ;; wiki username
-     `(a (@ (href ,(string-append "http://wiki.call-cc.org/users/"
-                                  (string-substitute " " "-" name 'global))))
-         ,name))
-   (lambda (x)     ;; raw HTML chunk
-     `(literal ,x))))
+    (irregex-fold irx
+                  (lambda (i m s)
+                    (cons (matched (irregex-match-substring m 1))
+                          (cons (did-not-match
+                                 (substring str i (irregex-match-start-index m 0)))
+                                s)))
+                  '()
+                  str
+                  (lambda (i s)
+                    (reverse (cons (did-not-match (substring str i))
+                                   s)))))
+  (if (string? sxml)
+      (transform
+        +link-regexp+
+        sxml
+        (lambda (name)  ;; wiki username
+          `(a (@ (href ,(string-append "http://wiki.call-cc.org/users/"
+                                       (irregex-replace/all " " name "-"))))
+              ,name))
+        (lambda (x)     ;; raw HTML chunk
+         `(literal ,x)))
+      sxml))
 
 (define name?
   (disjoin string? symbol?))
