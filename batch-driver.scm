@@ -214,9 +214,14 @@
       (set! inline-locally #t))
     (when (or verbose do-scrutinize)
       (set! ##sys#notices-enabled #t))
+    (when (memq 'strict-types options)
+      (set! strict-variable-types #t)
+      (set! enable-specialization #t)
+      (set! do-scrutinize #t))
     (when (memq 'no-warnings options) 
       (dribble "Warnings are disabled")
-      (set! ##sys#warnings-enabled #f) )
+      (set! ##sys#warnings-enabled #f) 
+      (set! do-scrutinize #f))		; saves some processing time
     (when (memq 'optimize-leaf-routines options) (set! optimize-leaf-routines #t))
     (when (memq 'unsafe options) 
       (set! unsafe #t) )
@@ -262,10 +267,6 @@
       (parentheses-synonyms #f)
       (symbol-escape #f) )
     (set! verbose-mode verbose)
-    (set! strict-variable-types (memq 'strict-types options))
-    (when strict-variable-types
-      (set! enable-specialization #t)
-      (set! do-scrutinize #t))
     (set! ##sys#read-error-with-line-number #t)
     (set! ##sys#include-pathnames
       (append (map chop-separator (collect-options 'include-path))
