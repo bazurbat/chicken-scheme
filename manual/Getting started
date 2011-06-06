@@ -109,10 +109,8 @@ The generated C code is fully tail-recursive.
 
 Some of the features supported by CHICKEN:
 
-* SRFIs 0, 1, 2, 4, 6-19, 23, 25-31, 37-40, 42, 43, 45, 47, 55, 57,
-  60-63, 66, 69, 72, 78, 85, 95 and 98.
+* SRFIs 0, 1, 2, 4, 6, 8-18, 23, 26, 28, 30, 31, 39, 46, 55, 61, 62, 69, 85, 88 and 98.
 * Lightweight threads based on first-class continuations
-* Pattern matching with Andrew Wright's {{match}} package
 * Record structures
 * Extended comment- and string-literal syntaxes
 * Libraries for regular expressions, string handling
@@ -367,7 +365,7 @@ following little program:
      	      ; libraries included with CHICKEN.
 
 (define (process-line line re rplc) 
-  (string-substitute re rplc line 'all))
+  (irregex-replace/all re line rplc))
 
 (define (quickrep re rplc) 
   (let ((line (read-line)))
@@ -379,7 +377,7 @@ following little program:
 
 ;;; Does a lousy job of error checking!
 (define (main args)
-  (quickrep (regexp (car args)) (cadr args)))
+  (quickrep (irregex (car args)) (cadr args)))
 </enscript>
 
 
