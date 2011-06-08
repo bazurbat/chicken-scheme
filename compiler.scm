@@ -145,6 +145,7 @@
 ; (##core#let-compiler-syntax ((<symbol> <expr>) ...) <expr> ...)
 ; (##core#module <symbol> #t | (<name> | (<name> ...) ...) <body>)
 ; (##core#let-module-alias ((<alias> <name>) ...) <body>)
+; (##core#the <type> <exp>)
 ; (<exp> {<exp>})
 
 ; - Core language:
@@ -172,6 +173,7 @@
 ; [##core#return <exp>]
 ; [##core#direct_call {<safe-flag> <debug-info> <call-id> <words>} <exp-f> <exp>...]
 ; [##core#direct_lambda {<id> <mode> (<variable>... [. <variable>]) <size>} <exp>]
+; [##core#the {<type>} <exp>]
 
 ; - Closure converted/prepared language:
 ;
@@ -565,6 +567,11 @@
 			 (if unsafe
 			     ''#t
 			     (walk (cadr x) e se dest ldest h) ) )
+
+			((##core#the)
+			 `(##core#the
+			   ,(cadr x)
+			   ,(walk (caddr x) e se dest ldest h)))
 
 			((##core#immutable)
 			 (let ((c (cadadr x)))
@@ -1709,6 +1716,9 @@
 	 (walk-inline-call class params subs k) )
 	((##core#call) (walk-call (car subs) (cdr subs) params k))
 	((##core#callunit) (walk-call-unit (first params) k))
+	((##core#the)
+	 ;; remove "the" nodes, as they are not used after scrutiny
+	 (walk (car subs) k))
 	(else (bomb "bad node (cps)")) ) ) )
   
   (define (walk-call fn args params k)

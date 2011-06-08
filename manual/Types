@@ -58,6 +58,15 @@ currently not checked).  {{(declare (not escape IDENTIFIER))}}
 compiling the code in unsafe mode will not generate type-checks.
 
 
+===== the
+
+<syntax>(the TYPE EXPRESSION)</syntax>
+
+Equivalent to {{EXPRESSION}}, but declares that the result will be of the
+given type. Note that this form always declares the type of a single result,
+{{the}} can not be used to declare types for multiple result values.
+
+
 ==== Type syntax
 
 Types declared with the {{type}} declaration (see [[Declarations]])

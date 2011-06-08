@@ -504,6 +504,9 @@
 					 (list (walk body)) ) ) ) ) )
 	       ((lambda ##core#lambda) 
 		(make-node 'lambda (list (cadr x)) (list (walk (caddr x)))))
+	       ((##core#the)
+		;; first arg will be quoted
+		(make-node '##core#the (list (cadadr x)) (list (walk (caddr x)))))
 	       ((##core#primitive)
 		(let ([arg (cadr x)])
 		  (make-node
@@ -569,6 +572,8 @@
 		   '##core#lambda)
 	       (third params)
 	       (walk (car subs)) ) )
+	((##core#the)
+	 `(the ,(first params) ,(walk (first subs))))
 	((##core#call) 
 	 (map walk subs))
 	((##core#callunit) (cons* '##core#callunit (car params) (map walk subs)))
