@@ -95,3 +95,10 @@
 (define (foo9 x)
   (foo8 x)
   (+ x 1))				; foo8 enforces x
+
+;; trigger warnings for incompatible types in "the" forms
+(define (foo10 x)
+  (string-append (the pair (substring x 0 10))) ; 1
+  (the * (values 1 2))				; 1 + 2
+  (the * (values))				; 3
+  (the fixnum (* x y)))				; nothing

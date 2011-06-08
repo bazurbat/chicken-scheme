@@ -828,7 +828,7 @@
 			   (report
 			    loc
 			    (sprintf
-				"expression returns zero values but is declared to be of type `~a'"
+				"expression returns zero values but is declared to have a single result of type `~a'"
 			      t)))
 			  (else
 			   (when (> (length rt) 1)
@@ -843,7 +843,7 @@
 			      loc
 			      (sprintf
 				  "expression returns a result of type `~a', but is declared to return `~a', which is not a subtype"
-				t (first rt))))))
+				(first rt) t)))))
 		    (list t)))
 		 ((##core#switch ##core#cond)
 		  (bomb "unexpected node class" class))
