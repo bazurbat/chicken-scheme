@@ -821,30 +821,30 @@
 		       (cons fn (nth-value 0 (procedure-argument-types fn (sub1 len)))))
 		      r)))
 		 ((##core#the)
-		  (let* ((t (first params))
-			 (rt (walk (first subs) e loc dest tail flow ctags)))
-		    (cond ((eq? rt '*))
-			  ((null? rt)
-			   (report
-			    loc
-			    (sprintf
-				"expression returns zero values but is declared to have a single result of type `~a'"
-			      t)))
-			  (else
-			   (when (> (length rt) 1)
-			     (report
-			      loc
-			      (sprintf 
-				  "expression returns ~a values but is declared to have a single result"
-				(length rt)))
-			     (set! rt (list (first rt))))
-			   (unless (type<=? t (first rt))
+		  (let-values (((t _) (validate-type (first params) #f)))
+		    (let ((rt (walk (first subs) e loc dest tail flow ctags)))
+		      (cond ((eq? rt '*))
+			    ((null? rt)
 			     (report
 			      loc
 			      (sprintf
-				  "expression returns a result of type `~a', but is declared to return `~a', which is not a subtype"
-				(first rt) t)))))
-		    (list t)))
+				  "expression returns zero values but is declared to have a single result of type `~a'"
+				t)))
+			    (else
+			     (when (> (length rt) 1)
+			       (report
+				loc
+				(sprintf 
+				    "expression returns ~a values but is declared to have a single result"
+				  (length rt)))
+			       (set! rt (list (first rt))))
+			     (unless (type<=? t (first rt))
+			       (report
+				loc
+				(sprintf
+				    "expression returns a result of type `~a', but is declared to return `~a', which is not a subtype"
+				  (first rt) t)))))
+		      (list t))))
 		 ((##core#switch ##core#cond)
 		  (bomb "unexpected node class" class))
 		 (else
@@ -893,9 +893,11 @@
 			       (m2 0))
 		     (cond ((null? args1)
 			    (and (cond ((null? args2)
-					(or (and rtype2 (not rtype1))
-					    (and rtype1 rtype2
-						 (type<=? rtype1 rtype2))))
+					(if rtype1
+					    (if rtype2
+						(type<=? rtype1 rtype2)
+						#f)
+					    #t))
 				       ((eq? '#!optional (car args2))
 					(not rtype1))
 				       ((eq? '#!rest (car args2))
