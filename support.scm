@@ -1439,8 +1439,7 @@
 (define (load-identifier-database name)
   (and-let* ((rp (repository-path))
 	     (dbfile (file-exists? (make-pathname rp name))))
-    (when verbose-mode
-      (printf "loading identifier database ~a ...~%" dbfile))
+    (debugging 'p (sprintf "loading identifier database ~a ...~%" dbfile))
     (for-each
      (lambda (e)
        (let ((id (car e)))
@@ -1597,7 +1596,7 @@ Available debugging options:
      r          show invocation parameters
      s          show program-size information and other statistics
      a          show node-matching during simplification
-     p          show execution of compiler sub-passes
+     p          show execution of compiler passes
      m          show GC statistics during compilation
      n          print the line-number database 
      c          print every expression before macro-expansion

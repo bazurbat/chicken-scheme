@@ -103,10 +103,10 @@
     (define (cputime) (current-milliseconds))
 
     (define (dribble fstr . args)
-      (when verbose (printf "~?~%~!" fstr args)))
+      (debugging 'p (apply sprintf fstr args)))
 
     (define (print-header mode dbgmode)
-      (dribble "pass: ~a" mode)
+      (debugging 'p "pass" mode)
       (and (memq dbgmode debugging-chicken)
 	   (begin
 	     (printf "[~a]~%" mode)
@@ -212,7 +212,7 @@
     (when (memq 'inline-global options)
       (set! enable-inline-files #t)
       (set! inline-locally #t))
-    (when (or verbose do-scrutinize)
+    (when verbose
       (set! ##sys#notices-enabled #t))
     (when (memq 'no-warnings options) 
       (dribble "Warnings are disabled")

@@ -136,7 +136,7 @@
 		 (sprintf "use of deprecated library procedure `~a'" id) )
 		'(*))
 	       ((and (pair? a) (eq? (car a) 'deprecated))
-		(report 
+		(report
 		 loc
 		 (sprintf 
 		     "use of deprecated library procedure `~a' - consider using `~a' instead"
@@ -179,7 +179,7 @@
     (define (always-true t loc x)
       (let ((f (always-true1 t)))
 	(when f
-	  (report 
+	  (report-notice 
 	   loc
 	   (sprintf
 	       "expected value of type boolean in conditional but were given a value of\ntype `~a' which is always true:~%~%~a"
@@ -413,16 +413,21 @@
 	  (let ((n (length tv)))
 	    (cond ((= 1 n) (car tv))
 		  ((zero? n)
-		   (report 
+		   (report
 		    loc
 		    (sprintf "expected ~a a single result, but were given zero results" what))
 		   'undefined)
 		  (else
-		   (report 
+		   (report
 		    loc
 		    (sprintf "expected ~a a single result, but were given ~a result~a"
 		      what n (multiples n)))
 		   (first tv))))))
+
+    (define (report-notice loc desc #!optional (show complain))
+      (when show
+	(##sys#notice
+	 (conc (location-name loc) desc))))
 
     (define (report loc desc #!optional (show complain))
       (when show
@@ -520,7 +525,7 @@
 				   (variable-mark pn '##compiler#predicate)) =>
 				   (lambda (pt)
 				     (cond ((match-specialization (list pt) (cdr args) #t)
-					    (report
+					    (report-notice
 					     loc
 					     (sprintf 
 						 "~athe predicate is called with an argument of type `~a' and will always return true"
@@ -531,7 +536,7 @@
 					       `(let ((#:tmp #(1))) '#t))
 					      (set! op (list pn pt))))
 					   ((match-specialization (list `(not ,pt)) (cdr args) #t)
-					    (report
+					    (report-notice
 					     loc
 					     (sprintf 
 						 "~athe predicate is called with an argument of type `~a' and will always return false"
@@ -1013,8 +1018,7 @@
 
 (define (load-type-database name #!optional (path (repository-path)))
   (and-let* ((dbfile (file-exists? (make-pathname path name))))
-    (when verbose-mode
-      (printf "loading type database ~a ...~%" dbfile))
+    (debugging 'p (sprintf "loading type database ~a ...~%" dbfile))
     (for-each
      (lambda (e)
        (let* ((name (car e))
@@ -1040,7 +1044,7 @@
 		(warning "invalid type specification" name new))))
 	   (else))
 	 (when (and old (not (compatible-types? old new)))
-	   (##sys#notice
+	   (warning
 	    (sprintf
 		"type-definition `~a' for toplevel binding `~a' conflicts with previously loaded type `~a'"
 	      name new old)))
