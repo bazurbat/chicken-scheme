@@ -700,6 +700,10 @@
 				      escaping-procedures
 				      (not unsafe))
 			     (debugging 'x "checks argument-types" dest) ;XXX
+			     ;; [1] this is subtle: we don't want argtype-checks to be 
+			     ;; generated for toplevel defs other than user-declared ones. 
+			     ;; But since the ##compiler#declared-type mark is set AFTER 
+			     ;; the lambda has been walked (see below, [2]), nothing is added.
 			     (generate-type-checks! n dest vars inits))
 			   (list
 			    (append
@@ -750,6 +754,8 @@
 					  (get db var 'local-value))))
 			(when (eq? val (first subs))
 			  (debugging '|I| (sprintf "(: ~s ~s)" var rt))
+			  ;; [2] sets property, but lambda has already been walked,
+			  ;; so no type-checks are generated (see also [1], above)
 			  (mark-variable var '##compiler#declared-type)
 			  (mark-variable var '##compiler#type rt))))
 		    (when b
