@@ -1332,7 +1332,7 @@
 			(##core#undefined)
 			(##core#app 
 			 ##sys#error ',loc 
-			 ',(sprintf "expected argument `~a' to by of type `~s'"
+			 ',(sprintf "expected argument `~a' to be of type `~s'"
 			     v t)
 			 ,v))))
 		b))))))))
