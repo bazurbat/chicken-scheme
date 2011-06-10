@@ -696,8 +696,10 @@
 				      (not 
 				       (eq? 'no
 					    (variable-mark dest '##compiler#escape)))
+				      (variable-mark dest '##compiler#declared-type)
 				      escaping-procedures
 				      (not unsafe))
+			     (debugging 'x "checks argument-types" dest)
 			     (generate-type-checks! n dest vars inits))
 			   (list
 			    (append
