@@ -1173,7 +1173,7 @@
 	     (let* ((l1 (validate (car llist)))
 		    (l2 (validate-llist (cdr llist))))
 	       (and l1 l2 (cons l1 l2))))))
-    (define (validate t)
+    (define (validate t #!optional (rec #t))
       (cond ((memq t '(* string symbol char number boolean list pair
 			 procedure vector null eof undefined port blob
 			 pointer locative fixnum float pointer-vector
@@ -1209,7 +1209,7 @@
 							   rts))))))
 				  (and rt
 				       `(procedure 
-					 ,@(if name (list name) '())
+					 ,@(if (and name (not rec)) (list name) '())
 					 ,ts
 					 ,@rt)))))))))
 	    ((and (pair? (cdr t)) (memq '-> (cdr t))) =>
@@ -1217,18 +1217,19 @@
 	       (let ((cp (memq ': (cdr t))))
 		 (cond ((not cp) 
 			(validate
-			 `(procedure ,(upto t p) ,@(cdr p))))
+			 `(procedure ,(upto t p) ,@(cdr p))
+			 rec))
 		       ((and (= 5 (length t))
 			     (eq? p (cdr t))
 			     (eq? cp (cdddr t)))
-			(set! t (validate `(procedure (,(first t)) ,(third t))))
+			(set! t (validate `(procedure (,(first t)) ,(third t)) rec))
 			;; we do it this way to distinguish the "outermost" predicate
 			;; procedure type
 			(set! ptype (cons t (validate (cadr cp))))
 			t)
 		       (else #f)))))
 	    (else #f)))
-    (let ((type (validate type)))
+    (let ((type (validate type #f)))
       (values type (and ptype (eq? (car ptype) type) (cdr ptype))))))
 
 (define (initial-argument-types dest vars argc)
