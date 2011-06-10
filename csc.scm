@@ -302,8 +302,8 @@ Usage: #{csc} FILENAME | OPTION ...
   General options:
 
     -h  -help                      display this text and exit
-    -v                             show intermediate compilation stages
-    -vv  -verbose                  display information about translation
+    -v  -verbose                   show compiler notes and tool-invocations
+    -vv                            display information about translation
                                     progress
     -vvv                           display information about all compilation
                                     stages
@@ -608,14 +608,14 @@ EOF
 	       [(-libs)
 		(set! inquiry-only #t)
 		(set! show-libs #t) ]
-	       [(-v -verbose)
+	       ((-v -verbose)
 		(when (number? verbose)
 		  (set! compile-options (cons* "-v" "-Q" compile-options))
 		  (set! link-options (cons "-v" link-options)) )
-		(cond (verbose
-		       (t-options "-verbose") 
-		       (set! verbose 2)) 
-		      (else (set! verbose #t))) ]
+		(t-options "-verbose")
+		(if verbose
+		    (set! verbose 2)
+		    (set! verbose #t)) )
 	       [(-w -no-warnings)
 		(set! compile-options (cons "-w" compile-options))
 		(t-options "-no-warnings") ]
