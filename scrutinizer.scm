@@ -699,7 +699,7 @@
 				      (variable-mark dest '##compiler#declared-type)
 				      escaping-procedures
 				      (not unsafe))
-			     (debugging 'x "checks argument-types" dest)
+			     (debugging 'x "checks argument-types" dest) ;XXX
 			     (generate-type-checks! n dest vars inits))
 			   (list
 			    (append
@@ -863,13 +863,13 @@
 
     (let ((rn (walk (first (node-subexpressions node)) '() '() #f #f (list (tag)) #f)))
       (when (and (pair? specialization-statistics)
-		 (debugging 'x "specializations:"))
+		 (debugging 'x "specializations:")) ;XXX
 	(for-each 
 	 (lambda (ss)
 	   (printf "  ~a ~s~%" (cdr ss) (car ss)))
 	 specialization-statistics))
       (when (positive? safe-calls)
-	(debugging 'x "safe calls" safe-calls))
+	(debugging 'x "safe calls" safe-calls)) ;XXX
       rn)))
 
 (define (compatible-types? t1 t2)
