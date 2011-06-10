@@ -177,7 +177,7 @@ the source text should be read from standard input.
 
 ; -version : Prints the version and some copyright information and exit the compiler.
 
-; -verbose : Prints progress information to standard output during compilation.
+; -verbose : enables output of notes that are not necessarily warnings but might be of interest.
 
 The environment variable {{CHICKEN_OPTIONS}} can be set to a string
 with default command-line options for the compiler.

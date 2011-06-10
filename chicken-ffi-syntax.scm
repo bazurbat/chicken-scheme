@@ -112,27 +112,28 @@
     (##sys#check-syntax 'let-location form '(_ #((variable _ . #(_ 0 1)) 0) . _))
     (let* ((bindings (cadr form))
 	   (body (cddr form))
-	   [aliases (map (lambda (_) (r (gensym))) bindings)])
-      `(##core#let ,(append-map
-		(lambda (b a)
-		  (if (pair? (cddr b))
-		      (list (cons a (cddr b)))
-		      '() ) )
-		bindings aliases)
-	      ,(fold-right
-		(lambda (b a rest)
-		  (if (= 3 (length b))
-		      `(##core#let-location
-			,(car b)
-			,(cadr b)
-			,a
-			,rest)
-		      `(##core#let-location
-			,(car b)
-			,(cadr b)
-			,rest) ) )
-		`(##core#let () ,@body)
-		bindings aliases) ) ) ) ) )
+	   (aliases (map (lambda (_) (r (gensym))) bindings)))
+      `(##core#let
+	,(append-map
+	  (lambda (b a)
+	    (if (pair? (cddr b))
+		(list (cons a (cddr b)))
+		'() ) )
+	  bindings aliases)
+	,(fold-right
+	  (lambda (b a rest)
+	    (if (= 3 (length b))
+		`(##core#let-location
+		  ,(car b)
+		  ,(cadr b)
+		  ,a
+		  ,rest)
+		`(##core#let-location
+		  ,(car b)
+		  ,(cadr b)
+		  ,rest) ) )
+	  `(##core#let () ,@body)
+	  bindings aliases) ) ) ) ) )
 
 
 ;;; Embedding code directly:
@@ -166,10 +167,11 @@
 	 ,(cond ((string? code) code)
 		((symbol? code) (symbol->string code))
 		(else (syntax-error 'foreign-value "bad argument type - not a string or symbol" code))))
-	,tmp) ) ) ) )
+	,tmp ;XXX (##core#the ',(foreign-type->scrutiny-type (caddr form) 'result) ,tmp)
+	) ) ) ) )
 
 
-;;; Include/parse foreign code fragments
+;;; Include foreign code fragments
 
 (##sys#extend-macro-environment
  'foreign-declare
@@ -201,6 +203,7 @@
  '()
  (##sys#er-transformer
   (lambda (form r c)
+    ;;XXX check syntax and wrap in "##core#the"
     `(##core#foreign-primitive ,@(cdr form)))))
 
 (##sys#extend-macro-environment
@@ -208,6 +211,7 @@
  '()
  (##sys#er-transformer
   (lambda (form r c)
+    ;;XXX check syntax and wrap in "##core#the"
     `(##core#foreign-lambda ,@(cdr form)))))
 
 (##sys#extend-macro-environment
@@ -215,6 +219,7 @@
  '()
  (##sys#er-transformer
   (lambda (form r c)
+    ;;XXX check syntax and wrap in "##core#the"
     `(##core#foreign-lambda* ,@(cdr form)))))
 
 (##sys#extend-macro-environment
@@ -222,6 +227,7 @@
  '()
  (##sys#er-transformer
   (lambda (form r c)
+    ;;XXX check syntax and wrap in "##core#the"
     `(##core#foreign-safe-lambda ,@(cdr form)))))
 
 (##sys#extend-macro-environment
@@ -229,6 +235,7 @@
  '()
  (##sys#er-transformer
   (lambda (form r c)
+    ;;XXX check syntax and wrap in "##core#the"
     `(##core#foreign-safe-lambda* ,@(cdr form)))))
 
 (##sys#extend-macro-environment
@@ -245,7 +252,8 @@
 		(##compiler#foreign-type-declaration t ""))))
       `(##core#begin
 	(##core#define-foreign-variable ,tmp size_t ,(string-append "sizeof(" decl ")"))
-	,tmp) ) ) ) )
+	,tmp				;XXX (##core#the 'fixnum ,tmp)
+	)))))
 
 
 (##sys#macro-subset me0)))

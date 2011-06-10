@@ -148,6 +148,7 @@
  foreign-lambda-stubs
  foreign-result-conversion
  foreign-string-result-reserve
+ foreign-type->scrutiny-type
  foreign-type-check
  foreign-type-convert-argument
  foreign-type-convert-result

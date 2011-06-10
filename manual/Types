@@ -64,7 +64,9 @@ compiling the code in unsafe mode will not generate type-checks.
 
 Equivalent to {{EXPRESSION}}, but declares that the result will be of the
 given type. Note that this form always declares the type of a single result,
-{{the}} can not be used to declare types for multiple result values.
+{{the}} can not be used to declare types for multiple result values. {{TYPE}}
+should be a subtype of the type inferred for {{EXPRESSION}}, the compiler
+will issue a warning if this should not be the case.
 
 
 ==== Type syntax
