@@ -136,7 +136,7 @@
 		 (sprintf "use of deprecated library procedure `~a'" id) )
 		'(*))
 	       ((and (pair? a) (eq? (car a) 'deprecated))
-		(report 
+		(report
 		 loc
 		 (sprintf 
 		     "use of deprecated library procedure `~a' - consider using `~a' instead"
@@ -179,7 +179,7 @@
     (define (always-true t loc x)
       (let ((f (always-true1 t)))
 	(when f
-	  (report 
+	  (report-notice 
 	   loc
 	   (sprintf
 	       "expected value of type boolean in conditional but were given a value of\ntype `~a' which is always true:~%~%~a"
@@ -413,16 +413,21 @@
 	  (let ((n (length tv)))
 	    (cond ((= 1 n) (car tv))
 		  ((zero? n)
-		   (report 
+		   (report
 		    loc
 		    (sprintf "expected ~a a single result, but were given zero results" what))
 		   'undefined)
 		  (else
-		   (report 
+		   (report
 		    loc
 		    (sprintf "expected ~a a single result, but were given ~a result~a"
 		      what n (multiples n)))
 		   (first tv))))))
+
+    (define (report-notice loc desc #!optional (show complain))
+      (when show
+	(##sys#notice
+	 (conc (location-name loc) desc))))
 
     (define (report loc desc #!optional (show complain))
       (when show
@@ -520,7 +525,7 @@
 				   (variable-mark pn '##compiler#predicate)) =>
 				   (lambda (pt)
 				     (cond ((match-specialization (list pt) (cdr args) #t)
-					    (report
+					    (report-notice
 					     loc
 					     (sprintf 
 						 "~athe predicate is called with an argument of type `~a' and will always return true"
@@ -531,7 +536,7 @@
 					       `(let ((#:tmp #(1))) '#t))
 					      (set! op (list pn pt))))
 					   ((match-specialization (list `(not ,pt)) (cdr args) #t)
-					    (report
+					    (report-notice
 					     loc
 					     (sprintf 
 						 "~athe predicate is called with an argument of type `~a' and will always return false"
@@ -820,6 +825,31 @@
 		       subs
 		       (cons fn (nth-value 0 (procedure-argument-types fn (sub1 len)))))
 		      r)))
+		 ((##core#the)
+		  (let-values (((t _) (validate-type (first params) #f)))
+		    (let ((rt (walk (first subs) e loc dest tail flow ctags)))
+		      (cond ((eq? rt '*))
+			    ((null? rt)
+			     (report
+			      loc
+			      (sprintf
+				  "expression returns zero values but is declared to have a single result of type `~a'"
+				t)))
+			    (else
+			     (when (> (length rt) 1)
+			       (report
+				loc
+				(sprintf 
+				    "expression returns ~a values but is declared to have a single result"
+				  (length rt)))
+			       (set! rt (list (first rt))))
+			     (unless (type<=? t (first rt))
+			       (report
+				loc
+				(sprintf
+				    "expression returns a result of type `~a', but is declared to return `~a', which is not a subtype"
+				  (first rt) t)))))
+		      (list t))))
 		 ((##core#switch ##core#cond)
 		  (bomb "unexpected node class" class))
 		 (else
@@ -868,9 +898,11 @@
 			       (m2 0))
 		     (cond ((null? args1)
 			    (and (cond ((null? args2)
-					(or (and rtype2 (not rtype1))
-					    (and rtype1 rtype2
-						 (type<=? rtype1 rtype2))))
+					(if rtype1
+					    (if rtype2
+						(type<=? rtype1 rtype2)
+						#f)
+					    #t))
 				       ((eq? '#!optional (car args2))
 					(not rtype1))
 				       ((eq? '#!rest (car args2))
@@ -986,8 +1018,7 @@
 
 (define (load-type-database name #!optional (path (repository-path)))
   (and-let* ((dbfile (file-exists? (make-pathname path name))))
-    (when verbose-mode
-      (printf "loading type database ~a ...~%" dbfile))
+    (debugging 'p (sprintf "loading type database ~a ...~%" dbfile))
     (for-each
      (lambda (e)
        (let* ((name (car e))
@@ -1013,7 +1044,7 @@
 		(warning "invalid type specification" name new))))
 	   (else))
 	 (when (and old (not (compatible-types? old new)))
-	   (##sys#notice
+	   (warning
 	    (sprintf
 		"type-definition `~a' for toplevel binding `~a' conflicts with previously loaded type `~a'"
 	      name new old)))

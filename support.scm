@@ -504,6 +504,9 @@
 					 (list (walk body)) ) ) ) ) )
 	       ((lambda ##core#lambda) 
 		(make-node 'lambda (list (cadr x)) (list (walk (caddr x)))))
+	       ((##core#the)
+		;; first arg will be quoted
+		(make-node '##core#the (list (cadadr x)) (list (walk (caddr x)))))
 	       ((##core#primitive)
 		(let ([arg (cadr x)])
 		  (make-node
@@ -569,6 +572,8 @@
 		   '##core#lambda)
 	       (third params)
 	       (walk (car subs)) ) )
+	((##core#the)
+	 `(the ,(first params) ,(walk (first subs))))
 	((##core#call) 
 	 (map walk subs))
 	((##core#callunit) (cons* '##core#callunit (car params) (map walk subs)))
@@ -1434,8 +1439,7 @@
 (define (load-identifier-database name)
   (and-let* ((rp (repository-path))
 	     (dbfile (file-exists? (make-pathname rp name))))
-    (when verbose-mode
-      (printf "loading identifier database ~a ...~%" dbfile))
+    (debugging 'p (sprintf "loading identifier database ~a ...~%" dbfile))
     (for-each
      (lambda (e)
        (let ((id (car e)))
@@ -1592,7 +1596,7 @@ Available debugging options:
      r          show invocation parameters
      s          show program-size information and other statistics
      a          show node-matching during simplification
-     p          show execution of compiler sub-passes
+     p          show execution of compiler passes
      m          show GC statistics during compilation
      n          print the line-number database 
      c          print every expression before macro-expansion

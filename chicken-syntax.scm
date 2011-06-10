@@ -1186,6 +1186,16 @@
 	(begin-for-syntax ,registration))))))
 
 
+;;; inline type declaration
+
+(##sys#extend-macro-environment
+ 'the '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'the x '(_ _ _))
+    `(##core#the ',(##sys#strip-syntax (cadr x)) ,(caddr x)))))
+
+
 ;; capture current macro env
 
 (##sys#macro-subset me0 ##sys#default-macro-environment)))
