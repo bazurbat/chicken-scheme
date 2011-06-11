@@ -205,7 +205,6 @@
  membership-unfold-limit
  no-argc-checks
  no-bound-checks
- escaping-procedures
  no-global-procedure-checks
  enable-module-registration
  no-procedure-checks

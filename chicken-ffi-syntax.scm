@@ -166,9 +166,15 @@
 	 ,(caddr form)
 	 ,(cond ((string? code) code)
 		((symbol? code) (symbol->string code))
-		(else (syntax-error 'foreign-value "bad argument type - not a string or symbol" code))))
-	,tmp ;XXX (##core#the ',(foreign-type->scrutiny-type (caddr form) 'result) ,tmp)
-	) ) ) ) )
+		(else
+		 (syntax-error
+		  'foreign-value
+		  "bad argument type - not a string or symbol" 
+		  code))))
+	(##core#the ',(##compiler#foreign-type->scrutiny-type
+		       (##sys#strip-syntax (caddr form))
+		       'result) 
+		    ,tmp) ) ) ) ) )
 
 
 ;;; Include foreign code fragments
@@ -203,40 +209,67 @@
  '()
  (##sys#er-transformer
   (lambda (form r c)
-    ;;XXX check syntax and wrap in "##core#the"
-    `(##core#foreign-primitive ,@(cdr form)))))
+    (##sys#check-syntax 'foreign-primitive form '(_ _ . _))
+    (let* ((hasrtype (and (pair? (cddr form)) (not (string? (caddr form)))))
+	   (rtype (or (and hasrtype (##sys#strip-syntax (cadr form))) 'void))
+	   (args (##sys#strip-syntax (if hasrtype (caddr form) (cadr form))))
+	   (argtypes (map car args)))
+      `(##core#the '(procedure
+		     ,(map (cut ##compiler#foreign-type->scrutiny-type <> 'arg) argtypes)
+		     ,(##compiler#foreign-type->scrutiny-type rtype 'result))
+		   (##core#foreign-primitive ,@(cdr form)))))))
 
 (##sys#extend-macro-environment
  'foreign-lambda
  '()
  (##sys#er-transformer
   (lambda (form r c)
-    ;;XXX check syntax and wrap in "##core#the"
-    `(##core#foreign-lambda ,@(cdr form)))))
+    (##sys#check-syntax 'foreign-lambda form '(_ _ _ . _))
+    `(##core#the
+      '(procedure ,(map (cut ##compiler#foreign-type->scrutiny-type <> 'arg)
+			(##sys#strip-syntax (cdddr form)))
+		  ,(##compiler#foreign-type->scrutiny-type
+		    (##sys#strip-syntax (cadr form)) 'result))
+      (##core#foreign-lambda ,@(cdr form))))))
 
 (##sys#extend-macro-environment
  'foreign-lambda*
  '()
  (##sys#er-transformer
   (lambda (form r c)
-    ;;XXX check syntax and wrap in "##core#the"
-    `(##core#foreign-lambda* ,@(cdr form)))))
+    (##sys#check-syntax 'foreign-lambda* form '(_ _ _ _ . _))
+    `(##core#the
+      '(procedure ,(map (lambda (a) (##compiler#foreign-type->scrutiny-type (car a) 'arg))
+			(##sys#strip-syntax (caddr form)))
+		  ,(##compiler#foreign-type->scrutiny-type
+		    (##sys#strip-syntax (cadr form)) 'result))
+      (##core#foreign-lambda* ,@(cdr form))))))
 
 (##sys#extend-macro-environment
  'foreign-safe-lambda
  '()
  (##sys#er-transformer
   (lambda (form r c)
-    ;;XXX check syntax and wrap in "##core#the"
-    `(##core#foreign-safe-lambda ,@(cdr form)))))
+    (##sys#check-syntax 'foreign-safe-lambda form '(_ _ _ . _))
+    `(##core#the
+      '(procedure ,(map (cut ##compiler#foreign-type->scrutiny-type <> 'arg)
+			(##sys#strip-syntax (cdddr form)))
+		  ,(##compiler#foreign-type->scrutiny-type
+		    (##sys#strip-syntax (cadr form)) 'result))
+      (##core#foreign-safe-lambda ,@(cdr form))))))
 
 (##sys#extend-macro-environment
  'foreign-safe-lambda*
  '()
  (##sys#er-transformer
   (lambda (form r c)
-    ;;XXX check syntax and wrap in "##core#the"
-    `(##core#foreign-safe-lambda* ,@(cdr form)))))
+    (##sys#check-syntax 'foreign-safe-lambda* form '(_ _ _ _ . _))
+    `(##core#the
+      '(procedure ,(map (lambda (a) (##compiler#foreign-type->scrutiny-type (car a) 'arg))
+			(##sys#strip-syntax (caddr form)))
+		  ,(##compiler#foreign-type->scrutiny-type
+		    (##sys#strip-syntax (cadr form)) 'result))
+      (##core#foreign-safe-lambda* ,@(cdr form))))))
 
 (##sys#extend-macro-environment
  'foreign-type-size
@@ -252,8 +285,7 @@
 		(##compiler#foreign-type-declaration t ""))))
       `(##core#begin
 	(##core#define-foreign-variable ,tmp size_t ,(string-append "sizeof(" decl ")"))
-	,tmp				;XXX (##core#the 'fixnum ,tmp)
-	)))))
+	(##core#the 'fixnum ,tmp))))))
 
 
 (##sys#macro-subset me0)))

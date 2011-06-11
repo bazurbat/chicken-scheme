@@ -691,7 +691,8 @@
 					 (if rest (alist-cons rest 'list e2) e2)
 					 (add-loc dest loc)
 					 #f #t (list initial-tag) #f)))
-			   (when (and specialize
+			   ;; Disabled
+			   #;(when (and specialize
 				      dest
 				      (not 
 				       (eq? 'no
@@ -1241,7 +1242,9 @@
       (values type (and ptype (eq? (car ptype) type) (cdr ptype))))))
 
 (define (initial-argument-types dest vars argc)
-  (if (and dest (variable-mark dest '##compiler#declared-type))
+  (if (and dest 
+	   strict-variable-types
+	   (variable-mark dest '##compiler#declared-type))
       (let ((ptype (variable-mark dest '##compiler#type)))
 	(if (procedure-type? ptype)
 	    (nth-value 0 (procedure-argument-types ptype argc #t))
