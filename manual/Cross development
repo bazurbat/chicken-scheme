@@ -88,7 +88,7 @@ You should now have these files on {{~/target}}:
     |   `-- chicken.h
     |-- lib
     |   |-- chicken
-    |   |   `-- 5
+    |   |   `-- 6
     |   |       `-- types.db
     |   |-- libchicken.a
     |   `-- libchicken.so
@@ -151,12 +151,12 @@ In {{~/cross-chicken}}, you should find the following:
  |   `-- chicken.h
  |-- lib
  |   |-- chicken
- |   |   `-- 5
+ |   |   `-- 6
  |   |       :
  |   |
  |   |-- libchicken.a
- |   |-- libchicken.so -> libchicken.so.5
- |   `-- libchicken.so.5
+ |   |-- libchicken.so -> libchicken.so.6
+ |   `-- libchicken.so.6
  `-- share
      |-- chicken
      |   |-- doc
@@ -215,7 +215,7 @@ the import-library into the repository of the host compiler:
 
  # optionally, you can compile the import library:
  # ~/cross-chicken/arm-csc -O3 -d0 -s target-only-extension.import.scm
- cp target-only-extension.import.scm ~/cross-chicken/lib/chicken/5
+ cp target-only-extension.import.scm ~/cross-chicken/lib/chicken/6
 
 === Final notes
 
