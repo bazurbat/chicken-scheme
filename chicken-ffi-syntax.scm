@@ -171,9 +171,9 @@
 		  'foreign-value
 		  "bad argument type - not a string or symbol" 
 		  code))))
-	(##core#the ',(##compiler#foreign-type->scrutiny-type
-		       (##sys#strip-syntax (caddr form))
-		       'result) 
+	(##core#the ,(##compiler#foreign-type->scrutiny-type
+		      (##sys#strip-syntax (caddr form))
+		      'result) 
 		    ,tmp) ) ) ) ) )
 
 
@@ -214,9 +214,9 @@
 	   (rtype (or (and hasrtype (##sys#strip-syntax (cadr form))) 'void))
 	   (args (##sys#strip-syntax (if hasrtype (caddr form) (cadr form))))
 	   (argtypes (map car args)))
-      `(##core#the '(procedure
-		     ,(map (cut ##compiler#foreign-type->scrutiny-type <> 'arg) argtypes)
-		     ,(##compiler#foreign-type->scrutiny-type rtype 'result))
+      `(##core#the (procedure
+		    ,(map (cut ##compiler#foreign-type->scrutiny-type <> 'arg) argtypes)
+		    ,(##compiler#foreign-type->scrutiny-type rtype 'result))
 		   (##core#foreign-primitive ,@(cdr form)))))))
 
 (##sys#extend-macro-environment
@@ -226,10 +226,10 @@
   (lambda (form r c)
     (##sys#check-syntax 'foreign-lambda form '(_ _ _ . _))
     `(##core#the
-      '(procedure ,(map (cut ##compiler#foreign-type->scrutiny-type <> 'arg)
-			(##sys#strip-syntax (cdddr form)))
-		  ,(##compiler#foreign-type->scrutiny-type
-		    (##sys#strip-syntax (cadr form)) 'result))
+      (procedure ,(map (cut ##compiler#foreign-type->scrutiny-type <> 'arg)
+		       (##sys#strip-syntax (cdddr form)))
+		 ,(##compiler#foreign-type->scrutiny-type
+		   (##sys#strip-syntax (cadr form)) 'result))
       (##core#foreign-lambda ,@(cdr form))))))
 
 (##sys#extend-macro-environment
@@ -239,7 +239,7 @@
   (lambda (form r c)
     (##sys#check-syntax 'foreign-lambda* form '(_ _ _ _ . _))
     `(##core#the
-      '(procedure ,(map (lambda (a) (##compiler#foreign-type->scrutiny-type (car a) 'arg))
+      (procedure ,(map (lambda (a) (##compiler#foreign-type->scrutiny-type (car a) 'arg))
 			(##sys#strip-syntax (caddr form)))
 		  ,(##compiler#foreign-type->scrutiny-type
 		    (##sys#strip-syntax (cadr form)) 'result))
@@ -252,7 +252,7 @@
   (lambda (form r c)
     (##sys#check-syntax 'foreign-safe-lambda form '(_ _ _ . _))
     `(##core#the
-      '(procedure ,(map (cut ##compiler#foreign-type->scrutiny-type <> 'arg)
+      (procedure ,(map (cut ##compiler#foreign-type->scrutiny-type <> 'arg)
 			(##sys#strip-syntax (cdddr form)))
 		  ,(##compiler#foreign-type->scrutiny-type
 		    (##sys#strip-syntax (cadr form)) 'result))
@@ -265,7 +265,7 @@
   (lambda (form r c)
     (##sys#check-syntax 'foreign-safe-lambda* form '(_ _ _ _ . _))
     `(##core#the
-      '(procedure ,(map (lambda (a) (##compiler#foreign-type->scrutiny-type (car a) 'arg))
+      (procedure ,(map (lambda (a) (##compiler#foreign-type->scrutiny-type (car a) 'arg))
 			(##sys#strip-syntax (caddr form)))
 		  ,(##compiler#foreign-type->scrutiny-type
 		    (##sys#strip-syntax (cadr form)) 'result))
@@ -285,7 +285,7 @@
 		(##compiler#foreign-type-declaration t ""))))
       `(##core#begin
 	(##core#define-foreign-variable ,tmp size_t ,(string-append "sizeof(" decl ")"))
-	(##core#the 'fixnum ,tmp))))))
+	(##core#the fixnum ,tmp))))))
 
 
 (##sys#macro-subset me0)))

@@ -505,8 +505,7 @@
 	       ((lambda ##core#lambda) 
 		(make-node 'lambda (list (cadr x)) (list (walk (caddr x)))))
 	       ((##core#the)
-		;; first arg will be quoted
-		(make-node '##core#the (list (cadadr x)) (list (walk (caddr x)))))
+		(make-node '##core#the (list (cadr x)) (list (walk (caddr x)))))
 	       ((##core#primitive)
 		(let ([arg (cadr x)])
 		  (make-node

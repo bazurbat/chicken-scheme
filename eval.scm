@@ -749,7 +749,7 @@
 			  (compile-call (cdr x) e tf cntr se) ]
 
 			 ((##core#the)
-			  (compile (caddr x) e tf cntr se))
+			  (compile (caddr x) e h tf cntr se))
 
 			 (else
 			  (fluid-let ((##sys#syntax-context (cons head ##sys#syntax-context)))
