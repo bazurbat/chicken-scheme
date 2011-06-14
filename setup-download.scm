@@ -285,7 +285,7 @@
   (define (match-chunked-transfer-encoding ln)
     (irregex-match "[Tt]ransfer-[Ee]ncoding:\\s*chunked.*" ln) )
 
-  (define (http-fetch host port locn dest proxy-host proxy-port proxy-user-pass)
+  (define (http-connect host port locn proxy-host proxy-port proxy-user-pass)
     (d "connecting to host ~s, port ~a ~a...~%" host port
        (if proxy-host
 	   (sprintf "(via ~a:~a) " proxy-host proxy-port)
@@ -325,29 +325,48 @@
 	  (let ([data (read-chunks in)])
 	    (close-input-port in)
 	    (set! in (open-input-string data))) ) )
-      (d "reading files ...~%")
-      (let get-files ([files '()])
-        (let ([name (read in)])
-	  (cond [(and (pair? name) (eq? 'error (car name)))
-		 (throw-server-error (cadr name) (cddr name))]
-		[(or (eof-object? name) (not name))
-		 (close-input-port in)
-		 (close-output-port out)
-		 (reverse files) ]
-		[(not (string? name))
-		 (error "invalid file name - possibly corrupt transmission" name) ]
-		[(string-suffix? "/" name)
-		 (read in)		; skip size
-		 (d "  ~a~%" name)
-		 (create-directory (make-pathname dest name))
-		 (get-files files) ]
-		[else
-		 (d "  ~a~%" name)
-		 (let* ([size (read in)]
-			[_ (read-line in)]
-			[data (read-string size in)] )
-		   (with-output-to-file (make-pathname dest name) (cut display data) ) )
-		 (get-files (cons name files)) ] ) ) ) ) )
+      (values in out)))
+
+  (define (http-retrieve-files in out dest)
+    (d "reading files ...~%")
+    (let get-files ([files '()])
+      (let ([name (read in)])
+	(cond [(and (pair? name) (eq? 'error (car name)))
+	       (throw-server-error (cadr name) (cddr name))]
+	      [(or (eof-object? name) (not name))
+	       (close-input-port in)
+	       (close-output-port out)
+	       (reverse files) ]
+	      [(not (string? name))
+	       (error "invalid file name - possibly corrupt transmission" name) ]
+	      [(string-suffix? "/" name)
+	       (read in)		; skip size
+	       (d "  ~a~%" name)
+	       (create-directory (make-pathname dest name))
+	       (get-files files) ]
+	      [else
+	       (d "  ~a~%" name)
+	       (let* ([size (read in)]
+		      [_ (read-line in)]
+		      [data (read-string size in)] )
+		 (with-output-to-file (make-pathname dest name) (cut display data) ) )
+	       (get-files (cons name files)) ] ) ) ) )
+
+  (define (http-fetch host port locn dest proxy-host proxy-port proxy-user-pass)
+    (let-values (((in out)
+		  (http-connect host port locn proxy-host proxy-port proxy-user-pass)))
+      (http-retrieve-files in out dest)))
+
+  (define (list-eggs/http location proxy-host proxy-port proxy-user-pass)
+    (let-values ([(host port locn) (deconstruct-url location)])
+      (let-values (((in out) 
+		    (http-connect 
+		     host port
+		     (string-append locn "?list=1")
+		     proxy-host proxy-port proxy-user-pass)))
+	(display (read-all in))
+	(close-input-port in)
+	(close-output-port out))))
 
   (define (throw-server-error msg args)
     (abort
@@ -392,13 +411,16 @@
 	(else
 	 (error "cannot retrieve extension unsupported transport" transport) ) ) ) )
 
-  (define (list-extensions transport location #!key quiet username password)
+  (define (list-extensions transport location #!key quiet username password
+			   proxy-host proxy-port proxy-user-pass)
     (fluid-let ((*quiet* quiet))
       (case transport
 	((local)
 	 (list-eggs/local location) )
 	((svn)
 	 (list-eggs/svn location username password) )
+	((http)
+	 (list-eggs/http location proxy-host proxy-port proxy-user-pass))
 	(else
 	 (error "cannot list extensions - unsupported transport" transport) ) ) ) )
 
