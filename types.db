@@ -988,7 +988,7 @@
 (read-buffered (procedure! read-buffered (#!optional port) string))
 (read-byte (procedure! read-byte (#!optional port) fixnum))
 (read-file (procedure! read-file (#!optional (or port string) (procedure (port) *) fixnum) list))
-(read-line (procedure! read-line (#!optional port fixnum) *))
+(read-line (procedure! read-line (#!optional port (or boolean fixnum)) *))
 (read-lines (procedure! read-lines (#!optional (or port string) fixnum) list))
 (read-string (procedure! read-string (#!optional * port) string))
 (read-string! (procedure! read-string! (fixnum string #!optional port fixnum) fixnum))
@@ -1117,7 +1117,7 @@
 (address->pointer (procedure! address->pointer (fixnum) pointer)
 		  ((fixnum) (##sys#address->pointer #(1))))
 
-(align-to-word (procedure align-to-word (*) *))
+(align-to-word (procedure align-to-word ((or number pointer locative procedure port)) (or pointer number)))
 (allocate (procedure! allocate (fixnum) (or boolean pointer)))
 (block-ref (procedure! block-ref (* fixnum) *))
 (block-set! (procedure! block-set! (* fixnum *) *))
@@ -1156,20 +1156,22 @@
 (object-become! (procedure object-become! (list) *))
 (object-copy (procedure object-copy (*) *))
 (object-evict (procedure! object-evict (* #!optional (procedure (fixnum) pointer)) *))
-(object-evict-to-location (procedure! object-evict-to-location (* pointer #!optional fixnum) * pointer))
+(object-evict-to-location (procedure! object-evict-to-location (* (or pointer locative procedure port) #!optional fixnum) * pointer))
 (object-evicted? (procedure object-evicted? (*) boolean))
 (object-release (procedure! object-release (* #!optional (procedure (pointer) *)) *))
 (object-size (procedure object-size (*) fixnum))
 (object-unevict (procedure object-unevict (* #!optional *) *))
-(pointer+ (procedure! pointer+ (pointer fixnum) pointer))
+(pointer+ (procedure! pointer+ ((or pointer procedure port locative) fixnum) pointer))
 
-(pointer->address (procedure! pointer->address (pointer) number)
+(pointer->address (procedure! pointer->address ((or pointer procedure port locative)) number)
 		  ((pointer) (##sys#pointer->address #(1))))
 
 (pointer->object (procedure! pointer->object (pointer) *)
 		 ((pointer) (##core#inline "C_pointer_to_object" #(1))))
 
-(pointer-like? (procedure pointer-like? (*) boolean))
+(pointer-like? (procedure pointer-like? (*) boolean)
+	       (((or pointer locative procedure port)) (let ((#:tmp #(1))) '#t)))
+
 (pointer-f32-ref (procedure! pointer-f32-ref (pointer) number))
 (pointer-f32-set! (procedure! pointer-f32-set! (pointer number) undefined))
 (pointer-f64-ref (procedure! pointer-f64-ref (pointer) number))
@@ -1191,7 +1193,10 @@
 (pointer-s32-set! (procedure! pointer-s32-set! (pointer number) undefined))
 (pointer-s8-ref (procedure! pointer-s8-ref (pointer) fixnum))
 (pointer-s8-set! (procedure! pointer-s8-set! (pointer fixnum) undefined))
-(pointer-tag (procedure! pointer-tag (pointer) *))
+
+(pointer-tag (procedure! pointer-tag ((or pointer locative procedure port)) (or boolean number))
+	     (((or locative procedure port)) (let ((#:tmp #(1))) '#f)))
+
 (pointer-u16-ref (procedure! pointer-u16-ref (pointer) fixnum))
 (pointer-u16-set! (procedure! pointer-u16-set! (pointer fixnum) undefined))
 (pointer-u32-ref (procedure! pointer-u32-ref (pointer) number))
@@ -1199,7 +1204,8 @@
 (pointer-u8-ref (procedure! pointer-u8-ref (pointer) fixnum))
 (pointer-u8-set! (procedure! pointer-u8-set! (pointer fixnum) undefined))
 
-(pointer=? (procedure! pointer=? (pointer pointer) boolean)
+(pointer=? (procedure! pointer=? ((or pointer locative procedure port)
+				  (or pointer procedure locative port)) boolean)
 	   ((pointer pointer) (##core#inline "C_pointer_eqp" #(1) #(2))))
 
 (pointer? (procedure? pointer pointer? (*) boolean))
@@ -1461,7 +1467,7 @@
 (time->string (procedure! time->string (vector #!optional string) string))
 (unmap-file-from-memory (procedure! unmap-file-from-memory ((struct mmap) #!optional fixnum) undefined))
 (unsetenv (procedure! unsetenv (string) undefined))
-(user-information (procedure! user-information (fixnum #!optional *) *))
+(user-information (procedure! user-information ((or string fixnum) #!optional *) *))
 (utc-time->seconds (procedure! utc-time->seconds (vector) number))
 (with-input-from-pipe (procedure! with-input-from-pipe (string (procedure () . *) #!optional symbol) . *))
 (with-output-to-pipe (procedure! with-output-to-pipe (string (procedure () . *) #!optional symbol) . *))
