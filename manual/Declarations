@@ -78,14 +78,6 @@ Declares that the toplevel procedures listed check the type of their arguments
 invocation will indicate the the arguments are of the types declared.
 
 
-=== escape
-
- [declaration specifier] ([not] escape [IDENTIFIER ...])
-
-Declares the toplevel procedures of this compilation unit do not escape, i.e. are not
-returned or passed to code outside of the current compilation unit.
-
-
 === export
 
  [declaration specifier] (export IDENTIFIER ...)

@@ -1193,7 +1193,14 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax 'the x '(_ _ _))
-    `(##core#the ',(##sys#strip-syntax (cadr x)) ,(caddr x)))))
+    `(##core#the ,(##sys#strip-syntax (cadr x)) ,(caddr x)))))
+
+(##sys#extend-macro-environment
+ 'assume '()
+ (##sys#er-transformer
+  (syntax-rules ()
+    ((_ ((var type) ...) body ...)
+     (let ((var (##core#the type var)) ...) body ...)))))
 
 
 ;; capture current macro env

@@ -505,8 +505,7 @@
 	       ((lambda ##core#lambda) 
 		(make-node 'lambda (list (cadr x)) (list (walk (caddr x)))))
 	       ((##core#the)
-		;; first arg will be quoted
-		(make-node '##core#the (list (cadadr x)) (list (walk (caddr x)))))
+		(make-node '##core#the (list (cadr x)) (list (walk (caddr x)))))
 	       ((##core#primitive)
 		(let ([arg (cadr x)])
 		  (make-node
@@ -1163,6 +1162,69 @@
 	   body)])))
 
 
+;;; Translate foreign-type into scrutinizer type:
+
+(define (foreign-type->scrutiny-type t mode) ; MODE = 'arg | 'result
+  (let ((ft (final-foreign-type t)))
+    (case ft
+      ((char unsigned-char) 'char)
+      ((int unsigned-int short unsigned-short byte unsigned-byte int32 unsigned-int32)
+       'fixnum)
+      ((float double)
+       (case mode
+	 ((arg) 'number)
+	 (else 'float)))
+      ((scheme-pointer nonnull-scheme-pointer) '*)
+      ((blob) 
+       (case mode
+	 ((arg) '(or boolean blob))
+	 (else 'blob)))
+      ((nonnull-blob) 'blob)
+      ((pointer-vector) 
+       (case mode
+	 ((arg) '(or boolean pointer-vector))
+	 (else 'pointer-vector)))
+      ((nonnull-pointer-vector) 'pointer-vector)
+      ((u8vector u16vector s8vector s16vector u32vector s32vector f32vector f64vector)
+       (case mode
+	 ((arg) `(or boolean (struct ,ft)))
+	 (else `(struct ,ft))))
+      ((nonnull-u8vector) '(struct u8vector))
+      ((nonnull-s8vector) '(struct s8vector))
+      ((nonnull-u16vector) '(struct u16vector))
+      ((nonnull-s16vector) '(struct s16vector))
+      ((nonnull-u32vector) '(struct u32vector))
+      ((nonnull-s32vector) '(struct s32vector))
+      ((nonnull-f32vector) '(struct f32vector))
+      ((nonnull-f64vector) '(struct f64vector))
+      ((integer long size_t integer32 unsigned-integer32 integer64 unsigned-integer64
+		unsigned-long) 
+       'number)
+      ((c-pointer c-string-list c-string-list*)
+       (case mode
+	 ((arg) '(or boolean pointer))
+	 (else 'pointer)))
+      ((nonnull-c-pointer) 'pointer)
+      ((c-string c-string* unsigned-c-string unsigned-c-string*)
+       (case mode
+	 ((arg) '(or boolean string))
+	 (else 'string)))
+      ((nonnull-c-string nonnull-c-string* nonnull-unsigned-c-string*) 'string)
+      ((symbol) 'symbol)
+      (else
+       (cond ((pair? t)
+	      (case (car t)
+		((ref pointer function c-pointer)
+		 (case mode
+		   ((arg) '(or boolean pointer))
+		   (else 'pointer)))
+		((const) (foreign-type->scrutiny-type (cadr t) mode))
+		((enum) 'number)
+		((nonnull-pointer nonnull-c-pointer) 'pointer)
+		(else '*)))
+	     (else '*))))))
+
+
 ;;; Scan expression-node for variable usage:
 
 (define (scan-used-variables node vars)
@@ -1596,7 +1658,7 @@ Available debugging options:
      r          show invocation parameters
      s          show program-size information and other statistics
      a          show node-matching during simplification
-     p          show execution of compiler passes
+     p          display information about what the compiler is currently doing
      m          show GC statistics during compilation
      n          print the line-number database 
      c          print every expression before macro-expansion

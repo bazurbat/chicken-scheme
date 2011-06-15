@@ -691,13 +691,20 @@
 					 (if rest (alist-cons rest 'list e2) e2)
 					 (add-loc dest loc)
 					 #f #t (list initial-tag) #f)))
-			   (when (and specialize
+			   ;; Disabled
+			   #;(when (and specialize
 				      dest
 				      (not 
 				       (eq? 'no
 					    (variable-mark dest '##compiler#escape)))
+				      (variable-mark dest '##compiler#declared-type)
 				      escaping-procedures
 				      (not unsafe))
+			     (debugging 'x "checks argument-types" dest) ;XXX
+			     ;; [1] this is subtle: we don't want argtype-checks to be 
+			     ;; generated for toplevel defs other than user-declared ones. 
+			     ;; But since the ##compiler#declared-type mark is set AFTER 
+			     ;; the lambda has been walked (see below, [2]), nothing is added.
 			     (generate-type-checks! n dest vars inits))
 			   (list
 			    (append
@@ -748,6 +755,8 @@
 					  (get db var 'local-value))))
 			(when (eq? val (first subs))
 			  (debugging '|I| (sprintf "(: ~s ~s)" var rt))
+			  ;; [2] sets property, but lambda has already been walked,
+			  ;; so no type-checks are generated (see also [1], above)
 			  (mark-variable var '##compiler#declared-type)
 			  (mark-variable var '##compiler#type rt))))
 		    (when b
@@ -861,13 +870,13 @@
 
     (let ((rn (walk (first (node-subexpressions node)) '() '() #f #f (list (tag)) #f)))
       (when (and (pair? specialization-statistics)
-		 (debugging 'x "specializations:"))
+		 (debugging 'x "specializations:")) ;XXX
 	(for-each 
 	 (lambda (ss)
 	   (printf "  ~a ~s~%" (cdr ss) (car ss)))
 	 specialization-statistics))
       (when (positive? safe-calls)
-	(debugging 'x "safe calls" safe-calls))
+	(debugging 'x "safe calls" safe-calls)) ;XXX
       rn)))
 
 (define (compatible-types? t1 t2)
@@ -1173,7 +1182,7 @@
 	     (let* ((l1 (validate (car llist)))
 		    (l2 (validate-llist (cdr llist))))
 	       (and l1 l2 (cons l1 l2))))))
-    (define (validate t)
+    (define (validate t #!optional (rec #t))
       (cond ((memq t '(* string symbol char number boolean list pair
 			 procedure vector null eof undefined port blob
 			 pointer locative fixnum float pointer-vector
@@ -1209,7 +1218,7 @@
 							   rts))))))
 				  (and rt
 				       `(procedure 
-					 ,@(if name (list name) '())
+					 ,@(if (and name (not rec)) (list name) '())
 					 ,ts
 					 ,@rt)))))))))
 	    ((and (pair? (cdr t)) (memq '-> (cdr t))) =>
@@ -1217,22 +1226,25 @@
 	       (let ((cp (memq ': (cdr t))))
 		 (cond ((not cp) 
 			(validate
-			 `(procedure ,(upto t p) ,@(cdr p))))
+			 `(procedure ,(upto t p) ,@(cdr p))
+			 rec))
 		       ((and (= 5 (length t))
 			     (eq? p (cdr t))
 			     (eq? cp (cdddr t)))
-			(set! t (validate `(procedure (,(first t)) ,(third t))))
+			(set! t (validate `(procedure (,(first t)) ,(third t)) rec))
 			;; we do it this way to distinguish the "outermost" predicate
 			;; procedure type
 			(set! ptype (cons t (validate (cadr cp))))
 			t)
 		       (else #f)))))
 	    (else #f)))
-    (let ((type (validate type)))
+    (let ((type (validate type #f)))
       (values type (and ptype (eq? (car ptype) type) (cdr ptype))))))
 
 (define (initial-argument-types dest vars argc)
-  (if (and dest (variable-mark dest '##compiler#declared-type))
+  (if (and dest 
+	   strict-variable-types
+	   (variable-mark dest '##compiler#declared-type))
       (let ((ptype (variable-mark dest '##compiler#type)))
 	(if (procedure-type? ptype)
 	    (nth-value 0 (procedure-argument-types ptype argc #t))
@@ -1332,7 +1344,7 @@
 			(##core#undefined)
 			(##core#app 
 			 ##sys#error ',loc 
-			 ',(sprintf "expected argument `~a' to by of type `~s'"
+			 ',(sprintf "expected argument `~a' to be of type `~s'"
 			     v t)
 			 ,v))))
 		b))))))))
