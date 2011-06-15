@@ -67,7 +67,7 @@ will issue a warning if this should not be the case.
 
 <syntax>(assume ((VARIABLE TYPE) ...) BODY ...)</syntax>
 
-Declares that during execution of {{BODY ..}}, the variables will
+Declares that at the start of execution of {{BODY ..}}, the variables will
 be of the given types. This is equivalent to
 
 <enscript hightlight=scheme>
