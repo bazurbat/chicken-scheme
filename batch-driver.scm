@@ -191,7 +191,8 @@
 	       (not a-only))
       (set! all-import-libraries #t))
     (set! enable-module-registration (not (memq 'no-module-registration options)))
-    (when (memq 'scrutinize options)
+    (when (or enable-specialization
+	      (memq 'scrutinize options))
       (set! do-scrutinize #t))
     (when (memq 't debugging-chicken) (##sys#start-timer))
     (when (memq 'b debugging-chicken) (set! time-breakdown #t))
