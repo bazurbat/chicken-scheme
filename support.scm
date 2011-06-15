@@ -1167,6 +1167,7 @@
 (define (foreign-type->scrutiny-type t mode) ; MODE = 'arg | 'result
   (let ((ft (final-foreign-type t)))
     (case ft
+      ((void) 'undefined)
       ((char unsigned-char) 'char)
       ((int unsigned-int short unsigned-short byte unsigned-byte int32 unsigned-int32)
        'fixnum)
