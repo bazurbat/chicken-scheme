@@ -178,7 +178,7 @@
     (cond ((assoc name *aliases*) => 
 	   (lambda (a)
 	     (let ((new (cdr a)))
-	       (print "resolving alias `" name "' to: " new)
+	       ;(print "resolving alias `" name "' to: " new)
 	       (resolve-location new))))
 	  (else name)))
 
@@ -301,22 +301,30 @@
       [e ()
        (abort e) ] ) )
 
-  (define (try-default-sources name version)
+  (define (with-default-sources proc)
     (let trying-sources ([defs (known-default-sources)])
       (if (null? defs)
-          (values #f "")
+          (proc #f #f)
           (let* ([def (car defs)]
                  [locn (resolve-location
 			(cadr (or (assq 'location def)
 				  (error "missing location entry" def))))]
                  [trans (cadr (or (assq 'transport def)
                                   (error "missing transport entry" def)))])
-            (let-values ([(dir ver) (try-extension name version trans locn)])
-              (if dir
-                  (values dir ver)
-                  (begin
+	    (proc trans locn
+		  (lambda ()
                     (invalidate-default-source! def)
-                    (trying-sources (cdr defs)) ) ) ) ) ) ) )
+                    (trying-sources (cdr defs)) ) ) ) ) ) )
+
+  (define (try-default-sources name version)
+    (with-default-sources
+     (lambda (trans locn next)
+       (if (not trans)
+	   (values #f "")
+	   (let-values (((dir ver) (try-extension name version trans locn)))
+	     (if dir
+		 (values dir ver)
+		 (next)))))))
 
   (define (make-replace-extension-question e+d+v upgrade)
     (string-concatenate
@@ -661,6 +669,20 @@
       (glob (make-pathname (repo-path) "*" "setup-info")))
      equal?))
 
+  (define (list-available-extensions trans locn)
+    (with-default-sources
+     (lambda (trans locn next)
+       (if trans
+	   (list-extensions
+	    trans locn
+	    quiet: #t
+	    username: *username*
+	    password: *password*
+	    proxy-host: *proxy-host*
+	    proxy-port: *proxy-port*
+	    proxy-user-pass: *proxy-user-pass*)
+	   (next)))))
+
   (define (command fstr . args)
     (let ((cmd (apply sprintf fstr args)))
       (print "  " cmd)
@@ -682,6 +704,7 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
   -r   -retrieve                only retrieve egg into current directory, don't install
   -n   -no-install              do not install, just build (implies `-keep')
   -p   -prefix PREFIX           change installation prefix to PREFIX
+       -list                    list extensions available over selected transport and location
        -host                    when cross-compiling, compile extension only for host
        -target                  when cross-compiling, compile extension only for target
        -test                    run included test-cases, if available
@@ -724,6 +747,7 @@ EOF
   (define (main args)
     (let ((update #f)
 	  (scan #f)
+	  (listeggs #f)
           (rx (irregex "([^:]+):(.+)")))
       (setup-proxy (get-environment-variable "http_proxy"))
       (let loop ((args args) (eggs '()))
@@ -736,28 +760,29 @@ EOF
                      (else
 		      (let ((defaults (load-defaults)))
 			(when (null? eggs)
-			  (if *reinstall*
-			      (let ((egginfos (installed-extensions)))
-				(if (or *force*
-					(yes-or-no? 
-					 (sprintf
-					     "About to re-install all ~a currently installed extensions - do you want to proceed?"
-					   (length egginfos))
-					 abort: #f))
-				    (set! eggs (map info->egg egginfos))
-				    (exit 1)))))
-			(when (null? eggs)
-			  (let ((setups (glob "*.setup")))
-			    (cond ((pair? setups)
-				   (set! *eggs+dirs+vers*
-				     (append
-				      (map
-				       (lambda (s) (cons (pathname-file s) (list "." "")))
-				       setups)
-				      *eggs+dirs+vers*)))
-				  (else
-				   (print "no setup-scripts to process")
-				   (exit 1))) ) )
+			  (cond (*reinstall*
+				 (let ((egginfos (installed-extensions)))
+				   (if (or *force*
+					   (yes-or-no? 
+					    (sprintf
+						"About to re-install all ~a currently installed extensions - do you want to proceed?"
+					      (length egginfos))
+					    abort: #f))
+				       (set! eggs (map info->egg egginfos))
+				       (exit 1))))
+				((not listeggs)
+				 (let ((setups (glob "*.setup")))
+				   (cond ((pair? setups)
+					  (set! *eggs+dirs+vers*
+					    (append
+					     (map
+					      (lambda (s) 
+						(cons (pathname-file s) (list "." "")))
+					      setups)
+					     *eggs+dirs+vers*)))
+					 (else
+					  (print "no setup-scripts to process")
+					  (exit 1))) ) )))
 			(unless defaults
 			  (unless *default-transport*
 			    (error
@@ -765,7 +790,10 @@ EOF
 			  (unless *default-location*
 			    (error
 			     "no default location defined - please use `-location' option")))
-			(install (apply-mappings (reverse eggs)))))))
+			(if listeggs
+			    (list-available-extensions
+			     *default-transport* *default-location*)
+			    (install (apply-mappings (reverse eggs))))))))
               (else
                (let ((arg (car args)))
                  (cond ((or (string=? arg "-help")
@@ -870,6 +898,9 @@ EOF
 			(loop (cdr args) eggs))
 		       ((string=? "-keep-going" arg)
 			(set! *keep-going* #t)
+			(loop (cdr args) eggs))
+		       ((string=? "-list" arg)
+			(set! listeggs #t)
 			(loop (cdr args) eggs))
 		       ((string=? "-csi" arg)
 			(unless (pair? (cdr args)) (usage 1))

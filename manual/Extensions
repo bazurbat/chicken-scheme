@@ -562,6 +562,7 @@ Available options:
 ; {{-k   -keep}} : keep temporary files
 ; {{-l   -location LOCATION}} : install from given location instead of default
 ; {{-t   -transport TRANSPORT}} : use given transport instead of default
+; {{-list}} : list extensions available
 ; {{-proxy HOST[:PORT]}} : connect via HTTP proxy
 ; {{-s   -sudo}} : use {{sudo(1)}} for installing or removing files
 ; {{-r   -retrieve}} : only retrieve egg into current directory, don't install

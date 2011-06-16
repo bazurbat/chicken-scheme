@@ -1211,4 +1211,4 @@
 ;; register features
 
 (eval-when (compile load eval)
-  (register-feature! 'srfi-8 'srfi-16 'srfi-26 'srfi-31 'srfi-15 'srfi-11) )
+  (register-feature! 'srfi-8 'srfi-11 'srfi-15 'srfi-16 'srfi-26 'srfi-31) )

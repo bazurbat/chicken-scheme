@@ -1999,8 +1999,8 @@ EOF
 (define process)
 (define process*)
 
-(let ([%process
-        (lambda (loc err? cmd args env)
+(let ((%process
+        (lambda (loc err? cmd args env k)
           (let ([chkstrlst
                  (lambda (lst)
                    (##sys#check-list lst loc)
@@ -2012,16 +2012,19 @@ EOF
                   (set! args (##sys#shell-command-arguments cmd))
                   (set! cmd (##sys#shell-command)) ) )
             (when env (chkstrlst env))
-            (receive [in out pid err] (##sys#process loc cmd args env #t #t err?)
-              (if err?
-                  (values in out pid err)
-                  (values in out pid) ) ) ) )] )
+            (##sys#call-with-values 
+	     (lambda () (##sys#process loc cmd args env #t #t err?))
+	     k)))))
   (set! process
     (lambda (cmd #!optional args env)
-      (%process 'process #f cmd args env) ))
+      (%process 
+       'process #f cmd args env
+       (lambda (i o p e) (values i o p)))))
   (set! process*
     (lambda (cmd #!optional args env)
-      (%process 'process* #t cmd args env) )) )
+      (%process
+       'process* #t cmd args env
+       values))))
 
 
 ;;; chroot:
