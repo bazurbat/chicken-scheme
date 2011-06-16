@@ -472,7 +472,9 @@
     (define (call-result node args e loc params)
       (define (pname)
 	(sprintf "~ain procedure call to `~s', " 
-	  (if (and (pair? params) (pair? (cdr params)))
+	  (if (and (pair? params)
+		   (pair? (cdr params))
+		   (pair? (cadr params))) ; sourceinfo has line-number information?
 	      (let ((n (source-info->line (cadr params))))
 		(if n
 		    (sprintf "~a: " n)
@@ -1254,7 +1256,7 @@
 
 ;;; generate type-checks for formal variables
 
-(define (generate-type-checks! node loc vars inits)
+#;(define (generate-type-checks! node loc vars inits)
   ;; assumes type is validated
   (define (test t v)
     (case t
