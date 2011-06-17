@@ -855,7 +855,7 @@
 				  (length rt)))
 			       (set! rt (list (first rt))))
 			     (unless (type<=? t (first rt))
-			       (report
+			       (report-notice
 				loc
 				(sprintf
 				    "expression returns a result of type `~a', but is declared to return `~a', which is not a subtype"
