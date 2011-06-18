@@ -1150,8 +1150,17 @@
 (mutate-procedure (procedure! mutate-procedure (procedure procedure) procedure))
 (null-pointer deprecated)
 (null-pointer? deprecated)
-(number-of-bytes (procedure number-of-bytes (*) fixnum))
-(number-of-slots (procedure number-of-slots (*) fixnum)) ;XXX
+
+(number-of-bytes (procedure number-of-bytes (*) fixnum)
+		 (((or blob string)) (##sys#size #(1)))
+		 (((or port procedure symbol pair vector locative float pointer-vector))
+		  ;; would be applicable to all structure types, but we can't specify
+		  ;; "(struct *)" (yet)
+		  (##core#inline "C_w2b" (##sys#size #(1)))))
+
+(number-of-slots (procedure number-of-slots (*) fixnum)
+		 (((or vector symbol pair)) (##sys#size #(1))))
+
 (object->pointer (procedure object->pointer (*) *))
 (object-become! (procedure object-become! (list) *))
 (object-copy (procedure object-copy (*) *))
