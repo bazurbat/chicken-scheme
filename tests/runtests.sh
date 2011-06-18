@@ -130,7 +130,7 @@ echo "======================================== syntax tests (compiled) ..."
 $compile syntax-tests.scm
 ./a.out
 
-echo "======================================== syntax tests (2, compiled) ..."
+echo "======================================== syntax tests (v2, compiled) ..."
 $compile syntax-tests-2.scm
 ./a.out
 
@@ -232,9 +232,6 @@ $compile_s ec.import.scm -o ec.import.so
 $interpret -bnq ec.so ec-tests.scm
 # $compile ec-tests.scm
 # ./a.out        # takes ages to compile
-
-echo "======================================== arithmetic tests ..."
-$interpret -D check -s arithmetic-test.scm
 
 echo "======================================== hash-table tests ..."
 $interpret -s hash-table-tests.scm

@@ -231,32 +231,6 @@
       (define (decorate p ll h cntr)
 	(##sys#eval-decorator p ll h cntr) )
 
-      (define (eval/meta form)
-	(let ((oldcm (##sys#current-module))
-	      (oldme (##sys#macro-environment))
-	      (mme (##sys#meta-macro-environment)))
-	  (dynamic-wind
-	      (lambda () 
-		(##sys#current-module #f)
-		(##sys#macro-environment mme))
-	      (lambda ()
-		((##sys#compile-to-closure
-		  form
-		  '() 
-		  (##sys#current-meta-environment))
-		 '() ) )
-	      (lambda ()
-		(##sys#current-module oldcm)
-		(##sys#meta-macro-environment (##sys#macro-environment))
-		(##sys#macro-environment oldme)))))
-
-      (define (eval/elab form)
-	((##sys#compile-to-closure
-	  form
-	  '() 
-	  (##sys#current-environment))
-	 '() ) )
-
       (define (compile x e h tf cntr se)
 	(cond ((keyword? x) (lambda v x))
 	      ((symbol? x)
@@ -326,7 +300,7 @@
 		 (d `(EVAL/EXPANDED: ,x2))
 		 (if (not (eq? x2 x))
 		     (compile x2 e h tf cntr se)
-		     (let ((head (rename (##sys#slot x 0) se))) 
+		     (let ((head (rename (##sys#slot x 0) se)))
 		       ;; here we did't resolve ##core#primitive, but that is done in compile-call (via 
 		       ;; a normal walking of the operator)
 		       (case head
@@ -580,7 +554,7 @@
 					      (car b)
 					      se
 					      (##sys#er-transformer
-					       (eval/meta (cadr b)))))
+					       (##sys#eval/meta (cadr b)))))
 					   (cadr x) ) 
 				      se) ) )
 			    (compile
@@ -593,7 +567,7 @@
 					     (car b)
 					     #f
 					     (##sys#er-transformer
-					      (eval/meta (cadr b)))))
+					      (##sys#eval/meta (cadr b)))))
 					  (cadr x) ) )
 				 (se2 (append ms se)) )
 			    (for-each 
@@ -614,7 +588,7 @@
 			    (##sys#extend-macro-environment
 			     name
 			     (##sys#current-environment)
-			     (##sys#er-transformer (eval/meta body)))
+			     (##sys#er-transformer (##sys#eval/meta body)))
 			    (compile '(##core#undefined) e #f tf cntr se) ) )
 
 			 ((##core#define-compiler-syntax)
@@ -693,8 +667,7 @@
 			  (compile `(,(rename 'lambda se) ,@(cdr x)) e #f tf cntr se) ]
 
 			 [(##core#require-for-syntax)
-			  (let ([ids (map (lambda (x)
-					    (eval/meta x))
+			  (let ([ids (map (lambda (x) (##sys#eval/meta x))
 					  (cdr x))])
 			    (apply ##sys#require ids)
 			    (let ([rs (##sys#lookup-runtime-requirements ids)])
@@ -718,7 +691,7 @@
 			     e #f tf cntr se) ) ]
 
 			 [(##core#elaborationtimeonly ##core#elaborationtimetoo) ; <- Note this!
-			  (eval/meta (cadr x))
+			  (##sys#eval/meta (cadr x))
 			  (compile '(##core#undefined) e #f tf cntr se) ]
 
 			 [(##core#compiletimetoo)
@@ -814,6 +787,30 @@
 		      (apply (##core#app fn v) (##sys#map (lambda (a) (##core#app a v)) as))) ) ] ) ) )
 
       (compile exp env #f (fx> (##sys#eval-debug-level) 0) cntr se) ) ) )
+
+
+;;; evaluate in the macro-expansion/compile-time environment
+(define (##sys#eval/meta form)
+  (let ((oldcm (##sys#current-module))
+	(oldme (##sys#macro-environment))
+	(mme (##sys#meta-macro-environment))
+	(aee ##sys#active-eval-environment))
+    (dynamic-wind
+	(lambda () 
+	  (##sys#current-module #f)
+	  (##sys#macro-environment mme)
+	  (set! ##sys#active-eval-environment ##sys#current-meta-environment))
+	(lambda ()
+	  ((##sys#compile-to-closure
+	    form
+	    '() 
+	    (##sys#current-meta-environment))
+	   '() ) )
+	(lambda ()
+	  (set! ##sys#active-eval-environment aee)
+	  (##sys#current-module oldcm)
+	  (##sys#meta-macro-environment (##sys#macro-environment))
+	  (##sys#macro-environment oldme)))))
 
 (define ##sys#eval-handler 
   (make-parameter

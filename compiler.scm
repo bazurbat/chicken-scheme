@@ -471,25 +471,6 @@
 	    ((not (memq x e)) (##sys#alias-global-hook x #f h)) ; only if global
 	    (else x))))
   
-  (define (eval/meta form)
-    (let ((oldcm (##sys#current-module))
-	  (oldme (##sys#macro-environment))
-	  (mme (##sys#meta-macro-environment)))
-      (dynamic-wind
-	  (lambda () 
-	    (##sys#current-module #f)
-	    (##sys#macro-environment mme))
-	  (lambda ()
-	    ((##sys#compile-to-closure
-	      form
-	      '() 
-	      (##sys#current-meta-environment))
-	     '() ) )
-	  (lambda ()
-	    (##sys#current-module oldcm)
-	    (##sys#meta-macro-environment (##sys#macro-environment))
-	    (##sys#macro-environment oldme)))))
-
   (define (emit-import-lib name il)
     (let* ((fname (if all-import-libraries
 		      (string-append (symbol->string name) ".import.scm")
@@ -686,7 +667,7 @@
 					     (car b)
 					     se
 					     (##sys#er-transformer
-					      (eval/meta (cadr b)))))
+					      (##sys#eval/meta (cadr b)))))
 					  (cadr x) )
 				     se) ) )
 			   (walk
@@ -700,7 +681,7 @@
 					   (car b)
 					   #f
 					   (##sys#er-transformer
-					    (eval/meta (cadr b)))))
+					    (##sys#eval/meta (cadr b)))))
 					(cadr x) ) )
 			       (se2 (append ms se)) )
 			  (for-each 
@@ -727,7 +708,7 @@
 			  (##sys#extend-macro-environment
 			   name
 			   (##sys#current-environment)
-			   (##sys#er-transformer (eval/meta body)))
+			   (##sys#er-transformer (##sys#eval/meta body)))
 			  (walk
 			   (if ##sys#enable-runtime-macros
 			       `(##sys#extend-macro-environment
@@ -750,7 +731,7 @@
 			   name '##compiler#compiler-syntax
 			   (and body
 				(##sys#cons
-				 (##sys#er-transformer (eval/meta body))
+				 (##sys#er-transformer (##sys#eval/meta body))
 				 (##sys#current-environment))))
 			  (walk 
 			   (if ##sys#enable-runtime-macros
@@ -772,7 +753,8 @@
 				       (list 
 					name 
 					(and (pair? (cdr b))
-					     (cons (##sys#er-transformer (eval/meta (cadr b))) se))
+					     (cons (##sys#er-transformer
+						    (##sys#eval/meta (cadr b))) se))
 					(##sys#get name '##compiler#compiler-syntax) ) ) )
 				   (cadr x))))
 			  (dynamic-wind
@@ -979,11 +961,11 @@
 
 			((##core#compiletimetoo ##core#elaborationtimetoo)
 			 (let ((exp (cadr x)))
-			   (eval/meta exp)
+			   (##sys#eval/meta exp)
 			   (walk exp e se dest #f h) ) )
 
 			((##core#compiletimeonly ##core#elaborationtimeonly)
-			 (eval/meta (cadr x))
+			 (##sys#eval/meta (cadr x))
 			 '(##core#undefined) )
 
 			((##core#begin ##core#toplevel-begin) 
