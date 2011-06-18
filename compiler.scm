@@ -598,11 +598,8 @@
 			    (let loop ([ids (##sys#strip-syntax (cadr x))])
 			      (if (null? ids)
 				  '(##core#undefined)
-				  (let ((id (##sys#resolve-module-name (car ids) #f)))
-				    (let-values ([(exp f)
-						  (##sys#do-the-right-thing
-						   (##sys#resolve-module-name id #f)
-						   #t imp?)])
+				  (let ((id (car ids)))
+				    (let-values (((exp f) (##sys#do-the-right-thing id #t imp?)))
 				      (unless (or f 
 						  (and (symbol? id)
 						       (or (feature? id)
