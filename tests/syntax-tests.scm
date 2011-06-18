@@ -929,3 +929,9 @@
   `(print ,(+ (cadr x) 1)))
 
 (foo 3)
+
+
+;; #578: "use" with import-specifier has no effect for internal modules on csi's top-level
+
+(use (prefix srfi-1 list-))
+take
