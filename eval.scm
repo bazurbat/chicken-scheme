@@ -698,9 +698,8 @@
 			     (let loop ([ids (##sys#strip-syntax (cadr x))])
 			       (if (null? ids)
 				   '(##core#undefined)
-				   (let-values ([(exp _) 
-						 (##sys#do-the-right-thing
-						  (car ids) #f imp?)])
+				   (let-values (((exp _) 
+						 (##sys#do-the-right-thing (car ids) #f imp?)))
 				     `(##core#begin ,exp ,(loop (cdr ids))) ) ) )
 			     e #f tf cntr se) ) ]
 
@@ -1243,7 +1242,7 @@
 		 (if comp?
 		     `(##core#declare (uses ,id))
 		     `(##sys#load-library ',id #f) )
-		 impid #t)
+		 impid #f)
 		#t) )
 	      ((memq id ##sys#explicit-library-modules)
 	       (let* ((info (##sys#extension-information id 'require-extension))
