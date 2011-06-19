@@ -31,7 +31,7 @@
   (hide ready-queue-head ready-queue-tail ##sys#timeout-list
 	##sys#update-thread-state-buffer ##sys#restore-thread-state-buffer
 	remove-from-ready-queue ##sys#unblock-threads-for-i/o ##sys#force-primordial
-	fdset-input-set fdset-output-set fdset-clear
+	fdset-input-set fdset-output-set fdset-error-set fdset-clear
 	fdset-select-timeout fdset-set fdset-test
 	create-fdset stderr
 	##sys#clear-i/o-state-for-thread! ##sys#abandon-mutexes) 
@@ -367,7 +367,8 @@ EOF
 (define fdset-clear
   (foreign-lambda* void ()
     "FD_ZERO(&C_fdset_input);"
-    "FD_ZERO(&C_fdset_output);") )
+    "FD_ZERO(&C_fdset_output);"
+    "FD_ZERO(&C_fdset_error);") )
 
 (define fdset-input-set
   (foreign-lambda* void ([int fd])
@@ -377,8 +378,13 @@ EOF
   (foreign-lambda* void ([int fd])
     "FD_SET(fd, &C_fdset_output);" ) )
 
+(define fdset-error-set
+  (foreign-lambda* void ([int fd])
+    "FD_SET(fd, &C_fdset_error);" ) )
+
 (define (fdset-set fd i/o)
   (dbg "setting fdset for " fd " to " i/o)
+  (fdset-error-set fd)
   (case i/o
     ((#t #:input) (fdset-input-set fd))
     ((#f #:output) (fdset-output-set fd))
