@@ -1307,14 +1307,16 @@
 	 (form (cons op (map (lambda (arg) `(quote ,arg)) args))))
     (handle-exceptions ex 
 	(begin
-	  (debugging 'o "folding constant expression failed" form)
-	  (k #f form #f))
+	  (k #f form #f (get-condition-property ex 'exn 'message)))
       ;; op must have toplevel binding, result must be single-valued
       (let ((proc (##sys#slot op 0)))
 	(if (procedure? proc)
-	    (let ((result (apply proc args)))
-	      (debugging 'o "folded constant expression" form)
-	      (k #t form result))
+	    (let ((results (receive (apply proc args))))
+	      (cond ((= 1 (length results))
+		     (debugging 'o "folded constant expression" form)
+		     (k #t form (car results) #f))
+		    (else 
+		     (bomb "attempt to constant-fold call to procedure that has multiple results" form))))
 	    (bomb "attempt to constant-fold call to non-procedure" form))))))
 
 
