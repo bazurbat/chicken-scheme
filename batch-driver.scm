@@ -362,7 +362,7 @@
 	       '() ) ) )
 	(dribble "generating ~aprofiled code" (if acc "accumulative " "")) ))
 
-    ;;*** hardcoded "modules.db" is bad (also used in chicken-install.scm)
+    ;;XXX hardcoded "modules.db" is bad (also used in chicken-install.scm)
     (load-identifier-database "modules.db")
 
     (cond ((memq 'version options)
@@ -525,7 +525,7 @@
 			(load-inline-file ilf) )
 		      ifs)))
 		 (when do-scrutinize
-		   ;;*** hardcoded database file name
+		   ;;XXX hardcoded database file name
 		   (unless (memq 'ignore-repository options)
 		     (load-type-database "types.db"))
 		   (for-each (cut load-type-database <> #f) (collect-options 'types))

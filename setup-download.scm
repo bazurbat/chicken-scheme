@@ -302,7 +302,7 @@
 	(let* ([h1 (read-line in)]
 	       [response-match (match-http-response h1)])
 	  (d "~a~%" h1)
-	  ;;*** handle redirects here
+	  ;;XXX handle redirects here
 	  (if (response-match-code? response-match 407)
 	      (let-values (((inpx outpx) (tcp-connect proxy-host proxy-port)))
 		(set! in inpx) (set! out outpx)

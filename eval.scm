@@ -584,7 +584,7 @@
 				 (name (rename var se)))
 			    (##sys#register-syntax-export 
 			     name (##sys#current-module)
-			     body)	;*** not really necessary, it only shouldn't be #f
+			     body)	; not really necessary, it only shouldn't be #f
 			    (##sys#extend-macro-environment
 			     name
 			     (##sys#current-environment)

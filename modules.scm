@@ -532,7 +532,7 @@
 	(%prefix (r 'prefix))
 	(%srfi (r 'srfi)))
     (define (resolve sym)
-      (or (lookup sym '()) sym))	;*** empty se?
+      (or (lookup sym '()) sym))	;XXX really empty se?
     (define (tostr x)
       (cond ((string? x) x)
 	    ((keyword? x) (##sys#string-append (##sys#symbol->string x) ":")) ; hack
@@ -722,7 +722,7 @@
 	 (lambda (a)
 	   (let ((sym2 (cdr a)))
 	     (dm "(ALIAS) in current environment " sym " -> " sym2)
-	     (if (pair? sym2)		; macro (*** can this be?)
+	     (if (pair? sym2)		; macro (XXX can this be?)
 		 (mrename sym)
 		 (or (getp sym2 '##core#primitive) sym2)))))
 	(else (mrename sym))))

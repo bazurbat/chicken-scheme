@@ -714,7 +714,7 @@
 			       `(##sys#extend-macro-environment
 				 ',var
 				 (##sys#current-environment)
-				 (##sys#er-transformer ,body)) ;*** possibly wrong se?
+				 (##sys#er-transformer ,body)) ;XXX possibly wrong se?
 			       '(##core#undefined) )
 			   e se dest ldest h)) )
 
@@ -2646,14 +2646,14 @@
 	    ((##core#inline "C_lambdainfop" x)
 	     (let ((i (length lambda-info-literals)))
 	       (set! lambda-info-literals 
-		 (append lambda-info-literals (list x))) ;*** see below
+		 (append lambda-info-literals (list x))) ;XXX see below
 	       (vector i) ) )
             [(posq x literals) => identity]
 	    [else (new-literal x)] ) )
 
     (define (new-literal x)
       (let ([i (length literals)])
-	(set! literals (append literals (list x))) ;*** could (should) be optimized
+	(set! literals (append literals (list x))) ;XXX could (should) be optimized
 	i) )
 
     (define (blockvar-literal var)

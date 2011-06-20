@@ -1322,7 +1322,7 @@
       ((unsigned-short) "C_fix(0xffff&(C_word)")
       ((byte) "C_fix((char)")
       ((unsigned-byte) "C_fix(0xff&(C_word)")
-      ((float double) (sprintf "C_flonum(&~a," dest))	;*** suboptimal for int64
+      ((float double) (sprintf "C_flonum(&~a," dest))	;XXX suboptimal for int64
       ((number) (sprintf "C_number(&~a," dest))
       ((nonnull-c-string c-string nonnull-c-pointer c-string* nonnull-c-string* 
 			 unsigned-c-string unsigned-c-string* nonnull-unsigned-c-string
