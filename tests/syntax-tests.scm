@@ -914,3 +914,24 @@
   (set-cdr! a a)
   `(1 ,@a))
 
+
+;; ##sys#alias-global-hook, when invoked via eval/meta, did resolve identifiers
+;; used during evaluation of an expander body in the wrong environment and mapped
+;; an identifier to something imported for the runtime environment
+
+(module foonumbers (+)
+  (import (except scheme +) chicken)
+  (define (+ . _) (error "failed.")))
+
+(import foonumbers)
+
+(define-syntax (foo x r c)
+  `(print ,(+ (cadr x) 1)))
+
+(foo 3)
+
+
+;; #578: "use" with import-specifier has no effect for internal modules on csi's top-level
+
+(use (prefix srfi-1 list-))
+take

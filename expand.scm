@@ -61,6 +61,7 @@
 
 (define ##sys#current-environment (make-parameter '()))
 (define ##sys#current-meta-environment (make-parameter '()))
+(define ##sys#active-eval-environment ##sys#current-environment)
 
 (define (lookup id se)
   (cond ((##core#inline "C_u_i_assq" id se) => cdr)

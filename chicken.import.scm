@@ -232,4 +232,4 @@
    ir-macro-transformer
    dynamic-load-libraries
    with-exception-handler)
- ##sys#chicken-macro-environment)       ;*** incorrect - won't work in compiled executable that does expansion
+ ##sys#chicken-macro-environment)       ;XXX incorrect - won't work in compiled executable that does expansion

@@ -647,7 +647,7 @@
 (rewrite 'char>=? 2 2 "C_i_char_greater_or_equal_p" #t)
 (rewrite 'char<=? 2 2 "C_i_char_less_or_equal_p" #t)
 (rewrite '##sys#slot 2 2 "C_slot" #t)		; consider as safe, the primitive is unsafe anyway.
-(rewrite '##sys#block-ref 2 2 "C_i_block_ref" #t) ;*** must be safe for pattern matcher (anymore?)
+(rewrite '##sys#block-ref 2 2 "C_i_block_ref" #t) ;XXX must be safe for pattern matcher (anymore?)
 (rewrite '##sys#size 2 1 "C_block_size" #t)
 (rewrite 'fxnot 2 1 "C_fixnum_not" #t)
 (rewrite 'fx* 2 2 "C_fixnum_times" #t)

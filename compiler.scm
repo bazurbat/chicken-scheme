@@ -475,25 +475,6 @@
 	    ((not (memq x e)) (##sys#alias-global-hook x #f h)) ; only if global
 	    (else x))))
   
-  (define (eval/meta form)
-    (let ((oldcm (##sys#current-module))
-	  (oldme (##sys#macro-environment))
-	  (mme (##sys#meta-macro-environment)))
-      (dynamic-wind
-	  (lambda () 
-	    (##sys#current-module #f)
-	    (##sys#macro-environment mme))
-	  (lambda ()
-	    ((##sys#compile-to-closure
-	      form
-	      '() 
-	      (##sys#current-meta-environment))
-	     '() ) )
-	  (lambda ()
-	    (##sys#current-module oldcm)
-	    (##sys#meta-macro-environment (##sys#macro-environment))
-	    (##sys#macro-environment oldme)))))
-
   (define (emit-import-lib name il)
     (let* ((fname (if all-import-libraries
 		      (string-append (symbol->string name) ".import.scm")
@@ -607,11 +588,8 @@
 			    (let loop ([ids (##sys#strip-syntax (cadr x))])
 			      (if (null? ids)
 				  '(##core#undefined)
-				  (let ((id (##sys#resolve-module-name (car ids) #f)))
-				    (let-values ([(exp f)
-						  (##sys#do-the-right-thing
-						   (##sys#resolve-module-name id #f)
-						   #t imp?)])
+				  (let ((id (car ids)))
+				    (let-values (((exp f) (##sys#do-the-right-thing id #t imp?)))
 				      (unless (or f 
 						  (and (symbol? id)
 						       (or (feature? id)
@@ -698,7 +676,7 @@
 					     (car b)
 					     se
 					     (##sys#er-transformer
-					      (eval/meta (cadr b)))))
+					      (##sys#eval/meta (cadr b)))))
 					  (cadr x) )
 				     se) ) )
 			   (walk
@@ -712,7 +690,7 @@
 					   (car b)
 					   #f
 					   (##sys#er-transformer
-					    (eval/meta (cadr b)))))
+					    (##sys#eval/meta (cadr b)))))
 					(cadr x) ) )
 			       (se2 (append ms se)) )
 			  (for-each 
@@ -739,13 +717,13 @@
 			  (##sys#extend-macro-environment
 			   name
 			   (##sys#current-environment)
-			   (##sys#er-transformer (eval/meta body)))
+			   (##sys#er-transformer (##sys#eval/meta body)))
 			  (walk
 			   (if ##sys#enable-runtime-macros
 			       `(##sys#extend-macro-environment
 				 ',var
 				 (##sys#current-environment)
-				 (##sys#er-transformer ,body)) ;*** possibly wrong se?
+				 (##sys#er-transformer ,body)) ;XXX possibly wrong se?
 			       '(##core#undefined) )
 			   e se dest ldest h)) )
 
@@ -762,7 +740,7 @@
 			   name '##compiler#compiler-syntax
 			   (and body
 				(##sys#cons
-				 (##sys#er-transformer (eval/meta body))
+				 (##sys#er-transformer (##sys#eval/meta body))
 				 (##sys#current-environment))))
 			  (walk 
 			   (if ##sys#enable-runtime-macros
@@ -784,7 +762,8 @@
 				       (list 
 					name 
 					(and (pair? (cdr b))
-					     (cons (##sys#er-transformer (eval/meta (cadr b))) se))
+					     (cons (##sys#er-transformer
+						    (##sys#eval/meta (cadr b))) se))
 					(##sys#get name '##compiler#compiler-syntax) ) ) )
 				   (cadr x))))
 			  (dynamic-wind
@@ -991,11 +970,11 @@
 
 			((##core#compiletimetoo ##core#elaborationtimetoo)
 			 (let ((exp (cadr x)))
-			   (eval/meta exp)
+			   (##sys#eval/meta exp)
 			   (walk exp e se dest #f h) ) )
 
 			((##core#compiletimeonly ##core#elaborationtimeonly)
-			 (eval/meta (cadr x))
+			 (##sys#eval/meta (cadr x))
 			 '(##core#undefined) )
 
 			((##core#begin ##core#toplevel-begin) 
@@ -2716,14 +2695,14 @@
 	    ((##core#inline "C_lambdainfop" x)
 	     (let ((i (length lambda-info-literals)))
 	       (set! lambda-info-literals 
-		 (append lambda-info-literals (list x))) ;*** see below
+		 (append lambda-info-literals (list x))) ;XXX see below
 	       (vector i) ) )
             [(posq x literals) => identity]
 	    [else (new-literal x)] ) )
 
     (define (new-literal x)
       (let ([i (length literals)])
-	(set! literals (append literals (list x))) ;*** could (should) be optimized
+	(set! literals (append literals (list x))) ;XXX could (should) be optimized
 	i) )
 
     (define (blockvar-literal var)

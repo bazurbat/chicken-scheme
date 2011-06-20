@@ -37,6 +37,12 @@
 (define-alias dm d)
 (define-alias dx d)
 
+#+debugbuild
+(define (map-se se)
+  (map (lambda (a) 
+	 (cons (car a) (if (symbol? (cdr a)) (cdr a) '<macro>)))
+       se))
+
 (define-inline (getp sym prop)
   (##core#inline "C_i_getprop" sym prop #f))
 
@@ -532,7 +538,7 @@
 	(%prefix (r 'prefix))
 	(%srfi (r 'srfi)))
     (define (resolve sym)
-      (or (lookup sym '()) sym))	;*** empty se?
+      (or (lookup sym '()) sym))	;XXX really empty se?
     (define (tostr x)
       (cond ((string? x) x)
 	    ((keyword? x) (##sys#string-append (##sys#symbol->string x) ":")) ; hack
@@ -718,11 +724,11 @@
 	((getp sym '##core#aliased) 
 	 (dm "(ALIAS) marked: " sym)
 	 sym)
-	((assq sym (##sys#current-environment)) =>
+	((assq sym (##sys#active-eval-environment)) =>
 	 (lambda (a)
-	   (dm "(ALIAS) in current environment: " sym)
 	   (let ((sym2 (cdr a)))
-	     (if (pair? sym2)		; macro (*** can this be?)
+	     (dm "(ALIAS) in current environment " sym " -> " sym2)
+	     (if (pair? sym2)		; macro (XXX can this be?)
 		 (mrename sym)
 		 (or (getp sym2 '##core#primitive) sym2)))))
 	(else (mrename sym))))
