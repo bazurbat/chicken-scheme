@@ -59,6 +59,9 @@
 
 (define ##sys#current-environment (make-parameter '()))
 (define ##sys#current-meta-environment (make-parameter '()))
+
+;;XXX should this be a parameter?
+;;XXX should this be in eval.scm?
 (define ##sys#active-eval-environment ##sys#current-environment)
 
 (define (lookup id se)
