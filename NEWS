@@ -1,3 +1,72 @@
+4.7.1
+
+- Foreign function interface
+  - "int32" was not properly detected as a valid foreign result type
+
+- Core tools
+  - "chicken-install"
+    - Added option "-override", which allows storing extension-
+      versions in a file - this may be useful to ensure specific 
+      versions of a complete set of eggs to be installed
+    - Added option "-keep-installed"/"-x" that only installs explicitly
+      named extensions given on the command line, if they are not
+      already installed
+    - Added option "-list" that lists extensions available remotely
+    - Added option "-csi" to specify what interpreter should be used
+      to execute the setup-script of an installed extension
+    - Added option "-scan" that scans a local directory for the highest
+      available extension versions available
+    - Added option "-reinstall" that reinstalls all currently installed
+      eggs, keeping their verrsions, if possible
+  - "chicken-status"
+    - Added option "-list" that dumps versions of installed extensions
+      in a format suitable for "chicken-install -override ..."
+  - "csc"
+    - The environment-variables "CHICKEN_C_INCLUDE_PATH" and
+      "CHICKEN_C_LIBRARY_PATH" can now be used to add default include-
+      and link-directories to C-compiler invocations
+
+- Module system
+  - Added "interfaces", named groups of exports
+  - Added "functors", which are parameterized modules
+  - Modules can now be aliased
+  - New syntax:
+    (define-interface NAME EXPORTS)
+    (functor (NAME ...) EXPORTS ...)
+
+- Core libraries
+  - Cleaned up set of available internal SRFI-feature-identifiers
+  - Fixed several bugs in "make-pathname" (thanks to Jim Ursetto)
+  - The reader is now more consistent when parsing symbol- and keyword names 
+    that are fully or partially escaped (thanks to Kon Lovett)
+  - The printer now does a better job at escaping certain single-character
+    symbol names
+  - Unit "lolevel"
+    - deprecated "null-pointer" and "null-pointer?"
+  - Fixed a bug in the Windows implementation of "file-type" (thanks to
+    Jim Ursetto)
+  - Fixed a bug in the implementation of "current-milliseconds" that could
+    result in integer-overflow
+  - Fixed an incorrect type-check in "list-ref" (thanks to Sven Hartrumpf)
+
+- Syntax expander
+  - Fixed a bug that caused imported identifiers to leak into the 
+    macroexpansion/compile-time environment (reported by Christian Kellermann)
+
+- Compiler
+  - Fixed bug in handling of symbols in constant-definitions (thanks to Peter
+    Bex)
+  - Fixed bug that caused argument-signatures of external definitions to be
+    incorrectly modified during optimization (thanks to Peter Bex)
+  - Failing constant-folding expressions now produce a compile-time warning
+  - Fixed various bugs in the internal type-database (thanks to Kon Lovett)
+
+- Build system
+  - The default target library name for an installation configured for cross-
+    compilation is now "libchicken" and independent on any particular 
+    setting of PROGRAM_PREFIX/PROGRAM_SUFFIX
+
+
 4.7.0
 
 - Build system
