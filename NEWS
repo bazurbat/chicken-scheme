@@ -1,8 +1,5 @@
 4.7.1
 
-- Foreign function interface
-  - "int32" was not properly detected as a valid foreign result type
-
 - Core tools
   - "chicken-install"
     - Added option "-override", which allows storing extension-
@@ -17,7 +14,9 @@
     - Added option "-scan" that scans a local directory for the highest
       available extension versions available
     - Added option "-reinstall" that reinstalls all currently installed
-      eggs, keeping their verrsions, if possible
+      eggs, keeping their versions, if possible
+    - Fixed bug with "chicken-install -test" when multiple extensions where
+      given on the command line (thanks to Kon Lovett)
   - "chicken-status"
     - Added option "-list" that dumps versions of installed extensions
       in a format suitable for "chicken-install -override ..."
@@ -25,6 +24,8 @@
     - The environment-variables "CHICKEN_C_INCLUDE_PATH" and
       "CHICKEN_C_LIBRARY_PATH" can now be used to add default include-
       and link-directories to C-compiler invocations
+  - "csi"
+    - ",m" now properly switches between modules (thanks to Christian Kellermann)
 
 - Module system
   - Added "interfaces", named groups of exports
@@ -33,10 +34,11 @@
   - New syntax:
     (define-interface NAME EXPORTS)
     (functor (NAME ...) EXPORTS ...)
+  - Extended syntax of "module" for aliasing and functor-instantiation
 
 - Core libraries
   - Cleaned up set of available internal SRFI-feature-identifiers
-  - Fixed several bugs in "make-pathname" (thanks to Jim Ursetto)
+  - Fixed bugs in "make-pathname" and "normalize-pathname" (thanks to Jim Ursetto)
   - The reader is now more consistent when parsing symbol- and keyword names 
     that are fully or partially escaped (thanks to Kon Lovett)
   - The printer now does a better job at escaping certain single-character
@@ -48,23 +50,35 @@
   - Fixed a bug in the implementation of "current-milliseconds" that could
     result in integer-overflow
   - Fixed an incorrect type-check in "list-ref" (thanks to Sven Hartrumpf)
+  - Disabled "-setup-mode" when compiling extensions for deployment (thanks
+    to Ivan Raikov)
+  - Got rid of some warnings in the C runtime system that were triggered on
+    the SunPro C compiler (thanks to Joe Python)
 
 - Syntax expander
   - Fixed a bug that caused imported identifiers to leak into the 
     macroexpansion/compile-time environment (reported by Christian Kellermann)
+  - Fixed a bug in the processing of extended lambda-lists (thanks to Peter Bex)
 
 - Compiler
   - Fixed bug in handling of symbols in constant-definitions (thanks to Peter
     Bex)
+  - Stricter check for value-part of constant definition (thanks to Kon Lovett)
   - Fixed bug that caused argument-signatures of external definitions to be
     incorrectly modified during optimization (thanks to Peter Bex)
   - Failing constant-folding expressions now produce a compile-time warning
-  - Fixed various bugs in the internal type-database (thanks to Kon Lovett)
+  - Fixed various bugs in the internal type-database (thanks to Kon Lovett and
+    Peter Bex)
+  - Fixed incorrect optimization rules for some fp-rounding and fixnum operators
+
+- Foreign function interface
+  - "int32" was not properly detected as a valid foreign type (thanks
+    to Jim Ursetto)
 
 - Build system
   - The default target library name for an installation configured for cross-
     compilation is now "libchicken" and independent on any particular 
-    setting of PROGRAM_PREFIX/PROGRAM_SUFFIX
+    setting of PROGRAM_PREFIX/PROGRAM_SUFFIX (thanks to Otavio Salvador)
 
 
 4.7.0
