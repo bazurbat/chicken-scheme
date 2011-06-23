@@ -471,7 +471,7 @@
 (define (qnode const) (make-node 'quote (list const) '()))
 
 (define (build-node-graph exp)
-  (let ([count 0])
+  (let ((count 0))
     (define (walk x)
       (cond ((symbol? x) (varnode x))
 	    ((node? x) x)
@@ -495,13 +495,14 @@
 		      [body (caddr x)] )
 		  (if (null? bs)
 		      (walk body)
-		      (make-node 'let 
-				 (map (lambda (v) 
-					;; for temporaries introduced by specialization
-					(if (eq? '#:tmp v) (gensym) v))
-				      (unzip1 bs))
-				 (append (map (lambda (b) (walk (cadr b))) (cadr x))
-					 (list (walk body)) ) ) ) ) )
+		      (make-node
+		       'let 
+		       (map (lambda (v) 
+			      ;; for temporaries introduced by specialization
+			      (if (eq? '#:tmp v) (gensym) v)) ; OBSOLETE
+			    (unzip1 bs))
+		       (append (map (lambda (b) (walk (cadr b))) (cadr x))
+			       (list (walk body)) ) ) ) ) )
 	       ((lambda ##core#lambda) 
 		(make-node 'lambda (list (cadr x)) (list (walk (caddr x)))))
 	       ((##core#the)

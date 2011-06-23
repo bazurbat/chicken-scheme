@@ -101,4 +101,4 @@
   (string-append (the pair (substring x 0 10))) ; 1
   (the * (values 1 2))				; 1 + 2
   (the * (values))				; 3
-  (the fixnum (* x y)))				; nothing
+  (the fixnum (* x y)))				; nothing (but warns about "x" being string)

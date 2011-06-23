@@ -1,69 +1,69 @@
 
 Note: at toplevel:
-  pair?: in procedure call to `pair?', the predicate is called with an argument of type `pair' and will always return true
+  in procedure call to `pair?', the predicate is called with an argument of type `pair' and will always return true
 
 Note: at toplevel:
-  pair?: in procedure call to `pair?', the predicate is called with an argument of type `null' and will always return false
+  in procedure call to `pair?', the predicate is called with an argument of type `null' and will always return false
 
 Note: at toplevel:
-  pair?: in procedure call to `pair?', the predicate is called with an argument of type `fixnum' and will always return false
+  in procedure call to `pair?', the predicate is called with an argument of type `fixnum' and will always return false
 
 Note: at toplevel:
-  pair?: in procedure call to `pair?', the predicate is called with an argument of type `float' and will always return false
+  in procedure call to `pair?', the predicate is called with an argument of type `float' and will always return false
 
 Note: at toplevel:
-  list?: in procedure call to `list?', the predicate is called with an argument of type `list' and will always return true
+  in procedure call to `list?', the predicate is called with an argument of type `list' and will always return true
 
 Note: at toplevel:
-  list?: in procedure call to `list?', the predicate is called with an argument of type `fixnum' and will always return false
+  in procedure call to `list?', the predicate is called with an argument of type `fixnum' and will always return false
 
 Note: at toplevel:
-  list?: in procedure call to `list?', the predicate is called with an argument of type `float' and will always return false
+  in procedure call to `list?', the predicate is called with an argument of type `float' and will always return false
 
 Note: at toplevel:
-  null?: in procedure call to `null?', the predicate is called with an argument of type `null' and will always return true
+  in procedure call to `null?', the predicate is called with an argument of type `null' and will always return true
 
 Note: at toplevel:
-  null?: in procedure call to `null?', the predicate is called with an argument of type `pair' and will always return false
+  in procedure call to `null?', the predicate is called with an argument of type `pair' and will always return false
 
 Note: at toplevel:
-  null?: in procedure call to `null?', the predicate is called with an argument of type `fixnum' and will always return false
+  in procedure call to `null?', the predicate is called with an argument of type `fixnum' and will always return false
 
 Note: at toplevel:
-  null?: in procedure call to `null?', the predicate is called with an argument of type `float' and will always return false
+  in procedure call to `null?', the predicate is called with an argument of type `float' and will always return false
 
 Note: at toplevel:
-  fixnum?: in procedure call to `fixnum?', the predicate is called with an argument of type `fixnum' and will always return true
+  in procedure call to `fixnum?', the predicate is called with an argument of type `fixnum' and will always return true
 
 Note: at toplevel:
-  fixnum?: in procedure call to `fixnum?', the predicate is called with an argument of type `float' and will always return false
+  in procedure call to `fixnum?', the predicate is called with an argument of type `float' and will always return false
 
 Note: at toplevel:
-  exact?: in procedure call to `exact?', the predicate is called with an argument of type `fixnum' and will always return true
+  in procedure call to `exact?', the predicate is called with an argument of type `fixnum' and will always return true
 
 Note: at toplevel:
-  exact?: in procedure call to `exact?', the predicate is called with an argument of type `float' and will always return false
+  in procedure call to `exact?', the predicate is called with an argument of type `float' and will always return false
 
 Note: at toplevel:
-  flonum?: in procedure call to `flonum?', the predicate is called with an argument of type `float' and will always return true
+  in procedure call to `flonum?', the predicate is called with an argument of type `float' and will always return true
 
 Note: at toplevel:
-  flonum?: in procedure call to `flonum?', the predicate is called with an argument of type `fixnum' and will always return false
+  in procedure call to `flonum?', the predicate is called with an argument of type `fixnum' and will always return false
 
 Note: at toplevel:
-  inexact?: in procedure call to `inexact?', the predicate is called with an argument of type `float' and will always return true
+  in procedure call to `inexact?', the predicate is called with an argument of type `float' and will always return true
 
 Note: at toplevel:
-  inexact?: in procedure call to `inexact?', the predicate is called with an argument of type `fixnum' and will always return false
+  in procedure call to `inexact?', the predicate is called with an argument of type `fixnum' and will always return false
 
 Note: at toplevel:
-  number?: in procedure call to `number?', the predicate is called with an argument of type `fixnum' and will always return true
+  in procedure call to `number?', the predicate is called with an argument of type `fixnum' and will always return true
 
 Note: at toplevel:
-  number?: in procedure call to `number?', the predicate is called with an argument of type `float' and will always return true
+  in procedure call to `number?', the predicate is called with an argument of type `float' and will always return true
 
 Note: at toplevel:
-  number?: in procedure call to `number?', the predicate is called with an argument of type `number' and will always return true
+  in procedure call to `number?', the predicate is called with an argument of type `number' and will always return true
 
 Note: at toplevel:
-  number?: in procedure call to `number?', the predicate is called with an argument of type `null' and will always return false
+  in procedure call to `number?', the predicate is called with an argument of type `null' and will always return false

@@ -771,6 +771,10 @@ EOF
   (fp-check-flonums x y 'fp/)
   (##core#inline_allocate ("C_a_i_flonum_quotient" 4) x y) )
 
+(define (fp/? x y)			; undocumented
+  (fp-check-flonums x y 'fp/?)
+  (##core#inline_allocate ("C_a_i_flonum_quotient_checked" 4) x y) )
+
 (define (fp= x y) 
   (fp-check-flonums x y 'fp=)
   (##core#inline "C_flonum_equalp" x y) )

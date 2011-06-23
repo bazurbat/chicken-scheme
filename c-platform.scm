@@ -133,7 +133,7 @@
 (define default-extended-bindings
   '(bitwise-and alist-cons xcons
     bitwise-ior bitwise-xor bitwise-not add1 sub1 fx+ fx- fx* fx/
-    fx+? fx-? fx*? fx/? fxmod o
+    fx+? fx-? fx*? fx/? fxmod o fp/?
     fx= fx> fx< fx>= fx<= fixnum? fxneg fxmax fxmin identity fp+ fp- fp* fp/ fpmin fpmax fpneg
     fp> fp< fp= fp>= fp<= fxand fxnot fxior fxxor fxshr fxshl bit-set? fxodd? fxeven?
     fpfloor fpceiling fptruncate fpround fpsin fpcos fptan fpasin fpacos fpatan
@@ -709,6 +709,7 @@
 (rewrite 'fp- 16 2 "C_a_i_flonum_difference" #f words-per-flonum)
 (rewrite 'fp* 16 2 "C_a_i_flonum_times" #f words-per-flonum)
 (rewrite 'fp/ 16 2 "C_a_i_flonum_quotient" #f words-per-flonum)
+(rewrite 'fp/? 16 2 "C_a_i_flonum_quotient_checked" #f words-per-flonum)
 (rewrite 'fpneg 16 1 "C_a_i_flonum_negate" #f words-per-flonum)
 
 (rewrite 'exp 16 1 "C_a_i_exp" #t words-per-flonum)

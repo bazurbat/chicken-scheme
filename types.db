@@ -29,9 +29,9 @@
 ; - numeric types are disjoint, "fixnum" or "float" will not match "number" in the
 ;   rewrite rules
 ; - for a description of the type-specifier syntax, see "scrutinizer.scm" (top of file)
-; - in templates, "#(INDEX)" refers to the INDEXth argument (starting from 1)
-; - in templates "(let ((#:tmp X)) ...)" binds X to a temporary variable, you can not
-;   refer to this variable inside the template
+; - in templates, "#(INTEGER)" refers to the INTEGERth argument (starting from 1)
+; - in templates "#(SYMBOL)" binds X to a temporary gensym'd variable, further references
+;   to "#(SYMBOL)" allow backreferences to this generated identifier
 ; - a type of the form "(procedure! ...)" is internally treated like "(procedure ..."
 ;   but declares the procedure as "argument-type enforcing"
 ; - a type of the form "(procedure? TYPE  ...)" is internally treated like "(procedure ..."
@@ -42,7 +42,7 @@
 ;; scheme
 
 (not (procedure not (*) boolean)
-     (((not boolean)) (let ((#:tmp #(1))) '#t)))
+     (((not boolean)) (let ((#(tmp) #(1))) '#t)))
 
 (boolean? (procedure? boolean boolean? (*) boolean))
 
@@ -122,7 +122,7 @@
 
 ;;XXX predicate?
 (integer? (procedure integer? (*) boolean)
-	  ((fixnum) (let ((#:tmp #(1))) '#t))
+	  ((fixnum) (let ((#(tmp) #(1))) '#t))
 	  ((float) (##core#inline "C_u_i_fpintegerp" #(1))))
 
 (exact? (procedure? fixnum exact? (*) boolean))
@@ -132,7 +132,7 @@
 
 ;;XXX predicate?
 (rational? (procedure rational? (*) boolean)
-	   ((fixnum) (let ((#:tmp #(1))) '#t)))
+	   ((fixnum) (let ((#(tmp) #(1))) '#t)))
 
 (zero? (procedure! zero? (number) boolean) 
        ((fixnum) (eq? #(1) '0))
@@ -213,16 +213,16 @@
 (/ (procedure! / (number #!rest number) number)
    ((float fixnum) (float)
     (##core#inline_allocate 
-     ("C_a_i_flonum_quotient" 4) 
+     ("C_a_i_flonum_quotient_checked" 4) 
      #(1) 
      (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
    ((fixnum float) (float)
     (##core#inline_allocate 
-     ("C_a_i_flonum_quotient" 4) 
+     ("C_a_i_flonum_quotient_checked" 4) 
      (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
      #(2)))
    ((float float) (float)
-    (##core#inline_allocate ("C_a_i_flonum_quotient" 4) #(1) #(2))))
+    (##core#inline_allocate ("C_a_i_flonum_quotient_checked" 4) #(1) #(2))))
 
 (= (procedure! = (#!rest number) boolean)
    ((fixnum fixnum) (eq? #(1) #(2)))
@@ -487,7 +487,7 @@
 (char-ready? (procedure! char-ready? (#!optional port) boolean))
 
 (imag-part (procedure! imag-part (number) number)
-	   ((or fixnum float number) (let ((#:tmp #(1))) '0)))
+	   ((or fixnum float number) (let ((#(tmp) #(1))) '0)))
 
 (real-part (procedure! real-part (number) number)
 	   ((or fixnum float number) #(1)))
@@ -502,7 +502,7 @@
 	   ((fixnum) (fixnum) #(1)))
 	   
 (denominator (procedure! denominator (number) number)
-	     ((fixnum) (fixnum) (let ((#:tmp #(1))) '1)))
+	     ((fixnum) (fixnum) (let ((#(tmp) #(1))) '1)))
 
 (scheme-report-environment (procedure! scheme-report-environment (#!optional fixnum) *))
 (null-environment (procedure! null-environment (#!optional fixnum) *))
@@ -849,44 +849,44 @@
 				((pointer) #(1)))
 
 (##sys#check-blob (procedure! ##sys#check-blob (blob #!optional *) *)
-		  ((blob) (let ((#:tmp #(1))) '#t))
-		  ((blob *) (let ((#:tmp #(1))) '#t)))
+		  ((blob) (let ((#(tmp) #(1))) '#t))
+		  ((blob *) (let ((#(tmp) #(1))) '#t)))
 (##sys#check-pair (procedure! ##sys#check-pair (pair #!optional *) *)
-		  ((pair) (let ((#:tmp #(1))) '#t))
-		  ((pair *) (let ((#:tmp #(1))) '#t)))
+		  ((pair) (let ((#(tmp) #(1))) '#t))
+		  ((pair *) (let ((#(tmp) #(1))) '#t)))
 (##sys#check-list (procedure! ##sys#check-list (list #!optional *) *)
-		  (((or null pair list)) (let ((#:tmp #(1))) '#t))
-		  (((or null pair list) *) (let ((#:tmp #(1))) '#t)))
+		  (((or null pair list)) (let ((#(tmp) #(1))) '#t))
+		  (((or null pair list) *) (let ((#(tmp) #(1))) '#t)))
 (##sys#check-string (procedure! ##sys#check-string (string #!optional *) *)
-		    ((string) (let ((#:tmp #(1))) '#t))
-		    ((string) *  (let ((#:tmp #(1))) '#t)))
+		    ((string) (let ((#(tmp) #(1))) '#t))
+		    ((string) *  (let ((#(tmp) #(1))) '#t)))
 (##sys#check-number (procedure! ##sys#check-number (number #!optional *) *)
-		    ((number) (let ((#:tmp #(1))) '#t))
-		    ((number *) (let ((#:tmp #(1))) '#t)))
+		    ((number) (let ((#(tmp) #(1))) '#t))
+		    ((number *) (let ((#(tmp) #(1))) '#t)))
 (##sys#check-exact (procedure! ##sys#check-exact (fixnum #!optional *) *)
-		   ((fixnum) (let ((#:tmp #(1))) '#t))
-		   ((fixnum *) (let ((#:tmp #(1))) '#t)))
+		   ((fixnum) (let ((#(tmp) #(1))) '#t))
+		   ((fixnum *) (let ((#(tmp) #(1))) '#t)))
 (##sys#check-inexact (procedure! ##sys#check-inexact (float #!optional *) *)
-		     ((float) (let ((#:tmp #(1))) '#t))
-		     ((float *) (let ((#:tmp #(1))) '#t)))
+		     ((float) (let ((#(tmp) #(1))) '#t))
+		     ((float *) (let ((#(tmp) #(1))) '#t)))
 (##sys#check-symbol (procedure! ##sys#check-symbol (symbol #!optional *) *)
-		    ((symbol) (let ((#:tmp #(1))) '#t))
-		    ((symbol *) (let ((#:tmp #(1))) '#t)))
+		    ((symbol) (let ((#(tmp) #(1))) '#t))
+		    ((symbol *) (let ((#(tmp) #(1))) '#t)))
 (##sys#check-vector (procedure! ##sys#check-vector (vector #!optional *) *)
-		    ((vector) (let ((#:tmp #(1))) '#t))
-		    ((vector *) (let ((#:tmp #(1))) '#t)))
+		    ((vector) (let ((#(tmp) #(1))) '#t))
+		    ((vector *) (let ((#(tmp) #(1))) '#t)))
 (##sys#check-char (procedure! ##sys#check-char (char #!optional *) *)
-		  ((char) (let ((#:tmp #(1))) '#t))
-		  ((char *) (let ((#:tmp #(1))) '#t)))
+		  ((char) (let ((#(tmp) #(1))) '#t))
+		  ((char *) (let ((#(tmp) #(1))) '#t)))
 (##sys#check-boolean (procedure! ##sys#check-boolean (boolean #!optional *) *)
-		     ((boolean) (let ((#:tmp #(1))) '#t))
-		     ((boolean *) (let ((#:tmp #(1))) '#t)))
+		     ((boolean) (let ((#(tmp) #(1))) '#t))
+		     ((boolean *) (let ((#(tmp) #(1))) '#t)))
 (##sys#check-locative (procedure! ##sys#check-locative (locative #!optional *) *)
-		      ((locative) (let ((#:tmp #(1))) '#t))
-		      ((locative *) (let ((#:tmp #(1))) '#t)))
+		      ((locative) (let ((#(tmp) #(1))) '#t))
+		      ((locative *) (let ((#(tmp) #(1))) '#t)))
 (##sys#check-closure (procedure! ##sys#check-closure (procedure #!optional *) *)
-		     ((procedure) (let ((#:tmp #(1))) '#t))
-		     ((procedure *) (let ((#:tmp #(1))) '#t)))
+		     ((procedure) (let ((#(tmp) #(1))) '#t))
+		     ((procedure *) (let ((#(tmp) #(1))) '#t)))
 
 ;; data-structures
 
@@ -898,11 +898,11 @@
 (always? (procedure always? (#!rest) boolean))
 
 (any? (procedure any? (*) boolean)
-      ((*) (let ((#:tmp #(1))) '#t)))
+      ((*) (let ((#(tmp) #(1))) '#t)))
 
 (atom? (procedure atom? (*) boolean)
-       ((pair) (let ((#:tmp #(1))) '#f))
-       (((not (or pair list))) (let ((#:tmp #(1))) '#t)))
+       ((pair) (let ((#(tmp) #(1))) '#f))
+       (((not (or pair list))) (let ((#(tmp) #(1))) '#t)))
 
 (binary-search (procedure! binary-search (vector (procedure (*) *)) *))
 (butlast (procedure! butlast (pair) list))
@@ -928,7 +928,7 @@
 (never? (procedure never? (#!rest) boolean))
 
 (none? (procedure none? (*) boolean)
-       ((*) (let ((#:tmp #(1))) '#f)))
+       ((*) (let ((#(tmp) #(1))) '#f)))
 
 (o (procedure! o (#!rest (procedure (*) *)) (procedure (*) *)))
 
@@ -1179,7 +1179,7 @@
 		 ((pointer) (##core#inline "C_pointer_to_object" #(1))))
 
 (pointer-like? (procedure pointer-like? (*) boolean)
-	       (((or pointer locative procedure port)) (let ((#:tmp #(1))) '#t)))
+	       (((or pointer locative procedure port)) (let ((#(tmp) #(1))) '#t)))
 
 (pointer-f32-ref (procedure! pointer-f32-ref (pointer) number))
 (pointer-f32-set! (procedure! pointer-f32-set! (pointer number) undefined))
@@ -1204,7 +1204,7 @@
 (pointer-s8-set! (procedure! pointer-s8-set! (pointer fixnum) undefined))
 
 (pointer-tag (procedure! pointer-tag ((or pointer locative procedure port)) (or boolean number))
-	     (((or locative procedure port)) (let ((#:tmp #(1))) '#f)))
+	     (((or locative procedure port)) (let ((#(tmp) #(1))) '#f)))
 
 (pointer-u16-ref (procedure! pointer-u16-ref (pointer) fixnum))
 (pointer-u16-set! (procedure! pointer-u16-set! (pointer fixnum) undefined))
@@ -1499,7 +1499,7 @@
 (circular-list (procedure circular-list (#!rest) list))
 
 (circular-list? (procedure circular-list? (*) boolean)
-		((null) (let ((#:tmp #(1))) '#f)))
+		((null) (let ((#(tmp) #(1))) '#f)))
 
 (concatenate (procedure! concatenate (list) list))
 (concatenate! (procedure! concatenate! (list) list))
@@ -1556,13 +1556,13 @@
 (ninth (procedure! ninth (pair) *))
 
 (not-pair? (procedure not-pair? (*) boolean)
-	   ((pair) (let ((#:tmp #(1))) '#f))
-	   (((not (or pair list))) (let ((#:tmp #(1))) '#t)))
+	   ((pair) (let ((#(tmp) #(1))) '#f))
+	   (((not (or pair list))) (let ((#(tmp) #(1))) '#t)))
 
 (null-list? (procedure! null-list? (list) boolean)
-	    ((pair) (let ((#:tmp #(1))) '#f))
-	    ((list) (let ((#:tmp #(1))) '#f))
-	    ((null) (let ((#:tmp #(1))) '#t)))
+	    ((pair) (let ((#(tmp) #(1))) '#f))
+	    ((list) (let ((#(tmp) #(1))) '#f))
+	    ((null) (let ((#(tmp) #(1))) '#t)))
 
 (pair-fold (procedure! pair-fold (procedure * list #!rest list) *))
 (pair-fold-right (procedure! pair-fold-right (procedure * list #!rest list) *))
@@ -1571,7 +1571,7 @@
 (partition! (procedure! partition! ((procedure (*) *) list) list list))
 
 (proper-list? (procedure proper-list? (*) boolean)
-	      ((null) (let ((#:tmp #(1))) '#t)))
+	      ((null) (let ((#(tmp) #(1))) '#t)))
 
 (reduce (procedure! reduce ((procedure (* *) *) * list) *))
 (reduce-right (procedure! reduce-right ((procedure (* *) *) * list) *))
