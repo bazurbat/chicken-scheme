@@ -364,9 +364,10 @@
 		     host port
 		     (string-append locn "?list=1")
 		     proxy-host proxy-port proxy-user-pass)))
-	(display (read-all in))
-	(close-input-port in)
-	(close-output-port out))))
+	(let ((ls (read-all in)))
+	  (close-input-port in)
+	  (close-output-port out)
+	  ls))))
 
   (define (throw-server-error msg args)
     (abort

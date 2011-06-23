@@ -214,7 +214,9 @@
   (define (ext-version x)
     (cond ((or (eq? x 'chicken)
                (equal? x "chicken")
-               (member (->string x) ##sys#core-library-modules))
+               (let ((xs (->string x)))
+		 (or (member xs ##sys#core-library-modules)
+		     (member xs ##sys#core-syntax-modules))))
            (chicken-version) )
           ((extension-information x) =>
            (lambda (info)
@@ -793,8 +795,9 @@ EOF
 			    (error
 			     "no default location defined - please use `-location' option")))
 			(if listeggs
-			    (list-available-extensions
-			     *default-transport* *default-location*)
+			    (display
+			     (list-available-extensions
+			      *default-transport* *default-location*))
 			    (install (apply-mappings (reverse eggs))))))))
               (else
                (let ((arg (car args)))

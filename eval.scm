@@ -56,8 +56,10 @@
 
 (define ##sys#core-library-modules
   '(extras lolevel utils files tcp irregex posix srfi-1 srfi-4 srfi-13 
-	   srfi-14 srfi-18 srfi-69 data-structures ports chicken-syntax
-	   chicken-ffi-syntax))
+	   srfi-14 srfi-18 srfi-69 data-structures ports))
+
+(define ##sys#core-syntax-modules
+  '(chicken-syntax chicken-ffi-syntax))
 
 (define ##sys#explicit-library-modules '())
 
@@ -1152,7 +1154,8 @@
 	    (else (##sys#check-symbol id loc)) )
       (let ([p (##sys#canonicalize-extension-path id loc)])
 	(cond ((member p ##sys#loaded-extensions))
-	      ((memq id ##sys#core-library-modules)
+	      ((or (memq id ##sys#core-library-modules)
+		   (memq id ##sys#core-syntax-modules))
 	       (or (##sys#load-library-0 id #f)
 		   (and err?
 			(##sys#error loc "cannot load core library" id))))
@@ -1252,6 +1255,14 @@
 		     `(##core#declare (uses ,id))
 		     `(##sys#load-library ',id #f) )
 		 impid #f)
+		#t) )
+	      ((memq id ##sys#core-syntax-modules)
+	       (values
+		(impform
+		 (if comp?
+		     `(##core#declare (uses ,id))
+		     `(##sys#load-library ',id #f) )
+		 impid #t)
 		#t) )
 	      ((memq id ##sys#explicit-library-modules)
 	       (let* ((info (##sys#extension-information id 'require-extension))
