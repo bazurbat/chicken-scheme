@@ -158,6 +158,10 @@
      ((float float) (##core#inline "C_i_flonum_min" #(1) #(2))))
 
 (+ (procedure! + (#!rest number) number)
+;XXX add these, also for other multi-arity, possibly fast operations:
+;
+;   ((* * * *) (+ (+ (+ #(1) #(2)) #(3)) #(4)))
+;   ((* * *) (+ (+ #(1) #(2)) #(3)))
    ((fixnum) (fixnum) #(1))
    ((float) (float) #(1))
    ((number) #(1))
