@@ -485,7 +485,8 @@
       (let* ((ptype (car args))
 	     (pptype? (procedure-type? ptype))
 	     (nargs (length (cdr args)))
-	     (xptype `(procedure ,(make-list nargs '*) *)))
+	     (xptype `(procedure ,(make-list nargs '*) *))
+	     (op #f))
 	(cond ((and (not pptype?) (not (match xptype ptype)))
 	       (report
 		loc
@@ -494,7 +495,7 @@
 		  (pname) 
 		  xptype
 		  ptype))
-	       '*)
+	       (values '* #f))
 	      (else
 	       (let-values (((atypes values-rest) (procedure-argument-types ptype nargs)))
 		 (d "  argument-types: ~a (~a)" atypes values-rest)
@@ -520,8 +521,7 @@
 		   (set! noreturn #t))
 		 (let ((r (procedure-result-types ptype values-rest (cdr args))))
 		   ;;XXX we should check whether this is a standard- or extended binding
-		   (let* ((pn (procedure-name ptype))
-			  (op #f))
+		   (let* ((pn (procedure-name ptype)))
 		     (when pn
 		       (cond ((and (fx= 1 nargs) 
 				   (variable-mark pn '##compiler#predicate)) =>
@@ -535,7 +535,7 @@
 					    (when specialize
 					      (specialize-node!
 					       node
-					       `(let ((#:tmp #(1))) '#t))
+					       `(let ((#(tmp) #(1))) '#t))
 					      (set! op (list pn pt))))
 					   ((match-specialization (list `(not ,pt)) (cdr args) #t)
 					    (report-notice
@@ -546,7 +546,7 @@
 					    (when specialize
 					      (specialize-node!
 					       node
-					       `(let ((#:tmp #(1))) '#f))
+					       `(let ((#(tmp) #(1))) '#f))
 					      (set! op (list pt `(not ,pt))))))))
 			     ((and specialize (variable-mark pn '##compiler#specializations)) =>
 			      (lambda (specs)
@@ -561,6 +561,7 @@
 					     (when r2 (set! r r2)))))
 					(else (loop (cdr specs))))))))
 		       (when op
+			 (d "  specialized: `~s'" op)
 			 (cond ((assoc op specialization-statistics) =>
 				(lambda (a) (set-cdr! a (add1 (cdr a)))))
 			       (else
@@ -571,8 +572,9 @@
 		       (set-car! (node-parameters node) #t)
 		       (set! safe-calls (add1 safe-calls))))
 		   (d  "  result-types: ~a" r)
-		   r))))))
-    
+		   (values r op)))))))
+
+    ;; not used in the moment
     (define (self-call? node loc)
       (case (node-class node)
 	((##core#call)
@@ -799,43 +801,57 @@
 			 (enforces
 			  (and pn (variable-mark pn '##compiler#enforce)))
 			 (pt (and pn (variable-mark pn '##compiler#predicate))))
-		    (let ((r (call-result n args e loc params)))
-		      (for-each
-		       (lambda (arg argr)
-			 (when (eq? '##core#variable (node-class arg))
-			   (let* ((var (first (node-parameters arg)))
-				  (a (assq var e))
-				  (oparg? (eq? arg (first subs)))
-				  (pred (and pt ctags (not (get db var 'assigned)) (not oparg?))))
-			     (cond (pred
-				    (d "  predicate `~a' indicates `~a' is ~a in flow ~a" pn var pt
-				       (car ctags))
-				    (add-to-blist 
-				     var (car ctags)
-				     (if (and a (type<=? (cdr a) pt)) (cdr a) pt)))
-				   (a
-				    (when enforces
-				      (let ((ar (cond ((blist-type var flow) =>
-						       (lambda (t)
-							 (if (type<=? t argr)
-							     t
-							     argr)))
-						      ((get db var 'assigned) '*)
-						      ((type<=? (cdr a) argr) (cdr a))
-						      (else argr))))
-					(d "  assuming: ~a -> ~a (flow: ~a)" var ar (car flow))
-					(add-to-blist var (car flow) ar)
-					(when ctags
-					  (add-to-blist var (car ctags) ar)
-					  (add-to-blist var (cdr ctags) ar)))))
-				   ((and oparg?
-					 (variable-mark var '##compiler#special-result-type))
-				    => (lambda (srt)
-					 (dd "  hardcoded special case: ~a" var)
-					 (set! r (srt n r))))))))
-		       subs
-		       (cons fn (nth-value 0 (procedure-argument-types fn (sub1 len)))))
-		      r)))
+		    (let-values (((r specialized?) (call-result n args e loc params)))
+		      (cond (specialized?
+			     (walk n e loc dest tail flow ctags)
+			     ;; keep type, as the specialization may contain icky stuff
+			     ;; like "##core#inline", etc.
+			     r)
+			    (else
+			     (for-each
+			      (lambda (arg argr)
+				(when (eq? '##core#variable (node-class arg))
+				  (let* ((var (first (node-parameters arg)))
+					 (a (assq var e))
+					 (oparg? (eq? arg (first subs)))
+					 (pred (and pt
+						    ctags
+						    (not (get db var 'assigned)) 
+						    (not oparg?))))
+				    (cond (pred
+					   (d "  predicate `~a' indicates `~a' is ~a in flow ~a"
+					      pn var pt (car ctags))
+					   (add-to-blist 
+					    var (car ctags)
+					    (if (and a (type<=? (cdr a) pt)) (cdr a) pt)))
+					  (a
+					   (when enforces
+					     (let ((ar (cond ((blist-type var flow) =>
+							      (lambda (t)
+								(if (type<=? t argr)
+								    t
+								    argr)))
+							     ((get db var 'assigned) '*)
+							     ((type<=? (cdr a) argr) (cdr a))
+							     (else argr))))
+					       (d "  assuming: ~a -> ~a (flow: ~a)" 
+						  var ar (car flow))
+					       (add-to-blist var (car flow) ar)
+					       (when ctags
+						 (add-to-blist var (car ctags) ar)
+						 (add-to-blist var (cdr ctags) ar)))))
+					  ((and oparg?
+						(variable-mark 
+						 var
+						 '##compiler#special-result-type))
+					   => (lambda (srt)
+						(dd "  hardcoded special case: ~a" var)
+						(set! r (srt n r))))))))
+			      subs
+			      (cons 
+			       fn
+			       (nth-value 0 (procedure-argument-types fn (sub1 len)))))
+			     r)))))
 		 ((##core#the)
 		  (let-values (((t _) (validate-type (first params) #f)))
 		    (let ((rt (walk (first subs) e loc dest tail flow ctags)))
