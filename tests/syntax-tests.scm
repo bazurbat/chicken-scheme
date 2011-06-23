@@ -208,6 +208,18 @@
 
 (t "x" (symbol->string (c)))
 
+(define-syntax c2
+   (syntax-rules ()
+     [(_)
+      (let ([x 10])
+        (let-syntax ([z (syntax-rules ()
+                          [(_) (let-syntax ([w (syntax-rules ()
+                                                 [(_) (quote x)])])
+                                 (w))])])
+          (z)))]))
+
+(t "x" (symbol->string (c2)))
+
 ;;; strip-syntax on renamed module identifiers, as well as core identifiers
 (module foo (bar)
   (import chicken scheme)
