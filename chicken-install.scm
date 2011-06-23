@@ -793,8 +793,9 @@ EOF
 			    (error
 			     "no default location defined - please use `-location' option")))
 			(if listeggs
-			    (list-available-extensions
-			     *default-transport* *default-location*)
+			    (display
+			     (list-available-extensions
+			      *default-transport* *default-location*))
 			    (install (apply-mappings (reverse eggs))))))))
               (else
                (let ((arg (car args)))
