@@ -121,8 +121,10 @@
 (define strip-syntax ##sys#strip-syntax)
 
 (define (##sys#extend-se se vars #!optional (aliases (map gensym vars)))
-  (for-each 
-   (cut ##sys#put! <> '##core#real-name <>) 
+  (for-each
+   (lambda (alias sym)
+     (let ((original-real-name (getp sym '##core#real-name)))
+       (putp alias '##core#real-name (or original-real-name sym))))
    aliases vars)
   (append (map (lambda (x y) (cons x y)) vars aliases) se)) ; inline cons
 
