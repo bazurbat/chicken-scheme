@@ -42,7 +42,7 @@
        (let ((d (path distname d)))
 	 (unless (file-exists? d)
 	   (print "creating " d)
-	   (create-directory d))))
+	   (create-directory d 'with-parents))))
      (delete-duplicates (filter-map prefix files) string=?))
     (let ((missing '()))
       (for-each
