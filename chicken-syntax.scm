@@ -503,7 +503,7 @@
 	   (cond ((null? clauses)
 		  '(##core#undefined) )
 		 ((not (pair? clauses))
-		  (##sys#syntax-error 'select "invalid syntax" clauses))
+		  (syntax-error 'select "invalid syntax" clauses))
 		 (else
 		  (let ((clause (##sys#slot clauses 0))
 			(rclauses (##sys#slot clauses 1)) )
@@ -1142,7 +1142,7 @@
     (let ((name (##sys#strip-syntax (cadr x)))
 	  (%quote (r 'quote)))
       (when (eq? '* name)
-	(##sys#syntax-error-hook
+	(syntax-error-hook
 	 'define-interface "`*' is not allowed as a name for an interface"))
       `(,(r 'begin-for-syntax)
 	(##sys#register-interface
@@ -1153,7 +1153,7 @@
 			   ((list? exps) 
 			    (##sys#validate-exports exps 'define-interface))
 			   (else
-			    (##sys#syntax-error-hook
+			    (syntax-error-hook
 			     'define-interface "invalid exports" (caddr x))))))))))))
 
 
@@ -1231,8 +1231,17 @@
 			 (##sys#append
 			  (list
 			   (cons atypes
-				 (if rtypes
-				     (list rtypes spec)
+				 (if (and rtypes (pair? rtypes))
+				     (list
+				      (map (lambda (rt)
+					     (let-values (((t _) 
+							   (##compiler#validate-type rt #f)))
+					       (or t
+						   (syntax-error
+						    'define-specialization
+						    "invalid result type" t))))
+					   rtypes)
+				      spec)
 				     (list spec))))
 			  (or (##compiler#variable-mark 
 			       name '##compiler#local-specializations)
@@ -1249,9 +1258,16 @@
 			(cond ((symbol? arg)
 			       (loop (cdr args) (cons arg anames) (cons '* atypes)))
 			      ((and (list? arg) (fx= 2 (length arg)) (symbol? (car arg)))
-			       (loop (cdr args) (cons (car arg) anames)
-				     (cons (cadr arg) atypes)))
-			      (else (##sys#syntax-error
+			       (let-values (((t _) (##compiler#validate-type (cadr arg) #f)))
+				 (if t
+				     (loop
+				      (cdr args)
+				      (cons (car arg) anames)
+				      (cons t atypes))
+				     (syntax-error
+				      'define-specialization
+				      "invalid argument type" arg head))))
+			      (else (syntax-error
 				     'define-specialization
 				     "invalid argument syntax" arg head)))))))))))))
 
