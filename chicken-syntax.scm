@@ -1202,6 +1202,59 @@
     ((_ ((var type) ...) body ...)
      (let ((var (##core#the type var)) ...) body ...)))))
 
+(##sys#extend-macro-environment
+ 'define-specialization '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (cond ((memq #:csi ##sys#features) '(##core#undefined))
+	  (else
+	   (##sys#check-syntax 'define-specialization x '(_ (symbol . #(_ 0)) _ . #(_ 0 1)))
+	   (let* ((head (cadr x))
+		  (name (car head))
+		  (args (cdr head))
+		  (alias (gensym name))
+		  (rtypes (and (pair? (cdddr x)) (caddr x)))
+		  (%define (r 'define))
+		  (body (if rtypes (cadddr x) (caddr x))))
+	     (let loop ((args args) (anames '()) (atypes '()))
+	       (cond ((null? args)
+		      (let ((anames (reverse anames))
+			    (atypes (reverse atypes))
+			    (spec
+			     `(,alias ,@(let loop2 ((anames anames) (i 1))
+					 (if (null? anames)
+					     '()
+					     (cons (vector i)
+						   (loop2 (cdr anames) (fx+ i 1))))))))
+			(##sys#put! 
+			 name '##compiler#local-specializations
+			 (##sys#append
+			  (list
+			   (cons atypes
+				 (if rtypes
+				     (list rtypes spec)
+				     (list spec))))
+			  (or (##compiler#variable-mark 
+			       name '##compiler#local-specializations)
+			      '())))
+			`(##core#begin
+			  (##core#declare (inline ,alias) (hide ,alias))
+			  (,%define (,alias ,@anames)
+				    (##core#let ,(map (lambda (an at)
+							(list an `(##core#the ,at ,an)))
+						      anames atypes)
+						,body)))))
+		     (else
+		      (let ((arg (car args)))
+			(cond ((symbol? arg)
+			       (loop (cdr args) (cons arg anames) (cons '* atypes)))
+			      ((and (list? arg) (fx= 2 (length arg)) (symbol? (car arg)))
+			       (loop (cdr args) (cons (car arg) anames)
+				     (cons (cadr arg) atypes)))
+			      (else (##sys#syntax-error
+				     'define-specialization
+				     "invalid argument syntax" arg head)))))))))))))
+
 
 ;; capture current macro env
 

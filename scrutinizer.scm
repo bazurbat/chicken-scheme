@@ -72,6 +72,7 @@
 ;   ##compiler#declared-type   ->  BOOL
 ;   ##compiler#predicate       ->  TYPESPEC
 ;   ##compiler#specializations ->  (SPECIALIZATION ...)
+;   ##compiler#local-specializations ->  (SPECIALIZATION ...)
 ;   ##compiler#enforce         ->  BOOL
 ;   ##compiler#special-result-type -> PROCEDURE
 ;   ##compiler#escape          ->  #f | 'yes | 'no
@@ -471,6 +472,12 @@
 	 (lambda ()
 	   (pp (fragment x))))))
 
+    (define (get-specializations name)
+      (let* ((a (variable-mark name '##compiler#specializations))
+	     (b (variable-mark name '##compiler#local-specializations))
+	     (c (append (or a '()) (or b '()))))
+	(and (pair? c) c)))
+
     (define (call-result node args e loc params)
       (define (pname)
 	(sprintf "~ain procedure call to `~s', " 
@@ -550,7 +557,7 @@
 					       node
 					       `(let ((#(tmp) #(1))) '#f))
 					      (set! op (list pt `(not ,pt))))))))
-			     ((and specialize (variable-mark pn '##compiler#specializations)) =>
+			     ((and specialize (get-specializations pn)) =>
 			      (lambda (specs)
 				(let loop ((specs specs))
 				  (cond ((null? specs))
@@ -1092,8 +1099,7 @@
        (lambda (sym plist)
 	 (when (variable-visible? sym)
 	   (when (variable-mark sym '##compiler#declared-type)
-	     (let ((specs
-		    (or (variable-mark sym '##compiler#specializations) '()))
+	     (let ((specs (or (variable-mark sym '##compiler#specializations) '()))
 		   (type (variable-mark sym '##compiler#type))
 		   (pred (variable-mark sym '##compiler#predicate))
 		   (enforce (variable-mark sym '##compiler#enforce)))
