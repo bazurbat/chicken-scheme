@@ -1,4 +1,4 @@
-4.7.1
+4.7.2
 
 - Core tools
   - "chicken-install"
@@ -320,8 +320,6 @@
     (thanks to Alan Post)
   - new "implicit renaming" macro facility contributed by Peter Bex
     (see `ir-macro-transformer')
-  - record-definitions are now made local to the module in which
-    they are defined (thanks to Jim Ursetto)
   - parameters are now settable and can be modified using `set!'
     (SRFI-17)
   - added a SRFI-17 setter to `list-ref'
