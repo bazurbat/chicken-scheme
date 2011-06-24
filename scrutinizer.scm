@@ -41,7 +41,7 @@
 
 (define (d fstr . args)
   (when (##sys#fudge 13)
-    (printf "[debug] ~a~?~%" (make-string d-depth #\space) fstr args)) )
+    (printf "[debug|~a] ~a~?~%" d-depth (make-string d-depth #\space) fstr args)) )
 
 (define dd d)
 
@@ -78,9 +78,11 @@
 ;
 ; specialization specifiers:
 ;
-;   SPECIALIZATION = ((MVAL ... [#!rest MVAL]) TEMPLATE)
+;   SPECIALIZATION = ((MVAL ... [#!rest MVAL]) [RESULTS] TEMPLATE)
 ;   MVAL = VAL | (not VAL) | (or VAL ...) | (and VAL ...)
-;   TEMPLATE = #(INDEX [...])
+;   TEMPLATE = #(INDEX)
+;            | #(-INDEX)
+;            | #(SYMBOL)
 ;            | INTEGER | SYMBOL | STRING
 ;            | (quote CONSTANT)
 ;            | (TEMPLATE . TEMPLATE)
@@ -1161,7 +1163,10 @@
       (cond ((and (vector? x)
 		  (= 1 (vector-length x)) )
 	     (let ((y (vector-ref x 0)))
-	       (cond ((integer? y) (list-ref args (sub1 y)))
+	       (cond ((integer? y)
+		      (if (negative? y)
+			  (list-tail args (sub1 (- y)))
+			  (list-ref args (sub1 y))))
 		     ((symbol? y)
 		      (cond ((assq y env) => cdr)
 			    (else

@@ -96,7 +96,6 @@
 (set-cdr! (procedure! set-cdr! (pair *) undefined) ((pair *) (##sys#setslot #(1) '1 #(2))))
 
 (null? (procedure? null null? (*) boolean))
-
 (list? (procedure? list list? (*) boolean))
 
 (list (procedure list (#!rest) list))
@@ -158,10 +157,6 @@
      ((float float) (##core#inline "C_i_flonum_min" #(1) #(2))))
 
 (+ (procedure! + (#!rest number) number)
-;XXX add these, also for other multi-arity, possibly fast operations:
-;
-;   ((* * * *) (+ (+ (+ #(1) #(2)) #(3)) #(4)))
-;   ((* * *) (+ (+ #(1) #(2)) #(3)))
    ((fixnum) (fixnum) #(1))
    ((float) (float) #(1))
    ((number) #(1))
