@@ -31,7 +31,7 @@
   (hide ready-queue-head ready-queue-tail ##sys#timeout-list
 	##sys#update-thread-state-buffer ##sys#restore-thread-state-buffer
 	remove-from-ready-queue ##sys#unblock-threads-for-i/o ##sys#force-primordial
-	fdset-input-set fdset-output-set fdset-clear
+	fdset-input-set fdset-output-set fdset-error-set fdset-clear
 	fdset-select-timeout fdset-set fdset-test
 	create-fdset stderr
 	##sys#clear-i/o-state-for-thread! ##sys#abandon-mutexes) 
@@ -74,9 +74,10 @@ C_word C_msleep(C_word ms) {
   return C_SCHEME_TRUE;
 }
 #endif
-static fd_set C_fdset_input, C_fdset_output;
+static fd_set C_fdset_input, C_fdset_output, C_fdset_error;
 #define C_fd_test_input(fd)  C_mk_bool(FD_ISSET(C_unfix(fd), &C_fdset_input))
 #define C_fd_test_output(fd)  C_mk_bool(FD_ISSET(C_unfix(fd), &C_fdset_output))
+#define C_fd_test_error(fd)  C_mk_bool(FD_ISSET(C_unfix(fd), &C_fdset_error))
 EOF
 ) )
 
@@ -163,7 +164,7 @@ EOF
 	(let ([nt (remove-from-ready-queue)])
 	  (cond [(not nt) 
 		 (if (and (null? ##sys#timeout-list) (null? ##sys#fd-list))
-		     (##sys#halt "deadlock")
+		     (panic "deadlock")
 		     (loop1) ) ]
 		[(eq? (##sys#slot nt 3) 'ready) (switch nt)]
 		[else (loop2)] ) ) ) ) ) )
@@ -366,7 +367,8 @@ EOF
 (define fdset-clear
   (foreign-lambda* void ()
     "FD_ZERO(&C_fdset_input);"
-    "FD_ZERO(&C_fdset_output);") )
+    "FD_ZERO(&C_fdset_output);"
+    "FD_ZERO(&C_fdset_error);") )
 
 (define fdset-input-set
   (foreign-lambda* void ([int fd])
@@ -376,8 +378,13 @@ EOF
   (foreign-lambda* void ([int fd])
     "FD_SET(fd, &C_fdset_output);" ) )
 
+(define fdset-error-set
+  (foreign-lambda* void ([int fd])
+    "FD_SET(fd, &C_fdset_error);" ) )
+
 (define (fdset-set fd i/o)
   (dbg "setting fdset for " fd " to " i/o)
+  (fdset-error-set fd)
   (case i/o
     ((#t #:input) (fdset-input-set fd))
     ((#f #:output) (fdset-output-set fd))
@@ -386,11 +393,11 @@ EOF
      (fdset-output-set fd) )
     (else (panic "fdset-set: invalid i/o direction"))))
 
-(define (fdset-test inf outf i/o)
+(define (fdset-test inf outf errf i/o)
   (case i/o
-    ((#t #:input) inf)
-    ((#f #:output) outf)
-    ((#:all) (or inf outf))
+    ((#t #:input) (or inf errf))
+    ((#f #:output) (or outf errf))
+    ((#:all) (or inf outf errf))
     (else (panic "fdset-test: invalid i/o direction"))))
 
 (define (##sys#thread-block-for-i/o! t fd i/o)
@@ -434,9 +441,10 @@ EOF
 		     (let* ([a (car lst)]
 			    [fd (car a)]
 			    [inf (##core#inline "C_fd_test_input" fd)]
-			    [outf (##core#inline "C_fd_test_output" fd)] )
-		       (dbg "fd " fd " state: input=" inf ", output=" outf)
-		       (if (or inf outf)
+			    [outf (##core#inline "C_fd_test_output" fd)]
+			    [errf (##core#inline "C_fd_test_error" fd)] )
+		       (dbg "fd " fd " state: input=" inf ", output=" outf ", error=" errf)
+		       (if (or inf outf errf)
 			   (let loop2 ((threads (cdr a)) (keep '()))
 			     (if (null? threads)
 				 (if (null? keep)
@@ -455,13 +463,9 @@ EOF
 					    (##sys#remove-from-timeout-list t))
 					  (##sys#thread-basic-unblock! t) 
 					  (loop2 (cdr threads) keep))
-					 ((or (not (eq? fd (car p)))
-					      ;; thread on fd-list has incorrect
-					      ;; file-descriptor registered. 
-					      ;; We just assume this is the right one and
-					      ;; unblock.
-					      ;; XXX Needs to be investigated...
-					      (fdset-test inf outf (cdr p)))
+					 ((not (eq? fd (car p)))
+					  (panic "thread is registered for I/O on unknown file-descriptor"))
+					 ((fdset-test inf outf errf (cdr p))
 					  (when (##sys#slot t 4) ; also blocked for timeout?
 					    (##sys#remove-from-timeout-list t))
 					  (##sys#thread-basic-unblock! t) 
