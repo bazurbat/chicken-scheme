@@ -54,11 +54,15 @@
     to Ivan Raikov)
   - Got rid of some warnings in the C runtime system that were triggered on
     the SunPro C compiler (thanks to Joe Python)
+  - Fixed bug in "string->number" that caused out-of-range characters to
+    be accepted for base > 10 (thanks to Jim Ursetto)
 
 - Syntax expander
   - Fixed a bug that caused imported identifiers to leak into the 
     macroexpansion/compile-time environment (reported by Christian Kellermann)
   - Fixed a bug in the processing of extended lambda-lists (thanks to Peter Bex)
+  - Peter Bex fixed a bug that caused bound variables to be incorrectly
+    renamed in quoted literals (thanks to Matthew Flatt)
 
 - Compiler
   - Fixed bug in handling of symbols in constant-definitions (thanks to Peter
