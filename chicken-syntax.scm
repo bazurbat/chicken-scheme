@@ -1211,8 +1211,10 @@
 	   (##sys#check-syntax 'define-specialization x '(_ (symbol . #(_ 0)) _ . #(_ 0 1)))
 	   (let* ((head (cadr x))
 		  (name (car head))
+		  (gname (##sys#globalize name '())) ;XXX correct?
 		  (args (cdr head))
 		  (alias (gensym name))
+		  (galias (##sys#globalize alias '())) ;XXX and this?
 		  (rtypes (and (pair? (cdddr x)) (caddr x)))
 		  (%define (r 'define))
 		  (body (if rtypes (cadddr x) (caddr x))))
@@ -1221,13 +1223,13 @@
 		      (let ((anames (reverse anames))
 			    (atypes (reverse atypes))
 			    (spec
-			     `(,alias ,@(let loop2 ((anames anames) (i 1))
-					 (if (null? anames)
-					     '()
-					     (cons (vector i)
-						   (loop2 (cdr anames) (fx+ i 1))))))))
+			     `(,galias ,@(let loop2 ((anames anames) (i 1))
+					   (if (null? anames)
+					       '()
+					       (cons (vector i)
+						     (loop2 (cdr anames) (fx+ i 1))))))))
 			(##sys#put! 
-			 name '##compiler#local-specializations
+			 gname '##compiler#local-specializations
 			 (##sys#append
 			  (list
 			   (cons atypes
@@ -1244,7 +1246,8 @@
 				      spec)
 				     (list spec))))
 			  (or (##compiler#variable-mark 
-			       name '##compiler#local-specializations)
+			       gname
+			       '##compiler#local-specializations)
 			      '())))
 			`(##core#begin
 			  (##core#declare (inline ,alias) (hide ,alias))
