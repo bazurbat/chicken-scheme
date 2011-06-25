@@ -2242,6 +2242,12 @@ void C_no_closure_error(C_word x)
 }
 
 
+void C_div_by_zero_error(char *loc)
+{
+  barf(C_DIVISION_BY_ZERO_ERROR, loc);
+}
+
+
 /* Allocate and initialize record: */
 
 C_regparm C_word C_fcall C_string(C_word **ptr, int len, C_char *str)
@@ -5310,30 +5316,6 @@ C_regparm C_word C_fcall C_a_i_sqrt(C_word **a, int c, C_word n)
 
   C_check_real(n, "sqrt", f);
   return C_flonum(a, sqrt(f));
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_i_fixnum_arithmetic_shift(C_word n, C_word c)
-{
-  if(C_unfix(c) < 0) return C_fixnum_shift_right(n, C_u_fixnum_negate(c));
-  else return C_fixnum_shift_left(n, c);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_fixnum_divide(C_word x, C_word y)
-{
-  if(y == C_fix(0)) barf(C_DIVISION_BY_ZERO_ERROR, "fx/");
-  else return C_u_fixnum_divide(x, y);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_fixnum_modulo(C_word x, C_word y)
-{
-  if(y == C_fix(0)) barf(C_DIVISION_BY_ZERO_ERROR, "fxmod");
-  else return C_u_fixnum_modulo(x, y);
 }
 
 
@@ -9298,14 +9280,4 @@ C_filter_heap_objects(C_word c, C_word closure, C_word k, C_word func, C_word ve
   C_save(func);
   C_fromspace_top = C_fromspace_limit; /* force major GC */
   C_reclaim((void *)filter_heap_objects_2, NULL);
-}
-
-
-C_regparm C_word C_fcall 
-C_a_i_flonum_quotient_checked(C_word **ptr, int c, C_word n1, C_word n2)
-{
-  double n3 = C_flonum_magnitude(n2);
-
-  if(n3 == 0.0) barf(C_DIVISION_BY_ZERO_ERROR, "fp/?");
-  else return C_flonum(ptr, C_flonum_magnitude(n1) / n3);
 }

@@ -532,6 +532,7 @@
   (C_a_i_flonum_difference (flonum flonum) flonum "C_ub_i_flonum_difference")
   (C_a_i_flonum_times (flonum flonum) flonum "C_ub_i_flonum_times") 
   (C_a_i_flonum_quotient (flonum flonum) flonum "C_ub_i_flonum_quotient") 
+  (C_a_i_flonum_quotient_checked (flonum flonum) flonum "C_ub_i_flonum_quotient_checked") 
   (C_u_i_fpintegerp (flonum) bool "C_ub_i_fpintegerp")
   (C_flonum_equalp (flonum flonum) bool "C_ub_i_flonum_equalp")
   (C_flonum_greaterp (flonum flonum) bool "C_ub_i_flonum_greaterp")

@@ -1555,6 +1555,7 @@ C_fctexport void C_bad_min_argc_2(int c, int n, C_word closure) C_noret;
 C_fctexport void C_stack_overflow(void) C_noret;
 C_fctexport void C_unbound_error(C_word sym) C_noret;
 C_fctexport void C_no_closure_error(C_word x) C_noret;
+C_fctexport void C_div_by_zero_error(char *loc) C_noret;
 C_fctexport C_word C_closure(C_word **ptr, int cells, C_word proc, ...);
 C_fctexport C_word C_fcall C_pair(C_word **ptr, C_word car, C_word cdr) C_regparm;
 C_fctexport C_word C_fcall C_h_pair(C_word car, C_word cdr) C_regparm;
@@ -1769,9 +1770,6 @@ C_fctexport C_word C_fcall C_i_not_pair_p_2(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_null_list_p(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_string_null_p(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_null_pointerp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_fixnum_arithmetic_shift(C_word n, C_word c) C_regparm;
-C_fctexport C_word C_fcall C_fixnum_divide(C_word x, C_word y) C_regparm;
-C_fctexport C_word C_fcall C_fixnum_modulo(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_locative_set(C_word loc, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_locative_to_object(C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_a_i_make_locative(C_word **a, int c, C_word type, C_word object, C_word index, C_word weak) C_regparm;
@@ -1799,7 +1797,6 @@ C_fctexport C_word C_fcall C_i_o_fixnum_and(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_o_fixnum_ior(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_o_fixnum_xor(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_a_i_flonum_round_proper(C_word **a, int c, C_word n) C_regparm;
-C_fctexport C_word C_fcall C_a_i_flonum_quotient_checked(C_word **ptr, int c, C_word n1, C_word n2) C_regparm;
 C_fctexport C_word C_fcall C_i_getprop(C_word sym, C_word prop, C_word def) C_regparm;
 C_fctexport C_word C_fcall C_putprop(C_word **a, C_word sym, C_word prop, C_word val) C_regparm;
 C_fctexport C_word C_fcall C_i_get_keyword(C_word key, C_word args, C_word def) C_regparm;
@@ -2196,6 +2193,27 @@ C_inline C_word C_i_fixnum_max(C_word x, C_word y)
 }
 
 
+C_inline C_word C_fixnum_divide(C_word x, C_word y)
+{
+  if(y == C_fix(0)) C_div_by_zero_error("fx/");
+  else return C_u_fixnum_divide(x, y);
+}
+
+
+C_inline C_word C_fixnum_modulo(C_word x, C_word y)
+{
+  if(y == C_fix(0)) C_div_by_zero_error("fxmod");
+  else return C_u_fixnum_modulo(x, y);
+}
+
+
+C_inline C_word C_i_fixnum_arithmetic_shift(C_word n, C_word c)
+{
+  if(C_unfix(c) < 0) return C_fixnum_shift_right(n, C_u_fixnum_negate(c));
+  else return C_fixnum_shift_left(n, c);
+}
+
+
 C_inline C_word C_i_flonum_min(C_word x, C_word y)
 {
   double 
@@ -2213,6 +2231,24 @@ C_inline C_word C_i_flonum_max(C_word x, C_word y)
     yf = C_flonum_magnitude(y);
 
   return xf > yf ? x : y;
+}
+
+
+C_inline C_word
+C_a_i_flonum_quotient_checked(C_word **ptr, int c, C_word n1, C_word n2)
+{
+  double n3 = C_flonum_magnitude(n2);
+
+  if(n3 == 0.0) C_div_by_zero_error("fp/?");
+  else return C_flonum(ptr, C_flonum_magnitude(n1) / n3);
+}
+
+
+C_inline double
+C_ub_i_flonum_quotient_checked(double n1, double n2)
+{
+  if(n2 == 0.0) C_div_by_zero_error("fp/?");
+  else return n1 / n2;
 }
 
 
