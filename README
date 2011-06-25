@@ -249,15 +249,16 @@
 	|   |       `-- utils.import.so
 	|   |-- libchicken.a
 	|   |-- libchicken.dll.a                      (Windows)
+	|   |-- libchicken.dylib                      (Macintosh)
 	|   |-- libchicken.so -> libchicken.so.6      (Unix)
 	|   `-- libchicken.so.6			      (Unix)
 	`-- share
 	    |-- chicken
 	    |   |-- doc
-	    |   |   |-- CHICKEN.icns                  (Macintosh)
 	    |   |   |-- LICENSE
 	    |   |   |-- README
 	    |   |   |-- mac.r			      (Macintosh)
+	    |   |   |-- CHICKEN.icns                  (Macintosh)
 	    |   |   |-- manual-html
             |   |   |-- chicken.png
 	    |   |   `-- *.html
