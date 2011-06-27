@@ -100,6 +100,7 @@
   (let ((blist '())
 	(aliased '())
 	(noreturn #f)
+	(dropped-branches 0)
 	(safe-calls 0))
 
     (define (constant-result lit)
@@ -625,11 +626,18 @@
 		 ((##core#variable) (variable-result (first params) e loc flow))
 		 ((if)
 		  (let* ((tags (cons (tag) (tag)))
-			 (rt (single "in conditional" (walk (first subs) e loc #f #f flow tags) loc))
+			 (tst (first subs))
+			 (rt (single "in conditional" (walk tst e loc #f #f flow tags) loc))
 			 (c (second subs))
 			 (a (third subs))
 			 (nor0 noreturn))
-		    (always-true rt loc n)
+		    (when (and (always-true rt loc n) specialize)
+		      (set! dropped-branches (+ dropped-branches 1))
+		      (copy-node!
+		       (build-node-graph
+			`(let ((,(gensym) ,tst))
+			   ,c))
+		       n))
 		    (set! noreturn #f)
 		    (let* ((r1 (walk c e loc dest tail (cons (car tags) flow) #f))
 			   (nor1 noreturn))
@@ -904,6 +912,8 @@
 	 specialization-statistics))
       (when (positive? safe-calls)
 	(debugging 'x "safe calls" safe-calls)) ;XXX
+      (when (positive? dropped-branches)
+	(debugging 'x "dropped branches" dropped-branches)) ;XXX
       rn)))
 
 (define (compatible-types? t1 t2)
