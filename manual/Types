@@ -202,6 +202,18 @@ the compilation unit in which they occur and can not be exported. When
 encountered in the interpreter, {{define-specialization}} does nothing
 and returns an unspecified result.
 
+Note that the exact order of specialization application is not
+specified and nested specializations may result in not narrowing down
+the result types to the most specific type, due to the way the
+flow-analysis is implemented. It is recommended to not define "chains"
+of specializations where one variant of a procedure call is
+specialized to another one that is intended to specialize further.
+
+There is currently no way of ensuring specializations take place.  You
+can use the {{-debug o}} compiler options to see the total number of
+specializations performed on a particular named function call during
+compilation.
+
 
 ---
 Previous: [[Modules]]
