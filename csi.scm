@@ -205,7 +205,7 @@ EOF
 	(and (> (##sys#size name) 0)
 	     (cond [(dirseparator? (string-ref name 0)) (addext name)]
 		   [(string-index dirseparator? name)
-		    (and-let* ([p (_getcwd buf 256)])
+		    (let ((p (_getcwd buf 256)))
 		      (addext (string-append (chop-separator p) "/" name)) ) ]
 		   [(addext name)]
 		   [else
