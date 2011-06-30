@@ -837,6 +837,10 @@
 						    (not (get db var 'assigned)) 
 						    (not oparg?))))
 				    (cond (pred
+					   ;;XXX we could add a blist entry for var in the other
+					   ;;    branch by subtracting pt from the current type
+					   ;;    of var, at least in the simple case of
+					   ;;    "(or ... <PT> ...)" -> "(or ... ...)"
 					   (d "  predicate `~a' indicates `~a' is ~a in flow ~a"
 					      pn var pt (car ctags))
 					   (add-to-blist 
