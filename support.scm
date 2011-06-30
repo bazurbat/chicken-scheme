@@ -1203,23 +1203,17 @@
 		unsigned-long) 
        'number)
       ((c-pointer c-string-list c-string-list*)
-       (case mode
-	 ((arg) '(or boolean pointer))
-	 (else 'pointer)))
+       '(or boolean pointer))
       ((nonnull-c-pointer) 'pointer)
       ((c-string c-string* unsigned-c-string unsigned-c-string*)
-       (case mode
-	 ((arg) '(or boolean string))
-	 (else 'string)))
+       '(or boolean string))
       ((nonnull-c-string nonnull-c-string* nonnull-unsigned-c-string*) 'string)
       ((symbol) 'symbol)
       (else
        (cond ((pair? t)
 	      (case (car t)
 		((ref pointer function c-pointer)
-		 (case mode
-		   ((arg) '(or boolean pointer))
-		   (else 'pointer)))
+		 '(or boolean pointer))
 		((const) (foreign-type->scrutiny-type (cadr t) mode))
 		((enum) 'number)
 		((nonnull-pointer nonnull-c-pointer) 'pointer)
