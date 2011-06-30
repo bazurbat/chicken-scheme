@@ -778,6 +778,7 @@
 			  (debugging '|I| (sprintf "(: ~s ~s)" var rt))
 			  ;; [2] sets property, but lambda has already been walked,
 			  ;; so no type-checks are generated (see also [1], above)
+			  ;; note that implicit declarations are not enforcing
 			  (mark-variable var '##compiler#declared-type)
 			  (mark-variable var '##compiler#type rt))))
 		    (when b
