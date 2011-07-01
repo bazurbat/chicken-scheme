@@ -54,14 +54,6 @@
 # define EX_SOFTWARE	70
 #endif
 
-#ifndef C_BUILD_TAG
-# define C_BUILD_TAG	""
-#endif
-
-#ifndef C_BRANCH_NAME
-# define C_BRANCH_NAME   ""
-#endif
-
 #define C_close_file(p)	      (C_fclose((C_FILEPTR)(C_port_file(p))), C_SCHEME_UNDEFINED)
 #define C_a_f64peek(ptr, c, b, i)  C_flonum(ptr, ((double *)C_data_pointer(b))[ C_unfix(i) ])
 #define C_fetch_c_strlen(b, i) C_fix(strlen((C_char *)C_block_item(b, C_unfix(i))))
@@ -140,7 +132,6 @@ EOF
 
 
 (include "common-declarations.scm")
-(include "version.scm")
 (include "banner.scm")
 
 
@@ -150,9 +141,6 @@ EOF
 (define-constant read-line-buffer-initial-size 1024)
 (define-constant default-parameter-vector-size 16)
 (define-constant maximal-string-length #x00ffffff)
-
-(define-foreign-variable +build-tag+ c-string "C_BUILD_TAG")
-(define-foreign-variable +branch-name+ c-string "C_BRANCH_NAME")
 
 
 ;;; System routines:

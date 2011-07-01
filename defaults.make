@@ -351,7 +351,6 @@ chicken-defaults.h:
 ifdef OPTIMIZE_FOR_SPEED
 	echo "/* (this build was optimized for speed) */" >$@
 endif
-	echo "#define C_BUILD_TAG \"$(BUILD_TAG)\"" >>$@
 	echo "#define C_CHICKEN_PROGRAM \"$(CHICKEN_PROGRAM)$(EXE)\"" >>$@
 	echo "#ifndef C_INSTALL_CC" >>$@
 	echo "# define C_INSTALL_CC \"$(C_COMPILER)\"" >>$@
@@ -488,9 +487,6 @@ endif
 	echo "#endif" >>$@
 	echo "#ifndef C_BINARY_VERSION" >>$@
 	echo "# define C_BINARY_VERSION $(BINARYVERSION)" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_BRANCH_NAME" >>$@
-	echo "# define C_BRANCH_NAME \"$(BRANCHNAME)\"" >>$@
 	echo "#endif" >>$@
 	echo "/* END OF FILE */" >>$@
 endif

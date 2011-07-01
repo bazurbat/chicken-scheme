@@ -493,7 +493,7 @@ $(foreach lib, $(SETUP_API_OBJECTS_1),\
 
 bootstrap-lib = $(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
 
-library.c: $(SRCDIR)library.scm $(SRCDIR)version.scm $(SRCDIR)banner.scm $(SRCDIR)common-declarations.scm
+library.c: $(SRCDIR)library.scm $(SRCDIR)banner.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 eval.c: $(SRCDIR)eval.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)

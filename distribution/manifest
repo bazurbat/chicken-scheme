@@ -45,7 +45,6 @@ support.c
 tcp.c
 utils.c
 build.scm
-version.scm
 buildversion
 c-backend.scm
 c-platform.scm
