@@ -7,6 +7,7 @@ NEWS
 README
 config-arch.sh
 identify-branch.sh
+identify-revision.sh
 banner.scm
 batch-driver.scm
 batch-driver.c
@@ -95,6 +96,7 @@ srfi-4.scm
 stub.scm
 support.scm
 tcp.scm
+build-version.scm
 tests/thread-list.scm
 tests/gobble.scm
 tests/test-optional.scm

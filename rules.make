@@ -38,7 +38,7 @@ SETUP_API_OBJECTS_1 = setup-api setup-download
 LIBCHICKEN_OBJECTS_1 = \
        library eval data-structures ports files extras lolevel utils tcp srfi-1 srfi-4 srfi-13 \
        srfi-14 srfi-18 srfi-69 $(POSIXFILE) irregex scheduler \
-       profiler stub expand modules chicken-syntax chicken-ffi-syntax runtime
+       profiler stub expand modules chicken-syntax chicken-ffi-syntax runtime build-version
 LIBCHICKEN_SHARED_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=$(O))
 LIBCHICKEN_STATIC_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=-static$(O))
 
@@ -461,6 +461,26 @@ ifdef WINDOWS_SHELL
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(IBINDIR)$(SEP)csibatch.bat"
 endif
 
+# build versioning
+
+.PHONY: buildtag buildbranch buildid
+
+ifdef WINDOWS_SHELL
+buildtag:
+	echo.$(BUILD_TAG)>buildtag
+buildbranch:
+	echo.$(BRANCHNAME)>buildbranch
+buildid:
+	echo.$(BUILD_ID)>buildid
+else
+buildtag:
+	echo "$(BUILD_TAG)" > buildtag
+buildbranch:
+	echo "$(BRANCHNAME)" > buildbranch
+buildid:
+	echo "$(BUILD_ID)" > buildid
+endif
+
 # bootstrapping c sources
 
 define declare-emitted-import-lib-dependency
@@ -526,6 +546,8 @@ profiler.c: $(SRCDIR)profiler.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 stub.c: $(SRCDIR)stub.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
+build-version.c: $(SRCDIR)build-version.scm buildtag buildbranch buildid $(SRCDIR)buildversion
+	$(bootstrap-lib)
 
 define declare-bootstrap-import-lib
 $(1).import.c: $$(SRCDIR)$(1).import.scm

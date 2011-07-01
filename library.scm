@@ -27,6 +27,7 @@
 
 (declare
   (unit library)
+  (uses build-version)
   (disable-interrupts)
   (hide ##sys#dynamic-unwind ##sys#find-symbol
 	##sys#grow-vector ##sys#default-parameter-vector 

@@ -32,6 +32,7 @@ endif
 SEP = $(strip \)
 SRCDIR =.$(SEP)
 BRANCHNAME =
+BUILD_ID =
 
 # platform configuration
 

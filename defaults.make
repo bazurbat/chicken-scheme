@@ -43,7 +43,7 @@ SEP ?= /
 SRCDIR ?= .$(SEP)
 DESTDIR ?=
 PREFIX ?= /usr/local
-BRANCHNAME ?= $(shell sh identify-branch.sh $(SRCDIR))
+BRANCHNAME ?= $(shell sh $(SRCDIR)identify-branch.sh $(SRCDIR))
 
 BINDIR = $(PREFIX)/bin
 LIBDIR = $(PREFIX)/lib
@@ -237,6 +237,7 @@ UNAME_SYS ?= $(shell uname)
 COPY_COMMAND = cp
 endif
 BUILD_TAG ?= compiled $(BUILD_TIME) on $(HOSTNAME) ($(UNAME_SYS))
+BUILD_ID ?= $(shell sh $(SRCDIR)identify-revision.sh $(SRCDIR))
 COPYMANY =
 
 
