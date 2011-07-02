@@ -615,6 +615,10 @@
 (flonum? (procedure? float flonum? (*) boolean))
 
 (flush-output (procedure! flush-output (#!optional port) undefined))
+
+(foldl (procedure! foldl ((procedure (* *) *) * list) *))
+(foldr (procedure! foldr ((procedure (* *) *) * list) *))
+
 (force-finalizers (procedure force-finalizers () undefined))
 
 (fp- (procedure! fp- (float float) float)

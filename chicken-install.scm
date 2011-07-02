@@ -214,7 +214,9 @@
   (define (ext-version x)
     (cond ((or (eq? x 'chicken)
                (equal? x "chicken")
-               (member (->string x) ##sys#core-library-modules))
+               (let ((xs (->string x)))
+		 (or (member xs ##sys#core-library-modules)
+		     (member xs ##sys#core-syntax-modules))))
            (chicken-version) )
           ((extension-information x) =>
            (lambda (info)
@@ -697,6 +699,7 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
        -force                   don't ask, install even if versions don't match
   -k   -keep                    keep temporary files
   -x   -keep-installed          install only if not already installed
+       -reinstall               reinstall all currently installed extensions
   -l   -location LOCATION       install from given location instead of default
   -t   -transport TRANSPORT     use given transport instead of default
        -proxy HOST[:PORT]       download via HTTP proxy
@@ -791,8 +794,9 @@ EOF
 			    (error
 			     "no default location defined - please use `-location' option")))
 			(if listeggs
-			    (list-available-extensions
-			     *default-transport* *default-location*)
+			    (display
+			     (list-available-extensions
+			      *default-transport* *default-location*))
 			    (install (apply-mappings (reverse eggs))))))))
               (else
                (let ((arg (car args)))

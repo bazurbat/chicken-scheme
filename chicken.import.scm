@@ -93,6 +93,8 @@
    flonum-radix
    flonum?
    flush-output
+   foldl
+   foldr
    force-finalizers
    fp-
    fp*

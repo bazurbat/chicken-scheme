@@ -4905,3 +4905,20 @@ EOF
 
 (define ##sys#dump-heap-state (##core#primitive "C_dump_heap_state"))
 (define ##sys#filter-heap-objects (##core#primitive "C_filter_heap_objects"))
+
+
+;;; fast folds with correct argument order
+
+(define (foldl f z lst)
+  (##sys#check-list lst 'foldl)
+  (let loop ((lst lst) (z z))
+    (if (not (pair? lst))
+	z
+	(loop (##sys#slot lst 1) (f z (##sys#slot lst 0))))))
+
+(define (foldr f z lst)
+  (##sys#check-list lst 'foldr)
+  (let loop ((lst lst))
+    (if (not (pair? lst))
+	z
+	(f (##sys#slot lst 0) (loop (##sys#slot lst 1))))))

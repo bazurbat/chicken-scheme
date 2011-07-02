@@ -6,7 +6,7 @@
   (c) 2008-2011, The Chicken Team
   (c) 2000-2007, Felix L. Winkelmann
 
-  version 4.7.1
+  version 4.7.3
 
 
  1. Introduction
@@ -249,15 +249,16 @@
 	|   |       `-- utils.import.so
 	|   |-- libchicken.a
 	|   |-- libchicken.dll.a                      (Windows)
+	|   |-- libchicken.dylib                      (Macintosh)
 	|   |-- libchicken.so -> libchicken.so.6      (Unix)
 	|   `-- libchicken.so.6			      (Unix)
 	`-- share
 	    |-- chicken
 	    |   |-- doc
-	    |   |   |-- CHICKEN.icns                  (Macintosh)
 	    |   |   |-- LICENSE
 	    |   |   |-- README
 	    |   |   |-- mac.r			      (Macintosh)
+	    |   |   |-- CHICKEN.icns                  (Macintosh)
 	    |   |   |-- manual-html
             |   |   |-- chicken.png
 	    |   |   `-- *.html

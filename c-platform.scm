@@ -149,6 +149,7 @@
     block-ref block-set! number-of-slots substring-index substring-index-ci
     hash-table-ref any? read-string substring=? substring-ci=?
     first second third fourth make-record-instance
+    foldl foldr
     u8vector-length s8vector-length u16vector-length s16vector-length u32vector-length 
     s32vector-length
     f32vector-length f64vector-length setter

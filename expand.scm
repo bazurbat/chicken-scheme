@@ -61,6 +61,9 @@
 
 (define ##sys#current-environment (make-parameter '()))
 (define ##sys#current-meta-environment (make-parameter '()))
+
+;;XXX should this be a parameter?
+;;XXX should this be in eval.scm?
 (define ##sys#active-eval-environment ##sys#current-environment)
 
 (define (lookup id se)
@@ -76,9 +79,10 @@
 		 (char=? #\# (##core#inline "C_subchar" str 0)))))
       var
       (let* ((alias (gensym var))
-	     (ua (or (lookup var se) var)))
+	     (ua (or (lookup var se) var))
+             (rn (or (getp var '##core#real-name) var)))
 	(putp alias '##core#macro-alias ua)
-	(putp alias '##core#real-name var)
+	(putp alias '##core#real-name rn)
 	(dd "aliasing " alias " (real: " var ") to " 
 	    (if (pair? ua)
 		'<macro>
@@ -120,8 +124,10 @@
 (define strip-syntax ##sys#strip-syntax)
 
 (define (##sys#extend-se se vars #!optional (aliases (map gensym vars)))
-  (for-each 
-   (cut ##sys#put! <> '##core#real-name <>) 
+  (for-each
+   (lambda (alias sym)
+     (let ((original-real-name (getp sym '##core#real-name)))
+       (putp alias '##core#real-name (or original-real-name sym))))
    aliases vars)
   (append (map (lambda (x y) (cons x y)) vars aliases) se)) ; inline cons
 
@@ -845,17 +851,17 @@
 	    ((not (symbol? sym)) sym)
             (else                       ; Code stolen from ##sys#strip-syntax
              (let ((renamed (lookup sym se) ) )
-               (cond ((getp sym '##core#real-name) =>
-                      (lambda (name)
-                        (dd "STRIP SYNTAX ON " sym " ---> " name)
-                        name))
-                     ((assq-reverse sym renv) =>
+               (cond ((assq-reverse sym renv) =>
                       (lambda (a)
                         (dd "REVERSING RENAME: " sym " --> " (car a)) (car a)))
                      ((not renamed)
                       (dd "IMPLICITLY RENAMED: " sym) (rename sym))
                      ((pair? renamed)
                       (dd "MACRO: " sym) (rename sym))
+                     ((getp sym '##core#real-name) =>
+                      (lambda (name)
+                        (dd "STRIP SYNTAX ON " sym " ---> " name)
+                        name))
                      (else (dd "BUILTIN ALIAS:" renamed) renamed))))))
     (if explicit-renaming?
         ;; Let the user handle renaming

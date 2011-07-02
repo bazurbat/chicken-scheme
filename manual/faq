@@ -538,6 +538,8 @@ The following extended bindings are handled specially:
 {{fixnum?}}
 {{flonum?}}
 {{flush-output}}
+{{foldl}}
+{{foldr}}
 {{format}}
 {{fourth}}
 {{fp*}}
