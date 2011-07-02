@@ -926,8 +926,8 @@ Applies {{PROCEDURE}} to the elements from {{LIST}}, beginning from the left:
 </enscript>
 
 Note that the order of arguments taken by {{PROCEDURE}} is different
-from the {{SRFI-1}} {{fold}} procedure, but matches the more intuitive
-order used in Haskell.
+from the {{SRFI-1}} {{fold}} procedure, but matches the more natural
+order used in Haskell and Objective Caml.
 
 
 ==== foldr
