@@ -473,6 +473,7 @@ The following extended bindings are handled specially:
 {{cpu-time}} {{error}} {{call/cc}} {{any?}}
 {{substring=?}} {{substring-ci=?}} {{substring-index}} {{substring-index-ci}}
 {{printf}} {{sprintf}} {{fprintf}} {{format}} {{o}}
+{{foldl}} {{foldr}}
 
 ==== What's the difference betweem "block" and "local" mode?
 

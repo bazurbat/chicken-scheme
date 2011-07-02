@@ -913,6 +913,33 @@ Returns {{#t}} if the two argument blobs are of the same
 size and have the same content.
 
 
+=== Lists
+
+==== foldl
+
+<procedure>(foldl PROCEDURE INIT LIST)</procedure>
+
+Applies {{PROCEDURE}} to the elements from {{LIST}}, beginning from the left:
+
+<enscript hightlight=scheme>
+(foldl + 0 '(1 2 3))    ==>    (+ (+ (+ 0 1) 2) 3)
+</enscript>
+
+Note that the order of arguments taken by {{PROCEDURE}} is different
+from the {{SRFI-1}} {{fold}} procedure, but matches the more intuitive
+order used in Haskell.
+
+
+==== foldr
+
+<procedure>(foldr PROCEDURE INIT LIST)</procedure>
+
+Applies {{PROCEDURE}} to the elements from {{LIST}}, beginning from the right:
+
+<enscript hightlight=scheme>
+(foldr + 0 '(1 2 3))    ==>    (+ 1 (+ 2 (+ 3 0)))
+</enscript>
+
 
 === Vectors
 
