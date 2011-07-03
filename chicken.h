@@ -1667,7 +1667,7 @@ C_fctexport void C_ccall C_software_version(C_word c, C_word closure, C_word k) 
 C_fctexport void C_ccall C_build_platform(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_register_finalizer(C_word c, C_word closure, C_word k, C_word x, C_word proc) C_noret;
 C_fctexport void C_ccall C_set_dlopen_flags(C_word c, C_word closure, C_word k, C_word now, C_word global) C_noret;
-C_fctexport void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word entry, C_word reloadable) C_noret;
+C_fctexport void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word entry) C_noret;
 C_fctexport void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table) C_noret;
 C_fctexport void C_ccall C_locative_ref(C_word c, C_word closure, C_word k, C_word loc) C_noret;
 C_fctexport void C_ccall C_call_with_cthulhu(C_word c, C_word self, C_word k, C_word proc) C_noret;
@@ -1815,7 +1815,6 @@ C_fctexport C_word C_fcall C_i_foreign_unsigned_integer64_argumentp(C_word x) C_
 
 C_fctexport C_char *C_lookup_procedure_id(void *ptr);
 C_fctexport void *C_lookup_procedure_ptr(C_char *id);
-C_fctexport C_word C_dunload(C_word name);
 C_fctexport C_char *C_executable_path();
 
 #ifdef C_SIXTY_FOUR
