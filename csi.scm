@@ -55,7 +55,7 @@ EOF
   (hide parse-option-string bytevector-data member* canonicalize-args 
 	describer-table dirseparator? circular-list? improper-pairs?
 	show-frameinfo selected-frame select-frame copy-from-frame
-	findall command-table default-editor) )
+	findall command-table default-editor csi-eval) )
 
 
 ;;; Parameters:
@@ -286,7 +286,7 @@ EOF
 	 (set! command-table (cons (list name proc help) command-table))))
   (##sys#void))
 
-(set! ##sys#repl-eval-hook
+(set! csi-eval
   (let ((eval eval)
 	(load-noisily load-noisily)
 	(read read)
@@ -1087,7 +1087,7 @@ EOF
       (do ([args args (cdr args)])
 	  ((null? args)
 	   (unless batch 
-	     (repl)
+	     (repl csi-eval)
 	     (##sys#write-char-0 #\newline ##sys#standard-output) ) )
 	(let* ((arg (car args)))
 	  (cond ((member arg simple-options))

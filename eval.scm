@@ -30,7 +30,7 @@
   (uses expand)
   (hide ##sys#r4rs-environment ##sys#r5rs-environment 
 	##sys#interaction-environment pds pdss pxss d) 
-  (not inline ##sys#repl-eval-hook ##sys#repl-read-hook ##sys#repl-print-hook 
+  (not inline ##sys#repl-read-hook ##sys#repl-print-hook 
        ##sys#read-prompt-hook ##sys#alias-global-hook ##sys#user-read-hook
        ##sys#syntax-error-hook))
 
@@ -1506,7 +1506,6 @@
 
 ;;;; Read-Eval-Print loop:
 
-(define ##sys#repl-eval-hook #f)
 (define ##sys#repl-print-length-limit #f)
 (define ##sys#repl-read-hook #f)
 (define ##sys#repl-recent-call-chain #f) ; used in csi for ,c command
@@ -1530,7 +1529,7 @@
 	(read read)
 	(call-with-current-continuation call-with-current-continuation)
 	(string-append string-append))
-    (lambda ()
+    (lambda (#!optional (evaluator eval))
 
       (define (write-err xs)
 	(for-each (cut ##sys#repl-print-hook <> ##sys#standard-error) xs) )
@@ -1610,7 +1609,7 @@
 		   (##sys#read-char-0 ##sys#standard-input) )
 		 (##sys#clear-trace-buffer)
 		 (set! ##sys#unbound-in-eval '())
-		 (receive result ((or ##sys#repl-eval-hook eval) exp)
+		 (receive result (evaluator exp)
 		   (when (and ##sys#warnings-enabled (pair? ##sys#unbound-in-eval))
 		     (let loop ((vars ##sys#unbound-in-eval) (u '()))
 		       (cond ((null? vars)
