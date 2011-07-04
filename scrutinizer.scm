@@ -236,72 +236,6 @@
 		  len m m
 		  (map typename results))))))
 
-    (define (simplify t)
-      (let ((t2 (simplify1 t)))
-	(dd "simplify: ~a -> ~a" t t2)
-	t2))
-
-    (define (simplify1 t)
-      (call/cc 
-       (lambda (return)
-	 (if (pair? t)
-	     (case (car t)
-	       ((or)
-		(cond ((= 2 (length t)) (simplify (second t)))
-		      ((every procedure-type? (cdr t))
-		       (if (any (cut eq? 'procedure <>) (cdr t))
-			   'procedure
-			   (reduce
-			    (lambda (t pt)
-			      (let* ((name1 (and (named? t) (cadr t)))
-				     (atypes1 (if name1 (third t) (second t)))
-				     (rtypes1 (if name1 (cdddr t) (cddr t)))
-				     (name2 (and (named? pt) (cadr pt)))
-				     (atypes2 (if name2 (third pt) (second pt)))
-				     (rtypes2 (if name2 (cdddr pt) (cddr pt))))
-				(append
-				 '(procedure)
-				 (if (and name1 name2 (eq? name1 name2)) (list name1) '())
-				 (list (merge-argument-types atypes1 atypes2))
-				 (merge-result-types rtypes1 rtypes2))))
-			    #f
-			    (cdr t))))
-		      (else
-		       (let* ((ts (append-map
-				   (lambda (t)
-				     (let ((t (simplify t)))
-				       (cond ((and (pair? t) (eq? 'or (car t)))
-					      (cdr t))
-					     ((eq? t 'undefined) (return 'undefined))
-					     ((eq? t 'noreturn) '())
-					     (else (list t)))))
-				   (cdr t)))
-			      (ts2 (let loop ((ts ts) (done '()))
-				     (cond ((null? ts) (reverse done))
-					   ((eq? '* (car ts)) (return '*))
-					   ((any (cut type<=? (car ts) <>) (cdr ts))
-					    (loop (cdr ts) done))
-					   ((any (cut type<=? (car ts) <>) done)
-					    (loop (cdr ts) done))
-					   (else (loop (cdr ts) (cons (car ts) done)))))))
-			 (cond ((equal? ts2 (cdr t)) t)
-			       (else
-				(dd "  or-simplify: ~a" ts2)
-				(simplify 
-				 `(or ,@(if (any (cut eq? <> '*) ts2) '(*) ts2)))))))) )
-	       ((procedure)
-		(let* ((name (and (named? t) (cadr t)))
-		       (rtypes (if name (cdddr t) (cddr t))))
-		  (append
-		   '(procedure)
-		   (if name (list name) '())
-		   (list (map simplify (if name (third t) (second t))))
-		   (if (eq? '* rtypes)
-		       '*
-		       (map simplify rtypes)))))
-	       (else t))
-	     t))))
-
     ;;XXX this could be better done by combining non-matching arguments/llists
     ;;    into "(or (procedure ...) (procedure ...))"
     (define (merge-argument-types ts1 ts2) 
@@ -313,17 +247,17 @@
 	    ((eq? '#!rest (car ts1))
 	     (cond ((and (pair? ts2) (eq? '#!rest (car ts2)))
 		    `(#!rest
-		      ,(simplify 
+		      ,(simplify-type
 			`(or ,(rest-type (cdr ts1))
 			     ,(rest-type (cdr ts2))))))
 		   (else '(#!rest))))	;XXX giving up
 	    ((eq? '#!optional (car ts1))
 	     (cond ((and (pair? ts2) (eq? '#!optional (car ts2)))
 		    `(#!optional 
-		      ,(simplify `(or ,(cadr ts1) ,(cadr ts2)))
+		      ,(simplify-type `(or ,(cadr ts1) ,(cadr ts2)))
 		      ,@(merge-argument-types (cddr ts1) (cddr ts2))))
 		   (else '(#!rest))))	;XXX
-	    (else (cons (simplify `(or ,(car ts1) ,(car ts2)))
+	    (else (cons (simplify-type `(or ,(car ts1) ,(car ts2)))
 			(merge-argument-types (cdr ts1) (cdr ts2))))))
 
     (define (merge-result-types ts11 ts21) ;XXX possibly overly conservative
@@ -335,7 +269,7 @@
 		 ((or (atom? ts1) (atom? ts2)) (return '*))
 		 ((eq? 'noreturn (car ts1)) (loop (cdr ts1) ts2))
 		 ((eq? 'noreturn (car ts2)) (loop ts1 (cdr ts2)))
-		 (else (cons (simplify `(or ,(car ts1) ,(car ts2)))
+		 (else (cons (simplify-type `(or ,(car ts1) ,(car ts2)))
 			     (loop (cdr ts1) (cdr ts2)))))))))
 
     (define (match t1 t2)
@@ -672,7 +606,7 @@
 				  (sprintf
 				      "branches in conditional expression differ in the number of results:~%~%~a"
 				    (pp-fragment n))))
-			       (map (lambda (t1 t2) (simplify `(or ,t1 ,t2)))
+			       (map (lambda (t1 t2) (simplify-type `(or ,t1 ,t2)))
 				    r1 r2))
 			      (else '*))))))
 		 ((let)
@@ -920,6 +854,75 @@
       (when (positive? dropped-branches)
 	(debugging 'x "dropped branches" dropped-branches)) ;XXX
       rn)))
+
+
+(define (simplify-type t)
+  (define (simplify t)
+    (let ((t2 (simplify1 t)))
+      (dd "simplify: ~a -> ~a" t t2)
+      t2))
+  (define (simplify1 t)
+    (call/cc 
+     (lambda (return)
+       (if (pair? t)
+	   (case (car t)
+	     ((or)
+	      (cond ((= 2 (length t)) (simplify (second t)))
+		    ((every procedure-type? (cdr t))
+		     (if (any (cut eq? 'procedure <>) (cdr t))
+			 'procedure
+			 (reduce
+			  (lambda (t pt)
+			    (let* ((name1 (and (named? t) (cadr t)))
+				   (atypes1 (if name1 (third t) (second t)))
+				   (rtypes1 (if name1 (cdddr t) (cddr t)))
+				   (name2 (and (named? pt) (cadr pt)))
+				   (atypes2 (if name2 (third pt) (second pt)))
+				   (rtypes2 (if name2 (cdddr pt) (cddr pt))))
+			      (append
+			       '(procedure)
+			       (if (and name1 name2 (eq? name1 name2)) (list name1) '())
+			       (list (merge-argument-types atypes1 atypes2))
+			       (merge-result-types rtypes1 rtypes2))))
+			  #f
+			  (cdr t))))
+		    (else
+		     (let* ((ts (append-map
+				 (lambda (t)
+				   (let ((t (simplify t)))
+				     (cond ((and (pair? t) (eq? 'or (car t)))
+					    (cdr t))
+					   ((eq? t 'undefined) (return 'undefined))
+					   ((eq? t 'noreturn) '())
+					   (else (list t)))))
+				 (cdr t)))
+			    (ts2 (let loop ((ts ts) (done '()))
+				   (cond ((null? ts) (reverse done))
+					 ((eq? '* (car ts)) (return '*))
+					 ((any (cut type<=? (car ts) <>) (cdr ts))
+					  (loop (cdr ts) done))
+					 ((any (cut type<=? (car ts) <>) done)
+					  (loop (cdr ts) done))
+					 (else (loop (cdr ts) (cons (car ts) done)))))))
+		       (cond ((equal? ts2 (cdr t)) t)
+			     (else
+			      (dd "  or-simplify: ~a" ts2)
+			      (simplify 
+			       `(or ,@(if (any (cut eq? <> '*) ts2) '(*) ts2)))))))) )
+	     ((procedure)
+	      (let* ((name (and (named? t) (cadr t)))
+		     (rtypes (if name (cdddr t) (cddr t))))
+		(append
+		 '(procedure)
+		 (if name (list name) '())
+		 (list (map simplify (if name (third t) (second t))))
+		 (if (eq? '* rtypes)
+		     '*
+		     (map simplify rtypes)))))
+	     (else t))
+	   t))))
+  (simplify t))
+
 
 (define (compatible-types? t1 t2)
   (or (type<=? t1 t2)

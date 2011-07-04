@@ -260,6 +260,7 @@
  simplifications
  simplified-ops
  simplify-named-call
+ simplify-type
  sort-symbols
  source-filename
  source-info->string
