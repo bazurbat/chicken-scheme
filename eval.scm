@@ -794,12 +794,12 @@
   (let ((oldcm (##sys#current-module))
 	(oldme (##sys#macro-environment))
 	(mme (##sys#meta-macro-environment))
-	(aee ##sys#active-eval-environment))
+	(aee (##sys#active-eval-environment)))
     (dynamic-wind
 	(lambda () 
 	  (##sys#current-module #f)
 	  (##sys#macro-environment mme)
-	  (set! ##sys#active-eval-environment ##sys#current-meta-environment))
+	  (##sys#active-eval-environment ##sys#current-meta-environment))
 	(lambda ()
 	  ((##sys#compile-to-closure
 	    form
@@ -807,7 +807,7 @@
 	    (##sys#current-meta-environment))
 	   '() ) )
 	(lambda ()
-	  (set! ##sys#active-eval-environment aee)
+	  (##sys#active-eval-environment aee)
 	  (##sys#current-module oldcm)
 	  (##sys#meta-macro-environment (##sys#macro-environment))
 	  (##sys#macro-environment oldme)))))

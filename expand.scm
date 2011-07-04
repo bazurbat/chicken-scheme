@@ -60,9 +60,8 @@
 (define ##sys#current-environment (make-parameter '()))
 (define ##sys#current-meta-environment (make-parameter '()))
 
-;;XXX should this be a parameter?
 ;;XXX should this be in eval.scm?
-(define ##sys#active-eval-environment ##sys#current-environment)
+(define ##sys#active-eval-environment (make-parameter ##sys#current-environment))
 
 (define (lookup id se)
   (cond ((##core#inline "C_u_i_assq" id se) => cdr)

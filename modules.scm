@@ -718,7 +718,7 @@
 	((getp sym '##core#aliased) 
 	 (dm "(ALIAS) marked: " sym)
 	 sym)
-	((assq sym (##sys#active-eval-environment)) =>
+	((assq sym ((##sys#active-eval-environment))) =>
 	 (lambda (a)
 	   (let ((sym2 (cdr a)))
 	     (dm "(ALIAS) in current environment " sym " -> " sym2)
