@@ -279,7 +279,7 @@ EOF
 	   (##sys#string-append "cannot bind to socket - " strerror) s port) )
 	(values s addr) ) ) ) )
 
-(define-constant default-backlog 10)
+(define-constant default-backlog 100)
 
 (define (tcp-listen port . more)
   (let-optionals more ((w default-backlog) (host #f))
