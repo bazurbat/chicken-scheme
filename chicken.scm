@@ -118,7 +118,7 @@
 		   (quit "missing argument to `-~s' option" o) ) )
 	      (else
 	       (warning 
-		"invalid compiler option (gnored)" 
+		"invalid compiler option (ignored)" 
 		(if (string? o) o (conc "-" o)) )
 	       (loop rest) ) ) ) ) )
   (apply compile-source-file filename options)
