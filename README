@@ -329,6 +329,13 @@
 	    compile your translated Scheme files with `kgcc' instead of
 	    `gcc'.
 
+          - There have been reports where the library directory
+	    "/usr/lib64" could not be found at build-time on a Fedora
+	    12 system. If you build a 64-bit version of CHICKEN and
+	    the library directory is set incorrectly, you can override
+	    it by passing "LIBDIR=/usr/lib64" as an additional
+	    argument when you invoke "make".
+
         Solaris:
 
 	  - By default, CHICKEN is build with the GNU C compiler (`gcc').

@@ -48,8 +48,8 @@ Henrik Tramberend, Vladimir Tsichevsky, Neil van Dyke, Sam Varner,
 Taylor Venable, Sander Vesik, Jaques Vidrine, Panagiotis Vossos, Shawn
 Wagner, Peter Wang, Ed Watkeys, Brad Watson, Thomas Weidner, Goeran
 Weinholt, Matthew Welland, Drake Wilson, Joerg Wittenberger, Peter
-Wright, Mark Wutka, Richard Zidlicky and Houman Zolfaghari for
-bug-fixes, tips and suggestions.
+Wright, Mark Wutka, Adam Young, Richard Zidlicky and Houman Zolfaghari
+for bug-fixes, tips and suggestions.
 
 CHICKEN uses the "irregex" regular expression package written by Alex Shinn.
 
