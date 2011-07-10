@@ -2176,9 +2176,9 @@
 	   (decompose-lambda-list
 	    (third params)
 	    (lambda (vars argc rest)
-	      (let* ([id (if here (first params) 'toplevel)]
-		     [capturedvars (captured-variables (car subs) env)]
-		     [csize (length capturedvars)] )
+	      (let* ((id (if here (first params) 'toplevel))
+		     (capturedvars (captured-variables (first subs) env))
+		     (csize (length capturedvars)) )
 		(put! db id 'closure-size csize)
 		(put! db id 'captured-variables capturedvars)
 		(gather (car subs) id (append vars env)) ) ) ) )
@@ -2201,8 +2201,10 @@
 		 (make-node '##core#unbox '() (list val))
 		 val) ) )
 
-	  ((if ##core#call ##core#inline ##core#inline_allocate ##core#callunit ##core#inline_ref ##core#inline_update 
-	       ##core#switch ##core#cond ##core#direct_call ##core#recurse ##core#return ##core#inline_loc_ref
+	  ((if ##core#call ##core#inline ##core#inline_allocate ##core#callunit 
+	       ##core#inline_ref ##core#inline_update 
+	       ##core#switch ##core#cond ##core#direct_call ##core#recurse ##core#return 
+	       ##core#inline_loc_ref
 	       ##core#inline_loc_update)
 	   (make-node (node-class n) params (maptransform subs here closure)) )
 
@@ -2262,10 +2264,12 @@
 		     (list (let ((body (transform (car subs) cvar capturedvars)))
 			     (if (pair? boxedvars)
 				 (fold-right
-				  (lambda (alias val body) (make-node 'let (list alias) (list val body)))
+				  (lambda (alias val body)
+				    (make-node 'let (list alias) (list val body)))
 				  body
 				  (unzip1 boxedaliases)
-				  (map (lambda (a) (make-node '##core#box '() (list (varnode (cdr a)))))
+				  (map (lambda (a)
+					 (make-node '##core#box '() (list (varnode (cdr a)))))
 				       boxedaliases) )
 				 body) ) ) )
 		    (let ((cvars (map (lambda (v) (ref-var (varnode v) here closure))

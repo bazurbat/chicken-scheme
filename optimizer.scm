@@ -142,6 +142,9 @@
     (define (node-value n) (first (node-parameters n)))
     (define (touch) (set! dirty #t))
 
+    (define (invalidate-gae! gae)
+      (for-each (cut set-cdr! <> #f) gae))
+
     (define (simplify n)
       (or (and-let* ([entry (##sys#hash-table-ref simplifications (node-class n))])
 	    (any (lambda (s)
@@ -159,23 +162,23 @@
 		 entry) )
 	  n) )
 
-    (define (walk n fids)
+    (define (walk n fids gae)
       (if (memq n broken-constant-nodes)
 	  n
 	  (simplify
 	   (let* ((odirty dirty)
-		  (n1 (walk1 n fids))
+		  (n1 (walk1 n fids gae))
 		  (subs (node-subexpressions n1)) )
 	     (case (node-class n1)
 
 	       ((if)			; (This can be done by the simplifier...)
 		(cond ((constant-node? (car subs))
-		       (set! removed-ifs (+ removed-ifs 1))
+		       (set! removed-ifs (add1 removed-ifs))
 		       (touch)
 		       (walk (if (node-value (car subs))
 				 (cadr subs)
 				 (caddr subs) )
-			     fids) )
+			     fids gae) )
 		      (else n1) ) )
 
 	       ((##core#call)
@@ -219,7 +222,7 @@
 
 	       (else n1) ) ) ) ) )
 
-    (define (walk1 n fids)
+    (define (walk1 n fids gae)
       (let ((subs (node-subexpressions n))
 	    (params (node-parameters n)) 
 	    (class (node-class n)) )
@@ -232,55 +235,69 @@
 		    (touch)
 		    (debugging 'o "substituted constant variable" var)
 		    (qnode (car (node-parameters (test var 'value)))) )
-		   (else
-		    (if (not (eq? var (first params)))
-			(begin
-			  (touch)
-			  (set! replaced-vars (+ replaced-vars 1)) ) )
-		    (varnode var) ) ) ) )
+		   ((not (eq? var (first params)))
+		    (touch)
+		    (set! replaced-vars (+ replaced-vars 1))
+		    (varnode var))
+		   ((assq var gae) =>
+		    (lambda (a)
+		      (cond ((cdr a)
+			     (debugging 'o "propagated global variable" var (cdr a))
+			     (varnode (cdr a)))
+			    (else (varnode var)))))
+		   (else (varnode var)))))
 
 	  ((let)
-	   (let ([var (first params)])
-	     (cond [(or (test var 'removable)
+	   (let ((var (first params)))
+	     (cond ((or (test var 'removable)
 			(and (test var 'contractable) (not (test var 'replacing))) )
 		    (touch)
 		    (set! removed-lets (add1 removed-lets))
-		    (walk (second subs) fids) ]
-		   [else (make-node 'let params (map (cut walk <> fids) subs))] ) ) )
+		    (walk (second subs) fids gae) )
+		   (else
+		    (let ((gae (if (and (eq? '##core#variable (node-class (first subs)))
+					(test (first (node-parameters (first subs)))
+					      'global))
+				   (alist-cons var (first (node-parameters (first subs)))
+					       gae)
+				   gae)))
+		      (make-node 'let params (map (cut walk <> fids gae) subs))) ) ) ))
 
 	  ((##core#lambda)
 	   (let ((llist (third params))
 		 (id (first params)))
-	     (cond [(test id 'has-unused-parameters)
-		    (decompose-lambda-list
-		     llist
-		     (lambda (vars argc rest)
-		       (receive (unused used) (partition (lambda (v) (test v 'unused)) vars)
+	     (fluid-let ((gae '()))
+	       (cond [(test id 'has-unused-parameters)
+		      (decompose-lambda-list
+		       llist
+		       (lambda (vars argc rest)
+			 (receive (unused used) (partition (lambda (v) (test v 'unused)) vars)
+			   (touch)
+			   (debugging 'o "removed unused formal parameters" unused)
+			   (make-node
+			    '##core#lambda
+			    (list (first params) (second params)
+				  (cond [(and rest (test id 'explicit-rest))
+					 (debugging 
+					  'o "merged explicitly consed rest parameter" rest)
+					 (build-lambda-list used (add1 argc) #f) ]
+					[else (build-lambda-list used argc rest)] )
+				  (fourth params) )
+			    (list (walk (first subs) (cons id fids) '())) ) ) ) ) ]
+		     [(test id 'explicit-rest)
+		      (decompose-lambda-list
+		       llist
+		       (lambda (vars argc rest)
 			 (touch)
-			 (debugging 'o "removed unused formal parameters" unused)
+			 (debugging 'o "merged explicitly consed rest parameter" rest)
 			 (make-node
 			  '##core#lambda
-			  (list (first params) (second params)
-				(cond [(and rest (test id 'explicit-rest))
-				       (debugging 'o "merged explicitly consed rest parameter" rest)
-				       (build-lambda-list used (add1 argc) #f) ]
-				      [else (build-lambda-list used argc rest)] )
+			  (list (first params)
+				(second params)
+				(build-lambda-list vars (add1 argc) #f)
 				(fourth params) )
-			  (list (walk (first subs) (cons id fids))) ) ) ) ) ]
-		   [(test id 'explicit-rest)
-		    (decompose-lambda-list
-		     llist
-		     (lambda (vars argc rest)
-		       (touch)
-		       (debugging 'o "merged explicitly consed rest parameter" rest)
-		       (make-node
-			'##core#lambda
-			(list (first params)
-			      (second params)
-			      (build-lambda-list vars (add1 argc) #f)
-			      (fourth params) )
-			(list (walk (first subs) (cons id fids))) ) ) ) ]
-		   [else (walk-generic n class params subs (cons id fids))] ) ) )
+			  (list (walk (first subs) (cons id fids) '())) ) ) ) ]
+		     [else (walk-generic n class params subs (cons id fids) '() #f)] ) ) ))
 
 	  ((##core#call)
 	   (let* ([fun (car subs)]
@@ -304,7 +321,7 @@
 			    (inline-lambda-bindings
 			     llist args (first (node-subexpressions lval)) #f db
 			     void)
-			    fids) ) )
+			    fids gae) ) )
 			((variable-mark var '##compiler#pure) =>
 			 (lambda (pb)
 			   (or (and-let* ((k (car args))
@@ -328,7 +345,7 @@
 				 (make-node
 				  '##core#call '(#t)
 				  (list k (make-node '##core#undefined '() '())) ) ) 
-			       (walk-generic n class params subs fids)) ) )
+			       (walk-generic n class params subs fids gae #f)) ) )
 			((and lval
 			      (eq? '##core#lambda (node-class lval)))
 			 (let* ([lparams (node-parameters lval)]
@@ -363,22 +380,26 @@
 					     'i
 					     "not inlining procedure because it refers to contractable"
 					     var cvar)
-					    (return (walk-generic n class params subs fids)))
+					    (return 
+					     (walk-generic n class params subs fids gae #t)))
 					  (let ((n2 (inline-lambda-bindings
 						     llist args (first (node-subexpressions lval))
 						     #t db cfk)))
 					    (touch)
-					    (walk n2 fids)))))
+					    (walk n2 fids gae)))))
 				      ((test ifid 'has-unused-parameters)
 				       (if (< (length args) argc) ; Expression was already optimized (should this happen?)
-					   (walk-generic n class params subs fids)
+					   (walk-generic n class params subs fids gae #t)
 					   (let loop ((vars vars) (argc argc) (args args) (used '()))
 					     (cond [(or (null? vars) (zero? argc))
 						    (touch)
-						    (make-node
-						     '##core#call
-						     params
-						     (map (cut walk <> fids) (cons fun (append-reverse used args))) ) ]
+						    (let ((args
+							   (map (cut walk <> fids gae)
+								(cons 
+								 fun
+								 (append-reverse used args))) ) )
+						      (invalidate-gae! gae)
+						      (make-node '##core#call params args))]
 						   [(test (car vars) 'unused)
 						    (touch)
 						    (debugging
@@ -388,7 +409,7 @@
 							(make-node
 							 'let
 							 (list (gensym 't))
-							 (list (walk (car args) fids)
+							 (list (walk (car args) fids gae)
 							       (loop (cdr vars) (sub1 argc) (cdr args) used) ) )
 							(loop (cdr vars) (sub1 argc) (cdr args) used) ) ]
 						   [else (loop (cdr vars)
@@ -399,14 +420,14 @@
 					    (not (memq n rest-consers)) ) ; make sure we haven't inlined rest-list already
 				       (let ([n (llist-length llist)])
 					 (if (< (length args) n)
-					     (walk-generic n class params subs fids)
+					     (walk-generic n class params subs fids gae #t) 
 					     (begin
 					       (debugging 'o "consed rest parameter at call site" var n)
 					       (let-values ([(args rargs) (split-at args n)])
 						 (let ([n2 (make-node
 							    '##core#call
 							    params
-							    (map (cut walk <> fids)
+							    (map (cut walk <> fids gae)
 								 (cons fun
 								       (append 
 									args
@@ -418,14 +439,18 @@
 									      (list "C_a_i_list" (* 3 (length rargs)))
 									      rargs) ) ) ) ) ) ) ] )
 						   (set! rest-consers (cons n2 rest-consers))
+						   (invalidate-gae! gae)
 						   n2) ) ) ) ) )
-				      (else (walk-generic n class params subs fids)) ) ) ) ) ) )
-			(else (walk-generic n class params subs fids)) ) ) ]
+				      (else (walk-generic n class params subs fids gae #t)) ) ) ) ) ) )
+			(else (walk-generic n class params subs fids gae #t)) ) ) ]
 	       [(##core#lambda)
 		(if (first params)
-		    (walk-generic n class params subs fids)
-		    (make-node '##core#call (cons #t (cdr params)) (map (cut walk <> fids) subs)) ) ]
-	       [else (walk-generic n class params subs fids)] ) ) )
+		    (walk-generic n class params subs fids gae #f)
+		    (let ((n2 (make-node '##core#call (cons #t (cdr params))
+					 (map (cut walk <> fids gae) subs)) ))
+		      (invalidate-gae! gae)
+		      n2))]
+	       [else (walk-generic n class params subs fids gae #t)] ) ) )
 
 	  ((set!)
 	   (let ([var (first params)])
@@ -437,20 +462,24 @@
 		   ((test var 'replacable)
 		    (touch)
 		    (make-node '##core#undefined '() '()) )
-		   [(and (or (not (test var 'global))
+		   ((and (or (not (test var 'global))
 			     (not (variable-visible? var)))
 			 (not (test var 'inline-transient))
 			 (not (test var 'references)) 
 			 (not (expression-has-side-effects? (first subs) db)) )
 		    (touch)
 		    (debugging 'o "removed side-effect free assignment to unused variable" var)
-		    (make-node '##core#undefined '() '()) ]
-		   [else (make-node 'set! params (list (walk (car subs) fids)))] ) ) )
+		    (make-node '##core#undefined '() '()) )
+		   (else
+		    (let ((n2 (make-node 'set! params (list (walk (car subs) fids gae)))))
+		      (cond ((assq var gae) => (cut set-cdr! <> #f)))
+		      n2)))))
 
-	  (else (walk-generic n class params subs fids)) ) ) )
+	  (else (walk-generic n class params subs fids gae #f)) ) ) )
     
-    (define (walk-generic n class params subs fids)
-      (let ((subs2 (map (cut walk <> fids) subs)))
+    (define (walk-generic n class params subs fids gae invgae)
+      (let ((subs2 (map (cut walk <> fids gae) subs)))
+	(when invgae (invalidate-gae! gae))
 	(if (every eq? subs subs2)
 	    n
 	    (make-node class params subs2) ) ) )
@@ -460,7 +489,7 @@
 	(begin
 	  (debugging 'p "traversal phase...")
 	  (set! simplified-ops '())
-	  (let ((node2 (walk node '())))
+	  (let ((node2 (walk node '() '())))
 	    (when (pair? simplified-classes) (debugging 'o "simplifications" simplified-classes))
 	    (when (and (pair? simplified-ops) (debugging 'o "  call simplifications:"))
 	      (for-each
