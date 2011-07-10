@@ -2103,7 +2103,6 @@
 (define (perform-closure-conversion node db)
   (let ((direct-calls 0)
 	(customizable '())
-	(captured '())
 	(lexicals '()))
 
     (define (test sym item) (get db sym item))
@@ -2116,35 +2115,36 @@
       (set! direct-calls (add1 direct-calls))
       (set! direct-call-ids (lset-adjoin eq? direct-call-ids id)) )
 
-    (define (capture var)
-      (set! captured (lset-adjoin eq? captured var)))
-
     ;; Gather free-variable information:
     ;; (and: - register direct calls
     ;;       - update (by mutation) call information in "##core#call" nodes)
-    (define (gather n here env)
+    (define (gather n here locals)
       (let ((subs (node-subexpressions n))
 	    (params (node-parameters n)) )
 	(case (node-class n)
 
 	  ((##core#variable)
 	   (let ((var (first params)))
-	     (when (memq var lexicals)
-	       (capture var))))
+	     (if (memq var lexicals)
+		 (list var)
+		 '())))
 
 	  ((quote ##core#undefined ##core#proc ##core#primitive ##core#global-ref)
-	   #f)
+	   '())
 
 	  ((let)
-	   ;;XXX remove this test later:
+	   ;;XXX remove this test later, shouldn't be needed:
 	   (when (pair? (cdr params)) (bomb "let-node has invalid format" params))
-	   (gather (first subs) here env)
-	   (gather (second subs) here (cons (first params) env)))
+	   (let ((c (gather (first subs) here locals))
+		 (var (first params)))
+	     (append c (delete var (gather (second subs) here (cons var locals)) eq?))))
 
 	  ((set!)
-	   (let ((var (first params)))
-	     (when (memq var lexicals) (capture var))
-	     (gather (first subs) here env)))
+	   (let ((var (first params))
+		 (c (gather (first subs) here locals)))
+	     (if (memq var lexicals) 
+		 (cons var c)
+		 c)))
 
 	  ((##core#call)
 	   (let* ([fn (first subs)]
@@ -2188,24 +2188,20 @@
 					'() ) )
 				  '() ) )
 			'() ) ) )
-	     (for-each (cut gather <> here env) subs) ) )
+	     (concatenate (map (cut gather <> here locals) subs) ) ))
 
 	  ((##core#lambda ##core#direct_lambda)
 	   (decompose-lambda-list
 	    (third params)
 	    (lambda (vars argc rest)
-	      (let* ((id (if here (first params) 'toplevel))
-		     (cap0 captured)
-		     (n (length cap0)))
-		(fluid-let ((lexicals env))
-		  (gather (first subs) id (append vars env))
-		  (let* ((n2 (length captured))
-			 (capt (take captured (- n2 n))))
-		    (print "captured: " capt " of " lexicals)
-		    (put! db id 'closure-size n2)
-		    (put! db id 'captured-variables capt)))))))
+	      (let ((id (if here (first params) 'toplevel)))
+		(fluid-let ((lexicals (append locals lexicals)))
+		  (let ((c (gather (first subs) id vars)))
+		    (put! db id 'closure-size (length c))
+		    (put! db id 'captured-variables c)
+		    (lset-difference eq? c locals vars)))))))
 	
-	  (else (for-each (lambda (n) (gather n here env)) subs)) ) ) )
+	  (else (concatenate (map (lambda (n) (gather n here locals)) subs)) ) ) ))
 
     ;; Create explicit closures:
     (define (transform n here closure)
