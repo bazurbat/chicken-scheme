@@ -141,7 +141,7 @@ EOF
 				    (exact (map (lambda (p)
 						  (string-append "^" (irregex-quote p) "$"))
 						pats))
-				    (else pats))))
+				    (else (map ##sys#glob->regexp pats)))))
 			    (eggs (gather-eggs patterns)))
 		       (if (null? eggs)
 			   (print "(none)")
