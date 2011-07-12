@@ -232,6 +232,55 @@
      (deps 'needs meta)
      (if *run-tests* (deps 'test-depends meta) '())))
 
+  (define (check-dependency dep)
+    (cond ((or (symbol? dep) (string? dep))
+	   (values
+	    (and (not (ext-version dep))
+		 (->string dep))
+	    #f))
+	  ((and (list? dep) (eq? 'or (car dep)))
+	   (let scan ((ordeps (cdr dep)) (bestm #f) (bestu #f))
+	     (if (null? ordeps)
+		 (values
+		  (cond (bestu #f)	; upgrade overrides new
+			(bestm bestm)
+			(else #f))
+		  bestu)
+		 (let-values (((m u) (check-dependency (car ordeps))))
+		   (if (and (not m) (not u))
+		       (values #f #f)
+		       (scan (cdr ordeps)
+			     (if (and m (not bestm))
+				 m
+				 bestm)
+			     (if (and u (not bestu))
+				 u
+				 bestu)))))))
+	  ((and (list? dep) (= 2 (length dep))
+		(or (string? (car dep)) (symbol? (car dep))))
+	   (let ((v (ext-version (car dep))))
+	     (cond ((not v)
+		    (values
+		     (->string (car dep))
+		     #f))
+		   ((not (version>=? v (->string (cadr dep))))
+		    (when (and (string=? "chicken" (->string (car dep)))
+			       (not *force*))
+		      (error
+		       (string-append 
+			"Your CHICKEN version is not recent enough to use this extension - version "
+			(cadr dep) 
+			" or newer is required")))
+		    (values 
+		     #f
+		     (cons (->string (car dep)) (->string (cadr dep)))))
+		   (else (values #f #f)))))
+	  (else
+	   (warning
+	    "invalid dependency syntax in extension meta information"
+	    dep)
+	   (values #f #f))))
+
   (define (outdated-dependencies meta)
     (let ((ds (meta-dependencies meta)))
       (let loop ((deps ds) (missing '()) (upgrade '()))
@@ -239,35 +288,10 @@
             (values (reverse missing) (reverse upgrade))
             (let ((dep (car deps))
                   (rest (cdr deps)))
-              (cond ((or (symbol? dep) (string? dep))
-                     (loop rest
-                           (if (ext-version dep)
-                               missing
-                               (cons (->string dep) missing))
-                           upgrade))
-                    ((and (list? dep) (= 2 (length dep))
-                          (or (string? (car dep)) (symbol? (car dep))))
-                     (let ((v (ext-version (car dep))))
-                       (cond ((not v)
-                              (loop rest (cons (->string (car dep)) missing) upgrade))
-                             ((not (version>=? v (->string (cadr dep))))
-			      (when (and (string=? "chicken" (->string (car dep)))
-					 (not *force*))
-				(error
-				 (string-append 
-				  "Your CHICKEN version is not recent enough to use this extension - version "
-				  (cadr dep) 
-				  " or newer is required")))
-                              (loop rest missing
-                                    (alist-cons
-                                     (->string (car dep)) (->string (cadr dep))
-                                     upgrade)))
-                             (else (loop rest missing upgrade)))))
-                    (else
-                     (warning
-                      "invalid dependency syntax in extension meta information"
-                      dep)
-                     (loop rest missing upgrade))))))))
+	      (let-values (((m u) (check-dependency dep)))
+		(loop rest
+		      (if m (cons m missing) missing)
+		      (if u (cons u upgrade) upgrade))))))))
 
   (define *eggs+dirs+vers* '())
   (define *dependencies* '())

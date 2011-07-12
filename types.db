@@ -791,7 +791,7 @@
 (register-feature! (procedure! register-feature! (#!rest symbol) undefined))
 (remprop! (procedure! remprop! (symbol symbol) undefined))
 (rename-file (procedure! rename-file (string string) string))
-(repl (procedure repl () undefined))
+(repl (procedure! repl (#!optional (procedure (*) *)) undefined))
 (repl-prompt (procedure! repl-prompt (#!optional procedure) procedure))
 (repository-path (procedure repository-path (#!optional *) *))
 (require (procedure require (#!rest *) undefined))
@@ -952,7 +952,7 @@
 
 (rassoc (procedure! rassoc (* list #!optional (procedure (* *) *)) *))
 (reverse-string-append (procedure! reverse-string-append (list) string))
-(shuffle (procedure! shuffle (list (procedure (fixnum) fixnum)) list))
+(shuffle deprecated)
 (sort (procedure! sort ((or list vector) (procedure (* *) *)) (or list vector)))
 (sort! (procedure! sort! ((or list vector) (procedure (* *) *)) (or list vector)))
 (sorted? (procedure! sorted? ((or list vector) (procedure (* *) *)) boolean))

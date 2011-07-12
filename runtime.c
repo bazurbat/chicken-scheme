@@ -429,9 +429,7 @@ static C_TLS double
   timer_accumulated_gc_ms,
   interrupt_time,
   last_interrupt_latency;
-static C_TLS LF_LIST 
-  *lf_list,
-  *reload_lf;
+static C_TLS LF_LIST *lf_list;
 static C_TLS int signal_mapping_table[ NSIG ];
 static C_TLS int
   locative_table_size,
@@ -712,7 +710,6 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   allocated_finalizer_count = 0;
   current_module_name = NULL;
   current_module_handle = NULL;
-  reload_lf = NULL;
   callback_continuation_level = 0;
   gc_ms = 0;
   C_randomize(time(NULL));
@@ -723,7 +720,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* hardcoded table size - this must match the number of C_pte calls! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 62);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 61);
   int i = 0;
 
   if(pt == NULL)
@@ -784,7 +781,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_register_finalizer);
   C_pte(C_locative_ref);
   C_pte(C_call_with_cthulhu);
-  C_pte(C_dunload);
   C_pte(C_copy_closure);
   C_pte(C_dump_heap_state);
   C_pte(C_filter_heap_objects);
@@ -1703,8 +1699,8 @@ C_regparm double C_fcall C_cpu_milliseconds(void)
     struct rusage ru;
 
     if(C_getrusage(RUSAGE_SELF, &ru) == -1) return 0;
-    else return (ru.ru_utime.tv_sec + ru.ru_stime.tv_sec) * 1000
-                 + (ru.ru_utime.tv_usec + ru.ru_stime.tv_usec) / 1000;
+    else return ((double)ru.ru_utime.tv_sec + ru.ru_stime.tv_sec) * 1000
+	   + ((double)ru.ru_utime.tv_usec + ru.ru_stime.tv_usec) / 1000;
 #endif
 }
 
@@ -1873,34 +1869,15 @@ void *C_register_lf2(C_word *lf, int count, C_PTABLE_ENTRY *ptable)
   node->lf = lf;
   node->count = count;
   node->ptable = ptable;
-  node->module_name = NULL;
-  node->module_handle = NULL;
-  
-  if(reload_lf != NULL) {
-    if(debug_mode)
-      C_dbg(C_text("debug"), C_text("replacing previous LF-entry for `%s'\n"), current_module_name);
-    
-    C_free(reload_lf->module_name);
-    reload_lf->lf = lf;
-    reload_lf->count = count;
-    reload_lf->ptable = ptable;
-    C_free(node);
-    node = reload_lf;
-  }
-
   node->module_name = current_module_name;
   node->module_handle = current_module_handle;
   current_module_handle = NULL;
 
-  if(reload_lf != node) {
-    if(lf_list) lf_list->prev = node;
+  if(lf_list) lf_list->prev = node;
 
-    node->next = lf_list;
-    node->prev = NULL;
-    lf_list = node;
-  }
-  else reload_lf = NULL;
-
+  node->next = lf_list;
+  node->prev = NULL;
+  lf_list = node;
   return (void *)node;
 }
 
@@ -8105,12 +8082,12 @@ void C_ccall C_set_dlopen_flags(C_word c, C_word closure, C_word k, C_word now, 
 }
 
 
-void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word entry, C_word reloadable)
+void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word entry)
 {
 #if !defined(NO_DLOAD2) && (defined(HAVE_DLFCN_H) || defined(HAVE_DL_H) || (defined(HAVE_LOADLIBRARY) && defined(HAVE_GETPROCADDRESS)))
   /* Force minor GC: otherwise the lf may contain pointers to stack-data
      (stack allocated interned symbols, for example) */
-  C_save_and_reclaim(dload_2, NULL, 4, k, name, entry, reloadable);
+  C_save_and_reclaim(dload_2, NULL, 3, k, name, entry);
 #endif
 
   C_kontinue(k, C_SCHEME_FALSE);
@@ -8127,8 +8104,7 @@ void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word ent
 void dload_2(void *dummy)
 {
   void *handle, *p;
-  C_word reloadable = C_restore,
-         entry = C_restore,
+  C_word entry = C_restore,
          name = C_restore,
          k = C_restore;
   C_char *mname = (C_char *)C_data_pointer(name);
@@ -8139,12 +8115,6 @@ void dload_2(void *dummy)
    *   (char *) C_data_pointer(name),
    *   (char *) C_data_pointer(entry));
    */
-
-  if(C_truep(reloadable) && (reload_lf = find_module_handle(mname)) != NULL) {
-    if(shl_unload((shl_t)reload_lf->module_handle) != 0)
-      panic(C_text("Unable to unload previously loaded compiled code"));
-  }
-  else reload_lf = NULL;
 
   if ((handle = (void *) shl_load(mname,
 				  BIND_IMMEDIATE | DYNAMIC_PATH,
@@ -8157,13 +8127,8 @@ void dload_2(void *dummy)
       current_module_handle = handle;
 
       if(debug_mode) {
-	if(reload_lf != NULL)
-	  C_dbg(C_text("debug"), C_text("reloading compiled module `%s' (previous handle was " UWORD_FORMAT_STRING ", new is "
-				UWORD_FORMAT_STRING ")\n"), current_module_name, (C_uword)reload_lf->module_handle, 
-		(C_uword)current_module_handle);
-	else 
-	  C_dbg(C_text("debug"), C_text("loading compiled module `%s' (handle is " UWORD_FORMAT_STRING ")\n"),
-		current_module_name, (C_uword)current_module_handle);
+	C_dbg(C_text("debug"), C_text("loading compiled module `%s' (handle is " UWORD_FORMAT_STRING ")\n"),
+	      current_module_name, (C_uword)current_module_handle);
       }
 
       ((C_proc2)p)(2, C_SCHEME_UNDEFINED, k);
@@ -8188,19 +8153,12 @@ void dload_2(void *dummy)
 {
   void *handle, *p, *p2;
   C_word 
-    reloadable = C_restore,
     entry = C_restore,
     name = C_restore,
     k = C_restore;
   C_char *topname = (C_char *)C_data_pointer(entry);
   C_char *mname = (C_char *)C_data_pointer(name);
   C_char *tmp;
-
-  if(C_truep(reloadable) && (reload_lf = find_module_handle(mname)) != NULL) {
-    if(C_dlclose(reload_lf->module_handle) != 0)
-      panic(C_text("Unable to unload previously loaded compiled code"));
-  }
-  else reload_lf = NULL;
 
   if((handle = C_dlopen(mname, dlopen_flags)) != NULL) {
     if((p = C_dlsym(handle, topname)) == NULL) {
@@ -8220,13 +8178,8 @@ void dload_2(void *dummy)
       current_module_handle = handle;
 
       if(debug_mode) {
-	if(reload_lf != NULL)
-	  C_dbg(C_text("debug"), C_text("reloading compiled module `%s' (previous handle was " UWORD_FORMAT_STRING ", new is "
-				UWORD_FORMAT_STRING ")\n"), current_module_name, (C_uword)reload_lf->module_handle, 
-		(C_uword)current_module_handle);
-	else 
-	  C_dbg(C_text("debug"), C_text("loading compiled module `%s' (handle is " UWORD_FORMAT_STRING ")\n"),
-		current_module_name, (C_uword)current_module_handle);
+	C_dbg(C_text("debug"), C_text("loading compiled module `%s' (handle is " UWORD_FORMAT_STRING ")\n"),
+	      current_module_name, (C_uword)current_module_handle);
       }
 
       ((C_proc2)p)(2, C_SCHEME_UNDEFINED, k); /* doesn't return */
@@ -8249,7 +8202,6 @@ void dload_2(void *dummy)
   HINSTANCE handle;
   FARPROC p = NULL, p2;
   C_word
-    reloadable = C_restore,
     entry = C_restore,
     name = C_restore,
     k = C_restore;
@@ -8265,25 +8217,14 @@ void dload_2(void *dummy)
       C_kontinue(k, C_SCHEME_FALSE);
   }
 
-  if(C_truep(reloadable) && (reload_lf = find_module_handle((char *)C_data_pointer(name))) != NULL) {
-    if(FreeLibrary((HINSTANCE)reload_lf->module_handle) == 0)
-      panic(C_text("Unable to unload previously loaded compiled code"));
-  }
-  else reload_lf = NULL;
-
   if((handle = LoadLibrary(mname)) != NULL) {
     if ((p = GetProcAddress(handle, topname)) != NULL) {
       current_module_name = C_strdup(mname);
       current_module_handle = handle;
 
       if(debug_mode) {
-	if(reload_lf != NULL)
-	  C_dbg(C_text("debug"), C_text("reloading compiled module `%s' (previous handle was " UWORD_FORMAT_STRING ", new is "
-				UWORD_FORMAT_STRING ")\n"), current_module_name, (C_uword)reload_lf->module_handle, 
-		(C_uword)current_module_handle);
-	else 
-	  C_dbg(C_text("debug"), C_text("loading compiled module `%s' (handle is " UWORD_FORMAT_STRING ")\n"),
-		current_module_name, (C_uword)current_module_handle);
+	C_dbg(C_text("debug"), C_text("loading compiled module `%s' (handle is " UWORD_FORMAT_STRING ")\n"),
+	      current_module_name, (C_uword)current_module_handle);
       }
 
       ((C_proc2)p)(2, C_SCHEME_UNDEFINED, k);
@@ -8295,31 +8236,6 @@ void dload_2(void *dummy)
   C_kontinue(k, C_SCHEME_FALSE);
 }
 #endif
-
-
-C_word C_ccall C_dunload(C_word name)
-{
-  LF_LIST *m = find_module_handle(C_c_string(name));
-
-  if(m == NULL) return C_SCHEME_FALSE;
-
-#ifndef NO_DLOAD2
-# if defined(__hpux__) && defined(HAVE_DL_H)
-  if(shl_unload((shl_t)m->module_handle) != 0) return C_SCHEME_FALSE;
-# elif defined(HAVE_DLFCN_H)
-  if(dlclose(m->module_handle) != 0) return C_SCHEME_FALSE;
-# elif defined(HAVE_LOADLIBRARY)
-  if(FreeLibrary(m->module_handle) == 0) return C_SCHEME_FALSE;
-# else
-  return C_SCHEME_FALSE;
-# endif
-# else
-  return C_SCHEME_FALSE;
-#endif
-
-  C_unregister_lf(m);
-  return C_SCHEME_TRUE;
-}
 
 
 void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table)

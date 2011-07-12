@@ -357,12 +357,6 @@ EOF
 (define ##sys#dload (##core#primitive "C_dload"))
 (define ##sys#set-dlopen-flags! (##core#primitive "C_set_dlopen_flags"))
 
-;; Dynamic Unload not available on all platforms and to be used with caution!
-(define (##sys#dunload name)
-  (and-let* ((r (##core#inline "C_dunload" (##sys#make-c-string name))))
-    (##sys#gc #t) 
-    #t ) )
-
 
 ;;; Operations on booleans:
 

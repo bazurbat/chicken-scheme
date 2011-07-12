@@ -19,7 +19,7 @@ of kind {{(exn i/o network)}}.
 
 Creates and returns a TCP listener object that listens for connections on {{TCPPORT}}, which
 should be an exact integer. {{BACKLOG}} specifies the number of maximally pending
-connections (and defaults to 4). If the optional argument {{HOST}} is given and not
+connections (and defaults to 100). If the optional argument {{HOST}} is given and not
 {{#f}}, then only incoming connections for the given host (or IP) are accepted.
 
 

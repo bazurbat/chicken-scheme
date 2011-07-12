@@ -18,11 +18,6 @@ This directory contains a couple of things that might be useful:
     A simple svnwiki -> HTML translator used for the manual. Needs
     `htmlprag' and `matchable' eggs installed.
 
-  make-egg-index.scm
-
-    Creates an egg index HTML page from a local working copy of a
-    `release/<number>' egg tree.
-
   makedist.scm
 
     Creates a distribution tarball from a chicken svn checkout.

@@ -30,7 +30,7 @@
   (uses expand)
   (hide ##sys#r4rs-environment ##sys#r5rs-environment 
 	##sys#interaction-environment pds pdss pxss d) 
-  (not inline ##sys#repl-eval-hook ##sys#repl-read-hook ##sys#repl-print-hook 
+  (not inline ##sys#repl-read-hook ##sys#repl-print-hook 
        ##sys#read-prompt-hook ##sys#alias-global-hook ##sys#user-read-hook
        ##sys#syntax-error-hook))
 
@@ -797,12 +797,12 @@
   (let ((oldcm (##sys#current-module))
 	(oldme (##sys#macro-environment))
 	(mme (##sys#meta-macro-environment))
-	(aee ##sys#active-eval-environment))
+	(aee (##sys#active-eval-environment)))
     (dynamic-wind
 	(lambda () 
 	  (##sys#current-module #f)
 	  (##sys#macro-environment mme)
-	  (set! ##sys#active-eval-environment ##sys#current-meta-environment))
+	  (##sys#active-eval-environment ##sys#current-meta-environment))
 	(lambda ()
 	  ((##sys#compile-to-closure
 	    form
@@ -810,7 +810,7 @@
 	    (##sys#current-meta-environment))
 	   '() ) )
 	(lambda ()
-	  (set! ##sys#active-eval-environment aee)
+	  (##sys#active-eval-environment aee)
 	  (##sys#current-module oldcm)
 	  (##sys#meta-macro-environment (##sys#macro-environment))
 	  (##sys#macro-environment oldme)))))
@@ -933,13 +933,13 @@
 	       (display " ...\n") 
 	       (flush-output)] )
 	(or (and fname
-		 (or (##sys#dload (##sys#make-c-string fname 'load) topentry #t) 
+		 (or (##sys#dload (##sys#make-c-string fname 'load) topentry) 
 		     (and (not (has-sep? fname))
 			  (##sys#dload 
 			   (##sys#make-c-string
 			    (##sys#string-append "./" fname) 
 			    'load) 
-			   topentry #t) ) ) )
+			   topentry) ) ) )
 	    (call-with-current-continuation
 	     (lambda (abrt)
 	       (fluid-let ((##sys#read-error-with-line-number #t)
@@ -1047,7 +1047,7 @@
 		(display " ...\n") )
 	      (let loop ([libs libs])
 		(cond [(null? libs) #f]
-		      [(##sys#dload (##sys#make-c-string (##sys#slot libs 0) 'load-library) top #f)
+		      [(##sys#dload (##sys#make-c-string (##sys#slot libs 0) 'load-library) top)
 		       (unless (memq id ##sys#features) (set! ##sys#features (cons id ##sys#features)))
 		       #t]
 		      [else (loop (##sys#slot libs 1))] ) ) ) ) ) ) ) )
@@ -1509,7 +1509,6 @@
 
 ;;;; Read-Eval-Print loop:
 
-(define ##sys#repl-eval-hook #f)
 (define ##sys#repl-print-length-limit #f)
 (define ##sys#repl-read-hook #f)
 (define ##sys#repl-recent-call-chain #f) ; used in csi for ,c command
@@ -1533,7 +1532,7 @@
 	(read read)
 	(call-with-current-continuation call-with-current-continuation)
 	(string-append string-append))
-    (lambda ()
+    (lambda (#!optional (evaluator eval))
 
       (define (write-err xs)
 	(for-each (cut ##sys#repl-print-hook <> ##sys#standard-error) xs) )
@@ -1613,7 +1612,7 @@
 		   (##sys#read-char-0 ##sys#standard-input) )
 		 (##sys#clear-trace-buffer)
 		 (set! ##sys#unbound-in-eval '())
-		 (receive result ((or ##sys#repl-eval-hook eval) exp)
+		 (receive result (evaluator exp)
 		   (when (and ##sys#warnings-enabled (pair? ##sys#unbound-in-eval))
 		     (let loop ((vars ##sys#unbound-in-eval) (u '()))
 		       (cond ((null? vars)

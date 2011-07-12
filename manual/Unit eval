@@ -34,11 +34,9 @@ code.
 If source code is loaded from a port, then that port is closed after
 all expressions have been read.
 
-Compiled code can be re-loaded, but care has to be taken, if code
-from the replaced dynamically loaded module is still executing (i.e.
-if an active continuation refers to compiled code in the old module).
+A compiled file can only be loaded once. Subsequent attempts to load the
+same file have no effect.
 
-Support for reloading compiled code dynamically is still experimental.
 
 ==== load-relative
 
@@ -102,12 +100,15 @@ this facility is mainly of interest when accessing foreign code.
 
 ==== repl
 
-<procedure>(repl)</procedure>
+<procedure>(repl [EVALUATOR])</procedure>
 
 Start a new read-eval-print loop. Sets the {{reset-handler}} so that
 any invocation of {{reset}} restarts the read-eval-print loop. Also
 changes the current exception-handler to display a message, write
 any arguments to the value of {{(current-error-port)}} and reset.
+
+If {{EVALUATOR}} is given, it should be a procedure of one argument that
+is used in place of {{eval}} to evaluate each entered expression.
 
 
 === Loading extension libraries
