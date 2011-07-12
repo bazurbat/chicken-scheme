@@ -1689,8 +1689,8 @@ C_regparm double C_fcall C_cpu_milliseconds(void)
     struct rusage ru;
 
     if(C_getrusage(RUSAGE_SELF, &ru) == -1) return 0;
-    else return (ru.ru_utime.tv_sec + ru.ru_stime.tv_sec) * 1000
-                 + (ru.ru_utime.tv_usec + ru.ru_stime.tv_usec) / 1000;
+    else return ((double)ru.ru_utime.tv_sec + ru.ru_stime.tv_sec) * 1000
+	   + ((double)ru.ru_utime.tv_usec + ru.ru_stime.tv_usec) / 1000;
 #endif
 }
 
