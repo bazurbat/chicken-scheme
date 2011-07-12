@@ -782,7 +782,7 @@
 (print* (procedure print* (#!rest) undefined))
 (procedure-information (procedure! procedure-information (procedure) *))
 (program-name (procedure! program-name (#!optional string) string))
-(promise? (procedure promise? (*) boolean))
+(promise? (procedure? (struct promise) promise? (*) boolean))
 
 (put! (procedure! put! (symbol symbol *) undefined)
       ((symbol symbol *)
