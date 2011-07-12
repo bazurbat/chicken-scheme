@@ -204,7 +204,7 @@ EOF
 	       (cons (##sys#slot lst 0) (loop (##sys#slot blst 1) (##sys#slot lst 1)))]
 	      [else (loop (##sys#slot blst 1) (##sys#slot lst 1))] ) ) ) ) )
 
-(define shuffle
+(define shuffle				; DEPRECATED
   (lambda (l random)
     (let ((len (length l)))
       (map cdr

@@ -67,7 +67,7 @@
    queue?
    rassoc
    reverse-string-append
-   shuffle
+   shuffle				; DEPRECATED
    sort
    sort!
    sorted?

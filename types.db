@@ -475,7 +475,7 @@
 (rassoc (procedure rassoc (* list #!optional (procedure (* *) *)) *))
 (right-section deprecated)
 (reverse-string-append (procedure reverse-string-append (list) string))
-(shuffle (procedure shuffle (list (procedure (fixnum) fixnum)) list))
+(shuffle deprecated)
 (sort (procedure sort ((or list vector) (procedure (* *) *)) (or list vector)))
 (sort! (procedure sort! ((or list vector) (procedure (* *) *)) (or list vector)))
 (sorted? (procedure sorted? ((or list vector) (procedure (* *) *)) boolean))

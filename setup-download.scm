@@ -38,7 +38,8 @@
 			temporary-directory)
 
   (import scheme chicken foreign)
-  (import extras irregex posix utils srfi-1 data-structures tcp srfi-13 files setup-api)
+  (import extras irregex posix utils srfi-1 data-structures tcp srfi-13 srfi-14 files
+	  setup-api)
 
   (define-constant +default-tcp-connect-timeout+ 30000) ; 30 seconds
   (define-constant +default-tcp-read/write-timeout+ 30000) ; 30 seconds
@@ -239,9 +240,10 @@
 		     (if tests "&tests=yes" ""))]
 	      [eggdir (make-pathname tmpdir egg) ] )
 	  (unless (file-exists? eggdir) (create-directory eggdir))
-	  (http-fetch host port locn eggdir proxy-host proxy-port proxy-user-pass)
-	  ; If we get here then version of egg exists
-	  (values eggdir (or version "")) ) ) ) )
+	  (let ((fversion
+		 (http-fetch host port locn eggdir proxy-host proxy-port proxy-user-pass)))
+	    ;; If we get here then version of egg exists
+	    (values eggdir (or fversion version "")) ) ) ) ))
 
   (define (network-failure msg . args)
     (signal
@@ -329,28 +331,48 @@
 
   (define (http-retrieve-files in out dest)
     (d "reading files ...~%")
-    (let get-files ([files '()])
-      (let ([name (read in)])
-	(cond [(and (pair? name) (eq? 'error (car name)))
-	       (throw-server-error (cadr name) (cddr name))]
-	      [(or (eof-object? name) (not name))
-	       (close-input-port in)
-	       (close-output-port out)
-	       (reverse files) ]
-	      [(not (string? name))
-	       (error "invalid file name - possibly corrupt transmission" name) ]
-	      [(string-suffix? "/" name)
-	       (read in)		; skip size
-	       (d "  ~a~%" name)
-	       (create-directory (make-pathname dest name))
-	       (get-files files) ]
-	      [else
-	       (d "  ~a~%" name)
-	       (let* ([size (read in)]
-		      [_ (read-line in)]
-		      [data (read-string size in)] )
-		 (with-output-to-file (make-pathname dest name) (cut display data) ) )
-	       (get-files (cons name files)) ] ) ) ) )
+    (let ((version #f))
+      (define (skip)
+	(let ((ln (read-line in)))
+	  (cond ((or (eof-object? ln)
+		     (irregex-match " *#!eof *" ln))
+		 (open-input-string ""))
+		((irregex-match " *#\\|[- ]*([^ ]+) *\\|#.*" ln) =>
+		 (lambda (m)
+		   (let ((v (irregex-match-substring m 1)))
+		     (cond ((string=? "#f" v))
+			   ((and version (not (string=? v version)))
+			    (warning "files-versions are not identical" ln version)
+			    (set! version #f))
+			   (else
+			    (set! version v)))
+		     (open-input-string ln))))
+		((string-every char-set:whitespace ln)
+		 (skip))
+		(else
+		 (error "unrecognized file-information - possibly corrupt transmission" 
+			ln)))))
+      (let get-files ((files '()))
+	(let ((ins (skip)))
+	  (let ((name (read ins)))
+	    (cond ((and (pair? name) (eq? 'error (car name)))
+		   (throw-server-error (cadr name) (cddr name)))
+		  ((or (eof-object? name) (not name))
+		   (close-input-port in)
+		   (close-output-port out)
+		   version)
+		  ((not (string? name))
+		   (error "invalid file name - possibly corrupt transmission" name) )
+		  ((string-suffix? "/" name)
+		   (d "  ~a~%" name)
+		   (create-directory (make-pathname dest name))
+		   (get-files files) )
+		  (else
+		   (d "  ~a~%" name)
+		   (let* ((size (read ins))
+			  (data (read-string size in)) )
+		     (with-output-to-file (make-pathname dest name) (cut display data) ) )
+		   (get-files (cons name files)) ) ) ) ) )))
 
   (define (http-fetch host port locn dest proxy-host proxy-port proxy-user-pass)
     (let-values (((in out)
