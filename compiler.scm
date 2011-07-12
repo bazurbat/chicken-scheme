@@ -2196,9 +2196,13 @@
 	    (lambda (vars argc rest)
 	      (let ((id (if here (first params) 'toplevel)))
 		(fluid-let ((lexicals (append locals lexicals)))
-		  (let ((c (gather (first subs) id vars)))
+		  (let ((c (delete-duplicates (gather (first subs) id vars) eq?)))
 		    (put! db id 'closure-size (length c))
 		    (put! db id 'captured-variables c)
+		    #;(print "X: " id " -> "
+			   (sort c
+				 (lambda (x y)
+				   (string<? (symbol->string x) (symbol->string y)))))
 		    (lset-difference eq? c locals vars)))))))
 	
 	  (else (concatenate (map (lambda (n) (gather n here locals)) subs)) ) ) ))
