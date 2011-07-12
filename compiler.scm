@@ -4,7 +4,7 @@
 ; "This is insane. What we clearly want to do is not exactly clear, and is rooted in NCOMPLR."
 ;
 ;
-;--------------------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------
 ; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
@@ -2097,14 +2097,11 @@
 
 ;;; Collect unsafe global procedure calls that are assigned:
 
-;;; Convert closures to explicit data structures (effectively flattens function-binding 
-;   structure):
+;;; Convert closures to explicit data structures (effectively flattens function-binding structure):
 
 (define (perform-closure-conversion node db)
-  (let ((direct-calls 0)
-	(customizable '())
-	(captured '())
-	(lexicals '()))
+  (let ([direct-calls 0]
+	[customizable '()] )
 
     (define (test sym item) (get db sym item))
   
@@ -2116,9 +2113,6 @@
       (set! direct-calls (add1 direct-calls))
       (set! direct-call-ids (lset-adjoin eq? direct-call-ids id)) )
 
-    (define (capture var)
-      (set! captured (lset-adjoin eq? captured var)))
-
     ;; Gather free-variable information:
     ;; (and: - register direct calls
     ;;       - update (by mutation) call information in "##core#call" nodes)
@@ -2127,24 +2121,12 @@
 	    (params (node-parameters n)) )
 	(case (node-class n)
 
-	  ((##core#variable)
-	   (let ((var (first params)))
-	     (when (memq var lexicals)
-	       (capture var))))
-
-	  ((quote ##core#undefined ##core#proc ##core#primitive ##core#global-ref)
-	   #f)
+	  ((quote ##core#variable ##core#undefined ##core#proc ##core#primitive ##core#global-ref) #f)
 
 	  ((let)
-	   ;;XXX remove this test later:
-	   (when (pair? (cdr params)) (bomb "let-node has invalid format" params))
-	   (gather (first subs) here env)
-	   (gather (second subs) here (cons (first params) env)))
-
-	  ((set!)
-	   (let ((var (first params)))
-	     (when (memq var lexicals) (capture var))
-	     (gather (first subs) here env)))
+	   (receive (vals body) (split-at subs (length params))
+	     (for-each (lambda (n) (gather n here env)) vals)
+	     (gather (first body) here (append params env)) ) )
 
 	  ((##core#call)
 	   (let* ([fn (first subs)]
@@ -2188,22 +2170,18 @@
 					'() ) )
 				  '() ) )
 			'() ) ) )
-	     (for-each (cut gather <> here env) subs) ) )
+	     (for-each (lambda (n) (gather n here env)) subs) ) )
 
 	  ((##core#lambda ##core#direct_lambda)
 	   (decompose-lambda-list
 	    (third params)
 	    (lambda (vars argc rest)
-	      (let* ((id (if here (first params) 'toplevel))
-		     (cap0 captured)
-		     (n (length cap0)))
-		(fluid-let ((lexicals env))
-		  (gather (first subs) id (append vars env))
-		  (let* ((n2 (length captured))
-			 (capt (take captured (- n2 n))))
-		    (print "captured: " capt " of " lexicals)
-		    (put! db id 'closure-size n2)
-		    (put! db id 'captured-variables capt)))))))
+	      (let* ([id (if here (first params) 'toplevel)]
+		     [capturedvars (captured-variables (car subs) env)]
+		     [csize (length capturedvars)] )
+		(put! db id 'closure-size csize)
+		(put! db id 'captured-variables capturedvars)
+		(gather (car subs) id (append vars env)) ) ) ) )
 	
 	  (else (for-each (lambda (n) (gather n here env)) subs)) ) ) )
 
@@ -2352,6 +2330,24 @@
 		    (make-node '##core#ref (list (+ i 1)) 
 			       (list (varnode here)) ) ) )
 	      (else n) ) ) )
+
+    (define (captured-variables node env)
+      (let ([vars '()])
+	(let walk ([n node])
+	  (let ((subs (node-subexpressions n))
+		(params (node-parameters n)) )
+	    (case (node-class n)
+	      ((##core#variable)
+	       (let ([var (first params)])
+		 (when (memq var env)
+		   (set! vars (lset-adjoin eq? vars var)) ) ) )
+	      ((quote ##core#undefined ##core#primitive ##core#proc ##core#inline_ref ##core#global-ref) #f)
+	      ((set!) 
+	       (let ([var (first params)])
+		 (when (memq var env) (set! vars (lset-adjoin eq? vars var)))
+		 (walk (car subs)) ) )
+	      (else (for-each walk subs)) ) ) )
+	vars) )
 
     (debugging 'p "closure conversion gathering phase...")
     (gather node #f '())
