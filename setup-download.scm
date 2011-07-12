@@ -340,7 +340,8 @@
 		((irregex-match " *#\\|[- ]*([^ ]+) *\\|#.*" ln) =>
 		 (lambda (m)
 		   (let ((v (irregex-match-substring m 1)))
-		     (cond ((and version (not (string=? v version)))
+		     (cond ((string=? "#f" v))
+			   ((and version (not (string=? v version)))
 			    (warning "files-versions are not identical" ln version)
 			    (set! version #f))
 			   (else
