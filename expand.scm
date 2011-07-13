@@ -745,6 +745,7 @@
 
 (define ((make-er/ir-transformer handler explicit-renaming?) form se dse)
   (let ((renv '()))			; keep rename-environment for this expansion
+    (assert (list? se) "not a list" se) ;XXX remove later
     (define (rename sym)
       (cond ((pair? sym)
 	     (cons (rename (car sym)) (rename (cdr sym))))
