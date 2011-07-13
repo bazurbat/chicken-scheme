@@ -76,13 +76,13 @@ where symbols have all context-information removed.
 
 The low-level macro facility that CHICKEN provides is called "explicit
 renaming" and allows writing hygienic or non-hygienic macros
-procedurally.  When given a lambda-expression or the return value of
-the procedure {{er-macro-transformer}} (to be preferred for
-portability reasons) instead of a {{syntax-rules}} form,
-{{define-syntax}} evaluates the procedure in a distinct expansion
-environment (initially having access to the exported identifiers of
-the {{scheme}} module). The procedure takes an expression and two
-other arguments and returns a transformed expression.
+procedurally.  When given a the return value of the one of the
+procedures {{er-macro-transformer}} or {{ir-macro-transformer}}
+instead of a {{syntax-rules}} form, {{define-syntax}} evaluates the
+procedure in a distinct expansion environment (initially having access
+to the exported identifiers of the {{scheme}} module). The procedure
+takes an expression and two other arguments and returns a transformed
+expression.
 
 For example, the transformation procedure for a {{call}} macro such
 that {{(call proc arg ...)}} expands into {{(proc arg ...)}} can be
