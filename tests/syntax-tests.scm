@@ -40,9 +40,11 @@
 ;; some basic contrived testing
 
 (define (fac n)
-  (let-syntax ((m1 (lambda (n r c) 
-		     (pp `(M1: ,n))
-		     (list (r 'sub1) (cadr n)))))
+  (let-syntax ((m1 
+		(er-macro-transformer
+		 (lambda (n r c) 
+		   (pp `(M1: ,n))
+		   (list (r 'sub1) (cadr n))))))
     (define (sub1 . _)			; ref. transp.? (should not be used here)
       (error "argh.") )
     #;(print "fac: " n)		  
@@ -365,11 +367,12 @@
 
 
 (define-syntax loop
-  (lambda (x r c)
-    (let ((body (cdr x)))
-      `(,(r 'call/cc)
-	(,(r 'lambda) (exit)
-	 (,(r 'let) ,(r 'f) () ,@body (,(r 'f))))))))
+  (er-macro-transformer
+   (lambda (x r c)
+     (let ((body (cdr x)))
+       `(,(r 'call/cc)
+	 (,(r 'lambda) (exit)
+	  (,(r 'let) ,(r 'f) () ,@body (,(r 'f)))))))))
 
 (let ((n 10))
   (loop
@@ -387,10 +390,11 @@
 (f (while0 #f (print "no.")))
 
 (define-syntax while
-  (lambda (x r c)
-    `(,(r 'loop) 
-      (,(r 'if) (,(r 'not) ,(cadr x)) (exit #f))
-      ,@(cddr x))))
+  (er-macro-transformer
+   (lambda (x r c)
+     `(,(r 'loop) 
+       (,(r 'if) (,(r 'not) ,(cadr x)) (exit #f))
+       ,@(cddr x)))))
 
 (let ((n 10))
   (while (not (zero? n))
@@ -409,8 +413,9 @@
   (syntax-rules ()
     ((_ (name . llist) body ...)
      (define-syntax name
-       (lambda (x r c)
-	 (apply (lambda llist body ...) (strip-syntax (cdr x))))))))
+       (er-macro-transformer
+	(lambda (x r c)
+	  (apply (lambda llist body ...) (strip-syntax (cdr x)))))))))
 
 (define-macro (loop . body)
   (let ((loop (gensym)))
@@ -549,8 +554,9 @@
   (define-syntax s1 (syntax-rules () ((_ x) (list x))))
 
   (define-syntax s2
-    (lambda (x r c)
-      (r `(vector (s1 ,(cadr x)))))) )	; without renaming the local version of `s1'
+    (er-macro-transformer
+     (lambda (x r c)
+       (r `(vector (s1 ,(cadr x))))))) )	; without renaming the local version of `s1'
 					; below will be captured 
 
 (import m1)

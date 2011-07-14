@@ -666,8 +666,9 @@
 					    (list
 					     (car b)
 					     se
-					     (##sys#er-transformer
-					      (##sys#eval/meta (cadr b)))))
+					     (##sys#ensure-transformer
+					      (##sys#eval/meta (cadr b))
+					      'let-syntax)))
 					  (cadr x) )
 				     se) ) )
 			   (walk
@@ -680,8 +681,9 @@
 					  (list
 					   (car b)
 					   #f
-					   (##sys#er-transformer
-					    (##sys#eval/meta (cadr b)))))
+					   (##sys#ensure-transformer
+					    (##sys#eval/meta (cadr b))
+					    'letrec-syntax)))
 					(cadr x) ) )
 			       (se2 (append ms se)) )
 			  (for-each 
@@ -708,13 +710,12 @@
 			  (##sys#extend-macro-environment
 			   name
 			   (##sys#current-environment)
-			   (##sys#er-transformer (##sys#eval/meta body)))
+			   (##sys#eval/meta body))
 			  (walk
 			   (if ##sys#enable-runtime-macros
 			       `(##sys#extend-macro-environment
 				 ',var
-				 (##sys#current-environment)
-				 (##sys#er-transformer ,body)) ;XXX possibly wrong se?
+				 (##sys#current-environment) ,body) ;XXX possibly wrong se?
 			       '(##core#undefined) )
 			   e se dest ldest h)) )
 
@@ -731,7 +732,9 @@
 			   name '##compiler#compiler-syntax
 			   (and body
 				(##sys#cons
-				 (##sys#er-transformer (##sys#eval/meta body))
+				 (##sys#ensure-transformer
+				  (##sys#eval/meta body)
+				  'define-compiler-syntax)
 				 (##sys#current-environment))))
 			  (walk 
 			   (if ##sys#enable-runtime-macros
@@ -740,7 +743,9 @@
 				'##compiler#compiler-syntax
 				,(and body
 				      `(##sys#cons
-					(##sys#er-transformer ,body)
+					(##sys#ensure-transformer 
+					 ,body
+					 'define-compiler-syntax)
 					(##sys#current-environment))))
 			       '(##core#undefined) )
 			   e se dest ldest h)))
@@ -753,8 +758,10 @@
 				       (list 
 					name 
 					(and (pair? (cdr b))
-					     (cons (##sys#er-transformer
-						    (##sys#eval/meta (cadr b))) se))
+					     (cons (##sys#ensure-transformer
+						    (##sys#eval/meta (cadr b))
+						    'let-compiler-syntax)
+						   se))
 					(##sys#get name '##compiler#compiler-syntax) ) ) )
 				   (cadr x))))
 			  (dynamic-wind
