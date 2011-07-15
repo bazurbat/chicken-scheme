@@ -82,8 +82,10 @@
 (cond-expand
   (chicken-bootstrap
    (begin
-     (define-syntax (internal x r c)
-       `(,(with-input-from-string (cadr x) read) ,@(cddr x)))
+     (define-syntax internal
+       (er-macro-transformer
+	(lambda (x r c)
+	  `(,(with-input-from-string (cadr x) read) ,@(cddr x)))))
      ;; make-irregex defined elsewhere
      (define (irregex? x)
        (internal "##sys#structure?" x 'regexp))

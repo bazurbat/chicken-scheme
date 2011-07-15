@@ -955,8 +955,10 @@
 
 (import foonumbers)
 
-(define-syntax (foo x r c)
-  `(print ,(+ (cadr x) 1)))
+(define-syntax foo
+  (er-macro-transformer
+   (lambda (x r c)
+     `(print ,(+ (cadr x) 1)))))
 
 (foo 3)
 
