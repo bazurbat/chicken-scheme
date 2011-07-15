@@ -394,24 +394,26 @@ EOF
 
 ;;; Creating vectors from a list:
 
-(define-syntax (list->NNNvector x r c)
-  (let* ((tag (##sys#strip-syntax (cadr x)))
-	 (tagstr (symbol->string tag))
-	 (name (string->symbol (string-append "list->" tagstr)))
-	 (make (string->symbol (string-append "make-" tagstr)))
-	 (set (string->symbol (string-append tagstr "-set!"))))
-    `(define ,name
-       (let ((,make ,make))
-	 (lambda (lst)
-	   (##sys#check-list lst ',tag)
-	   (let* ((n (##core#inline "C_i_length" lst))
-		  (v (,make n)) )
-	     (do ((p lst (##core#inline "C_slot" p 1))
-		  (i 0 (##core#inline "C_fixnum_plus" i 1)) )
-		 ((##core#inline "C_eqp" p '()) v)
-	       (if (and (##core#inline "C_blockp" p) (##core#inline "C_pairp" p))
-		   (,set v i (##core#inline "C_slot" p 0))
-		   (##sys#error-not-a-proper-list lst) ) ) ) )))))
+(define-syntax list->NNNvector 
+  (er-macro-transformer 
+   (lambda (x r c)
+     (let* ((tag (##sys#strip-syntax (cadr x)))
+	    (tagstr (symbol->string tag))
+	    (name (string->symbol (string-append "list->" tagstr)))
+	    (make (string->symbol (string-append "make-" tagstr)))
+	    (set (string->symbol (string-append tagstr "-set!"))))
+       `(define ,name
+	  (let ((,make ,make))
+	    (lambda (lst)
+	      (##sys#check-list lst ',tag)
+	      (let* ((n (##core#inline "C_i_length" lst))
+		     (v (,make n)) )
+		(do ((p lst (##core#inline "C_slot" p 1))
+		     (i 0 (##core#inline "C_fixnum_plus" i 1)) )
+		    ((##core#inline "C_eqp" p '()) v)
+		  (if (and (##core#inline "C_blockp" p) (##core#inline "C_pairp" p))
+		      (,set v i (##core#inline "C_slot" p 0))
+		      (##sys#error-not-a-proper-list lst) ) ) ) )))))))
 
 (list->NNNvector u8vector)
 (list->NNNvector s8vector)
@@ -452,21 +454,23 @@ EOF
 
 ;;; Creating lists from a vector:
 
-(define-syntax (NNNvector->list x r c)
-  (let* ((tag (##sys#strip-syntax (cadr x)))
-	 (alloc? (pair? (cddr x)))
-	 (name (string->symbol (string-append (symbol->string tag) "->list"))))
-    `(define (,name v)
-       (##sys#check-structure v ',tag ',name)
-       (let ((len (##core#inline ,(conc "C_u_i_" tag "_length") v)))
-	 (let loop ((i 0))
-	   (if (fx>= i len)
-	       '()
-	       (cons 
-		,(if alloc?
-		     `(##core#inline_allocate (,(conc "C_a_i_" tag "_ref") 4) v i)
-		     `(##core#inline ,(conc "C_u_i_" tag "_ref") v i))
-		(loop (fx+ i 1)) ) ) ) ) ) ) )
+(define-syntax NNNvector->list
+  (er-macro-transformer
+   (lambda (x r c)
+     (let* ((tag (##sys#strip-syntax (cadr x)))
+	    (alloc? (pair? (cddr x)))
+	    (name (string->symbol (string-append (symbol->string tag) "->list"))))
+       `(define (,name v)
+	  (##sys#check-structure v ',tag ',name)
+	  (let ((len (##core#inline ,(conc "C_u_i_" tag "_length") v)))
+	    (let loop ((i 0))
+	      (if (fx>= i len)
+		  '()
+		  (cons 
+		   ,(if alloc?
+			`(##core#inline_allocate (,(conc "C_a_i_" tag "_ref") 4) v i)
+			`(##core#inline ,(conc "C_u_i_" tag "_ref") v i))
+		   (loop (fx+ i 1)) ) ) ) ) ) ) )))
 
 (NNNvector->list u8vector)
 (NNNvector->list s8vector)

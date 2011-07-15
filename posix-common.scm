@@ -127,14 +127,16 @@ EOF
 (define-foreign-variable _stat_st_dev unsigned-int "C_statbuf.st_dev")
 (define-foreign-variable _stat_st_rdev unsigned-int "C_statbuf.st_rdev")
 
-(define-syntax (stat-mode x r c)
-  ;; no need to rename here
-  (let ((name (cadr x)))
-    `(##core#begin
-      (declare
-	(foreign-declare
-	 ,(sprintf "#ifndef ~a~%#define ~a S_IFREG~%#endif~%" name name)))
-      (define-foreign-variable ,name unsigned-int))))
+(define-syntax stat-mode
+  (er-macro-transformer
+   (lambda (x r c)
+     ;; no need to rename here
+     (let ((name (cadr x)))
+       `(##core#begin
+	 (declare
+	   (foreign-declare
+	    ,(sprintf "#ifndef ~a~%#define ~a S_IFREG~%#endif~%" name name)))
+	 (define-foreign-variable ,name unsigned-int))))))
 
 (stat-mode S_IFLNK)
 (stat-mode S_IFREG)

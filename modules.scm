@@ -341,17 +341,17 @@
 	  (map (lambda (se)
 		 (if (symbol? se)
 		     (find-reexport se)
-		     (list (car se) #f (##sys#er-transformer (cdr se)))))
+		     (list (car se) #f (##sys#ensure-transformer (cdr se) (car se)))))
 	       sexports))
 	 (iexps 
 	  (map (lambda (ie)
 		 (if (pair? (cdr ie))
-		     (list (car ie) (cadr ie) (##sys#er-transformer (caddr ie)))
+		     (list (car ie) (cadr ie) (##sys#ensure-transformer (caddr ie) (car ie)))
 		     ie))
 	       iexports))
 	 (nexps
 	  (map (lambda (ne)
-		 (list (car ne) #f (##sys#er-transformer (cdr ne))))
+		 (list (car ne) #f (##sys#ensure-transformer (cdr ne) (car ne))))
 	       sdefs))
 	 (mod (make-module name '() vexports sexps))
 	 (senv (merge-se 

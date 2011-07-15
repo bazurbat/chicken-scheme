@@ -149,8 +149,14 @@
 (define ##sys#chicken-macro-environment '()) ; used later in chicken.import.scm
 (define ##sys#chicken-ffi-macro-environment '()) ; used later in foreign.import.scm
 
-(define (##sys#extend-macro-environment name se handler)
-  (let ((me (##sys#macro-environment)))
+(define (##sys#ensure-transformer t #!optional loc)
+  (cond ((procedure? t) (##sys#slot (##sys#er-transformer t) 1)) ; DEPRECATED
+	((##sys#structure? t 'transformer) (##sys#slot t 1))
+	(else (##sys#error loc "expected syntax-transformer, but got" t))))
+
+(define (##sys#extend-macro-environment name se transformer)
+  (let ((me (##sys#macro-environment))
+	(handler (##sys#ensure-transformer transformer name)))
     (cond ((lookup name me) =>
 	   (lambda (a)
 	     (set-car! a se)
@@ -495,10 +501,11 @@
 		(let ((def (car body)))
 		  (loop 
 		   (cdr body) 
-		   (cons (cond ((pair? (cadr def))
+		   (cons (cond ((pair? (cadr def)) ; DEPRECATED
 				`(define-syntax ; (the first element is actually ignored)
 				   ,(caadr def)
-				   (##core#lambda ,(cdadr def) ,@(cddr def))))
+				   (##sys#er-transformer
+				    (##core#lambda ,(cdadr def) ,@(cddr def)))))
 			       ;; insufficient, if introduced by different expansions, but
 			       ;; better than nothing:
 			       ((eq? (car def) (cadr def))
@@ -755,127 +762,131 @@
 	     (walk (cdr x) (cdr p)) ) ) ) ) )
 
 
-;;; explicit-renaming transformer
+;;; explicit/implicit-renaming transformer
 
-(define ((make-er/ir-transformer handler explicit-renaming?) form se dse)
-  (let ((renv '()))			; keep rename-environment for this expansion
-    (define (rename sym)
-      (cond ((pair? sym)
-	     (cons (rename (car sym)) (rename (cdr sym))))
-	    ((vector? sym)
-	     (list->vector (rename (vector->list sym))))
-	    ((not (symbol? sym)) sym)
-	    ((assq sym renv) => 
-	     (lambda (a) 
-	       (dd `(RENAME/RENV: ,sym --> ,(cdr a)))
-	       (cdr a)))
-	    ((lookup sym se) => 
-	     (lambda (a)
-	       (cond ((symbol? a)
-                      ;; Add an extra level of indirection for already aliased
-                      ;; symbols.  This prevents aliased symbols from popping up
-                      ;; in syntax-stripped output.
-                      (cond ((or (getp a '##core#aliased)
-                                 (getp a '##core#primitive))
-                             (let ((a2 (macro-alias sym se)))
-                               (dd `(RENAME/LOOKUP/ALIASED: ,sym --> ,a ==> ,a2))
-                               (set! renv (cons (cons sym a2) renv))
-                               a2))
-                            (else (dd `(RENAME/LOOKUP: ,sym --> ,a))
-                                  (set! renv (cons (cons sym a) renv))
-                                  a)))
-		     (else
-		      (let ((a2 (macro-alias sym se)))
-			(dd `(RENAME/LOOKUP/MACRO: ,sym --> ,a2))
-			(set! renv (cons (cons sym a2) renv))
-			a2)))))
-	    (else
-	     (let ((a (macro-alias sym se)))
-	       (dd `(RENAME: ,sym --> ,a))
-	       (set! renv (cons (cons sym a) renv))
-	       a))))
-    (define (compare s1 s2)
-      (let ((result
-	     (cond ((pair? s1)
-		    (and (pair? s2)
-			 (compare (car s1) (car s2))
-			 (compare (cdr s1) (cdr s2))))
-		   ((vector? s1)
-		    (and (vector? s2)
-			 (let ((len (vector-length s1)))
-			   (and (fx= len (vector-length s2))
-				(do ((i 0 (fx+ i 1))
-				     (f #t (compare (vector-ref s1 i) (vector-ref s2 i))))
-				    ((or (fx>= i len) (not f)) f))))))
-		   ((and (symbol? s1) (symbol? s2))
-		    (let ((ss1 (or (getp s1 '##core#macro-alias)
-				   (lookup2 1 s1 dse)
-				   s1) )
-			  (ss2 (or (getp s2 '##core#macro-alias)
-				   (lookup2 2 s2 dse)
-				   s2) ) )
-		      (cond ((symbol? ss1)
-			     (cond ((symbol? ss2) 
-				    (eq? (or (getp ss1 '##core#primitive) ss1)
-					 (or (getp ss2 '##core#primitive) ss2)))
-				   ((assq ss1 (##sys#macro-environment)) =>
-				    (lambda (a) (eq? (cdr a) ss2)))
-				   (else #f) ) )
-			    ((symbol? ss2)
-			     (cond ((assq ss2 (##sys#macro-environment)) =>
-				    (lambda (a) (eq? ss1 (cdr a))))
-				   (else #f)))
-			    (else (eq? ss1 ss2)))))
-		   (else (eq? s1 s2))) ) ) 
-	(dd `(COMPARE: ,s1 ,s2 --> ,result)) 
-	result))
-    (define (lookup2 n sym dse)
-      (let ((r (lookup sym dse)))
-	(dd "  (lookup/DSE " (list n) ": " sym " --> " 
-	    (if (and r (pair? r))
-		'<macro>
-		r)
-	    ")")
-	r))
-    (define (assq-reverse s l)
-      (cond
-       ((null? l) #f)
-       ((eq? (cdar l) s) (car l))
-       (else (assq-reverse s (cdr l)))))
-    (define (mirror-rename sym)
-      (cond ((pair? sym)
-	     (cons (mirror-rename (car sym)) (mirror-rename (cdr sym))))
-	    ((vector? sym)
-	     (list->vector (mirror-rename (vector->list sym))))
-	    ((not (symbol? sym)) sym)
-            (else                       ; Code stolen from ##sys#strip-syntax
-             (let ((renamed (lookup sym se) ) )
-               (cond ((assq-reverse sym renv) =>
-                      (lambda (a)
-                        (dd "REVERSING RENAME: " sym " --> " (car a)) (car a)))
-                     ((not renamed)
-                      (dd "IMPLICITLY RENAMED: " sym) (rename sym))
-                     ((pair? renamed)
-                      (dd "MACRO: " sym) (rename sym))
-                     ((getp sym '##core#real-name) =>
-                      (lambda (name)
-                        (dd "STRIP SYNTAX ON " sym " ---> " name)
-                        name))
-                     (else (dd "BUILTIN ALIAS:" renamed) renamed))))))
-    (if explicit-renaming?
-        ;; Let the user handle renaming
-        (handler form rename compare)
-        ;; Implicit renaming:
-        ;; Rename everything in the input first, feed it to the transformer
-        ;; and then swap out all renamed identifiers by their non-renamed
-        ;; versions, and vice versa.  User can decide when to inject code
-        ;; unhygienically this way.
-        (mirror-rename (handler (rename form) rename compare)) ) ) )
+(define (make-er/ir-transformer handler explicit-renaming?) 
+  (##sys#make-structure 
+   'transformer
+   (lambda (form se dse)
+     (let ((renv '()))	  ; keep rename-environment for this expansion
+       (assert (list? se) "not a list" se) ;XXX remove later
+       (define (rename sym)
+	 (cond ((pair? sym)
+		(cons (rename (car sym)) (rename (cdr sym))))
+	       ((vector? sym)
+		(list->vector (rename (vector->list sym))))
+	       ((not (symbol? sym)) sym)
+	       ((assq sym renv) => 
+		(lambda (a) 
+		  (dd `(RENAME/RENV: ,sym --> ,(cdr a)))
+		  (cdr a)))
+	       ((lookup sym se) => 
+		(lambda (a)
+		  (cond ((symbol? a)
+			 ;; Add an extra level of indirection for already aliased
+			 ;; symbols.  This prevents aliased symbols from popping up
+			 ;; in syntax-stripped output.
+			 (cond ((or (getp a '##core#aliased)
+				    (getp a '##core#primitive))
+				(let ((a2 (macro-alias sym se)))
+				  (dd `(RENAME/LOOKUP/ALIASED: ,sym --> ,a ==> ,a2))
+				  (set! renv (cons (cons sym a2) renv))
+				  a2))
+			       (else (dd `(RENAME/LOOKUP: ,sym --> ,a))
+				     (set! renv (cons (cons sym a) renv))
+				     a)))
+			(else
+			 (let ((a2 (macro-alias sym se)))
+			   (dd `(RENAME/LOOKUP/MACRO: ,sym --> ,a2))
+			   (set! renv (cons (cons sym a2) renv))
+			   a2)))))
+	       (else
+		(let ((a (macro-alias sym se)))
+		  (dd `(RENAME: ,sym --> ,a))
+		  (set! renv (cons (cons sym a) renv))
+		  a))))
+       (define (compare s1 s2)
+	 (let ((result
+		(cond ((pair? s1)
+		       (and (pair? s2)
+			    (compare (car s1) (car s2))
+			    (compare (cdr s1) (cdr s2))))
+		      ((vector? s1)
+		       (and (vector? s2)
+			    (let ((len (vector-length s1)))
+			      (and (fx= len (vector-length s2))
+				   (do ((i 0 (fx+ i 1))
+					(f #t (compare (vector-ref s1 i) (vector-ref s2 i))))
+				       ((or (fx>= i len) (not f)) f))))))
+		      ((and (symbol? s1) (symbol? s2))
+		       (let ((ss1 (or (getp s1 '##core#macro-alias)
+				      (lookup2 1 s1 dse)
+				      s1) )
+			     (ss2 (or (getp s2 '##core#macro-alias)
+				      (lookup2 2 s2 dse)
+				      s2) ) )
+			 (cond ((symbol? ss1)
+				(cond ((symbol? ss2) 
+				       (eq? (or (getp ss1 '##core#primitive) ss1)
+					    (or (getp ss2 '##core#primitive) ss2)))
+				      ((assq ss1 (##sys#macro-environment)) =>
+				       (lambda (a) (eq? (cdr a) ss2)))
+				      (else #f) ) )
+			       ((symbol? ss2)
+				(cond ((assq ss2 (##sys#macro-environment)) =>
+				       (lambda (a) (eq? ss1 (cdr a))))
+				      (else #f)))
+			       (else (eq? ss1 ss2)))))
+		      (else (eq? s1 s2))) ) ) 
+	   (dd `(COMPARE: ,s1 ,s2 --> ,result)) 
+	   result))
+       (define (lookup2 n sym dse)
+	 (let ((r (lookup sym dse)))
+	   (dd "  (lookup/DSE " (list n) ": " sym " --> " 
+	       (if (and r (pair? r))
+		   '<macro>
+		   r)
+	       ")")
+	   r))
+       (define (assq-reverse s l)
+	 (cond
+	  ((null? l) #f)
+	  ((eq? (cdar l) s) (car l))
+	  (else (assq-reverse s (cdr l)))))
+       (define (mirror-rename sym)
+	 (cond ((pair? sym)
+		(cons (mirror-rename (car sym)) (mirror-rename (cdr sym))))
+	       ((vector? sym)
+		(list->vector (mirror-rename (vector->list sym))))
+	       ((not (symbol? sym)) sym)
+	       (else		 ; Code stolen from ##sys#strip-syntax
+		(let ((renamed (lookup sym se) ) )
+		  (cond ((assq-reverse sym renv) =>
+			 (lambda (a)
+			   (dd "REVERSING RENAME: " sym " --> " (car a)) (car a)))
+			((not renamed)
+			 (dd "IMPLICITLY RENAMED: " sym) (rename sym))
+			((pair? renamed)
+			 (dd "MACRO: " sym) (rename sym))
+			((getp sym '##core#real-name) =>
+			 (lambda (name)
+			   (dd "STRIP SYNTAX ON " sym " ---> " name)
+			   name))
+			(else (dd "BUILTIN ALIAS:" renamed) renamed))))))
+       (if explicit-renaming?
+	   ;; Let the user handle renaming
+	   (handler form rename compare)
+	   ;; Implicit renaming:
+	   ;; Rename everything in the input first, feed it to the transformer
+	   ;; and then swap out all renamed identifiers by their non-renamed
+	   ;; versions, and vice versa.  User can decide when to inject code
+	   ;; unhygienically this way.
+	   (mirror-rename (handler (rename form) rename compare)) ) ) )))
 
 (define (##sys#er-transformer handler) (make-er/ir-transformer handler #t))
 (define (##sys#ir-transformer handler) (make-er/ir-transformer handler #f))
 
-(define (er-macro-transformer x) x)
+(define er-macro-transformer ##sys#er-transformer)
 (define ir-macro-transformer ##sys#ir-transformer)
 
 
@@ -987,7 +998,7 @@
 	       (when (c (r 'define-syntax) head)
 		 (##sys#defjam-error form))
 	       `(##core#define-syntax ,head ,(car body)))
-	      (else
+	      (else			; DEPRECATED
 	       (##sys#check-syntax 'define-syntax head '(_ . lambda-list))
 	       (##sys#check-syntax 'define-syntax body '#(_ 1))
 	       (when (eq? (car form) (car head))
@@ -996,7 +1007,7 @@
 		  form))
 	       `(##core#define-syntax 
 		 ,(car head)
-		 (##core#lambda ,(cdr head) ,@body)))))))))
+		 (##sys#er-transformer (##core#lambda ,(cdr head) ,@body))))))))))
 
 (##sys#extend-macro-environment
  'let
