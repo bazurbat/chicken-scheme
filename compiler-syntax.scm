@@ -44,8 +44,8 @@
 
 (define (r-c-s names transformer #!optional (se '()))
   (let ((t (cons (##sys#ensure-transformer
-		  (##sys#er-transformer transformer) 
-		  'define-compiler-syntax)
+		  (##sys#er-transformer transformer)
+		  (car names))
 		 se)))
     (for-each
      (lambda (name)

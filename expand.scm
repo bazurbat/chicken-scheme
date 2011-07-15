@@ -142,7 +142,7 @@
 
 (define (##sys#extend-macro-environment name se transformer)
   (let ((me (##sys#macro-environment))
-	(handler (##sys#ensure-transformer transformer 'define-syntax)))
+	(handler (##sys#ensure-transformer transformer name)))
     (cond ((lookup name me) =>
 	   (lambda (a)
 	     (set-car! a se)
@@ -487,10 +487,11 @@
 		(let ((def (car body)))
 		  (loop 
 		   (cdr body) 
-		   (cons (cond ((pair? (cadr def))
+		   (cons (cond ((pair? (cadr def)) ; DEPRECATED
 				`(define-syntax ; (the first element is actually ignored)
 				   ,(caadr def)
-				   (##core#lambda ,(cdadr def) ,@(cddr def))))
+				   (##sys#er-transformer
+				    (##core#lambda ,(cdadr def) ,@(cddr def)))))
 			       ;; insufficient, if introduced by different expansions, but
 			       ;; better than nothing:
 			       ((eq? (car def) (cadr def))
@@ -983,7 +984,7 @@
 	       (when (c (r 'define-syntax) head)
 		 (##sys#defjam-error form))
 	       `(##core#define-syntax ,head ,(car body)))
-	      (else
+	      (else			; DEPRECATED
 	       (##sys#check-syntax 'define-syntax head '(_ . lambda-list))
 	       (##sys#check-syntax 'define-syntax body '#(_ 1))
 	       (when (eq? (car form) (car head))
@@ -992,7 +993,7 @@
 		  form))
 	       `(##core#define-syntax 
 		 ,(car head)
-		 (##core#lambda ,(cdr head) ,@body)))))))))
+		 (##sys#er-transformer (##core#lambda ,(cdr head) ,@body))))))))))
 
 (##sys#extend-macro-environment
  'let

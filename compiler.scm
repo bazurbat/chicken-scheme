@@ -668,7 +668,7 @@
 					     se
 					     (##sys#ensure-transformer
 					      (##sys#eval/meta (cadr b))
-					      'let-syntax)))
+					      (car b))))
 					  (cadr x) )
 				     se) ) )
 			   (walk
@@ -683,7 +683,7 @@
 					   #f
 					   (##sys#ensure-transformer
 					    (##sys#eval/meta (cadr b))
-					    'letrec-syntax)))
+					    (car b))))
 					(cadr x) ) )
 			       (se2 (append ms se)) )
 			  (for-each 
@@ -727,14 +727,15 @@
 			    (set! compiler-syntax
 			      (alist-cons
 			       name
-			       (##sys#get name '##compiler#compiler-syntax) compiler-syntax)))
+			       (##sys#get name '##compiler#compiler-syntax)
+			       compiler-syntax)))
 			  (##sys#put! 
 			   name '##compiler#compiler-syntax
 			   (and body
 				(##sys#cons
 				 (##sys#ensure-transformer
 				  (##sys#eval/meta body)
-				  'define-compiler-syntax)
+				  var)
 				 (##sys#current-environment))))
 			  (walk 
 			   (if ##sys#enable-runtime-macros
@@ -745,7 +746,7 @@
 				      `(##sys#cons
 					(##sys#ensure-transformer 
 					 ,body
-					 'define-compiler-syntax)
+					 ',var)
 					(##sys#current-environment))))
 			       '(##core#undefined) )
 			   e se dest ldest h)))
@@ -760,7 +761,7 @@
 					(and (pair? (cdr b))
 					     (cons (##sys#ensure-transformer
 						    (##sys#eval/meta (cadr b))
-						    'let-compiler-syntax)
+						    (car b))
 						   se))
 					(##sys#get name '##compiler#compiler-syntax) ) ) )
 				   (cadr x))))

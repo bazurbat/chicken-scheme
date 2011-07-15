@@ -128,4 +128,5 @@
 			   ,@body)
 	       `(,%receive ,s-e-r
 			   (,%string-parse-final-start+end ,proc ,s-exp ,args-exp)
-			   ,@body) ) )))))))
+			   ,@body) ) )))
+      'let-string-start+end))))
