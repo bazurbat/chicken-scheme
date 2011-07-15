@@ -305,17 +305,18 @@ for example.
 
 <macro>(define-compiler-syntax NAME)</macro><br>
 <macro>(define-compiler-syntax NAME TRANSFORMER)</macro><br>
-<macro>(define-compiler-syntax (NAME VAR ...) BODY ...)</macro>
 
 Defines what is usually called a ''compiler macro'' in Lisp: {{NAME}} should be the
 name of a globally or locally bound procedure. Any direct call to this procedure
 will be transformed before compilation, which allows arbitrary rewritings
 of function calls. 
 
-{{TRANSFORMER}} can be a {{syntax-rules}} expression or an explicit-renaming transformer
-procedure. Returning the original form in an explicit-renaming macro or simply
-"falling trough" all patterns in a {{syntax-rules}} form will keep the original
-expression and compile it normally.
+{{TRANSFORMER}} can be a {{syntax-rules}} expression or a transformer
+procedure (as returned by {{er-macro-transformer}} or
+{{ir-macro-transformer}}). Returning the original form in an
+explicit/implicit-renaming macro or simply "falling trough" all patterns in a
+{{syntax-rules}} form will keep the original expression and compile it
+normally.
 
 In the interpreter this form does nothing and returns an unspecified value.
 

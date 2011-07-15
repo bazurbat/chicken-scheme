@@ -104,11 +104,12 @@
     (c x %ellipsis))
 
   (define (make-transformer rules)
-    `(,%lambda (,%input ,%rename ,%compare)
-	       (,%let ((,%tail (,%cdr ,%input)))
-		      (,%cond ,@(map process-rule rules)
-			      (,%else 
-			       (##sys#syntax-rules-mismatch ,%input))))))
+    `(##sys#er-transformer
+      (,%lambda (,%input ,%rename ,%compare)
+		(,%let ((,%tail (,%cdr ,%input)))
+		       (,%cond ,@(map process-rule rules)
+			       (,%else 
+				(##sys#syntax-rules-mismatch ,%input)))))))
 
   (define (process-rule rule)
     (if (and (pair? rule)

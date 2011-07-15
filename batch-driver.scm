@@ -149,8 +149,7 @@
 
     (define (end-time pass)
       (when time-breakdown
-	(printf "milliseconds needed for ~a: \t~s~%" pass
-		(inexact->exact (round (- (cputime) time0)) ) )))
+	(printf "milliseconds needed for ~a: \t~s~%" pass (- (cputime) time0)) ) )
 
     (define (analyze pass node . args)
       (let-optionals args ((no 0) (contf #t))

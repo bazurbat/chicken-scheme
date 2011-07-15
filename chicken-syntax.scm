@@ -141,22 +141,22 @@
 (##sys#extend-macro-environment
  'time '()
  (##sys#er-transformer
- (lambda (form r c)
-   (let ((rvar (r 't)))
-    `(##core#begin
-       (##sys#start-timer)
-       (##sys#call-with-values 
-	(##core#lambda () ,@(cdr form))
-	(##core#lambda 
-	 ,rvar
-	 (##sys#display-times (##sys#stop-timer))
-	 (##sys#apply ##sys#values ,rvar) ) ) ) ) ) ) )
+  (lambda (form r c)
+    (let ((rvar (r 't)))
+      `(##core#begin
+	(##sys#start-timer)
+	(##sys#call-with-values 
+	 (##core#lambda () ,@(cdr form))
+	 (##core#lambda 
+	  ,rvar
+	  (##sys#display-times (##sys#stop-timer))
+	  (##sys#apply ##sys#values ,rvar) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'declare '()
  (##sys#er-transformer
- (lambda (form r c)
-   `(##core#declare ,@(cdr form)))))
+  (lambda (form r c)
+    `(##core#declare ,@(cdr form)))))
 
 (##sys#extend-macro-environment
  'include '()
@@ -1093,21 +1093,20 @@
 
 (##sys#extend-macro-environment
  'define-compiler-syntax '()
- (##sys#er-transformer
-  (syntax-rules ()
-    ((_ name)
-     (##core#define-compiler-syntax name #f))
-    ((_ (name . llist) body ...)
-     (define-compiler-syntax name (lambda llist body ...)))
-    ((_ name transformer)
-     (##core#define-compiler-syntax name transformer)))))
+ (syntax-rules ()
+   ((_ name)
+    (##core#define-compiler-syntax name #f))
+   ((_ (name . llist) body ...)		; DEPRECATED
+    (define-compiler-syntax name
+      (##sys#er-transformer (lambda llist body ...) 'name)))
+   ((_ name transformer)
+    (##core#define-compiler-syntax name transformer))))
 
 (##sys#extend-macro-environment
  'let-compiler-syntax '()
- (##sys#er-transformer
-  (syntax-rules ()
-    ((_ (binding ...) body ...)
-     (##core#let-compiler-syntax (binding ...) body ...)))))
+ (syntax-rules ()
+   ((_ (binding ...) body ...)
+    (##core#let-compiler-syntax (binding ...) body ...))))
 
 
 ;;; interface definition

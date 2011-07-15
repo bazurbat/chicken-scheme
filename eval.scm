@@ -555,8 +555,9 @@
 					     (list
 					      (car b)
 					      se
-					      (##sys#er-transformer
-					       (##sys#eval/meta (cadr b)))))
+					      (##sys#ensure-transformer
+					       (##sys#eval/meta (cadr b))
+					       (car b))))
 					   (cadr x) ) 
 				      se) ) )
 			    (compile
@@ -568,8 +569,9 @@
 					    (list
 					     (car b)
 					     #f
-					     (##sys#er-transformer
-					      (##sys#eval/meta (cadr b)))))
+					     (##sys#ensure-transformer
+					      (##sys#eval/meta (cadr b))
+					      (car b))))
 					  (cadr x) ) )
 				 (se2 (append ms se)) )
 			    (for-each 
@@ -590,7 +592,7 @@
 			    (##sys#extend-macro-environment
 			     name
 			     (##sys#current-environment)
-			     (##sys#er-transformer (##sys#eval/meta body)))
+			     (##sys#eval/meta body))
 			    (compile '(##core#undefined) e #f tf cntr se) ) )
 
 			 ((##core#define-compiler-syntax)
