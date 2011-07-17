@@ -145,8 +145,10 @@ EOF
 
 ;;; System routines:
 
-(define (exit . code) (apply (##sys#exit-handler) code))
+(define (exit #!optional code) ((##sys#exit-handler) code))
 (define (reset) ((##sys#reset-handler)))
+(define (##sys#quit-hook result) ((##sys#reset-handler)))
+(define (quit #!optional result) (##sys#quit-hook result))
 
 (define (##sys#error . args)
   (if (pair? args)

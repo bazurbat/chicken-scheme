@@ -392,6 +392,7 @@
 (program-name (procedure program-name (#!optional string) string))
 (promise? (procedure promise? (*) boolean))
 (put! (procedure put! (symbol symbol *) undefined))
+(quit (procedure quit (#!optional *) noreturn))
 (register-feature! (procedure register-feature! (#!rest symbol) undefined))
 (remprop! (procedure remprop! (symbol symbol) undefined))
 (rename-file (procedure rename-file (string string) string))
