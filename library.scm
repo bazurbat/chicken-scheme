@@ -3548,14 +3548,17 @@ EOF
 		   (if (##sys#fudge 32) " gchooks" "") 
 		   (if (##sys#fudge 39) " cross" "") ) ) )
 	(string-append
-	 "Version " +build-version+ " " +branch-name+ "\n"
+	 "Version " ##sys#build-version
+	 (if ##sys#build-branch (string-append " (" ##sys#build-branch ")") "")
+	 (if ##sys#build-id (string-append " (rev " ##sys#build-id ")") "")
+	 "\n"
 	 (get-config)
 	 (if (zero? (##sys#size spec))
 	     ""
 	     (string-append " [" spec " ]") )
 	 "\n"
-	 +build-tag+))
-      +build-version+) )
+	 (or ##sys#build-tag "")))
+      ##sys#build-version) )
 
 
 ;;; Feature identifiers:
