@@ -59,6 +59,7 @@
 (pair? (procedure? pair pair? (*) boolean))
 
 (cons (procedure cons (* *) pair))
+(##sys#cons (procedure ##sys#cons (* *) pair))
 
 (car (procedure! car (pair) *) ((pair) (##core#inline "C_u_i_car" #(1))))
 (cdr (procedure! cdr (pair) *) ((pair) (##core#inline "C_u_i_cdr" #(1))))
@@ -99,10 +100,13 @@
 (list? (procedure? list list? (*) boolean))
 
 (list (procedure list (#!rest) list))
+(##sys#list (procedure ##sys#list (#!rest) list))
 (length (procedure! length (list) fixnum) ((list) (##core#inline "C_u_i_length" #(1))))
+(##sys#length (procedure! ##sys#length (list) fixnum) ((list) (##core#inline "C_u_i_length" #(1))))
 (list-tail (procedure! list-tail (list fixnum) *))
 (list-ref (procedure! list-ref (list fixnum) *))
 (append (procedure append (list #!rest) *))
+(##sys#append (procedure ##sys#append (list #!rest) *))
 (reverse (procedure! reverse (list) list))
 (memq (procedure memq (* list) *) ((* list) (##core#inline "C_u_i_memq" #(1) #(2))))
 (memv (procedure memv (* list) *))
@@ -436,14 +440,20 @@
 (make-vector (procedure! make-vector (fixnum #!optional *) vector))
 
 (vector-ref (procedure! vector-ref (vector fixnum) *))
+(##sys#vector-ref (procedure! ##sys#vector-ref (vector fixnum) *))
 (vector-set! (procedure! vector-set! (vector fixnum *) undefined))
 (vector (procedure vector (#!rest) vector))
+(##sys#vector (procedure ##sys#vector (#!rest) vector))
 
 (vector-length (procedure! vector-length (vector) fixnum)
 	       ((vector) (##sys#size #(1))))
+(##sys#vector-length (procedure! ##sys#vector-length (vector) fixnum)
+		     ((vector) (##sys#size #(1))))
 
 (vector->list (procedure! vector->list (vector) list))
+(##sys#vector->list (procedure! ##sys#vector->list (vector) list))
 (list->vector (procedure! list->vector (list) vector))
+(##sys#list->vector (procedure! ##sys#list->vector (list) vector))
 (vector-fill! (procedure! vector-fill! (vector *) vector))
 
 (procedure? (procedure? procedure procedure? (*) boolean))
@@ -452,6 +462,7 @@
 (map (procedure! map (procedure #!rest list) list))
 (for-each (procedure! for-each (procedure #!rest list) undefined))
 (apply (procedure! apply (procedure #!rest) . *))
+(##sys#apply (procedure! ##sys#apply (procedure #!rest) . *))
 (force (procedure force (*) *))
 (call-with-current-continuation (procedure! call-with-current-continuation (procedure) . *))
 (input-port? (procedure input-port? (*) boolean))
@@ -481,6 +492,7 @@
 (with-output-to-file (procedure! with-output-to-file (string procedure #!rest symbol) . *))
 (dynamic-wind (procedure! dynamic-wind (procedure procedure procedure) . *))
 (values (procedure values (#!rest values) . *))
+(##sys#values (procedure ##sys#values (#!rest values) . *))
 (call-with-values (procedure! call-with-values (procedure procedure) . *))
 (eval (procedure eval (* #!optional *) *))
 (char-ready? (procedure! char-ready? (#!optional port) boolean))
@@ -590,6 +602,8 @@
 (er-macro-transformer (procedure! er-macro-transformer ((procedure (* * *) *)) (struct transformer)))
 (errno (procedure errno () fixnum))
 (error (procedure error (#!rest) noreturn))
+(##sys#error (procedure ##sys#error (#!rest) noreturn))
+(##sys#signal-hook (procedure ##sys#signal-hook (#!rest) noreturn))
 (exit (procedure exit (#!optional fixnum) noreturn))
 (exit-handler (procedure! exit-handler (#!optional procedure) procedure))
 (expand (procedure expand (* #!optional *) *))
@@ -892,6 +906,7 @@
 (##sys#check-closure (procedure! ##sys#check-closure (procedure #!optional *) *)
 		     ((procedure) (let ((#(tmp) #(1))) '#t))
 		     ((procedure *) (let ((#(tmp) #(1))) '#t)))
+
 
 ;; data-structures
 
