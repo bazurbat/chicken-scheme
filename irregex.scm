@@ -86,43 +86,45 @@
 
 (register-feature! 'irregex)
 
-(define-syntax (build-cache x r c)
-  ;; (build-cache N ARG FAIL) 
-  (let* ((n (cadr x))
-	 (n2 (* n 2))
-	 (arg (caddr x))
-	 (fail (cadddr x))
-	 (%cache (r 'cache))
-	 (%index (r 'index))
-	 (%arg (r 'arg))
-	 (%let (r 'let))
-	 (%let* (r 'let*))
-	 (%if (r 'if))
-	 (%fx+ (r 'fx+))
-	 (%fxmod (r 'fxmod))
-	 (%equal? (r 'equal?))
-	 (%quote (r 'quote))
-	 (%tmp (r 'tmp))
-	 (%begin (r 'begin))
-	 (cache (make-vector (add1 n2) #f)))
-    (##sys#setslot cache n2 0)		; last slot: current index
-    `(,%let* ((,%cache (,%quote ,cache)) ; we mutate a literal vector
-	      (,%arg ,arg))
-	     ,(let fold ((i 0))
-		(if (fx>= i n)
-		    ;; this should be thread-safe: a context-switch can only
-		    ;; happen before this code and in the call to FAIL.
-		    `(,%let ((,%tmp ,fail)
-			     (,%index (##sys#slot ,%cache ,n2)))
-			    (##sys#setslot ,%cache ,%index ,%arg)
-			    (##sys#setslot ,%cache (,%fx+ ,%index 1) ,%tmp)
-			    (##sys#setislot 
-			     ,%cache ,n2
-			     (##core#inline "C_u_fixnum_modulo" (,%fx+ ,%index 2) ,n2))
-			    ,%tmp)
-		    `(,%if (,%equal? (##sys#slot ,%cache ,(* i 2)) ,%arg)
-			   (##sys#slot ,%cache ,(add1 (* i 2)))
-			   ,(fold (add1 i))))))))
+(define-syntax build-cache
+  (er-macro-transformer 
+   (lambda (x r c)
+     ;; (build-cache N ARG FAIL) 
+     (let* ((n (cadr x))
+	    (n2 (* n 2))
+	    (arg (caddr x))
+	    (fail (cadddr x))
+	    (%cache (r 'cache))
+	    (%index (r 'index))
+	    (%arg (r 'arg))
+	    (%let (r 'let))
+	    (%let* (r 'let*))
+	    (%if (r 'if))
+	    (%fx+ (r 'fx+))
+	    (%fxmod (r 'fxmod))
+	    (%equal? (r 'equal?))
+	    (%quote (r 'quote))
+	    (%tmp (r 'tmp))
+	    (%begin (r 'begin))
+	    (cache (make-vector (add1 n2) #f)))
+       (##sys#setslot cache n2 0)	 ; last slot: current index
+       `(,%let* ((,%cache (,%quote ,cache)) ; we mutate a literal vector
+		 (,%arg ,arg))
+		,(let fold ((i 0))
+		   (if (fx>= i n)
+		       ;; this should be thread-safe: a context-switch can only
+		       ;; happen before this code and in the call to FAIL.
+		       `(,%let ((,%tmp ,fail)
+				(,%index (##sys#slot ,%cache ,n2)))
+			       (##sys#setslot ,%cache ,%index ,%arg)
+			       (##sys#setslot ,%cache (,%fx+ ,%index 1) ,%tmp)
+			       (##sys#setislot 
+				,%cache ,n2
+				(##core#inline "C_u_fixnum_modulo" (,%fx+ ,%index 2) ,n2))
+			       ,%tmp)
+		       `(,%if (,%equal? (##sys#slot ,%cache ,(* i 2)) ,%arg)
+			      (##sys#slot ,%cache ,(add1 (* i 2)))
+			      ,(fold (add1 i))))))))))
 
 (define-compiler-syntax %%string-copy!
   (syntax-rules ()

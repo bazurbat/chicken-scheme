@@ -17,14 +17,15 @@ macro system based on ''explicit renaming''.
 
 Defines a macro named {{IDENTIFIER}} that will transform an expression
 with {{IDENTIFIER}} in operator position according to {{TRANSFORMER}}.
-The transformer expression must be a procedure with three arguments or
+The transformer expression must the result of a call
+to{{er-macro-transformer}} or {{ir-macro-transformer}}, or it must be
 a {{syntax-rules}} form. If {{syntax-rules}} is used, the usual R5RS
-semantics apply. If {{TRANSFORMER}} is a procedure, then it will
-be called on expansion with the complete s-expression of the macro
-invocation, a rename procedure that hygienically renames identifiers
-and a comparison procedure that compares (possibly renamed) identifiers
-(see the section "Explicit renaming macros" below for a detailed explanation
-on non-R5RS macros).
+semantics apply. If {{TRANSFORMER}} is a transformer, then its
+transformer procedure will be called on expansion with the complete
+s-expression of the macro invocation, a rename procedure that
+hygienically renames identifiers and a comparison procedure that
+compares (possibly renamed) identifiers (see the section "Explicit
+renaming macros" below for a detailed explanation on non-R5RS macros).
 
 {{define-syntax}} may be used to define local macros that are visible
 throughout the rest of the body in which the definition occurred, i.e.
@@ -56,12 +57,26 @@ The effect of destructively modifying the s-expression passed to a
 transformer procedure is undefined.
 
 
-==== syntax
+==== er-macro-transformer
 
-<macro>(syntax EXPRESSION)</macro>
+<procedure>(er-macro-transformer PROCEDURE)</procedure>
 
-Similar to {{quote}} but retains syntactical context information for
-embedded identifiers.
+Returns an explicit-remnaming transformer object wrapping the
+syntax-transformer procedure {{PROCEDURE}}. The procedure will be
+called with the form to be expanded and rename and compare procedures
+and perform explicit renaming to maintain hygiene. See below for
+more information about explicit renaming macros.
+
+
+==== ir-macro-transformer
+
+<procedure>(ir-macro-transformer PROCEDURE)</procedure>
+
+Returns a implicit-renaming transformer object wrapping the
+syntax-transformer procedure {{PROCEDURE}}. The procedure will be
+called with the form to be expanded and an inject and compare
+procedure and perform implicit renaming to maintain hygiene.  See
+below for more information about implicit renaming macros.
 
 
 ==== strip-syntax
@@ -76,13 +91,13 @@ where symbols have all context-information removed.
 
 The low-level macro facility that CHICKEN provides is called "explicit
 renaming" and allows writing hygienic or non-hygienic macros
-procedurally.  When given a lambda-expression or the return value of
-the procedure {{er-macro-transformer}} (to be preferred for
-portability reasons) instead of a {{syntax-rules}} form,
-{{define-syntax}} evaluates the procedure in a distinct expansion
-environment (initially having access to the exported identifiers of
-the {{scheme}} module). The procedure takes an expression and two
-other arguments and returns a transformed expression.
+procedurally.  When given a the return value of the one of the
+procedures {{er-macro-transformer}} or {{ir-macro-transformer}}
+instead of a {{syntax-rules}} form, {{define-syntax}} evaluates the
+procedure in a distinct expansion environment (initially having access
+to the exported identifiers of the {{scheme}} module). The procedure
+takes an expression and two other arguments and returns a transformed
+expression.
 
 For example, the transformation procedure for a {{call}} macro such
 that {{(call proc arg ...)}} expands into {{(proc arg ...)}} can be

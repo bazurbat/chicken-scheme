@@ -394,24 +394,26 @@ EOF
 
 ;;; Creating vectors from a list:
 
-(define-syntax (list->NNNvector x r c)
-  (let* ((tag (##sys#strip-syntax (cadr x)))
-	 (tagstr (symbol->string tag))
-	 (name (string->symbol (string-append "list->" tagstr)))
-	 (make (string->symbol (string-append "make-" tagstr)))
-	 (set (string->symbol (string-append tagstr "-set!"))))
-    `(define ,name
-       (let ((,make ,make))
-	 (lambda (lst)
-	   (##sys#check-list lst ',tag)
-	   (let* ((n (##core#inline "C_i_length" lst))
-		  (v (,make n)) )
-	     (do ((p lst (##core#inline "C_slot" p 1))
-		  (i 0 (##core#inline "C_fixnum_plus" i 1)) )
-		 ((##core#inline "C_eqp" p '()) v)
-	       (if (and (##core#inline "C_blockp" p) (##core#inline "C_pairp" p))
-		   (,set v i (##core#inline "C_slot" p 0))
-		   (##sys#error-not-a-proper-list lst) ) ) ) )))))
+(define-syntax list->NNNvector 
+  (er-macro-transformer 
+   (lambda (x r c)
+     (let* ((tag (##sys#strip-syntax (cadr x)))
+	    (tagstr (symbol->string tag))
+	    (name (string->symbol (string-append "list->" tagstr)))
+	    (make (string->symbol (string-append "make-" tagstr)))
+	    (set (string->symbol (string-append tagstr "-set!"))))
+       `(define ,name
+	  (let ((,make ,make))
+	    (lambda (lst)
+	      (##sys#check-list lst ',tag)
+	      (let* ((n (##core#inline "C_i_length" lst))
+		     (v (,make n)) )
+		(do ((p lst (##core#inline "C_slot" p 1))
+		     (i 0 (##core#inline "C_fixnum_plus" i 1)) )
+		    ((##core#inline "C_eqp" p '()) v)
+		  (if (and (##core#inline "C_blockp" p) (##core#inline "C_pairp" p))
+		      (,set v i (##core#inline "C_slot" p 0))
+		      (##sys#error-not-a-proper-list lst) ) ) ) )))))))
 
 (list->NNNvector u8vector)
 (list->NNNvector s8vector)
@@ -452,21 +454,23 @@ EOF
 
 ;;; Creating lists from a vector:
 
-(define-syntax (NNNvector->list x r c)
-  (let* ((tag (##sys#strip-syntax (cadr x)))
-	 (alloc? (pair? (cddr x)))
-	 (name (string->symbol (string-append (symbol->string tag) "->list"))))
-    `(define (,name v)
-       (##sys#check-structure v ',tag ',name)
-       (let ((len (##core#inline ,(conc "C_u_i_" tag "_length") v)))
-	 (let loop ((i 0))
-	   (if (fx>= i len)
-	       '()
-	       (cons 
-		,(if alloc?
-		     `(##core#inline_allocate (,(conc "C_a_i_" tag "_ref") 4) v i)
-		     `(##core#inline ,(conc "C_u_i_" tag "_ref") v i))
-		(loop (fx+ i 1)) ) ) ) ) ) ) )
+(define-syntax NNNvector->list
+  (er-macro-transformer
+   (lambda (x r c)
+     (let* ((tag (##sys#strip-syntax (cadr x)))
+	    (alloc? (pair? (cddr x)))
+	    (name (string->symbol (string-append (symbol->string tag) "->list"))))
+       `(define (,name v)
+	  (##sys#check-structure v ',tag ',name)
+	  (let ((len (##core#inline ,(conc "C_u_i_" tag "_length") v)))
+	    (let loop ((i 0))
+	      (if (fx>= i len)
+		  '()
+		  (cons 
+		   ,(if alloc?
+			`(##core#inline_allocate (,(conc "C_a_i_" tag "_ref") 4) v i)
+			`(##core#inline ,(conc "C_u_i_" tag "_ref") v i))
+		   (loop (fx+ i 1)) ) ) ) ) ) ) )))
 
 (NNNvector->list u8vector)
 (NNNvector->list s8vector)
@@ -638,7 +642,7 @@ EOF
 (define (write-u8vector v #!optional (port ##sys#standard-output) (from 0)
 			(to (u8vector-length v)))
   (##sys#check-structure v 'u8vector 'write-u8vector)
-  (##sys#check-port port 'write-u8vector)
+  (##sys#check-port* port 'write-u8vector)
   (do ((i from (fx+ i 1)))
       ((fx>= i to))
     (##sys#write-char-0 
@@ -646,7 +650,7 @@ EOF
      port) ) )
 
 (define (read-u8vector! n dest #!optional (port ##sys#standard-input) (start 0))
-  (##sys#check-port port 'read-u8vector!)
+  (##sys#check-port* port 'read-u8vector!)
   (##sys#check-exact start 'read-u8vector!)
   (##sys#check-structure dest 'u8vector 'read-u8vector!)
   (let ((dest (##sys#slot dest 1)))
@@ -666,7 +670,7 @@ EOF
 	 (##core#inline "C_substring_copy" str str2 0 n 0)
 	 str2) ) )
     (lambda (#!optional n (p ##sys#standard-input))
-      (##sys#check-port p 'read-u8vector)
+      (##sys#check-port* p 'read-u8vector)
       (cond (n (##sys#check-exact n 'read-u8vector)
 	       (let* ((str (##sys#allocate-vector n #t #f #t))
 		      (n2 (##sys#read-string! n str p 0)) )

@@ -43,7 +43,10 @@
 	(alist-update! name (add1 a) compiler-syntax-statistics)))))
 
 (define (r-c-s names transformer #!optional (se '()))
-  (let ((t (cons (##sys#er-transformer transformer) se)))
+  (let ((t (cons (##sys#ensure-transformer
+		  (##sys#er-transformer transformer)
+		  (car names))
+		 se)))
     (for-each
      (lambda (name)
        (##sys#put! name '##compiler#compiler-syntax t) )

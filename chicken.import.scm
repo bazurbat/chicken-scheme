@@ -69,6 +69,7 @@
    directory-exists?
    enable-warnings
    equal=?
+   er-macro-transformer
    errno
    error
    exit
@@ -157,6 +158,7 @@
    get-properties
    getter-with-setter
    implicit-exit-handler
+   ir-macro-transformer
    keyword->string
    keyword-style
    keyword?
@@ -190,6 +192,7 @@
    program-name
    promise?
    put!
+   quit
    register-feature!
    remprop!
    rename-file

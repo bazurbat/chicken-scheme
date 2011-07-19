@@ -4,7 +4,7 @@
 ; "This is insane. What we clearly want to do is not exactly clear, and is rooted in NCOMPLR."
 ;
 ;
-;--------------------------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------
 ; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
@@ -666,8 +666,9 @@
 					    (list
 					     (car b)
 					     se
-					     (##sys#er-transformer
-					      (##sys#eval/meta (cadr b)))))
+					     (##sys#ensure-transformer
+					      (##sys#eval/meta (cadr b))
+					      (car b))))
 					  (cadr x) )
 				     se) ) )
 			   (walk
@@ -680,8 +681,9 @@
 					  (list
 					   (car b)
 					   #f
-					   (##sys#er-transformer
-					    (##sys#eval/meta (cadr b)))))
+					   (##sys#ensure-transformer
+					    (##sys#eval/meta (cadr b))
+					    (car b))))
 					(cadr x) ) )
 			       (se2 (append ms se)) )
 			  (for-each 
@@ -708,13 +710,12 @@
 			  (##sys#extend-macro-environment
 			   name
 			   (##sys#current-environment)
-			   (##sys#er-transformer (##sys#eval/meta body)))
+			   (##sys#eval/meta body))
 			  (walk
 			   (if ##sys#enable-runtime-macros
 			       `(##sys#extend-macro-environment
 				 ',var
-				 (##sys#current-environment)
-				 (##sys#er-transformer ,body)) ;XXX possibly wrong se?
+				 (##sys#current-environment) ,body) ;XXX possibly wrong se?
 			       '(##core#undefined) )
 			   e se dest ldest h)) )
 
@@ -726,12 +727,15 @@
 			    (set! compiler-syntax
 			      (alist-cons
 			       name
-			       (##sys#get name '##compiler#compiler-syntax) compiler-syntax)))
+			       (##sys#get name '##compiler#compiler-syntax)
+			       compiler-syntax)))
 			  (##sys#put! 
 			   name '##compiler#compiler-syntax
 			   (and body
 				(##sys#cons
-				 (##sys#er-transformer (##sys#eval/meta body))
+				 (##sys#ensure-transformer
+				  (##sys#eval/meta body)
+				  var)
 				 (##sys#current-environment))))
 			  (walk 
 			   (if ##sys#enable-runtime-macros
@@ -740,7 +744,9 @@
 				'##compiler#compiler-syntax
 				,(and body
 				      `(##sys#cons
-					(##sys#er-transformer ,body)
+					(##sys#ensure-transformer 
+					 ,body
+					 ',var)
 					(##sys#current-environment))))
 			       '(##core#undefined) )
 			   e se dest ldest h)))
@@ -753,8 +759,10 @@
 				       (list 
 					name 
 					(and (pair? (cdr b))
-					     (cons (##sys#er-transformer
-						    (##sys#eval/meta (cadr b))) se))
+					     (cons (##sys#ensure-transformer
+						    (##sys#eval/meta (cadr b))
+						    (car b))
+						   se))
 					(##sys#get name '##compiler#compiler-syntax) ) ) )
 				   (cadr x))))
 			  (dynamic-wind
@@ -2097,11 +2105,13 @@
 
 ;;; Collect unsafe global procedure calls that are assigned:
 
-;;; Convert closures to explicit data structures (effectively flattens function-binding structure):
+;;; Convert closures to explicit data structures (effectively flattens function-binding 
+;   structure):
 
 (define (perform-closure-conversion node db)
-  (let ([direct-calls 0]
-	[customizable '()] )
+  (let ((direct-calls 0)
+	(customizable '())
+	(lexicals '()))
 
     (define (test sym item) (get db sym item))
   
@@ -2116,17 +2126,33 @@
     ;; Gather free-variable information:
     ;; (and: - register direct calls
     ;;       - update (by mutation) call information in "##core#call" nodes)
-    (define (gather n here env)
+    (define (gather n here locals)
       (let ((subs (node-subexpressions n))
 	    (params (node-parameters n)) )
 	(case (node-class n)
 
-	  ((quote ##core#variable ##core#undefined ##core#proc ##core#primitive ##core#global-ref) #f)
+	  ((##core#variable)
+	   (let ((var (first params)))
+	     (if (memq var lexicals)
+		 (list var)
+		 '())))
+
+	  ((quote ##core#undefined ##core#proc ##core#primitive ##core#global-ref)
+	   '())
 
 	  ((let)
-	   (receive (vals body) (split-at subs (length params))
-	     (for-each (lambda (n) (gather n here env)) vals)
-	     (gather (first body) here (append params env)) ) )
+	   ;;XXX remove this test later, shouldn't be needed:
+	   (when (pair? (cdr params)) (bomb "let-node has invalid format" params))
+	   (let ((c (gather (first subs) here locals))
+		 (var (first params)))
+	     (append c (delete var (gather (second subs) here (cons var locals)) eq?))))
+
+	  ((set!)
+	   (let ((var (first params))
+		 (c (gather (first subs) here locals)))
+	     (if (memq var lexicals) 
+		 (cons var c)
+		 c)))
 
 	  ((##core#call)
 	   (let* ([fn (first subs)]
@@ -2170,20 +2196,20 @@
 					'() ) )
 				  '() ) )
 			'() ) ) )
-	     (for-each (lambda (n) (gather n here env)) subs) ) )
+	     (concatenate (map (lambda (n) (gather n here locals)) subs) ) ))
 
 	  ((##core#lambda ##core#direct_lambda)
 	   (decompose-lambda-list
 	    (third params)
 	    (lambda (vars argc rest)
-	      (let* ((id (if here (first params) 'toplevel))
-		     (capturedvars (captured-variables (first subs) env))
-		     (csize (length capturedvars)) )
-		(put! db id 'closure-size csize)
-		(put! db id 'captured-variables capturedvars)
-		(gather (car subs) id (append vars env)) ) ) ) )
+	      (let ((id (if here (first params) 'toplevel)))
+		(fluid-let ((lexicals (append locals lexicals)))
+		  (let ((c (delete-duplicates (gather (first subs) id vars) eq?)))
+		    (put! db id 'closure-size (length c))
+		    (put! db id 'captured-variables c)
+		    (lset-difference eq? c locals vars)))))))
 	
-	  (else (for-each (lambda (n) (gather n here env)) subs)) ) ) )
+	  (else (concatenate (map (lambda (n) (gather n here locals)) subs)) ) ) ))
 
     ;; Create explicit closures:
     (define (transform n here closure)
@@ -2334,24 +2360,6 @@
 		    (make-node '##core#ref (list (+ i 1)) 
 			       (list (varnode here)) ) ) )
 	      (else n) ) ) )
-
-    (define (captured-variables node env)
-      (let ([vars '()])
-	(let walk ([n node])
-	  (let ((subs (node-subexpressions n))
-		(params (node-parameters n)) )
-	    (case (node-class n)
-	      ((##core#variable)
-	       (let ([var (first params)])
-		 (when (memq var env)
-		   (set! vars (lset-adjoin eq? vars var)) ) ) )
-	      ((quote ##core#undefined ##core#primitive ##core#proc ##core#inline_ref ##core#global-ref) #f)
-	      ((set!) 
-	       (let ([var (first params)])
-		 (when (memq var env) (set! vars (lset-adjoin eq? vars var)))
-		 (walk (car subs)) ) )
-	      (else (for-each walk subs)) ) ) )
-	vars) )
 
     (debugging 'p "closure conversion gathering phase...")
     (gather node #f '())
