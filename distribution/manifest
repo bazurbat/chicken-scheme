@@ -6,8 +6,7 @@ LICENSE
 NEWS
 README
 config-arch.sh
-identify-branch.sh
-identify-revision.sh
+identify.sh
 banner.scm
 batch-driver.scm
 batch-driver.c

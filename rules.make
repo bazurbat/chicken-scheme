@@ -18,7 +18,7 @@
 # OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
 # AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR
 # CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROd	CUREMENT OF SUBSTITUTE GOODS OR
 # SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
@@ -463,9 +463,9 @@ endif
 
 # build versioning
 
-#.PHONY: buildtag buildbranch buildid
-
 ifdef WINDOWS_SHELL
+.PHONY: buildtag buildbranch buildid
+
 buildtag:
 	echo.$(BUILD_TAG)>buildtag
 buildbranch:
@@ -473,12 +473,14 @@ buildbranch:
 buildid:
 	echo.$(BUILD_ID)>buildid
 else
-buildtag:
-	echo "$(BUILD_TAG)" > buildtag
-buildbranch:
-	echo "$(BRANCHNAME)" > buildbranch
-buildid:
-	echo "$(BUILD_ID)" > buildid
+.PHONY: identify-me
+
+identify-me:
+	sh identify.sh $(SRCDIR)
+
+buildtag: identify-me
+buildbranch: identify-me
+buildid: identify-me
 endif
 
 # bootstrapping c sources
@@ -655,17 +657,6 @@ check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 
 bench: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 	cd tests; echo >>bench.log; date >>bench.log; sh runbench.sh 2>&1 | tee -a bench.log
-
-
-# build current head in sub-directory
-
-.PHONY: buildhead
-
-buildhead:
-	rm -fr chicken-`cat buildversion`
-	git archive --format=tar --prefix=chicken-`cat buildversion`/ $(HEAD) | tar x
-	cd chicken-`cat buildversion`; $(MAKE) -f Makefile.$(PLATFORM) \
-	  PLATFORM=$(PLATFORM) PREFIX=`pwd` CONFIG= CHICKEN=$(CHICKEN) all install
 
 
 # build static bootstrapping chicken
