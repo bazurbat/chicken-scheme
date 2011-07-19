@@ -147,7 +147,7 @@ EOF
 
 (define (exit #!optional code) ((##sys#exit-handler) code))
 (define (reset) ((##sys#reset-handler)))
-(define (##sys#quit-hook result) ((##sys#reset-handler)))
+(define (##sys#quit-hook result) ((##sys#exit-handler) 0))
 (define (quit #!optional result) (##sys#quit-hook result))
 
 (define (##sys#error . args)

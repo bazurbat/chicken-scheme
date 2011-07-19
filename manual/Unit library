@@ -683,7 +683,7 @@ Returns an s-expression with debug information for the procedure {{PROC}}, or
 <procedure>(quit [RESULT])</procedure>
 
 In the interpreter {{quit}} exits the currently active read-eval-print loop.
-In compiled code, it is equivalent to calling {{reset}}. See also: {{repl}}.
+In compiled code, it is equivalent to calling {{exit}}. See also: {{repl}}.
 
 
 ==== reset
