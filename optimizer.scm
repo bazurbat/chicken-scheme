@@ -299,6 +299,10 @@
 			  (list (walk (first subs) (cons id fids) '())) ) ) ) ]
 		     [else (walk-generic n class params subs (cons id fids) '() #f)] ) ) ))
 
+	  ((##core#direct_lambda)
+	   (fluid-let ((gae '()))
+	     (walk-generic n class params subs fids '() #f)))
+
 	  ((##core#call)
 	   (let* ([fun (car subs)]
 		  [funclass (node-class fun)] )
