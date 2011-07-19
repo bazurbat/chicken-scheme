@@ -236,42 +236,6 @@
 		  len m m
 		  (map typename results))))))
 
-    ;;XXX this could be better done by combining non-matching arguments/llists
-    ;;    into "(or (procedure ...) (procedure ...))"
-    (define (merge-argument-types ts1 ts2) 
-      (cond ((null? ts1) 
-	     (cond ((null? ts2) '())
-		   ((memq (car ts2) '(#!rest #!optional)) ts2)
-		   (else '(#!rest))))
-	    ((null? ts2) '(#!rest))	;XXX giving up
-	    ((eq? '#!rest (car ts1))
-	     (cond ((and (pair? ts2) (eq? '#!rest (car ts2)))
-		    `(#!rest
-		      ,(simplify-type
-			`(or ,(rest-type (cdr ts1))
-			     ,(rest-type (cdr ts2))))))
-		   (else '(#!rest))))	;XXX giving up
-	    ((eq? '#!optional (car ts1))
-	     (cond ((and (pair? ts2) (eq? '#!optional (car ts2)))
-		    `(#!optional 
-		      ,(simplify-type `(or ,(cadr ts1) ,(cadr ts2)))
-		      ,@(merge-argument-types (cddr ts1) (cddr ts2))))
-		   (else '(#!rest))))	;XXX
-	    (else (cons (simplify-type `(or ,(car ts1) ,(car ts2)))
-			(merge-argument-types (cdr ts1) (cdr ts2))))))
-
-    (define (merge-result-types ts11 ts21) ;XXX possibly overly conservative
-      (call/cc
-       (lambda (return)
-	 (let loop ((ts1 ts11) (ts2 ts21))
-	   (cond ((null? ts1) ts2)
-		 ((null? ts2) ts1)
-		 ((or (atom? ts1) (atom? ts2)) (return '*))
-		 ((eq? 'noreturn (car ts1)) (loop (cdr ts1) ts2))
-		 ((eq? 'noreturn (car ts2)) (loop ts1 (cdr ts2)))
-		 (else (cons (simplify-type `(or ,(car ts1) ,(car ts2)))
-			     (loop (cdr ts1) (cdr ts2)))))))))
-
     (define (match t1 t2)
       (let ((m (match1 t1 t2)))
 	(dd "    match ~a <-> ~a -> ~a" t1 t2 m)
@@ -922,6 +886,42 @@
 	     (else t))
 	   t))))
   (simplify t))
+
+;;XXX this could be better done by combining non-matching arguments/llists
+;;    into "(or (procedure ...) (procedure ...))"
+(define (merge-argument-types ts1 ts2) 
+  (cond ((null? ts1) 
+	 (cond ((null? ts2) '())
+	       ((memq (car ts2) '(#!rest #!optional)) ts2)
+	       (else '(#!rest))))
+	((null? ts2) '(#!rest))		;XXX giving up
+	((eq? '#!rest (car ts1))
+	 (cond ((and (pair? ts2) (eq? '#!rest (car ts2)))
+		`(#!rest
+		  ,(simplify-type
+		    `(or ,(rest-type (cdr ts1))
+			 ,(rest-type (cdr ts2))))))
+	       (else '(#!rest))))	;XXX giving up
+	((eq? '#!optional (car ts1))
+	 (cond ((and (pair? ts2) (eq? '#!optional (car ts2)))
+		`(#!optional 
+		  ,(simplify-type `(or ,(cadr ts1) ,(cadr ts2)))
+		  ,@(merge-argument-types (cddr ts1) (cddr ts2))))
+	       (else '(#!rest))))	;XXX
+	(else (cons (simplify-type `(or ,(car ts1) ,(car ts2)))
+		    (merge-argument-types (cdr ts1) (cdr ts2))))))
+
+(define (merge-result-types ts11 ts21) ;XXX possibly overly conservative
+  (call/cc
+   (lambda (return)
+     (let loop ((ts1 ts11) (ts2 ts21))
+       (cond ((null? ts1) ts2)
+	     ((null? ts2) ts1)
+	     ((or (atom? ts1) (atom? ts2)) (return '*))
+	     ((eq? 'noreturn (car ts1)) (loop (cdr ts1) ts2))
+	     ((eq? 'noreturn (car ts2)) (loop ts1 (cdr ts2)))
+	     (else (cons (simplify-type `(or ,(car ts1) ,(car ts2)))
+			 (loop (cdr ts1) (cdr ts2)))))))))
 
 
 (define (compatible-types? t1 t2)
