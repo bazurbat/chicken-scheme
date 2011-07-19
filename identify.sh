@@ -7,7 +7,7 @@
 
 # make sure file exists anyway, since branchname is a special case
 if test \! -e "buildbranch"; then
-    echo >buildid
+    echo >buildbranch
 fi
 
 rev0=`cat buildid || echo ""`
