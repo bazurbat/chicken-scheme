@@ -463,7 +463,7 @@ endif
 
 # build versioning
 
-.PHONY: buildtag buildbranch buildid
+#.PHONY: buildtag buildbranch buildid
 
 ifdef WINDOWS_SHELL
 buildtag:
