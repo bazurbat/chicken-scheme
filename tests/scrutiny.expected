@@ -48,3 +48,5 @@ Warning: at toplevel:
 Warning: redefinition of standard binding: car
 
 Warning: (in k118) constant-folding expression results in error: "bad argument type": (+ (quote a) (quote b))
+
+Warning: (in k60) constant-folding expression results in error: "bad argument type": (+ (quote 3) (quote a))
