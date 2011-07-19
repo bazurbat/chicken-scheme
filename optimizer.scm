@@ -242,7 +242,7 @@
 		   ((assq var gae) =>
 		    (lambda (a)
 		      (cond ((cdr a)
-			     (debugging 'o "propagated global variable" var (cdr a))
+			     (debugging 'x "propagated global variable" var (cdr a))
 			     (varnode (cdr a)))
 			    (else (varnode var)))))
 		   (else (varnode var)))))
