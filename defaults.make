@@ -43,7 +43,6 @@ SEP ?= /
 SRCDIR ?= .$(SEP)
 DESTDIR ?=
 PREFIX ?= /usr/local
-BRANCHNAME ?= $(shell sh $(SRCDIR)identify-branch.sh $(SRCDIR))
 
 BINDIR = $(PREFIX)/bin
 LIBDIR = $(PREFIX)/lib
@@ -226,18 +225,15 @@ LIBCHICKEN_SO_LIBRARIES ?= $(LIBRARIES)
 
 # other settings
 
-HOSTNAME ?= $(shell hostname)
-
 ifdef WINDOWS_SHELL
 BUILD_TIME ?= $(shell date /t)
 COPY_COMMAND = copy /Y
+HOSTNAME ?= $(shell hostname)
+UNAME_SYS ?= Windows
+BUILD_TAG ?= compiled $(BUILD_TIME) on $(HOSTNAME) ($(UNAME_SYS))
 else
-BUILD_TIME ?= $(shell date +%Y-%m-%d)
-UNAME_SYS ?= $(shell uname)
 COPY_COMMAND = cp
 endif
-BUILD_TAG ?= compiled $(BUILD_TIME) on $(HOSTNAME) ($(UNAME_SYS))
-BUILD_ID ?= $(shell sh $(SRCDIR)identify-revision.sh $(SRCDIR))
 COPYMANY =
 
 

@@ -1,7 +1,6 @@
 ;;;; build-version.scm
 ;
-; Copyright (c) 2008-2011, The Chicken Team
-; Copyright (c) 2000-2007, Felix L. Winkelmann
+; Copyright (c) 2011, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -31,13 +30,14 @@
 ;; (read-version filename): Read line from FILENAME and return
 ;; as a string; return #f if non-existent file or blank line.
 (define-syntax read-version
-  (lambda (x r c)
-    (let ((fn (cadr x)))
-      (and (file-exists? fn)
-	   (let ((ver (with-input-from-file (cadr x) read-line)))
-	     (if (string=? ver "")
-		 #f
-		 ver))))))
+  (er-macro-transformer
+   (lambda (x r c)
+     (let ((fn (cadr x)))
+       (and (file-exists? fn)
+	    (let ((ver (with-input-from-file (cadr x) read-line)))
+	      (if (string=? ver "")
+		  #f
+		  ver)))))))
 
 (define ##sys#build-version (read-version "buildversion"))
 (define ##sys#build-tag     (read-version "buildtag"))
