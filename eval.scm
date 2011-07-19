@@ -557,7 +557,7 @@
 					      se
 					      (##sys#ensure-transformer
 					       (##sys#eval/meta (cadr b))
-					       (car b))))
+					       (##sys#strip-syntax (car b)))))
 					   (cadr x) ) 
 				      se) ) )
 			    (compile
@@ -571,7 +571,7 @@
 					     #f
 					     (##sys#ensure-transformer
 					      (##sys#eval/meta (cadr b))
-					      (car b))))
+					      (##sys#strip-syntax (car b)))))
 					  (cadr x) ) )
 				 (se2 (append ms se)) )
 			    (for-each 

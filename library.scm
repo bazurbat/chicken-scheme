@@ -145,7 +145,7 @@ EOF
 
 ;;; System routines:
 
-(define (exit #!optional code) ((##sys#exit-handler) code))
+(define (exit #!optional (code 0)) ((##sys#exit-handler) code))
 (define (reset) ((##sys#reset-handler)))
 (define (##sys#quit-hook result) ((##sys#exit-handler) 0))
 (define (quit #!optional result) (##sys#quit-hook result))
