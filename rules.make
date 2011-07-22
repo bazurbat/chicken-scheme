@@ -476,7 +476,7 @@ else
 .PHONY: identify-me
 
 identify-me:
-	sh identify.sh $(SRCDIR)
+	@sh $(SRCDIR)identify.sh $(SRCDIR)
 
 buildtag: identify-me
 buildbranch: identify-me
