@@ -464,10 +464,10 @@ endif
 # build versioning
 
 ifdef WINDOWS_SHELL
-.PHONY: buildtag buildbranch buildid
+.PHONY: buildbranch buildid
 
-buildtag:
-	echo.$(BUILD_TAG)>buildtag
+buildtag.h:
+	echo #define C_BUILD_TAG "$(BUILD_TAG)" >$@
 buildbranch:
 	echo.$(BRANCHNAME)>buildbranch
 buildid:
@@ -478,7 +478,7 @@ else
 identify-me:
 	@sh $(SRCDIR)identify.sh $(SRCDIR)
 
-buildtag: identify-me
+buildtag.h: identify-me
 buildbranch: identify-me
 buildid: identify-me
 endif
@@ -548,7 +548,8 @@ profiler.c: $(SRCDIR)profiler.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 stub.c: $(SRCDIR)stub.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
-build-version.c: $(SRCDIR)build-version.scm buildtag buildbranch buildid $(SRCDIR)buildversion
+build-version.c: $(SRCDIR)build-version.scm buildbranch buildid \
+	  $(SRCDIR)buildversion buildtag.h
 	$(bootstrap-lib)
 
 define declare-bootstrap-import-lib
@@ -632,7 +633,7 @@ endif
 confclean:
 	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) \
 	  chicken-config.h chicken-defaults.h chicken-install.rc chicken-uninstall.rc \
-	  buildtag buildid buildbranch
+	  buildtag.h buildid buildbranch
 
 spotless: distclean testclean
 	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) $(DISTFILES)
