@@ -337,7 +337,7 @@
 	  (cond ((or (eof-object? ln)
 		     (irregex-match " *#!eof *" ln))
 		 (open-input-string ""))
-		((irregex-match " *#\\|[- ]*([^- ]*) *\\|#.*" ln) =>w
+		((irregex-match " *#\\|[- ]*([^- ]*) *\\|#.*" ln) =>
 		 (lambda (m)
 		   (let ((v (irregex-match-substring m 1)))
 		     (cond ((or (string=? "" v) (string=? "#f" v)))
