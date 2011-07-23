@@ -43,7 +43,6 @@ SEP ?= /
 SRCDIR ?= .$(SEP)
 DESTDIR ?=
 PREFIX ?= /usr/local
-BRANCHNAME ?= $(shell sh identify-branch.sh $(SRCDIR))
 
 BINDIR = $(PREFIX)/bin
 LIBDIR = $(PREFIX)/lib
@@ -226,17 +225,15 @@ LIBCHICKEN_SO_LIBRARIES ?= $(LIBRARIES)
 
 # other settings
 
-HOSTNAME ?= $(shell hostname)
-
 ifdef WINDOWS_SHELL
 BUILD_TIME ?= $(shell date /t)
 COPY_COMMAND = copy /Y
+HOSTNAME ?= $(shell hostname)
+UNAME_SYS ?= Windows
+BUILD_TAG ?= compiled $(BUILD_TIME) on $(HOSTNAME) ($(UNAME_SYS))
 else
-BUILD_TIME ?= $(shell date +%Y-%m-%d)
-UNAME_SYS ?= $(shell uname)
 COPY_COMMAND = cp
 endif
-BUILD_TAG ?= compiled $(BUILD_TIME) on $(HOSTNAME) ($(UNAME_SYS))
 COPYMANY =
 
 
@@ -275,7 +272,7 @@ CSI ?= csi$(EXE)
 
 CHICKEN_OPTIONS = -optimize-level 2 -include-path . -include-path $(SRCDIR) -inline -ignore-repository -feature chicken-bootstrap
 ifdef DEBUGBUILD
-CHICKEN_OPTIONS += -feature debugbuild -scrutinize -types $(SRCDIR)types.db -verbose
+CHICKEN_OPTIONS += -feature debugbuild -scrutinize -types $(SRCDIR)types.db
 CHICKEN_OPTIONS += -feature debugbuild
 else
 CHICKEN_OPTIONS += -no-warnings
@@ -351,7 +348,6 @@ chicken-defaults.h:
 ifdef OPTIMIZE_FOR_SPEED
 	echo "/* (this build was optimized for speed) */" >$@
 endif
-	echo "#define C_BUILD_TAG \"$(BUILD_TAG)\"" >>$@
 	echo "#define C_CHICKEN_PROGRAM \"$(CHICKEN_PROGRAM)$(EXE)\"" >>$@
 	echo "#ifndef C_INSTALL_CC" >>$@
 	echo "# define C_INSTALL_CC \"$(C_COMPILER)\"" >>$@
@@ -488,9 +484,6 @@ endif
 	echo "#endif" >>$@
 	echo "#ifndef C_BINARY_VERSION" >>$@
 	echo "# define C_BINARY_VERSION $(BINARYVERSION)" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_BRANCH_NAME" >>$@
-	echo "# define C_BRANCH_NAME \"$(BRANCHNAME)\"" >>$@
 	echo "#endif" >>$@
 	echo "/* END OF FILE */" >>$@
 endif

@@ -419,10 +419,10 @@ Let's take a simple example.
 
 Compiled to C, we get {{hello.c}}. We need the files {{chicken.h}} and
 {{runtime.c}}, which contain the basic runtime system, plus the three
-basic library files {{library.c}}, {{eval.c}} and {{extras.c}} which
-contain the same functionality as the library linked into a plain
-CHICKEN-compiled application, or which is available by default in the
-interpreter, {{csi}}:
+basic library files {{library.c}}, {{eval.c}} and {{build-version.c}}
+which contain the same functionality as the library linked into a
+plain CHICKEN-compiled application, or which is available by default
+in the interpreter, {{csi}}:
 
   % cd /tmp
   %echo '(print "Hello World.")' > hello.scm
@@ -430,12 +430,13 @@ interpreter, {{csi}}:
   % cp $CHICKEN_BUILD/library.c .
   % cp $CHICKEN_BUILD/eval.c    .
   % cp $CHICKEN_BUILD/extras.c  .
-  % gcc -static -Os -fomit-frame-pointer runtime.c library.c eval.c \
-    extras.c hello.c -o hello -lm
+  % gcc -static -Os -fomit-frame-pointer runtime.c build-version.c library.c eval.c \
+    hello.c -o hello -lm
 
 Now we have all files together, and can create an tarball containing all the files:
 
- % tar cf hello.tar Makefile hello.c runtime.c library.c eval.c extras.c chicken.h
+ % tar cf hello.tar Makefile hello.c runtime.c build-version.c library.c eval.c extras.c \
+   chicken.h
  % gzip hello.tar
 
 This is naturally rather simplistic. Things like enabling dynamic loading, estimating
@@ -443,11 +444,11 @@ the optimal stack-size and selecting supported features of the host system would
 more configuration- and build-time support. All this can be addressed using more
 elaborate build-scripts, makefiles or by using autoconf/automake.
 
-Note also that the size of the application can still be reduced by removing {{extras}} and
+Note also that the size of the application can still be reduced by removing
 {{eval}} and compiling {{hello.scm}} with the {{-explicit-use}} option.
 
-For more information, study the CHICKEN source code and/or get in
-contact with the author.
+For more information, study the CHICKEN source code and/or ask on the CHICKEN
+mailing list.
 
 ---
 Previous: [[Basic mode of operation]]

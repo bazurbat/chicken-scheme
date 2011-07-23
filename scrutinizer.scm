@@ -1213,6 +1213,7 @@
   ;; - also converts "(... -> ...)" types
   ;; - drops "#!key ..." args by converting to #!rest
   ;; - handles "(T1 -> T2 : T3)" (predicate) 
+  ;; - simplifies result
   (let ((ptype #f))			; (T . PT) | #f
     (define (upto lst p)
       (let loop ((lst lst))
@@ -1292,7 +1293,7 @@
 			t)
 		       (else #f)))))
 	    (else #f)))
-    (let ((type (validate type #f)))
+    (let ((type (simplify-type (validate type #f))))
       (values type (and ptype (eq? (car ptype) type) (cdr ptype))))))
 
 (define (initial-argument-types dest vars argc)

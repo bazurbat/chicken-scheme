@@ -557,7 +557,7 @@
 					      se
 					      (##sys#ensure-transformer
 					       (##sys#eval/meta (cadr b))
-					       (car b))))
+					       (##sys#strip-syntax (car b)))))
 					   (cadr x) ) 
 				      se) ) )
 			    (compile
@@ -571,7 +571,7 @@
 					     #f
 					     (##sys#ensure-transformer
 					      (##sys#eval/meta (cadr b))
-					      (car b))))
+					      (##sys#strip-syntax (car b)))))
 					  (cadr x) ) )
 				 (se2 (append ms se)) )
 			    (for-each 
@@ -1555,6 +1555,7 @@
 	    (ehandler (##sys#error-handler))
 	    (rhandler (##sys#reset-handler)) 
 	    (lv #f)
+	    (qh ##sys#quit-hook)
 	    (uie ##sys#unbound-in-eval) )
 
 	(define (saveports)
@@ -1567,82 +1568,86 @@
 	  (set! ##sys#standard-output stdout)
 	  (set! ##sys#standard-error stderr) )
 
-	(##sys#dynamic-wind
-	 (lambda ()
-	   (set! lv (load-verbose))
-	   (load-verbose #t)
-	   (##sys#error-handler
-	    (lambda (msg . args)
-	      (resetports)
-	      (##sys#print "\nError" #f ##sys#standard-error)
-	      (when msg
-		(##sys#print ": " #f ##sys#standard-error)
-		(##sys#print msg #f ##sys#standard-error) )
-	      (if (and (pair? args) (null? (cdr args)))
-		  (begin
-		    (##sys#print ": " #f ##sys#standard-error)
-		    (write-err args) )
-		  (begin
-		    (##sys#write-char-0 #\newline ##sys#standard-error)
-		    (write-err args) ) )
-	      (set! ##sys#repl-recent-call-chain
-		(or (and-let* ((lexn ##sys#last-exception) ;XXX not really right
-			       ((##sys#structure? lexn 'condition))
-			       (a (member '(exn . call-chain) (##sys#slot lexn 2))))
-		      (let ((ct (cadr a)))
-			(##sys#really-print-call-chain
-			 ##sys#standard-error ct
-			 "\n\tCall history:\n")
-			ct))
-		    (print-call-chain ##sys#standard-error)))
-	      (flush-output ##sys#standard-error) ) ) )
-	 (lambda ()
-	   (let loop ()
-	     (saveports)
-	     (call-with-current-continuation
-	      (lambda (c)
-		(##sys#reset-handler
-		 (lambda ()
-		   (set! ##sys#read-error-with-line-number #f)
-		   (set! ##sys#enable-qualifiers #t)
-		   (resetports)
-		   (c #f) ) ) ) )
-	     (##sys#read-prompt-hook)
-	     (let ([exp ((or ##sys#repl-read-hook read))])
-	       (unless (eof-object? exp)
-		 (when (char=? #\newline (##sys#peek-char-0 ##sys#standard-input))
-		   (##sys#read-char-0 ##sys#standard-input) )
-		 (##sys#clear-trace-buffer)
-		 (set! ##sys#unbound-in-eval '())
-		 (receive result (evaluator exp)
-		   (when (and ##sys#warnings-enabled (pair? ##sys#unbound-in-eval))
-		     (let loop ((vars ##sys#unbound-in-eval) (u '()))
-		       (cond ((null? vars)
-			      (when (pair? u)
-				(##sys#notice
-				 "the following toplevel variables are referenced but unbound:\n")
-				(for-each 
-				 (lambda (v)
-				   (##sys#print "  " #f ##sys#standard-error)
-				   (##sys#print (car v) #t ##sys#standard-error)
-				   (when (cdr v)
-				     (##sys#print " (in " #f ##sys#standard-error)
-				     (##sys#print (cdr v) #t ##sys#standard-error) 
-				     (##sys#write-char-0 #\) ##sys#standard-error) )
-				   (##sys#write-char-0 #\newline ##sys#standard-error) )
-				 u)
-				(##sys#flush-output ##sys#standard-error)))
-			     ((or (memq (caar vars) u) 
-				  (##sys#symbol-has-toplevel-binding? (caar vars)) )
-			      (loop (cdr vars) u) )
-			     (else (loop (cdr vars) (cons (car vars) u))) ) 9 ) )
-		   (write-results result) 
-		   (loop) ) ) ) ) )
-	 (lambda ()
-	   (load-verbose lv)
-	   (set! ##sys#unbound-in-eval uie)
-	   (##sys#error-handler ehandler)
-	   (##sys#reset-handler rhandler) ) ) ) ) ) )
+	(call-with-current-continuation
+	 (lambda (k)
+	   (##sys#dynamic-wind
+	    (lambda ()
+	      (set! lv (load-verbose))
+	      (set! ##sys#quit-hook (lambda (result) (k result)))
+	      (load-verbose #t)
+	      (##sys#error-handler
+	       (lambda (msg . args)
+		 (resetports)
+		 (##sys#print "\nError" #f ##sys#standard-error)
+		 (when msg
+		   (##sys#print ": " #f ##sys#standard-error)
+		   (##sys#print msg #f ##sys#standard-error) )
+		 (if (and (pair? args) (null? (cdr args)))
+		     (begin
+		       (##sys#print ": " #f ##sys#standard-error)
+		       (write-err args) )
+		     (begin
+		       (##sys#write-char-0 #\newline ##sys#standard-error)
+		       (write-err args) ) )
+		 (set! ##sys#repl-recent-call-chain
+		   (or (and-let* ((lexn ##sys#last-exception) ;XXX not really right
+				  ((##sys#structure? lexn 'condition))
+				  (a (member '(exn . call-chain) (##sys#slot lexn 2))))
+			 (let ((ct (cadr a)))
+			   (##sys#really-print-call-chain
+			    ##sys#standard-error ct
+			    "\n\tCall history:\n")
+			   ct))
+		       (print-call-chain ##sys#standard-error)))
+		 (flush-output ##sys#standard-error) ) ) )
+	    (lambda ()
+	      (let loop ()
+		(saveports)
+		(call-with-current-continuation
+		 (lambda (c)
+		   (##sys#reset-handler
+		    (lambda ()
+		      (set! ##sys#read-error-with-line-number #f)
+		      (set! ##sys#enable-qualifiers #t)
+		      (resetports)
+		      (c #f) ) ) ) )
+		(##sys#read-prompt-hook)
+		(let ([exp ((or ##sys#repl-read-hook read))])
+		  (unless (eof-object? exp)
+		    (when (char=? #\newline (##sys#peek-char-0 ##sys#standard-input))
+		      (##sys#read-char-0 ##sys#standard-input) )
+		    (##sys#clear-trace-buffer)
+		    (set! ##sys#unbound-in-eval '())
+		    (receive result (evaluator exp)
+		      (when (and ##sys#warnings-enabled (pair? ##sys#unbound-in-eval))
+			(let loop ((vars ##sys#unbound-in-eval) (u '()))
+			  (cond ((null? vars)
+				 (when (pair? u)
+				   (##sys#notice
+				    "the following toplevel variables are referenced but unbound:\n")
+				   (for-each 
+				    (lambda (v)
+				      (##sys#print "  " #f ##sys#standard-error)
+				      (##sys#print (car v) #t ##sys#standard-error)
+				      (when (cdr v)
+					(##sys#print " (in " #f ##sys#standard-error)
+					(##sys#print (cdr v) #t ##sys#standard-error) 
+					(##sys#write-char-0 #\) ##sys#standard-error) )
+				      (##sys#write-char-0 #\newline ##sys#standard-error) )
+				    u)
+				   (##sys#flush-output ##sys#standard-error)))
+				((or (memq (caar vars) u) 
+				     (##sys#symbol-has-toplevel-binding? (caar vars)) )
+				 (loop (cdr vars) u) )
+				(else (loop (cdr vars) (cons (car vars) u))) ) 9 ) )
+		      (write-results result) 
+		      (loop) ) ) ) ) )
+	    (lambda ()
+	      (load-verbose lv)
+	      (set! ##sys#quit-hook qh)
+	      (set! ##sys#unbound-in-eval uie)
+	      (##sys#error-handler ehandler)
+	      (##sys#reset-handler rhandler) ) ) ) ) ) ) ))
 
 
 ;;; SRFI-10:

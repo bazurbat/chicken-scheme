@@ -238,6 +238,7 @@
  profiled-procedures
  put!
  qnode
+ quit
  r-c-s
  read/source-info
  real-name

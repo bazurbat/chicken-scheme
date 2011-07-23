@@ -27,6 +27,7 @@
 
 (declare
   (unit library)
+  (uses build-version)
   (disable-interrupts)
   (hide ##sys#dynamic-unwind ##sys#find-symbol
 	##sys#grow-vector ##sys#default-parameter-vector 
@@ -51,14 +52,6 @@
 
 #ifndef EX_SOFTWARE
 # define EX_SOFTWARE	70
-#endif
-
-#ifndef C_BUILD_TAG
-# define C_BUILD_TAG	""
-#endif
-
-#ifndef C_BRANCH_NAME
-# define C_BRANCH_NAME   ""
 #endif
 
 #define C_close_file(p)	      (C_fclose((C_FILEPTR)(C_port_file(p))), C_SCHEME_UNDEFINED)
@@ -139,7 +132,6 @@ EOF
 
 
 (include "common-declarations.scm")
-(include "version.scm")
 (include "banner.scm")
 
 
@@ -150,14 +142,13 @@ EOF
 (define-constant default-parameter-vector-size 16)
 (define-constant maximal-string-length #x00ffffff)
 
-(define-foreign-variable +build-tag+ c-string "C_BUILD_TAG")
-(define-foreign-variable +branch-name+ c-string "C_BRANCH_NAME")
-
 
 ;;; System routines:
 
-(define (exit . code) (apply (##sys#exit-handler) code))
+(define (exit #!optional (code 0)) ((##sys#exit-handler) code))
 (define (reset) ((##sys#reset-handler)))
+(define (##sys#quit-hook result) ((##sys#exit-handler) 0))
+(define (quit #!optional result) (##sys#quit-hook result))
 
 (define (##sys#error . args)
   (if (pair? args)
@@ -3038,11 +3029,13 @@ EOF
   (for-each (cut ##sys#print <> #f ##sys#standard-output) lst) )
  
 (define (print . args)
+  (##sys#check-port* ##sys#standard-output 'print)
   (*print-each args)
   (##sys#write-char-0 #\newline ##sys#standard-output) 
   (void) )
 
 (define (print* . args)
+  (##sys#check-port* ##sys#standard-output 'print)
   (*print-each args)
   (##sys#flush-output ##sys#standard-output)
   (void) )
@@ -3574,14 +3567,17 @@ EOF
 		   (if (##sys#fudge 32) " gchooks" "") 
 		   (if (##sys#fudge 39) " cross" "") ) ) )
 	(string-append
-	 "Version " +build-version+ " " +branch-name+ "\n"
+	 "Version " ##sys#build-version
+	 (if ##sys#build-branch (string-append " (" ##sys#build-branch ")") "")
+	 (if ##sys#build-id (string-append " (rev " ##sys#build-id ")") "")
+	 "\n"
 	 (get-config)
 	 (if (zero? (##sys#size spec))
 	     ""
 	     (string-append " [" spec " ]") )
 	 "\n"
-	 +build-tag+))
-      +build-version+) )
+	 (or (##sys#build-tag) "")))
+      ##sys#build-version) )
 
 
 ;;; Feature identifiers:
@@ -3718,7 +3714,7 @@ EOF
 (define (print-call-chain #!optional (port ##sys#standard-output) (start 0)
 				     (thread ##sys#current-thread)
 				     (header "\n\tCall history:\n") )
-  (##sys#check-port port 'print-call-chain)
+  (##sys#check-port* port 'print-call-chain)
   (##sys#check-exact start 'print-call-chain)
   (##sys#check-string header 'print-call-chain)
   (let ((ct (##sys#get-call-chain start thread)))

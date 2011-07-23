@@ -130,7 +130,7 @@ EOF
 
 (define (print-banner)
   (newline)
-  ;;UNUSED
+  ;;UNUSED BECAUSE IT IS STUPID
   #;(when (and (tty-input?) (##sys#fudge 11))
     (let* ((t (string-copy +product+))
 	   (len (string-length t))
@@ -336,7 +336,7 @@ EOF
 				[xn (eval n)] )
 			   (dump xe xn) ) )
 			((r) (report))
-			((q) (exit))
+			((q) (##sys#quit-hook))
 			((l)
 			 (let ((fns (string-split (read-line))))
 			   (for-each load fns)
@@ -1087,7 +1087,10 @@ EOF
       (do ([args args (cdr args)])
 	  ((null? args)
 	   (unless batch 
-	     (repl csi-eval)
+	     (call/cc
+	      (lambda (k)
+		(set! ##sys#quit-hook (lambda _ (k #f)))
+		(repl csi-eval)))
 	     (##sys#write-char-0 #\newline ##sys#standard-output) ) )
 	(let* ((arg (car args)))
 	  (cond ((member arg simple-options))

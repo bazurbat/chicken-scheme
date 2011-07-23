@@ -18,7 +18,7 @@
 # OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
 # AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR
 # CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROd	CUREMENT OF SUBSTITUTE GOODS OR
 # SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
@@ -38,7 +38,7 @@ SETUP_API_OBJECTS_1 = setup-api setup-download
 LIBCHICKEN_SCHEME_OBJECTS_1 = \
        library eval data-structures ports files extras lolevel utils tcp srfi-1 srfi-4 srfi-13 \
        srfi-14 srfi-18 srfi-69 $(POSIXFILE) irregex scheduler \
-       profiler stub expand modules chicken-syntax chicken-ffi-syntax
+       profiler stub expand modules chicken-syntax chicken-ffi-syntax build-version
 LIBCHICKEN_OBJECTS_1 = $(LIBCHICKEN_SCHEME_OBJECTS_1) runtime
 LIBCHICKEN_SHARED_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=$(O))
 LIBCHICKEN_STATIC_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=-static$(O))
@@ -462,6 +462,28 @@ ifdef WINDOWS_SHELL
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) "$(DESTDIR)$(IBINDIR)$(SEP)csibatch.bat"
 endif
 
+# build versioning
+
+ifdef WINDOWS_SHELL
+.PHONY: buildbranch buildid
+
+buildtag.h:
+	echo #define C_BUILD_TAG "$(BUILD_TAG)" >$@
+buildbranch:
+	echo.$(BRANCHNAME)>buildbranch
+buildid:
+	echo.$(BUILD_ID)>buildid
+else
+.PHONY: identify-me
+
+identify-me:
+	@sh $(SRCDIR)identify.sh $(SRCDIR)
+
+buildtag.h: identify-me
+buildbranch: identify-me
+buildid: identify-me
+endif
+
 # bootstrapping c sources
 
 define declare-emitted-import-lib-dependency
@@ -474,7 +496,7 @@ $(foreach lib, $(SETUP_API_OBJECTS_1),\
 
 bootstrap-lib = $(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
 
-library.c: $(SRCDIR)library.scm $(SRCDIR)version.scm $(SRCDIR)banner.scm $(SRCDIR)common-declarations.scm
+library.c: $(SRCDIR)library.scm $(SRCDIR)banner.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 eval.c: $(SRCDIR)eval.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
@@ -527,6 +549,9 @@ profiler.c: $(SRCDIR)profiler.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 stub.c: $(SRCDIR)stub.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
+build-version.c: $(SRCDIR)build-version.scm buildbranch buildid \
+	  $(SRCDIR)buildversion buildtag.h
+	$(bootstrap-lib)
 
 define declare-bootstrap-import-lib
 $(1).import.c: $$(SRCDIR)$(1).import.scm
@@ -609,7 +634,8 @@ endif
 
 confclean:
 	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) \
-	  chicken-config.h chicken-defaults.h chicken-install.rc chicken-uninstall.rc
+	  chicken-config.h chicken-defaults.h chicken-install.rc chicken-uninstall.rc \
+	  buildtag.h buildid buildbranch
 
 spotless: distclean testclean
 	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) $(DISTFILES)
@@ -634,17 +660,6 @@ check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 
 bench: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 	cd tests; echo >>bench.log; date >>bench.log; sh runbench.sh 2>&1 | tee -a bench.log
-
-
-# build current head in sub-directory
-
-.PHONY: buildhead
-
-buildhead:
-	rm -fr chicken-`cat buildversion`
-	git archive --format=tar --prefix=chicken-`cat buildversion`/ $(HEAD) | tar x
-	cd chicken-`cat buildversion`; $(MAKE) -f Makefile.$(PLATFORM) \
-	  PLATFORM=$(PLATFORM) PREFIX=`pwd` CONFIG= CHICKEN=$(CHICKEN) all install
 
 
 # build static bootstrapping chicken

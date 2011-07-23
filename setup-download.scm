@@ -337,10 +337,10 @@
 	  (cond ((or (eof-object? ln)
 		     (irregex-match " *#!eof *" ln))
 		 (open-input-string ""))
-		((irregex-match " *#\\|[- ]*([^ ]+) *\\|#.*" ln) =>
+		((irregex-match " *#\\|[- ]*([^- ]*) *\\|#.*" ln) =>
 		 (lambda (m)
 		   (let ((v (irregex-match-substring m 1)))
-		     (cond ((string=? "#f" v))
+		     (cond ((or (string=? "" v) (string=? "#f" v)))
 			   ((and version (not (string=? v version)))
 			    (warning "files-versions are not identical" ln version)
 			    (set! version #f))

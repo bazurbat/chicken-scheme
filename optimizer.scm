@@ -189,19 +189,6 @@
 			   (cddr subs)
 			   (lambda (ok form result msg)
 			     (cond ((not ok)
-				    (let ((loc
-					   (and (pair? fids)
-						(real-name (car fids)))))
-				      (warning
-				       (string-append
-					(if loc
-					    (string-append "(in " loc ") ")
-					    "")
-					"constant-folding expression results in error"
-					(if msg
-					    (string-append ": \"" msg "\"")
-					    ""))
-				       form))
 				    (unless odirty (set! dirty #f))
 				    (set! broken-constant-nodes
 				      (lset-adjoin eq? broken-constant-nodes n1))

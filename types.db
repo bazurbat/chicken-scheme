@@ -804,6 +804,7 @@
       ((symbol symbol *)
        (##core#inline_allocate ("C_a_i_putprop" 8) #(1) #(2) #(3))))
 
+(quit (procedure quit (#!optional *) noreturn))
 (register-feature! (procedure! register-feature! (#!rest symbol) undefined))
 (remprop! (procedure! remprop! (symbol symbol) undefined))
 (rename-file (procedure! rename-file (string string) string))

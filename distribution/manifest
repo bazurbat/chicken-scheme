@@ -6,7 +6,7 @@ LICENSE
 NEWS
 README
 config-arch.sh
-identify-branch.sh
+identify.sh
 banner.scm
 batch-driver.scm
 batch-driver.c
@@ -44,8 +44,8 @@ support.c
 tcp.c
 utils.c
 build.scm
-version.scm
 buildversion
+buildbranch
 c-backend.scm
 c-platform.scm
 chicken-ffi-syntax.scm
@@ -95,6 +95,10 @@ srfi-4.scm
 stub.scm
 support.scm
 tcp.scm
+build-version.scm
+build-version.c
+buildid
+buildtag.h
 tests/thread-list.scm
 tests/gobble.scm
 tests/test-optional.scm

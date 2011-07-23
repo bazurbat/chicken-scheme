@@ -420,6 +420,8 @@ Exit the running process and return exit-code, which defaults to 0
 
 Note that pending {{dynamic-wind}} thunks are ''not'' invoked when exiting your program in this way.
 
+
+
 ==== build-platform
 
 <procedure>(build-platform)</procedure>
@@ -674,6 +676,14 @@ defaults to {{"Error:"}}.
 
 Returns an s-expression with debug information for the procedure {{PROC}}, or
 {{#f}}, if {{PROC}} has no associated debug information.
+
+
+==== quit
+
+<procedure>(quit [RESULT])</procedure>
+
+In the interpreter {{quit}} exits the currently active read-eval-print loop.
+In compiled code, it is equivalent to calling {{exit}}. See also: {{repl}}.
 
 
 ==== reset

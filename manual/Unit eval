@@ -110,6 +110,8 @@ any arguments to the value of {{(current-error-port)}} and reset.
 If {{EVALUATOR}} is given, it should be a procedure of one argument that
 is used in place of {{eval}} to evaluate each entered expression.
 
+You can use {{quit}} to terminate the current read-eval-print loop.
+
 
 === Loading extension libraries
 
