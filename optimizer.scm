@@ -228,10 +228,12 @@
 		    (varnode var))
 		   ((assq var gae) =>
 		    (lambda (a)
-		      (cond ((cdr a)
-			     (debugging 'x "propagated global variable" var (cdr a))
-			     (varnode (cdr a)))
-			    (else (varnode var)))))
+		      (let ((gvar (cdr a)))
+			(cond ((and gvar
+				    (not (eq? 'no (variable-mark gvar '##compiler#inline))))
+			       (debugging 'x "propagated global variable" var gvar)
+			       (varnode gvar))
+			      (else (varnode var))))))
 		   (else (varnode var)))))
 
 	  ((let)
