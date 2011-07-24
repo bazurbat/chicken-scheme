@@ -46,7 +46,3 @@ Warning: at toplevel:
   g89: in procedure call to `g89', expected a value of type `(procedure () *)', but were given a value of type `fixnum'
 
 Warning: redefinition of standard binding: car
-
-Warning: (in k118) constant-folding expression results in error: "bad argument type": (+ (quote a) (quote b))
-
-Warning: (in k60) constant-folding expression results in error: "bad argument type": (+ (quote 3) (quote a))

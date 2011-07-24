@@ -45,6 +45,7 @@ tcp.c
 utils.c
 build.scm
 buildversion
+buildbranch
 c-backend.scm
 c-platform.scm
 chicken-ffi-syntax.scm
@@ -95,6 +96,9 @@ stub.scm
 support.scm
 tcp.scm
 build-version.scm
+build-version.c
+buildid
+buildtag.h
 tests/thread-list.scm
 tests/gobble.scm
 tests/test-optional.scm

@@ -7,12 +7,12 @@
 
 # make sure file exists anyway, since branchname is a special case
 if test \! -e "buildbranch"; then
-    echo >buildbranch
+    touch buildbranch
 fi
 
 rev0=`cat buildid || echo ""`
 branchname0=`cat buildbranch || echo ""`
-tag0=`cat buildtag || echo ""`
+tag0=`cat buildtag.h || echo ""`
 buildtime=`date +%Y-%m-%d`
 host=`hostname`
 usys=`uname`
@@ -20,7 +20,7 @@ usys=`uname`
 if test -d "$1/.git"; then
     rev=`GIT_DIR="$1/.git" git rev-parse --short HEAD 2>/dev/null`
     branchname=`GIT_DIR="$1/.git" git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'`
-    tag="compiled ${buildtime} on ${host} (${usys})"
+    tag="#define C_BUILD_TAG \"compiled ${buildtime} on ${host} (${usys})\""
 
     case ${branchname} in
 	"") branchname="";;
@@ -33,6 +33,6 @@ if test -d "$1/.git"; then
 	echo ${branchname} >buildbranch
     fi
     if test "${tag0}" \!= "${tag}"; then
-	echo ${tag} >buildtag
+	echo ${tag} >buildtag.h
     fi
 fi

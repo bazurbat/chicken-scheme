@@ -3547,7 +3547,7 @@ EOF
 	     ""
 	     (string-append " [" spec " ]") )
 	 "\n"
-	 (or ##sys#build-tag "")))
+	 (or (##sys#build-tag) "")))
       ##sys#build-version) )
 
 
