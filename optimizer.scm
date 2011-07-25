@@ -255,42 +255,40 @@
 	  ((##core#lambda)
 	   (let ((llist (third params))
 		 (id (first params)))
-	     (fluid-let ((gae '()))
-	       (cond [(test id 'has-unused-parameters)
-		      (decompose-lambda-list
-		       llist
-		       (lambda (vars argc rest)
-			 (receive (unused used) (partition (lambda (v) (test v 'unused)) vars)
-			   (touch)
-			   (debugging 'o "removed unused formal parameters" unused)
-			   (make-node
-			    '##core#lambda
-			    (list (first params) (second params)
-				  (cond [(and rest (test id 'explicit-rest))
-					 (debugging 
-					  'o "merged explicitly consed rest parameter" rest)
-					 (build-lambda-list used (add1 argc) #f) ]
-					[else (build-lambda-list used argc rest)] )
-				  (fourth params) )
-			    (list (walk (first subs) (cons id fids) '())) ) ) ) ) ]
-		     [(test id 'explicit-rest)
-		      (decompose-lambda-list
-		       llist
-		       (lambda (vars argc rest)
+	     (cond [(test id 'has-unused-parameters)
+		    (decompose-lambda-list
+		     llist
+		     (lambda (vars argc rest)
+		       (receive (unused used) (partition (lambda (v) (test v 'unused)) vars)
 			 (touch)
-			 (debugging 'o "merged explicitly consed rest parameter" rest)
+			 (debugging 'o "removed unused formal parameters" unused)
 			 (make-node
 			  '##core#lambda
-			  (list (first params)
-				(second params)
-				(build-lambda-list vars (add1 argc) #f)
+			  (list (first params) (second params)
+				(cond [(and rest (test id 'explicit-rest))
+				       (debugging 
+					'o "merged explicitly consed rest parameter" rest)
+				       (build-lambda-list used (add1 argc) #f) ]
+				      [else (build-lambda-list used argc rest)] )
 				(fourth params) )
-			  (list (walk (first subs) (cons id fids) '())) ) ) ) ]
-		     [else (walk-generic n class params subs (cons id fids) '() #f)] ) ) ))
+			  (list (walk (first subs) (cons id fids) '())) ) ) ) ) ]
+		   [(test id 'explicit-rest)
+		    (decompose-lambda-list
+		     llist
+		     (lambda (vars argc rest)
+		       (touch)
+		       (debugging 'o "merged explicitly consed rest parameter" rest)
+		       (make-node
+			'##core#lambda
+			(list (first params)
+			      (second params)
+			      (build-lambda-list vars (add1 argc) #f)
+			      (fourth params) )
+			(list (walk (first subs) (cons id fids) '())) ) ) ) ]
+		   [else (walk-generic n class params subs (cons id fids) '() #f)] ) ) )
 
 	  ((##core#direct_lambda)
-	   (fluid-let ((gae '()))
-	     (walk-generic n class params subs fids '() #f)))
+	   (walk-generic n class params subs fids '() #f))
 
 	  ((##core#call)
 	   (let* ([fun (car subs)]
