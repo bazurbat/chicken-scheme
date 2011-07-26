@@ -93,7 +93,8 @@
   (meta-expressions module-meta-expressions set-module-meta-expressions!) ; (EXP ...)
   (vexports module-vexports set-module-vexports!)	      ; ((SYMBOL . SYMBOL) ...)
   (sexports module-sexports set-module-sexports!)	      ; ((SYMBOL SE TRANSFORMER) ...)
-  (saved-environments module-saved-environments set-module-saved-environments!)) ; for csi's ",m" command, holds (<env> . <macroenv>)
+  ;; for csi's ",m" command, holds (<env> . <macroenv>)
+  (saved-environments module-saved-environments set-module-saved-environments!))
 
 (define ##sys#module-name module-name)
 

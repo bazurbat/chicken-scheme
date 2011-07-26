@@ -95,7 +95,6 @@
 ; <constant>
 ; (##core#declare {<spec>})
 ; (##core#immutable <exp>)
-; (##core#global-ref <variable>)
 ; (##core#quote <exp>)
 ; (##core#syntax <exp>)
 ; (##core#if <exp> <exp> [<exp>])
@@ -153,7 +152,6 @@
 ; [##core#lambda {<id> <mode> (<variable>... [. <variable>]) <size>} <exp>]
 ; [set! {<variable>} <exp>]
 ; [##core#undefined {}]
-; [##core#global-ref {<variable>}]
 ; [##core#primitive {<name>}]
 ; [##core#inline {<op>} <exp>...]
 ; [##core#inline_allocate {<op> <words>} <exp>...]
@@ -1601,7 +1599,7 @@
 	  (params (node-parameters n)) 
 	  (class (node-class n)) )
       (case (node-class n)
-	((##core#variable quote ##core#undefined ##core#primitive ##core#global-ref) (k n))
+	((##core#variable quote ##core#undefined ##core#primitive) (k n))
 	((if) (let* ((t1 (gensym 'k))
 		     (t2 (gensym 'r))
 		     (k1 (lambda (r) (make-node '##core#call '(#t) (list (varnode t1) r)))) )
@@ -1693,7 +1691,7 @@
   
   (define (atomic? n)
     (let ((class (node-class n)))
-      (or (memq class '(quote ##core#variable ##core#undefined ##core#global-ref))
+      (or (memq class '(quote ##core#variable ##core#undefined))
 	  (and (memq class '(##core#inline ##core#inline_allocate ##core#inline_ref ##core#inline_update
 					   ##core#inline_loc_ref ##core#inline_loc_update))
 	       (every atomic? (node-subexpressions n)) ) ) ) )
@@ -1739,12 +1737,6 @@
 		      (put! db var 'captured #t))
 		     ((not (get db var 'global)) 
 		      (put! db var 'global #t) ) ) ) ) )
-	  
-	  ((##core#global-ref)
-	   (let ((var (first params)))
-	     (ref var n)
-	     (grow 1)
-	     (put! db var 'global #t) ) )
 	  
 	  ((##core#callunit ##core#recurse)
 	   (grow 1)
@@ -2137,7 +2129,7 @@
 		 (list var)
 		 '())))
 
-	  ((quote ##core#undefined ##core#proc ##core#primitive ##core#global-ref)
+	  ((quote ##core#undefined ##core#proc ##core#primitive)
 	   '())
 
 	  ((let)
@@ -2218,7 +2210,7 @@
 	    (class (node-class n)) )
 	(case class
 
-	  ((quote ##core#undefined ##core#proc ##core#global-ref) n)
+	  ((quote ##core#undefined ##core#proc) n)
 
 	  ((##core#variable)
 	   (let* ((var (first params))
@@ -2443,9 +2435,6 @@
 
 	  ((##core#variable) 
 	   (walk-var (first params) e #f) )
-
-	  ((##core#global-ref)
-	   (walk-global (first params) #t) )
 
 	  ((##core#direct_call)
 	   (set! allocated (+ allocated (fourth params)))

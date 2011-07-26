@@ -260,7 +260,6 @@
 
 	      ((##core#undefined
 		##core#proc
-		##core#global-ref
 		##core#inline_ref
 		##core#inline_loc_ref) #f)
 

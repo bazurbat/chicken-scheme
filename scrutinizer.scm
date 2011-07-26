@@ -538,7 +538,6 @@
 	       ((quote) (list (constant-result (first params))))
 	       ((##core#undefined) '(*))
 	       ((##core#proc) '(procedure))
-	       ((##core#global-ref) (global-result (first params) loc))
 	       ((##core#variable) (variable-result (first params) e loc))
 	       ((if)
 		(let ((rt (single "in conditional" (walk (first subs) e loc #f #f) loc))

@@ -477,7 +477,6 @@
 	    ((not-pair? x) (bomb "bad expression" x))
 	    ((symbol? (car x))
 	     (case (car x)
-	       ((##core#global-ref) (make-node '##core#global-ref (list (cadr x)) '()))
 	       ((if ##core#undefined) (make-node (car x) '() (map walk (cdr x))))
 	       ((quote)
 		(let ((c (cadr x)))
@@ -553,7 +552,7 @@
 	((if ##core#box ##core#cond) (cons class (map walk subs)))
 	((##core#closure)
 	 `(##core#closure ,params ,@(map walk subs)) )
-	((##core#variable ##core#global-ref) (car params))
+	((##core#variable) (car params))
 	((quote) `(quote ,(car params)))
 	((let)
 	 `(let ,(map list params (map walk (butlast subs)))
@@ -775,7 +774,7 @@
   (let walk ([n node])
     (let ([subs (node-subexpressions n)])
       (case (node-class n)
-	[(##core#variable quote ##core#undefined ##core#proc ##core#global-ref) #f]
+	[(##core#variable quote ##core#undefined ##core#proc) #f]
 	[(##core#lambda) 
 	 (let ([id (first (node-parameters n))])
 	   (find (lambda (fs)

@@ -323,15 +323,6 @@
 			  (let ((c (cadr x)))
 			    (lambda v c)))
 
-			 [(##core#global-ref)
-			  ;;XXX this is only used in tinyclos and should be removed
-			  ;;    together will all other occurrences of it
-			  (let ([var (cadr x)]) ;XXX broken - should alias (see above)
-			    (if ##sys#eval-environment
-				(let ([loc (##sys#hash-table-location ##sys#eval-environment var #t)])
-				  (lambda v (##sys#slot loc 1)) )
-				(lambda v (##core#inline "C_slot" var 0)) ) ) ]
-
 			 [(##core#check)
 			  (compile (cadr x) e h tf cntr se) ]
 
