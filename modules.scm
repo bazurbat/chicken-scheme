@@ -394,6 +394,10 @@
 			       se name))
 			  se))
 		    sexports))))
+    (set-module-saved-environments!
+     mod
+     (cons (##sys#current-environment)
+	   (##sys#macro-environment)))
     (set! ##sys#module-table (cons (cons name mod) ##sys#module-table)) 
     mod))
 
