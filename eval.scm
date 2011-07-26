@@ -238,7 +238,7 @@
 	      ((symbol? x)
 	       (receive (i j) (lookup x e se)
 		 (cond ((not i)
-			(let ((var (if (not (assq x se)) ; global?
+			(let ((var (if (not (assq x se))
 				       (##sys#alias-global-hook j #f cntr)
 				       (or (##sys#get j '##core#primitive) j))))
 			  (if ##sys#eval-environment
@@ -364,7 +364,7 @@
 						    ((symbol? (cdr a))))
 					   (##sys#notice "assignment to imported value binding" var)))
 				       (let ((var
-					      (if (not (assq x se)) ; global?
+					      (if (not (assq x se))
 						  (##sys#alias-global-hook j #t cntr)
 						  (or (##sys#get j '##core#primitive) j))))
 					 (if ##sys#eval-environment
