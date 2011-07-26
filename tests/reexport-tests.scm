@@ -1,7 +1,7 @@
 ;;;; reexport-tests.scm
 
 
-(module r4rs ()
+(module my-r4rs ()
   (import scheme chicken)
   (reexport 
     (except scheme 
@@ -9,7 +9,7 @@
       null-environment interaction-environment)))
 
 (module m1 ()
-  (import r4rs)
+  (import my-r4rs)
   (display (+ 3 4))
   (newline))
 
@@ -17,7 +17,7 @@
  (not
   (handle-exceptions ex #f
     (eval '(module m2 ()
-	     (import r4rs)
+	     (import my-r4rs)
 	     (values 123))))))
 
 (define-syntax compound-module

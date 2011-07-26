@@ -24,9 +24,11 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
+;; this unit needs the "modules" unit, but must be initialized first, so it doesn't
+;; declare "modules" as used - if you use "-explicit-use", take care of this.
+
 (declare
   (unit expand)
-  (uses modules)
   (disable-interrupts)
   (fixnum)
   (hide match-expression

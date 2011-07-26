@@ -28,9 +28,8 @@ import the {{scheme}} module to do anything useful. To access any
 of the non-standard macros and procedures, import the {{chicken}}
 module.
 
-CHICKEN's module system has the following features and shortcomings:
+CHICKEN's module system has the following features:
 
-* Indirect exports for syntax definitions must be listed
 * Separation of compile/expansion-time and run-time code is provided, which allows cross compilation
 * Module-generating code is only created, when needed
 * Supports batch-compilation of separate compilation units
@@ -243,8 +242,11 @@ Import libraries for the following modules are initially
 available:
 
  [module] scheme
+ [module] r4rs
+ [module] r5rs
 
-Exports the standard R5RS bindings.
+Exports the definitions given in R4RS or R5RS. {{r5rs}} is a module alias
+for {{scheme}}.
 
  [module] chicken
 

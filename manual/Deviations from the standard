@@ -31,12 +31,6 @@ the procedures {{string->number}}, {{read}}, {{write}}, and {{display}} do not o
 read/write invariance to inexact numbers.
 
 
-=== Environments and non-standard syntax
-
-Code evaluated in {{scheme-report-environment}} or
-{{null-environment}} still sees non-standard syntax.
-
-
 == Unconfirmed deviations
 
 === {{char-ready?}}

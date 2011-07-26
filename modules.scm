@@ -818,3 +818,59 @@
 	    "in instantiation `" (symbol->string name) "' of functor `"
 	    (symbol->string fname) "', because the following required exports are missing:\n"
 	    (map (lambda (s) (string-append "\n  " (symbol->string s))) missing))))))))
+
+
+;;; built-in modules (needed for eval environments)
+
+(let ((r4rs-values
+       '(not boolean? eq? eqv? equal? pair?
+	     cons car cdr caar cadr cdar cddr caaar caadr cadar caddr cdaar cdadr
+	     cddar cdddr caaaar caaadr caadar caaddr cadaar cadadr caddar cadddr cdaaar
+	     cdaadr cdadar cdaddr cddaar cddadr cdddar cddddr set-car! set-cdr!
+	     null? list? list length list-tail list-ref append reverse memq memv
+	     member assq assv assoc symbol? symbol->string string->symbol number?
+	     integer? exact? real? complex? inexact? rational? zero? odd? even?
+	     positive? negative?  max min + - * / = > < >= <= quotient remainder
+	     modulo gcd lcm abs floor ceiling truncate round exact->inexact
+	     inexact->exact exp log expt sqrt sin cos tan asin acos atan
+	     number->string string->number char? char=? char>? char<? char>=?
+	     char<=? char-ci=? char-ci<? char-ci>?  char-ci>=? char-ci<=?
+	     char-alphabetic? char-whitespace? char-numeric? char-upper-case?
+	     char-lower-case? char-upcase char-downcase char->integer integer->char
+	     string? string=?  string>? string<? string>=? string<=? string-ci=?
+	     string-ci<? string-ci>? string-ci>=? string-ci<=?  make-string
+	     string-length string-ref string-set! string-append string-copy
+	     string->list list->string substring string-fill! vector? make-vector
+	     vector-ref vector-set! string vector vector-length vector->list
+	     list->vector vector-fill! procedure? map for-each apply force
+	     call-with-current-continuation input-port? output-port?
+	     current-input-port current-output-port call-with-input-file
+	     call-with-output-file open-input-file open-output-file
+	     close-input-port close-output-port load read eof-object? read-char
+	     peek-char write display write-char newline with-input-from-file
+	     with-output-to-file eval
+	     char-ready? imag-part real-part magnitude numerator denominator
+	     scheme-report-environment null-environment interaction-environment
+	     else)))
+  (##sys#register-primitive-module
+   'r4rs
+   r4rs-values
+   ##sys#default-macro-environment)
+  (##sys#register-primitive-module 
+   'scheme
+   (append '(dynamic-wind values call-with-values) r4rs-values)
+   ##sys#default-macro-environment))
+
+(##sys#register-primitive-module 'r4rs-null '() ##sys#default-macro-environment)
+(##sys#register-primitive-module 'r5rs-null '() ##sys#default-macro-environment)
+
+(##sys#register-module-alias 'r5rs 'scheme)
+
+(define (##sys#module-environment mname #!optional (ename mname))
+  (let ((mod (##sys#find-module mname)))
+    (##sys#make-structure
+     'environment
+     ename
+     (append
+      (module-vexports mod)
+      (module-sexports mod)))))
