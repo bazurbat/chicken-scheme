@@ -324,6 +324,8 @@
 			    (lambda v c)))
 
 			 [(##core#global-ref)
+			  ;;XXX this is only used in tinyclos and should be removed
+			  ;;    together will all other occurrences of it
 			  (let ([var (cadr x)]) ;XXX broken - should alias (see above)
 			    (if ##sys#eval-environment
 				(let ([loc (##sys#hash-table-location ##sys#eval-environment var #t)])
@@ -370,7 +372,10 @@
 					 (and-let* ((a (assq var (##sys#current-environment)))
 						    ((symbol? (cdr a))))
 					   (##sys#notice "assignment to imported value binding" var)))
-				       (let ((var (##sys#alias-global-hook j #t cntr)))
+				       (let ((var
+					      (if (not (assq x se)) ; global?
+						  (##sys#alias-global-hook j #t cntr)
+						  (or (##sys#get j '##core#primitive) j))))
 					 (if ##sys#eval-environment
 					     (let ([loc (##sys#hash-table-location
 							 ##sys#eval-environment 
