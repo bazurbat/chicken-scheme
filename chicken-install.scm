@@ -55,7 +55,6 @@
       "srfi-14.import.so"
       "tcp.import.so"
       "foreign.import.so"
-      "scheme.import.so"
       "srfi-18.import.so"
       "utils.import.so"
       "csi.import.so"
