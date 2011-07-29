@@ -236,6 +236,23 @@ macros. Note that these definitions will ruthlessly pollute the
 toplevel namespace and so they should be used sparingly.
 
 
+=== Using modules as evaluation environments
+
+==== module-environment
+
+<procedure>(module-environment MODULENAME)</procedure>
+
+Locates the module with the name {{MODULENAME}} and returns an
+environment that can be passed as the second argument to {{eval}}. The
+evaluated expressions have only access to the bindings that are
+visible inside the module. Note that the environment is not mutable.
+
+If the module is not registered in the current process, {{module-environment}}
+will try to locate meta-information about the module by loading any
+existing import library with the name {{MODULENAME.import.[scm|so]}},
+if possible.
+
+
 === Predefined modules
 
 Import libraries for the following modules are initially

@@ -174,6 +174,7 @@
    maximum-flonum
    memory-statistics
    minimum-flonum
+   module-environment
    most-negative-fixnum
    most-positive-fixnum
    on-exit

@@ -1333,8 +1333,8 @@
   (##sys#write-char-0 #\> p))
 
 (define scheme-report-environment
-  (let ((r4 (##sys#module-environment 'r4rs 'scheme-report-environment/4))
-	(r5 (##sys#module-environment 'scheme 'scheme-report-environment/5)))
+  (let ((r4 (module-environment 'r4rs 'scheme-report-environment/4))
+	(r5 (module-environment 'scheme 'scheme-report-environment/5)))
     (lambda (n)
       (##sys#check-exact n 'scheme-report-environment)
       (case n
@@ -1346,8 +1346,8 @@
 	  "unsupported scheme report environment version" n)) ) ) ) )
 
 (define null-environment
-  (let ((r4 (##sys#module-environment 'r4rs-null 'null-environment/4))
-	(r5 (##sys#module-environment 'r5rs-null 'null-environment/5)))
+  (let ((r4 (module-environment 'r4rs-null 'null-environment/4))
+	(r5 (module-environment 'r5rs-null 'null-environment/5)))
     (lambda (n)
       (##sys#check-exact n 'null-environment)
       (case n

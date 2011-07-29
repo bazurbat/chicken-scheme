@@ -26,4 +26,20 @@
 (test-error (eval 'car (null-environment 5)))
 (test-equal (eval '((lambda (x) x) 123) (null-environment 5)) 123)
 
+(define baz 100)
+
+(module foo (bar)
+  (import r5rs)
+  (define (bar) 99))
+
+(define foo-env (module-environment 'foo))
+(define srfi-1-env (module-environment 'srfi-1))
+
+(require-library srfi-1)
+
+(test-equal (eval '(bar) foo-env) 99)
+(test-error (eval 'baz foo-env))
+(test-equal (eval '(xcons 1 2) srfi-1-env) '(2 . 1))
+(test-error (eval 'baz srf-1-env))
+
 (test-end)

@@ -396,7 +396,9 @@
 		    sexports))))
     (set-module-saved-environments!
      mod
-     (cons (##sys#current-environment)
+     (cons (merge-se (##sys#current-environment)
+		     (module-vexports mod)
+		     (module-sexports mod))
 	   (##sys#macro-environment)))
     (set! ##sys#module-table (cons (cons name mod) ##sys#module-table)) 
     mod))
@@ -522,13 +524,35 @@
 	  (set-module-sexports! mod sexports)
 	  (set-module-saved-environments!
 	   mod
-	   (cons (##sys#current-environment)
+	   (cons (merge-se (##sys#current-environment) vexports sexports)
 		 (##sys#macro-environment))))))))
 
 (define ##sys#module-table '())
 
 
 ;;; Import-expansion
+
+(define (##sys#find-module/import-library mname loc)
+  (let* ((mname (##sys#resolve-module-name mname loc))
+	 (mod (##sys#find-module mname #f loc)))
+    (unless mod
+      (let* ((il (##sys#find-extension
+		  (string-append (symbol->string mname) ".import")
+		  #t)))
+	(cond (il (parameterize ((##sys#current-module #f)
+				 (##sys#current-environment '())
+				 (##sys#current-meta-environment 
+				  (##sys#current-meta-environment))
+				 (##sys#macro-environment
+				  (##sys#meta-macro-environment)))
+		    (fluid-let ((##sys#notices-enabled #f)) ; to avoid re-import warnings
+		      (##sys#load il #f #f)))
+		  (set! mod (##sys#find-module mname 'import)))
+	      (else
+	       (##sys#syntax-error-hook
+		loc "cannot import from undefined module" 
+		mname)))))
+    mod))
 
 (define (##sys#expand-import x r c import-env macro-env meta? reexp? loc)
   (let ((%only (r 'only))
@@ -545,28 +569,10 @@
 	    ((number? x) (number->string x))
 	    (else (##sys#syntax-error-hook loc "invalid prefix" ))))
     (define (import-name spec)
-      (let* ((mname (##sys#resolve-module-name (##sys#strip-syntax spec) 'import))
-	     (mod (##sys#find-module mname #f 'import)))
-	(unless mod
-	  (let* ((il (##sys#find-extension
-		     (string-append (symbol->string mname) ".import")
-		     #t)))
-	    (cond (il (parameterize ((##sys#current-module #f)
-				     (##sys#current-environment '())
-				     (##sys#current-meta-environment 
-				      (##sys#current-meta-environment))
-				     (##sys#macro-environment
-				      (##sys#meta-macro-environment)))
-			(fluid-let ((##sys#notices-enabled #f)) ; to avoid re-import warnings
-			  (##sys#load il #f #f)))
-		      (set! mod (##sys#find-module mname 'import)))
-		  (else
-		   (##sys#syntax-error-hook
-		    loc "cannot import from undefined module" 
-		    mname)))))
-	(let ((vexp (module-vexports mod))
-	      (sexp (module-sexports mod)))
-	  (cons vexp sexp))))	  
+      (let* ((mod (##sys#find-module/import-library (##sys#strip-syntax spec) 'import))
+	     (vexp (module-vexports mod))
+	     (sexp (module-sexports mod)))
+	(cons vexp sexp)))
     (define (import-spec spec)
       (cond ((symbol? spec) (import-name spec))
 	    ((or (not (list? spec)) (< (length spec) 2))
@@ -851,26 +857,32 @@
 	     with-output-to-file eval
 	     char-ready? imag-part real-part magnitude numerator denominator
 	     scheme-report-environment null-environment interaction-environment
-	     else)))
-  (##sys#register-primitive-module
-   'r4rs
-   r4rs-values
-   ##sys#default-macro-environment)
+	     else))
+      (r4rs-syntax
+       ;;XXX currently disabled - better would be to move these into the "chicken"
+       ;;    module. "import[-for-syntax]" and "reexport" are in
+       ;;    ##sys#initial-macro-environment and thus always available inside modules.
+       #;(foldr
+	(lambda (s r)
+	  (if (memq (car s)
+		    '(import require-extension require-library begin-for-syntax
+			     export module cond-expand syntax reexport import-for-syntax))
+	      r
+	      (cons s r)))
+	'()
+	##sys#default-macro-environment)
+       ##sys#default-macro-environment))
+  (##sys#register-primitive-module 'r4rs r4rs-values r4rs-syntax)
   (##sys#register-primitive-module 
    'scheme
    (append '(dynamic-wind values call-with-values) r4rs-values)
-   ##sys#default-macro-environment))
-
-(##sys#register-primitive-module 'r4rs-null '() ##sys#default-macro-environment)
-(##sys#register-primitive-module 'r5rs-null '() ##sys#default-macro-environment)
+   r4rs-syntax)
+  (##sys#register-primitive-module 'r4rs-null '() r4rs-syntax)
+  (##sys#register-primitive-module 'r5rs-null '() r4rs-syntax))
 
 (##sys#register-module-alias 'r5rs 'scheme)
 
-(define (##sys#module-environment mname #!optional (ename mname))
-  (let ((mod (##sys#find-module mname)))
-    (##sys#make-structure
-     'environment
-     ename
-     (append
-      (module-vexports mod)
-      (module-sexports mod)))))
+(define (module-environment mname #!optional (ename mname))
+  (let* ((mod (##sys#find-module/import-library mname 'module-environment))
+	 (saved (module-saved-environments mod)))
+    (##sys#make-structure 'environment ename (car saved))))
