@@ -904,6 +904,7 @@
   (cut ##sys#expand-import <> <> <> ##sys#current-environment ##sys#macro-environment 
        #f #t 'reexport) ) )
 
+;; contains only "import[-for-syntax]" and "reexport"
 (define ##sys#initial-macro-environment (##sys#macro-environment))
 
 (##sys#extend-macro-environment
@@ -1442,26 +1443,3 @@
   (##sys#fixup-macro-environment (##sys#macro-environment)))
 
 (define ##sys#meta-macro-environment (make-parameter (##sys#macro-environment)))
-
-
-;; Used by the syntax-rules implementation (and possibly handy elsewhere)
-;; (kindly contributed by Peter Bex)
-
-(define (##sys#drop-right input temp)
-  ;;XXX use unsafe accessors
-  (let loop ((len (length input))
-	     (input input))
-    (cond
-     ((> len temp)
-      (cons (car input)
-	    (loop (- len 1) (cdr input))))
-     (else '()))))
-
-(define (##sys#take-right input temp)
-  ;;XXX use unsafe accessors
-  (let loop ((len (length input))
-	     (input input))
-    (cond
-     ((> len temp)
-      (loop (- len 1) (cdr input)))
-     (else input))))
