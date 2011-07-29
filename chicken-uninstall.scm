@@ -60,14 +60,14 @@
 	(map (cut grep <> eggs) patterns))
        string=?)))
 
-  (define (quit code)
+  (define (fini code)
     (print "aborted.")
     (exit code))
 
   (define (ask eggs)
     (handle-exceptions ex
 	(if (eq? ex 'aborted)
-	    (quit 1) 
+	    (fini 1) 
 	    (signal ex))
       (yes-or-no? 
        (string-concatenate
