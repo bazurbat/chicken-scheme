@@ -31,6 +31,15 @@ the procedures {{string->number}}, {{read}}, {{write}}, and {{display}} do not o
 read/write invariance to inexact numbers.
 
 
+=== Environments and non-standard syntax
+
+In addition to the standard bindings {{scheme-report-environment}} and
+{{null-environment}} contain additional non-standard bindings for the
+following syntactic forms: {{import}}, {{require-extension}},
+{{require-library}}, {{begin-for-syntax}}, {{export}}, {{module}},
+{{cond-expand}}, {{syntax}}, {{reexport}}, {{import-for-syntax}}.
+
+
 == Unconfirmed deviations
 
 === {{char-ready?}}
