@@ -2203,8 +2203,9 @@ EOF
 		 (when (fx>= i n)
 		   (set! ##sys#current-parameter-vector
 		     (##sys#grow-vector ##sys#current-parameter-vector (fx+ i 1) ##sys#snafu) ) )
-		 (##sys#setslot ##sys#current-parameter-vector i (guard val))
-		 (##core#undefined) )))
+		 (let ((val (guard val)))
+		   (##sys#setslot ##sys#current-parameter-vector i val)
+		   val))))
 	  (getter-with-setter
 	   (lambda arg
 	     (let ((n (##sys#size ##sys#current-parameter-vector)))

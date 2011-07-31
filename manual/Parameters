@@ -22,7 +22,6 @@ owns a local copy of a parameters' value.
 CHICKEN implements [[http://srfi.schemers.org/srfi-39/srfi-39.html|SRFI-39]].
 
 
-
 === make-parameter
 
 <procedure>(make-parameter VALUE [GUARD])</procedure>
@@ -30,11 +29,12 @@ CHICKEN implements [[http://srfi.schemers.org/srfi-39/srfi-39.html|SRFI-39]].
 Returns a procedure that accepts zero or one argument. Invoking the
 procedure with zero arguments returns {{VALUE}}. Invoking the
 procedure with one argument changes its value to the value of that
-argument (subsequent invocations with zero parameters return the new
-value). {{GUARD}} should be a procedure of a single argument. Any
-new values of the parameter (even the initial value) are passed to this
-procedure. The guard procedure should check the value and/or convert it
-to an appropriate form.
+argument and returns the new value (subsequent invocations with zero
+parameters return the new value). {{GUARD}} should be a procedure of a
+single argument. Any new values of the parameter (even the initial
+value) are passed to this procedure. The guard procedure should check
+the value and/or convert it to an appropriate form.
+
 
 == Built-in parameters
 
