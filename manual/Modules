@@ -252,6 +252,8 @@ will try to locate meta-information about the module by loading any
 existing import library with the name {{MODULENAME.import.[scm|so]}},
 if possible.
 
+In compiled modules, only exported bindings will be visible to interactively entered code. In interpreted modules all bindings are visible.
+
 
 === Predefined modules
 
