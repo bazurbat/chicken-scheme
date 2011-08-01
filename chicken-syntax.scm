@@ -276,28 +276,32 @@
  (##sys#er-transformer
   (lambda (form r c)
     (##sys#check-syntax 'parameterize form '#(_ 2))
-     (let* ((bindings (cadr form))
-	    (body (cddr form))
-	    (swap (r 'swap))
-	    [params (##sys#map car bindings)]
-	    [vals (##sys#map cadr bindings)]
-	    [aliases (##sys#map (lambda (z) (r (gensym))) params)]
-	    [aliases2 (##sys#map (lambda (z) (r (gensym))) params)] )
-       `(##core#let
-	 ,(##sys#append 
-	   (map ##sys#list aliases params)
-	   (map ##sys#list aliases2 vals))
+    (let* ((bindings (cadr form))
+	   (body (cddr form))
+	   (swap (r 'swap))
+	   (mode (r 'mode))
+	   (params (##sys#map car bindings))
+	   (vals (##sys#map cadr bindings))
+	   (aliases (##sys#map (lambda (z) (r (gensym))) params))
+	   (aliases2 (##sys#map (lambda (z) (r (gensym))) params)) )
+      `(##core#let
+	,(map ##sys#list aliases params)
+	(##core#let
+	 ,(map ##sys#list aliases2 vals)
+	 (##core#let
+	  ((,mode #f))
 	  (##core#let
 	   ((,swap (##core#lambda
 		    ()
 		    ,@(map (lambda (a a2)
-			     `(##core#let ((t (,a))) (,a ,a2)
+			     `(##core#let ((t (,a))) (,a ,a2 ,mode)
 					  (##core#set! ,a2 t)))
-			   aliases aliases2) ) ) )
+			   aliases aliases2)
+		    (##core#set! ,mode #t))))
 	   (##sys#dynamic-wind 
 	    ,swap
 	    (##core#lambda () ,@body)
-	    ,swap) ) ) ) )))
+	    ,swap) ) ) ) )))))
 
 (##sys#extend-macro-environment
  'when '()
