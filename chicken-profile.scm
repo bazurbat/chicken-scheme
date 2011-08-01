@@ -203,7 +203,6 @@ EOF
     (if (< 0 top (length data))
 	(set! data (take data top)))
     (set! data (map (lambda (entry)
-		      (pp entry)
 		      (let ([c (second entry)]
 			    [t (third entry)]
 			    [a (fourth entry)]
