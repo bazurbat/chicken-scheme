@@ -28,6 +28,7 @@
 (declare
   (unit profiler)
   (hide ##sys#profile-name ##sys#profile-vector-list cpu-ms)
+  (unsafe)
   (disable-interrupts))
 
 (foreign-declare #<<EOF
