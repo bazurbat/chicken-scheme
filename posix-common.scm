@@ -229,7 +229,7 @@ EOF
 
 ;;; Set or get current directory:
 
-(define (current-directory #!optional dir mode) ; for "parameterize"
+(define (current-directory #!optional dir)
   (if dir
       (change-directory dir)
       (let* ((buffer (make-string 1024))
