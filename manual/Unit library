@@ -743,7 +743,8 @@ abnormal program exit. A normal program exit does not run finalizers
 that are still reachable from global data. 
 
 Multiple finalizers can be registered for the same object. The order
-in which the finalizers run is undefined.
+in which the finalizers run is undefined. Execution of finalizers
+may be nested.
 
 
 ==== set-gc-report!

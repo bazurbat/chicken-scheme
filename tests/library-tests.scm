@@ -229,3 +229,26 @@
 (assert (equal=? '#(1 2 (3)) '#(1 2 (3))))
 (assert (not (equal=? '#(1 2 (4)) '#(1 2 (3)))))
 (assert (not (equal=? 123 '(123))))
+
+;;; parameters
+
+(define guard-called 0)
+
+(define p
+  (make-parameter 
+   1
+   (lambda (x)
+     (set! guard-called (+ guard-called 1))
+     x)))
+
+(define k
+  (parameterize ((p 2))
+    (call/cc
+     (lambda (k) 
+       (assert (= 2 (p)))
+       k))))
+
+(k #f)
+
+(assert (= 2 guard-called))
+

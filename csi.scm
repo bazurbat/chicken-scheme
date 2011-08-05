@@ -427,11 +427,11 @@ EOF
  (let ((printf printf))
    (lambda ()
      (let ((name (read)))
+       (when (string? name)
+	 (set! name (##sys#string->symbol name)))
        (cond ((not name)
 	      (##sys#switch-module #f)
 	      (printf "; resetting current module to toplevel~%"))
-	     ((string? name)
-	      (set! name (##sys#string->symbol name)))
 	     ((not (symbol? name))
 	      (printf "invalid module name `~a'~%" name))
 	     ((##sys#find-module (##sys#resolve-module-name name #f) #f) =>

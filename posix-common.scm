@@ -229,19 +229,18 @@ EOF
 
 ;;; Set or get current directory:
 
-(define current-directory
-  (lambda (#!optional dir)
-    (if dir
-	(change-directory dir)
-	(let* ((buffer (make-string 1024))
-	       (len (##core#inline "C_curdir" buffer)) )
-	  #+(or unix cygwin)
-	  (##sys#update-errno)
-	  (if len
-	      (##sys#substring buffer 0 len)
-	      (##sys#signal-hook
-	       #:file-error
-	       'current-directory "cannot retrieve current directory") ) ) ) ) )
+(define (current-directory #!optional dir)
+  (if dir
+      (change-directory dir)
+      (let* ((buffer (make-string 1024))
+	     (len (##core#inline "C_curdir" buffer)) )
+	#+(or unix cygwin)
+	(##sys#update-errno)
+	(if len
+	    (##sys#substring buffer 0 len)
+	    (##sys#signal-hook
+	     #:file-error
+	     'current-directory "cannot retrieve current directory") ) ) ) )
 
 (define delete-directory
   (lambda (name #!optional recursive)

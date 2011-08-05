@@ -27,9 +27,9 @@
 
 (declare
   (unit profiler)
-  (hide ##sys#profile-name ##sys#profile-vector-list)
-  (disable-interrupts)
-  (fixnum) )
+  (hide ##sys#profile-name ##sys#profile-vector-list cpu-ms)
+  (unsafe)
+  (disable-interrupts))
 
 (foreign-declare #<<EOF
 #include <unistd.h>
@@ -49,71 +49,70 @@ EOF
 (define ##sys#profile-name #f)
 (define ##sys#profile-append-mode #f)
 
+
 ;;; Initialize profile counter vector:
 
 (define ##sys#register-profile-info
-  (let ((make-vector make-vector))
-    (lambda (size filename)
-      (when filename
-	(set! ##sys#profile-name 
-	  (if (string? filename)
-	      filename
-	      (string-append "PROFILE." (number->string profile-id))))
-	(let ([oldeh (##sys#exit-handler)]
-	      [oldieh (##sys#implicit-exit-handler)] )
-	  (##sys#exit-handler
-	   (lambda args
-	     (##sys#finish-profile)
-	     (apply oldeh args) ) )
-	  (##sys#implicit-exit-handler
-	   (lambda ()
-	     (##sys#finish-profile)
-	     (oldieh) ) ) ) )
-      ;; entry: [name, count, time0, total, pending]
-      (let ((vec (make-vector (* size profile-info-entry-size) 0)))
-	(set! ##sys#profile-vector-list (cons vec ##sys#profile-vector-list))
-	vec) ) ) )
+  (lambda (size filename)
+    (when filename
+      (set! ##sys#profile-name 
+	(if (string? filename)
+	    filename
+	    (string-append "PROFILE." (number->string profile-id))))
+      (let ([oldeh (##sys#exit-handler)]
+	    [oldieh (##sys#implicit-exit-handler)] )
+	(##sys#exit-handler
+	 (lambda args
+	   (##sys#finish-profile)
+	   (apply oldeh args) ) )
+	(##sys#implicit-exit-handler
+	 (lambda ()
+	   (##sys#finish-profile)
+	   (oldieh) ) ) ) )
+    ;; entry: [name, count, time0, total, pending]
+    (let ((vec (make-vector (fx* size profile-info-entry-size) 0)))
+      (set! ##sys#profile-vector-list (cons vec ##sys#profile-vector-list))
+      vec) ) )
 
 (define (##sys#set-profile-info-vector! vec i x)
-  (##sys#setslot vec (* i profile-info-entry-size) x) )
+  (##sys#setslot vec (fx* i profile-info-entry-size) x) )
 
 
 ;;; Entry and exit into/out of profiled lambda:
 
+(define cpu-ms (foreign-lambda double "C_cpu_milliseconds"))
+
 (define ##sys#profile-entry 
-  (let ((maxfix (##sys#fudge 21)))
+  (let ((maxfix most-positive-fixnum))
     (lambda (index vec)
-      (let* ([i (* index profile-info-entry-size)]
-	     [ic (add1 i)]
+      (let* ([i (fx* index profile-info-entry-size)]
+	     [ic (fx+ i 1)]
 	     [count (##sys#slot vec ic)]
-	     [it0 (+ i 2)] 
-	     [ip (+ i 4)] 
+	     [it0 (fx+ i 2)] 
+	     [ip (fx+ i 4)] 
 	     [ipc (##sys#slot vec ip)] )
 	(##sys#setislot 
 	 vec ic
 	 (cond ((not count) #f)
 	       ((eq? maxfix count) #f)
-	       (else (add1 count))))
-	(when (zero? ipc)
-	  (##sys#setislot 
-	   vec it0
-	   (##core#inline "C_i_current_cpu_milliseconds_as_fixnum" #f)))
-	(##sys#setislot vec ip (add1 ipc)) ) ) ) )
+	       (else (fx+ count 1))))
+	(when (eq? 0 ipc)
+	  (##sys#setslot vec it0 (cpu-ms)))
+	(##sys#setislot vec ip (fx+ ipc 1)) ) ) ) )
 
 (define (##sys#profile-exit index vec)
   (let* ([i (fx* index profile-info-entry-size)]
 	 [it0 (fx+ i 2)] 
 	 [it (fx+ i 3)] 
 	 [ip (fx+ i 4)] 
-	 [ipc (sub1 (##sys#slot vec ip))] )
+	 [ipc (fx- (##sys#slot vec ip) 1)] )
     (##sys#setislot vec ip ipc)
-    (when (zero? ipc)
-      (##sys#setislot
-       vec it 
-       (fx+ (##sys#slot vec it)
-	    (fx- (##core#inline "C_i_current_cpu_milliseconds_as_fixnum" #f)
-		 (##sys#slot vec it0)))))
-    (##sys#setislot vec it0 0) ) )
+    (when (eq? 0 ipc)
+      (let ((t (##sys#slot vec it)))
+	(##sys#setslot
+	 vec it 
+	 (fp+ (if (eq? t 0) 0.0 t)
+	      (fp- (cpu-ms) (##sys#slot vec it0))))))))
 
 
 ;;; Generate profile:
@@ -124,7 +123,7 @@ EOF
 	[write write] )
     (lambda ()
       (when (##sys#fudge 13)
-	(##sys#print "[debug] writing profile...\n" #f ##sys#standard-output) )
+	(##sys#print "[debug] writing profile...\n" #f ##sys#standard-error) )
       (apply
        with-output-to-file ##sys#profile-name
        (lambda () 

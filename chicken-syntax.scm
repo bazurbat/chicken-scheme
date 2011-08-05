@@ -276,28 +276,32 @@
  (##sys#er-transformer
   (lambda (form r c)
     (##sys#check-syntax 'parameterize form '#(_ 2))
-     (let* ((bindings (cadr form))
-	    (body (cddr form))
-	    (swap (r 'swap))
-	    [params (##sys#map car bindings)]
-	    [vals (##sys#map cadr bindings)]
-	    [aliases (##sys#map (lambda (z) (r (gensym))) params)]
-	    [aliases2 (##sys#map (lambda (z) (r (gensym))) params)] )
-       `(##core#let
-	 ,(##sys#append 
-	   (map ##sys#list aliases params)
-	   (map ##sys#list aliases2 vals))
+    (let* ((bindings (cadr form))
+	   (body (cddr form))
+	   (swap (r 'swap))
+	   (mode (r 'mode))
+	   (params (##sys#map car bindings))
+	   (vals (##sys#map cadr bindings))
+	   (aliases (##sys#map (lambda (z) (r (gensym))) params))
+	   (aliases2 (##sys#map (lambda (z) (r (gensym))) params)) )
+      `(##core#let
+	,(map ##sys#list aliases params)
+	(##core#let
+	 ,(map ##sys#list aliases2 vals)
+	 (##core#let
+	  ((,mode #f))
 	  (##core#let
 	   ((,swap (##core#lambda
 		    ()
 		    ,@(map (lambda (a a2)
-			     `(##core#let ((t (,a))) (,a ,a2)
+			     `(##core#let ((t (,a))) (,a ,a2 ,mode)
 					  (##core#set! ,a2 t)))
-			   aliases aliases2) ) ) )
+			   aliases aliases2)
+		    (##core#set! ,mode #t))))
 	   (##sys#dynamic-wind 
 	    ,swap
 	    (##core#lambda () ,@body)
-	    ,swap) ) ) ) )))
+	    ,swap) ) ) ) )))))
 
 (##sys#extend-macro-environment
  'when '()
@@ -558,7 +562,6 @@
 ;;; The expression takes a rest list ARG-LIST and binds the VARi to
 ;;; the elements of the rest list. When there are no more elements, then
 ;;; the remaining VARi are bound to their corresponding DEFAULTi values.
-;;; It is an error if there are more args than variables.
 ;;;
 ;;; - The default expressions are *not* evaluated unless needed.
 ;;;
@@ -636,9 +639,7 @@
       (define (make-if-tree vars defaulters body-proc rest rename)
 	(let recur ((vars vars) (defaulters defaulters) (non-defaults '()))
 	  (if (null? vars)
-	      `(##core#if (##core#check (,(r 'null?) ,rest))
-		     (,body-proc . ,(reverse non-defaults))
-		     (##sys#error (##core#immutable '"too many optional arguments") ,rest))
+	      `(,body-proc . ,(reverse non-defaults))
 	      (let ((v (car vars)))
 		`(##core#if (null? ,rest)
 		       (,(car defaulters) . ,(reverse non-defaults))
@@ -690,7 +691,6 @@
 ;;;     (lambda (a b . r) ...)
 ;;; - If REST-ARG has 0 elements, evaluate DEFAULT-EXP and return that.
 ;;; - If REST-ARG has 1 element, return that element.
-;;; - If REST-ARG has >1 element, error.
 
 (##sys#extend-macro-environment
  'optional 
@@ -703,12 +703,8 @@
     (let ((var (r 'tmp)))
       `(##core#let ((,var ,(cadr form)))
 	(##core#if (,(r 'null?) ,var) 
-	      ,(optional (cddr form) #f)
-	      (##core#if (##core#check (,(r 'null?) (,(r 'cdr) ,var)))
-		    (,(r 'car) ,var)
-		    (##sys#error
-		     (##core#immutable '"too many optional arguments") 
-		     ,var))))))))
+		   ,(optional (cddr form) #f)
+		   (,(r 'car) ,var)))))))
 
 
 ;;; (LET-OPTIONALS* args ((var1 default1) ... [rest]) body1 ...)
@@ -723,8 +719,6 @@
 ;;;   VAR7, and ARGS has 9 values, then REST will be bound to the list of
 ;;;   the two values of ARGS. If ARGS is too short, causing defaults to
 ;;;   be used, then REST is bound to '().
-;;; - If there is no REST variable, then it is an error to have excess
-;;;   values in the ARGS list.
 
 (##sys#extend-macro-environment
  'let-optionals* 
@@ -743,11 +737,7 @@
 	  ((,rvar ,args))
 	  ,(let loop ([args rvar] [vardefs var/defs])
 	     (if (null? vardefs)
-		 `(##core#if (##core#check (,%null? ,args))
-			     (##core#let () ,@body)
-			     (##sys#error 
-			      (##core#immutable '"too many optional arguments") 
-			      ,args) )
+		 `(##core#let () ,@body)
 		 (let ([head (car vardefs)])
 		   (if (pair? head)
 		       (let ((rvar2 (r 'tmp2)))

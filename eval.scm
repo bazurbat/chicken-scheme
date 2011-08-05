@@ -238,7 +238,7 @@
 	      ((symbol? x)
 	       (receive (i j) (lookup x e se)
 		 (cond ((not i)
-			(let ((var (if (not (assq x se)) ; global?
+			(let ((var (if (not (assq x se))
 				       (##sys#alias-global-hook j #f cntr)
 				       (or (##sys#get j '##core#primitive) j))))
 			  (if ##sys#eval-environment
@@ -323,13 +323,6 @@
 			  (let ((c (cadr x)))
 			    (lambda v c)))
 
-			 [(##core#global-ref)
-			  (let ([var (cadr x)]) ;XXX broken - should alias (see above)
-			    (if ##sys#eval-environment
-				(let ([loc (##sys#hash-table-location ##sys#eval-environment var #t)])
-				  (lambda v (##sys#slot loc 1)) )
-				(lambda v (##core#inline "C_slot" var 0)) ) ) ]
-
 			 [(##core#check)
 			  (compile (cadr x) e h tf cntr se) ]
 
@@ -370,7 +363,10 @@
 					 (and-let* ((a (assq var (##sys#current-environment)))
 						    ((symbol? (cdr a))))
 					   (##sys#notice "assignment to imported value binding" var)))
-				       (let ((var (##sys#alias-global-hook j #t cntr)))
+				       (let ((var
+					      (if (not (assq x se))
+						  (##sys#alias-global-hook j #t cntr)
+						  (or (##sys#get j '##core#primitive) j))))
 					 (if ##sys#eval-environment
 					     (let ([loc (##sys#hash-table-location
 							 ##sys#eval-environment 

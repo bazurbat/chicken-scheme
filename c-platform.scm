@@ -156,7 +156,7 @@
     u8vector-ref s8vector-ref u16vector-ref s16vector-ref u32vector-ref s32vector-ref
     f32vector-ref f64vector-ref f32vector-set! f64vector-set!
     u8vector-set! s8vector-set! u16vector-set! s16vector-set! u32vector-set! s32vector-set!
-    locative-ref locative-set! locative->object locative? global-ref
+    locative-ref locative-set! locative->object locative?
     null-pointer? pointer->object flonum? finite? address->pointer pointer->address
     pointer+ pointer=?
     pointer-u8-ref pointer-s8-ref pointer-u16-ref pointer-s16-ref
@@ -1124,7 +1124,6 @@
     (pointer-f32-ref . pointer-f32-set!)
     (pointer-f64-ref . pointer-f64-set!)
     (string-ref . string-set!)
-    (global-ref . global-set!)
     (vector-ref . vector-set!) ) )
 
 (rewrite

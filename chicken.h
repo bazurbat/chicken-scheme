@@ -1457,12 +1457,6 @@ extern double trunc(double);
 
 #define C_a_i_current_milliseconds(ptr, c, dummy) C_flonum(ptr, C_milliseconds())
 
-/* this is of course silly, but only used for profiling, where we can assume that
-   the process doesn't run for more than a week.
-
-   (now someone will do exactly that ...) */
-#define C_i_current_cpu_milliseconds_as_fixnum(dummy) C_fix(C_cpu_milliseconds())
-
 
 /* Variables: */
 
