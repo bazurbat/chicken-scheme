@@ -201,3 +201,18 @@
       (bar a: #t))
     baz)
   bar)
+
+
+;; global-propagation must also invalidate alias to global if global
+;; itself is assigned (reported by Sven Hartrumpf)
+
+(define gp-test-global 0)
+
+(define (gp-test)
+  (let ((a gp-test-global)
+	(b gp-test-global))
+    (set! gp-test-global 1)
+    (assert (zero? a))
+    (assert (zero? b))))
+
+(gp-test)
