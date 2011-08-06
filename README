@@ -233,7 +233,6 @@
 	|   |       |-- modules.db
 	|   |       |-- ports.import.so
 	|   |       |-- posix.import.so
-	|   |       |-- scheme.import.so
 	|   |       |-- setup-api.import.so
 	|   |       |-- setup-api.so
 	|   |       |-- setup-download.import.so
