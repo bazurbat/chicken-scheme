@@ -155,7 +155,7 @@ Returns {{#t}} if {{X}} is a queue, or {{#f}} otherwise.
 
 Returns {{QUEUE}} converted into a list, where the first element
 of the list is the same as the first element of the queue. The resulting
-list may share memory with the queue object and should not be modified.
+list is freshly allocated and does not share memory with the queue object.
 
 
 ==== queue-add!

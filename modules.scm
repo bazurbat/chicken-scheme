@@ -292,7 +292,7 @@
 	(mifs (module-meta-import-forms mod)))
     `(,@(if (pair? ifs) `((eval '(import ,@(##sys#strip-syntax ifs)))) '())
       ,@(if (pair? mifs) `((import ,@(##sys#strip-syntax mifs))) '())
-      ,@(reverse (map ##sys#strip-syntax (module-meta-expressions mod)))
+      ,@(##sys#fast-reverse (map ##sys#strip-syntax (module-meta-expressions mod)))
       (##sys#register-compiled-module
        ',(module-name mod)
        (list
