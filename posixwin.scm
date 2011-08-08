@@ -1524,7 +1524,7 @@ EOF
 		      [else (loop (fx+ i 1))]))))])
 	  (let loop ([ilst lst] [olst '()])
 	    (if (null? ilst)
-		(reverse olst)
+		(##sys#fast-reverse olst)
 		(let ([str (car ilst)])
 		  (loop
 		   (cdr ilst)

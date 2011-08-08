@@ -71,8 +71,7 @@ This implementation of {{require-extension}} is compliant with [[http://srfi.sch
 
 Use this form for procedures that take a single optional argument. If
 {{ARGS}} is the empty list {{DEFAULT}} is evaluated and
-returned, otherwise the first element of the list {{ARGS}}. It is
-an error if {{ARGS}} contains more than one value.
+returned, otherwise the first element of the list {{ARGS}}.
 
 <enscript highlight=scheme>
 (define (incr x . i) (+ x (optional i 1)))
@@ -112,8 +111,7 @@ be a rest-parameter taken from a lambda-list. {{let-optionals}}
 binds {{VAR1 ...}} to available arguments in parallel, or
 to {{DEFAULT1 ...}} if not enough arguments were provided.
 {{let-optionals*}} binds {{VAR1 ...}} sequentially, so every
-variable sees the previous ones. it is an error if any excess
-arguments are provided.
+variable sees the previous ones. 
 
 <enscript highlight=scheme>
 (let-optionals '(one two) ((a 1) (b 2) (c 3))
@@ -130,8 +128,7 @@ binds {{VAR1 ...}} to available arguments in parallel, or
 to {{DEFAULT1 ...}} if not enough arguments were provided.
 {{let-optionals*}} binds {{VAR1 ...}} sequentially, so every
 variable sees the previous ones. If a single variable {{RESTVAR}}
-is given, then it is bound to any remaining arguments, otherwise it is
-an error if any excess arguments are provided.
+is given, then it is bound to any remaining arguments.
 
 <enscript highlight=scheme>
 (let-optionals* '(one two) ((a 1) (b 2) (c a))
