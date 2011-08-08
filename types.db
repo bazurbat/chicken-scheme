@@ -594,7 +594,7 @@
 (current-gc-milliseconds (procedure current-gc-milliseconds () fixnum))
 (current-milliseconds (procedure current-milliseconds () float))
 (current-read-table (procedure current-read-table () (struct read-table)))
-(current-seconds (procedure current-seconds () number))
+(current-seconds (procedure current-seconds () float))
 (define-reader-ctor (procedure! define-reader-ctor (symbol procedure) undefined))
 (delete-file (procedure! delete-file (string) string))
 (enable-warnings (procedure enable-warnings (#!optional *) *))
