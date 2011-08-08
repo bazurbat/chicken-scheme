@@ -963,6 +963,10 @@
 
 (queue-first (procedure! queue-first ((struct queue)) *))
 (queue-last (procedure! queue-last ((struct queue)) *))
+
+(queue-length (procedure! queue-length ((struct queue)) fixnum)
+	      (((struct queue)) (##sys#slot #(1) '3)))
+
 (queue-push-back! (procedure! queue-push-back! ((struct queue) *) undefined))
 (queue-push-back-list! (procedure! queue-push-back-list! ((struct queue) list) undefined))
 (queue-remove! (procedure! queue-remove! ((struct queue)) *))

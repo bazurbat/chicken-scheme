@@ -793,8 +793,12 @@ EOF
 ; is stored in the queue type so that datums can be added in constant
 ; time.
 
-(define (make-queue) (##sys#make-structure 'queue '() '()))
+(define (make-queue) (##sys#make-structure 'queue '() '() 0))
 (define (queue? x) (##sys#structure? x 'queue))
+
+(define (queue-length q)		; thread-safe
+  (##sys#check-structure q 'queue 'queue-length)
+  (##sys#slot q 3))
 
 (define (queue-empty? q)		; thread-safe
   (##sys#check-structure q 'queue 'queue-empty?)
@@ -822,6 +826,7 @@ EOF
     (cond ((eq? '() (##sys#slot q 1)) (##sys#setslot q 1 new-pair))
 	  (else (##sys#setslot (##sys#slot q 2) 1 new-pair)) )
     (##sys#setslot q 2 new-pair) 
+    (##sys#setislot q 3 (fx+ (##sys#slot q 3) 1))
     (##core#undefined) ) )
 
 (define queue-remove!			; thread-safe
@@ -834,6 +839,7 @@ EOF
 	(##sys#setslot q 1 first-cdr)
 	(if (eq? '() first-cdr)
 	    (##sys#setslot q 2 '()) )
+	(##sys#setislot q 3 (fx- (##sys#slot q 3) 1))
 	(##sys#slot first-pair 0) ) ) ) )
 
 (define (queue->list q)
@@ -864,7 +870,8 @@ EOF
   (let ((newlist (cons item (##sys#slot q 1))))
     (##sys#setslot q 1 newlist)
     (if (eq? '() (##sys#slot q 2))
-	(##sys#setslot q 2 newlist))))
+	(##sys#setslot q 2 newlist))
+    (##sys#setislot q 3 (fx+ (##sys#slot q 3) 1))))
 
 ; (queue-push-back-list! queue item-list)
 ; Pushes the items in item-list back onto the queue,
@@ -882,4 +889,5 @@ EOF
 		       '()
 		       (last-pair newlist))))
     (##sys#setslot q 1 newlist)
-    (##sys#setslot q 2 newtail)))
+    (##sys#setslot q 2 newtail)
+    (##sys#setislot q 3 (fx+ (##sys#slot q 3) (##core#inline "C_i_length" itemlist)))))

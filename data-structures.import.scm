@@ -61,6 +61,7 @@
    queue-empty?
    queue-first
    queue-last
+   queue-length
    queue-push-back!
    queue-push-back-list!
    queue-remove!

@@ -149,6 +149,13 @@ Returns a newly created queue.
 Returns {{#t}} if {{X}} is a queue, or {{#f}} otherwise.
 
 
+==== queue-length
+
+<procedure>(queue-length QUEUE)</procedure>
+
+Returns the current number of items stored in {{QUEUE}}.
+
+
 ==== queue->list
 
 <procedure>(queue->list QUEUE)</procedure>
