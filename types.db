@@ -1220,7 +1220,7 @@
 		       ((pointer-vector) (##sys#slot #(1) '1)))
 
 (pointer-vector-ref (procedure! pointer-vector-ref (pointer-vector fixnum) pointer))
-(pointer-vector-set! (procedure! pointer-vector-set! (pointer-vector fixnum pointer) pointer))
+(pointer-vector-set! (procedure! pointer-vector-set! (pointer-vector fixnum pointer) undefined))
 (pointer-s16-ref (procedure! pointer-s16-ref (pointer) fixnum))
 (pointer-s16-set! (procedure! pointer-s16-set! (pointer fixnum) undefined))
 (pointer-s32-ref (procedure! pointer-s32-ref (pointer) number))
