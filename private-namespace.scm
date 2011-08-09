@@ -26,21 +26,22 @@
 
 
 (define-syntax private
-  (lambda (form r c)
-    (let ((namespace (cadr form))
-	  (vars (cddr form)))
-      (##sys#check-symbol namespace 'private)
-      (let* ((str (symbol->string namespace)) ; somewhat questionable (renaming)
-	     (prefix (string-append 
-		      (string (integer->char (string-length str)))
-		      (symbol->string namespace))))
-	(for-each
-	 (lambda (var)
-	   (put! 
-	    var 'c:namespace
-	    (##sys#string->qualified-symbol prefix (symbol->string var))))
-	 vars)
-	'(##core#undefined) ) ) ) ) 
+  (er-macro-transformer
+   (lambda (form r c)
+     (let ((namespace (cadr form))
+	   (vars (cddr form)))
+       (##sys#check-symbol namespace 'private)
+       (let* ((str (symbol->string namespace)) ; somewhat questionable (renaming)
+	      (prefix (string-append 
+		       (string (integer->char (string-length str)))
+		       (symbol->string namespace))))
+	 (for-each
+	  (lambda (var)
+	    (put! 
+	     var 'c:namespace
+	     (##sys#string->qualified-symbol prefix (symbol->string var))))
+	  vars)
+	 '(##core#undefined) ) ) ) ) )
 
 (set! ##sys#alias-global-hook
   (lambda (var . assign)		; must work with old chicken

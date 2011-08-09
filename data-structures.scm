@@ -512,7 +512,7 @@ EOF
       (if (fx>= i len)
 	  (##sys#fragments->string
 	   total
-	   (reverse 
+	   (##sys#fast-reverse 
 	    (if (fx> i from) 
 		(cons (##sys#substring str from i) fs)
 		fs) ) )
@@ -798,11 +798,11 @@ EOF
 (define (make-queue) (##sys#make-structure 'queue '() '()))
 (define (queue? x) (##sys#structure? x 'queue))
 
-(define (queue-empty? q)
+(define (queue-empty? q)		; thread-safe
   (##sys#check-structure q 'queue 'queue-empty?)
   (eq? '() (##sys#slot q 1)) )
 
-(define queue-first
+(define queue-first			; thread-safe
   (lambda (q)
     (##sys#check-structure q 'queue 'queue-first)
     (let ((first-pair (##sys#slot q 1)))
@@ -810,7 +810,7 @@ EOF
 	(##sys#error 'queue-first "queue is empty" q))
       (##sys#slot first-pair 0) ) ) )
 
-(define queue-last
+(define queue-last			; thread-safe
   (lambda (q)
     (##sys#check-structure q 'queue 'queue-last)
     (let ((last-pair (##sys#slot q 2)))
@@ -818,7 +818,7 @@ EOF
 	(##sys#error 'queue-last "queue is empty" q))
       (##sys#slot last-pair 0) ) ) )
 
-(define (queue-add! q datum)
+(define (queue-add! q datum)		; thread-safe
   (##sys#check-structure q 'queue 'queue-add!)
   (let ((new-pair (cons datum '())))
     (cond ((eq? '() (##sys#slot q 1)) (##sys#setslot q 1 new-pair))
@@ -826,7 +826,7 @@ EOF
     (##sys#setslot q 2 new-pair) 
     (##core#undefined) ) )
 
-(define queue-remove!
+(define queue-remove!			; thread-safe
   (lambda (q)
     (##sys#check-structure q 'queue 'queue-remove!)
     (let ((first-pair (##sys#slot q 1)))
@@ -840,9 +840,12 @@ EOF
 
 (define (queue->list q)
   (##sys#check-structure q 'queue 'queue->list)
-  (##sys#slot q 1) )
+  (let loop ((lst (##sys#slot q 1)) (lst2 '()))
+    (if (null? lst)
+	(##sys#fast-reverse lst2)
+	(loop (##sys#slot lst 1) (cons (##sys#slot lst 0) lst2)))))
 
-(define (list->queue lst0)
+(define (list->queue lst0)		
   (##sys#check-list lst0 'list->queue)
   (##sys#make-structure 
    'queue lst0
@@ -858,7 +861,7 @@ EOF
 ; (queue-push-back! queue item)
 ; Pushes an item into the first position of a queue.
 
-(define (queue-push-back! q item)
+(define (queue-push-back! q item)	; thread-safe
   (##sys#check-structure q 'queue 'queue-push-back!)
   (let ((newlist (cons item (##sys#slot q 1))))
     (##sys#setslot q 1 newlist)

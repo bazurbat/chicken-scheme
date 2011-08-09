@@ -368,7 +368,7 @@ EOF
 			     (##sys#string-append drive r)
 			     r))
 		       (let ((out (open-output-string))
-			     (parts (reverse parts)))
+			     (parts (##sys#fast-reverse parts)))
 			 (display (car parts) out)
 			 (for-each
 			  (lambda (p)

@@ -429,6 +429,12 @@ EOF
 	   (loop (##sys#slot lst 1) (cons (##sys#slot lst 0) rest)) )
 	  (else (##sys#error-not-a-proper-list lst0 'reverse)) ) ))
 
+(define (##sys#fast-reverse lst0)
+  (let loop ((lst lst0) (rest '()))
+    (if (pair? lst)
+	(loop (##sys#slot lst 1) (cons (##sys#slot lst 0) rest))
+	rest)))
+
 (define (memq x lst) (##core#inline "C_i_memq" x lst))
 (define (memv x lst) (##core#inline "C_i_memv" x lst))
 (define (member x lst) (##core#inline "C_i_member" x lst))
@@ -2160,26 +2166,32 @@ EOF
 
 (define make-parameter
   (let ((count 0))
-    (lambda (init . guard)
-      (let* ((guard (if (pair? guard) (car guard) (lambda (x) x)))
-	     (val (guard init))
-	     (i count))
+    (lambda (init #!optional (guard (lambda (x) x)))
+      (let ((val (guard init))
+	    (i count))
 	(set! count (fx+ count 1))
 	(when (fx>= i (##sys#size ##sys#default-parameter-vector))
 	  (set! ##sys#default-parameter-vector 
-	    (##sys#grow-vector ##sys#default-parameter-vector (fx+ i 1) (##core#undefined)) ) )
+	    (##sys#grow-vector
+	     ##sys#default-parameter-vector
+	     (fx+ i 1)
+	     (##core#undefined)) ) )
 	(##sys#setslot ##sys#default-parameter-vector i val)
 	(let ((assign 
-	       (lambda (val n)
+	       (lambda (val n mode)
 		 (when (fx>= i n)
 		   (set! ##sys#current-parameter-vector
-		     (##sys#grow-vector ##sys#current-parameter-vector (fx+ i 1) ##sys#snafu) ) )
-		 (##sys#setslot ##sys#current-parameter-vector i (guard val))
+		     (##sys#grow-vector
+		      ##sys#current-parameter-vector
+		      (fx+ i 1)
+		      ##sys#snafu) ) )
+		 (##sys#setslot ##sys#current-parameter-vector i (if mode val (guard val)))
 		 (##core#undefined) )))
 	  (getter-with-setter
-	   (lambda arg
+	   (lambda args
 	     (let ((n (##sys#size ##sys#current-parameter-vector)))
-	       (cond ((pair? arg) (assign (car arg) n))
+	       (cond ((pair? args)
+		      (assign (car args) n (optional (cdr args) #f)))
 		     ((fx>= i n)
 		      (##sys#slot ##sys#default-parameter-vector i) )
 		     (else
@@ -2189,7 +2201,7 @@ EOF
 			    val) ) ) ) ) )
 	   (lambda (val)
 	     (let ((n (##sys#size ##sys#current-parameter-vector)))
-	       (assign val n)))))))))
+	       (assign val n #f)))))))))
   
 
 ;;; Input:
@@ -2279,8 +2291,7 @@ EOF
        args) ) ) )
 
 (define ##sys#read
-  (let ((reverse reverse)
-	(string-append string-append)
+  (let ((string-append string-append)
 	(keyword-style keyword-style)
 	(case-sensitive case-sensitive)
 	(parantheses-synonyms parantheses-synonyms)
@@ -2571,7 +2582,7 @@ EOF
 			   (case (and sep c)
 			     ((#\|) 
 			      (let ((part (r-string #\|)))
-				(loop (append (reverse (##sys#string->list part)) lst)
+				(loop (append (##sys#fast-reverse (##sys#string->list part)) lst)
 				      #f)))
 			     ((#\newline)
 			      (##sys#read-warning
@@ -4291,7 +4302,6 @@ EOF
 
 (set! ##sys#user-read-hook
   (let ([old ##sys#user-read-hook]
-	[reverse reverse]
 	[read read]
 	[display display] )
     (define (readln port)

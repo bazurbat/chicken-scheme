@@ -157,6 +157,10 @@
       #f                                 ; #3: chunka
       #f))))                             ; #4: fail
 
+(define-compiler-syntax reverse
+  (syntax-rules ()
+    ((_ lst) (##sys#fast-reverse lst))))
+
 (define-compiler-syntax bit-shl
   (syntax-rules ()
     ((_ n i) (fxshl n i))))

@@ -182,32 +182,28 @@ EOF
 
 (define (write-profile)
   (print "reading `" file "' ...\n")
-  (let* ([data0 (with-input-from-file file read-profile)]
-	 [max-t (fold (lambda (t result)
-			(+ (third t) result))
-		      0
-		      data0)]
-	 [data (sort (map
+  (let* ((data0 (with-input-from-file file read-profile))
+	 (max-t (foldl (lambda (r t) (max r (third t))) 0 data0))
+	 (data (sort (map
 		      (lambda (t)
 			(append
 			 t
-			 (let ((c (second t))
-			       (t (third t)))
-			   (list (or (and c (> c 0) (/ t c))
+			 (let ((c (second t)) ; count
+			       (t (third t))) ; total time
+			   (list (or (and c (> c 0) (/ t c)) ; time / count
 				     0)
-				 (or (and (> max-t 0) (* (/ t max-t) 100))
+				 (or (and (> max-t 0) (* (/ t max-t) 100)) ; % of max-time
 				     0)
 				 ))))
 		      data0)
-                     sort-by)])
+                     sort-by)))
     (if (< 0 top (length data))
 	(set! data (take data top)))
     (set! data (map (lambda (entry)
-		      (pp entry)
-		      (let ([c (second entry)]
-			    [t (third entry)]
-			    [a (fourth entry)]
-			    [p (fifth entry)] )
+		      (let ([c (second entry)] ; count
+			    [t (third entry)]  ; total time
+			    [a (fourth entry)] ; average time
+			    [p (fifth entry)] ) ; % of max time
 			(list (##sys#symbol->qualified-string (first entry))
 			      (if (not c) "overflow" (number->string c))
 			      (format-real (/ t 1000) seconds-digits)

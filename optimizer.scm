@@ -231,7 +231,7 @@
 		      (let ((gvar (cdr a)))
 			(cond ((and gvar
 				    (not (eq? 'no (variable-mark gvar '##compiler#inline))))
-			       (debugging 'x "propagated global variable" var gvar)
+			       (debugging 'o "propagated global variable" var gvar)
 			       (varnode gvar))
 			      (else (varnode var))))))
 		   (else (varnode var)))))
@@ -463,7 +463,15 @@
 		    (make-node '##core#undefined '() '()) )
 		   (else
 		    (let ((n2 (make-node 'set! params (list (walk (car subs) fids gae)))))
-		      (cond ((assq var gae) => (cut set-cdr! <> #f)))
+		      (for-each
+		       (if (test var 'global)
+			   (lambda (a)
+			     (when (eq? var (cdr a)) ; assignment to alias?
+			       (set-cdr! a #f)))
+			   (lambda (a)
+			     (when (eq? var (car a))
+			       (set-cdr! a #f))))
+		       gae)
 		      n2)))))
 
 	  (else (walk-generic n class params subs fids gae #f)) ) ) )

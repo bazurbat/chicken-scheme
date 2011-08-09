@@ -54,7 +54,7 @@
     (let loop ((xs '()))
       (let ((x (thunk)))
 	(if (eof-object? x)
-	    (reverse xs)
+	    (##sys#fast-reverse xs)
 	    (loop (cons (fn x) xs)))))))
 
 (define (port-fold fn acc thunk)

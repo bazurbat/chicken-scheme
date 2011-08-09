@@ -41,14 +41,13 @@
 
 (define read-file
   (let ([read read]
-	[reverse reverse] 
 	[call-with-input-file call-with-input-file] )
     (lambda (#!optional (port ##sys#standard-input) (reader read) max)
       (define (slurp port)
 	(do ((x (reader port) (reader port))
 	     (i 0 (fx+ i 1))
 	     (xs '() (cons x xs)) )
-	    ((or (eof-object? x) (and max (fx>= i max))) (reverse xs)) ) )
+	    ((or (eof-object? x) (and max (fx>= i max))) (##sys#fast-reverse xs)) ) )
       (if (port? port)
 	  (slurp port)
 	  (call-with-input-file port slurp) ) ) ) )
@@ -122,10 +121,10 @@
 	(let loop ((lns '())
 		   (n (or max 1000000000)) ) ; this is silly
 	  (if (eq? n 0)
-	      (reverse lns)
+	      (##sys#fast-reverse lns)
 	      (let ((ln (read-line port)))
 		(if (eof-object? ln)
-		    (reverse lns)
+		    (##sys#fast-reverse lns)
 		    (loop (cons ln lns) (fx- n 1)) ) ) ) ) )
       (if (string? port)
 	  (call-with-input-file port doread)
