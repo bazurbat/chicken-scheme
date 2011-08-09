@@ -85,12 +85,13 @@
     profile inline keep-shadowed-macros ignore-repository
     fixnum-arithmetic disable-interrupts optimize-leaf-routines
     compile-syntax tag-pointers accumulate-profile
-    disable-stack-overflow-checks raw 
+    disable-stack-overflow-checks raw specialize
     emit-external-prototypes-first release local inline-global
     analyze-only dynamic scrutinize no-argc-checks no-procedure-checks
     no-procedure-checks-for-toplevel-bindings module
     no-bound-checks no-procedure-checks-for-usual-bindings no-compiler-syntax
     no-parentheses-synonyms no-symbol-escape r5rs-syntax emit-all-import-libraries
+    strict-types
     lambda-lift				; OBSOLETE
     setup-mode unboxing no-module-registration) )
 
@@ -102,6 +103,7 @@
     parenthesis-synonyms
     prelude postlude prologue epilogue nursery extend feature no-feature types
     emit-import-library emit-inline-file static-extension consult-inline-file
+    emit-type-file
     heap-growth heap-shrinkage heap-initial-size ffi-define ffi-include-path) )
 
 
@@ -125,12 +127,13 @@
     read-char substring string-fill! vector-fill! make-string make-vector open-input-file
     open-output-file call-with-input-file call-with-output-file close-input-port close-output-port
     values call-with-values vector procedure? memq memv member assq assv assoc list-tail
-    list-ref abs char-ready? peek-char list->string string->list) )
+    list-ref abs char-ready? peek-char list->string string->list
+    current-input-port current-output-port) )
 
 (define default-extended-bindings
-  '(bitwise-and 
+  '(bitwise-and alist-cons xcons
     bitwise-ior bitwise-xor bitwise-not add1 sub1 fx+ fx- fx* fx/
-    fx+? fx-? fx*? fx/? fxmod o
+    fx+? fx-? fx*? fx/? fxmod o fp/?
     fx= fx> fx< fx>= fx<= fixnum? fxneg fxmax fxmin identity fp+ fp- fp* fp/ fpmin fpmax fpneg
     fp> fp< fp= fp>= fp<= fxand fxnot fxior fxxor fxshr fxshl bit-set? fxodd? fxeven?
     fpfloor fpceiling fptruncate fpround fpsin fpcos fptan fpasin fpacos fpatan
@@ -147,7 +150,8 @@
     hash-table-ref any? read-string substring=? substring-ci=?
     first second third fourth make-record-instance
     foldl foldr
-    u8vector-length s8vector-length u16vector-length s16vector-length u32vector-length s32vector-length
+    u8vector-length s8vector-length u16vector-length s16vector-length u32vector-length 
+    s32vector-length
     f32vector-length f64vector-length setter
     u8vector-ref s8vector-ref u16vector-ref s16vector-ref u32vector-ref s32vector-ref
     f32vector-ref f64vector-ref f32vector-set! f64vector-set!
@@ -159,13 +163,15 @@
     pointer-u32-ref pointer-s32-ref pointer-f32-ref pointer-f64-ref
     pointer-u8-set! pointer-s8-set! pointer-u16-set! pointer-s16-set!
     pointer-u32-set! pointer-s32-set! pointer-f32-set! pointer-f64-set!
+    current-error-port current-thread
     printf sprintf format get-keyword) )
 
 (define internal-bindings
   '(##sys#slot ##sys#setslot ##sys#block-ref ##sys#block-set!
     ##sys#call-with-current-continuation ##sys#size ##sys#byte ##sys#setbyte
     ##sys#pointer? ##sys#generic-structure? ##sys#structure? ##sys#check-structure
-    ##sys#check-exact ##sys#check-number ##sys#check-list ##sys#check-pair ##sys#check-string ##sys#check-symbol 
+    ##sys#check-exact ##sys#check-number ##sys#check-list ##sys#check-pair ##sys#check-string
+    ##sys#check-symbol ##sys#check-boolean ##sys#check-locative
     ##sys#check-char ##sys#check-vector ##sys#check-byte-vector ##sys#list ##sys#cons
     ##sys#call-with-values ##sys#fits-in-int? ##sys#fits-in-unsigned-int? ##sys#flonum-in-fixnum-range? 
     ##sys#fudge ##sys#immediate? ##sys#direct-return ##sys#context-switch
@@ -200,7 +206,16 @@
     f32vector-set! f64vector-set!
     u8vector-ref s8vector-ref u16vector-ref s16vector-ref u32vector-ref s32vector-ref
     u8vector-set! s8vector-set! u16vector-set! s16vector-set! u32vector-set! s32vector-set!
-    ##sys#intern-symbol ##sys#make-symbol make-record-instance error ##sys#block-set!) )
+    ##sys#intern-symbol ##sys#make-symbol make-record-instance error ##sys#block-set!
+    current-error-port current-thread
+    pointer-u8-ref pointer-u8-set!
+    pointer-s8-ref pointer-s8-set!
+    pointer-u16-ref pointer-u16-set!
+    pointer-s16-ref pointer-s16-set!
+    pointer-u32-ref pointer-u32-set!
+    pointer-s32-ref pointer-s32-set!
+    pointer-f32-ref pointer-f32-set!
+    pointer-f64-ref pointer-f64-set!))
 
 (define foldable-bindings
   (lset-difference 
@@ -252,12 +267,12 @@
 	     (and (eq? 'quote (node-class x))
 		  (eq? 1 (first (node-parameters x))) ) ) 
 	   callargs) ] )
-     (cond [(null? callargs) (make-node '##core#call '(#t) (list cont (qnode 0)))]
+     (cond [(null? callargs) (make-node '##core#call (list #t) (list cont (qnode 0)))]
 	   [(null? (cdr callargs))
-	    (make-node '##core#call '(#t) (list cont (first callargs))) ]
+	    (make-node '##core#call (list #t) (list cont (first callargs))) ]
 	   [(eq? number-type 'fixnum)
 	    (make-node 
-	     '##core#call '(#t)
+	     '##core#call (list #t)
 	     (list
 	      cont
 	      (fold-inner
@@ -280,7 +295,7 @@
    (cond [(null? callargs) #f]
 	 [(and (null? (cdr callargs)) (eq? number-type 'fixnum))
 	  (make-node
-	   '##core#call '(#t)
+	   '##core#call (list #t)
 	   (list cont
 		 (make-node '##core#inline
 			    (if unsafe '("C_u_fixnum_negate") '("C_fixnum_negate"))
@@ -296,7 +311,7 @@
 	    (and (eq? number-type 'fixnum)
 		 (>= (length callargs) 2)
 		 (make-node
-		  '##core#call '(#t)
+		  '##core#call (list #t)
 		  (list 
 		   cont
 		   (fold-inner
@@ -323,7 +338,7 @@
 	  (and (eq? number-type 'fixnum)
 	       (>= (length callargs) 2)
 	       (make-node
-		'##core#call '(#t)
+		'##core#call (list #t)
 		(list
 		 cont
 		 (fold-inner
@@ -342,7 +357,7 @@
    (and (= (length callargs) 2)
 	(if (eq? 'fixnum number-type)
 	    (make-node
-	     '##core#call '(#t)
+	     '##core#call (list #t)
 	     (let ([arg2 (second callargs)])
 	       (list cont 
 		     (if (and (eq? 'quote (node-class arg2)) 
@@ -352,7 +367,7 @@
 			  (list (first callargs) (qnode 1)) )
 			 (make-node '##core#inline '("C_fixnum_divide") callargs) ) ) ) )
 	    (make-node
-	     '##core#call '(#t)
+	     '##core#call (list #t)
 	     (cons* (make-node '##core#proc '("C_quotient" #t) '()) cont callargs) ) ) ) ) )
 
 (let ()
@@ -365,7 +380,7 @@
   (define ((op1 fiop ufiop aiop) db classargs cont callargs)
     (and (= (length callargs) 1)
 	 (make-node
-	  '##core#call '(#t)
+	  '##core#call (list #t)
 	  (list 
 	   cont
 	   (if (eq? 'fixnum number-type)
@@ -386,13 +401,13 @@
 	   (or (and (eq? '##core#variable (node-class arg1))
 		    (eq? '##core#variable (node-class arg2))
 		    (equal? (node-parameters arg1) (node-parameters arg2))
-		    (make-node '##core#call '(#t) (list cont (qnode #t))) )
+		    (make-node '##core#call (list #t) (list cont (qnode #t))) )
 	       (and (or (and (eq? 'quote (node-class arg1))
 			     (not (flonum? (first (node-parameters arg1)))) )
 			(and (eq? 'quote (node-class arg2))
 			     (not (flonum? (first (node-parameters arg2)))) ) )
 		    (make-node
-		     '##core#call '(#t) 
+		     '##core#call (list #t) 
 		     (list cont (make-node '##core#inline '("C_eqp") callargs)) ) ) ) ) ) )
   (rewrite 'eqv? 8 eqv?-id)
   (rewrite '##sys#eqv? 8 eqv?-id))
@@ -409,7 +424,7 @@
 	  (or (and (eq? '##core#variable (node-class arg1))
 		   (eq? '##core#variable (node-class arg2))
 		   (equal? (node-parameters arg1) (node-parameters arg2))
-		   (make-node '##core#call '(#t) (list cont (qnode #t))) )
+		   (make-node '##core#call (list #t) (list cont (qnode #t))) )
 	      (and (or (and (eq? 'quote (node-class arg1))
 			    (let ([f (first (node-parameters arg1))])
 			      (or (immediate? f) (symbol? f)) ) )
@@ -417,10 +432,10 @@
 			    (let ([f (first (node-parameters arg2))])
 			      (or (immediate? f) (symbol? f)) ) ) )
 		   (make-node
-		    '##core#call '(#t) 
+		    '##core#call (list #t) 
 		    (list cont (make-node '##core#inline '("C_eqp") callargs)) ) )
 	      (make-node
-	       '##core#call '(#t) 
+	       '##core#call (list #t) 
 	       (list cont (make-node '##core#inline '("C_i_equalp") callargs)) ) ) ) ) ) )
 
 (let ()
@@ -434,7 +449,7 @@
 	       [proc (car callargs)] )
 	   (if (eq? 'quote (node-class lastarg))
 	       (make-node
-		'##core#call '(#f)
+		'##core#call (list #f)
 		(cons* (first callargs)
 		       cont 
 		       (append (cdr (butlast callargs)) (map qnode (first (node-parameters lastarg)))) ) )
@@ -444,12 +459,12 @@
 			  (and (memq name '(values ##sys#values))
 			       (intrinsic? name)
 			       (make-node
-				'##core#call '(#t)
+				'##core#call (list #t)
 				(list (make-node '##core#proc '("C_apply_values" #t) '())
 				      cont
 				      (cadr callargs) ) ) ) ) ) 
 		   (make-node
-		    '##core#call '(#t)
+		    '##core#call (list #t)
 		    (cons* (make-node '##core#proc '("C_apply" #t) '())
 			   cont callargs) ) ) ) ) ) )
   (rewrite 'apply 8 rewrite-apply)
@@ -468,7 +483,7 @@
 	     (lambda (return)
 	       (let ([arg (first callargs)])
 		 (make-node
-		  '##core#call '(#t)
+		  '##core#call (list #t)
 		  (list
 		   cont
 		   (cond [(and (eq? '##core#variable (node-class arg))
@@ -498,7 +513,7 @@
        (lambda (db classargs cont callargs)
 	 ;; (values <x>) -> <x>
 	 (and (= (length callargs) 1)
-	      (make-node '##core#call '(#t) (cons cont callargs) ) ) ) ] )
+	      (make-node '##core#call (list #t) (cons cont callargs) ) ) ) ] )
   (rewrite 'values 8 rvalues)
   (rewrite '##sys#values 8 rvalues) )
 
@@ -526,10 +541,10 @@
 				       '##core#lambda
 				       (list (gensym 'f_) #f (list tmpk) 0)
 				       (list (make-node
-					      '##core#call '(#t)
+					      '##core#call (list #t)
 					      (list arg2 cont (varnode tmpk)) ) ) ) 
 				      (make-node
-				       '##core#call '(#t)
+				       '##core#call (list #t)
 				       (list arg1 (varnode tmp)) ) ) ) ) ) ) ) ) ) ) ) )
   (rewrite 'call-with-values 8 rewrite-c-w-v)
   (rewrite '##sys#call-with-values 8 rewrite-c-w-v) )
@@ -608,7 +623,7 @@
 (rewrite 'flonum? 2 1 "C_i_flonump" #t)
 (rewrite 'fixnum? 2 1 "C_fixnump" #t)
 (rewrite 'finite? 2 1 "C_i_finitep" #f)
-(rewrite 'fpinteger? 2 1 "C_u_i_fpintegerp" 'specialized)
+(rewrite 'fpinteger? 2 1 "C_u_i_fpintegerp" #f)
 (rewrite '##sys#pointer? 2 1 "C_anypointerp" #t)
 (rewrite 'pointer? 2 1 "C_i_safe_pointerp" #t)
 (rewrite '##sys#generic-structure? 2 1 "C_structurep" #t)
@@ -646,15 +661,15 @@
 (rewrite 'fx< 2 2 "C_fixnum_lessp" #t)
 (rewrite 'fx>= 2 2 "C_fixnum_greater_or_equal_p" #t)
 (rewrite 'fx<= 2 2 "C_fixnum_less_or_equal_p" #t)
-(rewrite 'fp= 2 2 "C_flonum_equalp" 'specialized)
-(rewrite 'fp> 2 2 "C_flonum_greaterp" 'specialized)
-(rewrite 'fp< 2 2 "C_flonum_lessp" 'specialized)
-(rewrite 'fp>= 2 2 "C_flonum_greater_or_equal_p" 'specialized)
-(rewrite 'fp<= 2 2 "C_flonum_less_or_equal_p" 'specialized)
+(rewrite 'fp= 2 2 "C_flonum_equalp" #f)
+(rewrite 'fp> 2 2 "C_flonum_greaterp" #f)
+(rewrite 'fp< 2 2 "C_flonum_lessp" #f)
+(rewrite 'fp>= 2 2 "C_flonum_greater_or_equal_p" #f)
+(rewrite 'fp<= 2 2 "C_flonum_less_or_equal_p" #f)
 (rewrite 'fxmax 2 2 "C_i_fixnum_max" #t)
 (rewrite 'fxmin 2 2 "C_i_fixnum_min" #t)
-(rewrite 'fpmax 2 2 "C_i_flonum_max" 'specialized)
-(rewrite 'fpmin 2 2 "C_i_flonum_min" 'specialized)
+(rewrite 'fpmax 2 2 "C_i_flonum_max" #f)
+(rewrite 'fpmin 2 2 "C_i_flonum_min" #f)
 (rewrite 'char-numeric? 2 1 "C_u_i_char_numericp" #t)
 (rewrite 'char-alphabetic? 2 1 "C_u_i_char_alphabeticp" #t)
 (rewrite 'char-whitespace? 2 1 "C_u_i_char_whitespacep" #t)
@@ -691,11 +706,12 @@
 
 (rewrite 'bitwise-not 22 1 "C_a_i_bitwise_not" #t words-per-flonum "C_fixnum_not")
 
-(rewrite 'fp+ 16 2 "C_a_i_flonum_plus" 'specialized words-per-flonum)
-(rewrite 'fp- 16 2 "C_a_i_flonum_difference" 'specialized words-per-flonum)
-(rewrite 'fp* 16 2 "C_a_i_flonum_times" 'specialized words-per-flonum)
-(rewrite 'fp/ 16 2 "C_a_i_flonum_quotient" 'specialized words-per-flonum)
-(rewrite 'fpneg 16 1 "C_a_i_flonum_negate" 'specialized words-per-flonum)
+(rewrite 'fp+ 16 2 "C_a_i_flonum_plus" #f words-per-flonum)
+(rewrite 'fp- 16 2 "C_a_i_flonum_difference" #f words-per-flonum)
+(rewrite 'fp* 16 2 "C_a_i_flonum_times" #f words-per-flonum)
+(rewrite 'fp/ 16 2 "C_a_i_flonum_quotient" #f words-per-flonum)
+(rewrite 'fp/? 16 2 "C_a_i_flonum_quotient_checked" #f words-per-flonum)
+(rewrite 'fpneg 16 1 "C_a_i_flonum_negate" #f words-per-flonum)
 
 (rewrite 'exp 16 1 "C_a_i_exp" #t words-per-flonum)
 (rewrite 'sin 16 1 "C_a_i_sin" #t words-per-flonum)
@@ -734,6 +750,8 @@
 (rewrite '##sys#check-number 2 1 "C_i_check_number" #t)
 (rewrite '##sys#check-list 2 1 "C_i_check_list" #t)
 (rewrite '##sys#check-pair 2 1 "C_i_check_pair" #t)
+(rewrite '##sys#check-boolean 2 1 "C_i_check_boolean" #t)
+(rewrite '##sys#check-locative 2 1 "C_i_check_locative" #t)
 (rewrite '##sys#check-symbol 2 1 "C_i_check_symbol" #t)
 (rewrite '##sys#check-string 2 1 "C_i_check_string" #t)
 (rewrite '##sys#check-byte-vector 2 1 "C_i_check_bytevector" #t)
@@ -744,6 +762,8 @@
 (rewrite '##sys#check-number 2 2 "C_i_check_number_2" #t)
 (rewrite '##sys#check-list 2 2 "C_i_check_list_2" #t)
 (rewrite '##sys#check-pair 2 2 "C_i_check_pair_2" #t)
+(rewrite '##sys#check-boolean 2 2 "C_i_check_boolean_2" #t)
+(rewrite '##sys#check-locative 2 2 "C_i_check_locative_2" #t)
 (rewrite '##sys#check-symbol 2 2 "C_i_check_symbol_2" #t)
 (rewrite '##sys#check-string 2 2 "C_i_check_string_2" #t)
 (rewrite '##sys#check-byte-vector 2 2 "C_i_check_bytevector_2" #t)
@@ -826,22 +846,22 @@
 (rewrite 'ceiling 15 'flonum 'fixnum 'fpceiling #f)
 (rewrite 'truncate 15 'flonum 'fixnum 'fptruncate #f)
 
-(rewrite 'fpsin 16 1 "C_a_i_flonum_sin" 'specialized words-per-flonum)
-(rewrite 'fpcos 16 1 "C_a_i_flonum_cos" 'specialized words-per-flonum)
-(rewrite 'fptan 16 1 "C_a_i_flonum_tan" 'specialized words-per-flonum)
-(rewrite 'fpasin 16 1 "C_a_i_flonum_asin" 'specialized words-per-flonum)
-(rewrite 'fpacos 16 1 "C_a_i_flonum_acos" 'specialized words-per-flonum)
-(rewrite 'fpatan 16 1 "C_a_i_flonum_atan" 'specialized words-per-flonum)
-(rewrite 'fpatan2 16 2 "C_a_i_flonum_atan2" 'specialized words-per-flonum)
-(rewrite 'fpexp 16 1 "C_a_i_flonum_exp" 'specialized words-per-flonum)
-(rewrite 'fpexpt 16 2 "C_a_i_flonum_expt" 'specialized words-per-flonum)
-(rewrite 'fplog 16 1 "C_a_i_flonum_log" 'specialized words-per-flonum)
-(rewrite 'fpsqrt 16 1 "C_a_i_flonum_sqrt" 'specialized words-per-flonum)
-(rewrite 'fpabs 16 1 "C_a_i_flonum_abs" 'specialized words-per-flonum)
-(rewrite 'fptruncate 16 1 "C_a_i_flonum_truncate" 'specialized words-per-flonum)
-(rewrite 'fpround 16 1 "C_a_i_flonum_round" 'specialized words-per-flonum)
-(rewrite 'fpceiling 16 1 "C_a_i_flonum_ceiling" 'specialized words-per-flonum)
-(rewrite 'fpfloor 16 1 "C_a_i_flonum_floor" 'specialized words-per-flonum)
+(rewrite 'fpsin 16 1 "C_a_i_flonum_sin" #f words-per-flonum)
+(rewrite 'fpcos 16 1 "C_a_i_flonum_cos" #f words-per-flonum)
+(rewrite 'fptan 16 1 "C_a_i_flonum_tan" #f words-per-flonum)
+(rewrite 'fpasin 16 1 "C_a_i_flonum_asin" #f words-per-flonum)
+(rewrite 'fpacos 16 1 "C_a_i_flonum_acos" #f words-per-flonum)
+(rewrite 'fpatan 16 1 "C_a_i_flonum_atan" #f words-per-flonum)
+(rewrite 'fpatan2 16 2 "C_a_i_flonum_atan2" #f words-per-flonum)
+(rewrite 'fpexp 16 1 "C_a_i_flonum_exp" #f words-per-flonum)
+(rewrite 'fpexpt 16 2 "C_a_i_flonum_expt" #f words-per-flonum)
+(rewrite 'fplog 16 1 "C_a_i_flonum_log" #f words-per-flonum)
+(rewrite 'fpsqrt 16 1 "C_a_i_flonum_sqrt" #f words-per-flonum)
+(rewrite 'fpabs 16 1 "C_a_i_flonum_abs" #f words-per-flonum)
+(rewrite 'fptruncate 16 1 "C_a_i_flonum_truncate" #f words-per-flonum)
+(rewrite 'fpround 16 1 "C_a_i_flonum_round" #f words-per-flonum)
+(rewrite 'fpceiling 16 1 "C_a_i_flonum_ceiling" #f words-per-flonum)
+(rewrite 'fpround 16 1 "C_a_i_flonum_floor" #f words-per-flonum)
 
 (rewrite
  'string->number 8
@@ -850,7 +870,7 @@
    ;; (string->number X Y) -> (##core#inline_allocate ("C_a_i_string_to_number" 4) X Y)
    (define (build x y)
      (make-node
-      '##core#call '(#t)
+      '##core#call (list #t)
       (list cont
 	    (make-node
 	     '##core#inline_allocate 
@@ -898,7 +918,7 @@
    ;; (##sys#setslot <x> <y> <z>) -> (##core#inline "C_i_setslot" <x> <y> <z>)
    (and (= (length callargs) 3)
 	(make-node 
-	 '##core#call '(#t)
+	 '##core#call (list #t)
 	 (list cont
 	       (make-node
 		'##core#inline
@@ -930,7 +950,7 @@
    (and (= 2 (length callargs))
 	(let ([val (second callargs)])
 	  (make-node
-	   '##core#call '(#t)
+	   '##core#call (list #t)
 	   (list cont
 		 (or (and-let* ([(eq? 'quote (node-class val))]
 				[(eq? number-type 'fixnum)]
@@ -1044,7 +1064,7 @@
 			    (list tmp)
 			    (list val
 				  (make-node
-				   '##core#call '(#t)
+				   '##core#call (list #t)
 				   (list cont
 					 (make-node
 					  '##core#inline_allocate 
@@ -1074,7 +1094,7 @@
 				   (not (get db var 'assigned)) 
 				   (not (get db var 'inline-transient))
 				   (make-node
-				    '##core#call '(#t)
+				    '##core#call (list #t)
 				    (list val cont (qnode #f)) ) ) ) ) ) ) ) ) ) ) ) )
   (rewrite 'call-with-current-continuation 8 rewrite-call/cc)
   (rewrite 'call/cc 8 rewrite-call/cc) )
@@ -1117,11 +1137,15 @@
 		 (and (intrinsic? sym)
 		      (and-let* ((a (assq sym setter-map)))
 			(make-node
-			 '##core#call '(#t)
+			 '##core#call (list #t)
 			 (list cont (varnode (cdr a))) ) ) ) ) ) ) ) ) )
 			       
-(rewrite 'void 3 '##sys#undefined-value)
-(rewrite '##sys#void 3 '##sys#undefined-value)
+(rewrite 'void 3 '##sys#undefined-value 0)
+(rewrite '##sys#void 3 '##sys#undefined-value #f)
+(rewrite 'current-thread 3 '##sys#current-thread 0)
+(rewrite 'current-input-port 3 '##sys#standard-input 0)
+(rewrite 'current-output-port 3 '##sys#standard-output 0)
+(rewrite 'current-error-port 3 '##sys#standard-error 0)
 
 (rewrite
  'any? 8
@@ -1129,7 +1153,7 @@
    (and (= 1 (length callargs))
 	(let ((arg (car callargs)))
 	  (make-node
-	   '##core#call '(#t) 
+	   '##core#call (list #t) 
 	   (list cont
 		 (if (and (eq? '##core#variable (node-class arg))
 			  (not (get db (car (node-parameters arg)) 'global)) )
@@ -1143,7 +1167,7 @@
  (lambda (db classargs cont callargs)
    (and (= 2 (length callargs))
 	(make-node
-	 '##core#call '(#t)
+	 '##core#call (list #t)
 	 (list cont
 	       (make-node
 		'##core#inline 
@@ -1160,3 +1184,36 @@
 
 (rewrite 'get-keyword 7 2 "C_i_get_keyword" #f #t)
 (rewrite '##sys#get-keyword 7 2 "C_i_get_keyword" #f #t)
+
+(rewrite 
+ 'alist-cons 8
+ (lambda (db classargs cont callargs)
+   (and (= 3 (length callargs))
+	(make-node
+	 '##core#call (list #t)
+	 (list cont
+	       (make-node
+		'##core#inline_allocate
+		'("C_a_i_cons" 3) 
+		(list (make-node
+		       '##core#inline_allocate
+		       '("C_a_i_cons" 3)
+		       (list (first callargs) (second callargs)))
+		      (third callargs))))))))
+
+(rewrite 
+ 'xcons 8
+ (lambda (db classargs cont callargs)
+   (and (= 2 (length callargs))
+	(let ((tmp (gensym)))
+	  (make-node 
+	   'let (list tmp)		; preserve order of argument evaluation
+	   (list
+	    (first callargs)
+	    (make-node
+	     '##core#call (list #t)
+	     (list cont
+		   (make-node
+		    '##core#inline_allocate
+		    '("C_a_i_cons" 3) 
+		    (list (varnode tmp) (second callargs)))))))))))

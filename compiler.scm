@@ -62,7 +62,6 @@
 ; (no-procedure-checks)
 ; (no-procedure-checks-for-usual-bindings)
 ; (no-procedure-checks-for-toplevel-bindings)
-; (post-process <string> ...)
 ; (profile <symbol> ...)
 ; (safe-globals)
 ; (separate)
@@ -71,6 +70,9 @@
 ; (unsafe)
 ; (unused <symbol> ...)
 ; (uses {<unitname>})
+; (strict-types)
+; (specialize)
+; (enforce-argument-types [<symbol> ...])
 ;
 ;   <type> = fixnum | generic
 
@@ -141,6 +143,7 @@
 ; (##core#let-compiler-syntax ((<symbol> <expr>) ...) <expr> ...)
 ; (##core#module <symbol> #t | (<name> | (<name> ...) ...) <body>)
 ; (##core#let-module-alias ((<alias> <name>) ...) <body>)
+; (##core#the <type> <exp>)
 ; (<exp> {<exp>})
 
 ; - Core language:
@@ -167,6 +170,7 @@
 ; [##core#return <exp>]
 ; [##core#direct_call {<safe-flag> <debug-info> <call-id> <words>} <exp-f> <exp>...]
 ; [##core#direct_lambda {<id> <mode> (<variable>... [. <variable>]) <size>} <exp>]
+; [##core#the {<type>} <exp>]
 
 ; - Closure converted/prepared language:
 ;
@@ -175,7 +179,7 @@
 ; [##core#bind {<count>} <exp-v>... <exp>]
 ; [##core#let_unboxed {<name> <utype>} <exp1> <exp2>]
 ; [##core#undefined {}]
-; [##core#unboxed_ref {<name> <utype>}]
+; [##core#unboxed_ref {<name> [<utype>]}]
 ; [##core#unboxed_set! {<name> <utype>} <exp>]
 ; [##core#inline {<op>} <exp>...]
 ; [##core#inline_allocate {<op <words>} <exp>...]
@@ -328,11 +332,11 @@
 (define standalone-executable #t)
 (define local-definitions #f)
 (define inline-locally #f)
-(define inline-output-file #f)
-(define do-scrutinize #f)
 (define enable-inline-files #f)
 (define compiler-syntax-enabled #t)
 (define bootstrap-mode #f)
+(define strict-variable-types #f)
+(define enable-specialization #f)
 
 
 ;;; These are here so that the backend can access them:
@@ -540,6 +544,11 @@
 			 (if unsafe
 			     ''#t
 			     (walk (cadr x) e se dest ldest h) ) )
+
+			((##core#the)
+			 `(##core#the
+			   ,(cadr x)
+			   ,(walk (caddr x) e se dest ldest h)))
 
 			((##core#immutable)
 			 (let ((c (cadadr x)))
@@ -1268,24 +1277,17 @@
    '() (##sys#current-environment) #f #f #f) ) )
 
 
-(define (process-declaration spec se)	; se unused in the moment
+(define (process-declaration spec se)
   (define (check-decl spec minlen . maxlen)
     (let ([n (length (cdr spec))])
       (if (or (< n minlen) (> n (optional maxlen 99999)))
 	  (syntax-error "invalid declaration" spec) ) ) )  
   (define (stripa x)			; global aliasing
-    (globalize x))
+    (##sys#globalize x se))
   (define (strip x)			; raw symbol
     (##sys#strip-syntax x))
   (define stripu ##sys#strip-syntax)
-  (define (globalize sym)
-    (if (symbol? sym)
-	(let loop ((se se))			; ignores syntax bindings
-	  (cond ((null? se) (strip (##sys#alias-global-hook sym #f #f))) ;XXX could hint at decl (3rd arg)
-		((and (eq? sym (caar se)) (symbol? (cdar se))) (cdar se))
-		(else (loop (cdr se)))))
-	sym))
-  (define (globalize-all syms) (map globalize syms))
+  (define (globalize-all syms) (map (cut ##sys#globalize <> se) syms))
   (call-with-current-continuation
    (lambda (return)
      (unless (pair? spec)
@@ -1363,6 +1365,10 @@
        ((keep-shadowed-macros) (set! undefine-shadowed-macros #f))
        ((unused)
 	(for-each (cut mark-variable <> '##compiler#unused) (globalize-all (cdr spec))))
+       ((enforce-argument-types)
+	(for-each
+	 (cut mark-variable <> '##compiler#enforce)
+	 (globalize-all (cdr spec))))
        ((not)
 	(check-decl spec 1)
 	(case (##sys#strip-syntax (second spec)) ; strip all
@@ -1479,13 +1485,53 @@
        ((type)
 	(for-each
 	 (lambda (spec)
+	   (if (not (and (list? spec)
+			 (>= (length spec) 2)
+			 (symbol? (car spec))))
+	       (warning "illegal type declaration" (##sys#strip-syntax spec))
+	       (let ((name (##sys#globalize (car spec) se))
+		     (type (##sys#strip-syntax (cadr spec))))
+		 (let-values (((type pred) (validate-type type name)))
+		   (cond (type
+			  ;; HACK: since `:' doesn't have access to the SE, we
+			  ;; fixup the procedure name if type is a named procedure type
+			  ;; (We only have access to the SE for ##sys#globalize in here).
+			  ;; Quite terrible.
+			  (when (and (pair? type) 
+				     (eq? 'procedure (car type)) 
+				     (symbol? (cadr type)))
+			    (set-car! (cdr type) name))
+			  (mark-variable name '##compiler#type type)
+			  (mark-variable name '##compiler#declared-type)
+			  (when pred
+			    (mark-variable name '##compiler#predicate pred))
+			  (when (pair? (cddr spec))
+			    (mark-variable
+			     name '##compiler#specializations
+			     (##sys#strip-syntax (cddr spec)))))
+			 (else
+			  (warning 
+			   "illegal `type' declaration"
+			   (##sys#strip-syntax spec))))))))
+	 (cdr spec)))
+       ((predicate)
+	(for-each
+	 (lambda (spec)
 	   (cond ((and (list? spec) (symbol? (car spec)) (= 2 (length spec)))
-		  (##sys#put! (car spec) '##core#type (cadr spec))
-		  (##sys#put! (car spec) '##core#declared-type #t))
+		  (let ((name (##sys#globalize (car spec) se))
+			(type (##sys#strip-syntax (cadr spec))))
+		    (let-values (((type pred) (validate-type type name)))
+		      (if (and type (not pred))
+			  (mark-variable name '##compiler#predicate type)
+			  (warning "illegal `predicate' declaration" spec)))))
 		 (else
 		  (warning "illegal `type' declaration item" spec))))
 	 (globalize-all (cdr spec))))
-       (else (warning "illegal declaration specifier" spec)) )
+       ((specialize)
+	(set! enable-specialization #t))
+       ((strict-types)
+	(set! strict-variable-types #t))
+       (else (warning "unknown declaration specifier" spec)) )
      '(##core#undefined) ) ) )
 
 
@@ -1592,7 +1638,7 @@
 	  '##core#lambda (list id #t (cons t1 llist) 0)
 	  (list (walk (car subs)
 		      (lambda (r) 
-			(make-node '##core#call '(#t) (list (varnode t1) r)) ) ) ) ) ) ) )
+			(make-node '##core#call (list #t) (list (varnode t1) r)) ) ) ) ) ) ) )
   
   (define (walk n k)
     (let ((subs (node-subexpressions n))
@@ -1602,7 +1648,7 @@
 	((##core#variable quote ##core#undefined ##core#primitive) (k n))
 	((if) (let* ((t1 (gensym 'k))
 		     (t2 (gensym 'r))
-		     (k1 (lambda (r) (make-node '##core#call '(#t) (list (varnode t1) r)))) )
+		     (k1 (lambda (r) (make-node '##core#call (list #t) (list (varnode t1) r)))) )
 		(make-node 
 		 'let
 		 (list t1)
@@ -1643,6 +1689,9 @@
 	 (walk-inline-call class params subs k) )
 	((##core#call) (walk-call (car subs) (cdr subs) params k))
 	((##core#callunit) (walk-call-unit (first params) k))
+	((##core#the)
+	 ;; remove "the" nodes, as they are not used after scrutiny
+	 (walk (car subs) k))
 	(else (bomb "bad node (cps)")) ) ) )
   
   (define (walk-call fn args params k)
@@ -1692,8 +1741,9 @@
   (define (atomic? n)
     (let ((class (node-class n)))
       (or (memq class '(quote ##core#variable ##core#undefined))
-	  (and (memq class '(##core#inline ##core#inline_allocate ##core#inline_ref ##core#inline_update
-					   ##core#inline_loc_ref ##core#inline_loc_update))
+	  (and (memq class '(##core#inline_allocate
+			     ##core#inline_ref ##core#inline_update
+			     ##core#inline_loc_ref ##core#inline_loc_update))
 	       (every atomic? (node-subexpressions n)) ) ) ) )
   
   (walk node values) )

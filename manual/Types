@@ -1,0 +1,221 @@
+[[tags: manual]]
+[[toc:]]
+
+
+=== Types
+
+A dynamically typed language like Scheme does not restrict the type of
+values bound or assigned to variables to be constant troughout the
+run-time of a program. This provides a lot of flexibility and makes it
+easy to get code up and running quickly, but can make maintenance of
+larger code bases more difficult as the implicit assignment of types
+to variables done by the programmer has to be "recovered" when the
+code is inspected or debugged again. Statically typed languages
+enforce distinct types for all variables, optionally providing
+type-inference to compute types without requiring the user to specify
+explicit type declarations in many cases.
+
+If the compiler has some knowledge of the types of local or global
+variables then it can help in catching type-related errors like
+passing a value of the wrong type to a user-defined or built-in
+procedure. Type-information also can be used to generate more
+efficient code by omitting unnecessary type-checks.
+
+CHICKEN provides an intra-procedural flow-analysis pass and two
+compiler options for using type-information in this manner:
+
+{{-scrutinize}} will look for possibly incorrectly typed arguments to
+library procedure calls and generate warnings in such cases.
+
+{{-specialize}} will replace certain generic library procedure calls
+with faster type-specific operations.
+
+{{-strict-types}} makes type-analysis more optimistic and gives
+more opportunities for specialization, but may result in unsafe
+code if type-declarations are violated.
+
+Note that the interpreter will always ignore type-declarations
+and will not perform any flow-analysis of interpreted code.
+
+
+==== Declaring types
+
+Type information for all core library units is available by default.
+User-defined global variables can be declared to have a type using
+the {{(declare (type ...))}} or {{:}} syntax.
+
+
+===== :
+
+<syntax>(: IDENTIFIER TYPE)</syntax>
+
+Declares that the global variable {{IDENTIFIER}} is of the given type.
+
+
+===== the
+
+<syntax>(the TYPE EXPRESSION)</syntax>
+
+Equivalent to {{EXPRESSION}}, but declares that the result will be of the
+given type. Note that this form always declares the type of a single result,
+{{the}} can not be used to declare types for multiple result values. {{TYPE}}
+should be a subtype of the type inferred for {{EXPRESSION}}, the compiler
+will issue a warning if this should not be the case.
+
+
+===== assume
+
+<syntax>(assume ((VARIABLE TYPE) ...) BODY ...)</syntax>
+
+Declares that at the start of execution of {{BODY ..}}, the variables will
+be of the given types. This is equivalent to
+
+<enscript hightlight=scheme>
+(let ((VARIABLE (the TYPE VARIABLE)) ...) 
+  BODY ...)
+</enscript>
+
+
+==== Type syntax
+
+Types declared with the {{type}} declaration (see [[Declarations]])
+or {{:}} should follow the syntax given below:
+
+<table>
+<tr><th>TYPE</th><th>meaning</th></tr>
+<tr><td>{{*}}</td><td>any value</td></tr>
+<tr><td>{{deprecated}}</td><td>any use of this variable will generate a warning</td></tr>
+<tr><td>VALUETYPE</td><td></td></tr>
+</table>
+
+<table>  
+<tr><th>VALUETYPE</th><th>meaning</th></tr>
+<tr><td>{{(or VALUETYPE ...)}}</td><td>"union" or "sum" type</td></tr>
+<tr><td>{{(struct STRUCTURENAME)}}</td><td>record structure of given kind</td></tr>
+<tr><td>{{(procedure [NAME] (VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]]) . RESULTS)}}</td><td>procedure type, optionally with name</td></tr>
+<tr><td>{{(VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]] -> . RESULTS)}}</td><td>alternative procedure type syntax</td></tr>
+<tr><td>{{(VALUETYPE -> VALUETYPE : VALUETYPE)}}</td><td>predicate procedure type</td></tr>
+<tr><td>BASICTYPE</td><td></td></tr>
+</table>
+
+<table>
+<tr><th>BASICTYPE</th><th>meaning</th></tr>
+<tr><td>{{*}}</td><td>any value</td></tr>
+<tr><td>{{string}}</td><td>string</td></tr>
+<tr><td>{{symbol}}</td><td>symbol</td></tr>
+<tr><td>{{char}}</td><td>character</td></tr>
+<tr><td>{{boolean}}</td><td>boolean</td></tr>
+<tr><td>{{list}}</td><td>null or pair</td></tr>
+<tr><td>{{pair}}</td><td>pair</td></tr>
+<tr><td>{{null}}</td><td>empty list</td></tr>
+<tr><td>{{procedure}}</td><td>unspecific procedure</td></tr>
+<tr><td>{{vector}}</td><td>vector</td></tr>
+<tr><td>{{eof}}</td><td>end-of-file object</td></tr>
+<tr><td>{{port}}</td><td>input- or output-port</td></tr>
+<tr><td>{{blob}}</td><td>byte vector</td></tr>
+<tr><td>{{pointer}}</td><td>native pointer</td></tr>
+<tr><td>{{pointer-vector}}</td><td>vector or native pointers</td></tr>
+<tr><td>{{locative}}</td><td>locative object</td></tr>
+<tr><td>{{fixnum}}</td><td>word-sized integer</td></tr>
+<tr><td>{{float}}</td><td>floating-point number</td></tr>
+<tr><td>{{number}}</td><td>fixnum or float</td></tr>
+</table>
+
+<table>  
+<tr><th>RESULTS</th><th>meaning</th></tr>
+<tr><td>{{*}}</td><td>any number of unspecific results</td></tr>
+<tr><td>{{(RESULTTYPE ...)}}</td><td>specific number of results with given types</td></tr>
+</table>
+  
+<table>  
+<tr><th>RESULTTYPE</th><th>meaning</th></tr>
+<tr><td>{{undefined}}</td><td>a single undefined result</td></tr>
+<tr><td>{{noreturn}}</td><td>procedure does not return normally</td></tr>
+<tr><td>VALUETYPE</td><td></td></tr>
+</table>
+
+
+==== Predicates
+
+Procedure-types of the form {{(DOM -> RNG : TYPE)}} specify that the declared
+procedure will be a predicate, i.e. it accepts a single argument of type
+{{DOM}}, returns a result of type {{RNG}} (usually a boolean) and returns
+a true value if the argument is of type {{TYPE}} and false otherwise.
+
+
+==== Using type information in extensions
+
+Type information of declared toplevel variables can be used in client
+code that refers to the definitions in a compiled file. The following
+compiler options allow saving type-declarations to a file and consulting
+the type declarations retained in this manner:
+
+{{-emit-type-file FILENAME}} writes the type-information for all declared
+definitions in an internal format to {{FILENAME}}.
+
+{{-types FILENAME}} loads and registers the type-information in
+{{FILENAME}} which should be a file generated though a previous use of
+{{-emit-type-file}}.
+
+If library code is used with {{require-extension}} or {{(declare (unit
+...))}}  and a {{.types}} file of the same name exists in the
+extension repository path, then it is automatically consulted. This
+allows code using these libraries to take advantage of type-information
+for library definitions.
+
+Note that procedure-definitions in dynamically loaded code that was
+compiled with {{-strict-types}} will not check the types of their
+arguments which will result in unsafe code. Invoking such procedures
+with incorrectly typed arguments will result in undefined program
+behaviour.
+
+
+==== Optimizations done by specialization
+
+If argument types are known, then calls to known library procedures
+are replaced with non-checking variants (if available). Additionally,
+procedure checks can be omitted in cases where the value in operator
+position of a procedure call is known to be a procedure. Performance
+results will vary greatly depending on the nature of the compiled
+code. In general, specialization will not make code that is compiled
+in unsafe mode any faster: compilation in unsafe mode will omit most
+type checks anyway. But specialization can often improve the
+performance of code compiled in safe (default) mode.
+
+Specializations can also be defined by the user:
+
+===== define-specialization
+
+<syntax>(define-specialization (NAME ARGUMENT ...) [RESULTS] BODY)</syntax>
+
+{{NAME}} should have a declared type (for example by using {{:}})
+(this is currently not checked).  Declares the calls to the globally
+defined procedure {{NAME}} with arguments matching the types given in
+{{ARGUMENTS}} should be replaced by {{BODY}} (a single expression). If
+given, {{RESULTS}} (which follows the syntax given above under "Type
+Syntax") narrows the result type(s) if it differs from the result
+types previously declared for {{NAME}}.  {{ARGUMENT}} should be an
+identifier naming the formal parameter or a list of the form
+{{(IDENTIFIER TYPE)}}. In the former case, this argument specializes
+on the {{*}} type. User-defined specializations are always local to
+the compilation unit in which they occur and can not be exported. When
+encountered in the interpreter, {{define-specialization}} does nothing
+and returns an unspecified result.
+
+Note that the exact order of specialization application is not
+specified and nested specializations may result in not narrowing down
+the result types to the most specific type, due to the way the
+flow-analysis is implemented. It is recommended to not define "chains"
+of specializations where one variant of a procedure call is
+specialized to another one that is intended to specialize further.
+
+There is currently no way of ensuring specializations take place.  You
+can use the {{-debug o}} compiler options to see the total number of
+specializations performed on a particular named function call during
+compilation.
+
+
+---
+Previous: [[Modules]]
+
+Next: [[Declarations]]

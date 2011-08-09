@@ -614,9 +614,9 @@ EOF
 
 ;;; Subvectors:
 
-(declare (hide subvector))
+(declare (hide subnvector))
 
-(define (subvector v t es from to loc)
+(define (subnvector v t es from to loc)
   (##sys#check-structure v t loc)
   (let* ([bv (##sys#slot v 1)]
 	 [len (##sys#size bv)]
@@ -630,14 +630,14 @@ EOF
 	(##core#inline "C_copy_subvector" bv2 bv 0 (fx* from es) size2)
 	v) ) ) )
 
-(define (subu8vector v from to) (subvector v 'u8vector 1 from to 'subu8vector))
-(define (subu16vector v from to) (subvector v 'u16vector 2 from to 'subu16vector))
-(define (subu32vector v from to) (subvector v 'u32vector 4 from to 'subu32vector))
-(define (subs8vector v from to) (subvector v 's8vector 1 from to 'subs8vector))
-(define (subs16vector v from to) (subvector v 's16vector 2 from to 'subs16vector))
-(define (subs32vector v from to) (subvector v 's32vector 4 from to 'subs32vector))
-(define (subf32vector v from to) (subvector v 'f32vector 4 from to 'subf32vector))
-(define (subf64vector v from to) (subvector v 'f64vector 8 from to 'subf64vector))
+(define (subu8vector v from to) (subnvector v 'u8vector 1 from to 'subu8vector))
+(define (subu16vector v from to) (subnvector v 'u16vector 2 from to 'subu16vector))
+(define (subu32vector v from to) (subnvector v 'u32vector 4 from to 'subu32vector))
+(define (subs8vector v from to) (subnvector v 's8vector 1 from to 'subs8vector))
+(define (subs16vector v from to) (subnvector v 's16vector 2 from to 'subs16vector))
+(define (subs32vector v from to) (subnvector v 's32vector 4 from to 'subs32vector))
+(define (subf32vector v from to) (subnvector v 'f32vector 4 from to 'subf32vector))
+(define (subf64vector v from to) (subnvector v 'f64vector 8 from to 'subf64vector))
 
 (define (write-u8vector v #!optional (port ##sys#standard-output) (from 0)
 			(to (u8vector-length v)))

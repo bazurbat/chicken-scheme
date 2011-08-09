@@ -2,7 +2,7 @@
 Warning: at toplevel:
   use of deprecated library procedure `current-environment'
 
-Warning: in local procedure `c',
+Note: in local procedure `c',
   in local procedure `b',
   in toplevel procedure `a':
   expected value of type boolean in conditional but were given a value of
@@ -13,13 +13,13 @@ type `number' which is always true:
 Warning: in toplevel procedure `foo':
   branches in conditional expression differ in the number of results:
 
-(if x5 (values '1 '2) (values '1 '2 (+ ...)))
+(if x5 (values '1 '2) (values '1 '2 (+ (+ ...))))
 
 Warning: at toplevel:
-  scrutiny-tests.scm:18: in procedure call to `bar6', expected argument #2 of type `number', but where given an argument of type `symbol'
+  scrutiny-tests.scm:18: in procedure call to `bar6', expected argument #2 of type `number', but was given an argument of type `symbol'
 
 Warning: at toplevel:
-  scrutiny-tests.scm:20: in procedure call to `pp', expected 1 argument, but where given 0 arguments
+  scrutiny-tests.scm:20: in procedure call to `pp', expected 1 argument, but was given 0 arguments
 
 Warning: at toplevel:
   expected in argument #1 of procedure call `(print (cpu-time))' a single result, but were given 2 results
@@ -28,13 +28,13 @@ Warning: at toplevel:
   expected in argument #1 of procedure call `(print (values))' a single result, but were given zero results
 
 Warning: at toplevel:
-  scrutiny-tests.scm:26: in procedure call to `x7', expected a value of type `(procedure () *)', but were given a value of type `fixnum'
+  scrutiny-tests.scm:26: in procedure call to `x7', expected a value of type `(procedure () *)', but was given a value of type `fixnum'
 
 Warning: at toplevel:
-  scrutiny-tests.scm:28: in procedure call to `+', expected argument #1 of type `number', but where given an argument of type `symbol'
+  scrutiny-tests.scm:28: in procedure call to `+', expected argument #1 of type `number', but was given an argument of type `symbol'
 
 Warning: at toplevel:
-  scrutiny-tests.scm:28: in procedure call to `+', expected argument #2 of type `number', but where given an argument of type `symbol'
+  scrutiny-tests.scm:28: in procedure call to `+', expected argument #2 of type `number', but was given an argument of type `symbol'
 
 Warning: at toplevel:
   assignment of value of type `fixnum' to toplevel variable `car' does not match declared type `(procedure car (pair) *)'
@@ -43,6 +43,42 @@ Warning: at toplevel:
   expected in `let' binding of `g8' a single result, but were given 2 results
 
 Warning: at toplevel:
-  g89: in procedure call to `g89', expected a value of type `(procedure () *)', but were given a value of type `fixnum'
+  in procedure call to `g89', expected a value of type `(procedure () *)', but was given a value of type `fixnum'
+
+Warning: in toplevel procedure `foo2':
+  scrutiny-tests.scm:57: in procedure call to `string-append', expected argument #1 of type `string', but was given an argument of type `number'
+
+Warning: at toplevel:
+  scrutiny-tests.scm:65: in procedure call to `foo3', expected argument #1 of type `string', but was given an argument of type `fixnum'
+
+Warning: in toplevel procedure `foo4':
+  scrutiny-tests.scm:70: in procedure call to `+', expected argument #1 of type `number', but was given an argument of type `string'
+
+Warning: in toplevel procedure `foo5':
+  scrutiny-tests.scm:76: in procedure call to `+', expected argument #1 of type `number', but was given an argument of type `string'
+
+Warning: in toplevel procedure `foo6':
+  scrutiny-tests.scm:82: in procedure call to `+', expected argument #1 of type `number', but was given an argument of type `string'
+
+Warning: in toplevel procedure `foo9':
+  scrutiny-tests.scm:97: in procedure call to `+', expected argument #1 of type `number', but was given an argument of type `string'
+
+Note: in toplevel procedure `foo10':
+  expression returns a result of type `string', but is declared to return `pair', which is not a subtype
+
+Warning: in toplevel procedure `foo10':
+  scrutiny-tests.scm:101: in procedure call to `string-append', expected argument #1 of type `string', but was given an argument of type `pair'
+
+Warning: in toplevel procedure `foo10':
+  expression returns 2 values but is declared to have a single result
+
+Note: in toplevel procedure `foo10':
+  expression returns a result of type `fixnum', but is declared to return `*', which is not a subtype
+
+Warning: in toplevel procedure `foo10':
+  expression returns zero values but is declared to have a single result of type `*'
+
+Warning: in toplevel procedure `foo10':
+  scrutiny-tests.scm:104: in procedure call to `*', expected argument #1 of type `number', but was given an argument of type `string'
 
 Warning: redefinition of standard binding: car

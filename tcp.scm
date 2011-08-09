@@ -644,15 +644,17 @@ EOF
 (define (tcp-port-numbers p)
   (##sys#check-port* p 'tcp-port-numbers)
   (let ((fd (##sys#tcp-port->fileno p)))
-    (values
-     (or (##net#getsockport fd)
-	 (##sys#signal-hook 
-	  #:network-error 'tcp-port-numbers
-	  (##sys#string-append "cannot compute local port - " strerror) p) )
-     (or (##net#getpeerport fd)
-	 (##sys#signal-hook
-	  #:network-error 'tcp-port-numbers
-	  (##sys#string-append "cannot compute remote port - " strerror) p) ) ) ) )
+    (let ((sp (##net#getsockport fd))
+	  (pp (##net#getpeerport fd)))
+      (when (eq? -1 sp)
+	(##sys#signal-hook 
+	 #:network-error 'tcp-port-numbers
+	 (##sys#string-append "cannot compute local port - " strerror) p))
+      (when (eq? -1 pp)
+	(##sys#signal-hook
+	 #:network-error 'tcp-port-numbers
+	 (##sys#string-append "cannot compute remote port - " strerror) p) )
+      (values sp pp))))
 
 (define (tcp-listener-port tcpl)
   (##sys#check-structure tcpl 'tcp-listener 'tcp-listener-port)

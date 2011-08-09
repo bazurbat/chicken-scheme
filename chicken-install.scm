@@ -539,12 +539,11 @@
 	(pp dag)
 	(for-each
 	 (lambda (e+d+v i)
-	   (let ((isdep (not (find (lambda (e)
-				     (equal? (if (pair? e) (car e) e) (car e+d+v)))
-				   eggs))))
-	     (when (and (not depinstall-ok)
-			isdep
-			(= i num))
+	   (let ((isdep (and (pair? eggs)
+			     (not (find (lambda (e)
+					  (equal? (if (pair? e) (car e) e) (car e+d+v)))
+					eggs)))))
+	     (when (and (not depinstall-ok) isdep)
 	       (when (and *no-install*
 			   (not (yes-or-no?
 				 (string-append

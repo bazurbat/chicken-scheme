@@ -1511,6 +1511,16 @@ void barf(int code, char *loc, ...)
     c = 1;
     break;
 
+  case C_BAD_ARGUMENT_TYPE_NO_BOOLEAN_ERROR:
+    msg = C_text("bad argument type - not a boolean");
+    c = 1;
+    break;
+
+  case C_BAD_ARGUMENT_TYPE_NO_LOCATIVE_ERROR:
+    msg = C_text("bad argument type - not a locative");
+    c = 1;
+    break;
+
   case C_BAD_ARGUMENT_TYPE_NO_LIST_ERROR:
     msg = C_text("bad argument type - not a list");
     c = 1;
@@ -2208,6 +2218,12 @@ void C_unbound_error(C_word sym)
 void C_no_closure_error(C_word x)
 {
   barf(C_NOT_A_CLOSURE_ERROR, NULL, x);
+}
+
+
+void C_div_by_zero_error(char *loc)
+{
+  barf(C_DIVISION_BY_ZERO_ERROR, loc);
 }
 
 
@@ -5282,30 +5298,6 @@ C_regparm C_word C_fcall C_a_i_sqrt(C_word **a, int c, C_word n)
 }
 
 
-/* I */
-C_regparm C_word C_fcall C_i_fixnum_arithmetic_shift(C_word n, C_word c)
-{
-  if(C_unfix(c) < 0) return C_fixnum_shift_right(n, C_u_fixnum_negate(c));
-  else return C_fixnum_shift_left(n, c);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_fixnum_divide(C_word x, C_word y)
-{
-  if(y == C_fix(0)) barf(C_DIVISION_BY_ZERO_ERROR, "fx/");
-  else return C_u_fixnum_divide(x, y);
-}
-
-
-/* I */
-C_regparm C_word C_fcall C_fixnum_modulo(C_word x, C_word y)
-{
-  if(y == C_fix(0)) barf(C_DIVISION_BY_ZERO_ERROR, "fxmod");
-  else return C_u_fixnum_modulo(x, y);
-}
-
-
 C_regparm C_word C_fcall C_i_assq(C_word x, C_word lst)
 {
   C_word a;
@@ -5519,6 +5511,28 @@ C_regparm C_word C_fcall C_i_check_pair_2(C_word x, C_word loc)
 }
 
 
+C_regparm C_word C_fcall C_i_check_boolean_2(C_word x, C_word loc)
+{
+  if((x & C_IMMEDIATE_TYPE_BITS) != C_BOOLEAN_BITS) {
+    error_location = loc;
+    barf(C_BAD_ARGUMENT_TYPE_NO_BOOLEAN_ERROR, NULL, x);
+  }
+
+  return C_SCHEME_UNDEFINED;
+}
+
+
+C_regparm C_word C_fcall C_i_check_locative_2(C_word x, C_word loc)
+{
+  if(C_immediatep(x) || C_block_header(x) != C_LOCATIVE_TAG) {
+    error_location = loc;
+    barf(C_BAD_ARGUMENT_TYPE_NO_LOCATIVE_ERROR, NULL, x);
+  }
+
+  return C_SCHEME_UNDEFINED;
+}
+
+
 C_regparm C_word C_fcall C_i_check_symbol_2(C_word x, C_word loc)
 {
   if(C_immediatep(x) || C_block_header(x) != C_SYMBOL_TAG) {
@@ -5541,6 +5555,7 @@ C_regparm C_word C_fcall C_i_check_list_2(C_word x, C_word loc)
 }
 
 
+/*XXX these are not correctly named */
 C_regparm C_word C_fcall C_i_foreign_char_argumentp(C_word x)
 {
   if((x & C_IMMEDIATE_TYPE_BITS) != C_CHARACTER_BITS)
@@ -7531,6 +7546,25 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
   a = C_alloc((C_bytestowords(radix) + 1));
   radix = C_string(&a, radix, p);
   C_kontinue(k, radix);
+}
+
+
+/* special case for fixnum arg and decimal radix */
+void C_ccall 
+C_fixnum_to_string(C_word c, C_word self, C_word k, C_word num)
+{
+  C_word *a, s;
+  int n;
+
+#ifdef C_SIXTY_FOUR
+  C_sprintf(buffer, C_text("%ld"), C_unfix(num));
+#else
+  C_sprintf(buffer, C_text("%d"), C_unfix(num));
+#endif
+  n = C_strlen(buffer);
+  a = C_alloc(C_bytestowords(n) + 1);
+  s = C_string2(&a, buffer);
+  C_kontinue(k, s);
 }
 
 

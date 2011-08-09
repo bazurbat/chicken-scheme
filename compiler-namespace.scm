@@ -97,7 +97,6 @@
  display-analysis-database
  display-line-number-database
  display-real-name-table
- do-scrutinize
  dump-defined-globals
  dump-global-refs
  dump-nodes
@@ -108,7 +107,9 @@
  emit-profile
  emit-syntax-trace-info
  emit-trace-info
+ emit-type-file
  enable-inline-files
+ enable-specialization
  encode-literal
  eq-inline-operator
  error-is-extended-binding
@@ -147,6 +148,7 @@
  foreign-lambda-stubs
  foreign-result-conversion
  foreign-string-result-reserve
+ foreign-type->scrutiny-type
  foreign-type-check
  foreign-type-convert-argument
  foreign-type-convert-result
@@ -175,7 +177,6 @@
  inline-lambda-bindings
  inline-locally
  inline-max-size
- inline-output-file
  inline-substitutions-enabled
  inline-table
  inline-table-used
@@ -199,6 +200,7 @@
  make-variable-list
  mark-variable
  match-node
+ match-specialization
  membership-test-operators
  membership-unfold-limit
  no-argc-checks
@@ -224,6 +226,7 @@
  postponed-initforms
  pprint-expressions-to-file
  prepare-for-code-generation
+ print-debug-options
  print-program-statistics
  print-usage
  print-version
@@ -258,11 +261,14 @@
  simplifications
  simplified-ops
  simplify-named-call
+ simplify-type
  sort-symbols
  source-filename
  source-info->string
  source-info->line
+ specialize-node!
  standalone-executable
+ strict-variable-types
  string->c-identifier
  string->expr
  stringify
@@ -289,6 +295,7 @@
  valid-c-identifier?
  valid-compiler-options
  valid-compiler-options-with-argument
+ validate-type
  variable-mark
  variable-visible?
  varnode

@@ -53,7 +53,7 @@ collection or internal data type dispatching.
 
 ; C_GC_FORWARDING_BIT : Flag used for forwarding garbage collected object pointers.
 
-; C_BYTEBLOCK_BIT : Flag that specifies whether this data object contains raw bytes (a string or byte-vector) or pointers to other data objects.
+; C_BYTEBLOCK_BIT : Flag that specifies whether this data object contains raw bytes (a string or blob) or pointers to other data objects.
 
 ; C_SPECIALBLOCK_BIT : Flag that specifies whether this object contains a ''special'' non-object pointer value in its first slot. An example for this kind of objects are closures, which are a vector-type object with the code-pointer as the first item.
 
@@ -93,8 +93,11 @@ contain housekeeping data used for this port.
 specifies the kind of structure this record is an instance of. The other
 slots contain the actual record items.
 
-'''pointers''': special vector objects with type bits
-{{C_POINTER_TYPE}}, currently 1001. The single slot contains a machine pointer.
+'''blob''': a raw sequence of bytes with type bits {{C_BYTEVECTOR_TYPE}}.
+
+'''pointer-vectors''': vector objects of native pointers - these are
+actually structures where the first slot holds a blob containing the 32- or 64-bit
+pointer values.
 
 '''locatives''': special vector objects with type bits
 {{C_LOCATIVE_TYPE}}, currently 1010.  A locative object holds 4 slots:
@@ -105,18 +108,19 @@ object slot that holds a pointer to Scheme data) and a flag indicating
 whether this locative is "weak". If the locative is non-weak, slot #4 holds
 a pointer to the object referred to.
 
+'''pointers''': special vector objects with type bits
+{{C_POINTER_TYPE}}, currently 1001. The single slot contains a machine pointer.
+
 '''tagged pointers''': special vector objects with type bits 
 {{C_TAGGED_POINTER_TYPE}}, currently 1011, Tagged pointers are similar to pointers,
 but the object contains an additional
 slot with a tag (an arbitrary data object) that identifies the type
 of the pointer.
 
-'''SWIG pointers''': special vector objects with type bits {{C_SWIG_POINTER_TYPE}}, currently
-1100.
-
 '''lambda infos''': byte-vector objects with type-bits {{C_LAMBDA_INFO_TYPE}}, currently 1101.
 
-'''buckets''': vector objects with type-bits {{C_BUCKET_TYPE}}, currently 1111.
+'''buckets''': vector objects with type-bits {{C_BUCKET_TYPE}}, currently 1111. These are
+only used internally for the implementation of symbol tables.
 
 The actual data follows immediately after the header. Note that
 block addresses are always aligned to the native machine-word

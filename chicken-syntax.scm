@@ -507,7 +507,7 @@
 	   (cond ((null? clauses)
 		  '(##core#undefined) )
 		 ((not (pair? clauses))
-		  (##sys#syntax-error 'select "invalid syntax" clauses))
+		  (syntax-error 'select "invalid syntax" clauses))
 		 (else
 		  (let ((clause (##sys#slot clauses 0))
 			(rclauses (##sys#slot clauses 1)) )
@@ -1099,6 +1099,28 @@
     (##core#let-compiler-syntax (binding ...) body ...))))
 
 
+;;; type-declaration syntax
+
+(##sys#extend-macro-environment
+ ': '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax ': x '(_ symbol _ . _))
+    (if (memq #:csi ##sys#features) 
+	'(##core#undefined)
+	(let* ((type1 (##sys#strip-syntax (caddr x)))
+	       (name1 (cadr x)))
+	  (let-values (((type pred)
+			(##compiler#validate-type type1 (##sys#strip-syntax name1))))
+	    (cond ((not type)
+		   (syntax-error ': "invalid type syntax" name1 type1))
+		  (else
+		   `(##core#declare 
+		     (type (,name1 ,type ,@(cdddr x)))
+		     (enforce-argument-types ,name1)
+		     ,@(if pred `((predicate (,name1 ,pred))) '()))))))))))
+
+
 ;;; interface definition
 
 (##sys#extend-macro-environment
@@ -1109,7 +1131,7 @@
     (let ((name (##sys#strip-syntax (cadr x)))
 	  (%quote (r 'quote)))
       (when (eq? '* name)
-	(##sys#syntax-error-hook
+	(syntax-error-hook
 	 'define-interface "`*' is not allowed as a name for an interface"))
       `(,(r 'begin-for-syntax)
 	(##sys#register-interface
@@ -1120,7 +1142,7 @@
 			   ((list? exps) 
 			    (##sys#validate-exports exps 'define-interface))
 			   (else
-			    (##sys#syntax-error-hook
+			    (syntax-error-hook
 			     'define-interface "invalid exports" (caddr x))))))))))))
 
 
@@ -1151,6 +1173,95 @@
 	#t
 	(import scheme chicken)
 	(begin-for-syntax ,registration))))))
+
+
+;;; inline type declaration
+
+(##sys#extend-macro-environment
+ 'the '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'the x '(_ _ _))
+    `(##core#the ,(##sys#strip-syntax (cadr x)) ,(caddr x)))))
+
+(##sys#extend-macro-environment
+ 'assume '()
+ (##sys#er-transformer
+  (syntax-rules ()
+    ((_ ((var type) ...) body ...)
+     (let ((var (##core#the type var)) ...) body ...)))))
+
+(##sys#extend-macro-environment
+ 'define-specialization '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (cond ((memq #:csi ##sys#features) '(##core#undefined))
+	  (else
+	   (##sys#check-syntax 'define-specialization x '(_ (symbol . #(_ 0)) _ . #(_ 0 1)))
+	   (let* ((head (cadr x))
+		  (name (car head))
+		  (gname (##sys#globalize name '())) ;XXX correct?
+		  (args (cdr head))
+		  (alias (gensym name))
+		  (galias (##sys#globalize alias '())) ;XXX and this?
+		  (rtypes (and (pair? (cdddr x)) (caddr x)))
+		  (%define (r 'define))
+		  (body (if rtypes (cadddr x) (caddr x))))
+	     (let loop ((args args) (anames '()) (atypes '()))
+	       (cond ((null? args)
+		      (let ((anames (reverse anames))
+			    (atypes (reverse atypes))
+			    (spec
+			     `(,galias ,@(let loop2 ((anames anames) (i 1))
+					   (if (null? anames)
+					       '()
+					       (cons (vector i)
+						     (loop2 (cdr anames) (fx+ i 1))))))))
+			(##sys#put! 
+			 gname '##compiler#local-specializations
+			 (##sys#append
+			  (list
+			   (cons atypes
+				 (if (and rtypes (pair? rtypes))
+				     (list
+				      (map (lambda (rt)
+					     (let-values (((t _) 
+							   (##compiler#validate-type rt #f)))
+					       (or t
+						   (syntax-error
+						    'define-specialization
+						    "invalid result type" t))))
+					   rtypes)
+				      spec)
+				     (list spec))))
+			  (or (##compiler#variable-mark 
+			       gname
+			       '##compiler#local-specializations)
+			      '())))
+			`(##core#begin
+			  (##core#declare (inline ,alias) (hide ,alias))
+			  (,%define (,alias ,@anames)
+				    (##core#let ,(map (lambda (an at)
+							(list an `(##core#the ,at ,an)))
+						      anames atypes)
+						,body)))))
+		     (else
+		      (let ((arg (car args)))
+			(cond ((symbol? arg)
+			       (loop (cdr args) (cons arg anames) (cons '* atypes)))
+			      ((and (list? arg) (fx= 2 (length arg)) (symbol? (car arg)))
+			       (let-values (((t _) (##compiler#validate-type (cadr arg) #f)))
+				 (if t
+				     (loop
+				      (cdr args)
+				      (cons (car arg) anames)
+				      (cons t atypes))
+				     (syntax-error
+				      'define-specialization
+				      "invalid argument type" arg head))))
+			      (else (syntax-error
+				     'define-specialization
+				     "invalid argument syntax" arg head)))))))))))))
 
 
 ;; capture current macro env

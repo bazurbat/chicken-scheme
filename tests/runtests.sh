@@ -57,12 +57,20 @@ echo "======================================== compiler tests (unboxing) ..."
 $compile compiler-tests-3.scm -unsafe -unboxing
 ./a.out
 
+echo "======================================== compiler tests (specialization) ..."
+$compile fft.scm -O2 -local -d0 -disable-interrupts -b -o fft1
+$compile fft.scm -O2 -local -specialize -debug x -d0 -disable-interrupts -b -o fft2 -specialize
+echo "normal:"
+/usr/bin/time ./fft1 1000 7
+echo "specialized:"
+/usr/bin/time ./fft2 1000 7
+
 echo "======================================== compiler inlining tests  ..."
 $compile inlining-tests.scm -optimize-level 3
 ./a.out
 
 echo "======================================== scrutiny tests ..."
-$compile scrutiny-tests.scm -scrutinize -analyze-only -ignore-repository -types ../types.db 2>scrutiny.out
+$compile scrutiny-tests.scm -scrutinize -analyze-only -ignore-repository -types ../types.db 2>scrutiny.out -verbose
 
 if test -n "$MSYSTEM"; then
     dos2unix scrutiny.out
@@ -73,7 +81,30 @@ if test \! -f scrutiny.expected; then
     cp scrutiny.out scrutiny.expected
 fi
 
-diff -bu scrutiny.out scrutiny.expected
+diff -bu scrutiny.expected scrutiny.out
+
+$compile scrutiny-tests-2.scm -scrutinize -analyze-only -ignore-repository -types ../types.db 2>scrutiny-2.out -verbose
+./a.out
+
+if test -n "$MSYSTEM"; then
+    dos2unix scrutiny.out
+fi
+
+# this is sensitive to gensym-names, so make it optional
+if test \! -f scrutiny-2.expected; then
+    cp scrutiny-2.out scrutiny-2.expected
+fi
+
+diff -bu scrutiny-2.expected scrutiny-2.out
+
+echo "======================================== specialization tests ..."
+rm -f foo.types foo.import.*
+$compile specialization-test-1.scm -emit-type-file foo.types -specialize \
+  -debug ox -emit-import-library foo
+./a.out
+$compile specialization-test-2.scm -types foo.types -specialize -debug ox
+./a.out
+rm -f foo.types foo.import.*
 
 echo "======================================== callback tests ..."
 $compile callback-tests.scm

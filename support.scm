@@ -471,9 +471,10 @@
 (define (qnode const) (make-node 'quote (list const) '()))
 
 (define (build-node-graph exp)
-  (let ([count 0])
+  (let ((count 0))
     (define (walk x)
       (cond ((symbol? x) (varnode x))
+	    ((node? x) x)
 	    ((not-pair? x) (bomb "bad expression" x))
 	    ((symbol? (car x))
 	     (case (car x)
@@ -493,11 +494,18 @@
 		      [body (caddr x)] )
 		  (if (null? bs)
 		      (walk body)
-		      (make-node 'let (unzip1 bs)
-				 (append (map (lambda (b) (walk (cadr b))) (cadr x))
-					 (list (walk body)) ) ) ) ) )
+		      (make-node
+		       'let 
+		       (map (lambda (v) 
+			      ;; for temporaries introduced by specialization
+			      (if (eq? '#:tmp v) (gensym) v)) ; OBSOLETE
+			    (unzip1 bs))
+		       (append (map (lambda (b) (walk (cadr b))) (cadr x))
+			       (list (walk body)) ) ) ) ) )
 	       ((lambda ##core#lambda) 
 		(make-node 'lambda (list (cadr x)) (list (walk (caddr x)))))
+	       ((##core#the)
+		(make-node '##core#the (list (cadr x)) (list (walk (caddr x)))))
 	       ((##core#primitive)
 		(let ([arg (cadr x)])
 		  (make-node
@@ -522,7 +530,7 @@
 					##core#inline_loc_ref ##core#inline_loc_update)
 		(make-node (first x) (second x) (map walk (cddr x))) )
 	       ((##core#app)
-		(make-node '##core#call '(#t) (map walk (cdr x))) )
+		(make-node '##core#call (list #t) (map walk (cdr x))) )
 	       (else
 		(receive (name ln) (get-line-2 x)
 		  (make-node
@@ -537,10 +545,10 @@
 				     (or rn (##sys#symbol->qualified-string name))) )
 			     (##sys#symbol->qualified-string name) ) )
 		   (map walk x) ) ) ) ) )
-	    (else (make-node '##core#call '(#f) (map walk x))) ) )
+	    (else (make-node '##core#call (list #f) (map walk x))) ) )
     (let ([exp2 (walk exp)])
       (when (positive? count)
-	(debugging 'o "eliminated procedure checks" count))
+	(debugging 'o "eliminated procedure checks" count)) ;XXX perhaps throw this out
       exp2) ) )
 
 (define (build-expression-tree node)
@@ -563,7 +571,10 @@
 		   '##core#lambda)
 	       (third params)
 	       (walk (car subs)) ) )
-	((##core#call) (map walk subs))
+	((##core#the)
+	 `(the ,(first params) ,(walk (first subs))))
+	((##core#call) 
+	 (map walk subs))
 	((##core#callunit) (cons* '##core#callunit (car params) (map walk subs)))
 	((##core#undefined) (list class))
 	((##core#bind) 
@@ -1151,6 +1162,64 @@
 	   body)])))
 
 
+;;; Translate foreign-type into scrutinizer type:
+
+(define (foreign-type->scrutiny-type t mode) ; MODE = 'arg | 'result
+  (let ((ft (final-foreign-type t)))
+    (case ft
+      ((void) 'undefined)
+      ((char unsigned-char) 'char)
+      ((int unsigned-int short unsigned-short byte unsigned-byte int32 unsigned-int32)
+       'fixnum)
+      ((float double)
+       (case mode
+	 ((arg) 'number)
+	 (else 'float)))
+      ((scheme-pointer nonnull-scheme-pointer) '*)
+      ((blob) 
+       (case mode
+	 ((arg) '(or boolean blob))
+	 (else 'blob)))
+      ((nonnull-blob) 'blob)
+      ((pointer-vector) 
+       (case mode
+	 ((arg) '(or boolean pointer-vector))
+	 (else 'pointer-vector)))
+      ((nonnull-pointer-vector) 'pointer-vector)
+      ((u8vector u16vector s8vector s16vector u32vector s32vector f32vector f64vector)
+       (case mode
+	 ((arg) `(or boolean (struct ,ft)))
+	 (else `(struct ,ft))))
+      ((nonnull-u8vector) '(struct u8vector))
+      ((nonnull-s8vector) '(struct s8vector))
+      ((nonnull-u16vector) '(struct u16vector))
+      ((nonnull-s16vector) '(struct s16vector))
+      ((nonnull-u32vector) '(struct u32vector))
+      ((nonnull-s32vector) '(struct s32vector))
+      ((nonnull-f32vector) '(struct f32vector))
+      ((nonnull-f64vector) '(struct f64vector))
+      ((integer long size_t integer32 unsigned-integer32 integer64 unsigned-integer64
+		unsigned-long) 
+       'number)
+      ((c-pointer c-string-list c-string-list*)
+       '(or boolean pointer))
+      ((nonnull-c-pointer) 'pointer)
+      ((c-string c-string* unsigned-c-string unsigned-c-string*)
+       '(or boolean string))
+      ((nonnull-c-string nonnull-c-string* nonnull-unsigned-c-string*) 'string)
+      ((symbol) 'symbol)
+      (else
+       (cond ((pair? t)
+	      (case (car t)
+		((ref pointer function c-pointer)
+		 '(or boolean pointer))
+		((const) (foreign-type->scrutiny-type (cadr t) mode))
+		((enum) 'number)
+		((nonnull-pointer nonnull-c-pointer) 'pointer)
+		(else '*)))
+	     (else '*))))))
+
+
 ;;; Scan expression-node for variable usage:
 
 (define (scan-used-variables node vars)
@@ -1429,8 +1498,7 @@
 (define (load-identifier-database name)
   (and-let* ((rp (repository-path))
 	     (dbfile (file-exists? (make-pathname rp name))))
-    (when verbose-mode
-      (printf "loading identifier database ~a ...~%" dbfile))
+    (debugging 'p (sprintf "loading identifier database ~a ...~%" dbfile))
     (for-each
      (lambda (e)
        (let ((id (car e)))
@@ -1511,6 +1579,7 @@ Usage: chicken FILENAME OPTION ...
     -no-lambda-info              omit additional procedure-information
     -scrutinize                  perform local flow analysis for static checks
     -types FILENAME              load additional type database
+    -emit-type-file FILENAME     write type-declaration information into file
 
   Optimization options:
 
@@ -1527,6 +1596,7 @@ Usage: chicken FILENAME OPTION ...
     -inline                      enable inlining
     -inline-limit LIMIT          set inlining threshold
     -inline-global               enable cross-module inlining
+    -specialize                  perform type-based specialization of primitive calls
     -unboxing                    use unboxed temporaries if possible
     -emit-inline-file FILENAME   generate file with globally inlinable
                                   procedures (implies -inline -local)
@@ -1540,6 +1610,7 @@ Usage: chicken FILENAME OPTION ...
     -no-procedure-checks-for-toplevel-bindings
                                    disable procedure call checks for toplevel
                                     bindings
+    -strict-types                assume variable do not change their type
 
   Configuration options:
 
@@ -1571,3 +1642,45 @@ Usage: chicken FILENAME OPTION ...
 
 EOF
 ) )
+
+(define (print-debug-options)
+  (display #<<EOF
+
+Available debugging options:
+
+     t          show time needed for compilation
+     b          show breakdown of time needed for each compiler pass
+     o          show performed optimizations
+     i          show information about inlining
+     r          show invocation parameters
+     s          show program-size information and other statistics
+     a          show node-matching during simplification
+     p          display information about what the compiler is currently doing
+     m          show GC statistics during compilation
+     n          print the line-number database 
+     c          print every expression before macro-expansion
+     u          lists all unassigned global variable references
+     d          lists all assigned global variables
+     I          show inferred type information for unexported globals
+     x          display information about experimental features
+     D          when printing nodes, use node-tree output
+     N          show the real-name mapping table
+     S          show applications of compiler syntax
+     T          show expressions after converting to node tree
+     P          show expressions after specialization
+     U          show expressions after unboxing
+     M          show syntax-/runtime-requirements
+     1          show source expressions
+     2          show canonicalized expressions
+     3          show expressions converted into CPS
+     4          show database after each analysis pass
+     5          show expressions after each optimization pass
+     6          show expressions after each inlining pass
+     7          show expressions after complete optimization
+     8          show database after final analysis
+     9          show expressions after closure conversion
+     h          you already figured that out
+
+
+EOF
+))

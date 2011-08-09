@@ -295,16 +295,28 @@ EOF
       (##core#inline "C_i_check_char_2" x (car loc))
       (##core#inline "C_i_check_char" x) ) )
 
+(define (##sys#check-boolean x . loc)
+  (If (pair? loc)
+      (##core#inline "C_i_check_boolean_2" x (car loc))
+      (##core#inline "C_i_check_boolean" x) ) )
+
+(define (##sys#check-locative x . loc)
+  (If (pair? loc)
+      (##core#inline "C_i_check_locative_2" x (car loc))
+      (##core#inline "C_i_check_locative" x) ) )
+
 (define (##sys#check-integer x . loc)
   (unless (##core#inline "C_i_integerp" x) 
-    (##sys#error-hook (foreign-value "C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR" int)
-		      (and (pair? loc) (car loc)) x) ) )
+    (##sys#error-hook
+     (foreign-value "C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR" int)
+     (and (pair? loc) (car loc)) x) ) )
 
 (define (##sys#check-range i from to . loc)
   (##sys#check-exact i loc)
   (unless (and (fx<= from i) (fx< i to))
-    (##sys#error-hook (foreign-value "C_OUT_OF_RANGE_ERROR" int)
-		      (and (pair? loc) (car loc)) i from to) ) )
+    (##sys#error-hook
+     (foreign-value "C_OUT_OF_RANGE_ERROR" int)
+     (and (pair? loc) (car loc)) i from to) ) )
 
 (define (##sys#check-special ptr . loc)
   (unless (and (##core#inline "C_blockp" ptr) (##core#inline "C_specialp" ptr))
@@ -750,6 +762,10 @@ EOF
   (fp-check-flonums x y 'fp/)
   (##core#inline_allocate ("C_a_i_flonum_quotient" 4) x y) )
 
+(define (fp/? x y)			; undocumented
+  (fp-check-flonums x y 'fp/?)
+  (##core#inline_allocate ("C_a_i_flonum_quotient_checked" 4) x y) )
+
 (define (fp= x y) 
   (fp-check-flonums x y 'fp=)
   (##core#inline "C_flonum_equalp" x y) )
@@ -1061,6 +1077,7 @@ EOF
 
 (define string->number ##sys#string->number)
 (define ##sys#number->string (##core#primitive "C_number_to_string"))
+(define ##sys#fixnum->string (##core#primitive "C_fixnum_to_string"))
 (define number->string ##sys#number->string)
 
 (define (flonum-print-precision #!optional prec)
@@ -1340,17 +1357,29 @@ EOF
 (define (vector-copy! from to . n)
   (##sys#check-vector from 'vector-copy!)
   (##sys#check-vector to 'vector-copy!)
-  (let* ([len-from (##sys#size from)]
-	 [len-to (##sys#size to)] 
-	 [n (if (pair? n) (car n) (fxmin len-to len-from))] )
+  (let* ((len-from (##sys#size from))
+	 (len-to (##sys#size to))
+	 (n (if (pair? n) (car n) (fxmin len-to len-from))) )
     (##sys#check-exact n 'vector-copy!)
     (when (or (fx> n len-to) (fx> n len-from))
       (##sys#signal-hook 
        #:bounds-error 'vector-copy!
        "cannot copy vector - count exceeds length" from to n) )
-    (do ([i 0 (fx+ i 1)])
+    (do ((i 0 (fx+ i 1)))
 	((fx>= i n))
       (##sys#setslot to i (##sys#slot from i)) ) ) )
+
+(define (subvector v i #!optional j)
+  (##sys#check-vector v 'subvector)
+  (let* ((len (##sys#size v))
+	 (j (or j len))
+	 (len2 (fx- j i)))
+    (##sys#check-range i 0 len 'subvector)
+    (##sys#check-range j 0 len 'subvector)
+    (let ((v2 (make-vector len2)))
+      (do ((k 0 (fx+ k 1)))
+	  ((fx>= k len2) v2)
+	(##sys#setslot v2 k (##sys#slot v (fx+ k i)))))))
 
 (define (vector-resize v n #!optional init)
   (##sys#check-vector v 'vector-resize)
@@ -2185,8 +2214,9 @@ EOF
 		      ##sys#current-parameter-vector
 		      (fx+ i 1)
 		      ##sys#snafu) ) )
-		 (##sys#setslot ##sys#current-parameter-vector i (if mode val (guard val)))
-		 (##core#undefined) )))
+		 (let ((val (if mode val (guard val))))
+		   (##sys#setslot ##sys#current-parameter-vector i val)
+		   val))))
 	  (getter-with-setter
 	   (lambda args
 	     (let ((n (##sys#size ##sys#current-parameter-vector)))
@@ -2259,7 +2289,7 @@ EOF
 (define (##sys#infix-list-hook lst) lst)
 
 (define (##sys#sharp-number-hook port n)
-  (##sys#read-error port "invalid parameterized read syntax" n) )
+  (##sys#read-error port "invalid `#...' read syntax" n) )
 
 (define case-sensitive (make-parameter #t))
 (define keyword-style (make-parameter #:suffix))
@@ -4041,6 +4071,8 @@ EOF
 	((34) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a procedure" args))
 	((35) (apply ##sys#signal-hook #:type-error loc "bad argument type - invalid base" args))
 	((36) (apply ##sys#signal-hook #:limit-error loc "recursion too deep or circular data encountered" args))
+	((37) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a boolean" args))
+	((38) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a locative" args))
 	(else (apply ##sys#signal-hook #:runtime-error loc "unknown internal error" args)) ) ) ) )
 
 

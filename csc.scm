@@ -139,6 +139,7 @@
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
     -emit-all-import-libraries -setup-mode -unboxing -no-elevation -no-module-registration
     -no-procedure-checks-for-usual-bindings -module
+    -specialize -strict-types
     -lambda-lift			; OBSOLETE
     -no-procedure-checks-for-toplevel-bindings))
 
@@ -146,7 +147,7 @@
   '(-debug -output-file -heap-size -nursery -stack-size -compiler -unit -uses -keyword-style
     -optimize-level -include-path -database-size -extend -prelude -postlude -prologue -epilogue 
     -inline-limit -profile-name
-    -emit-inline-file -types
+    -emit-inline-file -types -emit-type-file
     -feature -debug-level -heap-growth -heap-shrinkage -heap-initial-size -consult-inline-file
     -emit-import-library
     -no-feature))
@@ -301,8 +302,8 @@ Usage: #{csc} FILENAME | OPTION ...
   General options:
 
     -h  -help                      display this text and exit
-    -v                             show intermediate compilation stages
-    -vv  -verbose                  display information about translation
+    -v  -verbose                   show compiler notes and tool-invocations
+    -vv                            display information about translation
                                     progress
     -vvv                           display information about all compilation
                                     stages
@@ -380,9 +381,11 @@ Usage: #{csc} FILENAME | OPTION ...
     -inline-limit LIMIT            set inlining threshold
     -inline-global                 enable cross-module inlining
     -unboxing                      use unboxed temporaries if possible
+    -specialize                    perform type-based specialization of primitive calls
     -n -emit-inline-file FILENAME  generate file with globally inlinable
                                     procedures (implies -inline -local)
     -consult-inline-file FILENAME  explicitly load inline file
+    -emit-type-file FILENAME       write type-declaration information into file
     -no-argc-checks                disable argument count checks
     -no-bound-checks               disable bound variable checks
     -no-procedure-checks           disable procedure call checks
@@ -392,6 +395,7 @@ Usage: #{csc} FILENAME | OPTION ...
     -no-procedure-checks-for-toplevel-bindings
                                    disable procedure call checks for toplevel
                                     bindings
+    -strict-types                  assume variable do not change their type
 
   Configuration options:
 
@@ -604,14 +608,14 @@ EOF
 	       [(-libs)
 		(set! inquiry-only #t)
 		(set! show-libs #t) ]
-	       [(-v -verbose)
+	       ((-v -verbose)
 		(when (number? verbose)
 		  (set! compile-options (cons* "-v" "-Q" compile-options))
 		  (set! link-options (cons "-v" link-options)) )
-		(cond (verbose
-		       (t-options "-verbose") 
-		       (set! verbose 2)) 
-		      (else (set! verbose #t))) ]
+		(t-options "-verbose")
+		(if verbose
+		    (set! verbose 2)
+		    (set! verbose #t)) )
 	       [(-w -no-warnings)
 		(set! compile-options (cons "-w" compile-options))
 		(t-options "-no-warnings") ]

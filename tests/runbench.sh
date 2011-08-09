@@ -35,6 +35,7 @@ echo "****************************************"
 
 compiler_options="-C -Wa,-W"
 compile="../csc -w -compiler $CHICKEN -I.. -L.. -include-path .. -o a.out $COMPILE_OPTIONS"
+interpret="../csi -n -include-path .."
 
 echo "======================================== null ... "
 $compile null.scm -O5
@@ -58,15 +59,18 @@ run compiler.scm
 
 echo "======================================== fft/boxed ... "
 $compile fft.scm
-run
+run 2000 11
 echo "======================================== fft/unboxed ... "
 $compile fft.scm -D unboxed
-run
+run 2000 11
 
 echo "======================================== threads ... "
-$compile thread-list.scm -O4 -d0 -fb
+$compile thread-list.scm -f
 run 1000000
 
 echo "======================================== allocation ... "
-$compile gobble.scm -O4 -d0 -b
+$compile gobble.scm
 run 1000000000
+
+echo "======================================== irregex ... "
+/usr/bin/time "$timeopts" $interpret -bnq test-irregex.scm >/dev/null

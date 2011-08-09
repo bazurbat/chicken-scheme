@@ -400,80 +400,274 @@ option or by using the {{-:s...}} runtime option).
 The following standard bindings are handled specially, depending on optimization options
 and compiler settings:
 
-{{+}} {{*}} {{-}} {{/}} {{quotient}} {{eq?}} {{eqv?}} {{equal?}} {{apply}} {{c...r}} {{values}} {{call-with-values}}
-{{list-ref}} {{null?}} {{length}} {{not}} {{char?}} {{string?}} {{symbol?}} {{vector?}} {{pair?}} {{procedure?}}
-{{boolean?}} {{number?}} {{complex?}} {{rational?}} {{real?}} {{exact?}} {{inexact?}} {{list?}} {{eof-object?}}
-{{string-ref}} {{string-set!}} {{vector-ref}} {{vector-set!}} 
-{{char=?}} {{char<?}} {{char>?}} {{char<=?}} {{char>=?}}
-{{char-numeric?}} {{char-alphabetic?}} {{char-whitespace?}} {{char-upper-case?}} {{for-each}}
-{{char-lower-case?}} {{char-upcae}} {{char-downcase}} {{list-tail}} {{assv}} {{memv}} {{memq}} {{assoc}}
-{{member}} {{set-car!}} {{set-cdr!}} {{abs}} {{exp}} {{sin}} {{cos}} {{tan}} {{log}} {{asin}} {{acos}} {{atan}} {{sqrt}}
-{{zero?}} {{positive?}} {{negative?}} {{vector-length}} {{string-length}} {{char->integer}}
-{{integer->char}} {{inexact->exact}} {{=}} {{>}} {{<}} {{>=}} {{<=}} {{for-each}} {{map}} {{substring}}
-{{string-append}} {{gcd}} {{lcm}} {{list}} {{exact->inexact}} {{string->number}} {{number->string}}
-{{even?}} {{odd?}} {{remainder}} {{floor}} {{ceiling}} {{truncate}} {{round}} {{cons}} {{vector}} {{string}}
-{{string=?}} {{string-ci=?}} {{make-vector}} {{call-with-current-continuation}}
-{{write-char}} {{read-string}} 
+{{*}}
+{{+}}
+{{-}}
+{{/}}
+{{<=}}
+{{<}}
+{{=}}
+{{>=}}
+{{>}}
+{{abs}}
+{{acos}}
+{{apply}}
+{{asin}}
+{{assoc}}
+{{assv}}
+{{atan}}
+{{boolean?}}
+{{c...r}}
+{{call-with-current-continuation}}
+{{call-with-values}}
+{{ceiling}}
+{{char->integer}}
+{{char-alphabetic?}}
+{{char-downcase}}
+{{char-lower-case?}}
+{{char-numeric?}}
+{{char-upcae}}
+{{char-upper-case?}}
+{{char-whitespace?}}
+{{char<=?}}
+{{char<?}}
+{{char=?}}
+{{char>=?}}
+{{char>?}}
+{{char?}}
+{{complex?}}
+{{cons}}
+{{cos}}
+{{current-input-port}}
+{{current-output-port}}
+{{eof-object?}}
+{{eq?}}
+{{equal?}}
+{{eqv?}}
+{{even?}}
+{{exact->inexact}}
+{{exact?}}
+{{exp}}
+{{floor}}
+{{for-each}}
+{{for-each}}
+{{gcd}}
+{{inexact->exact}}
+{{inexact?}}
+{{integer->char}}
+{{lcm}}
+{{length}}
+{{list-ref}}
+{{list-tail}}
+{{list?}}
+{{list}}
+{{log}}
+{{make-vector}}
+{{map}}
+{{member}}
+{{memq}}
+{{memv}}
+{{negative?}}
+{{not}}
+{{null?}}
+{{number->string}}
+{{number?}}
+{{odd?}}
+{{pair?}}
+{{positive?}}
+{{procedure?}}
+{{quotient}}
+{{rational?}}
+{{read-string}} 
+{{real?}}
+{{remainder}}
+{{round}}
+{{set-car!}}
+{{set-cdr!}}
+{{sin}}
+{{sqrt}}
+{{string->number}}
+{{string-append}}
+{{string-ci=?}}
+{{string-length}}
+{{string-ref}}
+{{string-set!}}
+{{string=?}}
+{{string?}}
+{{string}}
+{{substring}}
+{{symbol?}}
+{{tan}}
+{{truncate}}
+{{values}}
+{{vector-length}}
+{{vector-ref}}
+{{vector-set!}}
+{{vector?}}
+{{vector}}
+{{write-char}}
+{{zero?}}
 
 The following extended bindings are handled specially: 
 
-{{bitwise-and}} {{bitwise-ior}} {{bitwise-xor}} {{bitwise-not}} 
-{{bit-set?}} {{add1}} {{sub1}}
-{{fx+}} {{fx-}} {{fx*}} {{fx/}}
-{{fx+?}} {{fx-?}} {{fx*?}} {{fx/?}}
-{{fxmod}}
-{{fx=}} {{fx>}} {{fx>=}} {{fixnum?}} {{fxneg}} {{fxmax}} {{fxmin}}
-{{fxodd?}} {{fxeven?}}
-{{fxand}} {{fxior}} {{fxxor}} {{fxnot}} {{fxshl}} {{fxshr}}
-{{finite?}} {{fp=}} {{fp>}} {{fp<}} {{fp>=}} {{fp<=}} {{fpinteger?}}
-{{flonum?}} {{fp+}}
-{{fp-}} {{fp*}} {{fp/}} {{atom?}}
-{{fp=}} {{fp>}} {{fp>=}} {{fpneg}} {{fpmax}} {{fpmin}}
-{{fpfloor}} {{fpceiling}} {{fpround}} {{fptruncate}} {{fpsqrt}} {{fpabs}}
-{{fplog}} {{fpexp}} {{fpexpt}} {{fpsin}} {{fpcos}} {{fptan}} {{fpasin}}
-{{fpacos}} {{fpatan}} {{fpatan2}}
-{{arithmetic-shift}} {{signum}} {{flush-output}} {{thread-specific}} {{thread-specific-set!}}
-{{not-pair?}} {{null-list?}} {{print}} {{print*}} {{u8vector->blob/shared}}
-{{s8vector->blob/shared}} {{u16vector->blob/shared}} {{s16vector->blob/shared}}
-{{u32vector->blob/shared}}
-{{s32vector->blob/shared}} {{f32vector->blob/shared}} {{f64vector->blob/shared}} {{block-ref}}
+{{add1}}
+{{alist-cons}}
+{{any?}}
+{{arithmetic-shift}}
+{{atom?}}
+{{bit-set?}}
+{{bitwise-and}}
+{{bitwise-ior}}
+{{bitwise-not}}
+{{bitwise-xor}}
 {{blob-size}}
-{{u8vector-length}}
-{{s8vector-length}}
-{{u16vector-length}}
-{{s16vector-length}}
-{{u32vector-length}}
-{{s32vector-length}}
+{{block-ref}}
+{{block-set!}}
+{{call/cc}}
+{{current-error-port}}
+{{current-thread}}
+{{error}}
+{{f32vector->blob/shared}}
 {{f32vector-length}}
-{{f64vector-length}}
-{{u8vector-ref}}
-{{s8vector-ref}}
-{{u16vector-ref}}
-{{s16vector-ref}}
-{{u32vector-ref}}
-{{s32vector-ref}}
 {{f32vector-ref}}
+{{f64vector->blob/shared}}
+{{f64vector-length}}
 {{f64vector-ref}}
-{{u8vector-set!}}
-{{s8vector-set!}}
-{{u16vector-set!}}
-{{s16vector-set!}}
-{{u32vector-set!}}
-{{s32vector-set!}}
+{{finite?}}
+{{first}}
+{{fixnum?}}
+{{flonum?}}
+{{flush-output}}
+{{foldl}}
+{{foldr}}
+{{format}}
+{{fourth}}
+{{fp*}}
+{{fp+}}
+{{fp-}}
+{{fp/}}
+{{fp<=}}
+{{fp<}}
+{{fp=}}
+{{fp=}}
+{{fp>=}}
+{{fp>=}}
+{{fp>}}
+{{fp>}}
+{{fpabs}}
+{{fpacos}}
+{{fpasin}}
+{{fpatan2}}
+{{fpatan}}
+{{fpceiling}}
+{{fpcos}}
+{{fpexpt}}
+{{fpexp}}
+{{fpfloor}}
+{{fpinteger?}}
+{{fplog}}
+{{fpmax}}
+{{fpmin}}
+{{fpneg}}
+{{fprintf}}
+{{fpround}}
+{{fpsin}}
+{{fpsqrt}}
+{{fptan}}
+{{fptruncate}}
+{{fx*?}}
+{{fx*}}
+{{fx+?}}
+{{fx+}}
+{{fx-?}}
+{{fx-}}
+{{fx/?}}
+{{fx/}}
+{{fx=}}
+{{fx>=}}
+{{fx>}}
+{{fxand}}
+{{fxeven?}}
+{{fxior}}
+{{fxmax}}
+{{fxmin}}
+{{fxmod}}
+{{fxneg}}
+{{fxnot}}
+{{fxodd?}}
+{{fxshl}}
+{{fxshr}}
+{{fxxor}}
 {{hash-table-ref}}
-{{block-set!}} {{number-of-slots}}
-{{first}} {{second}} {{third}} {{fourth}} {{null-pointer?}} {{pointer->object}}
-{{pointer+}} {{pointer=?}}
-{{pointer-u8-ref}} {{pointer-s8-ref}} {{pointer-u16-ref}} {{pointer-s16-ref}} 
-{{pointer-u32-ref}} {{pointer-s32-ref}} {{pointer-f32-ref}} {{pointer-f64-ref}} 
-{{pointer-u8-set!}} {{pointer-s8-set!}} {{pointer-u16-set!}} {{pointer-s16-set!}} 
-{{pointer-u32-set!}} {{pointer-s32-set!}} {{pointer-f32-set!}} {{pointer-f64-set!}} 
+{{identity}}
+{{locative->object}}
+{{locative-ref}}
+{{locative-set!}}
+{{locative?}}
 {{make-record-instance}}
-{{locative-ref}} {{locative-set!}} {{locative?}} {{locative->object}} {{identity}}
-{{cpu-time}} {{error}} {{call/cc}} {{any?}}
-{{substring=?}} {{substring-ci=?}} {{substring-index}} {{substring-index-ci}}
-{{printf}} {{sprintf}} {{fprintf}} {{format}} {{o}}
-{{foldl}} {{foldr}}
+{{not-pair?}}
+{{null-list?}}
+{{null-pointer?}}
+{{number-of-slots}}
+{{o}}
+{{pointer+}}
+{{pointer->object}}
+{{pointer-f32-ref}}
+{{pointer-f32-set!}}
+{{pointer-f64-ref}}
+{{pointer-f64-set!}}
+{{pointer-s16-ref}}
+{{pointer-s16-set!}}
+{{pointer-s32-ref}}
+{{pointer-s32-set!}}
+{{pointer-s8-ref}}
+{{pointer-s8-set!}}
+{{pointer-u16-ref}}
+{{pointer-u16-set!}}
+{{pointer-u32-ref}}
+{{pointer-u32-set!}}
+{{pointer-u8-ref}}
+{{pointer-u8-set!}}
+{{pointer=?}}
+{{print*}}
+{{printf}}
+{{print}}
+{{s16vector->blob/shared}}
+{{s16vector-length}}
+{{s16vector-ref}}
+{{s16vector-set!}}
+{{s32vector->blob/shared}}
+{{s32vector-length}}
+{{s32vector-ref}}
+{{s32vector-set!}}
+{{s8vector->blob/shared}}
+{{s8vector-length}}
+{{s8vector-ref}}
+{{s8vector-set!}}
+{{second}}
+{{signum}}
+{{sprintf}}
+{{sub1}}
+{{substring-ci=?}}
+{{substring-index-ci}}
+{{substring-index}}
+{{substring=?}}
+{{third}}
+{{thread-specific-set!}}
+{{thread-specific}}
+{{u16vector->blob/shared}}
+{{u16vector-length}}
+{{u16vector-ref}}
+{{u16vector-set!}}
+{{u32vector->blob/shared}}
+{{u32vector-length}}
+{{u32vector-ref}}
+{{u32vector-set!}}
+{{u8vector->blob/shared}}
+{{u8vector-length}}
+{{u8vector-ref}}
+{{u8vector-set!}}
+{{xcons}}
 
 ==== What's the difference betweem "block" and "local" mode?
 

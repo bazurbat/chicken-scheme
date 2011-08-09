@@ -976,6 +976,13 @@ additional items are initialized to {{INIT}}. If {{INIT}} is not specified, the
 contents are initialized to some unspecified value.
 
 
+==== subvector
+
+<procedure>(subvector VECTOR FROM [TO])</procedure>
+
+Returns a new vector with elements taken from {{VECTOR}} in the
+given range. {{TO}} defaults to {{(vector-length VECTOR)}}.
+
 
 === The unspecified value
 

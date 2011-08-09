@@ -570,6 +570,8 @@ static inline int isinf_ld (long double x)
 #define C_BAD_ARGUMENT_TYPE_NO_CLOSURE_ERROR          34
 #define C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR            35
 #define C_CIRCULAR_DATA_ERROR                         36
+#define C_BAD_ARGUMENT_TYPE_NO_BOOLEAN_ERROR          37
+#define C_BAD_ARGUMENT_TYPE_NO_LOCATIVE_ERROR         38
 
 
 /* Platform information */
@@ -1120,7 +1122,7 @@ extern double trunc(double);
 #define C_pointer_to_block(p, x)        (C_set_block_item(p, 0, (C_word)C_data_pointer(x)), C_SCHEME_UNDEFINED)
 #define C_null_pointerp(x)              C_mk_bool((void *)C_block_item(x, 0) == NULL)
 #define C_update_pointer(p, ptr)        (C_set_block_item(ptr, 0, C_num_to_unsigned_int(p)), C_SCHEME_UNDEFINED)
-#define C_copy_pointer(from, to)        (C_set_block_item(to, 0, C_u_i_car(from)), C_SCHEME_UNDEFINED)
+#define C_copy_pointer(from, to)        (C_set_block_item(to, 0, C_block_item(from, 0)), C_SCHEME_UNDEFINED)
 #define C_pointer_to_object(ptr)        C_block_item(ptr, 0)
 
 #define C_direct_return(dk, x)          (C_kontinue(dk, x), C_SCHEME_UNDEFINED)
@@ -1132,6 +1134,9 @@ extern double trunc(double);
 #endif
 
 #define C_copy_memory(to, from, n)      (C_memcpy(C_data_pointer(to), C_data_pointer(from), C_unfix(n)), C_SCHEME_UNDEFINED)
+#define C_copy_ptr_memory(to, from, n, toff, foff) \
+  (C_memcpy(C_pointer_address(to) + C_unfix(toff), C_pointer_address(from) + C_unfix(foff), \
+	    C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_set_memory(to, c, n)          (C_memset(C_data_pointer(to), C_character_code(c), C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_string_compare(to, from, n)   C_fix(C_strncmp(C_c_string(to), C_c_string(from), C_unfix(n)))
 #define C_string_compare_case_insensitive(from, to, n) \
@@ -1183,6 +1188,7 @@ extern double trunc(double);
 #define C_a_i_flonum(ptr, i, n)         C_flonum(ptr, n)
 #define C_a_i_data_mpointer(ptr, n, x)  C_mpointer(ptr, C_data_pointer(x))
 #define C_a_i_fix_to_flo(p, n, f)       C_flonum(p, C_unfix(f))
+#define C_cast_to_flonum(n)             ((double)(n))
 #define C_a_i_mpointer(ptr, n, x)       C_mpointer(ptr, (x))
 #define C_a_u_i_pointer_inc(ptr, n, p, i) C_mpointer(ptr, (C_char *)(p) + C_unfix(i))
 #define C_pointer_eqp(x, y)             C_mk_bool(C_c_pointer_nn(x) == C_c_pointer_nn(y))
@@ -1267,6 +1273,8 @@ extern double trunc(double);
 #define C_i_check_symbol(x)             C_i_check_symbol_2(x, C_SCHEME_FALSE)
 #define C_i_check_list(x)               C_i_check_list_2(x, C_SCHEME_FALSE)
 #define C_i_check_pair(x)               C_i_check_pair_2(x, C_SCHEME_FALSE)
+#define C_i_check_locative(x)           C_i_check_locative_2(x, C_SCHEME_FALSE)
+#define C_i_check_boolean(x)            C_i_check_boolean_2(x, C_SCHEME_FALSE)
 #define C_i_check_vector(x)             C_i_check_vector_2(x, C_SCHEME_FALSE)
 #define C_i_check_structure(x, st)      C_i_check_structure_2(x, (st), C_SCHEME_FALSE)
 #define C_i_check_char(x)               C_i_check_char_2(x, C_SCHEME_FALSE)
@@ -1559,6 +1567,7 @@ C_fctexport void C_bad_min_argc_2(int c, int n, C_word closure) C_noret;
 C_fctexport void C_stack_overflow(void) C_noret;
 C_fctexport void C_unbound_error(C_word sym) C_noret;
 C_fctexport void C_no_closure_error(C_word x) C_noret;
+C_fctexport void C_div_by_zero_error(char *loc) C_noret;
 C_fctexport C_word C_closure(C_word **ptr, int cells, C_word proc, ...);
 C_fctexport C_word C_fcall C_pair(C_word **ptr, C_word car, C_word cdr) C_regparm;
 C_fctexport C_word C_fcall C_h_pair(C_word car, C_word cdr) C_regparm;
@@ -1656,6 +1665,7 @@ C_fctexport void C_ccall C_exact_to_inexact(C_word c, C_word closure, C_word k, 
 C_fctexport void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2) C_noret;
 C_fctexport void C_ccall C_string_to_number(C_word c, C_word closure, C_word k, C_word str, ...) C_noret; /*XXX left for binary compatibility */
 C_fctexport void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, ...) C_noret;
+C_fctexport void C_ccall C_fixnum_to_string(C_word c, C_word closure, C_word k, C_word num) C_noret;
 C_fctexport void C_ccall C_get_argv(C_word c, C_word closure, C_word k) C_noret; /* OBSOLETE */
 C_fctexport void C_ccall C_get_argument(C_word c, C_word closure, C_word k, C_word index) C_noret;
 C_fctexport void C_ccall C_make_structure(C_word c, C_word closure, C_word k, C_word type, ...) C_noret;
@@ -1754,6 +1764,8 @@ C_fctexport C_word C_fcall C_i_check_bytevector_2(C_word x, C_word loc) C_regpar
 C_fctexport C_word C_fcall C_i_check_symbol_2(C_word x, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_list_2(C_word x, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_pair_2(C_word x, C_word loc) C_regparm;
+C_fctexport C_word C_fcall C_i_check_boolean_2(C_word x, C_word loc) C_regparm;
+C_fctexport C_word C_fcall C_i_check_locative_2(C_word x, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_vector_2(C_word x, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_structure_2(C_word x, C_word st, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_char_2(C_word x, C_word loc) C_regparm;
@@ -1770,9 +1782,6 @@ C_fctexport C_word C_fcall C_i_not_pair_p_2(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_null_list_p(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_string_null_p(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_null_pointerp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_fixnum_arithmetic_shift(C_word n, C_word c) C_regparm;
-C_fctexport C_word C_fcall C_fixnum_divide(C_word x, C_word y) C_regparm;
-C_fctexport C_word C_fcall C_fixnum_modulo(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_locative_set(C_word loc, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_locative_to_object(C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_a_i_make_locative(C_word **a, int c, C_word type, C_word object, C_word index, C_word weak) C_regparm;
@@ -2195,6 +2204,27 @@ C_inline C_word C_i_fixnum_max(C_word x, C_word y)
 }
 
 
+C_inline C_word C_fixnum_divide(C_word x, C_word y)
+{
+  if(y == C_fix(0)) C_div_by_zero_error("fx/");
+  else return C_u_fixnum_divide(x, y);
+}
+
+
+C_inline C_word C_fixnum_modulo(C_word x, C_word y)
+{
+  if(y == C_fix(0)) C_div_by_zero_error("fxmod");
+  else return C_u_fixnum_modulo(x, y);
+}
+
+
+C_inline C_word C_i_fixnum_arithmetic_shift(C_word n, C_word c)
+{
+  if(C_unfix(c) < 0) return C_fixnum_shift_right(n, C_u_fixnum_negate(c));
+  else return C_fixnum_shift_left(n, c);
+}
+
+
 C_inline C_word C_i_flonum_min(C_word x, C_word y)
 {
   double 
@@ -2212,6 +2242,24 @@ C_inline C_word C_i_flonum_max(C_word x, C_word y)
     yf = C_flonum_magnitude(y);
 
   return xf > yf ? x : y;
+}
+
+
+C_inline C_word
+C_a_i_flonum_quotient_checked(C_word **ptr, int c, C_word n1, C_word n2)
+{
+  double n3 = C_flonum_magnitude(n2);
+
+  if(n3 == 0.0) C_div_by_zero_error("fp/?");
+  else return C_flonum(ptr, C_flonum_magnitude(n1) / n3);
+}
+
+
+C_inline double
+C_ub_i_flonum_quotient_checked(double n1, double n2)
+{
+  if(n2 == 0.0) C_div_by_zero_error("fp/?");
+  else return n1 / n2;
 }
 
 
