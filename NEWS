@@ -1,3 +1,86 @@
+4.7.3
+
+- Build system
+  - version information has been moved into a separate unit to make the
+    build-version shown in the banner and accessible through library
+    procedures more accurate, this also speeds up the build on version-
+    changes (thanks to Jim Ursetto for contributing this)
+
+- Runtime system
+  - fixed handling of "inf" and nan" floating-point predicates for Solaris
+    (thanks to Claude Marinier)
+  - support for re-loading of compiled files has now been completely 
+    removed
+
+- Core libraries
+  - added "foldl" and "foldr" procedures, which are more efficient and
+    more have a more consistent argument order than the corresponding
+    SRFI-1 procedures
+  - "shuffle" has been deprecated
+  - added "queue-length"
+  - "queue->list" allocates and returns a fresh list now
+  - invoking a parameter-procedure with an argument will return the new
+    value
+  - added new procedure "quit"
+  - port-procedures now check correctly for argument-ports being open 
+    (thanks to Peter Bex)
+  - irregex bugfixes (by Peter Bex)
+  - "repl" accepts an optional evaluator procedure (suggested by John 
+    Cowan)
+
+- Core syntax
+  - "parameterize" now correctly omits invoking the guard procedure when
+    the old value is restored (thanks to Joo ChurlSoo)
+  - "optional", "let-optionals" and "let-optionals*" do not anymore check
+    for surplus arguments
+  - added ":", "the" and "assume" syntax for declaring types
+  - added "define-specialization" form to declare type-driven procedure
+    call rewrites in compiled code
+
+- Compiler
+  - added "-specialize" option and "specialize" declaration which enables
+    optimizations of uses of core library procedures based on type-
+    information gathered during flow analysis
+  - "-optimize-level 3" and higher now implies "-specialize"
+  - added option "-strict-types" and "-emit-type-file"
+  - progress-information is now only shown with "-debug p"; the "-verbose"
+    option only shows informational but noncritical messages
+  - fixed several bugs in the unboxing pass
+  - added optimizations for some library procedures
+  - variable propagation for global variable accesses is done in certain
+    situations now
+  - the algorithmic complexity of the closure-conversion pass has been
+    reduced which speeds up compilation noticably for large files
+  - the "-uses" option handles whitespace in unit lists given on the
+    command line (thanks to Santosh Rajan)
+  - the alternative branch in a conditional is dropped when the condition
+    is known to be a non-boolean value (suggested by Joerg Wittenberger)
+  - implemented numerous fixes and improvements for flow analysis
+
+- Interpreter
+  - ",q" now leaves the currently active REPL invocation instead of
+    terminating the process (as suggested by John Cowan)
+
+- Syntax expander
+  - fixed devious bug in the invocation and generation of transformer
+    procedures
+  - using normal "lambda" forms as transformers for local or global
+    syntax definitions is deprecated - one should use "syntax-rules",
+    "er-macro-transformer" or "ir-macro-transformer" from now on
+
+- Core tools
+  - "chicken-profile"
+    - fixed some bugs in the profiler and the runtime support code for
+      profiling (thanks to Sven Hartrumpf)
+    - fixed broken percentage calculation (thanks to "megane")
+  - "chicken-status"
+    - the "pattern" argument is now actually treated as a pattern and not
+      as a regex
+  - "chicken-install"
+    - added support for "or"-dependencies where a dependency is considered
+      installed if one of a set of candidates is available
+
+
 4.7.2
 
 - Core tools
