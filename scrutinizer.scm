@@ -1195,11 +1195,14 @@
       (print "; END OF FILE"))))
 
 (define (match-specialization typelist atypes exact)
-  ;; - does not accept complex procedure types in typelist!
+  ;; - does not accept complex procedure or list/vector/pair types in typelist!
   ;; - "exact" means: "or"-type in atypes is not allowed
-  ;;XXX doesn't handle complex "list", "pair" and "vector" types
   (define (match st t)
     (cond ((eq? st t))
+	  ((and (pair? t) (memq (car t) '(vector list)))
+	   (match st (car t)))		;XXX hack, insufficient
+	  ((and (pair? t) (eq? 'pair (car t))) 
+	   (match st 'pair))		;XXX same here
 	  ((pair? st)
 	   (case (car st)
 	     ((not) (matchnot (cadr st) t))
@@ -1221,6 +1224,10 @@
 	  (else (equal? st t))))
   (define (matchnot st t)
     (cond ((eq? st t) #f)
+	  ((and (pair? t) (memq (car t) '(vector list)))
+	   (match st (car t)))		;XXX hack, insufficient
+	  ((and (pair? t) (eq? 'pair (car t))) 
+	   (match st 'pair))		;XXX same here
 	  ((eq? 'list t) (matchnot st '(or null pair)))
 	  ((eq? 'number t) (matchnot st '(or fixnum float)))
 	  ((eq? '* t) #f)
