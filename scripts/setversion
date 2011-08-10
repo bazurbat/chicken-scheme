@@ -6,7 +6,6 @@ exec csi -s "$0" "$@"
 (use srfi-1 utils posix irregex)
 
 (define buildversion (->string (car (read-file "buildversion"))))
-(define buildbinaryversion (car (read-file "buildbinaryversion")))
 
 (define files '("README" "manual/The User's Manual"))
 
