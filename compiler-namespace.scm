@@ -255,6 +255,7 @@
  scan-toplevel-assignments
  scan-used-variables
  scrutinize
+ scrutiny-debug
  set-real-name!
  sexpr->node
  simple-lambda-node?
