@@ -45,8 +45,8 @@
 
 (define dd d)
 
-;(define-syntax d (syntax-rules () ((_ . _) (void))))
-;(define-syntax dd (syntax-rules () ((_ . _) (void))))
+(define-syntax d (syntax-rules () ((_ . _) (void))))
+(define-syntax dd (syntax-rules () ((_ . _) (void))))
 
 
 ;;; Walk node tree, keeping type and binding information
@@ -115,8 +115,8 @@
 	       (else 'number)))		; in case...
 	    ((boolean? lit) 'boolean)
 	    ((null? lit) 'null)
-	    ((pair? lit) 'pair)
 	    ((list? lit) 'list)
+	    ((pair? lit) 'pair)
 	    ((eof-object? lit) 'eof)
 	    ((vector? lit) 'vector)
 	    ((and (not (##sys#immediate? lit)) (##sys#generic-structure? lit))
@@ -1276,7 +1276,7 @@
 					 ,@(if (and name (not rec)) (list name) '())
 					 ,ts
 					 ,@rt)))))))))
-	    ((and (pair? (cdr t)) (memq '-> (cdr t))) =>
+	    ((and (pair? (cdr t)) (memq '-> t)) =>
 	     (lambda (p)
 	       (let ((cp (memq ': (cdr t))))
 		 (cond ((not cp) 
