@@ -83,7 +83,6 @@ or {{:}} should follow the syntax given below:
 
 <table>
 <tr><th>TYPE</th><th>meaning</th></tr>
-<tr><td>{{*}}</td><td>any value</td></tr>
 <tr><td>{{deprecated}}</td><td>any use of this variable will generate a warning</td></tr>
 <tr><td>VALUETYPE</td><td></td></tr>
 </table>
@@ -95,6 +94,7 @@ or {{:}} should follow the syntax given below:
 <tr><td>{{(procedure [NAME] (VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]]) . RESULTS)}}</td><td>procedure type, optionally with name</td></tr>
 <tr><td>{{(VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]] -> . RESULTS)}}</td><td>alternative procedure type syntax</td></tr>
 <tr><td>{{(VALUETYPE -> VALUETYPE : VALUETYPE)}}</td><td>predicate procedure type</td></tr>
+<tr><td>COMPLEXTYPE</td><td></td></tr>
 <tr><td>BASICTYPE</td><td></td></tr>
 </table>
 
@@ -120,6 +120,12 @@ or {{:}} should follow the syntax given below:
 <tr><td>{{float}}</td><td>floating-point number</td></tr>
 <tr><td>{{number}}</td><td>fixnum or float</td></tr>
 </table>
+
+<table>
+<tr><th>COMPLEXTYPE</th><th>meaning</th></tr>
+<tr><td>{{(pair TYPE1 TYPE2)}</td><td>pair with given component types</td></tr>
+<tr><td>{{(list TYPE)}</td><td>proper list with given element type</td></tr>
+<tr><td>{{(vector TYPE)}</td><td>vector with given element types</td></tr>
 
 <table>  
 <tr><th>RESULTS</th><th>meaning</th></tr>

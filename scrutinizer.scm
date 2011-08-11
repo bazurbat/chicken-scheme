@@ -28,7 +28,7 @@
   (unit scrutinizer)
   (hide match-specialization specialize-node! specialization-statistics
 	procedure-type? named? procedure-result-types procedure-argument-types
-	noreturn-type? rest-type procedure-name d-depth generate-type-checks!
+	noreturn-type? rest-type procedure-name d-depth
 	noreturn-procedure-type?
 	compatible-types? type<=? initial-argument-types))
 
@@ -651,21 +651,6 @@
 					 (if rest (alist-cons rest 'list e2) e2)
 					 (add-loc dest loc)
 					 #f #t (list initial-tag) #f)))
-			   ;; Disabled
-			   #;(when (and specialize
-				      dest
-				      (not 
-				       (eq? 'no
-					    (variable-mark dest '##compiler#escape)))
-				      (variable-mark dest '##compiler#declared-type)
-				      escaping-procedures
-				      (not unsafe))
-			     (debugging 'x "checks argument-types" dest) ;XXX
-			     ;; [1] this is subtle: we don't want argtype-checks to be 
-			     ;; generated for toplevel defs other than user-declared ones. 
-			     ;; But since the ##compiler#declared-type mark is set AFTER 
-			     ;; the lambda has been walked (see below, [2]), nothing is added.
-			     (generate-type-checks! n dest vars inits))
 			   (list
 			    (append
 			     '(procedure) 
@@ -914,6 +899,21 @@
 			      (dd "  or-simplify: ~a" ts2)
 			      (simplify 
 			       `(or ,@(if (any (cut eq? <> '*) ts2) '(*) ts2)))))))) )
+	     ((pair) 
+	      (let ((tcar (simplify (second t)))
+		    (tcdr (simplify (third t))))
+		(if (and (eq? '* tcar) (eq? '* tcdr))
+		    'pair
+		    (let rec ((tr tcdr) (ts (list tcar)))
+		      (cond ((eq? tr 'null) `(list (or ,@(reverse ts))))
+			    ((and (pair? tr) (eq? 'pair (first tr)))
+			     (rec (third tr) (cons (second tr) ts)))
+			    (else `(pair ,tcar ,tcdr)))))))
+	     ((vector list)
+	      (let ((t2 (simplify (second t))))
+		(if (eq? ts '*)
+		    (car t)
+		    `(,(car t) ,t2))))
 	     ((procedure)
 	      (let* ((name (and (named? t) (cadr t)))
 		     (rtypes (if name (cdddr t) (cddr t))))
@@ -1380,104 +1380,6 @@
 	    (nth-value 0 (procedure-argument-types ptype argc #t))
 	    (make-list argc '*)))
       (make-list argc '*)))
-
-
-;;; generate type-checks for formal variables
-
-#;(define (generate-type-checks! node loc vars inits)
-  ;; assumes type is validated
-  (define (test t v)
-    (case t
-      ((null) `(##core#inline "C_eqp" ,v '()))
-      ((eof) `(##core#inline "C_eofp" ,v))
-      ((string) `(if (##core#inline "C_blockp" ,v)
-		     (##core#inline "C_stringp" ,v)
-		     '#f))
-      ((float) `(if (##core#inline "C_blockp" ,v)
-		    (##core#inline "C_flonump" ,v)
-		    '#f))
-      ((char) `(##core#inline "C_charp" ,v))
-      ((fixnum) `(##core#inline "C_fixnump" ,v))
-      ((number) `(##core#inline "C_i_numberp" ,v))
-      ((list) `(##core#inline "C_i_listp" ,v))
-      ((symbol) `(if (##core#inline "C_blockp" ,v)
-		     (##core#inline "C_symbolp" ,v)
-		     '#f))
-      ((pair) `(if (##core#inline "C_blockp" ,v)
-		   (##core#inline "C_pairp" ,v)
-		   '#f))
-      ((boolean) `(##core#inline "C_booleanp" ,v))
-      ((procedure) `(if (##core#inline "C_blockp" ,v)
-			(##core#inline "C_closurep" ,v)
-			'#f))
-      ((vector) `(if (##core#inline "C_blockp" ,v)
-		     (##core#inline "C_vectorp" ,v)
-		     '#f))
-      ((pointer) `(if (##core#inline "C_blockp" ,v)
-		      (##core#inline "C_pointerp" ,v)
-		      '#f))
-      ((blob) `(if (##core#inline "C_blockp" ,v)
-		   (##core#inline "C_byteblockp" ,v)
-		   '#f))
-      ((pointer-vector) `(##core#inline "C_i_structurep" ,v 'pointer-vector))
-      ((port) `(if (##core#inline "C_blockp" ,v)
-		   (##core#inline "C_portp" ,v)
-		   '#f))
-      ((locative) `(if (##core#inline "C_blockp" ,v)
-		       (##core#inline "C_locativep" ,v)
-		       '#f))
-      (else
-       (case (car t)
-	 ((procedure) `(if (##core#inline "C_blockp" ,v)
-			   (##core#inline "C_closurep" ,v)
-			   '#f))
-	 ((or) 
-	  (cond ((null? (cdr t)) '(##core#undefined))
-		((null? (cddr t)) (test (cadr t) v))
-		(else 
-		 `(if ,(test (cadr t) v)
-		      '#t
-		      ,(test `(or ,@(cddr t)) v)))))
-	 ((and)
-	  (cond ((null? (cdr t)) '(##core#undefined))
-		((null? (cddr t)) (test (cadr t) v))
-		(else
-		 `(if ,(test (cadr t) v)
-		      ,(test `(and ,@(cddr t)) v)
-		      '#f))))
-	 ((not)
-	  `(not ,(test (cadr t) v)))
-	 (else (bomb "invalid type" t v))))))
-  (let ((body (first (node-subexpressions node))))
-    (let loop ((vars (reverse vars)) (inits (reverse inits)) (b body))
-      (cond ((null? inits)
-	     (if (eq? b body)
-		 body
-		 (copy-node!
-		  (make-node 
-		   (node-class node)	; lambda
-		   (node-parameters node)
-		   (list b))
-		  node)))
-	    ((eq? '* (car inits))
-	     (loop (cdr vars) (cdr inits) b))
-	    (else
-	     (loop
-	      (cdr vars) (cdr inits)
-	      (make-node
-	       'let (list (gensym))
-	       (list
-		(build-node-graph
-		 (let ((t (car inits))
-		       (v (car vars)))
-		   `(if ,(test t v)
-			(##core#undefined)
-			(##core#app 
-			 ##sys#error ',loc 
-			 ',(sprintf "expected argument `~a' to be of type `~s'"
-			     v t)
-			 ,v))))
-		b))))))))
 
 
 ;;; hardcoded result types for certain primitives
