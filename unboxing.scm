@@ -42,7 +42,7 @@
   (when (##sys#fudge 13)
     (printf "[debug] ~a~?~%" (make-string d-depth #\space) fstr args)) )
 
-;(define-syntax d (syntax-rules () ((_ . _) (void))))
+(define-syntax d (syntax-rules () ((_ . _) (void))))
 
 
 (define (perform-unboxing! node)
