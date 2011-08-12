@@ -294,15 +294,17 @@
 		       (when f
 			 (d "straightening form (~a): ~a" class params)
 			 (let ((n2 (straighten-binding! n2)))
+#|
 			   (print "---\n")
 			   (pp (build-expression-tree n))
 			   (print " ->\n")
+|#
 			   (copy-node! n2 n)
-			   (pp (build-expression-tree n))
-			   (print "---\n")))
+			   #;(pp (build-expression-tree n))
+			   #;(print "---\n")))
 		       n))
 		    ((memq (node-class (car args)) '(let ##core#let_unboxed))
-		     (printf "~s:~s~%~!" class (node-class (car args)))
+		     ;(printf "~s:~s~%~!" class (node-class (car args)))
 		     (let* ((arg (car args))
 			    (subs2 (node-subexpressions arg)))
 		       (set! f #t)
@@ -357,7 +359,7 @@
 			      ((not udest) (boxed! v)))
 			a))
 
-		     ((##core#inline ##core#inline_allocate)
+		     ((##core#inline ##core#inline_allocate ##core#inline_unboxed)
 		      (let* ((rw1 (##sys#get (symbolify (first params)) '##compiler#unboxed-op))
 			     (rw (and unsafe rw1))
 			     (args (map (cut walk <> #f rw pass2?) subs)))

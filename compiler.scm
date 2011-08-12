@@ -2410,7 +2410,7 @@
     (debugging 'p "closure conversion transformation phase...")
     (let ((node2 (transform node #f #f)))
       (unless (zero? direct-calls)
-	(debugging 'o "calls to known targets" direct-calls (delay (length direct-call-ids))) )
+	(debugging 'o "calls to known targets" direct-calls))
       node2) ) )
 
 
