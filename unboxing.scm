@@ -124,9 +124,10 @@
 	  (copy-node!
 	   (let loop ((args avals) (anodes anodes) (atypes atypes0) (iargs '()))
 	     (cond ((null? args) 
-		    (let ((n2 (make-node
-			       '##core#inline_unboxed (list alt)
-			       (reverse iargs))))
+		    (let ((n2 (straighten-form!
+			       (make-node
+				'##core#inline_unboxed (list alt)
+				(reverse iargs)))))
 		      (if (and dest (cdr dest))
 			  n2
 			  (let ((tmp (gensym "tu")))
@@ -289,32 +290,35 @@
 	    (let loop ((args subs) (newargs '()) (wrap identity))
 	      (cond ((null? args)
 		     (let ((n2 (wrap
-				((if f straighten-form! identity)
+				((if f straighten! identity)
 				 (make-node class params (reverse newargs))))))
 		       (when f
 			 (d "straightening form (~a): ~a" class params)
 			 (let ((n2 (straighten-binding! n2)))
 #|
-			   (print "---\n")
+			   (print "---\n") ;XXX
 			   (pp (build-expression-tree n))
 			   (print " ->\n")
 |#
 			   (copy-node! n2 n)
-			   #;(pp (build-expression-tree n))
-			   #;(print "---\n")))
+#|
+			   (pp (build-expression-tree n))
+			   (print "---\n")
+|#
+			   ))
 		       n))
 		    ((memq (node-class (car args)) '(let ##core#let_unboxed))
-		     ;(printf "~s:~s~%~!" class (node-class (car args)))
 		     (let* ((arg (car args))
 			    (subs2 (node-subexpressions arg)))
 		       (set! f #t)
 		       (loop (cdr args)
 			     (cons (second subs2) newargs)
 			     (lambda (body)
-			       (make-node
-				(node-class arg)
-				(node-parameters arg)
-				(list (first subs2) body))))))
+			       (wrap
+				(make-node
+				 (node-class arg)
+				 (node-parameters arg)
+				 (list (first subs2) body)))))))
 		    (else (loop (cdr args) (cons (car args) newargs) wrap))))))
 
 	;; walk node and return either "(<var> . <type>)" or #f
