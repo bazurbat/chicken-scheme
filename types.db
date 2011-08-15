@@ -30,6 +30,8 @@
 ;   rewrite rules
 ; - for a description of the type-specifier syntax, see "scrutinizer.scm" (top of file)
 ; - in templates, "#(INTEGER)" refers to the INTEGERth argument (starting from 1)
+; - in templates, "#(INTEGER ...)" refers to the INTEGERth argument (starting from 1) and
+;   all remaining arguments
 ; - in templates "#(SYMBOL)" binds X to a temporary gensym'd variable, further references
 ;   to "#(SYMBOL)" allow backreferences to this generated identifier
 ; - a type of the form "(procedure! ...)" is internally treated like "(procedure ..."
@@ -37,6 +39,7 @@
 ; - a type of the form "(procedure? TYPE  ...)" is internally treated like "(procedure ..."
 ;   but declares the procedure as a predicate over TYPE.
 ; - a type of the form "(procedure!? TYPE ...)" or "(procedure?! TYPE ...)" is the obvious.
+; - types in specializations are currently not validated
 
 
 ;; scheme
