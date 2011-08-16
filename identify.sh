@@ -24,6 +24,7 @@ if test -d "$1/.git"; then
 
     case ${branchname} in
 	"") branchname="";;
+        "(no branch)") branchname="";;
 	"master") branchname="";;
     esac
     if test "${rev0}" \!= "${rev}"; then
