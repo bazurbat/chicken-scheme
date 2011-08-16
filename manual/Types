@@ -94,6 +94,7 @@ or {{:}} should follow the syntax given below:
 <tr><td>{{(procedure [NAME] (VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]]) . RESULTS)}}</td><td>procedure type, optionally with name</td></tr>
 <tr><td>{{(VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]] -> . RESULTS)}}</td><td>alternative procedure type syntax</td></tr>
 <tr><td>{{(VALUETYPE -> VALUETYPE : VALUETYPE)}}</td><td>predicate procedure type</td></tr>
+<tr><td>{{(forall (TYPEVAR ...) VALUETYPE)}}</td><td>polymorphic type</td></tr>
 <tr><td>COMPLEXTYPE</td><td></td></tr>
 <tr><td>BASICTYPE</td><td></td></tr>
 </table>

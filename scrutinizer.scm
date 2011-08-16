@@ -29,7 +29,7 @@
   (hide match-specialization specialize-node! specialization-statistics
 	procedure-type? named? procedure-result-types procedure-argument-types
 	noreturn-type? rest-type procedure-name d-depth
-	noreturn-procedure-type?
+	noreturn-procedure-type? trail trail-restore
 	compatible-types? type<=? initial-argument-types))
 
 
@@ -98,6 +98,7 @@
 
 
 (define specialization-statistics '())
+(define trail '())
 
 
 (define (scrutinize node db complain specialize)
@@ -271,7 +272,8 @@
 		 (if (cdr e)
 		     (match1 (cdr e) t2)
 		     (begin
-		       (d "   unify ~a = ~a" t1 t2)
+		       (dd "   unify ~a = ~a" t1 t2)
+		       (set! trail (cons t1 trail))
 		       (set-cdr! e t2)
 		       #t))))
 	      ((and (symbol? t2) (assq t2 typeenv)) => 
@@ -279,7 +281,8 @@
 		 (if (cdr e) 
 		     (match1 t1 (cdr e))
 		     (begin
-		       (d "   unify ~a = ~a" t2 t1)
+		       (dd "   unify ~a = ~a" t2 t1)
+		       (set! trail (cons t2 trail))
 		       (set-cdr! e t1)
 		       #t))))
 	      ((eq? t1 '*))
@@ -546,17 +549,23 @@
 					      (set! op (list pt `(not ,pt))))))))
 			     ((and specialize (get-specializations pn)) =>
 			      (lambda (specs)
-				(let loop ((specs specs))
-				  (cond ((null? specs))
-					((match-specialization
-					  (first (car specs)) (cdr args) typeenv #f)
-					 (let ((spec (car specs)))
-					   (set! op (cons pn (car spec)))
-					   (let* ((r2 (and (pair? (cddr spec)) (second spec)))
-						  (rewrite (if r2 (third spec) (second spec))))
-					     (specialize-node! node rewrite)
-					     (when r2 (set! r r2)))))
-					(else (loop (cdr specs))))))))
+				(let ((trail0 trail))
+				  (let loop ((specs specs))
+				    (cond ((null? specs))
+					  ((match-specialization
+					    (first (car specs)) (cdr args) typeenv #f)
+					   (let ((spec (car specs)))
+					     (set! op (cons pn (car spec)))
+					     (let* ((r2 (and (pair? (cddr spec))
+							     (second spec)))
+						    (rewrite (if r2
+								 (third spec)
+								 (second spec))))
+					       (specialize-node! node rewrite)
+					       (when r2 (set! r r2)))))
+					  (else
+					   (trail-restore trail0 typeenv)
+					   (loop (cdr specs)))))))))
 		       (when op
 			 (d "  specialized: `~s'" op)
 			 (cond ((assoc op specialization-statistics) =>
@@ -1280,6 +1289,12 @@
 	  ((or and)
 	   (for-each loop (cdr t))))))
     (map (cut cons <> #f) te)))
+
+(define (trail-restore tr typeenv)
+  (do ((tr2 trail (cdr tr2)))
+      ((eq? tr2 tr))
+    (let ((a (assq (car tr2) typeenv)))
+      (set-cdr! a #f))))
 
 
 ;;; type-db processing
