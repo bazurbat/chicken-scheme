@@ -506,8 +506,25 @@
 		(make-node 'lambda (list (cadr x)) (list (walk (caddr x)))))
 	       ((##core#the)
 		(make-node '##core#the (list (cadr x)) (list (walk (caddr x)))))
+	       ((##core#typecase)
+		;; clause-head is already stripped
+		(let loop ((cls (cddr x)) (types '()) (exps (list (walk (cadr x)))))
+		  (cond ((null? cls) 	; no "else" clause given
+			 (make-node
+			  '##core#typecase 
+			  (reverse types)
+			  (reverse
+			   (cons (make-node '##core#undefined '() '()) exps))))
+			((eq? 'else (caar cls))
+			 (make-node
+			  '##core#typecase
+			  (reverse (cons '* types))
+			  (reverse (cons (walk (cadar cls)) exps))))
+			(else (loop (cdr cls)
+				    (cons (caar cls) types)
+				    (cons (walk (cadar cls)) exps))))))
 	       ((##core#primitive)
-		(let ([arg (cadr x)])
+		(let ((arg (cadr x)))
 		  (make-node
 		   (car x)
 		   (list (if (and (pair? arg) (eq? 'quote (car arg))) (cadr arg) arg))
@@ -573,6 +590,14 @@
 	       (walk (car subs)) ) )
 	((##core#the)
 	 `(the ,(first params) ,(walk (first subs))))
+	((##core#typecase)
+	 `(compiler-typecase
+	   ,(walk (first subs))
+	   ,@(let loop ((types params) (bodies (cdr subs)))
+	       (if (null? types)
+		   `((else ,(walk (car bodies))))
+		   (cons (list (car types) (walk (car bodies)))
+			 (loop (cdr types) (cdr bodies)))))))
 	((##core#call) 
 	 (map walk subs))
 	((##core#callunit) (cons* '##core#callunit (car params) (map walk subs)))

@@ -106,6 +106,7 @@
 	(aliased '())
 	(noreturn #f)
 	(dropped-branches 0)
+	(typecases 0)
 	(safe-calls 0))
 
     (define (constant-result lit)
@@ -882,8 +883,7 @@
 				loc
 				(sprintf 
 				    "expression returns ~a values but is declared to have a single result"
-				  (length rt)))
-			       (set! rt (list (first rt))))
+				  (length rt))))
 			     (unless (type<=? t (first rt))
 			       (report-notice
 				loc
@@ -891,6 +891,18 @@
 				    "expression returns a result of type `~a', but is declared to return `~a', which is not a subtype"
 				  (first rt) t)))))
 		      (list t))))
+		 ((##core#typecase)
+		  (let ((ts (walk (first subs) e loc #f #f flow ctags)))
+		    ;; first exp is always a variable so ts must be of length 1
+		    (let loop ((types params) (subs (cdr subs)))
+		      (cond ((null? types) (bomb "no more clauses in `compiler-typecase'" types))
+			    ((match-specialization (list (car types)) ts '() #f)
+			     ;; drops exp
+			     (set! typecases (add1 typecases))
+			     (copy-node! (car subs) n)
+			     (walk n e loc dest tail flow ctags))
+			    (else
+			     (loop (cdr types) (cdr subs)))))))
 		 ((##core#switch ##core#cond)
 		  (bomb "unexpected node class" class))
 		 (else
@@ -911,6 +923,8 @@
 	(debugging 'x "safe calls" safe-calls)) ;XXX
       (when (positive? dropped-branches)
 	(debugging 'x "dropped branches" dropped-branches)) ;XXX
+      (when (positive? typecases)
+	(debugging 'x "expanded typecases" typecases)) ;XXX
       rn)))
 
 

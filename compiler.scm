@@ -144,6 +144,7 @@
 ; (##core#module <symbol> #t | (<name> | (<name> ...) ...) <body>)
 ; (##core#let-module-alias ((<alias> <name>) ...) <body>)
 ; (##core#the <type> <exp>)
+; (##core#typecase <exp> (<type> <body>) ... [(else <body>)])
 ; (<exp> {<exp>})
 
 ; - Core language:
@@ -171,6 +172,7 @@
 ; [##core#direct_call {<safe-flag> <debug-info> <call-id> <words>} <exp-f> <exp>...]
 ; [##core#direct_lambda {<id> <mode> (<variable>... [. <variable>]) <size>} <exp>]
 ; [##core#the {<type>} <exp>]
+; [##core#typecase {(<type> ...)} <exp> <body1> ... [<elsebody>]]
 
 ; - Closure converted/prepared language:
 ;
@@ -547,8 +549,16 @@
 
 			((##core#the)
 			 `(##core#the
-			   ,(cadr x)
+			   ,(##sys#strip-syntax (cadr x))
 			   ,(walk (caddr x) e se dest ldest h)))
+
+			((##core#typecase)
+			 `(##core#typecase
+			   ,(walk (cadr x) e se #f #f h)
+			   ,@(map (lambda (cl)
+				    (list (##sys#strip-syntax (car cl))
+					  (walk (cadr cl) e se dest ldest h)))
+				  (cddr x))))
 
 			((##core#immutable)
 			 (let ((c (cadadr x)))
@@ -1692,6 +1702,9 @@
 	((##core#the)
 	 ;; remove "the" nodes, as they are not used after scrutiny
 	 (walk (car subs) k))
+	((##core#typecase)
+	 ;; same here, the last clause is chosen, exp is dropped
+	 (walk (last subs) k))
 	(else (bomb "bad node (cps)")) ) ) )
   
   (define (walk-call fn args params k)
