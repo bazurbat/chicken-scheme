@@ -496,7 +496,12 @@
 (dynamic-wind (procedure! dynamic-wind (procedure procedure procedure) . *))
 (values (procedure values (#!rest values) . *))
 (##sys#values (procedure ##sys#values (#!rest values) . *))
-(call-with-values (procedure! call-with-values (procedure procedure) . *))
+
+(call-with-values (procedure! call-with-values ((procedure () . *) procedure) . *)
+  (((procedure () *) *) (let ((#(tmp1) #(1)))
+			  (let ((#(tmp2) #(2)))
+			    (#(tmp2) (#(tmp1)))))))
+
 (eval (procedure eval (* #!optional *) *))
 (char-ready? (procedure! char-ready? (#!optional port) boolean))
 
