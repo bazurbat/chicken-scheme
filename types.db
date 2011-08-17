@@ -502,6 +502,12 @@
 			  (let ((#(tmp2) #(2)))
 			    (#(tmp2) (#(tmp1)))))))
 
+(##sys#call-with-values
+ (procedure! ##sys#call-with-values ((procedure () . *) procedure) . *)
+ (((procedure () *) *) (let ((#(tmp1) #(1)))
+			 (let ((#(tmp2) #(2)))
+			   (#(tmp2) (#(tmp1)))))))
+
 (eval (procedure eval (* #!optional *) *))
 (char-ready? (procedure! char-ready? (#!optional port) boolean))
 
