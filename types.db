@@ -62,12 +62,21 @@
 (pair? (procedure? pair pair? (*) boolean))
 
 (cons (procedure cons (* *) pair))
+;* (cons (forall (a b) (procedure cons (a b) (pair a b))))
+
 (##sys#cons (procedure ##sys#cons (* *) pair))
+;* (##sys#cons (forall (a b) (procedure ##sys#cons (a b) (pair a b))))
 
 (car (procedure! car (pair) *) ((pair) (##core#inline "C_u_i_car" #(1))))
+;* (car (forall (a) (procedure! car ((pair a *)) a) ((pair) (##core#inline "C_u_i_car" #(1))))
 (cdr (procedure! cdr (pair) *) ((pair) (##core#inline "C_u_i_cdr" #(1))))
+;* (cdr (forall (a) (procedure! cdr ((pair * a)) a) ((pair) (##core#inline "C_u_i_cdr" #(1))))
 
 (caar (procedure! caar (pair) *))
+;* (caar (forall (a) (procedure! caar ((pair (pair a *) *)) a))
+
+;*XXX ...
+
 (cadr (procedure! cadr (pair) *))
 (cdar (procedure! cdar (pair) *))
 (cddr (procedure! cddr (pair) *))
@@ -497,12 +506,18 @@
 (values (procedure values (#!rest values) . *))
 (##sys#values (procedure ##sys#values (#!rest values) . *))
 
-(call-with-values (procedure! call-with-values ((procedure () . *) procedure) . *)
+(call-with-values (procedure! call-with-values ((procedure () . *) procedure) . *))
+
+;XXX match-specialization can't handle complex procedure types yet
+#;(call-with-values (procedure! call-with-values ((procedure () . *) procedure) . *)
   (((procedure () *) *) (let ((#(tmp1) #(1)))
 			  (let ((#(tmp2) #(2)))
 			    (#(tmp2) (#(tmp1)))))))
 
 (##sys#call-with-values
+ (procedure! ##sys#call-with-values ((procedure () . *) procedure) . *))
+
+#;(##sys#call-with-values
  (procedure! ##sys#call-with-values ((procedure () . *) procedure) . *)
  (((procedure () *) *) (let ((#(tmp1) #(1)))
 			 (let ((#(tmp2) #(2)))

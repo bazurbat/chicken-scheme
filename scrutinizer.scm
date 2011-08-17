@@ -84,13 +84,19 @@
 ; specialization specifiers:
 ;
 ;   SPECIALIZATION = ((MVAL ... [#!rest MVAL]) [RESULTS] TEMPLATE)
-;   MVAL = VAL | (not VAL) | (or VAL ...) | (and VAL ...)
+;   MVAL = VAL 
+;        | (not MVAL)
+;        | (or MVAL ...)
+;        | (and MVAL ...)
+;        | (forall (VAR1 ...) MVAL)
 ;   TEMPLATE = #(INDEX)
 ;            | #(INDEX ...)
 ;            | #(SYMBOL)
 ;            | INTEGER | SYMBOL | STRING
 ;            | (quote CONSTANT)
 ;            | (TEMPLATE . TEMPLATE)
+;
+;   - complex procedure types can currently not be matched
 
 
 (define-constant +fragment-max-length+ 6)
@@ -106,7 +112,6 @@
 	(aliased '())
 	(noreturn #f)
 	(dropped-branches 0)
-	(typecases 0)
 	(safe-calls 0))
 
     (define (constant-result lit)
@@ -361,7 +366,7 @@
       (define (optargs a)
 	(memq a '(#!rest #!optional)))
       (let loop ((args1 args1) (args2 args2) (opt1 #f) (opt2 #f))
-	(d "  args ~a ~a ~a ~a" args1 args2 opt1 opt2)
+	(dd "  args ~a ~a ~a ~a" args1 args2 opt1 opt2)
 	(cond ((null? args1) 
 	       (or opt2
 		   (null? args2)
@@ -895,10 +900,10 @@
 		  (let ((ts (walk (first subs) e loc #f #f flow ctags)))
 		    ;; first exp is always a variable so ts must be of length 1
 		    (let loop ((types params) (subs (cdr subs)))
-		      (cond ((null? types) (bomb "no more clauses in `compiler-typecase'" types))
+		      (cond ((null? types)
+			     (bomb "no clause applies in `compiler-typecase'" params (car ts)))
 			    ((match-specialization (list (car types)) ts '() #f)
 			     ;; drops exp
-			     (set! typecases (add1 typecases))
 			     (copy-node! (car subs) n)
 			     (walk n e loc dest tail flow ctags))
 			    (else
@@ -923,8 +928,6 @@
 	(debugging 'x "safe calls" safe-calls)) ;XXX
       (when (positive? dropped-branches)
 	(debugging 'x "dropped branches" dropped-branches)) ;XXX
-      (when (positive? typecases)
-	(debugging 'x "expanded typecases" typecases)) ;XXX
       rn)))
 
 
@@ -1321,20 +1324,27 @@
        (lambda (e)
 	 (let* ((name (car e))
 		(old (variable-mark name '##compiler#type))
-		(new (cadr e))
-		(specs (and (pair? (cddr e)) (cddr e))))
-	   (when (pair? new)
-	     (case (car new)
-	       ((procedure!)
-		(mark-variable name '##compiler#enforce #t)
-		(set-car! new 'procedure))
-	       ((procedure!? procedure?!)
-		(mark-variable name '##compiler#enforce #t)
-		(mark-variable name '##compiler#predicate (cadr new))
-		(set! new (cons 'procedure (cddr new))))
-	       ((procedure?)
-		(mark-variable name '##compiler#predicate (cadr new))
-		(set! new (cons 'procedure (cddr new))))))
+		(specs (and (pair? (cddr e)) (cddr e)))
+		(new
+		 (let adjust ((new (cadr e)))
+		   (if (pair? new)
+		       (case (car new)
+			 ((procedure!)
+			  (mark-variable name '##compiler#enforce #t)
+			  `(procedure ,@(cdr new)))
+			 ((procedure!? procedure?!)
+			  (mark-variable name '##compiler#enforce #t)
+			  (mark-variable name '##compiler#predicate (cadr new))
+			  `(procedure ,@(cddr new)))
+			 ((procedure?)
+			  (mark-variable name '##compiler#predicate (cadr new))
+			  `(procedure ,@(cddr new)))
+			 ((forall)
+			  `(forall ,(cadr new) ,(adjust (caddr new))))
+			 (else new))
+		       new))))
+	   ;; validation is needed, even though .types-files can be considered
+	   ;; correct, because type variables have to be renamed:
 	   (let-values (((t _) (validate-type new name)))
 	     (unless t
 	       (warning "invalid type specification" name new))
@@ -1382,6 +1392,13 @@
 (define (match-specialization typelist atypes typeenv exact)
   ;; - does not accept complex procedure types in typelist!
   ;; - "exact" means: "or"-type in atypes is not allowed (used for predicates)
+  ;;
+  ;;XXX It is not entirely clear to me whether we can simply use the "match"
+  ;;    above instead of having a second matcher. The only difference
+  ;;    seems to be the specialization-types allow "not" and disallow
+  ;;    complex procedure types (the latter would be handled by the
+  ;;    full matcher). And what about "exact"?
+  ;;
   (define (match st t)
     (cond ((eq? st t))
 	  ((and (symbol? st) (assq st typeenv)) => 
@@ -1412,10 +1429,10 @@
 	   ((if exact every any) (cut match st <>) (cdr t)))
 	  ((and (pair? t) (eq? 'and (car t)))
 	   (every (cut match st <>) (cdr t)))
-	  ((and (pair? t) (eq? 'procedure (car t)))
-	   (match st 'procedure))
 	  ((and (pair? t) (eq? 'forall (car t)))
 	   (match st (third t))) ; assumes typeenv has already been extracted
+	  ((and (pair? t) (eq? 'procedure (car t)))
+	   (match st 'procedure))
 	  ((pair? st)
 	   (case (car st)
 	     ((forall)
@@ -1437,8 +1454,8 @@
 		   (eq? 'pair (car t))
 		   (match (second st) (second t))
 		   (match (third st) (third t))))
-	     ((procedure) 		;XXX
-	      (match 'procedure t))
+	     ((procedure) 		
+	      (bomb "match-specialization: can not match complex procedure type" st))
 	     (else (equal? st t))))
 	  ((eq? st '*))
 	  ;; "list" different from "number": a pair is not necessarily a list:
