@@ -26,11 +26,11 @@
 
 (declare
   (unit scrutinizer)
-  (hide match-specialization specialize-node! specialization-statistics
+  (hide specialize-node! specialization-statistics
 	procedure-type? named? procedure-result-types procedure-argument-types
 	noreturn-type? rest-type procedure-name d-depth
 	noreturn-procedure-type? trail trail-restore
-	compatible-types? type<=? initial-argument-types))
+	compatible-types? type<=? match-types resolve match-argument-types))
 
 
 (include "compiler-namespace")
@@ -56,6 +56,7 @@
 ;
 ;   SPEC = * | (VAL1 ...)
 ;   VAL = (or VAL1 ...)
+;       | (not VAL)       
 ;       | (struct NAME)
 ;       | (procedure [NAME] (VAL1 ... [#!optional VALOPT1 ...] [#!rest [VAL | values]]) . RESULTS)
 ;       | BASIC
@@ -83,20 +84,13 @@
 ;
 ; specialization specifiers:
 ;
-;   SPECIALIZATION = ((MVAL ... [#!rest MVAL]) [RESULTS] TEMPLATE)
-;   MVAL = VAL 
-;        | (not MVAL)
-;        | (or MVAL ...)
-;        | (and MVAL ...)
-;        | (forall (VAR1 ...) MVAL)
+;   SPECIALIZATION = ((VAL ... [#!rest VAL]) [RESULTS] TEMPLATE)
 ;   TEMPLATE = #(INDEX)
 ;            | #(INDEX ...)
 ;            | #(SYMBOL)
 ;            | INTEGER | SYMBOL | STRING
 ;            | (quote CONSTANT)
 ;            | (TEMPLATE . TEMPLATE)
-;
-;   - complex procedure types can currently not be matched
 
 
 (define-constant +fragment-max-length+ 6)
@@ -270,131 +264,6 @@
 		  len m m
 		  (map typename results))))))
 
-    (define (match t1 t2 typeenv)
-      (define (match1 t1 t2)
-	(cond ((eq? t1 t2))
-	      ((and (symbol? t1) (assq t1 typeenv)) => 
-	       (lambda (e) 
-		 (if (cdr e)
-		     (match1 (cdr e) t2)
-		     (begin
-		       (dd "   unify ~a = ~a" t1 t2)
-		       (set! trail (cons t1 trail))
-		       (set-cdr! e t2)
-		       #t))))
-	      ((and (symbol? t2) (assq t2 typeenv)) => 
-	       (lambda (e) 
-		 (if (cdr e) 
-		     (match1 t1 (cdr e))
-		     (begin
-		       (dd "   unify ~a = ~a" t2 t1)
-		       (set! trail (cons t2 trail))
-		       (set-cdr! e t1)
-		       #t))))
-	      ((eq? t1 '*))
-	      ((eq? t2 '*))
-	      ((eq? t1 'noreturn))
-	      ((eq? t2 'noreturn))
-	      ((and (eq? t1 'number) (memq t2 '(number fixnum float))))
-	      ((and (eq? t2 'number) (memq t1 '(number fixnum float))))
-	      ((eq? 'procedure t1) (and (pair? t2) (eq? 'procedure (car t2))))
-	      ((eq? 'procedure t2) (and (pair? t1) (eq? 'procedure (car t1))))
-	      ((and (pair? t1) (eq? 'or (car t1))) (any (cut match1 <> t2) (cdr t1)))
-	      ((and (pair? t2) (eq? 'or (car t2))) (any (cut match1 t1 <>) (cdr t2)))
-	      ((and (pair? t1) (eq? 'forall (car t1)))
-	       (match1 (third t1) t2))	; assumes typeenv has already been extracted
-	      ((and (pair? t2) (eq? 'forall (car t2)))
-	       (match1 t1 (third t2))) 	; assumes typeenv has already been extracted
-	      ((eq? t1 'pair) (match1 '(pair * *) t2))
-	      ((eq? t2 'pair) (match1 t1 '(pair * *)))
-	      ((eq? t1 'list) (match1 '(list *) t2))
-	      ((eq? t2 'list) (match1 t1 '(list *)))
-	      ((eq? t1 'vector) (match1 '(vector *) t2))
-	      ((eq? t2 'vector) (match1 t1 '(vector *)))
-	      ((eq? t1 'null)
-	       (or (memq t2 '(null list))
-		   (and (pair? t2) (eq? 'list (car t2)))))
-	      ((eq? t2 'null)
-	       (or (memq t1 '(null list))
-		   (and (pair? t1) (eq? 'list (car t1)))))
-	      ((and (pair? t1) (pair? t2) (eq? (car t1) (car t2)))
-	       (case (car t1)
-		 ((procedure)
-		  (let ((args1 (if (named? t1) (third t1) (second t1)))
-			(args2 (if (named? t2) (third t2) (second t2))) 
-			(results1 (if (named? t1) (cdddr t1) (cddr t1))) 
-			(results2 (if (named? t2) (cdddr t2) (cddr t2))) )
-		    (and (match-args args1 args2 typeenv)
-			 (match-results results1 results2 typeenv))))
-		 ((struct) (equal? t1 t2))
-		 ((pair) (every match1 (cdr t1) (cdr t2)))
-		 ((list vector) (match1 (second t1) (second t2)))
-		 (else #f) ) )
-	      ((and (pair? t1) (eq? 'pair (car t1)))
-	       (and (pair? t2)
-		    (eq? 'list (car t2))
-		    (match1 (second t1) (second t2))
-		    (match1 (third t1) t2)))
-	      ((and (pair? t2) (eq? 'pair (car t2)))
-	       (and (pair? t1)
-		    (eq? 'list (car t1))
-		    (match1 (second t1) (second t2))
-		    (match1 t1 (third t2))))
-	      ((and (pair? t1) (eq? 'list (car t1)))
-	       (or (eq? 'null t2)
-		   (and (pair? t2)
-			(eq? 'pair? (car t2))
-			(match1 (second t1) (second t2))
-			(match1 t1 (third t2)))))
-	      ((and (pair? t2) (eq? 'list (car t2)))
-	       (or (eq? 'null t1)
-		   (and (pair? t1)
-			(eq? 'pair? (car t1))
-			(match1 (second t1) (second t2))
-			(match1 (third t1) t2))))
-	      (else #f)))
-      (let ((m (match1 t1 t2)))
-	(dd "    match ~a <-> ~a -> ~a" t1 t2 m)
-	m))
-
-    (define (match-args args1 args2 typeenv)
-      (d "match-args: ~s <-> ~s" args1 args2)
-      (define (match-rest rtype args opt) ;XXX currently ignores `opt'
-	(let-values (((head tail) (break (cut eq? '#!rest <>) args)))
-	  (and (every (cut match rtype <> typeenv) head) ; match required args
-	       (match rtype (if (pair? tail) (rest-type (cdr tail)) '*) typeenv))))
-      (define (optargs a)
-	(memq a '(#!rest #!optional)))
-      (let loop ((args1 args1) (args2 args2) (opt1 #f) (opt2 #f))
-	(dd "  args ~a ~a ~a ~a" args1 args2 opt1 opt2)
-	(cond ((null? args1) 
-	       (or opt2
-		   (null? args2)
-		   (optargs (car args2))))
-	      ((null? args2) 
-	       (or opt1
-		   (optargs (car args1))))
-	      ((eq? '#!optional (car args1))
-	       (loop (cdr args1) args2 #t opt2))
-	      ((eq? '#!optional (car args2))
-	       (loop args1 (cdr args2) opt1 #t))
-	      ((eq? '#!rest (car args1))
-	       (match-rest (rest-type (cdr args1)) args2 opt2))
-	      ((eq? '#!rest (car args2))
-	       (match-rest (rest-type (cdr args2)) args1 opt1))
-	      ((match (car args1) (car args2) typeenv)
-	       (loop (cdr args1) (cdr args2) opt1 opt2))
-	      (else #f))))
-
-    (define (match-results results1 results2 typeenv)
-      (cond ((null? results1) (atom? results2))
-	    ((eq? '* results1))
-	    ((eq? '* results2))
-	    ((null? results2) #f)
-	    ((match (car results1) (car results2) typeenv) 
-	     (match-results (cdr results1) (cdr results2) typeenv))
-	    (else #f)))
-
     (define (multiples n)
       (if (= n 1) "" "s"))
 
@@ -485,11 +354,7 @@
 	     (xptype `(procedure ,(make-list nargs '*) *))
 	     (typeenv (or (and pptype? (type-typeenv ptype)) '()))
 	     (op #f))
-	(define (resolve t)
-	  (cond ((not t) '*)
-		((assq t typeenv) => (lambda (a) (resolve (cdr a))))
-		(else t)))
-	(cond ((and (not pptype?) (not (match xptype ptype typeenv)))
+	(cond ((and (not pptype?) (not (match-types xptype ptype typeenv)))
 	       (report
 		loc
 		(sprintf
@@ -514,7 +379,7 @@
 		      (atypes atypes (cdr atypes))
 		      (i 1 (add1 i)))
 		     ((or (null? args) (null? atypes)))
-		   (unless (match (car atypes) (car args) typeenv)
+		   (unless (match-types (car atypes) (car args) typeenv)
 		     (report
 		      loc
 		      (sprintf
@@ -524,12 +389,13 @@
 		   (set! noreturn #t))
 		 (let ((r (procedure-result-types ptype values-rest (cdr args) typeenv)))
 		   ;;XXX we should check whether this is a standard- or extended binding
-		   (let* ((pn (procedure-name ptype)))
+		   (let* ((pn (procedure-name ptype))
+			  (trail0 trail))
 		     (when pn
 		       (cond ((and (fx= 1 nargs) 
 				   (variable-mark pn '##compiler#predicate)) =>
 				   (lambda (pt)
-				     (cond ((match-specialization 
+				     (cond ((match-argument-types
 					     (list pt) (cdr args) typeenv #t)
 					    (report-notice
 					     loc
@@ -541,8 +407,11 @@
 					       node
 					       `(let ((#(tmp) #(1))) '#t))
 					      (set! op (list pn pt))))
-					   ((match-specialization 
-					     (list `(not ,pt)) (cdr args) typeenv #t)
+					   ((begin
+					      (trail-restore trail0 typeenv)
+					      (match-argument-types
+					       (list `(not ,pt)) (cdr args) typeenv 
+					       #t))
 					    (report-notice
 					     loc
 					     (sprintf 
@@ -552,26 +421,27 @@
 					      (specialize-node!
 					       node
 					       `(let ((#(tmp) #(1))) '#f))
-					      (set! op (list pt `(not ,pt))))))))
+					      (set! op (list pt `(not ,pt)))))
+					   (else (trail-restore trail0 typeenv)))))
 			     ((and specialize (get-specializations pn)) =>
 			      (lambda (specs)
-				(let ((trail0 trail))
-				  (let loop ((specs specs))
-				    (cond ((null? specs))
-					  ((match-specialization
-					    (first (car specs)) (cdr args) typeenv #f)
-					   (let ((spec (car specs)))
-					     (set! op (cons pn (car spec)))
-					     (let* ((r2 (and (pair? (cddr spec))
-							     (second spec)))
-						    (rewrite (if r2
-								 (third spec)
-								 (second spec))))
-					       (specialize-node! node rewrite)
-					       (when r2 (set! r r2)))))
-					  (else
-					   (trail-restore trail0 typeenv)
-					   (loop (cdr specs)))))))))
+				(let loop ((specs specs))
+				  (cond ((null? specs))
+					((match-argument-types
+					  (first (car specs)) (cdr args) typeenv 
+					  #t)
+					 (let ((spec (car specs)))
+					   (set! op (cons pn (car spec)))
+					   (let* ((r2 (and (pair? (cddr spec))
+							   (second spec)))
+						  (rewrite (if r2
+							       (third spec)
+							       (second spec))))
+					     (specialize-node! node rewrite)
+					     (when r2 (set! r r2)))))
+					(else
+					 (trail-restore trail0 typeenv)
+					 (loop (cdr specs))))))))
 		       (when op
 			 (d "  specialized: `~s'" op)
 			 (cond ((assoc op specialization-statistics) =>
@@ -583,7 +453,7 @@
 		     (when (and specialize (not op) (procedure-type? ptype))
 		       (set-car! (node-parameters node) #t)
 		       (set! safe-calls (add1 safe-calls))))
-		   (let ((r (if (eq? '* r) r (map resolve r))))
+		   (let ((r (if (eq? '* r) r (map (cut resolve <> typeenv) r))))
 		     (d  "  result-types: ~a" r)
 		     (values r op))))))))
 
@@ -612,6 +482,16 @@
 	  (when a
 	    (d "  applying to alias: ~a -> ~a" (cdr a) type)
 	    (loop (cdr a))))))
+
+    (define (initial-argument-types dest vars argc)
+      (if (and dest 
+	       strict-variable-types
+	       (variable-mark dest '##compiler#declared-type))
+	  (let ((ptype (variable-mark dest '##compiler#type)))
+	    (if (procedure-type? ptype)
+		(nth-value 0 (procedure-argument-types ptype argc '() #t))
+		(make-list argc '*)))
+	  (make-list argc '*)))
 
     (define (walk n e loc dest tail flow ctags) ; returns result specifier
       (let ((subs (node-subexpressions n))
@@ -675,8 +555,11 @@
 				  (sprintf
 				      "branches in conditional expression differ in the number of results:~%~%~a"
 				    (pp-fragment n))))
-			       (map (lambda (t1 t2) (simplify-type `(or ,t1 ,t2)))
-				    r1 r2))
+			       (cond (nor1 r2)
+				     (nor2 r1)
+				     (else
+				      (map (lambda (t1 t2) (simplify-type `(or ,t1 ,t2)))
+					   r1 r2))))
 			      (else '*))))))
 		 ((let)
 		  ;; before CPS-conversion, `let'-nodes may have multiple bindings
@@ -748,7 +631,7 @@
 			 (b (assq var e)) )
 		    (when (and type (not b)
 			       (not (eq? type 'deprecated))
-			       (not (match type rt '())))
+			       (not (match-types type rt '())))
 		      ;;XXX make this an error with strict-types?
 		      (report
 		       loc
@@ -808,24 +691,20 @@
 			 (enforces
 			  (and pn (variable-mark pn '##compiler#enforce)))
 			 (pt (and pn (variable-mark pn '##compiler#predicate))))
-		    (define (resolve t)
-		      (cond ((not t) '*)
-			    ((assq t typeenv) => (lambda (a) (resolve (cdr a))))
-			    (else t)))
 		    (let-values (((r specialized?) 
 				  (call-result n args e loc params typeenv)))
 		      (cond (specialized?
 			     (walk n e loc dest tail flow ctags)
 			     ;; keep type, as the specialization may contain icky stuff
 			     ;; like "##core#inline", etc.
-			     (resolve r))
+			     (resolve r typeenv))
 			    (else
 			     (for-each
 			      (lambda (arg argr)
 				(when (eq? '##core#variable (node-class arg))
 				  (let* ((var (first (node-parameters arg)))
 					 (a (assq var e))
-					 (argr (resolve argr))
+					 (argr (resolve argr typeenv))
 					 (oparg? (eq? arg (first subs)))
 					 (pred (and pt
 						    ctags
@@ -836,7 +715,7 @@
 					   ;;    branch by subtracting pt from the current type
 					   ;;    of var, at least in the simple case of
 					   ;;    "(or ... <PT> ...)" -> "(or ... ...)"
-					   (let ((pt (resolve pt)))
+					   (let ((pt (resolve pt typeenv)))
 					     (d "  predicate `~a' indicates `~a' is ~a in flow ~a"
 						pn var pt (car ctags))
 					     (add-to-blist 
@@ -897,12 +776,13 @@
 				  (first rt) t)))))
 		      (list t))))
 		 ((##core#typecase)
-		  (let ((ts (walk (first subs) e loc #f #f flow ctags)))
+		  (let ((ts (walk (first subs) e loc #f #f flow ctags))
+			(trail0 trail))
 		    ;; first exp is always a variable so ts must be of length 1
 		    (let loop ((types params) (subs (cdr subs)))
 		      (cond ((null? types)
 			     (bomb "no clause applies in `compiler-typecase'" params (car ts)))
-			    ((match-specialization (list (car types)) ts '() #f)
+			    ((match-types (car types) (car ts) '())
 			     ;; drops exp
 			     (copy-node! (car subs) n)
 			     (walk n e loc dest tail flow ctags))
@@ -929,6 +809,177 @@
       (when (positive? dropped-branches)
 	(debugging 'x "dropped branches" dropped-branches)) ;XXX
       rn)))
+
+
+;;; Type-matching
+;
+; - "exact" means: first argument must match second one exactly
+
+(define (match-types t1 t2 typeenv #!optional exact)
+
+  (define (match-args args1 args2)
+    (d "match-args: ~s <-> ~s" args1 args2)
+    (let loop ((args1 args1) (args2 args2) (opt1 #f) (opt2 #f))
+      (dd "  args ~a ~a ~a ~a" args1 args2 opt1 opt2)
+      (cond ((null? args1) 
+	     (or opt2
+		 (null? args2)
+		 (optargs? (car args2))))
+	    ((null? args2) 
+	     (or opt1
+		 (optargs? (car args1))))
+	    ((eq? '#!optional (car args1))
+	     (loop (cdr args1) args2 #t opt2))
+	    ((eq? '#!optional (car args2))
+	     (loop args1 (cdr args2) opt1 #t))
+	    ((eq? '#!rest (car args1))
+	     (match-rest (rest-type (cdr args1)) args2 opt2))
+	    ((eq? '#!rest (car args2))
+	     (match-rest (rest-type (cdr args2)) args1 opt1))
+	    ((match1 (car args1) (car args2))
+	     (loop (cdr args1) (cdr args2) opt1 opt2))
+	    (else #f))))
+  
+  (define (match-rest rtype args opt) ;XXX currently ignores `opt'
+    (let-values (((head tail) (break (cut eq? '#!rest <>) args)))
+      (and (every (cut match1 rtype <>) head) ; match required args
+	   (match1 rtype (if (pair? tail) (rest-type (cdr tail)) '*)))))
+
+  (define (optargs? a)
+    (memq a '(#!rest #!optional)))
+
+  (define (match-results results1 results2)
+    (cond ((null? results1) (atom? results2))
+	  ((eq? '* results1))
+	  ((eq? '* results2))
+	  ((null? results2) #f)
+	  ((match1 (car results1) (car results2)) 
+	   (match-results (cdr results1) (cdr results2)))
+	  (else #f)))
+
+  (define (match1 t1 t2)
+    (cond ((eq? t1 t2))
+	  ((and (symbol? t1) (assq t1 typeenv)) => 
+	   (lambda (e) 
+	     (if (cdr e)
+		 (match1 (cdr e) t2)
+		 (begin
+		   (dd "   unify ~a = ~a" t1 t2)
+		   (set! trail (cons t1 trail))
+		   (set-cdr! e t2)
+		   #t))))
+	  ((and (symbol? t2) (assq t2 typeenv)) => 
+	   (lambda (e) 
+	     (if (cdr e) 
+		 (match1 t1 (cdr e))
+		 (begin
+		   (dd "   unify ~a = ~a" t2 t1)
+		   (set! trail (cons t2 trail))
+		   (set-cdr! e t1)
+		   #t))))
+	  ((eq? t1 '*))
+	  ((eq? t2 '*) (not exact))
+	  ((eq? t1 'noreturn) (not exact))
+	  ((eq? t2 'noreturn) (not exact))
+	  ((eq? t1 'number) 
+	   (and (not exact)
+		(match1 '(or fixnum float) t2)))
+	  ((eq? t2 'number)
+	   (and (not exact)
+		(match1 t1 '(or fixnum float))))
+	  ((eq? 'procedure t1)
+	   (and (pair? t2)
+		(eq? 'procedure (car t2))))
+	  ((eq? 'procedure t2) 
+	   (and (not exact)
+		(pair? t1)
+		(eq? 'procedure (car t1))))
+	  ((and (pair? t1) (eq? 'not (car t1)))
+	   (let* ((trail0 trail)
+		  (m (match1 (cadr t1) t2)))
+	     (trail-restore trail0 typeenv)
+	     (not m)))
+	  ((and (pair? t2) (eq? 'not (car t2)))
+	   (and (not exact)
+		(let* ((trail0 trail)
+		       (m (match1 t1 (cadr t2))))
+		  (trail-restore trail0 typeenv)
+		  (not m))))
+	  ((and (pair? t1) (eq? 'or (car t1))) 
+	   (any (cut match1 <> t2) (cdr t1)))
+	  ((and (pair? t2) (eq? 'or (car t2)))
+	   ((if exact every any) (cut match1 t1 <>) (cdr t2)))
+	  ((and (pair? t1) (eq? 'forall (car t1)))
+	   (match1 (third t1) t2)) ; assumes typeenv has already been extracted
+	  ((and (pair? t2) (eq? 'forall (car t2)))
+	   (match1 t1 (third t2))) ; assumes typeenv has already been extracted
+	  ((eq? t1 'pair) (match1 '(pair * *) t2))
+	  ((eq? t2 'pair) (match1 t1 '(pair * *)))
+	  ((eq? t1 'list) (match1 '(list *) t2))
+	  ((eq? t2 'list) (match1 t1 '(list *)))
+	  ((eq? t1 'vector) (match1 '(vector *) t2))
+	  ((eq? t2 'vector) (match1 t1 '(vector *)))
+	  ((eq? t1 'null)
+	   (and (not exact)
+		(or (memq t2 '(null list))
+		    (and (pair? t2) (eq? 'list (car t2))))))
+	  ((eq? t2 'null)
+	   (and (not exact)
+		(or (memq t1 '(null list))
+		    (and (pair? t1) (eq? 'list (car t1))))))
+	  ((and (pair? t1) (pair? t2) (eq? (car t1) (car t2)))
+	   (case (car t1)
+	     ((procedure)
+	      (let ((args1 (if (named? t1) (third t1) (second t1)))
+		    (args2 (if (named? t2) (third t2) (second t2))) 
+		    (results1 (if (named? t1) (cdddr t1) (cddr t1))) 
+		    (results2 (if (named? t2) (cdddr t2) (cddr t2))) )
+		(and (match-args args1 args2)
+		     (match-results results1 results2))))
+	     ((struct) (equal? t1 t2))
+	     ((pair) (every match1 (cdr t1) (cdr t2)))
+	     ((list vector) (match1 (second t1) (second t2)))
+	     (else #f) ) )
+	  ((and (pair? t1) (eq? 'pair (car t1)))
+	   (and (not exact)
+		(pair? t2)
+		(eq? 'list (car t2))
+		(match1 (second t1) (second t2))
+		(match1 (third t1) t2)))
+	  ((and (pair? t2) (eq? 'pair (car t2)))
+	   (and (not exact)
+		(pair? t1)
+		(eq? 'list (car t1))
+		(match1 (second t1) (second t2))
+		(match1 t1 (third t2))))
+	  ((and (pair? t1) (eq? 'list (car t1)))
+	   (and (not exact)
+		(or (eq? 'null t2)
+		    (and (pair? t2)
+			 (eq? 'pair? (car t2))
+			 (match1 (second t1) (second t2))
+			 (match1 t1 (third t2))))))
+	  ((and (pair? t2) (eq? 'list (car t2)))
+	   (and (not exact)
+		(or (eq? 'null t1)
+		    (and (pair? t1)
+			 (eq? 'pair? (car t1))
+			 (match1 (second t1) (second t2))
+			 (match1 (third t1) t2)))))
+	  (else #f)))
+  (let ((m (match1 t1 t2)))
+    (dd "    match ~a <-> ~a -> ~a" t1 t2 m)
+    m))
+
+(define (match-argument-types typelist atypes typeenv #!optional exact)
+  (let loop ((tl typelist) (atypes atypes))
+    (cond ((null? tl) (null? atypes))
+	  ((null? atypes) #f)
+	  ((eq? (car tl) '#!rest)
+	   (every (cute match-types (cadr tl) <> typeenv exact) atypes))
+	  ((match-types (car tl) (car atypes) typeenv exact)
+	   (loop (cdr tl) (cdr atypes)))
+	  (else #f))))
 
 
 ;;; Simplify type specifier
@@ -1060,8 +1111,8 @@
   (call/cc
    (lambda (return)
      (let loop ((ts1 ts11) (ts2 ts21))
-       (cond ((null? ts1) ts2)
-	     ((null? ts2) ts1)
+       (cond ((null? ts1) '())
+	     ((null? ts2) '())
 	     ((or (atom? ts1) (atom? ts2)) (return '*))
 	     ((eq? 'noreturn (car ts1)) (loop (cdr ts1) ts2))
 	     ((eq? 'noreturn (car ts2)) (loop ts1 (cdr ts2)))
@@ -1286,6 +1337,9 @@
 	     ((forall) (noreturn-type? (third t)))
 	     (else #f)))))
 
+
+;;; Type-environments and -variables
+
 (define (type-typeenv t)
   (let ((te '()))
     (let loop ((t t))
@@ -1312,6 +1366,33 @@
       ((eq? tr2 tr))
     (let ((a (assq (car tr2) typeenv)))
       (set-cdr! a #f))))
+
+(define (resolve t typeenv)
+  (let resolve ((t t))
+    (cond ((not t) '*)			; unbound type-variable
+	  ((assq t typeenv) => (lambda (a) (resolve (cdr a))))
+	  ((not (pair? t)) t)
+	  (else 
+	   (case (car t)
+	     ((or) `(or ,@(map resolve (cdr t))))
+	     ((not) `(not ,(resolve (second t))))
+	     ((forall) `(forall ,(second t) ,(resolve (third t))))
+	     ((pair list vector) 
+	      (cons (car t) (map resolve (cdr t))))
+	     ((procedure)
+	      (let* ((n (named? t))
+		     (argtypes ((if n third second) t))
+		     (rtypes ((if n cdddr cddr) t)))
+		`(procedure
+		  ,(let loop ((args argtypes))
+		     (cond ((null? args) '())
+			   ((eq? '#!rest (car args))
+			    (cons '#!rest (loop (cdr args))))
+			   (else (cons (resolve (car args)) (loop (cdr args))))))
+		  ,@(if (eq? '* rtypes)
+			'*
+			(map resolve rtypes)))))
+	     (else t))))))
 
 
 ;;; type-db processing
@@ -1366,166 +1447,34 @@
 	     source-filename "\n")
       (##sys#hash-table-for-each
        (lambda (sym plist)
-	 (when (variable-visible? sym)
-	   (when (variable-mark sym '##compiler#declared-type)
-	     (let ((specs (or (variable-mark sym '##compiler#specializations) '()))
-		   (type (variable-mark sym '##compiler#type))
-		   (pred (variable-mark sym '##compiler#predicate))
-		   (enforce (variable-mark sym '##compiler#enforce)))
-	       (pp (cons*
-		    sym
-		    (if (and (pair? type) (eq? 'procedure (car type)))
-			`(,(cond ((and enforce pred) 'procedure!?)
-				 (pred 'procedure?)
-				 (enforce 'procedure!)
-				 (else 'procedure))
-			  ,@(if pred (list pred) '())
-			  ,@(cdr type))
-			type)
-		    specs))))))
+	 (when (and (variable-visible? sym)
+		    (variable-mark sym '##compiler#declared-type))
+	   (let ((specs (or (variable-mark sym '##compiler#specializations) '()))
+		 (type (variable-mark sym '##compiler#type))
+		 (pred (variable-mark sym '##compiler#predicate))
+		 (enforce (variable-mark sym '##compiler#enforce)))
+	     (pp (cons*
+		  sym
+		  (let wrap ((type type))
+		    (if (pair? type)
+			(case (car type)
+			  ((procedure)
+			   `(,(cond ((and enforce pred) 'procedure!?)
+				    (pred 'procedure?)
+				    (enforce 'procedure!)
+				    (else 'procedure))
+			     ,@(if pred (list pred) '())
+			     ,@(cdr type)))
+			  ((forall)
+			   `(forall ,(second type) ,(wrap (third type))))
+			  (else type))
+			type))
+		  specs)))))
        db)
       (print "; END OF FILE"))))
 
 
-;;; matching for specialization
-
-(define (match-specialization typelist atypes typeenv exact)
-  ;; - does not accept complex procedure types in typelist!
-  ;; - "exact" means: "or"-type in atypes is not allowed (used for predicates)
-  ;;
-  ;;XXX It is not entirely clear to me whether we can simply use the "match"
-  ;;    above instead of having a second matcher. The only difference
-  ;;    seems to be the specialization-types allow "not" and disallow
-  ;;    complex procedure types (the latter would be handled by the
-  ;;    full matcher). And what about "exact"?
-  ;;
-  (define (match st t)
-    (cond ((eq? st t))
-	  ((and (symbol? st) (assq st typeenv)) => 
-	   (lambda (e) 
-	     (if (cdr e)
-		 (match (cdr e) t)
-		 (begin
-		   (d "   unify (specialization) ~a = ~a" st t)
-		   (set-cdr! e t)
-		   #t))))
-	  ((and (symbol? t) (assq t typeenv)) => 
-	   (lambda (e) 
-	     (if (cdr e) 
-		 (match st (cdr e))
-		 (begin
-		   (d "   unify (specialization) ~a = ~a" t st)
-		   (set-cdr! e st)
-		   #t))))
-	  ((memq st '(vector list))
-	   (match (list st '*) t))
-	  ((memq t '(vector list))
-	   (match st (list t '*)))
-	  ((eq? 'pair st)
-	   (match '(pair * *) t))
-	  ((eq? 'pair t)
-	   (match st '(pair * *)))
-	  ((and (pair? t) (eq? 'or (car t)))
-	   ((if exact every any) (cut match st <>) (cdr t)))
-	  ((and (pair? t) (eq? 'and (car t)))
-	   (every (cut match st <>) (cdr t)))
-	  ((and (pair? t) (eq? 'forall (car t)))
-	   (match st (third t))) ; assumes typeenv has already been extracted
-	  ((and (pair? t) (eq? 'procedure (car t)))
-	   (match st 'procedure))
-	  ((pair? st)
-	   (case (car st)
-	     ((forall)
-	      (match (third st) t)) ; assumes typeenv has already been extracted
-	     ((not) (matchnot (cadr st) t))
-	     ((or) (any (cut match <> t) (cdr st)))
-	     ((and) (every (cut match <> t) (cdr st)))
-	     ((list)
-	      (or (eq? 'null t)
-		  (and (pair? t) 
-		       (eq? 'list (car t))
-		       (match (second st) (second t)))))
-	     ((vector) 
-	      (and (pair? t) 
-		   (eq? 'vector (car t))
-		   (match (second st) (second t))))
-	     ((pair)
-	      (and (pair? t)
-		   (eq? 'pair (car t))
-		   (match (second st) (second t))
-		   (match (third st) (third t))))
-	     ((procedure) 		
-	      (bomb "match-specialization: can not match complex procedure type" st))
-	     (else (equal? st t))))
-	  ((eq? st '*))
-	  ;; "list" different from "number": a pair is not necessarily a list:
-	  ((eq? st 'number) (match '(or fixnum float) t))
-	  (else (equal? st t))))
-  (define (matchnot st t)
-    (cond ((eq? st t) #f)
-	  ((and (symbol? st) (assq st typeenv)) => ; doesn't unify
-	   (lambda (e) 
-	     (if (cdr e)
-		 (matchnot (cdr e) t)
-		 #f)))
-	  ((and (symbol? t) (assq t typeenv)) =>
-	   (lambda (e) 
-	     (if (cdr e)
-		 (matchnot st (cdr e))
-		 #f)))
-	  ((memq st '(vector list))
-	   (matchnot (list st '*) t))
-	  ((memq t '(vector list))
-	   (matchnot st (list t '*)))
-	  ((eq? 'pair st)
-	   (matchnot '(pair * *) t))
-	  ((eq? 'pair t)
-	   (matchnot st '(pair * *)))
-	  ((and (pair? t) (eq? 'or (car t)))
-	   (every (cut matchnot st <>) (cdr t)))
-	  ((and (pair? t) (eq? 'and (car t)))
-	   (any (cut matchnot st <>) (cdr t))) ;XXX test for "exact" here, too?
-	  ((eq? 'number st) (not (match '(or fixnum float) t)))
-	  ((eq? 'number t) (matchnot st '(or fixnum float)))
-	  ((eq? '* t) #f)
-	  ((eq? 'null st)
-	   (or (not (pair? t))
-	       (not (eq? 'list (car t)))))
-	  ((and (pair? t) (eq? 'forall (car t)))
-	   (match st (third t))) ; assumes typeenv has already been extracted
-	  ((pair? st)
-	   (case (car st)
-	     ;;XXX "and" not handled here
-	     ((forall)
-	      (match (third st) t)) ; assumes typeenv has already been extracted
-	     ((or) (every (cut matchnot <> t) (cdr t)))
-	     ((list)
-	      (and (not (eq? 'null t))
-		   (or (not (pair? t))
-		       (and (eq? 'list (car t))
-			    (matchnot (second st) (second t)))
-		       (matchnot `(pair ,(second st) *) t)))) ;XXX too conservative?
-	     ((vector)
-	      (or (not (pair? t))
-		  (not (eq? 'vector (car t)))
-		  (matchnot (second st) (second t))))
-	     ((pair)
-	      (or (not (pair? t))
-		  (case (car t)
-		    ((list) (matchnot (second st) (second t)))
-		    ((pair)
-		     (and (matchnot (second st) (second t))
-			  (matchnot (third st) (third t))))
-		    (else #f))))
-	     (else (not (match st t)))))
-	  (else (not (match st t)))))
-  (let loop ((tl typelist) (atypes atypes))
-    (cond ((null? tl) (null? atypes))
-	  ((null? atypes) #f)
-	  ((eq? (car tl) '#!rest)
-	   (every (cute match (cadr tl) <>) atypes))
-	  ((match (car tl) (car atypes)) (loop (cdr tl) (cdr atypes)))
-	  (else #f))))
+;; Mutate node for specialization
 
 (define (specialize-node! node template)
   (let ((args (cdr (node-subexpressions node)))
@@ -1554,6 +1503,9 @@
 	    (else (cons (subst (car x)) (subst (cdr x))))))
     (let ((spec (subst template)))
       (copy-node! (build-node-graph spec) node))))
+
+
+;;; Type-validation and -normalization
 
 (define (validate-type type name)
   ;; - returns converted type or #f
@@ -1671,16 +1623,6 @@
 		   ,type)))
       (let ((type (simplify-type type)))
 	(values type (and ptype (eq? (car ptype) type) (cdr ptype)))))))
-
-(define (initial-argument-types dest vars argc)
-  (if (and dest 
-	   strict-variable-types
-	   (variable-mark dest '##compiler#declared-type))
-      (let ((ptype (variable-mark dest '##compiler#type)))
-	(if (procedure-type? ptype)
-	    (nth-value 0 (procedure-argument-types ptype argc '() #t))
-	    (make-list argc '*)))
-      (make-list argc '*)))
 
 
 ;;; hardcoded result types for certain primitives

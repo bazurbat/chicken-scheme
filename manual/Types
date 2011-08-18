@@ -90,6 +90,7 @@ or {{:}} should follow the syntax given below:
 <table>  
 <tr><th>VALUETYPE</th><th>meaning</th></tr>
 <tr><td>{{(or VALUETYPE ...)}}</td><td>"union" or "sum" type</td></tr>
+<tr><td>{{(not VALUETYPE)}}</td><td>non-matching type (*)</td></tr>
 <tr><td>{{(struct STRUCTURENAME)}}</td><td>record structure of given kind</td></tr>
 <tr><td>{{(procedure [NAME] (VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]]) . RESULTS)}}</td><td>procedure type, optionally with name</td></tr>
 <tr><td>{{(VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]] -> . RESULTS)}}</td><td>alternative procedure type syntax</td></tr>
@@ -140,6 +141,8 @@ or {{:}} should follow the syntax given below:
 <tr><td>{{noreturn}}</td><td>procedure does not return normally</td></tr>
 <tr><td>VALUETYPE</td><td></td></tr>
 </table>
+
+(*) Note: no type-variables are bound inside {{(not TYPE)}}.
 
 
 ==== Predicates
