@@ -360,8 +360,8 @@
 		(sprintf
 		    "~aexpected a value of type `~a', but was given a value of type `~a'"
 		  (pname) 
-		  xptype
-		  ptype))
+		  (resolve xptype typeenv)
+		  (resolve ptype typeenv)))
 	       (values '* #f))
 	      (else
 	       (let-values (((atypes values-rest)
@@ -384,7 +384,10 @@
 		      loc
 		      (sprintf
 			  "~aexpected argument #~a of type `~a', but was given an argument of type `~a'"
-			(pname) i (car atypes) (car args)))))
+			(pname) 
+			i
+			(resolve (car atypes) typeenv)
+			(resolve (car args) typeenv)))))
 		 (when (noreturn-procedure-type? ptype)
 		   (set! noreturn #t))
 		 (let ((r (procedure-result-types ptype values-rest (cdr args) typeenv)))
@@ -425,6 +428,7 @@
 					   (else (trail-restore trail0 typeenv)))))
 			     ((and specialize (get-specializations pn)) =>
 			      (lambda (specs)
+				(dd "   specializing: ~s" pn)
 				(let loop ((specs specs))
 				  (cond ((null? specs))
 					((match-argument-types
@@ -968,7 +972,7 @@
 			 (match1 (third t1) t2)))))
 	  (else #f)))
   (let ((m (match1 t1 t2)))
-    (dd "    match ~a <-> ~a -> ~a" t1 t2 m)
+    (dd "    match~a ~a <-> ~a -> ~a" (if exact " (exact)" "") t1 t2 m)
     m))
 
 (define (match-argument-types typelist atypes typeenv #!optional exact)
