@@ -1038,12 +1038,12 @@
 (binary-search (forall (a) (procedure! binary-search ((vector a) (procedure (a) *)) *)))
 (butlast (forall (a) (procedure! butlast ((pair a *)) (list a))))
 (chop (forall (a) (procedure! chop ((list a) fixnum) (list a))))
-(complement (procedure! complement ((procedure (#!rest) *) (procedure (#!rest) *))))
+(complement (procedure! complement ((procedure (#!rest) *) (procedure (#!rest) boolean))))
 (compose (procedure! compose (#!rest procedure) procedure))
 (compress (forall (a) (procedure! compress (list (list a)) (list a))))
 (conc (procedure conc (#!rest) string))
 (conjoin (procedure! conjoin (#!rest (procedure (*) *)) (procedure (*) *)))
-(constantly (procedure constantly (#!rest) . *))
+(constantly (forall (a) (procedure constantly (a) (procedure (#!rest) a))))
 (disjoin (procedure! disjoin (#!rest (procedure (*) *)) (procedure (*) *)))
 (each (procedure! each (#!rest procedure) procedure))
 (flatten (procedure! flatten (pair) list))
@@ -1108,22 +1108,22 @@
 (substring=? (procedure! substring=? (string string #!optional fixnum fixnum fixnum) boolean))
 (tail? (procedure tail? (* *) boolean))
 
-;;XXX continue ...
+
 ;; extras
 
 (format (procedure format (#!rest) *))
 (fprintf (procedure! fprintf (port string #!rest) undefined))
 (pp (procedure! pp (* #!optional port) undefined))
 (pretty-print (procedure! pretty-print (* #!optional port) undefined))
-(pretty-print-width (procedure pretty-print-width (#!optional *) *))
+(pretty-print-width (procedure pretty-print-width (#!optional fixnum) *))
 (printf (procedure! printf (string #!rest) undefined))
-(random (procedure! random (number) number))
-(randomize (procedure! randomize (#!optional number) undefined))
+(random (procedure! random (fixnum) fixnum))
+(randomize (procedure! randomize (#!optional fixnum) undefined))
 (read-buffered (procedure! read-buffered (#!optional port) string))
-(read-byte (procedure! read-byte (#!optional port) fixnum))
+(read-byte (procedure! read-byte (#!optional port) *))
 (read-file (procedure! read-file (#!optional (or port string) (procedure (port) *) fixnum) list))
 (read-line (procedure! read-line (#!optional port (or boolean fixnum)) *))
-(read-lines (procedure! read-lines (#!optional (or port string) fixnum) list))
+(read-lines (procedure! read-lines (#!optional (or port string) fixnum) (list string)))
 (read-string (procedure! read-string (#!optional * port) string))
 (read-string! (procedure! read-string! (fixnum string #!optional port fixnum) fixnum))
 (read-token (procedure! read-token ((procedure (char) *) #!optional port) string))
@@ -1136,14 +1136,15 @@
 (write-line (procedure! write-line (string #!optional port) undefined))
 (write-string (procedure! write-string (string #!optional * port) undefined))
 
+
 ;; files
 
 (delete-file* (procedure! delete-file* (string) *))
 (file-copy (procedure! file-copy (string string #!optional * fixnum) fixnum))
 (file-move (procedure! file-move (string string #!optional * fixnum) fixnum))
-(make-pathname (procedure! make-pathname (* * #!optional string string) string))
+(make-pathname (procedure! make-pathname (* #!optional string string) string))
 (directory-null? (procedure! directory-null? (string) boolean))
-(make-absolute-pathname (procedure! make-absolute-pathname (* * #!optional string string) string))
+(make-absolute-pathname (procedure! make-absolute-pathname (* #!optional string string) string))
 (create-temporary-directory (procedure! create-temporary-directory () string))
 (create-temporary-file (procedure! create-temporary-file (#!optional string) string))
 (decompose-directory (procedure! decompose-directory (string) * * *))
@@ -1159,7 +1160,10 @@
 (pathname-strip-extension (procedure! pathname-strip-extension (string) string))
 (normalize-pathname (procedure! normalize-pathname (string #!optional symbol) string))
 
+
 ;; irregex
+
+;;XXX these need to be reviewed by Alex and/or sjamaan
 
 (irregex (procedure irregex (#!rest) *))
 ;irregex-apply-match
@@ -1246,25 +1250,31 @@
 (string->irregex (procedure! string->irregex (string #!rest) *))
 (string->sre (procedure! string->sre (string #!rest) *))
 
+
 ;; lolevel
 
 (address->pointer (procedure! address->pointer (fixnum) pointer)
 		  ((fixnum) (##sys#address->pointer #(1))))
 
-(align-to-word (procedure align-to-word ((or number pointer locative procedure port)) (or pointer number)))
+(align-to-word
+ (procedure 
+  align-to-word
+  ((or number pointer locative procedure port)) 
+  (or pointer number)))
+
 (allocate (procedure! allocate (fixnum) (or boolean pointer)))
 (block-ref (procedure! block-ref (* fixnum) *))
 (block-set! (procedure! block-set! (* fixnum *) *))
 (extend-procedure (procedure! extend-procedure (procedure *) procedure))
 (extended-procedure? (procedure extended-procedure? (*) boolean))
-(free (procedure! free (pointer) *))
+(free (procedure! free (pointer) undefined))
 (locative->object (procedure! locative->object (locative) *))
 (locative-ref (procedure! locative-ref (locative) *))
 (locative-set! (procedure! locative-set! (locative *) *))
-(locative? (procedure locative? (*) boolean))
+(locative? (procedure? locative locative? (*) boolean))
 (make-locative (procedure! make-locative (* #!optional fixnum) locative))
 (make-pointer-vector (procedure! make-pointer-vector (fixnum #!optional pointer) pointer-vector))
-(make-record-instance (procedure make-record-instance (* #!rest) *))
+(make-record-instance (procedure make-record-instance (symbol #!rest) *))
 (make-weak-locative (procedure! make-weak-locative (* #!optional fixnum) locative))
 
 (move-memory! (procedure! move-memory! (* * #!optional fixnum fixnum fixnum) *)
@@ -1348,7 +1358,7 @@
 (pointer-u8-set! (procedure! pointer-u8-set! (pointer fixnum) undefined))
 
 (pointer=? (procedure! pointer=? ((or pointer locative procedure port)
-				  (or pointer procedure locative port)) boolean)
+				  (or pointer locative procedure port)) boolean)
 	   ((pointer pointer) (##core#inline "C_pointer_eqp" #(1) #(2))))
 
 (pointer? (procedure? pointer pointer? (*) boolean))
@@ -1364,15 +1374,19 @@
 (tag-pointer (procedure! tag-pointer (pointer *) pointer))
 (tagged-pointer? (procedure! tagged-pointer? (* #!optional *) boolean))
 
+
 ;; ports
 
 (call-with-input-string (procedure! call-with-input-string (string (procedure (port) . *)) . *))
 (call-with-output-string (procedure! call-with-output-string ((procedure (port) . *)) string))
-(copy-port (procedure! copy-port (* * #!optional (procedure (*) *) (procedure (* *) *)) undefined)) 
+(copy-port (procedure! copy-port (* * #!optional (procedure (*) *) (procedure (* port) *)) undefined)) 
 (make-input-port (procedure! make-input-port ((procedure () char) (procedure () *) (procedure () . *) #!optional * * * *) port))
 (make-output-port (procedure! make-output-port ((procedure (string) . *) (procedure () . *) #!optional (procedure () . *)) port))
 (port-for-each (procedure! port-for-each ((procedure (*) *) (procedure () . *)) undefined))
-(port-map (procedure! port-map ((procedure (*) *) (procedure () . *)) list))
+
+(port-map
+ (forall (a b) (procedure! port-map ((procedure (a) b) (procedure () a)) (list b))))
+
 (port-fold (procedure! port-fold ((procedure (* *) *) * (procedure () *)) *))
 (make-broadcast-port (procedure! make-broadcast-port (#!rest port) port))
 (make-concatenated-port (procedure! make-concatenated-port (port #!rest port) port))
@@ -1381,6 +1395,7 @@
 (with-input-from-string (procedure! with-input-from-string (string (procedure () . *)) . *))
 (with-output-to-port (procedure! with-output-to-port (port (procedure () . *)) . *))
 (with-output-to-string (procedure! with-output-to-string ((procedure () . *)) . *))
+
 
 ;; posix
 
@@ -1402,13 +1417,13 @@
 (current-effective-user-id (procedure current-effective-user-id () fixnum))
 (current-effective-user-name (procedure current-effective-user-name () string))
 (current-environment deprecated)
-(get-environment-variables (procedure get-environment-variables () list))
+(get-environment-variables (procedure get-environment-variables () (list string)))
 (current-group-id (procedure current-group-id () fixnum))
 (current-process-id (procedure current-process-id () fixnum))
 (current-user-id (procedure current-user-id () fixnum))
 (current-user-name (procedure current-user-name () string))
 (delete-directory (procedure! delete-directory (string) string))
-(directory (procedure! directory (string #!optional *) list))
+(directory (procedure! directory (string #!optional *) (list string)))
 (directory? (procedure! directory? ((or string fixnum)) boolean))
 (duplicate-fileno (procedure! duplicate-fileno (fixnum #!optional fixnum) fixnum))
 (errno/2big fixnum)
@@ -1472,9 +1487,9 @@
 (file-position (procedure! file-position ((or port fixnum)) fixnum))
 (file-read (procedure! file-read (fixnum fixnum #!optional *) list))
 (file-read-access? (procedure! file-read-access? (string) boolean))
-(file-select (procedure! file-select (list list #!optional fixnum) list list))
+(file-select (procedure! file-select ((list fixnum) (list fixnum) #!optional fixnum) * *))
 (file-size (procedure! file-size ((or string fixnum)) number))
-(file-stat (procedure! file-stat ((or string fixnum) #!optional *) vector))
+(file-stat (procedure! file-stat ((or string fixnum) #!optional *) (vector number)))
 (file-test-lock (procedure! file-test-lock (port #!optional fixnum *) boolean))
 (file-truncate (procedure! file-truncate ((or string fixnum) fixnum) undefined))
 (file-type (procedure! ((or string fixnum) #!optional * *) symbol))
@@ -1490,7 +1505,7 @@
 (glob (procedure! glob (#!rest string) list))
 (group-information (procedure! group-information (fixnum #!optional *) *))
 (initialize-groups (procedure! initialize-groups (string fixnum) undefined))
-(local-time->seconds (procedure! local-time->seconds (vector) number))
+(local-time->seconds (procedure! local-time->seconds ((vector number)) number))
 (local-timezone-abbreviation (procedure local-timezone-abbreviation () string))
 (map-file-to-memory (procedure! map-file-to-memory (* fixnum fixnum fixnum fixnum #!optional fixnum) (struct mmap)))
 (map/anonymous fixnum)
@@ -1537,12 +1552,15 @@
 (perm/ixusr fixnum)
 (pipe/buf fixnum)
 (port->fileno (procedure! port->fileno (port) fixnum))
-(process (procedure! process (string #!optional list list) port port fixnum))
-(process* (procedure! process* (string #!optional list list) port port fixnum *))
-(process-execute (procedure! process-execute (string #!optional list list) noreturn))
+(process (procedure! process (string #!optional (list string) (list string)) port port fixnum))
+(process* (procedure! process* (string #!optional (list string) (list string)) port port fixnum *))
+
+(process-execute
+ (procedure! process-execute (string #!optional (list string) (list string)) noreturn))
+
 (process-fork (procedure! process-fork (#!optional (procedure () . *)) fixnum))
 (process-group-id (procedure! process-group-id () fixnum))
-(process-run (procedure! process-run (string #!optional list) fixnum))
+(process-run (procedure! process-run (string #!optional (list string)) fixnum))
 (process-signal (procedure! process-signal (fixnum #!optional fixnum) undefined))
 (process-wait (procedure! process-wait (fixnum #!optional *) fixnum fixnum fixnum))
 (prot/exec fixnum)
@@ -1551,9 +1569,9 @@
 (prot/write fixnum)
 (read-symbolic-link (procedure! read-symbolic-link (string) string))
 (regular-file? (procedure! regular-file? ((or string fixnum)) boolean))
-(seconds->local-time (procedure! seconds->local-time (#!optional number) vector))
+(seconds->local-time (procedure! seconds->local-time (#!optional number) (vector number)))
 (seconds->string (procedure! seconds->string (#!optional number) string))
-(seconds->utc-time (procedure! seconds->utc-time (#!optional number) vector))
+(seconds->utc-time (procedure! seconds->utc-time (#!optional number) (vector number)))
 (seek/cur fixnum)
 (seek/end fixnum)
 (seek/set fixnum)
@@ -1563,7 +1581,7 @@
 (set-groups! (procedure! set-groups! (list) undefined))
 (set-root-directory! (procedure! set-root-directory! (string) undefined))
 (set-signal-handler! (procedure! set-signal-handler! (fixnum (procedure (fixnum) . *)) undefined))
-(set-signal-mask! (procedure! set-signal-mask! (list) undefined))
+(set-signal-mask! (procedure! set-signal-mask! ((list fixnum)) undefined))
 (setenv (procedure! setenv (string string) undefined))
 (signal-handler (procedure! signal-handler (fixnum) (procedure (fixnum) . *)))
 (signal-mask (procedure signal-mask () fixnum))
@@ -1611,14 +1629,17 @@
 (unmap-file-from-memory (procedure! unmap-file-from-memory ((struct mmap) #!optional fixnum) undefined))
 (unsetenv (procedure! unsetenv (string) undefined))
 (user-information (procedure! user-information ((or string fixnum) #!optional *) *))
-(utc-time->seconds (procedure! utc-time->seconds (vector) number))
+(utc-time->seconds (procedure! utc-time->seconds ((vector number)) number))
 (with-input-from-pipe (procedure! with-input-from-pipe (string (procedure () . *) #!optional symbol) . *))
 (with-output-to-pipe (procedure! with-output-to-pipe (string (procedure () . *) #!optional symbol) . *))
 
+
 ;; srfi-1
 
-(alist-cons (procedure alist-cons (* * *) list))
-(alist-copy (procedure! alist-copy (list) list))
+(alist-cons (forall (a b c) (procedure alist-cons (a b (list c)) (pair a (pair b (list c))))))
+(alist-copy (forall (a) (procedure! alist-copy ((list a)) (list a)))
+
+;;XXX continue ...
 (alist-delete (procedure! alist-delete (* list #!optional (procedure (* *) *)) list))
 (alist-delete! (procedure! alist-delete! (* list #!optional (procedure (* *) *)) undefined))
 (any (procedure! any ((procedure (* #!rest) *) list #!rest list) *))
