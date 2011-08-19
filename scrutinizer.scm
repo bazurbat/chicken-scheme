@@ -29,7 +29,7 @@
   (hide specialize-node! specialization-statistics
 	procedure-type? named? procedure-result-types procedure-argument-types
 	noreturn-type? rest-type procedure-name d-depth
-	noreturn-procedure-type? trail trail-restore
+	noreturn-procedure-type? trail trail-restore typename
 	compatible-types? type<=? match-types resolve match-argument-types))
 
 
@@ -64,7 +64,7 @@
 ;       | (forall (VAR1 ...) VAL)
 ;       | deprecated
 ;   BASIC = * | string | symbol | char | number | boolean | list | pair | 
-;           procedure | vector | null | eof | undefined | port | 
+;           procedure | vector | null | eof | undefined | port |
 ;           blob | noreturn | pointer | locative | fixnum | float |
 ;           pointer-vector
 ;   COMPLEX = (pair VAL VAL) | (vector VAL) | (list VAL)
@@ -207,41 +207,6 @@
 	     (pp-fragment x))))
 	f))
 
-    (define (typename t)
-      (case t
-	((*) "anything")
-	((char) "character")
-	(else
-	 (cond ((symbol? t) (symbol->string t))
-	       ((pair? t)
-		(case (car t)
-		  ((procedure) 
-		   (if (or (string? (cadr t)) (symbol? (cadr t)))
-		       (->string (cadr t))
-		       (sprintf "a procedure with ~a returning ~a"
-			 (argument-string (cadr t))
-			 (result-string (cddr t)))))
-		  ((or)
-		   (string-intersperse
-		    (map typename (cdr t))
-		    " OR "))
-		  ((struct)
-		   (sprintf "a structure of type ~a" (cadr t)))
-		  ((forall) 
-		   (sprintf "~a (for all ~a)"
-		     (typename (third t))
-		     (string-intersperse (map symbol->string (second t)) " ")))
-		  ((pair)
-		   (sprintf "a pair wth car ~a and cdr ~a"
-		     (typename (second t))
-		     (typename (third t))))
-		  ((vector)
-		   (sprintf "a vector with element type ~a" (typename (second t))))
-		  ((list)
-		   (sprintf "a list with element type ~a" (typename (second t))))
-		  (else (bomb "invalid type" t))))
-	       (else (bomb "invalid type" t))))))
-
     (define (argument-string args)
       (let* ((len (length args))
 	     (m (multiples len)))
@@ -352,7 +317,7 @@
 	     (pptype? (procedure-type? ptype))
 	     (nargs (length (cdr args)))
 	     (xptype `(procedure ,(make-list nargs '*) *))
-	     (typeenv (or (and pptype? (type-typeenv ptype)) '()))
+	     (typeenv (append-map type-typeenv args))
 	     (op #f))
 	(cond ((and (not pptype?) (not (match-types xptype ptype typeenv)))
 	       (report
@@ -430,22 +395,25 @@
 			      (lambda (specs)
 				(dd "   specializing: ~s" pn)
 				(let loop ((specs specs))
-				  (cond ((null? specs))
-					((match-argument-types
-					  (first (car specs)) (cdr args) typeenv 
-					  #t)
-					 (let ((spec (car specs)))
-					   (set! op (cons pn (car spec)))
-					   (let* ((r2 (and (pair? (cddr spec))
-							   (second spec)))
-						  (rewrite (if r2
-							       (third spec)
-							       (second spec))))
-					     (specialize-node! node rewrite)
-					     (when r2 (set! r r2)))))
-					(else
-					 (trail-restore trail0 typeenv)
-					 (loop (cdr specs))))))))
+				  (and (pair? specs)
+				       (let* ((spec (car specs))
+					      (stype (first spec))
+					      (tenv2 (append (type-typeenv stype) typeenv)))
+					   (cond ((match-argument-types
+						   (first (car specs)) (cdr args) tenv2
+						   #t)
+						  (set! op (cons pn (car spec)))
+						  (set! typeenv tenv2)
+						  (let* ((r2 (and (pair? (cddr spec))
+								  (second spec)))
+							 (rewrite (if r2
+								      (third spec)
+								      (second spec))))
+						    (specialize-node! node rewrite)
+						    (when r2 (set! r r2))))
+						 (else
+						  (trail-restore trail0 tenv2)
+						  (loop (cdr specs))))))))))
 		       (when op
 			 (d "  specialized: `~s'" op)
 			 (cond ((assoc op specialization-statistics) =>
@@ -785,7 +753,11 @@
 		    ;; first exp is always a variable so ts must be of length 1
 		    (let loop ((types params) (subs (cdr subs)))
 		      (cond ((null? types)
-			     (bomb "no clause applies in `compiler-typecase'" params (car ts)))
+			     (quit "~ano clause applies in `compiler-typecase' for expression of type `~s':~a" 
+				   (location-name loc) (car ts)
+				   (string-concatenate
+				    (map (lambda (t) (string-append "\n   " (typename t)))
+					 params))))
 			    ((match-types (car types) (car ts) '())
 			     ;; drops exp
 			     (copy-node! (car subs) n)
@@ -813,6 +785,44 @@
       (when (positive? dropped-branches)
 	(debugging 'x "dropped branches" dropped-branches)) ;XXX
       rn)))
+      
+
+(define (typename t)
+  (case t
+    ((*) "anything")
+    ((char) "character")
+    (else
+     (cond ((symbol? t) (symbol->string t))
+	   ((pair? t)
+	    (case (car t)
+	      ((procedure) 
+	       (if (or (string? (cadr t)) (symbol? (cadr t)))
+		   (->string (cadr t))
+		   (sprintf "a procedure with ~a returning ~a"
+		     (argument-string (cadr t))
+		     (result-string (cddr t)))))
+	      ((or)
+	       (string-intersperse
+		(map typename (cdr t))
+		" OR "))
+	      ((struct)
+	       (sprintf "a structure of type ~a" (cadr t)))
+	      ((forall) 
+	       (sprintf "~a (for all ~a)"
+		 (typename (third t))
+		 (string-intersperse (map symbol->string (second t)) " ")))
+	      ((not)
+	       (sprintf "NOT ~a" (typename (second t))))
+	      ((pair)
+	       (sprintf "a pair wth car ~a and cdr ~a"
+		 (typename (second t))
+		 (typename (third t))))
+	      ((vector)
+	       (sprintf "a vector with element type ~a" (typename (second t))))
+	      ((list)
+	       (sprintf "a list with element type ~a" (typename (second t))))
+	      (else (bomb "invalid type" t))))
+	   (else (bomb "invalid type" t))))))
 
 
 ;;; Type-matching
@@ -853,9 +863,11 @@
     (memq a '(#!rest #!optional)))
 
   (define (match-results results1 results2)
-    (cond ((null? results1) (atom? results2))
+    (cond ((null? results1) 
+	   (or (null? results2)
+	       (and (not exact) (eq? '* results2))))
 	  ((eq? '* results1))
-	  ((eq? '* results2))
+	  ((eq? '* results2) (not exact))
 	  ((null? results2) #f)
 	  ((match1 (car results1) (car results2)) 
 	   (match-results (cdr results1) (cdr results2)))
@@ -882,23 +894,7 @@
 		   (set-cdr! e t1)
 		   #t))))
 	  ((eq? t1 '*))
-	  ((eq? t2 '*) (not exact))
-	  ((eq? t1 'noreturn) (not exact))
-	  ((eq? t2 'noreturn) (not exact))
-	  ((eq? t1 'number) 
-	   (and (not exact)
-		(match1 '(or fixnum float) t2)))
-	  ((eq? t2 'number)
-	   (and (not exact)
-		(match1 t1 '(or fixnum float))))
-	  ((eq? 'procedure t1)
-	   (and (pair? t2)
-		(eq? 'procedure (car t2))))
-	  ((eq? 'procedure t2) 
-	   (and (not exact)
-		(pair? t1)
-		(eq? 'procedure (car t1))))
-	  ((and (pair? t1) (eq? 'not (car t1)))
+	  ((and (pair? t1) (eq? 'not (car t1))) ; needs to be done before '* check for t2
 	   (let* ((trail0 trail)
 		  (m (match1 (cadr t1) t2)))
 	     (trail-restore trail0 typeenv)
@@ -917,6 +913,22 @@
 	   (match1 (third t1) t2)) ; assumes typeenv has already been extracted
 	  ((and (pair? t2) (eq? 'forall (car t2)))
 	   (match1 t1 (third t2))) ; assumes typeenv has already been extracted
+	  ((eq? t2 '*) (not exact))
+	  ((eq? t1 'noreturn) (not exact))
+	  ((eq? t2 'noreturn) (not exact))
+	  ((eq? t1 'number) 
+	   (and (not exact)
+		(match1 '(or fixnum float) t2)))
+	  ((eq? t2 'number)
+	   (and (not exact)
+		(match1 t1 '(or fixnum float))))
+	  ((eq? 'procedure t1)
+	   (and (pair? t2)
+		(eq? 'procedure (car t2))))
+	  ((eq? 'procedure t2) 
+	   (and (not exact)
+		(pair? t1)
+		(eq? 'procedure (car t1))))
 	  ((eq? t1 'pair) (match1 '(pair * *) t2))
 	  ((eq? t2 'pair) (match1 t1 '(pair * *)))
 	  ((eq? t1 'list) (match1 '(list *) t2))
