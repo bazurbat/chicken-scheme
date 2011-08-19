@@ -6389,7 +6389,7 @@ void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...)
 	if((n2 = C_unfix(n1)) == 0)
 	  barf(C_DIVISION_BY_ZERO_ERROR, "/");
 
-	if((fresult = (double)iresult / (double)n2) != (iresult /= n2))
+	if((fresult = (double)iresult / (double)n2) != (iresult / n2))
 	  fflag = 1;
       }
     }
