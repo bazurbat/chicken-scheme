@@ -1267,7 +1267,7 @@
  'compiler-typecase '()
  (##sys#er-transformer
   (lambda (x r c)
-    (##sys#check-syntax 'compiler-typecase x '(_ _ . #((_ . #(_ 1)) 0)))
+    (##sys#check-syntax 'compiler-typecase x '(_ _ . #((_ . #(_ 1)) 1)))
     (let ((var (gensym)))
       `(##core#let ((,var ,(cadr x)))
 		   (##core#typecase 

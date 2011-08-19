@@ -8,7 +8,8 @@
        (compiler-typecase x
 	 (t 'ok))
        (compiler-typecase not-x
-	 ((not t) 'ok))))))
+	 ((not t) 'ok))
+       (ms t x not-x)))))
 
 (define-syntax checkp
   (syntax-rules ()
@@ -19,6 +20,70 @@
 	     (t 'ok)))
        (compiler-typecase (##sys#make-structure 'foo)
 	 ((not t) 'ok))))))
+
+(define (bar) 42)
+
+(define-syntax m
+  (er-macro-transformer
+   (lambda (x r c)
+     (let ((t1 (cadr x))
+	   (t2 (caddr x))
+	   (foo1 (gensym 'foo1))
+	   (foo2 (gensym 'foo2)))
+       `(begin
+	  (print t1 " = " t2)
+	  (: ,foo1 (-> ,t1))
+	  (: ,foo2 (-> ,t2))
+	  (define (,foo1) (bar))
+	  (define (,foo2) (bar))
+	  (compiler-typecase (,foo1)
+	    (,t2 'ok))
+	  (print t2 " = " t1)
+	  (compiler-typecase (,foo2)
+	    (,t1 'ok)))))))
+
+(define-syntax mn
+  (er-macro-transformer
+   (lambda (x r c)
+     (let ((t1 (cadr x))
+	   (t2 (caddr x))
+	   (foo1 (gensym 'foo1))
+	   (foo2 (gensym 'foo2)))
+       `(begin
+	  (print t1 " != " t2)
+	  (: ,foo1 (-> ,t1))
+	  (: ,foo2 (-> ,t2))
+	  (define (,foo1) (bar))
+	  (define (,foo2) (bar))
+	  (compiler-typecase (,foo1)
+	    (,t2 (bomb))
+	    (else 'ok))
+	  (print t2 " != " t1)
+	  (compiler-typecase (,foo2)
+	    (,t1 (bomb))
+	    (else 'ok)))))))
+
+(define-syntax ms
+  (er-macro-transformer
+   (lambda (x r c)
+     (let ((fname (gensym))
+	   (fname2 (gensym))
+	   (type (cadr x))
+	   (val (caddr x))
+	   (nval (cadddr x)))
+       `(begin
+	  (print "specialize " type)
+	  (: ,fname (,type -> *)
+	     ((,type) 'ok)
+	     (((not ,type)) 'ok-too))
+	  (define (,fname x) (bomb))
+	  (assert (eq? 'ok (,fname ,val)))
+	  (assert (eq? 'ok-too (,fname ,nval)))
+	  (: ,fname2 (* -> *)
+	     (((not ,type)) (bomb)))
+	  (define (,fname2 x) 'ok)
+	  (print "specialize not " type)
+	  (,fname2 ,val))))))
 
 
 ;;;
@@ -73,3 +138,12 @@
 (checkp pointer-vector? (make-pointer-vector 1) pointer-vector)
 (checkp pointer? (address->pointer 1) pointer)
 
+(m number fixnum)
+(m number float)
+(m list null)
+(mn list pair)
+(m pair (pair number string))
+(m procedure (procedure () *))
+(mn (procedure (*) *) (procedure () *))
+(m (procedure (#!rest) . *) (procedure (*) . *))
+(mn (procedure () *) (procedure () * *))

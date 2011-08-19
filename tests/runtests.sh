@@ -70,8 +70,9 @@ $compile inlining-tests.scm -optimize-level 3
 ./a.out
 
 echo "======================================== scrutiny tests ..."
-$compile typematch-tests.scm -scrutinize -analyze-only
-$compile scrutiny-tests.scm -scrutinize -analyze-only -ignore-repository -types ../types.db 2>scrutiny.out -verbose
+$compile typematch-tests.scm -scrutinize
+./a.out
+$compile scrutiny-tests.scm -scrutinize -ignore-repository -types ../types.db 2>scrutiny.out -verbose
 
 if test -n "$MSYSTEM"; then
     dos2unix scrutiny.out

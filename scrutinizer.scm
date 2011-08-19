@@ -398,9 +398,9 @@
 				  (and (pair? specs)
 				       (let* ((spec (car specs))
 					      (stype (first spec))
-					      (tenv2 (append (type-typeenv stype) typeenv)))
+					      (tenv2 (append (append-map type-typeenv stype) typeenv)))
 					   (cond ((match-argument-types
-						   (first (car specs)) (cdr args) tenv2
+						   stype (cdr args) tenv2
 						   #t)
 						  (set! op (cons pn (car spec)))
 						  (set! typeenv tenv2)
@@ -1387,7 +1387,12 @@
   (let resolve ((t t))
     (cond ((not t) '*)			; unbound type-variable
 	  ((assq t typeenv) => (lambda (a) (resolve (cdr a))))
-	  ((not (pair? t)) t)
+	  ((not (pair? t)) 
+	   (if (memq t '(* fixnum eof char string symbol float number list vector pair
+			   undefined blob port pointer locative boolean pointer-vector
+			   null procedure noreturn))
+	       t
+	       (bomb "can't resolve unknown type-variable" t)))
 	  (else 
 	   (case (car t)
 	     ((or) `(or ,@(map resolve (cdr t))))
@@ -1403,7 +1408,11 @@
 		  ,(let loop ((args argtypes))
 		     (cond ((null? args) '())
 			   ((eq? '#!rest (car args))
-			    (cons '#!rest (loop (cdr args))))
+			    (if (equal? '(values) (cdr args))
+				args
+				(cons (car args) (loop (cdr args)))))
+			   ((eq? '#!optional (car args))
+			    (cons (car args) (loop (cdr args))))
 			   (else (cons (resolve (car args)) (loop (cdr args))))))
 		  ,@(if (eq? '* rtypes)
 			'*
@@ -1563,16 +1572,17 @@
 			 deprecated noreturn values))
 	     t)
 	    ((not (pair? t)) 
-	     (when (memq t typevars)
-	       (set! usedvars (cons t usedvars)))
-	     t)
+	     (cond ((memq t typevars)
+		    (set! usedvars (cons t usedvars))
+		    t)
+		   (else #f)))
 	    ((eq? 'forall (car t))
 	     (and (= 3 (length t))
 		  (list? (second t))
 		  (every symbol? (second t))
 		  (begin
 		    (set! typevars (append (second t) typevars))
-		    (validate (third t)))))
+		    (validate (third t) rec))))
 	    ((eq? 'or (car t)) 
 	     (and (list? t)
 		  (let ((ts (map validate (cdr t))))
@@ -1582,14 +1592,30 @@
 	     (and (= 2 (length t))
 		  (symbol? (cadr t))
 		  t))
-	    ((eq? 'pair (car t))
-	     (and (= 3 (length t))
-		  (let ((ts (map validate (cdr t))))
-		    (and ts `(pair ,@ts)))))
+	    ((memq '-> t) =>
+	     (lambda (p)
+	       (let ((cp (memq ': (cdr p))))
+		 (cond ((not cp) 
+			(validate
+			 `(procedure ,(upto t p) ,@(cdr p))
+			 rec))
+		       ((and (= 5 (length t))
+			     (eq? p (cdr t))
+			     (eq? cp (cdddr t)))
+			(set! t (validate `(procedure (,(first t)) ,(third t)) rec))
+			;; we do it this way to distinguish the "outermost" predicate
+			;; procedure type
+			(set! ptype (cons t (validate (cadr cp))))
+			t)
+		       (else #f)))))
 	    ((memq (car t) '(vector list))
 	     (and (= 2 (length t))
 		  (let ((t2 (validate (second t))))
 		    (and t2 `(,(car t) ,t2)))))
+	    ((eq? 'pair (car t))
+	     (and (= 3 (length t))
+		  (let ((ts (map validate (cdr t))))
+		    (and ts `(pair ,@ts)))))
 	    ((eq? 'procedure (car t))
 	     (and (pair? (cdr t))
 		  (let* ((name (if (symbol? (cadr t))
@@ -1613,32 +1639,18 @@
 					 ,@(if (and name (not rec)) (list name) '())
 					 ,ts
 					 ,@rt)))))))))
-	    ((and (pair? (cdr t)) (memq '-> (cdr t))) =>
-	     (lambda (p)
-	       (let ((cp (memq ': (cdr t))))
-		 (cond ((not cp) 
-			(validate
-			 `(procedure ,(upto t p) ,@(cdr p))
-			 rec))
-		       ((and (= 5 (length t))
-			     (eq? p (cdr t))
-			     (eq? cp (cdddr t)))
-			(set! t (validate `(procedure (,(first t)) ,(third t)) rec))
-			;; we do it this way to distinguish the "outermost" predicate
-			;; procedure type
-			(set! ptype (cons t (validate (cadr cp))))
-			t)
-		       (else #f)))))
 	    (else #f)))
-    (let ((type (validate type #f)))
-      (when (pair? typevars)
-	(set! type
-	  `(forall ,(filter-map
-		     (lambda (v) (and (memq v usedvars) v))
-		     (delete-duplicates typevars eq?))
-		   ,type)))
-      (let ((type (simplify-type type)))
-	(values type (and ptype (eq? (car ptype) type) (cdr ptype)))))))
+    (cond ((validate type #f) =>
+	   (lambda (type)
+	     (when (pair? typevars)
+	       (set! type
+		 `(forall ,(filter-map
+			    (lambda (v) (and (memq v usedvars) v))
+			    (delete-duplicates typevars eq?))
+			  ,type)))
+	     (let ((type (simplify-type type)))
+	       (values type (and ptype (eq? (car ptype) type) (cdr ptype))))))
+	  (else (values #f #f)))))
 
 
 ;;; hardcoded result types for certain primitives
