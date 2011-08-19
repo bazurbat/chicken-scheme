@@ -873,6 +873,14 @@
 	   (match-results (cdr results1) (cdr results2)))
 	  (else #f)))
 
+  (define (match1/restore t1 t2)
+    (let* ((trail0 trail)
+	   (m (match1 t1 t2)))
+      (cond (m)
+	    (else
+	     (trail-restore trail0 typeenv)
+	     #f))))
+
   (define (match1 t1 t2)
     (cond ((eq? t1 t2))
 	  ((and (symbol? t1) (assq t1 typeenv)) => 
@@ -906,9 +914,9 @@
 		  (trail-restore trail0 typeenv)
 		  (not m))))
 	  ((and (pair? t1) (eq? 'or (car t1))) 
-	   (any (cut match1 <> t2) (cdr t1)))
+	   (any (cut match1/restore <> t2) (cdr t1)))
 	  ((and (pair? t2) (eq? 'or (car t2)))
-	   ((if exact every any) (cut match1 t1 <>) (cdr t2)))
+	   ((if exact every any) (cut match1/restore t1 <>) (cdr t2)))
 	  ((and (pair? t1) (eq? 'forall (car t1)))
 	   (match1 (third t1) t2)) ; assumes typeenv has already been extracted
 	  ((and (pair? t2) (eq? 'forall (car t2)))
@@ -991,6 +999,7 @@
   (let loop ((tl typelist) (atypes atypes))
     (cond ((null? tl) (null? atypes))
 	  ((null? atypes) #f)
+	  ((equal? '(#!rest) tl))
 	  ((eq? (car tl) '#!rest)
 	   (every (cute match-types (cadr tl) <> typeenv exact) atypes))
 	  ((match-types (car tl) (car atypes) typeenv exact)

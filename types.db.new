@@ -1019,15 +1019,13 @@
 		     ((procedure *) (let ((#(tmp) #(1))) '#t)))
 
 
-;;XXX continue...
-
 ;; data-structures
 
 (->string (procedure ->string (*) string)
 	  ((string) #(1)))
 
-(alist-ref (procedure! alist-ref (* list #!optional (procedure (* *) *) *) *))
-(alist-update! (procedure! alist-update! (* * list #!optional (procedure (* *) *)) *))
+(alist-ref (procedure! alist-ref (* (list pair) #!optional (procedure (* *) *) *) *))
+(alist-update! (procedure! alist-update! (* * (list pair) #!optional (procedure (* *) *)) *))
 (always? (procedure always? (#!rest) boolean))
 
 (any? (procedure any? (*) boolean)
@@ -1037,20 +1035,20 @@
        ((pair) (let ((#(tmp) #(1))) '#f))
        (((not (or pair list))) (let ((#(tmp) #(1))) '#t)))
 
-(binary-search (procedure! binary-search (vector (procedure (*) *)) *))
-(butlast (procedure! butlast (pair) list))
-(chop (procedure! chop (list fixnum) list))
-(complement (procedure! complement (procedure) procedure))
+(binary-search (forall (a) (procedure! binary-search ((vector a) (procedure (a) *)) *)))
+(butlast (forall (a) (procedure! butlast ((pair a *)) (list a))))
+(chop (forall (a) (procedure! chop ((list a) fixnum) (list a))))
+(complement (procedure! complement ((procedure (#!rest) *) (procedure (#!rest) *))))
 (compose (procedure! compose (#!rest procedure) procedure))
-(compress (procedure! compress (list list) list))
+(compress (forall (a) (procedure! compress (list (list a)) (list a))))
 (conc (procedure conc (#!rest) string))
 (conjoin (procedure! conjoin (#!rest (procedure (*) *)) (procedure (*) *)))
 (constantly (procedure constantly (#!rest) . *))
 (disjoin (procedure! disjoin (#!rest (procedure (*) *)) (procedure (*) *)))
 (each (procedure! each (#!rest procedure) procedure))
 (flatten (procedure! flatten (pair) list))
-(flip (procedure! flip ((procedure (* *) . *)) procedure))
-(identity (procedure identity (*) *))
+(flip (procedure! flip ((procedure (* *) . *)) (procedure (* *) . *)))
+(identity (forall (a) (procedure identity (a) a)))
 (intersperse (procedure! intersperse (list *) list))
 (join (procedure! join (list list) list))
 (list->queue (procedure! list->queue (list) (struct queue)))
@@ -1060,13 +1058,11 @@
 (merge! (procedure! merge! (list list (procedure (* *) *)) list))
 (never? (procedure never? (#!rest) boolean))
 
-(none? (procedure none? (*) boolean)
-       ((*) (let ((#(tmp) #(1))) '#f)))
+(none? (procedure none? (*) boolean))
 
 (o (procedure! o (#!rest (procedure (*) *)) (procedure (*) *)))
 
-(queue->list (procedure! queue->list ((struct queue)) list)
-	     (((struct queue)) (##sys#slot #(1) '1)))
+(queue->list (procedure! queue->list ((struct queue)) list))
 
 (queue-add! (procedure! queue-add! ((struct queue) *) undefined))
 
@@ -1084,21 +1080,21 @@
 (queue-remove! (procedure! queue-remove! ((struct queue)) *))
 (queue? (procedure? (struct queue) queue? (*) boolean))
 
-(rassoc (procedure! rassoc (* list #!optional (procedure (* *) *)) *))
-(reverse-string-append (procedure! reverse-string-append (list) string))
+(rassoc (procedure! rassoc (* (list pair) #!optional (procedure (* *) *)) *))
+(reverse-string-append (procedure! reverse-string-append ((list string)) string))
 (shuffle deprecated)
 (sort (procedure! sort ((or list vector) (procedure (* *) *)) (or list vector)))
 (sort! (procedure! sort! ((or list vector) (procedure (* *) *)) (or list vector)))
 (sorted? (procedure! sorted? ((or list vector) (procedure (* *) *)) boolean))
-(topological-sort (procedure! topological-sort (list (procedure (* *) *)) list))
+(topological-sort (procedure! topological-sort ((list list) (procedure (* *) *)) list))
 (string-chomp (procedure! string-chomp (string #!optional string) string))
-(string-chop (procedure! string-chop (string fixnum) list))
+(string-chop (procedure! string-chop (string fixnum) (list string)))
 (string-compare3 (procedure! string-compare3 (string string) fixnum))
 (string-compare3-ci (procedure! string-compare3-ci (string string) fixnum))
-(string-intersperse (procedure! string-intersperse (list #!optional string) string))
-(string-split (procedure! string-split (string #!optional string *) list))
+(string-intersperse (procedure! string-intersperse ((list string) #!optional string) string))
+(string-split (procedure! string-split (string #!optional string *) (list string)))
 (string-translate (procedure! string-translate (string * #!optional *) string))
-(string-translate* (procedure! string-translate* (string list) string))
+(string-translate* (procedure! string-translate* (string (list (pair string string))) string))
 (substring-ci=? (procedure! substring-ci=? (string string #!optional fixnum fixnum fixnum) boolean))
 
 (substring-index (procedure! substring-index (string string #!optional fixnum) *)
@@ -1112,6 +1108,7 @@
 (substring=? (procedure! substring=? (string string #!optional fixnum fixnum fixnum) boolean))
 (tail? (procedure tail? (* *) boolean))
 
+;;XXX continue ...
 ;; extras
 
 (format (procedure format (#!rest) *))
