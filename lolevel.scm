@@ -565,7 +565,9 @@ EOF
 		 (do ([i (if (##core#inline "C_specialp" x) 1 0) (fx+ i 1)])
 		     [(fx>= i n)]
 		   (release (##sys#slot x i))) )
-	       (free (##sys#address->pointer (##core#inline_allocate ("C_block_address" 4) x))) ) ] ) ) ) )
+	       (free 
+		(##sys#address->pointer
+		 (##core#inline_allocate ("C_block_address" 4) x))) ) ] ) ) ) )
 
 (define (object-size x)
   (let ([tab (make-hash-table eq?)])
@@ -616,7 +618,7 @@ EOF
   (##sys#check-become-alist alst 'object-become!)
   (##sys#become! alst) )
 
-(define (mutate-procedure old proc)
+(define (mutate-procedure old proc)	;XXX should be named "mutate-procedure!"
   (##sys#check-closure old 'mutate-procedure)
   (##sys#check-closure proc 'mutate-procedure)
   (let* ([n (##sys#size old)]
