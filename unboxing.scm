@@ -124,9 +124,10 @@
 	  (copy-node!
 	   (let loop ((args avals) (anodes anodes) (atypes atypes0) (iargs '()))
 	     (cond ((null? args) 
-		    (let ((n2 (make-node
-			       '##core#inline_unboxed (list alt)
-			       (reverse iargs))))
+		    (let ((n2 (straighten-form!
+			       (make-node
+				'##core#inline_unboxed (list alt)
+				(reverse iargs)))))
 		      (if (and dest (cdr dest))
 			  n2
 			  (let ((tmp (gensym "tu")))
@@ -222,6 +223,12 @@
 	    (node-parameters-set! n (list var t))
 	    (straighten-binding! n) ))
 
+	(define (straighten! n)
+	  (case (node-class n)
+	    ((let ##core#let_unboxed) (straighten-binding! n))
+	    ((if) (straighten-conditional! n))
+	    (else (straighten-form! n))))
+
 	(define (straighten-binding! n)
 	  ;; change `(let ((<v> (let (...) <x2>))) <x>)' into 
 	  ;;        `(let (...) (let ((<v> <x2>)) <x>))'
@@ -230,7 +237,7 @@
 		 (bnode (first subs))
 		 (bcl (node-class bnode)))
 	    (when (memq bcl '(let ##core#let_unboxed))
-	      (d "straighten binding: ~a -> ~a" (node-parameters n) (node-parameters bnode))
+	      (d "straightening binding: ~a -> ~a" (node-parameters n) (node-parameters bnode))
 	      (copy-node!
 	       (make-node
 		bcl
@@ -245,7 +252,8 @@
 	       n)
 	      ;;(pp (build-expression-tree n))
 	      (straighten-binding! n)
-	      (straighten-binding! (second (node-subexpressions n))))))
+	      (straighten-binding! (second (node-subexpressions n))))
+	    n))
 
 	(define (straighten-conditional! n)
 	  ;; change `(if (let (...) <x1>) <x2> <x3>)' into 
@@ -255,7 +263,7 @@
 		 (bnode (first subs))
 		 (bcl (node-class bnode)))
 	    (when (memq bcl '(let ##core#let_unboxed))
-	      (d "straighten conditional: ~a" (node-parameters bnode))
+	      (d "straightening conditional: ~a" (node-parameters bnode))
 	      (copy-node!
 	       (make-node
 		bcl
@@ -271,80 +279,47 @@
 	      ;;(pp (build-expression-tree n))
 	      (straighten-binding! n))))
 
-	(define (straighten-call! n)
-	  ;; change `(<proc> ... (let (...) <x>) ...)' into
-	  ;;        `(let (...) (<proc> ... <x> ...))'
-	  ;; (also for "##core#let_unboxed")
-	  (let* ((class (node-class n))
-		 (subs (node-subexpressions n))
-		 (params (node-parameters n))
-		 (proc (first subs))
-		 (args (cdr subs)))
-	    (when (any (lambda (n) (memq (node-class n) '(let ##core#let_unboxed)))
-		       args)
-	      (d "straighten call: ~a" (build-expression-tree proc))
-	      (copy-node!
-	       (let loop ((args args) (newargs '()))
-		 (if (null? args)
-		     (straighten-call!
-		      (make-node class params (cons proc (reverse newargs))))
-		     (let* ((arg (first args))
-			    (aclass (node-class arg))
-			    (asubs (node-subexpressions arg)))
-		       (if (memq aclass '(let ##core#let_unboxed))
-			   (make-node
-			    aclass (node-parameters arg)
-			    (list 
-			     (first asubs)
-			     (loop (cdr args) (cons (second asubs) newargs))))
-			   (loop (cdr args) (cons arg newargs))))))
-	       n))
-	    n))
-
-	(define (straighten-unboxed-assignment! n)
-	  ;; change `(##core#unboxed_set! <v> <type> (let (...) <x>))' and
-	  ;;        `(let (...) (##core#unboxed_set! <v> <type> <x>))' 
-	  ;; (also for "##core#let_unboxed")
-	  (let* ((class (node-class n))
-		 (subs (node-subexpressions n))
-		 (params (node-parameters n))
-		 (arg1 (first subs))
-		 (letsubs (node-subexpressions arg1)))
-	    (when (memq (node-class arg1) '(let ##core#let_unboxed))
-	      (d "straighten unboxed assignment: ~a" params)
-	      (let-values (((bvals body) (split-at letsubs (sub1 (length letsubs)))))
-		(copy-node!
-		 (make-node
-		  (node-class arg1)
-		  (node-parameters arg1)
-		  (append
-		   bvals
-		   (list 
-		    (straighten-unboxed-assignment! (make-node class params body)))))
-		 n)))
-	    n))
-
-	(define (straighten-assignment! n)
-	  ;; change `(set! <v> (##core#let_unboxed (...) <x>))' to
-	  ;;        `(##core#let_unboxed (...) (set! <v> <x>))' 
-	  (let* ((class (node-class n))
-		 (subs (node-subexpressions n))
-		 (params (node-parameters n))
-		 (arg1 (first subs))
-		 (letsubs (node-subexpressions arg1)))
-	    (when (eq? (node-class arg1) '##core#let_unboxed)
-	      (d "straighten assignment: ~a" params)
-	      (let-values (((bvals body) (split-at letsubs (sub1 (length letsubs)))))
-		(copy-node!
-		 (make-node
-		  '##core#let_unboxed
-		  (node-parameters arg1)
-		  (append
-		   bvals
-		   (list 
-		    (straighten-assignment! (make-node class params body)))))
-		 n)))
-	    n))
+	(define (straighten-form! n)
+	  ;; change `(<form> ... (let (...) <x>) ...)' to
+	  ;;        `(let (...) (<form> ... <x> ...))'
+	  ;; - also for `##core#let_unboxed'
+	  (let ((class (node-class n))
+		(subs (node-subexpressions n))
+		(params (node-parameters n))
+		(f #f))
+	    (let loop ((args subs) (newargs '()) (wrap identity))
+	      (cond ((null? args)
+		     (let ((n2 (wrap
+				((if f straighten! identity)
+				 (make-node class params (reverse newargs))))))
+		       (when f
+			 (d "straightening form (~a): ~a" class params)
+			 (let ((n2 (straighten-binding! n2)))
+#|
+			   (print "---\n") ;XXX
+			   (pp (build-expression-tree n))
+			   (print " ->\n")
+|#
+			   (copy-node! n2 n)
+#|
+			   (pp (build-expression-tree n))
+			   (print "---\n")
+|#
+			   ))
+		       n))
+		    ((memq (node-class (car args)) '(let ##core#let_unboxed))
+		     (let* ((arg (car args))
+			    (subs2 (node-subexpressions arg)))
+		       (set! f #t)
+		       (loop (cdr args)
+			     (cons (second subs2) newargs)
+			     (lambda (body)
+			       (wrap
+				(make-node
+				 (node-class arg)
+				 (node-parameters arg)
+				 (list (first subs2) body)))))))
+		    (else (loop (cdr args) (cons (car args) newargs) wrap))))))
 
 	;; walk node and return either "(<var> . <type>)" or #f
 	;; - at second pass: rewrite "##core#inline[_allocate]" nodes
@@ -388,14 +363,14 @@
 			      ((not udest) (boxed! v)))
 			a))
 
-		     ((##core#inline ##core#inline_allocate)
-		      (let* ((rw1 (##sys#get 
-				   (symbolify (first params))
-				   '##compiler#unboxed-op))
+		     ((##core#inline ##core#inline_allocate ##core#inline_unboxed)
+		      (let* ((rw1 (##sys#get (symbolify (first params)) '##compiler#unboxed-op))
 			     (rw (and unsafe rw1))
 			     (args (map (cut walk <> #f rw pass2?) subs)))
 			;; rewrite inline operation to unboxed one, if possible
-			(cond ((not rw) #f)
+			(cond ((not rw)
+			       (straighten-form! n)
+			       #f)
 			      ((or (not pass2?)
 				   (and dest (unboxed? dest))
 				   (any unboxed-value? args))
@@ -411,14 +386,15 @@
 			      (else
 			       (let ((rtype (third rw)))
 				 ;; mark argument-vars and dest as unboxed if alternative exists
-				 (unless pass2?
-				   (for-each
-				    (lambda (a)
-				      (when (and a (car a) (cdr a))
-					(unboxed! (car a) (cdr a))))
-				    args)
-				   (when dest
-				     (unboxed! dest rtype)))
+				 (cond ((not pass2?)
+					(for-each
+					 (lambda (a)
+					   (when (and a (car a) (cdr a))
+					     (unboxed! (car a) (cdr a))))
+					 args)
+					(when dest
+					  (unboxed! dest rtype)))
+				       (else (straighten-form! n)))
 				 (cons #f rtype))))))
 
 		     ((let)
@@ -444,9 +420,9 @@
 				       (make-node
 					'##core#unboxed_set! (list (alias var) (cdr a)) subs)
 				       n)
-				      (straighten-unboxed-assignment! n))
+				      (straighten-form! n))
 				     (else
-				      (straighten-assignment! n))))
+				      (straighten-form! n))))
 			      ((and a val (cdr val))
 			       (unboxed! var (cdr val)))
 			      (else 
@@ -476,7 +452,7 @@
 		     ((##core#call ##core#direct_call)
 		      (for-each (o invalidate (cut walk <> #f #f pass2?)) subs)
 		      (when pass2?
-			(straighten-call! n))
+			(straighten-form! n))
 		      #f)
 
 		     (else
