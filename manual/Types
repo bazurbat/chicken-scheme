@@ -218,11 +218,34 @@ the result types to the most specific type, due to the way the
 flow-analysis is implemented. It is recommended to not define "chains"
 of specializations where one variant of a procedure call is
 specialized to another one that is intended to specialize further.
+This can not always be avoided, but should be kept in mind.
+
+Note that the matching of argument types is done "exactly". This
+means, for example, that an argument type specialized for {{list}}
+will not match {{null}}: even though {{null}} is a subtype of {{list}}
+and will match during normal flow-analysis, we want to be able to
+control what happens when a procedure is called with exactly with a
+list argument. To handle the case when it is called with a {{null}}
+argument, define another specialization for exactly that type or
+use an {{(or ...)}} type-specifier.
 
 There is currently no way of ensuring specializations take place.  You
 can use the {{-debug o}} compiler options to see the total number of
 specializations performed on a particular named function call during
 compilation.
+
+===== compiler-typecase
+
+<syntax>(compiler-typecase EXP (TYPE BODY ... [(else BODY ...)]) ...)</syntax>
+
+Evaluates {{EXP}} and executes the first clause which names a type that
+matches the type inferred during flow analysis as the result of {{EXP}}.
+The result of {{EXP}} is ignored and should be a single value. If a 
+{{compiler-typecase}} form occurs in evaluated code, or if it occurs in
+compiled code but specialization is not enabled, then it must have
+an {{else}} clause which specifies the default code to be executed
+after {{EXP}}. If no {{else}} clause is given and no {{TYPE}} matches,
+then a compile-time error is signalled.
 
 
 ---
