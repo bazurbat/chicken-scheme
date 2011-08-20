@@ -29,7 +29,7 @@
  '(->string
    alist-ref
    alist-update!
-   always?
+   always?				; DEPRECATED
    any?
    atom?
    binary-search
@@ -53,8 +53,8 @@
    make-queue
    merge
    merge!
-   never?
-   none?
+   never?				; DEPRECATED
+   none?				; DEPRECATED
    o
    queue->list
    queue-add!
