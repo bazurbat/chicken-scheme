@@ -1,4 +1,4 @@
-;;;; tweaks.scm - Some inline-routines and declarations
+;;;; tweaks.scm - Some inline-routines and declarations for the compiler 
 ;
 ; Copyright (c) 2008-2011, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
@@ -32,6 +32,7 @@
 (cond-expand
   ((not debugbuild)
    (declare
+     ;XXX (specialize)
      (disable-interrupts)
      (no-bound-checks)
      (no-procedure-checks)
