@@ -65,8 +65,8 @@
 
 (##sys#cons (forall (a b) (procedure ##sys#cons (a b) (pair a b))))
 
-(car (forall (a) (procedure! car ((pair a *)) a) ((pair) (##core#inline "C_u_i_car" #(1)))))
-(cdr (forall (a) (procedure! cdr ((pair * a)) a) ((pair) (##core#inline "C_u_i_cdr" #(1)))))
+(car (forall (a) (procedure! car ((pair a *)) a)) ((pair) (##core#inline "C_u_i_car" #(1))))
+(cdr (forall (a) (procedure! cdr ((pair * a)) a)) ((pair) (##core#inline "C_u_i_cdr" #(1))))
 
 (caar (forall (a) (procedure! caar ((pair (pair a *) *)) a)))
 
@@ -514,8 +514,8 @@
  (() ##sys#standard-input))
 
 (current-output-port
- (procedure! current-output-port (#!optional port) port))
- ((port) (let ((#(tmp1) #(1))) 
+ (procedure! current-output-port (#!optional port) port)
+ ((port) (let ((#(tmp1) #(1)))
 	   (let ((#(tmp2) (set! ##sys#standard-output #(tmp1))))
 	     #(tmp1))))
  (() ##sys#standard-output))
@@ -608,7 +608,7 @@
       ((float) (float) 
        (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) '1.0)))
 
-(argc+argv (procedure argc+argv () fixnum (list string fixnum)))
+(argc+argv (procedure argc+argv () fixnum (list string) fixnum))
 (argv (procedure argv () (list string)))
 (arithmetic-shift (procedure! arithmetic-shift (number number) number))
 
@@ -865,7 +865,7 @@
 (ir-macro-transformer
  (procedure
   ir-macro-transformer
-  ((procedure (procedure (* (propcedure * *) *)) *))
+  ((procedure (* (procedure (*) *) (procedure (* *) *)) *))
   (struct transformer)))
 
 (keyword->string (procedure! keyword->string (symbol) string))
@@ -1293,7 +1293,7 @@
 (mutate-procedure!
  (procedure! mutate-procedure (procedure (procedure (procedure) . *)) procedure))
 
-(mutate-procedure (deprecated mutate-procedure!)
+(mutate-procedure (deprecated mutate-procedure!))
 (null-pointer deprecated)
 (null-pointer? deprecated)
 
@@ -1639,7 +1639,7 @@
 ;; srfi-1
 
 (alist-cons (forall (a b c) (procedure alist-cons (a b (list c)) (pair a (pair b (list c))))))
-(alist-copy (forall (a) (procedure! alist-copy ((list a)) (list a)))
+(alist-copy (forall (a) (procedure! alist-copy ((list a)) (list a))))
 (alist-delete (forall (a b) (procedure! alist-delete (a (list b) #!optional (procedure (a b) *)) list)))
 (alist-delete! (forall (a b) (procedure! alist-delete! (a (list b) #!optional (procedure (a b) *)) undefined)))
 (any (forall (a) (procedure! any ((procedure (a #!rest) *) (list a) #!rest list) *)))
@@ -1668,7 +1668,7 @@
 (cons* (forall (a) (procedure cons* (a #!rest) (pair a *))))
 (count (forall (a) (procedure! count ((procedure (a #!rest) *) (list a) #!rest list) fixnum)))
 (delete (forall (a b) (procedure! delete (a (list b) #!optional (procedure (a *) *)) (list b))))
-(delete! (forall (a b) (procedure! delete! (a (list b) #!optional (procedure (a *) *)) (list b)))
+(delete! (forall (a b) (procedure! delete! (a (list b) #!optional (procedure (a *) *)) (list b))))
 
 (delete-duplicates
  (forall (a) (procedure! delete-duplicates ((list a) #!optional (procedure (a *) *)) (list a))))
@@ -1699,8 +1699,8 @@
 (first (forall (a) (procedure! first ((pair a *)) a))
        ((pair) (##core#inline "C_u_i_car" #(1))))
 
-(fold (procedure! fold ((procedure (* #!rest) *) * #!rest list) *)) ; oh, what the hell...
-(fold-right (procedure! fold-right ((procedure (* #!rest) *) * #!rest list) *))
+(fold (procedure! fold ((procedure (* #!rest) *) * #!rest list) *)) ;XXX
+(fold-right (procedure! fold-right ((procedure (* #!rest) *) * #!rest list) *)) ;XXX
 
 (fourth (forall (a) (procedure! fourth ((pair * (pair * (pair * (pair a *))))) a)))
 (iota (procedure! iota (fixnum #!optional fixnum fixnum) (list number)))
@@ -1711,13 +1711,20 @@
 (list-index (forall (a) (procedure! list-index ((procedure (a #!rest) *) (list a) #!rest list) *)))
 (list-tabulate (forall (a) (procedure! list-tabulate (fixnum (procedure (fixnum) a)) (list a))))
 (list= (procedure! list= (#!rest list) boolean))
-(lset-adjoin (foreall (a) (procedure! lset-adjoin ((procedure (a a) *) (list a) #!rest a) (list a))))
+
+(lset-adjoin 
+ (forall (a) (procedure! lset-adjoin ((procedure (a a) *) (list a) #!rest a) (list a))))
+
 (lset-diff+intersection
- (forall (a) (procedure! lset-diff+intersection ((procedure (a a) *) (list a) #!rest (list a))
-			 (list a))))
+ (forall (a)
+	 (procedure! lset-diff+intersection ((procedure (a a) *) (list a) #!rest (list a))
+		     (list a))))
+
 (lset-diff+intersection! 
- (forall (a) (procedure! lset-diff+intersection! ((procedure (a a) *) (list a) #!rest (list a))
-			 (list a))))
+ (forall (a)
+	 (procedure! lset-diff+intersection! ((procedure (a a) *) (list a) #!rest (list a))
+		     (list a))))
+
 (lset-difference
  (forall (a) (procedure! lset-difference ((procedure (a a) *) (list a) #!rest (list a)) (list a))))
 

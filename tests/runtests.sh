@@ -26,6 +26,9 @@ for x in setup-api.so setup-api.import.so setup-download.so \
   cp ../$x test-repository
 done
 
+#XXX
+cp ../types.db.new test-repository
+
 CHICKEN_REPOSITORY=${TEST_DIR}/test-repository
 CHICKEN=../chicken
 CHICKEN_INSTALL=${TEST_DIR}/../chicken-install
@@ -57,20 +60,12 @@ echo "======================================== compiler tests (unboxing) ..."
 $compile compiler-tests-3.scm -unsafe -unboxing
 ./a.out
 
-echo "======================================== compiler tests (specialization) ..."
-$compile fft.scm -O2 -local -d0 -disable-interrupts -b -o fft1
-$compile fft.scm -O2 -local -specialize -debug x -d0 -disable-interrupts -b -o fft2 -specialize
-echo "normal:"
-/usr/bin/time ./fft1 1000 7
-echo "specialized:"
-/usr/bin/time ./fft2 1000 7
-
 echo "======================================== compiler inlining tests  ..."
 $compile inlining-tests.scm -optimize-level 3
 ./a.out
 
 echo "======================================== scrutiny tests ..."
-$compile typematch-tests.scm -scrutinize
+$compile typematch-tests.scm -specialize -w
 ./a.out
 $compile scrutiny-tests.scm -scrutinize -ignore-repository -types ../types.db 2>scrutiny.out -verbose
 
@@ -86,7 +81,6 @@ fi
 diff -bu scrutiny.expected scrutiny.out
 
 $compile scrutiny-tests-2.scm -scrutinize -analyze-only -ignore-repository -types ../types.db 2>scrutiny-2.out -verbose
-./a.out
 
 if test -n "$MSYSTEM"; then
     dos2unix scrutiny.out
@@ -107,6 +101,14 @@ $compile specialization-test-1.scm -emit-type-file foo.types -specialize \
 $compile specialization-test-2.scm -types foo.types -specialize -debug ox
 ./a.out
 rm -f foo.types foo.import.*
+
+echo "======================================== specialization benchmark ..."
+$compile fft.scm -O2 -local -d0 -disable-interrupts -b -o fft1
+$compile fft.scm -O2 -local -specialize -debug x -d0 -disable-interrupts -b -o fft2 -specialize
+echo "normal:"
+/usr/bin/time ./fft1 1000 7
+echo "specialized:"
+/usr/bin/time ./fft2 1000 7
 
 echo "======================================== callback tests ..."
 $compile callback-tests.scm

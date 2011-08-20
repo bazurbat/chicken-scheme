@@ -5,8 +5,8 @@ Warning: at toplevel:
 Note: in local procedure `c',
   in local procedure `b',
   in toplevel procedure `a':
-  expected value of type boolean in conditional but were given a value of
-type `number' which is always true:
+  expected value of type boolean in conditional but were given a value of type
+   `number' which is always true:
 
 (if x3 '1 '2)
 

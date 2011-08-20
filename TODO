@@ -1,0 +1,14 @@
+TODO								-*- Outline -*-
+
+
+* replace "types.db" with "types.db.new"
+
+* enable specialization in "common-declarations.scm" and "tweaks.scm"
+
+* "tests/runtests.sh": remove command to cp "types.db.new"
+
+* compare "-debug x" output for specialization with results from complete self-compile
+
+* test self-build
+
+* run mini-salmonella

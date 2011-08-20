@@ -546,7 +546,8 @@
 		 (when (or do-scrutinize enable-specialization)
 		   ;;XXX hardcoded database file name
 		   (unless (memq 'ignore-repository options)
-		     (load-type-database "types.db"))
+		     (unless (load-type-database "types.db")
+		       (quit "default type-database `types.db' not found")))
 		   (for-each (cut load-type-database <> #f) (collect-options 'types))
 		   (for-each
 		    (lambda (id)

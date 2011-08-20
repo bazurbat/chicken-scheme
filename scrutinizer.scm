@@ -212,7 +212,7 @@
 	  (report-notice 
 	   loc
 	   (sprintf
-	       "expected value of type boolean in conditional but were given a value of\ntype `~a' which is always true:~%~%~a"
+	       "expected value of type boolean in conditional but were given a value of type\n  `~a' which is always true:~%~%~a"
 	     t
 	     (pp-fragment x))))
 	f))
@@ -349,11 +349,11 @@
 				   (variable-mark pn '##compiler#predicate)) =>
 				   (lambda (pt)
 				     (cond ((match-argument-types
-					     (list pt) (cdr args) typeenv #t)
+					     (list pt) (cdr args) typeenv #f #t)
 					    (report-notice
 					     loc
 					     (sprintf 
-						 "~athe predicate is called with an argument of type `~a' and will always return true"
+						 "~athe predicate is called with an argument of type\n  `~a' and will always return true"
 					       (pname) (cadr args)))
 					    (when specialize
 					      (specialize-node!
@@ -363,12 +363,11 @@
 					   ((begin
 					      (trail-restore trail0 typeenv)
 					      (match-argument-types
-					       (list `(not ,pt)) (cdr args) typeenv 
-					       #t))
+					       (list `(not ,pt)) (cdr args) typeenv #f #t))
 					    (report-notice
 					     loc
 					     (sprintf 
-						 "~athe predicate is called with an argument of type `~a' and will always return false"
+						 "~athe predicate is called with an argument of type\n  `~a' and will always return false"
 					       (pname) (cadr args)))
 					    (when specialize
 					      (specialize-node!
@@ -400,7 +399,7 @@
 						  (trail-restore trail0 tenv2)
 						  (loop (cdr specs))))))))))
 		       (when op
-			 (d "  specialized: `~s'" op)
+			 (d "  specialized: `~s' for ~a" (car op) (cdr op))
 			 (cond ((assoc op specialization-statistics) =>
 				(lambda (a) (set-cdr! a (add1 (cdr a)))))
 			       (else
@@ -454,7 +453,7 @@
       (let ((subs (node-subexpressions n))
 	    (params (node-parameters n)) 
 	    (class (node-class n)) )
-	(dd "walk: ~a ~a (loc: ~a, dest: ~a, tail: ~a, flow: ~a, blist: ~a, e: ~a)"
+	(dd "walk: ~a ~s (loc: ~a, dest: ~a, tail: ~a, flow: ~a, blist: ~a, e: ~a)"
 	    class params loc dest tail flow blist e)
 	(set! d-depth (add1 d-depth))
 	(let ((results
@@ -779,9 +778,9 @@
 
 (define (typename t)
   (define (argument-string args)
-    (let* ((len (length (delete args '#!optional) eq?))
+    (let* ((len (length (delete '#!optional args eq?)))
 	   (m (multiples len)))
-      ;;XXX not quite right for test-arguments
+      ;;XXX not quite right for rest/optional arguments
       (cond ((memq '#!rest args)
 	     (sprintf "~a or more arguments" len))
 	    ((zero? len) "zero arguments")
@@ -841,8 +840,9 @@
 ;;; Type-matching
 ;
 ; - "exact" means: first argument must match second one exactly
+; - "all" means: all elements in `or'-types in second argument must match
 
-(define (match-types t1 t2 typeenv #!optional exact)
+(define (match-types t1 t2 typeenv #!optional exact all)
 
   (define (match-args args1 args2)
     (d "match-args: ~s <-> ~s" args1 args2)
@@ -895,6 +895,7 @@
 	     #f))))
 
   (define (match1 t1 t2)
+    ;; note: the order of determining the type is important
     ;(dd "   match1: ~s <-> ~s" t1 t2)
     (cond ((eq? t1 t2))
 	  ((and (symbol? t1) (assq t1 typeenv)) => 
@@ -916,11 +917,13 @@
 		   (set-cdr! e t1)
 		   #t))))
 	  ((eq? t1 '*))
-	  ((and (pair? t1) (eq? 'not (car t1))) ; needs to be done before '* check for t2
-	   (let* ((trail0 trail)
-		  (m (match1 (cadr t1) t2)))
-	     (trail-restore trail0 typeenv)
-	     (not m)))
+	  ((and (pair? t1) (eq? 'not (car t1)))
+	   (fluid-let ((exact #f)
+		       (all #f))
+	     (let* ((trail0 trail)
+		    (m (match1 (cadr t1) t2)))
+	       (trail-restore trail0 typeenv)
+	       (not m))))
 	  ((and (pair? t2) (eq? 'not (car t2)))
 	   (and (not exact)
 		(let* ((trail0 trail)
@@ -930,12 +933,12 @@
 	  ((and (pair? t1) (eq? 'or (car t1))) 
 	   (any (cut match1/restore <> t2) (cdr t1)))
 	  ((and (pair? t2) (eq? 'or (car t2)))
-	   ((if exact every any) (cut match1/restore t1 <>) (cdr t2)))
+	   ((if (or exact all) every any) (cut match1/restore t1 <>) (cdr t2)))
 	  ((and (pair? t1) (eq? 'forall (car t1)))
 	   (match1 (third t1) t2)) ; assumes typeenv has already been extracted
 	  ((and (pair? t2) (eq? 'forall (car t2)))
 	   (match1 t1 (third t2))) ; assumes typeenv has already been extracted
-	  ((eq? t2 '*) (not exact))
+	  ((eq? t2 '*) (and (not exact) (not all)))
 	  ((eq? t1 'noreturn) (not exact))
 	  ((eq? t2 'noreturn) (not exact))
 	  ((eq? t1 'number) 
@@ -958,7 +961,7 @@
 	  ((eq? t1 'vector) (match1 '(vector *) t2))
 	  ((eq? t2 'vector) (match1 t1 '(vector *)))
 	  ((eq? t1 'null)
-	   (and (not exact)
+	   (and (not exact) (not all)
 		(or (memq t2 '(null list))
 		    (and (pair? t2) (eq? 'list (car t2))))))
 	  ((eq? t2 'null)
@@ -979,7 +982,7 @@
 	     ((list vector) (match1 (second t1) (second t2)))
 	     (else #f) ) )
 	  ((and (pair? t1) (eq? 'pair (car t1)))
-	   (and (not exact)
+	   (and (not exact) (not all)
 		(pair? t2)
 		(eq? 'list (car t2))
 		(match1 (second t1) (second t2))
@@ -991,7 +994,7 @@
 		(match1 (second t1) (second t2))
 		(match1 t1 (third t2))))
 	  ((and (pair? t1) (eq? 'list (car t1)))
-	   (and (not exact)
+	   (and (not exact) (not all)
 		(or (eq? 'null t2)
 		    (and (pair? t2)
 			 (eq? 'pair (car t2))
@@ -1006,17 +1009,20 @@
 			 (match1 (third t1) t2)))))
 	  (else #f)))
   (let ((m (match1 t1 t2)))
-    (dd "    match~a ~a <-> ~a -> ~a  (te: ~s)" (if exact " (exact)" "") t1 t2 m typeenv)
+    (dd "    match~a~a ~a <-> ~a -> ~a  te: ~s" 
+	(if exact " (exact)" "") 
+	(if all " (all)" "") 
+	t1 t2 m typeenv)
     m))
 
-(define (match-argument-types typelist atypes typeenv #!optional exact)
+(define (match-argument-types typelist atypes typeenv #!optional exact all)
   (let loop ((tl typelist) (atypes atypes))
     (cond ((null? tl) (null? atypes))
 	  ((null? atypes) #f)
 	  ((equal? '(#!rest) tl))
 	  ((eq? (car tl) '#!rest)
-	   (every (cute match-types (cadr tl) <> typeenv exact) atypes))
-	  ((match-types (car tl) (car atypes) typeenv exact)
+	   (every (cute match-types (cadr tl) <> typeenv exact all) atypes))
+	  ((match-types (car tl) (car atypes) typeenv exact all)
 	   (loop (cdr tl) (cdr atypes)))
 	  (else #f))))
 
@@ -1446,7 +1452,7 @@
 
 (define (load-type-database name #!optional (path (repository-path)))
   (and-let* ((dbfile (file-exists? (make-pathname path name))))
-    (debugging 'p (sprintf "loading type database ~a ...~%" dbfile))
+    (debugging 'p (sprintf "loading type database `~a' ...~%" dbfile))
     (fluid-let ((scrutiny-debug #f))
       (for-each
        (lambda (e)
@@ -1485,7 +1491,8 @@
 	     (when specs
 	       ;;XXX validate types in specs
 	       (mark-variable name '##compiler#specializations specs)))))
-       (read-file dbfile)))))
+       (read-file dbfile))
+      #t)))
 
 (define (emit-type-file filename db)
   (with-output-to-file filename
@@ -1614,6 +1621,8 @@
 	     (and (= 2 (length t))
 		  (symbol? (cadr t))
 		  t))
+	    ((eq? 'deprecated (car t))
+	     (and (= 2 (length t)) (symbol? (second t))))
 	    ((memq '-> t) =>
 	     (lambda (p)
 	       (let ((cp (memq ': (cdr p))))
