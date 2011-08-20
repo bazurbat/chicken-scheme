@@ -1029,7 +1029,7 @@
 
 (alist-ref (procedure! alist-ref (* (list pair) #!optional (procedure (* *) *) *) *))
 (alist-update! (procedure! alist-update! (* * (list pair) #!optional (procedure (* *) *)) *))
-(always? (procedure always? (#!rest) boolean))
+(always? deprecated)
 
 (any? (procedure any? (*) boolean)
       ((*) (let ((#(tmp) #(1))) '#t)))
@@ -1059,14 +1059,10 @@
 (make-queue (procedure make-queue () (struct queue)))
 (merge (procedure! merge (list list (procedure (* *) *)) list))
 (merge! (procedure! merge! (list list (procedure (* *) *)) list))
-(never? (procedure never? (#!rest) boolean))
-
-(none? (procedure none? (*) boolean))
-
+(never? deprecated)
+(none? deprecated)
 (o (procedure! o (#!rest (procedure (*) *)) (procedure (*) *)))
-
 (queue->list (procedure! queue->list ((struct queue)) list))
-
 (queue-add! (procedure! queue-add! ((struct queue) *) undefined))
 
 (queue-empty? (procedure! queue-empty? ((struct queue)) boolean)

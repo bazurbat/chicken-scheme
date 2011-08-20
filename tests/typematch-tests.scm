@@ -46,6 +46,13 @@
 	  (compiler-typecase (,foo2)
 	    (,t1 'ok)))))))
 
+(define-syntax mx
+  (syntax-rules ()
+    ((_ t x) 
+     (compiler-typecase 
+      x
+      (t 'ok)))))
+
 (define-syntax mn
   (er-macro-transformer
    (lambda (x r c)
@@ -137,6 +144,9 @@
 (ms (##sys#make-structure 'promise) 1 (struct promise))
 (ms '(1 . 2.3) '(a) (pair fixnum float))
 (ms '#(a) 1 (vector symbol))
+(ms '(1) 'a (or pair symbol))
+(ms (list) 'a list)
+(ms '() 'a (or null pair))
 
 (checkp boolean? #t boolean)
 (checkp boolean? #f boolean)
@@ -170,3 +180,7 @@
 (mn (procedure (*) *) (procedure () *))
 (m (procedure (#!rest) . *) (procedure (*) . *))
 (mn (procedure () *) (procedure () * *))
+
+(mx (forall (a) (procedure (#!rest a) a) +))
+(mx (or pair null) '(1))
+(mx (or pair null) (list))
