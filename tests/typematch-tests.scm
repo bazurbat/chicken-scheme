@@ -144,7 +144,7 @@
 (ms (##sys#make-structure 'promise) 1 (struct promise))
 (ms '(1 . 2.3) '(a) (pair fixnum float))
 (ms '#(a) 1 (vector symbol))
-(ms '(1) 'a (or pair symbol))
+(ms '(1) "a" (or pair symbol))
 (ms (list) 'a list)
 (ms '() 'a (or null pair))
 
@@ -181,6 +181,6 @@
 (m (procedure (#!rest) . *) (procedure (*) . *))
 (mn (procedure () *) (procedure () * *))
 
-(mx (forall (a) (procedure (#!rest a) a) +))
+(mx (forall (a) (procedure (#!rest a) a)) +)
 (mx (or pair null) '(1))
 (mx (or pair null) (list))

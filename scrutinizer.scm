@@ -29,7 +29,8 @@
   (hide specialize-node! specialization-statistics
 	procedure-type? named? procedure-result-types procedure-argument-types
 	noreturn-type? rest-type procedure-name d-depth
-	noreturn-procedure-type? trail trail-restore typename
+	noreturn-procedure-type? trail trail-restore 
+	typename multiples
 	compatible-types? type<=? match-types resolve match-argument-types))
 
 
@@ -46,8 +47,8 @@
 
 (define dd d)
 
-(define-syntax d (syntax-rules () ((_ . _) (void))))
-(define-syntax dd (syntax-rules () ((_ . _) (void))))
+;(define-syntax d (syntax-rules () ((_ . _) (void))))
+;(define-syntax dd (syntax-rules () ((_ . _) (void))))
 
 
 ;;; Walk node tree, keeping type and binding information
@@ -100,6 +101,10 @@
 
 (define specialization-statistics '())
 (define trail '())
+
+
+(define (multiples n)
+  (if (= n 1) "" "s"))
 
 
 (define (scrutinize node db complain specialize)
@@ -211,31 +216,6 @@
 	     t
 	     (pp-fragment x))))
 	f))
-
-    (define (argument-string args)
-      (let* ((len (length args))
-	     (m (multiples len)))
-	(if (zero? len)
-	    "zero arguments"
-	    (sprintf 
-		"~a argument~a of type~a ~a"
-	      len m m
-	      (map typename args)))))
-
-    (define (result-string results)
-      (if (eq? '* results) 
-	  "an unknown number of values"
-	  (let* ((len (length results))
-		 (m (multiples len)))
-	    (if (zero? len)
-		"zero values"
-		(sprintf 
-		    "~a value~a of type~a ~a"
-		  len m m
-		  (map typename results))))))
-
-    (define (multiples n)
-      (if (= n 1) "" "s"))
 
     (define (single what tv loc)
       (if (eq? '* tv)
@@ -753,21 +733,24 @@
 				  (first rt) t)))))
 		      (list t))))
 		 ((##core#typecase)
-		  (let ((ts (walk (first subs) e loc #f #f flow ctags))
-			(trail0 trail))
+		  (let* ((ts (walk (first subs) e loc #f #f flow ctags))
+			 (trail0 trail)
+			 (typeenv (type-typeenv (car ts))))
 		    ;; first exp is always a variable so ts must be of length 1
 		    (let loop ((types params) (subs (cdr subs)))
 		      (cond ((null? types)
 			     (quit "~ano clause applies in `compiler-typecase' for expression of type `~s':~a" 
 				   (location-name loc) (car ts)
 				   (string-concatenate
-				    (map (lambda (t) (string-append "\n   " (typename t)))
+				    (map (lambda (t) (string-sprintf "\n    ~a" t))
 					 params))))
-			    ((match-types (car types) (car ts) '())
+			    ((match-types (car types) (car ts) 
+					  (append (type-typeenv (car types)) typeenv))
 			     ;; drops exp
 			     (copy-node! (car subs) n)
 			     (walk n e loc dest tail flow ctags))
 			    (else
+			     (trail-restore trail0 typeenv)
 			     (loop (cdr types) (cdr subs)))))))
 		 ((##core#switch ##core#cond)
 		  (bomb "unexpected node class" class))
@@ -792,7 +775,32 @@
       rn)))
       
 
+;;; Converting type into string
+
 (define (typename t)
+  (define (argument-string args)
+    (let* ((len (length (delete args '#!optional) eq?))
+	   (m (multiples len)))
+      ;;XXX not quite right for test-arguments
+      (cond ((memq '#!rest args)
+	     (sprintf "~a or more arguments" len))
+	    ((zero? len) "zero arguments")
+	    (else
+	     (sprintf 
+		 "~a argument~a of type~a ~a"
+	       len m m
+	       (string-intersperse (map typename args) ", "))))))
+  (define (result-string results)
+    (if (eq? '* results) 
+	"an unknown number of values"
+	(let* ((len (length results))
+	       (m (multiples len)))
+	  (if (zero? len)
+	      "zero values"
+	      (sprintf 
+		  "~a value~a of type~a ~a"
+		len m m
+		(string-intersperse (map typename results) ", "))))))
   (case t
     ((*) "anything")
     ((char) "character")
@@ -887,6 +895,7 @@
 	     #f))))
 
   (define (match1 t1 t2)
+    ;(dd "   match1: ~s <-> ~s" t1 t2)
     (cond ((eq? t1 t2))
 	  ((and (symbol? t1) (assq t1 typeenv)) => 
 	   (lambda (e) 
@@ -997,7 +1006,7 @@
 			 (match1 (third t1) t2)))))
 	  (else #f)))
   (let ((m (match1 t1 t2)))
-    (dd "    match~a ~a <-> ~a -> ~a" (if exact " (exact)" "") t1 t2 m)
+    (dd "    match~a ~a <-> ~a -> ~a  (te: ~s)" (if exact " (exact)" "") t1 t2 m typeenv)
     m))
 
 (define (match-argument-types typelist atypes typeenv #!optional exact)
