@@ -46,8 +46,8 @@
 
 (define dd d)
 
-;(define-syntax d (syntax-rules () ((_ . _) (void))))
-;(define-syntax dd (syntax-rules () ((_ . _) (void))))
+(define-syntax d (syntax-rules () ((_ . _) (void))))
+(define-syntax dd (syntax-rules () ((_ . _) (void))))
 
 
 ;;; Walk node tree, keeping type and binding information
@@ -63,6 +63,7 @@
 ;       | COMPLEX
 ;       | (forall (VAR1 ...) VAL)
 ;       | deprecated
+;       | (deprecated NAME)
 ;   BASIC = * | string | symbol | char | number | boolean | list | pair | 
 ;           procedure | vector | null | eof | undefined | port |
 ;           blob | noreturn | pointer | locative | fixnum | float |

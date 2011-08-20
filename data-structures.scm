@@ -114,11 +114,9 @@ EOF
 
 (define (any? x) #t)
 
-(define (none? x) #f)
-
-(define (always? . _) #t)
-
-(define (never? . _) #f)
+(define (none? x) #f)			; DEPRECATED
+(define (always? . _) #t)		; DEPRECATED
+(define (never? . _) #f)		; DEPRECATED
 
 
 ;;; List operators:

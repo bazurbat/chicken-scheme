@@ -618,14 +618,16 @@ EOF
   (##sys#check-become-alist alst 'object-become!)
   (##sys#become! alst) )
 
-(define (mutate-procedure old proc)	;XXX should be named "mutate-procedure!"
-  (##sys#check-closure old 'mutate-procedure)
-  (##sys#check-closure proc 'mutate-procedure)
+(define (mutate-procedure! old proc)
+  (##sys#check-closure old 'mutate-procedure!)
+  (##sys#check-closure proc 'mutate-procedure!)
   (let* ([n (##sys#size old)]
 	 [words (##core#inline "C_words" n)]
 	 [new (##core#inline "C_copy_block" old (##sys#make-vector words))] )
     (##sys#become! (list (cons old (proc new))))
     new ) )
+
+(define mutate-procedure mutate-procedure!) ; DEPRECATED
 
 
 ;;; pointer vectors

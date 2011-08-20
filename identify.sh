@@ -22,8 +22,9 @@ if test -d "$1/.git"; then
     branchname=`GIT_DIR="$1/.git" git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'`
     tag="#define C_BUILD_TAG \"compiled ${buildtime} on ${host} (${usys})\""
 
-    case ${branchname} in
+    case "${branchname}" in
 	"") branchname="";;
+        "(no branch)") branchname="";;
 	"master") branchname="";;
     esac
     if test "${rev0}" \!= "${rev}"; then

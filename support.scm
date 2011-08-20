@@ -462,7 +462,7 @@
   (subexpressions node-subexpressions node-subexpressions-set!)) ; (node...)
 
 (define-record-printer (node n out)
-  (fprintf out "#<node ~a>" (node-class n)))
+  (fprintf out "#<node ~a ~a>" (node-class n) (node-parameters n)))
 
 (define (make-node c p s)
   (##sys#make-structure 'node c p s) ) ; this kludge is for allowing the inlined `make-node'
