@@ -489,8 +489,11 @@
 (procedure? (procedure? procedure procedure? (*) boolean))
 
 (vector-copy! (procedure! vector-copy! (vector vector #!optional fixnum) undefined))
-(map (procedure! map ((procedure (#!rest) *) #!rest list) list))
-(for-each (procedure! for-each (procedure #!rest list) undefined))
+(map (forall (a b) (procedure! map ((procedure (a #!rest) b) (list a) #!rest list) (list b))))
+
+(for-each
+ (forall (a) (procedure! for-each ((procedure (a #!rest) . *) (list a) #!rest list) undefined)))
+
 (apply (procedure! apply (procedure #!rest) . *))
 (##sys#apply (procedure! ##sys#apply (procedure #!rest) . *))
 
@@ -1291,7 +1294,7 @@
 	      ((locative locative fixnum fixnum fixnum)
 	       (##core#inline "C_copy_ptr_memory" #(2) #(1) #(3) #(5) #(4))))
 
-(mutate-procedure (procedure! mutate-procedure (procedure procedure) procedure))
+(mutate-procedure (procedure! mutate-procedure (procedure (procedure (procedure) . *)) procedure))
 (null-pointer deprecated)
 (null-pointer? deprecated)
 
@@ -1638,76 +1641,120 @@
 
 (alist-cons (forall (a b c) (procedure alist-cons (a b (list c)) (pair a (pair b (list c))))))
 (alist-copy (forall (a) (procedure! alist-copy ((list a)) (list a)))
-
-;;XXX continue ...
-(alist-delete (procedure! alist-delete (* list #!optional (procedure (* *) *)) list))
-(alist-delete! (procedure! alist-delete! (* list #!optional (procedure (* *) *)) undefined))
-(any (procedure! any ((procedure (* #!rest) *) list #!rest list) *))
+(alist-delete (forall (a b) (procedure! alist-delete (a (list b) #!optional (procedure (a b) *)) list)))
+(alist-delete! (forall (a b) (procedure! alist-delete! (a (list b) #!optional (procedure (a b) *)) undefined)))
+(any (forall (a) (procedure! any ((procedure (a #!rest) *) (list a) #!rest list) *)))
 (append! (procedure! append! (#!rest list) list))
-(append-map (procedure! append-map ((procedure (#!rest) *) list #!rest list) pair))
-(append-map! (procedure! append-map! ((procedure (#!rest) *) list #!rest list) pair))
+
+(append-map
+ (forall (a b) (procedure! append-map ((procedure (a #!rest) (list b)) (list a) #!rest list)
+			   (list b))))
+
+(append-map!
+ (forall (a b) (procedure! append-map! ((procedure (a #!rest) (list b)) (list a) #!rest list)
+			   (list b))))
+
 (append-reverse (procedure! append-reverse (list list) list))
 (append-reverse! (procedure! append-reverse! (list list) list))
-(break (procedure! break ((procedure (*) *) list) list list))
-(break! (procedure! break! ((procedure (*) *) list) list list))
-(car+cdr (procedure! car+cdr (pair) * *))
+(break (forall (a) (procedure! break ((procedure (a) *) (list a)) (list a) (list a))))
+(break! (forall (a) (procedure! break! ((procedure (a) *) (list a)) (list a) (list a))))
+(car+cdr (forall (a b) (procedure! car+cdr ((pair a b)) a b)))
 (circular-list (procedure circular-list (#!rest) list))
 
 (circular-list? (procedure circular-list? (*) boolean)
 		((null) (let ((#(tmp) #(1))) '#f)))
 
-(concatenate (procedure! concatenate (list) list))
-(concatenate! (procedure! concatenate! (list) list))
-(cons* (procedure cons* (* #!rest) pair))
-(count (procedure! count ((procedure (*) *) list #!rest list) fixnum))
-(delete (procedure! delete (* list #!optional (procedure (* *) *)) list))
-(delete! (procedure! delete! (* list #!optional (procedure (* *) *)) list))
-(delete-duplicates (procedure! delete-duplicates (list #!optional (procedure (* *) *)) list))
-(delete-duplicates! (procedure! delete-duplicates! (list #!optional (procedure (* *) *)) list))
-(dotted-list? (procedure dotted-list? (*) boolean))
-(drop (procedure! drop (list fixnum) list))
-(drop-right (procedure! drop-right (list fixnum) list))
-(drop-right! (procedure! drop-right! (list fixnum) list))
-(drop-while (procedure! drop-while ((procedure (*) *) list) list))
-(eighth (procedure! eighth (pair) *))
-(every (procedure! every ((procedure (* #!rest) *) list #!rest list) *))
-(fifth (procedure! fifth (pair) *))
-(filter (procedure! filter ((procedure (*) *) list) list))
-(filter! (procedure! filter! ((procedure (*) *) list) list))
-(filter-map (procedure! filter-map ((procedure (* #!rest) *) list #!rest list) list))
-(find (procedure! find ((procedure (*) *) list) *))
-(find-tail (procedure! find-tail ((procedure (*) *) list) *))
+(concatenate (procedure! concatenate ((list list)) list))
+(concatenate! (procedure! concatenate! ((list list)) list))
+(cons* (forall (a) (procedure cons* (a #!rest) (pair a *))))
+(count (forall (a) (procedure! count ((procedure (a #!rest) *) (list a) #!rest list) fixnum)))
+(delete (forall (a b) (procedure! delete (a (list b) #!optional (procedure (a *) *)) (list b))))
+(delete! (forall (a b) (procedure! delete! (a (list b) #!optional (procedure (a *) *)) (list b)))
 
-(first (procedure! first (pair) *)
+(delete-duplicates
+ (forall (a) (procedure! delete-duplicates ((list a) #!optional (procedure (a *) *)) (list a))))
+
+(delete-duplicates!
+ (forall (a) (procedure! delete-duplicates! ((list a) #!optional (procedure (a *) *)) (list a))))
+
+(dotted-list? (procedure dotted-list? (*) boolean))
+(drop (forall (a) (procedure! drop ((list a) fixnum) (list a))))
+(drop-right (forall (a) (procedure! drop-right ((list a) fixnum) (list a))))
+(drop-right! (forall (a) (procedure! drop-right! ((list a) fixnum) (list a))))
+(drop-while (forall (a) (procedure! drop-while ((procedure (a) *) (list a)) (list a))))
+(eighth (procedure! eighth (pair) *))
+
+(every
+ (forall (a) (procedure! every ((procedure (a #!rest) *) (list a) #!rest list) *)))
+
+(fifth (procedure! fifth (pair) *))
+(filter (forall (a) (procedure! filter ((procedure (a) *) (list a)) (list a))))
+(filter! (forall (a) (procedure! filter! ((procedure (a) *) (list a)) (list a))))
+
+(filter-map
+ (forall (a b) (procedure! filter-map ((procedure (a #!rest) b) (list a) #!rest list) (list b))))
+
+(find (forall (a) (procedure! find ((procedure (a) *) (list a)) a)))
+(find-tail (forall (a) (procedure! find-tail ((procedure (a) *) (list a)) *)))
+
+(first (forall (a) (procedure! first ((pair a *)) a))
        ((pair) (##core#inline "C_u_i_car" #(1))))
 
-(fold (procedure! fold ((procedure (* #!rest) *) * #!rest list) *))
+(fold (procedure! fold ((procedure (* #!rest) *) * #!rest list) *)) ; oh, what the hell...
 (fold-right (procedure! fold-right ((procedure (* #!rest) *) * #!rest list) *))
-(fourth (procedure! fourth (pair) *))
-(iota (procedure! iota (fixnum #!optional fixnum fixnum) list))
+
+(fourth (forall (a) (procedure! fourth ((pair * (pair * (pair * (pair a *))))) a)))
+(iota (procedure! iota (fixnum #!optional fixnum fixnum) (list number)))
 (last (procedure! last (pair) *))
 (last-pair (procedure! last-pair (pair) *))
 (length+ (procedure! length+ (list) *))
-(list-copy (procedure! list-copy (list) list))
-(list-index (procedure! list-index ((procedure (* #!rest) *) list #!rest list) *))
-(list-tabulate (procedure! list-tabulate (fixnum (procedure (fixnum) *)) list))
+(list-copy (forall (a) (procedure! list-copy ((list a)) (list a))))
+(list-index (forall (a) (procedure! list-index ((procedure (a #!rest) *) (list a) #!rest list) *)))
+(list-tabulate (forall (a) (procedure! list-tabulate (fixnum (procedure (fixnum) a)) (list a))))
 (list= (procedure! list= (#!rest list) boolean))
-(lset-adjoin (procedure! lset-adjoin ((procedure (* *) *) list #!rest) list))
-(lset-diff+intersection (procedure! lset-diff+intersection ((procedure (* *) *) list #!rest list) list))
-(lset-diff+intersection! (procedure! lset-diff+intersection! ((procedure (* *) *) list #!rest list) list))
-(lset-difference (procedure! lset-difference ((procedure (* *) *) list #!rest list) list))
-(lset-difference! (procedure! lset-difference! ((procedure (* *) *) list #!rest list) list))
-(lset-intersection (procedure! lset-intersection ((procedure (* *) *) list #!rest list) list))
-(lset-intersection! (procedure! lset-intersection! ((procedure (* *) *) list #!rest list) list))
-(lset-union (procedure! lset-union ((procedure (* *) *) list #!rest list) list))
-(lset-union! (procedure! lset-union! ((procedure (* *) *) list #!rest list) list))
-(lset-xor (procedure! lset-xor ((procedure (* *) *) list #!rest list) list))
-(lset-xor! (procedure! lset-xor! ((procedure (* *) *) list #!rest list) list))
-(lset<= (procedure! lset<= ((procedure (* *) *) list #!rest list) boolean))
-(lset= (procedure! lset= ((procedure (* *) *) list #!rest list) boolean))
-(make-list (procedure! make-list (fixnum #!optional *) list))
-(map! (procedure! map! ((procedure (*) *) list #!rest list) list))
-(map-in-order (procedure! map-in-order ((procedure (*) *) list #!rest list) list))
+(lset-adjoin (foreall (a) (procedure! lset-adjoin ((procedure (a a) *) (list a) #!rest a) (list a))))
+(lset-diff+intersection
+ (forall (a) (procedure! lset-diff+intersection ((procedure (a a) *) (list a) #!rest (list a))
+			 (list a))))
+(lset-diff+intersection! 
+ (forall (a) (procedure! lset-diff+intersection! ((procedure (a a) *) (list a) #!rest (list a))
+			 (list a))))
+(lset-difference
+ (forall (a) (procedure! lset-difference ((procedure (a a) *) (list a) #!rest (list a)) (list a))))
+
+(lset-difference!
+ (forall (a) (procedure! lset-difference! ((procedure (a a) *) (list a) #!rest (list a)) (list a))))
+
+(lset-intersection
+ (forall (a) (procedure! lset-intersection ((procedure (a a) *) (list a) #!rest (list a)) (list a))))
+
+(lset-intersection!
+ (forall (a) (procedure! lset-intersection! ((procedure (a a) *) (list a) #!rest (list a)) (list a))))
+
+(lset-union
+ (forall (a) (procedure! lset-union ((procedure (a a) *) (list a) #!rest (list a)) (list a))))
+
+(lset-union!
+ (forall (a) (procedure! lset-union! ((procedure (a a) *) (list a) #!rest (list a)) (list a))))
+
+(lset-xor
+ (forall (a) (procedure! lset-xor ((procedure (a a) *) (list a) #!rest (list a)) (list a))))
+
+(lset-xor!
+ (forall (a) (procedure! lset-xor! ((procedure (a a) *) (list a) #!rest (list a)) (list a))))
+
+(lset<=
+ (forall (a) (procedure! lset<= ((procedure (a a) *) (list a) #!rest (list a)) boolean)))
+
+(lset=
+ (forall (a) (procedure! lset= ((procedure (a a) *) (list a) #!rest (list a)) boolean)))
+
+(make-list (forall (a) (procedure! make-list (fixnum #!optional a) (list a))))
+(map! (forall (a b) (procedure! map! ((procedure (a #!rest) b) (list a) #!rest list) (list b))))
+
+(map-in-order
+ (forall (a b) (procedure! map-in-order ((procedure (a #!rest) b) (list a) #!rest list) (list b))))
+
 (ninth (procedure! ninth (pair) *))
 
 (not-pair? (procedure not-pair? (*) boolean)
@@ -1719,50 +1766,59 @@
 	    ((list) (let ((#(tmp) #(1))) '#f))
 	    ((null) (let ((#(tmp) #(1))) '#t)))
 
-(pair-fold (procedure! pair-fold (procedure * list #!rest list) *))
-(pair-fold-right (procedure! pair-fold-right (procedure * list #!rest list) *))
-(pair-for-each (procedure! pair-for-each ((procedure (#!rest) . *) list #!rest list) undefined))
-(partition (procedure! partition ((procedure (*) *) list) list list))
-(partition! (procedure! partition! ((procedure (*) *) list) list list))
+(pair-fold (procedure! pair-fold (procedure * list #!rest list) *)) ;XXX do this
+(pair-fold-right (procedure! pair-fold-right (procedure * list #!rest list) *)) ;XXX
+(pair-for-each (procedure! pair-for-each ((procedure (#!rest) . *) list #!rest list) undefined)) ;XXX
+(partition (forall (a) (procedure! partition ((procedure (a) *) (list a)) (list a) (list a))))
+(partition! (forall (a) (procedure! partition! ((procedure (a) *) (list a)) (list a) (list a))))
 
 (proper-list? (procedure proper-list? (*) boolean)
 	      ((null) (let ((#(tmp) #(1))) '#t)))
 
-(reduce (procedure! reduce ((procedure (* *) *) * list) *))
-(reduce-right (procedure! reduce-right ((procedure (* *) *) * list) *))
-(remove (procedure! remove ((procedure (*) *) list) list))
-(remove! (procedure! remove! ((procedure (*) *) list) list))
-(reverse! (procedure! reverse! (list) list))
-(second (procedure! second (pair) *))
+(reduce (procedure! reduce ((procedure (* *) *) * list) *)) ;XXX
+(reduce-right (procedure! reduce-right ((procedure (* *) *) * list) *)) ;XXX
+(remove (forall (a) (procedure! remove ((procedure (a) *) (list a)) (list a))))
+(remove! (forall (a) (procedure! remove! ((procedure (a) *) (list a)) (list a))))
+(reverse! (forall (a) (procedure! reverse! ((list a)) (list a))))
+(second (forall (a) (procedure! second ((pair * (pair a *))) a)))
 (seventh (procedure! seventh (pair) *))
 (sixth (procedure! sixth (pair) *))
-(span (procedure! span ((procedure (*) *) list) list list))
-(span! (procedure! span! ((procedure (*) *) list) list list))
-(split-at (procedure! split-at (list fixnum) list list))
-(split-at! (procedure! split-at! (list fixnum) list list))
-(take (procedure! take (list fixnum) list))
-(take! (procedure! take! (list fixnum) list))
-(take-right (procedure! take-right (list fixnum) list))
-(take-while (procedure! take-while ((procedure (*) *) list) list))
-(take-while! (procedure! take-while! ((procedure (*) *) list) list))
+(span (forall (a) (procedure! span ((procedure (a) *) (list a)) (list a) (list a))))
+(span! (forall (a) (procedure! span! ((procedure (a) *) (list a)) (list a) (list a))))
+(split-at (forall (a) (procedure! split-at ((list a) fixnum) (list a) (list a))))
+(split-at! (forall (a) (procedure! split-at! ((list a) fixnum) (list a) (list a))))
+(take (forall (a) (procedure! take ((list a) fixnum) (list a))))
+(take! (forall (a) (procedure! take! ((list a) fixnum) (list a))))
+(take-right (forall (a) (procedure! take-right ((list a) fixnum) (list a))))
+(take-while (forall (a) (procedure! take-while ((procedure (a) *) (list a)) (list a))))
+(take-while! (forall (a) (procedure! take-while! ((procedure (a) *) (list a)) (list a))))
 (tenth (procedure! tenth (pair) *))
-(third (procedure! third (pair) *))
-(unfold (procedure! unfold ((procedure (*) *) (procedure (*) *) (procedure (*) *) * #!optional (procedure (*) *)) *))
-(unfold-right (procedure! unfold-right ((procedure (*) *) (procedure (*) *) (procedure (*) *) * #!optional (procedure (*) *)) *))
-(unzip1 (procedure! unzip1 (list) list))
-(unzip2 (procedure! unzip2 (list) list list))
-(unzip3 (procedure! unzip3 (list) list list list))
-(unzip4 (procedure! unzip4 (list) list list list list))
-(unzip5 (procedure! unzip5 (list) list list list list list))
-(xcons (procedure xcons (* *) pair))
-(zip (procedure! zip (list #!rest list) list))
+(third (forall (a) (procedure! third ((pair * (pair * (pair a *)))) a)))
+(unfold (procedure! unfold ((procedure (*) *) (procedure (*) *) (procedure (*) *) * #!optional (procedure (*) *)) *)) ;XXX
+(unfold-right (procedure! unfold-right ((procedure (*) *) (procedure (*) *) (procedure (*) *) * #!optional (procedure (*) *)) *)) ;XXX
+(unzip1 (forall (a) (procedure! unzip1 ((list (pair a *))) (list a))))
+(unzip2 (forall (a b) (procedure! unzip2 ((list (pair a (pair b *)))) (list a) (list b))))
+
+(unzip3
+ (forall (a b c) (procedure! unzip3 ((list (pair a (pair b (pair c *))))) (list a) (list b) (list c))))
+
+(unzip4 (procedure! unzip4 (list) list list list list)) ; yeah
+(unzip5 (procedure! unzip5 (list) list list list list list)) ; yeah, too
+(xcons (forall (a b) (procedure xcons (a b) (pair b a))))
+(zip (forall (a) (procedure! zip ((list a) #!rest list) (list (pair a *)))))
+
 
 ;; srfi-13
 
 (check-substring-spec (procedure! check-substring-spec (* string fixnum fixnum) undefined))
 (kmp-step (procedure! kmp-step (string vector char fixnum (procedure (char char) *) fixnum) fixnum))
 (make-kmp-restart-vector (procedure! make-kmp-restart-vector (string #!optional (procedure (* *) *) fixnum fixnum) vector))
-(string-any (procedure! string-any (* string #!optional fixnum fixnum) boolean))
+
+(string-any
+ (procedure!
+  string-any
+  ((or char (struct char-set) (procedure (char) *)) string #!optional fixnum fixnum)
+  boolean))
 
 (string-append/shared (procedure! string-append/shared (#!rest string) string)
 		      ((string string) (##sys#string-append #(1) #(2))))
@@ -1787,10 +1843,10 @@
 
 (string-compare (procedure! string-compare (string string (procedure (fixnum) *) (procedure (fixnum) *) (procedure (fixnum) *) #!optional fixnum fixnum fixnum fixnum) *))
 (string-compare-ci (procedure! string-compare (string string (procedure (fixnum) *) (procedure (fixnum) *) (procedure (fixnum) *) #!optional fixnum fixnum fixnum fixnum) *))
-(string-concatenate (procedure! string-concatenate (list) string))
-(string-concatenate-reverse (procedure! string-concatenate-reverse (list #!optional string fixnum) string))
-(string-concatenate-reverse/shared (procedure! string-concatenate-reverse/shared (list #!optional string fixnum) string))
-(string-concatenate/shared (procedure! string-concatenate/shared (list) string))
+(string-concatenate (procedure! string-concatenate ((list string)) string))
+(string-concatenate-reverse (procedure! string-concatenate-reverse ((list string) #!optional string fixnum) string))
+(string-concatenate-reverse/shared (procedure! string-concatenate-reverse/shared ((list string) #!optional string fixnum) string))
+(string-concatenate/shared (procedure! string-concatenate/shared ((list string)) string))
 (string-contains (procedure! string-contains (string string #!optional fixnum fixnum fixnum fixnum) (or fixnum boolean)))
 (string-contains-ci (procedure! string-contains-ci (string string #!optional fixnum fixnum fixnum fixnum) (or fixnum boolean)))
 (string-copy (procedure! string-copy (string #!optional fixnum fixnum) string))
@@ -1801,15 +1857,39 @@
 (string-downcase! (procedure! string-downcase! (string #!optional fixnum fixnum) string))
 (string-drop (procedure! string-drop (string fixnum) string))
 (string-drop-right (procedure! string-drop-right (string fixnum) string))
-(string-every (procedure! string-every (* string #!optional fixnum fixnum) boolean))
+
+(string-every
+ (procedure!
+  string-every
+  ((or char (struct char-set) (procedure (char) *)) string #!optional fixnum fixnum) 
+  boolean))
+
 (string-fill! (procedure! string-fill! (string char #!optional fixnum fixnum) string))
-(string-filter (procedure! string-filter (* string #!optional fixnum fixnum) string))
-(string-fold (procedure! string-fold ((procedure (char *) *) * string #!optional fixnum fixnum) *))
-(string-fold-right (procedure! string-fold-right ((procedure (char *) *) * string #!optional fixnum fixnum) *))
+
+(string-filter
+ (procedure! 
+  string-filter
+  ((or char (struct char-set) (procedure (char) *)) string #!optional fixnum fixnum) 
+  string))
+
+(string-fold (procedure! string-fold ((procedure (char *) *) * string #!optional fixnum fixnum) *)) ;XXX
+
+(string-fold-right (procedure! string-fold-right ((procedure (char *) *) * string #!optional fixnum fixnum) *)) ;XXX
 (string-for-each (procedure! string-for-each ((procedure (char) . *) string #!optional fixnum fixnum) undefined))
 (string-for-each-index (procedure! string-for-each-index ((procedure (fixnum) . *) string #!optional fixnum fixnum) undefined))
-(string-index (procedure! string-index (string * #!optional fixnum fixnum) (or fixnum boolean)))
-(string-index-right (procedure! string-index-right (string * #!optional fixnum fixnum) (or fixnum boolean)))
+
+(string-index
+ (procedure! 
+  string-index
+  (string (or char (struct char-set) (procedure (char) *)) #!optional fixnum fixnum)
+  (or fixnum boolean)))
+
+(string-index-right
+ (procedure! 
+  string-index-right
+  (string (or char (struct char-set) (procedure (char) *)) #!optional fixnum fixnum)
+  (or fixnum boolean)))
+
 (string-join (procedure! string-join (list #!optional string symbol) string))
 (string-kmp-partial-search (procedure! string-kmp-partial-search (string vector string fixnum #!optional (procedure (char char) *) fixnum fixnum fixnum) fixnum))
 (string-map (procedure! string-map ((procedure (char) char) string #!optional fixnum fixnum) string))
@@ -1829,8 +1909,19 @@
 (string-replace (procedure! string-replace (string string fixnum fixnum #!optional fixnum fixnum) string))
 (string-reverse (procedure! string-reverse (string #!optional fixnum fixnum) string))
 (string-reverse! (procedure! string-reverse! (string #!optional fixnum fixnum) string))
-(string-skip (procedure! string-skip (string * #!optional fixnum fixnum) (or fixnum boolean)))
-(string-skip-right (procedure! string-skip-right (string * #!optional fixnum fixnum) (or fixnum boolean)))
+
+(string-skip
+ (procedure! 
+  string-skip
+  (string (or char (struct char-set) (procedure (char) *)) #!optional fixnum fixnum)
+  (or fixnum boolean)))
+
+(string-skip-right
+ (procedure! 
+  string-skip-right
+  (string (or char (struct char-set) (procedure (char) *)) #!optional fixnum fixnum)
+  (or fixnum boolean)))
+
 (string-suffix-ci? (procedure! string-suffix-ci? (string string #!optional fixnum fixnum fixnum fixnum) boolean))
 (string-suffix-length (procedure! string-suffix-length (string string #!optional fixnum fixnum fixnum fixnum) fixnum))
 (string-suffix-length-ci (procedure! string-suffix-length-ci (string string #!optional fixnum fixnum fixnum fixnum) fixnum))
@@ -1840,12 +1931,30 @@
 (string-take-right (procedure! string-take-right (string fixnum) string))
 (string-titlecase (procedure! string-titlecase (string #!optional fixnum fixnum) string))
 (string-titlecase! (procedure! string-titlecase! (string #!optional fixnum fixnum) string))
-(string-tokenize (procedure! string-tokenize (string #!optional * fixnum fixnum) list))
-(string-trim (procedure! string-trim (string #!optional * fixnum fixnum) string))
-(string-trim-both (procedure! string-trim-both (string #!optional * fixnum fixnum) string))
-(string-trim-right (procedure! string-trim-right (string #!optional * fixnum fixnum) string))
-(string-unfold (procedure! string-unfold (procedure procedure procedure * #!optional * procedure) string))
-(string-unfold-right (procedure! string-unfold-right (procedure procedure procedure * #!optional * procedure) string))
+
+(string-tokenize
+ (procedure! string-tokenize (string #!optional (struct char-set) fixnum fixnum) list))
+
+(string-trim
+ (procedure! 
+  string-trim
+  (string #!optional (or char (struct char-set) (procedure (char) *)) fixnum fixnum) 
+  string))
+
+(string-trim-both
+ (procedure! 
+  string-trim-both
+  (string #!optional (or char (struct char-set) (procedure (char) *)) fixnum fixnum) 
+  string))
+
+(string-trim-right
+ (procedure! 
+  string-trim-right
+  (string #!optional (or char (struct char-set) (procedure (char) *)) fixnum fixnum) 
+  string))
+
+(string-unfold (procedure! string-unfold (procedure procedure procedure * #!optional * procedure) string)) ;XXX
+(string-unfold-right (procedure! string-unfold-right (procedure procedure procedure * #!optional * procedure) string)) ;XXX
 (string-upcase (procedure! string-upcase (string #!optional fixnum fixnum) string))
 (string-upcase! (procedure! string-upcase! (string #!optional fixnum fixnum) string))
 (string-xcopy! (procedure! string-xcopy! (string string string fixnum #!optional fixnum fixnum fixnum) string))
@@ -1871,6 +1980,7 @@
 (substring-spec-ok? (procedure! substring-spec-ok? (string fixnum fixnum) boolean))
 (substring/shared (procedure! substring/shared (string fixnum #!optional fixnum) string))
 (xsubstring (procedure! xsubstring (string fixnum #!optional fixnum fixnum fixnum) string))
+
 
 ;; srfi-14
 
@@ -1944,6 +2054,7 @@
 (string->char-set! (procedure! string->char-set! (string #!optional (struct char-set)) (struct char-set)))
 (ucs-range->char-set (procedure! ucs-range->char-set (fixnum fixnum #!optional * (struct char-set)) (struct char-set)))
 (ucs-range->char-set! (procedure! ucs-range->char-set! (fixnum fixnum #!optional * (struct char-set)) (struct char-set)))
+
 
 ;; srfi-18
 
@@ -2023,6 +2134,7 @@
 (uncaught-exception-reason (procedure! uncaught-exception-reason ((struct condition)) *))
 (uncaught-exception? (procedure uncaught-exception? (*) boolean))
 
+
 ;; srfi-4
 
 (blob->f32vector (procedure! blob->f32vector (blob) (struct f32vector)))
@@ -2067,14 +2179,14 @@
 
 (f64vector? (procedure? (struct f64vector) f64vector? (*) boolean))
 
-(list->f32vector (procedure! list->f32vector (list) (struct f32vector)))
-(list->f64vector (procedure! list->f64vector (list) (struct f64vector)))
-(list->s16vector (procedure! list->s16vector (list) (struct s16vector)))
-(list->s32vector (procedure! list->s32vector (list) (struct s32vector)))
-(list->s8vector (procedure! list->s8vector (list) (struct s8vector)))
-(list->u16vector (procedure! list->u16vector (list) (struct u16vector)))
-(list->u32vector (procedure! list->u32vector (list) (struct u32vector)))
-(list->u8vector (procedure! list->u8vector (list) (struct u8vector)))
+(list->f32vector (procedure! list->f32vector ((list number)) (struct f32vector)))
+(list->f64vector (procedure! list->f64vector ((list number)) (struct f64vector)))
+(list->s16vector (procedure! list->s16vector ((list fixnum)) (struct s16vector)))
+(list->s32vector (procedure! list->s32vector ((list number)) (struct s32vector)))
+(list->s8vector (procedure! list->s8vector ((list fixnum)) (struct s8vector)))
+(list->u16vector (procedure! list->u16vector ((list fixnum)) (struct u16vector)))
+(list->u32vector (procedure! list->u32vector ((list number)) (struct u32vector)))
+(list->u8vector (procedure! list->u8vector ((list fixnum)) (struct u8vector)))
 (make-f32vector (procedure! make-f32vector (fixnum #!optional * * *) (struct f32vector)))
 (make-f64vector (procedure! make-f64vector (fixnum #!optional * * *) (struct f64vector)))
 (make-s16vector (procedure! make-s16vector (fixnum #!optional * * *) (struct s16vector)))
@@ -2089,7 +2201,7 @@
 (s16vector (procedure! s16vector (#!rest fixnum) (struct s16vector)))
 (s16vector->blob (procedure! s16vector->blob ((struct s16vector)) blob))
 (s16vector->blob/shared (procedure! s16vector->blob/shared ((struct s16vector)) blob))
-(s16vector->list (procedure! s16vector->list ((struct s16vector)) list))
+(s16vector->list (procedure! s16vector->list ((struct s16vector)) (list fixnum)))
 
 (s16vector-length (procedure! s16vector-length ((struct s16vector)) fixnum)
 		  (((struct s16vector)) (##core#inline "C_u_i_16vector_length" #(1))))
@@ -2102,7 +2214,7 @@
 (s32vector (procedure! s32vector (#!rest number) (struct s32vector)))
 (s32vector->blob (procedure! s32vector->blob ((struct 32vector)) blob))
 (s32vector->blob/shared (procedure! s32vector->blob/shared ((struct s32vector)) blob))
-(s32vector->list (procedure! s32vector->list ((struct s32vector)) list))
+(s32vector->list (procedure! s32vector->list ((struct s32vector)) (list number)))
 
 (s32vector-length (procedure! s32vector-length ((struct s32vector)) fixnum)
 		  (((struct s32vector)) (##core#inline "C_u_i_32vector_length" #(1))))
@@ -2115,7 +2227,7 @@
 (s8vector (procedure! s8vector (#!rest fixnum) (struct s8vector)))
 (s8vector->blob (procedure! s8vector->blob ((struct s8vector)) blob))
 (s8vector->blob/shared (procedure! s8vector->blob/shared ((struct s8vector)) blob))
-(s8vector->list (procedure! s8vector->list ((struct s8vector)) list))
+(s8vector->list (procedure! s8vector->list ((struct s8vector)) (list fixnum)))
 
 (s8vector-length (procedure! s8vector-length ((struct s8vector)) fixnum)
 		 (((struct s8vector)) (##core#inline "C_u_i_8vector_length" #(1))))
@@ -2136,7 +2248,7 @@
 (u16vector (procedure! u16vector (#!rest fixnum) (struct u16vector)))
 (u16vector->blob (procedure! u16vector->blob ((struct u16vector)) blob))
 (u16vector->blob/shared (procedure! u16vector->blob/shared ((struct u16vector)) blob))
-(u16vector->list (procedure! u16vector->list ((struct u16vector)) list))
+(u16vector->list (procedure! u16vector->list ((struct u16vector)) (list fixnum)))
 
 (u16vector-length (procedure! u16vector-length ((struct u16vector)) fixnum)
 		  (((struct u16vector)) (##core#inline "C_u_i_16vector_length" #(1))))
@@ -2149,7 +2261,7 @@
 (u32vector (procedure! u32vector (#!rest number) (struct u32vector)))
 (u32vector->blob (procedure! u32vector->blob ((struct u32vector)) blob))
 (u32vector->blob/shared (procedure! u32vector->blob/shared ((struct u32vector)) blob))
-(u32vector->list (procedure! u32vector->list ((struct u32vector)) list))
+(u32vector->list (procedure! u32vector->list ((struct u32vector)) (list number)))
 
 (u32vector-length (procedure! u32vector-length ((struct u32vector)) fixnum)
 		  (((struct u32vector)) (##core#inline "C_u_i_32vector_length" #(1))))
@@ -2162,7 +2274,7 @@
 (u8vector (procedure! u8vector (#!rest fixnum) (struct u8vector)))
 (u8vector->blob (procedure! u8vector->blob ((struct u8vector)) blob))
 (u8vector->blob/shared (procedure! u8vector->blob/shared ((struct u8vector)) blob))
-(u8vector->list (procedure! u8vector->list ((struct u8vector)) list))
+(u8vector->list (procedure! u8vector->list ((struct u8vector)) (list fixnum)))
 
 (u8vector-length (procedure! u8vector-length ((struct u8vector)) fixnum)
 		 (((struct u8vector)) (##core#inline "C_u_i_8vector_length" #(1))))
@@ -2174,15 +2286,16 @@
 
 (write-u8vector (procedure! write-u8vector ((struct u8vector) #!optional port fixnum fixnum) undefined))
 
+
 ;; srfi-69
 
-(alist->hash-table (procedure! alist->hash-table (list #!rest) (struct hash-table)))
+(alist->hash-table (procedure! alist->hash-table ((list pair) #!rest) (struct hash-table)))
 (eq?-hash (procedure! eq?-hash (* #!optional fixnum) fixnum))
 (equal?-hash (procedure! equal?-hash (* #!optional fixnum) fixnum))
 (eqv?-hash (procedure! eqv?-hash (* #!optional fixnum) fixnum))
 (hash (procedure! hash (* #!optional fixnum) fixnum))
 (hash-by-identity (procedure! hash-by-identity (* #!optional fixnum) fixnum))
-(hash-table->alist (procedure! hash-table->alist ((struct hash-table)) list))
+(hash-table->alist (procedure! hash-table->alist ((struct hash-table)) (list pair)))
 (hash-table-clear! (procedure! hash-table-clear! ((struct hash-table)) undefined))
 (hash-table-copy (procedure! hash-table-copy ((struct hash-table)) (struct hash-table)))
 (hash-table-delete! (procedure! hash-table-delete! ((struct hash-table) *) boolean))
@@ -2243,6 +2356,7 @@
 (string-hash-ci (procedure! string-hash-ci (string #!optional fixnum fixnum fixnum) number))
 (string-ci-hash (procedure! string-ci-hash (string #!optional fixnum fixnum fixnum) number))
 
+
 ;; tcp
 
 (tcp-abandon-port (procedure! tcp-abandon-port (port) undefined))
@@ -2267,6 +2381,7 @@
 (tcp-read-timeout (procedure! tcp-read-timeout (#!optional number) number))
 (tcp-write-timeout (procedure! tcp-write-timeout (#!optional number) number))
 
+
 ;; utils
 
 (for-each-argv-line deprecated)
@@ -2275,6 +2390,6 @@
 (system* (procedure! system* (string #!rest) undefined))
 (qs (procedure! qs (string) string))
 (compile-file (procedure! compile-file (string #!rest) (or boolean string)))
-(compile-file-options (procedure! compile-file-options (#!optional list) list))
+(compile-file-options (procedure! compile-file-options (#!optional (list string)) (list string)))
 (scan-input-lines (procedure! scan-input-lines (* #!optional port) *))
 (yes-or-no? (procedure! yes-or-no? (string #!rest) *))
