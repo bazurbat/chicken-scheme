@@ -6338,7 +6338,7 @@ void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...)
 {
   va_list v;
   C_word n2;
-  C_word iresult;
+  C_word iresult, n3;
   int fflag;
   double fresult, f2;
   C_alloc_flonum;
@@ -6389,8 +6389,11 @@ void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...)
 	if((n2 = C_unfix(n1)) == 0)
 	  barf(C_DIVISION_BY_ZERO_ERROR, "/");
 
-	if((fresult = (double)iresult / (double)n2) != (iresult / n2))
+	n3 = iresult / n2;
+
+	if((fresult = (double)iresult / (double)n2) != n3)
 	  fflag = 1;
+	else iresult = n3;
       }
     }
     else if(!C_immediatep(n1) && C_block_header(n1) == C_FLONUM_TAG) {
