@@ -68,19 +68,55 @@
 (car (forall (a) (procedure! car ((pair a *)) a)) ((pair) (##core#inline "C_u_i_car" #(1))))
 (cdr (forall (a) (procedure! cdr ((pair * a)) a)) ((pair) (##core#inline "C_u_i_cdr" #(1))))
 
-(caar (forall (a) (procedure! caar ((pair (pair a *) *)) a)))
+(caar (forall (a) (procedure! caar ((pair (pair a *) *)) a))
+      (((pair (pair * *) *)) (##core#inline "C_u_i_car" (##core#inline "C_u_i_car" #(1)))))
+(cadr (forall (a) (procedure! cadr ((pair * (pair a *))) a))
+      (((pair * (pair * *))) (##core#inline "C_u_i_car" (##core#inline "C_u_i_cdr" #(1)))))
+(cdar (forall (a) (procedure! cdar ((pair (pair * a) *)) a))
+      (((pair (pair * *) *)) (##core#inline "C_u_i_cdr" (##core#inline "C_u_i_car" #(1)))))
+(cddr (forall (a) (procedure! cddr ((pair * (pair * a))) a))
+      (((pair * (pair * *))) (##core#inline "C_u_i_cdr" (##core#inline "C_u_i_cdr" #(1)))))
 
-(cadr (forall (a) (procedure! cadr ((pair * (pair a *))) a)))
-(cdar (forall (a) (procedure! cdar ((pair (pair * a) *)) a)))
-(cddr (forall (a) (procedure! cddr ((pair * (pair * a))) a)))
-(caaar (forall (a) (procedure! caaar ((pair (pair (pair a *) *) *)) a)))
-(caadr (forall (a) (procedure! caadr ((pair * (pair (pair a *) *))) a)))
-(cadar (forall (a) (procedure! cadar ((pair (pair * (pair a *)) *)) a)))
-(caddr (forall (a) (procedure! caddr ((pair * (pair * (pair a *)))) a)))
-(cdaar (forall (a) (procedure! cdaar ((pair (pair (pair * a) *) *)) a)))
-(cdadr (forall (a) (procedure! cdadr ((pair * (pair (pair * a) *))) a)))
-(cddar (forall (a) (procedure! cddar ((pair (pair * (pair * a)) *)) a)))
-(cdddr (forall (a) (procedure! cdddr ((pair * (pair * (pair * a)))) a)))
+(caaar (forall (a) (procedure! caaar ((pair (pair (pair a *) *) *)) a))
+       (((pair (pair (pair * *) *) *))
+	(##core#inline "C_u_i_car"
+		       (##core#inline "C_u_i_car" (##core#inline "C_u_i_car" #(1))))))
+
+(caadr (forall (a) (procedure! caadr ((pair * (pair (pair a *) *))) a))
+       (((pair * (pair (pair * *) *)))
+	(##core#inline "C_u_i_car"
+		       (##core#inline "C_u_i_car" (##core#inline "C_u_i_cdr" #(1))))))
+
+(cadar (forall (a) (procedure! cadar ((pair (pair * (pair a *)) *)) a))
+       (((pair (pair * (pair * *)) *))
+	(##core#inline "C_u_i_car"
+		       (##core#inline "C_u_i_cdr" (##core#inline "C_u_i_car" #(1))))))
+
+(caddr (forall (a) (procedure! caddr ((pair * (pair * (pair a *)))) a))
+       (((pair * (pair * (pair * *))))
+	(##core#inline "C_u_i_car"
+		       (##core#inline "C_u_i_cdr" (##core#inline "C_u_i_cdr" #(1))))))
+
+(cdaar (forall (a) (procedure! cdaar ((pair (pair (pair * a) *) *)) a))
+       (((pair (pair (pair * *) *) *))
+	(##core#inline "C_u_i_cdr"
+		       (##core#inline "C_u_i_car" (##core#inline "C_u_i_car" #(1))))))
+
+(cdadr (forall (a) (procedure! cdadr ((pair * (pair (pair * a) *))) a))
+       (((pair * (pair (pair * *) *)))
+	(##core#inline "C_u_i_cdr"
+		       (##core#inline "C_u_i_car" (##core#inline "C_u_i_cdr" #(1))))))
+
+(cddar (forall (a) (procedure! cddar ((pair (pair * (pair * a)) *)) a))
+       (((pair (pair * (pair * *)) *))
+	(##core#inline "C_u_i_cdr"
+		       (##core#inline "C_u_i_cdr" (##core#inline "C_u_i_car" #(1))))))
+
+(cdddr (forall (a) (procedure! cdddr ((pair * (pair * (pair * a)))) a))
+       (((pair * (pair * (pair * *))))
+	(##core#inline "C_u_i_cdr"
+		       (##core#inline "C_u_i_cdr" (##core#inline "C_u_i_cdr" #(1))))))
+
 (caaaar (forall (a) (procedure! caaaar ((pair (pair (pair (pair a *) *) *) *)) a)))
 (caaadr (forall (a) (procedure! caaadr ((pair * (pair (pair (pair a *) *) *))) a)))
 (caadar (forall (a) (procedure! caadar ((pair (pair * (pair (pair a *) *)) *)) a)))
@@ -1693,7 +1729,7 @@
 (filter-map
  (forall (a b) (procedure! filter-map ((procedure (a #!rest) b) (list a) #!rest list) (list b))))
 
-(find (forall (a) (procedure! find ((procedure (a) *) (list a)) a)))
+(find (forall (a) (procedure! find ((procedure (a) *) (list a)) *)))
 (find-tail (forall (a) (procedure! find-tail ((procedure (a) *) (list a)) *)))
 
 (first (forall (a) (procedure! first ((pair a *)) a))
@@ -1786,7 +1822,10 @@
 (remove (forall (a) (procedure! remove ((procedure (a) *) (list a)) (list a))))
 (remove! (forall (a) (procedure! remove! ((procedure (a) *) (list a)) (list a))))
 (reverse! (forall (a) (procedure! reverse! ((list a)) (list a))))
-(second (forall (a) (procedure! second ((pair * (pair a *))) a)))
+
+(second (forall (a) (procedure! second ((pair * (pair a *))) a))
+	(((pair * (pair * *))) (##core#inline "C_u_i_car" (##core#inline "C_u_i_cdr" #(1)))))
+
 (seventh (procedure! seventh (pair) *))
 (sixth (procedure! sixth (pair) *))
 (span (forall (a) (procedure! span ((procedure (a) *) (list a)) (list a) (list a))))
@@ -1799,7 +1838,12 @@
 (take-while (forall (a) (procedure! take-while ((procedure (a) *) (list a)) (list a))))
 (take-while! (forall (a) (procedure! take-while! ((procedure (a) *) (list a)) (list a))))
 (tenth (procedure! tenth (pair) *))
-(third (forall (a) (procedure! third ((pair * (pair * (pair a *)))) a)))
+
+(third (forall (a) (procedure! third ((pair * (pair * (pair a *)))) a))
+       (((pair * (pair * (pair * *))))
+	(##core#inline "C_u_i_car" 
+		       (##core#inline "C_u_i_cdr" (##core#inline "C_u_i_cdr" #(1))))))
+
 (unfold (procedure! unfold ((procedure (*) *) (procedure (*) *) (procedure (*) *) * #!optional (procedure (*) *)) *)) ;XXX
 (unfold-right (procedure! unfold-right ((procedure (*) *) (procedure (*) *) (procedure (*) *) * #!optional (procedure (*) *)) *)) ;XXX
 (unzip1 (forall (a) (procedure! unzip1 ((list (pair a *))) (list a))))
