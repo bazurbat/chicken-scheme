@@ -57,7 +57,7 @@
 
 (equal? (procedure equal? (* *) boolean)
 	(((or fixnum symbol char eof null undefined) *) (eq? #(1) #(2)))
-	((* (or fixnum symbol char eof null undefined) (eq? #(1) #(2)))))
+	((* (or fixnum symbol char eof null undefined)) (eq? #(1) #(2))))
 
 (pair? (procedure? pair pair? (*) boolean))
 
@@ -227,6 +227,7 @@
      ((float float) (##core#inline "C_i_flonum_min" #(1) #(2))))
 
 (+ (procedure! + (#!rest number) number)
+   (() (fixnum) '0)
    ((fixnum) (fixnum) #(1))
    ((float) (float) #(1))
    ((number) #(1))
@@ -263,6 +264,7 @@
     (##core#inline_allocate ("C_a_i_flonum_negate" 4) #(1))))
 
 (* (procedure! * (#!rest number) number)
+   (() (fixnum) '1)
    ((fixnum) (fixnum) #(1))
    ((float) (float) #(1))
    ((number) (number) #(1))
@@ -534,7 +536,7 @@
 (##sys#apply (procedure! ##sys#apply (procedure #!rest) . *))
 
 (force (procedure force (*) *)
-       ((not (struct promise)) #(1)))
+       (((not (struct promise))) #(1)))
 
 (call-with-current-continuation
  (procedure! call-with-current-continuation ((procedure (procedure) . *)) . *))
@@ -607,10 +609,10 @@
 (char-ready? (procedure! char-ready? (#!optional port) boolean))
 
 (imag-part (procedure! imag-part (number) number)
-	   ((or fixnum float number) (let ((#(tmp) #(1))) '0)))
+	   (((or fixnum float number)) (let ((#(tmp) #(1))) '0)))
 
 (real-part (procedure! real-part (number) number)
-	   ((or fixnum float number) #(1)))
+	   (((or fixnum float number)) #(1)))
 
 (magnitude (procedure! magnitude (number) number)
 	   ((fixnum) (fixnum)
@@ -722,7 +724,7 @@
 
 (equal=? (procedure equal=? (* *) boolean)
 	 (((or fixnum symbol char eof null undefined) *) (eq? #(1) #(2)))
-	 ((* (or fixnum symbol char eof null undefined) (eq? #(1) #(2))))
+	 ((* (or fixnum symbol char eof null undefined)) (eq? #(1) #(2)))
 	 (((or float number) (or float number)) (= #(1) #(2))))
 
 (er-macro-transformer
@@ -1028,7 +1030,7 @@
 		  (((or null pair list) *) (let ((#(tmp) #(1))) '#t)))
 (##sys#check-string (procedure! ##sys#check-string (string #!optional *) *)
 		    ((string) (let ((#(tmp) #(1))) '#t))
-		    ((string) *  (let ((#(tmp) #(1))) '#t)))
+		    ((string) * (let ((#(tmp) #(1))) '#t)))
 (##sys#check-number (procedure! ##sys#check-number (number #!optional *) *)
 		    ((number) (let ((#(tmp) #(1))) '#t))
 		    ((number *) (let ((#(tmp) #(1))) '#t)))
@@ -1738,7 +1740,13 @@
 (fold (procedure! fold ((procedure (* #!rest) *) * #!rest list) *)) ;XXX
 (fold-right (procedure! fold-right ((procedure (* #!rest) *) * #!rest list) *)) ;XXX
 
-(fourth (forall (a) (procedure! fourth ((pair * (pair * (pair * (pair a *))))) a)))
+(fourth (forall (a) (procedure! fourth ((pair * (pair * (pair * (pair a *))))) a))
+	(((pair * (pair * (pair * (pair * *)))))
+	 (##core#inline "C_u_i_car" 
+			(##core#inline "C_u_i_cdr"
+				       (##core#inline "C_u_i_cdr"
+						      (##core#inline "C_u_i_cdr" #(1)))))))
+
 (iota (procedure! iota (fixnum #!optional fixnum fixnum) (list number)))
 (last (procedure! last (pair) *))
 (last-pair (procedure! last-pair (pair) *))

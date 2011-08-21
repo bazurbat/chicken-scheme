@@ -1516,8 +1516,8 @@
 			  (when pred
 			    (mark-variable name '##compiler#predicate pred))
 			  (when (pair? (cddr spec))
-			    (mark-variable
-			     name '##compiler#specializations
+			    (install-specializations 
+			     name 
 			     (##sys#strip-syntax (cddr spec)))))
 			 (else
 			  (warning 

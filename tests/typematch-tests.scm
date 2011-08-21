@@ -89,7 +89,7 @@
 	     (((not ,type)) 'ok-too))
 	  (define (,fname x) 'bomb)
 	  (assert (eq? 'ok (,fname ,val)) "did not specialize" ',val ',type)
-	  (assert (eq? 'ok-too (,fname ,nval)) "did specialize" ',val ',type)
+	  (assert (eq? 'ok-too (,fname ,nval)) "did specialize" ',nval ',type)
 	  (: ,fname2 (* -> *)
 	     (((not ,type)) 'bomb))
 	  (define (,fname2 x) 'ok)

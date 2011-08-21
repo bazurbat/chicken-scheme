@@ -4,6 +4,7 @@
 # - Note: this needs a proper shell, so it will not work with plain mingw
 #   (just the compiler and the Windows shell, without MSYS)
 
+
 set -e
 TEST_DIR=`pwd`
 OS_NAME=`uname -s`
@@ -13,22 +14,6 @@ export LIBRARY_PATH=${TEST_DIR}/..:${LIBRARY_PATH}
 
 mkdir -p test-repository
 
-# copy files into test-repository (by hand to avoid calling `chicken-install'):
-
-for x in setup-api.so setup-api.import.so setup-download.so \
-      setup-download.import.so chicken.import.so lolevel.import.so \
-      srfi-1.import.so srfi-4.import.so data-structures.import.so \
-      ports.import.so files.import.so posix.import.so \
-      srfi-13.import.so srfi-69.import.so extras.import.so \
-      irregex.import.so srfi-14.import.so tcp.import.so \
-      foreign.import.so scheme.import.so srfi-18.import.so \
-      utils.import.so csi.import.so irregex.import.so types.db; do
-  cp ../$x test-repository
-done
-
-#XXX
-cp ../types.db.new test-repository
-
 CHICKEN_REPOSITORY=${TEST_DIR}/test-repository
 CHICKEN=../chicken
 CHICKEN_INSTALL=${TEST_DIR}/../chicken-install
@@ -37,6 +22,11 @@ ASMFLAGS=
 FAST_OPTIONS="-O5 -d0 -b -disable-interrupts"
 
 $CHICKEN_INSTALL -init ${TEST_DIR}/test-repository
+
+#TYPESDB=../types.db
+#XXX
+TYPESDB=../types.db.new
+cp $TYPESDB test-repository/types.db
 
 if test -n "$MSYSTEM"; then
     CHICKEN="..\\chicken.exe"
@@ -67,7 +57,7 @@ $compile inlining-tests.scm -optimize-level 3
 echo "======================================== scrutiny tests ..."
 $compile typematch-tests.scm -specialize -w
 ./a.out
-$compile scrutiny-tests.scm -scrutinize -ignore-repository -types ../types.db 2>scrutiny.out -verbose
+$compile scrutiny-tests.scm -scrutinize -ignore-repository -types $TYPESDB 2>scrutiny.out -verbose
 
 if test -n "$MSYSTEM"; then
     dos2unix scrutiny.out
@@ -80,7 +70,7 @@ fi
 
 diff -bu scrutiny.expected scrutiny.out
 
-$compile scrutiny-tests-2.scm -scrutinize -analyze-only -ignore-repository -types ../types.db 2>scrutiny-2.out -verbose
+$compile scrutiny-tests-2.scm -scrutinize -analyze-only -ignore-repository -types $TYPESDB 2>scrutiny-2.out -verbose
 
 if test -n "$MSYSTEM"; then
     dos2unix scrutiny.out

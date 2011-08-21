@@ -297,7 +297,7 @@
 		    ""))
 	      "")
 	  (fragment (first (node-subexpressions node)))))
-      (d "  call-result: ~a " args)
+      (d "  call: ~a " args)
       (let* ((ptype (car args))
 	     (pptype? (procedure-type? ptype))
 	     (nargs (length (cdr args)))
@@ -382,21 +382,21 @@
 				       (let* ((spec (car specs))
 					      (stype (first spec))
 					      (tenv2 (append (append-map type-typeenv stype) typeenv)))
-					   (cond ((match-argument-types
-						   stype (cdr args) tenv2
-						   #t)
-						  (set! op (cons pn (car spec)))
-						  (set! typeenv tenv2)
-						  (let* ((r2 (and (pair? (cddr spec))
-								  (second spec)))
-							 (rewrite (if r2
-								      (third spec)
-								      (second spec))))
-						    (specialize-node! node rewrite)
-						    (when r2 (set! r r2))))
-						 (else
-						  (trail-restore trail0 tenv2)
-						  (loop (cdr specs))))))))))
+					 (cond ((match-argument-types
+						 stype (cdr args) tenv2
+						 #t)
+						(set! op (cons pn (car spec)))
+						(set! typeenv tenv2)
+						(let* ((r2 (and (pair? (cddr spec))
+								(second spec)))
+						       (rewrite (if r2
+								    (third spec)
+								    (second spec))))
+						  (specialize-node! node rewrite)
+						  (when r2 (set! r r2))))
+					       (else
+						(trail-restore trail0 tenv2)
+						(loop (cdr specs))))))))))
 		       (when op
 			 (d "  specialized: `~s' for ~a" (car op) (cdr op))
 			 (cond ((assoc op specialization-statistics) =>
@@ -845,9 +845,8 @@
 (define (match-types t1 t2 typeenv #!optional exact all)
 
   (define (match-args args1 args2)
-    (d "match-args: ~s <-> ~s" args1 args2)
+    (d "match args: ~s <-> ~s" args1 args2)
     (let loop ((args1 args1) (args2 args2) (opt1 #f) (opt2 #f))
-      (dd "  args ~a ~a ~a ~a" args1 args2 opt1 opt2)
       (cond ((null? args1) 
 	     (or opt2
 		 (null? args2)
@@ -1199,7 +1198,7 @@
 	  ((memq t1 '(vector list)) (type<=? `(,t1 *) t2))
 	  ((and (eq? 'null t1)
 		(pair? t2) 
-		(memq (car t2) '(pair list))))
+		(eq? (car t2) 'list)))
 	  ((and (pair? t1) (eq? 'forall (car t1)))
 	   (set! typeenv (append (map (cut cons <> #f) (second t1)) typeenv))
 	   (type<=? (third t1) t2))
@@ -1520,8 +1519,7 @@
 		  name new old)))
 	     (mark-variable name '##compiler#type t)
 	     (when specs
-	       ;;XXX validate types in specs
-	       (mark-variable name '##compiler#specializations specs)))))
+	       (install-specializations name specs)))))
        (read-file dbfile))
       #t)))
 
@@ -1636,6 +1634,9 @@
 		    (set! usedvars (cons t usedvars))
 		    t)
 		   (else #f)))
+	    ((eq? 'not (car t))
+	     (and (= 2 (length t))
+		  `(not ,(validate (second t)))))
 	    ((eq? 'forall (car t))
 	     (and (= 3 (length t))
 		  (list? (second t))
@@ -1713,6 +1714,51 @@
 	     (let ((type (simplify-type type)))
 	       (values type (and ptype (eq? (car ptype) type) (cdr ptype))))))
 	  (else (values #f #f)))))
+
+(define (install-specializations name specs)
+  (define (fail spec)
+    (error "invalid specialization format" spec name))
+  (mark-variable 
+   name '##compiler#specializations
+   ;;XXX it would be great if result types could refer to typevars
+   ;;    bound in the argument types, like this:
+   ;;
+   ;; (: with-input-from-file ((-> . *) -> . *)
+   ;;    (((forall (a) (-> a))) (a) ...code that does it single-valued-ly...))
+   ;;
+   ;; This would make it possible to propagate the (single) result type from
+   ;; the thunk to the enclosing expression. Unfortunately the simplification in
+   ;; the first validation renames typevars, so the second validation will have
+   ;; non-matching names.
+   (map (lambda (spec)
+	  (if (and (list? spec) (list? (first spec)))
+	      (let* ((args
+		      (map (lambda (t) 
+			     (let-values (((t2 _) (validate-type t #f)))
+			       (or t2
+				   (error "invalid argument type in specialization" 
+					  t spec name))))
+			   (first spec)))
+		     (typevars (unzip1 (append-map type-typeenv args))))
+		(cons
+		 args
+		 (case (length spec)
+		   ((2) (cdr spec))
+		   ((3) 
+		    (cond ((list? (second spec))
+			   (cons
+			    (map (lambda (t)
+				   (let-values (((t2 _) (validate-type t #f)))
+				     (or t2
+					 (error "invalid result type in specialization" 
+						t spec name))))
+				 (second spec))
+			    (cddr spec)))
+			  ((eq? '* (second spec)) (cdr spec))
+			  (else (fail spec))))
+		   (else (fail spec)))))
+	      (fail spec)))
+	specs)))
 
 
 ;;; hardcoded result types for certain primitives

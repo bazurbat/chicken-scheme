@@ -182,6 +182,7 @@
  inline-table-used
  inlining
  insert-timer-checks
+ install-specializations
  installation-home
  internal-bindings
  intrinsic?
