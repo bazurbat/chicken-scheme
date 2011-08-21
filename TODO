@@ -2,6 +2,7 @@ TODO								-*- Outline -*-
 
 
 * replace "types.db" with "types.db.new"
+** rm ./xchicken
 
 * enable specialization in "common-declarations.scm" and "tweaks.scm"
 
