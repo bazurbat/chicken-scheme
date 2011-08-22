@@ -316,7 +316,6 @@
 	      (else
 	       (let-values (((atypes values-rest)
 			     (procedure-argument-types ptype nargs typeenv)))
-		 (d "  argument-types: ~a (~a)" atypes values-rest)
 		 (unless (= (length atypes) nargs)
 		   (let ((alen (length atypes)))
 		     (report 
@@ -1608,6 +1607,7 @@
 (define (validate-type type name)
   ;; - returns converted type or #f
   ;; - also converts "(... -> ...)" types
+  ;; - converts some typenames to struct types (u32vector, etc.)
   ;; - drops "#!key ..." args by converting to #!rest
   ;; - handles "(T1 -> T2 : T3)" (predicate) 
   ;; - simplifies result
@@ -1644,6 +1644,11 @@
 			 pointer locative fixnum float pointer-vector
 			 deprecated noreturn values))
 	     t)
+	    ((memq t '(u8vector s8vector u16vector s16vector u32vector s32vector
+				f32vector f64vector thread queue environment time
+				continuation lock mmap condition hash-table
+				tcp-listener))
+	     `(struct ,t))
 	    ((not (pair? t)) 
 	     (cond ((memq t typevars)
 		    (set! usedvars (cons t usedvars))
