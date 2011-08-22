@@ -32,7 +32,6 @@
 (cond-expand
   ((not debugbuild)
    (declare
-     ;XXX (specialize)
      (disable-interrupts)
      (no-bound-checks)
      (no-procedure-checks)

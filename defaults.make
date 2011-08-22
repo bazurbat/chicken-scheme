@@ -272,10 +272,12 @@ CSI ?= csi$(EXE)
 
 CHICKEN_OPTIONS = -optimize-level 2 -include-path . -include-path $(SRCDIR) -inline -ignore-repository -feature chicken-bootstrap
 ifdef DEBUGBUILD
-CHICKEN_OPTIONS += -feature debugbuild -scrutinize -types $(SRCDIR)types.db
-CHICKEN_OPTIONS += -feature debugbuild
+CHICKEN_OPTIONS += -feature debugbuild -scrutinize -types $(SRCDIR)types.db -verbose
 else
 CHICKEN_OPTIONS += -no-warnings
+endif
+ifndef BUILDING_CHICKEN_BOOT
+CHICKEN_OPTIONS += -specialize
 endif
 CHICKEN_OPTIONS += $(EXTRA_CHICKEN_OPTIONS)
 CHICKEN_LIBRARY_OPTIONS = $(CHICKEN_OPTIONS) -explicit-use -no-trace

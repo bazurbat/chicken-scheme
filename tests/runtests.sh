@@ -23,9 +23,7 @@ FAST_OPTIONS="-O5 -d0 -b -disable-interrupts"
 
 $CHICKEN_INSTALL -init ${TEST_DIR}/test-repository
 
-#TYPESDB=../types.db
-#XXX
-TYPESDB=../types.db.new
+TYPESDB=../types.db
 cp $TYPESDB test-repository/types.db
 
 if test -n "$MSYSTEM"; then
