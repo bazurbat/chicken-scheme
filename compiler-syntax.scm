@@ -50,7 +50,7 @@
     (for-each
      (lambda (name)
        (##sys#put! name '##compiler#compiler-syntax t) )
-     (if (symbol? names) (list names) names) ) ) )
+     names) ) )
 
 (define-syntax define-internal-compiler-syntax
   (syntax-rules ()

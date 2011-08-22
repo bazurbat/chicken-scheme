@@ -30,7 +30,7 @@
 	procedure-type? named? procedure-result-types procedure-argument-types
 	noreturn-type? rest-type procedure-name d-depth
 	noreturn-procedure-type? trail trail-restore 
-	typename multiples
+	typename multiples procedure-arguments procedure-results
 	compatible-types? type<=? match-types resolve match-argument-types))
 
 
@@ -452,8 +452,10 @@
       (let ((subs (node-subexpressions n))
 	    (params (node-parameters n)) 
 	    (class (node-class n)) )
-	(dd "walk: ~a ~s (loc: ~a, dest: ~a, tail: ~a, flow: ~a, blist: ~a, e: ~a)"
-	    class params loc dest tail flow blist e)
+	(dd "walk: ~a ~s (loc: ~a, dest: ~a, tail: ~a, flow: ~a, blist: ~a)"
+	    class params loc dest tail flow blist)
+	;;(dd "walk: ~a ~s (loc: ~a, dest: ~a, tail: ~a, flow: ~a, blist: ~a, e: ~a)"
+	;;    class params loc dest tail flow blist e)
 	(set! d-depth (add1 d-depth))
 	(let ((results
 	       (case class
@@ -513,6 +515,7 @@
 			       (cond (nor1 r2)
 				     (nor2 r1)
 				     (else
+				      (dd "merge branch results: ~s + ~s" r1 r2)
 				      (map (lambda (t1 t2)
 					     (simplify-type `(or ,t1 ,t2)))
 					   r1 r2))))
@@ -548,6 +551,7 @@
 		       (when dest 
 			 (d "~a: initial-argument types: ~a" dest inits))
 		       (fluid-let ((blist '())
+				   (noreturn #f)
 				   (aliased '()))
 			 (let* ((initial-tag (tag))
 				(r (walk (first subs)
@@ -584,10 +588,13 @@
 			      (sprintf "in assignment to `~a'" var)
 			      (walk (first subs) e loc var #f flow #f)
 			      loc))
+			 (typeenv (append 
+				   (if type (type-typeenv type) '())
+				   (type-typeenv rt)))
 			 (b (assq var e)) )
 		    (when (and type (not b)
 			       (not (eq? type 'deprecated))
-			       (not (match-types type rt '())))
+			       (not (match-types type rt typeenv)))
 		      ;;XXX make this an error with strict-types?
 		      (report
 		       loc
@@ -653,7 +660,9 @@
 			     (walk n e loc dest tail flow ctags)
 			     ;; keep type, as the specialization may contain icky stuff
 			     ;; like "##core#inline", etc.
-			     (resolve r typeenv))
+			     (if (eq? '* r)
+				 r
+				 (map (cut resolve <> typeenv) r)))
 			    (else
 			     (for-each
 			      (lambda (arg argr)
@@ -757,7 +766,7 @@
 		  (for-each (lambda (n) (walk n e loc #f #f flow #f)) subs)
 		  '*))))
 	  (set! d-depth (sub1 d-depth))
-	  (dd "  -> ~a" results)
+	  (dd "  ~a -> ~a" class results)
 	  results)))
 
     (let ((rn (walk (first (node-subexpressions node)) '() '() #f #f (list (tag)) #f)))
@@ -895,17 +904,24 @@
 
   (define (match1 t1 t2)
     ;; note: the order of determining the type is important
-    ;(dd "   match1: ~s <-> ~s" t1 t2)
+    (dd "   match1: ~s <-> ~s" t1 t2)
     (cond ((eq? t1 t2))
 	  ((and (symbol? t1) (assq t1 typeenv)) => 
 	   (lambda (e) 
-	     (if (cdr e)
-		 (match1 (cdr e) t2)
-		 (begin
-		   (dd "   unify ~a = ~a" t1 t2)
-		   (set! trail (cons t1 trail))
-		   (set-cdr! e t2)
-		   #t))))
+	     (cond ((cdr e) (match1 (cdr e) t2))
+		   ;; special case for two unbound typevars
+		   ((and (symbol? t2) (assq t2 typeenv)) =>
+		    (lambda (e2)
+		      ;;XXX probably not fully right, consider:
+		      ;;    (forall (a b) ((a a b) ->)) + (forall (c d) ((c d d) ->))
+		      ;;    or is this not a problem? I don't know right now...
+		      (or (not (cdr e2))
+			  (match1 t1 (cdr e2)))))
+		   (else
+		    (dd "   unify ~a = ~a" t1 t2)
+		    (set! trail (cons t1 trail))
+		    (set-cdr! e t2)
+		    #t))))
 	  ((and (symbol? t2) (assq t2 typeenv)) => 
 	   (lambda (e) 
 	     (if (cdr e) 
@@ -970,10 +986,10 @@
 	  ((and (pair? t1) (pair? t2) (eq? (car t1) (car t2)))
 	   (case (car t1)
 	     ((procedure)
-	      (let ((args1 (if (named? t1) (third t1) (second t1)))
-		    (args2 (if (named? t2) (third t2) (second t2))) 
-		    (results1 (if (named? t1) (cdddr t1) (cddr t1))) 
-		    (results2 (if (named? t2) (cdddr t2) (cddr t2))) )
+	      (let ((args1 (procedure-arguments t1))
+		    (args2 (procedure-arguments t2))
+		    (results1 (procedure-results t1))
+		    (results2 (procedure-results t2)))
 		(and (match-args args1 args2)
 		     (match-results results1 results2))))
 	     ((struct) (equal? t1 t2))
@@ -1459,9 +1475,8 @@
 	     ((pair list vector) 
 	      (cons (car t) (map resolve (cdr t))))
 	     ((procedure)
-	      (let* ((n (named? t))
-		     (argtypes ((if n third second) t))
-		     (rtypes ((if n cdddr cddr) t)))
+	      (let* ((argtypes (procedure-arguments t))
+		     (rtypes (procedure-results t)))
 		`(procedure
 		  ,(let loop ((args argtypes))
 		     (cond ((null? args) '())

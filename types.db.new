@@ -505,7 +505,8 @@
 
 (vector? (procedure? vector vector? (*) boolean))
 
-(make-vector (forall (a) (procedure! make-vector (fixnum #!optional a) (vector a))))
+;; not result type "(vector a)", since it may be mutated!
+(make-vector (forall (a) (procedure! make-vector (fixnum #!optional a) vector)))
 
 (vector-ref (forall (a) (procedure! vector-ref ((vector a) fixnum) a)))
 (##sys#vector-ref (forall (a) (procedure! ##sys#vector-ref ((vector a) fixnum) a)))
@@ -1079,7 +1080,7 @@
 (binary-search (forall (a) (procedure! binary-search ((vector a) (procedure (a) *)) *)))
 (butlast (forall (a) (procedure! butlast ((pair a *)) (list a))))
 (chop (forall (a) (procedure! chop ((list a) fixnum) (list a))))
-(complement (procedure! complement ((procedure (#!rest) *) (procedure (#!rest) boolean))))
+(complement (procedure! complement ((procedure (#!rest) *)) (procedure (#!rest) boolean)))
 (compose (procedure! compose (#!rest procedure) procedure))
 (compress (forall (a) (procedure! compress (list (list a)) (list a))))
 (conc (procedure conc (#!rest) string))
@@ -1452,7 +1453,10 @@
 (create-pipe (procedure create-pipe () fixnum fixnum))
 (create-session (procedure create-session () fixnum))
 (create-symbolic-link (procedure! create-symbolic-link (string string) undefined))
-(current-directory (procedure! current-directory (#!optional string) string))
+
+;; extra arg for "parameterize" - ugh, what a hack...
+(current-directory (procedure! current-directory (#!optional string *) string))
+
 (current-effective-group-id (procedure current-effective-group-id () fixnum))
 (current-effective-user-id (procedure current-effective-user-id () fixnum))
 (current-effective-user-name (procedure current-effective-user-name () string))
@@ -1799,11 +1803,16 @@
 (lset=
  (forall (a) (procedure! lset= ((procedure (a a) *) (list a) #!rest (list a)) boolean)))
 
-(make-list (forall (a) (procedure! make-list (fixnum #!optional a) (list a))))
-(map! (forall (a b) (procedure! map! ((procedure (a #!rest) b) (list a) #!rest list) (list b))))
+;; see note about "make-vector", above
+(make-list (forall (a) (procedure! make-list (fixnum #!optional a) list)))
+
+(map!
+ (forall (a b) (procedure! map! ((procedure (a #!rest) b) (list a) #!rest list) (list b))))
 
 (map-in-order
- (forall (a b) (procedure! map-in-order ((procedure (a #!rest) b) (list a) #!rest list) (list b))))
+ (forall 
+  (a b)
+  (procedure! map-in-order ((procedure (a #!rest) b) (list a) #!rest list) (list b))))
 
 (ninth (procedure! ninth (pair) *))
 

@@ -13,3 +13,58 @@ TODO								-*- Outline -*-
 * test self-build
 
 * run mini-salmonella
+
+* bugs found:
+
+** irregex-core:
+
+Note: in local procedure `lp',
+  in local procedure `collect/terms',
+  in local procedure `lp',
+  in toplevel procedure `string->sre':
+  irregex-core.scm:806: in procedure call to `pair?', the predicate is called with an argument of type
+  `(pair * *)' and will always return true
+
+>                         `(if ,(cadr res)
+>                              ,(if (pair? (cdr res))
+
+Note: in local procedure `lp',
+  in local procedure `collect/terms',
+  in local procedure `lp',
+  in toplevel procedure `string->sre':
+  irregex-core.scm:811: in procedure call to `pair?', the predicate is called with an argument of type
+  `(pair (pair * (pair * *)) *)' and will always return true
+
+>                          `(if ,(cadadr res)
+>                               ,(if (pair? (cdr res))
+
+Note: in local procedure `lp',
+  in local procedure `collect/terms',
+  in local procedure `lp',
+  in toplevel procedure `string->sre':
+  irregex-core.scm:815: in procedure call to `pair?', the predicate is called with an argument of type
+  `(pair (pair * (pair * *)) *)' and will always return true
+
+                          `(if ,(cadadr res)
+                               ,(if (pair? (cdr res))
+                                    (sre-sequence (cddadr res))
+                                    'epsilon)
+                               ,(sre-alternate
+                                 (if (pair? (cdr res)) (cddr res) '())))))
+
+** compiler-syntax.scm
+
+Note: in toplevel procedure `##compiler#r-c-s':
+  compiler-syntax.scm:53: in procedure call to `symbol?', the predicate is called with an argument of type
+  `(pair * *)' and will always return false
+
+(define (r-c-s names transformer #!optional (se '()))
+  (let ((t (cons (##sys#ensure-transformer
+		  (##sys#er-transformer transformer)
+		  (car names))
+		 se)))
+    (for-each
+     (lambda (name)
+       (##sys#put! name '##compiler#compiler-syntax t) )
+     names) ) )
+     (if (symbol? names) (list names) names) ) ) )  ; <-

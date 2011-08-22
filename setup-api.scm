@@ -381,8 +381,8 @@
 					 ((string? reason)
 					  (string-append " because " reason " changed"))
 					 (else
-					  (string-append (sprintf " just because (reason: ~a date: ~a)" 
-								  reason date)))) ) )
+					  (sprintf " just because (reason: ~a date: ~a)" 
+					    reason date)))) )
 			      (handle-exceptions exn
 				  (begin
 				    (printf "make: Failed to make ~a: ~a~%"
