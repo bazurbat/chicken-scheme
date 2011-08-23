@@ -31,6 +31,7 @@
 	noreturn-type? rest-type procedure-name d-depth
 	noreturn-procedure-type? trail trail-restore 
 	typename multiples procedure-arguments procedure-results
+	smash-component-types!
 	compatible-types? type<=? match-types resolve match-argument-types))
 
 
@@ -108,7 +109,7 @@
 
 
 (define (scrutinize node db complain specialize)
-  (let ((blist '())
+  (let ((blist '())			; (((VAR . FLOW) TYPE) ...)
 	(aliased '())
 	(noreturn #f)
 	(dropped-branches 0)
@@ -628,9 +629,11 @@
 				      "variable `~a' of type `~a' was modified to a value of type `~a'"
 				    var ot rt)
 				  #t)))))
-		      (when strict-variable-types
-			;; don't use "add-to-blist" since this does not affect aliases
-			(set! blist (alist-cons (cons var (car flow)) rt blist))))
+		      ;; don't use "add-to-blist" since the current operation does not affect aliases
+		      (set! blist
+			(alist-cons (cons var (car flow)) 
+				    (if strict-variable-types rt '*)
+				    blist)))
 		    '(undefined)))
 		 ((##core#primitive ##core#inline_ref) '*)
 		 ((##core#call)
@@ -655,8 +658,15 @@
 			 (pt (and pn (variable-mark pn '##compiler#predicate))))
 		    (let-values (((r specialized?) 
 				  (call-result n args e loc params typeenv)))
+		      (define (smash)
+			(when (and (not strict-variable-types)
+				   (or (not pn)
+				       (not (variable-mark pn '##compiler#pure))))
+			  (smash-component-types! e "env")
+			  (smash-component-types! blist "blist")))
 		      (cond (specialized?
 			     (walk n e loc dest tail flow ctags)
+			     (smash)
 			     ;; keep type, as the specialization may contain icky stuff
 			     ;; like "##core#inline", etc.
 			     (if (eq? '* r)
@@ -714,7 +724,10 @@
 			       (nth-value 
 				0 
 				(procedure-argument-types fn (sub1 len) typeenv))))
-			     r)))))
+			     (smash)
+			     (if (eq? '* r)
+				 r
+				 (map (cut resolve <> typeenv) r)))))))
 		 ((##core#the)
 		  (let-values (((t _) (validate-type (first params) #f)))
 		    (let ((rt (walk (first subs) e loc dest tail flow ctags)))
@@ -749,10 +762,11 @@
 			     (quit "~ano clause applies in `compiler-typecase' for expression of type `~s':~a" 
 				   (location-name loc) (car ts)
 				   (string-concatenate
-				    (map (lambda (t) (string-sprintf "\n    ~a" t))
+				    (map (lambda (t) (sprintf "\n    ~a" t))
 					 params))))
 			    ((match-types (car types) (car ts) 
-					  (append (type-typeenv (car types)) typeenv))
+					  (append (type-typeenv (car types)) typeenv)
+					  #t)
 			     ;; drops exp
 			     (copy-node! (car subs) n)
 			     (walk n e loc dest tail flow ctags))
@@ -781,6 +795,24 @@
 	(debugging 'x "dropped branches" dropped-branches)) ;XXX
       rn)))
       
+
+;;; replace pair/vector types with components to component-less variants in env or blist
+
+(define (smash-component-types! lst where)
+  (do ((lst lst (cdr lst)))
+      ((null? lst))
+    (let loop ((t (cdar lst))
+	       (change! (cute set-cdr! (car lst) <>)))
+      (when (pair? t)
+	(case (car t)
+	  ((pair vector)
+	   (dd "  smashing `~s' in ~a" (caar lst) where)
+	   (change! (car t))
+	   (car t))
+	  ((forall)
+	   (loop (third t)
+		 (cute set-car! (cddr t) <>))))))))
+
 
 ;;; Converting type into string
 
@@ -1008,6 +1040,8 @@
 		(match1 (second t1) (second t2))
 		(match1 t1 (third t2))))
 	  ((and (pair? t1) (eq? 'list (car t1)))
+	   ;;XXX (list T) == (pair T (pair T ... (pair T null)))
+	   ;     should also work in exact mode
 	   (and (not exact) (not all)
 		(or (eq? 'null t2)
 		    (and (pair? t2)
@@ -1506,20 +1540,44 @@
 		(new
 		 (let adjust ((new (cadr e)))
 		   (if (pair? new)
-		       (case (car new)
-			 ((procedure!)
-			  (mark-variable name '##compiler#enforce #t)
-			  `(procedure ,@(cdr new)))
-			 ((procedure!? procedure?!)
-			  (mark-variable name '##compiler#enforce #t)
-			  (mark-variable name '##compiler#predicate (cadr new))
-			  `(procedure ,@(cddr new)))
-			 ((procedure?)
-			  (mark-variable name '##compiler#predicate (cadr new))
-			  `(procedure ,@(cddr new)))
-			 ((forall)
-			  `(forall ,(cadr new) ,(adjust (caddr new))))
-			 (else new))
+		       (cond ((and (list? (car new))
+				   (eq? 'procedure (caar new)))
+			      ;;XXX this format is not used yet:
+			      (let loop ((props (cdar new)))
+				(unless (null? props)
+				  (case (car props)
+				    ((pure)
+				     ;;XXX this overwrites a possibly existing 'standard/
+				     ;;    'extended mark - I don't know if this is
+				     ;;    a problem
+				     (mark-variable name '##compiler#pure #t)
+				     (loop (cdr props)))
+				    ((enforce)
+				     (mark-variable name '##compiler#enforce #t)
+				     (loop (cdr props)))
+				    ((predicate)
+				     (mark-variable name '##compiler#predicate (cadr props))
+				     (loop (cddr props)))
+				    (else
+				     (bomb
+				      "load-type-database: invalid procedure-type property"
+				      (car props))))))
+			      `(procedure ,@(cdr new)))
+			     (else 	;XXX old style, remove at some stage
+			      (case (car new)
+				((procedure!)
+				 (mark-variable name '##compiler#enforce #t)
+				 `(procedure ,@(cdr new)))
+				((procedure!? procedure?!)
+				 (mark-variable name '##compiler#enforce #t)
+				 (mark-variable name '##compiler#predicate (cadr new))
+				 `(procedure ,@(cddr new)))
+				((procedure?)
+				 (mark-variable name '##compiler#predicate (cadr new))
+				 `(procedure ,@(cddr new)))
+				((forall)
+				 `(forall ,(cadr new) ,(adjust (caddr new))))
+				(else new))))
 		       new))))
 	   ;; validation is needed, even though .types-files can be considered
 	   ;; correct, because type variables have to be renamed:
@@ -1649,6 +1707,8 @@
 				continuation lock mmap condition hash-table
 				tcp-listener))
 	     `(struct ,t))
+	    ((eq? t 'immediate)		;XXX undocumented
+	     '(or eof null fixnum char boolean))
 	    ((not (pair? t)) 
 	     (cond ((memq t typevars)
 		    (set! usedvars (cons t usedvars))

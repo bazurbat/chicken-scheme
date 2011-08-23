@@ -21,10 +21,6 @@ Note: at toplevel:
 
 Note: at toplevel:
   in procedure call to `list?', the predicate is called with an argument of type
-  `(pair fixnum fixnum)' and will always return false
-
-Note: at toplevel:
-  in procedure call to `list?', the predicate is called with an argument of type
   `null' and will always return true
 
 Note: at toplevel:
@@ -41,7 +37,7 @@ Note: at toplevel:
 
 Note: at toplevel:
   in procedure call to `null?', the predicate is called with an argument of type
-  `(pair fixnum fixnum)' and will always return false
+  `pair' and will always return false
 
 Note: at toplevel:
   in procedure call to `null?', the predicate is called with an argument of type
