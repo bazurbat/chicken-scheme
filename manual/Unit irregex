@@ -112,10 +112,11 @@ position, the longest match is returned.
 
 ===== irregex-match
 
-<procedure>(irregex-match <irx> <str>)</procedure>
+<procedure>(irregex-match <irx> <str> [<start> <end>])</procedure>
 
 Like {{irregex-search}}, but performs an anchored match against the
-beginning and end of the string, without searching.
+beginning and end of the substring specified by {{<start>}} and {{<end>}},
+without searching.
 
 Examples:
 
