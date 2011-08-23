@@ -224,21 +224,6 @@
    non-foldable-bindings) )
 
 (for-each
- (cut mark-variable <> '##compiler#pure 'standard)
- '(not boolean? eq? eqv? equal? pair? null? list? zero?
-       char? eof-object? symbol? number? complex? real? integer? rational? string?
-       procedure?))
- 
-(for-each
- (cut mark-variable <> '##compiler#pure 'extended)
- '(fx+ fx- fx* fx/ fxmod fx+? fx*? fx/? fx-?
-       fx= fx> fx< fx>= fx<= fixnum? fxneg fxmax fxmin identity
-    fxand fxnot fxior fxxor fxshr fxshl fxodd? fxeven?
-    void not-pair? atom? any? u8vector? s8vector? u16vector? s16vector?
-    u32vector? s32vector? f32vector? f64vector?
-    locative?) )
-    
-(for-each
  (cut mark-variable <> '##compiler#pure '#t)
  '(##sys#slot ##sys#block-ref ##sys#size ##sys#byte
     ##sys#pointer? ##sys#generic-structure? ##sys#fits-in-int? ##sys#fits-in-unsigned-int? ##sys#flonum-in-fixnum-range? 
