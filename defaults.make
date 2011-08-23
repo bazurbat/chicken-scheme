@@ -303,7 +303,6 @@ CHICKEN_STATUS_PROGRAM = $(PROGRAM_PREFIX)chicken-status$(PROGRAM_SUFFIX)
 CHICKEN_BUG_PROGRAM = $(PROGRAM_PREFIX)chicken-bug$(PROGRAM_SUFFIX)
 IMPORT_LIBRARIES = chicken lolevel srfi-1 srfi-4 data-structures ports files posix srfi-13 srfi-69 extras srfi-14 tcp foreign scheme srfi-18 utils csi irregex
 IMPORT_LIBRARIES += setup-api setup-download
-SCRUTINIZED_LIBRARIES = library eval data-structures ports files extras lolevel utils tcp srfi-1 srfi-4 srfi-13 srfi-14 srfi-18 srfi-69 $(POSIXFILE) irregex scheduler profiler stub expand modules chicken-syntax chicken-ffi-syntax
 
 ifdef STATICBUILD
 CHICKEN_STATIC_EXECUTABLE = $(CHICKEN_PROGRAM)$(EXE)
