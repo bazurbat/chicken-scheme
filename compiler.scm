@@ -90,6 +90,8 @@
 ;   ##compiler#unused -> BOOL
 ;   ##compiler#foldable -> BOOL
 ;   ##compiler#pure -> 'standard | 'extended | BOOL
+;   ##compiler#type -> TYPE
+;   ##compiler#declared-type -> BOOL
 
 ; - Source language:
 ;
@@ -1448,7 +1450,7 @@
 	      (warning 
 	       "invalid argument to `inline-limit' declaration"
 	       spec) ) ) )
-       ((constant)
+       ((constant pure)			;XXX "pure" is undocumented
 	(let ((syms (cdr spec)))
 	  (if (every symbol? syms)
 	      (for-each 
