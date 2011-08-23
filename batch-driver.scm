@@ -302,6 +302,7 @@
          (mark-variable v '##compiler#always-bound-to-procedure)
          (mark-variable v '##compiler#always-bound) )
        default-extended-bindings) )
+    (when (memq 'p debugging-chicken) (load-verbose #t))
 
     ;; Handle feature options:
     (for-each 
@@ -315,7 +316,6 @@
     (set! ##sys#features (cons #:compiler-extension ##sys#features))
     (let ([extends (collect-options 'extend)])
       (dribble "Loading compiler extensions...")
-      (when verbose (load-verbose #t))
       (for-each
        (lambda (f) (load (##sys#resolve-include-filename f #f #t))) 
        extends) )
@@ -548,7 +548,11 @@
 		   (unless (memq 'ignore-repository options)
 		     (unless (load-type-database "types.db")
 		       (quit "default type-database `types.db' not found")))
-		   (for-each (cut load-type-database <> #f) (collect-options 'types))
+		   (for-each 
+		    (lambda (fn)
+		      (or (load-type-database fn #f)
+			  (quit "type-database `~a' not found" fn)))
+		    (collect-options 'types))
 		   (for-each
 		    (lambda (id)
 		      (load-type-database (make-pathname #f (symbol->string id) "types")))
