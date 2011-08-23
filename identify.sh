@@ -5,13 +5,16 @@
 # usage: identify.sh SOURCEDIR
 
 
-# make sure file exists anyway, since branchname is a special case
 if test \! -e "buildbranch"; then
     touch buildbranch
 fi
 
+if test \! -e "buildid"; then
+    touch buildid
+fi
+
 rev0=`cat buildid || echo ""`
-branchname0=`cat buildbranch || echo ""`
+branchname0=`cat buildbranch`
 tag0=`cat buildtag.h || echo ""`
 buildtime=`date +%Y-%m-%d`
 host=`hostname`
@@ -20,20 +23,24 @@ usys=`uname`
 if test -d "$1/.git"; then
     rev=`GIT_DIR="$1/.git" git rev-parse --short HEAD 2>/dev/null`
     branchname=`GIT_DIR="$1/.git" git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'`
-    tag="#define C_BUILD_TAG \"compiled ${buildtime} on ${host} (${usys})\""
+fi
 
-    case "${branchname}" in
-	"") branchname="";;
-        "(no branch)") branchname="";;
-	"master") branchname="";;
-    esac
-    if test "${rev0}" \!= "${rev}"; then
-	echo ${rev} >buildid
-    fi
-    if test "${branchname0}" \!= "${branchname}"; then
-	echo ${branchname} >buildbranch
-    fi
-    if test "${tag0}" \!= "${tag}"; then
-	echo ${tag} >buildtag.h
-    fi
+tag="#define C_BUILD_TAG \"compiled ${buildtime} on ${host} (${usys})\""
+
+case "${branchname}" in
+    "") branchname="";;
+    "(no branch)") branchname="";;
+    "master") branchname="";;
+esac
+
+if test "${rev0}" \!= "${rev}"; then
+    echo ${rev} >buildid
+fi
+
+if test "${branchname0}" \!= "${branchname}"; then
+    echo ${branchname} >buildbranch
+fi
+
+if test "${tag0}" \!= "${tag}"; then
+    echo ${tag} >buildtag.h
 fi
