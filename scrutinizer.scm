@@ -729,7 +729,7 @@
 				 r
 				 (map (cut resolve <> typeenv) r)))))))
 		 ((##core#the)
-		  (let-values (((t _) (validate-type (first params) #f)))
+		  (let-values (((t pred pure) (validate-type (first params) #f)))
 		    (let ((rt (walk (first subs) e loc dest tail flow ctags)))
 		      (cond ((eq? rt '*))
 			    ((null? rt)
@@ -1529,6 +1529,9 @@
 ;;; type-db processing
 
 (define (load-type-database name #!optional (path (repository-path)))
+  (define (pure! name)
+    (when enable-specialization 
+      (mark-variable name '##compiler#pure #t)))
   (and-let* ((dbfile (file-exists? (make-pathname path name))))
     (debugging 'p (sprintf "loading type database `~a' ...~%" dbfile))
     (fluid-let ((scrutiny-debug #f))
@@ -1540,17 +1543,14 @@
 		(new
 		 (let adjust ((new (cadr e)))
 		   (if (pair? new)
-		       (cond ((and (list? (car new))
-				   (eq? 'procedure (caar new)))
+		       (cond ((and (vector? (car new))
+				   (eq? 'procedure (vector-ref new 0)))
 			      ;;XXX this format is not used yet:
-			      (let loop ((props (cdar new)))
+			      (let loop ((props (cdr (vector->list (car new)))))
 				(unless (null? props)
 				  (case (car props)
 				    ((pure)
-				     ;;XXX this overwrites a possibly existing 'standard/
-				     ;;    'extended mark - I don't know if this is
-				     ;;    a problem
-				     (mark-variable name '##compiler#pure #t)
+				     (pure! name)
 				     (loop (cdr props)))
 				    ((enforce)
 				     (mark-variable name '##compiler#enforce #t)
@@ -1561,7 +1561,7 @@
 				    (else
 				     (bomb
 				      "load-type-database: invalid procedure-type property"
-				      (car props))))))
+				      (car props) new)))))
 			      `(procedure ,@(cdr new)))
 			     (else 	;XXX old style, remove at some stage
 			      (case (car new)
@@ -1581,7 +1581,7 @@
 		       new))))
 	   ;; validation is needed, even though .types-files can be considered
 	   ;; correct, because type variables have to be renamed:
-	   (let-values (((t _) (validate-type new name)))
+	   (let-values (((t pred pure) (validate-type new name)))
 	     (unless t
 	       (warning "invalid type specification" name new))
 	     (when (and old (not (compatible-types? old t)))
@@ -1607,6 +1607,7 @@
 	   (let ((specs (or (variable-mark sym '##compiler#specializations) '()))
 		 (type (variable-mark sym '##compiler#type))
 		 (pred (variable-mark sym '##compiler#predicate))
+		 (pure (variable-mark sym '##compiler#pure))
 		 (enforce (variable-mark sym '##compiler#enforce)))
 	     (pp (cons*
 		  sym
@@ -1614,11 +1615,10 @@
 		    (if (pair? type)
 			(case (car type)
 			  ((procedure)
-			   `(,(cond ((and enforce pred) 'procedure!?)
-				    (pred 'procedure?)
-				    (enforce 'procedure!)
-				    (else 'procedure))
-			     ,@(if pred (list pred) '())
+			   `(#(procedure
+			       ,@(if enforce '(enforce) '())
+			       ,@(if pred `(predicate ,pred) '())
+			       ,@(if pure '(pure) '()))
 			     ,@(cdr type)))
 			  ((forall)
 			   `(forall ,(second type) ,(wrap (third type))))
@@ -1668,10 +1668,12 @@
   ;; - converts some typenames to struct types (u32vector, etc.)
   ;; - drops "#!key ..." args by converting to #!rest
   ;; - handles "(T1 -> T2 : T3)" (predicate) 
+  ;; - handles "(T1 --> T2 [: T3])" (pure)
   ;; - simplifies result
   ;; - coalesces all "forall" forms into one (remove "forall" if typevar-set is empty)
   ;; - renames type-variables
   (let ((ptype #f)			; (T . PT) | #f
+	(pure #f)
 	(usedvars '())
 	(typevars '()))
     (define (upto lst p)
@@ -1735,22 +1737,26 @@
 		  t))
 	    ((eq? 'deprecated (car t))
 	     (and (= 2 (length t)) (symbol? (second t))))
-	    ((memq '-> t) =>
+	    ((or (memq '--> t) (memq '-> t)) =>
 	     (lambda (p)
-	       (let ((cp (memq ': (cdr p))))
-		 (cond ((not cp) 
-			(validate
-			 `(procedure ,(upto t p) ,@(cdr p))
-			 rec))
-		       ((and (= 5 (length t))
-			     (eq? p (cdr t))
-			     (eq? cp (cdddr t)))
-			(set! t (validate `(procedure (,(first t)) ,(third t)) rec))
-			;; we do it this way to distinguish the "outermost" predicate
-			;; procedure type
-			(set! ptype (cons t (validate (cadr cp))))
-			t)
-		       (else #f)))))
+	       (let* ((puref (eq? '--> (car p)))
+		      (ok (or (not rec) (not puref))))
+		 (set! pure puref)
+		 (let ((cp (memq ': (cdr p))))
+		   (cond ((not cp)
+			  (and ok
+			       (validate
+				`(procedure ,(upto t p) ,@(cdr p))
+				rec)))
+			 ((and (= 5 (length t))
+			       (eq? p (cdr t))
+			       (eq? cp (cdddr t)))
+			  (set! t (validate `(procedure (,(first t)) ,(third t)) rec))
+			  ;; we do it this way to distinguish the "outermost" predicate
+			  ;; procedure type
+			  (set! ptype (cons t (validate (cadr cp))))
+			  (and ok t))
+			 (else #f))))))
 	    ((memq (car t) '(vector list))
 	     (and (= 2 (length t))
 		  (let ((t2 (validate (second t))))
@@ -1792,7 +1798,10 @@
 			    (delete-duplicates typevars eq?))
 			  ,type)))
 	     (let ((type (simplify-type type)))
-	       (values type (and ptype (eq? (car ptype) type) (cdr ptype))))))
+	       (values 
+		type 
+		(and ptype (eq? (car ptype) type) (cdr ptype))
+		pure))))
 	  (else (values #f #f)))))
 
 (define (install-specializations name specs)
@@ -1814,7 +1823,7 @@
 	  (if (and (list? spec) (list? (first spec)))
 	      (let* ((args
 		      (map (lambda (t) 
-			     (let-values (((t2 _) (validate-type t #f)))
+			     (let-values (((t2 pred pure) (validate-type t #f)))
 			       (or t2
 				   (error "invalid argument type in specialization" 
 					  t spec name))))
@@ -1828,7 +1837,7 @@
 		    (cond ((list? (second spec))
 			   (cons
 			    (map (lambda (t)
-				   (let-values (((t2 _) (validate-type t #f)))
+				   (let-values (((t2 pred pure) (validate-type t #f)))
 				     (or t2
 					 (error "invalid result type in specialization" 
 						t spec name))))

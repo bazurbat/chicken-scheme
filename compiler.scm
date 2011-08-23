@@ -1503,7 +1503,7 @@
 	       (warning "illegal type declaration" (##sys#strip-syntax spec))
 	       (let ((name (##sys#globalize (car spec) se))
 		     (type (##sys#strip-syntax (cadr spec))))
-		 (let-values (((type pred) (validate-type type name)))
+		 (let-values (((type pred pure) (validate-type type name)))
 		   (cond (type
 			  ;; HACK: since `:' doesn't have access to the SE, we
 			  ;; fixup the procedure name if type is a named procedure type
@@ -1515,6 +1515,8 @@
 			    (set-car! (cdr type) name))
 			  (mark-variable name '##compiler#type type)
 			  (mark-variable name '##compiler#declared-type)
+			  (when pure
+			    (mark-variable name '##compiler#pure #t))
 			  (when pred
 			    (mark-variable name '##compiler#predicate pred))
 			  (when (pair? (cddr spec))
@@ -1532,7 +1534,7 @@
 	   (cond ((and (list? spec) (symbol? (car spec)) (= 2 (length spec)))
 		  (let ((name (##sys#globalize (car spec) se))
 			(type (##sys#strip-syntax (cadr spec))))
-		    (let-values (((type pred) (validate-type type name)))
+		    (let-values (((type pred pure) (validate-type type name)))
 		      (if (and type (not pred))
 			  (mark-variable name '##compiler#predicate type)
 			  (warning "illegal `predicate' declaration" spec)))))

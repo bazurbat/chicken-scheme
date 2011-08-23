@@ -1110,13 +1110,14 @@
 	'(##core#undefined)
 	(let* ((type1 (##sys#strip-syntax (caddr x)))
 	       (name1 (cadr x)))
-	  (let-values (((type pred)
+	  (let-values (((type pred pure)
 			(##compiler#validate-type type1 (##sys#strip-syntax name1))))
 	    (cond ((not type)
 		   (syntax-error ': "invalid type syntax" name1 type1))
 		  (else
 		   `(##core#declare 
 		     (type (,name1 ,type ,@(cdddr x)))
+		     ,@(if pure `((pure ,name1)) '())
 		     (enforce-argument-types ,name1)
 		     ,@(if pred `((predicate (,name1 ,pred))) '()))))))))))
 
@@ -1225,7 +1226,7 @@
 				 (if (and rtypes (pair? rtypes))
 				     (list
 				      (map (lambda (rt)
-					     (let-values (((t _) 
+					     (let-values (((t pred pure) 
 							   (##compiler#validate-type rt #f)))
 					       (or t
 						   (syntax-error
@@ -1250,7 +1251,8 @@
 			(cond ((symbol? arg)
 			       (loop (cdr args) (cons arg anames) (cons '* atypes)))
 			      ((and (list? arg) (fx= 2 (length arg)) (symbol? (car arg)))
-			       (let-values (((t _) (##compiler#validate-type (cadr arg) #f)))
+			       (let-values (((t pred pure)
+					     (##compiler#validate-type (cadr arg) #f)))
 				 (if t
 				     (loop
 				      (cdr args)
