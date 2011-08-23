@@ -694,9 +694,11 @@
 				      "variable `~a' of type `~a' was modified to a value of type `~a'"
 				    var ot rt)
 				  #t)))))
-		      (when strict-variable-types
-			;; don't use "add-to-blist" since this does not affect aliases
-			(set! blist (alist-cons (cons var (car flow)) rt blist))))
+		      ;; don't use "add-to-blist" since this does not affect aliases
+		      (set! blist
+			(alist-cons (cons var (car flow)) 
+				    (if strict-variable-types rt '*)
+				    blist)))
 		    '(undefined)))
 		 ((##core#primitive ##core#inline_ref) '*)
 		 ((##core#call)
@@ -1254,6 +1256,8 @@
 	     (and (= 2 (length t))
 		  (symbol? (cadr t))
 		  t))
+	    ((eq? 'deprecated (car t))
+	     (and (= 2 (length t)) (symbol? (second t))))
 	    ((eq? 'procedure (car t))
 	     (and (pair? (cdr t))
 		  (let* ((name (if (symbol? (cadr t))
