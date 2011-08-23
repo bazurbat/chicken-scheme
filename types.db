@@ -56,8 +56,8 @@
       ((* (not float)) (eq? #(1) #(2))))
 
 (equal? (procedure equal? (* *) boolean)
-	(((or fixnum symbol char eof null undefined) *) (eq? #(1) #(2)))
-	((* (or fixnum symbol char eof null undefined)) (eq? #(1) #(2))))
+	(((or fixnum symbol char eof null) *) (eq? #(1) #(2)))
+	((* (or fixnum symbol char eof null)) (eq? #(1) #(2))))
 
 (pair? (procedure? pair pair? (*) boolean))
 
@@ -145,10 +145,20 @@
 (null? (procedure? null null? (*) boolean))
 (list? (procedure? list list? (*) boolean))
 
-(list (procedure list (#!rest) list))
-(##sys#list (procedure ##sys#list (#!rest) list))
-(length (procedure! length (list) fixnum) ((list) (##core#inline "C_u_i_length" #(1))))
-(##sys#length (procedure! ##sys#length (list) fixnum) ((list) (##core#inline "C_u_i_length" #(1))))
+(list (procedure list (#!rest) list)
+      (() (null) '()))
+
+(##sys#list (procedure ##sys#list (#!rest) list)
+	    (() (null) '()))
+
+(length (procedure! length (list) fixnum)
+	((null) '0)
+	((list) (##core#inline "C_u_i_length" #(1))))
+
+(##sys#length (procedure! ##sys#length (list) fixnum)
+	      ((null) '0)
+	      ((list) (##core#inline "C_u_i_length" #(1))))
+
 (list-tail (forall (a) (procedure! list-tail ((list a) fixnum) (list a))))
 (list-ref (forall (a) (procedure! list-ref ((list a) fixnum) a)))
 (append (procedure append (list #!rest) *))
