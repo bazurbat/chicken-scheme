@@ -935,7 +935,7 @@
 
   (define (match1 t1 t2)
     ;; note: the order of determining the type is important
-    (dd "   match1: ~s <-> ~s" t1 t2)
+    ;;(dd "   match1: ~s <-> ~s" t1 t2)
     (cond ((eq? t1 t2))
 	  ((and (symbol? t1) (assq t1 typeenv)) => 
 	   (lambda (e) 
@@ -1544,7 +1544,7 @@
 		 (let adjust ((new (cadr e)))
 		   (if (pair? new)
 		       (cond ((and (vector? (car new))
-				   (eq? 'procedure (vector-ref new 0)))
+				   (eq? 'procedure (vector-ref (car new) 0)))
 			      ;;XXX this format is not used yet:
 			      (let loop ((props (cdr (vector->list (car new)))))
 				(unless (null? props)
