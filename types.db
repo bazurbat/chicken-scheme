@@ -61,7 +61,7 @@
 
 (pair? (procedure? pair pair? (*) boolean))
 
-(cons (forall (a b) (procedure cons (a b) (pair a b))))
+(cons (forall (a b) (#(procedure pure enforce) cons (a b) (pair a b))))
 
 (##sys#cons (forall (a b) (procedure ##sys#cons (a b) (pair a b))))
 
