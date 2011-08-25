@@ -1444,10 +1444,10 @@
        (case (car ptype)
 	 ((procedure)
 	  (and (list? ptype)
-	       (eq? 'noreturn 
-		    (if (symbol? (second ptype)) 
-			(fourth ptype)
-			(third ptype)))))
+	       (eq? '(noreturn)
+		    (if (pair? (second ptype))
+			(cddr ptype)
+			(cdddr ptype)))))
 	 ((forall)
 	  (noreturn-procedure-type? (third ptype)))
 	 (else #f))))
@@ -1549,13 +1549,13 @@
 			      (let loop ((props (cdr (vector->list (car new)))))
 				(unless (null? props)
 				  (case (car props)
-				    ((pure)
+				    ((#:pure)
 				     (pure! name)
 				     (loop (cdr props)))
-				    ((enforce)
+				    ((#:enforce)
 				     (mark-variable name '##compiler#enforce #t)
 				     (loop (cdr props)))
-				    ((predicate)
+				    ((#:predicate)
 				     (mark-variable name '##compiler#predicate (cadr props))
 				     (loop (cddr props)))
 				    (else
@@ -1563,7 +1563,7 @@
 				      "load-type-database: invalid procedure-type property"
 				      (car props) new)))))
 			      `(procedure ,@(cdr new)))
-			     (else 	;XXX old style, remove at some stage
+			     (else 	;XXX DEPRECATED
 			      (case (car new)
 				((procedure!)
 				 (mark-variable name '##compiler#enforce #t)
@@ -1616,9 +1616,9 @@
 			(case (car type)
 			  ((procedure)
 			   `(#(procedure
-			       ,@(if enforce '(enforce) '())
-			       ,@(if pred `(predicate ,pred) '())
-			       ,@(if pure '(pure) '()))
+			       ,@(if enforce '(#:enforce) '())
+			       ,@(if pred `(#:predicate ,pred) '())
+			       ,@(if pure '(#:pure) '()))
 			     ,@(cdr type)))
 			  ((forall)
 			   `(forall ,(second type) ,(wrap (third type))))
@@ -1802,7 +1802,7 @@
 		type 
 		(and ptype (eq? (car ptype) type) (cdr ptype))
 		pure))))
-	  (else (values #f #f)))))
+	  (else (values #f #f #f)))))
 
 (define (install-specializations name specs)
   (define (fail spec)
