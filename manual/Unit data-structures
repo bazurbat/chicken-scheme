@@ -454,27 +454,6 @@ is a case-insensitive version of {{substring-index}}.
 Ignores its argument and always returns {{#t}}. This is actually useful sometimes.
 
 
-==== none?
-
-<procedure>(none? X)</procedure>
-
-Ignores its argument and always returns {{#f}}. This is actually useful sometimes.
-
-
-==== always?
-
-<procedure>(always? X)</procedure>
-
-Ignores its arguments and always returns {{#t}}. This is actually useful sometimes.
-
-
-==== never?
-
-<procedure>(never? X)</procedure>
-
-Ignores its arguments and always returns {{#f}}. This is actually useful sometimes.
-
-
 ==== constantly
 
 <procedure>(constantly X ...)</procedure>

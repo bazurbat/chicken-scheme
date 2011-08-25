@@ -45,8 +45,8 @@
 
 (define dd d)
 
-;(define-syntax d (syntax-rules () ((_ . _) (void))))
-;(define-syntax dd (syntax-rules () ((_ . _) (void))))
+(define-syntax d (syntax-rules () ((_ . _) (void))))
+(define-syntax dd (syntax-rules () ((_ . _) (void))))
 
 
 ;;; Walk node tree, keeping type and binding information
@@ -59,6 +59,7 @@
 ;       | (procedure [NAME] (VAL1 ... [#!optional VALOPT1 ...] [#!rest [VAL | values]]) . RESULTS)
 ;       | BASIC
 ;       | deprecated
+;       | (deprecated NAME)
 ;   BASIC = * | string | symbol | char | number | boolean | list | pair | 
 ;           procedure | vector | null | eof | undefined | port | 
 ;           blob | noreturn | pointer | locative | fixnum | float |
@@ -115,8 +116,8 @@
 	       (else 'number)))		; in case...
 	    ((boolean? lit) 'boolean)
 	    ((null? lit) 'null)
-	    ((pair? lit) 'pair)
 	    ((list? lit) 'list)
+	    ((pair? lit) 'pair)
 	    ((eof-object? lit) 'eof)
 	    ((vector? lit) 'vector)
 	    ((and (not (##sys#immediate? lit)) (##sys#generic-structure? lit))
@@ -693,9 +694,11 @@
 				      "variable `~a' of type `~a' was modified to a value of type `~a'"
 				    var ot rt)
 				  #t)))))
-		      (when strict-variable-types
-			;; don't use "add-to-blist" since this does not affect aliases
-			(set! blist (alist-cons (cons var (car flow)) rt blist))))
+		      ;; don't use "add-to-blist" since this does not affect aliases
+		      (set! blist
+			(alist-cons (cons var (car flow)) 
+				    (if strict-variable-types rt '*)
+				    blist)))
 		    '(undefined)))
 		 ((##core#primitive ##core#inline_ref) '*)
 		 ((##core#call)
@@ -1253,6 +1256,8 @@
 	     (and (= 2 (length t))
 		  (symbol? (cadr t))
 		  t))
+	    ((eq? 'deprecated (car t))
+	     (and (= 2 (length t)) (symbol? (second t))))
 	    ((eq? 'procedure (car t))
 	     (and (pair? (cdr t))
 		  (let* ((name (if (symbol? (cadr t))
@@ -1276,7 +1281,7 @@
 					 ,@(if (and name (not rec)) (list name) '())
 					 ,ts
 					 ,@rt)))))))))
-	    ((and (pair? (cdr t)) (memq '-> (cdr t))) =>
+	    ((and (pair? (cdr t)) (memq '-> t)) =>
 	     (lambda (p)
 	       (let ((cp (memq ': (cdr t))))
 		 (cond ((not cp) 

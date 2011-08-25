@@ -43,7 +43,8 @@
    make-pointer-vector
    make-weak-locative
    move-memory!
-   mutate-procedure
+   mutate-procedure			; DEPRECATED
+   mutate-procedure!
    null-pointer
    null-pointer?
    number-of-bytes

@@ -727,18 +727,18 @@ The effect of using {{object-become!}} on evicted data (see {{object-evict}})
 is undefined.
 
 
-==== mutate-procedure
+==== mutate-procedure!
 
-<procedure>(mutate-procedure OLD PROC)</procedure>
+<procedure>(mutate-procedure! OLD PROC)</procedure>
 
 Replaces the procedure {{OLD}} with the result of calling the one-argument
 procedure {{PROC}}. {{PROC}} will receive a copy of {{OLD}} that will be
-identical in behaviour to the result of {{PROC}}:
+identical in behaviour to the result of {{OLD}}:
 
 <enscript highlight=scheme>
  ;;; Replace arbitrary procedure with tracing one:
 
- (mutate-procedure my-proc
+ (mutate-procedure! my-proc
    (lambda (new)
      (lambda args
        (printf "~s called with arguments: ~s~%" new args)

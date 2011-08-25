@@ -369,7 +369,7 @@
 (number->string (procedure! number->string (number #!optional number) string)
 		((fixnum) (##sys#fixnum->string #(1))))
 
-(string->number (procedure! string->number (string #!optional number) (or number boolean)))
+(string->number (procedure! string->number (string #!optional number) *))
 
 (char? (procedure? char char? (*) boolean))
 
@@ -917,7 +917,7 @@
 
 (alist-ref (procedure! alist-ref (* list #!optional (procedure (* *) *) *) *))
 (alist-update! (procedure! alist-update! (* * list #!optional (procedure (* *) *)) *))
-(always? (procedure always? (#!rest) boolean))
+(always? deprecated)
 
 (any? (procedure any? (*) boolean)
       ((*) (let ((#(tmp) #(1))) '#t)))
@@ -947,16 +947,10 @@
 (make-queue (procedure make-queue () (struct queue)))
 (merge (procedure! merge (list list (procedure (* *) *)) list))
 (merge! (procedure! merge! (list list (procedure (* *) *)) list))
-(never? (procedure never? (#!rest) boolean))
-
-(none? (procedure none? (*) boolean)
-       ((*) (let ((#(tmp) #(1))) '#f)))
-
+(never? deprecated)
+(none? deprecated)
 (o (procedure! o (#!rest (procedure (*) *)) (procedure (*) *)))
-
-(queue->list (procedure! queue->list ((struct queue)) list)
-	     (((struct queue)) (##sys#slot #(1) '1)))
-
+(queue->list (procedure! queue->list ((struct queue)) list))
 (queue-add! (procedure! queue-add! ((struct queue) *) undefined))
 
 (queue-empty? (procedure! queue-empty? ((struct queue)) boolean)
@@ -976,8 +970,8 @@
 (rassoc (procedure! rassoc (* list #!optional (procedure (* *) *)) *))
 (reverse-string-append (procedure! reverse-string-append (list) string))
 (shuffle deprecated)
-(sort (procedure! sort ((or list vector) (procedure (* *) *)) (or list vector)))
-(sort! (procedure! sort! ((or list vector) (procedure (* *) *)) (or list vector)))
+(sort (procedure! sort ((or list vector) (procedure (* *) *)) *))
+(sort! (procedure! sort! ((or list vector) (procedure (* *) *)) *))
 (sorted? (procedure! sorted? ((or list vector) (procedure (* *) *)) boolean))
 (topological-sort (procedure! topological-sort (list (procedure (* *) *)) list))
 (string-chomp (procedure! string-chomp (string #!optional string) string))
@@ -1076,7 +1070,7 @@
 (irregex-lengths (procedure! irregex-lengths ((struct regexp)) *)
 		 (((struct regexp)) (##sys#slot #(1) '7)))
 
-(irregex-match (procedure! irregex-match (* string) *))
+(irregex-match (procedure! irregex-match (* string #!optional fixnum fixnum) *))
 ;irregex-match?
 
 (irregex-match-data? (procedure? (struct regexp-match) irregex-match-data? (*) boolean))
@@ -1143,8 +1137,8 @@
 (address->pointer (procedure! address->pointer (fixnum) pointer)
 		  ((fixnum) (##sys#address->pointer #(1))))
 
-(align-to-word (procedure align-to-word ((or number pointer locative procedure port)) (or pointer number)))
-(allocate (procedure! allocate (fixnum) (or boolean pointer)))
+(align-to-word (procedure align-to-word ((or number pointer locative procedure port))) *)
+(allocate (procedure! allocate (fixnum) *))
 (block-ref (procedure! block-ref (* fixnum) *))
 (block-set! (procedure! block-set! (* fixnum *) *))
 (extend-procedure (procedure! extend-procedure (procedure *) procedure))
@@ -1173,7 +1167,8 @@
 	      ((locative locative fixnum fixnum fixnum)
 	       (##core#inline "C_copy_ptr_memory" #(2) #(1) #(3) #(5) #(4))))
 
-(mutate-procedure (procedure! mutate-procedure (procedure procedure) procedure))
+(mutate-procedure (deprecated mutate-procedure!))
+(mutate-procedure! (procedure! mutate-procedure! (procedure procedure) procedure))
 (null-pointer deprecated)
 (null-pointer? deprecated)
 
@@ -1229,7 +1224,7 @@
 (pointer-s8-ref (procedure! pointer-s8-ref (pointer) fixnum))
 (pointer-s8-set! (procedure! pointer-s8-set! (pointer fixnum) undefined))
 
-(pointer-tag (procedure! pointer-tag ((or pointer locative procedure port)) (or boolean number))
+(pointer-tag (procedure! pointer-tag ((or pointer locative procedure port)) *)
 	     (((or locative procedure port)) (let ((#(tmp) #(1))) '#f)))
 
 (pointer-u16-ref (procedure! pointer-u16-ref (pointer) fixnum))
@@ -1662,8 +1657,8 @@
 (string-concatenate-reverse (procedure! string-concatenate-reverse (list #!optional string fixnum) string))
 (string-concatenate-reverse/shared (procedure! string-concatenate-reverse/shared (list #!optional string fixnum) string))
 (string-concatenate/shared (procedure! string-concatenate/shared (list) string))
-(string-contains (procedure! string-contains (string string #!optional fixnum fixnum fixnum fixnum) (or fixnum boolean)))
-(string-contains-ci (procedure! string-contains-ci (string string #!optional fixnum fixnum fixnum fixnum) (or fixnum boolean)))
+(string-contains (procedure! string-contains (string string #!optional fixnum fixnum fixnum fixnum) *))
+(string-contains-ci (procedure! string-contains-ci (string string #!optional fixnum fixnum fixnum fixnum) *))
 (string-copy (procedure! string-copy (string #!optional fixnum fixnum) string))
 (string-copy! (procedure! string-copy! (string fixnum string #!optional fixnum fixnum) undefined))
 (string-count (procedure! string-count (string * #!optional fixnum fixnum) fixnum))
@@ -1679,8 +1674,8 @@
 (string-fold-right (procedure! string-fold-right ((procedure (char *) *) * string #!optional fixnum fixnum) *))
 (string-for-each (procedure! string-for-each ((procedure (char) . *) string #!optional fixnum fixnum) undefined))
 (string-for-each-index (procedure! string-for-each-index ((procedure (fixnum) . *) string #!optional fixnum fixnum) undefined))
-(string-index (procedure! string-index (string * #!optional fixnum fixnum) (or fixnum boolean)))
-(string-index-right (procedure! string-index-right (string * #!optional fixnum fixnum) (or fixnum boolean)))
+(string-index (procedure! string-index (string * #!optional fixnum fixnum) *))
+(string-index-right (procedure! string-index-right (string * #!optional fixnum fixnum) *))
 (string-join (procedure! string-join (list #!optional string symbol) string))
 (string-kmp-partial-search (procedure! string-kmp-partial-search (string vector string fixnum #!optional (procedure (char char) *) fixnum fixnum fixnum) fixnum))
 (string-map (procedure! string-map ((procedure (char) char) string #!optional fixnum fixnum) string))
@@ -1700,8 +1695,8 @@
 (string-replace (procedure! string-replace (string string fixnum fixnum #!optional fixnum fixnum) string))
 (string-reverse (procedure! string-reverse (string #!optional fixnum fixnum) string))
 (string-reverse! (procedure! string-reverse! (string #!optional fixnum fixnum) string))
-(string-skip (procedure! string-skip (string * #!optional fixnum fixnum) (or fixnum boolean)))
-(string-skip-right (procedure! string-skip-right (string * #!optional fixnum fixnum) (or fixnum boolean)))
+(string-skip (procedure! string-skip (string * #!optional fixnum fixnum) *))
+(string-skip-right (procedure! string-skip-right (string * #!optional fixnum fixnum) *))
 (string-suffix-ci? (procedure! string-suffix-ci? (string string #!optional fixnum fixnum fixnum fixnum) boolean))
 (string-suffix-length (procedure! string-suffix-length (string string #!optional fixnum fixnum fixnum fixnum) fixnum))
 (string-suffix-length-ci (procedure! string-suffix-length-ci (string string #!optional fixnum fixnum fixnum fixnum) fixnum))
@@ -2145,7 +2140,7 @@
 (read-all (procedure! read-all (#!optional (or port string)) string))
 (system* (procedure! system* (string #!rest) undefined))
 (qs (procedure! qs (string) string))
-(compile-file (procedure! compile-file (string #!rest) (or boolean string)))
+(compile-file (procedure! compile-file (string #!rest) *))
 (compile-file-options (procedure! compile-file-options (#!optional list) list))
 (scan-input-lines (procedure! scan-input-lines (* #!optional port) *))
 (yes-or-no? (procedure! yes-or-no? (string #!rest) *))
