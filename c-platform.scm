@@ -229,7 +229,8 @@
     ##sys#pointer? ##sys#generic-structure? ##sys#fits-in-int? ##sys#fits-in-unsigned-int? ##sys#flonum-in-fixnum-range? 
     ##sys#fudge ##sys#immediate?
     ##sys#bytevector? ##sys#pair?
-    ##sys#eq? ##sys#list? ##sys#vector? ##sys#eqv? ##sys#get-keyword
+    ##sys#eq? ##sys#list? ##sys#vector? ##sys#eqv? 
+    ##sys#get-keyword			; ok it isn't, but this is only used for ext. llists
     ##sys#void
     ##sys#permanent?))
 
