@@ -29,8 +29,11 @@ cp $TYPESDB test-repository/types.db
 if test -n "$MSYSTEM"; then
     CHICKEN="..\\chicken.exe"
     ASMFLAGS=-Wa,-w
+    TIME=time
     # make compiled tests use proper library on Windows
     cp ../libchicken.dll .
+else 
+    TIME=/usr/bin/time
 fi
 
 compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
@@ -94,9 +97,9 @@ echo "======================================== specialization benchmark ..."
 $compile fft.scm -O2 -local -d0 -disable-interrupts -b -o fft1
 $compile fft.scm -O2 -local -specialize -debug x -d0 -disable-interrupts -b -o fft2 -specialize
 echo "normal:"
-/usr/bin/time ./fft1 1000 7
+time ./fft1 1000 7
 echo "specialized:"
-/usr/bin/time ./fft2 1000 7
+time ./fft2 1000 7
 
 echo "======================================== callback tests ..."
 $compile callback-tests.scm
@@ -259,8 +262,10 @@ $interpret -bnq ec.so ec-tests.scm
 echo "======================================== hash-table tests ..."
 $interpret -s hash-table-tests.scm
 
+if test -z "$MSYSTEM"; then
 echo "======================================== port tests ..."
-$interpret -s port-tests.scm
+    $interpret -s port-tests.scm
+fi
 
 echo "======================================== fixnum tests ..."
 $compile fixnum-tests.scm
