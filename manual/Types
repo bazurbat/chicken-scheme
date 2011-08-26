@@ -94,7 +94,7 @@ or {{:}} should follow the syntax given below:
 <tr><td>{{(struct STRUCTURENAME)}}</td><td>record structure of given kind</td></tr>
 <tr><td>{{(procedure [NAME] (VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]]) . RESULTS)}}</td><td>procedure type, optionally with name</td></tr>
 <tr><td>{{(VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]] -> . RESULTS)}}</td><td>alternative procedure type syntax</td></tr>
-<tr><td>{{(VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]] --> . RESULTS)}}</td><td>procedure type that is declared as referentially transparent</td></tr>
+<tr><td>{{(VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]] --> . RESULTS)}}</td><td>procedure type that is declared to modify locally held state</td></tr>
 <tr><td>{{(VALUETYPE -> VALUETYPE : VALUETYPE)}}</td><td>predicate procedure type</td></tr>
 <tr><td>{{(forall (TYPEVAR ...) VALUETYPE)}}</td><td>polymorphic type</td></tr>
 <tr><td>COMPLEXTYPE</td><td></td></tr>
@@ -182,10 +182,12 @@ a true value if the argument is of type {{TYPE}} and false otherwise.
 
 ==== Purity
 
-Procedure types are assumed to be not referentially transparent. Using
-the {{(... --> ...)}} syntax, you can declare a procedure to be referentially
-transparent, i.e. not causing any side-effects. This gives more opportunities
-for optimization but may not be violated or the results are undefined.
+Procedure types are assumed to be not referentially transparent and
+are assumed to possibly modify locally held state. Using the
+{{(... --> ...)}} syntax, you can declare a procedure to not modify
+local state, i.e. not causing any side-effects on local variables or
+data contain in local variables. This gives more opportunities for
+optimization but may not be violated or the results are undefined.
 
 
 ==== Using type information in extensions
@@ -281,6 +283,18 @@ compiled code but specialization is not enabled, then it must have
 an {{else}} clause which specifies the default code to be executed
 after {{EXP}}. If no {{else}} clause is given and no {{TYPE}} matches,
 then a compile-time error is signalled.
+
+
+==== Caveats
+
+Assignments make flow-analysis much harder and remove opportunities
+for optimization. Generally you should avoid using a lot of mutations
+of both local variables and data held in local variables. It may
+even make your code do unexpected things when these mutations violate
+type-declarations.
+
+Note that using threads which modify local state makes all
+type-analysis pointless.
 
 
 ---
