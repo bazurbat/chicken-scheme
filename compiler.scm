@@ -82,14 +82,15 @@
 ;   ##compiler#always-bound-to-procedure -> BOOL
 ;   ##compiler#local -> BOOL
 ;   ##compiler#visibility -> #f | 'hidden | 'exported
-;   ##compiler#constant -> BOOL
+;   ##compiler#constant -> BOOL                             defined as constant
 ;   ##compiler#intrinsic -> #f | 'standard | 'extended
 ;   ##compiler#inline -> 'no | 'yes
 ;   ##compiler#inline-global -> 'yes | 'no | <node>
 ;   ##compiler#profile -> BOOL
 ;   ##compiler#unused -> BOOL
 ;   ##compiler#foldable -> BOOL
-;   ##compiler#pure -> 'standard | 'extended | BOOL
+;   ##compiler#pure -> BOOL                                 referentially transparent
+;   ##compiler#clean -> BOOL                                does not modify local state
 ;   ##compiler#type -> TYPE
 ;   ##compiler#declared-type -> BOOL
 

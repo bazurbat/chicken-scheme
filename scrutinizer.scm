@@ -661,7 +661,9 @@
 		      (define (smash)
 			(when (and (not strict-variable-types)
 				   (or (not pn)
-				       (not (variable-mark pn '##compiler#pure))))
+				       (and
+					(not (variable-mark pn '##compiler#pure))
+					(not (variable-mark pn '##compiler#clean)))))
 			  (smash-component-types! e "env")
 			  (smash-component-types! blist "blist")))
 		      (cond (specialized?
@@ -1529,6 +1531,9 @@
 ;;; type-db processing
 
 (define (load-type-database name #!optional (path (repository-path)))
+  (define (clean! name)
+    (when enable-specialization 
+      (mark-variable name '##compiler#clean #t)))
   (define (pure! name)
     (when enable-specialization 
       (mark-variable name '##compiler#pure #t)))
@@ -1551,6 +1556,9 @@
 				  (case (car props)
 				    ((#:pure)
 				     (pure! name)
+				     (loop (cdr props)))
+				    ((#:clean)
+				     (clean! name)
 				     (loop (cdr props)))
 				    ((#:enforce)
 				     (mark-variable name '##compiler#enforce #t)
@@ -1608,6 +1616,7 @@
 		 (type (variable-mark sym '##compiler#type))
 		 (pred (variable-mark sym '##compiler#predicate))
 		 (pure (variable-mark sym '##compiler#pure))
+		 (clean (variable-mark sym '##compiler#clean))
 		 (enforce (variable-mark sym '##compiler#enforce)))
 	     (pp (cons*
 		  sym
@@ -1618,7 +1627,8 @@
 			   `(#(procedure
 			       ,@(if enforce '(#:enforce) '())
 			       ,@(if pred `(#:predicate ,pred) '())
-			       ,@(if pure '(#:pure) '()))
+			       ,@(if pure '(#:pure) '())
+			       ,@(if clean '(#:clean) '()))
 			     ,@(cdr type)))
 			  ((forall)
 			   `(forall ,(second type) ,(wrap (third type))))
@@ -1668,12 +1678,12 @@
   ;; - converts some typenames to struct types (u32vector, etc.)
   ;; - drops "#!key ..." args by converting to #!rest
   ;; - handles "(T1 -> T2 : T3)" (predicate) 
-  ;; - handles "(T1 --> T2 [: T3])" (pure)
+  ;; - handles "(T1 --> T2 [: T3])" (clean)
   ;; - simplifies result
   ;; - coalesces all "forall" forms into one (remove "forall" if typevar-set is empty)
   ;; - renames type-variables
   (let ((ptype #f)			; (T . PT) | #f
-	(pure #f)
+	(clean #f)
 	(usedvars '())
 	(typevars '()))
     (define (upto lst p)
@@ -1739,9 +1749,9 @@
 	     (and (= 2 (length t)) (symbol? (second t))))
 	    ((or (memq '--> t) (memq '-> t)) =>
 	     (lambda (p)
-	       (let* ((puref (eq? '--> (car p)))
-		      (ok (or (not rec) (not puref))))
-		 (set! pure puref)
+	       (let* ((cleanf (eq? '--> (car p)))
+		      (ok (or (not rec) (not cleanf))))
+		 (set! clean cleanf)
 		 (let ((cp (memq ': (cdr p))))
 		   (cond ((not cp)
 			  (and ok
@@ -1801,7 +1811,7 @@
 	       (values 
 		type 
 		(and ptype (eq? (car ptype) type) (cdr ptype))
-		pure))))
+		clean))))
 	  (else (values #f #f #f)))))
 
 (define (install-specializations name specs)
