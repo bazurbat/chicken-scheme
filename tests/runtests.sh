@@ -262,10 +262,8 @@ $interpret -bnq ec.so ec-tests.scm
 echo "======================================== hash-table tests ..."
 $interpret -s hash-table-tests.scm
 
-if test -z "$MSYSTEM"; then
 echo "======================================== port tests ..."
-    $interpret -s port-tests.scm
-fi
+$interpret -s port-tests.scm
 
 echo "======================================== fixnum tests ..."
 $compile fixnum-tests.scm
