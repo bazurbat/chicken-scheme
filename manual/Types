@@ -122,6 +122,7 @@ or {{:}} should follow the syntax given below:
 <tr><td>{{fixnum}}</td><td>word-sized integer</td></tr>
 <tr><td>{{float}}</td><td>floating-point number</td></tr>
 <tr><td>{{number}}</td><td>fixnum or float</td></tr>
+<tr><td>{{immediate}}</td><td>abbreviation for {{(or eof null fixnum char boolean)}}</td></tr>
 </table>
 
 <table>

@@ -1550,7 +1550,6 @@
 		   (if (pair? new)
 		       (cond ((and (vector? (car new))
 				   (eq? 'procedure (vector-ref (car new) 0)))
-			      ;;XXX this format is not used yet:
 			      (let loop ((props (cdr (vector->list (car new)))))
 				(unless (null? props)
 				  (case (car props)
@@ -1571,7 +1570,7 @@
 				      "load-type-database: invalid procedure-type property"
 				      (car props) new)))))
 			      `(procedure ,@(cdr new)))
-			     (else 	;XXX DEPRECATED
+			     (else 	;DEPRECATED
 			      (case (car new)
 				((procedure!)
 				 (mark-variable name '##compiler#enforce #t)
@@ -1719,7 +1718,7 @@
 				continuation lock mmap condition hash-table
 				tcp-listener))
 	     `(struct ,t))
-	    ((eq? t 'immediate)		;XXX undocumented
+	    ((eq? t 'immediate)
 	     '(or eof null fixnum char boolean))
 	    ((not (pair? t)) 
 	     (cond ((memq t typevars)

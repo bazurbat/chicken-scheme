@@ -277,7 +277,7 @@ else
 CHICKEN_OPTIONS += -no-warnings
 endif
 ifndef BUILDING_CHICKEN_BOOT
-#XXX CHICKEN_OPTIONS += -specialize -types $(SRCDIR)types.db 
+CHICKEN_OPTIONS += -specialize -types $(SRCDIR)types.db 
 endif
 CHICKEN_OPTIONS += $(EXTRA_CHICKEN_OPTIONS)
 CHICKEN_LIBRARY_OPTIONS = $(CHICKEN_OPTIONS) -explicit-use -no-trace
