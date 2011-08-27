@@ -452,8 +452,8 @@
       (let ((subs (node-subexpressions n))
 	    (params (node-parameters n)) 
 	    (class (node-class n)) )
-	(dd "walk: ~a ~s (loc: ~a, dest: ~a, tail: ~a, flow: ~a, blist: ~a)"
-	    class params loc dest tail flow blist)
+	(dd "walk: ~a ~s (loc: ~a, dest: ~a, tail: ~a, flow: ~a)"
+	    class params loc dest tail flow)
 	;;(dd "walk: ~a ~s (loc: ~a, dest: ~a, tail: ~a, flow: ~a, blist: ~a, e: ~a)"
 	;;    class params loc dest tail flow blist e)
 	(set! d-depth (add1 d-depth))
@@ -465,61 +465,58 @@
 		 ((##core#global-ref) (global-result (first params) loc))
 		 ((##core#variable) (variable-result (first params) e loc flow))
 		 ((if)
-		  (let* ((tags (cons (tag) (tag)))
-			 (tst (first subs))
-			 (rt (single "in conditional" (walk tst e loc #f #f flow tags) loc))
-			 (c (second subs))
-			 (a (third subs))
-			 (nor0 noreturn))
-		    (when (and (always-true rt loc n) specialize)
-		      (set! dropped-branches (+ dropped-branches 1))
-		      (copy-node!
-		       (build-node-graph
-			`(let ((,(gensym) ,tst))
-			   ,c))
-		       n))
+		  (let ((tags (cons (tag) (tag)))
+			(tst (first subs))
+			(nor-1 noreturn))
 		    (set! noreturn #f)
-		    (let* ((r1 (walk c e loc dest tail (cons (car tags) flow) #f))
-			   (nor1 noreturn))
-		      (set! noreturn #f)
-		      (let* ((r2 (walk a e loc dest tail (cons (cdr tags) flow) #f))
-			     (nor2 noreturn))
-			(set! noreturn 
-			  (if nor1
-			      (if nor2 
-				  (if nor0 #t 'some)
-				  'some)
-			      (if nor2 
-				  'some
-				  nor0)))
-			;; when only one branch is noreturn, add blist entries for
-			;; all in other branch:
-			(when (or (and (eq? #t nor1) (not nor2))
-				  (and (eq? #t nor2) (not nor1)))
-			  (let ((yestag (if nor1 (cdr tags) (car tags))))
-			    (for-each
-			     (lambda (ble)
-			       (when (eq? (cdar ble) yestag)
-				 (d "adding blist entry ~a for single returning conditional branch"
-				    ble)
-				 (add-to-blist (caar ble) (car flow) (cdr ble))))
-			     blist)))
-			(cond ((and (not (eq? '* r1)) (not (eq? '* r2)))
-			       (when (and (not nor1) (not nor2)
-					  (not (= (length r1) (length r2))))
-				 (report 
-				  loc
-				  (sprintf
-				      "branches in conditional expression differ in the number of results:~%~%~a"
-				    (pp-fragment n))))
-			       (cond (nor1 r2)
-				     (nor2 r1)
-				     (else
-				      (dd "merge branch results: ~s + ~s" r1 r2)
-				      (map (lambda (t1 t2)
-					     (simplify-type `(or ,t1 ,t2)))
-					   r1 r2))))
-			      (else '*))))))
+		    (let* ((rt (single "in conditional" (walk tst e loc #f #f flow tags) loc))
+			   (c (second subs))
+			   (a (third subs))
+			   (nor0 noreturn))
+		      (when (and (always-true rt loc n) specialize)
+			(set! dropped-branches (+ dropped-branches 1))
+			(copy-node!
+			 (build-node-graph
+			  `(let ((,(gensym) ,tst)) ,c))
+			 n))
+		      (let* ((r1 (walk c e loc dest tail (cons (car tags) flow) #f))
+			     (nor1 noreturn))
+			(set! noreturn #f)
+			(let* ((r2 (walk a e loc dest tail (cons (cdr tags) flow) #f))
+			       (nor2 noreturn))
+			  (set! noreturn 
+			    (or nor-1
+				(and nor1 nor2)))
+			  ;; when only one branch is noreturn, add blist entries for
+			  ;; all in other branch:
+			  (when (or (and nor1 (not nor2))
+				    (and nor2 (not nor1)))
+			    (let ((yestag (if nor1 (cdr tags) (car tags))))
+			      (for-each
+			       (lambda (ble)
+				 (when (eq? (cdar ble) yestag)
+				   (d "adding blist entry ~a for single returning conditional branch"
+				      ble)
+				   (add-to-blist (caar ble) (car flow) (cdr ble))))
+			       blist)))
+			  (cond ((and (not (eq? '* r1)) (not (eq? '* r2)))
+				 (when (and (not nor1) (not nor2)
+					    (not (= (length r1) (length r2))))
+				   (report 
+				    loc
+				    (sprintf
+					"branches in conditional expression differ in the number of results:~%~%~a"
+				      (pp-fragment n))))
+				 ;;(dd " branches: ~s:~s / ~s:~s" nor1 r1 nor2 r2)
+				 (cond (nor0 '(noreturn))
+				       (nor1 r2)
+				       (nor2 r1)
+				       (else
+					(dd "merge branch results: ~s + ~s" r1 r2)
+					(map (lambda (t1 t2)
+					       (simplify-type `(or ,t1 ,t2)))
+					     r1 r2))))
+				(else '*)))))))
 		 ((let)
 		  ;; before CPS-conversion, `let'-nodes may have multiple bindings
 		  (let loop ((vars params) (body subs) (e2 '()))
