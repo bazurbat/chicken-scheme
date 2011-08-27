@@ -1103,7 +1103,7 @@
 		   (simplify (third t)))
 		  ((or)
 		   (let ((ts (map simplify (cdr t))))
-		     (cond ((= 1 (length ts)) (simplify (car ts)))
+		     (cond ((= 1 (length ts)) (car ts))
 			   ((every procedure-type? ts)
 			    (if (any (cut eq? 'procedure <>) ts)
 				'procedure
@@ -1201,6 +1201,8 @@
 		  ,(simplify-type `(or ,(cadr ts1) ,(cadr ts2)))
 		  ,@(merge-argument-types (cddr ts1) (cddr ts2))))
 	       (else '(#!rest))))	;XXX
+	((memq (car ts2) '(#!rest #!optional))
+	 (merge-argument-types ts2 ts1))
 	(else (cons (simplify-type `(or ,(car ts1) ,(car ts2)))
 		    (merge-argument-types (cdr ts1) (cdr ts2))))))
 
