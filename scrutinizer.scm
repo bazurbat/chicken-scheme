@@ -484,9 +484,7 @@
 			(set! noreturn #f)
 			(let* ((r2 (walk a e loc dest tail (cons (cdr tags) flow) #f))
 			       (nor2 noreturn))
-			  (set! noreturn 
-			    (or nor-1
-				(and nor1 nor2)))
+			  (set! noreturn (or nor-1 nor0 (and nor1 nor2)))
 			  ;; when only one branch is noreturn, add blist entries for
 			  ;; all in other branch:
 			  (when (or (and nor1 (not nor2))
@@ -508,8 +506,7 @@
 					"branches in conditional expression differ in the number of results:~%~%~a"
 				      (pp-fragment n))))
 				 ;;(dd " branches: ~s:~s / ~s:~s" nor1 r1 nor2 r2)
-				 (cond (nor0 '(noreturn))
-				       (nor1 r2)
+				 (cond (nor1 r2)
 				       (nor2 r1)
 				       (else
 					(dd "merge branch results: ~s + ~s" r1 r2)
