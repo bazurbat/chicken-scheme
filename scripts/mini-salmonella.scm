@@ -115,7 +115,9 @@
 (for-each
  (lambda (egg)
    (and-let* ((dir (find-newest egg)))
-     (print* egg)
+     (if *debug*
+	 (print "\n\n######################################## " egg "\n")
+	 (print* egg))
      (cleanup-repository)
      (let ((meta (file-exists? (make-pathname dir egg "meta"))))
        (if meta
