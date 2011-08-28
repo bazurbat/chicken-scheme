@@ -1194,7 +1194,7 @@
 (delete-file* (#(procedure #:clean #:enforce) delete-file* (string) *))
 (file-copy (#(procedure #:clean #:enforce) file-copy (string string #!optional * fixnum) fixnum))
 (file-move (#(procedure #:clean #:enforce) file-move (string string #!optional * fixnum) fixnum))
-(make-pathname (#(procedure #:clean #:enforce) make-pathname (* #!optional string string) string))
+(make-pathname (#(procedure #:clean #:enforce) make-pathname (* #!optional (or string boolean) (or string boolean)) string))
 (directory-null? (#(procedure #:clean #:enforce) directory-null? (string) boolean))
 (make-absolute-pathname (#(procedure #:clean #:enforce) make-absolute-pathname (* #!optional string string) string))
 (create-temporary-directory (#(procedure #:clean #:enforce) create-temporary-directory () string))
