@@ -770,7 +770,7 @@
 			     (trail-restore trail0 typeenv)
 			     (loop (cdr types) (cdr subs)))))))
 		 ((##core#switch ##core#cond)
-		  (bomb "unexpected node class" class))
+		  (bomb "scrutinize: unexpected node class" class))
 		 (else
 		  (for-each (lambda (n) (walk n e loc #f #f flow #f)) subs)
 		  '*))))
@@ -869,8 +869,8 @@
 	       (sprintf "a vector with element type ~a" (typename (second t))))
 	      ((list)
 	       (sprintf "a list with element type ~a" (typename (second t))))
-	      (else (bomb "invalid type" t))))
-	   (else (bomb "invalid type" t))))))
+	      (else (bomb "typename: invalid type" t))))
+	   (else (bomb "typename: invalid type" t))))))
 
 
 ;;; Type-matching
@@ -1489,22 +1489,27 @@
       (set-cdr! a #f))))
 
 (define (resolve t typeenv)
-  (let resolve ((t t))
+  (let resolve ((t t) (done '()))
     (cond ((not t) '*)			; unbound type-variable
-	  ((assq t typeenv) => (lambda (a) (resolve (cdr a))))
+	  ((assq t typeenv) => 
+	   (lambda (a)
+	     (let ((t (cdr a)))
+	       (if (memq t done)
+		   '*			; circular reference
+		   (resolve t (cons t done))))))
 	  ((not (pair? t)) 
 	   (if (memq t '(* fixnum eof char string symbol float number list vector pair
 			   undefined blob port pointer locative boolean pointer-vector
 			   null procedure noreturn))
 	       t
-	       (bomb "can't resolve unknown type-variable" t)))
+	       (bomb "resolve: can't resolve unknown type-variable" t)))
 	  (else 
 	   (case (car t)
-	     ((or) `(or ,@(map resolve (cdr t))))
-	     ((not) `(not ,(resolve (second t))))
-	     ((forall) `(forall ,(second t) ,(resolve (third t))))
+	     ((or) `(or ,@(map (cut resolve <> done) (cdr t))))
+	     ((not) `(not ,(resolve (second t) done)))
+	     ((forall) `(forall ,(second t) ,(resolve (third t) done)))
 	     ((pair list vector) 
-	      (cons (car t) (map resolve (cdr t))))
+	      (cons (car t) (map (cut resolve <> done) (cdr t))))
 	     ((procedure)
 	      (let* ((argtypes (procedure-arguments t))
 		     (rtypes (procedure-results t)))
@@ -1517,10 +1522,10 @@
 				(cons (car args) (loop (cdr args)))))
 			   ((eq? '#!optional (car args))
 			    (cons (car args) (loop (cdr args))))
-			   (else (cons (resolve (car args)) (loop (cdr args))))))
+			   (else (cons (resolve (car args) done) (loop (cdr args))))))
 		  ,@(if (eq? '* rtypes)
 			'*
-			(map resolve rtypes)))))
+			(map (cut resolve <> done) rtypes)))))
 	     (else t))))))
 
 
