@@ -904,7 +904,11 @@
   
   (define (match-rest rtype args opt) ;XXX currently ignores `opt'
     (let-values (((head tail) (break (cut eq? '#!rest <>) args)))
-      (and (every (cut match1 rtype <>) head) ; match required args
+      (and (every			
+	    (lambda (t)
+	      (or (eq? '#!optional t)
+		  (match1 rtype t)))
+	    head)
 	   (match1 rtype (if (pair? tail) (rest-type (cdr tail)) '*)))))
 
   (define (optargs? a)
@@ -1060,12 +1064,17 @@
     m))
 
 (define (match-argument-types typelist atypes typeenv #!optional exact all)
+  ;; this doesn't need optional: it is only used for predicate- and specialization
+  ;; matching
   (let loop ((tl typelist) (atypes atypes))
     (cond ((null? tl) (null? atypes))
 	  ((null? atypes) #f)
 	  ((equal? '(#!rest) tl))
 	  ((eq? (car tl) '#!rest)
-	   (every (cute match-types (cadr tl) <> typeenv exact all) atypes))
+	   (every 
+	    (lambda (at)
+	      (match-types (cadr tl) at typeenv exact all))
+	    atypes))
 	  ((match-types (car tl) (car atypes) typeenv exact all)
 	   (loop (cdr tl) (cdr atypes)))
 	  (else #f))))
@@ -1180,9 +1189,9 @@
       t2)))
 
 
-;;XXX this could be better done by combining non-matching arguments/llists
-;;    into "(or (procedure ...) (procedure ...))"
 (define (merge-argument-types ts1 ts2) 
+  ;; this could be more elegantly done by combining non-matching arguments/llists
+  ;; into "(or (procedure ...) (procedure ...))" and then simplifying
   (cond ((null? ts1) 
 	 (cond ((null? ts2) '())
 	       ((memq (car ts2) '(#!rest #!optional)) ts2)
@@ -1377,7 +1386,7 @@
 	 (else (bomb "procedure-results: not a procedure type" t)))))
 
 (define (procedure-argument-types t n typeenv #!optional norest)
-  (let loop1 ((t t))
+  (let loop1 ((t t) (done '())
     (cond ((and (pair? t)
 		(eq? 'procedure (car t)))
 	   (let* ((vf #f)
@@ -1402,8 +1411,13 @@
 	     (values llist vf)))
 	  ((and (pair? t) 
 		(eq? 'forall (car t)))
-	   (loop1 (third t))) ; assumes typeenv has already been extracted
-	  ((assq t typeenv) => (lambda (e) (loop1 (cdr e))))
+	   (loop1 (third t) done)) ; assumes typeenv has already been extracted
+	  ((assq t typeenv) =>
+	   (lambda (e)
+	     (let ((t2 (cdr e)))
+	       (if (memq t2 done)
+		   (loop1 '* done)		; circularity
+		   (loop1 t2 (cons t done)))))))))))
 	  (else (values (make-list n '*) #f)))))
 
 (define (procedure-result-types t values-rest? args typeenv)
@@ -1493,10 +1507,10 @@
     (cond ((not t) '*)			; unbound type-variable
 	  ((assq t typeenv) => 
 	   (lambda (a)
-	     (let ((t (cdr a)))
-	       (if (memq t done)
+	     (let ((t2 (cdr a)))
+	       (if (memq t2 done)
 		   '*			; circular reference
-		   (resolve t (cons t done))))))
+		   (resolve t2 (cons t done))))))
 	  ((not (pair? t)) 
 	   (if (memq t '(* fixnum eof char string symbol float number list vector pair
 			   undefined blob port pointer locative boolean pointer-vector
