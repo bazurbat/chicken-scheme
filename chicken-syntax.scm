@@ -275,6 +275,10 @@
  'parameterize '()
  (##sys#er-transformer
   (lambda (form r c)
+    (define (pname p)
+      (if (symbol? p)
+	  (gensym p)
+	  (gensym "parameter")))
     (##sys#check-syntax 'parameterize form '#(_ 2))
     (let* ((bindings (cadr form))
 	   (body (cddr form))
@@ -282,7 +286,7 @@
 	   (mode (r 'mode))
 	   (params (##sys#map car bindings))
 	   (vals (##sys#map cadr bindings))
-	   (aliases (##sys#map (lambda (z) (r (gensym))) params))
+	   (aliases (##sys#map (lambda (z) (r (pname z))) params))
 	   (aliases2 (##sys#map (lambda (z) (r (gensym))) params)) )
       `(##core#let
 	,(map ##sys#list aliases params)
