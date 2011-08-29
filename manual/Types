@@ -104,25 +104,24 @@ or {{:}} should follow the syntax given below:
 <table>
 <tr><th>BASICTYPE</th><th>meaning</th></tr>
 <tr><td>{{*}}</td><td>any value</td></tr>
-<tr><td>{{string}}</td><td>string</td></tr>
-<tr><td>{{symbol}}</td><td>symbol</td></tr>
-<tr><td>{{char}}</td><td>character</td></tr>
-<tr><td>{{boolean}}</td><td>boolean</td></tr>
-<tr><td>{{list}}</td><td>null or pair</td></tr>
-<tr><td>{{pair}}</td><td>pair</td></tr>
-<tr><td>{{null}}</td><td>empty list</td></tr>
-<tr><td>{{procedure}}</td><td>unspecific procedure</td></tr>
-<tr><td>{{vector}}</td><td>vector</td></tr>
-<tr><td>{{eof}}</td><td>end-of-file object</td></tr>
-<tr><td>{{port}}</td><td>input- or output-port</td></tr>
 <tr><td>{{blob}}</td><td>byte vector</td></tr>
-<tr><td>{{pointer}}</td><td>native pointer</td></tr>
-<tr><td>{{pointer-vector}}</td><td>vector or native pointers</td></tr>
-<tr><td>{{locative}}</td><td>locative object</td></tr>
+<tr><td>{{boolean}}</td><td>boolean</td></tr>
+<tr><td>{{char}}</td><td>character</td></tr>
+<tr><td>{{eof}}</td><td>end-of-file object</td></tr>
 <tr><td>{{fixnum}}</td><td>word-sized integer</td></tr>
 <tr><td>{{float}}</td><td>floating-point number</td></tr>
+<tr><td>{{list}}</td><td>null or pair</td></tr>
+<tr><td>{{locative}}</td><td>locative object</td></tr>
+<tr><td>{{null}}</td><td>empty list</td></tr>
 <tr><td>{{number}}</td><td>fixnum or float</td></tr>
-<tr><td>{{immediate}}</td><td>abbreviation for {{(or eof null fixnum char boolean)}}</td></tr>
+<tr><td>{{pair}}</td><td>pair</td></tr>
+<tr><td>{{pointer-vector}}</td><td>vector or native pointers</td></tr>
+<tr><td>{{pointer}}</td><td>native pointer</td></tr>
+<tr><td>{{port}}</td><td>input- or output-port</td></tr>
+<tr><td>{{procedure}}</td><td>unspecific procedure</td></tr>
+<tr><td>{{string}}</td><td>string</td></tr>
+<tr><td>{{symbol}}</td><td>symbol</td></tr>
+<tr><td>{{vector}}</td><td>vector</td></tr>
 </table>
 
 <table>
@@ -170,6 +169,15 @@ these names directly in type-specifications - {{TYPE}} corresponds to
 <tr><td>{{condition}}</td><td>object representing exception</td></tr>
 <tr><td>{{hash-table}}</td><td>SRFI-69 hash-table</td></tr>
 <tr><td>{{tcp-listener}}</td><td>listener object from "tcp" unit</td></tr>
+</table>
+
+Additionally, some aliases are allowed:
+
+<table>
+<tr><th>Alias</th><th>Type</th></tr>
+<tr><td>{{any}}</td><td>{{*}}</td></tr>
+<tr><td>{{immediate}}</td><td>{{(or eof null fixnum char boolean)}}</td></tr>
+<tr><td>{{void}}</td><td>{{undefined}}</td></tr>
 </table>
 
 
