@@ -315,16 +315,16 @@
 		  (resolve ptype typeenv)))
 	       (values '* #f))
 	      (else
-	       (let-values (((atypes values-rest)
+	       (let-values (((atypes values-rest ok alen)
 			     (procedure-argument-types ptype nargs typeenv)))
-		 (unless (= (length atypes) nargs)
-		   (let ((alen (length atypes)))
-		     (report 
-		      loc
-		      (sprintf
-			  "~aexpected ~a argument~a, but was given ~a argument~a"
-			(pname) alen (multiples alen)
-			nargs (multiples nargs)))))
+		 (unless ok
+		   (report 
+		    loc
+		    (sprintf
+			"~aexpected ~a argument~a, but was given ~a argument~a"
+		      (pname)
+		      alen (multiples alen)
+		      nargs (multiples nargs))))
 		 (do ((args (cdr args) (cdr args))
 		      (atypes atypes (cdr atypes))
 		      (i 1 (add1 i)))
@@ -661,6 +661,8 @@
 			  (smash-component-types! e "env")
 			  (smash-component-types! blist "blist")))
 		      (cond (specialized?
+			     ;;XXX this will walk the arguments again, resulting in
+			     ;;    duplicate warnings
 			     (walk n e loc dest tail flow ctags)
 			     (smash)
 			     ;; keep type, as the specialization may contain icky stuff
@@ -1386,17 +1388,22 @@
 	 (else (bomb "procedure-results: not a procedure type" t)))))
 
 (define (procedure-argument-types t n typeenv #!optional norest)
-  (let loop1 ((t t) (done '())
+  (let loop1 ((t t) (done '()))
     (cond ((and (pair? t)
 		(eq? 'procedure (car t)))
 	   (let* ((vf #f)
+		  (ok #t)
+		  (alen 0)
 		  (llist
+		   ;; quite a mess
 		   (let loop ((at (if (or (string? (second t)) (symbol? (second t)))
 				      (third t)
 				      (second t)))
 			      (m n)
 			      (opt #f))
-		     (cond ((null? at) '())
+		     (cond ((null? at)
+			    (set! ok (or opt (zero? m)))
+			    '())
 			   ((eq? '#!optional (car at))
 			    (if norest
 				'()
@@ -1407,18 +1414,20 @@
 				   (set! vf (and (pair? (cdr at)) (eq? 'values (cadr at))))
 				   (make-list m (rest-type (cdr at))))))
 			   ((and opt (<= m 0)) '())
-			   (else (cons (car at) (loop (cdr at) (sub1 m) opt)))))))
-	     (values llist vf)))
-	  ((and (pair? t) 
-		(eq? 'forall (car t)))
+			   (else
+			    (set! ok (positive? m))
+			    (set! alen (add1 alen))
+			    (cons (car at) (loop (cdr at) (sub1 m) opt)))))))
+	     (values llist vf ok alen)))
+	  ((and (pair? t) (eq? 'forall (car t)))
 	   (loop1 (third t) done)) ; assumes typeenv has already been extracted
 	  ((assq t typeenv) =>
 	   (lambda (e)
 	     (let ((t2 (cdr e)))
 	       (if (memq t2 done)
 		   (loop1 '* done)		; circularity
-		   (loop1 t2 (cons t done)))))))))))
-	  (else (values (make-list n '*) #f)))))
+		   (loop1 t2 (cons t done))))))
+	  (else (values (make-list n '*) #f #t n)))))
 
 (define (procedure-result-types t values-rest? args typeenv)
   (define (loop1 t)
@@ -1690,6 +1699,7 @@
   ;; - returns converted type or #f
   ;; - also converts "(... -> ...)" types
   ;; - converts some typenames to struct types (u32vector, etc.)
+  ;; - handles some type aliases
   ;; - drops "#!key ..." args by converting to #!rest
   ;; - handles "(T1 -> T2 : T3)" (predicate) 
   ;; - handles "(T1 --> T2 [: T3])" (clean)
@@ -1735,6 +1745,8 @@
 	     `(struct ,t))
 	    ((eq? t 'immediate)
 	     '(or eof null fixnum char boolean))
+	    ((eq? t 'any) '*)
+	    ((eq? t 'void) 'undefined)
 	    ((not (pair? t)) 
 	     (cond ((memq t typevars)
 		    (set! usedvars (cons t usedvars))
@@ -1773,8 +1785,8 @@
 				`(procedure ,(upto t p) ,@(cdr p))
 				rec)))
 			 ((and (= 5 (length t))
-			       (eq? p (cdr t))
-			       (eq? cp (cdddr t)))
+			       (eq? p (cdr t)) ; one argument?
+			       (eq? cp (cdddr t))) ; 4th item is ":"?
 			  (set! t (validate `(procedure (,(first t)) ,(third t)) rec))
 			  ;; we do it this way to distinguish the "outermost" predicate
 			  ;; procedure type
@@ -1821,9 +1833,9 @@
 			    (lambda (v) (and (memq v usedvars) v))
 			    (delete-duplicates typevars eq?))
 			  ,type)))
-	     (let ((type (simplify-type type)))
+	     (let ((type2 (simplify-type type)))
 	       (values 
-		type 
+		type2
 		(and ptype (eq? (car ptype) type) (cdr ptype))
 		clean))))
 	  (else (values #f #f #f)))))

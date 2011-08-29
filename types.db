@@ -1135,7 +1135,12 @@
 (rassoc (#(procedure #:clean #:enforce) rassoc (* (list pair) #!optional (procedure (* *) *)) *))
 (reverse-string-append (#(procedure #:clean #:enforce) reverse-string-append ((list string)) string))
 (shuffle deprecated)
+
+;; really should be
+;;   (: sort (forall (e (s (or (vector e) (list e)))) (s (e e -> *) -> s)))
+;; if we had contraints for "forall"
 (sort (#(procedure #:enforce) sort ((or list vector) (procedure (* *) *)) (or list vector)))
+
 (sort! (#(procedure #:enforce) sort! ((or list vector) (procedure (* *) *)) (or list vector)))
 (sorted? (#(procedure #:enforce) sorted? ((or list vector) (procedure (* *) *)) boolean))
 (topological-sort (#(procedure #:enforce) topological-sort ((list list) (procedure (* *) *)) list))

@@ -1103,29 +1103,6 @@
     (##core#let-compiler-syntax (binding ...) body ...))))
 
 
-;;; type-declaration syntax
-
-(##sys#extend-macro-environment
- ': '()
- (##sys#er-transformer
-  (lambda (x r c)
-    (##sys#check-syntax ': x '(_ symbol _ . _))
-    (if (memq #:csi ##sys#features) 
-	'(##core#undefined)
-	(let* ((type1 (##sys#strip-syntax (caddr x)))
-	       (name1 (cadr x)))
-	  (let-values (((type pred pure)
-			(##compiler#validate-type type1 (##sys#strip-syntax name1))))
-	    (cond ((not type)
-		   (syntax-error ': "invalid type syntax" name1 type1))
-		  (else
-		   `(##core#declare 
-		     (type (,name1 ,type ,@(cdddr x)))
-		     ,@(if pure `((pure ,name1)) '())
-		     (enforce-argument-types ,name1)
-		     ,@(if pred `((predicate (,name1 ,pred))) '()))))))))))
-
-
 ;;; interface definition
 
 (##sys#extend-macro-environment
@@ -1180,7 +1157,27 @@
 	(begin-for-syntax ,registration))))))
 
 
-;;; inline type declaration
+;;; type-related syntax
+
+(##sys#extend-macro-environment
+ ': '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax ': x '(_ symbol _ . _))
+    (if (memq #:csi ##sys#features) 
+	'(##core#undefined)
+	(let* ((type1 (##sys#strip-syntax (caddr x)))
+	       (name1 (cadr x)))
+	  (let-values (((type pred pure)
+			(##compiler#validate-type type1 (##sys#strip-syntax name1))))
+	    (cond ((not type)
+		   (syntax-error ': "invalid type syntax" name1 type1))
+		  (else
+		   `(##core#declare 
+		     (type (,name1 ,type1 ,@(cdddr x)))
+		     ,@(if pure `((pure ,name1)) '())
+		     (enforce-argument-types ,name1)
+		     ,@(if pred `((predicate (,name1 ,pred))) '()))))))))))
 
 (##sys#extend-macro-environment
  'the '()
@@ -1202,14 +1199,14 @@
   (lambda (x r c)
     (cond ((memq #:csi ##sys#features) '(##core#undefined))
 	  (else
-	   (##sys#check-syntax 'define-specialization x '(_ (symbol . #(_ 0)) _ . #(_ 0 1)))
+	   (##sys#check-syntax 'define-specialization x '(_ (variable . #(_ 0)) _ . #(_ 0 1)))
 	   (let* ((head (cadr x))
 		  (name (car head))
 		  (gname (##sys#globalize name '())) ;XXX correct?
 		  (args (cdr head))
 		  (alias (gensym name))
 		  (galias (##sys#globalize alias '())) ;XXX and this?
-		  (rtypes (and (pair? (cdddr x)) (caddr x)))
+		  (rtypes (and (pair? (cdddr x)) (##sys#strip-syntax (caddr x))))
 		  (%define (r 'define))
 		  (body (if rtypes (cadddr x) (caddr x))))
 	     (let loop ((args args) (anames '()) (atypes '()))
@@ -1256,7 +1253,9 @@
 			       (loop (cdr args) (cons arg anames) (cons '* atypes)))
 			      ((and (list? arg) (fx= 2 (length arg)) (symbol? (car arg)))
 			       (let-values (((t pred pure)
-					     (##compiler#validate-type (cadr arg) #f)))
+					     (##compiler#validate-type
+					      (##sys#strip-syntax (cadr arg))
+					      #f)))
 				 (if t
 				     (loop
 				      (cdr args)
