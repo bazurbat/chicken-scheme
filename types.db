@@ -1442,7 +1442,7 @@
 (call-with-input-string (#(procedure #:enforce) call-with-input-string (string (procedure (port) . *)) . *))
 (call-with-output-string (#(procedure #:enforce) call-with-output-string ((procedure (port) . *)) string))
 (copy-port (#(procedure #:enforce) copy-port (* * #!optional (procedure (*) *) (procedure (* port) *)) undefined)) 
-(make-input-port (#(procedure #:clean #:enforce) make-input-port ((procedure () char) (procedure () *) (procedure () . *) #!optional * * * *) port))
+(make-input-port (#(procedure #:clean #:enforce) make-input-port ((procedure () (or char eof)) (procedure () *) (procedure () . *) #!optional * * * *) port))
 (make-output-port (#(procedure #:clean #:enforce) make-output-port ((procedure (string) . *) (procedure () . *) #!optional (procedure () . *)) port))
 (port-for-each (#(procedure #:enforce) port-for-each ((procedure (*) *) (procedure () . *)) undefined))
 
