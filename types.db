@@ -754,8 +754,8 @@
 (extension-information (#(procedure #:clean) extension-information (symbol) *))
 (feature? (#(procedure #:clean) feature? (symbol) boolean))
 (features (#(procedure #:clean) features () (list symbol)))
-(file-exists? (#(procedure #:clean #:enforce) file-exists? (string) *))
-(directory-exists? (#(procedure #:clean #:enforce) directory-exists? (string) *))
+(file-exists? (#(procedure #:clean #:enforce) file-exists? (string) (or boolean string)))
+(directory-exists? (#(procedure #:clean #:enforce) directory-exists? (string) (or boolean string)))
 (fixnum-bits fixnum)
 (fixnum-precision fixnum)
 
@@ -1154,11 +1154,11 @@
 (string-translate* (#(procedure #:clean #:enforce) string-translate* (string (list (pair string string))) string))
 (substring-ci=? (#(procedure #:clean #:enforce) substring-ci=? (string string #!optional fixnum fixnum fixnum) boolean))
 
-(substring-index (#(procedure #:clean #:enforce) substring-index (string string #!optional fixnum) *)
+(substring-index (#(procedure #:clean #:enforce) substring-index (string string #!optional fixnum) (or boolean fixnum))
 		 ((* *) (##sys#substring-index #(1) #(2) '0))
 		 ((* * *) (##sys#substring-index #(1) #(2) #(3))))
 
-(substring-index-ci (#(procedure #:clean #:enforce) substring-index-ci (string string #!optional fixnum) *)
+(substring-index-ci (#(procedure #:clean #:enforce) substring-index-ci (string string #!optional fixnum) (or boolean fixnum))
 		    ((* *) (##sys#substring-index-ci #(1) #(2) '0))
 		    ((* * *) (##sys#substring-index-ci #(1) #(2) #(3))))
 
