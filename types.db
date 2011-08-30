@@ -610,8 +610,8 @@
 (extension-information (procedure extension-information (symbol) *))
 (feature? (procedure feature? (symbol) boolean))
 (features (procedure features () list))
-(file-exists? (procedure! file-exists? (string) (or boolean string)))
-(directory-exists? (procedure! directory-exists? (string) (or boolean string)))
+(file-exists? (procedure! file-exists? (string) *))
+(directory-exists? (procedure! directory-exists? (string) *))
 (fixnum-bits fixnum)
 (fixnum-precision fixnum)
 
@@ -983,11 +983,11 @@
 (string-translate* (procedure! string-translate* (string list) string))
 (substring-ci=? (procedure! substring-ci=? (string string #!optional fixnum fixnum fixnum) boolean))
 
-(substring-index (procedure! substring-index (string string #!optional fixnum) (or boolean fixnum))
+(substring-index (procedure! substring-index (string string #!optional fixnum) *)
 		 ((* *) (##sys#substring-index #(1) #(2) '0))
 		 ((* * *) (##sys#substring-index #(1) #(2) #(3))))
 
-(substring-index-ci (procedure! substring-index-ci (string string #!optional fixnum) (or boolean fixnum))
+(substring-index-ci (procedure! substring-index-ci (string string #!optional fixnum) *)
 		    ((* *) (##sys#substring-index-ci #(1) #(2) '0))
 		    ((* * *) (##sys#substring-index-ci #(1) #(2) #(3))))
 
@@ -1673,8 +1673,8 @@
 (string-fold-right (procedure! string-fold-right ((procedure (char *) *) * string #!optional fixnum fixnum) *))
 (string-for-each (procedure! string-for-each ((procedure (char) . *) string #!optional fixnum fixnum) undefined))
 (string-for-each-index (procedure! string-for-each-index ((procedure (fixnum) . *) string #!optional fixnum fixnum) undefined))
-(string-index (procedure! string-index (string * #!optional fixnum fixnum) (or boolean fixnum)))
-(string-index-right (procedure! string-index-right (string * #!optional fixnum fixnum) (or boolean fixnum)))
+(string-index (procedure! string-index (string * #!optional fixnum fixnum) *))
+(string-index-right (procedure! string-index-right (string * #!optional fixnum fixnum) *))
 (string-join (procedure! string-join (list #!optional string symbol) string))
 (string-kmp-partial-search (procedure! string-kmp-partial-search (string vector string fixnum #!optional (procedure (char char) *) fixnum fixnum fixnum) fixnum))
 (string-map (procedure! string-map ((procedure (char) char) string #!optional fixnum fixnum) string))
