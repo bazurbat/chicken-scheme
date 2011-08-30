@@ -1247,7 +1247,7 @@
 (irregex-lengths (#(procedure #:clean #:enforce) irregex-lengths ((struct regexp)) *)
 		 (((struct regexp)) (##sys#slot #(1) '7)))
 
-(irregex-match (#(procedure #:enforce) irregex-match (* string) *))
+(irregex-match (#(procedure #:enforce) irregex-match (* string #!optional fixnum fixnum) *))
 ;irregex-match?
 
 (irregex-match-data? (#(procedure #:pure #:predicate (struct regexp-match)) irregex-match-data? (*) boolean))

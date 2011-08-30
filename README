@@ -416,9 +416,10 @@
 
  6. Bootstrapping
 
-	To build a bootstrapping compiler yourself, obtain a recent
-	release tarball, unpack it, change into the extracted
-	directory and enter
+        To build a bootstrapping compiler yourself, get the most
+        recent release tarball from http://code.call-cc.org, unpack
+        it, build and install it.  Then change to the directory
+        containing the git code and run:
 
           make PLATFORM=<platform> CHICKEN=<path-to-existing-chicken> \
             boot-chicken
