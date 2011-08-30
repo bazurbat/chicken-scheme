@@ -182,6 +182,7 @@
  inline-table-used
  inlining
  insert-timer-checks
+ install-specializations
  installation-home
  internal-bindings
  intrinsic?
@@ -200,7 +201,6 @@
  make-variable-list
  mark-variable
  match-node
- match-specialization
  membership-test-operators
  membership-unfold-limit
  no-argc-checks
@@ -255,6 +255,7 @@
  scan-toplevel-assignments
  scan-used-variables
  scrutinize
+ scrutiny-debug
  set-real-name!
  sexpr->node
  simple-lambda-node?

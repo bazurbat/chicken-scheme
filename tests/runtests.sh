@@ -4,6 +4,7 @@
 # - Note: this needs a proper shell, so it will not work with plain mingw
 #   (just the compiler and the Windows shell, without MSYS)
 
+
 set -e
 TEST_DIR=`pwd`
 OS_NAME=`uname -s`
@@ -12,19 +13,6 @@ export LD_LIBRARY_PATH=${TEST_DIR}/..
 export LIBRARY_PATH=${TEST_DIR}/..:${LIBRARY_PATH}
 
 mkdir -p test-repository
-
-# copy files into test-repository (by hand to avoid calling `chicken-install'):
-
-for x in setup-api.so setup-api.import.so setup-download.so \
-      setup-download.import.so chicken.import.so lolevel.import.so \
-      srfi-1.import.so srfi-4.import.so data-structures.import.so \
-      ports.import.so files.import.so posix.import.so \
-      srfi-13.import.so srfi-69.import.so extras.import.so \
-      irregex.import.so srfi-14.import.so tcp.import.so \
-      foreign.import.so scheme.import.so srfi-18.import.so \
-      utils.import.so csi.import.so irregex.import.so types.db; do
-  cp ../$x test-repository
-done
 
 CHICKEN_REPOSITORY=${TEST_DIR}/test-repository
 CHICKEN=../chicken
@@ -35,11 +23,17 @@ FAST_OPTIONS="-O5 -d0 -b -disable-interrupts"
 
 $CHICKEN_INSTALL -init ${TEST_DIR}/test-repository
 
+TYPESDB=../types.db
+cp $TYPESDB test-repository/types.db
+
 if test -n "$MSYSTEM"; then
     CHICKEN="..\\chicken.exe"
     ASMFLAGS=-Wa,-w
+    TIME=time
     # make compiled tests use proper library on Windows
     cp ../libchicken.dll .
+else 
+    TIME=/usr/bin/time
 fi
 
 compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
@@ -57,20 +51,14 @@ echo "======================================== compiler tests (unboxing) ..."
 $compile compiler-tests-3.scm -unsafe -unboxing
 ./a.out
 
-echo "======================================== compiler tests (specialization) ..."
-$compile fft.scm -O2 -local -d0 -disable-interrupts -b -o fft1
-$compile fft.scm -O2 -local -specialize -debug x -d0 -disable-interrupts -b -o fft2 -specialize
-echo "normal:"
-/usr/bin/time ./fft1 1000 7
-echo "specialized:"
-/usr/bin/time ./fft2 1000 7
-
 echo "======================================== compiler inlining tests  ..."
 $compile inlining-tests.scm -optimize-level 3
 ./a.out
 
 echo "======================================== scrutiny tests ..."
-$compile scrutiny-tests.scm -scrutinize -analyze-only -ignore-repository -types ../types.db 2>scrutiny.out -verbose
+$compile typematch-tests.scm -specialize -w
+./a.out
+$compile scrutiny-tests.scm -scrutinize -ignore-repository -types $TYPESDB 2>scrutiny.out -verbose
 
 if test -n "$MSYSTEM"; then
     dos2unix scrutiny.out
@@ -83,8 +71,7 @@ fi
 
 diff -bu scrutiny.expected scrutiny.out
 
-$compile scrutiny-tests-2.scm -scrutinize -analyze-only -ignore-repository -types ../types.db 2>scrutiny-2.out -verbose
-./a.out
+$compile scrutiny-tests-2.scm -scrutinize -analyze-only -ignore-repository -types $TYPESDB 2>scrutiny-2.out -verbose
 
 if test -n "$MSYSTEM"; then
     dos2unix scrutiny.out
@@ -105,6 +92,14 @@ $compile specialization-test-1.scm -emit-type-file foo.types -specialize \
 $compile specialization-test-2.scm -types foo.types -specialize -debug ox
 ./a.out
 rm -f foo.types foo.import.*
+
+echo "======================================== specialization benchmark ..."
+$compile fft.scm -O2 -local -d0 -disable-interrupts -b -o fft1
+$compile fft.scm -O2 -local -specialize -debug x -d0 -disable-interrupts -b -o fft2 -specialize
+echo "normal:"
+time ./fft1 1000 7
+echo "specialized:"
+time ./fft2 1000 7
 
 echo "======================================== callback tests ..."
 $compile callback-tests.scm

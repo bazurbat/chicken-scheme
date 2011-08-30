@@ -24,9 +24,16 @@ return n;}
   (print "bar: " i)
   0)
 
-(handle-exceptions ex #f (foo 1.0))	; failed type-check
 (assert (zero? (foo 1)))
 (assert (zero? (bar 1.0)))
 (assert (= 1 (bar 1)))
+
+(: spec (* -> *))
+(define (spec x) x)
+
+(define-specialization (spec (x fixnum)) fixnum
+  (+ x 1))
+
+(assert (= 2 (spec 1)))
 
 )

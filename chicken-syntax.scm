@@ -275,6 +275,10 @@
  'parameterize '()
  (##sys#er-transformer
   (lambda (form r c)
+    (define (pname p)
+      (if (symbol? p)
+	  (gensym p)
+	  (gensym "parameter")))
     (##sys#check-syntax 'parameterize form '#(_ 2))
     (let* ((bindings (cadr form))
 	   (body (cddr form))
@@ -282,7 +286,7 @@
 	   (mode (r 'mode))
 	   (params (##sys#map car bindings))
 	   (vals (##sys#map cadr bindings))
-	   (aliases (##sys#map (lambda (z) (r (gensym))) params))
+	   (aliases (##sys#map (lambda (z) (r (pname z))) params))
 	   (aliases2 (##sys#map (lambda (z) (r (gensym))) params)) )
       `(##core#let
 	,(map ##sys#list aliases params)
@@ -1099,28 +1103,6 @@
     (##core#let-compiler-syntax (binding ...) body ...))))
 
 
-;;; type-declaration syntax
-
-(##sys#extend-macro-environment
- ': '()
- (##sys#er-transformer
-  (lambda (x r c)
-    (##sys#check-syntax ': x '(_ symbol _ . _))
-    (if (memq #:csi ##sys#features) 
-	'(##core#undefined)
-	(let* ((type1 (##sys#strip-syntax (caddr x)))
-	       (name1 (cadr x)))
-	  (let-values (((type pred)
-			(##compiler#validate-type type1 (##sys#strip-syntax name1))))
-	    (cond ((not type)
-		   (syntax-error ': "invalid type syntax" name1 type1))
-		  (else
-		   `(##core#declare 
-		     (type (,name1 ,type ,@(cdddr x)))
-		     (enforce-argument-types ,name1)
-		     ,@(if pred `((predicate (,name1 ,pred))) '()))))))))))
-
-
 ;;; interface definition
 
 (##sys#extend-macro-environment
@@ -1175,7 +1157,27 @@
 	(begin-for-syntax ,registration))))))
 
 
-;;; inline type declaration
+;;; type-related syntax
+
+(##sys#extend-macro-environment
+ ': '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax ': x '(_ symbol _ . _))
+    (if (memq #:csi ##sys#features) 
+	'(##core#undefined)
+	(let* ((type1 (##sys#strip-syntax (caddr x)))
+	       (name1 (cadr x)))
+	  (let-values (((type pred pure)
+			(##compiler#validate-type type1 (##sys#strip-syntax name1))))
+	    (cond ((not type)
+		   (syntax-error ': "invalid type syntax" name1 type1))
+		  (else
+		   `(##core#declare 
+		     (type (,name1 ,type1 ,@(cdddr x)))
+		     ,@(if pure `((pure ,name1)) '())
+		     (enforce-argument-types ,name1)
+		     ,@(if pred `((predicate (,name1 ,pred))) '()))))))))))
 
 (##sys#extend-macro-environment
  'the '()
@@ -1197,14 +1199,14 @@
   (lambda (x r c)
     (cond ((memq #:csi ##sys#features) '(##core#undefined))
 	  (else
-	   (##sys#check-syntax 'define-specialization x '(_ (symbol . #(_ 0)) _ . #(_ 0 1)))
+	   (##sys#check-syntax 'define-specialization x '(_ (variable . #(_ 0)) _ . #(_ 0 1)))
 	   (let* ((head (cadr x))
 		  (name (car head))
 		  (gname (##sys#globalize name '())) ;XXX correct?
 		  (args (cdr head))
 		  (alias (gensym name))
 		  (galias (##sys#globalize alias '())) ;XXX and this?
-		  (rtypes (and (pair? (cdddr x)) (caddr x)))
+		  (rtypes (and (pair? (cdddr x)) (##sys#strip-syntax (caddr x))))
 		  (%define (r 'define))
 		  (body (if rtypes (cadddr x) (caddr x))))
 	     (let loop ((args args) (anames '()) (atypes '()))
@@ -1225,7 +1227,7 @@
 				 (if (and rtypes (pair? rtypes))
 				     (list
 				      (map (lambda (rt)
-					     (let-values (((t _) 
+					     (let-values (((t pred pure) 
 							   (##compiler#validate-type rt #f)))
 					       (or t
 						   (syntax-error
@@ -1250,7 +1252,10 @@
 			(cond ((symbol? arg)
 			       (loop (cdr args) (cons arg anames) (cons '* atypes)))
 			      ((and (list? arg) (fx= 2 (length arg)) (symbol? (car arg)))
-			       (let-values (((t _) (##compiler#validate-type (cadr arg) #f)))
+			       (let-values (((t pred pure)
+					     (##compiler#validate-type
+					      (##sys#strip-syntax (cadr arg))
+					      #f)))
 				 (if t
 				     (loop
 				      (cdr args)
@@ -1262,6 +1267,19 @@
 			      (else (syntax-error
 				     'define-specialization
 				     "invalid argument syntax" arg head)))))))))))))
+
+(##sys#extend-macro-environment
+ 'compiler-typecase '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'compiler-typecase x '(_ _ . #((_ . #(_ 1)) 1)))
+    (let ((var (gensym)))
+      `(##core#let ((,var ,(cadr x)))
+		   (##core#typecase 
+		    ,var		; must be variable (see: CPS transform)
+		    ,@(map (lambda (clause)
+			     (list (car clause) `(##core#begin ,@(cdr clause))))
+			   (cddr x))))))))
 
 
 ;; capture current macro env

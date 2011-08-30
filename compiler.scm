@@ -82,14 +82,17 @@
 ;   ##compiler#always-bound-to-procedure -> BOOL
 ;   ##compiler#local -> BOOL
 ;   ##compiler#visibility -> #f | 'hidden | 'exported
-;   ##compiler#constant -> BOOL
+;   ##compiler#constant -> BOOL                             defined as constant
 ;   ##compiler#intrinsic -> #f | 'standard | 'extended
 ;   ##compiler#inline -> 'no | 'yes
 ;   ##compiler#inline-global -> 'yes | 'no | <node>
 ;   ##compiler#profile -> BOOL
 ;   ##compiler#unused -> BOOL
 ;   ##compiler#foldable -> BOOL
-;   ##compiler#pure -> 'standard | 'extended | BOOL
+;   ##compiler#pure -> BOOL                                 referentially transparent
+;   ##compiler#clean -> BOOL                                does not modify local state
+;   ##compiler#type -> TYPE
+;   ##compiler#declared-type -> BOOL
 
 ; - Source language:
 ;
@@ -144,6 +147,7 @@
 ; (##core#module <symbol> #t | (<name> | (<name> ...) ...) <body>)
 ; (##core#let-module-alias ((<alias> <name>) ...) <body>)
 ; (##core#the <type> <exp>)
+; (##core#typecase <exp> (<type> <body>) ... [(else <body>)])
 ; (<exp> {<exp>})
 
 ; - Core language:
@@ -171,6 +175,7 @@
 ; [##core#direct_call {<safe-flag> <debug-info> <call-id> <words>} <exp-f> <exp>...]
 ; [##core#direct_lambda {<id> <mode> (<variable>... [. <variable>]) <size>} <exp>]
 ; [##core#the {<type>} <exp>]
+; [##core#typecase {(<type> ...)} <exp> <body1> ... [<elsebody>]]
 
 ; - Closure converted/prepared language:
 ;
@@ -547,8 +552,16 @@
 
 			((##core#the)
 			 `(##core#the
-			   ,(cadr x)
+			   ,(##sys#strip-syntax (cadr x))
 			   ,(walk (caddr x) e se dest ldest h)))
+
+			((##core#typecase)
+			 `(##core#typecase
+			   ,(walk (cadr x) e se #f #f h)
+			   ,@(map (lambda (cl)
+				    (list (##sys#strip-syntax (car cl))
+					  (walk (cadr cl) e se dest ldest h)))
+				  (cddr x))))
 
 			((##core#immutable)
 			 (let ((c (cadadr x)))
@@ -1127,7 +1140,10 @@
 			 (walk
 			  `(##core#begin
 			     ,@(map (lambda (d)
-				      (process-declaration d se))
+				      (process-declaration 
+				       d se
+				       (lambda (id)
+					 (memq (lookup id se) e))))
 				    (cdr x) ) )
 			  e '() #f #f h) )
 	     
@@ -1277,7 +1293,7 @@
    '() (##sys#current-environment) #f #f #f) ) )
 
 
-(define (process-declaration spec se)
+(define (process-declaration spec se local?)
   (define (check-decl spec minlen . maxlen)
     (let ([n (length (cdr spec))])
       (if (or (< n minlen) (> n (optional maxlen 99999)))
@@ -1287,7 +1303,17 @@
   (define (strip x)			; raw symbol
     (##sys#strip-syntax x))
   (define stripu ##sys#strip-syntax)
-  (define (globalize-all syms) (map (cut ##sys#globalize <> se) syms))
+  (define (globalize-all syms)
+    (filter-map
+     (lambda (var)
+       (cond ((local? var) 
+	      (note-local var)
+	      #f)
+	     (else (##sys#globalize var se))))
+     syms))
+  (define (note-local var)
+    (##sys#notice 
+     (sprintf "ignoring declaration for locally bound variable `~a'" var)))
   (call-with-current-continuation
    (lambda (return)
      (unless (pair? spec)
@@ -1438,7 +1464,7 @@
 	      (warning 
 	       "invalid argument to `inline-limit' declaration"
 	       spec) ) ) )
-       ((constant)
+       ((constant pure)			;XXX "pure" is undocumented
 	(let ((syms (cdr spec)))
 	  (if (every symbol? syms)
 	      (for-each 
@@ -1491,28 +1517,32 @@
 	       (warning "illegal type declaration" (##sys#strip-syntax spec))
 	       (let ((name (##sys#globalize (car spec) se))
 		     (type (##sys#strip-syntax (cadr spec))))
-		 (let-values (((type pred) (validate-type type name)))
-		   (cond (type
-			  ;; HACK: since `:' doesn't have access to the SE, we
-			  ;; fixup the procedure name if type is a named procedure type
-			  ;; (We only have access to the SE for ##sys#globalize in here).
-			  ;; Quite terrible.
-			  (when (and (pair? type) 
-				     (eq? 'procedure (car type)) 
-				     (symbol? (cadr type)))
-			    (set-car! (cdr type) name))
-			  (mark-variable name '##compiler#type type)
-			  (mark-variable name '##compiler#declared-type)
-			  (when pred
-			    (mark-variable name '##compiler#predicate pred))
-			  (when (pair? (cddr spec))
-			    (mark-variable
-			     name '##compiler#specializations
-			     (##sys#strip-syntax (cddr spec)))))
-			 (else
-			  (warning 
-			   "illegal `type' declaration"
-			   (##sys#strip-syntax spec))))))))
+		 (if (local? (car spec))
+		     (note-local (car spec))
+		     (let-values (((type pred pure) (validate-type type name)))
+		       (cond (type
+			      ;; HACK: since `:' doesn't have access to the SE, we
+			      ;; fixup the procedure name if type is a named procedure type
+			      ;; (We only have access to the SE for ##sys#globalize in here).
+			      ;; Quite terrible.
+			      (when (and (pair? type) 
+					 (eq? 'procedure (car type)) 
+					 (symbol? (cadr type)))
+				(set-car! (cdr type) name))
+			      (mark-variable name '##compiler#type type)
+			      (mark-variable name '##compiler#declared-type)
+			      (when pure
+				(mark-variable name '##compiler#pure #t))
+			      (when pred
+				(mark-variable name '##compiler#predicate pred))
+			      (when (pair? (cddr spec))
+				(install-specializations 
+				 name 
+				 (##sys#strip-syntax (cddr spec)))))
+			     (else
+			      (warning 
+			       "illegal `type' declaration"
+			       (##sys#strip-syntax spec)))))))))
 	 (cdr spec)))
        ((predicate)
 	(for-each
@@ -1520,13 +1550,15 @@
 	   (cond ((and (list? spec) (symbol? (car spec)) (= 2 (length spec)))
 		  (let ((name (##sys#globalize (car spec) se))
 			(type (##sys#strip-syntax (cadr spec))))
-		    (let-values (((type pred) (validate-type type name)))
-		      (if (and type (not pred))
-			  (mark-variable name '##compiler#predicate type)
-			  (warning "illegal `predicate' declaration" spec)))))
+		    (if (local? (car spec))
+			(note-local (car spec))
+			(let-values (((type pred pure) (validate-type type name)))
+			  (if (and type (not pred))
+			      (mark-variable name '##compiler#predicate type)
+			      (warning "illegal `predicate' declaration" spec))))))
 		 (else
 		  (warning "illegal `type' declaration item" spec))))
-	 (globalize-all (cdr spec))))
+	 (cdr spec)))
        ((specialize)
 	(set! enable-specialization #t))
        ((strict-types)
@@ -1692,6 +1724,9 @@
 	((##core#the)
 	 ;; remove "the" nodes, as they are not used after scrutiny
 	 (walk (car subs) k))
+	((##core#typecase)
+	 ;; same here, the last clause is chosen, exp is dropped
+	 (walk (last subs) k))
 	(else (bomb "bad node (cps)")) ) ) )
   
   (define (walk-call fn args params k)

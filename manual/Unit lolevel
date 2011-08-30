@@ -611,7 +611,7 @@ Symbols are re-interned into the symbol table. Strings and byte-vectors are
 <procedure>(object-size X)</procedure>
 
 Returns the number of bytes that would be needed to evict the data object
-{{X}}.
+{{X}}. If {{X}} is an immediate object, zero is returned.
 
 
 

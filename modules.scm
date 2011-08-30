@@ -33,6 +33,8 @@
 
 (include "common-declarations.scm")
 
+(define-syntax d (syntax-rules () ((_ . _) (void))))
+
 (define-alias dd d)
 (define-alias dm d)
 (define-alias dx d)

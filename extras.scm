@@ -531,7 +531,7 @@
       (define (pp-do expr col extra)
 	(pp-general expr col extra #f pp-expr-list pp-expr-list pp-expr))
 
-					; define formatting style (change these to suit your style)
+      ;; define formatting style (change these to suit your style)
 
       (define indent-general 2)
 

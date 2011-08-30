@@ -315,30 +315,28 @@
 			     llist args (first (node-subexpressions lval)) #f db
 			     void)
 			    fids gae) ) )
-			((variable-mark var '##compiler#pure) =>
-			 (lambda (pb)
-			   (or (and-let* ((k (car args))
-					  ((or (eq? #t pb) 
-					       (let ((im (variable-mark var '##compiler#intrinsic)))
-						 (or (eq? im 'internal) (eq? im pb)))))
-					  ((eq? '##core#variable (node-class k)))
-					  (kvar (first (node-parameters k)))
-					  (lval (and (not (test kvar 'unknown)) (test kvar 'value))) 
-					  ((eq? '##core#lambda (node-class lval)))
-					  (llist (third (node-parameters lval)))
-					  ((or (test (car llist) 'unused)
-					       (and (not (test (car llist) 'references))
-						    (not (test (car llist) 'assigned)))))
-					  ((not (any (cut expression-has-side-effects? <> db) (cdr args) ))))
-				 (let ((info (and (pair? (cdr params)) (second params))))
-				   (debugging 
-				    'o
-				    "removed call to pure procedure with unused result"
-				    (or (source-info->string info) var)))
-				 (make-node
-				  '##core#call (list #t)
-				  (list k (make-node '##core#undefined '() '())) ) ) 
-			       (walk-generic n class params subs fids gae #f)) ) )
+			((variable-mark var '##compiler#pure)
+			 (or (and-let* ((k (car args))
+					((eq? '##core#variable (node-class k)))
+					(kvar (first (node-parameters k)))
+					(lval (and (not (test kvar 'unknown)) 
+						   (test kvar 'value))) 
+					((eq? '##core#lambda (node-class lval)))
+					(llist (third (node-parameters lval)))
+					((or (test (car llist) 'unused)
+					     (and (not (test (car llist) 'references))
+						  (not (test (car llist) 'assigned)))))
+					((not (any (cut expression-has-side-effects? <> db)
+						   (cdr args) ))))
+			       (let ((info (and (pair? (cdr params)) (second params))))
+				 (debugging 
+				  'o
+				  "removed call to pure procedure with unused result"
+				  (or (source-info->string info) var)))
+			       (make-node
+				'##core#call (list #t)
+				(list k (make-node '##core#undefined '() '())) ) ) 
+			     (walk-generic n class params subs fids gae #f)) )
 			((and lval
 			      (eq? '##core#lambda (node-class lval)))
 			 (let* ([lparams (node-parameters lval)]

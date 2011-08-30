@@ -83,7 +83,6 @@ or {{:}} should follow the syntax given below:
 
 <table>
 <tr><th>TYPE</th><th>meaning</th></tr>
-<tr><td>{{*}}</td><td>any value</td></tr>
 <tr><td>{{deprecated}}</td><td>any use of this variable will generate a warning</td></tr>
 <tr><td>VALUETYPE</td><td></td></tr>
 </table>
@@ -91,35 +90,45 @@ or {{:}} should follow the syntax given below:
 <table>  
 <tr><th>VALUETYPE</th><th>meaning</th></tr>
 <tr><td>{{(or VALUETYPE ...)}}</td><td>"union" or "sum" type</td></tr>
+<tr><td>{{(not VALUETYPE)}}</td><td>non-matching type (*)</td></tr>
 <tr><td>{{(struct STRUCTURENAME)}}</td><td>record structure of given kind</td></tr>
 <tr><td>{{(procedure [NAME] (VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]]) . RESULTS)}}</td><td>procedure type, optionally with name</td></tr>
 <tr><td>{{(VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]] -> . RESULTS)}}</td><td>alternative procedure type syntax</td></tr>
+<tr><td>{{(VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]] --> . RESULTS)}}</td><td>procedure type that is declared to modify locally held state</td></tr>
 <tr><td>{{(VALUETYPE -> VALUETYPE : VALUETYPE)}}</td><td>predicate procedure type</td></tr>
+<tr><td>{{(forall (TYPEVAR ...) VALUETYPE)}}</td><td>polymorphic type</td></tr>
+<tr><td>COMPLEXTYPE</td><td></td></tr>
 <tr><td>BASICTYPE</td><td></td></tr>
 </table>
 
 <table>
 <tr><th>BASICTYPE</th><th>meaning</th></tr>
 <tr><td>{{*}}</td><td>any value</td></tr>
-<tr><td>{{string}}</td><td>string</td></tr>
-<tr><td>{{symbol}}</td><td>symbol</td></tr>
-<tr><td>{{char}}</td><td>character</td></tr>
-<tr><td>{{boolean}}</td><td>boolean</td></tr>
-<tr><td>{{list}}</td><td>null or pair</td></tr>
-<tr><td>{{pair}}</td><td>pair</td></tr>
-<tr><td>{{null}}</td><td>empty list</td></tr>
-<tr><td>{{procedure}}</td><td>unspecific procedure</td></tr>
-<tr><td>{{vector}}</td><td>vector</td></tr>
-<tr><td>{{eof}}</td><td>end-of-file object</td></tr>
-<tr><td>{{port}}</td><td>input- or output-port</td></tr>
 <tr><td>{{blob}}</td><td>byte vector</td></tr>
-<tr><td>{{pointer}}</td><td>native pointer</td></tr>
-<tr><td>{{pointer-vector}}</td><td>vector or native pointers</td></tr>
-<tr><td>{{locative}}</td><td>locative object</td></tr>
+<tr><td>{{boolean}}</td><td>boolean</td></tr>
+<tr><td>{{char}}</td><td>character</td></tr>
+<tr><td>{{eof}}</td><td>end-of-file object</td></tr>
 <tr><td>{{fixnum}}</td><td>word-sized integer</td></tr>
 <tr><td>{{float}}</td><td>floating-point number</td></tr>
+<tr><td>{{list}}</td><td>null or pair</td></tr>
+<tr><td>{{locative}}</td><td>locative object</td></tr>
+<tr><td>{{null}}</td><td>empty list</td></tr>
 <tr><td>{{number}}</td><td>fixnum or float</td></tr>
+<tr><td>{{pair}}</td><td>pair</td></tr>
+<tr><td>{{pointer-vector}}</td><td>vector or native pointers</td></tr>
+<tr><td>{{pointer}}</td><td>native pointer</td></tr>
+<tr><td>{{port}}</td><td>input- or output-port</td></tr>
+<tr><td>{{procedure}}</td><td>unspecific procedure</td></tr>
+<tr><td>{{string}}</td><td>string</td></tr>
+<tr><td>{{symbol}}</td><td>symbol</td></tr>
+<tr><td>{{vector}}</td><td>vector</td></tr>
 </table>
+
+<table>
+<tr><th>COMPLEXTYPE</th><th>meaning</th></tr>
+<tr><td>{{(pair TYPE1 TYPE2)}</td><td>pair with given component types</td></tr>
+<tr><td>{{(list TYPE)}</td><td>proper list with given element type</td></tr>
+<tr><td>{{(vector TYPE)}</td><td>vector with given element types</td></tr>
 
 <table>  
 <tr><th>RESULTS</th><th>meaning</th></tr>
@@ -134,6 +143,43 @@ or {{:}} should follow the syntax given below:
 <tr><td>VALUETYPE</td><td></td></tr>
 </table>
 
+(*) Note: no type-variables are bound inside {{(not TYPE)}}.
+
+Some types are internally represented as structure types, but you can also use
+these names directly in type-specifications - {{TYPE}} corresponds to
+{{(struct TYPE)}} in this case:
+
+<table>  
+<tr><th>Structure type</th><th>meaning</th></tr>
+<tr><td>{{u8vector}}</td><td>SRFI-4 byte vector</td></tr>
+<tr><td>{{s8vector}}</td><td>SRFI-4 byte vector</td></tr>
+<tr><td>{{u16vector}}</td><td>SRFI-4 byte vector</td></tr>
+<tr><td>{{s16vector}}</td><td>SRFI-4 byte vector</td></tr>
+<tr><td>{{u32vector}}</td><td>SRFI-4 byte vector</td></tr>
+<tr><td>{{s32vector}}</td><td>SRFI-4 byte vector</td></tr>
+<tr><td>{{f32vector}}</td><td>SRFI-4 byte vector</td></tr>
+<tr><td>{{f64vector}}</td><td>SRFI-4 byte vector</td></tr>
+<tr><td>{{thread}}</td><td>SRFI-18 thread</td></tr>
+<tr><td>{{queue}}</td><td></td>see "data-structures" unit</tr>
+<tr><td>{{environment}}</td><td>evaluation environment</td></tr>
+<tr><td>{{time}}</td><td>SRFI-18 "time" object</td></tr>
+<tr><td>{{continuation}}</td><td>continuation object</td></tr>
+<tr><td>{{lock}}</td><td>lock object from "posix" unit</td></tr>
+<tr><td>{{mmap}}</td><td>memory mapped file</td></tr>
+<tr><td>{{condition}}</td><td>object representing exception</td></tr>
+<tr><td>{{hash-table}}</td><td>SRFI-69 hash-table</td></tr>
+<tr><td>{{tcp-listener}}</td><td>listener object from "tcp" unit</td></tr>
+</table>
+
+Additionally, some aliases are allowed:
+
+<table>
+<tr><th>Alias</th><th>Type</th></tr>
+<tr><td>{{any}}</td><td>{{*}}</td></tr>
+<tr><td>{{immediate}}</td><td>{{(or eof null fixnum char boolean)}}</td></tr>
+<tr><td>{{void}}</td><td>{{undefined}}</td></tr>
+</table>
+
 
 ==== Predicates
 
@@ -141,6 +187,16 @@ Procedure-types of the form {{(DOM -> RNG : TYPE)}} specify that the declared
 procedure will be a predicate, i.e. it accepts a single argument of type
 {{DOM}}, returns a result of type {{RNG}} (usually a boolean) and returns
 a true value if the argument is of type {{TYPE}} and false otherwise.
+
+
+==== Purity
+
+Procedure types are assumed to be not referentially transparent and
+are assumed to possibly modify locally held state. Using the
+{{(... --> ...)}} syntax, you can declare a procedure to not modify
+local state, i.e. not causing any side-effects on local variables or
+data contain in local variables. This gives more opportunities for
+optimization but may not be violated or the results are undefined.
 
 
 ==== Using type information in extensions
@@ -208,11 +264,46 @@ the result types to the most specific type, due to the way the
 flow-analysis is implemented. It is recommended to not define "chains"
 of specializations where one variant of a procedure call is
 specialized to another one that is intended to specialize further.
+This can not always be avoided, but should be kept in mind.
+
+Note that the matching of argument types is done "exactly". This
+means, for example, that an argument type specialized for {{list}}
+will not match {{null}}: even though {{null}} is a subtype of {{list}}
+and will match during normal flow-analysis, we want to be able to
+control what happens when a procedure is called with exactly with a
+list argument. To handle the case when it is called with a {{null}}
+argument, define another specialization for exactly that type or
+use an {{(or ...)}} type-specifier.
 
 There is currently no way of ensuring specializations take place.  You
 can use the {{-debug o}} compiler options to see the total number of
 specializations performed on a particular named function call during
 compilation.
+
+===== compiler-typecase
+
+<syntax>(compiler-typecase EXP (TYPE BODY ... [(else BODY ...)]) ...)</syntax>
+
+Evaluates {{EXP}} and executes the first clause which names a type that
+matches the type inferred during flow analysis as the result of {{EXP}}.
+The result of {{EXP}} is ignored and should be a single value. If a 
+{{compiler-typecase}} form occurs in evaluated code, or if it occurs in
+compiled code but specialization is not enabled, then it must have
+an {{else}} clause which specifies the default code to be executed
+after {{EXP}}. If no {{else}} clause is given and no {{TYPE}} matches,
+then a compile-time error is signalled.
+
+
+==== Caveats
+
+Assignments make flow-analysis much harder and remove opportunities
+for optimization. Generally you should avoid using a lot of mutations
+of both local variables and data held in local variables. It may
+even make your code do unexpected things when these mutations violate
+type-declarations.
+
+Note that using threads which modify local state makes all
+type-analysis pointless.
 
 
 ---

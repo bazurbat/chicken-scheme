@@ -5,8 +5,8 @@ Warning: at toplevel:
 Note: in local procedure `c',
   in local procedure `b',
   in toplevel procedure `a':
-  expected value of type boolean in conditional but were given a value of
-type `number' which is always true:
+  expected value of type boolean in conditional but were given a value of type
+  `number' which is always true:
 
 (if x3 '1 '2)
 
@@ -37,7 +37,7 @@ Warning: at toplevel:
   scrutiny-tests.scm:28: in procedure call to `+', expected argument #2 of type `number', but was given an argument of type `symbol'
 
 Warning: at toplevel:
-  assignment of value of type `fixnum' to toplevel variable `car' does not match declared type `(procedure car (pair) *)'
+  assignment of value of type `fixnum' to toplevel variable `car' does not match declared type `(forall (a99) (procedure car ((pair a99 *)) a99))'
 
 Warning: at toplevel:
   expected in `let' binding of `g8' a single result, but were given 2 results
@@ -59,6 +59,9 @@ Warning: in toplevel procedure `foo5':
 
 Warning: in toplevel procedure `foo6':
   scrutiny-tests.scm:82: in procedure call to `+', expected argument #1 of type `number', but was given an argument of type `string'
+
+Warning: at toplevel:
+  scrutiny-tests.scm:89: in procedure call to `+', expected argument #1 of type `number', but was given an argument of type `string'
 
 Warning: in toplevel procedure `foo9':
   scrutiny-tests.scm:97: in procedure call to `+', expected argument #1 of type `number', but was given an argument of type `string'

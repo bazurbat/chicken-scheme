@@ -272,10 +272,12 @@ CSI ?= csi$(EXE)
 
 CHICKEN_OPTIONS = -optimize-level 2 -include-path . -include-path $(SRCDIR) -inline -ignore-repository -feature chicken-bootstrap
 ifdef DEBUGBUILD
-CHICKEN_OPTIONS += -feature debugbuild -scrutinize -types $(SRCDIR)types.db
-CHICKEN_OPTIONS += -feature debugbuild
+CHICKEN_OPTIONS += -feature debugbuild -verbose
 else
 CHICKEN_OPTIONS += -no-warnings
+endif
+ifndef BUILDING_CHICKEN_BOOT
+CHICKEN_OPTIONS += -specialize -types $(SRCDIR)types.db 
 endif
 CHICKEN_OPTIONS += $(EXTRA_CHICKEN_OPTIONS)
 CHICKEN_LIBRARY_OPTIONS = $(CHICKEN_OPTIONS) -explicit-use -no-trace
@@ -301,7 +303,6 @@ CHICKEN_STATUS_PROGRAM = $(PROGRAM_PREFIX)chicken-status$(PROGRAM_SUFFIX)
 CHICKEN_BUG_PROGRAM = $(PROGRAM_PREFIX)chicken-bug$(PROGRAM_SUFFIX)
 IMPORT_LIBRARIES = chicken lolevel srfi-1 srfi-4 data-structures ports files posix srfi-13 srfi-69 extras srfi-14 tcp foreign scheme srfi-18 utils csi irregex
 IMPORT_LIBRARIES += setup-api setup-download
-SCRUTINIZED_LIBRARIES = library eval data-structures ports files extras lolevel utils tcp srfi-1 srfi-4 srfi-13 srfi-14 srfi-18 srfi-69 $(POSIXFILE) irregex scheduler profiler stub expand modules chicken-syntax chicken-ffi-syntax
 
 ifdef STATICBUILD
 CHICKEN_STATIC_EXECUTABLE = $(CHICKEN_PROGRAM)$(EXE)

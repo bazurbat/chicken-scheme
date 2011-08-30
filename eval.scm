@@ -50,6 +50,9 @@
 
 (include "common-declarations.scm")
 
+(define-syntax d (syntax-rules () ((_ . _) (void))))
+
+
 (define-foreign-variable install-egg-home c-string "C_INSTALL_EGG_HOME")
 (define-foreign-variable installation-home c-string "C_INSTALL_SHARE_HOME")
 (define-foreign-variable binary-version int "C_BINARY_VERSION")
@@ -721,6 +724,17 @@
 
 			 ((##core#the)
 			  (compile (caddr x) e h tf cntr se))
+			 
+			 ((##core#typecase)
+			  ;; drops exp and requires "else" clause
+			  (cond ((assq 'else (##sys#strip-syntax (cddr x))) =>
+				 (lambda (cl)
+				   (compile (cadr cl) e h tf cntr se)))
+				(else
+				 (##sys#syntax-error-hook
+				  'compiler-typecase
+				  "no `else-clause' in unresolved `compiler-typecase' form"
+				  x))))
 
 			 (else
 			  (fluid-let ((##sys#syntax-context (cons head ##sys#syntax-context)))
