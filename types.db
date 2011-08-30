@@ -946,7 +946,7 @@
 (port-name (#(procedure #:clean #:enforce) port-name (#!optional port) *)
 	   ((port) (##sys#slot #(1) '3)))
 
-(port-position (#(procedure #:clean #:enforce) port-position (#!optional port) fixnum))
+(port-position (#(procedure #:clean #:enforce) port-position (#!optional port) fixnum fixnum))
 
 (port? (#(procedure #:pure #:predicate port) port? (*) boolean))
 
@@ -1029,7 +1029,7 @@
 			       ((string) #(1)))
 (##sys#foreign-symbol-argument (#(procedure #:clean #:enforce) ##sys#foreign-symbol-argument (symbol) symbol)
 			       ((symbol) #(1)))
-(##sys#foreign-pointer-argument (#(procedure #:clean #:enforce) ##sys#foreign-pointer-argument (pointer) pointer)
+(##sys#foreign-pointer-argument (#(procedure #:clean #:enforce) ##sys#foreign-pointer-argument ((or boolean pointer)) pointer)
 				((pointer) #(1)))
 
 (##sys#check-blob (#(procedure #:clean #:enforce) ##sys#check-blob (blob #!optional *) *)
@@ -1645,7 +1645,7 @@
 (set-file-position! (#(procedure #:clean #:enforce) set-file-position! ((or port fixnum) fixnum #!optional fixnum) undefined))
 (set-groups! (#(procedure #:clean #:enforce) set-groups! (list) undefined))
 (set-root-directory! (#(procedure #:clean #:enforce) set-root-directory! (string) undefined))
-(set-signal-handler! (#(procedure #:clean #:enforce) set-signal-handler! (fixnum (procedure (fixnum) . *)) undefined))
+(set-signal-handler! (#(procedure #:clean #:enforce) set-signal-handler! (fixnum (or boolean (procedure (fixnum) . *))) undefined))
 (set-signal-mask! (#(procedure #:clean #:enforce) set-signal-mask! ((list fixnum)) undefined))
 (setenv (#(procedure #:clean #:enforce) setenv (string string) undefined))
 (signal-handler (#(procedure #:clean #:enforce) signal-handler (fixnum) (procedure (fixnum) . *)))
@@ -2451,7 +2451,7 @@
 (tcp-abandon-port (#(procedure #:clean #:enforce) tcp-abandon-port (port) undefined))
 (tcp-accept (#(procedure #:clean #:enforce) tcp-accept ((struct tcp-listener)) port port))
 (tcp-accept-ready? (#(procedure #:clean #:enforce) tcp-accept-ready? ((struct tcp-listener)) boolean))
-(tcp-accept-timeout (#(procedure #:clean #:enforce) tcp-accept-timeout (#!optional number) number))
+(tcp-accept-timeout (#(procedure #:clean #:enforce) tcp-accept-timeout (#!optional (or boolean number)) number))
 (tcp-addresses (#(procedure #:clean #:enforce) tcp-addresses (port) string string))
 (tcp-buffer-size (#(procedure #:clean #:enforce) tcp-buffer-size (#!optional fixnum) fixnum))
 (tcp-close (#(procedure #:clean #:enforce) tcp-close ((struct tcp-listener)) undefined))
@@ -2467,8 +2467,8 @@
 (tcp-listener? (#(procedure #:clean #:predicate (struct tcp-listener)) tcp-listener? (*) boolean))
 
 (tcp-port-numbers (#(procedure #:clean #:enforce) tcp-port-numbers (port) fixnum fixnum))
-(tcp-read-timeout (#(procedure #:clean #:enforce) tcp-read-timeout (#!optional number) number))
-(tcp-write-timeout (#(procedure #:clean #:enforce) tcp-write-timeout (#!optional number) number))
+(tcp-read-timeout (#(procedure #:clean #:enforce) tcp-read-timeout (#!optional (or boolean number)) number))
+(tcp-write-timeout (#(procedure #:clean #:enforce) tcp-write-timeout (#!optional (or boolean number)) number))
 
 
 ;; utils
