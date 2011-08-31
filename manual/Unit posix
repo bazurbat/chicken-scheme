@@ -84,6 +84,14 @@ Permission bits used with, for example, {{file-open}}.
 
 Changes the current working directory to {{NAME}}.
 
+==== change-directory*
+
+<procedure>(change-directory* FD)</procedure>
+
+Changes the current working directory to the one represented by the
+file-descriptor {{FD}}, which should be an exact integer.
+
+
 ==== current-directory
 
 <procedure>(current-directory [DIR])</procedure>
@@ -1249,6 +1257,7 @@ not be obtained. On Windows, this procedure always returns {{0}},
 === How Scheme procedures relate to UNIX C functions
 
 ; {{change-directory}} : {{chdir}}
+; {{change-directory*}} : {{fchdir}}
 ; {{change-file-mode}} : {{chmod}}
 ; {{change-file-owner}} : {{chown}}
 ; {{create-directory}} : {{mkdir}}
@@ -1368,6 +1377,7 @@ Microsoft tools or with MinGW):
  set-signal-mask!  signal-mask  signal-masked?  signal-mask!  signal-unmask!
  user-information  group-information  get-groups  set-groups!  initialize-groups
  errno/wouldblock
+ change-directory*
  change-file-owner
  current-user-id  current-group-id  current-effective-user-id  current-effective-groupd-id
  set-user-id!  set-group-id!

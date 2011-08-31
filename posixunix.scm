@@ -142,6 +142,7 @@ static C_TLS char C_hostbuf[ 256 ];
 static C_TLS struct stat C_statbuf;
 
 #define C_mkdir(str)        C_fix(mkdir(C_c_string(str), S_IRWXU | S_IRWXG | S_IRWXO))
+#define C_fchdir(fd)        C_fix(fchdir(C_unfix(fd)))
 #define C_chdir(str)        C_fix(chdir(C_c_string(str)))
 #define C_rmdir(str)        C_fix(rmdir(C_c_string(str)))
 
@@ -767,6 +768,12 @@ EOF
       (unless (fx= 0 (##core#inline "C_chdir" sname))
 	(posix-error #:file-error 'change-directory "cannot change current directory" name) )
       name)))
+
+(define (change-directory* fd)
+  (##sys#check-exact fd 'change-directory*) 
+  (unless (fx= 0 (##core#inline "C_fchdir" fd)) 
+    (posix-error #:file-error 'change-directory* "cannot change current directory" fd) ) 
+  fd)) 
 
 
 ;;; Pipes:

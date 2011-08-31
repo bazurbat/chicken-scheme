@@ -34,6 +34,7 @@
 ; set-signal-mask!  signal-mask	 signal-masked?	 signal-mask!  signal-unmask!
 ; user-information group-information  get-groups  set-groups!  initialize-groups
 ; errno/wouldblock
+; change-directory*
 ; change-file-owner
 ; current-user-id  current-group-id  current-effective-user-id	current-effective-group-id
 ; current-effective-user-name
@@ -1731,6 +1732,7 @@ EOF
      (define (?name . _)
        (error '?name (##core#immutable '"this function is not available on this platform")) ) ] ) )
 
+(define-unimplemented change-directory*)
 (define-unimplemented change-file-owner)
 (define-unimplemented create-fifo)
 (define-unimplemented create-session)

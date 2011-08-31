@@ -1465,6 +1465,7 @@
 (call-with-input-pipe (#(procedure #:enforce) call-with-input-pipe (string (procedure (port) . *) #!optional symbol) . *))
 (call-with-output-pipe (#(procedure #:enforce) call-with-output-pipe (string (procedure (port) . *) #!optional symbol) . *))
 (change-directory (#(procedure #:clean #:enforce) change-directory (string) string))
+(change-directory* (#(procedure #:clean #:enforce) change-directory* (fixnum) fixnum))
 (change-file-mode (#(procedure #:clean #:enforce) change-file-mode (string fixnum) undefined))
 (change-file-owner (#(procedure #:clean #:enforce) change-file-owner (string fixnum fixnum) undefined))
 (close-input-pipe (#(procedure #:clean #:enforce) close-input-pipe (port) fixnum))
