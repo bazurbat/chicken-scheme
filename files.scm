@@ -117,8 +117,8 @@ EOF
 	    'file-move
 	    "newfile exists but clobber is false"
 	    newfile)))
-  (let* ((i (open-input-file origfile))
-	 (o (open-output-file newfile))
+  (let* ((i (open-input-file origfile #:binary))
+	 (o (open-output-file newfile #:binary))
 	 (s (make-string blocksize)))
     (let loop ((d (read-string! blocksize s i))
 	       (l 0))
