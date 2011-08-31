@@ -153,8 +153,8 @@
 	(let ((saved (if mod (module-saved-environments mod) saved-default-envs)))
 	  (when saved
 	    (##sys#current-environment (car saved))
-	    (##sys#macro-environment (cdr saved))
-	    (##sys#current-module mod)))))))
+	    (##sys#macro-environment (cdr saved)))
+	  (##sys#current-module mod))))))
 
 (define (##sys#add-to-export-list mod exps)
   (set-module-export-list! 
