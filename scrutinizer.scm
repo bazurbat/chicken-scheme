@@ -629,9 +629,13 @@
 				  #t)))))
 		      ;; don't use "add-to-blist" since the current operation does not affect aliases
 		      (set! blist
-			(alist-cons (cons var (car flow)) 
-				    (if strict-variable-types rt '*)
-				    blist)))
+			(alist-cons
+			 (cons var (car flow)) 
+			 (if (or strict-variable-types
+				 (not (get db var 'captured)))
+			     rt 
+			     '*)
+			 blist)))
 		    '(undefined)))
 		 ((##core#primitive ##core#inline_ref) '*)
 		 ((##core#call)
