@@ -632,7 +632,8 @@
 			(alist-cons
 			 (cons var (car flow)) 
 			 (if (or strict-variable-types
-				 (not (get db var 'captured)))
+				 ;;XXX needs to be tested more
+				 #;(not (get db var 'captured)))
 			     rt 
 			     '*)
 			 blist)))
