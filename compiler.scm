@@ -600,7 +600,8 @@
 			      (if (null? ids)
 				  '(##core#undefined)
 				  (let ((id (car ids)))
-				    (let-values (((exp f) (##sys#do-the-right-thing id #t imp?)))
+				    (let-values (((exp f realid)
+						  (##sys#do-the-right-thing id #t imp?)))
 				      (unless (or f 
 						  (and (symbol? id)
 						       (or (feature? id)
@@ -609,7 +610,7 @@
 							     id 'require-extension)
 							    #f)) ) ) 
 					(warning 
-					 (sprintf "extension `~A' is currently not installed" id)))
+					 (sprintf "extension `~A' is currently not installed" realid)))
 				      `(##core#begin ,exp ,(loop (cdr ids))) ) ) ) )
 			    e se dest ldest h) ) )
 

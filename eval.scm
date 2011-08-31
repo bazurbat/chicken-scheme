@@ -686,7 +686,7 @@
 			     (let loop ([ids (##sys#strip-syntax (cadr x))])
 			       (if (null? ids)
 				   '(##core#undefined)
-				   (let-values (((exp _) 
+				   (let-values (((exp f real-id) 
 						 (##sys#do-the-right-thing (car ids) #f imp?)))
 				     `(##core#begin ,exp ,(loop (cdr ids))) ) ) )
 			     e #f tf cntr se) ) ]
@@ -1262,7 +1262,7 @@
 		   (if comp?
 		       (memq id builtin-features/compiled)
 		       (##sys#feature? id) ) )
-	       (values (impform '(##core#undefined) impid #t) #t) )
+	       (values (impform '(##core#undefined) impid #t) #t id) )
 	      ((memq id ##sys#core-library-modules)
 	       (values
 		(impform
@@ -1270,7 +1270,7 @@
 		     `(##core#declare (uses ,id))
 		     `(##sys#load-library ',id #f) )
 		 impid #f)
-		#t) )
+		#t id) )
 	      ((memq id ##sys#core-syntax-modules)
 	       (values
 		(impform
@@ -1278,7 +1278,7 @@
 		     `(##core#declare (uses ,id))
 		     `(##sys#load-library ',id #f) )
 		 impid #t)
-		#t) )
+		#t id) )
 	      ((memq id ##sys#explicit-library-modules)
 	       (let* ((info (##sys#extension-information id 'require-extension))
 		      (nr (assq 'import-only info))
@@ -1293,7 +1293,7 @@
 			      `(##sys#load-library ',id #f) )
 			  '(##core#undefined))
 		      impid #f))
-		  #t) ) )
+		  #t id) ) )
 	      (else
 	       (let ((info (##sys#extension-information id 'require-extension)))
 		 (cond (info
@@ -1314,14 +1314,14 @@
 						(cond (rr (cdr rr))
 						      (else (list id)) ) ) ) ) ) ) )
 			    impid #f)
-			   #t) ) )
+			   #t id) ) )
 		       (else
 			(add-req id #f)
 			(values
 			 (impform
 			  `(##sys#require ',id) 
 			  impid #f)
-			 #f)))))))
+			 #f id)))))))
       (cond ((and (pair? id) (symbol? (car id)))
 	     (case (car id)
 	       ((srfi)
@@ -1334,7 +1334,7 @@
 				       (set! f (or f f2))
 				       exp)))
 				 (cdr id)))))
-		  (values exp f)))
+		  (values exp f id)))	;XXX `id' not fully correct
 	       ((rename except only prefix)
 		(let follow ((id2 id))
 		  (if (and (pair? id2) (pair? (cdr id2)))
