@@ -936,6 +936,7 @@
 (maximum-flonum float)
 (memory-statistics (#(procedure #:clean) memory-statistics () (vector fixnum)))
 (minimum-flonum float)
+(module-environment (procedure module-environment (symbol #!optional symbol) (struct environment)))
 (most-negative-fixnum fixnum)
 (most-positive-fixnum fixnum)
 (on-exit (#(procedure #:clean #:enforce) on-exit ((procedure () . *)) undefined))

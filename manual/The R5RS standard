@@ -2830,24 +2830,18 @@ with null-environment or scheme-report-environment.
 <procedure>(scheme-report-environment version)</procedure><br>
 <procedure>(null-environment version)</procedure><br>
 
-Version must be the exact integer 5, corresponding to this revision of
-the Scheme report (the Revised^5 Report on Scheme).
-Scheme-report-environment returns a specifier for an environment that
-is empty except for all bindings defined in this report that are either
-required or both optional and supported by the implementation.
-Null-environment returns a specifier for an environment that is empty
-except for the (syntactic) bindings for all syntactic keywords defined
-in this report that are either required or both optional and supported
-by the implementation.
+Version must be either the exact integer 4 or 5, corresponding to the
+respective revisions of the Scheme report (the Revised^N Report on
+Scheme).  Scheme-report-environment returns a specifier for an
+environment that is empty except for all bindings defined in this
+report that are either required or both optional and supported by the
+implementation.  Null-environment returns a specifier for an
+environment that is empty except for the (syntactic) bindings for all
+syntactic keywords defined in this report that are either required or
+both optional and supported by the implementation.
 
-Other values of version can be used to specify environments matching
-past revisions of this report, but their support is not required. An
-implementation will signal an error if version is neither 5 nor another
-value supported by the implementation.
-
-The effect of assigning (through the use of eval) a variable bound in a
-scheme-report-environment (for example car) is unspecified. Thus the
-environments specified by scheme-report-environment may be immutable.
+The environments specified by scheme-report-environment and 
+null-environment are immutable.
 
 <procedure>(interaction-environment)</procedure><br>
 

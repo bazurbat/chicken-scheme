@@ -27,9 +27,8 @@
 
 (declare
   (unit eval)
-  (uses expand)
-  (hide ##sys#r4rs-environment ##sys#r5rs-environment 
-	##sys#interaction-environment pds pdss pxss d) 
+  (uses expand modules)
+  (hide pds pdss pxss d) 
   (not inline ##sys#repl-read-hook ##sys#repl-print-hook 
        ##sys#read-prompt-hook ##sys#alias-global-hook ##sys#user-read-hook
        ##sys#syntax-error-hook))
@@ -165,9 +164,6 @@
 
 ;;; Compile lambda to closure:
 
-(define ##sys#eval-environment #f)
-(define ##sys#environment-is-mutable #f)
-
 (define (##sys#eval-decorator p ll h cntr)
   (##sys#decorate-lambda
    p 
@@ -182,7 +178,6 @@
      p) ) )
 
 (define ##sys#unbound-in-eval #f)
-(define ##sys#unsafe-eval #f)
 (define ##sys#eval-debug-level (make-parameter 1))
 
 (define ##sys#compile-to-closure
@@ -191,7 +186,7 @@
 	[with-input-from-file with-input-from-file]
 	[unbound (##sys#slot '##sys#arbitrary-unbound-symbol 0)]
 	[display display] )
-    (lambda (exp env se #!optional cntr)
+    (lambda (exp env se #!optional cntr evalenv static)
 
       (define (find-id id se)		; ignores macro bindings
 	(cond ((null? se) #f)
@@ -242,27 +237,19 @@
 	       (receive (i j) (lookup x e se)
 		 (cond ((not i)
 			(let ((var (if (not (assq x se))
-				       (##sys#alias-global-hook j #f cntr)
+				       (and (not static)
+					    (##sys#alias-global-hook j #f cntr))
 				       (or (##sys#get j '##core#primitive) j))))
-			  (if ##sys#eval-environment
-			      (let ([loc (##sys#hash-table-location ##sys#eval-environment var #t)])
-				(unless loc
-				  (##sys#syntax-error-hook "reference to undefined identifier" var))
-				(if ##sys#unsafe-eval 
-				    (lambda v (##sys#slot loc 1))
-				    (lambda v 
-				      (let ([val (##sys#slot loc 1)])
-					(if (eq? unbound val)
-					    (##sys#error "unbound variable" var)
-					    val) ) ) ))
-			      (cond (##sys#unsafe-eval
-				     (lambda v (##core#inline "C_slot" var 0)))
-				    (else
-				     (when (and ##sys#unbound-in-eval
-						(not (##sys#symbol-has-toplevel-binding? var)))
-				       (set! ##sys#unbound-in-eval
-					 (cons (cons var cntr) ##sys#unbound-in-eval)) )
-				     (lambda v (##core#inline "C_retrieve" var)))))))
+			  (when (and ##sys#unbound-in-eval
+				     (or (not var)
+					 (not (##sys#symbol-has-toplevel-binding? var))))
+			    (set! ##sys#unbound-in-eval
+			      (cons (cons var cntr) ##sys#unbound-in-eval)) )
+			  (cond ((not var)
+				 (lambda (v)
+				   (##sys#error "unbound variable" x)))
+				(else
+				 (lambda v (##core#inline "C_retrieve" var))))))
                       (else
                        (case i
                          ((0) (lambda (v) 
@@ -368,18 +355,12 @@
 					   (##sys#notice "assignment to imported value binding" var)))
 				       (let ((var
 					      (if (not (assq x se))
-						  (##sys#alias-global-hook j #t cntr)
+						  (and (not static)
+						       (##sys#alias-global-hook j #t cntr))
 						  (or (##sys#get j '##core#primitive) j))))
-					 (if ##sys#eval-environment
-					     (let ([loc (##sys#hash-table-location
-							 ##sys#eval-environment 
-							 var
-							 ##sys#environment-is-mutable) ] )
-					       (unless loc
-						 (##sys#error "assignment to undefined identifier" var))
-					       (if (##sys#slot loc 2)
-						   (lambda (v) (##sys#setslot loc 1 (##core#app val v)))
-						   (lambda v (##sys#error "assignment to immutable variable" var)) ) )
+					 (if (not var) ; static
+					     (lambda (v)
+					       (##sys#error 'eval "environment is not mutable" evalenv var))
 					     (lambda (v)
 					       (##sys#setslot var 0 (##core#app val v))) ) ) ]
 				      [(zero? i) (lambda (v) (##sys#setslot (##sys#slot v 0) j (##core#app val v)))]
@@ -397,9 +378,7 @@
 				 (se2 (##sys#extend-se se vars aliases))
 				 [body (##sys#compile-to-closure
 					(##sys#canonicalize-body (cddr x) se2 #f)
-					e2
-					se2
-					cntr) ] )
+					e2 se2 cntr evalenv static) ] )
 			    (case n
 			      [(1) (let ([val (compile (cadar bindings) e (car vars) tf cntr se)])
 				     (lambda (v)
@@ -472,9 +451,7 @@
 				      (body 
 				       (##sys#compile-to-closure
 					(##sys#canonicalize-body body se2 #f)
-					e2
-					se2
-					(or h cntr) ) ) )
+					e2 se2 (or h cntr) evalenv static) ) )
 				 (case argc
 				   [(0) (if rest
 					    (lambda (v)
@@ -585,6 +562,8 @@
 			  (let* ((var (cadr x))
 				 (body (caddr x))
 				 (name (rename var se)))
+			    (when (and static (not (assq var se)))
+			      (##sys#error 'eval "environment is not mutable" evalenv var))
 			    (##sys#register-syntax-export 
 			     name (##sys#current-module)
 			     body)	; not really necessary, it only shouldn't be #f
@@ -819,7 +798,7 @@
 	  ((##sys#compile-to-closure
 	    form
 	    '() 
-	    (##sys#current-meta-environment))
+	    (##sys#current-meta-environment)) ;XXX evalenv? static?
 	   '() ) )
 	(lambda ()
 	  (##sys#active-eval-environment aee)
@@ -829,18 +808,12 @@
 
 (define ##sys#eval-handler 
   (make-parameter
-   (lambda (x . env)
-     (let ([mut ##sys#environment-is-mutable]
-	   [e #f] )
-       (when (pair? env)
-	 (let ([env (car env)])
-	   (when env
-	     (##sys#check-structure env 'environment)
-	     (set! e (##sys#slot env 1)) 
-	     (set! mut (##sys#slot env 2)) ) ) )
-       ((fluid-let ((##sys#environment-is-mutable mut)
-		    (##sys#eval-environment e) )
-	  (##sys#compile-to-closure x '() (##sys#current-environment)) )
+   (lambda (x #!optional env)
+     (let ((se (##sys#current-environment)))
+       (when env
+	 (##sys#check-structure env 'environment 'eval)
+	 (set! se (or (##sys#slot env 2) se)))
+       ((##sys#compile-to-closure x '() se #f env (and env (##sys#slot env 3)))
 	'() ) ) ) ) )
 
 (define eval-handler ##sys#eval-handler)
@@ -1367,116 +1340,41 @@
 
 ;;; Environments:
 
-(define ##sys#r4rs-environment (make-vector environment-table-size '()))
-(define ##sys#r5rs-environment #f)
-(define ##sys#interaction-environment (##sys#make-structure 'environment #f #t))
+(define interaction-environment
+  (let ((e (##sys#make-structure 'environment 'interaction-environment #f #f)))
+    (lambda () e)))
 
-(define (##sys#environment? obj)
-  (and (##sys#structure? obj 'environment) (fx= 3 (##sys#size obj))) )
-
-(define ##sys#copy-env-table
-  (lambda (e mff mf . args)
-    (let ([syms (and (pair? args) (car args))])
-      (let* ([s (##sys#size e)]
-             [e2 (##sys#make-vector s '())] )
-       (do ([i 0 (fx+ i 1)])
-           ((fx>= i s) e2)
-         (##sys#setslot 
-          e2 i
-          (let copy ([b (##sys#slot e i)])
-            (if (null? b)
-                '()
-                (let ([bi (##sys#slot b 0)])
-                  (let ([sym (##sys#slot bi 0)])
-                    (if (or (not syms) (memq sym syms))
-                      (cons (vector
-                              sym
-                              (##sys#slot bi 1)
-                              (if mff mf (##sys#slot bi 2)))
-                            (copy (##sys#slot b 1)))
-                      (copy (##sys#slot b 1)) ) ) ) ) ) ) ) ) ) ) )
-
-(define ##sys#environment-symbols
-  (lambda (env . args)
-    (##sys#check-structure env 'environment)
-    (let ([pred (and (pair? args) (car args))])
-      (let ([envtbl (##sys#slot env 1)])
-        (if envtbl
-            ;then "real" environment
-          (let ([envtblsiz (vector-length envtbl)])
-            (do ([i 0 (fx+ i 1)]
-                 [syms
-                   '()
-                   (let loop ([bucket (vector-ref envtbl i)] [syms syms])
-                     (if (null? bucket)
-                       syms
-                       (let ([sym (vector-ref (car bucket) 0)])
-                         (if (or (not pred) (pred sym))
-                           (loop (cdr bucket) (cons sym syms))
-                           (loop (cdr bucket) syms) ) ) ) )])
-	        ((fx>= i envtblsiz) syms) ) )
-	    ;else interaction-environment
-	  (let ([syms '()])
-	    (##sys#walk-namespace
-	      (lambda (sym)
-	        (when (or (not pred) (pred sym))
-	          (set! syms (cons sym syms)) ) ) )
-	    syms ) ) ) ) ) )
-
-(define (interaction-environment) ##sys#interaction-environment)
+(define-record-printer (environment e p)
+  (##sys#print "#<environment " #f p)
+  (##sys#print (##sys#slot e 1) #f p)
+  (##sys#write-char-0 #\> p))
 
 (define scheme-report-environment
-  (lambda (n . mutable)
-    (##sys#check-exact n 'scheme-report-environment)
-    (let ([mf (and (pair? mutable) (car mutable))])
+  (let ((r4 (module-environment 'r4rs 'scheme-report-environment/4))
+	(r5 (module-environment 'scheme 'scheme-report-environment/5)))
+    (lambda (n)
+      (##sys#check-exact n 'scheme-report-environment)
       (case n
-	[(4) (##sys#make-structure 'environment (##sys#copy-env-table ##sys#r4rs-environment #t mf) mf)]
-	[(5) (##sys#make-structure 'environment (##sys#copy-env-table ##sys#r5rs-environment #t mf) mf)]
-	[else (##sys#error 'scheme-report-environment "no support for version" n)] ) ) ) )
+	((4) r4)
+	((5) r5)
+	(else 
+	 (##sys#error 
+	  'scheme-report-environment
+	  "unsupported scheme report environment version" n)) ) ) ) )
 
 (define null-environment
-  (let ([make-vector make-vector])
-    (lambda (n . mutable)
+  (let ((r4 (module-environment 'r4rs-null 'null-environment/4))
+	(r5 (module-environment 'r5rs-null 'null-environment/5)))
+    (lambda (n)
       (##sys#check-exact n 'null-environment)
-      (when (or (fx< n 4) (fx> n 5))
-	(##sys#error 'null-environment "no support for version" n) )
-      (##sys#make-structure
-       'environment
-       (make-vector environment-table-size '())
-       (and (pair? mutable) (car mutable)) ) ) ) )
-
-(let ()
-  (define (initb ht) 
-    (lambda (b)
-      (let ([loc (##sys#hash-table-location ht b #t)])
-        (##sys#setslot loc 1 (##sys#slot b 0)) ) ) )
-  (for-each 
-   (initb ##sys#r4rs-environment)
-   '(not boolean? eq? eqv? equal? pair? cons car cdr caar cadr cdar cddr caaar caadr cadar caddr cdaar
-     cdadr cddar cdddr caaaar caaadr caadar caaddr cadaar cadadr cadddr cdaaar cdaadr cdadar cdaddr
-     cddaar cddadr cdddar cddddr set-car! set-cdr! null? list? list length list-tail list-ref
-     append reverse memq memv member assq assv assoc symbol? symbol->string string->symbol
-     number? integer? exact? real? complex? inexact? rational? zero? odd? even? positive? negative?
-     max min + - * / = > < >= <= quotient remainder modulo gcd lcm abs floor ceiling truncate round
-     exact->inexact inexact->exact exp log expt sqrt sin cos tan asin acos atan number->string
-     string->number char? char=? char>? char<? char>=? char<=? char-ci=? char-ci<? char-ci>?
-     char-ci>=? char-ci<=? char-alphabetic? char-whitespace? char-numeric? char-upper-case?
-     char-lower-case? char-upcase char-downcase char->integer integer->char string? string=?
-     string>? string<? string>=? string<=? string-ci=? string-ci<? string-ci>? string-ci>=? string-ci<=?
-     make-string string-length string-ref string-set! string-append string-copy string->list 
-     list->string substring string-fill! vector? make-vector vector-ref vector-set! string vector
-     vector-length vector->list list->vector vector-fill! procedure? map for-each apply force 
-     call-with-current-continuation input-port? output-port? current-input-port current-output-port
-     call-with-input-file call-with-output-file open-input-file open-output-file close-input-port
-     close-output-port load read eof-object? read-char peek-char
-     write display write-char newline with-input-from-file with-output-to-file ##sys#call-with-values
-     ##sys#values ##sys#dynamic-wind ##sys#void
-     ##sys#list->vector ##sys#list ##sys#append ##sys#cons ##sys#make-promise) )
-  (set! ##sys#r5rs-environment (##sys#copy-env-table ##sys#r4rs-environment #t #t))
-  (for-each
-   (initb ##sys#r5rs-environment)
-   '(dynamic-wind values call-with-values eval scheme-report-environment null-environment interaction-environment) ) )
-
+      (case n
+	((4) r4)
+	((5) r5)
+	(else
+	 (##sys#error
+	  'null-environment 
+	  "unsupported null environment version" n) )))))
+            
 
 ;;; Find included file:
 

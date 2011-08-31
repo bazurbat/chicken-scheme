@@ -78,7 +78,7 @@
   (syntax-rules ()
     ((_ name expr value eq) (run-equal name (lambda () expr) value eq))
     ((_ name expr value) (run-equal name (lambda () expr) value equal?))
-    ((_ expr value) (run-equal (->string value) (lambda () expr) value equal?))))
+    ((_ expr value) (run-equal (->string 'expr) (lambda () expr) value equal?))))
 
 (define-syntax test-error
   (syntax-rules ()

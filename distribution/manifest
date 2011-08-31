@@ -100,6 +100,7 @@ build-version.c
 buildid
 buildtag.h
 tests/thread-list.scm
+tests/environment-tests.scm
 tests/gobble.scm
 tests/test-optional.scm
 tests/arithmetic-test.scm
@@ -231,8 +232,6 @@ ports.import.scm
 ports.import.c
 files.import.scm
 files.import.c
-scheme.import.scm
-scheme.import.c
 chicken.import.scm
 chicken.import.c
 foreign.import.scm

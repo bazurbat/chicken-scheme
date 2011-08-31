@@ -43,10 +43,10 @@ EOF
 
 (private csi 
   print-usage print-banner
-  run hexdump del 
+  run hexdump
   parse-option-string chop-separator lookup-script-file
   report describe dump hexdump bytevector-data get-config
-  deldups tty-input?
+  tty-input?
   history-list history-count history-add history-ref history-clear history-show)
 
 (declare
@@ -908,24 +908,6 @@ EOF
 
 ;;; Start interpreting:
 
-(define (del x lst tst)
-  (let loop ([lst lst])
-    (if (null? lst)
-	'()
-	(let ([y (car lst)])
-	  (if (tst x y)
-	      (cdr lst)
-	      (cons y (loop (cdr lst))) ) ) ) ) )
-
-(define (deldups lis . maybe-=)
-  (let ((elt= (optional maybe-= equal?)))
-    (let recur ((lis lis))
-      (if (null? lis) lis
-	  (let* ((x (car lis))
-		 (tail (cdr lis))
-		 (new-tail (recur (del x tail elt=))))
-	    (if (eq? tail new-tail) lis (cons x new-tail)))))))
-
 (define (member* keys set)
   (let loop ((set set))
     (and (pair? set)
@@ -1054,7 +1036,7 @@ EOF
       (for-each register-feature! (collect-options "-D"))
       (for-each unregister-feature! (collect-options "-no-feature"))
       (set! ##sys#include-pathnames 
-	(deldups
+	(##sys#nodups
 	 (append (map chop-separator (collect-options "-include-path"))
 		 (map chop-separator (collect-options "-I"))
 		 ##sys#include-pathnames

@@ -28,9 +28,8 @@ import the {{scheme}} module to do anything useful. To access any
 of the non-standard macros and procedures, import the {{chicken}}
 module.
 
-CHICKEN's module system has the following features and shortcomings:
+CHICKEN's module system has the following features:
 
-* Indirect exports for syntax definitions must be listed
 * Separation of compile/expansion-time and run-time code is provided, which allows cross compilation
 * Module-generating code is only created, when needed
 * Supports batch-compilation of separate compilation units
@@ -237,14 +236,36 @@ macros. Note that these definitions will ruthlessly pollute the
 toplevel namespace and so they should be used sparingly.
 
 
+=== Using modules as evaluation environments
+
+==== module-environment
+
+<procedure>(module-environment MODULENAME)</procedure>
+
+Locates the module with the name {{MODULENAME}} and returns an
+environment that can be passed as the second argument to {{eval}}. The
+evaluated expressions have only access to the bindings that are
+visible inside the module. Note that the environment is not mutable.
+
+If the module is not registered in the current process, {{module-environment}}
+will try to locate meta-information about the module by loading any
+existing import library with the name {{MODULENAME.import.[scm|so]}},
+if possible.
+
+In compiled modules, only exported bindings will be visible to interactively entered code. In interpreted modules all bindings are visible.
+
+
 === Predefined modules
 
 Import libraries for the following modules are initially
 available:
 
  [module] scheme
+ [module] r4rs
+ [module] r5rs
 
-Exports the standard R5RS bindings.
+Exports the definitions given in R4RS or R5RS. {{r5rs}} is a module alias
+for {{scheme}}.
 
  [module] chicken
 

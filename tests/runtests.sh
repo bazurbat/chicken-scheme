@@ -14,6 +14,19 @@ export LIBRARY_PATH=${TEST_DIR}/..:${LIBRARY_PATH}
 
 mkdir -p test-repository
 
+# copy files into test-repository (by hand to avoid calling `chicken-install'):
+
+for x in setup-api.so setup-api.import.so setup-download.so \
+      setup-download.import.so chicken.import.so lolevel.import.so \
+      srfi-1.import.so srfi-4.import.so data-structures.import.so \
+      ports.import.so files.import.so posix.import.so \
+      srfi-13.import.so srfi-69.import.so extras.import.so \
+      irregex.import.so srfi-14.import.so tcp.import.so \
+      foreign.import.so srfi-18.import.so \
+      utils.import.so csi.import.so irregex.import.so types.db; do
+  cp ../$x test-repository
+done
+
 CHICKEN_REPOSITORY=${TEST_DIR}/test-repository
 CHICKEN=../chicken
 CHICKEN_INSTALL=${TEST_DIR}/../chicken-install
@@ -148,6 +161,9 @@ fi
 
 echo "======================================== pretty-printer tests ..."
 $interpret -s pp-test.scm
+
+echo "======================================== evaluation environment tests ..."
+$interpret -s environment-tests.scm
 
 echo "======================================== syntax tests ..."
 $interpret -s syntax-tests.scm
