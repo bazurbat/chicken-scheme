@@ -756,6 +756,11 @@
 (features (#(procedure #:clean) features () (list symbol)))
 (file-exists? (#(procedure #:clean #:enforce) file-exists? (string) (or boolean string)))
 (directory-exists? (#(procedure #:clean #:enforce) directory-exists? (string) (or boolean string)))
+
+(finite? (#(procedure #:pure) finite? (*) boolean)
+	 ((fixnum) (let ((#(tmp) #(1))) '#t))
+	 ((*) (##core#inline "C_i_finitep" #(1))))
+
 (fixnum-bits fixnum)
 (fixnum-precision fixnum)
 
