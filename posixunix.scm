@@ -772,8 +772,8 @@ EOF
 (define (change-directory* fd)
   (##sys#check-exact fd 'change-directory*) 
   (unless (fx= 0 (##core#inline "C_fchdir" fd)) 
-    (posix-error #:file-error 'change-directory* "cannot change current directory" fd) ) 
-  fd)) 
+    (posix-error #:file-error 'change-directory* "cannot change current directory" fd) )
+  fd)
 
 
 ;;; Pipes:
