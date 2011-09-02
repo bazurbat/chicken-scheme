@@ -1094,10 +1094,11 @@
 ;;; Simplify type specifier
 ;
 ; - coalesces "forall" and renames type-variables
-; - also rename type-variables
+; - also removes unused typevars
 
 (define (simplify-type t)
-  (let ((typeenv '()))			; ((VAR1 . NEWVAR1) ...)
+  (let ((typeenv '())			; ((VAR1 . NEWVAR1) ...)
+	(used '()))
     (define (subst x)
       (cond ((symbol? x)
 	     (cond ((assq x typeenv) => cdr)
@@ -1191,11 +1192,19 @@
 			  '*
 			  (map simplify rtypes)))))
 		  (else t)))
-	       ((assq t typeenv) => cdr)
+	       ((assq t typeenv) =>
+		(lambda (e)
+		  (set! used (lset-adjoin eq? used t))
+		  (cdr e)))
 	       (else t)))))
     (let ((t2 (simplify t)))
       (when (pair? typeenv)
-	(set! t2 `(forall ,(map cdr typeenv) ,(subst t2))))
+	(set! t2 
+	  `(forall ,(filter-map
+		     (lambda (e)
+		       (and (memq (car e) used) (cdr e)))
+		     typeenv)
+		   ,(subst t2))))
       (dd "simplify: ~a -> ~a" t t2)
       t2)))
 
@@ -1717,7 +1726,6 @@
   ;; - renames type-variables
   (let ((ptype #f)			; (T . PT) | #f
 	(clean #f)
-	(usedvars '())
 	(typevars '()))
     (define (upto lst p)
       (let loop ((lst lst))
@@ -1757,9 +1765,7 @@
 	    ((eq? t 'any) '*)
 	    ((eq? t 'void) 'undefined)
 	    ((not (pair? t)) 
-	     (cond ((memq t typevars)
-		    (set! usedvars (cons t usedvars))
-		    t)
+	     (cond ((memq t typevars) t)
 		   (else #f)))
 	    ((eq? 'not (car t))
 	     (and (= 2 (length t))
@@ -1838,10 +1844,7 @@
 	   (lambda (type)
 	     (when (pair? typevars)
 	       (set! type
-		 `(forall ,(filter-map
-			    (lambda (v) (and (memq v usedvars) v))
-			    (delete-duplicates typevars eq?))
-			  ,type)))
+		 `(forall ,(delete-duplicates typevars eq?) ,type)))
 	     (let ((type2 (simplify-type type)))
 	       (values 
 		type2
