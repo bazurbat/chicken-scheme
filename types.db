@@ -2270,7 +2270,7 @@
 (f64vector (#(procedure #:clean #:enforce) f64vector (#!rest number) (struct f64vector)))
 (f64vector->blob (#(procedure #:clean #:enforce) f64vector->blob ((struct f32vector)) blob))
 (f64vector->blob/shared (#(procedure #:clean #:enforce) f64vector->blob/shared ((struct f64vector)) blob))
-(f64vector->list (#(procedure #:clean #:enforce) f64vector->list ((struct f64vector)) blob))
+(f64vector->list (#(procedure #:clean #:enforce) f64vector->list ((struct f64vector)) (list float)))
 
 (f64vector-length (#(procedure #:clean #:enforce) f64vector-length ((struct f64vector)) fixnum)
 		  (((struct f32vector)) (##core#inline "C_u_i_64vector_length" #(1))))
