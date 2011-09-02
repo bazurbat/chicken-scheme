@@ -34,6 +34,11 @@
 ;   all remaining arguments
 ; - in templates "#(SYMBOL)" binds X to a temporary gensym'd variable, further references
 ;   to "#(SYMBOL)" allow backreferences to this generated identifier
+; - "#(procedure PROPERTY ...)" may be used in place of "procedure", properties are:
+;     #:clean
+;     #:enforce
+;     #:predicate TYPE
+;     #:pure
 ; - "#:clean" means: will not invoke procedures that modify local variables and
 ;   will not modify list or vector data held locally (note that I/O may invoke
 ;   port handlers)
