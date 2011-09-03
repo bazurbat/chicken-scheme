@@ -126,16 +126,17 @@ or {{:}} should follow the syntax given below:
 
 <table>
 <tr><th>COMPLEXTYPE</th><th>meaning</th></tr>
-<tr><td>{{(pair TYPE1 TYPE2)}</td><td>pair with given component types</td></tr>
-<tr><td>{{(list TYPE)}</td><td>proper list with given element type</td></tr>
-<tr><td>{{(vector TYPE)}</td><td>vector with given element types</td></tr>
+<tr><td>{{(pair TYPE1 TYPE2)}}</td><td>pair with given component types</td></tr>
+<tr><td>{{(list TYPE)}}</td><td>proper list with given element type</td></tr>
+<tr><td>{{(vector TYPE)}}</td><td>vector with given element types</td></tr>
+</table>
 
 <table>  
 <tr><th>RESULTS</th><th>meaning</th></tr>
 <tr><td>{{*}}</td><td>any number of unspecific results</td></tr>
 <tr><td>{{(RESULTTYPE ...)}}</td><td>specific number of results with given types</td></tr>
 </table>
-  
+
 <table>  
 <tr><th>RESULTTYPE</th><th>meaning</th></tr>
 <tr><td>{{undefined}}</td><td>a single undefined result</td></tr>
@@ -160,7 +161,7 @@ these names directly in type-specifications - {{TYPE}} corresponds to
 <tr><td>{{f32vector}}</td><td>SRFI-4 byte vector</td></tr>
 <tr><td>{{f64vector}}</td><td>SRFI-4 byte vector</td></tr>
 <tr><td>{{thread}}</td><td>SRFI-18 thread</td></tr>
-<tr><td>{{queue}}</td><td></td>see "data-structures" unit</tr>
+<tr><td>{{queue}}</td><td>see "data-structures" unit</td></tr>
 <tr><td>{{environment}}</td><td>evaluation environment</td></tr>
 <tr><td>{{time}}</td><td>SRFI-18 "time" object</td></tr>
 <tr><td>{{continuation}}</td><td>continuation object</td></tr>
