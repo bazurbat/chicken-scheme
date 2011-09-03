@@ -1303,7 +1303,7 @@
 			`(##core#begin
 			  ,@(map (lambda (n)
 				   (let ((rid (srfi-id n)))
-				     (let-values (((exp f2) (doit rid rid)))
+				     (let-values (((exp f2 _) (doit rid rid)))
 				       (set! f (or f f2))
 				       exp)))
 				 (cdr id)))))
