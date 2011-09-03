@@ -2257,7 +2257,7 @@
 (f32vector (#(procedure #:clean #:enforce) f32vector (#!rest number) (struct f32vector)))
 (f32vector->blob (#(procedure #:clean #:enforce) f32vector->blob ((struct f32vector)) blob))
 (f32vector->blob/shared (#(procedure #:clean #:enforce) f32vector->blob/shared ((struct f32vector)) blob))
-(f32vector->list (#(procedure #:clean #:enforce) f32vector->list ((struct f32vector)) list))
+(f32vector->list (#(procedure #:clean #:enforce) f32vector->list ((struct f32vector)) (list float)))
 
 (f32vector-length (#(procedure #:clean #:enforce) f32vector-length ((struct f32vector)) fixnum)
 		  (((struct f32vector)) (##core#inline "C_u_i_32vector_length" #(1))))
