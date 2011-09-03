@@ -107,6 +107,7 @@
   (define *keep-going* #f)
   (define *override* '())
   (define *reinstall* #f)
+  (define *show-foreign-depends* #f)
 
   (define (repo-path)
     (if (and *cross-chicken* (not *host-extension*))
@@ -390,6 +391,22 @@
 	       (cadr a)))
 	    ((pair? egg) (cdr egg))
 	    (else #f))))
+
+  (define (show-foreign-depends eggs)
+    (print "fetching meta information...")
+    (retrieve eggs)
+    (print "Foreign dependencies as reported in .meta:")
+    (for-each
+     (lambda (egg)
+       (and-let* ((meta-file (make-pathname (cadr egg) (car egg) "meta"))
+                  (m (and (file-exists? meta-file) (with-input-from-file meta-file read)))
+                  (ds (deps 'foreign-depends m)))
+         (unless (null? ds)
+           (print (car egg) ": ")
+           (for-each (cut print "\t" <>) (deps 'foreign-depends m)))))
+     *eggs+dirs+vers*)
+    (cleanup)
+    (exit 0))
 
   (define (retrieve eggs)
     (print "retrieving ...")
@@ -747,6 +764,7 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
        -scan DIRECTORY          scan local directory for highest available egg versions
        -override FILENAME       override versions for installed eggs with information from file
        -csi FILENAME            use given pathname for invocations of "csi"
+       -show-foreign-depends    display a list of foreign dependencies for the given egg(s)
 EOF
 );|
     (exit code))
@@ -816,11 +834,15 @@ EOF
 			  (unless *default-location*
 			    (error
 			     "no default location defined - please use `-location' option")))
-			(if listeggs
-			    (display
-			     (list-available-extensions
-			      *default-transport* *default-location*))
-			    (install (apply-mappings (reverse eggs))))))))
+                        (cond (listeggs
+                               (display
+                                (list-available-extensions
+                                 *default-transport* *default-location*)))
+                              (*show-foreign-depends*
+                               (show-foreign-depends eggs))
+                              (else
+                               (install (apply-mappings (reverse eggs)))))
+                        ))))
               (else
                (let ((arg (car args)))
                  (cond ((or (string=? arg "-help")
@@ -937,6 +959,9 @@ EOF
                         (unless (pair? (cdr args)) (usage 1))
                         (set! *password* (cadr args))
                         (loop (cddr args) eggs))
+                       ((string=? "-show-foreign-depends" arg)
+                        (set! *show-foreign-depends* #t)
+                        (loop (cdr args) eggs))
                        ((and (positive? (string-length arg))
                              (char=? #\- (string-ref arg 0)))
                         (if (> (string-length arg) 2)
