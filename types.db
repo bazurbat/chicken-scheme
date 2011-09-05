@@ -1121,8 +1121,15 @@
 (list->queue (#(procedure #:clean #:enforce) list->queue (list) (struct queue)))
 (list-of? (#(procedure #:clean #:enforce) list-of? ((procedure (*) *)) (procedure (list) boolean)))
 (make-queue (#(procedure #:pure) make-queue () (struct queue)))
-(merge (#(procedure #:enforce) merge (list list (procedure (* *) *)) list))
-(merge! (#(procedure #:enforce) merge! (list list (procedure (* *) *)) list))
+
+(merge 
+ (forall (e)
+	 (#(procedure #:enforce) merge ((list e) (list e) (procedure (e e) *)) (list e))))
+
+(merge!
+ (forall (e)
+	 (#(procedure #:enforce) merge! ((list e) (list e) (procedure (e e) *)) (list e))))
+
 (never? deprecated)
 (none? deprecated)
 (o (#(procedure #:clean #:enforce) o (#!rest (procedure (*) *)) (procedure (*) *)))
@@ -1147,12 +1154,22 @@
 (reverse-string-append (#(procedure #:clean #:enforce) reverse-string-append ((list string)) string))
 (shuffle deprecated)
 
-;; really should be
 ;;   (: sort (forall (e (s (or (vector e) (list e)))) (s (e e -> *) -> s)))
 ;; if we had contraints for "forall"
-(sort (#(procedure #:enforce) sort ((or list vector) (procedure (* *) *)) (or list vector)))
+(sort
+ (forall (e (s (or (vector e) (list e))))
+	 (#(procedure #:enforce) 
+	  sort
+	  (s (procedure (e e) *)) 
+	  s)))
 
-(sort! (#(procedure #:enforce) sort! ((or list vector) (procedure (* *) *)) (or list vector)))
+(sort!
+ (forall (e (s (or (vector e) (list e))))
+	 (#(procedure #:enforce) 
+	  sort
+	  (s (procedure (e e) *)) 
+	  s)))
+
 (sorted? (#(procedure #:enforce) sorted? ((or list vector) (procedure (* *) *)) boolean))
 (topological-sort (#(procedure #:enforce) topological-sort ((list list) (procedure (* *) *)) list))
 (string-chomp (#(procedure #:clean #:enforce) string-chomp (string #!optional string) string))

@@ -67,7 +67,7 @@
 ;       | (procedure [NAME] (VAL1 ... [#!optional VALOPT1 ...] [#!rest [VAL | values]]) . RESULTS)
 ;       | BASIC
 ;       | COMPLEX
-;       | (forall (VAR1 ...) VAL)
+;       | (forall (TVAR1 ...) VAL)
 ;       | deprecated
 ;       | (deprecated NAME)
 ;   BASIC = * | string | symbol | char | number | boolean | list | pair | 
@@ -77,6 +77,7 @@
 ;   COMPLEX = (pair VAL VAL) | (vector VAL) | (list VAL)
 ;   RESULTS = * 
 ;           | (VAL1 ...)
+;   TVAR = (VAR TYPE) | VAR
 ;
 ; global symbol properties:
 ;
@@ -385,7 +386,9 @@
 				  (and (pair? specs)
 				       (let* ((spec (car specs))
 					      (stype (first spec))
-					      (tenv2 (append (append-map type-typeenv stype) typeenv)))
+					      (tenv2 (append
+						      (append-map type-typeenv stype)
+						      typeenv)))
 					 (cond ((match-argument-types
 						 stype (cdr args) tenv2
 						 #t)
@@ -869,7 +872,13 @@
 	      ((forall) 
 	       (sprintf "~a (for all ~a)"
 		 (typename (third t))
-		 (string-intersperse (map symbol->string (second t)) " ")))
+		 (string-intersperse
+		  (map (lambda (tv)
+			 (if (symbol? tv)
+			     (symbol->string tv)
+			     (sprintf "~a being ~a" (first tv) (typename (second tv)))))
+		       (second t))
+		  " ")))
 	      ((not)
 	       (sprintf "NOT ~a" (typename (second t))))
 	      ((pair)
@@ -913,7 +922,7 @@
 	     (loop (cdr args1) (cdr args2) opt1 opt2))
 	    (else #f))))
   
-  (define (match-rest rtype args opt) ;XXX currently ignores `opt'
+  (define (match-rest rtype args opt)	;XXX currently ignores `opt'
     (let-values (((head tail) (break (cut eq? '#!rest <>) args)))
       (and (every			
 	    (lambda (t)
@@ -944,35 +953,53 @@
 	     (trail-restore trail0 typeenv)
 	     #f))))
 
+  (define (rawmatch1 t1 t2)
+    (fluid-let ((exact #f)
+		(all #f))
+      (match1 t1 t2)))
+
   (define (match1 t1 t2)
     ;; note: the order of determining the type is important
     ;;(dd "   match1: ~s <-> ~s" t1 t2)
     (cond ((eq? t1 t2))
+	  ;;XXX do we have to handle circularities?
 	  ((and (symbol? t1) (assq t1 typeenv)) => 
 	   (lambda (e) 
-	     (cond ((cdr e) (match1 (cdr e) t2))
+	     ;;XXX is "raw" matching for constraints correct?
+	     (cond ((second e)
+		    (and (match1 (second e) t2)
+			 (or (not (third e)) ; constraint
+			     (rawmatch1 (third e) t2))))
 		   ;; special case for two unbound typevars
 		   ((and (symbol? t2) (assq t2 typeenv)) =>
 		    (lambda (e2)
 		      ;;XXX probably not fully right, consider:
 		      ;;    (forall (a b) ((a a b) ->)) + (forall (c d) ((c d d) ->))
 		      ;;    or is this not a problem? I don't know right now...
-		      (or (not (cdr e2))
-			  (match1 t1 (cdr e2)))))
-		   (else
+		      (or (not (second e2))
+			  (and (match1 t1 (second e2))
+			       (or (not (third e2)) ; constraint
+				   (rawmatch1 t1 (third e2)))))))
+		   ((or (not (third e))
+			(rawmatch1 (third e) t2))
 		    (dd "   unify ~a = ~a" t1 t2)
 		    (set! trail (cons t1 trail))
-		    (set-cdr! e t2)
-		    #t))))
+		    (set-car! (cdr e) t2)
+		    #t)
+		   (else #f))))
 	  ((and (symbol? t2) (assq t2 typeenv)) => 
 	   (lambda (e) 
-	     (if (cdr e) 
-		 (match1 t1 (cdr e))
-		 (begin
-		   (dd "   unify ~a = ~a" t2 t1)
-		   (set! trail (cons t2 trail))
-		   (set-cdr! e t1)
-		   #t))))
+	     (cond ((second e)
+		    (and (match1 t1 (second e))
+			 (or (not (third e)) ; constraint
+			     (rawmatch1 t1 (third e)))))
+		   ((or (not (third e))
+			(rawmatch1 t1 (third e)))
+		    (dd "   unify ~a = ~a" t2 t1)
+		    (set! trail (cons t2 trail))
+		    (set-car! (cdr e) t1)
+		    #t)
+		   (else #f))))
 	  ((eq? t1 '*))
 	  ((and (pair? t1) (eq? 'not (car t1)))
 	   (fluid-let ((exact #f)
@@ -1052,7 +1079,7 @@
 		(match1 t1 (third t2))))
 	  ((and (pair? t1) (eq? 'list (car t1)))
 	   ;;XXX (list T) == (pair T (pair T ... (pair T null)))
-	   ;     should also work in exact mode
+	   ;;     should also work in exact mode
 	   (and (not exact) (not all)
 		(or (eq? 'null t2)
 		    (and (pair? t2)
@@ -1073,6 +1100,7 @@
 	(if all " (all)" "") 
 	t1 t2 m typeenv)
     m))
+
 
 (define (match-argument-types typelist atypes typeenv #!optional exact all)
   ;; this doesn't need optional: it is only used for predicate- and specialization
@@ -1098,6 +1126,7 @@
 
 (define (simplify-type t)
   (let ((typeenv '())			; ((VAR1 . NEWVAR1) ...)
+	(constraints '())		; ((VAR1 TYPE1) ...)
 	(used '()))
     (define (subst x)
       (cond ((symbol? x)
@@ -1119,9 +1148,20 @@
 	 (cond ((pair? t)
 		(case (car t)
 		  ((forall)
-		   (set! typeenv
-		     (append (map (lambda (v) (cons v (gensym v))) (second t)) typeenv))
-		   (simplify (third t)))
+		   (let ((typevars (second t)))
+		     (set! typeenv
+		       (append (map (lambda (v)
+				      (let ((v (if (symbol? v) v (first v))))
+					(cons v (gensym v))) )
+				    typevars)
+			       typeenv))
+		     (set! constraints 
+		       (append (filter-map 
+				(lambda (v)
+				  (and (pair? v) v))
+				typevars)
+			       constraints))
+		     (simplify (third t))))
 		  ((or)
 		   (let ((ts (map simplify (cdr t))))
 		     (cond ((= 1 (length ts)) (car ts))
@@ -1202,7 +1242,13 @@
 	(set! t2 
 	  `(forall ,(filter-map
 		     (lambda (e)
-		       (and (memq (car e) used) (cdr e)))
+		       (and (memq (car e) used)
+			    (let ((v (cdr e)))
+			      (cond ((assq (car e) constraints) =>
+				     (lambda (c)
+				       (list v (simplify (cadr c)))))
+				    (else v)))))
+				     
 		     typeenv)
 		   ,(subst t2))))
       (dd "simplify: ~a -> ~a" t t2)
@@ -1252,23 +1298,44 @@
   (or (type<=? t1 t2)
       (type<=? t2 t1)))
 
+
 (define (type<=? t1 t2)
-  (let ((typeenv '()))			; ((VAR1 . TYPE1) ...)
+  (let ((typeenv '())			; ((VAR1 . TYPE1) ...)
+	(constraints '()))		; ((VAR1 TYPE1) ...)
+
+    (define (extract-vars tv)
+      (set! typeenv
+	(append (map (lambda (v)
+		       (cons (if (symbol? v) v (first v)) #f))
+		     tv)
+		typeenv))
+      (set! constraints
+	(append (filter-map
+		 (lambda (v)
+		   (and (pair? v) v))
+		 tv)
+		constraints)))
+
     (cond ((eq? t1 t2))
+	  ;;XXX do we need to handle circularities in typevar-references?
 	  ((and (symbol? t1) (assq t1 typeenv)) =>
 	   (lambda (e)
 	     (if (cdr e)
 		 (type<=? (cdr e) t2)
 		 (begin
 		   (set-cdr! e t2)
-		   #t))))
+		   (cond ((assq t1 constraints) =>
+			  (lambda (c) (type<=? (second c) t2)))
+			 (else #t))))))
 	  ((and (symbol? t2) (assq t2 typeenv)) =>
 	   (lambda (e) 
 	     (if (cdr e)
 		 (type<=? t1 (cdr e))
 		 (begin
 		   (set-cdr! e t1)
-		   #t))))
+		   (cond ((assq t2 constraints) =>
+			  (lambda (c) (type<=? t1 (second c))))
+			 (else #t))))))
 	  ((memq t2 '(* undefined)))
 	  ((eq? 'pair t1) (type<=? '(pair * *) t2))
 	  ((memq t1 '(vector list)) (type<=? `(,t1 *) t2))
@@ -1276,10 +1343,10 @@
 		(pair? t2) 
 		(eq? (car t2) 'list)))
 	  ((and (pair? t1) (eq? 'forall (car t1)))
-	   (set! typeenv (append (map (cut cons <> #f) (second t1)) typeenv))
+	   (extract-vars (second t1))
 	   (type<=? (third t1) t2))
 	  ((and (pair? t2) (eq? 'forall (car t2)))
-	   (set! typeenv (append (map (cut cons <> #f) (second t2)) typeenv))
+	   (extract-vars (second t2))
 	   (type<=? t1 (third t2)))
 	  (else
 	   (case t2
@@ -1441,8 +1508,8 @@
 	   (loop1 (third t) done)) ; assumes typeenv has already been extracted
 	  ((assq t typeenv) =>
 	   (lambda (e)
-	     (let ((t2 (cdr e)))
-	       (if (memq t2 done)
+	     (let ((t2 (second e)))
+	       (if (and t2 (memq t2 done))
 		   (loop1 '* done)		; circularity
 		   (loop1 t2 (cons t done))))))
 	  (else (values (make-list n '*) #f #t n)))))
@@ -1450,7 +1517,7 @@
 (define (procedure-result-types t values-rest? args typeenv)
   (define (loop1 t)
     (cond (values-rest? args)
-	  ((assq t typeenv) => (lambda (e) (loop1 (cdr e))))
+	  ((assq t typeenv) => (lambda (e) (loop1 (second e))))
 	  ((and (pair? t) (eq? 'procedure (car t)))
 	   (call/cc
 	    (lambda (return)
@@ -1517,26 +1584,33 @@
 		  (when (pair? (cddr t))
 		    (for-each loop (cddr t))))))
 	  ((forall)
-	   (set! te (append (second t) te))
+	   (set! te (append (map (lambda (tv) 
+				   (if (symbol? tv)
+				       (list tv #f #f)
+				       (list (first tv) #f (second tv))))
+				 (second t))
+			    te))
 	   (loop (third t)))
 	  ((or and)
 	   (for-each loop (cdr t))))))
-    (map (cut cons <> #f) te)))
+    te))
 
 (define (trail-restore tr typeenv)
   (do ((tr2 trail (cdr tr2)))
       ((eq? tr2 tr))
     (let ((a (assq (car tr2) typeenv)))
-      (set-cdr! a #f))))
+      (set-car! (cdr a) #f))))
 
 (define (resolve t typeenv)
   (let resolve ((t t) (done '()))
-    (cond ((not t) '*)			; unbound type-variable
-	  ((assq t typeenv) => 
+    (cond ((assq t typeenv) => 
 	   (lambda (a)
-	     (let ((t2 (cdr a)))
-	       (if (memq t2 done)
-		   '*			; circular reference
+	     (let ((t2 (second a)))
+	       (if (or (not t2)
+		       (memq t2 done))	; circular reference
+		   (if (third a)
+		       (resolve (third a) (cons t done))
+		       '*)
 		   (resolve t2 (cons t done))))))
 	  ((not (pair? t)) 
 	   (if (memq t '(* fixnum eof char string symbol float number list vector pair
@@ -1612,21 +1686,9 @@
 				      "load-type-database: invalid procedure-type property"
 				      (car props) new)))))
 			      `(procedure ,@(cdr new)))
-			     (else 	;DEPRECATED
-			      (case (car new)
-				((procedure!)
-				 (mark-variable name '##compiler#enforce #t)
-				 `(procedure ,@(cdr new)))
-				((procedure!? procedure?!)
-				 (mark-variable name '##compiler#enforce #t)
-				 (mark-variable name '##compiler#predicate (cadr new))
-				 `(procedure ,@(cddr new)))
-				((procedure?)
-				 (mark-variable name '##compiler#predicate (cadr new))
-				 `(procedure ,@(cddr new)))
-				((forall)
-				 `(forall ,(cadr new) ,(adjust (caddr new))))
-				(else new))))
+			     ((eq? 'forall (car new))
+			      `(forall ,(second new) ,(adjust (third new))))
+			     (else new))
 		       new))))
 	   ;; validation is needed, even though .types-files can be considered
 	   ;; correct, because type variables have to be renamed:
@@ -1726,7 +1788,8 @@
   ;; - renames type-variables
   (let ((ptype #f)			; (T . PT) | #f
 	(clean #f)
-	(typevars '()))
+	(typevars '())
+	(constraints '()))
     (define (upto lst p)
       (let loop ((lst lst))
 	(cond ((eq? lst p) '())
@@ -1773,10 +1836,27 @@
 	    ((eq? 'forall (car t))
 	     (and (= 3 (length t))
 		  (list? (second t))
-		  (every symbol? (second t))
 		  (begin
-		    (set! typevars (append (second t) typevars))
-		    (validate (third t) rec))))
+		    (set! typevars
+		      (append (map (lambda (tv)
+				     (if (symbol? tv) tv (first tv)))
+				   (second t))
+			      typevars))
+		    (set! constraints
+		      (append (filter-map
+			       (lambda (tv)
+				 (and (pair? tv) tv))
+			       (second t))
+			      constraints))
+		    (and
+		     (every (lambda (tv)
+			      (or (symbol? tv)
+				  (and (list? tv)
+				       (= 2 (length tv))
+				       (symbol? (first tv))
+				       (validate (second tv)))))
+			    (second t))
+		     (validate (third t) rec)))))
 	    ((eq? 'or (car t)) 
 	     (and (list? t)
 		  (let ((ts (map validate (cdr t))))
@@ -1844,7 +1924,12 @@
 	   (lambda (type)
 	     (when (pair? typevars)
 	       (set! type
-		 `(forall ,(delete-duplicates typevars eq?) ,type)))
+		 `(forall
+		   ,(map (lambda (tv)
+			   (cond ((assq tv constraints) => identity)
+				 (else tv)))
+			 (delete-duplicates typevars eq?))
+		   ,type)))
 	     (let ((type2 (simplify-type type)))
 	       (values 
 		type2
