@@ -1019,7 +1019,9 @@
 (syntax-error (procedure syntax-error (* #!rest) noreturn))
 (system (#(procedure #:clean #:enforce) system (string) fixnum))
 (unregister-feature! (#(procedure #:clean #:enforce) unregister-feature! (#!rest symbol) undefined))
-(vector-resize (forall (a) (#(procedure #:clean #:enforce) vector-resize ((vector a) fixnum) (vector a))))
+(vector-resize
+ (forall (a) (#(procedure #:clean #:enforce) vector-resize ((vector a) fixnum #!optional *) 
+	      (vector a))))
 (void (#(procedure #:pure) void (#!rest) undefined))
 (##sys#void (#(procedure #:pure) void (#!rest) undefined))
 (warning (procedure warning (* #!rest) undefined))
