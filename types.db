@@ -2213,7 +2213,7 @@
 (raise (procedure raise (*) noreturn))
 (seconds->time (#(procedure #:clean #:enforce) seconds->time (number) (struct time)))
 (terminated-thread-exception? (#(procedure #:pure) terminated-thread-exception? (*) boolean))
-(thread-join! (#(procedure #:clean #:enforce) thread-join! ((struct thread) #!optional * *) *))
+(thread-join! (#(procedure #:clean #:enforce) thread-join! ((struct thread) #!optional * *) . *))
 
 (thread-name (#(procedure #:clean #:enforce) thread-name ((struct thread)) *)
 	     (((struct thread)) (##sys#slot #(1) '6)))
