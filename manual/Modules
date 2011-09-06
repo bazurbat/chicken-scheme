@@ -209,7 +209,8 @@ module-definitions using the {{(interface: INTERFACE)}} syntax.
 See the definition of {{module}} above for an explanation of
 {{EXPORT}} specifications.
 
-Interface names use a distinct global namespace.
+Interface names use a distinct global namespace. Interfaces defined
+inside modules are not visible outside of the module body.
 
 
 === import libraries

@@ -37,7 +37,7 @@ Warning: at toplevel:
   scrutiny-tests.scm:28: in procedure call to `+', expected argument #2 of type `number', but was given an argument of type `symbol'
 
 Warning: at toplevel:
-  assignment of value of type `fixnum' to toplevel variable `car' does not match declared type `(forall (a99) (procedure car ((pair a99 *)) a99))'
+  assignment of value of type `fixnum' to toplevel variable `car' does not match declared type `(forall (a100) (procedure car ((pair a100 *)) a100))'
 
 Warning: at toplevel:
   expected in `let' binding of `g8' a single result, but were given 2 results
@@ -64,13 +64,13 @@ Warning: at toplevel:
   scrutiny-tests.scm:89: in procedure call to `+', expected argument #1 of type `number', but was given an argument of type `string'
 
 Warning: in toplevel procedure `foo9':
-  scrutiny-tests.scm:97: in procedure call to `+', expected argument #1 of type `number', but was given an argument of type `string'
+  scrutiny-tests.scm:99: in procedure call to `+', expected argument #1 of type `number', but was given an argument of type `string'
 
 Note: in toplevel procedure `foo10':
   expression returns a result of type `string', but is declared to return `pair', which is not a subtype
 
 Warning: in toplevel procedure `foo10':
-  scrutiny-tests.scm:101: in procedure call to `string-append', expected argument #1 of type `string', but was given an argument of type `pair'
+  scrutiny-tests.scm:103: in procedure call to `string-append', expected argument #1 of type `string', but was given an argument of type `pair'
 
 Warning: in toplevel procedure `foo10':
   expression returns 2 values but is declared to have a single result
@@ -82,6 +82,6 @@ Warning: in toplevel procedure `foo10':
   expression returns zero values but is declared to have a single result of type `*'
 
 Warning: in toplevel procedure `foo10':
-  scrutiny-tests.scm:104: in procedure call to `*', expected argument #1 of type `number', but was given an argument of type `string'
+  scrutiny-tests.scm:106: in procedure call to `*', expected argument #1 of type `number', but was given an argument of type `string'
 
 Warning: redefinition of standard binding: car

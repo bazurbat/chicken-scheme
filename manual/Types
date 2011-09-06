@@ -76,6 +76,15 @@ be of the given types. This is equivalent to
 </enscript>
 
 
+===== define-type
+
+<syntax>(define-type NAME TYPE)</syntax>
+
+Defines a type-abbreviation {{NAME}} that can be used in place of
+{{TYPE}}.  Type-abbreviations defined inside a module are not visible
+outside of that module.
+
+
 ==== Type syntax
 
 Types declared with the {{type}} declaration (see [[Declarations]])

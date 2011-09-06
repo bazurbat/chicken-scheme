@@ -1829,7 +1829,7 @@
 	     '(or eof null fixnum char boolean))
 	    ((eq? t 'any) '*)
 	    ((eq? t 'void) 'undefined)
-	    ((##sys#get t '##compiler#type-abbreviation) => cdr)
+	    ((and (symbol? t) (##sys#get t '##compiler#type-abbreviation)))
 	    ((not (pair? t)) 
 	     (cond ((memq t typevars) t)
 		   (else #f)))

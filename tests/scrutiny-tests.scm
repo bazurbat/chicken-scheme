@@ -89,7 +89,9 @@
   (+ x 1))				; will warn about "x" being a string
 
 ;; declared procedure types are enforcing
-(: foo8 (string -> symbol))
+(define-type s2s (string -> symbol))
+
+(: foo8 s2s)
 (define (foo8 x) (string->symbol x))
 
 (define (foo9 x)

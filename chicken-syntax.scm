@@ -1115,7 +1115,7 @@
       (when (eq? '* name)
 	(syntax-error-hook
 	 'define-interface "`*' is not allowed as a name for an interface"))
-      `(,(r 'begin-for-syntax)
+      `(##core#elaborationtimeonly
 	(##sys#put/restore!
 	 (,%quote ,name)
 	 (,%quote ##core#interface)
@@ -1293,12 +1293,12 @@
 	   (let ((name (##sys#strip-syntax (cadr x)))
 		 (%quote (r 'quote))
 		 (t0 (##sys#strip-syntax (caddr x))))
-	     (let-values (((t pred pure) (##compiler#validate-type t0 #f)))
+	     (let-values (((t pred pure) (##compiler#validate-type t0 name)))
 	       (if t
-		   `(,(r 'begin-for-syntax)
+		   `(##core#elaborationtimeonly
 		     (##sys#put/restore!
 		      (,%quote ,name)
-		      (,%quote '##compiler#type-abbreviation)
+		      (,%quote ##compiler#type-abbreviation)
 		      (,%quote ,t)))
 		   (syntax-error-hook 'define-type "invalid type" name t0)))))))))
 
