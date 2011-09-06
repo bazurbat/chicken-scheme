@@ -89,6 +89,7 @@
 ;   ##compiler#enforce         ->  BOOL
 ;   ##compiler#special-result-type -> PROCEDURE
 ;   ##compiler#escape          ->  #f | 'yes | 'no
+;   ##compiler#type-abbreviation -> TYPESPEC
 ;
 ; specialization specifiers:
 ;
@@ -1786,6 +1787,7 @@
   ;; - simplifies result
   ;; - coalesces all "forall" forms into one (remove "forall" if typevar-set is empty)
   ;; - renames type-variables
+  ;; - replaces type-abbreviations
   (let ((ptype #f)			; (T . PT) | #f
 	(clean #f)
 	(typevars '())
@@ -1827,6 +1829,7 @@
 	     '(or eof null fixnum char boolean))
 	    ((eq? t 'any) '*)
 	    ((eq? t 'void) 'undefined)
+	    ((##sys#get t '##compiler#type-abbreviation) => cdr)
 	    ((not (pair? t)) 
 	     (cond ((memq t typevars) t)
 		   (else #f)))

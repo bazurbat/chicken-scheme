@@ -851,43 +851,45 @@
 							##sys#initial-macro-environment)
 						       (##sys#module-alias-environment
 							(##sys#module-alias-environment)))
-					    (let loop ((body (cdddr x)) (xs '()))
-					      (cond 
-					       ((null? body)
-						(handle-exceptions ex
-						    (begin
-						      ;; avoid backtrace
-						      (print-error-message ex (current-error-port))
-						      (exit 1))
-						  (##sys#finalize-module (##sys#current-module)))
-						(cond ((or all-import-libraries
-							   (assq name import-libraries) ) =>
-						       (lambda (il)
-							 (when enable-module-registration
-							   (emit-import-lib name il))
-							 (values
-							  (reverse xs)
-							  '((##core#undefined)))))
-						      ((not enable-module-registration)
-						       (values 
-							(reverse xs)
-							'((##core#undefined))))
-						      (else
-						       (values
-							(reverse xs)
-							(if standalone-executable
-							    '()
-							    (##sys#compiled-module-registration 
-							     (##sys#current-module)))))))
-					       (else
-						(loop 
-						 (cdr body)
-						 (cons (walk 
-							(car body)
-							e ;?
-							(##sys#current-environment)
-							#f #f h)
-						       xs))))))))
+					  (##sys#with-property-restore
+					   (lambda ()
+					     (let loop ((body (cdddr x)) (xs '()))
+					       (cond 
+						((null? body)
+						 (handle-exceptions ex
+						     (begin
+						       ;; avoid backtrace
+						       (print-error-message ex (current-error-port))
+						       (exit 1))
+						   (##sys#finalize-module (##sys#current-module)))
+						 (cond ((or all-import-libraries
+							    (assq name import-libraries) ) =>
+							    (lambda (il)
+							      (when enable-module-registration
+								(emit-import-lib name il))
+							      (values
+							       (reverse xs)
+							       '((##core#undefined)))))
+						       ((not enable-module-registration)
+							(values 
+							 (reverse xs)
+							 '((##core#undefined))))
+						       (else
+							(values
+							 (reverse xs)
+							 (if standalone-executable
+							     '()
+							     (##sys#compiled-module-registration 
+							      (##sys#current-module)))))))
+						(else
+						 (loop 
+						  (cdr body)
+						  (cons (walk 
+							 (car body)
+							 e ;?
+							 (##sys#current-environment)
+							 #f #f h)
+							xs))))))))))
 			    (let ((body
 				   (canonicalize-begin-body
 				    (append
@@ -898,7 +900,7 @@
 					(lambda (x)
 					  (walk 
 					   x 
-					   e 	;?
+					   e ;?
 					   (##sys#current-meta-environment) #f #f h) )
 					mreg))
 				     body))))
