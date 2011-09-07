@@ -1,19 +1,24 @@
 ;;;; setup.defaults - defaults for chicken-install -*- Scheme -*-
 
 
+;; version-number of the defaults file - checked by "chicken-install"
+;  when defaults are loaded
+
 (version 1)
 
 
 ;; list of servers in the order in which they will be processed
 ;
 ; (server (location URL) (transport TRANSPORT))
+;
+; URL may be an alias (see below) or a real URL
 
 (server
  (location "kitten-technologies")
  (transport http))
 
 (server
- (location "call-cc.org")
+ (location "call-cc")
  (transport http))
 
 
@@ -34,7 +39,7 @@
 ; (alias (NAME REALNAME) ...)
 
 (alias 
- ("call-cc.org" "http://code.call-cc.org/cgi-bin/henrietta.cgi")
+ ("call-cc" "http://code.call-cc.org/cgi-bin/henrietta.cgi")
  ("kitten-technologies" "http://chicken.kitten-technologies.co.uk/henrietta.cgi"))
 
 
@@ -45,3 +50,13 @@
 ; or:
 ;
 ; (override FILENAME)
+
+
+;; hack
+;
+; (hack EXPR)
+;
+;   EXPR should evaluate to a procedure of the type, where the 
+;   procedure is of type EGGNAME DEPENDENCIES -> DEPENDENCIES' and
+;   may modify the dependencies-list of an arbitrary egg. All
+;   hack procedures are invoked in the order given here

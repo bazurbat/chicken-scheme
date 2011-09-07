@@ -108,6 +108,7 @@
   (define *override* '())
   (define *reinstall* #f)
   (define *show-foreign-depends* #f)
+  (define *hacks* '())
 
   (define (repo-path)
     (if (and *cross-chicken* (not *host-extension*))
@@ -170,6 +171,8 @@
 		     (if (and (pair? (cdr x)) (string? (cadr x)))
 			 (read-file (cadr x))
 			 (cdr x))))
+		  ((hack)
+		   (set! *hacks* (append *hacks* (list (eval (cadr x))))))
 		  (else (broken x))))
 	      (read-file deff))))
       (pair? *default-sources*) ))
@@ -281,8 +284,11 @@
 	    dep)
 	   (values #f #f))))
 
-  (define (outdated-dependencies meta)
+  (define (outdated-dependencies egg meta)
     (let ((ds (meta-dependencies meta)))
+      (for-each
+       (lambda (h) (set! ds (h egg ds)))
+       *hacks*)
       (let loop ((deps ds) (missing '()) (upgrade '()))
         (if (null? deps)
             (values (reverse missing) (reverse upgrade))
@@ -435,7 +441,8 @@
 		      (print "checking platform for `" (car e+d+v) "' ...")
 		      (check-platform (car e+d+v) meta)
                       (print "checking dependencies for `" (car e+d+v) "' ...")
-                      (let-values (((missing upgrade) (outdated-dependencies meta)))
+                      (let-values (((missing upgrade) 
+				    (outdated-dependencies (car e+d+v) meta)))
 			(set! missing (apply-mappings missing)) ;XXX only missing - wrong?
 			(set! *dependencies*
 			  (cons
