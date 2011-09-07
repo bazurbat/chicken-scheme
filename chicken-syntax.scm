@@ -1109,23 +1109,25 @@
  'define-interface '()
  (##sys#er-transformer
   (lambda (x r c)
-    (##sys#check-syntax 'define-interface x '(_ symbol _))
+    (##sys#check-syntax 'define-interface x '(_ variable _))
     (let ((name (##sys#strip-syntax (cadr x)))
 	  (%quote (r 'quote)))
       (when (eq? '* name)
 	(syntax-error-hook
 	 'define-interface "`*' is not allowed as a name for an interface"))
-      `(,(r 'begin-for-syntax)
-	(##sys#register-interface
+      `(##core#elaborationtimeonly
+	(##sys#put/restore!
 	 (,%quote ,name)
-	 (,%quote ,(let ((exps (##sys#strip-syntax (caddr x))))
-		     (cond ((eq? '* exps) '*)
-			   ((symbol? exps) `(#:interface ,exps))
-			   ((list? exps) 
-			    (##sys#validate-exports exps 'define-interface))
-			   (else
-			    (syntax-error-hook
-			     'define-interface "invalid exports" (caddr x))))))))))))
+	 (,%quote ##core#interface)
+	 (,%quote
+	  ,(let ((exps (##sys#strip-syntax (caddr x))))
+	     (cond ((eq? '* exps) '*)
+		   ((symbol? exps) `(#:interface ,exps))
+		   ((list? exps) 
+		    (##sys#validate-exports exps 'define-interface))
+		   (else
+		    (syntax-error-hook
+		     'define-interface "invalid exports" (caddr x))))))))))))
 
 
 ;;; functor definition
@@ -1280,6 +1282,26 @@
 		    ,@(map (lambda (clause)
 			     (list (car clause) `(##core#begin ,@(cdr clause))))
 			   (cddr x))))))))
+
+(##sys#extend-macro-environment
+ 'define-type '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'define-type x '(_ variable _))
+    (cond ((memq #:csi ##sys#features) '(##core#undefined))
+	  (else
+	   (let ((name (##sys#strip-syntax (cadr x)))
+		 (%quote (r 'quote))
+		 (t0 (##sys#strip-syntax (caddr x))))
+	     (let-values (((t pred pure) (##compiler#validate-type t0 name)))
+	       (if t
+		   `(##core#elaborationtimeonly
+		     (##sys#put/restore!
+		      (,%quote ,name)
+		      (,%quote ##compiler#type-abbreviation)
+		      (,%quote ,t)))
+		   (syntax-error-hook 'define-type "invalid type" name t0)))))))))
+
 
 
 ;; capture current macro env

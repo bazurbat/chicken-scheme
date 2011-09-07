@@ -76,6 +76,15 @@ be of the given types. This is equivalent to
 </enscript>
 
 
+===== define-type
+
+<syntax>(define-type NAME TYPE)</syntax>
+
+Defines a type-abbreviation {{NAME}} that can be used in place of
+{{TYPE}}.  Type-abbreviations defined inside a module are not visible
+outside of that module.
+
+
 ==== Type syntax
 
 Types declared with the {{type}} declaration (see [[Declarations]])
@@ -99,6 +108,7 @@ or {{:}} should follow the syntax given below:
 <tr><td>{{(forall (TYPEVAR ...) VALUETYPE)}}</td><td>polymorphic type</td></tr>
 <tr><td>COMPLEXTYPE</td><td></td></tr>
 <tr><td>BASICTYPE</td><td></td></tr>
+<tr><td>TYPEVAR</td><td>{{VARIABLE}} or {{(VARIABLE TYPE)}}</td></tr>
 </table>
 
 <table>
@@ -126,16 +136,17 @@ or {{:}} should follow the syntax given below:
 
 <table>
 <tr><th>COMPLEXTYPE</th><th>meaning</th></tr>
-<tr><td>{{(pair TYPE1 TYPE2)}</td><td>pair with given component types</td></tr>
-<tr><td>{{(list TYPE)}</td><td>proper list with given element type</td></tr>
-<tr><td>{{(vector TYPE)}</td><td>vector with given element types</td></tr>
+<tr><td>{{(pair TYPE1 TYPE2)}}</td><td>pair with given component types</td></tr>
+<tr><td>{{(list TYPE)}}</td><td>proper list with given element type</td></tr>
+<tr><td>{{(vector TYPE)}}</td><td>vector with given element types</td></tr>
+</table>
 
 <table>  
 <tr><th>RESULTS</th><th>meaning</th></tr>
 <tr><td>{{*}}</td><td>any number of unspecific results</td></tr>
 <tr><td>{{(RESULTTYPE ...)}}</td><td>specific number of results with given types</td></tr>
 </table>
-  
+
 <table>  
 <tr><th>RESULTTYPE</th><th>meaning</th></tr>
 <tr><td>{{undefined}}</td><td>a single undefined result</td></tr>
@@ -144,6 +155,16 @@ or {{:}} should follow the syntax given below:
 </table>
 
 (*) Note: no type-variables are bound inside {{(not TYPE)}}.
+
+Note that type-variables in {{forall}} types may be given "constraint" types, i.e.
+
+  (: sort (forall (e (s (or (vector e) (list e))))
+            (s (e e -> *) -> s)))
+
+declares that {{sort}} is a procedure of two arguments, the first
+being a vector or list of an undetermined element type {{e}} and the
+second being a procedure that takes two arguments of the element type.
+The result of {{sort}} is of the same type as the first argument.
 
 Some types are internally represented as structure types, but you can also use
 these names directly in type-specifications - {{TYPE}} corresponds to
@@ -160,7 +181,7 @@ these names directly in type-specifications - {{TYPE}} corresponds to
 <tr><td>{{f32vector}}</td><td>SRFI-4 byte vector</td></tr>
 <tr><td>{{f64vector}}</td><td>SRFI-4 byte vector</td></tr>
 <tr><td>{{thread}}</td><td>SRFI-18 thread</td></tr>
-<tr><td>{{queue}}</td><td></td>see "data-structures" unit</tr>
+<tr><td>{{queue}}</td><td>see "data-structures" unit</td></tr>
 <tr><td>{{environment}}</td><td>evaluation environment</td></tr>
 <tr><td>{{time}}</td><td>SRFI-18 "time" object</td></tr>
 <tr><td>{{continuation}}</td><td>continuation object</td></tr>

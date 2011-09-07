@@ -1019,7 +1019,9 @@
 (syntax-error (procedure syntax-error (* #!rest) noreturn))
 (system (#(procedure #:clean #:enforce) system (string) fixnum))
 (unregister-feature! (#(procedure #:clean #:enforce) unregister-feature! (#!rest symbol) undefined))
-(vector-resize (forall (a) (#(procedure #:clean #:enforce) vector-resize ((vector a) fixnum) (vector a))))
+(vector-resize
+ (forall (a) (#(procedure #:clean #:enforce) vector-resize ((vector a) fixnum #!optional *) 
+	      (vector a))))
 (void (#(procedure #:pure) void (#!rest) undefined))
 (##sys#void (#(procedure #:pure) void (#!rest) undefined))
 (warning (procedure warning (* #!rest) undefined))
@@ -1121,8 +1123,15 @@
 (list->queue (#(procedure #:clean #:enforce) list->queue (list) (struct queue)))
 (list-of? (#(procedure #:clean #:enforce) list-of? ((procedure (*) *)) (procedure (list) boolean)))
 (make-queue (#(procedure #:pure) make-queue () (struct queue)))
-(merge (#(procedure #:enforce) merge (list list (procedure (* *) *)) list))
-(merge! (#(procedure #:enforce) merge! (list list (procedure (* *) *)) list))
+
+(merge 
+ (forall (e)
+	 (#(procedure #:enforce) merge ((list e) (list e) (procedure (e e) *)) (list e))))
+
+(merge!
+ (forall (e)
+	 (#(procedure #:enforce) merge! ((list e) (list e) (procedure (e e) *)) (list e))))
+
 (never? deprecated)
 (none? deprecated)
 (o (#(procedure #:clean #:enforce) o (#!rest (procedure (*) *)) (procedure (*) *)))
@@ -1147,12 +1156,22 @@
 (reverse-string-append (#(procedure #:clean #:enforce) reverse-string-append ((list string)) string))
 (shuffle deprecated)
 
-;; really should be
 ;;   (: sort (forall (e (s (or (vector e) (list e)))) (s (e e -> *) -> s)))
 ;; if we had contraints for "forall"
-(sort (#(procedure #:enforce) sort ((or list vector) (procedure (* *) *)) (or list vector)))
+(sort
+ (forall (e (s (or (vector e) (list e))))
+	 (#(procedure #:enforce) 
+	  sort
+	  (s (procedure (e e) *)) 
+	  s)))
 
-(sort! (#(procedure #:enforce) sort! ((or list vector) (procedure (* *) *)) (or list vector)))
+(sort!
+ (forall (e (s (or (vector e) (list e))))
+	 (#(procedure #:enforce) 
+	  sort
+	  (s (procedure (e e) *)) 
+	  s)))
+
 (sorted? (#(procedure #:enforce) sorted? ((or list vector) (procedure (* *) *)) boolean))
 (topological-sort (#(procedure #:enforce) topological-sort ((list list) (procedure (* *) *)) list))
 (string-chomp (#(procedure #:clean #:enforce) string-chomp (string #!optional string) string))
@@ -2196,7 +2215,7 @@
 (raise (procedure raise (*) noreturn))
 (seconds->time (#(procedure #:clean #:enforce) seconds->time (number) (struct time)))
 (terminated-thread-exception? (#(procedure #:pure) terminated-thread-exception? (*) boolean))
-(thread-join! (#(procedure #:clean #:enforce) thread-join! ((struct thread) #!optional * *) *))
+(thread-join! (#(procedure #:clean #:enforce) thread-join! ((struct thread) #!optional * *) . *))
 
 (thread-name (#(procedure #:clean #:enforce) thread-name ((struct thread)) *)
 	     (((struct thread)) (##sys#slot #(1) '6)))
@@ -2257,7 +2276,7 @@
 (f32vector (#(procedure #:clean #:enforce) f32vector (#!rest number) (struct f32vector)))
 (f32vector->blob (#(procedure #:clean #:enforce) f32vector->blob ((struct f32vector)) blob))
 (f32vector->blob/shared (#(procedure #:clean #:enforce) f32vector->blob/shared ((struct f32vector)) blob))
-(f32vector->list (#(procedure #:clean #:enforce) f32vector->list ((struct f32vector)) list))
+(f32vector->list (#(procedure #:clean #:enforce) f32vector->list ((struct f32vector)) (list float)))
 
 (f32vector-length (#(procedure #:clean #:enforce) f32vector-length ((struct f32vector)) fixnum)
 		  (((struct f32vector)) (##core#inline "C_u_i_32vector_length" #(1))))
@@ -2270,7 +2289,7 @@
 (f64vector (#(procedure #:clean #:enforce) f64vector (#!rest number) (struct f64vector)))
 (f64vector->blob (#(procedure #:clean #:enforce) f64vector->blob ((struct f32vector)) blob))
 (f64vector->blob/shared (#(procedure #:clean #:enforce) f64vector->blob/shared ((struct f64vector)) blob))
-(f64vector->list (#(procedure #:clean #:enforce) f64vector->list ((struct f64vector)) blob))
+(f64vector->list (#(procedure #:clean #:enforce) f64vector->list ((struct f64vector)) (list float)))
 
 (f64vector-length (#(procedure #:clean #:enforce) f64vector-length ((struct f64vector)) fixnum)
 		  (((struct f32vector)) (##core#inline "C_u_i_64vector_length" #(1))))
@@ -2463,12 +2482,12 @@
 (tcp-abandon-port (#(procedure #:clean #:enforce) tcp-abandon-port (port) undefined))
 (tcp-accept (#(procedure #:clean #:enforce) tcp-accept ((struct tcp-listener)) port port))
 (tcp-accept-ready? (#(procedure #:clean #:enforce) tcp-accept-ready? ((struct tcp-listener)) boolean))
-(tcp-accept-timeout (#(procedure #:clean #:enforce) tcp-accept-timeout (#!optional (or boolean number)) number))
+(tcp-accept-timeout (#(procedure #:clean #:enforce) tcp-accept-timeout (#!optional (or boolean number)) (or boolean number)))
 (tcp-addresses (#(procedure #:clean #:enforce) tcp-addresses (port) string string))
 (tcp-buffer-size (#(procedure #:clean #:enforce) tcp-buffer-size (#!optional fixnum) fixnum))
 (tcp-close (#(procedure #:clean #:enforce) tcp-close ((struct tcp-listener)) undefined))
 (tcp-connect (#(procedure #:clean #:enforce) tcp-connect (string #!optional fixnum) port port))
-(tcp-connect-timeout (#(procedure #:clean #:enforce) tcp-connect-timeout (#!optional number) number))
+(tcp-connect-timeout (#(procedure #:clean #:enforce) tcp-connect-timeout (#!optional (or boolean number)) (or boolean number)))
 (tcp-listen (#(procedure #:clean #:enforce) tcp-listen (fixnum #!optional fixnum *) (struct tcp-listener)))
 
 (tcp-listener-fileno (#(procedure #:clean #:enforce) tcp-listener-fileno ((struct tcp-listener)) fixnum)
@@ -2479,8 +2498,8 @@
 (tcp-listener? (#(procedure #:clean #:predicate (struct tcp-listener)) tcp-listener? (*) boolean))
 
 (tcp-port-numbers (#(procedure #:clean #:enforce) tcp-port-numbers (port) fixnum fixnum))
-(tcp-read-timeout (#(procedure #:clean #:enforce) tcp-read-timeout (#!optional (or boolean number)) number))
-(tcp-write-timeout (#(procedure #:clean #:enforce) tcp-write-timeout (#!optional (or boolean number)) number))
+(tcp-read-timeout (#(procedure #:clean #:enforce) tcp-read-timeout (#!optional (or boolean number)) (or boolean number)))
+(tcp-write-timeout (#(procedure #:clean #:enforce) tcp-write-timeout (#!optional (or boolean number)) (or boolean number)))
 
 
 ;; utils

@@ -12,6 +12,7 @@ export DYLD_LIBRARY_PATH=${TEST_DIR}/..
 export LD_LIBRARY_PATH=${TEST_DIR}/..
 export LIBRARY_PATH=${TEST_DIR}/..:${LIBRARY_PATH}
 
+rm -fr test-repository
 mkdir -p test-repository
 
 # copy files into test-repository (by hand to avoid calling `chicken-install'):
@@ -33,8 +34,6 @@ CHICKEN_INSTALL=${TEST_DIR}/../chicken-install
 CHICKEN_UNINSTALL=${TEST_DIR}/../chicken-uninstall
 ASMFLAGS=
 FAST_OPTIONS="-O5 -d0 -b -disable-interrupts"
-
-$CHICKEN_INSTALL -init ${TEST_DIR}/test-repository
 
 TYPESDB=../types.db
 cp $TYPESDB test-repository/types.db

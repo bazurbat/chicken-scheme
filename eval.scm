@@ -623,27 +623,29 @@
 					    ##sys#initial-macro-environment)
 					   (##sys#module-alias-environment
 					    (##sys#module-alias-environment)))
-			      (let loop ((body (cdddr x)) (xs '()))
-				  (if (null? body)
-				      (let ((xs (reverse xs)))
-					(##sys#finalize-module (##sys#current-module))
-					(lambda (v)
-					  (let loop2 ((xs xs))
-					    (if (null? xs)
-						(##sys#void)
-						(let ((n (cdr xs)))
-						  (cond ((pair? n)
-							 ((car xs) v)
-							 (loop2 n))
-							(else
-							 ((car xs) v))))))))
-				      (loop 
-				       (cdr body)
-				       (cons (compile 
-					      (car body) 
-					      '() #f tf cntr 
-					      (##sys#current-environment))
-					     xs))))) ) )
+			      (##sys#with-property-restore
+			       (lambda ()
+				 (let loop ((body (cdddr x)) (xs '()))
+				   (if (null? body)
+				       (let ((xs (reverse xs)))
+					 (##sys#finalize-module (##sys#current-module))
+					 (lambda (v)
+					   (let loop2 ((xs xs))
+					     (if (null? xs)
+						 (##sys#void)
+						 (let ((n (cdr xs)))
+						   (cond ((pair? n)
+							  ((car xs) v)
+							  (loop2 n))
+							 (else
+							  ((car xs) v))))))))
+				       (loop 
+					(cdr body)
+					(cons (compile 
+					       (car body) 
+					       '() #f tf cntr 
+					       (##sys#current-environment))
+					      xs))))) ) )))
 
 			 [(##core#loop-lambda)
 			  (compile `(,(rename 'lambda se) ,@(cdr x)) e #f tf cntr se) ]
@@ -822,6 +824,33 @@
   (apply (##sys#eval-handler) 
 	 x
 	 env) )
+
+
+;;; Setting properties dynamically scroped
+
+(define-values (##sys#put/restore! ##sys#with-property-restore)
+  (let ((trail '())
+	(restoring #f))
+    (values
+     (lambda (sym prop val)
+       (when restoring
+	 (set! trail (cons (list sym prop (##sys#get sym prop)) trail)))
+       (##sys#put! sym prop val)
+       val)
+     (lambda (thunk)
+       (let ((t0 #f)
+	     (r0 restoring))
+	 (dynamic-wind
+	     (lambda ()
+	       (set! t0 trail)
+	       (set! restoring #t))
+	     thunk
+	     (lambda ()
+	       (do () ((eq? t0 trail))
+		 (apply ##sys#put! (car trail))
+		 (set! trail (cdr trail)))
+	       (set! restoring r0))))))))
+
 
 ;;; Split lambda-list into its parts:
 
@@ -1303,7 +1332,7 @@
 			`(##core#begin
 			  ,@(map (lambda (n)
 				   (let ((rid (srfi-id n)))
-				     (let-values (((exp f2) (doit rid rid)))
+				     (let-values (((exp f2 _) (doit rid rid)))
 				       (set! f (or f f2))
 				       exp)))
 				 (cdr id)))))
