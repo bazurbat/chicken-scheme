@@ -723,7 +723,7 @@
 						 var
 						 '##compiler#special-result-type))
 					   => (lambda (srt)
-						(dd "  hardcoded special case: ~a" var)
+						(dd "  hardcoded special result-type: ~a" var)
 						(set! r (srt n r))))))))
 			      subs
 			      (cons 
@@ -1913,7 +1913,7 @@
 		 (and (eq? 'quote (node-class arg1))
 		      (let ((val (first (node-parameters arg1))))
 			(and (symbol? val)
-			     ;;XXX a bit of a hack - we should remove the distinct
+			     ;;XXX a dirty hack - we should remove the distinct
 			     ;;    "pointer-vector" type.
 			     (if (eq? 'pointer-vector val)
 				 '(pointer-vector)
