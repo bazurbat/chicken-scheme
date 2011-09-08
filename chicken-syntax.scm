@@ -1178,7 +1178,6 @@
 		   `(##core#declare 
 		     (type (,name1 ,type1 ,@(cdddr x)))
 		     ,@(if pure `((pure ,name1)) '())
-		     (enforce-argument-types ,name1)
 		     ,@(if pred `((predicate (,name1 ,pred))) '()))))))))))
 
 (##sys#extend-macro-environment
