@@ -227,6 +227,66 @@ EOF
   (eq? 'directory (file-type file #f #f)))
 
 
+;;; Using file-descriptors:
+
+(define-foreign-variable _stdin_fileno int "STDIN_FILENO")
+(define-foreign-variable _stdout_fileno int "STDOUT_FILENO")
+(define-foreign-variable _stderr_fileno int "STDERR_FILENO")
+
+(define fileno/stdin _stdin_fileno)
+(define fileno/stdout _stdout_fileno)
+(define fileno/stderr _stderr_fileno)
+
+(let ()
+  (define (mode inp m loc)
+    (##sys#make-c-string
+     (cond [(pair? m)
+            (let ([m (car m)])
+              (case m
+                [(###append) (if (not inp) "a" (##sys#error "invalid mode for input file" m))]
+                [else (##sys#error "invalid mode argument" m)] ) ) ]
+           [inp "r"]
+           [else "w"] )
+     loc) )
+  (define (check loc fd inp r)
+    (if (##sys#null-pointer? r)
+        (posix-error #:file-error loc "cannot open file" fd)
+        (let ([port (##sys#make-port inp ##sys#stream-port-class "(fdport)" 'stream)])
+          (##core#inline "C_set_file_ptr" port r)
+          port) ) )
+  (set! open-input-file*
+    (lambda (fd . m)
+      (##sys#check-exact fd 'open-input-file*)
+      (check 'open-input-file* fd #t (##core#inline_allocate ("C_fdopen" 2) fd (mode #t m 'open-input-file*))) ) )
+  (set! open-output-file*
+    (lambda (fd . m)
+      (##sys#check-exact fd 'open-output-file*)
+      (check 'open-output-file* fd #f (##core#inline_allocate ("C_fdopen" 2) fd (mode #f m 'open-output-file*)) ) ) ) )
+
+(define port->fileno
+  (lambda (port)
+    (##sys#check-port port 'port->fileno)
+    (cond [(eq? 'socket (##sys#slot port 7)) (##sys#tcp-port->fileno port)]
+          [(not (zero? (##sys#peek-unsigned-integer port 0)))
+           (let ([fd (##core#inline "C_C_fileno" port)])
+             (when (fx< fd 0)
+               (posix-error #:file-error 'port->fileno "cannot access file-descriptor of port" port) )
+             fd) ]
+          [else (posix-error #:type-error 'port->fileno "port has no attached file" port)] ) ) )
+
+(define duplicate-fileno
+  (lambda (old . new)
+    (##sys#check-exact old duplicate-fileno)
+    (let ([fd (if (null? new)
+                  (##core#inline "C_dup" old)
+                  (let ([n (car new)])
+                    (##sys#check-exact n 'duplicate-fileno)
+                    (##core#inline "C_dup2" old n) ) ) ] )
+      (when (fx< fd 0)
+        (posix-error #:file-error 'duplicate-fileno "cannot duplicate file-descriptor" old) )
+      fd) ) )
+
+
 ;;; Set or get current directory:
 
 (define (current-directory #!optional dir)
