@@ -157,8 +157,6 @@ static C_TLS struct stat C_statbuf;
 #define open_text_output_pipe(a, n, name)    open_binary_output_pipe(a, n, name)
 #define close_pipe(p)                        C_fix(pclose(C_port_file(p)))
 
-#define C_set_file_ptr(port, ptr)  (C_set_block_item(port, 0, (C_block_item(ptr, 0))), C_SCHEME_UNDEFINED)
-
 #define C_fork              fork
 #define C_waitpid(id, o)    C_fix(waitpid(C_unfix(id), &C_wait_status, C_unfix(o)))
 #define C_getppid           getppid
@@ -191,10 +189,6 @@ static C_TLS struct stat C_statbuf;
 #define C_truncate(f, n)    C_fix(truncate((char *)C_data_pointer(f), C_num_to_int(n)))
 #define C_ftruncate(f, n)   C_fix(ftruncate(C_unfix(f), C_num_to_int(n)))
 #define C_uname             C_fix(uname(&C_utsname))
-#define C_fdopen(a, n, fd, m) C_mpointer(a, fdopen(C_unfix(fd), C_c_string(m)))
-#define C_C_fileno(p)       C_fix(fileno(C_port_file(p)))
-#define C_dup(x)            C_fix(dup(C_unfix(x)))
-#define C_dup2(x, y)        C_fix(dup2(C_unfix(x), C_unfix(y)))
 #define C_alarm             alarm
 #define C_setvbuf(p, m, s)  C_fix(setvbuf(C_port_file(p), NULL, C_unfix(m), C_unfix(s)))
 #define C_test_access(fn, m)     C_fix(access((char *)C_data_pointer(fn), C_unfix(m)))

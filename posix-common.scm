@@ -53,6 +53,15 @@ static C_TLS struct stat C_statbuf;
 #define C_strftime(v, f) \
         (strftime(C_time_string, sizeof(C_time_string), C_c_string(f), C_tm_set(v)) ? C_time_string : NULL)
 
+#define C_C_fileno(p)	    C_fix(fileno(C_port_file(p)))
+
+#define C_fdopen(a, n, fd, m) C_mpointer(a, fdopen(C_unfix(fd), C_c_string(m)))
+#define C_C_fileno(p)       C_fix(fileno(C_port_file(p)))
+#define C_dup(x)            C_fix(dup(C_unfix(x)))
+#define C_dup2(x, y)        C_fix(dup2(C_unfix(x), C_unfix(y)))
+
+#define C_set_file_ptr(port, ptr)  (C_set_block_item(port, 0, (C_block_item(ptr, 0))), C_SCHEME_UNDEFINED)
+
 EOF
 ))
 
