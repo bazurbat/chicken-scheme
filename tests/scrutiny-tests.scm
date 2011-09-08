@@ -88,16 +88,6 @@
 (when (foo7 x)
   (+ x 1))				; will warn about "x" being a string
 
-;; declared procedure types are enforcing
-(define-type s2s (string -> symbol))
-
-(: foo8 s2s)
-(define (foo8 x) (string->symbol x))
-
-(define (foo9 x)
-  (foo8 x)
-  (+ x 1))				; foo8 enforces x
-
 ;; trigger warnings for incompatible types in "the" forms
 (define (foo10 x)
   (string-append (the pair (substring x 0 10))) ; 1
