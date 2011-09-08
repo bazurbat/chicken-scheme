@@ -31,7 +31,7 @@
 	noreturn-type? rest-type procedure-name d-depth
 	noreturn-procedure-type? trail trail-restore 
 	typename multiples procedure-arguments procedure-results
-	smash-component-types!
+	smash-component-types! generate-type-checks!
 	compatible-types? type<=? match-types resolve match-argument-types))
 
 
@@ -560,6 +560,16 @@
 					 (if rest (alist-cons rest 'list e2) e2)
 					 (add-loc dest loc)
 					 #f #t (list initial-tag) #f)))
+			   #;(when (and specialize
+				      dest
+				      (variable-mark dest '##compiler#declared-type)
+				      (not unsafe))
+			     (debugging 'x "checks argument-types" dest) ;XXX
+			     ;; [1] this is subtle: we don't want argtype-checks to be 
+			     ;; generated for toplevel defs other than user-declared ones. 
+			     ;; But since the ##compiler#declared-type mark is set AFTER 
+			     ;; the lambda has been walked (see below, [2]), nothing is added.
+			     (generate-type-checks! n dest vars inits))
 			   (list
 			    (append
 			     '(procedure) 
@@ -2007,3 +2017,123 @@
 				 '(pointer-vector)
 				 `((struct ,val)))))))))
 	rtypes)))
+
+
+;;; generate type-checks for formal variables
+;
+;XXX not used in the moment
+
+(define (generate-type-checks! node loc vars inits)
+  ;; assumes type is validated
+  (define (test t v)
+    (case t
+      ((null) `(##core#inline "C_eqp" ,v '()))
+      ((eof) `(##core#inline "C_eofp" ,v))
+      ((string) `(if (##core#inline "C_blockp" ,v)
+		     (##core#inline "C_stringp" ,v)
+		     '#f))
+      ((float) `(if (##core#inline "C_blockp" ,v)
+		    (##core#inline "C_flonump" ,v)
+		    '#f))
+      ((char) `(##core#inline "C_charp" ,v))
+      ((fixnum) `(##core#inline "C_fixnump" ,v))
+      ((number) `(##core#inline "C_i_numberp" ,v))
+      ((list) `(##core#inline "C_i_listp" ,v))
+      ((symbol) `(if (##core#inline "C_blockp" ,v)
+		     (##core#inline "C_symbolp" ,v)
+		     '#f))
+      ((pair) `(##core#inline "C_i_pairp" ,v))
+      ((boolean) `(##core#inline "C_booleanp" ,v))
+      ((procedure) `(if (##core#inline "C_blockp" ,v)
+			(##core#inline "C_closurep" ,v)
+			'#f))
+      ((vector) `(##core#inline "C_i_vectorp" ,v))
+      ((pointer) `(if (##core#inline "C_blockp" ,v)
+		      (##core#inline "C_pointerp" ,v)
+		      '#f))
+      ((blob) `(if (##core#inline "C_blockp" ,v)
+		   (##core#inline "C_byteblockp" ,v)
+		   '#f))
+      ((pointer-vector) `(##core#inline "C_i_structurep" ,v 'pointer-vector))
+      ((port) `(if (##core#inline "C_blockp" ,v)
+		   (##core#inline "C_portp" ,v)
+		   '#f))
+      ((locative) `(if (##core#inline "C_blockp" ,v)
+		       (##core#inline "C_locativep" ,v)
+		       '#f))
+      (else
+       (case (car t)
+         ((forall) (test (third t) v))
+	 ((procedure) `(if (##core#inline "C_blockp" ,v)
+			   (##core#inline "C_closurep" ,v)
+			   '#f))
+	 ((or) 
+	  (cond ((null? (cdr t)) '(##core#undefined))
+		((null? (cddr t)) (test (cadr t) v))
+		(else 
+		 `(if ,(test (cadr t) v)
+		      '#t
+		      ,(test `(or ,@(cddr t)) v)))))
+	 ((and)
+	  (cond ((null? (cdr t)) '(##core#undefined))
+		((null? (cddr t)) (test (cadr t) v))
+		(else
+		 `(if ,(test (cadr t) v)
+		      ,(test `(and ,@(cddr t)) v)
+		      '#f))))
+	 ((pair)
+	  `(if (##core#inline "C_i_pairp" ,v)
+	       (if ,(test (second t) `(##sys#slot ,v 0))
+		   ,(test (third t) `(##sys#slot ,v 1))
+		   '#f)
+	       '#f))
+	 ((list)
+	  (let ((var (gensym)))
+	    `(if (##core#inline "C_i_listp" ,v)
+		 (##sys#check-list-items ;XXX missing
+		  ,v 
+		  (lambda (,var) 
+		    ,(test (second t) ,var)))
+		 '#f)))
+	 ((vector)
+	  (let ((var (gensym)))
+	    `(if (##core#inline "C_i_vectorp" ,v)
+		 (##sys#check-vector-items ;XXX missing
+		  ,v 
+		  (lambda (,var) 
+		    ,(test (second t) ,var)))
+		 '#f)))
+	 ((not)
+	  `(not ,(test (cadr t) v)))
+	 (else (bomb "generate-type-checks!: invalid type" t v))))))
+  (let ((body (first (node-subexpressions node))))
+    (let loop ((vars (reverse vars)) (inits (reverse inits)) (b body))
+      (cond ((null? inits)
+	     (if (eq? b body)
+		 body
+		 (copy-node!
+		  (make-node 
+		   (node-class node)	; lambda
+		   (node-parameters node)
+		   (list b))
+		  node)))
+	    ((eq? '* (car inits))
+	     (loop (cdr vars) (cdr inits) b))
+	    (else
+	     (loop
+	      (cdr vars) (cdr inits)
+	      (make-node
+	       'let (list (gensym))
+	       (list
+		(build-node-graph
+		 (let ((t (car inits))
+		       (v (car vars)))
+		   `(if ,(test t v)
+			(##core#undefined)
+			;;XXX better call non-CPS C routine
+			(##core#app 
+			 ##sys#error ',loc 
+			 ',(sprintf "expected argument `~a' to be of type `~s'"
+			     v t)
+			 ,v))))
+		b))))))))
