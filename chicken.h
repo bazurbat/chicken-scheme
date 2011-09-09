@@ -1597,7 +1597,6 @@ C_fctexport int C_in_stackp(C_word x) C_regparm;
 C_fctexport int C_fcall C_in_heapp(C_word x) C_regparm;
 C_fctexport int C_fcall C_in_fromspacep(C_word x) C_regparm;
 C_fctexport void C_fcall C_trace(C_char *name) C_regparm;
-C_fctexport C_word C_fcall C_emit_trace_info(C_word x, C_word y, C_word t) C_regparm;
 C_fctexport C_word C_fcall C_emit_trace_info2(char *raw, C_word x, C_word y, C_word t) C_regparm;
 C_fctexport C_word C_fcall C_hash_string(C_word str) C_regparm;
 C_fctexport C_word C_fcall C_hash_string_ci(C_word str) C_regparm;

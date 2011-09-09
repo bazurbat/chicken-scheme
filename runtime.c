@@ -3664,13 +3664,6 @@ C_regparm void C_fcall C_trace(C_char *name)
 }
 
 
-/* DEPRECATED: throw out at some stage: */
-C_regparm C_word C_fcall C_emit_trace_info(C_word x, C_word y, C_word t)
-{
-  return C_emit_trace_info2("<eval>", x, y, t);
-}
-
-
 C_regparm C_word C_fcall C_emit_trace_info2(char *raw, C_word x, C_word y, C_word t)
 {
   if(trace_buffer_top >= trace_buffer_limit) {

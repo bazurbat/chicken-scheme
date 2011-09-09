@@ -2093,7 +2093,7 @@
 		 (##sys#check-list-items ;XXX missing
 		  ,v 
 		  (lambda (,var) 
-		    ,(test (second t) ,var)))
+		    ,(test (second t) var)))
 		 '#f)))
 	 ((vector)
 	  (let ((var (gensym)))
@@ -2101,7 +2101,7 @@
 		 (##sys#check-vector-items ;XXX missing
 		  ,v 
 		  (lambda (,var) 
-		    ,(test (second t) ,var)))
+		    ,(test (second t) var)))
 		 '#f)))
 	 ((not)
 	  `(not ,(test (cadr t) v)))
