@@ -340,6 +340,8 @@
 (test-group "utils"
   (test-equal "h*llo world"
       (irregex-replace "[aeiou]" "hello world" "*"))
+  (test-equal "hello world"
+      (irregex-replace "[xyz]" "hello world" "*"))
   (test-equal "h*ll* w*rld"
       (irregex-replace/all "[aeiou]" "hello world" "*"))
   (test-equal '("bob@test.com" "fred@example.com")
