@@ -46,7 +46,7 @@
    mutate-procedure			; DEPRECATED
    mutate-procedure!
    null-pointer
-   null-pointer?
+   null-pointer?			; DEPRECATED
    number-of-bytes
    number-of-slots
    object->pointer
