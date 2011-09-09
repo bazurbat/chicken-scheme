@@ -418,8 +418,6 @@ EOF
    (foreign-value "C_NOT_A_PROPER_LIST_ERROR" int) 
    loc arg))
 
-(define ##sys#not-a-proper-list-error ##sys#error-not-a-proper-list) ;DEPRECATED
-
 (define (append . lsts)
   (if (eq? lsts '())
       lsts
