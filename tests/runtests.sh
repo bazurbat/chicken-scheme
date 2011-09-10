@@ -86,7 +86,7 @@ diff -bu scrutiny.expected scrutiny.out
 $compile scrutiny-tests-2.scm -scrutinize -analyze-only -ignore-repository -types $TYPESDB 2>scrutiny-2.out -verbose
 
 if test -n "$MSYSTEM"; then
-    dos2unix scrutiny.out
+    dos2unix scrutiny-2.out
 fi
 
 # this is sensitive to gensym-names, so make it optional

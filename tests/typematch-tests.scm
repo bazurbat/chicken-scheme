@@ -105,10 +105,9 @@
 (check #\x 1.2 char)
 (check #t 1.2 boolean)
 (check (+ 1 2) 'a number)
-(check '(1) 1.2 (pair fixnum null))
-(check '(a) 1.2 (pair symbol null))
-(check (list 1) '(1 . 2) list)
-(check '(1) 1.2 pair)
+(check '(1) 1.2 (list fixnum))
+(check '(a) 1.2 (list symbol))
+(check (list 1) '(1 . 2) (list fixnum))
 (check '(1 . 2) '() pair)
 (check + 1.2 procedure)
 (check '#(1) 1.2 vector)
@@ -121,17 +120,17 @@
 (check (##sys#make-structure 'promise) 1 (struct promise))
 (check '(1 . 2.3) '(a) (pair fixnum float))
 (check '#(a) 1 (vector symbol))
-(check '("ok") 1 (pair string null))
+(check '("ok") 1 (list string))
 
 (ms 123 1.2 fixnum)
 (ms "abc" 1.2 string)
 (ms 'abc 1.2 symbol)
 (ms #\x 1.2 char)
 (ms #t 1.2 boolean)
-(ms '(1) 1.2 pair)
+(ms '(1) 1.2 (list fixnum))
 (ms '(1 . 2) '() pair)
 (ms + 1.2 procedure)
-(ms '#(1) 1.2 vector)
+(ms '#(1) 1.2 (vector fixnum))
 (ms '() 1 null)
 (ms (void) 1.2 undefined)
 (ms (current-input-port) 1.2 port)
@@ -142,8 +141,8 @@
 (ms (##sys#make-structure 'promise) 1 (struct promise))
 (ms '(1 . 2.3) '(a) (pair fixnum float))
 (ms '#(a) 1 (vector symbol))
-(ms '(1) "a" (or pair symbol))
-(ms (list 1) 'a list)
+(ms '(1) "a" (or (list fixnum) symbol))
+(ms (list 1) 'a (list fixnum))
 (ms '() 'a (or null pair))
 
 (define n 1)
@@ -152,7 +151,7 @@
 (checkp boolean? #f boolean)
 (checkp pair? '(1 . 2) pair)
 (checkp null? '() null)
-(checkp list? '(1) list)
+(checkp list? '(1) (list fixnum))
 (checkp symbol? 'a symbol)
 (checkp number? (+ n) number)
 (checkp number? (+ n) number)
@@ -177,4 +176,26 @@
 (mn (procedure () *) (procedure () * *))
 
 (mx (forall (a) (procedure (#!rest a) a)) +)
-(mx (or pair null) '(1))
+(mx (list fixnum) '(1))
+
+
+;;; special cases
+
+(let ((x (##sys#make-structure 'foo)))
+  (mx (struct foo) x))
+
+(define x 1)
+
+(assert 
+ (eq? 'number
+      (compiler-typecase (vector-ref '#(1 2 3.4) x)
+	(fixnum 'fixnum)
+	(float 'float)
+	(number 'number))))
+
+(mx float (vector-ref '#(1 2 3.4) 2))
+(mx fixnum (vector-ref '#(1 2 3.4) 0))
+(mx float (##sys#vector-ref '#(1 2 3.4) 2))
+(mx fixnum (##sys#vector-ref '#(1 2 3.4) 0))
+(mx (vector fixnum float) (vector 1 2.3))
+(mx (list fixnum float) (list 1 2.3))

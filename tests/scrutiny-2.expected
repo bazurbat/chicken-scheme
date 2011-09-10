@@ -9,6 +9,10 @@ Note: at toplevel:
 
 Note: at toplevel:
   in procedure call to `pair?', the predicate is called with an argument of type
+  `null' and will always return false
+
+Note: at toplevel:
+  in procedure call to `pair?', the predicate is called with an argument of type
   `fixnum' and will always return false
 
 Note: at toplevel:
@@ -17,7 +21,7 @@ Note: at toplevel:
 
 Note: at toplevel:
   in procedure call to `list?', the predicate is called with an argument of type
-  `list' and will always return true
+  `null' and will always return true
 
 Note: at toplevel:
   in procedure call to `list?', the predicate is called with an argument of type
@@ -38,6 +42,10 @@ Note: at toplevel:
 Note: at toplevel:
   in procedure call to `null?', the predicate is called with an argument of type
   `pair' and will always return false
+
+Note: at toplevel:
+  in procedure call to `null?', the predicate is called with an argument of type
+  `null' and will always return true
 
 Note: at toplevel:
   in procedure call to `null?', the predicate is called with an argument of type
