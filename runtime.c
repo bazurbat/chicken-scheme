@@ -7196,9 +7196,9 @@ void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2
 C_regparm C_word C_fcall
 C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix0)
 {
-  int radix, radixpf = 0, sharpf = 0, ratp = 0, exactf, exactpf = 0, periodf = 0;
+  int radix, radixpf = 0, sharpf = 0, ratf = 0, exactf, exactpf = 0, periodf = 0, expf = 0;
   C_word n1, n;
-  C_char *sptr, *eptr;
+  C_char *sptr, *eptr, *rptr;
   double fn1, fn;
 
   if(radix0 & C_FIXNUM_BIT) radix = C_unfix(radix0);
@@ -7219,47 +7219,73 @@ C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix0)
   buffer[ n ] = '\0';
   
   while(*sptr == '#') {
-    switch(*(++sptr)) {
+    switch(C_tolower((int)*(++sptr))) {
     case 'b': if(radixpf) goto fail; else { radix = 2; radixpf = 1; } break;
     case 'o': if(radixpf) goto fail; else { radix = 8; radixpf = 1; } break;
     case 'd': if(radixpf) goto fail; else { radix = 10; radixpf = 1; } break;
     case 'x': if(radixpf) goto fail; else { radix = 16; radixpf = 1; } break;
     case 'e': if(exactpf) goto fail; else { exactf = 1; exactpf = 1; } break;
     case 'i': if(exactpf) goto fail; else { exactf = 0; exactpf = 1; } break;
-    default: --sptr;
+    default: goto fail;  /* Unknown prefix type */
     }
 
     ++sptr;
   }
-
-  /* check for embedded '#'s and double '.'s: */
-  for(eptr = sptr; *eptr != '\0'; ++eptr) {
-    switch(*eptr) {
+  
+  /* Scan for embedded special characters and do basic sanity checking: */
+  for(eptr = sptr, rptr = sptr; *eptr != '\0'; ++eptr) {
+    switch(C_tolower((int)*eptr)) {
     case '.': 
-      if(periodf) goto fail;
+      if(periodf || ratf || expf) goto fail;
       
       periodf = 1;
       break;
 
     case '#':
-      if(eptr[ 1 ] == '\0' || C_strchr("#.0123456789", eptr[ 1 ]) != NULL) {
-	sharpf = 1;
-	*eptr = '0';
-      }
-      else goto fail;
+      if (expf || (eptr == rptr) ||
+	  (!sharpf && (eptr == rptr+1) && (C_strchr("+-.", *rptr) != NULL)))
+        goto fail;
       
+      sharpf = 1;
+      *eptr = '0';
+      
+      break;
+    case '/':
+      if(periodf || ratf || expf || eptr == sptr) goto fail;
+      
+      sharpf = 0; /* Allow sharp signs in the denominator */
+      ratf = 1;
+      rptr = eptr+1;
+      break;
+    case 'e':
+    case 'd':
+    case 'f':
+    case 'l':
+    case 's':
+      /* Don't set exp flag if we see the "f" in "inf.0" (preceded by 'n') */
+      /* Other failure modes are handled elsewhere. */
+      if(radix == 10 && eptr > sptr && C_tolower((int)*(eptr-1)) != 'n') {
+        if (ratf) goto fail;
+	
+        expf = 1;
+	sharpf = 0;
+	*eptr = 'e'; /* strtod() normally only understands 'e', not dfls */
+      }
+      break;
+    default:
+      if(sharpf) goto fail;
       break;
     }
   }
-
+  if (eptr == rptr) goto fail; /* Disallow "empty" numbers like "#x" and "1/" */
+  
   /* check for rational representation: */
-  if((eptr = C_strchr(sptr, '/')) != NULL) {
-    if (eptr == sptr) {
-        n = C_SCHEME_FALSE;
-        goto fini;
+  if(rptr != sptr) {
+    if (*(rptr) == '-' || *(rptr) == '+') {
+      n = C_SCHEME_FALSE;
+      goto fini;
     }
-    *eptr = '\0';
-    ratp = 1;
+    *(rptr-1) = '\0';
 
     switch(convert_string_to_number(sptr, radix, &n1, &fn1)) {
     case 0:
@@ -7273,7 +7299,7 @@ C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix0)
       /* case 2: nop */
     }
 
-    sptr = eptr + 1;
+    sptr = rptr;
   }    
   
   /* convert number and return result: */
@@ -7283,8 +7309,8 @@ C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix0)
     break;
 
   case 1:			/* fixnum */
-    if(sharpf || ratp || (exactpf && !exactf)) {
-      n = C_flonum(a, ratp ? fn1 / (double)n : (double)n);
+    if(sharpf || ratf || (exactpf && !exactf)) {
+      n = C_flonum(a, ratf ? fn1 / (double)n : (double)n);
 
       if(exactpf && exactf) n = C_i_inexact_to_exact(n);
     }
@@ -7293,7 +7319,7 @@ C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix0)
     break;
 
   case 2:			/* flonum */
-    n = C_flonum(a, ratp ? fn1 / fn : fn);
+    n = C_flonum(a, ratf ? fn1 / fn : fn);
 
     if(exactpf && exactf) n = C_i_inexact_to_exact(n);
 
@@ -7354,28 +7380,35 @@ C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word
   C_word n;
   C_char *eptr, *eptr2;
   double fn;
-#if defined(__CYGWIN__) || defined(__MINGW32__) || defined(__OpenBSD__)
   int len = C_strlen(str);
 
-  if(len >= 4) {
-    if(!C_strncmp(str, "+nan.0", len)) {
-      *flo = 0.0/0.0;
-      return 2;
+  if(radix == 10) {
+    if (len >= 4 && len <= 6) { /* DEPRECATED, TODO: Change to (len == 4) */
+      if((*str == '+' || *str == '-') &&
+         C_strchr("inIN", *(str+1)) != NULL &&
+         C_strchr("naNA", *(str+2)) != NULL &&
+         C_strchr("fnFN", *(str+3)) != NULL &&
+         /* DEPRECATED, TODO: Rip out len checks */
+         (len == 4 || *(str+4) == '.') && (len == 5 || (*(str+5) == '0'))) {
+        if (*(str+1) == 'i' || *(str+1) == 'I')   /* Inf */
+          *flo = 1.0/0.0;
+        else                                      /* NaN */
+          *flo = 0.0/0.0;
+        if (*str == '-')
+          *flo *= -1.0;
+        return 2;
+      }
     }
-    else if(!C_strncmp(str, "-nan.0", len)) {
-      *flo = -0.0/0.0;
-      return 2;
+    /* DEPRECATED (enable in next release) */
+#if 0
+    /* This is disabled during the deprecation period of "+nan" syntax */
+    /* Prevent C parser from accepting things like "-inf" on its own... */
+    for(n = 0; n < len; ++n) {
+      if (C_strchr("+-0123456789e.", *(str+n)) == NULL)
+        return 0;
     }
-    else if(!C_strncmp(str, "+inf.0", len)) {
-      *flo = 1.0/0.0;
-      return 2;
-    }
-    else if(!C_strncmp(str, "-inf.0", len)) {
-      *flo = -1.0/0.0;
-      return 2;
-    }
-  }
 #endif
+  }
 
   if(C_strpbrk(str, "xX\0") != NULL) return 0;
 
@@ -7505,7 +7538,6 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
       }
     } 
 
-#if defined(__CYGWIN__) || defined(__MINGW32__)
     if(C_isnan(f)) {
       C_strcpy(p = buffer, "+nan.0");
       goto fini;
@@ -7514,7 +7546,6 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
       C_sprintf(p = buffer, "%cinf.0", f > 0 ? '+' : '-');
       goto fini;
     }
-#endif
 
 #ifdef HAVE_GCVT
     p = C_gcvt(f, flonum_print_precision, buffer); /* p unused, but we want to avoid stupid warnings */

@@ -9,6 +9,10 @@
 - Runtime system
   - fixed handling of "inf" and nan" floating-point predicates for Solaris
     (thanks to Claude Marinier)
+  - deprecated "[+-]nan", "[+-]inf" and other notations "accidentally"
+    accepted by Chicken due to the underlying C library's strtod() function,
+    standardizing on "[+-]nan.0" and "[+-]inf.0" from R6RS (and soon R7RS),
+    when displaying numbers only these forms are generated now.
   - support for re-loading of compiled files has now been completely 
     removed
 
