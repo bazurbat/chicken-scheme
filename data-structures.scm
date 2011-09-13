@@ -231,6 +231,19 @@ EOF
 	  lst)
 	(cons (cons x y) lst) ) ) )
 
+(define (alist-update k v lst #!optional (cmp eqv?))
+  (let loop ((lst lst))
+    (if (null? lst)
+        (list (cons k v))
+        (let ((a (##sys#slot lst 0)))
+          (cond ((not (pair? a))
+                 (error 'alist-update "bad argument type" a))
+                ((cmp (##sys#slot a 0) k)
+                 (cons (cons k v) (##sys#slot lst 1)))
+                (else
+                 (cons (cons (##sys#slot a 0) (##sys#slot a 1))
+                       (loop (##sys#slot lst 1)))))))))
+
 (define (alist-ref x lst #!optional (cmp eqv?) (default #f))
   (let* ([aq (cond [(eq? eq? cmp) assq]
 		   [(eq? eqv? cmp) assv]

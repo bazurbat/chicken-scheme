@@ -294,6 +294,9 @@ echo "======================================== srfi-18 tests ..."
 $interpret -s simple-thread-test.scm
 $interpret -s mutex-test.scm
 
+echo "======================================== data-structures tests ..."
+$interpret -s data-structures-tests.scm
+
 echo "======================================== path tests ..."
 $interpret -bnq path-tests.scm
 

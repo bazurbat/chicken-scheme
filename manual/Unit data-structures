@@ -19,15 +19,16 @@ Looks up {{KEY}} in {{ALIST}} using {{TEST}} as the comparison function (or {{eq
 no test was given) and returns the cdr of the found pair, or {{DEFAULT}} (which defaults to {{#f}}).
 
 
-==== alist-update!
+==== alist-update
 
+<procedure>(alist-update KEY VALUE ALIST [TEST])</procedure>
 <procedure>(alist-update! KEY VALUE ALIST [TEST])</procedure>
 
 If the list {{ALIST}} contains a pair of the form {{(KEY . X)}}, then this procedure
 replaces {{X}} with {{VALUE}} and returns {{ALIST}}. If {{ALIST}} contains no such item, then
-{{alist-update!}} returns {{((KEY . VALUE) . ALIST)}}. The optional argument
+{{alist-update}} returns {{((KEY . VALUE) . ALIST)}}. The optional argument
 {{TEST}} specifies the comparison procedure to search a matching pair in {{ALIST}}
-and defaults to {{eqv?}}.
+and defaults to {{eqv?}}. {{alist-update!}} is the destructive version of {{alist-update}}.
 
 
 ==== atom?

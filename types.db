@@ -1095,6 +1095,7 @@
 
 (alist-ref (#(procedure #:clean #:enforce) alist-ref (* (list pair) #!optional (procedure (* *) *) *) *))
 (alist-update! (#(procedure #:enforce) alist-update! (* * (list pair) #!optional (procedure (* *) *)) *))
+(alist-update (#(procedure #:clean #:enforce) alist-update (* * (list pair) #!optional (procedure (* *) *) *) *))
 (always? deprecated)
 
 (any? (#(procedure #:pure) any? (*) boolean)

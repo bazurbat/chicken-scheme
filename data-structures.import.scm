@@ -29,6 +29,7 @@
  '(->string
    alist-ref
    alist-update!
+   alist-update
    always?				; DEPRECATED
    any?
    atom?

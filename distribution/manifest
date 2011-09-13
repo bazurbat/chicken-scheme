@@ -100,6 +100,7 @@ build-version.c
 buildid
 buildtag.h
 tests/thread-list.scm
+tests/data-structures-tests.scm
 tests/environment-tests.scm
 tests/gobble.scm
 tests/test-optional.scm
