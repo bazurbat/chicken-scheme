@@ -1467,7 +1467,8 @@
 	      (warning 
 	       "invalid argument to `inline-limit' declaration"
 	       spec) ) ) )
-       ((constant pure)			;XXX "pure" is undocumented
+       ((constant			; DEPRECATED
+	 pure)
 	(let ((syms (cdr spec)))
 	  (if (every symbol? syms)
 	      (for-each 
