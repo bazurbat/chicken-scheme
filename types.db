@@ -164,32 +164,40 @@
 
 (append (#(procedure #:clean) append (list #!rest) *))
 (##sys#append (#(procedure #:clean) ##sys#append (list #!rest) *))
-(reverse (forall (a) (#(procedure #:clean #:enforce) reverse ((list a)) (list a))))
-(memq (#(procedure #:clean) memq (* list) *) ((* list) (##core#inline "C_u_i_memq" #(1) #(2))))
+(reverse (forall (a) (#(procedure #:clean #:enforce) reverse ((list-of a)) (list-of a))))
 
-(memv (#(procedure #:clean) memv (* list) *)
-      (((or fixnum boolean char eof undefined null) list)
+(memq (forall (a b) (#(procedure #:clean) memq (a (list-of b)) (or boolean (list-of b))))
+      ((* list) (##core#inline "C_u_i_memq" #(1) #(2))))
+
+(memv (forall (a b) (#(procedure #:clean) memv (a (list-of b)) (or boolean (list-of b))))
+      (((or symbol procedure immediate) list)
        (##core#inline "C_u_i_memq" #(1) #(2))))
 
-;; this may be a bit much...
-(member (forall (a) (#(procedure #:clean) member (* list #!optional (procedure (* *) *)) *))
-	(((or fixnum boolean char eof undefined null) list)
+(member (forall (a b) (#(procedure #:clean) member
+		       (a (list-of b) #!optional (procedure (b a) *)) ; sic
+		       (or boolean (list-of b))))
+	(((or symbol procedure immediate) list)
 	 (##core#inline "C_u_i_memq" #(1) #(2)))
-	((* (list (or fixnum boolean char eof undefined null)))
+	((* (list-of immediate))
 	 (##core#inline "C_u_i_memq" #(1) #(2))))
 
-(assq (#(procedure #:clean) assq (* list) *) ((* list) (##core#inline "C_u_i_assq" #(1) #(2))))
+(assq (forall (a b) (#(procedure #:clean) assq (* (list-of (pair a b)))
+		     (or boolean (pair a b))))
+      ((* list) (##core#inline "C_u_i_assq" #(1) #(2))))
 
-(assv (#(procedure #:clean) assv (* list) *)
-      (((or fixnum boolean char eof undefined null) list)
+(assv (forall (a b) (#(procedure #:clean) assv (* (list-of (pair a b))) 
+		     (or boolean (pair a b))))
+      (((or symbol immediate procedure) list)
        (##core#inline "C_u_i_assq" #(1) #(2)))
-      ((* (list (or fixnum boolean char eof undefined null)))
+      ((* (list-of (pair (or symbol procedure immediate) *)))
        (##core#inline "C_u_i_assq" #(1) #(2))))
 
-(assoc (#(procedure #:clean) assoc (* list #!optional (procedure (* *) *)) *)
-       (((or fixnum boolean char eof undefined null) list)
+(assoc (forall (a b c) (#(procedure #:clean) assoc (a (list-of (pair b c))
+						      #!optional (procedure (b a) *)) ; sic
+			(or boolean (pair b c))))
+       (((or symbol procedure immediate) list)
 	(##core#inline "C_u_i_assq" #(1) #(2)))
-       ((* (list (or fixnum boolean char eof undefined null)))
+       ((* (list-of (pair (or symbol procedure immediate) *)))
 	(##core#inline "C_u_i_assq" #(1) #(2))))
 
 (symbol? (#(procedure #:pure #:predicate symbol) symbol? (*) boolean))
@@ -1677,7 +1685,7 @@
 (set-alarm! (#(procedure #:clean #:enforce) set-alarm! (number) number))
 (set-buffering-mode! (#(procedure #:clean #:enforce) set-buffering-mode! (port symbol #!optional fixnum) undefined))
 (set-file-position! (#(procedure #:clean #:enforce) set-file-position! ((or port fixnum) fixnum #!optional fixnum) undefined))
-(set-groups! (#(procedure #:clean #:enforce) set-groups! (list) undefined))
+(set-groups! (#(procedure #:clean #:enforce) set-groups! ((list-of fixnum)) undefined))
 (set-root-directory! (#(procedure #:clean #:enforce) set-root-directory! (string) undefined))
 (set-signal-handler! (#(procedure #:clean #:enforce) set-signal-handler! (fixnum (or boolean (procedure (fixnum) . *))) undefined))
 (set-signal-mask! (#(procedure #:clean #:enforce) set-signal-mask! ((list-of fixnum)) undefined))

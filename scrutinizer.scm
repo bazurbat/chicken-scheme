@@ -779,7 +779,6 @@
 		    ;; first exp is always a variable so ts must be of length 1
 		    (let loop ((types params) (subs (cdr subs)))
 		      (cond ((null? types)
-			     ;;XXX figure out line-number
 			     (quit "~ano clause applies in `compiler-typecase' for expression of type `~s':~a" 
 				   (location-name loc) (car ts)
 				   (string-concatenate
@@ -1117,20 +1116,17 @@
 				(third t2))))
 		  (else #f))))
 	  ((and (pair? t1) (eq? 'list-of (car t1)))
-	   ;;XXX (list-of T) == (pair T (pair T ... (pair T null)))
-	   ;;     should also work in exact mode
-	   (and (not exact) (not all)
-		(or (eq? 'null t2)
-		    (and (pair? t2)
-			 (case (car t2)
-			   ((pair)
-			    (and (match1 (second t1) (second t2))
-				 (match1 t1 (third t2))))
-			   ((list)
-			    (match1 
-			     (second t1) 
-			     (simplify-type `(or ,@(cdr t2)))))
-			   (else #f))))))
+	   (or (eq? 'null t2)
+	       (and (pair? t2)
+		    (case (car t2)
+		      ((pair)
+		       (and (match1 (second t1) (second t2))
+			    (match1 t1 (third t2))))
+		      ((list)
+		       (match1 
+			(second t1) 
+			(simplify-type `(or ,@(cdr t2)))))
+		      (else #f)))))
 	  ((and (pair? t1) (eq? 'list (car t1)))
 	   (and (pair? t2)
 		(case (car t2)
