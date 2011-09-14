@@ -137,8 +137,10 @@ or {{:}} should follow the syntax given below:
 <table>
 <tr><th>COMPLEXTYPE</th><th>meaning</th></tr>
 <tr><td>{{(pair TYPE1 TYPE2)}}</td><td>pair with given component types</td></tr>
-<tr><td>{{(list TYPE)}}</td><td>proper list with given element type</td></tr>
-<tr><td>{{(vector TYPE)}}</td><td>vector with given element types</td></tr>
+<tr><td>{{(list-of TYPE)}}</td><td>proper list with given element type</td></tr>
+<tr><td>{{(list TYPE1 ...)}}</td><td>proper list with given length and element types</td></tr>
+<tr><td>{{(vector-of TYPE)}}</td><td>vector with given element types</td></tr>
+<tr><td>{{(vector TYPE1 ...)}}</td><td>vector with given length and element types</td></tr>
 </table>
 
 <table>  
@@ -158,7 +160,7 @@ or {{:}} should follow the syntax given below:
 
 Note that type-variables in {{forall}} types may be given "constraint" types, i.e.
 
-  (: sort (forall (e (s (or (vector e) (list e))))
+  (: sort (forall (e (s (or (vector e) (list-of e))))
             (s (e e -> *) -> s)))
 
 declares that {{sort}} is a procedure of two arguments, the first

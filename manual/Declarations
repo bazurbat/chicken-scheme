@@ -61,14 +61,6 @@ Declares that the given identifiers are always bound to procedure values.
 Enables or disables syntax-checking of embedded C/C++ code fragments. Checking C syntax is the default.
 
 
-=== constant
-
- [declaration specifier] (constant IDENTIFIER ...)
-
-Declares the procedures with the names {{IDENTIFIER ...}} as constant, that is, as not having any
-side effects. This can help the compiler to remove non-side-effecting expressions.
-
-
 === enforce-argument-types
 
  [declaration-specifier] (enforce-argument-types IDENTIFIER ...)
@@ -231,6 +223,16 @@ Marks the global procedure {{IDENTIFIER}} as a predicate on {{TYPE}}.
 Enable profiling exclusively for given identifiers. Normally the compiler
 enables profiling decorations for all globally defined procedures. With
 this declaration, profiling can be enabled for selected procedures.
+
+
+=== pure
+
+ [declaration specifier] (pure IDENTIFIER ...)
+
+Declares the procedures with the names {{IDENTIFIER ...}} as
+referentially transparent, that is, as not having any side
+effects. This can help the compiler to remove non-side-effecting
+expressions.
 
 
 === number-type
