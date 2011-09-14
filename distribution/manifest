@@ -128,6 +128,7 @@ tests/embedded3.c
 tests/embedded4.scm
 tests/condition-tests.scm
 tests/fixnum-tests.scm
+tests/numbers-string-conversion-tests.scm
 tests/path-tests.scm
 tests/posix-tests.scm
 tests/r4rstest.out

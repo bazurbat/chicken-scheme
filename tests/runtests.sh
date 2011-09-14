@@ -284,6 +284,10 @@ echo "======================================== fixnum tests ..."
 $compile fixnum-tests.scm
 ./a.out
 
+echo "======================================== string->number tests ..."
+$compile numbers-string-conversion-tests.scm
+./a.out
+
 echo "======================================== srfi-4 tests ..."
 $interpret -s srfi-4-tests.scm
 
