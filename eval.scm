@@ -31,7 +31,8 @@
   (hide pds pdss pxss d) 
   (not inline ##sys#repl-read-hook ##sys#repl-print-hook 
        ##sys#read-prompt-hook ##sys#alias-global-hook ##sys#user-read-hook
-       ##sys#syntax-error-hook))
+       ##sys#syntax-error-hook 
+       ##sys#eval-global-ref-hook ##sys#eval-global-assign-hook))
 
 #>
 #ifndef C_INSTALL_EGG_HOME
@@ -179,6 +180,8 @@
 
 (define ##sys#unbound-in-eval #f)
 (define ##sys#eval-debug-level (make-parameter 1))
+(define (##sys#eval-global-ref-hook var rvar c) c)
+(define (##sys#eval-global-assign-hook var rvar val c) c)
 
 (define ##sys#compile-to-closure
   (let ([write write]
@@ -244,12 +247,15 @@
 				     (or (not var)
 					 (not (##sys#symbol-has-toplevel-binding? var))))
 			    (set! ##sys#unbound-in-eval
-			      (cons (cons var cntr) ##sys#unbound-in-eval)) )
-			  (cond ((not var)
-				 (lambda (v)
-				   (##sys#error "unbound variable" x)))
-				(else
-				 (lambda v (##core#inline "C_retrieve" var))))))
+			      (cons (cons (or var x) cntr) ##sys#unbound-in-eval)) )
+			  (##sys#eval-global-ref-hook
+			   x var
+			   (cond ((not var)
+				  (lambda (v)
+				    ;; evaluation in static env and variable not found in se
+				    (##sys#error 'eval "unbound variable" x)))
+				 (else
+				  (lambda v (##core#inline "C_retrieve" var)))))))
                       (else
                        (case i
                          ((0) (lambda (v) 
@@ -348,7 +354,7 @@
 			  (let ((var (cadr x)))
 			    (receive (i j) (lookup var e se)
 			      (let ((val (compile (caddr x) e var tf cntr se)))
-				(cond [(not i)
+				(cond ((not i)
 				       (when ##sys#notices-enabled
 					 (and-let* ((a (assq var (##sys#current-environment)))
 						    ((symbol? (cdr a))))
@@ -358,12 +364,20 @@
 						  (and (not static)
 						       (##sys#alias-global-hook j #t cntr))
 						  (or (##sys#get j '##core#primitive) j))))
-					 (if (not var) ; static
-					     (lambda (v)
-					       (##sys#error 'eval "environment is not mutable" evalenv var))
-					     (lambda (v)
-					       (##sys#setslot var 0 (##core#app val v))) ) ) ]
-				      [(zero? i) (lambda (v) (##sys#setslot (##sys#slot v 0) j (##core#app val v)))]
+					 (##sys#eval-global-assign-hook
+					  (cadr x) var val
+					  (if (not var) ; static
+					      (lambda (v)
+						;; evaluation in static env and variable
+						;; not found in se
+						(##sys#error 
+						 'eval "environment is not mutable"
+						 evalenv (or var x)))
+					      (lambda (v)
+						(##sys#setslot var 0 (##core#app val v)))))))
+				      [(zero? i)
+				       (lambda (v)
+					 (##sys#setslot (##sys#slot v 0) j (##core#app val v)))]
 				      [else
 				       (lambda (v)
 					 (##sys#setslot
