@@ -60,6 +60,8 @@
 ;;; Generate target code:
 
 (define (generate-code literals lliterals lambdas out source-file dynamic db)
+  ;; Don't truncate floating-point precision!
+  (flonum-print-precision (+ flonum-maximum-decimal-exponent 1))
   (let ()
 
     ;; Some helper procedures
