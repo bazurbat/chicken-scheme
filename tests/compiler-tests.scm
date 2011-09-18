@@ -217,6 +217,10 @@
 
 (gp-test)
 
+;; Test that encode-literal/decode-literal use the proper functions
+;; to decode number literals.
+(assert (equal? '(+inf.0 -inf.0) (list (fp/ 1.0 0.0) (fp/ -1.0 0.0))))
+
 ;; Test that encode-literal doesn't drop digits for extreme flonum values.
 
 ;; This number is 2^971 * (2^53 - 1), and is the positive "all ones" number for
