@@ -199,3 +199,16 @@
 (mx fixnum (##sys#vector-ref '#(1 2 3.4) 0))
 (mx (vector fixnum float) (vector 1 2.3))
 (mx (list fixnum float) (list 1 2.3))
+
+(: f1 (forall (a) ((list-of a) -> a)))
+(define (f1 x) (car x))
+(mx fixnum (f1 '(1)))
+
+(: f2 (forall (a) ((list-of a) -> a)))
+(define (f2 x) (car x))
+(assert
+ (eq? 'sf
+      (compiler-typecase (f2 (list (if bar 1 'a)))
+	(symbol 's)
+	(fixnum 'f)
+	((or fixnum symbol) 'sf))))
