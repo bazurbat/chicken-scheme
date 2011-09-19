@@ -429,7 +429,15 @@
 
 (expt (#(procedure #:clean #:enforce) expt (number number) number)
       ((float float) (float)
-       (##core#inline_allocate ("C_a_i_flonum_expt" 4) #(1) #(2))))
+       (##core#inline_allocate ("C_a_i_flonum_expt" 4) #(1) #(2)))
+      ((float fixnum) (float)
+       (##core#inline_allocate ("C_a_i_flonum_expt" 4) 
+			       #(1)
+			       (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
+      ((fixnum float) (float)
+       (##core#inline_allocate ("C_a_i_flonum_expt" 4)
+			       (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
+			       #(2))))
 
 (sqrt (#(procedure #:clean #:enforce) sqrt (number) float)
       ((float) (##core#inline_allocate ("C_a_i_flonum_sqrt" 4) #(1))))
@@ -451,6 +459,14 @@
 
 (atan (#(procedure #:clean #:enforce) atan (number #!optional number) float)
       ((float) (##core#inline_allocate ("C_a_i_flonum_atan" 4) #(1)))
+      ((float fixnum)
+       (##core#inline_allocate ("C_a_i_flonum_atan2" 4) 
+			       #(1)
+			       (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
+      ((fixnum float)
+       (##core#inline_allocate ("C_a_i_flonum_atan2" 4) 
+			       (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))
+			       #(2)))
       ((float float) (##core#inline_allocate ("C_a_i_flonum_atan2" 4) #(1))))
 
 (number->string (#(procedure #:clean #:enforce) number->string (number #!optional number) string)
