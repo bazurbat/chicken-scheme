@@ -5,6 +5,13 @@
 == Declarations
 
 
+Declarations can be used to control compiler settings directly inside
+the compiled code and are always global in scope. In many (but not
+all) cases an associated command-line option exists. When in conflict,
+declarations override command-line options. When multiple declarations
+conflict, the one appearing textually last overrides any previous one.
+
+
 === declare
 
 <macro>(declare DECLSPEC ...)</macro>
