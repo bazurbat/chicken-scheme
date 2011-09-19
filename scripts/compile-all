@@ -17,5 +17,5 @@ for x in library eval data-structures ports files extras lolevel utils tcp srfi-
 done
 
 for x in chicken batch-driver compiler optimizer compiler-syntax scrutinizer unboxing support c-platform c-backend; do
-    $compiler $x.scm $library_options -output-file /tmp/xxx.c "$@"
+    $compiler $x.scm $compiler_options -output-file /tmp/xxx.c "$@"
 done
