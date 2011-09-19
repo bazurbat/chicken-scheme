@@ -684,17 +684,3 @@ ifdef WINDOWS_SHELL
 else
 	touch *.scm
 endif
-
-
-# compile all core modules (for testing)
-
-.PHONY: compile-all
-
-COMPILE_ALL_FILES = $(LIBCHICKEN_SCHEME_OBJECTS_1) $(COMPILER_OBJECTS_1)
-
-# use EXTRA_CHICKEN_OPTIONS to test particular compiler options:
-compile-all:
-	@for x in $(COMPILE_ALL_FILES:=.scm); do \
-	  echo "$(CHICKEN) $$x $(CHICKEN_LIBRARY_OPTIONS)"; \
-	  $(CHICKEN) $$x $(CHICKEN_LIBRARY_OPTIONS) -output-file out.c || exit 1; \
-	done
