@@ -436,7 +436,7 @@ EOF
 			    [inf (##core#inline "C_fd_test_input" fd)]
 			    [outf (##core#inline "C_fd_test_output" fd)])
 		       (dbg "fd " fd " state: input=" inf ", output=" outf)
-		       (if (or inf outf errf)
+		       (if (or inf outf)
 			   (let loop2 ((threads (cdr a)) (keep '()))
 			     (if (null? threads)
 				 (if (null? keep)

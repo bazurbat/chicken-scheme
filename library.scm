@@ -2322,7 +2322,7 @@ EOF
   (let ((string-append string-append)
 	(keyword-style keyword-style)
 	(case-sensitive case-sensitive)
-	(parantheses-synonyms parantheses-synonyms)
+	(parentheses-synonyms parentheses-synonyms)
 	(symbol-escape symbol-escape)
 	(current-read-table current-read-table)
 	(kwprefix (string (integer->char 0))))
