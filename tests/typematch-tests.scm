@@ -151,7 +151,6 @@
 (checkp boolean? #f boolean)
 (checkp pair? '(1 . 2) pair)
 (checkp null? '() null)
-(checkp list? '(1) (list fixnum))
 (checkp symbol? 'a symbol)
 (checkp number? (+ n) number)
 (checkp number? (+ n) number)
