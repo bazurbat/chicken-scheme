@@ -422,7 +422,7 @@ EOF
                               (seed '())
                               (limit #f)
                               (dotfiles #f)
-                              (follow-symlinks #t))
+                              (follow-symlinks #f))
   (##sys#find-files dir test action seed limit follow-symlinks dotfiles 'find-files))
 
 
