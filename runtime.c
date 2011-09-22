@@ -8839,7 +8839,7 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
   val = (C_word)(*ptr);
 
   if(bits == C_FLONUM_TYPE) {
-    long ln;
+    C_word ln;
     double fn;
 
     switch (convert_string_to_number(*str, 10, &ln, &fn)) {
