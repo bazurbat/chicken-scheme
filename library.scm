@@ -1813,25 +1813,25 @@ EOF
   p )
 
 (define (current-input-port . arg)
-  (if (pair? arg)
-      (let ([p (car arg)])
-	(##sys#check-port p 'current-input-port)
-	(set! ##sys#standard-input p) )
-      ##sys#standard-input) )
+  (when (pair? arg)
+    (let ([p (car arg)])
+      (##sys#check-port p 'current-input-port)
+      (set! ##sys#standard-input p) ))
+  ##sys#standard-input)
 
 (define (current-output-port . arg)
-  (if (pair? arg)
-      (let ([p (car arg)])
-	(##sys#check-port p 'current-output-port)
-	(set! ##sys#standard-output p) )
-      ##sys#standard-output) )
+  (when (pair? arg)
+    (let ([p (car arg)])
+      (##sys#check-port p 'current-output-port)
+      (set! ##sys#standard-output p) ) )
+  ##sys#standard-output)
 
 (define (current-error-port . arg)
-  (if (pair? arg)
-      (let ([p (car arg)])
-	(##sys#check-port p 'current-error-port)
-	(set! ##sys#standard-error p) )
-      ##sys#standard-error) )
+  (when (pair? arg)
+    (let ([p (car arg)])
+      (##sys#check-port p 'current-error-port)
+      (set! ##sys#standard-error p) ) )
+  ##sys#standard-error)
 
 (define (##sys#tty-port? port)
   (and (not (zero? (##sys#peek-unsigned-integer port 0)))
@@ -3954,9 +3954,9 @@ EOF
       (lambda () (set! ##sys#current-exception-handler oldh)) ) ) )
 
 (define (current-exception-handler #!optional proc)
-  (if proc
-      (set! ##sys#current-exception-handler proc)
-      ##sys#current-exception-handler))
+  (when proc
+    (set! ##sys#current-exception-handler proc))
+  ##sys#current-exception-handler)
 
 (define (make-property-condition kind . props)
   (##sys#make-structure

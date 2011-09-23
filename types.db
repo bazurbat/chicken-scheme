@@ -684,6 +684,7 @@
 ;; chicken
 
 (abort (procedure abort (*) noreturn))
+(##sys#abort (procedure abort (*) noreturn))
 
 (add1 (#(procedure #:clean #:enforce) add1 (number) number)
       ((float) (float) 
@@ -1069,7 +1070,7 @@
 			       ((string) #(1)))
 (##sys#foreign-symbol-argument (#(procedure #:clean #:enforce) ##sys#foreign-symbol-argument (symbol) symbol)
 			       ((symbol) #(1)))
-(##sys#foreign-pointer-argument (#(procedure #:clean #:enforce) ##sys#foreign-pointer-argument ((or boolean pointer)) pointer)
+(##sys#foreign-pointer-argument (#(procedure #:clean #:enforce) ##sys#foreign-pointer-argument (pointer) pointer)
 				((pointer) #(1)))
 
 (##sys#check-blob (#(procedure #:clean #:enforce) ##sys#check-blob (blob #!optional *) *)
