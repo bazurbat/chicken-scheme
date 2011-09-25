@@ -211,3 +211,16 @@
 	(symbol 's)
 	(fixnum 'f)
 	((or fixnum symbol) 'sf))))
+
+(: f3 (forall (a) ((list-of a) -> a)))
+(define (f3 x) (car x))
+(define xxx '(1))
+
+(compiler-typecase (foo (the (or (vector-of fixnum) (list-of fixnum)) xxx))
+  (fixnum 'ok))
+
+(assert
+ (eq? 'ok
+      (compiler-typecase (list 123)
+	((forall (a) (or (vector-of a) (list-of a))) 'ok)
+	(else 'not-ok))))
