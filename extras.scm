@@ -134,13 +134,14 @@
 
 (define write-line
   (lambda (str . port)
-    (let ((p (if (##core#inline "C_eqp" port '())
-		 ##sys#standard-output
-		 (##sys#slot port 0) ) ) )
-      (##sys#check-port p 'write-line)
+    (let* ((p (if (##core#inline "C_eqp" port '())
+                  ##sys#standard-output
+                  (##sys#slot port 0) ) ))
+      (##sys#check-port* p 'write-line)
+      (##sys#check-port-mode p #f 'write-line)
       (##sys#check-string str 'write-line)
-      (display str p)
-      (newline p) ) ) )
+      ((##sys#slot (##sys#slot p 2) 3) p str) ; write-string method
+      (##sys#write-char-0 #\newline p))))
 
 
 ;;; Extended I/O 
