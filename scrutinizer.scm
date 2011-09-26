@@ -2307,7 +2307,7 @@
 				   (else '())))
 			   insts)))
 		       vars)))
-	(dd "  collected: ~s" all)	;XXX remove
+	;;(dd "  collected: ~s" all)	;XXX remove
 	all))
 
     (dd " over-all-instantiations: ~s exact=~a" tlist exact) ;XXX remove

@@ -1,7 +1,7 @@
 ;;;; typematch-tests.scm
 
 
-(use lolevel)
+(use lolevel data-structures)
 
 
 (define-syntax check
@@ -213,10 +213,10 @@
 	((or fixnum symbol) 'sf))))
 
 (: f3 (forall (a) ((list-of a) -> a)))
-(define (f3 x) (car x))
+(define f3 car)
 (define xxx '(1))
 
-(compiler-typecase (foo (the (or (vector-of fixnum) (list-of fixnum)) xxx))
+(compiler-typecase (f3 (the (or (vector-of fixnum) (list-of fixnum)) xxx))
   (fixnum 'ok))
 
 (assert
@@ -224,3 +224,15 @@
       (compiler-typecase (list 123)
 	((forall (a) (or (vector-of a) (list-of a))) 'ok)
 	(else 'not-ok))))
+
+(: f4 (forall (a) ((or fixnum (list-of a)) -> a)))
+(define f4 identity)
+
+(compiler-typecase (f4 '(1))
+  (fixnum 'ok))
+
+(assert
+ (eq? 'ok (compiler-typecase (f4 1)
+	    (fixnum 'not-ok)
+	    (else 'ok))))
+
