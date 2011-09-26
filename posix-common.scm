@@ -417,24 +417,13 @@ EOF
 		    ((pproc f) (loop rest (action f r)))
 		    (else (loop rest r)) ) ) ) ) ) ) )
 
-(define (find-files dir . args)
-  (cond ((or (null? args) (not (keyword? (car args))))
-	 ;; old signature - DEPRECATED
-	 (let-optionals args ((pred (lambda _ #t))
-			      (action (lambda (x y) (cons x y))) ; we want `cons' inlined
-			      (id '())
-			      (limit #f) )
-	   (##sys#find-files dir pred action id limit #t #f 'find-files)))
-	(else
-	 (apply 
-	  (lambda (#!key (test (lambda _ #t))
-			 (action (lambda (x y) (cons x y))) ; s.a.
-			 (seed '())
-			 (limit #f)
-			 (dotfiles #f)
-			 (follow-symlinks #t))
-	    (##sys#find-files dir test action seed limit follow-symlinks dotfiles 'find-files))
-	  args))))
+(define (find-files dir #!key (test (lambda _ #t))
+			      (action (lambda (x y) (cons x y)))
+                              (seed '())
+                              (limit #f)
+                              (dotfiles #f)
+                              (follow-symlinks #f))
+  (##sys#find-files dir test action seed limit follow-symlinks dotfiles 'find-files))
 
 
 ;;; umask

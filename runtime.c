@@ -8782,7 +8782,6 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
   unsigned long bits = *((*str)++) & 0xff;
   C_word *data, *dptr, val;
   C_uword size;
-  int maybe_fixnum = 0;
 
   /* vvv this can be taken out at a later stage (once it works reliably) vvv */
   if(bits != 0xfe)
@@ -8822,7 +8821,6 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
 #else
     case (C_FLONUM_TYPE >> 24) & 0xff:
 #endif
-      maybe_fixnum = 1;
       bits = C_FLONUM_TYPE;
       break;
 
@@ -8841,19 +8839,24 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
   val = (C_word)(*ptr);
 
   if(bits == C_FLONUM_TYPE) {
-    if(maybe_fixnum) {
-      long ln;
+    C_word ln;
+    double fn;
 
-      errno = 0;
-      ln = strtol(*str, str, 10);
+    switch (convert_string_to_number(*str, 10, &ln, &fn)) {
+    case 0: 			/* failed */
+      panic(C_text("invalid encoded numeric literal"));
+      break;
 
-      if(((ln == LONG_MAX || ln == LONG_MIN) && errno == ERANGE) || **str != '\0')
-	val = C_number(ptr, C_strtod(*str, str));
-      else val = C_fix(ln);
+    case 1:			/* fixnum */
+      val = C_fix(ln);
+      break;
+
+    case 2:			/* flonum */
+      val = C_flonum(ptr, fn);
+      break;
     }
-    else val = C_flonum(ptr, C_strtod(*str, str));
 
-    ++(*str);			/* skip terminating '\0' */
+    while(*((*str)++) != '\0');      /* skip terminating '\0' */
     return val;
   }
 
