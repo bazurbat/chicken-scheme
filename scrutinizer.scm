@@ -1015,19 +1015,15 @@
 	  ((and (pair? t2) (eq? 'or (car t2)))
 	   (over-all-instantiations
 	    (cdr t2)
-	    typeenv
-	    (lambda (t) (match1 t1 t))
-	    (lambda () 
-	      (if (or exact all)
-		  (every 
-		   (cut match1 t1 <>)
-		   (cdr t2))
-		  #t))))
+	    typeenv 
+	    (or exact all)
+	    (lambda (t) (match1 t1 t))))
 	  ;; s.a.
 	  ((and (pair? t1) (eq? 'or (car t1))) 
 	   (over-all-instantiations
 	    (cdr t1)
 	    typeenv
+	    #f
 	    (lambda (t) (match1 t t2)))) ; o-a-i ensures at least one element matches
 	  ((and (pair? t1) (eq? 'forall (car t1)))
 	   (match1 (third t1) t2)) ; assumes typeenv has already been extracted
@@ -1413,7 +1409,8 @@
 				  (test t1 (third e)))))))
 		    ((memq t2 '(* undefined)))
 		    ((eq? 'pair t1) (test '(pair * *) t2))
-		    ((memq t1 '(vector list)) (test `(,t1 *) t2))
+		    ((eq? 'vector t1) (test '(vector-of *) t2))
+		    ((eq? 'list t1) (test '(list-of *) t2))
 		    ((and (eq? 'null t1)
 			  (pair? t2) 
 			  (eq? (car t2) 'list-of)))
@@ -1435,9 +1432,8 @@
 			       (over-all-instantiations
 				(cdr t2)
 				typeenv
-				(lambda (t) (test t1 t))
-				(lambda ()
-				  (every (cut test t1 <>) (cdr t2)))))
+				#t
+				(lambda (t) (test t1 t))))
 			      ((and (eq? 'vector (car t1)) (eq? 'vector-of (car t2)))
 			       (every (cute test <> (second t2)) (cdr t1)))
 			      ((and (eq? 'vector-of (car t1)) (eq? 'vector (car t2)))
@@ -1462,9 +1458,8 @@
 				  (over-all-instantiations
 				   (cdr t1)
 				   typeenv
-				   (lambda (t) (test t t2))
-				   (lambda ()
-				     (every (cut test <> t2) (cdr t1)))))
+				   #t
+				   (lambda (t) (test t t2))))
 				 ((vector-of list-of) (test (second t1) (second t2)))
 				 ((pair) (every test (cdr t1) (cdr t2)))
 				 ((procedure)
@@ -2277,7 +2272,7 @@
 
 ;;; perform check over all typevar instantiations
 
-(define (over-all-instantiations tlist typeenv process #!optional (combine (constantly #t)))
+(define (over-all-instantiations tlist typeenv exact process)
   (let ((insts '())
 	(anyinst #f)
 	(trail0 trail))
@@ -2306,15 +2301,17 @@
 	     (all (map (lambda (var)
 			 (cons
 			  var
-			  (map (lambda (inst)
-				 (cond ((assq var inst) => cdr)
-				       (else '*)))
-			       insts)))
+			  (append-map
+			   (lambda (inst)
+			     (cond ((assq var inst) => (o list cdr))
+				   (exact '(*))
+				   (else '())))
+			   insts)))
 		       vars)))
 	;;(dd "  collected: ~s" all)	;XXX remove
 	all))
 
-    (dd " over-all-instantiations: ~s" tlist) ;XXX remove
+    (dd " over-all-instantiations: ~s exact=~a" tlist exact) ;XXX remove
     ;; process all tlist elements
     (let loop ((ts tlist) (ok #f))
       (cond ((null? ts)
@@ -2322,13 +2319,17 @@
 		    (for-each 
 		     (lambda (i)
 		       (set! trail (cons (car i) trail))
-		       (set-car! (cdr (assq (car i) typeenv)) `(or ,@(cdr i))))
+		       (set-car! (cdr (assq (car i) typeenv))
+				 (simplify-type `(or ,@(cdr i)))))
 		     (collect))
-		    (combine))
+		    #t)
 		   (else #f)))
 	    ((process (car ts))
 	     (restore)
 	     (loop (cdr ts) #t))
+	    (exact 
+	     (restore)
+	     #f)
 	    (else 
 	     (restore)
 	     (loop (cdr ts) ok))))))
