@@ -1070,8 +1070,12 @@ EOF
 		  (##sys#lcm head n2)
 		  (##sys#slot next 1)) #f) ) ) ) ) ) )
 
-(define (##sys#string->number str #!optional (radix 10))
-  (##core#inline_allocate ("C_a_i_string_to_number" 4) str radix))
+(define (##sys#string->number str #!optional (radix 10) exactness)
+  (let ((num (##core#inline_allocate ("C_a_i_string_to_number" 4) str radix)))
+    (case exactness
+      ((i) (##core#inline_allocate ("C_a_i_exact_to_inexact" 4) num))
+      ((e) (##core#inline "C_i_inexact_to_exact" num))
+      (else num))))
 
 (define string->number ##sys#string->number)
 (define ##sys#number->string (##core#primitive "C_number_to_string"))
@@ -2526,20 +2530,25 @@ EOF
 		  (##sys#list->vector lst)
 		  (##sys#read-error port "invalid vector syntax" lst) ) ) )
 	  
-	  (define (r-number radix)
+	  (define (r-number radix exactness)
 	    (set! rat-flag #f)
 	    (let ([tok (r-token)])
-	      (if (string=? tok ".")
-		  (##sys#read-error port "invalid use of `.'")
-		  (let ([val (##sys#string->number tok (or radix 10))] )
+	      (cond 
+		[(string=? tok ".")
+		  (##sys#read-error port "invalid use of `.'")]
+		[(and (fx> (##sys#size tok) 0) (char=? (string-ref tok 0) #\#))
+		  (##sys#read-error port "unexpected prefix in number syntax" tok)]
+		[else
+		  (let ([val (##sys#string->number tok (or radix 10) exactness)] )
 		    (cond [val
+			   ;;XXX move this into ##sys#string->number ?
 			   (when (and (##sys#inexact? val) rat-flag)
 			     (##sys#read-warning 
 			      port
 			      "cannot represent exact fraction - coerced to flonum" tok) )
 			   val]
 			  [radix (##sys#read-error port "illegal number syntax" tok)]
-			  [else (build-symbol tok)] ) ) ) ) )
+			  [else (build-symbol tok)] ) ) ] ) ) )
 
 	  (define (r-number-with-exactness radix)
 	    (cond [(char=? #\# (##sys#peek-char-0 port))
@@ -2547,25 +2556,25 @@ EOF
 		   (let ([c2 (##sys#read-char-0 port)])
 		     (cond [(eof-object? c2) 
 			    (##sys#read-error port "unexpected end of numeric literal")]
-			   [(char=? c2 #\i) (##sys#exact->inexact (r-number radix))]
-			   [(char=? c2 #\e) (##sys#inexact->exact (r-number radix))]
+			   [(char=? c2 #\i) (r-number radix 'i)]
+			   [(char=? c2 #\e) (r-number radix 'e)]
 			   [else
 			    (##sys#read-error
 			     port
 			     "illegal number syntax - invalid exactness prefix" c2)] ) ) ]
-		  [else (r-number radix)] ) )
+		  [else (r-number radix #f)] ) )
 	  
-	  (define (r-number-with-radix)
+	  (define (r-number-with-radix exactness)
 	    (cond [(char=? #\# (##sys#peek-char-0 port))
 		   (##sys#read-char-0 port)
 		   (let ([c2 (##sys#read-char-0 port)])
 		     (cond [(eof-object? c2) (##sys#read-error port "unexpected end of numeric literal")]
-			   [(char=? c2 #\x) (r-number 16)]
-			   [(char=? c2 #\d) (r-number 10)]
-			   [(char=? c2 #\o) (r-number 8)]
-			   [(char=? c2 #\b) (r-number 2)]
+			   [(char=? c2 #\x) (r-number 16 exactness)]
+			   [(char=? c2 #\d) (r-number 10 exactness)]
+			   [(char=? c2 #\o) (r-number 8 exactness)]
+			   [(char=? c2 #\b) (r-number 2 exactness)]
 			   [else (##sys#read-error port "illegal number syntax - invalid radix" c2)] ) ) ]
-		  [else (r-number 10)] ) )
+		  [else (r-number 10 exactness)] ) )
 	
 	  (define (r-token)
 	    (let loop ((c (##sys#peek-char-0 port)) (lst '()))
@@ -2783,8 +2792,8 @@ EOF
 				 ((#\d) (##sys#read-char-0 port) (r-number-with-exactness 10))
 				 ((#\o) (##sys#read-char-0 port) (r-number-with-exactness 8))
 				 ((#\b) (##sys#read-char-0 port) (r-number-with-exactness 2))
-				 ((#\i) (##sys#read-char-0 port) (##sys#exact->inexact (r-number-with-radix)))
-				 ((#\e) (##sys#read-char-0 port) (##sys#inexact->exact (r-number-with-radix)))
+				 ((#\i) (##sys#read-char-0 port) (r-number-with-radix 'i))
+				 ((#\e) (##sys#read-char-0 port) (r-number-with-radix 'e))
 				 ((#\c)
 				  (##sys#read-char-0 port)
 				  (let ([c (##sys#read-char-0 port)])
@@ -2852,11 +2861,11 @@ EOF
 		  ((#\() (r-list #\( #\)))
 		  ((#\)) (##sys#read-char-0 port) (container c))
 		  ((#\") (##sys#read-char-0 port) (r-string #\"))
-		  ((#\.) (r-number #f))
-		  ((#\- #\+) (r-number #f))
+		  ((#\.) (r-number #f #f))
+		  ((#\- #\+) (r-number #f #f))
 		  (else
 		   (cond [(eof-object? c) c]
-			 [(char-numeric? c) (r-number #f)]
+			 [(char-numeric? c) (r-number #f #f)]
 			 ((memq c reserved-characters)
 			  (reserved-character c))
 			 (else
