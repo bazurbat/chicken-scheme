@@ -12,6 +12,7 @@
 ;;; It also doesn't try to support Schemes which support *only* integers or
 ;;; *only* flonums (which is also allowed by R5RS).
 ;;;
+(use ports)
 
 (define the-nan (fp/ 0.0 0.0))
 (define pos-inf (fp/ 1.0 0.0))
