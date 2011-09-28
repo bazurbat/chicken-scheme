@@ -4801,17 +4801,6 @@ EOF
 	  [(pair? default) (car default)]
 	  [else (##sys#error "symbol not exported from namespace" sym ns)] ) ) )
 
-(define (##sys#walk-namespace proc . args)
-  (let ([ns (if (pair? args) (car args) ".")])
-    (let ([nsp (##sys#find-symbol-table ns)]
-	  [enum-syms! (foreign-lambda scheme-object "C_enumerate_symbols" c-pointer scheme-object)]
-	  [pos (cons -1 '())])
-      (unless nsp (##sys#error "undefined namespace" ns))
-      (let loop ()
-	(let ([sym (enum-syms! nsp pos)])
-	  (when sym
-	    (proc sym)
-	    (loop) ) ) ) ) ) )
 
 ;;; More memory info
 
