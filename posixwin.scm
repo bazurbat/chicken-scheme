@@ -1157,13 +1157,20 @@ EOF
 	   (else (badmode m)) ) ) ) ) )
   (set! close-input-pipe
     (lambda (port)
-      (##sys#check-port port 'close-input-pipe)
+      (##sys#check-input-port port #t 'close-input-pipe)
       (let ((r (##core#inline "close_pipe" port)))
 	(##sys#update-errno)
 	(when (eq? -1 r)
 	  (##sys#signal-hook #:file-error 'close-input-pipe "error while closing pipe" port) )
 	r)))
-  (set! close-output-pipe close-input-pipe) )
+  (set! close-output-pipe
+    (lambda (port)
+      (##sys#check-output-port port #t 'close-output-pipe)
+      (let ((r (##core#inline "close_pipe" port)))
+	(##sys#update-errno)
+	(when (eq? -1 r)
+	  (##sys#signal-hook #:file-error 'close-output-pipe "error while closing pipe" port) )
+	r))))
 
 (define call-with-input-pipe
   (lambda (cmd proc . mode)
@@ -1390,7 +1397,7 @@ EOF
 
 (define port->fileno
   (lambda (port)
-    (##sys#check-port port 'port->fileno)
+    (##sys#check-open-port port 'port->fileno)
     (if (not (zero? (##sys#peek-unsigned-integer port 0)))
 	(let ([fd (##core#inline "C_C_fileno" port)])
 	  (when (fx< fd 0)
@@ -1456,7 +1463,7 @@ EOF
       (ex0 (if (pair? code) (car code) 0)) ) ) )
 
 (define (terminal-port? port)
-  (##sys#check-port* port 'terminal-port?)
+  (##sys#check-open-port port 'terminal-port?)
   (let ([fp (##sys#peek-unsigned-integer port 0)])
     (and (not (eq? 0 fp)) (##core#inline "C_tty_portp" port) ) ) )
 
@@ -1472,7 +1479,7 @@ EOF
 
 (define set-buffering-mode!
   (lambda (port mode . size)
-    (##sys#check-port port 'set-buffering-mode!)
+    (##sys#check-open-port port 'set-buffering-mode!)
     (let ([size (if (pair? size) (car size) _bufsiz)]
 	  [mode (case mode
 		  [(###full) _iofbf]

@@ -1693,6 +1693,7 @@ EOF
   (##sys#check-port p 'port-closed?)
   (##sys#slot p 8))
 
+
 ;;; Port layout:
 ;
 ; 0:  FP (special)
@@ -1799,18 +1800,33 @@ EOF
 (##sys#open-file-port ##sys#standard-output 1 #f)
 (##sys#open-file-port ##sys#standard-error 2 #f)
 
-(define (##sys#check-port x . loc)
-  (unless (%port? x)
-    (##sys#signal-hook
-     #:type-error (and (pair? loc) (car loc)) "argument is not a port" x) ) )
+(define (##sys#check-input-port x open . loc)
+  (if (pair? loc)
+      (##core#inline "C_i_check_port_2" x #t open (car loc))
+      (##core#inline "C_i_check_port" x #t open) ) )
 
-(define (##sys#check-port-mode port mode . loc)
+(define (##sys#check-output-port x open . loc)
+  (if (pair? loc)
+      (##core#inline "C_i_check_port_2" x #f open (car loc))
+      (##core#inline "C_i_check_port" x #f open) ) )
+
+(define (##sys#check-port x . loc)
+  (if (pair? loc)
+      (##core#inline "C_i_check_port_2" x 0 #f (car loc))
+      (##core#inline "C_i_check_port" x 0 #f) ) )
+
+(define (##sys#check-open-port x . loc)
+  (if (pair? loc)
+      (##core#inline "C_i_check_port_2" x 0 #t (car loc))
+      (##core#inline "C_i_check_port" x 0 #t) ) )
+
+(define (##sys#check-port-mode port mode . loc) ; OBSOLETE
   (unless (eq? mode (##sys#slot port 1))
     (##sys#signal-hook
      #:type-error (and (pair? loc) (car loc))
      (if mode "port is not an input port" "port is not an output-port") port) ) )
 
-(define (##sys#check-port* p loc)
+(define (##sys#check-port* p loc)	; OBSOLETE
   (##sys#check-port p)
   (when (##sys#slot p 8)
     (##sys#signal-hook #:file-error loc "port already closed" p) )
@@ -1916,6 +1932,7 @@ EOF
 
   (define (close port loc)
     (##sys#check-port port loc)
+    ;; repeated closing is ignored
     (unless (##sys#slot port 8)		; closed?
       ((##sys#slot (##sys#slot port 2) 4) port) ; close
       (##sys#setislot port 8 #t) )
@@ -1997,8 +2014,7 @@ EOF
   (##core#undefined) )
 
 (define (flush-output #!optional (port ##sys#standard-output))
-  (##sys#check-port* port 'flush-output)
-  (##sys#check-port-mode port #f 'flush-output)
+  (##sys#check-output-port port #t 'flush-output)
   (##sys#flush-output port) )
 
 (define (port-name #!optional (port ##sys#standard-input))
@@ -2241,8 +2257,7 @@ EOF
 (define (eof-object? x) (##core#inline "C_eofp" x))
 
 (define (char-ready? #!optional (port ##sys#standard-input))
-  (##sys#check-port* port 'char-ready?)
-  (##sys#check-port-mode port #t 'char-ready?)
+  (##sys#check-input-port port #t 'char-ready?)
   ((##sys#slot (##sys#slot port 2) 6) port) ) ; char-ready?
 
 (define (read-char #!optional (port ##sys#standard-input))
@@ -2262,8 +2277,7 @@ EOF
     c) )
 
 (define (##sys#read-char/port port)
-  (##sys#check-port* port 'read-char)
-  (##sys#check-port-mode port #t 'read-char)
+  (##sys#check-input-port port #t 'read-char)
   (##sys#read-char-0 port) )
 
 (define (##sys#peek-char-0 p)
@@ -2275,13 +2289,11 @@ EOF
 	c) ) )
 
 (define (peek-char #!optional (port ##sys#standard-input))
-  (##sys#check-port* port 'peek-char)
-  (##sys#check-port-mode port #t 'peek-char)
+  (##sys#check-input-port port #t 'peek-char)
   (##sys#peek-char-0 port) )
 
 (define (read #!optional (port ##sys#standard-input))
-  (##sys#check-port* port 'read)
-  (##sys#check-port-mode port #t 'read)
+  (##sys#check-input-port port #t 'read)
   (##sys#read port ##sys#default-read-info-hook) )
 
 (define ##sys#default-read-info-hook #f)
@@ -3027,38 +3039,37 @@ EOF
   (##sys#void))
 
 (define (##sys#write-char/port c port)
-  (##sys#check-port* port 'write-char)
+  (##sys#check-output-port port #t 'write-char)
   (##sys#check-char c 'write-char)
   (##sys#write-char-0 c port) )
 
 (define (write-char c #!optional (port ##sys#standard-output))
   (##sys#check-char c 'write-char)
-  (##sys#check-port* port 'write-char)
-  (##sys#check-port-mode port #f 'write-char)
+  (##sys#check-output-port port #t 'write-char)
   (##sys#write-char-0 c port) )
 
 (define (newline #!optional (port ##sys#standard-output))
   (##sys#write-char/port #\newline port) )
 
 (define (write x #!optional (port ##sys#standard-output))
-  (##sys#check-port* port 'write)
+  (##sys#check-output-port port #t 'write)
   (##sys#print x #t port) )
 
 (define (display x #!optional (port ##sys#standard-output))
-  (##sys#check-port* port 'display)
+  (##sys#check-output-port port #t 'display)
   (##sys#print x #f port) )
 
 (define-inline (*print-each lst)
   (for-each (cut ##sys#print <> #f ##sys#standard-output) lst) )
  
 (define (print . args)
-  (##sys#check-port* ##sys#standard-output 'print)
+  (##sys#check-output-port ##sys#standard-output #t 'print)
   (*print-each args)
   (##sys#write-char-0 #\newline ##sys#standard-output) 
   (void) )
 
 (define (print* . args)
-  (##sys#check-port* ##sys#standard-output 'print)
+  (##sys#check-output-port ##sys#standard-output #t 'print)
   (*print-each args)
   (##sys#flush-output ##sys#standard-output)
   (void) )
@@ -3072,7 +3083,7 @@ EOF
 	(case-sensitive case-sensitive)
 	(keyword-style keyword-style))
     (lambda (x readable port)
-      (##sys#check-port-mode port #f)
+      (##sys#check-output-port port #t #f)
       (let ([csp (case-sensitive)]
 	    [ksp (keyword-style)]
 	    [length-limit (##sys#print-length-limit)]
@@ -3507,8 +3518,7 @@ EOF
     port ) )
 
 (define (get-output-string port)
-  (##sys#check-port port 'get-output-string)
-  (##sys#check-port-mode port #f 'get-output-string)
+  (##sys#check-output-port port #f 'get-output-string)
   (if (not (eq? 'string (##sys#slot port 7)))
       (##sys#signal-hook
        #:type-error 'get-output-string "argument is not a string-output-port" port) 
@@ -3737,7 +3747,7 @@ EOF
 (define (print-call-chain #!optional (port ##sys#standard-output) (start 0)
 				     (thread ##sys#current-thread)
 				     (header "\n\tCall history:\n") )
-  (##sys#check-port* port 'print-call-chain)
+  (##sys#check-output-port port #t 'print-call-chain)
   (##sys#check-exact start 'print-call-chain)
   (##sys#check-string header 'print-call-chain)
   (let ((ct (##sys#get-call-chain start thread)))
@@ -4084,6 +4094,10 @@ EOF
 	((36) (apply ##sys#signal-hook #:limit-error loc "recursion too deep or circular data encountered" args))
 	((37) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a boolean" args))
 	((38) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a locative" args))
+	((39) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a port" args))
+	((40) (apply ##sys#signal-hook #:type-error loc "bad argument type - not an input-port" args))
+	((41) (apply ##sys#signal-hook #:type-error loc "bad argument type - not an output-port" args))
+	((42) (apply ##sys#signal-hook #:file-error loc "port already closed" args))
 	(else (apply ##sys#signal-hook #:runtime-error loc "unknown internal error" args)) ) ) ) )
 
 
@@ -4641,7 +4655,7 @@ EOF
     (lambda (ex . args)
       (let-optionals args ([port ##sys#standard-output]
 			   [header "Error"] )
-	(##sys#check-port port 'print-error-message)
+	(##sys#check-output-port port #t 'print-error-message)
 	(newline port)
 	(display header port)
 	(cond [(and (not (##sys#immediate? ex)) (eq? 'condition (##sys#slot ex 0)))

@@ -163,17 +163,17 @@
 ;;; Redirect standard ports:
 
 (define (with-input-from-port port thunk)
-  (##sys#check-port port 'with-input-from-port)
+  (##sys#check-input-port port #t 'with-input-from-port)
   (fluid-let ([##sys#standard-input port])
     (thunk) ) )
 
 (define (with-output-to-port port thunk)
-  (##sys#check-port port 'with-output-from-port)
+  (##sys#check-output-port port #t 'with-output-from-port)
   (fluid-let ([##sys#standard-output port])
     (thunk) ) )
 
 (define (with-error-output-to-port port thunk)
-  (##sys#check-port port 'with-error-output-from-port)
+  (##sys#check-output-port port #t 'with-error-output-from-port)
   (fluid-let ([##sys#standard-error port])
     (thunk) ) )
 

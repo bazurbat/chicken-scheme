@@ -274,7 +274,7 @@ EOF
 
 (define port->fileno
   (lambda (port)
-    (##sys#check-port port 'port->fileno)
+    (##sys#check-open-port port 'port->fileno)
     (cond [(eq? 'socket (##sys#slot port 7)) (##sys#tcp-port->fileno port)]
           [(not (zero? (##sys#peek-unsigned-integer port 0)))
            (let ([fd (##core#inline "C_C_fileno" port)])

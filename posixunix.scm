@@ -805,11 +805,18 @@ EOF
 	   (else (badmode m)) ) ) ) ) )
   (set! close-input-pipe
     (lambda (port)
-      (##sys#check-port port 'close-input-pipe)
+      (##sys#check-input-port port #t 'close-input-pipe)
       (let ((r (##core#inline "close_pipe" port)))
-	(when (eq? -1 r) (posix-error #:file-error 'close-input/output-pipe "error while closing pipe" port))
+	(when (eq? -1 r)
+	  (posix-error #:file-error 'close-input-pipe "error while closing pipe" port))
 	r) ) )
-  (set! close-output-pipe close-input-pipe) )
+  (set! close-output-pipe
+    (lambda (port)
+      (##sys#check-output-port port #t 'close-output-pipe)
+      (let ((r (##core#inline "close_pipe" port)))
+	(when (eq? -1 r) 
+	  (posix-error #:file-error 'close-output-pipe "error while closing pipe" port))
+	r) ) ))
 
 (define call-with-input-pipe
   (lambda (cmd proc . mode)
@@ -1687,9 +1694,9 @@ EOF
     (##sys#check-port port 'set-buffering-mode!)
     (let ([size (if (pair? size) (car size) _bufsiz)]
 	  [mode (case mode
-		  [(###full) _iofbf]
-		  [(###line) _iolbf]
-		  [(###none) _ionbf]
+		  [(#:full) _iofbf]
+		  [(#:line) _iolbf]
+		  [(#:none) _ionbf]
 		  [else (##sys#error 'set-buffering-mode! "invalid buffering-mode" mode port)] ) ] )
       (##sys#check-exact size 'set-buffering-mode!)
       (when (fx< (if (eq? 'stream (##sys#slot port 7))
@@ -1699,12 +1706,12 @@ EOF
 	(##sys#error 'set-buffering-mode! "cannot set buffering mode" port mode size) ) ) ) )
 
 (define (terminal-port? port)
-  (##sys#check-port* port 'terminal-port?)
+  (##sys#check-open-port port 'terminal-port?)
   (let ([fp (##sys#peek-unsigned-integer port 0)])
     (and (not (eq? 0 fp)) (##core#inline "C_tty_portp" port) ) ) )
 
 (define (##sys#terminal-check caller port)
-  (##sys#check-port port caller)
+  (##sys#check-open-port port caller)
   (unless (and (eq? 'stream (##sys#slot port 7))
 	       (##core#inline "C_tty_portp" port))
 	  (##sys#error caller "port is not connected to a terminal" port)))

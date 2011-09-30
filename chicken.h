@@ -572,6 +572,10 @@ static inline int isinf_ld (long double x)
 #define C_CIRCULAR_DATA_ERROR                         36
 #define C_BAD_ARGUMENT_TYPE_NO_BOOLEAN_ERROR          37
 #define C_BAD_ARGUMENT_TYPE_NO_LOCATIVE_ERROR         38
+#define C_BAD_ARGUMENT_TYPE_NO_PORT_ERROR             39
+#define C_BAD_ARGUMENT_TYPE_NO_INPUT_PORT_ERROR       40
+#define C_BAD_ARGUMENT_TYPE_NO_OUTPUT_PORT_ERROR      41
+#define C_PORT_CLOSED_ERROR                           42
 
 
 /* Platform information */
@@ -1278,6 +1282,7 @@ extern double trunc(double);
 #define C_i_check_vector(x)             C_i_check_vector_2(x, C_SCHEME_FALSE)
 #define C_i_check_structure(x, st)      C_i_check_structure_2(x, (st), C_SCHEME_FALSE)
 #define C_i_check_char(x)               C_i_check_char_2(x, C_SCHEME_FALSE)
+#define C_i_check_port(x, in, op)       C_i_check_port_2(x, in, op, C_SCHEME_FALSE)
 
 #define C_u_i_8vector_length(x)         C_fix(C_header_size(C_block_item(x, 1)))
 #define C_u_i_16vector_length(x)        C_fix(C_header_size(C_block_item(x, 1)) >> 1)
@@ -1768,6 +1773,7 @@ C_fctexport C_word C_fcall C_i_check_locative_2(C_word x, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_vector_2(C_word x, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_structure_2(C_word x, C_word st, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_char_2(C_word x, C_word loc) C_regparm;
+C_fctexport C_word C_fcall C_i_check_port_2(C_word x, C_word in, C_word op, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_2_times(C_word **ptr, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_2_plus(C_word **ptr, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_2_minus(C_word **ptr, C_word x, C_word y) C_regparm;

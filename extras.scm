@@ -83,7 +83,7 @@
       (let* ([parg (pair? args)]
 	     [p (if parg (car args) ##sys#standard-input)]
 	     [limit (and parg (pair? (cdr args)) (cadr args))])
-	(##sys#check-port* p 'read-line)
+	(##sys#check-input-port p #t 'read-line)
 	(cond ((##sys#slot (##sys#slot p 2) 8) => (lambda (rl) (rl p limit)))
 	      (else
 	       (let* ((buffer-len (if limit limit 256))
@@ -129,7 +129,7 @@
       (if (string? port)
 	  (call-with-input-file port doread)
 	  (begin
-	    (##sys#check-port port 'read-lines)
+	    (##sys#check-input-port port #t 'read-lines)
 	    (doread port) ) ) ) ) )
 
 (define write-line
@@ -137,8 +137,7 @@
     (let* ((p (if (##core#inline "C_eqp" port '())
                   ##sys#standard-output
                   (##sys#slot port 0) ) ))
-      (##sys#check-port* p 'write-line)
-      (##sys#check-port-mode p #f 'write-line)
+      (##sys#check-output-port p #t 'write-line)
       (##sys#check-string str 'write-line)
       ((##sys#slot (##sys#slot p 2) 3) p str) ; write-string method
       (##sys#write-char-0 #\newline p))))
@@ -175,7 +174,7 @@
 			 (else (fx+ n2 m))) )))))))
 
 (define (read-string! n dest #!optional (port ##sys#standard-input) (start 0))
-  (##sys#check-port* port 'read-string!)
+  (##sys#check-input-port port #t 'read-string!)
   (##sys#check-string dest 'read-string!)
   (when n
     (##sys#check-exact n 'read-string!)
@@ -188,7 +187,7 @@
 
 (define ##sys#read-string/port
   (lambda (n p)
-    (##sys#check-port* p 'read-string)
+    (##sys#check-input-port p #t 'read-string)
     (cond (n (##sys#check-exact n 'read-string)
 	     (let* ((str (##sys#make-string n))
 		    (n2 (##sys#read-string! n str p 0)) )
@@ -218,7 +217,7 @@
 ;; string-, process- and tcp ports.
 
 (define (read-buffered #!optional (port ##sys#standard-input))
-  (##sys#check-port port 'read-buffered)
+  (##sys#check-input-port port #t 'read-buffered)
   (let ((rb (##sys#slot (##sys#slot port 2) 9))) ; read-buffered method
     (if rb
 	(rb port)
@@ -230,7 +229,7 @@
 (define read-token
   (lambda (pred . port)
     (let ([port (optional port ##sys#standard-input)])
-      (##sys#check-port* port 'read-token)
+      (##sys#check-input-port port #t 'read-token)
       (let ([out (open-output-string)])
 	(let loop ()
 	  (let ([c (##sys#peek-char-0 port)])
@@ -244,7 +243,7 @@
   (lambda (s . more)
     (##sys#check-string s 'write-string)
     (let-optionals more ([n #f] [port ##sys#standard-output])
-      (##sys#check-port port 'write-string)
+      (##sys#check-output-port port #t 'write-string)
       (when n (##sys#check-exact n 'write-string))
       (display 
        (if (and n (fx< n (##sys#size s)))
@@ -256,7 +255,7 @@
 ;;; Binary I/O
 
 (define (read-byte #!optional (port ##sys#standard-input))
-  (##sys#check-port* port 'read-byte)
+  (##sys#check-input-port port #t 'read-byte)
   (let ((x (##sys#read-char-0 port)))
     (if (eof-object? x)
 	x
@@ -264,7 +263,7 @@
 
 (define (write-byte byte #!optional (port ##sys#standard-output))
   (##sys#check-exact byte 'write-byte)
-  (##sys#check-port* port 'write-byte)
+  (##sys#check-output-port port #t 'write-byte)
   (##sys#write-char-0 (integer->char byte) port) )
 
 
@@ -579,7 +578,7 @@
 
 (define fprintf0
   (lambda (loc port msg args)
-    (when port (##sys#check-port* port loc))
+    (when port (##sys#check-output-port port #t loc))
     (let ((out (if (and port (##sys#tty-port? port))
 		   port
 		   (open-output-string))))
