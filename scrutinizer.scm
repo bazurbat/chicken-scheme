@@ -71,7 +71,7 @@
 ;       | deprecated
 ;       | (deprecated NAME)
 ;   BASIC = * | string | symbol | char | number | boolean | list | pair | 
-;           procedure | vector | null | eof | undefined | port |
+;           procedure | vector | null | eof | undefined | input-port | output-port |
 ;           blob | noreturn | pointer | locative | fixnum | float |
 ;           pointer-vector
 ;   COMPLEX = (pair VAL VAL)
@@ -1708,8 +1708,8 @@
 		    (resolve t2 (cons t done))))))
 	   ((not (pair? t)) 
 	    (if (memq t '(* fixnum eof char string symbol float number list vector pair
-			    undefined blob port pointer locative boolean pointer-vector
-			    null procedure noreturn))
+			    undefined blob input-port output-port pointer locative boolean 
+			    pointer-vector null procedure noreturn))
 		t
 		(bomb "resolve: can't resolve unknown type-variable" t)))
 	   (else 
@@ -1909,8 +1909,8 @@
 	       (and l1 l2 (cons l1 l2))))))
     (define (validate t #!optional (rec #t))
       (cond ((memq t '(* string symbol char number boolean list pair
-			 procedure vector null eof undefined port blob
-			 pointer locative fixnum float pointer-vector
+			 procedure vector null eof undefined input-port output-port
+			 blob pointer locative fixnum float pointer-vector
 			 deprecated noreturn values))
 	     t)
 	    ((memq t '(u8vector s8vector u16vector s16vector u32vector s32vector
@@ -1920,6 +1920,8 @@
 	     `(struct ,t))
 	    ((eq? t 'immediate)
 	     '(or eof null fixnum char boolean))
+	    ((eq? t 'port)
+	     '(or input-port output-port))
 	    ((eq? t 'any) '*)
 	    ((eq? t 'void) 'undefined)
 	    ((and (symbol? t) (##sys#get t '##compiler#type-abbreviation)))
@@ -2149,127 +2151,6 @@
     `((vector ,@(cdr args)))))
 
 
-;;; generate type-checks for formal variables
-;
-;XXX not used in the moment
-
-#;(define (generate-type-checks! node loc vars inits)
-  ;; assumes type is validated
-  (define (test t v)
-    (case t
-      ((null) `(##core#inline "C_eqp" ,v '()))
-      ((eof) `(##core#inline "C_eofp" ,v))
-      ((string) `(if (##core#inline "C_blockp" ,v)
-		     (##core#inline "C_stringp" ,v)
-		     '#f))
-      ((float) `(if (##core#inline "C_blockp" ,v)
-		    (##core#inline "C_flonump" ,v)
-		    '#f))
-      ((char) `(##core#inline "C_charp" ,v))
-      ((fixnum) `(##core#inline "C_fixnump" ,v))
-      ((number) `(##core#inline "C_i_numberp" ,v))
-      ((list) `(##core#inline "C_i_listp" ,v))
-      ((symbol) `(if (##core#inline "C_blockp" ,v)
-		     (##core#inline "C_symbolp" ,v)
-		     '#f))
-      ((pair) `(##core#inline "C_i_pairp" ,v))
-      ((boolean) `(##core#inline "C_booleanp" ,v))
-      ((procedure) `(if (##core#inline "C_blockp" ,v)
-			(##core#inline "C_closurep" ,v)
-			'#f))
-      ((vector) `(##core#inline "C_i_vectorp" ,v))
-      ((pointer) `(if (##core#inline "C_blockp" ,v)
-		      (##core#inline "C_pointerp" ,v)
-		      '#f))
-      ((blob) `(if (##core#inline "C_blockp" ,v)
-		   (##core#inline "C_byteblockp" ,v)
-		   '#f))
-      ((pointer-vector) `(##core#inline "C_i_structurep" ,v 'pointer-vector))
-      ((port) `(if (##core#inline "C_blockp" ,v)
-		   (##core#inline "C_portp" ,v)
-		   '#f))
-      ((locative) `(if (##core#inline "C_blockp" ,v)
-		       (##core#inline "C_locativep" ,v)
-		       '#f))
-      (else
-       (case (car t)
-         ((forall) (test (third t) v))
-	 ((procedure) `(if (##core#inline "C_blockp" ,v)
-			   (##core#inline "C_closurep" ,v)
-			   '#f))
-	 ((or) 
-	  (cond ((null? (cdr t)) '(##core#undefined))
-		((null? (cddr t)) (test (cadr t) v))
-		(else 
-		 `(if ,(test (cadr t) v)
-		      '#t
-		      ,(test `(or ,@(cddr t)) v)))))
-	 ((and)
-	  (cond ((null? (cdr t)) '(##core#undefined))
-		((null? (cddr t)) (test (cadr t) v))
-		(else
-		 `(if ,(test (cadr t) v)
-		      ,(test `(and ,@(cddr t)) v)
-		      '#f))))
-	 ((pair)
-	  `(if (##core#inline "C_i_pairp" ,v)
-	       (if ,(test (second t) `(##sys#slot ,v 0))
-		   ,(test (third t) `(##sys#slot ,v 1))
-		   '#f)
-	       '#f))
-	 ((list-of)
-	  (let ((var (gensym)))
-	    `(if (##core#inline "C_i_listp" ,v)
-		 (##sys#check-list-items ;XXX missing
-		  ,v 
-		  (lambda (,var) 
-		    ,(test (second t) var)))
-		 '#f)))
-	 ((vector-of)
-	  (let ((var (gensym)))
-	    `(if (##core#inline "C_i_vectorp" ,v)
-		 (##sys#check-vector-items ;XXX missing
-		  ,v 
-		  (lambda (,var) 
-		    ,(test (second t) var)))
-		 '#f)))
-	 ;;XXX missing: vector, list
-	 ((not)
-	  `(not ,(test (cadr t) v)))
-	 (else (bomb "generate-type-checks!: invalid type" t v))))))
-  (let ((body (first (node-subexpressions node))))
-    (let loop ((vars (reverse vars)) (inits (reverse inits)) (b body))
-      (cond ((null? inits)
-	     (if (eq? b body)
-		 body
-		 (copy-node!
-		  (make-node 
-		   (node-class node)	; lambda
-		   (node-parameters node)
-		   (list b))
-		  node)))
-	    ((eq? '* (car inits))
-	     (loop (cdr vars) (cdr inits) b))
-	    (else
-	     (loop
-	      (cdr vars) (cdr inits)
-	      (make-node
-	       'let (list (gensym))
-	       (list
-		(build-node-graph
-		 (let ((t (car inits))
-		       (v (car vars)))
-		   `(if ,(test t v)
-			(##core#undefined)
-			;;XXX better call non-CPS C routine
-			(##core#app 
-			 ##sys#error ',loc 
-			 ',(sprintf "expected argument `~a' to be of type `~s'"
-			     v t)
-			 ,v))))
-		b))))))))
-
-
 ;;; perform check over all typevar instantiations
 
 (define (over-all-instantiations tlist typeenv exact process)
@@ -2297,21 +2178,21 @@
     ;; collect candidates for each typevar
     (define (collect)
       (let* ((vars (delete-duplicates (concatenate (map unzip1 insts)) eq?))
-	     ;;(_ (dd "vars: ~s, insts: ~s" vars insts)) ;XXX remove
 	     (all (map (lambda (var)
 			 (cons
 			  var
-			  (append-map
+			  (filter-map
 			   (lambda (inst)
-			     (cond ((assq var inst) => (o list cdr))
-				   (exact '(*))
-				   (else '())))
+			     (cond ((assq var inst) => cdr)
+				   ;;XXX is the following correct in all cases?
+				   (exact '*)
+				   (else #f)))
 			   insts)))
 		       vars)))
 	;;(dd "  collected: ~s" all)	;XXX remove
 	all))
 
-    (dd " over-all-instantiations: ~s exact=~a" tlist exact) ;XXX remove
+    ;;(dd " over-all-instantiations: ~s exact=~a" tlist exact) ;XXX remove
     ;; process all tlist elements
     (let loop ((ts tlist) (ok #f))
       (cond ((null? ts)

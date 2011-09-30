@@ -42,6 +42,10 @@
 ; - "#:clean" means: will not invoke procedures that modify local variables and
 ;   will not modify list or vector data held locally (note that I/O may invoke
 ;   port handlers)
+; - "#:pure" means: will not have side-effects; this is a bit of a lie,
+;   since arity-mismatch will for example always have a side effect.
+; - "#:enforce" means: after return from this procedure, the argument is of
+;   the correct type (it would have signalled an error otherwise)
 
 
 ;; scheme
@@ -583,46 +587,45 @@
 (call-with-current-continuation
  (#(procedure #:enforce) call-with-current-continuation ((procedure (procedure) . *)) . *))
 
-(input-port? (#(procedure #:pure) input-port? (*) boolean))
-(output-port? (#(procedure #:pure) output-port? (*) boolean))
+(input-port? (#(procedure #:pure #:predicate input-port) input-port? (*) boolean))
+(output-port? (#(procedure #:pure #:predicate output-port) output-port? (*) boolean))
 
 (current-input-port
- (#(procedure #:clean #:enforce) current-input-port (#!optional port) port)
- ((port) (let ((#(tmp1) #(1))) 
-	   (let ((#(tmp2) (set! ##sys#standard-input #(tmp1))))
-	     #(tmp1))))
+ (#(procedure #:clean #:enforce) current-input-port (#!optional input-port) input-port)
+ ((input-port) (let ((#(tmp1) #(1))) 
+		 (let ((#(tmp2) (set! ##sys#standard-input #(tmp1))))
+		   #(tmp1))))
  (() ##sys#standard-input))
 
 (current-output-port
- (#(procedure #:clean #:enforce) current-output-port (#!optional port) port)
- ((port) (let ((#(tmp1) #(1)))
-	   (let ((#(tmp2) (set! ##sys#standard-output #(tmp1))))
-	     #(tmp1))))
+ (#(procedure #:clean #:enforce) current-output-port (#!optional output-port) output-port)
+ ((output-port) (let ((#(tmp1) #(1)))
+		  (let ((#(tmp2) (set! ##sys#standard-output #(tmp1))))
+		    #(tmp1))))
  (() ##sys#standard-output))
 
 (call-with-input-file
-    (procedure call-with-input-file (string (procedure (port) . *) #!rest) . *))
+    (procedure call-with-input-file (string (procedure (input-port) . *) #!rest) . *))
 
 (call-with-output-file
-    (procedure call-with-output-file (string (procedure (port) . *) #!rest) . *))
+    (procedure call-with-output-file (string (procedure (output-port) . *) #!rest) . *))
 
-(open-input-file (#(procedure #:clean #:enforce) open-input-file (string #!rest symbol) port))
-(open-output-file (#(procedure #:clean #:enforce) open-output-file (string #!rest symbol) port))
-(close-input-port (#(procedure #:enforce) close-input-port (port) undefined))
-(close-output-port (#(procedure #:enforce) close-output-port (port) undefined))
+(open-input-file (#(procedure #:clean #:enforce) open-input-file (string #!rest symbol) input-port))
+(open-output-file (#(procedure #:clean #:enforce) open-output-file (string #!rest symbol) output-port))
+(close-input-port (#(procedure #:enforce) close-input-port (input-port) undefined))
+(close-output-port (#(procedure #:enforce) close-output-port (output-port) undefined))
 (load (procedure load (string #!optional (procedure (*) . *)) undefined))
-(read (#(procedure #:enforce) read (#!optional port) *))
+(read (#(procedure #:enforce) read (#!optional input-port) *))
 
 (eof-object? (#(procedure #:pure #:predicate eof) eof-object? (*) boolean))
 
-;;XXX if we had input/output port distinction, we could specialize these:
-(read-char (#(procedure #:enforce) read-char (#!optional port) *)) ;XXX result (or eof char) ?
-(peek-char (#(procedure #:enforce) peek-char (#!optional port) *))
+(read-char (#(procedure #:enforce) read-char (#!optional input-port) (or eof char)))
+(peek-char (#(procedure #:enforce) peek-char (#!optional input-port) (or eof char)))
 
-(write (#(procedure #:enforce) write (* #!optional port) undefined))
-(display (#(procedure #:enforce) display (* #!optional port) undefined))
-(write-char (#(procedure #:enforce) write-char (char #!optional port) undefined))
-(newline (#(procedure #:enforce) newline (#!optional port) undefined))
+(write (#(procedure #:enforce) write (* #!optional output-port) undefined))
+(display (#(procedure #:enforce) display (* #!optional output-port) undefined))
+(write-char (#(procedure #:enforce) write-char (char #!optional output-port) undefined))
+(newline (#(procedure #:enforce) newline (#!optional output-port) undefined))
 
 (with-input-from-file
     (#(procedure #:enforce) with-input-from-file (string (procedure () . *) #!rest symbol) . *))
@@ -648,7 +651,7 @@
 			   (#(tmp2) (#(tmp1)))))))
 
 (eval (procedure eval (* #!optional (struct environment)) *))
-(char-ready? (#(procedure #:enforce) char-ready? (#!optional port) boolean))
+(char-ready? (#(procedure #:enforce) char-ready? (#!optional input-port) boolean))
 
 (imag-part (#(procedure #:clean #:enforce) imag-part (number) number)
 	   (((or fixnum float number)) (let ((#(tmp) #(1))) '0)))
@@ -742,10 +745,10 @@
 (cpu-time (#(procedure #:clean) cpu-time () fixnum fixnum))
 
 (current-error-port
- (#(procedure #:clean #:enforce) current-error-port (#!optional port) port)
- ((port) (let ((#(tmp1) #(1))) 
-	   (let ((#(tmp2) (set! ##sys#standard-error #(tmp1))))
-	     #(tmp1))))
+ (#(procedure #:clean #:enforce) current-error-port (#!optional output-port) output-port)
+ ((output-port) (let ((#(tmp1) #(1))) 
+		  (let ((#(tmp2) (set! ##sys#standard-error #(tmp1))))
+		    #(tmp1))))
  (() ##sys#standard-error))
 
 (current-exception-handler
@@ -811,7 +814,7 @@
 
 (flonum? (#(procedure #:pure #:predicate float) flonum? (*) boolean))
 
-(flush-output (#(procedure #:enforce) flush-output (#!optional port) undefined))
+(flush-output (#(procedure #:enforce) flush-output (#!optional output-port) undefined))
 
 (foldl (forall (a b) (#(procedure #:enforce) foldl ((procedure (a b) a) a (list-of b)) a)))
 (foldr (forall (a b) (#(procedure #:enforce) foldr ((procedure (a b) b) b (list-of a)) b)))
@@ -938,7 +941,7 @@
 (get-condition-property (#(procedure #:clean #:enforce) get-condition-property ((struct condition) symbol symbol #!optional *) *))
 (get-environment-variable (#(procedure #:clean #:enforce) get-environment-variable (string) *))
 (get-keyword (#(procedure #:clean #:enforce) get-keyword (symbol list #!optional *) *))
-(get-output-string (#(procedure #:clean #:enforce) get-output-string (port) string))
+(get-output-string (#(procedure #:clean #:enforce) get-output-string (output-port) string))
 (get-properties (#(procedure #:clean #:enforce) get-properties (symbol list) symbol * list))
 
 (getter-with-setter
@@ -978,8 +981,8 @@
 (most-negative-fixnum fixnum)
 (most-positive-fixnum fixnum)
 (on-exit (#(procedure #:clean #:enforce) on-exit ((procedure () . *)) undefined))
-(open-input-string (#(procedure #:clean #:enforce) open-input-string (string #!rest) port))
-(open-output-string (#(procedure #:clean) open-output-string (#!rest) port))
+(open-input-string (#(procedure #:clean #:enforce) open-input-string (string #!rest) input-port))
+(open-output-string (#(procedure #:clean) open-output-string (#!rest) output-port))
 (parentheses-synonyms (#(procedure #:clean) parentheses-synonyms (#!optional *) *))
 
 (port-name (#(procedure #:clean #:enforce) port-name (#!optional port) *)
@@ -987,11 +990,11 @@
 
 (port-position (#(procedure #:clean #:enforce) port-position (#!optional port) fixnum fixnum))
 
-(port? (#(procedure #:pure #:predicate port) port? (*) boolean))
+(port? (#(procedure #:pure) port? (*) boolean))
 
 (print (procedure print (#!rest *) undefined))
-(print-call-chain (#(procedure #:clean #:enforce) print-call-chain (#!optional port fixnum * string) undefined))
-(print-error-message (#(procedure #:clean #:enforce) print-error-message (* #!optional port string) undefined))
+(print-call-chain (#(procedure #:clean #:enforce) print-call-chain (#!optional output-port fixnum * string) undefined))
+(print-error-message (#(procedure #:clean #:enforce) print-error-message (* #!optional output-port string) undefined))
 (print* (procedure print* (#!rest) undefined))
 (procedure-information (#(procedure #:clean #:enforce) procedure-information (procedure) *))
 (program-name (#(procedure #:clean #:enforce) program-name (#!optional string) string))
@@ -1017,13 +1020,13 @@
 (set-gc-report! (#(procedure #:clean) set-gc-report! (*) undefined))
 
 (set-parameterized-read-syntax!
- (#(procedure #:clean #:enforce) set-parameterized-read-syntax! (char (procedure (port fixnum) . *)) undefined))
+ (#(procedure #:clean #:enforce) set-parameterized-read-syntax! (char (procedure (input-port fixnum) . *)) undefined))
 
 (set-port-name! (#(procedure #:clean #:enforce) set-port-name! (port string) undefined)
 		((port string) (##sys#setslot #(1) '3 #(2))))
 
-(set-read-syntax! (#(procedure #:clean #:enforce) set-read-syntax! (char (procedure (port) . *)) undefined))
-(set-sharp-read-syntax! (#(procedure #:clean #:enforce) set-sharp-read-syntax! (char (procedure (port) . *)) undefined))
+(set-read-syntax! (#(procedure #:clean #:enforce) set-read-syntax! (char (procedure (input-port) . *)) undefined))
+(set-sharp-read-syntax! (#(procedure #:clean #:enforce) set-sharp-read-syntax! (char (procedure (input-port) . *)) undefined))
 (setter (#(procedure #:clean #:enforce) setter (procedure) procedure))
 (signal (procedure signal (*) . *))
 (signum (#(procedure #:clean #:enforce) signum (number) number))
@@ -1229,29 +1232,29 @@
 ;; extras
 
 (format (procedure format (#!rest) *))
-(fprintf (#(procedure #:enforce) fprintf (port string #!rest) undefined))
-(pp (#(procedure #:enforce) pp (* #!optional port) undefined))
-(pretty-print (#(procedure #:enforce) pretty-print (* #!optional port) undefined))
+(fprintf (#(procedure #:enforce) fprintf (output-port string #!rest) undefined))
+(pp (#(procedure #:enforce) pp (* #!optional output-port) undefined))
+(pretty-print (#(procedure #:enforce) pretty-print (* #!optional output-port) undefined))
 (pretty-print-width (#(procedure #:clean) pretty-print-width (#!optional fixnum) *))
 (printf (#(procedure #:enforce) printf (string #!rest) undefined))
 (random (#(procedure #:clean #:enforce) random (fixnum) fixnum))
 (randomize (#(procedure #:clean #:enforce) randomize (#!optional fixnum) undefined))
-(read-buffered (#(procedure #:enforce) read-buffered (#!optional port) string))
-(read-byte (#(procedure #:enforce) read-byte (#!optional port) *))
-(read-file (#(procedure #:enforce) read-file (#!optional (or port string) (procedure (port) *) fixnum) list))
-(read-line (#(procedure #:enforce) read-line (#!optional port (or boolean fixnum)) *))
-(read-lines (#(procedure #:enforce) read-lines (#!optional (or port string) fixnum) (list-of string)))
-(read-string (#(procedure #:enforce) read-string (#!optional * port) string))
-(read-string! (#(procedure #:enforce) read-string! (fixnum string #!optional port fixnum) fixnum))
-(read-token (#(procedure #:enforce) read-token ((procedure (char) *) #!optional port) string))
+(read-buffered (#(procedure #:enforce) read-buffered (#!optional input-port) string))
+(read-byte (#(procedure #:enforce) read-byte (#!optional input-port) *))
+(read-file (#(procedure #:enforce) read-file (#!optional (or input-port string) (procedure (input-port) *) fixnum) list))
+(read-line (#(procedure #:enforce) read-line (#!optional input-port (or boolean fixnum)) *))
+(read-lines (#(procedure #:enforce) read-lines (#!optional (or input-port string) fixnum) (list-of string)))
+(read-string (#(procedure #:enforce) read-string (#!optional * input-port) string))
+(read-string! (#(procedure #:enforce) read-string! (fixnum string #!optional input-port fixnum) fixnum))
+(read-token (#(procedure #:enforce) read-token ((procedure (char) *) #!optional input-port) string))
 (sprintf (#(procedure #:enforce) sprintf (string #!rest) string))
 
-(write-byte (#(procedure #:enforce) write-byte (fixnum #!optional port) undefined)
+(write-byte (#(procedure #:enforce) write-byte (fixnum #!optional output-port) undefined)
 	    ((fixnum port) (##sys#write-char-0 (integer->char #(1)) #(2)))
 	    ((fixnum) (##sys#write-char-0 (integer->char #(1)) ##sys#standard-output)))
 
-(write-line (#(procedure #:enforce) write-line (string #!optional port) undefined))
-(write-string (#(procedure #:enforce) write-string (string #!optional * port) undefined))
+(write-line (#(procedure #:enforce) write-line (string #!optional output-port) undefined))
+(write-string (#(procedure #:enforce) write-string (string #!optional * output-port) undefined))
 
 
 ;; files
@@ -1499,37 +1502,37 @@
 
 ;; ports
 
-(call-with-input-string (#(procedure #:enforce) call-with-input-string (string (procedure (port) . *)) . *))
-(call-with-output-string (#(procedure #:enforce) call-with-output-string ((procedure (port) . *)) string))
-(copy-port (#(procedure #:enforce) copy-port (* * #!optional (procedure (*) *) (procedure (* port) *)) undefined)) 
-(make-input-port (#(procedure #:clean #:enforce) make-input-port ((procedure () (or char eof)) (procedure () *) (procedure () . *) #!optional * * * *) port))
-(make-output-port (#(procedure #:clean #:enforce) make-output-port ((procedure (string) . *) (procedure () . *) #!optional (procedure () . *)) port))
+(call-with-input-string (#(procedure #:enforce) call-with-input-string (string (procedure (input-port) . *)) . *))
+(call-with-output-string (#(procedure #:enforce) call-with-output-string ((procedure (output-port) . *)) string))
+(copy-port (#(procedure #:enforce) copy-port (* * #!optional (procedure (*) *) (procedure (* output-port) *)) undefined)) 
+(make-input-port (#(procedure #:clean #:enforce) make-input-port ((procedure () (or char eof)) (procedure () *) (procedure () . *) #!optional * * * *) input-port))
+(make-output-port (#(procedure #:clean #:enforce) make-output-port ((procedure (string) . *) (procedure () . *) #!optional (procedure () . *)) output-port))
 (port-for-each (#(procedure #:enforce) port-for-each ((procedure (*) *) (procedure () . *)) undefined))
 
 (port-map
  (forall (a b) (#(procedure #:enforce) port-map ((procedure (a) b) (procedure () a)) (list-of b))))
 
 (port-fold (#(procedure #:enforce) port-fold ((procedure (* *) *) * (procedure () *)) *))
-(make-broadcast-port (#(procedure #:clean #:enforce) make-broadcast-port (#!rest port) port))
-(make-concatenated-port (#(procedure #:clean #:enforce) make-concatenated-port (port #!rest port) port))
-(with-error-output-to-port (#(procedure #:enforce) with-error-output-to-port (port (procedure () . *)) . *))
-(with-input-from-port (#(procedure #:enforce) with-input-from-port (port (procedure () . *)) . *))
+(make-broadcast-port (#(procedure #:clean #:enforce) make-broadcast-port (#!rest output-port) output-port))
+(make-concatenated-port (#(procedure #:clean #:enforce) make-concatenated-port (port #!rest input-port) input-port))
+(with-error-output-to-port (#(procedure #:enforce) with-error-output-to-port (output-port (procedure () . *)) . *))
+(with-input-from-port (#(procedure #:enforce) with-input-from-port (input-port (procedure () . *)) . *))
 (with-input-from-string (#(procedure #:enforce) with-input-from-string (string (procedure () . *)) . *))
-(with-output-to-port (#(procedure #:enforce) with-output-to-port (port (procedure () . *)) . *))
+(with-output-to-port (#(procedure #:enforce) with-output-to-port (output-port (procedure () . *)) . *))
 (with-output-to-string (#(procedure #:enforce) with-output-to-string ((procedure () . *)) . *))
 
 
 ;; posix
 
 (_exit (procedure _exit (fixnum) noreturn))
-(call-with-input-pipe (#(procedure #:enforce) call-with-input-pipe (string (procedure (port) . *) #!optional symbol) . *))
-(call-with-output-pipe (#(procedure #:enforce) call-with-output-pipe (string (procedure (port) . *) #!optional symbol) . *))
+(call-with-input-pipe (#(procedure #:enforce) call-with-input-pipe (string (procedure (input-port) . *) #!optional symbol) . *))
+(call-with-output-pipe (#(procedure #:enforce) call-with-output-pipe (string (procedure (input-port) . *) #!optional symbol) . *))
 (change-directory (#(procedure #:clean #:enforce) change-directory (string) string))
 (change-directory* (#(procedure #:clean #:enforce) change-directory* (fixnum) fixnum))
 (change-file-mode (#(procedure #:clean #:enforce) change-file-mode (string fixnum) undefined))
 (change-file-owner (#(procedure #:clean #:enforce) change-file-owner (string fixnum fixnum) undefined))
-(close-input-pipe (#(procedure #:clean #:enforce) close-input-pipe (port) fixnum))
-(close-output-pipe (#(procedure #:clean #:enforce) close-output-pipe (port) fixnum))
+(close-input-pipe (#(procedure #:clean #:enforce) close-input-pipe (input-port) fixnum))
+(close-output-pipe (#(procedure #:clean #:enforce) close-output-pipe (input-port) fixnum))
 (create-directory (#(procedure #:clean #:enforce) create-directory (string #!optional *) string))
 (create-fifo (#(procedure #:clean #:enforce) create-fifo (string #!optional fixnum) undefined))
 (create-pipe (procedure create-pipe () fixnum fixnum))
@@ -1641,10 +1644,10 @@
 (map/shared fixnum)
 (memory-mapped-file-pointer (#(procedure #:clean #:enforce) memory-mapped-file-pointer ((struct mmap)) pointer))
 (memory-mapped-file? (#(procedure #:clean #:predicate (struct mmap)) memory-mapped-file? (*) boolean))
-(open-input-file* (#(procedure #:clean #:enforce) open-input-file* (fixnum #!optional symbol) port))
-(open-input-pipe (#(procedure #:clean #:enforce) open-input-pipe (string #!optional symbol) port))
-(open-output-file* (#(procedure #:clean #:enforce) open-output-file* (fixnum #!optional symbol) port))
-(open-output-pipe (#(procedure #:clean #:enforce) open-output-pipe (string #!optional symbol) port))
+(open-input-file* (#(procedure #:clean #:enforce) open-input-file* (fixnum #!optional symbol) input-port))
+(open-input-pipe (#(procedure #:clean #:enforce) open-input-pipe (string #!optional symbol) input-port))
+(open-output-file* (#(procedure #:clean #:enforce) open-output-file* (fixnum #!optional symbol) output-port))
+(open-output-pipe (#(procedure #:clean #:enforce) open-output-pipe (string #!optional symbol) output-port))
 (open/append fixnum)
 (open/binary fixnum)
 (open/creat fixnum)
@@ -1678,8 +1681,8 @@
 (perm/ixusr fixnum)
 (pipe/buf fixnum)
 (port->fileno (#(procedure #:clean #:enforce) port->fileno (port) fixnum))
-(process (#(procedure #:clean #:enforce) process (string #!optional (list-of string) (list-of string)) port port fixnum))
-(process* (#(procedure #:clean #:enforce) process* (string #!optional (list-of string) (list-of string)) port port fixnum *))
+(process (#(procedure #:clean #:enforce) process (string #!optional (list-of string) (list-of string)) input-port output-port fixnum))
+(process* (#(procedure #:clean #:enforce) process* (string #!optional (list-of string) (list-of string)) input-port output-port fixnum *))
 
 (process-execute
  (#(procedure #:clean #:enforce) process-execute (string #!optional (list-of string) (list-of string)) noreturn))
@@ -2345,8 +2348,8 @@
 (make-u16vector (#(procedure #:clean #:enforce) make-u16vector (fixnum #!optional * * *) (struct u16vector)))
 (make-u32vector (#(procedure #:clean #:enforce) make-u32vector (fixnum #!optional * * *) (struct u32vector)))
 (make-u8vector (#(procedure #:clean #:enforce) make-u8vector (fixnum #!optional * * *) (struct u8vector)))
-(read-u8vector (#(procedure #:enforce) read-u8vector (#!optional fixnum port) (struct u8vector)))
-(read-u8vector! (#(procedure #:enforce) read-u8vector! (fixnum (struct u8vector) #!optional port fixnum) number))
+(read-u8vector (#(procedure #:enforce) read-u8vector (#!optional fixnum input-port) (struct u8vector)))
+(read-u8vector! (#(procedure #:enforce) read-u8vector! (fixnum (struct u8vector) #!optional input-port fixnum) number))
 (release-number-vector (procedure release-number-vector (*) undefined))
 (s16vector (#(procedure #:clean #:enforce) s16vector (#!rest fixnum) (struct s16vector)))
 (s16vector->blob (#(procedure #:clean #:enforce) s16vector->blob ((struct s16vector)) blob))
@@ -2434,7 +2437,7 @@
 
 (u8vector? (#(procedure #:pure #:predicate (struct u8vector)) u8vector? (*) boolean))
 
-(write-u8vector (#(procedure #:enforce) write-u8vector ((struct u8vector) #!optional port fixnum fixnum) undefined))
+(write-u8vector (#(procedure #:enforce) write-u8vector ((struct u8vector) #!optional output-port fixnum fixnum) undefined))
 
 
 ;; srfi-69
@@ -2510,13 +2513,13 @@
 ;; tcp
 
 (tcp-abandon-port (#(procedure #:clean #:enforce) tcp-abandon-port (port) undefined))
-(tcp-accept (#(procedure #:clean #:enforce) tcp-accept ((struct tcp-listener)) port port))
+(tcp-accept (#(procedure #:clean #:enforce) tcp-accept ((struct tcp-listener)) input-port output-port))
 (tcp-accept-ready? (#(procedure #:clean #:enforce) tcp-accept-ready? ((struct tcp-listener)) boolean))
 (tcp-accept-timeout (#(procedure #:clean #:enforce) tcp-accept-timeout (#!optional (or boolean number)) (or boolean number)))
 (tcp-addresses (#(procedure #:clean #:enforce) tcp-addresses (port) string string))
 (tcp-buffer-size (#(procedure #:clean #:enforce) tcp-buffer-size (#!optional fixnum) fixnum))
 (tcp-close (#(procedure #:clean #:enforce) tcp-close ((struct tcp-listener)) undefined))
-(tcp-connect (#(procedure #:clean #:enforce) tcp-connect (string #!optional fixnum) port port))
+(tcp-connect (#(procedure #:clean #:enforce) tcp-connect (string #!optional fixnum) input-port output-port))
 (tcp-connect-timeout (#(procedure #:clean #:enforce) tcp-connect-timeout (#!optional (or boolean number)) (or boolean number)))
 (tcp-listen (#(procedure #:clean #:enforce) tcp-listen (fixnum #!optional fixnum *) (struct tcp-listener)))
 
@@ -2536,10 +2539,10 @@
 
 (for-each-argv-line deprecated)
 (for-each-line deprecated)
-(read-all (#(procedure #:enforce) read-all (#!optional (or port string)) string))
+(read-all (#(procedure #:enforce) read-all (#!optional (or input-port string)) string))
 (system* (#(procedure #:clean #:enforce) system* (string #!rest) undefined))
 (qs (#(procedure #:clean #:enforce) qs (string) string))
 (compile-file (#(procedure #:clean #:enforce) compile-file (string #!rest) (or boolean string)))
 (compile-file-options (#(procedure #:clean #:enforce) compile-file-options (#!optional (list-of string)) (list-of string)))
-(scan-input-lines (#(procedure #:enforce) scan-input-lines (* #!optional port) *))
+(scan-input-lines (#(procedure #:enforce) scan-input-lines (* #!optional input-port) *))
 (yes-or-no? (#(procedure #:enforce) yes-or-no? (string #!rest) *))
