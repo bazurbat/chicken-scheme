@@ -4003,8 +4003,8 @@ EOF
 
 (define (condition-predicate kind)
   (lambda (c) 
-    (##sys#check-structure c 'condition)
-    (if (memv kind (##sys#slot c 1)) #t #f) ) )
+    (and (condition? c)
+         (if (memv kind (##sys#slot c 1)) #t #f)) ) )
 
 (define (condition-property-accessor kind prop . err-def)
   (let ((err? (null? err-def))
