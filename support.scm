@@ -673,6 +673,7 @@
 		  (val1 (walk (first subs) rl))
 		  (a (gensym v))
 		  (rl2 (alist-cons v a rl)) )
+	     (put! db a 'inline-transient #t)
 	     (make-node 
 	      'let (list a)
 	      (list val1 (walk (second subs) rl2)))) ]
