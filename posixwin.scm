@@ -1083,15 +1083,8 @@ EOF
     (##sys#signal-hook #:file-error 'create-directory
 		       "cannot create directory" name)))
 
-(define-inline (create-directory-check name)
-  (if (file-exists? name)
-      (let ((i   (##sys#file-info name)))
-	(and i
-	     (fx= 1 (##sys#slot i 4))))
-      #f))
-
 (define-inline (create-directory-helper-silent name)
-  (unless (create-directory-check name)
+  (unless (##sys#file-exists? name #f #t #f)
     (create-directory-helper name)))
 
 (define-inline (create-directory-helper-parents name)

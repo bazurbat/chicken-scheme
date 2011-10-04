@@ -468,6 +468,26 @@ static int set_file_mtime(char *filename, C_word tm)
   return utime(filename, &tb);
 }
 
+static C_word C_i_fifo_p(C_word name) 
+{
+  struct stat buf;
+  int res;
+
+  res = stat(C_c_string(name), &buf);
+
+  if(res != 0) {
+#ifdef __CYGWIN__
+    return C_SCHEME_FALSE;
+#else
+    if(errno == ENOENT) return C_fix(0);
+    else return C_fix(res);
+#endif
+  }
+
+  if((buf.st_mode & S_IFMT) == S_IFIFO) return C_SCHEME_TRUE;
+  else return C_SCHEME_FALSE;
+}
+
 EOF
 ) )
 
@@ -1546,10 +1566,16 @@ EOF
 (define fifo?
   (lambda (filename)
     (##sys#check-string filename 'fifo?)
-    (let ([v (##sys#file-info (##sys#expand-home-path filename))])
-      (if v
-          (fx= 3 (##sys#slot v 4))
-          (posix-error #:file-error 'fifo? "file does not exist" filename) ) ) ) )
+    (case (##core#inline 
+	   "C_i_fifo_p"
+	   (##sys#make-c-string (##sys#expand-home-path filename) 'fifo?))
+      ((#t) #t)
+      ((#f) #f)
+      ((0) (##sys#signal-hook #:file-error 'fifo? "file does not exist" filename) )
+      (else
+       (posix-error 
+	#:file-error 'fifo?
+	"system error while trying to access file" filename) ) ) ) )
 
 
 ;;; Environment access:

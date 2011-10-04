@@ -919,25 +919,20 @@
     (lambda (input evaluator pf #!optional timer printer)
       (when (string? input) 
 	(set! input (##sys#expand-home-path input)) )
-      (let* ([isdir #f]
-	     [fname 
+      (let* ((fname 
 	      (cond [(port? input) #f]
 		    [(not (string? input)) (badfile input)]
-		    [(and-let* ([info (##sys#file-info input)]
-				[id (##sys#slot info 4)] )
-		       (set! isdir (eq? 1 id)) 
-		       (not isdir) )
-		     input]
-		    [else
+		    ((##sys#file-exists? input #t #f 'load) input)
+		    (else
 		     (let ([fname2 (##sys#string-append input ##sys#load-dynamic-extension)])
 		       (if (and (not ##sys#dload-disabled)
 				(##sys#fudge 24) ; dload?
-				(##sys#file-info fname2))
+				(##sys#file-exists? fname2 #t #f 'load))
 			   fname2
 			   (let ([fname3 (##sys#string-append input source-file-extension)])
-			     (if (##sys#file-info fname3)
+			     (if (##sys#file-exists? fname3 #t #f 'load)
 				 fname3
-				 (and (not isdir) input) ) ) ) ) ] ) ]
+				 input) ) ) ) )))
 	     [evproc (or evaluator eval)] )
 	(cond [(and (string? input) (not fname))
 	       (##sys#signal-hook #:file-error 'load "cannot open file" input) ]
@@ -1414,8 +1409,7 @@
 (define ##sys#resolve-include-filename
   (let ((string-append string-append) )
     (define (exists? fname)
-      (let ([info (##sys#file-info fname)])
-	(and info (not (eq? 1 (##sys#slot info 4)))) ) )
+      (##sys#file-exists? fname #t #f #f))
     (lambda (fname prefer-source #!optional repo)
       (define (test2 fname lst)
 	(if (null? lst)

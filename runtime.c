@@ -720,7 +720,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* hardcoded table size - this must match the number of C_pte calls! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 61);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 60);
   int i = 0;
 
   if(pt == NULL)
@@ -736,7 +736,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_make_structure);
   C_pte(C_ensure_heap_reserve);
   C_pte(C_return_to_host);
-  C_pte(C_file_info);
   C_pte(C_get_symbol_table_info);
   C_pte(C_get_memory_info);
   C_pte(C_decode_seconds);
@@ -7828,61 +7827,6 @@ void C_ccall C_return_to_host(C_word c, C_word closure, C_word k)
 }
 
 
-void C_ccall C_file_info(C_word c, C_word closure, C_word k, C_word name)
-{
-  C_save(k);
-  C_save(name);
-  
-  if(!C_demand(FILE_INFO_SIZE + 1 + C_SIZEOF_FLONUM * 3)) C_reclaim((void *)file_info_2, NULL);
-
-  file_info_2(NULL);
-}
-
-
-void file_info_2(void *dummy)
-{
-  C_word name = C_restore,
-      k = C_restore,
-      *a = C_alloc(FILE_INFO_SIZE + 1 + C_SIZEOF_FLONUM * 3),
-      v = C_SCHEME_FALSE,
-      t, f1, f2, f3;
-  int len = C_header_size(name);
-  char *buffer2;
-  struct stat buf;
-
-  buffer2 = buffer;
-  if(len >= sizeof(buffer)) {
-    if((buffer2 = (char *)C_malloc(len + 1)) == NULL)
-      barf(C_OUT_OF_MEMORY_ERROR, "stat");
-  }
-  C_strncpy(buffer2, C_c_string(name), len);
-  buffer2[ len ] = '\0';
-
-  if(stat(buffer2, &buf) != 0) v = C_SCHEME_FALSE;
-  else {
-    switch(buf.st_mode & S_IFMT) {
-    case S_IFDIR: t = 1; break;
-    case S_IFIFO: t = 3; break;
-#if !defined(__MINGW32__)
-    case S_IFSOCK: t = 4; break;
-#endif
-    default: t = 0;
-    }
-
-    f1 = C_flonum(&a, buf.st_atime);
-    f2 = C_flonum(&a, buf.st_ctime);
-    f3 = C_flonum(&a, buf.st_mtime);
-    v = C_vector(&a, FILE_INFO_SIZE, f1, f2, f3,
-		 C_fix(buf.st_size), C_fix(t), C_fix(buf.st_mode), C_fix(buf.st_uid) ); 
-  }
-
-  if (buffer2 != buffer)
-    free(buffer2);
-
-  C_kontinue(k, v);
-}
-
-
 #define C_do_getenv(v) C_getenv(v)
 #define C_free_envbuf() {}
 
@@ -9291,3 +9235,25 @@ C_filter_heap_objects(C_word c, C_word closure, C_word k, C_word func, C_word ve
   C_fromspace_top = C_fromspace_limit; /* force major GC */
   C_reclaim((void *)filter_heap_objects_2, NULL);
 }
+
+
+C_regparm C_word C_fcall
+C_i_file_exists_p(C_word name, C_word file, C_word dir)
+{
+  struct stat buf;
+  int res;
+
+  res = stat(C_c_string(name), &buf);
+
+  if(res != 0) {
+    if(errno == ENOENT) return C_SCHEME_FALSE;
+    else return C_fix(res);
+  }
+
+  switch(buf.st_mode & S_IFMT) {
+  case S_IFDIR: return C_truep(file) ? C_SCHEME_FALSE : C_SCHEME_TRUE;
+  default: return C_truep(dir) ? C_SCHEME_FALSE : C_SCHEME_TRUE;
+  }
+}
+
+

@@ -190,7 +190,6 @@ EOF
 (define (##sys#fudge index) (##core#inline "C_fudge" index))
 (define ##sys#call-host (##core#primitive "C_return_to_host"))
 (define return-to-host ##sys#call-host)
-(define ##sys#file-info (##core#primitive "C_file_info"))
 (define ##sys#symbol-table-info (##core#primitive "C_get_symbol_table_info"))
 (define ##sys#memory-info (##core#primitive "C_get_memory_info"))
 (define (current-milliseconds) (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f))
@@ -1991,12 +1990,24 @@ EOF
 	    (set! ##sys#standard-output old)
 	    (apply ##sys#values results) ) ) ) ) ) )
 
+(define (##sys#file-exists? name file? dir? loc)
+  (case (##core#inline "C_i_file_exists_p" (##sys#make-c-string name loc) file? dir?)
+    ((#f) #f)
+    ((#t) #t)
+    (else 
+     (##sys#signal-hook 
+      #:file-error loc "system error while trying to access file" 
+      name))))
+
 (define (file-exists? name)
   (##sys#check-string name 'file-exists?)
   (##sys#pathname-resolution
     name
     (lambda (name)
-      (and (##sys#file-info (##sys#platform-fixup-pathname name)) name) )
+      (and (##sys#file-exists? 
+	    (##sys#platform-fixup-pathname name) 
+	    #f #f 'file-exists?) 
+	   name) )
     #:exists?) )
 
 (define (directory-exists? name)
@@ -2004,9 +2015,10 @@ EOF
   (##sys#pathname-resolution
    name
    (lambda (name)
-     (and-let* ((info (##sys#file-info (##sys#platform-fixup-pathname name)))
-		((eq? 1 (vector-ref info 4))))
-       name))
+     (and (##sys#file-exists?
+	   (##sys#platform-fixup-pathname name)
+	   #f #t 'directory-exists?)
+	  name) )
    #:exists?) )
 
 (define (##sys#flush-output port)

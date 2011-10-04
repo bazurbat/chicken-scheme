@@ -185,7 +185,8 @@
     ##sys#foreign-string-argument ##sys#foreign-pointer-argument ##sys#void
     ##sys#foreign-integer-argument ##sys#foreign-unsigned-integer-argument ##sys#double->number
     ##sys#peek-fixnum ##sys#setislot ##sys#poke-integer ##sys#permanent? ##sys#values ##sys#poke-double
-    ##sys#intern-symbol ##sys#make-symbol ##sys#null-pointer? ##sys#peek-byte) )
+    ##sys#intern-symbol ##sys#make-symbol ##sys#null-pointer? ##sys#peek-byte
+    ##sys#file-exists?) )
 
 (define non-foldable-bindings
   '(vector

@@ -1678,7 +1678,6 @@ C_fctexport void C_ccall C_make_pointer(C_word c, C_word closure, C_word k) C_no
 C_fctexport void C_ccall C_make_tagged_pointer(C_word c, C_word closure, C_word k, C_word tag) C_noret;
 C_fctexport void C_ccall C_ensure_heap_reserve(C_word c, C_word closure, C_word k, C_word n) C_noret;
 C_fctexport void C_ccall C_return_to_host(C_word c, C_word closure, C_word k) C_noret;
-C_fctexport void C_ccall C_file_info(C_word c, C_word closure, C_word k, C_word port) C_noret;
 C_fctexport void C_ccall C_get_environment_variable(C_word c, C_word closure, C_word k, C_word name) C_noret;
 C_fctexport void C_ccall C_get_symbol_table_info(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_get_memory_info(C_word c, C_word closure, C_word k) C_noret;
@@ -1822,6 +1821,7 @@ C_fctexport double C_fcall C_cpu_milliseconds(void) C_regparm;
 C_fctexport C_word C_fcall C_a_i_cpu_time(C_word **a, int c, C_word buf) C_regparm;
 C_fctexport C_word C_fcall C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix) C_regparm;
 C_fctexport C_word C_fcall C_a_i_exact_to_inexact(C_word **a, int c, C_word n) C_regparm;
+C_fctexport C_word C_fcall C_i_file_exists_p(C_word name, C_word file, C_word dir) C_regparm;
 
 C_fctexport C_word C_fcall C_i_foreign_char_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_fixnum_argumentp(C_word x) C_regparm;
