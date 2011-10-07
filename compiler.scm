@@ -2126,7 +2126,7 @@
 			     (if (eq? '##core#variable (node-class value))
 				 (let ((varname (first (node-parameters value))))
 				   (or (not (get db varname 'global))
-				       (not (variable-mark varname '##core#always-bound))))
+				       (variable-mark varname '##core#always-bound)))
 				 (not (expression-has-side-effects? value db)) ))
 			undefined) )
 	   (quick-put! plist 'removable #t) )
