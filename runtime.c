@@ -9246,8 +9246,12 @@ C_i_file_exists_p(C_word name, C_word file, C_word dir)
   res = stat(C_c_string(name), &buf);
 
   if(res != 0) {
-    if(errno == ENOENT) return C_SCHEME_FALSE;
-    else return C_fix(res);
+    switch(errno) {
+    case ENOENT: return C_SCHEME_FALSE;
+    case EOVERFLOW: return C_truep(dir) ? C_SCHEME_FALSE : C_SCHEME_TRUE;
+    case ENOTDIR: return C_SCHEME_FALSE;
+    default: return C_fix(res);
+    }
   }
 
   switch(buf.st_mode & S_IFMT) {
