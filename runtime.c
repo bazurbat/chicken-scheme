@@ -7257,7 +7257,7 @@ void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2
 C_regparm C_word C_fcall
 C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix0)
 {
-  int radix, radixpf = 0, sharpf = 0, ratf = 0, exactf, exactpf = 0, periodf = 0, expf = 0;
+  int radix, radixpf = 0, sharpf = 0, ratf = 0, exactf = 0, exactpf = 0, periodf = 0, expf = 0;
   C_word n1, n;
   C_char *sptr, *eptr, *rptr;
   double fn1, fn;
