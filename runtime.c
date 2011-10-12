@@ -55,6 +55,10 @@
 # define EX_SOFTWARE  70
 #endif
 
+#ifndef EOVERFLOW
+# define EOVERFLOW  0
+#endif
+
 #if !defined(C_NONUNIX)
 
 # include <sys/types.h>
