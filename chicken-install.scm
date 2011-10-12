@@ -267,16 +267,18 @@
 		     (->string (car dep))
 		     #f))
 		   ((not (version>=? v (->string (cadr dep))))
-		    (when (and (string=? "chicken" (->string (car dep)))
-			       (not *force*))
-		      (error
-		       (string-append 
-			"Your CHICKEN version is not recent enough to use this extension - version "
-			(cadr dep) 
-			" or newer is required")))
-		    (values 
-		     #f
-		     (cons (->string (car dep)) (->string (cadr dep)))))
+		    (cond ((string=? "chicken" (->string (car dep)))
+			   (if *force*
+			       (values #f #f)
+			       (error
+				(string-append 
+				 "Your CHICKEN version is not recent enough to use this extension - version "
+				 (cadr dep) 
+				 " or newer is required"))))
+			  (else
+			   (values 
+			    #f
+			    (cons (->string (car dep)) (->string (cadr dep)))))))
 		   (else (values #f #f)))))
 	  (else
 	   (warning
