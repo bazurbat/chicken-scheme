@@ -7078,14 +7078,14 @@ void C_ccall C_allocate_vector(C_word c, C_word closure, C_word k, C_word size, 
 
 void allocate_vector_2(void *dummy)
 {
-  C_word mode = C_restore;
-  int bytes = C_unfix(C_restore);
-  C_word align8 = C_restore,
-         bvecf = C_restore,
-         init = C_restore;
-  C_word size = C_unfix(C_restore);
-  C_word k = C_restore,
-         *v0, v;
+  C_word  mode = C_restore;
+  C_uword bytes = C_unfix(C_restore);
+  C_word  align8 = C_restore,
+          bvecf = C_restore,
+          init = C_restore;
+  C_word  size = C_unfix(C_restore);
+  C_word  k = C_restore,
+          *v0, v;
 
   if(C_truep(mode)) {
     while((C_uword)(C_fromspace_limit - C_fromspace_top) < (bytes + stack_size)) {
