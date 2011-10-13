@@ -196,15 +196,6 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 
 /* Macros: */
 
-#ifdef PARANOIA
-# define check_alignment(p)           assert(((C_word)(p) & 3) == 0)
-#else
-# ifndef NDEBUG
-#  define NDEBUG
-# endif
-# define check_alignment(p)
-#endif
-
 #define nmax(x, y)                   ((x) > (y) ? (x) : (y))
 #define nmin(x, y)                   ((x) < (y) ? (x) : (y))
 #define percentage(n, p)             ((long)(((double)(n) * (double)p) / 100))
