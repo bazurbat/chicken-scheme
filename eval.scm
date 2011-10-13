@@ -704,7 +704,7 @@
 			  (compile-call (cdr x) e tf cntr se) ]
 
 			 ((##core#the)
-			  (compile (caddr x) e h tf cntr se))
+			  (compile (cadddr x) e h tf cntr se))
 			 
 			 ((##core#typecase)
 			  ;; drops exp and requires "else" clause

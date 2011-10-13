@@ -505,7 +505,9 @@
 	       ((lambda ##core#lambda) 
 		(make-node 'lambda (list (cadr x)) (list (walk (caddr x)))))
 	       ((##core#the)
-		(make-node '##core#the (list (cadr x)) (list (walk (caddr x)))))
+		(make-node '##core#the
+			   (list (second x) (third x))
+			   (list (walk (fourth x)))))
 	       ((##core#typecase)
 		;; clause-head is already stripped
 		(let loop ((cls (cddr x)) (types '()) (exps (list (walk (cadr x)))))

@@ -123,6 +123,7 @@
 	(aliased '())
 	(noreturn #f)
 	(dropped-branches 0)
+	(errors #f)
 	(safe-calls 0))
 
     (define (constant-result lit)
@@ -241,6 +242,12 @@
       (when show
 	(warning
 	 (conc (location-name loc) desc))))
+
+    (define (report-error loc desc #!optional (show complain))
+      (when show
+	(warning 
+	 (conc (location-name loc) desc)))
+      (set! errors #t))
 
     (define (location-name loc)
       (define (lname loc1)
@@ -597,8 +604,7 @@
 		    (when (and type (not b)
 			       (not (eq? type 'deprecated))
 			       (not (match-types type rt typeenv)))
-		      ;;XXX make this an error with strict-types?
-		      (report
+		      ((if strict-variable-types report-error report)
 		       loc
 		       (sprintf 
 			   "assignment of value of type `~a' to toplevel variable `~a' does not match declared type `~a'"
@@ -752,8 +758,9 @@
 				(sprintf 
 				    "expression returns ~a values but is declared to have a single result"
 				  (length rt))))
-			     (unless (type<=? t (first rt))
-			       (report-notice
+			     (when (and (second params)
+					(not (type<=? t (first rt))))
+			       ((if strict-variable-types report-error report-notice)
 				loc
 				(sprintf
 				    "expression returns a result of type `~a', but is declared to return `~a', which is not a subtype"
@@ -800,6 +807,8 @@
 	(debugging 'x "safe calls" safe-calls)) ;XXX use 'o
       (when (positive? dropped-branches)
 	(debugging 'x "dropped branches" dropped-branches)) ;XXX use 'o
+      (when errors
+	(quit "some variable types do not satisfy strictness"))
       rn)))
       
 
@@ -2124,7 +2133,7 @@
 		 (and (eq? 'quote (node-class index))
 		      (let ((val (first (node-parameters index))))
 			(and (fixnum? val)
-			     (>= val 0) (< val (length (cdr arg1))) ;XXX could warn on failure
+			     (>= val 0) (< val (length (cdr arg1))) ;XXX could warn on failure (but needs location)
 			     (list (list-ref (cdr arg1) val))))))))
 	rtypes))
   (define-special-case vector-ref vector-ref-result-type)

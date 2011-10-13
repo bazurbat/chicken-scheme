@@ -174,7 +174,7 @@
 	(##core#the ,(##compiler#foreign-type->scrutiny-type
 		      (##sys#strip-syntax (caddr form))
 		      'result) 
-		    ,tmp) ) ) ) ) )
+		    #f ,tmp) ) ) ) ) )
 
 
 ;;; Include foreign code fragments
@@ -217,6 +217,7 @@
       `(##core#the (procedure
 		    ,(map (cut ##compiler#foreign-type->scrutiny-type <> 'arg) argtypes)
 		    ,(##compiler#foreign-type->scrutiny-type rtype 'result))
+		   #f
 		   (##core#foreign-primitive ,@(cdr form)))))))
 
 (##sys#extend-macro-environment
@@ -230,6 +231,7 @@
 		       (##sys#strip-syntax (cdddr form)))
 		 ,(##compiler#foreign-type->scrutiny-type
 		   (##sys#strip-syntax (cadr form)) 'result))
+      #f
       (##core#foreign-lambda ,@(cdr form))))))
 
 (##sys#extend-macro-environment
@@ -243,6 +245,7 @@
 			(##sys#strip-syntax (caddr form)))
 		  ,(##compiler#foreign-type->scrutiny-type
 		    (##sys#strip-syntax (cadr form)) 'result))
+      #f
       (##core#foreign-lambda* ,@(cdr form))))))
 
 (##sys#extend-macro-environment
@@ -256,6 +259,7 @@
 			(##sys#strip-syntax (cdddr form)))
 		  ,(##compiler#foreign-type->scrutiny-type
 		    (##sys#strip-syntax (cadr form)) 'result))
+      #f
       (##core#foreign-safe-lambda ,@(cdr form))))))
 
 (##sys#extend-macro-environment
@@ -269,6 +273,7 @@
 			(##sys#strip-syntax (caddr form)))
 		  ,(##compiler#foreign-type->scrutiny-type
 		    (##sys#strip-syntax (cadr form)) 'result))
+      #f
       (##core#foreign-safe-lambda* ,@(cdr form))))))
 
 (##sys#extend-macro-environment
@@ -285,7 +290,7 @@
 		(##compiler#foreign-type-declaration t ""))))
       `(##core#begin
 	(##core#define-foreign-variable ,tmp size_t ,(string-append "sizeof(" decl ")"))
-	(##core#the fixnum ,tmp))))))
+	(##core#the fixnum #f ,tmp))))))
 
 
 (##sys#macro-subset me0)))

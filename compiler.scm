@@ -146,7 +146,7 @@
 ; (##core#let-compiler-syntax ((<symbol> <expr>) ...) <expr> ...)
 ; (##core#module <symbol> #t | (<name> | (<name> ...) ...) <body>)
 ; (##core#let-module-alias ((<alias> <name>) ...) <body>)
-; (##core#the <type> <exp>)
+; (##core#the <type> <strict?> <exp>)
 ; (##core#typecase <exp> (<type> <body>) ... [(else <body>)])
 ; (<exp> {<exp>})
 
@@ -174,7 +174,7 @@
 ; [##core#return <exp>]
 ; [##core#direct_call {<safe-flag> <debug-info> <call-id> <words>} <exp-f> <exp>...]
 ; [##core#direct_lambda {<id> <mode> (<variable>... [. <variable>]) <size>} <exp>]
-; [##core#the {<type>} <exp>]
+; [##core#the {<type> <strict>} <exp>]
 ; [##core#typecase {(<type> ...)} <exp> <body1> ... [<elsebody>]]
 
 ; - Closure converted/prepared language:
@@ -553,7 +553,8 @@
 			((##core#the)
 			 `(##core#the
 			   ,(##sys#strip-syntax (cadr x))
-			   ,(walk (caddr x) e se dest ldest h)))
+			   ,(caddr x)
+			   ,(walk (cadddr x) e se dest ldest h)))
 
 			((##core#typecase)
 			 `(##core#typecase
