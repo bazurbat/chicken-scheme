@@ -225,7 +225,8 @@
 (define translate-options '())
 
 (define include-dir
-  (let ((id (prefix "" "include" 
+  (let ((id (prefix ""
+                    (make-pathname "include" "chicken")
 		    (if host-mode INSTALL_INCLUDE_HOME TARGET_INCLUDE_HOME))))
     (and (not (member id '("/usr/include" "")))
 	 id) ) )
