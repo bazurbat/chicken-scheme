@@ -223,7 +223,6 @@ readdir(DIR * dir)
 #define open_text_output_pipe(a, n, name)    open_binary_output_pipe(a, n, name)
 #define close_pipe(p)			     C_fix(_pclose(C_port_file(p)))
 
-#define C_getpid	    getpid
 #define C_chmod(fn, m)	    C_fix(chmod(C_data_pointer(fn), C_unfix(m)))
 #define C_setvbuf(p, m, s)  C_fix(setvbuf(C_port_file(p), NULL, C_unfix(m), C_unfix(s)))
 #define C_test_access(fn, m)	    C_fix(access((char *)C_data_pointer(fn), C_unfix(m)))
@@ -1569,8 +1568,6 @@ EOF
     ($exec-teardown 'process-spawn "cannot spawn process" filename
       (if envlst (##core#inline "C_spawnvpe" mode prg) (##core#inline "C_spawnvp" mode prg))) ) )
 
-(define current-process-id (foreign-lambda int "C_getpid"))
-
 (define-foreign-variable _shlcmd c-string "C_shlcmd")
 
 (define (##sys#shell-command)
@@ -1670,21 +1667,7 @@ EOF
     (values pid #t _exstatus)
     (values -1 #f #f) ) )
 
-(define process-wait
-  (lambda (pid . args)
-    (let-optionals* args ([nohang #f])
-      (##sys#check-exact pid 'process-wait)
-      (receive [epid enorm ecode] (##sys#process-wait pid nohang)
-	(if (fx= epid -1)
-	  (begin
-	    (##sys#update-errno)
-	    (##sys#signal-hook #:process-error 'process-wait "waiting for child process failed" pid) )
-	  (values epid enorm ecode) ) ) ) ) )
-
-(define sleep
-  (lambda (t)
-    (##core#inline "C_sleep" t)
-    0) )
+(define sleep (foreign-lambda int "C_sleep" int))
 
 (define-foreign-variable _hostname c-string "C_hostname")
 (define-foreign-variable _osver c-string "C_osver")

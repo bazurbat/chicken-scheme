@@ -1691,7 +1691,7 @@
 (process-group-id (#(procedure #:clean #:enforce) process-group-id () fixnum))
 (process-run (#(procedure #:clean #:enforce) process-run (string #!optional (list-of string)) fixnum))
 (process-signal (#(procedure #:clean #:enforce) process-signal (fixnum #!optional fixnum) undefined))
-(process-wait (#(procedure #:clean #:enforce) process-wait (fixnum #!optional *) fixnum fixnum fixnum))
+(process-wait (#(procedure #:clean #:enforce) process-wait (#!optional fixnum *) fixnum fixnum fixnum))
 (prot/exec fixnum)
 (prot/none fixnum)
 (prot/read fixnum)
