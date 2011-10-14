@@ -1837,17 +1837,6 @@ EOF
               (##core#inline "C_WTERMSIG" _wait-status)]
             [else (##core#inline "C_WSTOPSIG" _wait-status)] ) ) ) )
 
-(define process-wait
-  (lambda args
-    (let-optionals* args ([pid #f] [nohang #f])
-      (let ([pid (or pid -1)])
-        (##sys#check-exact pid 'process-wait)
-        (receive [epid enorm ecode] (##sys#process-wait pid nohang)
-          (if (fx= epid -1)
-              (posix-error #:process-error 'process-wait "waiting for child process failed" pid)
-              (values epid enorm ecode) ) ) ) ) ) )
-
-(define current-process-id (foreign-lambda int "C_getpid"))
 (define parent-process-id (foreign-lambda int "C_getppid"))
 
 (define sleep (foreign-lambda int "C_sleep" int))

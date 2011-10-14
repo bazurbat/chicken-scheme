@@ -38,7 +38,7 @@ EOF
 
 (include "common-declarations.scm")
 
-(define-foreign-variable profile-id int "getpid()")
+(define-foreign-variable profile-id int "C_getpid()")
 
 (define-constant profile-info-entry-size 5)
 

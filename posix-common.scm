@@ -487,3 +487,18 @@ EOF
                 (##sys#substring str 0 (fx- (##sys#size str) 1))
                 (##sys#error 'time->string "cannot convert time vector to string" tm) ) ) ) ) ) )
 
+
+;;; Processes
+
+(define current-process-id (foreign-lambda int "C_getpid"))
+
+(define process-wait
+  (lambda args
+    (let-optionals* args ([pid #f] [nohang #f])
+      (let ([pid (or pid -1)])
+        (##sys#check-exact pid 'process-wait)
+        (receive [epid enorm ecode] (##sys#process-wait pid nohang)
+          (if (fx= epid -1)
+              (posix-error #:process-error 'process-wait "waiting for child process failed" pid)
+              (values epid enorm ecode) ) ) ) ) ) )
+
