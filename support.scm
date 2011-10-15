@@ -434,6 +434,7 @@
 		 (inline-target . ilt) (inline-transient . itr)
 		 (undefined . und) (replacing . rpg) (unused . uud) (extended-binding . xtb)
 		 (inline-export . ilx) (hidden-refs . hrf)
+		 (value-ref . vvf)
 		 (customizable . cst) (has-unused-parameters . hup) (boxed-rest . bxr) ) ) 
 	(omit #f))
     (lambda (db)
@@ -618,7 +619,11 @@
 	((##core#closure)
 	 `(##core#closure ,params ,@(map walk subs)) )
 	((##core#variable) (car params))
-	((quote) `(quote ,(car params)))
+	((quote)
+	 (let ((c (car params)))
+	   (if (or (boolean? c) (string? c) (number? c) (char? c))
+	       c
+	       `(quote ,(car params)))))
 	((let)
 	 `(let ,(map list params (map walk (butlast subs)))
 	    ,(walk (last subs)) ) )
@@ -1673,12 +1678,14 @@ Usage: chicken FILENAME OPTION ...
     -no-bound-checks             disable bound variable checks
     -no-procedure-checks         disable procedure call checks
     -no-procedure-checks-for-usual-bindings
-                                 disable procedure call checks only for usual
-                                  bindings
+                                   disable procedure call checks only for usual
+                                   bindings
     -no-procedure-checks-for-toplevel-bindings
                                    disable procedure call checks for toplevel
-                                    bindings
+                                   bindings
     -strict-types                assume variable do not change their type
+    -clustering                  combine groups of local procedures into dispatch
+                                   loop
 
   Configuration options:
 

@@ -88,6 +88,7 @@
 		      (cons* 'optimize-leaf-routines
 			     'inline
 			     'unboxing
+			     ;XXX 'clustering
 			     options)) ) 
 		   ((3)
 		    (set! options
@@ -95,6 +96,7 @@
 			     'inline
 			     'inline-global
 			     'unboxing 'local
+			     ;XXX 'clustering
 			     'specialize
 			     options) ) )
 		   ((4)
@@ -104,6 +106,7 @@
 			     'inline-global
 			     'unboxing 
 			     'specialize
+			     ;XXX 'clustering
 			     'local 'unsafe
 			     options) ) )
 		   (else
@@ -120,6 +123,7 @@
 			       'no-lambda-info
 			       'inline
 			       'inline-global
+			       ;XXX 'clustering
 			       'unboxing
 			       options) ) ) ) )
 		 (loop (cdr rest)) ) )

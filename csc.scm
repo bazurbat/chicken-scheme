@@ -139,7 +139,7 @@
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
     -emit-all-import-libraries -setup-mode -unboxing -no-elevation -no-module-registration
     -no-procedure-checks-for-usual-bindings -module
-    -specialize -strict-types
+    -specialize -strict-types -clustering
     -lambda-lift			; OBSOLETE
     -no-procedure-checks-for-toplevel-bindings))
 
@@ -399,6 +399,8 @@ Usage: #{csc} FILENAME | OPTION ...
                                    disable procedure call checks for toplevel
                                     bindings
     -strict-types                  assume variable do not change their type
+    -clustering                    combine groups of local procedures into dispatch
+                                     loop
 
   Configuration options:
 

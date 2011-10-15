@@ -78,6 +78,7 @@
  debugging
  debugging-chicken
  debugging-executable
+ determine-loop-and-dispatch
  decompose-lambda-list
  default-debugging-declarations
  default-declarations
