@@ -48,12 +48,8 @@
 
 (define dd d)
 
-(cond-expand				;XXX remove cond-expand later
-  ((not debugbuild)
-   (begin
-     (define-syntax d (syntax-rules () ((_ . _) (void))))
-     (define-syntax dd (syntax-rules () ((_ . _) (void))))))
-  (else))
+(define-syntax d (syntax-rules () ((_ . _) (void))))
+(define-syntax dd (syntax-rules () ((_ . _) (void))))))
 
 
 ;;; Walk node tree, keeping type and binding information
