@@ -501,6 +501,11 @@
 		 (for-each pretty-print imps)
 		 (print "\n;; END OF FILE"))))) ) )
 
+  (define (checkvar name form)
+    (when (keyword? name)
+      (warning "variable is keyword in binding form" `(,form (... (,name ...) ...) ...)))
+    name)
+
   (define (walk x e se dest ldest h)
     (cond ((symbol? x)
 	   (cond ((keyword? x) `(quote ,x))
@@ -618,7 +623,7 @@
 			((##core#let)
 			 (let* ((bindings (cadr x))
 				(vars (unzip1 bindings))
-				(aliases (map gensym vars))
+				(aliases (map (o gensym (cut checkvar <> 'let)) vars))
 				(se2 (##sys#extend-se se vars aliases)))
 			   (set-real-names! aliases vars)
 			   `(let
@@ -636,7 +641,7 @@
 			   (walk
 			    `(##core#let
 			      ,(map (lambda (b)
-				      (list (car b) '(##core#undefined))) 
+				      (list (checkvar (car b) 'letrec) '(##core#undefined))) 
 				    bindings)
 			      ,@(map (lambda (b)
 				       `(##core#set! ,(car b) ,(cadr b))) 
@@ -686,7 +691,7 @@
 			 (let ((se2 (append
 				     (map (lambda (b)
 					    (list
-					     (car b)
+					     (checkvar (car b) 'let-syntax)
 					     se
 					     (##sys#ensure-transformer
 					      (##sys#eval/meta (cadr b))
@@ -701,7 +706,7 @@
 		       ((##core#letrec-syntax)
 			(let* ((ms (map (lambda (b)
 					  (list
-					   (car b)
+					   (checkvar (car b) 'letrec-syntax)
 					   #f
 					   (##sys#ensure-transformer
 					    (##sys#eval/meta (cadr b))
@@ -776,8 +781,11 @@
 		       ((##core#let-compiler-syntax)
 			(let ((bs (map
 				   (lambda (b)
-				     (##sys#check-syntax 'let-compiler-syntax b '(symbol . #(_ 0 1)))
-				     (let ((name (lookup (car b) se)))
+				     (##sys#check-syntax
+				      'let-compiler-syntax b '(symbol . #(_ 0 1)))
+				     (let ((name (lookup
+						  (checkvar (car b) 'let-compiler-syntax) 
+						  se)))
 				       (list 
 					name 
 					(and (pair? (cdr b))
