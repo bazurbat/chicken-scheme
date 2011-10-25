@@ -1575,7 +1575,6 @@ C_fctexport void C_no_closure_error(C_word x) C_noret;
 C_fctexport void C_div_by_zero_error(char *loc) C_noret;
 C_fctexport C_word C_closure(C_word **ptr, int cells, C_word proc, ...);
 C_fctexport C_word C_fcall C_pair(C_word **ptr, C_word car, C_word cdr) C_regparm;
-C_fctexport C_word C_fcall C_h_pair(C_word car, C_word cdr) C_regparm;
 C_fctexport C_word C_fcall C_number(C_word **ptr, double n) C_regparm;
 C_fctexport C_word C_fcall C_mpointer(C_word **ptr, void *mp) C_regparm;
 C_fctexport C_word C_fcall C_mpointer_or_false(C_word **ptr, void *mp) C_regparm;
@@ -1585,9 +1584,7 @@ C_fctexport C_word C_fcall C_taggedmpointer(C_word **ptr, C_word tag, void *mp) 
 C_fctexport C_word C_fcall C_taggedmpointer_or_false(C_word **ptr, C_word tag, void *mp) C_regparm;
 C_fctexport C_word C_fcall C_swigmpointer(C_word **ptr, void *mp, void *sdata) C_regparm;
 C_fctexport C_word C_vector(C_word **ptr, int n, ...);
-C_fctexport C_word C_h_vector(int n, ...);
 C_fctexport C_word C_structure(C_word **ptr, int n, ...);
-C_fctexport C_word C_h_structure(int n, ...);
 C_fctexport C_word C_fcall C_mutate(C_word *slot, C_word val) C_regparm;
 C_fctexport void C_fcall C_reclaim(void *trampoline, void *proc) C_regparm C_noret;
 C_fctexport void C_save_and_reclaim(void *trampoline, void *proc, int n, ...) C_noret;
@@ -1707,7 +1704,6 @@ C_fctexport C_word *C_a_i(C_word **a, int n);
 
 C_fctexport time_t C_fcall C_seconds(long *ms) C_regparm;
 C_fctexport C_word C_a_i_list(C_word **a, int c, ...);
-C_fctexport C_word C_h_list(int c, ...);
 C_fctexport C_word C_a_i_string(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_record(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_port(C_word **a, int c);

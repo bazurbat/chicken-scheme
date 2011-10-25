@@ -2400,25 +2400,6 @@ C_regparm C_word C_fcall C_pair(C_word **ptr, C_word car, C_word cdr)
 }
 
 
-C_regparm C_word C_fcall C_h_pair(C_word car, C_word cdr)
-{
-  /* Allocate on heap and check for non-heap slots: */
-  C_word *p = (C_word *)C_fromspace_top,
-         *p0 = p;
- 
-  *(p++) = C_PAIR_TYPE | (C_SIZEOF_PAIR - 1);
-
-  if(C_in_stackp(car)) C_mutate(p++, car);
-  else *(p++) = car;
-
-  if(C_in_stackp(cdr)) C_mutate(p++, cdr);
-  else *(p++) = cdr;
-
-  C_fromspace_top = (C_byte *)p;
-  return (C_word)p0;
-}
-
-
 C_regparm C_word C_fcall C_number(C_word **ptr, double n)
 {
   C_word 
@@ -2550,54 +2531,6 @@ C_word C_structure(C_word **ptr, int n, ...)
     *(p++) = va_arg(v, C_word);
 
   *ptr = p;
-  va_end(v);
-  return (C_word)p0;
-}
-
-
-C_word C_h_vector(int n, ...)
-{
-  /* As C_vector(), but remember slots containing nursery pointers: */
-  va_list v;
-  C_word *p = (C_word *)C_fromspace_top,
-         *p0 = p,
-         x; 
-
-  *(p++) = C_VECTOR_TYPE | n;
-  va_start(v, n);
-
-  while(n--) {
-    x = va_arg(v, C_word);
-
-    if(C_in_stackp(x)) C_mutate(p++, x);
-    else *(p++) = x;
-  }
-
-  C_fromspace_top = (C_byte *)p;
-  va_end(v);
-  return (C_word)p0;
-}
-
-
-C_word C_h_structure(int n, ...)
-{
-  /* As C_structure(), but remember slots containing nursery pointers: */
-  va_list v;
-  C_word *p = (C_word *)C_fromspace_top,
-         *p0 = p,
-         x; 
-
-  *(p++) = C_STRUCTURE_TYPE | n;
-  va_start(v, n);
-
-  while(n--) {
-    x = va_arg(v, C_word);
-
-    if(C_in_stackp(x)) C_mutate(p++, x);
-    else *(p++) = x;
-  }
-
-  C_fromspace_top = (C_byte *)p;
   va_end(v);
   return (C_word)p0;
 }
@@ -4430,32 +4363,6 @@ C_word C_a_i_list(C_word **a, int c, ...)
   for(last = C_SCHEME_UNDEFINED; c--; last = current) {
     x = va_arg(v, C_word);
     current = C_a_pair(a, x, C_SCHEME_END_OF_LIST);
-
-    if(last != C_SCHEME_UNDEFINED)
-      C_set_block_item(last, 1, current);
-    else first = current;
-  }
-
-  va_end(v);
-  return first;
-}
-
-
-C_word C_h_list(int c, ...)
-{
-  /* Similar to C_a_i_list(), but put slots with nursery data into mutation stack: */
-  va_list v;
-  C_word x, last, current,
-         first = C_SCHEME_END_OF_LIST;
-
-  va_start(v, c);
-
-  for(last = C_SCHEME_UNDEFINED; c--; last = current) {
-    x = va_arg(v, C_word);
-    current = C_a_pair(C_heaptop, x, C_SCHEME_END_OF_LIST);
-
-    if(C_in_stackp(x)) 
-      C_mutate(&C_u_i_car(current), x);
 
     if(last != C_SCHEME_UNDEFINED)
       C_set_block_item(last, 1, current);
