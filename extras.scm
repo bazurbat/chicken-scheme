@@ -245,11 +245,11 @@
     (let-optionals more ([n #f] [port ##sys#standard-output])
       (##sys#check-output-port port #t 'write-string)
       (when n (##sys#check-exact n 'write-string))
-      (display 
+      ((##sys#slot (##sys#slot port 2) 3) ; write-string
+       port
        (if (and n (fx< n (##sys#size s)))
 	   (##sys#substring s 0 n)
-	   s)
-       port) ) ) )
+	   s)))))
 
 
 ;;; Binary I/O
