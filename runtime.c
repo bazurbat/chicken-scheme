@@ -156,7 +156,6 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #define TEMPORARY_STACK_SIZE	       2048
 #define STRING_BUFFER_SIZE             4096
 #define DEFAULT_MUTATION_STACK_SIZE    1024
-#define MUTATION_STACK_GROWTH          1024
 
 #define FILE_INFO_SIZE                 7
 
@@ -2538,7 +2537,7 @@ C_word C_structure(C_word **ptr, int n, ...)
 
 C_regparm C_word C_fcall C_mutate(C_word *slot, C_word val)
 {
-  int mssize;
+  unsigned int mssize, newmssize, bytes;
 
   if(!C_immediatep(val)) {
 #ifdef C_GC_HOOKS
@@ -2548,14 +2547,19 @@ C_regparm C_word C_fcall C_mutate(C_word *slot, C_word val)
     if(mutation_stack_top >= mutation_stack_limit) {
       assert(mutation_stack_top == mutation_stack_limit);
       mssize = mutation_stack_top - mutation_stack_bottom;
-      mutation_stack_bottom =
-          (C_word **)realloc(mutation_stack_bottom,
-                             (mssize + MUTATION_STACK_GROWTH) * sizeof(C_word *));
+      newmssize = mssize * 2;
+      bytes = newmssize * sizeof(C_word *);
+
+      if(debug_mode) 
+	C_dbg(C_text("debug"), C_text("resizing mutation-stack from " UWORD_COUNT_FORMAT_STRING "k to " UWORD_COUNT_FORMAT_STRING "k ...\n"), 
+	      (mssize * sizeof(C_word *)) / 1024, bytes / 1024);
+
+      mutation_stack_bottom = (C_word **)realloc(mutation_stack_bottom, bytes);
 
       if(mutation_stack_bottom == NULL)
 	panic(C_text("out of memory - cannot re-allocate mutation stack"));
 
-      mutation_stack_limit = mutation_stack_bottom + mssize + MUTATION_STACK_GROWTH;
+      mutation_stack_limit = mutation_stack_bottom + newmssize;
       mutation_stack_top = mutation_stack_bottom + mssize;
     }
 
@@ -2599,7 +2603,7 @@ static void mark(C_word *x) { \
 
 C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 {
-  int i, j, n, fcount, weakn;
+  int i, j, n, fcount, weakn = 0;
   C_uword count, bytes;
   C_word *p, **msp, bucket, last, item, container;
   C_header h;
@@ -2608,7 +2612,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
   C_SCHEME_BLOCK *bp;
   C_GC_ROOT *gcrp;
   WEAK_TABLE_ENTRY *wep;
-  double tgc;
+  double tgc = 0;
   C_SYMBOL_TABLE *stp;
   volatile int finalizers_checked;
   FINALIZER_NODE *flist;
@@ -2627,9 +2631,10 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
   C_restart_address = proc;
   heap_scan_top = (C_byte *)C_align((C_uword)C_fromspace_top);
   gc_mode = GC_MINOR;
+  start = C_fromspace_top;
 
   /* Entry point for second-level GC (on explicit request or because of full fromspace): */
-  if(C_setjmp(gc_restart) || (start = C_fromspace_top) >= C_fromspace_limit) {
+  if(C_setjmp(gc_restart) || start >= C_fromspace_limit) {
     if(gc_bell) {
       C_putchar(7);
       C_fflush(stdout);
@@ -3106,7 +3111,7 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
 
   if(debug_mode) 
     C_dbg(C_text("debug"), C_text("resizing heap dynamically from " UWORD_COUNT_FORMAT_STRING "k to " UWORD_COUNT_FORMAT_STRING "k ...\n"), 
-	  (C_uword)heap_size / 1000, size / 1000);
+	  (C_uword)heap_size / 1024, size / 1024);
 
   if(gc_report_flag) {
     C_dbg(C_text("GC"), C_text("(old) fromspace: \tstart=" UWORD_FORMAT_STRING 
