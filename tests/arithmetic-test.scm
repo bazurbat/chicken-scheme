@@ -7,6 +7,14 @@
 ; fx-ops
 
 
+(cond-expand 
+  (windows
+   (begin
+     (print "this test can not be run on Windows")
+     (exit)))
+  (else))
+
+
 (use extras)
 
 #+use-numbers (use numbers)

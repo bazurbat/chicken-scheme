@@ -116,6 +116,7 @@ tests/r4rstest.scm
 tests/null.scm
 tests/sgrep.scm
 tests/runtests.sh
+tests/runtests.bat
 tests/runbench.sh
 tests/srfi-4-tests.scm
 tests/simple-thread-test.scm
