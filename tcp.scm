@@ -99,6 +99,7 @@ EOF
 (define-foreign-variable _ipproto_tcp int "IPPROTO_TCP")
 (define-foreign-variable _invalid_socket int "INVALID_SOCKET")
 (define-foreign-variable _ewouldblock int "EWOULDBLOCK")
+(define-foreign-variable _eintr int "EINTR")
 (define-foreign-variable _einprogress int "EINPROGRESS")
 
 (define ##net#socket (foreign-lambda int "socket" int int int))
@@ -359,6 +360,8 @@ EOF
 				     #:network-timeout-error
 				     "read operation timed out" tmr fd) )
 				  (loop) )
+				 ((eq? errno _eintr)
+				  (##sys#dispatch-interrupt loop))
 				 (else
 				  (##sys#update-errno)
 				  (##sys#signal-hook 
@@ -474,6 +477,9 @@ EOF
 				     #:network-timeout-error
 				     "write operation timed out" tmw fd) )
 				  (loop len offset) )
+				 ((eq? errno _eintr)
+				  (##sys#dispatch-interrupt 
+				   (cut loop len offset)))
 				 (else
 				  (##sys#update-errno)
 				  (##sys#signal-hook 
@@ -524,12 +530,16 @@ EOF
     (let loop ()
       (if (eq? 1 (##net#select fd))
 	  (let ((fd (##net#accept fd #f #f)))
-	    (when (eq? -1 fd)
-	      (##sys#update-errno)
-	      (##sys#signal-hook 
-	       #:network-error 'tcp-accept (##sys#string-append "could not accept from listener - " strerror) 
-	       tcpl) )
-	    (##net#io-ports fd) )
+	    (cond ((not (eq? -1 fd)) (##net#io-ports fd))
+		  ((eq? errno _eintr)
+		   (##sys#dispatch-interrupt loop))
+		  (else
+		   (##sys#update-errno)
+		   (##sys#signal-hook 
+		    #:network-error
+		    'tcp-accept
+		    (##sys#string-append "could not accept from listener - " strerror)
+		    tcpl))))
 	  (begin
 	    (when tma
 	      (##sys#thread-block-for-timeout! 
@@ -559,7 +569,7 @@ EOF
     "int err, optlen;"
     "optlen = sizeof(err);"
     "if (typecorrect_getsockopt(socket, SOL_SOCKET, SO_ERROR, &err, (socklen_t *)&optlen) == -1)"
-    "C_return(-1);"
+    "  C_return(-1);"
     "C_return(err);"))
 
 (define general-strerror (foreign-lambda c-string "strerror" int))
@@ -590,25 +600,28 @@ EOF
       (unless (##net#make-nonblocking s)
 	(##sys#update-errno)
 	(##sys#signal-hook #:network-error 'tcp-connect (##sys#string-append "fcntl() failed - " strerror)) )
-      (when (eq? -1 (##net#connect s addr _sockaddr_in_size))
-	(if (eq? errno _einprogress)
-	    (let loop ()
-	      (let ((f (##net#select-write s)))
-		(when (eq? f -1) (fail))
-		(unless (eq? f 1)
-		  (when tmc
-		    (##sys#thread-block-for-timeout!
-		     ##sys#current-thread
-		     (+ (current-milliseconds) tmc) ) )
-		  (##sys#thread-block-for-i/o! ##sys#current-thread s #:all)
-		  (yield)
-		  (when (##sys#slot ##sys#current-thread 13)
-		    (##sys#signal-hook
-		     #:network-timeout-error
-		     'tcp-connect
-		     "connect operation timed out" tmc s) )
-		  (loop) ) ) )
-	    (fail) ) )
+      (let loop ()
+	(when (eq? -1 (##net#connect s addr _sockaddr_in_size))
+	  (cond ((eq? errno _einprogress)
+		 (let loop2 ()
+		   (let ((f (##net#select-write s)))
+		     (when (eq? f -1) (fail))
+		     (unless (eq? f 1)
+		       (when tmc
+			 (##sys#thread-block-for-timeout!
+			  ##sys#current-thread
+			  (+ (current-milliseconds) tmc) ) )
+		       (##sys#thread-block-for-i/o! ##sys#current-thread s #:all)
+		       (yield)
+		       (when (##sys#slot ##sys#current-thread 13)
+			 (##sys#signal-hook
+			  #:network-timeout-error
+			  'tcp-connect
+			  "connect operation timed out" tmc s) )
+		       (loop2) ) ) ))
+		((eq? errno _eintr)
+		 (##sys#dispatch-interrupt loop))
+		(else (fail) ) )))
       (let ((err (get-socket-error s)))
 	(cond ((fx= err -1)
 	       (##net#close s)

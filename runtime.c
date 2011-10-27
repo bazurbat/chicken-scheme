@@ -32,6 +32,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <math.h>
+#include <signal.h>
 
 #ifdef HAVE_SYSEXITS_H
 # include <sysexits.h>
@@ -163,6 +164,8 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #define DEFAULT_MUTATION_STACK_SIZE    1024
 
 #define FILE_INFO_SIZE                 7
+
+#define MAX_PENDING_INTERRUPTS         100
 
 #ifdef C_DOUBLE_IS_32_BITS
 # define FLONUM_PRINT_PRECISION         7
@@ -446,6 +449,9 @@ static C_TLS FINALIZER_NODE
 static C_TLS void *current_module_handle;
 static C_TLS int flonum_print_precision = FLONUM_PRINT_PRECISION;
 static C_TLS HDUMP_BUCKET **hdump_table;
+static C_TLS int 
+  pending_interrupts[ MAX_PENDING_INTERRUPTS ],
+  pending_interrupts_count;
 
 
 /* Prototypes: */
@@ -695,6 +701,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   C_clear_trace_buffer();
   chicken_is_running = chicken_ran_once = 0;
   interrupt_reason = 0;
+  pending_interrupts_count = 0;
   last_interrupt_latency = 0;
   C_interrupts_enabled = 1;
   C_initial_timer_interrupt_period = INITIAL_TIMER_INTERRUPT_PERIOD;
@@ -718,7 +725,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 
 static C_PTABLE_ENTRY *create_initial_ptable()
 {
-  /* hardcoded table size - this must match the number of C_pte calls! */
+  /* IMPORTANT: hardcoded table size - this must match the number of C_pte calls! */
   C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 60);
   int i = 0;
 
@@ -750,6 +757,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_divide);
   C_pte(C_nequalp);
   C_pte(C_greaterp);
+  /* IMPORTANT: have you read the comments at the start and the end of this function? */
   C_pte(C_lessp);
   C_pte(C_greater_or_equal_p);
   C_pte(C_less_or_equal_p);
@@ -784,7 +792,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_filter_heap_objects);
   C_pte(C_get_argument);
 
-  /* did you remember the hardcoded pte table size? */
+  /* IMPORTANT: did you remember the hardcoded pte table size? */
   pt[ i ].id = NULL;
   return pt;
 }
@@ -982,7 +990,9 @@ void initialize_symbol_table(void)
 void global_signal_handler(int signum)
 {
   C_raise_interrupt(signal_mapping_table[ signum ]);
-  signal(signum, global_signal_handler);
+#ifndef HAVE_SIGACTION
+  C_signal(signum, global_signal_handler);
+#endif
 }
 
 
@@ -2650,7 +2660,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
     if(gc_mode == GC_REALLOC) {
       C_rereclaim2(percentage(heap_size, C_heap_growth), 0);
       gc_mode = GC_MAJOR;
-      goto never_mind_edsgar;
+      goto i_like_spaghetti;
     }
 
     heap_scan_top = (C_byte *)C_align((C_uword)tospace_top);    
@@ -2836,7 +2846,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
       tospace_limit = tmp;
     }
 
-  never_mind_edsgar:
+  i_like_spaghetti:
     ++gc_count_2;
 
     if(C_enable_gcweak) {
@@ -3944,7 +3954,12 @@ C_regparm C_word C_fcall C_read_char(C_word port)
 {
   int c = C_getc(C_port_file(port));
 
-  return c == EOF ? C_SCHEME_END_OF_FILE : C_make_character(c);
+  if(c == EOF) {
+    if(errno == EINTR) return C_fix(-1);
+    else return C_SCHEME_END_OF_FILE;
+  }
+
+  return C_make_character(c);
 }
 
 
@@ -3953,8 +3968,13 @@ C_regparm C_word C_fcall C_peek_char(C_word port)
   C_FILEPTR fp = C_port_file(port);
   int c = C_getc(fp);
 
+  if(c == EOF) {
+    if(errno == EINTR) return C_fix(-1);
+    else return C_SCHEME_END_OF_FILE;
+  }
+
   C_ungetc(c, fp);
-  return c == EOF ? C_SCHEME_END_OF_FILE : C_make_character(c);
+  return C_make_character(c);
 }
 
 
@@ -4202,16 +4222,25 @@ C_regparm void C_fcall C_paranoid_check_for_interrupt(void)
 C_regparm void C_fcall C_raise_interrupt(int reason)
 {
   if(C_interrupts_enabled) {
-    saved_stack_limit = C_stack_limit;
+    if(interrupt_reason) {
+      if(reason != C_TIMER_INTERRUPT_NUMBER) {
+	if(pending_interrupts_count < MAX_PENDING_INTERRUPTS) 
+	  /* drop signals if too many */
+	  pending_interrupts[ pending_interrupts_count++ ] = reason;
+      }
+    }
+    else {
+      saved_stack_limit = C_stack_limit;
 
 #if C_STACK_GROWS_DOWNWARD
-    C_stack_limit = C_stack_pointer + 1000;
+      C_stack_limit = C_stack_pointer + 1000;
 #else
-    C_stack_limit = C_stack_pointer - 1000;
+      C_stack_limit = C_stack_pointer - 1000;
 #endif
 
-    interrupt_reason = reason;
-    interrupt_time = C_cpu_milliseconds();
+      interrupt_reason = reason;
+      interrupt_time = C_cpu_milliseconds();
+    }
   }
 }
 
@@ -4235,11 +4264,23 @@ C_regparm C_word C_fcall C_disable_interrupts(void)
 C_regparm C_word C_fcall C_establish_signal_handler(C_word signum, C_word reason)
 {
   int sig = C_unfix(signum);
+#if defined(HAVE_SIGACTION)
+  struct sigaction new;
+
+  new.sa_flags = 0;
+  sigemptyset(&new.sa_mask);
+#endif
 
   if(reason == C_SCHEME_FALSE) C_signal(sig, SIG_IGN);
   else {
     signal_mapping_table[ sig ] = C_unfix(reason);
+#if defined(HAVE_SIGACTION)
+    sigaddset(&new.sa_mask, sig);
+    new.sa_handler = global_signal_handler;
+    C_sigaction(sig, &new, NULL);
+#else
     C_signal(sig, global_signal_handler);
+#endif
   }
 
   return C_SCHEME_UNDEFINED;
@@ -9173,3 +9214,19 @@ C_i_file_exists_p(C_word name, C_word file, C_word dir)
 }
 
 
+C_regparm C_word C_fcall
+C_i_pending_interrupt(C_word dummy)
+{
+  int i;
+
+  if(interrupt_reason && interrupt_reason != C_TIMER_INTERRUPT_NUMBER) {
+    i = interrupt_reason;
+    interrupt_reason = 0;
+    return C_fix(i);
+  }
+
+  if(pending_interrupts_count > 0)
+    return C_fix(pending_interrupts[ --pending_interrupts_count ]);
+
+  return C_SCHEME_FALSE;
+}

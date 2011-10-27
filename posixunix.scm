@@ -950,26 +950,6 @@ EOF
     signal/tstp signal/pipe signal/xcpu signal/xfsz signal/usr1 signal/usr2
     signal/winch))
 
-(let ([oldhook ##sys#interrupt-hook]
-      [sigvector (make-vector 256 #f)] )
-  (set! signal-handler
-    (lambda (sig)
-      (##sys#check-exact sig 'signal-handler)
-      (##sys#slot sigvector sig) ) )
-  (set! set-signal-handler!
-    (lambda (sig proc)
-      (##sys#check-exact sig 'set-signal-handler!)
-      (##core#inline "C_establish_signal_handler" sig (and proc sig))
-      (vector-set! sigvector sig proc) ) )
-  (set! ##sys#interrupt-hook
-    (lambda (reason state)
-      (let ([h (##sys#slot sigvector reason)])
-        (if h
-            (begin
-              (h reason)
-              (##sys#context-switch state) )
-            (oldhook reason state) ) ) ) ) )
-
 (define set-signal-mask!
   (lambda (sigs)
     (##sys#check-list sigs 'set-signal-mask!)
@@ -1004,12 +984,6 @@ EOF
   (##core#inline "C_sigdelset" sig)
   (when (fx< (##core#inline "C_sigprocmask_unblock" 0) 0)
       (posix-error #:process-error 'signal-unmask! "cannot unblock signal") )  )
-
-;;; Set SIGINT handler:
-
-(set-signal-handler!
- signal/int
- (lambda (n) (##sys#user-interrupt-hook)) )
 
 
 ;;; Getting system-, group- and user-information:
@@ -1338,13 +1312,15 @@ EOF
 	       (when (fx>= bufpos buflen)
 		 (let loop ()
 		   (let ([cnt (##core#inline "C_read" fd buf bufsiz)])
-		     (cond [(fx= cnt -1)
-			    (if (fx= _errno _ewouldblock)
-				(begin
-				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
-				  (##sys#thread-yield!)
-				  (loop) )
-				(posix-error #:file-error loc "cannot read" fd nam) )]
+		     (cond ((fx= cnt -1)
+			    (select errno
+			      ((_ewouldblock)
+			       (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
+			       (##sys#thread-yield!)
+			       (loop) )
+			      ((_eintr)
+			       (##sys#dispatch-interrupt loop))
+			      (else (posix-error #:file-error loc "cannot read" fd nam) )))
 			   [(and more? (fx= cnt 0))
 					; When "more" keep trying, otherwise read once more
 					; to guard against race conditions
@@ -1445,18 +1421,21 @@ EOF
 (define ##sys#custom-output-port
   (lambda (loc nam fd #!optional (nonblocking? #f) (bufi 0) (on-close void))
     (when nonblocking? (##sys#file-nonblocking! fd) )
-    (letrec (
-	     [poke
+    (letrec ([poke
 	      (lambda (str len)
-		(let ([cnt (##core#inline "C_write" fd str len)])
-		  (cond [(fx= -1 cnt)
-			 (if (fx= _errno _ewouldblock)
-			     (begin
-			       (##sys#thread-yield!)
-			       (poke str len) )
-			     (posix-error loc #:file-error "cannot write" fd nam) ) ]
-			[(fx< cnt len)
-			 (poke (##sys#substring str cnt len) (fx- len cnt)) ] ) ) )]
+		(let loop ()
+		  (let ([cnt (##core#inline "C_write" fd str len)])
+		    (cond ((fx= -1 cnt)
+			   (select _errno
+			     ((_ewouldblock)
+			      (##sys#thread-yield!)
+			      (poke str len) )
+			     ((_eintr)
+			      (##sys#dispatch-interrupt loop))
+			     (else
+			      (posix-error loc #:file-error "cannot write" fd nam) ) ) )
+			  ((fx< cnt len)
+			   (poke (##sys#substring str cnt len) (fx- len cnt)) ) ) ) ))]
 	     [store
 	      (let ([bufsiz (if (fixnum? bufi) bufi (##sys#size bufi))])
 		(if (fx= 0 bufsiz)
@@ -1480,8 +1459,7 @@ EOF
 				     (set! bufpos (fx+ bufpos len))] ) )
 			    (when (fx< 0 bufpos)
 			      (poke buf bufpos) ) ) ) ) ) )])
-      (letrec (
-	       [this-port
+      (letrec ([this-port
 		(make-output-port
 		 (lambda (str)		; write-string
 		   (store str) )

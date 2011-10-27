@@ -863,6 +863,9 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_isatty                   isatty
 # define C_fileno                   fileno
 # define C_select                   select
+# if defined(HAVE_SIGACTION)
+# define C_sigaction                sigaction
+# endif
 # define C_signal                   signal
 # define C_getrusage                getrusage
 # define C_tolower                  tolower
@@ -1848,6 +1851,7 @@ C_fctexport void C_ccall C_peek_unsigned_integer_32(C_word c, C_word closure, C_
 #endif
 
 C_fctexport C_word C_fcall C_decode_literal(C_word **ptr, C_char *str) C_regparm;
+C_fctexport C_word C_fcall C_i_pending_interrupt(C_word dummy) C_regparm;
 
 /* defined in eval.scm: */
 C_fctexport  void  CHICKEN_get_error_message(char *buf,int bufsize);

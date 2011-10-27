@@ -76,12 +76,18 @@ fast_read_line_from_file(C_word str, C_word port, C_word size) {
   C_FILEPTR fp = C_port_file(port);
 
   if ((c = C_getc(fp)) == EOF)
-    return C_SCHEME_END_OF_FILE;
+    return errno == EINTR ? C_fix(-1) : C_SCHEME_END_OF_FILE;
 
   C_ungetc(c, fp);
 
   for (i = 0; i < n; i++) {
     c = C_getc(fp);
+
+    if(c == EOF && errno == EINTR) {
+      clearerr(fp);
+      return C_fix(-(i + 1));
+    }
+
     switch (c) {
     case '\r':	if ((c = C_getc(fp)) != '\n') C_ungetc(c, fp);
     case EOF:	clearerr(fp);
@@ -101,7 +107,11 @@ fast_read_string_from_file(C_word dest, C_word port, C_word len, C_word pos)
 
   size_t m = fread (buf, sizeof (char), n, fp);
 
-  if (m < n) {
+  if(m == EOF && errno == EINTR) {
+    clearerr(fp);
+    return C_fix(-1);
+  }
+  else if (m < n) {
     if (feof (fp)) {
       clearerr (fp);
       if (0 == m)
@@ -1736,9 +1746,17 @@ EOF
 
 (define ##sys#stream-port-class
   (vector (lambda (p)			; read-char
-	    (##core#inline "C_read_char" p) )
+	    (let loop ()
+	      (let ((c (##core#inline "C_read_char" p)))
+		(if (eq? -1 c)		; EINTR
+		    (##sys#dispatch-interrupt loop)
+		    c))))
 	  (lambda (p)			; peek-char
-	    (##core#inline "C_peek_char" p) )
+	    (let loop ()
+	      (let ((c (##core#inline "C_peek_char" p)))
+		(if (eq? -1 c)		; EINTR
+		    (##sys#dispatch-interrupt loop)
+		    c))))
 	  (lambda (p c)			; write-char
 	    (##core#inline "C_display_char" p c) )
 	  (lambda (p s)			; write-string
@@ -1756,6 +1774,11 @@ EOF
 		(cond [(or (not len)	      ; error returns EOF
 			   (eof-object? len)) ; EOF returns 0 bytes read
 		       act]
+		      ((fx< len 0)	; EINTR
+		       (let ((len (fx< (fxneg len) 1)))
+			 (##sys#dispatch-interrupt
+			  (lambda () 
+			    (loop (fx- rem len) (fx+ act len) (fx+ start len))))))
 		      [(fx< len rem)
 		       (loop (fx- rem len) (fx+ act len) (fx+ start len))]
 		      [else
@@ -1781,6 +1804,11 @@ EOF
 				   (##sys#make-string (fx* len 2))
 				   (##sys#string-append result buffer)
 				   #t)) ]
+			((fx< n 0)	; EINTR
+			 (let ((n (fx- (fxneg n) 1)))
+			   (##sys#dispatch-interrupt
+			    (lambda ()
+			      (loop len limit buffer result f)))))
 			[f (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1))
 			   (##sys#string-append result (##sys#substring buffer 0 n))]
 			[else
@@ -3909,6 +3937,7 @@ EOF
 	   [(#:arity-error)		'(exn arity)]
 	   [(#:access-error)		'(exn access)]
 	   [(#:domain-error)		'(exn domain)]
+	   ((#:memory-error)            '(exn memory))
 	   [else			'(exn)] )
 	 (list '(exn . message) msg
 	       '(exn . arguments) args
@@ -4344,10 +4373,23 @@ EOF
 
 (define ##sys#context-switch (##core#primitive "C_context_switch"))
 
+(define ##sys#signal-vector (make-vector 256 #f))
+
 (define (##sys#interrupt-hook reason state)
-  (cond ((fx> (##sys#slot ##sys#pending-finalizers 0) 0)
-	 (##sys#run-pending-finalizers state) )
-	(else (##sys#context-switch state) ) ) )
+  (let loop ((reason reason))
+    (cond ((and reason (##sys#slot ##sys#signal-vector reason)) =>
+	   (lambda (handler)
+	     (handler reason)
+	     (loop (##core#inline "C_i_pending_interrupt" #f))))
+	  ((fx> (##sys#slot ##sys#pending-finalizers 0) 0)
+	   (##sys#run-pending-finalizers state) )
+	  ((procedure? state) (state))
+	  (else (##sys#context-switch state) ) ) ) )
+
+(define (##sys#dispatch-interrupt k)
+  (##sys#interrupt-hook
+   (##core#inline "C_i_pending_interrupt" #f)
+   k))
 
 
 ;;; Accessing "errno":
@@ -4568,19 +4610,20 @@ EOF
 	  (vector-fill! ##sys#pending-finalizers (##core#undefined))
 	  (##sys#setislot ##sys#pending-finalizers 0 0) 
 	  (set! working #f) ) )
-      (when state (##sys#context-switch state) ) ) ) )
+      (cond ((not state))
+	    ((procedure? state) (state))
+	    (state (##sys#context-switch state) ) ) ) ))
 
 (define (##sys#force-finalizers)
   (let loop ()
     (let ([n (##sys#gc)])
-      (if (fx> (##sys#slot ##sys#pending-finalizers 0) 0)
-	  (begin
-	    (##sys#run-pending-finalizers #f)
-	    (loop) )
-	  n) ) ) )
+      (cond ((fx> (##sys#slot ##sys#pending-finalizers 0) 0)
+	     (##sys#run-pending-finalizers #f)
+	     (loop) )
+	    (else n) ) ) ))
 
 (define (gc . arg)
-  (let ([a (and (pair? arg) (car arg))])
+  (let ((a (and (pair? arg) (car arg))))
     (if a
 	(##sys#force-finalizers)
 	(apply ##sys#gc arg) ) ) )

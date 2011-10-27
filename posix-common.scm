@@ -488,6 +488,21 @@ EOF
                 (##sys#error 'time->string "cannot convert time vector to string" tm) ) ) ) ) ) )
 
 
+;;; Signals
+
+(define (set-signal-handler! sig proc)
+  (##sys#check-exact sig 'set-signal-handler!)
+  (##core#inline "C_establish_signal_handler" sig (and proc sig))
+  (vector-set! ##sys#signal-vector sig proc) )
+
+(define signal-handler
+  (getter-with-setter
+   (lambda (sig)
+     (##sys#check-exact sig 'signal-handler)
+     (##sys#slot ##sys#signal-vector sig) )
+   set-signal-handler!))
+
+
 ;;; Processes
 
 (define current-process-id (foreign-lambda int "C_getpid"))
@@ -501,4 +516,3 @@ EOF
           (if (fx= epid -1)
               (posix-error #:process-error 'process-wait "waiting for child process failed" pid)
               (values epid enorm ecode) ) ) ) ) ) )
-

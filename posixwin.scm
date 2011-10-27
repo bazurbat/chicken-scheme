@@ -1262,25 +1262,6 @@ EOF
     signal/term signal/int signal/fpe signal/ill
     signal/segv signal/abrt signal/break))
 
-(let ([oldhook ##sys#interrupt-hook]
-      [sigvector (make-vector 256 #f)] )
-  (set! signal-handler
-    (lambda (sig)
-      (##sys#check-exact sig 'signal-handler)
-      (##sys#slot sigvector sig) ) )
-  (set! set-signal-handler!
-    (lambda (sig proc)
-      (##sys#check-exact sig 'set-signal-handler!)
-      (##core#inline "C_establish_signal_handler" sig (and proc sig))
-      (vector-set! sigvector sig proc) ) )
-  (set! ##sys#interrupt-hook
-    (lambda (reason state)
-      (let ([h (##sys#slot sigvector reason)])
-	(if h
-	    (begin
-	      (h reason)
-	      (##sys#context-switch state) )
-	    (oldhook reason state) ) ) ) ) )
 
 ;;; More errno codes:
 

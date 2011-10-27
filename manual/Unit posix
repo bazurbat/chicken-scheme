@@ -848,6 +848,12 @@ after {{SECONDS}} are elapsed.  You can use the
 
 ==== set-signal-handler!
 
+==== signal-handler
+
+<procedure>(signal-handler SIGNUM)</procedure>
+
+Returns the signal handler for the code {{SIGNUM}} or {{#f}}.
+
 <procedure>(set-signal-handler! SIGNUM PROC)</procedure>
 
 Establishes the procedure of one argument {{PROC}} as the handler
@@ -855,13 +861,13 @@ for the signal with the code {{SIGNUM}}. {{PROC}} is called
 with the signal number as its sole argument. If the argument {{PROC}} is {{#f}}
 then any signal handler will be removed, and the corresponding signal set to {{SIG_IGN}}.
 
-Note that is is unspecified in which thread of execution the signal handler will be invoked.
+Notes
 
-==== signal-handler
+* it is unspecified in which thread of execution the signal handler will be invoked.
 
-<procedure>(signal-handler SIGNUM)</procedure>
+* when signals arrive in quick succession (specifically, before the handler for a signal has been started), then signals will be queued (up to a certain limit); the order in which the queued signals will be handled is not specified
 
-Returns the signal handler for the code {{SIGNUM}} or {{#f}}.
+* {{(set! (signal-handler SIG) PROC)}} can be used as an alternative to {{(set-signal-handler! SIG PROC)}}
 
 ==== set-signal-mask!
 

@@ -153,10 +153,7 @@ $compile lolevel-tests.scm
 ./a.out
 
 echo "======================================== arithmetic tests ..."
-if test -z "$MSYSTEM"; then
-    # the windows runtime library prints flonums differently
-    $interpret -D check -s arithmetic-test.scm
-fi
+$interpret -D check -s arithmetic-test.scm
 
 echo "======================================== pretty-printer tests ..."
 $interpret -s pp-test.scm
@@ -315,6 +312,10 @@ if test -z "$MSYSTEM"; then
 fi
 
 $interpret -R posix -e '(delete-directory "tmpdir" #t)'
+
+echo "======================================== signal tests ..."
+$compile signal-tests.scm
+./a.out
 
 echo "======================================== lolevel tests ..."
 $interpret -s lolevel-tests.scm
