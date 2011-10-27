@@ -490,14 +490,18 @@
 	  (set! simplified-ops '())
 	  (let ((node2 (walk node '() '())))
 	    (when (pair? simplified-classes) (debugging 'o "simplifications" simplified-classes))
-	    (when (and (pair? simplified-ops) (debugging 'o "  call simplifications:"))
-	      (for-each
-	       (lambda (p)
-		 (print* #\tab (car p))
-		 (if (> (cdr p) 1)
-		     (print #\tab (cdr p))
-		     (newline) ) )
-	       simplified-ops) )
+	    (when (pair? simplified-ops)
+	      (with-debugging-output
+	       'o
+	       (lambda ()
+		 (print "  call simplifications:")
+		 (for-each
+		  (lambda (p)
+		    (print* "    " (car p))
+		    (if (> (cdr p) 1)
+			(print #\tab (cdr p))
+			(newline) ) )
+		  simplified-ops) ) ) )
 	    (when (> replaced-vars 0) (debugging 'o "replaced variables" replaced-vars))
 	    (when (> removed-lets 0) (debugging 'o "removed binding forms" removed-lets))
 	    (when (> removed-ifs 0) (debugging 'o "removed conditional forms" removed-ifs))

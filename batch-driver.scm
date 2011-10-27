@@ -483,11 +483,14 @@
 			     '() )
 			 '((##core#undefined))) ] )
 
-	     (when (and (pair? compiler-syntax-statistics)
-			(debugging 'S "applied compiler syntax:"))
-	       (for-each 
-		(lambda (cs) (printf "  ~a\t\t~a~%" (car cs) (cdr cs)))
-		compiler-syntax-statistics))
+	     (when (pair? compiler-syntax-statistics)
+	       (with-debugging-output
+		'S
+		(lambda ()
+		  (print "applied compiler syntax:")
+		  (for-each 
+		   (lambda (cs) (printf "  ~a\t\t~a~%" (car cs) (cdr cs)))
+		   compiler-syntax-statistics))))
    	     (when (debugging '|N| "real name table:")
 	       (display-real-name-table) )
 	     (when (debugging 'n "line number database:")
@@ -657,7 +660,8 @@
 			     (let ((out (if outfile (open-output-file outfile) (current-output-port))) )
 			       (dribble "generating `~A' ..." outfile)
 			       (generate-code literals lliterals lambdas out filename dynamic db)
-			       (when outfile (close-output-port out)))
+			       (when outfile
+				 (close-output-port out)))
 			     (end-time "code generation")
 			     (when (memq 't debugging-chicken)
 			       (##sys#display-times (##sys#stop-timer)))

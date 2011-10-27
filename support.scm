@@ -49,17 +49,51 @@
       (apply error (string-append "[internal compiler error] " (car msg-and-args)) (cdr msg-and-args))
       (error "[internal compiler error]") ) )
 
+(define collected-debugging-output
+  (open-output-string))
+
+(define +logged-debugging-modes+ '(o x S i))
+
 (define (debugging mode msg . args)
-  (and (memq mode debugging-chicken)
-       (begin
-	 (printf "~a" msg)
-	 (if (pair? args)
-	     (begin
-	       (display ": ")
-	       (for-each (lambda (x) (printf "~s " (force x))) args) ) )
-	 (newline)
-	 (flush-output)
-	 #t) ) )
+  (define (text)
+    (with-output-to-string
+      (lambda ()
+	(display msg)
+	(when (pair? args)
+	  (display ": ")
+	  (for-each
+	   (lambda (x) (printf "~s " (force x))) 
+	   args) )
+	(newline))))
+  (define (dump txt)
+    (fprintf collected-debugging-output "~a|~a" mode txt))
+  (cond ((memq mode debugging-chicken)
+	 (let ((txt (text)))
+	   (display txt)
+	   (flush-output)
+	   (when (memq mode +logged-debugging-modes+)
+	     (dump txt))
+	   #t))
+	(else
+	 (when (memq mode +logged-debugging-modes+)
+	   (dump (text)))
+	 #f)))
+
+(define (with-debugging-output mode thunk)
+  (define (collect text)
+    (for-each
+     (lambda (ln)
+       (fprintf collected-debugging-output "~a|~a~%"
+	 mode ln))
+     (string-split text "\n")))
+  (cond ((memq mode debugging-chicken)
+	 (let ((txt (with-output-to-string thunk)))
+	   (display txt)
+	   (flush-output)
+	   (when (memq mode +logged-debugging-modes+)
+	     (collect txt))))
+	((memq mode +logged-debugging-modes+)
+	 (collect (with-output-to-string thunk)))))
 
 (define (quit msg . args)
   (let ([out (current-error-port)])
@@ -123,6 +157,10 @@
 	((string? x) (string->symbol x))
 	(else (string->symbol (sprintf "~a" x))) ) )
 
+(define (slashify s) (string-translate (->string s) "\\" "/"))
+
+(define (uncommentify s) (string-translate* (->string s) '(("*/" . "*_/"))))
+  
 (define (build-lambda-list vars argc rest)
   (let loop ((vars vars) (n argc))
     (cond ((or (zero? n) (null? vars)) (or rest '()))

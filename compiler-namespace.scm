@@ -52,6 +52,7 @@
  close-checked-input-file
  collapsable-literal?
  collect!
+ collected-debugging-output
  compile-format-string
  compiler-arguments
  compiler-cleanup-hook
@@ -263,6 +264,7 @@
  simplified-ops
  simplify-named-call
  simplify-type
+ slashify
  sort-symbols
  source-filename
  source-info->string
@@ -285,6 +287,7 @@
  toplevel-scope
  transform-direct-lambdas!
  tree-copy
+ uncommentify
  undefine-shadowed-macros
  unique-id
  unit-name
@@ -301,6 +304,7 @@
  variable-visible?
  varnode
  verbose-mode
+ with-debugging-output
  words
  words->bytes
  words-per-flonum

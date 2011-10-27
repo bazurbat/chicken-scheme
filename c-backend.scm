@@ -70,9 +70,6 @@
       (or (find (lambda (ll) (eq? id (lambda-literal-id ll))) lambdas)
 	  (bomb "can't find lambda" id) ) )
 
-    (define (slashify s) (string-translate (->string s) "\\" "/"))
-    (define (uncommentify s) (string-translate* (->string s) '(("*/" . "* /"))))
-  
     ;; Compile a single expression
     (define (expression node temps ll)
 
@@ -493,7 +490,12 @@
 	  (generate-foreign-callback-stub-prototypes foreign-callback-stubs) ) ) )
   
     (define (trailer)
-      (gen #t "/* end of file */" #t) )
+      (gen #t #t "/*" #t 
+	   (uncommentify
+	    (get-output-string
+	     collected-debugging-output))
+	   "*/"
+	   #t "/* end of file */" #t))
   
     (define (declarations)
       (let ((n (length literals)))
