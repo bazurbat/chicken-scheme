@@ -672,7 +672,7 @@ boot-chicken:
 	  C_COMPILER_OPTIMIZATION_OPTIONS= C_HACKED_APPLY= BUILDING_CHICKEN_BOOT=1 \
 	  confclean chicken-boot-stage1$(EXE)
 	$(MAKE) -f Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) PREFIX=/nowhere CONFIG= \
-	  SRCDIR=$(SRCDIR) CHICKEN=`pwd`/chicken-boot-stage1$(EXE) PROGRAM_SUFFIX=-boot \
+	  SRCDIR=$(SRCDIR) CHICKEN=.$(SEP)chicken-boot-stage1$(EXE) PROGRAM_SUFFIX=-boot \
 	  STATICBUILD=1 C_COMPILER_OPTIMIZATION_OPTIONS= \
 	  touchfiles chicken-boot$(EXE) confclean
 
@@ -680,7 +680,7 @@ boot-chicken:
 
 touchfiles:
 ifdef WINDOWS_SHELL
-	for %x in (*.scm) do copy /b %x +,,
+	for %%x in (*.scm) do copy /b %%x +,,
 else
 	touch *.scm
 endif
