@@ -12,7 +12,7 @@ set FAST_OPTIONS=-O5 -d0 -b -disable-interrupts
 
 set TYPESDB=..\types.db
 
-cp ..\libchicken.dll .
+copy ..\libchicken.dll .
 
 set compile=..\csc -compiler %CHICKEN% -v -I.. -L.. -include-path .. -o a.out
 set compile2=..\csc -compiler %CHICKEN% -v -I.. -L.. -include-path ..

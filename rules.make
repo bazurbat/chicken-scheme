@@ -650,15 +650,18 @@ testclean:
 
 .PHONY: check 
 
-check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
+check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)$(EXE)
+ifndef WINDOWS_SHELL
 	cd tests; sh runtests.sh
-
+else
+	cd tests & runtests.bat
+endif
 
 # benchmark
 
 .PHONY: bench
 
-bench: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
+bench: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)$(EXE)
 	cd tests; echo >>bench.log; date >>bench.log; sh runbench.sh 2>&1 | tee -a bench.log
 
 
@@ -672,7 +675,7 @@ boot-chicken:
 	  C_COMPILER_OPTIMIZATION_OPTIONS= C_HACKED_APPLY= BUILDING_CHICKEN_BOOT=1 \
 	  confclean chicken-boot-stage1$(EXE)
 	$(MAKE) -f Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) PREFIX=/nowhere CONFIG= \
-	  CHICKEN=chicken-boot-stage1$(EXE) PROGRAM_SUFFIX=-boot \
+	  CHICKEN=.$(SEP)chicken-boot-stage1$(EXE) PROGRAM_SUFFIX=-boot \
 	  STATICBUILD=1 C_COMPILER_OPTIMIZATION_OPTIONS= \
 	  touchfiles chicken-boot$(EXE) confclean
 
