@@ -752,10 +752,13 @@
 		[else #f] ) ) )
 
       (define (compile-call x e tf cntr se)
-	(let* ([fn (compile (##sys#slot x 0) e #f tf cntr se)]
-	       [args (##sys#slot x 1)]
-	       [argc (checked-length args)]
-	       [info x] )
+	(let* ((head (##sys#slot x 0))
+	       (fn (if (procedure? head) 
+		       (lambda _ head)
+		       (compile (##sys#slot x 0) e #f tf cntr se)))
+	       (args (##sys#slot x 1))
+	       (argc (checked-length args))
+	       (info x) )
 	  (case argc
 	    [(#f) (##sys#syntax-error/context "malformed expression" x)]
 	    [(0) (lambda (v)
