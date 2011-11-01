@@ -104,6 +104,7 @@
 
 (define-constant +fragment-max-length+ 6)
 (define-constant +fragment-max-depth+ 4)
+(define-constant +maximal-union-type-length+ 20)
 
 
 (define specialization-statistics '())
@@ -1239,9 +1240,13 @@
 			       constraints))
 		     (simplify (third t))))
 		  ((or)
-		   (let ((ts (map simplify (cdr t))))
-		     (cond ((= 1 (length ts)) (car ts))
+ 		   (let* ((ts (map simplify (cdr t)))
+ 			  (tslen (length ts)))
+ 		     (cond ((= 1 tslen) (car ts))
 			   ((null? ts) '*)
+ 			   ((> tslen +maximal-union-type-length+)
+ 			    (d "union-type cutoff! (~a): ~s" tslen ts)
+ 			    '*)
 			   ((every procedure-type? ts)
 			    (if (any (cut eq? 'procedure <>) ts)
 				'procedure
