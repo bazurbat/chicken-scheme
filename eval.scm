@@ -818,11 +818,16 @@
   (make-parameter
    (lambda (x #!optional env)
      (let ((se (##sys#current-environment)))
-       (when env
-	 (##sys#check-structure env 'environment 'eval)
-	 (set! se (or (##sys#slot env 2) se)))
-       ((##sys#compile-to-closure x '() se #f env (and env (##sys#slot env 3)))
-	'() ) ) ) ) )
+       (cond (env
+	      (##sys#check-structure env 'environment 'eval)
+	      (let ((se2 (##sys#slot env 2)))
+		((if se2		; not interaction-environment?
+		     (parameterize ((##sys#macro-environment '()))
+		       (##sys#compile-to-closure x '() se2 #f env (##sys#slot env 3)))
+		     (##sys#compile-to-closure x '() se #f env #f))
+		 '() ) ) )
+	     (else
+	      ((##sys#compile-to-closure x '() se #f #f #f) '() ) ) ) ) )))
 
 (define eval-handler ##sys#eval-handler)
 
@@ -1379,27 +1384,52 @@
   (##sys#print (##sys#slot e 1) #f p)
   (##sys#write-char-0 #\> p))
 
-(define scheme-report-environment
-  (let ((r4 (module-environment 'r4rs 'scheme-report-environment/4))
-	(r5 (module-environment 'scheme 'scheme-report-environment/5)))
+(define scheme-report-environment)
+(define null-environment)
+
+(let* ((r4s (module-environment 'r4rs 'scheme-report-environment/4))
+       (r5s (module-environment 'scheme 'scheme-report-environment/5))
+       (r4n (module-environment 'r4rs-null 'null-environment/4))
+       (r5n (module-environment 'r5rs-null 'null-environment/5)))
+  (define (strip se)
+    (foldr
+     (lambda (s r)
+       (if (memq (car s)
+		 '(import 
+		    require-extension 
+		    require-library 
+		    begin-for-syntax
+		    export 
+		    module
+		    cond-expand
+		    syntax
+		    reexport 
+		    import-for-syntax))
+	   r
+	   (cons s r)))
+     '()
+     se))
+  ;; Strip non-std syntax from SEs
+  (##sys#setslot r4s 2 (strip (##sys#slot r4s 2)))
+  (##sys#setslot r4n 2 (strip (##sys#slot r4n 2)))
+  (##sys#setslot r5s 2 (strip (##sys#slot r5s 2)))
+  (##sys#setslot r5n 2 (strip (##sys#slot r5n 2)))
+  (set! scheme-report-environment
     (lambda (n)
       (##sys#check-exact n 'scheme-report-environment)
       (case n
-	((4) r4)
-	((5) r5)
+	((4) r4s)
+	((5) r5s)
 	(else 
 	 (##sys#error 
 	  'scheme-report-environment
-	  "unsupported scheme report environment version" n)) ) ) ) )
-
-(define null-environment
-  (let ((r4 (module-environment 'r4rs-null 'null-environment/4))
-	(r5 (module-environment 'r5rs-null 'null-environment/5)))
+	  "unsupported scheme report environment version" n)) ) ) )
+  (set! null-environment
     (lambda (n)
       (##sys#check-exact n 'null-environment)
       (case n
-	((4) r4)
-	((5) r5)
+	((4) r4n)
+	((5) r5n)
 	(else
 	 (##sys#error
 	  'null-environment 
