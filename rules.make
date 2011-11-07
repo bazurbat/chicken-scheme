@@ -634,11 +634,12 @@ endif
 
 confclean:
 	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) \
-	  chicken-config.h chicken-defaults.h chicken-install.rc chicken-uninstall.rc \
-	  buildtag.h buildid buildbranch
+	  chicken-config.h chicken-defaults.h chicken-install.rc chicken-uninstall.rc
 
 spotless: distclean testclean
-	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) $(DISTFILES)
+	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) $(DISTFILES) \
+	  buildtag.h buildid buildbranch
+
 
 distclean: clean confclean
 
