@@ -104,7 +104,8 @@
     prelude postlude prologue epilogue nursery extend feature no-feature types
     emit-import-library emit-inline-file static-extension consult-inline-file
     emit-type-file
-    heap-growth heap-shrinkage heap-initial-size ffi-define ffi-include-path) )
+    heap-growth heap-shrinkage heap-initial-size ; DEPRECATED
+    ffi-define ffi-include-path) )
 
 
 ;;; Standard and extended bindings:

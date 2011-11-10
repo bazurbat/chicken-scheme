@@ -148,7 +148,9 @@
     -optimize-level -include-path -database-size -extend -prelude -postlude -prologue -epilogue 
     -inline-limit -profile-name
     -emit-inline-file -types -emit-type-file
-    -feature -debug-level -heap-growth -heap-shrinkage -heap-initial-size -consult-inline-file
+    -feature -debug-level 
+    -heap-growth -heap-shrinkage -heap-initial-size ; DEPRECATED
+    -consult-inline-file
     -emit-import-library
     -no-feature))
 
@@ -403,9 +405,6 @@ Usage: #{csc} FILENAME | OPTION ...
     -unit NAME                     compile file as a library unit
     -uses NAME                     declare library unit as used.
     -heap-size NUMBER              specifies heap-size of compiled executable
-    -heap-initial-size NUMBER      specifies heap-size at startup time
-    -heap-growth PERCENTAGE        specifies growth-rate of expanding heap
-    -heap-shrinkage PERCENTAGE     specifies shrink-rate of contracting heap
     -nursery NUMBER  -stack-size NUMBER
                                    specifies nursery size of compiled
                                    executable

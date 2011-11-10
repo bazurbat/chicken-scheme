@@ -1685,9 +1685,6 @@ Usage: chicken FILENAME OPTION ...
     -unit NAME                   compile file as a library unit
     -uses NAME                   declare library unit as used.
     -heap-size NUMBER            specifies heap-size of compiled executable
-    -heap-initial-size NUMBER    specifies heap-size at startup time
-    -heap-growth PERCENTAGE      specifies growth-rate of expanding heap
-    -heap-shrinkage PERCENTAGE   specifies shrink-rate of contracting heap
     -nursery NUMBER  -stack-size NUMBER
                                  specifies nursery size of compiled executable
     -extend FILENAME             load file before compilation commences

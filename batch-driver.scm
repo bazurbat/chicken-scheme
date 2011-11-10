@@ -84,9 +84,6 @@
 	(profile-name 
 	 (and-let* ((pn (memq 'profile-name options))) (cadr pn)))
 	(hsize (memq 'heap-size options))
-	(hisize (memq 'heap-initial-size options))
-	(hgrowth (memq 'heap-growth options))
-	(hshrink (memq 'heap-shrinkage options))
 	(kwstyle (memq 'keyword-style options))
 	(uses-units '())
 	(uunit (memq 'unit options))
@@ -341,20 +338,11 @@
     (when (memq 'compile-syntax options)
       (set! ##sys#enable-runtime-macros #t) )
     (set! target-heap-size
-      (if hsize
-	  (arg-val (option-arg hsize))
-	  (and-let* ([hsize default-default-target-heap-size]
-		     [(not (zero? hsize))] )
-	    hsize) ) )
-    (set! target-initial-heap-size (and hisize (arg-val (option-arg hisize))))
-    (set! target-heap-growth (and hgrowth (arg-val (option-arg hgrowth))))
-    (set! target-heap-shrinkage (and hshrink (arg-val (option-arg hshrink))))
+      (and hsize
+	   (arg-val (option-arg hsize))))
     (set! target-stack-size
-      (if ssize
-	  (arg-val (option-arg ssize))
-	  (and-let* ([ssize default-default-target-stack-size]
-		     [(not (zero? ssize))] )
-	    ssize) ) )
+      (and ssize
+	   (arg-val (option-arg ssize))))
     (set! emit-trace-info (not (memq 'no-trace options)))
     (set! disable-stack-overflow-checking (memq 'disable-stack-overflow-checks options))
     (set! bootstrap-mode (feature? #:chicken-bootstrap))

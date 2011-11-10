@@ -814,15 +814,9 @@
 		    (when disable-stack-overflow-checking
 		      (gen #t "C_disable_overflow_check=1;") )
 		    (unless unit-name
-		      (cond [target-initial-heap-size
-			     (gen #t "C_set_or_change_heap_size(" target-initial-heap-size ",1);") ]
-			    [target-heap-size
-			     (gen #t "C_set_or_change_heap_size(" target-heap-size ",1);"
-				  #t "C_heap_size_is_fixed=1;") ] )
-		      (when target-heap-growth
-			(gen #t "C_heap_growth=" target-heap-growth #\;) )
-		      (when target-heap-shrinkage
-			(gen #t "C_heap_shrinkage=" target-heap-shrinkage #\;) )
+		      (when target-heap-size
+			(gen #t "C_set_or_change_heap_size(" target-heap-size ",1);"
+			     #t "C_heap_size_is_fixed=1;"))
 		      (when target-stack-size
 			(gen #t "C_resize_stack(" target-stack-size ");") ) )
 		    (gen #t "C_check_nursery_minimum(" demand ");"

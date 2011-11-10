@@ -279,15 +279,8 @@
 
 (define-inline (gensym-f-id) (gensym 'f_))
 
-(eval-when (eval)
-  (define installation-home #f)
-  (define default-target-heap-size #f)
-  (define default-target-stack-size #f) )
-
-(eval-when (load)
-  (define-foreign-variable installation-home c-string "C_INSTALL_SHARE_HOME")
-  (define-foreign-variable default-target-heap-size int "C_DEFAULT_TARGET_HEAP_SIZE")
-  (define-foreign-variable default-target-stack-size int "C_DEFAULT_TARGET_STACK_SIZE") )
+(define-foreign-variable installation-home c-string "C_INSTALL_SHARE_HOME")
+(define-foreign-variable default-target-heap-size int "C_DEFAULT_TARGET_HEAP_SIZE")
 
 (define-constant foreign-type-table-size 301)
 (define-constant analysis-database-size 3001)
@@ -313,7 +306,6 @@
 (define block-compilation #f)
 (define line-number-database-size default-line-number-database-size)
 (define target-heap-size #f)
-(define target-initial-heap-size #f)
 (define target-stack-size #f)
 (define optimize-leaf-routines #f)
 (define emit-profile #f)
@@ -342,12 +334,6 @@
 (define bootstrap-mode #f)
 (define strict-variable-types #f)
 (define enable-specialization #f)
-
-
-;;; These are here so that the backend can access them:
-
-(define default-default-target-heap-size default-target-heap-size)
-(define default-default-target-stack-size default-target-stack-size)
 
 
 ;;; Other global variables:

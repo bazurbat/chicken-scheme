@@ -131,7 +131,12 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 
 #define RELAX_MULTIVAL_CHECK
 
-#define DEFAULT_STACK_SIZE             64000
+#ifdef C_SIXTY_FOUR
+# define DEFAULT_STACK_SIZE            (1024 * 1024)
+#else
+# define DEFAULT_STACK_SIZE            (256 * 1024)
+#endif
+
 #define DEFAULT_SYMBOL_TABLE_SIZE      2999
 #define DEFAULT_HEAP_SIZE              500000
 #define MINIMAL_HEAP_SIZE              500000

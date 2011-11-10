@@ -82,7 +82,6 @@
  default-debugging-declarations
  default-declarations
  default-default-target-heap-size
- default-default-target-stack-size
  default-extended-bindings
  default-optimization-iterations
  default-optimization-passes
@@ -277,11 +276,8 @@
  stringify
  substitution-table
  symbolify
- target-heap-growth
- target-heap-shrinkage
  target-heap-size
  target-include-file
- target-initial-heap-size
  target-stack-size
  toplevel-lambda-id
  toplevel-scope
