@@ -31,12 +31,6 @@ BINARYVERSION = 6
 STACKDIRECTION ?= 1
 CROSS_CHICKEN ?= 0
 
-ifeq ($(ARCH),x86-64)
-NURSERY ?= (256*1024)
-else
-NURSERY ?= (128*1024)
-endif
-
 # directories
 
 SEP ?= /

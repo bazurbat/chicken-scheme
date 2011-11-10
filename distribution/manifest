@@ -205,7 +205,6 @@ apply-hack.x86.S
 apply-hack.x86-64.S
 apply-hack.ppc.darwin.S
 apply-hack.ppc.sysv.S
-apply-hack.sparc64.S
 chicken.pdf
 Makefile
 Makefile.linux
