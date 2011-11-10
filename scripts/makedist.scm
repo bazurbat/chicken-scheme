@@ -19,7 +19,7 @@
 	  (else
 	   (case (build-platform)
 	     ((mingw32) 
-	      (if (string=? (get-environment-variable "MSYSTEM") "MINGW32")
+	      (if (equal? (get-environment-variable "MSYSTEM") "MINGW32")
 		  "mingw-msys"
 		  "mingw32"))
 	     ((msvc) "msvc")
