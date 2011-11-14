@@ -500,15 +500,16 @@
 				   (add-to-blist (caar ble) (car flow) (cdr ble))))
 			       blist)))
 			  (cond ((and (not (eq? '* r1)) (not (eq? '* r2)))
-				 (when (and (not nor1) (not nor2)
-					    (not (= (length r1) (length r2))))
-				   (report 
-				    loc
-				    (sprintf
-					"branches in conditional expression differ in the number of results:~%~%~a"
-				      (pp-fragment n))))
 				 ;;(dd " branches: ~s:~s / ~s:~s" nor1 r1 nor2 r2)
-				 (cond (nor1 r2)
+				 (cond ((and (not nor1) (not nor2)
+					     (not (= (length r1) (length r2))))
+					(report 
+					 loc
+					 (sprintf
+					     "branches in conditional expression differ in the number of results:~%~%~a"
+					   (pp-fragment n)))
+					'*)
+				       (nor1 r2)
 				       (nor2 r1)
 				       (else
 					(dd "merge branch results: ~s + ~s" r1 r2)
