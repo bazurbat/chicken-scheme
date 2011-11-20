@@ -385,10 +385,17 @@ Equivalent to:
 
 <macro>(define-record NAME SLOTNAME ...)</macro>
 
-Defines a record type. Call {{make-NAME}} to create an instance
-of the structure (with one initialization-argument for each slot).
+Defines a record type. This defines a number of procedures for
+creating, accessing, and modifying record members.
+
+Call {{make-NAME}} to create an instance
+of the structure (with one initialization-argument for each slot, in
+the listed order).
+
 {{(NAME? STRUCT)}} tests any object for being an instance of this
-structure.  Slots are accessed via {{(NAME-SLOTNAME STRUCT)}}
+structure.
+
+Slots are accessed via {{(NAME-SLOTNAME STRUCT)}}
 and updated using {{(NAME-SLOTNAME-set!}} {{STRUCT}} {{VALUE)}}.
 
 <enscript highlight=scheme>
@@ -400,13 +407,26 @@ and updated using {{(NAME-SLOTNAME-set!}} {{STRUCT}} {{VALUE)}}.
 (point-y p1)                     ==> 99
 </enscript>
 
+===== SRFI-17 setters
+
 {{SLOTNAME}} may alternatively also be of the form
 
   (setter SLOTNAME)
 
-In this case the slot can be read with {{(NAME-SLOTNAME STRUCT)}}
-and written with {{(set! (NAME-SLOTNAME STRUCT) VALUE)}} (the slot-accessor
-has an associated SRFI-17 "setter" procedure).
+In this case the slot can be read with {{(NAME-SLOTNAME STRUCT)}} as usual,
+and modified with {{(set! (NAME-SLOTNAME STRUCT) VALUE)}} (the slot-accessor
+has an associated SRFI-17 "setter" procedure) instead of
+the usual {{(NAME-SLOTNAME-set!}} {{STRUCT}} {{VALUE)}}.
+
+
+<enscript highlight=scheme>
+(define-record point (setter x) (setter y))
+(define p1 (make-point 123 456))
+(point? p1)                      ==> #t
+(point-x p1)                     ==> 123
+(set! (point-y p1) 99)
+(point-y p1)                     ==> 99
+</enscript>
 
 ==== define-record-type
 
