@@ -231,11 +231,6 @@
       (define (decorate p ll h cntr)
 	(##sys#eval-decorator p ll h cntr) )
 
-      (define (checkvar name form)
-	(when (keyword? name)
-	  (warning "variable is keyword in binding form" `(,form (... (,name ...) ...) ...)))
-	name)
-
       (define (compile x e h tf cntr se)
 	(cond ((keyword? x) (lambda v x))
 	      ((symbol? x)
@@ -377,7 +372,7 @@
 			 [(##core#let)
 			  (let* ([bindings (cadr x)]
 				 [n (length bindings)] 
-				 [vars (map (lambda (x) (checkvar (car x) 'let)) bindings)] 
+				 [vars (map car bindings)]
 				 (aliases (map gensym vars))
 				 [e2 (cons aliases e)]
 				 (se2 (##sys#extend-se se vars aliases))
@@ -429,8 +424,7 @@
 			    (compile
 			     `(##core#let
 			       ,(##sys#map (lambda (b)
-					     (list (checkvar (car b) 'letrec)
-						   '(##core#undefined))) 
+					     (list (car b) '(##core#undefined))) 
 					   bindings)
 			       ,@(##sys#map (lambda (b)
 					      `(##core#set! ,(car b) ,(cadr b))) 
@@ -535,7 +529,7 @@
 			  (let ((se2 (append
 				      (map (lambda (b)
 					     (list
-					      (checkvar (car b) 'let-syntax)
+					      (car b)
 					      se
 					      (##sys#ensure-transformer
 					       (##sys#eval/meta (cadr b))
@@ -549,7 +543,7 @@
 			 ((##core#letrec-syntax)
 			  (let* ((ms (map (lambda (b)
 					    (list
-					     (checkvar (car b) 'letrec-syntax)
+					     (car b)
 					     #f
 					     (##sys#ensure-transformer
 					      (##sys#eval/meta (cadr b))
