@@ -359,7 +359,7 @@
 
 	    ((##core#callunit)
 	     ;; The code generated here does not use the extra temporary needed for standard calls, so we have
-	     ;;  one unused varable:
+	     ;;  one unused variable:
 	     (let* ((n (length subs))
 		    (nf (+ n 1)) )
 	       (gen #t "C_" (first params) "_toplevel(" nf ",C_SCHEME_UNDEFINED,")
@@ -467,7 +467,7 @@
 	     (mon (vector-ref tm 4))
 	     (year (vector-ref tm 5)) )
 	(gen "/* Generated from " source-file " by the CHICKEN compiler" #t
-	     "   http://www.call-with-current-continuation.org" #t
+	     "   http://www.call-cc.org" #t
 	     "   " (+ 1900 year) #\- (pad0 (add1 mon)) #\- (pad0 mday) #\space (pad0 hour) #\: (pad0 min) #t
 	     (string-intersperse
 	      (map (cut string-append "   " <> "\n") 
