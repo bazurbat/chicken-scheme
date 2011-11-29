@@ -601,7 +601,7 @@ setup-download.c: $(SRCDIR)setup-download.scm setup-api.c
 distfiles: $(DISTFILES)
 
 dist: distfiles html
-	CSI=$(CSI) $(CSI) -s $(SRCDIR)scripts$(SEP)makedist.scm --platform=$(PLATFORM) CHICKEN=$(CHICKEN)
+	CSI=$(CSI) $(CSI) -s $(SRCDIR)scripts$(SEP)makedist.scm -platform $(PLATFORM) CHICKEN=$(CHICKEN)
 
 # Jim's `manual-labor' must be installed (just run "chicken-install manual-labor")
 html:

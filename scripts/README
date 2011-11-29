@@ -4,19 +4,10 @@ README for scripts/
 
 This directory contains a couple of things that might be useful:
 
-  tools.scm
-
-    Helper functions for some of the scripts here.
-
   test-dist.sh
 
     Takes a platform-designator and the path to a tarball and unpacks,
     builds and tests the chicken distribution contained therein.
-
-  wiki2html.scm
-
-    A simple svnwiki -> HTML translator used for the manual. Needs
-    `htmlprag' and `matchable' eggs installed.
 
   makedist.scm
 
@@ -28,8 +19,3 @@ This directory contains a couple of things that might be useful:
     takes a path to a local checkout of the extensions repository
     and compiles each egg from scratch, reporting success or 
     failure.
-
-  identify-branch
-
-    Obtains the branchname, if this is a git(1) checkout, otherwise
-    does nothing.
