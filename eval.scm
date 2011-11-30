@@ -200,7 +200,7 @@
 
       (define (lookup var0 e se)
 	(let ((var (rename var0 se)))
-	  (d `(LOOKUP/EVAL: ,var0 ,var ,e ,(map car se)))
+	  (d `(LOOKUP/EVAL: ,var0 ,var ,e ,(map (lambda (x) (car x)) se)))
 	  (let loop ((envs e) (ei 0))
 	    (cond ((null? envs) (values #f var))
 		  ((posq var (##sys#slot envs 0)) => (lambda (p) (values ei p)))
@@ -372,7 +372,7 @@
 			 [(##core#let)
 			  (let* ([bindings (cadr x)]
 				 [n (length bindings)] 
-				 [vars (map car bindings)]
+				 [vars (map (lambda (x) (car x)) bindings)]
 				 (aliases (map gensym vars))
 				 [e2 (cons aliases e)]
 				 (se2 (##sys#extend-se se vars aliases))

@@ -434,7 +434,7 @@
 
   (define (resolve-variable x0 e se dest ldest h)
     (let ((x (lookup x0 se)))
-      (d `(RESOLVE-VARIABLE: ,x0 ,x ,(map car se)))
+      (d `(RESOLVE-VARIABLE: ,x0 ,x ,(map (lambda (x) (car x)) se)))
       (cond ((not (symbol? x)) x0)	; syntax?
 	    [(and constants-used (##sys#hash-table-ref constant-table x)) 
 	     => (lambda (val) (walk (car val) e se dest ldest h)) ]
@@ -1614,7 +1614,7 @@
   (let* ([rtype (second exp)]
 	 [args (third exp)]
 	 [body (apply string-append (cdddr exp))]
- 	 [argtypes (map car args)]
+ 	 [argtypes (map (lambda (x) (car x)) args)]
          ;; C identifiers aren't hygienically renamed inside body strings
 	 [argnames (map cadr (##sys#strip-syntax args))] )
     (create-foreign-stub rtype #f argtypes argnames body callback? callback?) ) )
@@ -1625,7 +1625,7 @@
 	 [rtype (if hasrtype (second exp) 'void)]
 	 [args (##sys#strip-syntax (if hasrtype (third exp) (second exp)))]
 	 [body (apply string-append (if hasrtype (cdddr exp) (cddr exp)))]
- 	 [argtypes (map car args)]
+ 	 [argtypes (map (lambda (x) (car x)) args)]
          ;; C identifiers aren't hygienically renamed inside body strings
 	 [argnames (map cadr (##sys#strip-syntax args))] )
     (create-foreign-stub rtype #f argtypes argnames body #f #t) ) )
