@@ -1,10 +1,81 @@
-HEAD
+4.7.4
+
+- Build system
+  - the test-suite is now working on for the mingw32 platform (with
+    a few tests disabled due to missing functionality)
+  - the version and branch of the sources are now properly compiled
+    into the core libraries and shown in the "csi" and "chicken"
+    version headers
 
 - Runtime system
   - deprecated "[+-]nan", "[+-]inf" and other notations "accidentally"
     accepted by Chicken due to the underlying C library's strtod() function,
     standardizing on "[+-]nan.0" and "[+-]inf.0" from R6RS (and soon R7RS),
     when displaying numbers only these forms are generated now.
+  - signals are queued to some extent
+  - the interpreter handles SIGINT directly - loading the "posix" unit
+    is not needed anymore to handle this feature
+  - changed default nursery size slightly and fixed a bug that caused
+    incorrect (too small) nursery sizes on 64-bit platforms
+  - deprecated the compiler option "-heap-initial-size", "-heap-growth"
+    and "-heap-shrinkage"
+  - the assembly-language stub routine for the implementation of "apply"
+    was broken for Sparc64 systems - has been disabled for this platform
+
+- Core libraries
+  - added a setter procedure to "signal-handler" ("posix" unit)
+  - EINTR is properly handled for input routines that may block
+    waiting for input
+  - the implementation of R5RS evaluation environments is now fully 
+    standards compliant
+  - "file-exists?" and "directory-exists?" work now properly for files
+    > 2GB (EOVERFLOW handling in stat(3) system call)
+  - fixed bug in implementation of "fifo?"
+  - the procedure returned by "condition-predicate" accepts any type
+    of argument now
+  - blobs have a readable textual representation ("#{...}")
+  - "find-files" does not follow symlinks by default (as it did previously)
+  - also, the old non-keyword argument signature for "find-files" is not
+    supported anymore
+  - added "alist-update" ("data-structures" unit)
+  - "irregex-replace" returns the original string instead of #f when the
+    regex does not match
+  - added "change-directory*" ("posix" unit)
+  - number parsing has been made more reliable and standards compliant
+
+- Compiler
+  - fixed a bug in the compiler that could cause some variable bindings
+    to be optimized away in certain situations involving inlining
+  - added an experimental optimization called "clustering" (enable
+    with the compiler option of the same name)
+  - the optimizations done by the compiler are now listed inside a comment
+    in the generated C file
+  - the type-information obtained during flow-analysis ("scrutiny") is 
+    now used for performing type-sensitive optimizations of calls to
+    most of the core-library procedures
+  - various improvements in the flow-analysis pass have been done and
+    countless bugs fixed
+  - added new type-specifiers "input-port", "output-port", "(list-of T)" 
+    and "(vector-of T)"
+  - the type-specifiers "(vector T ...)" and "(list T ...)" represent
+    fixed size lists and vectors now
+  - added qualified types ("forall"), optionally with type constrains
+  - added the "define-type" special form and type-abbreviations
+  - "-verbose" now shows scrutinizer-warnings and compiler notices
+    that are possibly non-critical (otherwise they are not listed)
+  - added "compiler-typecase", a compile-time typematching form
+  - deprecated "none?", "always?" and "never?" ("data-structures" unit)
+
+- Core tools
+  - "chicken-install"
+    - fixed handling of "-force" when a "chicken" dependency version did
+      not match
+    - added new option "-show-foreign-depends" which lists foreign egg
+      dependencies (if available)
+
+- Foreign function interface
+  - locatives are allowed as arguments declared "c-pointer"
+
 
 4.7.3
 
