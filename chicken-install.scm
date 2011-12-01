@@ -776,6 +776,9 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
        -override FILENAME       override versions for installed eggs with information from file
        -csi FILENAME            use given pathname for invocations of "csi"
        -show-foreign-depends    display a list of foreign dependencies for the given egg(s)
+
+chicken-install recognizes the http_proxy environment variable, if set.
+
 EOF
 );|
     (exit code))
