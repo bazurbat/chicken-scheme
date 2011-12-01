@@ -777,7 +777,7 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
        -csi FILENAME            use given pathname for invocations of "csi"
        -show-foreign-depends    display a list of foreign dependencies for the given egg(s)
 
-chicken-install recognizes the http_proxy environment variable, if set.
+chicken-install recognizes the http_proxy, and proxy_auth environment variables, if set.
 
 EOF
 );|
