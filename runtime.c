@@ -3823,7 +3823,7 @@ C_word C_message(C_word msg)
     buffer[ n ] = '\0';
 #if defined(_WIN32) && !defined(__CYGWIN__)
     MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONERROR);
-    ExitProcess(1);
+    return C_SCHEME_UNDEFINED;
 #endif
   } /* fall through */
 
