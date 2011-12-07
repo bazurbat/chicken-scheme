@@ -3822,7 +3822,7 @@ C_word C_message(C_word msg)
     C_strncpy(buffer, (C_char *)((C_SCHEME_BLOCK *)msg)->data, n);
     buffer[ n ] = '\0';
 #if defined(_WIN32) && !defined(__CYGWIN__)
-    MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONERROR);
+    MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONEXCLAMATION);
     return C_SCHEME_UNDEFINED;
 #endif
   } /* fall through */
