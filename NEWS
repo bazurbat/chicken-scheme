@@ -12,7 +12,8 @@
     accepted by Chicken due to the underlying C library's strtod() function,
     standardizing on "[+-]nan.0" and "[+-]inf.0" from R6RS (and soon R7RS),
     when displaying numbers only these forms are generated now.
-  - signals are queued to some extent
+  - signals are queued to some extent and the interrupt handling has
+    been cleaned up somewhat
   - the interpreter handles SIGINT directly - loading the "posix" unit
     is not needed anymore to handle this feature
   - changed default nursery size slightly and fixed a bug that caused
@@ -42,6 +43,13 @@
     regex does not match
   - added "change-directory*" ("posix" unit)
   - number parsing has been made more reliable and standards compliant
+  - deprecated "none?", "always?" and "never?" ("data-structures" unit)
+  - "parameterize" does not invoke guard procedure when restoring a 
+    parameter's value after execution of the body
+  - library procedures that take ports as arguments now all perform checks
+    on direction and open/closed state
+  - "mutate-procedure" has been renamed to "mutate-procedure!" - the old
+    name is still available but deprecated ("lolevel" unit)
 
 - Compiler
   - fixed a bug in the compiler that could cause some variable bindings
@@ -55,6 +63,9 @@
     most of the core-library procedures
   - various improvements in the flow-analysis pass have been done and
     countless bugs fixed
+  - deprecated the "constant" declaration specifier
+
+- Type system
   - added new type-specifiers "input-port", "output-port", "(list-of T)" 
     and "(vector-of T)"
   - the type-specifiers "(vector T ...)" and "(list T ...)" represent
@@ -64,7 +75,14 @@
   - "-verbose" now shows scrutinizer-warnings and compiler notices
     that are possibly non-critical (otherwise they are not listed)
   - added "compiler-typecase", a compile-time typematching form
-  - deprecated "none?", "always?" and "never?" ("data-structures" unit)
+
+- Module system
+  - the "scheme" module has been integrated into the core library and
+    is not installed as a separate import library anymore
+  - added core module "r4rs" containing only bindings for R4RS identifiers
+  - added core module alias "r5rs" for "scheme" module
+  - added "module-environment" which returns an evaluation environment
+    for the bindings of a module
 
 - Core tools
   - "chicken-install"
