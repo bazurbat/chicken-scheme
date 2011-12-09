@@ -358,6 +358,11 @@
        rope-chunker
        (rope "bob@test.com and fred@example.com")
        (lambda (src i s) (reverse s))))
+  (test-equal '("poo poo ")
+      (irregex-fold '(* "poo ")
+                    (lambda (i m s) (cons (irregex-match-substring m) s))
+                    '()
+                    "poo poo platter"))
   )
 
 
@@ -499,5 +504,13 @@
 (test-assert (not (irregex-search "(?u:<[あ-ん]*>)" "<ひらgがな>")))
 (test-assert (not (irregex-search "(?u:<[^あ-ん語]*>)" "<語>")))
 
-(test-end)(test-exit)
+(test-assert (irregex-search "(?u:<[^あ-ん]*>)" "<abc>"))
+(test-assert (not (irregex-search "(?u:<[^あ-ん]*>)" "<あん>")))
+(test-assert (not (irregex-search "(?u:<[^あ-ん]*>)" "<ひらがな>")))
+(test-assert (irregex-search "(?u:<[^あ-ん語]*>)" "<abc>"))
+(test-assert (not (irregex-search "(?u:<[^あ-ん語]*>)" "<あん>")))
+(test-assert (not (irregex-search "(?u:<[^あ-ん語]*>)" "<ひらがな>")))
+(test-assert (not (irregex-search "(?u:<[^あ-ん語]*>)" "<語>")))
+
+(test-end)
 
