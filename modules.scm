@@ -885,4 +885,4 @@
 (define (module-environment mname #!optional (ename mname))
   (let* ((mod (##sys#find-module/import-library mname 'module-environment))
 	 (saved (module-saved-environments mod)))
-    (##sys#make-structure 'environment ename (car saved))))
+    (##sys#make-structure 'environment ename (car saved) #t)))
