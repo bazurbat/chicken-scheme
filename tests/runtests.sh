@@ -48,6 +48,10 @@ else
     TIME=/usr/bin/time
 fi
 
+
+# for cygwin
+test -f ../cygchicken-0.dll && cp ../cygchicken-0.dll .
+
 compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
 compile2="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .."
 compile_s="../csc -s -compiler $CHICKEN -v -I.. -L.. -include-path .."
