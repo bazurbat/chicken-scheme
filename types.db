@@ -1552,7 +1552,7 @@
 (current-user-id (#(procedure #:clean) current-user-id () fixnum))
 (current-user-name (#(procedure #:clean) current-user-name () string))
 (delete-directory (#(procedure #:clean #:enforce) delete-directory (string) string))
-(directory (#(procedure #:clean #:enforce) directory (string #!optional *) (list-of string)))
+(directory (#(procedure #:clean #:enforce) directory (#!optional string *) (list-of string)))
 (directory? (#(procedure #:clean #:enforce) directory? ((or string fixnum)) boolean))
 (duplicate-fileno (#(procedure #:clean #:enforce) duplicate-fileno (fixnum #!optional fixnum) fixnum))
 (errno/2big fixnum)

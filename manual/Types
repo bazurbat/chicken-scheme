@@ -56,7 +56,6 @@ Declares that the global variable {{IDENTIFIER}} is of the given type.
 
 <syntax>(the TYPE EXPRESSION)</syntax>
 
-
 Equivalent to {{EXPRESSION}}, but declares that the result will be of the
 given type. Note that this form always declares the type of a single result,
 {{the}} can not be used to declare types for multiple result values. {{TYPE}}
@@ -161,7 +160,7 @@ or {{:}} should follow the syntax given below:
 
 Note that type-variables in {{forall}} types may be given "constraint" types, i.e.
 
-  (: sort (forall (e (s (or (vector-of e) (list-of e))))
+  (: sort (forall (e (s (or (vector e) (list-of e))))
             (s (e e -> *) -> s)))
 
 declares that {{sort}} is a procedure of two arguments, the first
