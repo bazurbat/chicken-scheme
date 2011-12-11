@@ -90,6 +90,7 @@
       not match
     - added new option "-show-foreign-depends" which lists foreign egg
       dependencies (if available)
+    - added new option "-show-depends" which lists egg dependencies
 
 - Foreign function interface
   - locatives are allowed as arguments declared "c-pointer"
