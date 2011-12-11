@@ -21,7 +21,7 @@
   - deprecated the compiler option "-heap-initial-size", "-heap-growth"
     and "-heap-shrinkage"
   - the assembly-language stub routine for the implementation of "apply"
-    was broken for Sparc64 systems - has been disabled for this platform
+    was broken for Sparc64 systems and has been disabled for this platform
 
 - Core libraries
   - added a setter procedure to "signal-handler" ("posix" unit)
@@ -29,11 +29,11 @@
     waiting for input
   - the implementation of R5RS evaluation environments is now fully 
     standards compliant
-  - "file-exists?" and "directory-exists?" work now properly for files
+  - "file-exists?" and "directory-exists?" work properly for files
     > 2GB (EOVERFLOW handling in stat(3) system call)
   - fixed bug in implementation of "fifo?"
   - the procedure returned by "condition-predicate" accepts any type
-    of argument now
+    of argument
   - blobs have a readable textual representation ("#{...}")
   - "find-files" does not follow symlinks by default (as it did previously)
   - also, the old non-keyword argument signature for "find-files" is not
@@ -46,7 +46,7 @@
   - deprecated "none?", "always?" and "never?" ("data-structures" unit)
   - "parameterize" does not invoke guard procedure when restoring a 
     parameter's value after execution of the body
-  - library procedures that take ports as arguments now all perform checks
+  - library procedures that take ports as arguments now perform checks
     on direction and open/closed state
   - "mutate-procedure" has been renamed to "mutate-procedure!" - the old
     name is still available but deprecated ("lolevel" unit)
@@ -54,7 +54,7 @@
 - Compiler
   - fixed a bug in the compiler that could cause some variable bindings
     to be optimized away in certain situations involving inlining
-  - added an experimental optimization called "clustering" (enable
+  - added an experimental optimization called "clustering" (enabled
     with the compiler option of the same name)
   - the optimizations done by the compiler are now listed inside a comment
     in the generated C file
@@ -68,13 +68,13 @@
 - Type system
   - added new type-specifiers "input-port", "output-port", "(list-of T)" 
     and "(vector-of T)"
-  - the type-specifiers "(vector T ...)" and "(list T ...)" represent
-    fixed size lists and vectors now
+  - the type-specifiers "(vector T ...)" and "(list T ...)" have been 
+    changed to represent fixed size lists and vectors now
   - added qualified types ("forall"), optionally with type constrains
   - added the "define-type" special form and type-abbreviations
   - "-verbose" now shows scrutinizer-warnings and compiler notices
     that are possibly non-critical (otherwise they are not listed)
-  - added "compiler-typecase", a compile-time typematching form
+  - added "compiler-typecase", a compile-time type-matching form
 
 - Module system
   - the "scheme" module has been integrated into the core library and
@@ -90,9 +90,10 @@
       not match
     - added new option "-show-foreign-depends" which lists foreign egg
       dependencies (if available)
+    - added new option "-show-depends" which lists egg dependencies
 
 - Foreign function interface
-  - locatives are allowed as arguments declared "c-pointer"
+  - locatives are allowed as arguments declared as "c-pointer"
 
 
 4.7.3
