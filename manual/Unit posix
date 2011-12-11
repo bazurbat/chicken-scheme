@@ -1199,13 +1199,8 @@ followed.
 Note that {{action}} is called with the full pathname of each file,
 including the directory prefix.
 
-This procedure's signature was changed in CHICKEN 4.6.   In older versions, {{find-files}}
-has a different signature:
-
-  (find-files DIRECTORY [TEST [ACTION [SEED [LIMIT]]]])
-
-The old signature is still supported in CHICKEN 4.6 for compatibility reasons, but is
-deprecated.
+The signature of this procedure changed in CHICKEN 4.7.4 from
+positional arguments to a keyword-driven style.
 
 === Getting the hostname and system information
 
