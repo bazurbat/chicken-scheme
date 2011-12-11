@@ -679,9 +679,9 @@ EOF
 		(when (memq (build-platform) '(mingw32 cygwin gnu clang))
 		  (set! compile-options 
 		    (cons* "-O3" "-fomit-frame-pointer" compile-options)) ) ]
-	       [(-d0) (set! rest (cons* "-debug-level" "0" rest))]
-	       [(-d1) (set! rest (cons* "-debug-level" "1" rest))]
-	       [(-d2) (set! rest (cons* "-debug-level" "2" rest))]
+	       [(|-d0|) (set! rest (cons* "-debug-level" "0" rest))]
+	       [(|-d1|) (set! rest (cons* "-debug-level" "1" rest))]
+	       [(|-d2|) (set! rest (cons* "-debug-level" "2" rest))]
 	       [(-dry-run) 
 		(set! verbose #t)
 		(set! dry-run #t)]
