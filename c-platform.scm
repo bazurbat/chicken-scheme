@@ -165,7 +165,7 @@
     pointer-u8-set! pointer-s8-set! pointer-u16-set! pointer-s16-set!
     pointer-u32-set! pointer-s32-set! pointer-f32-set! pointer-f64-set!
     current-error-port current-thread
-    printf sprintf format get-keyword) )
+    printf sprintf format fprintf get-keyword) )
 
 (define internal-bindings
   '(##sys#slot ##sys#setslot ##sys#block-ref ##sys#block-set!
