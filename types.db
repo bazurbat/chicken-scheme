@@ -163,6 +163,7 @@
 	      ((null) '0)
 	      ((list) (##core#inline "C_u_i_length" #(1))))
 
+;; these are special cased (see scrutinizer.scm)
 (list-tail (forall (a) (#(procedure #:clean #:enforce) list-tail ((list-of a) fixnum) (list-of a))))
 (list-ref (forall (a) (#(procedure #:clean #:enforce) list-ref ((list-of a) fixnum) a)))
 
