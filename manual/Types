@@ -160,7 +160,7 @@ or {{:}} should follow the syntax given below:
 
 Note that type-variables in {{forall}} types may be given "constraint" types, i.e.
 
-  (: sort (forall (e (s (or (vector e) (list-of e))))
+  (: sort (forall (e (s (or (vector-of e) (list-of e))))
             (s (e e -> *) -> s)))
 
 declares that {{sort}} is a procedure of two arguments, the first
