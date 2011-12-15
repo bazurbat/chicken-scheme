@@ -1111,8 +1111,6 @@
      ;;   number of arguments plus 1.
      ;; - if <counted> is given and true and <argc> is between 1-8, append "<count>"
      ;;   to the name of the inline routine.
-     ;; - if <safe> is 'specialized and `unsafe-specialized-arithmetic' is declared,
-     ;;   then assume it is safe
      (let ((argc (first classargs))
 	   (rargc (length callargs))
 	   (safe (third classargs))
