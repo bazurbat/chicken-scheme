@@ -625,6 +625,14 @@
 (write (#(procedure #:enforce) write (* #!optional output-port) undefined))
 (display (#(procedure #:enforce) display (* #!optional output-port) undefined))
 (write-char (#(procedure #:enforce) write-char (char #!optional output-port) undefined))
+
+;;XXX Yes, that would be nice, but the output-port may be closed
+#;(##sys#write-char-0
+ (#(procedure #:enforce) ##sys#write-char-0 (char output-port) undefined)
+ ((char output-port)
+   (let ((#(tmp) #(1)))
+     ((##sys#slot (##sys#slot #(tmp) '2) '2) #(tmp) #(2)))))
+
 (newline (#(procedure #:enforce) newline (#!optional output-port) undefined))
 
 (with-input-from-file
@@ -1248,11 +1256,7 @@
 (read-string! (#(procedure #:enforce) read-string! (fixnum string #!optional input-port fixnum) fixnum))
 (read-token (#(procedure #:enforce) read-token ((procedure (char) *) #!optional input-port) string))
 (sprintf (#(procedure #:enforce) sprintf (string #!rest) string))
-
-(write-byte (#(procedure #:enforce) write-byte (fixnum #!optional output-port) undefined)
-	    ((fixnum port) (##sys#write-char-0 (integer->char #(1)) #(2)))
-	    ((fixnum) (##sys#write-char-0 (integer->char #(1)) ##sys#standard-output)))
-
+(write-byte (#(procedure #:enforce) write-byte (fixnum #!optional output-port) undefined))
 (write-line (#(procedure #:enforce) write-line (string #!optional output-port) undefined))
 (write-string (#(procedure #:enforce) write-string (string #!optional * output-port) undefined))
 
