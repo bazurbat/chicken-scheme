@@ -27,7 +27,6 @@ if test -d "$1/.git"; then
         "(no branch)") branchname="";;
 	"master") branchname="";;
 	"release") branchname="";;
-	"prerelease") branchname="";;
     esac
     if test "${rev0}" \!= "${rev}"; then
 	echo ${rev} >buildid
