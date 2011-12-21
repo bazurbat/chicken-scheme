@@ -741,6 +741,8 @@
 				 (map (cut resolve <> typeenv) r)))))))
 		 ((##core#the)
 		  (let-values (((t pred pure) (validate-type (first params) #f)))
+		    (unless t
+		      (quit "invalid type specification: ~s" (first params)))
 		    (let ((rt (walk (first subs) e loc dest tail flow ctags)))
 		      (cond ((eq? rt '*))
 			    ((null? rt)
@@ -2020,7 +2022,7 @@
 	    ((eq? 'pair (car t))
 	     (and (= 3 (length t))
 		  (let ((ts (map validate (cdr t))))
-		    (and ts `(pair ,@ts)))))
+		    (and (every identity ts) `(pair ,@ts)))))
 	    ((eq? 'procedure (car t))
 	     (and (pair? (cdr t))
 		  (let* ((name (if (symbol? (cadr t))
