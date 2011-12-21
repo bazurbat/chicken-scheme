@@ -137,7 +137,7 @@
     -analyze-only -keep-shadowed-macros -inline-global -ignore-repository
     -no-symbol-escape -no-parentheses-synonyms -r5rs-syntax
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
-    -emit-all-import-libraries -setup-mode -unboxing -no-elevation -no-module-registration
+    -emit-all-import-libraries -setup-mode -no-elevation -no-module-registration
     -no-procedure-checks-for-usual-bindings -module
     -specialize -strict-types -clustering
     -lambda-lift			; OBSOLETE
@@ -383,7 +383,6 @@ Usage: #{csc} FILENAME | OPTION ...
     -inline                        enable inlining
     -inline-limit LIMIT            set inlining threshold
     -inline-global                 enable cross-module inlining
-    -unboxing                      use unboxed temporaries if possible
     -specialize                    perform type-based specialization of primitive calls
     -n -emit-inline-file FILENAME  generate file with globally inlinable
                                     procedures (implies -inline -local)

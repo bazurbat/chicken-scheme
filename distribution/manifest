@@ -27,7 +27,6 @@ lolevel.c
 optimizer.c
 compiler-syntax.c
 scrutinizer.c
-unboxing.c
 irregex.c
 posixunix.c
 posixwin.c
@@ -76,7 +75,6 @@ lolevel.scm
 optimizer.scm
 compiler-syntax.scm
 scrutinizer.scm
-unboxing.scm
 irregex.scm
 irregex-core.scm
 irregex-utils.scm
@@ -109,7 +107,6 @@ tests/arithmetic-test.32.expected
 tests/arithmetic-test.64.expected
 tests/library-tests.scm
 tests/compiler-tests.scm
-tests/compiler-tests-3.scm
 tests/inlining-tests.scm
 tests/locative-stress-test.scm
 tests/r4rstest.scm

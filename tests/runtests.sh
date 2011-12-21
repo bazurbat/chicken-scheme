@@ -63,10 +63,6 @@ echo "======================================== compiler tests ..."
 $compile compiler-tests.scm
 ./a.out
 
-echo "======================================== compiler tests (unboxing) ..."
-$compile compiler-tests-3.scm -unsafe -unboxing
-./a.out
-
 echo "======================================== compiler inlining tests  ..."
 $compile inlining-tests.scm -optimize-level 3
 ./a.out

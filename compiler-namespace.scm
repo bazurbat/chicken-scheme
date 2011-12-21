@@ -221,7 +221,6 @@
  perform-high-level-optimizations
  perform-inlining!
  perform-pre-optimization!
- perform-unboxing!
  posq
  postponed-initforms
  pprint-expressions-to-file

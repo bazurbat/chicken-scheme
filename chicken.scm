@@ -28,7 +28,7 @@
 (declare
   (uses chicken-syntax chicken-ffi-syntax 
 	srfi-1 srfi-4 utils files extras data-structures support
-	compiler optimizer unboxing compiler-syntax scrutinizer driver platform backend 
+	compiler optimizer compiler-syntax scrutinizer driver platform backend 
 	srfi-69))
 
 
@@ -104,7 +104,6 @@
 			     'inline 
 			     'inline-global
 			     'specialize
-			     'unboxing 
 			     ;XXX 'clustering
 			     'local 'unsafe
 			     options) ) )
@@ -123,7 +122,6 @@
 			       'inline
 			       'inline-global
 			       'clustering
-			       'unboxing
 			       options) ) ) ) )
 		 (loop (cdr rest)) ) )
 	      ((eq? 'debug-level o)

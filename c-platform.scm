@@ -93,7 +93,7 @@
     no-parentheses-synonyms no-symbol-escape r5rs-syntax emit-all-import-libraries
     strict-types clustering
     lambda-lift				; OBSOLETE
-    setup-mode unboxing no-module-registration) )
+    setup-mode no-module-registration) )
 
 (define valid-compiler-options-with-argument
   '(debug 

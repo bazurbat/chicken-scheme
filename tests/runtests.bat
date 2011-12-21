@@ -27,12 +27,6 @@ if errorlevel 1 exit /b 1
 a.out
 if errorlevel 1 exit /b 1
 
-echo ======================================== compiler tests (unboxing) ...
-%compile% compiler-tests-3.scm -unsafe -unboxing
-if errorlevel 1 exit /b 1
-a.out
-if errorlevel 1 exit /b 1
-
 echo ======================================== compiler inlining tests  ...
 %compile% inlining-tests.scm -optimize-level 3
 if errorlevel 1 exit /b 1

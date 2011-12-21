@@ -1670,7 +1670,6 @@ Usage: chicken FILENAME OPTION ...
     -inline-limit LIMIT          set inlining threshold
     -inline-global               enable cross-module inlining
     -specialize                  perform type-based specialization of primitive calls
-    -unboxing                    use unboxed temporaries if possible
     -emit-inline-file FILENAME   generate file with globally inlinable
                                   procedures (implies -inline -local)
     -consult-inline-file FILENAME  explicitly load inline file
@@ -1740,7 +1739,6 @@ Available debugging options:
      S          show applications of compiler syntax
      T          show expressions after converting to node tree
      P          show expressions after specialization
-     U          show expressions after unboxing
      M          show syntax-/runtime-requirements
      1          show source expressions
      2          show canonicalized expressions
