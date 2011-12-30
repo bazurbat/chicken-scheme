@@ -304,6 +304,7 @@
 				      (test var 'local-value)))]
 		       [args (cdr subs)] )
 		  (cond ((test var 'contractable)
+			 ;; only called once
 			 (let* ([lparams (node-parameters lval)]
 				[llist (third lparams)] )
 			   (check-signature var args llist)
@@ -316,6 +317,7 @@
 			     void)
 			    fids gae) ) )
 			((variable-mark var '##compiler#pure)
+			 ;; callee is side-effect free
 			 (or (and-let* ((k (car args))
 					((eq? '##core#variable (node-class k)))
 					(kvar (first (node-parameters k)))
@@ -339,6 +341,7 @@
 			     (walk-generic n class params subs fids gae #f)) )
 			((and lval
 			      (eq? '##core#lambda (node-class lval)))
+			 ;; callee is a lambda
 			 (let* ([lparams (node-parameters lval)]
 				[llist (third lparams)] )
 			   (decompose-lambda-list
@@ -433,6 +436,18 @@
 						   (invalidate-gae! gae)
 						   n2) ) ) ) ) )
 				      (else (walk-generic n class params subs fids gae #t)) ) ) ) ) ) )
+			((and lval
+			      (eq? '##core#variable (node-class lval))
+			      (intrinsic? (first (node-parameters lval))))
+			 ;; callee is intrinsic
+			 (debugging 'i "inlining call to intrinsic alias" 
+				    var (first (node-parameters lval)))
+			 (walk
+			  (make-node
+			   '##core#call
+			   params
+			   (cons lval (cdr subs)))
+			  fids gae))
 			(else (walk-generic n class params subs fids gae #t)) ) ) ]
 	       [(##core#lambda)
 		(if (first params)
