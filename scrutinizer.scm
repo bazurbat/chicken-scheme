@@ -799,7 +799,7 @@
     (let ((rn (walk (first (node-subexpressions node)) '() '() #f #f (list (tag)) #f)))
       (when (pair? specialization-statistics)
 	(with-debugging-output
-	 'o
+	 '(o e)
 	 (lambda ()
 	   (print "specializations:")
 	   (for-each 
@@ -807,9 +807,9 @@
 	      (printf "  ~a ~s~%" (cdr ss) (car ss)))
 	    specialization-statistics))))
       (when (positive? safe-calls)
-	(debugging 'o "safe calls" safe-calls))
+	(debugging '(o e) "safe calls" safe-calls))
       (when (positive? dropped-branches)
-	(debugging 'o "dropped branches" dropped-branches))
+	(debugging '(o e) "dropped branches" dropped-branches))
       (when errors
 	(quit "some variable types do not satisfy strictness"))
       rn)))
