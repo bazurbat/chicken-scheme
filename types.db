@@ -1537,7 +1537,7 @@
 (change-file-mode (#(procedure #:clean #:enforce) change-file-mode (string fixnum) undefined))
 (change-file-owner (#(procedure #:clean #:enforce) change-file-owner (string fixnum fixnum) undefined))
 (close-input-pipe (#(procedure #:clean #:enforce) close-input-pipe (input-port) fixnum))
-(close-output-pipe (#(procedure #:clean #:enforce) close-output-pipe (input-port) fixnum))
+(close-output-pipe (#(procedure #:clean #:enforce) close-output-pipe (output-port) fixnum))
 (create-directory (#(procedure #:clean #:enforce) create-directory (string #!optional *) string))
 (create-fifo (#(procedure #:clean #:enforce) create-fifo (string #!optional fixnum) undefined))
 (create-pipe (procedure create-pipe () fixnum fixnum))
