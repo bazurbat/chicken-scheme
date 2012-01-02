@@ -614,7 +614,10 @@
 			       (not (get db var 'unknown)))
 		      (and-let* ((val (or (get db var 'value)
 					  (get db var 'local-value))))
-			(when (eq? val (first subs))
+			(when (and (eq? val (first subs))
+				   (or (not (variable-visible? var))
+				       (not (eq? (variable-mark var '##compiler#inline) 
+						 'no))))
 			  (debugging '|I| (sprintf "(: ~s ~s)" var rt))
 			  ;; [2] sets property, but lambda has already been walked,
 			  ;; so no type-checks are generated (see also [1], above)
