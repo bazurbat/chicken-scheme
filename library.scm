@@ -3220,11 +3220,8 @@ EOF
 			  (cond [(char-name x) 
 				 => (lambda (cn) 
 				      (outstr port (##sys#slot cn 1)) ) ]
-				[(fx< code 32)
+				[(or (fx< code 32) (fx> code 255))
 				 (outchr port #\x)
-				 (outstr port (##sys#number->string code 16)) ]
-				[(fx> code 255)
-				 (outchr port (if (fx> code #xffff) #\U #\u))
 				 (outstr port (##sys#number->string code 16)) ]
 				[else (outchr port x)] ) ) ] 
 		       [else (outchr port x)] ) )
