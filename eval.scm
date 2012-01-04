@@ -109,13 +109,15 @@
 
 (define ##sys#hash-symbol
   (let ([cache-s #f]
-	[cache-h #f] )
+	[cache-h #f]
+        ;; NOTE: All low-level hash tables share the same randomization factor
+        [rand (##core#inline "C_random_fixnum" most-positive-fixnum)] )
     (lambda (s n)
       (if (eq? s cache-s)
 	  (##core#inline "C_fixnum_modulo" cache-h n)
           (begin
             (set! cache-s s)
-            (set! cache-h (##core#inline "C_hash_string" (##sys#slot s 1)))
+            (set! cache-h (##core#inline "C_u_i_string_hash" (##sys#slot s 1) rand))
             (##core#inline "C_fixnum_modulo" cache-h n))))))
 
 (define (##sys#hash-table-ref ht key)

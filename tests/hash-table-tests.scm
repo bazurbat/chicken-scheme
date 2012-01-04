@@ -38,7 +38,7 @@
 (print "HT - All Parameters")
 (set! ht (make-hash-table eqv? eqv?-hash 23
                           #:test equal? #:hash equal?-hash
-                          #:initial 'foo
+                          #:initial 'foo #:randomization 30
                           #:size 500
                           #:min-load 0.45 #:max-load 0.85
                           #:weak-keys #t #:weak-values #t))
@@ -126,6 +126,35 @@
 (let ([alist (hash-table-fold ht (lambda (k v a) (cons (cons k v) a)) '())])
   (assert (list? alist))
   (assert (= (length alist) 3)) )
+
+(print "Hash collision weaknesses")
+;; If these fail, it might be bad luck caused by the randomization/modulo combo
+;; So don't *immediately* dismiss a hash implementation when it fails here
+(assert (not (= (hash "a" 10 1) (hash "a" 10 2))))
+(assert (not (= (hash (make-string 1 #\nul) 10 10) 0)))
+;; Long identical suffixes should not hash to the same value
+(assert (not (= (hash (string-append (make-string 1000000 #\a)
+                                     (make-string 1000000 #\c)) 10 1)
+                (hash (string-append (make-string 1000000 #\b)
+                                     (make-string 1000000 #\c)) 10 1))))
+;; Same for prefixes
+(assert (not (= (hash (string-append (make-string 1000000 #\a)
+                                     (make-string 1000000 #\b)) 10 1)
+                (hash (string-append (make-string 1000000 #\a)
+                                     (make-string 1000000 #\c)) 10 1))))
+;; And palindromes, too
+(assert (not (= (hash (string-append (make-string 1000000 #\a)
+                                     (make-string 1000000 #\b)
+                                     (make-string 1000000 #\a)) 10 1)
+                (hash (string-append (make-string 1000000 #\a)
+                                     (make-string 1000000 #\c)
+                                     (make-string 1000000 #\a)) 10 1))))
+;; differing number of nul bytes should not be identical
+(assert (not (= (hash (make-string 1 #\nul) 10 1) 
+                (hash (make-string 2 #\nul) 10 1))))
+;; ensure very long NUL strings don't cause the random value to get pushed out
+(assert (not (= (hash (make-string 1000000 #\nul) 10 1)
+                (hash (make-string 1000001  #\nul) 10 1))))
 
 ;; Stress Test
 

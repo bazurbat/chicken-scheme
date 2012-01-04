@@ -2448,11 +2448,11 @@
 ;; srfi-69
 
 (alist->hash-table (#(procedure #:clean #:enforce) alist->hash-table ((list-of pair) #!rest) (struct hash-table)))
-(eq?-hash (#(procedure #:clean #:enforce) eq?-hash (* #!optional fixnum) fixnum))
-(equal?-hash (#(procedure #:clean #:enforce) equal?-hash (* #!optional fixnum) fixnum))
-(eqv?-hash (#(procedure #:clean #:enforce) eqv?-hash (* #!optional fixnum) fixnum))
-(hash (#(procedure #:pure #:enforce) hash (* #!optional fixnum) fixnum))
-(hash-by-identity (#(procedure #:pure #:enforce) hash-by-identity (* #!optional fixnum) fixnum))
+(eq?-hash (#(procedure #:clean #:enforce) eq?-hash (* #!optional fixnum fixnum) fixnum))
+(equal?-hash (#(procedure #:clean #:enforce) equal?-hash (* #!optional fixnum fixnum) fixnum))
+(eqv?-hash (#(procedure #:clean #:enforce) eqv?-hash (* #!optional fixnum fixnum) fixnum))
+(hash (#(procedure #:pure #:enforce) hash (* #!optional fixnum fixnum) fixnum))
+(hash-by-identity (#(procedure #:pure #:enforce) hash-by-identity (* #!optional fixnum fixnum) fixnum))
 (hash-table->alist (#(procedure #:clean #:enforce) hash-table->alist ((struct hash-table)) (list-of pair)))
 (hash-table-clear! (#(procedure #:clean #:enforce) hash-table-clear! ((struct hash-table)) undefined))
 (hash-table-copy (#(procedure #:clean #:enforce) hash-table-copy ((struct hash-table)) (struct hash-table)))
@@ -2468,6 +2468,8 @@
 (hash-table-hash-function (#(procedure #:clean #:enforce) hash-table-hash-function ((struct hash-table)) (procedure (* fixnum) fixnum))
 			  (((struct hash-table)) (##sys#slot #(1) '4)))
 
+(hash-table-randomization (#(procedure #:clean #:enforce) hash-table-randomization ((struct hash-table)) fixnum)
+                          (((struct hash-table)) (##sys#slot #(1) '10)))
 (hash-table-initial (#(procedure #:clean #:enforce) hash-table-initial ((struct hash-table)) *))
 (hash-table-keys (#(procedure #:clean #:enforce) hash-table-keys ((struct hash-table)) list))
 (hash-table-map (#(procedure #:clean #:enforce) hash-table-map ((struct hash-table) (procedure (* *) *)) list))
@@ -2504,15 +2506,15 @@
 
 ;;XXX if we want to hardcode hash-default-bound here, we could rewrite the 1-arg case...
 ;     (applies to all hash-functions)
-(keyword-hash (#(procedure #:clean #:enforce) keyword-hash (* #!optional fixnum) fixnum))
+(keyword-hash (#(procedure #:clean #:enforce) keyword-hash (* #!optional fixnum fixnum) fixnum))
 
 (make-hash-table (#(procedure #:clean #:enforce) make-hash-table (#!rest) (struct hash-table)))
-(number-hash (#(procedure #:clean #:enforce) number-hash (fixnum #!optional fixnum) fixnum))
-(object-uid-hash (#(procedure #:clean #:enforce) object-uid-hash (* #!optional fixnum) fixnum))
-(symbol-hash (#(procedure #:clean #:enforce) symbol-hash (symbol #!optional fixnum) fixnum))
-(string-hash (#(procedure #:clean #:enforce) string-hash (string #!optional fixnum fixnum fixnum) number))
-(string-hash-ci (#(procedure #:clean #:enforce) string-hash-ci (string #!optional fixnum fixnum fixnum) number))
-(string-ci-hash (#(procedure #:clean #:enforce) string-ci-hash (string #!optional fixnum fixnum fixnum) number))
+(number-hash (#(procedure #:clean #:enforce) number-hash (fixnum #!optional fixnum fixnum) fixnum))
+(object-uid-hash (#(procedure #:clean #:enforce) object-uid-hash (* #!optional fixnum fixnum) fixnum))
+(symbol-hash (#(procedure #:clean #:enforce) symbol-hash (symbol #!optional fixnum fixnum) fixnum))
+(string-hash (#(procedure #:clean #:enforce) string-hash (string #!optional fixnum fixnum fixnum fixnum) number))
+(string-hash-ci (#(procedure #:clean #:enforce) string-hash-ci (string #!optional fixnum fixnum fixnum fixnum) number))
+(string-ci-hash (#(procedure #:clean #:enforce) string-ci-hash (string #!optional fixnum fixnum fixnum fixnum) number))
 
 
 ;; tcp

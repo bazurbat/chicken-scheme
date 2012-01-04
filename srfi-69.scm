@@ -69,11 +69,11 @@
 (define-inline (%byte-block? obj)
   (##core#inline "C_byteblockp" obj) )
 
-(define-inline (%string-hash str)
-  (##core#inline "C_hash_string" str) )
+(define-inline (%string-hash str rnd)
+  (##core#inline "C_u_i_string_hash" str rnd) )
 
-(define-inline (%string-ci-hash str)
-  (##core#inline "C_hash_string_ci" str) )
+(define-inline (%string-ci-hash str rnd)
+  (##core#inline "C_u_i_string_ci_hash" str rnd) )
 
 (define-inline (%subbyte bytvec i)
   (##core#inline "C_subbyte" bytvec i) )
@@ -105,6 +105,8 @@
 (define-constant unknown-immediate-hash-value 262)
 
 (define-constant hash-default-bound 536870912)
+(define hash-default-randomization
+  (##core#inline "C_random_fixnum" hash-default-bound))
 
 ;; Force Hash to Bounded Fixnum:
 
@@ -136,22 +138,23 @@
                    `(,_fx+ (,_%subbyte ,flo ,idx)
                            (,_fxshl ,(loop (fx- idx 1)) 1)) ) ) ) ) ) )
 
-(define (##sys#number-hash-hook obj)
-  (*equal?-hash obj) )
+(define (##sys#number-hash-hook obj rnd)
+  (*equal?-hash obj rnd) )
 
-(define-inline (%non-fixnum-number-hash obj)
-  (cond [(flonum? obj)	($flonum-hash obj)]
-	[else		(%fix (##sys#number-hash-hook obj))] ) )
+(define-inline (%non-fixnum-number-hash obj rnd)
+  (cond [(flonum? obj)	($flonum-hash obj rnd)]
+	[else		(%fix (##sys#number-hash-hook obj rnd))] ) )
 
-(define-inline (%number-hash obj)
-  (cond [(fixnum? obj)	obj]
-	[else		(%non-fixnum-number-hash obj)] ) )
+(define-inline (%number-hash obj rnd)
+  (cond [(fixnum? obj)	(fxxor obj rnd)]
+	[else		(%non-fixnum-number-hash obj rnd)] ) )
 
-(define (number-hash obj #!optional (bound hash-default-bound))
+(define (number-hash obj #!optional (bound hash-default-bound)
+                     (randomization hash-default-randomization))
   (unless (number? obj)
     (##sys#signal-hook #:type 'number-hash "invalid number" obj) )
   (##sys#check-exact bound 'number-hash)
-  (%hash/limit (%number-hash obj) bound) )
+  (%hash/limit (%number-hash obj randomization) bound) )
 
 ;; Object UID Hash:
 
@@ -159,12 +162,13 @@
 (define-inline (%object-uid-hash obj)
   (%uid-hash (##sys#object->uid obj)) )
 
-(define-inline (%object-uid-hash obj)
-  (*equal?-hash obj) )
+(define-inline (%object-uid-hash obj rnd)
+  (*equal?-hash obj rnd) )
 
-(define (object-uid-hash obj #!optional (bound hash-default-bound))
+(define (object-uid-hash obj #!optional (bound hash-default-bound)
+                         (randomization hash-default-randomization))
   (##sys#check-exact bound 'object-uid-hash)
-  (%hash/limit (%object-uid-hash obj) bound) )
+  (%hash/limit (%object-uid-hash obj randomization) bound) )
 
 ;; Symbol Hash:
 
@@ -172,13 +176,14 @@
 (define-inline (%symbol-hash obj)
   (##sys#slot obj INDEX-OF-UNIQUE-HASH-VALUE-COMPUTED-DURING-SYMBOL-CREATION) )
 
-(define-inline (%symbol-hash obj)
-  (%string-hash (##sys#slot obj 1)) )
+(define-inline (%symbol-hash obj rnd)
+  (%string-hash (##sys#slot obj 1) rnd) )
 
-(define (symbol-hash obj #!optional (bound hash-default-bound))
+(define (symbol-hash obj #!optional (bound hash-default-bound)
+                     (randomization hash-default-randomization))
   (##sys#check-symbol obj 'symbol-hash)
   (##sys#check-exact bound 'symbol-hash)
-  (%hash/limit (%symbol-hash obj) bound) )
+  (%hash/limit (%symbol-hash obj randomization) bound) )
 
 ;; Keyword Hash:
 
@@ -192,13 +197,14 @@
 (define-inline (%keyword-hash obj)
   (##sys#slot obj INDEX-OF-UNIQUE-HASH-VALUE-COMPUTED-DURING-KEYWORD-CREATION) )
 
-(define-inline (%keyword-hash obj)
-  (%string-hash (##sys#slot obj 1)) )
+(define-inline (%keyword-hash obj rnd)
+  (%string-hash (##sys#slot obj 1) rnd) )
 
-(define (keyword-hash obj #!optional (bound hash-default-bound))
+(define (keyword-hash obj #!optional (bound hash-default-bound)
+                      (randomization hash-default-randomization))
   (##sys#check-keyword obj 'keyword-hash)
   (##sys#check-exact bound 'keyword-hash)
-  (%hash/limit (%keyword-hash obj) bound) )
+  (%hash/limit (%keyword-hash obj randomization) bound) )
 
 ;; Eq Hash:
 
@@ -208,22 +214,23 @@
        #; ;NOT YET (no keyword vs. symbol issue)
        (keyword? obj) ) )
 
-(define (*eq?-hash obj)
-  (cond [(fixnum? obj)		obj]
-	[(char? obj)		(char->integer obj)]
-	[(eq? obj #t)		true-hash-value]
-	[(eq? obj #f)		false-hash-value]
-	[(null? obj)		null-hash-value]
-	[(eof-object? obj)	eof-hash-value]
-	[(symbol? obj)		(%symbol-hash obj)]
+(define (*eq?-hash obj rnd)
+  (cond [(fixnum? obj)		(fxxor obj rnd)]
+	[(char? obj)		(fxxor (char->integer obj) rnd)]
+	[(eq? obj #t)		(fxxor true-hash-value rnd)]
+	[(eq? obj #f)		(fxxor false-hash-value rnd)]
+	[(null? obj)		(fxxor null-hash-value rnd)]
+	[(eof-object? obj)	(fxxor eof-hash-value rnd)]
+	[(symbol? obj)		(%symbol-hash obj rnd)]
 	#; ;NOT YET (no keyword vs. symbol issue)
-	[(keyword? obj)		(%keyword-hash obj)]
-	[(%immediate? obj)	unknown-immediate-hash-value]
-	[else			(%object-uid-hash obj) ] ) )
+	[(keyword? obj)		(%keyword-hash obj rnd)]
+	[(%immediate? obj)	(fxxor unknown-immediate-hash-value rnd)]
+	[else			(%object-uid-hash obj rnd) ] ) )
 
-(define (eq?-hash obj #!optional (bound hash-default-bound))
+(define (eq?-hash obj #!optional (bound hash-default-bound)
+                  (randomization hash-default-randomization))
   (##sys#check-exact bound 'eq?-hash)
-  (%hash/limit (*eq?-hash obj) bound) )
+  (%hash/limit (*eq?-hash obj randomization) bound) )
 
 (define hash-by-identity eq?-hash)
 
@@ -233,23 +240,24 @@
   (or (%eq?-hash-object? obj)
       (number? obj) ) )
 
-(define (*eqv?-hash obj)
-  (cond [(fixnum? obj)		obj]
-	[(char? obj)		(char->integer obj)]
-	[(eq? obj #t)		true-hash-value]
-	[(eq? obj #f)		false-hash-value]
-	[(null? obj)		null-hash-value]
-	[(eof-object? obj)	eof-hash-value]
-	[(symbol? obj)		(%symbol-hash obj)]
+(define (*eqv?-hash obj rnd)
+  (cond [(fixnum? obj)		(fxxor obj rnd)]
+	[(char? obj)		(fxxor (char->integer obj) rnd)]
+	[(eq? obj #t)		(fxxor true-hash-value rnd)]
+	[(eq? obj #f)		(fxxor false-hash-value rnd)]
+	[(null? obj)		(fxxor null-hash-value rnd)]
+	[(eof-object? obj)	(fxxor eof-hash-value rnd)]
+	[(symbol? obj)		(%symbol-hash obj rnd)]
 	#; ;NOT YET (no keyword vs. symbol issue)
-	[(keyword? obj)		(%keyword-hash obj)]
-	[(number? obj)		(%non-fixnum-number-hash obj)]
-	[(%immediate? obj)	unknown-immediate-hash-value]
-	[else			(%object-uid-hash obj) ] ) )
+	[(keyword? obj)		(%keyword-hash obj rnd)]
+	[(number? obj)		(%non-fixnum-number-hash obj rnd)]
+	[(%immediate? obj)	(fxxor unknown-immediate-hash-value rnd)]
+	[else			(%object-uid-hash obj rnd) ] ) )
 
-(define (eqv?-hash obj #!optional (bound hash-default-bound))
+(define (eqv?-hash obj #!optional (bound hash-default-bound)
+                   (randomization hash-default-randomization))
   (##sys#check-exact bound 'eqv?-hash)
-  (%hash/limit (*eqv?-hash obj) bound) )
+  (%hash/limit (*eqv?-hash obj randomization) bound) )
 
 ;; Equal Hash:
 
@@ -259,105 +267,106 @@
 
 ;; NOTE - These refer to identifiers available only within the body of '*equal?-hash'.
 
-(define-inline (%%list-hash obj)
+(define-inline (%%list-hash obj rnd)
   (fx+ (length obj)
-       (recursive-atomic-hash (##sys#slot obj 0) depth)) )
+       (recursive-atomic-hash (##sys#slot obj 0) depth rnd)) )
 
-(define-inline (%%pair-hash obj)
-  (fx+ (fxshl (recursive-atomic-hash (##sys#slot obj 0) depth) 16)
-	(recursive-atomic-hash (##sys#slot obj 1) depth)) )
+(define-inline (%%pair-hash obj rnd)
+  (fx+ (fxshl (recursive-atomic-hash (##sys#slot obj 0) depth rnd) 16)
+	(recursive-atomic-hash (##sys#slot obj 1) depth rnd)) )
 
-(define-inline (%%port-hash obj)
-  (fx+ (fxshl (##sys#peek-fixnum obj 0) 4) ; Little extra "identity"
+(define-inline (%%port-hash obj rnd)
+  (fx+ (fxxor (fxshl (##sys#peek-fixnum obj 0) 4) rnd) ; Little extra "identity"
 	(if (input-port? obj)
 	    input-port-hash-value
 	    output-port-hash-value)) )
 
-(define-inline (%%special-vector-hash obj)
-  (vector-hash obj (##sys#peek-fixnum obj 0) depth 1) )
+(define-inline (%%special-vector-hash obj rnd)
+  (vector-hash obj (##sys#peek-fixnum obj 0) depth 1 rnd) )
 
-(define-inline (%%regular-vector-hash obj)
-  (vector-hash obj 0 depth 0) )
+(define-inline (%%regular-vector-hash obj rnd)
+  (vector-hash obj 0 depth 0 rnd) )
 
-(define (*equal?-hash obj)
+(define (*equal?-hash obj rnd)
 
   ; Recurse into some portion of the vector's slots
-  (define (vector-hash obj seed depth start)
+  (define (vector-hash obj seed depth start rnd)
     (let ([len (##sys#size obj)])
-      (let loop ([hsh (fx+ len seed)]
+      (let loop ([hsh (fx+ len (fxxor seed rnd))]
 		 [i start]
 		 [len (fx- (fxmin recursive-hash-max-length len) start)] )
 	(if (fx= len 0)
 	    hsh
 	    (loop (fx+ hsh
 		       (fx+ (fxshl hsh 4)
-			    (recursive-hash (##sys#slot obj i) (fx+ depth 1))))
+			    (recursive-hash (##sys#slot obj i) (fx+ depth 1) rnd)))
 		  (fx+ i 1)
 		  (fx- len 1) ) ) ) ) )
 
   ; Don't recurse into structured objects
-  (define (recursive-atomic-hash obj depth)
+  (define (recursive-atomic-hash obj depth rnd)
     (if (or (%eqv?-hash-object? obj)
 	    (%byte-block? obj))
-	(recursive-hash obj (fx+ depth 1))
-	other-hash-value ) )
+	(recursive-hash obj (fx+ depth 1) rnd)
+	(fxxor other-hash-value rnd) ) )
 
   ; Recurse into structured objects
-  (define (recursive-hash obj depth)
+  (define (recursive-hash obj depth rnd)
     (cond [(fx>= depth recursive-hash-max-depth)
-				  other-hash-value]
-	  [(fixnum? obj)	  obj]
-	  [(char? obj)		  (char->integer obj)]
-	  [(eq? obj #t)		  true-hash-value]
-	  [(eq? obj #f)		  false-hash-value]
-	  [(null? obj)		  null-hash-value]
-	  [(eof-object? obj)	  eof-hash-value]
-	  [(symbol? obj)	  (%symbol-hash obj)]
+				  (fxxor other-hash-value rnd)]
+	  [(fixnum? obj)	  (fxxor obj rnd)]
+	  [(char? obj)		  (fxxor (char->integer obj) rnd)]
+	  [(eq? obj #t)		  (fxxor true-hash-value rnd)]
+	  [(eq? obj #f)		  (fxxor false-hash-value rnd)]
+	  [(null? obj)		  (fxxor null-hash-value rnd)]
+	  [(eof-object? obj)	  (fxxor eof-hash-value rnd)]
+	  [(symbol? obj)	  (%symbol-hash obj rnd)]
 	  #; ;NOT YET (no keyword vs. symbol issue)
-	  [(keyword? obj)	  (%keyword-hash obj)]
-	  [(number? obj)	  (%non-fixnum-number-hash obj)]
-	  [(%immediate? obj)	  unknown-immediate-hash-value]
-	  [(%byte-block? obj)	  (%string-hash obj)]
-	  [(list? obj)		  (%%list-hash obj)]
-	  [(pair? obj)		  (%%pair-hash obj)]
-	  [(%port? obj)		  (%%port-hash obj)]
-	  [(%special? obj)	  (%%special-vector-hash obj)]
-	  [else			  (%%regular-vector-hash obj)] ) )
+	  [(keyword? obj)	  (%keyword-hash obj rnd)]
+	  [(number? obj)	  (%non-fixnum-number-hash obj rnd)]
+	  [(%immediate? obj)	  (fxxor unknown-immediate-hash-value rnd)]
+	  [(%byte-block? obj)	  (%string-hash obj rnd)]
+	  [(list? obj)		  (%%list-hash obj rnd)]
+	  [(pair? obj)		  (%%pair-hash obj rnd)]
+	  [(%port? obj)		  (%%port-hash obj rnd)]
+	  [(%special? obj)	  (%%special-vector-hash obj rnd)]
+	  [else			  (%%regular-vector-hash obj rnd)] ) )
 
   ;
-  (recursive-hash obj 0) )
+  (recursive-hash obj 0 rnd) )
 
-(define (equal?-hash obj #!optional (bound hash-default-bound))
+(define (equal?-hash obj #!optional (bound hash-default-bound)
+                     (randomization hash-default-randomization))
   (##sys#check-exact bound 'hash)
-  (%hash/limit (*equal?-hash obj) bound) )
+  (%hash/limit (*equal?-hash obj randomization) bound) )
 
 (define hash equal?-hash)
 
 ;; String Hash:
 
-(define (string-hash str #!optional (bound hash-default-bound) . start+end)
+(define (string-hash str #!optional (bound hash-default-bound) start end
+                     (randomization hash-default-randomization))
   (##sys#check-string str 'string-hash)
   (##sys#check-exact bound 'string-hash)
-  (let ((str (if (pair? start+end)
-		 (let-optionals start+end ((start 0)
-					   (end (##sys#size str)))
-		   (##sys#check-range start 0 (##sys#size str) 'string-hash) 
-		   (##sys#check-range end 0 (##sys#size str) 'string-hash) 
-		   (##sys#substring str start end) )
-		 str) ) )
-    (%hash/limit (%string-hash str) bound) ) )
+  (let ((str (if start
+                 (let ((end (or end (##sys#size str))))
+                   (##sys#check-range start 0 (##sys#size str) 'string-hash) 
+                   (##sys#check-range end 0 (##sys#size str) 'string-hash) 
+                   (##sys#substring str start end))
+                 str)) )
+    (%hash/limit (%string-hash str randomization) bound) ) )
 
-(define (string-ci-hash str #!optional (bound hash-default-bound) . start+end)
+(define (string-ci-hash str #!optional (bound hash-default-bound) start end
+                     (randomization hash-default-randomization))
   (##sys#check-string str 'string-ci-hash)
   (##sys#check-exact bound 'string-ci-hash)
-  (let ((str (if (pair? start+end)
-		 (let-optionals start+end ((start 0)
-					   (end (##sys#size str)))
-		   (##sys#check-range start 0 (##sys#size str) 'string-hash-ci) 
-		   (##sys#check-range end 0 (##sys#size str) 'string-hash-ci) 
-		   (##sys#substring str start end) )
-		 str) ) )
-  (%hash/limit (%string-ci-hash str) bound) ) )
+  (let ((str (if start
+                 (let ((end (or end (##sys#size str))))
+                   (##sys#check-range start 0 (##sys#size str) 'string-hash) 
+                   (##sys#check-range end 0 (##sys#size str) 'string-hash) 
+                   (##sys#substring str start end))
+                 str)) )
+    (%hash/limit (%string-ci-hash str randomization) bound) ) )
 
 (define string-hash-ci string-ci-hash)
 
@@ -405,16 +414,17 @@
 (define *make-hash-table
   (let ([make-vector make-vector])
     (lambda (test hash len min-load max-load weak-keys weak-values initial
-	     #!optional (vec (make-vector len '())))
+                  randomization #!optional (vec (make-vector len '())))
       (##sys#make-structure 'hash-table
-       vec 0 test hash min-load max-load #f #f initial) ) ) )
+       vec 0 test hash min-load max-load #f #f initial randomization) ) ) )
 
 ;; SRFI-69 & SRFI-90'ish.
 ;;
 ;; Argument list is the pattern
 ;;
 ;; (make-hash-table #!optional test hash size
-;;		    #!key test hash size initial min-load max-load weak-keys weak-values)
+;;		    #!key test hash size initial randomization
+;;                        min-load max-load weak-keys weak-values)
 ;;
 ;; where a keyword argument takes precedence over the corresponding optional
 ;; argument. Keyword arguments MUST come after optional & required
@@ -435,6 +445,7 @@
 	    [hash #f]
 	    [size hash-table-default-length]
 	    [initial #f]
+            [randomization (##core#inline "C_random_fixnum" hash-default-bound)]
 	    [min-load hash-table-default-min-load]
 	    [max-load hash-table-default-max-load]
 	    [weak-keys #f]
@@ -501,6 +512,9 @@
 			    (set! size (fxmin hash-table-max-length val))]
 			  [(#:initial)
 			    (set! initial (lambda () val))]
+                          [(#:randomization)
+			    (##sys#check-exact val 'make-hash-table)
+			    (set! randomization val)]
 			  [(#:min-load)
 			    (##sys#check-inexact val 'make-hash-table)
 			    (unless (and (fp< 0.0 val) (fp< val 1.0))
@@ -533,7 +547,8 @@
 		    (warning 'make-hash-table "user test without user hash")
 		    (set! hash equal?-hash) ) ) ) )
 	  ; Done
-	  (*make-hash-table test hash size min-load max-load weak-keys weak-values initial) ) ) ) ) )
+	  (*make-hash-table test hash size min-load max-load
+                            weak-keys weak-values initial randomization) ) ) ) ) )
 
 ;; Hash-Table Predicate:
 
@@ -580,9 +595,13 @@
   (and-let* ([thunk (##sys#slot ht 9)])
     (thunk) ) )
 
+(define (hash-table-randomization ht)
+  (##sys#check-structure ht 'hash-table 'hash-table-initial)
+  (##sys#slot ht 10) )
+
 ;; hash-table-rehash!:
 
-(define (hash-table-rehash! vec1 vec2 hash)
+(define (hash-table-rehash! vec1 vec2 hash rnd)
   (let ([len1 (##sys#size vec1)]
 	[len2 (##sys#size vec2)] )
     (do ([i 0 (fx+ i 1)])
@@ -591,7 +610,7 @@
 	(unless (null? bucket)
 	  (let* ([pare (##sys#slot bucket 0)]
 		 [key (##sys#slot pare 0)]
-		 [hshidx (hash key len2)] )
+		 [hshidx (hash key len2 rnd)] )
 	    (##sys#setslot vec2 hshidx
 			   (cons (cons key (##sys#slot pare 1)) (##sys#slot vec2 hshidx)))
 	    (loop (##sys#slot bucket 1)) ) ) ) ) ) )
@@ -602,7 +621,7 @@
   (let* ([deslen (fxmin hash-table-max-length (fx* len hash-table-new-length-factor))]
          [newlen (hash-table-canonical-length hash-table-prime-lengths deslen)]
          [vec2 (make-vector newlen '())] )
-    (hash-table-rehash! vec vec2 (##sys#slot ht 4))
+    (hash-table-rehash! vec vec2 (##sys#slot ht 4) (##sys#slot ht 10))
     (##sys#setslot ht 1 vec2) ) )
 
 ;; hash-table-check-resize!:
@@ -633,7 +652,7 @@
 	      (##sys#slot ht 2)
 	      (##sys#slot ht 5) (##sys#slot ht 6)
 	      (##sys#slot ht 7) (##sys#slot ht 8)
-	      (##sys#slot ht 9)
+	      (##sys#slot ht 9) (##sys#slot ht 10)
 	      vec2)]
 	  (##sys#setslot vec2 i
 	   (let copy-loop ([bucket (##sys#slot vec1 i)])
@@ -671,9 +690,10 @@
 	(hash-table-check-resize! ht newsiz)
 	(let ([hash (##sys#slot ht 4)]
 	      [test (##sys#slot ht 3)]
-	      [vec (##sys#slot ht 1)] )
+	      [vec (##sys#slot ht 1)]
+              [rnd (##sys#slot ht 10)])
 	  (let* ([len (##sys#size vec)]
-	         [hshidx (hash key len)]
+	         [hshidx (hash key len rnd)]
 	         [bucket0 (##sys#slot vec hshidx)] )
             (if (eq? core-eq? test)
                 ; Fast path (eq? is rewritten by the compiler):
@@ -710,9 +730,10 @@
 	(hash-table-check-resize! ht newsiz)
 	(let ([hash (##sys#slot ht 4)]
 	      [test (##sys#slot ht 3)]
-	      [vec (##sys#slot ht 1)] )
+	      [vec (##sys#slot ht 1)]
+              [rnd (##sys#slot ht 10)])
 	  (let* ([len (##sys#size vec)]
-	         [hshidx (hash key len)]
+	         [hshidx (hash key len rnd)]
 	         [bucket0 (##sys#slot vec hshidx)] )
             (if (eq? core-eq? test)
                 ; Fast path (eq? is rewritten by the compiler):
@@ -755,9 +776,10 @@
 	(hash-table-check-resize! ht newsiz)
 	(let ([hash (##sys#slot ht 4)]
 	      [test (##sys#slot ht 3)]
-	      [vec (##sys#slot ht 1)] )
+	      [vec (##sys#slot ht 1)]
+              [rnd (##sys#slot ht 10)])
 	  (let* ([len (##sys#size vec)]
-	         [hshidx (hash key len)]
+	         [hshidx (hash key len rnd)]
 	         [bucket0 (##sys#slot vec hshidx)] )
             (if (eq? core-eq? test)
                 ; Fast path (eq? is rewritten by the compiler):
@@ -794,9 +816,10 @@
         (##sys#check-structure ht 'hash-table 'hash-table-ref)
         (##sys#check-closure def 'hash-table-ref)
         (let  ([vec (##sys#slot ht 1)]
-	       [test (##sys#slot ht 3)] )
+	       [test (##sys#slot ht 3)]
+               [rnd (##sys#slot ht 10)])
           (let* ([hash (##sys#slot ht 4)]
-		 [hshidx (hash key (##sys#size vec))] )
+		 [hshidx (hash key (##sys#size vec) rnd)] )
 	    (if (eq? core-eq? test)
 	        ; Fast path (eq? is rewritten by the compiler):
 	        (let loop ([bucket (##sys#slot vec hshidx)])
@@ -822,9 +845,10 @@
     (lambda (ht key def)
       (##sys#check-structure ht 'hash-table 'hash-table-ref/default)
       (let  ([vec (##sys#slot ht 1)]
-	     [test (##sys#slot ht 3)] )
+	     [test (##sys#slot ht 3)]
+             [rnd (##sys#slot ht 10)])
 	(let* ([hash (##sys#slot ht 4)]
-	       [hshidx (hash key (##sys#size vec))] )
+	       [hshidx (hash key (##sys#size vec) rnd)] )
 	   (if (eq? core-eq? test)
 	       ; Fast path (eq? is rewritten by the compiler):
 	       (let loop ([bucket (##sys#slot vec hshidx)])
@@ -848,9 +872,10 @@
     (lambda (ht key)
       (##sys#check-structure ht 'hash-table 'hash-table-exists?)
       (let  ([vec (##sys#slot ht 1)]
-	     [test (##sys#slot ht 3)] )
+	     [test (##sys#slot ht 3)]
+             [rnd (##sys#slot ht 10)])
 	(let* ([hash (##sys#slot ht 4)]
-	       [hshidx (hash key (##sys#size vec))] )
+	       [hshidx (hash key (##sys#size vec) rnd)] )
 	  (if (eq? core-eq? test)
 	       ; Fast path (eq? is rewritten by the compiler):
 	       (let loop ([bucket (##sys#slot vec hshidx)])
@@ -874,7 +899,8 @@
       (let* ([vec (##sys#slot ht 1)]
              [len (##sys#size vec)]
              [hash (##sys#slot ht 4)]
-             [hshidx (hash key len)] )
+             [rnd (##sys#slot ht 10)]
+             [hshidx (hash key len rnd)] )
         (let ([test (##sys#slot ht 3)]
               [newsiz (fx- (##sys#slot ht 2) 1)]
               [bucket0 (##sys#slot vec hshidx)] )

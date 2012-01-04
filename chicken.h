@@ -682,6 +682,7 @@ typedef struct C_symbol_table_struct
 {
   char *name;
   unsigned int size;
+  unsigned int rand;
   C_word *table;
   struct C_symbol_table_struct *next;
 } C_SYMBOL_TABLE;
@@ -1603,8 +1604,10 @@ C_fctexport int C_fcall C_in_heapp(C_word x) C_regparm;
 C_fctexport int C_fcall C_in_fromspacep(C_word x) C_regparm;
 C_fctexport void C_fcall C_trace(C_char *name) C_regparm;
 C_fctexport C_word C_fcall C_emit_trace_info2(char *raw, C_word x, C_word y, C_word t) C_regparm;
-C_fctexport C_word C_fcall C_hash_string(C_word str) C_regparm;
-C_fctexport C_word C_fcall C_hash_string_ci(C_word str) C_regparm;
+C_fctexport C_word C_fcall C_u_i_string_hash(C_word str, C_word rnd) C_regparm;
+C_fctexport C_word C_fcall C_u_i_string_ci_hash(C_word str, C_word rnd) C_regparm;
+C_fctexport C_word C_fcall C_hash_string(C_word str) C_regparm; /* DEPRECATED, INSECURE */
+C_fctexport C_word C_fcall C_hash_string_ci(C_word str) C_regparm; /* DEPRECATED, INSECURE */
 C_fctexport C_word C_halt(C_word msg);
 C_fctexport C_word C_message(C_word msg);
 C_fctexport C_word C_fcall C_equalp(C_word x, C_word y) C_regparm;

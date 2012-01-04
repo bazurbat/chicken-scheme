@@ -471,7 +471,7 @@ static void C_fcall really_mark(C_word *x) C_regparm;
 static WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word container) C_regparm;
 static C_ccall void values_continuation(C_word c, C_word closure, C_word dummy, ...) C_noret;
 static C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stable);
-static int C_fcall hash_string(int len, C_char *str, unsigned int m) C_regparm;
+static C_word C_fcall hash_string(int len, C_char *str, C_word m, C_word r, int ci) C_regparm;
 static C_word C_fcall lookup(C_word key, int len, C_char *str, C_SYMBOL_TABLE *stable) C_regparm;
 static double compute_symbol_table_load(double *avg_bucket_len, int *total);
 static C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word *fix, double *flo) C_regparm;
@@ -846,7 +846,7 @@ void *CHICKEN_global_lookup(char *name)
 {
   int 
     len = C_strlen(name),
-    key = hash_string(len, name, symbol_table->size);
+    key = hash_string(len, name, symbol_table->size, symbol_table->rand, 0);
   C_word s;
   void *root = CHICKEN_new_gc_root();
 
@@ -886,6 +886,7 @@ C_regparm C_SYMBOL_TABLE *C_new_symbol_table(char *name, unsigned int size)
   stp->name = name;
   stp->size = size;
   stp->next = symbol_table_list;
+  stp->rand = C_unfix(C_random_fixnum(C_fix(size)));
 
   if((stp->table = (C_word *)C_malloc(size * sizeof(C_word))) == NULL)
     return NULL;
@@ -933,7 +934,7 @@ C_regparm C_word C_find_symbol(C_word str, C_SYMBOL_TABLE *stable)
   char *sptr = C_c_string(str);
   int 
     len = C_header_size(str),
-    key = hash_string(len, sptr, stable->size);
+    key = hash_string(len, sptr, stable->size, stable->rand, 0);
   C_word s;
 
   if(C_truep(s = lookup(key, len, sptr, stable))) return s;
@@ -1961,7 +1962,7 @@ C_regparm C_word C_fcall C_intern_in(C_word **ptr, int len, C_char *str, C_SYMBO
 
   if(stable == NULL) stable = symbol_table;
 
-  key = hash_string(len, str, stable->size);
+  key = hash_string(len, str, stable->size, stable->rand, 0);
 
   if(C_truep(s = lookup(key, len, str, stable))) return s;
 
@@ -1979,7 +1980,7 @@ C_regparm C_word C_fcall C_h_intern_in(C_word *slot, int len, C_char *str, C_SYM
 
   if(stable == NULL) stable = symbol_table;
 
-  key = hash_string(len, str, stable->size);
+  key = hash_string(len, str, stable->size, stable->rand, 0);
 
   if(C_truep(s = lookup(key, len, str, stable))) {
     if(C_in_stackp(s)) C_mutate(slot, s);
@@ -1995,7 +1996,7 @@ C_regparm C_word C_fcall C_h_intern_in(C_word *slot, int len, C_char *str, C_SYM
 C_regparm C_word C_fcall intern0(C_char *str)
 {
   int len = C_strlen(str);
-  int key = hash_string(len, str, symbol_table->size);
+  int key = hash_string(len, str, symbol_table->size, symbol_table->rand, 0);
   C_word s;
 
   if(C_truep(s = lookup(key, len, str, symbol_table))) return s;
@@ -2009,7 +2010,7 @@ C_regparm C_word C_fcall C_lookup_symbol(C_word sym)
   C_word str = C_block_item(sym, 1);
   int len = C_header_size(str);
 
-  key = hash_string(len, C_c_string(str), symbol_table->size);
+  key = hash_string(len, C_c_string(str), symbol_table->size, symbol_table->rand, 0);
 
   return lookup(key, len, C_c_string(str), symbol_table);
 }
@@ -2030,18 +2031,16 @@ C_regparm C_word C_fcall C_intern3(C_word **ptr, C_char *str, C_word value)
 }
 
 
-C_regparm int C_fcall hash_string(int len, C_char *str, unsigned int m)
+C_regparm C_word C_fcall hash_string(int len, C_char *str, C_word m, C_word r, int ci)
 {
-  unsigned int key = 0;
+  C_uword key = r;
 
-# if 0
-  /* Zbigniew's suggested change for extended significance & ^2 table sizes. */
-  while(len--) key += (key << 5) + *(str++);
-# else
-  while(len--) key = (key << 4) + *(str++);
-# endif
+  if (ci)
+    while(len--) key ^= (key << 6) + (key >> 2) + C_tolower((int)(*str++));
+  else
+    while(len--) key ^= (key << 6) + (key >> 2) + *(str++);
 
-  return (int)(key % m);
+  return (C_word)(key % (C_uword)m);
 }
 
 
@@ -3743,29 +3742,31 @@ C_word C_fetch_trace(C_word starti, C_word buffer)
   return C_fix(p);
 }
 
+C_regparm C_word C_fcall C_u_i_string_hash(C_word str, C_word rnd)
+{
+  int len = C_header_size(str);
+  C_char *ptr = C_data_pointer(str);
+  return C_fix(hash_string(len, ptr, C_MOST_POSITIVE_FIXNUM, C_unfix(rnd), 0));
+}
 
+C_regparm C_word C_fcall C_u_i_string_ci_hash(C_word str, C_word rnd)
+{
+  int len = C_header_size(str);
+  C_char *ptr = C_data_pointer(str);
+  return C_fix(hash_string(len, ptr, C_MOST_POSITIVE_FIXNUM, C_unfix(rnd), 1));
+}
+
+/* DEPRECATED, INSECURE */
 C_regparm C_word C_fcall C_hash_string(C_word str)
 {
-  unsigned C_word key = 0;
-  int len = C_header_size(str);
-  C_byte *ptr = C_data_pointer(str);
-  while(len--) key = (key << 4) + (*ptr++);
-
-  return C_fix(key & C_MOST_POSITIVE_FIXNUM);
+  return C_u_i_string_hash(str, C_fix(0));
 }
 
-
+/* DEPRECATED, INSECURE */
 C_regparm C_word C_fcall C_hash_string_ci(C_word str)
 {
-  unsigned C_word key = 0;
-  int len = C_header_size(str);
-  C_byte *ptr = C_data_pointer(str);
-
-  while(len--) key = (key << 4) + C_tolower((int)(*ptr++));
-
-  return C_fix(key & C_MOST_POSITIVE_FIXNUM);
+  return C_u_i_string_ci_hash(str, C_fix(0));
 }
-
 
 C_regparm void C_fcall C_toplevel_entry(C_char *name)
 {
@@ -7092,7 +7093,7 @@ void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word strin
     
   len = C_header_size(string);
   name = (C_char *)C_data_pointer(string);
-  key = hash_string(len, name, symbol_table->size);
+  key = hash_string(len, name, symbol_table->size, symbol_table->rand, 0);
 
   if(!C_truep(s = lookup(key, len, name, symbol_table))) 
     s = add_symbol(&a, key, string, symbol_table);
