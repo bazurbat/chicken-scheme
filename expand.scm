@@ -136,13 +136,16 @@
 ;;; resolve symbol to global name
 
 (define (##sys#globalize sym se)
-  (if (symbol? sym)
-      (let loop ((se se))			; ignores syntax bindings
-	(cond ((null? se)
-	       (##sys#alias-global-hook sym #f #f)) ;XXX could hint at decl (3rd arg)
-	      ((and (eq? sym (caar se)) (symbol? (cdar se))) (cdar se))
-	      (else (loop (cdr se)))))
-      sym))
+  (let loop1 ((sym sym))
+    (cond ((not (symbol? sym)) sym)
+	  ((getp sym '##core#macro-alias) =>
+	   (lambda (a) (if (symbol? a) (loop1 a) sym)))
+	  (else
+	   (let loop ((se se))		; ignores syntax bindings
+	     (cond ((null? se)
+		    (##sys#alias-global-hook sym #t #f)) ;XXX could hint at decl (3rd arg)
+		   ((and (eq? sym (caar se)) (symbol? (cdar se))) (cdar se))
+		   (else (loop (cdr se)))))))))
 
 
 ;;; Macro handling

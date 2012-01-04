@@ -70,9 +70,6 @@
       (or (find (lambda (ll) (eq? id (lambda-literal-id ll))) lambdas)
 	  (bomb "can't find lambda" id) ) )
 
-    (define (slashify s) (string-translate (->string s) "\\" "/"))
-    (define (uncommentify s) (string-translate* (->string s) '(("*/" . "* /"))))
-  
     ;; Compile a single expression
     (define (expression node temps ll)
 
@@ -362,7 +359,7 @@
 
 	    ((##core#callunit)
 	     ;; The code generated here does not use the extra temporary needed for standard calls, so we have
-	     ;;  one unused varable:
+	     ;;  one unused variable:
 	     (let* ((n (length subs))
 		    (nf (+ n 1)) )
 	       (gen #t "C_" (first params) "_toplevel(" nf ",C_SCHEME_UNDEFINED,")
@@ -470,7 +467,7 @@
 	     (mon (vector-ref tm 4))
 	     (year (vector-ref tm 5)) )
 	(gen "/* Generated from " source-file " by the CHICKEN compiler" #t
-	     "   http://www.call-with-current-continuation.org" #t
+	     "   http://www.call-cc.org" #t
 	     "   " (+ 1900 year) #\- (pad0 (add1 mon)) #\- (pad0 mday) #\space (pad0 hour) #\: (pad0 min) #t
 	     (string-intersperse
 	      (map (cut string-append "   " <> "\n") 
@@ -493,7 +490,12 @@
 	  (generate-foreign-callback-stub-prototypes foreign-callback-stubs) ) ) )
   
     (define (trailer)
-      (gen #t "/* end of file */" #t) )
+      (gen #t #t "/*" #t 
+	   (uncommentify
+	    (get-output-string
+	     collected-debugging-output))
+	   "*/"
+	   #t "/* end of file */" #t))
   
     (define (declarations)
       (let ((n (length literals)))
@@ -812,15 +814,9 @@
 		    (when disable-stack-overflow-checking
 		      (gen #t "C_disable_overflow_check=1;") )
 		    (unless unit-name
-		      (cond [target-initial-heap-size
-			     (gen #t "C_set_or_change_heap_size(" target-initial-heap-size ",1);") ]
-			    [target-heap-size
-			     (gen #t "C_set_or_change_heap_size(" target-heap-size ",1);"
-				  #t "C_heap_size_is_fixed=1;") ] )
-		      (when target-heap-growth
-			(gen #t "C_heap_growth=" target-heap-growth #\;) )
-		      (when target-heap-shrinkage
-			(gen #t "C_heap_shrinkage=" target-heap-shrinkage #\;) )
+		      (when target-heap-size
+			(gen #t "C_set_or_change_heap_size(" target-heap-size ",1);"
+			     #t "C_heap_size_is_fixed=1;"))
 		      (when target-stack-size
 			(gen #t "C_resize_stack(" target-stack-size ");") ) )
 		    (gen #t "C_check_nursery_minimum(" demand ");"

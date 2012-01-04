@@ -107,6 +107,7 @@
   (define *keep-going* #f)
   (define *override* '())
   (define *reinstall* #f)
+  (define *show-depends* #f)
   (define *show-foreign-depends* #f)
   (define *hacks* '())
 
@@ -267,16 +268,18 @@
 		     (->string (car dep))
 		     #f))
 		   ((not (version>=? v (->string (cadr dep))))
-		    (when (and (string=? "chicken" (->string (car dep)))
-			       (not *force*))
-		      (error
-		       (string-append 
-			"Your CHICKEN version is not recent enough to use this extension - version "
-			(cadr dep) 
-			" or newer is required")))
-		    (values 
-		     #f
-		     (cons (->string (car dep)) (->string (cadr dep)))))
+		    (cond ((string=? "chicken" (->string (car dep)))
+			   (if *force*
+			       (values #f #f)
+			       (error
+				(string-append 
+				 "Your CHICKEN version is not recent enough to use this extension - version "
+				 (cadr dep) 
+				 " or newer is required"))))
+			  (else
+			   (values 
+			    #f
+			    (cons (->string (car dep)) (->string (cadr dep)))))))
 		   (else (values #f #f)))))
 	  (else
 	   (warning
@@ -398,21 +401,26 @@
 	    ((pair? egg) (cdr egg))
 	    (else #f))))
 
-  (define (show-foreign-depends eggs)
+  (define (show-depends eggs . type)
     (print "fetching meta information...")
     (retrieve eggs)
-    (print "Foreign dependencies as reported in .meta:")
-    (for-each
-     (lambda (egg)
-       (and-let* ((meta-file (make-pathname (cadr egg) (car egg) "meta"))
-                  (m (and (file-exists? meta-file) (with-input-from-file meta-file read)))
-                  (ds (deps 'foreign-depends m)))
-         (unless (null? ds)
-           (print (car egg) ": ")
-           (for-each (cut print "\t" <>) (deps 'foreign-depends m)))))
-     *eggs+dirs+vers*)
-    (cleanup)
-    (exit 0))
+    (let ((type (optional type 'depends)))
+      (printf "~a dependencies as reported in .meta:\n"
+	      (case type ((depends) "Egg")
+			 ((foreign-depends) "Foreign")))
+      (for-each
+       (lambda (egg)
+	 (and-let* ((meta-file (make-pathname (cadr egg) (car egg) "meta"))
+		    (m (and (file-exists? meta-file) (with-input-from-file meta-file read)))
+		    (ds (if (eq? type 'depends)
+			  (append (deps 'needs m) (deps type m))
+			  (deps type m))))
+	   (unless (null? ds)
+	     (print (car egg) ": ")
+	     (for-each (cut print "\t" <>) ds))))
+       *eggs+dirs+vers*)
+      (cleanup)
+      (exit 0)))
 
   (define (retrieve eggs)
     (print "retrieving ...")
@@ -426,7 +434,9 @@
               (let ((name (if (pair? egg) (car egg) egg))
                     (version (override-version egg)))
                 (let-values (((dir ver) (try-default-sources name version)))
-                  (unless dir (error "extension or version not found"))
+                  (when (or (not dir)
+                            (null? (directory dir)))
+                    (error "extension or version not found"))
                   (print " " name " located at " dir)
                   (set! *eggs+dirs+vers* (cons (list name dir ver) *eggs+dirs+vers*)) ) ) ] ) )
      eggs)
@@ -771,7 +781,11 @@ usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
        -scan DIRECTORY          scan local directory for highest available egg versions
        -override FILENAME       override versions for installed eggs with information from file
        -csi FILENAME            use given pathname for invocations of "csi"
+       -show-depends            display a list of egg dependencies for the given egg(s)
        -show-foreign-depends    display a list of foreign dependencies for the given egg(s)
+
+chicken-install recognizes the http_proxy, and proxy_auth environment variables, if set.
+
 EOF
 );|
     (exit code))
@@ -845,8 +859,10 @@ EOF
                                (display
                                 (list-available-extensions
                                  *default-transport* *default-location*)))
+                              (*show-depends*
+                               (show-depends eggs 'depends))
                               (*show-foreign-depends*
-                               (show-foreign-depends eggs))
+                               (show-depends eggs 'foreign-depends))
                               (else
                                (install (apply-mappings (reverse eggs)))))
                         ))))
@@ -966,6 +982,9 @@ EOF
                         (unless (pair? (cdr args)) (usage 1))
                         (set! *password* (cadr args))
                         (loop (cddr args) eggs))
+		       ((string=? "-show-depends" arg)
+                        (set! *show-depends* #t)
+                        (loop (cdr args) eggs))
                        ((string=? "-show-foreign-depends" arg)
                         (set! *show-foreign-depends* #t)
                         (loop (cdr args) eggs))

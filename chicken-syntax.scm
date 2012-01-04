@@ -1185,14 +1185,14 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax 'the x '(_ _ _))
-    `(##core#the ,(##sys#strip-syntax (cadr x)) ,(caddr x)))))
+    `(##core#the ,(##sys#strip-syntax (cadr x)) #t ,(caddr x)))))
 
 (##sys#extend-macro-environment
  'assume '()
  (##sys#er-transformer
   (syntax-rules ()
     ((_ ((var type) ...) body ...)
-     (let ((var (##core#the type var)) ...) body ...)))))
+     (let ((var (##core#the type #t var)) ...) body ...)))))
 
 (##sys#extend-macro-environment
  'define-specialization '()
@@ -1245,7 +1245,7 @@
 			  (##core#declare (inline ,alias) (hide ,alias))
 			  (,%define (,alias ,@anames)
 				    (##core#let ,(map (lambda (an at)
-							(list an `(##core#the ,at ,an)))
+							(list an `(##core#the ,at #t ,an)))
 						      anames atypes)
 						,body)))))
 		     (else

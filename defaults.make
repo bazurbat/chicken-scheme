@@ -31,12 +31,6 @@ BINARYVERSION = 6
 STACKDIRECTION ?= 1
 CROSS_CHICKEN ?= 0
 
-ifeq ($(ARCH),x86-64)
-NURSERY ?= (256*1024)
-else
-NURSERY ?= (128*1024)
-endif
-
 # directories
 
 SEP ?= /
@@ -394,9 +388,6 @@ endif
 	echo "#endif" >>$@
 	echo "#ifndef C_INSTALL_MORE_STATIC_LIBS" >>$@
 	echo "# define C_INSTALL_MORE_STATIC_LIBS \"$(LIBRARIES)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_DEFAULT_TARGET_STACK_SIZE" >>$@
-	echo "# define C_DEFAULT_TARGET_STACK_SIZE $(NURSERY)" >>$@
 	echo "#endif" >>$@
 	echo "#ifndef C_DEFAULT_TARGET_HEAP_SIZE" >>$@
 	echo "# define C_DEFAULT_TARGET_HEAP_SIZE 0" >>$@

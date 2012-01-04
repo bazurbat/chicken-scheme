@@ -146,7 +146,7 @@
 ; (##core#let-compiler-syntax ((<symbol> <expr>) ...) <expr> ...)
 ; (##core#module <symbol> #t | (<name> | (<name> ...) ...) <body>)
 ; (##core#let-module-alias ((<alias> <name>) ...) <body>)
-; (##core#the <type> <exp>)
+; (##core#the <type> <strict?> <exp>)
 ; (##core#typecase <exp> (<type> <body>) ... [(else <body>)])
 ; (<exp> {<exp>})
 
@@ -174,7 +174,7 @@
 ; [##core#return <exp>]
 ; [##core#direct_call {<safe-flag> <debug-info> <call-id> <words>} <exp-f> <exp>...]
 ; [##core#direct_lambda {<id> <mode> (<variable>... [. <variable>]) <size>} <exp>]
-; [##core#the {<type>} <exp>]
+; [##core#the {<type> <strict>} <exp>]
 ; [##core#typecase {(<type> ...)} <exp> <body1> ... [<elsebody>]]
 
 ; - Closure converted/prepared language:
@@ -279,15 +279,8 @@
 
 (define-inline (gensym-f-id) (gensym 'f_))
 
-(eval-when (eval)
-  (define installation-home #f)
-  (define default-target-heap-size #f)
-  (define default-target-stack-size #f) )
-
-(eval-when (load)
-  (define-foreign-variable installation-home c-string "C_INSTALL_SHARE_HOME")
-  (define-foreign-variable default-target-heap-size int "C_DEFAULT_TARGET_HEAP_SIZE")
-  (define-foreign-variable default-target-stack-size int "C_DEFAULT_TARGET_STACK_SIZE") )
+(define-foreign-variable installation-home c-string "C_INSTALL_SHARE_HOME")
+(define-foreign-variable default-target-heap-size int "C_DEFAULT_TARGET_HEAP_SIZE")
 
 (define-constant foreign-type-table-size 301)
 (define-constant analysis-database-size 3001)
@@ -313,7 +306,6 @@
 (define block-compilation #f)
 (define line-number-database-size default-line-number-database-size)
 (define target-heap-size #f)
-(define target-initial-heap-size #f)
 (define target-stack-size #f)
 (define optimize-leaf-routines #f)
 (define emit-profile #f)
@@ -342,12 +334,6 @@
 (define bootstrap-mode #f)
 (define strict-variable-types #f)
 (define enable-specialization #f)
-
-
-;;; These are here so that the backend can access them:
-
-(define default-default-target-heap-size default-target-heap-size)
-(define default-default-target-stack-size default-target-stack-size)
 
 
 ;;; Other global variables:
@@ -448,7 +434,7 @@
 
   (define (resolve-variable x0 e se dest ldest h)
     (let ((x (lookup x0 se)))
-      (d `(RESOLVE-VARIABLE: ,x0 ,x ,(map car se)))
+      (d `(RESOLVE-VARIABLE: ,x0 ,x ,(map (lambda (x) (car x)) se)))
       (cond ((not (symbol? x)) x0)	; syntax?
 	    [(and constants-used (##sys#hash-table-ref constant-table x)) 
 	     => (lambda (val) (walk (car val) e se dest ldest h)) ]
@@ -553,7 +539,8 @@
 			((##core#the)
 			 `(##core#the
 			   ,(##sys#strip-syntax (cadr x))
-			   ,(walk (caddr x) e se dest ldest h)))
+			   ,(caddr x)
+			   ,(walk (cadddr x) e se dest ldest h)))
 
 			((##core#typecase)
 			 `(##core#typecase
@@ -775,7 +762,8 @@
 		       ((##core#let-compiler-syntax)
 			(let ((bs (map
 				   (lambda (b)
-				     (##sys#check-syntax 'let-compiler-syntax b '(symbol . #(_ 0 1)))
+				     (##sys#check-syntax
+				      'let-compiler-syntax b '(symbol . #(_ 0 1)))
 				     (let ((name (lookup (car b) se)))
 				       (list 
 					name 
@@ -1626,7 +1614,7 @@
   (let* ([rtype (second exp)]
 	 [args (third exp)]
 	 [body (apply string-append (cdddr exp))]
- 	 [argtypes (map car args)]
+ 	 [argtypes (map (lambda (x) (car x)) args)]
          ;; C identifiers aren't hygienically renamed inside body strings
 	 [argnames (map cadr (##sys#strip-syntax args))] )
     (create-foreign-stub rtype #f argtypes argnames body callback? callback?) ) )
@@ -1637,7 +1625,7 @@
 	 [rtype (if hasrtype (second exp) 'void)]
 	 [args (##sys#strip-syntax (if hasrtype (third exp) (second exp)))]
 	 [body (apply string-append (if hasrtype (cdddr exp) (cddr exp)))]
- 	 [argtypes (map car args)]
+ 	 [argtypes (map (lambda (x) (car x)) args)]
          ;; C identifiers aren't hygienically renamed inside body strings
 	 [argnames (map cadr (##sys#strip-syntax args))] )
     (create-foreign-stub rtype #f argtypes argnames body #f #t) ) )
@@ -2126,7 +2114,7 @@
 			     (if (eq? '##core#variable (node-class value))
 				 (let ((varname (first (node-parameters value))))
 				   (or (not (get db varname 'global))
-				       (not (variable-mark varname '##core#always-bound))))
+				       (variable-mark varname '##core#always-bound)))
 				 (not (expression-has-side-effects? value db)) ))
 			undefined) )
 	   (quick-put! plist 'removable #t) )

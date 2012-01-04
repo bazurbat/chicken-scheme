@@ -127,7 +127,7 @@ or {{:}} should follow the syntax given below:
 <tr><td>{{pair}}</td><td>pair</td></tr>
 <tr><td>{{pointer-vector}}</td><td>vector or native pointers</td></tr>
 <tr><td>{{pointer}}</td><td>native pointer</td></tr>
-<tr><td>{{port}}</td><td>input- or output-port</td></tr>
+<tr><td>{{input-port}} {{output-port}}</td><td>input- or output-port</td></tr>
 <tr><td>{{procedure}}</td><td>unspecific procedure</td></tr>
 <tr><td>{{string}}</td><td>string</td></tr>
 <tr><td>{{symbol}}</td><td>symbol</td></tr>
@@ -160,7 +160,7 @@ or {{:}} should follow the syntax given below:
 
 Note that type-variables in {{forall}} types may be given "constraint" types, i.e.
 
-  (: sort (forall (e (s (or (vector e) (list-of e))))
+  (: sort (forall (e (s (or (vector-of e) (list-of e))))
             (s (e e -> *) -> s)))
 
 declares that {{sort}} is a procedure of two arguments, the first
@@ -200,6 +200,7 @@ Additionally, some aliases are allowed:
 <tr><th>Alias</th><th>Type</th></tr>
 <tr><td>{{any}}</td><td>{{*}}</td></tr>
 <tr><td>{{immediate}}</td><td>{{(or eof null fixnum char boolean)}}</td></tr>
+<tr><td>{{port}}</td><td>{{(or input-port output-port)}}</td></tr>
 <tr><td>{{void}}</td><td>{{undefined}}</td></tr>
 </table>
 

@@ -24,6 +24,13 @@
 		  (scheme-report-environment 5)))
 
 (test-error (eval 'car (null-environment 5)))
+(test-error (eval '(cond-expand (chicken 1) (else 2)) (null-environment 4)))
+(test-error (eval '(cond-expand (chicken 1) (else 2)) (null-environment 5)))
+(test-error (eval '(cond-expand (chicken 1) (else 2)) (scheme-report-environment 4)))
+(test-error (eval '(cond-expand (chicken 1) (else 2)) (scheme-report-environment 5)))
+(test-equal 1 (eval '(if #t 1 2) (scheme-report-environment 5)))
+(test-equal 1 (eval '(if #t 1 2) (null-environment 4)))
+(test-equal 1 (eval '(if #t 1 2) (null-environment 5)))
 (test-equal (eval '((lambda (x) x) 123) (null-environment 5)) 123)
 
 (define baz 100)

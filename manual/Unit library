@@ -983,6 +983,8 @@ contents are initialized to some unspecified value.
 Returns a new vector with elements taken from {{VECTOR}} in the
 given range. {{TO}} defaults to {{(vector-length VECTOR)}}.
 
+{{subvector}} was introduced in CHICKEN 4.7.3.
+
 
 === The unspecified value
 

@@ -572,6 +572,10 @@ static inline int isinf_ld (long double x)
 #define C_CIRCULAR_DATA_ERROR                         36
 #define C_BAD_ARGUMENT_TYPE_NO_BOOLEAN_ERROR          37
 #define C_BAD_ARGUMENT_TYPE_NO_LOCATIVE_ERROR         38
+#define C_BAD_ARGUMENT_TYPE_NO_PORT_ERROR             39
+#define C_BAD_ARGUMENT_TYPE_NO_INPUT_PORT_ERROR       40
+#define C_BAD_ARGUMENT_TYPE_NO_OUTPUT_PORT_ERROR      41
+#define C_PORT_CLOSED_ERROR                           42
 
 
 /* Platform information */
@@ -859,6 +863,9 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_isatty                   isatty
 # define C_fileno                   fileno
 # define C_select                   select
+# if defined(HAVE_SIGACTION)
+# define C_sigaction                sigaction
+# endif
 # define C_signal                   signal
 # define C_getrusage                getrusage
 # define C_tolower                  tolower
@@ -1278,6 +1285,7 @@ extern double trunc(double);
 #define C_i_check_vector(x)             C_i_check_vector_2(x, C_SCHEME_FALSE)
 #define C_i_check_structure(x, st)      C_i_check_structure_2(x, (st), C_SCHEME_FALSE)
 #define C_i_check_char(x)               C_i_check_char_2(x, C_SCHEME_FALSE)
+#define C_i_check_port(x, in, op)       C_i_check_port_2(x, in, op, C_SCHEME_FALSE)
 
 #define C_u_i_8vector_length(x)         C_fix(C_header_size(C_block_item(x, 1)))
 #define C_u_i_16vector_length(x)        C_fix(C_header_size(C_block_item(x, 1)) >> 1)
@@ -1570,7 +1578,6 @@ C_fctexport void C_no_closure_error(C_word x) C_noret;
 C_fctexport void C_div_by_zero_error(char *loc) C_noret;
 C_fctexport C_word C_closure(C_word **ptr, int cells, C_word proc, ...);
 C_fctexport C_word C_fcall C_pair(C_word **ptr, C_word car, C_word cdr) C_regparm;
-C_fctexport C_word C_fcall C_h_pair(C_word car, C_word cdr) C_regparm;
 C_fctexport C_word C_fcall C_number(C_word **ptr, double n) C_regparm;
 C_fctexport C_word C_fcall C_mpointer(C_word **ptr, void *mp) C_regparm;
 C_fctexport C_word C_fcall C_mpointer_or_false(C_word **ptr, void *mp) C_regparm;
@@ -1580,9 +1587,7 @@ C_fctexport C_word C_fcall C_taggedmpointer(C_word **ptr, C_word tag, void *mp) 
 C_fctexport C_word C_fcall C_taggedmpointer_or_false(C_word **ptr, C_word tag, void *mp) C_regparm;
 C_fctexport C_word C_fcall C_swigmpointer(C_word **ptr, void *mp, void *sdata) C_regparm;
 C_fctexport C_word C_vector(C_word **ptr, int n, ...);
-C_fctexport C_word C_h_vector(int n, ...);
 C_fctexport C_word C_structure(C_word **ptr, int n, ...);
-C_fctexport C_word C_h_structure(int n, ...);
 C_fctexport C_word C_fcall C_mutate(C_word *slot, C_word val) C_regparm;
 C_fctexport void C_fcall C_reclaim(void *trampoline, void *proc) C_regparm C_noret;
 C_fctexport void C_save_and_reclaim(void *trampoline, void *proc, int n, ...) C_noret;
@@ -1673,7 +1678,6 @@ C_fctexport void C_ccall C_make_pointer(C_word c, C_word closure, C_word k) C_no
 C_fctexport void C_ccall C_make_tagged_pointer(C_word c, C_word closure, C_word k, C_word tag) C_noret;
 C_fctexport void C_ccall C_ensure_heap_reserve(C_word c, C_word closure, C_word k, C_word n) C_noret;
 C_fctexport void C_ccall C_return_to_host(C_word c, C_word closure, C_word k) C_noret;
-C_fctexport void C_ccall C_file_info(C_word c, C_word closure, C_word k, C_word port) C_noret;
 C_fctexport void C_ccall C_get_environment_variable(C_word c, C_word closure, C_word k, C_word name) C_noret;
 C_fctexport void C_ccall C_get_symbol_table_info(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_get_memory_info(C_word c, C_word closure, C_word k) C_noret;
@@ -1703,7 +1707,6 @@ C_fctexport C_word *C_a_i(C_word **a, int n);
 
 C_fctexport time_t C_fcall C_seconds(long *ms) C_regparm;
 C_fctexport C_word C_a_i_list(C_word **a, int c, ...);
-C_fctexport C_word C_h_list(int c, ...);
 C_fctexport C_word C_a_i_string(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_record(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_port(C_word **a, int c);
@@ -1768,6 +1771,7 @@ C_fctexport C_word C_fcall C_i_check_locative_2(C_word x, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_vector_2(C_word x, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_structure_2(C_word x, C_word st, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_char_2(C_word x, C_word loc) C_regparm;
+C_fctexport C_word C_fcall C_i_check_port_2(C_word x, C_word in, C_word op, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_2_times(C_word **ptr, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_2_plus(C_word **ptr, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_2_minus(C_word **ptr, C_word x, C_word y) C_regparm;
@@ -1816,6 +1820,7 @@ C_fctexport double C_fcall C_cpu_milliseconds(void) C_regparm;
 C_fctexport C_word C_fcall C_a_i_cpu_time(C_word **a, int c, C_word buf) C_regparm;
 C_fctexport C_word C_fcall C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix) C_regparm;
 C_fctexport C_word C_fcall C_a_i_exact_to_inexact(C_word **a, int c, C_word n) C_regparm;
+C_fctexport C_word C_fcall C_i_file_exists_p(C_word name, C_word file, C_word dir) C_regparm;
 
 C_fctexport C_word C_fcall C_i_foreign_char_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_fixnum_argumentp(C_word x) C_regparm;
@@ -1846,6 +1851,7 @@ C_fctexport void C_ccall C_peek_unsigned_integer_32(C_word c, C_word closure, C_
 #endif
 
 C_fctexport C_word C_fcall C_decode_literal(C_word **ptr, C_char *str) C_regparm;
+C_fctexport C_word C_fcall C_i_pending_interrupt(C_word dummy) C_regparm;
 
 /* defined in eval.scm: */
 C_fctexport  void  CHICKEN_get_error_message(char *buf,int bufsize);

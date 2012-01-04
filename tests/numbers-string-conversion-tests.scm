@@ -12,6 +12,7 @@
 ;;; It also doesn't try to support Schemes which support *only* integers or
 ;;; *only* flonums (which is also allowed by R5RS).
 ;;;
+(use ports)
 
 (define the-nan (fp/ 0.0 0.0))
 (define pos-inf (fp/ 1.0 0.0))
@@ -41,8 +42,39 @@
                           (write `(str value ...))
                           (display " => ") (write re-str) (newline)
                           (set! total-errors (+ total-errors 1)))
-                   (begin (display "OK                  ")
-                          (write '(str value ...)) (newline))))))
+                   (and (handle-exceptions exn
+                          (if res
+                              (begin (display "READBACK EXN ERROR  ")
+                                     (write `(str value ...))
+                                     (display " => ") (write exn) (newline)
+                                     (set! total-errors (+ total-errors 1))
+                                     #f)
+                              #t)
+                          (let ((re-read (with-input-from-string str read)))
+                            (if (and (not (symbol? re-read))
+                                     (not (eof-object? re-read))
+                                     (or (not res)
+                                         (and (not (and (nan? res) (nan? re-read)))
+                                              (not (equal? res re-read)))))
+                                (begin (display "READBACK ERROR      ")
+                                       (write `(str value ...))
+                                       (display " => ") (write re-read) (newline)
+                                       (set! total-errors (+ total-errors 1))
+                                       #f)
+                                #t)))
+                        (let ((written&read (with-input-from-string
+                                                (with-output-to-string
+                                                  (lambda () (write res)))
+                                              read)))
+                          (if (not (or (and (nan? res) (nan? written&read))
+                                       (equal? res written&read)))
+                              (begin (display "R/W VARIANCE ERROR  ")
+                                     (write `(str value ...))
+                                     (display " => ")
+                                     (write written&read) (newline)
+                                     (set! total-errors (+ total-errors 1)))
+                              (begin (display "OK                  ")
+                                     (write '(str value ...)) (newline)))))))))
        (test-numbers rest ...)))
     ((_ "no-totals") #f)
     ((_ x rest ...)
@@ -162,7 +194,7 @@
  ("1/2e2" #f)
  ("1/2e2" #f)
  ("1#/2" 5.0 7.5 "5.0" "5." "7.5")
- ("1/2#" 0.05 "0.05" ".05" "50.0e-3")
+ ("1/2#" 0.05 "0.05" ".05" "50.0e-3" "5.e-002")
  ("1#/#" #f)
  ("1/" #f)
  ("1/+" #f)

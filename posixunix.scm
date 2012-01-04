@@ -468,6 +468,26 @@ static int set_file_mtime(char *filename, C_word tm)
   return utime(filename, &tb);
 }
 
+static C_word C_i_fifo_p(C_word name) 
+{
+  struct stat buf;
+  int res;
+
+  res = stat(C_c_string(name), &buf);
+
+  if(res != 0) {
+#ifdef __CYGWIN__
+    return C_SCHEME_FALSE;
+#else
+    if(errno == ENOENT) return C_fix(0);
+    else return C_fix(res);
+#endif
+  }
+
+  if((buf.st_mode & S_IFMT) == S_IFIFO) return C_SCHEME_TRUE;
+  else return C_SCHEME_FALSE;
+}
+
 EOF
 ) )
 
@@ -805,11 +825,18 @@ EOF
 	   (else (badmode m)) ) ) ) ) )
   (set! close-input-pipe
     (lambda (port)
-      (##sys#check-port port 'close-input-pipe)
+      (##sys#check-input-port port #t 'close-input-pipe)
       (let ((r (##core#inline "close_pipe" port)))
-	(when (eq? -1 r) (posix-error #:file-error 'close-input/output-pipe "error while closing pipe" port))
+	(when (eq? -1 r)
+	  (posix-error #:file-error 'close-input-pipe "error while closing pipe" port))
 	r) ) )
-  (set! close-output-pipe close-input-pipe) )
+  (set! close-output-pipe
+    (lambda (port)
+      (##sys#check-output-port port #t 'close-output-pipe)
+      (let ((r (##core#inline "close_pipe" port)))
+	(when (eq? -1 r) 
+	  (posix-error #:file-error 'close-output-pipe "error while closing pipe" port))
+	r) ) ))
 
 (define call-with-input-pipe
   (lambda (cmd proc . mode)
@@ -831,24 +858,20 @@ EOF
 
 (define with-input-from-pipe
   (lambda (cmd thunk . mode)
-    (let ([old ##sys#standard-input]
-	  [p (apply open-input-pipe cmd mode)] )
-      (set! ##sys#standard-input p)
-      (##sys#call-with-values thunk
-			      (lambda results
-				(close-input-pipe p)
-				(set! ##sys#standard-input old)
-				(apply values results) ) ) ) ) )
+    (let ([p (apply open-input-pipe cmd mode)])
+      (fluid-let ((##sys#standard-input p))
+	(##sys#call-with-values thunk
+				(lambda results
+				  (close-input-pipe p)
+				  (apply values results) ) ) ) ) ) )
 (define with-output-to-pipe
   (lambda (cmd thunk . mode)
-    (let ([old ##sys#standard-output]
-	  [p (apply open-output-pipe cmd mode)] )
-      (set! ##sys#standard-output p)
-      (##sys#call-with-values thunk
-			      (lambda results
-				(close-output-pipe p)
-				(set! ##sys#standard-output old)
-				(apply values results) ) ) ) ) )
+    (let ([p (apply open-output-pipe cmd mode)])
+      (fluid-let ((##sys#standard-output p))
+	(##sys#call-with-values thunk
+				(lambda results
+				  (close-output-pipe p)
+				  (apply values results) ) ) ) ) ) )
 
 (define-foreign-variable _pipefd0 int "C_pipefds[ 0 ]")
 (define-foreign-variable _pipefd1 int "C_pipefds[ 1 ]")
@@ -923,26 +946,6 @@ EOF
     signal/tstp signal/pipe signal/xcpu signal/xfsz signal/usr1 signal/usr2
     signal/winch))
 
-(let ([oldhook ##sys#interrupt-hook]
-      [sigvector (make-vector 256 #f)] )
-  (set! signal-handler
-    (lambda (sig)
-      (##sys#check-exact sig 'signal-handler)
-      (##sys#slot sigvector sig) ) )
-  (set! set-signal-handler!
-    (lambda (sig proc)
-      (##sys#check-exact sig 'set-signal-handler!)
-      (##core#inline "C_establish_signal_handler" sig (and proc sig))
-      (vector-set! sigvector sig proc) ) )
-  (set! ##sys#interrupt-hook
-    (lambda (reason state)
-      (let ([h (##sys#slot sigvector reason)])
-        (if h
-            (begin
-              (h reason)
-              (##sys#context-switch state) )
-            (oldhook reason state) ) ) ) ) )
-
 (define set-signal-mask!
   (lambda (sigs)
     (##sys#check-list sigs 'set-signal-mask!)
@@ -977,12 +980,6 @@ EOF
   (##core#inline "C_sigdelset" sig)
   (when (fx< (##core#inline "C_sigprocmask_unblock" 0) 0)
       (posix-error #:process-error 'signal-unmask! "cannot unblock signal") )  )
-
-;;; Set SIGINT handler:
-
-(set-signal-handler!
- signal/int
- (lambda (n) (##sys#user-interrupt-hook)) )
 
 
 ;;; Getting system-, group- and user-information:
@@ -1311,13 +1308,15 @@ EOF
 	       (when (fx>= bufpos buflen)
 		 (let loop ()
 		   (let ([cnt (##core#inline "C_read" fd buf bufsiz)])
-		     (cond [(fx= cnt -1)
-			    (if (fx= _errno _ewouldblock)
-				(begin
-				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
-				  (##sys#thread-yield!)
-				  (loop) )
-				(posix-error #:file-error loc "cannot read" fd nam) )]
+		     (cond ((fx= cnt -1)
+			    (select errno
+			      ((_ewouldblock)
+			       (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
+			       (##sys#thread-yield!)
+			       (loop) )
+			      ((_eintr)
+			       (##sys#dispatch-interrupt loop))
+			      (else (posix-error #:file-error loc "cannot read" fd nam) )))
 			   [(and more? (fx= cnt 0))
 					; When "more" keep trying, otherwise read once more
 					; to guard against race conditions
@@ -1418,18 +1417,21 @@ EOF
 (define ##sys#custom-output-port
   (lambda (loc nam fd #!optional (nonblocking? #f) (bufi 0) (on-close void))
     (when nonblocking? (##sys#file-nonblocking! fd) )
-    (letrec (
-	     [poke
+    (letrec ([poke
 	      (lambda (str len)
-		(let ([cnt (##core#inline "C_write" fd str len)])
-		  (cond [(fx= -1 cnt)
-			 (if (fx= _errno _ewouldblock)
-			     (begin
-			       (##sys#thread-yield!)
-			       (poke str len) )
-			     (posix-error loc #:file-error "cannot write" fd nam) ) ]
-			[(fx< cnt len)
-			 (poke (##sys#substring str cnt len) (fx- len cnt)) ] ) ) )]
+		(let loop ()
+		  (let ([cnt (##core#inline "C_write" fd str len)])
+		    (cond ((fx= -1 cnt)
+			   (select _errno
+			     ((_ewouldblock)
+			      (##sys#thread-yield!)
+			      (poke str len) )
+			     ((_eintr)
+			      (##sys#dispatch-interrupt loop))
+			     (else
+			      (posix-error loc #:file-error "cannot write" fd nam) ) ) )
+			  ((fx< cnt len)
+			   (poke (##sys#substring str cnt len) (fx- len cnt)) ) ) ) ))]
 	     [store
 	      (let ([bufsiz (if (fixnum? bufi) bufi (##sys#size bufi))])
 		(if (fx= 0 bufsiz)
@@ -1453,8 +1455,7 @@ EOF
 				     (set! bufpos (fx+ bufpos len))] ) )
 			    (when (fx< 0 bufpos)
 			      (poke buf bufpos) ) ) ) ) ) )])
-      (letrec (
-	       [this-port
+      (letrec ([this-port
 		(make-output-port
 		 (lambda (str)		; write-string
 		   (store str) )
@@ -1539,10 +1540,16 @@ EOF
 (define fifo?
   (lambda (filename)
     (##sys#check-string filename 'fifo?)
-    (let ([v (##sys#file-info (##sys#expand-home-path filename))])
-      (if v
-          (fx= 3 (##sys#slot v 4))
-          (posix-error #:file-error 'fifo? "file does not exist" filename) ) ) ) )
+    (case (##core#inline 
+	   "C_i_fifo_p"
+	   (##sys#make-c-string (##sys#expand-home-path filename) 'fifo?))
+      ((#t) #t)
+      ((#f) #f)
+      ((0) (##sys#signal-hook #:file-error 'fifo? "file does not exist" filename) )
+      (else
+       (posix-error 
+	#:file-error 'fifo?
+	"system error while trying to access file" filename) ) ) ) )
 
 
 ;;; Environment access:
@@ -1687,9 +1694,9 @@ EOF
     (##sys#check-port port 'set-buffering-mode!)
     (let ([size (if (pair? size) (car size) _bufsiz)]
 	  [mode (case mode
-		  [(###full) _iofbf]
-		  [(###line) _iolbf]
-		  [(###none) _ionbf]
+		  [(#:full) _iofbf]
+		  [(#:line) _iolbf]
+		  [(#:none) _ionbf]
 		  [else (##sys#error 'set-buffering-mode! "invalid buffering-mode" mode port)] ) ] )
       (##sys#check-exact size 'set-buffering-mode!)
       (when (fx< (if (eq? 'stream (##sys#slot port 7))
@@ -1699,12 +1706,12 @@ EOF
 	(##sys#error 'set-buffering-mode! "cannot set buffering mode" port mode size) ) ) ) )
 
 (define (terminal-port? port)
-  (##sys#check-port* port 'terminal-port?)
+  (##sys#check-open-port port 'terminal-port?)
   (let ([fp (##sys#peek-unsigned-integer port 0)])
     (and (not (eq? 0 fp)) (##core#inline "C_tty_portp" port) ) ) )
 
 (define (##sys#terminal-check caller port)
-  (##sys#check-port port caller)
+  (##sys#check-open-port port caller)
   (unless (and (eq? 'stream (##sys#slot port 7))
 	       (##core#inline "C_tty_portp" port))
 	  (##sys#error caller "port is not connected to a terminal" port)))
@@ -1804,17 +1811,6 @@ EOF
               (##core#inline "C_WTERMSIG" _wait-status)]
             [else (##core#inline "C_WSTOPSIG" _wait-status)] ) ) ) )
 
-(define process-wait
-  (lambda args
-    (let-optionals* args ([pid #f] [nohang #f])
-      (let ([pid (or pid -1)])
-        (##sys#check-exact pid 'process-wait)
-        (receive [epid enorm ecode] (##sys#process-wait pid nohang)
-          (if (fx= epid -1)
-              (posix-error #:process-error 'process-wait "waiting for child process failed" pid)
-              (values epid enorm ecode) ) ) ) ) ) )
-
-(define current-process-id (foreign-lambda int "C_getpid"))
 (define parent-process-id (foreign-lambda int "C_getppid"))
 
 (define sleep (foreign-lambda int "C_sleep" int))

@@ -91,7 +91,7 @@
     no-procedure-checks-for-toplevel-bindings module
     no-bound-checks no-procedure-checks-for-usual-bindings no-compiler-syntax
     no-parentheses-synonyms no-symbol-escape r5rs-syntax emit-all-import-libraries
-    strict-types
+    strict-types clustering
     lambda-lift				; OBSOLETE
     setup-mode unboxing no-module-registration) )
 
@@ -104,7 +104,8 @@
     prelude postlude prologue epilogue nursery extend feature no-feature types
     emit-import-library emit-inline-file static-extension consult-inline-file
     emit-type-file
-    heap-growth heap-shrinkage heap-initial-size ffi-define ffi-include-path) )
+    heap-growth heap-shrinkage heap-initial-size ; DEPRECATED
+    ffi-define ffi-include-path) )
 
 
 ;;; Standard and extended bindings:
@@ -164,7 +165,7 @@
     pointer-u8-set! pointer-s8-set! pointer-u16-set! pointer-s16-set!
     pointer-u32-set! pointer-s32-set! pointer-f32-set! pointer-f64-set!
     current-error-port current-thread
-    printf sprintf format get-keyword) )
+    printf sprintf format fprintf get-keyword) )
 
 (define internal-bindings
   '(##sys#slot ##sys#setslot ##sys#block-ref ##sys#block-set!
@@ -172,6 +173,8 @@
     ##sys#pointer? ##sys#generic-structure? ##sys#structure? ##sys#check-structure
     ##sys#check-exact ##sys#check-number ##sys#check-list ##sys#check-pair ##sys#check-string
     ##sys#check-symbol ##sys#check-boolean ##sys#check-locative
+    ##sys#check-port ##sys#check-input-port ##sys#check-output-port
+    ##sys#check-open-port
     ##sys#check-char ##sys#check-vector ##sys#check-byte-vector ##sys#list ##sys#cons
     ##sys#call-with-values ##sys#fits-in-int? ##sys#fits-in-unsigned-int? ##sys#flonum-in-fixnum-range? 
     ##sys#fudge ##sys#immediate? ##sys#direct-return ##sys#context-switch
@@ -183,7 +186,8 @@
     ##sys#foreign-string-argument ##sys#foreign-pointer-argument ##sys#void
     ##sys#foreign-integer-argument ##sys#foreign-unsigned-integer-argument ##sys#double->number
     ##sys#peek-fixnum ##sys#setislot ##sys#poke-integer ##sys#permanent? ##sys#values ##sys#poke-double
-    ##sys#intern-symbol ##sys#make-symbol ##sys#null-pointer? ##sys#peek-byte) )
+    ##sys#intern-symbol ##sys#make-symbol ##sys#null-pointer? ##sys#peek-byte
+    ##sys#file-exists?) )
 
 (define non-foldable-bindings
   '(vector

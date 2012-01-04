@@ -490,14 +490,18 @@
 	  (set! simplified-ops '())
 	  (let ((node2 (walk node '() '())))
 	    (when (pair? simplified-classes) (debugging 'o "simplifications" simplified-classes))
-	    (when (and (pair? simplified-ops) (debugging 'o "  call simplifications:"))
-	      (for-each
-	       (lambda (p)
-		 (print* #\tab (car p))
-		 (if (> (cdr p) 1)
-		     (print #\tab (cdr p))
-		     (newline) ) )
-	       simplified-ops) )
+	    (when (pair? simplified-ops)
+	      (with-debugging-output
+	       'o
+	       (lambda ()
+		 (print "  call simplifications:")
+		 (for-each
+		  (lambda (p)
+		    (print* "    " (car p))
+		    (if (> (cdr p) 1)
+			(print #\tab (cdr p))
+			(newline) ) )
+		  simplified-ops) ) ) )
 	    (when (> replaced-vars 0) (debugging 'o "replaced variables" replaced-vars))
 	    (when (> removed-lets 0) (debugging 'o "removed binding forms" removed-lets))
 	    (when (> removed-ifs 0) (debugging 'o "removed conditional forms" removed-ifs))
@@ -1107,8 +1111,6 @@
      ;;   number of arguments plus 1.
      ;; - if <counted> is given and true and <argc> is between 1-8, append "<count>"
      ;;   to the name of the inline routine.
-     ;; - if <safe> is 'specialized and `unsafe-specialized-arithmetic' is declared,
-     ;;   then assume it is safe
      (let ((argc (first classargs))
 	   (rargc (length callargs))
 	   (safe (third classargs))
@@ -1522,3 +1524,208 @@
     (debugging 'p "direct leaf routine optimization pass...")
     (walk #f node #f)
     dirty) )
+
+
+;;; turn groups of local procedures into dispatch loop ("clustering")
+;
+; This turns (in bodies)
+;
+;   :
+;   (define (a x) (b x))
+;   (define (b y) (a y))
+;   (a z)))
+;
+; into something similar to
+;
+;   (letrec ((<dispatch>
+;              (lambda (<a1> <i>)
+;                (case <i>
+;                  ((1) (let ((x <a1>)) (<dispatch> x 2)))
+;                  ((2) (let ((y <a1>)) (<dispatch> y 1)))
+;                  (else (<dispatch> z 1))))))
+;     (<dispatch> #f 0))
+
+(define (determine-loop-and-dispatch node db)
+  (let ((groups '())
+	(outer #f)
+	(group '()))
+
+    (define (close)			; "close" group of local definitions
+      (when (pair? group)
+	(when (> (length group) 1)
+	  (set! groups (alist-cons outer group groups)))
+	(set! group '())
+	(set! outer #f)))
+
+    (define (user-lambda? n)
+      (and (eq? '##core#lambda (node-class n))
+	   (list? (third (node-parameters n))))) ; no rest argument allowed
+
+    (define (walk n e)
+      (let ((subs (node-subexpressions n))
+	    (params (node-parameters n)) 
+	    (class (node-class n)) )
+	(case class
+	  ((let)
+	   (let ((var (first params))
+		 (val (first subs))
+		 (body (second subs)))
+	     (cond ((and (not outer) 
+			 (eq? '##core#undefined (node-class val)))
+		    ;; find outermost "(let ((VAR (##core#undefined))) ...)"
+		    (set! outer n)
+		    (walk body (cons var e)))
+		   ((and outer
+			 (eq? 'set! (node-class val))
+			 (let ((sval (first (node-subexpressions val)))
+			       (svar (first (node-parameters val))))
+			   ;;XXX should we also accept "##core#direct_lambda" ?
+			   (and (eq? '##core#lambda (node-class sval))
+				(= (length (or (get db svar 'references) '()))
+				   (length (or (get db svar 'call-sites) '())))
+				(memq svar e)
+				(user-lambda? sval))))
+		    ;; "(set! VAR (lambda ...))" - add to group
+		    (set! group (cons val group))
+		    (walk body (cons var e)))
+		   (else
+		    ;; other "let" binding, close group (if any)
+		    (close)
+		    (walk val e)
+		    (walk body (cons var e))))))
+	  ((##core#lambda ##core#direct_lambda)
+	   (decompose-lambda-list
+	    (third params)
+	    (lambda (vars argc rest)
+	      ;; walk recursively, with cleared cluster state
+	      (fluid-let ((group '())
+			  (outer #f))
+		(walk (first subs) vars)))))
+	  (else
+	   ;; other form, close group (if any)
+	   (close)
+	   (for-each (cut walk <> e) subs)))))
+
+    (debugging 'p "collecting clusters ...")
+
+    ;; walk once and gather groups
+    (walk node '())
+
+    ;; process found clusters
+    (for-each
+     (lambda (g)
+       (let* ((outer (car g))
+	      (group (cdr g))
+	      (dname (gensym 'dispatch))
+	      (i (gensym 'i))
+	      (n 1)
+	      (bodies
+	       (map (lambda (assign)
+		      ;; collect information and replace assignment
+		      ;; with "(##core#undefined)"
+		      (let* ((name (first (node-parameters assign)))
+			     (proc (first (node-subexpressions assign)))
+			     (pparams (node-parameters proc))
+			     (llist (third pparams))
+			     (aliases (map gensym llist)))
+			(decompose-lambda-list
+			 llist
+			 (lambda (vars argc rest)
+			   (let ((body (first (node-subexpressions proc)))
+				 (m n))
+			     (set! n (add1 n))
+			     (copy-node!
+			      (make-node '##core#undefined '() '())
+			      assign)
+			     (list name m llist body))))))
+		    group))
+	      (k (gensym 'k))
+	      (maxargs (apply max (map (o length third) bodies)))
+	      (dllist (append
+		       (list-tabulate maxargs (lambda _ (gensym 'a)))
+		       (list i))))
+
+	 (debugging 'x "clustering" (map first bodies)) ;XXX
+
+	 ;; first descend into "(let ((_ (##core#undefined))) ...)" forms
+	 ;; to make them visible everywhere
+
+	 (let descend ((outer outer))
+	   ;;(print "outer: " (node-parameters outer))
+	   (let ((body (second (node-subexpressions outer))))
+	     (if (and (eq? 'let (node-class body))
+		      (let ((val (first (node-subexpressions body))))
+			(eq? '##core#undefined (node-class val))))
+		 (descend body)
+		 ;; wrap cluster into dispatch procedure
+		 (copy-node!
+		  (make-node
+		   'let
+		   (list dname)
+		   (list
+		    (make-node '##core#undefined '() '())
+		    (make-node
+		     'let (list (gensym))
+		     (list
+		      (make-node 
+		       'set! (list dname)
+		       (list
+			(make-node
+			 '##core#lambda
+			 (list (gensym 'f_) #t dllist 0)
+			 (list
+			  ;; dispatch to cluster member or main body
+			  (make-node
+			   '##core#switch
+			   (list (sub1 n))
+			   (append
+			    (list (varnode i))
+			    (append-map
+			     (lambda (b)
+			       (list (qnode (second b))
+				     (let loop ((args dllist)
+						(vars (third b)))
+				       (if (null? vars)
+					   (fourth b)
+					   (make-node
+					    'let (list (car vars))
+					    (list (varnode (car args))
+						  (loop (cdr args) (cdr vars))))))))
+			     bodies)
+			    (cdr (node-subexpressions outer))))))))
+		      ;; call to enter dispatch loop - the current continuation is
+		      ;; not used, so the first parameter is passed as "#f" (it is
+		      ;; a tail call)
+		      (make-node
+		       '##core#call '(#t)
+		       (cons* (varnode dname)
+			      (append
+			       (list-tabulate maxargs (lambda _ (qnode #f)))
+			       (list (qnode 0)))))))))
+		  outer))))
+
+	 ;; modify call-sites to invoke dispatch loop instead
+	 (for-each
+	  (lambda (b)
+	    (let ((sites (get db (car b) 'call-sites)))
+	      (for-each
+	       (lambda (site)
+		 (let* ((callnode (cdr site))
+			(args (cdr (node-subexpressions callnode))))
+		   (copy-node!
+		    (make-node
+		     '##core#call (node-parameters callnode)
+		     (cons* (varnode dname)
+			    (append
+			     args
+			     (list-tabulate
+			      (- maxargs (length args))
+			      (lambda _ (qnode #f)))
+			     (list (qnode (second b))))))
+		    callnode)))
+	       sites)))
+	  bodies)))
+
+     groups)
+    (values node (pair? groups))))
+

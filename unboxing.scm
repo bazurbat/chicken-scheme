@@ -489,6 +489,9 @@
 	 (printf "  ~a\t~a~%" k v) )
        stats))))
 
+
+;;; unboxed rewrites
+
 (define-syntax define-unboxed-ops
   (syntax-rules ()
     ((_ (name atypes rtype alt) ...)
@@ -498,8 +501,6 @@
 (define (register-unboxed-op name atypes rtype alt)
   (##sys#put! (symbolify name) '##compiler#unboxed-op (list alt atypes rtype)))
 
-
-;;; unboxed rewrites
 
 ;; arithmetic
 (define-unboxed-ops 

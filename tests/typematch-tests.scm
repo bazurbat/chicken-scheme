@@ -1,7 +1,7 @@
 ;;;; typematch-tests.scm
 
 
-(use lolevel)
+(use lolevel data-structures)
 
 
 (define-syntax check
@@ -112,7 +112,7 @@
 (check + 1.2 procedure)
 (check '#(1) 1.2 vector)
 (check '() 1 null)
-(check (current-input-port) 1.2 port)
+(check (current-input-port) 1.2 input-port)
 (check (make-blob 10) 1.2 blob)
 (check (address->pointer 0) 1.2 pointer)
 (check (make-pointer-vector 1) 1.2 pointer-vector)
@@ -133,7 +133,7 @@
 (ms '#(1) 1.2 (vector fixnum))
 (ms '() 1 null)
 (ms (void) 1.2 undefined)
-(ms (current-input-port) 1.2 port)
+(ms (current-input-port) 1.2 input-port)
 (ms (make-blob 10) 1.2 blob)
 (ms (address->pointer 0) 1.2 pointer)
 (ms (make-pointer-vector 1) 1.2 pointer-vector)
@@ -151,7 +151,6 @@
 (checkp boolean? #f boolean)
 (checkp pair? '(1 . 2) pair)
 (checkp null? '() null)
-(checkp list? '(1) (list fixnum))
 (checkp symbol? 'a symbol)
 (checkp number? (+ n) number)
 (checkp number? (+ n) number)
@@ -167,7 +166,7 @@
 (checkp condition? (##sys#make-structure 'condition) (struct condition))
 (checkp fixnum? 1 fixnum)
 (checkp flonum? 1.2 float)
-(checkp port? (current-input-port) port)
+(checkp input-port? (current-input-port) input-port)
 (checkp pointer-vector? (make-pointer-vector 1) pointer-vector)
 (checkp pointer? (address->pointer 1) pointer)
 
@@ -199,3 +198,41 @@
 (mx fixnum (##sys#vector-ref '#(1 2 3.4) 0))
 (mx (vector fixnum float) (vector 1 2.3))
 (mx (list fixnum float) (list 1 2.3))
+
+(: f1 (forall (a) ((list-of a) -> a)))
+(define (f1 x) (car x))
+(mx fixnum (f1 '(1)))
+
+(: f2 (forall (a) ((list-of a) -> a)))
+(define (f2 x) (car x))
+(assert
+ (eq? 'sf
+      (compiler-typecase (f2 (list (if bar 1 'a)))
+	(symbol 's)
+	(fixnum 'f)
+	((or fixnum symbol) 'sf))))
+
+(: f3 (forall (a) ((list-of a) -> a)))
+(define f3 car)
+(define xxx '(1))
+
+(compiler-typecase (f3 (the (or (vector-of fixnum) (list-of fixnum)) xxx))
+  (fixnum 'ok))
+
+(assert
+ (eq? 'ok
+      (compiler-typecase (list 123)
+	((forall (a) (or (vector-of a) (list-of a))) 'ok)
+	(else 'not-ok))))
+
+(: f4 (forall (a) ((or fixnum (list-of a)) -> a)))
+(define f4 identity)
+
+(compiler-typecase (f4 '(1))
+  (fixnum 'ok))
+
+(assert
+ (eq? 'ok (compiler-typecase (f4 1)
+	    (fixnum 'not-ok)
+	    (else 'ok))))
+

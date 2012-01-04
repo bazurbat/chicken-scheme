@@ -8,12 +8,12 @@ Note: in local procedure `c',
   expected value of type boolean in conditional but were given a value of type
   `number' which is always true:
 
-(if x3 '1 '2)
+(if x3 1 2)
 
 Warning: in toplevel procedure `foo':
   branches in conditional expression differ in the number of results:
 
-(if x5 (values '1 '2) (values '1 '2 (+ (+ ...))))
+(if x5 (values 1 2) (values 1 2 (+ (+ ...))))
 
 Warning: at toplevel:
   scrutiny-tests.scm:18: in procedure call to `bar6', expected argument #2 of type `number', but was given an argument of type `symbol'

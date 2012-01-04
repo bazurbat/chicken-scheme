@@ -48,6 +48,10 @@ else
     TIME=/usr/bin/time
 fi
 
+
+# for cygwin
+test -f ../cygchicken-0.dll && cp ../cygchicken-0.dll .
+
 compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
 compile2="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .."
 compile_s="../csc -s -compiler $CHICKEN -v -I.. -L.. -include-path .."
@@ -153,10 +157,7 @@ $compile lolevel-tests.scm
 ./a.out
 
 echo "======================================== arithmetic tests ..."
-if test -z "$MSYSTEM"; then
-    # the windows runtime library prints flonums differently
-    $interpret -D check -s arithmetic-test.scm
-fi
+$interpret -D check -s arithmetic-test.scm
 
 echo "======================================== pretty-printer tests ..."
 $interpret -s pp-test.scm
@@ -285,8 +286,7 @@ $compile fixnum-tests.scm
 ./a.out
 
 echo "======================================== string->number tests ..."
-$compile numbers-string-conversion-tests.scm
-./a.out
+$interpret -s numbers-string-conversion-tests.scm
 
 echo "======================================== srfi-4 tests ..."
 $interpret -s srfi-4-tests.scm
@@ -316,6 +316,10 @@ if test -z "$MSYSTEM"; then
 fi
 
 $interpret -R posix -e '(delete-directory "tmpdir" #t)'
+
+echo "======================================== signal tests ..."
+$compile signal-tests.scm
+./a.out
 
 echo "======================================== lolevel tests ..."
 $interpret -s lolevel-tests.scm

@@ -200,7 +200,7 @@
 
       (define (lookup var0 e se)
 	(let ((var (rename var0 se)))
-	  (d `(LOOKUP/EVAL: ,var0 ,var ,e ,(map car se)))
+	  (d `(LOOKUP/EVAL: ,var0 ,var ,e ,(map (lambda (x) (car x)) se)))
 	  (let loop ((envs e) (ei 0))
 	    (cond ((null? envs) (values #f var))
 		  ((posq var (##sys#slot envs 0)) => (lambda (p) (values ei p)))
@@ -372,7 +372,7 @@
 			 [(##core#let)
 			  (let* ([bindings (cadr x)]
 				 [n (length bindings)] 
-				 [vars (map (lambda (x) (car x)) bindings)] 
+				 [vars (map (lambda (x) (car x)) bindings)]
 				 (aliases (map gensym vars))
 				 [e2 (cons aliases e)]
 				 (se2 (##sys#extend-se se vars aliases))
@@ -704,7 +704,7 @@
 			  (compile-call (cdr x) e tf cntr se) ]
 
 			 ((##core#the)
-			  (compile (caddr x) e h tf cntr se))
+			  (compile (cadddr x) e h tf cntr se))
 			 
 			 ((##core#typecase)
 			  ;; drops exp and requires "else" clause
@@ -746,10 +746,13 @@
 		[else #f] ) ) )
 
       (define (compile-call x e tf cntr se)
-	(let* ([fn (compile (##sys#slot x 0) e #f tf cntr se)]
-	       [args (##sys#slot x 1)]
-	       [argc (checked-length args)]
-	       [info x] )
+	(let* ((head (##sys#slot x 0))
+	       (fn (if (procedure? head) 
+		       (lambda _ head)
+		       (compile (##sys#slot x 0) e #f tf cntr se)))
+	       (args (##sys#slot x 1))
+	       (argc (checked-length args))
+	       (info x) )
 	  (case argc
 	    [(#f) (##sys#syntax-error/context "malformed expression" x)]
 	    [(0) (lambda (v)
@@ -812,11 +815,16 @@
   (make-parameter
    (lambda (x #!optional env)
      (let ((se (##sys#current-environment)))
-       (when env
-	 (##sys#check-structure env 'environment 'eval)
-	 (set! se (or (##sys#slot env 2) se)))
-       ((##sys#compile-to-closure x '() se #f env (and env (##sys#slot env 3)))
-	'() ) ) ) ) )
+       (cond (env
+	      (##sys#check-structure env 'environment 'eval)
+	      (let ((se2 (##sys#slot env 2)))
+		((if se2		; not interaction-environment?
+		     (parameterize ((##sys#macro-environment '()))
+		       (##sys#compile-to-closure x '() se2 #f env (##sys#slot env 3)))
+		     (##sys#compile-to-closure x '() se #f env #f))
+		 '() ) ) )
+	     (else
+	      ((##sys#compile-to-closure x '() se #f #f #f) '() ) ) ) ) )))
 
 (define eval-handler ##sys#eval-handler)
 
@@ -919,25 +927,20 @@
     (lambda (input evaluator pf #!optional timer printer)
       (when (string? input) 
 	(set! input (##sys#expand-home-path input)) )
-      (let* ([isdir #f]
-	     [fname 
+      (let* ((fname 
 	      (cond [(port? input) #f]
 		    [(not (string? input)) (badfile input)]
-		    [(and-let* ([info (##sys#file-info input)]
-				[id (##sys#slot info 4)] )
-		       (set! isdir (eq? 1 id)) 
-		       (not isdir) )
-		     input]
-		    [else
+		    ((##sys#file-exists? input #t #f 'load) input)
+		    (else
 		     (let ([fname2 (##sys#string-append input ##sys#load-dynamic-extension)])
 		       (if (and (not ##sys#dload-disabled)
 				(##sys#fudge 24) ; dload?
-				(##sys#file-info fname2))
+				(##sys#file-exists? fname2 #t #f 'load))
 			   fname2
 			   (let ([fname3 (##sys#string-append input source-file-extension)])
-			     (if (##sys#file-info fname3)
+			     (if (##sys#file-exists? fname3 #t #f 'load)
 				 fname3
-				 (and (not isdir) input) ) ) ) ) ] ) ]
+				 input) ) ) ) )))
 	     [evproc (or evaluator eval)] )
 	(cond [(and (string? input) (not fname))
 	       (##sys#signal-hook #:file-error 'load "cannot open file" input) ]
@@ -1378,27 +1381,52 @@
   (##sys#print (##sys#slot e 1) #f p)
   (##sys#write-char-0 #\> p))
 
-(define scheme-report-environment
-  (let ((r4 (module-environment 'r4rs 'scheme-report-environment/4))
-	(r5 (module-environment 'scheme 'scheme-report-environment/5)))
+(define scheme-report-environment)
+(define null-environment)
+
+(let* ((r4s (module-environment 'r4rs 'scheme-report-environment/4))
+       (r5s (module-environment 'scheme 'scheme-report-environment/5))
+       (r4n (module-environment 'r4rs-null 'null-environment/4))
+       (r5n (module-environment 'r5rs-null 'null-environment/5)))
+  (define (strip se)
+    (foldr
+     (lambda (s r)
+       (if (memq (car s)
+		 '(import 
+		    require-extension 
+		    require-library 
+		    begin-for-syntax
+		    export 
+		    module
+		    cond-expand
+		    syntax
+		    reexport 
+		    import-for-syntax))
+	   r
+	   (cons s r)))
+     '()
+     se))
+  ;; Strip non-std syntax from SEs
+  (##sys#setslot r4s 2 (strip (##sys#slot r4s 2)))
+  (##sys#setslot r4n 2 (strip (##sys#slot r4n 2)))
+  (##sys#setslot r5s 2 (strip (##sys#slot r5s 2)))
+  (##sys#setslot r5n 2 (strip (##sys#slot r5n 2)))
+  (set! scheme-report-environment
     (lambda (n)
       (##sys#check-exact n 'scheme-report-environment)
       (case n
-	((4) r4)
-	((5) r5)
+	((4) r4s)
+	((5) r5s)
 	(else 
 	 (##sys#error 
 	  'scheme-report-environment
-	  "unsupported scheme report environment version" n)) ) ) ) )
-
-(define null-environment
-  (let ((r4 (module-environment 'r4rs-null 'null-environment/4))
-	(r5 (module-environment 'r5rs-null 'null-environment/5)))
+	  "unsupported scheme report environment version" n)) ) ) )
+  (set! null-environment
     (lambda (n)
       (##sys#check-exact n 'null-environment)
       (case n
-	((4) r4)
-	((5) r5)
+	((4) r4n)
+	((5) r5n)
 	(else
 	 (##sys#error
 	  'null-environment 
@@ -1414,8 +1442,7 @@
 (define ##sys#resolve-include-filename
   (let ((string-append string-append) )
     (define (exists? fname)
-      (let ([info (##sys#file-info fname)])
-	(and info (not (eq? 1 (##sys#slot info 4)))) ) )
+      (##sys#file-exists? fname #t #f #f))
     (lambda (fname prefer-source #!optional repo)
       (define (test2 fname lst)
 	(if (null? lst)

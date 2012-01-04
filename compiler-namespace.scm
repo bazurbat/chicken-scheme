@@ -52,6 +52,7 @@
  close-checked-input-file
  collapsable-literal?
  collect!
+ collected-debugging-output
  compile-format-string
  compiler-arguments
  compiler-cleanup-hook
@@ -77,11 +78,11 @@
  debugging
  debugging-chicken
  debugging-executable
+ determine-loop-and-dispatch
  decompose-lambda-list
  default-debugging-declarations
  default-declarations
  default-default-target-heap-size
- default-default-target-stack-size
  default-extended-bindings
  default-optimization-iterations
  default-optimization-passes
@@ -263,6 +264,7 @@
  simplified-ops
  simplify-named-call
  simplify-type
+ slashify
  sort-symbols
  source-filename
  source-info->string
@@ -275,16 +277,14 @@
  stringify
  substitution-table
  symbolify
- target-heap-growth
- target-heap-shrinkage
  target-heap-size
  target-include-file
- target-initial-heap-size
  target-stack-size
  toplevel-lambda-id
  toplevel-scope
  transform-direct-lambdas!
  tree-copy
+ uncommentify
  undefine-shadowed-macros
  unique-id
  unit-name
@@ -301,6 +301,7 @@
  variable-visible?
  varnode
  verbose-mode
+ with-debugging-output
  words
  words->bytes
  words-per-flonum

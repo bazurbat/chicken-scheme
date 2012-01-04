@@ -32,6 +32,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <math.h>
+#include <signal.h>
 
 #ifdef HAVE_SYSEXITS_H
 # include <sysexits.h>
@@ -53,6 +54,10 @@
 
 #ifndef EX_SOFTWARE
 # define EX_SOFTWARE  70
+#endif
+
+#ifndef EOVERFLOW
+# define EOVERFLOW  0
 #endif
 
 #if !defined(C_NONUNIX)
@@ -127,7 +132,12 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 
 #define RELAX_MULTIVAL_CHECK
 
-#define DEFAULT_STACK_SIZE             64000
+#ifdef C_SIXTY_FOUR
+# define DEFAULT_STACK_SIZE            (1024 * 1024)
+#else
+# define DEFAULT_STACK_SIZE            (256 * 1024)
+#endif
+
 #define DEFAULT_SYMBOL_TABLE_SIZE      2999
 #define DEFAULT_HEAP_SIZE              500000
 #define MINIMAL_HEAP_SIZE              500000
@@ -152,9 +162,10 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #define TEMPORARY_STACK_SIZE	       2048
 #define STRING_BUFFER_SIZE             4096
 #define DEFAULT_MUTATION_STACK_SIZE    1024
-#define MUTATION_STACK_GROWTH          1024
 
 #define FILE_INFO_SIZE                 7
+
+#define MAX_PENDING_INTERRUPTS         100
 
 #ifdef C_DOUBLE_IS_32_BITS
 # define FLONUM_PRINT_PRECISION         7
@@ -191,15 +202,6 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 
 
 /* Macros: */
-
-#ifdef PARANOIA
-# define check_alignment(p)           assert(((C_word)(p) & 3) == 0)
-#else
-# ifndef NDEBUG
-#  define NDEBUG
-# endif
-# define check_alignment(p)
-#endif
 
 #define nmax(x, y)                   ((x) > (y) ? (x) : (y))
 #define nmin(x, y)                   ((x) < (y) ? (x) : (y))
@@ -447,6 +449,9 @@ static C_TLS FINALIZER_NODE
 static C_TLS void *current_module_handle;
 static C_TLS int flonum_print_precision = FLONUM_PRINT_PRECISION;
 static C_TLS HDUMP_BUCKET **hdump_table;
+static C_TLS int 
+  pending_interrupts[ MAX_PENDING_INTERRUPTS ],
+  pending_interrupts_count;
 
 
 /* Prototypes: */
@@ -696,6 +701,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   C_clear_trace_buffer();
   chicken_is_running = chicken_ran_once = 0;
   interrupt_reason = 0;
+  pending_interrupts_count = 0;
   last_interrupt_latency = 0;
   C_interrupts_enabled = 1;
   C_initial_timer_interrupt_period = INITIAL_TIMER_INTERRUPT_PERIOD;
@@ -719,8 +725,8 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 
 static C_PTABLE_ENTRY *create_initial_ptable()
 {
-  /* hardcoded table size - this must match the number of C_pte calls! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 61);
+  /* IMPORTANT: hardcoded table size - this must match the number of C_pte calls! */
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 60);
   int i = 0;
 
   if(pt == NULL)
@@ -736,7 +742,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_make_structure);
   C_pte(C_ensure_heap_reserve);
   C_pte(C_return_to_host);
-  C_pte(C_file_info);
   C_pte(C_get_symbol_table_info);
   C_pte(C_get_memory_info);
   C_pte(C_decode_seconds);
@@ -752,6 +757,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_divide);
   C_pte(C_nequalp);
   C_pte(C_greaterp);
+  /* IMPORTANT: have you read the comments at the start and the end of this function? */
   C_pte(C_lessp);
   C_pte(C_greater_or_equal_p);
   C_pte(C_less_or_equal_p);
@@ -786,7 +792,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_filter_heap_objects);
   C_pte(C_get_argument);
 
-  /* did you remember the hardcoded pte table size? */
+  /* IMPORTANT: did you remember the hardcoded pte table size? */
   pt[ i ].id = NULL;
   return pt;
 }
@@ -984,7 +990,9 @@ void initialize_symbol_table(void)
 void global_signal_handler(int signum)
 {
   C_raise_interrupt(signal_mapping_table[ signum ]);
-  signal(signum, global_signal_handler);
+#ifndef HAVE_SIGACTION
+  C_signal(signum, global_signal_handler);
+#endif
 }
 
 
@@ -1614,6 +1622,26 @@ void barf(int code, char *loc, ...)
   case C_CIRCULAR_DATA_ERROR:
     msg = C_text("recursion too deep or circular data encountered");
     c = 0;
+    break;
+
+  case C_BAD_ARGUMENT_TYPE_NO_PORT_ERROR:
+    msg = C_text("bad argument type - not a port");
+    c = 1;
+    break;
+
+  case C_BAD_ARGUMENT_TYPE_NO_INPUT_PORT_ERROR:
+    msg = C_text("bad argument type - not an input-port");
+    c = 1;
+    break;
+
+  case C_BAD_ARGUMENT_TYPE_NO_OUTPUT_PORT_ERROR:
+    msg = C_text("bad argument type - not an output-port");
+    c = 1;
+    break;
+
+  case C_PORT_CLOSED_ERROR:
+    msg = C_text("port already closed");
+    c = 1;
     break;
 
   default: panic(C_text("illegal internal error code"));
@@ -2386,25 +2414,6 @@ C_regparm C_word C_fcall C_pair(C_word **ptr, C_word car, C_word cdr)
 }
 
 
-C_regparm C_word C_fcall C_h_pair(C_word car, C_word cdr)
-{
-  /* Allocate on heap and check for non-heap slots: */
-  C_word *p = (C_word *)C_fromspace_top,
-         *p0 = p;
- 
-  *(p++) = C_PAIR_TYPE | (C_SIZEOF_PAIR - 1);
-
-  if(C_in_stackp(car)) C_mutate(p++, car);
-  else *(p++) = car;
-
-  if(C_in_stackp(cdr)) C_mutate(p++, cdr);
-  else *(p++) = cdr;
-
-  C_fromspace_top = (C_byte *)p;
-  return (C_word)p0;
-}
-
-
 C_regparm C_word C_fcall C_number(C_word **ptr, double n)
 {
   C_word 
@@ -2541,57 +2550,9 @@ C_word C_structure(C_word **ptr, int n, ...)
 }
 
 
-C_word C_h_vector(int n, ...)
-{
-  /* As C_vector(), but remember slots containing nursery pointers: */
-  va_list v;
-  C_word *p = (C_word *)C_fromspace_top,
-         *p0 = p,
-         x; 
-
-  *(p++) = C_VECTOR_TYPE | n;
-  va_start(v, n);
-
-  while(n--) {
-    x = va_arg(v, C_word);
-
-    if(C_in_stackp(x)) C_mutate(p++, x);
-    else *(p++) = x;
-  }
-
-  C_fromspace_top = (C_byte *)p;
-  va_end(v);
-  return (C_word)p0;
-}
-
-
-C_word C_h_structure(int n, ...)
-{
-  /* As C_structure(), but remember slots containing nursery pointers: */
-  va_list v;
-  C_word *p = (C_word *)C_fromspace_top,
-         *p0 = p,
-         x; 
-
-  *(p++) = C_STRUCTURE_TYPE | n;
-  va_start(v, n);
-
-  while(n--) {
-    x = va_arg(v, C_word);
-
-    if(C_in_stackp(x)) C_mutate(p++, x);
-    else *(p++) = x;
-  }
-
-  C_fromspace_top = (C_byte *)p;
-  va_end(v);
-  return (C_word)p0;
-}
-
-
 C_regparm C_word C_fcall C_mutate(C_word *slot, C_word val)
 {
-  int mssize;
+  unsigned int mssize, newmssize, bytes;
 
   if(!C_immediatep(val)) {
 #ifdef C_GC_HOOKS
@@ -2601,14 +2562,19 @@ C_regparm C_word C_fcall C_mutate(C_word *slot, C_word val)
     if(mutation_stack_top >= mutation_stack_limit) {
       assert(mutation_stack_top == mutation_stack_limit);
       mssize = mutation_stack_top - mutation_stack_bottom;
-      mutation_stack_bottom =
-          (C_word **)realloc(mutation_stack_bottom,
-                             (mssize + MUTATION_STACK_GROWTH) * sizeof(C_word *));
+      newmssize = mssize * 2;
+      bytes = newmssize * sizeof(C_word *);
+
+      if(debug_mode) 
+	C_dbg(C_text("debug"), C_text("resizing mutation-stack from " UWORD_COUNT_FORMAT_STRING "k to " UWORD_COUNT_FORMAT_STRING "k ...\n"), 
+	      (mssize * sizeof(C_word *)) / 1024, bytes / 1024);
+
+      mutation_stack_bottom = (C_word **)realloc(mutation_stack_bottom, bytes);
 
       if(mutation_stack_bottom == NULL)
 	panic(C_text("out of memory - cannot re-allocate mutation stack"));
 
-      mutation_stack_limit = mutation_stack_bottom + mssize + MUTATION_STACK_GROWTH;
+      mutation_stack_limit = mutation_stack_bottom + newmssize;
       mutation_stack_top = mutation_stack_bottom + mssize;
     }
 
@@ -2652,7 +2618,7 @@ static void mark(C_word *x) { \
 
 C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 {
-  int i, j, n, fcount, weakn;
+  int i, j, n, fcount, weakn = 0;
   C_uword count, bytes;
   C_word *p, **msp, bucket, last, item, container;
   C_header h;
@@ -2661,7 +2627,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
   C_SCHEME_BLOCK *bp;
   C_GC_ROOT *gcrp;
   WEAK_TABLE_ENTRY *wep;
-  double tgc;
+  double tgc = 0;
   C_SYMBOL_TABLE *stp;
   volatile int finalizers_checked;
   FINALIZER_NODE *flist;
@@ -2680,9 +2646,10 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
   C_restart_address = proc;
   heap_scan_top = (C_byte *)C_align((C_uword)C_fromspace_top);
   gc_mode = GC_MINOR;
+  start = C_fromspace_top;
 
   /* Entry point for second-level GC (on explicit request or because of full fromspace): */
-  if(C_setjmp(gc_restart) || (start = C_fromspace_top) >= C_fromspace_limit) {
+  if(C_setjmp(gc_restart) || start >= C_fromspace_limit) {
     if(gc_bell) {
       C_putchar(7);
       C_fflush(stdout);
@@ -2693,7 +2660,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
     if(gc_mode == GC_REALLOC) {
       C_rereclaim2(percentage(heap_size, C_heap_growth), 0);
       gc_mode = GC_MAJOR;
-      goto never_mind_edsgar;
+      goto i_like_spaghetti;
     }
 
     heap_scan_top = (C_byte *)C_align((C_uword)tospace_top);    
@@ -2879,7 +2846,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
       tospace_limit = tmp;
     }
 
-  never_mind_edsgar:
+  i_like_spaghetti:
     ++gc_count_2;
 
     if(C_enable_gcweak) {
@@ -3159,7 +3126,7 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
 
   if(debug_mode) 
     C_dbg(C_text("debug"), C_text("resizing heap dynamically from " UWORD_COUNT_FORMAT_STRING "k to " UWORD_COUNT_FORMAT_STRING "k ...\n"), 
-	  (C_uword)heap_size / 1000, size / 1000);
+	  (C_uword)heap_size / 1024, size / 1024);
 
   if(gc_report_flag) {
     C_dbg(C_text("GC"), C_text("(old) fromspace: \tstart=" UWORD_FORMAT_STRING 
@@ -3855,8 +3822,8 @@ C_word C_message(C_word msg)
     C_strncpy(buffer, (C_char *)((C_SCHEME_BLOCK *)msg)->data, n);
     buffer[ n ] = '\0';
 #if defined(_WIN32) && !defined(__CYGWIN__)
-    MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONERROR);
-    ExitProcess(1);
+    MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONEXCLAMATION);
+    return C_SCHEME_UNDEFINED;
 #endif
   } /* fall through */
 
@@ -3987,7 +3954,12 @@ C_regparm C_word C_fcall C_read_char(C_word port)
 {
   int c = C_getc(C_port_file(port));
 
-  return c == EOF ? C_SCHEME_END_OF_FILE : C_make_character(c);
+  if(c == EOF) {
+    if(errno == EINTR) return C_fix(-1);
+    else return C_SCHEME_END_OF_FILE;
+  }
+
+  return C_make_character(c);
 }
 
 
@@ -3996,8 +3968,13 @@ C_regparm C_word C_fcall C_peek_char(C_word port)
   C_FILEPTR fp = C_port_file(port);
   int c = C_getc(fp);
 
+  if(c == EOF) {
+    if(errno == EINTR) return C_fix(-1);
+    else return C_SCHEME_END_OF_FILE;
+  }
+
   C_ungetc(c, fp);
-  return c == EOF ? C_SCHEME_END_OF_FILE : C_make_character(c);
+  return C_make_character(c);
 }
 
 
@@ -4245,16 +4222,25 @@ C_regparm void C_fcall C_paranoid_check_for_interrupt(void)
 C_regparm void C_fcall C_raise_interrupt(int reason)
 {
   if(C_interrupts_enabled) {
-    saved_stack_limit = C_stack_limit;
+    if(interrupt_reason) {
+      if(reason != C_TIMER_INTERRUPT_NUMBER) {
+	if(pending_interrupts_count < MAX_PENDING_INTERRUPTS) 
+	  /* drop signals if too many */
+	  pending_interrupts[ pending_interrupts_count++ ] = reason;
+      }
+    }
+    else {
+      saved_stack_limit = C_stack_limit;
 
 #if C_STACK_GROWS_DOWNWARD
-    C_stack_limit = C_stack_pointer + 1000;
+      C_stack_limit = C_stack_pointer + 1000;
 #else
-    C_stack_limit = C_stack_pointer - 1000;
+      C_stack_limit = C_stack_pointer - 1000;
 #endif
 
-    interrupt_reason = reason;
-    interrupt_time = C_cpu_milliseconds();
+      interrupt_reason = reason;
+      interrupt_time = C_cpu_milliseconds();
+    }
   }
 }
 
@@ -4278,11 +4264,23 @@ C_regparm C_word C_fcall C_disable_interrupts(void)
 C_regparm C_word C_fcall C_establish_signal_handler(C_word signum, C_word reason)
 {
   int sig = C_unfix(signum);
+#if defined(HAVE_SIGACTION)
+  struct sigaction new;
+
+  new.sa_flags = 0;
+  sigemptyset(&new.sa_mask);
+#endif
 
   if(reason == C_SCHEME_FALSE) C_signal(sig, SIG_IGN);
   else {
     signal_mapping_table[ sig ] = C_unfix(reason);
+#if defined(HAVE_SIGACTION)
+    sigaddset(&new.sa_mask, sig);
+    new.sa_handler = global_signal_handler;
+    C_sigaction(sig, &new, NULL);
+#else
     C_signal(sig, global_signal_handler);
+#endif
   }
 
   return C_SCHEME_UNDEFINED;
@@ -4416,32 +4414,6 @@ C_word C_a_i_list(C_word **a, int c, ...)
   for(last = C_SCHEME_UNDEFINED; c--; last = current) {
     x = va_arg(v, C_word);
     current = C_a_pair(a, x, C_SCHEME_END_OF_LIST);
-
-    if(last != C_SCHEME_UNDEFINED)
-      C_set_block_item(last, 1, current);
-    else first = current;
-  }
-
-  va_end(v);
-  return first;
-}
-
-
-C_word C_h_list(int c, ...)
-{
-  /* Similar to C_a_i_list(), but put slots with nursery data into mutation stack: */
-  va_list v;
-  C_word x, last, current,
-         first = C_SCHEME_END_OF_LIST;
-
-  va_start(v, c);
-
-  for(last = C_SCHEME_UNDEFINED; c--; last = current) {
-    x = va_arg(v, C_word);
-    current = C_a_pair(C_heaptop, x, C_SCHEME_END_OF_LIST);
-
-    if(C_in_stackp(x)) 
-      C_mutate(&C_u_i_car(current), x);
 
     if(last != C_SCHEME_UNDEFINED)
       C_set_block_item(last, 1, current);
@@ -5542,6 +5514,48 @@ C_regparm C_word C_fcall C_i_check_list_2(C_word x, C_word loc)
   if(x != C_SCHEME_END_OF_LIST && (C_immediatep(x) || C_block_header(x) != C_PAIR_TAG)) {
     error_location = loc;
     barf(C_BAD_ARGUMENT_TYPE_NO_LIST_ERROR, NULL, x);
+  }
+
+  return C_SCHEME_UNDEFINED;
+}
+
+
+C_regparm C_word C_fcall C_i_check_port_2(C_word x, C_word input, C_word open, C_word loc)
+{
+  int inp;
+
+  if(C_immediatep(x) || C_header_bits(x) != C_PORT_TYPE) {
+    error_location = loc;
+    barf(C_BAD_ARGUMENT_TYPE_NO_PORT_ERROR, NULL, x);
+  }
+
+  inp = C_block_item(x, 1) == C_SCHEME_TRUE;	/* slot #1: I/O flag */
+
+  switch(input) {
+  case C_SCHEME_TRUE:
+    if(!inp) {
+      error_location = loc;
+      barf(C_BAD_ARGUMENT_TYPE_NO_INPUT_PORT_ERROR, NULL, x);
+    }
+
+    break;
+
+  case C_SCHEME_FALSE:
+    if(inp) {
+      error_location = loc;
+      barf(C_BAD_ARGUMENT_TYPE_NO_OUTPUT_PORT_ERROR, NULL, x);
+    }
+
+    break;
+
+    /* any other value: omit direction check */
+  }
+
+  if(open == C_SCHEME_TRUE) {
+    if(C_block_item(x, 8) != C_SCHEME_FALSE) {	/* slot #8: closed flag */
+      error_location = loc;
+      barf(C_PORT_CLOSED_ERROR, NULL, x);
+    }
   }
 
   return C_SCHEME_UNDEFINED;
@@ -7017,14 +7031,14 @@ void C_ccall C_allocate_vector(C_word c, C_word closure, C_word k, C_word size, 
 
 void allocate_vector_2(void *dummy)
 {
-  C_word mode = C_restore;
-  int bytes = C_unfix(C_restore);
-  C_word align8 = C_restore,
-         bvecf = C_restore,
-         init = C_restore;
-  C_word size = C_unfix(C_restore);
-  C_word k = C_restore,
-         *v0, v;
+  C_word  mode = C_restore;
+  C_uword bytes = C_unfix(C_restore);
+  C_word  align8 = C_restore,
+          bvecf = C_restore,
+          init = C_restore;
+  C_word  size = C_unfix(C_restore);
+  C_word  k = C_restore,
+          *v0, v;
 
   if(C_truep(mode)) {
     while((C_uword)(C_fromspace_limit - C_fromspace_top) < (bytes + stack_size)) {
@@ -7196,7 +7210,7 @@ void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2
 C_regparm C_word C_fcall
 C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix0)
 {
-  int radix, radixpf = 0, sharpf = 0, ratf = 0, exactf, exactpf = 0, periodf = 0, expf = 0;
+  int radix, radixpf = 0, sharpf = 0, ratf = 0, exactf = 0, exactpf = 0, periodf = 0, expf = 0;
   C_word n1, n;
   C_char *sptr, *eptr, *rptr;
   double fn1, fn;
@@ -7763,61 +7777,6 @@ void C_ccall C_return_to_host(C_word c, C_word closure, C_word k)
   return_to_host = 1;
   C_save(k);
   C_reclaim((void *)generic_trampoline, NULL);
-}
-
-
-void C_ccall C_file_info(C_word c, C_word closure, C_word k, C_word name)
-{
-  C_save(k);
-  C_save(name);
-  
-  if(!C_demand(FILE_INFO_SIZE + 1 + C_SIZEOF_FLONUM * 3)) C_reclaim((void *)file_info_2, NULL);
-
-  file_info_2(NULL);
-}
-
-
-void file_info_2(void *dummy)
-{
-  C_word name = C_restore,
-      k = C_restore,
-      *a = C_alloc(FILE_INFO_SIZE + 1 + C_SIZEOF_FLONUM * 3),
-      v = C_SCHEME_FALSE,
-      t, f1, f2, f3;
-  int len = C_header_size(name);
-  char *buffer2;
-  struct stat buf;
-
-  buffer2 = buffer;
-  if(len >= sizeof(buffer)) {
-    if((buffer2 = (char *)C_malloc(len + 1)) == NULL)
-      barf(C_OUT_OF_MEMORY_ERROR, "stat");
-  }
-  C_strncpy(buffer2, C_c_string(name), len);
-  buffer2[ len ] = '\0';
-
-  if(stat(buffer2, &buf) != 0) v = C_SCHEME_FALSE;
-  else {
-    switch(buf.st_mode & S_IFMT) {
-    case S_IFDIR: t = 1; break;
-    case S_IFIFO: t = 3; break;
-#if !defined(__MINGW32__)
-    case S_IFSOCK: t = 4; break;
-#endif
-    default: t = 0;
-    }
-
-    f1 = C_flonum(&a, buf.st_atime);
-    f2 = C_flonum(&a, buf.st_ctime);
-    f3 = C_flonum(&a, buf.st_mtime);
-    v = C_vector(&a, FILE_INFO_SIZE, f1, f2, f3,
-		 C_fix(buf.st_size), C_fix(t), C_fix(buf.st_mode), C_fix(buf.st_uid) ); 
-  }
-
-  if (buffer2 != buffer)
-    free(buffer2);
-
-  C_kontinue(k, v);
 }
 
 
@@ -8839,7 +8798,7 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
   val = (C_word)(*ptr);
 
   if(bits == C_FLONUM_TYPE) {
-    long ln;
+    C_word ln;
     double fn;
 
     switch (convert_string_to_number(*str, 10, &ln, &fn)) {
@@ -9228,4 +9187,46 @@ C_filter_heap_objects(C_word c, C_word closure, C_word k, C_word func, C_word ve
   C_save(func);
   C_fromspace_top = C_fromspace_limit; /* force major GC */
   C_reclaim((void *)filter_heap_objects_2, NULL);
+}
+
+
+C_regparm C_word C_fcall
+C_i_file_exists_p(C_word name, C_word file, C_word dir)
+{
+  struct stat buf;
+  int res;
+
+  res = stat(C_c_string(name), &buf);
+
+  if(res != 0) {
+    switch(errno) {
+    case ENOENT: return C_SCHEME_FALSE;
+    case EOVERFLOW: return C_truep(dir) ? C_SCHEME_FALSE : C_SCHEME_TRUE;
+    case ENOTDIR: return C_SCHEME_FALSE;
+    default: return C_fix(res);
+    }
+  }
+
+  switch(buf.st_mode & S_IFMT) {
+  case S_IFDIR: return C_truep(file) ? C_SCHEME_FALSE : C_SCHEME_TRUE;
+  default: return C_truep(dir) ? C_SCHEME_FALSE : C_SCHEME_TRUE;
+  }
+}
+
+
+C_regparm C_word C_fcall
+C_i_pending_interrupt(C_word dummy)
+{
+  int i;
+
+  if(interrupt_reason && interrupt_reason != C_TIMER_INTERRUPT_NUMBER) {
+    i = interrupt_reason;
+    interrupt_reason = 0;
+    return C_fix(i);
+  }
+
+  if(pending_interrupts_count > 0)
+    return C_fix(pending_interrupts[ --pending_interrupts_count ]);
+
+  return C_SCHEME_FALSE;
 }

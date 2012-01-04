@@ -8,7 +8,7 @@
 #>
 long *ptrs[10];
 
-//#define check(n)  ptrs[n] = o##n; if(!C_in_stackp((C_word)o##n) && !C_in_fromspacep((C_word)o##n)) C_dbg_hook(0);
+/*#define check(n)  ptrs[n] = o##n; if(!C_in_stackp((C_word)o##n) && !C_in_fromspacep((C_word)o##n)) C_dbg_hook(0);*/
 #define check(n)
 
 long fill_10(long i, long *o0, long *o1, long *o2, long *o3, long *o4,

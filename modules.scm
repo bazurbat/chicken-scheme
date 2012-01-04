@@ -867,18 +867,10 @@
 	     scheme-report-environment null-environment interaction-environment
 	     else))
       (r4rs-syntax
-       ;;XXX currently disabled - better would be to move these into the "chicken"
+       ;;XXX better would be to move these into the "chicken"
        ;;    module. "import[-for-syntax]" and "reexport" are in
-       ;;    ##sys#initial-macro-environment and thus always available inside modules.
-       #;(foldr
-	(lambda (s r)
-	  (if (memq (car s)
-		    '(import require-extension require-library begin-for-syntax
-			     export module cond-expand syntax reexport import-for-syntax))
-	      r
-	      (cons s r)))
-	'()
-	##sys#default-macro-environment)
+       ;;    ##sys#initial-macro-environment and thus always available inside 
+       ;;    modules.
        ##sys#default-macro-environment))
   (##sys#register-primitive-module 'r4rs r4rs-values r4rs-syntax)
   (##sys#register-primitive-module 
@@ -893,4 +885,4 @@
 (define (module-environment mname #!optional (ename mname))
   (let* ((mod (##sys#find-module/import-library mname 'module-environment))
 	 (saved (module-saved-environments mod)))
-    (##sys#make-structure 'environment ename (car saved))))
+    (##sys#make-structure 'environment ename (car saved) #t)))

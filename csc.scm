@@ -139,7 +139,7 @@
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
     -emit-all-import-libraries -setup-mode -unboxing -no-elevation -no-module-registration
     -no-procedure-checks-for-usual-bindings -module
-    -specialize -strict-types
+    -specialize -strict-types -clustering
     -lambda-lift			; OBSOLETE
     -no-procedure-checks-for-toplevel-bindings))
 
@@ -148,7 +148,9 @@
     -optimize-level -include-path -database-size -extend -prelude -postlude -prologue -epilogue 
     -inline-limit -profile-name
     -emit-inline-file -types -emit-type-file
-    -feature -debug-level -heap-growth -heap-shrinkage -heap-initial-size -consult-inline-file
+    -feature -debug-level 
+    -heap-growth -heap-shrinkage -heap-initial-size ; DEPRECATED
+    -consult-inline-file
     -emit-import-library
     -no-feature))
 
@@ -225,7 +227,8 @@
 (define translate-options '())
 
 (define include-dir
-  (let ((id (prefix "" "include" 
+  (let ((id (prefix ""
+                    (make-pathname "include" "chicken")
 		    (if host-mode INSTALL_INCLUDE_HOME TARGET_INCLUDE_HOME))))
     (and (not (member id '("/usr/include" "")))
 	 id) ) )
@@ -396,15 +399,14 @@ Usage: #{csc} FILENAME | OPTION ...
                                    disable procedure call checks for toplevel
                                     bindings
     -strict-types                  assume variable do not change their type
+    -clustering                    combine groups of local procedures into dispatch
+                                     loop
 
   Configuration options:
 
     -unit NAME                     compile file as a library unit
     -uses NAME                     declare library unit as used.
     -heap-size NUMBER              specifies heap-size of compiled executable
-    -heap-initial-size NUMBER      specifies heap-size at startup time
-    -heap-growth PERCENTAGE        specifies growth-rate of expanding heap
-    -heap-shrinkage PERCENTAGE     specifies shrink-rate of contracting heap
     -nursery NUMBER  -stack-size NUMBER
                                    specifies nursery size of compiled
                                    executable
@@ -677,9 +679,9 @@ EOF
 		(when (memq (build-platform) '(mingw32 cygwin gnu clang))
 		  (set! compile-options 
 		    (cons* "-O3" "-fomit-frame-pointer" compile-options)) ) ]
-	       [(-d0) (set! rest (cons* "-debug-level" "0" rest))]
-	       [(-d1) (set! rest (cons* "-debug-level" "1" rest))]
-	       [(-d2) (set! rest (cons* "-debug-level" "2" rest))]
+	       [(|-d0|) (set! rest (cons* "-debug-level" "0" rest))]
+	       [(|-d1|) (set! rest (cons* "-debug-level" "1" rest))]
+	       [(|-d2|) (set! rest (cons* "-debug-level" "2" rest))]
 	       [(-dry-run) 
 		(set! verbose #t)
 		(set! dry-run #t)]

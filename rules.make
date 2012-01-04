@@ -601,7 +601,7 @@ setup-download.c: $(SRCDIR)setup-download.scm setup-api.c
 distfiles: $(DISTFILES)
 
 dist: distfiles html
-	CSI=$(CSI) $(CSI) -s $(SRCDIR)scripts$(SEP)makedist.scm --platform=$(PLATFORM) CHICKEN=$(CHICKEN)
+	CSI=$(CSI) $(CSI) -s $(SRCDIR)scripts$(SEP)makedist.scm -platform $(PLATFORM) CHICKEN=$(CHICKEN)
 
 # Jim's `manual-labor' must be installed (just run "chicken-install manual-labor")
 html:
@@ -634,31 +634,35 @@ endif
 
 confclean:
 	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) \
-	  chicken-config.h chicken-defaults.h chicken-install.rc chicken-uninstall.rc \
-	  buildtag.h buildid buildbranch
+	  chicken-config.h chicken-defaults.h chicken-install.rc chicken-uninstall.rc
 
 spotless: distclean testclean
-	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) $(DISTFILES)
+	-$(REMOVE_COMMAND) $(REMOVE_COMMAND_OPTIONS) $(DISTFILES) \
+	  buildtag.h buildid buildbranch
+
 
 distclean: clean confclean
 
 testclean:
 	$(REMOVE_COMMAND) $(REMOVE_COMMAND_RECURSIVE_OPTIONS) $(SRCDIR)tests$(SEP)a.out $(SRCDIR)tests$(SEP)scrutiny.out \
-	  $(SRCDIR)tests$(SEP)tmp* $(SRCDIR)tests$(SEP)*.so $(SRCDIR)tests$(SEP)*.import.scm $(SRCDIR)tests$(SEP)repository
+	  $(SRCDIR)tests$(SEP)tmp* $(SRCDIR)tests$(SEP)*.so $(SRCDIR)tests$(SEP)*.import.scm $(SRCDIR)tests$(SEP)repository $(SRCDIR)tests$(SEP)*.dll
 
 # run tests
 
 .PHONY: check 
 
-check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
+check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)$(EXE)
+ifndef WINDOWS_SHELL
 	cd tests; sh runtests.sh
-
+else
+	cd tests & runtests.bat
+endif
 
 # benchmark
 
 .PHONY: bench
 
-bench: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
+bench: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)$(EXE)
 	cd tests; echo >>bench.log; date >>bench.log; sh runbench.sh 2>&1 | tee -a bench.log
 
 
@@ -668,11 +672,11 @@ bench: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)
 
 boot-chicken:
 	$(MAKE) -f Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) PREFIX=/nowhere CONFIG= \
-	  SRCDIR=$(SRCDIR) CHICKEN=$(CHICKEN) PROGRAM_SUFFIX=-boot-stage1 STATICBUILD=1 \
+	  CHICKEN=$(CHICKEN) PROGRAM_SUFFIX=-boot-stage1 STATICBUILD=1 \
 	  C_COMPILER_OPTIMIZATION_OPTIONS= C_HACKED_APPLY= BUILDING_CHICKEN_BOOT=1 \
 	  confclean chicken-boot-stage1$(EXE)
 	$(MAKE) -f Makefile.$(PLATFORM) PLATFORM=$(PLATFORM) PREFIX=/nowhere CONFIG= \
-	  SRCDIR=$(SRCDIR) CHICKEN=`pwd`/chicken-boot-stage1$(EXE) PROGRAM_SUFFIX=-boot \
+	  CHICKEN=.$(SEP)chicken-boot-stage1$(EXE) PROGRAM_SUFFIX=-boot \
 	  STATICBUILD=1 C_COMPILER_OPTIMIZATION_OPTIONS= \
 	  touchfiles chicken-boot$(EXE) confclean
 
@@ -680,21 +684,7 @@ boot-chicken:
 
 touchfiles:
 ifdef WINDOWS_SHELL
-	for %x in (*.scm) do copy /b %x +,,
+	for %%x in (*.scm) do copy /b %%x +,,
 else
 	touch *.scm
 endif
-
-
-# compile all core modules (for testing)
-
-.PHONY: compile-all
-
-COMPILE_ALL_FILES = $(LIBCHICKEN_SCHEME_OBJECTS_1) $(COMPILER_OBJECTS_1)
-
-# use EXTRA_CHICKEN_OPTIONS to test particular compiler options:
-compile-all:
-	@for x in $(COMPILE_ALL_FILES:=.scm); do \
-	  echo "$(CHICKEN) $$x $(CHICKEN_LIBRARY_OPTIONS)"; \
-	  $(CHICKEN) $$x $(CHICKEN_LIBRARY_OPTIONS) -output-file out.c || exit 1; \
-	done

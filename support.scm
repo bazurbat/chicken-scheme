@@ -49,17 +49,51 @@
       (apply error (string-append "[internal compiler error] " (car msg-and-args)) (cdr msg-and-args))
       (error "[internal compiler error]") ) )
 
+(define collected-debugging-output
+  (open-output-string))
+
+(define +logged-debugging-modes+ '(o x S i))
+
 (define (debugging mode msg . args)
-  (and (memq mode debugging-chicken)
-       (begin
-	 (printf "~a" msg)
-	 (if (pair? args)
-	     (begin
-	       (display ": ")
-	       (for-each (lambda (x) (printf "~s " (force x))) args) ) )
-	 (newline)
-	 (flush-output)
-	 #t) ) )
+  (define (text)
+    (with-output-to-string
+      (lambda ()
+	(display msg)
+	(when (pair? args)
+	  (display ": ")
+	  (for-each
+	   (lambda (x) (printf "~s " (force x))) 
+	   args) )
+	(newline))))
+  (define (dump txt)
+    (fprintf collected-debugging-output "~a|~a" mode txt))
+  (cond ((memq mode debugging-chicken)
+	 (let ((txt (text)))
+	   (display txt)
+	   (flush-output)
+	   (when (memq mode +logged-debugging-modes+)
+	     (dump txt))
+	   #t))
+	(else
+	 (when (memq mode +logged-debugging-modes+)
+	   (dump (text)))
+	 #f)))
+
+(define (with-debugging-output mode thunk)
+  (define (collect text)
+    (for-each
+     (lambda (ln)
+       (fprintf collected-debugging-output "~a|~a~%"
+	 mode ln))
+     (string-split text "\n")))
+  (cond ((memq mode debugging-chicken)
+	 (let ((txt (with-output-to-string thunk)))
+	   (display txt)
+	   (flush-output)
+	   (when (memq mode +logged-debugging-modes+)
+	     (collect txt))))
+	((memq mode +logged-debugging-modes+)
+	 (collect (with-output-to-string thunk)))))
 
 (define (quit msg . args)
   (let ([out (current-error-port)])
@@ -123,6 +157,10 @@
 	((string? x) (string->symbol x))
 	(else (string->symbol (sprintf "~a" x))) ) )
 
+(define (slashify s) (string-translate (->string s) "\\" "/"))
+
+(define (uncommentify s) (string-translate* (->string s) '(("*/" . "*_/"))))
+  
 (define (build-lambda-list vars argc rest)
   (let loop ((vars vars) (n argc))
     (cond ((or (zero? n) (null? vars)) (or rest '()))
@@ -396,6 +434,7 @@
 		 (inline-target . ilt) (inline-transient . itr)
 		 (undefined . und) (replacing . rpg) (unused . uud) (extended-binding . xtb)
 		 (inline-export . ilx) (hidden-refs . hrf)
+		 (value-ref . vvf)
 		 (customizable . cst) (has-unused-parameters . hup) (boxed-rest . bxr) ) ) 
 	(omit #f))
     (lambda (db)
@@ -505,7 +544,9 @@
 	       ((lambda ##core#lambda) 
 		(make-node 'lambda (list (cadr x)) (list (walk (caddr x)))))
 	       ((##core#the)
-		(make-node '##core#the (list (cadr x)) (list (walk (caddr x)))))
+		(make-node '##core#the
+			   (list (second x) (third x))
+			   (list (walk (fourth x)))))
 	       ((##core#typecase)
 		;; clause-head is already stripped
 		(let loop ((cls (cddr x)) (types '()) (exps (list (walk (cadr x)))))
@@ -578,7 +619,11 @@
 	((##core#closure)
 	 `(##core#closure ,params ,@(map walk subs)) )
 	((##core#variable) (car params))
-	((quote) `(quote ,(car params)))
+	((quote)
+	 (let ((c (car params)))
+	   (if (or (boolean? c) (string? c) (number? c) (char? c))
+	       c
+	       `(quote ,(car params)))))
 	((let)
 	 `(let ,(map list params (map walk (butlast subs)))
 	    ,(walk (last subs)) ) )
@@ -595,7 +640,9 @@
 	   ,(walk (first subs))
 	   ,@(let loop ((types params) (bodies (cdr subs)))
 	       (if (null? types)
-		   `((else ,(walk (car bodies))))
+		   (if (null? bodies)
+		       '()
+		       `((else ,(walk (car bodies)))))
 		   (cons (list (car types) (walk (car bodies)))
 			 (loop (cdr types) (cdr bodies)))))))
 	((##core#call) 
@@ -671,6 +718,7 @@
 		  (val1 (walk (first subs) rl))
 		  (a (gensym v))
 		  (rl2 (alist-cons v a rl)) )
+	     (put! db a 'inline-transient #t)
 	     (make-node 
 	      'let (list a)
 	      (list val1 (walk (second subs) rl2)))) ]
@@ -1630,21 +1678,20 @@ Usage: chicken FILENAME OPTION ...
     -no-bound-checks             disable bound variable checks
     -no-procedure-checks         disable procedure call checks
     -no-procedure-checks-for-usual-bindings
-                                 disable procedure call checks only for usual
-                                  bindings
+                                   disable procedure call checks only for usual
+                                   bindings
     -no-procedure-checks-for-toplevel-bindings
                                    disable procedure call checks for toplevel
-                                    bindings
+                                   bindings
     -strict-types                assume variable do not change their type
+    -clustering                  combine groups of local procedures into dispatch
+                                   loop
 
   Configuration options:
 
     -unit NAME                   compile file as a library unit
     -uses NAME                   declare library unit as used.
     -heap-size NUMBER            specifies heap-size of compiled executable
-    -heap-initial-size NUMBER    specifies heap-size at startup time
-    -heap-growth PERCENTAGE      specifies growth-rate of expanding heap
-    -heap-shrinkage PERCENTAGE   specifies shrink-rate of contracting heap
     -nursery NUMBER  -stack-size NUMBER
                                  specifies nursery size of compiled executable
     -extend FILENAME             load file before compilation commences

@@ -84,10 +84,8 @@
 	(profile-name 
 	 (and-let* ((pn (memq 'profile-name options))) (cadr pn)))
 	(hsize (memq 'heap-size options))
-	(hisize (memq 'heap-initial-size options))
-	(hgrowth (memq 'heap-growth options))
-	(hshrink (memq 'heap-shrinkage options))
 	(kwstyle (memq 'keyword-style options))
+        (loop/dispatch (memq 'clustering options))
 	(uses-units '())
 	(uunit (memq 'unit options))
 	(a-only (memq 'analyze-only options))
@@ -341,20 +339,11 @@
     (when (memq 'compile-syntax options)
       (set! ##sys#enable-runtime-macros #t) )
     (set! target-heap-size
-      (if hsize
-	  (arg-val (option-arg hsize))
-	  (and-let* ([hsize default-default-target-heap-size]
-		     [(not (zero? hsize))] )
-	    hsize) ) )
-    (set! target-initial-heap-size (and hisize (arg-val (option-arg hisize))))
-    (set! target-heap-growth (and hgrowth (arg-val (option-arg hgrowth))))
-    (set! target-heap-shrinkage (and hshrink (arg-val (option-arg hshrink))))
+      (and hsize
+	   (arg-val (option-arg hsize))))
     (set! target-stack-size
-      (if ssize
-	  (arg-val (option-arg ssize))
-	  (and-let* ([ssize default-default-target-stack-size]
-		     [(not (zero? ssize))] )
-	    ssize) ) )
+      (and ssize
+	   (arg-val (option-arg ssize))))
     (set! emit-trace-info (not (memq 'no-trace options)))
     (set! disable-stack-overflow-checking (memq 'disable-stack-overflow-checks options))
     (set! bootstrap-mode (feature? #:chicken-bootstrap))
@@ -483,11 +472,14 @@
 			     '() )
 			 '((##core#undefined))) ] )
 
-	     (when (and (pair? compiler-syntax-statistics)
-			(debugging 'S "applied compiler syntax:"))
-	       (for-each 
-		(lambda (cs) (printf "  ~a\t\t~a~%" (car cs) (cdr cs)))
-		compiler-syntax-statistics))
+	     (when (pair? compiler-syntax-statistics)
+	       (with-debugging-output
+		'S
+		(lambda ()
+		  (print "applied compiler syntax:")
+		  (for-each 
+		   (lambda (cs) (printf "  ~a\t\t~a~%" (car cs) (cdr cs)))
+		   compiler-syntax-statistics))))
    	     (when (debugging '|N| "real name table:")
 	       (display-real-name-table) )
 	     (when (debugging 'n "line number database:")
@@ -582,8 +574,11 @@
 		 (print-node "cps" '|3| node1)
 
 		 ;; Optimization loop:
-		 (let loop ([i 1] [node2 node1] [progress #t])
-
+		 (let loop ((i 1)
+			    (node2 node1)
+			    (progress #t)
+			    (l/d #f)
+			    (l/d-done #f))
 		   (begin-time)
 		   (let ([db (analyze 'opt node2 i progress)])
 		     (when first-analysis
@@ -601,29 +596,42 @@
 		     (end-time "analysis")
 		     (print-db "analysis" '|4| db i)
 
-		     (when (memq 's debugging-chicken) (print-program-statistics db))
+		     (when (memq 's debugging-chicken) 
+		       (print-program-statistics db))
 
 		     (cond (progress
 			    (debugging 'p "optimization pass" i)
 			    (begin-time)
 			    (receive (node2 progress-flag)
-				(perform-high-level-optimizations node2 db)
+				(if l/d
+				    (determine-loop-and-dispatch node2 db)
+				    (perform-high-level-optimizations node2 db))
 			      (end-time "optimization")
 			      (print-node "optimized-iteration" '|5| node2)
-			      (cond [progress-flag (loop (add1 i) node2 #t)]
-				    [(not inline-substitutions-enabled)
-				     (debugging 'p "rewritings enabled...")
+			      (cond (progress-flag
+				     (loop (add1 i) node2 #t #f l/d))
+				    ((and (not l/d-done) loop/dispatch)
+				     (debugging 'p "clustering enabled")
+				     (loop (add1 i) node2 #t #t #t))
+				    ((not inline-substitutions-enabled)
+				     (debugging 'p "rewritings enabled")
 				     (set! inline-substitutions-enabled #t)
-				     (loop (add1 i) node2 #t) ]
-				    [optimize-leaf-routines
+				     (loop (add1 i) node2 #t #f l/d-done) )
+				    (optimize-leaf-routines
 				     (begin-time)
 				     (let ([db (analyze 'leaf node2)])
 				       (end-time "analysis")
 				       (begin-time)
-				       (let ([progress (transform-direct-lambdas! node2 db)])
+				       (let ((progress
+					      (transform-direct-lambdas! node2 db)))
 					 (end-time "leaf routine optimization")
-					 (loop (add1 i) node2 progress) ) ) ]
-				    [else (loop (add1 i) node2 #f)] ) ) )
+					 (loop (add1 i) 
+					       node2
+					       progress
+					       #f
+					       l/d-done) ) ) )
+				    (else
+				     (loop (add1 i) node2 #f #f l/d-done)) ) ) )
 			   
 			   (else
 			    (print-node "optimized" '|7| node2)
@@ -657,7 +665,8 @@
 			     (let ((out (if outfile (open-output-file outfile) (current-output-port))) )
 			       (dribble "generating `~A' ..." outfile)
 			       (generate-code literals lliterals lambdas out filename dynamic db)
-			       (when outfile (close-output-port out)))
+			       (when outfile
+				 (close-output-port out)))
 			     (end-time "code generation")
 			     (when (memq 't debugging-chicken)
 			       (##sys#display-times (##sys#stop-timer)))

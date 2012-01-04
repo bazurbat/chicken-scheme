@@ -223,7 +223,6 @@ readdir(DIR * dir)
 #define open_text_output_pipe(a, n, name)    open_binary_output_pipe(a, n, name)
 #define close_pipe(p)			     C_fix(_pclose(C_port_file(p)))
 
-#define C_getpid	    getpid
 #define C_chmod(fn, m)	    C_fix(chmod(C_data_pointer(fn), C_unfix(m)))
 #define C_setvbuf(p, m, s)  C_fix(setvbuf(C_port_file(p), NULL, C_unfix(m), C_unfix(s)))
 #define C_test_access(fn, m)	    C_fix(access((char *)C_data_pointer(fn), C_unfix(m)))
@@ -1083,15 +1082,8 @@ EOF
     (##sys#signal-hook #:file-error 'create-directory
 		       "cannot create directory" name)))
 
-(define-inline (create-directory-check name)
-  (if (file-exists? name)
-      (let ((i   (##sys#file-info name)))
-	(and i
-	     (fx= 1 (##sys#slot i 4))))
-      #f))
-
 (define-inline (create-directory-helper-silent name)
-  (unless (create-directory-check name)
+  (unless (##sys#file-exists? name #f #t #f)
     (create-directory-helper name)))
 
 (define-inline (create-directory-helper-parents name)
@@ -1157,13 +1149,20 @@ EOF
 	   (else (badmode m)) ) ) ) ) )
   (set! close-input-pipe
     (lambda (port)
-      (##sys#check-port port 'close-input-pipe)
+      (##sys#check-input-port port #t 'close-input-pipe)
       (let ((r (##core#inline "close_pipe" port)))
 	(##sys#update-errno)
 	(when (eq? -1 r)
 	  (##sys#signal-hook #:file-error 'close-input-pipe "error while closing pipe" port) )
 	r)))
-  (set! close-output-pipe close-input-pipe) )
+  (set! close-output-pipe
+    (lambda (port)
+      (##sys#check-output-port port #t 'close-output-pipe)
+      (let ((r (##core#inline "close_pipe" port)))
+	(##sys#update-errno)
+	(when (eq? -1 r)
+	  (##sys#signal-hook #:file-error 'close-output-pipe "error while closing pipe" port) )
+	r))))
 
 (define call-with-input-pipe
   (lambda (cmd proc . mode)
@@ -1185,27 +1184,23 @@ EOF
 
 (define with-input-from-pipe
   (lambda (cmd thunk . mode)
-    (let ([old ##sys#standard-input]
-	  [p (apply open-input-pipe cmd mode)] )
-      (set! ##sys#standard-input p)
-      (##sys#call-with-values
-       thunk
-       (lambda results
-	 (close-input-pipe p)
-	 (set! ##sys#standard-input old)
-	 (apply values results) ) ) ) ) )
+    (let ([p (apply open-input-pipe cmd mode)])
+      (fluid-let ((##sys#standard-input p))
+	(##sys#call-with-values
+	 thunk
+	 (lambda results
+	   (close-input-pipe p)
+	   (apply values results) ) ) ) ) ) )
 
 (define with-output-to-pipe
   (lambda (cmd thunk . mode)
-    (let ([old ##sys#standard-output]
-	  [p (apply open-output-pipe cmd mode)] )
-      (set! ##sys#standard-output p)
-      (##sys#call-with-values
-       thunk
-       (lambda results
-	 (close-output-pipe p)
-	 (set! ##sys#standard-output old)
-	 (apply values results) ) ) ) ) )
+    (let ([p (apply open-output-pipe cmd mode)])
+      (fluid-let ((##sys#standard-output p))
+	(##sys#call-with-values
+	 thunk
+	 (lambda results
+	   (close-output-pipe p)
+	   (apply values results) ) ) ) ) ) )
 
 
 ;;; Pipe primitive:
@@ -1263,25 +1258,6 @@ EOF
     signal/term signal/int signal/fpe signal/ill
     signal/segv signal/abrt signal/break))
 
-(let ([oldhook ##sys#interrupt-hook]
-      [sigvector (make-vector 256 #f)] )
-  (set! signal-handler
-    (lambda (sig)
-      (##sys#check-exact sig 'signal-handler)
-      (##sys#slot sigvector sig) ) )
-  (set! set-signal-handler!
-    (lambda (sig proc)
-      (##sys#check-exact sig 'set-signal-handler!)
-      (##core#inline "C_establish_signal_handler" sig (and proc sig))
-      (vector-set! sigvector sig proc) ) )
-  (set! ##sys#interrupt-hook
-    (lambda (reason state)
-      (let ([h (##sys#slot sigvector reason)])
-	(if h
-	    (begin
-	      (h reason)
-	      (##sys#context-switch state) )
-	    (oldhook reason state) ) ) ) ) )
 
 ;;; More errno codes:
 
@@ -1390,7 +1366,7 @@ EOF
 
 (define port->fileno
   (lambda (port)
-    (##sys#check-port port 'port->fileno)
+    (##sys#check-open-port port 'port->fileno)
     (if (not (zero? (##sys#peek-unsigned-integer port 0)))
 	(let ([fd (##core#inline "C_C_fileno" port)])
 	  (when (fx< fd 0)
@@ -1456,7 +1432,7 @@ EOF
       (ex0 (if (pair? code) (car code) 0)) ) ) )
 
 (define (terminal-port? port)
-  (##sys#check-port* port 'terminal-port?)
+  (##sys#check-open-port port 'terminal-port?)
   (let ([fp (##sys#peek-unsigned-integer port 0)])
     (and (not (eq? 0 fp)) (##core#inline "C_tty_portp" port) ) ) )
 
@@ -1472,7 +1448,7 @@ EOF
 
 (define set-buffering-mode!
   (lambda (port mode . size)
-    (##sys#check-port port 'set-buffering-mode!)
+    (##sys#check-open-port port 'set-buffering-mode!)
     (let ([size (if (pair? size) (car size) _bufsiz)]
 	  [mode (case mode
 		  [(###full) _iofbf]
@@ -1568,8 +1544,6 @@ EOF
   (let ([prg ($exec-setup 'process-spawn filename arglst envlst exactf)])
     ($exec-teardown 'process-spawn "cannot spawn process" filename
       (if envlst (##core#inline "C_spawnvpe" mode prg) (##core#inline "C_spawnvp" mode prg))) ) )
-
-(define current-process-id (foreign-lambda int "C_getpid"))
 
 (define-foreign-variable _shlcmd c-string "C_shlcmd")
 
@@ -1670,21 +1644,7 @@ EOF
     (values pid #t _exstatus)
     (values -1 #f #f) ) )
 
-(define process-wait
-  (lambda (pid . args)
-    (let-optionals* args ([nohang #f])
-      (##sys#check-exact pid 'process-wait)
-      (receive [epid enorm ecode] (##sys#process-wait pid nohang)
-	(if (fx= epid -1)
-	  (begin
-	    (##sys#update-errno)
-	    (##sys#signal-hook #:process-error 'process-wait "waiting for child process failed" pid) )
-	  (values epid enorm ecode) ) ) ) ) )
-
-(define sleep
-  (lambda (t)
-    (##core#inline "C_sleep" t)
-    0) )
+(define sleep (foreign-lambda int "C_sleep" int))
 
 (define-foreign-variable _hostname c-string "C_hostname")
 (define-foreign-variable _osver c-string "C_osver")

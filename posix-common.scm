@@ -274,7 +274,7 @@ EOF
 
 (define port->fileno
   (lambda (port)
-    (##sys#check-port port 'port->fileno)
+    (##sys#check-open-port port 'port->fileno)
     (cond [(eq? 'socket (##sys#slot port 7)) (##sys#tcp-port->fileno port)]
           [(not (zero? (##sys#peek-unsigned-integer port 0)))
            (let ([fd (##core#inline "C_C_fileno" port)])
@@ -417,24 +417,13 @@ EOF
 		    ((pproc f) (loop rest (action f r)))
 		    (else (loop rest r)) ) ) ) ) ) ) )
 
-(define (find-files dir . args)
-  (cond ((or (null? args) (not (keyword? (car args))))
-	 ;; old signature - DEPRECATED
-	 (let-optionals args ((pred (lambda _ #t))
-			      (action (lambda (x y) (cons x y))) ; we want `cons' inlined
-			      (id '())
-			      (limit #f) )
-	   (##sys#find-files dir pred action id limit #t #f 'find-files)))
-	(else
-	 (apply 
-	  (lambda (#!key (test (lambda _ #t))
-			 (action (lambda (x y) (cons x y))) ; s.a.
-			 (seed '())
-			 (limit #f)
-			 (dotfiles #f)
-			 (follow-symlinks #t))
-	    (##sys#find-files dir test action seed limit follow-symlinks dotfiles 'find-files))
-	  args))))
+(define (find-files dir #!key (test (lambda _ #t))
+			      (action (lambda (x y) (cons x y)))
+                              (seed '())
+                              (limit #f)
+                              (dotfiles #f)
+                              (follow-symlinks #f))
+  (##sys#find-files dir test action seed limit follow-symlinks dotfiles 'find-files))
 
 
 ;;; umask
@@ -498,3 +487,32 @@ EOF
                 (##sys#substring str 0 (fx- (##sys#size str) 1))
                 (##sys#error 'time->string "cannot convert time vector to string" tm) ) ) ) ) ) )
 
+
+;;; Signals
+
+(define (set-signal-handler! sig proc)
+  (##sys#check-exact sig 'set-signal-handler!)
+  (##core#inline "C_establish_signal_handler" sig (and proc sig))
+  (vector-set! ##sys#signal-vector sig proc) )
+
+(define signal-handler
+  (getter-with-setter
+   (lambda (sig)
+     (##sys#check-exact sig 'signal-handler)
+     (##sys#slot ##sys#signal-vector sig) )
+   set-signal-handler!))
+
+
+;;; Processes
+
+(define current-process-id (foreign-lambda int "C_getpid"))
+
+(define process-wait
+  (lambda args
+    (let-optionals* args ([pid #f] [nohang #f])
+      (let ([pid (or pid -1)])
+        (##sys#check-exact pid 'process-wait)
+        (receive [epid enorm ecode] (##sys#process-wait pid nohang)
+          (if (fx= epid -1)
+              (posix-error #:process-error 'process-wait "waiting for child process failed" pid)
+              (values epid enorm ecode) ) ) ) ) ) )

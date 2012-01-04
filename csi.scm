@@ -31,6 +31,8 @@
   (disable-interrupts)
   (compile-syntax)
   (foreign-declare #<<EOF
+#include <signal.h>
+
 #if defined(HAVE_DIRECT_H)
 # include <direct.h>
 #else
@@ -904,6 +906,20 @@ EOF
 		      (##sys#slot data 3))	; v
 		     (fail (##sys#string-append "no such variable: " name)))))))
 	    (##sys#void))))))
+
+
+;;; Handle some signals:
+
+(define-foreign-variable _sigint int "SIGINT")
+
+(define-syntax defhandler 
+  (syntax-rules ()
+    ((_ sig handler)
+     (begin
+       (##core#inline "C_establish_signal_handler" sig sig)
+       (##sys#setslot ##sys#signal-vector sig handler)))))
+
+(defhandler _sigint (lambda (n) (##sys#user-interrupt-hook)))
 
 
 ;;; Start interpreting:

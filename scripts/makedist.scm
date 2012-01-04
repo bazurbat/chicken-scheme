@@ -1,15 +1,10 @@
 ;;;; makedist.scm - Make distribution tarballs
 
 
-(use srfi-69 irregex)
+(use srfi-69 irregex srfi-1 setup-api)
 
 (define *release* #f)
-
-(load-relative "tools.scm")
-
 (define *help* #f)
-
-(set! *verbose* #t)
 
 (define BUILDVERSION (with-input-from-file "buildversion" read))
 
@@ -19,7 +14,7 @@
 	  (else
 	   (case (build-platform)
 	     ((mingw32) 
-	      (if (string=? (get-environment-variable "MSYSTEM") "MINGW32")
+	      (if (equal? (get-environment-variable "MSYSTEM") "MINGW32")
 		  "mingw-msys"
 		  "mingw32"))
 	     ((msvc) "msvc")
@@ -30,6 +25,22 @@
 	((string=? "mingw32" *platform*) "mingw32-make")
 	(else "make")))
 
+(define (prefix dir . files)
+  (if (null? files)
+      (pathname-directory dir)
+      (let ((files2 (map (cut make-pathname dir <>) (normalize files))))
+	(if (or (pair? (cdr files)) (pair? (car files)))
+	    files2
+	    (car files2) ) ) ) )
+
+(define (normalize fs)
+  (delete-duplicates
+   (map ->string
+	(if (pair? fs)
+	    (flatten fs)
+	    (list fs) ) )
+   equal?) )
+
 (define (release full?)
   (let* ((files (read-lines "distribution/manifest"))
 	 (distname (conc "chicken-" BUILDVERSION)) 
@@ -39,7 +50,7 @@
     (create-directory distname)
     (for-each
      (lambda (d)
-       (let ((d (path distname d)))
+       (let ((d (make-pathname distname d)))
 	 (unless (file-exists? d)
 	   (print "creating " d)
 	   (create-directory d 'with-parents))))
@@ -47,8 +58,8 @@
     (let ((missing '()))
       (for-each
        (lambda (f)
-	 (if (-e f)
-	     (run (cp -p ,(qs f) ,(qs (path distname f))))
+	 (if (file-exists? f)
+	     (run (cp -p ,(qs f) ,(qs (make-pathname distname f))))
 	     (set! f (cons f missing))))
        files)
       (unless (null? missing)
@@ -56,16 +67,27 @@
     (run (tar cfz ,(conc distname ".tar.gz") ,distname))
     (run (rm -fr ,distname)) ) )
 
-(define (usage . _)
-  (print "usage: makedist [--release] [--make=PROGRAM] [--platform=PLATFORM] MAKEOPTION ...")
-  (exit 1))
+(define (usage)
+  (print "usage: makedist [-release] [-make PROGRAM] [--platform=PLATFORM] MAKEOPTION ...")
+  (exit))
 
 (define *makeargs*
-  (simple-args
-   (command-line-arguments)
-   usage))
-
-(when *help* (usage))
+  (let loop ((args (command-line-arguments)))
+    (if (null? args)
+	'()
+	(let ((arg (car args)))
+	  (cond ((string=? "-release" arg) 
+		 (set! *release* #t)
+		 (loop (cdr args)))
+		((string=? "-make" arg)
+		 (set! *make* (cadr args))
+		 (loop (cddr args)))
+		((string=? "-help" arg)
+		 (usage))
+		((string=? "-platform" arg)
+		 (set! *platform* (cadr args))
+		 (loop (cddr args)))
+		(else (cons arg (loop (cdr args)))))))))
 
 (run (,*make* -f ,(conc "Makefile." *platform*) distfiles ,@*makeargs*))
 
