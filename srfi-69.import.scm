@@ -49,6 +49,7 @@
    hash-table-merge
    hash-table-merge!
    hash-table-min-load
+   hash-table-randomization
    hash-table-ref
    hash-table-ref/default
    hash-table-remove!
