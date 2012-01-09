@@ -2468,8 +2468,6 @@
 (hash-table-hash-function (#(procedure #:clean #:enforce) hash-table-hash-function ((struct hash-table)) (procedure (* fixnum) fixnum))
 			  (((struct hash-table)) (##sys#slot #(1) '4)))
 
-(hash-table-randomization (#(procedure #:clean #:enforce) hash-table-randomization ((struct hash-table)) fixnum)
-                          (((struct hash-table)) (##sys#slot #(1) '10)))
 (hash-table-initial (#(procedure #:clean #:enforce) hash-table-initial ((struct hash-table)) *))
 (hash-table-keys (#(procedure #:clean #:enforce) hash-table-keys ((struct hash-table)) list))
 (hash-table-map (#(procedure #:clean #:enforce) hash-table-map ((struct hash-table) (procedure (* *) *)) list))
