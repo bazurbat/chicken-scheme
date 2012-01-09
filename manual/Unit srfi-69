@@ -13,7 +13,7 @@ CHICKEN implements SRFI 69 with SRFI 90 extensions. For more information, see
 
 ==== make-hash-table
 
-<procedure>(make-hash-table [TEST HASH SIZE] [#:test TEST] [#:hash HASH] [#:size SIZE] [#:initial INITIAL] [#:randomization RANDOMIZATION] [#:min-load MIN-LOAD] [#:max-load MAX-LOAD] [#:weak-keys WEAK-KEYS] [#:weak-values WEAK-VALUES])</procedure>
+<procedure>(make-hash-table [TEST HASH SIZE] [#:test TEST] [#:hash HASH] [#:size SIZE] [#:initial INITIAL] [#:min-load MIN-LOAD] [#:max-load MAX-LOAD] [#:weak-keys WEAK-KEYS] [#:weak-values WEAK-VALUES])</procedure>
 
 Returns a new {{HASH-TABLE}} with the supplied configuration.
 
@@ -21,7 +21,6 @@ Returns a new {{HASH-TABLE}} with the supplied configuration.
 ; {{HASH}} : The hash function.
 ; {{SIZE}} : The expected number of table elements.
 ; {{INITIAL}} : The default initial value.
-; {{RANDOMIZATION}} : A value for perturbing hash values.  Should never be a fixed value!
 ; {{MIN-LOAD}} : The minimum load factor. A {{flonum}} in (0.0 1.0).
 ; {{MAX-LOAD}} : The maximum load factor. A {{flonum}} in (0.0 1.0).
 ; {{WEAK-KEYS}} : Use weak references for keys. (Ignored)
@@ -30,7 +29,7 @@ Returns a new {{HASH-TABLE}} with the supplied configuration.
 
 ==== alist->hash-table
 
-<procedure>(alist->hash-table A-LIST [#:test TEST] [#:hash HASH] [#:size SIZE] [#:initial INITIAL] [#:randomization RANDOMIZATION] [#:min-load MIN-LOAD] [#:max-load MAX-LOAD] [#:weak-keys WEAK-KEYS] [#:weak-values WEAK-VALUES])</procedure>
+<procedure>(alist->hash-table A-LIST [#:test TEST] [#:hash HASH] [#:size SIZE] [#:initial INITIAL] [#:min-load MIN-LOAD] [#:max-load MAX-LOAD] [#:weak-keys WEAK-KEYS] [#:weak-values WEAK-VALUES])</procedure>
 
 Returns a new {{HASH-TABLE}}. The {{HASH-TABLE}} is populated from the
 {{A-LIST}}. The keyword arguments are per {{make-hash-table}}.
@@ -104,13 +103,6 @@ Does the {{HASH-TABLE}} have a default initial value?
 <procedure>(hash-table-initial HASH-TABLE)</procedure>
 
 The {{HASH-TABLE}} default initial value.
-
-==== hash-table-randomization
-
-<procedure>(hash-table-randomization HASH-TABLE)</procedure>
-
-The randomization number for {{HASH-TABLE}}.  Make sure you never
-expose this to a potential attacker.
 
 
 ==== hash-table-keys

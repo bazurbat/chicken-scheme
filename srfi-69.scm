@@ -409,22 +409,41 @@
 	  cur
 	  (loop nxt) ) ) ) )
 
+(define (*make-hash-function user-function)
+  (if (memq user-function (list eq?-hash eqv?-hash equal?-hash hash
+				string-hash string-hash-ci number-hash))
+      (let ((randomization (##core#inline "C_random_fixnum" most-positive-fixnum)))
+       (lambda (object bound)
+	 ;; Don't add unneccessary bounds checks for procedures known to be
+	 ;; well-behaved (these are not user-*created* functions)
+	 (user-function object bound randomization)))
+      (lambda (object bound)
+	(let ((hash (user-function object bound)))
+	  (##sys#check-exact hash 'hash user-function)
+	  (if (and (fx< hash bound) (fx>= hash 0))
+	      hash
+	      (##sys#signal-hook 
+	       #:bounds-error 'hash
+	       "Hash value out of bounds" bound hash user-function) )))))
+
 ;; "Raw" make-hash-table:
 
 (define *make-hash-table
   (let ([make-vector make-vector])
     (lambda (test hash len min-load max-load weak-keys weak-values initial
-                  randomization #!optional (vec (make-vector len '())))
-      (##sys#make-structure 'hash-table
-       vec 0 test hash min-load max-load #f #f initial randomization) ) ) )
+                  #!optional (vec (make-vector len '())))
+      (let ((ht (##sys#make-structure 'hash-table
+                 vec 0 test hash min-load max-load #f #f initial #f)))
+        (##sys#setslot ht 10 (*make-hash-function hash))
+        ht) ) ) )
 
 ;; SRFI-69 & SRFI-90'ish.
 ;;
 ;; Argument list is the pattern
 ;;
 ;; (make-hash-table #!optional test hash size
-;;		    #!key test hash size initial randomization
-;;                        min-load max-load weak-keys weak-values)
+;;		    #!key test hash size initial
+;;			  min-load max-load weak-keys weak-values)
 ;;
 ;; where a keyword argument takes precedence over the corresponding optional
 ;; argument. Keyword arguments MUST come after optional & required
@@ -445,7 +464,6 @@
 	    [hash #f]
 	    [size hash-table-default-length]
 	    [initial #f]
-            [randomization (##core#inline "C_random_fixnum" hash-default-bound)]
 	    [min-load hash-table-default-min-load]
 	    [max-load hash-table-default-max-load]
 	    [weak-keys #f]
@@ -512,9 +530,6 @@
 			    (set! size (fxmin hash-table-max-length val))]
 			  [(#:initial)
 			    (set! initial (lambda () val))]
-                          [(#:randomization)
-			    (##sys#check-exact val 'make-hash-table)
-			    (set! randomization val)]
 			  [(#:min-load)
 			    (##sys#check-inexact val 'make-hash-table)
 			    (unless (and (fp< 0.0 val) (fp< val 1.0))
@@ -547,8 +562,7 @@
 		    (warning 'make-hash-table "user test without user hash")
 		    (set! hash equal?-hash) ) ) ) )
 	  ; Done
-	  (*make-hash-table test hash size min-load max-load
-                            weak-keys weak-values initial randomization) ) ) ) ) )
+	  (*make-hash-table test hash size min-load max-load weak-keys weak-values initial) ) ) ) ) )
 
 ;; Hash-Table Predicate:
 
@@ -595,13 +609,9 @@
   (and-let* ([thunk (##sys#slot ht 9)])
     (thunk) ) )
 
-(define (hash-table-randomization ht)
-  (##sys#check-structure ht 'hash-table 'hash-table-initial)
-  (##sys#slot ht 10) )
-
 ;; hash-table-rehash!:
 
-(define (hash-table-rehash! vec1 vec2 hash rnd)
+(define (hash-table-rehash! vec1 vec2 hash)
   (let ([len1 (##sys#size vec1)]
 	[len2 (##sys#size vec2)] )
     (do ([i 0 (fx+ i 1)])
@@ -610,7 +620,7 @@
 	(unless (null? bucket)
 	  (let* ([pare (##sys#slot bucket 0)]
 		 [key (##sys#slot pare 0)]
-		 [hshidx (hash key len2 rnd)] )
+		 [hshidx (hash key len2)] )
 	    (##sys#setslot vec2 hshidx
 			   (cons (cons key (##sys#slot pare 1)) (##sys#slot vec2 hshidx)))
 	    (loop (##sys#slot bucket 1)) ) ) ) ) ) )
@@ -621,7 +631,7 @@
   (let* ([deslen (fxmin hash-table-max-length (fx* len hash-table-new-length-factor))]
          [newlen (hash-table-canonical-length hash-table-prime-lengths deslen)]
          [vec2 (make-vector newlen '())] )
-    (hash-table-rehash! vec vec2 (##sys#slot ht 4) (##sys#slot ht 10))
+    (hash-table-rehash! vec vec2 (##sys#slot ht 10))
     (##sys#setslot ht 1 vec2) ) )
 
 ;; hash-table-check-resize!:
@@ -652,8 +662,7 @@
 	      (##sys#slot ht 2)
 	      (##sys#slot ht 5) (##sys#slot ht 6)
 	      (##sys#slot ht 7) (##sys#slot ht 8)
-	      (##sys#slot ht 9) (##sys#slot ht 10)
-	      vec2)]
+	      (##sys#slot ht 9) vec2)]
 	  (##sys#setslot vec2 i
 	   (let copy-loop ([bucket (##sys#slot vec1 i)])
 	     (if (null? bucket)
@@ -688,12 +697,11 @@
       (##sys#check-closure thunk 'hash-table-update!)
       (let ([newsiz (fx+ (##sys#slot ht 2) 1)] )
 	(hash-table-check-resize! ht newsiz)
-	(let ([hash (##sys#slot ht 4)]
+	(let ([hash (##sys#slot ht 10)]
 	      [test (##sys#slot ht 3)]
-	      [vec (##sys#slot ht 1)]
-              [rnd (##sys#slot ht 10)])
+	      [vec (##sys#slot ht 1)])
 	  (let* ([len (##sys#size vec)]
-	         [hshidx (hash key len rnd)]
+	         [hshidx (hash key len)]
 	         [bucket0 (##sys#slot vec hshidx)] )
             (if (eq? core-eq? test)
                 ; Fast path (eq? is rewritten by the compiler):
@@ -728,12 +736,11 @@
     (lambda (ht key func def)
       (let ([newsiz (fx+ (##sys#slot ht 2) 1)] )
 	(hash-table-check-resize! ht newsiz)
-	(let ([hash (##sys#slot ht 4)]
+	(let ([hash (##sys#slot ht 10)]
 	      [test (##sys#slot ht 3)]
-	      [vec (##sys#slot ht 1)]
-              [rnd (##sys#slot ht 10)])
+	      [vec (##sys#slot ht 1)])
 	  (let* ([len (##sys#size vec)]
-	         [hshidx (hash key len rnd)]
+	         [hshidx (hash key len)]
 	         [bucket0 (##sys#slot vec hshidx)] )
             (if (eq? core-eq? test)
                 ; Fast path (eq? is rewritten by the compiler):
@@ -774,12 +781,11 @@
       (##sys#check-structure ht 'hash-table 'hash-table-set!)
       (let ([newsiz (fx+ (##sys#slot ht 2) 1)] )
 	(hash-table-check-resize! ht newsiz)
-	(let ([hash (##sys#slot ht 4)]
+	(let ([hash (##sys#slot ht 10)]
 	      [test (##sys#slot ht 3)]
-	      [vec (##sys#slot ht 1)]
-              [rnd (##sys#slot ht 10)])
+	      [vec (##sys#slot ht 1)])
 	  (let* ([len (##sys#size vec)]
-	         [hshidx (hash key len rnd)]
+	         [hshidx (hash key len)]
 	         [bucket0 (##sys#slot vec hshidx)] )
             (if (eq? core-eq? test)
                 ; Fast path (eq? is rewritten by the compiler):
@@ -816,10 +822,9 @@
         (##sys#check-structure ht 'hash-table 'hash-table-ref)
         (##sys#check-closure def 'hash-table-ref)
         (let  ([vec (##sys#slot ht 1)]
-	       [test (##sys#slot ht 3)]
-               [rnd (##sys#slot ht 10)])
-          (let* ([hash (##sys#slot ht 4)]
-		 [hshidx (hash key (##sys#size vec) rnd)] )
+	       [test (##sys#slot ht 3)])
+          (let* ([hash (##sys#slot ht 10)]
+		 [hshidx (hash key (##sys#size vec))] )
 	    (if (eq? core-eq? test)
 	        ; Fast path (eq? is rewritten by the compiler):
 	        (let loop ([bucket (##sys#slot vec hshidx)])
@@ -845,10 +850,9 @@
     (lambda (ht key def)
       (##sys#check-structure ht 'hash-table 'hash-table-ref/default)
       (let  ([vec (##sys#slot ht 1)]
-	     [test (##sys#slot ht 3)]
-             [rnd (##sys#slot ht 10)])
-	(let* ([hash (##sys#slot ht 4)]
-	       [hshidx (hash key (##sys#size vec) rnd)] )
+	     [test (##sys#slot ht 3)])
+	(let* ([hash (##sys#slot ht 10)]
+	       [hshidx (hash key (##sys#size vec))] )
 	   (if (eq? core-eq? test)
 	       ; Fast path (eq? is rewritten by the compiler):
 	       (let loop ([bucket (##sys#slot vec hshidx)])
@@ -872,10 +876,9 @@
     (lambda (ht key)
       (##sys#check-structure ht 'hash-table 'hash-table-exists?)
       (let  ([vec (##sys#slot ht 1)]
-	     [test (##sys#slot ht 3)]
-             [rnd (##sys#slot ht 10)])
-	(let* ([hash (##sys#slot ht 4)]
-	       [hshidx (hash key (##sys#size vec) rnd)] )
+	     [test (##sys#slot ht 3)])
+	(let* ([hash (##sys#slot ht 10)]
+	       [hshidx (hash key (##sys#size vec))] )
 	  (if (eq? core-eq? test)
 	       ; Fast path (eq? is rewritten by the compiler):
 	       (let loop ([bucket (##sys#slot vec hshidx)])
@@ -898,9 +901,8 @@
       (##sys#check-structure ht 'hash-table 'hash-table-delete!)
       (let* ([vec (##sys#slot ht 1)]
              [len (##sys#size vec)]
-             [hash (##sys#slot ht 4)]
-             [rnd (##sys#slot ht 10)]
-             [hshidx (hash key len rnd)] )
+             [hash (##sys#slot ht 10)]
+             [hshidx (hash key len)] )
         (let ([test (##sys#slot ht 3)]
               [newsiz (fx- (##sys#slot ht 2) 1)]
               [bucket0 (##sys#slot vec hshidx)] )

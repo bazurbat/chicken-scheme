@@ -38,7 +38,7 @@
 (print "HT - All Parameters")
 (set! ht (make-hash-table eqv? eqv?-hash 23
                           #:test equal? #:hash equal?-hash
-                          #:initial 'foo #:randomization 30
+                          #:initial 'foo
                           #:size 500
                           #:min-load 0.45 #:max-load 0.85
                           #:weak-keys #t #:weak-values #t))
@@ -127,6 +127,22 @@
   (assert (list? alist))
   (assert (= (length alist) 3)) )
 
+(set! ht (make-hash-table equal? (lambda (object bounds)
+                                   (case object
+                                     ((test) 0)
+                                     ((one two) 1)
+                                     (else (+ bounds 1))))))
+(print "HT - custom hash function")
+(hash-table-set! ht 'test 123)
+(hash-table-set! ht 'one 1)
+(hash-table-set! ht 'two 2)
+(assert (= 123 (hash-table-ref ht 'test)))
+(assert (= 1 (hash-table-ref ht 'one)))
+(assert (= 2 (hash-table-ref ht 'two)))
+
+(print "HT - out of bounds value is caught")
+(assert (handle-exceptions exn #t (hash-table-set! ht 'out-of-bounds 123) #f))
+
 (print "Hash collision weaknesses")
 ;; If these fail, it might be bad luck caused by the randomization/modulo combo
 ;; So don't *immediately* dismiss a hash implementation when it fails here
@@ -173,3 +189,4 @@
   (do ([i 0 (fx+ i 1)])
       [(fx= i stress-size)]
     (assert (fx= i (hash-table-ref ht i))) ) )
+
