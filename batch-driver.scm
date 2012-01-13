@@ -199,6 +199,8 @@
       (warning "obsolete compiler option: -emit-exports") )
     (when (memq 'lambda-lift options)	; OBSOLETE
       (warning "obsolete compiler option: -lambda-lift") )
+    (when (memq 'unboxing options)	; OBSOLETE
+      (warning "obsolete compiler option: -unboxing") )
     (when (memq 'raw options)
       (set! explicit-use-flag #t)
       (set! cleanup-forms '())

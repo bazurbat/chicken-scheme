@@ -140,7 +140,7 @@
     -emit-all-import-libraries -setup-mode -no-elevation -no-module-registration
     -no-procedure-checks-for-usual-bindings -module
     -specialize -strict-types -clustering
-    -lambda-lift			; OBSOLETE
+    -lambda-lift -unboxing		; OBSOLETE
     -no-procedure-checks-for-toplevel-bindings))
 
 (define-constant complex-options

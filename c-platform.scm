@@ -92,7 +92,7 @@
     no-bound-checks no-procedure-checks-for-usual-bindings no-compiler-syntax
     no-parentheses-synonyms no-symbol-escape r5rs-syntax emit-all-import-libraries
     strict-types clustering
-    lambda-lift				; OBSOLETE
+    lambda-lift unboxing		; OBSOLETE
     setup-mode no-module-registration) )
 
 (define valid-compiler-options-with-argument
