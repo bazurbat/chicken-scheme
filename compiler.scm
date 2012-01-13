@@ -360,7 +360,6 @@
 (define profile-lambda-index 0)
 (define profile-info-vector-name #f)
 (define external-to-pointer '())
-(define error-is-extended-binding #f)
 (define real-name-table #f)
 (define location-pointer-map '())
 (define pending-canonicalizations '())

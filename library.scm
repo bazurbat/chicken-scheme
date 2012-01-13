@@ -3182,6 +3182,7 @@ EOF
 		   (let ((c (##core#inline "C_subchar" str 0)))
 		     (cond ((or (eq? #\. c) (eq? #\# c) (eq? #\; c) (eq? #\, c) (eq? #\| c))
 			    #f)
+			   ((specialchar? c) #f)
 			   ((char-numeric? c) #f)
 			   (else #t))))
 		  (else

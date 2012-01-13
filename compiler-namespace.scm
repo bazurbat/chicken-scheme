@@ -113,7 +113,6 @@
  enable-specialization
  encode-literal
  eq-inline-operator
- error-is-extended-binding
  estimate-foreign-result-location-size
  estimate-foreign-result-size
  expand-debug-assignment
