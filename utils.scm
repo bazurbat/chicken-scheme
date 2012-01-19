@@ -53,7 +53,7 @@
   (let ([file (optional file ##sys#standard-input)])
     (if (port? file)
 	(read-string #f file)
-	(with-input-from-file file (cut read-string #f)) ) ) )
+	(with-input-from-file file (cut read-string #f) #:binary) ) ) )
 
 
 ;;; Quote string for shell
