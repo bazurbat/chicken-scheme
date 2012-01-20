@@ -643,8 +643,7 @@
 			(alist-cons
 			 (cons var (car flow)) 
 			 (if (or strict-variable-types
-				 ;;XXX needs to be tested more but might be worth it
-				 #;(not (get db var 'captured)))
+				 (not (get db var 'captured)))
 			     rt 
 			     '*)
 			 blist)))
@@ -1095,8 +1094,10 @@
 		(pair? t2)
 		(case (car t2)
 		  ((list-of)
-		   (and (match1 (second t1) (second t2))
-			(match1 (third t1) t2)))
+		   (let ((ct1 (canonicalize-list-of-type t1)))
+		     (if ct1
+			 (match1 ct1 t2)
+			 #t)))		; inexact match
 		  ((list)
 		   (and (match1 (second t1) (second t2))
 			(match1 (third t1)
@@ -1108,9 +1109,10 @@
 	   (and (pair? t1)
 		(case (car t1)
 		  ((list-of)
-		   (and ;(not exact)
-			(match1 (second t1) (second t2))
-			(match1 t1 (third t2))))
+		   (let ((ct2 (canonicalize-list-of-type t2)))
+		     (if ct2
+			 (match1 t1 ct2)
+			 (and (not exact) (not all)))))	; inexact mode: ok
 		  ((list)
 		   (and (match1 (second t1) (second t2))
 			(match1 (if (null? (cdr t1))
@@ -1121,15 +1123,9 @@
 	  ((and (pair? t1) (eq? 'list-of (car t1)))
 	   (or (eq? 'null t2)
 	       (and (pair? t2)
-		    (case (car t2)
-		      ((pair)
-		       (and (match1 (second t1) (second t2))
-			    (match1 t1 (third t2))))
-		      ((list)
-		       (match1 
-			(second t1) 
-			(simplify-type `(or ,@(cdr t2)))))
-		      (else #f)))))
+		    (memq (car t2) '(pair list))
+		    (let ((ct2 (canonicalize-list-of-type t2)))
+		      (and ct2 (match1 t1 ct2))))))
 	  ((and (pair? t1) (eq? 'list (car t1)))
 	   (and (pair? t2)
 		(case (car t2)
@@ -1139,23 +1135,16 @@
 			(match1 t1 (third t2))))
 		  ((list-of)
 		   (and (not exact) (not all)			
-			(match1 
-			 (simplify-type `(or ,@(cdr t1)))
-			 (second t2))))
+			(let ((ct2 (canonicalize-list-of-type t2)))
+			  (and ct2 (match1 t1 ct2)))))
 		  (else #f))))
 	  ((and (pair? t2) (eq? 'list-of (car t2)))
-	   (and (not exact)
+	   (and (not exact)		;XXX also check "all"?
 		(or (eq? 'null t1)
 		    (and (pair? t1)
-			 (case (car t1)
-			   ((pair)
-			    (and (match1 (second t1) (second t2))
-				 (match1 (third t1) t2)))
-			   ((list)
-			    (match1 
-			     (simplify-type `(or ,@(cdr t1)))
-			     (second t2)))
-			   (else #f))))))
+			 (memq (car t1) '(pair list))
+			 (let ((ct1 (canonicalize-list-of-type t1)))
+			   (and ct1 (match1 ct1 t2)))))))
 	  ((and (pair? t2) (eq? 'list (car t2)))
 	   (and (pair? t1)
 		(case (car t1)
@@ -1165,9 +1154,8 @@
 			(match1 (third t1) t2)))
 		  ((list-of)
 		   (and (not exact) (not all)
-			(match1
-			 (second t1)
-			 (simplify-type `(or ,@(cdr t2))))))
+			(let ((ct1 (canonicalize-list-of-type t1)))
+			  (and ct1 (match1 ct1 t2)))))
 		  (else #f))))
 	  ((and (pair? t1) (eq? 'vector (car t1)))
 	   (and (not exact) (not all)
@@ -1303,16 +1291,9 @@
 			 (tcdr (simplify (third t))))
 		     (if (and (eq? '* tcar) (eq? '* tcdr))
 			 'pair
-			 (let rec ((tr tcdr) (ts (list tcar)))
-			   (cond ((eq? 'null tr)
-				  `(list-of ,(simplify `(or ,@ts))))
-				 ((and (pair? tr) (eq? 'pair (first tr)))
-				  (rec (third tr) (cons (second tr) ts)))
-				 ((and (pair? tr) (eq? 'list (first tr)))
-				  `(list-of ,(simplify `(or ,@ts ,@(cdr tr)))))
-				 ((and (pair? tr) (eq? 'list-of (first tr)))
-				  `(list-of ,(simplify-type `(or ,@(reverse ts) ,@(cdr tr)))))
-				 (else `(pair ,tcar ,tcdr)))))))
+			 (let ((t `(pair ,tcar ,tcdr)))
+			   (or (canonicalize-list-of-type t)
+			       t)))))
 		  ((vector-of)
 		   (let ((t2 (simplify (second t))))
 		     (if (eq? t2 '*)
@@ -2111,6 +2092,33 @@
 		   (else (fail spec)))))
 	      (fail spec)))
 	specs)))
+
+
+;;; Canonicalize complex pair/list type for matching with "list-of"
+;
+; - returns #f if not possibly matchable with "list-of"
+
+(define (canonicalize-list-of-type t)
+  (cond ((not (pair? t)) t)
+	((eq? 'pair (car t))
+	 (let ((tcar (second t))
+	       (tcdr (third t)))
+	   (let rec ((tr tcdr) (ts (list tcar)))
+	     (cond ((eq? 'null tr)
+		    `(list-of ,(simplify-type `(or ,@ts))))
+		   ((eq? 'list tr) tr)
+		   ((and (pair? tr) (eq? 'pair (first tr)))
+		    (rec (third tr) (cons (second tr) ts)))
+		   ((and (pair? tr) (eq? 'list (first tr)))
+		    `(list-of ,(simplify-type `(or ,@ts ,@(cdr tr)))))
+		   ((and (pair? tr) (eq? 'list-of (first tr)))
+		    `(list-of 
+		      ,(simplify-type
+			`(or ,@(reverse ts) ,@(cdr tr)))))
+		   (else #f)))))
+	((eq? 'list (car t)) 
+	 `(list-of ,(simplify-type `(or ,@(cdr t)))))
+	(else t)))
 
 
 ;;; hardcoded result types for certain primitives

@@ -42,6 +42,7 @@
  build-node-graph
  c-ify-string
  callback-names
+ canonicalize-list-of-type
  canonicalize-begin-body
  canonicalize-expression
  check-and-open-input-file

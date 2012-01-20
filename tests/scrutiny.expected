@@ -45,6 +45,12 @@ Warning: at toplevel:
 Warning: at toplevel:
   in procedure call to `g89', expected a value of type `(procedure () *)', but was given a value of type `fixnum'
 
+Note: in toplevel procedure `foo':
+  expected value of type boolean in conditional but were given a value of type
+  `(procedure bar29 () *)' which is always true:
+
+(if bar29 3 (##core#undefined))
+
 Warning: in toplevel procedure `foo2':
   scrutiny-tests.scm:57: in procedure call to `string-append', expected argument #1 of type `string', but was given an argument of type `number'
 
