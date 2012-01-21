@@ -1409,15 +1409,15 @@
     (cond [(not rn) (##sys#symbol->qualified-string var)]
 	  [(pair? db)
 	   (let ([db (car db)])
-	     (let loop ([prev (##sys#symbol->qualified-string rn)] 
+	     (let loop ([nesting (list (##sys#symbol->qualified-string rn))] 
 			[container (get db var 'contained-in)] )
 	       (if container
 		   (let ([rc (resolve container)])
 		     (if (eq? rc container)
-			 prev
-			 (loop (sprintf "~A in ~A" prev rc)
+			 (string-intersperse (reverse nesting) " in ")
+			 (loop (cons (symbol->string rc) nesting)
 			       (get db container 'contained-in) ) ) )
-		   prev) ) ) ]
+		   (string-intersperse (reverse nesting) " in ")) ) ) ]
 	  [else (##sys#symbol->qualified-string rn)] ) ) )
 
 (define (real-name2 var db)
