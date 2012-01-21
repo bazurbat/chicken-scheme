@@ -217,6 +217,15 @@
 	  LLVM version of gcc and with "clang", the LLVM-based C compiler,
 	  just set C_COMPILER to "llvm-gcc" or "clang".
 
+	PROFILE_OBJECTS=
+	  This variable allows you to profile (parts of) Chicken itself.
+	  Just pass in a whitespace-separated list of objects, without
+	  the .scm-extension.  (An "object" here is an individual
+	  .scm-file which gets compiled to a .c-file)
+	  To build with profiling support, run "make spotless" first.
+	  Be warned that this is a highly experimental option and
+	  profiling doesn't work for every component of Chicken.
+
     2.5. Uninstalling Chicken
 
         To remove CHICKEN from your file-system, enter (probably as

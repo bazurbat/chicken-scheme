@@ -494,7 +494,11 @@ endef
 $(foreach lib, $(SETUP_API_OBJECTS_1),\
           $(eval $(call declare-emitted-import-lib-dependency,$(lib))))
 
-bootstrap-lib = $(CHICKEN) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
+define profile-flags
+$(if $(filter $(basename $(1)),$(PROFILE_OBJECTS)),-profile)
+endef
+
+bootstrap-lib = $(CHICKEN) $(call profile-flags, $@) $< $(CHICKEN_LIBRARY_OPTIONS) -output-file $@
 
 library.c: $(SRCDIR)library.scm $(SRCDIR)banner.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
