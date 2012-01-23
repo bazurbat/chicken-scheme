@@ -1398,6 +1398,9 @@
 (define (set-real-name! name rname)
   (##sys#hash-table-set! real-name-table name rname) )
 
+;; Arbitrary limit to prevent runoff into exponential behavior
+(define real-name-max-depth 20)
+
 (define (real-name var . db)
   (define (resolve n)
     (let ([n2 (##sys#hash-table-ref real-name-table n)])
@@ -1409,15 +1412,20 @@
     (cond [(not rn) (##sys#symbol->qualified-string var)]
 	  [(pair? db)
 	   (let ([db (car db)])
-	     (let loop ([nesting (list (##sys#symbol->qualified-string rn))] 
+	     (let loop ([nesting (list (##sys#symbol->qualified-string rn))]
+                        [depth 0]
 			[container (get db var 'contained-in)] )
-	       (if container
-		   (let ([rc (resolve container)])
-		     (if (eq? rc container)
-			 (string-intersperse (reverse nesting) " in ")
-			 (loop (cons (symbol->string rc) nesting)
-			       (get db container 'contained-in) ) ) )
-		   (string-intersperse (reverse nesting) " in ")) ) ) ]
+	       (cond
+                ((> depth real-name-max-depth)
+                 (string-intersperse (reverse (cons "..." nesting)) " in "))
+                (container
+                 (let ([rc (resolve container)])
+                   (if (eq? rc container)
+                       (string-intersperse (reverse nesting) " in ")
+                       (loop (cons (symbol->string rc) nesting)
+                             (fx+ depth 1)
+                             (get db container 'contained-in) ) ) ))
+                (else (string-intersperse (reverse nesting) " in "))) ) ) ]
 	  [else (##sys#symbol->qualified-string rn)] ) ) )
 
 (define (real-name2 var db)
