@@ -127,6 +127,14 @@
   (assert (list? alist))
   (assert (= (length alist) 3)) )
 
+(print "HT - Built-in string hash function")
+(set! ht (make-hash-table string=?))
+(hash-table-set! ht "test" 123)
+(hash-table-set! ht "one" 1)
+(assert (= 123 (hash-table-ref ht "test")))
+(assert (= 1 (hash-table-ref ht "one")))
+
+
 (set! ht (make-hash-table equal? (lambda (object bounds)
                                    (case object
                                      ((test) 0)

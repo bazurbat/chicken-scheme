@@ -412,11 +412,15 @@
 (define (*make-hash-function user-function)
   (if (memq user-function (list eq?-hash eqv?-hash equal?-hash hash
 				string-hash string-hash-ci number-hash))
+      ;; Don't add unneccessary bounds checks for procedures known to be
+      ;; well-behaved (these are not user-*created* functions)
       (let ((randomization (##core#inline "C_random_fixnum" most-positive-fixnum)))
-       (lambda (object bound)
-	 ;; Don't add unneccessary bounds checks for procedures known to be
-	 ;; well-behaved (these are not user-*created* functions)
-	 (user-function object bound randomization)))
+        (if (memq user-function (list string-hash string-hash-ci))
+            ;; String functions have differing signatures; treat them specially
+            (lambda (object bound)
+              (user-function object bound #f #f randomization))
+            (lambda (object bound)
+              (user-function object bound randomization))))
       (lambda (object bound)
 	(let ((hash (user-function object bound)))
 	  (##sys#check-exact hash 'hash user-function)
