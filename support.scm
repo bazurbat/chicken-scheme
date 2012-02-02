@@ -152,6 +152,12 @@
 	  [(eq? x (car lst)) i]
 	  [else (loop (cdr lst) (add1 i))] ) ) )
 
+(define (posv x lst)
+  (let loop ([lst lst] [i 0])
+    (cond [(null? lst) #f]
+	  [(eqv? x (car lst)) i]
+	  [else (loop (cdr lst) (add1 i))] ) ) )
+
 (define (stringify x)
   (cond ((string? x) x)
 	((symbol? x) (symbol->string x))

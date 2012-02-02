@@ -2473,7 +2473,9 @@
   
 (define (prepare-for-code-generation node db)
   (let ((literals '())
+        (literal-count 0)
 	(lambda-info-literals '())
+        (lambda-info-literal-count 0)
         (lambdas '())
         (temporaries 0)
 	(ubtemporaries '())
@@ -2731,31 +2733,30 @@
 
     (define (literal x)
       (cond [(immediate? x) (immediate-literal x)]
-	    [(number? x)
-	     (or (and (inexact? x) 
-		      (list-index (lambda (y) (and (number? y) (inexact? y) (= x y)))
-				  literals) )
-		 (new-literal x)) ]
-	    ((##core#inline "C_lambdainfop" x)
-	     (let ((i (length lambda-info-literals)))
-	       (set! lambda-info-literals 
-		 (append lambda-info-literals (list x))) ;XXX see below
+            ;; Fixnums that don't fit in 32 bits are treated as non-immediates,
+            ;; that's why we do the (apparently redundant) C_blockp check here.
+	    ((and (##core#inline "C_blockp" x) (##core#inline "C_lambdainfop" x))
+	     (let ((i lambda-info-literal-count))
+	       (set! lambda-info-literals (cons x lambda-info-literals))
+               (set! lambda-info-literal-count (add1 lambda-info-literal-count))
 	       (vector i) ) )
-            [(posq x literals) => identity]
+            [(posv x literals) => (lambda (p) (fx- literal-count (fx+ p 1)))]
 	    [else (new-literal x)] ) )
 
     (define (new-literal x)
-      (let ([i (length literals)])
-	(set! literals (append literals (list x))) ;XXX could (should) be optimized
+      (let ([i literal-count])
+	(set! literals (cons x literals))
+        (set! literal-count (add1 literal-count))
 	i) )
 
     (define (blockvar-literal var)
-      (or (list-index
-	   (lambda (lit) 
-	     (and (block-variable-literal? lit)
-		  (eq? var (block-variable-literal-name lit)) ) )
-	   literals)
-	  (new-literal (make-block-variable-literal var)) ) )
+      (cond
+       ((list-index (lambda (lit) 
+                      (and (block-variable-literal? lit)
+                           (eq? var (block-variable-literal-name lit)) ) )
+                    literals)
+        => (lambda (p) (fx- literal-count (fx+ p 1))))
+       (else (new-literal (make-block-variable-literal var))) ) )
     
     (define (immediate-literal x)
       (if (eq? (void) x)
@@ -2777,4 +2778,5 @@
 	(debugging 'o "fast global references" fastrefs))
       (when (positive? fastsets)
 	(debugging 'o "fast global assignments" fastsets))
-      (values node2 literals lambda-info-literals lambdas) ) ) )
+      (values node2 (##sys#fast-reverse literals)
+              (##sys#fast-reverse lambda-info-literals) lambdas) ) ) )
