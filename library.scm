@@ -4066,7 +4066,7 @@ EOF
 
 (define get-condition-property
   (lambda (c kind prop . err-def)
-    ((condition-property-accessor kind prop err-def) c)))
+    ((apply condition-property-accessor kind prop err-def) c)))
 
 
 ;;; Error hook (called by runtime-system):
