@@ -2484,8 +2484,10 @@
 	(fastrefs 0) 
 	(fastsets 0) )
 
-    (define (walk-var var e sf)
-      (cond [(posq var e) => (lambda (i) (make-node '##core#local (list i) '()))]
+    (define (walk-var var e e-count sf)
+      (cond [(posq var e)
+             => (lambda (i)
+                  (make-node '##core#local (list (fx- e-count (fx+ i 1))) '()))]
 	    [(keyword? var) (make-node '##core#literal (list (literal var)) '())]
 	    [else (walk-global var sf)] ) )
 
@@ -2508,7 +2510,7 @@
 	       var)
 	 '() ) ) )
 
-    (define (walk n e here boxes)
+    (define (walk n e e-count here boxes)
       (let ((subs (node-subexpressions n))
 	    (params (node-parameters n))
 	    (class (node-class n)) )
@@ -2517,15 +2519,15 @@
 	  ((##core#undefined ##core#proc) n)
 
 	  ((##core#variable) 
-	   (walk-var (first params) e #f) )
+	   (walk-var (first params) e e-count #f) )
 
 	  ((##core#direct_call)
 	   (set! allocated (+ allocated (fourth params)))
-	   (make-node class params (mapwalk subs e here boxes)) )
+	   (make-node class params (mapwalk subs e e-count here boxes)) )
 
 	  ((##core#inline_allocate)
 	   (set! allocated (+ allocated (second params)))
-	   (make-node class params (mapwalk subs e here boxes)) )
+	   (make-node class params (mapwalk subs e e-count here boxes)) )
 
 	  ((##core#inline_ref)
 	   (set! allocated (+ allocated (words (estimate-foreign-result-size (second params)))))
@@ -2533,19 +2535,19 @@
 
 	  ((##core#inline_loc_ref)
 	   (set! allocated (+ allocated (words (estimate-foreign-result-size (first params)))))
-	   (make-node class params (mapwalk subs e here boxes)) )
+	   (make-node class params (mapwalk subs e e-count here boxes)) )
 
 	  ((##core#closure) 
 	   (set! allocated (+ allocated (first params) 1))
-	   (make-node '##core#closure params (mapwalk subs e here boxes)) )
+	   (make-node '##core#closure params (mapwalk subs e e-count here boxes)) )
 
 	  ((##core#box)
 	   (set! allocated (+ allocated 2))
-	   (make-node '##core#box params (list (walk (first subs) e here boxes))) )
+	   (make-node '##core#box params (list (walk (first subs) e e-count here boxes))) )
 
 	  ((##core#updatebox)
 	   (let* ([b (first subs)]
-		  [subs (mapwalk subs e here boxes)] )
+		  [subs (mapwalk subs e e-count here boxes)] )
 	     (make-node
 	      (cond [(and (eq? '##core#variable (node-class b))
 			  (memq (first (node-parameters b)) boxes) )
@@ -2579,9 +2581,12 @@
 				     [else (get db rest 'rest-parameter)] ) ) ) ]
 		       [body (walk 
 			      (car subs)
-			      (if (eq? 'none rest-mode)
-				  (butlast vars)
-				  vars)
+			      (##sys#fast-reverse (if (eq? 'none rest-mode)
+                                                      (butlast vars)
+                                                      vars))
+                              (if (eq? 'none rest-mode)
+				  (fx- (length vars) 1)
+				  (length vars))
 			      id
 			      '()) ] )
 		  (when (eq? rest-mode 'none)
@@ -2625,8 +2630,10 @@
 	     (set! temporaries (add1 temporaries))
 	     (make-node
 	      '##core#bind (list 1)	; is actually never used with more than 1 variable
-	      (list (walk val e here boxes)
-		    (walk (second subs) (append e params) here (append boxvars boxes)) ) ) ) )
+	      (list (walk val e e-count here boxes)
+		    (walk (second subs)
+                          (append (##sys#fast-reverse params) e) (fx+ e-count 1)
+                          here (append boxvars boxes)) ) ) ) )
 
 	  ((##core#let_unboxed)
 	   (let* ((var (first params))
@@ -2634,15 +2641,17 @@
 	     (set! ubtemporaries (alist-cons var (second params) ubtemporaries))
 	     (make-node
 	      '##core#let_unboxed params
-	      (list (walk val e here boxes)
-		    (walk (second subs) e here boxes) ) ) ) )
+	      (list (walk val e e-count here boxes)
+		    (walk (second subs) e e-count here boxes) ) ) ) )
 
 	  ((set!)
 	   (let ([var (first params)]
 		 [val (first subs)] )
 	     (cond ((posq var e)
-		    => (lambda (i) 
-			 (make-node '##core#setlocal (list i) (list (walk val e here boxes)) ) ) )
+		    => (lambda (i)
+                         (make-node '##core#setlocal
+                                    (list (fx- e-count (fx+ i 1)))
+                                    (list (walk val e e-count here boxes)) ) ) )
 		   (else
 		    (let* ([cval (node-class val)]
 			   [blockvar (not (variable-visible? var))]
@@ -2656,18 +2665,18 @@
 				 (literal var) )
 			     blockvar
 			     var)
-		       (list (walk (car subs) e here boxes)) ) ) ) ) ) )
+		       (list (walk (car subs) e e-count here boxes)) ) ) ) ) ) )
 
 	  ((##core#call) 
 	   (let ([len (length (cdr subs))])
 	     (set! signatures (lset-adjoin = signatures len)) 
 	     (when (and (>= (length params) 3) (eq? here (third params)))
 	       (set! looping (add1 looping)) )
-	     (make-node class params (mapwalk subs e here boxes)) ) )
+	     (make-node class params (mapwalk subs e e-count here boxes)) ) )
 
 	  ((##core#recurse)
 	   (when (first params) (set! looping (add1 looping)))
-	   (make-node class params (mapwalk subs e here boxes)) )
+	   (make-node class params (mapwalk subs e e-count here boxes)) )
 
 	  ((quote)
 	   (let ((c (first params)))
@@ -2687,16 +2696,16 @@
 		   (else (make-node '##core#literal (list (literal c)) '())) ) ) )
 
 	  ((if ##core#cond)
-	   (let* ((test (walk (first subs) e here boxes))
+	   (let* ((test (walk (first subs) e e-count here boxes))
 		  (a0 allocated)
-		  (x1 (walk (second subs) e here boxes))
+		  (x1 (walk (second subs) e e-count here boxes))
 		  (a1 allocated)
-		  (x2 (walk (third subs) e here boxes)))
+		  (x2 (walk (third subs) e e-count here boxes)))
 	     (set! allocated (+ a0 (max (- allocated a1) (- a1 a0))))
 	     (make-node class params (list test x1 x2))))
 
 	  ((##core#switch)
-	   (let* ((exp (walk (first subs) e here boxes))
+	   (let* ((exp (walk (first subs) e e-count here boxes))
 		  (a0 allocated))
 	     (make-node
 	      class
@@ -2706,19 +2715,19 @@
 	       (let loop ((j (first params)) (subs (cdr subs)) (ma 0))
 		 (set! allocated a0)
 		 (if (zero? j)
-		     (let ((def (walk (car subs) e here boxes)))
+		     (let ((def (walk (car subs) e e-count here boxes)))
 		       (set! allocated (+ a0 (max ma (- allocated a0))))
 		       (list def))
-		     (let* ((const (walk (car subs) e here boxes))
-			    (body (walk (cadr subs) e here boxes)))
+		     (let* ((const (walk (car subs) e e-count here boxes))
+			    (body (walk (cadr subs) e e-count here boxes)))
 		       (cons* 
 			const body
 			(loop (sub1 j) (cddr subs) (max (- allocated a0) ma))))))))))
 
-	  (else (make-node class params (mapwalk subs e here boxes)) ) ) ) )
+	  (else (make-node class params (mapwalk subs e e-count here boxes)) ) ) ) )
     
-    (define (mapwalk xs e here boxes)
-      (map (lambda (x) (walk x e here boxes)) xs) )
+    (define (mapwalk xs e e-count here boxes)
+      (map (lambda (x) (walk x e e-count here boxes)) xs) )
 
     (define (literal x)
       (cond [(immediate? x) (immediate-literal x)]
@@ -2761,7 +2770,7 @@
 		     '() ) ) )
     
     (debugging 'p "preparation phase...")
-    (let ((node2 (walk node '() #f '())))
+    (let ((node2 (walk node '() 0 #f '())))
       (when (positive? fastinits)
 	(debugging 'o "fast box initializations" fastinits))
       (when (positive? fastrefs)
