@@ -58,6 +58,13 @@
     name is still available but deprecated ("lolevel" unit)
   - deprecated C_hash_string and C_hash_string_ci functions in the C API in
     favor of the more secure versions C_u_i_string_hash, C_u_i_string_ci_hash
+  - a number of bugs in the irregex regular expression engine have been
+    fixed
+  - "with-input-from-file", "with-output-to-file", "with-input-from-pipe" and
+    "with-output-to-pipe" now properly restore the standard input/output 
+    ports in case the body thunk escapes
+  - symbols with a single-char print-name where not always properly escaped
+    whrn printed readably
 
 - Compiler
   - fixed a bug in the compiler that could cause some variable bindings
@@ -72,6 +79,14 @@
   - various improvements in the flow-analysis pass have been done and
     countless bugs fixed
   - deprecated the "constant" declaration specifier
+  - "unboxing" optimization has been completely removed - the implementation
+    was unreliable und unmaintainable; the "-unboxing" compiler option will
+    still be accepted but will produce a warning
+  - Peter Bex contributed an optimization to the analysis pass that 
+    greatly reduces compile time for source code containing deeply nested
+    lexical bindings
+  - procedures that are known to have the value of a core library procedure
+    that is a "standard" or "extended binding" will be inlined
 
 - Type system
   - added new type-specifiers "input-port", "output-port", "(list-of T)" 
