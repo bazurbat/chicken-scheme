@@ -211,6 +211,15 @@
 
 	       (else n1) ) ) ) ) )
 
+    (define (replace-var var)
+      (cond ((test var 'replacable) =>
+             (lambda (rvar)
+               (let ((final-var (replace-var rvar)))
+                 ;; Store intermediate vars to avoid recurring same chain again
+                 (put! db var 'replacable final-var)
+                 final-var)))
+            (else var)))
+    
     (define (walk1 n fids gae)
       (let ((subs (node-subexpressions n))
 	    (params (node-parameters n)) 
@@ -218,9 +227,8 @@
 	(case class
 
 	  ((##core#variable)
-	   (let replace ((var (first params)))
-	     (cond ((test var 'replacable) => replace)
-		   ((test var 'collapsable)
+	   (let ((var (replace-var (first params))))
+	     (cond ((test var 'collapsable)
 		    (touch)
 		    (debugging 'o "substituted constant variable" var)
 		    (qnode (car (node-parameters (test var 'value)))) )
