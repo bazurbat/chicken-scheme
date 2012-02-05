@@ -882,6 +882,8 @@
 
 (##sys#register-module-alias 'r5rs 'scheme)
 
+(register-feature! 'module-environments)
+
 (define (module-environment mname #!optional (ename mname))
   (let* ((mod (##sys#find-module/import-library mname 'module-environment))
 	 (saved (module-saved-environments mod)))
