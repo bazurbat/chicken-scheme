@@ -61,6 +61,7 @@ Usage: chicken-profile [FILENAME | OPTION] ...
  the highest modification time, in case multiple profiles exist.
 
 EOF
+;|
 )
  (exit 64) )
 
@@ -91,7 +92,8 @@ EOF
 	      (if (and n (> n 0)) n (error "invalid argument to option" arg))))
 	  (cond 
 	   [(member arg '("-h" "-help" "--help")) (print-usage)]
-	   [(member arg '("-v" "-version"))
+	   [(member arg '("-v" 		; DEPRECATED
+			  "-version"))
 	    (print "chicken-profile - Version " (chicken-version))
 	    (exit) ]
 	   [(string=? arg "-release")

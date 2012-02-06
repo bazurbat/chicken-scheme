@@ -98,7 +98,7 @@
 usage: chicken-uninstall [OPTION | PATTERN] ...
 
   -h   -help                    show this message and exit
-  -v   -version                 show version and exit
+       -version                 show version and exit
        -force                   don't ask, delete whatever matches
        -exact                   treat PATTERN as exact match (not a pattern)
   -s   -sudo                    use sudo(1) for deleting files
@@ -129,7 +129,8 @@ EOF
 			    (string=? arg "-h")
 			    (string=? arg "--help"))
 			(usage 0))
-		       ((or (string=? arg "-v") (string=? arg "-version"))
+		       ((or (string=? arg "-v") ; DEPRECATED
+			    (string=? arg "-version"))
 			(print (chicken-version))
 			(exit 0))
 		       ((string=? arg "-target")

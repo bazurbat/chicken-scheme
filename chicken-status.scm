@@ -114,7 +114,7 @@
 usage: chicken-status [OPTION | PATTERN] ...
 
   -h   -help                    show this message
-  -v   -version                 show version and exit
+       -version                 show version and exit
   -f   -files                   list installed files
        -exact                   treat PATTERN as exact match (not a pattern)
        -host                    when cross-compiling, show status of host extensions only
@@ -175,7 +175,8 @@ EOF
 		    ((or (string=? arg "-f") (string=? arg "-files"))
 		     (set! files #t)
 		     (loop (cdr args) pats))
-		    ((or (string=? arg "-v") (string=? arg "-version"))
+		    ((or (string=? arg "-v") ; DEPRECATED
+			 (string=? arg "-version"))
 		     (print (chicken-version))
 		     (exit 0))
 		    ((and (positive? (string-length arg))

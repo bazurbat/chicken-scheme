@@ -91,7 +91,7 @@ usage: csi [FILENAME | OPTION ...]
   one of the following:
 
     -h  -help  --help             display this text and exit
-    -v  -version                  display version and exit
+        -version                  display version and exit
         -release                  print release number and exit
     -i  -case-insensitive         enable case-insensitive reading
     -e  -eval EXPRESSION          evaluate given expression
@@ -1030,7 +1030,9 @@ EOF
       (when (member* '("-h" "-help" "--help") args)
 	(print-usage)
 	(exit 0) )
-      (when (member* '("-v" "-version") args)
+      (when (member* '("-v"		; DEPRECATED
+		       "-version") 
+		     args)
 	(print-banner)
 	(exit 0) )
       (when (member "-setup-mode" args)

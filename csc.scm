@@ -160,7 +160,7 @@
     (-S "-scrutinize")
     (-M "-module")
     (|-P| "-check-syntax")
-    (|-V| "-version")
+    (|-V| "-version")			; DEPRECATED
     (-f "-fixnum-arithmetic")
     (|-D| "-feature")
     (-i "-case-insensitive")
@@ -310,7 +310,7 @@ Usage: #{csc} FILENAME | OPTION ...
                                     progress
     -vvv                           display information about all compilation
                                     stages
-    -V  -version                   display Scheme compiler version and exit
+    -version                       display Scheme compiler version and exit
     -release                       display release number and exit
 
   File and pathname options:

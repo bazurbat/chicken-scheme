@@ -752,7 +752,7 @@
 usage: chicken-install [OPTION | EXTENSION[:VERSION]] ...
 
   -h   -help                    show this message and exit
-  -v   -version                 show version and exit
+       -version                 show version and exit
        -force                   don't ask, install even if versions don't match
   -k   -keep                    keep temporary files
   -x   -keep-installed          install only if not already installed
@@ -908,7 +908,8 @@ EOF
                         (set! *keep* #t)
                         (set! *no-install* #t)
                         (loop (cdr args) eggs))
-                       ((or (string=? arg "-v") (string=? arg "-version"))
+                       ((or (string=? arg "-v") ; DEPRECATED
+			    (string=? arg "-version"))
                         (print (chicken-version))
                         (exit 0))
                        ((or (string=? arg "-u") (string=? arg "-update-db"))
