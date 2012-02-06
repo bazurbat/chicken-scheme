@@ -557,7 +557,7 @@ what files belong to a particular installed extension.
 Available options:
 
 ; {{-h   -help}} : show this message and exit
-; {{-v   -version}} : show version and exit
+; {{-version}} : show version and exit
 ; {{-force}} : don't ask, install even if versions don't match
 ; {{-k   -keep}} : keep temporary files
 ; {{-l   -location LOCATION}} : install from given location instead of default
@@ -593,7 +593,7 @@ Available options:
 === chicken-uninstall reference
 
 ; {{-h   -help}} : show usage information and exit
-; {{-v   -version}} : show version and exit
+; {{-version}} : show version and exit
 ; {{-force}} : don't ask, delete whatever matches
 ; {{-s   -sudo}} : use {{sudo(1)}} for deleting files
 ; {{-host}} : when cross-compiling, remove extensions for host system only
@@ -603,7 +603,7 @@ Available options:
 === chicken-status reference
 
 ; {{-h   -help}} : show usage information and exit
-; {{-v   -version}} : show version and exit
+; {{-version}} : show version and exit
 ; {{-f   -files}} : list installed files
 ; {{-host}} : when cross-compiling, show extensions for host system only
 ; {{-target}} : when cross-compiling, show extensions for target system only
