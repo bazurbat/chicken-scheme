@@ -80,7 +80,7 @@
     countless bugs fixed
   - deprecated the "constant" declaration specifier
   - "unboxing" optimization has been completely removed - the implementation
-    was unreliable und unmaintainable; the "-unboxing" compiler option will
+    was unreliable and unmaintainable; the "-unboxing" compiler option will
     still be accepted but will produce a warning
   - Peter Bex contributed an optimization to the analysis pass that 
     greatly reduces compile time for source code containing deeply nested
