@@ -102,23 +102,19 @@ bound to a string-output-port and return the accumulated output string.
 
 <procedure>(port-for-each FN THUNK)</procedure>
 
-Apply {{FN}} to successive results of calling the zero argument procedure {{THUNK}}
-until it returns {{#!eof}}, discarding the results.
+Apply {{FN}} to successive results of calling the zero argument procedure {{THUNK}} (typically {{read}}) until it returns {{#!eof}}, discarding the results.
 
 ==== port-map
 
 <procedure>(port-map FN THUNK)</procedure>
 
-Apply {{FN}} to successive results of calling the zero argument procedure {{THUNK}}
-until it returns {{#!eof}}, returning a list of the collected results.
+Apply {{FN}} to successive results of calling the zero argument procedure {{THUNK}} (typically {{read}}) until it returns {{#!eof}}, returning a list of the collected results.
 
 ==== port-fold
 
 <procedure>(port-fold FN ACC THUNK)</procedure>
 
-Apply {{FN}} to successive results of calling the zero argument procedure {{THUNK}},
-passing the {{ACC}} value as the second argument. The {{FN}} result becomes the new
-{{ACC}} value. When {{THUNK}} returns {{#!eof}}, the last {{FN}} result is returned.
+Apply {{FN}} to successive results of calling the zero argument procedure {{THUNK}}, (typically {{read}}) passing the {{ACC}} value as the second argument. The {{FN}} result becomes the new {{ACC}} value. When {{THUNK}} returns {{#!eof}}, the last {{FN}} result is returned.
 
 ==== copy-port
 
@@ -126,13 +122,14 @@ passing the {{ACC}} value as the second argument. The {{FN}} result becomes the 
 
 Reads all remaining data from port {{FROM}} using the reader procedure
 {{READ}} and writes it to port {{TO}} using the writer procedure
-{{WRITE}}. {{READ}} defaults to {{read-char}} and {{WRITE} to
+{{WRITE}}. {{READ}} defaults to {{read-char}} and {{WRITE}} to
 {{write-char}}. Note that this procedure does not check {{FROM}} and
 {{TO}} for being ports, so the reader and writer procedures may
 perform arbitrary operations as long as they can be invoked
 as {{(READ FROM)}} and {{(WRITE X TO)}}, respectively.
 {{copy-port}} returns an undefined value.
 
+{{copy-port}} was introduced in Chicken 4.6.0.
 
 === Funky ports
 

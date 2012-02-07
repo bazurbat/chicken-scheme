@@ -420,8 +420,6 @@ Exit the running process and return exit-code, which defaults to 0
 
 Note that pending {{dynamic-wind}} thunks are ''not'' invoked when exiting your program in this way.
 
-
-
 ==== build-platform
 
 <procedure>(build-platform)</procedure>
@@ -455,12 +453,13 @@ Returns the error code of the last system call.
 ==== get-environment-variable
 
 <procedure>(get-environment-variable STRING)</procedure><br>
-<procedure>(getenv STRING)</procedure>
 
 Returns the value of the environment variable {{STRING}} or
 {{#f}} if that variable is not defined. See also [[http://srfi.schemers.org/srfi-98/|SRFI-98]].
-{{getenv}} is an alias for {{get-environment-variable}}.
 
+<procedure>(getenv STRING)</procedure>
+
+{{getenv}} was removed in Chicken 4.6.4.  Use {{get-environment-variable}} instead.
 
 ==== machine-byte-order
 

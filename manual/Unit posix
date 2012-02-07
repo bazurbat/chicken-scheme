@@ -393,14 +393,68 @@ time of {{FILE}} to {{SECONDS}}.
 
 <procedure>(file-stat FILE [LINK])</procedure>
 
-Returns a 13-element vector with the following contents: inode-number,
-mode (as with {{file-permissions}}), number of hard links, uid of
-owner (as with {{file-owner}}), gid of owner, size (as with
-{{file-size}}) and access-, change- and modification-time (as with
-{{file-access-time}}, {{file-change-time}} and
-{{file-modification-time}}, device id, device type (for special file
-inode, blocksize and blocks allocated.  On Windows systems the last 4
-values are undefined.
+Returns a 13-element vector with the following contents:
+
+<table>
+<tr><th>index</th>
+    <th>value</th>
+    <th>field</th>
+    <th>notes</th></tr>
+<tr><td>0</td>
+    <td>inode number</td>
+    <td>{{st_ino}}</td>
+    <td></td></tr>
+<tr><td>1</td>
+    <td>mode</td>
+    <td>{{st_mode}}</td>
+    <td>bitfield combining file permissions and file type</td></tr>
+<tr><td>2</td>
+    <td>number of hard links</td>
+    <td>{{st_nlink}}</td>
+    <td></td></tr>
+<tr><td>3</td>
+    <td>UID of owner</td>
+    <td>{{st_uid}}</td>
+    <td>as with {{file-owner}}</td></tr>
+<tr><td>4</td>
+    <td>GID of owner</td>
+    <td>{{st_gid}}</td>
+    <td></td></tr>
+<tr><td>5</td>
+    <td>size</td>
+    <td>{{st_size}}</td>
+    <td>as with {{file-size}}</td></tr>
+<tr><td>6</td>
+    <td>access time</td>
+    <td>{{st_atime}}</td>
+    <td>as with {{file-access-time}}</td></tr>
+<tr><td>7</td>
+    <td>change time</td>
+    <td>{{st_ctime}}</td>
+    <td>as with {{file-change-time}}</td></tr>
+<tr><td>8</td>
+    <td>modification time</td>
+    <td>{{st_mtime}}</td>
+    <td>as with {{file-modification-time}}</td></tr>
+<tr><td>9</td>
+    <td>parent device ID </td>
+    <td>{{st_dev}}</td>
+    <td>ID of device on which this file resides</td></tr>
+<tr><td>10</td>
+    <td>device ID</td>
+    <td>{{st_rdev}}</td>
+    <td>device ID for special files (i.e. the raw major/minor number)</td></tr>
+<tr><td>11</td>
+    <td>block size</td>
+    <td>{{st_blksize}}</td>
+    <td></td></tr>
+<tr><td>12</td>
+    <td>number of blocks allocated</td>
+    <td>{{st_blocks}}</td>
+    <td></td></tr>
+</table>
+
+On Windows systems, the last 4 values are undefined.
 
 By default, symbolic links are followed and
 the status of the referenced file is returned;
@@ -723,7 +777,7 @@ Creates a hard link from {{OLDNAME}} to {{NEWNAME}} (both strings).
 <procedure>(current-user-id)</procedure>
  [setter] (set! (current-user-id) UID)
 
-Get or set the real user-id of the current process.
+Get or set the real user-id of the current process. The procedure corresponds to the getuid and setuid C functions.
 
 ==== current-effective-user-id
 
@@ -1199,8 +1253,13 @@ followed.
 Note that {{action}} is called with the full pathname of each file,
 including the directory prefix.
 
-The signature of this procedure changed in CHICKEN 4.7.4 from
-positional arguments to a keyword-driven style.
+This procedure's signature was changed in CHICKEN 4.6.   In older versions, {{find-files}}
+has a different signature:
+
+  (find-files DIRECTORY [TEST [ACTION [SEED [LIMIT]]]])
+
+The old signature is still supported in CHICKEN 4.6 for compatibility reasons, but is
+deprecated.
 
 === Getting the hostname and system information
 

@@ -834,7 +834,7 @@ The dynamic order in which the various applications of F are made is not
 specified. In the n-ary case, CLIST_2, CLIST_3, ... must have at least as
 many elements as LIST_1.
 
-<procedure>(map-in-order f) clist_1 clist_2 ...) -> list</procedure><br>
+<procedure>(map-in-order f clist_1 clist_2 ...) -> list</procedure><br>
 
 A variant of the {{map}} procedure that guarantees to apply F across the
 elements of the LIST_I arguments in a left-to-right order. This is useful

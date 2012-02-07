@@ -20,7 +20,7 @@ on the command line for a list of options.
 be compiled. A filename argument of {{-}} specifies that
 the source text should be read from standard input.
 
-==== Command-line options
+==== Basic command-line options
 
 ; -analyze-only : Stop compilation after first analysis pass.
 

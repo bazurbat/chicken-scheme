@@ -50,7 +50,7 @@ See also: {{set-extension-specifier!}}
 <macro>(require-extension ID ...)</macro>
 
 This is equivalent to {{(require-library ID ...)}} but performs an implicit
-{{import}}, if necessary. {{ID}} may also be an import specification
+{{import}}, if necessary. Since version 4.4.0, {{ID}} may also be an import specification
 (using {{rename}}, {{only}}, {{except}} or {{prefix}}).
 
 This implementation of {{require-extension}} is compliant with [[http://srfi.schemers.org/srfi-55/srfi-55.html|SRFI-55]]
@@ -71,7 +71,8 @@ This implementation of {{require-extension}} is compliant with [[http://srfi.sch
 
 Use this form for procedures that take a single optional argument. If
 {{ARGS}} is the empty list {{DEFAULT}} is evaluated and
-returned, otherwise the first element of the list {{ARGS}}.
+returned, otherwise the first element of the list {{ARGS}}. It is
+an error if {{ARGS}} contains more than one value.
 
 <enscript highlight=scheme>
 (define (incr x . i) (+ x (optional i 1)))
@@ -111,7 +112,8 @@ be a rest-parameter taken from a lambda-list. {{let-optionals}}
 binds {{VAR1 ...}} to available arguments in parallel, or
 to {{DEFAULT1 ...}} if not enough arguments were provided.
 {{let-optionals*}} binds {{VAR1 ...}} sequentially, so every
-variable sees the previous ones. 
+variable sees the previous ones. it is an error if any excess
+arguments are provided.
 
 <enscript highlight=scheme>
 (let-optionals '(one two) ((a 1) (b 2) (c 3))
@@ -128,7 +130,8 @@ binds {{VAR1 ...}} to available arguments in parallel, or
 to {{DEFAULT1 ...}} if not enough arguments were provided.
 {{let-optionals*}} binds {{VAR1 ...}} sequentially, so every
 variable sees the previous ones. If a single variable {{RESTVAR}}
-is given, then it is bound to any remaining arguments.
+is given, then it is bound to any remaining arguments, otherwise it is
+an error if any excess arguments are provided.
 
 <enscript highlight=scheme>
 (let-optionals* '(one two) ((a 1) (b 2) (c a))
@@ -297,6 +300,9 @@ Defines the toplevel variable {{NAME}} at macro-expansion time. This can
 be helpful when you want to define support procedures for use in macro-transformers,
 for example.
 
+Note that {{define-for-syntax}} definitions within a module are implicitly
+added to that module's import library. Refer to the documentation on
+[[/man/4/Modules#import-libraries|import libraries]] for more information.
 
 ==== define-compiler-syntax
 

@@ -22,6 +22,7 @@ owns a local copy of a parameters' value.
 CHICKEN implements [[http://srfi.schemers.org/srfi-39/srfi-39.html|SRFI-39]].
 
 
+
 === make-parameter
 
 <procedure>(make-parameter VALUE [GUARD])</procedure>

@@ -156,10 +156,10 @@ resources.
 The CHICKEN wiki ([[http://wiki.call-cc.org]]) contains the most
 current version of the User's manual, along with various tutorials and
 other useful documents. The list of eggs is at
-[[http://wiki.call-cc.org/chicken-projects/egg-index-4.html#category-list]].
+[[http://wiki.call-cc.org/egg-index]].
 
 A very useful search facility for questions about CHICKEN is found at
-[[http://chickadee.call-cc.org]]. The CHICKEN issue tracker is at
+[[http://api.call-cc.org]]. The CHICKEN issue tracker is at
 [[http://bugs.call-cc.org]].
 
 The CHICKEN community has two major mailing lists. If you are a
@@ -327,23 +327,8 @@ convenient.
 
 The REPL also supports debugging commands: 
 input lines beginning with a {{,}} (comma) are treated as special
-commands. (See the [[Using the interpreter#Toplevel commands|full list]].) We can
-'''trace''' {{fact}} to see how it works. 
+commands. (See the [[Using the interpreter#Toplevel commands|full list]].)
 
- #;5> ,tr fact
- #;5> (fact 3)
- |(fact 3)
- | (fact 2)
- |  (fact 1)
- |   (fact 0)
- |   fact -> 1 
- |  fact -> 1 
- | fact -> 2 
- |fact -> 6 
- 6
-
-The command number didn't increment, because the {{tr}} command isn't
-actually a Scheme ''form''. 
 
 ==== Scripts
 

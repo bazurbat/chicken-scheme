@@ -33,7 +33,7 @@ repository, then build the libraries and necessary development files:
 
  make ARCH= \
      PREFIX=/usr \
-     PLATFORM=linux 
+     PLATFORM=linux \
      HOSTSYSTEM=arm-none-linux-gnueabi \
      DESTDIR=$HOME/target \
      TARGET_FEATURES="-no-feature x86 -feature arm" \

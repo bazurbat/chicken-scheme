@@ -14,7 +14,7 @@ system or if the application should be completely self-contained.
 === Simple executables
 
 The simplest form of deployment is the single executable. The runtime
-libraries ({{libchicken.so}} or {{libchicken.dll}} is required for these
+library ({{libchicken.so}} or {{libchicken.dll}}) is required for these
 programs to run, unless you link your application statically:
 
   % csc myprogram.scm
@@ -107,12 +107,14 @@ extensions that the program will use at runtime:
   [debug] loading compiled module `/home/felix/tmp/myprogram/defstruct.so' (handle is 0x886ce98)
   ...
 
-There is one restriction that you should be aware of, though: any extension that
-you install inside an application directory must first be installed system-wide
-(unless you use a custom repository with the {{CHICKEN_REPOSITORY}} environment variable),
-so that {{csc}}/{{chicken}} will find an import library for the extension. Just make
-sure you have all the extensions installed that you use in an application (something
-you will normally have anyway).
+There is one restriction that you should be aware of: you cannot
+{{chicken-install -deploy}} an uninstalled extension, e.g.
+directly from an SVN checkout.  You must first install it on your
+build system normally with {{chicken-install}}, so that {{csc}} can
+find its import library in the system-wide repository (or in a custom
+one if you have set {{CHICKEN_REPOSITORY}}).  This is only needed
+while you are deploying the extension into the application directory; once
+deployed, of course, it's totally self-contained.
 
 You can execute the program from its location, or you can install a symbolic
 link pointing to it - it will find the correct directory where the actual

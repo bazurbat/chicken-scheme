@@ -304,7 +304,7 @@ the {{NULL}}-pointer.
 <procedure>(make-pointer-vector LENGTH [INIT])</procedure>
 
 Creates a pointer-vector of the given length and optionally initializes each
-element to {{INIT}}, which should be a pointer or {{#f}, which represents the
+element to {{INIT}}, which should be a pointer or {{#f}}, which represents the
 {{NULL}} pointer.
 
 ==== pointer-vector?

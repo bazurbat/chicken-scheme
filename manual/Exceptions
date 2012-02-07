@@ -132,6 +132,8 @@ formatted as follows:
 
 There is no guaranteed order within the list.
 
+{{condition->list}} was introduced in CHICKEN 4.7.0.
+
 == SRFI-12 specification
 
 A Scheme implementation ("the system") raises an exception whenever an

@@ -11,7 +11,8 @@ compiled procedure or macro is limited to 120 (1000 on some
 common hardware platforms like x86).
 Likewise, the maximum number of values that can be passed
 to continuations captured using {{call-with-current-continuation}}
-is limited as well.
+is 120.  This is an implementation restriction that is unlikely
+to be lifted.
 
 
 === {{numerator}}, {{denominator}} and {{rationalize}}

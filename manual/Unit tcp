@@ -10,7 +10,7 @@ PLT Scheme.
 This unit uses the {{extras}} unit.
 
 All errors related to failing network operations will raise a condition
-of kind {{(exn i/o network)}}.
+of kind {{(exn i/o net)}}.
 
 
 === tcp-listen

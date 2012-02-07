@@ -74,14 +74,18 @@ be passed using {{-I}} and {{-L}} to the C compiler.
 
 === Creating extensions
 
-Extensions can be created by creating an (optionally gzipped) {{tar}}
-archive named {{EXTENSION.egg}} containing all needed files plus a
-{{.setup}} script in the root directory.  After {{chicken-install}} has
-extracted the files, the setup script will be invoked. There are no
-additional constraints on the structure of the archive, but the setup
-script has to be in the root path of the archive.
+An extension can be created by placing its code and some special
+files in a directory named after it. For example, if your
+extension is called {{foo}}, create a directory called {{foo}}
+and put the extension code in it.
 
-For more details on creating extensions, see the [[/eggs tutorial|eggs tutorial]].
+Extensions need two special files: an {{<extension name>.setup}}
+file and an {{<extension name>.meta}} file (where {{<extension
+name>}} is the name of your extension).  The former indicates how
+the egg is to be copiled and the latter provides some information
+about the extension (author, license, dependencies etc).  See the
+[[/eggs tutorial|eggs tutorial]] for further information about
+how to create extensions.
 
 
 === Procedures and macros available in setup scripts
@@ -524,10 +528,10 @@ Next, it should be possible to load the library:
 
  $ csi -q
  #;1> (use my-lib)
- ; loading /usr/local/lib/chicken/5/my-lib.import.so ...
- ; loading /usr/local/lib/chicken/5/scheme.import.so ...
- ; loading /usr/local/lib/chicken/5/chicken.import.so ...
- ; loading /usr/local/lib/chicken/5/my-lib.so ...
+ ; loading /usr/local/lib/chicken/6/my-lib.import.so ...
+ ; loading /usr/local/lib/chicken/6/scheme.import.so ...
+ ; loading /usr/local/lib/chicken/6/chicken.import.so ...
+ ; loading /usr/local/lib/chicken/6/my-lib.so ...
  #;2> (my-sum '(10 20 30))
  my-sum used one more time!
  60
@@ -639,7 +643,7 @@ or by modifying {{config.make}}. Eggs will then be installed in
 === Changing repository location
 
 When Chicken is installed a repository for eggs is created and initialized
-in a default location (usually something like {{/usr/local/lib/chicken/5/}}).
+in a default location (usually something like {{/usr/local/lib/chicken/6/}}).
 It is possible to keep an eggs repository in another location. This can be
 configured at build-time by passing {{VARDIR=<directory>}} to {{make(3)}}
 or by modifying the {{config.make}} configuration file. If you want to
@@ -647,13 +651,18 @@ override this location after chicken is installed, you can create an
 initial repository directory with some default extensions and set the
 {{CHICKEN_REPOSITORY}} environment variable:
 
+Note that your binary version can differ from the examples here, if your
+chicken version is older or newer than the one used in these examples.
+Check your default location for the correct binary-version number.
+
 First, initialize the new repository with
 
-  chicken-install -init ~/myeggs/lib/chicken/5
+  mkdir -p ~/myeggs/lib/chicken/6               # to create directory structure
+  chicken-install -init ~/myeggs/lib/chicken/6
 
 Then set this environment variable:
 
-  export CHICKEN_REPOSITORY=~/myeggs/lib/chicken/5
+  export CHICKEN_REPOSITORY=~/myeggs/lib/chicken/6
 
 {{CHICKEN_REPOSITORY}} is the place where extensions are to be
 loaded from for all chicken-based programs (which includes all
@@ -671,13 +680,27 @@ When you load eggs from the interpreter, you will see messages showing
 where libraries are being loaded from:
 
  #;1> (use numbers)
- ; loading /home/jdoe/myeggs/lib/chicken/5/numbers.import.so ...
- ; loading /home/jdoe/myeggs/lib/chicken/5/scheme.import.so ...
- ; loading /home/jdoe/myeggs/lib/chicken/5/chicken.import.so ...
- ; loading /home/jdoe/myeggs/lib/chicken/5/foreign.import.so ...
- ; loading /home/jdoe/myeggs/lib/chicken/5/regex.import.so ...
- ; loading /home/jdoe/myeggs/lib/chicken/5/numbers.so ...
- #;2> 
+ ; loading /home/jdoe/myeggs/lib/chicken/6/numbers.import.so ...
+ ; loading /home/jdoe/myeggs/lib/chicken/6/scheme.import.so ...
+ ; loading /home/jdoe/myeggs/lib/chicken/6/chicken.import.so ...
+ ; loading /home/jdoe/myeggs/lib/chicken/6/foreign.import.so ...
+ ; loading /home/jdoe/myeggs/lib/chicken/6/regex.import.so ...
+ ; loading /home/jdoe/myeggs/lib/chicken/6/numbers.so ...
+ #;2>
+
+==== Upgrading
+
+After a main upgrade, you need to reinstall all the eggs. First,
+reset the repository environment variable:
+
+  export CHICKEN_REPOSITORY=/usr/lib/chicken/6
+
+Then, make a new directory that reflects the systematic one:
+
+  mkdir ~/myeggs/lib/chicken/6
+
+After that, do the same steps above for the new directory (initialize, set repository environment variable)
+and reinstall all the eggs.
 
 === Other modes of installation
 
