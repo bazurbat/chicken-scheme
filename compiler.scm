@@ -283,7 +283,7 @@
 (define-foreign-variable default-target-heap-size int "C_DEFAULT_TARGET_HEAP_SIZE")
 
 (define-constant foreign-type-table-size 301)
-(define-constant analysis-database-size 3001)
+(define-constant initial-analysis-database-size 3001)
 (define-constant default-line-number-database-size 997)
 (define-constant inline-table-size 301)
 (define-constant constant-table-size 301)
@@ -335,12 +335,12 @@
 (define strict-variable-types #f)
 (define enable-specialization #f)
 
-
 ;;; Other global variables:
 
 (define verbose-mode #f)
 (define original-program-size #f)
 (define current-program-size 0)
+(define current-analysis-database-size initial-analysis-database-size)
 (define line-number-database-2 #f)
 (define immutable-constants '())
 (define inline-table #f)
@@ -1790,8 +1790,10 @@
 ;;; Perform source-code analysis:
 
 (define (analyze-expression node)
-  (let ((db (make-vector analysis-database-size '()))
-	(explicitly-consed '()) )
+  ;; Avoid crowded hash tables by using previous run's size as heuristic
+  (let* ((db-size (fx* (fxmax current-analysis-database-size 1) 3))
+         (db (make-vector db-size '()))
+	 (explicitly-consed '()) )
 
     (define (grow n)
       (set! current-program-size (+ current-program-size n)) )
@@ -1960,6 +1962,7 @@
 
     ;; Complete gathered database information:
     (debugging 'p "analysis gathering phase...")
+    (set! current-analysis-database-size 0)    
     (##sys#hash-table-for-each
      (lambda (sym plist)
        (let ([unknown #f]
@@ -1977,6 +1980,8 @@
 	     [nreferences 0]
 	     [ncall-sites 0] )
 
+         (set! current-analysis-database-size (fx+ current-analysis-database-size 1))
+         
 	 (for-each
 	  (lambda (prop)
 	    (case (car prop)
