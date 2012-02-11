@@ -7,7 +7,7 @@
     testing/debugging.
 
 - Build system
-  - the test-suite is now working on for the mingw32 platform (with
+  - the test-suite is now working on the mingw32 platform (with
     a few tests disabled due to missing functionality)
   - the version and branch of the sources are now properly compiled
     into the core libraries and shown in the "csi" and "chicken"
