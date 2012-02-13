@@ -2476,7 +2476,8 @@
         (literal-count 0)
 	(lambda-info-literals '())
         (lambda-info-literal-count 0)
-        (lambdas '())
+        ;; Use analysis db as optimistic heuristic for procedure table size
+        (lambda-table (make-vector (fx* (fxmax current-analysis-database-size 1) 3) '()))
         (temporaries 0)
 	(ubtemporaries '())
         (allocated 0)
@@ -2595,29 +2596,30 @@
 		    (debugging 'o "unused rest argument" rest id))
 		  (when (and direct rest)
 		    (bomb "bad direct lambda" id allocated rest) )
-		  (set! lambdas
-		    (cons (make-lambda-literal
-			   id
-			   (second params)
-			   vars
-			   argc
-			   rest
-			   (add1 temporaries)
-			   ubtemporaries
-			   signatures
-			   allocated
-			   (or direct (memq id direct-call-ids))
-			   (or (get db id 'closure-size) 0)
-			   (and (not rest)
-				(> looping 0)
-				(begin
-				  (debugging 'o "identified direct recursive calls" id looping)
-				  #t) )
-			   (or direct (get db id 'customizable))
-			   rest-mode
-			   body
-			   direct)
-			  lambdas) )
+		  (##sys#hash-table-set!
+                   lambda-table
+                   id
+                   (make-lambda-literal
+                    id
+                    (second params)
+                    vars
+                    argc
+                    rest
+                    (add1 temporaries)
+                    ubtemporaries
+                    signatures
+                    allocated
+                    (or direct (memq id direct-call-ids))
+                    (or (get db id 'closure-size) 0)
+                    (and (not rest)
+                         (> looping 0)
+                         (begin
+                           (debugging 'o "identified direct recursive calls" id looping)
+                           #t) )
+                    (or direct (get db id 'customizable))
+                    rest-mode
+                    body
+                    direct) )
 		  (set! looping lping)
 		  (set! temporaries temps)
 		  (set! ubtemporaries ubtemps)
@@ -2779,4 +2781,4 @@
       (when (positive? fastsets)
 	(debugging 'o "fast global assignments" fastsets))
       (values node2 (##sys#fast-reverse literals)
-              (##sys#fast-reverse lambda-info-literals) lambdas) ) ) )
+              (##sys#fast-reverse lambda-info-literals) lambda-table) ) ) )

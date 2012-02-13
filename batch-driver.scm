@@ -653,13 +653,13 @@
 			    (when a-only (exit 0))
 			    (begin-time)
 			    (receive 
-			     (node literals lliterals lambdas)
+			     (node literals lliterals lambda-table)
 			     (prepare-for-code-generation node2 db)
 			     (end-time "preparation")
 			     (begin-time)
 			     (let ((out (if outfile (open-output-file outfile) (current-output-port))) )
 			       (dribble "generating `~A' ..." outfile)
-			       (generate-code literals lliterals lambdas out filename dynamic db)
+			       (generate-code literals lliterals lambda-table out filename dynamic db)
 			       (when outfile
 				 (close-output-port out)))
 			     (end-time "code generation")

@@ -59,7 +59,7 @@
 
 ;;; Generate target code:
 
-(define (generate-code literals lliterals lambdas out source-file dynamic db)
+(define (generate-code literals lliterals lambda-table out source-file dynamic db)
   ;; Don't truncate floating-point precision!
   (flonum-print-precision (+ flonum-maximum-decimal-exponent 1))
   (let ()
@@ -67,7 +67,7 @@
     ;; Some helper procedures
 
     (define (find-lambda id)
-      (or (find (lambda (ll) (eq? id (lambda-literal-id ll))) lambdas)
+      (or (##sys#hash-table-ref lambda-table id)
 	  (bomb "can't find lambda" id) ) )
 
     ;; Compile a single expression
@@ -529,13 +529,12 @@
     (define (prototypes)
       (let ([large-signatures '()])
 	(gen #t)
-	(for-each
-	 (lambda (ll)
+	(##sys#hash-table-for-each
+	 (lambda (id ll)
 	   (let* ([n (lambda-literal-argument-count ll)]
 		  [customizable (lambda-literal-customizable ll)] 
 		  [empty-closure (and customizable (zero? (lambda-literal-closure-size ll)))]
 		  [varlist (intersperse (make-variable-list (if empty-closure (sub1 n) n) "t") #\,)]
-		  [id (lambda-literal-id ll)]
 		  [rest (lambda-literal-rest-argument ll)]
 		  [rest-mode (lambda-literal-rest-argument-mode ll)]
 		  [direct (lambda-literal-direct ll)] 
@@ -580,7 +579,7 @@
 		    ;;(when customizable (gen " C_c_regparm"))
 		    (unless direct (gen " C_noret"))
 		    (gen #\;) ] ) ) )
-	 lambdas) 
+	 lambda-table) 
 	(for-each
 	 (lambda (s)
 	   (gen #t "typedef void (*C_proc" s ")(C_word")
@@ -622,12 +621,11 @@
 	    (apply gen (intersperse (make-argument-list (+ n 1) "t") #\,))
 	    (gen ");}") ) )
 
-	(for-each
-	 (lambda (ll)
+	(##sys#hash-table-for-each
+	 (lambda (id ll)
 	   (let* ([argc (lambda-literal-argument-count ll)]
 		  [rest (lambda-literal-rest-argument ll)]
 		  [rest-mode (lambda-literal-rest-argument-mode ll)]
-		  [id (lambda-literal-id ll)]
 		  [customizable (lambda-literal-customizable ll)]
 		  [empty-closure (and customizable (zero? (lambda-literal-closure-size ll)))] )
 	     (when empty-closure (set! argc (sub1 argc)))
@@ -645,7 +643,7 @@
 		      (if (and rest (not (eq? rest-mode 'none)))
 			  (set! nsr (lset-adjoin = nsr argc)) 
 			  (set! ns (lset-adjoin = ns argc)) ) ] ) ) ) )
-	 lambdas)
+	 lambda-table)
 	(for-each
 	 (lambda (n)
 	   (gen #t #t "C_noret_decl(tr" n ")"
@@ -742,10 +740,9 @@
 	(else (bomb "invalid unboxed type" t))))
 
     (define (procedures)
-      (for-each
-       (lambda (ll)
+      (##sys#hash-table-for-each
+       (lambda (id ll)
 	 (let* ((n (lambda-literal-argument-count ll))
-		(id (lambda-literal-id ll))
 		(rname (real-name id db))
 		(demand (lambda-literal-allocated ll))
 		(rest (lambda-literal-rest-argument ll))
@@ -909,7 +906,7 @@
 		n)
 	    ll)
 	   (gen #\}) ) )
-       lambdas) )
+       lambda-table) )
 
     (debugging 'p "code generation phase...")
     (set! output out)
@@ -921,25 +918,25 @@
     (generate-foreign-callback-stubs foreign-callback-stubs db)
     (trampolines)
     (procedures)
-    (emit-procedure-table-info lambdas source-file)
+    (emit-procedure-table-info lambda-table source-file)
     (trailer) ) )
 
 
 ;;; Emit procedure table:
 
-(define (emit-procedure-table-info lambdas sf)
+(define (emit-procedure-table-info lambda-table sf)
   (gen #t #t "#ifdef C_ENABLE_PTABLES"
-       #t "static C_PTABLE_ENTRY ptable[" (add1 (length lambdas)) "] = {")
-  (do ((ll lambdas (cdr ll)))
-      ((null? ll)
-       (gen #t "{NULL,NULL}};") )
-    (let ((id (lambda-literal-id (car ll))))
-      (gen #t "{\"" id #\: (string->c-identifier sf) "\",(void*)")
-      (if (eq? 'toplevel id)
-	  (if unit-name
-	      (gen "C_" unit-name "_toplevel},")
-	      (gen "C_toplevel},") )
-	  (gen id "},") ) ) )
+       #t "static C_PTABLE_ENTRY ptable[" (add1 (##sys#hash-table-size lambda-table)) "] = {")
+  (##sys#hash-table-for-each
+   (lambda (id ll)
+     (gen #t "{\"" id #\: (string->c-identifier sf) "\",(void*)")
+     (if (eq? 'toplevel id)
+         (if unit-name
+             (gen "C_" unit-name "_toplevel},")
+             (gen "C_toplevel},") )
+         (gen id "},") ) )
+   lambda-table)
+  (gen #t "{NULL,NULL}};")
   (gen #t "#endif")
   (gen #t #t "static C_PTABLE_ENTRY *create_ptable(void)")
   (gen "{" #t "#ifdef C_ENABLE_PTABLES"

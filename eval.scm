@@ -163,6 +163,11 @@
 		    b
 		    (loop (##sys#slot bucket 1)) ) ) ) ) ) ) ) )
 
+(define (##sys#hash-table-size ht)
+  (let loop ((len (##sys#size ht)) (bkt 0) (size 0))
+    (if (fx= bkt len)
+        size
+        (loop len (fx+ bkt 1) (fx+ size (##sys#length (##sys#slot ht bkt)))))))
 
 ;;; Compile lambda to closure:
 
