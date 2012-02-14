@@ -456,8 +456,8 @@
 	    (class (node-class n)) )
 	(dd "walk: ~a ~s (loc: ~a, dest: ~a, tail: ~a, flow: ~a)"
 	    class params loc dest tail flow)
-	;;(dd "walk: ~a ~s (loc: ~a, dest: ~a, tail: ~a, flow: ~a, blist: ~a, e: ~a)"
-	;;    class params loc dest tail flow blist e)
+	#;(dd "walk: ~a ~s (loc: ~a, dest: ~a, tail: ~a, flow: ~a, blist: ~a, e: ~a)"
+	    class params loc dest tail flow blist e)
 	(set! d-depth (add1 d-depth))
 	(let ((results
 	       (case class
@@ -639,14 +639,22 @@
 				    var ot rt)
 				  #t)))))
 		      ;; don't use "add-to-blist" since the current operation does not affect aliases
-		      (set! blist
-			(alist-cons
-			 (cons var (car flow)) 
-			 (if (or strict-variable-types
-				 (not (get db var 'captured)))
-			     rt 
-			     '*)
-			 blist)))
+		      (let ((t (if (or strict-variable-types
+				       (not (get db var 'captured)))
+				   rt 
+				   '*))
+			    (fl (car flow)))
+			(let loop ((bl blist) (f #f))
+			  (cond ((null? bl)
+				 (unless f
+				   (set! blist (alist-cons (cons var fl) t blist))))
+				((eq? (caaar bl) var)
+				 (let ((t (simplify-type `(or ,t ,(cdar bl)))))
+				   (dd "assignment modifies blist entry ~s -> ~a"
+				       (caar bl) t)
+				   (set-cdr! (car bl) t)
+				   (loop (cdr bl) (eq? fl (cdaar bl)))))
+				(else (loop (cdr bl) f))))))
 		    '(undefined)))
 		 ((##core#primitive ##core#inline_ref) '*)
 		 ((##core#call)

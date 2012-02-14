@@ -109,3 +109,22 @@
   (the * (values 1 2))				; 1 + 2
   (the * (values))				; 3
   (the fixnum (* x y)))				; nothing (but warns about "x" being string)
+
+
+;; Reported by Joerg Wittenberger:
+;
+; - assignment inside first conditional does not invalidate blist
+;;  entries for "ins"/"del" in outer flow.
+
+(define (write-blob-to-sql sql identifier last blob c-c)
+ (define ins '())
+ (define del '())
+ (if (vector? blob)
+     (begin
+	(set! ins (vector-ref blob 1))
+	(set! del (vector-ref blob 2))
+	(set! blob (vector-ref blob 0))))
+ (if (or (pair? ins)
+	 (pair? del))
+     (<handle-ins-and-del>))
+ (<do-some-more>))
