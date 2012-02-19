@@ -1656,46 +1656,55 @@
 
 (define (perform-cps-conversion node)
 
-  (define (cps-lambda id llist subs k)
-    (let ([t1 (gensym 'k)])
+  (define (cps-lambda id returnvar llist subs k)
+    (let ([t1 (or returnvar (gensym 'k))])
       (k (make-node
 	  '##core#lambda (list id #t (cons t1 llist) 0)
-	  (list (walk (car subs)
+	  (list (walk (gensym-f-id)
+                      (car subs)
 		      (lambda (r) 
 			(make-node '##core#call (list #t) (list (varnode t1) r)) ) ) ) ) ) ) )
+
+  (define (node-for-var? node var)
+     (and (eq? (node-class node) '##core#variable)
+          (eq? (car (node-parameters node)) var)))
   
-  (define (walk n k)
+  (define (walk returnvar n k)
     (let ((subs (node-subexpressions n))
 	  (params (node-parameters n)) 
 	  (class (node-class n)) )
       (case (node-class n)
 	((##core#variable quote ##core#undefined ##core#primitive) (k n))
 	((if) (let* ((t1 (gensym 'k))
-		     (t2 (gensym 'r))
+		     (t2 (or returnvar (gensym 'r)))
 		     (k1 (lambda (r) (make-node '##core#call (list #t) (list (varnode t1) r)))) )
 		(make-node 
 		 'let
 		 (list t1)
 		 (list (make-node '##core#lambda (list (gensym-f-id) #f (list t2) 0) 
 				  (list (k (varnode t2))) )
-		       (walk (car subs)
+		       (walk #f (car subs)
 			     (lambda (v)
 			       (make-node 'if '()
 					  (list v
-						(walk (cadr subs) k1)
-						(walk (caddr subs) k1) ) ) ) ) ) ) ) )
+						(walk #f (cadr subs) k1)
+						(walk #f (caddr subs) k1) ) ) ) ) ) ) ) )
 	((let)
 	 (let loop ((vars params) (vals subs))
 	   (if (null? vars)
-	       (walk (car vals) k)
-	       (walk (car vals)
-		     (lambda (r) 
-		       (make-node 'let
-				  (list (car vars))
-				  (list r (loop (cdr vars) (cdr vals))) ) ) ) ) ) )
-	((lambda ##core#lambda) (cps-lambda (gensym-f-id) (first params) subs k))
+	       (walk #f (car vals) k)
+	       (walk (car vars)
+                     (car vals)
+		     (lambda (r)
+                       (if (node-for-var? r (car vars)) ; Don't generate unneccessary lets
+                           (loop (cdr vars) (cdr vals))
+                           (make-node 'let
+                                      (list (car vars))
+                                      (list r (loop (cdr vars) (cdr vals))) )) ) ) ) ) )
+	((lambda ##core#lambda) (cps-lambda (gensym-f-id) returnvar (first params) subs k))
 	((set!) (let ((t1 (gensym 't)))
-		  (walk (car subs)
+		  (walk #f
+                        (car subs)
 			(lambda (r)
 			  (make-node 'let (list t1)
 				     (list (make-node 'set! (list (first params)) (list r))
@@ -1707,23 +1716,24 @@
 	     (cons (apply make-foreign-callback-stub id params) foreign-callback-stubs) )
 	   ;; mark to avoid leaf-routine optimization
 	   (mark-variable id '##compiler#callback-lambda)
-	   (cps-lambda id (first (node-parameters lam)) (node-subexpressions lam) k) ) )
+           ;; maybe pass returnvar here?
+	   (cps-lambda id #f (first (node-parameters lam)) (node-subexpressions lam) k) ) )
 	((##core#inline ##core#inline_allocate ##core#inline_ref ##core#inline_update ##core#inline_loc_ref 
 			##core#inline_loc_update)
 	 (walk-inline-call class params subs k) )
-	((##core#call) (walk-call (car subs) (cdr subs) params k))
-	((##core#callunit) (walk-call-unit (first params) k))
+	((##core#call) (walk-call returnvar (car subs) (cdr subs) params k))
+	((##core#callunit) (walk-call-unit returnvar (first params) k))
 	((##core#the)
 	 ;; remove "the" nodes, as they are not used after scrutiny
-	 (walk (car subs) k))
+	 (walk returnvar (car subs) k))
 	((##core#typecase)
 	 ;; same here, the last clause is chosen, exp is dropped
-	 (walk (last subs) k))
+	 (walk returnvar (last subs) k))
 	(else (bomb "bad node (cps)")) ) ) )
   
-  (define (walk-call fn args params k)
+  (define (walk-call returnvar fn args params k)
     (let ((t0 (gensym 'k))
-          (t3 (gensym 'r)) )
+          (t3 (or returnvar (gensym 'r))) )
       (make-node
        'let (list t0)
        (list (make-node '##core#lambda (list (gensym-f-id) #f (list t3) 0) 
@@ -1731,13 +1741,13 @@
 	     (walk-arguments
 	      args
 	      (lambda (vars)
-		(walk fn
+		(walk #f fn
 		      (lambda (r) 
 			(make-node '##core#call params (cons* r (varnode t0) vars) ) ) ) ) ) ) ) ) )
   
-  (define (walk-call-unit unitname k)
+  (define (walk-call-unit returnvar unitname k)
     (let ((t0 (gensym 'k))
-	  (t3 (gensym 'r)) )
+	  (t3 (or returnvar (gensym 'r))) )
       (make-node
        'let (list t0)
        (list (make-node '##core#lambda (list (gensym-f-id) #f (list t3) 0) 
@@ -1758,12 +1768,15 @@
              (loop (cdr args) (cons (car args) vars)) )
             (else
              (let ((t1 (gensym 'a)))
-               (walk (car args)
+               (walk t1
+                     (car args)
                      (lambda (r)
-		       (make-node 'let (list t1)
-				  (list r
-					(loop (cdr args) 
-					      (cons (varnode t1) vars) ) ) ) ) ) ) ) ) ) )
+                       (if (node-for-var? r t1) ; Don't generate unneccessary lets
+                           (loop (cdr args) (cons (varnode t1) vars) )
+                           (make-node 'let (list t1)
+                                      (list r
+                                            (loop (cdr args) 
+                                                  (cons (varnode t1) vars) ) ) )) ) ) ) ) ) ) )
   
   (define (atomic? n)
     (let ((class (node-class n)))
@@ -1773,7 +1786,7 @@
 			     ##core#inline_loc_ref ##core#inline_loc_update))
 	       (every atomic? (node-subexpressions n)) ) ) ) )
   
-  (walk node values) )
+  (walk #f node values) )
 
 
 ;;; Foreign callback stub type:
