@@ -114,10 +114,6 @@
 # include <kernel/image.h>
 #endif
 
-#ifndef _MSC_VAR
-# include <strings.h>
-#endif
-
 
 /* Byteorder in machine word */
 
