@@ -114,10 +114,6 @@
 # include <kernel/image.h>
 #endif
 
-#ifndef _MSC_VAR
-# include <strings.h>
-#endif
-
 
 /* Byteorder in machine word */
 
@@ -955,7 +951,7 @@ extern double trunc(double);
 #define C_demand_2(n)              (((C_word *)C_fromspace_top + (n)) < (C_word *)C_fromspace_limit)
 #define C_fix(n)                   (((C_word)(n) << C_FIXNUM_SHIFT) | C_FIXNUM_BIT)
 #define C_unfix(x)                 ((x) >> C_FIXNUM_SHIFT)
-#define C_make_character(c)        ((((c) & C_CHAR_BIT_MASK) << C_CHAR_SHIFT) | C_CHARACTER_BITS)
+#define C_make_character(c)        (((((C_uword)(c)) & C_CHAR_BIT_MASK) << C_CHAR_SHIFT) | C_CHARACTER_BITS)
 #define C_character_code(x)        (((C_word)(x) >> C_CHAR_SHIFT) & C_CHAR_BIT_MASK)
 #define C_flonum_magnitude(x)      (*((double *)(((C_SCHEME_BLOCK *)(x))->data)))
 #define C_c_string(x)              ((C_char *)(((C_SCHEME_BLOCK *)(x))->data))
