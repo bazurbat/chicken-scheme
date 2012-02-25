@@ -197,16 +197,6 @@ to {{chicken-install}}) and {{-feature compiling-extension}} options to the comp
 Equivalent to {{(run (csc FORM ...))}}.
 
 
-==== make
-
-<macro>(make ((TARGET (DEPENDENT ...) COMMAND ...) ...) ARGUMENTS)</macro>
-
-A ''make'' macro that executes the expressions {{COMMAND ...}}, when any of the dependents
-{{DEPENDENT ...}} have changed, to build {{TARGET}}. This is the same as the {{make}}
-extension, which is available separately. For more information, see
-[[http://wiki.call-cc.org/egg/make|make]].
-
-
 ==== patch
 
 <procedure>(patch WHICH REGEX SUBST)</procedure>

@@ -39,7 +39,7 @@
     ((run execute)
      compile
      standard-extension
-     make make/proc
+     make make/proc			; DEPRECATED
      host-extension
      install-extension install-program install-script
      setup-verbose-mode setup-install-mode deployment-mode
@@ -290,6 +290,9 @@
 
 ;;; "make" functionality
 
+;;; DEPRECATED
+;;; vvv
+
 (define (make:find-matching-line str spec)
   (let ((match? (lambda (s) (string=? s str))))
     (let loop ((lines spec))
@@ -442,6 +445,9 @@
 	  ,@(if (null? (cddr form))
 		'('())
 		(cddr form)))))))
+
+;;;^^^
+;;; DEPRECATED
 
 
 ;;; Processing setup scripts
