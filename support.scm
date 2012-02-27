@@ -560,17 +560,17 @@
 			   (list (walk (fourth x)))))
 	       ((##core#typecase)
 		;; clause-head is already stripped
-		(let loop ((cls (cddr x)) (types '()) (exps (list (walk (cadr x)))))
+		(let loop ((cls (cdddr x)) (types '()) (exps (list (walk (caddr x)))))
 		  (cond ((null? cls) 	; no "else" clause given
 			 (make-node
 			  '##core#typecase 
-			  (reverse types)
+			  (cons (cadr x) (reverse types))
 			  (reverse
 			   (cons (make-node '##core#undefined '() '()) exps))))
 			((eq? 'else (caar cls))
 			 (make-node
 			  '##core#typecase
-			  (reverse (cons '* types))
+			  (cons (cadr x) (reverse (cons '* types)))
 			  (reverse (cons (walk (cadar cls)) exps))))
 			(else (loop (cdr cls)
 				    (cons (caar cls) types)
@@ -649,7 +649,7 @@
 	((##core#typecase)
 	 `(compiler-typecase
 	   ,(walk (first subs))
-	   ,@(let loop ((types params) (bodies (cdr subs)))
+	   ,@(let loop ((types (cdr params)) (bodies (cdr subs)))
 	       (if (null? types)
 		   (if (null? bodies)
 		       '()
@@ -1455,6 +1455,14 @@
   (if (list? info)
       (car info)
       (and info (->string info))))
+
+(define (call-info params var)
+  (or (and-let* ((info (and (pair? (cdr params)) (second params))))
+	(and (list? info)
+	     (let ((ln (car info))
+		   (name (cadr info)))
+	       (conc "(" ln ") " var))))
+      var))
 
 
 ;;; constant folding support:

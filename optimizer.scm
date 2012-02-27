@@ -301,22 +301,23 @@
 	   (walk-generic n class params subs fids '() #f))
 
 	  ((##core#call)
-	   (let* ([fun (car subs)]
-		  [funclass (node-class fun)] )
+	   (let* ((fun (car subs))
+		  (funclass (node-class fun)))
 	     (case funclass
 	       [(##core#variable)
 		;; Call to named procedure:
-		(let* ([var (first (node-parameters fun))]
-		       [lval (and (not (test var 'unknown)) 
+		(let* ((var (first (node-parameters fun)))
+		       (info (call-info params var))
+		       (lval (and (not (test var 'unknown)) 
 				  (or (test var 'value)
-				      (test var 'local-value)))]
-		       [args (cdr subs)] )
+				      (test var 'local-value))))
+		       (args (cdr subs)) )
 		  (cond ((test var 'contractable)
 			 ;; only called once
 			 (let* ([lparams (node-parameters lval)]
 				[llist (third lparams)] )
 			   (check-signature var args llist)
-			   (debugging 'o "contracted procedure" var)
+			   (debugging 'o "contracted procedure" info)
 			   (touch)
 			   (for-each (cut put! db <> 'inline-target #t) fids)
 			   (walk
@@ -338,11 +339,10 @@
 						  (not (test (car llist) 'assigned)))))
 					((not (any (cut expression-has-side-effects? <> db)
 						   (cdr args) ))))
-			       (let ((info (and (pair? (cdr params)) (second params))))
-				 (debugging 
-				  'o
-				  "removed call to pure procedure with unused result"
-				  (or (source-info->string info) var)))
+			       (debugging 
+				'o
+				"removed call to pure procedure with unused result"
+				info)
 			       (make-node
 				'##core#call (list #t)
 				(list k (make-node '##core#undefined '() '())) ) ) 
@@ -371,17 +371,17 @@
 					(if external
 					    "global inlining" 	
 					    "inlining")
-					var ifid (fourth lparams))
+					info ifid (fourth lparams))
 				       (for-each (cut put! db <> 'inline-target #t) fids)
 				       (check-signature var args llist)
-				       (debugging 'o "inlining procedure" var)
+				       (debugging 'o "inlining procedure" info)
 				       (call/cc
 					(lambda (return)
 					  (define (cfk cvar)
 					    (debugging 
 					     'i
 					     "not inlining procedure because it refers to contractable"
-					     var cvar)
+					     info cvar)
 					    (return 
 					     (walk-generic n class params subs fids gae #t)))
 					  (let ((n2 (inline-lambda-bindings
@@ -406,7 +406,7 @@
 						    (touch)
 						    (debugging
 						     'o "removed unused parameter to known procedure" 
-						     (car vars) var)
+						     (car vars) info)
 						    (if (expression-has-side-effects? (car args) db)
 							(make-node
 							 'let
@@ -424,7 +424,7 @@
 					 (if (< (length args) n)
 					     (walk-generic n class params subs fids gae #t) 
 					     (begin
-					       (debugging 'o "consed rest parameter at call site" var n)
+					       (debugging 'o "consed rest parameter at call site" info n)
 					       (let-values ([(args rargs) (split-at args n)])
 						 (let ([n2 (make-node
 							    '##core#call
@@ -449,7 +449,7 @@
 			      (intrinsic? (first (node-parameters lval))))
 			 ;; callee is intrinsic
 			 (debugging 'i "inlining call to intrinsic alias" 
-				    var (first (node-parameters lval)))
+				    info (first (node-parameters lval)))
 			 (walk
 			  (make-node
 			   '##core#call

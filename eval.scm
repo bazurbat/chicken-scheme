@@ -715,7 +715,7 @@
 			 
 			 ((##core#typecase)
 			  ;; drops exp and requires "else" clause
-			  (cond ((assq 'else (##sys#strip-syntax (cddr x))) =>
+			  (cond ((assq 'else (##sys#strip-syntax (cdddr x))) =>
 				 (lambda (cl)
 				   (compile (cadr cl) e h tf cntr se)))
 				(else

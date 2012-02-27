@@ -42,6 +42,7 @@
  build-node-graph
  c-ify-string
  callback-names
+ call-info
  canonicalize-list-of-type
  canonicalize-begin-body
  canonicalize-expression

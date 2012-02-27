@@ -1274,9 +1274,11 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax 'compiler-typecase x '(_ _ . #((_ . #(_ 1)) 1)))
-    (let ((var (gensym)))
+    (let ((var (gensym))
+	  (ln (get-line-number x)))
       `(##core#let ((,var ,(cadr x)))
 		   (##core#typecase 
+		    ,ln
 		    ,var		; must be variable (see: CPS transform)
 		    ,@(map (lambda (clause)
 			     (list (car clause) `(##core#begin ,@(cdr clause))))

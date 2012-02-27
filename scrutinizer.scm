@@ -295,7 +295,7 @@
 		   (pair? (cadr params))) ; sourceinfo has line-number information?
 	      (let ((n (source-info->line (cadr params))))
 		(if n
-		    (sprintf "~a: " n)
+		    (sprintf "(~a) " n)
 		    ""))
 	      "")
 	  (fragment (first (node-subexpressions node)))))
@@ -781,13 +781,17 @@
 			 (trail0 trail)
 			 (typeenv (type-typeenv (car ts))))
 		    ;; first exp is always a variable so ts must be of length 1
-		    (let loop ((types params) (subs (cdr subs)))
+		    (let loop ((types (cdr params)) (subs (cdr subs)))
 		      (cond ((null? types)
-			     (quit "~ano clause applies in `compiler-typecase' for expression of type `~s':~a" 
-				   (location-name loc) (car ts)
+			     (quit "~a~ano clause applies in `compiler-typecase' for expression of type `~s':~a" 
+				   (location-name loc)
+				   (if (first params) 
+				       (sprintf "(~a) " (first params))
+				       "")
+				   (car ts)
 				   (string-concatenate
 				    (map (lambda (t) (sprintf "\n    ~a" t))
-					 params))))
+					 (cdr params)))))
 			    ((match-types (car types) (car ts) 
 					  (append (type-typeenv (car types)) typeenv)
 					  #t)
