@@ -997,11 +997,11 @@
 (rewrite 'u16vector-ref 2 2 "C_u_i_u16vector_ref" #f)
 (rewrite 's16vector-ref 2 2 "C_u_i_s16vector_ref" #f)
 
-(rewrite 'f32vector-ref 16 2 "C_a_i_f32vector_ref" #f words-per-flonum)
-(rewrite 'f64vector-ref 16 2 "C_a_i_f64vector_ref" #f words-per-flonum)
+(rewrite 'f32vector-ref 16 2 "C_a_u_i_f32vector_ref" #f words-per-flonum)
+(rewrite 'f64vector-ref 16 2 "C_a_u_i_f64vector_ref" #f words-per-flonum)
 
-(rewrite 'u32vector-ref 22 2 "C_a_i_u32vector_ref" #f words-per-flonum "C_u_i_u32vector_ref")
-(rewrite 's32vector-ref 22 2 "C_a_i_s32vector_ref" #f words-per-flonum "C_u_i_s32vector_ref")
+(rewrite 'u32vector-ref 22 2 "C_a_u_i_u32vector_ref" #f words-per-flonum "C_u_i_u32vector_ref")
+(rewrite 's32vector-ref 22 2 "C_a_u_i_s32vector_ref" #f words-per-flonum "C_u_i_s32vector_ref")
 
 (rewrite 'u8vector-set! 2 3 "C_u_i_u8vector_set" #f)
 (rewrite 's8vector-set! 2 3 "C_u_i_s8vector_set" #f)

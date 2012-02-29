@@ -2245,7 +2245,7 @@
 (mutex-specific-set! (#(procedure #:clean #:enforce) mutex-specific-set! ((struct mutex) *) undefined)
 		     (((struct mutex) *) (##sys#setslot #(1) '6 #(2))))
 
-(mutex-state (#(procedure #:clean #:enforce) mutex-state ((struct mutex)) symbol))
+(mutex-state (#(procedure #:clean #:enforce) mutex-state ((struct mutex)) (or symbol (struct thread))))
 (mutex-unlock! (#(procedure #:clean #:enforce) mutex-unlock! ((struct mutex) #!optional (struct condition-variable) *) undefined))
 
 (mutex? (#(procedure #:pure #:predicate (struct mutex)) mutex? (*) boolean))

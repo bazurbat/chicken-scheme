@@ -500,11 +500,17 @@
 	  (else (walk-generic n class params subs fids gae #f)) ) ) )
     
     (define (walk-generic n class params subs fids gae invgae)
-      (let ((subs2 (map (cut walk <> fids gae) subs)))
-	(when invgae (invalidate-gae! gae))
-	(if (every eq? subs subs2)
-	    n
-	    (make-node class params subs2) ) ) )
+      (let lp ((same? #t)
+               (subs subs)
+               (subs2 '()))
+        (cond ((null? subs)
+               (when invgae (invalidate-gae! gae))
+               ;; Create new node if walk made changes, otherwise original node
+               (if same? n (make-node class params (reverse subs2))))
+              (else
+               (let ((sub2 (walk (car subs) fids gae)))
+                 (lp (and same? (eq? sub2 (car subs)))
+                     (cdr subs) (cons sub2 subs2)))) ) ))
 
     (if (perform-pre-optimization! node db)
 	(values node #t)

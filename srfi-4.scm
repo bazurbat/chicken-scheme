@@ -217,7 +217,7 @@ EOF
      (##sys#check-structure x 'u32vector 'u32vector-ref)
      (let ((len (##core#inline "C_u_i_u32vector_length" x)))
        (check-range i 0 len 'u32vector-ref)
-       (##core#inline_allocate ("C_a_i_u32vector_ref" 4) x i)))
+       (##core#inline_allocate ("C_a_u_i_u32vector_ref" 4) x i)))
    u32vector-set!
    "(u32vector-ref v i)"))
 
@@ -227,7 +227,7 @@ EOF
      (##sys#check-structure x 's32vector 's32vector-ref)
      (let ((len (##core#inline "C_u_i_s32vector_length" x)))
        (check-range i 0 len 's32vector-ref)
-       (##core#inline_allocate ("C_a_i_s32vector_ref" 4) x i)))
+       (##core#inline_allocate ("C_a_u_i_s32vector_ref" 4) x i)))
    s32vector-set!
    "(s32vector-ref v i)"))
 
@@ -237,7 +237,7 @@ EOF
      (##sys#check-structure x 'f32vector 'f32vector-ref)
      (let ((len (##core#inline "C_u_i_f32vector_length" x)))
        (check-range i 0 len 'f32vector-ref)
-       (##core#inline_allocate ("C_a_i_f32vector_ref" 4) x i)))
+       (##core#inline_allocate ("C_a_u_i_f32vector_ref" 4) x i)))
    f32vector-set!
    "(f32vector-ref v i)"))
 
@@ -245,9 +245,9 @@ EOF
   (getter-with-setter
    (lambda (x i)
      (##sys#check-structure x 'f64vector 'f64vector-ref)
-     (let ((len (##core#inline "C_u_i_8vector_length" x)))
+     (let ((len (##core#inline "C_u_i_f64vector_length" x)))
        (check-range i 0 len 'f64vector-ref)
-       (##core#inline_allocate ("C_a_i_f64vector_ref" 4) x i)))
+       (##core#inline_allocate ("C_a_u_i_f64vector_ref" 4) x i)))
    f64vector-set!
    "(f64vector-ref v i)"))
 
