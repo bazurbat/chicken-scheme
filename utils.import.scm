@@ -30,5 +30,6 @@
    system*
    qs
    compile-file
+   compile-file-options
    scan-input-lines
    yes-or-no?))
