@@ -417,10 +417,21 @@
 		 (read-line in)
 		 (get-chunks (cons chunk data)) ) ) ) ) ))
 
+  (define slashes (char-set #\\ #\/))
+
+  (define (valid-extension-name? name)
+    (and (not (member name '("" ".." ".")))
+	 (not (string-index name slashes))))
+
+  (define (check-egg-name name)
+    (unless (valid-extension-name? name)
+      (error "invalid extension name" name)))
+
   (define (retrieve-extension name transport location
                               #!key version quiet destination username password tests
 			      proxy-host proxy-port proxy-user-pass
 			      trunk (mode 'default) clean)
+    (check-egg-name name)
     (fluid-let ((*quiet* quiet)
 		(*trunk* trunk)
 		(*mode* mode))
@@ -448,6 +459,7 @@
 	 (error "cannot list extensions - unsupported transport" transport) ) ) ) )
 
   (define (list-extension-versions name transport location #!key quiet username password)
+    (check-egg-name name)
     (fluid-let ((*quiet* quiet))
       (case transport
 	((local)
