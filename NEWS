@@ -5,6 +5,10 @@
     values (which caused very nonrandom results for very large values).
     Note that tandom shouldn't be used for security-critical code.
 
+- Compiler
+  - enhanced line number tracking to get better error messages from
+    the scrutinizer.
+
 4.7.4
 
 - Security fixes
