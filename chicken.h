@@ -2198,13 +2198,17 @@ C_inline int C_ub_i_fpintegerp(double x)
 
 C_inline C_word C_i_integerp(C_word x)
 {
-  double dummy;
+  double dummy, val;
 
-  if(C_isnan(x) || C_isinf(x)) return C_SCHEME_FALSE;
+  if (x & C_FIXNUM_BIT)
+	  return C_SCHEME_TRUE;
+  if (C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG)
+	  return C_SCHEME_FALSE;
 
-  return C_mk_bool((x & C_FIXNUM_BIT) || 
-		   ((!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) &&
-		    C_modf(C_flonum_magnitude(x), &dummy) == 0.0 ) );
+  val = C_flonum_magnitude(x);
+  if(C_isnan(val) || C_isinf(val)) return C_SCHEME_FALSE;
+
+  return C_mk_bool(C_modf(val, &dummy) == 0.0);
 }
 
 

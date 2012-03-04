@@ -20,7 +20,19 @@
 (assert (rational? 1))
 (assert (rational? 1.0))
 (assert (not (rational? +inf.)))
+(assert (not (rational? -inf.)))
+(assert (not (rational? +nan)))
 (assert (not (rational? 'foo)))
+(assert (not (rational? "foo")))
+(assert (integer? 2))
+(assert (integer? 2.0))
+(assert (not (integer? 1.1)))
+(assert (not (integer? +inf.)))
+(assert (not (integer? -inf.)))
+(assert (not (integer? +nan)))
+(assert (not (integer? 'foo)))
+(assert (not (integer? "foo")))
+; XXX number missing
 
 (define-syntax assert-fail
   (syntax-rules ()
