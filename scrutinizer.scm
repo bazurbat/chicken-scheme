@@ -2142,17 +2142,17 @@
 
 (define-special-case ##sys#make-structure
   (lambda (node args rtypes)
-    (or (let ((subs (node-subexpressions node)))
-	  (and (>= (length subs) 2)
-	       (let ((arg1 (second subs)))
-		 (and (eq? 'quote (node-class arg1))
-		      (let ((val (first (node-parameters arg1))))
-			(and (symbol? val)
-			     ;;XXX a dirty hack - we should remove the distinct
-			     ;;    "pointer-vector" type.
-			     (if (eq? 'pointer-vector val)
-				 '(pointer-vector)
-				 `((struct ,val)))))))))
+    (or (and-let* ((subs (node-subexpressions node))
+                   ((>= (length subs) 2))
+                   (arg1 (second subs))
+                   ((eq? 'quote (node-class arg1)))
+                   (val (first (node-parameters arg1)))
+                   ((symbol? val)))
+          ;;XXX a dirty hack - we should remove the distinct
+          ;;    "pointer-vector" type.
+          (if (eq? 'pointer-vector val)
+              '(pointer-vector)
+              `((struct ,val))))
 	rtypes)))
 
 (let ()
