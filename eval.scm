@@ -45,6 +45,8 @@
 #ifndef C_BINARY_VERSION
 # define C_BINARY_VERSION      0
 #endif
+
+#define C_rnd_fix()		(C_fix(rand()))
 <#
 
 (include "common-declarations.scm")
@@ -111,7 +113,7 @@
   (let ([cache-s #f]
 	[cache-h #f]
         ;; NOTE: All low-level hash tables share the same randomization factor
-        [rand (##core#inline "C_random_fixnum" most-positive-fixnum)] )
+        [rand (##core#inline "C_rnd_fix")] )
     (lambda (s n)
       (if (eq? s cache-s)
 	  (##core#inline "C_fixnum_modulo" cache-h n)

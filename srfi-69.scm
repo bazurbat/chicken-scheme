@@ -30,10 +30,12 @@
   *eq?-hash *eqv?-hash *equal?-hash
   *make-hash-table
   *hash-table-copy *hash-table-merge! *hash-table-update!/default
-  *hash-table-for-each *hash-table-fold
+  *hash-table-for-each *hash-table-fold hash-default-randomization
   hash-table-canonical-length hash-table-rehash! hash-table-check-resize! ) )
 
 (include "common-declarations.scm")
+
+(foreign-declare "#define C_rnd_fix() (C_fix(rand()))")
 
 (register-feature! 'srfi-69)
 
@@ -105,8 +107,7 @@
 (define-constant unknown-immediate-hash-value 262)
 
 (define-constant hash-default-bound 536870912)
-(define hash-default-randomization
-  (##core#inline "C_random_fixnum" hash-default-bound))
+(define hash-default-randomization (##core#inline "C_rnd_fix"))
 
 ;; Force Hash to Bounded Fixnum:
 
@@ -414,7 +415,7 @@
 				string-hash string-hash-ci number-hash))
       ;; Don't add unneccessary bounds checks for procedures known to be
       ;; well-behaved (these are not user-*created* functions)
-      (let ((randomization (##core#inline "C_random_fixnum" most-positive-fixnum)))
+      (let ((randomization (##core#inline "C_rnd_fix")))
         (if (memq user-function (list string-hash string-hash-ci))
             ;; String functions have differing signatures; treat them specially
             (lambda (object bound)

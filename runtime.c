@@ -886,7 +886,7 @@ C_regparm C_SYMBOL_TABLE *C_new_symbol_table(char *name, unsigned int size)
   stp->name = name;
   stp->size = size;
   stp->next = symbol_table_list;
-  stp->rand = C_unfix(C_random_fixnum(C_fix(size)));
+  stp->rand = rand();
 
   if((stp->table = (C_word *)C_malloc(size * sizeof(C_word))) == NULL)
     return NULL;
