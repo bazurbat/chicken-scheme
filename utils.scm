@@ -83,14 +83,16 @@
   (let ((csc (foreign-value "C_CSC_PROGRAM" c-string))
 	(load-file load)
 	(path (foreign-value "C_INSTALL_BIN_HOME" c-string)) )
-    (lambda (filename #!key (options '()) output-file (load #t) verbose)
+    (lambda (filename #!key options output-file (load #t) verbose)
       (let* ((cscpath (or (file-exists? (make-pathname path csc)) "csc"))
 	     (tmpfile (and (not output-file) (create-temporary-file "so")))
 	     (crapshell (eq? (build-platform) 'mingw32))
 	     (cmd (sprintf "~a~a -s ~a ~a -o ~a~a" 
 		    (if crapshell "\"" "")
 		    (qs cscpath)
-		    (string-intersperse (append (compile-file-options) options) " ")
+		    (string-intersperse
+		     (or options
+			 (compile-file-options)))
 		    (qs filename)
 		    (qs (or output-file tmpfile))
 		    (if crapshell "\"" ""))))
