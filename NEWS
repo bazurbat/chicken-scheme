@@ -9,6 +9,10 @@
   - enhanced line number tracking to get better error messages from
     the scrutinizer.
 
+- Runtime system
+  - the maximum length of strings is no longer limited to a 24-bit
+    number on 64-bit architectures but can be 56 bits.
+    
 4.7.4
 
 - Security fixes

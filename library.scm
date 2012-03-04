@@ -33,7 +33,8 @@
 	##sys#grow-vector ##sys#default-parameter-vector 
 	current-print-length setter-tag read-marks
 	##sys#print-exit
-	##sys#format-here-doc-warning)
+	##sys#format-here-doc-warning
+        maximal-string-length)
   (not inline ##sys#user-read-hook ##sys#error-hook ##sys#signal-hook ##sys#schedule
        ##sys#default-read-info-hook ##sys#infix-list-hook ##sys#sharp-number-hook
        ##sys#user-print-hook ##sys#user-interrupt-hook ##sys#step-hook)
@@ -144,13 +145,12 @@ EOF
 (include "common-declarations.scm")
 (include "banner.scm")
 
-
 (define-constant namespace-max-id-len 31)
 (define-constant char-name-table-size 37)
 (define-constant output-string-initial-size 256)
 (define-constant read-line-buffer-initial-size 1024)
 (define-constant default-parameter-vector-size 16)
-(define-constant maximal-string-length #x00ffffff)
+(define maximal-string-length (foreign-value "C_HEADER_SIZE_MASK" unsigned-long))
 
 
 ;;; System routines:
