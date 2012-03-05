@@ -432,7 +432,7 @@
 	((http)
 	 (locate-egg/http name location version destination tests proxy-host proxy-port proxy-user-pass) )
 	(else
-	 (error "cannot retrieve extension unsupported transport" transport) ) ) ) )
+	 (error "cannot retrieve extension - unsupported transport" transport) ) ) ) )
 
   (define (list-extensions transport location #!key quiet username password
 			   proxy-host proxy-port proxy-user-pass)
