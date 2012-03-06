@@ -175,8 +175,10 @@
 	     (ln (get-line-number form))
 	     (msg-and-args (cddr form))
 	     (msg  (if (null? msg-and-args)
-		       "assertion failed"
-		       (car msg-and-args)))
+                       "assertion failed"
+                       (let ((msg-str (car msg-and-args)))
+                         (##sys#check-string msg-str 'assert)
+                         msg-str)))
 	     (msg (if ln
 		      (string-append "(" ln ") " msg)
 		      msg)))
