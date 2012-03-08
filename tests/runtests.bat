@@ -322,7 +322,9 @@ a.out
 if errorlevel 1 exit /b 1
 
 echo ======================================== string->number tests ...
-%interpret% -s numbers-string-conversion-tests.scm
+%compile% numbers-string-conversion-tests.scm
+if errorlevel 1 exit /b 1
+a.out
 if errorlevel 1 exit /b 1
 
 echo ======================================== srfi-4 tests ...
