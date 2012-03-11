@@ -1,12 +1,14 @@
 ;;;; library-tests.scm
 
-(use srfi-1)
+(use srfi-1 extras)
 
 
 ;; numbers
 
 (assert (= -4.0 (round -4.3)))
+(assert (= -4.0 (round -4.5)))          ; R5RS
 (assert (= 4.0 (round 3.5)))
+(assert (= 4.0 (round 4.5)))            ; R5RS
 (assert (= 4 (round (string->number "7/2"))))
 (assert (= 7 (round 7)))
 (assert (zero? (round -0.5))) 		; is actually -0.0
@@ -84,6 +86,8 @@
 (assert (= (acos 0.5) (fpacos 0.5)))
 (assert (= (atan 0.5) (fpatan 0.5)))
 (assert (= (atan 42.0 1.2) (fpatan2 42.0 1.2)))
+(assert (= (atan 42.0 1) (fpatan2 42.0 1.0)))
+(assert (= (atan 42 1.0) (fpatan2 42.0 1.0)))
 (assert (= (exp 42.0) (fpexp 42.0)))
 (assert (= (log 42.0) (fplog 42.0)))
 (assert (= (expt 42.0 3.5) (fpexpt 42.0 3.5)))
@@ -248,7 +252,7 @@
        (assert (= 2 (p)))
        k))))
 
-(k #f)
+(and k (k #f))
 
 (assert (= 2 guard-called))
 

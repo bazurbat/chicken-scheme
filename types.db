@@ -418,7 +418,7 @@
 (round (#(procedure #:clean #:enforce) round (number) number)
        ((fixnum) (fixnum) #(1))
        ((float) (float)
-	(##core#inline_allocate ("C_a_i_flonum_round" 4) #(1))))
+	(##core#inline_allocate ("C_a_i_flonum_round_proper" 4) #(1))))
 
 (exact->inexact (#(procedure #:clean #:enforce) exact->inexact (number) float)
 		((float) #(1))
@@ -470,9 +470,9 @@
 			       (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
       ((fixnum float)
        (##core#inline_allocate ("C_a_i_flonum_atan2" 4) 
-			       (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))
+			       (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
 			       #(2)))
-      ((float float) (##core#inline_allocate ("C_a_i_flonum_atan2" 4) #(1))))
+      ((float float) (##core#inline_allocate ("C_a_i_flonum_atan2" 4) #(1) #(2))))
 
 (number->string (#(procedure #:clean #:enforce) number->string (number #!optional number) string)
 		((fixnum) (##sys#fixnum->string #(1))))
@@ -889,7 +889,7 @@
 	 ((float) (##core#inline_allocate ("C_a_i_flonum_floor" 4) #(1) )))
 
 (fpinteger? (#(procedure #:clean #:enforce) fpinteger? (float) boolean)
-	    ((float) (##core#inline "C_u_i_flonum_intergerp" #(1) )))
+	    ((float) (##core#inline "C_u_i_fpintegerp" #(1) )))
 
 (fplog (#(procedure #:clean #:enforce) fplog (float) float)
        ((float) (##core#inline_allocate ("C_a_i_flonum_log" 4) #(1) )))

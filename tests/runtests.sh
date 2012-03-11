@@ -131,6 +131,8 @@ $compile test-gc-hooks.scm
 
 echo "======================================== library tests ..."
 $interpret -s library-tests.scm
+$compile -specialize library-tests.scm
+./a.out
 $interpret -s records-and-setters-test.scm
 $compile records-and-setters-test.scm
 ./a.out

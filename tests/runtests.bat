@@ -103,6 +103,10 @@ if errorlevel 1 exit /b 1
 echo ======================================== library tests ...
 %interpret% -s library-tests.scm
 if errorlevel 1 exit /b 1
+%compile% -specialize library-tests.scm
+if errorlevel 1 exit /b 1
+a.out
+if errorlevel 1 exit /b 1
 %interpret% -s records-and-setters-test.scm
 if errorlevel 1 exit /b 1
 %compile% records-and-setters-test.scm
