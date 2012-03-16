@@ -468,7 +468,7 @@ EOF
 		  '()
 		  (cons 
 		   ,(if alloc?
-			`(##core#inline_allocate (,(conc "C_a_i_" tag "_ref") 4) v i)
+			`(##core#inline_allocate (,(conc "C_a_u_i_" tag "_ref") 4) v i)
 			`(##core#inline ,(conc "C_u_i_" tag "_ref") v i))
 		   (loop (fx+ i 1)) ) ) ) ) ) ) )))
 
