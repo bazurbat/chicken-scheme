@@ -2182,9 +2182,13 @@ C_inline C_word C_i_rationalp(C_word x)
 
 C_inline C_word C_u_i_fpintegerp(C_word x)
 {
-  double dummy;
+  double dummy, val;
 
-  return C_mk_bool(C_modf(C_flonum_magnitude(x), &dummy) == 0.0);
+  val = C_flonum_magnitude(x);
+
+  if(C_isnan(val) || C_isinf(val)) return C_SCHEME_FALSE;
+
+  return C_mk_bool(C_modf(val, &dummy) == 0.0);
 }
 
 
