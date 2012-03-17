@@ -269,3 +269,7 @@
 
 (assert (= 2 guard-called))
 
+;;; vector and blob limits
+
+(assert-fail (make-blob -1))
+(assert-fail (make-vector -1))

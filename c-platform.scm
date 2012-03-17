@@ -1045,7 +1045,7 @@
 		  (let ([tmp (gensym)]
 			[c (first (node-parameters n))] )
 		    (and (fixnum? c)
-			 (<= c 32)
+			 (<= 0 c 32)
 			 (let ([val (if (pair? (cdr callargs))
 					(second callargs)
 					(make-node '##core#undefined '() '()) ) ] )
