@@ -5,6 +5,7 @@
 
 ;; numbers
 
+(assert (not (not 3)))
 (assert (= -4.0 (round -4.3)))
 (assert (= -4.0 (round -4.5)))          ; R5RS
 (assert (= 4.0 (round 3.5)))

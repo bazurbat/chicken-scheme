@@ -51,7 +51,7 @@
 ;; scheme
 
 (not (#(procedure #:pure) not (*) boolean)
-     (((not boolean)) (let ((#(tmp) #(1))) '#t)))
+     (((not boolean)) (let ((#(tmp) #(1))) '#f)))
 
 (boolean? (#(procedure #:pure #:predicate boolean) boolean? (*) boolean))
 
