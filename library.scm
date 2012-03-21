@@ -2583,23 +2583,22 @@ EOF
 	  
 	  (define (r-number radix exactness)
 	    (set! rat-flag #f)
-	    (let ([tok (r-token)])
-	      (cond 
-		[(string=? tok ".")
-		  (##sys#read-error port "invalid use of `.'")]
-		[(and (fx> (##sys#size tok) 0) (char=? (string-ref tok 0) #\#))
-		  (##sys#read-error port "unexpected prefix in number syntax" tok)]
-		[else
-		  (let ([val (##sys#string->number tok (or radix 10) exactness)] )
-		    (cond [val
-			   ;;XXX move this into ##sys#string->number ?
-			   (when (and (##sys#inexact? val) rat-flag)
-			     (##sys#read-warning 
-			      port
-			      "cannot represent exact fraction - coerced to flonum" tok) )
-			   val]
-			  [radix (##sys#read-error port "illegal number syntax" tok)]
-			  [else (build-symbol tok)] ) ) ] ) ) )
+	    (let ((tok (r-token)))
+	      (cond
+		((string=? tok ".")
+                 (##sys#read-error port "invalid use of `.'"))
+		((and (fx> (##sys#size tok) 0) (char=? (string-ref tok 0) #\#))
+                 (##sys#read-error port "unexpected prefix in number syntax" tok))
+		(else
+                 (let ((val (##sys#string->number tok (or radix 10) exactness)) )
+                   (cond (val
+                          (when (and (##sys#inexact? val) (not (eq? exactness 'i)) rat-flag)
+                            (##sys#read-warning
+                             port
+                             "cannot represent exact fraction - coerced to flonum" tok) )
+                          val)
+                         (radix (##sys#read-error port "illegal number syntax" tok))
+                         (else (build-symbol tok)) ) ) ) ) ) )
 
 	  (define (r-number-with-exactness radix)
 	    (cond [(char=? #\# (##sys#peek-char-0 port))
