@@ -2224,8 +2224,13 @@ C_inline C_word C_i_flonump(C_word x)
 
 C_inline C_word C_i_finitep(C_word x)
 {
+  double val;
+  
   if((x & C_FIXNUM_BIT) != 0) return C_SCHEME_TRUE;
-  else return C_mk_bool(!C_isinf(C_flonum_magnitude(x)));
+  
+  val = C_flonum_magnitude(x);
+  if(C_isnan(val) || C_isinf(val)) return C_SCHEME_FALSE;
+  else return C_SCHEME_TRUE;
 }
 
 

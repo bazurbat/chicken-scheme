@@ -1083,7 +1083,10 @@ EOF
   (let ((num (##core#inline_allocate ("C_a_i_string_to_number" 4) str radix)))
     (case exactness
       ((i) (##core#inline_allocate ("C_a_i_exact_to_inexact" 4) num))
-      ((e) (##core#inline "C_i_inexact_to_exact" num))
+      ;; If inf/nan, don't error but just return #f
+      ((e) (and num
+                (##core#inline "C_i_finitep" num)
+                (##core#inline "C_i_inexact_to_exact" num)))
       (else num))))
 
 (define string->number ##sys#string->number)

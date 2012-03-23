@@ -475,6 +475,7 @@ static C_word C_fcall hash_string(int len, C_char *str, C_word m, C_word r, int 
 static C_word C_fcall lookup(C_word key, int len, C_char *str, C_SYMBOL_TABLE *stable) C_regparm;
 static double compute_symbol_table_load(double *avg_bucket_len, int *total);
 static C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word *fix, double *flo) C_regparm;
+static C_word C_fcall maybe_inexact_to_exact(C_word n) C_regparm;
 static void C_fcall remark_system_globals(void) C_regparm;
 static void C_fcall really_remark(C_word *x) C_regparm;
 static C_word C_fcall intern0(C_char *name) C_regparm;
@@ -4966,22 +4967,30 @@ C_regparm C_word C_fcall C_u_i_length(C_word lst)
   return C_fix(n);
 }
 
-
-C_regparm C_word C_fcall C_i_inexact_to_exact(C_word n)
+C_regparm C_word maybe_inexact_to_exact(C_word n)
 {
   double m;
   C_word r;
-
-  if(n & C_FIXNUM_BIT) return n;
-  else if(C_immediatep(n) || C_block_header(n) != C_FLONUM_TAG)
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "inexact->exact", n);
-
+  
   if(modf(C_flonum_magnitude(n), &m) == 0.0) {
     r = (C_word)m;
     
     if(r == m && C_fitsinfixnump(r))
       return C_fix(r);
   }
+  return C_SCHEME_FALSE;
+}
+
+C_regparm C_word C_fcall C_i_inexact_to_exact(C_word n)
+{
+  C_word r;
+  
+  if(n & C_FIXNUM_BIT) return n;
+  else if(C_immediatep(n) || C_block_header(n) != C_FLONUM_TAG)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "inexact->exact", n);
+
+  r = maybe_inexact_to_exact(n);
+  if (r != C_SCHEME_FALSE) return r;
 
   barf(C_CANT_REPRESENT_INEXACT_ERROR, "inexact->exact", n);
   return 0;
@@ -7336,7 +7345,7 @@ C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix0)
     if(sharpf || ratf || (exactpf && !exactf)) {
       n = C_flonum(a, ratf ? fn1 / (double)n : (double)n);
 
-      if(exactpf && exactf) n = C_i_inexact_to_exact(n);
+      if(exactpf && exactf) n = maybe_inexact_to_exact(n);
     }
     else n = C_fix(n);
 
@@ -7345,7 +7354,7 @@ C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix0)
   case 2:			/* flonum */
     n = C_flonum(a, ratf ? fn1 / fn : fn);
 
-    if(exactpf && exactf) n = C_i_inexact_to_exact(n);
+    if(exactpf && exactf) n = maybe_inexact_to_exact(n);
 
     break;
   }
