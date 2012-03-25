@@ -967,3 +967,10 @@
 
 (use (prefix srfi-1 list-))
 take
+
+
+;; #805: case-lambda is unhygienic (as well as ensure, see 4706afb4 and bc5cc698)
+(module foo ()
+  (import (prefix chicken c/) (prefix scheme s/))
+  (c/case-lambda ((a) a))
+  (c/ensure s/even? 2))
