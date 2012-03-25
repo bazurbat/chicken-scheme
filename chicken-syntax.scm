@@ -208,8 +208,8 @@
 		    #:type-error
 		    ,@(if (pair? args)
 			  args
-			  `((##core#immutable '"argument has incorrect type")
-			    ,tmp ',pred) ) ) ) ) ) ) ) )
+			  `((##core#immutable (##core#quote "argument has incorrect type"))
+			    ,tmp (##core#quote ,pred)) ) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
  'fluid-let '()
