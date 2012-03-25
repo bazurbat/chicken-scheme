@@ -764,7 +764,8 @@
  `((>= . ,(##sys#primitive-alias '>=))
    (car . ,(##sys#primitive-alias 'car))
    (cdr . ,(##sys#primitive-alias 'cdr))
-   (eq? . ,(##sys#primitive-alias 'eq?)))
+   (eq? . ,(##sys#primitive-alias 'eq?))
+   (length . ,(##sys#primitive-alias 'length)))
  (##sys#er-transformer
   (lambda (form r c)
     (##sys#check-syntax 'case-lambda form '(_ . _))
@@ -785,11 +786,12 @@
 	   (%>= (r '>=))
 	   (%eq? (r 'eq?))
 	   (%car (r 'car))
-	   (%cdr (r 'cdr)))
+	   (%cdr (r 'cdr))
+	   (%length (r 'length)))
       `(##core#lambda
 	,(append minvars rvar)
 	(##core#let
-	 ((,lvar (length ,rvar)))
+        ((,lvar (,%length ,rvar)))
 	 ,(fold-right
 	   (lambda (c body)
 	     (##sys#decompose-lambda-list
@@ -820,7 +822,7 @@
 				     bindings
 				     `(##core#let ,(map list vars1 minvars) ,bindings) ) ) )
 			    ,body) ) ) )
-	   '(##core#check (##sys#error (##core#immutable '"no matching clause in call to 'case-lambda' form")))
+	   '(##core#check (##sys#error (##core#immutable (##core#quote "no matching clause in call to 'case-lambda' form"))))
 	   (cdr form))))))))
 
 
