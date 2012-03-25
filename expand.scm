@@ -359,7 +359,7 @@
 				,(map (lambda (k)
 					(let ([s (car k)])
 					  `(,s (##sys#get-keyword
-						',(->keyword (##sys#strip-syntax s)) ,rvar
+						(##core#quote ,(->keyword (##sys#strip-syntax s))) ,rvar
 						,@(if (pair? (cdr k)) 
 						      `((,%lambda () ,@(cdr k)))
 						      '())))))
