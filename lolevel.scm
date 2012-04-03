@@ -484,8 +484,6 @@ EOF
 
 ;;; Evict objects into static memory:
 
-(define-constant evict-table-size 301)
-
 (define (object-evicted? x) (##core#inline "C_permanentp" x))
 
 (define (object-evict x . allocator)
