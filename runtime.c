@@ -4615,12 +4615,17 @@ C_regparm C_word C_fcall C_u_i_negativep(C_word x)
 
 C_regparm C_word C_fcall C_i_evenp(C_word x)
 {
+  double val, dummy;
   if(x & C_FIXNUM_BIT) return C_mk_nbool(x & 0x02);
 
   if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "even?", x);
 
-  return C_mk_bool(fmod(C_flonum_magnitude(x), 2.0) == 0.0);
+  val = C_flonum_magnitude(x);
+  if(C_isnan(val) || C_isinf(val) || C_modf(val, &dummy) != 0.0)
+    barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "even?", x);
+
+  return C_mk_bool(fmod(val, 2.0) == 0.0);
 }
 
 
@@ -4635,10 +4640,15 @@ C_regparm C_word C_fcall C_u_i_evenp(C_word x)
 
 C_regparm C_word C_fcall C_i_oddp(C_word x)
 {
+  double val, dummy;
   if(x & C_FIXNUM_BIT) return C_mk_bool(x & 0x02);
 
   if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "odd?", x);
+
+  val = C_flonum_magnitude(x);
+  if(C_isnan(val) || C_isinf(val) || C_modf(val, &dummy) != 0.0)
+    barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "odd?", x);
 
   return C_mk_bool(fmod(C_flonum_magnitude(x), 2.0) != 0.0);
 }
@@ -5141,7 +5151,7 @@ C_regparm C_word C_fcall C_a_i_arithmetic_shift(C_word **a, int c, C_word n1, C_
 
     f = C_flonum_magnitude(n1);
     
-    if(modf(f, &m) != 0.0)
+    if(C_isnan(f) || C_isinf(f) || modf(f, &m) != 0.0)
       barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "arithmetic-shift", n1);
 
     if(f < C_WORD_MIN || f > C_UWORD_MAX)
@@ -7204,16 +7214,23 @@ void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2
     else if(!C_immediatep(n2) && C_block_header(n2) == C_FLONUM_TAG) {
       f1 = (double)C_unfix(n1);
       f2 = C_flonum_magnitude(n2);
+      if(C_isnan(f2) || C_isinf(f2) || C_modf(f2, &r) != 0.0)
+        barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "quotient", n2);
     }
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "quotient", n2);
   }
   else if(!C_immediatep(n1) && C_block_header(n1) == C_FLONUM_TAG) {
     f1 = C_flonum_magnitude(n1);
+    if(C_isnan(f1) || C_isinf(f1) || C_modf(f1, &r) != 0.0)
+      barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "quotient", n1);
 
     if(n2 &C_FIXNUM_BIT)
       f2 = (double)C_unfix(n2);
-    else if(!C_immediatep(n2) && C_block_header(n2) == C_FLONUM_TAG)
+    else if(!C_immediatep(n2) && C_block_header(n2) == C_FLONUM_TAG) {
       f2 = C_flonum_magnitude(n2);
+      if(C_isnan(f2) || C_isinf(f2) || C_modf(f2, &r) != 0.0)
+        barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "quotient", n2);
+    }
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "quotient", n2);
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "quotient", n1);
