@@ -74,7 +74,7 @@ Enables or disables syntax-checking of embedded C/C++ code fragments. Checking C
 
 Declares that the toplevel procedures listed check the type of their arguments
 (either explicitly or by calling other enforcing procedures) and so a successfull
-invocation will indicate the the arguments are of the types declared.
+invocation will indicate the arguments are of the types declared.
 
 
 === export
