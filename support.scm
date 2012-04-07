@@ -1467,9 +1467,6 @@
 
 ;;; constant folding support:
 
-(define (string-null? x) 
-  (##core#inline "C_i_string_null_p" s))
-
 (define (constant-form-eval op argnodes k)
   (let* ((args (map (lambda (n) (first (node-parameters n))) argnodes))
 	 (form (cons op (map (lambda (arg) `(quote ,arg)) args))))
