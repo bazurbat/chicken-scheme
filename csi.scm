@@ -113,7 +113,7 @@ EOF
     -w  -no-warnings              disable all warnings
     -K  -keyword-style STYLE      enable alternative keyword-syntax
                                    (prefix, suffix or none)
-        -no-parentheses-synonyms  disables list delimiter synonyms
+        -no-parenthesis-synonyms  disables list delimiter synonyms
         -no-symbol-escape         disables support for escaped symbols
         -r5rs-syntax              disables the Chicken extensions to
                                    R5RS syntax
@@ -937,7 +937,7 @@ EOF
 
 (define-constant long-options
   '("-ss" "-sx" "-script" "-version" "-help" "--help" "-feature" "-no-feature" "-eval"
-    "-case-insensitive" "-keyword-style" "-no-parentheses-synonyms" "-no-symbol-escape"
+    "-case-insensitive" "-keyword-style" "-no-parenthesis-synonyms" "-no-symbol-escape"
     "-r5rs-syntax" "-setup-mode"
     "-require-extension" "-batch" "-quiet" "-no-warnings" "-no-init" 
     "-include-path" "-release" "-print" "-pretty-print" "--") )
@@ -968,7 +968,7 @@ EOF
 (define-constant simple-options
   '("--" "-b" "-batch" "-q" "-quiet" "-n" "-no-init" "-w" "-no-warnings" 
     "-i" "-case-insensitive"
-    "-no-parentheses-synonyms" "-no-symbol-escape" "-r5rs-syntax" "-setup-mode"
+    "-no-parenthesis-synonyms" "-no-symbol-escape" "-r5rs-syntax" "-setup-mode"
     ; Not "simple" but processed early
     "-ss" "-sx" "-s" "-script") )
 
@@ -1069,8 +1069,8 @@ EOF
 	       (keyword-style #:none) ]
 	      [(string=? "suffix" (cadr kwstyle))
 	       (keyword-style #:suffix) ] ) )
-      (when (member* '("-no-parentheses-synonyms") args)
-	(unless quiet (display "Disabled support for parentheses synonyms\n"))
+      (when (member* '("-no-parenthesis-synonyms") args)
+	(unless quiet (display "Disabled support for parenthesis-synonyms\n"))
         (parentheses-synonyms #f) )
       (when (member* '("-no-symbol-escape") args)
 	(unless quiet (display "Disabled support for escaped symbols\n"))
