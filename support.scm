@@ -52,7 +52,7 @@
 (define collected-debugging-output
   (open-output-string))
 
-(define +logged-debugging-modes+ '(o x S i))
+(define +logged-debugging-modes+ '(o x S))
 
 (define (debugging mode msg . args)
   (define (text)
