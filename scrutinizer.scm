@@ -1273,7 +1273,7 @@
 				      (list (merge-argument-types atypes1 atypes2))
 				      (merge-result-types rtypes1 rtypes2))))
 				 #f
-				 (cdr t))))
+				 ts)))
 			   ((lset= eq? '(fixnum float) ts) 'number)
 			   (else
 			    (let* ((ts (append-map
