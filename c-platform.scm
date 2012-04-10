@@ -90,7 +90,7 @@
     analyze-only dynamic scrutinize no-argc-checks no-procedure-checks
     no-procedure-checks-for-toplevel-bindings module
     no-bound-checks no-procedure-checks-for-usual-bindings no-compiler-syntax
-    no-parenthesis-synonyms no-symbol-escape r5rs-syntax emit-all-import-libraries
+    no-parentheses-synonyms no-symbol-escape r5rs-syntax emit-all-import-libraries
     strict-types clustering
     lambda-lift unboxing		; OBSOLETE
     setup-mode no-module-registration) )
@@ -100,6 +100,7 @@
     output-file include-path heap-size stack-size unit uses keyword-style require-extension 
     inline-limit profile-name 
     disable-warning			; OBSOLETE
+    parenthesis-synonyms
     prelude postlude prologue epilogue nursery extend feature no-feature types
     emit-import-library emit-inline-file static-extension consult-inline-file
     emit-type-file

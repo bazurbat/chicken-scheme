@@ -1645,7 +1645,7 @@ Usage: chicken FILENAME OPTION ...
     -case-insensitive            don't preserve case of read symbols
     -keyword-style STYLE         allow alternative keyword syntax
                                   (prefix, suffix or none)
-    -no-parenthesis-synonyms     disables list delimiter synonyms
+    -no-parentheses-synonyms     disables list delimiter synonyms
     -no-symbol-escape            disables support for escaped symbols
     -r5rs-syntax                 disables the Chicken extensions to
                                   R5RS syntax
