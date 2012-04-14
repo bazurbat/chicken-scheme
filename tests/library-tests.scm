@@ -278,3 +278,9 @@
 
 (assert-fail (make-blob -1))
 (assert-fail (make-vector -1))
+
+;;; eval return values
+
+(assert (= 1 (eval 1)))
+(assert (eq? '() (receive (eval '(values)))))
+(assert (equal? '(1 2 3) (receive (eval '(values 1 2 3)))))

@@ -659,7 +659,7 @@
 			 (let ((#(tmp2) #(2)))
 			   (#(tmp2) (#(tmp1)))))))
 
-(eval (procedure eval (* #!optional (struct environment)) *))
+(eval (procedure eval (* #!optional (struct environment)) . *))
 (char-ready? (#(procedure #:enforce) char-ready? (#!optional input-port) boolean))
 
 (imag-part (#(procedure #:clean #:enforce) imag-part (number) number)
