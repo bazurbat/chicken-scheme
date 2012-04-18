@@ -410,26 +410,30 @@
 	  cur
 	  (loop nxt) ) ) ) )
 
-(define (*make-hash-function user-function)
-  (if (memq user-function (list eq?-hash eqv?-hash equal?-hash hash
-				string-hash string-hash-ci number-hash))
-      ;; Don't add unneccessary bounds checks for procedures known to be
-      ;; well-behaved (these are not user-*created* functions)
-      (let ((randomization (##core#inline "C_rnd_fix")))
-        (if (memq user-function (list string-hash string-hash-ci))
-            ;; String functions have differing signatures; treat them specially
-            (lambda (object bound)
-              (user-function object bound #f #f randomization))
-            (lambda (object bound)
-              (user-function object bound randomization))))
-      (lambda (object bound)
-	(let ((hash (user-function object bound)))
-	  (##sys#check-exact hash 'hash user-function)
-	  (if (and (fx< hash bound) (fx>= hash 0))
-	      hash
-	      (##sys#signal-hook 
-	       #:bounds-error 'hash
-	       "Hash value out of bounds" bound hash user-function) )))))
+(define *make-hash-function
+  (let ((eq?-hash eq?-hash) (eqv?-hash eqv?-hash) (equal?-hash equal?-hash)
+	(hash hash) (string-hash string-hash) (string-hash-ci string-hash-ci)
+	(number-hash number-hash))
+    (lambda (user-function)
+      (if (memq user-function (list eq?-hash eqv?-hash equal?-hash hash
+				    string-hash string-hash-ci number-hash))
+	  ;; Don't add unnecessary bounds checks for procedures known to be
+	  ;; well-behaved (these are not user-*created* functions)
+	  (let ((randomization (##core#inline "C_rnd_fix")))
+	    (if (memq user-function (list string-hash string-hash-ci))
+		;; String functions have differing signatures; treat them specially
+		(lambda (object bound)
+		  (user-function object bound #f #f randomization))
+		(lambda (object bound)
+		  (user-function object bound randomization))))
+	  (lambda (object bound)
+	    (let ((hash (user-function object bound)))
+	      (##sys#check-exact hash 'hash user-function)
+	      (if (and (fx< hash bound) (fx>= hash 0))
+		  hash
+		  (##sys#signal-hook 
+		   #:bounds-error 'hash
+		   "Hash value out of bounds" bound hash user-function) )))))))
 
 ;; "Raw" make-hash-table:
 
@@ -462,7 +466,10 @@
 	[core-equal? equal?]
 	[core-string=? string=?]
 	[core-string-ci=? string-ci=?]
-	[core= =] )
+	[core= =]
+	(eq?-hash eq?-hash) (eqv?-hash eqv?-hash) (equal?-hash equal?-hash)
+	(hash hash) (string-hash string-hash) (string-hash-ci string-hash-ci)
+	(number-hash number-hash))
     (lambda arguments0
       (let ([arguments arguments0]
 	    [test equal?]
