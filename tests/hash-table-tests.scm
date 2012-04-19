@@ -134,6 +134,12 @@
 (assert (= 123 (hash-table-ref ht "test")))
 (assert (= 1 (hash-table-ref ht "one")))
 
+;; Issue #818, found by Jim Ursetto (srfi-13 defines its own string-hash)
+(print "HT - After overwriting 'string-hash' should still work")
+(set! string-hash (lambda (x) (error "Wrong string-hash called")))
+(set! ht (make-hash-table string=?))
+(hash-table-set! ht "foo" "bar")
+(assert (string=? (hash-table-ref ht "foo") "bar"))
 
 (set! ht (make-hash-table equal? (lambda (object bounds)
                                    (case object
