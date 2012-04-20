@@ -413,10 +413,12 @@
 (define *make-hash-function
   (let ((eq?-hash eq?-hash) (eqv?-hash eqv?-hash) (equal?-hash equal?-hash)
 	(hash hash) (string-hash string-hash) (string-hash-ci string-hash-ci)
-	(number-hash number-hash))
+	(number-hash number-hash) (object-uid-hash object-uid-hash)
+        (symbol-hash symbol-hash) (keyword-hash keyword-hash))
     (lambda (user-function)
       (if (memq user-function (list eq?-hash eqv?-hash equal?-hash hash
-				    string-hash string-hash-ci number-hash))
+				    string-hash string-hash-ci number-hash
+				    object-uid-hash symbol-hash keyword-hash))
 	  ;; Don't add unnecessary bounds checks for procedures known to be
 	  ;; well-behaved (these are not user-*created* functions)
 	  (let ((randomization (##core#inline "C_rnd_fix")))
