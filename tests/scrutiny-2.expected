@@ -60,27 +60,11 @@ Note: at toplevel:
   `float' and will always return false
 
 Note: at toplevel:
-  (scrutiny-tests-2.scm:24) in procedure call to `exact?', the predicate is called with an argument of type
-  `fixnum' and will always return true
-
-Note: at toplevel:
-  (scrutiny-tests-2.scm:24) in procedure call to `exact?', the predicate is called with an argument of type
-  `float' and will always return false
-
-Note: at toplevel:
   (scrutiny-tests-2.scm:25) in procedure call to `flonum?', the predicate is called with an argument of type
   `float' and will always return true
 
 Note: at toplevel:
   (scrutiny-tests-2.scm:25) in procedure call to `flonum?', the predicate is called with an argument of type
-  `fixnum' and will always return false
-
-Note: at toplevel:
-  (scrutiny-tests-2.scm:26) in procedure call to `inexact?', the predicate is called with an argument of type
-  `float' and will always return true
-
-Note: at toplevel:
-  (scrutiny-tests-2.scm:26) in procedure call to `inexact?', the predicate is called with an argument of type
   `fixnum' and will always return false
 
 Note: at toplevel:

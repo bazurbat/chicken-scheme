@@ -2,6 +2,10 @@
 
 (use srfi-1 extras)
 
+(define-syntax assert-fail
+  (syntax-rules ()
+    ((_ exp)
+     (assert (handle-exceptions ex #t exp #f)))))
 
 ;; numbers
 
@@ -20,6 +24,7 @@
 (assert (= 1.0 (round 0.6)))
 (assert (rational? 1))
 (assert (finite? 1))
+(assert-fail (finite? 'foo))
 (assert (rational? 1.0))
 (assert (finite? 1.0))
 (assert (not (rational? +inf.0)))
@@ -40,10 +45,14 @@
 (assert (not (integer? "foo")))
 ; XXX number missing
 
-(define-syntax assert-fail
-  (syntax-rules ()
-    ((_ exp)
-     (assert (handle-exceptions ex #t exp #f)))))
+(assert (exact? 1))
+(assert (not (exact? 1.0)))
+(assert (not (exact? 1.1)))
+(assert-fail (exact? 'foo))
+(assert (not (inexact? 1)))
+(assert (inexact? 1.0))
+(assert (inexact? 1.1))
+(assert-fail (inexact? 'foo))
 
 (assert-fail (/ 1 1 0))
 (assert-fail (/ 1 1 0.0))

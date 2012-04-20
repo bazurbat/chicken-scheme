@@ -218,10 +218,14 @@
 	  ((fixnum) (let ((#(tmp) #(1))) '#t))
 	  ((float) (##core#inline "C_u_i_fpintegerp" #(1))))
 
-(exact? (#(procedure #:pure #:predicate fixnum) exact? (*) boolean))
 (real? (#(procedure #:pure #:predicate number) real? (*) boolean))
 (complex? (#(procedure #:pure #:predicate number) complex? (*) boolean))
-(inexact? (#(procedure #:pure #:predicate float) inexact? (*) boolean))
+(exact? (#(procedure #:clean #:enforce) exact? (number) boolean)
+        ((fixnum) (let ((#(tmp) #(1))) '#t))
+        ((float) (let ((#(tmp) #(1))) '#f)))
+(inexact? (#(procedure #:clean #:enforce) inexact? (number) boolean)
+          ((fixnum) (let ((#(tmp) #(1))) '#f))
+          ((float) (let ((#(tmp) #(1))) '#t)))
 
 ;;XXX predicate?
 (rational? (#(procedure #:pure) rational? (*) boolean)
@@ -474,10 +478,10 @@
 			       #(2)))
       ((float float) (##core#inline_allocate ("C_a_i_flonum_atan2" 4) #(1) #(2))))
 
-(number->string (#(procedure #:clean #:enforce) number->string (number #!optional number) string)
+(number->string (#(procedure #:clean #:enforce) number->string (number #!optional fixnum) string)
 		((fixnum) (##sys#fixnum->string #(1))))
 
-(string->number (#(procedure #:clean #:enforce) string->number (string #!optional number) 
+(string->number (#(procedure #:clean #:enforce) string->number (string #!optional fixnum) 
 		 (or number boolean)))
 
 (char? (#(procedure #:pure #:predicate char) char? (*) boolean))
@@ -802,9 +806,9 @@
 (file-exists? (#(procedure #:clean #:enforce) file-exists? (string) (or boolean string)))
 (directory-exists? (#(procedure #:clean #:enforce) directory-exists? (string) (or boolean string)))
 
-(finite? (#(procedure #:pure) finite? (*) boolean)
+(finite? (#(procedure #:clean #:enforce) finite? (number) boolean)
 	 ((fixnum) (let ((#(tmp) #(1))) '#t))
-	 ((*) (##core#inline "C_i_finitep" #(1))))
+	 (((or float number)) (##core#inline "C_i_finitep" #(1))))
 
 (fixnum-bits fixnum)
 (fixnum-precision fixnum)
