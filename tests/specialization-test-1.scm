@@ -36,4 +36,9 @@ return n;}
 
 (assert (= 2 (spec 1)))
 
+;; "smash-component-types!" had to convert "list[-of]" types to "pair" (#803)
+(let ((x (list 'a)))
+  (set-cdr! x x)
+  (assert (not (list? x))))
+
 )

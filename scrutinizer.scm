@@ -829,7 +829,9 @@
       rn)))
       
 
-;;; replace pair/vector types with components to component-less variants in env or blist
+;;; replace pair/vector types with components to variants with undetermined
+;;  component types (used for env or blist); also convert "list[-of]" types
+;;  into "pair", since mutation may take place
 
 (define (smash-component-types! lst where)
   (do ((lst lst (cdr lst)))
@@ -838,11 +840,15 @@
 	       (change! (cute set-cdr! (car lst) <>)))
       (when (pair? t)
 	(case (car t)
-	  ((list-of vector-of)
+	  ((vector-of)
 	   (dd "  smashing `~s' in ~a" (caar lst) where)
-	   (change! (if (eq? 'list-of (car t)) 'list 'vector))
+	   (change! 'vector)
 	   (car t))
-	  ((pair vector list)
+	  ((list-of list)
+	   (dd "  smashing `~s' in ~a" (caar lst) where)
+	   (change! 'pair)
+	   (car t))
+	  ((pair vector)
 	   (dd "  smashing `~s' in ~a" (caar lst) where)
 	   (change! (car t))
 	   (car t))
