@@ -1025,3 +1025,9 @@ take
   (import (prefix chicken c/) (prefix scheme s/))
   (c/case-lambda ((a) a))
   (c/ensure s/even? 2))
+
+
+;; #816: compiler-syntax should obey hygiene in its rewrites
+(module foo ()
+  (import (prefix (only scheme map lambda list) ~))
+  (~map (~lambda (y) y) (~list 1)))

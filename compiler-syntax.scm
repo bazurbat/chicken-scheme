@@ -46,7 +46,7 @@
   (let ((t (cons (##sys#ensure-transformer
 		  (##sys#er-transformer transformer)
 		  (car names))
-		 se)))
+		 (append se ##sys#default-macro-environment))))
     (for-each
      (lambda (name)
        (##sys#put! name '##compiler#compiler-syntax t) )
@@ -66,6 +66,7 @@
 	(%loop (r 'for-each-loop))
 	(%proc (gensym))
 	(%begin (r 'begin))
+	(%quote (r 'quote))
 	(%and (r 'and))
 	(%pair? (r 'pair?))
 	(%lambda (r 'lambda))
@@ -76,7 +77,7 @@
 	  `(,%let ((,%proc ,(cadr x))
 		   ,@(map list vars lsts))
 		  ,@(map (lambda (var)
-			   `(##core#check (##sys#check-list ,var 'for-each)))
+			   `(##core#check (##sys#check-list ,var (,%quote for-each))))
 			 vars)
 		  (,%let ,%loop ,(map list vars vars)
 			 (,%if (,%and ,@(map (lambda (v) `(,%pair? ,v)) vars))
@@ -89,7 +90,7 @@
 	x)))
 
 (define-internal-compiler-syntax ((map ##sys#map #%map) x r c)
-  (pair?)
+  (pair? cons)
   (let ((%let (r 'let))
 	(%if (r 'if))
 	(%loop (r 'map-loop))
@@ -113,7 +114,7 @@
 		   (,%proc ,(cadr x))
 		   ,@(map list vars lsts))		   
 		  ,@(map (lambda (var)
-			   `(##core#check (##sys#check-list ,var 'map)))
+			   `(##core#check (##sys#check-list ,var (,%quote map))))
 			 vars)
 		  (,%let ,%loop ,(map list vars vars)
 			 (,%if (,%and ,@(map (lambda (v) `(,%pair? ,v)) vars))
