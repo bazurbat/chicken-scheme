@@ -220,6 +220,17 @@
 (assert (equal? '#${abc} '#${ab0c}))
 (assert (equal? '#${a b c} '#${0a0b0c}))
 
+;; #800: blobs and strings with embedded nul bytes should not be compared
+;; with ASCIIZ string comparison functions
+(assert (not (equal? '#${a b 0 c} '#${a b 0 d})))
+(assert (not (blob=? '#${a b 0 c} '#${a b 0 d})))
+(assert (not (equal=? "foo\x00a" "foo\x00b")))
+(assert (not (string=? "foo\x00a" "foo\x00b")))
+(assert (not (string-ci=? "foo\x00a" "foo\x00b")))
+(assert (string<? "foo\x00a" "foo\x00b"))
+(assert (string>? "foo\x00b" "foo\x00a"))
+(assert (string-ci<? "foo\x00a" "foo\x00B"))
+(assert (string-ci>? "foo\x00b" "foo\x00A"))
 
 ;;; getter-with-setter
 

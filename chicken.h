@@ -1156,9 +1156,9 @@ extern double trunc(double);
   (C_memcpy(C_pointer_address(to) + C_unfix(toff), C_pointer_address(from) + C_unfix(foff), \
 	    C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_set_memory(to, c, n)          (C_memset(C_data_pointer(to), C_character_code(c), C_unfix(n)), C_SCHEME_UNDEFINED)
-#define C_string_compare(to, from, n)   C_fix(C_strncmp(C_c_string(to), C_c_string(from), C_unfix(n)))
+#define C_string_compare(to, from, n)   C_fix(C_memcmp(C_c_string(to), C_c_string(from), C_unfix(n)))
 #define C_string_compare_case_insensitive(from, to, n) \
-                                        C_fix(C_strncasecmp(C_c_string(from), C_c_string(to), C_unfix(n)))
+                                        C_fix(C_memcasecmp(C_c_string(from), C_c_string(to), C_unfix(n)))
 #define C_rename_file(old, new)         C_fix(rename(C_c_string(old), C_c_string(new)))
 #define C_delete_file(fname)            C_fix(remove(C_c_string(fname)))
 #define C_poke_double(b, i, n)          (((double *)C_data_pointer(b))[ C_unfix(i) ] = C_c_double(n), C_SCHEME_UNDEFINED)
@@ -2106,6 +2106,20 @@ C_inline C_word C_u_i_string_equal_p(C_word x, C_word y)
          && !C_memcmp((char *)C_data_pointer(x), (char *)C_data_pointer(y), n));
 }
 
+/* Like memcmp but case insensitive (to strncasecmp as memcmp is to strncmp) */
+C_inline int C_memcasecmp(const char *x, const char *y, unsigned int len)
+{
+  const unsigned char *ux = (const unsigned char *)x;
+  const unsigned char *uy = (const unsigned char *)y;
+
+  if (len == 0) return 0;
+  
+  do {
+    if (tolower(*ux++) != tolower(*uy++))
+      return (tolower(*--ux) - tolower(*--uy));
+  } while(--len != 0);
+  return 0;
+}
 
 C_inline C_word C_i_eqvp(C_word x, C_word y)
 {
