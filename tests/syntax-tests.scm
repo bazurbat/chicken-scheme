@@ -764,6 +764,33 @@
 
 (assert (string=? "hello, XXX" (bar who: "XXX")))
 
+;;; DSSSL keyword arguments in various combinations with optional and rest args
+;;; reported on IRC by R. Winkler
+
+(define (test-optional&rest x y #!optional z #!rest r)
+  (list x y z r))
+
+(assert (equal? '(3 4 5 (6 7)) (test-optional&rest 3 4 5 6 7)))
+
+(define (test-optional&key x y #!optional z #!key i (j 1))
+  (list x y z i: i j: j))
+
+(assert (equal? '(3 4 5 i: 6 j: 7) (test-optional&key 3 4 5 i: 6 j: 7 8)))
+;; Unfortunate but correct (missing optional arg)
+(assert (equal? '(3 4 i: i: #f j: 1) (test-optional&key 3 4 i: 6 j: 7 8)))
+
+(define (test-key&rest x y #!rest r #!key i (j 1))
+  (list x y i: i j: j r))
+
+(assert (equal? '(3 4 i: 5 j: 1 (i: 5 6 7)) (test-key&rest 3 4 i: 5 6 7)))
+(assert (equal? '(3 4 i: 5 j: 6 (i: 5 j: 6 7 8))
+                (test-key&rest 3 4 i: 5 j: 6 7 8)))
+
+(define (test-optional-key&rest x y #!optional z #!rest r #!key i (j 1))
+  (list x y z i: i j: j r))
+
+(assert (equal? '(3 4 5 i: 6 j: 7 (i: 6 j: 7 8))
+                (test-optional-key&rest 3 4 5 i: 6 j: 7 8)))
 
 ;;; import not seen, if explicitly exported and renamed:
 
