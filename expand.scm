@@ -407,7 +407,7 @@
 			  (err "`#!rest' argument marker in wrong context") ) ]
 		     [(#!key)
 		      (if (not rvar) (set! rvar (macro-alias 'tmp se)))
-		      (if (fx<= mode 3)
+		      (if (fx<= mode 2)
 			  (loop 3 req opt '() r)
 			  (err "`#!key' argument marker in wrong context") ) ]
 		     [else

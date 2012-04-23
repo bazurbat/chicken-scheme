@@ -792,6 +792,30 @@
 (assert (equal? '(3 4 5 i: 6 j: 7 (i: 6 j: 7 8))
                 (test-optional-key&rest 3 4 5 i: 6 j: 7 8)))
 
+;;; Miscellaneous DSSSL tests
+
+;; DSSSL annotations may each appear only once
+(f (eval '(lambda (x #!optional o1 #!optional o2) 'foo)))
+(f (eval '(lambda (x #!rest r1 #!rest r1) 'foo)))
+(f (eval '(lambda (x #!key k1 #!key k2) 'foo)))
+
+;; DSSSL annotations must occur in order (optional, rest, key)
+(f (eval '(lambda (x #!rest r1 #!optional o1) 'foo)))
+(f (eval '(lambda (x #!key k1 #!optional o1) 'foo)))
+(f (eval '(lambda (x #!key r1 #!rest k1) 'foo)))
+
+;; #!rest limited to 1 arg
+(f (eval '(lambda (x #!rest r1 r2) 'foo)))
+
+;; list arguments invalid for required and rest parameters
+(f (eval '(lambda ((x 0) #!rest r1) 'foo)))
+(f (eval '(lambda (x #!rest (r1 0)) 'foo)))
+
+;; Dotted list syntax can be mixed in
+(t '(1 2 3 4 (5 6))
+   ((lambda (x y #!optional o1 o2 . r) (list x y o1 o2 r))
+    1 2 3 4 5 6))
+
 ;;; import not seen, if explicitly exported and renamed:
 
 (module rfoo (rbar rbaz)
