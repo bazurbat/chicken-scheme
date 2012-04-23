@@ -1118,7 +1118,7 @@ extern double trunc(double);
                                                            (C_char *)C_data_pointer(s2) + C_unfix(start2), \
                                                            C_unfix(len) ) == 0)
 #define C_substring_compare_case_insensitive(s1, s2, start1, start2, len) \
-                                        C_mk_bool(C_strncasecmp((C_char *)C_data_pointer(s1) + C_unfix(start1), \
+                                        C_mk_bool(C_memcasecmp((C_char *)C_data_pointer(s1) + C_unfix(start1), \
                                                                 (C_char *)C_data_pointer(s2) + C_unfix(start2), \
                                                                 C_unfix(len) ) == 0)
 /* this does not use C_mutate: */
@@ -2112,12 +2112,10 @@ C_inline int C_memcasecmp(const char *x, const char *y, unsigned int len)
   const unsigned char *ux = (const unsigned char *)x;
   const unsigned char *uy = (const unsigned char *)y;
 
-  if (len == 0) return 0;
-  
-  do {
+  while (len--) {
     if (tolower(*ux++) != tolower(*uy++))
       return (tolower(*--ux) - tolower(*--uy));
-  } while(--len != 0);
+  }
   return 0;
 }
 

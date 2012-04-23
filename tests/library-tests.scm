@@ -220,8 +220,14 @@
 (assert (equal? '#${abc} '#${ab0c}))
 (assert (equal? '#${a b c} '#${0a0b0c}))
 
-;; #800: blobs and strings with embedded nul bytes should not be compared
+;; #808: blobs and strings with embedded nul bytes should not be compared
 ;; with ASCIIZ string comparison functions
+(assert (equal? '#${a b 0 c} '#${a b 0 c}))
+(assert (blob=? '#${a b 0 c} '#${a b 0 c}))
+(assert (equal=? "foo\x00a" "foo\x00a"))
+(assert (string=? "foo\x00a" "foo\x00a"))
+(assert (string-ci=? "foo\x00a" "foo\x00a"))
+(assert (string-ci=? "foo\x00a" "foo\x00A"))
 (assert (not (equal? '#${a b 0 c} '#${a b 0 d})))
 (assert (not (blob=? '#${a b 0 c} '#${a b 0 d})))
 (assert (not (equal=? "foo\x00a" "foo\x00b")))

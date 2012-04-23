@@ -26,11 +26,7 @@
 
 
 (declare
- (unit data-structures)
- (foreign-declare #<<EOF
-#define C_mem_compare(to, from, n)   C_fix(C_memcmp(C_c_string(to), C_c_string(from), C_unfix(n)))
-EOF
-) )
+ (unit data-structures))
 
 (include "common-declarations.scm")
 
@@ -352,7 +348,7 @@ EOF
   (let ((len1 (##sys#size s1))
 	(len2 (##sys#size s2)) )
     (let* ((len-diff (fx- len1 len2)) 
-	   (cmp (##core#inline "C_mem_compare" s1 s2 (if (fx< len-diff 0) len1 len2))))
+	   (cmp (##core#inline "C_string_compare" s1 s2 (if (fx< len-diff 0) len1 len2))))
       (if (fx= cmp 0) 
 	  len-diff 
 	  cmp))))
