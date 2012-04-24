@@ -674,10 +674,7 @@ EOF
 	       [(|-O3|) (set! rest (cons* "-optimize-level" "3" rest))]
 	       [(|-O4|) (set! rest (cons* "-optimize-level" "4" rest))]
 	       [(|-O5|)
-		(set! rest (cons* "-optimize-level" "5" rest))
-		(when (memq (build-platform) '(mingw32 cygwin gnu clang))
-		  (set! compile-options 
-		    (cons* "-O3" "-fomit-frame-pointer" compile-options)) ) ]
+		(set! rest (cons* "-optimize-level" "5" rest))]
 	       [(|-d0|) (set! rest (cons* "-debug-level" "0" rest))]
 	       [(|-d1|) (set! rest (cons* "-debug-level" "1" rest))]
 	       [(|-d2|) (set! rest (cons* "-debug-level" "2" rest))]
