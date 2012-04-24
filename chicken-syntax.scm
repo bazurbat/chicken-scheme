@@ -172,16 +172,11 @@
     (lambda (form r c)
       (##sys#check-syntax 'assert form '#(_ 1))
       (let* ((exp (cadr form))
-	     (ln (get-line-number form))
 	     (msg-and-args (cddr form))
-	     (msg  (if (null? msg-and-args)
-                       "assertion failed"
-                       (let ((msg-str (car msg-and-args)))
-                         (##sys#check-string msg-str 'assert)
-                         msg-str)))
-	     (msg (if ln
-		      (string-append "(" ln ") " msg)
-		      msg)))
+	     (msg (optional msg-and-args "assertion failed")))
+	(when (string? msg)
+	  (and-let* ((ln (get-line-number form)))
+	    (set! msg (string-append "(" ln ") " msg))))
 	`(##core#if (##core#check ,exp)
 		    (##core#undefined)
 		    (##sys#error 
