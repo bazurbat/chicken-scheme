@@ -846,7 +846,7 @@
 	   (car t))
 	  ((list-of list)
 	   (dd "  smashing `~s' in ~a" (caar lst) where)
-	   (change! 'pair)
+	   (change! '(or pair null))
 	   (car t))
 	  ((pair vector)
 	   (dd "  smashing `~s' in ~a" (caar lst) where)
