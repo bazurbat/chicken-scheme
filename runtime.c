@@ -4650,7 +4650,7 @@ C_regparm C_word C_fcall C_i_oddp(C_word x)
   if(C_isnan(val) || C_isinf(val) || C_modf(val, &dummy) != 0.0)
     barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "odd?", x);
 
-  return C_mk_bool(fmod(C_flonum_magnitude(x), 2.0) != 0.0);
+  return C_mk_bool(fmod(val, 2.0) != 0.0);
 }
 
 
@@ -5151,7 +5151,7 @@ C_regparm C_word C_fcall C_a_i_arithmetic_shift(C_word **a, int c, C_word n1, C_
 
     f = C_flonum_magnitude(n1);
     
-    if(C_isnan(f) || C_isinf(f) || modf(f, &m) != 0.0)
+    if(C_isnan(f) || C_isinf(f) || C_modf(f, &m) != 0.0)
       barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "arithmetic-shift", n1);
 
     if(f < C_WORD_MIN || f > C_UWORD_MAX)
