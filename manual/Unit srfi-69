@@ -26,6 +26,9 @@ Returns a new {{HASH-TABLE}} with the supplied configuration.
 ; {{WEAK-KEYS}} : Use weak references for keys. (Ignored)
 ; {{WEAK-VALUES}} : Use weak references for values. (Ignored)
 
+Please note that hash tables are ''not'' guaranteed to compare {{equal?}}
+to each other, even if they contain exactly the same key/value pairs.
+
 
 ==== alist->hash-table
 

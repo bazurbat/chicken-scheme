@@ -347,7 +347,7 @@ exactly.
 
 <enscript highlight=scheme>
 (irregex-search "needle" "hayneedlehay") => #<match>
-</enscipt>
+</enscript>
 
 By default the match is case-sensitive, though you can control this
 either with the compiler flags or local overrides:

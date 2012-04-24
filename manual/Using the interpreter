@@ -61,7 +61,7 @@ The options recognized by the interpreter are:
 
 ; -R  -require-extension NAME : Equivalent to evaluating {{(require-extension NAME)}}.
 
-; -version : Write the banner with version information to standard output and exit.
+; -v  -version : Write the banner with version information to standard output and exit.
 
 
 === Writing Scheme scripts

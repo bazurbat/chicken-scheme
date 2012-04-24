@@ -294,7 +294,7 @@ error is signalled.
 
 === Pointer vectors
 
-/Pointer-vectors/ are specialized and space-efficient vectors or
+''Pointer vectors'' are specialized and space-efficient vectors for
 foreign pointer objects. All procedures defined below that accept
 a pointer object allow {{#f}} as an alternative representation of
 the {{NULL}}-pointer.
@@ -539,9 +539,9 @@ Signals an error if any of the above constraints is violated.
 <procedure>(object-evict X [ALLOCATOR])</procedure>
 
 Copies the object {{X}} recursively into the memory pointed to by the foreign
-pointer object returned by {{ALLOCATOR}}, which should be a procedure of a
-single argument (the number of bytes to allocate). The freshly copied object is
-returned.
+pointer object returned by {{ALLOCATOR}}.  The freshly copied object is
+returned.  {{ALLOCATOR}} should be a procedure of a single argument
+(the number of bytes to allocate), and defaults to {{allocate}}.
 
 This facility allows moving arbitrary objects into static memory, but care
 should be taken when mutating evicted data: setting slots in evicted
@@ -549,7 +549,9 @@ vector-like objects to non-evicted data is not allowed. It '''is''' possible to
 set characters/bytes in evicted strings or byte-vectors, though.  It is
 advisable '''not''' to evict ports, because they might be mutated by certain
 file-operations.  {{object-evict}} is able to handle circular and shared
-structures, but evicted symbols are no longer unique: a fresh copy of the
+structures.
+
+Evicted symbols are no longer unique: a fresh copy of the
 symbol is created, so
 
 <enscript highlight=scheme>
@@ -561,8 +563,16 @@ y                              ==> foo
 (eq? (car z) (cadr z))         ==> #t
 </enscript>
 
-The {{ALLOCATOR}} defaults to {{allocate}}.
+This loss of uniqueness also implies that an evicted structure --
+such as one created with {{define-record}} -- cannot be operated on with
+the existing predicate or accessors, as internally a symbol is used to
+denote the type:
 
+<enscript highlight=scheme>
+(define-record point x y)
+(point? (make-point x y))                  ; => #t
+(point? (object-evict (make-point x y)))   ; => #f
+</enscript>
 
 ==== object-evict-to-location
 

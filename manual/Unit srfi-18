@@ -80,6 +80,21 @@ Suspends the current thread until input ({{MODE}} is {{#:input}}), output ({{MOD
 or both ({{MODE}} is {{#:all}}) is available. {{FD}} should be a file-descriptor (not a port!) open
 for input or output, respectively.
 
+<procedure>(thread-state thread)</procedure><br>
+
+Returns information about the state of the {{thread}}. The possible results
+are:
+
+
+* '''symbol {{created}}''': the {{thread}} is in the created state 
+* '''symbol {{ready}}''': the {{thread}} is in the ready state 
+* '''symbol {{running}}''': the {{thread}} is in the running state 
+* '''symbol {{blocked}}''': the {{thread}} is in the blocked state 
+* '''symbol {{suspended}}''': the {{thread}} is in the suspended state 
+* '''symbol {{sleeping}}''': the {{thread}} is in the sleeping state 
+* '''symbol {{terminated}}''': the {{thread}} is in the terminated state 
+* '''symbol {{dead}}''': the {{thread}} is in the dead state 
+
 
 == SRFI-18 specification
 
