@@ -371,7 +371,7 @@
 		   (d "  ~a~%" name)
 		   (let* ((size (read ins))
 			  (data (read-string size in)) )
-		     (with-output-to-file (make-pathname dest name) (cut display data) ) )
+		     (with-output-to-file (make-pathname dest name) (cut display data) #:binary ) )
 		   (get-files (cons name files)) ) ) ) ) )))
 
   (define (http-fetch host port locn dest proxy-host proxy-port proxy-user-pass)
