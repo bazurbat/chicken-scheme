@@ -48,14 +48,14 @@ An abbreviation for {{(location EXPRESSION)}}.
 
 === Blob literals
 
-<read>#{</read>
+<read>#${</read>
 
-  #{ HEX ... }
+  #${ HEX ... }
 
 Syntax for literal "blobs" (byte-sequences). Expects hexadecimal digits and ignores
 any whitespace characters:
 
-  #;1> ,d '${deadbee f}
+  #;1> ,d '#${deadbee f}
   blob of size 4:
      0: de ad be ef                                     ....
 
