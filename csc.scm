@@ -721,9 +721,9 @@ EOF
 		(check s rest)
 		(set! rpath (car rest))
 		(when (and (memq (build-platform) '(gnu clang))
-			   (not mingw))
-		  (set! link-options (append link-options (list (string-append "-Wl,-R" rpath))))
-		  (set! rest (cdr rest)) ) ]
+			   (not mingw) (not osx))
+		  (set! link-options (append link-options (list (string-append "-Wl,-R" rpath)))) )
+	  	(set! rest (cdr rest)) ]
 	       [(-host) #f]
 	       [(-) 
 		(set! target-filename (make-pathname #f "a" executable-extension))
