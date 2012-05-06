@@ -128,3 +128,9 @@
 	 (pair? del))
      (<handle-ins-and-del>))
  (<do-some-more>))
+
+;; Checking whether reported line numbers inside modules are correct
+(module foo (blabla)
+  (import chicken scheme)
+  (define (blabla)
+    (+ 1 'x)))
