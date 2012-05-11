@@ -826,7 +826,7 @@
 						  (##sys#syntax-error-hook
 						   'module
 						   "invalid export syntax" exp name))))
-					 (caddr x))))
+					 (##sys#strip-syntax (caddr x)))))
 			       (csyntax compiler-syntax))
 			  (when (##sys#current-module)
 			    (##sys#syntax-error-hook
