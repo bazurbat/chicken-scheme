@@ -1164,15 +1164,15 @@
 			  (file-exists? (##sys#string-append p0 ##sys#load-dynamic-extension)))
 		     (file-exists? (##sys#string-append p0 source-file-extension)) )
 		 p0) ) )
-	  (let loop ((paths (##sys#append
-			     (if ##sys#setup-mode '(".") '())
-			     (if rp (list rp) '())
-			     (if inc? ##sys#include-pathnames '())
-			     (if ##sys#setup-mode '() '("."))) ))
-	    (and (pair? paths)
-		 (let ((pa (##sys#slot paths 0)))
-		   (or (check pa)
-		       (loop (##sys#slot paths 1)) ) ) ) ) ) ) ))
+	(let loop ((paths (##sys#append
+			   (if ##sys#setup-mode '(".") '())
+			   (if rp (list rp) '())
+			   (if inc? ##sys#include-pathnames '())
+			   (if ##sys#setup-mode '() '("."))) ))
+	  (and (pair? paths)
+	       (let ((pa (##sys#slot paths 0)))
+		 (or (check pa)
+		     (loop (##sys#slot paths 1)) ) ) ) ) ) ) ))
 
 (define ##sys#loaded-extensions '())
 
