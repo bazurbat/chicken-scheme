@@ -810,7 +810,7 @@
 			   (walk `(##core#begin ,@(cddr x)) e se dest ldest h ln))))
 
 		       ((##core#module)
-			(let* ((name (cadr x))
+			(let* ((name (##sys#strip-syntax (cadr x)))
 			       (exports 
 				(or (eq? #t (caddr x))
 				    (map (lambda (exp)
