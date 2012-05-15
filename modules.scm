@@ -666,8 +666,7 @@
 	     (append (module-import-forms cm) (cdr x)))))
       (for-each
        (lambda (spec)
-	 (let* ((spec (##sys#strip-syntax spec))
-		(vs (import-spec spec))
+	 (let* ((vs (import-spec spec))
 		(vsv (car vs))
 		(vss (cdr vs))
 		(prims '()))
