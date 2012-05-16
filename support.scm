@@ -1285,11 +1285,13 @@
       ((integer long size_t integer32 unsigned-integer32 integer64 unsigned-integer64
 		unsigned-long) 
        'number)
-      ((c-pointer c-string-list c-string-list*)
+      ((c-pointer)
        '(or boolean pointer locative))
       ((nonnull-c-pointer) 'pointer)
       ((c-string c-string* unsigned-c-string unsigned-c-string*)
        '(or boolean string))
+      ((c-string-list c-string-list*)
+       '(list-of string))
       ((nonnull-c-string nonnull-c-string* nonnull-unsigned-c-string*) 'string)
       ((symbol) 'symbol)
       (else
