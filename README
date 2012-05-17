@@ -187,8 +187,7 @@
           runtime system by building a version of CHICKEN with the
           "HOST" option mentioned above. More information about this
           process and the variables that you should set are provided
-          in the CHICKEN wiki at
-          <http://wiki.call-cc.org/cross-compilation>.
+          in the manual (see the "Cross development" chapter).
 
         SRCDIR= 
           Specifies that CHICKEN should be built outside of its source
