@@ -119,8 +119,11 @@
 (define windows-shell WINDOWS_SHELL)
 (define generate-manifest #f)
 
+(define libchicken
+  (string-append "lib" INSTALL_LIB_NAME))
+
 (define default-library
-  (string-append "libchicken." library-extension))
+  (string-append libchicken "." library-extension))
 
 (define default-compilation-optimization-options (string-split (if host-mode INSTALL_CFLAGS TARGET_CFLAGS)))
 (define best-compilation-optimization-options default-compilation-optimization-options)
@@ -912,9 +915,9 @@ EOF
     (when (and osx (or (not cross-chicken) host-mode))
       (command
        (string-append
-	"install_name_tool -change libchicken.dylib "
+	"install_name_tool -change " libchicken ".dylib "
 	(quotewrap 
-	 (let ((lib "libchicken.dylib"))
+	 (let ((lib (string-append libchicken ".dylib")))
 	   (if deployed
 	       (make-pathname "@executable_path" lib)
 	       (make-pathname
@@ -955,7 +958,7 @@ EOF
 (define (copy-libraries targetdir)
   (let ((lib (make-pathname
 	      (target-lib-path) 
-	      "libchicken"
+	      libchicken
 	      (cond (osx "dylib")
 		    (win "dll")
 		    (else (string-append

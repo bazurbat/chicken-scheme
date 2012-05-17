@@ -57,6 +57,7 @@
 (define-foreign-variable install-egg-home c-string "C_INSTALL_EGG_HOME")
 (define-foreign-variable installation-home c-string "C_INSTALL_SHARE_HOME")
 (define-foreign-variable binary-version int "C_BINARY_VERSION")
+(define-foreign-variable install-lib-name c-string "C_INSTALL_LIB_NAME")
 
 (define ##sys#core-library-modules
   '(extras lolevel utils files tcp irregex posix srfi-1 srfi-4 srfi-13 
@@ -67,7 +68,8 @@
 
 (define ##sys#explicit-library-modules '())
 
-(define-constant default-dynamic-load-libraries '("libchicken"))
+(define default-dynamic-load-libraries
+  `(,(string-append "lib" install-lib-name)))
 (define-constant cygwin-default-dynamic-load-libraries '("cygchicken-0"))
 (define-constant macosx-load-library-extension ".dylib")
 (define-constant windows-load-library-extension ".dll")

@@ -17,7 +17,7 @@ COMPILE_OPTIONS="-O5 -d0 -disable-interrupts -b"
 if test -n "$MSYSTEM"; then
     CHICKEN="..\\chicken.exe"
     # make compiled tests use proper library on Windows
-    cp ../libchicken.dll .
+    cp ../lib*chicken*.dll .
 fi
 
 case `uname -s` in

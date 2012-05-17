@@ -43,7 +43,7 @@ if test -n "$MSYSTEM"; then
     ASMFLAGS=-Wa,-w
     TIME=time
     # make compiled tests use proper library on Windows
-    cp ../libchicken.dll .
+    cp ../lib*chicken*.dll .
 else 
     TIME=/usr/bin/time
 fi
