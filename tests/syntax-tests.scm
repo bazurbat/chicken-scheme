@@ -1031,3 +1031,14 @@ take
 (module foo ()
   (import (prefix (only scheme map lambda list) ~))
   (~map (~lambda (y) y) (~list 1)))
+
+;; #852: renamed macros should not be returned as first-class
+;;       objects in the interpreter
+(module renamed-macros (renamed-macro-not-firstclassed)
+  (import chicken scheme)
+  (define-syntax renamed-macro-not-firstclassed
+    (er-macro-transformer
+     (lambda (e r c)
+       `(,(r 'list) ,(r 'define))))))
+
+(f (eval '(begin (import renamed-macros) (renamed-macro-not-firstclassed))))

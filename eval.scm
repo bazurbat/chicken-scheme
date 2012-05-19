@@ -247,10 +247,11 @@
 	      ((symbol? x)
 	       (receive (i j) (lookup x e se)
 		 (cond ((not i)
-			(let ((var (if (not (assq x se))
-				       (and (not static)
-					    (##sys#alias-global-hook j #f cntr))
-				       (or (##sys#get j '##core#primitive) j))))
+			(let ((var (cond ((not (symbol? j)) x) ; syntax?
+                                         ((not (assq x se))
+                                          (and (not static)
+                                               (##sys#alias-global-hook j #f cntr)))
+                                         (else (or (##sys#get j '##core#primitive) j)))))
 			  (when (and ##sys#unbound-in-eval
 				     (or (not var)
 					 (not (##sys#symbol-has-toplevel-binding? var))))
