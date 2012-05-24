@@ -78,3 +78,4 @@
 (test "x/y/z.q" (make-pathname "x/y\\" "z.q"))
 (test "x//y/z.q" (make-pathname "x//y/" "z.q"))
 (test "x\\y/z.q" (make-pathname "x\\y" "z.q"))
+(test 'error (handle-exceptions _ 'error (make-pathname '(#f) "foo")))
