@@ -29,7 +29,7 @@
   (hide specialize-node! specialization-statistics
 	procedure-type? named? procedure-result-types procedure-argument-types
 	noreturn-type? rest-type procedure-name d-depth
-	noreturn-procedure-type? trail trail-restore 
+	noreturn-procedure-type? trail trail-restore walked-result 
 	typename multiples procedure-arguments procedure-results
 	smash-component-types! generate-type-checks! over-all-instantiations
 	compatible-types? type<=? match-types resolve match-argument-types))
@@ -113,6 +113,9 @@
 
 (define (multiples n)
   (if (= n 1) "" "s"))
+
+(define (walked-result n)
+  (first (node-parameters n)))		; assumes ##core#the/result node
 
 
 (define (scrutinize node db complain specialize)
@@ -299,13 +302,14 @@
 		    ""))
 	      "")
 	  (fragment (first (node-subexpressions node)))))
-      (d "  call: ~a " args)
-      (let* ((ptype (car args))
+      (let* ((actualtypes (map walked-result args))
+	     (ptype (car actualtypes))
 	     (pptype? (procedure-type? ptype))
 	     (nargs (length (cdr args)))
 	     (xptype `(procedure ,(make-list nargs '*) *))
-	     (typeenv (append-map type-typeenv args))
+	     (typeenv (append-map type-typeenv actualtypes))
 	     (op #f))
+	(d "  call: ~a " actualtypes)
 	(cond ((and (not pptype?) (not (match-types xptype ptype typeenv)))
 	       (report
 		loc
@@ -326,11 +330,14 @@
 		      (pname)
 		      alen (multiples alen)
 		      nargs (multiples nargs))))
-		 (do ((args (cdr args) (cdr args))
+		 (do ((actualtypes (cdr actualtypes) (cdr actualtypes))
 		      (atypes atypes (cdr atypes))
 		      (i 1 (add1 i)))
-		     ((or (null? args) (null? atypes)))
-		   (unless (match-types (car atypes) (car args) typeenv)
+		     ((or (null? actualtypes) (null? atypes)))
+		   (unless (match-types 
+			    (car atypes)
+			    (car actualtypes)
+			    typeenv)
 		     (report
 		      loc
 		      (sprintf
@@ -338,10 +345,10 @@
 			(pname) 
 			i
 			(resolve (car atypes) typeenv)
-			(resolve (car args) typeenv)))))
+			(resolve (car actualtypes) typeenv)))))
 		 (when (noreturn-procedure-type? ptype)
 		   (set! noreturn #t))
-		 (let ((r (procedure-result-types ptype values-rest (cdr args) typeenv)))
+		 (let ((r (procedure-result-types ptype values-rest (cdr actualtypes) typeenv)))
 		   (let* ((pn (procedure-name ptype))
 			  (trail0 trail))
 		     (when pn
@@ -349,29 +356,29 @@
 				   (variable-mark pn '##compiler#predicate)) =>
 				   (lambda (pt)
 				     (cond ((match-argument-types
-					     (list pt) (cdr args) typeenv #f #t)
+					     (list pt) (cdr actualtypes) typeenv #f #t)
 					    (report-notice
 					     loc
 					     (sprintf 
 						 "~athe predicate is called with an argument of type\n  `~a' and will always return true"
-					       (pname) (cadr args)))
+					       (pname) (cadr actualtypes)))
 					    (when specialize
 					      (specialize-node!
-					       node
+					       node (cdr args)
 					       `(let ((#(tmp) #(1))) '#t))
 					      (set! op (list pn pt))))
 					   ((begin
 					      (trail-restore trail0 typeenv)
 					      (match-argument-types
-					       (list `(not ,pt)) (cdr args) typeenv #f #t))
+					       (list `(not ,pt)) (cdr actualtypes) typeenv #f #t))
 					    (report-notice
 					     loc
 					     (sprintf 
 						 "~athe predicate is called with an argument of type\n  `~a' and will always return false"
-					       (pname) (cadr args)))
+					       (pname) (cadr actualtypes)))
 					    (when specialize
 					      (specialize-node!
-					       node
+					       node (cdr args)
 					       `(let ((#(tmp) #(1))) '#f))
 					      (set! op (list pt `(not ,pt)))))
 					   (else (trail-restore trail0 typeenv)))))
@@ -385,7 +392,7 @@
 						      (append-map type-typeenv stype)
 						      typeenv)))
 					 (cond ((match-argument-types
-						 stype (cdr args) tenv2
+						 stype (cdr actualtypes) tenv2
 						 #t)
 						(set! op (cons pn (car spec)))
 						(set! typeenv tenv2)
@@ -394,7 +401,7 @@
 						       (rewrite (if r2
 								    (third spec)
 								    (second spec))))
-						  (specialize-node! node rewrite)
+						  (specialize-node! node (cdr args) rewrite)
 						  (when r2 (set! r r2))))
 					       (else
 						(trail-restore trail0 tenv2)
@@ -413,18 +420,6 @@
 		   (let ((r (if (eq? '* r) r (map (cut resolve <> typeenv) r))))
 		     (d  "  result-types: ~a" r)
 		     (values r op))))))))
-
-    ;; not used in the moment
-    (define (self-call? node loc)
-      (case (node-class node)
-	((##core#call)
-	 (and (pair? loc)
-	      (let ((op (first (node-subexpressions node))))
-		(and (eq? '##core#variable (node-class op))
-		     (eq? (car loc) (first (node-parameters op)))))))
-	((let)
-	 (self-call? (last (node-subexpressions node)) loc))
-	(else #f)))
 
     (define tag
       (let ((n 0))
@@ -461,6 +456,7 @@
 	(set! d-depth (add1 d-depth))
 	(let ((results
 	       (case class
+		 ((##core#the/result) (list (first params))) ; already walked
 		 ((quote) (list (constant-result (first params))))
 		 ((##core#undefined) '(*))
 		 ((##core#proc) '(procedure))
@@ -476,7 +472,7 @@
 			   (a (third subs))
 			   (nor0 noreturn))
 		      (when (and (always-true rt loc n) specialize)
-			(set! dropped-branches (+ dropped-branches 1))
+			(set! dropped-branches (add1 dropped-branches))
 			(copy-node!
 			 (build-node-graph
 			  `(let ((,(gensym) ,tst)) ,c))
@@ -661,19 +657,25 @@
 		  (let* ((f (fragment n))
 			 (len (length subs))
 			 (args (map (lambda (n i)
-				      (single 
-				       (sprintf 
-					   "in ~a of procedure call `~s'"
-					 (if (zero? i)
-					     "operator position"
-					     (sprintf "argument #~a" i))
-					 f)
-				       (walk n e loc #f #f flow #f) loc))
+				      (make-node
+				       '##core#the/result
+				       (list
+					(single 
+					 (sprintf 
+					     "in ~a of procedure call `~s'"
+					   (if (zero? i)
+					       "operator position"
+					       (sprintf "argument #~a" i))
+					   f)
+					 (walk n e loc #f #f flow #f) 
+					 loc))
+				       (list n)))
 				    subs 
 				    (iota len)))
-			 (fn (car args))
+			 (fn (walked-result (car args)))
 			 (pn (procedure-name fn))
-			 (typeenv (type-typeenv `(or ,@args))) ; hack
+			 (typeenv (type-typeenv
+				   `(or ,@(map walked-result args)))) ; hack
 			 (enforces
 			  (and pn (variable-mark pn '##compiler#enforce)))
 			 (pt (and pn (variable-mark pn '##compiler#predicate))))
@@ -688,8 +690,6 @@
 			  (smash-component-types! e "env")
 			  (smash-component-types! blist "blist")))
 		      (cond (specialized?
-			     ;;XXX this will walk the arguments again, resulting in
-			     ;;    duplicate warnings
 			     (walk n e loc dest tail flow ctags)
 			     (smash)
 			     ;; keep type, as the specialization may contain icky stuff
@@ -1859,9 +1859,8 @@
 
 ;; Mutate node for specialization
 
-(define (specialize-node! node template)
-  (let ((args (cdr (node-subexpressions node)))
-	(env '()))
+(define (specialize-node! node args template)
+  (let ((env '()))
     (define (subst x)
       (cond ((and (vector? x)
 		  (= 1 (vector-length x)) )
@@ -2165,7 +2164,7 @@
   (define (vector-ref-result-type node args rtypes)
     (or (and-let* ((subs (node-subexpressions node))
                    ((= (length subs) 3))
-                   (arg1 (second args))
+                   (arg1 (walked-result (second args)))
                    ((pair? arg1))
                    ((eq? 'vector (car arg1)))
                    (index (third subs))
@@ -2183,7 +2182,7 @@
   (define (list-ref-result-type node args rtypes)
     (or (and-let* ((subs (node-subexpressions node))
                    ((= (length subs) 3))
-                   (arg1 (second args))
+                   (arg1 (walked-result (second args)))
                    ((pair? arg1))
                    ((eq? 'list (car arg1)))
                    (index (third subs))
@@ -2201,7 +2200,7 @@
   (lambda (node args rtypes)
     (or (and-let* ((subs (node-subexpressions node))
                    ((= (length subs) 3))
-                   (arg1 (second args))
+                   (arg1 (walked-result (second args)))
                    ((pair? arg1))
                    ((eq? 'list (car arg1)))
                    (index (third subs))
@@ -2220,21 +2219,21 @@
   (lambda (node args rtypes)
     (if (null? (cdr args))
 	'(null)
-	`((list ,@(cdr args))))))
+	`((list ,@(map walked-result (cdr args)))))))
 
 (define-special-case ##sys#list
   (lambda (node args rtypes)
     (if (null? (cdr args))
 	'(null)
-	`((list ,@(cdr args))))))
+	`((list ,@(map walked-result (cdr args)))))))
 
 (define-special-case vector
   (lambda (node args rtypes)
-    `((vector ,@(cdr args)))))
+    `((vector ,@(map walked-result (cdr args))))))
 
 (define-special-case ##sys#vector
   (lambda (node args rtypes)
-    `((vector ,@(cdr args)))))
+    `((vector ,@(map walked-result (cdr args))))))
 
 
 ;;; perform check over all typevar instantiations

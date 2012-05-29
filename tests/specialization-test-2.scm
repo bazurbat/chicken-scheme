@@ -14,3 +14,15 @@ return n;}
 (assert (= 1 (bar 1)))
 
 )
+
+
+;; #855: second walk of arguments after specialization of call to "zero?"
+;;       applies enforced type-assumption for argument "y" to "string-length"
+;;       to call to "string-length" itself
+
+(define (bug855 x)
+  (let ((y (car x)))
+    (zero? (string-length y))))
+
+(assert (handle-exceptions ex #t (bug855 '(#f)) #f))
+

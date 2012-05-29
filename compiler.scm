@@ -175,6 +175,7 @@
 ; [##core#direct_call {<safe-flag> <debug-info> <call-id> <words>} <exp-f> <exp>...]
 ; [##core#direct_lambda {<id> <mode> (<variable>... [. <variable>]) <size>} <exp>]
 ; [##core#the {<type> <strict>} <exp>]
+; [##core#the/result {<typelist>} <exp>]
 ; [##core#typecase {<info> (<type> ...)} <exp> <body1> ... [<elsebody>]]
 
 ; - Closure converted/prepared language:
@@ -1722,7 +1723,7 @@
 	 (walk-inline-call class params subs k) )
 	((##core#call) (walk-call returnvar (car subs) (cdr subs) params k))
 	((##core#callunit) (walk-call-unit returnvar (first params) k))
-	((##core#the)
+	((##core#the ##core#the/result)
 	 ;; remove "the" nodes, as they are not used after scrutiny
 	 (walk returnvar (car subs) k))
 	((##core#typecase)
