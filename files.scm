@@ -178,7 +178,6 @@ EOF
       (if (null? strs)
 	  ""
 	  (let ((s1 (car strs)))
-            (##sys#check-string s1 'make-pathname)
 	    (if (zero? (string-length s1))
 		(loop (cdr strs))
 		(string-append 
