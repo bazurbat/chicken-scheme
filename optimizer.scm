@@ -84,7 +84,7 @@
 
 	  [(lambda ##core#lambda) #f]
 
-	  [(##core#call ##core#callunit) (touch)]
+	  [(##core#call) (touch)]
 
 	  [(set!)
 	   (let ((var (first params))
