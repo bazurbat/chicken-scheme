@@ -96,7 +96,6 @@
 		    (qs filename)
 		    (qs (or output-file tmpfile))
 		    (if crapshell "\"" ""))))
-	(print "; compiling " filename " ...")
 	(when verbose (print "  " cmd))
 	(let ((status (system cmd)))
 	  (cond ((zero? status)
