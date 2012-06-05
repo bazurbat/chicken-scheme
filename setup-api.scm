@@ -501,8 +501,17 @@
 		      to-path
 		      (make-pathname prefix to-path) )
 		  to-path))))
-    (ensure-directory to)
-    (run (,*copy-command* ,(shellpath from) ,(shellpath to)))
+    (let walk ((from from) (to to))
+      (cond ((directory? from)
+	     (for-each
+	      (lambda (f)
+		(walk (make-pathname from f) (make-pathname to f)))
+	      (directory from)))
+	    (else
+	     (ensure-directory to)
+	     (run (,*copy-command* 
+		   ,(shellpath from)
+		   ,(shellpath to))))))
     to))
 
 (define (path-prefix? pref path)
@@ -615,7 +624,7 @@
   (when (setup-install-mode)
     (let* ((files (check-filelist (if (list? files) files (list files))))
 	   (pre (installation-prefix))
-	   (ppath (ensure-directory (make-pathname pre "bin")))
+	   (ppath (ensure-directory (make-pathname pre "bin") #t))
 	   (files (if *windows*
                       (map (lambda (f)
                              (if (list? f) 
@@ -637,7 +646,7 @@
   (when (setup-install-mode)
     (let* ((files (check-filelist (if (list? files) files (list files))))
 	   (pre (installation-prefix))
-	   (ppath (ensure-directory (make-pathname pre "bin")))
+	   (ppath (ensure-directory (make-pathname pre "bin") #t))
 	   (pfiles (map (lambda (f)
 			  (let ((from (if (pair? f) (car f) f))
 				(to (make-dest-pathname ppath f)) )
@@ -664,11 +673,11 @@
 			  (sprintf "lib/chicken/~a" (##sys#fudge 42)))
 			 (repository-path)))) ; otherwise use repo-path
 	       (repository-path))) )
-    (ensure-directory p)
+    (ensure-directory p #t)
     p) )
 
-(define (ensure-directory path)
-  (and-let* ((dir (pathname-directory path)))
+(define (ensure-directory path #!optional full)
+  (and-let* ((dir (if full path (pathname-directory path))))
     (if (file-exists? dir)
 	(unless (directory? dir)
 	  (error "cannot create directory: a file with the same name already exists") )
