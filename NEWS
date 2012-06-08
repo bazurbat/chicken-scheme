@@ -1,15 +1,75 @@
-4.7.5
+4.8.0
 
 - Security fixes
+  - improved hash table collision resistance and added randomization
+    to prevent malicious external causes of collisions.  All SRFI-69
+    procedures accept extra arguments to control randomization for
+    testing/debugging.
   - on 64-bit machines the "random" procedure no longer truncates result
     values (which caused very nonrandom results for very large values).
-    Note that tandom shouldn't be used for security-critical code.
+    Note that random shouldn't be used for security-critical code.
 
 - Build system
+  - version information has been moved into a separate unit to make the
+    build-version shown in the banner and accessible through library
+    procedures more accurate, this also speeds up the build on version-
+    changes (thanks to Jim Ursetto for contributing this)
   - the build was made more reliable with respect to cross-compilation
     and custom installation names
+  - the test-suite is now working on the mingw32 platform (with
+    a few tests disabled due to missing functionality)
+  - the version and branch of the sources are now properly compiled
+    into the core libraries and shown in the "csi" and "chicken"
+    version headers
+  - The default target library name for an installation configured for cross-
+    compilation is now "libchicken" and independent on any particular 
+    setting of PROGRAM_PREFIX/PROGRAM_SUFFIX (thanks to Otavio Salvador)
 
 - Compiler
+  - Fixed bug in handling of symbols in constant-definitions (thanks to Peter
+    Bex)
+  - Stricter check for value-part of constant definition (thanks to Kon Lovett)
+  - Fixed bug that caused argument-signatures of external definitions to be
+    incorrectly modified during optimization (thanks to Peter Bex)
+  - Failing constant-folding expressions now produce a compile-time warning
+  - Fixed various bugs in the internal type-database (thanks to Kon Lovett and
+    Peter Bex)
+  - Fixed incorrect optimization rules for some fp-rounding and fixnum operators
+  - added "-specialize" option and "specialize" declaration which enables
+    optimizations of uses of core library procedures based on type-
+    information gathered during flow analysis
+  - "-optimize-level 3" and higher now implies "-specialize"
+  - added option "-strict-types" and "-emit-type-file"
+  - progress-information is now only shown with "-debug p"; the "-verbose"
+    option only shows informational but noncritical messages
+  - added optimizations for some library procedures
+  - variable propagation for global variable accesses is now done in certain
+    situations
+  - the algorithmic complexity of the closure-conversion pass has been
+    reduced which speeds up compilation noticably for large files
+  - the "-uses" option handles whitespace in unit lists given on the
+    command line (thanks to Santosh Rajan)
+  - the alternative branch in a conditional is dropped when the condition
+    is known to be a non-boolean value (suggested by Joerg Wittenberger)
+  - implemented numerous fixes and improvements for flow analysis
+  - fixed a bug in the compiler that could cause some variable bindings
+    to be optimized away in certain situations involving inlining
+  - added an experimental optimization called "clustering" (enable
+    with the compiler option of the same name)
+  - the optimizations done by the compiler are now listed as a comment
+    in the generated C file
+  - the type-information obtained during flow-analysis ("scrutiny") is 
+    now used for performing type-sensitive optimizations of calls to
+    most of the core-library procedures
+  - deprecated the "constant" declaration specifier
+  - "unboxing" optimization has been completely removed - the implementation
+    was unreliable and unmaintainable; the "-unboxing" compiler option will
+    still be accepted but will produce a warning
+  - Peter Bex contributed an optimization to the analysis pass that 
+    greatly reduces compile time for source code containing deeply nested
+    lexical bindings
+  - procedures that are known to have the value of a core library procedure
+    that is a "standard" or "extended binding" will be inlined
   - enhanced line number tracking to get better error messages from
     the scrutinizer.
   - hygiene bugs related to compiler-syntax were fixed.
@@ -19,54 +79,44 @@
     were reduced resulting in much better compile-times especially
     for large source files.
 
-- Core tools
-  - csc: "-O5" does not pass expensive optimization flags to the C
-    compiler anymore
-  - chicken-install: installing subdirectories works now on Windows
-
-- Core syntax
-  - "assert" shows the line number of the form when a second argument
-    is not given or is a literal string
-
-- Runtime system
-  - the maximum length of strings is no longer limited to a 24-bit
-    number on 64-bit architectures but can be 56 bits.
-  - string-comparison handles embedded '\0' characters.
-  - numerical predicates handle infinity and NaN correctly.
- 
-4.7.4
-
-- Security fixes
-  - improved hash table collision resistance and added randomization
-    to prevent malicious external causes of collisions.  All SRFI-69
-    procedures accept extra arguments to control randomization for
-    testing/debugging.
-    
-
-- Build system
-  - the test-suite is now working on the mingw32 platform (with
-    a few tests disabled due to missing functionality)
-  - the version and branch of the sources are now properly compiled
-    into the core libraries and shown in the "csi" and "chicken"
-    version headers
-
-- Runtime system
-  - deprecated "[+-]nan", "[+-]inf" and other notations "accidentally"
-    accepted by Chicken due to the underlying C library's strtod() function,
-    standardizing on "[+-]nan.0" and "[+-]inf.0" from R6RS (and soon R7RS),
-    when displaying numbers only these forms are generated now.
-  - signals are queued to some extent and the interrupt handling has
-    been cleaned up somewhat
-  - the interpreter handles SIGINT directly - loading the "posix" unit
-    is not needed anymore to handle this feature
-  - changed default nursery size slightly and fixed a bug that caused
-    incorrect (too small) nursery sizes on 64-bit platforms
-  - deprecated the compiler option "-heap-initial-size", "-heap-growth"
-    and "-heap-shrinkage"
-  - the assembly-language stub routine for the implementation of "apply"
-    was broken for Sparc64 systems - has been disabled for this platform
+- Interpreter
+  - ",q" leaves the currently active REPL invocation instead of
+    terminating the process (as suggested by John Cowan)
+  - ",m" properly switches between modules (thanks to Christian Kellermann)
 
 - Core libraries
+  - Cleaned up the set of available internal SRFI-feature-identifiers
+  - Fixed bugs in "make-pathname" and "normalize-pathname" (thanks to Jim Ursetto)
+  - The reader is now more consistent when parsing symbol- and keyword names 
+    that are fully or partially escaped (thanks to Kon Lovett)
+  - The printer now does a better job at escaping certain single-character
+    symbol names
+  - Unit "lolevel"
+    - deprecated "null-pointer" and "null-pointer?"
+  - Fixed a bug in the Windows implementation of "file-type" (thanks to
+    Jim Ursetto)
+  - Fixed a bug in the implementation of "current-milliseconds" that could
+    result in integer-overflow
+  - Fixed an incorrect type-check in "list-ref" (thanks to Sven Hartrumpf)
+  - Disabled "-setup-mode" when compiling extensions for deployment (thanks
+    to Ivan Raikov)
+  - Got rid of some warnings in the C runtime system that were triggered on
+    the SunPro C compiler (thanks to Joe Python)
+  - Fixed bug in "string->number" that caused out-of-range characters to
+    be accepted for base > 10 (thanks to Jim Ursetto)
+  - added "foldl" and "foldr" procedures, which are more efficient and
+    have a more consistent argument order than the corresponding
+    SRFI-1 procedures
+  - "shuffle" has been deprecated
+  - added "queue-length"
+  - "queue->list" allocates and returns a fresh list now
+  - invoking a parameter-procedure with an argument will return the new
+    value
+  - added new procedure "quit"
+  - port-procedures now check correctly for argument-ports being open 
+    (thanks to Peter Bex)
+  - "repl" accepts an optional evaluator procedure (suggested by John 
+    Cowan)
   - added a setter procedure to "signal-handler" ("posix" unit)
   - EINTR is properly handled for input routines that may block
     waiting for input
@@ -86,13 +136,11 @@
     regex does not match
   - added "change-directory*" ("posix" unit)
   - number parsing has been made more reliable and standards compliant
-  - deprecated "none?", "always?" and "never?" ("data-structures" unit)
-  - "parameterize" does not invoke guard procedure when restoring a 
-    parameter's value after execution of the body
+  - deprecated "none?", "always?" and "never?"
   - library procedures that take ports as arguments now all perform checks
-    on direction and open/closed state
+    on port-direction and open/closed state
   - "mutate-procedure" has been renamed to "mutate-procedure!" - the old
-    name is still available but deprecated ("lolevel" unit)
+    name is still available but deprecated
   - deprecated C_hash_string and C_hash_string_ci functions in the C API in
     favor of the more secure versions C_u_i_string_hash, C_u_i_string_ci_hash
   - a number of bugs in the irregex regular expression engine have been
@@ -101,155 +149,27 @@
     "with-output-to-pipe" now properly restore the standard input/output 
     ports in case the body thunk escapes
   - symbols with a single-char print-name where not always properly escaped
-    whrn printed readably
-
-- Compiler
-  - fixed a bug in the compiler that could cause some variable bindings
-    to be optimized away in certain situations involving inlining
-  - added an experimental optimization called "clustering" (enable
-    with the compiler option of the same name)
-  - the optimizations done by the compiler are now listed inside a comment
-    in the generated C file
-  - the type-information obtained during flow-analysis ("scrutiny") is 
-    now used for performing type-sensitive optimizations of calls to
-    most of the core-library procedures
-  - various improvements in the flow-analysis pass have been done and
-    countless bugs fixed
-  - deprecated the "constant" declaration specifier
-  - "unboxing" optimization has been completely removed - the implementation
-    was unreliable and unmaintainable; the "-unboxing" compiler option will
-    still be accepted but will produce a warning
-  - Peter Bex contributed an optimization to the analysis pass that 
-    greatly reduces compile time for source code containing deeply nested
-    lexical bindings
-  - procedures that are known to have the value of a core library procedure
-    that is a "standard" or "extended binding" will be inlined
-
-- Type system
-  - added new type-specifiers "input-port", "output-port", "(list-of T)" 
-    and "(vector-of T)"
-  - the type-specifiers "(vector T ...)" and "(list T ...)" represent
-    fixed size lists and vectors now
-  - added qualified types ("forall"), optionally with type constrains
-  - added the "define-type" special form and type-abbreviations
-  - "-verbose" now shows scrutinizer-warnings and compiler notices
-    that are possibly non-critical (otherwise they are not listed)
-  - added "compiler-typecase", a compile-time typematching form
-
-- Module system
-  - the "scheme" module has been integrated into the core library and
-    is not installed as a separate import library anymore
-  - added core module "r4rs" containing only bindings for R4RS identifiers
-  - added core module alias "r5rs" for "scheme" module
-  - added "module-environment" which returns an evaluation environment
-    for the bindings of a module
+    when printed readably
+  - the "make" facility of the "setup-api" module has been deprecated,
+    please use the "make" extension when your egg requires this during
+    setup.
 
 - Core tools
+  - "csc"
+    - The environment-variables "CHICKEN_C_INCLUDE_PATH" and
+      "CHICKEN_C_LIBRARY_PATH" can now be used to add default include-
+      and link-directories to C-compiler invocations
+    - "-O5" passed expensive optimization flags to the C compiler which
+      could expose C-Compiler bugs, depending on the compiler version
+      (thanks to Sven Hartrumpf for pointing this out).
   - "chicken-install"
-    - fixed handling of "-force" when a "chicken" dependency version did
-      not match
-    - added new option "-show-foreign-depends" which lists foreign egg
-      dependencies (if available)
-    - added new option "-show-depends" which lists egg dependencies
-
-- Foreign function interface
-  - locatives are allowed as arguments declared "c-pointer"
-
-
-4.7.3
-
-- Build system
-  - version information has been moved into a separate unit to make the
-    build-version shown in the banner and accessible through library
-    procedures more accurate, this also speeds up the build on version-
-    changes (thanks to Jim Ursetto for contributing this)
-
-- Runtime system
-  - fixed handling of "inf" and nan" floating-point predicates for Solaris
-    (thanks to Claude Marinier)
-  - support for re-loading of compiled files has now been completely 
-    removed
-
-- Core libraries
-  - added "foldl" and "foldr" procedures, which are more efficient and
-    more have a more consistent argument order than the corresponding
-    SRFI-1 procedures
-  - "shuffle" has been deprecated
-  - added "queue-length"
-  - "queue->list" allocates and returns a fresh list now
-  - invoking a parameter-procedure with an argument will return the new
-    value
-  - added new procedure "quit"
-  - port-procedures now check correctly for argument-ports being open 
-    (thanks to Peter Bex)
-  - irregex bugfixes (by Peter Bex)
-  - "repl" accepts an optional evaluator procedure (suggested by John 
-    Cowan)
-
-- Core syntax
-  - "parameterize" now correctly omits invoking the guard procedure when
-    the old value is restored (thanks to Joo ChurlSoo)
-  - "optional", "let-optionals" and "let-optionals*" do not anymore check
-    for surplus arguments
-  - added ":", "the" and "assume" syntax for declaring types
-  - added "define-specialization" form to declare type-driven procedure
-    call rewrites in compiled code
-
-- Compiler
-  - added "-specialize" option and "specialize" declaration which enables
-    optimizations of uses of core library procedures based on type-
-    information gathered during flow analysis
-  - "-optimize-level 3" and higher now implies "-specialize"
-  - added option "-strict-types" and "-emit-type-file"
-  - progress-information is now only shown with "-debug p"; the "-verbose"
-    option only shows informational but noncritical messages
-  - fixed several bugs in the unboxing pass
-  - added optimizations for some library procedures
-  - variable propagation for global variable accesses is done in certain
-    situations now
-  - the algorithmic complexity of the closure-conversion pass has been
-    reduced which speeds up compilation noticably for large files
-  - the "-uses" option handles whitespace in unit lists given on the
-    command line (thanks to Santosh Rajan)
-  - the alternative branch in a conditional is dropped when the condition
-    is known to be a non-boolean value (suggested by Joerg Wittenberger)
-  - implemented numerous fixes and improvements for flow analysis
-
-- Interpreter
-  - ",q" now leaves the currently active REPL invocation instead of
-    terminating the process (as suggested by John Cowan)
-
-- Syntax expander
-  - fixed devious bug in the invocation and generation of transformer
-    procedures
-  - using normal "lambda" forms as transformers for local or global
-    syntax definitions is deprecated - one should use "syntax-rules",
-    "er-macro-transformer" or "ir-macro-transformer" from now on
-
-- Core tools
-  - "chicken-profile"
-    - fixed some bugs in the profiler and the runtime support code for
-      profiling (thanks to Sven Hartrumpf)
-    - fixed broken percentage calculation (thanks to "megane")
-  - "chicken-status"
-    - the "pattern" argument is now actually treated as a pattern and not
-      as a regex
-  - "chicken-install"
-    - added support for "or"-dependencies where a dependency is considered
-      installed if one of a set of candidates is available
-
-
-4.7.2
-
-- Core tools
-  - "chicken-install"
-    - Added option "-override", which allows storing extension-
-      versions in a file - this may be useful to ensure specific 
-      versions of a complete set of eggs to be installed
+    - Added option "-override", which allows retrieving extension-
+      versions from a file - this may be useful to ensure specific 
+      versions of a complete set of eggs are installed
     - Added option "-keep-installed"/"-x" that only installs explicitly
       named extensions given on the command line, if they are not
       already installed
-    - Added option "-list" that lists extensions available remotely
+    - Added option "-list" that lists all extensions available
     - Added option "-csi" to specify what interpreter should be used
       to execute the setup-script of an installed extension
     - Added option "-scan" that scans a local directory for the highest
@@ -258,45 +178,32 @@
       eggs, keeping their versions, if possible
     - Fixed bug with "chicken-install -test" when multiple extensions where
       given on the command line (thanks to Kon Lovett)
+    - installing subdirectories works now on Windows.
+    - fixed handling of "-force" when a "chicken" dependency version did
+      not match
+    - added new option "-show-foreign-depends" which lists foreign egg
+      dependencies (if available)
+    - added new option "-show-depends" which lists egg dependencies
+    - added support for "or"-dependencies where a dependency is considered
+      installed if one of a set of candidates is available
+  - "chicken-profile"
+    - fixed some bugs in the profiler and the runtime support code for
+      profiling (thanks to Sven Hartrumpf)
+    - fixed broken percentage calculation (thanks to "megane")
   - "chicken-status"
     - Added option "-list" that dumps versions of installed extensions
       in a format suitable for "chicken-install -override ..."
-  - "csc"
-    - The environment-variables "CHICKEN_C_INCLUDE_PATH" and
-      "CHICKEN_C_LIBRARY_PATH" can now be used to add default include-
-      and link-directories to C-compiler invocations
-  - "csi"
-    - ",m" now properly switches between modules (thanks to Christian Kellermann)
+    - the "pattern" argument is now actually treated as a pattern and not
+      as a regex
 
-- Module system
-  - Added "interfaces", named groups of exports
-  - Added "functors", which are parameterized modules
-  - Modules can now be aliased
-  - New syntax:
-    (define-interface NAME EXPORTS)
-    (functor (NAME ...) EXPORTS ...)
-  - Extended syntax of "module" for aliasing and functor-instantiation
-
-- Core libraries
-  - Cleaned up set of available internal SRFI-feature-identifiers
-  - Fixed bugs in "make-pathname" and "normalize-pathname" (thanks to Jim Ursetto)
-  - The reader is now more consistent when parsing symbol- and keyword names 
-    that are fully or partially escaped (thanks to Kon Lovett)
-  - The printer now does a better job at escaping certain single-character
-    symbol names
-  - Unit "lolevel"
-    - deprecated "null-pointer" and "null-pointer?"
-  - Fixed a bug in the Windows implementation of "file-type" (thanks to
-    Jim Ursetto)
-  - Fixed a bug in the implementation of "current-milliseconds" that could
-    result in integer-overflow
-  - Fixed an incorrect type-check in "list-ref" (thanks to Sven Hartrumpf)
-  - Disabled "-setup-mode" when compiling extensions for deployment (thanks
-    to Ivan Raikov)
-  - Got rid of some warnings in the C runtime system that were triggered on
-    the SunPro C compiler (thanks to Joe Python)
-  - Fixed bug in "string->number" that caused out-of-range characters to
-    be accepted for base > 10 (thanks to Jim Ursetto)
+- Core syntax
+  - "assert" shows the line number of the form when a second argument
+    is not given or is a literal string
+  - "parameterize" now correctly omits invoking the guard procedure when
+    the old value is restored (thanks to Joo ChurlSoo)
+  - added ":", "the" and "assume" syntax for declaring types
+  - added "define-specialization" form to declare type-driven procedure
+    call rewrites in compiled code
 
 - Syntax expander
   - Fixed a bug that caused imported identifiers to leak into the 
@@ -304,26 +211,64 @@
   - Fixed a bug in the processing of extended lambda-lists (thanks to Peter Bex)
   - Peter Bex fixed a bug that caused bound variables to be incorrectly
     renamed in quoted literals (thanks to Matthew Flatt)
+  - fixed devious bug in the invocation and generation of transformer
+    procedures
+  - using normal "lambda" forms as transformers for local or global
+    syntax definitions is deprecated - one should use "syntax-rules",
+    "er-macro-transformer" or "ir-macro-transformer" from now on
 
-- Compiler
-  - Fixed bug in handling of symbols in constant-definitions (thanks to Peter
-    Bex)
-  - Stricter check for value-part of constant definition (thanks to Kon Lovett)
-  - Fixed bug that caused argument-signatures of external definitions to be
-    incorrectly modified during optimization (thanks to Peter Bex)
-  - Failing constant-folding expressions now produce a compile-time warning
-  - Fixed various bugs in the internal type-database (thanks to Kon Lovett and
-    Peter Bex)
-  - Fixed incorrect optimization rules for some fp-rounding and fixnum operators
+- Runtime system
+  - fixed handling of "inf" and nan" floating-point predicates for Solaris
+    (thanks to Claude Marinier)
+  - support for re-loading of compiled files has now been completely 
+    removed
+  - the maximum length of strings is no longer limited to a 24-bit
+    number on 64-bit architectures but can be 56 bits.
+  - string-comparison handles embedded '\0' characters.
+  - numerical predicates handle infinity and NaN correctly.
+  - deprecated "[+-]nan", "[+-]inf" and other notations "accidentally"
+    accepted by Chicken due to the underlying C library's strtod() function,
+    standardizing on "[+-]nan.0" and "[+-]inf.0" from R6RS (and soon R7RS),
+    when displaying numbers only these forms are generated now.
+  - signals are queued to some extent and the interrupt handling has
+    been cleaned up somewhat
+  - the interpreter handles SIGINT directly - loading the "posix" unit
+    is not needed anymore to handle this feature
+  - changed default nursery size slightly and fixed a bug that caused
+    incorrect (too small) nursery sizes on 64-bit platforms
+  - deprecated the compiler option "-heap-initial-size", "-heap-growth"
+    and "-heap-shrinkage"
+  - the assembly-language stub routine for the implementation of "apply"
+    was broken for Sparc64 systems and has been disabled for this platform
+ 
+- Type system
+  - added new type-specifiers "input-port", "output-port", "(list-of T)" 
+    and "(vector-of T)"
+  - the type-specifiers "(vector T ...)" and "(list T ...)" represent
+    fixed size lists and vectors now
+  - added qualified types ("forall"), optionally with type constrains
+  - added the "define-type" special form and type-abbreviations
+  - added "compiler-typecase", a compile-time typematching form
+
+- Module system
+  - Added "interfaces", which are named groups of exports
+  - Added "functors", which are parameterized modules
+  - Modules can now be aliased
+  - New syntax:
+    (define-interface NAME EXPORTS)
+    (functor (NAME ...) EXPORTS ...)
+  - Extended syntax of "module" for aliasing and functor-instantiation
+  - the "scheme" module has been integrated into the core library and
+    is not installed as a separate import library anymore
+  - added core module "r4rs" containing only bindings for R4RS identifiers
+  - added core module alias "r5rs" for "scheme" module
+  - added "module-environment" which returns an evaluation environment
+    for the bindings of a module
 
 - Foreign function interface
+  - locatives are allowed as arguments declared "c-pointer"
   - "int32" was not properly detected as a valid foreign type (thanks
     to Jim Ursetto)
-
-- Build system
-  - The default target library name for an installation configured for cross-
-    compilation is now "libchicken" and independent on any particular 
-    setting of PROGRAM_PREFIX/PROGRAM_SUFFIX (thanks to Otavio Salvador)
 
 
 4.7.0
