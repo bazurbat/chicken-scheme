@@ -5,14 +5,35 @@
     values (which caused very nonrandom results for very large values).
     Note that tandom shouldn't be used for security-critical code.
 
+- Build system
+  - the build was made more reliable with respect to cross-compilation
+    and custom installation names
+
 - Compiler
   - enhanced line number tracking to get better error messages from
     the scrutinizer.
+  - hygiene bugs related to compiler-syntax were fixed.
+  - the local flow-analysis was sometimes reporting multiple warnings
+    for the same type-conflict.
+  - the time/space-complexity of some algorithms used in the compiler
+    were reduced resulting in much better compile-times especially
+    for large source files.
+
+- Core tools
+  - csc: "-O5" does not pass expensive optimization flags to the C
+    compiler anymore
+  - chicken-install: installing subdirectories works now on Windows
+
+- Core syntax
+  - "assert" shows the line number of the form when a second argument
+    is not given or is a literal string
 
 - Runtime system
   - the maximum length of strings is no longer limited to a 24-bit
     number on 64-bit architectures but can be 56 bits.
-    
+  - string-comparison handles embedded '\0' characters.
+  - numerical predicates handle infinity and NaN correctly.
+ 
 4.7.4
 
 - Security fixes
