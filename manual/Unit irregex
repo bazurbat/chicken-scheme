@@ -19,8 +19,6 @@ be made available in the Chicken interpreter ({{csi}}) by entering
 (require-extension irregex)
 </enscript>
 
-[[toc:]]
-
 === Specification
 
 ==== Procedures
