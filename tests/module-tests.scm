@@ -248,5 +248,33 @@
    b)
  2)
 
+;; (contributed by "megane")
+
+(module m25 *
+  (import chicken scheme)
+  (define foo 1))
+
+(module m26 (bar)
+  (import chicken scheme)
+  (reexport m25)
+  (define bar 2))
+
+(module m27 *
+  (import chicken scheme)
+  (reexport m25) ;; <- oops, bar not exported anymore
+  (define bar 2))
+
+(test-equal
+ "handle star-exporting module with reexport"
+ (module m28 ()
+   (import scheme chicken)
+   (import (prefix m26 b/))
+   (import (prefix m27 c/))
+   (print b/foo)
+   (print c/foo)
+   (print b/bar)
+   c/bar) ;; <- Error: unbound variable: c/bar
+ 2)
+
 (test-end "modules")
 

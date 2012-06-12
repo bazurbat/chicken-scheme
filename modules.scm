@@ -696,13 +696,21 @@
 	   (when reexp?
 	     (unless cm
 	       (##sys#syntax-error-hook loc "`reexport' only valid inside a module"))
-	     (set-module-export-list! 
-	      cm
-	      (append 
-	       (let ((xl (module-export-list cm) ))
-		 (if (eq? #t xl) '() xl))
-	       (map car vsv)
-	       (map car vss)))
+
+	     (if (eq? #t (module-export-list cm))
+		 (begin
+		   (set-module-exist-list!
+		    cm
+		    (append (module-exist-list cm)
+			    (map car vsv)
+			    (map car vss))))
+		 (set-module-export-list!
+		  cm
+		  (append
+		   (let ((xl (module-export-list cm) ))
+		     (if (eq? #t xl) '() xl))
+		   (map car vsv)
+		   (map car vss))))
 	     (when (pair? prims)
 	       (set-module-meta-expressions! 
 		cm
