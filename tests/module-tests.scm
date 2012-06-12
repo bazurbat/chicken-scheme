@@ -225,5 +225,28 @@
    a)
  1)
 
+;; #865 - "*" export list needs special treatment when using "export"
+;; (fix contributed by "megane")
+
+(module
+ m22
+ *
+ (import chicken scheme)
+ (define b 2))
+
+(module
+ m23
+ *
+ (import chicken scheme)
+ (import m22)
+ (export b) )
+
+(test-equal
+ "`*' export-list + explicit export"
+ (module m24 ()
+   (import m23)
+   b)
+ 2)
+
 (test-end "modules")
 

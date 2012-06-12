@@ -157,11 +157,13 @@
 	  (##sys#current-module mod))))))
 
 (define (##sys#add-to-export-list mod exps)
-  (set-module-export-list! 
-   mod
-   (let ((xl (module-export-list mod)))
-     (or (eq? xl #t) 		; ==> #t
-	 (append xl exps)))))
+  (let ((xl (module-export-list mod)))
+    (if (eq? xl #t)
+	(let ((el (module-exist-list mod)))
+	  (set-module-exist-list!
+	   mod (append el exps)))
+	(set-module-export-list!
+	 mod (append xl exps)))))
 
 (define (##sys#toplevel-definition-hook sym mod exp val) #f)
 
