@@ -1294,7 +1294,8 @@ EOF
 	     (lambda ()
 	       (let ((res (##sys#file-select-one fd)))
 		 (if (fx= -1 res)
-		     (if (fx= _errno _ewouldblock)
+		     (if (or (fx= _errno _ewouldblock)
+			     (rx= _errno _eagain))
 			 #f
 			 (posix-error #:file-error loc "cannot select" fd nam))
 		     (fx= 1 res))))]
@@ -1310,7 +1311,7 @@ EOF
 		   (let ([cnt (##core#inline "C_read" fd buf bufsiz)])
 		     (cond ((fx= cnt -1)
 			    (select _errno
-			      ((_ewouldblock)
+			      ((_ewouldblock _egain)
 			       (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
 			       (##sys#thread-yield!)
 			       (loop) )
@@ -1326,7 +1327,8 @@ EOF
 				  (loop) )
 				(let ([cnt (##core#inline "C_read" fd buf bufsiz)])
 				  (when (fx= cnt -1)
-				    (if (fx= _errno _ewouldblock)
+				    (if (or (fx= _errno _ewouldblock)
+					    (fx= _errno _eagain))
 					(set! cnt 0)
 					(posix-error #:file-error loc "cannot read" fd nam) ) )
 				  (set! buflen cnt)
@@ -1423,7 +1425,7 @@ EOF
 		  (let ([cnt (##core#inline "C_write" fd str len)])
 		    (cond ((fx= -1 cnt)
 			   (select _errno
-			     ((_ewouldblock)
+			     ((_ewouldblock _eagain)
 			      (##sys#thread-yield!)
 			      (poke str len) )
 			     ((_eintr)

@@ -45,6 +45,7 @@
 static WSADATA wsa;
 # define fcntl(a, b, c)  0
 # define EWOULDBLOCK     0
+# define EAGAIN          0
 # define EINPROGRESS     0
 # define typecorrect_getsockopt(socket, level, optname, optval, optlen)	\
     getsockopt(socket, level, optname, (char *)optval, optlen)
@@ -99,6 +100,7 @@ EOF
 (define-foreign-variable _ipproto_tcp int "IPPROTO_TCP")
 (define-foreign-variable _invalid_socket int "INVALID_SOCKET")
 (define-foreign-variable _ewouldblock int "EWOULDBLOCK")
+(define-foreign-variable _eagain int "EAGAIN")
 (define-foreign-variable _eintr int "EINTR")
 (define-foreign-variable _einprogress int "EINPROGRESS")
 
@@ -348,7 +350,8 @@ EOF
 		(let loop ()
 		  (let ((n (##net#recv fd buf +input-buffer-size+ 0)))
 		    (cond ((eq? -1 n)
-			   (cond ((eq? errno _ewouldblock) 
+			   (cond ((or (eq? errno _ewouldblock) 
+				      (eq? errno _eagain))
 				  (when tmr
 				    (##sys#thread-block-for-timeout! 
 				     ##sys#current-thread
@@ -465,7 +468,8 @@ EOF
 		  (let* ((count (fxmin +output-chunk-size+ len))
 			 (n (##net#send fd s offset count 0)) )
 		    (cond ((eq? -1 n)
-			   (cond ((eq? errno _ewouldblock)
+			   (cond ((or (eq? errno _ewouldblock)
+				      (eq? errno _eagain))
 				  (when tmw
 				    (##sys#thread-block-for-timeout! 
 				     ##sys#current-thread
