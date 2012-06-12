@@ -162,6 +162,7 @@
     - "-O5" passed expensive optimization flags to the C compiler which
       could expose C-Compiler bugs, depending on the compiler version
       (thanks to Sven Hartrumpf for pointing this out).
+    - "-rpath" is ignored on OS X (thanks to Kon Lovett).
   - "chicken-install"
     - Added option "-override", which allows retrieving extension-
       versions from a file - this may be useful to ensure specific 
@@ -264,6 +265,8 @@
   - added core module alias "r5rs" for "scheme" module
   - added "module-environment" which returns an evaluation environment
     for the bindings of a module
+  - fixed bugs related to using "export"/"reexport" in combination with
+    wildcard ("*") module export lists (thanks to "megane")
 
 - Foreign function interface
   - locatives are allowed as arguments declared "c-pointer"
