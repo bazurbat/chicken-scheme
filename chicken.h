@@ -874,8 +874,17 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_gettimeofday             gettimeofday
 # define C_gmtime                   gmtime
 # define C_localtime                localtime
-# define C_setjmp                   setjmp
-# define C_longjmp                  longjmp
+/*
+ * It is undefined whether regular setjmp/longjmp save/restore signal mask
+ * so try to use versions that we know won't try to save & restore.
+ */
+# if defined(HAVE_SIGSETJMP)
+#   define C_setjmp(e)              sigsetjmp(e, 0)
+#   define C_longjmp(e,v)           siglongjmp(e, v)
+# else
+#   define C_setjmp                 setjmp
+#   define C_longjmp                longjmp
+# endif
 # define C_alloca                   alloca
 # define C_strerror                 strerror
 # define C_isalpha                  isalpha

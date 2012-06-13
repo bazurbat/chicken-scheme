@@ -241,6 +241,8 @@
     and "-heap-shrinkage"
   - the assembly-language stub routine for the implementation of "apply"
     was broken for Sparc64 systems and has been disabled for this platform
+  - signal masks were accedentally reset upon GC for some platforms; use
+    sigsetjmp/siglongjmp on BSD, Linux and MacOS X
  
 - Type system
   - added new type-specifiers "input-port", "output-port", "(list-of T)" 
