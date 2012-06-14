@@ -45,7 +45,6 @@
 static WSADATA wsa;
 # define fcntl(a, b, c)  0
 # define EWOULDBLOCK     0
-# define EAGAIN          0
 # define EINPROGRESS     0
 # define typecorrect_getsockopt(socket, level, optname, optval, optlen)	\
     getsockopt(socket, level, optname, (char *)optval, optlen)
