@@ -1311,7 +1311,7 @@ EOF
 		   (let ([cnt (##core#inline "C_read" fd buf bufsiz)])
 		     (cond ((fx= cnt -1)
 			    (select _errno
-			      ((_ewouldblock _egain)
+			      ((_ewouldblock _eagain)
 			       (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
 			       (##sys#thread-yield!)
 			       (loop) )
