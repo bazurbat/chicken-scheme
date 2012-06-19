@@ -1202,8 +1202,6 @@
 (reverse-string-append (#(procedure #:clean #:enforce) reverse-string-append ((list-of string)) string))
 (shuffle deprecated)
 
-;;   (: sort (forall (e (s (or (vector-of e) (list-of e)))) (s (e e -> *) -> s)))
-;; if we had constraints for "forall"
 (sort
  (forall (e (s (or (vector-of e) (list-of e))))
 	 (#(procedure #:enforce) 

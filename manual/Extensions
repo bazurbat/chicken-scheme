@@ -170,7 +170,7 @@ a simple single-file extension. This is roughly equivalent to:
   
   (install-extension
    'ID
-   '("ID.o" "ID.so" "ID.import.so")
+   '("ID.so" "ID.import.so")
    '((version 1.0)
      ... `INFO' ...
      ))
