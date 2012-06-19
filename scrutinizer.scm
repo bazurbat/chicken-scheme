@@ -614,12 +614,15 @@
 				   (or (not (variable-visible? var))
 				       (not (eq? (variable-mark var '##compiler#inline) 
 						 'no))))
-			  (debugging '|I| (sprintf "(: ~s ~s)" var rt))
-			  ;; [2] sets property, but lambda has already been walked,
-			  ;; so no type-checks are generated (see also [1], above)
-			  ;; note that implicit declarations are not enforcing
-			  (mark-variable var '##compiler#declared-type)
-			  (mark-variable var '##compiler#type rt))))
+			  (let ((rtlst (list (cons #f (tree-copy rt)))))
+			    (smash-component-types! rtlst "global")
+			    (let ((rt (cdar rtlst)))
+			      (debugging '|I| (sprintf "(: ~s ~s)" var rt))
+			      ;; [2] sets property, but lambda has already been walked,
+			      ;; so no type-checks are generated (see also [1], above)
+			      ;; note that implicit declarations are not enforcing
+			      (mark-variable var '##compiler#declared-type)
+			      (mark-variable var '##compiler#type rt))))))
 		    (when b
 		      (cond ((eq? 'undefined (cdr b)) (set-cdr! b rt))
 			    #;(strict-variable-types
@@ -834,6 +837,7 @@
 ;;  into "pair", since mutation may take place
 
 (define (smash-component-types! lst where)
+  ;; assumes list of the form "((_ . T1) ...)"
   (do ((lst lst (cdr lst)))
       ((null? lst))
     (let loop ((t (cdar lst))
