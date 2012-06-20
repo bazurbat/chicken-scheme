@@ -3231,7 +3231,7 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
   }
 
   heap_free (heapspace1, heapspace1_size);
-  heap_free (heapspace2, heapspace1_size);
+  heap_free (heapspace2, heapspace2_size);
   
   if ((heapspace2 = heap_alloc (size, &tospace_start)) == NULL)
     panic(C_text("out ot memory - cannot allocate heap segment"));
