@@ -3346,11 +3346,11 @@ C_regparm void C_fcall really_remark(C_word *x)
   n = C_header_size(p);
   bytes = (h & C_BYTEBLOCK_BIT) ? n : n * sizeof(C_word);
 
-  if(((C_byte *)p2 + bytes + sizeof(C_word)) > new_tospace_limit) {
+  new_tospace_top = ((C_byte *)p2 + C_align(bytes) + sizeof(C_word));
+  if(new_tospace_top > new_tospace_limit) {
     panic(C_text("out of memory - heap full while resizing"));
   }
 
-  new_tospace_top = (C_byte *)p2 + C_align(bytes) + sizeof(C_word);
   *x = (C_word)p2;
   p2->header = h;
   assert(!is_fptr(h));
