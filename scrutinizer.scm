@@ -188,7 +188,7 @@
 	    ((assq id e) =>
 	     (lambda (a)
 	       (cond ((eq? 'undefined (cdr a))
-		      (report 
+		      #;(report 
 		       loc
 		       (sprintf "access to variable `~a' which has an undefined value"
 			 (real-name id db)))
