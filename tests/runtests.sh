@@ -293,6 +293,9 @@ $compile numbers-string-conversion-tests.scm
 echo "======================================== srfi-4 tests ..."
 $interpret -s srfi-4-tests.scm
 
+echo "======================================== srfi-13 tests ..."
+$interpret -s srfi-13-tests.scm
+
 echo "======================================== condition tests ..."
 $interpret -s condition-tests.scm
 
