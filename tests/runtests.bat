@@ -400,6 +400,10 @@ echo ======================================== finalizer tests ...
 if errorlevel 1 exit /b 1
 
 echo ======================================== finalizer tests (2) ...
+%compile% finalizer-error-test.scm
+if errorlevel 1 exit /b 1
+a.out -:hg101
+if errorlevel 1 exit /b 1
 %compile% test-finalizers-2.scm
 if errorlevel 1 exit /b 1
 a.out

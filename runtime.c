@@ -139,8 +139,8 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #endif
 
 #define DEFAULT_SYMBOL_TABLE_SIZE      2999
-#define DEFAULT_HEAP_SIZE              500000
-#define MINIMAL_HEAP_SIZE              500000
+#define DEFAULT_HEAP_SIZE              DEFAULT_STACK_SIZE
+#define MINIMAL_HEAP_SIZE              DEFAULT_STACK_SIZE
 #define DEFAULT_MAXIMAL_HEAP_SIZE      0x7ffffff0
 #define DEFAULT_HEAP_GROWTH            200
 #define DEFAULT_HEAP_SHRINKAGE         50
@@ -3120,6 +3120,9 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
 
   if(size < MINIMAL_HEAP_SIZE) size = MINIMAL_HEAP_SIZE;
 
+  /* Heap must at least grow enough to accommodate first generation (nursery) */
+  if(size - heap_size < stack_size) size = heap_size + stack_size;
+	  
   if(size > C_maximal_heap_size) size = C_maximal_heap_size;
 
   if(size == heap_size) return;
