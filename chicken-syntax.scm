@@ -1188,10 +1188,9 @@
 
 (##sys#extend-macro-environment
  'assume '()
- (##sys#er-transformer
-  (syntax-rules ()
-    ((_ ((var type) ...) body ...)
-     (let ((var (##core#the type #t var)) ...) body ...)))))
+ (syntax-rules ()
+   ((_ ((var type) ...) body ...)
+    (let ((var (##core#the type #t var)) ...) body ...))))
 
 (##sys#extend-macro-environment
  'define-specialization '()
