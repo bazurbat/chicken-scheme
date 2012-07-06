@@ -1165,7 +1165,7 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax ': x '(_ symbol _ . _))
-    (if (memq #:csi ##sys#features) 
+    (if (not (memq #:compiling ##sys#features)) 
 	'(##core#undefined)
 	(let* ((type1 (##sys#strip-syntax (caddr x)))
 	       (name1 (cadr x)))
@@ -1196,7 +1196,7 @@
  'define-specialization '()
  (##sys#er-transformer
   (lambda (x r c)
-    (cond ((memq #:csi ##sys#features) '(##core#undefined))
+    (cond ((not (memq #:compiling ##sys#features)) '(##core#undefined))
 	  (else
 	   (##sys#check-syntax 'define-specialization x '(_ (variable . #(_ 0)) _ . #(_ 0 1)))
 	   (let* ((head (cadr x))
@@ -1287,7 +1287,7 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax 'define-type x '(_ variable _))
-    (cond ((memq #:csi ##sys#features) '(##core#undefined))
+    (cond ((not (memq #:compiling ##sys#features)) '(##core#undefined))
 	  (else
 	   (let ((name (##sys#strip-syntax (cadr x)))
 		 (%quote (r 'quote))
