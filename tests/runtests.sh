@@ -296,6 +296,10 @@ $interpret -s srfi-4-tests.scm
 echo "======================================== srfi-13 tests ..."
 $interpret -s srfi-13-tests.scm
 
+echo "======================================== srfi-14 tests ..."
+$compile srfi-14-tests.scm
+./a.out
+
 echo "======================================== condition tests ..."
 $interpret -s condition-tests.scm
 
