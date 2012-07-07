@@ -538,7 +538,7 @@
 
 			((##core#the)
 			 `(##core#the
-			   ,(##sys#strip-syntax (cadr x))
+			   ,(validate-type (##sys#strip-syntax (cadr x)) #f)
 			   ,(caddr x)
 			   ,(walk (cadddr x) e se dest ldest h ln)))
 

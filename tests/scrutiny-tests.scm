@@ -134,3 +134,11 @@
   (import chicken scheme)
   (define (blabla)
     (+ 1 'x)))
+
+;; Reported by megane in #884:
+;;
+;; Custom types defined in modules need to be resolved during canonicalization
+(module bar ()
+  (import chicken scheme)
+  (define-type footype string)
+  (the footype "bar"))
