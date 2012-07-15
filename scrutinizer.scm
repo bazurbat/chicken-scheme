@@ -1996,7 +1996,7 @@
 	     (lambda (p)
 	       (let* ((cleanf (eq? '--> (car p)))
 		      (ok (or (not rec) (not cleanf))))
-		 (set! clean cleanf)
+		 (unless rec (set! clean cleanf))
 		 (let ((cp (memq ': (cdr p))))
 		   (cond ((not cp)
 			  (and ok
