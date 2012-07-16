@@ -668,22 +668,24 @@
     (lambda (ht)
       (let* ([vec1 (##sys#slot ht 1)]
 	     [len (##sys#size vec1)]
-	     [vec2 (make-vector len '())] )
-	(do ([i 0 (fx+ i 1)])
-	    [(fx>= i len)
-	     (*make-hash-table
-	      (##sys#slot ht 3) (##sys#slot ht 4)
-	      (##sys#slot ht 2)
-	      (##sys#slot ht 5) (##sys#slot ht 6)
-	      (##sys#slot ht 7) (##sys#slot ht 8)
-	      (##sys#slot ht 9) vec2)]
-	  (##sys#setslot vec2 i
-	   (let copy-loop ([bucket (##sys#slot vec1 i)])
-	     (if (null? bucket)
-		 '()
-		 (let ([pare (##sys#slot bucket 0)])
-		   (cons (cons (##sys#slot pare 0) (##sys#slot pare 1))
-			 (copy-loop (##sys#slot bucket 1))))))) ) ) ) ) )
+	     [vec2 (make-vector len '())]
+             [ht2 (do ([i 0 (fx+ i 1)])
+                      [(fx>= i len)
+                       (*make-hash-table
+                        (##sys#slot ht 3) (##sys#slot ht 4)
+                        (##sys#slot ht 2)
+                        (##sys#slot ht 5) (##sys#slot ht 6)
+                        (##sys#slot ht 7) (##sys#slot ht 8)
+                        (##sys#slot ht 9) vec2)]
+                    (##sys#setslot vec2 i
+                                   (let copy-loop ([bucket (##sys#slot vec1 i)])
+                                     (if (null? bucket)
+                                         '()
+                                         (let ([pare (##sys#slot bucket 0)])
+                                           (cons (cons (##sys#slot pare 0) (##sys#slot pare 1))
+                                                 (copy-loop (##sys#slot bucket 1))))))) )])
+        (##sys#setslot ht2 2 (##sys#slot ht 2))
+        ht2 ) ) ) )
 
 (define (hash-table-copy ht)
   (##sys#check-structure ht 'hash-table 'hash-table-copy)
