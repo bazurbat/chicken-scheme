@@ -4113,112 +4113,112 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
       if(locative_table[ i ] != C_SCHEME_UNDEFINED) ++j;
     return C_fix(j);
 
-  case C_fix(20):
+  case C_fix(20):		/* unused */
     return C_SCHEME_FALSE;
 
-  case C_fix(21):
+  case C_fix(21):		/* largest fixnum */
     return C_fix(C_MOST_POSITIVE_FIXNUM);
 
-  case C_fix(22):
+  case C_fix(22):		/* does this process use a private egg-repository? */
     return C_mk_bool(private_repository != NULL);
 
-  case C_fix(23):
+  case C_fix(23):		/* seconds since process startup */
     return C_fix(C_startup_time_seconds);
 
-  case C_fix(24):
+  case C_fix(24):		/* dynamic loading available? */
 #ifdef NO_DLOAD2
     return C_SCHEME_FALSE;
 #else
     return C_SCHEME_TRUE;
 #endif
 
-  case C_fix(25):
+  case C_fix(25):		/* REPL on error? XXX Is this used anywhere? */
     return C_mk_bool(C_enable_repl);
 
-  case C_fix(26):
+  case C_fix(26):		/* number of untriggered finalizers */
     return C_fix(live_finalizer_count);
 
-  case C_fix(27):
+  case C_fix(27):		/* total number of finalizers used and unused */
     return C_fix(allocated_finalizer_count);
 
-  case C_fix(28):
+  case C_fix(28):		/* are procedure-tabled enabled? */
 #ifdef C_ENABLE_PTABLES
     return C_SCHEME_TRUE;
 #else
     return C_SCHEME_FALSE;
 #endif
 
-  case C_fix(29):
+  case C_fix(29):		/* size of ring-buffer used to hold trace entries */
     return C_fix(C_trace_buffer_size);
 
-  case C_fix(30):
+  case C_fix(30):		/* unused */
     return C_SCHEME_FALSE;
 
-  case C_fix(31):
+  case C_fix(31):		/* GC time since last invocation */
     tgc = timer_accumulated_gc_ms;
     timer_accumulated_gc_ms = 0;
     return C_fix(tgc);
 
-  case C_fix(32):
+  case C_fix(32):		/* are GC-hooks enabled? */
 #ifdef C_GC_HOOKS
     return C_SCHEME_TRUE;
 #else
     return C_SCHEME_FALSE;
 #endif
 
-  case C_fix(33):
-    return C_SCHEME_TRUE;
+  case C_fix(33):		/* return process-ID */
+    return C_fix(C_getpid());
 
-  case C_fix(34):
+  case C_fix(34):		/* effective maximum for procedure arguments */
 #ifdef C_HACKED_APPLY
     return C_fix(TEMPORARY_STACK_SIZE);
 #else
     return C_fix(126);
 #endif
 
-  case C_fix(35):
+  case C_fix(35):		/* unused */
     /* used to be apply-hook indicator */
     return C_SCHEME_FALSE;
     
-  case C_fix(36):
+  case C_fix(36):		/* toggle debug mode */
     debug_mode = !debug_mode;
     return C_mk_bool(debug_mode);
 
-  case C_fix(37):
+  case C_fix(37):		/* heap-dump enabled? */
     return C_mk_bool(dump_heap_on_exit);
 
-  case C_fix(38):
+  case C_fix(38):		/* SVN revision of built sources */
 #ifdef C_SVN_REVISION
     return C_fix(C_SVN_REVISION);
 #else
     return C_fix(0);
 #endif
 
-  case C_fix(39):
+  case C_fix(39):		/* is this a cross-chicken? */
 #if defined(C_CROSS_CHICKEN) && C_CROSS_CHICKEN
     return C_SCHEME_TRUE;
 #else
     return C_SCHEME_FALSE;
 #endif
 
-  case C_fix(40):
+  case C_fix(40):		/* assembly stub for "apply" available? */
 #if defined(C_HACKED_APPLY)
     return C_SCHEME_TRUE;
 #else
     return C_SCHEME_FALSE;
 #endif
 
-  case C_fix(41):
+  case C_fix(41):		/* major CHICKEN version */
     return C_fix(C_MAJOR_VERSION);
 
-  case C_fix(42):
+  case C_fix(42):		/* binary version number */
 #ifdef C_BINARY_VERSION
     return C_fix(C_BINARY_VERSION);
 #else
     return C_fix(0);
 #endif
 
-  case C_fix(43):
+  case C_fix(43):		/* minor CHICKEN version */
     return C_fix(C_MINOR_VERSION);
 
   default: return C_SCHEME_UNDEFINED;

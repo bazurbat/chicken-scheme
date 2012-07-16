@@ -295,7 +295,8 @@ EOF
 (define create-temporary-directory)
 
 (let ((temp #f)
-      (temp-prefix "temp"))
+      (temp-prefix "temp")
+      (string-append string-append))
   (define (tempdir)
     (or temp
 	(let ((tmp 
@@ -312,9 +313,12 @@ EOF
 	(let* ((n (##core#inline "C_random_fixnum" #x10000))
 	       (pn (make-pathname 
 		    (tempdir)
-		    (##sys#string-append 
+		    (string-append 
 		     temp-prefix
-		     (number->string n 16)) ext)) )
+		     (number->string n 16)
+		     "."
+		     (##sys#number->string (##sys#fudge 33))) ; PID
+		    ext)) )
 	  (if (file-exists? pn)
 	      (loop)
 	      (call-with-output-file pn (lambda (p) pn)) ) ) ) ) )
@@ -326,7 +330,9 @@ EOF
 		    (tempdir)
 		    (string-append
 		     temp-prefix
-		     (number->string n 16)))))
+		     (number->string n 16)
+		     "."
+		     (##sys#number->string (##sys#fudge 33)))))) ; PID
 	  (if (directory-exists? pn) 
 	      (loop)
 	      (let ((r (##core#inline "C_mkdir" (##sys#make-c-string pn 'create-temporary-directory))))

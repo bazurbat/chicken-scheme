@@ -505,7 +505,7 @@ EOF
 
 ;;; Processes
 
-(define current-process-id (foreign-lambda int "C_getpid"))
+(define (current-process-id) (##sys#fudge 33))
 
 (define process-wait
   (lambda args
