@@ -144,7 +144,7 @@
   - deprecated C_hash_string and C_hash_string_ci functions in the C API in
     favor of the more secure versions C_u_i_string_hash, C_u_i_string_ci_hash
   - a number of bugs in the irregex regular expression engine have been
-    fixed
+    fixed; it has been updated to upstream release 0.8.3
   - "with-input-from-file", "with-output-to-file", "with-input-from-pipe" and
     "with-output-to-pipe" now properly restore the standard input/output 
     ports in case the body thunk escapes
