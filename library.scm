@@ -994,20 +994,19 @@ EOF
 
 (letrec ((maxmin
 	  (lambda (n1 ns pred)
-	    (let loop ((nbest n1) (ns ns))
+	    (let loop ((nbest n1) (inexact (##core#inline "C_blockp" n1)) (ns ns))
 	      (if (eq? ns '())
-		  nbest
+		  (if (and inexact (not (##core#inline "C_blockp" nbest)))
+		      (##core#inline_allocate ("C_a_i_fix_to_flo" 4) nbest)
+		      nbest)
 		  (let ([ni (##sys#slot ns 0)])
 		    (loop (if (pred ni nbest)
-			      (if (and (##core#inline "C_blockp" nbest) 
-				       (##core#inline "C_flonump" nbest) 
-				       (not (##core#inline "C_blockp" ni)) )
-				  (##core#inline_allocate ("C_a_i_fix_to_flo" 4) ni)
-				  ni)
+			      ni
 			      nbest)
+                          (or inexact (##core#inline "C_blockp" ni))
 			  (##sys#slot ns 1) ) ) ) ) ) ) )
-  (set! max (lambda (n1 . ns) (maxmin n1 ns >)))
-  (set! min (lambda (n1 . ns) (maxmin n1 ns <))) )
+  (set! max (lambda (n1 . ns) (##sys#check-number n1 'max) (maxmin n1 ns >)))
+  (set! min (lambda (n1 . ns) (##sys#check-number n1 'min) (maxmin n1 ns <))) )
 
 (define (exp n)
   (##core#inline_allocate ("C_a_i_exp" 4) n) )

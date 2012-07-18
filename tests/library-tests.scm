@@ -164,6 +164,18 @@
 (assert-fail (modulo 4.0 +inf.0))
 (assert-fail (modulo 4.0 +nan.0))
 
+(assert-fail (min 'x))
+(assert-fail (max 'x))
+(assert (eq? 1 (min 1 2)))
+(assert (eq? 1 (min 2 1)))
+(assert (eq? 2 (max 1 2)))
+(assert (eq? 2 (max 2 1)))
+;; must be flonum
+(assert (fp= 1.0 (min 1 2.0)))           
+(assert (fp= 1.0 (min 2.0 1)))
+(assert (fp= 2.0 (max 2 1.0)))           
+(assert (fp= 2.0 (max 1.0 2)))
+
 ;; number->string conversion
 
 (for-each
