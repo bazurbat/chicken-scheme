@@ -134,6 +134,7 @@
   - added "alist-update" ("data-structures" unit)
   - "irregex-replace" returns the original string instead of #f when the
     regex does not match
+  - irregex "real" built-in utility pattern now accepts a leading sign
   - added "change-directory*" ("posix" unit)
   - number parsing has been made more reliable and standards compliant
   - deprecated "none?", "always?" and "never?"
