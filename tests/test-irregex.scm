@@ -358,6 +358,11 @@
        rope-chunker
        (rope "bob@test.com and fred@example.com")
        (lambda (src i s) (reverse s))))
+  (test-equal '("poo poo ")
+      (irregex-fold '(* "poo ")
+                    (lambda (i m s) (cons (irregex-match-substring m) s))
+                    '()
+                    "poo poo platter"))
   )
 
 
