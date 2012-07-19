@@ -339,7 +339,14 @@
   (define (with-default-sources proc)
     (let trying-sources ([defs (known-default-sources)])
       (if (null? defs)
-          (proc #f #f)
+          (proc #f #f
+                (lambda ()
+                  (with-output-to-port (current-error-port)
+                    (lambda ()
+                      (print "Could not determine a source of extensions. "
+                             "Please, specify a location and a transport for "
+                             "a source.")))
+                  (exit 1)))
           (let* ([def (car defs)]
                  [locn (resolve-location
 			(cadr (or (assq 'location def)
