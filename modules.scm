@@ -159,9 +159,17 @@
 (define (##sys#add-to-export-list mod exps)
   (let ((xl (module-export-list mod)))
     (if (eq? xl #t)
-	(let ((el (module-exist-list mod)))
-	  (set-module-exist-list!
-	   mod (append el exps)))
+	(let ((el (module-exist-list mod))
+	      (me (##sys#macro-environment))
+	      (sexps '()))
+	  (for-each
+	   (lambda (exp)
+	     (cond ((assq exp me) =>
+		    (lambda (a)
+		      (set! sexps (cons a sexps))))))
+	   exps)
+	  (set-module-sexports! mod (append sexps (module-sexports mod)))
+	  (set-module-exist-list! mod (append el exps)))
 	(set-module-export-list!
 	 mod (append xl exps)))))
 
@@ -437,7 +445,7 @@
 			  (module-defined-syntax-list mod)))
 	     (sexports
 	      (if (eq? #t explist)
-		  sdlist
+		  (merge-se (module-sexports mod) sdlist)
 		  (let loop ((me (##sys#macro-environment)))
 		    (cond ((null? me) '())
 			  ((##sys#find-export (caar me) mod #f)

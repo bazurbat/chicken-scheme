@@ -276,5 +276,27 @@
    c/bar) ;; <- Error: unbound variable: c/bar
  2)
 
+;; somewhat related, but with syntax (#882, found by megane):
+
+(module m29 *
+  (import chicken scheme)
+  (define-syntax m29-baz
+    (lambda _
+      ''foo)))
+
+(module m30 *
+  (import chicken scheme)
+  (import m29)
+  (export m29-baz))
+
+(test-equal
+ "star-export with explicit re-export of syntax"
+ (module m31 ()
+   (import scheme chicken)
+   (import m30)
+   (m29-baz))
+ 'foo)
+
+
 (test-end "modules")
 
