@@ -1641,11 +1641,11 @@ EOF
   (let ((winds ##sys#dynamic-winds))
     (##sys#call-with-current-continuation
      (lambda (cont)
-       (proc
-	(lambda results
-	  (unless (eq? ##sys#dynamic-winds winds)
-	    (##sys#dynamic-unwind winds (fx- (length ##sys#dynamic-winds) (length winds))) )
-	  (apply cont results) ) ) ) ) ) )
+       (define (continuation . results)
+	 (unless (eq? ##sys#dynamic-winds winds)
+	   (##sys#dynamic-unwind winds (fx- (length ##sys#dynamic-winds) (length winds))) )
+	 (apply cont results) )
+       (proc continuation)))))
 
 (define call/cc call-with-current-continuation)
 
