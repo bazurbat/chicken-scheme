@@ -1042,3 +1042,16 @@ take
        `(,(r 'list) ,(r 'define))))))
 
 (f (eval '(begin (import renamed-macros) (renamed-macro-not-firstclassed))))
+
+;; #893: implicitly renamed variables shouldn't be resolved to core
+;;       builtins (#%xyz), but go through a level of indirection, so
+;;       strip-syntax can still access the original symbol.
+(module rename-builtins
+ (strip-syntax-on-*)
+ (import chicken scheme)
+ (define-syntax strip-syntax-on-*
+   (ir-macro-transformer
+    (lambda (e r c) '(quote *)))))
+
+(import rename-builtins)
+(assert (eq? '* (strip-syntax-on-*)))

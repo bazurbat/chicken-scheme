@@ -877,7 +877,12 @@
 			 (lambda (name)
 			   (dd "STRIP SYNTAX ON " sym " ---> " name)
 			   name))
-			(else (dd "BUILTIN ALIAS:" renamed) renamed))))))
+                        ;; Rename builtin aliases so strip-syntax can still
+                        ;; access symbols as entered by the user
+			(else (let ((implicitly-renamed (rename sym)))
+                                (dd "BUILTIN ALIAS: " sym " as " renamed
+                                    " --> " implicitly-renamed)
+                                implicitly-renamed)))))))
        (if explicit-renaming?
 	   ;; Let the user handle renaming
 	   (handler form rename compare)
