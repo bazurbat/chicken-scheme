@@ -3843,8 +3843,7 @@ C_regparm C_word C_fcall C_equalp(C_word x, C_word y)
   C_header header;
   C_word bits, n, i;
 
-  if(C_stack_test)
-    barf(C_CIRCULAR_DATA_ERROR, "equal?");
+  C_stack_check1(barf(C_CIRCULAR_DATA_ERROR, "equal?"));
 
  loop:
   if(x == y) return 1;

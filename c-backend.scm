@@ -855,7 +855,7 @@
 			[else
 			 (unless direct (gen #t "C_word *a;"))
 			 (when (and direct (not unsafe) (not disable-stack-overflow-checking))
-			   (gen #t "C_stack_check;") )
+			   (gen #t "C_stack_overflow_check;") )
 			 (when looping (gen #t "loop:")) ] )
 		  (when (and external (not unsafe) (not no-argc-checks) (not customizable))
 		    ;; (not customizable) implies empty-closure
