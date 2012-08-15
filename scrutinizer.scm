@@ -755,32 +755,30 @@
 				 r
 				 (map (cut resolve <> typeenv) r)))))))
 		 ((##core#the)
-		  (let-values (((t pred pure) (validate-type (first params) #f)))
-		    (unless t
-		      (quit "invalid type specification: ~s" (first params)))
-		    (let ((rt (walk (first subs) e loc dest tail flow ctags)))
-		      (cond ((eq? rt '*))
-			    ((null? rt)
+		  (let ((t (first params))
+			(rt (walk (first subs) e loc dest tail flow ctags)))
+		    (cond ((eq? rt '*))
+			  ((null? rt)
+			   (report
+			    loc
+			    (sprintf
+				"expression returns zero values but is declared to have a single result of type `~a'"
+			      t)))
+			  (else
+			   (when (> (length rt) 1)
 			     (report
 			      loc
+			      (sprintf 
+				  "expression returns ~a values but is declared to have a single result"
+				(length rt))))
+			   (when (and (second params)
+				      (not (type<=? t (first rt))))
+			     ((if strict-variable-types report-error report-notice)
+			      loc
 			      (sprintf
-				  "expression returns zero values but is declared to have a single result of type `~a'"
-				t)))
-			    (else
-			     (when (> (length rt) 1)
-			       (report
-				loc
-				(sprintf 
-				    "expression returns ~a values but is declared to have a single result"
-				  (length rt))))
-			     (when (and (second params)
-					(not (type<=? t (first rt))))
-			       ((if strict-variable-types report-error report-notice)
-				loc
-				(sprintf
-				    "expression returns a result of type `~a', but is declared to return `~a', which is not a subtype"
-				  (first rt) t)))))
-		      (list t))))
+				  "expression returns a result of type `~a', but is declared to return `~a', which is not a subtype"
+				(first rt) t)))))
+		    (list t)))
 		 ((##core#typecase)
 		  (let* ((ts (walk (first subs) e loc #f #f flow ctags))
 			 (trail0 trail)
@@ -2071,6 +2069,11 @@
 		(and ptype (eq? (car ptype) type) (cdr ptype))
 		clean))))
 	  (else (values #f #f #f)))))
+
+(define (check-and-validate-type type loc #!optional name)
+  (let-values (((t pred pure) (validate-type (##sys#strip-syntax type) name)))
+    (or t 
+	(error loc "invalid type specifier" type))))
 
 (define (install-specializations name specs)
   (define (fail spec)
