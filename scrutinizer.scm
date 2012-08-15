@@ -1487,6 +1487,7 @@
 				 ((list vector)
 				  (and (= (length t1) (length t2))
 				       (every test (cdr t1) (cdr t2))))
+				 ((struct) (eq? (cadr t1) (cadr t2)))
 				 ((procedure)
 				  (let ((args1 (if (named? t1) (caddr t1) (cadr t1)))
 					(args2 (if (named? t2) (caddr t2) (cadr t2)))
