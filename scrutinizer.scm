@@ -309,7 +309,7 @@
 	     (xptype `(procedure ,(make-list nargs '*) *))
 	     (typeenv (append-map type-typeenv actualtypes))
 	     (op #f))
-	(d "  call: ~a " actualtypes)
+	(d "  call: ~a, te: ~a" actualtypes typeenv)
 	(cond ((and (not pptype?) (not (match-types xptype ptype typeenv)))
 	       (report
 		loc
@@ -439,9 +439,11 @@
       (if (and dest 
 	       strict-variable-types
 	       (variable-mark dest '##compiler#declared-type))
-	  (let ((ptype (variable-mark dest '##compiler#type)))
+	  (let* ((ptype (variable-mark dest '##compiler#type))
+		 (typeenv (type-typeenv ptype)))
 	    (if (procedure-type? ptype)
-		(nth-value 0 (procedure-argument-types ptype argc '() #t))
+		(map (cut resolve <> typeenv)
+		     (nth-value 0 (procedure-argument-types ptype argc '() #t)))
 		(make-list argc '*)))
 	  (make-list argc '*)))
 
