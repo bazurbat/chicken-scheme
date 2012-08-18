@@ -572,6 +572,7 @@ static inline int isinf_ld (long double x)
 #define C_BAD_ARGUMENT_TYPE_NO_INPUT_PORT_ERROR       40
 #define C_BAD_ARGUMENT_TYPE_NO_OUTPUT_PORT_ERROR      41
 #define C_PORT_CLOSED_ERROR                           42
+#define C_ASCIIZ_REPRESENTATION_ERROR                 43
 
 
 /* Platform information */

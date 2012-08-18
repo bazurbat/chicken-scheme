@@ -1,5 +1,10 @@
 (use files posix)
 
+(define-syntax assert-error
+  (syntax-rules ()
+    ((_ expr) 
+     (assert (handle-exceptions _ #t expr #f)))))
+
 (define-constant SOME-POS 123456)
 
 (let ((tnpfilpn (create-temporary-file)))
@@ -16,3 +21,13 @@
       (assert (= SOME-POS (file-position port)))
       (close-output-port port)
       (delete-file* tnpfilpn) ) ) )
+
+(assert-error (get-environment-variable "with\x00embedded-NUL"))
+(assert-error (setenv "with\x00embedded-NUL" "blabla"))
+(assert-error (setenv "blabla" "with\x00embedded-NUL"))
+(assert-error (system "echo this is \x00 not okay"))
+;; Use "false" to signal to the calling script that there was an error,
+;; even if the process will get called
+(assert-error (process-execute "false\x00123"))
+(assert-error (process-execute "false" '("1" "123\x00456")))
+(assert-error (process-execute "false" '("123\x00456") '("foo\x00bar" "blabla") ("lalala" "qux\x00mooh")))
