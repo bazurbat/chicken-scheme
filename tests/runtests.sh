@@ -99,6 +99,9 @@ diff -bu scrutiny-2.expected scrutiny-2.out
 $compile scrutiny-tests-3.scm -specialize -block -ignore-repository -types $TYPESDB
 ./a.out
 
+$compile scrutiny-tests-strict.scm -strict-types -specialize -ignore-repository -types $TYPESDB
+./a.out
+
 echo "======================================== specialization tests ..."
 rm -f foo.types foo.import.*
 $compile specialization-test-1.scm -emit-type-file foo.types -specialize \
