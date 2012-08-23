@@ -166,6 +166,7 @@
       could expose C-Compiler bugs, depending on the compiler version
       (thanks to Sven Hartrumpf for pointing this out).
     - "-rpath" is ignored on OS X (thanks to Kon Lovett).
+    - Fixed handling of "-output-file" (it was being ignored)
   - "chicken-install"
     - Added option "-override", which allows retrieving extension-
       versions from a file - this may be useful to ensure specific 
