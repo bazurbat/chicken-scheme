@@ -1,3 +1,5 @@
+;;;; module re-exporting from core module
+
 (module reexport-m1 ()
   (import scheme chicken)
   (require-library srfi-1 srfi-13)

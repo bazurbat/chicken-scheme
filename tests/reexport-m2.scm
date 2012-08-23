@@ -1,3 +1,5 @@
+;;;; module importing from module that reexports core binding
+
 (module foo ()
   (import scheme chicken)
   (use reexport-m1)

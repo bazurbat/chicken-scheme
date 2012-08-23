@@ -36,3 +36,23 @@
 (module m3 ()
   (import scheme big-chicken)
   (pp (string-intersperse '("abc" "def" "ghi") "-")))
+
+;;; #901 - reexport with "*" export list
+
+(module
+ m4
+ (foo-m4)
+ (import chicken scheme) 
+ (define-syntax foo-m4
+   (ir-macro-transformer
+    (lambda (e i c)
+      ''1))))
+
+(module
+ m5
+ *					; () works here
+ (import chicken scheme)
+ (reexport m4))
+
+(import m5)
+(print (foo-m4))

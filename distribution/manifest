@@ -154,7 +154,10 @@ tests/syntax-tests-2.scm
 tests/meta-syntax-test.scm
 tests/reexport-m1.scm
 tests/reexport-m2.scm
+tests/reexport-m3.scm
+tests/reexport-m4.scm
 tests/reexport-tests.scm
+tests/reexport-tests-2.scm
 tests/ec.scm
 tests/ec-tests.scm
 tests/test-chained-modules.scm

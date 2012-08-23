@@ -196,6 +196,10 @@ $compile_s reexport-m1.import.scm
 $interpret -s reexport-m2.scm
 $compile reexport-m2.scm
 ./a.out
+$compile_s reexport-m3.scm -J
+$compile_s reexport-m4.scm -J
+$compile reexport-tests-2.scm
+./a.out
 
 echo "======================================== functor tests ..."
 $interpret -bnq simple-functors-test.scm
