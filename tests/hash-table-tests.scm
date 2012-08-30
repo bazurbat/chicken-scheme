@@ -212,4 +212,5 @@
 (print l " -- " (hash-table->alist ht2))
 (assert (equal? l (sort (hash-table->alist ht2)
                         (lambda (e1 e2) (< (car e1) (car e2))))))
-
+;; Ensure that lookup still works (#905, randomization value was reset)
+(assert (equal? '(a) (hash-table-ref ht2 1)))

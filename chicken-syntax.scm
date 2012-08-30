@@ -1169,6 +1169,7 @@
 	'(##core#undefined)
 	(let* ((type1 (##sys#strip-syntax (caddr x)))
 	       (name1 (cadr x)))
+	  ;; we need pred/pure info, so not using "##compiler#check-and-validate-type"
 	  (let-values (((type pred pure)
 			(##compiler#validate-type type1 (##sys#strip-syntax name1))))
 	    (cond ((not type)
@@ -1184,13 +1185,17 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax 'the x '(_ _ _))
-    `(##core#the ,(##sys#strip-syntax (cadr x)) #t ,(caddr x)))))
+    (if (not (memq #:compiling ##sys#features)) 
+	(caddr x)
+	`(##core#the ,(##compiler#check-and-validate-type (cadr x) 'the)
+		     #t
+		     ,(caddr x))))))
 
 (##sys#extend-macro-environment
  'assume '()
  (syntax-rules ()
    ((_ ((var type) ...) body ...)
-    (let ((var (##core#the type #t var)) ...) body ...))))
+    (let ((var (the type var)) ...) body ...))))
 
 (##sys#extend-macro-environment
  'define-specialization '()
@@ -1225,13 +1230,9 @@
 			   (cons atypes
 				 (if (and rtypes (pair? rtypes))
 				     (list
-				      (map (lambda (rt)
-					     (let-values (((t pred pure) 
-							   (##compiler#validate-type rt #f)))
-					       (or t
-						   (syntax-error
-						    'define-specialization
-						    "invalid result type" t))))
+				      (map (cut ##compiler#check-and-validate-type 
+					     <>
+					     'define-specialization)
 					   rtypes)
 				      spec)
 				     (list spec))))
@@ -1251,18 +1252,14 @@
 			(cond ((symbol? arg)
 			       (loop (cdr args) (cons arg anames) (cons '* atypes)))
 			      ((and (list? arg) (fx= 2 (length arg)) (symbol? (car arg)))
-			       (let-values (((t pred pure)
-					     (##compiler#validate-type
-					      (##sys#strip-syntax (cadr arg))
-					      #f)))
-				 (if t
-				     (loop
-				      (cdr args)
-				      (cons (car arg) anames)
-				      (cons t atypes))
-				     (syntax-error
-				      'define-specialization
-				      "invalid argument type" arg head))))
+			       (loop
+				(cdr args)
+				(cons (car arg) anames)
+				(cons 
+				 (##compiler#check-and-validate-type 
+				  (cadr arg) 
+				  'define-specialization)
+				 atypes)))
 			      (else (syntax-error
 				     'define-specialization
 				     "invalid argument syntax" arg head)))))))))))))
@@ -1272,14 +1269,24 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax 'compiler-typecase x '(_ _ . #((_ . #(_ 1)) 1)))
-    (let ((var (gensym))
+    (let ((val (memq #:compiling ##sys#features))
+	  (var (gensym))
 	  (ln (get-line-number x)))
       `(##core#let ((,var ,(cadr x)))
 		   (##core#typecase 
 		    ,ln
 		    ,var		; must be variable (see: CPS transform)
 		    ,@(map (lambda (clause)
-			     (list (car clause) `(##core#begin ,@(cdr clause))))
+			     (let ((hd (##sys#strip-syntax (car clause))))
+			       (list
+				(if (eq? hd 'else)
+				    'else
+				    (if val
+					(##compiler#check-and-validate-type
+					 hd
+					 'compiler-typecase)
+					hd))
+				`(##core#begin ,@(cdr clause)))))
 			   (cddr x))))))))
 
 (##sys#extend-macro-environment
@@ -1292,15 +1299,11 @@
 	   (let ((name (##sys#strip-syntax (cadr x)))
 		 (%quote (r 'quote))
 		 (t0 (##sys#strip-syntax (caddr x))))
-	     (let-values (((t pred pure) (##compiler#validate-type t0 name)))
-	       (if t
-		   `(##core#elaborationtimeonly
-		     (##sys#put/restore!
-		      (,%quote ,name)
-		      (,%quote ##compiler#type-abbreviation)
-		      (,%quote ,t)))
-		   (syntax-error-hook 'define-type "invalid type" name t0)))))))))
-
+	     `(##core#elaborationtimeonly
+	       (##sys#put/restore!
+		(,%quote ,name)
+		(,%quote ##compiler#type-abbreviation)
+		(,%quote ,(##compiler#check-and-validate-type t0 'define-type name))))))))))
 
 
 ;; capture current macro env

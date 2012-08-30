@@ -224,6 +224,7 @@ static void C_fcall C_set_arg_string(char **where, int i, char *a, int len) {
     ptr = (char *)C_malloc(len + 1);
     C_memcpy(ptr, a, len);
     ptr[ len ] = '\0';
+    /* Can't barf() here, so the NUL byte check happens in Scheme */
   }
   else ptr = NULL;
   where[ i ] = ptr;
@@ -1765,9 +1766,12 @@ EOF
             [else pid] ) ) ) ) )
 
 (define process-execute
-  (let ([setarg (foreign-lambda void "C_set_exec_arg" int scheme-pointer int)]
+  ;; NOTE: We use c-string here instead of scheme-object.
+  ;; Because set_exec_* make a copy, this implies a double copy.
+  ;; At least it's secure, we can worry about performance later, if at all
+  (let ([setarg (foreign-lambda void "C_set_exec_arg" int c-string int)]
         [freeargs (foreign-lambda void "C_free_exec_args")]
-        [setenv (foreign-lambda void "C_set_exec_env" int scheme-pointer int)]
+        [setenv (foreign-lambda void "C_set_exec_env" int c-string int)]
         [freeenv (foreign-lambda void "C_free_exec_env")]
         [pathname-strip-directory pathname-strip-directory] )
     (lambda (filename #!optional (arglist '()) envlist)

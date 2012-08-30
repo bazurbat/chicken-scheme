@@ -262,6 +262,7 @@ C_set_arg_string(char **where, int i, char *dat, int len)
 	ptr = (char *)C_malloc(len + 1);
 	C_memcpy(ptr, dat, len);
 	ptr[ len ] = '\0';
+        /* Can't barf() here, so the NUL byte check happens in Scheme */
     }
     else
 	ptr = NULL;
@@ -830,6 +831,7 @@ C_process(const char * app, const char * cmdlin, const char ** env,
 		pb += strlen(*p) + 1;
 	    }
 	    *pb = '\0';
+            /* This _should_ already have been checked for embedded NUL bytes */
 	}
 	else
 	    success = FALSE;
@@ -1504,8 +1506,11 @@ EOF
 		    olst)) ) ) ) ) ) ) )
 
 (define $exec-setup
-  (let ([setarg (foreign-lambda void "C_set_exec_arg" int scheme-pointer int)]
-	[setenv (foreign-lambda void "C_set_exec_env" int scheme-pointer int)]
+  ;; NOTE: We use c-string here instead of scheme-object.
+  ;; Because set_exec_* make a copy, this implies a double copy.
+  ;; At least it's secure, we can worry about performance later, if at all
+  (let ([setarg (foreign-lambda void "C_set_exec_arg" int c-string int)]
+	[setenv (foreign-lambda void "C_set_exec_env" int c-string int)]
 	[build-exec-argvec
 	  (lambda (loc lst argvec-setter idx)
 	    (if lst
@@ -1584,6 +1589,7 @@ EOF
 ; where stdin-input-port?, etc. is a port or #f, indicating no port created.
 
 (define ##sys#process
+  ;; XXX TODO: When environment is implemented, check for embedded NUL bytes!
   (let ([c-process
 	  (foreign-lambda bool "C_process" c-string c-string c-pointer
 	    (c-pointer int) (c-pointer int) (c-pointer int) (c-pointer int) int)])

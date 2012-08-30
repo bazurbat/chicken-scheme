@@ -1,5 +1,10 @@
 (require-extension srfi-1 ports utils srfi-4 extras tcp posix)
 
+(define-syntax assert-error
+  (syntax-rules ()
+    ((_ expr) 
+     (assert (handle-exceptions _ #t expr #f)))))
+
 (define *text* #<<EOF
 this is a test
 <foof> #;33> (let ((in (open-input-string ""))) (close-input-port in)
@@ -195,3 +200,6 @@ EOF
     (check (read-string 10 in))
     (check "read-string!" (let ((buf (make-string 10)))
                             (read-string! 10 buf in) buf))))
+
+(print "\nEmbedded NUL bytes in filenames are rejected\n")
+(assert-error (with-output-to-file "embedded\x00null-byte" void))

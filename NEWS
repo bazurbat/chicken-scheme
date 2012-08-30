@@ -8,6 +8,8 @@
   - on 64-bit machines the "random" procedure no longer truncates result
     values (which caused very nonrandom results for very large values).
     Note that random shouldn't be used for security-critical code.
+  - Added checks for embedded '\0' characters in strings passed to some
+    C functions on a lower level than Chicken's FFI.
 
 - Build system
   - version information has been moved into a separate unit to make the
@@ -164,6 +166,7 @@
       could expose C-Compiler bugs, depending on the compiler version
       (thanks to Sven Hartrumpf for pointing this out).
     - "-rpath" is ignored on OS X (thanks to Kon Lovett).
+    - Fixed handling of "-output-file" (it was being ignored)
   - "chicken-install"
     - Added option "-override", which allows retrieving extension-
       versions from a file - this may be useful to ensure specific 

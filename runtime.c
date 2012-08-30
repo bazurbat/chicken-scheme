@@ -1645,6 +1645,11 @@ void barf(int code, char *loc, ...)
     msg = C_text("port already closed");
     c = 1;
     break;
+ 
+  case C_ASCIIZ_REPRESENTATION_ERROR:
+    msg = C_text("cannot represent string with NUL bytes as C string");
+    c = 1;
+    break;
 
   default: panic(C_text("illegal internal error code"));
   }
@@ -3791,6 +3796,7 @@ C_word C_halt(C_word msg)
 	n = sizeof(buffer) - 1;
       C_strncpy(buffer, (C_char *)C_data_pointer(msg), n);
       buffer[ n ] = '\0';
+      /* XXX msg isn't checked for NUL bytes, but we can't barf here either! */
     }
     else C_strcpy(buffer, C_text("(aborted)"));
 
@@ -3819,12 +3825,18 @@ C_word C_halt(C_word msg)
 
 C_word C_message(C_word msg)
 {
+  unsigned int n = C_header_size(msg);
+  /*
+   * Strictly speaking this isn't necessary for the non-gui-mode,
+   * but let's try and keep this consistent across modes.
+   */
+  if (memchr(C_c_string(msg), '\0', n) != NULL)
+    barf(C_ASCIIZ_REPRESENTATION_ERROR, "##sys#message", msg);
+
   if(C_gui_mode) {
-    int n = C_header_size(msg);
-    
     if (n >= sizeof(buffer))
       n = sizeof(buffer) - 1;
-    C_strncpy(buffer, (C_char *)((C_SCHEME_BLOCK *)msg)->data, n);
+    C_strncpy(buffer, C_c_string(msg), n);
     buffer[ n ] = '\0';
 #if defined(_WIN32) && !defined(__CYGWIN__)
     MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONEXCLAMATION);
@@ -3832,7 +3844,7 @@ C_word C_message(C_word msg)
 #endif
   } /* fall through */
 
-  C_fwrite(((C_SCHEME_BLOCK *)msg)->data, C_header_size(msg), sizeof(C_char), stdout);
+  C_fwrite(C_c_string(msg), n, sizeof(C_char), stdout);
   C_putchar('\n');
   return C_SCHEME_UNDEFINED;
 }
@@ -3843,8 +3855,7 @@ C_regparm C_word C_fcall C_equalp(C_word x, C_word y)
   C_header header;
   C_word bits, n, i;
 
-  if(C_stack_test)
-    barf(C_CIRCULAR_DATA_ERROR, "equal?");
+  C_stack_check1(barf(C_CIRCULAR_DATA_ERROR, "equal?"));
 
  loop:
   if(x == y) return 1;
@@ -4008,6 +4019,8 @@ C_regparm C_word C_fcall C_execute_shell_command(C_word string)
 
   C_memcpy(buf, ((C_SCHEME_BLOCK *)string)->data, n);
   buf[ n ] = '\0';
+  if (n != strlen(buf))
+    barf(C_ASCIIZ_REPRESENTATION_ERROR, "get-environment-variable", string);
 
   n = C_system(buf);
 
@@ -7012,10 +7025,14 @@ void C_ccall C_open_file_port(C_word c, C_word closure, C_word k, C_word port, C
 
     C_strncpy(buf, C_c_string(channel), n);
     buf[ n ] = '\0';
+    if (n != strlen(buf))
+      barf(C_ASCIIZ_REPRESENTATION_ERROR, "open", channel);
     n = C_header_size(mode);
     if (n >= sizeof(fmode)) n = sizeof(fmode) - 1;
     C_strncpy(fmode, C_c_string(mode), n);
     fmode[ n ] = '\0';
+    if (n != strlen(fmode)) /* Shouldn't happen, but never hurts */
+      barf(C_ASCIIZ_REPRESENTATION_ERROR, "open", mode);
     fp = C_fopen(buf, fmode);
 
     if(buf != buffer) C_free(buf);
@@ -7270,6 +7287,8 @@ C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix0)
 
   C_memcpy(sptr = buffer, C_c_string(str), n > (STRING_BUFFER_SIZE - 1) ? STRING_BUFFER_SIZE : n);
   buffer[ n ] = '\0';
+  if (n != strlen(buffer)) /* Don't barf; this is simply invalid number syntax */
+    goto fail;
   
   while(*sptr == '#') {
     switch(C_tolower((int)*(++sptr))) {
@@ -7830,13 +7849,15 @@ void C_ccall C_get_environment_variable(C_word c, C_word closure, C_word k, C_wo
   if(c != 3) C_bad_argc(c, 3);
 
   if(C_immediatep(name) || C_header_bits(name) != C_STRING_TYPE)
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "getenv", name);
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "get-environment-variable", name);
   
   if((len = C_header_size(name)) >= STRING_BUFFER_SIZE)
     C_kontinue(k, C_SCHEME_FALSE);
 
   strncpy(buffer, C_c_string(name), len);
   buffer[ len ] = '\0';
+  if (len != strlen(buffer))
+    barf(C_ASCIIZ_REPRESENTATION_ERROR, "get-environment-variable", name);
 
   if((save_string = C_do_getenv(buffer)) == NULL)
     C_kontinue(k, C_SCHEME_FALSE);

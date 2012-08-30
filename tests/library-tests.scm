@@ -411,3 +411,7 @@
 (assert (= 1 (eval 1)))
 (assert (eq? '() (receive (eval '(values)))))
 (assert (equal? '(1 2 3) (receive (eval '(values 1 2 3)))))
+
+;;; message checks for invalid strings
+
+(assert-fail (##sys#message "123\x00456"))

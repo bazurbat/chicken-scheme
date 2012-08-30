@@ -4134,6 +4134,7 @@ EOF
 	((40) (apply ##sys#signal-hook #:type-error loc "bad argument type - not an input-port" args))
 	((41) (apply ##sys#signal-hook #:type-error loc "bad argument type - not an output-port" args))
 	((42) (apply ##sys#signal-hook #:file-error loc "port already closed" args))
+	((43) (apply ##sys#signal-hook #:type-error loc "cannot represent string with NUL bytes as C string" args))
 	(else (apply ##sys#signal-hook #:runtime-error loc "unknown internal error" args)) ) ) ) )
 
 
@@ -4177,9 +4178,8 @@ EOF
     (##core#inline "C_setsubchar" buf len #\nul)
     (if (fx= (##core#inline "C_asciiz_strlen" buf) len)
         buf
-        (##sys#signal-hook #:type-error loc
-                           "cannot represent string with NUL bytes as C string"
-                           str))) )
+        (##sys#error-hook (foreign-value "C_ASCIIZ_REPRESENTATION_ERROR" int)
+                          loc str))) )
 
 (define ##sys#peek-signed-integer (##core#primitive "C_peek_signed_integer"))
 (define ##sys#peek-unsigned-integer (##core#primitive "C_peek_unsigned_integer"))

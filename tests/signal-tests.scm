@@ -7,10 +7,7 @@
   (exit))
 
 
-;;XXX not tested yet
-
-
-(use posix srfi-18 extras tcp)
+(use posix srfi-18 extras)
 
 
 (define received1 0)
@@ -36,14 +33,6 @@
 
 (define (child)
   (print "child started")
-  (thread-start!
-   (lambda ()
-     (let-values (((i o) (tcp-accept (tcp-listen 9999))))
-       (tick #\!)
-       (assert (string=? "ok." (read-line i)))
-       (print "client connected.")
-       (close-input-port i)
-       (close-output-port o))))
   (thread-start! 
    (lambda ()
      (do () (#f)
@@ -76,10 +65,5 @@
 	 (set! sent2 (add1 sent2))
 	 (process-signal pid signal/usr2)))))
   (printf "~%signals sent: ~a USR1, ~a USR2~%" sent1 sent2)
-  (print "connecting ...")
-  (let-values (((i o) (tcp-connect "localhost" 9999)))
-    (display "ok.\n" o)
-    (close-input-port i)
-    (close-output-port o)
-    (sleep 1))
+  (print "terminating child process ...")
   (process-signal pid))

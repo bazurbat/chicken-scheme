@@ -846,7 +846,7 @@
 	 env) )
 
 
-;;; Setting properties dynamically scroped
+;;; Setting properties dynamically scoped
 
 (define-values (##sys#put/restore! ##sys#with-property-restore)
   (let ((trail '())

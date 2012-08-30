@@ -572,6 +572,7 @@ static inline int isinf_ld (long double x)
 #define C_BAD_ARGUMENT_TYPE_NO_INPUT_PORT_ERROR       40
 #define C_BAD_ARGUMENT_TYPE_NO_OUTPUT_PORT_ERROR      41
 #define C_PORT_CLOSED_ERROR                           42
+#define C_ASCIIZ_REPRESENTATION_ERROR                 43
 
 
 /* Platform information */
@@ -1007,17 +1008,34 @@ extern double trunc(double);
 # define C_stress                  1
 #endif
 
+#define C_stack_overflow_check    C_stack_check1(C_stack_overflow())
+
+/*XXX OBSOLETE */
+#define C_stack_check             C_stack_overflow_check
+
 #if C_STACK_GROWS_DOWNWARD
 # define C_demand(n)              (C_stress && ((C_word)(C_stack_pointer - C_stack_limit) > (n)))
 # define C_stack_probe(p)         (C_stress && ((C_word *)(p) >= C_stack_limit))
-# define C_stack_test             (!C_disable_overflow_check && (C_byte*)(C_stack_pointer) + C_STACK_RESERVE < (C_byte *)C_stack_limit)
+
+# define C_stack_check1(err)      if(!C_disable_overflow_check) {	\
+                                    do { C_byte *_sp = (C_byte*)(C_stack_pointer); \
+				      if(_sp < (C_byte *)C_stack_limit && \
+					 ((C_byte *)C_stack_limit - _sp) > C_STACK_RESERVE) \
+					err; }				\
+				    while(0);}
+
 #else
 # define C_demand(n)              (C_stress && ((C_word)(C_stack_limit - C_stack_pointer) > (n)))
 # define C_stack_probe(p)         (C_stress && ((C_word *)(p) < C_stack_limit))
-# define C_stack_test             (!C_disable_overflow_check && (C_byte*)(C_stack_pointer) - C_STACK_RESERVE > (C_byte *)C_stack_limit)
-#endif
 
-#define C_stack_check             if(C_stack_test) C_stack_overflow()
+# define C_stack_check1(err)      if(!C_disable_overflow_check) {	\
+                                    do { C_byte *_sp = (C_byte*)(C_stack_pointer); \
+				      if(_sp > (C_byte *)C_stack_limit && \
+					 (_sp - (C_byte *)C_stack_limit) > C_STACK_RESERVE) \
+					err; }				\
+				    while(0);}
+
+#endif
 
 #define C_zero_length_p(x)        C_mk_bool(C_header_size(x) == 0)
 #define C_boundp(x)               C_mk_bool(((C_SCHEME_BLOCK *)(x))->data[ 0 ] != C_SCHEME_UNBOUND)

@@ -147,7 +147,7 @@
     -no-procedure-checks-for-toplevel-bindings))
 
 (define-constant complex-options
-  '(-debug -output-file -heap-size -nursery -stack-size -compiler -unit -uses -keyword-style
+  '(-debug -heap-size -nursery -stack-size -compiler -unit -uses -keyword-style
     -optimize-level -include-path -database-size -extend -prelude -postlude -prologue -epilogue 
     -inline-limit -profile-name
     -emit-inline-file -types -emit-type-file
@@ -666,7 +666,7 @@ EOF
 		(when osx 
 		  (set! link-options (cons* "-framework" (car rest) link-options)) )
 		(set! rest (cdr rest)) ]
-	       [(-o)
+	       [(-o -output-file)
 		(check s rest)
 		(let ([fn (car rest)])
 		  (set! rest (cdr rest))

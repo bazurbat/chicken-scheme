@@ -309,7 +309,7 @@
 	     (xptype `(procedure ,(make-list nargs '*) *))
 	     (typeenv (append-map type-typeenv actualtypes))
 	     (op #f))
-	(d "  call: ~a " actualtypes)
+	(d "  call: ~a, te: ~a" actualtypes typeenv)
 	(cond ((and (not pptype?) (not (match-types xptype ptype typeenv)))
 	       (report
 		loc
@@ -439,9 +439,11 @@
       (if (and dest 
 	       strict-variable-types
 	       (variable-mark dest '##compiler#declared-type))
-	  (let ((ptype (variable-mark dest '##compiler#type)))
+	  (let* ((ptype (variable-mark dest '##compiler#type))
+		 (typeenv (type-typeenv ptype)))
 	    (if (procedure-type? ptype)
-		(nth-value 0 (procedure-argument-types ptype argc '() #t))
+		(map (cut resolve <> typeenv)
+		     (nth-value 0 (procedure-argument-types ptype argc '() #t)))
 		(make-list argc '*)))
 	  (make-list argc '*)))
 
@@ -753,32 +755,30 @@
 				 r
 				 (map (cut resolve <> typeenv) r)))))))
 		 ((##core#the)
-		  (let-values (((t pred pure) (validate-type (first params) #f)))
-		    (unless t
-		      (quit "invalid type specification: ~s" (first params)))
-		    (let ((rt (walk (first subs) e loc dest tail flow ctags)))
-		      (cond ((eq? rt '*))
-			    ((null? rt)
+		  (let ((t (first params))
+			(rt (walk (first subs) e loc dest tail flow ctags)))
+		    (cond ((eq? rt '*))
+			  ((null? rt)
+			   (report
+			    loc
+			    (sprintf
+				"expression returns zero values but is declared to have a single result of type `~a'"
+			      t)))
+			  (else
+			   (when (> (length rt) 1)
 			     (report
 			      loc
+			      (sprintf 
+				  "expression returns ~a values but is declared to have a single result"
+				(length rt))))
+			   (when (and (second params)
+				      (not (type<=? t (first rt))))
+			     ((if strict-variable-types report-error report-notice)
+			      loc
 			      (sprintf
-				  "expression returns zero values but is declared to have a single result of type `~a'"
-				t)))
-			    (else
-			     (when (> (length rt) 1)
-			       (report
-				loc
-				(sprintf 
-				    "expression returns ~a values but is declared to have a single result"
-				  (length rt))))
-			     (when (and (second params)
-					(not (type<=? t (first rt))))
-			       ((if strict-variable-types report-error report-notice)
-				loc
-				(sprintf
-				    "expression returns a result of type `~a', but is declared to return `~a', which is not a subtype"
-				  (first rt) t)))))
-		      (list t))))
+				  "expression returns a result of type `~a', but is declared to return `~a', which is not a subtype"
+				(first rt) t)))))
+		    (list t)))
 		 ((##core#typecase)
 		  (let* ((ts (walk (first subs) e loc #f #f flow ctags))
 			 (trail0 trail)
@@ -1487,6 +1487,7 @@
 				 ((list vector)
 				  (and (= (length t1) (length t2))
 				       (every test (cdr t1) (cdr t2))))
+				 ((struct) (eq? (cadr t1) (cadr t2)))
 				 ((procedure)
 				  (let ((args1 (if (named? t1) (caddr t1) (cadr t1)))
 					(args2 (if (named? t2) (caddr t2) (cadr t2)))
@@ -2068,6 +2069,11 @@
 		(and ptype (eq? (car ptype) type) (cdr ptype))
 		clean))))
 	  (else (values #f #f #f)))))
+
+(define (check-and-validate-type type loc #!optional name)
+  (let-values (((t pred pure) (validate-type (##sys#strip-syntax type) name)))
+    (or t 
+	(error loc "invalid type specifier" type))))
 
 (define (install-specializations name specs)
   (define (fail spec)
