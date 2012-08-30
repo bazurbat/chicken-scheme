@@ -793,9 +793,60 @@ equivalent to {{(list->string (reverse LIST))}}, but much more efficient.
 
 
 
-=== Generating uninterned symbols
+=== Symbols
 
-==== gensym
+==== Symbol utilities
+
+===== symbol-append
+
+<procedure>(symbol-append SYMBOL1 ...)</procedure>
+
+Creates a new symbol from the concatenated names of the argument symbols
+{{(SYMBOL1 ...)}}.
+
+==== Uninterned symbols ("gensyms")
+
+Symbols may be "interned" or "uninterned". Interned symbols are
+registered in a global table, and when read back from a port are
+identical to a symbol written before:
+
+<enscript highlight=scheme>
+(define sym 'foo)
+
+(eq? sym (with-input-from-string
+            (with-output-to-string 
+              (lambda () (write sym)))
+	    read))
+
+  => #t
+</enscript>
+
+Uninterned symbols on the other hand are not globally registered and so
+multiple symbols with the same name may coexist:
+
+<enscript highlight=scheme>
+(define sym (gensym 'foo))   ; sym is a uninterned symbol like "foo42"
+
+(eq? sym (with-input-from-string    ; the symbol read will be an interned symbol
+            (with-output-to-string 
+              (lambda () (write sym)))
+	    read))
+
+  => #f
+
+(eq? (string->uninterned-symbol "foo") (string->uninterned-symbol "foo"))
+
+  => #f
+</enscript>
+
+Use uninterned symbols if you need to generate unique values that
+can be compared quickly, for example as keys into a hash-table
+or association list. Note that uninterned symbols lose their
+uniqueness property when written to a file and read back in, as
+in the example above.
+
+
+===== gensym
 
 <procedure>(gensym [STRING-OR-SYMBOL])</procedure>
 
@@ -803,19 +854,60 @@ Returns a newly created uninterned symbol. If an argument is provided,
 the new symbol is prefixed with that argument.
 
 
-==== string->uninterned-symbol
+===== string->uninterned-symbol
 
 <procedure>(string->uninterned-symbol STRING)</procedure>
 
 Returns a newly created, unique symbol with the name {{STRING}}.
 
 
-==== symbol-append
+==== Property lists
 
-<procedure>(symbol-append SYMBOL1 ...)</procedure>
+As in other Lisp dialects, CHICKEN supports "property lists" associated with symbols.
+Properties are accessible via a key that can be any kind of value but which will
+be compared using {{eq?}}.
 
-Creates a new interned symbol from the concatenated names of the argument symbols
-{{(SYMBOL1 ...)}}.
+===== get
+
+<procedure>(get SYMBOL PROPERTY [DEFAULT])</procedure>
+
+Returns the value stored under the key {{PROPERTY}} in the property
+list of {{SYMBOL}}. If no such property is stored, returns
+{{DEFAULT}}. The {{DEFAULT}} is optional and defaults to {{#f}}.
+
+===== put!
+
+<procedure>(put! SYMBOL PROPERTY VALUE)</procedure>
+setter: (set! (get SYMBOL PROPERTY) VALUE)
+
+Stores {{VALUE}} under the key {{PROPERTY}} in the property list of
+{{SYMBOL}} replacing any previously stored value.
+
+===== remprop!
+
+<procedure>(remprop! SYMBOL PROPERTY)</procedure>
+
+Deletes the first property matching the key {{PROPERTY}} in the property list
+of {{SYMBOL}}. Returns {{#t}} when a deletion performed, and {{#f}} otherwise.
+
+===== symbol-plist
+
+<procedure>(symbol-plist SYMBOL)</procedure>
+setter: (set! (symbol-plist SYMBOL) LST)
+
+Returns the property list of {{SYMBOL}} or sets it.
+
+===== get-properties
+
+<procedure>(get-properties SYMBOL PROPERTIES)</procedure>
+
+Searches the property list of {{SYMBOL}} for the first property with a key in
+the list {{PROPERTIES}}. Returns 3 values: the matching property key, value,
+and the tail of property list after the matching property. When no match found
+all values are {{#f}}.
+
+{{PROPERTIES}} may also be an atom, in which case it is treated as a list of
+one element.
 
 
 === Standard Input/Output
@@ -1152,53 +1244,6 @@ Returns a copy of the given read-table. You can access the currently active read
 with {{(current-read-table)}}.
 
 
-=== Property lists
-
-As in other Lisp dialects, CHICKEN supports "property lists" associated with symbols.
-Properties are accessible via a key that can be any kind of value but which will
-be compared using {{eq?}}.
-
-==== get
-
-<procedure>(get SYMBOL PROPERTY [DEFAULT])</procedure>
-
-Returns the value stored under the key {{PROPERTY}} in the property
-list of {{SYMBOL}}. If no such property is stored, returns
-{{DEFAULT}}. The {{DEFAULT}} is optional and defaults to {{#f}}.
-
-==== put!
-
-<procedure>(put! SYMBOL PROPERTY VALUE)</procedure>
-setter: (set! (get SYMBOL PROPERTY) VALUE)
-
-Stores {{VALUE}} under the key {{PROPERTY}} in the property list of
-{{SYMBOL}} replacing any previously stored value.
-
-==== remprop!
-
-<procedure>(remprop! SYMBOL PROPERTY)</procedure>
-
-Deletes the first property matching the key {{PROPERTY}} in the property list
-of {{SYMBOL}}. Returns {{#t}} when a deletion performed, and {{#f}} otherwise.
-
-==== symbol-plist
-
-<procedure>(symbol-plist SYMBOL)</procedure>
-setter: (set! (symbol-plist SYMBOL) LST)
-
-Returns the property list of {{SYMBOL}} or sets it.
-
-==== get-properties
-
-<procedure>(get-properties SYMBOL PROPERTIES)</procedure>
-
-Searches the property list of {{SYMBOL}} for the first property with a key in
-the list {{PROPERTIES}}. Returns 3 values: the matching property key, value,
-and the tail of property list after the matching property. When no match found
-all values are {{#f}}.
-
-{{PROPERTIES}} may also be an atom, in which case it is treated as a list of
-one element.
 
 ----
 Previous: [[Exceptions]] Next: [[Unit eval]]
