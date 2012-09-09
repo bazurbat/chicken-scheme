@@ -131,7 +131,27 @@
         It designates the directory where the files are installed
         into.
 
-    2.4. Optional features
+    2.4. Verifying your installation is correct
+
+        You can check whether Chicken is functioning correctly by
+        running
+
+            make <vars> check
+
+        where <vars> are all the variables you used while building
+        Chicken.
+
+        This will run the test scripts, which show a lot of output.
+        The only thing that matters is the exit status at the end.
+        If it exits with status 0, everything is fine, if it exits
+        with a nonzero status, the failing test's output should be
+        the final lines before Make's "error; exit" output.  If the
+        check fails on unmodified sources, please file a bugreport.
+
+        Currently "make check" only works if you have installed
+        Chicken.
+
+    2.5. Optional features
 
         You can further enable various optional features by adding
         one or more of the following variables to the "make"
@@ -225,7 +245,7 @@
 	  Be warned that this is a highly experimental option and
 	  profiling doesn't work for every component of Chicken.
 
-    2.5. Uninstalling Chicken
+    2.6. Uninstalling Chicken
 
         To remove CHICKEN from your file-system, enter (probably as
         root):
@@ -235,7 +255,7 @@
         (If you gave DESTDIR during installation, you have to pass
         the same setting to "make" when uninstalling)
 
-    2.6. What gets installed
+    2.7. What gets installed
 
 	These files will be installed under the prefix given during
 	build and installation:
