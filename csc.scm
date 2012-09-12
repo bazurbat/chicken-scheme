@@ -120,7 +120,9 @@
 (define generate-manifest #f)
 
 (define libchicken
-  (string-append "lib" INSTALL_LIB_NAME))
+  (if cygwin
+      (string-append "cyg" INSTALL_LIB_NAME "-0")
+      (string-append "lib" INSTALL_LIB_NAME)))
 
 (define default-library
   (string-append libchicken "." library-extension))
@@ -960,7 +962,7 @@ EOF
 	      (target-lib-path) 
 	      libchicken
 	      (cond (osx "dylib")
-		    (win "dll")
+		    ((or win cygwin) "dll")
 		    (else (string-append
                            "so."
                            (number->string BINARY_VERSION)))))))

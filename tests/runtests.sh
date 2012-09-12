@@ -50,7 +50,11 @@ fi
 
 
 # for cygwin
-test -f ../cygchicken-0.dll && cp ../cygchicken-0.dll .
+if test -f ../cygchicken-0.dll; then
+    cp ../cygchicken-0.dll .
+    cp ../cygchicken-0.dll reverser/tags/1.0
+fi
+mv ../cygchicken-0.dll ../cygchicken-0.dll_
 
 compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
 compile2="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .."
