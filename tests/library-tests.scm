@@ -300,6 +300,12 @@
 (assert (string=? ":" (symbol->string (with-input-from-string ":||" read))))
 (assert-fail (with-input-from-string "#:" read))
 
+(assert (keyword? (with-input-from-string "42:" read)))
+(assert (keyword? (with-input-from-string ".:" read)))
+
+(assert (equal? (cons 1 2) (with-input-from-string "(1 . 2)" read)))
+(assert (every keyword? (with-input-from-string "(42: abc: .: #:: ::)" read)))
+
 
 ;;; setters
 
