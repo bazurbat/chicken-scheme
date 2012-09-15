@@ -30,4 +30,4 @@
 ;; even if the process will get called
 (assert-error (process-execute "false\x00123"))
 (assert-error (process-execute "false" '("1" "123\x00456")))
-(assert-error (process-execute "false" '("123\x00456") '("foo\x00bar" "blabla") ("lalala" "qux\x00mooh")))
+(assert-error (process-execute "false" '("123\x00456") '("foo\x00bar" "blabla") '("lalala" "qux\x00mooh")))

@@ -38,7 +38,7 @@ echo ======================================== scrutiny tests ...
 if errorlevel 1 exit /b 1
 a.out
 if errorlevel 1 exit /b 1
-%compile% scrutiny-tests.scm -scrutinize -ignore-repository -types %TYPESDB% -verbose 2>scrutiny.out
+%compile% scrutiny-tests.scm -A -scrutinize -ignore-repository -types %TYPESDB% -verbose 2>scrutiny.out
 if errorlevel 1 exit /b 1
 
 rem this is sensitive to gensym-names, so make it optional
@@ -47,7 +47,7 @@ if not exist scrutiny.expected copy /Y scrutiny.out scrutiny.expected
 fc /w scrutiny.expected scrutiny.out
 if errorlevel 1 exit /b 1
 
-%compile% scrutiny-tests-2.scm -scrutinize -analyze-only -ignore-repository -types %TYPESDB% -verbose 2>scrutiny-2.out
+%compile% scrutiny-tests-2.scm -A -scrutinize -analyze-only -ignore-repository -types %TYPESDB% -verbose 2>scrutiny-2.out
 if errorlevel 1 exit /b 1
 
 if not exist scrutiny-2.expected copy /Y scrutiny-2.out scrutiny-2.expected

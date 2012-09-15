@@ -1,9 +1,9 @@
 ;;;; signal-tests.scm
 
 
-#+windows
+#+mingw32
 (begin
-  (print "this test can not be run on Windows")
+  (print "this test can not be run on Windows/mingw")
   (exit))
 
 

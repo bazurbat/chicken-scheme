@@ -121,7 +121,7 @@ EOF
                ((exn i/o file) (printf "OK\n") okay))))))))
 
 (cond-expand
-  ((not windows)
+  ((not mingw32)
 
    (define proc (process-fork (lambda () (tcp-accept (tcp-listen 8080)))))
 
@@ -166,7 +166,7 @@ EOF
     ;;(check (port->fileno in))
     (check (flush-output out))
 
-    #+(not windows) 
+    #+(not mingw32) 
     (begin
       (check (file-test-lock out))
       (check (file-lock out))
@@ -189,7 +189,7 @@ EOF
     (check (read-u8vector 5 in))
     (check "read-u8vector!" (let ((dest (make-u8vector 5)))
                               (read-u8vector! 5 dest in)))
-    #+(not windows) 
+    #+(not mingw32) 
     (begin
       (check (file-test-lock in))
       (check (file-lock in))

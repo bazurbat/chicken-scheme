@@ -50,7 +50,11 @@ fi
 
 
 # for cygwin
-test -f ../cygchicken-0.dll && cp ../cygchicken-0.dll .
+if test -f ../cygchicken-0.dll; then
+    cp ../cygchicken-0.dll .
+    cp ../cygchicken-0.dll reverser/tags/1.0
+    mv ../cygchicken-0.dll ../cygchicken-0.dll_
+fi
 
 compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
 compile2="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .."
@@ -70,7 +74,7 @@ $compile inlining-tests.scm -optimize-level 3
 echo "======================================== scrutiny tests ..."
 $compile typematch-tests.scm -specialize -w
 ./a.out
-$compile scrutiny-tests.scm -scrutinize -ignore-repository -types $TYPESDB 2>scrutiny.out -verbose
+$compile scrutiny-tests.scm -A -scrutinize -ignore-repository -types $TYPESDB 2>scrutiny.out -verbose
 
 if test -n "$MSYSTEM"; then
     dos2unix scrutiny.out
@@ -83,7 +87,7 @@ fi
 
 diff -bu scrutiny.expected scrutiny.out
 
-$compile scrutiny-tests-2.scm -scrutinize -analyze-only -ignore-repository -types $TYPESDB 2>scrutiny-2.out -verbose
+$compile scrutiny-tests-2.scm -A -scrutinize -analyze-only -ignore-repository -types $TYPESDB 2>scrutiny-2.out -verbose
 
 if test -n "$MSYSTEM"; then
     dos2unix scrutiny-2.out

@@ -154,21 +154,21 @@
 
     (define (global-result id loc)
       (cond ((variable-mark id '##compiler#type) =>
-	     (lambda (a) 
+	     (lambda (a)
 	       (cond
 		((eq? a 'deprecated)
-		(report
-		 loc
-		 (sprintf "use of deprecated library procedure `~a'" id) )
-		'(*))
-	       ((and (pair? a) (eq? (car a) 'deprecated))
-		(report
-		 loc
-		 (sprintf 
-		     "use of deprecated library procedure `~a' - consider using `~a' instead"
-		   id (cadr a)))
-		'(*))
-	       (else (list a)))))
+		 (report
+		  loc
+		  (sprintf "use of deprecated library procedure `~a'" id) )
+		 '(*))
+		((and (pair? a) (eq? (car a) 'deprecated))
+		 (report
+		  loc
+		  (sprintf 
+		      "use of deprecated library procedure `~a' - consider using `~a' instead"
+		    id (cadr a)))
+		 '(*))
+		(else (list a)))))
 	    (else '(*))))
 
     (define (blist-type id flow)
@@ -598,7 +598,9 @@
 				   (type-typeenv rt)))
 			 (b (assq var e)) )
 		    (when (and type (not b)
-			       (not (eq? type 'deprecated))
+			       (not (or (eq? type 'deprecated)
+                                        (and (pair? type)
+                                             (eq? (car type) 'deprecated))))
 			       (not (match-types type rt typeenv)))
 		      ((if strict-variable-types report-error report)
 		       loc
@@ -1992,7 +1994,7 @@
 		  (symbol? (cadr t))
 		  t))
 	    ((eq? 'deprecated (car t))
-	     (and (= 2 (length t)) (symbol? (second t))))
+	     (and (= 2 (length t)) (symbol? (second t)) t))
 	    ((or (memq '--> t) (memq '-> t)) =>
 	     (lambda (p)
 	       (let* ((cleanf (eq? '--> (car p)))

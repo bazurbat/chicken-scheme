@@ -1,8 +1,5 @@
 ;;;; scrutiny-tests.scm
 
-
-(pp (current-environment))		; deprecated
-
 (define (a)
   (define (b)
     (define (c)
@@ -142,3 +139,11 @@
   (import chicken scheme)
   (define-type footype string)
   (the footype "bar"))
+
+(: deprecated-procedure deprecated)
+(define (deprecated-procedure x) (+ x x))
+(deprecated-procedure 1)
+
+(: another-deprecated-procedure (deprecated replacement-procedure))
+(define (another-deprecated-procedure x) (+ x x))
+(another-deprecated-procedure 2)

@@ -2288,14 +2288,14 @@ C_inline C_word C_i_fixnum_max(C_word x, C_word y)
 C_inline C_word C_fixnum_divide(C_word x, C_word y)
 {
   if(y == C_fix(0)) C_div_by_zero_error("fx/");
-  else return C_u_fixnum_divide(x, y);
+  return C_u_fixnum_divide(x, y);
 }
 
 
 C_inline C_word C_fixnum_modulo(C_word x, C_word y)
 {
   if(y == C_fix(0)) C_div_by_zero_error("fxmod");
-  else return C_u_fixnum_modulo(x, y);
+  return C_u_fixnum_modulo(x, y);
 }
 
 
@@ -2332,7 +2332,7 @@ C_a_i_flonum_quotient_checked(C_word **ptr, int c, C_word n1, C_word n2)
   double n3 = C_flonum_magnitude(n2);
 
   if(n3 == 0.0) C_div_by_zero_error("fp/?");
-  else return C_flonum(ptr, C_flonum_magnitude(n1) / n3);
+  return C_flonum(ptr, C_flonum_magnitude(n1) / n3);
 }
 
 
@@ -2340,7 +2340,7 @@ C_inline double
 C_ub_i_flonum_quotient_checked(double n1, double n2)
 {
   if(n2 == 0.0) C_div_by_zero_error("fp/?");
-  else return n1 / n2;
+  return n1 / n2;
 }
 
 
