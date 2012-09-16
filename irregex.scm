@@ -142,9 +142,9 @@
 
 (define-compiler-syntax make-irregex 
   (syntax-rules ()
-    ((_ dfa dfa/search dfa/extract nfa flags submatches lengths names)
+    ((_ dfa dfa/search nfa flags submatches lengths names)
      (##sys#make-structure
-      'regexp dfa dfa/search dfa/extract nfa flags submatches lengths names))))
+      'regexp dfa dfa/search nfa flags submatches lengths names))))
 
 (define-compiler-syntax make-irregex-match
   (syntax-rules ()
@@ -207,6 +207,13 @@
   (syntax-rules ()
     ((_ m n end)
      (vector-set! (##sys#slot m 1) (+ 3 (* n 4)) end))))
+
+(define-compiler-syntax irregex-match-chunk&index-from-tag-set!
+  (syntax-rules ()
+    ((_ m t chunk index)
+     (begin
+       (vector-set! (##sys#slot m 1) (+ 4 (* t 2)) chunk)
+       (vector-set! (##sys#slot m 1) (+ 5 (* t 2)) index)))))
 
 (define-compiler-syntax %irregex-error
   (syntax-rules ()

@@ -1300,22 +1300,30 @@
 (irregex-dfa (#(procedure #:clean #:enforce) irregex-dfa ((struct regexp)) *)
 	     (((struct regexp)) (##sys#slot #(1) '1)))
 
-(irregex-dfa/extract (#(procedure #:clean #:enforce) irregex-dfa/extract ((struct regexp)) *)
-		     (((struct regexp)) (##sys#slot #(1) '3)))
-
 (irregex-dfa/search (#(procedure #:clean #:enforce) irregex-dfa/search ((struct regexp)) *)
 		    (((struct regexp)) (##sys#slot #(1) '2)))
 
-(irregex-extract (#(procedure #:enforce) irregex-extract (* string #!optional fixnum fixnum) list)) ;XXX specialize?
+(irregex-nfa (#(procedure #:clean #:enforce) irregex-nfa ((struct regexp)) *)
+	     (((struct regexp)) (##sys#slot #(1) '3)))
+
 (irregex-flags (#(procedure #:clean #:enforce) irregex-flags ((struct regexp)) *)
-	       (((struct regexp)) (##sys#slot #(1) '5)))
+	       (((struct regexp)) (##sys#slot #(1) '4)))
+
+(irregex-num-submatches (#(procedure #:clean #:enforce) irregex-num-submatches ((struct regexp))
+				   fixnum)
+			(((struct regexp)) (##sys#slot #(1) '5)))
+
+(irregex-lengths (#(procedure #:clean #:enforce) irregex-lengths ((struct regexp)) *)
+		 (((struct regexp)) (##sys#slot #(1) '6)))
+
+(irregex-names (#(procedure #:clean #:enforce) irregex-names ((struct regexp)) *)
+	       (((struct regexp)) (##sys#slot #(1) '7)))
+
+(irregex-extract (#(procedure #:enforce) irregex-extract (* string #!optional fixnum fixnum) list)) ;XXX specialize?
 
 (irregex-fold (#(procedure #:enforce) irregex-fold (* (procedure (fixnum (struct regexp-match) *) *) * string #!optional (procedure (fixnum *) *) fixnum fixnum) *))
 
 (irregex-fold/chunked (#(procedure #:enforce) irregex-fold/chunked (* (procedure (* fixnum (struct regexp-match) *) *) * procedure * #!optional (procedure (* fixnum *) *) fixnum fixnum) *))
-
-(irregex-lengths (#(procedure #:clean #:enforce) irregex-lengths ((struct regexp)) *)
-		 (((struct regexp)) (##sys#slot #(1) '7)))
 
 (irregex-match (#(procedure #:enforce) irregex-match (* string #!optional fixnum fixnum) *))
 ;irregex-match?
@@ -1338,17 +1346,7 @@
 (irregex-match-substring (#(procedure) irregex-match-substring (* #!optional *) *))
 (irregex-match/chunked (#(procedure #:enforce) irregex-match/chunked (* * * #!optional fixnum) *))
 
-(irregex-names (#(procedure #:clean #:enforce) irregex-names ((struct regexp)) *)
-	       (((struct regexp)) (##sys#slot #(1) '8)))
-
 (irregex-new-matches (procedure irregex-new-matches (*) *))
-
-(irregex-nfa (#(procedure #:clean #:enforce) irregex-nfa ((struct regexp)) *)
-	     (((struct regexp)) (##sys#slot #(1) '4)))
-
-(irregex-num-submatches (#(procedure #:clean #:enforce) irregex-num-submatches ((struct regexp))
-				   fixnum)
-			(((struct regexp)) (##sys#slot #(1) '6)))
 
 (irregex-opt (#(procedure #:enforce) irregex-opt (list) *))
 (irregex-quote (#(procedure #:enforce) irregex-quote (string) string))
