@@ -1130,6 +1130,7 @@
 		     ((procedure *) (let ((#(tmp) #(1))) '#t)))
 (##sys#setslot (#(procedure #:enforce) ##sys#setslot (* fixnum *) *)
 	       #;((* fixnum immediate) (##sys#setislot #(1) #(2) #(3)))) ; too dangerous
+(##sys#size (#(procedure #:pure) ##sys#size (*) fixnum))
 
 
 ;; data-structures
@@ -1495,7 +1496,14 @@
 
 (procedure-data (#(procedure #:clean #:enforce) procedure-data (procedure) *))
 (record->vector (#(procedure #:clean) record->vector (*) vector))
-(record-instance? (#(procedure #:clean) record-instance? (* #!optional symbol) boolean))
+
+(record-instance? (#(procedure #:clean) record-instance? (* #!optional symbol) boolean)
+		  ((* symbol) (##sys#structure? #(1) #(2)))
+		  ((*) (let ((#(tmp) #(1)))
+			 (if (##sys#immediate? #(tmp))
+			     '#f
+			     (##sys#generic-structure? #(tmp))))))
+
 (record-instance-length (#(procedure #:clean) record-instance-length (*) fixnum))
 (record-instance-slot (#(procedure #:clean #:enforce) record-instance-slot (* fixnum) *))
 (record-instance-slot-set! (#(procedure #:clean #:enforce) record-instance-slot-set! (* fixnum *) undefined))
