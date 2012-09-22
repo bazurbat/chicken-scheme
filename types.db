@@ -1128,8 +1128,34 @@
 (##sys#check-closure (#(procedure #:clean #:enforce) ##sys#check-closure (procedure #!optional *) *)
 		     ((procedure) (let ((#(tmp) #(1))) '#t))
 		     ((procedure *) (let ((#(tmp) #(1))) '#t)))
+
+(##sys#check-port 
+ (#(procedure #:clean #:enforce) ##sys#check-port ((or input-port output-port) #!optional *)
+  *)
+ (((or input-port output-port)) (let ((#(tmp) #(1))) '#t))
+ (((or input-port output-port) *) (let ((#(tmp) #(1))) '#t)))
+
+(##sys#check-input-port
+ (#(procedure #:clean #:enforce) ##sys#check-input-port (input-port * #!optional *) *)
+ ((* *) (##core#inline "C_i_check_port" #(1) '#t #(2)))
+ ((* * *) (##core#inline "C_i_check_port_2" #(1) '#t #(2) #(3))))
+
+(##sys#check-output-port
+ (#(procedure #:clean #:enforce) ##sys#check-output-port (output-port * #!optional *) *)
+ ((* *) (##core#inline "C_i_check_port" #(1) '#f #(2)))
+ ((* * *) (##core#inline "C_i_check_port_2" #(1) '#f #(2) #(3))))
+
+(##sys#check-open-port
+ (#(procedure #:clean #:enforce) ##sys#check-open-port ((or input-port output-port) #!optional *) *)
+ ((*) (##core#inline "C_i_check_port" #(1) '0 '#t))
+ ((* *) (##core#inline "C_i_check_port_2" #(1) '0 '#t #(2))))
+
 (##sys#setslot (#(procedure #:enforce) ##sys#setslot (* fixnum *) *)
 	       #;((* fixnum immediate) (##sys#setislot #(1) #(2) #(3)))) ; too dangerous
+
+(##sys#standard-input input-port)
+(##sys#standard-output output-port)
+(##sys#standard-error output-port)
 
 
 ;; data-structures
