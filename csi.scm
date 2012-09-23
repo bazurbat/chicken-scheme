@@ -506,6 +506,7 @@ EOF
                    Installation prefix:\t~A~%~
                    Extension path:  \t~A~%~
                    Include path:    \t~A~%~
+                   Keyword style:   \t~A~%~
                    Symbol-table load:\t~S~%  ~
                      Avg bucket length:\t~S~%  ~
                      Total symbol count:\t~S~%~
@@ -520,6 +521,7 @@ EOF
 		    prefix
 		    (repository-path)
 		    ##sys#include-pathnames
+		    (symbol->string (keyword-style))
 		    (shorten (vector-ref sinfo 0))
 		    (shorten (vector-ref sinfo 1))
 		    (vector-ref sinfo 2)
