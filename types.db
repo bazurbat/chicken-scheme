@@ -1584,7 +1584,6 @@
 (current-effective-group-id (#(procedure #:clean) current-effective-group-id () fixnum))
 (current-effective-user-id (#(procedure #:clean) current-effective-user-id () fixnum))
 (current-effective-user-name (#(procedure #:clean) current-effective-user-name () string))
-(current-environment deprecated)
 (get-environment-variables (#(procedure #:clean) get-environment-variables () (list-of string)))
 (current-group-id (#(procedure #:clean) current-group-id () fixnum))
 (current-process-id (#(procedure #:clean) current-process-id () fixnum))
@@ -2267,7 +2266,6 @@
 (make-condition-variable (#(procedure #:clean) make-condition-variable (#!optional *) (struct condition-variable)))
 (make-mutex (#(procedure #:clean) make-mutex (#!optional *) (struct mutex)))
 (make-thread (#(procedure #:clean #:enforce) make-thread ((procedure () . *) #!optional *) (struct thread)))
-(milliseconds->time deprecated)
 (mutex-lock! (#(procedure #:clean #:enforce) mutex-lock! ((struct mutex) #!optional * (struct thread)) boolean))
 
 (mutex-name (#(procedure #:clean #:enforce) mutex-name ((struct mutex)) *)
@@ -2318,7 +2316,6 @@
 
 (thread? (#(procedure #:pure #:predicate (struct thread)) thread? (*) boolean))
 
-(time->milliseconds deprecated)
 (time->seconds (#(procedure #:clean #:enforce) time->seconds ((struct time)) number))
 
 (time? (#(procedure #:pure #:predicate (struct time)) time? (*) boolean))
@@ -2576,8 +2573,6 @@
 
 ;; utils
 
-(for-each-argv-line deprecated)
-(for-each-line deprecated)
 (read-all (#(procedure #:enforce) read-all (#!optional (or input-port string)) string))
 (system* (#(procedure #:clean #:enforce) system* (string #!rest) undefined))
 (qs (#(procedure #:clean #:enforce) qs (string) string))
