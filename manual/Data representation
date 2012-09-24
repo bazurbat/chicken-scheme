@@ -43,9 +43,9 @@ The first word of the data block contains a header, which gives
 information about the type of the object. The header is a
 single machine word.
 
-The 24 lowest-order bits contain the length of the data object, which is either
-the number of bytes in a string or byte-vector, or the the number
-of elements for a vector or record type.
+The 24 lowest-order bits contain the length of the data object, which
+is either the number of bytes in a string or byte-vector, or the
+number of elements for a vector or record type.
 
 The remaining bits are placed in the high-order end of the header.
 The four highest-order bits are used for garbage

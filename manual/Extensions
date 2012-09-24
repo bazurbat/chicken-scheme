@@ -171,7 +171,7 @@ a simple single-file extension. This is roughly equivalent to:
   (install-extension
    'ID
    '("ID.so" "ID.import.so")
-   '((version 1.0)
+   '((version VERSION)
      ... `INFO' ...
      ))
 
@@ -446,8 +446,7 @@ program to remove one or more extensions from the local repository:
 The hello module was just a shared library, and not a module.
 
 To create an extension that exports syntax see the chapter on
-[[http://wiki.call-cc.org/man/4/Modules%20and%20macros|Modules and
-macros]].  We will show a simple example here: a module {{my-lib}}
+[[Modules]].  We will show a simple example here: a module {{my-lib}}
 that exports one macro ({{prog1}}) and one procedure ({{my-sum}}):
 
 <enscript highlight=scheme>
@@ -499,7 +498,7 @@ The setup file is:
 
 (install-extension
  'my-lib
- '("my-lib.o" "my-lib.so" "my-lib.import.so")
+ '("my-lib.so" "my-lib.import.so")
  '((version 1.0)))
 </enscript>
 

@@ -266,7 +266,6 @@ for equality.
 Time complexity: O (|V| + |E|)
 
 <enscript highlight=scheme>
-(require 'tsort)
 (topological-sort
        '((shirt tie belt)
          (tie jacket)
