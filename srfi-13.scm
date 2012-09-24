@@ -150,23 +150,24 @@
 	 . body) ) ) ) ) )
 
 (define-syntax let-string-start+end
-  (lambda (form r c)
-    (##sys#check-syntax 'let-string-start+end form '(_ _ _ _ _ . _))
-    (let ((s-e-r (cadr form))
-	  (proc (caddr form))
-	  (s-exp (cadddr form))
-	  (args-exp (car (cddddr form)))
-	  (body (cdr (cddddr form)))
-	  (%receive (r 'receive))
-	  (%string-parse-start+end (r 'string-parse-start+end))
-	  (%string-parse-final-start+end (r 'string-parse-final-start+end)))
-      (if (pair? (cddr s-e-r))
-	  `(,%receive (,(caddr s-e-r) ,(car s-e-r) ,(cadr s-e-r))
-		      (,%string-parse-start+end ,proc ,s-exp ,args-exp)
-		      ,@body)
-	  `(,%receive ,s-e-r
-		      (,%string-parse-final-start+end ,proc ,s-exp ,args-exp)
-		      ,@body) ) )))
+  (er-macro-transformer
+   (lambda (form r c)
+     (##sys#check-syntax 'let-string-start+end form '(_ _ _ _ _ . _))
+     (let ((s-e-r (cadr form))
+           (proc (caddr form))
+           (s-exp (cadddr form))
+           (args-exp (car (cddddr form)))
+           (body (cdr (cddddr form)))
+           (%receive (r 'receive))
+           (%string-parse-start+end (r 'string-parse-start+end))
+           (%string-parse-final-start+end (r 'string-parse-final-start+end)))
+       (if (pair? (cddr s-e-r))
+           `(,%receive (,(caddr s-e-r) ,(car s-e-r) ,(cadr s-e-r))
+                       (,%string-parse-start+end ,proc ,s-exp ,args-exp)
+                       ,@body)
+           `(,%receive ,s-e-r
+                       (,%string-parse-final-start+end ,proc ,s-exp ,args-exp)
+                       ,@body) ) ))))
 
 
 ;;; Returns three values: rest start end

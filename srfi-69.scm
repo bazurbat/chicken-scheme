@@ -125,19 +125,20 @@
 (define-constant flonum-magic 331804471)
 
 (define-syntax $flonum-hash
-  (lambda (form r c)
-    (let ( (flo (cadr form))
-           (_%subbyte (r '%subbyte))
-           (_flonum-magic (r 'flonum-magic))
-           (_fx+ (r 'fx+))
-           (_fx* (r 'fx*))
-           (_fxshl (r 'fxshl)) )
-    `(,_fx* ,_flonum-magic
-            ,(let loop ( (idx (fx- (##sys#size 1.0) 1)) )
-               (if (fx= 0 idx)
-                   `(,_%subbyte ,flo 0)
-                   `(,_fx+ (,_%subbyte ,flo ,idx)
-                           (,_fxshl ,(loop (fx- idx 1)) 1)) ) ) ) ) ) )
+  (er-macro-transformer
+   (lambda (form r c)
+     (let ( (flo (cadr form))
+            (_%subbyte (r '%subbyte))
+            (_flonum-magic (r 'flonum-magic))
+            (_fx+ (r 'fx+))
+            (_fx* (r 'fx*))
+            (_fxshl (r 'fxshl)) )
+       `(,_fx* ,_flonum-magic
+               ,(let loop ( (idx (fx- (##sys#size 1.0) 1)) )
+                  (if (fx= 0 idx)
+                      `(,_%subbyte ,flo 0)
+                      `(,_fx+ (,_%subbyte ,flo ,idx)
+                              (,_fxshl ,(loop (fx- idx 1)) 1)) ) ) ) ) )) )
 
 (define (##sys#number-hash-hook obj rnd)
   (*equal?-hash obj rnd) )

@@ -281,8 +281,9 @@
 (module m29 *
   (import chicken scheme)
   (define-syntax m29-baz
-    (lambda _
-      ''foo)))
+    (er-macro-transformer
+     (lambda _
+       ''foo))))
 
 (module m30 *
   (import chicken scheme)
