@@ -1575,9 +1575,24 @@
   (callback foreign-stub-callback))	       ; boolean
 
 (define (create-foreign-stub rtype sname argtypes argnames body callback cps)
+  ;; try to describe a foreign-lambda type specification
+  ;; eg. (type->symbol '(c-pointer (struct "point"))) => point*
+  (define (type->symbol type-spec)
+    (let loop ([type type-spec])
+      (cond
+       ((null? type) 'a)
+       ((list? type)
+	(case (car type)
+	  ((c-pointer) (string->symbol (conc (loop (cdr type)) "*"))) ;; if pointer, append *
+	  ((const struct) (loop (cdr type))) ;; ignore these
+	  (else (loop (car type)))))
+       ((or (symbol? type) (string? type)) type)
+       (else 'a))))
   (let* ((rtype (##sys#strip-syntax rtype))
 	 (argtypes (##sys#strip-syntax argtypes))
-	 [params (list-tabulate (length argtypes) (lambda (x) (gensym 'a)))]
+	 [params (if argnames
+                     (map gensym argnames)
+                     (map (o gensym type->symbol) argtypes))]
 	 [f-id (gensym 'stub)]
 	 [bufvar (gensym)] 
 	 [rsize (estimate-foreign-result-size rtype)] )
