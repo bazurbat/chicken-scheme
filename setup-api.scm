@@ -509,8 +509,6 @@
 	      (directory from)))
 	    (else
 	     (ensure-directory to)
-             (when (file-exists? to)
-                 (run (,*remove-command* ,to)))
 	     (run (,*copy-command* 
 		   ,(shellpath from)
 		   ,(shellpath to))))))
