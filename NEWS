@@ -1,3 +1,8 @@
+4.8.1
+
+- Core libraries
+  - Fixed EINTR handling in process-wait and when reading from file ports.
+
 4.8.0
 
 - Security fixes
