@@ -1820,8 +1820,7 @@
 (define (analyze-expression node)
   ;; Avoid crowded hash tables by using previous run's size as heuristic
   (let* ((db-size (fx* (fxmax current-analysis-database-size 1) 3))
-         (db (make-vector db-size '()))
-	 (explicitly-consed '()) )
+         (db (make-vector db-size '())))
 
     (define (grow n)
       (set! current-program-size (+ current-program-size n)) )
@@ -1975,13 +1974,6 @@
 
     (define (quick-put! plist prop val)
       (set-cdr! plist (alist-cons prop val (cdr plist))) )
-
-    ;; Return true if <id> directly or indirectly contains any of <other-ids>:
-    (define (contains? id other-ids)
-      (or (memq id other-ids)
-	  (let ((clist (get db id 'contains)))
-	    (and clist
-		 (any (lambda (id2) (contains? id2 other-ids)) clist) ) ) ) )
 
     ;; Walk toplevel expression-node:
     (debugging 'p "analysis traversal phase...")
@@ -2137,7 +2129,6 @@
 		      (cond [(and has (not (rassoc sym callback-names eq?)))
 			     (put! db (first lparams) 'has-unused-parameters #t) ]
 			    [rest
-			     (set! explicitly-consed (cons rest explicitly-consed))
 			     (put! db (first lparams) 'explicit-rest #t) ] ) ) ) ) ) ) ) )
 
 	 ;; Make 'removable, if it has no references and is not assigned to, and if it 

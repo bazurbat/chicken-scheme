@@ -727,7 +727,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size - this must match the number of C_pte calls! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 60);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 57);
   int i = 0;
 
   if(pt == NULL)
@@ -765,7 +765,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_quotient);
   C_pte(C_flonum_fraction);
   C_pte(C_expt);
-  C_pte(C_string_to_number);
   C_pte(C_number_to_string);
   C_pte(C_make_symbol);
   C_pte(C_string_to_symbol);
@@ -787,7 +786,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_context_switch);
   C_pte(C_register_finalizer);
   C_pte(C_locative_ref);
-  C_pte(C_call_with_cthulhu);
   C_pte(C_copy_closure);
   C_pte(C_dump_heap_state);
   C_pte(C_filter_heap_objects);
@@ -7147,23 +7145,6 @@ void C_ccall C_flonum_fraction(C_word c, C_word closure, C_word k, C_word n)
 }
 
 
-/* XXX left for binary compatibility */
-void C_ccall C_exact_to_inexact(C_word c, C_word closure, C_word k, C_word n)
-{
-  C_alloc_flonum;
-
-  if(c != 3) C_bad_argc(c, 3);
-
-  if(n & C_FIXNUM_BIT) {
-    C_kontinue_flonum(k, (double)C_unfix(n));
-  }
-  else if(C_immediatep(n) || C_block_header(n) != C_FLONUM_TAG)
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "exact->inexact", n);
- 
-  C_kontinue(k, n);
-}
-
-
 C_regparm C_word C_fcall 
 C_a_i_exact_to_inexact(C_word **a, int c, C_word n)
 {
@@ -7388,26 +7369,6 @@ C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix0)
 
  fini:
   return n;
-}
-
-
-/* only left for backwards-compatibility */
-void C_ccall
-C_string_to_number(C_word c, C_word closure, C_word k, C_word str, ...)
-{
-  va_list va;
-  C_word data[ C_SIZEOF_FLONUM + 2 ]; /* alignment */
-  C_word *a = data;
-  C_word radix = C_fix(10);
-
-  if(c == 4) {
-    va_start(va, str);
-    radix = va_arg(va, C_word);
-    va_end(va);
-  }
-  else if(c != 3) C_bad_argc(c, 3);
-
-  C_kontinue(k, C_a_i_string_to_number(&a, 2, str, radix));
 }
 
 

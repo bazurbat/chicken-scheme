@@ -181,7 +181,7 @@
     ##sys#foreign-char-argument ##sys#foreign-fixnum-argument ##sys#foreign-flonum-argument
     ##sys#foreign-block-argument ##sys#foreign-struct-wrapper-argument
     ##sys#foreign-string-argument ##sys#foreign-pointer-argument ##sys#void
-    ##sys#foreign-integer-argument ##sys#foreign-unsigned-integer-argument ##sys#double->number
+    ##sys#foreign-integer-argument ##sys#foreign-unsigned-integer-argument
     ##sys#peek-fixnum ##sys#setislot ##sys#poke-integer ##sys#permanent? ##sys#values ##sys#poke-double
     ##sys#intern-symbol ##sys#make-symbol ##sys#null-pointer? ##sys#peek-byte
     ##sys#file-exists?) )
@@ -963,7 +963,6 @@
 (rewrite '##sys#setislot 17 3 "C_i_set_i_slot")
 (rewrite '##sys#poke-integer 17 3 "C_poke_integer")
 (rewrite '##sys#poke-double 17 3 "C_poke_double")
-(rewrite '##sys#double->number 17 1 "C_double_to_number")
 (rewrite 'string=? 17 2 "C_i_string_equal_p" "C_u_i_string_equal_p")
 (rewrite 'string-ci=? 17 2 "C_i_string_ci_equal_p")
 (rewrite '##sys#fudge 17 1 "C_fudge")

@@ -139,7 +139,6 @@
  final-foreign-type
  find-early-refs
  find-inlining-candidates
- find-lambda-container
  finish-foreign-result
  first-analysis
  fold-boolean

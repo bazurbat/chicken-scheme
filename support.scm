@@ -421,12 +421,6 @@
 	   => (lambda (a) (values (car lst) (cdr a))) )
 	  (else (values name #f)) ) ) )
 
-(define (find-lambda-container id cid db)
-  (let loop ([id id])
-    (or (eq? id cid)
-	(let ([c (get db id 'contained-in)])
-	  (and c (loop c)) ) ) ) )
-
 (define (display-line-number-database)
   (##sys#hash-table-for-each
    (lambda (key val)

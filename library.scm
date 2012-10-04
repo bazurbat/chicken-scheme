@@ -908,7 +908,6 @@ EOF
 (define (##sys#fits-in-int? n) (##core#inline "C_fits_in_int_p" n))
 (define (##sys#fits-in-unsigned-int? n) (##core#inline "C_fits_in_unsigned_int_p" n))
 (define (##sys#flonum-in-fixnum-range? n) (##core#inline "C_flonum_in_fixnum_range_p" n))
-(define (##sys#double->number n) (##core#inline "C_double_to_number" n))
 (define (zero? n) (##core#inline "C_i_zerop" n))
 (define (positive? n) (##core#inline "C_i_positivep" n))
 (define (negative? n) (##core#inline "C_i_negativep" n))
