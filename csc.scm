@@ -145,7 +145,6 @@
     -emit-all-import-libraries -setup-mode -no-elevation -no-module-registration
     -no-procedure-checks-for-usual-bindings -module
     -specialize -strict-types -clustering
-    -lambda-lift -unboxing		; OBSOLETE
     -no-procedure-checks-for-toplevel-bindings))
 
 (define-constant complex-options
@@ -154,7 +153,6 @@
     -inline-limit -profile-name
     -emit-inline-file -types -emit-type-file
     -feature -debug-level 
-    -heap-growth -heap-shrinkage -heap-initial-size ; DEPRECATED
     -consult-inline-file
     -emit-import-library
     -no-feature))
@@ -165,7 +163,6 @@
     (-S "-scrutinize")
     (-M "-module")
     (|-P| "-check-syntax")
-    (|-V| "-version")			; DEPRECATED
     (-f "-fixnum-arithmetic")
     (|-D| "-feature")
     (-i "-case-insensitive")

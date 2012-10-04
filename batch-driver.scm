@@ -325,17 +325,12 @@
     ;; Insert postponed initforms:
     (set! initforms (append initforms postponed-initforms))
 
-    (let ((se (map string->symbol (collect-options 'static-extension)))) ; DEPRECATED
-      ;; Append required extensions to initforms:
-      (set! initforms
-	(append 
-	 initforms 
-	 (map (lambda (r) `(##core#require-extension (,r) #t)) 
-	      (append se (map string->symbol (collect-options 'require-extension))))))
-
-      ;; add static-extensions as used units:
-      (set! ##sys#explicit-library-modules
-	(append ##sys#explicit-library-modules se)))
+    ;; Append required extensions to initforms:
+    (set! initforms
+          (append 
+           initforms 
+           (map (lambda (r) `(##core#require-extension (,(string->symbol r)) #t))
+                (collect-options 'require-extension))))
 
     (when (memq 'compile-syntax options)
       (set! ##sys#enable-runtime-macros #t) )

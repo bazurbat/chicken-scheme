@@ -990,6 +990,7 @@ EOF
 	     (##sys#error "missing or invalid script argument"))
 	   (program-name (cadr script))
 	   (command-line-arguments (cddr script))
+	   ;; 2012-10-04 (felix) left 'script activated to avoid breaking too much code
 	   (register-feature! 'script)	; DEPRECATED
 	   (register-feature! 'chicken-script)
 	   (set-cdr! (cdr script) '()) 
@@ -1032,9 +1033,7 @@ EOF
       (when (member* '("-h" "-help" "--help") args)
 	(print-usage)
 	(exit 0) )
-      (when (member* '("-v"		; DEPRECATED
-		       "-version") 
-		     args)
+      (when (member "-version" args)
 	(print-banner)
 	(exit 0) )
       (when (member "-setup-mode" args)

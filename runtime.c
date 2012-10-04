@@ -3765,18 +3765,6 @@ C_regparm C_word C_fcall C_u_i_string_ci_hash(C_word str, C_word rnd)
   return C_fix(hash_string(len, ptr, C_MOST_POSITIVE_FIXNUM, C_unfix(rnd), 1));
 }
 
-/* DEPRECATED, INSECURE */
-C_regparm C_word C_fcall C_hash_string(C_word str)
-{
-  return C_u_i_string_hash(str, C_fix(0));
-}
-
-/* DEPRECATED, INSECURE */
-C_regparm C_word C_fcall C_hash_string_ci(C_word str)
-{
-  return C_u_i_string_ci_hash(str, C_fix(0));
-}
-
 C_regparm void C_fcall C_toplevel_entry(C_char *name)
 {
   if(debug_mode)
@@ -7455,13 +7443,12 @@ C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word
   int len = C_strlen(str);
 
   if(radix == 10) {
-    if (len >= 4 && len <= 6) { /* DEPRECATED, TODO: Change to (len == 4) */
+    if (len == 6) {
       if((*str == '+' || *str == '-') &&
          C_strchr("inIN", *(str+1)) != NULL &&
          C_strchr("naNA", *(str+2)) != NULL &&
          C_strchr("fnFN", *(str+3)) != NULL &&
-         /* DEPRECATED, TODO: Rip out len checks */
-         (len == 4 || *(str+4) == '.') && (len == 5 || (*(str+5) == '0'))) {
+         *(str+4) == '.' && *(str+5) == '0') {
         if (*(str+1) == 'i' || *(str+1) == 'I')   /* Inf */
           *flo = 1.0/0.0;
         else                                      /* NaN */
@@ -7471,15 +7458,11 @@ C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word
         return 2;
       }
     }
-    /* DEPRECATED (enable in next release) */
-#if 0
-    /* This is disabled during the deprecation period of "+nan" syntax */
     /* Prevent C parser from accepting things like "-inf" on its own... */
     for(n = 0; n < len; ++n) {
       if (C_strchr("+-0123456789e.", *(str+n)) == NULL)
         return 0;
     }
-#endif
   }
 
   if(C_strpbrk(str, "xX\0") != NULL) return 0;

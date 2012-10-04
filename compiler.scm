@@ -1456,8 +1456,7 @@
 	      (warning 
 	       "invalid argument to `inline-limit' declaration"
 	       spec) ) ) )
-       ((constant			; DEPRECATED
-	 pure)
+       ((pure)
 	(let ((syms (cdr spec)))
 	  (if (every symbol? syms)
 	      (for-each 

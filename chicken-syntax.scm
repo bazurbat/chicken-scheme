@@ -1089,9 +1089,6 @@
  (syntax-rules ()
    ((_ name)
     (##core#define-compiler-syntax name #f))
-   ((_ (name . llist) body ...)		; DEPRECATED
-    (define-compiler-syntax name
-      (##sys#er-transformer (lambda llist body ...) 'name)))
    ((_ name transformer)
     (##core#define-compiler-syntax name transformer))))
 

@@ -39,7 +39,6 @@
     ((run execute)
      compile
      standard-extension
-     make make/proc			; DEPRECATED
      host-extension
      install-extension install-program install-script
      setup-verbose-mode setup-install-mode deployment-mode
@@ -54,7 +53,6 @@
      test-compile try-compile run-verbose
      extra-features extra-nonfeatures
      copy-file move-file
-     required-chicken-version required-extension-version ;DEPRECATED
      sudo-install keep-intermediates
      version>=?
      extension-name-and-version
@@ -261,12 +259,6 @@
 	 (shellpath (substring prg 2)))
 	(else (find-program prg))))
 
-(define (fixmaketarget file)
-  (if (and (equal? "so" (pathname-extension file))
-	   (not (string=? "so" ##sys#load-dynamic-extension)) )
-      (pathname-replace-extension file ##sys#load-dynamic-extension)
-      file) )
-
 (define (execute explist)
   (define (smooth lst)
     (let ((slst (map ->string lst)))
@@ -286,168 +278,6 @@
   (syntax-rules ()
     ((_ exp ...)
      (run (csc exp ...)))))
-
-
-;;; "make" functionality
-
-;;; DEPRECATED
-;;; vvv
-
-(define (make:find-matching-line str spec)
-  (let ((match? (lambda (s) (string=? s str))))
-    (let loop ((lines spec))
-      (cond
-       ((null? lines) #f)
-       (else (let* ((line (car lines))
-		    (names (if (string? (car line))
-			       (list (car line))
-			       (car line))))
-	       (if (any match? names)
-		   line
-		   (loop (cdr lines)))))))))
-
-(define (make:form-error s p) (error (sprintf "~a: ~s" s p)))
-(define (make:line-error s p n) (error (sprintf "~a: ~s for line: ~a" s p n)))
-
-(define (make:check-spec spec)
-  (and (or (list? spec) (make:form-error "specification is not a list" spec))
-       (or (pair? spec) (make:form-error "specification is an empty list" spec))
-       (every
-	(lambda (line)
-	  (and (or (and (list? line) (<= 2 (length line) 3))
-		   (make:form-error "list is not a list with 2 or 3 parts" line))
-	       (or (or (string? (car line))
-		       (and (list? (car line))
-			    (every string? (car line))))
-		   (make:form-error "line does not start with a string or list of strings" line))
-	       (let ((name (car line)))
-		 (or (list? (cadr line))
-		     (make:line-error "second part of line is not a list" (cadr line) name)
-		     (every (lambda (dep)
-			       (or (string? dep)
-				   (make:form-error "dependency item is not a string" dep)))
-			     (cadr line)))
-		 (or (null? (cddr line))
-		     (procedure? (caddr line))
-		     (make:line-error "command part of line is not a thunk" (caddr line) name)))))
-	spec)))
-
-(define (make:check-argv argv)
-  (or (string? argv)
-      (every string? argv)
-      (error "argument-list to `make' is not a string or string list" argv)))
-
-(define (make:make/proc/helper spec argv)
-  (when (vector? argv) (set! argv (vector->list argv)))
-  (make:check-spec spec)
-  (make:check-argv argv)
-  (letrec ((made '())
-	   (exn? (condition-predicate 'exn))
-	   (exn-message (condition-property-accessor 'exn 'message))
-	   (make-file
-	    (lambda (s indent)
-	      (let* ((line (make:find-matching-line s spec))
-		     (s2 (fixmaketarget s)) 
-		     (date (and (file-exists? s2)
-				(file-modification-time s2))))
-		(when (setup-verbose-mode)
-		  (printf "make: ~achecking ~a~%" indent s2))
-		(if line
-		    (let ((deps (cadr line)))
-		      (for-each (let ((new-indent (string-append " " indent)))
-				  (lambda (d) (make-file d new-indent)))
-				deps)
-		      (let ((reason
-			     (or (not date)
-				 (any (lambda (dep)
-					  (let ((dep2 (fixmaketarget dep)))
-					    (unless (file-exists? dep2)
-					      ;;XXX internal error?
-					      (error
-					       (sprintf
-						   "(make) dependency ~a was not made~%"
-						 dep2)))
-					    (and (> (file-modification-time dep2) date)
-						 dep2)) )
-					deps))))
-			(when reason
-			  (let ((l (cddr line)))
-			    (unless (null? l)
-			      (set! made (cons s made))
-			      (when (setup-verbose-mode)
-				(printf "make: ~amaking ~a~a~%"
-					indent
-					s2
-					(cond
-					 ((not date)
-					  (string-append " because " s2 " does not exist"))
-					 ((string? reason)
-					  (string-append " because " reason " changed"))
-					 (else
-					  (sprintf " just because (reason: ~a date: ~a)" 
-					    reason date)))) )
-			      (handle-exceptions exn
-				  (begin
-				    (printf "make: Failed to make ~a: ~a~%"
-					    (car line)
-					    (if (exn? exn)
-						(exn-message exn)
-						exn))
-				    (signal exn) )
-				((car l))))))))
-		    (unless date
-		      (error (sprintf "(make) don't know how to make ~a" s2))))))))
-    (cond
-     ((string? argv) (make-file argv ""))
-     ((null? argv) (make-file (caar spec) ""))
-     (else (for-each (lambda (f) (make-file f "")) argv)))
-    (when (setup-verbose-mode)
-      (for-each (lambda (item)
-		  (printf "make: made ~a~%" item))
-	(reverse made)))) )
-
-(define make/proc
-  (case-lambda
-   ((spec) (make:make/proc/helper spec '()))
-   ((spec argv)
-    (make:make/proc/helper
-     spec
-     (if (vector? argv)
-	 (vector->list argv)
-	 argv) ) ) ) )
-
-(define-syntax make
-  (lambda (form r c)
-    (##sys#check-syntax 'make form '(_ _ . #(_ 0 1)))
-    (let ((spec (cadr form))
-	  (%list (r 'list))
-	  (%lambda (r 'lambda)))
-      (let ((form-error (lambda (s . p) (apply error s spec p))))
-	(and (or (list? spec) (form-error "illegal specification (not a sequence)"))
-	     (or (pair? spec) (form-error "empty specification"))
-	     (every
-	      (lambda (line)
-		(and (or (and (list? line) (>= (length line) 2))
-			 (form-error "clause does not have at least 2 parts" line))
-		     (let ((name (car line)))
-		       (or (list? (cadr line))
-			   (make:line-error "second part of clause is not a sequence" (cadr line) name)))))
-	      spec))
-	`(,(r 'make/proc)
-	  (list ,@(map (lambda (line)
-			 `(,%list ,(car line)
-				  (,%list ,@(cadr line))
-				  ,@(let ((l (cddr line)))
-				      (if (null? l)
-					  '()
-					  `((,%lambda () ,@l))))))
-		       spec))
-	  ,@(if (null? (cddr form))
-		'('())
-		(cddr form)))))))
-
-;;;^^^
-;;; DEPRECATED
 
 
 ;;; Processing setup scripts
@@ -709,40 +539,6 @@
     (when verb (print (if (zero? r) "succeeded." "failed.")))
     (ignore-errors ($system (sprintf "~A ~A" *remove-command* (shellpath fname))))
     (zero? r) ) )
-
-(define (required-chicken-version v)	;DEPRECATED
-  (when (version>=? v (chicken-version) ) 
-    (error (sprintf "CHICKEN version ~a or higher is required" v)) ) )
-
-(define (upgrade-message ext msg #!optional version)
-  (error
-   (sprintf
-    "the currently installed extension `~s' ~a - please run~%~%  chicken-install ~a~a~%~%and repeat the current installation operation."
-    ext msg ext (if version (conc ":" version) "")) ) )
-
-(define (required-extension-version . args) ;DEPRECATED
-  (let loop ((args args))
-    (cond ((null? args) #f)
-	  ((and (list? args) (>= (length args) 2))
-	   (let* ((ext (car args))
-		  (version (cadr args))
-		  (more (cddr args))
-		  (info (extension-information ext)))
-	     (if info
-		 (let ((ver (and (assq 'version info) (cadr (assq 'version info)))))
-		   (cond ((not ver) (upgrade-message ext "has no associated version information"))
-			 ((and (version>=? version ver) 
-			       (not (string=? (->string version) (->string ver))))
-			  (upgrade-message 
-			   ext
-			   (sprintf
-			       "is older than ~a, which is the minimum version that this extension requires"
-			     version) 
-                           version) )
-			 (else (loop more)) ) ) 
-		 (upgrade-message ext "is not installed") ) ) )
-	  (else 
-	   (error 'required-extension-information "bad argument format" args)) ) ) )
 
 (define test-compile try-compile)
 

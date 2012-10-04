@@ -222,12 +222,6 @@ EOF
   (##sys#check-special ptr 'pointer->address)
   (##sys#pointer->address ptr) )
 
-(define null-pointer ##sys#null-pointer) ; DEPRECATED
-
-(define (null-pointer? ptr)		; DEPRECATED
-  (##sys#check-special ptr 'null-pointer?)
-  (##core#inline "C_null_pointerp" ptr))
-
 (define (object->pointer x)
   (and (##core#inline "C_blockp" x)
        ((foreign-lambda* nonnull-c-pointer ((scheme-object x)) "C_return((void *)x);") x) ) )
@@ -622,8 +616,6 @@ EOF
 	 [new (##core#inline "C_copy_block" old (##sys#make-vector words))] )
     (##sys#become! (list (cons old (proc new))))
     new ) )
-
-(define mutate-procedure mutate-procedure!) ; DEPRECATED
 
 
 ;;; pointer vectors

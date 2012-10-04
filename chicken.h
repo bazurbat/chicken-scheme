@@ -325,8 +325,6 @@ void *alloca ();
 #define ___byte             char
 #define ___scheme_value     C_word
 #define ___scheme_pointer   void *
-/* `___byte_vector' is DEPRECATED */
-#define ___byte_vector      unsigned char *
 #define ___blob             void *
 #define ___pointer_vector   void **
 #define ___symbol           char *
@@ -1347,10 +1345,6 @@ extern double trunc(double);
 #define C_u_i_u32vector_ref(x, i)       C_fix(((C_u32 *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ])
 #define C_u_i_s32vector_ref(x, i)       C_fix(((C_u32 *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ])
 
-/* DEPRECATED */
-#define C_a_i_u32vector_ref             C_a_u_i_u32vector_ref
-#define C_a_i_s32vector_ref             C_a_u_i_s32vector_ref
-
 #define C_a_u_i_u32vector_ref(ptr, c, x, i)  C_unsigned_int_to_num(ptr, ((C_u32 *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ])
 #define C_a_u_i_s32vector_ref(ptr, c, x, i)  C_int_to_num(ptr, ((C_s32 *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ])
 
@@ -1484,10 +1478,6 @@ extern double trunc(double);
 #define C_a_i_flonum_ceiling(ptr, n, x)  C_flonum(ptr, C_ceil(C_flonum_magnitude(x)))
 #define C_a_i_flonum_floor(ptr, n, x)   C_flonum(ptr, C_floor(C_flonum_magnitude(x)))
 #define C_a_i_flonum_round(ptr, n, x)   C_flonum(ptr, C_round(C_flonum_magnitude(x)))
-
-/* DEPRECATED */
-#define C_a_i_f32vector_ref             C_a_u_i_f32vector_ref
-#define C_a_i_f64vector_ref             C_a_u_i_f64vector_ref
 
 #define C_a_u_i_f32vector_ref(ptr, n, b, i)  C_flonum(ptr, ((float *)C_data_pointer(C_block_item((b), 1)))[ C_unfix(i) ])
 #define C_a_u_i_f64vector_ref(ptr, n, b, i)  C_flonum(ptr, ((double *)C_data_pointer(C_block_item((b), 1)))[ C_unfix(i) ])
@@ -1654,8 +1644,6 @@ C_fctexport void C_fcall C_trace(C_char *name) C_regparm;
 C_fctexport C_word C_fcall C_emit_trace_info2(char *raw, C_word x, C_word y, C_word t) C_regparm;
 C_fctexport C_word C_fcall C_u_i_string_hash(C_word str, C_word rnd) C_regparm;
 C_fctexport C_word C_fcall C_u_i_string_ci_hash(C_word str, C_word rnd) C_regparm;
-C_fctexport C_word C_fcall C_hash_string(C_word str) C_regparm; /* DEPRECATED, INSECURE */
-C_fctexport C_word C_fcall C_hash_string_ci(C_word str) C_regparm; /* DEPRECATED, INSECURE */
 C_fctexport C_word C_halt(C_word msg);
 C_fctexport C_word C_message(C_word msg);
 C_fctexport C_word C_fcall C_equalp(C_word x, C_word y) C_regparm;

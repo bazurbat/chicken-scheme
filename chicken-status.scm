@@ -175,8 +175,7 @@ EOF
 		    ((or (string=? arg "-f") (string=? arg "-files"))
 		     (set! files #t)
 		     (loop (cdr args) pats))
-		    ((or (string=? arg "-v") ; DEPRECATED
-			 (string=? arg "-version"))
+		    ((string=? arg "-version")
 		     (print (chicken-version))
 		     (exit 0))
 		    ((and (positive? (string-length arg))

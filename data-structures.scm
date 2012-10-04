@@ -110,10 +110,6 @@
 
 (define (any? x) #t)
 
-(define (none? x) #f)			; DEPRECATED
-(define (always? . _) #t)		; DEPRECATED
-(define (never? . _) #f)		; DEPRECATED
-
 
 ;;; List operators:
 
@@ -197,13 +193,6 @@
 	      [(##sys#slot blst 0)
 	       (cons (##sys#slot lst 0) (loop (##sys#slot blst 1) (##sys#slot lst 1)))]
 	      [else (loop (##sys#slot blst 1) (##sys#slot lst 1))] ) ) ) ) )
-
-(define shuffle				; DEPRECATED
-  (lambda (l random)
-    (let ((len (length l)))
-      (map cdr
-	   (sort! (map (lambda (x) (cons (random len) x)) l)
-		  (lambda (x y) (< (car x) (car y)))) ) ) ) )
 
 
 ;;; Alists:

@@ -92,19 +92,16 @@
     no-bound-checks no-procedure-checks-for-usual-bindings no-compiler-syntax
     no-parentheses-synonyms no-symbol-escape r5rs-syntax emit-all-import-libraries
     strict-types clustering
-    lambda-lift unboxing		; OBSOLETE
     setup-mode no-module-registration) )
 
 (define valid-compiler-options-with-argument
   '(debug 
     output-file include-path heap-size stack-size unit uses keyword-style require-extension 
     inline-limit profile-name 
-    disable-warning			; OBSOLETE
     parenthesis-synonyms
     prelude postlude prologue epilogue nursery extend feature no-feature types
     emit-import-library emit-inline-file static-extension consult-inline-file
     emit-type-file
-    heap-growth heap-shrinkage heap-initial-size ; DEPRECATED
     ffi-define ffi-include-path) )
 
 

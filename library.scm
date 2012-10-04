@@ -3616,8 +3616,6 @@ EOF
   (let ([sym (string->symbol ((##core#primitive "C_build_platform")))])
     (lambda () sym) ) )
 
-(define (c-runtime) 'unknown)		; DEPRECATED
-
 (define ##sys#windows-platform
   (and (eq? 'windows (software-type))
        ;; Still windows even if 'Linux-like'

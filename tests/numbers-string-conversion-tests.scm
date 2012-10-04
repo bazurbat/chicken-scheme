@@ -193,14 +193,12 @@
  ("#i+nan.0" the-nan "+nan.0" "+NaN.0")
  ("#i+inf.0" pos-inf "+inf.0" "+Inf.0")
  ("#i-inf.0" neg-inf "-inf.0" "-Inf.0")
-#|
- ;; DEPRECATED (Disabled during deprecation period of "[+-]nan", "[+-]inf")
+ ;; These used to be accepted but are invalid
  ("+nan" #f)
  ("+inf" #f)
  ("-inf" #f)
  ("nan.0" #f)
  ("inf.0" #f)
-|#
 
  "Fractions"
  ("1/2" (/ 1 2) "0.5" ".5" "500.0e-3")

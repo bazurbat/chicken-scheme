@@ -1169,8 +1169,6 @@
 (alist-update! (#(procedure #:enforce) alist-update! (* * (list-of pair) #!optional (procedure (* *) *)) *))
 (alist-update (#(procedure #:clean #:enforce) alist-update (* * (list-of pair) #!optional (procedure (* *) *) *) *))
 
-(always? deprecated)
-
 (any? (#(procedure #:pure) any? (*) boolean)
       ((*) (let ((#(tmp) #(1))) '#t)))
 
@@ -1206,8 +1204,6 @@
  (forall (e)
 	 (#(procedure #:enforce) merge! ((list-of e) (list-of e) (procedure (e e) *)) (list-of e))))
 
-(never? deprecated)
-(none? deprecated)
 (o (#(procedure #:clean #:enforce) o (#!rest (procedure (*) *)) (procedure (*) *)))
 (queue->list (#(procedure #:clean #:enforce) queue->list ((struct queue)) list))
 (queue-add! (#(procedure #:clean #:enforce) queue-add! ((struct queue) *) undefined))
@@ -1228,7 +1224,6 @@
 
 (rassoc (#(procedure #:clean #:enforce) rassoc (* (list-of pair) #!optional (procedure (* *) *)) *))
 (reverse-string-append (#(procedure #:clean #:enforce) reverse-string-append ((list-of string)) string))
-(shuffle deprecated)
 
 (sort
  (forall (e (s (or (vector-of e) (list-of e))))
@@ -1448,10 +1443,6 @@
 
 (mutate-procedure!
  (#(procedure #:enforce) mutate-procedure! (procedure (procedure (procedure) . *)) procedure))
-
-(mutate-procedure (deprecated mutate-procedure!))
-(null-pointer deprecated)
-(null-pointer? deprecated)
 
 (number-of-bytes (#(procedure #:clean) number-of-bytes (*) fixnum)
 		 (((or blob string)) (##sys#size #(1)))

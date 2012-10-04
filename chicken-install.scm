@@ -915,8 +915,7 @@ EOF
                         (set! *keep* #t)
                         (set! *no-install* #t)
                         (loop (cdr args) eggs))
-                       ((or (string=? arg "-v") ; DEPRECATED
-			    (string=? arg "-version"))
+                       ((string=? arg "-version")
                         (print (chicken-version))
                         (exit 0))
                        ((or (string=? arg "-u") (string=? arg "-update-db"))

@@ -43,10 +43,8 @@
    make-pointer-vector
    make-weak-locative
    move-memory!
-   mutate-procedure			; DEPRECATED
    mutate-procedure!
    null-pointer
-   null-pointer?			; DEPRECATED
    number-of-bytes
    number-of-slots
    object->pointer
@@ -60,7 +58,6 @@
    object-unevict
    pointer->address
    pointer-like?
-   pointer-offset			; DEPRECATED
    pointer->object
    pointer-f32-ref
    pointer-f32-set!

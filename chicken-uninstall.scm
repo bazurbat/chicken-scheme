@@ -129,8 +129,7 @@ EOF
 			    (string=? arg "-h")
 			    (string=? arg "--help"))
 			(usage 0))
-		       ((or (string=? arg "-v") ; DEPRECATED
-			    (string=? arg "-version"))
+		       ((string=? arg "-version")
 			(print (chicken-version))
 			(exit 0))
 		       ((string=? arg "-target")
