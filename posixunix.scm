@@ -291,6 +291,7 @@ static C_TLS sigset_t C_sigset;
 #define C_sigprocmask_set(d)        C_fix(sigprocmask(SIG_SETMASK, &C_sigset, NULL))
 #define C_sigprocmask_block(d)      C_fix(sigprocmask(SIG_BLOCK, &C_sigset, NULL))
 #define C_sigprocmask_unblock(d)    C_fix(sigprocmask(SIG_UNBLOCK, &C_sigset, NULL))
+#define C_sigprocmask_get(d)        C_fix(sigprocmask(SIG_SETMASK, NULL, &C_sigset))
 
 #define C_open(fn, fl, m)   C_fix(open(C_c_string(fn), C_unfix(fl), C_unfix(m)))
 #define C_read(fd, b, n)    C_fix(read(C_unfix(fd), C_data_pointer(b), C_unfix(n)))
@@ -893,6 +894,7 @@ EOF
 (define-foreign-variable _sighup int "SIGHUP")
 (define-foreign-variable _sigfpe int "SIGFPE")
 (define-foreign-variable _sigill int "SIGILL")
+(define-foreign-variable _sigbus int "SIGBUS")
 (define-foreign-variable _sigsegv int "SIGSEGV")
 (define-foreign-variable _sigabrt int "SIGABRT")
 (define-foreign-variable _sigtrap int "SIGTRAP")
@@ -938,6 +940,7 @@ EOF
 (define signal/usr1 _sigusr1)
 (define signal/usr2 _sigusr2)
 (define signal/winch _sigwinch)
+(define signal/bus _sigbus)
 
 (define signals-list
   (list
@@ -945,7 +948,7 @@ EOF
     signal/segv signal/abrt signal/trap signal/quit signal/alrm signal/vtalrm
     signal/prof signal/io signal/urg signal/chld signal/cont signal/stop
     signal/tstp signal/pipe signal/xcpu signal/xfsz signal/usr1 signal/usr2
-    signal/winch))
+    signal/winch signal/bus))
 
 (define set-signal-mask!
   (lambda (sigs)
@@ -957,30 +960,38 @@ EOF
         (##core#inline "C_sigaddset" s) )
       sigs)
     (when (fx< (##core#inline "C_sigprocmask_set" 0) 0)
-      (posix-error #:process-error 'set-signal-mask! "cannot set signal mask") ) ) )
+      (posix-error #:process-error 'set-signal-mask! "cannot set signal mask") )))
 
-(define (signal-mask)
-  (let loop ([sigs signals-list] [mask '()])
-    (if (null? sigs)
-        mask
-        (let ([sig (car sigs)])
-          (loop (cdr sigs) (if (##core#inline "C_sigismember" sig) (cons sig mask) mask)) ) ) ) )
+(define signal-mask
+  (getter-with-setter
+   (lambda ()
+     (##core#inline "C_sigprocmask_get" 0)
+     (let loop ([sigs signals-list] [mask '()])
+       (if (null? sigs)
+	   mask
+	   (let ([sig (car sigs)])
+	     (loop (cdr sigs)
+		   (if (##core#inline "C_sigismember" sig) (cons sig mask) mask)) ) ) ) )
+   set-signal-mask!))
 
 (define (signal-masked? sig)
   (##sys#check-exact sig 'signal-masked?)
+  (##core#inline "C_sigprocmask_get" 0)
   (##core#inline "C_sigismember" sig) )
 
 (define (signal-mask! sig)
   (##sys#check-exact sig 'signal-mask!)
+  (##core#inline "C_sigemptyset" 0)
   (##core#inline "C_sigaddset" sig)
   (when (fx< (##core#inline "C_sigprocmask_block" 0) 0)
-      (posix-error #:process-error 'signal-mask! "cannot block signal") )  )
+    (posix-error #:process-error 'signal-mask! "cannot block signal") ))
 
 (define (signal-unmask! sig)
   (##sys#check-exact sig 'signal-unmask!)
-  (##core#inline "C_sigdelset" sig)
+  (##core#inline "C_sigemptyset" 0)
+  (##core#inline "C_sigaddset" sig)
   (when (fx< (##core#inline "C_sigprocmask_unblock" 0) 0)
-      (posix-error #:process-error 'signal-unmask! "cannot unblock signal") )  )
+    (posix-error #:process-error 'signal-unmask! "cannot unblock signal") ) )
 
 
 ;;; Getting system-, group- and user-information:

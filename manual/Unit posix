@@ -928,6 +928,8 @@ Notes
 
 * {{(set! (signal-handler SIG) PROC)}} can be used as an alternative to {{(set-signal-handler! SIG PROC)}}
 
+* Any signal handlers for the signals {{signal/segv}}, {{signal/bus}}, {{signal/fpe}} and {{signal/ill}} will be ignored and these signals will always trigger an exception, unless the executable was started with the {{-:S}} runtime option. This feature is only available on platforms that support the {{sigprocmask(3)}} POSIX API function.
+
 ==== set-signal-mask!
 
 <procedure>(set-signal-mask! SIGLIST)</procedure>
@@ -986,6 +988,7 @@ Unmasks (unblocks) the signal for the code {{SIGNUM}}.
 <constant>signal/xfsz</constant><br>
 <constant>signal/usr1</constant><br>
 <constant>signal/usr2</constant><br>
+<constant>signal/bus</constant><br>
 <constant>signal/winch</constant>
 
 These variables contain signal codes for use with {{process-signal}},  {{set-signal-handler!}},  {{signal-handler}},  {{signal-masked?}},  {{signal-mask!}},  or {{signal-unmask!}}.

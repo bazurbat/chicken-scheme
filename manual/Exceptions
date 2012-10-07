@@ -83,6 +83,13 @@ argument. If the condition does not have a value for the desired property and
 if the optional argument is given, no error is signaled and the accessor
 returns the third argument.
 
+* On platforms that support the {{sigprocmask(3)}} POSIX API function,
+the signals {{SIGSEGV}}, {{SIGFPE}}, {{SIGBUS}} and {{SIGILL}} will be
+caught and trigger an exception instead of aborting the process, if
+possible. If the unwinding and handling of the signal raises one of
+these signals once again, the process will abort with an error
+message.
+
 === Additional API
 
 <macro>(condition-case EXPRESSION CLAUSE ...)</macro>

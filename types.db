@@ -1756,6 +1756,7 @@
 (signal/ill fixnum)
 (signal/int fixnum)
 (signal/io fixnum)
+(signal/bus fixnum)
 (signal/kill fixnum)
 (signal/pipe fixnum)
 (signal/prof fixnum)

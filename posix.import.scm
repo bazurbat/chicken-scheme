@@ -216,6 +216,7 @@
    signal/chld
    signal/cont
    signal/fpe
+   signal/bus
    signal/hup
    signal/ill
    signal/int

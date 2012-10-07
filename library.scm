@@ -4172,6 +4172,10 @@ EOF
 	((41) (apply ##sys#signal-hook #:type-error loc "bad argument type - not an output-port" args))
 	((42) (apply ##sys#signal-hook #:file-error loc "port already closed" args))
 	((43) (apply ##sys#signal-hook #:type-error loc "cannot represent string with NUL bytes as C string" args))
+	((44) (apply ##sys#signal-hook #:memory-error loc "segmentation violation" args))
+	((45) (apply ##sys#signal-hook #:arithmetic-error loc "floating-point exception" args))
+	((46) (apply ##sys#signal-hook #:runtime-error loc "illegal instruction" args))
+	((47) (apply ##sys#signal-hook #:memory-error loc "bus error" args))
 	(else (apply ##sys#signal-hook #:runtime-error loc "unknown internal error" args)) ) ) ) )
 
 

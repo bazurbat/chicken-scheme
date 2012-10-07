@@ -571,6 +571,10 @@ static inline int isinf_ld (long double x)
 #define C_BAD_ARGUMENT_TYPE_NO_OUTPUT_PORT_ERROR      41
 #define C_PORT_CLOSED_ERROR                           42
 #define C_ASCIIZ_REPRESENTATION_ERROR                 43
+#define C_MEMORY_VIOLATION_ERROR                      44
+#define C_FLOATING_POINT_EXCEPTION_ERROR              45
+#define C_ILLEGAL_INSTRUCTION_ERROR                   46
+#define C_BUS_ERROR                                   47
 
 
 /* Platform information */
@@ -878,12 +882,14 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
  * so try to use versions that we know won't try to save & restore.
  */
 # if defined(HAVE_SIGSETJMP)
-#   define C_setjmp(e)              sigsetjmp(e, 0)
-#   define C_longjmp(e,v)           siglongjmp(e, v)
-# else
-#   define C_setjmp                 setjmp
-#   define C_longjmp                longjmp
+#   define C_sigsetjmp              sigsetjmp
+#   define C_siglongjmp             siglongjmp
 # endif
+# ifdef HAVE_SIGPROCMASK
+#  define C_sigprocmask             sigprocmask
+# endif
+# define C_setjmp                   setjmp
+# define C_longjmp                  longjmp
 # define C_alloca                   alloca
 # define C_strerror                 strerror
 # define C_isalpha                  isalpha

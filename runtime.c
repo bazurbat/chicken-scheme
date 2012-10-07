@@ -418,7 +418,9 @@ static C_TLS int
   heap_size_changed,
   chicken_is_running,
   chicken_ran_once,
+  pass_serious_signals = 1,
   callback_continuation_level;
+static volatile C_TLS int serious_signal_occurred = 0;
 static C_TLS unsigned int
   mutation_count,
   stack_size,
@@ -498,6 +500,10 @@ static C_ccall void callback_return_continuation(C_word c, C_word self, C_word r
 static void become_2(void *dummy) C_noret;
 static void copy_closure_2(void *dummy) C_noret;
 static void dump_heap_state_2(void *dummy) C_noret;
+static void C_fcall sigsegv_trampoline(void *) C_regparm;
+static void C_fcall sigill_trampoline(void *) C_regparm;
+static void C_fcall sigfpe_trampoline(void *) C_regparm;
+static void C_fcall sigbus_trampoline(void *) C_regparm;
 
 static C_PTABLE_ENTRY *create_initial_ptable();
 
@@ -536,6 +542,7 @@ int CHICKEN_main(int argc, char *argv[], void *toplevel)
 #endif
   }
 
+  pass_serious_signals = 0;
   CHICKEN_parse_command_line(argc, argv, &h, &s, &n);
   
   if(!CHICKEN_initialize(h, s, n, toplevel))
@@ -586,6 +593,9 @@ void parse_argv(C_char *cmds)
 int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 {
   int i;
+#ifdef HAVE_SIGACTION
+  struct sigaction sa;
+#endif
 
   /*FIXME Should have C_tzset in chicken.h? */
 #ifdef C_NONUNIX
@@ -692,6 +702,28 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 #else
   dlopen_flags = 0;
 #endif
+
+  /* setup signal handlers */
+  if(!pass_serious_signals) {
+#ifdef HAVE_SIGACTION
+    sa.sa_flags = 0;
+    sigemptyset(&sa.sa_mask);
+    sigaddset(&sa.sa_mask, SIGBUS);
+    sigaddset(&sa.sa_mask, SIGFPE);
+    sigaddset(&sa.sa_mask, SIGILL);
+    sigaddset(&sa.sa_mask, SIGSEGV);
+    sa.sa_handler = global_signal_handler;
+    C_sigaction(SIGBUS, &sa, NULL);
+    C_sigaction(SIGFPE, &sa, NULL);
+    C_sigaction(SIGILL, &sa, NULL);
+    C_sigaction(SIGSEGV, &sa, NULL);
+#else
+    C_signal(SIGBUS, global_signal_handler);
+    C_signal(SIGILL, global_signal_handler);
+    C_signal(SIGFPE, global_signal_handler);
+    C_signal(SIGSEGV, global_signal_handler);
+#endif
+  }
 
   mutation_count = gc_count_1 = gc_count_1_total = gc_count_2 = 0;
   lf_list = NULL;
@@ -985,12 +1017,71 @@ void initialize_symbol_table(void)
 }
 
 
+C_regparm void C_fcall 
+sigsegv_trampoline(void *dummy)
+{
+  barf(C_MEMORY_VIOLATION_ERROR, NULL);
+}
+
+
+C_regparm void C_fcall 
+sigbus_trampoline(void *dummy)
+{
+  barf(C_BUS_ERROR, NULL);
+}
+
+
+C_regparm void C_fcall 
+sigfpe_trampoline(void *dummy)
+{
+  barf(C_FLOATING_POINT_EXCEPTION_ERROR, NULL);
+}
+
+
+C_regparm void C_fcall 
+sigill_trampoline(void *dummy)
+{
+  barf(C_ILLEGAL_INSTRUCTION_ERROR, NULL);
+}
+
+
 /* This is called from POSIX signals: */
 
 void global_signal_handler(int signum)
 {
+#if defined(HAVE_SIGPROCMASK)
+  if(signum == SIGSEGV || signum == SIGFPE || signum == SIGILL || signum == SIGBUS) {
+    sigset_t sset;
+    
+    if(serious_signal_occurred || !chicken_is_running) {
+      switch(signum) {
+      case SIGSEGV: panic(C_text("unrecoverable segmentation violation"));
+      case SIGFPE: panic(C_text("unrecoverable floating-point exception"));
+      case SIGILL: panic(C_text("unrecoverable illegal instruction error"));
+      case SIGBUS: panic(C_text("unrecoverable bus error"));
+      default: panic(C_text("unrecoverable serious condition"));
+      }
+    }
+    else serious_signal_occurred = 1;
+
+    /* unblock signal to avoid nested invocation of the handler */
+    sigemptyset(&sset);
+    sigaddset(&sset, signum);
+    C_sigprocmask(SIG_UNBLOCK, &sset, NULL);
+
+    switch(signum) {
+    case SIGSEGV: C_reclaim(sigsegv_trampoline, NULL);
+    case SIGFPE: C_reclaim(sigfpe_trampoline, NULL);
+    case SIGILL: C_reclaim(sigill_trampoline, NULL);
+    case SIGBUS: C_reclaim(sigbus_trampoline, NULL);
+    default: panic(C_text("invalid serious signal"));
+    }
+  }
+#endif
+
   C_raise_interrupt(signal_mapping_table[ signum ]);
 #ifndef HAVE_SIGACTION
+  /* not necessarily needed, but older UNIXen may not leave the handler installed: */
   C_signal(signum, global_signal_handler);
 #endif
 }
@@ -1163,6 +1254,7 @@ void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *st
 		 " -:G              force GUI mode\n"
 		 " -:aSIZE          set trace-buffer/call-chain size\n"
 		 " -:H              dump heap state on exit\n"
+		 " -:S              do not handle segfaults or other serious conditions\n"
 		 "\n  SIZE may have a `k' (`K'), `m' (`M') or `g' (`G') suffix, meaning size\n"
 		 "  times 1024, 1048576, and 1073741824, respectively.\n\n");
 	  exit(0);
@@ -1203,6 +1295,10 @@ void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *st
 
 	case 'H':
 	  dump_heap_on_exit = 1;
+	  break;
+
+	case 'S':
+	  pass_serious_signals = 1;
 	  break;
 
 	case 's':
@@ -1322,7 +1418,13 @@ C_word CHICKEN_run(void *toplevel)
     C_dbg(C_text("debug"), C_text("stack bottom is 0x%lx.\n"), (long)stack_bottom);
 
   /* The point of (usually) no return... */
+#ifdef HAVE_SIGSETJMP
+  C_sigsetjmp(C_restart, 0);
+#else
   C_setjmp(C_restart);
+#endif
+
+  serious_signal_occurred = 0;
 
   if(!return_to_host)
     (C_restart_trampoline)(C_restart_address);
@@ -1649,6 +1751,11 @@ void barf(int code, char *loc, ...)
     c = 1;
     break;
 
+  case C_MEMORY_VIOLATION_ERROR:
+    msg = C_text("segmentation violation");
+    c = 0;
+    break;
+
   default: panic(C_text("illegal internal error code"));
   }
   
@@ -1797,7 +1904,13 @@ C_word C_fcall C_callback(C_word closure, int argc)
   callback_returned_flag = 0;       
   chicken_is_running = 1;
 
+#ifdef HAVE_SIGSETJMP
+  if(!C_sigsetjmp(C_restart, 0)) C_do_apply(argc, closure, k);
+#else
   if(!C_setjmp(C_restart)) C_do_apply(argc, closure, k);
+#endif
+
+  serious_signal_occurred = 0;
 
   if(!callback_returned_flag) (C_restart_trampoline)(C_restart_address);
   else {
@@ -2657,7 +2770,11 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
   start = C_fromspace_top;
 
   /* Entry point for second-level GC (on explicit request or because of full fromspace): */
+#ifdef HAVE_SIGSETJMP
+  if(C_sigsetjmp(gc_restart, 0) || start >= C_fromspace_limit) {
+#else
   if(C_setjmp(gc_restart) || start >= C_fromspace_limit) {
+#endif
     if(gc_bell) {
       C_putchar(7);
       C_fflush(stdout);
@@ -2943,8 +3060,12 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
   if(C_post_gc_hook != NULL) C_post_gc_hook(gc_mode, (long)tgc);
 
-  /* Jump from the Empire State Building... */
+  /* Unwind stack completely */
+#ifdef HAVE_SIGSETJMP
+  C_siglongjmp(C_restart, 1);
+#else
   C_longjmp(C_restart, 1);
+#endif
 }
 
 
@@ -3011,7 +3132,11 @@ C_regparm void C_fcall really_mark(C_word *x)
     bytes = (h & C_BYTEBLOCK_BIT) ? n : n * sizeof(C_word);
 
     if(((C_byte *)p2 + bytes + sizeof(C_word)) > C_fromspace_limit)
+#ifdef HAVE_SIGSETJMP
+      C_siglongjmp(gc_restart, 1);
+#else
       C_longjmp(gc_restart, 1);
+#endif
 
     C_fromspace_top = (C_byte *)p2 + C_align(bytes) + sizeof(C_word);
 
@@ -3080,7 +3205,11 @@ C_regparm void C_fcall really_mark(C_word *x)
 	panic(C_text("out of memory - heap full"));
       
       gc_mode = GC_REALLOC;
+#ifdef HAVE_SIGSETJMP
+      C_siglongjmp(gc_restart, 1);
+#else
       C_longjmp(gc_restart, 1);
+#endif
     }
 
     tospace_top = (C_byte *)p2 + C_align(bytes) + sizeof(C_word);
