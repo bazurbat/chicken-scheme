@@ -1276,7 +1276,7 @@
 (read-buffered (#(procedure #:enforce) read-buffered (#!optional input-port) string))
 (read-byte (#(procedure #:enforce) read-byte (#!optional input-port) *))
 (read-file (#(procedure #:enforce) read-file (#!optional (or input-port string) (procedure (input-port) *) fixnum) list))
-(read-line (#(procedure #:enforce) read-line (#!optional input-port (or boolean fixnum)) *))
+(read-line (#(procedure #:enforce) read-line (#!optional input-port (or boolean fixnum)) (or eof string)))
 (read-lines (#(procedure #:enforce) read-lines (#!optional (or input-port string) fixnum) (list-of string)))
 (read-string (#(procedure #:enforce) read-string (#!optional * input-port) string))
 (read-string! (#(procedure #:enforce) read-string! (fixnum string #!optional input-port fixnum) fixnum))
