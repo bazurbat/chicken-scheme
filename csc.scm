@@ -144,7 +144,7 @@
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
     -emit-all-import-libraries -setup-mode -no-elevation -no-module-registration
     -no-procedure-checks-for-usual-bindings -module
-    -specialize -strict-types -clustering
+    -specialize -strict-types -clustering -lfa2
     -no-procedure-checks-for-toplevel-bindings))
 
 (define-constant complex-options
@@ -182,7 +182,6 @@
 ;;; Variables:
 
 (define scheme-files '())
-(define generated-scheme-files '())
 (define c-files '())
 (define rc-files '())
 (define generated-c-files '())
@@ -405,6 +404,7 @@ Usage: #{csc} FILENAME | OPTION ...
     -strict-types                  assume variable do not change their type
     -clustering                    combine groups of local procedures into dispatch
                                      loop
+    -lfa2                          perform additional lightweight flow-analysis pass
 
   Configuration options:
 
@@ -830,8 +830,7 @@ EOF
 	 " ") )
        (set! c-files (append (list fc) c-files))
        (set! generated-c-files (append (list fc) generated-c-files))))
-   scheme-files)
-  (unless keep-files (for-each $delete-file generated-scheme-files)) )
+   scheme-files))
 
 
 ;;; Compile all C/C++  and .rc files:

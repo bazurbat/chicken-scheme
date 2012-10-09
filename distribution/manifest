@@ -78,6 +78,8 @@ scrutinizer.scm
 irregex.scm
 irregex-core.scm
 irregex-utils.scm
+lfa2.c
+lfa2.scm
 posixunix.scm
 posixwin.scm
 posix-common.scm

@@ -1504,6 +1504,13 @@ extern double trunc(double);
 
 #define C_a_i_current_milliseconds(ptr, c, dummy) C_flonum(ptr, C_milliseconds())
 
+#define C_i_noop1(dummy)               ((dummy), C_SCHEME_UNDEFINED)
+#define C_i_noop2(dummy1, dummy2)      ((dummy1), (dummy2), C_SCHEME_UNDEFINED)
+#define C_i_noop3(dummy1, dummy2, dummy3)  ((dummy1), (dummy2), (dummy3), C_SCHEME_UNDEFINED)
+#define C_i_true1(dummy)               ((dummy), C_SCHEME_TRUE)
+#define C_i_true2(dummy1, dummy2)      ((dummy1), (dummy2), C_SCHEME_TRUE)
+#define C_i_true3(dummy1, dummy2, dummy3)  ((dummy1), (dummy2), (dummy3), C_SCHEME_TRUE)
+
 
 /* Variables: */
 

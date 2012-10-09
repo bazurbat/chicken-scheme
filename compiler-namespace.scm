@@ -223,6 +223,7 @@
  perform-high-level-optimizations
  perform-inlining!
  perform-pre-optimization!
+ perform-secondary-flow-analysis
  posv
  posq
  postponed-initforms

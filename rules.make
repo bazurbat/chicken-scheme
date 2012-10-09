@@ -44,7 +44,7 @@ LIBCHICKEN_SHARED_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=$(O))
 LIBCHICKEN_STATIC_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=-static$(O))
 
 COMPILER_OBJECTS_1 = \
-	chicken batch-driver compiler optimizer compiler-syntax scrutinizer support \
+	chicken batch-driver compiler optimizer lfa2 compiler-syntax scrutinizer support \
 	c-platform c-backend
 COMPILER_OBJECTS        = $(COMPILER_OBJECTS_1:=$(O))
 COMPILER_STATIC_OBJECTS = $(COMPILER_OBJECTS_1:=-static$(O))

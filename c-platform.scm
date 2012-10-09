@@ -91,7 +91,7 @@
     no-procedure-checks-for-toplevel-bindings module
     no-bound-checks no-procedure-checks-for-usual-bindings no-compiler-syntax
     no-parentheses-synonyms no-symbol-escape r5rs-syntax emit-all-import-libraries
-    strict-types clustering
+    strict-types clustering lfa2
     setup-mode no-module-registration) )
 
 (define valid-compiler-options-with-argument

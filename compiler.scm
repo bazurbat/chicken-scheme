@@ -1910,7 +1910,7 @@
 		  ;; decorate ##core#call node with size
 		  (set-car! (cdddr (node-parameters n)) (- current-program-size size0)) ) ) ) ) )
 	  
-	  ((set! ##core#set!) 
+	  ((set! ##core#set!) 		;XXX ##core#set! still used?
 	   (let* ((var (first params))
 		  (val (car subs)) )
 	     (when (and first-analysis (not bootstrap-mode))
