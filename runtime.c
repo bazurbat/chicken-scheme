@@ -963,7 +963,7 @@ C_regparm C_word C_enumerate_symbols(C_SYMBOL_TABLE *stable, C_word pos)
 
   sym = C_u_i_car(bucket);
   C_set_block_item(pos, 0, C_fix(i));
-  C_mutate(&C_u_i_cdr(pos), C_u_i_cdr(bucket));
+  C_mutate2(&C_u_i_cdr(pos), C_u_i_cdr(bucket));
   return sym;
 }
 
@@ -1746,7 +1746,7 @@ int C_fcall C_save_callback_continuation(C_word **ptr, C_word k)
 {
   C_word p = C_a_pair(ptr, k, C_block_item(callback_continuation_stack_symbol, 0));
   
-  C_mutate(&C_block_item(callback_continuation_stack_symbol, 0), p);
+  C_mutate_slot(&C_block_item(callback_continuation_stack_symbol, 0), p);
   return ++callback_continuation_level;
 }
 
@@ -1760,7 +1760,7 @@ C_word C_fcall C_restore_callback_continuation(void)
   assert(!C_immediatep(p) && C_block_header(p) == C_PAIR_TAG);
   k = C_u_i_car(p);
 
-  C_mutate(&C_block_item(callback_continuation_stack_symbol, 0), C_u_i_cdr(p));
+  C_mutate2(&C_block_item(callback_continuation_stack_symbol, 0), C_u_i_cdr(p));
   --callback_continuation_level;
   return k;
 }
@@ -1776,7 +1776,7 @@ C_word C_fcall C_restore_callback_continuation2(int level)
 
   k = C_u_i_car(p);
 
-  C_mutate(&C_block_item(callback_continuation_stack_symbol, 0), C_u_i_cdr(p));
+  C_mutate2(&C_block_item(callback_continuation_stack_symbol, 0), C_u_i_cdr(p));
   --callback_continuation_level;
   return k;
 }
@@ -1987,7 +1987,7 @@ C_regparm C_word C_fcall C_h_intern_in(C_word *slot, int len, C_char *str, C_SYM
   key = hash_string(len, str, stable->size, stable->rand, 0);
 
   if(C_truep(s = lookup(key, len, str, stable))) {
-    if(C_in_stackp(s)) C_mutate(slot, s);
+    if(C_in_stackp(s)) C_mutate_slot(slot, s);
     
     return s;
   }
@@ -2030,7 +2030,7 @@ C_regparm C_word C_fcall C_intern3(C_word **ptr, C_char *str, C_word value)
 {
   C_word s = C_intern_in(ptr, C_strlen(str), str, symbol_table);
   
-  C_mutate(&C_u_i_car(s), value);
+  C_mutate2(&C_u_i_car(s), value);
   return s;
 }
 
@@ -2113,13 +2113,13 @@ C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stabl
   ((C_SCHEME_BLOCK *)bucket)->header = 
     (((C_SCHEME_BLOCK *)bucket)->header & ~C_HEADER_TYPE_BITS) | C_BUCKET_TYPE;
 
-  if(ptr != C_heaptop) C_mutate(&stable->table[ key ], bucket);
+  if(ptr != C_heaptop) C_mutate_slot(&stable->table[ key ], bucket);
   else {
     /* If a stack-allocated bucket was here, and we allocate from 
        heap-top (say, in a toplevel literal frame allocation) then we have
        to inform the memory manager that a 2nd gen. block points to a 
        1st gen. block, hence the mutation: */
-    C_mutate(&C_u_i_cdr(bucket), b2);
+    C_mutate2(&C_u_i_cdr(bucket), b2);
     stable->table[ key ] = bucket;
   }
 
@@ -2553,39 +2553,44 @@ C_word C_structure(C_word **ptr, int n, ...)
 }
 
 
-C_regparm C_word C_fcall C_mutate(C_word *slot, C_word val)
+C_regparm C_word C_fcall
+C_mutate_slot(C_word *slot, C_word val)
 {
   unsigned int mssize, newmssize, bytes;
 
-  if(!C_immediatep(val)) {
 #ifdef C_GC_HOOKS
-    if(C_gc_mutation_hook != NULL && C_gc_mutation_hook(slot, val)) return val;
+  if(C_gc_mutation_hook != NULL && C_gc_mutation_hook(slot, val)) return val;
 #endif
 
-    if(mutation_stack_top >= mutation_stack_limit) {
-      assert(mutation_stack_top == mutation_stack_limit);
-      mssize = mutation_stack_top - mutation_stack_bottom;
-      newmssize = mssize * 2;
-      bytes = newmssize * sizeof(C_word *);
+  if(mutation_stack_top >= mutation_stack_limit) {
+    assert(mutation_stack_top == mutation_stack_limit);
+    mssize = mutation_stack_top - mutation_stack_bottom;
+    newmssize = mssize * 2;
+    bytes = newmssize * sizeof(C_word *);
 
-      if(debug_mode) 
-	C_dbg(C_text("debug"), C_text("resizing mutation-stack from " UWORD_COUNT_FORMAT_STRING "k to " UWORD_COUNT_FORMAT_STRING "k ...\n"), 
-	      (mssize * sizeof(C_word *)) / 1024, bytes / 1024);
+    if(debug_mode) 
+      C_dbg(C_text("debug"), C_text("resizing mutation-stack from " UWORD_COUNT_FORMAT_STRING "k to " UWORD_COUNT_FORMAT_STRING "k ...\n"), 
+	    (mssize * sizeof(C_word *)) / 1024, bytes / 1024);
 
-      mutation_stack_bottom = (C_word **)realloc(mutation_stack_bottom, bytes);
+    mutation_stack_bottom = (C_word **)realloc(mutation_stack_bottom, bytes);
 
-      if(mutation_stack_bottom == NULL)
-	panic(C_text("out of memory - cannot re-allocate mutation stack"));
+    if(mutation_stack_bottom == NULL)
+      panic(C_text("out of memory - cannot re-allocate mutation stack"));
 
-      mutation_stack_limit = mutation_stack_bottom + newmssize;
-      mutation_stack_top = mutation_stack_bottom + mssize;
-    }
-
-    *(mutation_stack_top++) = slot;
-    ++mutation_count;
+    mutation_stack_limit = mutation_stack_bottom + newmssize;
+    mutation_stack_top = mutation_stack_bottom + mssize;
   }
 
+  *(mutation_stack_top++) = slot;
+  ++mutation_count;
   return *slot = val;
+}
+
+
+C_regparm C_word C_fcall
+C_mutate(C_word *slot, C_word val) /* OBSOLETE */
+{
+  return C_mutate2(slot, val);
 }
 
 
@@ -3737,12 +3742,12 @@ C_word C_fetch_trace(C_word starti, C_word buffer)
       if(ptr >= trace_buffer_limit) ptr = trace_buffer;
 
       /* outside-pointer, will be ignored by GC */
-      C_mutate(&C_block_item(buffer, p++), (C_word)ptr->raw);
+      C_mutate2(&C_block_item(buffer, p++), (C_word)ptr->raw);
 
       /* subject to GC */
-      C_mutate(&C_block_item(buffer, p++), ptr->cooked1);
-      C_mutate(&C_block_item(buffer, p++), ptr->cooked2);
-      C_mutate(&C_block_item(buffer, p++), ptr->thread);
+      C_mutate2(&C_block_item(buffer, p++), ptr->cooked1);
+      C_mutate2(&C_block_item(buffer, p++), ptr->cooked2);
+      C_mutate2(&C_block_item(buffer, p++), ptr->thread);
     }
   }
 
@@ -5014,7 +5019,7 @@ C_regparm C_word C_fcall C_i_set_car(C_word x, C_word val)
   if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "set-car!", x);
 
-  C_mutate(&C_u_i_car(x), val);
+  C_mutate2(&C_u_i_car(x), val);
   return C_SCHEME_UNDEFINED;
 }
 
@@ -5024,7 +5029,7 @@ C_regparm C_word C_fcall C_i_set_cdr(C_word x, C_word val)
   if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "set-cdr!", x);
 
-  C_mutate(&C_u_i_cdr(x), val);
+  C_mutate2(&C_u_i_cdr(x), val);
   return C_SCHEME_UNDEFINED;
 }
 
@@ -5041,7 +5046,7 @@ C_regparm C_word C_fcall C_i_vector_set(C_word v, C_word i, C_word x)
 
     if(j < 0 || j >= C_header_size(v)) barf(C_OUT_OF_RANGE_ERROR, "vector-set!", v, i);
 
-    C_mutate(&C_block_item(v, j), x);
+    C_mutate2(&C_block_item(v, j), x);
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "vector-set!", i);
 
@@ -8035,10 +8040,10 @@ void C_ccall C_do_register_finalizer(C_word x, C_word proc)
   flist->next = finalizer_list;
   finalizer_list = flist;
 
-  if(C_in_stackp(x)) C_mutate(&flist->item, x);
+  if(C_in_stackp(x)) C_mutate_slot(&flist->item, x);
   else flist->item = x;
 
-  if(C_in_stackp(proc)) C_mutate(&flist->finalizer, proc);
+  if(C_in_stackp(proc)) C_mutate_slot(&flist->finalizer, proc);
   else flist->finalizer = proc;
 
   ++live_finalizer_count;
@@ -8386,7 +8391,7 @@ C_regparm C_word C_fcall C_i_locative_set(C_word loc, C_word x)
     barf(C_LOST_LOCATIVE_ERROR, "locative-set!", loc);
 
   switch(C_unfix(C_block_item(loc, 2))) {
-  case C_SLOT_LOCATIVE: C_mutate(ptr, x); break;
+  case C_SLOT_LOCATIVE: C_mutate2(ptr, x); break;
 
   case C_CHAR_LOCATIVE:
     if((x & C_IMMEDIATE_TYPE_BITS) != C_CHARACTER_BITS)
@@ -8923,7 +8928,7 @@ C_putprop(C_word **ptr, C_word sym, C_word prop, C_word val)
 
   while(pl != C_SCHEME_END_OF_LIST) {
     if(C_block_item(pl, 0) == prop) {
-      C_mutate(&C_u_i_car(C_u_i_cdr(pl)), val);
+      C_mutate2(&C_u_i_car(C_u_i_cdr(pl)), val);
       return val;
     }
     else pl = C_u_i_cdr(C_u_i_cdr(pl));
@@ -8931,7 +8936,7 @@ C_putprop(C_word **ptr, C_word sym, C_word prop, C_word val)
 
   pl = C_a_pair(ptr, val, C_block_item(sym, 2));
   pl = C_a_pair(ptr, prop, pl);
-  C_mutate(&C_block_item(sym, 2), pl);
+  C_mutate_slot(&C_block_item(sym, 2), pl);
   return val;
 }
 

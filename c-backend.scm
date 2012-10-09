@@ -139,7 +139,7 @@
 	     (gen #\)) )
 
 	    ((##core#update)
-	     (gen "C_mutate(((C_word *)")
+	     (gen "C_mutate2(((C_word *)")
 	     (expr (car subs) i)
 	     (gen ")+" (+ (first params) 1) ",")
 	     (expr (cadr subs) i) 
@@ -153,7 +153,7 @@
 	     (gen #\)) )
 
 	    ((##core#updatebox)
-	     (gen "C_mutate(((C_word *)")
+	     (gen "C_mutate2(((C_word *)")
 	     (expr (car subs) i)
 	     (gen ")+1,")
 	     (expr (cadr subs) i) 
@@ -199,8 +199,8 @@
 		   (block (second params)) 
 		   (var (third params)))
 	       (if block
-		   (gen "C_mutate(&lf[" index "]")
-		   (gen "C_mutate((C_word*)lf[" index "]+1") )
+		   (gen "C_mutate2(&lf[" index "]")
+		   (gen "C_mutate2((C_word*)lf[" index "]+1") )
 	       (gen " /* (set! " (uncommentify (##sys#symbol->qualified-string var)) " ...) */,")
 	       (expr (car subs) i)
 	       (gen #\)) ) )

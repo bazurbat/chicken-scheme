@@ -772,10 +772,10 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 /* Macros: */
 
 #define CHICKEN_gc_root_ref(root)      (((C_GC_ROOT *)(root))->value)
-#define CHICKEN_gc_root_set(root, x)   C_mutate(&((C_GC_ROOT *)(root))->value, (x))
+#define CHICKEN_gc_root_set(root, x)   C_mutate2(&((C_GC_ROOT *)(root))->value, (x))
 
 #define CHICKEN_global_ref(root)       C_u_i_car(((C_GC_ROOT *)(root))->value)
-#define CHICKEN_global_set(root, x)    C_mutate(&C_u_i_car(((C_GC_ROOT *)(root))->value), (x))
+#define CHICKEN_global_set(root, x)    C_mutate2(&C_u_i_car(((C_GC_ROOT *)(root))->value), (x))
 
 #define CHICKEN_default_toplevel       ((void *)C_default_5fstub_toplevel)
 
@@ -1240,10 +1240,10 @@ extern double trunc(double);
 #define C_a_double_to_num(ptr, n)       C_double_to_number(C_flonum(ptr, n))
 #define C_a_i_vector                    C_vector
 #define C_list                          C_a_i_list
-#define C_i_setslot(x, i, y)            (C_mutate(&C_block_item(x, C_unfix(i)), y), C_SCHEME_UNDEFINED)
+#define C_i_setslot(x, i, y)            (C_mutate2(&C_block_item(x, C_unfix(i)), y), C_SCHEME_UNDEFINED)
 #define C_i_set_i_slot(x, i, y)         (C_set_block_item(x, C_unfix(i), y), C_SCHEME_UNDEFINED)
-#define C_u_i_set_car(p, x)             (C_mutate(&C_u_i_car(p), x), C_SCHEME_UNDEFINED)
-#define C_u_i_set_cdr(p, x)             (C_mutate(&C_u_i_cdr(p), x), C_SCHEME_UNDEFINED)
+#define C_u_i_set_car(p, x)             (C_mutate2(&C_u_i_car(p), x), C_SCHEME_UNDEFINED)
+#define C_u_i_set_cdr(p, x)             (C_mutate2(&C_u_i_cdr(p), x), C_SCHEME_UNDEFINED)
 #define C_a_i_putprop(p, c, x, y, z)    C_putprop(p, x, y, z)
 
 #define C_i_not(x)                      (C_truep(x) ? C_SCHEME_FALSE : C_SCHEME_TRUE)
@@ -1627,6 +1627,7 @@ C_fctexport C_word C_fcall C_taggedmpointer_or_false(C_word **ptr, C_word tag, v
 C_fctexport C_word C_fcall C_swigmpointer(C_word **ptr, void *mp, void *sdata) C_regparm;
 C_fctexport C_word C_vector(C_word **ptr, int n, ...);
 C_fctexport C_word C_structure(C_word **ptr, int n, ...);
+C_fctexport C_word C_fcall C_mutate_slot(C_word *slot, C_word val) C_regparm;
 C_fctexport C_word C_fcall C_mutate(C_word *slot, C_word val) C_regparm;
 C_fctexport void C_fcall C_reclaim(void *trampoline, void *proc) C_regparm C_noret;
 C_fctexport void C_save_and_reclaim(void *trampoline, void *proc, int n, ...) C_noret;
@@ -1906,6 +1907,14 @@ C_fctexport void C_default_5fstub_toplevel(C_word c,C_word d,C_word k) C_noret;
 
 
 /* Inline functions: */
+
+C_inline C_word 
+C_mutate2(C_word *slot, C_word val)
+{
+  if(!C_immediatep(val)) return C_mutate_slot(slot, val);
+  else return *slot = val;
+}
+
 
 C_inline C_word C_permanentp(C_word x)
 {
