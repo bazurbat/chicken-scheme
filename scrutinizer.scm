@@ -447,6 +447,19 @@
 		(make-list argc '*)))
 	  (make-list argc '*)))
 
+    (define (reduce-typeset t pt typeenv)
+      (and-let* ((tnew
+		  (let rec ((t t))
+		    (and (pair? t)
+			 (case (car t)
+			   ((forall) 
+			    (and-let* ((t2 (rec (third t))))
+			      `(forall ,(second t) ,t2)))
+			   ((or) 
+			    `(or ,@(remove (cut match-types <> pt typeenv) (cdr t))))
+			   (else #f))))))
+	(simplify-type tnew)))
+
     (define (walk n e loc dest tail flow ctags) ; returns result specifier
       (let ((subs (node-subexpressions n))
 	    (params (node-parameters n)) 
@@ -717,12 +730,25 @@
 						    (not (get db var 'assigned)) 
 						    (not oparg?))))
 				    (cond (pred
+					   ;;XXX is this needed? "typeenv" is the te of "args",
+					   ;;    not of "pt":
 					   (let ((pt (resolve pt typeenv)))
 					     (d "  predicate `~a' indicates `~a' is ~a in flow ~a"
 						pn var pt (car ctags))
 					     (add-to-blist 
 					      var (car ctags)
-					      (if (and a (type<=? (cdr a) pt)) (cdr a) pt))))
+					      (if (and a (type<=? (cdr a) pt)) (cdr a) pt))
+					     ;; if the variable type is an "or"-type, we can
+					     ;; can remove all elements that match the predicate
+					     ;; type
+					     (when a
+					       ;;XXX hack, again:
+					       (let* ((tenv2 (type-typeenv `(or ,(cdr a) ,pt)))
+						      (at (reduce-typeset (cdr a) pt tenv2)))
+						 (when at
+						   (d "  predicate `~a' indicates `~a' is ~a in flow ~a"
+						      pn var at (cdr ctags))
+						   (add-to-blist var (cdr ctags) at))))))
 					  (a
 					   (when enforces
 					     (let ((ar (cond ((blist-type var flow) =>
