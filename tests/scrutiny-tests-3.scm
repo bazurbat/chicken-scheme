@@ -23,6 +23,13 @@
       (compiler-typecase x
 	(string 2))))
 
+(let ((x (the (or string number) something)))
+  (if (fixnum? x)
+      (compiler-typecase x
+	(fixnum 1))
+      (compiler-typecase x
+	((or string number) 2))))
+
 (let ((x (the (forall ((a string) (b number)) (or a b)) something)))
   (if (number? x)
       (compiler-typecase x

@@ -456,7 +456,7 @@
 			    (and-let* ((t2 (rec (third t))))
 			      `(forall ,(second t) ,t2)))
 			   ((or) 
-			    `(or ,@(remove (cut match-types <> pt typeenv) (cdr t))))
+			    `(or ,@(remove (cut match-types <> pt typeenv #t) (cdr t))))
 			   (else #f))))))
 	(simplify-type tnew)))
 
