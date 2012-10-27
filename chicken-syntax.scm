@@ -35,9 +35,7 @@
   (no-bound-checks)
   (no-procedure-checks))
 
-(##sys#provide
- 'chicken-more-macros 			; historical, remove later
- 'chicken-syntax)
+(##sys#provide 'chicken-syntax)
 
 
 ;;; Non-standard macros:

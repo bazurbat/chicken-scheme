@@ -26,7 +26,8 @@
 
 
 (declare
-  (uses chicken-syntax ports extras)
+  (uses chicken-syntax)	; OBSOLETE (but left to allow older chicken's to bootstrap)
+  (uses ports extras)
   (usual-integrations)
   (disable-interrupts)
   (compile-syntax)

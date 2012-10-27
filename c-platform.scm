@@ -64,7 +64,7 @@
      (bound-to-procedure
        ##sys#profile-entry ##sys#profile-exit) ) ) )
 
-(define units-used-by-default '(library eval)) 
+(define units-used-by-default '(library eval chicken-syntax)) 
 (define words-per-flonum 4)
 (define parameter-limit 1024)
 (define small-parameter-limit 128)

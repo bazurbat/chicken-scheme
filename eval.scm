@@ -70,6 +70,7 @@
 
 (define default-dynamic-load-libraries
   `(,(string-append "lib" install-lib-name)))
+
 (define-constant cygwin-default-dynamic-load-libraries '("cygchicken-0"))
 (define-constant macosx-load-library-extension ".dylib")
 (define-constant windows-load-library-extension ".dll")
