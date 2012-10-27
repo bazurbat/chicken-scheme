@@ -90,7 +90,7 @@
 	(uunit (memq 'unit options))
 	(a-only (memq 'analyze-only options))
 	(dynamic (memq 'dynamic options))
-	(do-scrutinize (memq 'scrutinize options))
+	(do-scrutinize #t)
 	(do-lfa2 (memq 'lfa2 options))
 	(dumpnodes #f)
 	(start-time #f)
@@ -191,8 +191,7 @@
 	       (not a-only))
       (set! all-import-libraries #t))
     (set! enable-module-registration (not (memq 'no-module-registration options)))
-    (when (or enable-specialization
-	      (memq 'scrutinize options))
+    (when enable-specialization
       (set! do-scrutinize #t))
     (when (memq 't debugging-chicken) (##sys#start-timer))
     (when (memq 'b debugging-chicken) (set! time-breakdown #t))
@@ -219,8 +218,7 @@
       (set! ##sys#notices-enabled #t))
     (when (memq 'strict-types options)
       (set! strict-variable-types #t)
-      (set! enable-specialization #t)
-      (set! do-scrutinize #t))
+      (set! enable-specialization #t))
     (when (memq 'no-warnings options) 
       (dribble "Warnings are disabled")
       (set! ##sys#warnings-enabled #f) 
@@ -345,9 +343,11 @@
     (set! disable-stack-overflow-checking (memq 'disable-stack-overflow-checks options))
     (set! bootstrap-mode (feature? #:chicken-bootstrap))
     (when (memq 'm debugging-chicken) (set-gc-report! #t))
-    (unless (memq 'no-usual-integrations options)
-      (set! standard-bindings default-standard-bindings)
-      (set! extended-bindings default-extended-bindings) )
+    (cond ((memq 'no-usual-integrations options)
+	   (set! do-scrutinize #f))
+	  (else
+	   (set! standard-bindings default-standard-bindings)
+	   (set! extended-bindings default-extended-bindings) ))
     (dribble "debugging info: ~A"
 	     (if emit-trace-info
 		 "calltrace"

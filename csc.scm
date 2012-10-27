@@ -138,7 +138,8 @@
     -block -disable-interrupts -fixnum-arithmetic -to-stdout -profile -raw -accumulate-profile
     -check-syntax -case-insensitive -shared -compile-syntax -no-lambda-info
     -dynamic -disable-stack-overflow-checks -local
-    -emit-external-prototypes-first -inline -release -scrutinize
+    -emit-external-prototypes-first -inline -release 
+    -scrutinize				; OBSOLETE
     -analyze-only -keep-shadowed-macros -inline-global -ignore-repository
     -no-symbol-escape -no-parentheses-synonyms -r5rs-syntax
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
@@ -160,7 +161,7 @@
 (define-constant shortcuts
   '((-h "-help")
     (-s "-shared")
-    (-S "-scrutinize")
+    (-S "-scrutinize")			; OBSOLETE
     (-M "-module")
     (|-P| "-check-syntax")
     (-f "-fixnum-arithmetic")
@@ -368,7 +369,6 @@ Usage: #{csc} FILENAME | OPTION ...
                                     append mode
     -profile-name FILENAME         name of the generated profile information
                                     file
-    -S  -scrutinize                perform local flow analysis
     -types FILENAME                load additional type database
 
   Optimization options:

@@ -87,7 +87,9 @@
     compile-syntax tag-pointers accumulate-profile
     disable-stack-overflow-checks raw specialize
     emit-external-prototypes-first release local inline-global
-    analyze-only dynamic scrutinize no-argc-checks no-procedure-checks
+    analyze-only dynamic 
+    scrutinize 				; OBSOLETE
+    no-argc-checks no-procedure-checks
     no-procedure-checks-for-toplevel-bindings module
     no-bound-checks no-procedure-checks-for-usual-bindings no-compiler-syntax
     no-parentheses-synonyms no-symbol-escape r5rs-syntax emit-all-import-libraries

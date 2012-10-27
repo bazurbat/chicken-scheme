@@ -151,9 +151,7 @@ the source text should be read from standard input.
 
 ; -setup-mode : When locating extension, search the current directory first. By default, extensions are located first in the ''extension repository'', where {{chicken-install}} stores compiled extensions and their associated metadata.
 
-; -scrutinize : Enable simple flow-analysis to catch common type errors and argument/result mismatches. You can also use the {{scrutinize}} declaration to enable scrutiny.
-
-; -specialize : Enable simple flow-analysis for doing some type-directed optimizations. Implies {{-scrutinize}}.
+; -specialize : Enable simple flow-analysis for doing some type-directed optimizations.
 
 ; -strict-types : Assume that the type of variables is not changed by assignments. This gives more type-information during specialization, but violating this assumption will result in unsafe and incorrectly behaving code.
 
