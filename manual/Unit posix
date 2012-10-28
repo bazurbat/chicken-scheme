@@ -649,12 +649,15 @@ of the {{PATH}} environment variable while {{execve(3)}} does not.
 
 ==== process-fork
 
-<procedure>(process-fork [THUNK])</procedure>
+<procedure>(process-fork [THUNK [KILLOTHERS?]])</procedure>
 
 Creates a new child process with the UNIX system call
 {{fork()}}. Returns either the PID of the child process or 0. If
 {{THUNK}} is given, then the child process calls it as a procedure
-with no arguments and terminates.
+with no arguments and terminates. If {{THUNK}} is given and the
+optional argument {{KILLOTHERS?}} is true, then kill all other
+existing threads in the child process, leaving only the current thread
+to run {{THUNK}} and terminate.
 
 ==== process-run
 

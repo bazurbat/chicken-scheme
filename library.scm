@@ -4382,7 +4382,9 @@ EOF
    '()					; #12 recipients
    #f) )				; #13 unblocked by timeout?
 
-(define ##sys#primordial-thread (##sys#make-thread #f 'running 'primordial ##sys#default-thread-quantum))
+(define ##sys#primordial-thread
+  (##sys#make-thread #f 'running 'primordial ##sys#default-thread-quantum))
+
 (define ##sys#current-thread ##sys#primordial-thread)
 
 (define (##sys#make-mutex id owner)
@@ -4403,6 +4405,9 @@ EOF
      (let ((ct ##sys#current-thread))
        (##sys#setslot ct 1 (lambda () (return (##core#undefined))))
        (##sys#schedule) ) ) ) )
+
+(define (##sys#kill-other-threads thunk)
+  (thunk))	     ; does nothing, will be modified by scheduler.scm
 
 
 ;;; Interrupt-handling:

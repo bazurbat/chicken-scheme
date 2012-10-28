@@ -1767,14 +1767,19 @@ EOF
 ;;; Process handling:
 
 (define process-fork
-  (let ([fork (foreign-lambda int "C_fork")])
-    (lambda thunk
-      (let ([pid (fork)])
-      (cond [(fx= -1 pid) (posix-error #:process-error 'process-fork "cannot create child process")]
-            [(and (pair? thunk) (fx= pid 0))
-             ((car thunk))
-             ((foreign-lambda void "_exit" int) 0) ]
-            [else pid] ) ) ) ) )
+  (let ((fork (foreign-lambda int "C_fork")))
+    (lambda (#!optional thunk killothers)
+      (let ((pid (fork)))
+	(when (fx= -1 pid) 
+	  (posix-error #:process-error 'process-fork "cannot create child process"))
+	(if (and thunk (zero? pid))
+	    ((if killothers
+		 ##sys#kill-other-threads
+		 (lambda (thunk) (thunk)))
+	     (lambda ()
+	       (thunk)
+	       ((foreign-lambda void "_exit" int) 0) ))
+	    pid)))))
 
 (define process-execute
   ;; NOTE: We use c-string here instead of scheme-object.

@@ -527,3 +527,30 @@ EOF
     (##sys#remove-from-timeout-list t)
     (##sys#clear-i/o-state-for-thread! t)
     (##sys#thread-basic-unblock! t) ) )
+
+
+;;; Kill all threads in fd-, io- and timeout-lists and assign one thread as the
+;   new primordial one. Overrides "##sys#kill-all-threads" in library.scm.
+
+(set! ##sys#kill-other-threads 
+  (let ((exit exit))
+    (lambda (thunk)
+      (let ((primordial ##sys#current-thread))
+	(define (suspend t)
+	  (unless (eq? t primordial)
+	    (##sys#setslot t 3 'suspended))
+	  (##sys#setslot t 11 #f)      ; block-object (may be thread)
+	  (##sys#setslot t 12 '()))    ; recipients (waiting for join)
+	(set! ##sys#primordial-thread primordial)
+	(set! ready-queue-head (list primordial))
+	(set! ready-queue-tail ready-queue-head)
+	(suspend primordial)	     ; clear block-obj. and recipients
+	(for-each
+	 (lambda (a) (suspend (cdr a)))
+	 ##sys#timeout-list)
+	(set! ##sys#timeout-list '())
+	(for-each
+	 (lambda (a) (suspend (cdr a)))
+	 ##sys#fd-list)
+	(thunk)
+	(exit)))))
