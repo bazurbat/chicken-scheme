@@ -3065,9 +3065,13 @@ EOF
 	     (unless (##sys#slot crt slot)
 	       (##sys#setslot crt slot (##sys#make-vector 256 #f)) )
 	     (##sys#check-char chr loc)
-	     (let ([i (char->integer chr)])
+	     (let ((i (char->integer chr)))
 	       (##sys#check-range i 0 256 loc)
-	       (##sys#setslot (##sys#slot crt slot) i (wrap proc)) ) ) ) ) )
+              (cond (proc
+                     (##sys#check-closure proc loc)
+                     (##sys#setslot (##sys#slot crt slot) i (wrap proc)))
+                    (else
+                     (##sys#setslot (##sys#slot crt slot) i #f))))))))
  
   (set! set-read-syntax!
     (syntax-setter

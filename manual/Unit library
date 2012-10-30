@@ -1224,6 +1224,8 @@ To disable built-in read-syntax, define a handler that triggers an error (for ex
 Similar to {{set-read-syntax!}}, but allows defining new {{#<CHAR> ...}} reader syntax.
 If the first argument is a symbol, then this procedure is equivalent to {{set-read-syntax!}}.
 
+{{PROC}} may be {{#f}} to disable previously defined "sharp" read syntax.
+
 
 ==== set-parameterized-read-syntax!
 
@@ -1234,6 +1236,8 @@ form {{#<NUMBER><CHAR> ...}}. The handler procedure {{PROC}} will be called with
 arguments: the input port and the number preceding
 the dispatching character.
 If the first argument is a symbol, then this procedure is equivalent to {{set-read-syntax!}}.
+
+{{PROC}} may be {{#f}} to disable previously defined parameterized read syntax.
 
 
 ==== copy-read-table
