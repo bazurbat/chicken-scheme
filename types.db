@@ -1034,13 +1034,22 @@
 (set-gc-report! (#(procedure #:clean) set-gc-report! (*) undefined))
 
 (set-parameterized-read-syntax!
- (#(procedure #:clean #:enforce) set-parameterized-read-syntax! (char (procedure (input-port fixnum) . *)) undefined))
+ (#(procedure #:clean #:enforce) set-parameterized-read-syntax!
+  (char (or boolean (procedure (input-port fixnum) . *)))
+  undefined))
 
 (set-port-name! (#(procedure #:clean #:enforce) set-port-name! (port string) undefined)
 		((port string) (##sys#setslot #(1) '3 #(2))))
 
-(set-read-syntax! (#(procedure #:clean #:enforce) set-read-syntax! (char (procedure (input-port) . *)) undefined))
-(set-sharp-read-syntax! (#(procedure #:clean #:enforce) set-sharp-read-syntax! (char (procedure (input-port) . *)) undefined))
+(set-read-syntax!
+ (#(procedure #:clean #:enforce) set-read-syntax!
+  (char (or boolean (procedure (input-port) . *)))
+  undefined))
+
+(set-sharp-read-syntax!
+ (#(procedure #:clean #:enforce) set-sharp-read-syntax!
+  (char (or boolean (procedure (input-port) . *))) undefined))
+
 (setter (#(procedure #:clean #:enforce) setter (procedure) procedure))
 (signal (procedure signal (*) . *))
 (signum (#(procedure #:clean #:enforce) signum (number) number))
