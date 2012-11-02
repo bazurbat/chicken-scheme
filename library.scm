@@ -29,7 +29,7 @@
   (unit library)
   (uses build-version)
   (disable-interrupts)
-  (hide ##sys#dynamic-unwind ##sys#find-symbol
+  (hide ##sys#dynamic-unwind
 	##sys#grow-vector ##sys#default-parameter-vector 
 	current-print-length setter-tag read-marks
 	##sys#print-exit
