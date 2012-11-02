@@ -412,6 +412,7 @@ static C_TLS int
   gc_count_1,
   gc_count_1_total,
   gc_count_2,
+  weak_table_randomization,
   interrupt_reason,
   stack_size_changed,
   dlopen_flags,
@@ -649,7 +650,9 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 
   /* Allocate weak item table: */
   if(C_enable_gcweak) {
-    if((weak_item_table = (WEAK_TABLE_ENTRY *)C_calloc(WEAK_TABLE_SIZE, sizeof(WEAK_TABLE_ENTRY))) == NULL)
+    weak_item_table = (WEAK_TABLE_ENTRY *)C_calloc(WEAK_TABLE_SIZE, sizeof(WEAK_TABLE_ENTRY));
+
+    if(weak_item_table == NULL)
       return 0;
   }
 
@@ -2769,6 +2772,9 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
   gc_mode = GC_MINOR;
   start = C_fromspace_top;
 
+  if(C_enable_gcweak) 
+    weak_table_randomization = rand();
+
   /* Entry point for second-level GC (on explicit request or because of full fromspace): */
 #ifdef HAVE_SIGSETJMP
   if(C_sigsetjmp(gc_restart, 0) || start >= C_fromspace_limit) {
@@ -3148,7 +3154,9 @@ C_regparm void C_fcall really_mark(C_word *x)
   }
   else { /* (major GC) */
     /* Increase counter (saturated at 2) if weakly held item (someone pointed to this object): */
-    if(C_enable_gcweak && (wep = lookup_weak_table_entry(val, 0)) != NULL) {
+    if(C_enable_gcweak &&
+       (h & C_HEADER_TYPE_BITS) == C_SYMBOL_TYPE &&
+       (wep = lookup_weak_table_entry(val, 0)) != NULL) {
       if((wep->container & WEAK_COUNTER_MAX) == 0) ++wep->container;
     }
 
@@ -3328,12 +3336,12 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
     remark(&flist->finalizer);
   }
 
-  /* Mark weakly held items: */
+  /* Clear weakly held items: */
   if(C_enable_gcweak) {
     wep = weak_item_table; 
 
     for(i = 0; i < WEAK_TABLE_SIZE; ++i, ++wep)
-      if(wep->item != 0) remark(&wep->item);
+      wep->item = wep->container = 0;
   }
 
   /* Mark trace-buffer: */
@@ -3608,7 +3616,7 @@ C_regparm WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word 
   WEAK_TABLE_ENTRY *wep;
 
   for(n = 0; n < WEAK_HASH_ITERATIONS; ++n) {
-    key = (key + disp) % WEAK_TABLE_SIZE;
+    key = (key + disp + weak_table_randomization) % WEAK_TABLE_SIZE;
     wep = &weak_item_table[ key ];
 
     if(wep->item == 0) {
