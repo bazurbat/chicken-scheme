@@ -1726,7 +1726,7 @@
 (process-execute
  (#(procedure #:clean #:enforce) process-execute (string #!optional (list-of string) (list-of string)) noreturn))
 
-(process-fork (#(procedure #:enforce) process-fork (#!optional (procedure () . *) *) fixnum))
+(process-fork (#(procedure #:enforce) process-fork (#!optional (or (procedure () . *) boolean) *) fixnum))
 
 (process-group-id (#(procedure #:clean #:enforce) process-group-id () fixnum))
 (process-run (#(procedure #:clean #:enforce) process-run (string #!optional (list-of string)) fixnum))
