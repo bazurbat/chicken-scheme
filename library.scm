@@ -341,8 +341,15 @@ EOF
 
 (define (##sys#force promise)
   (if (##sys#structure? promise 'promise)
-      ((##sys#slot promise 1))
-      promise) )
+      (apply ##sys#values
+             (or (##sys#slot promise 2)
+                 (let ((results (##sys#call-with-values (##sys#slot promise 1) (lambda xs xs))))
+                   (or (##sys#slot promise 2)
+                       (begin
+                         (##sys#setslot promise 1 #f)
+                         (##sys#setslot promise 2 results)
+                         results)))))
+      promise))
 
 (define force ##sys#force)
 
@@ -4708,22 +4715,7 @@ EOF
 ;;; Promises:
 
 (define (##sys#make-promise proc)
-  (let ([result-ready #f]
-	[results #f] )
-    (##sys#make-structure
-     'promise
-     (lambda ()
-       (if result-ready
-	   (apply ##sys#values results)
-	   (##sys#call-with-values 
-	    proc
-	    (lambda xs
-	      (if result-ready
-		  (apply ##sys#values results)
-		  (begin
-		    (set! result-ready #t)
-		    (set! results xs)
-		    (apply ##sys#values results) ) ) ) ) ) ) ) ) )
+  (##sys#make-structure 'promise proc #f))
 
 (define (promise? x)
   (##sys#structure? x 'promise) )
