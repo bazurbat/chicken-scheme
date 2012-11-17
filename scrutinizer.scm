@@ -1912,7 +1912,8 @@
 			   `(forall ,(second type) ,(wrap (third type))))
 			  (else type))
 			type))
-		  specs)))))
+		  specs))
+	     (newline))))
        db)
       (print "; END OF FILE"))))
 
