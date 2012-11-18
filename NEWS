@@ -1,5 +1,9 @@
 4.8.1
 
+- Security fixes
+  - Use POSIX poll() on systems where available.  This avoids a design flaw
+    in select(); it supports no more than FD_SETSIZE descriptors.
+
 - Core libraries
   - Fixed EINTR handling in process-wait and when reading from file ports.
 
