@@ -74,7 +74,7 @@
 (define elf
   (memq (software-version) '(linux netbsd freebsd solaris openbsd)))
 
-(define (quit msg . args)
+(define (stop msg . args)
   (fprintf (current-error-port) "~a: ~?~%" CSC_PROGRAM msg args)
   (exit 64) )
 
@@ -511,7 +511,7 @@ EOF
 
   (define (check o r . n)
     (unless (>= (length r) (optional n 1))
-      (quit "not enough arguments to option `~A'" o) ) )
+      (stop "not enough arguments to option `~A'" o) ) )
 
   (define (shared-build lib)
     (set! translate-options (cons* "-feature" "chicken-compile-shared" translate-options))
@@ -543,7 +543,7 @@ EOF
 	   (cond [(null? scheme-files)
 		  (when (and (null? c-files) 
 			     (null? object-files))
-		    (quit "no source files specified") )
+		    (stop "no source files specified") )
 		  (let ((f0 (last (if (null? c-files) object-files c-files))))
 		    (unless target-filename
 		      (set! target-filename 
@@ -768,8 +768,8 @@ EOF
  				(if (null? (lset-difference char=? opts short-options))
  				    (set! rest
  				      (append (map (lambda (o) (string-append "-" (string o))) opts) rest) )
- 				    (quit "invalid option `~A'" arg) ) ) ]
-			     [else (quit "invalid option `~A'" s)] ) ]
+ 				    (stop "invalid option `~A'" arg) ) ) ]
+			     [else (stop "invalid option `~A'" s)] ) ]
 		      [(file-exists? arg)
 		       (let-values ([(dirs name ext) (decompose-pathname arg)])
 			 (cond [(not ext)
@@ -793,7 +793,7 @@ EOF
 		       (let ([f2 (string-append arg ".scm")])
 			 (if (file-exists? f2)
 			     (set! rest (cons f2 rest))
-			     (quit "file `~A' does not exist" arg) ) ) ] ) ] )
+			     (stop "file `~A' does not exist" arg) ) ) ] ) ] )
 	     (loop rest) ) ] ) ) )
 
 
@@ -802,13 +802,17 @@ EOF
 (define (run-translation)
   (for-each
    (lambda (f)
-     (let ([fc (pathname-replace-extension
-		(if (= 1 (length scheme-files))
+     (let* ((sf (if (= 1 (length scheme-files))
 		    target-filename
-		    f)
-		(cond (cpp-mode "cpp")
-		      (objc-mode "m")
-		      (else "c") ) ) ] )
+		    f))
+	    (fc (pathname-replace-extension
+		 sf
+		 (cond (cpp-mode "cpp")
+		       (objc-mode "m")
+		       (else "c") ) ) ) )
+       (when (member fc c-files)
+	 (stop "C file generated from `~a' will overwrite explicitly given source file `~a'"
+	       f fc))
        (command
 	(string-intersperse 
 	 (cons* translator (quotewrap f) 
@@ -839,7 +843,10 @@ EOF
   (let ((ofiles '()))
     (for-each
      (lambda (f)
-       (let ([fo (pathname-replace-extension f object-extension)])
+       (let ((fo (pathname-replace-extension f object-extension)))
+	 (when (member fo object-files)
+	   (stop "object file generated from `~a' will overwrite explicitly given object file `~a'"
+		 f fo))
 	 (command
 	  (string-intersperse
 	   (list (cond (cpp-mode c++-compiler)
