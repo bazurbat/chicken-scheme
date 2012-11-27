@@ -6,6 +6,7 @@
 
 - Core libraries
   - Fixed EINTR handling in process-wait and when reading from file ports.
+  - Irregex is updated to 0.9.1, which includes bugfixes and faster submatches.
 
 4.8.0
 
