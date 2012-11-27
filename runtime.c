@@ -196,6 +196,12 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 # define UWORD_COUNT_FORMAT_STRING     "%u"
 #endif
 
+#ifdef C_LLP
+# define LONG_FORMAT_STRING            "%lldf"
+#else
+# define LONG_FORMAT_STRING            "%ld"
+#endif
+
 #define GC_MINOR           0
 #define GC_MAJOR           1
 #define GC_REALLOC         2
@@ -205,7 +211,7 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 
 #define nmax(x, y)                   ((x) > (y) ? (x) : (y))
 #define nmin(x, y)                   ((x) < (y) ? (x) : (y))
-#define percentage(n, p)             ((long)(((double)(n) * (double)p) / 100))
+#define percentage(n, p)             ((C_long)(((double)(n) * (double)p) / 100))
 
 #define is_fptr(x)                   (((x) & C_GC_FORWARDING_BIT) != 0)
 #define ptr_to_fptr(x)               ((((x) >> FORWARDING_BIT_SHIFT) & 1) | C_GC_FORWARDING_BIT | ((x) & ~1))
@@ -260,6 +266,10 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 
 #define C_pte(name)                  pt[ i ].id = #name; pt[ i++ ].ptr = (void *)name;
 
+#ifndef SIGBUS
+# define SIGBUS                      0
+#endif
+
 
 /* Type definitions: */
 
@@ -313,7 +323,7 @@ C_TLS C_word
   *C_temporary_stack_bottom,
   *C_temporary_stack_limit,
   *C_stack_limit;
-C_TLS long
+C_TLS C_long
   C_timer_interrupt_counter,
   C_initial_timer_interrupt_period;
 C_TLS C_byte 
@@ -326,7 +336,7 @@ C_TLS int (*C_gc_mutation_hook)(C_word *slot, C_word val);
 C_TLS void (*C_gc_trace_hook)(C_word *var, int mode);
 C_TLS void (*C_panic_hook)(C_char *msg) = NULL;
 C_TLS void (*C_pre_gc_hook)(int mode) = NULL;
-C_TLS void (*C_post_gc_hook)(int mode, long ms) = NULL;
+C_TLS void (*C_post_gc_hook)(int mode, C_long ms) = NULL;
 C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
 
 C_TLS int
@@ -1366,7 +1376,7 @@ C_word arg_val(C_char *arg)
 {
   int len;
   C_char *end;
-  long val, mul = 1;
+  C_long val, mul = 1;
 
   if (arg == NULL) panic(C_text("illegal runtime-option argument"));
       
@@ -1387,7 +1397,7 @@ C_word arg_val(C_char *arg)
   default: mul = 1;
   }
 
-  val = strtol(arg, &end, 10);
+  val = C_strtow(arg, &end, 10);
 
   if((mul != 1 ? end[ 1 ] != '\0' : end[ 0 ] != '\0')) 
     panic(C_text("invalid runtime-option argument suffix"));
@@ -1418,7 +1428,7 @@ C_word CHICKEN_run(void *toplevel)
   stack_bottom = C_stack_pointer;
 
   if(debug_mode)
-    C_dbg(C_text("debug"), C_text("stack bottom is 0x%lx.\n"), (long)stack_bottom);
+    C_dbg(C_text("debug"), C_text("stack bottom is 0x%lx.\n"), (C_word)stack_bottom);
 
   /* The point of (usually) no return... */
 #ifdef HAVE_SIGSETJMP
@@ -1811,7 +1821,7 @@ C_regparm double C_fcall C_milliseconds(void)
 }
 
 
-C_regparm time_t C_fcall C_seconds(long *ms)
+C_regparm time_t C_fcall C_seconds(C_long *ms)
 {
 #ifdef C_NONUNIX
   if(ms != NULL) *ms = 0;
@@ -3064,7 +3074,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
   if(gc_mode == GC_MAJOR) gc_count_1 = 0;
 
-  if(C_post_gc_hook != NULL) C_post_gc_hook(gc_mode, (long)tgc);
+  if(C_post_gc_hook != NULL) C_post_gc_hook(gc_mode, (C_long)tgc);
 
   /* Unwind stack completely */
 #ifdef HAVE_SIGSETJMP
@@ -3279,10 +3289,10 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
   if(gc_report_flag) {
     C_dbg(C_text("GC"), C_text("(old) fromspace: \tstart=" UWORD_FORMAT_STRING 
 			       ", \tlimit=" UWORD_FORMAT_STRING "\n"),
-	  (long)fromspace_start, (long)C_fromspace_limit);
+	  (C_word)fromspace_start, (C_word)C_fromspace_limit);
     C_dbg(C_text("GC"), C_text("(old) tospace:   \tstart=" UWORD_FORMAT_STRING
 			       ", \tlimit=" UWORD_FORMAT_STRING "\n"),
-	  (long)tospace_start, (long)tospace_limit);
+	  (C_word)tospace_start, (C_word)tospace_limit);
   }
 
   heap_size = size;
@@ -3397,10 +3407,10 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
     C_dbg(C_text("GC"), C_text("resized heap to %d bytes\n"), heap_size);
     C_dbg(C_text("GC"), C_text("(new) fromspace: \tstart=" UWORD_FORMAT_STRING 
 			       ", \tlimit=" UWORD_FORMAT_STRING "\n"),
-	  (long)fromspace_start, (long)C_fromspace_limit);
+	  (C_word)fromspace_start, (C_word)C_fromspace_limit);
     C_dbg(C_text("GC"), C_text("(new) tospace:   \tstart=" UWORD_FORMAT_STRING
 			       ", \tlimit=" UWORD_FORMAT_STRING "\n"),
-	  (long)tospace_start, (long)tospace_limit);
+	  (C_word)tospace_start, (C_word)tospace_limit);
   }
 
   if(C_post_gc_hook != NULL) C_post_gc_hook(GC_REALLOC, 0);
@@ -4454,7 +4464,7 @@ C_regparm C_word C_fcall C_establish_signal_handler(C_word signum, C_word reason
 C_regparm C_word C_fcall C_copy_block(C_word from, C_word to)
 {
   int n = C_header_size(from);
-  long bytes;
+  C_long bytes;
 
   if(C_header_bits(from) & C_BYTEBLOCK_BIT) {
     bytes = n;
@@ -4472,7 +4482,7 @@ C_regparm C_word C_fcall C_copy_block(C_word from, C_word to)
 C_regparm C_word C_fcall C_evict_block(C_word from, C_word ptr)
 {
   int n = C_header_size(from);
-  long bytes;
+  C_long bytes;
   C_word *p = (C_word *)C_pointer_address(ptr);
 
   if(C_header_bits(from) & C_BYTEBLOCK_BIT) bytes = n;
@@ -7100,7 +7110,7 @@ void C_ccall C_gc(C_word c, C_word closure, C_word k, ...)
 {
   int f;
   C_word arg;
-  long size = 0;
+  C_long size = 0;
   va_list v;
 
   va_start(v, k);
@@ -7546,7 +7556,7 @@ static int from_n_nary(C_char *str, int base, double *r)
 
 C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word *fix, double *flo)
 {
-  unsigned long ln;
+  C_ulong ln;
   C_word n;
   C_char *eptr, *eptr2;
   double fn;
@@ -7578,9 +7588,9 @@ C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word
   if(C_strpbrk(str, "xX\0") != NULL) return 0;
 
   errno = 0;
-  n = C_strtol(str, &eptr, radix);
+  n = C_strtow(str, &eptr, radix);
   
-  if(((n == LONG_MAX || n == LONG_MIN) && errno == ERANGE) || *eptr != '\0') {
+  if(((n == C_LONG_MAX || n == C_LONG_MIN) && errno == ERANGE) || *eptr != '\0') {
     if(radix != 10)
       return from_n_nary(str, radix, flo) ? 2 : 0;
 
@@ -7659,9 +7669,9 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 
     switch(radix) {
 #ifdef C_SIXTY_FOUR
-    case 8: C_sprintf(p = buffer + 1, C_text("%lo"), num); break;
-    case 10: C_sprintf(p = buffer + 1, C_text("%ld"), num); break;
-    case 16: C_sprintf(p = buffer + 1, C_text("%lx"), num); break;
+    case 8: C_sprintf(p = buffer + 1, C_text("%llo"), num); break;
+    case 10: C_sprintf(p = buffer + 1, C_text("%lld"), num); break;
+    case 16: C_sprintf(p = buffer + 1, C_text("%llx"), num); break;
 #else
     case 8: C_sprintf(p = buffer + 1, C_text("%o"), num); break;
     case 10: C_sprintf(p = buffer + 1, C_text("%d"), num); break;
@@ -7748,8 +7758,9 @@ C_fixnum_to_string(C_word c, C_word self, C_word k, C_word num)
   C_word *a, s;
   int n;
 
+  /*XXX is this necessary? */
 #ifdef C_SIXTY_FOUR
-  C_sprintf(buffer, C_text("%ld"), C_unfix(num));
+  C_sprintf(buffer, C_text(LONG_FORMAT_STRING), C_unfix(num));
 #else
   C_sprintf(buffer, C_text("%d"), C_unfix(num));
 #endif
@@ -8779,7 +8790,11 @@ C_regparm C_word C_fcall C_i_o_fixnum_times(C_word n1, C_word n2)
   C_word x1, x2;
   C_uword x1u, x2u;
 #ifdef C_SIXTY_FOUR
+# ifdef C_LLP
+  C_uword c = 1ULL<<63ULL;
+# else
   C_uword c = 1UL<<63UL;
+# endif
 #else
   C_uword c = 1UL<<31UL;
 #endif
@@ -8804,7 +8819,7 @@ C_regparm C_word C_fcall C_i_o_fixnum_quotient(C_word n1, C_word n2)
 {
   C_word x1, x2;
 #ifdef C_SIXTY_FOUR
-  static long eight_0 = 0x8000000000000000L;
+  static C_long eight_0 = 0x8000000000000000L;
 #else
   static int eight_0 = 0x80000000;
 #endif
@@ -8891,7 +8906,7 @@ static C_regparm C_uword C_fcall decode_size(C_char **str)
 static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
 						C_word *dest)
 {
-  unsigned long bits = *((*str)++) & 0xff;
+  C_ulong bits = *((*str)++) & 0xff;
   C_word *data, *dptr, val;
   C_uword size;
 
@@ -9121,10 +9136,10 @@ C_dump_heap_state(C_word c, C_word closure, C_word k)
 }
 
 
-static unsigned long
+static C_ulong
 hdump_hash(C_word key)
 {
-  return (unsigned long)key % HDUMP_TABLE_SIZE;
+  return (C_ulong)key % HDUMP_TABLE_SIZE;
 }
 
 

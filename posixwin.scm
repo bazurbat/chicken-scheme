@@ -477,7 +477,7 @@ redir_io()
     return 1;
 }
 
-static int C_fcall
+static C_word C_fcall
 run_process(char *cmdline)
 {
     PROCESS_INFORMATION pi;
@@ -501,14 +501,14 @@ run_process(char *cmdline)
 	CloseHandle(C_rd0);
 	CloseHandle(C_wr1);
 	C_rd0 = C_wr1 = INVALID_HANDLE_VALUE;
-	return (int)pi.hProcess;
+	return (C_word)pi.hProcess;
     }
     else
 	return set_last_errno();
 }
 
-static int C_fcall
-pipe_write(int hpipe, void* buf, int count)
+static C_word C_fcall
+pipe_write(C_word hpipe, void* buf, int count)
 {
     DWORD done = 0;
     if (WriteFile((HANDLE)hpipe, buf, count, &done, NULL))
@@ -517,8 +517,8 @@ pipe_write(int hpipe, void* buf, int count)
 	return set_last_errno();
 }
 
-static int C_fcall
-pipe_read(int hpipe)
+static C_word C_fcall
+pipe_read(C_word hpipe)
 {
     DWORD done = 0;
     /* TODO:
@@ -536,7 +536,7 @@ pipe_read(int hpipe)
 }
 
 static int C_fcall
-pipe_ready(int hpipe)
+pipe_ready(C_word hpipe)
 {
     DWORD avail = 0;
     if (PeekNamedPipe((HANDLE)hpipe, NULL, 0, NULL, &avail, NULL) && avail)
@@ -561,7 +561,7 @@ pipe_ready(int hpipe)
 #define close_handle(h) CloseHandle((HANDLE)h)
 
 static int C_fcall
-process_wait(int h, int t)
+process_wait(C_word h, C_word t)
 {
     if (WaitForSingleObject((HANDLE)h, (t ? 0 : INFINITE)) == WAIT_OBJECT_0)
     {
@@ -764,7 +764,7 @@ get_netinfo()
 */
 static int C_fcall
 C_process(const char * app, const char * cmdlin, const char ** env,
-	  int * phandle,
+	  C_word * phandle,
 	  int * pstdin_fd, int * pstdout_fd, int * pstderr_fd,
 	  int params)
 {
@@ -802,7 +802,7 @@ C_process(const char * app, const char * cmdlin, const char ** env,
 		HANDLE parent_end;
 		if (modes[i]=='r') { child_io_handles[i]=a; parent_end=b; }
 		else		   { parent_end=a; child_io_handles[i]=b; }
-		success = (io_fds[i] = _open_osfhandle((long)parent_end,0)) >= 0;
+		success = (io_fds[i] = _open_osfhandle((C_word)parent_end,0)) >= 0;
 	    }
 	}
     }
@@ -875,7 +875,7 @@ C_process(const char * app, const char * cmdlin, const char ** env,
 
     if (success)
     {
-	*phandle = (int)child_process;
+	*phandle = (C_word)child_process;
 	*pstdin_fd = io_fds[0];
 	*pstdout_fd = io_fds[1];
 	*pstderr_fd = io_fds[2];

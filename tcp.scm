@@ -44,8 +44,12 @@
 # define socklen_t       int
 static WSADATA wsa;
 # define fcntl(a, b, c)  0
-# define EWOULDBLOCK     0
-# define EINPROGRESS     0
+# ifndef EWOULDBLOCK
+#  define EWOULDBLOCK     0
+# endif
+# ifndef EINPROGRESS
+#  define EINPROGRESS     0
+# endif
 # define typecorrect_getsockopt(socket, level, optname, optval, optlen)	\
     getsockopt(socket, level, optname, (char *)optval, optlen)
 #else

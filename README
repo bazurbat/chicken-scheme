@@ -236,6 +236,11 @@
 	  LLVM version of gcc and with "clang", the LLVM-based C compiler,
 	  just set C_COMPILER to "llvm-gcc" or "clang".
 
+        LINKER=
+	  Selects the linker to be used for creating executables and 
+	  dynamic libraries from compiled C code. This should normally
+	  be the same as C_COMPILER.
+
 	PROFILE_OBJECTS=
 	  This variable allows you to profile (parts of) Chicken itself.
 	  Just pass in a whitespace-separated list of objects, without
@@ -480,6 +485,14 @@
 	  - When installing under mingw without MSYS, make sure that the
 	    MSYS tools (in case you have some of them, in particular the
 	    sh.exe UNIX shell) are *NOT* visible in your PATH.
+
+	  - 64-bit Windows is supported, invoke mingw32-make with the
+	    "ARCH=x86-64" argument (this is currently not detected
+	    auto- matically). The build has been tested on Windows 7
+	    with the SJLJ binary package from "MinGW-builds", which
+	    can be found here:
+
+	    http://sourceforge.net/projects/mingwbuilds/
 
 	  - Cygwin will not be able to find the chicken shared libraries
 	    until Windows is rebooted.

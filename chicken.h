@@ -68,6 +68,8 @@
 #   define C_SIXTY_FOUR
 # elif defined(__mips64) && (!defined(__GNUC__) || _MIPS_SZPTR == 64)
 #   define C_SIXTY_FOUR
+# elif defined(__MINGW64__)
+#   define C_SIXTY_FOUR
 # endif
 #endif
 
@@ -89,6 +91,10 @@
 
 #if defined(__sun__) && defined(__svr4__)
 # define C_SOLARIS
+#endif
+
+#ifdef __MINGW64__
+# define C_LLP
 #endif
 
 
@@ -497,7 +503,11 @@ static inline int isinf_ld (long double x)
 #define C_F64_LOCATIVE            9
 
 #ifdef C_SIXTY_FOUR
-# define C_word                   long
+# ifdef C_LLP
+#  define C_word                  __int64
+# else
+#  define C_word                  long
+# endif
 # define C_u32                    uint32_t
 # define C_s32                    int32_t
 #else
@@ -519,6 +529,18 @@ static inline int isinf_ld (long double x)
 #define C_byte                    char
 #define C_uword                   unsigned C_word
 #define C_header                  C_uword
+
+#if defined(C_LLP) && defined(C_SIXTY_FOUR)
+# define C_long                   __int64
+# define C_LONG_MAX               LONG_LONG_MAX
+# define C_LONG_MIN               LONG_LONG_MIN
+#else
+# define C_long                   long
+# define C_LONG_MAX               LONG_MAX
+# define C_LONG_MIN               LONG_MIN
+#endif
+
+#define C_ulong                   unsigned C_long
 
 #ifdef __cplusplus
 # define C_text(x)                ((C_char *)(x))
@@ -833,6 +855,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_realloc                  realloc
 # define C_strdup                   strdup
 # define C_strtol                   strtol
+# define C_strtoll                  strtoll
 # define C_strtod                   strtod
 # define C_strtoul                  strtoul
 # define C_fopen                    fopen
@@ -927,6 +950,12 @@ extern double trunc(double);
 /* provide this file and define C_PROVIDE_LIBC_STUBS if you want to use
    your own libc-replacements or -wrappers */
 # include "chicken-libc-stubs.h"
+#endif
+
+#ifdef C_LLP
+# define C_strtow                  C_strtoll
+#else
+# define C_strtow                  C_strtol
 #endif
 
 #define C_id(x)                    (x)
@@ -1525,7 +1554,7 @@ C_varextern C_TLS C_word
   *C_temporary_stack,
   *C_temporary_stack_bottom,
   *C_stack_limit;
-C_varextern C_TLS long
+C_varextern C_TLS C_long
   C_timer_interrupt_counter,
   C_initial_timer_interrupt_period;
 C_varextern C_TLS C_byte
@@ -1538,7 +1567,7 @@ C_varextern C_TLS int C_gui_mode;
 
 C_varextern C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
 C_varextern C_TLS void (*C_pre_gc_hook)(int mode);
-C_varextern C_TLS void (*C_post_gc_hook)(int mode, long ms);
+C_varextern C_TLS void (*C_post_gc_hook)(int mode, C_long ms);
 C_varextern C_TLS void (*C_panic_hook)(C_char *msg);
 
 C_varextern C_TLS int
@@ -1756,7 +1785,7 @@ C_fctexport void C_ccall C_filter_heap_objects(C_word x, C_word closure, C_word 
 C_fctexport C_word *C_a_i(C_word **a, int n);
 #endif
 
-C_fctexport time_t C_fcall C_seconds(long *ms) C_regparm;
+C_fctexport time_t C_fcall C_seconds(C_long *ms) C_regparm;
 C_fctexport C_word C_a_i_list(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_string(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_record(C_word **a, int c, ...);
@@ -2052,14 +2081,14 @@ C_inline C_word C_unsigned_int_to_num(C_word **ptr, C_uword n)
 }
 
 
-C_inline C_word C_long_to_num(C_word **ptr, long n)
+C_inline C_word C_long_to_num(C_word **ptr, C_long n)
 {
   if(C_fitsinfixnump(n)) return C_fix(n);
   else return C_flonum(ptr, (double)n);
 }
 
 
-C_inline C_word C_unsigned_long_to_num(C_word **ptr, unsigned long n)
+C_inline C_word C_unsigned_long_to_num(C_word **ptr, C_ulong n)
 {
   if(C_ufitsinfixnump(n)) return C_fix(n);
   else return C_flonum(ptr, (double)n);
@@ -2118,17 +2147,17 @@ C_inline void *C_scheme_or_c_pointer(C_word x)
 }
 
 
-C_inline long C_num_to_long(C_word x)
+C_inline C_long C_num_to_long(C_word x)
 {
   if(x & C_FIXNUM_BIT) return C_unfix(x);
-  else return (long)C_flonum_magnitude(x);
+  else return (C_long)C_flonum_magnitude(x);
 }
 
 
-C_inline unsigned long C_num_to_unsigned_long(C_word x)
+C_inline C_ulong C_num_to_unsigned_long(C_word x)
 {
   if(x & C_FIXNUM_BIT) return C_unfix(x);
-  else return (unsigned long)C_flonum_magnitude(x);
+  else return (C_ulong)C_flonum_magnitude(x);
 }
 
 
