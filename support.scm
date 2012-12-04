@@ -1064,7 +1064,7 @@
 	      (if unsafe
 		  param
 		  `(##sys#foreign-unsigned-integer-argument ,param) ) ]
-	     [(unsigned-integer32)
+	     [(unsigned-integer64)
 	      (if unsafe
 		  param
 		  `(##sys#foreign-unsigned-integer64-argument ,param) ) ]
