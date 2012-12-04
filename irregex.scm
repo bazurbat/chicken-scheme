@@ -45,15 +45,12 @@
    irregex-match
    irregex-match?
    irregex-match-data?
-   irregex-match-end
    irregex-match-end-chunk
    irregex-match-end-index
    irregex-match-names
    irregex-match-num-submatches
-   irregex-match-start
    irregex-match-start-chunk
    irregex-match-start-index
-   irregex-match-string
    irregex-match-subchunk
    irregex-match-substring
    irregex-match-valid-index?
