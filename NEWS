@@ -8,6 +8,10 @@
   - Fixed EINTR handling in process-wait and when reading from file ports.
   - Irregex is updated to 0.9.2, which includes bugfixes and faster submatches.
 
+- Core tools
+  - chicken-status
+    - Added -eggs command line option to list installed eggs
+
 4.8.0
 
 - Security fixes
