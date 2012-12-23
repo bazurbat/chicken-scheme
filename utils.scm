@@ -77,7 +77,7 @@
 
 ;;; Compile and load file
 
-(define compile-file-options (make-parameter '("-S" "-O2" "-d2")))
+(define compile-file-options (make-parameter '("-O2" "-d2")))
 
 (define compile-file
   (let ((csc (foreign-value "C_CSC_PROGRAM" c-string))
