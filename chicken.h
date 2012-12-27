@@ -502,9 +502,17 @@ static inline int isinf_ld (long double x)
 #define C_F32_LOCATIVE            8
 #define C_F64_LOCATIVE            9
 
+#if defined (__MINGW32__)
+# define C_s64                    __int64
+# define C_u64                    unsigned __int64
+#else
+# define C_s64                    int64_t
+# define C_u64                    uint64_t
+#endif
+
 #ifdef C_SIXTY_FOUR
 # ifdef C_LLP
-#  define C_word                  __int64
+#  define C_word                  C_s64
 # else
 #  define C_word                  long
 # endif
@@ -516,24 +524,47 @@ static inline int isinf_ld (long double x)
 # define C_s32                    int
 #endif
 
-#if defined (__MINGW32__)
-# define C_s64                    __int64
-# define C_u64                    unsigned __int64
-#else
-# define C_s64                    int64_t
-# define C_u64                    uint64_t
-#endif
-
 #define C_char                    char
 #define C_uchar                   unsigned C_char
 #define C_byte                    char
 #define C_uword                   unsigned C_word
 #define C_header                  C_uword
 
+#if defined(__sun__) && !defined(__svr4__) 
+/* SunOS is supposed not to have stdint.h */
+# include <inttypes.h>
+#else
+# include <stdint.h>
+#endif
+
+/* if all else fails, use these:
+ #define UINT64_MAX (18446744073709551615ULL)
+ #define INT64_MAX  (9223372036854775807LL)
+ #define INT64_MIN  (-INT64_MAX - 1)
+ #define UINT32_MAX (4294967295U)
+ #define INT32_MAX  (2147483647)
+ #define INT32_MIN  (-INT32_MAX - 1)
+ #define UINT16_MAX (65535U)
+ #define INT16_MAX  (32767)
+ #define INT16_MIN  (-INT16_MAX - 1)
+ #define UINT8_MAX  (255)
+ #define INT8_MAX   (127)
+ #define INT8_MIN   (-INT8_MAX - 1)
+*/
+
+#define C_U64_MAX    UINT64_MAX
+#define C_S64_MIN    INT64_MIN
+#define C_S64_MAX    INT64_MAX
+
 #if defined(C_LLP) && defined(C_SIXTY_FOUR)
-# define C_long                   __int64
-# define C_LONG_MAX               LONG_LONG_MAX
-# define C_LONG_MIN               LONG_LONG_MIN
+# define C_long                   C_s64
+# ifndef LONG_LONG_MAX
+#  define C_LONG_MAX              LLONG_MAX
+#  define C_LONG_MIN              LLONG_MIN
+# else
+#  define C_LONG_MAX              LONG_LONG_MAX
+#  define C_LONG_MIN              LONG_LONG_MIN
+# endif
 #else
 # define C_long                   long
 # define C_LONG_MAX               LONG_MAX

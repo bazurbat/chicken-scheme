@@ -5879,10 +5879,15 @@ C_regparm C_word C_fcall C_i_foreign_integer_argumentp(C_word x)
 
 C_regparm C_word C_fcall C_i_foreign_integer64_argumentp(C_word x)
 {
-  double m;
+  double m, r;
 
-  if((x & C_FIXNUM_BIT) != 0 || (!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG))
-    return x;
+  if((x & C_FIXNUM_BIT) != 0) return x;
+  
+  if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
+    m = C_flonum_magnitude(x);
+
+    if(m >= C_S64_MIN && m <= C_S64_MAX && C_modf(m, &r) == 0.0) return x;
+  }
 
   barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, NULL, x);
   return C_SCHEME_UNDEFINED;
@@ -5891,14 +5896,14 @@ C_regparm C_word C_fcall C_i_foreign_integer64_argumentp(C_word x)
 
 C_regparm C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x)
 {
-  double m;
+  double m ,r;
 
   if((x & C_FIXNUM_BIT) != 0) return x;
 
   if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
     m = C_flonum_magnitude(x);
 
-    if(m >= 0 && m <= C_UWORD_MAX) return x;
+    if(m >= 0 && m <= C_UWORD_MAX && C_modf(m, &r) == 0.0) return x;
   }
 
   barf(C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR, NULL, x);
@@ -5908,14 +5913,14 @@ C_regparm C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x)
 
 C_regparm C_word C_fcall C_i_foreign_unsigned_integer64_argumentp(C_word x)
 {
-  double m;
+  double m, r;
 
   if((x & C_FIXNUM_BIT) != 0) return x;
 
   if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
     m = C_flonum_magnitude(x);
 
-    if(m >= 0 && m <= C_UWORD_MAX) return x;
+    if(m >= 0 && m <= C_U64_MAX && C_modf(m, &r) == 0.0) return x;
   }
 
   barf(C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR, NULL, x);
