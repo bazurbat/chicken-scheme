@@ -65,6 +65,8 @@
    make-hash-table
    number-hash
    object-uid-hash
+   recursive-hash-max-depth
+   recursive-hash-max-length
    string-hash-ci
    string-ci-hash
    string-hash
