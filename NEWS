@@ -7,10 +7,85 @@
 - Core libraries
   - Fixed EINTR handling in process-wait and when reading from file ports.
   - Irregex is updated to 0.9.2, which includes bugfixes and faster submatches.
+  - Compile-time expansions for "[sf]printf" are slightly more efficient.
+  - Removed the deprecated "always?", "never?", "shuffle" and "none?" procedures.
+  - Fixed problem "make-pathname" that returned an absolute path if given
+    a relative one without a directory argument.
+  - The implementation of promises has been made more efficient.
+  - Removed the deprecated "c-runtime", "null-pointer?" and "pointer-offset"
+    procedures.
+  - The deprecated alias "mutate-procedure" for "mutate-procedure!" has
+    been removed.
+  - On 64-bit systems the feature identifier "64bit" is registered.
+  - "process-fork" accepts an optional argument that specifies
+    wether other threads should be terminated in the child process.
+  - The "signal/bus" signal identifier was missing.
+  - Added setter-procedure for "signal-mask".
+  - Added "recursive-hash-max-length" and "recursive-hash-max-depth"
+    parameters (srfi-69).
+
+- Platform support
+  - Added support for 64-bit Windows (consult the "README" file for more
+    information).
+
+- Compiler
+  - Type-analysis ("scrutiny") is enabled by default now, unless
+    "-optimize-level 0" or "-no-usual-integrations" is given.
+  - The "-scrutinize" compiler option has been deprecated.
+  - A new leightweight flow-analysis pass ("lfa2") has been added.
+    Enable by passing the "-lfa2" option to the compiler.
+  - The deprecated options "-disable-warning", "-heap-growth", "-heap-shrinkage"
+    and "-heap-initial-size" have been removed.
+  - Removed the deprecated "constant" declaration.
+  - Removed the deprecated "-lambda-lift" and "-unboxing" compiler options.
+  - Removed the deprecated "-V" compiler option.
+  - Generated names for formal parameters of foreign functions are slightly
+    more informative.
+  - Unused references to variables that name intrinsics can be removed.
+  - In the flow-analysis pass, matching of combinations of "list"/"list-of" and 
+    "or" types with has been made more reliable.
+  - Fixed various bugs in the type database.
+
+- Syntax expander
+  - Extended syntactic definitions are now available by default in all
+    evaluated code, particularly in code evaluated at runtime in compiled 
+    applications.
+  - Removed the deprecated variant "(define-compiler-syntax (NAME . LLIST) BODY ...)"
+    of "define-compiler-syntax".
+
+- Runtime system
+  - The code generated for mutating data destructively is partially inlined
+    and thus slightly more efficient.
+  - Fixed incorrect code in the foreign argument conversion for "integer64"
+    and "unsigned-intger64".
+  - On systems that provide sigprocmask(2), segmentation violations, illegal
+    instruction signals, bus errors and floating-point exceptions are now caught 
+    and trigger normal error-processing (including a backtrace). The handling
+    of these so called "serious" signals can be disabled by passing the
+    "-:S" runtime option to executables.
+  - Reclamation of unused interned symbols (enabled with the "-:w" runtime option)
+    works much better now.
+
+- C API
+  - Removed the deprecated "__byte_vector" type.
 
 - Core tools
   - chicken-status
     - Added -eggs command line option to list installed eggs
+  - Removed the deprecated "-v" options (use "-version" instead) in various
+    core programs.
+  - The runtime linker path for compiled executables was not set correctly 
+    on FreeBSD systems.
+  - "csc" doesn't overwrite .c/.o files in case they have the same basename as
+    a Scheme source file (i.e. "csc foo.scm foo.c -o foo" works now).
+  - Removed the deprecated "make" and "make/proc" facility from the 
+    "setup-api" module; also removed the deprecated "required-extension-version"
+    and "required-chicken-version" procedures.
+
+- Build system
+  - Fixed a dependency problem that made it impossible to build the distribution
+    tarball on Windows with the mingw compiler.
+  - Increased the "binary compatibility version" to 7.
 
 4.8.0
 
