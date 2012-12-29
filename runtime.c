@@ -187,7 +187,7 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #ifdef C_SIXTY_FOUR
 # define ALIGNMENT_HOLE_MARKER         ((C_word)0xfffffffffffffffeL)
 # define FORWARDING_BIT_SHIFT          63
-# define UWORD_FORMAT_STRING           "0x%016x"
+# define UWORD_FORMAT_STRING           "0x%016lx"
 # define UWORD_COUNT_FORMAT_STRING     "%u"
 #else
 # define ALIGNMENT_HOLE_MARKER         ((C_word)0xfffffffe)
@@ -764,7 +764,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   current_module_handle = NULL;
   callback_continuation_level = 0;
   gc_ms = 0;
-  C_randomize(time(NULL));
+  (void)C_randomize(time(NULL));
   return 1;
 }
 
@@ -2432,7 +2432,7 @@ C_regparm C_word C_fcall C_bytevector(C_word **ptr, int len, C_char *str)
 {
   C_word strblock = C_string(ptr, len, str);
 
-  C_string_to_bytevector(strblock);
+  (void)C_string_to_bytevector(strblock);
   return strblock;
 }
 
@@ -3052,7 +3052,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 #endif
 
     if(gc_mode == GC_MINOR) 
-      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), (unsigned int)count);
+      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), (C_uword)count);
 
     C_fputc('\n', C_stderr);
     C_dbg("GC", C_text(" from\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING),
@@ -3284,7 +3284,7 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
 
   if(debug_mode) 
     C_dbg(C_text("debug"), C_text("resizing heap dynamically from " UWORD_COUNT_FORMAT_STRING "k to " UWORD_COUNT_FORMAT_STRING "k ...\n"), 
-	  (C_uword)heap_size / 1024, size / 1024);
+	  heap_size / 1024, size / 1024);
 
   if(gc_report_flag) {
     C_dbg(C_text("GC"), C_text("(old) fromspace: \tstart=" UWORD_FORMAT_STRING 
@@ -6361,6 +6361,8 @@ C_regparm C_word C_fcall C_2_times(C_word **ptr, C_word x, C_word y)
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "*", y);
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "*", x);
+  /* shutup compiler */
+  return C_flonum(ptr, 0.0/0.0);
 }
 
 
@@ -6437,6 +6439,8 @@ C_regparm C_word C_fcall C_2_plus(C_word **ptr, C_word x, C_word y)
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "+", y);
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "+", x);
+  /* shutup compiler */
+  return C_flonum(ptr, 0.0/0.0);
 }
 
 
@@ -6530,6 +6534,8 @@ C_regparm C_word C_fcall C_2_minus(C_word **ptr, C_word x, C_word y)
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "-", y);
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "-", x);
+  /* shutup compiler */
+  return C_flonum(ptr, 0.0/0.0);
 }
 
 
@@ -7672,9 +7678,9 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 
     switch(radix) {
 #ifdef C_SIXTY_FOUR
-    case 8: C_sprintf(p = buffer + 1, C_text("%llo"), num); break;
-    case 10: C_sprintf(p = buffer + 1, C_text("%lld"), num); break;
-    case 16: C_sprintf(p = buffer + 1, C_text("%llx"), num); break;
+    case 8: C_sprintf(p = buffer + 1, C_text("%llo"), (long long)num); break;
+    case 10: C_sprintf(p = buffer + 1, C_text("%lld"), (long long)num); break;
+    case 16: C_sprintf(p = buffer + 1, C_text("%llx"), (long long)num); break;
 #else
     case 8: C_sprintf(p = buffer + 1, C_text("%o"), num); break;
     case 10: C_sprintf(p = buffer + 1, C_text("%d"), num); break;
@@ -9278,7 +9284,7 @@ dump_heap_state_2(void *dummy)
 	  x = C_block_item(x, 1);
 	  C_fprintf(C_stderr, C_text("`%.*s'"), (int)C_header_size(x), C_c_string(x));
 	}
-	else C_fprintf(C_stderr, C_text("unknown key " UWORD_FORMAT_STRING), (unsigned int)b->key);
+	else C_fprintf(C_stderr, C_text("unknown key " UWORD_FORMAT_STRING), (C_uword)b->key);
       }
 
       C_fprintf(C_stderr, C_text("\t" UWORD_COUNT_FORMAT_STRING), b->count);
