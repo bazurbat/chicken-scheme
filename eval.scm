@@ -261,6 +261,8 @@
 			  (cond ((not var)
 				 (lambda (v)
 				   (##sys#error "unbound variable" x)))
+				((##sys#symbol-has-toplevel-binding? var)
+				 (lambda v (##sys#slot var 0)))
 				(else
 				 (lambda v (##core#inline "C_retrieve" var))))))
                       (else
