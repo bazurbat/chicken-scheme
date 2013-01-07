@@ -337,8 +337,9 @@
 			    'boolean)))))
 		 ((assoc (first params) +constructor-map+) =>
 		  (lambda (a)
-		    (let ((arg1 (first subs)))
-		      (if (and (eq? '*struct* (cadr a))
+		    (let ((arg1 (and (pair? subs) (first subs))))
+		      (if (and arg1
+			       (eq? '*struct* (cadr a))
 			       (eq? 'quote (node-class arg1)))
 			  (let ((tag (first (node-parameters arg1))))
 			    (if (symbol? tag)
