@@ -56,8 +56,10 @@
 - Runtime system
   - The code generated for mutating data destructively is partially inlined
     and thus slightly more efficient.
-  - Fixed incorrect code in the foreign argument conversion for "integer64"
-    and "unsigned-intger64".
+  - Fixed incorrect code in the foreign argument conversion for
+    "unsigned-integer64" (#955).  For unsigned-integer, integer64 and
+    unsigned-integer64, disallow floating-point numbers.  Fix behavior
+    on 32-bit systems.
   - On systems that provide sigprocmask(2), segmentation violations, illegal
     instruction signals, bus errors and floating-point exceptions are now caught 
     and trigger normal error-processing (including a backtrace). The handling
