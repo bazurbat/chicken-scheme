@@ -41,11 +41,8 @@ cp $TYPESDB test-repository/types.db
 if test -n "$MSYSTEM"; then
     CHICKEN="..\\chicken.exe"
     ASMFLAGS=-Wa,-w
-    TIME=time
     # make compiled tests use proper library on Windows
     cp ../lib*chicken*.dll .
-else 
-    TIME=/usr/bin/time
 fi
 
 
