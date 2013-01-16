@@ -433,11 +433,9 @@ to a set of exports.
 
 The general syntax of a functor definition looks like this:
 
-<enscript highlight=scheme>
-(functor (FUNCTORNAME (ARGUMENTMODULE1 EXPORTS1) ...) 
-  FUNCTOREXPORTS
-  BODY)
-</enscript>
+<syntax>(functor (FUNCTORNAME (ARGUMENTMODULE1 EXPORTS1) ...) FUNCTOREXPORTS BODY)</syntax>
+
+Defines a "functor", a parameterized module.
 
 This functor definition does not generate any code. This is done
 by ''instantiating'' the functor for specific input modules:
