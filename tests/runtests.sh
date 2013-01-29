@@ -8,9 +8,10 @@
 set -e
 TEST_DIR=`pwd`
 OS_NAME=`uname -s`
-export DYLD_LIBRARY_PATH=${TEST_DIR}/..
-export LD_LIBRARY_PATH=${TEST_DIR}/..
-export LIBRARY_PATH=${TEST_DIR}/..:${LIBRARY_PATH}
+DYLD_LIBRARY_PATH=${TEST_DIR}/..
+LD_LIBRARY_PATH=${TEST_DIR}/..
+LIBRARY_PATH=${TEST_DIR}/..:${LIBRARY_PATH}
+export DYLD_LIBRARY_PATH LD_LIBRARY_PATH LIBRARY_PATH
 
 rm -fr test-repository
 mkdir -p test-repository
