@@ -3059,7 +3059,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 	  (C_uword)fromspace_start, (C_uword)C_fromspace_top, (C_uword)C_fromspace_limit);
 
     if(gc_mode == GC_MAJOR) 
-      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), (unsigned)count);
+      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), (C_uword)count);
 
     C_fputc('\n', C_stderr);
     C_dbg("GC", C_text("   to\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING" \n"), 
@@ -8253,7 +8253,7 @@ void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word ent
 #if !defined(NO_DLOAD2) && (defined(HAVE_DLFCN_H) || defined(HAVE_DL_H) || (defined(HAVE_LOADLIBRARY) && defined(HAVE_GETPROCADDRESS)))
   /* Force minor GC: otherwise the lf may contain pointers to stack-data
      (stack allocated interned symbols, for example) */
-  C_save_and_reclaim(dload_2, NULL, 3, k, name, entry);
+  C_save_and_reclaim((void *)dload_2, NULL, 3, k, name, entry);
 #endif
 
   C_kontinue(k, C_SCHEME_FALSE);
@@ -8432,7 +8432,7 @@ void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table)
 
   *p = 0;
   C_fromspace_top = C_fromspace_limit;
-  C_save_and_reclaim(become_2, NULL, 1, k);
+  C_save_and_reclaim((void *)become_2, NULL, 1, k);
 }
 
 
@@ -8720,7 +8720,7 @@ void C_ccall C_copy_closure(C_word c, C_word closure, C_word k, C_word proc)
 {
   int n = C_header_size(proc);
 
-  if(!C_demand(n + 1)) C_save_and_reclaim(copy_closure_2, NULL, 2, proc, k);
+  if(!C_demand(n + 1)) C_save_and_reclaim((void *)copy_closure_2, NULL, 2, proc, k);
   else {
     C_save(proc);
     C_save(k);
@@ -8832,11 +8832,6 @@ C_regparm C_word C_fcall C_i_o_fixnum_times(C_word n1, C_word n2)
 C_regparm C_word C_fcall C_i_o_fixnum_quotient(C_word n1, C_word n2)
 {
   C_word x1, x2;
-#ifdef C_SIXTY_FOUR
-  static C_long eight_0 = 0x8000000000000000L;
-#else
-  static int eight_0 = 0x80000000;
-#endif
 
   if((n1 & C_FIXNUM_BIT) == 0 || (n2 & C_FIXNUM_BIT) == 0) return C_SCHEME_FALSE;
 
