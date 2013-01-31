@@ -97,9 +97,7 @@ message.
 Evaluates {{EXPRESSION}} and handles any exceptions that are covered by
 {{CLAUSE ...}}, where {{CLAUSE}} should be of the following form:
 
-<enscript highlight=scheme>
-CLAUSE = ([VARIABLE] (KIND ...) BODY ...)
-</enscript>
+  CLAUSE = ([VARIABLE] (KIND ...) BODY ...)
 
 If provided, {{VARIABLE}} will be bound to the signaled exception
 object. {{BODY ...}} is executed when the exception is a property-
@@ -177,11 +175,13 @@ invoking ''thunk''.
 
 Example:
 
- (call-with-current-continuation
-  (lambda (k)
-   (with-exception-handler (lambda (x) (k '()))
-                           (lambda () (car '())))))
- ;=> '()
+<enscript highlight=scheme>
+(call-with-current-continuation
+ (lambda (k)
+  (with-exception-handler (lambda (x) (k '()))
+                          (lambda () (car '())))))
+;=> '()
+</enscript>
 
 Note that the handler procedure must somehow return non-locally out of
 the dynamic extent of the {{with-exception-handler}} form, because
@@ -202,22 +202,24 @@ value provided to the handler.
 
 Examples:
 
- (handle-exceptions exn
-		    (begin
-		      (display "Went wrong")
-		      (newline))
-  (car '()))
- ; displays "Went wrong"
+<enscript highlight=scheme>
+(handle-exceptions exn
+		   (begin
+		     (display "Went wrong")
+		     (newline))
+ (car '()))
+; displays "Went wrong"
  
- (handle-exceptions exn 
-		    (cond
-		     ((eq? exn 'one) 1)
-		     (else (ABORT exn)))
-   (case (random-number)
-    [(0) 'zero]
-    [(1) (abort 'one)]
-    [else (abort "Something else")]))
- ;=> 'zero, 1, or (abort "Something else")
+(handle-exceptions exn 
+		   (cond
+		    ((eq? exn 'one) 1)
+		     (else (abort exn)))
+  (case (random 3)
+   [(0) 'zero]
+   [(1) (abort 'one)]
+   [else (abort "Something else")]))
+;=> 'zero, 1, or (abort "Something else")
+</enscript>
 
 === Raising Exceptions
 
@@ -226,12 +228,14 @@ Examples:
 Raises a non-continuable exception represented by ''obj''. The {{abort}}
 procedure can be implemented as follows:
 
- (define (abort obj)
-   ((current-exception-handler) obj)
-   (abort (make-property-condition
-	    'exn
-	    'message
-	    "Exception handler returned")))
+<enscript highlight=scheme>
+(define (abort obj)
+  ((current-exception-handler) obj)
+  (abort (make-property-condition
+	   'exn
+	   'message
+	   "Exception handler returned")))
+</enscript>
 
 The {{abort}} procedure does not ensure that its argument is a condition.
 If its argument is a condition, {{abort}} does not ensure that the condition
@@ -242,8 +246,10 @@ indicates a non-continuable exception.
 Raises a continuable exception represented by ''obj''. The {{signal}} procedure
 can be implemented as follows:
 
- (define (signal exn)
-  ((current-exception-handler) exn))
+<enscript highlight=scheme>
+(define (signal exn)
+ ((current-exception-handler) exn))
+</enscript>
 
 The {{signal}} procedure does not ensure that its argument is a condition.
 If its argument is a condition, {{signal}} does not ensure that the condition
@@ -312,60 +318,66 @@ properties:
 Thus, if ''exn'' is a condition representing a system exception,
 then
 
+<enscript highlight=scheme>
  ((condition-property-accessor 'exn 'message) exn)
+</enscript>
 
 extracts the error message from ''exn''. Example:
 
- (handle-exceptions exn 
-		    (begin
-		      (display "Went wrong: ")
-		      (display
-		       ((condition-property-accessor 'exn 'message) exn))
-		      (newline))
-  (car '()))
- ; displays something like "Went wrong: can't take car of nil"
+<enscript highlight=scheme>
+(handle-exceptions exn 
+		   (begin
+		     (display "Went wrong: ")
+		     (display
+		      ((condition-property-accessor 'exn 'message) exn))
+		     (newline))
+ (car '()))
+; displays something like "Went wrong: can't take car of nil"
+</enscript>
 
 === More Examples
 
- (define (try-car v)
-  (let ((orig (current-exception-handler)))
-    (with-exception-handler
-     (lambda (exn)
-       (orig (make-composite-condition
-	      (make-property-condition
-	       'not-a-pair
-	       'value
-	       v)
-	      exn)))
-     (lambda () (car v)))))
+<enscript highlight=scheme>
+(define (try-car v)
+ (let ((orig (current-exception-handler)))
+   (with-exception-handler
+    (lambda (exn)
+      (orig (make-composite-condition
+	     (make-property-condition
+	      'not-a-pair
+	      'value
+	      v)
+	     exn)))
+    (lambda () (car v)))))
  
- (try-car '(1))
- ;=> 1
+(try-car '(1))
+;=> 1
 
- (handle-exceptions exn
-		    (if ((condition-predicate 'not-a-pair) exn)
-			(begin
-			 (display "Not a pair: ")
-			 (display
-			  ((condition-property-accessor 'not-a-pair 'value) exn))
-			 (newline))
-			(ABORT exn))
-   (try-car 0))
- ; displays "Not a pair: 0"
+(handle-exceptions exn
+		   (if ((condition-predicate 'not-a-pair) exn)
+		       (begin
+			(display "Not a pair: ")
+			(display
+			 ((condition-property-accessor 'not-a-pair 'value) exn))
+			(newline))
+		       (abort exn))
+  (try-car 0))
+; displays "Not a pair: 0"
 
- (let* ((cs-key (list 'color-scheme))
-	(bg-key (list 'background))
-	(color-scheme? (condition-predicate cs-key))
-	(color-scheme-background 
-	 (condition-property-accessor cs-key bg-key))
-	(condition1 (make-property-condition cs-key bg-key 'green))
-	(condition2 (make-property-condition cs-key bg-key 'blue))
-	(condition3 (make-composite-condition condition1 condition2)))
-   (and (color-scheme? condition1)
-	(color-scheme? condition2)
-	(color-scheme? condition3)
-	(color-scheme-background condition3)))
- ; => 'green or 'blue
+(let* ((cs-key (list 'color-scheme))
+       (bg-key (list 'background))
+       (color-scheme? (condition-predicate cs-key))
+       (color-scheme-background 
+	(condition-property-accessor cs-key bg-key))
+       (condition1 (make-property-condition cs-key bg-key 'green))
+       (condition2 (make-property-condition cs-key bg-key 'blue))
+       (condition3 (make-composite-condition condition1 condition2)))
+  (and (color-scheme? condition1)
+       (color-scheme? condition2)
+       (color-scheme? condition3)
+       (color-scheme-background condition3)))
+; => 'green or 'blue
+</enscript>
 
 ----
 Previous: [[Parameters]] Next: [[Unit library]]

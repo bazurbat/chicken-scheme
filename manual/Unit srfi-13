@@ -1071,7 +1071,7 @@ use {{string-tokenize}} in contexts where more serious parsing is needed.
 ==== Filtering & deleting
 
 <procedure>(string-filter char/char-set/pred s [start end]) -> string</procedure><br>
-<procedure>(string-delete har/char-set/pred s [start end]) -> string</procedure><br>
+<procedure>(string-delete char/char-set/pred s [start end]) -> string</procedure><br>
 
 Filter the string S, retaining only those characters that satisfy / do not
 satisfy the CHAR/CHAR-SET/PRED argument. If this argument is a procedure,
