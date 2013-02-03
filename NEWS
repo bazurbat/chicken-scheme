@@ -1,3 +1,10 @@
+4.8.2
+
+- Tools
+  - csc: added "-oi"/"-ot" options as alternatives to "-emit-inline-file"
+    and "-emit-type-file", respectively; "-n" has been deprecated.
+
+
 4.8.1
 
 - Security fixes

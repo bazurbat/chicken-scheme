@@ -173,7 +173,7 @@
     (-x "-explicit-use")
     (-u "-unsafe")
     (-j "-emit-import-library")
-    (-n "-emit-inline-file")
+    (-n "-emit-inline-file")		; DEPRECATED
     (-b "-block") ) )
 
 (define short-options
@@ -388,10 +388,10 @@ Usage: #{csc} FILENAME | OPTION ...
     -inline-limit LIMIT            set inlining threshold
     -inline-global                 enable cross-module inlining
     -specialize                    perform type-based specialization of primitive calls
-    -n -emit-inline-file FILENAME  generate file with globally inlinable
+    -oi -emit-inline-file FILENAME  generate file with globally inlinable
                                     procedures (implies -inline -local)
     -consult-inline-file FILENAME  explicitly load inline file
-    -emit-type-file FILENAME       write type-declaration information into file
+    -ot  -emit-type-file FILENAME  write type-declaration information into file
     -no-argc-checks                disable argument count checks
     -no-bound-checks               disable bound variable checks
     -no-procedure-checks           disable procedure call checks
@@ -728,6 +728,14 @@ EOF
 		  (set! link-options (append link-options (list (string-append "-Wl,-R" rpath)))) )
 	  	(set! rest (cdr rest)) ]
 	       [(-host) #f]
+	       ((-oi) 
+		(check s rest)
+		(t-options "-emit-inline-file" (car rest))
+		(set! rest (cdr rest)))
+	       ((-ot) 
+		(check s rest)
+		(t-options "-emit-type-file" (car rest))
+		(set! rest (cdr rest)))
 	       [(-) 
 		(set! scheme-files (append scheme-files '("-")))
 		(unless target-filename
