@@ -3545,17 +3545,13 @@ EOF
 	      (end (if limit (fx+ pos limit) size)))
 	 (if (fx>= pos size)
 	     #!eof
-	     (##sys#scan-buffer-line
-	      buf 
-	      (if (fx> end size) size end)
-	      pos 
-	      (lambda (pos2 next)
-		(when (not (eq? pos2 next))
-		  (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1)) )
-		(let ((dest (##sys#make-string (fx- pos2 pos))))
-		  (##core#inline "C_substring_copy" buf dest pos pos2 0)
-		  (##sys#setislot p 10 next)
-		  dest) ) ) ) ) )
+	     (receive (next line)
+		 (##sys#scan-buffer-line
+		  buf (if (fx> end size) size end) pos
+		  (lambda (pos) (values #f pos #f) ) )
+	       (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1)) ; lineno
+	       (##sys#setislot p 10 next)
+	       line) ) ) )
      (lambda (p)			; read-buffered
        (let ((pos (##sys#slot p 10))
 	     (string (##sys#slot p 12))
@@ -3567,18 +3563,47 @@ EOF
 	       buffered))))
      )))
 
-; Invokes the eol handler when EOL or EOS is reached.
-(define (##sys#scan-buffer-line buf limit pos k)
-  (let loop ((pos2 pos))
-    (if (fx>= pos2 limit)
-	(k pos2 pos2)
-	(let ((c (##core#inline "C_subchar" buf pos2)))
-	  (cond ((eq? c #\newline) (k pos2 (fx+ pos2 1)))
-		((and (eq? c #\return) 
-		      (fx> limit (fx+ pos2 1))
-		      (eq? (##core#inline "C_subchar" buf (fx+ pos2 1)) #\newline) )
-		 (k pos2 (fx+ pos2 2)) )
-		(else (loop (fx+ pos2 1))) ) ) ) ) )
+;; Invokes the eos handler when EOS is reached to get more data.
+;; The eos-handler is responsible for stopping, either when EOF is hit or
+;; a user-supplied limit is reached (ie, it's indistinguishable from EOF)
+(define (##sys#scan-buffer-line buf limit start-pos eos-handler)
+  (define (copy&append buf offset pos old-line)
+    (let* ((old-line-len (##sys#size old-line))
+	   (new-line (##sys#make-string (fx+ old-line-len (fx- pos offset)))))
+      (##core#inline "C_substring_copy" old-line new-line 0 old-line-len 0)
+      (##core#inline "C_substring_copy" buf new-line offset pos old-line-len)
+      new-line))
+  (let loop ((buf buf)
+	     (offset start-pos)
+	     (pos start-pos)
+	     (limit limit)
+	     (line ""))
+    (if (fx= pos limit)
+	(let ((line (copy&append buf offset pos line)))
+	  (receive (buf offset limit) (eos-handler pos)
+	    (if buf
+		(loop buf offset offset limit line)
+		(values offset line))))
+	(let ((c (##core#inline "C_subchar" buf pos)))
+	  (cond ((eq? c #\newline)
+		 (values (fx+ pos 1) (copy&append buf offset pos line)))
+		((and (eq? c #\return)	; \r\n -> drop \r from string
+		      (fx> limit (fx+ pos 1))
+		      (eq? (##core#inline "C_subchar" buf (fx+ pos 1)) #\newline))
+		 (values (fx+ pos 2) (copy&append buf offset pos line)))
+		((and (eq? c #\return)	; Edge case (#568): \r{read}[\n|xyz]
+		      (fx= limit (fx+ pos 1)))
+		 (let ((line (copy&append buf offset pos line)))
+		   (receive (buf offset limit) (eos-handler pos)
+		     (if buf
+			 (if (eq? (##core#inline "C_subchar" buf offset) #\newline)
+			     (values (fx+ offset 1) line)
+			     ;; "Restore" \r we didn't copy, loop w/ new string
+			     (loop buf offset offset limit
+				   (##sys#string-append line "\r")))
+			 ;; Restore \r here, too (when we reached EOF)
+			 (values offset (##sys#string-append line "\r"))))))
+		(else (loop buf offset (fx+ pos 1) limit line)) ) ) ) ) )
 
 (define (open-input-string string)
   (##sys#check-string string 'open-input-string)

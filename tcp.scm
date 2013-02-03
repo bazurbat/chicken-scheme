@@ -429,34 +429,30 @@ EOF
 			      m
 			      (loop n m start) ) ) ) ) )
 	       (lambda (p limit)	; read-line
-		 (let loop ((str #f)
-			    (limit (or limit (##sys#fudge 21))))
-		   (cond ((fx< bufindex buflen)
-			  (##sys#scan-buffer-line
-			   buf 
-			   (fxmin buflen limit)
-			   bufindex
-			   (lambda (pos2 next)
-			     (let* ((len (fx- pos2 bufindex))
-				    (dest (##sys#make-string len)))
-			       (##core#inline "C_substring_copy" buf dest bufindex pos2 0)
-			       (set! bufindex next)
-			       (cond ((eq? pos2 limit) ; no line-terminator, hit limit
-				      (if str (##sys#string-append str dest) dest))
-				     ((eq? pos2 next) ; no line-terminator, hit buflen
-				      (read-input)
-				      (if (fx>= bufindex buflen)
-					  (or str "")
-					  (loop (if str (##sys#string-append str dest) dest)
-						(fx- limit len)) ) )
-				     (else 
-				      (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1))
-				      (if str (##sys#string-append str dest) dest)) ) ) ) ) )
-			 (else
-			  (read-input)
-			  (if (fx< bufindex buflen)
-			      (loop str limit)
-			      #!eof) ) ) ) )
+		 (when (fx>= bufindex buflen)
+		   (read-input))
+		 (if (fx>= bufindex buflen)
+		     #!eof
+		     (let ((limit (or limit (##sys#fudge 21))))
+		       (receive (next line)
+			   (##sys#scan-buffer-line
+			    buf
+                            (fxmin buflen (fx+ bufindex limit))
+                            bufindex
+			    (lambda (pos)
+			      (let ((nbytes (fx- pos bufindex)))
+				(cond ((fx>= nbytes limit)
+				       (values #f pos #f))
+				      (else (read-input)
+					    (set! limit (fx- limit nbytes))
+					    (if (fx< bufindex buflen)
+						(values buf bufindex
+							(fxmin buflen
+                                                               (fx+ bufindex limit)))
+						(values #f bufindex #f))))) ) )
+			 (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1)) ; lineno
+			 (set! bufindex next)
+			 line) )) )
 	       (lambda (p)		; read-buffered
 		 (if (fx>= bufindex buflen)
 		     ""

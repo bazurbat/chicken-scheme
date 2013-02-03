@@ -1384,40 +1384,31 @@ EOF
                                   m
                                   (loop n m start) ) ] ) ) )
 		   (lambda (port limit)	; read-line
-		     (let loop ([str #f])
-		       (let ([bumper
-			      (lambda (cur ptr)
-				(let* ([cnt (fx- cur bufpos)]
-				       [dest
-					(if (eq? 0 cnt)
-					    (or str "")
-					    (let ([dest (##sys#make-string cnt)])
-					      (##core#inline "C_substring_copy"
-							     buf dest bufpos cur 0)
-					      (##sys#setislot port 5
-							      (fx+ (##sys#slot port 5) cnt))
-					      (if str
-						  (##sys#string-append str dest)
-						  dest ) ) ) ] )
-				  (set! bufpos ptr)
-				  (cond [(eq? cur ptr) ; no EOL encountered
-                                         (fetch)
-                                         (values dest (fx< bufpos buflen)) ]
-                                        [else ; at EOL
-					 (##sys#setislot port 4 (fx+ (##sys#slot port 4) 1))
-					 (##sys#setislot port 5 0)
-					 (values dest #f) ] ) ) ) ] )
-			 (cond [(fx< bufpos buflen)
-                                (let-values ([(dest cont?)
-                                              (##sys#scan-buffer-line buf buflen bufpos bumper)])
-                                  (if cont?
-                                      (loop dest)
-                                      dest ) ) ]
-			       [else
-                                (fetch)
-                                (if (fx< bufpos buflen)
-                                    (loop str)
-                                    #!eof) ] ) ) ) )
+		     (when (fx>= bufpos buflen)
+		       (fetch))
+		     (if (fx>= bufpos buflen)
+			 #!eof
+			 (let ((limit (or limit (##sys#fudge 21))))
+			   (receive (next line)
+			       (##sys#scan-buffer-line
+				buf
+				(fxmin buflen (fx+ bufpos limit))
+				bufpos
+				(lambda (pos)
+				  (let ((nbytes (fx- pos bufpos)))
+				    (cond ((fx>= nbytes limit)
+					   (values #f pos #f))
+					  (else
+                                           (set! limit (fx- limit nbytes))
+					   (fetch)
+					   (if (fx< bufpos buflen)
+					       (values buf bufpos
+						       (fxmin buflen
+                                                              (fx+ bufpos limit)))
+					       (values #f bufpos #f)))))))
+			     (##sys#setislot port 4 (fx+ (##sys#slot port 4) 1))
+			     (set! bufpos next)
+			     line)) ) )
 		   (lambda (port)		; read-buffered
 		     (if (fx>= bufpos buflen)
 			 ""

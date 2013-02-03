@@ -4,6 +4,8 @@
   - csc: added "-oi"/"-ot" options as alternatives to "-emit-inline-file"
     and "-emit-type-file", respectively; "-n" has been deprecated.
 
+- Core libraries
+  - read-line no longer returns trailing CRs in rare cases on TCP ports (#568)
 
 4.8.1
 
