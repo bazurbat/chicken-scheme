@@ -381,7 +381,8 @@ static C_TLS C_byte
   *heap_scan_top;
 static C_TLS size_t
   heapspace1_size,
-  heapspace2_size;
+  heapspace2_size,
+  heap_size;
 static C_TLS C_char 
   buffer[ STRING_BUFFER_SIZE ],
   *private_repository = NULL,
@@ -434,8 +435,7 @@ static C_TLS int
 static volatile C_TLS int serious_signal_occurred = 0;
 static C_TLS unsigned int
   mutation_count,
-  stack_size,
-  heap_size;
+  stack_size;
 static C_TLS int chicken_is_initialized;
 static C_TLS jmp_buf gc_restart;
 static C_TLS double
