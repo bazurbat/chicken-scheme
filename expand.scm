@@ -33,6 +33,7 @@
   (fixnum)
   (hide match-expression
 	macro-alias
+	check-for-multiple-bindings
 	d dd dm dx map-se
 	lookup check-for-redef) 
   (not inline ##sys#syntax-error-hook ##sys#compiler-syntax-hook
@@ -1022,14 +1023,30 @@
 		 ,(car head)
 		 (##sys#er-transformer (##core#lambda ,(cdr head) ,@body))))))))))
 
+(define (check-for-multiple-bindings bindings form loc)
+  ;; assumes correct syntax
+  (let loop ((bs bindings) (seen '()) (warned '()))
+    (cond ((null? bs))
+	  ((and (memq (caar bs) seen)
+                (not (memq (caar bs) warned)))
+	   (##sys#warn 
+	    (string-append "variable bound multiple times in " loc " construct")
+	    (caar bs)
+	    form)
+	   (loop (cdr bs) seen (cons (caar bs) warned)))
+	  (else (loop (cdr bs) (cons (caar bs) seen) warned)))))
+
 (##sys#extend-macro-environment
  'let
  '()
  (##sys#er-transformer
   (lambda (x r c)
-    (if (and (pair? (cdr x)) (symbol? (cadr x)))
-	(##sys#check-syntax 'let x '(_ symbol #((symbol _) 0) . #(_ 1)))
-	(##sys#check-syntax 'let x '(_ #((symbol _) 0) . #(_ 1))))
+    (cond ((and (pair? (cdr x)) (symbol? (cadr x)))
+	   (##sys#check-syntax 'let x '(_ symbol #((symbol _) 0) . #(_ 1)))
+           (check-for-multiple-bindings (caddr x) x "let"))
+	  (else
+	   (##sys#check-syntax 'let x '(_ #((symbol _) 0) . #(_ 1)))
+           (check-for-multiple-bindings (cadr x) x "let")))
     `(##core#let ,@(cdr x)))))
 
 (##sys#extend-macro-environment
@@ -1038,6 +1055,7 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax 'letrec x '(_ #((symbol _) 0) . #(_ 1)))
+    (check-for-multiple-bindings (cadr x) x "letrec")
     `(##core#letrec ,@(cdr x)))))
 
 (##sys#extend-macro-environment
@@ -1046,6 +1064,7 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax 'let-syntax x '(_ #((symbol _) 0) . #(_ 1)))
+    (check-for-multiple-bindings (cadr x) x "let-syntax")
     `(##core#let-syntax ,@(cdr x)))))
 
 (##sys#extend-macro-environment
@@ -1054,6 +1073,7 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax 'letrec-syntax x '(_ #((symbol _) 0) . #(_ 1)))
+    (check-for-multiple-bindings (cadr x) x "letrec-syntax")
     `(##core#letrec-syntax ,@(cdr x)))))
 
 (##sys#extend-macro-environment
