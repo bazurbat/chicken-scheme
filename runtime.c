@@ -503,7 +503,6 @@ static void get_argv_2(void *dummy) C_noret; /* OBSOLETE */
 static void get_argument_2(void *dummy) C_noret;
 static void make_structure_2(void *dummy) C_noret;
 static void generic_trampoline(void *dummy) C_noret;
-static void file_info_2(void *dummy) C_noret;
 static void get_environment_variable_2(void *dummy) C_noret;
 static void handle_interrupt(void *trampoline, void *proc) C_noret;
 static void callback_trampoline(void *dummy) C_noret;
