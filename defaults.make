@@ -443,7 +443,7 @@ endif
 	echo "# define C_TARGET_SHARE_HOME \"$(TARGET_PREFIX)/share\"" >>$@
 	echo "#endif" >>$@
 	echo "#ifndef C_TARGET_INCLUDE_HOME" >>$@
-	echo "# define C_TARGET_INCLUDE_HOME \"$(TARGET_PREFIX)/include/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)\"" >>$@
+	echo "# define C_TARGET_INCLUDE_HOME \"$(TARGET_PREFIX)/include/chicken\"" >>$@
 	echo "#endif" >>$@
 	echo "#ifndef C_TARGET_STATIC_LIB_HOME" >>$@
 	echo "# define C_TARGET_STATIC_LIB_HOME \"$(TARGET_PREFIX)/lib\"" >>$@
