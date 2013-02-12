@@ -3167,7 +3167,7 @@ EOF
       (let ([csp (case-sensitive)]
 	    [ksp (keyword-style)]
 	    [length-limit (##sys#print-length-limit)]
-	    [special-characters '(#\( #\) #\, #\[ #\] #\{ #\} #\' #\" #\; #\ #\` #\|)] )
+	    [special-characters '(#\( #\) #\, #\[ #\] #\{ #\} #\' #\" #\; #\ #\` #\| #\\)] )
 
 	(define (outstr port str)
 	  (if length-limit
@@ -3224,8 +3224,7 @@ EOF
 	    (cond ((eq? len 0) #f)
 		  ((eq? len 1)
 		   (let ((c (##core#inline "C_subchar" str 0)))
-		     (cond ((or (eq? #\. c) (eq? #\# c) (eq? #\; c) (eq? #\, c) (eq? #\| c))
-			    #f)
+		     (cond ((or (eq? #\# c) (eq? #\. c)) #f)
 			   ((specialchar? c) #f)
 			   ((char-numeric? c) #f)
 			   (else #t))))
@@ -3235,8 +3234,8 @@ EOF
 			 (let ((c (##core#inline "C_subchar" str 0)))
 			   (cond ((or (char-numeric? c)
 				      (eq? c #\+)
-				      (eq? c #\-)
-				      (eq? c #\.) )
+				      (eq? c #\.)
+				      (eq? c #\-) )
 				  (not (##sys#string->number str)) )
 				 ((eq? c #\:) (not (eq? ksp #:prefix)))
 				 ((and (eq? c #\#)
