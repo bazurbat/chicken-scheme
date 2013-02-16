@@ -395,7 +395,7 @@ EOF
 		 (if (fx>= bufindex buflen)
 		     #!eof
 		     (let ((limit (or limit (fx- (##sys#fudge 21) bufindex))))
-		       (receive (next line)
+		       (receive (next line full-line?)
 			   (##sys#scan-buffer-line
 			    buf
                             (fxmin buflen (fx+ bufindex limit))
@@ -411,7 +411,13 @@ EOF
 							(fxmin buflen
                                                                (fx+ bufindex limit)))
 						(values #f bufindex #f))))) ) )
-			 (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1)) ; lineno
+			 ;; Update row & column position
+			 (if full-line?
+			     (begin
+			       (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1))
+			       (##sys#setislot p 5 0))
+			     (##sys#setislot p 5 (fx+ (##sys#slot p 5)
+						      (##sys#size line))))
 			 (set! bufindex next)
 			 line) )) )
 	       (lambda (p)		; read-buffered

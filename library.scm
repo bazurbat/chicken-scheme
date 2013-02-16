@@ -3575,11 +3575,16 @@ EOF
 	      (end (if limit (fx+ pos limit) size)))
 	 (if (fx>= pos size)
 	     #!eof
-	     (receive (next line)
+	     (receive (next line full-line?)
 		 (##sys#scan-buffer-line
 		  buf (if (fx> end size) size end) pos
 		  (lambda (pos) (values #f pos #f) ) )
-	       (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1)) ; lineno
+	       ;; Update row & column position
+	       (if full-line?
+		   (begin
+		     (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1))
+		     (##sys#setislot p 5 0))
+		   (##sys#setislot p 5 (fx+ (##sys#slot p 5) (##sys#size line))))
 	       (##sys#setislot p 10 next)
 	       line) ) ) )
      (lambda (p)			; read-buffered
@@ -3613,26 +3618,26 @@ EOF
 	  (receive (buf offset limit) (eos-handler pos)
 	    (if buf
 		(loop buf offset offset limit line)
-		(values offset line))))
+		(values offset line #f))))
 	(let ((c (##core#inline "C_subchar" buf pos)))
 	  (cond ((eq? c #\newline)
-		 (values (fx+ pos 1) (copy&append buf offset pos line)))
+		 (values (fx+ pos 1) (copy&append buf offset pos line) #t))
 		((and (eq? c #\return)	; \r\n -> drop \r from string
 		      (fx> limit (fx+ pos 1))
 		      (eq? (##core#inline "C_subchar" buf (fx+ pos 1)) #\newline))
-		 (values (fx+ pos 2) (copy&append buf offset pos line)))
+		 (values (fx+ pos 2) (copy&append buf offset pos line) #t))
 		((and (eq? c #\return)	; Edge case (#568): \r{read}[\n|xyz]
 		      (fx= limit (fx+ pos 1)))
 		 (let ((line (copy&append buf offset pos line)))
 		   (receive (buf offset limit) (eos-handler pos)
 		     (if buf
 			 (if (eq? (##core#inline "C_subchar" buf offset) #\newline)
-			     (values (fx+ offset 1) line)
+			     (values (fx+ offset 1) line #t)
 			     ;; "Restore" \r we didn't copy, loop w/ new string
 			     (loop buf offset offset limit
 				   (##sys#string-append line "\r")))
 			 ;; Restore \r here, too (when we reached EOF)
-			 (values offset (##sys#string-append line "\r"))))))
+			 (values offset (##sys#string-append line "\r") #t)))))
 		(else (loop buf offset (fx+ pos 1) limit line)) ) ) ) ) )
 
 (define (open-input-string string)

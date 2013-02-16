@@ -1368,13 +1368,13 @@ EOF
 			      (if (eq? 0 buflen) 
 				  m
 				  (loop n m start) ) ] ) ) )
-		   (lambda (port limit)	; read-line
+		   (lambda (p limit)	; read-line
 		     (when (fx>= bufpos buflen)
 		       (fetch))
 		     (if (fx>= bufpos buflen)
 			 #!eof
 			 (let ((limit (or limit (fx- (##sys#fudge 21) bufpos))))
-			   (receive (next line)
+			   (receive (next line full-line?)
 			       (##sys#scan-buffer-line
 				buf
 				(fxmin buflen (fx+ bufpos limit))
@@ -1391,7 +1391,13 @@ EOF
 						       (fxmin buflen
                                                               (fx+ bufpos limit)))
 					       (values #f bufpos #f)))))))
-			     (##sys#setislot port 4 (fx+ (##sys#slot port 4) 1))
+			     ;; Update row & column position
+			     (if full-line?
+				 (begin
+				   (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1))
+				   (##sys#setislot p 5 0))
+				 (##sys#setislot p 5 (fx+ (##sys#slot p 5)
+							  (##sys#size line))))
 			     (set! bufpos next)
 			     line)) ) )
 		   (lambda (port)		; read-buffered
