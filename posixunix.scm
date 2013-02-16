@@ -1388,7 +1388,7 @@ EOF
 		       (fetch))
 		     (if (fx>= bufpos buflen)
 			 #!eof
-			 (let ((limit (or limit (##sys#fudge 21))))
+			 (let ((limit (or limit (fx- (##sys#fudge 21) bufpos))))
 			   (receive (next line)
 			       (##sys#scan-buffer-line
 				buf

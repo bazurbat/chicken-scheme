@@ -433,7 +433,7 @@ EOF
 		   (read-input))
 		 (if (fx>= bufindex buflen)
 		     #!eof
-		     (let ((limit (or limit (##sys#fudge 21))))
+		     (let ((limit (or limit (fx- (##sys#fudge 21) bufindex))))
 		       (receive (next line)
 			   (##sys#scan-buffer-line
 			    buf
