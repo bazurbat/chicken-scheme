@@ -577,7 +577,7 @@ process_wait(C_word h, C_word t)
 }
 
 #define C_process_wait(p, t) (process_wait(C_unfix(p), C_truep(t)) ? C_SCHEME_TRUE : C_SCHEME_FALSE)
-#define C_sleep(t) (Sleep(C_unfix(t) * 1000), C_SCHEME_UNDEFINED)
+#define C_sleep(t) (Sleep(C_unfix(t) * 1000), C_fix(0))
 
 static int C_fcall
 get_hostname()
@@ -1650,7 +1650,9 @@ EOF
     (values pid #t _exstatus)
     (values -1 #f #f) ) )
 
-(define sleep (foreign-lambda int "C_sleep" int))
+(define (sleep s)
+  (##sys#check-exact s 'sleep)
+  (##core#inline "C_sleep" s))
 
 (define-foreign-variable _hostname c-string "C_hostname")
 (define-foreign-variable _osver c-string "C_osver")
