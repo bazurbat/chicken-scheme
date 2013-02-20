@@ -1318,40 +1318,38 @@ EOF
 		   (##core#inline "C_subchar" buf bufpos)) )]
             [fetch
 	     (lambda ()
-	       (when (fx>= bufpos buflen)
-		 (let loop ()
-		   (let ([cnt (##core#inline "C_read" fd buf bufsiz)])
-		     (cond ((fx= cnt -1)
-			    (select _errno
-			      ((_ewouldblock _eagain)
-			       (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
-			       (##sys#thread-yield!)
-			       (loop) )
-			      ((_eintr)
-			       (##sys#dispatch-interrupt loop))
-			      (else (posix-error #:file-error loc "cannot read" fd nam) )))
-			   [(and more? (fx= cnt 0))
-					; When "more" keep trying, otherwise read once more
-					; to guard against race conditions
-			    (if (more?)
-				(begin
-				  (##sys#thread-yield!)
-				  (loop) )
-				(let ([cnt (##core#inline "C_read" fd buf bufsiz)])
-				  (when (fx= cnt -1)
-				    (if (or (fx= _errno _ewouldblock)
-					    (fx= _errno _eagain))
-					(set! cnt 0)
-					(posix-error #:file-error loc "cannot read" fd nam) ) )
-				  (set! buflen cnt)
-				  (set! bufpos 0) ) )]
-			   [else
-			    (set! buflen cnt)
-			    (set! bufpos 0)]) ) ) ) )] )
+	       (let loop ()
+		 (let ([cnt (##core#inline "C_read" fd buf bufsiz)])
+		   (cond ((fx= cnt -1)
+			  (select _errno
+			    ((_ewouldblock _eagain)
+			     (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
+			     (##sys#thread-yield!)
+			     (loop) )
+			    ((_eintr)
+			     (##sys#dispatch-interrupt loop))
+			    (else (posix-error #:file-error loc "cannot read" fd nam) )))
+			 [(and more? (fx= cnt 0))
+			  ;; When "more" keep trying, otherwise read once more
+			  ;; to guard against race conditions
+			  (if (more?)
+			      (begin
+				(##sys#thread-yield!)
+				(loop) )
+			      (let ([cnt (##core#inline "C_read" fd buf bufsiz)])
+				(when (fx= cnt -1)
+				  (if (or (fx= _errno _ewouldblock)
+					  (fx= _errno _eagain))
+				      (set! cnt 0)
+				      (posix-error #:file-error loc "cannot read" fd nam) ) )
+				(set! buflen cnt)
+				(set! bufpos 0) ) )]
+			 [else
+			  (set! buflen cnt)
+			  (set! bufpos 0)]) ) )	 )] )
 	(letrec ([this-port
 		  (make-input-port
 		   (lambda ()		; read-char
-		     (fetch)
 		     (let ([ch (peek)])
 		       #; ; Allow increment since overflow is far, far away
 		       (unless (eof-object? ch) (set! bufpos (fx+ bufpos 1)))
@@ -1367,22 +1365,23 @@ EOF
 			 (posix-error #:file-error loc "cannot close" fd nam) )
 		       (on-close) ) )
 		   (lambda ()		; peek-char
-		     (fetch)
+		     (when (fx>= bufpos buflen)
+		       (fetch))
 		     (peek) )
 		   (lambda (port n dest start) ; read-string!
 		     (let loop ([n (or n (fx- (##sys#size dest) start))] [m 0] [start start])
 		       (cond [(eq? 0 n) m]
 			     [(fx< bufpos buflen)
-                              (let* ([rest (fx- buflen bufpos)]
-                                     [n2 (if (fx< n rest) n rest)])
-                                (##core#inline "C_substring_copy" buf dest bufpos (fx+ bufpos n2) start)
-                                (set! bufpos (fx+ bufpos n2))
-                                (loop (fx- n n2) (fx+ m n2) (fx+ start n2)) ) ]
+			      (let* ([rest (fx- buflen bufpos)]
+				     [n2 (if (fx< n rest) n rest)])
+				(##core#inline "C_substring_copy" buf dest bufpos (fx+ bufpos n2) start)
+				(set! bufpos (fx+ bufpos n2))
+				(loop (fx- n n2) (fx+ m n2) (fx+ start n2)) ) ]
 			     [else
-                              (fetch)
-                              (if (eq? 0 buflen) 
-                                  m
-                                  (loop n m start) ) ] ) ) )
+			      (fetch)
+			      (if (eq? 0 buflen) 
+				  m
+				  (loop n m start) ) ] ) ) )
 		   (lambda (port limit)	; read-line
 		     (when (fx>= bufpos buflen)
 		       (fetch))
