@@ -7,6 +7,9 @@
 - Core libraries
   - read-line no longer returns trailing CRs in rare cases on TCP ports (#568)
 
+- Runtime system
+  - Special events in poll() are now handled, avoiding hangs in threaded apps.
+
 4.8.1
 
 - Security fixes
