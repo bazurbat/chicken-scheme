@@ -10,6 +10,9 @@
 - Runtime system
   - Special events in poll() are now handled, avoiding hangs in threaded apps.
 
+- C API
+  - Deprecated C_get_argument[_2] and C_get_environment_variable[_2] functions.
+
 4.8.1
 
 - Security fixes

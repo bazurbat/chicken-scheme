@@ -202,7 +202,7 @@ EOF
 (define (current-milliseconds) (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f))
 (define (current-gc-milliseconds) (##sys#fudge 31))
 (define ##sys#decode-seconds (##core#primitive "C_decode_seconds"))
-(define get-environment-variable (##core#primitive "C_get_environment_variable"))
+(define get-environment-variable (foreign-lambda c-string "C_getenv" c-string))
 
 (define (##sys#start-timer)
   (##sys#gc #t)
@@ -4594,23 +4594,23 @@ EOF
 
 ;;; command-line handling
 
-(define ##sys#get-argument (##core#primitive "C_get_argument"))
 
 (define argv				; includes program name
-  (let ((cache #f))
+  (let ((cache #f)
+        (fetch-arg (foreign-lambda* c-string ((scheme-object i))
+                     "C_return(C_main_argv[C_unfix(i)]);")))
     (lambda ()
-      (or cache
-	  (let ((v (let loop ((i 0))
-		     (let ((arg (##sys#get-argument i)))
-		       (if arg
-			   (cons arg (loop (fx+ i 1)))
-			   '())))))
-	    (set! cache v)
-	    v)))))
+      (unless cache
+        (set! cache (do ((i (fx- main_argc 1) (fx- i 1))
+                         (v '() (cons (fetch-arg i) v)))
+                        ((fx< i 0) v))))
+      cache)))
 
 (define program-name
   (make-parameter
-   (or (##sys#get-argument 0) "<unknown>") ; may happen if embedded in C application
+   (if (null? (argv))
+       "<unknown>" ; may happen if embedded in C application
+       (car (argv)))
    (lambda (x)
      (##sys#check-string x 'program-name)
      x) ) )

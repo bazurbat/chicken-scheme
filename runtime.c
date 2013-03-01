@@ -500,10 +500,10 @@ static C_ccall void call_cc_values_wrapper(C_word c, C_word closure, C_word k, .
 static void gc_2(void *dummy) C_noret;
 static void allocate_vector_2(void *dummy) C_noret;
 static void get_argv_2(void *dummy) C_noret; /* OBSOLETE */
-static void get_argument_2(void *dummy) C_noret;
+static void get_argument_2(void *dummy) C_noret; /* OBSOLETE */
 static void make_structure_2(void *dummy) C_noret;
 static void generic_trampoline(void *dummy) C_noret;
-static void get_environment_variable_2(void *dummy) C_noret;
+static void get_environment_variable_2(void *dummy) C_noret; /* OBSOLETE */
 static void handle_interrupt(void *trampoline, void *proc) C_noret;
 static void callback_trampoline(void *dummy) C_noret;
 static C_ccall void callback_return_continuation(C_word c, C_word self, C_word r) C_noret;
@@ -790,7 +790,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_get_symbol_table_info);
   C_pte(C_get_memory_info);
   C_pte(C_decode_seconds);
-  C_pte(C_get_environment_variable);
+  C_pte(C_get_environment_variable); /* OBSOLETE */
   C_pte(C_stop_timer);
   C_pte(C_dload);
   C_pte(C_set_dlopen_flags);
@@ -833,7 +833,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_copy_closure);
   C_pte(C_dump_heap_state);
   C_pte(C_filter_heap_objects);
-  C_pte(C_get_argument);
+  C_pte(C_get_argument); /* OBSOLETE */
 
   /* IMPORTANT: did you remember the hardcoded pte table size? */
   pt[ i ].id = NULL;
@@ -7822,6 +7822,7 @@ void get_argv_2(void *dummy)
 }
 
 
+/* OBSOLETE */
 void C_ccall C_get_argument(C_word c, C_word closure, C_word k, C_word index)
 {
   int i = C_unfix(index);
@@ -7841,6 +7842,7 @@ void C_ccall C_get_argument(C_word c, C_word closure, C_word k, C_word index)
 }
 
 
+/* OBSOLETE */
 void get_argument_2(void *dummy)
 {
   int i = C_unfix(C_restore);
@@ -7955,10 +7957,11 @@ void C_ccall C_return_to_host(C_word c, C_word closure, C_word k)
 }
 
 
-#define C_do_getenv(v) C_getenv(v)
-#define C_free_envbuf() {}
+#define C_do_getenv(v) C_getenv(v) /* OBSOLETE */
+#define C_free_envbuf() {} /* OBSOLETE */
 
 
+/* OBSOLETE */
 void C_ccall C_get_environment_variable(C_word c, C_word closure, C_word k, C_word name)
 {
   int len;
@@ -7989,6 +7992,7 @@ void C_ccall C_get_environment_variable(C_word c, C_word closure, C_word k, C_wo
 }
 
 
+/* OBSOLETE */
 void get_environment_variable_2(void *dummy)
 {
   int len = C_strlen(save_string);

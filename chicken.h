@@ -1782,14 +1782,14 @@ C_fctexport void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n
 C_fctexport void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, ...) C_noret;
 C_fctexport void C_ccall C_fixnum_to_string(C_word c, C_word closure, C_word k, C_word num) C_noret;
 C_fctexport void C_ccall C_get_argv(C_word c, C_word closure, C_word k) C_noret; /* OBSOLETE */
-C_fctexport void C_ccall C_get_argument(C_word c, C_word closure, C_word k, C_word index) C_noret;
+C_fctexport void C_ccall C_get_argument(C_word c, C_word closure, C_word k, C_word index) C_noret; /* OBSOLETE */
 C_fctexport void C_ccall C_make_structure(C_word c, C_word closure, C_word k, C_word type, ...) C_noret;
 C_fctexport void C_ccall C_make_symbol(C_word c, C_word closure, C_word k, C_word name) C_noret;
 C_fctexport void C_ccall C_make_pointer(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_make_tagged_pointer(C_word c, C_word closure, C_word k, C_word tag) C_noret;
 C_fctexport void C_ccall C_ensure_heap_reserve(C_word c, C_word closure, C_word k, C_word n) C_noret;
 C_fctexport void C_ccall C_return_to_host(C_word c, C_word closure, C_word k) C_noret;
-C_fctexport void C_ccall C_get_environment_variable(C_word c, C_word closure, C_word k, C_word name) C_noret;
+C_fctexport void C_ccall C_get_environment_variable(C_word c, C_word closure, C_word k, C_word name) C_noret; /* OBSOLETE */
 C_fctexport void C_ccall C_get_symbol_table_info(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_get_memory_info(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_context_switch(C_word c, C_word closure, C_word k, C_word state) C_noret;
