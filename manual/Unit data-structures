@@ -282,6 +282,9 @@ Time complexity: O (|V| + |E|)
 (socks undershorts pants shoes watch shirt belt tie jacket)
 </enscript>
 
+If a cycle is detected during the sorting process, an exception of the
+condition kinds {{(exn runtime cycle)}} is thrown.
+
 === Random numbers
 
 
