@@ -331,31 +331,43 @@
 	       (##sys#print obj #t s)
 	       (out (get-output-string s) col) ) )
 	    ((procedure? obj)   (out (##sys#procedure->string obj) col))
-	    ((string? obj)      (if display?
-				    (out obj col)
-				    (let loop ((i 0) (j 0) (col (out "\"" col)))
-				      (if (and col (fx< j (string-length obj)))
-					  (let ((c (string-ref obj j)))
-                                            (if (or (char=? c #\\)
-                                                    (char=? c #\"))
-                                                (loop j
-                                                      (+ j 1)
-                                                      (out "\\"
-                                                           (out (##sys#substring obj i j)
-                                                                col)))
-                                                (cond ((assq c '((#\tab . "\\t")
-                                                                 (#\newline . "\\n")
-                                                                 (#\return . "\\r")))
-                                                       =>
-                                                       (lambda (a)
-                                                         (let ((col2
-                                                                (out (##sys#substring obj i j) col)))
-                                                           (loop (fx+ j 1)
-                                                                 (fx+ j 1)
-                                                                 (out (cdr a) col2)))))
-                                                      (else (loop i (fx+ j 1) col)))))
-					  (out "\""
-					       (out (##sys#substring obj i j) col))))))
+	    ((string? obj)
+             (if display?
+		 (out obj col)
+		 (let loop ((i 0) (j 0) (col (out "\"" col)))
+		   (if (and col (fx< j (string-length obj)))
+		       (let ((c (string-ref obj j)))
+			 (cond
+			  ((or (char=? c #\\)
+			       (char=? c #\"))
+			   (loop j
+				 (+ j 1)
+				 (out "\\"
+				      (out (##sys#substring obj i j)
+					   col))))
+			  ((or (char<? c #\x20)
+			       (char=? c #\x7f))
+			   (loop (fx+ j 1)
+				 (fx+ j 1)
+				 (let ((col2
+					(out (##sys#substring obj i j) col)))
+				   (cond ((assq c '((#\tab . "\\t")
+						    (#\newline . "\\n")
+						    (#\return . "\\r")
+						    (#\vtab . "\\v")
+						    (#\page . "\\f")
+						    (#\alarm . "\\a")
+						    (#\backspace . "\\b")))
+					  =>
+					  (lambda (a)
+					    (out (cdr a) col2)))
+					 (else
+					  (out (number->string (char->integer c) 16)
+					       (out (if (char<? c #\x10) "0" "")
+						    (out "\\x" col2))))))))
+			  (else (loop i (fx+ j 1) col))))
+		       (out "\""
+			    (out (##sys#substring obj i j) col))))))
 	    ((char? obj)        (if display?
 				    (out (make-string 1 obj) col)
 				    (let ([code (char->integer obj)])
