@@ -3310,15 +3310,17 @@ EOF
 			      ((34) (outstr port "\\\""))
 			      ((92) (outstr port "\\\\"))
 			      (else
-			       (cond ((fx< chr 32)
+			       (cond ((or (fx< chr 32)
+					  (fx= chr 127))
 				      (outchr port #\\)
 				      (case chr
+                                        ((7) (outchr port #\a))
+					((8) (outchr port #\b))
 					((9) (outchr port #\t))
 					((10) (outchr port #\n))
-					((13) (outchr port #\r))
 					((11) (outchr port #\v))
 					((12) (outchr port #\f))
-					((8) (outchr port #\b))
+					((13) (outchr port #\r))
 					(else
 					 (outchr port #\x)
 					 (when (fx< chr 16) (outchr port #\0))
