@@ -366,7 +366,6 @@
 					    (not (test ifid 'inline-target)) ; inlinable procedure has changed
 					    (not (test ifid 'explicit-rest))
 					    (case (variable-mark var '##compiler#inline) 
-					      ((yes) #t)
 					      ((no) #f)
 					      (else 
 					       (or external (< (fourth lparams) inline-max-size)))))

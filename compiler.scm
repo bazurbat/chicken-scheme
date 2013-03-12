@@ -1446,7 +1446,7 @@
 	(if (null? (cdr spec))
 	    (set! inline-locally #t)
 	    (for-each
-	     (cut mark-variable <> '##compiler#inline 'yes)
+	     (cut mark-variable <> '##compiler#local)
 	     (globalize-all (cdr spec)))))
        ((inline-limit)
 	(check-decl spec 1 1)

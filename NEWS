@@ -11,6 +11,11 @@
   - chicken-install now also accepts full URI syntax for proxy environment
     variables (thanks to Michele La Monaca)
 
+- Compiler
+  - the "inline" declaration does not force inlining anymore as recursive
+    inlining could lead to non-termination of the compiler (thanks to
+    Andrei Barbu).
+
 - Core libraries
   - read-line no longer returns trailing CRs in rare cases on TCP ports (#568)
   - write and pp now correctly use escape sequences for control characters
