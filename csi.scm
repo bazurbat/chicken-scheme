@@ -173,7 +173,8 @@ EOF
 ;;; Chop terminating separator from pathname:
 
 (define (dirseparator? c)
-  (or (char=? c #\\) (char=? c #\/)))
+  (or (and ##sys#windows-platform (char=? c #\\))
+      (char=? c #\/)))
 
 (define chop-separator 
   (let ([substring substring] )
