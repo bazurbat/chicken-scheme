@@ -798,16 +798,12 @@ EOF
     (exit code))
 
   (define (setup-proxy uri)
-    (if (string? uri)
-        (begin 
-          (set! *proxy-user-pass* (get-environment-variable "proxy_auth"))
-          (cond ((irregex-match "(.+)\\:([0-9]+)" uri) =>
-                 (lambda (m)
-                   (set! *proxy-host* (irregex-match-substring m 1))
-                   (set! *proxy-port* (string->number (irregex-match-substring m 2))))
-                 (else
-                  (set! *proxy-host* uri)
-                  (set! *proxy-port* 80)))))))
+    (and-let* (((string? uri))
+	       (m (irregex-match "(http://)?([^:]+):?([0-9]*)" uri))
+	       (port (irregex-match-substring m 3)))
+      (set! *proxy-user-pass* (get-environment-variable "proxy_auth"))
+      (set! *proxy-host* (irregex-match-substring m 2))
+      (set! *proxy-port* (or (string->number port) 80))))
 
   (define (info->egg info)
     (if (member (cdr info) '("" "unknown" "trunk"))

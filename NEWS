@@ -7,6 +7,8 @@
 - Tools
   - csc: added "-oi"/"-ot" options as alternatives to "-emit-inline-file"
     and "-emit-type-file", respectively; "-n" has been deprecated.
+  - chicken-install now also accepts full URI syntax for proxy environment
+    variables (thanks to Michele La Monaca)
 
 - Core libraries
   - read-line no longer returns trailing CRs in rare cases on TCP ports (#568)
