@@ -108,7 +108,7 @@ the standard procedure {{number?}}. The procedures {{make-rectangular}}
 and {{make-polar}} are not implemented. Fixnums are limited to
 2^<nowiki><sup>30</sup></nowiki> (or 2^<nowiki><sup>62</sup></nowiki>
 on 64-bit hardware).  Support for the full numeric tower is available
-as a separate package, provided the GNU multiprecision library is installed.
+as a separate package.
 
 
 === {{transcript-on}} and {{transcript-off}} are not implemented
