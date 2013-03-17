@@ -356,7 +356,7 @@ done
 
 echo "======================================== symbol-GC tests ..."
 $compile symbolgc-tests.scm
-./a.out -:w
+./a.out -:w || echo "*** FAILED ***"
 
 echo "======================================== finalizer tests ..."
 $interpret -s test-finalizers.scm
