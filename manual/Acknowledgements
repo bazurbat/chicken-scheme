@@ -3,38 +3,38 @@
 == Acknowledgements
 
 Many thanks to Jules Altfas, Nico Amtsberg, Alonso Andres, William
-Annis, Marc Baily, Peter Barabas, Jonah Beckford, Arto Bendiken, Kevin
-Beranek, Peter Bex, Jean-Francois Bignolles, Oivind Binde, Alaric
-Blagrave-Snellpym, Dave Bodenstab, Fabian Böhlke, T. Kurt Bond,
-Ashley Bone, Dominique Boucher, Terence Brannon, Roy Bryant, Adam
-Buchbinder, Hans Bulfone, "Category 5", Taylor Campbell, Naruto
-Canada, Mark Carter, Esteban U. Caamano Castro, Semih Cemiloglu,
-Franklin Chen, Joo ChurlSoo, Thomas Chust, Gian Paolo Ciceri, Fulvio
-Ciriaco, Paul Colby, Tobia Conforto, John Cowan, Grzegorz Chrupala,
-James Crippen, Tollef Fog Heen, Drew Hess, Alejandro Forero Cuervo,
-Peter Danenberg, Linh Dang, Brian Denheyer, Sean D'Epagnier, "dgym",
-"Don", Chris Double, "Brown Dragon", David Dreisigmeyer, Jarod Eells,
-Petter Egesund, Stephen Eilert, Steve Elkins, Daniel B. Faken, Will
-Farr, Graham Fawcett, Marc Feeley, "Fizzie", Matthew Flatt, Kimura
-Fuyuki, Tony Garnock-Jones, Martin Gasbichler, Abdulaziz Ghuloum, Joey
-Gibson, Stephen C. Gilardi, Mario Domenech Goulart, Joshua Griffith,
-Johannes Groedem, Damian Gryski, Andreas Gustafsson, Sven Hartrumpf,
-Jun-ichiro itojun Hagino, Ahdi Hargo, Matthias Heiler, Karl
-M. Hegbloom, William P. Heinemann, Bill Hoffman, Bruce Hoult, Hans
-Hübner, Markus Hülsmann, Götz Isenmann, Paulo Jabardo, Wietse
-Jacobs, David Janssens, Christian Jäger, Matt Jones, Dale Jordan,
-Valentin Kamyshenko, Daishi Kato, Peter Keller, Brad Kind, Ron
-Kneusel, Matthias Köppe, Krysztof Kowalczyk, Andre Kühne, Todd
-R. Kueny Sr, Goran Krampe, David Krentzlin, Ben Kurtz, Michele La
-Monaca, Micky Latowicki, John Lenz, Kirill Lisovsky, Jürgen Lorenz,
-Kon Lovett, Lam Luu, Vitaly Magerya, Leonardo Valeri Manera, Claude
-Marinier, Dennis Marti, Charles Martin, Bob McIsaac, "megane", Alain
-Mellan, Eric Merrit, Perry Metzger, Scott G. Miller, Mikael, Karel
-Miklav, Bruce Mitchener, Fadi Moukayed, Chris Moline, Eric E. Moore,
-Julian Morrison, Dan Muresan, David N. Murray, Timo Myyrä,
-"nicktick", Lars Nilsson, Ian Oversby, "o.t.", Gene Pavlovsky, Levi
-Pearson, Jeronimo Pellegrini, Nicolas Pelletier, Derrell Piper, Carlos
-Pita, Robin Lee Powell, Alan Post, "Pupeno", Davide Puricelli,
+Annis, Marc Baily, Peter Barabas, Andrei Barbu, Jonah Beckford, Arto
+Bendiken, Kevin Beranek, Peter Bex, Jean-Francois Bignolles, Oivind
+Binde, Alaric Blagrave-Snellpym, Dave Bodenstab, Fabian Böhlke,
+T. Kurt Bond, Ashley Bone, Dominique Boucher, Terence Brannon, Roy
+Bryant, Adam Buchbinder, Hans Bulfone, "Category 5", Taylor Campbell,
+Naruto Canada, Mark Carter, Esteban U. Caamano Castro, Semih
+Cemiloglu, Franklin Chen, Joo ChurlSoo, Thomas Chust, Gian Paolo
+Ciceri, Fulvio Ciriaco, Paul Colby, Tobia Conforto, John Cowan,
+Grzegorz Chrupala, James Crippen, Tollef Fog Heen, Drew Hess,
+Alejandro Forero Cuervo, Peter Danenberg, Linh Dang, Brian Denheyer,
+Sean D'Epagnier, "dgym", "Don", Chris Double, "Brown Dragon", David
+Dreisigmeyer, Jarod Eells, Petter Egesund, Stephen Eilert, Steve
+Elkins, Daniel B. Faken, Will Farr, Graham Fawcett, Marc Feeley,
+"Fizzie", Matthew Flatt, Kimura Fuyuki, Tony Garnock-Jones, Martin
+Gasbichler, Abdulaziz Ghuloum, Joey Gibson, Stephen C. Gilardi, Mario
+Domenech Goulart, Joshua Griffith, Johannes Groedem, Damian Gryski,
+Andreas Gustafsson, Sven Hartrumpf, Jun-ichiro itojun Hagino, Ahdi
+Hargo, Matthias Heiler, Karl M. Hegbloom, William P. Heinemann, Bill
+Hoffman, Bruce Hoult, Hans Hübner, Markus Hülsmann, Götz Isenmann,
+Paulo Jabardo, Wietse Jacobs, David Janssens, Christian Jäger, Matt
+Jones, Dale Jordan, Valentin Kamyshenko, Daishi Kato, Peter Keller,
+Brad Kind, Ron Kneusel, Matthias Köppe, Krysztof Kowalczyk, Andre
+Kühne, Todd R. Kueny Sr, Goran Krampe, David Krentzlin, Ben Kurtz,
+Michele La Monaca, Micky Latowicki, John Lenz, Kirill Lisovsky,
+Jürgen Lorenz, Kon Lovett, Lam Luu, Vitaly Magerya, Leonardo Valeri
+Manera, Claude Marinier, Dennis Marti, Charles Martin, Bob McIsaac,
+"megane", Alain Mellan, Eric Merrit, Perry Metzger, Scott G. Miller,
+Mikael, Karel Miklav, Bruce Mitchener, Fadi Moukayed, Chris Moline,
+Eric E. Moore, Julian Morrison, Dan Muresan, David N. Murray, Timo
+Myyrä, "nicktick", Lars Nilsson, Ian Oversby, "o.t.", Gene Pavlovsky,
+Levi Pearson, Jeronimo Pellegrini, Nicolas Pelletier, Derrell Piper,
+Carlos Pita, Robin Lee Powell, Alan Post, "Pupeno", Davide Puricelli,
 "presto", Doug Quale, Imran Rafique, Eric Raible, Ivan Raikov, Santosh
 Rajan, Joel Reymont, Chris Roberts, Eric Rochester, Paul Romanchenko,
 Andreas Rottman, David Rush, Lars Rustemeier, Daniel Sadilek, Otavio
