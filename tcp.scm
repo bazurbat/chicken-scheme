@@ -226,14 +226,15 @@ EOF
 (define-syntax network-error
   (syntax-rules ()
     ((_ loc msg . args)
-     (network-error/errno loc (##sys#update-errno) msg args))))
+     (network-error/errno loc (##sys#update-errno) msg . args))))
 
 (define-syntax network-error/errno
   (syntax-rules ()
     ((_ loc errno msg . args)
      (##sys#signal-hook #:network-error loc
-                        (string-append (string-append msg " - ")
-                                       (general-strerror errno))))))
+			(string-append (string-append msg " - ")
+				       (general-strerror errno))
+			. args))))
 
 (define ##net#parse-host
   (let ((substring substring))
