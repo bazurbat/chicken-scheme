@@ -1,8 +1,9 @@
 4.8.2
 
 - Security fixes
-  - ./.csirc is no longer loaded from the current directory upon startup of csi,
-    which could lead to untrusted code execution. (thanks to Florian Zumbiehl)
+  - CVE-2013-1874: ./.csirc is no longer loaded from the current directory
+    upon startup of csi, which could lead to untrusted code execution.
+    (thanks to Florian Zumbiehl)
 
 - Tools
   - csc: added "-oi"/"-ot" options as alternatives to "-emit-inline-file"

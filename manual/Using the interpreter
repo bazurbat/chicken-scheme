@@ -39,7 +39,7 @@ The options recognized by the interpreter are:
 
 ; -K  -keyword-style STYLE : Enables alternative keyword syntax, where {{STYLE}} may be either {{prefix}} (as in Common Lisp) or {{suffix}} (as in DSSSL). Any other value is ignored.
 
-; -n  -no-init : Do not load initialization-file. If this option is not given and the file {{./.csirc}} or {{$HOME/.csirc}} exists, then it is loaded before the read-eval-print loop commences.
+; -n  -no-init : Do not load initialization-file. If this option is not given and the file {{$HOME/.csirc}} exists, then it is loaded before the read-eval-print loop commences.
 
 ;     -no-parentheses-synonyms STYLE : Disables list delimiter synonyms, [..] and {...} for (...).
 
