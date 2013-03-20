@@ -3619,9 +3619,10 @@ C_regparm void C_fcall update_locative_table(int mode)
 
 C_regparm WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word container)
 {
-  int key = (C_uword)item >> 2,
-      disp = 0,
-      n;
+  C_uword
+    key = (C_uword)item >> 2,
+    disp = 0,
+    n;
   WEAK_TABLE_ENTRY *wep;
 
   for(n = 0; n < WEAK_HASH_ITERATIONS; ++n) {
