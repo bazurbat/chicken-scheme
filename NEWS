@@ -20,6 +20,7 @@
   - read-line no longer returns trailing CRs in rare cases on TCP ports (#568)
   - write and pp now correctly use escape sequences for control characters
      (thanks to Florian Zumbiehl)
+  - posix: memory-mapped file support for Windows (thanks to "rivo")
 
 - Runtime system
   - Special events in poll() are now handled, avoiding hangs in threaded apps.

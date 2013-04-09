@@ -1460,9 +1460,6 @@ Microsoft tools or with MinGW):
  file-truncate
  file-lock  file-lock/blocking  file-unlock  file-test-lock
  create-fifo  fifo?
- prot/...
- map/...
- map-file-to-memory  unmap-file-from-memory  memory-mapped-file-pointer  memory-mapped-file?
  set-alarm!
  terminal-port?  terminal-name
  process-fork  process-signal
