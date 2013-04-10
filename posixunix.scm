@@ -1350,10 +1350,10 @@ EOF
 	(letrec ([this-port
 		  (make-input-port
 		   (lambda ()		; read-char
+		     (when (fx>= bufpos buflen)
+		       (fetch))
 		     (let ([ch (peek)])
-		       #; ; Allow increment since overflow is far, far away
 		       (unless (eof-object? ch) (set! bufpos (fx+ bufpos 1)))
-		       (set! bufpos (fx+ bufpos 1))
 		       ch ) )
 		   (lambda ()		; char-ready?
 		     (or (fx< bufpos buflen)
