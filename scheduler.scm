@@ -292,19 +292,19 @@ EOF
 
 (define (##sys#thread-block-for-timeout! t tm)
   (dbg t " blocks for timeout " tm)
-  (unless (and (flonum? tm)			; to catch old code that uses fixum timeouts
-	       (fp> tm 0.0))
+  (unless (flonum? tm)	  ; to catch old code that uses fixnum timeouts
     (panic "##sys#thread-block-for-timeout!: invalid timeout"))
-  ;; This should really use a balanced tree:
-  (let loop ([tl ##sys#timeout-list] [prev #f])
-    (if (or (null? tl) (fp< tm (caar tl)))
-	(if prev
-	    (set-cdr! prev (cons (cons tm t) tl))
-	    (set! ##sys#timeout-list (cons (cons tm t) tl)) )
-	(loop (cdr tl) tl) ) ) 
-  (##sys#setslot t 3 'blocked)
-  (##sys#setislot t 13 #f)
-  (##sys#setslot t 4 tm) )
+  (when (fp> tm 0.0)
+    ;; This should really use a balanced tree:
+    (let loop ([tl ##sys#timeout-list] [prev #f])
+      (if (or (null? tl) (fp< tm (caar tl)))
+	  (if prev
+	      (set-cdr! prev (cons (cons tm t) tl))
+	      (set! ##sys#timeout-list (cons (cons tm t) tl)) )
+	  (loop (cdr tl) tl) ) ) 
+    (##sys#setslot t 3 'blocked)
+    (##sys#setislot t 13 #f)
+    (##sys#setslot t 4 tm) ) )
 
 (define (##sys#thread-block-for-termination! t t2)
   (dbg t " blocks for " t2)
