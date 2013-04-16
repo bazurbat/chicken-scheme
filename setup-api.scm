@@ -237,7 +237,7 @@
   (cond ((string=? prg "csc")
 	 (string-intersperse 
 	  (cons*
-	   (shellpath (find-program "csc"))
+	   (find-program "csc")
 	   "-feature" "compiling-extension" 
 	   (if (or (deployment-mode)
 		   (and (feature? #:cross-chicken)

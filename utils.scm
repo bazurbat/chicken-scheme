@@ -59,20 +59,18 @@
 ;;; Quote string for shell
 
 (define (qs str #!optional (platform (build-platform)))
-  (case platform
-    ((mingw32)
-     (string-append "\"" str "\""))
-    (else
-     (if (zero? (string-length str))
-	 "''"
-	 (string-concatenate
-	  (map (lambda (c)
-		 (if (or (char-whitespace? c)
-			 (memq c '(#\# #\" #\' #\` #\´ #\~ #\& #\% #\$ #\! #\* #\;
-				   #\< #\> #\\ #\( #\) #\[ #\] #\{ #\} #\? #\|)))
-		     (string #\\ c)
-		     (string c)))
-	       (string->list str)))))))
+  (let ((delim (if (eq? platform 'mingw32) #\" #\'))
+	(escaped (if (eq? platform 'mingw32) "\"\"" "'\\''")))
+    (string-append
+     (string delim)
+     (string-concatenate
+      (map (lambda (c)
+	     (cond
+	      ((char=? c delim) escaped)
+	      ((char=? c #\nul) (error 'qs "NUL character can not be represented in shell string" str))
+	      (else (string c))))
+	   (string->list str)))
+     (string delim))))
 
 
 ;;; Compile and load file
