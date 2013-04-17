@@ -1684,7 +1684,7 @@
 (file-position (#(procedure #:clean #:enforce) file-position ((or port fixnum)) fixnum))
 (file-read (#(procedure #:clean #:enforce) file-read (fixnum fixnum #!optional *) list))
 (file-read-access? (#(procedure #:clean #:enforce) file-read-access? (string) boolean))
-(file-select (#(procedure #:clean #:enforce) file-select ((list-of fixnum) (list-of fixnum) #!optional fixnum) * *))
+(file-select (#(procedure #:clean #:enforce) file-select ((or (list-of fixnum) fixnum boolean) (or (list-of fixnum) fixnum boolean) #!optional fixnum) * *))
 (file-size (#(procedure #:clean #:enforce) file-size ((or string fixnum)) number))
 (file-stat (#(procedure #:clean #:enforce) file-stat ((or string fixnum) #!optional *) (vector-of number)))
 (file-test-lock (#(procedure #:clean #:enforce) file-test-lock (port #!optional fixnum *) boolean))
