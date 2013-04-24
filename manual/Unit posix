@@ -535,7 +535,7 @@ not followed:
   block-device
 
 Note that not all types are supported on every platform. 
-If {{ERROR}} is given and false, {{file-type}} signals an
+If {{ERROR}} is given and true, {{file-type}} signals an
 error if the file does not exist.
 
 
