@@ -106,7 +106,9 @@
 			   (if (and (file-exists? trunkdir) (directory? trunkdir))
 			       (values trunkdir "trunk")
 			       (values eggdir "") ) ) ) ) )
-	(cond (dest
+	(cond ((or (not (file-exists? eggdir)) (not (directory? eggdir)))
+	       (values #f ""))
+	      (dest
 	       (create-directory dest)
 	       (let ((qdest (qs (normalize-pathname dest)))
 		     (qsrc (qs (normalize-pathname src)))

@@ -196,9 +196,6 @@
            (transport ,*default-transport*)))
         *default-sources* ) )
 
-  (define (invalidate-default-source! def)
-    (set! *default-sources* (delete def *default-sources* eq?)) )
-
   (define (deps key meta)
     (or (and-let* ((d (assq key meta)))
           (cdr d))
@@ -337,26 +334,30 @@
        (abort e) ] ) )
 
   (define (with-default-sources proc)
-    (let trying-sources ([defs (known-default-sources)])
-      (if (null? defs)
-          (proc #f #f
-                (lambda ()
-                  (with-output-to-port (current-error-port)
-                    (lambda ()
-                      (print "Could not determine a source of extensions. "
-                             "Please, specify a location and a transport for "
-                             "a source.")))
-                  (exit 1)))
-          (let* ([def (car defs)]
-                 [locn (resolve-location
-			(cadr (or (assq 'location def)
-				  (error "missing location entry" def))))]
-                 [trans (cadr (or (assq 'transport def)
-                                  (error "missing transport entry" def)))])
-	    (proc trans locn
+    (let ((sources (known-default-sources)))
+      (let trying-sources ((defs sources))
+	(if (null? defs)
+	    (proc #f #f
 		  (lambda ()
-                    (invalidate-default-source! def)
-                    (trying-sources (cdr defs)) ) ) ) ) ) )
+		    (with-output-to-port (current-error-port)
+		      (lambda ()
+			(print "Could not determine a source of extensions. "
+			       "Please specify a valid location and transport.")))
+		    (exit 1)))
+	    (let ((def (car defs)))
+	      (if def
+		  (let* ((locn (resolve-location
+				(cadr (or (assq 'location def)
+					  (error "missing location entry" def)))))
+			 (trans (cadr (or (assq 'transport def)
+					  (error "missing transport entry" def)))))
+		    (proc trans locn
+			  (lambda ()
+			    (unless (eq? 'local trans)
+			      ;; invalidate this entry in the list of sources
+			      (set-car! defs #f))
+			    (trying-sources (cdr defs)))))
+		  (trying-sources (cdr defs))))))))
 
   (define (try-default-sources name version)
     (with-default-sources
