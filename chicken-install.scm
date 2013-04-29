@@ -611,6 +611,8 @@
 		      (lambda (dir)
 			(print "changing current directory to " dir)
 			(parameterize ((current-directory dir))
+			  (when *cross-chicken*
+			    (delete-stale-binaries))
 			  (let ((cmd (make-install-command e+d+v (> i 1)))
 				(name (car e+d+v)))
 			    (print "  " cmd)
@@ -639,6 +641,15 @@
 		     (setup tmpcopy)))))))
 	 (map (cut assoc <> *eggs+dirs+vers*) dag)
 	 (iota num num -1)))))
+
+  (define (delete-stale-binaries)
+    (print* "deleting stale binaries ...")
+    (print* "deleting stale binaries ...")
+    (find-files "." test: `(seq (* any) "." (or "o" "so" "dll" "a"))
+		action: (lambda (f _)
+			  (print* " " f)
+			  (delete-file* f)))
+    (newline))
 
   (define (cleanup)
     (unless *keep*
