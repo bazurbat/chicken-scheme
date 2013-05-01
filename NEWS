@@ -25,6 +25,7 @@
   - write and pp now correctly use escape sequences for control characters
      (thanks to Florian Zumbiehl)
   - posix: memory-mapped file support for Windows (thanks to "rivo")
+  - posix: find-file's test argument now also accepts SRE forms.
 
 - Runtime system
   - Special events in poll() are now handled, avoiding hangs in threaded apps.

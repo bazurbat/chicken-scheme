@@ -1239,20 +1239,21 @@ These variables contain error codes as returned by {{errno}}.
 Recursively traverses the contents of {{DIRECTORY}} (which should be a
 string) and invokes the procedure {{action}} for all files in which
 the procedure {{test}} is true.  {{test}} may be a procedure of one
-argument or a regular-expression string that will be matched with a
-full pathname using {{irregex-match}}.  {{action}} should be a
-procedure of two arguments: the currently encountered file and the
-result of the previous invocation of {{action}}, or, if this is the
-first invocation, the value of {{seed}}. {{test}} defaults to
-{{(constantly #t)}}, {{action}} defaults to {{cons}}, {{seed}}
-defaults to {{()}}.  {{limit}} should be a procedure of one argument
-that is called for each nested directory and which should return true,
-if that directory is to be traversed recursively. {{limit}} may also
-be an exact integer that gives the maximum recursion depth. For
-example, a depth of {{0}} means that only files in the top-level,
-specified directory are to be traversed. In this case, all nested
-directories are ignored.  {{limit}} may also be {{#f}} (the default),
-which is equivalent to {{(constantly #t)}}. 
+argument or an irregex object, regex string or SRE expression that
+will be matched with a full pathname using {{irregex-match}}.
+{{action}} should be a procedure of two arguments: the currently
+encountered file and the result of the previous invocation of
+{{action}}, or, if this is the first invocation, the value of
+{{seed}}. {{test}} defaults to {{(constantly #t)}}, {{action}}
+defaults to {{cons}}, {{seed}} defaults to {{()}}.  {{limit}} should
+be a procedure of one argument that is called for each nested
+directory and which should return true, if that directory is to be
+traversed recursively. {{limit}} may also be an exact integer that
+gives the maximum recursion depth. For example, a depth of {{0}} means
+that only files in the top-level, specified directory are to be
+traversed. In this case, all nested directories are ignored.
+{{limit}} may also be {{#f}} (the default), which is equivalent to
+{{(constantly #t)}}.
 
 If {{dotfiles}} is given and true, then files starting with a "{{.}}"
 character will not be ignored (but note that "{{.}}" and "{{..}}"  are

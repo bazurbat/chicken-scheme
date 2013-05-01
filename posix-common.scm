@@ -399,10 +399,10 @@ EOF
 		  ((fixnum? limit) (lambda _ (fx< depth limit)))
 		  (else limit) ) )
 	   (pproc
-	    (if (or (string? pred) (irregex? pred))
+	    (if (procedure? pred)
+		pred
 		(let ((pred (irregex pred))) ; force compilation
-		  (lambda (x) (irregex-match pred x)))
-		pred) ) )
+		  (lambda (x) (irregex-match pred x))) ) ) )
       (let loop ((fs (glob (make-pathname dir (if dot "?*" "*"))))
 		 (r id) )
 	(if (null? fs)
