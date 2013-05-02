@@ -4,9 +4,10 @@
   - CVE-2013-1874: ./.csirc is no longer loaded from the current directory
     upon startup of csi, which could lead to untrusted code execution.
     (thanks to Florian Zumbiehl)
-  - On *nix, the qs procedure now single-quotes everything instead of relying
-    on a blacklist of shell characters to be escaped.  On Windows, it properly
-    duplicates double-quote characters.  (thanks to Florian Zumbiehl)
+  - CVE-2013-2024: On *nix, the qs procedure now single-quotes everything
+    instead of relying on a blacklist of shell characters to be escaped.
+    On Windows, it properly duplicates double-quote characters.  (thanks
+    to Florian Zumbiehl)
 
 - Tools
   - csc: added "-oi"/"-ot" options as alternatives to "-emit-inline-file"
