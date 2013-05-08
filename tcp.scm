@@ -50,6 +50,9 @@ static WSADATA wsa;
 # ifndef EINPROGRESS
 #  define EINPROGRESS     0
 # endif
+# ifndef EAGAIN
+#  define EAGAIN          0
+# endif
 # define typecorrect_getsockopt(socket, level, optname, optval, optlen)	\
     getsockopt(socket, level, optname, (char *)optval, optlen)
 #else
@@ -115,6 +118,7 @@ EOF
 (define ##net#recv (foreign-lambda int "recv" int scheme-pointer int int))
 (define ##net#shutdown (foreign-lambda int "shutdown" int int))
 (define ##net#connect (foreign-lambda int "connect" int scheme-pointer int))
+(define ##net#check-fd-ready (foreign-lambda int "C_check_fd_ready" int))
 
 (define ##net#send
   (foreign-lambda* 
@@ -181,30 +185,6 @@ EOF
      if((se = getservbyname(serv, proto)) == NULL) C_return(0);
      else C_return(ntohs(se->s_port));") )     
 
-(define ##net#select
-  (foreign-lambda* int ((int fd))
-    "fd_set in;
-     struct timeval tm;
-     int rv;
-     FD_ZERO(&in);
-     FD_SET(fd, &in);
-     tm.tv_sec = tm.tv_usec = 0;
-     rv = select(fd + 1, &in, NULL, NULL, &tm);
-     if(rv > 0) { rv = FD_ISSET(fd, &in) ? 1 : 0; }
-     C_return(rv);") )
-
-(define ##net#select-write
-  (foreign-lambda* int ((int fd))
-    "fd_set out;
-     struct timeval tm;
-     int rv;
-     FD_ZERO(&out);
-     FD_SET(fd, &out);
-     tm.tv_sec = tm.tv_usec = 0;
-     rv = select(fd + 1, NULL, &out, NULL, &tm);
-     if(rv > 0) { rv = FD_ISSET(fd, &out) ? 1 : 0; }
-     C_return(rv);") )
-
 (define ##net#gethostaddr
   (foreign-lambda* bool ((scheme-pointer saddr) (c-string host) (unsigned-short port))
     "struct hostent *he = gethostbyname(host);"
@@ -215,13 +195,6 @@ EOF
     "addr->sin_port = htons((short)port);"
     "addr->sin_addr = *((struct in_addr *)he->h_addr);"
     "C_return(1);") )
-
-(define (yield)
-  (##sys#call-with-current-continuation
-   (lambda (return)
-     (let ((ct ##sys#current-thread))
-       (##sys#setslot ct 1 (lambda () (return (##core#undefined))))
-       (##sys#schedule) ) ) ) )
 
 (define-syntax network-error
   (syntax-rules ()
@@ -342,7 +315,9 @@ EOF
 	     (outbufsize (tbs))
 	     (outbuf (and outbufsize (fx> outbufsize 0) ""))
 	     (tmr (tcp-read-timeout))
+             (dlr (and tmr (+ (current-milliseconds) tmr)))
 	     (tmw (tcp-write-timeout))
+             (dlw (and tmw (+ (current-milliseconds) tmw)))
 	     (read-input
 	      (lambda ()
 		(let loop ()
@@ -350,12 +325,11 @@ EOF
 		    (cond ((eq? -1 n)
 			   (cond ((or (eq? errno _ewouldblock) 
 				      (eq? errno _eagain))
-				  (when tmr
-				    (##sys#thread-block-for-timeout! 
-				     ##sys#current-thread
-				     (+ (current-milliseconds) tmr) ) )
+				  (when dlr
+				    (##sys#thread-block-for-timeout!
+                                     ##sys#current-thread dlr) )
 				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
-				  (yield)
+                                  (##sys#thread-yield!)
 				  (when (##sys#slot ##sys#current-thread 13)
 				    (##sys#signal-hook
 				     #:network-timeout-error
@@ -381,7 +355,7 @@ EOF
 		       c) ) )
 	       (lambda ()
 		 (or (fx< bufindex buflen)
-		     (let ((f (##net#select fd)))
+		     (let ((f (##net#check-fd-ready fd)))
 		       (when (eq? f -1)
 			 (network-error #f "cannot check socket for input" fd) )
 		       (eq? f 1) ) ) )
@@ -452,12 +426,11 @@ EOF
 		    (cond ((eq? -1 n)
 			   (cond ((or (eq? errno _ewouldblock)
 				      (eq? errno _eagain))
-				  (when tmw
+				  (when dlw
 				    (##sys#thread-block-for-timeout! 
-				     ##sys#current-thread
-				     (+ (current-milliseconds) tmw) ) )
-				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #:output)
-				  (yield) 
+				     ##sys#current-thread dlw) )
+                                  (##sys#thread-block-for-i/o! ##sys#current-thread fd #:output)
+                                  (##sys#thread-yield!)
 				  (when (##sys#slot ##sys#current-thread 13)
 				    (##sys#signal-hook
 				     #:network-timeout-error
@@ -505,33 +478,29 @@ EOF
 
 (define (tcp-accept tcpl)
   (##sys#check-structure tcpl 'tcp-listener)
-  (let ((fd (##sys#slot tcpl 1))
-	(tma (tcp-accept-timeout)))
+  (let* ((fd (##sys#slot tcpl 1))
+         (tma (tcp-accept-timeout))
+         (dla (and tma (+ tma (current-milliseconds)))))
     (let loop ()
-      (if (eq? 1 (##net#select fd))
-	  (let ((fd (##net#accept fd #f #f)))
-	    (cond ((not (eq? -1 fd)) (##net#io-ports fd))
-		  ((eq? errno _eintr)
-		   (##sys#dispatch-interrupt loop))
-		  (else
-		   (network-error 'tcp-accept "could not accept from listener" tcpl))))
-	  (begin
-	    (when tma
-	      (##sys#thread-block-for-timeout! 
-	       ##sys#current-thread
-	       (+ (current-milliseconds) tma) ) )
-	    (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
-	    (yield)
-	    (when (##sys#slot ##sys#current-thread 13)
-	      (##sys#signal-hook
-	       #:network-timeout-error
-	       'tcp-accept
-	       "accept operation timed out" tma fd) )
-	    (loop) ) ) ) ) )
+      (when dla
+        (##sys#thread-block-for-timeout! ##sys#current-thread dla) )
+      (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
+      (##sys#thread-yield!)
+      (if (##sys#slot ##sys#current-thread 13)
+	  (##sys#signal-hook
+	   #:network-timeout-error
+	   'tcp-accept
+	   "accept operation timed out" tma fd) )
+      (let ((fd (##net#accept fd #f #f)))
+	(cond ((not (eq? -1 fd)) (##net#io-ports fd))
+	      ((eq? errno _eintr)
+	       (##sys#dispatch-interrupt loop))
+	      (else
+	       (network-error 'tcp-accept "could not accept from listener" tcpl)))) ) ) )
 
 (define (tcp-accept-ready? tcpl)
   (##sys#check-structure tcpl 'tcp-listener 'tcp-accept-ready?)
-  (let ((f (##net#select (##sys#slot tcpl 1))))
+  (let ((f (##net#check-fd-ready (##sys#slot tcpl 1))))
     (when (eq? -1 f)
       (network-error 'tcp-accept-ready? "cannot check socket for input" tcpl) )
     (eq? 1 f) ) )
@@ -547,8 +516,9 @@ EOF
 (define general-strerror (foreign-lambda c-string "strerror" int))
 
 (define (tcp-connect host . more)
-  (let ((port (optional more #f))
-	(tmc (tcp-connect-timeout)))
+  (let* ((port (optional more #f))
+         (tmc (tcp-connect-timeout))
+         (dlc (and tmc (+ (current-milliseconds) tmc))))
     (##sys#check-string host)
     (unless port
       (set!-values (host port) (##net#parse-host host "tcp"))
@@ -565,25 +535,9 @@ EOF
       (let loop ()
 	(when (eq? -1 (##net#connect s addr _sockaddr_in_size))
 	  (cond ((eq? errno _einprogress)
-		 (let loop2 ()
-		   (let ((f (##net#select-write s)))
-		     (when (eq? f -1)
-		       (##net#close s)
-		       (network-error 'tcp-connect "cannot connect to socket" host port))
-		     (unless (eq? f 1)
-		       (when tmc
-			 (##sys#thread-block-for-timeout!
-			  ##sys#current-thread
-			  (+ (current-milliseconds) tmc) ) )
-		       (##sys#thread-block-for-i/o! ##sys#current-thread s #:all)
-		       (yield)
-		       (when (##sys#slot ##sys#current-thread 13)
-			 (##net#close s)
-			 (##sys#signal-hook
-			  #:network-timeout-error
-			  'tcp-connect
-			  "connect operation timed out" tmc s) )
-		       (loop2) ) ) ))
+		 (when dlc
+		   (##sys#thread-block-for-timeout! ##sys#current-thread dlc))
+		 (##sys#thread-block-for-i/o! ##sys#current-thread s #:all))
 		((eq? errno _eintr)
 		 (##sys#dispatch-interrupt loop))
 		(else

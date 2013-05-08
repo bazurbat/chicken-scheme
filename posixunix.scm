@@ -494,16 +494,7 @@ EOF
     "if(val == -1) C_return(0);"
     "C_return(fcntl(fd, F_SETFL, val | O_NONBLOCK) != -1);" ) )
 
-(define ##sys#file-select-one
-  (foreign-lambda* int ([int fd])
-    "fd_set in;"
-    "struct timeval tm;"
-    "FD_ZERO(&in);"
-    "FD_SET(fd, &in);"
-    "tm.tv_sec = tm.tv_usec = 0;"
-    "if(select(fd + 1, &in, NULL, NULL, &tm) == -1) C_return(-1);"
-    "else C_return(FD_ISSET(fd, &in) ? 1 : 0);" ) )
-
+(define ##sys#file-select-one (foreign-lambda int "C_check_fd_ready" int) )
 
 ;;; Lo-level I/O:
 

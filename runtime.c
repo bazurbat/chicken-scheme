@@ -60,6 +60,11 @@
 # define EOVERFLOW  0
 #endif
 
+/* TODO: Include sys/select.h? Windows doesn't seem to have it... */
+#ifdef HAVE_POSIX_POLL
+#  include <poll.h>
+#endif
+
 #if !defined(C_NONUNIX)
 
 # include <sys/types.h>
@@ -4174,20 +4179,39 @@ C_regparm C_word C_fcall C_execute_shell_command(C_word string)
   return C_fix(n);
 }
 
+/*
+ * TODO: Implement something for Windows that supports selecting on
+ * arbitrary fds (there, select() only works on network sockets and
+ * poll() is not available at all).
+ */
+C_regparm int C_fcall C_check_fd_ready(int fd)
+{
+#ifdef HAVE_POSIX_POLL
+  struct pollfd ps;
+  ps.fd = fd;
+  ps.events = POLLIN;
+  return poll(&ps, 1, 0);
+#else
+  fd_set in;
+  struct timeval tm;
+  int rv;
+  FD_ZERO(&in);
+  FD_SET(fd, &in);
+  tm.tv_sec = tm.tv_usec = 0;
+  rv = select(fd + 1, &in, NULL, NULL, &tm);
+  if(rv > 0) { rv = FD_ISSET(fd, &in) ? 1 : 0; }
+  return rv;
+#endif
+}
 
 C_regparm C_word C_fcall C_char_ready_p(C_word port)
 {
-#if !defined(C_NONUNIX)
-  fd_set fs;
-  struct timeval to;
-  int fd = C_fileno(C_port_file(port));
-
-  FD_ZERO(&fs);
-  FD_SET(fd, &fs);
-  to.tv_sec = to.tv_usec = 0;
-  return C_mk_bool(C_select(fd + 1, &fs, NULL, NULL, &to) == 1);
-#else
+#if defined(C_NONUNIX)
+  /* The best we can currently do on Windows... */
   return C_SCHEME_TRUE;
+#else
+  int fd = C_fileno(C_port_file(port));
+  return C_mk_bool(C_check_fd_ready(fd) == 1);
 #endif
 }
 
