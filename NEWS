@@ -17,6 +17,10 @@
   - chicken-install now also accepts full URI syntax for proxy environment
     variables (thanks to Michele La Monaca)
 
+- Syntax
+  - Added the aliases "&optional" and "&rest" as alternatives to "#!optional"
+    and "#!rest" in type-declarations (suggested by Joerg Wittenberger).
+
 - Compiler
   - the "inline" declaration does not force inlining anymore as recursive
     inlining could lead to non-termination of the compiler (thanks to

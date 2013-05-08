@@ -201,6 +201,10 @@ Additionally, some aliases are allowed:
 <tr><td>{{void}}</td><td>{{undefined}}</td></tr>
 </table>
 
+For portability the aliases {{&optional}} and {{&rest}} are allowed
+in procedure type declarations as an alternative to {{#!optional}} and
+{{#!rest}}, respectively.
+
 
 ==== Predicates
 

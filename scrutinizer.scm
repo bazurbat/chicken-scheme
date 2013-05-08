@@ -102,6 +102,9 @@
 ;            | INTEGER | SYMBOL | STRING
 ;            | (quote CONSTANT)
 ;            | (TEMPLATE . TEMPLATE)
+;
+; As an alternative to the "#!rest" and "#!optional" keywords, "&rest" or "&optional"
+; may be used.
 
 
 (define-constant +fragment-max-length+ 6)
@@ -1956,6 +1959,7 @@
   ;; - converts some typenames to struct types (u32vector, etc.)
   ;; - handles some type aliases
   ;; - drops "#!key ..." args by converting to #!rest
+  ;; - replaces uses of "&rest"/"&optional" with "#!rest"/"#!optional"
   ;; - handles "(T1 -> T2 : T3)" (predicate) 
   ;; - handles "(T1 --> T2 [: T3])" (clean)
   ;; - simplifies result
@@ -1974,10 +1978,12 @@
       (cond ((null? llist) '())
 	    ((symbol? llist) '(#!rest *))
 	    ((not (pair? llist)) #f)
-	    ((eq? '#!optional (car llist))
+	    ((or (eq? '#!optional (car llist))
+		 (eq? '&optional (car llist)))
 	     (let ((l1 (validate-llist (cdr llist))))
 	       (and l1 (cons '#!optional l1))))
-	    ((eq? '#!rest (car llist))
+	    ((or (eq? '#!rest (car llist))
+		 (eq? '&rest (car llist)))
 	     (cond ((null? (cdr llist)) '(#!rest *))
 		   ((not (pair? (cdr llist))) #f)
 		   (else
