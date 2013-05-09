@@ -201,6 +201,13 @@ EOF
     ((_ loc msg . args)
      (network-error/errno loc (##sys#update-errno) msg . args))))
 
+(define-syntax network-error/close
+  (syntax-rules ()
+    ((_ loc msg socket . args)
+     (let ((errno (##sys#update-errno)))
+       (##net#close socket)
+       (network-error/errno loc errno msg socket . args)))))
+
 (define-syntax network-error/errno
   (syntax-rules ()
     ((_ loc errno msg . args)
@@ -235,42 +242,39 @@ EOF
     "addr->sin_port = htons(port);"
     "addr->sin_addr.s_addr = htonl(INADDR_ANY);") )
 
-(define (##net#bind-socket port style host)
-  (##sys#check-exact port)
-  (when (or (fx< port 0) (fx> port 65535))
-    (##sys#signal-hook #:domain-error 'tcp-listen "invalid port number" port) )
-  (let ((s (##net#socket _af_inet style 0)))
-    (when (eq? _invalid_socket s)
-      (##sys#update-errno)
-      (##sys#error "cannot create socket") )
-    ;; PLT makes this an optional arg to tcp-listen. Should we as well?
-    (when (eq? -1 ((foreign-lambda* int ((int socket)) 
-		     "int yes = 1; 
-                      C_return(setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes, sizeof(int)));") 
-		   s) )
-      (network-error 'tcp-listen "error while setting up socket" s) )
-    (let ((addr (make-string _sockaddr_in_size)))
-      (if host
-	  (unless (##net#gethostaddr addr host port)
-	    (##sys#signal-hook 
-	     #:network-error 'tcp-listen 
-	     "getting listener host IP failed" host port) )
-	  (##net#fresh-addr addr port) )
-      (let ((b (##net#bind s addr _sockaddr_in_size)))
-	(when (eq? -1 b)
-	  (network-error 'tcp-listen "cannot bind to socket" s port) )
-	(values s addr) ) ) ) )
+(define (##net#bind-socket style host port)
+  (let ((addr (make-string _sockaddr_in_size)))
+    (if host
+	(unless (##net#gethostaddr addr host port)
+	  (##sys#signal-hook 
+	   #:network-error 'tcp-listen 
+	   "getting listener host IP failed" host port) )
+	(##net#fresh-addr addr port) )
+    (let ((s (##net#socket _af_inet style 0)))
+      (when (eq? _invalid_socket s)
+	(##sys#update-errno)
+	(##sys#error "cannot create socket") )
+      ;; PLT makes this an optional arg to tcp-listen. Should we as well?
+      (when (eq? -1 ((foreign-lambda* int ((int socket)) 
+		       "int yes = 1; 
+		      C_return(setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes, sizeof(int)));") 
+		     s) )
+	(network-error/close 'tcp-listen "error while setting up socket" s) )
+      (when (eq? -1 (##net#bind s addr _sockaddr_in_size))
+	(network-error/close 'tcp-listen "cannot bind to socket" s host port) )
+      s)) )
 
 (define-constant default-backlog 100)
 
-(define (tcp-listen port . more)
-  (let-optionals more ((w default-backlog) (host #f))
-    (let-values (((s addr) (##net#bind-socket port _sock_stream host)))
-      (##sys#check-exact w)
-      (let ((l (##net#listen s w)))
-	(when (eq? -1 l)
-	  (network-error 'tcp-listen "cannot listen on socket" s port) )
-	(##sys#make-structure 'tcp-listener s) ) ) ) )
+(define (tcp-listen port #!optional (backlog default-backlog) host)
+  (##sys#check-exact port)
+  (when (or (fx< port 0) (fx> port 65535))
+    (##sys#signal-hook #:domain-error 'tcp-listen "invalid port number" port) )
+  (##sys#check-exact backlog)
+  (let ((s (##net#bind-socket _sock_stream host port)))
+    (when (eq? -1 (##net#listen s backlog))
+      (network-error/close 'tcp-listen "cannot listen on socket" s port) )
+    (##sys#make-structure 'tcp-listener s) ) )
 
 (define (tcp-listener? x) 
   (and (##core#inline "C_blockp" x)
@@ -303,9 +307,9 @@ EOF
 
 (define ##net#io-ports
   (let ((tbs tcp-buffer-size))
-    (lambda (fd)
+    (lambda (loc fd)
       (unless (##net#make-nonblocking fd)
-	(network-error #f "cannot create TCP ports") )
+	(network-error/close loc "cannot create TCP ports" fd) )
       (let* ((buf (make-string +input-buffer-size+))
 	     (data (vector fd #f #f buf 0))
 	     (buflen 0)
@@ -492,7 +496,7 @@ EOF
 	   'tcp-accept
 	   "accept operation timed out" tma fd) )
       (let ((fd (##net#accept fd #f #f)))
-	(cond ((not (eq? -1 fd)) (##net#io-ports fd))
+	(cond ((not (eq? -1 fd)) (##net#io-ports 'tcp-accept fd))
 	      ((eq? errno _eintr)
 	       (##sys#dispatch-interrupt loop))
 	      (else
@@ -518,20 +522,20 @@ EOF
 (define (tcp-connect host . more)
   (let* ((port (optional more #f))
          (tmc (tcp-connect-timeout))
-         (dlc (and tmc (+ (current-milliseconds) tmc))))
+         (dlc (and tmc (+ (current-milliseconds) tmc)))
+         (addr (make-string _sockaddr_in_size)))
     (##sys#check-string host)
     (unless port
       (set!-values (host port) (##net#parse-host host "tcp"))
       (unless port (##sys#signal-hook #:domain-error 'tcp-connect "no port specified" host)) )
     (##sys#check-exact port)
-    (let ((addr (make-string _sockaddr_in_size))
-	  (s (##net#socket _af_inet _sock_stream 0)) )
+    (unless (##net#gethostaddr addr host port)
+      (##sys#signal-hook #:network-error 'tcp-connect "cannot find host address" host) )
+    (let ((s (##net#socket _af_inet _sock_stream 0)) )
       (when (eq? -1 s)
 	(network-error 'tcp-connect "cannot create socket" host port) )
-      (unless (##net#gethostaddr addr host port)
-	(##sys#signal-hook #:network-error 'tcp-connect "cannot find host address" host) )
       (unless (##net#make-nonblocking s)
-	(network-error 'tcp-connect "fcntl() failed") )
+	(network-error/close 'tcp-connect "fcntl() failed" s) )
       (let loop ()
 	(when (eq? -1 (##net#connect s addr _sockaddr_in_size))
 	  (cond ((eq? errno _einprogress)
@@ -542,16 +546,15 @@ EOF
 		((eq? errno _eintr)
 		 (##sys#dispatch-interrupt loop))
 		(else
-		 (##net#close s)
-		 (network-error 'tcp-connect "cannot connect to socket" host port)))))
+		 (network-error/close
+                  'tcp-connect "cannot connect to socket" s host port)))))
       (let ((err (get-socket-error s)))
 	(cond ((fx= err -1)
-	       (##net#close s)
-	       (network-error 'tcp-connect "getsockopt() failed"))
+               (network-error/close 'tcp-connect "getsockopt() failed" s))
 	      ((fx> err 0)
 	       (##net#close s)
 	       (network-error/errno 'tcp-connect err "cannot create socket"))))
-      (##net#io-ports s) ) ) )
+      (##net#io-ports 'tcp-connect s) ) ) )
 
 (define (##sys#tcp-port->fileno p)
   (let ((data (##sys#port-data p)))
