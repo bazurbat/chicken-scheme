@@ -537,7 +537,8 @@ EOF
 	  (cond ((eq? errno _einprogress)
 		 (when dlc
 		   (##sys#thread-block-for-timeout! ##sys#current-thread dlc))
-		 (##sys#thread-block-for-i/o! ##sys#current-thread s #:all))
+		 (##sys#thread-block-for-i/o! ##sys#current-thread s #:all)
+                 (##sys#thread-yield!))
 		((eq? errno _eintr)
 		 (##sys#dispatch-interrupt loop))
 		(else
