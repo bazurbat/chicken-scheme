@@ -60,6 +60,7 @@ static C_TLS int C_wait_status;
 
 #if defined(__sun__) && defined(__svr4__)
 # include <sys/tty.h>
+# include <termios.h>
 #endif
 
 #ifdef HAVE_GRP_H
