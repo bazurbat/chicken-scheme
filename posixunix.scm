@@ -58,7 +58,7 @@ static C_TLS int C_wait_status;
 #include <pwd.h>
 #include <utime.h>
 
-#if defined(__sun__) && defined(__svr4__)
+#if defined(__sun) && defined(__SVR4)
 # include <sys/tty.h>
 # include <termios.h>
 #endif

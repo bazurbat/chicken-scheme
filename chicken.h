@@ -89,7 +89,7 @@
 # define C_NONUNIX
 #endif
 
-#if defined(__sun__) && defined(__svr4__)
+#if defined(__sun) && defined(__SVR4)
 # define C_SOLARIS
 #endif
 
@@ -135,9 +135,9 @@
 # include <arpa/nameser.h>
 #elif defined(_AIX)
 # include <sys/machine.h>
-#elif defined(__sun__)
+#elif defined(__sun)
 # include <sys/isa_defs.h>
-#elif defined(__svr4__)
+#elif defined(__SVR4)
 # include <sys/byteorder.h>
 #endif
 
@@ -530,7 +530,7 @@ static inline int isinf_ld (long double x)
 #define C_uword                   unsigned C_word
 #define C_header                  C_uword
 
-#if defined(__sun__) && !defined(__svr4__) 
+#if defined(__sun) && !defined(__SVR4) 
 /* SunOS is supposed not to have stdint.h */
 # include <inttypes.h>
 #else
@@ -709,8 +709,8 @@ static inline int isinf_ld (long double x)
 # define C_SOFTWARE_VERSION "dragonfly"
 #elif defined(__HAIKU__)
 # define C_SOFTWARE_VERSION "haiku"
-#elif defined(__sun__)
-# if defined(__svr4__)
+#elif defined(__sun)
+# if defined(__SVR4)
 #   define C_SOFTWARE_VERSION "solaris"
 # else
 #   define C_SOFTWARE_VERSION "sunos"
@@ -2865,7 +2865,7 @@ C_path_to_executable(C_char *fname)
     return buffer;
   }
   else return NULL;  
-# elif defined(__unix__) || defined(C_XXXBSD)
+# elif defined(__unix__) || defined(__unix) || defined(C_XXXBSD)
   int i, j, k, l;
   C_char *path, *dname;
 
