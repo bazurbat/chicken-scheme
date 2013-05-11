@@ -8,8 +8,8 @@
     instead of relying on a blacklist of shell characters to be escaped.
     On Windows, it properly duplicates double-quote characters.  (thanks
     to Florian Zumbiehl)
-  - Use POSIX poll() in other places where select() was still being used.
-    (thanks to Florian Zumbiehl and Joerg Wittenberger)
+  - CVE-2013-2075: Use POSIX poll() in other places where select() was
+    still being used.  (thanks to Florian Zumbiehl and Joerg Wittenberger)
 
 - Tools
   - csc: added "-oi"/"-ot" options as alternatives to "-emit-inline-file"
