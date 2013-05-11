@@ -235,19 +235,6 @@ static void C_fcall C_free_arg_string(char **where) {
   while((*where) != NULL) C_free(*(where++));
 }
 
-static void C_set_timeval(C_word num, struct timeval *tm)
-{
-  if((num & C_FIXNUM_BIT) != 0) {
-    tm->tv_sec = C_unfix(num);
-    tm->tv_usec = 0;
-  }
-  else {
-    double i;
-    tm->tv_usec = (int)(modf(C_flonum_magnitude(num), &i) * 1000000);
-    tm->tv_sec = (int)i;
-  }
-}
-
 #define C_set_exec_arg(i, a, len)	C_set_arg_string(C_exec_args, i, a, len)
 #define C_free_exec_args()		C_free_arg_string(C_exec_args)
 #define C_set_exec_env(i, a, len)	C_set_arg_string(C_exec_env, i, a, len)
