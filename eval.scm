@@ -1413,6 +1413,7 @@
        (if (memq (car s)
 		 '(import 
 		    require-extension 
+		    require-extension-for-syntax
 		    require-library 
 		    begin-for-syntax
 		    export 

@@ -1082,6 +1082,13 @@
     (##sys#check-syntax 'use x '(_ . #(_ 0)))
     `(##core#require-extension ,(cdr x) #t))))
 
+(##sys#extend-macro-environment
+ 'use-for-syntax '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'use-for-syntax x '(_ . #(_ 0)))
+    `(,(r 'require-extension-for-syntax) ,@(cdr x)))))
+
 
 ;;; compiler syntax
 

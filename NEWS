@@ -31,6 +31,9 @@
     inlining could lead to non-termination of the compiler (thanks to
     Andrei Barbu).
 
+- Syntax expander
+  - added "require-extension-for-syntax" and "use-for-syntax".
+
 - Core libraries
   - read-line no longer returns trailing CRs in rare cases on TCP ports (#568)
   - write and pp now correctly use escape sequences for control characters

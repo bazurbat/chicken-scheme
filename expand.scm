@@ -1380,6 +1380,13 @@
       `(##core#require-extension ,ids #t) ) ) ) )
 
 (##sys#extend-macro-environment
+ 'require-extension-for-syntax
+ '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    `(,(r 'begin-for-syntax) (,(r 'require-extension) ,@(cdr x))))))
+
+(##sys#extend-macro-environment
  'module
  '()
  (##sys#er-transformer

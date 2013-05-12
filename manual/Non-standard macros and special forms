@@ -43,8 +43,6 @@ defined:
 * {{(srfi NUMBER ...)}} is required for SRFI-55 compatibility and is fully implemented
 * {{(version ID NUMBER)}} is equivalent to {{ID}}, but checks at compile-time whether the extension named {{ID}} is installed and whether its version is equal or higher than {{NUMBER}}. {{NUMBER}} may be a string or a number, the comparison is done lexicographically (using {{string>=?}}).
 
-See also: {{set-extension-specifier!}}
-
 ==== require-extension
 
 <macro>(require-extension ID ...)</macro>
@@ -61,6 +59,24 @@ This implementation of {{require-extension}} is compliant with [[http://srfi.sch
 <macro>(use ID ...)</macro>
 
 {{use}} is just a shorter alias for {{require-extension}}.
+
+==== require-extension-for-syntax
+
+<macro>(require-extension-for-syntax ID ...)</macro>
+
+An abbreviation for the idiom:
+
+<enscript highlight=scheme>
+(begin-for-syntax (require-library ID ...))  ; load extension at expansion-time
+(import-for-syntax ID ...)                   ; import extension for use in syntax-transformers
+</enscript>
+
+
+==== use-for-syntax
+
+<macro>(use-for-syntax ID ...)</macro>
+
+{{use}} is just a shorter alias for {{require-extension-for-syntax}} (which is quite a mouthful).
 
 
 === Binding forms for optional arguments
