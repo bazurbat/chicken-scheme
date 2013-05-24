@@ -101,7 +101,6 @@ static C_TLS char *C_exec_env[ ENV_MAX ];
 static C_TLS struct group *C_group;
 static C_TLS int C_pipefds[ 2 ];
 static C_TLS time_t C_secs;
-static C_TLS struct tm C_tm;
 
 /* pipe handles */
 static C_TLS HANDLE C_rd0, C_wr0, C_wr0_, C_rd1, C_wr1, C_rd1_;
@@ -302,23 +301,6 @@ C_free_arg_string(char **where) {
 #define C_umask(m)          C_fix(_umask(C_unfix(m)))
 
 #define C_ctime(n)	    (C_secs = (n), ctime(&C_secs))
-
-#define C_tm_set_08(v) \
-        (memset(&C_tm, 0, sizeof(struct tm)), \
-        C_tm.tm_sec = C_unfix(C_block_item(v, 0)), \
-        C_tm.tm_min = C_unfix(C_block_item(v, 1)), \
-        C_tm.tm_hour = C_unfix(C_block_item(v, 2)), \
-        C_tm.tm_mday = C_unfix(C_block_item(v, 3)), \
-        C_tm.tm_mon = C_unfix(C_block_item(v, 4)), \
-        C_tm.tm_year = C_unfix(C_block_item(v, 5)), \
-        C_tm.tm_wday = C_unfix(C_block_item(v, 6)), \
-        C_tm.tm_yday = C_unfix(C_block_item(v, 7)), \
-        C_tm.tm_isdst = (C_block_item(v, 8) != C_SCHEME_FALSE))
-
-#define C_tm_set(v) (C_tm_set_08(v), &C_tm)
-
-#define C_asctime(v)    (asctime(C_tm_set(v)))
-#define C_a_mktime(ptr, c, v)  C_flonum(ptr, mktime(C_tm_set(v)))
 
 #define TIME_STRING_MAXLENGTH 255
 static char C_time_string [TIME_STRING_MAXLENGTH + 1];

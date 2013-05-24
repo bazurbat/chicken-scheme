@@ -137,7 +137,6 @@ static C_TLS struct {
 #endif
 static C_TLS int C_pipefds[ 2 ];
 static C_TLS time_t C_secs;
-static C_TLS struct tm C_tm;
 static C_TLS struct timeval C_timeval;
 static C_TLS char C_hostbuf[ 256 ];
 static C_TLS struct stat C_statbuf;
@@ -327,21 +326,14 @@ static time_t C_timegm(struct tm *t)
 #define C_timegm timegm
 #endif
 
-#define cpy_tmvec_to_tmstc08(ptm, v) \
-    (memset((ptm), 0, sizeof(struct tm)), \
-    (ptm)->tm_sec = C_unfix(C_block_item((v), 0)), \
-    (ptm)->tm_min = C_unfix(C_block_item((v), 1)), \
-    (ptm)->tm_hour = C_unfix(C_block_item((v), 2)), \
-    (ptm)->tm_mday = C_unfix(C_block_item((v), 3)), \
-    (ptm)->tm_mon = C_unfix(C_block_item((v), 4)), \
-    (ptm)->tm_year = C_unfix(C_block_item((v), 5)), \
-    (ptm)->tm_wday = C_unfix(C_block_item((v), 6)), \
-    (ptm)->tm_yday = C_unfix(C_block_item((v), 7)), \
-    (ptm)->tm_isdst = (C_block_item((v), 8) != C_SCHEME_FALSE))
+#define C_a_timegm(ptr, c, v, tm)  C_flonum(ptr, C_timegm(C_tm_set((v), C_data_pointer(tm))))
 
-#define cpy_tmvec_to_tmstc9(ptm, v) \
-    (((struct tm *)ptm)->tm_gmtoff = -C_unfix(C_block_item((v), 9)))
+#ifdef __linux__
+extern char *strptime(const char *s, const char *format, struct tm *tm);
+extern pid_t getpgid(pid_t pid);
+#endif
 
+/* tm_get could be in posix-common, but it's only used in here */
 #define cpy_tmstc08_to_tmvec(v, ptm) \
     (C_set_block_item((v), 0, C_fix(((struct tm *)ptm)->tm_sec)), \
     C_set_block_item((v), 1, C_fix((ptm)->tm_min)), \
@@ -356,63 +348,21 @@ static time_t C_timegm(struct tm *t)
 #define cpy_tmstc9_to_tmvec(v, ptm) \
     (C_set_block_item((v), 9, C_fix(-(ptm)->tm_gmtoff)))
 
-#define C_tm_set_08(v)  cpy_tmvec_to_tmstc08( &C_tm, (v) )
-#define C_tm_set_9(v)   cpy_tmvec_to_tmstc9( &C_tm, (v) )
-
-#define C_tm_get_08(v)  cpy_tmstc08_to_tmvec( (v), &C_tm )
-#define C_tm_get_9(v)   cpy_tmstc9_to_tmvec( (v), &C_tm )
-
-#if !defined(C_GNU_ENV) || defined(__CYGWIN__) || defined(__uClinux__)
-
-static struct tm *
-C_tm_set( C_word v )
-{
-  C_tm_set_08( v );
-  return &C_tm;
-}
+#define C_tm_get_08(v, tm)  cpy_tmstc08_to_tmvec( (v), (tm) )
+#define C_tm_get_9(v, tm)   cpy_tmstc9_to_tmvec( (v), (tm) )
 
 static C_word
-C_tm_get( C_word v )
+C_tm_get( C_word v, void *tm )
 {
-  C_tm_get_08( v );
+  C_tm_get_08( v, (struct tm *)tm );
+#if defined(C_GNU_ENV) && !defined(__CYGWIN__) && !defined(__uClinux__)
+  C_tm_get_9( v, (struct tm *)tm );
+#endif
   return v;
 }
 
-#else
-
-static struct tm *
-C_tm_set( C_word v )
-{
-  C_tm_set_08( v );
-  C_tm_set_9( v );
-  return &C_tm;
-}
-
-static C_word
-C_tm_get( C_word v )
-{
-  C_tm_get_08( v );
-  C_tm_get_9( v );
-  return v;
-}
-
-#endif
-
-#define C_asctime(v)    (asctime(C_tm_set(v)))
-#define C_a_mktime(ptr, c, v)  C_flonum(ptr, mktime(C_tm_set(v)))
-#define C_a_timegm(ptr, c, v)  C_flonum(ptr, C_timegm(C_tm_set(v)))
-
-#define TIME_STRING_MAXLENGTH 255
-static char C_time_string [TIME_STRING_MAXLENGTH + 1];
-#undef TIME_STRING_MAXLENGTH
-
-#ifdef __linux__
-extern char *strptime(const char *s, const char *format, struct tm *tm);
-extern pid_t getpgid(pid_t pid);
-#endif
-
-#define C_strptime(s, f, v) \
-        (strptime(C_c_string(s), C_c_string(f), &C_tm) ? C_tm_get(v) : C_SCHEME_FALSE)
+#define C_strptime(s, f, v, stm) \
+        (strptime(C_c_string(s), C_c_string(f), ((struct tm *)(stm))) ? C_tm_get((v), (stm)) : C_SCHEME_FALSE)
 
 static gid_t *C_groups = NULL;
 
@@ -1631,34 +1581,22 @@ EOF
 
 ;;; Time related things:
 
-(define time->string
-  (let ([asctime (foreign-lambda c-string "C_asctime" scheme-object)]
-        [strftime (foreign-lambda c-string "C_strftime" scheme-object scheme-object)])
-    (lambda (tm #!optional fmt)
-      (check-time-vector 'time->string tm)
-      (if fmt
-          (begin
-            (##sys#check-string fmt 'time->string)
-            (or (strftime tm (##sys#make-c-string fmt 'time->string))
-                (##sys#error 'time->string "time formatting overflows buffer" tm)) )
-          (let ([str (asctime tm)])
-            (if str
-                (##sys#substring str 0 (fx- (##sys#size str) 1))
-                (##sys#error 'time->string "cannot convert time vector to string" tm) ) ) ) ) ) )
-
 (define string->time
-  (let ([strptime (foreign-lambda scheme-object "C_strptime" scheme-object scheme-object scheme-object)])
+  (let ((strptime (foreign-lambda scheme-object "C_strptime" scheme-object scheme-object scheme-object scheme-pointer))
+        (tm-size (foreign-value "sizeof(struct tm)" int)))
     (lambda (tim #!optional (fmt "%a %b %e %H:%M:%S %Z %Y"))
       (##sys#check-string tim 'string->time)
       (##sys#check-string fmt 'string->time)
-      (strptime (##sys#make-c-string tim 'string->time) (##sys#make-c-string fmt) (make-vector 10 #f)) ) ) )
+      (strptime (##sys#make-c-string tim 'string->time) (##sys#make-c-string fmt) (make-vector 10 #f) (##sys#make-string tm-size #\nul)) ) ) )
 
-(define (utc-time->seconds tm)
-  (check-time-vector 'utc-time->seconds tm)
-  (let ((t (##core#inline_allocate ("C_a_timegm" 4) tm)))
-    (if (fp= -1.0 t)
-	(##sys#error 'utc-time->seconds "cannot convert time vector to seconds" tm) 
-	t)))
+(define utc-time->seconds
+  (let ((tm-size (foreign-value "sizeof(struct tm)" int)))
+    (lambda (tm)
+      (check-time-vector 'utc-time->seconds tm)
+      (let ((t (##core#inline_allocate ("C_a_timegm" 4) tm (##sys#make-string tm-size #\nul))))
+        (if (fp= -1.0 t)
+            (##sys#error 'utc-time->seconds "cannot convert time vector to seconds" tm)
+            t)))))
 
 (define local-timezone-abbreviation
   (foreign-lambda* c-string ()

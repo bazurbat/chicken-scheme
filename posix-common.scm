@@ -50,8 +50,41 @@ static C_TLS struct stat C_statbuf;
 # define S_IFSOCK           0140000
 #endif
 
-#define C_strftime(v, f) \
-        (strftime(C_time_string, sizeof(C_time_string), C_c_string(f), C_tm_set(v)) ? C_time_string : NULL)
+#define cpy_tmvec_to_tmstc08(ptm, v) \
+    ((ptm)->tm_sec = C_unfix(C_block_item((v), 0)), \
+    (ptm)->tm_min = C_unfix(C_block_item((v), 1)), \
+    (ptm)->tm_hour = C_unfix(C_block_item((v), 2)), \
+    (ptm)->tm_mday = C_unfix(C_block_item((v), 3)), \
+    (ptm)->tm_mon = C_unfix(C_block_item((v), 4)), \
+    (ptm)->tm_year = C_unfix(C_block_item((v), 5)), \
+    (ptm)->tm_wday = C_unfix(C_block_item((v), 6)), \
+    (ptm)->tm_yday = C_unfix(C_block_item((v), 7)), \
+    (ptm)->tm_isdst = (C_block_item((v), 8) != C_SCHEME_FALSE))
+
+#define cpy_tmvec_to_tmstc9(ptm, v) \
+    (((struct tm *)ptm)->tm_gmtoff = -C_unfix(C_block_item((v), 9)))
+
+#define C_tm_set_08(v, tm)  cpy_tmvec_to_tmstc08( (tm), (v) )
+#define C_tm_set_9(v, tm)   cpy_tmvec_to_tmstc9( (tm), (v) )
+
+static struct tm *
+C_tm_set( C_word v, void *tm )
+{
+  C_tm_set_08( v, (struct tm *)tm );
+#if defined(C_GNU_ENV) && !defined(__CYGWIN__) && !defined(__uClinux__)
+  C_tm_set_9( v, (struct tm *)tm );
+#endif
+  return tm;
+}
+
+#define TIME_STRING_MAXLENGTH 255
+static char C_time_string [TIME_STRING_MAXLENGTH + 1];
+#undef TIME_STRING_MAXLENGTH
+
+#define C_strftime(v, f, tm) \
+        (strftime(C_time_string, sizeof(C_time_string), C_c_string(f), C_tm_set((v), (tm))) ? C_time_string : NULL)
+#define C_a_mktime(ptr, c, v, tm)  C_flonum(ptr, mktime(C_tm_set((v), C_data_pointer(tm))))
+#define C_asctime(v, tm)    (asctime(C_tm_set((v), (tm))))
 
 #define C_C_fileno(p)	    C_fix(fileno(C_port_file(p)))
 
@@ -470,24 +503,27 @@ EOF
             (##sys#substring str 0 (fx- (##sys#size str) 1))
             (##sys#error 'seconds->string "cannot convert seconds to string" secs) ) ) ) ) )
 
-(define (local-time->seconds tm)
-  (check-time-vector 'local-time->seconds tm)
-  (let ((t (##core#inline_allocate ("C_a_mktime" 4) tm)))
-    (if (fp= -1.0 t)
-	(##sys#error 'local-time->seconds "cannot convert time vector to seconds" tm)
-	t)))
+(define local-time->seconds
+  (let ((tm-size (foreign-value "sizeof(struct tm)" int)))
+    (lambda (tm)
+      (check-time-vector 'local-time->seconds tm)
+      (let ((t (##core#inline_allocate ("C_a_mktime" 4) tm (##sys#make-string tm-size #\nul))))
+        (if (fp= -1.0 t)
+            (##sys#error 'local-time->seconds "cannot convert time vector to seconds" tm)
+            t)))))
 
 (define time->string
-  (let ([asctime (foreign-lambda c-string "C_asctime" scheme-object)]
-        [strftime (foreign-lambda c-string "C_strftime" scheme-object scheme-object)])
+  (let ((asctime (foreign-lambda c-string "C_asctime" scheme-object scheme-pointer))
+        (strftime (foreign-lambda c-string "C_strftime" scheme-object scheme-object scheme-pointer))
+        (tm-size (foreign-value "sizeof(struct tm)" int)))
     (lambda (tm #!optional fmt)
       (check-time-vector 'time->string tm)
       (if fmt
           (begin
             (##sys#check-string fmt 'time->string)
-            (or (strftime tm (##sys#make-c-string fmt 'time->string))
+            (or (strftime tm (##sys#make-c-string fmt 'time->string) (##sys#make-string tm-size #\nul))
                 (##sys#error 'time->string "time formatting overflows buffer" tm)) )
-          (let ([str (asctime tm)])
+          (let ([str (asctime tm (##sys#make-string tm-size #\nul))])
             (if str
                 (##sys#substring str 0 (fx- (##sys#size str) 1))
                 (##sys#error 'time->string "cannot convert time vector to string" tm) ) ) ) ) ) )
