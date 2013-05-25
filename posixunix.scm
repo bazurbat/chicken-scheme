@@ -1241,21 +1241,36 @@ EOF
 
 (define-foreign-variable _filename_max int "FILENAME_MAX")
 
-(define read-symbolic-link
+(define ##sys#read-symbolic-link
   (let ((buf (make-string (fx+ _filename_max 1))))
-    (lambda (fname #!optional canonicalize)
-      (##sys#check-string fname 'read-symbolic-link)
-      (let ((len (##core#inline 
-		  "C_do_readlink"
-		  (##sys#make-c-string (##sys#expand-home-path fname) 'read-symbolic-link) buf)))
-	(if (fx< len 0)
-	    (if canonicalize
-		fname
-		(posix-error #:file-error 'read-symbolic-link "cannot read symbolic link" fname))
-	    (let ((pathname (substring buf 0 len)))
-	      (if (and canonicalize (symbolic-link? pathname))
-		  (read-symbolic-link pathname 'canonicalize)
-		  pathname ) ) ) ) ) ) )
+    (lambda (fname location)
+      (let ((len (##core#inline
+                  "C_do_readlink"
+                  (##sys#make-c-string fname location) buf)))
+        (if (fx< len 0)
+            (posix-error #:file-error location "cannot read symbolic link" fname)
+            (substring buf 0 len))))))
+
+(define (read-symbolic-link fname #!optional canonicalize)
+  (##sys#check-string fname 'read-symbolic-link)
+  (let ((fname (##sys#expand-home-path fname)))
+    (if canonicalize
+        (receive (base-origin base-directory directory-components) (decompose-directory fname)
+          (let loop ((components directory-components)
+                     (result (string-append (or base-origin "") (or base-directory ""))))
+            (if (null? components)
+                result
+                (let ((pathname (make-pathname result (car components))))
+                  (if (file-exists? pathname)
+                      (loop (cdr components)
+                            (if (symbolic-link? pathname)
+                                (let ((target (##sys#read-symbolic-link pathname 'read-symbolic-link)))
+                                  (if (absolute-pathname? target)
+                                      target
+                                      (make-pathname result target)))
+                                pathname))
+                      (##sys#signal-hook #:file-error 'read-symbolic-link "could not canonicalize path with symbolic links, component does not exist" pathname))))))
+        (##sys#read-symbolic-link fname 'read-symbolic-link))))
 
 (define file-link
   (let ([link (foreign-lambda int "link" c-string c-string)])
