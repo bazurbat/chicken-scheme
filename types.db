@@ -1768,7 +1768,7 @@
 (prot/none fixnum)
 (prot/read fixnum)
 (prot/write fixnum)
-(read-symbolic-link (#(procedure #:clean #:enforce) read-symbolic-link (string) string))
+(read-symbolic-link (#(procedure #:clean #:enforce) read-symbolic-link (string #!optional boolean) string))
 (regular-file? (#(procedure #:clean #:enforce) regular-file? ((or string fixnum)) boolean))
 (seconds->local-time (#(procedure #:clean #:enforce) seconds->local-time (#!optional number) (vector fixnum fixnum fixnum fixnum fixnum fixnum fixnum fixnum boolean fixnum)))
 (seconds->string (#(procedure #:clean #:enforce) seconds->string (#!optional number) string))
