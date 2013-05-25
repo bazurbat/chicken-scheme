@@ -1,10 +1,15 @@
 ;;;; private-repository-test.scm
 
 
-(use files)
+(use files posix)
 
-(define repo (normalize-pathname (repository-path)))
-(define dir (normalize-pathname (car (command-line-arguments))))
+(define read-symbolic-link*
+  (cond-expand
+   ((and windows (not cygwin)) (lambda (x) x))
+   (else read-symbolic-link)))
+
+(define repo (normalize-pathname (read-symbolic-link* (repository-path) #t)))
+(define dir (normalize-pathname (read-symbolic-link* (car (command-line-arguments)) #t)))
 
 (print (list dir repo))
 
