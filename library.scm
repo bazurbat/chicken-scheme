@@ -2236,6 +2236,8 @@ EOF
 (define setter ##sys#setter)
 
 (define (getter-with-setter get set #!optional info)
+  (##sys#check-closure get 'getter-with-setter)
+  (##sys#check-closure set 'getter-with-setter)
   (let ((getdec (cond (info
 		       (##sys#check-string info 'getter-with-setter)
 		       (##sys#make-lambda-info info))
