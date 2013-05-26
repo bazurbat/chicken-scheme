@@ -1,27 +1,49 @@
 ;; R7RS Tests
 
 ;; Copied from R4RS tests
-(define cur-section '())(define errs '())
-(define SECTION (lambda args
-		  (display "SECTION") (write args) (newline)
-		  (set! cur-section args) #t))
-(define record-error (lambda (e) (set! errs (cons (list cur-section e) errs))))
+(define cur-section '())
 
-(define test
-  (lambda (expect fun . args)
-    (write (cons fun args))
-    (display "  ==> ")
-    ((lambda (res)
-      (write res)
-      (newline)
-      (cond ((not (equal? expect res))
-	     (record-error (list res expect (cons fun args)))
-	     (display " BUT EXPECTED ")
-	     (write expect)
-	     (newline)
-	     #f)
-	    (else #t)))
-     (if (procedure? fun) (apply fun args) (car args)))))
+(define errs '())
+
+(define (SECTION . args)
+  (newline)
+  (write (cons 'SECTION args))
+  (newline)
+  (newline)
+  (set! cur-section args) #t)
+
+(define (record-error e)
+  (set! errs (cons (list cur-section e) errs)))
+
+(define (test expect fun . args)
+  (write (cons fun args))
+  (display "  ==> ")
+  (let ((res (if (procedure? fun) (apply fun args) (car args))))
+    (write res)
+    (newline)
+    (if (equal? expect res)
+        #t
+        (begin
+          (record-error (list res expect (cons fun args)))
+          (display " BUT EXPECTED ")
+          (write expect)
+          (newline)
+          #f))))
+
+(define (test-error expected? fun . args)
+  (write (cons fun args))
+  (newline)
+  (handle-exceptions exn
+    (or (expected? exn)
+        (begin
+          (record-error (list exn expected? (cons fun args)))
+          (display " EXPECTED A DIFFERENT ERROR")
+          (newline)
+          #f))
+    (apply fun args)
+    (display " EXPECTED AN ERROR BUT DIDN'T GET ONE")
+    #f))
+
 (define (report-errs)
   (newline)
   (if (null? errs) (display "Passed all tests")
