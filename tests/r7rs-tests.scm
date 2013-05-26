@@ -89,9 +89,42 @@
 
 
 
+(SECTION 6 7)
+
+
+;; We try to avoid using the very constructs that we are testing here,
+;; hence the slightly cumbersome string construction of <x> -> "\"\\<x>\""
+(define (read-escaped-string x)
+  (with-input-from-string (string-append (string #\" #\\) x (string #\"))
+    read))
+(define (escaped-char x)
+  (string-ref (read-escaped-string x) 0))
+
+(test #\alarm escaped-char "a")
+(test #\backspace escaped-char "b")
+(test #\tab escaped-char "t")
+(test #\newline escaped-char "n")
+(test #\return escaped-char "r")
+(test #\" escaped-char "\"")
+(test #\\ escaped-char "\\")
+(test #\| escaped-char "|")
+;; *ONE* line ending following a backslash escape, along with any
+;; preceding or trailing intraline whitespace is collapsed and ignored.
+(test #\E escaped-char (string-append (string #\newline) "       END"))
+(test #\E escaped-char (string-append "    " (string #\newline) "END"))
+(test #\E escaped-char (string-append "    " (string #\newline) "END"))
+(test #\E escaped-char (string-append "     " (string #\newline) "   END"))
+;; But not more than one!
+(test #\newline escaped-char (string-append "     " (string #\newline) "    " (string #\newline) " END"))
+;; Tabs count as intraline whitespace too
+(test #\E escaped-char (string-append (string #\tab) (string #\newline) (string #\tab) "   END"))
+;; Edge case
+(test "" read-escaped-string (string-append "    " (string #\newline) "    "))
+
 ;; NOT YET (is ambiguous with existing \xNN syntax in Chicken)
 #;(test #\tab escaped-char "x9;")
 #;(test #\tab escaped-char "x09;")
+
 
 
 (SECTION 6 8)

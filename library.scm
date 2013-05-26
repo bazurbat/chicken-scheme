@@ -2521,6 +2521,22 @@ EOF
 			      (loop (##sys#read-char-0 port) (r-cons-codepoint n lst)) )))
 		       ((#\\ #\' #\" #\|)
 			(loop (##sys#read-char-0 port) (cons c lst)))
+		       ((#\newline #\space #\tab)
+			;; Read "escaped" <intraline ws>* <nl> <intraline ws>*
+			(let eat-ws ((c c) (nl? #f))
+			  (case c
+			    ((#\space #\tab)
+			     (eat-ws (##sys#read-char-0 port) nl?))
+			    ((#\newline)
+			     (if nl?
+				 (loop c lst)
+				 (eat-ws (##sys#read-char-0 port) #t)))
+			    (else
+                             (unless nl?
+                               (##sys#read-warning 
+				port 
+				"escaped whitespace, but no newline - collapsing anyway"))
+                             (loop c lst)))))
 		       (else
 			(cond ((and (char-numeric? c)
 				    (char>=? c #\0)
