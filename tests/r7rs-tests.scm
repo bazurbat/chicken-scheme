@@ -53,7 +53,8 @@
 	(display "(SECTION (got expected (call)))")
 	(newline)
 	(for-each (lambda (l) (write l) (newline))
-		  errs)))
+		  errs)
+        (exit 1)))
   (newline))
 
 (SECTION 4 2 5)
@@ -74,9 +75,9 @@
 
 ;; Symbols are implicitly quoted inside self-evaluating vectors.
 ;; This is not as clear from draft 9 as it could be.
-(test '#(0 (2 2 2 2) "Anna") #(0 (2 2 2 2) "Anna"))
+(test '#(0 (2 2 2 2) "Anna") #f #(0 (2 2 2 2) "Anna"))
 (test #t vector? '#(0 (a b) c))
 (test #t vector? #(0 (a b) c))
-(test '#(0 (a b) c d #(1 2 (e) f) g) #(0 (a b) c d #(1 2 (e) f) g))
+(test '#(0 (a b) c d #(1 2 (e) f) g) #f #(0 (a b) c d #(1 2 (e) f) g))
 
 (report-errs)

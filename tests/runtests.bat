@@ -284,6 +284,11 @@ echo (expect two failures)
 %interpret% -i -s r5rs_pitfalls.scm
 if errorlevel 1 exit /b 1
 
+echo "======================================== r7rs tests ..."
+echo (expect two failures)
+%interpret% -i -s r7rs-tests.scm
+if errorlevel 1 exit /b 1
+
 echo ======================================== module tests ...
 %interpret% -include-path .. -s module-tests.scm
 if errorlevel 1 exit /b 1
