@@ -4740,6 +4740,10 @@ EOF
 (define (promise? x)
   (##sys#structure? x 'promise) )
 
+(define (make-promise obj)
+  (cond ((promise? obj) obj)
+        ((procedure? obj) (##sys#make-promise obj))
+        (else (##sys#make-promise (lambda () obj)))))
 
 ;;; Internal string-reader:
 
