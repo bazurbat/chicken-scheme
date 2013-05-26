@@ -295,10 +295,13 @@
 	       (if x
 		   (lambda v #t)
 		   (lambda v #f) ) ]
-	      [(or (char? x)
+	      ((or (char? x)
 		   (eof-object? x)
-		   (string? x) )
-	       (lambda v x) ]
+		   (string? x)
+		   (blob? x)
+		   (vector? x)
+		   (##sys#srfi-4-vector? x))
+	       (lambda v x) )
 	      [(not (pair? x)) 
 	       (##sys#syntax-error/context "illegal non-atomic object" x)]
 	      [(symbol? (##sys#slot x 0))

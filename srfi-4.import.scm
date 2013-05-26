@@ -141,4 +141,5 @@
    u8vector-ref
    u8vector-set!
    u8vector?
-   write-u8vector))
+   write-u8vector
+   number-vector?))

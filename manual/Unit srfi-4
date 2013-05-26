@@ -163,7 +163,7 @@ This external representation is also available in program source code. For examp
 
  (set! x '#u8(1 2 3))
 
-will set {{x}} to the object {{#u8(1 2 3)}}. Literal homogeneous vectors must be quoted just like heterogeneous vectors must be. Homogeneous vectors can appear in quasiquotations but must not contain {{unquote}} or {{unquote-splicing}} forms.  ''I.e.'',
+will set {{x}} to the object {{#u8(1 2 3)}}. Since CHICKEN 4.9.0, literal homogeneous vectors do not have to be quoted. Homogeneous vectors can appear in quasiquotations but must not contain {{unquote}} or {{unquote-splicing}} forms.  ''I.e.'',
 
  `(,x #u8(1 2))        ; legal
  `#u8(1 ,x 2)          ; illegal
@@ -180,6 +180,11 @@ will set {{x}} to the object {{#u8(1 2 3)}}. Literal homogeneous vectors must be
 <procedure>(f64vector? OBJ)</procedure><br>
 
 Return {{#t}} if {{obj}} is an object of the specified type or {{#f}} if not.
+
+<procedure>(number-vector? OBJ)</procedure>
+
+Return {{#t}} if {{obj}} is a number vector, {{#f}} if not.  A "number vector" is any of the homogeneous number vector types defined by SRFI-4, ie it's one of {{u8vector}}, {{s8vector}}, {{u16vector}}, {{s16vector}}, {{u32vector}}, {{s32vector}}, {{f32vector}} or {{f64vector}}).
+
 
 === Constructors
 

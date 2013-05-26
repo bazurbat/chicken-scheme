@@ -46,4 +46,15 @@
 (test 1 force (make-promise (lambda _ 1)))
 (test 1 force (make-promise (make-promise 1)))
 
+
+
+(SECTION 6 8)
+
+;; Symbols are implicitly quoted inside self-evaluating vectors.
+;; This is not as clear from draft 9 as it could be.
+(test '#(0 (2 2 2 2) "Anna") #(0 (2 2 2 2) "Anna"))
+(test #t vector? '#(0 (a b) c))
+(test #t vector? #(0 (a b) c))
+(test '#(0 (a b) c d #(1 2 (e) f) g) #(0 (a b) c d #(1 2 (e) f) g))
+
 (report-errs)

@@ -327,6 +327,12 @@
 (assert (equal? '#${abc} '#${ab0c}))
 (assert (equal? '#${a b c} '#${0a0b0c}))
 
+;; self-evaluating
+(assert (equal? '#${a} #${a}))
+(assert (equal? '#${abcd} #${abcd}))
+(assert (equal? '#${abc} #${abc}))
+
+
 ;; #808: blobs and strings with embedded nul bytes should not be compared
 ;; with ASCIIZ string comparison functions
 (assert (equal? '#${a b 0 c} '#${a b 0 c}))

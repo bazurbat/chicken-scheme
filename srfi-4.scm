@@ -275,9 +275,7 @@ EOF
 
   (set! release-number-vector
     (lambda (v)
-      (if (and (##sys#generic-structure? v)
-	       (memq (##sys#slot v 0)
-		     '(u8vector u16vector s8vector s16vector u32vector s32vector f32vector f64vector)) )
+      (if (number-vector? v)
 	  (ext-free v)
 	  (##sys#error 'release-number-vector "bad argument type - not a number vector" v)) ) )
 
@@ -493,6 +491,8 @@ EOF
 (define (f32vector? x) (##sys#structure? x 'f32vector))
 (define (f64vector? x) (##sys#structure? x 'f64vector))
 
+;; Catch-all predicate
+(define number-vector? ##sys#srfi-4-vector?)
 
 ;;; Accessing the packed bytevector:
 

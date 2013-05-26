@@ -2507,6 +2507,9 @@
 
 (write-u8vector (#(procedure #:enforce) write-u8vector ((struct u8vector) #!optional output-port fixnum fixnum) undefined))
 
+(number-vector? (#(procedure #:pure #:predicate (or (struct u8vector) (struct u16vector) (struct s8vector) (struct s16vector) (struct u32vector) (struct s32vector) (struct f32vector) (struct f64vector))) number-vector? (*) boolean))
+(##sys#srfi-4-vector? (#(procedure #:pure #:predicate (or (struct u8vector) (struct u16vector) (struct s8vector) (struct s16vector) (struct u32vector) (struct s32vector) (struct f32vector) (struct f64vector))) ##sys#srfi-4-vector? (*) boolean))
+
 
 ;; srfi-69
 

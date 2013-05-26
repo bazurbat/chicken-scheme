@@ -253,6 +253,9 @@
       (string? x)
       (boolean? x)
       (eof-object? x)
+      (blob? x)
+      (vector? x)
+      (##sys#srfi-4-vector? x)
       (and (pair? x) (eq? 'quote (car x))) ) )
 
 (define (collapsable-literal? x)
