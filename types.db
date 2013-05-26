@@ -1014,6 +1014,9 @@
 (program-name (#(procedure #:clean #:enforce) program-name (#!optional string) string))
 (promise? (#(procedure #:pure #:predicate (struct promise)) promise? (*) boolean))
 
+(make-promise (#(procedure #:enforce) make-promise (*) (struct promise))
+              (((struct promise)) #(1)))
+
 (put! (#(procedure #:clean #:enforce) put! (symbol symbol *) undefined)
       ((symbol symbol *)
        (##core#inline_allocate ("C_a_i_putprop" 8) #(1) #(2) #(3))))

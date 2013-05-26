@@ -260,6 +260,10 @@ echo "======================================== syntax tests (r5rs_pitfalls) ..."
 echo "(expect two failures)"
 $interpret -i -s r5rs_pitfalls.scm
 
+echo "======================================== r7rs tests ..."
+$interpret -i -s r7rs-tests.scm
+
+
 echo "======================================== module tests ..."
 $interpret -include-path .. -s module-tests.scm
 $interpret -include-path .. -s module-tests-2.scm

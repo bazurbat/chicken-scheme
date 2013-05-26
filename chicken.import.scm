@@ -170,6 +170,7 @@
    make-blob
    make-composite-condition
    make-parameter
+   make-promise
    make-property-condition
    maximum-flonum
    memory-statistics

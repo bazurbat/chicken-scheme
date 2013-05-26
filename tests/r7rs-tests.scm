@@ -65,7 +65,7 @@
 (test #t promise? (make-promise (make-promise 1)))
 
 (test 1 force (make-promise 1))
-(test 1 force (make-promise (lambda _ 1)))
+(test #t procedure? (force (make-promise (lambda _ 1))))
 (test 1 force (make-promise (make-promise 1)))
 
 
