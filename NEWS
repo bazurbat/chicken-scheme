@@ -22,6 +22,8 @@
     and "#!rest" in type-declarations (suggested by Joerg Wittenberger).
   - Vectors, SRFI-4 number vectors and blobs are now self-evaluating for
      R7RS compatibility.  Being literal constants, they are implicitly quoted.
+  - For R7RS compatibility, named character literals #\escape and #\null are
+     supported as aliases for #\esc and #\nul.  WRITE will output R7RS names.
 
 - Compiler
   - the "inline" declaration does not force inlining anymore as recursive

@@ -1527,6 +1527,8 @@ EOF
 	       (and-let* ([a (assq x names-to-chars)])
 		 (##sys#slot a 1) ) ] ) ) ) ) )
 
+;; TODO: Use the character names here in the next release?  Or just
+;; use the numbers everywhere, for clarity?
 (char-name 'space #\space)
 (char-name 'tab #\tab)
 (char-name 'linefeed #\linefeed)
@@ -1534,8 +1536,10 @@ EOF
 (char-name 'vtab (integer->char 11))
 (char-name 'delete (integer->char 127))
 (char-name 'esc (integer->char 27))
+(char-name 'escape (integer->char 27))
 (char-name 'alarm (integer->char 7))
 (char-name 'nul (integer->char 0))
+(char-name 'null (integer->char 0))
 (char-name 'return #\return)
 (char-name 'page (integer->char 12))
 (char-name 'backspace (integer->char 8))

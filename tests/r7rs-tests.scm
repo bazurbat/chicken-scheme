@@ -71,6 +71,29 @@
 
 
 
+(SECTION 6 6)
+
+
+(define (integer->named-char x)
+  (with-output-to-string (lambda () (write (integer->char x)))))
+
+(test "#\\alarm" integer->named-char #x07)
+(test "#\\backspace" integer->named-char #x08)
+(test "#\\delete" integer->named-char #x7f)
+(test "#\\escape" integer->named-char #x1b)
+(test "#\\newline" integer->named-char #x0a)
+(test "#\\null" integer->named-char #x00)
+(test "#\\return" integer->named-char #x0d)
+(test "#\\space" integer->named-char #x20)
+(test "#\\tab" integer->named-char #x09)
+
+
+
+;; NOT YET (is ambiguous with existing \xNN syntax in Chicken)
+#;(test #\tab escaped-char "x9;")
+#;(test #\tab escaped-char "x09;")
+
+
 (SECTION 6 8)
 
 ;; Symbols are implicitly quoted inside self-evaluating vectors.
