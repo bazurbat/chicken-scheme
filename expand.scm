@@ -1174,6 +1174,7 @@
 	  (body (cddr form)) )
       (let ((tmp (r 'tmp))
 	    (%or (r 'or))
+	    (%=> (r '=>))
 	    (%eqv? (r 'eqv?))
 	    (%else (r 'else)))
 	`(let ((,tmp ,exp))
@@ -1185,7 +1186,10 @@
 		    (##sys#check-syntax 'case clause '#(_ 1))
 		    (cond ((c %else (car clause))
 			   (expand rclauses #t)
-			   `(##core#begin ,@(cdr clause)) )
+			   (if (and (fx= (length clause) 3) ; (else => expr)
+				    (c %=> (cadr clause)))
+			       `(,(caddr clause) ,tmp)
+			       `(##core#begin ,@(cdr clause))))
 			  (else?
 			   (##sys#notice
 			    "non-`else' clause following `else' clause in `case'"
@@ -1196,7 +1200,10 @@
 			   `(##core#if (,%or ,@(##sys#map
 						(lambda (x) `(,%eqv? ,tmp ',x))
 						(car clause)))
-				       (##core#begin ,@(cdr clause)) 
+				       ,(if (and (fx= (length clause) 3) ; ((...) => expr)
+						 (c %=> (cadr clause)))
+					    `(,(caddr clause) ,tmp)
+					    `(##core#begin ,@(cdr clause)))
 				       ,(expand rclauses #f) ) ) ) ) ) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment

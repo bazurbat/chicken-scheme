@@ -57,6 +57,14 @@
         (exit 1)))
   (newline))
 
+(SECTION 4 2 1)
+
+;; case with => clause
+(test "a" (lambda () (case 'a ((a) => symbol->string))))
+(test "a" (lambda () (case 'a (else => symbol->string))))
+(test-error condition? (lambda () (case 'a ((a) =>))))
+(test-error condition? (lambda () (case 'a (else =>))))
+
 (SECTION 4 2 5)
 
 
