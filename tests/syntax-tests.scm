@@ -191,6 +191,14 @@
   (cond (#t => 'ok)))
 )
 
+(t 1 (let ((=> 1))
+       (cond (#f 'false)
+             (#t =>))))
+
+(t 3 (let ((=> 1))
+       (cond (#f 'false)
+             (#t => 2 3))))
+
 (t '(3 4)
 (let ((foo 3))
   (let-syntax ((bar (syntax-rules () ((_ x) (list foo x)))))

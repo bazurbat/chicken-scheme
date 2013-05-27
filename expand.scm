@@ -1144,13 +1144,14 @@
 		     '(##core#begin))
 		    ((null? (cdr clause)) 
 		     `(,%or ,(car clause) ,(expand rclauses #f)))
-		    ((c %=> (cadr clause))
+		    ((and (fx= (length clause) 3)
+			  (c %=> (cadr clause)))
 		     (let ((tmp (r 'tmp)))
 		       `(##core#let ((,tmp ,(car clause)))
 				    (##core#if ,tmp
 					       (,(caddr clause) ,tmp)
 					       ,(expand rclauses #f) ) ) ) )
-		    ((and (list? clause) (fx= (length clause) 4)
+		    ((and (fx= (length clause) 4)
 			  (c %=> (caddr clause)))
 		     (let ((tmp (r 'tmp)))
 		       `(##sys#call-with-values
