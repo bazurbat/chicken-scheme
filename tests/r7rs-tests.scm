@@ -119,11 +119,17 @@
 ;; *ONE* line ending following a backslash escape, along with any
 ;; preceding or trailing intraline whitespace is collapsed and ignored.
 (test #\E escaped-char (string-append (string #\newline) "       END"))
+;; This also works with CR instead of LF...
+(test #\E escaped-char (string-append (string #\return) "       END"))
+;; And CRLF, too
+(test #\E escaped-char (string-append (string #\return) (string #\newline) "       END"))
 (test #\E escaped-char (string-append "    " (string #\newline) "END"))
 (test #\E escaped-char (string-append "    " (string #\newline) "END"))
 (test #\E escaped-char (string-append "     " (string #\newline) "   END"))
 ;; But not more than one!
 (test #\newline escaped-char (string-append "     " (string #\newline) "    " (string #\newline) " END"))
+;; CR and LF both counted
+(test #\newline escaped-char (string-append "     " (string #\return) "    " (string #\newline) " END"))
 ;; Tabs count as intraline whitespace too
 (test #\E escaped-char (string-append (string #\tab) (string #\newline) (string #\tab) "   END"))
 ;; Edge case

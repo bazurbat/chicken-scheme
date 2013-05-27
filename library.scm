@@ -2523,12 +2523,19 @@ EOF
 			      (loop (##sys#read-char-0 port) (r-cons-codepoint n lst)) )))
 		       ((#\\ #\' #\" #\|)
 			(loop (##sys#read-char-0 port) (cons c lst)))
-		       ((#\newline #\space #\tab)
+		       ((#\newline #\return #\space #\tab)
 			;; Read "escaped" <intraline ws>* <nl> <intraline ws>*
 			(let eat-ws ((c c) (nl? #f))
 			  (case c
 			    ((#\space #\tab)
 			     (eat-ws (##sys#read-char-0 port) nl?))
+			    ((#\return)
+			     (if nl?
+				 (loop c lst)
+			         (let ((nc (##sys#read-char-0 port)))
+			           (if (eq? nc #\newline) ; collapse \r\n
+				       (eat-ws (##sys#read-char-0 port) #t)
+				       (eat-ws nc #t)))))
 			    ((#\newline)
 			     (if nl?
 				 (loop c lst)
