@@ -1871,7 +1871,7 @@ EOF
             (lambda ()
               (vector-set! clsvec idx #t)
               (when (and (vector-ref clsvec idxa) (vector-ref clsvec idxb))
-                (receive [_ flg cod] (process-wait pid)
+                (receive [_ flg cod] (##sys#process-wait pid #f)
                   (unless flg
                     (##sys#signal-hook #:process-error loc
                       "abnormal process exit" pid cod)) ) ) ) )]
