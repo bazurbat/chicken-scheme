@@ -256,23 +256,32 @@ Syntax: <Key> may be any expression. Each <clause> should have the form
 
  ((<datum[1]> ...) <expression[1]> <expression[2]> ...),
 
-where each <datum> is an external representation of some object. All
-the <datum>s must be distinct. The last <clause> may be an "else
-clause," which has the form
+where each <datum> is an external representation of some object.
+Alternatively, as per R7RS, a <clause> may be of the form
 
- (else <expression[1]> <expression[2]> ...).
+ ((<datum[1]> ...) => <expression>).
+
+All the <datum>s must be distinct. The last <clause> may be an
+"else clause," which has one of the following two forms:
+
+ (else <expression[1]> <expression[2]> ...)
+ (else => <expression>).      ; R7RS extension
 
 Semantics: A case expression is evaluated as follows. <Key> is
 evaluated and its result is compared against each <datum>. If the
 result of evaluating <key> is equivalent (in the sense of eqv?; see
 section 6.1) to a <datum>, then the expressions in the corresponding
-<clause> are evaluated from left to right and the result(s) of the last
-expression in the <clause> is(are) returned as the result(s) of the
-case expression. If the result of evaluating <key> is different from
-every <datum>, then if there is an else clause its expressions are
-evaluated and the result(s) of the last is(are) the result(s) of the
-case expression; otherwise the result of the case expression is
-unspecified.
+<clause> are evaluated from left to right and the result(s) of the
+last expression in the <clause> is(are) returned as the result(s) of
+the case expression. If the selected <clause> uses the => alternate
+form (an R7RS extension), then the <expression> is evaluated. Its
+value must be a procedure that accepts one argument; this procedure is
+then called on the value of the <key> and the value(s) returned by
+this procedure is(are) returned by the case expression.  If the result
+of evaluating <key> is different from every <datum>, then if there is
+an else clause its expressions are evaluated and the result(s) of the
+last is(are) the result(s) of the case expression; otherwise the
+result of the case expression is unspecified.
 
  (case (* 2 3)
    ((2 3 5 7) 'prime)

@@ -24,6 +24,7 @@
      R7RS compatibility.  Being literal constants, they are implicitly quoted.
   - For R7RS compatibility, named character literals #\escape and #\null are
      supported as aliases for #\esc and #\nul.  WRITE will output R7RS names.
+  - The CASE form accepts => proc syntax, like COND (as specified by R7RS).
 
 - Compiler
   - the "inline" declaration does not force inlining anymore as recursive
