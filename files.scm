@@ -161,11 +161,13 @@ EOF
 
 (define (chop-pds str)
   (and str
-       (let ((len (##sys#size str)))
-	 (if (and (fx>= len 1)
-		  (*char-pds? (##core#inline "C_subchar" str (fx- len 1)) ) )
-	     (##sys#substring str 0 (fx- len 1))
-	     str) ) ) )
+       (let lp ((len (##sys#size str)))
+	 (cond ((and (fx>= len 1)
+		     (*char-pds? (##core#inline "C_subchar" str (fx- len 1))))
+		(lp (fx- len 1)))
+	       ((fx< len (##sys#size str))
+		(##sys#substring str 0 len))
+	       (else str)))))
 
 (define make-pathname)
 (define make-absolute-pathname)
@@ -231,9 +233,10 @@ EOF
 	 [strip-pds
 	  (lambda (dir)
 	    (and dir
-		 (if (member dir '("/" "\\"))
-		     dir
-		     (chop-pds dir) ) ) )] )
+	         (let ((chopped (chop-pds dir)))
+		   (if (fx> (##sys#size chopped) 0)
+		       chopped
+		       (##sys#substring dir 0 1) ) ) ) )] )
     (lambda (pn)
       (##sys#check-string pn 'decompose-pathname)
       (if (fx= 0 (##sys#size pn))
