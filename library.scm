@@ -3556,8 +3556,7 @@ EOF
 	       [output (##sys#slot p 12)] )
 	   (##core#inline "C_substring_copy" str output 0 len position)
 	   (##sys#setislot p 10 (fx+ position len)) ) ) )
-     (lambda (p)			; close
-       (##sys#setislot p 10 (##sys#slot p 11)) )
+     void ; close
      (lambda (p) #f)			; flush-output
      (lambda (p)			; char-ready?
        (fx< (##sys#slot p 10) (##sys#slot p 11)) )

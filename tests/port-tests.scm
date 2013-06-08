@@ -42,6 +42,17 @@ EOF
   (read-line p)))
 (assert (= 20 (length (read-lines (open-input-string *text*)))))
 
+(let ((out (open-output-string)))
+  (test-equal "Initially, output string is empty"
+              (get-output-string out) "")
+  (display "foo" out)
+  (test-equal "output can be extracted from output string"
+              (get-output-string out) "foo")
+  (close-output-port out)
+  (test-equal "closing a string output port has no effect on the returned data"
+              (get-output-string out) "foo")
+  (test-error "writing to a closed string output port is an error"
+              (display "bar" out)))
 
 ;;; copy-port
 
@@ -303,3 +314,5 @@ EOF
  (test-port-position read-tcp-line/pos))
 
 ;;;
+
+(test-end)
