@@ -22,8 +22,8 @@
   (let lp ((ls ls))
     (cond
       ((null? ls) (newline))
-      ((eq? (car ls) 'expect) (display expect) (lp (cdr ls)))
-      ((eq? (car ls) 'result) (display result) (lp (cdr ls)))
+      ((eq? (car ls) 'expect) (write expect) (lp (cdr ls)))
+      ((eq? (car ls) 'result) (write result) (lp (cdr ls)))
       ((eq? (car ls) 'name) (if name (begin (display #\space) (display name))) (lp (cdr ls)))
       (else (display (car ls)) (lp (cdr ls))))))
 
