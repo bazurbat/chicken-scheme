@@ -74,6 +74,26 @@
 
 (assert (= 2.5 (/ 5 2)))
 
+;; Use equal? instead of = to check equality and exactness in one go
+(assert (equal? 0 (numerator 0)))
+(assert (equal? 1 (denominator 0)))
+(assert (equal? 3 (numerator 3)))
+(assert (equal? 1 (denominator 3)))
+(assert (equal? -3 (numerator -3)))
+(assert (equal? 1 (denominator -3)))
+(assert (equal? 1.0 (numerator 0.5)))
+(assert (equal? 2.0 (denominator 0.5)))
+(assert (equal? 5.0 (numerator 1.25)))
+(assert (equal? 4.0 (denominator 1.25)))
+(assert (equal? -5.0 (numerator -1.25)))
+(assert (equal? 4.0 (denominator -1.25)))
+(assert (equal? 1e10 (numerator 1e10)))
+(assert (equal? 1.0 (denominator 1e10)))
+(assert-fail (numerator +inf.0))
+(assert-fail (numerator +nan.0))
+(assert-fail (denominator +inf.0))
+(assert-fail (denominator +nan.0))
+
 (assert (even? 2))
 (assert (even? 2.0))
 (assert (even? 0))

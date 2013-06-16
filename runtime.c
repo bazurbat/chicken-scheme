@@ -31,6 +31,7 @@
 #include <signal.h>
 #include <assert.h>
 #include <limits.h>
+#include <float.h>
 #include <math.h>
 #include <signal.h>
 
@@ -784,7 +785,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size - this must match the number of C_pte calls! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 57);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 58);
   int i = 0;
 
   if(pt == NULL)
@@ -821,6 +822,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_less_or_equal_p);
   C_pte(C_quotient);
   C_pte(C_flonum_fraction);
+  C_pte(C_flonum_rat);
   C_pte(C_expt);
   C_pte(C_number_to_string);
   C_pte(C_make_symbol);
@@ -7351,6 +7353,51 @@ void C_ccall C_flonum_fraction(C_word c, C_word closure, C_word k, C_word n)
   C_alloc_flonum;
 
   C_kontinue_flonum(k, modf(fn, &i));
+}
+
+void C_ccall C_flonum_rat(C_word c, C_word closure, C_word k, C_word n)
+{
+  double frac, tmp, numer, denom, factor, fn = C_flonum_magnitude(n);
+  double r1a, r1b;
+  double ga, gb;
+  C_word ab[WORDS_PER_FLONUM * 2], *ap = ab;
+  int i = 0;
+
+  if (n < 1 && n > -1) {
+    factor = pow(2, DBL_MANT_DIG);
+    fn *= factor;
+  } else {
+    factor = 1;
+  }
+
+  /* Calculate bit-length of the fractional part (ie, after decimal point) */
+  frac = fn;
+  while(!C_isnan(frac) && !C_isinf(frac) && C_modf(frac, &tmp) != 0.0) {
+    frac *= 2;
+    if (i++ > 3000) /* should this be flonum-maximum-exponent? */
+      barf(C_CANT_REPRESENT_INEXACT_ERROR, "fprat", n);
+  }
+
+  /* r1a and r1b are integral and form the rational number r1 = r1a/r1b. */
+  r1b = pow(2, i);
+  r1a = fn*r1b;
+
+  /*
+   * We "multiply" r1 with r2 given that r2 = 1/factor.
+   * result = (r1a * (factor / g)) / abs(r1b / g)   | g = gcd(r1b, factor)
+   */
+  ga = r1b;
+  gb = factor;
+  while(gb != 0.0) {
+    tmp = fmod(ga, gb);
+    ga = gb;
+    gb = tmp;
+  }
+  /* ga now holds gcd(r1b, factor), and r1b and ga are absolute already */
+  numer = r1a * (factor / ga);
+  denom = r1b / ga;
+
+  C_values(4, C_SCHEME_UNDEFINED, k, C_flonum(&ap, numer), C_flonum(&ap, denom));
 }
 
 

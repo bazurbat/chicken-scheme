@@ -901,6 +901,7 @@ EOF
 (define real? number?)
 (define (rational? n) (##core#inline "C_i_rationalp" n))
 (define ##sys#flonum-fraction (##core#primitive "C_flonum_fraction"))
+(define ##sys#fprat (##core#primitive "C_flonum_rat"))
 (define (##sys#integer? x) (##core#inline "C_i_integerp" x))
 (define integer? ##sys#integer?)
 (define (##sys#exact? x) (##core#inline "C_i_exactp" x))
@@ -930,15 +931,23 @@ EOF
 
 (define (numerator n)
   (##sys#check-number n 'numerator)
-  (if (##core#inline "C_i_integerp" n)
-      n
-      (##sys#signal-hook #:type-error 'numerator "bad argument type - not a rational number" n) ) )
+  (cond
+   ((##core#inline "C_u_i_exactp" n) n)
+   ((##core#inline "C_i_finitep" n)
+    (receive (num denom) (##sys#fprat n) num))
+   (else
+    (##sys#signal-hook
+     #:type-error 'numerator "bad argument type - not a rational number" n)) ) )
 
 (define (denominator n)
   (##sys#check-number n 'denominator)
-  (if (##core#inline "C_i_integerp" n)
-      1
-      (##sys#signal-hook #:type-error 'numerator "bad argument type - not a rational number" n) ) )
+  (cond
+   ((##core#inline "C_u_i_exactp" n) 1)
+   ((##core#inline "C_i_finitep" n)
+    (receive (num denom) (##sys#fprat n) denom))
+   (else
+    (##sys#signal-hook
+     #:type-error 'denominator "bad argument type - not a rational number" n)) ) )
 
 (define magnitude abs)
 

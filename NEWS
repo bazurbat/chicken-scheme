@@ -37,6 +37,8 @@
      (thanks to Florian Zumbiehl)
   - posix: memory-mapped file support for Windows (thanks to "rivo")
   - posix: find-file's test argument now also accepts SRE forms.
+  - numerator and denominator now accept inexact numbers, as per R5RS
+    (reported by John Cowan).
 
 - Runtime system
   - Special events in poll() are now handled, avoiding hangs in threaded apps.
