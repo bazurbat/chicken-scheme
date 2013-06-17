@@ -114,6 +114,7 @@ tests/locative-stress-test.scm
 tests/r4rstest.scm
 tests/null.scm
 tests/sgrep.scm
+tests/r7rs-tests.scm
 tests/runtests.sh
 tests/runtests.bat
 tests/runbench.sh
