@@ -214,6 +214,7 @@
    signal-unmask!
    signal/abrt
    signal/alrm
+   signal/break
    signal/chld
    signal/cont
    signal/fpe

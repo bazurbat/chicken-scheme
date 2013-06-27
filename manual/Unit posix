@@ -993,6 +993,7 @@ Unmasks (unblocks) the signal for the code {{SIGNUM}}.
 <constant>signal/usr2</constant><br>
 <constant>signal/bus</constant><br>
 <constant>signal/winch</constant>
+<constant>signal/break</constant>
 
 These variables contain signal codes for use with {{process-signal}},  {{set-signal-handler!}},  {{signal-handler}},  {{signal-masked?}},  {{signal-mask!}},  or {{signal-unmask!}}.
 

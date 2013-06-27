@@ -912,6 +912,7 @@ EOF
 (define signal/usr2 _sigusr2)
 (define signal/winch _sigwinch)
 (define signal/bus _sigbus)
+(define signal/break 0)
 
 (define signals-list
   (list
