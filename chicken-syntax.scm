@@ -489,6 +489,7 @@
 	      (cond [(not (pair? b)) `(##core#if ,b ,(fold bs2) #f)]
 		    [(null? (cdr b)) `(##core#if ,(car b) ,(fold bs2) #f)]
 		    [else
+		     (##sys#check-syntax 'and-let* b '(symbol _))
 		     (let ((var (car b)))
 		       `(##core#let ((,var ,(cadr b)))
 			 (##core#if ,var ,(fold bs2) #f) ) ) ] ) ) ) ) ) ) ) )

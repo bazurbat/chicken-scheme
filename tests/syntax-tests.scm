@@ -851,6 +851,19 @@
             (import scheme)
             (define (always-two) (+ (one#always-one) 1)))))
 
+;;; SRFI-2 (and-let*)
+
+(t 1 (and-let* ((a 1)) a))
+(f (eval '(and-let* ((a 1 2 3)) a)))
+(t 2 (and-let* ((a 1) (b (+ a 1))) b))
+(t 3 (and-let* (((or #f #t))) 3))
+(f (eval '(and-let* ((or #f #t)) 1)))
+(t 4 (and-let* ((c 4) ((equal? 4 c))) c))
+(t #f (and-let* ((c 4) ((equal? 5 c))) (error "not reached")))
+(t #f (and-let* (((= 4 5)) ((error "not reached 1"))) (error "not reached 2")))
+(t 'foo (and-let* (((= 4 4)) (a 'foo)) a))
+(t #f (and-let* ((a #f) ((error "not reached 1"))) (error "not reached 2")))
+
 ;;; SRFI-26
 
 ;; Cut
