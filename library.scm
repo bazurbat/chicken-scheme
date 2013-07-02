@@ -1950,6 +1950,8 @@ EOF
 (define (##sys#pathname-resolution name thunk . _)
   (thunk (##sys#expand-home-path name)) )
 
+;; DEPRECATED: implicit $VAR- and ~-expansion will be removed in
+;; future versions.  See ticket #1001
 (define ##sys#expand-home-path
   (lambda (path)
     (let ((len (##sys#size path)))
