@@ -7832,6 +7832,11 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
       }
       else if(buffer[ 1 ] != 'i') C_strcat(buffer, C_text(".0")); /* negative infinity? */
     }
+#ifdef __MINGW32__
+    /* On mingw32, gcvt(3) does not add a trailing '\0' */
+    else if(buffer[ C_strlen(buffer) - 1 ] == '.')
+      C_strcat(buffer, C_text("0"));
+#endif
 
     p = buffer;
   }
