@@ -2383,6 +2383,13 @@ void C_stack_overflow_with_msg(C_char *msg)
   barf(C_STACK_OVERFLOW_ERROR, NULL);
 }
 
+void C_temp_stack_overflow(void)
+{
+  /* Just raise a "too many parameters" error; it isn't very useful to
+     show a different message here. */
+  barf(C_TOO_MANY_PARAMETERS_ERROR, NULL);
+}
+
 
 void C_unbound_error(C_word sym)
 {

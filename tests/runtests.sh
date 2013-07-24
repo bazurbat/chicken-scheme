@@ -134,6 +134,8 @@ fi
 
 echo "======================================== runtime tests ..."
 $interpret -s apply-test.scm
+$compile apply-test.scm
+./a.out
 $compile test-gc-hooks.scm
 ./a.out
 

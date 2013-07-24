@@ -105,6 +105,10 @@ if errorlevel 1 (
 echo ======================================== runtime tests ...
 %interpret% -s apply-test.scm
 if errorlevel 1 exit /b 1
+%compile% apply-test.scm
+if errorlevel 1 exit /b 1
+a.out
+if errorlevel 1 exit /b 1
 %compile% test-gc-hooks.scm
 if errorlevel 1 exit /b 1
 a.out

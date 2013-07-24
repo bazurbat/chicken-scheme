@@ -1003,7 +1003,7 @@ extern double trunc(double);
 #define C_save(x)	           (*(--C_temporary_stack) = (C_word)(x))
 #define C_adjust_stack(n)          (C_temporary_stack -= (n))
 #define C_rescue(x, i)             (C_temporary_stack[ i ] = (x))
-#define C_save_rest(s, c, n)  	   for(va_start(v, s); c-- > (n); C_save(va_arg(v, C_word)))
+#define C_save_rest(s, c, n)  	   do { if((C_temporary_stack - (c - (n))) < C_temporary_stack_limit) C_temp_stack_overflow(); for(va_start(v, s); c-- > (n); C_save(va_arg(v, C_word))); }while(0)
 #define C_rest_count(c)            ((C_temporary_stack_bottom - C_temporary_stack) - (c))
 #define C_restore                  (*(C_temporary_stack++))
 #define C_heaptop                  ((C_word **)(&C_fromspace_top))
@@ -1584,6 +1584,7 @@ C_varextern C_TLS time_t C_startup_time_seconds;
 C_varextern C_TLS C_word
   *C_temporary_stack,
   *C_temporary_stack_bottom,
+  *C_temporary_stack_limit,
   *C_stack_limit;
 C_varextern C_TLS C_long
   C_timer_interrupt_counter,
@@ -1689,6 +1690,7 @@ C_fctexport void C_bad_min_argc(int c, int n) C_noret;
 C_fctexport void C_bad_argc_2(int c, int n, C_word closure) C_noret;
 C_fctexport void C_bad_min_argc_2(int c, int n, C_word closure) C_noret;
 C_fctexport void C_stack_overflow(void) C_noret;
+C_fctexport void C_temp_stack_overflow(void) C_noret;
 C_fctexport void C_unbound_error(C_word sym) C_noret;
 C_fctexport void C_no_closure_error(C_word x) C_noret;
 C_fctexport void C_div_by_zero_error(char *loc) C_noret;
