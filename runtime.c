@@ -3305,8 +3305,6 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
 	  
   if(size > C_maximal_heap_size) size = C_maximal_heap_size;
 
-  if(size == heap_size) return;
-
   if(debug_mode) 
     C_dbg(C_text("debug"), C_text("resizing heap dynamically from " UWORD_COUNT_FORMAT_STRING "k to " UWORD_COUNT_FORMAT_STRING "k ...\n"), 
 	  heap_size / 1024, size / 1024);
@@ -3417,7 +3415,7 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
   heap_free (heapspace2, heapspace2_size);
   
   if ((heapspace2 = heap_alloc (size, &tospace_start)) == NULL)
-    panic(C_text("out ot memory - cannot allocate heap segment"));
+    panic(C_text("out of memory - cannot allocate next heap segment"));
   heapspace2_size = size;
 
   heapspace1 = new_heapspace;

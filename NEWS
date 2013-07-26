@@ -48,6 +48,7 @@
   - Special events in poll() are now handled, avoiding hangs in threaded apps.
   - When invoking procedures with many rest arguments directly (not via APPLY),
     raise an error when argument count limit was reached instead of crashing.
+  - When the maximum allowed heap size is reached, panic instead of crashing.
 
 - C API
   - Deprecated C_get_argument[_2] and C_get_environment_variable[_2] functions.
