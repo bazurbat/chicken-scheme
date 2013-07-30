@@ -318,35 +318,33 @@ EOF
 	     (oclosed #f)
 	     (outbufsize (tbs))
 	     (outbuf (and outbufsize (fx> outbufsize 0) ""))
-	     (tmr (tcp-read-timeout))
-             (dlr (and tmr (+ (current-milliseconds) tmr)))
-	     (tmw (tcp-write-timeout))
-             (dlw (and tmw (+ (current-milliseconds) tmw)))
 	     (read-input
 	      (lambda ()
-		(let loop ()
-		  (let ((n (##net#recv fd buf +input-buffer-size+ 0)))
-		    (cond ((eq? -1 n)
-			   (cond ((or (eq? errno _ewouldblock) 
-				      (eq? errno _eagain))
-				  (when dlr
-				    (##sys#thread-block-for-timeout!
-                                     ##sys#current-thread dlr) )
-				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
-                                  (##sys#thread-yield!)
-				  (when (##sys#slot ##sys#current-thread 13)
-				    (##sys#signal-hook
-				     #:network-timeout-error
-				     "read operation timed out" tmr fd) )
-				  (loop) )
-				 ((eq? errno _eintr)
-				  (##sys#dispatch-interrupt loop))
-				 (else
-				  (network-error #f "cannot read from socket" fd) ) ) )
-			  (else
-			   (set! buflen n)
-			   (##sys#setislot data 4 n)
-			   (set! bufindex 0) ) ) ) ) ) )
+                (let* ((tmr (tcp-read-timeout))
+                       (dlr (and tmr (+ (current-milliseconds) tmr))))
+		  (let loop ()
+		    (let ((n (##net#recv fd buf +input-buffer-size+ 0)))
+		      (cond ((eq? -1 n)
+			     (cond ((or (eq? errno _ewouldblock)
+					(eq? errno _eagain))
+				    (when dlr
+				      (##sys#thread-block-for-timeout!
+				       ##sys#current-thread dlr) )
+				    (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
+				    (##sys#thread-yield!)
+				    (when (##sys#slot ##sys#current-thread 13)
+				      (##sys#signal-hook
+				       #:network-timeout-error
+				       "read operation timed out" tmr fd) )
+				    (loop) )
+				   ((eq? errno _eintr)
+				    (##sys#dispatch-interrupt loop))
+				   (else
+				    (network-error #f "cannot read from socket" fd) ) ) )
+			    (else
+			     (set! buflen n)
+			     (##sys#setislot data 4 n)
+			     (set! bufindex 0) ) ) ) )) ) )
 	     (in
 	      (make-input-port
 	       (lambda ()
@@ -398,8 +396,8 @@ EOF
 		       (receive (next line full-line?)
 			   (##sys#scan-buffer-line
 			    buf
-                            (fxmin buflen (fx+ bufindex limit))
-                            bufindex
+			    (fxmin buflen (fx+ bufindex limit))
+			    bufindex
 			    (lambda (pos)
 			      (let ((nbytes (fx- pos bufindex)))
 				(cond ((fx>= nbytes limit)
@@ -409,7 +407,7 @@ EOF
 					    (if (fx< bufindex buflen)
 						(values buf bufindex
 							(fxmin buflen
-                                                               (fx+ bufindex limit)))
+							       (fx+ bufindex limit)))
 						(values #f bufindex #f))))) ) )
 			 ;; Update row & column position
 			 (if full-line?
@@ -429,30 +427,36 @@ EOF
 	       ) )
 	     (output
 	      (lambda (s)
-		(let loop ((len (##sys#size s))
-			   (offset 0))
-		  (let* ((count (fxmin +output-chunk-size+ len))
-			 (n (##net#send fd s offset count 0)) )
-		    (cond ((eq? -1 n)
-			   (cond ((or (eq? errno _ewouldblock)
-				      (eq? errno _eagain))
-				  (when dlw
-				    (##sys#thread-block-for-timeout! 
-				     ##sys#current-thread dlw) )
-                                  (##sys#thread-block-for-i/o! ##sys#current-thread fd #:output)
-                                  (##sys#thread-yield!)
-				  (when (##sys#slot ##sys#current-thread 13)
-				    (##sys#signal-hook
-				     #:network-timeout-error
-				     "write operation timed out" tmw fd) )
-				  (loop len offset) )
-				 ((eq? errno _eintr)
-				  (##sys#dispatch-interrupt 
-				   (cut loop len offset)))
-				 (else
-				  (network-error #f "cannot write to socket" fd) ) ) )
-			  ((fx< n len)
-			   (loop (fx- len n) (fx+ offset n)) ) ) ) ) ) )
+		(let ((tmw (tcp-write-timeout)))
+		  (let loop ((len (##sys#size s))
+			     (offset 0)
+			     (dlw (and tmw (+ (current-milliseconds) tmw))))
+		    (let* ((count (fxmin +output-chunk-size+ len))
+			   (n (##net#send fd s offset count 0)) )
+		      (cond ((eq? -1 n)
+			     (cond ((or (eq? errno _ewouldblock)
+					(eq? errno _eagain))
+				    (when dlw
+				      (##sys#thread-block-for-timeout!
+				       ##sys#current-thread dlw) )
+				    (##sys#thread-block-for-i/o! ##sys#current-thread fd #:output)
+				    (##sys#thread-yield!)
+				    (when (##sys#slot ##sys#current-thread 13)
+				      (##sys#signal-hook
+				       #:network-timeout-error
+				       "write operation timed out" tmw fd) )
+				    (loop len offset dlw) )
+				   ((eq? errno _eintr)
+				    (##sys#dispatch-interrupt
+				     (cut loop len offset dlw)))
+				   (else
+				    (network-error #f "cannot write to socket" fd) ) ) )
+			    ((fx< n len)
+			     (loop (fx- len n) (fx+ offset n)
+				   (if (fx= n 0)
+				       tmw
+				       ;; If we wrote *something*, reset timeout
+				       (and tmw (+ (current-milliseconds) tmw)) )) ) ) ) )) ) )
 	     (out
 	      (make-output-port
 	       (if outbuf
