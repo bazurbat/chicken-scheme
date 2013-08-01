@@ -1341,7 +1341,7 @@ not be obtained. On Windows, this procedure always returns {{0}},
 ; {{create-session}} : {{setsid}}
 ; {{create-symbolic-link}} : {{link}}
 ; {{current-directory}} : {{curdir}}
-; {{current-effective-groupd-id}} : {{getegid}}
+; {{current-effective-group-id}} : {{getegid}}
 ; {{current-effective-user-id}} : {{geteuid}}
 ; {{current-group-id}} : {{getgid}}
 ; {{current-parent-id}} : {{getppid}}
@@ -1454,7 +1454,7 @@ Microsoft tools or with MinGW):
  errno/wouldblock
  change-directory*
  change-file-owner
- current-user-id  current-group-id  current-effective-user-id  current-effective-groupd-id
+ current-user-id  current-group-id  current-effective-user-id  current-effective-group-id
  set-user-id!  set-group-id!
  create-session
  process-group-id  set-process-group-id!
