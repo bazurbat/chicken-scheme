@@ -1285,7 +1285,7 @@
 	(if (fixnum? n)
 	    (##sys#intern-symbol
 	     (##sys#string-append "srfi-" (##sys#number->string n)))
-	    (##sys#syntax-error 'require-extension "invalid SRFI number" n)))
+	    (##sys#syntax-error-hook 'require-extension "invalid SRFI number" n)))
       (define (doit id impid)
 	(cond ((or (memq id builtin-features)
 		   (if comp?
