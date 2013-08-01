@@ -34,6 +34,7 @@
 	current-print-length setter-tag read-marks
 	##sys#print-exit
 	##sys#format-here-doc-warning
+	exit-in-progress
         maximal-string-length)
   (not inline ##sys#user-read-hook ##sys#error-hook ##sys#signal-hook ##sys#schedule
        ##sys#default-read-info-hook ##sys#infix-list-hook ##sys#sharp-number-hook
@@ -3957,17 +3958,17 @@ EOF
    (lambda ()
      ((##sys#exit-handler) _ex_software)) ) )
 
+(define exit-in-progress #f)
+
 (define exit-handler
   (make-parameter
-   (lambda code
-     (##sys#cleanup-before-exit)
-     (##core#inline
-      "C_exit_runtime"
-      (if (null? code)
-	  0
-	  (let ([code (car code)])
-	    (##sys#check-exact code)
-	    code) ) ) ) ) )
+   (lambda (#!optional (code 0))
+     (##sys#check-exact code)
+     (cond (exit-in-progress
+	    (##sys#warn "\"exit\" called while processing on-exit tasks"))
+	   (else
+	    (##sys#cleanup-before-exit)
+	    (##core#inline "C_exit_runtime" code))))))
 
 (define implicit-exit-handler
   (make-parameter
@@ -3980,19 +3981,25 @@ EOF
 
 (define force-finalizers (make-parameter #t))
 
-(define ##sys#cleanup-before-exit
-  (lambda ()
-    (when (##sys#fudge 37)
-      (##sys#print "\n" #f ##sys#standard-error)
-      (##sys#dump-heap-state))
-    (when (##sys#fudge 13)
-      (##sys#print "[debug] forcing finalizers...\n" #f ##sys#standard-error) )
-    (when (force-finalizers) (##sys#force-finalizers)) ) )
+(define ##sys#cleanup-tasks '())
+
+(define (##sys#cleanup-before-exit)
+  (set! exit-in-progress #t)
+  (when (##sys#fudge 37)		; -:H given?
+    (##sys#print "\n" #f ##sys#standard-error)
+    (##sys#dump-heap-state))
+  (let loop ()
+    (let ((tasks ##sys#cleanup-tasks))
+      (set! ##sys#cleanup-tasks '())
+      (unless (null? tasks)
+	(for-each (lambda (t) (t)) tasks)
+	(loop))))    
+  (when (##sys#fudge 13)		; debug mode
+    (##sys#print "[debug] forcing finalizers...\n" #f ##sys#standard-error) )
+  (when (force-finalizers) (##sys#force-finalizers)) )
 
 (define (on-exit thunk)
-  (set! ##sys#cleanup-before-exit
-    (let ((old ##sys#cleanup-before-exit))
-      (lambda () (old) (thunk)) ) ) )
+  (set! ##sys#cleanup-tasks (cons thunk ##sys#cleanup-tasks)))
 
 
 ;;; Condition handling:
