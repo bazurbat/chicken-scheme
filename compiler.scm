@@ -47,7 +47,6 @@
 ; (block)
 ; (block-global {<name>})
 ; (bound-to-procedure {<var>})
-; (c-options {<opt>})
 ; (compile-syntax)
 ; (disable-interrupts)
 ; (emit-import-library {<module> | (<module> <filename>)})
