@@ -151,7 +151,7 @@ commences in the calling code.
 <macro>(foreign-safe-lambda RETURNTYPE NAME ARGTYPE ...)</macro>
 
 This is similar to {{foreign-lambda}}, but also allows the called
-function to call Scheme functions and allocate Scheme data-objects. See [[Callbacks]].
+function to call Scheme functions. See [[Callbacks]].
 
 
 === foreign-safe-lambda*
