@@ -27,7 +27,7 @@
 
 (declare
   (unit posix)
-  (uses scheduler irregex extras utils files ports)
+  (uses scheduler irregex extras files ports)
   (disable-interrupts)
   (hide group-member _get-groups _ensure-groups posix-error ##sys#terminal-check)
   (not inline ##sys#interrupt-hook ##sys#user-interrupt-hook))

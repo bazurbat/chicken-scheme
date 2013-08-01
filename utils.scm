@@ -27,9 +27,8 @@
 
 (declare
   (unit utils)
-  (uses extras srfi-13 posix files irregex)
+  (uses eval extras srfi-13 posix files irregex)
   (fixnum)
-  (hide chop-pds)
   (disable-interrupts) )
 
 (include "common-declarations.scm")
