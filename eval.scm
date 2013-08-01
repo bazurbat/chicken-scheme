@@ -436,7 +436,7 @@
 				       (##sys#setslot v2 i (##core#app (##sys#slot vlist 0) v)) )
 				     (##core#app body (cons v2 v)) ) ) ) ] ) ) ]
 
-			 ((##core#letrec)
+			 ((##core#letrec*)
 			  (let ((bindings (cadr x))
 				(body (cddr x)) )
 			    (compile
@@ -449,6 +449,23 @@
 					    bindings)
 			       (##core#let () ,@body) )
 			     e h tf cntr se)))
+
+			((##core#letrec)
+			 (let* ((bindings (cadr x))
+				(vars (map car bindings))
+				(tmps (map gensym vars))
+				(body (cddr x)) )
+			   (compile
+			    `(##core#let
+			      ,(map (lambda (b)
+				      (list (car b) '(##core#undefined))) 
+				    bindings)
+			      (##core#let ,(map (lambda (t b) (list t (cadr b))) tmps bindings)
+					  ,@(map (lambda (v t)
+						   `(##core#set! ,v ,t))
+						 vars tmps)
+					  (##core#let () ,@body) ) )
+			      e h tf cntr se)))
 
 			 [(##core#lambda)
 			  (##sys#check-syntax 'lambda x '(_ lambda-list . #(_ 1)) #f se)

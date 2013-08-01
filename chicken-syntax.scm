@@ -422,6 +422,7 @@
 	    `(,%let-values (,(car vbindings))
 			   ,(fold (cdr vbindings))) ) ) ))))
 
+;;XXX do we need letrec*-values ?
 (##sys#extend-macro-environment
  'letrec-values '()
  (##sys#er-transformer
@@ -1056,11 +1057,11 @@
     (##sys#check-syntax 'rec form '(_ _ . _))
     (let ((head (cadr form)))
       (if (pair? head)
-	  `(##core#letrec ((,(car head) 
-			    (##core#lambda ,(cdr head)
-					   ,@(cddr form))))
-			  ,(car head))
-	  `(##core#letrec ((,head ,@(cddr form))) ,head))))))
+	  `(##core#letrec* ((,(car head) 
+			     (##core#lambda ,(cdr head)
+					    ,@(cddr form))))
+			   ,(car head))
+	  `(##core#letrec* ((,head ,@(cddr form))) ,head))))))
 
 
 ;;; Definitions available at macroexpansion-time:

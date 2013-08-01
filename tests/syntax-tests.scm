@@ -1100,3 +1100,19 @@ take
       ((_) (begin (define req 2) (display req) (newline)))))
   (bar)
   (assert (eq? req 1)))
+
+
+;; letrec vs. letrec*
+
+;;XXX this fails - the optimizer substitutes "foo" for it's known constant value
+#;(t (void) (letrec ((foo 1)
+		   (bar foo))
+	    bar))
+
+(t (void) (letrec ((foo (gc))
+		   (bar foo))
+	    bar))
+
+(t 1 (letrec* ((foo 1)
+	       (bar foo))
+	      bar))

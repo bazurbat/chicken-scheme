@@ -105,6 +105,7 @@
 ; (##core#let <variable> ({(<variable> <exp>)}) <body>)
 ; (##core#let ({(<variable> <exp>)}) <body>)
 ; (##core#letrec ({(<variable> <exp>)}) <body>)
+; (##core#letrec* ({(<variable> <exp>)}) <body>)
 ; (##core#let-location <symbol> <type> [<init>] <exp>)
 ; (##core#lambda <variable> <body>)
 ; (##core#lambda ({<variable>}+ [. <variable>]) <body>)
@@ -616,7 +617,7 @@
 				    (append aliases e)
 				    se2 dest ldest h ln) ) )  )
 
-			((##core#letrec)
+			((##core#letrec*)
 			 (let ((bindings (cadr x))
 			       (body (cddr x)) )
 			   (walk
@@ -628,6 +629,24 @@
 				       `(##core#set! ,(car b) ,(cadr b))) 
 				     bindings)
 			      (##core#let () ,@body) )
+			    e se dest ldest h ln)))
+
+			((##core#letrec)
+			 (let* ((bindings (cadr x))
+				(vars (unzip1 bindings))
+				(tmps (map gensym vars))
+				(body (cddr x)) )
+			   (walk
+			    `(##core#let
+			      ,(map (lambda (b)
+				      (list (car b) '(##core#undefined))) 
+				    bindings)
+			      (##core#let
+			       ,(map (lambda (t b) (list t (cadr b))) tmps bindings)
+			       ,@(map (lambda (v t)
+					`(##core#set! ,v ,t))
+				      vars tmps)
+			       (##core#let () ,@body) ) )
 			    e se dest ldest h ln)))
 
 			((##core#lambda)

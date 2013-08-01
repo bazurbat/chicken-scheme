@@ -172,6 +172,13 @@ executed normally and the result of the last expression is the
 result of the {{and-let*}} form. See also the documentation for
 [[http://srfi.schemers.org/srfi-2/srfi-2.html|SRFI-2]].
 
+==== letrec*
+
+<macro>(letrec* ((VARIABLE EXPRESSION) ...) BODY ...)</macro>
+
+Implements R6RS/R7RS {{letrec*}}. {{letrec*}} is similar to {{letrec}} but
+binds the variables sequentially and is to {{letrec}} what {{let*}} is to {{let}}.
+
 ==== rec
 
 <macro>(rec NAME EXPRESSION)</macro><br>

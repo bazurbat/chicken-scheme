@@ -277,7 +277,7 @@
 			      (let ([bs (cadr body)])
 				(values
 				 `(##core#app
-				   (##core#letrec
+				   (##core#letrec*
 				    ([,bindings 
 				      (##core#loop-lambda
 				       ,(map (lambda (b) (car b)) bs) ,@(cddr body))])
@@ -1048,6 +1048,15 @@
 	   (##sys#check-syntax 'let x '(_ #((symbol _) 0) . #(_ 1)))
            (check-for-multiple-bindings (cadr x) x "let")))
     `(##core#let ,@(cdr x)))))
+
+(##sys#extend-macro-environment
+ 'letrec*
+ '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'letrec* x '(_ #((symbol _) 0) . #(_ 1)))
+    (check-for-multiple-bindings (cadr x) x "letrec*")
+    `(##core#letrec* ,@(cdr x)))))
 
 (##sys#extend-macro-environment
  'letrec
