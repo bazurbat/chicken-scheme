@@ -1199,7 +1199,7 @@
 (constantly (forall (a) (#(procedure #:pure) constantly (a) (procedure (#!rest) a))))
 (disjoin (#(procedure #:clean #:enforce) disjoin (#!rest (procedure (*) *)) (procedure (*) *)))
 (each (#(procedure #:clean #:enforce) each (#!rest procedure) procedure))
-(flatten (#(procedure #:clean #:enforce) flatten (pair) list))
+(flatten (#(procedure #:clean #:enforce) flatten (#!rest *) list))
 (flip (#(procedure #:clean #:enforce) flip ((procedure (* *) . *)) (procedure (* *) . *)))
 (identity (forall (a) (#(procedure #:pure) identity (a) a)))
 (intersperse (#(procedure #:clean #:enforce) intersperse (list *) list))
