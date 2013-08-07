@@ -35,7 +35,8 @@ exec csi -s "$0" "$@"
     (list (irregex-match-substring m 0)
 	  (irregex-match-substring m 1)
 	  (irregex-match-substring m 2)
-	  (irregex-match-substring m 3))))
+	  (irregex-match-substring m 3)
+	  (irregex-match-substring m 4))))
 
 (define (main args)
   (let ((major (##sys#fudge 41))
