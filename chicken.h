@@ -1665,6 +1665,7 @@ C_fctexport void *C_register_lf2(C_word *lf, int count, C_PTABLE_ENTRY *ptable);
 C_fctexport void C_unregister_lf(void *handle);
 C_fctexport C_char *C_dump_trace(int start);
 C_fctexport void C_fcall C_clear_trace_buffer(void) C_regparm;
+C_fctexport C_word C_resize_trace_buffer(C_word size);
 C_fctexport C_word C_fetch_trace(C_word start, C_word buffer);
 C_fctexport C_word C_fcall C_string(C_word **ptr, int len, C_char *str) C_regparm;
 C_fctexport C_word C_fcall C_static_string(C_word **ptr, int len, C_char *str) C_regparm;

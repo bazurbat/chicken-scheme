@@ -1534,6 +1534,9 @@
       (##sys#flush-output ##sys#standard-output) ) ) )
 
 (define ##sys#clear-trace-buffer (foreign-lambda void "C_clear_trace_buffer"))
+(define (##sys#resize-trace-buffer i)
+  (##sys#check-exact i)
+  (##core#inline "C_resize_trace_buffer" i))
 
 (define repl
   (let ((eval eval)

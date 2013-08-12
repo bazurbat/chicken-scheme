@@ -714,9 +714,6 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   gc_root_list = NULL;
  
   /* Initialize global variables: */
-  if(C_trace_buffer_size < MIN_TRACE_BUFFER_SIZE)
-    C_trace_buffer_size = MIN_TRACE_BUFFER_SIZE;
-
   if(C_heap_growth <= 0) C_heap_growth = DEFAULT_HEAP_GROWTH;
 
   if(C_heap_shrinkage <= 0) C_heap_shrinkage = DEFAULT_HEAP_SHRINKAGE;
@@ -3875,6 +3872,9 @@ C_regparm void C_fcall C_clear_trace_buffer(void)
   int i;
 
   if(trace_buffer == NULL) {
+    if(C_trace_buffer_size < MIN_TRACE_BUFFER_SIZE)
+      C_trace_buffer_size = MIN_TRACE_BUFFER_SIZE;
+
     trace_buffer = (TRACE_INFO *)C_malloc(sizeof(TRACE_INFO) * C_trace_buffer_size);
 
     if(trace_buffer == NULL)
@@ -3892,6 +3892,15 @@ C_regparm void C_fcall C_clear_trace_buffer(void)
   }
 }
 
+C_word C_resize_trace_buffer(C_word size) {
+  int old_size = C_trace_buffer_size;
+  assert(trace_buffer);
+  free(trace_buffer);
+  trace_buffer = NULL;
+  C_trace_buffer_size = C_unfix(size);
+  C_clear_trace_buffer();
+  return(C_fix(old_size));
+}
 
 C_word C_fetch_trace(C_word starti, C_word buffer)
 {
