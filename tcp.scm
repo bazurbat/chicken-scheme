@@ -160,7 +160,7 @@ EOF
     "struct sockaddr_in sa;"
     "unsigned char *ptr;"
     "unsigned int len = sizeof(struct sockaddr_in);"
-    "if(getpeername(s, (struct sockaddr *)&sa, ((unsigned int *)&len)) != 0) C_return(NULL);"
+    "if(getpeername(s, (struct sockaddr *)&sa, ((socklen_t *)&len)) != 0) C_return(NULL);"
     "ptr = (unsigned char *)&sa.sin_addr;"
     "sprintf(addr_buffer, \"%d.%d.%d.%d\", ptr[ 0 ], ptr[ 1 ], ptr[ 2 ], ptr[ 3 ]);"
     "C_return(addr_buffer);") )

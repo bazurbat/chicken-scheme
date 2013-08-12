@@ -70,6 +70,7 @@
 (define win mingw)
 (define netbsd (eq? (software-version) 'netbsd))
 (define cygwin (eq? (build-platform) 'cygwin))
+(define aix (eq? (build-platform) 'aix))
 
 (define elf
   (memq (software-version) '(linux netbsd freebsd solaris openbsd)))
@@ -271,6 +272,8 @@
 				 INSTALL_LIB_HOME
 				 TARGET_RUN_LIB_HOME)))
 		 "\"")) )
+		 (aix
+		  (list (conc "-Wl,-R\"" library-dir "\"")))
 	 (else
 	  (list (conc "-L\"" library-dir "\""))))
    (if (and deployed (eq? (software-version) 'freebsd))

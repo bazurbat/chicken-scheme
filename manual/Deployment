@@ -168,6 +168,8 @@ the same directory is supported on FreeBSD, OpenBSD and Solaris.
 NetBSD supports this from version 5.0 onwards - this is currently
 disabled in {{csc}} for this particular platform.
 
+On AIX, deployment is currently unsupported.
+
 === Deploying source code
 
 An alternative to deploying binaries is deployment as compiled

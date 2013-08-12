@@ -416,6 +416,10 @@
 	    % showrev -p | grep 106950    # solaris 7
 	    % showrev -p | grep 109147    # solaris 8
 
+        AIX:
+
+	  - Currently, deployment mode is unsupported on AIX.
+
 	Mac OS X:
 
 	  - On 10.6 and 10.7, Chicken may incorrectly select a 32-bit build

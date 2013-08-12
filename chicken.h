@@ -653,9 +653,9 @@ static inline int isinf_ld (long double x)
 # define C_MACHINE_TYPE "ultrasparc"
 #elif defined(__sparc__)
 # define C_MACHINE_TYPE "sparc"
-#elif defined(__powerpc64__)
+#elif defined(__powerpc64__) || defined(_ARCH_PPC64)
 # define C_MACHINE_TYPE "ppc64"
-#elif defined(__ppc__) || defined(__powerpc__)
+#elif defined(__ppc__) || defined(__powerpc__) || defined(_ARCH_PPC)
 # define C_MACHINE_TYPE "ppc"
 #elif defined(_M_IX86) || defined(__i386__)
 # define C_MACHINE_TYPE "x86"
@@ -671,7 +671,7 @@ static inline int isinf_ld (long double x)
 
 #if defined(__CYGWIN__) || defined(__MINGW32__) || defined(_WIN32) || defined(__WINNT__)
 # define C_SOFTWARE_TYPE "windows"
-#elif defined(__unix__) || defined(C_XXXBSD)
+#elif defined(__unix__) || defined(C_XXXBSD) || defined(_AIX)
 # define C_SOFTWARE_TYPE "unix"
 #elif defined(ECOS)
 # define C_SOFTWARE_TYPE "ecos"
@@ -687,6 +687,8 @@ static inline int isinf_ld (long double x)
 # define C_BUILD_PLATFORM "mingw32"
 #elif defined(__clang__)
 # define C_BUILD_PLATFORM "clang"
+#elif defined(_AIX)
+# define C_BUILD_PLATFORM "aix"
 #elif defined(__GNUC__)
 # define C_BUILD_PLATFORM "gnu"
 #elif defined(__MWERKS__)
@@ -721,6 +723,8 @@ static inline int isinf_ld (long double x)
 # else
 #   define C_SOFTWARE_VERSION "sunos"
 # endif
+#elif defined(_AIX)
+# define C_SOFTWARE_VERSION "aix"
 #else
 # define C_SOFTWARE_VERSION "unknown"
 #endif
@@ -2951,7 +2955,7 @@ C_path_to_executable(C_char *fname)
     return buffer;
   }
   else return NULL;  
-# elif defined(__unix__) || defined(__unix) || defined(C_XXXBSD)
+# elif defined(__unix__) || defined(__unix) || defined(C_XXXBSD) || defined(_AIX)
   int i, j, k, l;
   C_char *path, *dname;
 

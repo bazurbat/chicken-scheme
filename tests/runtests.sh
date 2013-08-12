@@ -13,6 +13,13 @@ LD_LIBRARY_PATH=${TEST_DIR}/..
 LIBRARY_PATH=${TEST_DIR}/..:${LIBRARY_PATH}
 export DYLD_LIBRARY_PATH LD_LIBRARY_PATH LIBRARY_PATH
 
+case `uname` in
+	AIX)
+		DIFF_OPTS=-b ;;
+	*)
+		DIFF_OPTS=-bu ;;
+esac
+
 rm -fr test-repository
 mkdir -p test-repository
 
@@ -83,7 +90,7 @@ if test \! -f scrutiny.expected; then
     cp scrutiny.out scrutiny.expected
 fi
 
-diff -bu scrutiny.expected scrutiny.out
+diff $DIFF_OPTS scrutiny.expected scrutiny.out
 
 $compile scrutiny-tests-2.scm -A -scrutinize -analyze-only -ignore-repository -types $TYPESDB 2>scrutiny-2.out -verbose
 
@@ -96,7 +103,7 @@ if test \! -f scrutiny-2.expected; then
     cp scrutiny-2.out scrutiny-2.expected
 fi
 
-diff -bu scrutiny-2.expected scrutiny-2.out
+diff $DIFF_OPTS scrutiny-2.expected scrutiny-2.out
 
 $compile scrutiny-tests-3.scm -specialize -block -ignore-repository -types $TYPESDB
 ./a.out
@@ -152,10 +159,10 @@ $interpret -s reader-tests.scm
 
 echo "======================================== dynamic-wind tests ..."
 $interpret -s dwindtst.scm >dwindtst.out
-diff -bu dwindtst.expected dwindtst.out
+diff $DIFF_OPTS dwindtst.expected dwindtst.out
 $compile dwindtst.scm
 ./a.out >dwindtst.out
-diff -bu dwindtst.expected dwindtst.out
+diff $DIFF_OPTS dwindtst.expected dwindtst.out
 echo "*** Skipping \"feeley-dynwind\" for now ***"
 # $interpret -s feeley-dynwind.scm
 
@@ -255,7 +262,7 @@ if test -n "$MSYSTEM"; then
     # the windows runtime library prints flonums differently
     tail r4rstest.log
 else
-    diff -bu r4rstest.out r4rstest.log
+    diff $DIFF_OPTS r4rstest.out r4rstest.log
 fi
 
 echo "======================================== syntax tests (r5rs_pitfalls) ..."
@@ -405,14 +412,18 @@ CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR -r
  -csi ${TEST_DIR}/../csi
 CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $interpret -bnq rev-app.scm 1.0
 
-echo "======================================== deployment tests"
-mkdir rev-app
-CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR reverser
-CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $compile2 -deploy rev-app.scm
-CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -deploy -prefix rev-app -t local -l $TEST_DIR reverser
-unset LD_LIBRARY_PATH DYLD_LIBRARY_PATH CHICKEN_REPOSITORY
-rev-app/rev-app 1.1
-mv rev-app rev-app-2
-rev-app-2/rev-app 1.1
+if test $OS_NAME != AIX; then
+	echo "======================================== deployment tests"
+	mkdir rev-app
+	CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR reverser
+	CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $compile2 -deploy rev-app.scm
+	CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -deploy -prefix rev-app -t local -l $TEST_DIR reverser
+	unset LD_LIBRARY_PATH DYLD_LIBRARY_PATH CHICKEN_REPOSITORY
+	rev-app/rev-app 1.1
+	mv rev-app rev-app-2
+	rev-app-2/rev-app 1.1
+else
+	echo "Disabling deployment tests, as deployment is currently unsupported on AIX."
+fi
 
 echo "======================================== done."
