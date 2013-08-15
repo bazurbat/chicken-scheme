@@ -688,7 +688,7 @@ record-instance type is not counted. Signals an error if
 <procedure>(record-instance-slot RECORD INDEX)</procedure>
 
 Returns the contents of the {{INDEX}}th slot of the record structure
-{{RECORD}}. The slot index range is the open interval (([0
+{{RECORD}}. The slot index range is the open interval {{[0
 record-instance-length)}}. Signals an error if {{RECORD}} is not a record
 structure.
 
@@ -699,7 +699,7 @@ structure.
 <procedure>(set! (record-instance-slot RECORD INDEX) X)</procedure>
 
 Sets the {{INDEX}}th slot of the record structure {{RECORD}} to {{X}}. The slot
-index range is the open interval (([0 record-instance-length)}}. Signals an
+index range is the open interval {{[0 record-instance-length)}}. Signals an
 error if {{RECORD}} is not a record structure.
 
 
