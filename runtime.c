@@ -6074,6 +6074,7 @@ void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...)
   /* 3 additional args + 1 slot for stack-pointer + two for stack-alignment to 16 bytes */
   buf = alloca((n + 6) * sizeof(C_word));
 # ifdef __x86_64__
+  /* XXX Shouldn't this check for C_SIXTY_FOUR in general? */
   buf = (void *)C_align16((C_uword)buf);
 # endif
   buf[ 0 ] = n + 2;

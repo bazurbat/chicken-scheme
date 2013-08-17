@@ -61,16 +61,8 @@
 
 /* Kind of platform */
 
-#ifndef C_SIXTY_FOUR
-# if defined (__alpha__) || defined(__ia64__) || defined(__x86_64__) || defined(__LP64__) || defined(__powerpc64__)
-#   define C_SIXTY_FOUR
-# elif (defined(__sparc_v9__) || defined(__sparcv9)) && defined(__arch64__)
-#   define C_SIXTY_FOUR
-# elif defined(__mips64) && (!defined(__GNUC__) || _MIPS_SZPTR == 64)
-#   define C_SIXTY_FOUR
-# elif defined(__MINGW64__)
-#   define C_SIXTY_FOUR
-# endif
+#if defined(__LP64__) || defined(_LP64) || defined(__MINGW64__) || defined(_WIN64)
+# define C_SIXTY_FOUR
 #endif
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -86,6 +78,10 @@
 #endif
 
 #if defined(__MINGW32__) || defined(__WATCOMC__) || defined(__MWERKS__)
+/*
+ * XXX This should probably be renamed or changed because it's misleading.
+ * For example, Haiku is not a Unix either, but this doesn't get defined there.
+ */
 # define C_NONUNIX
 #endif
 
@@ -93,7 +89,7 @@
 # define C_SOLARIS
 #endif
 
-#ifdef __MINGW64__
+#if defined(__MINGW64__) || defined(_WIN64)
 # define C_LLP
 #endif
 
@@ -110,6 +106,7 @@
 #include <time.h>
 #include <math.h>
 
+/* This check is exceedingly strange */
 #if !defined(C_NONUNIX) || defined(__MINGW32__) || defined(__WATCOMC__)
 # include <unistd.h>
 # include <inttypes.h>
@@ -556,7 +553,7 @@ static inline int isinf_ld (long double x)
 #define C_S64_MIN    INT64_MIN
 #define C_S64_MAX    INT64_MAX
 
-#if defined(C_LLP) && defined(C_SIXTY_FOUR)
+#if defined(C_LLP)
 # define C_long                   C_s64
 # ifndef LONG_LONG_MAX
 #  define C_LONG_MAX              LLONG_MAX
