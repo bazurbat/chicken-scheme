@@ -513,7 +513,7 @@
 		 (and (not (any loop (cdr p))) (fail)))
 		(else (error "invalid `platform' property" name (cadr platform))))))))
 
-  (define (make-install-command e+d+v dep?)
+  (define (make-install-command egg-name egg-version dep?)
     (conc
      *csi*
      " -bnq "
@@ -527,7 +527,7 @@
 	 ""
 	 "-e \"(setup-error-handling)\" ")
      (sprintf "-e \"(extension-name-and-version '(\\\"~a\\\" \\\"~a\\\"))\""
-       (car e+d+v) (caddr e+d+v))
+       egg-name egg-version)
      (if (sudo-install) " -e \"(sudo-install #t)\"" "")
      (if *keep* " -e \"(keep-intermediates #t)\"" "")
      (if (and *no-install* (not dep?)) " -e \"(setup-install-mode #f)\"" "")
@@ -550,7 +550,7 @@
 	 "")
      (if *deploy* " -e \"(deployment-mode #t)\"" "")
      #\space
-     (shellpath (make-pathname (cadr e+d+v) (car e+d+v) "setup"))) )
+     (shellpath (string-append egg-name ".setup"))) )
 
   (define-syntax keep-going
     (syntax-rules ()
@@ -610,26 +610,33 @@
 	       (let ((setup
 		      (lambda (dir)
 			(print "changing current directory to " dir)
-			(parameterize ((current-directory dir))
-			  (when *cross-chicken*
-			    (delete-stale-binaries))
-			  (let ((cmd (make-install-command e+d+v (> i 1)))
-				(name (car e+d+v)))
-			    (print "  " cmd)
-			    (keep-going 
-			     (name "installing")
-			     ($system cmd))
-			    (when (and *run-tests*
-				       (not isdep)
-				       (file-exists? "tests")
-				       (directory? "tests")
-				       (file-exists? "tests/run.scm") )
-			      (set! *running-test* #t)
-			      (current-directory "tests")
-			      (keep-going
-			       (name "testing")
-			       (command "~a -s run.scm ~a ~a" *csi* name (caddr e+d+v)))
-			      (set! *running-test* #f)))))))
+			(let ((old-dir (current-directory)))
+			  (dynamic-wind
+			      (lambda ()
+				(change-directory dir))
+			      (lambda ()
+				(when *cross-chicken*
+				      (delete-stale-binaries))
+				(let ((cmd (make-install-command
+					    (car e+d+v) (caddr e+d+v) (> i 1)))
+				      (name (car e+d+v)))
+				  (print "  " cmd)
+				  (keep-going 
+				   (name "installing")
+				   ($system cmd))
+				  (when (and *run-tests*
+					     (not isdep)
+					     (file-exists? "tests")
+					     (directory? "tests")
+					     (file-exists? "tests/run.scm") )
+					(set! *running-test* #t)
+					(current-directory "tests")
+					(keep-going
+					 (name "testing")
+					 (command "~a -s run.scm ~a ~a" *csi* name (caddr e+d+v)))
+					(set! *running-test* #f))))
+			      (lambda ()
+				(change-directory old-dir)))))))
 		 (if (and *target-extension* *host-extension*)
 		     (fluid-let ((*deploy* #f)
 				 (*prefix* #f))
