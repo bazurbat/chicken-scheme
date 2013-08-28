@@ -4704,32 +4704,48 @@ EOF
 (define ##sys#set-finalizer! (##core#primitive "C_register_finalizer"))
 
 (define set-finalizer! 
-  (lambda (x y)
-    (when (fx>= (##sys#fudge 26) _max_pending_finalizers)
-      (if (##core#inline "C_resize_pending_finalizers" (fx* 2 _max_pending_finalizers))
-	  (begin
-	    (set! ##sys#pending-finalizers (##sys#grow-vector ##sys#pending-finalizers
-							      (fx+ (fx* 2 _max_pending_finalizers) 1)
-							      (##core#undefined)))
-	    (when (##sys#fudge 13)
-	      (print "[debug] too many finalizers (" (##sys#fudge 26)
-		     "), resized max finalizers to " _max_pending_finalizers "...") ) )
-	  (begin
-	    (when (##sys#fudge 13)
-	      (print "[debug] too many finalizers (" (##sys#fudge 26) "), forcing ...") )
-	    (##sys#force-finalizers) ) ) )
-    (##sys#set-finalizer! x y) ) )
+  (let ((string-append string-append))
+    (lambda (x y)
+      (when (fx>= (##sys#fudge 26) _max_pending_finalizers)
+	(cond ((##core#inline "C_resize_pending_finalizers" (fx* 2 _max_pending_finalizers))
+	       (set! ##sys#pending-finalizers (##sys#grow-vector ##sys#pending-finalizers
+								 (fx+ (fx* 2 _max_pending_finalizers) 1)
+								 (##core#undefined)))
+	       (when (##sys#fudge 13)
+		 (##sys#print 
+		  (string-append
+		   "[debug] too many finalizers (" 
+		   (##sys#number->string (##sys#fudge 26))
+		   "), resized max finalizers to "
+		   (##sys#number->string _max_pending_finalizers)
+		   "\n")
+		  #f ##sys#standard-error)))
+	      (else
+	       (when (##sys#fudge 13)
+		 (##sys#print 
+		  (string-append
+		   "[debug] too many finalizers ("
+		   (##sys#fudge 26)
+		   "), forcing ...\n")
+		  #f ##sys#standard-error))
+	       (##sys#force-finalizers) ) ) )
+      (##sys#set-finalizer! x y) ) ) )
 
 (define ##sys#run-pending-finalizers
-  (let ([vector-fill! vector-fill!]
-	[working #f] )
+  (let ((vector-fill! vector-fill!)
+	(string-append string-append)
+	(working #f) )
     (lambda (state)
       (unless working
 	(set! working #t)
 	(let* ((c (##sys#slot ##sys#pending-finalizers 0)) )
 	  (when (##sys#fudge 13)
-	    (print "[debug] running " c " finalizer(s) (" (##sys#fudge 26) " live, "
-		   (##sys#fudge 27) " allocated) ..."))
+	    (##sys#print 
+	     (string-append "[debug] running " (##sys#number->string c)
+			    " finalizer(s) (" (##sys#number->string (##sys#fudge 26))
+			    " live, " (##sys#number->string (##sys#fudge 27))
+			    " allocated) ...\n")
+	     #f ##sys#standard-error))
 	  (do ([i 0 (fx+ i 1)])
 	      ((fx>= i c))
 	    (let ([i2 (fx+ 1 (fx* i 2))])
