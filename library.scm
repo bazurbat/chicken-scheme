@@ -2747,9 +2747,11 @@ EOF
 			 (if (and skw (eq? ksp #:suffix))
 			     (k (##sys#reverse-list->string (cdr lst)) #t)
 			     (k (##sys#reverse-list->string lst) pkw)))
+                        ((memq c reserved-characters)
+			  (reserved-character c))
 			(else
 			 (let ((c (##sys#read-char-0 port)))
-			   (case (and sep c)
+			   (case c
 			     ((#\|) 
 			      (let ((part (r-string #\|)))
 				(loop (append (##sys#fast-reverse (##sys#string->list part)) lst)
@@ -2858,13 +2860,8 @@ EOF
 
           ; now have the state to make a decision.
           (set! reserved-characters
-	        (if psp
-	            (if sep
-	                '()
-	                '(#\[ #\] #\{ #\}) )
-	            (if sep
-	                '(#\|)
-	                '(#\[ #\] #\{ #\} #\|))))
+                (append (if (not psp) '(#\[ #\] #\{ #\}) '())
+                        (if (not sep) '(#\|) '())))
 
 	  (r-spaces)
 	  (let* ((c (##sys#peek-char-0 port))

@@ -283,6 +283,29 @@
   (assert (string=? "aBc" (symbol->string (with-input-from-string "|aBc|" read))))
   (assert (string=? "aBc" (symbol->string (with-input-from-string "a\\Bc" read)))))
 
+(parameterize ((symbol-escape #f))
+  (assert (string=? "aBc" (symbol->string (with-input-from-string "aBc" read))))
+  (assert-fail (with-input-from-string "|aBc|" read))
+  (assert-fail (with-input-from-string "a|Bc" read)))
+(parameterize ((symbol-escape #t))
+  (assert (string=? "aBc" (symbol->string (with-input-from-string "aBc" read))))
+  (assert (string=? "aBc" (symbol->string (with-input-from-string "|aBc|" read))))
+  (assert (string=? "aB c" (symbol->string (with-input-from-string "|aB c|" read))))
+  ;; The following is an extension/generalisation of r7RS
+  (assert (string=? "aBc" (symbol->string (with-input-from-string "a|Bc|" read))))
+  ;; "Unterminated string" (unterminated identifier?)
+  (assert-fail (with-input-from-string "a|Bc" read)))
+
+;;; Paren synonyms
+
+(parameterize ((parentheses-synonyms #f))
+  (assert (eq? '() (with-input-from-string "()" read)))
+  (assert-fail (with-input-from-string "[]" read))
+  (assert-fail (with-input-from-string "{}" read)))
+(parameterize ((parentheses-synonyms #t))
+  (assert (eq? '() (with-input-from-string "()" read)))
+  (assert (eq? '() (with-input-from-string "[]" read)))
+  (assert (eq? '() (with-input-from-string "{}" read))))
 
 ;;; keywords
 
