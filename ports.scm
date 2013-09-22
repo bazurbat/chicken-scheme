@@ -32,8 +32,9 @@
 ; OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-(declare (unit ports))
-
+(declare
+  (unit ports)
+  (uses extras))
 
 (include "common-declarations.scm")
 

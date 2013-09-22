@@ -27,7 +27,7 @@
 
 (declare
  (unit extras)
- (uses data-structures ports))
+ (uses data-structures))
 
 (declare
   (hide fprintf0 generic-write) )

@@ -6,6 +6,11 @@
 - Runtime system
   - The procedure trace buffer has been made resizable.
 
+- Core libraries
+  - Unit extras now implicitly depends on ports.  ports no longer
+     implicitly depends on extras.  This may break programs which don't
+     use modules and forgot to require ports but use procedures from it.
+
 4.8.2
 
 - Security fixes
