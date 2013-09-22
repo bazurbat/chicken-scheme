@@ -295,7 +295,49 @@ EOF
 
 (test-group
  "read-line string port position tests"
-(test-port-position read-string-line/pos))
+ (test-port-position read-string-line/pos))
+
+(test-group "read-string!"
+  (let ((in (open-input-string "1234567890"))
+        (buf (make-string 5)))
+    (test-equal "read-string! won't read past buffer if given #f"
+                (read-string! #f buf in)
+                5)
+    (test-equal "read-string! reads the requested bytes with #f"
+                buf
+                "12345")
+    (test-equal "read-string! won't read past buffer if given #f and offset"
+                (read-string! #f buf in 3)
+                2)
+    (test-equal "read-string! reads the requested bytes with #f and offset"
+                buf
+                "12367")
+    (test-equal "read-string! reads until the end correctly"
+                (read-string! #f buf in)
+                3)
+    (test-equal "read-string! leaves the buffer's tail intact"
+                buf
+                "89067"))
+  (let ((in (open-input-string "1234567890"))
+        (buf (make-string 5)))
+    (test-equal "read-string! won't read past buffer if given size"
+                (read-string! 10 buf in)
+                5)
+    (test-equal "read-string! reads the requested bytes with buffer size"
+                buf
+                "12345")
+    (test-equal "read-string! won't read past buffer if given size and offset"
+                (read-string! 10 buf in 3)
+                2)
+    (test-equal "read-string! reads the requested bytes with buffer size and offset"
+                buf
+                "12367")
+    (test-equal "read-string! reads until the end correctly with buffer size"
+                (read-string! 10 buf in)
+                3)
+    (test-equal "read-string! leaves the buffer's tail intact"
+                buf
+                "89067")))
 
 ;; Disabled because it requires `echo -n` for
 ;; the EOF test, and that is not available on all systems.
