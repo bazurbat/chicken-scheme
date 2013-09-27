@@ -1,7 +1,8 @@
 4.8.3
 
 - Security fixes
-  - read-string! no longer reads beyond its buffer when length is #f.
+  - CVE-2013-4385: read-string! no longer reads beyond its buffer when
+    length is #f.
 
 - Runtime system
   - The procedure trace buffer has been made resizable.
