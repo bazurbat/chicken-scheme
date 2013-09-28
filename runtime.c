@@ -2199,7 +2199,7 @@ C_regparm C_word C_fcall lookup(C_word key, int len, C_char *str, C_SYMBOL_TABLE
     s = C_block_item(sym, 1);
 
     if(C_header_size(s) == (C_word)len
-       && !C_memcmp(str, (C_char *)((C_SCHEME_BLOCK *)s)->data, len))
+       && !C_memcmp(str, (C_char *)C_data_pointer(s), len))
       return sym;
   }
 
@@ -2244,15 +2244,14 @@ C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stabl
   p = *ptr;
   sym = (C_word)p;
   p += C_SIZEOF_SYMBOL;
-  ((C_SCHEME_BLOCK *)sym)->header = C_SYMBOL_TYPE | (C_SIZEOF_SYMBOL - 1);
+  C_block_header_init(sym, C_SYMBOL_TYPE | (C_SIZEOF_SYMBOL - 1));
   C_set_block_item(sym, 0, keyw ? sym : C_SCHEME_UNBOUND); /* keyword? */
   C_set_block_item(sym, 1, string);
   C_set_block_item(sym, 2, C_SCHEME_END_OF_LIST);
   *ptr = p;
   b2 = stable->table[ key ];	/* previous bucket */
   bucket = C_a_pair(ptr, sym, b2); /* create new bucket */
-  ((C_SCHEME_BLOCK *)bucket)->header = 
-    (((C_SCHEME_BLOCK *)bucket)->header & ~C_HEADER_TYPE_BITS) | C_BUCKET_TYPE;
+  C_block_header(bucket) = (C_block_header(bucket) & ~C_HEADER_TYPE_BITS) | C_BUCKET_TYPE;
 
   if(ptr != C_heaptop) C_mutate_slot(&stable->table[ key ], bucket);
   else {
@@ -2413,7 +2412,7 @@ C_regparm C_word C_fcall C_string(C_word **ptr, int len, C_char *str)
   C_word strblock = (C_word)(*ptr);
 
   *ptr = (C_word *)((C_word)(*ptr) + sizeof(C_header) + C_align(len));
-  ((C_SCHEME_BLOCK *)strblock)->header = C_STRING_TYPE | len;
+  C_block_header_init(strblock, C_STRING_TYPE | len);
   C_memcpy(C_data_pointer(strblock), str, len);
   return strblock;
 }
@@ -2428,7 +2427,7 @@ C_regparm C_word C_fcall C_static_string(C_word **ptr, int len, C_char *str)
     panic(C_text("out of memory - cannot allocate static string"));
     
   strblock = (C_word)dptr;
-  ((C_SCHEME_BLOCK *)strblock)->header = C_STRING_TYPE | len;
+  C_block_header_init(strblock, C_STRING_TYPE | len);
   C_memcpy(C_data_pointer(strblock), str, len);
   return strblock;
 }
@@ -2444,7 +2443,7 @@ C_regparm C_word C_fcall C_static_lambda_info(C_word **ptr, int len, C_char *str
     panic(C_text("out of memory - cannot allocate static lambda info"));
 
   strblock = (C_word)dptr;
-  ((C_SCHEME_BLOCK *)strblock)->header = C_LAMBDA_INFO_TYPE | len;
+  C_block_header_init(strblock, C_LAMBDA_INFO_TYPE | len);
   C_memcpy(C_data_pointer(strblock), str, len);
   return strblock;
 }
@@ -2463,7 +2462,7 @@ C_regparm C_word C_fcall C_static_bytevector(C_word **ptr, int len, C_char *str)
 {
   C_word strblock = C_static_string(ptr, len, str);
 
-  ((C_SCHEME_BLOCK *)strblock)->header = C_BYTEVECTOR_TYPE | len;
+  C_block_header_init(strblock, C_BYTEVECTOR_TYPE | len);
   return strblock;
 }
 
@@ -2507,8 +2506,8 @@ C_regparm C_word C_fcall C_string2(C_word **ptr, C_char *str)
 
   len = C_strlen(str);
   *ptr = (C_word *)((C_word)(*ptr) + sizeof(C_header) + C_align(len));
-  ((C_SCHEME_BLOCK *)strblock)->header = C_STRING_TYPE | len;
-  C_memcpy(((C_SCHEME_BLOCK *)strblock)->data, str, len);
+  C_block_header_init(strblock, C_STRING_TYPE | len);
+  C_memcpy(C_data_pointer(strblock), str, len);
   return strblock;
 }
 
@@ -2528,8 +2527,8 @@ C_regparm C_word C_fcall C_string2_safe(C_word **ptr, int max, C_char *str)
   }
 
   *ptr = (C_word *)((C_word)(*ptr) + sizeof(C_header) + C_align(len));
-  ((C_SCHEME_BLOCK *)strblock)->header = C_STRING_TYPE | len;
-  C_memcpy(((C_SCHEME_BLOCK *)strblock)->data, str, len);
+  C_block_header_init(strblock, C_STRING_TYPE | len);
+  C_memcpy(C_data_pointer(strblock), str, len);
   return strblock;
 }
 
@@ -4195,7 +4194,7 @@ C_regparm C_word C_fcall C_execute_shell_command(C_word string)
       barf(C_OUT_OF_MEMORY_ERROR, "system");
   }
 
-  C_memcpy(buf, ((C_SCHEME_BLOCK *)string)->data, n);
+  C_memcpy(buf, C_data_pointer(string), n);
   buf[ n ] = '\0';
   if (n != strlen(buf))
     barf(C_ASCIIZ_REPRESENTATION_ERROR, "get-environment-variable", string);
@@ -4656,7 +4655,7 @@ C_word C_a_i_string(C_word **a, int c, ...)
   char *p;
 
   *a = (C_word *)((C_word)(*a) + sizeof(C_header) + C_align(c));
-  ((C_SCHEME_BLOCK *)s)->header = C_STRING_TYPE | c;
+  C_block_header_init(s, C_STRING_TYPE | c);
   p = (char *)C_data_pointer(s);
   va_start(v, c);
 

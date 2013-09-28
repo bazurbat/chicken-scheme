@@ -345,6 +345,9 @@ chicken-defaults.h:
 ifdef OPTIMIZE_FOR_SPEED
 	echo "/* (this build was optimized for speed) */" >$@
 endif
+ifdef DEBUGBUILD
+	echo "#define DEBUGBUILD 1" >> $@
+endif
 	echo "#define C_CHICKEN_PROGRAM \"$(CHICKEN_PROGRAM)$(EXE)\"" >>$@
 	echo "#ifndef C_INSTALL_CC" >>$@
 	echo "# define C_INSTALL_CC \"$(C_COMPILER)\"" >>$@

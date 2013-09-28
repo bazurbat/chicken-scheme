@@ -226,6 +226,10 @@ void *alloca ();
 
 /* Language specifics: */
 #if defined(__GNUC__) || defined(__INTEL_COMPILER)
+#define HAVE_STATEMENT_EXPRESSIONS 1
+#endif
+
+#if defined(__GNUC__) || defined(__INTEL_COMPILER)
 # ifndef __cplusplus
 #  define C_cblock                ({
 #  define C_cblockend             })
@@ -858,6 +862,60 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_UWORD_MAX               UINT_MAX
 #endif
 
+#if DEBUGBUILD && HAVE_STATEMENT_EXPRESSIONS
+/* These are wrappers around the following idiom:
+ *    assert(SOME_PRED(obj));
+ *    do_something_with(obj);
+ * This works around the fact obj may be an expression with side-effects.
+ *
+ * We'd like semantics like (let ((x 1)) (let ((x x)) x)) => 1, but in C
+ * int x = x; results in undefined behaviour because x refers to itself, so
+ * we need to keep around a reference to the previous level (one scope up).
+ * After initialisers are run, "previous" is redefined to mean "current".
+ * Multiple ACCESS calls yield successively larger chains of "prev" access.
+ */
+# define C_VAL(x,y) C__PREV_TMPST.x
+static const int C__TMPST = 0;
+static const int C__PREV_TMPST = 0;
+# define C__STR(x)   #x
+# define C__CHECK_panic(a,s,f,l)                                       \
+  ((a) ? (void)0 :                                                     \
+   C_panic_hook("Low-level type assertion " s " failed at " f ":" C__STR(l)))
+# define C__CHECK_core(n,v,a,s,x)                                       \
+  ({ struct {                                                           \
+      typeof(v) n;                                                      \
+      typeof(C__PREV_TMPST) C__TMPST;                                   \
+  } C__TMPST = { .C__TMPST = C__PREV_TMPST};                            \
+    C__TMPST.n = (v);                                                   \
+    typeof(C__TMPST) C__PREV_TMPST=C__TMPST;                            \
+    C__CHECK_panic(a,s,__FILE__,__LINE__);                              \
+    x; })
+# define C__CHECK2_core(n1,v1,n2,v2,a,s,x)                              \
+  ({ struct {                                                           \
+      typeof(v1) n1;                                                    \
+      typeof(v2) n2;                                                    \
+      typeof(C__PREV_TMPST) C__TMPST;                                   \
+  } C__TMPST = { .C__TMPST = C__PREV_TMPST};                            \
+    C__TMPST.n1 = (v1);                                                 \
+    C__TMPST.n2 = (v2);                                                 \
+    typeof(C__TMPST) C__PREV_TMPST=C__TMPST;                            \
+    C__CHECK_panic(a,s,__FILE__,__LINE__);                              \
+    x; })
+# define C_CHECK(n,v,a,x)             C__CHECK_core(n,v,a,#a,x)
+# define C_CHECK2(n1,v1,n2,v2,a,x)    C__CHECK2_core(n1,v1,n2,v2,a,#a,x)
+/*
+ * Convenience for using Scheme-predicates.
+ */
+# define C_CHECKp(n,v,a,x)            C__CHECK_core(n,v,C_truep(a),#a"=#t",x)
+# define C_CHECK2p(n1,v1,n2,v2,a,x)   C__CHECK2_core(n1,v1,n2,v2,C_truep(a),#a"=#t",x)
+#else
+# define C_VAL(x,y)                   (y)
+# define C_CHECK(n,v,a,x)             (x)
+# define C_CHECK2(n1,v1,n2,v2,a,x)    (x)
+# define C_CHECKp(n,v,a,x)            (x)
+# define C_CHECK2p(n1,v1,n2,v2,a,x)   (x)
+#endif
+
 #ifndef C_PROVIDE_LIBC_STUBS
 # define C_FILEPTR                  FILE *
 
@@ -986,17 +1044,19 @@ extern double trunc(double);
 # define C_strtow                  C_strtol
 #endif
 
-#define C_id(x)                    (x)
 #define C_return(x)                return(x)
 #define C_resize_stack(n)          C_do_resize_stack(n)
 #define C_memcpy_slots(t, f, n)    C_memcpy((t), (f), (n) * sizeof(C_word))
-#define C_block_header(x)          (((C_SCHEME_BLOCK *)(x))->header)
-#define C_header_bits(x)           (C_block_header(x) & C_HEADER_BITS_MASK)
-#define C_header_size(x)           (C_block_header(x) & C_HEADER_SIZE_MASK)
+/* Without check: initialisation of a newly allocated header */
+#define C_block_header_init(x,h)   (((C_SCHEME_BLOCK *)(x))->header = (h))
+/* These two must result in an lvalue, hence the (*foo(&bar)) faffery */
+#define C_block_header(x)          (*C_CHECKp(__x,x,C_blockp((C_word)C_VAL(__x,x)),&(((C_SCHEME_BLOCK *)(C_VAL(__x,x)))->header)))
+#define C_block_item(x,i)          (*C_CHECK2(__x,x,__i,i,(C_header_size(C_VAL(__x,x))>(C_VAL(__i,i))),&(((C_SCHEME_BLOCK *)(C_VAL(__x,x)))->data [ C_VAL(__i,i) ])))
+#define C_set_block_item(x,i,y)    (C_block_item(x, i) = (y))
+#define C_header_bits(bh)          (C_block_header(bh) & C_HEADER_BITS_MASK)
+#define C_header_size(bh)          (C_block_header(bh) & C_HEADER_SIZE_MASK)
 #define C_make_header(type, size)  ((C_header)(((type) & C_HEADER_BITS_MASK) | ((size) & C_HEADER_SIZE_MASK)))
 #define C_symbol_value(x)          (C_block_item(x, 0))
-#define C_block_item(x, i)         (((C_SCHEME_BLOCK *)(x))->data[ i ])
-#define C_set_block_item(x, i, y)  (C_block_item(x, i) = (y))
 #define C_save(x)	           (*(--C_temporary_stack) = (C_word)(x))
 #define C_adjust_stack(n)          (C_temporary_stack -= (n))
 #define C_rescue(x, i)             (C_temporary_stack[ i ] = (x))
@@ -1021,19 +1081,21 @@ extern double trunc(double);
 #define C_stack_pointer_test       ((C_word *)C_alloca(1))
 #define C_demand_2(n)              (((C_word *)C_fromspace_top + (n)) < (C_word *)C_fromspace_limit)
 #define C_fix(n)                   (((C_word)(n) << C_FIXNUM_SHIFT) | C_FIXNUM_BIT)
-#define C_unfix(x)                 ((x) >> C_FIXNUM_SHIFT)
+#define C_unfix(x)                 C_CHECKp(__x,x,C_fixnump(C_VAL(__x,x)),((C_VAL(__x,x)) >> C_FIXNUM_SHIFT))
 #define C_make_character(c)        (((((C_uword)(c)) & C_CHAR_BIT_MASK) << C_CHAR_SHIFT) | C_CHARACTER_BITS)
-#define C_character_code(x)        (((C_word)(x) >> C_CHAR_SHIFT) & C_CHAR_BIT_MASK)
-#define C_flonum_magnitude(x)      (*((double *)(((C_SCHEME_BLOCK *)(x))->data)))
-#define C_c_string(x)              ((C_char *)(((C_SCHEME_BLOCK *)(x))->data))
+#define C_character_code(x)        C_CHECKp(__x,x,C_charp(C_VAL(__x,x)),((C_word)(C_VAL(__x,x)) >> C_CHAR_SHIFT) & C_CHAR_BIT_MASK)
+#define C_flonum_magnitude(x)      (*C_CHECKp(__x,x,C_flonump(C_VAL(__x,x)),(double *)C_data_pointer(C_VAL(__x,x))))
+/* XXX Sometimes this is (ab)used on bytevectors (ie, blob=? uses string_compare) */
+#define C_c_string(x)              C_CHECK(__x,x,(C_truep(C_stringp(C_VAL(__x,x))) || C_truep(C_bytevectorp(C_VAL(__x,x)))),(C_char *)C_data_pointer(C_VAL(__x,x)))
+
 #define C_c_pointer(x)             ((void *)(x))
 #define C_c_pointer_nn(x)          ((void *)C_block_item(x, 0))
 #define C_truep(x)                 ((x) != C_SCHEME_FALSE)
 #define C_immediatep(x)            ((x) & C_IMMEDIATE_MARK_BITS)
 #define C_mk_bool(x)               ((x) ? C_SCHEME_TRUE : C_SCHEME_FALSE)
 #define C_mk_nbool(x)              ((x) ? C_SCHEME_FALSE : C_SCHEME_TRUE)
-#define C_port_file(p)             ((C_FILEPTR)C_block_item(p, 0))
-#define C_data_pointer(x)          ((void *)((C_SCHEME_BLOCK *)(x))->data)
+#define C_port_file(p)             C_CHECKp(__p,p,C_portp(C_VAL(__p,p)),(C_FILEPTR)C_block_item(C_VAL(__p,p), 0))
+#define C_data_pointer(b)          C_CHECKp(__b,b,C_blockp((C_word)C_VAL(__b,b)),(void *)(((C_SCHEME_BLOCK *)(C_VAL(__b,b)))->data))
 #define C_invert_flag(f)           (!(f))
 #define C_fitsinfixnump(n)         (((n) & C_INT_SIGN_BIT) == (((n) & C_INT_TOP_BIT) << 1))
 #define C_ufitsinfixnump(n)        (((n) & (C_INT_SIGN_BIT | (C_INT_SIGN_BIT >> 1))) == 0)
@@ -1099,7 +1161,7 @@ extern double trunc(double);
 #endif
 
 #define C_zero_length_p(x)        C_mk_bool(C_header_size(x) == 0)
-#define C_boundp(x)               C_mk_bool(((C_SCHEME_BLOCK *)(x))->data[ 0 ] != C_SCHEME_UNBOUND)
+#define C_boundp(x)               C_mk_bool(C_block_item(x, 0) != C_SCHEME_UNBOUND)
 #define C_unboundvaluep(x)        C_mk_bool((x) == C_SCHEME_UNBOUND)
 #define C_blockp(x)               C_mk_bool(!C_immediatep(x))
 #define C_forwardedp(x)           C_mk_bool((C_block_header(x) & C_GC_FORWARDING_BIT) != 0)
@@ -1135,13 +1197,13 @@ extern double trunc(double);
 #define C_u_i_exactp(x)           C_mk_bool((x) & C_FIXNUM_BIT)
 #define C_u_i_inexactp(x)         C_mk_bool(((x) & C_FIXNUM_BIT) == 0)
 
-#define C_slot(x, i)              (((C_SCHEME_BLOCK *)(x))->data[ C_unfix(i) ])
-#define C_slot0(x)                (((C_SCHEME_BLOCK *)(x))->data[ 0 ])
-#define C_subbyte(x, i)           C_fix(((C_byte *)((C_SCHEME_BLOCK *)(x))->data)[ C_unfix(i) ] & 0xff)
-#define C_subchar(x, i)           C_make_character(((C_uchar *)((C_SCHEME_BLOCK *)(x))->data)[ C_unfix(i) ])
-#define C_setbyte(x, i, n)        (((C_byte *)((C_SCHEME_BLOCK *)(x))->data)[ C_unfix(i) ] = C_unfix(n), C_SCHEME_UNDEFINED)
-#define C_setsubchar(x, i, n)     (((C_char *)((C_SCHEME_BLOCK *)(x))->data)[ C_unfix(i) ] = C_character_code(n), C_SCHEME_UNDEFINED)
-#define C_setsubbyte(x, i, n)     (((C_char *)((C_SCHEME_BLOCK *)(x))->data)[ C_unfix(i) ] = C_unfix(n), C_SCHEME_UNDEFINED)
+#define C_slot(x, i)              C_block_item(x, C_unfix(i))
+#define C_subbyte(x, i)           C_fix(((C_byte *)C_data_pointer(x))[ C_unfix(i) ] & 0xff)
+#define C_subchar(x, i)           C_make_character(((C_uchar *)C_data_pointer(x))[ C_unfix(i) ])
+#define C_setbyte(x, i, n)        (((C_byte *)C_data_pointer(x))[ C_unfix(i) ] = C_unfix(n), C_SCHEME_UNDEFINED)
+#define C_setsubchar(x, i, n)     (((C_char *)C_data_pointer(x))[ C_unfix(i) ] = C_character_code(n), C_SCHEME_UNDEFINED)
+#define C_setsubbyte(x, i, n)     (((C_char *)C_data_pointer(x))[ C_unfix(i) ] = C_unfix(n), C_SCHEME_UNDEFINED)
+
 #define C_fixnum_times(n1, n2)          (C_fix(C_unfix(n1) * C_unfix(n2)))
 #define C_u_fixnum_plus(n1, n2)         (((n1) - C_FIXNUM_BIT) + (n2))
 #define C_fixnum_plus(n1, n2)           (C_u_fixnum_plus(n1, n2) | C_FIXNUM_BIT)
@@ -1186,7 +1248,7 @@ extern double trunc(double);
 
 #define C_display_fixnum(p, n)          (C_fprintf(C_port_file(p), C_text("%d"), C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_display_char(p, c)            (C_fputc(C_character_code(c), C_port_file(p)), C_SCHEME_UNDEFINED)
-#define C_display_string(p, s)          (C_fwrite(((C_SCHEME_BLOCK *)(s))->data, sizeof(C_char), C_header_size(s), \
+#define C_display_string(p, s)          (C_fwrite(C_data_pointer(s), sizeof(C_char), C_header_size(s), \
                                          C_port_file(p)), C_SCHEME_UNDEFINED)
 #define C_flush_output(port)            (C_fflush(C_port_file(port)), C_SCHEME_UNDEFINED)
 
@@ -1223,7 +1285,7 @@ extern double trunc(double);
 #define C_block_address(ptr, n, x)      C_a_unsigned_int_to_num(ptr, n, x)
 #define C_offset_pointer(x, y)          (C_pointer_address(x) + (y))
 #define C_kontinue(k, r)                ((C_proc2)(void *)C_u_i_car(k))(2, (k), (r))
-#define C_fetch_byte(x, p)              (((unsigned C_byte *)((C_SCHEME_BLOCK *)(x))->data)[ p ])
+#define C_fetch_byte(x, p)              (((unsigned C_byte *)C_data_pointer(x))[ p ])
 #define C_poke_integer(x, i, n)         (C_set_block_item(x, C_unfix(i), C_num_to_int(n)), C_SCHEME_UNDEFINED)
 #define C_pointer_to_block(p, x)        (C_set_block_item(p, 0, (C_word)C_data_pointer(x)), C_SCHEME_UNDEFINED)
 #define C_null_pointerp(x)              C_mk_bool((void *)C_block_item(x, 0) == NULL)
@@ -1264,10 +1326,10 @@ extern double trunc(double);
 #define C_emit_syntax_trace_info(x, y, z) C_emit_trace_info2("<syntax>", x, y, z)
 
 /* These expect C_VECTOR_TYPE to be 0: */
-#define C_vector_to_structure(v)        (((C_SCHEME_BLOCK *)(v))->header |= C_STRUCTURE_TYPE, C_SCHEME_UNDEFINED)
-#define C_vector_to_closure(v)          (((C_SCHEME_BLOCK *)(v))->header |= C_CLOSURE_TYPE, C_SCHEME_UNDEFINED)
-#define C_string_to_bytevector(s)       (((C_SCHEME_BLOCK *)(s))->header = C_header_size(s) | C_BYTEVECTOR_TYPE, C_SCHEME_UNDEFINED)
-#define C_string_to_lambdainfo(s)       (((C_SCHEME_BLOCK *)(s))->header = C_header_size(s) | C_LAMBDA_INFO_TYPE, C_SCHEME_UNDEFINED)
+#define C_vector_to_structure(v)        (C_block_header(v) |= C_STRUCTURE_TYPE, C_SCHEME_UNDEFINED)
+#define C_vector_to_closure(v)          (C_block_header(v) |= C_CLOSURE_TYPE, C_SCHEME_UNDEFINED)
+#define C_string_to_bytevector(s)       (C_block_header(s) = C_header_size(s) | C_BYTEVECTOR_TYPE, C_SCHEME_UNDEFINED)
+#define C_string_to_lambdainfo(s)       (C_block_header(s) = C_header_size(s) | C_LAMBDA_INFO_TYPE, C_SCHEME_UNDEFINED)
 
 #ifdef C_TIMER_INTERRUPTS
 # ifdef PARANOIA
@@ -1283,13 +1345,13 @@ extern double trunc(double);
   (C_initial_timer_interrupt_period = C_unfix(n), C_SCHEME_UNDEFINED)
 
 
-#if defined(__GNUC__) || defined(__INTEL_COMPILER)
+#ifdef HAVE_STATEMENT_EXPRESSIONS
 # define C_a_i(a, n)                    ({C_word *tmp = *a; *a += (n); tmp;})
 # define C_a_i_cons(a, n, car, cdr)     ({C_word tmp = (C_word)(*a); (*a)[0] = C_PAIR_TYPE | 2; *a += 3; \
                                           C_set_block_item(tmp, 0, car); C_set_block_item(tmp, 1, cdr); tmp;})
 #else
 # define C_a_i_cons(a, n, car, cdr)     C_a_pair(a, car, cdr)
-#endif /* __GNUC__ */
+#endif /* HAVE_STATEMENT_EXPRESSIONS */
 
 #define C_a_i_flonum(ptr, i, n)         C_flonum(ptr, n)
 #define C_a_i_data_mpointer(ptr, n, x)  C_mpointer(ptr, C_data_pointer(x))
@@ -1364,7 +1426,7 @@ extern double trunc(double);
 #define C_a_i_minus( ptr, n, x, y)      C_2_minus( ptr, x, y)
 #define C_a_i_divide(ptr, n, x, y)      C_2_divide(ptr, x, y)
 
-#if defined(__GNUC__) || defined(__INTEL_COMPILER)
+#ifdef HAVE_STATEMENT_EXPRESSIONS
 # define C_i_not_pair_p(x)              ({C_word tmp = (x); C_mk_bool(C_immediatep(tmp) || C_block_header(tmp) != C_PAIR_TAG);})
 #else
 # define C_i_not_pair_p                 C_i_not_pair_p_2
@@ -1818,7 +1880,7 @@ C_fctexport void C_ccall C_dump_heap_state(C_word x, C_word closure, C_word k) C
 C_fctexport void C_ccall C_filter_heap_objects(C_word x, C_word closure, C_word k, C_word func,
 					       C_word vector, C_word userarg) C_noret;
 
-#if !defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#ifndef HAVE_STATEMENT_EXPRESSIONS
 C_fctexport C_word *C_a_i(C_word **a, int n);
 #endif
 
