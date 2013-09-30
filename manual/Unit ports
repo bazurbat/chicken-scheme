@@ -18,20 +18,44 @@ bound to {{PORT}}.
 
 ==== make-input-port
 
-<procedure>(make-input-port READ READY? CLOSE [PEEK])</procedure>
+<procedure>(make-input-port READ-CHAR CHAR-READY? CLOSE [PEEK-CHAR [READ-STRING! [READ-LINE]]])</procedure>
 
-Returns a custom input port. Common operations on this
-port are handled by the given parameters, which should be
-procedures of no arguments. {{READ}} is called when the
-next character is to be read and should return a character or
-{{#!eof}}. {{READY?}} is called
-when {{char-ready?}} is called on this port and should return
-{{#t}} or {{#f}}.  {{CLOSE}} is called when the port is
-closed. {{PEEK}} is called when {{peek-char}} is called on this
-port and should return a character or {{#!eof}}.
-if the argument {{PEEK}} is not given, then {{READ}} is used
-instead and the created port object handles peeking automatically (by
-calling {{READ}} and buffering the character).
+Returns a custom input port. Common operations on this port are
+handled by the given parameters, which should be procedures of no
+arguments.  The following arguments are all different kinds of reader
+procedures:
+
+* {{READ-CHAR}} is the most fundamental reader, and must always be
+present.  It is a thunk which is called when the next character is
+to be read and it should return a character or {{#!eof}}.
+* {{CHAR-READY?}} is a thunk which is called when {{char-ready?}}
+is called on this port and should return {{#t}} or {{#f}}.
+* {{CLOSE}} is a thunk which is called when the port is closed.
+* {{PEEK-CHAR}} is a thunk which is called when {{peek-char}} is
+called on this port and should return a character or {{#!eof}}. If it
+is not provided or {{#f}}, {{READ-CHAR}} will be used instead and the
+created port object handles peeking automatically (by calling {{READ}}
+and buffering the character).
+* {{READ-STRING!}} is called when {{read-string!}} is called (or the
+higher-level non-mutating {{read-string}}).  It will be invoked with 4
+arguments: the port created by {{make-input-port}}, the number of
+bytes to read, the string buffer in which to read (which may be
+assumed to be big enough to hold the data) and the offset into the
+string at which to put the data to read.  It should return the number
+of bytes that have successfully been read, which should always be
+equal to the requested bytes unless EOF was hit, in which case it can
+be less.  If this procedure is not provided or {{#f}}, the buffer will
+be filled by repeated reads to {{READ-CHAR}}.
+* {{READ-LINE}} is called when {{read-line}} is called.  It will be
+invoked with two arguments: the port created by {{make-input-port}}
+and the maximum number of characters to read (or {{#f}}).
+
+All the optional procedures except for {{PEEK-CHAR}} are responsible
+for updating the port's position, which currently can only be done via
+low-level slot accessors like {{##sys#setslot}}; slot 4 is the row
+number (ie, the line) and slot 5 is the column number (ie, the
+character on the line).  If the port's positions are not updated,
+{{port-position}} won't work.
 
 
 ==== make-output-port
