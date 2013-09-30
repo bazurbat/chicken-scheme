@@ -48,7 +48,9 @@ be less.  If this procedure is not provided or {{#f}}, the buffer will
 be filled by repeated reads to {{READ-CHAR}}.
 * {{READ-LINE}} is called when {{read-line}} is called.  It will be
 invoked with two arguments: the port created by {{make-input-port}}
-and the maximum number of characters to read (or {{#f}}).
+and the maximum number of characters to read (or {{#f}}).  If this
+procedure is not provided or {{#f}}, the buffer will be filled by
+repeated reads to {{READ-CHAR}}.
 
 All the optional procedures except for {{PEEK-CHAR}} are responsible
 for updating the port's position, which currently can only be done via
