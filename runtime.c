@@ -4613,19 +4613,6 @@ C_regparm C_word C_fcall C_i_string_ci_equal_p(C_word x, C_word y)
 }
 
 
-#if !defined(__GNUC__) && !defined(__INTEL_COMPILER)
-
-C_word *C_a_i(C_word **a, int n)
-{
-  C_word *p = *a;
-  
-  *a += n;
-  return p;
-}
-
-#endif
-
-
 C_word C_a_i_list(C_word **a, int c, ...)
 {
   va_list v;
