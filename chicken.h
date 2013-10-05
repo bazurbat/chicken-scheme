@@ -868,52 +868,47 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
  *    do_something_with(obj);
  * This works around the fact obj may be an expression with side-effects.
  *
- * We'd like semantics like (let ((x 1)) (let ((x x)) x)) => 1, but in C
- * int x = x; results in undefined behaviour because x refers to itself, so
- * we need to keep around a reference to the previous level (one scope up).
- * After initialisers are run, "previous" is redefined to mean "current".
- * Multiple ACCESS calls yield successively larger chains of "prev" access.
+ * To make this work with nested expansions, we need semantics like
+ * (let ((x 1)) (let ((x x)) x)) => 1, but in C, int x = x; results in
+ * undefined behaviour because x refers to itself.  As a workaround,
+ * we keep around a reference to the previous level (one scope up).
+ * After initialisation, "previous" is redefined to mean "current".
  */
-# define C_VAL(x,y) C__PREV_TMPST.x
-static const int C__TMPST = 0;
-static const int C__PREV_TMPST = 0;
-# define C__STR(x)   #x
+# define C_VAL1(x)                 C__PREV_TMPST.n1
+# define C_VAL2(x)                 C__PREV_TMPST.n2
+# define C__STR(x)                 #x
 # define C__CHECK_panic(a,s,f,l)                                       \
   ((a) ? (void)0 :                                                     \
    C_panic_hook("Low-level type assertion " s " failed at " f ":" C__STR(l)))
-# define C__CHECK_core(n,v,a,s,x)                                       \
+# define C__CHECK_core(v,a,s,x)                                         \
   ({ struct {                                                           \
-      typeof(v) n;                                                      \
-      typeof(C__PREV_TMPST) C__TMPST;                                   \
-  } C__TMPST = { .C__TMPST = C__PREV_TMPST};                            \
-    C__TMPST.n = (v);                                                   \
+      typeof(v) n1;                                                     \
+  } C__TMPST = { .n1 = (v) };                                           \
     typeof(C__TMPST) C__PREV_TMPST=C__TMPST;                            \
     C__CHECK_panic(a,s,__FILE__,__LINE__);                              \
     x; })
-# define C__CHECK2_core(n1,v1,n2,v2,a,s,x)                              \
+# define C__CHECK2_core(v1,v2,a,s,x)                                    \
   ({ struct {                                                           \
       typeof(v1) n1;                                                    \
       typeof(v2) n2;                                                    \
-      typeof(C__PREV_TMPST) C__TMPST;                                   \
-  } C__TMPST = { .C__TMPST = C__PREV_TMPST};                            \
-    C__TMPST.n1 = (v1);                                                 \
-    C__TMPST.n2 = (v2);                                                 \
+  } C__TMPST = { .n1 = (v1), .n2 = (v2) };                              \
     typeof(C__TMPST) C__PREV_TMPST=C__TMPST;                            \
     C__CHECK_panic(a,s,__FILE__,__LINE__);                              \
     x; })
-# define C_CHECK(n,v,a,x)             C__CHECK_core(n,v,a,#a,x)
-# define C_CHECK2(n1,v1,n2,v2,a,x)    C__CHECK2_core(n1,v1,n2,v2,a,#a,x)
+# define C_CHECK(v,a,x)            C__CHECK_core(v,a,#a,x)
+# define C_CHECK2(v1,v2,a,x)       C__CHECK2_core(v1,v2,a,#a,x)
 /*
  * Convenience for using Scheme-predicates.
  */
-# define C_CHECKp(n,v,a,x)            C__CHECK_core(n,v,C_truep(a),#a"=#t",x)
-# define C_CHECK2p(n1,v1,n2,v2,a,x)   C__CHECK2_core(n1,v1,n2,v2,C_truep(a),#a"=#t",x)
+# define C_CHECKp(v,a,x)           C__CHECK_core(v,C_truep(a),#a"=#t",x)
+# define C_CHECK2p(v1,v2,a,x)      C__CHECK2_core(v1,v2,C_truep(a),#a"=#t",x)
 #else
-# define C_VAL(x,y)                   (y)
-# define C_CHECK(n,v,a,x)             (x)
-# define C_CHECK2(n1,v1,n2,v2,a,x)    (x)
-# define C_CHECKp(n,v,a,x)            (x)
-# define C_CHECK2p(n1,v1,n2,v2,a,x)   (x)
+# define C_VAL1(x)                 (x)
+# define C_VAL2(x)                 (x)
+# define C_CHECK(v,a,x)            (x)
+# define C_CHECK2(v1,v2,a,x)       (x)
+# define C_CHECKp(v,a,x)           (x)
+# define C_CHECK2p(v1,v2,a,x)      (x)
 #endif
 
 #ifndef C_PROVIDE_LIBC_STUBS
@@ -1050,8 +1045,8 @@ extern double trunc(double);
 /* Without check: initialisation of a newly allocated header */
 #define C_block_header_init(x,h)   (((C_SCHEME_BLOCK *)(x))->header = (h))
 /* These two must result in an lvalue, hence the (*foo(&bar)) faffery */
-#define C_block_header(x)          (*C_CHECKp(__x,x,C_blockp((C_word)C_VAL(__x,x)),&(((C_SCHEME_BLOCK *)(C_VAL(__x,x)))->header)))
-#define C_block_item(x,i)          (*C_CHECK2(__x,x,__i,i,(C_header_size(C_VAL(__x,x))>(C_VAL(__i,i))),&(((C_SCHEME_BLOCK *)(C_VAL(__x,x)))->data [ C_VAL(__i,i) ])))
+#define C_block_header(x)          (*C_CHECKp(x,C_blockp((C_word)C_VAL1(x)),&(((C_SCHEME_BLOCK *)(C_VAL1(x)))->header)))
+#define C_block_item(x,i)          (*C_CHECK2(x,i,(C_header_size(C_VAL1(x))>(C_VAL2(i))),&(((C_SCHEME_BLOCK *)(C_VAL1(x)))->data [ C_VAL2(i) ])))
 #define C_set_block_item(x,i,y)    (C_block_item(x, i) = (y))
 #define C_header_bits(bh)          (C_block_header(bh) & C_HEADER_BITS_MASK)
 #define C_header_size(bh)          (C_block_header(bh) & C_HEADER_SIZE_MASK)
@@ -1081,12 +1076,12 @@ extern double trunc(double);
 #define C_stack_pointer_test       ((C_word *)C_alloca(1))
 #define C_demand_2(n)              (((C_word *)C_fromspace_top + (n)) < (C_word *)C_fromspace_limit)
 #define C_fix(n)                   (((C_word)(n) << C_FIXNUM_SHIFT) | C_FIXNUM_BIT)
-#define C_unfix(x)                 C_CHECKp(__x,x,C_fixnump(C_VAL(__x,x)),((C_VAL(__x,x)) >> C_FIXNUM_SHIFT))
+#define C_unfix(x)                 C_CHECKp(x,C_fixnump(C_VAL1(x)),((C_VAL1(x)) >> C_FIXNUM_SHIFT))
 #define C_make_character(c)        (((((C_uword)(c)) & C_CHAR_BIT_MASK) << C_CHAR_SHIFT) | C_CHARACTER_BITS)
-#define C_character_code(x)        C_CHECKp(__x,x,C_charp(C_VAL(__x,x)),((C_word)(C_VAL(__x,x)) >> C_CHAR_SHIFT) & C_CHAR_BIT_MASK)
-#define C_flonum_magnitude(x)      (*C_CHECKp(__x,x,C_flonump(C_VAL(__x,x)),(double *)C_data_pointer(C_VAL(__x,x))))
+#define C_character_code(x)        C_CHECKp(x,C_charp(C_VAL1(x)),((C_word)(C_VAL1(x)) >> C_CHAR_SHIFT) & C_CHAR_BIT_MASK)
+#define C_flonum_magnitude(x)      (*C_CHECKp(x,C_flonump(C_VAL1(x)),(double *)C_data_pointer(C_VAL1(x))))
 /* XXX Sometimes this is (ab)used on bytevectors (ie, blob=? uses string_compare) */
-#define C_c_string(x)              C_CHECK(__x,x,(C_truep(C_stringp(C_VAL(__x,x))) || C_truep(C_bytevectorp(C_VAL(__x,x)))),(C_char *)C_data_pointer(C_VAL(__x,x)))
+#define C_c_string(x)              C_CHECK(x,(C_truep(C_stringp(C_VAL1(x))) || C_truep(C_bytevectorp(C_VAL1(x)))),(C_char *)C_data_pointer(C_VAL1(x)))
 
 #define C_c_pointer(x)             ((void *)(x))
 #define C_c_pointer_nn(x)          ((void *)C_block_item(x, 0))
@@ -1094,8 +1089,8 @@ extern double trunc(double);
 #define C_immediatep(x)            ((x) & C_IMMEDIATE_MARK_BITS)
 #define C_mk_bool(x)               ((x) ? C_SCHEME_TRUE : C_SCHEME_FALSE)
 #define C_mk_nbool(x)              ((x) ? C_SCHEME_FALSE : C_SCHEME_TRUE)
-#define C_port_file(p)             C_CHECKp(__p,p,C_portp(C_VAL(__p,p)),(C_FILEPTR)C_block_item(C_VAL(__p,p), 0))
-#define C_data_pointer(b)          C_CHECKp(__b,b,C_blockp((C_word)C_VAL(__b,b)),(void *)(((C_SCHEME_BLOCK *)(C_VAL(__b,b)))->data))
+#define C_port_file(p)             C_CHECKp(p,C_portp(C_VAL1(p)),(C_FILEPTR)C_block_item(C_VAL1(p), 0))
+#define C_data_pointer(b)          C_CHECKp(b,C_blockp((C_word)C_VAL1(b)),(void *)(((C_SCHEME_BLOCK *)(C_VAL1(b)))->data))
 #define C_invert_flag(f)           (!(f))
 #define C_fitsinfixnump(n)         (((n) & C_INT_SIGN_BIT) == (((n) & C_INT_TOP_BIT) << 1))
 #define C_ufitsinfixnump(n)        (((n) & (C_INT_SIGN_BIT | (C_INT_SIGN_BIT >> 1))) == 0)
