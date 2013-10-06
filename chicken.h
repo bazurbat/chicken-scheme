@@ -862,7 +862,8 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_UWORD_MAX               UINT_MAX
 #endif
 
-#if DEBUGBUILD && HAVE_STATEMENT_EXPRESSIONS
+/* Clang and G++ support statement expressions, but only in a limited way */
+#if DEBUGBUILD && HAVE_STATEMENT_EXPRESSIONS && !defined(__clang__) && !defined(__cplusplus)
 /* These are wrappers around the following idiom:
  *    assert(SOME_PRED(obj));
  *    do_something_with(obj);
