@@ -345,11 +345,6 @@ echo "======================================== signal tests ..."
 $compile signal-tests.scm
 ./a.out
 
-echo "======================================== lolevel tests ..."
-$interpret -s lolevel-tests.scm
-$compile lolevel-tests.scm
-./a.out
-
 echo "======================================== regular expression tests ..."
 $interpret -bnq test-irregex.scm
 $interpret -bnq test-glob.scm
