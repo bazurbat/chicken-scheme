@@ -293,7 +293,8 @@ EOF
 (define (##sys#thread-block-for-timeout! t tm)
   (dbg t " blocks for timeout " tm)
   (unless (flonum? tm)	  ; to catch old code that uses fixnum timeouts
-    (panic "##sys#thread-block-for-timeout!: invalid timeout"))
+    (panic
+     (sprintf "##sys#thread-block-for-timeout!: invalid timeout: ~S" tm)))
   (when (fp> tm 0.0)
     ;; This should really use a balanced tree:
     (let loop ([tl ##sys#timeout-list] [prev #f])
@@ -407,19 +408,23 @@ EOF
       ((#t #:input) (fdset-add! fd #t #f))
       ((#f #:output) (fdset-add! fd #f #t))
       ((#:all) (fdset-add! fd #t #t))
-      (else (panic "fdset-set: invalid i/o direction")))))
+      (else
+       (panic
+        (sprintf "fdset-set: invalid i/o direction: ~S (fd = ~S)" i/o fd))))))
 
 (define (fdset-test inf outf i/o)
   (case i/o
     ((#t #:input) inf)
     ((#f #:output) outf)
     ((#:all) (or inf outf))
-    (else (panic "fdset-test: invalid i/o direction"))))
+    (else
+     (panic (sprintf "fdset-test: invalid i/o direction: ~S (i = ~S, o = ~S)"
+              i/o inf outf)))))
 
 (define (##sys#thread-block-for-i/o! t fd i/o)
   (dbg t " blocks for I/O " fd " in mode " i/o)
   #;(unless (memq i/o '(#:all #:input #:output))
-    (panic "##sys#thread-block-for-i/o!: invalid i/o mode"))
+    (panic (sprintf "##sys#thread-block-for-i/o!: invalid i/o mode: ~S" i/o)))
   (let loop ([lst ##sys#fd-list])
     (if (null? lst) 
 	(set! ##sys#fd-list (cons (list fd t) ##sys#fd-list)) 
@@ -481,7 +486,7 @@ EOF
 					  (##sys#thread-basic-unblock! t) 
 					  (loop2 (cdr threads) keep))
 					 ((not (eq? fd (car p)))
-					  (panic "thread is registered for I/O on unknown file-descriptor"))
+					  (panic (sprintf "thread is registered for I/O on unknown file-descriptor: ~S (expected ~S)" (car p) fd)))
 					 ((fdset-test inf outf (cdr p))
 					  (when (##sys#slot t 4) ; also blocked for timeout?
 					    (##sys#remove-from-timeout-list t))
