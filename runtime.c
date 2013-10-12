@@ -906,7 +906,7 @@ void *CHICKEN_global_lookup(char *name)
   void *root = CHICKEN_new_gc_root();
 
   if(C_truep(s = lookup(key, len, name, symbol_table))) {
-    if(C_u_i_car(s) != C_SCHEME_UNBOUND) {
+    if(C_block_item(s, 0) != C_SCHEME_UNBOUND) {
       CHICKEN_gc_root_set(root, s);
       return root;
     }
@@ -996,7 +996,7 @@ C_regparm C_word C_find_symbol(C_word str, C_SYMBOL_TABLE *stable)
   else return C_SCHEME_FALSE;
 }
 
-
+/* OBSOLETE */
 C_regparm C_word C_enumerate_symbols(C_SYMBOL_TABLE *stable, C_word pos)
 {
   int i;
@@ -1554,7 +1554,7 @@ void barf(int code, char *loc, ...)
   C_dbg_hook(C_SCHEME_UNDEFINED);
 
   C_temporary_stack = C_temporary_stack_bottom;
-  err = C_u_i_car(err);
+  err = C_block_item(err, 0);
 
   if(C_immediatep(err))
     panic(C_text("`##sys#error-hook' is not defined - the `library' unit was probably not linked with this executable"));
@@ -2013,8 +2013,8 @@ void C_zap_strings(C_word str)
 
     for(bucket = symbol_table->table[ i ];
         bucket != C_SCHEME_END_OF_LIST;
-        bucket = C_u_i_cdr(bucket)) {
-      sym = C_u_i_car(bucket);
+        bucket = C_block_item(bucket,1)) {
+      sym = C_block_item(bucket,0);
       C_set_block_item(sym, 1, str);
     }
   }
@@ -2171,7 +2171,7 @@ C_regparm C_word C_fcall C_intern3(C_word **ptr, C_char *str, C_word value)
 {
   C_word s = C_intern_in(ptr, C_strlen(str), str, symbol_table);
   
-  C_mutate2(&C_u_i_car(s), value);
+  C_mutate2(&C_block_item(s,0), value);
   return s;
 }
 
@@ -2194,8 +2194,8 @@ C_regparm C_word C_fcall lookup(C_word key, int len, C_char *str, C_SYMBOL_TABLE
   C_word bucket, sym, s;
 
   for(bucket = stable->table[ key ]; bucket != C_SCHEME_END_OF_LIST; 
-      bucket = C_u_i_cdr(bucket)) {
-    sym = C_u_i_car(bucket);
+      bucket = C_block_item(bucket,1)) {
+    sym = C_block_item(bucket,0);
     s = C_block_item(sym, 1);
 
     if(C_header_size(s) == (C_word)len
@@ -2216,7 +2216,7 @@ double compute_symbol_table_load(double *avg_bucket_len, int *total_n)
     bucket = symbol_table->table[ i ];
 
     for(j = 0; bucket != C_SCHEME_END_OF_LIST; ++j)
-      bucket = C_u_i_cdr(bucket);
+      bucket = C_block_item(bucket,1);
 
     if(j > 0) {
       alen += j;
@@ -2250,8 +2250,7 @@ C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stabl
   C_set_block_item(sym, 2, C_SCHEME_END_OF_LIST);
   *ptr = p;
   b2 = stable->table[ key ];	/* previous bucket */
-  bucket = C_a_pair(ptr, sym, b2); /* create new bucket */
-  C_block_header(bucket) = (C_block_header(bucket) & ~C_HEADER_TYPE_BITS) | C_BUCKET_TYPE;
+  bucket = C_a_bucket(ptr, sym, b2); /* create new bucket */
 
   if(ptr != C_heaptop) C_mutate_slot(&stable->table[ key ], bucket);
   else {
@@ -2259,7 +2258,7 @@ C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stabl
        heap-top (say, in a toplevel literal frame allocation) then we have
        to inform the memory manager that a 2nd gen. block points to a 
        1st gen. block, hence the mutation: */
-    C_mutate2(&C_u_i_cdr(bucket), b2);
+    C_mutate2(&C_block_item(bucket,1), b2);
     stable->table[ key ] = bucket;
   }
 
@@ -2969,7 +2968,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 	  C_dbg(C_text("GC"), C_text("queueing %d finalizer(s)\n"), pending_finalizer_count);
 
 	last = C_block_item(pending_finalizers_symbol, 0);
-	assert(C_u_i_car(last) == C_fix(0));
+	assert(C_block_item(last, 0) == C_fix(0));
 	C_set_block_item(last, 0, C_fix(pending_finalizer_count));
 
 	for(i = 0; i < pending_finalizer_count; ++i) {
@@ -3040,10 +3039,10 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 	for(i = 0; i < stp->size; ++i) {
 	  last = 0;
 	  
-	  for(bucket = stp->table[ i ]; bucket != C_SCHEME_END_OF_LIST; bucket = C_u_i_cdr(bucket))
-	    if(C_u_i_car(bucket) == C_SCHEME_UNDEFINED) {
-	      if(last) C_set_block_item(last, 1, C_u_i_cdr(bucket));
-	      else stp->table[ i ] = C_u_i_cdr(bucket);
+	  for(bucket = stp->table[ i ]; bucket != C_SCHEME_END_OF_LIST; bucket = C_block_item(bucket,1))
+	    if(C_block_item(bucket,0) == C_SCHEME_UNDEFINED) {
+	      if(last) C_set_block_item(last, 1, C_block_item(bucket,1));
+	      else stp->table[ i ] = C_block_item(bucket,1);
 	    }
 	    else last = bucket;
 	}
@@ -3227,7 +3226,7 @@ C_regparm void C_fcall really_mark(C_word *x)
 #endif
 
     if(C_enable_gcweak && (h & C_HEADER_TYPE_BITS) == C_BUCKET_TYPE) {
-      item = C_u_i_car(val);
+      item = C_block_item(val,0);
 
       /* Lookup item in weak item table or add entry: */
       if((wep = lookup_weak_table_entry(item, (C_word)p2)) != NULL) {
@@ -5697,7 +5696,7 @@ C_regparm C_word C_fcall C_i_check_vector_2(C_word x, C_word loc)
 
 C_regparm C_word C_fcall C_i_check_structure_2(C_word x, C_word st, C_word loc)
 {
-  if(C_immediatep(x) || C_header_bits(x) != C_STRUCTURE_TYPE || C_u_i_car(x) != st) {
+  if(C_immediatep(x) || C_header_bits(x) != C_STRUCTURE_TYPE || C_block_item(x,0) != st) {
     error_location = loc;
     barf(C_BAD_ARGUMENT_TYPE_BAD_STRUCT_ERROR, NULL, x, st);
   }
@@ -6172,13 +6171,13 @@ void C_ccall C_call_cc(C_word c, C_word closure, C_word k, C_word cont)
 {
   C_word *a = C_alloc(3),
          wrapper;
-  void *pr = (void *)C_u_i_car(cont);
+  void *pr = (void *)C_block_item(cont,0);
 
   if(C_immediatep(cont) || C_header_bits(cont) != C_CLOSURE_TYPE)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "call-with-current-continuation", cont);
 
   /* Check for values-continuation: */
-  if(C_u_i_car(k) == (C_word)values_continuation)
+  if(C_block_item(k,0) == (C_word)values_continuation)
     wrapper = C_closure(&a, 2, (C_word)call_cc_values_wrapper, k);
   else wrapper = C_closure(&a, 2, (C_word)call_cc_wrapper, k);
 
@@ -6188,7 +6187,7 @@ void C_ccall C_call_cc(C_word c, C_word closure, C_word k, C_word cont)
 
 void C_ccall call_cc_wrapper(C_word c, C_word closure, C_word k, C_word result)
 {
-  C_word cont = C_u_i_cdr(closure);
+  C_word cont = C_block_item(closure,1);
 
   if(c != 3) C_bad_argc(c, 3);
 
@@ -6199,7 +6198,7 @@ void C_ccall call_cc_wrapper(C_word c, C_word closure, C_word k, C_word result)
 void C_ccall call_cc_values_wrapper(C_word c, C_word closure, C_word k, ...)
 {
   va_list v;
-  C_word cont = C_u_i_cdr(closure),
+  C_word cont = C_block_item(closure,1),
          x1;
   int n = c;
 
@@ -6318,7 +6317,7 @@ void C_ccall C_u_call_with_values(C_word c, C_word closure, C_word k, C_word thu
 
 void C_ccall values_continuation(C_word c, C_word closure, C_word arg0, ...)
 {
-  C_word kont = C_u_i_cdr(closure),
+  C_word kont = C_block_item(closure, 1),
          k = C_block_item(closure, 2),
          n = c,
          *ptr;
@@ -8124,8 +8123,8 @@ void C_ccall C_context_switch(C_word c, C_word closure, C_word k, C_word state)
 
   C_temporary_stack = C_temporary_stack_bottom - n;
   C_memcpy(C_temporary_stack, (C_word *)state + 2, n * sizeof(C_word));
-  trampoline = (TRAMPOLINE)C_u_i_car(adrs);
-  trampoline((void *)C_u_i_cdr(adrs));
+  trampoline = (TRAMPOLINE)C_block_item(adrs,0);
+  trampoline((void *)C_block_item(adrs,1));
 }
 
 

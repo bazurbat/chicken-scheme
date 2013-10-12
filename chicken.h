@@ -1280,7 +1280,7 @@ extern double trunc(double);
 #define C_pointer_address(x)            ((C_byte *)C_block_item((x), 0))
 #define C_block_address(ptr, n, x)      C_a_unsigned_int_to_num(ptr, n, x)
 #define C_offset_pointer(x, y)          (C_pointer_address(x) + (y))
-#define C_kontinue(k, r)                ((C_proc2)(void *)C_u_i_car(k))(2, (k), (r))
+#define C_kontinue(k, r)                ((C_proc2)(void *)C_block_item(k,0))(2, (k), (r))
 #define C_fetch_byte(x, p)              (((unsigned C_byte *)C_data_pointer(x))[ p ])
 #define C_poke_integer(x, i, n)         (C_set_block_item(x, C_unfix(i), C_num_to_int(n)), C_SCHEME_UNDEFINED)
 #define C_pointer_to_block(p, x)        (C_set_block_item(p, 0, (C_word)C_data_pointer(x)), C_SCHEME_UNDEFINED)
@@ -1386,8 +1386,8 @@ extern double trunc(double);
 #define C_i_list_ref(lst, i)            C_i_car(C_i_list_tail(lst, i))
 #define C_u_i_list_ref(lst, i)          C_u_i_car(C_i_list_tail(lst, i))
 
-#define C_u_i_car(x)                    C_block_item(x, 0)
-#define C_u_i_cdr(x)                    C_block_item(x, 1)
+#define C_u_i_car(x)                    (*C_CHECKp(x,C_pairp(C_VAL1(x)),&C_block_item(C_VAL1(x), 0)))
+#define C_u_i_cdr(x)                    (*C_CHECKp(x,C_pairp(C_VAL1(x)),&C_block_item(C_VAL1(x), 1)))
 #define C_u_i_caar(x)                   C_u_i_car( C_u_i_car( x ) )
 #define C_u_i_cadr(x)                   C_u_i_car( C_u_i_cdr( x ) )
 #define C_u_i_cdar(x)                   C_u_i_cdr( C_u_i_car( x ) )
@@ -2669,6 +2669,17 @@ C_inline C_word C_fcall C_a_pair(C_word **ptr, C_word car, C_word cdr)
   *(p++) = C_PAIR_TYPE | (C_SIZEOF_PAIR - 1);
   *(p++) = car;
   *(p++) = cdr;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+C_inline C_word C_fcall C_a_bucket(C_word **ptr, C_word head, C_word tail)
+{
+  C_word *p = *ptr, *p0 = p;
+
+  *(p++) = C_BUCKET_TYPE | (C_SIZEOF_BUCKET - 1);
+  *(p++) = head;
+  *(p++) = tail;
   *ptr = p;
   return (C_word)p0;
 }
