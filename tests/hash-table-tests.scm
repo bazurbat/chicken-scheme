@@ -1,6 +1,6 @@
 ;;;; hash-table-tests.scm
 
-(require-extension srfi-69)
+(require-extension srfi-69 data-structures extras)
 
 (print "SRFI 69 procedures")
 (assert (eq? hash equal?-hash))
