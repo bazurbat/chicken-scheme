@@ -1817,10 +1817,9 @@ EOF
 		      ((fx< len 0)
 		       (##sys#update-errno)
 		       (if (eq? (errno) (foreign-value "EINTR" int))
-			   (let ((len (fx< (fxneg len) 1)))
-			     (##sys#dispatch-interrupt
-			      (lambda () 
-				(loop (fx- rem len) (fx+ act len) (fx+ start len)))))
+			   (##sys#dispatch-interrupt
+			    (lambda ()
+			      (loop (fx- rem len) (fx+ act len) (fx+ start len))))
 			   (##sys#signal-hook
 			    #:file-error 'read-string!
 			    (##sys#string-append "cannot read from port - " strerror)
