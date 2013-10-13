@@ -86,8 +86,6 @@ static char C_time_string [TIME_STRING_MAXLENGTH + 1];
 #define C_a_mktime(ptr, c, v, tm)  C_flonum(ptr, mktime(C_tm_set((v), C_data_pointer(tm))))
 #define C_asctime(v, tm)    (asctime(C_tm_set((v), (tm))))
 
-#define C_C_fileno(p)	    C_fix(fileno(C_port_file(p)))
-
 #define C_fdopen(a, n, fd, m) C_mpointer(a, fdopen(C_unfix(fd), C_c_string(m)))
 #define C_C_fileno(p)       C_fix(fileno(C_port_file(p)))
 #define C_dup(x)            C_fix(dup(C_unfix(x)))
