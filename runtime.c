@@ -3296,8 +3296,13 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
 
   if(size < MINIMAL_HEAP_SIZE) size = MINIMAL_HEAP_SIZE;
 
-  /* Heap must at least grow enough to accommodate first generation (nursery) */
-  if(size - heap_size < stack_size) size = heap_size + stack_size;
+  /*
+   * Heap must at least grow enough to accommodate first generation
+   * (nursery).  Because we're calculating the total heap size here
+   * (fromspace *AND* tospace), we have to double the stack size,
+   * otherwise we'd accommodate only half the stack in the tospace.
+   */
+  if(size - heap_size < stack_size * 2) size = heap_size + stack_size * 2;
 	  
   if(size > C_maximal_heap_size) size = C_maximal_heap_size;
 
@@ -3314,9 +3319,17 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
 	  (C_word)tospace_start, (C_word)tospace_limit);
   }
 
-  heap_size = size;
-  size /= 2;
-
+  heap_size = size;         /* Total heap size of the two halves... */
+  size /= 2;                /* ...each half is this big */
+  
+  /*
+   * Start by allocating the new heap's fromspace.  After remarking,
+   * allocate the other half of the new heap (its tospace).
+   *
+   * To clarify: what we call "new_space" here is what will eventually
+   * be cycled over to "fromspace" when re-reclamation has finished
+   * (that is, after the old one has been freed).
+   */
   if ((new_heapspace = heap_alloc (size, &new_tospace_start)) == NULL)
     panic(C_text("out of memory - cannot allocate heap segment"));
   new_heapspace_size = size;
