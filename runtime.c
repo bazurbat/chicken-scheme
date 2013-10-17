@@ -3296,12 +3296,13 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
   if(size < MINIMAL_HEAP_SIZE) size = MINIMAL_HEAP_SIZE;
 
   /*
-   * Heap must at least grow enough to accommodate first generation
-   * (nursery).  Because we're calculating the total heap size here
-   * (fromspace *AND* tospace), we have to double the stack size,
-   * otherwise we'd accommodate only half the stack in the tospace.
+   * When heap grows, ensure it's enough to accommodate first
+   * generation (nursery).  Because we're calculating the total heap
+   * size here (fromspace *AND* tospace), we have to double the stack
+   * size, otherwise we'd accommodate only half the stack in the tospace.
    */
-  if(size - heap_size < stack_size * 2) size = heap_size + stack_size * 2;
+  if(size > heap_size && size - heap_size < stack_size * 2)
+    size = heap_size + stack_size * 2;
 	  
   if(size > C_maximal_heap_size) size = C_maximal_heap_size;
 
