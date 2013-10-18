@@ -5,7 +5,7 @@
 
 (define read-symbolic-link*
   (cond-expand
-   ((and windows (not cygwin)) (lambda (x) x))
+   ((and windows (not cygwin)) (lambda (filename _) filename))
    (else read-symbolic-link)))
 
 (define repo (normalize-pathname (read-symbolic-link* (repository-path) #t)))
