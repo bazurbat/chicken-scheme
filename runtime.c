@@ -6731,11 +6731,8 @@ C_regparm C_word C_fcall C_2_divide(C_word **ptr, C_word x, C_word y)
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "/", x);
 
-  iresult = C_fix(iresult);
-
-  if(fflag || (double)C_unfix(iresult) != fresult) return C_flonum(ptr, fresult);
-  
-  return iresult;
+  if(fflag || (double)iresult != fresult) return C_flonum(ptr, fresult);
+  else return C_fix(iresult);
 }
 
 

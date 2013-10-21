@@ -229,11 +229,16 @@ void *alloca ();
 #define HAVE_STATEMENT_EXPRESSIONS 1
 #endif
 
+#if !defined(__clang__) && !defined(__has_attribute)
+/* Define so it won't error on other compilers with keywords like "noreturn" */
+#define __has_attribute(x)        0
+#endif
+
 #if defined(__GNUC__) || defined(__INTEL_COMPILER)
 # ifndef __cplusplus
 #  define C_cblock                ({
 #  define C_cblockend             })
-#  ifdef __clang__
+#  if defined(__clang__) && !__has_attribute(noreturn)
 #   define C_noret
 #  else
 #   define C_noret                __attribute__ ((noreturn))
