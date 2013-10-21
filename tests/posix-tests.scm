@@ -42,3 +42,11 @@
       (move-memory! (memory-mapped-file-pointer mmap) str size)
       (assert (blob=? (string->blob data) (string->blob str)))
       (unmap-file-from-memory mmap))))
+
+(let* ((tmp-dir (create-temporary-directory))
+       (tmp-dot (make-pathname (list tmp-dir "foo" "bar") ".baz")))
+  (create-directory tmp-dot 'recursively)
+  (assert (directory-exists? tmp-dot))
+  (delete-directory tmp-dir 'recursively)
+  (assert (not (directory-exists? tmp-dot)))
+  (assert (not (directory-exists? tmp-dir))))

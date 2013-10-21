@@ -447,7 +447,7 @@ EOF
 			   ((lproc f)
 			    (loop rest
 				  (fluid-let ((depth (fx+ depth 1)))
-				    (loop (glob (make-pathname f "*"))
+				    (loop (glob (make-pathname f (if dot "?*" "*")))
 					  (if (pproc f) (action f r) r)) ) ) )
 			   (else (loop rest (if (pproc f) (action f r) r))) ) )
 		    ((pproc f) (loop rest (action f r)))
