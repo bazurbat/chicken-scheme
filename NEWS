@@ -15,6 +15,7 @@
 
 - Platform support
   - CHICKEN can now be built on AIX (contributed by Erik Falor)
+  - CHICKEN can now be built on GNU Hurd (contributed by Christian Kellermann)
 
 4.8.2
 

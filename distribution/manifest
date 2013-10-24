@@ -226,6 +226,7 @@ Makefile.solaris
 Makefile.bsd
 Makefile.cygwin
 Makefile.haiku
+Makefile.hurd
 Makefile.cross-linux-mingw
 GNUmakefile
 config.make

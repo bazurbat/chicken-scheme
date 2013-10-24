@@ -725,6 +725,10 @@ static inline int isinf_ld (long double x)
 # endif
 #elif defined(_AIX)
 # define C_SOFTWARE_VERSION "aix"
+#elif defined(__GNU__)
+# define C_SOFTWARE_VERSION "hurd"
+/* This is as silly as the other limits, there is no PATH_MAX in The Hurd */
+# define PATH_MAX 1024
 #else
 # define C_SOFTWARE_VERSION "unknown"
 #endif

@@ -73,7 +73,7 @@
 (define aix (eq? (build-platform) 'aix))
 
 (define elf
-  (memq (software-version) '(linux netbsd freebsd solaris openbsd)))
+  (memq (software-version) '(linux netbsd freebsd solaris openbsd hurd)))
 
 (define (stop msg . args)
   (fprintf (current-error-port) "~a: ~?~%" CSC_PROGRAM msg args)
