@@ -12,7 +12,7 @@
      implicitly depends on extras.  This may break programs which don't
      use modules and forgot to require ports but use procedures from it.
 
-- Build system
+- Platform support
   - CHICKEN can now be built on AIX (contributed by Erik Falor)
 
 4.8.2

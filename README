@@ -416,10 +416,6 @@
 	    % showrev -p | grep 106950    # solaris 7
 	    % showrev -p | grep 109147    # solaris 8
 
-        AIX:
-
-	  - Currently, deployment mode is unsupported on AIX.
-
 	Mac OS X:
 
 	  - On 10.6 and 10.7, Chicken may incorrectly select a 32-bit build
@@ -509,6 +505,44 @@
 	    when compiling the system or compiled Scheme files. These
 	    warnings are bogus and can be ignored.
 
+	AIX:
+
+	  - CHICKEN is built with the GNU C compiler (`gcc').  IBM's XL
+	    C compiler is not supported at this time.
+
+	  - AIX users *must* use GNU make ("gmake") - the makefiles can not be
+	    processed with IBM's version of make.
+
+	  - Deployment doesn't work.  See manual/Deployment for more details.
+
+	  - The AIX linker may occasionally show warnings of the form:
+
+	      ld: 0711-783 WARNING: TOC overflow. TOC size: 66656
+	      Maximum size: 65536
+	      Extra instructions are being generated for each reference to a TOC
+	      symbol if the symbol is in the TOC overflow area.
+
+	    Such messages indicate that lookups for some symbols in the
+	    effected library/executable may be somewhat slower at runtime as an
+	    auxiliary symbol table is needed to accommodate all of the symbols.
+
+	  - The AIX assembler may show warnings of the form:
+
+	      /tmp//ccycPGzK.s: line 527244: 1252-171 The displacement must be
+	      greater than or equal to -32768 and less than or equal to 32767.
+
+	    This is a known issue between the GNU toolchain and IBM's assembler:
+
+	    http://gcc.gnu.org/bugzilla/show_bug.cgi?id=4587
+
+	    The problem arises because the PPC architecture cannot perform jumps
+	    to addresses that differ more than what a 16-bit integer can
+	    represent.  Adding support for IBM's XL C compiler may resolve this
+	    issue.
+
+	    Instructing gcc to optimize the size of generated code (-Os)
+	    mitigates this to some degree, but very large C files may still be
+	    uncompilable.  This is known to affect the html-tags egg.
 
  6. Bootstrapping
 
