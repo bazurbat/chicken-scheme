@@ -586,7 +586,7 @@
 (apply (#(procedure #:enforce) apply (procedure #!rest) . *))
 (##sys#apply (#(procedure #:enforce) ##sys#apply (procedure #!rest) . *))
 
-(force (procedure force (*) *)
+(force (procedure force (*) . *)
        (((not (struct promise))) #(1)))
 
 (call-with-current-continuation
