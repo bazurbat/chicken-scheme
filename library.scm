@@ -334,17 +334,29 @@ EOF
       (##core#inline "C_i_check_closure_2" x (car loc))
       (##core#inline "C_i_check_closure" x) ) )
 
-(define (##sys#force promise)
-  (if (##sys#structure? promise 'promise)
-      (apply ##sys#values
-             (or (##sys#slot promise 2)
-                 (let ((results (##sys#call-with-values (##sys#slot promise 1) (lambda xs xs))))
-                   (or (##sys#slot promise 2)
-                       (begin
-                         (##sys#setslot promise 1 #f)
-                         (##sys#setslot promise 2 results)
-                         results)))))
-      promise))
+(define (##sys#force obj)
+  (if (##sys#structure? obj 'promise)
+      (let lp ((promise obj)
+	       (forward #f))
+	(let ((val (##sys#slot promise 1)))
+	  (cond ((null? val) (##sys#values))
+		((pair? val) (apply ##sys#values val))
+		((procedure? val)
+		 (when forward (##sys#setslot forward 1 promise))
+		 (let ((results (##sys#call-with-values val ##sys#list)))
+		   (cond ((not (procedure? (##sys#slot promise 1)))
+			  (lp promise forward)) ; in case of reentrance
+			 ((and (not (null? results)) (null? (cdr results))
+			       (##sys#structure? (##sys#slot results 0) 'promise))
+			  (let ((result0 (##sys#slot results 0)))
+			    (##sys#setslot promise 1 (##sys#slot result0 1))
+			    (lp promise result0)))
+			 (else
+			  (##sys#setslot promise 1 results)
+			  (apply ##sys#values results)))))
+		((##sys#structure? val 'promise)
+		 (lp val forward)))))
+      obj))
 
 (define force ##sys#force)
 
@@ -4823,7 +4835,7 @@ EOF
 ;;; Promises:
 
 (define (##sys#make-promise proc)
-  (##sys#make-structure 'promise proc #f))
+  (##sys#make-structure 'promise proc))
 
 (define (promise? x)
   (##sys#structure? x 'promise) )

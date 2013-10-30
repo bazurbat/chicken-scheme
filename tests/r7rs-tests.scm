@@ -77,7 +77,60 @@
 (test #t procedure? (force (make-promise (lambda _ 1))))
 (test 1 force (make-promise (make-promise 1)))
 
+;; delay/force/delay-force
+(test #t promise? (delay 1))
+(test #t promise? (delay (delay 1)))
+(test 1 force 1)
+(test force force (force (delay force)))
 
+(test 3 force (delay (+ 1 2))) ; pp. 18
+(let ((p (delay (+ 1 2))))
+  (test '(3 3) list (force p) (force p)))
+
+(let () ; pp. 19
+  (define integers
+    (letrec ((next
+	      (lambda (n)
+		(delay (cons n (next (+ n 1)))))))
+      (next 0)))
+  (define head
+    (lambda (stream) (car (force stream))))
+  (define tail
+    (lambda (stream) (cdr (force stream))))
+  (test 0 head integers)
+  (test 0 head integers)
+  (test 1 head (tail integers))
+  (test 2 head (tail (tail integers))))
+
+(let () ; later on pp. 19
+  (define count 0)
+  (define p
+    (delay (begin (set! count (+ count 1))
+	     (if (> count x)
+		 count
+		 (force p)))))
+  (define x 5)
+  (test #t promise? p)
+  (test 6 force p)
+  (test #t promise? p)
+  (set! x 10)
+  (test 6 force p))
+
+(test #t promise? (delay-force 1))
+(test 1 force (delay-force 1))
+(test 6 force (delay-force (+ 1 2 3)))
+(test #t promise? (delay-force (delay 1)))
+
+;; delayed MVs
+(call-with-values
+ (lambda () (force (delay (values 1 2 3))))
+ (lambda mv (test '(1 2 3) #f mv)))
+(call-with-values
+ (lambda () (force (delay-force (values 4 5 6))))
+ (lambda mv (test '(4 5 6) #f mv)))
+(call-with-values
+ (lambda () (force (delay (values))))
+ (lambda mv (test '() #f mv)))
 
 (SECTION 6 6)
 

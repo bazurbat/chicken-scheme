@@ -382,6 +382,10 @@ echo ======================================== path tests ...
 %interpret% -bnq path-tests.scm
 if errorlevel 1 exit /b 1
 
+echo ======================================== srfi-45 tests ...
+%interpret% -s srfi-45-tests.scm
+if errorlevel 1 exit /b 1
+
 echo ======================================== posix tests ...
 %compile% posix-tests.scm
 if errorlevel 1 exit /b 1

@@ -507,14 +507,42 @@ execution of <body> may be repeated by invoking the procedure named by
 <macro>(delay <expression>)</macro><br>
 
 The delay construct is used together with the procedure force to
-implement lazy evaluation or call by need. (delay <expression>) returns
-an object called a promise which at some point in the future may be
-asked (by the force procedure) to evaluate <expression>, and deliver
-the resulting value. The effect of <expression> returning multiple
-values is unspecified.
+implement lazy evaluation or call by need. {{(delay <expression>)}}
+returns an object called a promise which at some point in the future
+may be asked (by the force procedure) to evaluate {{<expression>}},
+and deliver the resulting value. The {{<expression>}} may return
+multiple values, which will be correctly memoized and returned by
+subsequent calls to {{force}}.  This is a CHICKEN extension to R5RS.
+
+See the description of {{force}} (section 6.4) for a more complete
+description of {{delay}}.
+
+<macro>(delay-force <expression>)</macro><br>
+
+The expression {{(delay-force expression)}} is conceptually similar to
+{{(delay (force expression))}}, with the difference that forcing the
+result of {{delay-force}} will in effect result in a tail call to
+{{(force expression)}}, while forcing the result of
+{{(delay (force expression))}} might not.
+
+Thus iterative lazy algorithms that might result in a long series of
+chains of delay and force can be rewritten using delay-force to
+prevent consuming unbounded space during evaluation.
+
+The {{delay-force}} macro is a CHICKEN extension to R5RS, taken from
+R7RS.
 
 See the description of force (section 6.4) for a more complete
-description of delay.
+description of delayed evaluation.
+
+<procedure>(make-promise obj)</procedure>
+
+The make-promise procedure returns a promise which, when forced, will
+return {{obj}} . It is similar to {{delay}}, but does not delay its
+argument: it is a procedure rather than syntax. If {{obj}} is already
+a promise, it is returned.
+
+This procedure is a CHICKEN extension to R5RS, taken from R7RS.
 
 ==== Quasiquotation
 

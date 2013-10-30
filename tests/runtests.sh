@@ -335,6 +335,9 @@ $interpret -s data-structures-tests.scm
 echo "======================================== path tests ..."
 $interpret -bnq path-tests.scm
 
+echo "======================================== srfi-45 tests ..."
+$interpret -s srfi-45-tests.scm
+
 echo "======================================== posix tests ..."
 $compile posix-tests.scm
 ./a.out

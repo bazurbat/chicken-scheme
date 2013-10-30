@@ -539,6 +539,14 @@ In addition the following feature-identifiers may exist: {{cross-chicken}},
 For further information, see the documentation for
 [[http://srfi.schemers.org/srfi-0/srfi-0.html|SRFI-0]].
 
+=== {{delay-force}}
+
+CHICKEN supports the R7RS {{delay-force}} syntax which allows for
+iterative lazy algorithms to be expressed in bounded space.
+
+For more information regarding this behaviour, see the
+[[http://srfi.schemers.org/srfi-45/srfi-45.html|SRFI-45]] rationale.
+
 ==== ensure
 
 <macro>(ensure PREDICATE EXP [ARGUMENTS ...])</macro>
