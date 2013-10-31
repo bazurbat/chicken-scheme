@@ -3677,6 +3677,8 @@ EOF
 				   (##sys#string-append line "\r")))
 			 ;; Restore \r here, too (when we reached EOF)
 			 (values offset (##sys#string-append line "\r") #t)))))
+		((eq? c #\return)
+		 (values (fx+ pos 1) (copy&append buf offset pos line) #t))
 		(else (loop buf offset (fx+ pos 1) limit line)) ) ) ) ) )
 
 (define (open-input-string string)

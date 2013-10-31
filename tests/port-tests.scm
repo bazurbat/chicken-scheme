@@ -353,6 +353,27 @@ EOF
                 buf
                 "89067")))
 
+(test-group "line endings"
+  (let ((s "foo\nbar\rbaz\r\nqux")
+	(f (lambda ()
+	     (test-equal "\\n" (read-line) "foo")
+	     (test-equal "\\r" (read-line) "bar")
+	     (test-equal "\\r\\n" (read-line) "baz")
+	     (test-equal "eof" (read-line) "qux"))))
+    (test-group "string port"
+      (with-input-from-string s f))
+    (test-group "file port"
+      (let ((file "mixed-line-endings"))
+	(with-output-to-file file (lambda () (display s)))
+	(with-input-from-file file f)
+	(delete-file* file)))
+    (test-group "custom port"
+      (let* ((p (open-input-string s))
+	     (p* (make-input-port (lambda () (read-char p))
+				  (lambda () (char-ready? p))
+				  (lambda () (close-input-port p)))))
+	(with-input-from-port p* f)))))
+
 ;; Disabled because it requires `echo -n` for
 ;; the EOF test, and that is not available on all systems.
 ;; Uncomment locally to run.
