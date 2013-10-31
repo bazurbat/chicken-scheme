@@ -73,12 +73,6 @@
 
 (define read-line
   (let ()
-    (define (fixup str len)
-      (##sys#substring
-       str 0
-       (if (and (fx>= len 1) (char=? #\return (##core#inline "C_subchar" str (fx- len 1))))
-	   (fx- len 1)
-	   len) ) )
     (lambda args
       (let* ([parg (pair? args)]
 	     [p (if parg (car args) ##sys#standard-input)]
