@@ -11,6 +11,7 @@
   - Unit extras now implicitly depends on ports.  ports no longer
      implicitly depends on extras.  This may break programs which don't
      use modules and forgot to require ports but use procedures from it.
+  - Support has been added for the space-safe R7RS macro "delay-force".
 
 - Platform support
   - CHICKEN can now be built on AIX (contributed by Erik Falor)
