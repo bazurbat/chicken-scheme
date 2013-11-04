@@ -435,6 +435,7 @@ static C_TLS int
   gc_count_2,
   weak_table_randomization,
   interrupt_reason,
+  handling_interrupts=0,
   stack_size_changed,
   dlopen_flags,
   heap_size_changed,
@@ -2789,7 +2790,9 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
   /* assert(C_timer_interrupt_counter >= 0); */
 
-  if(interrupt_reason && C_interrupts_enabled)
+  /* trampoline + proc already represent ##sys#interrupt-hook when
+     handling_interrupts, so don't reinvoke (which allocates state) */
+  if(interrupt_reason && !handling_interrupts && C_interrupts_enabled)
     handle_interrupt(trampoline, proc);
 
   /* Note: the mode argument will always be GC_MINOR or GC_REALLOC. */
@@ -3704,6 +3707,7 @@ void handle_interrupt(void *trampoline, void *proc)
   C_temporary_stack = C_temporary_stack_bottom;
   i = interrupt_reason;
   interrupt_reason = 0;
+  handling_interrupts = 1;
   C_stack_limit = saved_stack_limit;
 
   /* Invoke high-level interrupt handler: */
@@ -4466,13 +4470,23 @@ C_regparm void C_fcall C_raise_interrupt(int reason)
       }
     }
     else {
-      saved_stack_limit = C_stack_limit;
+      /*
+       * Force the next stack check to fail by faking a "full" stack.
+       * That causes save_and_reclaim() to be called, which will
+       * invoke handle_interrupt() (which restores the stack limit).
+       *
+       * Only do this when we're not already inside the interrupt
+       * handler, to avoid an endless GC loop.
+       */
+      if (!handling_interrupts) {
+        saved_stack_limit = C_stack_limit;
 
 #if C_STACK_GROWS_DOWNWARD
-      C_stack_limit = C_stack_pointer + 1000;
+        C_stack_limit = C_stack_pointer + 1000;
 #else
-      C_stack_limit = C_stack_pointer - 1000;
+        C_stack_limit = C_stack_pointer - 1000;
 #endif
+      }
 
       interrupt_reason = reason;
       interrupt_time = C_cpu_milliseconds();
@@ -8119,6 +8133,7 @@ void C_ccall C_context_switch(C_word c, C_word closure, C_word k, C_word state)
     adrs = C_block_item(state, 0);
   TRAMPOLINE trampoline;
 
+  handling_interrupts = 0; /* context_switch happens after interrupt handling */
   C_temporary_stack = C_temporary_stack_bottom - n;
   C_memcpy(C_temporary_stack, (C_word *)state + 2, n * sizeof(C_word));
   trampoline = (TRAMPOLINE)C_block_item(adrs,0);
