@@ -434,8 +434,6 @@ static C_TLS int
   gc_count_1_total,
   gc_count_2,
   weak_table_randomization,
-  interrupt_reason,
-  handling_interrupts=0,
   stack_size_changed,
   dlopen_flags,
   heap_size_changed,
@@ -479,7 +477,8 @@ static C_TLS int flonum_print_precision = FLONUM_PRINT_PRECISION;
 static C_TLS HDUMP_BUCKET **hdump_table;
 static C_TLS int 
   pending_interrupts[ MAX_PENDING_INTERRUPTS ],
-  pending_interrupts_count;
+  pending_interrupts_count,
+  handling_interrupts;
 
 
 /* Prototypes: */
@@ -757,8 +756,8 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   trace_buffer = NULL;
   C_clear_trace_buffer();
   chicken_is_running = chicken_ran_once = 0;
-  interrupt_reason = 0;
   pending_interrupts_count = 0;
+  handling_interrupts = 0;
   last_interrupt_latency = 0;
   C_interrupts_enabled = 1;
   C_initial_timer_interrupt_period = INITIAL_TIMER_INTERRUPT_PERIOD;
@@ -2790,9 +2789,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
   /* assert(C_timer_interrupt_counter >= 0); */
 
-  /* trampoline + proc already represent ##sys#interrupt-hook when
-     handling_interrupts, so don't reinvoke (which allocates state) */
-  if(interrupt_reason && !handling_interrupts && C_interrupts_enabled)
+  if(pending_interrupts_count > 0 && C_interrupts_enabled)
     handle_interrupt(trampoline, proc);
 
   /* Note: the mode argument will always be GC_MINOR or GC_REALLOC. */
@@ -3686,7 +3683,6 @@ C_regparm WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word 
 void handle_interrupt(void *trampoline, void *proc)
 {
   C_word *p, x, n;
-  int i;
   double c;
 
   /* Build vector with context information: */
@@ -3705,13 +3701,10 @@ void handle_interrupt(void *trampoline, void *proc)
 
   /* Restore state to the one at the time of the interrupt: */
   C_temporary_stack = C_temporary_stack_bottom;
-  i = interrupt_reason;
-  interrupt_reason = 0;
-  handling_interrupts = 1;
   C_stack_limit = saved_stack_limit;
 
   /* Invoke high-level interrupt handler: */
-  C_save(C_fix(i));
+  C_save(C_fix(pending_interrupts[ --pending_interrupts_count ]));
   C_save(x);
   x = C_block_item(interrupt_hook_symbol, 0);
 
@@ -4462,34 +4455,23 @@ C_regparm void C_fcall C_paranoid_check_for_interrupt(void)
 C_regparm void C_fcall C_raise_interrupt(int reason)
 {
   if(C_interrupts_enabled) {
-    if(interrupt_reason) {
-      if(reason != C_TIMER_INTERRUPT_NUMBER) {
-	if(pending_interrupts_count < MAX_PENDING_INTERRUPTS) 
-	  /* drop signals if too many */
-	  pending_interrupts[ pending_interrupts_count++ ] = reason;
-      }
-    }
-    else {
-      /*
-       * Force the next stack check to fail by faking a "full" stack.
-       * That causes save_and_reclaim() to be called, which will
-       * invoke handle_interrupt() (which restores the stack limit).
-       *
-       * Only do this when we're not already inside the interrupt
-       * handler, to avoid an endless GC loop.
-       */
-      if (!handling_interrupts) {
-        saved_stack_limit = C_stack_limit;
+    if(pending_interrupts_count == 0 && !handling_interrupts) {
+      /* Force the next stack check to fail by faking a "full" stack.
+         That causes save_and_reclaim() to be called, which will
+         invoke handle_interrupt() (which restores the stack limit). */
+      saved_stack_limit = C_stack_limit;
 
 #if C_STACK_GROWS_DOWNWARD
-        C_stack_limit = C_stack_pointer + 1000;
+      C_stack_limit = C_stack_pointer + 1000;
 #else
-        C_stack_limit = C_stack_pointer - 1000;
+      C_stack_limit = C_stack_pointer - 1000;
 #endif
-      }
-
-      interrupt_reason = reason;
       interrupt_time = C_cpu_milliseconds();
+      pending_interrupts[ pending_interrupts_count++ ] = reason;
+    } else if(reason != C_TIMER_INTERRUPT_NUMBER &&
+              pending_interrupts_count < MAX_PENDING_INTERRUPTS) {
+      /* drop signals if too many */
+      pending_interrupts[ pending_interrupts_count++ ] = reason;
     }
   }
 }
@@ -8133,7 +8115,6 @@ void C_ccall C_context_switch(C_word c, C_word closure, C_word k, C_word state)
     adrs = C_block_item(state, 0);
   TRAMPOLINE trampoline;
 
-  handling_interrupts = 0; /* context_switch happens after interrupt handling */
   C_temporary_stack = C_temporary_stack_bottom - n;
   C_memcpy(C_temporary_stack, (C_word *)state + 2, n * sizeof(C_word));
   trampoline = (TRAMPOLINE)C_block_item(adrs,0);
@@ -9493,16 +9474,11 @@ C_i_file_exists_p(C_word name, C_word file, C_word dir)
 C_regparm C_word C_fcall
 C_i_pending_interrupt(C_word dummy)
 {
-  int i;
-
-  if(interrupt_reason && interrupt_reason != C_TIMER_INTERRUPT_NUMBER) {
-    i = interrupt_reason;
-    interrupt_reason = 0;
-    return C_fix(i);
-  }
-
-  if(pending_interrupts_count > 0)
+  if(pending_interrupts_count > 0) {
+    handling_interrupts = 1; /* Lock out further forced GCs until we're done */
     return C_fix(pending_interrupts[ --pending_interrupts_count ]);
-
-  return C_SCHEME_FALSE;
+  } else {
+    handling_interrupts = 0; /* OK, can go on */
+    return C_SCHEME_FALSE;
+  }
 }
