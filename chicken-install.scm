@@ -478,7 +478,7 @@
                                    (or *force*
                                        (yes-or-no?
                                         (make-replace-extension-question e+d+v upgrade)
-                                        "no"
+                                        default: "no"
 					abort: (abort-setup) ) ) )
                           (let ([ueggs (unzip1 upgrade)])
                             (print " upgrade: " (string-intersperse ueggs ", "))
