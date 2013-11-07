@@ -576,7 +576,13 @@
     (unless *retrieve-only*
       (let* ((dag (reverse (topological-sort *dependencies* string=?)))
 	     (num (length dag))
-	     (depinstall-ok *force*))
+	     (depinstall-ok *force*)
+	     (eggs+dirs+vers (map (cut assoc <> *eggs+dirs+vers*) dag)))
+	(and-let* ((ibad (list-index not eggs+dirs+vers)))
+	  ;; A dependency was left unretrieved, most likely because the user declined an upgrade.
+	  (fprintf (current-error-port) "\nUnresolved dependency: ~a\n\n" (list-ref dag ibad))
+	  (cleanup)
+	  (exit 1))
 	(print "install order:")
 	(pp dag)
 	(for-each
@@ -646,7 +652,7 @@
 		   (print "installing for target ...")
 		   (fluid-let ((*host-extension* #f))
 		     (setup tmpcopy)))))))
-	 (map (cut assoc <> *eggs+dirs+vers*) dag)
+	 eggs+dirs+vers
 	 (iota num num -1)))))
 
   (define (delete-stale-binaries)
