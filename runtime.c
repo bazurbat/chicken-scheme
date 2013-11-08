@@ -1017,9 +1017,9 @@ C_regparm C_word C_enumerate_symbols(C_SYMBOL_TABLE *stable, C_word pos)
     else bucket = stable->table[ i ];
   }
 
-  sym = C_u_i_car(bucket);
+  sym = C_block_item(bucket, 0);
   C_set_block_item(pos, 0, C_fix(i));
-  C_mutate2(&C_u_i_cdr(pos), C_u_i_cdr(bucket));
+  C_mutate2(&C_u_i_cdr(pos), C_block_item(bucket, 1));
   return sym;
 }
 
