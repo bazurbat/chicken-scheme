@@ -2,7 +2,7 @@
 
 
 (import foreign)
-
+(use srfi-4)
 
 ;; test dropping of previous toplevel assignments
 
@@ -240,3 +240,45 @@
            ((foreign-lambda* unsigned-integer64 ((unsigned-integer64 x))
               "C_return(x);")
             #xAB54A98CEB1F0AD2)))
+
+;; #1059: foreign vector types use wrong lolevel accessors, causing
+;; paranoid DEBUGBUILD assertions to fail.
+(define-syntax srfi-4-vector-length
+  (lambda (e r c)
+    (let* ((type (symbol->string (strip-syntax (cadr e))))
+           (base-type (string-translate* type '(("nonnull-" . ""))))
+           (length-procedure-name (string-append base-type "-length")))
+     `(,(string->symbol length-procedure-name) ,(caddr e)))))
+
+(define-syntax s4v-sum
+  (syntax-rules ()
+    ((_ "integer" type arg)
+     ((foreign-lambda* int ((type v) (int len))
+        "int i, result = 0;"
+        "for (i = 0; i < len; ++i) {"
+        "  result += (int)v[i];"
+        "}"
+        "C_return(result);") arg (srfi-4-vector-length type arg)))
+    ((_ "float" type arg)
+     ((foreign-lambda* double ((type v) (int len))
+        "int i; double result = 0.0;"
+        "for (i = 0; i < len; ++i) {"
+        "  result += v[i];"
+        "}"
+        "C_return(result);") arg (srfi-4-vector-length type arg)))))
+(assert (= 10 (s4v-sum "integer" u8vector '#u8(1 2 3 4))))
+(assert (= 10 (s4v-sum "integer" u16vector '#u16(1 2 3 4))))
+(assert (= 10 (s4v-sum "integer" u32vector '#u32(1 2 3 4))))
+(assert (= 10 (s4v-sum "integer" nonnull-u8vector '#u8(1 2 3 4))))
+(assert (= 10 (s4v-sum "integer" nonnull-u16vector '#u16(1 2 3 4))))
+(assert (= 10 (s4v-sum "integer" nonnull-u32vector '#u32(1 2 3 4))))
+(assert (= -10 (s4v-sum "integer" s8vector '#s8(-1 -2 -3 -4))))
+(assert (= -10 (s4v-sum "integer" s16vector '#s16(-1 -2 -3 -4))))
+(assert (= -10 (s4v-sum "integer" s32vector '#s32(-1 -2 -3 -4))))
+(assert (= -10 (s4v-sum "integer" nonnull-s8vector '#s8(-1 -2 -3 -4))))
+(assert (= -10 (s4v-sum "integer" nonnull-s16vector '#s16(-1 -2 -3 -4))))
+(assert (= -10 (s4v-sum "integer" nonnull-s32vector '#s32(-1 -2 -3 -4))))
+(assert (= 12.0 (s4v-sum "float" f32vector '#f32(1.5 2.5 3.5 4.5))))
+(assert (= 12.0 (s4v-sum "float" f64vector '#f64(1.5 2.5 3.5 4.5))))
+(assert (= 12.0 (s4v-sum "float" nonnull-f32vector '#f32(1.5 2.5 3.5 4.5))))
+(assert (= 12.0 (s4v-sum "float" nonnull-f64vector '#f64(1.5 2.5 3.5 4.5))))

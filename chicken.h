@@ -1111,21 +1111,22 @@ extern double trunc(double);
 #define C_and(x, y)                (C_truep(x) ? (y) : C_SCHEME_FALSE)
 #define C_c_bytevector(x)          ((unsigned char *)C_data_pointer(x))
 #define C_c_bytevector_or_null(x)  ((unsigned char *)C_data_pointer_or_null(x))
-#define C_c_u8vector(x)            ((unsigned char *)C_data_pointer(C_u_i_cdr(x)))
+#define C_srfi_4_vector(x)         C_data_pointer(C_block_item(x,1))
+#define C_c_u8vector(x)            ((unsigned char *)C_srfi_4_vector(x))
 #define C_c_u8vector_or_null(x)    ((unsigned char *)C_srfi_4_vector_or_null(x))
-#define C_c_s8vector(x)            ((char *)C_data_pointer(C_u_i_cdr(x)))
+#define C_c_s8vector(x)            ((char *)C_srfi_4_vector(x))
 #define C_c_s8vector_or_null(x)    ((char *)C_srfi_4_vector_or_null(x))
-#define C_c_u16vector(x)           ((unsigned short *)C_data_pointer(C_u_i_cdr(x)))
+#define C_c_u16vector(x)           ((unsigned short *)C_srfi_4_vector(x))
 #define C_c_u16vector_or_null(x)   ((unsigned short *)C_srfi_4_vector_or_null(x))
-#define C_c_s16vector(x)           ((short *)C_data_pointer(C_u_i_cdr(x)))
+#define C_c_s16vector(x)           ((short *)C_srfi_4_vector(x))
 #define C_c_s16vector_or_null(x)   ((short *)C_srfi_4_vector_or_null(x))
-#define C_c_u32vector(x)           ((C_u32 *)C_data_pointer(C_u_i_cdr(x)))
+#define C_c_u32vector(x)           ((C_u32 *)C_srfi_4_vector(x))
 #define C_c_u32vector_or_null(x)   ((C_u32 *)C_srfi_4_vector_or_null(x))
-#define C_c_s32vector(x)           ((C_s32 *)C_data_pointer(C_u_i_cdr(x)))
+#define C_c_s32vector(x)           ((C_s32 *)C_srfi_4_vector(x))
 #define C_c_s32vector_or_null(x)   ((C_s32 *)C_srfi_4_vector_or_null(x))
-#define C_c_f32vector(x)           ((float *)C_data_pointer(C_u_i_cdr(x)))
+#define C_c_f32vector(x)           ((float *)C_srfi_4_vector(x))
 #define C_c_f32vector_or_null(x)   ((float *)C_srfi_4_vector_or_null(x))
-#define C_c_f64vector(x)           ((double *)C_data_pointer(C_u_i_cdr(x)))
+#define C_c_f64vector(x)           ((double *)C_srfi_4_vector(x))
 #define C_c_f64vector_or_null(x)   ((double *)C_srfi_4_vector_or_null(x))
 #define C_c_pointer_vector(x)      ((void **)C_data_pointer(C_block_item((x), 2)))
 
@@ -2239,7 +2240,7 @@ C_inline void *C_data_pointer_or_null(C_word x)
 
 C_inline void *C_srfi_4_vector_or_null(C_word x) 
 {
-  return C_truep(x) ? C_data_pointer(C_block_item(x, 1)) : NULL;
+  return C_truep(x) ? C_srfi_4_vector(x) : NULL;
 }
 
 
