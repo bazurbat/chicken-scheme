@@ -488,7 +488,7 @@
 
 	  - 64-bit Windows is supported, invoke mingw32-make with the
 	    "ARCH=x86-64" argument (this is currently not detected
-	    auto- matically). The build has been tested on Windows 7
+	    automatically). The build has been tested on Windows 7
 	    with the SJLJ binary package from "MinGW-builds", which
 	    can be found here:
 
