@@ -50,3 +50,9 @@
   (delete-directory tmp-dir 'recursively)
   (assert (not (directory-exists? tmp-dot)))
   (assert (not (directory-exists? tmp-dir))))
+
+;; unsetenv
+(setenv "FOO" "bar")
+(assert (equal? (get-environment-variable "FOO") "bar"))
+(unsetenv "FOO")
+(assert (not (get-environment-variable "FOO")))
