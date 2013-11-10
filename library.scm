@@ -109,13 +109,14 @@ fast_read_line_from_file(C_word str, C_word port, C_word size) {
 static C_word
 fast_read_string_from_file(C_word dest, C_word port, C_word len, C_word pos)
 {
+  size_t m;
   int n = C_unfix (len);
   char * buf = ((char *)C_data_pointer (dest) + C_unfix (pos));
   C_FILEPTR fp = C_port_file (port);
 
   if(feof(fp)) return C_SCHEME_END_OF_FILE;
 
-  size_t m = fread (buf, sizeof (char), n, fp);
+  m = fread (buf, sizeof (char), n, fp);
 
   if (m < n) {
     if (ferror(fp)) /* Report to Scheme, which may retry, so clear errors */

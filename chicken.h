@@ -73,7 +73,7 @@
 # define C_XXXBSD
 #endif
 
-#if /*defined(__GNUC__) &&*/ (defined(__linux__) || defined(C_XXXBSD))
+#if /*defined(__GNUC__) &&*/ (defined(__linux__) || defined(C_XXXBSD) || defined(__HAIKU__))
 # define C_GNU_ENV
 #endif
 
@@ -3047,7 +3047,7 @@ C_path_to_executable(C_char *fname)
 
   while (get_next_image_info(0, &cookie, &info) == B_OK) {
     if (info.type == B_APP_IMAGE) {
-      C_strcat(buffer, info.name);
+      C_strcpy(buffer, info.name);
 
       for(i = C_strlen(buffer); i >= 0 && buffer[ i ] != '/'; --i);
 
