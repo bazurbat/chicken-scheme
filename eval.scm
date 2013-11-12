@@ -1066,7 +1066,7 @@
 
 (define dynamic-load-libraries 
   (let ((ext
-	 (if (and (memq (software-version) '(linux netbsd openbsd freebsd haiku))
+	 (if (and (memq (software-version) '(linux netbsd openbsd freebsd haiku hurd))
 		  (not (zero? binary-version))) ; allow "configless" build
 	     (string-append
 	      ##sys#load-library-extension
