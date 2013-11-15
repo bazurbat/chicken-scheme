@@ -1144,12 +1144,23 @@
 	      (##sys#check-syntax 'cond clause '#(_ 1))
 	      (cond (else?
 		     (##sys#warn
-		      "clause following `else' clause in `cond'"
+		      (sprintf "clause following `~S' clause in `cond'" else?)
 		      (##sys#strip-syntax clause))
-		     (expand rclauses #t)
+		     (expand rclauses else?)
 		     '(##core#begin))
-		    ((c %else (car clause))
-		     (expand rclauses #t)
+		    ((or (c %else (car clause))
+                         (eq? #t (car clause))
+                         ;; Like "constant?" from support.scm
+                         (number? (car clause))
+                         (char? (car clause))
+                         (string? (car clause))
+                         (eof-object? (car clause))
+                         (blob? (car clause))
+                         (vector? (car clause))
+                         (##sys#srfi-4-vector? (car clause))
+                         (and (pair? (car clause))
+                              (c (r 'quote) (caar clause))))
+		     (expand rclauses (strip-syntax (car clause)))
 		     `(##core#begin ,@(cdr clause)))
 		    ((null? (cdr clause)) 
 		     `(,%or ,(car clause) ,(expand rclauses #f)))
