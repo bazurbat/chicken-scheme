@@ -1142,15 +1142,15 @@
 	    (let ((clause (car clauses))
 		  (rclauses (cdr clauses)) )
 	      (##sys#check-syntax 'cond clause '#(_ 1))
-	      (cond ((c %else (car clause))
-		     (expand rclauses #t)
-		     `(##core#begin ,@(cdr clause)))
-		    (else?
+	      (cond (else?
 		     (##sys#warn
-		      "non-`else' clause following `else' clause in `cond'"
+		      "clause following `else' clause in `cond'"
 		      (##sys#strip-syntax clause))
 		     (expand rclauses #t)
 		     '(##core#begin))
+		    ((c %else (car clause))
+		     (expand rclauses #t)
+		     `(##core#begin ,@(cdr clause)))
 		    ((null? (cdr clause)) 
 		     `(,%or ,(car clause) ,(expand rclauses #f)))
 		    ((and (fx= (length clause) 3)
@@ -1194,18 +1194,18 @@
 		  (let ((clause (car clauses))
 			(rclauses (cdr clauses)) )
 		    (##sys#check-syntax 'case clause '#(_ 1))
-		    (cond ((c %else (car clause))
+		    (cond (else?
+			   (##sys#warn
+			    "clause following `else' clause in `case'"
+			    (##sys#strip-syntax clause))
+			   (expand rclauses #t)
+			   '(##core#begin))
+			  ((c %else (car clause))
 			   (expand rclauses #t)
 			   (if (and (fx= (length clause) 3) ; (else => expr)
 				    (c %=> (cadr clause)))
 			       `(,(caddr clause) ,tmp)
 			       `(##core#begin ,@(cdr clause))))
-			  (else?
-			   (##sys#notice
-			    "non-`else' clause following `else' clause in `case'"
-			    (##sys#strip-syntax clause))
-			   (expand rclauses #t)
-			   '(##core#begin))
 			  (else
 			   `(##core#if (,%or ,@(##sys#map
 						(lambda (x) `(,%eqv? ,tmp ',x))
