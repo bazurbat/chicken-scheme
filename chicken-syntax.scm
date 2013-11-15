@@ -171,17 +171,19 @@
       (##sys#check-syntax 'assert form '#(_ 1))
       (let* ((exp (cadr form))
 	     (msg-and-args (cddr form))
-	     (msg (optional msg-and-args "assertion failed")))
+	     (msg (optional msg-and-args "assertion failed"))
+	     (tmp (r 'tmp)))
 	(when (string? msg)
 	  (and-let* ((ln (get-line-number form)))
 	    (set! msg (string-append "(" ln ") " msg))))
-	`(##core#if (##core#check ,exp)
-		    (##core#undefined)
-		    (##sys#error 
-		     ,msg 
-		     ,@(if (pair? msg-and-args)
-			   (cdr msg-and-args)
-			   `((##core#quote ,(##sys#strip-syntax exp)))))))))))
+	`(##core#let ((,tmp ,exp))
+	   (##core#if (##core#check ,tmp)
+		      ,tmp
+		      (##sys#error
+		       ,msg
+		       ,@(if (pair? msg-and-args)
+			     (cdr msg-and-args)
+			     `((##core#quote ,(##sys#strip-syntax exp))))))))))))
 
 (##sys#extend-macro-environment
  'ensure
