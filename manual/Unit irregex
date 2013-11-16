@@ -92,7 +92,7 @@ Examples:
 <enscript highlight=scheme>
 (irregex-search "foobar" "abcFOOBARdef") => #f
 
-(irregex-search "foobar" "abcFOOBARdef" 'i) => #<match>
+(irregex-search (irregex "foobar" 'i) "abcFOOBARdef") => #<match>
 
 (irregex-search '(w/nocase "foobar") "abcFOOBARdef") => #<match>
 </enscript>
@@ -404,7 +404,7 @@ matches the pattern:
 
 (irregex-search '(: "match" (? "es") "!") "match!") => #<match>
 
-(irregex-search '(: "match" (? "es") "!") "matche!") => #<match>
+(irregex-search '(: "match" (? "es") "!") "matche!") => #f
 </enscript>
 
 To optionally match any number of times, use {{*}}, the Kleene star:
