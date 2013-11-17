@@ -497,6 +497,16 @@
 	  - Cygwin will not be able to find the chicken shared libraries
 	    until Windows is rebooted.
 
+	  - During "make check" you may see these intermittent errors:
+
+	      ld.exe: cannot open output file a.out: Permission denied
+
+	    When this happens, the virusscanner is holding open
+	    the file of the previous test while the compiler is
+	    preparing the next test.
+	    To work around this in Windows Defender (the default),
+	    disable "realtime protection" under tools->options.
+
 	  - gcc 3.4 shows sometimes warnings of the form
 
 	      easyffi.c: In function `f_11735':
