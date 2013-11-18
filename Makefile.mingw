@@ -110,7 +110,6 @@ chicken-config.h: chicken-defaults.h
 	echo #define STDC_HEADERS 1 >>$@
 	echo #define HAVE_DIRECT_H 1 >>$@
 	echo #define HAVE_ERRNO_H 1 >>$@
-	echo #define HAVE_GCVT 1 >>$@
 	echo #define HAVE_LOADLIBRARY 1 >>$@
 	echo #define HAVE_GETPROCADDRESS 1 >>$@
 	echo #define HAVE_WINSOCK2_H 1 >>$@

@@ -942,7 +942,6 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_fopen                    fopen
 # define C_fclose                   fclose
 # define C_strpbrk                  strpbrk
-# define C_gcvt                     gcvt
 # define C_sprintf                  sprintf
 # define C_snprintf                 snprintf
 # define C_printf                   printf

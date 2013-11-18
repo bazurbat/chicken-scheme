@@ -17,6 +17,7 @@
 (define the-nan (fp/ 0.0 0.0))
 (define pos-inf (fp/ 1.0 0.0))
 (define neg-inf (fp/ -1.0 0.0))
+(define neg-zero (/ -1.0 +inf.0))
 
 (define (nan? x) (and (number? x) (not (= x x))))
 
@@ -171,7 +172,7 @@
  ("1#e2" 1000.0 1500.0 "1000.0" "1500.0" "1000." "1500." "1.0e3" "15.0e2")
  ("1e2#" #f)
 
- "NaN, Inf"
+ "NaN, Inf, negative zero"
  ("+nan.0" the-nan "+NaN.0")
  ("+NAN.0" the-nan "+nan.0" "+NaN.0")
  ("+nan.1" #f)
@@ -193,6 +194,7 @@
  ("#i+nan.0" the-nan "+nan.0" "+NaN.0")
  ("#i+inf.0" pos-inf "+inf.0" "+Inf.0")
  ("#i-inf.0" neg-inf "-inf.0" "-Inf.0")
+ ("-0.0" neg-zero "-.0" "-0.")
  ;; These used to be accepted but are invalid
  ("+nan" #f)
  ("+inf" #f)

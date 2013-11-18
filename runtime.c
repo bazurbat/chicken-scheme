@@ -4130,11 +4130,7 @@ C_regparm C_word C_fcall C_display_flonum(C_word port, C_word n)
 {
   C_FILEPTR fp = C_port_file(port);
 
-#ifdef HAVE_GCVT
-  C_fprintf(fp, C_text("%s"), C_gcvt(C_flonum_magnitude(n), flonum_print_precision, buffer));
-#else
   C_fprintf(fp, C_text("%.*g"), flonum_print_precision, C_flonum_magnitude(n));
-#endif
   return C_SCHEME_UNDEFINED;
 }
 
@@ -7800,11 +7796,9 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
       goto fini;
     }
 
-#ifdef HAVE_GCVT
-    p = C_gcvt(f, flonum_print_precision, buffer); /* p unused, but we want to avoid stupid warnings */
-#else
-    C_sprintf(buffer, C_text("%.*g"), flonum_print_precision, f);
-#endif
+    C_snprintf(buffer, STRING_BUFFER_SIZE, C_text("%.*g"),
+	       flonum_print_precision, f);
+    buffer[STRING_BUFFER_SIZE-1] = '\0';
 
     if((p = C_strpbrk(buffer, C_text(".eE"))) == NULL) {
       if(*buffer == 'i' || *buffer == 'n') { /* inf or nan */
@@ -7813,11 +7807,6 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
       }
       else if(buffer[ 1 ] != 'i') C_strcat(buffer, C_text(".0")); /* negative infinity? */
     }
-#ifdef __MINGW32__
-    /* On mingw32, gcvt(3) does not add a trailing zero */
-    else if(buffer[ C_strlen(buffer) - 1 ] == '.')
-      C_strcat(buffer, C_text("0"));
-#endif
 
     p = buffer;
   }
