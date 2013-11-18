@@ -1725,7 +1725,12 @@ void* mmap(void* addr,int len,int prot,int flags,int fd,int off)
         return (void*)-1;
     }
 
-    hFile = _get_osfhandle(fd);
+    /*
+     * We must cast because _get_osfhandle returns intptr_t, but it must
+     * be compared with INVALID_HANDLE_VALUE, which is a HANDLE type.
+     * Who comes up with this shit?
+     */
+    hFile = (HANDLE)_get_osfhandle(fd);
     if (hFile == INVALID_HANDLE_VALUE)
     {
         return (void*)-1;
