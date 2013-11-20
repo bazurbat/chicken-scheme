@@ -19,6 +19,8 @@
      prematurely woken up by a signal.
   - unsetenv has been fixed on Windows.
   - The process procedure has been fixed on Windows.
+  - Nonblocking behaviour on sockets has been fixed on Windows.
+  - Possible race condition while handling TCP errors has been fixed.
   - The posix unit will no longer hang upon any error in Windows.
 
 - Platform support
