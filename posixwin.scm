@@ -367,15 +367,16 @@ static errmap_t errmap[] =
 static void C_fcall
 set_errno(DWORD w32err)
 {
-    errmap_t *map = errmap;
-    for (; errmap->win32; ++map)
+    errmap_t *map;
+    for (map = errmap; map->win32; ++map)
     {
-	if (errmap->win32 == w32err)
+	if (map->win32 == w32err)
 	{
-	    errno = errmap->libc;
+	    errno = map->libc;
 	    return;
 	}
     }
+    errno = ENOSYS; /* For lack of anything better */
 }
 
 static int C_fcall
@@ -783,14 +784,12 @@ C_process(const char * app, const char * cmdlin, const char ** env,
 		if (modes[i]=='r') { child_io_handles[i]=a; parent_end=b; }
 		else		   { parent_end=a; child_io_handles[i]=b; }
 		success = (io_fds[i] = _open_osfhandle((C_word)parent_end,0)) >= 0;
+                /* Make new handle inheritable */
+		if (success)
+		  success = SetHandleInformation(child_io_handles[i], HANDLE_FLAG_INHERIT, -1);
 	    }
 	}
     }
-
-    /****** make handles inheritable */
-
-    for (i=0; i<3 && success; ++i)
-	success = SetHandleInformation(child_io_handles[i], HANDLE_FLAG_INHERIT, -1);
 
 #if 0 /* Requires a sorted list by key! */
     /****** create environment block if necessary ****/
@@ -851,7 +850,10 @@ C_process(const char * app, const char * cmdlin, const char ** env,
     /****** cleanup & return *********/
 
     /* parent must close child end */
-    for (i=0; i<3; ++i) CloseHandle(child_io_handles[i]);
+    for (i=0; i<3; ++i) {
+	if (child_io_handles[i] != NULL)
+	    CloseHandle(child_io_handles[i]);
+    }
 
     if (success)
     {
@@ -862,7 +864,10 @@ C_process(const char * app, const char * cmdlin, const char ** env,
     }
     else
     {
-	for (i=0; i<3; ++i) _close(io_fds[i]);
+	for (i=0; i<3; ++i) {
+	    if (io_fds[i] != -1)
+		_close(io_fds[i]);
+	}
     }
 
     return success;

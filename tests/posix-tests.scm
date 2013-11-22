@@ -32,6 +32,17 @@
 (assert-error (process-execute "false" '("1" "123\x00456")))
 (assert-error (process-execute "false" '("123\x00456") '("foo\x00bar" "blabla") '("lalala" "qux\x00mooh")))
 
+(receive (in out pid)
+    (process "../csi" '("-n" "-e"
+                        "(write 'err (current-error-port)) (write 'ok)"))
+  (assert (equal? 'ok (read in))))
+
+(receive (in out pid err)
+    (process* "../csi" '("-n" "-e"
+                         "(write 'err (current-error-port)) (write 'ok)"))
+  (assert (equal? 'ok (read in)))
+  (assert (equal? 'err (read err))))
+
 (let ((tnpfilpn (create-temporary-file)))
   (let ((tmpfilno (file-open tnpfilpn (+ open/rdwr open/creat)))
         (data "abcde")
