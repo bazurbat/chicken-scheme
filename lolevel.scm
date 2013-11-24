@@ -36,9 +36,6 @@
    pv-buf-ref pv-buf-set!)
   (not inline ipc-hook-0 ##sys#invalid-procedure-call-hook)
   (foreign-declare #<<EOF
-#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-# include <sys/types.h>
-#endif
 #ifndef C_NONUNIX
 # include <sys/mman.h>
 #endif

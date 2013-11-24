@@ -41,7 +41,6 @@
   (hide chop-pds absolute-pathname-root root-origin root-directory split-directory)
   (disable-interrupts) 
   (foreign-declare #<<EOF
-#include <unistd.h>
 #include <errno.h>
 
 #ifndef _WIN32

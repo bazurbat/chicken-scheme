@@ -40,17 +40,12 @@
        ##sys#default-read-info-hook ##sys#infix-list-hook ##sys#sharp-number-hook
        ##sys#user-print-hook ##sys#user-interrupt-hook ##sys#step-hook)
   (foreign-declare #<<EOF
-#include <string.h>
-#include <ctype.h>
 #include <errno.h>
-#include <time.h>
 #include <float.h>
 
 #ifdef HAVE_SYSEXITS_H
 # include <sysexits.h>
 #endif
-
-#include <unistd.h>
 
 #ifndef EX_SOFTWARE
 # define EX_SOFTWARE	70

@@ -83,12 +83,10 @@
 #include <signal.h>
 #include <errno.h>
 #include <io.h>
-#include <stdio.h>
 #include <process.h>
 #include <fcntl.h>
 #include <direct.h>
 #include <utime.h>
-#include <time.h>
 
 #define ARG_MAX		256
 #define PIPE_BUF	512

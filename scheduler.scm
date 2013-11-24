@@ -53,10 +53,7 @@
 /* Beware: winsock2.h must come BEFORE windows.h */
 # define C_msleep(n)     (Sleep(C_unfix(n)), C_SCHEME_TRUE)
 #else
-# include <unistd.h>
-# include <sys/types.h>
 # include <sys/time.h>
-# include <time.h>
 static C_word C_msleep(C_word ms);
 C_word C_msleep(C_word ms) {
 #ifdef __CYGWIN__

@@ -30,9 +30,7 @@
 
 #include <signal.h>
 #include <errno.h>
-#include <math.h>
 
-#include <sys/types.h>
 #include <sys/stat.h>
 
 static int C_not_implemented(void);

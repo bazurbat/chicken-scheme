@@ -27,13 +27,11 @@
 
 
 #include "chicken.h"
-#include <errno.h>
-#include <signal.h>
 #include <assert.h>
-#include <limits.h>
+#include <errno.h>
 #include <float.h>
-#include <math.h>
 #include <signal.h>
+#include <sys/stat.h>
 
 #ifdef HAVE_SYSEXITS_H
 # include <sysexits.h>
@@ -68,16 +66,11 @@
 
 #if !defined(C_NONUNIX)
 
-# include <sys/types.h>
-# include <sys/stat.h>
 # include <sys/time.h>
 # include <sys/resource.h>
 # include <sys/wait.h>
 
 #else
-
-# include <sys/types.h>
-# include <sys/stat.h>
 
 #ifdef ECOS
 #include <cyg/kernel/kapi.h>

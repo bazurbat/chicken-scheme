@@ -48,7 +48,6 @@
   (foreign-declare #<<EOF
 static C_TLS int C_wait_status;
 
-#include <unistd.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/utsname.h>
@@ -69,7 +68,6 @@ static C_TLS int C_wait_status;
 
 #include <sys/mman.h>
 #include <sys/poll.h>
-#include <time.h>
 
 #ifndef O_FSYNC
 # define O_FSYNC O_SYNC

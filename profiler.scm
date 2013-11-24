@@ -31,11 +31,6 @@
   (unsafe)
   (disable-interrupts))
 
-(foreign-declare #<<EOF
-#include <unistd.h>
-EOF
-)
-
 (include "common-declarations.scm")
 
 (define-foreign-variable profile-id int "C_getpid()")

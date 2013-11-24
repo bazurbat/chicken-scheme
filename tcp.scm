@@ -57,11 +57,9 @@ static WSADATA wsa;
     getsockopt(socket, level, optname, (char *)optval, optlen)
 #else
 # include <fcntl.h>
-# include <sys/types.h>
 # include <sys/socket.h>
 # include <sys/time.h>
 # include <netinet/in.h>
-# include <unistd.h>
 # include <netdb.h>
 # include <signal.h>
 # define closesocket     close

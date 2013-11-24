@@ -96,26 +96,19 @@
 
 /* Headers */
 
+#include <ctype.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <math.h>
+#include <setjmp.h>
+#include <stdarg.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
-#include <ctype.h>
 #include <string.h>
-#include <setjmp.h>
-#include <limits.h>
 #include <time.h>
-#include <math.h>
-
-/* This check is exceedingly strange */
-#if !defined(C_NONUNIX) || defined(__MINGW32__) || defined(__WATCOMC__)
-# include <unistd.h>
-# include <inttypes.h>
-# include <sys/types.h>
-#endif
-
-#if defined(__HAIKU__)
-# include <kernel/image.h>
-#endif
+#include <unistd.h>
+#include <sys/types.h>
 
 
 /* Byteorder in machine word */
@@ -535,13 +528,6 @@ static inline int isinf_ld (long double x)
 #define C_byte                    char
 #define C_uword                   unsigned C_word
 #define C_header                  C_uword
-
-#if defined(__sun) && !defined(__SVR4) 
-/* SunOS is supposed not to have stdint.h */
-# include <inttypes.h>
-#else
-# include <stdint.h>
-#endif
 
 /* if all else fails, use these:
  #define UINT64_MAX (18446744073709551615ULL)
@@ -2908,7 +2894,10 @@ C_inline C_word C_a_i_record8(C_word **ptr, int n, C_word x1, C_word x2, C_word 
 #ifdef C_PRIVATE_REPOSITORY
 # if defined(C_MACOSX) && defined(C_GUI)
 #  include <CoreFoundation/CoreFoundation.h>
+# elif defined(__HAIKU__)
+#  include <kernel/image.h>
 # endif
+
 C_inline C_char *
 C_path_to_executable(C_char *fname)
 {
