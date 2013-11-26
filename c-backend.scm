@@ -1172,7 +1172,7 @@
       [(c-string-list c-string-list*) "C_char **"]
       [(blob nonnull-blob u8vector nonnull-u8vector) (str "unsigned char *")]
       [(u16vector nonnull-u16vector) (str "unsigned short *")]
-      [(s8vector nonnull-s8vector) (str "char *")]
+      [(s8vector nonnull-s8vector) (str "signed char *")]
       [(u32vector nonnull-u32vector) (str "unsigned int *")]
       [(s16vector nonnull-s16vector) (str "short *")]
       [(s32vector nonnull-s32vector) (str "int *")]
