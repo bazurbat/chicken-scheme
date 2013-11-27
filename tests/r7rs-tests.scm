@@ -59,6 +59,10 @@
 
 (SECTION 4 2 1)
 
+;; cond clause with only <test>
+(test 1 (lambda () (cond (1))))
+(test 'foo (lambda () (cond ('foo))))
+
 ;; case with => clause
 (test "a" (lambda () (case 'a ((a) => symbol->string))))
 (test "a" (lambda () (case 'a (else => symbol->string))))
