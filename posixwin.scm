@@ -73,20 +73,14 @@
 # define WIN32_LEAN_AND_MEAN
 #endif
 
-#if (defined(HAVE_WINSOCK2_H) && defined(HAVE_WS2TCPIP_H))
-# include <winsock2.h>
-# include <ws2tcpip.h>
-#else
-# include <winsock.h>
-#endif
-
-#include <signal.h>
+#include <direct.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <io.h>
 #include <process.h>
-#include <fcntl.h>
-#include <direct.h>
+#include <signal.h>
 #include <utime.h>
+#include <winsock2.h>
 
 #define ARG_MAX		256
 #define PIPE_BUF	512
@@ -386,161 +380,6 @@ set_last_errno()
     return 0;
 }
 
-/* Functions for creating process with redirected I/O */
-
-static int C_fcall
-zero_handles()
-{
-    C_rd0 = C_wr0 = C_wr0_ = INVALID_HANDLE_VALUE;
-    C_rd1 = C_wr1 = C_rd1_ = INVALID_HANDLE_VALUE;
-    C_save0 = C_save1 = INVALID_HANDLE_VALUE;
-    return 1;
-}
-
-static int C_fcall
-close_handles()
-{
-    if (C_rd0 != INVALID_HANDLE_VALUE)
-	CloseHandle(C_rd0);
-    if (C_rd1 != INVALID_HANDLE_VALUE)
-	CloseHandle(C_rd1);
-    if (C_wr0 != INVALID_HANDLE_VALUE)
-	CloseHandle(C_wr0);
-    if (C_wr1 != INVALID_HANDLE_VALUE)
-	CloseHandle(C_wr1);
-    if (C_rd1_ != INVALID_HANDLE_VALUE)
-	CloseHandle(C_rd1_);
-    if (C_wr0_ != INVALID_HANDLE_VALUE)
-	CloseHandle(C_wr0_);
-    if (C_save0 != INVALID_HANDLE_VALUE)
-    {
-	SetStdHandle(STD_INPUT_HANDLE, C_save0);
-	CloseHandle(C_save0);
-    }
-    if (C_save1 != INVALID_HANDLE_VALUE)
-    {
-	SetStdHandle(STD_OUTPUT_HANDLE, C_save1);
-	CloseHandle(C_save1);
-    }
-    return zero_handles();
-}
-
-static int C_fcall
-redir_io()
-{
-    SECURITY_ATTRIBUTES sa;
-    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-    sa.bInheritHandle = TRUE;
-    sa.lpSecurityDescriptor = NULL;
-
-    zero_handles();
-
-    C_save0 = GetStdHandle(STD_INPUT_HANDLE);
-    C_save1 = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (!CreatePipe(&C_rd0, &C_wr0, &sa, 0)
-	    || !SetStdHandle(STD_INPUT_HANDLE, C_rd0)
-	    || !DuplicateHandle(GetCurrentProcess(), C_wr0, GetCurrentProcess(),
-		&C_wr0_, 0, FALSE, DUPLICATE_SAME_ACCESS)
-	    || !CreatePipe(&C_rd1, &C_wr1, &sa, 0)
-	    || !SetStdHandle(STD_OUTPUT_HANDLE, C_wr1)
-	    || !DuplicateHandle(GetCurrentProcess(), C_rd1, GetCurrentProcess(),
-		&C_rd1_, 0, FALSE, DUPLICATE_SAME_ACCESS))
-    {
-	set_last_errno();
-	close_handles();
-	return 0;
-    }
-
-    CloseHandle(C_wr0);
-    C_wr0 = INVALID_HANDLE_VALUE;
-    CloseHandle(C_rd1);
-    C_rd1 = INVALID_HANDLE_VALUE;
-    return 1;
-}
-
-static C_word C_fcall
-run_process(char *cmdline)
-{
-    PROCESS_INFORMATION pi;
-    STARTUPINFO si;
-
-    ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
-    ZeroMemory(&si, sizeof(STARTUPINFO));
-    si.cb = sizeof(STARTUPINFO);
-
-    C_wr0_ = C_rd1_ = INVALID_HANDLE_VALUE; /* these handles are saved */
-
-    if (CreateProcess(NULL, cmdline, NULL, NULL, TRUE, 0, NULL,
-		      NULL, &si, &pi))
-    {
-	CloseHandle(pi.hThread);
-
-	SetStdHandle(STD_INPUT_HANDLE, C_save0);
-	SetStdHandle(STD_OUTPUT_HANDLE, C_save1);
-	C_save0 = C_save1 = INVALID_HANDLE_VALUE;
-
-	CloseHandle(C_rd0);
-	CloseHandle(C_wr1);
-	C_rd0 = C_wr1 = INVALID_HANDLE_VALUE;
-	return (C_word)pi.hProcess;
-    }
-    else
-	return set_last_errno();
-}
-
-static C_word C_fcall
-pipe_write(C_word hpipe, void* buf, int count)
-{
-    DWORD done = 0;
-    if (WriteFile((HANDLE)hpipe, buf, count, &done, NULL))
-	return 1;
-    else
-	return set_last_errno();
-}
-
-static C_word C_fcall
-pipe_read(C_word hpipe)
-{
-    DWORD done = 0;
-    /* TODO:
-    if (!pipe_ready(hpipe))
-	go_to_sleep;
-    */
-    if (ReadFile((HANDLE)hpipe, &C_rdbuf, 1, &done, NULL))
-    {
-	if (done > 0) /* not EOF yet */
-	    return 1;
-	else
-	    return -1;
-    }
-    return set_last_errno();
-}
-
-static int C_fcall
-pipe_ready(C_word hpipe)
-{
-    DWORD avail = 0;
-    if (PeekNamedPipe((HANDLE)hpipe, NULL, 0, NULL, &avail, NULL) && avail)
-	return 1;
-    else
-    {
-	Sleep(0); /* give pipe a chance */
-	if (PeekNamedPipe((HANDLE)hpipe, NULL, 0, NULL, &avail, NULL))
-	    return (avail > 0);
-	else
-	    return 0;
-    }
-}
-
-#define C_zero_handles() C_fix(zero_handles())
-#define C_close_handles() C_fix(close_handles())
-#define C_redir_io() (redir_io() ? C_SCHEME_TRUE : C_SCHEME_FALSE)
-#define C_run_process(cmdline) C_fix(run_process(C_c_string(cmdline)))
-#define C_pipe_write(h, b, n) (pipe_write(C_unfix(h), C_c_string(b), C_unfix(n)) ? C_SCHEME_TRUE : C_SCHEME_FALSE)
-#define C_pipe_read(h) C_fix(pipe_read(C_unfix(h)))
-#define C_pipe_ready(h) (pipe_ready(C_unfix(h)) ? C_SCHEME_TRUE : C_SCHEME_FALSE)
-#define close_handle(h) CloseHandle((HANDLE)h)
-
 static int C_fcall
 process_wait(C_word h, C_word t)
 {
@@ -665,7 +504,7 @@ get_shlcmd()
     /* Do we need to build the shell command pathname? */
     if (!strlen(C_shlcmd))
     {
-	if (sysinfo())
+	if (sysinfo()) /* for C_isNT */
 	{
 	    char *cmdnam = C_isNT ? "\\cmd.exe" : "\\command.com";
 	    UINT len = GetSystemDirectory(C_shlcmd, sizeof(C_shlcmd) - strlen(cmdnam));
@@ -699,31 +538,6 @@ get_user_name()
 }
 
 #define C_get_user_name() (get_user_name() ? C_SCHEME_TRUE : C_SCHEME_FALSE)
-
-/* User Information */
-
-#if 0
-static int C_fcall
-get_netinfo()
-{
-    HINSTANCE hNet = 0,
-	      hLoc = 0;
-
-    if (isNT)
-	hNet = LoadLibrary("netapi32.dll");
-    else
-    {
-	hLoc = LoadLibrary("rlocal32.dll");
-	hNet = LoadLibrary("radmin32.dll");
-	//hNet = LoadLibrary("netapi.dll");
-    }
-
-    if (!hNet)
-	return 0;
-
-    
-}
-#endif
 
 /*
     Spawn a process directly.

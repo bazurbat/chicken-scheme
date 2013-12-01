@@ -34,12 +34,8 @@
 	  tcp-read-timeout tcp-write-timeout tcp-accept-timeout tcp-connect-timeout)
   (foreign-declare #<<EOF
 #ifdef _WIN32
-# if (defined(HAVE_WINSOCK2_H) && defined(HAVE_WS2TCPIP_H))
-#  include <winsock2.h>
-#  include <ws2tcpip.h>
-# else
-#  include <winsock.h>
-# endif
+# include <winsock2.h>
+# include <ws2tcpip.h>
 /* Beware: winsock2.h must come BEFORE windows.h */
 # define socklen_t	 int
 static WSADATA wsa;

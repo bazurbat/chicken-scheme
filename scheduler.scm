@@ -44,12 +44,8 @@
 #endif
 
 #ifdef _WIN32
-# if (defined(HAVE_WINSOCK2_H) && defined(HAVE_WS2TCPIP_H))
-#  include <winsock2.h>
-#  include <ws2tcpip.h>
-# else
-#  include <winsock.h>
-# endif
+/* TODO: Winsock select() only works for sockets */
+# include <winsock2.h>
 /* Beware: winsock2.h must come BEFORE windows.h */
 # define C_msleep(n)     (Sleep(C_unfix(n)), C_SCHEME_TRUE)
 #else

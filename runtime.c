@@ -96,7 +96,9 @@ static C_TLS int timezone;
 # define RTLD_LAZY                     0
 #endif
 
-#if defined(HAVE_WINDOWS_H) || (defined(_WIN32) && !defined(__CYGWIN__))
+#if defined(_WIN32) && !defined(__CYGWIN__)
+/* Include winsock2 to get select() for check_fd_ready() */
+# include <winsock2.h>
 # include <windows.h>
 #endif
 
