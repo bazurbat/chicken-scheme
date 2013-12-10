@@ -25,10 +25,12 @@
 ;; so let the OS deliver it to us when we're ready:
 (foreign-declare "#include <sys/time.h>")
 ((foreign-lambda* void ()
+   "#ifndef __MINGW32__ \n"
    "struct itimerval timer;"
    "timer.it_value.tv_sec = 1;"
    "timer.it_value.tv_usec = 0;"
-   "setitimer(ITIMER_REAL, &timer, NULL);"))
+   "setitimer(ITIMER_REAL, &timer, NULL);\n"
+   "#endif"))
 
 (display "Testing correct handling of thread-join! with external signals:")
 (flush-output)
