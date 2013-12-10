@@ -167,31 +167,37 @@
 	   (toval (and tosupplied (##sys#slot rest 0))) )
       (##sys#call-with-current-continuation
        (lambda (return)
-	 (let ([ct ##sys#current-thread])
+	 (let ((ct ##sys#current-thread))
 	   (when limit (##sys#thread-block-for-timeout! ct limit))
 	   (##sys#setslot
 	    ct 1
 	    (lambda ()
 	      (case (##sys#slot thread 3)
-		[(dead)
+		((dead)
 		 (unless (##sys#slot ct 13) ; not unblocked by timeout
 		   (##sys#remove-from-timeout-list ct))
-		 (apply return (##sys#slot thread 2))]
-		[(terminated)
+		 (apply return (##sys#slot thread 2)))
+		((terminated)
 		 (return 
 		  (##sys#signal
 		   (##sys#make-structure 
 		    'condition '(uncaught-exception)
-		    (list '(uncaught-exception . reason) (##sys#slot thread 7)) ) ) ) ]
-		[else
-		 (return
-		  (if tosupplied
-		      toval
-		      (##sys#signal
-		       (##sys#make-structure 'condition '(join-timeout-exception) '())) ) ) ] ) ) )
-	   (##sys#thread-block-for-termination! ct thread) 
+		    (list '(uncaught-exception . reason) (##sys#slot thread 7)) ) ) ) )
+		((blocked ready)
+                 (if limit
+                     (return
+                      (if tosupplied
+                          toval
+                          (##sys#signal
+                           (##sys#make-structure 'condition '(join-timeout-exception) '())) ) )
+                     (##sys#thread-block-for-termination! ct thread) ) )
+                (else
+                 (##sys#error 'thread-join!
+                              "Internal scheduler error: unknown thread state: "
+                              ct (##sys#slot thread 3)) ) ) ) )
+	   (##sys#thread-block-for-termination! ct thread)
 	   (##sys#schedule) ) ) ) ) ) )
-	   
+
 (define (thread-terminate! thread)
   (##sys#check-structure thread 'thread 'thread-terminate!)
   (when (eq? thread ##sys#primordial-thread)

@@ -15,6 +15,8 @@
   - Export file-type from the posix unit (thanks to Alan Post).
   - unsetenv has been fixed on Windows.
   - SRFI-4 s8vectors now work correctly in compiled code on PowerPC and ARM.
+  - thread-join! now works correctly even if the waiting thread was
+     prematurely woken up by a signal.
 
 - Platform support
   - CHICKEN can now be built on AIX (contributed by Erik Falor)

@@ -68,6 +68,7 @@ interpret="../csi -n -include-path .."
 
 rm -f *.exe *.so *.o *.import.* a.out ../foo.import.*
 
+
 echo "======================================== compiler tests ..."
 $compile compiler-tests.scm
 ./a.out
@@ -328,6 +329,8 @@ $interpret -s condition-tests.scm
 echo "======================================== srfi-18 tests ..."
 $interpret -s simple-thread-test.scm
 $interpret -s mutex-test.scm
+$compile srfi-18-signal-test.scm
+./a.out
 
 echo "======================================== data-structures tests ..."
 $interpret -s data-structures-tests.scm
