@@ -884,23 +884,26 @@
 	  (%memv (r 'memv))
 	  (%else (r 'else)))
       (define (parse-clause c)
-	(let* ([var (and (symbol? (car c)) (car c))]
-	       [kinds (if var (cadr c) (car c))]
-	       [body (if var (cddr c) (cdr c))] )
+	(let* ((var (and (symbol? (car c)) (car c)))
+	       (kinds (if var (cadr c) (car c)))
+	       (body (if var
+			 `(##core#let ((,var ,exvar)) ,@(cddr c))
+			 `(##core#let () ,@(cdr c)))))
 	  (if (null? kinds)
-	      `(,%else 
-		,(if var
-		     `(##core#let ([,var ,exvar]) ,@body)
-		     `(##core#let () ,@body) ) )
-	      `((,%and ,kvar ,@(map (lambda (k) `(,%memv (##core#quote ,k) ,kvar)) kinds))
-		,(if var
-		     `(##core#let ([,var ,exvar]) ,@body)
-		     `(##core#let () ,@body) ) ) ) ) )
+	      `(,%else ,body)
+	      `((,%and ,kvar ,@(map (lambda (k)
+				      `(,%memv (##core#quote ,k) ,kvar)) kinds))
+		,body ) ) ) )
       `(,(r 'handle-exceptions) ,exvar
-	(##core#let ([,kvar (,%and (##sys#structure? ,exvar (##core#quote condition) )
-				   (##sys#slot ,exvar 1))])
-		    (,(r 'cond) ,@(map parse-clause (cddr form))
-		     (,%else (##sys#signal ,exvar)) ) )
+	(##core#let ((,kvar (,%and (##sys#structure? ,exvar
+						     (##core#quote condition))
+				   (##sys#slot ,exvar 1))))
+		    ,(let ((clauses (map parse-clause (cddr form))))
+		       `(,(r 'cond)
+			 ,@clauses
+			 ,@(if (assq %else clauses)
+			       `()   ; Don't generate two else clauses
+			       `((,%else (##sys#signal ,exvar)))) )) )
 	,(cadr form))))))
 
 
