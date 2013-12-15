@@ -217,6 +217,15 @@
 
 (gp-test)
 
+;; Optimizer would "lift" inner-bar out of its let and replace
+;; outer-bar with it, even though it wasn't visible yet.  Caused by
+;; broken cps-conversion (underlying problem for #1068).
+(let ((outer-bar (##core#undefined)))
+  (let ((inner-bar (let ((tmp (lambda (x) (if x '1 (outer-bar '#t)))))
+                     tmp)))
+    (set! outer-bar inner-bar)
+    (outer-bar #f)))
+
 ;; Test that encode-literal/decode-literal use the proper functions
 ;; to decode number literals.
 (assert (equal? '(+inf.0 -inf.0) (list (fp/ 1.0 0.0) (fp/ -1.0 0.0))))

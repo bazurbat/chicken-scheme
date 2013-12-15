@@ -1113,6 +1113,18 @@ take
 		   (bar foo))
 	    bar))
 
+;; Obscure letrec issue #1068
+(t 1 (letrec ((foo (lambda () 1))
+	      (bar (let ((tmp (lambda (x) (if x (foo) (bar #t)))))
+		     tmp)))
+       (bar #f)))
+
+;; Just to verify (this has always worked)
+(t 1 (letrec* ((foo (lambda () 1))
+	       (bar (let ((tmp (lambda (x) (if x (foo) (bar #t)))))
+		      tmp)))
+       (bar #f)))
+
 (t 1 (letrec* ((foo 1)
 	       (bar foo))
-	      bar))
+       bar))
