@@ -806,6 +806,10 @@ directory and the default shell. When {{AS-VECTOR}} is {{#t}} a vector of 7
 elements is returned instead of a list. If no user with this name or id then
 {{#f}} is returned.
 
+Note: on Android systems, the user-specific string is always {{""}},
+since {{pw_gecos}} is not available in the C {{passwd}} struct on that
+platform.
+
 ==== current-group-id
 
 <procedure>(current-group-id)</procedure>

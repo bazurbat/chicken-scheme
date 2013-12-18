@@ -657,6 +657,8 @@ static inline int isinf_ld (long double x)
 
 #if defined(__CYGWIN__) || defined(__MINGW32__) || defined(_WIN32) || defined(__WINNT__)
 # define C_SOFTWARE_TYPE "windows"
+#elif defined(__ANDROID__)
+# define C_SOFTWARE_TYPE "android"
 #elif defined(__unix__) || defined(C_XXXBSD) || defined(_AIX)
 # define C_SOFTWARE_TYPE "unix"
 #elif defined(ECOS)

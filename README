@@ -359,6 +359,30 @@
         
  5. Platform issues
 
+        Android:
+     
+	  - The Android SDK and NDK are required. Make sure you have
+	    set up a project and have a suitable NDK toolchain
+	    available. You will have to override the make(1) variable
+	    C_COMPILER to contain the correct compiler; see
+	    docs/STANDALONE-TOOLCHAIN.html in your NDK root for notes
+	    on how to call the correct compiler. You will also need to
+	    override the ARCH variable to match the device you're
+	    targeting.  The build will produce a libchicken.so that
+	    can then be integrated into your project as a prebuilt
+	    shared library.  See the android section on
+	    http://wiki.call-cc.org/embedding for a complete example.
+
+	  - It is possible to use eggs, by copying them into the right
+	    place and probably renaming the files. This is somewhat
+	    awkward and requires various hacks to make the
+	    loading/linking of eggs work. It may be easier to build
+	    the eggs you need manually and linking them statically to
+	    your executable.
+
+	  - By default debug-logging is enabled and written to the
+	    Android log.
+
     	FreeBSD/NetBSD/OpenBSD:
 
           - *BSD system users *must* use GNU make ("gmake") - the makefiles

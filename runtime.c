@@ -37,6 +37,10 @@
 # include <sysexits.h>
 #endif
 
+#ifdef __ANDROID__
+# include <android/log.h>
+#endif
+
 #if !defined(PIC)
 # define NO_DLOAD2
 #endif
@@ -536,12 +540,16 @@ C_dbg(C_char *prefix, C_char *fstr, ...)
 {
   va_list va;
 
+  va_start(va, fstr);
+#ifdef __ANDROID__
+  __android_log_vprint(ANDROID_LOG_DEBUG, prefix, fstr, va);
+#else
   C_fflush(C_stdout);
   C_fprintf(C_stderr, "[%s] ", prefix);
-  va_start(va, fstr);
   C_vfprintf(C_stderr, fstr, va);
-  va_end(va);
   C_fflush(C_stderr);
+#endif
+  va_end(va);
 }
 
 
@@ -633,6 +641,10 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 
   if(chicken_is_initialized) return 1;
   else chicken_is_initialized = 1;
+
+#ifdef __ANDROID__
+  debug_mode = 2;
+#endif
 
   if(debug_mode) 
     C_dbg(C_text("debug"), C_text("application startup...\n"));
