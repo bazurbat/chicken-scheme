@@ -1708,7 +1708,7 @@ C_fctexport void C_fcall C_toplevel_entry(C_char *name) C_regparm;
 C_fctexport C_word C_fcall C_enable_interrupts(void) C_regparm;
 C_fctexport C_word C_fcall C_disable_interrupts(void) C_regparm;
 C_fctexport void C_fcall C_paranoid_check_for_interrupt(void) C_regparm;
-C_fctexport void C_zap_strings(C_word str);
+C_fctexport void C_zap_strings(C_word str); /* OBSOLETE */
 C_fctexport void C_set_or_change_heap_size(C_word heap, int reintern);
 C_fctexport void C_do_resize_stack(C_word stack);
 C_fctexport C_word C_resize_pending_finalizers(C_word size);

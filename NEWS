@@ -6,6 +6,7 @@
 
 - Runtime system
   - The procedure trace buffer has been made resizable.
+  - C_zap_strings and ##sys#zap-strings (undocumented) have been deprecated.
 
 - Core libraries
   - Unit extras now implicitly depends on ports.  ports no longer

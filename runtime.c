@@ -1995,7 +1995,7 @@ void C_ccall callback_return_continuation(C_word c, C_word self, C_word r)
 }
 
 
-/* Zap symbol names: */
+/* Zap symbol names: (OBSOLETE) */
 
 void C_zap_strings(C_word str)
 {

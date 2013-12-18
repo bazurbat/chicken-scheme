@@ -4432,6 +4432,7 @@ EOF
    from to
    offset1 offset2 bytes) )
 
+;; OBSOLETE
 (define ##sys#zap-strings (foreign-lambda void "C_zap_strings" scheme-object))
 
 (define (##sys#block-pointer x)
