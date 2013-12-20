@@ -54,11 +54,12 @@ Welland, Drake Wilson, Jörg Wittenberger, Peter Wright, Mark Wutka,
 Adam Young, Richard Zidlicky, Houman Zolfaghari and Florian Zumbiehl
 for bug-fixes, tips and suggestions.
 
-CHICKEN uses the "irregex" regular expression package written by Alex Shinn.
-
 Special thanks to Brandon van Every for contributing the (now defunct)
 [[http://www.cmake.org|CMake]] support and for helping with Windows
 build issues.
+
+Thanks to [[http://www.bevuta.com|bevuta IT GmbH]] for providing serverspace
+and contributing patches and support.
 
 Also special thanks to Benedikt Rosenau for his constant encouragement.
 
@@ -67,11 +68,11 @@ and for her awesome support.
 
 CHICKEN contains code from several people:
 
-; Richard Kelsey, Jonathan Rees and Taylor Campbell : {{syntax-rules}} expander
-; Mikael Djurfeldt : topological sort used by compiler.
 ; Marc Feeley : pretty-printer.
+; Richard Kelsey, Jonathan Rees and Taylor Campbell : {{syntax-rules}} expander
 ; Aubrey Jaffer : implementation of {{dynamic-wind}}.
 ; Richard O'Keefe : sorting routines.
+; Alex Shinn : the [[http://synthcode.com/scheme/irregex/|irregex]] regular expression package.
 ; Olin Shivers : implementation of {{let-optionals[*]}} and reference implementations of SRFI-1, SRFI-13 and SRFI-14.
 ; Andrew Wilcox : queues.
 
