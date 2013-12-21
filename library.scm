@@ -2574,7 +2574,9 @@ EOF
 				"escaped whitespace, but no newline - collapsing anyway"))
                              (loop c lst)))))
 		       (else
-			(cond ((and (char-numeric? c)
+			(cond ((##core#inline "C_eofp" c)
+			       (##sys#read-error port "unterminated string"))
+			      ((and (char-numeric? c)
 				    (char>=? c #\0)
 				    (char<=? c #\7))
 			       (let ((ch (integer->char 
