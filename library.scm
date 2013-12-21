@@ -2546,7 +2546,7 @@ EOF
 		       ((#\U)
 			(let ([n (r-usequence "U" 8 16)])
 			  (if (##sys#unicode-surrogate? n)
-			      (##sys#read-error port (string-append "invalid escape (surrogate)" n))
+			      (##sys#read-error port "invalid escape (surrogate)" n)
 			      (loop (##sys#read-char-0 port) (r-cons-codepoint n lst)) )))
 		       ((#\\ #\' #\" #\|)
 			(loop (##sys#read-char-0 port) (cons c lst)))
