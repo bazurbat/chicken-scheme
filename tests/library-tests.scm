@@ -377,6 +377,31 @@
 (assert-fail (with-input-from-string "|\\" read))
 (assert-fail (with-input-from-string "\"\\" read))
 
+;;; here documents
+
+(assert (string=? "" #<<A
+A
+))
+
+(assert (string=? "foo" #<<A
+foo
+A
+))
+
+(assert (string=? "\nfoo\n" #<<A
+
+foo
+
+A
+))
+
+(assert (string=? "foo\nbar\nbaz" #<<A
+foo
+bar
+baz
+A
+))
+
 ;;; setters
 
 (define x '(a b c))

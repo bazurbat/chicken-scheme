@@ -4577,7 +4577,7 @@ EOF
       (let ([ln (open-output-string)])
 	(do ([c (##sys#read-char-0 port) (##sys#read-char-0 port)])
 	    ((or (eof-object? c) (char=? #\newline c))
-	     (get-output-string ln))
+	     (if (eof-object? c) c (get-output-string ln)))
 	  (##sys#write-char-0 c ln) ) ) )
     (define (read-escaped-sexp port skip-brace?)
       (when skip-brace? (##sys#read-char-0 port))
@@ -4600,7 +4600,7 @@ EOF
 		(let ([str (open-output-string)]
 		      [end (readln port)] 
 		      [f #f] )
-		  (let ((endlen (string-length end)))
+		  (let ((endlen (if (eof-object? end) 0 (string-length end))))
 		    (cond
 		     ((fx= endlen 0)
 		      (##sys#read-warning
@@ -4611,8 +4611,8 @@ EOF
 		       port "Whitespace after #<< here-doc tag"))
 		     ))			    
 		  (do ([ln (readln port) (readln port)])
-		      ((or (string=? "" ln) (string=? end ln))
-		       (when (string=? "" ln)
+		      ((or (eof-object? ln) (string=? end ln))
+		       (when (eof-object? ln)
 			 (##sys#read-warning port
 			  (##sys#format-here-doc-warning end)))
 		       (get-output-string str) )
@@ -4629,7 +4629,7 @@ EOF
 		      (set! str (open-output-string))
 		      s))
 
-		  (let ((endlen (string-length end)))
+		  (let ((endlen (if (eof-object? end) 0 (string-length end))))
 		    (cond
 		     ((fx= endlen 0)
 		      (##sys#read-warning
