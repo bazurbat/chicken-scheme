@@ -133,6 +133,7 @@
 	(let-location 1)
 	(foreign-lambda 2)
 	(foreign-lambda* 2)
+	(foreign-primitive 2)
 	(foreign-safe-lambda 2)
 	(foreign-safe-lambda* 2)
 	(set! 1)
