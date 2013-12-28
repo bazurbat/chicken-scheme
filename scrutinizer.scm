@@ -1158,9 +1158,10 @@
 			 (match1 ct1 t2)
 			 #t)))		; inexact match
 		  ((list)
-		   (and (match1 (second t1) (second t2))
+		   (and (pair? (cdr t2))
+			(match1 (second t1) (second t2))
 			(match1 (third t1)
-				(if (null? (cdr t2))
+				(if (null? (cddr t2))
 				    'null
 				    `(list ,@(cddr t2))))))
 		  (else #f))))
@@ -1173,8 +1174,9 @@
 			 (match1 t1 ct2)
 			 (and (not exact) (not all)))))	; inexact mode: ok
 		  ((list)
-		   (and (match1 (second t1) (second t2))
-			(match1 (if (null? (cdr t1))
+		   (and (pair? (cdr t1))
+			(match1 (second t1) (second t2))
+			(match1 (if (null? (cddr t1))
 				    'null
 				    `(list ,@(cddr t1)))
 				(third t2))))
