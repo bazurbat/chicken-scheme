@@ -220,11 +220,22 @@
 ;; Optimizer would "lift" inner-bar out of its let and replace
 ;; outer-bar with it, even though it wasn't visible yet.  Caused by
 ;; broken cps-conversion (underlying problem for #1068).
-(let ((outer-bar (##core#undefined)))
-  (let ((inner-bar (let ((tmp (lambda (x) (if x '1 (outer-bar '#t)))))
-                     tmp)))
-    (set! outer-bar inner-bar)
-    (outer-bar #f)))
+(assert (equal? 1 (let ((outer-bar (##core#undefined)))
+                    (let ((inner-bar (let ((tmp (lambda (x)
+                                                  (if x '1 (outer-bar '#t)))))
+                                       tmp)))
+                      (set! outer-bar inner-bar)
+                      (outer-bar #f)))))
+
+;; Slightly modified version which broke after fixing the above due 
+;; to replacement optimization getting triggered.  This replacement 
+;; caused outer-bar to get replaced by inner-bar, even within itself, 
+;; thereby causing an undefined variable reference. 
+(assert (equal? 1 (let ((outer-bar (##core#undefined))) 
+                    (let ((inner-bar (lambda (x)
+                                       (if x '1 (outer-bar outer-bar))))) 
+                      (set! outer-bar inner-bar) 
+                      (outer-bar '#f))))) 
 
 ;; Test that encode-literal/decode-literal use the proper functions
 ;; to decode number literals.

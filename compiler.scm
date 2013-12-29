@@ -2169,14 +2169,15 @@
 	   (when (eq? '##core#variable (node-class value))
 	     (let* ([name (first (node-parameters value))]
 		    [nrefs (get db name 'references)] )
-	       (when (or (and (not (get db name 'unknown)) (get db name 'value))
-			 (and (not (get db name 'captured))
-			      nrefs
-			      (= 1 (length nrefs))
-			      (not assigned)
-			      (not (get db name 'assigned)) 
-			      (or (not (variable-visible? name))
-				  (not (get db name 'global))) ) )
+	       (when (and (not captured)
+			  (or (and (not (get db name 'unknown)) (get db name 'value))
+			      (and (not (get db name 'captured))
+				   nrefs
+				   (= 1 (length nrefs))
+				   (not assigned)
+				   (not (get db name 'assigned)) 
+				   (or (not (variable-visible? name))
+				       (not (get db name 'global))) ) ))
 		 (quick-put! plist 'replacable name) 
 		 (put! db name 'replacing #t) ) ) ) )
 

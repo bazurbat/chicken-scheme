@@ -1119,6 +1119,10 @@ take
 		     tmp)))
        (bar #f)))
 
+;; Deeper issue uncovered by fixing the above issue 
+(t 1 (letrec ((bar (lambda (x) (if x 1 (bar bar)))))
+       (bar #f)))
+
 ;; Just to verify (this has always worked)
 (t 1 (letrec* ((foo (lambda () 1))
 	       (bar (let ((tmp (lambda (x) (if x (foo) (bar #t)))))
