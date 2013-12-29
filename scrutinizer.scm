@@ -1147,14 +1147,13 @@
 		   (every match1 (cdr t1) (cdr t2))))
 	     (else #f) ) )
 	  ((and (pair? t1) (eq? 'pair (car t1)))
-	   (and (not exact) (not all)
-		(pair? t2)
+	   (and (pair? t2)
 		(case (car t2)
 		  ((list-of)
-		   (let ((ct1 (canonicalize-list-type t1)))
-		     (if ct1
-			 (match1 ct1 t2)
-			 #t)))		; inexact match
+		   (and (not exact)
+			(not all)
+			(match1 (second t1) (second t2))
+			(match1 (third t1) t2)))
 		  ((list)
 		   (and (pair? (cdr t2))
 			(match1 (second t1) (second t2))
@@ -1167,10 +1166,9 @@
 	   (and (pair? t1)
 		(case (car t1)
 		  ((list-of)
-		   (let ((ct2 (canonicalize-list-type t2)))
-		     (if ct2
-			 (match1 t1 ct2)
-			 (and (not exact) (not all)))))	; inexact mode: ok
+		   (and (not exact)
+			(match1 (second t1) (second t2))
+			(match1 t1 (third t2))))
 		  ((list)
 		   (and (pair? (cdr t1))
 			(match1 (second t1) (second t2))
@@ -1348,9 +1346,8 @@
 			 (tcdr (simplify (third t))))
 		     (if (and (eq? '* tcar) (eq? '* tcdr))
 			 'pair
-			 (let ((t `(pair ,tcar ,tcdr)))
-			   (or (canonicalize-list-type t)
-			       t)))))
+			 (canonicalize-list-type
+			  `(pair ,tcar ,tcdr)))))
 		  ((vector-of)
 		   (let ((t2 (simplify (second t))))
 		     (if (eq? t2 '*)
@@ -2172,16 +2169,11 @@
 	   (let rec ((tr tcdr) (ts (list tcar)))
 	     (cond ((eq? 'null tr)
 		    `(list ,@(reverse ts)))
-		   ((eq? 'list tr) tr)
 		   ((and (pair? tr) (eq? 'pair (first tr)))
 		    (rec (third tr) (cons (second tr) ts)))
 		   ((and (pair? tr) (eq? 'list (first tr)))
 		    `(list ,@(reverse ts) ,@(cdr tr)))
-		   ((and (pair? tr) (eq? 'list-of (first tr)))
-		    `(list-of
-		      ,(simplify-type
-			`(or ,@(reverse ts) ,@(cdr tr)))))
-		   (else #f)))))
+		   (else t)))))
 	(else t)))
 
 
