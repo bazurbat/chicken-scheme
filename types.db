@@ -167,8 +167,9 @@
 (list-tail (forall (a) (#(procedure #:clean #:enforce) list-tail ((list-of a) fixnum) (list-of a))))
 (list-ref (forall (a) (#(procedure #:clean #:enforce) list-ref ((list-of a) fixnum) a)))
 
-(append (#(procedure #:clean) append (list #!rest) *))
-(##sys#append (#(procedure #:clean) ##sys#append (list #!rest) *))
+(append (#(procedure #:clean) append (#!rest list) *)) ; sic
+(##sys#append (#(procedure #:clean) ##sys#append (#!rest list) *))
+
 (reverse (forall (a) (#(procedure #:clean #:enforce) reverse ((list-of a)) (list-of a))))
 
 (memq (forall (a b) (#(procedure #:clean) memq (a (list-of b)) (or boolean (list-of b))))
@@ -324,6 +325,8 @@
     (##core#inline_allocate ("C_a_i_flonum_quotient_checked" 4) #(1) #(2))))
 
 (= (#(procedure #:clean #:enforce) = (#!rest number) boolean)
+   (() '#t)
+   ((number) (let ((#(tmp) #(1))) '#t))
    ((fixnum fixnum) (eq? #(1) #(2)))
    ((float fixnum) (##core#inline
 		    "C_flonum_equalp"
@@ -336,6 +339,8 @@
    ((float float) (##core#inline "C_flonum_equalp" #(1) #(2))))
 
 (> (#(procedure #:clean #:enforce) > (#!rest number) boolean)
+   (() '#t)
+   ((number) (let ((#(tmp) #(1))) '#t))
    ((fixnum fixnum) (fx> #(1) #(2)))
    ((float fixnum) (##core#inline
 		    "C_flonum_greaterp"
@@ -348,6 +353,8 @@
    ((float float) (##core#inline "C_flonum_greaterp" #(1) #(2))))
 
 (< (#(procedure #:clean #:enforce) < (#!rest number) boolean)
+   (() '#t)
+   ((number) (let ((#(tmp) #(1))) '#t))
    ((fixnum fixnum) (fx< #(1) #(2)))
    ((float fixnum) (##core#inline
 		    "C_flonum_lessp"
@@ -360,6 +367,8 @@
    ((float float) (##core#inline "C_flonum_lessp" #(1) #(2))))
 
 (>= (#(procedure #:clean #:enforce) >= (#!rest number) boolean)
+    (() '#t)
+    ((number) (let ((#(tmp) #(1))) '#t))
     ((fixnum fixnum) (fx>= #(1) #(2)))
     ((float fixnum) (##core#inline
 		     "C_flonum_greater_or_equal_p"
@@ -372,6 +381,8 @@
     ((float float) (##core#inline "C_flonum_greater_or_equal_p" #(1) #(2))))
 
 (<= (#(procedure #:clean #:enforce) <= (#!rest number) boolean)
+    (() '#t)
+    ((number) (let ((#(tmp) #(1))) '#t))
     ((fixnum fixnum) (fx<= #(1) #(2)))
     ((float fixnum) (##core#inline
 		     "C_flonum_less_or_equal_p"
@@ -802,7 +813,7 @@
 (exit-handler (#(procedure #:clean #:enforce) exit-handler (#!optional (procedure (fixnum) . *)) procedure))
 (expand (procedure expand (* #!optional list) *))
 (extension-information (#(procedure #:clean) extension-information (symbol) *))
-(feature? (#(procedure #:clean) feature? (symbol) boolean))
+(feature? (#(procedure #:clean) feature? (#!rest symbol) boolean))
 (features (#(procedure #:clean) features () (list-of symbol)))
 (file-exists? (#(procedure #:clean #:enforce) file-exists? (string) (or boolean string)))
 (directory-exists? (#(procedure #:clean #:enforce) directory-exists? (string) (or boolean string)))
@@ -1916,53 +1927,73 @@
 (list-copy (forall (a) (#(procedure #:clean #:enforce) list-copy ((list-of a)) (list-of a))))
 (list-index (forall (a) (#(procedure #:enforce) list-index ((procedure (a #!rest) *) (list-of a) #!rest list) *)))
 (list-tabulate (forall (a) (#(procedure #:enforce) list-tabulate (fixnum (procedure (fixnum) a)) (list-of a))))
-(list= (#(procedure #:clean #:enforce) list= (#!rest list) boolean))
+(list= (#(procedure #:clean #:enforce) list= (#!optional (procedure (list list) *) #!rest list) boolean)
+       (() '#t)
+       ((procedure) (let ((#(tmp) #(1))) '#t)))
 
 (lset-adjoin 
- (forall (a) (#(procedure #:enforce) lset-adjoin ((procedure (a a) *) (list-of a) #!rest a) (list-of a))))
+ (forall (a) (#(procedure #:enforce) lset-adjoin ((procedure (a a) *) (list-of a) #!rest a) (list-of a)))
+ ((procedure list) (let ((#(tmp) #(1))) #(2))))
 
 (lset-diff+intersection
  (forall (a)
 	 (#(procedure #:enforce) lset-diff+intersection ((procedure (a a) *) (list-of a) #!rest (list-of a))
-		     (list-of a))))
+		     (list-of a) (list-of a)))
+ ((procedure list) (let ((#(tmp) #(1))) (##sys#values #(2) '()))))
 
 (lset-diff+intersection! 
  (forall (a)
 	 (#(procedure #:enforce) lset-diff+intersection! ((procedure (a a) *) (list-of a) #!rest (list-of a))
-		     (list-of a))))
+		     (list-of a) (list-of a)))
+ ((procedure list) (let ((#(tmp) #(1))) (##sys#values #(2) '()))))
 
 (lset-difference
- (forall (a) (#(procedure #:enforce) lset-difference ((procedure (a a) *) (list-of a) #!rest (list-of a)) (list-of a))))
+ (forall (a) (#(procedure #:enforce) lset-difference ((procedure (a a) *) (list-of a) #!rest (list-of a)) (list-of a)))
+ ((procedure list) (let ((#(tmp) #(1))) #(2))))
 
 (lset-difference!
- (forall (a) (#(procedure #:enforce) lset-difference! ((procedure (a a) *) (list-of a) #!rest (list-of a)) (list-of a))))
+ (forall (a) (#(procedure #:enforce) lset-difference! ((procedure (a a) *) (list-of a) #!rest (list-of a)) (list-of a)))
+ ((procedure list) (let ((#(tmp) #(1))) #(2))))
 
 (lset-intersection
- (forall (a) (#(procedure #:enforce) lset-intersection ((procedure (a a) *) (list-of a) #!rest (list-of a)) (list-of a))))
+ (forall (a) (#(procedure #:enforce) lset-intersection ((procedure (a a) *) (list-of a) #!rest (list-of a)) (list-of a)))
+ ((procedure list) (let ((#(tmp) #(1))) #(2))))
 
 (lset-intersection!
- (forall (a) (#(procedure #:enforce) lset-intersection! ((procedure (a a) *) (list-of a) #!rest (list-of a)) (list-of a))))
+ (forall (a) (#(procedure #:enforce) lset-intersection! ((procedure (a a) *) (list-of a) #!rest (list-of a)) (list-of a)))
+ ((procedure list) (let ((#(tmp) #(1))) #(2))))
 
 (lset-union
- (forall (a) (#(procedure #:enforce) lset-union ((procedure (a a) *) (list-of a) #!rest (list-of a)) (list-of a))))
+ (forall (a) (#(procedure #:enforce) lset-union ((procedure (a a) *) #!rest (list-of a)) (list-of a)))
+ ((procedure) (let ((#(tmp) #(1))) '()))
+ ((procedure list) (let ((#(tmp) #(1))) #(2))))
 
 (lset-union!
- (forall (a) (#(procedure #:enforce) lset-union! ((procedure (a a) *) (list-of a) #!rest (list-of a)) (list-of a))))
+ (forall (a) (#(procedure #:enforce) lset-union! ((procedure (a a) *) #!rest (list-of a)) (list-of a)))
+ ((procedure) (let ((#(tmp) #(1))) '()))
+ ((procedure list) (let ((#(tmp) #(1))) #(2))))
 
 (lset-xor
- (forall (a) (#(procedure #:enforce) lset-xor ((procedure (a a) *) (list-of a) #!rest (list-of a)) (list-of a))))
+ (forall (a) (#(procedure #:enforce) lset-xor ((procedure (a a) *) #!rest (list-of a)) (list-of a)))
+ ((procedure) (let ((#(tmp) #(1))) '()))
+ ((procedure list) (let ((#(tmp) #(1))) #(2))))
 
 (lset-xor!
- (forall (a) (#(procedure #:enforce) lset-xor! ((procedure (a a) *) (list-of a) #!rest (list-of a)) (list-of a))))
+ (forall (a) (#(procedure #:enforce) lset-xor! ((procedure (a a) *) #!rest (list-of a)) (list-of a)))
+ ((procedure) (let ((#(tmp) #(1))) '()))
+ ((procedure list) (let ((#(tmp) #(1))) #(2))))
 
 (lset<=
- (forall (a) (#(procedure #:enforce) lset<= ((procedure (a a) *) (list-of a) #!rest (list-of a)) boolean)))
+ (forall (a) (#(procedure #:enforce) lset<= ((procedure (a a) *) #!rest (list-of a)) boolean))
+ ((procedure) (let ((#(tmp) #(1))) '#t))
+ ((procedure list) (let ((#(tmp1) #(1)) (#(tmp2) #(2))) '#t)))
 
 (lset=
- (forall (a) (#(procedure #:enforce) lset= ((procedure (a a) *) (list-of a) #!rest (list-of a)) boolean)))
+ (forall (a) (#(procedure #:enforce) lset= ((procedure (a a) *) #!rest (list-of a)) boolean))
+ ((procedure) (let ((#(tmp) #(1))) '#t))
+ ((procedure list) (let ((#(tmp1) #(1)) (#(tmp2) #(2))) '#t)))
 
-;; see note about "make-vector", above
-(make-list (forall (a) (#(procedure #:clean #:enforce) make-list (fixnum #!optional a) list)))
+(make-list (forall (a) (#(procedure #:clean #:enforce) make-list (fixnum #!optional a) (list-of a))))
 
 (map!
  (forall (a b) (#(procedure #:enforce) map! ((procedure (a #!rest) b) (list-of a) #!rest list) (list-of b))))
@@ -2267,8 +2298,12 @@
 (char-set:title-case (struct char-set))
 (char-set:upper-case (struct char-set))
 (char-set:whitespace (struct char-set))
-(char-set<= (#(procedure #:clean #:enforce) char-set<= (#!rest (struct char-set)) boolean))
-(char-set= (#(procedure #:clean #:enforce) char-set= (#!rest (struct char-set)) boolean))
+(char-set<= (#(procedure #:clean #:enforce) char-set<= (#!rest (struct char-set)) boolean)
+	    (() '#t)
+	    (((struct char-set)) (let ((#(tmp) #(1))) '#t)))
+(char-set= (#(procedure #:clean #:enforce) char-set= (#!rest (struct char-set)) boolean)
+	   (() '#t)
+	   (((struct char-set)) (let ((#(tmp) #(1))) '#t)))
 
 (char-set? (#(procedure #:pure #:predicate (struct char-set)) char-set? (*) boolean))
 
