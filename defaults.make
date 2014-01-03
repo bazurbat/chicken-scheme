@@ -485,6 +485,13 @@ endif
 	echo "#ifndef C_BINARY_VERSION" >>$@
 	echo "# define C_BINARY_VERSION $(BINARYVERSION)" >>$@
 	echo "#endif" >>$@
+	echo "#ifndef C_USES_SONAME" >>$@
+ifdef USES_SONAME
+	echo "# define C_USES_SONAME 1" >>$@
+else
+	echo "# define C_USES_SONAME 0" >>$@
+endif
+	echo "#endif" >>$@
 	echo "/* END OF FILE */" >>$@
 endif
 

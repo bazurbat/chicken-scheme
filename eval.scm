@@ -57,6 +57,7 @@
 (define-foreign-variable install-egg-home c-string "C_INSTALL_EGG_HOME")
 (define-foreign-variable installation-home c-string "C_INSTALL_SHARE_HOME")
 (define-foreign-variable binary-version int "C_BINARY_VERSION")
+(define-foreign-variable uses-soname? bool "C_USES_SONAME")
 (define-foreign-variable install-lib-name c-string "C_INSTALL_LIB_NAME")
 
 (define ##sys#core-library-modules
@@ -1066,8 +1067,7 @@
 
 (define dynamic-load-libraries 
   (let ((ext
-	 (if (and (memq (software-version) '(linux netbsd openbsd freebsd haiku hurd))
-		  (not (zero? binary-version))) ; allow "configless" build
+	 (if uses-soname?
 	     (string-append
 	      ##sys#load-library-extension
 	      "." 
