@@ -4471,9 +4471,16 @@ C_regparm void C_fcall C_raise_interrupt(int reason)
 #endif
       interrupt_time = C_cpu_milliseconds();
       pending_interrupts[ pending_interrupts_count++ ] = reason;
-    } else if(reason != C_TIMER_INTERRUPT_NUMBER &&
-              pending_interrupts_count < MAX_PENDING_INTERRUPTS) {
-      /* drop signals if too many */
+    } else if(pending_interrupts_count < MAX_PENDING_INTERRUPTS) {
+      int i;
+      /*
+       * Drop signals if too many, but don't queue up multiple entries
+       * for the same signal.
+       */
+      for (i = 0; i < pending_interrupts_count; ++i) {
+        if (pending_interrupts[i] == reason)
+          return;
+      }
       pending_interrupts[ pending_interrupts_count++ ] = reason;
     }
   }
