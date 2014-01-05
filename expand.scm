@@ -43,6 +43,14 @@
 
 (define-syntax d (syntax-rules () ((_ . _) (void))))
 
+;; Macro to avoid "unused variable map-se" when "d" is disabled
+(define-syntax map-se
+  (syntax-rules ()
+    ((_ ?se)
+     (map (lambda (a) 
+	    (cons (car a) (if (symbol? (cdr a)) (cdr a) '<macro>)))
+	  ?se))))
+
 (set! ##sys#features
   (append '(#:hygienic-macros 
 	    #:syntax-rules 
@@ -90,12 +98,6 @@
 		'<macro>
 		ua))
 	alias) ) )
-
-#+debugbuild
-(define (map-se se)
-  (map (lambda (a) 
-	 (cons (car a) (if (symbol? (cdr a)) (cdr a) '<macro>)))
-       se))
 
 (define (##sys#strip-syntax exp)
  ;; if se is given, retain bound vars
