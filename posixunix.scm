@@ -152,11 +152,6 @@ static C_TLS struct stat C_statbuf;
 #define C_chdir(str)        C_fix(chdir(C_c_string(str)))
 #define C_rmdir(str)        C_fix(rmdir(C_c_string(str)))
 
-#define C_opendir(x,h)      C_set_block_item(h, 0, (C_word) opendir(C_c_string(x)))
-#define C_closedir(h)       (closedir((DIR *)C_block_item(h, 0)), C_SCHEME_UNDEFINED)
-#define C_readdir(h,e)      C_set_block_item(e, 0, (C_word) readdir((DIR *)C_block_item(h, 0)))
-#define C_foundfile(e,b)    (strcpy(C_c_string(b), ((struct dirent *) C_block_item(e, 0))->d_name), C_fix(strlen(((struct dirent *) C_block_item(e, 0))->d_name)))
-
 #define open_binary_input_pipe(a, n, name)   C_mpointer(a, popen(C_c_string(name), "r"))
 #define open_text_input_pipe(a, n, name)     open_binary_input_pipe(a, n, name)
 #define open_binary_output_pipe(a, n, name)  C_mpointer(a, popen(C_c_string(name), "w"))
@@ -203,26 +198,6 @@ static C_TLS struct stat C_statbuf;
 #define C_umask(m)          C_fix(umask(C_unfix(m)))
 
 #define C_lstat(fn)         C_fix(lstat((char *)C_data_pointer(fn), &C_statbuf))
-
-#ifdef C_GNU_ENV
-# define C_unsetenv(s)      (unsetenv((char *)C_data_pointer(s)), C_SCHEME_TRUE)
-# define C_setenv(x, y)     C_fix(setenv((char *)C_data_pointer(x), (char *)C_data_pointer(y), 1))
-#else
-# define C_unsetenv(s)      C_fix(putenv((char *)C_data_pointer(s)))
-static C_word C_fcall C_setenv(C_word x, C_word y) {
-  char *sx = C_data_pointer(x),
-       *sy = C_data_pointer(y);
-  int n1 = C_strlen(sx), n2 = C_strlen(sy);
-  char *buf = (char *)C_malloc(n1 + n2 + 2);
-  if(buf == NULL) return(C_fix(0));
-  else {
-    C_strcpy(buf, sx);
-    buf[ n1 ] = '=';
-    C_strcpy(buf + n1 + 1, sy);
-    return(C_fix(putenv(buf)));
-  }
-}
-#endif
 
 static void C_fcall C_set_arg_string(char **where, int i, char *a, int len) {
   char *ptr;
@@ -1503,35 +1478,6 @@ EOF
        (posix-error 
 	#:file-error 'fifo?
 	"system error while trying to access file" filename) ) ) ) )
-
-
-;;; Environment access:
-
-(define setenv
-  (lambda (var val)
-    (##sys#check-string var 'setenv)
-    (##sys#check-string val 'setenv)
-    (##core#inline "C_setenv" (##sys#make-c-string var 'setenv) (##sys#make-c-string val 'setenv))
-    (##core#undefined) ) )
-
-(define (unsetenv var)
-  (##sys#check-string var 'unsetenv)
-  (##core#inline "C_unsetenv" (##sys#make-c-string var 'unsetenv))
-  (##core#undefined) )
-
-(define get-environment-variables
-  (let ([get (foreign-lambda c-string "C_getenventry" int)])
-    (lambda ()
-      (let loop ([i 0])
-        (let ([entry (get i)])
-          (if entry
-              (let scan ([j 0])
-                (if (char=? #\= (##core#inline "C_subchar" entry j))
-                    (cons (cons (##sys#substring entry 0 j)
-                                (##sys#substring entry (fx+ j 1) (##sys#size entry)))
-                          (loop (fx+ i 1)))
-                    (scan (fx+ j 1)) ) )
-              '() ) ) ) ) ) )
 
 
 ;;; Memory mapped I/O:

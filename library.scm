@@ -4375,7 +4375,7 @@ EOF
     str2 ) )
 
 (define (##sys#poke-c-string b i s) 
-  (##core#inline "C_poke_c_string" b i (##sys#make-c-string s)) )
+  (##core#inline "C_poke_c_string" b i (##sys#make-c-string s) s) )
 
 (define (##sys#poke-integer b i n) (##core#inline "C_poke_integer" b i n))
 (define (##sys#poke-double b i n) (##core#inline "C_poke_double" b i n))

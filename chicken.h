@@ -1,3 +1,4 @@
+
 /* chicken.h - General headerfile for compiler generated executables
 ;
 ; Copyright (c) 2008-2014, The Chicken Team
@@ -922,12 +923,12 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 
 # define C_memcpy                   memcpy
 # define C_memcmp                   memcmp
-# define C_strcpy                   strcpy
+# define C_strlcpy                  strlcpy
 # define C_strncpy                  strncpy
 # define C_strcmp                   strcmp
 # define C_strncmp                  strncmp
 # define C_strlen                   strlen
-# define C_strcat                   strcat
+# define C_strlcat                  strlcat
 # define C_memset                   memset
 # define C_memmove                  memmove
 # define C_strncasecmp              strncasecmp
@@ -944,7 +945,6 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_fopen                    fopen
 # define C_fclose                   fclose
 # define C_strpbrk                  strpbrk
-# define C_sprintf                  sprintf
 # define C_snprintf                 snprintf
 # define C_printf                   printf
 # define C_fprintf                  fprintf
@@ -1308,7 +1308,7 @@ extern double trunc(double);
 #define C_rename_file(old, new)         C_fix(rename(C_c_string(old), C_c_string(new)))
 #define C_delete_file(fname)            C_fix(remove(C_c_string(fname)))
 #define C_poke_double(b, i, n)          (((double *)C_data_pointer(b))[ C_unfix(i) ] = C_c_double(n), C_SCHEME_UNDEFINED)
-#define C_poke_c_string(b, i, from)     (C_strcpy((char *)C_block_item(b, C_unfix(i)), C_data_pointer(from)), C_SCHEME_UNDEFINED)
+#define C_poke_c_string(b, i, from, s)  (C_strlcpy((char *)C_block_item(b, C_unfix(i)), C_data_pointer(from), s), C_SCHEME_UNDEFINED)
 #define C_peek_fixnum(b, i)             C_fix(C_block_item(b, C_unfix(i)))
 #define C_peek_byte(ptr, i)             C_fix(((unsigned char *)C_u_i_car(ptr))[ C_unfix(i) ])
 #define C_dupstr(s)                     C_strdup(C_data_pointer(s))
@@ -2913,9 +2913,9 @@ C_path_to_executable(C_char *fname)
 	
   pid = C_getpid();
 #  ifdef __linux__
-  C_sprintf(linkname, "/proc/%i/exe", pid);
+  C_snprintf(linkname, sizeof(linkname), "/proc/%i/exe", pid);
 #  else
-  C_sprintf(linkname, "/proc/%i/path/a.out", pid); /* SunOS / Solaris */
+  C_snprintf(linkname, sizeof(linkname), "/proc/%i/path/a.out", pid); /* SunOS / Solaris */
 #  endif
   ret = C_readlink(linkname, buffer, C_MAX_PATH - 1);
 
@@ -2965,7 +2965,7 @@ C_path_to_executable(C_char *fname)
   /* absolute path */
   if(*fname == '/') {
     fname[ i ] = '\0';
-    C_strcpy(buffer, fname);
+    C_strlcpy(buffer, fname, C_MAX_PATH);
     return buffer;
   }
   else {
@@ -2973,8 +2973,8 @@ C_path_to_executable(C_char *fname)
     if(C_getcwd(buffer, C_MAX_PATH - 1) == NULL)
       return NULL;
 
-    C_strcat(buffer, "/");
-    C_strcat(buffer, fname);
+    C_strlcat(buffer, "/", C_MAX_PATH);
+    C_strlcat(buffer, fname, C_MAX_PATH);
   
     if(C_access(buffer, F_OK) == 0) {
       for(i = C_strlen(buffer); i >= 0 && buffer[ i ] != '/'; --i);
@@ -2999,8 +2999,8 @@ C_path_to_executable(C_char *fname)
       case ':':
 	C_strncpy(buffer, path + j, k - j);
 	buffer[ k - j ] = '\0';
-	C_strcat(buffer, "/");
-	C_strcat(buffer, fname);
+	C_strlcat(buffer, "/", C_MAX_PATH);
+	C_strlcat(buffer, fname, C_MAX_PATH);
 
 	if(C_access(buffer, F_OK) == 0) {
 	  dname = C_strdup(buffer);
@@ -3037,7 +3037,7 @@ C_path_to_executable(C_char *fname)
 
   while (get_next_image_info(0, &cookie, &info) == B_OK) {
     if (info.type == B_APP_IMAGE) {
-      C_strcpy(buffer, info.name);
+      C_strlcpy(buffer, info.name, C_MAX_PATH);
 
       for(i = C_strlen(buffer); i >= 0 && buffer[ i ] != '/'; --i);
 
@@ -3054,6 +3054,36 @@ C_path_to_executable(C_char *fname)
 }
 #endif
 
+/* These strl* functions are based on public domain code by C.B. Falconer */
+#ifndef HAVE_STRLCPY
+C_inline size_t strlcpy(char *dst, const char *src, size_t sz)
+{
+   const char *start = src;
+
+   if (sz--) {
+      while ((*dst++ = *src))
+         if (sz--) src++;
+         else {
+            *(--dst) = '\0';
+            break;
+         }
+   }
+   while (*src++) continue;
+   return src - start - 1;
+}
+#endif
+
+#ifndef HAVE_STRLCAT
+C_inline size_t strlcat(char *dst, const char *src, size_t sz)
+{
+   char  *start = dst;
+
+   while (*dst++)    /* assumes sz >= strlen(dst) */
+      if (sz) sz--;    /* i.e. well formed string */
+   dst--;
+   return dst - start + strlcpy(dst, src, sz);
+}
+#endif
 
 C_END_C_DECLS
 

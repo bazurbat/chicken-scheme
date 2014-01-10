@@ -91,6 +91,36 @@ static char C_time_string [TIME_STRING_MAXLENGTH + 1];
 
 #define C_set_file_ptr(port, ptr)  (C_set_block_item(port, 0, (C_block_item(ptr, 0))), C_SCHEME_UNDEFINED)
 
+#define C_opendir(x,h)      C_set_block_item(h, 0, (C_word) opendir(C_c_string(x)))
+#define C_closedir(h)       (closedir((DIR *)C_block_item(h, 0)), C_SCHEME_UNDEFINED)
+#define C_readdir(h,e)      C_set_block_item(e, 0, (C_word) readdir((DIR *)C_block_item(h, 0)))
+#define C_foundfile(e,b,l)    (C_strlcpy(C_c_string(b), ((struct dirent *) C_block_item(e, 0))->d_name, l), C_fix(strlen(((struct dirent *) C_block_item(e, 0))->d_name)))
+
+#ifdef C_GNU_ENV
+# define C_unsetenv(s)      (unsetenv((char *)C_data_pointer(s)), C_SCHEME_TRUE)
+# define C_setenv(x, y)     C_fix(setenv((char *)C_data_pointer(x), (char *)C_data_pointer(y), 1))
+#else
+# if defined(_WIN32) && !defined(__CYGWIN__)
+#  define C_unsetenv(s)      C_fix(C_setenv(s, C_SCHEME_FALSE))
+# else
+#  define C_unsetenv(s)      C_fix(putenv((char *)C_data_pointer(s)))
+# endif
+static C_word C_fcall C_setenv(C_word x, C_word y) {
+  char *sx = C_c_string(x),
+       *sy = (y == C_SCHEME_FALSE ? "" : C_c_string(y));
+  int n1 = C_strlen(sx), n2 = C_strlen(sy);
+  int buf_len = n1 + n2 + 2;
+  char *buf = (char *)C_malloc(buf_len);
+  if(buf == NULL) return(C_fix(0));
+  else {
+    C_strlcpy(buf, sx, buf_len);
+    buf[ n1 ] = '=';
+    C_strlcat(buf + n1 + 1, sy, buf_len);
+    return(C_fix(putenv(buf)));
+  }
+}
+#endif
+
 EOF
 ))
 
@@ -385,7 +415,7 @@ EOF
 		(begin
 		  (##core#inline "C_closedir" handle)
 		  '() )
-		(let* ([flen (##core#inline "C_foundfile" entry buffer)]
+		(let* ([flen (##core#inline "C_foundfile" entry buffer (string-length buffer))]
 		       [file (##sys#substring buffer 0 flen)]
 		       [char1 (string-ref file 0)]
 		       [char2 (and (fx> flen 1) (string-ref file 1))] )
@@ -523,6 +553,35 @@ EOF
             (if str
                 (##sys#substring str 0 (fx- (##sys#size str) 1))
                 (##sys#error 'time->string "cannot convert time vector to string" tm) ) ) ) ) ) )
+
+
+;;; Environment access:
+
+(define setenv
+  (lambda (var val)
+    (##sys#check-string var 'setenv)
+    (##sys#check-string val 'setenv)
+    (##core#inline "C_setenv" (##sys#make-c-string var 'setenv) (##sys#make-c-string val 'setenv))
+    (##core#undefined) ) )
+
+(define (unsetenv var)
+  (##sys#check-string var 'unsetenv)
+  (##core#inline "C_unsetenv" (##sys#make-c-string var 'unsetenv))
+  (##core#undefined) )
+
+(define get-environment-variables
+  (let ([get (foreign-lambda c-string "C_getenventry" int)])
+    (lambda ()
+      (let loop ([i 0])
+        (let ([entry (get i)])
+          (if entry
+              (let scan ([j 0])
+                (if (char=? #\= (##core#inline "C_subchar" entry j))
+                    (cons (cons (##sys#substring entry 0 j)
+                                (##sys#substring entry (fx+ j 1) (##sys#size entry)))
+                          (loop (fx+ i 1)))
+                    (scan (fx+ j 1)) ) )
+              '() ) ) ) ) ) )
 
 
 ;;; Signals

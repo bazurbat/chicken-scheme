@@ -137,6 +137,7 @@ static DIR * C_fcall
 opendir(const char *name)
 {
     int name_len = strlen(name);
+    int what_len = name_len + 3;
     DIR *dir = (DIR *)malloc(sizeof(DIR));
     char *what;
     if (!dir)
@@ -144,18 +145,18 @@ opendir(const char *name)
 	errno = ENOMEM;
 	return NULL;
     }
-    what = (char *)malloc(name_len + 3);
+    what = (char *)malloc(what_len);
     if (!what)
     {
 	free(dir);
 	errno = ENOMEM;
 	return NULL;
     }
-    strcpy(what, name);
+    C_strlcpy(what, name, what_len);
     if (strchr("\\/", name[name_len - 1]))
-	strcat(what, "*");
+	C_strlcat(what, "*", what_len);
     else
-	strcat(what, "\\*");
+	C_strlcat(what, "\\*", what_len);
 
     dir->handle = _findfirst(what, &dir->fdata);
     if (dir->handle == -1)
@@ -203,11 +204,6 @@ readdir(DIR * dir)
 # define P_DETACH P_NOWAIT
 #endif
 
-#define C_opendir(x,h)		C_set_block_item(h, 0, (C_word) opendir(C_c_string(x)))
-#define C_closedir(h)		(closedir((DIR *)C_block_item(h, 0)), C_SCHEME_UNDEFINED)
-#define C_readdir(h,e)		C_set_block_item(e, 0, (C_word) readdir((DIR *)C_block_item(h, 0)))
-#define C_foundfile(e,b)	(strcpy(C_c_string(b), ((struct dirent *) C_block_item(e, 0))->d_name), C_fix(strlen(((struct dirent *) C_block_item(e, 0))->d_name)))
-
 #define open_binary_input_pipe(a, n, name)   C_mpointer(a, _popen(C_c_string(name), "r"))
 #define open_text_input_pipe(a, n, name)     open_binary_input_pipe(a, n, name)
 #define open_binary_output_pipe(a, n, name)  C_mpointer(a, _popen(C_c_string(name), "w"))
@@ -222,27 +218,7 @@ readdir(DIR * dir)
 
 #define C_getenventry(i)   environ[ i ]
 
-#define C_putenv(s)	    C_fix(putenv((char *)C_data_pointer(s)))
 #define C_lstat(fn)	    C_stat(fn)
-
-static C_word C_fcall
-C_setenv(C_word x, C_word y)
-{
-    char *sx = C_data_pointer(x),
-	 *sy = C_data_pointer(y);
-    int n1 = C_strlen(sx),
-	n2 = C_strlen(sy);
-    char *buf = (char *)C_malloc(n1 + n2 + 2);
-    if (buf == NULL)
-	return(C_fix(0));
-    else
-    {
-	C_strcpy(buf, sx);
-	buf[ n1 ] = '=';
-	C_strcpy(buf + n1 + 1, sy);
-	return(C_fix(putenv(buf)));
-    }
-}
 
 static void C_fcall
 C_set_arg_string(char **where, int i, char *dat, int len)
@@ -509,7 +485,7 @@ get_shlcmd()
 	    char *cmdnam = C_isNT ? "\\cmd.exe" : "\\command.com";
 	    UINT len = GetSystemDirectory(C_shlcmd, sizeof(C_shlcmd) - strlen(cmdnam));
 	    if (len)
-		strcpy(C_shlcmd + len, cmdnam);
+		C_strlcpy(C_shlcmd + len, cmdnam, sizeof(C_shlcmd));
 	    else
 		return set_last_errno();
 	}
@@ -620,7 +596,7 @@ C_process(const char * app, const char * cmdlin, const char ** env,
 	    char* pb = (char*)envblk;
 	    for (p = env; *p; ++p)
 	    {
-		strcpy(pb, *p);
+		C_strlcpy(pb, *p, len+1);
 		pb += strlen(*p) + 1;
 	    }
 	    *pb = '\0';
@@ -1188,36 +1164,6 @@ EOF
 	(##sys#update-errno)
 	(##sys#signal-hook #:file-error 'duplicate-fileno "cannot duplicate file descriptor" old) )
       fd) ) )
-
-
-;;; Environment access:
-
-(define setenv
-  (lambda (var val)
-    (##sys#check-string var 'setenv)
-    (##sys#check-string val 'setenv)
-    (##core#inline "C_setenv" (##sys#make-c-string var 'setenv) (##sys#make-c-string val 'setenv))
-    (##core#undefined) ) )
-
-(define (unsetenv var)
-  (##sys#check-string var 'unsetenv)
-  ;; Windows does not support unsetenv, but it can be faked with setenv to ""
-  (##core#inline "C_setenv"
-                 (##sys#make-c-string var 'setenv)
-                 (##sys#make-c-string ""))
-  (##core#undefined) )
-
-(define get-environment-variables
-  (let ([get (foreign-lambda c-string "C_getenventry" int)])
-    (lambda ()
-      (let loop ([i 0])
-	(let ([entry (get i)])
-	  (if entry
-	      (let scan ([j 0])
-		(if (char=? #\= (##core#inline "C_subchar" entry j))
-		    (cons (cons (substring entry 0 j) (substring entry (fx+ j 1) (##sys#size entry))) (loop (fx+ i 1)))
-		    (scan (fx+ j 1)) ) )
-	      '() ) ) ) ) ) )
 
 
 ;;; Time related things:

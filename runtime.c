@@ -602,14 +602,15 @@ void parse_argv(C_char *cmds)
 
     for(bptr0 = bptr = buffer; !isspace((int)(*ptr)) && *ptr != '\0'; *(bptr++) = *(ptr++))
       ++n;
-    
+
     *bptr = '\0';
-    aptr = (C_char *)malloc(sizeof(C_char) * (n + 1));
-    
-    if(aptr == NULL)
+
+    aptr = (C_char*) malloc(sizeof(C_char) * (n + 1));
+    if (!aptr)
       panic(C_text("cannot allocate argument buffer"));
 
-    C_strcpy(aptr, bptr0);
+    C_strlcpy(aptr, bptr0, sizeof(C_char) * (n + 1));
+
     C_main_argv[ C_main_argc++ ] = aptr;
   }
 }
@@ -1520,7 +1521,7 @@ void usual_panic(C_char *msg)
   C_dbg_hook(C_SCHEME_UNDEFINED);
 
   if(C_gui_mode) {
-    C_sprintf(buffer, C_text("%s\n\n%s"), msg, dmp);
+    C_snprintf(buffer, sizeof(buffer), C_text("%s\n\n%s"), msg, dmp);
 #if defined(_WIN32) && !defined(__CYGWIN__)
     MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONERROR);
     ExitProcess(1);
@@ -1537,7 +1538,7 @@ void horror(C_char *msg)
   C_dbg_hook(C_SCHEME_UNDEFINED);
 
   if(C_gui_mode) {
-    C_sprintf(buffer, C_text("%s"), msg);
+    C_snprintf(buffer, sizeof(buffer), C_text("%s"), msg);
 #if defined(_WIN32) && !defined(__CYGWIN__)
     MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONERROR);
     ExitProcess(1);
@@ -2528,7 +2529,7 @@ C_regparm C_word C_fcall C_string2_safe(C_word **ptr, int max, C_char *str)
   len = C_strlen(str);
 
   if(len >= max) {
-    C_sprintf(buffer, C_text("foreign string result exceeded maximum of %d bytes"), max);
+    C_snprintf(buffer, sizeof(buffer), C_text("foreign string result exceeded maximum of %d bytes"), max);
     panic(buffer);
   }
 
@@ -3846,9 +3847,10 @@ C_char *C_dump_trace(int start)
 {
   TRACE_INFO *ptr;
   C_char *result;
-  int i;
+  int i, result_len;
 
-  if((result = (char *)C_malloc(STRING_BUFFER_SIZE)) == NULL)
+  result_len = STRING_BUFFER_SIZE;
+  if((result = (char *)C_malloc(result_len)) == NULL)
     horror(C_text("out of memory - cannot allocate trace-dump buffer"));
 
   *result = '\0';
@@ -3856,7 +3858,7 @@ C_char *C_dump_trace(int start)
   if(trace_buffer_top > trace_buffer || trace_buffer_full) {
     if(trace_buffer_full) {
       i = C_trace_buffer_size;
-      C_strcat(result, C_text("...more...\n"));
+      C_strlcat(result, C_text("...more...\n"), result_len);
     }
     else i = trace_buffer_top - trace_buffer;
 
@@ -3868,14 +3870,16 @@ C_char *C_dump_trace(int start)
       if(ptr >= trace_buffer_limit) ptr = trace_buffer;
 
       if(C_strlen(result) > STRING_BUFFER_SIZE - 32) {
-	if((result = C_realloc(result, C_strlen(result) * 2)) == NULL)
+        result_len = C_strlen(result) * 2;
+        result = C_realloc(result, result_len);
+	if(result == NULL)
 	  horror(C_text("out of memory - cannot reallocate trace-dump buffer"));
       }
 
-      C_strcat(result, ptr->raw);
+      C_strlcat(result, ptr->raw, result_len);
 
-      if(i > 0) C_strcat(result, "\n");
-      else C_strcat(result, " \t<--\n");
+      if(i > 0) C_strlcat(result, "\n", result_len);
+      else C_strlcat(result, " \t<--\n", result_len);
     }
   }
 
@@ -3978,18 +3982,17 @@ C_word C_halt(C_word msg)
   if(C_gui_mode) {
     if(msg != C_SCHEME_FALSE) {
       int n = C_header_size(msg);
-      
+
       if (n >= sizeof(buffer))
 	n = sizeof(buffer) - 1;
-      C_strncpy(buffer, (C_char *)C_data_pointer(msg), n);
-      buffer[ n ] = '\0';
+      C_strlcpy(buffer, (C_char *)C_data_pointer(msg), n);
       /* XXX msg isn't checked for NUL bytes, but we can't barf here either! */
     }
-    else C_strcpy(buffer, C_text("(aborted)"));
+    else C_strlcpy(buffer, C_text("(aborted)"), sizeof(buffer));
 
-    C_strcat(buffer, C_text("\n\n"));
+    C_strlcat(buffer, C_text("\n\n"), sizeof(buffer));
 
-    if(dmp != NULL) C_strcat(buffer, dmp);
+    if(dmp != NULL) C_strlcat(buffer, dmp, sizeof(buffer));
 
 #if defined(_WIN32) && !defined(__CYGWIN__) 
     MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONERROR);
@@ -7785,13 +7788,13 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 
     switch(radix) {
 #ifdef C_SIXTY_FOUR
-    case 8: C_sprintf(p = buffer + 1, C_text("%llo"), (long long)num); break;
-    case 10: C_sprintf(p = buffer + 1, C_text("%lld"), (long long)num); break;
-    case 16: C_sprintf(p = buffer + 1, C_text("%llx"), (long long)num); break;
+    case 8: C_snprintf(p = buffer + 1, sizeof(buffer) -1 , C_text("%llo"), (long long)num); break;
+    case 10: C_snprintf(p = buffer + 1, sizeof(buffer) - 1, C_text("%lld"), (long long)num); break;
+    case 16: C_snprintf(p = buffer + 1, sizeof(buffer) - 1, C_text("%llx"), (long long)num); break;
 #else
-    case 8: C_sprintf(p = buffer + 1, C_text("%o"), num); break;
-    case 10: C_sprintf(p = buffer + 1, C_text("%d"), num); break;
-    case 16: C_sprintf(p = buffer + 1, C_text("%x"), num); break;
+    case 8: C_snprintf(p = buffer + 1, sizeof(buffer) - 1, C_text("%o"), num); break;
+    case 10: C_snprintf(p = buffer + 1, sizeof(buffer) - 1, C_text("%d"), num); break;
+    case 16: C_snprintf(p = buffer + 1, sizeof(buffer) - 1, C_text("%x"), num); break;
 #endif
     default: 
       p = to_n_nary(num, radix);
@@ -7812,11 +7815,11 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 
       switch(radix) {
       case 8:
-	C_sprintf(p = buffer, "%o", (unsigned int)f);
+	C_snprintf(p = buffer, sizeof(buffer), "%o", (unsigned int)f);
 	goto fini;
 
       case 16:
-	C_sprintf(p = buffer, "%x", (unsigned int)f);
+	C_snprintf(p = buffer, sizeof(buffer), "%x", (unsigned int)f);
 	goto fini;
 
       case 10: break;		/* force output of decimal point to retain
@@ -7830,11 +7833,13 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
     } 
 
     if(C_isnan(f)) {
-      C_strcpy(p = buffer, "+nan.0");
+      C_strlcpy(buffer, C_text("+nan.0"), sizeof(buffer));
+      p = buffer;
       goto fini;
     }
     else if(C_isinf(f)) {
-      C_sprintf(p = buffer, "%cinf.0", f > 0 ? '+' : '-');
+      C_snprintf(buffer, sizeof(buffer), "%cinf.0", f > 0 ? '+' : '-');
+      p = buffer;
       goto fini;
     }
 
@@ -7847,7 +7852,7 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 	C_memmove(buffer + 1, buffer, C_strlen(buffer) + 1);
 	*buffer = '+';
       }
-      else if(buffer[ 1 ] != 'i') C_strcat(buffer, C_text(".0")); /* negative infinity? */
+      else if(buffer[ 1 ] != 'i') C_strlcat(buffer, C_text(".0"), sizeof(buffer)); /* negative infinity? */
     }
 
     p = buffer;
@@ -7874,9 +7879,9 @@ C_fixnum_to_string(C_word c, C_word self, C_word k, C_word num)
 
   /*XXX is this necessary? */
 #ifdef C_SIXTY_FOUR
-  C_sprintf(buffer, C_text(LONG_FORMAT_STRING), C_unfix(num));
+  C_snprintf(buffer, sizeof(buffer), C_text(LONG_FORMAT_STRING), C_unfix(num));
 #else
-  C_sprintf(buffer, C_text("%d"), C_unfix(num));
+  C_snprintf(buffer, sizeof(buffer), C_text("%d"), C_unfix(num));
 #endif
   n = C_strlen(buffer);
   a = C_alloc(C_bytestowords(n) + 1);
@@ -8429,16 +8434,18 @@ void dload_2(void *dummy)
   C_char *topname = (C_char *)C_data_pointer(entry);
   C_char *mname = (C_char *)C_data_pointer(name);
   C_char *tmp;
+  int tmp_len = 0;
 
   if((handle = C_dlopen(mname, dlopen_flags)) != NULL) {
     if((p = C_dlsym(handle, topname)) == NULL) {
-      tmp = (C_char *)C_malloc(C_strlen(topname) + 2);
-      
+      tmp_len = C_strlen(topname) + 2;
+      tmp = (C_char *)C_malloc(tmp_len);
+
       if(tmp == NULL)
 	panic(C_text("out of memory - cannot allocate toplevel name string"));
-      
-      C_strcpy(tmp, C_text("_"));
-      C_strcat(tmp, topname);
+
+      C_strlcpy(tmp, C_text("_"), tmp_len);
+      C_strlcat(tmp, topname, tmp_len);
       p = C_dlsym(handle, tmp);
       C_free(tmp);
     }
