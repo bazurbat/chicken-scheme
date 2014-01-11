@@ -688,3 +688,21 @@
                 (handle-exceptions exn
                   (k #f)
                   (string=? "abrcaaba" (string-delete char-set:upper-case "abrAcaDabRa"))))))
+
+
+; http://srfi.schemers.org/srfi-13/post-mail-archive/msg00007.html
+; From: David Van Horn <address@hidden>
+; Date: Wed, 01 Nov 2006 07:53:34 +0100
+;
+; Both string-index-right and string-skip-right will continue to search
+; left past a given start index.
+;
+;    (string-index-right "abbb" #\a 1) ;; => 0, but should be #f
+;    (string-skip-right  "abbb" #\b 1) ;; => 0, but should be #f
+;
+; This also causes incorrect results for string-trim-right,
+; string-trim-both and string-tokenize when given a non-zero start
+; argument.
+
+(test "string-index-right" #f (string-index-right "abbb" #\a 1))
+(test "string-skip-right" #f (string-skip-right  "abbb" #\b 1))
