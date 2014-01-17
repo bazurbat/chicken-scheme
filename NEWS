@@ -8,6 +8,10 @@
   - The procedure trace buffer has been made resizable.
   - C_zap_strings and ##sys#zap-strings (undocumented) have been deprecated.
 
+- Tools
+  - csc: "-z origin" is now passed as a linker option on FreeBSD when
+    compiling for deployment (thanks to Jules Altfas & Vitaly Magerya)
+
 - Core libraries
   - Unit extras now implicitly depends on ports.  ports no longer
      implicitly depends on extras.  This may break programs which don't

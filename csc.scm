@@ -277,7 +277,7 @@
 	 (else
 	  (list (conc "-L\"" library-dir "\""))))
    (if (and deployed (eq? (software-version) 'freebsd))
-       (list "-z origin")
+       (list "-Wl,-z,origin")
        '())
    (cond ((get-environment-variable "CHICKEN_C_LIBRARY_PATH") => 
 	  (lambda (path) 
