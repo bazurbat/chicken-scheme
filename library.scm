@@ -30,7 +30,7 @@
   (uses build-version)
   (disable-interrupts)
   (hide ##sys#dynamic-unwind
-	##sys#grow-vector ##sys#default-parameter-vector 
+	##sys#vector-resize ##sys#default-parameter-vector 
 	current-print-length setter-tag read-marks
 	##sys#print-exit
 	##sys#format-here-doc-warning
@@ -1418,15 +1418,14 @@ EOF
 (define (vector-resize v n #!optional init)
   (##sys#check-vector v 'vector-resize)
   (##sys#check-exact n 'vector-resize)
-  (##sys#grow-vector v n init) )
+  (##sys#vector-resize v n init) )
 
-(define (##sys#grow-vector v n init)
-  (let ([v2 (##sys#make-vector n init)]
-	[len (##sys#size v)] )
-    (do ([i 0 (fx+ i 1)])
+(define (##sys#vector-resize v n init)
+  (let ((v2 (##sys#make-vector n init))
+	(len (min (##sys#size v) n)) )
+    (do ((i 0 (fx+ i 1)))
 	((fx>= i len) v2)
       (##sys#setslot v2 i (##sys#slot v i)) ) ) )
-	
 
 ;;; Characters:
 
@@ -2321,7 +2320,7 @@ EOF
 	(set! count (fx+ count 1))
 	(when (fx>= i (##sys#size ##sys#default-parameter-vector))
 	  (set! ##sys#default-parameter-vector 
-	    (##sys#grow-vector
+	    (##sys#vector-resize
 	     ##sys#default-parameter-vector
 	     (fx+ i 1)
 	     (##core#undefined)) ) )
@@ -2330,7 +2329,7 @@ EOF
 	       (lambda (val n mode)
 		 (when (fx>= i n)
 		   (set! ##sys#current-parameter-vector
-		     (##sys#grow-vector
+		     (##sys#vector-resize
 		      ##sys#current-parameter-vector
 		      (fx+ i 1)
 		      ##sys#snafu) ) )
@@ -3172,11 +3171,11 @@ EOF
   (##sys#make-structure 
    'read-table
    (let ((t1 (##sys#slot rt 1)))
-     (and t1 (##sys#grow-vector t1 (##sys#size t1) #f) ) )
+     (and t1 (##sys#vector-resize t1 (##sys#size t1) #f) ) )
    (let ((t2 (##sys#slot rt 2)))
-     (and t2 (##sys#grow-vector t2 (##sys#size t2) #f) ) )
+     (and t2 (##sys#vector-resize t2 (##sys#size t2) #f) ) )
    (let ((t3 (##sys#slot rt 3)))
-     (and t3 (##sys#grow-vector t3 (##sys#size t3) #f) ) ) ))
+     (and t3 (##sys#vector-resize t3 (##sys#size t3) #f) ) ) ))
 
 
 ;;; Output:
@@ -4488,7 +4487,8 @@ EOF
     ##sys#standard-output
     ##sys#standard-error
     ##sys#default-exception-handler
-    (##sys#grow-vector ##sys#current-parameter-vector (##sys#size ##sys#current-parameter-vector) #f) )
+    (##sys#vector-resize ##sys#current-parameter-vector
+			 (##sys#size ##sys#current-parameter-vector) #f) )
    name					; #6 name
    (##core#undefined)			; #7 end-exception
    '()					; #8 owned mutexes
@@ -4737,9 +4737,10 @@ EOF
     (lambda (x y)
       (when (fx>= (##sys#fudge 26) _max_pending_finalizers)
 	(cond ((##core#inline "C_resize_pending_finalizers" (fx* 2 _max_pending_finalizers))
-	       (set! ##sys#pending-finalizers (##sys#grow-vector ##sys#pending-finalizers
-								 (fx+ (fx* 2 _max_pending_finalizers) 1)
-								 (##core#undefined)))
+	       (set! ##sys#pending-finalizers
+		 (##sys#vector-resize ##sys#pending-finalizers
+				      (fx+ (fx* 2 _max_pending_finalizers) 1)
+				      (##core#undefined)))
 	       (when (##sys#fudge 13)
 		 (##sys#print 
 		  (string-append

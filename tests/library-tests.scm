@@ -513,6 +513,19 @@ A
 (assert-fail (make-blob -1))
 (assert-fail (make-vector -1))
 
+;;; Resizing of vectors works to both sides
+(let ((original (vector 1 2 3 4 5 6)))
+  (assert (equal? (vector-resize original 6 -1) original))
+  (assert (not (eq? (vector-resize original 6 -1) original))))
+
+(let ((original (vector 1 2 3 4 5 6))
+      (smaller (vector 1 2 3)))
+  (assert (equal? (vector-resize original 3 -1) smaller)))
+
+(let ((original (vector 1 2 3))
+      (larger (vector 1 2 3 -1 -1 -1)))
+  (assert (equal? (vector-resize original 6 -1) larger)))
+
 ;;; eval return values
 
 (assert (= 1 (eval 1)))

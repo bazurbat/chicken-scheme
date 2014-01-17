@@ -26,6 +26,7 @@
   - Nonblocking behaviour on sockets has been fixed on Windows.
   - Possible race condition while handling TCP errors has been fixed.
   - The posix unit will no longer hang upon any error in Windows.
+  - resize-vector no longer crashes when reducing the size of the vector.
 
 - Platform support
   - CHICKEN can now be built on AIX (contributed by Erik Falor)
