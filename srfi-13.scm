@@ -1066,7 +1066,7 @@
   (let-optionals* criteria+start+end ((criteria char-set:whitespace) rest)
     (let-string-start+end (start end) string-trim-right s rest
       (cond ((string-skip-right s criteria start end) =>
-	     (lambda (i) (%substring/shared s 0 (+ 1 i))))
+	     (lambda (i) (%substring/shared s start (+ 1 i))))
 	    (else "")))))
 
 (define (string-trim-both s . criteria+start+end)

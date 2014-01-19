@@ -706,3 +706,11 @@
 
 (test "string-index-right" #f (string-index-right "abbb" #\a 1))
 (test "string-skip-right" #f (string-skip-right  "abbb" #\b 1))
+
+;; Tests to check the string-trim-right issue found by Seth Alves
+;; http://lists.gnu.org/archive/html/chicken-hackers/2014-01/msg00016.html
+(test "string-trim-right" "" (string-trim-right "" char-whitespace? 0 0))
+(test "string-trim-right" "" (string-trim-right "a" char-whitespace? 0 0))
+(test "string-trim-right" "" (string-trim-right "a " char-whitespace? 0 0))
+(test "string-trim-right" "bc" (string-trim-right "abc   " char-whitespace? 1))
+(test "string-trim-right" "" (string-trim-right "abc   " char-whitespace? 4 4))
