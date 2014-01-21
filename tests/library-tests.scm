@@ -541,3 +541,38 @@ A
 (assert (equal? '#(2 3) (subvector '#(1 2 3) 1)))
 (assert (equal? '#(2)   (subvector '#(1 2 3) 1 2)))
 (assert (equal? '#()    (subvector '#(1 2 3) 1 1)))
+
+;;; alist accessors
+
+(assert (equal? '(foo) (assq 'foo '((foo)))))
+(assert (not (assq 'foo '())))
+(assert-fail (assq 'foo '(bar)))
+(assert-fail (assq 'foo 'bar))
+
+
+(assert (equal? '(foo) (assv 'foo '((foo)))))
+(assert (not (assv 'foo '())))
+(assert-fail (assv 'foo '(bar)))
+(assert-fail (assv 'foo 'bar))
+
+(assert (equal? '("foo") (assoc "foo" '(("foo")))))
+(assert (not (assoc "foo" '())))
+(assert-fail (assoc "foo" '("bar")))
+(assert-fail (assoc "foo" "bar"))
+
+;;; list membership
+
+(assert (equal? '(foo) (memq 'foo '(bar foo))))
+(assert (not (memq 'foo '(bar))))
+(assert (not (memq 'foo '())))
+(assert-fail (memq 'foo 'foo))
+
+(assert (equal? '(foo) (memv 'foo '(bar foo))))
+(assert (not (memv 'foo '(bar))))
+(assert (not (memv 'foo '())))
+(assert-fail (memv 'foo 'foo))
+
+(assert (equal? '("foo") (member "foo" '("bar" "foo"))))
+(assert (not (member "foo" '("bar"))))
+(assert (not (member "foo" '())))
+(assert-fail (member "foo" "foo"))

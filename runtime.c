@@ -5525,6 +5525,9 @@ C_regparm C_word C_fcall C_i_assq(C_word x, C_word lst)
     lst = C_u_i_cdr(lst);
   }
 
+  if(lst!=C_SCHEME_END_OF_LIST)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "assq", lst);
+
   return C_SCHEME_FALSE;
 }
 
@@ -5543,6 +5546,9 @@ C_regparm C_word C_fcall C_i_assv(C_word x, C_word lst)
   
     lst = C_u_i_cdr(lst);
   }
+
+  if(lst!=C_SCHEME_END_OF_LIST)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "assv", lst);
 
   return C_SCHEME_FALSE;
 }
@@ -5563,6 +5569,9 @@ C_regparm C_word C_fcall C_i_assoc(C_word x, C_word lst)
     lst = C_u_i_cdr(lst);
   }
 
+  if(lst!=C_SCHEME_END_OF_LIST)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "assoc", lst);
+
   return C_SCHEME_FALSE;
 }
 
@@ -5573,6 +5582,9 @@ C_regparm C_word C_fcall C_i_memq(C_word x, C_word lst)
     if(C_u_i_car(lst) == x) return lst;
     else lst = C_u_i_cdr(lst);
   }
+
+  if(lst!=C_SCHEME_END_OF_LIST)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "memq", lst);
 
   return C_SCHEME_FALSE;
 }
@@ -5585,6 +5597,9 @@ C_regparm C_word C_fcall C_u_i_memq(C_word x, C_word lst)
     else lst = C_u_i_cdr(lst);
   }
 
+  if(lst!=C_SCHEME_END_OF_LIST)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "memv", lst);
+
   return C_SCHEME_FALSE;
 }
 
@@ -5596,6 +5611,9 @@ C_regparm C_word C_fcall C_i_memv(C_word x, C_word lst)
     else lst = C_u_i_cdr(lst);
   }
 
+  if(lst!=C_SCHEME_END_OF_LIST)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "memv", lst);
+  
   return C_SCHEME_FALSE;
 }
 
@@ -5606,6 +5624,9 @@ C_regparm C_word C_fcall C_i_member(C_word x, C_word lst)
     if(C_equalp(C_u_i_car(lst), x)) return lst;
     else lst = C_u_i_cdr(lst);
   }
+
+  if(lst!=C_SCHEME_END_OF_LIST)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "member", lst);
   
   return C_SCHEME_FALSE;
 }

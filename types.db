@@ -189,11 +189,11 @@
 
 (assq (forall (a b) (#(procedure #:clean) assq (* (list-of (pair a b)))
 		     (or boolean (pair a b))))
-      ((* list) (##core#inline "C_u_i_assq" #(1) #(2))))
+      ((* (list-of pair)) (##core#inline "C_u_i_assq" #(1) #(2))))
 
 (assv (forall (a b) (#(procedure #:clean) assv (* (list-of (pair a b))) 
 		     (or boolean (pair a b))))
-      (((or symbol immediate procedure) list)
+      (((or symbol immediate procedure) (list-of pair))
        (##core#inline "C_u_i_assq" #(1) #(2)))
       ((* (list-of (pair (or symbol procedure immediate) *)))
        (##core#inline "C_u_i_assq" #(1) #(2))))
@@ -201,7 +201,7 @@
 (assoc (forall (a b c) (#(procedure #:clean) assoc (a (list-of (pair b c))
 						      #!optional (procedure (b a) *)) ; sic
 			(or boolean (pair b c))))
-       (((or symbol procedure immediate) list)
+       (((or symbol procedure immediate) (list-of pair))
 	(##core#inline "C_u_i_assq" #(1) #(2)))
        ((* (list-of (pair (or symbol procedure immediate) *)))
 	(##core#inline "C_u_i_assq" #(1) #(2))))

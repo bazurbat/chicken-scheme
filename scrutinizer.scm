@@ -2029,7 +2029,7 @@
 		  t))
 	    ((eq? 'deprecated (car t))
 	     (and (= 2 (length t)) (symbol? (second t)) t))
-	    ((or (memq '--> t) (memq '-> t)) =>
+	    ((and (list? t) (or (memq '--> t) (memq '-> t))) =>
 	     (lambda (p)
 	       (let* ((cleanf (eq? '--> (car p)))
 		      (ok (or (not rec) (not cleanf))))
