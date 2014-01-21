@@ -1088,8 +1088,8 @@
 (system (#(procedure #:clean #:enforce) system (string) fixnum))
 (unregister-feature! (#(procedure #:clean #:enforce) unregister-feature! (#!rest symbol) undefined))
 (vector-resize
- (forall (a) (#(procedure #:clean #:enforce) vector-resize ((vector-of a) fixnum #!optional *) 
-	      (vector-of a))))
+ (forall (a b) (#(procedure #:clean #:enforce) vector-resize ((vector-of a) fixnum #!optional b)
+	       (vector-of (or a b)))))
 (void (#(procedure #:pure) void (#!rest) undefined))
 (##sys#void (#(procedure #:pure) void (#!rest) undefined))
 (warning (procedure warning (* #!rest) undefined))
