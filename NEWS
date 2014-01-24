@@ -1,3 +1,9 @@
+4.8.4
+
+- Tools
+  - csc "-deploy" works now on FreeBSD (thanks to Jules Altfas and
+    Vitaly Magerya) and OpenBSD.
+
 4.8.3
 
 - Security fixes
