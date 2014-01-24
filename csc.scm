@@ -68,7 +68,6 @@
 
 (define mingw (eq? (build-platform) 'mingw32))
 (define osx (eq? (software-version) 'macosx))
-(define win mingw)
 (define cygwin (eq? (build-platform) 'cygwin))
 (define aix (eq? (build-platform) 'aix))
 
@@ -962,11 +961,9 @@ EOF
 (define (lib-path)
   (prefix "" 
 	  "lib"
-	  (if win
-	      INSTALL_BIN_HOME
-	      (if host-mode
-		  INSTALL_LIB_HOME
-		  TARGET_RUN_LIB_HOME))))
+	  (if host-mode
+	      INSTALL_LIB_HOME
+	      TARGET_RUN_LIB_HOME)))
 
 (define (target-lib-path)
   (let ((tdir TARGET_LIB_HOME))
@@ -981,7 +978,7 @@ EOF
 	      (target-lib-path) 
 	      libchicken
 	      (cond (osx "dylib")
-		    ((or win cygwin) "dll")
+		    ((or mingw cygwin) "dll")
 		    (else (string-append
                            "so."
                            (number->string BINARY_VERSION)))))))

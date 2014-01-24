@@ -134,9 +134,6 @@ endif
 	echo #ifndef C_INSTALL_CXX >>$@
 	echo # define C_INSTALL_CXX "$(CXX_COMPILER)" >>$@
 	echo #endif >>$@
-	echo #ifndef C_INSTALL_POSTINSTALL_PROGRAM >>$@
-	echo # define C_INSTALL_POSTINSTALL_PROGRAM "$(POSTINSTALL_PROGRAM)" >>$@
-	echo #endif" >>$@
 	echo #ifndef C_INSTALL_RC_COMPILER >>$@
 	echo # define C_INSTALL_RC_COMPILER "$(RC_COMPILER)" >>$@
 	echo #endif >>$@
@@ -222,7 +219,7 @@ endif
 	echo # define C_TARGET_LIB_NAME "$(TARGET_LIB_NAME)" >>$@
 	echo #endif >>$@
 	echo #ifndef C_TARGET_RUN_LIB_HOME >>$@
-	echo # define C_TARGET_RUN_LIB_HOME "$(TARGET_PREFIX)/lib" >>$@
+	echo # define C_TARGET_RUN_LIB_HOME "$(TARGET_PREFIX)/bin" >>$@
 	echo #endif >>$@
 	echo #ifndef C_TARGET_SHARE_HOME >>$@
 	echo # define C_TARGET_SHARE_HOME "$(TARGET_PREFIX)/share" >>$@
@@ -253,6 +250,13 @@ endif
 	echo #endif >>$@
 	echo #ifndef C_BINARY_VERSION >>$@
 	echo # define C_BINARY_VERSION $(BINARYVERSION) >>$@
+	echo #endif >>$@
+	echo #ifndef C_USES_SONAME >>$@
+ifdef USES_SONAME
+	echo # define C_USES_SONAME 1 >>$@
+else
+	echo # define C_USES_SONAME 0 >>$@
+endif
 	echo #endif >>$@
 	echo /* END OF FILE */ >>$@
 

@@ -340,6 +340,9 @@ all: $(TARGETS)
 
 # generic part of chicken-config.h
 
+# IMPORTANT: If you change anything here, remember to make a
+# corresponding change in the makefiles which have
+# CUSTOM_CHICKEN_DEFAULTS (currently only mingw)
 ifndef CUSTOM_CHICKEN_DEFAULTS
 chicken-defaults.h:
 ifdef OPTIMIZE_FOR_SPEED
@@ -443,7 +446,11 @@ endif
 	echo "# define C_TARGET_LIB_NAME \"$(TARGET_LIB_NAME)\"" >>$@
 	echo "#endif" >>$@
 	echo "#ifndef C_TARGET_RUN_LIB_HOME" >>$@
+ifdef DLLSINPATH
+	echo "# define C_TARGET_RUN_LIB_HOME \"$(TARGET_RUN_PREFIX)/bin\"" >>$@
+else
 	echo "# define C_TARGET_RUN_LIB_HOME \"$(TARGET_RUN_PREFIX)/lib\"" >>$@
+endif
 	echo "#endif" >>$@
 	echo "#ifndef C_TARGET_SHARE_HOME" >>$@
 	echo "# define C_TARGET_SHARE_HOME \"$(TARGET_PREFIX)/share\"" >>$@
@@ -494,6 +501,7 @@ endif
 	echo "#endif" >>$@
 	echo "/* END OF FILE */" >>$@
 endif
+# IMPORTANT: Did you read the note at the start of this Make rule?
 
 ifndef CUSTOM_RC_FILE
 chicken-install.rc:
