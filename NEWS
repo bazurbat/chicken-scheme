@@ -27,6 +27,8 @@
   - Possible race condition while handling TCP errors has been fixed.
   - The posix unit will no longer hang upon any error in Windows.
   - resize-vector no longer crashes when reducing the size of the vector.
+  - Distinct types for boolean true and false have been added to the
+    scrutinizer.
 
 - Platform support
   - CHICKEN can now be built on AIX (contributed by Erik Falor)

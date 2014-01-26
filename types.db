@@ -172,27 +172,27 @@
 
 (reverse (forall (a) (#(procedure #:clean #:enforce) reverse ((list-of a)) (list-of a))))
 
-(memq (forall (a b) (#(procedure #:clean) memq (a (list-of b)) (or boolean (list-of b))))
+(memq (forall (a b) (#(procedure #:clean) memq (a (list-of b)) (or false (list-of b))))
       ((* list) (##core#inline "C_u_i_memq" #(1) #(2))))
 
-(memv (forall (a b) (#(procedure #:clean) memv (a (list-of b)) (or boolean (list-of b))))
+(memv (forall (a b) (#(procedure #:clean) memv (a (list-of b)) (or false (list-of b))))
       (((or symbol procedure immediate) list)
        (##core#inline "C_u_i_memq" #(1) #(2))))
 
 (member (forall (a b) (#(procedure #:clean) member
 		       (a (list-of b) #!optional (procedure (b a) *)) ; sic
-		       (or boolean (list-of b))))
+		       (or false (list-of b))))
 	(((or symbol procedure immediate) list)
 	 (##core#inline "C_u_i_memq" #(1) #(2)))
 	((* (list-of (or symbol procedure immediate)))
 	 (##core#inline "C_u_i_memq" #(1) #(2))))
 
 (assq (forall (a b) (#(procedure #:clean) assq (* (list-of (pair a b)))
-		     (or boolean (pair a b))))
+		     (or false (pair a b))))
       ((* (list-of pair)) (##core#inline "C_u_i_assq" #(1) #(2))))
 
 (assv (forall (a b) (#(procedure #:clean) assv (* (list-of (pair a b))) 
-		     (or boolean (pair a b))))
+		     (or false (pair a b))))
       (((or symbol immediate procedure) (list-of pair))
        (##core#inline "C_u_i_assq" #(1) #(2)))
       ((* (list-of (pair (or symbol procedure immediate) *)))
@@ -200,7 +200,7 @@
 
 (assoc (forall (a b c) (#(procedure #:clean) assoc (a (list-of (pair b c))
 						      #!optional (procedure (b a) *)) ; sic
-			(or boolean (pair b c))))
+			(or false (pair b c))))
        (((or symbol procedure immediate) (list-of pair))
 	(##core#inline "C_u_i_assq" #(1) #(2)))
        ((* (list-of (pair (or symbol procedure immediate) *)))
@@ -493,7 +493,7 @@
 		((fixnum) (##sys#fixnum->string #(1))))
 
 (string->number (#(procedure #:clean #:enforce) string->number (string #!optional fixnum) 
-		 (or number boolean)))
+		 (or number false)))
 
 (char? (#(procedure #:pure #:predicate char) char? (*) boolean))
 
@@ -815,8 +815,8 @@
 (extension-information (#(procedure #:clean) extension-information (symbol) *))
 (feature? (#(procedure #:clean) feature? (#!rest symbol) boolean))
 (features (#(procedure #:clean) features () (list-of symbol)))
-(file-exists? (#(procedure #:clean #:enforce) file-exists? (string) (or boolean string)))
-(directory-exists? (#(procedure #:clean #:enforce) directory-exists? (string) (or boolean string)))
+(file-exists? (#(procedure #:clean #:enforce) file-exists? (string) (or false string)))
+(directory-exists? (#(procedure #:clean #:enforce) directory-exists? (string) (or false string)))
 
 (finite? (#(procedure #:clean #:enforce) finite? (number) boolean)
 	 ((fixnum) (let ((#(tmp) #(1))) '#t))
@@ -1049,7 +1049,7 @@
 
 (set-parameterized-read-syntax!
  (#(procedure #:clean #:enforce) set-parameterized-read-syntax!
-  (char (or boolean (procedure (input-port fixnum) . *)))
+  (char (or false (procedure (input-port fixnum) . *)))
   undefined))
 
 (set-port-name! (#(procedure #:clean #:enforce) set-port-name! (port string) undefined)
@@ -1057,12 +1057,12 @@
 
 (set-read-syntax!
  (#(procedure #:clean #:enforce) set-read-syntax!
-  (char (or boolean (procedure (input-port) . *)))
+  (char (or false (procedure (input-port) . *)))
   undefined))
 
 (set-sharp-read-syntax!
  (#(procedure #:clean #:enforce) set-sharp-read-syntax!
-  (char (or boolean (procedure (input-port) . *))) undefined))
+  (char (or false (procedure (input-port) . *))) undefined))
 
 (setter (#(procedure #:clean #:enforce) setter (procedure) procedure))
 (signal (procedure signal (*) . *))
@@ -1110,7 +1110,7 @@
 			       ((string) #(1)))
 (##sys#foreign-symbol-argument (#(procedure #:clean #:enforce) ##sys#foreign-symbol-argument (symbol) symbol)
 			       ((symbol) #(1)))
-(##sys#foreign-pointer-argument (#(procedure #:clean #:enforce) ##sys#foreign-pointer-argument (pointer) pointer)
+(##sys#foreign-pointer-argument (#(procedure #:clean #:enforce) ##sys#foreign-pointer-argument ((or pointer false)) pointer)
 				((pointer) #(1)))
 
 (##sys#check-blob (#(procedure #:clean #:enforce) ##sys#check-blob (blob #!optional *) *)
@@ -1274,11 +1274,11 @@
 (string-translate* (#(procedure #:clean #:enforce) string-translate* (string (list-of (pair string string))) string))
 (substring-ci=? (#(procedure #:clean #:enforce) substring-ci=? (string string #!optional fixnum fixnum fixnum) boolean))
 
-(substring-index (#(procedure #:clean #:enforce) substring-index (string string #!optional fixnum) (or boolean fixnum))
+(substring-index (#(procedure #:clean #:enforce) substring-index (string string #!optional fixnum) (or false fixnum))
 		 ((* *) (##sys#substring-index #(1) #(2) '0))
 		 ((* * *) (##sys#substring-index #(1) #(2) #(3))))
 
-(substring-index-ci (#(procedure #:clean #:enforce) substring-index-ci (string string #!optional fixnum) (or boolean fixnum))
+(substring-index-ci (#(procedure #:clean #:enforce) substring-index-ci (string string #!optional fixnum) (or false fixnum))
 		    ((* *) (##sys#substring-index-ci #(1) #(2) '0))
 		    ((* * *) (##sys#substring-index-ci #(1) #(2) #(3))))
 
@@ -1299,7 +1299,7 @@
 (read-buffered (#(procedure #:enforce) read-buffered (#!optional input-port) string))
 (read-byte (#(procedure #:enforce) read-byte (#!optional input-port) *))
 (read-file (#(procedure #:enforce) read-file (#!optional (or input-port string) (procedure (input-port) *) fixnum) list))
-(read-line (#(procedure #:enforce) read-line (#!optional input-port (or boolean fixnum)) (or eof string)))
+(read-line (#(procedure #:enforce) read-line (#!optional input-port (or false fixnum)) (or eof string)))
 (read-lines (#(procedure #:enforce) read-lines (#!optional (or input-port string) fixnum) (list-of string)))
 (read-string (#(procedure #:enforce) read-string (#!optional * input-port) string))
 (read-string! (#(procedure #:enforce) read-string! (fixnum string #!optional input-port fixnum) fixnum))
@@ -1315,7 +1315,7 @@
 (delete-file* (#(procedure #:clean #:enforce) delete-file* (string) *))
 (file-copy (#(procedure #:clean #:enforce) file-copy (string string #!optional * fixnum) fixnum))
 (file-move (#(procedure #:clean #:enforce) file-move (string string #!optional * fixnum) fixnum))
-(make-pathname (#(procedure #:clean #:enforce) make-pathname (* #!optional (or string boolean) (or string boolean)) string))
+(make-pathname (#(procedure #:clean #:enforce) make-pathname (* #!optional (or string false) (or string false)) string))
 (directory-null? (#(procedure #:clean #:enforce) directory-null? (string) boolean))
 (make-absolute-pathname (#(procedure #:clean #:enforce) make-absolute-pathname (* #!optional string string) string))
 (create-temporary-directory (#(procedure #:clean #:enforce) create-temporary-directory () string))
@@ -1345,15 +1345,15 @@
 ;; the car of each list is a number (for init-state), false or an alist;
 ;; the cdr is a list of alists, which contains a char (or vector) and two alists
 ;; These alists have types themselves, of course...
-(irregex-dfa (#(procedure #:clean #:enforce) irregex-dfa ((struct regexp)) (or boolean vector))
+(irregex-dfa (#(procedure #:clean #:enforce) irregex-dfa ((struct regexp)) (or false vector))
 	     (((struct regexp)) (##sys#slot #(1) '1)))
 
-(irregex-dfa/search (#(procedure #:clean #:enforce) irregex-dfa/search ((struct regexp)) (or boolean vector))
+(irregex-dfa/search (#(procedure #:clean #:enforce) irregex-dfa/search ((struct regexp)) (or false vector))
 		    (((struct regexp)) (##sys#slot #(1) '2)))
 
 ;; Procedure type returned by irregex-nfa is a matcher type (it is misnamed)
 ;; which is another complex procedure type.
-(irregex-nfa (#(procedure #:clean #:enforce) irregex-nfa ((struct regexp)) (or boolean procedure))
+(irregex-nfa (#(procedure #:clean #:enforce) irregex-nfa ((struct regexp)) (or false procedure))
 	     (((struct regexp)) (##sys#slot #(1) '3)))
 
 (irregex-flags (#(procedure #:clean #:enforce) irregex-flags ((struct regexp)) fixnum)
@@ -1364,7 +1364,7 @@
 			(((struct regexp)) (##sys#slot #(1) '5)))
 
 (irregex-lengths (#(procedure #:clean #:enforce) irregex-lengths ((struct regexp))
-                  (vector-of (or boolean pair)))
+                  (vector-of (or false pair)))
 		 (((struct regexp)) (##sys#slot #(1) '6)))
 
 ;; XXX: Submatch names ought to be symbols according to the docs, but this is
@@ -1393,11 +1393,11 @@
                 ((* string fixnum fixnum) (and (irregex-match #(1) #(2) #(3) #(4)) '#t)))
 ;; These two return #f or a match object
 (irregex-match (#(procedure #:clean #:enforce) irregex-match (* string #!optional fixnum fixnum)
-                (or boolean (struct regexp-match))))
+                (or false (struct regexp-match))))
 ;; XXX chunker is a plain vector
 ;; Not marked clean because we don't know what chunker procedures will do
 (irregex-match/chunked (#(procedure #:enforce) irregex-match/chunked (* vector * #!optional fixnum)
-                        (or boolean (struct regexp-match))))
+                        (or false (struct regexp-match))))
 
 (irregex-match-data? (#(procedure #:pure #:predicate (struct regexp-match)) irregex-match-data? (*) boolean))
 
@@ -1426,12 +1426,12 @@
 
 ;; These return #f or a match object
 (irregex-search (#(procedure #:clean #:enforce) irregex-search (* string #!optional fixnum fixnum)
-                 (or boolean (struct regexp-match))))
+                 (or false (struct regexp-match))))
 ;; XXX chunker is a plain vector
 (irregex-search/chunked (#(procedure #:enforce) irregex-search/chunked (* vector * #!optional fixnum *)
-                         (or boolean (struct regexp-match))))
+                         (or false (struct regexp-match))))
 (irregex-search/matches (#(procedure #:enforce) irregex-search/matches (* vector * * fixnum (struct regexp-match))
-                         (or boolean (struct regexp-match))))
+                         (or false (struct regexp-match))))
 (irregex-match-valid-index? 
  (#(procedure #:clean #:enforce) irregex-match-valid-index? ((struct regexp-match) *) boolean))
 
@@ -1464,7 +1464,7 @@
   ((or number pointer locative procedure port)) 
   (or pointer number)))
 
-(allocate (#(procedure #:clean #:enforce) allocate (fixnum) (or boolean pointer)))
+(allocate (#(procedure #:clean #:enforce) allocate (fixnum) (or false pointer)))
 (block-ref (#(procedure #:clean #:enforce) block-ref (* fixnum) *))
 (block-set! (#(procedure #:enforce) block-set! (* fixnum *) *))
 (extend-procedure (#(procedure #:clean #:enforce) extend-procedure (procedure *) procedure))
@@ -1475,7 +1475,7 @@
 (locative-set! (#(procedure #:enforce) locative-set! (locative *) *))
 (locative? (#(procedure #:pure #:predicate locative) locative? (*) boolean))
 (make-locative (#(procedure #:clean #:enforce) make-locative (* #!optional fixnum) locative))
-(make-pointer-vector (#(procedure #:clean #:enforce) make-pointer-vector (fixnum #!optional pointer) pointer-vector))
+(make-pointer-vector (#(procedure #:clean #:enforce) make-pointer-vector (fixnum #!optional (or pointer false)) pointer-vector))
 (make-record-instance (#(procedure #:clean) make-record-instance (symbol #!rest) *))
 (make-weak-locative (#(procedure #:clean #:enforce) make-weak-locative (* #!optional fixnum) locative))
 
@@ -1534,13 +1534,13 @@
 
 (pointer-vector? (#(procedure #:pure #:predicate pointer-vector) pointer-vector? (*) boolean))
 
-(pointer-vector-fill! (#(procedure #:clean #:enforce) pointer-vector-fill! (pointer-vector pointer) undefined))
+(pointer-vector-fill! (#(procedure #:clean #:enforce) pointer-vector-fill! (pointer-vector (or pointer false)) undefined))
 
 (pointer-vector-length (#(procedure #:clean #:enforce) pointer-vector-length (pointer-vector) fixnum)
 		       ((pointer-vector) (##sys#slot #(1) '1)))
 
-(pointer-vector-ref (#(procedure #:clean #:enforce) pointer-vector-ref (pointer-vector fixnum) pointer))
-(pointer-vector-set! (#(procedure #:clean #:enforce) pointer-vector-set! (pointer-vector fixnum pointer) undefined))
+(pointer-vector-ref (#(procedure #:clean #:enforce) pointer-vector-ref (pointer-vector fixnum) (or pointer false)))
+(pointer-vector-set! (#(procedure #:clean #:enforce) pointer-vector-set! (pointer-vector fixnum (or pointer false)) undefined))
 (pointer-s16-ref (#(procedure #:clean #:enforce) pointer-s16-ref (pointer) fixnum))
 (pointer-s16-set! (#(procedure #:clean #:enforce) pointer-s16-set! (pointer fixnum) undefined))
 (pointer-s32-ref (#(procedure #:clean #:enforce) pointer-s32-ref (pointer) number))
@@ -1548,7 +1548,7 @@
 (pointer-s8-ref (#(procedure #:clean #:enforce) pointer-s8-ref (pointer) fixnum))
 (pointer-s8-set! (#(procedure #:clean #:enforce) pointer-s8-set! (pointer fixnum) undefined))
 
-(pointer-tag (#(procedure #:clean #:enforce) pointer-tag ((or pointer locative procedure port)) (or boolean number))
+(pointer-tag (#(procedure #:clean #:enforce) pointer-tag ((or pointer locative procedure port)) (or false number))
 	     (((or locative procedure port)) (let ((#(tmp) #(1))) '#f)))
 
 (pointer-u16-ref (#(procedure #:clean #:enforce) pointer-u16-ref (pointer) fixnum))
@@ -1698,7 +1698,7 @@
 (file-position (#(procedure #:clean #:enforce) file-position ((or port fixnum)) fixnum))
 (file-read (#(procedure #:clean #:enforce) file-read (fixnum fixnum #!optional *) list))
 (file-read-access? (#(procedure #:clean #:enforce) file-read-access? (string) boolean))
-(file-select (#(procedure #:clean #:enforce) file-select ((or (list-of fixnum) fixnum boolean) (or (list-of fixnum) fixnum boolean) #!optional fixnum) * *))
+(file-select (#(procedure #:clean #:enforce) file-select ((or (list-of fixnum) fixnum false) (or (list-of fixnum) fixnum false) #!optional fixnum) * *))
 (file-size (#(procedure #:clean #:enforce) file-size ((or string fixnum)) number))
 (file-stat (#(procedure #:clean #:enforce) file-stat ((or string fixnum) #!optional *) (vector-of number)))
 (file-test-lock (#(procedure #:clean #:enforce) file-test-lock (port #!optional fixnum *) boolean))
@@ -1769,7 +1769,7 @@
 (process-execute
  (#(procedure #:clean #:enforce) process-execute (string #!optional (list-of string) (list-of string)) noreturn))
 
-(process-fork (#(procedure #:enforce) process-fork (#!optional (or (procedure () . *) boolean) *) fixnum))
+(process-fork (#(procedure #:enforce) process-fork (#!optional (or (procedure () . *) false) *) fixnum))
 
 (process-group-id (#(procedure #:clean #:enforce) process-group-id () fixnum))
 (process-run (#(procedure #:clean #:enforce) process-run (string #!optional (list-of string)) fixnum))
@@ -1792,10 +1792,10 @@
 (set-file-position! (#(procedure #:clean #:enforce) set-file-position! ((or port fixnum) fixnum #!optional fixnum) undefined))
 (set-groups! (#(procedure #:clean #:enforce) set-groups! ((list-of fixnum)) undefined))
 (set-root-directory! (#(procedure #:clean #:enforce) set-root-directory! (string) undefined))
-(set-signal-handler! (#(procedure #:clean #:enforce) set-signal-handler! (fixnum (or boolean (procedure (fixnum) . *))) undefined))
+(set-signal-handler! (#(procedure #:clean #:enforce) set-signal-handler! (fixnum (or false (procedure (fixnum) . *))) undefined))
 (set-signal-mask! (#(procedure #:clean #:enforce) set-signal-mask! ((list-of fixnum)) undefined))
 (setenv (#(procedure #:clean #:enforce) setenv (string string) undefined))
-(signal-handler (#(procedure #:clean #:enforce) signal-handler (fixnum) (or boolean (procedure (fixnum) . *))))
+(signal-handler (#(procedure #:clean #:enforce) signal-handler (fixnum) (or false (procedure (fixnum) . *))))
 (signal-mask (#(procedure #:clean) signal-mask () fixnum))
 (signal-mask! (#(procedure #:clean #:enforce) signal-mask! (fixnum) undefined))
 (signal-masked? (#(procedure #:clean #:enforce) signal-masked? (fixnum) boolean))
@@ -2103,8 +2103,8 @@
 (string-concatenate-reverse (#(procedure #:clean #:enforce) string-concatenate-reverse ((list-of string) #!optional string fixnum) string))
 (string-concatenate-reverse/shared (#(procedure #:clean #:enforce) string-concatenate-reverse/shared ((list-of string) #!optional string fixnum) string))
 (string-concatenate/shared (#(procedure #:clean #:enforce) string-concatenate/shared ((list-of string)) string))
-(string-contains (#(procedure #:clean #:enforce) string-contains (string string #!optional fixnum fixnum fixnum fixnum) (or fixnum boolean)))
-(string-contains-ci (#(procedure #:clean #:enforce) string-contains-ci (string string #!optional fixnum fixnum fixnum fixnum) (or fixnum boolean)))
+(string-contains (#(procedure #:clean #:enforce) string-contains (string string #!optional fixnum fixnum fixnum fixnum) (or fixnum false)))
+(string-contains-ci (#(procedure #:clean #:enforce) string-contains-ci (string string #!optional fixnum fixnum fixnum fixnum) (or fixnum false)))
 (string-copy (#(procedure #:clean #:enforce) string-copy (string #!optional fixnum fixnum) string))
 (string-copy! (#(procedure #:clean #:enforce) string-copy! (string fixnum string #!optional fixnum fixnum) undefined))
 (string-count (#(procedure #:clean #:enforce) string-count (string * #!optional fixnum fixnum) fixnum))
@@ -2138,13 +2138,13 @@
  (#(procedure #:enforce) 
   string-index
   (string (or char (struct char-set) (procedure (char) *)) #!optional fixnum fixnum)
-  (or fixnum boolean)))
+  (or fixnum false)))
 
 (string-index-right
  (#(procedure #:enforce) 
   string-index-right
   (string (or char (struct char-set) (procedure (char) *)) #!optional fixnum fixnum)
-  (or fixnum boolean)))
+  (or fixnum false)))
 
 (string-join (#(procedure #:clean #:enforce) string-join (list #!optional string symbol) string))
 (string-kmp-partial-search (#(procedure #:enforce) string-kmp-partial-search (string vector string fixnum #!optional (procedure (char char) *) fixnum fixnum fixnum) fixnum))
@@ -2170,13 +2170,13 @@
  (#(procedure #:enforce) 
   string-skip
   (string (or char (struct char-set) (procedure (char) *)) #!optional fixnum fixnum)
-  (or fixnum boolean)))
+  (or fixnum false)))
 
 (string-skip-right
  (#(procedure #:enforce) 
   string-skip-right
   (string (or char (struct char-set) (procedure (char) *)) #!optional fixnum fixnum)
-  (or fixnum boolean)))
+  (or fixnum false)))
 
 (string-suffix-ci? (#(procedure #:clean #:enforce) string-suffix-ci? (string string #!optional fixnum fixnum fixnum fixnum) boolean))
 (string-suffix-length (#(procedure #:clean #:enforce) string-suffix-length (string string #!optional fixnum fixnum fixnum fixnum) fixnum))
@@ -2336,7 +2336,7 @@
 (make-condition-variable (#(procedure #:clean) make-condition-variable (#!optional *) (struct condition-variable)))
 (make-mutex (#(procedure #:clean) make-mutex (#!optional *) (struct mutex)))
 (make-thread (#(procedure #:clean #:enforce) make-thread ((procedure () . *) #!optional *) (struct thread)))
-(mutex-lock! (#(procedure #:clean #:enforce) mutex-lock! ((struct mutex) #!optional * (or boolean (struct thread))) boolean))
+(mutex-lock! (#(procedure #:clean #:enforce) mutex-lock! ((struct mutex) #!optional * (or false (struct thread))) boolean))
 
 (mutex-name (#(procedure #:clean #:enforce) mutex-name ((struct mutex)) *)
 	    (((struct mutex)) (##sys#slot #(1) '1)))
@@ -2624,12 +2624,12 @@
 (tcp-abandon-port (#(procedure #:clean #:enforce) tcp-abandon-port (port) undefined))
 (tcp-accept (#(procedure #:clean #:enforce) tcp-accept ((struct tcp-listener)) input-port output-port))
 (tcp-accept-ready? (#(procedure #:clean #:enforce) tcp-accept-ready? ((struct tcp-listener)) boolean))
-(tcp-accept-timeout (#(procedure #:clean #:enforce) tcp-accept-timeout (#!optional (or boolean number)) (or boolean number)))
+(tcp-accept-timeout (#(procedure #:clean #:enforce) tcp-accept-timeout (#!optional (or false number)) (or false number)))
 (tcp-addresses (#(procedure #:clean #:enforce) tcp-addresses (port) string string))
 (tcp-buffer-size (#(procedure #:clean #:enforce) tcp-buffer-size (#!optional fixnum) fixnum))
 (tcp-close (#(procedure #:clean #:enforce) tcp-close ((struct tcp-listener)) undefined))
 (tcp-connect (#(procedure #:clean #:enforce) tcp-connect (string #!optional fixnum) input-port output-port))
-(tcp-connect-timeout (#(procedure #:clean #:enforce) tcp-connect-timeout (#!optional (or boolean number)) (or boolean number)))
+(tcp-connect-timeout (#(procedure #:clean #:enforce) tcp-connect-timeout (#!optional (or false number)) (or false number)))
 (tcp-listen (#(procedure #:clean #:enforce) tcp-listen (fixnum #!optional fixnum *) (struct tcp-listener)))
 
 (tcp-listener-fileno (#(procedure #:clean #:enforce) tcp-listener-fileno ((struct tcp-listener)) fixnum)
@@ -2640,8 +2640,8 @@
 (tcp-listener? (#(procedure #:clean #:predicate (struct tcp-listener)) tcp-listener? (*) boolean))
 
 (tcp-port-numbers (#(procedure #:clean #:enforce) tcp-port-numbers (port) fixnum fixnum))
-(tcp-read-timeout (#(procedure #:clean #:enforce) tcp-read-timeout (#!optional (or boolean number)) (or boolean number)))
-(tcp-write-timeout (#(procedure #:clean #:enforce) tcp-write-timeout (#!optional (or boolean number)) (or boolean number)))
+(tcp-read-timeout (#(procedure #:clean #:enforce) tcp-read-timeout (#!optional (or false number)) (or false number)))
+(tcp-write-timeout (#(procedure #:clean #:enforce) tcp-write-timeout (#!optional (or false number)) (or false number)))
 
 
 ;; utils
@@ -2649,7 +2649,7 @@
 (read-all (#(procedure #:enforce) read-all (#!optional (or input-port string)) string))
 (system* (#(procedure #:clean #:enforce) system* (string #!rest) undefined))
 (qs (#(procedure #:clean #:enforce) qs (string) string))
-(compile-file (#(procedure #:clean #:enforce) compile-file (string #!rest) (or boolean string)))
+(compile-file (#(procedure #:clean #:enforce) compile-file (string #!rest) (or false string)))
 (compile-file-options (#(procedure #:clean #:enforce) compile-file-options (#!optional (list-of string)) (list-of string)))
 (scan-input-lines (#(procedure #:enforce) scan-input-lines (* #!optional input-port) *))
 (yes-or-no? (#(procedure #:enforce) yes-or-no? (string #!rest) *))

@@ -112,9 +112,10 @@ or {{:}} should follow the syntax given below:
 <tr><th>BASICTYPE</th><th>meaning</th></tr>
 <tr><td>{{*}}</td><td>any value</td></tr>
 <tr><td>{{blob}}</td><td>byte vector</td></tr>
-<tr><td>{{boolean}}</td><td>boolean</td></tr>
+<tr><td>{{boolean}}</td><td>true or false</td></tr>
 <tr><td>{{char}}</td><td>character</td></tr>
 <tr><td>{{eof}}</td><td>end-of-file object</td></tr>
+<tr><td>{{false}}</td><td>boolean false</td></tr>
 <tr><td>{{fixnum}}</td><td>word-sized integer</td></tr>
 <tr><td>{{float}}</td><td>floating-point number</td></tr>
 <tr><td>{{list}}</td><td>null or pair</td></tr>
@@ -128,6 +129,7 @@ or {{:}} should follow the syntax given below:
 <tr><td>{{procedure}}</td><td>unspecific procedure</td></tr>
 <tr><td>{{string}}</td><td>string</td></tr>
 <tr><td>{{symbol}}</td><td>symbol</td></tr>
+<tr><td>{{true}}</td><td>boolean true</td></tr>
 <tr><td>{{vector}}</td><td>vector</td></tr>
 </table>
 

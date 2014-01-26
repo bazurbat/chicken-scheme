@@ -103,7 +103,8 @@
 (check "abc" 1.2 string)
 (check 'abc 1.2 symbol)
 (check #\x 1.2 char)
-(check #t 1.2 boolean)
+(check #t #f true)
+(check #f #t false)
 (check (+ 1 2) 'a number)
 (check '(1) 1.2 (list fixnum))
 (check '(a) 1.2 (list symbol))
@@ -126,7 +127,8 @@
 (ms "abc" 1.2 string)
 (ms 'abc 1.2 symbol)
 (ms #\x 1.2 char)
-(ms #t 1.2 boolean)
+(ms #t #f true)
+(ms #f #t false)
 (ms '(1) 1.2 (list fixnum))
 (ms '(1 . 2) '() pair)
 (ms + 1.2 procedure)
@@ -147,8 +149,8 @@
 
 (define n 1)
 
-(checkp boolean? #t boolean)
-(checkp boolean? #f boolean)
+(checkp boolean? #t true)
+(checkp boolean? #f false)
 (checkp pair? '(1 . 2) pair)
 (checkp null? '() null)
 (checkp symbol? 'a symbol)
@@ -247,6 +249,13 @@
 	(fixnum 'fixnum)
 	(float 'float)
 	(number 'number))))
+
+(assert
+ (eq? 'boolean
+      (compiler-typecase (vector-ref '#(#t #f) x)
+	(true 'true)
+	(false 'false)
+	(boolean 'boolean))))
 
 (mx float (vector-ref '#(1 2 3.4) 2))
 (mx fixnum (vector-ref '#(1 2 3.4) 0))

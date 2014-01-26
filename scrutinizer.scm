@@ -68,7 +68,7 @@
 ;       | (forall (TVAR1 ...) VAL)
 ;       | deprecated
 ;       | (deprecated NAME)
-;   BASIC = * | string | symbol | char | number | boolean | list | pair | 
+;   BASIC = * | string | symbol | char | number | boolean | true | false | list | pair |
 ;           procedure | vector | null | eof | undefined | input-port | output-port |
 ;           blob | noreturn | pointer | locative | fixnum | float |
 ;           pointer-vector
@@ -141,7 +141,8 @@
 	       ((fixnum) 'fixnum)
 	       ((flonum) 'flonum)
 	       (else 'number)))		; in case...
-	    ((boolean? lit) 'boolean)
+	    ((boolean? lit)
+	     (if lit 'true 'false))
 	    ((null? lit) 'null)
 	    ((list? lit) 
 	     `(list ,@(map constant-result lit)))
@@ -207,7 +208,7 @@
 	       ((or) (every always-true1 (cdr t)))
 	       ((forall) (always-true1 (third t)))
 	       (else #t)))
-	    ((memq t '(* boolean undefined noreturn)) #f)
+	    ((memq t '(* boolean true false undefined noreturn)) #f)
 	    (else #t)))
 
     (define (always-true t loc x)
@@ -1105,6 +1106,12 @@
 	   (match1 t1 (third t2))) ; assumes typeenv has already been extracted
 	  ((eq? t1 'noreturn) (not exact))
 	  ((eq? t2 'noreturn) (not exact))
+	  ((eq? t1 'boolean)
+	   (and (not exact)
+		(match1 '(or true false) t2)))
+	  ((eq? t2 'boolean)
+	   (and (not exact)
+		(match1 t1 '(or true false))))
 	  ((eq? t1 'number) 
 	   (and (not exact)
 		(match1 '(or fixnum float) t2)))
@@ -1317,6 +1324,7 @@
 				      (merge-result-types rtypes1 rtypes2))))
 				 #f
 				 ts)))
+			   ((lset= eq? '(true false) ts) 'boolean)
 			   ((lset= eq? '(fixnum float) ts) 'number)
 			   (else
 			    (let* ((ts (append-map
@@ -1475,6 +1483,7 @@
 		    (else
 		     (case t2
 		       ((procedure) (and (pair? t1) (eq? 'procedure (car t1))))
+		       ((boolean) (memq t1 '(true false)))
 		       ((number) (memq t1 '(fixnum float)))
 		       ((vector) (test t1 '(vector-of *)))
 		       ((list) (test t1 '(list-of *)))
@@ -1767,7 +1776,7 @@
 	   ((not (pair? t)) 
 	    (if (memq t '(* fixnum eof char string symbol float number list vector pair
 			    undefined blob input-port output-port pointer locative boolean 
-			    pointer-vector null procedure noreturn))
+			    true false pointer-vector null procedure noreturn))
 		t
 		(bomb "resolve: can't resolve unknown type-variable" t)))
 	   (else 
@@ -1974,7 +1983,7 @@
 		    (l2 (validate-llist (cdr llist))))
 	       (and l1 l2 (cons l1 l2))))))
     (define (validate t #!optional (rec #t))
-      (cond ((memq t '(* string symbol char number boolean list pair
+      (cond ((memq t '(* string symbol char number boolean true false list pair
 			 procedure vector null eof undefined input-port output-port
 			 blob pointer locative fixnum float pointer-vector
 			 deprecated noreturn values))
