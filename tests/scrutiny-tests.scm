@@ -158,3 +158,6 @@
 (apply1 + (list 'a 2 3)) ; <- no type warning (#948)
 (apply1 + (cons 'a (cons 2 (cons 3 '())))) ; <- same here (#952)
 
+;; multiple-value return syntax
+(: mv (-> . *))
+(: mv (procedure () . *))

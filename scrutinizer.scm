@@ -1948,6 +1948,11 @@
       (let loop ((lst lst))
 	(cond ((eq? lst p) '())
 	      (else (cons (car lst) (loop (cdr lst)))))))
+    (define (memq* x lst) ; memq, but allow improper list
+      (let loop ((lst lst))
+	(cond ((not (pair? lst)) #f)
+	      ((eq? (car lst) x) lst)
+	      (else (loop (cdr lst))))))
     (define (validate-llist llist)
       (cond ((null? llist) '())
 	    ((symbol? llist) '(#!rest *))
@@ -2029,12 +2034,12 @@
 		  t))
 	    ((eq? 'deprecated (car t))
 	     (and (= 2 (length t)) (symbol? (second t)) t))
-	    ((and (list? t) (or (memq '--> t) (memq '-> t))) =>
+	    ((or (memq* '--> t) (memq* '-> t)) =>
 	     (lambda (p)
 	       (let* ((cleanf (eq? '--> (car p)))
 		      (ok (or (not rec) (not cleanf))))
 		 (unless rec (set! clean cleanf))
-		 (let ((cp (memq ': (cdr p))))
+		 (let ((cp (memq* ': p)))
 		   (cond ((not cp)
 			  (and ok
 			       (validate
