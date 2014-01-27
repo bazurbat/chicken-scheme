@@ -1327,8 +1327,8 @@
 		#t id) )
 	      ((memq id ##sys#explicit-library-modules)
 	       (let* ((info (##sys#extension-information id 'require-extension))
-		      (nr (assq 'import-only info))
-		      (s (assq 'syntax info)))
+		      (nr (and info (assq 'import-only info)))
+		      (s (and info (assq 'syntax info))))
 		 (values
 		  `(##core#begin
 		    ,@(if s `((##core#require-for-syntax ',id)) '())
