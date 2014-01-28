@@ -358,6 +358,9 @@ endif
 	echo "#ifndef C_INSTALL_RC_COMPILER" >>$@
 	echo "# define C_INSTALL_RC_COMPILER \"$(RC_COMPILER)\"" >>$@
 	echo "#endif" >>$@
+	echo "#ifndef C_INSTALL_POSTINSTALL_PROGRAM" >>$@
+	echo "# define C_INSTALL_POSTINSTALL_PROGRAM \"$(POSTINSTALL_PROGRAM)\"" >>$@
+	echo "#endif" >>$@
 	echo "#ifndef C_INSTALL_CFLAGS" >>$@
 	echo "# define C_INSTALL_CFLAGS \"$(C_COMPILER_OPTIONS) $(C_COMPILER_OPTIMIZATION_OPTIONS)\"" >>$@
 	echo "#endif" >>$@

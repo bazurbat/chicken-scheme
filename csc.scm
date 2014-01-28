@@ -61,6 +61,7 @@
 (define-foreign-variable CSC_PROGRAM c-string "C_CSC_PROGRAM")
 (define-foreign-variable WINDOWS_SHELL bool "C_WINDOWS_SHELL")
 (define-foreign-variable BINARY_VERSION int "C_BINARY_VERSION")
+(define-foreign-variable POSTINSTALL_PROGRAM c-string "C_INSTALL_POSTINSTALL_PROGRAM")
 
 
 ;;; Parameters:
@@ -523,7 +524,7 @@ EOF
     (set! compile-options (append pic-options '("-DC_SHARED") compile-options))
     (set! link-options
       (cons (cond
-             (osx (if lib "-dynamiclib" "-bundle"))
+             (osx (if lib "-dynamiclib" "-bundle -headerpad_max_install_names"))
              (else "-shared")) link-options))
     (set! shared #t) )
 
@@ -937,7 +938,7 @@ EOF
     (when (and osx (or (not cross-chicken) host-mode))
       (command
        (string-append
-	"install_name_tool -change " libchicken ".dylib "
+	POSTINSTALL_PROGRAM " -change " libchicken ".dylib "
 	(quotewrap 
 	 (let ((lib (string-append libchicken ".dylib")))
 	   (if deployed
