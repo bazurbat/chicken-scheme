@@ -442,7 +442,16 @@
 
 	Mac OS X:
 
-	  - On 10.6 and 10.7, Chicken may incorrectly select a 32-bit build
+          - The build currently assumes the Xcode application path is
+            "/Applications/Xcode.app/", with the C compiler and build
+            tools being located in the "Contents/Developer/usr/bin"
+            and
+            "Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin"
+            subdirectories, respectively. To override these locations,
+            set XCODE_DEVELOPER and XCODE_TOOL_PATH on the make(3)
+            command line.
+
+	  - On 10.6 and 10.7, CHICKEN may incorrectly select a 32-bit build
 	    environment when it should be building 64-bit, resulting in a
 	    build error.  This occurs when you have a 32-bit kernel and a
 	    64-bit gcc (that is, on Core 2 Duo systems running 10.6 Desktop).
