@@ -3,16 +3,16 @@
 == Acknowledgements
 
 Many thanks to Jules Altfas, Nico Amtsberg, Alonso Andres, William
-Annis, Marc Baily, Peter Barabas, Andrei Barbu, Jonah Beckford, Arto
-Bendiken, Kevin Beranek, Peter Bex, Jean-Francois Bignolles, Oivind
-Binde, Alaric Blagrave-Snellpym, Dave Bodenstab, Fabian Böhlke,
-T. Kurt Bond, Ashley Bone, Dominique Boucher, Terence Brannon, Roy
-Bryant, Adam Buchbinder, Hans Bulfone, "Category 5", Taylor Campbell,
-Naruto Canada, Mark Carter, Esteban U. Caamano Castro, Semih
-Cemiloglu, Franklin Chen, Joo ChurlSoo, Thomas Chust, Gian Paolo
-Ciceri, Fulvio Ciriaco, Paul Colby, Tobia Conforto, John Cowan,
-Grzegorz Chrupala, James Crippen, Evan Hanson, Tollef Fog Heen, Drew
-Hess, Alejandro Forero Cuervo, Peter Danenberg, Linh Dang, Brian
+Annis, Jason E. Aten, Marc Baily, Peter Barabas, Andrei Barbu, Jonah
+Beckford, Arto Bendiken, Kevin Beranek, Peter Bex, Jean-Francois
+Bignolles, Oivind Binde, Alaric Blagrave-Snellpym, Dave Bodenstab,
+Fabian Böhlke, T. Kurt Bond, Ashley Bone, Dominique Boucher, Terence
+Brannon, Roy Bryant, Adam Buchbinder, Hans Bulfone, "Category 5",
+Taylor Campbell, Naruto Canada, Mark Carter, Esteban U. Caamano
+Castro, Semih Cemiloglu, Franklin Chen, Joo ChurlSoo, Thomas Chust,
+Gian Paolo Ciceri, Fulvio Ciriaco, Paul Colby, Tobia Conforto, John
+Cowan, Grzegorz Chrupala, James Crippen, Evan Hanson, Tollef Fog Heen,
+Drew Hess, Alejandro Forero Cuervo, Peter Danenberg, Linh Dang, Brian
 Denheyer, Sean D'Epagnier, "dgym", "Don", Chris Double, "Brown
 Dragon", David Dreisigmeyer, Jarod Eells, Petter Egesund, Stephen
 Eilert, Steve Elkins, Daniel B. Faken, Erik Falor, Will Farr, Graham
@@ -49,10 +49,10 @@ Szadkowski, Rick Taube, Nathan Thern, Mike Thomas, Minh Thu, Christian
 Tismer, Andre van Tonder, John Tobey, Henrik Tramberend, Vladimir
 Tsichevsky, Neil van Dyke, Sam Varner, Taylor Venable, Sander Vesik,
 Jaques Vidrine, Panagiotis Vossos, Shawn Wagner, Peter Wang, Ed
-Watkeys, Brad Watson, Thomas Weidner, Göran Weinholt, Matthew
-Welland, Drake Wilson, Jörg Wittenberger, Peter Wright, Mark Wutka,
-Adam Young, Richard Zidlicky, Houman Zolfaghari and Florian Zumbiehl
-for bug-fixes, tips and suggestions.
+Watkeys, Brad Watson, Thomas Weidner, Göran Weinholt, Matthew Welland,
+Drake Wilson, Jörg Wittenberger, Peter Wright, Mark Wutka, Adam Young,
+Richard Zidlicky, Houman Zolfaghari and Florian Zumbiehl for
+bug-fixes, tips and suggestions.
 
 Special thanks to Brandon van Every for contributing the (now defunct)
 [[http://www.cmake.org|CMake]] support and for helping with Windows
