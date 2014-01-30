@@ -1315,7 +1315,7 @@
 (delete-file* (#(procedure #:clean #:enforce) delete-file* (string) *))
 (file-copy (#(procedure #:clean #:enforce) file-copy (string string #!optional * fixnum) fixnum))
 (file-move (#(procedure #:clean #:enforce) file-move (string string #!optional * fixnum) fixnum))
-(make-pathname (#(procedure #:clean #:enforce) make-pathname (* #!optional (or string false) (or string false)) string))
+(make-pathname (#(procedure #:clean #:enforce) make-pathname ((or string (list-of string) false) #!optional (or string false) (or string false)) string))
 (directory-null? (#(procedure #:clean #:enforce) directory-null? (string) boolean))
 (make-absolute-pathname (#(procedure #:clean #:enforce) make-absolute-pathname (* #!optional string string) string))
 (create-temporary-directory (#(procedure #:clean #:enforce) create-temporary-directory () string))
@@ -1548,7 +1548,7 @@
 (pointer-s8-ref (#(procedure #:clean #:enforce) pointer-s8-ref (pointer) fixnum))
 (pointer-s8-set! (#(procedure #:clean #:enforce) pointer-s8-set! (pointer fixnum) undefined))
 
-(pointer-tag (#(procedure #:clean #:enforce) pointer-tag ((or pointer locative procedure port)) (or false number))
+(pointer-tag (#(procedure #:clean #:enforce) pointer-tag ((or pointer locative procedure port)) *)
 	     (((or locative procedure port)) (let ((#(tmp) #(1))) '#f)))
 
 (pointer-u16-ref (#(procedure #:clean #:enforce) pointer-u16-ref (pointer) fixnum))
@@ -2071,10 +2071,11 @@
 (make-kmp-restart-vector (#(procedure #:clean #:enforce) make-kmp-restart-vector (string #!optional (procedure (* *) *) fixnum fixnum) vector))
 
 (string-any
- (#(procedure #:enforce)
-  string-any
-  ((or char (struct char-set) (procedure (char) *)) string #!optional fixnum fixnum)
-  boolean))
+ (forall (a)
+  (#(procedure #:enforce)
+   string-any
+   ((or char (struct char-set) (procedure (char) a)) string #!optional fixnum fixnum)
+   (or boolean a))))
 
 (string-append/shared (#(procedure #:clean #:enforce) string-append/shared (#!rest string) string)
 		      ((string string) (##sys#string-append #(1) #(2))))
@@ -2115,10 +2116,11 @@
 (string-drop-right (#(procedure #:clean #:enforce) string-drop-right (string fixnum) string))
 
 (string-every
- (#(procedure #:enforce)
-  string-every
-  ((or char (struct char-set) (procedure (char) *)) string #!optional fixnum fixnum) 
-  boolean))
+ (forall (a)
+  (#(procedure #:enforce)
+   string-every
+   ((or char (struct char-set) (procedure (char) a)) string #!optional fixnum fixnum)
+   (or boolean a))))
 
 (string-fill! (#(procedure #:clean #:enforce) string-fill! (string char #!optional fixnum fixnum) string))
 
@@ -2336,7 +2338,7 @@
 (make-condition-variable (#(procedure #:clean) make-condition-variable (#!optional *) (struct condition-variable)))
 (make-mutex (#(procedure #:clean) make-mutex (#!optional *) (struct mutex)))
 (make-thread (#(procedure #:clean #:enforce) make-thread ((procedure () . *) #!optional *) (struct thread)))
-(mutex-lock! (#(procedure #:clean #:enforce) mutex-lock! ((struct mutex) #!optional * (or false (struct thread))) boolean))
+(mutex-lock! (#(procedure #:clean #:enforce) mutex-lock! ((struct mutex) #!optional (or false number (struct time)) (or false (struct thread))) boolean))
 
 (mutex-name (#(procedure #:clean #:enforce) mutex-name ((struct mutex)) *)
 	    (((struct mutex)) (##sys#slot #(1) '1)))
