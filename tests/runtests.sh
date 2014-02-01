@@ -425,9 +425,10 @@ if test $OS_NAME != AIX; then
 	CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $compile2 -deploy rev-app.scm
 	CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -deploy -prefix rev-app -t local -l $TEST_DIR reverser
 	unset LD_LIBRARY_PATH DYLD_LIBRARY_PATH CHICKEN_REPOSITORY
-	rev-app/rev-app 1.1
+	# An absolute path is required on NetBSD with $ORIGIN, hence `pwd`
+	`pwd`/rev-app/rev-app 1.1
 	mv rev-app rev-app-2
-	rev-app-2/rev-app 1.1
+	`pwd`/rev-app-2/rev-app 1.1
 else
 	echo "Disabling deployment tests, as deployment is currently unsupported on AIX."
 fi

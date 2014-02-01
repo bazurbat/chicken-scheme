@@ -393,6 +393,15 @@
 
 	    % unlimit datasize
 
+	  - When using -deploy on NetBSD, currently the kernel only
+	    supports running the program through its absolute path,
+	    otherwise you will get an error message stating:
+
+	      execname not specified in AUX vector: No such file or directory
+
+	    Deployed binaries can also be run without an explicit path,
+	    through $PATH; only relative pathnames do not work.
+
 	  - Using external libraries on NetBSD may also be easier, if
 	    you add the following definitions to `Makefile.bsd':
 

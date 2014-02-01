@@ -69,7 +69,6 @@
 (define mingw (eq? (build-platform) 'mingw32))
 (define osx (eq? (software-version) 'macosx))
 (define win mingw)
-(define netbsd (eq? (software-version) 'netbsd))
 (define cygwin (eq? (build-platform) 'cygwin))
 (define aix (eq? (build-platform) 'aix))
 
@@ -266,7 +265,7 @@
 	  (list
 	   (conc "-L\"" library-dir "\"")
 	   (conc " -Wl,-R\""
-		 (if (and deployed (not netbsd))
+		 (if deployed
 		     "\\$ORIGIN"
 		     (prefix "" "lib"
 			     (if host-mode
@@ -277,8 +276,7 @@
 		  (list (conc "-Wl,-R\"" library-dir "\"")))
 	 (else
 	  (list (conc "-L\"" library-dir "\""))))
-   (if (and deployed (or (eq? (software-version) 'freebsd)
-                         (eq? (software-version) 'openbsd)))
+   (if (and deployed (memq (software-version) '(freebsd openbsd netbsd)))
        (list "-Wl,-z,origin")
        '())
    (cond ((get-environment-variable "CHICKEN_C_LIBRARY_PATH") => 

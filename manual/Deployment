@@ -164,9 +164,12 @@ will list dynamic libraries that your application needs.
 ===== Other UNIX flavors
 
 Setting up the application executable to load runtime libraries from
-the same directory is supported on FreeBSD, OpenBSD and Solaris.
-NetBSD supports this from version 5.0 onwards - this is currently
-disabled in {{csc}} for this particular platform.
+the same directory is supported on FreeBSD, NetBSD, OpenBSD and Solaris.
+
+Under NetBSD, you must invoke the binary using its full absolute path
+(or via {{$PATH}}), otherwise it will give you an error message:
+
+  execname not specified in AUX vector: No such file or directory
 
 On AIX, deployment is currently not fully supported as the runtime
 linker will only load libraries from paths hardcoded at link time.
