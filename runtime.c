@@ -5600,9 +5600,6 @@ C_regparm C_word C_fcall C_u_i_memq(C_word x, C_word lst)
     else lst = C_u_i_cdr(lst);
   }
 
-  if(lst!=C_SCHEME_END_OF_LIST)
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "memv", lst);
-
   return C_SCHEME_FALSE;
 }
 
