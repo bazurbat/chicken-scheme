@@ -101,7 +101,7 @@ static char C_time_string [TIME_STRING_MAXLENGTH + 1];
 # define C_setenv(x, y)     C_fix(setenv((char *)C_data_pointer(x), (char *)C_data_pointer(y), 1))
 #else
 # if defined(_WIN32) && !defined(__CYGWIN__)
-#  define C_unsetenv(s)      C_fix(C_setenv(s, C_SCHEME_FALSE))
+#  define C_unsetenv(s)      C_setenv(s, C_SCHEME_FALSE)
 # else
 #  define C_unsetenv(s)      C_fix(putenv((char *)C_data_pointer(s)))
 # endif
@@ -114,8 +114,8 @@ static C_word C_fcall C_setenv(C_word x, C_word y) {
   if(buf == NULL) return(C_fix(0));
   else {
     C_strlcpy(buf, sx, buf_len);
-    buf[ n1 ] = '=';
-    C_strlcat(buf + n1 + 1, sy, buf_len);
+    C_strlcat(buf, "=", buf_len);
+    C_strlcat(buf, sy, buf_len);
     return(C_fix(putenv(buf)));
   }
 }
