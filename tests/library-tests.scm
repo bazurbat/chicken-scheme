@@ -541,6 +541,9 @@ A
 (assert (equal? '#(2 3) (subvector '#(1 2 3) 1)))
 (assert (equal? '#(2)   (subvector '#(1 2 3) 1 2)))
 (assert (equal? '#()    (subvector '#(1 2 3) 1 1)))
+(assert (equal? '#()    (subvector '#(1 2 3) 3)))
+(assert-fail (subvector '#(1 2 3) 4))
+(assert-fail (subvector '#(1 2 3) 3 4))
 
 ;;; alist accessors
 

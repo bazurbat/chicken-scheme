@@ -1408,7 +1408,7 @@ EOF
   (let* ((len (##sys#size v))
 	 (j (or j len))
 	 (len2 (fx- j i)))
-    (##sys#check-range i 0 len 'subvector)
+    (##sys#check-range i 0 (fx+ len 1) 'subvector)
     (##sys#check-range j 0 (fx+ len 1) 'subvector)
     (let ((v2 (make-vector len2)))
       (do ((k 0 (fx+ k 1)))

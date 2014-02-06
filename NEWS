@@ -4,6 +4,10 @@
   - csc "-deploy" works now on FreeBSD (thanks to Jules Altfas and
     Vitaly Magerya), OpenBSD and NetBSD (see README for NetBSD).
 
+- Core libraries
+  - Fix subvector when the TO optional argument equals the given vector
+    length (#1097)
+
 4.8.3
 
 - Security fixes
