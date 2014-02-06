@@ -923,12 +923,10 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 
 # define C_memcpy                   memcpy
 # define C_memcmp                   memcmp
-# define C_strlcpy                  strlcpy
 # define C_strncpy                  strncpy
 # define C_strcmp                   strcmp
 # define C_strncmp                  strncmp
 # define C_strlen                   strlen
-# define C_strlcat                  strlcat
 # define C_memset                   memset
 # define C_memmove                  memmove
 # define C_strncasecmp              strncasecmp
@@ -3055,8 +3053,10 @@ C_path_to_executable(C_char *fname)
 #endif
 
 /* These strl* functions are based on public domain code by C.B. Falconer */
-#ifndef HAVE_STRLCPY
-C_inline size_t strlcpy(char *dst, const char *src, size_t sz)
+#ifdef HAVE_STRLCPY
+# define C_strlcpy                  strlcpy
+#else
+C_inline size_t C_strlcpy(char *dst, const char *src, size_t sz)
 {
    const char *start = src;
 
@@ -3073,15 +3073,17 @@ C_inline size_t strlcpy(char *dst, const char *src, size_t sz)
 }
 #endif
 
-#ifndef HAVE_STRLCAT
-C_inline size_t strlcat(char *dst, const char *src, size_t sz)
+#ifdef HAVE_STRLCAT
+# define C_strlcat                  strlcat
+#else
+C_inline size_t C_strlcat(char *dst, const char *src, size_t sz)
 {
    char  *start = dst;
 
    while (*dst++)    /* assumes sz >= strlen(dst) */
       if (sz) sz--;    /* i.e. well formed string */
    dst--;
-   return dst - start + strlcpy(dst, src, sz);
+   return dst - start + C_strlcpy(dst, src, sz);
 }
 #endif
 
