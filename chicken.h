@@ -2889,6 +2889,41 @@ C_inline C_word C_a_i_record8(C_word **ptr, int n, C_word x1, C_word x2, C_word 
   return (C_word)p0;
 }
 
+/* These strl* functions are based on public domain code by C.B. Falconer */
+#ifdef HAVE_STRLCPY
+# define C_strlcpy                  strlcpy
+#else
+C_inline size_t C_strlcpy(char *dst, const char *src, size_t sz)
+{
+   const char *start = src;
+
+   if (sz--) {
+      while ((*dst++ = *src))
+         if (sz--) src++;
+         else {
+            *(--dst) = '\0';
+            break;
+         }
+   }
+   while (*src++) continue;
+   return src - start - 1;
+}
+#endif
+
+#ifdef HAVE_STRLCAT
+# define C_strlcat                  strlcat
+#else
+C_inline size_t C_strlcat(char *dst, const char *src, size_t sz)
+{
+   char  *start = dst;
+
+   while (*dst++)    /* assumes sz >= strlen(dst) */
+      if (sz) sz--;    /* i.e. well formed string */
+   dst--;
+   return dst - start + C_strlcpy(dst, src, sz);
+}
+#endif
+
 
 #ifdef C_PRIVATE_REPOSITORY
 # if defined(C_MACOSX) && defined(C_GUI)
@@ -3049,41 +3084,6 @@ C_path_to_executable(C_char *fname)
 # else
   return NULL;
 # endif
-}
-#endif
-
-/* These strl* functions are based on public domain code by C.B. Falconer */
-#ifdef HAVE_STRLCPY
-# define C_strlcpy                  strlcpy
-#else
-C_inline size_t C_strlcpy(char *dst, const char *src, size_t sz)
-{
-   const char *start = src;
-
-   if (sz--) {
-      while ((*dst++ = *src))
-         if (sz--) src++;
-         else {
-            *(--dst) = '\0';
-            break;
-         }
-   }
-   while (*src++) continue;
-   return src - start - 1;
-}
-#endif
-
-#ifdef HAVE_STRLCAT
-# define C_strlcat                  strlcat
-#else
-C_inline size_t C_strlcat(char *dst, const char *src, size_t sz)
-{
-   char  *start = dst;
-
-   while (*dst++)    /* assumes sz >= strlen(dst) */
-      if (sz) sz--;    /* i.e. well formed string */
-   dst--;
-   return dst - start + C_strlcpy(dst, src, sz);
 }
 #endif
 
