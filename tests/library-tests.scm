@@ -91,11 +91,14 @@
 ;; On some machines/OSes these tests fail due to missing hardware support
 ;; and sometimes due to broken libc/libm support, so we have disabled them.
 (assert (equal? 1.0 (numerator 1.1125369292536006915451e-308)))
-(assert (equal? +inf.0 (denominator 1.1125369292536006915451e-308)))
-(assert (equal? -1.0 (numerator -5.5626846462680034577256e-309)))
 (assert (equal? +inf.0 (denominator -5.5626846462680034577256e-309)))
-(assert (equal? 1.0 (numerator 4.9406564584124654417657e-324)))
 (assert (equal? +inf.0 (denominator 4.9406564584124654417657e-324)))
+(cond-expand
+  ((not msvc)
+   (assert (equal? +inf.0 (denominator 1.1125369292536006915451e-308)))
+   (assert (equal? -1.0 (numerator -5.5626846462680034577256e-309)))
+   (assert (equal? 1.0 (numerator 4.9406564584124654417657e-324))))
+  (else))
 
 (assert (equal? 4.0 (denominator -1.25)))
 (assert (equal? 1e10 (numerator 1e10)))

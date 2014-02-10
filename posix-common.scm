@@ -126,6 +126,12 @@ static C_word C_fcall C_setenv(C_word x, C_word y) {
 }
 #endif
 
+#if defined(_MSC_VER)
+# define STDIN_FILENO    0
+# define STDOUT_FILENO   1
+# define STDERR_FILENO   2
+#endif 
+
 EOF
 ))
 

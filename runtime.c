@@ -31,7 +31,9 @@
 #include <errno.h>
 #include <float.h>
 #include <signal.h>
+#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif
 
 #ifdef HAVE_SYSEXITS_H
 # include <sysexits.h>
@@ -742,7 +744,9 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
     C_sigaction(SIGILL, &sa, NULL);
     C_sigaction(SIGSEGV, &sa, NULL);
 #else
+# ifndef _MSC_VER
     C_signal(SIGBUS, global_signal_handler);
+# endif
     C_signal(SIGILL, global_signal_handler);
     C_signal(SIGFPE, global_signal_handler);
     C_signal(SIGSEGV, global_signal_handler);
@@ -2797,11 +2801,13 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
     /* Mark literal frames: */
     for(lfn = lf_list; lfn != NULL; lfn = lfn->next)
-      for(i = 0; i < lfn->count; mark(&lfn->lf[ i++ ]));
+      for(i = 0; i < lfn->count; )
+          mark(&lfn->lf[ i++ ]);
 
     /* Mark symbol tables: */
     for(stp = symbol_table_list; stp != NULL; stp = stp->next)
-      for(i = 0; i < stp->size; mark(&stp->table[ i++ ]));
+      for(i = 0; i < stp->size; )
+          mark(&stp->table[ i++ ]);
 
     /* Mark collectibles: */
     for(msp = collectibles; msp < collectibles_top; ++msp)
@@ -2816,14 +2822,16 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
   }
   else {
     /* Mark mutated slots: */
-    for(msp = mutation_stack_bottom; msp < mutation_stack_top; mark(*(msp++)));
+    for(msp = mutation_stack_bottom; msp < mutation_stack_top; )
+        mark(*(msp++));
   }
 
   /* Clear the mutated slot stack: */
   mutation_stack_top = mutation_stack_bottom;
 
   /* Mark live values: */
-  for(p = C_temporary_stack; p < C_temporary_stack_bottom; mark(p++));
+  for(p = C_temporary_stack; p < C_temporary_stack_bottom; )
+      mark(p++);
 
   /* Mark trace-buffer: */
   for(tinfo = trace_buffer; tinfo < trace_buffer_limit; ++tinfo) {
@@ -3299,11 +3307,13 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
 
   /* Mark literal frames: */
   for(lfn = lf_list; lfn != NULL; lfn = lfn->next)
-    for(i = 0; i < lfn->count; remark(&lfn->lf[ i++ ]));
+    for(i = 0; i < lfn->count; )
+        remark(&lfn->lf[ i++ ]);
 
   /* Mark symbol table: */
   for(stp = symbol_table_list; stp != NULL; stp = stp->next)
-    for(i = 0; i < stp->size; remark(&stp->table[ i++ ]));
+    for(i = 0; i < stp->size; )
+        remark(&stp->table[ i++ ]);
 
   /* Mark collectibles: */
   for(msp = collectibles; msp < collectibles_top; ++msp)
@@ -3318,7 +3328,8 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
   mutation_stack_top = mutation_stack_bottom;
 
   /* Mark live values: */
-  for(p = C_temporary_stack; p < C_temporary_stack_bottom; remark(p++));
+  for(p = C_temporary_stack; p < C_temporary_stack_bottom; )
+      remark(p++);
 
   /* Mark locative table: */
   for(i = 0; i < locative_table_count; ++i)
@@ -6333,7 +6344,7 @@ C_regparm C_word C_fcall C_2_times(C_word **ptr, C_word x, C_word y)
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "*", x);
   /* shutup compiler */
-  return C_flonum(ptr, 0.0/0.0);
+  return C_flonum(ptr, NAN);
 }
 
 
@@ -6411,7 +6422,7 @@ C_regparm C_word C_fcall C_2_plus(C_word **ptr, C_word x, C_word y)
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "+", x);
   /* shutup compiler */
-  return C_flonum(ptr, 0.0/0.0);
+  return C_flonum(ptr, NAN);
 }
 
 
@@ -6506,7 +6517,7 @@ C_regparm C_word C_fcall C_2_minus(C_word **ptr, C_word x, C_word y)
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "-", x);
   /* shutup compiler */
-  return C_flonum(ptr, 0.0/0.0);
+  return C_flonum(ptr, NAN);
 }
 
 
@@ -7301,7 +7312,7 @@ void C_ccall C_flonum_rat(C_word c, C_word closure, C_word k, C_word n)
     numer = fn*denom;
   } else { /* denormalised/subnormal number: [+-]1.0/+inf.0 */
     numer = fn > 0.0 ? 1.0 : -1.0;
-    denom = 1.0/0.0; /* +inf */
+    denom = INFINITY; /* +inf */
   }
   C_values(4, C_SCHEME_UNDEFINED, k, C_flonum(&ap, numer), C_flonum(&ap, denom));
 }
@@ -7573,14 +7584,30 @@ C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word
          C_strchr("fnFN", *(str+3)) != NULL &&
          *(str+4) == '.' && *(str+5) == '0') {
         if (*(str+1) == 'i' || *(str+1) == 'I')   /* Inf */
-          *flo = 1.0/0.0;
+          *flo = INFINITY;
         else                                      /* NaN */
-          *flo = 0.0/0.0;
+          *flo = NAN;
         if (*str == '-')
           *flo *= -1.0;
         return 2;
       }
     }
+#ifdef _MSC_VER
+    else if (len == 7) {
+        if ((*str == '+' || *str == '-') &&
+            C_strchr("1", *(str+1)) &&
+            C_strchr(".", *(str+2)) &&
+            C_strchr("#", *(str+3)) &&
+            C_strchr("I", *(str+4)) &&
+            C_strchr("N", *(str+5))) {
+            if (C_strchr("F", *(str+6)))
+                *flo = INFINITY;
+            else if (C_strchr("D", *(str+6)))
+                *flo = NAN;
+            return 2;
+        }
+    }
+#endif
     /* Prevent C parser from accepting things like "-inf" on its own... */
     for(n = 0; n < len; ++n) {
       if (C_strchr("+-0123456789e.", *(str+n)) == NULL)

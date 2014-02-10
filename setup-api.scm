@@ -382,7 +382,7 @@
   (pathname-replace-extension f
    (let ((ext (pathname-extension f)))
      (cond ((not ext) default)
-	   ((equal? "so" ext) ##sys#load-dynamic-extension)
+	   ((equal? "so" ext) ##sys#load-library-extension)
 	   ((equal? "a" ext) (if *windows-shell* "lib" "a"))
 	   (else ext)))))
 

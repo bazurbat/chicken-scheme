@@ -1935,18 +1935,16 @@ EOF
 (define (##sys#set-port-data! port data) (##sys#setslot port 9 data))
 
 (define ##sys#platform-fixup-pathname
-  (let* ([bp (string->symbol ((##core#primitive "C_build_platform")))]
-	 [fixsuffix (eq? bp 'mingw32)])
-    (lambda (name)
-      (if fixsuffix
-	  (let ([end (fx- (##sys#size name) 1)])
-	    (if (fx>= end 0)
-		(let ([c (##core#inline "C_subchar" name end)])
-		  (if (or (eq? c #\\) (eq? c #\/))
-		      (##sys#substring name 0 end)
-		      name) )
-		name) )
-	  name) ) ) )
+  (lambda (name)
+    (if ##sys#windows-platform
+      (let ([end (fx- (##sys#size name) 1)])
+        (if (fx>= end 0)
+          (let ([c (##core#inline "C_subchar" name end)])
+            (if (or (eq? c #\\) (eq? c #\/))
+              (##sys#substring name 0 end)
+              name))
+          name))
+      name)))
 
 (define open-input-file)
 (define open-output-file)

@@ -187,10 +187,10 @@ $compile syntax-tests-2.scm
 ./a.out
 
 echo "======================================== meta-syntax tests ..."
-$interpret -bnq meta-syntax-test.scm -e '(import foo)' -e "(assert (equal? '((1)) (bar 1 2)))" -e "(assert (equal? '(list 1 2 3) (listify)))" -e "(import foo-usage)" -e "(assert (equal? '(1) (foo-user)))"
-$compile_s meta-syntax-test.scm -j foo
-$compile_s foo.import.scm
-$interpret -bnq -e '(require-library meta-syntax-test)' -e '(import foo)' -e "(assert (equal? '((1)) (bar 1 2)))" -e "(assert (equal? '(list 1 2 3) (listify)))" -e "(import foo-usage)" -e "(assert (equal? '(1) (foo-user)))"
+$interpret -bnq meta-syntax-test.scm -e '(import meta-syntax-test)' -e "(assert (equal? '((1)) (bar 1 2)))" -e "(assert (equal? '(list 1 2 3) (listify)))" -e "(import meta-syntax-test-usage)" -e "(assert (equal? '(1) (foo-user)))"
+$compile_s meta-syntax-test.scm -j meta-syntax-test
+$compile_s meta-syntax-test.import.scm
+$interpret -bnq -e '(require-library meta-syntax-test)' -e '(import meta-syntax-test)' -e "(assert (equal? '((1)) (bar 1 2)))" -e "(assert (equal? '(list 1 2 3) (listify)))" -e "(import meta-syntax-test-usage)" -e "(assert (equal? '(1) (foo-user)))"
 
 echo "======================================== reexport tests ..."
 $interpret -bnq reexport-tests.scm
@@ -233,10 +233,10 @@ echo "======================================== import tests ..."
 $interpret -bnq import-tests.scm
 
 echo "======================================== import library tests ..."
-rm -f ../foo.import.* foo.import.*
-$compile import-library-test1.scm -emit-import-library foo
+rm -f ../import-library-test1.import.* import-library-test1.import.*
+$compile import-library-test1.scm -emit-import-library import-library-test1
 $interpret -s import-library-test2.scm
-$compile_s foo.import.scm -o foo.import.so
+$compile_s import-library-test1.import.scm -o import-library-test1.import.so
 $interpret -s import-library-test2.scm
 $compile import-library-test2.scm
 ./a.out

@@ -972,7 +972,7 @@
 		    [(not (string? input)) (badfile input)]
 		    ((##sys#file-exists? input #t #f 'load) input)
 		    (else
-		     (let ([fname2 (##sys#string-append input ##sys#load-dynamic-extension)])
+		     (let ([fname2 (##sys#string-append input ##sys#load-library-extension)])
 		       (if (and (not ##sys#dload-disabled)
 				(##sys#fudge 24) ; dload?
 				(##sys#file-exists? fname2 #t #f 'load))
@@ -1057,7 +1057,8 @@
 	      (eq? (machine-type) 'hppa)) hppa-load-library-extension]
 	[else default-load-library-extension] ) )
 
-(define ##sys#load-dynamic-extension default-load-library-extension)
+; some eggs are using this
+(define ##sys#load-dynamic-extension ##sys#load-library-extension)
 
 (define ##sys#default-dynamic-load-libraries 
   (case (build-platform)
@@ -1192,7 +1193,7 @@
 	    (and (or (and rp
 			  (not ##sys#dload-disabled)
 			  (##sys#fudge 24) ; dload?
-			  (file-exists? (##sys#string-append p0 ##sys#load-dynamic-extension)))
+			  (file-exists? (##sys#string-append p0 ##sys#load-library-extension)))
 		     (file-exists? (##sys#string-append p0 source-file-extension)) )
 		 p0) ) )
 	(let loop ((paths (##sys#append
@@ -1497,8 +1498,8 @@
 	(test2 
 	 fname
 	 (cond ((not (##sys#fudge 24)) (list source-file-extension)) ; no dload?
-	       (prefer-source (list source-file-extension ##sys#load-dynamic-extension))
-	       (else (list ##sys#load-dynamic-extension source-file-extension) ) ) ))
+	       (prefer-source (list source-file-extension ##sys#load-library-extension))
+	       (else (list ##sys#load-library-extension source-file-extension) ) ) ))
       (or (test fname)
 	  (let loop ((paths (if repo
 				(##sys#append 

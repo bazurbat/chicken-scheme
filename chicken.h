@@ -89,7 +89,7 @@
 # define C_GNU_ENV
 #endif
 
-#if defined(__MINGW32__) || defined(__WATCOMC__) || defined(__MWERKS__)
+#if defined(__MINGW32__) || defined(__WATCOMC__) || defined(__MWERKS__) || defined(_MSC_VER)
 /*
  * XXX This should probably be renamed or changed because it's misleading.
  * For example, Haiku is not a Unix either, but this doesn't get defined there.
@@ -109,18 +109,37 @@
 /* Headers */
 
 #include <ctype.h>
-#include <inttypes.h>
-#include <limits.h>
+#if defined(HAVE_INTTYPES_H)
+# include <inttypes.h>
+#endif
+#if defined(HAVE_LIMITS_H)
+# include <limits.h>
+#endif
 #include <math.h>
+#include <float.h>
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
+#if defined(HAVE_STDLIB_H)
 #include <stdlib.h>
+#endif
+#if defined(HAVE_STRING_H)
 #include <string.h>
+#endif
 #include <time.h>
-#include <unistd.h>
-#include <sys/types.h>
+#if defined(HAVE_UNISTD_H)
+# include <unistd.h>
+#endif
+#if defined(HAVE_SYS_TYPES_H)
+# include <sys/types.h>
+#endif
+#if defined(HAVE_PROCESS_H)
+# include <process.h>
+#endif
+#if defined(HAVE_IO_H)
+# include <io.h>
+#endif
 
 
 /* Byteorder in machine word */
@@ -143,7 +162,7 @@
 # include <sys/byteorder.h>
 #endif
 
-#if defined(__MINGW32__) || defined(__WATCOMC__)
+#if defined(__MINGW32__) || defined(__WATCOMC__) || defined(_MSC_VER)
 # include <malloc.h>
 #endif
 
@@ -209,7 +228,7 @@ void *alloca ();
 #   undef  C_varextern
 #   define C_varextern             C_extern __declspec(dllimport)
 #  endif
-# elif defined(__WATCOMC__)
+# elif defined(__WATCOMC__) || defined(_MSC_VER)
 #  undef  C_fctimport
 #  define C_fctimport              __declspec(dllexport)
 #  undef  C_externimport
@@ -520,7 +539,7 @@ static inline int isinf_ld (long double x)
 #define C_F32_LOCATIVE            8
 #define C_F64_LOCATIVE            9
 
-#if defined (__MINGW32__)
+#if defined (__MINGW32__) || defined (_MSC_VER)
 # define C_s64                    __int64
 # define C_u64                    unsigned __int64
 #else
@@ -563,9 +582,23 @@ static inline int isinf_ld (long double x)
  #define INT8_MIN   (-INT8_MAX - 1)
 */
 
-#define C_U64_MAX    UINT64_MAX
-#define C_S64_MIN    INT64_MIN
-#define C_S64_MAX    INT64_MAX
+#if defined(_MSC_VER)
+# define C_U64_MAX    _UI64_MAX
+# define C_S64_MIN    _I64_MIN
+# define C_S64_MAX    _I64_MAX
+#else
+# define C_U64_MAX    UINT64_MAX
+# define C_S64_MIN    INT64_MIN
+# define C_S64_MAX    INT64_MAX
+#endif
+
+#if defined(_MSC_VER)
+# define INFINITY (DBL_MAX+DBL_MAX)
+# define NAN (INFINITY-INFINITY)
+# define isinf(x) (!_finite(x) && !_isnan(x))
+# define isnan(x) _isnan(x)
+# define isnormal(x) _finite(x)
+#endif
 
 #if defined(C_LLP)
 # define C_long                   C_s64
@@ -692,6 +725,8 @@ static inline int isinf_ld (long double x)
 # define C_BUILD_PLATFORM "sun"
 #elif defined(__MINGW32__)
 # define C_BUILD_PLATFORM "mingw32"
+#elif defined(_MSC_VER)
+# define C_BUILD_PLATFORM "msvc"
 #elif defined(__clang__)
 # define C_BUILD_PLATFORM "clang"
 #elif defined(_AIX)
@@ -947,7 +982,11 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_strlen                   strlen
 # define C_memset                   memset
 # define C_memmove                  memmove
-# define C_strncasecmp              strncasecmp
+# if defined(_WIN32)
+#  define C_strncasecmp              _strnicmp
+# else
+#  define C_strncasecmp              strncasecmp
+# endif
 # define C_malloc                   malloc
 # define C_calloc                   calloc
 # define C_free                     free
@@ -961,7 +1000,11 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_fopen                    fopen
 # define C_fclose                   fclose
 # define C_strpbrk                  strpbrk
-# define C_snprintf                 snprintf
+# if defined(_WIN32)
+#  define C_snprintf                _snprintf
+# else
+#  define C_snprintf                snprintf
+# endif
 # define C_printf                   printf
 # define C_fprintf                  fprintf
 # define C_vfprintf                 vfprintf
@@ -985,7 +1028,11 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_fgets                    fgets
 # define C_ungetc                   ungetc
 # define C_system                   system
-# define C_isatty                   isatty
+# if defined(_MSC_VER)
+#  define C_isatty                  _isatty
+# else
+#  define C_isatty                  isatty
+# endif
 # define C_fileno                   fileno
 # define C_select                   select
 # if defined(HAVE_SIGACTION)
@@ -1038,11 +1085,18 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_readlink                 readlink
 # define C_getcwd                   getcwd
 # define C_access                   access
-# define C_getpid                   getpid
+# if defined(_MSC_VER)
+#  define C_getpid                  _getpid
+# else
+#  define C_getpid                  getpid
+# endif
 # define C_getenv                   getenv
 # ifdef __linux__
 extern double round(double);
 extern double trunc(double);
+# elif defined(_MSC_VER)
+# define round(fp) ((int)((fp) >= 0 ? (fp) + 0.5 : (fp) - 0.5))
+# define trunc(fp) ((int)(fp))
 # endif
 #else
 /* provide this file and define C_PROVIDE_LIBC_STUBS if you want to use
@@ -1329,7 +1383,7 @@ extern double trunc(double);
 #define C_poke_pointer_or_null(b, i, x) (C_set_block_item(b, C_unfix(i), (C_word)C_data_pointer_or_null(x)), C_SCHEME_UNDEFINED)
 #define C_qfree(ptr)                    (C_free(C_c_pointer_nn(ptr)), C_SCHEME_UNDEFINED)
 
-#define C_tty_portp(p)                  C_mk_bool(isatty(fileno(C_port_file(p))))
+#define C_tty_portp(p)                  C_mk_bool(C_isatty(fileno(C_port_file(p))))
 
 #define C_emit_eval_trace_info(x, y, z) C_emit_trace_info2("<eval>", x, y, z)
 #define C_emit_syntax_trace_info(x, y, z) C_emit_trace_info2("<syntax>", x, y, z)
