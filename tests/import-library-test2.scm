@@ -1,7 +1,7 @@
 (require-library import-library-test1)
 
 (module bar (xcase)
-  (import scheme chicken extras foo)
+  (import scheme chicken extras import-library-test1-m)
   (assert (equal? '(123) (foo)))
   (assert (= 2 (xcase 1 ((1) 2)))))
 

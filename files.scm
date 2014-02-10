@@ -46,6 +46,11 @@
 #ifndef _WIN32
 # include <sys/stat.h>
 # define C_mkdir(str)       C_fix(mkdir(C_c_string(str), S_IRWXU | S_IRWXG | S_IRWXO))
+#elif _MSC_VER
+# ifdef HAVE_DIRECT_H
+#  include <direct.h>
+# endif
+# define C_mkdir(str)       C_fix(_mkdir(C_c_string(str)))
 #else
 # define C_mkdir(str)	    C_fix(mkdir(C_c_string(str)))
 #endif
@@ -350,7 +355,7 @@ EOF
 ;;; normalize pathname for a particular platform
 
 (define normalize-pathname
-  (let ((bldplt (if (eq? (build-platform) 'mingw32) 'windows 'unix)) )
+  (let ((bldplt (if ##sys#windows-platform 'windows 'unix)))
     (define (addpart part parts)
       (cond ((string=? "." part) parts)
             ((string=? ".." part) 
