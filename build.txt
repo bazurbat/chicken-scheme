@@ -1,0 +1,412 @@
+make -f ./Makefile.linux CONFIG= all
+make[1]: Entering directory '/home/radon/src/chicken-core'
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c apply-hack.x86-64.S -o apply-hack.x86-64.o
+chicken  library.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file library.c
+echo '#define C_CHICKEN_PROGRAM "chicken"' >> chicken-defaults.h
+echo '#ifndef C_INSTALL_CC' >> chicken-defaults.h
+echo '# define C_INSTALL_CC "gcc"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_INSTALL_CXX' >> chicken-defaults.h
+echo '# define C_INSTALL_CXX "g++"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_INSTALL_POSTINSTALL_PROGRAM' >> chicken-defaults.h
+echo '# define C_INSTALL_POSTINSTALL_PROGRAM "true"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_INSTALL_RC_COMPILER' >> chicken-defaults.h
+echo '# define C_INSTALL_RC_COMPILER ""' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_INSTALL_CFLAGS' >> chicken-defaults.h
+echo '# define C_INSTALL_CFLAGS "-fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -Os -fomit-frame-pointer"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_INSTALL_LDFLAGS' >> chicken-defaults.h
+echo '# define C_INSTALL_LDFLAGS " "' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_INSTALL_PREFIX' >> chicken-defaults.h
+echo '# define C_INSTALL_PREFIX "/usr/local"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_INSTALL_SHARE_HOME' >> chicken-defaults.h
+echo '# define C_INSTALL_SHARE_HOME "/usr/local/share/chicken"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_INSTALL_BIN_HOME' >> chicken-defaults.h
+echo '# define C_INSTALL_BIN_HOME "/usr/local/bin"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_INSTALL_EGG_HOME' >> chicken-defaults.h
+echo '# define C_INSTALL_EGG_HOME "/usr/local/lib/chicken/7"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_INSTALL_LIB_HOME' >> chicken-defaults.h
+echo '# define C_INSTALL_LIB_HOME "/usr/local/lib"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_INSTALL_LIB_NAME' >> chicken-defaults.h
+echo '# define C_INSTALL_LIB_NAME "chicken"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_INSTALL_STATIC_LIB_HOME' >> chicken-defaults.h
+echo '# define C_INSTALL_STATIC_LIB_HOME "/usr/local/lib"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_INSTALL_INCLUDE_HOME' >> chicken-defaults.h
+echo '# define C_INSTALL_INCLUDE_HOME "/usr/local/include/chicken"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_INSTALL_MORE_LIBS' >> chicken-defaults.h
+echo '# define C_INSTALL_MORE_LIBS "-lm -ldl"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_INSTALL_MORE_STATIC_LIBS' >> chicken-defaults.h
+echo '# define C_INSTALL_MORE_STATIC_LIBS "-lm -ldl"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_DEFAULT_TARGET_HEAP_SIZE' >> chicken-defaults.h
+echo '# define C_DEFAULT_TARGET_HEAP_SIZE 0' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_STACK_GROWS_DOWNWARD' >> chicken-defaults.h
+echo '# define C_STACK_GROWS_DOWNWARD 1' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_TARGET_MORE_LIBS' >> chicken-defaults.h
+echo '# define C_TARGET_MORE_LIBS "-lm -ldl"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_TARGET_MORE_STATIC_LIBS' >> chicken-defaults.h
+echo '# define C_TARGET_MORE_STATIC_LIBS "-lm -ldl"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_TARGET_CC' >> chicken-defaults.h
+echo '# define C_TARGET_CC "gcc"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_TARGET_CXX' >> chicken-defaults.h
+echo '# define C_TARGET_CXX "g++"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_TARGET_RC_COMPILER' >> chicken-defaults.h
+echo '# define C_TARGET_RC_COMPILER ""' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_TARGET_CFLAGS' >> chicken-defaults.h
+echo '# define C_TARGET_CFLAGS "-fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -Os -fomit-frame-pointer"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_TARGET_LDFLAGS' >> chicken-defaults.h
+echo '# define C_TARGET_LDFLAGS " "' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_TARGET_FEATURES' >> chicken-defaults.h
+echo '# define C_TARGET_FEATURES ""' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_CROSS_CHICKEN' >> chicken-defaults.h
+echo '# define C_CROSS_CHICKEN 0' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_TARGET_PREFIX' >> chicken-defaults.h
+echo '# define C_TARGET_PREFIX "/usr/local"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_TARGET_BIN_HOME' >> chicken-defaults.h
+echo '# define C_TARGET_BIN_HOME "/usr/local/bin"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_TARGET_LIB_HOME' >> chicken-defaults.h
+echo '# define C_TARGET_LIB_HOME "/usr/local/lib"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_TARGET_LIB_NAME' >> chicken-defaults.h
+echo '# define C_TARGET_LIB_NAME "chicken"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_TARGET_RUN_LIB_HOME' >> chicken-defaults.h
+echo '# define C_TARGET_RUN_LIB_HOME "/usr/local/lib"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_TARGET_SHARE_HOME' >> chicken-defaults.h
+echo '# define C_TARGET_SHARE_HOME "/usr/local/share"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_TARGET_INCLUDE_HOME' >> chicken-defaults.h
+echo '# define C_TARGET_INCLUDE_HOME "/usr/local/include/chicken"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_TARGET_STATIC_LIB_HOME' >> chicken-defaults.h
+echo '# define C_TARGET_STATIC_LIB_HOME "/usr/local/lib"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_CHICKEN_PROGRAM' >> chicken-defaults.h
+echo '# define C_CHICKEN_PROGRAM "chicken"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_CSC_PROGRAM' >> chicken-defaults.h
+echo '# define C_CSC_PROGRAM "csc"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_CSI_PROGRAM' >> chicken-defaults.h
+echo '# define C_CSI_PROGRAM "csi"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_CHICKEN_BUG_PROGRAM' >> chicken-defaults.h
+echo '# define C_CHICKEN_BUG_PROGRAM "chicken-bug"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_CHICKEN_INSTALL_PROGRAM' >> chicken-defaults.h
+echo '# define C_CHICKEN_INSTALL_PROGRAM "chicken-install"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_CHICKEN_UNINSTALL_PROGRAM' >> chicken-defaults.h
+echo '# define C_CHICKEN_UNINSTALL_PROGRAM "chicken-uninstall"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_CHICKEN_STATUS_PROGRAM' >> chicken-defaults.h
+echo '# define C_CHICKEN_STATUS_PROGRAM "chicken-status"' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_WINDOWS_SHELL' >> chicken-defaults.h
+echo '# define C_WINDOWS_SHELL 0' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_BINARY_VERSION' >> chicken-defaults.h
+echo '# define C_BINARY_VERSION 7' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '#ifndef C_USES_SONAME' >> chicken-defaults.h
+echo '# define C_USES_SONAME 1' >> chicken-defaults.h
+echo '#endif' >> chicken-defaults.h
+echo '/* END OF FILE */' >> chicken-defaults.h
+echo "/* GENERATED */" >chicken-config.h
+echo "#define HAVE_DIRENT_H 1" >>chicken-config.h
+echo "#define HAVE_DLFCN_H 1" >>chicken-config.h
+echo "#define HAVE_INTTYPES_H 1" >>chicken-config.h
+echo "#define HAVE_LIMITS_H 1" >>chicken-config.h
+echo "#define HAVE_LONG_LONG 1" >>chicken-config.h
+echo "#define HAVE_MEMMOVE 1" >>chicken-config.h
+echo "#define HAVE_MEMORY_H 1" >>chicken-config.h
+echo "#define HAVE_POSIX_POLL 1" >>chicken-config.h
+echo "#define HAVE_SIGACTION 1" >>chicken-config.h
+echo "#define HAVE_SIGSETJMP 1" >>chicken-config.h
+echo "#define HAVE_SIGPROCMASK 1" >>chicken-config.h
+echo "#define HAVE_STDINT_H 1" >>chicken-config.h
+echo "#define HAVE_STDLIB_H 1" >>chicken-config.h
+echo "#define HAVE_STRERROR 1" >>chicken-config.h
+echo "#define HAVE_STRINGS_H 1" >>chicken-config.h
+echo "#define HAVE_STRING_H 1" >>chicken-config.h
+echo "#define HAVE_STRTOLL 1" >>chicken-config.h
+echo "#define HAVE_STRTOQ 1" >>chicken-config.h
+echo "#define HAVE_SYS_STAT_H 1" >>chicken-config.h
+echo "#define HAVE_SYS_TYPES_H 1" >>chicken-config.h
+echo "#define HAVE_UNISTD_H 1" >>chicken-config.h
+echo "#define HAVE_UNSIGNED_LONG_LONG 1" >>chicken-config.h
+echo "#define STDC_HEADERS 1" >>chicken-config.h
+echo "#define HAVE_ALLOCA 1" >>chicken-config.h
+echo "#define HAVE_ALLOCA_H 1" >>chicken-config.h
+echo "#define HAVE_GRP_H 1" >>chicken-config.h
+echo "#define HAVE_ERRNO_H 1" >>chicken-config.h
+echo "#define HAVE_SYSEXITS_H 1" >>chicken-config.h
+echo "#define HAVE_MEMMOVE 1" >>chicken-config.h
+echo "#define C_STACK_GROWS_DOWNWARD 1" >>chicken-config.h
+echo "#define C_HACKED_APPLY" >>chicken-config.h
+cat chicken-defaults.h >>chicken-config.h
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN library.c -o library-static.o -I. -I./
+chicken  eval.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file eval.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN eval.c -o eval-static.o -I. -I./
+chicken  data-structures.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file data-structures.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN data-structures.c -o data-structures-static.o -I. -I./
+chicken  ports.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file ports.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN ports.c -o ports-static.o -I. -I./
+chicken  files.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file files.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN files.c -o files-static.o -I. -I./
+chicken  extras.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file extras.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN extras.c -o extras-static.o -I. -I./
+chicken  lolevel.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file lolevel.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN lolevel.c -o lolevel-static.o -I. -I./
+chicken  utils.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file utils.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN utils.c -o utils-static.o -I. -I./
+chicken  tcp.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file tcp.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN tcp.c -o tcp-static.o -I. -I./
+chicken  srfi-1.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file srfi-1.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN srfi-1.c -o srfi-1-static.o -I. -I./
+chicken  srfi-4.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file srfi-4.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN srfi-4.c -o srfi-4-static.o -I. -I./
+chicken  srfi-13.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file srfi-13.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN srfi-13.c -o srfi-13-static.o -I. -I./
+chicken  srfi-14.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file srfi-14.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN srfi-14.c -o srfi-14-static.o -I. -I./
+chicken  srfi-18.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file srfi-18.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN srfi-18.c -o srfi-18-static.o -I. -I./
+chicken  srfi-69.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file srfi-69.c -extend ./private-namespace.scm
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN srfi-69.c -o srfi-69-static.o -I. -I./
+chicken  posixunix.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file posixunix.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN posixunix.c -o posixunix-static.o -I. -I./
+chicken  irregex.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file irregex.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN irregex.c -o irregex-static.o -I. -I./
+chicken  scheduler.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file scheduler.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN scheduler.c -o scheduler-static.o -I. -I./
+chicken  profiler.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file profiler.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN profiler.c -o profiler-static.o -I. -I./
+chicken  stub.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file stub.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN stub.c -o stub-static.o -I. -I./
+chicken  expand.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file expand.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN expand.c -o expand-static.o -I. -I./
+chicken  modules.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file modules.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN modules.c -o modules-static.o -I. -I./
+chicken  chicken-syntax.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file chicken-syntax.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN chicken-syntax.c -o chicken-syntax-static.o -I. -I./
+chicken  chicken-ffi-syntax.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file chicken-ffi-syntax.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN chicken-ffi-syntax.c -o chicken-ffi-syntax-static.o -I. -I./
+cat: buildid: No such file or directory
+cat: buildtag.h: No such file or directory
+chicken  build-version.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -explicit-use -no-trace -output-file build-version.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN build-version.c -o build-version-static.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer  -DC_BUILDING_LIBCHICKEN runtime.c -o runtime-static.o -I. -I./
+ar cru  libchicken.a apply-hack.x86-64.o library-static.o eval-static.o data-structures-static.o ports-static.o files-static.o extras-static.o lolevel-static.o utils-static.o tcp-static.o srfi-1-static.o srfi-4-static.o srfi-13-static.o srfi-14-static.o srfi-18-static.o srfi-69-static.o posixunix-static.o irregex-static.o scheduler-static.o profiler-static.o stub-static.o expand-static.o modules-static.o chicken-syntax-static.o chicken-ffi-syntax-static.o build-version-static.o runtime-static.o
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN library.c -o library.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN eval.c -o eval.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN data-structures.c -o data-structures.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN ports.c -o ports.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN files.c -o files.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN extras.c -o extras.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN lolevel.c -o lolevel.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN utils.c -o utils.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN tcp.c -o tcp.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN srfi-1.c -o srfi-1.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN srfi-4.c -o srfi-4.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN srfi-13.c -o srfi-13.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN srfi-14.c -o srfi-14.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN srfi-18.c -o srfi-18.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN srfi-69.c -o srfi-69.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN posixunix.c -o posixunix.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN irregex.c -o irregex.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN scheduler.c -o scheduler.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN profiler.c -o profiler.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN stub.c -o stub.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN expand.c -o expand.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN modules.c -o modules.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN chicken-syntax.c -o chicken-syntax.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN chicken-ffi-syntax.c -o chicken-ffi-syntax.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN build-version.c -o build-version.o -I. -I./
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN runtime.c -o runtime.o -I. -I./
+gcc  -shared -Wl,-soname,libchicken.so.7 \
+  -o libchicken.so library.o eval.o data-structures.o ports.o files.o extras.o lolevel.o utils.o tcp.o srfi-1.o srfi-4.o srfi-13.o srfi-14.o srfi-18.o srfi-69.o posixunix.o irregex.o scheduler.o profiler.o stub.o expand.o modules.o chicken-syntax.o chicken-ffi-syntax.o build-version.o runtime.o apply-hack.x86-64.o -lm -ldl
+ln -sf libchicken.so libchicken.so.7
+chicken chicken.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -no-lambda-info -local -no-trace  -extend private-namespace.scm -no-trace -output-file chicken.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC chicken.c -o chicken.o -I. -I./
+chicken batch-driver.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -no-lambda-info -local -no-trace  -extend private-namespace.scm -no-trace -output-file batch-driver.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC batch-driver.c -o batch-driver.o -I. -I./
+chicken compiler.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -no-lambda-info -local -no-trace  -extend private-namespace.scm -no-trace -output-file compiler.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC compiler.c -o compiler.o -I. -I./
+chicken optimizer.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -no-lambda-info -local -no-trace  -extend private-namespace.scm -no-trace -output-file optimizer.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC optimizer.c -o optimizer.o -I. -I./
+chicken lfa2.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -no-lambda-info -local -no-trace  -extend private-namespace.scm -no-trace -output-file lfa2.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC lfa2.c -o lfa2.o -I. -I./
+chicken compiler-syntax.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -no-lambda-info -local -no-trace  -extend private-namespace.scm -no-trace -output-file compiler-syntax.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC compiler-syntax.c -o compiler-syntax.o -I. -I./
+chicken scrutinizer.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -no-lambda-info -local -no-trace  -extend private-namespace.scm -no-trace -output-file scrutinizer.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC scrutinizer.c -o scrutinizer.o -I. -I./
+chicken support.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -no-lambda-info -local -no-trace  -extend private-namespace.scm -no-trace -output-file support.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC support.c -o support.o -I. -I./
+chicken c-platform.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -no-lambda-info -local -no-trace  -extend private-namespace.scm -no-trace -output-file c-platform.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC c-platform.c -o c-platform.o -I. -I./
+chicken c-backend.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -no-lambda-info -local -no-trace  -extend private-namespace.scm -no-trace -output-file c-backend.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC c-backend.c -o c-backend.o -I. -I./
+gcc  -L. chicken.o batch-driver.o compiler.o optimizer.o lfa2.o compiler-syntax.o scrutinizer.o support.o c-platform.o c-backend.o -o chicken \
+          -lchicken -Wl,-R"." -lm -ldl
+chicken csi.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -no-lambda-info -local -no-trace  -output-file csi.c -extend ./private-namespace.scm
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -fPIC -DPIC -c -Os -fomit-frame-pointer csi.c -o csi.o -I. -I./ 
+gcc  -L. csi.o  -o csi -lchicken -Wl,-R"." -lm -ldl
+chicken chicken-profile.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -no-lambda-info -local -no-trace  -output-file chicken-profile.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -fPIC -DPIC -c -Os -fomit-frame-pointer chicken-profile.c -o chicken-profile.o -I. -I./ 
+gcc  -L. chicken-profile.o  -o chicken-profile -lchicken -Wl,-R"." -lm -ldl
+chicken csc.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -no-lambda-info -local -no-trace  -output-file csc.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -fPIC -DPIC -c -Os -fomit-frame-pointer csc.c -o csc.o -I. -I./ 
+gcc  -L. csc.o  -o csc -lchicken -Wl,-R"." -lm -ldl
+chicken setup-api.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -emit-import-library setup-api \
+  -output-file setup-api.c 
+chicken setup-download.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -emit-import-library setup-download \
+  -output-file setup-download.c 
+chicken chicken-install.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -no-lambda-info -local -no-trace  -output-file chicken-install.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -fPIC -DPIC -c -Os -fomit-frame-pointer chicken-install.c -o chicken-install.o -I. -I./ 
+gcc  -L. chicken-install.o  -o chicken-install -lchicken -Wl,-R"." -lm -ldl
+chicken chicken-uninstall.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -no-lambda-info -local -no-trace  -output-file chicken-uninstall.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -fPIC -DPIC -c -Os -fomit-frame-pointer chicken-uninstall.c -o chicken-uninstall.o -I. -I./ 
+gcc  -L. chicken-uninstall.o  -o chicken-uninstall -lchicken -Wl,-R"." -lm -ldl
+chicken chicken-status.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -no-lambda-info -local -no-trace  -output-file chicken-status.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -fPIC -DPIC -c -Os -fomit-frame-pointer chicken-status.c -o chicken-status.o -I. -I./ 
+gcc  -L. chicken-status.o  -o chicken-status -lchicken -Wl,-R"." -lm -ldl
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN setup-download.c -o setup-download.o -I. -I./
+gcc  -L. -shared -Wl,-R"." setup-download.o -o setup-download.so \
+  -lchicken \
+  -lm -ldl
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN setup-api.c -o setup-api.o -I. -I./
+gcc  -L. -shared -Wl,-R"." setup-api.o -o setup-api.so \
+  -lchicken \
+  -lm -ldl
+chicken chicken-bug.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -no-lambda-info -local -no-trace  -output-file chicken-bug.c 
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -c -Os -fomit-frame-pointer chicken-bug.c -o chicken-bug.o -I. -I./
+gcc  -L. chicken-bug.o  -o chicken-bug -lchicken -Wl,-R"." -lm -ldl
+chicken chicken.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file chicken.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN chicken.import.c -o chicken.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." chicken.import.o -o chicken.import.so \
+  -lchicken \
+  -lm -ldl
+chicken lolevel.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file lolevel.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN lolevel.import.c -o lolevel.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." lolevel.import.o -o lolevel.import.so \
+  -lchicken \
+  -lm -ldl
+chicken srfi-1.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file srfi-1.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN srfi-1.import.c -o srfi-1.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." srfi-1.import.o -o srfi-1.import.so \
+  -lchicken \
+  -lm -ldl
+chicken srfi-4.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file srfi-4.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN srfi-4.import.c -o srfi-4.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." srfi-4.import.o -o srfi-4.import.so \
+  -lchicken \
+  -lm -ldl
+chicken data-structures.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file data-structures.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN data-structures.import.c -o data-structures.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." data-structures.import.o -o data-structures.import.so \
+  -lchicken \
+  -lm -ldl
+chicken ports.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file ports.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN ports.import.c -o ports.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." ports.import.o -o ports.import.so \
+  -lchicken \
+  -lm -ldl
+chicken files.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file files.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN files.import.c -o files.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." files.import.o -o files.import.so \
+  -lchicken \
+  -lm -ldl
+chicken posix.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file posix.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN posix.import.c -o posix.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." posix.import.o -o posix.import.so \
+  -lchicken \
+  -lm -ldl
+chicken srfi-13.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file srfi-13.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN srfi-13.import.c -o srfi-13.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." srfi-13.import.o -o srfi-13.import.so \
+  -lchicken \
+  -lm -ldl
+chicken srfi-69.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file srfi-69.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN srfi-69.import.c -o srfi-69.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." srfi-69.import.o -o srfi-69.import.so \
+  -lchicken \
+  -lm -ldl
+chicken extras.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file extras.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN extras.import.c -o extras.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." extras.import.o -o extras.import.so \
+  -lchicken \
+  -lm -ldl
+chicken srfi-14.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file srfi-14.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN srfi-14.import.c -o srfi-14.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." srfi-14.import.o -o srfi-14.import.so \
+  -lchicken \
+  -lm -ldl
+chicken tcp.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file tcp.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN tcp.import.c -o tcp.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." tcp.import.o -o tcp.import.so \
+  -lchicken \
+  -lm -ldl
+chicken foreign.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file foreign.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN foreign.import.c -o foreign.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." foreign.import.o -o foreign.import.so \
+  -lchicken \
+  -lm -ldl
+chicken srfi-18.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file srfi-18.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN srfi-18.import.c -o srfi-18.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." srfi-18.import.o -o srfi-18.import.so \
+  -lchicken \
+  -lm -ldl
+chicken utils.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file utils.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN utils.import.c -o utils.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." utils.import.o -o utils.import.so \
+  -lchicken \
+  -lm -ldl
+chicken csi.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file csi.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN csi.import.c -o csi.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." csi.import.o -o csi.import.so \
+  -lchicken \
+  -lm -ldl
+chicken irregex.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file irregex.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN irregex.import.c -o irregex.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." irregex.import.o -o irregex.import.so \
+  -lchicken \
+  -lm -ldl
+chicken setup-api.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file setup-api.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN setup-api.import.c -o setup-api.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." setup-api.import.o -o setup-api.import.so \
+  -lchicken \
+  -lm -ldl
+chicken setup-download.import.scm -optimize-level 2 -include-path . -include-path ./ -inline -ignore-repository -feature chicken-bootstrap -no-warnings -specialize -types ./types.db   -feature chicken-compile-shared -dynamic -no-trace -output-file setup-download.import.c
+gcc -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES  -DC_SHARED -c -Os -fomit-frame-pointer -fPIC -DPIC -DC_BUILDING_LIBCHICKEN setup-download.import.c -o setup-download.import.o -I. -I./
+gcc  -L. -shared -Wl,-R"." setup-download.import.o -o setup-download.import.so \
+  -lchicken \
+  -lm -ldl
+make[1]: Leaving directory '/home/radon/src/chicken-core'
