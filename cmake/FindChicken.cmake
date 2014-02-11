@@ -95,14 +95,12 @@ function(add_chicken_source _OUTVAR _FILENAME)
     set(${_OUTVAR} ${${_OUTVAR}} PARENT_SCOPE)
 endfunction()
 
-function(add_chicken_library _FILENAME)
-    string(REGEX REPLACE "(.*)\\.scm$" "\\1" name ${_FILENAME})
-
+function(add_chicken_library _NAME _FILENAME)
     _chicken_custom_command(source ${_FILENAME} ${ARGN})
 
-    add_library(${name} MODULE ${source})
-    set_target_properties(${name} PROPERTIES PREFIX "")
-    target_link_libraries(${name} ${CHICKEN_LIBRARIES})
+    add_library(${_NAME} MODULE ${source})
+    set_target_properties(${_NAME} PROPERTIES PREFIX "")
+    target_link_libraries(${_NAME} ${CHICKEN_LIBRARIES})
 endfunction()
 
 function(add_chicken_module _NAME _FILENAME)

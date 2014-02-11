@@ -3,70 +3,16 @@ cmake_minimum_required(VERSION 2.8)
 project(chicken C)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/cmake)
-find_package(Chicken)
-# find_package(Chicken CONFIG PATHS cmake NO_DEFAULT_PATH)
-include(ChickenApplyHack)
 
+option(ENABLE_PTABLES "Enable procedure tables" YES)
+option(OPTIMIZE_FOR_SPEED "Optimize generated C code for speed" NO)
 option(BUILD_SHARED_LIBS "Build shared libraries" TRUE)
 
-set(BINARYVERSION 7)
-set(STACKDIRECTION 1)
-
-set(CHICKEN_EXTRA_LIBRARIES m dl)
-
-set(CHICKEN_OPTIONS -optimize-level 2 -inline -ignore-repository -feature
-    chicken-bootstrap)
-
-set(CHICKEN_LIBRARY_OPTIONS -explicit-use -no-trace)
-
-set(CHICKEN_PROGRAM_OPTIONS -no-lambda-info -local)
-
-set(CHICKEN_COMPILER_OPTIONS ${CHICKEN_PROGRAM_OPTIONS} -extend
-    private-namespace.scm)
-
-set(CHICKEN_DYNAMIC_OPTIONS -feature chicken-compile-shared -dynamic)
-
-set(CHICKEN_IMPORT_LIBRARY_OPTIONS ${CHICKEN_DYNAMIC_OPTIONS} -no-trace)
-
-if(DEFINED DEBUGBUILD)
-    list(APPEND CHICKEN_OPTIONS -feature debugbuild -verbose)
-else()
-    list(APPEND CHICKEN_OPTIONS -no-warnings)
-    list(APPEND CHICKEN_PROGRAM_OPTIONS -no-trace)
-    list(APPEND CHICKEN_COMPILER_OPTIONS -no-trace)
-endif()
-
-if(NOT DEFINED BUILDING_CHICKEN_BOOT)
-    list(APPEND CHICKEN_OPTIONS -specialize -types
-        ${PROJECT_SOURCE_DIR}/types.db)
-endif()
-
-add_definitions(-fno-strict-aliasing -fwrapv
-    -DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES)
-
-if(DEFINED DEBUGBUILD)
-    add_definitions(-g -Wall -Wno-unused)
-endif()
-
-if(DEFINED OPTIMIZE_FOR_SPEED)
-    add_definitions(-O3 -fomit-frame-pointer)
-else()
-    add_definitions(-Os -fomit-frame-pointer)
-endif()
-
-set(CHICKEN_CONFIG_H ${CMAKE_BINARY_DIR}/chicken-config.h)
-configure_file("chicken-config.h.in" ${CHICKEN_CONFIG_H})
-
-add_custom_command(
-    OUTPUT buildtag.h
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/identify.sh ${CMAKE_CURRENT_SOURCE_DIR})
-add_custom_target(buildtag ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/buildtag.h)
-
-add_custom_command(
-    OUTPUT buildversion
-    COMMAND cmake -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/buildversion ${CMAKE_CURRENT_BINARY_DIR})
-
-add_custom_target(tbuildversion ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/buildversion)
+find_package(Chicken)
+include(ChickenFunctions)
+include(ChickenApplyHack)
+include(ChickenBuildTag)
+include(ChickenConfig)
 
 # libchicken
 set_property(SOURCE runtime.c PROPERTY OBJECT_DEPENDS ${CHICKEN_CONFIG_H})
@@ -89,10 +35,8 @@ endif()
 
 add_library(libchicken ${libchicken_SOURCES})
 target_compile_definitions(libchicken PUBLIC -DPIC -DC_BUILDING_LIBCHICKEN)
-target_link_libraries(libchicken m dl)
-set_target_properties(libchicken PROPERTIES
-    PREFIX "" SOVERSION 7)
-add_dependencies(libchicken buildtag tbuildversion)
+target_link_libraries(libchicken ${CHICKEN_EXTRA_LIBS})
+set_target_properties(libchicken PROPERTIES PREFIX "" SOVERSION 7)
 
 # chicken
 set(chicken_SCM_SOURCES chicken.scm batch-driver.scm compiler.scm
@@ -102,7 +46,7 @@ chicken_wrap_sources(chicken_SOURCES ${chicken_SCM_SOURCES}
     OPTIONS ${CHICKEN_OPTIONS} ${CHICKEN_COMPILER_OPTIONS})
 
 add_executable(chicken ${chicken_SOURCES})
-target_link_libraries(chicken libchicken ${CHICKEN_EXTRA_LIBRARIES})
+target_link_libraries(chicken libchicken ${CHICKEN_EXTRA_LIBS})
 
 # csi
 set(csi_SCM_SOURCES csi.scm banner.scm private-namespace.scm)
@@ -111,16 +55,36 @@ add_chicken_source(csi_SOURCES csi.scm
     -extend private-namespace.scm)
 
 add_executable(csi ${csi_SOURCES})
-target_link_libraries(csi libchicken ${CHICKEN_EXTRA_LIBRARIES})
+target_link_libraries(csi libchicken ${CHICKEN_EXTRA_LIBS})
 
 # setup-api
 # set(setupapi_SCM_SOURCES setup-api.scm setup-download.scm)
 # chicken_wrap_sources(setupapi_SOURCES ${setupapi_SCM_SOURCES}
 #     OPTIONS ${CHICKEN_OPTIONS})
 
-# import
-# file(GLOB import_SCM_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.import.scm")
-# foreach(s ${import_SCM_SOURCES})
-#     add_chicken_library(${s} ${CHICKEN_OPTIONS}
-#         ${CHICKEN_IMPORT_LIBRARY_OPTIONS})
-# endforeach()
+# import libraries
+set(CHICKEN_IMPORT_LIBRARIES chicken lolevel srfi-1 srfi-4 data-structures
+    ports files posix srfi-13 srfi-69 extras srfi-14 tcp foreign srfi-18 utils
+    csi irregex)
+
+foreach(lib ${CHICKEN_IMPORT_LIBRARIES})
+    set(name ${lib}.import)
+    set(filename ${lib}.import.scm)
+    add_chicken_library(${name} ${filename}
+        ${CHICKEN_OPTIONS} ${CHICKEN_IMPORT_LIBRARY_OPTIONS})
+    add_dependencies(${name} libchicken)
+    install(TARGETS ${name}
+        LIBRARY DESTINATION ${EGG_INSTALL_DIR})
+endforeach()
+
+install(TARGETS chicken csi libchicken
+    RUNTIME DESTINATION ${BIN_INSTALL_DIR}
+    LIBRARY DESTINATION ${LIB_INSTALL_DIR})
+
+install(FILES chicken.h ${CHICKEN_CONFIG_H}
+    DESTINATION ${INCLUDE_INSTALL_DIR})
+
+# set(MANPAGES chicken.1 csc.1 csi.1 chicken-install.1 chicken-uninstall.1
+#     chicken-status.1 chicken-profile.1 chicken-bug.1)
+# install(FILES ${MANPAGES}
+#     DESTINATION ${MAN_INSTALL_DIR})
