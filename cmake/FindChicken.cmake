@@ -1,5 +1,7 @@
 # - Find Chicken Scheme compiler
 
+include(CMakeParseArguments)
+
 if(NOT CHICKEN_ROOT_DIR)
     if(EXISTS $ENV{CHICKEN_PREFIX})
         set(_chicken_root $ENV{CHICKEN_PREFIX})
@@ -23,43 +25,33 @@ find_library(CHICKEN_LIBRARY
 
 mark_as_advanced(CHICKEN_EXECUTABLE CHICKEN_INCLUDE_DIR CHICKEN_LIBRARY)
 
-function(_chicken_args_options _ARGS _OPTIONS)
-    set(_doing_options FALSE)
-    foreach(_arg ${ARGN})
-        if("${_arg}" STREQUAL "OPTIONS")
-            set(_doing_options TRUE)
-        else()
-            if(_doing_options)
-                list(APPEND _options ${_arg})
-            else()
-                list(APPEND _files ${_arg})
-            endif()
-        endif ()
+macro(_chicken_parse_arguments)
+    cmake_parse_arguments(arg "SHARED;STATIC;EMBEDDED" "" "EMIT;OPTIONS"
+        ${ARGN})
+
+    if(arg_SHARED)
+        list(APPEND _translate_flags -feature chicken-compile-shared)
+        set(_compile_flags "${_compile_flags} -DPIC -DC_SHARED")
+    endif()
+    if(arg_STATIC)
+        list(APPEND _translate_flags -feature chicken-compile-static)
+    endif()
+    if(arg_EMBEDDED)
+        set(_compile_flags "${_compile_flags} -DC_EMBEDDED")
+    endif()
+    if(arg_SHARED AND NOT arg_EMBEDDED)
+        list(APPEND _translate_flags -dynamic)
+    endif()
+
+    foreach(_emit ${arg_EMIT})
+        list(APPEND _command_output ${_emit}.import.scm)
+        list(APPEND _command_args -emit-import-library ${_emit})
     endforeach()
-    set(${_ARGS} ${_files} PARENT_SCOPE)
-    set(${_OPTIONS} ${_options} PARENT_SCOPE)
-endfunction()
 
-function(_chicken_flags _OUTVAR)
-    execute_process(
-        COMMAND ${CHICKEN_CSC_EXECUTABLE} / -dry-run -t ${ARGN}
-        COMMAND cut "-f5-" "-d "
-        OUTPUT_VARIABLE _flags
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-    separate_arguments(_flags UNIX_COMMAND ${_flags})
-    set(${_OUTVAR} ${_flags} PARENT_SCOPE)
-endfunction()
+    list(APPEND _translate_flags ${arg_OPTIONS})
+endmacro()
 
-function(_chicken_cflags _OUTVAR)
-    foreach(f ${ARGN})
-        if(f STREQUAL "chicken-compile-shared")
-            set(flags "${flags} -DPIC -DC_SHARED")
-        endif()
-    endforeach()
-    set(${_OUTVAR} ${flags} PARENT_SCOPE)
-endfunction()
-
-function(_chicken_custom_command _OUTPUT _INPUT)
+function(_chicken_command _OUTPUT _INPUT)
     string(REGEX REPLACE "(.*)\\.scm$" "\\1.chicken.c" _cname ${_INPUT})
 
     get_filename_component(_input ${_INPUT} ABSOLUTE)
@@ -71,17 +63,14 @@ function(_chicken_custom_command _OUTPUT _INPUT)
     set(_output ${CMAKE_CURRENT_BINARY_DIR}/${_cname})
     file(TO_NATIVE_PATH ${_output} _output)
 
-    _chicken_cflags(_compile_flags ${ARGN})
     set_property(SOURCE ${_output} APPEND_STRING PROPERTY
         COMPILE_FLAGS " -I${_path} ${_compile_flags}")
 
-    # _chicken_flags(_flags ${ARGN} ${CHICKEN_ARGS})
-    set(_flags ${ARGN})
     add_custom_command(
         OUTPUT ${_output} ${_command_output}
         COMMAND ${CHICKEN_EXECUTABLE}
         ARGS ${_input} -output-file ${_output} -include-path ${_path}
-             ${_flags} ${_command_args}
+             ${_translate_flags} ${_command_args}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         DEPENDS ${_input}
         VERBATIM)
@@ -89,46 +78,21 @@ function(_chicken_custom_command _OUTPUT _INPUT)
     set(${_OUTPUT} ${_output} PARENT_SCOPE)
 endfunction()
 
-function(add_chicken_source _OUTVAR _FILENAME)
-    _chicken_custom_command(_output ${_FILENAME} ${ARGN})
-    list(APPEND ${_OUTVAR} ${_output})
+function(add_chicken_sources _OUTVAR)
+    _chicken_parse_arguments(${ARGN})
+    foreach(arg ${arg_UNPARSED_ARGUMENTS})
+        _chicken_command(output ${arg})
+        list(APPEND ${_OUTVAR} ${output})
+    endforeach()
     set(${_OUTVAR} ${${_OUTVAR}} PARENT_SCOPE)
 endfunction()
 
 function(add_chicken_library _NAME _FILENAME)
-    _chicken_custom_command(source ${_FILENAME} ${ARGN})
-
-    add_library(${_NAME} MODULE ${source})
+    _chicken_parse_arguments(${ARGN})
+    _chicken_command(output ${_FILENAME})
+    add_library(${_NAME} MODULE ${output})
     set_target_properties(${_NAME} PROPERTIES PREFIX "")
     target_link_libraries(${_NAME} ${CHICKEN_LIBRARIES})
-endfunction()
-
-function(add_chicken_module _NAME _FILENAME)
-    _chicken_args_options(_names _options ${ARGN})
-    if(_names)
-        set(_libs ${_names})
-    else()
-        set(_libs ${_NAME})
-    endif()
-
-    foreach(_n ${_libs})
-        set(_command_output ${_command_output} ${_n}.import.scm)
-        set(_command_args ${_command_args} -emit-import-library ${_n})
-    endforeach()
-    _chicken_custom_command(source ${_FILENAME} -s ${_options})
-
-    add_library(${_NAME} MODULE ${source})
-    set_target_properties(${_NAME} PROPERTIES PREFIX "")
-    target_link_libraries(${_NAME} ${CHICKEN_LIBRARIES})
-endfunction()
-
-function(chicken_wrap_sources _SOURCES)
-    _chicken_args_options(_files _options ${ARGN})
-    foreach(_f ${_files})
-        add_chicken_source(_sources ${_f} ${_options})
-    endforeach()
-    list(APPEND ${_SOURCES} ${_sources})
-    set(${_SOURCES} ${${_SOURCES}} PARENT_SCOPE)
 endfunction()
 
 include(FindPackageHandleStandardArgs)
