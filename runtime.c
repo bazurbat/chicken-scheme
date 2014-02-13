@@ -738,11 +738,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   if(!pass_serious_signals) {
 #ifdef HAVE_SIGACTION
     sa.sa_flags = 0;
-    sigemptyset(&sa.sa_mask);
-    sigaddset(&sa.sa_mask, SIGBUS);
-    sigaddset(&sa.sa_mask, SIGFPE);
-    sigaddset(&sa.sa_mask, SIGILL);
-    sigaddset(&sa.sa_mask, SIGSEGV);
+    sigfillset(&sa.sa_mask); /* See note in C_establish_signal_handler() */
     sa.sa_handler = global_signal_handler;
     C_sigaction(SIGBUS, &sa, NULL);
     C_sigaction(SIGFPE, &sa, NULL);
@@ -4511,16 +4507,17 @@ C_regparm C_word C_fcall C_establish_signal_handler(C_word signum, C_word reason
   int sig = C_unfix(signum);
 #if defined(HAVE_SIGACTION)
   struct sigaction newsig;
-
-  newsig.sa_flags = 0;
-  sigemptyset(&newsig.sa_mask);
 #endif
 
   if(reason == C_SCHEME_FALSE) C_signal(sig, SIG_IGN);
   else {
     signal_mapping_table[ sig ] = C_unfix(reason);
 #if defined(HAVE_SIGACTION)
-    sigaddset(&newsig.sa_mask, sig);
+    newsig.sa_flags = 0;
+    /* The global signal handler is used for all signals, and
+       manipulates a single queue.  Don't allow other signals to
+       concurrently arrive while it's doing this, to avoid races. */
+    sigfillset(&newsig.sa_mask);
     newsig.sa_handler = global_signal_handler;
     C_sigaction(sig, &newsig, NULL);
 #else
