@@ -30,25 +30,25 @@ macro(_chicken_parse_arguments)
         ${ARGN})
 
     if(arg_SHARED)
-        list(APPEND _translate_flags -feature chicken-compile-shared)
+        list(APPEND _chicken_options -feature chicken-compile-shared)
         set(_compile_flags "${_compile_flags} -DPIC -DC_SHARED")
     endif()
     if(arg_STATIC)
-        list(APPEND _translate_flags -feature chicken-compile-static)
+        list(APPEND _chicken_options -feature chicken-compile-static)
     endif()
     if(arg_EMBEDDED)
         set(_compile_flags "${_compile_flags} -DC_EMBEDDED")
     endif()
     if(arg_SHARED AND NOT arg_EMBEDDED)
-        list(APPEND _translate_flags -dynamic)
+        list(APPEND _chicken_options -dynamic)
     endif()
 
     foreach(_emit ${arg_EMIT})
         list(APPEND _command_output ${_emit}.import.scm)
-        list(APPEND _command_args -emit-import-library ${_emit})
+        list(APPEND _chicken_options -emit-import-library ${_emit})
     endforeach()
 
-    list(APPEND _translate_flags ${arg_OPTIONS})
+    list(APPEND _chicken_options ${arg_OPTIONS})
 endmacro()
 
 function(_chicken_command _OUTPUT _INPUT)
@@ -70,7 +70,7 @@ function(_chicken_command _OUTPUT _INPUT)
         OUTPUT ${_output} ${_command_output}
         COMMAND ${CHICKEN_EXECUTABLE}
         ARGS ${_input} -output-file ${_output} -include-path ${_path}
-             ${_translate_flags} ${_command_args}
+             ${CHICKEN_OPTIONS} ${_chicken_options}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         DEPENDS ${_input}
         VERBATIM)

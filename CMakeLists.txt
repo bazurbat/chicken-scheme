@@ -25,9 +25,9 @@ set(libchicken_SCM_SOURCES library.scm eval.scm data-structures.scm ports.scm
     scheduler.scm profiler.scm stub.scm expand.scm modules.scm
     chicken-syntax.scm chicken-ffi-syntax.scm build-version.scm)
 add_chicken_sources(libchicken_SOURCES ${libchicken_SCM_SOURCES}
-    OPTIONS ${CHICKEN_OPTIONS} ${CHICKEN_LIBRARY_OPTIONS})
+    OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
 add_chicken_sources(libchicken_SOURCES srfi-69.scm
-    OPTIONS ${CHICKEN_OPTIONS} ${CHICKEN_LIBRARY_OPTIONS}
+    OPTIONS ${CHICKEN_LIBRARY_OPTIONS}
     -extend private-namespace.scm)
 
 if(C_HACKED_APPLY)
@@ -44,7 +44,7 @@ set(chicken_SCM_SOURCES chicken.scm batch-driver.scm compiler.scm
     optimizer.scm lfa2.scm compiler-syntax.scm scrutinizer.scm support.scm
     c-platform.scm c-backend.scm)
 add_chicken_sources(chicken_SOURCES ${chicken_SCM_SOURCES}
-    OPTIONS ${CHICKEN_OPTIONS} ${CHICKEN_COMPILER_OPTIONS})
+    OPTIONS ${CHICKEN_COMPILER_OPTIONS})
 
 add_executable(chicken ${chicken_SOURCES})
 target_link_libraries(chicken libchicken ${CHICKEN_EXTRA_LIBS})
@@ -52,7 +52,7 @@ target_link_libraries(chicken libchicken ${CHICKEN_EXTRA_LIBS})
 # csi
 set(csi_SCM_SOURCES csi.scm banner.scm private-namespace.scm)
 add_chicken_sources(csi_SOURCES csi.scm
-    OPTIONS ${CHICKEN_OPTIONS} ${CHICKEN_PROGRAM_OPTIONS}
+    OPTIONS ${CHICKEN_PROGRAM_OPTIONS}
     -extend private-namespace.scm)
 
 add_executable(csi ${csi_SOURCES})
@@ -65,9 +65,9 @@ foreach(name ${setupapi_MODULES})
     set(filename ${name}.scm)
     add_chicken_library(${name} ${filename}
         SHARED EMIT ${name}
-        OPTIONS ${CHICKEN_OPTIONS} ${CHICKEN_LIBRARY_OPTIONS})
+        OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
     add_chicken_library(${name}.import ${name}.import.scm
-        SHARED OPTIONS ${CHICKEN_OPTIONS} ${CHICKEN_LIBRARY_OPTIONS})
+        SHARED OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
     add_dependencies(${name} libchicken)
     add_dependencies(${name}.import ${name})
     install(TARGETS ${name} ${name}.import
@@ -83,7 +83,7 @@ foreach(lib ${CHICKEN_IMPORT_LIBRARIES})
     set(name ${lib}.import)
     set(filename ${lib}.import.scm)
     add_chicken_library(${name} ${filename} SHARED
-        OPTIONS ${CHICKEN_OPTIONS} ${CHICKEN_IMPORT_LIBRARY_OPTIONS})
+        OPTIONS ${CHICKEN_IMPORT_LIBRARY_OPTIONS})
     add_dependencies(${name} libchicken)
     install(TARGETS ${name}
         LIBRARY DESTINATION ${EGG_INSTALL_DIR})
