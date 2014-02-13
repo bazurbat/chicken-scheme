@@ -35,9 +35,11 @@ macro(_chicken_parse_arguments)
     endif()
     if(arg_STATIC)
         list(APPEND _chicken_options -feature chicken-compile-static)
+        set(_output_suffix "-static")
     endif()
     if(arg_EMBEDDED)
         set(_compile_flags "${_compile_flags} -DC_EMBEDDED")
+        set(_output_suffix "-embedded")
     endif()
     if(arg_SHARED AND NOT arg_EMBEDDED)
         list(APPEND _chicken_options -dynamic)
@@ -52,7 +54,7 @@ macro(_chicken_parse_arguments)
 endmacro()
 
 function(_chicken_command _OUTPUT _INPUT)
-    string(REGEX REPLACE "(.*)\\.scm$" "\\1.chicken.c" _cname ${_INPUT})
+    string(REGEX REPLACE "(.*)\\.scm$" "\\1${_output_suffix}.chicken.c" _cname ${_INPUT})
 
     get_filename_component(_input ${_INPUT} ABSOLUTE)
     file(TO_NATIVE_PATH ${_input} _input)
@@ -103,7 +105,7 @@ find_package_handle_standard_args(Chicken DEFAULT_MSG CHICKEN_ROOT_DIR
 
 if(CHICKEN_FOUND)
     set(CHICKEN_INCLUDE_DIRS ${CHICKEN_INCLUDE_DIR})
-    set(CHICKEN_LIBRARIES ${CHICKEN_LIBRARY} m dl)
+    set(CHICKEN_LIBRARIES ${CHICKEN_LIBRARY} m ${CMAKE_DL_LIBS})
 
     find_package_message(Chicken
         "\tCHICKEN_EXECUTABLE: ${CHICKEN_EXECUTABLE}

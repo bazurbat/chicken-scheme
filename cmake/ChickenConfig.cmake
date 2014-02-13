@@ -58,17 +58,10 @@ endif()
 # Scheme
 set(CHICKEN_OPTIONS -optimize-level 2 -inline -ignore-repository -feature
     chicken-bootstrap)
-
 set(CHICKEN_LIBRARY_OPTIONS -explicit-use -no-trace)
-
 set(CHICKEN_PROGRAM_OPTIONS -no-lambda-info -local)
-
 set(CHICKEN_COMPILER_OPTIONS ${CHICKEN_PROGRAM_OPTIONS} -extend
     private-namespace.scm)
-
-set(CHICKEN_DYNAMIC_OPTIONS -feature chicken-compile-shared -dynamic)
-
-# set(CHICKEN_IMPORT_LIBRARY_OPTIONS ${CHICKEN_DYNAMIC_OPTIONS} -no-trace)
 set(CHICKEN_IMPORT_LIBRARY_OPTIONS -no-trace)
 
 if(DEFINED DEBUGBUILD)

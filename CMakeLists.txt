@@ -27,36 +27,71 @@ set(libchicken_SCM_SOURCES library.scm eval.scm data-structures.scm ports.scm
 add_chicken_sources(libchicken_SOURCES ${libchicken_SCM_SOURCES}
     OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
 add_chicken_sources(libchicken_SOURCES srfi-69.scm
-    OPTIONS ${CHICKEN_LIBRARY_OPTIONS}
-    -extend private-namespace.scm)
+    OPTIONS ${CHICKEN_LIBRARY_OPTIONS} -extend private-namespace.scm)
+add_chicken_sources(libchicken_STATIC_SOURCES ${libchicken_SCM_SOURCES}
+    STATIC OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
+add_chicken_sources(libchicken_STATIC_SOURCES srfi-69.scm
+    STATIC OPTIONS ${CHICKEN_LIBRARY_OPTIONS} -extend private-namespace.scm)
 
 if(C_HACKED_APPLY)
     list(APPEND libchicken_SOURCES apply-hack.${CHICKEN_ARCH}.S)
 endif()
 
-add_library(libchicken ${libchicken_SOURCES})
+add_library(libchicken SHARED ${libchicken_SOURCES})
 target_compile_definitions(libchicken PUBLIC -DPIC -DC_BUILDING_LIBCHICKEN)
 target_link_libraries(libchicken ${CHICKEN_EXTRA_LIBS})
 set_target_properties(libchicken PROPERTIES PREFIX "" SOVERSION 7)
+
+add_library(libchicken-static STATIC ${libchicken_STATIC_SOURCES})
+target_compile_definitions(libchicken-static PUBLIC -DC_BUILDING_LIBCHICKEN)
+set_target_properties(libchicken-static PROPERTIES
+    PREFIX "" OUTPUT_NAME libchicken)
+
+install(TARGETS libchicken libchicken-static
+    ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
+    LIBRARY DESTINATION ${LIB_INSTALL_DIR})
 
 # chicken
 set(chicken_SCM_SOURCES chicken.scm batch-driver.scm compiler.scm
     optimizer.scm lfa2.scm compiler-syntax.scm scrutinizer.scm support.scm
     c-platform.scm c-backend.scm)
+
 add_chicken_sources(chicken_SOURCES ${chicken_SCM_SOURCES}
     OPTIONS ${CHICKEN_COMPILER_OPTIONS})
 
 add_executable(chicken ${chicken_SOURCES})
 target_link_libraries(chicken libchicken ${CHICKEN_EXTRA_LIBS})
 
-# csi
-set(csi_SCM_SOURCES csi.scm banner.scm private-namespace.scm)
-add_chicken_sources(csi_SOURCES csi.scm
-    OPTIONS ${CHICKEN_PROGRAM_OPTIONS}
-    -extend private-namespace.scm)
+install(TARGETS chicken
+    RUNTIME DESTINATION ${BIN_INSTALL_DIR})
 
+# utility programs
+add_chicken_sources(csi_SOURCES csi.scm
+    OPTIONS ${CHICKEN_PROGRAM_OPTIONS} -extend private-namespace.scm)
 add_executable(csi ${csi_SOURCES})
 target_link_libraries(csi libchicken ${CHICKEN_EXTRA_LIBS})
+
+# add_chicken_sources(csi_STATIC_SOURCES csi.scm
+#     STATIC OPTIONS ${CHICKEN_PROGRAM_OPTIONS} -extend private-namespace.scm)
+# add_executable(csi-static ${csi_STATIC_SOURCES})
+# target_link_libraries(csi-static libchicken.a m.a dl.a)
+# set_target_properties(csi-static PROPERTIES LINKER_FLAGS -static)
+
+install(TARGETS csi
+    RUNTIME DESTINATION ${BIN_INSTALL_DIR})
+
+set(utility_PROGRAMS csc chicken-install chicken-uninstall chicken-status
+    chicken-profile)
+foreach(program ${utility_PROGRAMS})
+    unset(program_SOURCES)
+    add_chicken_sources(program_SOURCES ${program}.scm
+        OPTIONS ${CHICKEN_PROGRAM_OPTIONS})
+    add_executable(${program} ${program_SOURCES})
+    target_link_libraries(${program} libchicken ${CHICKEN_EXTRA_LIBS})
+    install(TARGETS ${program}
+        RUNTIME DESTINATION ${BIN_INSTALL_DIR})
+endforeach()
+
 
 # setup-api
 set(setupapi_MODULES setup-api setup-download)
@@ -88,10 +123,6 @@ foreach(lib ${CHICKEN_IMPORT_LIBRARIES})
     install(TARGETS ${name}
         LIBRARY DESTINATION ${EGG_INSTALL_DIR})
 endforeach()
-
-install(TARGETS chicken csi libchicken
-    RUNTIME DESTINATION ${BIN_INSTALL_DIR}
-    LIBRARY DESTINATION ${LIB_INSTALL_DIR})
 
 install(FILES chicken.h ${CHICKEN_CONFIG_H}
     DESTINATION ${INCLUDE_INSTALL_DIR})
