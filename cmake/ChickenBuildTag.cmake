@@ -1,13 +1,14 @@
 # - Chicken Build Tag
 
 function(_chicken_write_buildtag)
+    set(src_buildversion ${CMAKE_CURRENT_SOURCE_DIR}/buildversion)
     set(buildversion ${CMAKE_CURRENT_BINARY_DIR}/buildversion)
     set(buildid ${CMAKE_CURRENT_BINARY_DIR}/buildid)
     set(buildbranch ${CMAKE_CURRENT_BINARY_DIR}/buildbranch)
     set(buildtag ${CMAKE_CURRENT_BINARY_DIR}/buildtag.h)
 
     file(STRINGS buildversion version LIMIT_COUNT 1)
-    if(buildversion IS_NEWER_THAN ${buildversion})
+    if(${src_buildversion} IS_NEWER_THAN ${buildversion})
         file(WRITE ${buildversion} ${version})
     endif()
 
