@@ -177,14 +177,9 @@ linker will only load libraries from paths hardcoded at link time.
 === Deploying source code
 
 An alternative to deploying binaries is deployment as compiled
-C sources. Usually, you just need to ship your application code,
-compiled to {{.c}} files and the {{chicken.h}} and {{runtime.c}}
-files from the CHICKEN sources. You will also need the {{.c}} files
-of any library units your program uses (at least {{library.c}} and
-{{build-version.c}}). Compiling everything and
-linking it together should work on most systems. Consult the
-CHICKEN makefiles for more information about optimization options,
-etc.
+C sources.
+
+See the corresponding section in [[Using the compiler]].
 
 
 ---

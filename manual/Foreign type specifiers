@@ -115,6 +115,10 @@ maximum range of a fixnum.  (Numbers between 2^62 and 2^64-1 have gaps.)
 Either a fixnum or a flonum in the range of an (unsigned) machine ''long''.
 Similar to {{integer32}} on 32-bit systems or {{integer64}} on 64-bit.
 
+<type>size_t</type>
+
+A direct mapping to C's {{size_t}}.
+
 === Floating-point
 
 <type>float</type><br>
@@ -357,6 +361,7 @@ The foreign type {{TYPE}} with an additional {{const}} qualifier.
 <tr><td>{{[unsigned-]integer32}}</td><td>{{[unsigned] int32_t}}</td></tr>
 <tr><td>{{[unsigned-]integer64}}</td><td>{{[unsigned] int64_t}}</td></tr>
 <tr><td>{{[unsigned-]long}}</td><td>{{[unsigned] long}}</td></tr>
+<tr><td>{{size_t}}</td><td>{{size_t}}</td></tr>
 <tr><td>{{float}}</td><td>{{float}}</td></tr>
 <tr><td>{{double}}</td><td>{{double}}</td></tr>
 <tr><td>{{number}}</td><td>{{double}}</td></tr>

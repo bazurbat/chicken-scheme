@@ -638,15 +638,18 @@ Returns the process group ID of the process specified by {{PID}}.
 
 <procedure>(process-execute PATHNAME [ARGUMENT-LIST [ENVIRONMENT-LIST]])</procedure>
 
-Creates a new child process and replaces the running process with it
-using the C library function {{execvp(3)}}. If the optional argument
-{{ARGUMENT-LIST}} is given, then it should contain a list of strings which
-are passed as arguments to the subprocess. If the optional argument
-{{ENVIRONMENT-LIST}} is supplied, then the library function {{execve(2)}}
-is used, and the environment passed in {{ENVIRONMENT-LIST}} (which should
-be of the form {{("<NAME>=<VALUE>" ...)}} is given
-to the invoked process. Note that {{execvp(3)}} respects the current setting
-of the {{PATH}} environment variable while {{execve(3)}} does not.
+Replaces the running process with a new process image from the program
+stored at {{PATHNAME}}, using the C library function {{execvp(3)}}.
+If the optional argument {{ARGUMENT-LIST}} is given, then it should 
+contain a list of strings which are passed as arguments to the subprocess.
+If the optional argument {{ENVIRONMENT-LIST}} is supplied, then the library 
+function {{execve(2)}} is used, and the environment passed in
+{{ENVIRONMENT-LIST}} (which should be of the form {{("<NAME>=<VALUE>" ...)}}
+is given to the invoked process. Note that {{execvp(3)}} respects the
+current setting of the {{PATH}} environment variable while {{execve(3)}} does not.
+ 
+This procedure never returns; it either replaces the process with a new one
+or it raises an exception in case something went wrong executing the program.
 
 ==== process-fork
 
@@ -708,6 +711,10 @@ which any data written to will be received as input in the sub-process
 and the process-id of the started sub-process. Blocking reads and writes
 to or from the ports returned by {{process}} only block the current
 thread, not other threads executing concurrently.
+
+Standard error for the subprocess is linked up to the current
+process's standard error (see {{process*}} if you want to reify
+its standard error into a separate port).
 
 * The single parameter version passes the string {{COMMANDLINE}} to the host-system's shell that
 is invoked as a subprocess.
@@ -1155,7 +1162,7 @@ Returns the abbreviation for the local timezone as a string.
 
 <procedure>(seconds->string [SECONDS])</procedure>
 
-Converts the local time represented in {{SECONDS}} into a string
+Converts the time represented in {{SECONDS}} into a local-time string
 of the form {{"Tue May 21 13:46:22 1991"}}. {{SECONDS}} defaults to
 the value of {{(current-seconds)}}.
 

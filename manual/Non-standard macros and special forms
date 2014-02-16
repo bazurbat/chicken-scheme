@@ -260,6 +260,7 @@ expression that evaluates to a parameter procedure.
 
 <macro>(receive (NAME ...) VALUEEXP BODY ...)</macro><br>
 <macro>(receive (NAME1 ... NAMEn . NAMEn+1) VALUEEXP BODY ...)</macro><br>
+<macro>(receive NAME VALUEEXP BODY ...)</macro><br>
 <macro>(receive VALUEEXP)</macro>
 
 [[http://srfi.schemers.org/srfi-8/srfi-8.html|SRFI-8]].
@@ -267,6 +268,7 @@ Syntactic sugar for {{call-with-values}}. Binds variables
 to the result values of {{VALUEEXP}} and evaluates {{BODY ...}}.
 
 {{(receive VALUEEXP)}} is equivalent to {{(receive _ VALUEEXP _)}}.
+This shortened form is not described by SRFI-8.
 
 ==== set!-values
 

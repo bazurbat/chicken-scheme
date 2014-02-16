@@ -486,6 +486,8 @@ and can also be simulated by declaring a stack-allocated array of
 
  [C macro] int C_SIZEOF_VECTOR (int length)
 
+Returns the size in words needed for allocation of vector with ''length'' elements.
+
 ===== C_SIZEOF_INTERNED_SYMBOL
 
  [C macro] int C_SIZEOF_INTERNED_SYMBOL (int length)

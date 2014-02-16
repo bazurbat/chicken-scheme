@@ -88,7 +88,7 @@ is equivalent to
 
 === Multiline String Constant with Embedded Expressions
 
-<read>#<</read>
+<read>#<#</read>
 
  #<#TAG
 
@@ -118,30 +118,24 @@ Abbreviation for {{(foreign-declare " ... ")}}.
 
 === String escape sequences
 
-String-literals may contain the following of the escape sequences:
+String-literals may contain the following escape sequences:
 
-<table>
+<table style="margin-top: 1em; max-width: 40em">
 <tr><th>Escape sequence</th><th>Character</th></tr>
-<tr><td>\n</td><td>line feed / newline</td></tr>
-<tr><td>\t</td><td>tab</td></tr>
-<tr><td>\r</td><td>carriage return</td></tr>
-<tr><td>\b</td><td>backspace</td></tr>
-<tr><td>\a</td><td>bell</td></tr>
-<tr><td>\v</td><td>vertical tab</td></tr>
-<tr><td>\f</td><td>form feed</td></tr>
-<tr><td>\xXX</td><td>hexadecimal 8-bit character</td></tr>
-<tr><td>\uXXXX</td><td>hexadecimal 16-bit UNICODE character</td></tr>
-<tr><td>\UXXXXXXXX</td><td>hexadecimal 32-bit UNICODE character</td></tr>
-<tr><td>\OOO</td><td>octal 8-bit character</td></tr>
-<tr><td>\| \" \\ \'</td><td>represents escaped character</td></tr>
+<tr><td>{{\n}}</td><td>line feed / newline</td></tr>
+<tr><td>{{\t}}</td><td>tab</td></tr>
+<tr><td>{{\r}}</td><td>carriage return</td></tr>
+<tr><td>{{\b}}</td><td>backspace</td></tr>
+<tr><td>{{\a}}</td><td>bell</td></tr>
+<tr><td>{{\v}}</td><td>vertical tab</td></tr>
+<tr><td>{{\f}}</td><td>form feed</td></tr>
+<tr><td>{{\x}}''XX''</td><td>hexadecimal 8-bit character code</td></tr>
+<tr><td>{{\u}}''XXXX''</td><td>hexadecimal 16-bit Unicode character code</td></tr>
+<tr><td>{{\U}}''XXXXXXXX''</td><td>hexadecimal 32-bit Unicode character code</td></tr>
+<tr><td>{{\}}''OOO''</td><td>octal 8-bit character code</td></tr>
+<tr><td>{{\|}}   {{\"}}    {{\\}}    {{\'}}</td><td>the escaped character</td></tr>
 </table>
 
-
-=== Foreign Declare
-
- #> ... <#
-
-Abbreviation for {{foreign-declare " ... ")}}.
 
 === Sharp Prefixed Symbol
 

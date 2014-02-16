@@ -343,6 +343,14 @@ and used in an identical manner:
   #;3> (greet "you")
   Hello, you !
 
+If you are depending on external libraries inside your module, follow the general rule of {{(import chicken scheme) (use anything-else)}} like so:
+
+ (module test (hello greet)
+   (import chicken scheme)
+   (use posix)
+   (use srfi-4)
+   ...)
+
 If you want to keep macro-definitions in a separate file, use import
 libraries:
 
@@ -370,9 +378,9 @@ load it manually:
   #;1> (import test)
   #;2> 
 
-Note that you must us import libraries if you compile code
+Note that you must use import libraries if you compile code
 that depends on other modules. The compiler will not execute
-the modules that are refered to by compiled code, and thus
+the modules that are referred to by compiled code, and thus
 the binding information and exported syntax of the former
 must be available separately.
 

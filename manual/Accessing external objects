@@ -183,6 +183,8 @@ where {{N}} is the number of values to be returned, and {{X1, ...}} are the
 results, which should be Scheme data objects. When returning multiple values, the
 return-type should be omitted.
 
+Returning just a single value can still be done via the {{C_return(...)}} macro.
+
 == Returning large objects or chunks of memory to Scheme
 
 When you call a C function which needs to return quantities of data, several issues arise:

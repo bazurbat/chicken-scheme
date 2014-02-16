@@ -82,7 +82,7 @@ and put the extension code in it.
 Extensions need two special files: an {{<extension name>.setup}}
 file and an {{<extension name>.meta}} file (where {{<extension
 name>}} is the name of your extension).  The former indicates how
-the egg is to be copiled and the latter provides some information
+the egg is to be compiled and the latter provides some information
 about the extension (author, license, dependencies etc).  See the
 [[/eggs tutorial|eggs tutorial]] for further information about
 how to create extensions.
@@ -446,8 +446,7 @@ program to remove one or more extensions from the local repository:
 The hello module was just a shared library, and not a module.
 
 To create an extension that exports syntax see the chapter on
-[[http://wiki.call-cc.org/man/4/Modules%20and%20macros|Modules and
-macros]].  We will show a simple example here: a module {{my-lib}}
+[[Modules]].  We will show a simple example here: a module {{my-lib}}
 that exports one macro ({{prog1}}) and one procedure ({{my-sum}}):
 
 <enscript highlight=scheme>
@@ -499,7 +498,7 @@ The setup file is:
 
 (install-extension
  'my-lib
- '("my-lib.o" "my-lib.so" "my-lib.import.so")
+ '("my-lib.so" "my-lib.import.so")
  '((version 1.0)))
 </enscript>
 
