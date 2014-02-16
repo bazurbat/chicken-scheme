@@ -25,6 +25,35 @@ find_library(CHICKEN_LIBRARY
 
 mark_as_advanced(CHICKEN_EXECUTABLE CHICKEN_INCLUDE_DIR CHICKEN_LIBRARY)
 
+function(_chicken_set_flags)
+    option(CHICKEN_ENABLE_PTABLES "Enable procedure tables" YES)
+
+    set(c_flags "-fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H")
+    if(CHICKEN_ENABLE_PTABLES)
+        set(c_flags "${c_flags} -DC_ENABLE_PTABLES")
+    endif()
+
+    set(CHICKEN_C_FLAGS_MINSIZEREL "-Os -fomit-frame-pointer" CACHE STRING
+        "Additional compiler flags for Chicken generated files during minsize builds")
+    set(CHICKEN_C_FLAGS_RELEASE "-O3 -fomit-frame-pointer" CACHE STRING
+        "Additional compiler flags for Chicken generated files during release builds")
+    set(CHICKEN_C_FLAGS_DEBUG "-g -Wall -Wno-unused" CACHE STRING
+        "Additional compiler flags for Chicken generated files during debug builds")
+    set(CHICKEN_EXTRA_C_FLAGS "" CACHE STRING
+        "Additional compiler flags for Chicken generated files during all build types")
+
+    if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+        set(c_flags "${c_flags} ${CHICKEN_C_FLAGS_MINSIZEREL}")
+    elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+        set(c_flags "${c_flags} ${CHICKEN_C_FLAGS_RELEASE}")
+    elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(c_flags "${c_flags} ${CHICKEN_C_FLAGS_DEBUG}")
+    endif()
+
+    set(CHICKEN_C_FLAGS "${c_flags} ${CHICKEN_EXTRA_C_FLAGS}" CACHE STRING
+        "Compiler flags for Chicken generated files (forced)" FORCE)
+endfunction()
+
 macro(_chicken_parse_arguments)
     cmake_parse_arguments(arg "SHARED;STATIC;EMBEDDED" "" "EMIT;OPTIONS"
         ${ARGN})
@@ -105,7 +134,11 @@ find_package_handle_standard_args(Chicken DEFAULT_MSG CHICKEN_ROOT_DIR
 
 if(CHICKEN_FOUND)
     set(CHICKEN_INCLUDE_DIRS ${CHICKEN_INCLUDE_DIR})
+    set(CHICKEN_EXTRA_LIBRARIES m ${CMAKE_DL_LIBS}
+        CACHE STRING "Additional libraries required by Chicken")
     set(CHICKEN_LIBRARIES ${CHICKEN_LIBRARY} m ${CMAKE_DL_LIBS})
+
+    _chicken_set_flags()
 
     find_package_message(Chicken
         "\tCHICKEN_EXECUTABLE: ${CHICKEN_EXECUTABLE}

@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
+cmake_policy(VERSION 2.8)
+
+set(CMAKE_C_COMPILER gcc)
 
 project(chicken C)
 
@@ -18,16 +21,18 @@ include(ChickenConfig)
 
 # libchicken
 set_property(SOURCE runtime.c PROPERTY OBJECT_DEPENDS ${CHICKEN_CONFIG_H})
-set(libchicken_SOURCES runtime.c)
+
 set(libchicken_SCM_SOURCES library.scm eval.scm data-structures.scm ports.scm
     files.scm extras.scm lolevel.scm utils.scm tcp.scm srfi-1.scm srfi-4.scm
     srfi-13.scm srfi-14.scm srfi-18.scm posixunix.scm irregex.scm
     scheduler.scm profiler.scm stub.scm expand.scm modules.scm
     chicken-syntax.scm chicken-ffi-syntax.scm build-version.scm)
+
 add_chicken_sources(libchicken_SOURCES ${libchicken_SCM_SOURCES}
     OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
 add_chicken_sources(libchicken_SOURCES srfi-69.scm
     OPTIONS ${CHICKEN_LIBRARY_OPTIONS} -extend private-namespace.scm)
+
 add_chicken_sources(libchicken_STATIC_SOURCES ${libchicken_SCM_SOURCES}
     STATIC OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
 add_chicken_sources(libchicken_STATIC_SOURCES srfi-69.scm
@@ -35,14 +40,15 @@ add_chicken_sources(libchicken_STATIC_SOURCES srfi-69.scm
 
 if(C_HACKED_APPLY)
     list(APPEND libchicken_SOURCES apply-hack.${CHICKEN_ARCH}.S)
+    list(APPEND libchicken_STATIC_SOURCES apply-hack.${CHICKEN_ARCH}.S)
 endif()
 
-add_library(libchicken SHARED ${libchicken_SOURCES})
-target_compile_definitions(libchicken PUBLIC -DPIC -DC_BUILDING_LIBCHICKEN)
-target_link_libraries(libchicken ${CHICKEN_EXTRA_LIBS})
+add_library(libchicken SHARED runtime.c ${libchicken_SOURCES})
+target_compile_definitions(libchicken PUBLIC -DC_BUILDING_LIBCHICKEN)
+target_link_libraries(libchicken ${CHICKEN_EXTRA_LIBRARIES})
 set_target_properties(libchicken PROPERTIES PREFIX "" SOVERSION 7)
 
-add_library(libchicken-static STATIC ${libchicken_STATIC_SOURCES})
+add_library(libchicken-static STATIC runtime.c ${libchicken_STATIC_SOURCES})
 target_compile_definitions(libchicken-static PUBLIC -DC_BUILDING_LIBCHICKEN)
 set_target_properties(libchicken-static PROPERTIES
     PREFIX "" OUTPUT_NAME libchicken)
@@ -71,11 +77,13 @@ add_chicken_sources(csi_SOURCES csi.scm
 add_executable(csi ${csi_SOURCES})
 target_link_libraries(csi libchicken ${CHICKEN_EXTRA_LIBS})
 
-# add_chicken_sources(csi_STATIC_SOURCES csi.scm
-#     STATIC OPTIONS ${CHICKEN_PROGRAM_OPTIONS} -extend private-namespace.scm)
-# add_executable(csi-static ${csi_STATIC_SOURCES})
-# target_link_libraries(csi-static libchicken.a m.a dl.a)
-# set_target_properties(csi-static PROPERTIES LINKER_FLAGS -static)
+add_chicken_sources(csi_STATIC_SOURCES csi.scm
+    STATIC OPTIONS ${CHICKEN_PROGRAM_OPTIONS} -extend private-namespace.scm)
+add_executable(csi-static ${csi_STATIC_SOURCES})
+target_link_libraries(csi-static libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
+set_target_properties(csi-static PROPERTIES LINK_FLAGS -static)
+set_target_properties(csi-static PROPERTIES LINK_SEARCH_START_STATIC TRUE)
+set_target_properties(csi-static PROPERTIES LINK_SEARCH_END_STATIC TRUE)
 
 install(TARGETS csi
     RUNTIME DESTINATION ${BIN_INSTALL_DIR})
@@ -91,7 +99,6 @@ foreach(program ${utility_PROGRAMS})
     install(TARGETS ${program}
         RUNTIME DESTINATION ${BIN_INSTALL_DIR})
 endforeach()
-
 
 # setup-api
 set(setupapi_MODULES setup-api setup-download)
