@@ -55,7 +55,10 @@ function(_chicken_set_flags)
 endfunction()
 
 macro(_chicken_parse_arguments)
-    cmake_parse_arguments(arg "SHARED;STATIC;EMBEDDED" "" "EMIT;OPTIONS"
+    cmake_parse_arguments(arg
+        "SHARED;STATIC;EMBEDDED"
+        "CHICKEN_LIBRARY"
+        "EMIT;OPTIONS"
         ${ARGN})
 
     if(arg_SHARED)
@@ -123,7 +126,11 @@ function(add_chicken_library _NAME _FILENAME)
     _chicken_command(output ${_FILENAME})
     add_library(${_NAME} MODULE ${output})
     set_target_properties(${_NAME} PROPERTIES PREFIX "")
-    target_link_libraries(${_NAME} ${CHICKEN_LIBRARIES})
+    if(arg_CHICKEN_LIBRARY)
+        target_link_libraries(${_NAME} ${arg_CHICKEN_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
+    else()
+        target_link_libraries(${_NAME} ${CHICKEN_LIBRARIES})
+    endif()
 endfunction()
 
 include(FindPackageHandleStandardArgs)
@@ -133,16 +140,24 @@ find_package_handle_standard_args(Chicken DEFAULT_MSG CHICKEN_ROOT_DIR
     CHICKEN_EXECUTABLE CHICKEN_INCLUDE_DIR CHICKEN_LIBRARY)
 
 if(CHICKEN_FOUND)
+    set(_extra_libs m ${CMAKE_DL_LIBS})
+    if(WIN32)
+        # TODO: handle x64?
+        list(APPEND _extra_libs ws2_32)
+    endif()
+
     set(CHICKEN_INCLUDE_DIRS ${CHICKEN_INCLUDE_DIR})
-    set(CHICKEN_EXTRA_LIBRARIES m ${CMAKE_DL_LIBS}
+    set(CHICKEN_EXTRA_LIBRARIES ${_extra_libs}
         CACHE STRING "Additional libraries required by Chicken")
-    set(CHICKEN_LIBRARIES ${CHICKEN_LIBRARY} m ${CMAKE_DL_LIBS})
+
+    set(CHICKEN_LIBRARIES ${CHICKEN_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
 
     _chicken_set_flags()
 
     find_package_message(Chicken
         "\tCHICKEN_EXECUTABLE: ${CHICKEN_EXECUTABLE}
 \tCHICKEN_INCLUDE_DIR: ${CHICKEN_INCLUDE_DIR}
-\tCHICKEN_LIBRARY: ${CHICKEN_LIBRARY}"
+\tCHICKEN_LIBRARY: ${CHICKEN_LIBRARY}
+\tCHICKEN_EXTRA_LIBRARIES: ${CHICKEN_EXTRA_LIBRARIES}"
         "$CHICKEN_ROOT_DIR")
 endif()

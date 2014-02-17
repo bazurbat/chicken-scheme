@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 cmake_policy(VERSION 2.8)
 
-set(CMAKE_C_COMPILER gcc)
-
 project(chicken C)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/cmake)
@@ -20,11 +18,19 @@ include(ChickenBuildTag)
 include(ChickenConfig)
 
 # libchicken
+include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
+
 set_property(SOURCE runtime.c PROPERTY OBJECT_DEPENDS ${CHICKEN_CONFIG_H})
+
+if(WIN32)
+    set(posix_scm posixwin.scm)
+else()
+    set(posix_scm posixunix.scm)
+endif()
 
 set(libchicken_SCM_SOURCES library.scm eval.scm data-structures.scm ports.scm
     files.scm extras.scm lolevel.scm utils.scm tcp.scm srfi-1.scm srfi-4.scm
-    srfi-13.scm srfi-14.scm srfi-18.scm posixunix.scm irregex.scm
+    srfi-13.scm srfi-14.scm srfi-18.scm ${posix_scm} irregex.scm
     scheduler.scm profiler.scm stub.scm expand.scm modules.scm
     chicken-syntax.scm chicken-ffi-syntax.scm build-version.scm)
 
@@ -105,11 +111,13 @@ set(setupapi_MODULES setup-api setup-download)
 
 foreach(name ${setupapi_MODULES})
     set(filename ${name}.scm)
-    add_chicken_library(${name} ${filename}
-        SHARED EMIT ${name}
+    add_chicken_library(${name} ${filename} SHARED
+        CHICKEN_LIBRARY libchicken
+        EMIT ${name}
         OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
-    add_chicken_library(${name}.import ${name}.import.scm
-        SHARED OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
+    add_chicken_library(${name}.import ${name}.import.scm SHARED
+        CHICKEN_LIBRARY libchicken
+        OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
     add_dependencies(${name} libchicken)
     add_dependencies(${name}.import ${name})
     install(TARGETS ${name} ${name}.import
