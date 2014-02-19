@@ -5,11 +5,15 @@ project(chicken C)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/cmake)
 
-option(ENABLE_PTABLES "Enable procedure tables" YES)
-option(OPTIMIZE_FOR_SPEED "Optimize generated C code for speed" NO)
 option(BUILD_SHARED_LIBS "Build shared libraries" YES)
 option(C_GC_HOOKS "Enable GC hooks" NO)
 option(C_COLLECT_ALL_SYMBOLS "Always collect all unused symbols" NO)
+
+if(CMAKE_BUILD_TYPE STREQUAL "")
+    set(CMAKE_BUILD_TYPE "MinSizeRel" CACHE STRING
+        "The type of build (Debug, Release, MinSizeRel)"
+        FORCE)
+endif()
 
 find_package(Chicken)
 include(ChickenFunctions)
@@ -21,6 +25,8 @@ include(ChickenConfig)
 include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
 set_property(SOURCE runtime.c PROPERTY OBJECT_DEPENDS ${CHICKEN_CONFIG_H})
+set_property(SOURCE runtime.c APPEND_STRING PROPERTY
+    COMPILE_FLAGS " ${CHICKEN_C_FLAGS}")
 
 if(WIN32)
     set(posix_scm posixwin.scm)
@@ -49,12 +55,12 @@ if(C_HACKED_APPLY)
     list(APPEND libchicken_STATIC_SOURCES apply-hack.${CHICKEN_ARCH}.S)
 endif()
 
-add_library(libchicken SHARED runtime.c ${libchicken_SOURCES})
+add_library(libchicken SHARED chicken.h runtime.c ${libchicken_SOURCES})
 target_compile_definitions(libchicken PUBLIC -DC_BUILDING_LIBCHICKEN)
 target_link_libraries(libchicken ${CHICKEN_EXTRA_LIBRARIES})
 set_target_properties(libchicken PROPERTIES PREFIX "" SOVERSION 7)
 
-add_library(libchicken-static STATIC runtime.c ${libchicken_STATIC_SOURCES})
+add_library(libchicken-static STATIC chicken.h runtime.c ${libchicken_STATIC_SOURCES})
 target_compile_definitions(libchicken-static PUBLIC -DC_BUILDING_LIBCHICKEN)
 set_target_properties(libchicken-static PROPERTIES
     PREFIX "" OUTPUT_NAME libchicken)

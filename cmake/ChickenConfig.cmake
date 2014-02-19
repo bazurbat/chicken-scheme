@@ -38,21 +38,8 @@ endfunction()
 _chicken_set_program_names()
 
 # C
-set(CMAKE_C_FLAGS "-fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H")
-
-if(ENABLE_PTABLES)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DC_ENABLE_PTABLES")
-endif()
-
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(DEBUGBUILD 1)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wno-unused")
-endif()
-
-if(OPTIMIZE_FOR_SPEED)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -fomit-frame-pointer")
-else()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Os -fomit-frame-pointer")
 endif()
 
 # Scheme

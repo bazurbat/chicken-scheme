@@ -28,29 +28,43 @@ mark_as_advanced(CHICKEN_EXECUTABLE CHICKEN_INCLUDE_DIR CHICKEN_LIBRARY)
 function(_chicken_set_flags)
     option(CHICKEN_ENABLE_PTABLES "Enable procedure tables" YES)
 
-    set(c_flags "-fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H")
+    set(definitions "-DHAVE_CHICKEN_CONFIG_H")
+
     if(CHICKEN_ENABLE_PTABLES)
-        set(c_flags "${c_flags} -DC_ENABLE_PTABLES")
+        set(definitions "${definitions} -DC_ENABLE_PTABLES")
     endif()
 
-    set(CHICKEN_C_FLAGS_MINSIZEREL "-Os -fomit-frame-pointer" CACHE STRING
+    if(MSVC)
+        set(optimize_size "/O1 /Os /Oy")
+        set(optimize_speed "/Ox /Ot /Oy")
+        set(optimize_debug "/Od")
+        # C4101 - unreferenced local variable
+        set(extra_flags "/wd4101")
+    else()
+        set(optimize_size "-Os -fomit-frame-pointer")
+        set(optimize_speed "-O3 -fomit-frame-pointer")
+        set(optimize_debug "-g -Wall -Wno-unused")
+        set(extra_flags "-fno-strict-aliasing -fwrapv")
+    endif()
+
+    set(CHICKEN_C_FLAGS_MINSIZEREL ${optimize_size} CACHE STRING
         "Additional compiler flags for Chicken generated files during minsize builds")
-    set(CHICKEN_C_FLAGS_RELEASE "-O3 -fomit-frame-pointer" CACHE STRING
+    set(CHICKEN_C_FLAGS_RELEASE ${optimize_speed} CACHE STRING
         "Additional compiler flags for Chicken generated files during release builds")
-    set(CHICKEN_C_FLAGS_DEBUG "-g -Wall -Wno-unused" CACHE STRING
+    set(CHICKEN_C_FLAGS_DEBUG ${optimize_debug} CACHE STRING
         "Additional compiler flags for Chicken generated files during debug builds")
-    set(CHICKEN_EXTRA_C_FLAGS "" CACHE STRING
+    set(CHICKEN_EXTRA_C_FLAGS ${extra_flags} CACHE STRING
         "Additional compiler flags for Chicken generated files during all build types")
 
     if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
-        set(c_flags "${c_flags} ${CHICKEN_C_FLAGS_MINSIZEREL}")
+        set(c_flags "${CHICKEN_C_FLAGS_MINSIZEREL}")
     elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-        set(c_flags "${c_flags} ${CHICKEN_C_FLAGS_RELEASE}")
+        set(c_flags "${CHICKEN_C_FLAGS_RELEASE}")
     elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        set(c_flags "${c_flags} ${CHICKEN_C_FLAGS_DEBUG}")
+        set(c_flags "${CHICKEN_C_FLAGS_DEBUG}")
     endif()
 
-    set(CHICKEN_C_FLAGS "${c_flags} ${CHICKEN_EXTRA_C_FLAGS}" CACHE STRING
+    set(CHICKEN_C_FLAGS "${c_flags} ${CHICKEN_EXTRA_C_FLAGS} ${definitions}" CACHE STRING
         "Compiler flags for Chicken generated files (forced)" FORCE)
 endfunction()
 
@@ -89,16 +103,16 @@ function(_chicken_command _OUTPUT _INPUT)
     string(REGEX REPLACE "(.*)\\.scm$" "\\1${_output_suffix}.chicken.c" _cname ${_INPUT})
 
     get_filename_component(_input ${_INPUT} ABSOLUTE)
-    file(TO_NATIVE_PATH ${_input} _input)
+    file(TO_CMAKE_PATH ${_input} _input)
 
     get_filename_component(_path ${_input} PATH)
-    file(TO_NATIVE_PATH ${_path} _path)
+    file(TO_CMAKE_PATH ${_path} _path)
 
     set(_output ${CMAKE_CURRENT_BINARY_DIR}/${_cname})
-    file(TO_NATIVE_PATH ${_output} _output)
+    file(TO_CMAKE_PATH ${_output} _output)
 
     set_property(SOURCE ${_output} APPEND_STRING PROPERTY
-        COMPILE_FLAGS " -I${_path} ${_compile_flags}")
+        COMPILE_FLAGS " -I${_path} ${CHICKEN_C_FLAGS} ${_compile_flags}")
 
     add_custom_command(
         OUTPUT ${_output} ${_command_output}
@@ -137,13 +151,15 @@ include(FindPackageHandleStandardArgs)
 include(FindPackageMessage)
 
 find_package_handle_standard_args(Chicken DEFAULT_MSG CHICKEN_ROOT_DIR
-    CHICKEN_EXECUTABLE CHICKEN_INCLUDE_DIR CHICKEN_LIBRARY)
+    CHICKEN_EXECUTABLE CHICKEN_INCLUDE_DIR)
 
 if(CHICKEN_FOUND)
-    set(_extra_libs m ${CMAKE_DL_LIBS})
+    set(_extra_libs ${CMAKE_DL_LIBS})
     if(WIN32)
         # TODO: handle x64?
         list(APPEND _extra_libs ws2_32)
+    elseif(UNIX)
+        list(APPEND _extra_libs m)
     endif()
 
     set(CHICKEN_INCLUDE_DIRS ${CHICKEN_INCLUDE_DIR})
