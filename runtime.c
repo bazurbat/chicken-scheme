@@ -2844,11 +2844,13 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
     /* Mark literal frames: */
     for(lfn = lf_list; lfn != NULL; lfn = lfn->next)
-      for(i = 0; i < lfn->count; mark(&lfn->lf[ i++ ]));
+      for(i = 0; i < lfn->count; )
+          mark(&lfn->lf[ i++ ]);
 
     /* Mark symbol tables: */
     for(stp = symbol_table_list; stp != NULL; stp = stp->next)
-      for(i = 0; i < stp->size; mark(&stp->table[ i++ ]));
+      for(i = 0; i < stp->size; )
+          mark(&stp->table[ i++ ]);
 
     /* Mark collectibles: */
     for(msp = collectibles; msp < collectibles_top; ++msp)
@@ -2863,14 +2865,16 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
   }
   else {
     /* Mark mutated slots: */
-    for(msp = mutation_stack_bottom; msp < mutation_stack_top; mark(*(msp++)));
+    for(msp = mutation_stack_bottom; msp < mutation_stack_top; )
+        mark(*(msp++));
   }
 
   /* Clear the mutated slot stack: */
   mutation_stack_top = mutation_stack_bottom;
 
   /* Mark live values: */
-  for(p = C_temporary_stack; p < C_temporary_stack_bottom; mark(p++));
+  for(p = C_temporary_stack; p < C_temporary_stack_bottom; )
+      mark(p++);
 
   /* Mark trace-buffer: */
   for(tinfo = trace_buffer; tinfo < trace_buffer_limit; ++tinfo) {
@@ -3355,11 +3359,13 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
 
   /* Mark literal frames: */
   for(lfn = lf_list; lfn != NULL; lfn = lfn->next)
-    for(i = 0; i < lfn->count; remark(&lfn->lf[ i++ ]));
+    for(i = 0; i < lfn->count; )
+        remark(&lfn->lf[ i++ ]);
 
   /* Mark symbol table: */
   for(stp = symbol_table_list; stp != NULL; stp = stp->next)
-    for(i = 0; i < stp->size; remark(&stp->table[ i++ ]));
+    for(i = 0; i < stp->size; )
+        remark(&stp->table[ i++ ]);
 
   /* Mark collectibles: */
   for(msp = collectibles; msp < collectibles_top; ++msp)
@@ -3374,7 +3380,8 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
   mutation_stack_top = mutation_stack_bottom;
 
   /* Mark live values: */
-  for(p = C_temporary_stack; p < C_temporary_stack_bottom; remark(p++));
+  for(p = C_temporary_stack; p < C_temporary_stack_bottom; )
+      remark(p++);
 
   /* Mark locative table: */
   for(i = 0; i < locative_table_count; ++i)

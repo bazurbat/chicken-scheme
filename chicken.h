@@ -78,7 +78,7 @@
 # define C_GNU_ENV
 #endif
 
-#if defined(__MINGW32__) || defined(__WATCOMC__) || defined(__MWERKS__)
+#if defined(__MINGW32__) || defined(__WATCOMC__) || defined(__MWERKS__) || defined(_MSC_VER)
 /*
  * XXX This should probably be renamed or changed because it's misleading.
  * For example, Haiku is not a Unix either, but this doesn't get defined there.
@@ -502,7 +502,7 @@ static inline int isinf_ld (long double x)
 #define C_F32_LOCATIVE            8
 #define C_F64_LOCATIVE            9
 
-#if defined (__MINGW32__)
+#if defined (__MINGW32__) || defined (_MSC_VER)
 # define C_s64                    __int64
 # define C_u64                    unsigned __int64
 #else
@@ -545,9 +545,15 @@ static inline int isinf_ld (long double x)
  #define INT8_MIN   (-INT8_MAX - 1)
 */
 
-#define C_U64_MAX    UINT64_MAX
-#define C_S64_MIN    INT64_MIN
-#define C_S64_MAX    INT64_MAX
+#if defined(_MSC_VER)
+# define C_U64_MAX    _UI64_MAX
+# define C_S64_MIN    _I64_MIN
+# define C_S64_MAX    _I64_MAX
+#else
+# define C_U64_MAX    UINT64_MAX
+# define C_S64_MIN    INT64_MIN
+# define C_S64_MAX    INT64_MAX
+#endif
 
 #if defined(C_LLP)
 # define C_long                   C_s64
