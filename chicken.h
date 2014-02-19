@@ -98,18 +98,30 @@
 /* Headers */
 
 #include <ctype.h>
-#include <inttypes.h>
-#include <limits.h>
+#if defined(HAVE_INTTYPES_H)
+# include <inttypes.h>
+#endif
+#if defined(HAVE_LIMITS_H)
+# include <limits.h>
+#endif
 #include <math.h>
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
+#if defined(HAVE_STDLIB_H)
 #include <stdlib.h>
+#endif
+#if defined(HAVE_STRING_H)
 #include <string.h>
+#endif
 #include <time.h>
-#include <unistd.h>
-#include <sys/types.h>
+#if defined(HAVE_UNISTD_H)
+# include <unistd.h>
+#endif
+#if defined(HAVE_SYS_TYPES_H)
+# include <sys/types.h>
+#endif
 
 
 /* Byteorder in machine word */

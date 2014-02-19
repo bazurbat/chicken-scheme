@@ -31,7 +31,9 @@
 #include <errno.h>
 #include <float.h>
 #include <signal.h>
+#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif
 
 #ifdef HAVE_SYSEXITS_H
 # include <sysexits.h>
