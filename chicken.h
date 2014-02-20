@@ -44,6 +44,10 @@
 # define _ISOC99_SOURCE
 #endif
 
+#ifndef __C99FEATURES__
+# define __C99FEATURES__
+#endif
+
 #ifndef _BSD_SOURCE
 # define _BSD_SOURCE
 #endif
