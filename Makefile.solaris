@@ -84,6 +84,7 @@ LINKER_LINK_SHARED_PROGRAM_OPTIONS = -Wl,-R"$(RUNTIME_LINKER_PATH)"
 endif
 LIBRARIES = -lsocket -lnsl -lm -ldl -lrt
 NEEDS_RELINKING = yes
+USES_SONAME = yes
 
 # special files
 
