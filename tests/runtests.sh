@@ -418,7 +418,7 @@ CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR -r
  -csi ${TEST_DIR}/../csi
 CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $interpret -bnq rev-app.scm 1.0
 
-if test $OS_NAME != AIX; then
+if test $OS_NAME != AIX -a $OS_NAME != SunOS; then
 	echo "======================================== deployment tests"
 	mkdir rev-app
 	CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR reverser
@@ -430,7 +430,7 @@ if test $OS_NAME != AIX; then
 	mv rev-app rev-app-2
 	`pwd`/rev-app-2/rev-app 1.1
 else
-	echo "Disabling deployment tests, as deployment is currently unsupported on AIX."
+	echo "Skipping deployment tests: deployment is currently unsupported on your platform."
 fi
 
 echo "======================================== done."
