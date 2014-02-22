@@ -210,6 +210,8 @@ $compile reexport-m2.scm
 ./a.out
 $compile_s reexport-m3.scm -J
 $compile_s reexport-m4.scm -J
+$compile_s reexport-m5.scm -J
+$compile_s reexport-m6.scm -J
 $compile reexport-tests-2.scm
 ./a.out
 

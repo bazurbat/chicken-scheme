@@ -209,6 +209,19 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 a.out
 if errorlevel 1 exit /b 1
+%compile_s% reexport-m3.scm -J
+if errorlevel 1 exit /b 1
+%compile_s% reexport-m4.scm -J
+if errorlevel 1 exit /b 1
+%compile_s% reexport-m5.scm -J
+if errorlevel 1 exit /b 1
+%compile_s% reexport-m6.scm -J
+if errorlevel 1 exit /b 1
+%compile% reexport-tests-2.scm
+if errorlevel 1 exit /b 1
+a.out
+if errorlevel 1 exit /b 1
+
 
 echo ======================================== functor tests ...
 %interpret% -bnq simple-functors-test.scm
