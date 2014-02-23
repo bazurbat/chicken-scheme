@@ -19,7 +19,7 @@ find_package(Chicken)
 include(ChickenFunctions)
 include(ChickenApplyHack)
 include(ChickenBuildTag)
-include(ChickenConfig)
+include(ChickenConfigure)
 
 # libchicken
 include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
@@ -66,8 +66,8 @@ set_target_properties(libchicken-static PROPERTIES
     PREFIX "" OUTPUT_NAME libchicken)
 
 install(TARGETS libchicken libchicken-static
-    ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
-    LIBRARY DESTINATION ${LIB_INSTALL_DIR})
+    ARCHIVE DESTINATION ${INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${INSTALL_LIBDIR})
 
 # chicken
 set(chicken_SCM_SOURCES chicken.scm batch-driver.scm compiler.scm
@@ -81,7 +81,7 @@ add_executable(chicken ${chicken_SOURCES})
 target_link_libraries(chicken libchicken ${CHICKEN_EXTRA_LIBS})
 
 install(TARGETS chicken
-    RUNTIME DESTINATION ${BIN_INSTALL_DIR})
+    RUNTIME DESTINATION ${INSTALL_BINDIR})
 
 # utility programs
 add_chicken_sources(csi_SOURCES csi.scm
@@ -98,7 +98,7 @@ set_target_properties(csi-static PROPERTIES LINK_SEARCH_START_STATIC TRUE)
 set_target_properties(csi-static PROPERTIES LINK_SEARCH_END_STATIC TRUE)
 
 install(TARGETS csi
-    RUNTIME DESTINATION ${BIN_INSTALL_DIR})
+    RUNTIME DESTINATION ${INSTALL_BINDIR})
 
 set(utility_PROGRAMS csc chicken-install chicken-uninstall chicken-status
     chicken-profile)
@@ -109,7 +109,7 @@ foreach(program ${utility_PROGRAMS})
     add_executable(${program} ${program_SOURCES})
     target_link_libraries(${program} libchicken ${CHICKEN_EXTRA_LIBS})
     install(TARGETS ${program}
-        RUNTIME DESTINATION ${BIN_INSTALL_DIR})
+        RUNTIME DESTINATION ${INSTALL_BINDIR})
 endforeach()
 
 # setup-api
@@ -127,7 +127,7 @@ foreach(name ${setupapi_MODULES})
     add_dependencies(${name} libchicken)
     add_dependencies(${name}.import ${name})
     install(TARGETS ${name} ${name}.import
-        LIBRARY DESTINATION ${EGG_INSTALL_DIR})
+        LIBRARY DESTINATION ${INSTALL_EGGDIR})
 endforeach()
 
 # import libraries
@@ -142,11 +142,11 @@ foreach(lib ${CHICKEN_IMPORT_LIBRARIES})
         OPTIONS ${CHICKEN_IMPORT_LIBRARY_OPTIONS})
     add_dependencies(${name} libchicken)
     install(TARGETS ${name}
-        LIBRARY DESTINATION ${EGG_INSTALL_DIR})
+        LIBRARY DESTINATION ${INSTALL_EGGDIR})
 endforeach()
 
 install(FILES chicken.h ${CHICKEN_CONFIG_H}
-    DESTINATION ${INCLUDE_INSTALL_DIR})
+    DESTINATION ${INSTALL_INCLUDEDIR})
 
 # set(MANPAGES chicken.1 csc.1 csi.1 chicken-install.1 chicken-uninstall.1
 #     chicken-status.1 chicken-profile.1 chicken-bug.1)

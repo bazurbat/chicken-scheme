@@ -2,20 +2,25 @@
 
 set(BINARYVERSION 7)
 set(STACKDIRECTION 1)
-set(CROSS_CHICKEN 0)
+
+set(PROGRAM_PREFIX "" CACHE STRING "Prefix for Chicken programs and paths")
+set(PROGRAM_SUFFIX "" CACHE STRING "Suffix for Chicken programs and paths")
+set(TARGET_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE STRING
+    "Specifies the location of target-specific files")
+set(TARGET_RUN_PREFIX ${TARGET_PREFIX} CACHE STRING
+    "Specifies effective runtime target prefix")
 
 # directories
 set(CHICKEN_NAME ${PROGRAM_PREFIX}chicken${PROGRAM_SUFFIX})
 
-set(BIN_INSTALL_DIR bin)
-set(LIB_INSTALL_DIR lib)
-set(SHARE_INSTALL_DIR share)
-set(DATA_INSTALL_DIR ${SHARE_INSTALL_DIR}/${CHICKEN_NAME})
-set(MAN_INSTALL_DIR ${SHARE_INSTALL_DIR}/man/man1)
-set(INCLUDE_INSTALL_DIR include/${CHICKEN_NAME})
-set(DOC_INSTALL_DIR ${DATA_INSTALL_DIR}/doc)
-set(CHICKEN_LIB_INSTALL_DIR ${LIB_INSTALL_DIR}/${CHICKEN_NAME})
-set(EGG_INSTALL_DIR ${CHICKEN_LIB_INSTALL_DIR}/${BINARYVERSION})
+include(GNUInstallDirs)
+
+set(INSTALL_BINDIR ${CMAKE_INSTALL_FULL_BINDIR})
+set(INSTALL_LIBDIR ${CMAKE_INSTALL_FULL_LIBDIR})
+set(INSTALL_DATADIR ${CMAKE_INSTALL_FULL_DATADIR}/${CHICKEN_NAME})
+set(INSTALL_INCLUDEDIR ${CMAKE_INSTALL_FULL_INCLUDEDIR}/${CHICKEN_NAME})
+set(INSTALL_EGGDIR ${INSTALL_LIBDIR}/${CHICKEN_NAME}/${BINARYVERSION})
+set(INSTALL_MANDIR ${CMAKE_INSTALL_FULL_MANDIR}/man1)
 
 function(_chicken_set_extra_libs)
     set(libs "-lm")
@@ -36,6 +41,33 @@ function(_chicken_set_program_names)
     endforeach()
 endfunction()
 _chicken_set_program_names()
+
+function(_chicken_find_toolchain _VAR)
+    set(cc C_${_VAR}_CC)
+    set(cxx C_${_VAR}_CXX)
+    set(rc C_${_VAR}_RC_COMPILER)
+    if(ARGV1)
+        set(prefix ${ARGV1}-)
+    endif()
+
+    find_program(${cc} ${prefix}gcc)
+    find_program(${cxx} ${prefix}g++)
+    find_program(${rc} ${prefix}windres)
+
+    if(${cc})
+        get_filename_component(${cc} ${${cc}} NAME)
+    endif()
+    if(${cxx})
+        get_filename_component(${cxx} ${${cxx}} NAME)
+    endif()
+    if(${rc})
+        get_filename_component(${rc} ${${rc}} NAME)
+    endif()
+
+    set(${cc} ${${cc}} PARENT_SCOPE)
+    set(${cxx} ${${cxx}} PARENT_SCOPE)
+    set(${rc} ${${rc}} PARENT_SCOPE)
+endfunction()
 
 # C
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -102,20 +134,13 @@ check_include_file("sys/stat.h" HAVE_SYS_STAT_H)
 check_include_file("sysexits.h" HAVE_SYSEXITS_H)
 check_include_file("unistd.h"   HAVE_UNISTD_H)
 
-if(CMAKE_C_COMPILER)
-    set(C_INSTALL_CC ${CMAKE_C_COMPILER})
+_chicken_find_toolchain(INSTALL)
+_chicken_find_toolchain(TARGET ${TARGET_SYSTEM})
+
+if(C_INSTALL_CC STREQUAL C_TARGET_CC)
+    set(CROSS_CHICKEN 0)
 else()
-    set(C_INSTALL_CC)
-endif()
-if(CMAKE_CXX_COMPILER)
-    set(C_INSTALL_CXX ${CMAKE_CXX_COMPILER})
-else()
-    set(C_INSTALL_CXX)
-endif()
-if(CMAKE_RC_COMPILER)
-    set(C_INSTALL_RC_COMPILER ${CMAKE_RC_COMPILER})
-else()
-    set(C_INSTALL_RC_COMPILER)
+    set(CROSS_CHICKEN 1)
 endif()
 
 set(CHICKEN_HOST_C_COMPILER ${CMAKE_C_COMPILER} CACHE STRING
