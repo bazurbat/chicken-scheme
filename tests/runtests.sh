@@ -420,7 +420,7 @@ CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR -r
  -csi ${TEST_DIR}/../csi
 CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $interpret -bnq rev-app.scm 1.0
 
-if test $OS_NAME != AIX -a $OS_NAME != SunOS; then
+if test $OS_NAME != AIX -a $OS_NAME != SunOS -a $OS_NAME != GNU; then
 	echo "======================================== deployment tests"
 	mkdir rev-app
 	CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR reverser
