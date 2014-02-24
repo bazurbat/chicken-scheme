@@ -72,7 +72,7 @@ macro(_chicken_parse_arguments)
     cmake_parse_arguments(arg
         "SHARED;STATIC;EMBEDDED"
         "CHICKEN_LIBRARY"
-        "EMIT;OPTIONS"
+        "EMIT;OPTIONS;COMPILE_FLAGS"
         ${ARGN})
 
     if(arg_SHARED)
@@ -97,6 +97,7 @@ macro(_chicken_parse_arguments)
     endforeach()
 
     list(APPEND _chicken_options ${arg_OPTIONS})
+    set(_compile_flags "${_compile_flags} ${arg_COMPILE_FLAGS}")
 endmacro()
 
 function(_chicken_command _OUTPUT _INPUT)

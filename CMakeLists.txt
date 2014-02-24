@@ -117,18 +117,30 @@ set(setupapi_MODULES setup-api setup-download)
 
 foreach(name ${setupapi_MODULES})
     set(filename ${name}.scm)
+    set(import_filename ${CMAKE_CURRENT_BINARY_DIR}/${name}.import.scm)
     add_chicken_library(${name} ${filename} SHARED
         CHICKEN_LIBRARY libchicken
         EMIT ${name}
         OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
-    add_chicken_library(${name}.import ${name}.import.scm SHARED
+    add_chicken_library(${name}.import ${import_filename} SHARED
         CHICKEN_LIBRARY libchicken
-        OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
+        OPTIONS ${CHICKEN_LIBRARY_OPTIONS}
+        COMPILE_FLAGS "-I${CMAKE_CURRENT_SOURCE_DIR}")
     add_dependencies(${name} libchicken)
     add_dependencies(${name}.import ${name})
     install(TARGETS ${name} ${name}.import
         LIBRARY DESTINATION ${INSTALL_EGGDIR})
 endforeach()
+
+add_dependencies(setup-download setup-api.import)
+
+###
+
+add_dependencies(chicken-install ${setupapi_MODULES})
+add_dependencies(chicken-uninstall ${setupapi_MODULES})
+add_dependencies(chicken-status ${setupapi_MODULES})
+
+###
 
 # import libraries
 set(CHICKEN_IMPORT_LIBRARIES chicken lolevel srfi-1 srfi-4 data-structures
