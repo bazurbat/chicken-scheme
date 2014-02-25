@@ -2,28 +2,65 @@
 
 include(CMakeParseArguments)
 
-if(NOT CHICKEN_ROOT_DIR)
-    if(EXISTS $ENV{CHICKEN_PREFIX})
-        set(_chicken_root $ENV{CHICKEN_PREFIX})
+function(_chicken_set_names)
+    set(CHICKEN_SYSTEM "" CACHE STRING
+        "Name of system")
+    set(CHICKEN_TARGET_SYSTEM ${CHICKEN_SYSTEM} CACHE STRING
+        "Name of target system")
+    if(CHICKEN_SYSTEM STREQUAL CHICKEN_TARGET_SYSTEM)
+        set(cross 0)
     else()
-        set(_chicken_root "/usr")
+        set(cross 1)
     endif()
-    set(CHICKEN_ROOT_DIR ${_chicken_root} CACHE PATH
-        "Chicken host install root")
-endif()
+    set(CHICKEN_CROSS ${cross} CACHE INTERNAL "Compiling cross Chicken")
 
-find_program(CHICKEN_EXECUTABLE ${CHICKEN_PROGRAM_PREFIX}chicken
-    PATHS ${CHICKEN_ROOT_DIR}/bin
-    NO_DEFAULT_PATH)
-find_path(CHICKEN_INCLUDE_DIR chicken.h
-    PATHS ${CHICKEN_ROOT_DIR}/include/${CHICKEN_PROGRAM_PREFIX}chicken
-    NO_DEFAULT_PATH)
-find_library(CHICKEN_LIBRARY
-    NAMES chicken ${CHICKEN_PROGRAM_PREFIX}chicken
-    PATHS ${CHICKEN_TARGET_ROOT_DIR}/lib ${CHICKEN_ROOT_DIR}/lib
-    NO_DEFAULT_PATH)
+    set(CHICKEN_PREFIX "" CACHE STRING
+        "Prefix for Chicken programs and paths")
+    set(CHICKEN_SUFFIX "" CACHE STRING
+        "Suffix for Chicken programs and paths")
+    set(CHICKEN_TARGET_PREFIX ${CHICKEN_PREFIX} CACHE STRING
+        "Prefix for target Chicken programs and paths")
+    set(CHICKEN_TARGET_SUFFIX ${CHICKEN_SUFFIX} CACHE STRING
+        "Suffix for target Chicken programs and paths")
 
-mark_as_advanced(CHICKEN_EXECUTABLE CHICKEN_INCLUDE_DIR CHICKEN_LIBRARY)
+    set(CHICKEN_NAME ${CHICKEN_PREFIX}chicken${CHICKEN_SUFFIX} CACHE INTERNAL
+        "Canonical Chicken name")
+    set(CHICKEN_TARGET_NAME ${CHICKEN_TARGET_PREFIX}chicken${CHICKEN_TARGET_SUFFIX} CACHE INTERNAL
+        "Canonical target Chicken name")
+    mark_as_advanced(CHICKEN_NAME CHICKEN_TARGET_NAME)
+
+    set(CHICKEN_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE STRING
+        "Installation directory")
+    set(CHICKEN_TARGET_INSTALL_PREFIX ${CHICKEN_INSTALL_PREFIX} CACHE STRING
+        "Target installation directory")
+    set(CHICKEN_TARGET_RUN_PREFIX ${CHICKEN_INSTALL_PREFIX} CACHE STRING
+        "Effective runtime target prefix")
+endfunction()
+_chicken_set_names()
+
+function(_chicken_find)
+    if((NOT CHICKEN_ROOT_DIR) AND (EXISTS $ENV{CHICKEN_PREFIX}))
+        set(CHICKEN_ROOT_DIR $ENV{CHICKEN_PREFIX})
+    else()
+        set(CHICKEN_ROOT_DIR ${CHICKEN_INSTALL_PREFIX})
+    endif()
+
+    find_program(CHICKEN_EXECUTABLE ${CHICKEN_NAME}
+        PATHS ${CHICKEN_ROOT_DIR}/bin
+        NO_DEFAULT_PATH)
+    find_program(CHICKEN_EXECUTABLE ${CHICKEN_NAME}
+        NO_SYSTEM_ENVIRONMENT_PATH)
+    find_path(CHICKEN_INCLUDE_DIR chicken.h
+        PATHS ${CHICKEN_ROOT_DIR}/include/${CHICKEN_NAME}
+        NO_DEFAULT_PATH)
+    find_path(CHICKEN_INCLUDE_DIR chicken.h
+        PATH_SUFFIXES ${CHICKEN_NAME})
+    find_library(CHICKEN_LIBRARY ${CHICKEN_NAME}
+        PATHS ${CHICKEN_ROOT_DIR}/lib
+        NO_DEFAULT_PATH)
+    find_library(CHICKEN_LIBRARY ${CHICKEN_NAME})
+endfunction()
+_chicken_find()
 
 function(_chicken_set_flags)
     option(CHICKEN_ENABLE_PTABLES "Enable procedure tables" YES)
@@ -151,8 +188,7 @@ endfunction()
 include(FindPackageHandleStandardArgs)
 include(FindPackageMessage)
 
-find_package_handle_standard_args(Chicken DEFAULT_MSG CHICKEN_ROOT_DIR
-    CHICKEN_EXECUTABLE CHICKEN_INCLUDE_DIR)
+find_package_handle_standard_args(Chicken DEFAULT_MSG CHICKEN_EXECUTABLE)
 
 if(CHICKEN_FOUND)
     set(_extra_libs ${CMAKE_DL_LIBS})

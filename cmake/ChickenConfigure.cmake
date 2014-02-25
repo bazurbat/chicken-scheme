@@ -3,24 +3,21 @@
 set(BINARYVERSION 7)
 set(STACKDIRECTION 1)
 
-set(PROGRAM_PREFIX "" CACHE STRING "Prefix for Chicken programs and paths")
-set(PROGRAM_SUFFIX "" CACHE STRING "Suffix for Chicken programs and paths")
-set(TARGET_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE STRING
-    "Specifies the location of target-specific files")
-set(TARGET_RUN_PREFIX ${TARGET_PREFIX} CACHE STRING
-    "Specifies effective runtime target prefix")
-
-# directories
-set(CHICKEN_NAME ${PROGRAM_PREFIX}chicken${PROGRAM_SUFFIX})
-
 include(GNUInstallDirs)
 
-set(INSTALL_BINDIR ${CMAKE_INSTALL_FULL_BINDIR})
-set(INSTALL_LIBDIR ${CMAKE_INSTALL_FULL_LIBDIR})
-set(INSTALL_DATADIR ${CMAKE_INSTALL_FULL_DATADIR}/${CHICKEN_NAME})
-set(INSTALL_INCLUDEDIR ${CMAKE_INSTALL_FULL_INCLUDEDIR}/${CHICKEN_NAME})
+set(INSTALL_BINDIR ${CHICKEN_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR})
+set(INSTALL_LIBDIR ${CHICKEN_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+set(INSTALL_DATAROOTDIR ${CHICKEN_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR})
+set(INSTALL_DATADIR ${CHICKEN_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/${CHICKEN_NAME})
+set(INSTALL_INCLUDEDIR ${CHICKEN_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/${CHICKEN_NAME})
 set(INSTALL_EGGDIR ${INSTALL_LIBDIR}/${CHICKEN_NAME}/${BINARYVERSION})
-set(INSTALL_MANDIR ${CMAKE_INSTALL_FULL_MANDIR}/man1)
+set(INSTALL_MANDIR ${CHICKEN_INSTALL_PREFIX}/${CMAKE_INSTALL_MANDIR}/man1)
+
+set(TARGET_BINDIR ${CHICKEN_TARGET_INSTALL_PREFIX}/bin)
+set(TARGET_LIBDIR ${CHICKEN_TARGET_INSTALL_PREFIX}/lib)
+set(TARGET_DATAROOTDIR ${CHICKEN_TARGET_INSTALL_PREFIX}/share)
+set(TARGET_INCLUDEDIR ${CHICKEN_TARGET_INSTALL_PREFIX}/include/${CHICKEN_TARGET_NAME})
+set(TARGET_RUN_LIBDIR ${CHICKEN_TARGET_RUN_PREFIX}/lib)
 
 function(_chicken_set_extra_libs)
     set(libs "-lm")
@@ -37,7 +34,7 @@ function(_chicken_set_program_names)
     foreach(n ${names})
         string(TOUPPER ${n} upper)
         string(REPLACE "-" "_" var ${upper})
-        set(${var}_PROGRAM ${PROGRAM_PREFIX}${n}${PROGRAM_SUFFIX} PARENT_SCOPE)
+        set(${var}_PROGRAM ${CHICKEN_PREFIX}${n}${CHICKEN_SUFFIX} PARENT_SCOPE)
     endforeach()
 endfunction()
 _chicken_set_program_names()
@@ -134,8 +131,8 @@ check_include_file("sys/stat.h" HAVE_SYS_STAT_H)
 check_include_file("sysexits.h" HAVE_SYSEXITS_H)
 check_include_file("unistd.h"   HAVE_UNISTD_H)
 
-_chicken_find_toolchain(INSTALL)
-_chicken_find_toolchain(TARGET ${TARGET_SYSTEM})
+_chicken_find_toolchain(INSTALL ${CHICKEN_SYSTEM})
+_chicken_find_toolchain(TARGET ${CHICKEN_TARGET_SYSTEM})
 
 if(C_INSTALL_CC STREQUAL C_TARGET_CC)
     set(CROSS_CHICKEN 0)
