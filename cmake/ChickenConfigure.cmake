@@ -1,16 +1,71 @@
 # - Chicken Parameters
 
-set(BINARYVERSION 7)
+include(GNUInstallDirs)
+
+set(CHICKEN_API_VERSION 7 CACHE STRING "Chicken API version")
 set(STACKDIRECTION 1)
 
-include(GNUInstallDirs)
+option(BUILD_SHARED_LIBS "Build shared libraries" YES)
+option(CHICKEN_GC_HOOKS "Enable GC hooks" NO)
+option(CHICKEN_COLLECT_ALL_SYMBOLS "Always collect all unused symbols" NO)
+
+if(CMAKE_BUILD_TYPE STREQUAL "")
+    set(CMAKE_BUILD_TYPE "MinSizeRel" CACHE STRING
+        "The type of build (Debug, Release, MinSizeRel)"
+        FORCE)
+endif()
+
+# set global flags from calculated by macro to let user see them in the gui
+set(CMAKE_C_FLAGS_MINSIZEREL "${CHICKEN_C_FLAGS_MINSIZEREL}" CACHE STRING
+    "C compiler flags to use during minsize build (forced)" FORCE)
+set(CMAKE_C_FLAGS_RELEASE "${CHICKEN_C_FLAGS_RELEASE}" CACHE STRING
+    "C compiler flags to use during release build (forced)" FORCE)
+set(CMAKE_C_FLAGS_DEBUG "${CHICKEN_C_FLAGS_DEBUG}" CACHE STRING
+    "C compiler flags to use during debug build (forced)" FORCE)
+set(CMAKE_C_FLAGS "${CHICKEN_C_FLAGS_EXTRA} ${CHICKEN_C_DEFINITIONS}" CACHE STRING
+    "C compiler flags to use during all build types (forced)" FORCE)
+set(CHICKEN_C_FLAGS "")
+
+if(CHICKEN_GC_HOOKS)
+    set(C_GC_HOOKS 1)
+endif()
+if(CHICKEN_COLLECT_ALL_SYMBOLS)
+    set(C_COLLECT_ALL_SYMBOLS 1)
+endif()
+
+set(CHICKEN_SYSTEM "" CACHE STRING
+    "Name of system")
+set(CHICKEN_TARGET_SYSTEM ${CHICKEN_SYSTEM} CACHE STRING
+    "Name of target system")
+if(CHICKEN_SYSTEM STREQUAL CHICKEN_TARGET_SYSTEM)
+    set(_chicken_cross 0)
+else()
+    set(_chicken_cross 1)
+endif()
+set(CHICKEN_CROSS ${_chicken_cross} CACHE INTERNAL "Compiling cross Chicken")
+
+set(CHICKEN_TARGET_PREFIX ${CHICKEN_PREFIX} CACHE STRING
+    "Prefix for target Chicken programs and paths")
+set(CHICKEN_TARGET_SUFFIX ${CHICKEN_SUFFIX} CACHE STRING
+    "Suffix for target Chicken programs and paths")
+
+set(CHICKEN_TARGET_NAME ${CHICKEN_TARGET_PREFIX}chicken${CHICKEN_TARGET_SUFFIX} CACHE INTERNAL
+    "Canonical target Chicken name")
+mark_as_advanced(CHICKEN_NAME CHICKEN_TARGET_NAME)
+
+set(CHICKEN_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE STRING
+    "Installation directory")
+set(CHICKEN_TARGET_INSTALL_PREFIX ${CHICKEN_INSTALL_PREFIX} CACHE STRING
+    "Target installation directory")
+set(CHICKEN_TARGET_RUN_PREFIX ${CHICKEN_INSTALL_PREFIX} CACHE STRING
+    "Effective runtime target prefix")
 
 set(INSTALL_BINDIR ${CHICKEN_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR})
 set(INSTALL_LIBDIR ${CHICKEN_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 set(INSTALL_DATAROOTDIR ${CHICKEN_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR})
 set(INSTALL_DATADIR ${CHICKEN_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/${CHICKEN_NAME})
 set(INSTALL_INCLUDEDIR ${CHICKEN_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/${CHICKEN_NAME})
-set(INSTALL_EGGDIR ${INSTALL_LIBDIR}/${CHICKEN_NAME}/${BINARYVERSION})
+set(INSTALL_EGGDIR ${INSTALL_LIBDIR}/${CHICKEN_NAME}/${CHICKEN_API_VERSION})
 set(INSTALL_MANDIR ${CHICKEN_INSTALL_PREFIX}/${CMAKE_INSTALL_MANDIR}/man1)
 
 set(TARGET_BINDIR ${CHICKEN_TARGET_INSTALL_PREFIX}/bin)
@@ -20,11 +75,12 @@ set(TARGET_INCLUDEDIR ${CHICKEN_TARGET_INSTALL_PREFIX}/include/${CHICKEN_TARGET_
 set(TARGET_RUN_LIBDIR ${CHICKEN_TARGET_RUN_PREFIX}/lib)
 
 function(_chicken_set_extra_libs)
-    set(libs "-lm")
-    if(CMAKE_DL_LIBS)
-        set(libs "${libs} -l${CMAKE_DL_LIBS}")
-    endif()
-    set(CHICKEN_EXTRA_LIBS ${libs} PARENT_SCOPE)
+    # TODO: handle MSVC
+    set(libs "")
+    foreach(lib ${CHICKEN_EXTRA_LIBRARIES})
+        set(libs "${libs} -l${lib}")
+    endforeach()
+    set(MORE_LIBS ${libs} PARENT_SCOPE)
 endfunction()
 _chicken_set_extra_libs()
 

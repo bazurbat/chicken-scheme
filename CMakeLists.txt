@@ -5,21 +5,11 @@ project(chicken C)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/cmake)
 
-option(BUILD_SHARED_LIBS "Build shared libraries" YES)
-option(C_GC_HOOKS "Enable GC hooks" NO)
-option(C_COLLECT_ALL_SYMBOLS "Always collect all unused symbols" NO)
-
-if(CMAKE_BUILD_TYPE STREQUAL "")
-    set(CMAKE_BUILD_TYPE "MinSizeRel" CACHE STRING
-        "The type of build (Debug, Release, MinSizeRel)"
-        FORCE)
-endif()
-
-find_package(Chicken)
-include(ChickenFunctions)
+find_package(Chicken PATHS ${CMAKE_HOME_DIRECTORY}/cmake NO_DEFAULT_PATH) 
+include(ChickenConfigure)
 include(ChickenApplyHack)
 include(ChickenBuildTag)
-include(ChickenConfigure)
+include(${CHICKEN_USE_FILE})
 
 # libchicken
 include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
@@ -58,7 +48,8 @@ endif()
 add_library(libchicken SHARED chicken.h runtime.c ${libchicken_SOURCES})
 target_compile_definitions(libchicken PUBLIC -DC_BUILDING_LIBCHICKEN)
 target_link_libraries(libchicken ${CHICKEN_EXTRA_LIBRARIES})
-set_target_properties(libchicken PROPERTIES PREFIX "" SOVERSION 7)
+set_target_properties(libchicken PROPERTIES
+    PREFIX "" VERSION ${CHICKEN_API_VERSION})
 
 add_library(libchicken-static STATIC chicken.h runtime.c ${libchicken_STATIC_SOURCES})
 target_compile_definitions(libchicken-static PUBLIC -DC_BUILDING_LIBCHICKEN)
@@ -78,7 +69,7 @@ add_chicken_sources(chicken_SOURCES ${chicken_SCM_SOURCES}
     OPTIONS ${CHICKEN_COMPILER_OPTIONS})
 
 add_executable(chicken ${chicken_SOURCES})
-target_link_libraries(chicken libchicken ${CHICKEN_EXTRA_LIBS})
+target_link_libraries(chicken libchicken ${CHICKEN_EXTRA_LIBRARIES})
 
 install(TARGETS chicken
     RUNTIME DESTINATION ${INSTALL_BINDIR})
@@ -87,7 +78,7 @@ install(TARGETS chicken
 add_chicken_sources(csi_SOURCES csi.scm
     OPTIONS ${CHICKEN_PROGRAM_OPTIONS} -extend private-namespace.scm)
 add_executable(csi ${csi_SOURCES})
-target_link_libraries(csi libchicken ${CHICKEN_EXTRA_LIBS})
+target_link_libraries(csi libchicken ${CHICKEN_EXTRA_LIBRARIES})
 
 add_chicken_sources(csi_STATIC_SOURCES csi.scm
     STATIC OPTIONS ${CHICKEN_PROGRAM_OPTIONS} -extend private-namespace.scm)
@@ -107,7 +98,7 @@ foreach(program ${utility_PROGRAMS})
     add_chicken_sources(program_SOURCES ${program}.scm
         OPTIONS ${CHICKEN_PROGRAM_OPTIONS})
     add_executable(${program} ${program_SOURCES})
-    target_link_libraries(${program} libchicken ${CHICKEN_EXTRA_LIBS})
+    target_link_libraries(${program} libchicken ${CHICKEN_EXTRA_LIBRARIES})
     install(TARGETS ${program}
         RUNTIME DESTINATION ${INSTALL_BINDIR})
 endforeach()
