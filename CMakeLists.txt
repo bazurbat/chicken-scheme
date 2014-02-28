@@ -110,11 +110,11 @@ foreach(name ${setupapi_MODULES})
     set(filename ${name}.scm)
     set(import_filename ${CMAKE_CURRENT_BINARY_DIR}/${name}.import.scm)
     add_chicken_library(${name} ${filename} SHARED
-        CHICKEN_LIBRARY libchicken
+        LIBRARY libchicken
         EMIT ${name}
         OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
     add_chicken_library(${name}.import ${import_filename} SHARED
-        CHICKEN_LIBRARY libchicken
+        LIBRARY libchicken
         OPTIONS ${CHICKEN_LIBRARY_OPTIONS}
         COMPILE_FLAGS "-I${CMAKE_CURRENT_SOURCE_DIR}")
     add_dependencies(${name} libchicken)
