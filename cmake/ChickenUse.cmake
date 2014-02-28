@@ -34,33 +34,34 @@ macro(_chicken_parse_arguments)
     set(_command_flags "${_command_flags} ${_arg_COMPILE_FLAGS}")
 endmacro()
 
-function(_chicken_command _OUTPUT _INPUT)
+function(_chicken_command out_var in_filename)
     string(REGEX REPLACE
         "(.*)\\.scm$" "\\1${_command_suffix}.chicken.c"
-        _cname ${_INPUT})
+        out_filename ${in_filename})
 
-    get_filename_component(_input ${_INPUT} ABSOLUTE)
-    file(TO_CMAKE_PATH ${_input} _input)
+    get_filename_component(in_filename ${in_filename} ABSOLUTE)
+    file(TO_CMAKE_PATH ${in_filename} in_filename)
 
-    get_filename_component(_path ${_input} PATH)
-    file(TO_CMAKE_PATH ${_path} _path)
+    if(NOT IS_ABSOLUTE ${out_filename})
+        set(out_filename ${CMAKE_CURRENT_BINARY_DIR}/${out_filename})
+    endif()
+    file(TO_CMAKE_PATH ${out_filename} out_filename)
 
-    set(_output ${CMAKE_CURRENT_BINARY_DIR}/${_cname})
-    file(TO_CMAKE_PATH ${_output} _output)
+    get_filename_component(in_path ${in_filename} PATH)
 
-    set_property(SOURCE ${_output} APPEND_STRING PROPERTY
-        COMPILE_FLAGS " -I${_path} ${_command_flags} ${CHICKEN_C_FLAGS}")
+    set_property(SOURCE ${out_filename} APPEND_STRING PROPERTY
+        COMPILE_FLAGS " -I\"${in_path}\" ${_command_flags} ${CHICKEN_C_FLAGS}")
 
     add_custom_command(
-        OUTPUT ${_output} ${_command_output}
+        OUTPUT ${out_filename} ${_command_output}
         COMMAND ${CHICKEN_EXECUTABLE}
-        ARGS ${_input} -output-file ${_output} -include-path ${_path}
+        ARGS ${in_filename} -output-file ${out_filename} -include-path ${in_path}
              ${_command_options} ${CHICKEN_OPTIONS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        DEPENDS ${_input}
+        DEPENDS ${in_filename}
         VERBATIM)
 
-    set(${_OUTPUT} ${_output} PARENT_SCOPE)
+    set(${out_var} ${out_filename} PARENT_SCOPE)
 endfunction()
 
 function(add_chicken_sources _OUTVAR)
