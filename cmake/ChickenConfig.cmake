@@ -58,8 +58,8 @@ function(_chicken_config_names)
         "Suffix for Chicken programs and paths")
     set(CHICKEN_NAME ${CHICKEN_PREFIX}chicken${CHICKEN_SUFFIX} CACHE INTERNAL
         "Canonical Chicken name")
-    set(CHICKEN_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE PATH
-        "Chicken installation directory")
+    set(CHICKEN_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE INTERNAL
+        "Chicken installation root directory")
 endfunction()
 
 function(_chicken_config_find)

@@ -49,12 +49,15 @@ add_library(libchicken SHARED chicken.h runtime.c ${libchicken_SOURCES})
 target_compile_definitions(libchicken PUBLIC -DC_BUILDING_LIBCHICKEN)
 target_link_libraries(libchicken ${CHICKEN_EXTRA_LIBRARIES})
 set_target_properties(libchicken PROPERTIES
-    PREFIX "" VERSION ${CHICKEN_API_VERSION})
+    PREFIX ""
+    OUTPUT_NAME lib${CHICKEN_PREFIX}chicken${CHICKEN_SUFFIX}
+    VERSION ${CHICKEN_API_VERSION})
 
 add_library(libchicken-static STATIC chicken.h runtime.c ${libchicken_STATIC_SOURCES})
 target_compile_definitions(libchicken-static PUBLIC -DC_BUILDING_LIBCHICKEN)
 set_target_properties(libchicken-static PROPERTIES
-    PREFIX "" OUTPUT_NAME libchicken)
+    PREFIX ""
+    OUTPUT_NAME lib${CHICKEN_PREFIX}chicken${CHICKEN_SUFFIX})
 
 install(TARGETS libchicken libchicken-static
     ARCHIVE DESTINATION ${INSTALL_LIBDIR}
@@ -70,6 +73,8 @@ add_chicken_sources(chicken_SOURCES ${chicken_SCM_SOURCES}
 
 add_executable(chicken ${chicken_SOURCES})
 target_link_libraries(chicken libchicken ${CHICKEN_EXTRA_LIBRARIES})
+set_property(TARGET chicken PROPERTY
+    OUTPUT_NAME ${CHICKEN_PREFIX}chicken${CHICKEN_SUFFIX})
 
 install(TARGETS chicken
     RUNTIME DESTINATION ${INSTALL_BINDIR})
@@ -79,16 +84,30 @@ add_chicken_sources(csi_SOURCES csi.scm
     OPTIONS ${CHICKEN_PROGRAM_OPTIONS} -extend private-namespace.scm)
 add_executable(csi ${csi_SOURCES})
 target_link_libraries(csi libchicken ${CHICKEN_EXTRA_LIBRARIES})
+set_property(TARGET csi PROPERTY
+    OUTPUT_NAME ${CHICKEN_PREFIX}csi${CHICKEN_SUFFIX})
 
 add_chicken_sources(csi_STATIC_SOURCES csi.scm
     STATIC OPTIONS ${CHICKEN_PROGRAM_OPTIONS} -extend private-namespace.scm)
 add_executable(csi-static ${csi_STATIC_SOURCES})
 target_link_libraries(csi-static libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
-set_target_properties(csi-static PROPERTIES LINK_FLAGS -static)
-set_target_properties(csi-static PROPERTIES LINK_SEARCH_START_STATIC TRUE)
-set_target_properties(csi-static PROPERTIES LINK_SEARCH_END_STATIC TRUE)
+set_target_properties(csi-static PROPERTIES
+    LINK_FLAGS -static
+    LINK_SEARCH_START_STATIC TRUE
+    LINK_SEARCH_END_STATIC TRUE
+    OUTPUT_NAME ${CHICKEN_PREFIX}csi-static${CHICKEN_SUFFIX})
 
-install(TARGETS csi
+add_chicken_sources(chicken-bug_SOURCES chicken-bug.scm
+    STATIC OPTIONS ${CHICKEN_PROGRAM_OPTIONS})
+add_executable(chicken-bug ${chicken-bug_SOURCES})
+target_link_libraries(chicken-bug libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
+set_target_properties(chicken-bug PROPERTIES
+    LINK_FLAGS -static
+    LINK_SEARCH_START_STATIC TRUE
+    LINK_SEARCH_END_STATIC TRUE
+    OUTPUT_NAME ${CHICKEN_PREFIX}chicken-bug${CHICKEN_SUFFIX})
+
+install(TARGETS csi chicken-bug
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
 set(utility_PROGRAMS csc chicken-install chicken-uninstall chicken-status
@@ -99,6 +118,8 @@ foreach(program ${utility_PROGRAMS})
         OPTIONS ${CHICKEN_PROGRAM_OPTIONS})
     add_executable(${program} ${program_SOURCES})
     target_link_libraries(${program} libchicken ${CHICKEN_EXTRA_LIBRARIES})
+    set_property(TARGET ${program} PROPERTY
+        OUTPUT_NAME ${CHICKEN_PREFIX}${program}${CHICKEN_SUFFIX})
     install(TARGETS ${program}
         RUNTIME DESTINATION ${INSTALL_BINDIR})
 endforeach()
@@ -148,10 +169,22 @@ foreach(lib ${CHICKEN_IMPORT_LIBRARIES})
         LIBRARY DESTINATION ${INSTALL_EGGDIR})
 endforeach()
 
+install(FILES types.db
+    DESTINATION ${INSTALL_EGGDIR})
+
 install(FILES chicken.h ${CHICKEN_CONFIG_H}
     DESTINATION ${INSTALL_INCLUDEDIR})
 
-# set(MANPAGES chicken.1 csc.1 csi.1 chicken-install.1 chicken-uninstall.1
-#     chicken-status.1 chicken-profile.1 chicken-bug.1)
-# install(FILES ${MANPAGES}
-#     DESTINATION ${MAN_INSTALL_DIR})
+install(FILES setup.defaults
+    DESTINATION ${INSTALL_DATADIR})
+
+set(MAN_PAGES chicken csc csi chicken-install chicken-uninstall
+    chicken-status chicken-profile chicken-bug)
+foreach(man ${MAN_PAGES})
+    install(FILES ${man}
+        DESTINATION ${INSTALL_MANDIR}
+        RENAME ${CHICKEN_PREFIX}${man}${CHICKEN_SUFFIX}.1)
+endforeach()
+
+install(FILES README LICENSE
+    DESTINATION ${INSTALL_DOCDIR})
