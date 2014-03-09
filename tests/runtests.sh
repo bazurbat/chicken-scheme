@@ -82,10 +82,6 @@ $compile typematch-tests.scm -specialize -w
 ./a.out
 $compile scrutiny-tests.scm -A -scrutinize -ignore-repository -types $TYPESDB 2>scrutiny.out -verbose
 
-if test -n "$MSYSTEM"; then
-    dos2unix scrutiny.out
-fi
-
 # this is sensitive to gensym-names, so make it optional
 if test \! -f scrutiny.expected; then
     cp scrutiny.out scrutiny.expected
@@ -94,10 +90,6 @@ fi
 diff $DIFF_OPTS scrutiny.expected scrutiny.out
 
 $compile scrutiny-tests-2.scm -A -scrutinize -analyze-only -ignore-repository -types $TYPESDB 2>scrutiny-2.out -verbose
-
-if test -n "$MSYSTEM"; then
-    dos2unix scrutiny-2.out
-fi
 
 # this is sensitive to gensym-names, so make it optional
 if test \! -f scrutiny-2.expected; then
@@ -261,12 +253,7 @@ echo "(expect mult-float-print-test to fail)"
 $interpret -e '(set! ##sys#procedure->string (constantly "#<procedure>"))' \
   -i -s r4rstest.scm >r4rstest.log
 
-if test -n "$MSYSTEM"; then
-    # the windows runtime library prints flonums differently
-    tail r4rstest.log
-else
-    diff $DIFF_OPTS r4rstest.out r4rstest.log
-fi
+diff $DIFF_OPTS r4rstest.out r4rstest.log
 
 echo "======================================== syntax tests (r5rs_pitfalls) ..."
 echo "(expect two failures)"
