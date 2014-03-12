@@ -6,12 +6,22 @@
 
 
 set -e
-TEST_DIR=`pwd`
+if test -z "$MSYSTEM"; then
+    TEST_DIR=`pwd`
+else
+    # Use Windows-native format with drive letters instead of awkward
+    # MSYS /c/blabla "pseudo-paths" which break when used in syscalls.
+    TEST_DIR=`pwd -W`
+fi
 OS_NAME=`uname -s`
 DYLD_LIBRARY_PATH=${TEST_DIR}/..
 LD_LIBRARY_PATH=${TEST_DIR}/..
 LIBRARY_PATH=${TEST_DIR}/..:${LIBRARY_PATH}
-export DYLD_LIBRARY_PATH LD_LIBRARY_PATH LIBRARY_PATH
+# Cygwin uses LD_LIBRARY_PATH for dlopen(), but the dlls linked into
+# the binary are read by the OS itself, which uses $PATH (mingw too)
+# Oddly, prefixing .. with ${TEST_DIR}/ does _not_ work on mingw!
+PATH=..:${PATH}
+export DYLD_LIBRARY_PATH LD_LIBRARY_PATH LIBRARY_PATH PATH
 
 case `uname` in
 	AIX)
@@ -37,34 +47,26 @@ for x in setup-api.so setup-api.import.so setup-download.so \
 done
 
 CHICKEN_REPOSITORY=${TEST_DIR}/test-repository
-CHICKEN=../chicken
+CHICKEN=${TEST_DIR}/../chicken
 CHICKEN_INSTALL=${TEST_DIR}/../chicken-install
 CHICKEN_UNINSTALL=${TEST_DIR}/../chicken-uninstall
 ASMFLAGS=
 FAST_OPTIONS="-O5 -d0 -b -disable-interrupts"
+COMPILE_OPTIONS="-compiler ${TEST_DIR}/../chicken -v -I${TEST_DIR}/.. -L${TEST_DIR}/.. -include-path ${TEST_DIR}/.."
+
+TEST_DIR_SEXPR=`../csi -n -include-path .. -e "(use posix) (write (current-directory))"`
+SETUP_PREFIX="-e (use files setup-api)"
+SETUP_PREFIX="${SETUP_PREFIX} -e (register-program \"csc\" (make-pathname ${TEST_DIR_SEXPR} \"../csc\"))"
+SETUP_PREFIX="${SETUP_PREFIX} -e (register-program \"chicken\" (make-pathname ${TEST_DIR_SEXPR} \"../chicken\"))"
+SETUP_PREFIX="${SETUP_PREFIX} -e (register-program \"csi\" (make-pathname ${TEST_DIR_SEXPR} \"../csi\"))"
 
 TYPESDB=../types.db
 cp $TYPESDB test-repository/types.db
 
-if test -n "$MSYSTEM"; then
-    CHICKEN="..\\chicken.exe"
-    ASMFLAGS=-Wa,-w
-    # make compiled tests use proper library on Windows
-    cp ../lib*chicken*.dll .
-fi
-
-
-# for cygwin
-if test -f ../cygchicken-0.dll; then
-    cp ../cygchicken-0.dll .
-    cp ../cygchicken-0.dll reverser/tags/1.0
-    mv ../cygchicken-0.dll ../cygchicken-0.dll_
-fi
-
-compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
-compile2="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .."
-compile_s="../csc -s -compiler $CHICKEN -v -I.. -L.. -include-path .."
-interpret="../csi -n -include-path .."
+compile="../csc -types ${TYPESDB} -ignore-repository ${COMPILE_OPTIONS} -o a.out"
+compile2="../csc -compiler $CHICKEN -v -I${TEST_DIR}/.. -L${TEST_DIR}.. -include-path ${TEST_DIR}/.."
+compile_s="../csc -s -types ${TYPESDB} -ignore-repository ${COMPILE_OPTIONS} -v -I${TEST_DIR}/.. -L${TEST_DIR}/.. -include-path ${TEST_DIR}/.."
+interpret="../csi -n -include-path ${TEST_DIR}/.."
 
 rm -f *.exe *.so *.o *.import.* a.out ../foo.import.*
 
@@ -80,7 +82,7 @@ $compile inlining-tests.scm -optimize-level 3
 echo "======================================== scrutiny tests ..."
 $compile typematch-tests.scm -specialize -w
 ./a.out
-$compile scrutiny-tests.scm -A -scrutinize -ignore-repository -types $TYPESDB 2>scrutiny.out -verbose
+$compile scrutiny-tests.scm -A -scrutinize 2>scrutiny.out -verbose
 
 # this is sensitive to gensym-names, so make it optional
 if test \! -f scrutiny.expected; then
@@ -89,7 +91,7 @@ fi
 
 diff $DIFF_OPTS scrutiny.expected scrutiny.out
 
-$compile scrutiny-tests-2.scm -A -scrutinize -analyze-only -ignore-repository -types $TYPESDB 2>scrutiny-2.out -verbose
+$compile scrutiny-tests-2.scm -A -scrutinize -analyze-only 2>scrutiny-2.out -verbose
 
 # this is sensitive to gensym-names, so make it optional
 if test \! -f scrutiny-2.expected; then
@@ -98,10 +100,10 @@ fi
 
 diff $DIFF_OPTS scrutiny-2.expected scrutiny-2.out
 
-$compile scrutiny-tests-3.scm -specialize -block -ignore-repository -types $TYPESDB
+$compile scrutiny-tests-3.scm -specialize -block
 ./a.out
 
-$compile scrutiny-tests-strict.scm -strict-types -specialize -ignore-repository -types $TYPESDB
+$compile scrutiny-tests-strict.scm -strict-types -specialize
 ./a.out
 
 echo "======================================== specialization tests ..."
@@ -264,8 +266,8 @@ $interpret -i -s r7rs-tests.scm
 
 
 echo "======================================== module tests ..."
-$interpret -include-path .. -s module-tests.scm
-$interpret -include-path .. -s module-tests-2.scm
+$interpret -include-path ${TEST_DIR}/.. -s module-tests.scm
+$interpret -include-path ${TEST_DIR}/.. -s module-tests-2.scm
 
 echo "======================================== module tests (compiled) ..."
 $compile module-tests-compiled.scm
@@ -354,7 +356,7 @@ $interpret -bnq test-glob.scm
 echo "======================================== compiler/nursery stress test ..."
 for s in 100000 120000 200000 250000 300000 350000 400000 450000 500000; do
     echo "  $s"
-    ../chicken ../utils.scm -:s$s -output-file tmp.c -include-path .. 
+    ../chicken -ignore-repository ../utils.scm -:s$s -output-file tmp.c -include-path ${TEST_DIR}/..
 done
 
 echo "======================================== symbol-GC tests ..."
@@ -400,19 +402,24 @@ rm -fr rev-app rev-app-2 reverser/*.import.* reverser/*.so
 
 echo "======================================== reinstall tests"
 CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_UNINSTALL -force reverser
-CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR reverser:1.0 \
- -csi ${TEST_DIR}/../csi
+CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY CSC_OPTIONS=$COMPILE_OPTIONS \
+    CSI_OPTIONS=$SETUP_PREFIX $CHICKEN_INSTALL -t local -l $TEST_DIR \
+    -csi ${TEST_DIR}/../csi reverser:1.0
 CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $interpret -bnq rev-app.scm 1.0
-CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR -reinstall -force \
- -csi ${TEST_DIR}/../csi
+CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY CSC_OPTIONS=$COMPILE_OPTIONS \
+    CSI_OPTIONS=$SETUP_PREFIX $CHICKEN_INSTALL -t local -l $TEST_DIR \
+    -reinstall -force -csi ${TEST_DIR}/../csi
 CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $interpret -bnq rev-app.scm 1.0
 
 if test $OS_NAME != AIX -a $OS_NAME != SunOS -a $OS_NAME != GNU; then
 	echo "======================================== deployment tests"
 	mkdir rev-app
-	CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR reverser
-	CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $compile2 -deploy rev-app.scm
-	CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -deploy -prefix rev-app -t local -l $TEST_DIR reverser
+        TARGET_LIB_PATH=${TEST_DIR}/.. CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY CSC_OPTIONS=$COMPILE_OPTIONS \
+                          CSI_OPTIONS=$SETUP_PREFIX $CHICKEN_INSTALL -csi ${TEST_DIR}/../csi -t local -l $TEST_DIR reverser
+        TARGET_LIB_PATH=${TEST_DIR}/.. CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY CSC_OPTIONS=$COMPILE_OPTIONS \
+                          CSI_OPTIONS=$SETUP_PREFIX $compile2 -deploy rev-app.scm
+        TARGET_LIB_PATH=${TEST_DIR}/.. CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY CSC_OPTIONS=$COMPILE_OPTIONS \
+                          CSI_OPTIONS=$SETUP_PREFIX $CHICKEN_INSTALL -csi ${TEST_DIR}/../csi -deploy -prefix rev-app -t local -l $TEST_DIR reverser
 	unset LD_LIBRARY_PATH DYLD_LIBRARY_PATH CHICKEN_REPOSITORY
 	# An absolute path is required on NetBSD with $ORIGIN, hence `pwd`
 	`pwd`/rev-app/rev-app 1.1

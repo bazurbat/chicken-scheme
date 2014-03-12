@@ -8,6 +8,9 @@
   - Fix subvector when the TO optional argument equals the given vector
     length (#1097)
 
+- Build system
+  - The tests can now be run without having to first install CHICKEN.
+
 4.8.3
 
 - Security fixes
