@@ -11,6 +11,10 @@
 - Build system
   - The tests can now be run without having to first install CHICKEN.
 
+- Tools
+  - chicken-install: -deploy now correctly installs dependencies of
+    deployed eggs under the deployment directory instead of globally.
+
 4.8.3
 
 - Security fixes

@@ -236,8 +236,10 @@
   (define (check-dependency dep)
     (cond ((or (symbol? dep) (string? dep))
 	   (values
-	    (and (not (ext-version dep))
-		 (->string dep))
+	    (if *deploy*
+		(->string dep)
+		(and (not (ext-version dep))
+		     (->string dep)))
 	    #f))
 	  ((and (list? dep) (eq? 'or (car dep)))
 	   (let scan ((ordeps (cdr dep)) (bestm #f) (bestu #f))
@@ -260,7 +262,7 @@
 	  ((and (list? dep) (= 2 (length dep))
 		(or (string? (car dep)) (symbol? (car dep))))
 	   (let ((v (ext-version (car dep))))
-	     (cond ((not v)
+	     (cond ((or *deploy* (not v))
 		    (values
 		     (->string (car dep))
 		     #f))
