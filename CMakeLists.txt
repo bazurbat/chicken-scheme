@@ -87,28 +87,33 @@ target_link_libraries(csi libchicken ${CHICKEN_EXTRA_LIBRARIES})
 set_property(TARGET csi PROPERTY
     OUTPUT_NAME ${CHICKEN_PREFIX}csi${CHICKEN_SUFFIX})
 
-add_chicken_sources(csi_STATIC_SOURCES csi.scm
-    STATIC OPTIONS ${CHICKEN_PROGRAM_OPTIONS} -extend private-namespace.scm)
-add_executable(csi-static ${csi_STATIC_SOURCES})
-target_link_libraries(csi-static libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
-set_target_properties(csi-static PROPERTIES
-    LINK_FLAGS -static
-    LINK_SEARCH_START_STATIC TRUE
-    LINK_SEARCH_END_STATIC TRUE
-    OUTPUT_NAME ${CHICKEN_PREFIX}csi-static${CHICKEN_SUFFIX})
-
-add_chicken_sources(chicken-bug_SOURCES chicken-bug.scm
-    STATIC OPTIONS ${CHICKEN_PROGRAM_OPTIONS})
-add_executable(chicken-bug ${chicken-bug_SOURCES})
-target_link_libraries(chicken-bug libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
-set_target_properties(chicken-bug PROPERTIES
-    LINK_FLAGS -static
-    LINK_SEARCH_START_STATIC TRUE
-    LINK_SEARCH_END_STATIC TRUE
-    OUTPUT_NAME ${CHICKEN_PREFIX}chicken-bug${CHICKEN_SUFFIX})
-
-install(TARGETS csi chicken-bug
+install(TARGETS csi
     RUNTIME DESTINATION ${INSTALL_BINDIR})
+
+if(NOT MSVC)
+    add_chicken_sources(csi_STATIC_SOURCES csi.scm
+        STATIC OPTIONS ${CHICKEN_PROGRAM_OPTIONS} -extend private-namespace.scm)
+    add_executable(csi-static ${csi_STATIC_SOURCES})
+    target_link_libraries(csi-static libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
+    set_target_properties(csi-static PROPERTIES
+        # LINK_FLAGS -static
+        # LINK_SEARCH_START_STATIC TRUE
+        # LINK_SEARCH_END_STATIC TRUE
+        OUTPUT_NAME ${CHICKEN_PREFIX}csi-static${CHICKEN_SUFFIX})
+
+    add_chicken_sources(chicken-bug_SOURCES chicken-bug.scm
+        STATIC OPTIONS ${CHICKEN_PROGRAM_OPTIONS})
+    add_executable(chicken-bug ${chicken-bug_SOURCES})
+    target_link_libraries(chicken-bug libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
+    set_target_properties(chicken-bug PROPERTIES
+        # LINK_FLAGS -static
+        # LINK_SEARCH_START_STATIC TRUE
+        # LINK_SEARCH_END_STATIC TRUE
+        OUTPUT_NAME ${CHICKEN_PREFIX}chicken-bug${CHICKEN_SUFFIX})
+
+    install(TARGETS chicken-bug
+        RUNTIME DESTINATION ${INSTALL_BINDIR})
+endif()
 
 set(utility_PROGRAMS csc chicken-install chicken-uninstall chicken-status
     chicken-profile)
@@ -163,6 +168,7 @@ foreach(lib ${CHICKEN_IMPORT_LIBRARIES})
     set(name ${lib}.import)
     set(filename ${lib}.import.scm)
     add_chicken_library(${name} ${filename} SHARED
+        LIBRARY libchicken
         OPTIONS ${CHICKEN_IMPORT_LIBRARY_OPTIONS})
     add_dependencies(${name} libchicken)
     install(TARGETS ${name}
