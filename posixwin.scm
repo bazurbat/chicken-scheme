@@ -79,7 +79,11 @@
 #include <io.h>
 #include <process.h>
 #include <signal.h>
-#include <utime.h>
+#ifdef HAVE_UTIME_H
+# include <utime.h>
+#else
+# include <sys/utime.h>
+#endif
 #include <winsock2.h>
 
 #define ARG_MAX		256

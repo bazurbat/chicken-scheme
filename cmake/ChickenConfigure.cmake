@@ -182,6 +182,7 @@ check_include_file("strings.h"  HAVE_STRINGS_H)
 check_include_file("sys/stat.h" HAVE_SYS_STAT_H)
 check_include_file("sysexits.h" HAVE_SYSEXITS_H)
 check_include_file("unistd.h"   HAVE_UNISTD_H)
+check_include_file("utime.h"    HAVE_UTIME_H)
 
 _chicken_find_toolchain(INSTALL ${CHICKEN_SYSTEM})
 _chicken_find_toolchain(TARGET ${CHICKEN_TARGET_SYSTEM})

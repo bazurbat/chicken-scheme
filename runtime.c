@@ -6455,7 +6455,7 @@ C_regparm C_word C_fcall C_2_times(C_word **ptr, C_word x, C_word y)
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "*", x);
   /* shutup compiler */
-  return C_flonum(ptr, 0.0/0.0);
+  return C_flonum(ptr, NAN);
 }
 
 
@@ -6533,7 +6533,7 @@ C_regparm C_word C_fcall C_2_plus(C_word **ptr, C_word x, C_word y)
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "+", x);
   /* shutup compiler */
-  return C_flonum(ptr, 0.0/0.0);
+  return C_flonum(ptr, NAN);
 }
 
 
@@ -6628,7 +6628,7 @@ C_regparm C_word C_fcall C_2_minus(C_word **ptr, C_word x, C_word y)
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "-", x);
   /* shutup compiler */
-  return C_flonum(ptr, 0.0/0.0);
+  return C_flonum(ptr, NAN);
 }
 
 
@@ -7423,7 +7423,7 @@ void C_ccall C_flonum_rat(C_word c, C_word closure, C_word k, C_word n)
     numer = fn*denom;
   } else { /* denormalised/subnormal number: [+-]1.0/+inf.0 */
     numer = fn > 0.0 ? 1.0 : -1.0;
-    denom = 1.0/0.0; /* +inf */
+    denom = INFINITY; /* +inf */
   }
   C_values(4, C_SCHEME_UNDEFINED, k, C_flonum(&ap, numer), C_flonum(&ap, denom));
 }
@@ -7695,9 +7695,9 @@ C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word
          C_strchr("fnFN", *(str+3)) != NULL &&
          *(str+4) == '.' && *(str+5) == '0') {
         if (*(str+1) == 'i' || *(str+1) == 'I')   /* Inf */
-          *flo = 1.0/0.0;
+          *flo = INFINITY;
         else                                      /* NaN */
-          *flo = 0.0/0.0;
+          *flo = NAN;
         if (*str == '-')
           *flo *= -1.0;
         return 2;

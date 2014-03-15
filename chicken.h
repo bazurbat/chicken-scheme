@@ -105,6 +105,7 @@
 # include <limits.h>
 #endif
 #include <math.h>
+#include <float.h>
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -567,6 +568,11 @@ static inline int isinf_ld (long double x)
 # define C_S64_MAX    INT64_MAX
 #endif
 
+#if defined(_MSC_VER)
+# define INFINITY (DBL_MAX+DBL_MAX)
+# define NAN (INFINITY-INFINITY)
+#endif
+
 #if defined(C_LLP)
 # define C_long                   C_s64
 # ifndef LONG_LONG_MAX
@@ -692,6 +698,8 @@ static inline int isinf_ld (long double x)
 # define C_BUILD_PLATFORM "sun"
 #elif defined(__MINGW32__)
 # define C_BUILD_PLATFORM "mingw32"
+#elif defined(_MSC_VER)
+# define C_BUILD_PLATFORM "msvc"
 #elif defined(__clang__)
 # define C_BUILD_PLATFORM "clang"
 #elif defined(_AIX)

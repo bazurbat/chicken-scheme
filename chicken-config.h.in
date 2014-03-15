@@ -27,6 +27,7 @@
 #cmakedefine HAVE_SYS_STAT_H
 #cmakedefine HAVE_SYS_TYPES_H
 #cmakedefine HAVE_UNISTD_H
+#cmakedefine HAVE_UTIME_H
 
 // what is this?
 #define STDC_HEADERS 1

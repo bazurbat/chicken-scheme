@@ -100,7 +100,7 @@ function(_chicken_config_find)
         "Chicken libraries")
 
     find_package_handle_standard_args(Chicken DEFAULT_MSG CHICKEN_ROOT_DIR
-        CHICKEN_EXECUTABLE CHICKEN_INCLUDE_DIR CHICKEN_LIBRARY)
+        CHICKEN_EXECUTABLE CHICKEN_INCLUDE_DIR)
     find_package_message(Chicken
 "\tCHICKEN_EXECUTABLE: ${CHICKEN_EXECUTABLE}
 \tCHICKEN_INCLUDE_DIR: ${CHICKEN_INCLUDE_DIR}
