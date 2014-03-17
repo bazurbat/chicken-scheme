@@ -497,6 +497,7 @@ static void C_fcall really_mark(C_word *x) C_regparm;
 static WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word container) C_regparm;
 static C_ccall void values_continuation(C_word c, C_word closure, C_word dummy, ...) C_noret;
 static C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stable);
+static C_regparm int C_fcall C_in_new_heapp(C_word x);
 static C_word C_fcall hash_string(int len, C_char *str, C_word m, C_word r, int ci) C_regparm;
 static C_word C_fcall lookup(C_word key, int len, C_char *str, C_SYMBOL_TABLE *stable) C_regparm;
 static double compute_symbol_table_load(double *avg_bucket_len, int *total);
@@ -2289,6 +2290,12 @@ C_regparm int C_fcall C_in_heapp(C_word x)
          (ptr >= tospace_start && ptr < tospace_limit);
 }
 
+/* Only used during major GC (heap realloc) */
+static C_regparm int C_fcall C_in_new_heapp(C_word x)
+{
+  C_byte *ptr = (C_byte *)(C_uword)x;
+  return (ptr >= new_tospace_start && ptr < new_tospace_limit);
+}
 
 C_regparm int C_fcall C_in_fromspacep(C_word x)
 {
@@ -3129,26 +3136,17 @@ C_regparm void C_fcall really_mark(C_word *x)
 
   val = *x;
 
-  p = (C_SCHEME_BLOCK *)val;
-  
-  /* not in stack and not in heap? */
-  if (
-#if C_STACK_GROWS_DOWNWARD
-       p < (C_SCHEME_BLOCK *)C_stack_pointer || p >= (C_SCHEME_BLOCK *)stack_bottom
-#else
-       p >= (C_SCHEME_BLOCK *)C_stack_pointer || p < (C_SCHEME_BLOCK *)stack_bottom
-#endif
-     )
-    if((p < (C_SCHEME_BLOCK *)fromspace_start || p >= (C_SCHEME_BLOCK *)C_fromspace_limit) &&
-       (p < (C_SCHEME_BLOCK *)tospace_start || p >= (C_SCHEME_BLOCK *)tospace_limit) ) {
+  if (!C_in_stackp(val) && !C_in_heapp(val)) {
 #ifdef C_GC_HOOKS
       if(C_gc_trace_hook != NULL) 
 	C_gc_trace_hook(x, gc_mode);
 #endif
 
       return;
-    }
+  }
 
+  p = (C_SCHEME_BLOCK *)val;
+  
   h = p->header;
 
   if(gc_mode == GC_MINOR) {
@@ -3473,27 +3471,17 @@ C_regparm void C_fcall really_remark(C_word *x)
 
   val = *x;
 
-  p = (C_SCHEME_BLOCK *)val;
-  
-  /* not in stack and not in heap? */
-  if(
-#if C_STACK_GROWS_DOWNWARD
-       p < (C_SCHEME_BLOCK *)C_stack_pointer || p >= (C_SCHEME_BLOCK *)stack_bottom
-#else
-       p >= (C_SCHEME_BLOCK *)C_stack_pointer || p < (C_SCHEME_BLOCK *)stack_bottom
-#endif
-    )
-    if((p < (C_SCHEME_BLOCK *)fromspace_start || p >= (C_SCHEME_BLOCK *)C_fromspace_limit) &&
-       (p < (C_SCHEME_BLOCK *)tospace_start || p >= (C_SCHEME_BLOCK *)tospace_limit) &&
-       (p < (C_SCHEME_BLOCK *)new_tospace_start || p >= (C_SCHEME_BLOCK *)new_tospace_limit) ) {
+  if (!C_in_stackp(val) && !C_in_heapp(val) && !C_in_new_heapp(val)) {
 #ifdef C_GC_HOOKS
       if(C_gc_trace_hook != NULL) 
 	C_gc_trace_hook(x, gc_mode);
 #endif
 
       return;
-    }
+  }
 
+  p = (C_SCHEME_BLOCK *)val;
+  
   h = p->header;
 
   if(is_fptr(h)) {
@@ -8282,7 +8270,8 @@ void C_ccall C_software_version(C_word c, C_word closure, C_word k)
 
 void C_ccall C_register_finalizer(C_word c, C_word closure, C_word k, C_word x, C_word proc)
 {
-  if(C_immediatep(x)) C_kontinue(k, x);
+  if(C_immediatep(x) || (!C_in_stackp(x) && !C_in_heapp(x))) /* not GCable? */
+    C_kontinue(k, x);
 
   C_do_register_finalizer(x, proc);
   C_kontinue(k, x);

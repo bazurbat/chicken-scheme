@@ -1,5 +1,7 @@
 ;;;; test-finalizers.scm
 
+(use extras)
+
 (##sys#eval-debug-level 0)		; disable keeping trace-buffer with frameinfo
 
 (define x (list 1 2 3))
@@ -63,3 +65,16 @@ a fix that unfortunately disables finalizers in the interpreter
 (gc #t)
 (print n)
 (assert (= 2 n))
+
+;; Finalizers on constants are ignored in compiled mode (because
+;; they're never GCed).  Reported by "Pluijzer".
+
+(set! n 0)
+(define bar "constant string")
+(set-finalizer! bar bump)
+(set! bar #f)
+(gc #t)
+(print n)
+(cond-expand
+  (compiling (assert (= 0 n)))
+  (else (assert (= 1 n))))

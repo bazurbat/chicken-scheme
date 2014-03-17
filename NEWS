@@ -8,6 +8,11 @@
   - Fix subvector when the TO optional argument equals the given vector
     length (#1097)
 
+- Runtime system
+  - finalizers on constants are ignored in compiled code because compiled
+    constants are never GCed (before, the finalizer would be incorrectly
+    invoked after the first GC).  (Reported by "Pluijzer")
+
 - Build system
   - The tests can now be run without having to first install CHICKEN.
 

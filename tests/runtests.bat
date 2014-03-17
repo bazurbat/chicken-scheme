@@ -432,6 +432,10 @@ rem if errorlevel 1 exit /b 1
 echo ======================================== finalizer tests ...
 %interpret% -s test-finalizers.scm
 if errorlevel 1 exit /b 1
+%compile% test-finalizers.scm
+if errorlevel 1 exit /b 1
+a.out
+if errorlevel 1 exit /b 1
 
 echo ======================================== finalizer tests (2) ...
 %compile% finalizer-error-test.scm
