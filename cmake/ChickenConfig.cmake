@@ -18,26 +18,26 @@ function(_chicken_config_flags)
         "C compiler definitions for building Chicken generated files")
 
     if(MSVC)
+        set(common_flags "/wd4101")
         set(optimize_size "/O1 /Os /Oy")
         set(optimize_speed "/Ox /Ot /Oy")
         set(optimize_debug "/Od")
         # C4101 - unreferenced local variable
-        set(extra_flags "/wd4101")
     else()
+        set(common_flags "-fno-strict-aliasing -fwrapv")
         set(optimize_size "-Os -fomit-frame-pointer")
         set(optimize_speed "-O3 -fomit-frame-pointer")
         set(optimize_debug "-g -Wall -Wno-unused")
-        set(extra_flags "-fno-strict-aliasing -fwrapv")
     endif()
 
+    set(CHICKEN_C_FLAGS_COMMON ${common_flags} CACHE STRING
+        "Additional C compiler flags for Chicken generated files during all build types")
     set(CHICKEN_C_FLAGS_MINSIZEREL ${optimize_size} CACHE STRING
         "Additional C compiler flags for Chicken generated files during minsize builds")
     set(CHICKEN_C_FLAGS_RELEASE ${optimize_speed} CACHE STRING
         "Additional C compiler flags for Chicken generated files during release builds")
     set(CHICKEN_C_FLAGS_DEBUG ${optimize_debug} CACHE STRING
         "Additional C compiler flags for Chicken generated files during debug builds")
-    set(CHICKEN_C_FLAGS_EXTRA ${extra_flags} CACHE STRING
-        "Additional C compiler flags for Chicken generated files during all build types")
 
     if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
         set(c_flags "${CHICKEN_C_FLAGS_MINSIZEREL}")
@@ -47,7 +47,7 @@ function(_chicken_config_flags)
         set(c_flags "${CHICKEN_C_FLAGS_DEBUG}")
     endif()
 
-    set(CHICKEN_C_FLAGS "${c_flags} ${CHICKEN_C_FLAGS_EXTRA} ${CHICKEN_C_DEFINITIONS}" CACHE STRING
+    set(CHICKEN_C_FLAGS "${CHICKEN_C_DEFINITIONS} ${CHICKEN_C_FLAGS_COMMON} ${c_flags}" CACHE STRING
         "Compiler flags for Chicken generated files (forced)" FORCE)
 endfunction()
 

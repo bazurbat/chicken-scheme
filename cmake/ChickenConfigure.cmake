@@ -22,7 +22,7 @@ set(CMAKE_C_FLAGS_RELEASE "${CHICKEN_C_FLAGS_RELEASE}" CACHE STRING
     "C compiler flags to use during release build (forced)" FORCE)
 set(CMAKE_C_FLAGS_DEBUG "${CHICKEN_C_FLAGS_DEBUG}" CACHE STRING
     "C compiler flags to use during debug build (forced)" FORCE)
-set(CMAKE_C_FLAGS "${CHICKEN_C_FLAGS_EXTRA} ${CHICKEN_C_DEFINITIONS}" CACHE STRING
+set(CMAKE_C_FLAGS "${CHICKEN_C_DEFINITIONS} ${CHICKEN_C_FLAGS_COMMON}" CACHE STRING
     "C compiler flags to use during all build types (forced)" FORCE)
 set(CHICKEN_C_FLAGS "")
 

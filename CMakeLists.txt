@@ -12,11 +12,11 @@ include(ChickenBuildTag)
 include(${CHICKEN_USE_FILE})
 
 # libchicken
+# use generated chicken-config.h
 include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
-set_property(SOURCE runtime.c PROPERTY OBJECT_DEPENDS ${CHICKEN_CONFIG_H})
-set_property(SOURCE runtime.c APPEND_STRING PROPERTY
-    COMPILE_FLAGS " ${CHICKEN_C_FLAGS}")
+set_source_files_properties(runtime.c PROPERTIES
+    OBJECT_DEPENDS ${CHICKEN_CONFIG_H})
 
 if(WIN32)
     set(posix_scm posixwin.scm)
@@ -58,7 +58,6 @@ target_compile_definitions(libchicken-static PUBLIC -DC_BUILDING_LIBCHICKEN)
 set_target_properties(libchicken-static PROPERTIES
     PREFIX ""
     OUTPUT_NAME lib${CHICKEN_PREFIX}chicken${CHICKEN_SUFFIX})
-
 install(TARGETS libchicken libchicken-static
     ARCHIVE DESTINATION ${INSTALL_LIBDIR}
     LIBRARY DESTINATION ${INSTALL_LIBDIR})
@@ -75,18 +74,16 @@ add_executable(chicken ${chicken_SOURCES})
 target_link_libraries(chicken libchicken ${CHICKEN_EXTRA_LIBRARIES})
 set_property(TARGET chicken PROPERTY
     OUTPUT_NAME ${CHICKEN_PREFIX}chicken${CHICKEN_SUFFIX})
-
 install(TARGETS chicken
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
-# utility programs
+# csi
 add_chicken_sources(csi_SOURCES csi.scm
     OPTIONS ${CHICKEN_PROGRAM_OPTIONS} -extend private-namespace.scm)
 add_executable(csi ${csi_SOURCES})
 target_link_libraries(csi libchicken ${CHICKEN_EXTRA_LIBRARIES})
 set_property(TARGET csi PROPERTY
     OUTPUT_NAME ${CHICKEN_PREFIX}csi${CHICKEN_SUFFIX})
-
 install(TARGETS csi
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
@@ -96,29 +93,25 @@ if(NOT MSVC)
     add_executable(csi-static ${csi_STATIC_SOURCES})
     target_link_libraries(csi-static libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
     set_target_properties(csi-static PROPERTIES
-        # LINK_FLAGS -static
-        # LINK_SEARCH_START_STATIC TRUE
-        # LINK_SEARCH_END_STATIC TRUE
         OUTPUT_NAME ${CHICKEN_PREFIX}csi-static${CHICKEN_SUFFIX})
 
+    # chicken-bug
     add_chicken_sources(chicken-bug_SOURCES chicken-bug.scm
         STATIC OPTIONS ${CHICKEN_PROGRAM_OPTIONS})
     add_executable(chicken-bug ${chicken-bug_SOURCES})
     target_link_libraries(chicken-bug libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
     set_target_properties(chicken-bug PROPERTIES
-        # LINK_FLAGS -static
-        # LINK_SEARCH_START_STATIC TRUE
-        # LINK_SEARCH_END_STATIC TRUE
         OUTPUT_NAME ${CHICKEN_PREFIX}chicken-bug${CHICKEN_SUFFIX})
-
     install(TARGETS chicken-bug
         RUNTIME DESTINATION ${INSTALL_BINDIR})
 endif()
 
+# utility programs
 set(utility_PROGRAMS csc chicken-install chicken-uninstall chicken-status
     chicken-profile)
+
 foreach(program ${utility_PROGRAMS})
-    unset(program_SOURCES)
+    set(program_SOURCES)
     add_chicken_sources(program_SOURCES ${program}.scm
         OPTIONS ${CHICKEN_PROGRAM_OPTIONS})
     add_executable(${program} ${program_SOURCES})
@@ -132,49 +125,42 @@ endforeach()
 # setup-api
 set(setupapi_MODULES setup-api setup-download)
 
-foreach(name ${setupapi_MODULES})
-    set(filename ${name}.scm)
-    set(import_filename ${CMAKE_CURRENT_BINARY_DIR}/${name}.import.scm)
-    add_chicken_library(${name} ${filename} SHARED
-        LIBRARY libchicken
-        EMIT ${name}
-        OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
-    add_chicken_library(${name}.import ${import_filename} SHARED
-        LIBRARY libchicken
-        OPTIONS ${CHICKEN_LIBRARY_OPTIONS}
-        COMPILE_FLAGS "-I${CMAKE_CURRENT_SOURCE_DIR}")
-    add_dependencies(${name} libchicken)
-    add_dependencies(${name}.import ${name})
-    install(TARGETS ${name} ${name}.import
-        LIBRARY DESTINATION ${INSTALL_EGGDIR})
-endforeach()
-
-add_dependencies(setup-download setup-api.import)
-
-###
+add_chicken_module(setup-api setup-api.scm
+    RUNTIME libchicken
+    EMIT setup-api
+    OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
+add_chicken_module(setup-download setup-download.scm
+    RUNTIME libchicken
+    EMIT setup-download
+    OPTIONS ${CHICKEN_LIBRARY_OPTIONS}
+    DEPENDS setup-api.import.scm)
 
 add_dependencies(chicken-install ${setupapi_MODULES})
 add_dependencies(chicken-uninstall ${setupapi_MODULES})
 add_dependencies(chicken-status ${setupapi_MODULES})
 
-###
-
-# import libraries
-set(CHICKEN_IMPORT_LIBRARIES chicken lolevel srfi-1 srfi-4 data-structures
-    ports files posix srfi-13 srfi-69 extras srfi-14 tcp foreign srfi-18 utils
-    csi irregex)
-
-foreach(lib ${CHICKEN_IMPORT_LIBRARIES})
-    set(name ${lib}.import)
-    set(filename ${lib}.import.scm)
-    add_chicken_library(${name} ${filename} SHARED
-        LIBRARY libchicken
-        OPTIONS ${CHICKEN_IMPORT_LIBRARY_OPTIONS})
-    add_dependencies(${name} libchicken)
-    install(TARGETS ${name}
+foreach(module ${setupapi_MODULES})
+    install(TARGETS ${module} ${module}.import
         LIBRARY DESTINATION ${INSTALL_EGGDIR})
 endforeach()
 
+# import libraries
+set(import_LIBRARIES
+    chicken.import lolevel.import srfi-1.import srfi-4.import
+    data-structures.import ports.import files.import posix.import
+    srfi-13.import srfi-69.import extras.import srfi-14.import tcp.import
+    foreign.import srfi-18.import utils.import csi.import irregex.import)
+
+foreach(lib ${import_LIBRARIES})
+    add_chicken_library(${lib} ${lib}.scm SHARED
+        RUNTIME libchicken
+        OPTIONS ${CHICKEN_IMPORT_LIBRARY_OPTIONS})
+    add_dependencies(${lib} libchicken)
+    install(TARGETS ${lib}
+        LIBRARY DESTINATION ${INSTALL_EGGDIR})
+endforeach()
+
+# misc files
 install(FILES types.db
     DESTINATION ${INSTALL_EGGDIR})
 
