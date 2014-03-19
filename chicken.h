@@ -145,7 +145,7 @@
 # include <sys/byteorder.h>
 #endif
 
-#if defined(__MINGW32__) || defined(__WATCOMC__)
+#if defined(__MINGW32__) || defined(__WATCOMC__) || defined(_MSC_VER)
 # include <malloc.h>
 #endif
 
@@ -558,6 +558,10 @@ static inline int isinf_ld (long double x)
  #define INT8_MIN   (-INT8_MAX - 1)
 */
 
+#if defined (_MSC_VER)
+# define snprintf _snprintf
+#endif
+
 #if defined(_MSC_VER)
 # define C_U64_MAX    _UI64_MAX
 # define C_S64_MIN    _I64_MIN
@@ -571,6 +575,9 @@ static inline int isinf_ld (long double x)
 #if defined(_MSC_VER)
 # define INFINITY (DBL_MAX+DBL_MAX)
 # define NAN (INFINITY-INFINITY)
+# define isinf(x) ((x)==INFINITY)
+# define isnan(x) ((x)==NAN)
+# define isnormal(x) (!isinf(x) && !isnan(x))
 #endif
 
 #if defined(C_LLP)
@@ -1051,6 +1058,9 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # ifdef __linux__
 extern double round(double);
 extern double trunc(double);
+# elif defined(_MSC_VER)
+# define round(fp) ((int)((fp) >= 0 ? (fp) + 0.5 : (fp) - 0.5))
+# define trunc(fp) ((int)(fp))
 # endif
 #else
 /* provide this file and define C_PROVIDE_LIBC_STUBS if you want to use

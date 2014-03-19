@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 cmake_policy(VERSION 2.8)
 
-project(chicken C)
+project(chicken)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/cmake)
 
@@ -10,6 +10,7 @@ include(ChickenConfigure)
 include(ChickenApplyHack)
 include(ChickenBuildTag)
 include(${CHICKEN_USE_FILE})
+include(GenerateExportHeader)
 
 # libchicken
 # use generated chicken-config.h
@@ -52,15 +53,18 @@ set_target_properties(libchicken PROPERTIES
     PREFIX ""
     OUTPUT_NAME lib${CHICKEN_PREFIX}chicken${CHICKEN_SUFFIX}
     VERSION ${CHICKEN_API_VERSION})
+generate_export_header(libchicken)
 
-add_library(libchicken-static STATIC chicken.h runtime.c ${libchicken_STATIC_SOURCES})
-target_compile_definitions(libchicken-static PUBLIC -DC_BUILDING_LIBCHICKEN)
-set_target_properties(libchicken-static PROPERTIES
-    PREFIX ""
-    OUTPUT_NAME lib${CHICKEN_PREFIX}chicken${CHICKEN_SUFFIX})
-install(TARGETS libchicken libchicken-static
-    ARCHIVE DESTINATION ${INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${INSTALL_LIBDIR})
+if(NOT MSVC)
+    add_library(libchicken-static STATIC chicken.h runtime.c ${libchicken_STATIC_SOURCES})
+    target_compile_definitions(libchicken-static PUBLIC -DC_BUILDING_LIBCHICKEN)
+    set_target_properties(libchicken-static PROPERTIES
+        PREFIX ""
+        OUTPUT_NAME lib${CHICKEN_PREFIX}chicken${CHICKEN_SUFFIX})
+    install(TARGETS libchicken libchicken-static
+        ARCHIVE DESTINATION ${INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${INSTALL_LIBDIR})
+endif()
 
 # chicken
 set(chicken_SCM_SOURCES chicken.scm batch-driver.scm compiler.scm
@@ -157,7 +161,7 @@ foreach(lib ${import_LIBRARIES})
         OPTIONS ${CHICKEN_IMPORT_LIBRARY_OPTIONS})
     add_dependencies(${lib} libchicken)
     install(TARGETS ${lib}
-        LIBRARY DESTINATION ${INSTALL_EGGDIR})
+        DESTINATION ${INSTALL_EGGDIR})
 endforeach()
 
 # misc files
