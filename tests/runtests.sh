@@ -6,65 +6,69 @@
 
 
 set -e
+BUILD_DIR="${1:-..}"
+DIST_DIR="${2:-..}"
 TEST_DIR=`pwd`
 OS_NAME=`uname -s`
-DYLD_LIBRARY_PATH=${TEST_DIR}/..
-LD_LIBRARY_PATH=${TEST_DIR}/..
-LIBRARY_PATH=${TEST_DIR}/..:${LIBRARY_PATH}
+DYLD_LIBRARY_PATH="${BUILD_DIR}"
+LD_LIBRARY_PATH="${BUILD_DIR}"
+LIBRARY_PATH="${BUILD_DIR}:${LIBRARY_PATH}"
 export DYLD_LIBRARY_PATH LD_LIBRARY_PATH LIBRARY_PATH
 
 case `uname` in
-	AIX)
-		DIFF_OPTS=-b ;;
-	*)
-		DIFF_OPTS=-bu ;;
+    AIX)
+        DIFF_OPTS=-b ;;
+    *)
+        DIFF_OPTS=-bu ;;
 esac
 
-rm -fr test-repository
-mkdir -p test-repository
+# rm -fr test-repository
+# mkdir -p test-repository
 
 # copy files into test-repository (by hand to avoid calling `chicken-install'):
 
 for x in setup-api.so setup-api.import.so setup-download.so \
-      setup-download.import.so chicken.import.so lolevel.import.so \
-      srfi-1.import.so srfi-4.import.so data-structures.import.so \
-      ports.import.so files.import.so posix.import.so \
-      srfi-13.import.so srfi-69.import.so extras.import.so \
-      irregex.import.so srfi-14.import.so tcp.import.so \
-      foreign.import.so srfi-18.import.so \
-      utils.import.so csi.import.so irregex.import.so types.db; do
-  cp ../$x test-repository
+    setup-download.import.so chicken.import.so lolevel.import.so \
+    srfi-1.import.so srfi-4.import.so data-structures.import.so \
+    ports.import.so files.import.so posix.import.so \
+    srfi-13.import.so srfi-69.import.so extras.import.so \
+    irregex.import.so srfi-14.import.so tcp.import.so \
+    foreign.import.so srfi-18.import.so \
+    utils.import.so csi.import.so irregex.import.so; do
+    cp "${BUILD_DIR}/$x" test-repository
 done
 
-CHICKEN_REPOSITORY=${TEST_DIR}/test-repository
-CHICKEN=../chicken
-CHICKEN_INSTALL=${TEST_DIR}/../chicken-install
-CHICKEN_UNINSTALL=${TEST_DIR}/../chicken-uninstall
+unset CHICKEN_PREFIX
+CHICKEN_REPOSITORY="${BUILD_DIR}"
+CHICKEN="${BUILD_DIR}/chicken"
+CHICKEN_INSTALL="${BUILD_DIR}/chicken-install"
+CHICKEN_UNINSTALL="${BUILD_DIR}/chicken-uninstall"
 ASMFLAGS=
 FAST_OPTIONS="-O5 -d0 -b -disable-interrupts"
+export CHICKEN_REPOSITORY
 
-TYPESDB=../types.db
+TYPESDB="${DIST_DIR}/types.db"
 cp $TYPESDB test-repository/types.db
 
 if test -n "$MSYSTEM"; then
-    CHICKEN="..\\chicken.exe"
+    CHICKEN="${BUILD_DIR}\\chicken.exe"
     ASMFLAGS=-Wa,-w
     # make compiled tests use proper library on Windows
-    cp ../lib*chicken*.dll .
+    cp "${BUILD_DIR}"/lib*chicken*.dll .
 fi
 
 
 # for cygwin
-if test -f ../cygchicken-0.dll; then
-    cp ../cygchicken-0.dll .
-    cp ../cygchicken-0.dll reverser/tags/1.0
-    mv ../cygchicken-0.dll ../cygchicken-0.dll_
+if test -f "${BUILD_DIR}/cygchicken-0.dll"; then
+    cp "${BUILD_DIR}/cygchicken-0.dll" .
+    cp "${BUILD_DIR}/cygchicken-0.dll" reverser/tags/1.0
+    mv "${BUILD_DIR}/cygchicken-0.dll" "${BUILD_DIR}/cygchicken-0.dll_"
 fi
 
-compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
-compile2="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .."
-compile_s="../csc -s -compiler $CHICKEN -v -I.. -L.. -include-path .."
-interpret="../csi -n -include-path .."
+compile="${BUILD_DIR}/csc -compiler $CHICKEN -v -I${BUILD_DIR} -I${DIST_DIR} -L${BUILD_DIR} -include-path ${DIST_DIR} -o a.out"
+compile2="${BUILD_DIR}/csc -compiler $CHICKEN -v -I${BUILD_DIR} -I${DIST_DIR} -L${BUILD_DIR} -include-path ${DIST_DIR}"
+compile_s="${BUILD_DIR}/csc -s -compiler $CHICKEN -v -I${BUILD_DIR} -I${DIST_DIR} -L${BUILD_DIR} -include-path ${BUILD_DIR}"
+interpret="${BUILD_DIR}/csi -n -include-path ${DIST_DIR}"
 
 rm -f *.exe *.so *.o *.import.* a.out ../foo.import.*
 
@@ -115,7 +119,7 @@ $compile scrutiny-tests-strict.scm -strict-types -specialize -ignore-repository 
 echo "======================================== specialization tests ..."
 rm -f foo.types foo.import.*
 $compile specialization-test-1.scm -emit-type-file foo.types -specialize \
-  -debug ox -emit-import-library foo
+    -debug ox -emit-import-library foo
 ./a.out
 $compile specialization-test-2.scm -types foo.types -specialize -debug ox
 ./a.out
@@ -257,7 +261,7 @@ $interpret -s loopy-test.scm
 echo "======================================== r4rstest ..."
 echo "(expect mult-float-print-test to fail)"
 $interpret -e '(set! ##sys#procedure->string (constantly "#<procedure>"))' \
-  -i -s r4rstest.scm >r4rstest.log
+    -i -s r4rstest.scm >r4rstest.log
 
 if test -n "$MSYSTEM"; then
     # the windows runtime library prints flonums differently
@@ -412,25 +416,25 @@ rm -fr rev-app rev-app-2 reverser/*.import.* reverser/*.so
 echo "======================================== reinstall tests"
 CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_UNINSTALL -force reverser
 CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR reverser:1.0 \
- -csi ${TEST_DIR}/../csi
+    -csi ${TEST_DIR}/../csi
 CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $interpret -bnq rev-app.scm 1.0
 CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR -reinstall -force \
- -csi ${TEST_DIR}/../csi
+    -csi ${TEST_DIR}/../csi
 CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $interpret -bnq rev-app.scm 1.0
 
 if test $OS_NAME != AIX; then
-	echo "======================================== deployment tests"
-	mkdir rev-app
-	CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR reverser
-	CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $compile2 -deploy rev-app.scm
-	CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -deploy -prefix rev-app -t local -l $TEST_DIR reverser
-	unset LD_LIBRARY_PATH DYLD_LIBRARY_PATH CHICKEN_REPOSITORY
-	# An absolute path is required on NetBSD with $ORIGIN, hence `pwd`
-	`pwd`/rev-app/rev-app 1.1
-	mv rev-app rev-app-2
-	`pwd`/rev-app-2/rev-app 1.1
+    echo "======================================== deployment tests"
+    mkdir rev-app
+    CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR reverser
+    CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $compile2 -deploy rev-app.scm
+    CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -deploy -prefix rev-app -t local -l $TEST_DIR reverser
+    unset LD_LIBRARY_PATH DYLD_LIBRARY_PATH CHICKEN_REPOSITORY
+    # An absolute path is required on NetBSD with $ORIGIN, hence `pwd`
+    `pwd`/rev-app/rev-app 1.1
+    mv rev-app rev-app-2
+    `pwd`/rev-app-2/rev-app 1.1
 else
-	echo "Disabling deployment tests, as deployment is currently unsupported on AIX."
+    echo "Disabling deployment tests, as deployment is currently unsupported on AIX."
 fi
 
 echo "======================================== done."
