@@ -1,6 +1,3 @@
-ChangeLog
-ChangeLog.20040412
-ChangeLog.20070807
 INSTALL
 LICENSE
 NEWS
@@ -161,6 +158,8 @@ tests/reexport-m1.scm
 tests/reexport-m2.scm
 tests/reexport-m3.scm
 tests/reexport-m4.scm
+tests/reexport-m5.scm
+tests/reexport-m6.scm
 tests/reexport-tests.scm
 tests/reexport-tests-2.scm
 tests/ec.scm
@@ -216,7 +215,6 @@ apply-hack.x86.S
 apply-hack.x86-64.S
 apply-hack.ppc.darwin.S
 apply-hack.ppc.sysv.S
-chicken.pdf
 Makefile
 Makefile.android
 Makefile.aix
@@ -304,6 +302,10 @@ types.db
 mac.r
 chicken.png
 CHICKEN.icns
+scripts/chicken-flymake
+scripts/chicken-flymake.bat
+scripts/csc-trans
+scripts/compile-all
 scripts/reconstruct-egg-name.scm
 scripts/mini-salmonella.scm
 scripts/make-wrapper.scm

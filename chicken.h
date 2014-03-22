@@ -44,6 +44,10 @@
 # define _ISOC99_SOURCE
 #endif
 
+#ifndef __C99FEATURES__
+# define __C99FEATURES__
+#endif
+
 #ifndef _BSD_SOURCE
 # define _BSD_SOURCE
 #endif
@@ -377,6 +381,11 @@ static inline int isinf_ld (long double x)
 { return !isnan (x) && isnan (x - x); }
 #endif
 
+/* Mingw's isnormal() is broken on 32bit; use GCC's builtin (see #1062) */
+#ifdef __MINGW32__
+# undef isnormal
+# define isnormal __builtin_isnormal
+#endif
 
 /* Constants: */
 

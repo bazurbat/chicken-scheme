@@ -1,12 +1,22 @@
 4.8.4
 
-- Tools
-  - csc "-deploy" works now on FreeBSD (thanks to Jules Altfas and
-    Vitaly Magerya), OpenBSD and NetBSD (see README for NetBSD).
-
 - Core libraries
   - Fix subvector when the TO optional argument equals the given vector
     length (#1097)
+
+- Runtime system
+  - finalizers on constants are ignored in compiled code because compiled
+    constants are never GCed (before, the finalizer would be incorrectly
+    invoked after the first GC).  (Reported by "Pluijzer")
+
+- Build system
+  - The tests can now be run without having to first install CHICKEN.
+
+- Tools
+  - csc "-deploy" works now on FreeBSD (thanks to Jules Altfas and
+    Vitaly Magerya), OpenBSD and NetBSD (see README for NetBSD).
+  - chicken-install: -deploy now correctly installs dependencies of
+    deployed eggs under the deployment directory instead of globally.
 
 4.8.3
 

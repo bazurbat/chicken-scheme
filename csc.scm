@@ -966,12 +966,13 @@ EOF
 	      TARGET_RUN_LIB_HOME)))
 
 (define (target-lib-path)
-  (let ((tdir TARGET_LIB_HOME))
-    (if (and (not (string=? tdir ""))
-	     cross-chicken
-	     (not host-mode))
-	tdir
-	(lib-path))))
+  (or (get-environment-variable "TARGET_LIB_PATH")
+      (let ((tdir TARGET_LIB_HOME))
+	(if (and (not (string=? tdir ""))
+		 cross-chicken
+		 (not host-mode))
+	    tdir
+	    (lib-path)))))
 
 (define (copy-libraries targetdir)
   (let ((lib (make-pathname
