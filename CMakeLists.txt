@@ -6,11 +6,15 @@ project(chicken)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/cmake)
 
 find_package(Chicken PATHS ${CMAKE_HOME_DIRECTORY}/cmake NO_DEFAULT_PATH) 
-include(ChickenConfigure)
-include(ChickenApplyHack)
 include(ChickenBuildTag)
+include(ChickenApplyHack)
+include(ChickenConfigure)
 include(${CHICKEN_USE_FILE})
 include(GenerateExportHeader)
+
+# set(CMAKE_INSTALL_RPATH .)
+# set(CMAKE_SKIP_BUILD_RPATH TRUE)
+# set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 
 # libchicken
 # use generated chicken-config.h
@@ -20,7 +24,7 @@ set_source_files_properties(runtime.c PROPERTIES
     OBJECT_DEPENDS ${CHICKEN_CONFIG_H})
 
 set(libchicken_SOURCES chicken.h runtime.c)
-if(C_HACKED_APPLY)
+if(CHICKEN_APPLY_HACK)
     list(APPEND libchicken_SOURCES apply-hack.${CHICKEN_ARCH}.S)
 endif()
 set(libchicken_STATIC_SOURCES ${libchicken_SOURCES})
@@ -48,9 +52,9 @@ add_chicken_sources(libchicken_STATIC_SOURCES srfi-69.scm
     STATIC OPTIONS ${CHICKEN_LIBRARY_OPTIONS} -extend private-namespace.scm)
 
 add_library(libchicken SHARED ${libchicken_SOURCES})
-target_compile_definitions(libchicken PUBLIC -DC_BUILDING_LIBCHICKEN)
 target_link_libraries(libchicken ${CHICKEN_EXTRA_LIBRARIES})
 set_target_properties(libchicken PROPERTIES
+    COMPILE_DEFINITIONS "PIC;C_BUILDING_LIBCHICKEN"
     PREFIX ""
     OUTPUT_NAME lib${CHICKEN_PREFIX}chicken${CHICKEN_SUFFIX}
     VERSION ${CHICKEN_API_VERSION})
@@ -60,8 +64,8 @@ install(TARGETS libchicken
 
 if(NOT MSVC)
     add_library(libchicken-static STATIC ${libchicken_STATIC_SOURCES})
-    target_compile_definitions(libchicken-static PUBLIC -DC_BUILDING_LIBCHICKEN)
     set_target_properties(libchicken-static PROPERTIES
+        COMPILE_DEFINITIONS "C_BUILDING_LIBCHICKEN"
         PREFIX ""
         OUTPUT_NAME lib${CHICKEN_PREFIX}chicken${CHICKEN_SUFFIX})
     install(TARGETS libchicken-static
@@ -76,7 +80,8 @@ add_chicken_sources(chicken_SOURCES ${chicken_SCM_SOURCES}
     OPTIONS ${CHICKEN_COMPILER_OPTIONS})
 add_executable(chicken ${chicken_SOURCES})
 target_link_libraries(chicken libchicken ${CHICKEN_EXTRA_LIBRARIES})
-set_property(TARGET chicken PROPERTY
+set_target_properties(chicken PROPERTIES
+    COMPILE_DEFINITIONS "PIC"
     OUTPUT_NAME ${CHICKEN_PREFIX}chicken${CHICKEN_SUFFIX})
 install(TARGETS chicken
     RUNTIME DESTINATION ${INSTALL_BINDIR})
@@ -87,7 +92,8 @@ add_chicken_sources(csi_SOURCES ${csi_SCM_SOURCES}
     OPTIONS ${CHICKEN_PROGRAM_OPTIONS} -extend private-namespace.scm)
 add_executable(csi ${csi_SOURCES})
 target_link_libraries(csi libchicken ${CHICKEN_EXTRA_LIBRARIES})
-set_property(TARGET csi PROPERTY
+set_target_properties(csi PROPERTIES
+    COMPILE_DEFINITIONS "PIC"
     OUTPUT_NAME ${CHICKEN_PREFIX}csi${CHICKEN_SUFFIX})
 install(TARGETS csi
     RUNTIME DESTINATION ${INSTALL_BINDIR})
@@ -123,7 +129,8 @@ foreach(program ${utility_PROGRAMS})
         OPTIONS ${CHICKEN_PROGRAM_OPTIONS})
     add_executable(${program} ${program_SOURCES})
     target_link_libraries(${program} libchicken ${CHICKEN_EXTRA_LIBRARIES})
-    set_property(TARGET ${program} PROPERTY
+    set_target_properties(${program} PROPERTIES
+        COMPILE_DEFINITIONS "PIC"
         OUTPUT_NAME ${CHICKEN_PREFIX}${program}${CHICKEN_SUFFIX})
     install(TARGETS ${program}
         RUNTIME DESTINATION ${INSTALL_BINDIR})
@@ -159,7 +166,7 @@ set(import_LIBRARIES
     foreign.import srfi-18.import utils.import csi.import irregex.import)
 
 foreach(lib ${import_LIBRARIES})
-    add_chicken_library(${lib} ${lib}.scm SHARED
+    add_chicken_library(${lib} ${lib}.scm MODULE
         RUNTIME libchicken
         OPTIONS ${CHICKEN_IMPORT_LIBRARY_OPTIONS})
     add_dependencies(${lib} libchicken)

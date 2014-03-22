@@ -9,22 +9,15 @@ option(BUILD_SHARED_LIBS "Build shared libraries" YES)
 option(CHICKEN_GC_HOOKS "Enable GC hooks" NO)
 option(CHICKEN_COLLECT_ALL_SYMBOLS "Always collect all unused symbols" NO)
 
+if(CHICKEN_APPLY_HACK)
+    set(C_HACKED_APPLY TRUE)
+endif()
+
 if(CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE "MinSizeRel" CACHE STRING
         "The type of build (Debug, Release, MinSizeRel)"
         FORCE)
 endif()
-
-# set global flags from calculated by macro to let user see them in the gui
-set(CMAKE_C_FLAGS_MINSIZEREL "${CHICKEN_C_FLAGS_MINSIZEREL}" CACHE STRING
-    "C compiler flags to use during minsize build (forced)" FORCE)
-set(CMAKE_C_FLAGS_RELEASE "${CHICKEN_C_FLAGS_RELEASE}" CACHE STRING
-    "C compiler flags to use during release build (forced)" FORCE)
-set(CMAKE_C_FLAGS_DEBUG "${CHICKEN_C_FLAGS_DEBUG}" CACHE STRING
-    "C compiler flags to use during debug build (forced)" FORCE)
-set(CMAKE_C_FLAGS "${CHICKEN_C_DEFINITIONS} ${CHICKEN_C_FLAGS_COMMON}" CACHE STRING
-    "C compiler flags to use during all build types (forced)" FORCE)
-set(CHICKEN_C_FLAGS "")
 
 if(CHICKEN_GC_HOOKS)
     set(C_GC_HOOKS 1)
@@ -209,3 +202,16 @@ endif()
 
 set(CHICKEN_CONFIG_H ${CMAKE_CURRENT_BINARY_DIR}/chicken-config.h)
 configure_file("chicken-config.h.in" ${CHICKEN_CONFIG_H})
+
+# set global flags from calculated by macro to let user see them in the gui
+set(CMAKE_C_FLAGS_MINSIZEREL "${CHICKEN_C_FLAGS_MINSIZEREL}" CACHE STRING
+    "C compiler flags to use during minsize build (forced)" FORCE)
+set(CMAKE_C_FLAGS_RELEASE "${CHICKEN_C_FLAGS_RELEASE}" CACHE STRING
+    "C compiler flags to use during release build (forced)" FORCE)
+set(CMAKE_C_FLAGS_DEBUG "${CHICKEN_C_FLAGS_DEBUG}" CACHE STRING
+    "C compiler flags to use during debug build (forced)" FORCE)
+set(CMAKE_C_FLAGS "${CHICKEN_C_DEFINITIONS} ${CHICKEN_C_FLAGS_COMMON}" CACHE STRING
+    "C compiler flags to use during all build types (forced)" FORCE)
+set(CHICKEN_C_FLAGS "")
+
+file(COPY types.db DESTINATION .)

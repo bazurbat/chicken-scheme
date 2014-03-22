@@ -112,7 +112,11 @@ function(add_chicken_library name)
         target_link_libraries(${name} ${CHICKEN_LIBRARIES})
     endif()
     if(compile_MODULE)
-        set_target_properties(${name} PROPERTIES PREFIX "")
+        set_target_properties(${name} PROPERTIES
+            PREFIX ""
+            NO_SONAME TRUE
+            INSTALL_RPATH .
+            BUILD_WITH_INSTALL_RPATH TRUE)
     endif()
 endfunction()
 
