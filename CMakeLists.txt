@@ -3,6 +3,8 @@ cmake_policy(VERSION 2.8)
 
 project(chicken)
 
+option(CHICKEN_ENABLE_TESTS "Enable tests" NO)
+
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/cmake)
 
 find_package(Chicken PATHS ${CMAKE_HOME_DIRECTORY}/cmake NO_DEFAULT_PATH) 
@@ -10,7 +12,6 @@ include(ChickenBuildTag)
 include(ChickenApplyHack)
 include(ChickenConfigure)
 include(${CHICKEN_USE_FILE})
-include(GenerateExportHeader)
 
 # set(CMAKE_INSTALL_RPATH .)
 # set(CMAKE_SKIP_BUILD_RPATH TRUE)
@@ -58,7 +59,6 @@ set_target_properties(libchicken PROPERTIES
     PREFIX ""
     OUTPUT_NAME lib${CHICKEN_PREFIX}chicken${CHICKEN_SUFFIX}
     VERSION ${CHICKEN_API_VERSION})
-generate_export_header(libchicken)
 install(TARGETS libchicken
     LIBRARY DESTINATION ${INSTALL_LIBDIR})
 
@@ -71,6 +71,9 @@ if(NOT MSVC)
     install(TARGETS libchicken-static
         ARCHIVE DESTINATION ${INSTALL_LIBDIR})
 endif()
+
+# let everything else use newly built libchicken
+set(CHICKEN_LIBRARIES libchicken ${CHICKEN_EXTRA_LIBRARIES})
 
 # chicken
 set(chicken_SCM_SOURCES chicken.scm batch-driver.scm compiler.scm
@@ -140,11 +143,9 @@ endforeach()
 set(setupapi_MODULES setup-api setup-download)
 
 add_chicken_module(setup-api setup-api.scm
-    RUNTIME libchicken
     EMIT setup-api
     OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
 add_chicken_module(setup-download setup-download.scm
-    RUNTIME libchicken
     EMIT setup-download
     OPTIONS ${CHICKEN_LIBRARY_OPTIONS}
     DEPENDS setup-api.import.scm)
@@ -167,7 +168,6 @@ set(import_LIBRARIES
 
 foreach(lib ${import_LIBRARIES})
     add_chicken_library(${lib} ${lib}.scm MODULE
-        RUNTIME libchicken
         OPTIONS ${CHICKEN_IMPORT_LIBRARY_OPTIONS})
     add_dependencies(${lib} libchicken)
     install(TARGETS ${lib}
@@ -194,3 +194,8 @@ endforeach()
 
 install(FILES README LICENSE
     DESTINATION ${INSTALL_DOCDIR})
+
+if(CHICKEN_ENABLE_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

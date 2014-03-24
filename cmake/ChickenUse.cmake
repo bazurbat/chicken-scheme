@@ -5,7 +5,7 @@ include(CMakeParseArguments)
 macro(_chicken_parse_arguments)
     cmake_parse_arguments(compile
         "STATIC;SHARED;MODULE;EMBEDDED"
-        "RUNTIME"
+        "SUFFIX"
         "EMIT;OPTIONS;C_FLAGS;DEPENDS"
         ${ARGN})
 endmacro()
@@ -44,7 +44,7 @@ endmacro()
 
 function(_chicken_command out_var in_filename)
     string(REGEX REPLACE
-        "(.*)\\.scm$" "\\1${output_suffix}.chicken.c"
+        "(.*)\\.scm$" "\\1${compile_SUFFIX}${output_suffix}.chicken.c"
         out_filename ${in_filename})
 
     get_filename_component(out_name ${out_filename} NAME)
@@ -88,6 +88,18 @@ function(add_chicken_sources out_var)
     set(${out_var} ${${out_var}} PARENT_SCOPE)
 endfunction()
 
+function(add_chicken_executable name)
+    _chicken_parse_arguments(${ARGN})
+    _chicken_process_arguments()
+    set(exe_sources)
+    foreach(arg ${compile_UNPARSED_ARGUMENTS})
+        _chicken_command(out_filename ${arg})
+        list(APPEND exe_sources ${out_filename})
+    endforeach()
+    add_executable(${name} ${exe_sources})
+    target_link_libraries(${name} ${CHICKEN_LIBRARIES})
+endfunction()
+
 function(add_chicken_library name)
     _chicken_parse_arguments(${ARGN})
     if(compile_STATIC)
@@ -106,11 +118,7 @@ function(add_chicken_library name)
         list(APPEND library_sources ${out_filename})
     endforeach()
     add_library(${name} ${library_type} ${library_sources})
-    if(compile_RUNTIME)
-        target_link_libraries(${name} ${compile_RUNTIME} ${CHICKEN_EXTRA_LIBRARIES})
-    else()
-        target_link_libraries(${name} ${CHICKEN_LIBRARIES})
-    endif()
+    target_link_libraries(${name} ${CHICKEN_LIBRARIES})
     if(compile_MODULE)
         set_target_properties(${name} PROPERTIES
             PREFIX ""
@@ -129,7 +137,6 @@ function(add_chicken_module name)
     foreach(lib ${import_libraries})
         add_chicken_library(${lib}.import MODULE
             ${CMAKE_CURRENT_BINARY_DIR}/${lib}.import.scm
-            RUNTIME ${compile_RUNTIME}
             OPTIONS ${compile_OPTIONS} C_FLAGS ${compile_C_FLAGS})
     endforeach()
 endfunction()
