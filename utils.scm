@@ -1,6 +1,6 @@
 ;;;; utils.scm - Utilities for scripting and file stuff
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -27,9 +27,8 @@
 
 (declare
   (unit utils)
-  (uses extras srfi-13 posix files irregex)
+  (uses eval extras srfi-13 posix files irregex)
   (fixnum)
-  (hide chop-pds)
   (disable-interrupts) )
 
 (include "common-declarations.scm")
@@ -59,25 +58,23 @@
 ;;; Quote string for shell
 
 (define (qs str #!optional (platform (build-platform)))
-  (case platform
-    ((mingw32)
-     (string-append "\"" str "\""))
-    (else
-     (if (zero? (string-length str))
-	 "''"
-	 (string-concatenate
-	  (map (lambda (c)
-		 (if (or (char-whitespace? c)
-			 (memq c '(#\# #\" #\' #\` #\´ #\~ #\& #\% #\$ #\! #\* #\;
-				   #\< #\> #\\ #\( #\) #\[ #\] #\{ #\} #\?)))
-		     (string #\\ c)
-		     (string c)))
-	       (string->list str)))))))
+  (let ((delim (if (eq? platform 'mingw32) #\" #\'))
+	(escaped (if (eq? platform 'mingw32) "\"\"" "'\\''")))
+    (string-append
+     (string delim)
+     (string-concatenate
+      (map (lambda (c)
+	     (cond
+	      ((char=? c delim) escaped)
+	      ((char=? c #\nul) (error 'qs "NUL character can not be represented in shell string" str))
+	      (else (string c))))
+	   (string->list str)))
+     (string delim))))
 
 
 ;;; Compile and load file
 
-(define compile-file-options (make-parameter '("-S" "-O2" "-d2")))
+(define compile-file-options (make-parameter '("-O2" "-d2")))
 
 (define compile-file
   (let ((csc (foreign-value "C_CSC_PROGRAM" c-string))

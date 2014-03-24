@@ -39,9 +39,9 @@ The options recognized by the interpreter are:
 
 ; -K  -keyword-style STYLE : Enables alternative keyword syntax, where {{STYLE}} may be either {{prefix}} (as in Common Lisp) or {{suffix}} (as in DSSSL). Any other value is ignored.
 
-; -n  -no-init : Do not load initialization-file. If this option is not given and the file {{./.csirc}} or {{$HOME/.csirc}} exists, then it is loaded before the read-eval-print loop commences.
+; -n  -no-init : Do not load initialization-file. If this option is not given and the file {{$HOME/.csirc}} exists, then it is loaded before the read-eval-print loop commences.
 
-;     -no-parentheses-synonyms STYLE : Disables list delimiter synonyms, [..] and {...} for (...).
+;     -no-parentheses-synonyms : Disables list delimiter synonyms, [..] and {...} for (...).
 
 ;     -no-symbol-escape : Disables support for escaped symbols, the |...| form.
 
@@ -128,7 +128,7 @@ executed as a script or normally loaded into the interpreter, say for debugging 
 <enscript highlight=scheme>
 #!/bin/sh
 #| demonstrates a slightly different way to run a script on UNIX systems
-exec csi -s "$@"
+exec csi -s "$0" "$@"
 |#
 
 (define (main args) ...)
@@ -140,6 +140,8 @@ exec csi -s "$@"
 </enscript>
 
 See also the documentation for the {{-ss}} option above.
+
+You can also have a look at [[/writing portable scripts]].
 
 
 === Toplevel commands
@@ -288,11 +290,11 @@ example:
 On platforms that support it, it is possible to get auto-completion of
 symbols, history (over different {{csi}} sessions) and a more
 feature-full editor for the expressions you type using the
-[[http://wiki.call-cc.org/eggref/4/readline|readline]] egg by Tony
+[[/eggref/4/readline|readline]] egg by Tony
 Garnock Jones.  It is very useful for interactive use of csi. See the
 egg's documentation on how to set it up. If readline is not available
 on your system consider using the self-contained
-[[http://wiki.call-cc.org/eggref/4/linenoise|linenoise]] egg
+[[/eggref/4/linenoise|linenoise]] egg
 instead. It should work on almost any system but is not as
 feature-rich as readline (e.g. it lacks reverse-i-search and
 auto-completion).

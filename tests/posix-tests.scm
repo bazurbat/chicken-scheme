@@ -1,4 +1,4 @@
-(use files posix)
+(use files posix lolevel)
 
 (define-syntax assert-error
   (syntax-rules ()
@@ -31,3 +31,39 @@
 (assert-error (process-execute "false\x00123"))
 (assert-error (process-execute "false" '("1" "123\x00456")))
 (assert-error (process-execute "false" '("123\x00456") '("foo\x00bar" "blabla") '("lalala" "qux\x00mooh")))
+
+(receive (in out pid)
+    (process "../csi" '("-n" "-e"
+                        "(write 'err (current-error-port)) (write 'ok)"))
+  (assert (equal? 'ok (read in))))
+
+(receive (in out pid err)
+    (process* "../csi" '("-n" "-e"
+                         "(write 'err (current-error-port)) (write 'ok)"))
+  (assert (equal? 'ok (read in)))
+  (assert (equal? 'err (read err))))
+
+(let ((tnpfilpn (create-temporary-file)))
+  (let ((tmpfilno (file-open tnpfilpn (+ open/rdwr open/creat)))
+        (data "abcde")
+        (size 5))
+    (file-write tmpfilno data)
+    (let ((mmap (map-file-to-memory #f size prot/read (+ map/shared map/file) tmpfilno))
+          (str (make-string size)))
+      (move-memory! (memory-mapped-file-pointer mmap) str size)
+      (assert (blob=? (string->blob data) (string->blob str)))
+      (unmap-file-from-memory mmap))))
+
+(let* ((tmp-dir (create-temporary-directory))
+       (tmp-dot (make-pathname (list tmp-dir "foo" "bar") ".baz")))
+  (create-directory tmp-dot 'recursively)
+  (assert (directory-exists? tmp-dot))
+  (delete-directory tmp-dir 'recursively)
+  (assert (not (directory-exists? tmp-dot)))
+  (assert (not (directory-exists? tmp-dir))))
+
+;; unsetenv
+(setenv "FOO" "bar")
+(assert (equal? (get-environment-variable "FOO") "bar"))
+(unsetenv "FOO")
+(assert (not (get-environment-variable "FOO")))

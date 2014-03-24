@@ -1,6 +1,6 @@
 ;;;; srfi-18.scm - Simple thread unit - felix
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -167,31 +167,37 @@
 	   (toval (and tosupplied (##sys#slot rest 0))) )
       (##sys#call-with-current-continuation
        (lambda (return)
-	 (let ([ct ##sys#current-thread])
+	 (let ((ct ##sys#current-thread))
 	   (when limit (##sys#thread-block-for-timeout! ct limit))
 	   (##sys#setslot
 	    ct 1
 	    (lambda ()
 	      (case (##sys#slot thread 3)
-		[(dead)
+		((dead)
 		 (unless (##sys#slot ct 13) ; not unblocked by timeout
 		   (##sys#remove-from-timeout-list ct))
-		 (apply return (##sys#slot thread 2))]
-		[(terminated)
+		 (apply return (##sys#slot thread 2)))
+		((terminated)
 		 (return 
 		  (##sys#signal
 		   (##sys#make-structure 
 		    'condition '(uncaught-exception)
-		    (list '(uncaught-exception . reason) (##sys#slot thread 7)) ) ) ) ]
-		[else
-		 (return
-		  (if tosupplied
-		      toval
-		      (##sys#signal
-		       (##sys#make-structure 'condition '(join-timeout-exception) '())) ) ) ] ) ) )
-	   (##sys#thread-block-for-termination! ct thread) 
+		    (list '(uncaught-exception . reason) (##sys#slot thread 7)) ) ) ) )
+		((blocked ready)
+                 (if limit
+                     (return
+                      (if tosupplied
+                          toval
+                          (##sys#signal
+                           (##sys#make-structure 'condition '(join-timeout-exception) '())) ) )
+                     (##sys#thread-block-for-termination! ct thread) ) )
+                (else
+                 (##sys#error 'thread-join!
+                              "Internal scheduler error: unknown thread state: "
+                              ct (##sys#slot thread 3)) ) ) ) )
+	   (##sys#thread-block-for-termination! ct thread)
 	   (##sys#schedule) ) ) ) ) ) )
-	   
+
 (define (thread-terminate! thread)
   (##sys#check-structure thread 'thread 'thread-terminate!)
   (when (eq? thread ##sys#primordial-thread)
@@ -265,6 +271,7 @@
        (lambda (return)
 	 (let ([ct ##sys#current-thread])
 	   (define (switch)
+             (dbg ct " sleeping on mutex " (mutex-name mutex))
 	     (##sys#setslot mutex 3 (##sys#append (##sys#slot mutex 3) (list ct)))
 	     (##sys#schedule) )
 	   (define (check)
@@ -272,7 +279,7 @@
 	       (return
 		(##sys#signal
 		 (##sys#make-structure 'condition '(abandoned-mutex-exception) '()))) ) )
-	   (dbg ct ": locking " mutex)
+	   (dbg ct ": locking " (mutex-name mutex))
 	   (cond [(not (##sys#slot mutex 5))
 		  (if (and threadsup (not thread))
 		      (begin
@@ -323,20 +330,20 @@
        (lambda (return)
 	 (let ([waiting (##sys#slot mutex 3)]
 	       [limit (and timeout (compute-time-limit timeout 'mutex-unlock!))] )
-	   (##sys#setislot mutex 4 #f)
-	   (##sys#setislot mutex 5 #f)
+	   (##sys#setislot mutex 4 #f)	; abandoned
+	   (##sys#setislot mutex 5 #f)	; blocked
 	   (let ((t (##sys#slot mutex 2)))
 	     (when t
-	       (##sys#setslot t 8 (##sys#delq mutex (##sys#slot t 8)))))
+	       (##sys#setslot t 8 (##sys#delq mutex (##sys#slot t 8))))) ; unown from owner
 	   (when cvar
 	     (##sys#setslot cvar 2 (##sys#append (##sys#slot cvar 2) (##sys#list ct)))
-	     (##sys#setslot ct 11 cvar)
+	     (##sys#setslot ct 11 cvar)	; block object
 	     (cond (limit
 		    (##sys#setslot 
 		     ct 1
 		     (lambda () 
 		       (##sys#setslot cvar 2 (##sys#delq ct (##sys#slot cvar 2)))
-		       (##sys#setslot ct 11 #f)
+		       (##sys#setslot ct 11 #f) ; block object
 		       (if (##sys#slot ct 13) ; unblocked by timeout
 			   (return #f)
 			   (begin

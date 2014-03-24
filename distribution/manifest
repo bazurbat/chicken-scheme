@@ -1,6 +1,3 @@
-ChangeLog
-ChangeLog.20040412
-ChangeLog.20070807
 INSTALL
 LICENSE
 NEWS
@@ -78,6 +75,8 @@ scrutinizer.scm
 irregex.scm
 irregex-core.scm
 irregex-utils.scm
+lfa2.c
+lfa2.scm
 posixunix.scm
 posixwin.scm
 posix-common.scm
@@ -112,12 +111,15 @@ tests/locative-stress-test.scm
 tests/r4rstest.scm
 tests/null.scm
 tests/sgrep.scm
+tests/r7rs-tests.scm
 tests/runtests.sh
 tests/runtests.bat
 tests/runbench.sh
 tests/srfi-4-tests.scm
 tests/srfi-13-tests.scm
+tests/srfi-18-signal-test.scm
 tests/srfi-14-tests.scm
+tests/srfi-45-tests.scm
 tests/simple-thread-test.scm
 tests/mutex-test.scm
 tests/hash-table-tests.scm
@@ -156,6 +158,8 @@ tests/reexport-m1.scm
 tests/reexport-m2.scm
 tests/reexport-m3.scm
 tests/reexport-m4.scm
+tests/reexport-m5.scm
+tests/reexport-m6.scm
 tests/reexport-tests.scm
 tests/reexport-tests-2.scm
 tests/ec.scm
@@ -211,8 +215,9 @@ apply-hack.x86.S
 apply-hack.x86-64.S
 apply-hack.ppc.darwin.S
 apply-hack.ppc.sysv.S
-chicken.pdf
 Makefile
+Makefile.android
+Makefile.aix
 Makefile.linux
 Makefile.macosx
 Makefile.mingw
@@ -221,6 +226,7 @@ Makefile.solaris
 Makefile.bsd
 Makefile.cygwin
 Makefile.haiku
+Makefile.hurd
 Makefile.cross-linux-mingw
 GNUmakefile
 config.make
@@ -296,6 +302,10 @@ types.db
 mac.r
 chicken.png
 CHICKEN.icns
+scripts/chicken-flymake
+scripts/chicken-flymake.bat
+scripts/csc-trans
+scripts/compile-all
 scripts/reconstruct-egg-name.scm
 scripts/mini-salmonella.scm
 scripts/make-wrapper.scm
@@ -329,6 +339,7 @@ manual-html/Parameters.html
 manual-html/Supported language.html
 manual-html/The R5RS standard.html
 manual-html/The User's Manual.html
+manual-html/Types.html
 manual-html/Unit data-structures.html
 manual-html/Unit eval.html
 manual-html/Unit expand.html

@@ -1,6 +1,6 @@
 ;;;; chicken-install.scm
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -26,7 +26,7 @@
 
 (require-library setup-download setup-api)
 (require-library srfi-1 posix data-structures utils irregex ports extras srfi-13 files)
-(require-library chicken-syntax)	; in case an import library reexports chicken syntax
+(require-library chicken-syntax) ; OBSOLETE (but left to allow older chicken's to bootstrap)
 (require-library chicken-ffi-syntax)	; same reason, also for filling modules.db
 
 (module main ()
@@ -196,9 +196,6 @@
            (transport ,*default-transport*)))
         *default-sources* ) )
 
-  (define (invalidate-default-source! def)
-    (set! *default-sources* (delete def *default-sources* eq?)) )
-
   (define (deps key meta)
     (or (and-let* ((d (assq key meta)))
           (cdr d))
@@ -239,8 +236,10 @@
   (define (check-dependency dep)
     (cond ((or (symbol? dep) (string? dep))
 	   (values
-	    (and (not (ext-version dep))
-		 (->string dep))
+	    (if *deploy*
+		(->string dep)
+		(and (not (ext-version dep))
+		     (->string dep)))
 	    #f))
 	  ((and (list? dep) (eq? 'or (car dep)))
 	   (let scan ((ordeps (cdr dep)) (bestm #f) (bestu #f))
@@ -263,7 +262,7 @@
 	  ((and (list? dep) (= 2 (length dep))
 		(or (string? (car dep)) (symbol? (car dep))))
 	   (let ((v (ext-version (car dep))))
-	     (cond ((not v)
+	     (cond ((or *deploy* (not v))
 		    (values
 		     (->string (car dep))
 		     #f))
@@ -337,26 +336,30 @@
        (abort e) ] ) )
 
   (define (with-default-sources proc)
-    (let trying-sources ([defs (known-default-sources)])
-      (if (null? defs)
-          (proc #f #f
-                (lambda ()
-                  (with-output-to-port (current-error-port)
-                    (lambda ()
-                      (print "Could not determine a source of extensions. "
-                             "Please, specify a location and a transport for "
-                             "a source.")))
-                  (exit 1)))
-          (let* ([def (car defs)]
-                 [locn (resolve-location
-			(cadr (or (assq 'location def)
-				  (error "missing location entry" def))))]
-                 [trans (cadr (or (assq 'transport def)
-                                  (error "missing transport entry" def)))])
-	    (proc trans locn
+    (let ((sources (known-default-sources)))
+      (let trying-sources ((defs sources))
+	(if (null? defs)
+	    (proc #f #f
 		  (lambda ()
-                    (invalidate-default-source! def)
-                    (trying-sources (cdr defs)) ) ) ) ) ) )
+		    (with-output-to-port (current-error-port)
+		      (lambda ()
+			(print "Could not determine a source of extensions. "
+			       "Please specify a valid location and transport.")))
+		    (exit 1)))
+	    (let ((def (car defs)))
+	      (if def
+		  (let* ((locn (resolve-location
+				(cadr (or (assq 'location def)
+					  (error "missing location entry" def)))))
+			 (trans (cadr (or (assq 'transport def)
+					  (error "missing transport entry" def)))))
+		    (proc trans locn
+			  (lambda ()
+			    (unless (eq? 'local trans)
+			      ;; invalidate this entry in the list of sources
+			      (set-car! defs #f))
+			    (trying-sources (cdr defs)))))
+		  (trying-sources (cdr defs))))))))
 
   (define (try-default-sources name version)
     (with-default-sources
@@ -477,7 +480,7 @@
                                    (or *force*
                                        (yes-or-no?
                                         (make-replace-extension-question e+d+v upgrade)
-                                        "no"
+                                        default: "no"
 					abort: (abort-setup) ) ) )
                           (let ([ueggs (unzip1 upgrade)])
                             (print " upgrade: " (string-intersperse ueggs ", "))
@@ -512,7 +515,7 @@
 		 (and (not (any loop (cdr p))) (fail)))
 		(else (error "invalid `platform' property" name (cadr platform))))))))
 
-  (define (make-install-command e+d+v dep?)
+  (define (make-install-command egg-name egg-version dep?)
     (conc
      *csi*
      " -bnq "
@@ -526,7 +529,7 @@
 	 ""
 	 "-e \"(setup-error-handling)\" ")
      (sprintf "-e \"(extension-name-and-version '(\\\"~a\\\" \\\"~a\\\"))\""
-       (car e+d+v) (caddr e+d+v))
+       egg-name egg-version)
      (if (sudo-install) " -e \"(sudo-install #t)\"" "")
      (if *keep* " -e \"(keep-intermediates #t)\"" "")
      (if (and *no-install* (not dep?)) " -e \"(setup-install-mode #f)\"" "")
@@ -549,7 +552,7 @@
 	 "")
      (if *deploy* " -e \"(deployment-mode #t)\"" "")
      #\space
-     (shellpath (make-pathname (cadr e+d+v) (car e+d+v) "setup"))) )
+     (shellpath (string-append egg-name ".setup"))) )
 
   (define-syntax keep-going
     (syntax-rules ()
@@ -575,7 +578,13 @@
     (unless *retrieve-only*
       (let* ((dag (reverse (topological-sort *dependencies* string=?)))
 	     (num (length dag))
-	     (depinstall-ok *force*))
+	     (depinstall-ok *force*)
+	     (eggs+dirs+vers (map (cut assoc <> *eggs+dirs+vers*) dag)))
+	(and-let* ((ibad (list-index not eggs+dirs+vers)))
+	  ;; A dependency was left unretrieved, most likely because the user declined an upgrade.
+	  (fprintf (current-error-port) "\nUnresolved dependency: ~a\n\n" (list-ref dag ibad))
+	  (cleanup)
+	  (exit 1))
 	(print "install order:")
 	(pp dag)
 	(for-each
@@ -609,24 +618,33 @@
 	       (let ((setup
 		      (lambda (dir)
 			(print "changing current directory to " dir)
-			(parameterize ((current-directory dir))
-			  (let ((cmd (make-install-command e+d+v (> i 1)))
-				(name (car e+d+v)))
-			    (print "  " cmd)
-			    (keep-going 
-			     (name "installing")
-			     ($system cmd))
-			    (when (and *run-tests*
-				       (not isdep)
-				       (file-exists? "tests")
-				       (directory? "tests")
-				       (file-exists? "tests/run.scm") )
-			      (set! *running-test* #t)
-			      (current-directory "tests")
-			      (keep-going
-			       (name "testing")
-			       (command "~a -s run.scm ~a ~a" *csi* name (caddr e+d+v)))
-			      (set! *running-test* #f)))))))
+			(let ((old-dir (current-directory)))
+			  (dynamic-wind
+			      (lambda ()
+				(change-directory dir))
+			      (lambda ()
+				(when *cross-chicken*
+				      (delete-stale-binaries))
+				(let ((cmd (make-install-command
+					    (car e+d+v) (caddr e+d+v) (> i 1)))
+				      (name (car e+d+v)))
+				  (print "  " cmd)
+				  (keep-going 
+				   (name "installing")
+				   ($system cmd))
+				  (when (and *run-tests*
+					     (not isdep)
+					     (file-exists? "tests")
+					     (directory? "tests")
+					     (file-exists? "tests/run.scm") )
+					(set! *running-test* #t)
+					(current-directory "tests")
+					(keep-going
+					 (name "testing")
+					 (command "~a -s run.scm ~a ~a" *csi* name (caddr e+d+v)))
+					(set! *running-test* #f))))
+			      (lambda ()
+				(change-directory old-dir)))))))
 		 (if (and *target-extension* *host-extension*)
 		     (fluid-let ((*deploy* #f)
 				 (*prefix* #f))
@@ -636,8 +654,17 @@
 		   (print "installing for target ...")
 		   (fluid-let ((*host-extension* #f))
 		     (setup tmpcopy)))))))
-	 (map (cut assoc <> *eggs+dirs+vers*) dag)
+	 eggs+dirs+vers
 	 (iota num num -1)))))
+
+  (define (delete-stale-binaries)
+    (print* "deleting stale binaries ...")
+    (print* "deleting stale binaries ...")
+    (find-files "." test: `(seq (* any) "." (or "o" "so" "dll" "a"))
+		action: (lambda (f _)
+			  (print* " " f)
+			  (delete-file* f)))
+    (newline))
 
   (define (cleanup)
     (unless *keep*
@@ -798,16 +825,12 @@ EOF
     (exit code))
 
   (define (setup-proxy uri)
-    (if (string? uri)
-        (begin 
-          (set! *proxy-user-pass* (get-environment-variable "proxy_auth"))
-          (cond ((irregex-match "(.+)\\:([0-9]+)" uri) =>
-                 (lambda (m)
-                   (set! *proxy-host* (irregex-match-substring m 1))
-                   (set! *proxy-port* (string->number (irregex-match-substring m 2))))
-                 (else
-                  (set! *proxy-host* uri)
-                  (set! *proxy-port* 80)))))))
+    (and-let* (((string? uri))
+	       (m (irregex-match "(http://)?([^:]+):?([0-9]*)" uri))
+	       (port (irregex-match-substring m 3)))
+      (set! *proxy-user-pass* (get-environment-variable "proxy_auth"))
+      (set! *proxy-host* (irregex-match-substring m 2))
+      (set! *proxy-port* (or (string->number port) 80))))
 
   (define (info->egg info)
     (if (member (cdr info) '("" "unknown" "trunk"))
@@ -915,8 +938,7 @@ EOF
                         (set! *keep* #t)
                         (set! *no-install* #t)
                         (loop (cdr args) eggs))
-                       ((or (string=? arg "-v") ; DEPRECATED
-			    (string=? arg "-version"))
+                       ((string=? arg "-version")
                         (print (chicken-version))
                         (exit 0))
                        ((or (string=? arg "-u") (string=? arg "-update-db"))

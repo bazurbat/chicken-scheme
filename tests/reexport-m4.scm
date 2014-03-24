@@ -1,3 +1,4 @@
+;;; export syntax that refers to reexported syntax (reexport-test-2.scm)
 (module
  reexport-m4
  (baz)

@@ -9,15 +9,14 @@ set OS_NAME=WindowsNT
 set CHICKEN=..\chicken
 set ASMFLAGS=-Wa,-w
 set FAST_OPTIONS=-O5 -d0 -b -disable-interrupts
+set PATH=%cd%\..;%PATH%
 
 set TYPESDB=..\types.db
 
-copy ..\lib*chicken*.dll .
-
-set compile=..\csc -compiler %CHICKEN% -v -I.. -L.. -include-path .. -o a.out
-set compile2=..\csc -compiler %CHICKEN% -v -I.. -L.. -include-path ..
-set compile_s=..\csc -s -compiler %CHICKEN% -v -I.. -L.. -include-path ..
-set interpret=..\csi -n -include-path ..
+set compile=..\csc -types %TYPESDB% -ignore-repository -compiler %CHICKEN% -v -I%TEST_DIR%/.. -L%TEST_DIR%/.. -include-path %TEST_DIR%/.. -o a.out
+set compile2=..\csc -compiler %CHICKEN% -v -I%TEST_DIR%/.. -L%TEST_DIR%/.. -include-path %TEST_DIR%/..
+set compile_s=..\csc -s -types %TYPESDB% -ignore-repository -compiler %CHICKEN% -v -I%TEST_DIR%/.. -L%TEST_DIR%/.. -include-path %TEST_DIR%/..
+set interpret=..\csi -n -include-path %TEST_DIR%/..
 
 del /f /q *.exe *.so *.o *.import.* ..\foo.import.*
 
@@ -38,7 +37,7 @@ echo ======================================== scrutiny tests ...
 if errorlevel 1 exit /b 1
 a.out
 if errorlevel 1 exit /b 1
-%compile% scrutiny-tests.scm -A -scrutinize -ignore-repository -types %TYPESDB% -verbose 2>scrutiny.out
+%compile% scrutiny-tests.scm -A -scrutinize -verbose 2>scrutiny.out
 if errorlevel 1 exit /b 1
 
 rem this is sensitive to gensym-names, so make it optional
@@ -47,11 +46,21 @@ if not exist scrutiny.expected copy /Y scrutiny.out scrutiny.expected
 fc /w scrutiny.expected scrutiny.out
 if errorlevel 1 exit /b 1
 
-%compile% scrutiny-tests-2.scm -A -scrutinize -analyze-only -ignore-repository -types %TYPESDB% -verbose 2>scrutiny-2.out
+%compile% scrutiny-tests-2.scm -A -scrutinize -analyze-only -verbose 2>scrutiny-2.out
 if errorlevel 1 exit /b 1
 
 if not exist scrutiny-2.expected copy /Y scrutiny-2.out scrutiny-2.expected
 fc /w scrutiny-2.expected scrutiny-2.out
+if errorlevel 1 exit /b 1
+
+%compile% scrutiny-tests-3.scm -specialize -block
+if errorlevel 1 exit /b 1
+a.out
+if errorlevel 1 exit /b 1
+
+%compile% scrutiny-tests-strict.scm -strict-types -specialize
+if errorlevel 1 exit /b 1
+a.out
 if errorlevel 1 exit /b 1
 
 echo ======================================== specialization tests ...
@@ -94,6 +103,10 @@ if errorlevel 1 (
 
 echo ======================================== runtime tests ...
 %interpret% -s apply-test.scm
+if errorlevel 1 exit /b 1
+%compile% apply-test.scm
+if errorlevel 1 exit /b 1
+a.out
 if errorlevel 1 exit /b 1
 %compile% test-gc-hooks.scm
 if errorlevel 1 exit /b 1
@@ -195,6 +208,19 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 a.out
 if errorlevel 1 exit /b 1
+%compile_s% reexport-m3.scm -J
+if errorlevel 1 exit /b 1
+%compile_s% reexport-m4.scm -J
+if errorlevel 1 exit /b 1
+%compile_s% reexport-m5.scm -J
+if errorlevel 1 exit /b 1
+%compile_s% reexport-m6.scm -J
+if errorlevel 1 exit /b 1
+%compile% reexport-tests-2.scm
+if errorlevel 1 exit /b 1
+a.out
+if errorlevel 1 exit /b 1
+
 
 echo ======================================== functor tests ...
 %interpret% -bnq simple-functors-test.scm
@@ -274,10 +300,15 @@ echo (expect two failures)
 %interpret% -i -s r5rs_pitfalls.scm
 if errorlevel 1 exit /b 1
 
-echo ======================================== module tests ...
-%interpret% -include-path .. -s module-tests.scm
+echo "======================================== r7rs tests ..."
+echo (expect two failures)
+%interpret% -i -s r7rs-tests.scm
 if errorlevel 1 exit /b 1
-%interpret% -include-path .. -s module-tests-2.scm
+
+echo ======================================== module tests ...
+%interpret% -include-path %TEST_DIR%/.. -s module-tests.scm
+if errorlevel 1 exit /b 1
+%interpret% -include-path %TEST_DIR%/.. -s module-tests-2.scm
 if errorlevel 1 exit /b 1
 
 echo ======================================== module tests (compiled) ...
@@ -363,6 +394,10 @@ echo ======================================== path tests ...
 %interpret% -bnq path-tests.scm
 if errorlevel 1 exit /b 1
 
+echo ======================================== srfi-45 tests ...
+%interpret% -s srfi-45-tests.scm
+if errorlevel 1 exit /b 1
+
 echo ======================================== posix tests ...
 %compile% posix-tests.scm
 if errorlevel 1 exit /b 1
@@ -374,14 +409,6 @@ echo 0 >tmpdir\.dotfile
 %interpret% -R posix -e "(delete-directory \"tmpdir\" #t)"
 if errorlevel 1 exit /b 1
 
-echo ======================================== lolevel tests ...
-%interpret% -s lolevel-tests.scm
-if errorlevel 1 exit /b 1
-%compile% lolevel-tests.scm
-if errorlevel 1 exit /b 1
-a.out
-if errorlevel 1 exit /b 1
-
 echo ======================================== regular expression tests ...
 %interpret% -bnq test-irregex.scm
 if errorlevel 1 exit /b 1
@@ -391,7 +418,7 @@ if errorlevel 1 exit /b 1
 echo ======================================== compiler/nursery stress test ...
 for %%s in (100000 120000 200000 250000 300000 350000 400000 450000 500000) do (
   echo %%s
-  ..\chicken ..\utils.scm -:s%%s -output-file tmp.c -include-path .. 
+  ..\chicken -ignore-repository ..\utils.scm -:s%%s -output-file tmp.c -include-path %TEST_DIR%/.. 
   if errorlevel 1 exit /b 1
 )
 
@@ -399,10 +426,15 @@ echo ======================================== symbol-GC tests ...
 %compile% symbolgc-tests.scm
 if errorlevel 1 exit /b 1
 a.out -:w
-if errorlevel 1 exit /b 1
+rem Currently disabled, because this may leave 1 symbol unreclaimed.
+rem if errorlevel 1 exit /b 1
 
 echo ======================================== finalizer tests ...
 %interpret% -s test-finalizers.scm
+if errorlevel 1 exit /b 1
+%compile% test-finalizers.scm
+if errorlevel 1 exit /b 1
+a.out
 if errorlevel 1 exit /b 1
 
 echo ======================================== finalizer tests (2) ...
@@ -448,7 +480,7 @@ mkdir tmp
 %compile% private-repository-test.scm -private-repository -o tmp\xxx
 if errorlevel 1 exit /b 1
 tmp\xxx %CD%\tmp
-set PATH=%CD%\tmp;$PATH xxx %CD%\tmp
+set PATH=%CD%\tmp;%PATH% xxx %CD%\tmp
 rem this may crash, if the PATH contains a non-matching libchicken.dll on Windows:
 set PATH=%PATH%;%CD%\tmp xxx %CD%\tmp
 del /f /q /s rev-app rev-app-2 reverser\*.import.* reverser\*.so

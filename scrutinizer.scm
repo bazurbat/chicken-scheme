@@ -1,6 +1,6 @@
 ;;;; scrutinizer.scm - The CHICKEN Scheme compiler (local flow analysis)
 ;
-; Copyright (c) 2009-2012, The Chicken Team
+; Copyright (c) 2009-2014, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -47,9 +47,11 @@
     (printf "[debug|~a] ~a~?~%" d-depth (make-string d-depth #\space) fstr args)) )
 
 (define dd d)
+(define ddd d)
 
 (define-syntax d (syntax-rules () ((_ . _) (void))))
 (define-syntax dd (syntax-rules () ((_ . _) (void))))
+(define-syntax ddd (syntax-rules () ((_ . _) (void))))
 
 
 ;;; Walk node tree, keeping type and binding information
@@ -66,7 +68,7 @@
 ;       | (forall (TVAR1 ...) VAL)
 ;       | deprecated
 ;       | (deprecated NAME)
-;   BASIC = * | string | symbol | char | number | boolean | list | pair | 
+;   BASIC = * | string | symbol | char | number | boolean | true | false | list | pair |
 ;           procedure | vector | null | eof | undefined | input-port | output-port |
 ;           blob | noreturn | pointer | locative | fixnum | float |
 ;           pointer-vector
@@ -100,6 +102,9 @@
 ;            | INTEGER | SYMBOL | STRING
 ;            | (quote CONSTANT)
 ;            | (TEMPLATE . TEMPLATE)
+;
+; As an alternative to the "#!rest" and "#!optional" keywords, "&rest" or "&optional"
+; may be used.
 
 
 (define-constant +fragment-max-length+ 6)
@@ -136,7 +141,8 @@
 	       ((fixnum) 'fixnum)
 	       ((flonum) 'flonum)
 	       (else 'number)))		; in case...
-	    ((boolean? lit) 'boolean)
+	    ((boolean? lit)
+	     (if lit 'true 'false))
 	    ((null? lit) 'null)
 	    ((list? lit) 
 	     `(list ,@(map constant-result lit)))
@@ -202,7 +208,7 @@
 	       ((or) (every always-true1 (cdr t)))
 	       ((forall) (always-true1 (third t)))
 	       (else #t)))
-	    ((memq t '(* boolean undefined noreturn)) #f)
+	    ((memq t '(* boolean true false undefined noreturn)) #f)
 	    (else #t)))
 
     (define (always-true t loc x)
@@ -446,6 +452,19 @@
 		     (nth-value 0 (procedure-argument-types ptype argc '() #t)))
 		(make-list argc '*)))
 	  (make-list argc '*)))
+
+    (define (reduce-typeset t pt typeenv)
+      (and-let* ((tnew
+		  (let rec ((t t))
+		    (and (pair? t)
+			 (case (car t)
+			   ((forall) 
+			    (and-let* ((t2 (rec (third t))))
+			      `(forall ,(second t) ,t2)))
+			   ((or) 
+			    `(or ,@(remove (cut match-types <> pt typeenv #t) (cdr t))))
+			   (else #f))))))
+	(simplify-type tnew)))
 
     (define (walk n e loc dest tail flow ctags) ; returns result specifier
       (let ((subs (node-subexpressions n))
@@ -717,12 +736,25 @@
 						    (not (get db var 'assigned)) 
 						    (not oparg?))))
 				    (cond (pred
+					   ;;XXX is this needed? "typeenv" is the te of "args",
+					   ;;    not of "pt":
 					   (let ((pt (resolve pt typeenv)))
 					     (d "  predicate `~a' indicates `~a' is ~a in flow ~a"
 						pn var pt (car ctags))
 					     (add-to-blist 
 					      var (car ctags)
-					      (if (and a (type<=? (cdr a) pt)) (cdr a) pt))))
+					      (if (and a (type<=? (cdr a) pt)) (cdr a) pt))
+					     ;; if the variable type is an "or"-type, we can
+					     ;; can remove all elements that match the predicate
+					     ;; type
+					     (when a
+					       ;;XXX hack, again:
+					       (let* ((tenv2 (type-typeenv `(or ,(cdr a) ,pt)))
+						      (at (reduce-typeset (cdr a) pt tenv2)))
+						 (when at
+						   (d "  predicate `~a' indicates `~a' is ~a in flow ~a"
+						      pn var at (cdr ctags))
+						   (add-to-blist var (cdr ctags) at))))))
 					  (a
 					   (when enforces
 					     (let ((ar (cond ((blist-type var flow) =>
@@ -984,6 +1016,8 @@
 	  ((eq? '* results1))
 	  ((eq? '* results2) (not exact))
 	  ((null? results2) #f)
+	  ((and (memq (car results1) '(undefined noreturn))
+		(memq (car results2) '(undefined noreturn))))
 	  ((match1 (car results1) (car results2)) 
 	   (match-results (cdr results1) (cdr results2)))
 	  (else #f)))
@@ -1035,6 +1069,9 @@
 		    #t)
 		   (else #f))))
 	  ((eq? t1 '*))
+	  ((eq? t2 '*) (and (not exact) (not all)))
+	  ((eq? t1 'undefined) #f)
+	  ((eq? t2 'undefined) #f)
 	  ((and (pair? t1) (eq? 'not (car t1)))
 	   (fluid-let ((exact #f)
 		       (all #f))
@@ -1067,9 +1104,14 @@
 	   (match1 (third t1) t2)) ; assumes typeenv has already been extracted
 	  ((and (pair? t2) (eq? 'forall (car t2)))
 	   (match1 t1 (third t2))) ; assumes typeenv has already been extracted
-	  ((eq? t2 '*) (and (not exact) (not all)))
 	  ((eq? t1 'noreturn) (not exact))
 	  ((eq? t2 'noreturn) (not exact))
+	  ((eq? t1 'boolean)
+	   (and (not exact)
+		(match1 '(or true false) t2)))
+	  ((eq? t2 'boolean)
+	   (and (not exact)
+		(match1 t1 '(or true false))))
 	  ((eq? t1 'number) 
 	   (and (not exact)
 		(match1 '(or fixnum float) t2)))
@@ -1091,12 +1133,10 @@
 	  ((eq? t2 'vector) (match1 t1 '(vector-of *)))
 	  ((eq? t1 'null)
 	   (and (not exact) (not all)
-		(or (memq t2 '(null list))
-		    (and (pair? t2) (eq? 'list-of (car t2))))))
+		(pair? t2) (eq? 'list-of (car t2))))
 	  ((eq? t2 'null)
 	   (and (not exact)
-		(or (memq t1 '(null list))
-		    (and (pair? t1) (eq? 'list-of (car t1))))))
+		(pair? t1) (eq? 'list-of (car t1))))
 	  ((and (pair? t1) (pair? t2) (eq? (car t1) (car t2)))
 	   (case (car t1)
 	     ((procedure)
@@ -1114,18 +1154,18 @@
 		   (every match1 (cdr t1) (cdr t2))))
 	     (else #f) ) )
 	  ((and (pair? t1) (eq? 'pair (car t1)))
-	   (and (not exact) (not all)
-		(pair? t2)
+	   (and (pair? t2)
 		(case (car t2)
 		  ((list-of)
-		   (let ((ct1 (canonicalize-list-of-type t1)))
-		     (if ct1
-			 (match1 ct1 t2)
-			 #t)))		; inexact match
+		   (and (not exact)
+			(not all)
+			(match1 (second t1) (second t2))
+			(match1 (third t1) t2)))
 		  ((list)
-		   (and (match1 (second t1) (second t2))
+		   (and (pair? (cdr t2))
+			(match1 (second t1) (second t2))
 			(match1 (third t1)
-				(if (null? (cdr t2))
+				(if (null? (cddr t2))
 				    'null
 				    `(list ,@(cddr t2))))))
 		  (else #f))))
@@ -1133,13 +1173,13 @@
 	   (and (pair? t1)
 		(case (car t1)
 		  ((list-of)
-		   (let ((ct2 (canonicalize-list-of-type t2)))
-		     (if ct2
-			 (match1 t1 ct2)
-			 (and (not exact) (not all)))))	; inexact mode: ok
+		   (and (not exact)
+			(match1 (second t1) (second t2))
+			(match1 t1 (third t2))))
 		  ((list)
-		   (and (match1 (second t1) (second t2))
-			(match1 (if (null? (cdr t1))
+		   (and (pair? (cdr t1))
+			(match1 (second t1) (second t2))
+			(match1 (if (null? (cddr t1))
 				    'null
 				    `(list ,@(cddr t1)))
 				(third t2))))
@@ -1147,49 +1187,47 @@
 	  ((and (pair? t1) (eq? 'list-of (car t1)))
 	   (or (eq? 'null t2)
 	       (and (pair? t2)
-		    (memq (car t2) '(pair list))
-		    (let ((ct2 (canonicalize-list-of-type t2)))
-		      (and ct2 (match1 t1 ct2))))))
+		    (case (car t2)
+		      ((list)
+		       (let ((t1 (second t1)))
+			 (over-all-instantiations
+			  (cdr t2)
+			  typeenv
+			  #t
+			  (lambda (t) (match1 t1 t)))))
+		      (else #f)))))
 	  ((and (pair? t1) (eq? 'list (car t1)))
 	   (and (pair? t2)
 		(case (car t2)
-		  ((pair)
-		   (and (pair? (cdr t1))
-			(match1 (second t1) (second t2))
-			(match1 t1 (third t2))))
 		  ((list-of)
-		   (and (not exact) (not all)			
-			(let ((ct2 (canonicalize-list-of-type t2)))
-			  (and ct2 (match1 t1 ct2)))))
-		  (else #f))))
-	  ((and (pair? t2) (eq? 'list-of (car t2)))
-	   (and (not exact)		;XXX also check "all"?
-		(or (eq? 'null t1)
-		    (and (pair? t1)
-			 (memq (car t1) '(pair list))
-			 (let ((ct1 (canonicalize-list-of-type t1)))
-			   (and ct1 (match1 ct1 t2)))))))
-	  ((and (pair? t2) (eq? 'list (car t2)))
-	   (and (pair? t1)
-		(case (car t1)
-		  ((pair)
-		   (and (pair? (cdr t2))
-			(match1 (second t1) (second t2))
-			(match1 (third t1) t2)))
-		  ((list-of)
-		   (and (not exact) (not all)
-			(let ((ct1 (canonicalize-list-of-type t1)))
-			  (and ct1 (match1 ct1 t2)))))
+		   (and (not exact) 
+			(not all)
+			(let ((t2 (second t2)))
+			  (over-all-instantiations
+			   (cdr t1)
+			   typeenv 
+			   #t
+			   (lambda (t) (match1 t t2))))))
 		  (else #f))))
 	  ((and (pair? t1) (eq? 'vector (car t1)))
 	   (and (not exact) (not all)
 		(pair? t2)
 		(eq? 'vector-of (car t2))
-		(match1 (simplify-type `(or ,@(cdr t1))) (second t2))))
+		(let ((t2 (second t2)))
+		  (over-all-instantiations
+		   (cdr t1)
+		   typeenv
+		   #t
+		   (lambda (t) (match1 t t2))))))
 	  ((and (pair? t2) (eq? 'vector (car t2)))
 	   (and (pair? t1)
 		(eq? 'vector-of (car t1))
-		(match1 (second t1) (simplify-type `(or ,@(cdr t2))))))
+		(let ((t1 (second t1)))
+		  (over-all-instantiations
+		   (cdr t2)
+		   typeenv 
+		   #t
+		   (lambda (t) (match1 t1 t))))))
 	  (else #f)))
 
   (let ((m (match1 t1 t2)))
@@ -1286,6 +1324,7 @@
 				      (merge-result-types rtypes1 rtypes2))))
 				 #f
 				 ts)))
+			   ((lset= eq? '(true false) ts) 'boolean)
 			   ((lset= eq? '(fixnum float) ts) 'number)
 			   (else
 			    (let* ((ts (append-map
@@ -1315,9 +1354,8 @@
 			 (tcdr (simplify (third t))))
 		     (if (and (eq? '* tcar) (eq? '* tcdr))
 			 'pair
-			 (let ((t `(pair ,tcar ,tcdr)))
-			   (or (canonicalize-list-of-type t)
-			       t)))))
+			 (canonicalize-list-type
+			  `(pair ,tcar ,tcdr)))))
 		  ((vector-of)
 		   (let ((t2 (simplify (second t))))
 		     (if (eq? t2 '*)
@@ -1445,6 +1483,7 @@
 		    (else
 		     (case t2
 		       ((procedure) (and (pair? t1) (eq? 'procedure (car t1))))
+		       ((boolean) (memq t1 '(true false)))
 		       ((number) (memq t1 '(fixnum float)))
 		       ((vector) (test t1 '(vector-of *)))
 		       ((list) (test t1 '(list-of *)))
@@ -1737,7 +1776,7 @@
 	   ((not (pair? t)) 
 	    (if (memq t '(* fixnum eof char string symbol float number list vector pair
 			    undefined blob input-port output-port pointer locative boolean 
-			    pointer-vector null procedure noreturn))
+			    true false pointer-vector null procedure noreturn))
 		t
 		(bomb "resolve: can't resolve unknown type-variable" t)))
 	   (else 
@@ -1859,7 +1898,8 @@
 			   `(forall ,(second type) ,(wrap (third type))))
 			  (else type))
 			type))
-		  specs)))))
+		  specs))
+	     (newline))))
        db)
       (print "; END OF FILE"))))
 
@@ -1902,6 +1942,7 @@
   ;; - converts some typenames to struct types (u32vector, etc.)
   ;; - handles some type aliases
   ;; - drops "#!key ..." args by converting to #!rest
+  ;; - replaces uses of "&rest"/"&optional" with "#!rest"/"#!optional"
   ;; - handles "(T1 -> T2 : T3)" (predicate) 
   ;; - handles "(T1 --> T2 [: T3])" (clean)
   ;; - simplifies result
@@ -1916,14 +1957,21 @@
       (let loop ((lst lst))
 	(cond ((eq? lst p) '())
 	      (else (cons (car lst) (loop (cdr lst)))))))
+    (define (memq* x lst) ; memq, but allow improper list
+      (let loop ((lst lst))
+	(cond ((not (pair? lst)) #f)
+	      ((eq? (car lst) x) lst)
+	      (else (loop (cdr lst))))))
     (define (validate-llist llist)
       (cond ((null? llist) '())
 	    ((symbol? llist) '(#!rest *))
 	    ((not (pair? llist)) #f)
-	    ((eq? '#!optional (car llist))
+	    ((or (eq? '#!optional (car llist))
+		 (eq? '&optional (car llist)))
 	     (let ((l1 (validate-llist (cdr llist))))
 	       (and l1 (cons '#!optional l1))))
-	    ((eq? '#!rest (car llist))
+	    ((or (eq? '#!rest (car llist))
+		 (eq? '&rest (car llist)))
 	     (cond ((null? (cdr llist)) '(#!rest *))
 		   ((not (pair? (cdr llist))) #f)
 		   (else
@@ -1935,7 +1983,7 @@
 		    (l2 (validate-llist (cdr llist))))
 	       (and l1 l2 (cons l1 l2))))))
     (define (validate t #!optional (rec #t))
-      (cond ((memq t '(* string symbol char number boolean list pair
+      (cond ((memq t '(* string symbol char number boolean true false list pair
 			 procedure vector null eof undefined input-port output-port
 			 blob pointer locative fixnum float pointer-vector
 			 deprecated noreturn values))
@@ -1995,12 +2043,12 @@
 		  t))
 	    ((eq? 'deprecated (car t))
 	     (and (= 2 (length t)) (symbol? (second t)) t))
-	    ((or (memq '--> t) (memq '-> t)) =>
+	    ((or (memq* '--> t) (memq* '-> t)) =>
 	     (lambda (p)
 	       (let* ((cleanf (eq? '--> (car p)))
 		      (ok (or (not rec) (not cleanf))))
 		 (unless rec (set! clean cleanf))
-		 (let ((cp (memq ': (cdr p))))
+		 (let ((cp (memq* ': p)))
 		   (cond ((not cp)
 			  (and ok
 			       (validate
@@ -2127,26 +2175,19 @@
 ;
 ; - returns #f if not possibly matchable with "list-of"
 
-(define (canonicalize-list-of-type t)
+(define (canonicalize-list-type t)
   (cond ((not (pair? t)) t)
 	((eq? 'pair (car t))
 	 (let ((tcar (second t))
 	       (tcdr (third t)))
 	   (let rec ((tr tcdr) (ts (list tcar)))
 	     (cond ((eq? 'null tr)
-		    `(list-of ,(simplify-type `(or ,@ts))))
-		   ((eq? 'list tr) tr)
+		    `(list ,@(reverse ts)))
 		   ((and (pair? tr) (eq? 'pair (first tr)))
 		    (rec (third tr) (cons (second tr) ts)))
 		   ((and (pair? tr) (eq? 'list (first tr)))
-		    `(list-of ,(simplify-type `(or ,@ts ,@(cdr tr)))))
-		   ((and (pair? tr) (eq? 'list-of (first tr)))
-		    `(list-of 
-		      ,(simplify-type
-			`(or ,@(reverse ts) ,@(cdr tr)))))
-		   (else #f)))))
-	((eq? 'list (car t)) 
-	 `(list-of ,(simplify-type `(or ,@(cdr t)))))
+		    `(list ,@(reverse ts) ,@(cdr tr)))
+		   (else t)))))
 	(else t)))
 
 
@@ -2257,7 +2298,7 @@
 
     ;; restore trail and collect instantiations
     (define (restore)
-      ;;(dd "restoring, trail: ~s, te: ~s" trail typeenv) ;XXX remove
+      (ddd "restoring, trail: ~s, te: ~s" trail typeenv)
       (let ((is '()))
 	(do ((tr trail (cdr tr)))
 	    ((eq? tr trail0)
@@ -2268,7 +2309,7 @@
 		    (car tr)
 		    (resolve (car tr) typeenv)
 		    is))
-	  ;; (dd "  restoring ~a, insts: ~s" (car tr) insts) ;XXX remove
+	  (ddd "  restoring ~a, insts: ~s" (car tr) insts)
 	  (let ((a (assq (car tr) typeenv)))
 	    (set-car! (cdr a) #f)))))
 
@@ -2286,10 +2327,10 @@
 				   (else #f)))
 			   insts)))
 		       vars)))
-	;;(dd "  collected: ~s" all)	;XXX remove
+	(ddd "  collected: ~s" all)
 	all))
 
-    ;;(dd " over-all-instantiations: ~s exact=~a" tlist exact) ;XXX remove
+    (ddd " over-all-instantiations: ~s exact=~a" tlist exact)
     ;; process all tlist elements
     (let loop ((ts tlist) (ok #f))
       (cond ((null? ts)

@@ -161,8 +161,8 @@ The name of the currently executing program. This is equivalent to
 
 <parameter>(repl-prompt)</parameter>
 
-A procedure that should evaluate to a string that will be printed before reading 
-interactive input from the user in a read-eval-print loop. Defaults to 
+A procedure that should evaluate to a string that will be printed before reading
+interactive input from the user in a read-eval-print loop. Defaults to
 {{(lambda () "#;N> ")}}.
 
 
@@ -174,6 +174,20 @@ A procedure of zero arguments that is called via {{reset}}. The
 default behavior in compiled code is to invoke the value of
 {{(exit-handler)}}. The default behavior in the interpreter is to
 abort the current computation and to restart the read-eval-print loop.
+
+
+=== recursive-hash-max-depth
+
+<parameter>(recursive-hash-max-depth)</parameter>
+
+The maximum structure depth to follow when computing a hash value. The default is {{4}}.
+
+
+=== recursive-hash-max-length
+
+<parameter>(recursive-hash-max-depth)</parameter>
+
+The maximum vector length to follow when computing a hash value. The default is {{4}}.
 
 ----
 Previous: [[Declarations]] Next: [[Exceptions]]

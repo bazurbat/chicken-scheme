@@ -1,6 +1,6 @@
 ;;;; lolevel.import.scm - import library for "lolevel" module
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -43,10 +43,8 @@
    make-pointer-vector
    make-weak-locative
    move-memory!
-   mutate-procedure			; DEPRECATED
    mutate-procedure!
    null-pointer
-   null-pointer?			; DEPRECATED
    number-of-bytes
    number-of-slots
    object->pointer
@@ -60,7 +58,6 @@
    object-unevict
    pointer->address
    pointer-like?
-   pointer-offset			; DEPRECATED
    pointer->object
    pointer-f32-ref
    pointer-f32-set!

@@ -1,7 +1,7 @@
 
 Note: at toplevel:
   (scrutiny-tests-2.scm:14) in procedure call to `pair?', the predicate is called with an argument of type
-  `(pair fixnum fixnum)' and will always return true
+  `pair' and will always return true
 
 Note: at toplevel:
   (scrutiny-tests-2.scm:14) in procedure call to `pair?', the predicate is called with an argument of type
@@ -42,6 +42,10 @@ Note: at toplevel:
 Note: at toplevel:
   (scrutiny-tests-2.scm:22) in procedure call to `null?', the predicate is called with an argument of type
   `null' and will always return true
+
+Note: at toplevel:
+  (scrutiny-tests-2.scm:22) in procedure call to `null?', the predicate is called with an argument of type
+  `pair' and will always return false
 
 Note: at toplevel:
   (scrutiny-tests-2.scm:22) in procedure call to `null?', the predicate is called with an argument of type

@@ -3,10 +3,10 @@
   =========================================
 
 
-  (c) 2008-2012, The Chicken Team
+  (c) 2008-2014, The Chicken Team
   (c) 2000-2007, Felix L. Winkelmann
 
-  version 4.8.0rc4
+  version 4.8.4
 
 
  1. Introduction
@@ -236,6 +236,11 @@
 	  LLVM version of gcc and with "clang", the LLVM-based C compiler,
 	  just set C_COMPILER to "llvm-gcc" or "clang".
 
+        LINKER=
+	  Selects the linker to be used for creating executables and 
+	  dynamic libraries from compiled C code. This should normally
+	  be the same as C_COMPILER.
+
 	PROFILE_OBJECTS=
 	  This variable allows you to profile (parts of) Chicken itself.
 	  Just pass in a whitespace-separated list of objects, without
@@ -354,6 +359,30 @@
         
  5. Platform issues
 
+        Android:
+     
+	  - The Android SDK and NDK are required. Make sure you have
+	    set up a project and have a suitable NDK toolchain
+	    available. You will have to override the make(1) variable
+	    C_COMPILER to contain the correct compiler; see
+	    docs/STANDALONE-TOOLCHAIN.html in your NDK root for notes
+	    on how to call the correct compiler. You will also need to
+	    override the ARCH variable to match the device you're
+	    targeting.  The build will produce a libchicken.so that
+	    can then be integrated into your project as a prebuilt
+	    shared library.  See the android section on
+	    http://wiki.call-cc.org/embedding for a complete example.
+
+	  - It is possible to use eggs, by copying them into the right
+	    place and probably renaming the files. This is somewhat
+	    awkward and requires various hacks to make the
+	    loading/linking of eggs work. It may be easier to build
+	    the eggs you need manually and linking them statically to
+	    your executable.
+
+	  - By default debug-logging is enabled and written to the
+	    Android log.
+
     	FreeBSD/NetBSD/OpenBSD:
 
           - *BSD system users *must* use GNU make ("gmake") - the makefiles
@@ -363,6 +392,15 @@
 	    "virtual memory exhausted error".  Try the following:
 
 	    % unlimit datasize
+
+	  - When using -deploy on NetBSD, currently the kernel only
+	    supports running the program through its absolute path,
+	    otherwise you will get an error message stating:
+
+	      execname not specified in AUX vector: No such file or directory
+
+	    Deployed binaries can also be run without an explicit path,
+	    through $PATH; only relative pathnames do not work.
 
 	  - Using external libraries on NetBSD may also be easier, if
 	    you add the following definitions to `Makefile.bsd':
@@ -413,7 +451,16 @@
 
 	Mac OS X:
 
-	  - On 10.6 and 10.7, Chicken may incorrectly select a 32-bit build
+          - The build currently assumes the Xcode application path is
+            "/Applications/Xcode.app/", with the C compiler and build
+            tools being located in the "Contents/Developer/usr/bin"
+            and
+            "Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin"
+            subdirectories, respectively. To override these locations,
+            set XCODE_DEVELOPER and XCODE_TOOL_PATH on the make(3)
+            command line.
+
+	  - On 10.6 and 10.7, CHICKEN may incorrectly select a 32-bit build
 	    environment when it should be building 64-bit, resulting in a
 	    build error.  This occurs when you have a 32-bit kernel and a
 	    64-bit gcc (that is, on Core 2 Duo systems running 10.6 Desktop).
@@ -481,8 +528,26 @@
 	    MSYS tools (in case you have some of them, in particular the
 	    sh.exe UNIX shell) are *NOT* visible in your PATH.
 
+	  - 64-bit Windows is supported, invoke mingw32-make with the
+	    "ARCH=x86-64" argument (this is currently not detected
+	    automatically). The build has been tested on Windows 7
+	    with the SJLJ binary package from "MinGW-builds", which
+	    can be found here:
+
+	    http://sourceforge.net/projects/mingwbuilds/
+
 	  - Cygwin will not be able to find the chicken shared libraries
 	    until Windows is rebooted.
+
+	  - During "make check" you may see these intermittent errors:
+
+	      ld.exe: cannot open output file a.out: Permission denied
+
+	    When this happens, the virusscanner is holding open
+	    the file of the previous test while the compiler is
+	    preparing the next test.
+	    To work around this in Windows Defender (the default),
+	    disable "realtime protection" under tools->options.
 
 	  - gcc 3.4 shows sometimes warnings of the form
 
@@ -492,6 +557,44 @@
 	    when compiling the system or compiled Scheme files. These
 	    warnings are bogus and can be ignored.
 
+	AIX:
+
+	  - CHICKEN is built with the GNU C compiler (`gcc').  IBM's XL
+	    C compiler is not supported at this time.
+
+	  - AIX users *must* use GNU make ("gmake") - the makefiles can not be
+	    processed with IBM's version of make.
+
+	  - Deployment doesn't work.  See manual/Deployment for more details.
+
+	  - The AIX linker may occasionally show warnings of the form:
+
+	      ld: 0711-783 WARNING: TOC overflow. TOC size: 66656
+	      Maximum size: 65536
+	      Extra instructions are being generated for each reference to a TOC
+	      symbol if the symbol is in the TOC overflow area.
+
+	    Such messages indicate that lookups for some symbols in the
+	    effected library/executable may be somewhat slower at runtime as an
+	    auxiliary symbol table is needed to accommodate all of the symbols.
+
+	  - The AIX assembler may show warnings of the form:
+
+	      /tmp//ccycPGzK.s: line 527244: 1252-171 The displacement must be
+	      greater than or equal to -32768 and less than or equal to 32767.
+
+	    This is a known issue between the GNU toolchain and IBM's assembler:
+
+	    http://gcc.gnu.org/bugzilla/show_bug.cgi?id=4587
+
+	    The problem arises because the PPC architecture cannot perform jumps
+	    to addresses that differ more than what a 16-bit integer can
+	    represent.  Adding support for IBM's XL C compiler may resolve this
+	    issue.
+
+	    Instructing gcc to optimize the size of generated code (-Os)
+	    mitigates this to some degree, but very large C files may still be
+	    uncompilable.  This is known to affect the html-tags egg.
 
  6. Bootstrapping
 

@@ -1,6 +1,6 @@
 # Makefile.haiku - configuration for Haiku -*- Makefile -*-
 #
-# Copyright (c) 2011-2012, The Chicken Team
+# Copyright (c) 2011-2014, The Chicken Team
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -47,9 +47,9 @@ C_COMPILER_OPTIMIZATION_OPTIONS ?= -Os -fomit-frame-pointer
 endif
 endif
 LINKER_LINK_SHARED_LIBRARY_OPTIONS = -shared
-LINKER_LINK_SHARED_DLOADABLE_OPTIONS = -L. -shared -Wl,-R$(RUNTIME_LINKER_PATH)
-LINKER_LINK_SHARED_PROGRAM_OPTIONS = -Wl,-R$(RUNTIME_LINKER_PATH)
-LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,-soname,lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX).so$(SONAME_VERSION)
+LINKER_LINK_SHARED_DLOADABLE_OPTIONS = -L. -shared -Wl,-R"$(RUNTIME_LINKER_PATH)"
+LINKER_LINK_SHARED_PROGRAM_OPTIONS = -Wl,-R"$(RUNTIME_LINKER_PATH)"
+LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,-soname,lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX).so.$(BINARYVERSION)
 LIBRARIES = -lnetwork
 NEEDS_RELINKING = yes
 USES_SONAME = yes
@@ -71,8 +71,10 @@ chicken-config.h: chicken-defaults.h
 	echo "#define HAVE_LONG_LONG 1" >>$@
 	echo "#define HAVE_MEMMOVE 1" >>$@
 	echo "#define HAVE_MEMORY_H 1" >>$@
+	echo "#define HAVE_POSIX_POLL 1" >>$@
 	echo "#define HAVE_SIGACTION 1" >>$@
 	echo "#define HAVE_SIGSETJMP 1" >>$@
+	echo "#define HAVE_SIGPROCMASK 1" >>$@
 	echo "#define HAVE_STDINT_H 1" >>$@
 	echo "#define HAVE_STDLIB_H 1" >>$@
 	echo "#define HAVE_STRERROR 1" >>$@
@@ -82,6 +84,7 @@ chicken-config.h: chicken-defaults.h
 	echo "#define HAVE_STRTOQ 1" >>$@
 	echo "#define HAVE_SYS_STAT_H 1" >>$@
 	echo "#define HAVE_SYS_TYPES_H 1" >>$@
+	echo "#define HAVE_SETENV 1" >>$@
 	echo "#define HAVE_UNISTD_H 1" >>$@
 	echo "#define HAVE_UNSIGNED_LONG_LONG 1" >>$@
 	echo "#define STDC_HEADERS 1" >>$@
@@ -89,7 +92,6 @@ chicken-config.h: chicken-defaults.h
 	echo "#define HAVE_ALLOCA_H 1" >>$@
 	echo "#define HAVE_GRP_H 1" >>$@
 	echo "#define HAVE_ERRNO_H 1" >>$@
-	echo "#define HAVE_GCVT 1" >>$@
 	echo "#define HAVE_MEMMOVE 1" >>$@
 	echo "#define C_STACK_GROWS_DOWNWARD 1" >>$@
 	echo "#define SIGIO 0" >>$@

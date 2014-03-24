@@ -1,6 +1,6 @@
 ;;;; setup-download.scm
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -44,7 +44,7 @@
   (define-constant +default-tcp-connect-timeout+ 30000) ; 30 seconds
   (define-constant +default-tcp-read/write-timeout+ 30000) ; 30 seconds
 
-  (define-constant +url-regex+ "(http://)?([^/:]+)(:([^:/]+))?(/.+)")
+  (define-constant +url-regex+ "(http://)?([^/:]+)(:([^:/]+))?(/.*)?")
 
   (tcp-connect-timeout +default-tcp-connect-timeout+)
   (tcp-read-timeout +default-tcp-read/write-timeout+)
@@ -106,7 +106,9 @@
 			   (if (and (file-exists? trunkdir) (directory? trunkdir))
 			       (values trunkdir "trunk")
 			       (values eggdir "") ) ) ) ) )
-	(cond (dest
+	(cond ((or (not (file-exists? eggdir)) (not (directory? eggdir)))
+	       (values #f ""))
+	      (dest
 	       (create-directory dest)
 	       (let ((qdest (qs (normalize-pathname dest)))
 		     (qsrc (qs (normalize-pathname src)))
@@ -226,7 +228,8 @@
 	     (or (string->number port)
 		 (error "not a valid port" port)))
 	   80)
-       (if m (irregex-match-substring m 5) "/")) ) )
+       (or (and m (irregex-match-substring m 5))
+           "/"))))
 
   (define (locate-egg/http egg url #!optional version destination tests
 			   proxy-host proxy-port proxy-user-pass)
@@ -402,10 +405,7 @@
 
   (define (read-chunks in)
     (let get-chunks ([data '()])
-      (let* ((szln (read-line in))
-	     ;;XXX workaround for "read-line" dropping the "\n" in certain situations
-	     ;;    (#568)
-	     (size (string->number (string-chomp szln "\r") 16)))
+      (let ((size (string->number (read-line in) 16)))
 	(cond ((not size)
 	       (error "invalid response from server - please try again"))
 	      ((zero? size)

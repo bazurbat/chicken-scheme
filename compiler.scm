@@ -5,7 +5,7 @@
 ;
 ;
 ;--------------------------------------------------------------------------------------------
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -47,7 +47,6 @@
 ; (block)
 ; (block-global {<name>})
 ; (bound-to-procedure {<var>})
-; (c-options {<opt>})
 ; (compile-syntax)
 ; (disable-interrupts)
 ; (emit-import-library {<module> | (<module> <filename>)})
@@ -106,6 +105,7 @@
 ; (##core#let <variable> ({(<variable> <exp>)}) <body>)
 ; (##core#let ({(<variable> <exp>)}) <body>)
 ; (##core#letrec ({(<variable> <exp>)}) <body>)
+; (##core#letrec* ({(<variable> <exp>)}) <body>)
 ; (##core#let-location <symbol> <type> [<init>] <exp>)
 ; (##core#lambda <variable> <body>)
 ; (##core#lambda ({<variable>}+ [. <variable>]) <body>)
@@ -617,7 +617,7 @@
 				    (append aliases e)
 				    se2 dest ldest h ln) ) )  )
 
-			((##core#letrec)
+			((##core#letrec*)
 			 (let ((bindings (cadr x))
 			       (body (cddr x)) )
 			   (walk
@@ -629,6 +629,24 @@
 				       `(##core#set! ,(car b) ,(cadr b))) 
 				     bindings)
 			      (##core#let () ,@body) )
+			    e se dest ldest h ln)))
+
+			((##core#letrec)
+			 (let* ((bindings (cadr x))
+				(vars (unzip1 bindings))
+				(tmps (map gensym vars))
+				(body (cddr x)) )
+			   (walk
+			    `(##core#let
+			      ,(map (lambda (b)
+				      (list (car b) '(##core#undefined))) 
+				    bindings)
+			      (##core#let
+			       ,(map (lambda (t b) (list t (cadr b))) tmps bindings)
+			       ,@(map (lambda (v t)
+					`(##core#set! ,v ,t))
+				      vars tmps)
+			       (##core#let () ,@body) ) )
 			    e se dest ldest h ln)))
 
 			((##core#lambda)
@@ -1446,7 +1464,7 @@
 	(if (null? (cdr spec))
 	    (set! inline-locally #t)
 	    (for-each
-	     (cut mark-variable <> '##compiler#inline 'yes)
+	     (cut mark-variable <> '##compiler#local)
 	     (globalize-all (cdr spec)))))
        ((inline-limit)
 	(check-decl spec 1 1)
@@ -1456,8 +1474,7 @@
 	      (warning 
 	       "invalid argument to `inline-limit' declaration"
 	       spec) ) ) )
-       ((constant			; DEPRECATED
-	 pure)
+       ((pure)
 	(let ((syms (cdr spec)))
 	  (if (every symbol? syms)
 	      (for-each 
@@ -1575,9 +1592,24 @@
   (callback foreign-stub-callback))	       ; boolean
 
 (define (create-foreign-stub rtype sname argtypes argnames body callback cps)
+  ;; try to describe a foreign-lambda type specification
+  ;; eg. (type->symbol '(c-pointer (struct "point"))) => point*
+  (define (type->symbol type-spec)
+    (let loop ([type type-spec])
+      (cond
+       ((null? type) 'a)
+       ((list? type)
+	(case (car type)
+	  ((c-pointer) (string->symbol (conc (loop (cdr type)) "*"))) ;; if pointer, append *
+	  ((const struct) (loop (cdr type))) ;; ignore these
+	  (else (loop (car type)))))
+       ((or (symbol? type) (string? type)) type)
+       (else 'a))))
   (let* ((rtype (##sys#strip-syntax rtype))
 	 (argtypes (##sys#strip-syntax argtypes))
-	 [params (list-tabulate (length argtypes) (lambda (x) (gensym 'a)))]
+	 [params (if argnames
+                     (map gensym argnames)
+                     (map (o gensym type->symbol) argtypes))]
 	 [f-id (gensym 'stub)]
 	 [bufvar (gensym)] 
 	 [rsize (estimate-foreign-result-size rtype)] )
@@ -1656,12 +1688,11 @@
 
 (define (perform-cps-conversion node)
 
-  (define (cps-lambda id returnvar llist subs k)
-    (let ([t1 (or returnvar (gensym 'k))])
+  (define (cps-lambda id llist subs k)
+    (let ([t1 (gensym 'k)])
       (k (make-node
 	  '##core#lambda (list id #t (cons t1 llist) 0)
-	  (list (walk (gensym-f-id)
-                      (car subs)
+	  (list (walk (car subs)
 		      (lambda (r) 
 			(make-node '##core#call (list #t) (list (varnode t1) r)) ) ) ) ) ) ) )
 
@@ -1669,42 +1700,40 @@
      (and (eq? (node-class node) '##core#variable)
           (eq? (car (node-parameters node)) var)))
   
-  (define (walk returnvar n k)
+  (define (walk n k)
     (let ((subs (node-subexpressions n))
 	  (params (node-parameters n)) 
 	  (class (node-class n)) )
       (case (node-class n)
 	((##core#variable quote ##core#undefined ##core#primitive) (k n))
 	((if) (let* ((t1 (gensym 'k))
-		     (t2 (or returnvar (gensym 'r)))
+		     (t2 (gensym 'r))
 		     (k1 (lambda (r) (make-node '##core#call (list #t) (list (varnode t1) r)))) )
 		(make-node 
 		 'let
 		 (list t1)
 		 (list (make-node '##core#lambda (list (gensym-f-id) #f (list t2) 0) 
 				  (list (k (varnode t2))) )
-		       (walk #f (car subs)
+		       (walk (car subs)
 			     (lambda (v)
 			       (make-node 'if '()
 					  (list v
-						(walk #f (cadr subs) k1)
-						(walk #f (caddr subs) k1) ) ) ) ) ) ) ) )
+						(walk (cadr subs) k1)
+						(walk (caddr subs) k1) ) ) ) ) ) ) ) )
 	((let)
 	 (let loop ((vars params) (vals subs))
 	   (if (null? vars)
-	       (walk #f (car vals) k)
-	       (walk (car vars)
-                     (car vals)
+	       (walk (car vals) k)
+	       (walk (car vals)
 		     (lambda (r)
                        (if (node-for-var? r (car vars)) ; Don't generate unneccessary lets
                            (loop (cdr vars) (cdr vals))
                            (make-node 'let
                                       (list (car vars))
                                       (list r (loop (cdr vars) (cdr vals))) )) ) ) ) ) )
-	((lambda ##core#lambda) (cps-lambda (gensym-f-id) returnvar (first params) subs k))
+	((lambda ##core#lambda) (cps-lambda (gensym-f-id) (first params) subs k))
 	((set!) (let ((t1 (gensym 't)))
-		  (walk #f
-                        (car subs)
+		  (walk (car subs)
 			(lambda (r)
 			  (make-node 'let (list t1)
 				     (list (make-node 'set! (list (first params)) (list r))
@@ -1716,24 +1745,23 @@
 	     (cons (apply make-foreign-callback-stub id params) foreign-callback-stubs) )
 	   ;; mark to avoid leaf-routine optimization
 	   (mark-variable id '##compiler#callback-lambda)
-           ;; maybe pass returnvar here?
-	   (cps-lambda id #f (first (node-parameters lam)) (node-subexpressions lam) k) ) )
+	   (cps-lambda id (first (node-parameters lam)) (node-subexpressions lam) k) ) )
 	((##core#inline ##core#inline_allocate ##core#inline_ref ##core#inline_update ##core#inline_loc_ref 
 			##core#inline_loc_update)
 	 (walk-inline-call class params subs k) )
-	((##core#call) (walk-call returnvar (car subs) (cdr subs) params k))
-	((##core#callunit) (walk-call-unit returnvar (first params) k))
+	((##core#call) (walk-call (car subs) (cdr subs) params k))
+	((##core#callunit) (walk-call-unit (first params) k))
 	((##core#the ##core#the/result)
 	 ;; remove "the" nodes, as they are not used after scrutiny
-	 (walk returnvar (car subs) k))
+	 (walk (car subs) k))
 	((##core#typecase)
 	 ;; same here, the last clause is chosen, exp is dropped
-	 (walk returnvar (last subs) k))
+	 (walk (last subs) k))
 	(else (bomb "bad node (cps)")) ) ) )
   
-  (define (walk-call returnvar fn args params k)
+  (define (walk-call fn args params k)
     (let ((t0 (gensym 'k))
-          (t3 (or returnvar (gensym 'r))) )
+          (t3 (gensym 'r)) )
       (make-node
        'let (list t0)
        (list (make-node '##core#lambda (list (gensym-f-id) #f (list t3) 0) 
@@ -1741,13 +1769,13 @@
 	     (walk-arguments
 	      args
 	      (lambda (vars)
-		(walk #f fn
+		(walk fn
 		      (lambda (r) 
 			(make-node '##core#call params (cons* r (varnode t0) vars) ) ) ) ) ) ) ) ) )
   
-  (define (walk-call-unit returnvar unitname k)
+  (define (walk-call-unit unitname k)
     (let ((t0 (gensym 'k))
-	  (t3 (or returnvar (gensym 'r))) )
+	  (t3 (gensym 'r)) )
       (make-node
        'let (list t0)
        (list (make-node '##core#lambda (list (gensym-f-id) #f (list t3) 0) 
@@ -1768,8 +1796,7 @@
              (loop (cdr args) (cons (car args) vars)) )
             (else
              (let ((t1 (gensym 'a)))
-               (walk t1
-                     (car args)
+               (walk (car args)
                      (lambda (r)
                        (if (node-for-var? r t1) ; Don't generate unneccessary lets
                            (loop (cdr args) (cons (varnode t1) vars) )
@@ -1786,7 +1813,7 @@
 			     ##core#inline_loc_ref ##core#inline_loc_update))
 	       (every atomic? (node-subexpressions n)) ) ) ) )
   
-  (walk #f node values) )
+  (walk node values) )
 
 
 ;;; Foreign callback stub type:
@@ -1806,8 +1833,7 @@
 (define (analyze-expression node)
   ;; Avoid crowded hash tables by using previous run's size as heuristic
   (let* ((db-size (fx* (fxmax current-analysis-database-size 1) 3))
-         (db (make-vector db-size '()))
-	 (explicitly-consed '()) )
+         (db (make-vector db-size '())))
 
     (define (grow n)
       (set! current-program-size (+ current-program-size n)) )
@@ -1897,7 +1923,7 @@
 		  ;; decorate ##core#call node with size
 		  (set-car! (cdddr (node-parameters n)) (- current-program-size size0)) ) ) ) ) )
 	  
-	  ((set! ##core#set!) 
+	  ((set! ##core#set!) 		;XXX ##core#set! still used?
 	   (let* ((var (first params))
 		  (val (car subs)) )
 	     (when (and first-analysis (not bootstrap-mode))
@@ -1961,13 +1987,6 @@
 
     (define (quick-put! plist prop val)
       (set-cdr! plist (alist-cons prop val (cdr plist))) )
-
-    ;; Return true if <id> directly or indirectly contains any of <other-ids>:
-    (define (contains? id other-ids)
-      (or (memq id other-ids)
-	  (let ((clist (get db id 'contains)))
-	    (and clist
-		 (any (lambda (id2) (contains? id2 other-ids)) clist) ) ) ) )
 
     ;; Walk toplevel expression-node:
     (debugging 'p "analysis traversal phase...")
@@ -2123,7 +2142,6 @@
 		      (cond [(and has (not (rassoc sym callback-names eq?)))
 			     (put! db (first lparams) 'has-unused-parameters #t) ]
 			    [rest
-			     (set! explicitly-consed (cons rest explicitly-consed))
 			     (put! db (first lparams) 'explicit-rest #t) ] ) ) ) ) ) ) ) )
 
 	 ;; Make 'removable, if it has no references and is not assigned to, and if it 
@@ -2134,7 +2152,8 @@
 			     (if (eq? '##core#variable (node-class value))
 				 (let ((varname (first (node-parameters value))))
 				   (or (not (get db varname 'global))
-				       (variable-mark varname '##core#always-bound)))
+				       (variable-mark varname '##core#always-bound)
+				       (intrinsic? varname)))
 				 (not (expression-has-side-effects? value db)) ))
 			undefined) )
 	   (quick-put! plist 'removable #t) )
@@ -2150,14 +2169,15 @@
 	   (when (eq? '##core#variable (node-class value))
 	     (let* ([name (first (node-parameters value))]
 		    [nrefs (get db name 'references)] )
-	       (when (or (and (not (get db name 'unknown)) (get db name 'value))
-			 (and (not (get db name 'captured))
-			      nrefs
-			      (= 1 (length nrefs))
-			      (not assigned)
-			      (not (get db name 'assigned)) 
-			      (or (not (variable-visible? name))
-				  (not (get db name 'global))) ) )
+	       (when (and (not captured)
+			  (or (and (not (get db name 'unknown)) (get db name 'value))
+			      (and (not (get db name 'captured))
+				   nrefs
+				   (= 1 (length nrefs))
+				   (not assigned)
+				   (not (get db name 'assigned)) 
+				   (or (not (variable-visible? name))
+				       (not (get db name 'global))) ) ))
 		 (quick-put! plist 'replacable name) 
 		 (put! db name 'replacing #t) ) ) ) )
 

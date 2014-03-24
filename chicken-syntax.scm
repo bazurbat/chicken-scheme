@@ -1,6 +1,6 @@
 ;;;; chicken-syntax.scm - non-standard syntax extensions
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -35,9 +35,7 @@
   (no-bound-checks)
   (no-procedure-checks))
 
-(##sys#provide
- 'chicken-more-macros 			; historical, remove later
- 'chicken-syntax)
+(##sys#provide 'chicken-syntax)
 
 
 ;;; Non-standard macros:
@@ -173,17 +171,19 @@
       (##sys#check-syntax 'assert form '#(_ 1))
       (let* ((exp (cadr form))
 	     (msg-and-args (cddr form))
-	     (msg (optional msg-and-args "assertion failed")))
+	     (msg (optional msg-and-args "assertion failed"))
+	     (tmp (r 'tmp)))
 	(when (string? msg)
 	  (and-let* ((ln (get-line-number form)))
 	    (set! msg (string-append "(" ln ") " msg))))
-	`(##core#if (##core#check ,exp)
-		    (##core#undefined)
-		    (##sys#error 
-		     ,msg 
-		     ,@(if (fx> (length msg-and-args) 1)
-			   (cdr msg-and-args)
-			   `((##core#quote ,(##sys#strip-syntax exp)))))))))))
+	`(##core#let ((,tmp ,exp))
+	   (##core#if (##core#check ,tmp)
+		      ,tmp
+		      (##sys#error
+		       ,msg
+		       ,@(if (pair? msg-and-args)
+			     (cdr msg-and-args)
+			     `((##core#quote ,(##sys#strip-syntax exp))))))))))))
 
 (##sys#extend-macro-environment
  'ensure
@@ -350,7 +350,10 @@
    (##sys#er-transformer
     (lambda (form r c)
       (##sys#check-syntax 'define-values form '(_ #(variable 0) _))
-      (for-each (cut ##sys#register-export <> (##sys#current-module)) (cadr form))
+      (for-each (lambda (nm)
+                  (let ((name (##sys#get nm '##core#macro-alias nm)))
+                    (##sys#register-export name (##sys#current-module))))
+                (cadr form))
       `(,(r 'set!-values) ,@(cdr form))))))
 
 (##sys#extend-macro-environment
@@ -421,6 +424,7 @@
 	    `(,%let-values (,(car vbindings))
 			   ,(fold (cdr vbindings))) ) ) ))))
 
+;;XXX do we need letrec*-values ?
 (##sys#extend-macro-environment
  'letrec-values '()
  (##sys#er-transformer
@@ -488,6 +492,7 @@
 	      (cond [(not (pair? b)) `(##core#if ,b ,(fold bs2) #f)]
 		    [(null? (cdr b)) `(##core#if ,(car b) ,(fold bs2) #f)]
 		    [else
+		     (##sys#check-syntax 'and-let* b '(symbol _))
 		     (let ((var (car b)))
 		       `(##core#let ((,var ,(cadr b)))
 			 (##core#if ,var ,(fold bs2) #f) ) ) ] ) ) ) ) ) ) ) )
@@ -879,23 +884,26 @@
 	  (%memv (r 'memv))
 	  (%else (r 'else)))
       (define (parse-clause c)
-	(let* ([var (and (symbol? (car c)) (car c))]
-	       [kinds (if var (cadr c) (car c))]
-	       [body (if var (cddr c) (cdr c))] )
+	(let* ((var (and (symbol? (car c)) (car c)))
+	       (kinds (if var (cadr c) (car c)))
+	       (body (if var
+			 `(##core#let ((,var ,exvar)) ,@(cddr c))
+			 `(##core#let () ,@(cdr c)))))
 	  (if (null? kinds)
-	      `(,%else 
-		,(if var
-		     `(##core#let ([,var ,exvar]) ,@body)
-		     `(##core#let () ,@body) ) )
-	      `((,%and ,kvar ,@(map (lambda (k) `(,%memv (##core#quote ,k) ,kvar)) kinds))
-		,(if var
-		     `(##core#let ([,var ,exvar]) ,@body)
-		     `(##core#let () ,@body) ) ) ) ) )
+	      `(,%else ,body)
+	      `((,%and ,kvar ,@(map (lambda (k)
+				      `(,%memv (##core#quote ,k) ,kvar)) kinds))
+		,body ) ) ) )
       `(,(r 'handle-exceptions) ,exvar
-	(##core#let ([,kvar (,%and (##sys#structure? ,exvar (##core#quote condition) )
-				   (##sys#slot ,exvar 1))])
-		    (,(r 'cond) ,@(map parse-clause (cddr form))
-		     (,%else (##sys#signal ,exvar)) ) )
+	(##core#let ((,kvar (,%and (##sys#structure? ,exvar
+						     (##core#quote condition))
+				   (##sys#slot ,exvar 1))))
+		    ,(let ((clauses (map parse-clause (cddr form))))
+		       `(,(r 'cond)
+			 ,@clauses
+			 ,@(if (assq %else clauses)
+			       `()   ; Don't generate two else clauses
+			       `((,%else (##sys#signal ,exvar)))) )) )
 	,(cadr form))))))
 
 
@@ -1054,11 +1062,11 @@
     (##sys#check-syntax 'rec form '(_ _ . _))
     (let ((head (cadr form)))
       (if (pair? head)
-	  `(##core#letrec ((,(car head) 
-			    (##core#lambda ,(cdr head)
-					   ,@(cddr form))))
-			  ,(car head))
-	  `(##core#letrec ((,head ,@(cddr form))) ,head))))))
+	  `(##core#letrec* ((,(car head) 
+			     (##core#lambda ,(cdr head)
+					    ,@(cddr form))))
+			   ,(car head))
+	  `(##core#letrec* ((,head ,@(cddr form))) ,head))))))
 
 
 ;;; Definitions available at macroexpansion-time:
@@ -1081,6 +1089,13 @@
     (##sys#check-syntax 'use x '(_ . #(_ 0)))
     `(##core#require-extension ,(cdr x) #t))))
 
+(##sys#extend-macro-environment
+ 'use-for-syntax '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'use-for-syntax x '(_ . #(_ 0)))
+    `(,(r 'require-extension-for-syntax) ,@(cdr x)))))
+
 
 ;;; compiler syntax
 
@@ -1089,9 +1104,6 @@
  (syntax-rules ()
    ((_ name)
     (##core#define-compiler-syntax name #f))
-   ((_ (name . llist) body ...)		; DEPRECATED
-    (define-compiler-syntax name
-      (##sys#er-transformer (lambda llist body ...) 'name)))
    ((_ name transformer)
     (##core#define-compiler-syntax name transformer))))
 

@@ -1,6 +1,6 @@
 ;;;; chicken-profile.scm - Formatted display of profile outputs - felix -*- Scheme -*-
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -92,8 +92,7 @@ EOF
 	      (if (and n (> n 0)) n (error "invalid argument to option" arg))))
 	  (cond 
 	   [(member arg '("-h" "-help" "--help")) (print-usage)]
-	   [(member arg '("-v" 		; DEPRECATED
-			  "-version"))
+	   [(string=? arg "-version")
 	    (print "chicken-profile - Version " (chicken-version))
 	    (exit) ]
 	   [(string=? arg "-release")

@@ -37,15 +37,12 @@ repository, then build the libraries and necessary development files:
      HOSTSYSTEM=arm-none-linux-gnueabi \
      DESTDIR=$HOME/target \
      TARGET_FEATURES="-no-feature x86 -feature arm" \
-     libs install-dev
+     install
 
-This will build the CHICKEN libraries and install them in {{~/target}},
-which we use as a temporary place to store the target files. A few things
-to note:
+This will build CHICKEN and install it in {{~/target}}, which we use
+as a temporary place to store the target files. A few things to note:
 
-* {{ARCH}} is empty, since we don't want the build process to detect the
-architecture (since the target-architecture is likely to be different).
-
+* {{ARCH}} is empty, since we don't want the build process to detect the architecture (since the target-architecture is likely to be different) and there is no {{apply-hack.<ARCH>.S}} file corresponding to arm at the moment.  If you know the right string to represent target architecture (see {{C_PLATFORM_TYPE}} in {{chicken.h}} for the supported options), you can set {{ARCH}} with that value.  Notice, however, that the apply-hack is not supported for all those architectures (at the moment, only for {{ppc.darwin}}, {{ppc.sysv}}, {{x86}} and {{x86-64}}).
 * {{PREFIX}} gives the prefix ''on the target system'', under which the
 libraries will finally be installed. In this case it will be {{/usr/lib}}.
 
@@ -59,7 +56,7 @@ If your cross compiler does not follow this convention, pass {{C_COMPILER}} and
 {{ar(1)}} tool, respectively.
 
 * {{DESTDIR}} holds the directory where the compiled library files will temporarily
-installeds into.
+be installed into.
 
 * {{TARGET_FEATURES}} contains extra options to be passed to the target-specific
 Scheme translator; in this case we disable and enable features so that code like
@@ -75,24 +72,42 @@ the following will do the right thing when cross-compiled:
 from an official release tarball, you will need a {{chicken}}
 executable to compile the Scheme sources of the runtime system. In
 this case pass yet another variable to the {{make(1)}} invocation:
-{{CHICKEN=<where the "chicken" executable is}}.
+{{CHICKEN=<where the "chicken" executable is>}}.
 
 * You can also put all those variables into a file, say {{config.mk}}
 and run {{make CONFIG=config.mk}}.
 
 You should now have these files on {{~/target}}:
 
-  `-- usr
-    |-- include
-    |   |-- chicken-config.h
-    |   `-- chicken.h
-    |-- lib
-    |   |-- chicken
-    |   |   `-- 6
-    |   |       `-- types.db
-    |   |-- libchicken.a
-    |   `-- libchicken.so
-    `-- share
+ |-- bin
+ |   |-- chicken
+ |   |-- chicken-bug
+ |   |-- chicken-install
+ |   |-- chicken-profile
+ |   |-- chicken-status
+ |   |-- chicken-uninstall
+ |   |-- csc
+ |   `-- csi
+ |-- include
+ |   |-- chicken-config.h
+ |   `-- chicken.h
+ |-- lib
+ |   |-- chicken
+ |   |   `-- 6
+ |   |       :
+ |   |
+ |   |-- libchicken.a
+ |   |-- libchicken.so -> libchicken.so.6
+ |   `-- libchicken.so.6
+ `-- share
+     |-- chicken
+     |   |-- doc
+     :   ;   :
+     |   |
+     |   `-- setup.defaults
+     `-- man
+         `-- man1
+             :
 
 You should now transfer {{libchicken.so}} to the target system, and place
 it in {{/usr}}.

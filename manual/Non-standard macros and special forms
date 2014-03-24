@@ -43,8 +43,6 @@ defined:
 * {{(srfi NUMBER ...)}} is required for SRFI-55 compatibility and is fully implemented
 * {{(version ID NUMBER)}} is equivalent to {{ID}}, but checks at compile-time whether the extension named {{ID}} is installed and whether its version is equal or higher than {{NUMBER}}. {{NUMBER}} may be a string or a number, the comparison is done lexicographically (using {{string>=?}}).
 
-See also: {{set-extension-specifier!}}
-
 ==== require-extension
 
 <macro>(require-extension ID ...)</macro>
@@ -61,6 +59,24 @@ This implementation of {{require-extension}} is compliant with [[http://srfi.sch
 <macro>(use ID ...)</macro>
 
 {{use}} is just a shorter alias for {{require-extension}}.
+
+==== require-extension-for-syntax
+
+<macro>(require-extension-for-syntax ID ...)</macro>
+
+An abbreviation for the idiom:
+
+<enscript highlight=scheme>
+(begin-for-syntax (require-library ID ...))  ; load extension at expansion-time
+(import-for-syntax ID ...)                   ; import extension for use in syntax-transformers
+</enscript>
+
+
+==== use-for-syntax
+
+<macro>(use-for-syntax ID ...)</macro>
+
+{{use}} is just a shorter alias for {{require-extension-for-syntax}} (which is quite a mouthful).
 
 
 === Binding forms for optional arguments
@@ -156,6 +172,13 @@ executed normally and the result of the last expression is the
 result of the {{and-let*}} form. See also the documentation for
 [[http://srfi.schemers.org/srfi-2/srfi-2.html|SRFI-2]].
 
+==== letrec*
+
+<macro>(letrec* ((VARIABLE EXPRESSION) ...) BODY ...)</macro>
+
+Implements R6RS/R7RS {{letrec*}}. {{letrec*}} is similar to {{letrec}} but
+binds the variables sequentially and is to {{letrec}} what {{let*}} is to {{let}}.
+
 ==== rec
 
 <macro>(rec NAME EXPRESSION)</macro><br>
@@ -237,6 +260,7 @@ expression that evaluates to a parameter procedure.
 
 <macro>(receive (NAME ...) VALUEEXP BODY ...)</macro><br>
 <macro>(receive (NAME1 ... NAMEn . NAMEn+1) VALUEEXP BODY ...)</macro><br>
+<macro>(receive NAME VALUEEXP BODY ...)</macro><br>
 <macro>(receive VALUEEXP)</macro>
 
 [[http://srfi.schemers.org/srfi-8/srfi-8.html|SRFI-8]].
@@ -244,6 +268,7 @@ Syntactic sugar for {{call-with-values}}. Binds variables
 to the result values of {{VALUEEXP}} and evaluates {{BODY ...}}.
 
 {{(receive VALUEEXP)}} is equivalent to {{(receive _ VALUEEXP _)}}.
+This shortened form is not described by SRFI-8.
 
 ==== set!-values
 
@@ -515,6 +540,14 @@ In addition the following feature-identifiers may exist: {{cross-chicken}},
 
 For further information, see the documentation for
 [[http://srfi.schemers.org/srfi-0/srfi-0.html|SRFI-0]].
+
+=== {{delay-force}}
+
+CHICKEN supports the R7RS {{delay-force}} syntax which allows for
+iterative lazy algorithms to be expressed in bounded space.
+
+For more information regarding this behaviour, see the
+[[http://srfi.schemers.org/srfi-45/srfi-45.html|SRFI-45]] rationale.
 
 ==== ensure
 

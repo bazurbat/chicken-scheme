@@ -2,9 +2,7 @@ This document describes Chicken's R5RS support, with a heavy emphasis
 on syntax and procedures.  It is based directly on the
 ''Revised^5 Report on the Algorithmic Language Scheme''.
 [[toc:]]
-== Overview of Scheme
-== Lexical conventions
-== Basic concepts
+
 == Expressions
 
 Expression types are categorized as primitive or derived. Primitive
@@ -12,7 +10,9 @@ expression types include variables and procedure calls. Derived
 expression types are not semantically primitive, but can instead be
 defined as macros. With the exception of quasiquote, whose macro
 definition is complex, the derived expressions are classified as
-library features. Suitable definitions are given in section 7.3.
+library features.  The distinction which R5RS makes between primitive
+and derived is unimportant and does not necessarily reflect how it's
+implemented in CHICKEN itself.
 
 === Primitive expression types
 
@@ -20,10 +20,10 @@ library features. Suitable definitions are given in section 7.3.
 
 <macro><variable></macro><br>
 
-An expression consisting of a variable (section 3.1) is a variable
-reference. The value of the variable reference is the value stored in
-the location to which the variable is bound. It is an error to
-reference an unbound variable.
+An expression consisting of a variable is a variable reference. The
+value of the variable reference is the value stored in the location to
+which the variable is bound. It is an error to reference an unbound
+variable.
 
  (define x 28)
  x           ===>  28
@@ -35,8 +35,8 @@ reference an unbound variable.
 <macro><constant></macro><br>
 
 (quote <datum>) evaluates to <datum>. <Datum> may be any external
-representation of a Scheme object (see section 3.3). This notation is
-used to include literal constants in Scheme code.
+representation of a Scheme object. This notation is used to include
+literal constants in Scheme code.
 
  (quote a)                    ===>  a
  (quote #(a b c))             ===>  #(a b c)
@@ -62,9 +62,11 @@ constants evaluate "to themselves"; they need not be quoted.
  '#t                ===>  #t
  #t                 ===>  #t
 
-As noted in section 3.4, it is an error to alter a constant (i.e. the
-value of a literal expression) using a mutation procedure like set-car!
-or string-set!.
+It is an error to alter a constant (i.e. the value of a literal
+expression) using a mutation procedure like set-car! or string-set!.
+In the current implementation of CHICKEN, identical constants don't
+share memory and it is possible to mutate them, but this may change in
+the future.
 
 ==== Procedure calls
 
@@ -81,13 +83,10 @@ arguments.
 
 A number of procedures are available as the values of variables in the
 initial environment; for example, the addition and multiplication
-procedures in the above examples are the values of the variables + and *.
-New procedures are created by evaluating lambda expressions (see
-section 4.1.4). Procedure calls may return any number of values (see
-values in section 6.4). With the exception of values the procedures
-available in the initial environment return one value or, for
-procedures such as apply, pass on the values returned by a call to one
-of their arguments.
+procedures in the above examples are the values of the variables + and
+*.  New procedures are created by evaluating lambda
+expressions. Procedure calls may return any number of values (see the
+{{values}} procedure [[#control-features|below]]).
 
 Procedure calls are also called combinations.
 
@@ -164,7 +163,7 @@ It is an error for a <variable> to appear more than once in <formals>.
 
 Each procedure created as the result of evaluating a lambda expression
 is (conceptually) tagged with a storage location, in order to make eqv?
-and eq? work on procedures (see section 6.1).
+and eq? work on procedures.
 
 ==== Conditionals
 
@@ -175,11 +174,12 @@ Syntax: <Test>, <consequent>, and <alternate> may be arbitrary
 expressions.
 
 Semantics: An if expression is evaluated as follows: first, <test> is
-evaluated. If it yields a true value (see section 6.3.1), then
-<consequent> is evaluated and its value(s) is(are) returned. Otherwise
-<alternate> is evaluated and its value(s) is(are) returned. If <test>
-yields a false value and no <alternate> is specified, then the result
-of the expression is unspecified.
+evaluated. If it yields a true value (see [[#booleans|the section
+about booleans]] below), then <consequent> is evaluated and its
+value(s) is(are) returned. Otherwise <alternate> is evaluated and its
+value(s) is(are) returned. If <test> yields a false value and no
+<alternate> is specified, then the result of the expression is
+unspecified.
 
  (if (> 3 2) 'yes 'no)                   ===>  yes
  (if (> 2 3) 'yes 'no)                   ===>  no
@@ -203,10 +203,11 @@ result of the set! expression is unspecified.
 
 === Derived expression types
 
-The constructs in this section are hygienic, as discussed in section 
-4.3. For reference purposes, section 7.3 gives macro definitions that
-will convert most of the constructs described in this section into the
-primitive constructs described in the previous section.
+The constructs in this section are hygienic.  For reference purposes,
+these macro definitions will convert most of the constructs described
+in this section into the primitive constructs described in the
+previous section.  This does not necessarily mean that's exactly how
+it's implemented in CHICKEN.
 
 ==== Conditionals
 
@@ -227,18 +228,19 @@ The last <clause> may be an "else clause," which has the form
 
 Semantics: A cond expression is evaluated by evaluating the <test>
 expressions of successive <clause>s in order until one of them
-evaluates to a true value (see section 6.3.1). When a <test> evaluates
-to a true value, then the remaining <expression>s in its <clause> are
-evaluated in order, and the result(s) of the last <expression> in the
-<clause> is(are) returned as the result(s) of the entire cond
-expression. If the selected <clause> contains only the <test> and no
-<expression>s, then the value of the <test> is returned as the result.
-If the selected <clause> uses the => alternate form, then the
-<expression> is evaluated. Its value must be a procedure that accepts
-one argument; this procedure is then called on the value of the <test>
-and the value(s) returned by this procedure is(are) returned by the
-cond expression. If all <test>s evaluate to false values, and there is
-no else clause, then the result of the conditional expression is
+evaluates to a true value (see [[#booleans|the section about
+booleans]] below). When a <test> evaluates to a true value, then the
+remaining <expression>s in its <clause> are evaluated in order, and
+the result(s) of the last <expression> in the <clause> is(are)
+returned as the result(s) of the entire cond expression. If the
+selected <clause> contains only the <test> and no <expression>s, then
+the value of the <test> is returned as the result.  If the selected
+<clause> uses the => alternate form, then the <expression> is
+evaluated. Its value must be a procedure that accepts one argument;
+this procedure is then called on the value of the <test> and the
+value(s) returned by this procedure is(are) returned by the cond
+expression. If all <test>s evaluate to false values, and there is no
+else clause, then the result of the conditional expression is
 unspecified; if there is an else clause, then its <expression>s are
 evaluated, and the value(s) of the last one is(are) returned.
 
@@ -256,19 +258,29 @@ Syntax: <Key> may be any expression. Each <clause> should have the form
 
  ((<datum[1]> ...) <expression[1]> <expression[2]> ...),
 
-where each <datum> is an external representation of some object. All
-the <datum>s must be distinct. The last <clause> may be an "else
-clause," which has the form
+where each <datum> is an external representation of some object.
+Alternatively, as per R7RS, a <clause> may be of the form
 
- (else <expression[1]> <expression[2]> ...).
+ ((<datum[1]> ...) => <expression>).
+
+All the <datum>s must be distinct. The last <clause> may be an
+"else clause," which has one of the following two forms:
+
+ (else <expression[1]> <expression[2]> ...)
+ (else => <expression>).      ; R7RS extension
 
 Semantics: A case expression is evaluated as follows. <Key> is
 evaluated and its result is compared against each <datum>. If the
-result of evaluating <key> is equivalent (in the sense of eqv?; see
-section 6.1) to a <datum>, then the expressions in the corresponding
-<clause> are evaluated from left to right and the result(s) of the last
-expression in the <clause> is(are) returned as the result(s) of the
-case expression. If the result of evaluating <key> is different from
+result of evaluating <key> is equivalent (in the sense of {{eqv?}};
+see [[#equivalence-predicates|below]]) to a <datum>, then the
+expressions in the corresponding <clause> are evaluated from left to
+right and the result(s) of the last expression in the <clause> is(are)
+returned as the result(s) of the case expression. If the selected
+<clause> uses the => alternate form (an R7RS extension), then the
+<expression> is evaluated. Its value must be a procedure that accepts
+one argument; this procedure is then called on the value of the <key>
+and the value(s) returned by this procedure is(are) returned by the
+case expression.  If the result of evaluating <key> is different from
 every <datum>, then if there is an else clause its expressions are
 evaluated and the result(s) of the last is(are) the result(s) of the
 case expression; otherwise the result of the case expression is
@@ -288,11 +300,11 @@ unspecified.
 <macro>(and <test[1]> ...)</macro><br>
 
 The <test> expressions are evaluated from left to right, and the value
-of the first expression that evaluates to a false value (see section 
-6.3.1) is returned. Any remaining expressions are not evaluated. If all
-the expressions evaluate to true values, the value of the last
-expression is returned. If there are no expressions then #t is
-returned.
+of the first expression that evaluates to a false value (see
+[[#booleans|the section about booleans]]) is returned. Any remaining
+expressions are not evaluated. If all the expressions evaluate to true
+values, the value of the last expression is returned. If there are no
+expressions then #t is returned.
 
  (and (= 2 2) (> 2 1))                   ===>  #t
  (and (= 2 2) (< 2 1))                   ===>  #f
@@ -302,10 +314,11 @@ returned.
 <macro>(or <test[1]> ...)</macro><br>
 
 The <test> expressions are evaluated from left to right, and the value
-of the first expression that evaluates to a true value (see section 
-6.3.1) is returned. Any remaining expressions are not evaluated. If all
-expressions evaluate to false values, the value of the last expression
-is returned. If there are no expressions then #f is returned.
+of the first expression that evaluates to a true value (see
+[[#booleans|the section about booleans]]) is returned. Any remaining
+expressions are not evaluated. If all expressions evaluate to false
+values, the value of the last expression is returned. If there are no
+expressions then #f is returned.
 
  (or (= 2 2) (> 2 1))                    ===>  #t
  (or (= 2 2) (< 2 1))                    ===>  #t
@@ -348,7 +361,7 @@ returned. Each binding of a <variable> has <body> as its region.
          (z (+ x y)))
      (* z x)))                           ===>  35
 
-See also named let, section 4.2.4.
+See also "named let", [[#iteration|below]].
 
 <macro>(let* <bindings> <body>)</macro><br>
 
@@ -439,12 +452,12 @@ evaluated (in some unspecified order), the <variable>s are bound to
 fresh locations, the results of the <init> expressions are stored in
 the bindings of the <variable>s, and then the iteration phase begins.
 
-Each iteration begins by evaluating <test>; if the result is false (see
-section 6.3.1), then the <command> expressions are evaluated in order
-for effect, the <step> expressions are evaluated in some unspecified
-order, the <variable>s are bound to fresh locations, the results of the
-<step>s are stored in the bindings of the <variable>s, and the next
-iteration begins.
+Each iteration begins by evaluating <test>; if the result is false
+(see [[#booleans|the section about booleans]]), then the <command>
+expressions are evaluated in order for effect, the <step> expressions
+are evaluated in some unspecified order, the <variable>s are bound to
+fresh locations, the results of the <step>s are stored in the bindings
+of the <variable>s, and the next iteration begins.
 
 If <test> evaluates to a true value, then the <expression>s are
 evaluated from left to right and the value(s) of the last <expression>
@@ -498,14 +511,43 @@ execution of <body> may be repeated by invoking the procedure named by
 <macro>(delay <expression>)</macro><br>
 
 The delay construct is used together with the procedure force to
-implement lazy evaluation or call by need. (delay <expression>) returns
-an object called a promise which at some point in the future may be
-asked (by the force procedure) to evaluate <expression>, and deliver
-the resulting value. The effect of <expression> returning multiple
-values is unspecified.
+implement lazy evaluation or call by need. {{(delay <expression>)}}
+returns an object called a promise which at some point in the future
+may be asked (by the force procedure) to evaluate {{<expression>}},
+and deliver the resulting value. The {{<expression>}} may return
+multiple values, which will be correctly memoized and returned by
+subsequent calls to {{force}}.  This is a CHICKEN extension to R5RS.
 
-See the description of force (section 6.4) for a more complete
-description of delay.
+See the description of {{force}} (under [[#control-features|Control
+features]], below) for a more complete description of {{delay}}.
+
+<macro>(delay-force <expression>)</macro><br>
+
+The expression {{(delay-force expression)}} is conceptually similar to
+{{(delay (force expression))}}, with the difference that forcing the
+result of {{delay-force}} will in effect result in a tail call to
+{{(force expression)}}, while forcing the result of
+{{(delay (force expression))}} might not.
+
+Thus iterative lazy algorithms that might result in a long series of
+chains of delay and force can be rewritten using delay-force to
+prevent consuming unbounded space during evaluation.
+
+The {{delay-force}} macro is a CHICKEN extension to R5RS, taken from
+R7RS.
+
+See the description of force (under [[#control-features|Control
+features]], below) for a more complete description of delayed
+evaluation.
+
+<procedure>(make-promise obj)</procedure>
+
+The make-promise procedure returns a promise which, when forced, will
+return {{obj}} . It is similar to {{delay}}, but does not delay its
+argument: it is a procedure rather than syntax. If {{obj}} is already
+a promise, it is returned.
+
+This procedure is a CHICKEN extension to R5RS, taken from R7RS.
 
 ==== Quasiquotation
 
@@ -599,7 +641,8 @@ transparent" and thus preserve Scheme's lexical scoping:
     (variable or keyword), the identifier will in effect be renamed
     throughout its scope to avoid conflicts with other identifiers.
     Note that a define at top level may or may not introduce a binding;
-    see section 5.2.
+    this depends on whether the binding already existed before (in which
+    case its value will be overridden).
 
 *   If a macro transformer inserts a free reference to an identifier,
     the reference refers to the binding that was visible where the
@@ -611,7 +654,7 @@ transparent" and thus preserve Scheme's lexical scoping:
 Let-syntax and letrec-syntax are analogous to let and letrec, but they
 bind syntactic keywords to macro transformers instead of binding
 variables to locations that contain values. Syntactic keywords may also
-be bound at top level; see section 5.3.
+be bound at top level.
 
 <macro>(let-syntax <bindings> <body>)</macro><br>
 
@@ -797,8 +840,8 @@ instance of syntax-rules appears. If a literal identifier is inserted
 as a bound identifier then it is in effect renamed to prevent
 inadvertent captures of free identifiers.
 
-As an example, if let and cond are defined as in section 7.3 then they
-are hygienic (as required) and the following is not an error.
+As an example, if let and cond are defined as usual, then they are
+hygienic (as required) and the following is not an error.
 
  (let ((=> #f))
    (cond (#t => 'ok)))                   ===> ok
@@ -834,11 +877,11 @@ can easily be written in terms of other built-in procedures are
 identified as "library procedures".
 
 A program may use a top-level definition to bind any variable. It may
-subsequently alter any such binding by an assignment (see 4.1.6). These
-operations do not modify the behavior of Scheme's built-in procedures.
-Altering any top-level binding that has not been introduced by a
-definition has an unspecified effect on the behavior of the built-in
-procedures.
+subsequently alter any such binding by an assignment (see
+[[#assignments|assignments]], above). These operations do
+not modify the behavior of Scheme's built-in procedures. Altering any
+top-level binding that has not been introduced by a definition has an
+unspecified effect on the behavior of the built-in procedures.
 
 === Equivalence predicates
 
@@ -867,28 +910,29 @@ The eqv? procedure returns #t if:
               (symbol->string obj2))
                 ===>  #t
 
-Note:  This assumes that neither obj[1] nor obj[2] is an
-"uninterned symbol" as alluded to in section 6.3.3. This
+Note: This assumes that neither obj[1] nor obj[2] is an "uninterned
+symbol" as alluded to in the section on [[#symbols|symbols]]. This
 report does not presume to specify the behavior of eqv? on
 implementation-dependent extensions.
 
 *   obj[1] and obj[2] are both numbers, are numerically equal (see =,
-    section 6.2), and are either both exact or both inexact.
+    under [[#numerical-operations|numerical operations]]), and are
+    either both exact or both inexact.
 
 *   obj[1] and obj[2] are both characters and are the same character
-    according to the char=? procedure (section 6.3.4).
+    according to the char=? procedure (see "[[#characters|characters]]").
 
 *   both obj[1] and obj[2] are the empty list.
 
 *   obj[1] and obj[2] are pairs, vectors, or strings that denote the
-    same locations in the store (section 3.4).
+    same locations in the store.
 
 *   obj[1] and obj[2] are procedures whose location tags are equal
-    (section 4.1.4).
+    (see "[[#procedures|procedures]]").
 
 The eqv? procedure returns #f if:
 
-*   obj[1] and obj[2] are of different types (section 3.2).
+*   obj[1] and obj[2] are of different types.
 
 *   one of obj[1] and obj[2] is #t but the other is #f.
 
@@ -1123,7 +1167,7 @@ Rational operations such as + should always produce exact results when
 given exact arguments. If the operation is unable to produce an exact
 result, then it may either report the violation of an implementation
 restriction or it may silently coerce its result to an inexact value.
-See section 6.2.3.
+See [[#implementation-restrictions|the next section]].
 
 With the exception of inexact->exact, the operations described in this
 section must generally return inexact results when given any inexact
@@ -1135,11 +1179,12 @@ inexact.
 
 ==== Implementation restrictions
 
-Implementations of Scheme are not required to implement the whole tower
-of subtypes given in section 6.2.1, but they must implement a coherent
-subset consistent with both the purposes of the implementation and the
-spirit of the Scheme language. For example, an implementation in which
-all numbers are real may still be quite useful.
+Implementations of Scheme are not required to implement the whole
+tower of subtypes given under "[[#numerical-types|Numerical types]]",
+but they must implement a coherent subset consistent with both the
+purposes of the implementation and the spirit of the Scheme
+language. For example, an implementation in which all numbers are real
+may still be quite useful.
 
 Implementations may also support only a limited range of numbers of any
 type, subject to the requirements of this section. The supported range
@@ -1216,9 +1261,9 @@ by an inexact number.
 
 ==== Syntax of numerical constants
 
-The syntax of the written representations for numbers is described
-formally in section 7.1.1. Note that case is not significant in
-numerical constants.
+For a complete formal description of the syntax of the written
+representations for numbers, see the R5RS report. Note that case is
+not significant in numerical constants.
 
 A number may be written in binary, octal, decimal, or hexadecimal by
 the use of a radix prefix. The radix prefixes are #b (binary), #o
@@ -1253,9 +1298,20 @@ the user.
 
 ==== Numerical operations
 
-The reader is referred to section 1.3.3 for a summary of the naming
-conventions used to specify restrictions on the types of arguments to
-numerical routines. The examples used in this section assume that any
+The numerical routines described below have argument restrictions,
+which are encoded in the naming conventions of the arguments as
+given in the procedure's signature.  The conventions are as follows:
+
+; {{obj}} : any object
+; {{list, list1, ... listj, ...	list : (see "[[#pairs-and-lists|Pairs and lists]]" below)
+; {{z, z1, ... zj, ...}} : complex number (currently not supported by CHICKEN core, see the "[[/egg/numbers|numbers]]" egg)
+; {{x, x1, ... xj, ...}} : real number
+; {{y, y1, ... yj, ...}} : real number
+; {{q, q1, ... qj, ...}} : rational number (NOTE: fractional numbers are not supported by CHICKEN core, see the "[[/egg/numbers|numbers]]" egg)
+; {{n, n1, ... nj, ...}} : integer
+; {{k, k1, ... kj, ...}} : exact non-negative integer
+
+The examples used in this section assume that any
 numerical constant written using an exact notation is indeed
 represented as an exact number. Some examples also assume that certain
 numerical constants written using an inexact notation can be
@@ -1598,7 +1654,8 @@ violation of an implementation restriction may be reported.
 
 These procedures implement the natural one-to-one correspondence
 between exact and inexact integers throughout an
-implementation-dependent range. See section 6.2.3.
+implementation-dependent range.
+See "[[#implementation-restrictions|Implementation restrictions]]".
 
 ==== Numerical input and output
 
@@ -1800,9 +1857,9 @@ denote two-element lists whose first elements are the symbols quote,
 quasiquote, unquote, and unquote-splicing, respectively. The second
 element in each case is <datum>. This convention is supported so that
 arbitrary Scheme programs may be represented as lists. That is,
-according to Scheme's grammar, every <expression> is also a <datum>
-(see section 7.1.2). Among other things, this permits the use of the
-read procedure to parse Scheme programs. See section 3.3.
+according to Scheme's grammar, every <expression> is also a <datum>.
+Among other things, this permits the use of the read procedure to
+parse Scheme programs.
 
 <procedure>(pair? obj)</procedure><br>
 
@@ -2032,7 +2089,7 @@ applications; for instance, they may be used the way enumerated values
 are used in Pascal.
 
 The rules for writing a symbol are exactly the same as the rules for
-writing an identifier; see sections 2.1 and 7.1.1.
+writing an identifier.
 
 It is guaranteed that any symbol that has been returned as part of a
 literal expression, or read using the read procedure, and subsequently
@@ -2066,15 +2123,16 @@ Returns #t if obj is a symbol, otherwise returns #f.
 <procedure>(symbol->string symbol)</procedure><br>
 
 Returns the name of symbol as a string. If the symbol was part of an
-object returned as the value of a literal expression (section 4.1.2) or
-by a call to the read procedure, and its name contains alphabetic
-characters, then the string returned will contain characters in the
-implementation's preferred standard case -- some implementations will
-prefer upper case, others lower case. If the symbol was returned by
-string->symbol, the case of characters in the string returned will be
-the same as the case in the string that was passed to string->symbol.
-It is an error to apply mutation procedures like string-set! to strings
-returned by this procedure.
+object returned as the value of a literal expression (see
+"[[#literal-expressions|literal expressions]]") or by a call to the
+read procedure, and its name contains alphabetic characters, then the
+string returned will contain characters in the implementation's
+preferred standard case -- some implementations will prefer upper
+case, others lower case. If the symbol was returned by string->symbol,
+the case of characters in the string returned will be the same as the
+case in the string that was passed to string->symbol.  It is an error
+to apply mutation procedures like string-set! to strings returned by
+this procedure.
 
 The following examples assume that the implementation's standard case
 is lower case:
@@ -2523,10 +2581,11 @@ for-each is unspecified.
 
 <procedure>(force promise)</procedure><br>
 
-Forces the value of promise (see delay, section 4.2.5). If no value has
-been computed for the promise, then a value is computed and returned.
-The value of the promise is cached (or "memoized") so that if it is
-forced a second time, the previously computed value is returned.
+Forces the value of promise (see "[[#delayed-evaluation|delayed
+evaluation]]"). If no value has been computed for the promise, then a
+value is computed and returned.  The value of the promise is cached
+(or "memoized") so that if it is forced a second time, the previously
+computed value is returned.
 
  (force (delay (+ 1 2)))           ===>  3
  (let ((p (delay (+ 1 2))))
@@ -2934,10 +2993,11 @@ the file has already been closed. The value returned is unspecified.
 <procedure>(read port)</procedure><br>
 
 Read converts external representations of Scheme objects into the
-objects themselves. That is, it is a parser for the nonterminal <datum>
-(see sections 7.1.2 and 6.3.2). Read returns the next object parsable
-from the given input port, updating port to point to the first
-character past the end of the external representation of the object.
+objects themselves. That is, it is a parser for the nonterminal
+<datum> (see also "[[#pairs-and-lists|pairs and lists]]"). Read
+returns the next object parsable from the given input port, updating
+port to point to the first character past the end of the external
+representation of the object.
 
 If an end of file is encountered in the input before any characters are
 found that can begin an object, then an end of file object is returned.

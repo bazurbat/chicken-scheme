@@ -1,6 +1,6 @@
 ;;;; optimizer.scm - The CHICKEN Scheme compiler (optimizations)
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -366,7 +366,6 @@
 					    (not (test ifid 'inline-target)) ; inlinable procedure has changed
 					    (not (test ifid 'explicit-rest))
 					    (case (variable-mark var '##compiler#inline) 
-					      ((yes) #t)
 					      ((no) #f)
 					      (else 
 					       (or external (< (fourth lparams) inline-max-size)))))

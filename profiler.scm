@@ -1,6 +1,6 @@
 ;;;; profiler.scm - Support code for profiling applications
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -30,11 +30,6 @@
   (hide ##sys#profile-name ##sys#profile-vector-list cpu-ms)
   (unsafe)
   (disable-interrupts))
-
-(foreign-declare #<<EOF
-#include <unistd.h>
-EOF
-)
 
 (include "common-declarations.scm")
 

@@ -1,6 +1,6 @@
 ;;;; posix-common.scm - common code for UNIX and Windows versions of the posix unit
 ;
-; Copyright (c) 2010-2012, The Chicken Team
+; Copyright (c) 2010-2014, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -30,9 +30,7 @@
 
 #include <signal.h>
 #include <errno.h>
-#include <math.h>
 
-#include <sys/types.h>
 #include <sys/stat.h>
 
 static int C_not_implemented(void);
@@ -50,10 +48,41 @@ static C_TLS struct stat C_statbuf;
 # define S_IFSOCK           0140000
 #endif
 
-#define C_strftime(v, f) \
-        (strftime(C_time_string, sizeof(C_time_string), C_c_string(f), C_tm_set(v)) ? C_time_string : NULL)
+#define cpy_tmvec_to_tmstc08(ptm, v) \
+    ((ptm)->tm_sec = C_unfix(C_block_item((v), 0)), \
+    (ptm)->tm_min = C_unfix(C_block_item((v), 1)), \
+    (ptm)->tm_hour = C_unfix(C_block_item((v), 2)), \
+    (ptm)->tm_mday = C_unfix(C_block_item((v), 3)), \
+    (ptm)->tm_mon = C_unfix(C_block_item((v), 4)), \
+    (ptm)->tm_year = C_unfix(C_block_item((v), 5)), \
+    (ptm)->tm_wday = C_unfix(C_block_item((v), 6)), \
+    (ptm)->tm_yday = C_unfix(C_block_item((v), 7)), \
+    (ptm)->tm_isdst = (C_block_item((v), 8) != C_SCHEME_FALSE))
 
-#define C_C_fileno(p)	    C_fix(fileno(C_port_file(p)))
+#define cpy_tmvec_to_tmstc9(ptm, v) \
+    (((struct tm *)ptm)->tm_gmtoff = -C_unfix(C_block_item((v), 9)))
+
+#define C_tm_set_08(v, tm)  cpy_tmvec_to_tmstc08( (tm), (v) )
+#define C_tm_set_9(v, tm)   cpy_tmvec_to_tmstc9( (tm), (v) )
+
+static struct tm *
+C_tm_set( C_word v, void *tm )
+{
+  C_tm_set_08( v, (struct tm *)tm );
+#if defined(C_GNU_ENV) && !defined(__CYGWIN__) && !defined(__uClinux__)
+  C_tm_set_9( v, (struct tm *)tm );
+#endif
+  return tm;
+}
+
+#define TIME_STRING_MAXLENGTH 255
+static char C_time_string [TIME_STRING_MAXLENGTH + 1];
+#undef TIME_STRING_MAXLENGTH
+
+#define C_strftime(v, f, tm) \
+        (strftime(C_time_string, sizeof(C_time_string), C_c_string(f), C_tm_set((v), (tm))) ? C_time_string : NULL)
+#define C_a_mktime(ptr, c, v, tm)  C_flonum(ptr, mktime(C_tm_set((v), C_data_pointer(tm))))
+#define C_asctime(v, tm)    (asctime(C_tm_set((v), (tm))))
 
 #define C_fdopen(a, n, fd, m) C_mpointer(a, fdopen(C_unfix(fd), C_c_string(m)))
 #define C_C_fileno(p)       C_fix(fileno(C_port_file(p)))
@@ -61,6 +90,36 @@ static C_TLS struct stat C_statbuf;
 #define C_dup2(x, y)        C_fix(dup2(C_unfix(x), C_unfix(y)))
 
 #define C_set_file_ptr(port, ptr)  (C_set_block_item(port, 0, (C_block_item(ptr, 0))), C_SCHEME_UNDEFINED)
+
+#define C_opendir(x,h)      C_set_block_item(h, 0, (C_word) opendir(C_c_string(x)))
+#define C_closedir(h)       (closedir((DIR *)C_block_item(h, 0)), C_SCHEME_UNDEFINED)
+#define C_readdir(h,e)      C_set_block_item(e, 0, (C_word) readdir((DIR *)C_block_item(h, 0)))
+#define C_foundfile(e,b,l)    (C_strlcpy(C_c_string(b), ((struct dirent *) C_block_item(e, 0))->d_name, l), C_fix(strlen(((struct dirent *) C_block_item(e, 0))->d_name)))
+
+#ifdef HAVE_SETENV
+# define C_unsetenv(s)      (unsetenv((char *)C_data_pointer(s)), C_SCHEME_TRUE)
+# define C_setenv(x, y)     C_fix(setenv((char *)C_data_pointer(x), (char *)C_data_pointer(y), 1))
+#else
+# if defined(_WIN32) && !defined(__CYGWIN__)
+#  define C_unsetenv(s)      C_setenv(s, C_SCHEME_FALSE)
+# else
+#  define C_unsetenv(s)      C_fix(putenv((char *)C_data_pointer(s)))
+# endif
+static C_word C_fcall C_setenv(C_word x, C_word y) {
+  char *sx = C_c_string(x),
+       *sy = (y == C_SCHEME_FALSE ? "" : C_c_string(y));
+  int n1 = C_strlen(sx), n2 = C_strlen(sy);
+  int buf_len = n1 + n2 + 2;
+  char *buf = (char *)C_malloc(buf_len);
+  if(buf == NULL) return(C_fix(0));
+  else {
+    C_strlcpy(buf, sx, buf_len);
+    C_strlcat(buf, "=", buf_len);
+    C_strlcat(buf, sy, buf_len);
+    return(C_fix(putenv(buf)));
+  }
+}
+#endif
 
 EOF
 ))
@@ -275,7 +334,12 @@ EOF
 (define port->fileno
   (lambda (port)
     (##sys#check-open-port port 'port->fileno)
-    (cond [(eq? 'socket (##sys#slot port 7)) (##sys#tcp-port->fileno port)]
+    (cond [(eq? 'socket (##sys#slot port 7))
+	   ;; Extract socket-FD from the port's "data" object - this is identical
+	   ;; to "##sys#tcp-port->fileno" in the tcp unit (tcp.scm). We code it in
+	   ;; this low-level manner to avoid depend on code defined there.
+	   ;; Peter agrees with that. I think. Have a nice day.
+	   (##sys#slot (##sys#port-data port) 0) ]
           [(not (zero? (##sys#peek-unsigned-integer port 0)))
            (let ([fd (##core#inline "C_C_fileno" port)])
              (when (fx< fd 0)
@@ -351,7 +415,7 @@ EOF
 		(begin
 		  (##core#inline "C_closedir" handle)
 		  '() )
-		(let* ([flen (##core#inline "C_foundfile" entry buffer)]
+		(let* ([flen (##core#inline "C_foundfile" entry buffer (string-length buffer))]
 		       [file (##sys#substring buffer 0 flen)]
 		       [char1 (string-ref file 0)]
 		       [char2 (and (fx> flen 1) (string-ref file 1))] )
@@ -394,10 +458,10 @@ EOF
 		  ((fixnum? limit) (lambda _ (fx< depth limit)))
 		  (else limit) ) )
 	   (pproc
-	    (if (or (string? pred) (irregex? pred))
+	    (if (procedure? pred)
+		pred
 		(let ((pred (irregex pred))) ; force compilation
-		  (lambda (x) (irregex-match pred x)))
-		pred) ) )
+		  (lambda (x) (irregex-match pred x))) ) ) )
       (let loop ((fs (glob (make-pathname dir (if dot "?*" "*"))))
 		 (r id) )
 	(if (null? fs)
@@ -411,7 +475,7 @@ EOF
 			   ((lproc f)
 			    (loop rest
 				  (fluid-let ((depth (fx+ depth 1)))
-				    (loop (glob (make-pathname f "*"))
+				    (loop (glob (make-pathname f (if dot "?*" "*")))
 					  (if (pproc f) (action f r) r)) ) ) )
 			   (else (loop rest (if (pproc f) (action f r) r))) ) )
 		    ((pproc f) (loop rest (action f r)))
@@ -432,9 +496,9 @@ EOF
   (getter-with-setter
    (lambda (#!optional um)
      (when um (##sys#check-exact um 'file-creation-mode))
-     (let ((um2 (##core#inline "C_umask" um)))
-       (unless um (##core#inline "C_umask" um2)
-       um2)))
+     (let ((um2 (##core#inline "C_umask" (or um 0))))
+       (unless um (##core#inline "C_umask" um2)) ; restore
+       um2))
    (lambda (um)
      (##sys#check-exact um 'file-creation-mode)
      (##core#inline "C_umask" um))
@@ -465,27 +529,59 @@ EOF
             (##sys#substring str 0 (fx- (##sys#size str) 1))
             (##sys#error 'seconds->string "cannot convert seconds to string" secs) ) ) ) ) )
 
-(define (local-time->seconds tm)
-  (check-time-vector 'local-time->seconds tm)
-  (let ((t (##core#inline_allocate ("C_a_mktime" 4) tm)))
-    (if (fp= -1.0 t)
-	(##sys#error 'local-time->seconds "cannot convert time vector to seconds" tm)
-	t)))
+(define local-time->seconds
+  (let ((tm-size (foreign-value "sizeof(struct tm)" int)))
+    (lambda (tm)
+      (check-time-vector 'local-time->seconds tm)
+      (let ((t (##core#inline_allocate ("C_a_mktime" 4) tm (##sys#make-string tm-size #\nul))))
+        (if (fp= -1.0 t)
+            (##sys#error 'local-time->seconds "cannot convert time vector to seconds" tm)
+            t)))))
 
 (define time->string
-  (let ([asctime (foreign-lambda c-string "C_asctime" scheme-object)]
-        [strftime (foreign-lambda c-string "C_strftime" scheme-object scheme-object)])
+  (let ((asctime (foreign-lambda c-string "C_asctime" scheme-object scheme-pointer))
+        (strftime (foreign-lambda c-string "C_strftime" scheme-object scheme-object scheme-pointer))
+        (tm-size (foreign-value "sizeof(struct tm)" int)))
     (lambda (tm #!optional fmt)
       (check-time-vector 'time->string tm)
       (if fmt
           (begin
             (##sys#check-string fmt 'time->string)
-            (or (strftime tm (##sys#make-c-string fmt 'time->string))
+            (or (strftime tm (##sys#make-c-string fmt 'time->string) (##sys#make-string tm-size #\nul))
                 (##sys#error 'time->string "time formatting overflows buffer" tm)) )
-          (let ([str (asctime tm)])
+          (let ([str (asctime tm (##sys#make-string tm-size #\nul))])
             (if str
                 (##sys#substring str 0 (fx- (##sys#size str) 1))
                 (##sys#error 'time->string "cannot convert time vector to string" tm) ) ) ) ) ) )
+
+
+;;; Environment access:
+
+(define setenv
+  (lambda (var val)
+    (##sys#check-string var 'setenv)
+    (##sys#check-string val 'setenv)
+    (##core#inline "C_setenv" (##sys#make-c-string var 'setenv) (##sys#make-c-string val 'setenv))
+    (##core#undefined) ) )
+
+(define (unsetenv var)
+  (##sys#check-string var 'unsetenv)
+  (##core#inline "C_unsetenv" (##sys#make-c-string var 'unsetenv))
+  (##core#undefined) )
+
+(define get-environment-variables
+  (let ([get (foreign-lambda c-string "C_getenventry" int)])
+    (lambda ()
+      (let loop ([i 0])
+        (let ([entry (get i)])
+          (if entry
+              (let scan ([j 0])
+                (if (char=? #\= (##core#inline "C_subchar" entry j))
+                    (cons (cons (##sys#substring entry 0 j)
+                                (##sys#substring entry (fx+ j 1) (##sys#size entry)))
+                          (loop (fx+ i 1)))
+                    (scan (fx+ j 1)) ) )
+              '() ) ) ) ) ) )
 
 
 ;;; Signals

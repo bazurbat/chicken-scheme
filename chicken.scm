@@ -1,6 +1,6 @@
 ;;;; chicken.scm - The CHICKEN Scheme compiler (loader/main-module)
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -28,7 +28,7 @@
 (declare
   (uses chicken-syntax chicken-ffi-syntax 
 	srfi-1 srfi-4 utils files extras data-structures support
-	compiler optimizer compiler-syntax scrutinizer driver platform backend 
+	compiler optimizer lfa2 compiler-syntax scrutinizer driver platform backend 
 	srfi-69))
 
 
@@ -82,12 +82,16 @@
 		    (set! options
 		      (cons* 'no-compiler-syntax 'no-usual-integrations options)) )
 		   ((1)
-		    (set! options (cons 'optimize-leaf-routines options)) )
+		    (set! options
+		      (cons* 'optimize-leaf-routines
+			     ;XXX 'lfa2 
+			     options)) )
 		   ((2)
 		    (set! options 
 		      (cons* 'optimize-leaf-routines
 			     'inline
 			     ;XXX 'clustering
+			     ;XXX 'lfa2
 			     options)) ) 
 		   ((3)
 		    (set! options
@@ -96,6 +100,7 @@
 			     'inline-global
 			     'local
 			     ;XXX 'clustering
+			     ;XXX 'lfa2
 			     'specialize
 			     options) ) )
 		   ((4)
@@ -105,6 +110,7 @@
 			     'inline-global
 			     'specialize
 			     ;XXX 'clustering
+			     ;XXX 'lfa2
 			     'local 'unsafe
 			     options) ) )
 		   (else
@@ -122,6 +128,7 @@
 			       'inline
 			       'inline-global
 			       'clustering
+			       'lfa2
 			       options) ) ) ) )
 		 (loop (cdr rest)) ) )
 	      ((eq? 'debug-level o)

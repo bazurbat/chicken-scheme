@@ -71,7 +71,7 @@ returns more than one result value:
     (print "i=" i ", f=" f) ) )
 </enscript>
 
-See [[http://wiki.call-cc.org/location-and-c-string-star|location and c-string*]] 
+See [[/location-and-c-string-star|location and c-string*]] 
 for a tip on returning a {{c-string*}} type.
 
 {{location}} returns a value of type {{c-pointer}}, when given

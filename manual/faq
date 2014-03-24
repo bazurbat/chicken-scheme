@@ -66,7 +66,7 @@ parameter {{case-sensitivity}} to {{#t}}.
 
 ==== Why doesn't CHICKEN support the full numeric tower by default?
 
-The short answer:
+The short answer is to use the [[http://wiki.call-cc.org/egg/numbers|numbers]] egg:
 
 <enscript highlight=scheme>
 % chicken-install numbers
@@ -84,9 +84,6 @@ numbers) are more than sufficient;
 - Interfacing to C is simpler;
 
 - Dispatching of arithmetic operations is more efficient.
-
-There is an extension based on the GNU Multiprecision Package that implements most of the full
-numeric tower, see [[http://wiki.call-cc.org/egg/numbers|numbers]].
 
 
 ==== Does CHICKEN support native threads?
@@ -797,16 +794,6 @@ If you compile a file with a call to {{load}}, the code will be loaded at
 runtime and, if the file loaded is a Scheme source code file
 (instead of a shared object), it will be
 interpreted (even if the caller program is compiled).
-
-==== How do I use extended (non-standard) syntax in evaluated code at run-time?
-
-Normally, only standard Scheme syntax is available to the evaluator. To
-use the extensions provided in the CHICKEN compiler and interpreter,
-add:
-
-<enscript highlight=scheme>
-(require-library chicken-syntax)
-</enscript>
 
 === Extensions 
 

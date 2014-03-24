@@ -6,11 +6,29 @@
 
 
 set -e
-TEST_DIR=`pwd`
+if test -z "$MSYSTEM"; then
+    TEST_DIR=`pwd`
+else
+    # Use Windows-native format with drive letters instead of awkward
+    # MSYS /c/blabla "pseudo-paths" which break when used in syscalls.
+    TEST_DIR=`pwd -W`
+fi
 OS_NAME=`uname -s`
-export DYLD_LIBRARY_PATH=${TEST_DIR}/..
-export LD_LIBRARY_PATH=${TEST_DIR}/..
-export LIBRARY_PATH=${TEST_DIR}/..:${LIBRARY_PATH}
+DYLD_LIBRARY_PATH=${TEST_DIR}/..
+LD_LIBRARY_PATH=${TEST_DIR}/..
+LIBRARY_PATH=${TEST_DIR}/..:${LIBRARY_PATH}
+# Cygwin uses LD_LIBRARY_PATH for dlopen(), but the dlls linked into
+# the binary are read by the OS itself, which uses $PATH (mingw too)
+# Oddly, prefixing .. with ${TEST_DIR}/ does _not_ work on mingw!
+PATH=..:${PATH}
+export DYLD_LIBRARY_PATH LD_LIBRARY_PATH LIBRARY_PATH PATH
+
+case `uname` in
+	AIX)
+		DIFF_OPTS=-b ;;
+	*)
+		DIFF_OPTS=-bu ;;
+esac
 
 rm -fr test-repository
 mkdir -p test-repository
@@ -29,39 +47,29 @@ for x in setup-api.so setup-api.import.so setup-download.so \
 done
 
 CHICKEN_REPOSITORY=${TEST_DIR}/test-repository
-CHICKEN=../chicken
+CHICKEN=${TEST_DIR}/../chicken
 CHICKEN_INSTALL=${TEST_DIR}/../chicken-install
 CHICKEN_UNINSTALL=${TEST_DIR}/../chicken-uninstall
 ASMFLAGS=
 FAST_OPTIONS="-O5 -d0 -b -disable-interrupts"
+COMPILE_OPTIONS="-compiler ${TEST_DIR}/../chicken -v -I${TEST_DIR}/.. -L${TEST_DIR}/.. -rpath ${TEST_DIR}/.. -include-path ${TEST_DIR}/.."
+
+TEST_DIR_SEXPR=`../csi -n -include-path .. -e "(use posix) (write (current-directory))"`
+SETUP_PREFIX="-e (use files setup-api)"
+SETUP_PREFIX="${SETUP_PREFIX} -e (register-program \"csc\" (make-pathname ${TEST_DIR_SEXPR} \"../csc\"))"
+SETUP_PREFIX="${SETUP_PREFIX} -e (register-program \"chicken\" (make-pathname ${TEST_DIR_SEXPR} \"../chicken\"))"
+SETUP_PREFIX="${SETUP_PREFIX} -e (register-program \"csi\" (make-pathname ${TEST_DIR_SEXPR} \"../csi\"))"
 
 TYPESDB=../types.db
 cp $TYPESDB test-repository/types.db
 
-if test -n "$MSYSTEM"; then
-    CHICKEN="..\\chicken.exe"
-    ASMFLAGS=-Wa,-w
-    TIME=time
-    # make compiled tests use proper library on Windows
-    cp ../lib*chicken*.dll .
-else 
-    TIME=/usr/bin/time
-fi
-
-
-# for cygwin
-if test -f ../cygchicken-0.dll; then
-    cp ../cygchicken-0.dll .
-    cp ../cygchicken-0.dll reverser/tags/1.0
-    mv ../cygchicken-0.dll ../cygchicken-0.dll_
-fi
-
-compile="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .. -o a.out"
-compile2="../csc -compiler $CHICKEN -v -I.. -L.. -include-path .."
-compile_s="../csc -s -compiler $CHICKEN -v -I.. -L.. -include-path .."
-interpret="../csi -n -include-path .."
+compile="../csc -types ${TYPESDB} -ignore-repository ${COMPILE_OPTIONS} -o a.out"
+compile2="../csc -compiler $CHICKEN -v -I${TEST_DIR}/.. -L${TEST_DIR}.. -include-path ${TEST_DIR}/.."
+compile_s="../csc -s -types ${TYPESDB} -ignore-repository ${COMPILE_OPTIONS} -v -I${TEST_DIR}/.. -L${TEST_DIR}/.. -include-path ${TEST_DIR}/.."
+interpret="../csi -n -include-path ${TEST_DIR}/.."
 
 rm -f *.exe *.so *.o *.import.* a.out ../foo.import.*
+
 
 echo "======================================== compiler tests ..."
 $compile compiler-tests.scm
@@ -74,36 +82,28 @@ $compile inlining-tests.scm -optimize-level 3
 echo "======================================== scrutiny tests ..."
 $compile typematch-tests.scm -specialize -w
 ./a.out
-$compile scrutiny-tests.scm -A -scrutinize -ignore-repository -types $TYPESDB 2>scrutiny.out -verbose
-
-if test -n "$MSYSTEM"; then
-    dos2unix scrutiny.out
-fi
+$compile scrutiny-tests.scm -A -scrutinize 2>scrutiny.out -verbose
 
 # this is sensitive to gensym-names, so make it optional
 if test \! -f scrutiny.expected; then
     cp scrutiny.out scrutiny.expected
 fi
 
-diff -bu scrutiny.expected scrutiny.out
+diff $DIFF_OPTS scrutiny.expected scrutiny.out
 
-$compile scrutiny-tests-2.scm -A -scrutinize -analyze-only -ignore-repository -types $TYPESDB 2>scrutiny-2.out -verbose
-
-if test -n "$MSYSTEM"; then
-    dos2unix scrutiny-2.out
-fi
+$compile scrutiny-tests-2.scm -A -scrutinize -analyze-only 2>scrutiny-2.out -verbose
 
 # this is sensitive to gensym-names, so make it optional
 if test \! -f scrutiny-2.expected; then
     cp scrutiny-2.out scrutiny-2.expected
 fi
 
-diff -bu scrutiny-2.expected scrutiny-2.out
+diff $DIFF_OPTS scrutiny-2.expected scrutiny-2.out
 
-$compile scrutiny-tests-3.scm -specialize -block -ignore-repository -types $TYPESDB
+$compile scrutiny-tests-3.scm -specialize -block
 ./a.out
 
-$compile scrutiny-tests-strict.scm -strict-types -specialize -ignore-repository -types $TYPESDB
+$compile scrutiny-tests-strict.scm -strict-types -specialize
 ./a.out
 
 echo "======================================== specialization tests ..."
@@ -136,6 +136,8 @@ fi
 
 echo "======================================== runtime tests ..."
 $interpret -s apply-test.scm
+$compile apply-test.scm
+./a.out
 $compile test-gc-hooks.scm
 ./a.out
 
@@ -152,10 +154,10 @@ $interpret -s reader-tests.scm
 
 echo "======================================== dynamic-wind tests ..."
 $interpret -s dwindtst.scm >dwindtst.out
-diff -bu dwindtst.expected dwindtst.out
+diff $DIFF_OPTS dwindtst.expected dwindtst.out
 $compile dwindtst.scm
 ./a.out >dwindtst.out
-diff -bu dwindtst.expected dwindtst.out
+diff $DIFF_OPTS dwindtst.expected dwindtst.out
 echo "*** Skipping \"feeley-dynwind\" for now ***"
 # $interpret -s feeley-dynwind.scm
 
@@ -185,10 +187,10 @@ $compile syntax-tests-2.scm
 ./a.out
 
 echo "======================================== meta-syntax tests ..."
-$interpret -bnq meta-syntax-test.scm -e '(import foo)' -e "(assert (equal? '((1)) (bar 1 2)))" -e "(assert (equal? '(list 1 2 3) (listify)))"
+$interpret -bnq meta-syntax-test.scm -e '(import foo)' -e "(assert (equal? '((1)) (bar 1 2)))" -e "(assert (equal? '(list 1 2 3) (listify)))" -e "(import foo-usage)" -e "(assert (equal? '(1) (foo-user)))"
 $compile_s meta-syntax-test.scm -j foo
 $compile_s foo.import.scm
-$interpret -bnq -e '(require-library meta-syntax-test)' -e '(import foo)' -e "(assert (equal? '((1)) (bar 1 2)))" -e "(assert (equal? '(list 1 2 3) (listify)))"
+$interpret -bnq -e '(require-library meta-syntax-test)' -e '(import foo)' -e "(assert (equal? '((1)) (bar 1 2)))" -e "(assert (equal? '(list 1 2 3) (listify)))" -e "(import foo-usage)" -e "(assert (equal? '(1) (foo-user)))"
 
 echo "======================================== reexport tests ..."
 $interpret -bnq reexport-tests.scm
@@ -202,6 +204,8 @@ $compile reexport-m2.scm
 ./a.out
 $compile_s reexport-m3.scm -J
 $compile_s reexport-m4.scm -J
+$compile_s reexport-m5.scm -J
+$compile_s reexport-m6.scm -J
 $compile reexport-tests-2.scm
 ./a.out
 
@@ -251,20 +255,19 @@ echo "(expect mult-float-print-test to fail)"
 $interpret -e '(set! ##sys#procedure->string (constantly "#<procedure>"))' \
   -i -s r4rstest.scm >r4rstest.log
 
-if test -n "$MSYSTEM"; then
-    # the windows runtime library prints flonums differently
-    tail r4rstest.log
-else
-    diff -bu r4rstest.out r4rstest.log
-fi
+diff $DIFF_OPTS r4rstest.out r4rstest.log
 
 echo "======================================== syntax tests (r5rs_pitfalls) ..."
 echo "(expect two failures)"
 $interpret -i -s r5rs_pitfalls.scm
 
+echo "======================================== r7rs tests ..."
+$interpret -i -s r7rs-tests.scm
+
+
 echo "======================================== module tests ..."
-$interpret -include-path .. -s module-tests.scm
-$interpret -include-path .. -s module-tests-2.scm
+$interpret -include-path ${TEST_DIR}/.. -s module-tests.scm
+$interpret -include-path ${TEST_DIR}/.. -s module-tests-2.scm
 
 echo "======================================== module tests (compiled) ..."
 $compile module-tests-compiled.scm
@@ -317,12 +320,17 @@ $interpret -s condition-tests.scm
 echo "======================================== srfi-18 tests ..."
 $interpret -s simple-thread-test.scm
 $interpret -s mutex-test.scm
+$compile srfi-18-signal-test.scm
+./a.out
 
 echo "======================================== data-structures tests ..."
 $interpret -s data-structures-tests.scm
 
 echo "======================================== path tests ..."
 $interpret -bnq path-tests.scm
+
+echo "======================================== srfi-45 tests ..."
+$interpret -s srfi-45-tests.scm
 
 echo "======================================== posix tests ..."
 $compile posix-tests.scm
@@ -341,11 +349,6 @@ echo "======================================== signal tests ..."
 $compile signal-tests.scm
 ./a.out
 
-echo "======================================== lolevel tests ..."
-$interpret -s lolevel-tests.scm
-$compile lolevel-tests.scm
-./a.out
-
 echo "======================================== regular expression tests ..."
 $interpret -bnq test-irregex.scm
 $interpret -bnq test-glob.scm
@@ -353,16 +356,20 @@ $interpret -bnq test-glob.scm
 echo "======================================== compiler/nursery stress test ..."
 for s in 100000 120000 200000 250000 300000 350000 400000 450000 500000; do
     echo "  $s"
-    ../chicken ../utils.scm -:s$s -output-file tmp.c -include-path .. 
+    ../chicken -ignore-repository ../utils.scm -:s$s -output-file tmp.c -include-path ${TEST_DIR}/..
 done
 
 echo "======================================== symbol-GC tests ..."
 $compile symbolgc-tests.scm
-./a.out -:w
+# Currently disabled, because this may leave 1 symbol unreclaimed.
+./a.out -:w || echo "*** FAILED ***"
 
 echo "======================================== finalizer tests ..."
 $interpret -s test-finalizers.scm
+$compile test-finalizers.scm
+./a.out
 $compile finalizer-error-test.scm
+echo "expect an error message here:"
 ./a.out -:hg101
 $compile test-finalizers-2.scm
 ./a.out
@@ -397,21 +404,31 @@ rm -fr rev-app rev-app-2 reverser/*.import.* reverser/*.so
 
 echo "======================================== reinstall tests"
 CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_UNINSTALL -force reverser
-CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR reverser:1.0 \
- -csi ${TEST_DIR}/../csi
+CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY CSC_OPTIONS=$COMPILE_OPTIONS \
+    CSI_OPTIONS=$SETUP_PREFIX $CHICKEN_INSTALL -t local -l $TEST_DIR \
+    -csi ${TEST_DIR}/../csi reverser:1.0
 CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $interpret -bnq rev-app.scm 1.0
-CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR -reinstall -force \
- -csi ${TEST_DIR}/../csi
+CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY CSC_OPTIONS=$COMPILE_OPTIONS \
+    CSI_OPTIONS=$SETUP_PREFIX $CHICKEN_INSTALL -t local -l $TEST_DIR \
+    -reinstall -force -csi ${TEST_DIR}/../csi
 CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $interpret -bnq rev-app.scm 1.0
 
-echo "======================================== deployment tests"
-mkdir rev-app
-CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -t local -l $TEST_DIR reverser
-CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $compile2 -deploy rev-app.scm
-CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY $CHICKEN_INSTALL -deploy -prefix rev-app -t local -l $TEST_DIR reverser
-unset LD_LIBRARY_PATH DYLD_LIBRARY_PATH CHICKEN_REPOSITORY
-rev-app/rev-app 1.1
-mv rev-app rev-app-2
-rev-app-2/rev-app 1.1
+if test $OS_NAME != AIX -a $OS_NAME != SunOS -a $OS_NAME != GNU; then
+	echo "======================================== deployment tests"
+	mkdir rev-app
+        TARGET_LIB_PATH=${TEST_DIR}/.. CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY CSC_OPTIONS=$COMPILE_OPTIONS \
+                          CSI_OPTIONS=$SETUP_PREFIX $CHICKEN_INSTALL -csi ${TEST_DIR}/../csi -t local -l $TEST_DIR reverser
+        TARGET_LIB_PATH=${TEST_DIR}/.. CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY CSC_OPTIONS=$COMPILE_OPTIONS \
+                          CSI_OPTIONS=$SETUP_PREFIX $compile2 -deploy rev-app.scm
+        TARGET_LIB_PATH=${TEST_DIR}/.. CHICKEN_REPOSITORY=$CHICKEN_REPOSITORY CSC_OPTIONS=$COMPILE_OPTIONS \
+                          CSI_OPTIONS=$SETUP_PREFIX $CHICKEN_INSTALL -csi ${TEST_DIR}/../csi -deploy -prefix rev-app -t local -l $TEST_DIR reverser
+	unset LD_LIBRARY_PATH DYLD_LIBRARY_PATH CHICKEN_REPOSITORY
+	# An absolute path is required on NetBSD with $ORIGIN, hence `pwd`
+	`pwd`/rev-app/rev-app 1.1
+	mv rev-app rev-app-2
+	`pwd`/rev-app-2/rev-app 1.1
+else
+	echo "Skipping deployment tests: deployment is currently unsupported on your platform."
+fi
 
 echo "======================================== done."

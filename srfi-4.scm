@@ -1,6 +1,6 @@
 ;;;; srfi-4.scm - Homogeneous numeric vectors
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -258,7 +258,7 @@ EOF
 	(foreign-lambda* scheme-object ([int bytes])
 	  "C_word *buf = (C_word *)C_malloc(bytes + sizeof(C_header));"
 	  "if(buf == NULL) C_return(C_SCHEME_FALSE);"
-	  "C_block_header(buf) = C_make_header(C_BYTEVECTOR_TYPE, bytes);"
+	  "C_block_header_init(buf, C_make_header(C_BYTEVECTOR_TYPE, bytes));"
 	  "C_return(buf);") ]
        [ext-free
 	(foreign-lambda* void ([scheme-object bv])
@@ -275,9 +275,7 @@ EOF
 
   (set! release-number-vector
     (lambda (v)
-      (if (and (##sys#generic-structure? v)
-	       (memq (##sys#slot v 0)
-		     '(u8vector u16vector s8vector s16vector u32vector s32vector f32vector f64vector)) )
+      (if (number-vector? v)
 	  (ext-free v)
 	  (##sys#error 'release-number-vector "bad argument type - not a number vector" v)) ) )
 
@@ -493,6 +491,8 @@ EOF
 (define (f32vector? x) (##sys#structure? x 'f32vector))
 (define (f64vector? x) (##sys#structure? x 'f64vector))
 
+;; Catch-all predicate
+(define number-vector? ##sys#srfi-4-vector?)
 
 ;;; Accessing the packed bytevector:
 

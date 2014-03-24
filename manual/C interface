@@ -161,7 +161,7 @@ Is {{x}} a port object?  Accepts only non-immediate objects.
 
 ===== C_structurep
 
- [C macro] C_word C_structure(C_word x)
+ [C macro] C_word C_structurep(C_word x)
 
 Is {{x}} a structure (record) object?  Accepts only non-immediate objects.
 
@@ -485,6 +485,8 @@ and can also be simulated by declaring a stack-allocated array of
 ===== C_SIZEOF_VECTOR
 
  [C macro] int C_SIZEOF_VECTOR (int length)
+
+Returns the size in words needed for allocation of vector with ''length'' elements.
 
 ===== C_SIZEOF_INTERNED_SYMBOL
 

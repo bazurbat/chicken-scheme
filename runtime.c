@@ -1,6 +1,6 @@
 /* runtime.c - Runtime code for compiler generated executables
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -27,15 +27,18 @@
 
 
 #include "chicken.h"
-#include <errno.h>
-#include <signal.h>
 #include <assert.h>
-#include <limits.h>
-#include <math.h>
+#include <errno.h>
+#include <float.h>
 #include <signal.h>
+#include <sys/stat.h>
 
 #ifdef HAVE_SYSEXITS_H
 # include <sysexits.h>
+#endif
+
+#ifdef __ANDROID__
+# include <android/log.h>
 #endif
 
 #if !defined(PIC)
@@ -60,18 +63,18 @@
 # define EOVERFLOW  0
 #endif
 
+/* TODO: Include sys/select.h? Windows doesn't seem to have it... */
+#ifdef HAVE_POSIX_POLL
+#  include <poll.h>
+#endif
+
 #if !defined(C_NONUNIX)
 
-# include <sys/types.h>
-# include <sys/stat.h>
 # include <sys/time.h>
 # include <sys/resource.h>
 # include <sys/wait.h>
 
 #else
-
-# include <sys/types.h>
-# include <sys/stat.h>
 
 #ifdef ECOS
 #include <cyg/kernel/kapi.h>
@@ -97,7 +100,9 @@ static C_TLS int timezone;
 # define RTLD_LAZY                     0
 #endif
 
-#if defined(HAVE_WINDOWS_H) || (defined(_WIN32) && !defined(__CYGWIN__))
+#if defined(_WIN32) && !defined(__CYGWIN__)
+/* Include winsock2 to get select() for check_fd_ready() */
+# include <winsock2.h>
 # include <windows.h>
 #endif
 
@@ -116,7 +121,7 @@ static C_TLS int timezone;
 #endif
 
 #ifdef C_HACKED_APPLY
-# if defined(__MACH__) || defined(__MINGW32__) || defined(__CYGWIN__)
+# if defined(C_MACOSX) || defined(__MINGW32__) || defined(__CYGWIN__)
 extern void C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 # else
 extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
@@ -187,13 +192,19 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #ifdef C_SIXTY_FOUR
 # define ALIGNMENT_HOLE_MARKER         ((C_word)0xfffffffffffffffeL)
 # define FORWARDING_BIT_SHIFT          63
-# define UWORD_FORMAT_STRING           "0x%016x"
+# define UWORD_FORMAT_STRING           "0x%016lx"
 # define UWORD_COUNT_FORMAT_STRING     "%u"
 #else
 # define ALIGNMENT_HOLE_MARKER         ((C_word)0xfffffffe)
 # define FORWARDING_BIT_SHIFT          31
 # define UWORD_FORMAT_STRING           "0x%08x"
 # define UWORD_COUNT_FORMAT_STRING     "%u"
+#endif
+
+#ifdef C_LLP
+# define LONG_FORMAT_STRING            "%lldf"
+#else
+# define LONG_FORMAT_STRING            "%ld"
 #endif
 
 #define GC_MINOR           0
@@ -205,7 +216,7 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 
 #define nmax(x, y)                   ((x) > (y) ? (x) : (y))
 #define nmin(x, y)                   ((x) < (y) ? (x) : (y))
-#define percentage(n, p)             ((long)(((double)(n) * (double)p) / 100))
+#define percentage(n, p)             ((C_long)(((double)(n) * (double)p) / 100))
 
 #define is_fptr(x)                   (((x) & C_GC_FORWARDING_BIT) != 0)
 #define ptr_to_fptr(x)               ((((x) >> FORWARDING_BIT_SHIFT) & 1) | C_GC_FORWARDING_BIT | ((x) & ~1))
@@ -260,6 +271,10 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 
 #define C_pte(name)                  pt[ i ].id = #name; pt[ i++ ].ptr = (void *)name;
 
+#ifndef SIGBUS
+# define SIGBUS                      0
+#endif
+
 
 /* Type definitions: */
 
@@ -278,9 +293,9 @@ typedef struct lf_list_struct
 
 typedef struct weak_table_entry_struct
 {
-  C_word item,
-         container;
-} WEAK_TABLE_ENTRY;
+  C_word item,			/* item weakly held (symbol) */
+         container;		/* object holding reference to symbol, lowest 3 bits are */
+} WEAK_TABLE_ENTRY;		/*   also used as a counter, saturated at 2 or more */
 
 typedef struct finalizer_node_struct
 {
@@ -313,20 +328,24 @@ C_TLS C_word
   *C_temporary_stack_bottom,
   *C_temporary_stack_limit,
   *C_stack_limit;
-C_TLS long
+C_TLS C_long
   C_timer_interrupt_counter,
   C_initial_timer_interrupt_period;
 C_TLS C_byte 
   *C_fromspace_top,
   *C_fromspace_limit;
+#ifdef HAVE_SIGSETJMP
+C_TLS sigjmp_buf C_restart;
+#else
 C_TLS jmp_buf C_restart;
+#endif
 C_TLS void *C_restart_address;
 C_TLS int C_entry_point_status;
 C_TLS int (*C_gc_mutation_hook)(C_word *slot, C_word val);
 C_TLS void (*C_gc_trace_hook)(C_word *var, int mode);
 C_TLS void (*C_panic_hook)(C_char *msg) = NULL;
 C_TLS void (*C_pre_gc_hook)(int mode) = NULL;
-C_TLS void (*C_post_gc_hook)(int mode, long ms) = NULL;
+C_TLS void (*C_post_gc_hook)(int mode, C_long ms) = NULL;
 C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
 
 C_TLS int
@@ -371,7 +390,8 @@ static C_TLS C_byte
   *heap_scan_top;
 static C_TLS size_t
   heapspace1_size,
-  heapspace2_size;
+  heapspace2_size,
+  heap_size;
 static C_TLS C_char 
   buffer[ STRING_BUFFER_SIZE ],
   *private_repository = NULL,
@@ -412,19 +432,24 @@ static C_TLS int
   gc_count_1,
   gc_count_1_total,
   gc_count_2,
-  interrupt_reason,
+  weak_table_randomization,
   stack_size_changed,
   dlopen_flags,
   heap_size_changed,
   chicken_is_running,
   chicken_ran_once,
+  pass_serious_signals = 1,
   callback_continuation_level;
+static volatile C_TLS int serious_signal_occurred = 0;
 static C_TLS unsigned int
   mutation_count,
-  stack_size,
-  heap_size;
+  stack_size;
 static C_TLS int chicken_is_initialized;
+#ifdef HAVE_SIGSETJMP
+static C_TLS sigjmp_buf gc_restart;
+#else
 static C_TLS jmp_buf gc_restart;
+#endif
 static C_TLS double
   timer_start_ms,
   gc_ms,
@@ -451,7 +476,8 @@ static C_TLS int flonum_print_precision = FLONUM_PRINT_PRECISION;
 static C_TLS HDUMP_BUCKET **hdump_table;
 static C_TLS int 
   pending_interrupts[ MAX_PENDING_INTERRUPTS ],
-  pending_interrupts_count;
+  pending_interrupts_count,
+  handling_interrupts;
 
 
 /* Prototypes: */
@@ -471,6 +497,7 @@ static void C_fcall really_mark(C_word *x) C_regparm;
 static WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word container) C_regparm;
 static C_ccall void values_continuation(C_word c, C_word closure, C_word dummy, ...) C_noret;
 static C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stable);
+static C_regparm int C_fcall C_in_new_heapp(C_word x);
 static C_word C_fcall hash_string(int len, C_char *str, C_word m, C_word r, int ci) C_regparm;
 static C_word C_fcall lookup(C_word key, int len, C_char *str, C_SYMBOL_TABLE *stable) C_regparm;
 static double compute_symbol_table_load(double *avg_bucket_len, int *total);
@@ -487,17 +514,20 @@ static C_ccall void call_cc_values_wrapper(C_word c, C_word closure, C_word k, .
 static void gc_2(void *dummy) C_noret;
 static void allocate_vector_2(void *dummy) C_noret;
 static void get_argv_2(void *dummy) C_noret; /* OBSOLETE */
-static void get_argument_2(void *dummy) C_noret;
+static void get_argument_2(void *dummy) C_noret; /* OBSOLETE */
 static void make_structure_2(void *dummy) C_noret;
 static void generic_trampoline(void *dummy) C_noret;
-static void file_info_2(void *dummy) C_noret;
-static void get_environment_variable_2(void *dummy) C_noret;
+static void get_environment_variable_2(void *dummy) C_noret; /* OBSOLETE */
 static void handle_interrupt(void *trampoline, void *proc) C_noret;
 static void callback_trampoline(void *dummy) C_noret;
 static C_ccall void callback_return_continuation(C_word c, C_word self, C_word r) C_noret;
 static void become_2(void *dummy) C_noret;
 static void copy_closure_2(void *dummy) C_noret;
 static void dump_heap_state_2(void *dummy) C_noret;
+static void C_fcall sigsegv_trampoline(void *) C_regparm;
+static void C_fcall sigill_trampoline(void *) C_regparm;
+static void C_fcall sigfpe_trampoline(void *) C_regparm;
+static void C_fcall sigbus_trampoline(void *) C_regparm;
 
 static C_PTABLE_ENTRY *create_initial_ptable();
 
@@ -511,12 +541,16 @@ C_dbg(C_char *prefix, C_char *fstr, ...)
 {
   va_list va;
 
+  va_start(va, fstr);
+#ifdef __ANDROID__
+  __android_log_vprint(ANDROID_LOG_DEBUG, prefix, fstr, va);
+#else
   C_fflush(C_stdout);
   C_fprintf(C_stderr, "[%s] ", prefix);
-  va_start(va, fstr);
   C_vfprintf(C_stderr, fstr, va);
-  va_end(va);
   C_fflush(C_stderr);
+#endif
+  va_end(va);
 }
 
 
@@ -536,6 +570,7 @@ int CHICKEN_main(int argc, char *argv[], void *toplevel)
 #endif
   }
 
+  pass_serious_signals = 0;
   CHICKEN_parse_command_line(argc, argv, &h, &s, &n);
   
   if(!CHICKEN_initialize(h, s, n, toplevel))
@@ -568,14 +603,15 @@ void parse_argv(C_char *cmds)
 
     for(bptr0 = bptr = buffer; !isspace((int)(*ptr)) && *ptr != '\0'; *(bptr++) = *(ptr++))
       ++n;
-    
+
     *bptr = '\0';
-    aptr = (C_char *)malloc(sizeof(C_char) * (n + 1));
-    
-    if(aptr == NULL)
+
+    aptr = (C_char*) malloc(sizeof(C_char) * (n + 1));
+    if (!aptr)
       panic(C_text("cannot allocate argument buffer"));
 
-    C_strcpy(aptr, bptr0);
+    C_strlcpy(aptr, bptr0, sizeof(C_char) * (n + 1));
+
     C_main_argv[ C_main_argc++ ] = aptr;
   }
 }
@@ -586,6 +622,9 @@ void parse_argv(C_char *cmds)
 int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 {
   int i;
+#ifdef HAVE_SIGACTION
+  struct sigaction sa;
+#endif
 
   /*FIXME Should have C_tzset in chicken.h? */
 #ifdef C_NONUNIX
@@ -604,6 +643,10 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 
   if(chicken_is_initialized) return 1;
   else chicken_is_initialized = 1;
+
+#ifdef __ANDROID__
+  debug_mode = 2;
+#endif
 
   if(debug_mode) 
     C_dbg(C_text("debug"), C_text("application startup...\n"));
@@ -639,7 +682,9 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 
   /* Allocate weak item table: */
   if(C_enable_gcweak) {
-    if((weak_item_table = (WEAK_TABLE_ENTRY *)C_calloc(WEAK_TABLE_SIZE, sizeof(WEAK_TABLE_ENTRY))) == NULL)
+    weak_item_table = (WEAK_TABLE_ENTRY *)C_calloc(WEAK_TABLE_SIZE, sizeof(WEAK_TABLE_ENTRY));
+
+    if(weak_item_table == NULL)
       return 0;
   }
 
@@ -678,9 +723,6 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   gc_root_list = NULL;
  
   /* Initialize global variables: */
-  if(C_trace_buffer_size < MIN_TRACE_BUFFER_SIZE)
-    C_trace_buffer_size = MIN_TRACE_BUFFER_SIZE;
-
   if(C_heap_growth <= 0) C_heap_growth = DEFAULT_HEAP_GROWTH;
 
   if(C_heap_shrinkage <= 0) C_heap_shrinkage = DEFAULT_HEAP_SHRINKAGE;
@@ -693,6 +735,24 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   dlopen_flags = 0;
 #endif
 
+  /* setup signal handlers */
+  if(!pass_serious_signals) {
+#ifdef HAVE_SIGACTION
+    sa.sa_flags = 0;
+    sigfillset(&sa.sa_mask); /* See note in C_establish_signal_handler() */
+    sa.sa_handler = global_signal_handler;
+    C_sigaction(SIGBUS, &sa, NULL);
+    C_sigaction(SIGFPE, &sa, NULL);
+    C_sigaction(SIGILL, &sa, NULL);
+    C_sigaction(SIGSEGV, &sa, NULL);
+#else
+    C_signal(SIGBUS, global_signal_handler);
+    C_signal(SIGILL, global_signal_handler);
+    C_signal(SIGFPE, global_signal_handler);
+    C_signal(SIGSEGV, global_signal_handler);
+#endif
+  }
+
   mutation_count = gc_count_1 = gc_count_1_total = gc_count_2 = 0;
   lf_list = NULL;
   C_register_lf2(NULL, 0, create_initial_ptable());
@@ -701,8 +761,8 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   trace_buffer = NULL;
   C_clear_trace_buffer();
   chicken_is_running = chicken_ran_once = 0;
-  interrupt_reason = 0;
   pending_interrupts_count = 0;
+  handling_interrupts = 0;
   last_interrupt_latency = 0;
   C_interrupts_enabled = 1;
   C_initial_timer_interrupt_period = INITIAL_TIMER_INTERRUPT_PERIOD;
@@ -719,7 +779,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   current_module_handle = NULL;
   callback_continuation_level = 0;
   gc_ms = 0;
-  C_randomize(time(NULL));
+  (void)C_randomize(C_fix(time(NULL)));
   return 1;
 }
 
@@ -727,7 +787,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size - this must match the number of C_pte calls! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 60);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 58);
   int i = 0;
 
   if(pt == NULL)
@@ -746,7 +806,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_get_symbol_table_info);
   C_pte(C_get_memory_info);
   C_pte(C_decode_seconds);
-  C_pte(C_get_environment_variable);
+  C_pte(C_get_environment_variable); /* OBSOLETE */
   C_pte(C_stop_timer);
   C_pte(C_dload);
   C_pte(C_set_dlopen_flags);
@@ -764,8 +824,8 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_less_or_equal_p);
   C_pte(C_quotient);
   C_pte(C_flonum_fraction);
+  C_pte(C_flonum_rat);
   C_pte(C_expt);
-  C_pte(C_string_to_number);
   C_pte(C_number_to_string);
   C_pte(C_make_symbol);
   C_pte(C_string_to_symbol);
@@ -787,11 +847,10 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_context_switch);
   C_pte(C_register_finalizer);
   C_pte(C_locative_ref);
-  C_pte(C_call_with_cthulhu);
   C_pte(C_copy_closure);
   C_pte(C_dump_heap_state);
   C_pte(C_filter_heap_objects);
-  C_pte(C_get_argument);
+  C_pte(C_get_argument); /* OBSOLETE */
 
   /* IMPORTANT: did you remember the hardcoded pte table size? */
   pt[ i ].id = NULL;
@@ -852,7 +911,7 @@ void *CHICKEN_global_lookup(char *name)
   void *root = CHICKEN_new_gc_root();
 
   if(C_truep(s = lookup(key, len, name, symbol_table))) {
-    if(C_u_i_car(s) != C_SCHEME_UNBOUND) {
+    if(C_block_item(s, 0) != C_SCHEME_UNBOUND) {
       CHICKEN_gc_root_set(root, s);
       return root;
     }
@@ -942,7 +1001,7 @@ C_regparm C_word C_find_symbol(C_word str, C_SYMBOL_TABLE *stable)
   else return C_SCHEME_FALSE;
 }
 
-
+/* OBSOLETE */
 C_regparm C_word C_enumerate_symbols(C_SYMBOL_TABLE *stable, C_word pos)
 {
   int i;
@@ -963,9 +1022,9 @@ C_regparm C_word C_enumerate_symbols(C_SYMBOL_TABLE *stable, C_word pos)
     else bucket = stable->table[ i ];
   }
 
-  sym = C_u_i_car(bucket);
+  sym = C_block_item(bucket, 0);
   C_set_block_item(pos, 0, C_fix(i));
-  C_mutate(&C_u_i_cdr(pos), C_u_i_cdr(bucket));
+  C_mutate2(&C_u_i_cdr(pos), C_block_item(bucket, 1));
   return sym;
 }
 
@@ -987,12 +1046,71 @@ void initialize_symbol_table(void)
 }
 
 
+C_regparm void C_fcall 
+sigsegv_trampoline(void *dummy)
+{
+  barf(C_MEMORY_VIOLATION_ERROR, NULL);
+}
+
+
+C_regparm void C_fcall 
+sigbus_trampoline(void *dummy)
+{
+  barf(C_BUS_ERROR, NULL);
+}
+
+
+C_regparm void C_fcall 
+sigfpe_trampoline(void *dummy)
+{
+  barf(C_FLOATING_POINT_EXCEPTION_ERROR, NULL);
+}
+
+
+C_regparm void C_fcall 
+sigill_trampoline(void *dummy)
+{
+  barf(C_ILLEGAL_INSTRUCTION_ERROR, NULL);
+}
+
+
 /* This is called from POSIX signals: */
 
 void global_signal_handler(int signum)
 {
+#if defined(HAVE_SIGPROCMASK)
+  if(signum == SIGSEGV || signum == SIGFPE || signum == SIGILL || signum == SIGBUS) {
+    sigset_t sset;
+    
+    if(serious_signal_occurred || !chicken_is_running) {
+      switch(signum) {
+      case SIGSEGV: panic(C_text("unrecoverable segmentation violation"));
+      case SIGFPE: panic(C_text("unrecoverable floating-point exception"));
+      case SIGILL: panic(C_text("unrecoverable illegal instruction error"));
+      case SIGBUS: panic(C_text("unrecoverable bus error"));
+      default: panic(C_text("unrecoverable serious condition"));
+      }
+    }
+    else serious_signal_occurred = 1;
+
+    /* unblock signal to avoid nested invocation of the handler */
+    sigemptyset(&sset);
+    sigaddset(&sset, signum);
+    C_sigprocmask(SIG_UNBLOCK, &sset, NULL);
+
+    switch(signum) {
+    case SIGSEGV: C_reclaim(sigsegv_trampoline, NULL);
+    case SIGFPE: C_reclaim(sigfpe_trampoline, NULL);
+    case SIGILL: C_reclaim(sigill_trampoline, NULL);
+    case SIGBUS: C_reclaim(sigbus_trampoline, NULL);
+    default: panic(C_text("invalid serious signal"));
+    }
+  }
+#endif
+
   C_raise_interrupt(signal_mapping_table[ signum ]);
 #ifndef HAVE_SIGACTION
+  /* not necessarily needed, but older UNIXen may not leave the handler installed: */
   C_signal(signum, global_signal_handler);
 #endif
 }
@@ -1165,6 +1283,7 @@ void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *st
 		 " -:G              force GUI mode\n"
 		 " -:aSIZE          set trace-buffer/call-chain size\n"
 		 " -:H              dump heap state on exit\n"
+		 " -:S              do not handle segfaults or other serious conditions\n"
 		 "\n  SIZE may have a `k' (`K'), `m' (`M') or `g' (`G') suffix, meaning size\n"
 		 "  times 1024, 1048576, and 1073741824, respectively.\n\n");
 	  exit(0);
@@ -1205,6 +1324,10 @@ void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *st
 
 	case 'H':
 	  dump_heap_on_exit = 1;
+	  break;
+
+	case 'S':
+	  pass_serious_signals = 1;
 	  break;
 
 	case 's':
@@ -1269,7 +1392,7 @@ C_word arg_val(C_char *arg)
 {
   int len;
   C_char *end;
-  long val, mul = 1;
+  C_long val, mul = 1;
 
   if (arg == NULL) panic(C_text("illegal runtime-option argument"));
       
@@ -1290,7 +1413,7 @@ C_word arg_val(C_char *arg)
   default: mul = 1;
   }
 
-  val = strtol(arg, &end, 10);
+  val = C_strtow(arg, &end, 10);
 
   if((mul != 1 ? end[ 1 ] != '\0' : end[ 0 ] != '\0')) 
     panic(C_text("invalid runtime-option argument suffix"));
@@ -1321,10 +1444,16 @@ C_word CHICKEN_run(void *toplevel)
   stack_bottom = C_stack_pointer;
 
   if(debug_mode)
-    C_dbg(C_text("debug"), C_text("stack bottom is 0x%lx.\n"), (long)stack_bottom);
+    C_dbg(C_text("debug"), C_text("stack bottom is 0x%lx.\n"), (C_word)stack_bottom);
 
   /* The point of (usually) no return... */
+#ifdef HAVE_SIGSETJMP
+  C_sigsetjmp(C_restart, 0);
+#else
   C_setjmp(C_restart);
+#endif
+
+  serious_signal_occurred = 0;
 
   if(!return_to_host)
     (C_restart_trampoline)(C_restart_address);
@@ -1389,7 +1518,7 @@ void usual_panic(C_char *msg)
   C_dbg_hook(C_SCHEME_UNDEFINED);
 
   if(C_gui_mode) {
-    C_sprintf(buffer, C_text("%s\n\n%s"), msg, dmp);
+    C_snprintf(buffer, sizeof(buffer), C_text("%s\n\n%s"), msg, dmp);
 #if defined(_WIN32) && !defined(__CYGWIN__)
     MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONERROR);
     ExitProcess(1);
@@ -1406,7 +1535,7 @@ void horror(C_char *msg)
   C_dbg_hook(C_SCHEME_UNDEFINED);
 
   if(C_gui_mode) {
-    C_sprintf(buffer, C_text("%s"), msg);
+    C_snprintf(buffer, sizeof(buffer), C_text("%s"), msg);
 #if defined(_WIN32) && !defined(__CYGWIN__)
     MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONERROR);
     ExitProcess(1);
@@ -1430,7 +1559,7 @@ void barf(int code, char *loc, ...)
   C_dbg_hook(C_SCHEME_UNDEFINED);
 
   C_temporary_stack = C_temporary_stack_bottom;
-  err = C_u_i_car(err);
+  err = C_block_item(err, 0);
 
   if(C_immediatep(err))
     panic(C_text("`##sys#error-hook' is not defined - the `library' unit was probably not linked with this executable"));
@@ -1651,6 +1780,11 @@ void barf(int code, char *loc, ...)
     c = 1;
     break;
 
+  case C_MEMORY_VIOLATION_ERROR:
+    msg = C_text("segmentation violation");
+    c = 0;
+    break;
+
   default: panic(C_text("illegal internal error code"));
   }
   
@@ -1703,7 +1837,7 @@ C_regparm double C_fcall C_milliseconds(void)
 }
 
 
-C_regparm time_t C_fcall C_seconds(long *ms)
+C_regparm time_t C_fcall C_seconds(C_long *ms)
 {
 #ifdef C_NONUNIX
   if(ms != NULL) *ms = 0;
@@ -1748,7 +1882,7 @@ int C_fcall C_save_callback_continuation(C_word **ptr, C_word k)
 {
   C_word p = C_a_pair(ptr, k, C_block_item(callback_continuation_stack_symbol, 0));
   
-  C_mutate(&C_block_item(callback_continuation_stack_symbol, 0), p);
+  C_mutate_slot(&C_block_item(callback_continuation_stack_symbol, 0), p);
   return ++callback_continuation_level;
 }
 
@@ -1762,7 +1896,7 @@ C_word C_fcall C_restore_callback_continuation(void)
   assert(!C_immediatep(p) && C_block_header(p) == C_PAIR_TAG);
   k = C_u_i_car(p);
 
-  C_mutate(&C_block_item(callback_continuation_stack_symbol, 0), C_u_i_cdr(p));
+  C_mutate2(&C_block_item(callback_continuation_stack_symbol, 0), C_u_i_cdr(p));
   --callback_continuation_level;
   return k;
 }
@@ -1778,7 +1912,7 @@ C_word C_fcall C_restore_callback_continuation2(int level)
 
   k = C_u_i_car(p);
 
-  C_mutate(&C_block_item(callback_continuation_stack_symbol, 0), C_u_i_cdr(p));
+  C_mutate2(&C_block_item(callback_continuation_stack_symbol, 0), C_u_i_cdr(p));
   --callback_continuation_level;
   return k;
 }
@@ -1786,7 +1920,11 @@ C_word C_fcall C_restore_callback_continuation2(int level)
 
 C_word C_fcall C_callback(C_word closure, int argc)
 {
+#ifdef HAVE_SIGSETJMP
+  sigjmp_buf prev;                                                                                                                                      
+#else                                                                                                                                                   
   jmp_buf prev;
+#endif
   C_word 
     *a = C_alloc(3),
     k = C_closure(&a, 2, (C_word)callback_return_continuation, C_SCHEME_FALSE);
@@ -1795,15 +1933,21 @@ C_word C_fcall C_callback(C_word closure, int argc)
   if(old && C_block_item(callback_continuation_stack_symbol, 0) == C_SCHEME_END_OF_LIST)
     panic(C_text("callback invoked in non-safe context"));
 
-  C_memcpy(&prev, &C_restart, sizeof(jmp_buf));
+  C_memcpy(&prev, &C_restart, sizeof(C_restart));
   callback_returned_flag = 0;       
   chicken_is_running = 1;
 
+#ifdef HAVE_SIGSETJMP
+  if(!C_sigsetjmp(C_restart, 0)) C_do_apply(argc, closure, k);
+#else
   if(!C_setjmp(C_restart)) C_do_apply(argc, closure, k);
+#endif
+
+  serious_signal_occurred = 0;
 
   if(!callback_returned_flag) (C_restart_trampoline)(C_restart_address);
   else {
-    C_memcpy(&C_restart, &prev, sizeof(jmp_buf));
+    C_memcpy(&C_restart, &prev, sizeof(C_restart));
     callback_returned_flag = 0;
   }
  
@@ -1863,7 +2007,7 @@ void C_ccall callback_return_continuation(C_word c, C_word self, C_word r)
 }
 
 
-/* Zap symbol names: */
+/* Zap symbol names: (OBSOLETE) */
 
 void C_zap_strings(C_word str)
 {
@@ -1874,8 +2018,8 @@ void C_zap_strings(C_word str)
 
     for(bucket = symbol_table->table[ i ];
         bucket != C_SCHEME_END_OF_LIST;
-        bucket = C_u_i_cdr(bucket)) {
-      sym = C_u_i_car(bucket);
+        bucket = C_block_item(bucket,1)) {
+      sym = C_block_item(bucket,0);
       C_set_block_item(sym, 1, str);
     }
   }
@@ -1989,7 +2133,7 @@ C_regparm C_word C_fcall C_h_intern_in(C_word *slot, int len, C_char *str, C_SYM
   key = hash_string(len, str, stable->size, stable->rand, 0);
 
   if(C_truep(s = lookup(key, len, str, stable))) {
-    if(C_in_stackp(s)) C_mutate(slot, s);
+    if(C_in_stackp(s)) C_mutate_slot(slot, s);
     
     return s;
   }
@@ -2032,7 +2176,7 @@ C_regparm C_word C_fcall C_intern3(C_word **ptr, C_char *str, C_word value)
 {
   C_word s = C_intern_in(ptr, C_strlen(str), str, symbol_table);
   
-  C_mutate(&C_u_i_car(s), value);
+  C_mutate2(&C_block_item(s,0), value);
   return s;
 }
 
@@ -2055,12 +2199,12 @@ C_regparm C_word C_fcall lookup(C_word key, int len, C_char *str, C_SYMBOL_TABLE
   C_word bucket, sym, s;
 
   for(bucket = stable->table[ key ]; bucket != C_SCHEME_END_OF_LIST; 
-      bucket = C_u_i_cdr(bucket)) {
-    sym = C_u_i_car(bucket);
+      bucket = C_block_item(bucket,1)) {
+    sym = C_block_item(bucket,0);
     s = C_block_item(sym, 1);
 
     if(C_header_size(s) == (C_word)len
-       && !C_memcmp(str, (C_char *)((C_SCHEME_BLOCK *)s)->data, len))
+       && !C_memcmp(str, (C_char *)C_data_pointer(s), len))
       return sym;
   }
 
@@ -2077,7 +2221,7 @@ double compute_symbol_table_load(double *avg_bucket_len, int *total_n)
     bucket = symbol_table->table[ i ];
 
     for(j = 0; bucket != C_SCHEME_END_OF_LIST; ++j)
-      bucket = C_u_i_cdr(bucket);
+      bucket = C_block_item(bucket,1);
 
     if(j > 0) {
       alen += j;
@@ -2105,23 +2249,21 @@ C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stabl
   p = *ptr;
   sym = (C_word)p;
   p += C_SIZEOF_SYMBOL;
-  ((C_SCHEME_BLOCK *)sym)->header = C_SYMBOL_TYPE | (C_SIZEOF_SYMBOL - 1);
+  C_block_header_init(sym, C_SYMBOL_TYPE | (C_SIZEOF_SYMBOL - 1));
   C_set_block_item(sym, 0, keyw ? sym : C_SCHEME_UNBOUND); /* keyword? */
   C_set_block_item(sym, 1, string);
   C_set_block_item(sym, 2, C_SCHEME_END_OF_LIST);
   *ptr = p;
   b2 = stable->table[ key ];	/* previous bucket */
-  bucket = C_a_pair(ptr, sym, b2); /* create new bucket */
-  ((C_SCHEME_BLOCK *)bucket)->header = 
-    (((C_SCHEME_BLOCK *)bucket)->header & ~C_HEADER_TYPE_BITS) | C_BUCKET_TYPE;
+  bucket = C_a_bucket(ptr, sym, b2); /* create new bucket */
 
-  if(ptr != C_heaptop) C_mutate(&stable->table[ key ], bucket);
+  if(ptr != C_heaptop) C_mutate_slot(&stable->table[ key ], bucket);
   else {
     /* If a stack-allocated bucket was here, and we allocate from 
        heap-top (say, in a toplevel literal frame allocation) then we have
        to inform the memory manager that a 2nd gen. block points to a 
        1st gen. block, hence the mutation: */
-    C_mutate(&C_u_i_cdr(bucket), b2);
+    C_mutate2(&C_block_item(bucket,1), b2);
     stable->table[ key ] = bucket;
   }
 
@@ -2148,6 +2290,12 @@ C_regparm int C_fcall C_in_heapp(C_word x)
          (ptr >= tospace_start && ptr < tospace_limit);
 }
 
+/* Only used during major GC (heap realloc) */
+static C_regparm int C_fcall C_in_new_heapp(C_word x)
+{
+  C_byte *ptr = (C_byte *)(C_uword)x;
+  return (ptr >= new_tospace_start && ptr < new_tospace_limit);
+}
 
 C_regparm int C_fcall C_in_fromspacep(C_word x)
 {
@@ -2241,6 +2389,13 @@ void C_stack_overflow_with_msg(C_char *msg)
   barf(C_STACK_OVERFLOW_ERROR, NULL);
 }
 
+void C_temp_stack_overflow(void)
+{
+  /* Just raise a "too many parameters" error; it isn't very useful to
+     show a different message here. */
+  barf(C_TOO_MANY_PARAMETERS_ERROR, NULL);
+}
+
 
 void C_unbound_error(C_word sym)
 {
@@ -2267,7 +2422,7 @@ C_regparm C_word C_fcall C_string(C_word **ptr, int len, C_char *str)
   C_word strblock = (C_word)(*ptr);
 
   *ptr = (C_word *)((C_word)(*ptr) + sizeof(C_header) + C_align(len));
-  ((C_SCHEME_BLOCK *)strblock)->header = C_STRING_TYPE | len;
+  C_block_header_init(strblock, C_STRING_TYPE | len);
   C_memcpy(C_data_pointer(strblock), str, len);
   return strblock;
 }
@@ -2282,7 +2437,7 @@ C_regparm C_word C_fcall C_static_string(C_word **ptr, int len, C_char *str)
     panic(C_text("out of memory - cannot allocate static string"));
     
   strblock = (C_word)dptr;
-  ((C_SCHEME_BLOCK *)strblock)->header = C_STRING_TYPE | len;
+  C_block_header_init(strblock, C_STRING_TYPE | len);
   C_memcpy(C_data_pointer(strblock), str, len);
   return strblock;
 }
@@ -2298,7 +2453,7 @@ C_regparm C_word C_fcall C_static_lambda_info(C_word **ptr, int len, C_char *str
     panic(C_text("out of memory - cannot allocate static lambda info"));
 
   strblock = (C_word)dptr;
-  ((C_SCHEME_BLOCK *)strblock)->header = C_LAMBDA_INFO_TYPE | len;
+  C_block_header_init(strblock, C_LAMBDA_INFO_TYPE | len);
   C_memcpy(C_data_pointer(strblock), str, len);
   return strblock;
 }
@@ -2308,7 +2463,7 @@ C_regparm C_word C_fcall C_bytevector(C_word **ptr, int len, C_char *str)
 {
   C_word strblock = C_string(ptr, len, str);
 
-  C_string_to_bytevector(strblock);
+  (void)C_string_to_bytevector(strblock);
   return strblock;
 }
 
@@ -2317,7 +2472,7 @@ C_regparm C_word C_fcall C_static_bytevector(C_word **ptr, int len, C_char *str)
 {
   C_word strblock = C_static_string(ptr, len, str);
 
-  ((C_SCHEME_BLOCK *)strblock)->header = C_BYTEVECTOR_TYPE | len;
+  C_block_header_init(strblock, C_BYTEVECTOR_TYPE | len);
   return strblock;
 }
 
@@ -2361,8 +2516,8 @@ C_regparm C_word C_fcall C_string2(C_word **ptr, C_char *str)
 
   len = C_strlen(str);
   *ptr = (C_word *)((C_word)(*ptr) + sizeof(C_header) + C_align(len));
-  ((C_SCHEME_BLOCK *)strblock)->header = C_STRING_TYPE | len;
-  C_memcpy(((C_SCHEME_BLOCK *)strblock)->data, str, len);
+  C_block_header_init(strblock, C_STRING_TYPE | len);
+  C_memcpy(C_data_pointer(strblock), str, len);
   return strblock;
 }
 
@@ -2377,13 +2532,13 @@ C_regparm C_word C_fcall C_string2_safe(C_word **ptr, int max, C_char *str)
   len = C_strlen(str);
 
   if(len >= max) {
-    C_sprintf(buffer, C_text("foreign string result exceeded maximum of %d bytes"), max);
+    C_snprintf(buffer, sizeof(buffer), C_text("foreign string result exceeded maximum of %d bytes"), max);
     panic(buffer);
   }
 
   *ptr = (C_word *)((C_word)(*ptr) + sizeof(C_header) + C_align(len));
-  ((C_SCHEME_BLOCK *)strblock)->header = C_STRING_TYPE | len;
-  C_memcpy(((C_SCHEME_BLOCK *)strblock)->data, str, len);
+  C_block_header_init(strblock, C_STRING_TYPE | len);
+  C_memcpy(C_data_pointer(strblock), str, len);
   return strblock;
 }
 
@@ -2555,39 +2710,44 @@ C_word C_structure(C_word **ptr, int n, ...)
 }
 
 
-C_regparm C_word C_fcall C_mutate(C_word *slot, C_word val)
+C_regparm C_word C_fcall
+C_mutate_slot(C_word *slot, C_word val)
 {
   unsigned int mssize, newmssize, bytes;
 
-  if(!C_immediatep(val)) {
 #ifdef C_GC_HOOKS
-    if(C_gc_mutation_hook != NULL && C_gc_mutation_hook(slot, val)) return val;
+  if(C_gc_mutation_hook != NULL && C_gc_mutation_hook(slot, val)) return val;
 #endif
 
-    if(mutation_stack_top >= mutation_stack_limit) {
-      assert(mutation_stack_top == mutation_stack_limit);
-      mssize = mutation_stack_top - mutation_stack_bottom;
-      newmssize = mssize * 2;
-      bytes = newmssize * sizeof(C_word *);
+  if(mutation_stack_top >= mutation_stack_limit) {
+    assert(mutation_stack_top == mutation_stack_limit);
+    mssize = mutation_stack_top - mutation_stack_bottom;
+    newmssize = mssize * 2;
+    bytes = newmssize * sizeof(C_word *);
 
-      if(debug_mode) 
-	C_dbg(C_text("debug"), C_text("resizing mutation-stack from " UWORD_COUNT_FORMAT_STRING "k to " UWORD_COUNT_FORMAT_STRING "k ...\n"), 
-	      (mssize * sizeof(C_word *)) / 1024, bytes / 1024);
+    if(debug_mode) 
+      C_dbg(C_text("debug"), C_text("resizing mutation-stack from " UWORD_COUNT_FORMAT_STRING "k to " UWORD_COUNT_FORMAT_STRING "k ...\n"), 
+	    (mssize * sizeof(C_word *)) / 1024, bytes / 1024);
 
-      mutation_stack_bottom = (C_word **)realloc(mutation_stack_bottom, bytes);
+    mutation_stack_bottom = (C_word **)realloc(mutation_stack_bottom, bytes);
 
-      if(mutation_stack_bottom == NULL)
-	panic(C_text("out of memory - cannot re-allocate mutation stack"));
+    if(mutation_stack_bottom == NULL)
+      panic(C_text("out of memory - cannot re-allocate mutation stack"));
 
-      mutation_stack_limit = mutation_stack_bottom + newmssize;
-      mutation_stack_top = mutation_stack_bottom + mssize;
-    }
-
-    *(mutation_stack_top++) = slot;
-    ++mutation_count;
+    mutation_stack_limit = mutation_stack_bottom + newmssize;
+    mutation_stack_top = mutation_stack_bottom + mssize;
   }
 
+  *(mutation_stack_top++) = slot;
+  ++mutation_count;
   return *slot = val;
+}
+
+
+C_regparm C_word C_fcall
+C_mutate(C_word *slot, C_word val) /* OBSOLETE */
+{
+  return C_mutate2(slot, val);
 }
 
 
@@ -2640,7 +2800,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
   /* assert(C_timer_interrupt_counter >= 0); */
 
-  if(interrupt_reason && C_interrupts_enabled)
+  if(pending_interrupts_count > 0 && C_interrupts_enabled)
     handle_interrupt(trampoline, proc);
 
   /* Note: the mode argument will always be GC_MINOR or GC_REALLOC. */
@@ -2653,8 +2813,15 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
   gc_mode = GC_MINOR;
   start = C_fromspace_top;
 
+  if(C_enable_gcweak) 
+    weak_table_randomization = rand();
+
   /* Entry point for second-level GC (on explicit request or because of full fromspace): */
+#ifdef HAVE_SIGSETJMP
+  if(C_sigsetjmp(gc_restart, 0) || start >= C_fromspace_limit) {
+#else
   if(C_setjmp(gc_restart) || start >= C_fromspace_limit) {
+#endif
     if(gc_bell) {
       C_putchar(7);
       C_fflush(stdout);
@@ -2812,7 +2979,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 	  C_dbg(C_text("GC"), C_text("queueing %d finalizer(s)\n"), pending_finalizer_count);
 
 	last = C_block_item(pending_finalizers_symbol, 0);
-	assert(C_u_i_car(last) == C_fix(0));
+	assert(C_block_item(last, 0) == C_fix(0));
 	C_set_block_item(last, 0, C_fix(pending_finalizer_count));
 
 	for(i = 0; i < pending_finalizer_count; ++i) {
@@ -2856,22 +3023,22 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
     if(C_enable_gcweak) {
       /* Check entries in weak item table and recover items ref'd only
-      * once, which are unbound symbols and have empty property-lists: */
+         once, which are unbound symbols and have empty property-lists: */
       weakn = 0;
       wep = weak_item_table;
 
       for(i = 0; i < WEAK_TABLE_SIZE; ++i, ++wep)
 	if(wep->item != 0) { 
-	  if((wep->container & WEAK_COUNTER_MAX) == 0 && 
-	     is_fptr((item = C_block_header(wep->item)))) {
-	    item = fptr_to_ptr(item);
+	  if((wep->container & WEAK_COUNTER_MAX) == 0 && /* counter saturated? (more than 1) */
+	     is_fptr((item = C_block_header(wep->item)))) { /* and forwarded/collected */
+	    item = fptr_to_ptr(item);			    /* recover obj from forwarding ptr */
 	    container = wep->container & ~WEAK_COUNTER_MASK;
 
 	    if(C_header_bits(item) == C_SYMBOL_TYPE && 
 	       C_block_item(item, 0) == C_SCHEME_UNBOUND &&
 	       C_block_item(item, 2) == C_SCHEME_END_OF_LIST) {
 	      ++weakn;
-	      C_set_block_item(container, 0, C_SCHEME_UNDEFINED);
+	      C_set_block_item(container, 0, C_SCHEME_UNDEFINED); /* clear reference to item */
 	    }
 	  }
 
@@ -2883,10 +3050,10 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 	for(i = 0; i < stp->size; ++i) {
 	  last = 0;
 	  
-	  for(bucket = stp->table[ i ]; bucket != C_SCHEME_END_OF_LIST; bucket = C_u_i_cdr(bucket))
-	    if(C_u_i_car(bucket) == C_SCHEME_UNDEFINED) {
-	      if(last) C_set_block_item(last, 1, C_u_i_cdr(bucket));
-	      else stp->table[ i ] = C_u_i_cdr(bucket);
+	  for(bucket = stp->table[ i ]; bucket != C_SCHEME_END_OF_LIST; bucket = C_block_item(bucket,1))
+	    if(C_block_item(bucket,0) == C_SCHEME_UNDEFINED) {
+	      if(last) C_set_block_item(last, 1, C_block_item(bucket,1));
+	      else stp->table[ i ] = C_block_item(bucket,1);
 	    }
 	    else last = bucket;
 	}
@@ -2916,14 +3083,14 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 #endif
 
     if(gc_mode == GC_MINOR) 
-      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), (unsigned int)count);
+      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), (C_uword)count);
 
     C_fputc('\n', C_stderr);
     C_dbg("GC", C_text(" from\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING),
 	  (C_uword)fromspace_start, (C_uword)C_fromspace_top, (C_uword)C_fromspace_limit);
 
     if(gc_mode == GC_MAJOR) 
-      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), (unsigned)count);
+      C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), (C_uword)count);
 
     C_fputc('\n', C_stderr);
     C_dbg("GC", C_text("   to\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING" \n"), 
@@ -2938,10 +3105,14 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
   if(gc_mode == GC_MAJOR) gc_count_1 = 0;
 
-  if(C_post_gc_hook != NULL) C_post_gc_hook(gc_mode, (long)tgc);
+  if(C_post_gc_hook != NULL) C_post_gc_hook(gc_mode, (C_long)tgc);
 
-  /* Jump from the Empire State Building... */
+  /* Unwind stack completely */
+#ifdef HAVE_SIGSETJMP
+  C_siglongjmp(C_restart, 1);
+#else
   C_longjmp(C_restart, 1);
+#endif
 }
 
 
@@ -2965,26 +3136,17 @@ C_regparm void C_fcall really_mark(C_word *x)
 
   val = *x;
 
-  p = (C_SCHEME_BLOCK *)val;
-  
-  /* not in stack and not in heap? */
-  if (
-#if C_STACK_GROWS_DOWNWARD
-       p < (C_SCHEME_BLOCK *)C_stack_pointer || p >= (C_SCHEME_BLOCK *)stack_bottom
-#else
-       p >= (C_SCHEME_BLOCK *)C_stack_pointer || p < (C_SCHEME_BLOCK *)stack_bottom
-#endif
-     )
-    if((p < (C_SCHEME_BLOCK *)fromspace_start || p >= (C_SCHEME_BLOCK *)C_fromspace_limit) &&
-       (p < (C_SCHEME_BLOCK *)tospace_start || p >= (C_SCHEME_BLOCK *)tospace_limit) ) {
+  if (!C_in_stackp(val) && !C_in_heapp(val)) {
 #ifdef C_GC_HOOKS
       if(C_gc_trace_hook != NULL) 
 	C_gc_trace_hook(x, gc_mode);
 #endif
 
       return;
-    }
+  }
 
+  p = (C_SCHEME_BLOCK *)val;
+  
   h = p->header;
 
   if(gc_mode == GC_MINOR) {
@@ -3008,7 +3170,11 @@ C_regparm void C_fcall really_mark(C_word *x)
     bytes = (h & C_BYTEBLOCK_BIT) ? n : n * sizeof(C_word);
 
     if(((C_byte *)p2 + bytes + sizeof(C_word)) > C_fromspace_limit)
+#ifdef HAVE_SIGSETJMP
+      C_siglongjmp(gc_restart, 1);
+#else
       C_longjmp(gc_restart, 1);
+#endif
 
     C_fromspace_top = (C_byte *)p2 + C_align(bytes) + sizeof(C_word);
 
@@ -3018,9 +3184,11 @@ C_regparm void C_fcall really_mark(C_word *x)
     p->header = ptr_to_fptr((C_uword)p2);
     C_memcpy(p2->data, p->data, bytes);
   }
-  else {
-    /* Increase counter if weakly held item: */
-    if(C_enable_gcweak && (wep = lookup_weak_table_entry(val, 0)) != NULL) {
+  else { /* (major GC) */
+    /* Increase counter (saturated at 2) if weakly held item (someone pointed to this object): */
+    if(C_enable_gcweak &&
+       (h & C_HEADER_TYPE_BITS) == C_SYMBOL_TYPE &&
+       (wep = lookup_weak_table_entry(val, 0)) != NULL) {
       if((wep->container & WEAK_COUNTER_MAX) == 0) ++wep->container;
     }
 
@@ -3060,7 +3228,7 @@ C_regparm void C_fcall really_mark(C_word *x)
 #endif
 
     if(C_enable_gcweak && (h & C_HEADER_TYPE_BITS) == C_BUCKET_TYPE) {
-      item = C_u_i_car(val);
+      item = C_block_item(val,0);
 
       /* Lookup item in weak item table or add entry: */
       if((wep = lookup_weak_table_entry(item, (C_word)p2)) != NULL) {
@@ -3077,7 +3245,11 @@ C_regparm void C_fcall really_mark(C_word *x)
 	panic(C_text("out of memory - heap full"));
       
       gc_mode = GC_REALLOC;
+#ifdef HAVE_SIGSETJMP
+      C_siglongjmp(gc_restart, 1);
+#else
       C_longjmp(gc_restart, 1);
+#endif
     }
 
     tospace_top = (C_byte *)p2 + C_align(bytes) + sizeof(C_word);
@@ -3125,29 +3297,41 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
 
   if(size < MINIMAL_HEAP_SIZE) size = MINIMAL_HEAP_SIZE;
 
-  /* Heap must at least grow enough to accommodate first generation (nursery) */
-  if(size - heap_size < stack_size) size = heap_size + stack_size;
+  /*
+   * When heap grows, ensure it's enough to accommodate first
+   * generation (nursery).  Because we're calculating the total heap
+   * size here (fromspace *AND* tospace), we have to double the stack
+   * size, otherwise we'd accommodate only half the stack in the tospace.
+   */
+  if(size > heap_size && size - heap_size < stack_size * 2)
+    size = heap_size + stack_size * 2;
 	  
   if(size > C_maximal_heap_size) size = C_maximal_heap_size;
 
-  if(size == heap_size) return;
-
   if(debug_mode) 
     C_dbg(C_text("debug"), C_text("resizing heap dynamically from " UWORD_COUNT_FORMAT_STRING "k to " UWORD_COUNT_FORMAT_STRING "k ...\n"), 
-	  (C_uword)heap_size / 1024, size / 1024);
+	  heap_size / 1024, size / 1024);
 
   if(gc_report_flag) {
     C_dbg(C_text("GC"), C_text("(old) fromspace: \tstart=" UWORD_FORMAT_STRING 
 			       ", \tlimit=" UWORD_FORMAT_STRING "\n"),
-	  (long)fromspace_start, (long)C_fromspace_limit);
+	  (C_word)fromspace_start, (C_word)C_fromspace_limit);
     C_dbg(C_text("GC"), C_text("(old) tospace:   \tstart=" UWORD_FORMAT_STRING
 			       ", \tlimit=" UWORD_FORMAT_STRING "\n"),
-	  (long)tospace_start, (long)tospace_limit);
+	  (C_word)tospace_start, (C_word)tospace_limit);
   }
 
-  heap_size = size;
-  size /= 2;
-
+  heap_size = size;         /* Total heap size of the two halves... */
+  size /= 2;                /* ...each half is this big */
+  
+  /*
+   * Start by allocating the new heap's fromspace.  After remarking,
+   * allocate the other half of the new heap (its tospace).
+   *
+   * To clarify: what we call "new_space" here is what will eventually
+   * be cycled over to "fromspace" when re-reclamation has finished
+   * (that is, after the old one has been freed).
+   */
   if ((new_heapspace = heap_alloc (size, &new_tospace_start)) == NULL)
     panic(C_text("out of memory - cannot allocate heap segment"));
   new_heapspace_size = size;
@@ -3196,12 +3380,12 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
     remark(&flist->finalizer);
   }
 
-  /* Mark weakly held items: */
+  /* Clear weakly held items: */
   if(C_enable_gcweak) {
     wep = weak_item_table; 
 
     for(i = 0; i < WEAK_TABLE_SIZE; ++i, ++wep)
-      if(wep->item != 0) remark(&wep->item);
+      wep->item = wep->container = 0;
   }
 
   /* Mark trace-buffer: */
@@ -3242,7 +3426,7 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
   heap_free (heapspace2, heapspace2_size);
   
   if ((heapspace2 = heap_alloc (size, &tospace_start)) == NULL)
-    panic(C_text("out ot memory - cannot allocate heap segment"));
+    panic(C_text("out of memory - cannot allocate next heap segment"));
   heapspace2_size = size;
 
   heapspace1 = new_heapspace;
@@ -3257,10 +3441,10 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
     C_dbg(C_text("GC"), C_text("resized heap to %d bytes\n"), heap_size);
     C_dbg(C_text("GC"), C_text("(new) fromspace: \tstart=" UWORD_FORMAT_STRING 
 			       ", \tlimit=" UWORD_FORMAT_STRING "\n"),
-	  (long)fromspace_start, (long)C_fromspace_limit);
+	  (C_word)fromspace_start, (C_word)C_fromspace_limit);
     C_dbg(C_text("GC"), C_text("(new) tospace:   \tstart=" UWORD_FORMAT_STRING
 			       ", \tlimit=" UWORD_FORMAT_STRING "\n"),
-	  (long)tospace_start, (long)tospace_limit);
+	  (C_word)tospace_start, (C_word)tospace_limit);
   }
 
   if(C_post_gc_hook != NULL) C_post_gc_hook(GC_REALLOC, 0);
@@ -3287,27 +3471,17 @@ C_regparm void C_fcall really_remark(C_word *x)
 
   val = *x;
 
-  p = (C_SCHEME_BLOCK *)val;
-  
-  /* not in stack and not in heap? */
-  if(
-#if C_STACK_GROWS_DOWNWARD
-       p < (C_SCHEME_BLOCK *)C_stack_pointer || p >= (C_SCHEME_BLOCK *)stack_bottom
-#else
-       p >= (C_SCHEME_BLOCK *)C_stack_pointer || p < (C_SCHEME_BLOCK *)stack_bottom
-#endif
-    )
-    if((p < (C_SCHEME_BLOCK *)fromspace_start || p >= (C_SCHEME_BLOCK *)C_fromspace_limit) &&
-       (p < (C_SCHEME_BLOCK *)tospace_start || p >= (C_SCHEME_BLOCK *)tospace_limit) &&
-       (p < (C_SCHEME_BLOCK *)new_tospace_start || p >= (C_SCHEME_BLOCK *)new_tospace_limit) ) {
+  if (!C_in_stackp(val) && !C_in_heapp(val) && !C_in_new_heapp(val)) {
 #ifdef C_GC_HOOKS
       if(C_gc_trace_hook != NULL) 
 	C_gc_trace_hook(x, gc_mode);
 #endif
 
       return;
-    }
+  }
 
+  p = (C_SCHEME_BLOCK *)val;
+  
   h = p->header;
 
   if(is_fptr(h)) {
@@ -3470,13 +3644,14 @@ C_regparm void C_fcall update_locative_table(int mode)
 
 C_regparm WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word container)
 {
-  int key = (C_uword)item >> 2,
-      disp = 0,
-      n;
+  C_uword
+    key = (C_uword)item >> 2,
+    disp = 0,
+    n;
   WEAK_TABLE_ENTRY *wep;
 
   for(n = 0; n < WEAK_HASH_ITERATIONS; ++n) {
-    key = (key + disp) % WEAK_TABLE_SIZE;
+    key = (key + disp + weak_table_randomization) % WEAK_TABLE_SIZE;
     wep = &weak_item_table[ key ];
 
     if(wep->item == 0) {
@@ -3500,7 +3675,6 @@ C_regparm WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word 
 void handle_interrupt(void *trampoline, void *proc)
 {
   C_word *p, x, n;
-  int i;
   double c;
 
   /* Build vector with context information: */
@@ -3519,12 +3693,10 @@ void handle_interrupt(void *trampoline, void *proc)
 
   /* Restore state to the one at the time of the interrupt: */
   C_temporary_stack = C_temporary_stack_bottom;
-  i = interrupt_reason;
-  interrupt_reason = 0;
   C_stack_limit = saved_stack_limit;
 
   /* Invoke high-level interrupt handler: */
-  C_save(C_fix(i));
+  C_save(C_fix(pending_interrupts[ --pending_interrupts_count ]));
   C_save(x);
   x = C_block_item(interrupt_hook_symbol, 0);
 
@@ -3659,9 +3831,10 @@ C_char *C_dump_trace(int start)
 {
   TRACE_INFO *ptr;
   C_char *result;
-  int i;
+  int i, result_len;
 
-  if((result = (char *)C_malloc(STRING_BUFFER_SIZE)) == NULL)
+  result_len = STRING_BUFFER_SIZE;
+  if((result = (char *)C_malloc(result_len)) == NULL)
     horror(C_text("out of memory - cannot allocate trace-dump buffer"));
 
   *result = '\0';
@@ -3669,7 +3842,7 @@ C_char *C_dump_trace(int start)
   if(trace_buffer_top > trace_buffer || trace_buffer_full) {
     if(trace_buffer_full) {
       i = C_trace_buffer_size;
-      C_strcat(result, C_text("...more...\n"));
+      C_strlcat(result, C_text("...more...\n"), result_len);
     }
     else i = trace_buffer_top - trace_buffer;
 
@@ -3681,14 +3854,16 @@ C_char *C_dump_trace(int start)
       if(ptr >= trace_buffer_limit) ptr = trace_buffer;
 
       if(C_strlen(result) > STRING_BUFFER_SIZE - 32) {
-	if((result = C_realloc(result, C_strlen(result) * 2)) == NULL)
+        result_len = C_strlen(result) * 2;
+        result = C_realloc(result, result_len);
+	if(result == NULL)
 	  horror(C_text("out of memory - cannot reallocate trace-dump buffer"));
       }
 
-      C_strcat(result, ptr->raw);
+      C_strlcat(result, ptr->raw, result_len);
 
-      if(i > 0) C_strcat(result, "\n");
-      else C_strcat(result, " \t<--\n");
+      if(i > 0) C_strlcat(result, "\n", result_len);
+      else C_strlcat(result, " \t<--\n", result_len);
     }
   }
 
@@ -3701,6 +3876,9 @@ C_regparm void C_fcall C_clear_trace_buffer(void)
   int i;
 
   if(trace_buffer == NULL) {
+    if(C_trace_buffer_size < MIN_TRACE_BUFFER_SIZE)
+      C_trace_buffer_size = MIN_TRACE_BUFFER_SIZE;
+
     trace_buffer = (TRACE_INFO *)C_malloc(sizeof(TRACE_INFO) * C_trace_buffer_size);
 
     if(trace_buffer == NULL)
@@ -3718,6 +3896,15 @@ C_regparm void C_fcall C_clear_trace_buffer(void)
   }
 }
 
+C_word C_resize_trace_buffer(C_word size) {
+  int old_size = C_trace_buffer_size;
+  assert(trace_buffer);
+  free(trace_buffer);
+  trace_buffer = NULL;
+  C_trace_buffer_size = C_unfix(size);
+  C_clear_trace_buffer();
+  return(C_fix(old_size));
+}
 
 C_word C_fetch_trace(C_word starti, C_word buffer)
 {
@@ -3739,12 +3926,12 @@ C_word C_fetch_trace(C_word starti, C_word buffer)
       if(ptr >= trace_buffer_limit) ptr = trace_buffer;
 
       /* outside-pointer, will be ignored by GC */
-      C_mutate(&C_block_item(buffer, p++), (C_word)ptr->raw);
+      C_mutate2(&C_block_item(buffer, p++), (C_word)ptr->raw);
 
       /* subject to GC */
-      C_mutate(&C_block_item(buffer, p++), ptr->cooked1);
-      C_mutate(&C_block_item(buffer, p++), ptr->cooked2);
-      C_mutate(&C_block_item(buffer, p++), ptr->thread);
+      C_mutate2(&C_block_item(buffer, p++), ptr->cooked1);
+      C_mutate2(&C_block_item(buffer, p++), ptr->cooked2);
+      C_mutate2(&C_block_item(buffer, p++), ptr->thread);
     }
   }
 
@@ -3765,18 +3952,6 @@ C_regparm C_word C_fcall C_u_i_string_ci_hash(C_word str, C_word rnd)
   return C_fix(hash_string(len, ptr, C_MOST_POSITIVE_FIXNUM, C_unfix(rnd), 1));
 }
 
-/* DEPRECATED, INSECURE */
-C_regparm C_word C_fcall C_hash_string(C_word str)
-{
-  return C_u_i_string_hash(str, C_fix(0));
-}
-
-/* DEPRECATED, INSECURE */
-C_regparm C_word C_fcall C_hash_string_ci(C_word str)
-{
-  return C_u_i_string_ci_hash(str, C_fix(0));
-}
-
 C_regparm void C_fcall C_toplevel_entry(C_char *name)
 {
   if(debug_mode)
@@ -3791,18 +3966,17 @@ C_word C_halt(C_word msg)
   if(C_gui_mode) {
     if(msg != C_SCHEME_FALSE) {
       int n = C_header_size(msg);
-      
+
       if (n >= sizeof(buffer))
 	n = sizeof(buffer) - 1;
-      C_strncpy(buffer, (C_char *)C_data_pointer(msg), n);
-      buffer[ n ] = '\0';
+      C_strlcpy(buffer, (C_char *)C_data_pointer(msg), n);
       /* XXX msg isn't checked for NUL bytes, but we can't barf here either! */
     }
-    else C_strcpy(buffer, C_text("(aborted)"));
+    else C_strlcpy(buffer, C_text("(aborted)"), sizeof(buffer));
 
-    C_strcat(buffer, C_text("\n\n"));
+    C_strlcat(buffer, C_text("\n\n"), sizeof(buffer));
 
-    if(dmp != NULL) C_strcat(buffer, dmp);
+    if(dmp != NULL) C_strlcat(buffer, dmp, sizeof(buffer));
 
 #if defined(_WIN32) && !defined(__CYGWIN__) 
     MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONERROR);
@@ -3957,21 +4131,21 @@ C_regparm C_word C_fcall C_display_flonum(C_word port, C_word n)
 {
   C_FILEPTR fp = C_port_file(port);
 
-#ifdef HAVE_GCVT
-  C_fprintf(fp, C_text("%s"), C_gcvt(C_flonum_magnitude(n), flonum_print_precision, buffer));
-#else
   C_fprintf(fp, C_text("%.*g"), flonum_print_precision, C_flonum_magnitude(n));
-#endif
   return C_SCHEME_UNDEFINED;
 }
 
 
 C_regparm C_word C_fcall C_read_char(C_word port)
 {
-  int c = C_getc(C_port_file(port));
+  C_FILEPTR fp = C_port_file(port);
+  int c = C_getc(fp);
 
   if(c == EOF) {
-    if(errno == EINTR) return C_fix(-1);
+    if(ferror(fp)) {
+      clearerr(fp);
+      return C_fix(-1);
+    }
     /* Found here:
        http://mail.python.org/pipermail/python-bugs-list/2002-July/012579.html */
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -3990,7 +4164,10 @@ C_regparm C_word C_fcall C_peek_char(C_word port)
   int c = C_getc(fp);
 
   if(c == EOF) {
-    if(errno == EINTR) return C_fix(-1);
+    if(ferror(fp)) {
+      clearerr(fp);
+      return C_fix(-1);
+    }
     /* see above */
 #if defined(_WIN32) && !defined(__CYGWIN__)
     else if(GetLastError() == ERROR_OPERATION_ABORTED) return C_fix(-1);
@@ -4017,7 +4194,7 @@ C_regparm C_word C_fcall C_execute_shell_command(C_word string)
       barf(C_OUT_OF_MEMORY_ERROR, "system");
   }
 
-  C_memcpy(buf, ((C_SCHEME_BLOCK *)string)->data, n);
+  C_memcpy(buf, C_data_pointer(string), n);
   buf[ n ] = '\0';
   if (n != strlen(buf))
     barf(C_ASCIIZ_REPRESENTATION_ERROR, "get-environment-variable", string);
@@ -4029,20 +4206,39 @@ C_regparm C_word C_fcall C_execute_shell_command(C_word string)
   return C_fix(n);
 }
 
+/*
+ * TODO: Implement something for Windows that supports selecting on
+ * arbitrary fds (there, select() only works on network sockets and
+ * poll() is not available at all).
+ */
+C_regparm int C_fcall C_check_fd_ready(int fd)
+{
+#ifdef HAVE_POSIX_POLL
+  struct pollfd ps;
+  ps.fd = fd;
+  ps.events = POLLIN;
+  return poll(&ps, 1, 0);
+#else
+  fd_set in;
+  struct timeval tm;
+  int rv;
+  FD_ZERO(&in);
+  FD_SET(fd, &in);
+  tm.tv_sec = tm.tv_usec = 0;
+  rv = select(fd + 1, &in, NULL, NULL, &tm);
+  if(rv > 0) { rv = FD_ISSET(fd, &in) ? 1 : 0; }
+  return rv;
+#endif
+}
 
 C_regparm C_word C_fcall C_char_ready_p(C_word port)
 {
-#if !defined(C_NONUNIX)
-  fd_set fs;
-  struct timeval to;
-  int fd = C_fileno(C_port_file(port));
-
-  FD_ZERO(&fs);
-  FD_SET(fd, &fs);
-  to.tv_sec = to.tv_usec = 0;
-  return C_mk_bool(C_select(fd + 1, &fs, NULL, NULL, &to) == 1);
-#else
+#if defined(C_NONUNIX)
+  /* The best we can currently do on Windows... */
   return C_SCHEME_TRUE;
+#else
+  int fd = C_fileno(C_port_file(port));
+  return C_mk_bool(C_check_fd_ready(fd) == 1);
 #endif
 }
 
@@ -4249,14 +4445,10 @@ C_regparm void C_fcall C_paranoid_check_for_interrupt(void)
 C_regparm void C_fcall C_raise_interrupt(int reason)
 {
   if(C_interrupts_enabled) {
-    if(interrupt_reason) {
-      if(reason != C_TIMER_INTERRUPT_NUMBER) {
-	if(pending_interrupts_count < MAX_PENDING_INTERRUPTS) 
-	  /* drop signals if too many */
-	  pending_interrupts[ pending_interrupts_count++ ] = reason;
-      }
-    }
-    else {
+    if(pending_interrupts_count == 0 && !handling_interrupts) {
+      /* Force the next stack check to fail by faking a "full" stack.
+         That causes save_and_reclaim() to be called, which will
+         invoke handle_interrupt() (which restores the stack limit). */
       saved_stack_limit = C_stack_limit;
 
 #if C_STACK_GROWS_DOWNWARD
@@ -4264,9 +4456,19 @@ C_regparm void C_fcall C_raise_interrupt(int reason)
 #else
       C_stack_limit = C_stack_pointer - 1000;
 #endif
-
-      interrupt_reason = reason;
       interrupt_time = C_cpu_milliseconds();
+      pending_interrupts[ pending_interrupts_count++ ] = reason;
+    } else if(pending_interrupts_count < MAX_PENDING_INTERRUPTS) {
+      int i;
+      /*
+       * Drop signals if too many, but don't queue up multiple entries
+       * for the same signal.
+       */
+      for (i = 0; i < pending_interrupts_count; ++i) {
+        if (pending_interrupts[i] == reason)
+          return;
+      }
+      pending_interrupts[ pending_interrupts_count++ ] = reason;
     }
   }
 }
@@ -4292,19 +4494,20 @@ C_regparm C_word C_fcall C_establish_signal_handler(C_word signum, C_word reason
 {
   int sig = C_unfix(signum);
 #if defined(HAVE_SIGACTION)
-  struct sigaction new;
-
-  new.sa_flags = 0;
-  sigemptyset(&new.sa_mask);
+  struct sigaction newsig;
 #endif
 
   if(reason == C_SCHEME_FALSE) C_signal(sig, SIG_IGN);
   else {
     signal_mapping_table[ sig ] = C_unfix(reason);
 #if defined(HAVE_SIGACTION)
-    sigaddset(&new.sa_mask, sig);
-    new.sa_handler = global_signal_handler;
-    C_sigaction(sig, &new, NULL);
+    newsig.sa_flags = 0;
+    /* The global signal handler is used for all signals, and
+       manipulates a single queue.  Don't allow other signals to
+       concurrently arrive while it's doing this, to avoid races. */
+    sigfillset(&newsig.sa_mask);
+    newsig.sa_handler = global_signal_handler;
+    C_sigaction(sig, &newsig, NULL);
 #else
     C_signal(sig, global_signal_handler);
 #endif
@@ -4319,7 +4522,7 @@ C_regparm C_word C_fcall C_establish_signal_handler(C_word signum, C_word reason
 C_regparm C_word C_fcall C_copy_block(C_word from, C_word to)
 {
   int n = C_header_size(from);
-  long bytes;
+  C_long bytes;
 
   if(C_header_bits(from) & C_BYTEBLOCK_BIT) {
     bytes = n;
@@ -4337,7 +4540,7 @@ C_regparm C_word C_fcall C_copy_block(C_word from, C_word to)
 C_regparm C_word C_fcall C_evict_block(C_word from, C_word ptr)
 {
   int n = C_header_size(from);
-  long bytes;
+  C_long bytes;
   C_word *p = (C_word *)C_pointer_address(ptr);
 
   if(C_header_bits(from) & C_BYTEBLOCK_BIT) bytes = n;
@@ -4417,19 +4620,6 @@ C_regparm C_word C_fcall C_i_string_ci_equal_p(C_word x, C_word y)
 }
 
 
-#if !defined(__GNUC__) && !defined(__INTEL_COMPILER)
-
-C_word *C_a_i(C_word **a, int n)
-{
-  C_word *p = *a;
-  
-  *a += n;
-  return p;
-}
-
-#endif
-
-
 C_word C_a_i_list(C_word **a, int c, ...)
 {
   va_list v;
@@ -4459,7 +4649,7 @@ C_word C_a_i_string(C_word **a, int c, ...)
   char *p;
 
   *a = (C_word *)((C_word)(*a) + sizeof(C_header) + C_align(c));
-  ((C_SCHEME_BLOCK *)s)->header = C_STRING_TYPE | c;
+  C_block_header_init(s, C_STRING_TYPE | c);
   p = (char *)C_data_pointer(s);
   va_start(v, c);
 
@@ -5028,7 +5218,7 @@ C_regparm C_word C_fcall C_i_set_car(C_word x, C_word val)
   if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "set-car!", x);
 
-  C_mutate(&C_u_i_car(x), val);
+  C_mutate2(&C_u_i_car(x), val);
   return C_SCHEME_UNDEFINED;
 }
 
@@ -5038,7 +5228,7 @@ C_regparm C_word C_fcall C_i_set_cdr(C_word x, C_word val)
   if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "set-cdr!", x);
 
-  C_mutate(&C_u_i_cdr(x), val);
+  C_mutate2(&C_u_i_cdr(x), val);
   return C_SCHEME_UNDEFINED;
 }
 
@@ -5055,7 +5245,7 @@ C_regparm C_word C_fcall C_i_vector_set(C_word v, C_word i, C_word x)
 
     if(j < 0 || j >= C_header_size(v)) barf(C_OUT_OF_RANGE_ERROR, "vector-set!", v, i);
 
-    C_mutate(&C_block_item(v, j), x);
+    C_mutate2(&C_block_item(v, j), x);
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "vector-set!", i);
 
@@ -5323,6 +5513,9 @@ C_regparm C_word C_fcall C_i_assq(C_word x, C_word lst)
     lst = C_u_i_cdr(lst);
   }
 
+  if(lst!=C_SCHEME_END_OF_LIST)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "assq", lst);
+
   return C_SCHEME_FALSE;
 }
 
@@ -5341,6 +5534,9 @@ C_regparm C_word C_fcall C_i_assv(C_word x, C_word lst)
   
     lst = C_u_i_cdr(lst);
   }
+
+  if(lst!=C_SCHEME_END_OF_LIST)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "assv", lst);
 
   return C_SCHEME_FALSE;
 }
@@ -5361,6 +5557,9 @@ C_regparm C_word C_fcall C_i_assoc(C_word x, C_word lst)
     lst = C_u_i_cdr(lst);
   }
 
+  if(lst!=C_SCHEME_END_OF_LIST)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "assoc", lst);
+
   return C_SCHEME_FALSE;
 }
 
@@ -5371,6 +5570,9 @@ C_regparm C_word C_fcall C_i_memq(C_word x, C_word lst)
     if(C_u_i_car(lst) == x) return lst;
     else lst = C_u_i_cdr(lst);
   }
+
+  if(lst!=C_SCHEME_END_OF_LIST)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "memq", lst);
 
   return C_SCHEME_FALSE;
 }
@@ -5394,6 +5596,9 @@ C_regparm C_word C_fcall C_i_memv(C_word x, C_word lst)
     else lst = C_u_i_cdr(lst);
   }
 
+  if(lst!=C_SCHEME_END_OF_LIST)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "memv", lst);
+  
   return C_SCHEME_FALSE;
 }
 
@@ -5404,6 +5609,9 @@ C_regparm C_word C_fcall C_i_member(C_word x, C_word lst)
     if(C_equalp(C_u_i_car(lst), x)) return lst;
     else lst = C_u_i_cdr(lst);
   }
+
+  if(lst!=C_SCHEME_END_OF_LIST)
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "member", lst);
   
   return C_SCHEME_FALSE;
 }
@@ -5501,7 +5709,7 @@ C_regparm C_word C_fcall C_i_check_vector_2(C_word x, C_word loc)
 
 C_regparm C_word C_fcall C_i_check_structure_2(C_word x, C_word st, C_word loc)
 {
-  if(C_immediatep(x) || C_header_bits(x) != C_STRUCTURE_TYPE || C_u_i_car(x) != st) {
+  if(C_immediatep(x) || C_header_bits(x) != C_STRUCTURE_TYPE || C_block_item(x,0) != st) {
     error_location = loc;
     barf(C_BAD_ARGUMENT_TYPE_BAD_STRUCT_ERROR, NULL, x, st);
   }
@@ -5734,10 +5942,15 @@ C_regparm C_word C_fcall C_i_foreign_integer_argumentp(C_word x)
 
 C_regparm C_word C_fcall C_i_foreign_integer64_argumentp(C_word x)
 {
-  double m;
+  double m, r;
 
-  if((x & C_FIXNUM_BIT) != 0 || (!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG))
-    return x;
+  if((x & C_FIXNUM_BIT) != 0) return x;
+  
+  if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
+    m = C_flonum_magnitude(x);
+
+    if(m >= C_S64_MIN && m <= C_S64_MAX && C_modf(m, &r) == 0.0) return x;
+  }
 
   barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, NULL, x);
   return C_SCHEME_UNDEFINED;
@@ -5746,14 +5959,14 @@ C_regparm C_word C_fcall C_i_foreign_integer64_argumentp(C_word x)
 
 C_regparm C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x)
 {
-  double m;
+  double m ,r;
 
   if((x & C_FIXNUM_BIT) != 0) return x;
 
   if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
     m = C_flonum_magnitude(x);
 
-    if(m >= 0 && m <= C_UWORD_MAX) return x;
+    if(m >= 0 && m <= C_UWORD_MAX && C_modf(m, &r) == 0.0) return x;
   }
 
   barf(C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR, NULL, x);
@@ -5763,12 +5976,15 @@ C_regparm C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x)
 
 C_regparm C_word C_fcall C_i_foreign_unsigned_integer64_argumentp(C_word x)
 {
-  double m;
+  double m, r;
 
   if((x & C_FIXNUM_BIT) != 0) return x;
 
-  if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG)
-    return C_flonum_magnitude(x);
+  if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
+    m = C_flonum_magnitude(x);
+
+    if(m >= 0 && m <= C_U64_MAX && C_modf(m, &r) == 0.0) return x;
+  }
 
   barf(C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR, NULL, x);
   return C_SCHEME_UNDEFINED;
@@ -5869,6 +6085,7 @@ void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...)
   /* 3 additional args + 1 slot for stack-pointer + two for stack-alignment to 16 bytes */
   buf = alloca((n + 6) * sizeof(C_word));
 # ifdef __x86_64__
+  /* XXX Shouldn't this check for C_SIXTY_FOUR in general? */
   buf = (void *)C_align16((C_uword)buf);
 # endif
   buf[ 0 ] = n + 2;
@@ -5967,13 +6184,13 @@ void C_ccall C_call_cc(C_word c, C_word closure, C_word k, C_word cont)
 {
   C_word *a = C_alloc(3),
          wrapper;
-  void *pr = (void *)C_u_i_car(cont);
+  void *pr = (void *)C_block_item(cont,0);
 
   if(C_immediatep(cont) || C_header_bits(cont) != C_CLOSURE_TYPE)
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "call-with-current-continuation", cont);
 
   /* Check for values-continuation: */
-  if(C_u_i_car(k) == (C_word)values_continuation)
+  if(C_block_item(k,0) == (C_word)values_continuation)
     wrapper = C_closure(&a, 2, (C_word)call_cc_values_wrapper, k);
   else wrapper = C_closure(&a, 2, (C_word)call_cc_wrapper, k);
 
@@ -5983,7 +6200,7 @@ void C_ccall C_call_cc(C_word c, C_word closure, C_word k, C_word cont)
 
 void C_ccall call_cc_wrapper(C_word c, C_word closure, C_word k, C_word result)
 {
-  C_word cont = C_u_i_cdr(closure);
+  C_word cont = C_block_item(closure,1);
 
   if(c != 3) C_bad_argc(c, 3);
 
@@ -5994,7 +6211,7 @@ void C_ccall call_cc_wrapper(C_word c, C_word closure, C_word k, C_word result)
 void C_ccall call_cc_values_wrapper(C_word c, C_word closure, C_word k, ...)
 {
   va_list v;
-  C_word cont = C_u_i_cdr(closure),
+  C_word cont = C_block_item(closure,1),
          x1;
   int n = c;
 
@@ -6113,7 +6330,7 @@ void C_ccall C_u_call_with_values(C_word c, C_word closure, C_word k, C_word thu
 
 void C_ccall values_continuation(C_word c, C_word closure, C_word arg0, ...)
 {
-  C_word kont = C_u_i_cdr(closure),
+  C_word kont = C_block_item(closure, 1),
          k = C_block_item(closure, 2),
          n = c,
          *ptr;
@@ -6213,6 +6430,8 @@ C_regparm C_word C_fcall C_2_times(C_word **ptr, C_word x, C_word y)
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "*", y);
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "*", x);
+  /* shutup compiler */
+  return C_flonum(ptr, 0.0/0.0);
 }
 
 
@@ -6289,6 +6508,8 @@ C_regparm C_word C_fcall C_2_plus(C_word **ptr, C_word x, C_word y)
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "+", y);
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "+", x);
+  /* shutup compiler */
+  return C_flonum(ptr, 0.0/0.0);
 }
 
 
@@ -6382,6 +6603,8 @@ C_regparm C_word C_fcall C_2_minus(C_word **ptr, C_word x, C_word y)
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "-", y);
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "-", x);
+  /* shutup compiler */
+  return C_flonum(ptr, 0.0/0.0);
 }
 
 
@@ -6520,11 +6743,8 @@ C_regparm C_word C_fcall C_2_divide(C_word **ptr, C_word x, C_word y)
   }
   else barf(C_BAD_ARGUMENT_TYPE_ERROR, "/", x);
 
-  iresult = C_fix(iresult);
-
-  if(fflag || (double)C_unfix(iresult) != fresult) return C_flonum(ptr, fresult);
-  
-  return iresult;
+  if(fflag || (double)iresult != fresult) return C_flonum(ptr, fresult);
+  else return C_fix(iresult);
 }
 
 
@@ -6965,7 +7185,7 @@ void C_ccall C_gc(C_word c, C_word closure, C_word k, ...)
 {
   int f;
   C_word arg;
-  long size = 0;
+  C_long size = 0;
   va_list v;
 
   va_start(v, k);
@@ -7158,21 +7378,30 @@ void C_ccall C_flonum_fraction(C_word c, C_word closure, C_word k, C_word n)
   C_kontinue_flonum(k, modf(fn, &i));
 }
 
-
-/* XXX left for binary compatibility */
-void C_ccall C_exact_to_inexact(C_word c, C_word closure, C_word k, C_word n)
+void C_ccall C_flonum_rat(C_word c, C_word closure, C_word k, C_word n)
 {
-  C_alloc_flonum;
+  double frac, tmp, numer, denom, fn = C_flonum_magnitude(n);
+  double ga, gb;
+  C_word ab[WORDS_PER_FLONUM * 2], *ap = ab;
+  int i = 0;
 
-  if(c != 3) C_bad_argc(c, 3);
-
-  if(n & C_FIXNUM_BIT) {
-    C_kontinue_flonum(k, (double)C_unfix(n));
+  if (isnormal(fn)) {
+    /* Calculate bit-length of the fractional part (ie, after decimal point) */
+    frac = fn;
+    while(!C_isnan(frac) && !C_isinf(frac) && C_modf(frac, &tmp) != 0.0) {
+      frac *= 2;
+      if (i++ > 3000) /* should this be flonum-maximum-exponent? */
+        barf(C_CANT_REPRESENT_INEXACT_ERROR, "fprat", n);
+    }
+    
+    /* Now we can compute the rational number r = 2^i/X*2^i = numer/denom. */
+    denom = pow(2, i);
+    numer = fn*denom;
+  } else { /* denormalised/subnormal number: [+-]1.0/+inf.0 */
+    numer = fn > 0.0 ? 1.0 : -1.0;
+    denom = 1.0/0.0; /* +inf */
   }
-  else if(C_immediatep(n) || C_block_header(n) != C_FLONUM_TAG)
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "exact->inexact", n);
- 
-  C_kontinue(k, n);
+  C_values(4, C_SCHEME_UNDEFINED, k, C_flonum(&ap, numer), C_flonum(&ap, denom));
 }
 
 
@@ -7403,26 +7632,6 @@ C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix0)
 }
 
 
-/* only left for backwards-compatibility */
-void C_ccall
-C_string_to_number(C_word c, C_word closure, C_word k, C_word str, ...)
-{
-  va_list va;
-  C_word data[ C_SIZEOF_FLONUM + 2 ]; /* alignment */
-  C_word *a = data;
-  C_word radix = C_fix(10);
-
-  if(c == 4) {
-    va_start(va, str);
-    radix = va_arg(va, C_word);
-    va_end(va);
-  }
-  else if(c != 3) C_bad_argc(c, 3);
-
-  C_kontinue(k, C_a_i_string_to_number(&a, 2, str, radix));
-}
-
-
 static int from_n_nary(C_char *str, int base, double *r)
 {
   double n = 0;
@@ -7448,20 +7657,19 @@ static int from_n_nary(C_char *str, int base, double *r)
 
 C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word *fix, double *flo)
 {
-  unsigned long ln;
+  C_ulong ln;
   C_word n;
   C_char *eptr, *eptr2;
   double fn;
   int len = C_strlen(str);
 
   if(radix == 10) {
-    if (len >= 4 && len <= 6) { /* DEPRECATED, TODO: Change to (len == 4) */
+    if (len == 6) {
       if((*str == '+' || *str == '-') &&
          C_strchr("inIN", *(str+1)) != NULL &&
          C_strchr("naNA", *(str+2)) != NULL &&
          C_strchr("fnFN", *(str+3)) != NULL &&
-         /* DEPRECATED, TODO: Rip out len checks */
-         (len == 4 || *(str+4) == '.') && (len == 5 || (*(str+5) == '0'))) {
+         *(str+4) == '.' && *(str+5) == '0') {
         if (*(str+1) == 'i' || *(str+1) == 'I')   /* Inf */
           *flo = 1.0/0.0;
         else                                      /* NaN */
@@ -7471,23 +7679,19 @@ C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word
         return 2;
       }
     }
-    /* DEPRECATED (enable in next release) */
-#if 0
-    /* This is disabled during the deprecation period of "+nan" syntax */
     /* Prevent C parser from accepting things like "-inf" on its own... */
     for(n = 0; n < len; ++n) {
       if (C_strchr("+-0123456789e.", *(str+n)) == NULL)
         return 0;
     }
-#endif
   }
 
   if(C_strpbrk(str, "xX\0") != NULL) return 0;
 
   errno = 0;
-  n = C_strtol(str, &eptr, radix);
+  n = C_strtow(str, &eptr, radix);
   
-  if(((n == LONG_MAX || n == LONG_MIN) && errno == ERANGE) || *eptr != '\0') {
+  if(((n == C_LONG_MAX || n == C_LONG_MIN) && errno == ERANGE) || *eptr != '\0') {
     if(radix != 10)
       return from_n_nary(str, radix, flo) ? 2 : 0;
 
@@ -7566,13 +7770,13 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 
     switch(radix) {
 #ifdef C_SIXTY_FOUR
-    case 8: C_sprintf(p = buffer + 1, C_text("%lo"), num); break;
-    case 10: C_sprintf(p = buffer + 1, C_text("%ld"), num); break;
-    case 16: C_sprintf(p = buffer + 1, C_text("%lx"), num); break;
+    case 8: C_snprintf(p = buffer + 1, sizeof(buffer) -1 , C_text("%llo"), (long long)num); break;
+    case 10: C_snprintf(p = buffer + 1, sizeof(buffer) - 1, C_text("%lld"), (long long)num); break;
+    case 16: C_snprintf(p = buffer + 1, sizeof(buffer) - 1, C_text("%llx"), (long long)num); break;
 #else
-    case 8: C_sprintf(p = buffer + 1, C_text("%o"), num); break;
-    case 10: C_sprintf(p = buffer + 1, C_text("%d"), num); break;
-    case 16: C_sprintf(p = buffer + 1, C_text("%x"), num); break;
+    case 8: C_snprintf(p = buffer + 1, sizeof(buffer) - 1, C_text("%o"), num); break;
+    case 10: C_snprintf(p = buffer + 1, sizeof(buffer) - 1, C_text("%d"), num); break;
+    case 16: C_snprintf(p = buffer + 1, sizeof(buffer) - 1, C_text("%x"), num); break;
 #endif
     default: 
       p = to_n_nary(num, radix);
@@ -7593,11 +7797,11 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 
       switch(radix) {
       case 8:
-	C_sprintf(p = buffer, "%o", (unsigned int)f);
+	C_snprintf(p = buffer, sizeof(buffer), "%o", (unsigned int)f);
 	goto fini;
 
       case 16:
-	C_sprintf(p = buffer, "%x", (unsigned int)f);
+	C_snprintf(p = buffer, sizeof(buffer), "%x", (unsigned int)f);
 	goto fini;
 
       case 10: break;		/* force output of decimal point to retain
@@ -7611,26 +7815,26 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
     } 
 
     if(C_isnan(f)) {
-      C_strcpy(p = buffer, "+nan.0");
+      C_strlcpy(buffer, C_text("+nan.0"), sizeof(buffer));
+      p = buffer;
       goto fini;
     }
     else if(C_isinf(f)) {
-      C_sprintf(p = buffer, "%cinf.0", f > 0 ? '+' : '-');
+      C_snprintf(buffer, sizeof(buffer), "%cinf.0", f > 0 ? '+' : '-');
+      p = buffer;
       goto fini;
     }
 
-#ifdef HAVE_GCVT
-    p = C_gcvt(f, flonum_print_precision, buffer); /* p unused, but we want to avoid stupid warnings */
-#else
-    C_sprintf(buffer, C_text("%.*g"), flonum_print_precision, f);
-#endif
+    C_snprintf(buffer, STRING_BUFFER_SIZE, C_text("%.*g"),
+	       flonum_print_precision, f);
+    buffer[STRING_BUFFER_SIZE-1] = '\0';
 
     if((p = C_strpbrk(buffer, C_text(".eE"))) == NULL) {
       if(*buffer == 'i' || *buffer == 'n') { /* inf or nan */
 	C_memmove(buffer + 1, buffer, C_strlen(buffer) + 1);
 	*buffer = '+';
       }
-      else if(buffer[ 1 ] != 'i') C_strcat(buffer, C_text(".0")); /* negative infinity? */
+      else if(buffer[ 1 ] != 'i') C_strlcat(buffer, C_text(".0"), sizeof(buffer)); /* negative infinity? */
     }
 
     p = buffer;
@@ -7655,10 +7859,11 @@ C_fixnum_to_string(C_word c, C_word self, C_word k, C_word num)
   C_word *a, s;
   int n;
 
+  /*XXX is this necessary? */
 #ifdef C_SIXTY_FOUR
-  C_sprintf(buffer, C_text("%ld"), C_unfix(num));
+  C_snprintf(buffer, sizeof(buffer), C_text(LONG_FORMAT_STRING), C_unfix(num));
 #else
-  C_sprintf(buffer, C_text("%d"), C_unfix(num));
+  C_snprintf(buffer, sizeof(buffer), C_text("%d"), C_unfix(num));
 #endif
   n = C_strlen(buffer);
   a = C_alloc(C_bytestowords(n) + 1);
@@ -7705,6 +7910,7 @@ void get_argv_2(void *dummy)
 }
 
 
+/* OBSOLETE */
 void C_ccall C_get_argument(C_word c, C_word closure, C_word k, C_word index)
 {
   int i = C_unfix(index);
@@ -7724,6 +7930,7 @@ void C_ccall C_get_argument(C_word c, C_word closure, C_word k, C_word index)
 }
 
 
+/* OBSOLETE */
 void get_argument_2(void *dummy)
 {
   int i = C_unfix(C_restore);
@@ -7838,10 +8045,11 @@ void C_ccall C_return_to_host(C_word c, C_word closure, C_word k)
 }
 
 
-#define C_do_getenv(v) C_getenv(v)
-#define C_free_envbuf() {}
+#define C_do_getenv(v) C_getenv(v) /* OBSOLETE */
+#define C_free_envbuf() {} /* OBSOLETE */
 
 
+/* OBSOLETE */
 void C_ccall C_get_environment_variable(C_word c, C_word closure, C_word k, C_word name)
 {
   int len;
@@ -7872,6 +8080,7 @@ void C_ccall C_get_environment_variable(C_word c, C_word closure, C_word k, C_wo
 }
 
 
+/* OBSOLETE */
 void get_environment_variable_2(void *dummy)
 {
   int len = C_strlen(save_string);
@@ -7919,8 +8128,8 @@ void C_ccall C_context_switch(C_word c, C_word closure, C_word k, C_word state)
 
   C_temporary_stack = C_temporary_stack_bottom - n;
   C_memcpy(C_temporary_stack, (C_word *)state + 2, n * sizeof(C_word));
-  trampoline = (TRAMPOLINE)C_u_i_car(adrs);
-  trampoline((void *)C_u_i_cdr(adrs));
+  trampoline = (TRAMPOLINE)C_block_item(adrs,0);
+  trampoline((void *)C_block_item(adrs,1));
 }
 
 
@@ -8061,7 +8270,8 @@ void C_ccall C_software_version(C_word c, C_word closure, C_word k)
 
 void C_ccall C_register_finalizer(C_word c, C_word closure, C_word k, C_word x, C_word proc)
 {
-  if(C_immediatep(x)) C_kontinue(k, x);
+  if(C_immediatep(x) || (!C_in_stackp(x) && !C_in_heapp(x))) /* not GCable? */
+    C_kontinue(k, x);
 
   C_do_register_finalizer(x, proc);
   C_kontinue(k, x);
@@ -8091,10 +8301,10 @@ void C_ccall C_do_register_finalizer(C_word x, C_word proc)
   flist->next = finalizer_list;
   finalizer_list = flist;
 
-  if(C_in_stackp(x)) C_mutate(&flist->item, x);
+  if(C_in_stackp(x)) C_mutate_slot(&flist->item, x);
   else flist->item = x;
 
-  if(C_in_stackp(proc)) C_mutate(&flist->finalizer, proc);
+  if(C_in_stackp(proc)) C_mutate_slot(&flist->finalizer, proc);
   else flist->finalizer = proc;
 
   ++live_finalizer_count;
@@ -8135,7 +8345,7 @@ void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word ent
 #if !defined(NO_DLOAD2) && (defined(HAVE_DLFCN_H) || defined(HAVE_DL_H) || (defined(HAVE_LOADLIBRARY) && defined(HAVE_GETPROCADDRESS)))
   /* Force minor GC: otherwise the lf may contain pointers to stack-data
      (stack allocated interned symbols, for example) */
-  C_save_and_reclaim(dload_2, NULL, 3, k, name, entry);
+  C_save_and_reclaim((void *)dload_2, NULL, 3, k, name, entry);
 #endif
 
   C_kontinue(k, C_SCHEME_FALSE);
@@ -8207,16 +8417,18 @@ void dload_2(void *dummy)
   C_char *topname = (C_char *)C_data_pointer(entry);
   C_char *mname = (C_char *)C_data_pointer(name);
   C_char *tmp;
+  int tmp_len = 0;
 
   if((handle = C_dlopen(mname, dlopen_flags)) != NULL) {
     if((p = C_dlsym(handle, topname)) == NULL) {
-      tmp = (C_char *)C_malloc(C_strlen(topname) + 2);
-      
+      tmp_len = C_strlen(topname) + 2;
+      tmp = (C_char *)C_malloc(tmp_len);
+
       if(tmp == NULL)
 	panic(C_text("out of memory - cannot allocate toplevel name string"));
-      
-      C_strcpy(tmp, C_text("_"));
-      C_strcat(tmp, topname);
+
+      C_strlcpy(tmp, C_text("_"), tmp_len);
+      C_strlcat(tmp, topname, tmp_len);
       p = C_dlsym(handle, tmp);
       C_free(tmp);
     }
@@ -8288,7 +8500,7 @@ void dload_2(void *dummy)
 
 void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table)
 {
-  C_word tp, x, old, new, i, *p;
+  C_word tp, x, old, neu, i, *p;
 
   i = forwarding_table_size;
   p = forwarding_table;
@@ -8296,7 +8508,7 @@ void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table)
   for(tp = table; tp != C_SCHEME_END_OF_LIST; tp = C_u_i_cdr(tp)) {
     x = C_u_i_car(tp);
     old = C_u_i_car(x);
-    new = C_u_i_cdr(x);
+    neu = C_u_i_cdr(x);
 
     if(i == 0) {
       if((forwarding_table = (C_word *)realloc(forwarding_table, (forwarding_table_size + 1) * 4 * sizeof(C_word))) == NULL)
@@ -8308,13 +8520,13 @@ void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table)
     }
 
     *(p++) = old;
-    *(p++) = new;
+    *(p++) = neu;
     --i;
   }
 
   *p = 0;
   C_fromspace_top = C_fromspace_limit;
-  C_save_and_reclaim(become_2, NULL, 1, k);
+  C_save_and_reclaim((void *)become_2, NULL, 1, k);
 }
 
 
@@ -8442,7 +8654,7 @@ C_regparm C_word C_fcall C_i_locative_set(C_word loc, C_word x)
     barf(C_LOST_LOCATIVE_ERROR, "locative-set!", loc);
 
   switch(C_unfix(C_block_item(loc, 2))) {
-  case C_SLOT_LOCATIVE: C_mutate(ptr, x); break;
+  case C_SLOT_LOCATIVE: C_mutate2(ptr, x); break;
 
   case C_CHAR_LOCATIVE:
     if((x & C_IMMEDIATE_TYPE_BITS) != C_CHARACTER_BITS)
@@ -8602,7 +8814,7 @@ void C_ccall C_copy_closure(C_word c, C_word closure, C_word k, C_word proc)
 {
   int n = C_header_size(proc);
 
-  if(!C_demand(n + 1)) C_save_and_reclaim(copy_closure_2, NULL, 2, proc, k);
+  if(!C_demand(n + 1)) C_save_and_reclaim((void *)copy_closure_2, NULL, 2, proc, k);
   else {
     C_save(proc);
     C_save(k);
@@ -8686,7 +8898,11 @@ C_regparm C_word C_fcall C_i_o_fixnum_times(C_word n1, C_word n2)
   C_word x1, x2;
   C_uword x1u, x2u;
 #ifdef C_SIXTY_FOUR
+# ifdef C_LLP
+  C_uword c = 1ULL<<63ULL;
+# else
   C_uword c = 1UL<<63UL;
+# endif
 #else
   C_uword c = 1UL<<31UL;
 #endif
@@ -8710,11 +8926,6 @@ C_regparm C_word C_fcall C_i_o_fixnum_times(C_word n1, C_word n2)
 C_regparm C_word C_fcall C_i_o_fixnum_quotient(C_word n1, C_word n2)
 {
   C_word x1, x2;
-#ifdef C_SIXTY_FOUR
-  static long eight_0 = 0x8000000000000000L;
-#else
-  static int eight_0 = 0x80000000;
-#endif
 
   if((n1 & C_FIXNUM_BIT) == 0 || (n2 & C_FIXNUM_BIT) == 0) return C_SCHEME_FALSE;
 
@@ -8798,7 +9009,7 @@ static C_regparm C_uword C_fcall decode_size(C_char **str)
 static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
 						C_word *dest)
 {
-  unsigned long bits = *((*str)++) & 0xff;
+  C_ulong bits = *((*str)++) & 0xff;
   C_word *data, *dptr, val;
   C_uword size;
 
@@ -8979,7 +9190,7 @@ C_putprop(C_word **ptr, C_word sym, C_word prop, C_word val)
 
   while(pl != C_SCHEME_END_OF_LIST) {
     if(C_block_item(pl, 0) == prop) {
-      C_mutate(&C_u_i_car(C_u_i_cdr(pl)), val);
+      C_mutate2(&C_u_i_car(C_u_i_cdr(pl)), val);
       return val;
     }
     else pl = C_u_i_cdr(C_u_i_cdr(pl));
@@ -8987,7 +9198,7 @@ C_putprop(C_word **ptr, C_word sym, C_word prop, C_word val)
 
   pl = C_a_pair(ptr, val, C_block_item(sym, 2));
   pl = C_a_pair(ptr, prop, pl);
-  C_mutate(&C_block_item(sym, 2), pl);
+  C_mutate_slot(&C_block_item(sym, 2), pl);
   return val;
 }
 
@@ -9028,10 +9239,10 @@ C_dump_heap_state(C_word c, C_word closure, C_word k)
 }
 
 
-static unsigned long
+static C_ulong
 hdump_hash(C_word key)
 {
-  return (unsigned long)key % HDUMP_TABLE_SIZE;
+  return (C_ulong)key % HDUMP_TABLE_SIZE;
 }
 
 
@@ -9167,7 +9378,7 @@ dump_heap_state_2(void *dummy)
 	  x = C_block_item(x, 1);
 	  C_fprintf(C_stderr, C_text("`%.*s'"), (int)C_header_size(x), C_c_string(x));
 	}
-	else C_fprintf(C_stderr, C_text("unknown key " UWORD_FORMAT_STRING), (unsigned int)b->key);
+	else C_fprintf(C_stderr, C_text("unknown key " UWORD_FORMAT_STRING), (C_uword)b->key);
       }
 
       C_fprintf(C_stderr, C_text("\t" UWORD_COUNT_FORMAT_STRING), b->count);
@@ -9277,16 +9488,11 @@ C_i_file_exists_p(C_word name, C_word file, C_word dir)
 C_regparm C_word C_fcall
 C_i_pending_interrupt(C_word dummy)
 {
-  int i;
-
-  if(interrupt_reason && interrupt_reason != C_TIMER_INTERRUPT_NUMBER) {
-    i = interrupt_reason;
-    interrupt_reason = 0;
-    return C_fix(i);
-  }
-
-  if(pending_interrupts_count > 0)
+  if(pending_interrupts_count > 0) {
+    handling_interrupts = 1; /* Lock out further forced GCs until we're done */
     return C_fix(pending_interrupts[ --pending_interrupts_count ]);
-
-  return C_SCHEME_FALSE;
+  } else {
+    handling_interrupts = 0; /* OK, can go on */
+    return C_SCHEME_FALSE;
+  }
 }

@@ -1,6 +1,6 @@
 ;;;; lolevel.scm - Low-level routines for CHICKEN
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -36,9 +36,6 @@
    pv-buf-ref pv-buf-set!)
   (not inline ipc-hook-0 ##sys#invalid-procedure-call-hook)
   (foreign-declare #<<EOF
-#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-# include <sys/types.h>
-#endif
 #ifndef C_NONUNIX
 # include <sys/mman.h>
 #endif
@@ -221,12 +218,6 @@ EOF
 (define (pointer->address ptr)
   (##sys#check-special ptr 'pointer->address)
   (##sys#pointer->address ptr) )
-
-(define null-pointer ##sys#null-pointer) ; DEPRECATED
-
-(define (null-pointer? ptr)		; DEPRECATED
-  (##sys#check-special ptr 'null-pointer?)
-  (##core#inline "C_null_pointerp" ptr))
 
 (define (object->pointer x)
   (and (##core#inline "C_blockp" x)
@@ -622,8 +613,6 @@ EOF
 	 [new (##core#inline "C_copy_block" old (##sys#make-vector words))] )
     (##sys#become! (list (cons old (proc new))))
     new ) )
-
-(define mutate-procedure mutate-procedure!) ; DEPRECATED
 
 
 ;;; pointer vectors

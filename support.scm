@@ -1,6 +1,6 @@
 ;;;; support.scm - Miscellaneous support code for the CHICKEN compiler
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -253,6 +253,9 @@
       (string? x)
       (boolean? x)
       (eof-object? x)
+      (blob? x)
+      (vector? x)
+      (##sys#srfi-4-vector? x)
       (and (pair? x) (eq? 'quote (car x))) ) )
 
 (define (collapsable-literal? x)
@@ -420,12 +423,6 @@
     (cond ((and lst (assq exp (cdr lst)))
 	   => (lambda (a) (values (car lst) (cdr a))) )
 	  (else (values name #f)) ) ) )
-
-(define (find-lambda-container id cid db)
-  (let loop ([id id])
-    (or (eq? id cid)
-	(let ([c (get db id 'contained-in)])
-	  (and c (loop c)) ) ) ) )
 
 (define (display-line-number-database)
   (##sys#hash-table-for-each
@@ -646,6 +643,8 @@
 	       (walk (car subs)) ) )
 	((##core#the)
 	 `(the ,(first params) ,(walk (first subs))))
+	((##core#the/result)
+	 (walk (first subs)))
 	((##core#typecase)
 	 `(compiler-typecase
 	   ,(walk (first subs))
@@ -1068,7 +1067,7 @@
 	      (if unsafe
 		  param
 		  `(##sys#foreign-unsigned-integer-argument ,param) ) ]
-	     [(unsigned-integer32)
+	     [(unsigned-integer64)
 	      (if unsafe
 		  param
 		  `(##sys#foreign-unsigned-integer64-argument ,param) ) ]
@@ -1676,7 +1675,6 @@ Usage: chicken FILENAME OPTION ...
     -accumulate-profile          executable emits profiling information in
                                   append mode
     -no-lambda-info              omit additional procedure-information
-    -scrutinize                  perform local flow analysis for static checks
     -types FILENAME              load additional type database
     -emit-type-file FILENAME     write type-declaration information into file
 
@@ -1711,6 +1709,7 @@ Usage: chicken FILENAME OPTION ...
     -strict-types                assume variable do not change their type
     -clustering                  combine groups of local procedures into dispatch
                                    loop
+    -lfa2                        perform additional lightweight flow-analysis pass
 
   Configuration options:
 

@@ -151,7 +151,7 @@ commences in the calling code.
 <macro>(foreign-safe-lambda RETURNTYPE NAME ARGTYPE ...)</macro>
 
 This is similar to {{foreign-lambda}}, but also allows the called
-function to call Scheme functions and allocate Scheme data-objects. See [[Callbacks]].
+function to call Scheme functions. See [[Callbacks]].
 
 
 === foreign-safe-lambda*
@@ -182,6 +182,8 @@ C_values(N + 2, C_SCHEME_UNDEFINED, C_k, X1, ...)
 where {{N}} is the number of values to be returned, and {{X1, ...}} are the
 results, which should be Scheme data objects. When returning multiple values, the
 return-type should be omitted.
+
+Returning just a single value can still be done via the {{C_return(...)}} macro.
 
 == Returning large objects or chunks of memory to Scheme
 

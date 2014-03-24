@@ -1,6 +1,6 @@
 ;;;; batch-driver.scm - Driver procedure for the compiler
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -90,7 +90,8 @@
 	(uunit (memq 'unit options))
 	(a-only (memq 'analyze-only options))
 	(dynamic (memq 'dynamic options))
-	(do-scrutinize (memq 'scrutinize options))
+	(do-scrutinize #t)
+	(do-lfa2 (memq 'lfa2 options))
 	(dumpnodes #f)
 	(start-time #f)
 	(upap #f)
@@ -190,8 +191,7 @@
 	       (not a-only))
       (set! all-import-libraries #t))
     (set! enable-module-registration (not (memq 'no-module-registration options)))
-    (when (or enable-specialization
-	      (memq 'scrutinize options))
+    (when enable-specialization
       (set! do-scrutinize #t))
     (when (memq 't debugging-chicken) (##sys#start-timer))
     (when (memq 'b debugging-chicken) (set! time-breakdown #t))
@@ -218,8 +218,7 @@
       (set! ##sys#notices-enabled #t))
     (when (memq 'strict-types options)
       (set! strict-variable-types #t)
-      (set! enable-specialization #t)
-      (set! do-scrutinize #t))
+      (set! enable-specialization #t))
     (when (memq 'no-warnings options) 
       (dribble "Warnings are disabled")
       (set! ##sys#warnings-enabled #f) 
@@ -325,17 +324,12 @@
     ;; Insert postponed initforms:
     (set! initforms (append initforms postponed-initforms))
 
-    (let ((se (map string->symbol (collect-options 'static-extension)))) ; DEPRECATED
-      ;; Append required extensions to initforms:
-      (set! initforms
-	(append 
-	 initforms 
-	 (map (lambda (r) `(##core#require-extension (,r) #t)) 
-	      (append se (map string->symbol (collect-options 'require-extension))))))
-
-      ;; add static-extensions as used units:
-      (set! ##sys#explicit-library-modules
-	(append ##sys#explicit-library-modules se)))
+    ;; Append required extensions to initforms:
+    (set! initforms
+          (append 
+           initforms 
+           (map (lambda (r) `(##core#require-extension (,(string->symbol r)) #t))
+                (collect-options 'require-extension))))
 
     (when (memq 'compile-syntax options)
       (set! ##sys#enable-runtime-macros #t) )
@@ -349,9 +343,11 @@
     (set! disable-stack-overflow-checking (memq 'disable-stack-overflow-checks options))
     (set! bootstrap-mode (feature? #:chicken-bootstrap))
     (when (memq 'm debugging-chicken) (set-gc-report! #t))
-    (unless (memq 'no-usual-integrations options)
-      (set! standard-bindings default-standard-bindings)
-      (set! extended-bindings default-extended-bindings) )
+    (cond ((memq 'no-usual-integrations options)
+	   (set! do-scrutinize #f))
+	  (else
+	   (set! standard-bindings default-standard-bindings)
+	   (set! extended-bindings default-extended-bindings) ))
     (dribble "debugging info: ~A"
 	     (if emit-trace-info
 		 "calltrace"
@@ -442,6 +438,7 @@
 	     (set! ##sys#explicit-library-modules
 	       (append ##sys#explicit-library-modules uses-units))
 	     (set! forms (cons `(declare (uses ,@uses-units)) forms)) )
+	   ;; Canonicalize s-expressions
 	   (let* ((exps0 (map canonicalize-expression
 			      (let ((forms (append initforms forms)))
 				(if wrap-module
@@ -498,6 +495,7 @@
 
 	     (when (memq 'check-syntax options) (exit))
 
+	     ;; User-defined pass (s-expressions)
 	     (let ([proc (user-pass)])
 	       (when proc
 		 (dribble "User pass...")
@@ -505,6 +503,7 @@
 		 (set! exps (map proc exps))
 		 (end-time "user pass") ) )
 
+	     ;; Convert s-expressions to node tree
 	     (let ((node0 (make-node
 			   'lambda '(())
 			   (list (build-node-graph
@@ -536,6 +535,7 @@
 			(dribble "Loading inline file ~a ..." ilf)
 			(load-inline-file ilf) )
 		      ifs)))
+		 ;; Perform scrutiny and optionally specialization
 		 (when (or do-scrutinize enable-specialization)
 		   ;;XXX hardcoded database file name
 		   (unless (memq 'ignore-repository options)
@@ -566,10 +566,12 @@
 	       (set! ##sys#line-number-database #f)
 	       (set! constant-table #f)
 	       (set! inline-table #f)
+	       ;; Analyze toplevel assignments
 	       (unless unsafe
 		 (scan-toplevel-assignments (first (node-subexpressions node0))) )
 
 	       (begin-time)
+	       ;; Convert to CPS
 	       (let ([node1 (perform-cps-conversion node0)])
 		 (end-time "cps conversion")
 		 (print-node "cps" '|3| node1)
@@ -581,6 +583,7 @@
 			    (l/d #f)
 			    (l/d-done #f))
 		   (begin-time)
+		   ;; Analyze node tree for optimization
 		   (let ([db (analyze 'opt node2 i progress)])
 		     (when first-analysis
 		       (when (memq 'u debugging-chicken)
@@ -600,6 +603,7 @@
 		     (when (memq 's debugging-chicken) 
 		       (print-program-statistics db))
 
+		     ;; Optimize (once)
 		     (cond (progress
 			    (debugging 'p "optimization pass" i)
 			    (begin-time)
@@ -635,6 +639,12 @@
 				     (loop (add1 i) node2 #f #f l/d-done)) ) ) )
 			   
 			   (else
+			    ;; Secondary flow-analysis
+			    (when do-lfa2
+			      (begin-time)
+			      (debugging 'p "doing lfa2")
+			      (perform-secondary-flow-analysis node2 db)
+			      (end-time "secondary flow analysis"))
 			    (print-node "optimized" '|7| node2)
 			    ;; inlining into a file with interrupts enabled would
 			    ;; change semantics
@@ -643,6 +653,7 @@
 				(dribble "generating global inline file `~a' ..." f)
 				(emit-global-inline-file f db) ) )
 			    (begin-time)
+			    ;; Closure conversion
 			    (set! node2 (perform-closure-conversion node2 db))
 			    (end-time "closure conversion")
 			    (print-db "final-analysis" '|8| db i)
@@ -652,11 +663,13 @@
 			    (print-node "closure-converted" '|9| node2)
 			    (when a-only (exit 0))
 			    (begin-time)
+			    ;; Preparation
 			    (receive 
 			     (node literals lliterals lambda-table)
 			     (prepare-for-code-generation node2 db)
 			     (end-time "preparation")
 			     (begin-time)
+			     ;; Code generation
 			     (let ((out (if outfile (open-output-file outfile) (current-output-port))) )
 			       (dribble "generating `~A' ..." outfile)
 			       (generate-code literals lliterals lambda-table out filename dynamic db)
