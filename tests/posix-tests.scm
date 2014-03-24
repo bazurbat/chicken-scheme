@@ -1,8 +1,5 @@
 (use files posix lolevel)
 
-(define build-dir (get-environment-variable "BUILD_DIR"))
-(define csi-path (make-pathname build-dir "csi"))
-
 (define-syntax assert-error
   (syntax-rules ()
     ((_ expr) 
@@ -36,12 +33,12 @@
 (assert-error (process-execute "false" '("123\x00456") '("foo\x00bar" "blabla") '("lalala" "qux\x00mooh")))
 
 (receive (in out pid)
-    (process csi-path '("-n" "-e"
+    (process "../csi" '("-n" "-e"
                         "(write 'err (current-error-port)) (write 'ok)"))
   (assert (equal? 'ok (read in))))
 
 (receive (in out pid err)
-    (process* csi-path '("-n" "-e"
+    (process* "../csi" '("-n" "-e"
                          "(write 'err (current-error-port)) (write 'ok)"))
   (assert (equal? 'ok (read in)))
   (assert (equal? 'err (read err))))
