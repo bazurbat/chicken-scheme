@@ -63,10 +63,12 @@ function(_chicken_config_names)
 endfunction()
 
 function(_chicken_config_find)
-    if((NOT CHICKEN_ROOT_DIR) AND (EXISTS $ENV{CHICKEN_PREFIX}))
-        set(CHICKEN_ROOT_DIR $ENV{CHICKEN_PREFIX})
-    else()
-        set(CHICKEN_ROOT_DIR ${CHICKEN_INSTALL_PREFIX})
+    if(NOT CHICKEN_ROOT_DIR)
+        if(EXISTS $ENV{CHICKEN_PREFIX})
+            set(CHICKEN_ROOT_DIR $ENV{CHICKEN_PREFIX})
+        else()
+            set(CHICKEN_ROOT_DIR ${CHICKEN_INSTALL_PREFIX})
+        endif()
     endif()
 
     find_program(CHICKEN_EXECUTABLE ${CHICKEN_NAME}
