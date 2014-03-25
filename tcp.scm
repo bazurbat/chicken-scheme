@@ -116,6 +116,27 @@ static C_word make_socket_nonblocking (C_word sock) {
 #endif
 
 static char addr_buffer[ 20 ];
+
+static int C_set_socket_options(int socket)
+{
+  int yes = 1; 
+  int r;
+
+  r = setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes, sizeof(int));
+  
+  if(r != 0) return r;
+
+#ifdef SO_NOSIGPIPE
+  /*
+   * Avoid SIGPIPE (iOS uses *only* SIGPIPE otherwise, not returning EPIPE).
+   * For consistency we do this everywhere the option is supported.
+   */
+  r = setsockopt(socket, SOL_SOCKET, SO_NOSIGPIPE, (const char *)&yes, sizeof(int));
+#endif
+
+  return r;
+}
+
 EOF
 ) )
 
@@ -152,6 +173,8 @@ EOF
 (define ##net#shutdown (foreign-lambda int "shutdown" int int))
 (define ##net#connect (foreign-lambda int "connect" int scheme-pointer int))
 (define ##net#check-fd-ready (foreign-lambda int "C_check_fd_ready" int))
+(define ##net#set-socket-options (foreign-lambda int "C_set_socket_options" int))
+
 
 (define ##net#send
   (foreign-lambda* 
@@ -281,12 +304,8 @@ EOF
       (when (eq? _invalid_socket s)
 	(##sys#error "cannot create socket") )
       ;; PLT makes this an optional arg to tcp-listen. Should we as well?
-      (when (eq? _socket_error
-		 ((foreign-lambda* int ((int socket))
-		    "int yes = 1;
-		      C_return(setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes, sizeof(int)));") 
-		  s) )
-	(network-error/close 'tcp-listen "error while setting up socket" s) )
+      (when (eq? _socket_error (##net#set-socket-options s))
+	(network-error 'tcp-listen "error while setting up socket" s) )
       (when (eq? _socket_error (##net#bind s addr _sockaddr_in_size))
 	(network-error/close 'tcp-listen "cannot bind to socket" s host port) )
       s)) )
@@ -571,6 +590,8 @@ EOF
     (let ((s (##net#socket _af_inet _sock_stream 0)) )
       (when (eq? _invalid_socket s)
 	(network-error 'tcp-connect "cannot create socket" host port) )
+      (when (eq? _socket_error (##net#set-socket-options s))
+	(network-error/close 'tcp-connect "error while setting up socket" s) )
       (unless (##core#inline "make_socket_nonblocking" s)
 	(network-error/close 'tcp-connect "fcntl() failed" s) )
       (let loop ()

@@ -220,6 +220,7 @@ Makefile.android
 Makefile.aix
 Makefile.linux
 Makefile.macosx
+Makefile.ios
 Makefile.mingw
 Makefile.mingw-msys
 Makefile.solaris
