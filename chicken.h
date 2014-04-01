@@ -215,7 +215,7 @@ void *alloca ();
 #   undef  C_varextern
 #   define C_varextern             C_extern __declspec(dllimport)
 #  endif
-# elif defined(__WATCOMC__)
+# elif defined(__WATCOMC__) || defined(_MSC_VER)
 #  undef  C_fctimport
 #  define C_fctimport              __declspec(dllexport)
 #  undef  C_externimport
