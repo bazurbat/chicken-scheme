@@ -21,7 +21,7 @@ function(_chicken_config_flags)
         set(common_flags "/wd4101")
         set(optimize_size "/O1 /Os /Oy")
         set(optimize_speed "/Ox /Ot /Oy")
-        set(optimize_debug "/Od")
+        set(optimize_debug "/Od /Zi")
         # C4101 - unreferenced local variable
     else()
         set(common_flags "-fno-strict-aliasing -fwrapv")
