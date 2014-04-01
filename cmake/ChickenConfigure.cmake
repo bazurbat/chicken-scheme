@@ -144,7 +144,7 @@ include(CheckTypeSize)
 include(CheckLanguage)
 
 check_language(C)
-check_language(CXX)
+# check_language(CXX)
 check_language(RC)
 
 # also checks HAVE_SYS_TYPES_H, HAVE_STDINT_H, and HAVE_STDDEF_H

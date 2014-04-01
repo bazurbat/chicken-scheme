@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 cmake_policy(VERSION 2.8)
 
-project(chicken)
+project(chicken C)
 
 option(CHICKEN_ENABLE_TESTS "Enable tests" NO)
 
@@ -60,7 +60,7 @@ set_target_properties(libchicken PROPERTIES
     OUTPUT_NAME lib${CHICKEN_PREFIX}chicken${CHICKEN_SUFFIX}
     VERSION ${CHICKEN_API_VERSION})
 install(TARGETS libchicken
-    LIBRARY DESTINATION ${INSTALL_LIBDIR})
+    DESTINATION ${INSTALL_LIBDIR})
 
 if(NOT MSVC)
     add_library(libchicken-static STATIC ${libchicken_STATIC_SOURCES})
@@ -142,22 +142,25 @@ endforeach()
 # setup-api
 set(setupapi_MODULES setup-api setup-download)
 
-add_chicken_module(setup-api setup-api.scm
-    EMIT setup-api
-    OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
-add_chicken_module(setup-download setup-download.scm
-    EMIT setup-download
-    OPTIONS ${CHICKEN_LIBRARY_OPTIONS}
-    DEPENDS setup-api.import.scm)
+if(NOT MSVC)
+    add_chicken_module(setup-api setup-api.scm
+        EMIT setup-api
+        OPTIONS ${CHICKEN_LIBRARY_OPTIONS})
+    add_chicken_module(setup-download setup-download.scm
+        EMIT setup-download
+        OPTIONS ${CHICKEN_LIBRARY_OPTIONS}
+        DEPENDS setup-api.import.scm)
 
-add_dependencies(chicken-install ${setupapi_MODULES})
-add_dependencies(chicken-uninstall ${setupapi_MODULES})
-add_dependencies(chicken-status ${setupapi_MODULES})
+    add_dependencies(chicken-install ${setupapi_MODULES})
+    add_dependencies(chicken-uninstall ${setupapi_MODULES})
+    add_dependencies(chicken-status ${setupapi_MODULES})
 
-foreach(module ${setupapi_MODULES})
-    install(TARGETS ${module} ${module}.import
-        LIBRARY DESTINATION ${INSTALL_EGGDIR})
-endforeach()
+    foreach(module ${setupapi_MODULES})
+        install(TARGETS ${module} ${module}.import
+            LIBRARY DESTINATION ${INSTALL_EGGDIR})
+    endforeach()
+
+endif()
 
 # import libraries
 set(import_LIBRARIES
