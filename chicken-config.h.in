@@ -34,7 +34,7 @@
 #cmakedefine C_COLLECT_ALL_SYMBOLS
 #cmakedefine C_HACKED_APPLY
 
-#cmakedefine DEBUGBUILD
+#cmakedefine01 DEBUGBUILD
 
 #ifndef C_INSTALL_CC
 # define C_INSTALL_CC "@C_INSTALL_CC@"
