@@ -168,8 +168,6 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #define STRING_BUFFER_SIZE             4096
 #define DEFAULT_MUTATION_STACK_SIZE    1024
 
-#define FILE_INFO_SIZE                 7
-
 #define MAX_PENDING_INTERRUPTS         100
 
 #ifdef C_DOUBLE_IS_32_BITS
