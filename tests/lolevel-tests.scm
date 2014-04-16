@@ -217,7 +217,10 @@
 (define ev-tstvec (object-evict tstvec))
 (assert (not (eq? tstvec ev-tstvec)))
 (assert (object-evicted? ev-tstvec))
-(object-release ev-tstvec)
+(set! ev-tstvec
+  (let ((old ev-tstvec))
+    (object-release old)
+    #f))
 
 ; object-evict-to-location
 
