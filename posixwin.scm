@@ -47,9 +47,8 @@
 ; create-fifo  fifo?
 ; prot/...
 ; map/...
-; map-file-to-memory  unmap-file-from-memory  memory-mapped-file-pointer  memory-mapped-file?
 ; set-alarm!
-; terminal-port?  terminal-name
+; terminal-name
 ; process-fork	process-wait
 ; parent-process-id
 ; process-signal
