@@ -146,7 +146,7 @@
   - Type-analysis ("scrutiny") is enabled by default now, unless
     "-optimize-level 0" or "-no-usual-integrations" is given.
   - The "-scrutinize" compiler option has been deprecated.
-  - A new leightweight flow-analysis pass ("lfa2") has been added.
+  - A new lightweight flow-analysis pass ("lfa2") has been added.
     Enable by passing the "-lfa2" option to the compiler.
   - The deprecated options "-disable-warning", "-heap-growth", "-heap-shrinkage"
     and "-heap-initial-size" have been removed.
