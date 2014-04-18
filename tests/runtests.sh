@@ -70,6 +70,8 @@ interpret="../csi -n -include-path ${TEST_DIR}/.."
 
 rm -f *.exe *.so *.o *.import.* a.out ../foo.import.*
 
+echo "======================================== version tests ..."
+$interpret -s version-tests.scm
 
 echo "======================================== compiler tests ..."
 $compile compiler-tests.scm
