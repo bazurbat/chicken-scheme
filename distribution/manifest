@@ -209,6 +209,7 @@ tests/reverser/tags/1.1/reverser.setup
 tests/reverser/tags/1.1/reverser.scm
 tests/rev-app.scm
 tests/signal-tests.scm
+tests/version-tests.scm
 tweaks.scm
 utils.scm
 apply-hack.x86.S
