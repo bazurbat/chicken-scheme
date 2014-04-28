@@ -3,11 +3,9 @@ cmake_policy(VERSION 2.8)
 
 project(chicken C)
 
-option(CHICKEN_ENABLE_TESTS "Enable tests" NO)
-
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/cmake)
 
-find_package(Chicken PATHS ${CMAKE_HOME_DIRECTORY}/cmake NO_DEFAULT_PATH) 
+find_package(Chicken PATHS ${CMAKE_HOME_DIRECTORY}/cmake NO_DEFAULT_PATH)
 include(ChickenBuildTag)
 include(ChickenApplyHack)
 include(ChickenConfigure)
@@ -198,7 +196,5 @@ endforeach()
 install(FILES README LICENSE
     DESTINATION ${INSTALL_DOCDIR})
 
-if(CHICKEN_ENABLE_TESTS)
-    enable_testing()
-    add_subdirectory(tests)
-endif()
+export(TARGETS libchicken chicken
+    FILE ChickenExports.cmake)

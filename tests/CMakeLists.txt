@@ -1,9 +1,22 @@
-# tests
+cmake_minimum_required(VERSION 2.8)
+cmake_policy(VERSION 2.8)
 
-set(CHICKEN_EXECUTABLE ${chicken_BINARY_DIR}/chicken)
+project(chicken-tests C)
+enable_testing()
+
+set(CHICKEN_SOURCE_DIR ${CMAKE_HOME_DIRECTORY}/..)
+file(TO_CMAKE_PATH CHICKEN_SOURCE_DIR ${CHICKEN_SOURCE_DIR})
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/../cmake)
+find_package(Chicken PATHS ${CMAKE_HOME_DIRECTORY}/../cmake NO_DEFAULT_PATH)
+include(${CHICKEN_USE_FILE})
+
+include(${CHICKEN_BUILD_ROOT}/ChickenExports.cmake)
+
+set(CHICKEN_EXECUTABLE chicken)
 set(CHICKEN_OPTIONS -ignore-repository
-    -types ${chicken_SOURCE_DIR}/types.db
-    -include-path ${chicken_SOURCE_DIR})
+    -types ${CHICKEN_SOURCE_DIR}/types.db
+    -include-path ${CHICKEN_SOURCE_DIR})
 
 # compiler tests
 add_chicken_executable(compiler-tests compiler-tests.scm)
