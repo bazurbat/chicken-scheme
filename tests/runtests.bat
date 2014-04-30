@@ -20,6 +20,10 @@ set interpret=..\csi -n -include-path %TEST_DIR%/..
 
 del /f /q *.exe *.so *.o *.import.* ..\foo.import.*
 
+echo ======================================== version tests ...
+%interpret% -s version-tests.scm
+if errorlevel 1 exit /b 1
+
 echo ======================================== compiler tests ...
 %compile% compiler-tests.scm
 if errorlevel 1 exit /b 1

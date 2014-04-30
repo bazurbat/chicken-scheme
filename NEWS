@@ -1,38 +1,23 @@
-4.8.4
-
-- Core libraries
-  - Fix subvector when the TO optional argument equals the given vector
-    length (#1097)
-
-- Runtime system
-  - finalizers on constants are ignored in compiled code because compiled
-    constants are never GCed (before, the finalizer would be incorrectly
-    invoked after the first GC).  (Reported by "Pluijzer")
-
-- Build system
-  - The tests can now be run without having to first install CHICKEN.
-
-- Tools
-  - csc "-deploy" works now on FreeBSD (thanks to Jules Altfas and
-    Vitaly Magerya), OpenBSD and NetBSD (see README for NetBSD).
-  - chicken-install: -deploy now correctly installs dependencies of
-    deployed eggs under the deployment directory instead of globally.
-
-4.8.3
+4.9.0
 
 - Security fixes
   - CVE-2013-4385: read-string! no longer reads beyond its buffer when
     length is #f.
-
-- Runtime system
-  - The procedure trace buffer has been made resizable.
-  - C_zap_strings and ##sys#zap-strings (undocumented) have been deprecated.
-
-- Tools
-  - csc: "-z origin" is now passed as a linker option on FreeBSD when
-    compiling for deployment (thanks to Jules Altfas & Vitaly Magerya)
+  - CVE-2013-1874: ./.csirc is no longer loaded from the current directory
+    upon startup of csi, which could lead to untrusted code execution.
+    (thanks to Florian Zumbiehl)
+  - CVE-2013-2024: On *nix, the qs procedure now single-quotes everything
+    instead of relying on a blacklist of shell characters to be escaped.
+    On Windows, it properly duplicates double-quote characters.  (thanks
+    to Florian Zumbiehl)
+  - CVE-2013-2075: Use POSIX poll() in other places where select() was
+    still being used.  (thanks to Florian Zumbiehl and Joerg Wittenberger)
+  - CVE-2012-6122: Use POSIX poll() on systems where available.  This avoids a
+    design flaw in select(); it supports no more than FD_SETSIZE descriptors.
 
 - Core libraries
+  - Fix subvector when the TO optional argument equals the given vector
+    length (#1097)
   - Unit extras now implicitly depends on ports.  ports no longer
      implicitly depends on extras.  This may break programs which don't
      use modules and forgot to require ports but use procedures from it.
@@ -51,50 +36,6 @@
     scrutinizer.
   - Fixed bugs in string-trim-right, string-index-right and
     string-skip-right, from SRFI-13
-
-- Platform support
-  - CHICKEN can now be built on AIX (contributed by Erik Falor)
-  - CHICKEN can now be built on GNU Hurd (contributed by Christian Kellermann)
-
-4.8.2
-
-- Security fixes
-  - CVE-2013-1874: ./.csirc is no longer loaded from the current directory
-    upon startup of csi, which could lead to untrusted code execution.
-    (thanks to Florian Zumbiehl)
-  - CVE-2013-2024: On *nix, the qs procedure now single-quotes everything
-    instead of relying on a blacklist of shell characters to be escaped.
-    On Windows, it properly duplicates double-quote characters.  (thanks
-    to Florian Zumbiehl)
-  - CVE-2013-2075: Use POSIX poll() in other places where select() was
-    still being used.  (thanks to Florian Zumbiehl and Joerg Wittenberger)
-
-- Tools
-  - csc: added "-oi"/"-ot" options as alternatives to "-emit-inline-file"
-    and "-emit-type-file", respectively; "-n" has been deprecated.
-  - chicken-install now also accepts full URI syntax for proxy environment
-    variables (thanks to Michele La Monaca)
-
-- Syntax
-  - Added the aliases "&optional" and "&rest" as alternatives to "#!optional"
-    and "#!rest" in type-declarations (suggested by Joerg Wittenberger).
-  - Vectors, SRFI-4 number vectors and blobs are now self-evaluating for
-     R7RS compatibility.  Being literal constants, they are implicitly quoted.
-  - For R7RS compatibility, named character literals #\escape and #\null are
-     supported as aliases for #\esc and #\nul.  WRITE will output R7RS names.
-  - The CASE form accepts => proc syntax, like COND (as specified by R7RS).
-  - letrec* was added for R7RS compatibility.  Plain letrec no longer behaves
-    like letrec*.
-
-- Compiler
-  - the "inline" declaration does not force inlining anymore as recursive
-    inlining could lead to non-termination of the compiler (thanks to
-    Andrei Barbu).
-
-- Syntax expander
-  - added "require-extension-for-syntax" and "use-for-syntax".
-
-- Core libraries
   - read-line no longer returns trailing CRs in rare cases on TCP ports (#568)
   - write and pp now correctly use escape sequences for control characters
      (thanks to Florian Zumbiehl)
@@ -103,23 +44,6 @@
   - numerator and denominator now accept inexact numbers, as per R5RS
     (reported by John Cowan).
   - Implicit $VAR- and ~-expansion in pathnames have been deprecated (#1001)
-
-- Runtime system
-  - Special events in poll() are now handled, avoiding hangs in threaded apps.
-  - When invoking procedures with many rest arguments directly (not via APPLY),
-    raise an error when argument count limit was reached instead of crashing.
-  - When the maximum allowed heap size is reached, panic instead of crashing.
-
-- C API
-  - Deprecated C_get_argument[_2] and C_get_environment_variable[_2] functions.
-
-4.8.1
-
-- Security fixes
-  - CVE-2012-6122: Use POSIX poll() on systems where available.  This avoids a
-    design flaw in select(); it supports no more than FD_SETSIZE descriptors.
-
-- Core libraries
   - Fixed EINTR handling in process-wait and when reading from file ports.
   - Irregex is updated to 0.9.2, which includes bugfixes and faster submatches.
   - Compile-time expansions for "[sf]printf" are slightly more efficient.
@@ -140,14 +64,89 @@
     parameters (srfi-69).
 
 - Platform support
+  - CHICKEN can now be built on AIX (contributed by Erik Falor)
+  - CHICKEN can now be built on GNU Hurd (contributed by Christian Kellermann)
+  - Basic support has been added for building Android and iOS binaries (see
+    the "README" file for caveats and pitfalls) (contributed by Felix Winkelmann
+    from bevuta IT GmbH)
   - Added support for 64-bit Windows (consult the "README" file for more
     information).
 
+- Runtime system
+  - finalizers on constants are ignored in compiled code because compiled
+    constants are never GCed (before, the finalizer would be incorrectly
+    invoked after the first GC).  (Reported by "Pluijzer")
+  - The call trace buffer is now also resizable at runtime via ##sys#resize-trace-buffer.
+  - C_zap_strings and ##sys#zap-strings (undocumented) have been deprecated.
+  - Special events in poll() are now handled, avoiding hangs in threaded apps.
+  - When invoking procedures with many rest arguments directly (not via APPLY),
+    raise an error when argument count limit was reached instead of crashing.
+  - When the maximum allowed heap size is reached, panic instead of crashing.
+  - The code generated for mutating data destructively is partially inlined
+    and thus slightly more efficient.
+  - Fixed incorrect code in the foreign argument conversion for
+    "unsigned-integer64" (#955).  For unsigned-integer, integer64 and
+    unsigned-integer64, disallow floating-point numbers.  Fix behavior
+    on 32-bit systems.
+  - On systems that provide sigprocmask(2), segmentation violations, illegal
+    instruction signals, bus errors and floating-point exceptions are now caught
+    and trigger normal error-processing (including a backtrace). The handling
+    of these so called "serious" signals can be disabled by passing the
+    "-:S" runtime option to executables.
+  - Reclamation of unused interned symbols (enabled with the "-:w" runtime option)
+    works much better now.
+
+- Build system
+  - The tests can now be run without having to first install CHICKEN.
+  - Fixed a dependency problem that made it impossible to build the distribution
+    tarball on Windows with the mingw compiler.
+  - Increased the "binary compatibility version" to 7.
+
+- Tools
+  - "csc"
+    - "-z origin" is now passed as a linker option on FreeBSD when
+      compiling for deployment (thanks to Jules Altfas & Vitaly Magerya)
+    - "-deploy" works now on FreeBSD (thanks to Jules Altfas and
+      Vitaly Magerya), OpenBSD and NetBSD (see README for NetBSD).
+    - added "-oi"/"-ot" options as alternatives to "-emit-inline-file"
+       and "-emit-type-file", respectively; "-n" has been deprecated.
+    - .c/.o files are no longer overwritten when they have the same basename
+      as a Scheme source file (i.e. "csc foo.scm foo.c -o foo" works now).
+  - "chicken-install"
+    - "-deploy" now correctly installs dependencies of
+      deployed eggs under the deployment directory instead of globally.
+    - Full URI syntax is now supported for proxy environment variables
+      (thanks to Michele La Monaca)
+  - "chicken-status"
+    - Added -eggs command line option to list installed eggs
+  - misc
+    - Removed the deprecated "-v" options (use "-version" instead) in various
+      core programs.
+    - The runtime linker path for compiled executables was not set correctly
+      on FreeBSD systems.  This has now been fixed.
+    - Removed the deprecated "make" and "make/proc" facility from the
+      "setup-api" module; also removed the deprecated "required-extension-version"
+      and "required-chicken-version" procedures.
+
+- Syntax
+  - Added the aliases "&optional" and "&rest" as alternatives to "#!optional"
+    and "#!rest" in type-declarations (suggested by Joerg Wittenberger).
+  - Vectors, SRFI-4 number vectors and blobs are now self-evaluating for
+     R7RS compatibility.  Being literal constants, they are implicitly quoted.
+  - For R7RS compatibility, named character literals #\escape and #\null are
+     supported as aliases for #\esc and #\nul.  WRITE will output R7RS names.
+  - The CASE form accepts => proc syntax, like COND (as specified by R7RS).
+  - letrec* was added for R7RS compatibility.  Plain letrec no longer behaves
+    like letrec*.
+
 - Compiler
+  - the "inline" declaration does not force inlining anymore as recursive
+    inlining could lead to non-termination of the compiler (thanks to
+    Andrei Barbu).
   - Type-analysis ("scrutiny") is enabled by default now, unless
     "-optimize-level 0" or "-no-usual-integrations" is given.
   - The "-scrutinize" compiler option has been deprecated.
-  - A new leightweight flow-analysis pass ("lfa2") has been added.
+  - A new lightweight flow-analysis pass ("lfa2") has been added.
     Enable by passing the "-lfa2" option to the compiler.
   - The deprecated options "-disable-warning", "-heap-growth", "-heap-shrinkage"
     and "-heap-initial-size" have been removed.
@@ -157,52 +156,22 @@
   - Generated names for formal parameters of foreign functions are slightly
     more informative.
   - Unused references to variables that name intrinsics can be removed.
-  - In the flow-analysis pass, matching of combinations of "list"/"list-of" and 
+  - In the flow-analysis pass, matching of combinations of "list"/"list-of" and
     "or" types with has been made more reliable.
   - Fixed various bugs in the type database.
 
 - Syntax expander
+  - added "require-extension-for-syntax" and "use-for-syntax".
   - Extended syntactic definitions are now available by default in all
-    evaluated code, particularly in code evaluated at runtime in compiled 
+    evaluated code, particularly in code evaluated at runtime in compiled
     applications.
   - Removed the deprecated variant "(define-compiler-syntax (NAME . LLIST) BODY ...)"
     of "define-compiler-syntax".
 
-- Runtime system
-  - The code generated for mutating data destructively is partially inlined
-    and thus slightly more efficient.
-  - Fixed incorrect code in the foreign argument conversion for
-    "unsigned-integer64" (#955).  For unsigned-integer, integer64 and
-    unsigned-integer64, disallow floating-point numbers.  Fix behavior
-    on 32-bit systems.
-  - On systems that provide sigprocmask(2), segmentation violations, illegal
-    instruction signals, bus errors and floating-point exceptions are now caught 
-    and trigger normal error-processing (including a backtrace). The handling
-    of these so called "serious" signals can be disabled by passing the
-    "-:S" runtime option to executables.
-  - Reclamation of unused interned symbols (enabled with the "-:w" runtime option)
-    works much better now.
-
 - C API
+  - Deprecated C_get_argument[_2] and C_get_environment_variable[_2] functions.
   - Removed the deprecated "__byte_vector" type.
 
-- Core tools
-  - chicken-status
-    - Added -eggs command line option to list installed eggs
-  - Removed the deprecated "-v" options (use "-version" instead) in various
-    core programs.
-  - The runtime linker path for compiled executables was not set correctly 
-    on FreeBSD systems.
-  - "csc" doesn't overwrite .c/.o files in case they have the same basename as
-    a Scheme source file (i.e. "csc foo.scm foo.c -o foo" works now).
-  - Removed the deprecated "make" and "make/proc" facility from the 
-    "setup-api" module; also removed the deprecated "required-extension-version"
-    and "required-chicken-version" procedures.
-
-- Build system
-  - Fixed a dependency problem that made it impossible to build the distribution
-    tarball on Windows with the mingw compiler.
-  - Increased the "binary compatibility version" to 7.
 
 4.8.0
 

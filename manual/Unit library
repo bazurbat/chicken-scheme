@@ -471,6 +471,8 @@ building the executing system, which is one of the following:
  intel
  clang
  sun
+ metrowerks
+ watcom
  unknown
 
 
@@ -516,6 +518,7 @@ machine's byte-order.
 Returns a symbol specifying the processor on which this process is
 currently running, which is one of the following:
 
+ arm
  alpha
  mips
  hppa
@@ -546,9 +549,9 @@ data are run before exit procedures.
 Returns a symbol specifying the operating system on which this process
 is currently running, which is one of the following:
 
+ android
  windows
  unix
- macos
  ecos
  unknown
 
@@ -566,8 +569,12 @@ process is currently running, which is one of the following:
  openbsd
  macosx
  hpux
+ dragonfly
+ haiku
  solaris
  sunos
+ aix
+ hurd
  unknown
 
 

@@ -6,7 +6,7 @@
   (c) 2008-2014, The Chicken Team
   (c) 2000-2007, Felix L. Winkelmann
 
-  version 4.8.4
+  version 4.9.1
 
 
  1. Introduction
@@ -505,6 +505,38 @@
 
 	  - On 10.3 and earlier, you must first install `dlcompat'
 	    which can be found at http://distfiles.macports.org/dlcompat/.
+
+
+        iOS:
+
+          - Make sure the "XCODE_PATH" setting is correct (see
+            Makefile.ios), it defaults to "/Applications/Xcode.app".
+
+          - The paths for the the various build tools changed between
+            Xcode 4 and 5. The makefile used for iOS builds of CHICKEN
+            assume Xcode 5 is used. If you are using Xcode 4, override
+            the XCODE_TOOLPATH and C_COMPILER make-variables providing
+            the correct paths, see Makefile.ios for suggestions.
+
+          - The iOS build is static (iOS doesn't support dynamic
+            loading of executable code). Only the runtime library
+            (libchicken.a) is of interest. To use it, integrate
+            libchicken.a in your Xcode project and use a normal MacOS
+            build to compile your Scheme sources into C files, adding
+            them to you project.
+
+          - Core library units must by accessed via "(declare (uses
+            ...))" and "(import ...)", "require", "require-library",
+            "require-extension" and "use" will not work, due to the
+            reasons mentioned above.
+
+          - As dynamic loading is not supported, eggs can not be used
+            as usual, you will have to compile them manually and
+            integrate what you need into your project.
+
+          - If you want to build for the iPhone Simulator, override
+            the ARCH and XCODE_SDK variables accordingly, see also in
+            Makefile.ios for suggestions.
 
    	Windows:
 

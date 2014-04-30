@@ -170,8 +170,6 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #define STRING_BUFFER_SIZE             4096
 #define DEFAULT_MUTATION_STACK_SIZE    1024
 
-#define FILE_INFO_SIZE                 7
-
 #define MAX_PENDING_INTERRUPTS         100
 
 #ifdef C_DOUBLE_IS_32_BITS
@@ -445,6 +443,7 @@ static C_TLS int
 static volatile C_TLS int serious_signal_occurred = 0;
 static C_TLS unsigned int
   mutation_count,
+  tracked_mutation_count,
   stack_size;
 static C_TLS int chicken_is_initialized;
 #ifdef HAVE_SIGSETJMP
@@ -755,7 +754,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 #endif
   }
 
-  mutation_count = gc_count_1 = gc_count_1_total = gc_count_2 = 0;
+  tracked_mutation_count = mutation_count = gc_count_1 = gc_count_1_total = gc_count_2 = 0;
   lf_list = NULL;
   C_register_lf2(NULL, 0, create_initial_ptable());
   C_restart_address = toplevel;
@@ -2717,6 +2716,14 @@ C_mutate_slot(C_word *slot, C_word val)
 {
   unsigned int mssize, newmssize, bytes;
 
+  ++mutation_count;
+  /* Mutation stack exists to track mutations pointing from elsewhere
+   * into nursery.  Stuff pointing anywhere else can be skipped, as
+   * well as mutations on nursery objects.
+   */
+  if(!C_in_stackp(val) || C_in_stackp((C_word)slot))
+    return *slot = val;
+
 #ifdef C_GC_HOOKS
   if(C_gc_mutation_hook != NULL && C_gc_mutation_hook(slot, val)) return val;
 #endif
@@ -2741,7 +2748,7 @@ C_mutate_slot(C_word *slot, C_word val)
   }
 
   *(mutation_stack_top++) = slot;
-  ++mutation_count;
+  ++tracked_mutation_count;
   return *slot = val;
 }
 
@@ -4091,6 +4098,7 @@ C_regparm C_word C_fcall C_set_gc_report(C_word flag)
 
 C_regparm C_word C_fcall C_start_timer(void)
 {
+  tracked_mutation_count = 0;
   mutation_count = 0;
   gc_count_1_total = 0;
   gc_count_2 = 0;
@@ -4104,13 +4112,14 @@ void C_ccall C_stop_timer(C_word c, C_word closure, C_word k)
 {
   double t0 = C_cpu_milliseconds() - timer_start_ms;
   C_word 
-    ab[ WORDS_PER_FLONUM * 2 + 6 ], /* 2 flonums, 1 vector of 5 elements */
+    ab[ WORDS_PER_FLONUM * 2 + 7 ], /* 2 flonums, 1 vector of 6 elements */
     *a = ab,
     elapsed = C_flonum(&a, t0 / 1000.0),
     gc_time = C_flonum(&a, gc_ms / 1000.0),
     info;
 
-  info = C_vector(&a, 5, elapsed, gc_time, C_fix(mutation_count), C_fix(gc_count_1_total), 
+  info = C_vector(&a, 6, elapsed, gc_time, C_fix(mutation_count),
+                  C_fix(tracked_mutation_count), C_fix(gc_count_1_total),
 		  C_fix(gc_count_2));
   C_kontinue(k, info);
 }
