@@ -7,6 +7,10 @@
 - Unit lolevel:
   - Restore long-lost but still documented "vector-like?" procedure (#983)
 
+- Unit "posix":
+  - set-file-position! now allows negative positions for seek/cur (thanks
+    to Seth Alves).
+
 4.9.0
 
 - Security fixes
