@@ -4,6 +4,9 @@
   - alist-ref from unit data-structures now gives an error when passed
     a non-list, for consistency with assv/assq/assoc.
 
+- Unit lolevel:
+  - Restore long-lost but still documented "vector-like?" procedure (#983)
+
 4.9.0
 
 - Security fixes

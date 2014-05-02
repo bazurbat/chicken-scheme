@@ -93,4 +93,5 @@
    record-instance-type
    set-procedure-data!
    tag-pointer
-   tagged-pointer?))
+   tagged-pointer?
+   vector-like?))
