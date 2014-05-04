@@ -3712,7 +3712,7 @@ void handle_interrupt(void *trampoline, void *proc)
 
   c = C_cpu_milliseconds() - interrupt_time;
   last_interrupt_latency = c;
-  C_timer_interrupt_counter = C_initial_timer_interrupt_period;	/* just in case */
+  C_timer_interrupt_counter = C_initial_timer_interrupt_period;
   /* <- no continuation is passed: "##sys#interrupt-hook" may not return! */
   C_do_apply(2, x, C_SCHEME_UNDEFINED); 
 }
