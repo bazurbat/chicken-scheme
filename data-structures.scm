@@ -233,18 +233,22 @@
                           (loop (##sys#slot lst 1))))))))))
 
 (define (alist-ref x lst #!optional (cmp eqv?) (default #f))
-  (let* ([aq (cond [(eq? eq? cmp) assq]
-		   [(eq? eqv? cmp) assv]
-		   [(eq? equal? cmp) assoc]
-		   [else 
+  (let* ((aq (cond ((eq? eq? cmp) assq)
+		   ((eq? eqv? cmp) assv)
+		   ((eq? equal? cmp) assoc)
+		   (else
 		    (lambda (x lst)
-		      (let loop ([lst lst])
-			(and (pair? lst)
-			     (let ([a (##sys#slot lst 0)])
-			       (if (and (pair? a) (cmp (##sys#slot a 0) x))
-				   a
-				   (loop (##sys#slot lst 1)) ) ) ) ) ) ] ) ] 
-	 [item (aq x lst)] )
+		      (let loop ((lst lst))
+			(cond
+			 ((null? lst) #f)
+			 ((pair? lst)
+			  (let ((a (##sys#slot lst 0)))
+			    (##sys#check-pair a 'alist-ref)
+			    (if (cmp (##sys#slot a 0) x)
+				a
+				(loop (##sys#slot lst 1)) ) ))
+			 (else (error 'alist-ref "bad argument type" lst)) )  ) ) ) ) )
+	 (item (aq x lst)) )
     (if item
 	(##sys#slot item 1)
 	default) ) )

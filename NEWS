@@ -1,3 +1,9 @@
+4.9.1
+
+- Core libraries
+  - alist-ref from unit data-structures now gives an error when passed
+    a non-list, for consistency with assv/assq/assoc.
+
 4.9.0
 
 - Security fixes
