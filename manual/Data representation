@@ -46,9 +46,9 @@ single machine word.
 The 24 (56 on 64-bit systems) lowest-order bits contain the length of
 the data object, which is either the number of bytes in a string or
 byte-vector, or the number of elements for a vector or record type. This
-allows a maximum size for data objects of 2^24 bytes, or approximately
-16 MB, on 32-bit systems, and 2^56 bytes, or approximately 72 PB, on
-64-bit systems.
+allows a maximum size for string or byte-vectors of 2^24 bytes, or
+approximately 16 MB, on 32-bit systems, and 2^56 bytes, or approximately
+72 PB, on 64-bit systems.
 
 The remaining bits are placed in the high-order end of the header.
 The four highest-order bits are used for garbage
