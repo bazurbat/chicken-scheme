@@ -396,10 +396,11 @@ $compile -e embedded3.c embedded4.scm
 echo "======================================== private repository test ..."
 mkdir -p tmp
 $compile private-repository-test.scm -private-repository -o tmp/xxx
-tmp/xxx $PWD/tmp
-PATH=$PWD/tmp:$PATH xxx $PWD/tmp
+tmp/xxx ${TEST_DIR}/tmp
+# This MUST be `pwd`: ${PWD} is not portable, and ${TEST_DIR} breaks mingw-msys
+PATH=`pwd`/tmp:$PATH xxx ${TEST_DIR}/tmp
 # this may crash, if the PATH contains a non-matching libchicken.dll on Windows:
-#PATH=$PATH:$PWD/tmp xxx $PWD/tmp
+#PATH=$PATH:${TEST_DIR}/tmp xxx ${TEST_DIR}/tmp
 rm -fr rev-app rev-app-2 reverser/*.import.* reverser/*.so
 
 echo "======================================== reinstall tests"
