@@ -90,6 +90,7 @@ or {{:}} should follow the syntax given below:
 <table>
 <tr><th>TYPE</th><th>meaning</th></tr>
 <tr><td>{{deprecated}}</td><td>any use of this variable will generate a warning</td></tr>
+<tr><td>{{(deprecated NAME)}}</td><td>generate a warning and advise alternative NAME</td></tr>
 <tr><td>VALUETYPE</td><td></td></tr>
 </table>
 
