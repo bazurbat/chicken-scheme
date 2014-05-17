@@ -34,7 +34,6 @@ CROSS_CHICKEN ?= 0
 # directories
 
 SEP ?= /
-SRCDIR ?= .$(SEP)
 DESTDIR ?=
 PREFIX ?= /usr/local
 
