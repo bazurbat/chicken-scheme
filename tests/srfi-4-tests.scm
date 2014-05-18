@@ -42,3 +42,15 @@
 (assert (equal? #s32(-1 2 3) '#s32(-1 2 3)))
 (assert (equal? #f32(1 2 3) '#f32(1 2 3)))
 (assert (equal? #f64(-1 2 3) '#f64(-1 2 3)))
+
+;; Ticket #1124: read-u8vector! w/o length, dest smaller than source.
+(let ((input (open-input-string "abcdefghijklmnopqrstuvwxyz"))
+      (u8vec (make-u8vector 10)))
+  (assert (= 10 (read-u8vector! #f u8vec input)))
+  (assert (equal? u8vec #u8(97 98 99 100 101 102 103 104 105 106)))
+  (assert (= 5  (read-u8vector! #f u8vec input 5)))
+  (assert (equal? u8vec #u8(97 98 99 100 101 107 108 109 110 111)))
+  (assert (= 5  (read-u8vector! 5  u8vec input)))
+  (assert (equal? u8vec #u8(112 113 114 115 116 107 108 109 110 111)))
+  (assert (= 6  (read-u8vector! 10 u8vec input)))
+  (assert (equal? u8vec #u8(117 118 119 120 121 122 108 109 110 111))))
