@@ -61,7 +61,7 @@ accessible from Scheme just like any other foreign variable defined by
 
 '''Note:''' don't be tempted to
 assign strings or bytevectors to external variables. Garbage collection
-moves those objects around, so it is very bad idea to assign pointers
+moves those objects around, so it is a very bad idea to assign pointers
 to heap-data. If you have to do so, then copy the data object into
 statically allocated memory (for example by using {{object-evict}}).
 

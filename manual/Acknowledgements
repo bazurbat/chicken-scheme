@@ -71,6 +71,7 @@ CHICKEN contains code from several people:
 
 ; Marc Feeley : pretty-printer.
 ; Richard Kelsey, Jonathan Rees and Taylor Campbell : {{syntax-rules}} expander
+; Mikael Djurfeldt : topological sort used by compiler.
 ; Aubrey Jaffer : implementation of {{dynamic-wind}}.
 ; Richard O'Keefe : sorting routines.
 ; Alex Shinn : the [[http://synthcode.com/scheme/irregex/|irregex]] regular expression package.
