@@ -388,7 +388,7 @@ must be available separately.
 === Functors
 
 A ''functor'' is a higher-order module that can be parameterized with
-other modules. A functor defines the body of a module for a set or
+other modules. A functor defines the body of a module for a set of
 argument modules and can be instantiated with concrete module names
 specializing the code contained in the functor. This is best explained
 with a silly and pointless example:
@@ -453,7 +453,7 @@ by ''instantiating'' the functor for specific input modules:
 </enscript>
 
 Inside {{BODY}}, references to {{ARGUMENTMODULE}} will be replaced by
-the corresponding {{MODUELNAME}} argument. The instantiation expands
+the corresponding {{MODULENAME}} argument. The instantiation expands
 into the complete functor-code {{BODY}} and as such can be considered
 a particular sort of macro-expansion. Note that there is no
 requirement that a specific export of an argument-module must be

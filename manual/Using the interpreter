@@ -174,7 +174,7 @@ The toplevel loop understands a number of special commands:
 
 ; ,ln FILENAME ... : Load files and print result(s) of each top-level expression.
 
-; ,m MODULENAME : switches the "current module" to {{MODULENAME}}, so expressions will be evaluated in the context of the given module. In compiled modules, only exported bindings will be visible to interactively entered code. In interpreted modules all bindings are visible.
+; ,m MODULENAME : switches the "current module" to {{MODULENAME}}, so expressions will be evaluated in the context of the given module.  To switch back to toplevel, use {{#f}} as a MODULENAME.  In compiled modules, only exported bindings will be visible to interactively entered code. In interpreted modules all bindings are visible.
 
 ; ,p EXP : Pretty-print evaluated expression {{EXP}}.
 
