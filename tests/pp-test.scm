@@ -13,4 +13,5 @@
 (test "\"\\\\\\\"\"\n" (pp->string "\\\""))
 (test "\"\\\\\\\\\\\\\\\"\"\n" (pp->string "\\\\\\\""))
 (test "\"\\\"\\\"\\\"\"\n" (pp->string "\"\"\""))
-(test "\\" "\\")
+(test "\"\\n\\t\\r\\b\\a\\v\\f\"\n" (pp->string "\n\t\r\b\a\v\f"))
+(test "\\" "\\")                        ; XXX?

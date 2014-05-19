@@ -69,7 +69,7 @@ of the symbol.
 
 '''strings''': byte-vector objects with type bits {{C_STRING_TYPE}}, currently 0010.
 
-'''pairs''': vector-like object with type bits {{C_PAIR_TYPE}}, currently 0011).
+'''pairs''': vector-like object with type bits {{C_PAIR_TYPE}}, currently 0011.
 The car and the cdr are contained in the first and second slots,
 respectively.
 
@@ -81,7 +81,7 @@ a flat closure representation is used).
 '''flonums''': byte-vector objects with type bits
 {{C_FLONUM_BITS}}, currently 0101. Slots one and two (or a single slot on
 64 bit architectures) contain a 64-bit floating-point number, in the
-representation used by the host systems C compiler.
+representation used by the host system's C compiler.
 
 '''ports''': special vector objects with type bits
 {{C_PORT_TYPE}}, currently 0111. The first slot contains a pointer to a file-

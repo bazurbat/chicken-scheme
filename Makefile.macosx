@@ -1,6 +1,6 @@
 # Makefile.macosx - configuration for Apple Macintosh OS X -*- Makefile -*-
 #
-# Copyright (c) 2008-2012, The Chicken Team
+# Copyright (c) 2008-2014, The Chicken Team
 # Copyright (c) 2007, Felix L. Winkelmann
 # All rights reserved.
 #
@@ -33,15 +33,18 @@ SRCDIR = ./
 
 # platform configuration
 
+XCODE_DEVELOPER ?= /Applications/Xcode.app/Contents/Developer
+XCODE_TOOL_PATH ?= $(XCODE_DEVELOPER)/Toolchains/XcodeDefault.xctoolchain/usr/bin
+C_COMPILER ?= $(XCODE_DEVELOPER)/usr/bin/gcc
 ARCH ?= $(shell sh $(SRCDIR)/config-arch.sh)
 
 # commands
 
-POSTINSTALL_PROGRAM = install_name_tool
+POSTINSTALL_PROGRAM = $(XCODE_TOOL_PATH)/install_name_tool
 
 # options
 
-C_COMPILER_OPTIONS ?= -no-cpp-precomp -fno-strict-aliasing -fwrapv -fno-common -DHAVE_CHICKEN_CONFIG_H
+C_COMPILER_OPTIONS ?= -fno-strict-aliasing -fwrapv -fno-common -DHAVE_CHICKEN_CONFIG_H
 ifdef DEBUGBUILD
 C_COMPILER_OPTIMIZATION_OPTIONS ?= -g -Wall -Wno-unused
 else
@@ -51,6 +54,7 @@ else
 C_COMPILER_OPTIMIZATION_OPTIONS ?= -Os -fomit-frame-pointer
 endif
 endif
+LIBRARIAN ?= $(XCODE_TOOL_PATH)/ar
 LINKER_LINK_SHARED_LIBRARY_OPTIONS = -dynamiclib -compatibility_version 1 -current_version 1.0 -install_name $@
 POSTINSTALL_PROGRAM_FLAGS = -change lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(SO) $(LIBDIR)/lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)$(SO)
 LIBRARIAN_OPTIONS = scru
@@ -96,17 +100,22 @@ chicken-config.h: chicken-defaults.h
 	echo "#define HAVE_LONG_LONG 1" >>$@
 	echo "#define HAVE_MEMMOVE 1" >>$@
 	echo "#define HAVE_MEMORY_H 1" >>$@
+	echo "#define HAVE_POSIX_POLL 1" >>$@
 	echo "#define HAVE_SIGACTION 1" >>$@
 	echo "#define HAVE_SIGSETJMP 1" >>$@
+	echo "#define HAVE_SIGPROCMASK 1" >>$@
 	echo "#define HAVE_STDINT_H 1" >>$@
 	echo "#define HAVE_STDLIB_H 1" >>$@
 	echo "#define HAVE_STRERROR 1" >>$@
 	echo "#define HAVE_STRINGS_H 1" >>$@
 	echo "#define HAVE_STRING_H 1" >>$@
+	echo "#define HAVE_STRLCAT 1" >>$@
+	echo "#define HAVE_STRLCPY 1" >>$@
 	echo "#define HAVE_STRTOLL 1" >>$@
 	echo "#define HAVE_STRTOQ 1" >>$@
 	echo "#define HAVE_SYS_STAT_H 1" >>$@
 	echo "#define HAVE_SYS_TYPES_H 1" >>$@
+	echo "#define HAVE_SETENV 1" >>$@
 	echo "#define HAVE_UNISTD_H 1" >>$@
 	echo "#define HAVE_UNSIGNED_LONG_LONG 1" >>$@
 	echo "#define STDC_HEADERS 1" >>$@

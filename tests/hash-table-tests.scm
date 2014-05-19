@@ -1,6 +1,6 @@
 ;;;; hash-table-tests.scm
 
-(require-extension srfi-69)
+(require-extension srfi-69 data-structures extras)
 
 (print "SRFI 69 procedures")
 (assert (eq? hash equal?-hash))
@@ -180,7 +180,7 @@
                                      (make-string 1000000 #\c)
                                      (make-string 1000000 #\a)) 10 1))))
 ;; differing number of nul bytes should not be identical
-(assert (not (= (hash (make-string 1 #\nul) 10 1) 
+(assert (not (= (hash (make-string 1 #\nul) 10 1)
                 (hash (make-string 2 #\nul) 10 1))))
 ;; ensure very long NUL strings don't cause the random value to get pushed out
 (assert (not (= (hash (make-string 1000000 #\nul) 10 1)
@@ -214,3 +214,29 @@
                         (lambda (e1 e2) (< (car e1) (car e2))))))
 ;; Ensure that lookup still works (#905, randomization value was reset)
 (assert (equal? '(a) (hash-table-ref ht2 1)))
+
+(print "HT - recursive depth/length")
+(assert (fixnum? (recursive-hash-max-depth)))
+(assert (positive? (recursive-hash-max-depth)))
+(assert (fixnum? (recursive-hash-max-length)))
+(assert (positive? (recursive-hash-max-length)))
+
+(let ((dd (recursive-hash-max-depth))
+      (tls (list (random 100000) (random 100000) (list (random 100000) (list (random 100000) (list (random 100000) (list (random 100000) (list (random 100000) (list (random 100000) (list (random 100000) (list (random 100000) (list (random 100000) (list (random 100000) (list (random 100000) (list (random 100000))))))))))))))))
+  (let ((hsh1 (equal?-hash tls 536870912 0)))
+    (recursive-hash-max-depth 10)
+    (assert (fx= 10 (recursive-hash-max-depth)))
+    (let ((hsh2 (equal?-hash tls 536870912 0)))
+      (recursive-hash-max-depth dd)
+      (print hsh1 " <?> " hsh2)
+      (assert (not (= hsh1 hsh2))) ) ) )
+
+(let ((dl (recursive-hash-max-length))
+      (tv (vector (random 100000) (random 100000) (random 100000) (random 100000) (random 100000) (random 100000) (random 100000) (random 100000) (random 100000) (random 100000) (random 100000) (random 100000))))
+  (let ((hsh1 (equal?-hash tv 536870912 0)))
+    (recursive-hash-max-length 10)
+    (assert (fx= 10 (recursive-hash-max-length)))
+    (let ((hsh2 (equal?-hash tv 536870912 0)))
+      (recursive-hash-max-length dl)
+      (print hsh1 " <?> " hsh2)
+      (assert (not (= hsh1 hsh2))) ) ) )

@@ -78,8 +78,8 @@
    (fast)
    ))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; chunked irregex
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;; chunked irregex
 
 (define (rope . args)
   (map (lambda (x) (if (pair? x) x (list x 0 (string-length x)))) args))
@@ -276,8 +276,8 @@
   (test-group "predicates"
     (test-assert (irregex? (irregex "a.*b")))
     (test-assert (irregex? (irregex '(: "a" (* any) "b"))))
-    (test-assert (not (irregex? (vector '*irregex-tag* #f #f #f #f #f #f #f))))
-    (test-assert (not (irregex? (vector #f #f #f #f #f #f #f #f #f))))
+    (test-assert (not (irregex? (vector '*irregex-tag* #f #f #f #f #f #f))))
+    (test-assert (not (irregex? (vector #f #f #f #f #f #f #f #f))))
     (test-assert (irregex-match-data? (irregex-search "a.*b" "axxxb")))
     (test-assert (irregex-match-data? (irregex-match "a.*b" "axxxb")))
     (test-assert (not (irregex-match-data? (vector '*irregex-match-tag* #f #f #f #f #f #f #f #f #f))))
@@ -363,6 +363,30 @@
                     (lambda (i m s) (cons (irregex-match-substring m) s))
                     '()
                     "poo poo platter"))
+  (test-equal "*  x   "
+      (irregex-replace/all
+       (irregex '(: bos #\space) 'backtrack) "   x   " "*"))
+  (test-equal "*  x   "
+      (irregex-replace/all
+       (irregex '(: bos #\space) 'dfa) "   x   " "*"))
+  (test-equal "***x***"
+      (irregex-replace/all
+       (irregex '(: #\space) 'backtrack) "   x   " "*"))
+  (test-equal "***x***"
+      (irregex-replace/all
+       (irregex '(: #\space) 'dfa) "   x   " "*"))
+  (test-equal "xaac"
+      (irregex-replace/all
+       (irregex '(or (seq bos "a") (seq bos "b")) 'backtrack) "aaac" "x"))
+  (test-equal "xaac"
+      (irregex-replace/all
+       (irregex '(or (seq bos "a") (seq bos "b")) 'dfa) "aaac" "x"))
+  (test-equal "xaac"
+      (irregex-replace/all (irregex '(or (seq bos "a") "b") 'backtrack)
+                           "aaac" "x"))
+  (test-equal "xaac"
+      (irregex-replace/all (irregex '(or (seq bos "a") "b") 'dfa)
+                           "aaac" "x"))
   )
 
 

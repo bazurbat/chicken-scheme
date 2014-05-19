@@ -1,6 +1,6 @@
 ;;;; compiler-syntax.scm - compiler syntax used internally
 ;
-; Copyright (c) 2009-2012, The Chicken Team
+; Copyright (c) 2009-2014, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -197,9 +197,6 @@
 	    (let ((code '())
 		  (index 0)
 		  (len (string-length fstr)) 
-		  (%display (r 'display))
-		  (%write (r 'write))
-		  (%write-char (r 'write-char))
 		  (%out (r 'out))
 		  (%fprintf (r 'fprintf))
 		  (%let (r 'let))
@@ -218,8 +215,8 @@
 		(when (pair? chunk)
 		  (push 
 		   (if (= 1 (length chunk))
-		       `(,%write-char ,(car chunk) ,%out)
-		       `(,%display ,(reverse-list->string chunk) ,%out)))))
+		       `(##sys#write-char-0 ,(car chunk) ,%out)
+		       `(##sys#print ,(reverse-list->string chunk) #f ,%out)))))
 	      (define (push exp)
 		(set! code (cons exp code)))
 	      (let loop ((chunk '()))
@@ -228,6 +225,7 @@
 			 (fail #f "too many arguments to formatted output procedure"))
 		       (endchunk chunk)
 		       `(,%let ((,%out ,out))
+			       (##sys#check-output-port ,%out #t ',func)
 			       ,@(reverse code)))
 		      (else
 		       (let ((c (fetch)))
@@ -235,19 +233,28 @@
 			     (let ((dchar (fetch)))
 			       (endchunk chunk)
 			       (case (char-upcase dchar)
-				 ((#\S) (push `(,%write ,(next) ,%out)))
-				 ((#\A) (push `(,%display ,(next) ,%out)))
-				 ((#\C) (push `(,%write-char ,(next) ,%out)))
-				 ((#\B) (push `(,%display (,%number->string ,(next) 2) ,%out)))
-				 ((#\O) (push `(,%display (,%number->string ,(next) 8) ,%out)))
-				 ((#\X) (push `(,%display (,%number->string ,(next) 16) ,%out)))
+				 ((#\S) (push `(##sys#print ,(next) #t ,%out)))
+				 ((#\A) (push `(##sys#print ,(next) #f ,%out)))
+				 ((#\C) (push `(##sys#write-char-0 ,(next) ,%out)))
+				 ((#\B)
+				  (push
+				   `(##sys#print (,%number->string ,(next) 2) 
+						  #f ,%out)))
+				 ((#\O)
+				  (push
+				   `(##sys#print (,%number->string ,(next) 8) 
+						 #f ,%out)))
+				 ((#\X)
+				  (push
+				   `(##sys#print (,%number->string ,(next) 16) 
+						 #f ,%out)))
 				 ((#\!) (push `(##sys#flush-output ,%out)))
 				 ((#\?)
 				  (let* ([fstr (next)]
 					 [lst (next)] )
 				    (push `(##sys#apply ,%fprintf ,%out ,fstr ,lst))))
-				 ((#\~) (push `(,write-char #\~ ,%out)))
-				 ((#\% #\N) (push `(,%write-char #\newline ,%out)))
+				 ((#\~) (push `(##sys#write-char-0 #\~ ,%out)))
+				 ((#\% #\N) (push `(##sys#write-char-0 #\newline ,%out)))
 				 (else
 				  (if (char-whitespace? dchar)
 				      (let skip ((c (fetch)))

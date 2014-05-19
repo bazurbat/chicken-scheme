@@ -1,6 +1,6 @@
 ;;;; tcp.scm - Networking stuff
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -28,43 +28,83 @@
 (declare
   (unit tcp)
   (uses extras scheduler)
+  (disable-interrupts) ; Avoid race conditions around errno/WSAGetLastError
   (export tcp-close tcp-listen tcp-connect tcp-accept tcp-accept-ready? ##sys#tcp-port->fileno tcp-listener? tcp-addresses
 	  tcp-abandon-port tcp-listener-port tcp-listener-fileno tcp-port-numbers tcp-buffer-size
 	  tcp-read-timeout tcp-write-timeout tcp-accept-timeout tcp-connect-timeout)
   (foreign-declare #<<EOF
-#include <errno.h>
 #ifdef _WIN32
-# if (defined(HAVE_WINSOCK2_H) && defined(HAVE_WS2TCPIP_H))
-#  include <winsock2.h>
-#  include <ws2tcpip.h>
-# else
-#  include <winsock.h>
-# endif
+# include <winsock2.h>
+# include <ws2tcpip.h>
 /* Beware: winsock2.h must come BEFORE windows.h */
-# define socklen_t       int
+# define socklen_t	 int
 static WSADATA wsa;
-# define fcntl(a, b, c)  0
-# define EWOULDBLOCK     0
-# define EINPROGRESS     0
+# ifndef SHUT_RD
+#  define SHUT_RD	  SD_RECEIVE
+# endif
+# ifndef SHUT_WR
+#  define SHUT_WR	  SD_SEND
+# endif
+
 # define typecorrect_getsockopt(socket, level, optname, optval, optlen)	\
     getsockopt(socket, level, optname, (char *)optval, optlen)
+
+static C_word make_socket_nonblocking (C_word sock) {
+  int fd = C_unfix(sock);
+  C_return(C_mk_bool(ioctlsocket(fd, FIONBIO, (void *)&fd) != SOCKET_ERROR)) ;
+}
+
+/* This is a bit of a hack, but it keeps things simple */
+static C_TLS char *last_wsa_errorstring = NULL;
+
+static char *errormsg_from_code(int code) {
+  int bufsize;
+  if (last_wsa_errorstring != NULL) {
+    LocalFree(last_wsa_errorstring);
+    last_wsa_errorstring = NULL;
+  }
+  bufsize = FormatMessage(
+	FORMAT_MESSAGE_ALLOCATE_BUFFER |
+	FORMAT_MESSAGE_FROM_SYSTEM |
+	FORMAT_MESSAGE_IGNORE_INSERTS,
+	NULL, code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+	(LPTSTR) &last_wsa_errorstring, 0, NULL);
+  if (bufsize == 0) return "ERROR WHILE FETCHING ERROR";
+  return last_wsa_errorstring;
+}
+
+# define get_last_socket_error()  WSAGetLastError()
+# define should_retry_call()      (WSAGetLastError() == WSAEWOULDBLOCK)
+/* Not EINPROGRESS in winsock.  Nonblocking connect returns EWOULDBLOCK... */
+# define call_in_progress()       (WSAGetLastError() == WSAEWOULDBLOCK)
+# define call_was_interrupted()   (WSAGetLastError() == WSAEINTR) /* ? */
+
 #else
+# include <errno.h>
 # include <fcntl.h>
-# include <sys/types.h>
 # include <sys/socket.h>
 # include <sys/time.h>
 # include <netinet/in.h>
-# include <unistd.h>
 # include <netdb.h>
 # include <signal.h>
 # define closesocket     close
 # define INVALID_SOCKET  -1
+# define SOCKET_ERROR    -1
 # define typecorrect_getsockopt getsockopt
-#endif
 
-#ifndef SD_RECEIVE
-# define SD_RECEIVE      0
-# define SD_SEND         1
+static C_word make_socket_nonblocking (C_word sock) {
+  int fd = C_unfix(sock);
+  int val = fcntl(fd, F_GETFL, 0);
+  if(val == -1) C_return(C_SCHEME_FALSE);
+  C_return(C_mk_bool(fcntl(fd, F_SETFL, val | O_NONBLOCK) != -1));
+}
+
+# define get_last_socket_error()  errno
+# define errormsg_from_code(e)    strerror(e)
+
+# define should_retry_call()      (errno == EAGAIN || errno == EWOULDBLOCK)
+# define call_was_interrupted()   (errno == EINTR)
+# define call_in_progress()       (errno == EINPROGRESS)
 #endif
 
 #ifdef ECOS
@@ -76,15 +116,33 @@ static WSADATA wsa;
 #endif
 
 static char addr_buffer[ 20 ];
+
+static int C_set_socket_options(int socket)
+{
+  int yes = 1; 
+  int r;
+
+  r = setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes, sizeof(int));
+  
+  if(r != 0) return r;
+
+#ifdef SO_NOSIGPIPE
+  /*
+   * Avoid SIGPIPE (iOS uses *only* SIGPIPE otherwise, not returning EPIPE).
+   * For consistency we do this everywhere the option is supported.
+   */
+  r = setsockopt(socket, SOL_SOCKET, SO_NOSIGPIPE, (const char *)&yes, sizeof(int));
+#endif
+
+  return r;
+}
+
 EOF
 ) )
 
 (include "common-declarations.scm")
 
 (register-feature! 'tcp)
-
-(define-foreign-variable errno int "errno")
-(define-foreign-variable strerror c-string "strerror(errno)")
 
 (define-foreign-type sockaddr* (pointer "struct sockaddr"))
 (define-foreign-type sockaddr_in* (pointer "struct sockaddr_in"))
@@ -94,15 +152,18 @@ EOF
 (define-foreign-variable _sock_dgram int "SOCK_DGRAM")
 (define-foreign-variable _sockaddr_size int "sizeof(struct sockaddr)")
 (define-foreign-variable _sockaddr_in_size int "sizeof(struct sockaddr_in)")
-(define-foreign-variable _sd_receive int "SD_RECEIVE")
-(define-foreign-variable _sd_send int "SD_SEND")
+(define-foreign-variable _shut_rd int "SHUT_RD")
+(define-foreign-variable _shut_wr int "SHUT_WR")
 (define-foreign-variable _ipproto_tcp int "IPPROTO_TCP")
 (define-foreign-variable _invalid_socket int "INVALID_SOCKET")
-(define-foreign-variable _ewouldblock int "EWOULDBLOCK")
-(define-foreign-variable _eagain int "EAGAIN")
-(define-foreign-variable _eintr int "EINTR")
-(define-foreign-variable _einprogress int "EINPROGRESS")
+(define-foreign-variable _socket_error int "SOCKET_ERROR")
 
+(define ##net#last-error-code (foreign-lambda int "get_last_socket_error"))
+(define ##net#error-code->message
+  (foreign-lambda c-string "errormsg_from_code" int))
+(define ##net#retry? (foreign-lambda bool "should_retry_call"))
+(define ##net#in-progress? (foreign-lambda bool "call_in_progress"))
+(define ##net#interrupted? (foreign-lambda bool "call_was_interrupted"))
 (define ##net#socket (foreign-lambda int "socket" int int int))
 (define ##net#bind (foreign-lambda int "bind" int scheme-pointer int))
 (define ##net#listen (foreign-lambda int "listen" int int))
@@ -111,17 +172,14 @@ EOF
 (define ##net#recv (foreign-lambda int "recv" int scheme-pointer int int))
 (define ##net#shutdown (foreign-lambda int "shutdown" int int))
 (define ##net#connect (foreign-lambda int "connect" int scheme-pointer int))
+(define ##net#check-fd-ready (foreign-lambda int "C_check_fd_ready" int))
+(define ##net#set-socket-options (foreign-lambda int "C_set_socket_options" int))
+
 
 (define ##net#send
   (foreign-lambda* 
       int ((int s) (scheme-pointer msg) (int offset) (int len) (int flags))
     "C_return(send(s, (char *)msg+offset, len, flags));"))
-
-(define ##net#make-nonblocking
-  (foreign-lambda* bool ((int fd))
-    "int val = fcntl(fd, F_GETFL, 0);"
-    "if(val == -1) C_return(0);"
-    "C_return(fcntl(fd, F_SETFL, val | O_NONBLOCK) != -1);") )
 
 (define ##net#getsockname 
   (foreign-lambda* c-string ((int s))
@@ -130,7 +188,7 @@ EOF
     "int len = sizeof(struct sockaddr_in);"
     "if(getsockname(s, (struct sockaddr *)&sa, (socklen_t *)&len) != 0) C_return(NULL);"
     "ptr = (unsigned char *)&sa.sin_addr;"
-    "sprintf(addr_buffer, \"%d.%d.%d.%d\", ptr[ 0 ], ptr[ 1 ], ptr[ 2 ], ptr[ 3 ]);"
+    "snprintf(addr_buffer, sizeof(addr_buffer), \"%d.%d.%d.%d\", ptr[ 0 ], ptr[ 1 ], ptr[ 2 ], ptr[ 3 ]);"
     "C_return(addr_buffer);") )
 
 (define ##net#getsockport
@@ -152,9 +210,9 @@ EOF
     "struct sockaddr_in sa;"
     "unsigned char *ptr;"
     "unsigned int len = sizeof(struct sockaddr_in);"
-    "if(getpeername(s, (struct sockaddr *)&sa, ((unsigned int *)&len)) != 0) C_return(NULL);"
+    "if(getpeername(s, (struct sockaddr *)&sa, ((socklen_t *)&len)) != 0) C_return(NULL);"
     "ptr = (unsigned char *)&sa.sin_addr;"
-    "sprintf(addr_buffer, \"%d.%d.%d.%d\", ptr[ 0 ], ptr[ 1 ], ptr[ 2 ], ptr[ 3 ]);"
+    "snprintf(addr_buffer, sizeof(addr_buffer), \"%d.%d.%d.%d\", ptr[ 0 ], ptr[ 1 ], ptr[ 2 ], ptr[ 3 ]);"
     "C_return(addr_buffer);") )
 
 (define ##net#startup
@@ -177,30 +235,6 @@ EOF
      if((se = getservbyname(serv, proto)) == NULL) C_return(0);
      else C_return(ntohs(se->s_port));") )     
 
-(define ##net#select
-  (foreign-lambda* int ((int fd))
-    "fd_set in;
-     struct timeval tm;
-     int rv;
-     FD_ZERO(&in);
-     FD_SET(fd, &in);
-     tm.tv_sec = tm.tv_usec = 0;
-     rv = select(fd + 1, &in, NULL, NULL, &tm);
-     if(rv > 0) { rv = FD_ISSET(fd, &in) ? 1 : 0; }
-     C_return(rv);") )
-
-(define ##net#select-write
-  (foreign-lambda* int ((int fd))
-    "fd_set out;
-     struct timeval tm;
-     int rv;
-     FD_ZERO(&out);
-     FD_SET(fd, &out);
-     tm.tv_sec = tm.tv_usec = 0;
-     rv = select(fd + 1, NULL, &out, NULL, &tm);
-     if(rv > 0) { rv = FD_ISSET(fd, &out) ? 1 : 0; }
-     C_return(rv);") )
-
 (define ##net#gethostaddr
   (foreign-lambda* bool ((scheme-pointer saddr) (c-string host) (unsigned-short port))
     "struct hostent *he = gethostbyname(host);"
@@ -212,12 +246,25 @@ EOF
     "addr->sin_addr = *((struct in_addr *)he->h_addr);"
     "C_return(1);") )
 
-(define (yield)
-  (##sys#call-with-current-continuation
-   (lambda (return)
-     (let ((ct ##sys#current-thread))
-       (##sys#setslot ct 1 (lambda () (return (##core#undefined))))
-       (##sys#schedule) ) ) ) )
+(define-syntax network-error
+  (syntax-rules ()
+    ((_ loc msg . args)
+     (network-error/code loc (##net#last-error-code) msg . args))))
+
+(define-syntax network-error/close
+  (syntax-rules ()
+    ((_ loc msg socket . args)
+     (let ((error-code (##net#last-error-code)))
+       (##net#close socket)
+       (network-error/code loc error-code msg socket . args)))))
+
+(define-syntax network-error/code
+  (syntax-rules ()
+    ((_ loc error-code msg . args)
+     (##sys#signal-hook #:network-error loc
+			(string-append (string-append msg " - ")
+				       (##net#error-code->message error-code))
+			. args))))
 
 (define ##net#parse-host
   (let ((substring substring))
@@ -233,11 +280,7 @@ EOF
 		     (let* ((s (substring host 0 i))
 			    (p (##net#getservbyname s proto)) )
 		       (when (eq? 0 p)
-			 (##sys#update-errno)
-			 (##sys#signal-hook
-			  #:network-error 'tcp-connect
-			  (##sys#string-append "cannot compute port from service - " strerror)
-			  s) )
+			 (network-error 'tcp-connect "cannot compute port from service" s) )
 		       p) )
 		    (loop (fx+ i 1)) ) ) ) ) ) ) ) )
 
@@ -249,51 +292,35 @@ EOF
     "addr->sin_port = htons(port);"
     "addr->sin_addr.s_addr = htonl(INADDR_ANY);") )
 
-(define (##net#bind-socket port style host)
-  (##sys#check-exact port)
-  (when (or (fx< port 0) (fx>= port 65535))
-    (##sys#signal-hook #:domain-error 'tcp-listen "invalid port number" port) )
-  (let ((s (##net#socket _af_inet style 0)))
-    (when (eq? _invalid_socket s)
-      (##sys#update-errno)
-      (##sys#error "cannot create socket") )
-    ;; PLT makes this an optional arg to tcp-listen. Should we as well?
-    (when (eq? -1 ((foreign-lambda* int ((int socket)) 
-		     "int yes = 1; 
-                      C_return(setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes, sizeof(int)));") 
-		   s) )
-      (##sys#update-errno)
-      (##sys#signal-hook 
-       #:network-error 'tcp-listen
-       (##sys#string-append "error while setting up socket - " strerror) s) )
-    (let ((addr (make-string _sockaddr_in_size)))
-      (if host
-	  (unless (##net#gethostaddr addr host port)
-	    (##sys#signal-hook 
-	     #:network-error 'tcp-listen 
-	     "getting listener host IP failed - " host port) )
-	  (##net#fresh-addr addr port) )
-      (let ((b (##net#bind s addr _sockaddr_in_size)))
-	(when (eq? -1 b)
-	  (##sys#update-errno)
-	  (##sys#signal-hook
-	   #:network-error 'tcp-listen
-	   (##sys#string-append "cannot bind to socket - " strerror) s port) )
-	(values s addr) ) ) ) )
+(define (##net#bind-socket style host port)
+  (let ((addr (make-string _sockaddr_in_size)))
+    (if host
+	(unless (##net#gethostaddr addr host port)
+	  (##sys#signal-hook 
+	   #:network-error 'tcp-listen 
+	   "getting listener host IP failed" host port) )
+	(##net#fresh-addr addr port) )
+    (let ((s (##net#socket _af_inet style 0)))
+      (when (eq? _invalid_socket s)
+	(##sys#error "cannot create socket") )
+      ;; PLT makes this an optional arg to tcp-listen. Should we as well?
+      (when (eq? _socket_error (##net#set-socket-options s))
+	(network-error 'tcp-listen "error while setting up socket" s) )
+      (when (eq? _socket_error (##net#bind s addr _sockaddr_in_size))
+	(network-error/close 'tcp-listen "cannot bind to socket" s host port) )
+      s)) )
 
 (define-constant default-backlog 100)
 
-(define (tcp-listen port . more)
-  (let-optionals more ((w default-backlog) (host #f))
-    (let-values (((s addr) (##net#bind-socket port _sock_stream host)))
-      (##sys#check-exact w)
-      (let ((l (##net#listen s w)))
-	(when (eq? -1 l)
-	  (##sys#update-errno)
-	  (##sys#signal-hook 
-	   #:network-error 'tcp-listen
-	   (##sys#string-append "cannot listen on socket - " strerror) s port) )
-	(##sys#make-structure 'tcp-listener s) ) ) ) )
+(define (tcp-listen port #!optional (backlog default-backlog) host)
+  (##sys#check-exact port)
+  (when (or (fx< port 0) (fx> port 65535))
+    (##sys#signal-hook #:domain-error 'tcp-listen "invalid port number" port) )
+  (##sys#check-exact backlog)
+  (let ((s (##net#bind-socket _sock_stream host port)))
+    (when (eq? _socket_error (##net#listen s backlog))
+      (network-error/close 'tcp-listen "cannot listen on socket" s port) )
+    (##sys#make-structure 'tcp-listener s) ) )
 
 (define (tcp-listener? x) 
   (and (##core#inline "C_blockp" x)
@@ -302,11 +329,8 @@ EOF
 (define (tcp-close tcpl)
   (##sys#check-structure tcpl 'tcp-listener)
   (let ((s (##sys#slot tcpl 1)))
-    (when (fx= -1 (##net#close s))
-      (##sys#update-errno)
-      (##sys#signal-hook 
-       #:network-error 'tcp-close
-       (##sys#string-append "cannot close TCP socket - " strerror) tcpl) ) ) )
+    (when (eq? _socket_error (##net#close s))
+      (network-error 'tcp-close "cannot close TCP socket" tcpl) ) ) )
 
 (define-constant +input-buffer-size+ 1024)
 (define-constant +output-chunk-size+ 8192)
@@ -329,11 +353,9 @@ EOF
 
 (define ##net#io-ports
   (let ((tbs tcp-buffer-size))
-    (lambda (fd)
-      (unless (##net#make-nonblocking fd)
-	(##sys#update-errno)
-	(##sys#signal-hook 
-	 #:network-error (##sys#string-append "cannot create TCP ports - " strerror)) )
+    (lambda (loc fd)
+      (unless (##core#inline "make_socket_nonblocking" fd)
+	(network-error/close loc "cannot create TCP ports" fd) )
       (let* ((buf (make-string +input-buffer-size+))
 	     (data (vector fd #f #f buf 0))
 	     (buflen 0)
@@ -342,38 +364,32 @@ EOF
 	     (oclosed #f)
 	     (outbufsize (tbs))
 	     (outbuf (and outbufsize (fx> outbufsize 0) ""))
-	     (tmr (tcp-read-timeout))
-	     (tmw (tcp-write-timeout))
 	     (read-input
 	      (lambda ()
-		(let loop ()
-		  (let ((n (##net#recv fd buf +input-buffer-size+ 0)))
-		    (cond ((eq? -1 n)
-			   (cond ((or (eq? errno _ewouldblock) 
-				      (eq? errno _eagain))
-				  (when tmr
-				    (##sys#thread-block-for-timeout! 
-				     ##sys#current-thread
-				     (+ (current-milliseconds) tmr) ) )
-				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
-				  (yield)
-				  (when (##sys#slot ##sys#current-thread 13)
-				    (##sys#signal-hook
-				     #:network-timeout-error
-				     "read operation timed out" tmr fd) )
-				  (loop) )
-				 ((eq? errno _eintr)
-				  (##sys#dispatch-interrupt loop))
-				 (else
-				  (##sys#update-errno)
-				  (##sys#signal-hook 
-				   #:network-error
-				   (##sys#string-append "cannot read from socket - " strerror) 
-				   fd) ) ) )
-			  (else
-			   (set! buflen n)
-			   (##sys#setislot data 4 n)
-			   (set! bufindex 0) ) ) ) ) ) )
+		(let* ((tmr (tcp-read-timeout))
+		       (dlr (and tmr (+ (current-milliseconds) tmr))))
+		  (let loop ()
+		    (let ((n (##net#recv fd buf +input-buffer-size+ 0)))
+		      (cond ((eq? _socket_error n)
+			     (cond ((##net#retry?)
+				    (when dlr
+				      (##sys#thread-block-for-timeout!
+				       ##sys#current-thread dlr) )
+				    (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
+				    (##sys#thread-yield!)
+				    (when (##sys#slot ##sys#current-thread 13)
+				      (##sys#signal-hook
+				       #:network-timeout-error
+				       "read operation timed out" tmr fd) )
+				    (loop) )
+				   ((##net#interrupted?)
+				    (##sys#dispatch-interrupt loop))
+				   (else
+				    (network-error #f "cannot read from socket" fd) ) ) )
+			    (else
+			     (set! buflen n)
+			     (##sys#setislot data 4 n)
+			     (set! bufindex 0) ) ) ) )) ) )
 	     (in
 	      (make-input-port
 	       (lambda ()
@@ -386,24 +402,18 @@ EOF
 		       c) ) )
 	       (lambda ()
 		 (or (fx< bufindex buflen)
-		     (let ((f (##net#select fd)))
-		       (when (eq? f -1)
-			 (##sys#update-errno)
-			 (##sys#signal-hook
-			  #:network-error
-			  (##sys#string-append "cannot check socket for input - " strerror) 
-			  fd) )
+		     ;; XXX: This "knows" that check_fd_ready is
+		     ;; implemented using a winsock2 call on Windows
+		     (let ((f (##net#check-fd-ready fd)))
+		       (when (eq? _socket_error f)
+			 (network-error #f "cannot check socket for input" fd) )
 		       (eq? f 1) ) ) )
 	       (lambda ()
 		 (unless iclosed
 		   (set! iclosed #t)
-		   (unless (##sys#slot data 1) (##net#shutdown fd _sd_receive))
-		   (when (and oclosed (eq? -1 (##net#close fd)))
-		     (##sys#update-errno)
-		     (##sys#signal-hook
-		      #:network-error
-		      (##sys#string-append "cannot close socket input port - " strerror)
-		      fd) ) ) )
+		   (unless (##sys#slot data 1) (##net#shutdown fd _shut_rd))
+		   (when (and oclosed (eq? _socket_error (##net#close fd)))
+		     (network-error #f "cannot close socket input port" fd) ) ) )
 	       (lambda ()
 		 (when (fx>= bufindex buflen)
 		   (read-input))
@@ -425,34 +435,36 @@ EOF
 			      m
 			      (loop n m start) ) ) ) ) )
 	       (lambda (p limit)	; read-line
-		 (let loop ((str #f)
-			    (limit (or limit (##sys#fudge 21))))
-		   (cond ((fx< bufindex buflen)
-			  (##sys#scan-buffer-line
-			   buf 
-			   (fxmin buflen limit)
-			   bufindex
-			   (lambda (pos2 next)
-			     (let* ((len (fx- pos2 bufindex))
-				    (dest (##sys#make-string len)))
-			       (##core#inline "C_substring_copy" buf dest bufindex pos2 0)
-			       (set! bufindex next)
-			       (cond ((eq? pos2 limit) ; no line-terminator, hit limit
-				      (if str (##sys#string-append str dest) dest))
-				     ((eq? pos2 next) ; no line-terminator, hit buflen
-				      (read-input)
-				      (if (fx>= bufindex buflen)
-					  (or str "")
-					  (loop (if str (##sys#string-append str dest) dest)
-						(fx- limit len)) ) )
-				     (else 
-				      (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1))
-				      (if str (##sys#string-append str dest) dest)) ) ) ) ) )
-			 (else
-			  (read-input)
-			  (if (fx< bufindex buflen)
-			      (loop str limit)
-			      #!eof) ) ) ) )
+		 (when (fx>= bufindex buflen)
+		   (read-input))
+		 (if (fx>= bufindex buflen)
+		     #!eof
+		     (let ((limit (or limit (fx- (##sys#fudge 21) bufindex))))
+		       (receive (next line full-line?)
+			   (##sys#scan-buffer-line
+			    buf
+			    (fxmin buflen (fx+ bufindex limit))
+			    bufindex
+			    (lambda (pos)
+			      (let ((nbytes (fx- pos bufindex)))
+				(cond ((fx>= nbytes limit)
+				       (values #f pos #f))
+				      (else (read-input)
+					    (set! limit (fx- limit nbytes))
+					    (if (fx< bufindex buflen)
+						(values buf bufindex
+							(fxmin buflen
+							       (fx+ bufindex limit)))
+						(values #f bufindex #f))))) ) )
+			 ;; Update row & column position
+			 (if full-line?
+			     (begin
+			       (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1))
+			       (##sys#setislot p 5 0))
+			     (##sys#setislot p 5 (fx+ (##sys#slot p 5)
+						      (##sys#size line))))
+			 (set! bufindex next)
+			 line) )) )
 	       (lambda (p)		; read-buffered
 		 (if (fx>= bufindex buflen)
 		     ""
@@ -462,35 +474,35 @@ EOF
 	       ) )
 	     (output
 	      (lambda (s)
-		(let loop ((len (##sys#size s))
-			   (offset 0))
-		  (let* ((count (fxmin +output-chunk-size+ len))
-			 (n (##net#send fd s offset count 0)) )
-		    (cond ((eq? -1 n)
-			   (cond ((or (eq? errno _ewouldblock)
-				      (eq? errno _eagain))
-				  (when tmw
-				    (##sys#thread-block-for-timeout! 
-				     ##sys#current-thread
-				     (+ (current-milliseconds) tmw) ) )
-				  (##sys#thread-block-for-i/o! ##sys#current-thread fd #:output)
-				  (yield) 
-				  (when (##sys#slot ##sys#current-thread 13)
-				    (##sys#signal-hook
-				     #:network-timeout-error
-				     "write operation timed out" tmw fd) )
-				  (loop len offset) )
-				 ((eq? errno _eintr)
-				  (##sys#dispatch-interrupt 
-				   (cut loop len offset)))
-				 (else
-				  (##sys#update-errno)
-				  (##sys#signal-hook 
-				   #:network-error
-				   (##sys#string-append "cannot write to socket - " strerror) 
-				   fd) ) ) )
-			  ((fx< n len)
-			   (loop (fx- len n) (fx+ offset n)) ) ) ) ) ) )
+		(let ((tmw (tcp-write-timeout)))
+		  (let loop ((len (##sys#size s))
+			     (offset 0)
+			     (dlw (and tmw (+ (current-milliseconds) tmw))))
+		    (let* ((count (fxmin +output-chunk-size+ len))
+			   (n (##net#send fd s offset count 0)) )
+		      (cond ((eq? _socket_error n)
+			     (cond ((##net#retry?)
+				    (when dlw
+				      (##sys#thread-block-for-timeout!
+				       ##sys#current-thread dlw) )
+				    (##sys#thread-block-for-i/o! ##sys#current-thread fd #:output)
+				    (##sys#thread-yield!)
+				    (when (##sys#slot ##sys#current-thread 13)
+				      (##sys#signal-hook
+				       #:network-timeout-error
+				       "write operation timed out" tmw fd) )
+				    (loop len offset dlw) )
+				   ((##net#interrupted?)
+				    (##sys#dispatch-interrupt
+				     (cut loop len offset dlw)))
+				   (else
+				    (network-error #f "cannot write to socket" fd) ) ) )
+			    ((fx< n len)
+			     (loop (fx- len n) (fx+ offset n)
+				   (if (fx= n 0)
+				       tmw
+				       ;; If we wrote *something*, reset timeout
+				       (and tmw (+ (current-milliseconds) tmw)) )) ) ) ) )) ) )
 	     (out
 	      (make-output-port
 	       (if outbuf
@@ -508,11 +520,9 @@ EOF
 		   (when (and outbuf (fx> (##sys#size outbuf) 0))
 		     (output outbuf)
 		     (set! outbuf "") )
-		   (unless (##sys#slot data 2) (##net#shutdown fd _sd_send))
-		   (when (and iclosed (eq? -1 (##net#close fd)))
-		     (##sys#update-errno)
-		     (##sys#signal-hook
-		      #:network-error (##sys#string-append "cannot close socket output port - " strerror) fd) ) ) )
+		   (unless (##sys#slot data 2) (##net#shutdown fd _shut_wr))
+		   (when (and iclosed (eq? _socket_error (##net#close fd)))
+		     (network-error #f "cannot close socket output port" fd) ) ) )
 	       (and outbuf
 		    (lambda ()
 		      (when (fx> (##sys#size outbuf) 0)
@@ -528,116 +538,81 @@ EOF
 
 (define (tcp-accept tcpl)
   (##sys#check-structure tcpl 'tcp-listener)
-  (let ((fd (##sys#slot tcpl 1))
-	(tma (tcp-accept-timeout)))
+  (let* ((fd (##sys#slot tcpl 1))
+	 (tma (tcp-accept-timeout))
+	 (dla (and tma (+ tma (current-milliseconds)))))
     (let loop ()
-      (if (eq? 1 (##net#select fd))
-	  (let ((fd (##net#accept fd #f #f)))
-	    (cond ((not (eq? -1 fd)) (##net#io-ports fd))
-		  ((eq? errno _eintr)
-		   (##sys#dispatch-interrupt loop))
-		  (else
-		   (##sys#update-errno)
-		   (##sys#signal-hook 
-		    #:network-error
-		    'tcp-accept
-		    (##sys#string-append "could not accept from listener - " strerror)
-		    tcpl))))
-	  (begin
-	    (when tma
-	      (##sys#thread-block-for-timeout! 
-	       ##sys#current-thread
-	       (+ (current-milliseconds) tma) ) )
-	    (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
-	    (yield)
-	    (when (##sys#slot ##sys#current-thread 13)
-	      (##sys#signal-hook
-	       #:network-timeout-error
-	       'tcp-accept
-	       "accept operation timed out" tma fd) )
-	    (loop) ) ) ) ) )
+      (when dla
+	(##sys#thread-block-for-timeout! ##sys#current-thread dla) )
+      (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
+      (##sys#thread-yield!)
+      (if (##sys#slot ##sys#current-thread 13)
+	  (##sys#signal-hook
+	   #:network-timeout-error
+	   'tcp-accept
+	   "accept operation timed out" tma fd) )
+      (let ((fd (##net#accept fd #f #f)))
+	(cond ((not (eq? _invalid_socket fd))
+	       (##net#io-ports 'tcp-accept fd))
+	      ((##net#interrupted?)
+	       (##sys#dispatch-interrupt loop))
+	      (else
+	       (network-error 'tcp-accept "could not accept from listener" tcpl)))) ) ) )
 
 (define (tcp-accept-ready? tcpl)
   (##sys#check-structure tcpl 'tcp-listener 'tcp-accept-ready?)
-  (let ((f (##net#select (##sys#slot tcpl 1))))
-    (when (eq? -1 f)
-      (##sys#update-errno)
-      (##sys#signal-hook 
-       #:network-error 'tcp-accept-ready? (##sys#string-append "cannot check socket for input - " strerror) 
-       tcpl) )
+  ;; XXX: This "knows" that check_fd_ready is implemented using a winsock2 call
+  (let ((f (##net#check-fd-ready (##sys#slot tcpl 1))))
+    (when (eq? _socket_error f)
+      (network-error 'tcp-accept-ready? "cannot check socket for input" tcpl) )
     (eq? 1 f) ) )
 
 (define get-socket-error
   (foreign-lambda* int ((int socket))
     "int err, optlen;"
     "optlen = sizeof(err);"
-    "if (typecorrect_getsockopt(socket, SOL_SOCKET, SO_ERROR, &err, (socklen_t *)&optlen) == -1)"
-    "  C_return(-1);"
+    "if (typecorrect_getsockopt(socket, SOL_SOCKET, SO_ERROR, &err, (socklen_t *)&optlen) == SOCKET_ERROR)"
+    "  C_return(SOCKET_ERROR);"
     "C_return(err);"))
 
-(define general-strerror (foreign-lambda c-string "strerror" int))
-
 (define (tcp-connect host . more)
-  (let ((port (optional more #f))
-	(tmc (tcp-connect-timeout)))
+  (let* ((port (optional more #f))
+	 (tmc (tcp-connect-timeout))
+	 (dlc (and tmc (+ (current-milliseconds) tmc)))
+	 (addr (make-string _sockaddr_in_size)))
     (##sys#check-string host)
     (unless port
       (set!-values (host port) (##net#parse-host host "tcp"))
-      (unless port (##sys#signal-hook #:network-error 'tcp-connect "no port specified" host)) )
+      (unless port (##sys#signal-hook #:domain-error 'tcp-connect "no port specified" host)) )
     (##sys#check-exact port)
-    (let ((addr (make-string _sockaddr_in_size))
-	  (s (##net#socket _af_inet _sock_stream 0)) )
-      (define (fail)
-	(##net#close s)
-	(##sys#update-errno)
-	(##sys#signal-hook 
-	 #:network-error 'tcp-connect (##sys#string-append "cannot connect to socket - " strerror) 
-	 host port) )
-      (when (eq? -1 s)
-	(##sys#update-errno)
-	(##sys#signal-hook 
-	 #:network-error 'tcp-connect
-	 (##sys#string-append "cannot create socket - " strerror) host port) )
-      (unless (##net#gethostaddr addr host port)
-	(##sys#signal-hook #:network-error 'tcp-connect "cannot find host address" host) )
-      (unless (##net#make-nonblocking s)
-	(##sys#update-errno)
-	(##sys#signal-hook #:network-error 'tcp-connect (##sys#string-append "fcntl() failed - " strerror)) )
+    (unless (##net#gethostaddr addr host port)
+      (##sys#signal-hook #:network-error 'tcp-connect "cannot find host address" host) )
+    (let ((s (##net#socket _af_inet _sock_stream 0)) )
+      (when (eq? _invalid_socket s)
+	(network-error 'tcp-connect "cannot create socket" host port) )
+      (when (eq? _socket_error (##net#set-socket-options s))
+	(network-error/close 'tcp-connect "error while setting up socket" s) )
+      (unless (##core#inline "make_socket_nonblocking" s)
+	(network-error/close 'tcp-connect "fcntl() failed" s) )
       (let loop ()
-	(when (eq? -1 (##net#connect s addr _sockaddr_in_size))
-	  (cond ((eq? errno _einprogress)
-		 (let loop2 ()
-		   (let ((f (##net#select-write s)))
-		     (when (eq? f -1) (fail))
-		     (unless (eq? f 1)
-		       (when tmc
-			 (##sys#thread-block-for-timeout!
-			  ##sys#current-thread
-			  (+ (current-milliseconds) tmc) ) )
-		       (##sys#thread-block-for-i/o! ##sys#current-thread s #:all)
-		       (yield)
-		       (when (##sys#slot ##sys#current-thread 13)
-			 (##net#close s)
-			 (##sys#signal-hook
-			  #:network-timeout-error
-			  'tcp-connect
-			  "connect operation timed out" tmc s) )
-		       (loop2) ) ) ))
-		((eq? errno _eintr)
+	(when (eq? _socket_error (##net#connect s addr _sockaddr_in_size))
+	  (cond ((##net#in-progress?) ; Wait till it's available via select/poll
+		 (when dlc
+		   (##sys#thread-block-for-timeout! ##sys#current-thread dlc))
+		 (##sys#thread-block-for-i/o! ##sys#current-thread s #:output)
+		 (##sys#thread-yield!)) ; Don't loop: it's connected now
+		((##net#interrupted?)
 		 (##sys#dispatch-interrupt loop))
-		(else (fail) ) )))
+		(else
+		 (network-error/close
+		  'tcp-connect "cannot connect to socket" s host port)))))
       (let ((err (get-socket-error s)))
-	(cond ((fx= err -1)
-	       (##net#close s)
-	       (##sys#signal-hook 
-		#:network-error 'tcp-connect
-		(##sys#string-append "getsockopt() failed - " strerror)))
+	(cond ((eq? _socket_error err)
+	       (network-error/close 'tcp-connect "getsockopt() failed" s))
 	      ((fx> err 0)
 	       (##net#close s)
-	       (##sys#signal-hook 
-		#:network-error 'tcp-connect
-		(##sys#string-append "cannot create socket - " (general-strerror err))))))
-      (##net#io-ports s) ) ) )
+	       (network-error/code 'tcp-connect err "cannot create socket"))))
+      (##net#io-ports 'tcp-connect s) ) ) )
 
 (define (##sys#tcp-port->fileno p)
   (let ((data (##sys#port-data p)))
@@ -650,13 +625,9 @@ EOF
   (let ((fd (##sys#tcp-port->fileno p)))
     (values 
      (or (##net#getsockname fd)
-	 (##sys#signal-hook 
-	  #:network-error 'tcp-addresses
-	  (##sys#string-append "cannot compute local address - " strerror) p) )
+	 (network-error 'tcp-addresses "cannot compute local address" p) )
      (or (##net#getpeername fd)
-	 (##sys#signal-hook
-	  #:network-error 'tcp-addresses
-	  (##sys#string-append "cannot compute remote address - " strerror) p) ) ) ) )
+	 (network-error 'tcp-addresses "cannot compute remote address" p) ) ) ) )
 
 (define (tcp-port-numbers p)
   (##sys#check-open-port p 'tcp-port-numbers)
@@ -664,13 +635,9 @@ EOF
     (let ((sp (##net#getsockport fd))
 	  (pp (##net#getpeerport fd)))
       (when (eq? -1 sp)
-	(##sys#signal-hook 
-	 #:network-error 'tcp-port-numbers
-	 (##sys#string-append "cannot compute local port - " strerror) p))
+	(network-error 'tcp-port-numbers "cannot compute local port" p) )
       (when (eq? -1 pp)
-	(##sys#signal-hook
-	 #:network-error 'tcp-port-numbers
-	 (##sys#string-append "cannot compute remote port - " strerror) p) )
+	(network-error 'tcp-port-numbers "cannot compute remote port" p) )
       (values sp pp))))
 
 (define (tcp-listener-port tcpl)
@@ -678,9 +645,7 @@ EOF
   (let* ((fd (##sys#slot tcpl 1))
 	 (port (##net#getsockport fd)) )
     (when (eq? -1 port)
-      (##sys#signal-hook
-       #:network-error 'tcp-listener-port (##sys#string-append "cannot obtain listener port - " strerror) 
-       tcpl fd) )
+      (network-error 'tcp-listener-port "cannot obtain listener port" tcpl fd) )
     port) )
 
 (define (tcp-abandon-port p)

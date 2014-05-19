@@ -1,6 +1,6 @@
 ;;;; chicken.import.scm - import library for "chicken" module
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -170,6 +170,7 @@
    make-blob
    make-composite-condition
    make-parameter
+   make-promise
    make-property-condition
    maximum-flonum
    memory-statistics

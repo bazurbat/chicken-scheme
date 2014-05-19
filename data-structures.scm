@@ -1,6 +1,6 @@
 ;;; data-structures.scm - Optional data structures extensions
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without
@@ -110,10 +110,6 @@
 
 (define (any? x) #t)
 
-(define (none? x) #f)			; DEPRECATED
-(define (always? . _) #t)		; DEPRECATED
-(define (never? . _) #f)		; DEPRECATED
-
 
 ;;; List operators:
 
@@ -198,13 +194,6 @@
 	       (cons (##sys#slot lst 0) (loop (##sys#slot blst 1) (##sys#slot lst 1)))]
 	      [else (loop (##sys#slot blst 1) (##sys#slot lst 1))] ) ) ) ) )
 
-(define shuffle				; DEPRECATED
-  (lambda (l random)
-    (let ((len (length l)))
-      (map cdr
-	   (sort! (map (lambda (x) (cons (random len) x)) l)
-		  (lambda (x y) (< (car x) (car y)))) ) ) ) )
-
 
 ;;; Alists:
 
@@ -229,16 +218,19 @@
 
 (define (alist-update k v lst #!optional (cmp eqv?))
   (let loop ((lst lst))
-    (if (null? lst)
-        (list (cons k v))
-        (let ((a (##sys#slot lst 0)))
-          (cond ((not (pair? a))
-                 (error 'alist-update "bad argument type" a))
-                ((cmp (##sys#slot a 0) k)
-                 (cons (cons k v) (##sys#slot lst 1)))
-                (else
-                 (cons (cons (##sys#slot a 0) (##sys#slot a 1))
-                       (loop (##sys#slot lst 1)))))))))
+    (cond ((null? lst)
+           (list (cons k v)))
+          ((not (pair? lst))
+           (error 'alist-update "bad argument type" lst))
+          (else
+           (let ((a (##sys#slot lst 0)))
+             (cond ((not (pair? a))
+                    (error 'alist-update "bad argument type" a))
+                   ((cmp (##sys#slot a 0) k)
+                    (cons (cons k v) (##sys#slot lst 1)))
+                   (else
+                    (cons (cons (##sys#slot a 0) (##sys#slot a 1))
+                          (loop (##sys#slot lst 1))))))))))
 
 (define (alist-ref x lst #!optional (cmp eqv?) (default #f))
   (let* ([aq (cond [(eq? eq? cmp) assq]
@@ -718,52 +710,49 @@
 	(sort! (append seq '()) less?)))
 
 
-;;;  Simple topological sort:
-;
-; Taken from SLIB (slightly adapted): Copyright (C) 1995 Mikael Djurfeldt
+;;; Topological sort with cycle detection:
+;;
+;; A functional implementation of the algorithm described in Cormen,
+;; et al. (2009), Introduction to Algorithms (3rd ed.), pp. 612-615.
 
 (define (topological-sort dag pred)
-  (if (null? dag)
-      '()
-      (let* ((adj-table '())
-	     (sorted '()))
-
-	(define (insert x y)
-	  (let loop ([at adj-table])
-	    (cond [(null? at) (set! adj-table (cons (cons x y) adj-table))]
-		  [(pred x (caar at)) (set-cdr! (car at) y)]
-		  [else (loop (cdr at))] ) ) )
-	
-	(define (lookup x)
-	  (let loop ([at adj-table])
-	    (cond [(null? at) #f]
-		  [(pred x (caar at)) (cdar at)]
-		  [else (loop (cdr at))] ) ) )
-	
-	(define (visit u adj-list)
-	  ;; Color vertex u
-	  (insert u 'colored)
-	  ;; Visit uncolored vertices which u connects to
-	  (for-each (lambda (v)
-		      (let ((val (lookup v)))
-			(if (not (eq? val 'colored))
-			    (visit v (or val '())))))
-		    adj-list)
-	  ;; Since all vertices downstream u are visited
-	  ;; by now, we can safely put u on the output list
-	  (set! sorted (cons u sorted)) )
-	
-	;; Hash adjacency lists
-	(for-each (lambda (def) (insert (car def) (cdr def)))
-		  (cdr dag))
-	;; Visit vertices
-	(visit (caar dag) (cdar dag))
-	(for-each (lambda (def)
-		    (let ((val (lookup (car def))))
-		      (if (not (eq? val 'colored))
-			  (visit (car def) (cdr def)))))
-		  (cdr dag)) 
-	sorted) ) )
+  (define (visit dag node edges path state)
+    (case (alist-ref node (car state) pred)
+      ((grey)
+       (##sys#abort
+        (##sys#make-structure
+         'condition
+         '(exn runtime cycle)
+         `((exn . message) "cycle detected"
+           (exn . arguments) ,(list (cons node (reverse path)))
+           (exn . call-chain) ,(##sys#get-call-chain)
+           (exn . location) topological-sort))))
+      ((black)
+       state)
+      (else
+       (let walk ((edges (or edges (alist-ref node dag pred '())))
+                  (state (cons (cons (cons node 'grey) (car state))
+                               (cdr state))))
+         (if (null? edges)
+             (cons (alist-update! node 'black (car state) pred)
+                   (cons node (cdr state)))
+             (let ((edge (car edges)))
+               (walk (cdr edges)
+                     (visit dag
+                            edge
+                            #f
+                            (cons edge path)
+                            state))))))))
+  (let loop ((dag dag)
+             (state (cons (list) (list))))
+    (if (null? dag)
+        (cdr state)
+        (loop (cdr dag)
+              (visit dag
+                     (caar dag)
+                     (cdar dag)
+                     '()
+                     state)))))
 
 
 ;;; Binary search:
@@ -866,7 +855,8 @@
 	   ((eq? (##sys#slot lst 1) '()) lst)
 	 (if (or (not (##core#inline "C_blockp" lst))
 		 (not (##core#inline "C_pairp" lst)) )
-	     (##sys#error-not-a-proper-list lst0 'list->queue) ) ) ) ) )
+	     (##sys#error-not-a-proper-list lst0 'list->queue) ) ) )
+   (##sys#length lst0)) )
 
 
 ; (queue-push-back! queue item)

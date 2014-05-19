@@ -1,6 +1,6 @@
 # Makefile.solaris - configuration for Solaris -*- Makefile -*-
 #
-# Copyright (c) 2008-2012, The Chicken Team
+# Copyright (c) 2008-2014, The Chicken Team
 # Copyright (c) 2007, Felix L. Winkelmann
 # All rights reserved.
 #
@@ -82,8 +82,9 @@ LINKER_LINK_SHARED_LIBRARY_OPTIONS = -shared
 LINKER_LINK_SHARED_DLOADABLE_OPTIONS = -shared -Wl,-R"$(RUNTIME_LINKER_PATH)" -Wl,-L.
 LINKER_LINK_SHARED_PROGRAM_OPTIONS = -Wl,-R"$(RUNTIME_LINKER_PATH)"
 endif
-LIBRARIES = -lsocket -lnsl -lm -ldl
+LIBRARIES = -lsocket -lnsl -lm -ldl -lrt
 NEEDS_RELINKING = yes
+USES_SONAME = yes
 
 # special files
 
@@ -102,15 +103,19 @@ chicken-config.h: chicken-defaults.h
 	echo "#define HAVE_LONG_LONG 1" >>$@
 	echo "#define HAVE_MEMMOVE 1" >>$@
 	echo "#define HAVE_MEMORY_H 1" >>$@
+	echo "#define HAVE_POSIX_POLL 1" >>$@
 	echo "#define HAVE_SIGACTION 1" >>$@
 	echo "#define HAVE_STDINT_H 1" >>$@
 	echo "#define HAVE_STDLIB_H 1" >>$@
 	echo "#define HAVE_STRERROR 1" >>$@
 	echo "#define HAVE_STRINGS_H 1" >>$@
 	echo "#define HAVE_STRING_H 1" >>$@
+	echo "#define HAVE_STRLCAT 1" >>$@
+	echo "#define HAVE_STRLCPY 1" >>$@
 	echo "#define HAVE_STRTOLL 1" >>$@
 	echo "#define HAVE_SYS_STAT_H 1" >>$@
 	echo "#define HAVE_SYS_TYPES_H 1" >>$@
+	echo "#define HAVE_SETENV 1" >>$@
 	echo "#define HAVE_UNISTD_H 1" >>$@
 	echo "#define HAVE_UNSIGNED_LONG_LONG 1" >>$@
 	echo "#define STDC_HEADERS 1" >>$@
@@ -118,7 +123,6 @@ chicken-config.h: chicken-defaults.h
 	echo "#define HAVE_ALLOCA 1" >>$@
 	echo "#define HAVE_GRP_H 1" >>$@
 	echo "#define HAVE_ERRNO_H 1" >>$@
-	echo "#define HAVE_GCVT 1" >>$@
 	echo "#define HAVE_SYSEXITS_H 1" >>$@
 	echo "#define C_STACK_GROWS_DOWNWARD 1" >>$@
 ifdef GCHOOKS

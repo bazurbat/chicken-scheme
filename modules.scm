@@ -1,6 +1,6 @@
 ;;;; modules.scm - module-system support
 ;
-; Copyright (c) 2011-2012, The Chicken Team
+; Copyright (c) 2011-2014, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -375,16 +375,16 @@
     (##sys#mark-imported-symbols iexps)
     (for-each
      (lambda (sexp)
-       (set-car! (cdr sexp) senv))
+       (set-car! (cdr sexp) (merge-se (or (cadr sexp) '()) senv)))
      sexps)
     (for-each
      (lambda (iexp)
        (when (pair? (cdr iexp))
-	 (set-car! (cdr iexp) senv)))
+	 (set-car! (cdr iexp) (merge-se (or (cadr iexp) '()) senv))))
      iexps)
     (for-each
      (lambda (nexp)
-       (set-car! (cdr nexp) senv))
+       (set-car! (cdr nexp) (merge-se (or (cadr nexp) '()) senv)))
      nexps)
     (set! ##sys#module-table (cons (cons name mod) ##sys#module-table)) 
     mod))

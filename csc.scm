@@ -1,6 +1,6 @@
 ;;;; csc.scm - Driver program for the CHICKEN compiler - felix -*- Scheme -*-
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -61,20 +61,20 @@
 (define-foreign-variable CSC_PROGRAM c-string "C_CSC_PROGRAM")
 (define-foreign-variable WINDOWS_SHELL bool "C_WINDOWS_SHELL")
 (define-foreign-variable BINARY_VERSION int "C_BINARY_VERSION")
+(define-foreign-variable POSTINSTALL_PROGRAM c-string "C_INSTALL_POSTINSTALL_PROGRAM")
 
 
 ;;; Parameters:
 
 (define mingw (eq? (build-platform) 'mingw32))
 (define osx (eq? (software-version) 'macosx))
-(define win mingw)
-(define netbsd (eq? (software-version) 'netbsd))
 (define cygwin (eq? (build-platform) 'cygwin))
+(define aix (eq? (build-platform) 'aix))
 
 (define elf
-  (memq (software-version) '(linux netbsd freebsd solaris openbsd)))
+  (memq (software-version) '(linux netbsd freebsd solaris openbsd hurd haiku)))
 
-(define (quit msg . args)
+(define (stop msg . args)
   (fprintf (current-error-port) "~a: ~?~%" CSC_PROGRAM msg args)
   (exit 64) )
 
@@ -138,14 +138,14 @@
     -block -disable-interrupts -fixnum-arithmetic -to-stdout -profile -raw -accumulate-profile
     -check-syntax -case-insensitive -shared -compile-syntax -no-lambda-info
     -dynamic -disable-stack-overflow-checks -local
-    -emit-external-prototypes-first -inline -release -scrutinize
+    -emit-external-prototypes-first -inline -release 
+    -scrutinize				; OBSOLETE
     -analyze-only -keep-shadowed-macros -inline-global -ignore-repository
     -no-symbol-escape -no-parentheses-synonyms -r5rs-syntax
     -no-argc-checks -no-bound-checks -no-procedure-checks -no-compiler-syntax
     -emit-all-import-libraries -setup-mode -no-elevation -no-module-registration
     -no-procedure-checks-for-usual-bindings -module
-    -specialize -strict-types -clustering
-    -lambda-lift -unboxing		; OBSOLETE
+    -specialize -strict-types -clustering -lfa2
     -no-procedure-checks-for-toplevel-bindings))
 
 (define-constant complex-options
@@ -154,7 +154,6 @@
     -inline-limit -profile-name
     -emit-inline-file -types -emit-type-file
     -feature -debug-level 
-    -heap-growth -heap-shrinkage -heap-initial-size ; DEPRECATED
     -consult-inline-file
     -emit-import-library
     -no-feature))
@@ -162,10 +161,9 @@
 (define-constant shortcuts
   '((-h "-help")
     (-s "-shared")
-    (-S "-scrutinize")
+    (-S "-scrutinize")			; OBSOLETE
     (-M "-module")
     (|-P| "-check-syntax")
-    (|-V| "-version")			; DEPRECATED
     (-f "-fixnum-arithmetic")
     (|-D| "-feature")
     (-i "-case-insensitive")
@@ -175,7 +173,7 @@
     (-x "-explicit-use")
     (-u "-unsafe")
     (-j "-emit-import-library")
-    (-n "-emit-inline-file")
+    (-n "-emit-inline-file")		; DEPRECATED
     (-b "-block") ) )
 
 (define short-options
@@ -185,7 +183,6 @@
 ;;; Variables:
 
 (define scheme-files '())
-(define generated-scheme-files '())
 (define c-files '())
 (define rc-files '())
 (define generated-c-files '())
@@ -267,15 +264,20 @@
 	  (list
 	   (conc "-L\"" library-dir "\"")
 	   (conc " -Wl,-R\""
-		 (if (and deployed (not netbsd))
+		 (if deployed
 		     "\\$ORIGIN"
 		     (prefix "" "lib"
 			     (if host-mode
 				 INSTALL_LIB_HOME
 				 TARGET_RUN_LIB_HOME)))
 		 "\"")) )
+		 (aix
+		  (list (conc "-Wl,-R\"" library-dir "\"")))
 	 (else
 	  (list (conc "-L\"" library-dir "\""))))
+   (if (and deployed (memq (software-version) '(freebsd openbsd netbsd)))
+       (list "-Wl,-z,origin")
+       '())
    (cond ((get-environment-variable "CHICKEN_C_LIBRARY_PATH") => 
 	  (lambda (path) 
 	    (map (cut string-append "-L\"" <> "\"") (string-split path ":;"))))
@@ -369,7 +371,6 @@ Usage: #{csc} FILENAME | OPTION ...
                                     append mode
     -profile-name FILENAME         name of the generated profile information
                                     file
-    -S  -scrutinize                perform local flow analysis
     -types FILENAME                load additional type database
 
   Optimization options:
@@ -389,10 +390,10 @@ Usage: #{csc} FILENAME | OPTION ...
     -inline-limit LIMIT            set inlining threshold
     -inline-global                 enable cross-module inlining
     -specialize                    perform type-based specialization of primitive calls
-    -n -emit-inline-file FILENAME  generate file with globally inlinable
+    -oi -emit-inline-file FILENAME  generate file with globally inlinable
                                     procedures (implies -inline -local)
     -consult-inline-file FILENAME  explicitly load inline file
-    -emit-type-file FILENAME       write type-declaration information into file
+    -ot  -emit-type-file FILENAME  write type-declaration information into file
     -no-argc-checks                disable argument count checks
     -no-bound-checks               disable bound variable checks
     -no-procedure-checks           disable procedure call checks
@@ -405,6 +406,7 @@ Usage: #{csc} FILENAME | OPTION ...
     -strict-types                  assume variable do not change their type
     -clustering                    combine groups of local procedures into dispatch
                                      loop
+    -lfa2                          perform additional lightweight flow-analysis pass
 
   Configuration options:
 
@@ -481,8 +483,9 @@ Usage: #{csc} FILENAME | OPTION ...
     -host                          compile for host when configured for
                                     cross-compiling
     -private-repository            load extensions from executable path
-    -deployed                      compile support file to be used from a deployed 
-                                    executable
+    -deployed                      link support file to be used from a deployed 
+                                    executable (sets `rpath' accordingly, if supported
+                                    on this platform)
     -no-elevation                  embed manifest on Windows to supress elevation
                                     warnings for programs named `install' or `setup'
 
@@ -511,14 +514,14 @@ EOF
 
   (define (check o r . n)
     (unless (>= (length r) (optional n 1))
-      (quit "not enough arguments to option `~A'" o) ) )
+      (stop "not enough arguments to option `~A'" o) ) )
 
   (define (shared-build lib)
     (set! translate-options (cons* "-feature" "chicken-compile-shared" translate-options))
     (set! compile-options (append pic-options '("-DC_SHARED") compile-options))
     (set! link-options
       (cons (cond
-             (osx (if lib "-dynamiclib" "-bundle"))
+             (osx (if lib "-dynamiclib" "-bundle -headerpad_max_install_names"))
              (else "-shared")) link-options))
     (set! shared #t) )
 
@@ -543,7 +546,7 @@ EOF
 	   (cond [(null? scheme-files)
 		  (when (and (null? c-files) 
 			     (null? object-files))
-		    (quit "no source files specified") )
+		    (stop "no source files specified") )
 		  (let ((f0 (last (if (null? c-files) object-files c-files))))
 		    (unless target-filename
 		      (set! target-filename 
@@ -727,9 +730,18 @@ EOF
 		  (set! link-options (append link-options (list (string-append "-Wl,-R" rpath)))) )
 	  	(set! rest (cdr rest)) ]
 	       [(-host) #f]
+	       ((-oi) 
+		(check s rest)
+		(t-options "-emit-inline-file" (car rest))
+		(set! rest (cdr rest)))
+	       ((-ot) 
+		(check s rest)
+		(t-options "-emit-type-file" (car rest))
+		(set! rest (cdr rest)))
 	       [(-) 
-		(set! target-filename (make-pathname #f "a" executable-extension))
-		(set! scheme-files (append scheme-files '("-")))]
+		(set! scheme-files (append scheme-files '("-")))
+		(unless target-filename
+		  (set! target-filename (make-pathname #f "a" executable-extension)))]
 	       [else
 		(when (eq? s '-to-stdout) 
 		  (set! to-stdout #t)
@@ -767,8 +779,8 @@ EOF
  				(if (null? (lset-difference char=? opts short-options))
  				    (set! rest
  				      (append (map (lambda (o) (string-append "-" (string o))) opts) rest) )
- 				    (quit "invalid option `~A'" arg) ) ) ]
-			     [else (quit "invalid option `~A'" s)] ) ]
+ 				    (stop "invalid option `~A'" arg) ) ) ]
+			     [else (stop "invalid option `~A'" s)] ) ]
 		      [(file-exists? arg)
 		       (let-values ([(dirs name ext) (decompose-pathname arg)])
 			 (cond [(not ext)
@@ -792,7 +804,7 @@ EOF
 		       (let ([f2 (string-append arg ".scm")])
 			 (if (file-exists? f2)
 			     (set! rest (cons f2 rest))
-			     (quit "file `~A' does not exist" arg) ) ) ] ) ] )
+			     (stop "file `~A' does not exist" arg) ) ) ] ) ] )
 	     (loop rest) ) ] ) ) )
 
 
@@ -801,13 +813,17 @@ EOF
 (define (run-translation)
   (for-each
    (lambda (f)
-     (let ([fc (pathname-replace-extension
-		(if (= 1 (length scheme-files))
+     (let* ((sf (if (= 1 (length scheme-files))
 		    target-filename
-		    f)
-		(cond (cpp-mode "cpp")
-		      (objc-mode "m")
-		      (else "c") ) ) ] )
+		    f))
+	    (fc (pathname-replace-extension
+		 sf
+		 (cond (cpp-mode "cpp")
+		       (objc-mode "m")
+		       (else "c") ) ) ) )
+       (when (member fc c-files)
+	 (stop "C file generated from `~a' will overwrite explicitly given source file `~a'"
+	       f fc))
        (command
 	(string-intersperse 
 	 (cons* translator (quotewrap f) 
@@ -829,8 +845,7 @@ EOF
 	 " ") )
        (set! c-files (append (list fc) c-files))
        (set! generated-c-files (append (list fc) generated-c-files))))
-   scheme-files)
-  (unless keep-files (for-each $delete-file generated-scheme-files)) )
+   scheme-files))
 
 
 ;;; Compile all C/C++  and .rc files:
@@ -839,7 +854,10 @@ EOF
   (let ((ofiles '()))
     (for-each
      (lambda (f)
-       (let ([fo (pathname-replace-extension f object-extension)])
+       (let ((fo (pathname-replace-extension f object-extension)))
+	 (when (member fo object-files)
+	   (stop "object file generated from `~a' will overwrite explicitly given object file `~a'"
+		 f fo))
 	 (command
 	  (string-intersperse
 	   (list (cond (cpp-mode c++-compiler)
@@ -917,7 +935,7 @@ EOF
     (when (and osx (or (not cross-chicken) host-mode))
       (command
        (string-append
-	"install_name_tool -change " libchicken ".dylib "
+	POSTINSTALL_PROGRAM " -change " libchicken ".dylib "
 	(quotewrap 
 	 (let ((lib (string-append libchicken ".dylib")))
 	   (if deployed
@@ -943,26 +961,25 @@ EOF
 (define (lib-path)
   (prefix "" 
 	  "lib"
-	  (if win
-	      INSTALL_BIN_HOME
-	      (if host-mode
-		  INSTALL_LIB_HOME
-		  TARGET_RUN_LIB_HOME))))
+	  (if host-mode
+	      INSTALL_LIB_HOME
+	      TARGET_RUN_LIB_HOME)))
 
 (define (target-lib-path)
-  (let ((tdir TARGET_LIB_HOME))
-    (if (and (not (string=? tdir ""))
-	     cross-chicken
-	     (not host-mode))
-	tdir
-	(lib-path))))
+  (or (get-environment-variable "TARGET_LIB_PATH")
+      (let ((tdir TARGET_LIB_HOME))
+	(if (and (not (string=? tdir ""))
+		 cross-chicken
+		 (not host-mode))
+	    tdir
+	    (lib-path)))))
 
 (define (copy-libraries targetdir)
   (let ((lib (make-pathname
 	      (target-lib-path) 
 	      libchicken
 	      (cond (osx "dylib")
-		    ((or win cygwin) "dll")
+		    ((or mingw cygwin) "dll")
 		    (else (string-append
                            "so."
                            (number->string BINARY_VERSION)))))))

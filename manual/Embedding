@@ -40,6 +40,12 @@ Calling this function more than once has no effect. If enough
 memory is available and initialization was successful, then {{1}}
 is returned, otherwise this function returns {{0}}.
 
+It is essential to run {{CHICKEN_initialize}} and subsequent calls to
+{{CHICKEN_run}} in the same native thread. The former computes a stack
+limit address which will not be valid if the runtime system is
+re-entered in a execution context where the stack is located at a
+different address.
+
 === CHICKEN_run
 
  [C function] C_word CHICKEN_run (void *toplevel)
@@ -53,7 +59,6 @@ point after it called {{return-to-host}} (see below).
 
 If you just need a Scheme interpreter, you can also pass {{CHICKEN_default_toplevel}} as
 the toplevel procedure, which just uses the default library units.
-
 
 Once {{CHICKEN_run}} has been called, Scheme code is executing until all toplevel
 expressions have been evaluated or until {{return-to-host}} is called inside the

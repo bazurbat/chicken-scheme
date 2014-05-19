@@ -164,21 +164,22 @@ will list dynamic libraries that your application needs.
 ===== Other UNIX flavors
 
 Setting up the application executable to load runtime libraries from
-the same directory is supported on FreeBSD, OpenBSD and Solaris.
-NetBSD supports this from version 5.0 onwards - this is currently
-disabled in {{csc}} for this particular platform.
+the same directory is supported on FreeBSD, NetBSD, OpenBSD and Solaris.
+
+Under NetBSD, you must invoke the binary using its full absolute path
+(or via {{$PATH}}), otherwise it will give you an error message:
+
+  execname not specified in AUX vector: No such file or directory
+
+On AIX, deployment is currently not fully supported as the runtime
+linker will only load libraries from paths hardcoded at link time.
 
 === Deploying source code
 
 An alternative to deploying binaries is deployment as compiled
-C sources. Usually, you just need to ship your application code,
-compiled to {{.c}} files and the {{chicken.h}} and {{runtime.c}}
-files from the CHICKEN sources. You will also need the {{.c}} files
-of any library units your program uses (at least {{library.c}} and
-{{build-version.c}}). Compiling everything and
-linking it together should work on most systems. Consult the
-CHICKEN makefiles for more information about optimization options,
-etc.
+C sources.
+
+See the corresponding section in [[Using the compiler]].
 
 
 ---

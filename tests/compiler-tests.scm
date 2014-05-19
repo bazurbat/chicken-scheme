@@ -2,7 +2,7 @@
 
 
 (import foreign)
-
+(use srfi-4)
 
 ;; test dropping of previous toplevel assignments
 
@@ -217,6 +217,26 @@
 
 (gp-test)
 
+;; Optimizer would "lift" inner-bar out of its let and replace
+;; outer-bar with it, even though it wasn't visible yet.  Caused by
+;; broken cps-conversion (underlying problem for #1068).
+(assert (equal? 1 (let ((outer-bar (##core#undefined)))
+                    (let ((inner-bar (let ((tmp (lambda (x)
+                                                  (if x '1 (outer-bar '#t)))))
+                                       tmp)))
+                      (set! outer-bar inner-bar)
+                      (outer-bar #f)))))
+
+;; Slightly modified version which broke after fixing the above due 
+;; to replacement optimization getting triggered.  This replacement 
+;; caused outer-bar to get replaced by inner-bar, even within itself, 
+;; thereby causing an undefined variable reference. 
+(assert (equal? 1 (let ((outer-bar (##core#undefined))) 
+                    (let ((inner-bar (lambda (x)
+                                       (if x '1 (outer-bar outer-bar))))) 
+                      (set! outer-bar inner-bar) 
+                      (outer-bar '#f))))) 
+
 ;; Test that encode-literal/decode-literal use the proper functions
 ;; to decode number literals.
 (assert (equal? '(+inf.0 -inf.0) (list (fp/ 1.0 0.0) (fp/ -1.0 0.0))))
@@ -233,3 +253,52 @@
               (expt 2 (- flonum-maximum-exponent flonum-precision)))
            179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.0
            (string->number "179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.0")))
+
+;; #955: unsigned-integer64 arg returned magnitude instead of Scheme object.
+#+64bit
+(assert (= #xAB54A98CEB1F0AD2
+           ((foreign-lambda* unsigned-integer64 ((unsigned-integer64 x))
+              "C_return(x);")
+            #xAB54A98CEB1F0AD2)))
+
+;; #1059: foreign vector types use wrong lolevel accessors, causing
+;; paranoid DEBUGBUILD assertions to fail.
+(define-syntax srfi-4-vector-length
+  (lambda (e r c)
+    (let* ((type (symbol->string (strip-syntax (cadr e))))
+           (base-type (string-translate* type '(("nonnull-" . ""))))
+           (length-procedure-name (string-append base-type "-length")))
+     `(,(string->symbol length-procedure-name) ,(caddr e)))))
+
+(define-syntax s4v-sum
+  (syntax-rules ()
+    ((_ "integer" type arg)
+     ((foreign-lambda* int ((type v) (int len))
+        "int i, result = 0;"
+        "for (i = 0; i < len; ++i) {"
+        "  result += (int)v[i];"
+        "}"
+        "C_return(result);") arg (srfi-4-vector-length type arg)))
+    ((_ "float" type arg)
+     ((foreign-lambda* double ((type v) (int len))
+        "int i; double result = 0.0;"
+        "for (i = 0; i < len; ++i) {"
+        "  result += v[i];"
+        "}"
+        "C_return(result);") arg (srfi-4-vector-length type arg)))))
+(assert (= 10 (s4v-sum "integer" u8vector '#u8(1 2 3 4))))
+(assert (= 10 (s4v-sum "integer" u16vector '#u16(1 2 3 4))))
+(assert (= 10 (s4v-sum "integer" u32vector '#u32(1 2 3 4))))
+(assert (= 10 (s4v-sum "integer" nonnull-u8vector '#u8(1 2 3 4))))
+(assert (= 10 (s4v-sum "integer" nonnull-u16vector '#u16(1 2 3 4))))
+(assert (= 10 (s4v-sum "integer" nonnull-u32vector '#u32(1 2 3 4))))
+(assert (= -10 (s4v-sum "integer" s8vector '#s8(-1 -2 -3 -4))))
+(assert (= -10 (s4v-sum "integer" s16vector '#s16(-1 -2 -3 -4))))
+(assert (= -10 (s4v-sum "integer" s32vector '#s32(-1 -2 -3 -4))))
+(assert (= -10 (s4v-sum "integer" nonnull-s8vector '#s8(-1 -2 -3 -4))))
+(assert (= -10 (s4v-sum "integer" nonnull-s16vector '#s16(-1 -2 -3 -4))))
+(assert (= -10 (s4v-sum "integer" nonnull-s32vector '#s32(-1 -2 -3 -4))))
+(assert (= 12.0 (s4v-sum "float" f32vector '#f32(1.5 2.5 3.5 4.5))))
+(assert (= 12.0 (s4v-sum "float" f64vector '#f64(1.5 2.5 3.5 4.5))))
+(assert (= 12.0 (s4v-sum "float" nonnull-f32vector '#f32(1.5 2.5 3.5 4.5))))
+(assert (= 12.0 (s4v-sum "float" nonnull-f64vector '#f64(1.5 2.5 3.5 4.5))))

@@ -1115,21 +1115,24 @@
 		  ans)))))
 
 
+;;; This version does not share common tails like the reference impl does.
+;;; Kindly suggested by Joerg Wittenberger on 20-05-2013.
 
-;;; Answers share common tail with LIS where possible; 
-;;; the technique is slightly subtle.
-
-(define (partition pred lis)
+(define (partition pred lst)
 ;  (check-arg procedure? pred partition)
-  (let recur ((lis lis))
-    (if (null-list? lis) (values lis lis)	; Use NOT-PAIR? to handle dotted lists.
-	(let ((elt (car lis))
-	      (tail (cdr lis)))
-	  (receive (in out) (recur tail)
-	    (if (pred elt)
-		(values (if (pair? out) (cons elt in) lis) out)
-		(values in (if (pair? in) (cons elt out) lis))))))))
-
+  (let ((t (cons #f '()))
+	(f (cons #f '())))
+    (let ((tl t) (fl f))
+      (do ((lst lst (cdr lst)))
+	  ((null? lst) (values (cdr t) (cdr f)))
+	(let ((elt (car lst)))
+	  (if (pred elt)
+	      (let ((p (cons elt (cdr tl))))
+		(set-cdr! tl p)
+		(set! tl p))
+	      (let ((p (cons elt (cdr fl))))
+		(set-cdr! fl p)
+		(set! fl p))))))))
 
 
 ;(define (partition! pred lis)			; Things are much simpler

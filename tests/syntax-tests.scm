@@ -191,6 +191,14 @@
   (cond (#t => 'ok)))
 )
 
+(t 1 (let ((=> 1))
+       (cond (#f 'false)
+             (#t =>))))
+
+(t 3 (let ((=> 1))
+       (cond (#f 'false)
+             (#t => 2 3))))
+
 (t '(3 4)
 (let ((foo 3))
   (let-syntax ((bar (syntax-rules () ((_ x) (list foo x)))))
@@ -843,6 +851,19 @@
             (import scheme)
             (define (always-two) (+ (one#always-one) 1)))))
 
+;;; SRFI-2 (and-let*)
+
+(t 1 (and-let* ((a 1)) a))
+(f (eval '(and-let* ((a 1 2 3)) a)))
+(t 2 (and-let* ((a 1) (b (+ a 1))) b))
+(t 3 (and-let* (((or #f #t))) 3))
+(f (eval '(and-let* ((or #f #t)) 1)))
+(t 4 (and-let* ((c 4) ((equal? 4 c))) c))
+(t #f (and-let* ((c 4) ((equal? 5 c))) (error "not reached")))
+(t #f (and-let* (((= 4 5)) ((error "not reached 1"))) (error "not reached 2")))
+(t 'foo (and-let* (((= 4 4)) (a 'foo)) a))
+(t #f (and-let* ((a #f) ((error "not reached 1"))) (error "not reached 2")))
+
 ;;; SRFI-26
 
 ;; Cut
@@ -1055,3 +1076,59 @@ take
 
 (import rename-builtins)
 (assert (eq? '* (strip-syntax-on-*)))
+
+;; #944: macro-renamed defines mismatch with the names recorded in module
+;;       definitions, causing the module to be unresolvable.
+
+(module foo ()
+  (import chicken scheme)
+  (define-syntax bar
+    (syntax-rules ()
+      ((_) (begin (define req 1) (display req) (newline)))))
+  (bar))
+
+;; The fix for the above bug causes the req to be defined at toplevel,
+;; unhygienically.  The test below should probably be enabled and this
+;; behavior fixed.  R5RS seems to allow the current behavior though (?),
+;; and some Schemes (at least Gauche) behave the same way.  I think it's
+;; broken, since it's unhygienic.
+#;(module foo ()
+  (import chicken scheme)
+  (define req 1)
+  (define-syntax bar
+    (syntax-rules ()
+      ((_) (begin (define req 2) (display req) (newline)))))
+  (bar)
+  (assert (eq? req 1)))
+
+
+;; letrec vs. letrec*
+
+;;XXX this fails - the optimizer substitutes "foo" for it's known constant value
+#;(t (void) (letrec ((foo 1)
+		   (bar foo))
+	    bar))
+
+(t (void) (letrec ((foo (gc))
+		   (bar foo))
+	    bar))
+
+;; Obscure letrec issue #1068
+(t 1 (letrec ((foo (lambda () 1))
+	      (bar (let ((tmp (lambda (x) (if x (foo) (bar #t)))))
+		     tmp)))
+       (bar #f)))
+
+;; Deeper issue uncovered by fixing the above issue 
+(t 1 (letrec ((bar (lambda (x) (if x 1 (bar bar)))))
+       (bar #f)))
+
+;; Just to verify (this has always worked)
+(t 1 (letrec* ((foo (lambda () 1))
+	       (bar (let ((tmp (lambda (x) (if x (foo) (bar #t)))))
+		      tmp)))
+       (bar #f)))
+
+(t 1 (letrec* ((foo 1)
+	       (bar foo))
+       bar))

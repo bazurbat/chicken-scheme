@@ -1,6 +1,6 @@
 ;;;; data-structures.import.scm - import library for "data-structures" module
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -30,7 +30,6 @@
    alist-ref
    alist-update!
    alist-update
-   always?				; DEPRECATED
    any?
    atom?
    binary-search
@@ -54,8 +53,6 @@
    make-queue
    merge
    merge!
-   never?				; DEPRECATED
-   none?				; DEPRECATED
    o
    queue->list
    queue-add!
@@ -69,7 +66,6 @@
    queue?
    rassoc
    reverse-string-append
-   shuffle				; DEPRECATED
    sort
    sort!
    sorted?

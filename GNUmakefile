@@ -1,6 +1,6 @@
 # GNUmakefile - toplevel makefile
 #
-# Copyright (c) 2008-2012, The Chicken Team
+# Copyright (c) 2008-2014, The Chicken Team
 # Copyright (c) 2007, Felix L. Winkelmann
 # All rights reserved.
 #
@@ -36,7 +36,7 @@ endif
 ifndef PLATFORM
 $(info Please select your target platform by running one of the following commands:)
 $(info )
-$(foreach mf, $(wildcard Makefile.*), $(info $(MAKE) PLATFORM=$(mf:Makefile.%=%)))
+$(foreach mf, $(wildcard Makefile.*), $(info "$(MAKE)" PLATFORM=$(mf:Makefile.%=%)))
 $(info )
 $(info For more information, consult the README file.)
 $(error No PLATFORM given.)
@@ -51,10 +51,10 @@ STANDARD_TARGETS \
 .PHONY: $(STANDARD_TARGETS) dist boot-chicken
 
 $(STANDARD_TARGETS):
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) $@
+	"$(MAKE)" -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) $@
 
 dist:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) dist
+	"$(MAKE)" -f $(SRCDIR)/Makefile.$(PLATFORM) CONFIG=$(CONFIG) dist
 
 boot-chicken:
-	$(MAKE) -f $(SRCDIR)/Makefile.$(PLATFORM) boot-chicken
+	"$(MAKE)" -f $(SRCDIR)/Makefile.$(PLATFORM) boot-chicken

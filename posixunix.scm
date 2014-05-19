@@ -1,6 +1,6 @@
 ;;;; posixunix.scm - Miscellaneous file- and process-handling routines
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -27,7 +27,7 @@
 
 (declare
   (unit posix)
-  (uses scheduler irregex extras utils files ports)
+  (uses scheduler irregex extras files ports)
   (disable-interrupts)
   (hide group-member _get-groups _ensure-groups posix-error ##sys#terminal-check)
   (not inline ##sys#interrupt-hook ##sys#user-interrupt-hook))
@@ -48,7 +48,6 @@
   (foreign-declare #<<EOF
 static C_TLS int C_wait_status;
 
-#include <unistd.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/utsname.h>
@@ -58,8 +57,9 @@ static C_TLS int C_wait_status;
 #include <pwd.h>
 #include <utime.h>
 
-#if defined(__sun__) && defined(__svr4__)
+#if defined(__sun) && defined(__SVR4)
 # include <sys/tty.h>
+# include <termios.h>
 #endif
 
 #ifdef HAVE_GRP_H
@@ -67,7 +67,7 @@ static C_TLS int C_wait_status;
 #endif
 
 #include <sys/mman.h>
-#include <time.h>
+#include <sys/poll.h>
 
 #ifndef O_FSYNC
 # define O_FSYNC O_SYNC
@@ -133,10 +133,16 @@ static C_TLS struct {
   char *gr_mem[ 1 ];
 } C_group = { "", "", 0, { "" } };
 #endif
+
+/* Android doesn't provide pw_gecos in the passwd struct */
+#ifdef __ANDROID__
+# define C_PW_GECOS ("")
+#else
+# define C_PW_GECOS (C_user->pw_gecos)
+#endif
+
 static C_TLS int C_pipefds[ 2 ];
 static C_TLS time_t C_secs;
-static C_TLS struct tm C_tm;
-static C_TLS fd_set C_fd_sets[ 2 ];
 static C_TLS struct timeval C_timeval;
 static C_TLS char C_hostbuf[ 256 ];
 static C_TLS struct stat C_statbuf;
@@ -145,11 +151,6 @@ static C_TLS struct stat C_statbuf;
 #define C_fchdir(fd)        C_fix(fchdir(C_unfix(fd)))
 #define C_chdir(str)        C_fix(chdir(C_c_string(str)))
 #define C_rmdir(str)        C_fix(rmdir(C_c_string(str)))
-
-#define C_opendir(x,h)      C_set_block_item(h, 0, (C_word) opendir(C_c_string(x)))
-#define C_closedir(h)       (closedir((DIR *)C_block_item(h, 0)), C_SCHEME_UNDEFINED)
-#define C_readdir(h,e)      C_set_block_item(e, 0, (C_word) readdir((DIR *)C_block_item(h, 0)))
-#define C_foundfile(e,b)    (strcpy(C_c_string(b), ((struct dirent *) C_block_item(e, 0))->d_name), C_fix(strlen(((struct dirent *) C_block_item(e, 0))->d_name)))
 
 #define open_binary_input_pipe(a, n, name)   C_mpointer(a, popen(C_c_string(name), "r"))
 #define open_text_input_pipe(a, n, name)     open_binary_input_pipe(a, n, name)
@@ -178,7 +179,7 @@ static C_TLS struct stat C_statbuf;
 #define C_do_readlink(f, b)    C_fix(readlink(C_data_pointer(f), C_data_pointer(b), FILENAME_MAX))
 #define C_getpwnam(n)       C_mk_bool((C_user = getpwnam((char *)C_data_pointer(n))) != NULL)
 #define C_getpwuid(u)       C_mk_bool((C_user = getpwuid(C_unfix(u))) != NULL)
-#ifdef HAVE_GRP_H
+#if !defined(__ANDROID__) && defined(HAVE_GRP_H)
 #define C_getgrnam(n)       C_mk_bool((C_group = getgrnam((char *)C_data_pointer(n))) != NULL)
 #define C_getgrgid(u)       C_mk_bool((C_group = getgrgid(C_unfix(u))) != NULL)
 #else
@@ -198,26 +199,6 @@ static C_TLS struct stat C_statbuf;
 
 #define C_lstat(fn)         C_fix(lstat((char *)C_data_pointer(fn), &C_statbuf))
 
-#ifdef C_GNU_ENV
-# define C_unsetenv(s)      (unsetenv((char *)C_data_pointer(s)), C_SCHEME_TRUE)
-# define C_setenv(x, y)     C_fix(setenv((char *)C_data_pointer(x), (char *)C_data_pointer(y), 1))
-#else
-# define C_unsetenv(s)      C_fix(putenv((char *)C_data_pointer(s)))
-static C_word C_fcall C_setenv(C_word x, C_word y) {
-  char *sx = C_data_pointer(x),
-       *sy = C_data_pointer(y);
-  int n1 = C_strlen(sx), n2 = C_strlen(sy);
-  char *buf = (char *)C_malloc(n1 + n2 + 2);
-  if(buf == NULL) return(C_fix(0));
-  else {
-    C_strcpy(buf, sx);
-    buf[ n1 ] = '=';
-    C_strcpy(buf + n1 + 1, sy);
-    return(C_fix(putenv(buf)));
-  }
-}
-#endif
-
 static void C_fcall C_set_arg_string(char **where, int i, char *a, int len) {
   char *ptr;
   if(a != NULL) {
@@ -232,19 +213,6 @@ static void C_fcall C_set_arg_string(char **where, int i, char *a, int len) {
 
 static void C_fcall C_free_arg_string(char **where) {
   while((*where) != NULL) C_free(*(where++));
-}
-
-static void C_set_timeval(C_word num, struct timeval *tm)
-{
-  if((num & C_FIXNUM_BIT) != 0) {
-    tm->tv_sec = C_unfix(num);
-    tm->tv_usec = 0;
-  }
-  else {
-    double i;
-    tm->tv_usec = (int)(modf(C_flonum_magnitude(num), &i) * 1000000);
-    tm->tv_sec = (int)i;
-  }
 }
 
 #define C_set_exec_arg(i, a, len)	C_set_arg_string(C_exec_args, i, a, len)
@@ -291,6 +259,7 @@ static C_TLS sigset_t C_sigset;
 #define C_sigprocmask_set(d)        C_fix(sigprocmask(SIG_SETMASK, &C_sigset, NULL))
 #define C_sigprocmask_block(d)      C_fix(sigprocmask(SIG_BLOCK, &C_sigset, NULL))
 #define C_sigprocmask_unblock(d)    C_fix(sigprocmask(SIG_UNBLOCK, &C_sigset, NULL))
+#define C_sigprocmask_get(d)        C_fix(sigprocmask(SIG_SETMASK, NULL, &C_sigset))
 
 #define C_open(fn, fl, m)   C_fix(open(C_c_string(fn), C_unfix(fl), C_unfix(m)))
 #define C_read(fd, b, n)    C_fix(read(C_unfix(fd), C_data_pointer(b), C_unfix(n)))
@@ -302,16 +271,9 @@ static C_TLS sigset_t C_sigset;
 #define C_fseek(p, n, w)    C_mk_nbool(fseek(C_port_file(p), C_num_to_int(n), C_unfix(w)))
 #define C_lseek(fd, o, w)     C_fix(lseek(C_unfix(fd), C_unfix(o), C_unfix(w)))
 
-#define C_zero_fd_set(i)      FD_ZERO(&C_fd_sets[ i ])
-#define C_set_fd_set(i, fd)   FD_SET(fd, &C_fd_sets[ i ])
-#define C_test_fd_set(i, fd)  FD_ISSET(fd, &C_fd_sets[ i ])
-#define C_C_select(m)         C_fix(select(C_unfix(m), &C_fd_sets[ 0 ], &C_fd_sets[ 1 ], NULL, NULL))
-#define C_C_select_t(m, t)    (C_set_timeval(t, &C_timeval), \
-			       C_fix(select(C_unfix(m), &C_fd_sets[ 0 ], &C_fd_sets[ 1 ], NULL, &C_timeval)))
-
 #define C_ctime(n)          (C_secs = (n), ctime(&C_secs))
 
-#if defined(__SVR4) || defined(C_MACOSX)
+#if defined(__SVR4) || defined(C_MACOSX) || defined(__ANDROID__) || defined(_AIX)
 /* Seen here: http://lists.samba.org/archive/samba-technical/2002-November/025571.html */
 
 static time_t C_timegm(struct tm *t)
@@ -345,21 +307,14 @@ static time_t C_timegm(struct tm *t)
 #define C_timegm timegm
 #endif
 
-#define cpy_tmvec_to_tmstc08(ptm, v) \
-    (memset((ptm), 0, sizeof(struct tm)), \
-    (ptm)->tm_sec = C_unfix(C_block_item((v), 0)), \
-    (ptm)->tm_min = C_unfix(C_block_item((v), 1)), \
-    (ptm)->tm_hour = C_unfix(C_block_item((v), 2)), \
-    (ptm)->tm_mday = C_unfix(C_block_item((v), 3)), \
-    (ptm)->tm_mon = C_unfix(C_block_item((v), 4)), \
-    (ptm)->tm_year = C_unfix(C_block_item((v), 5)), \
-    (ptm)->tm_wday = C_unfix(C_block_item((v), 6)), \
-    (ptm)->tm_yday = C_unfix(C_block_item((v), 7)), \
-    (ptm)->tm_isdst = (C_block_item((v), 8) != C_SCHEME_FALSE))
+#define C_a_timegm(ptr, c, v, tm)  C_flonum(ptr, C_timegm(C_tm_set((v), C_data_pointer(tm))))
 
-#define cpy_tmvec_to_tmstc9(ptm, v) \
-    (((struct tm *)ptm)->tm_gmtoff = -C_unfix(C_block_item((v), 9)))
+#ifdef __linux__
+extern char *strptime(const char *s, const char *format, struct tm *tm);
+extern pid_t getpgid(pid_t pid);
+#endif
 
+/* tm_get could be in posix-common, but it's only used in here */
 #define cpy_tmstc08_to_tmvec(v, ptm) \
     (C_set_block_item((v), 0, C_fix(((struct tm *)ptm)->tm_sec)), \
     C_set_block_item((v), 1, C_fix((ptm)->tm_min)), \
@@ -374,63 +329,21 @@ static time_t C_timegm(struct tm *t)
 #define cpy_tmstc9_to_tmvec(v, ptm) \
     (C_set_block_item((v), 9, C_fix(-(ptm)->tm_gmtoff)))
 
-#define C_tm_set_08(v)  cpy_tmvec_to_tmstc08( &C_tm, (v) )
-#define C_tm_set_9(v)   cpy_tmvec_to_tmstc9( &C_tm, (v) )
-
-#define C_tm_get_08(v)  cpy_tmstc08_to_tmvec( (v), &C_tm )
-#define C_tm_get_9(v)   cpy_tmstc9_to_tmvec( (v), &C_tm )
-
-#if !defined(C_GNU_ENV) || defined(__CYGWIN__) || defined(__uClinux__)
-
-static struct tm *
-C_tm_set( C_word v )
-{
-  C_tm_set_08( v );
-  return &C_tm;
-}
+#define C_tm_get_08(v, tm)  cpy_tmstc08_to_tmvec( (v), (tm) )
+#define C_tm_get_9(v, tm)   cpy_tmstc9_to_tmvec( (v), (tm) )
 
 static C_word
-C_tm_get( C_word v )
+C_tm_get( C_word v, void *tm )
 {
-  C_tm_get_08( v );
+  C_tm_get_08( v, (struct tm *)tm );
+#if defined(C_GNU_ENV) && !defined(__CYGWIN__) && !defined(__uClinux__)
+  C_tm_get_9( v, (struct tm *)tm );
+#endif
   return v;
 }
 
-#else
-
-static struct tm *
-C_tm_set( C_word v )
-{
-  C_tm_set_08( v );
-  C_tm_set_9( v );
-  return &C_tm;
-}
-
-static C_word
-C_tm_get( C_word v )
-{
-  C_tm_get_08( v );
-  C_tm_get_9( v );
-  return v;
-}
-
-#endif
-
-#define C_asctime(v)    (asctime(C_tm_set(v)))
-#define C_a_mktime(ptr, c, v)  C_flonum(ptr, mktime(C_tm_set(v)))
-#define C_a_timegm(ptr, c, v)  C_flonum(ptr, C_timegm(C_tm_set(v)))
-
-#define TIME_STRING_MAXLENGTH 255
-static char C_time_string [TIME_STRING_MAXLENGTH + 1];
-#undef TIME_STRING_MAXLENGTH
-
-#ifdef __linux__
-extern char *strptime(const char *s, const char *format, struct tm *tm);
-extern pid_t getpgid(pid_t pid);
-#endif
-
-#define C_strptime(s, f, v) \
-        (strptime(C_c_string(s), C_c_string(f), &C_tm) ? C_tm_get(v) : C_SCHEME_FALSE)
+#define C_strptime(s, f, v, stm) \
+        (strptime(C_c_string(s), C_c_string(f), ((struct tm *)(stm))) ? C_tm_get((v), (stm)) : C_SCHEME_FALSE)
 
 static gid_t *C_groups = NULL;
 
@@ -438,7 +351,7 @@ static gid_t *C_groups = NULL;
 #define C_set_gid(n, id)  (C_groups[ C_unfix(n) ] = C_unfix(id), C_SCHEME_UNDEFINED)
 #define C_set_groups(n)   C_fix(setgroups(C_unfix(n), C_groups))
 
-#ifdef TIOCGWINSZ
+#if !defined(__ANDROID__) && defined(TIOCGWINSZ)
 static int get_tty_size(int p, int *rows, int *cols)
 {
  struct winsize tty_size;
@@ -500,16 +413,7 @@ EOF
     "if(val == -1) C_return(0);"
     "C_return(fcntl(fd, F_SETFL, val | O_NONBLOCK) != -1);" ) )
 
-(define ##sys#file-select-one
-  (foreign-lambda* int ([int fd])
-    "fd_set in;"
-    "struct timeval tm;"
-    "FD_ZERO(&in);"
-    "FD_SET(fd, &in);"
-    "tm.tv_sec = tm.tv_usec = 0;"
-    "if(select(fd + 1, &in, NULL, NULL, &tm) == -1) C_return(-1);"
-    "else C_return(FD_ISSET(fd, &in) ? 1 : 0);" ) )
-
+(define ##sys#file-select-one (foreign-lambda int "C_check_fd_ready" int) )
 
 ;;; Lo-level I/O:
 
@@ -655,60 +559,59 @@ EOF
 
 ;;; I/O multiplexing:
 
-(define file-select
-  (let ([fd_zero (foreign-lambda void "C_zero_fd_set" int)]
-        [fd_set (foreign-lambda void "C_set_fd_set" int int)]
-        [fd_test (foreign-lambda bool "C_test_fd_set" int int)] )
-    (lambda (fdsr fdsw . timeout)
-      (let ([fdmax 0]
-            [tm (if (pair? timeout) (car timeout) #f)] )
-        (fd_zero 0)
-        (fd_zero 1)
-        (cond [(not fdsr)]
-              [(fixnum? fdsr)
-               (set! fdmax fdsr)
-               (fd_set 0 fdsr) ]
-              [else
-               (##sys#check-list fdsr 'file-select)
-               (for-each
-                (lambda (fd)
-                  (##sys#check-exact fd 'file-select)
-                  (set! fdmax (##core#inline "C_i_fixnum_max" fdmax fd))
-                  (fd_set 0 fd) )
-                fdsr) ] )
-        (cond [(not fdsw)]
-              [(fixnum? fdsw)
-               (set! fdmax fdsw)
-               (fd_set 1 fdsw) ]
-              [else
-               (##sys#check-list fdsw 'file-select)
-               (for-each
-                (lambda (fd)
-                  (##sys#check-exact fd 'file-select)
-                  (set! fdmax (##core#inline "C_i_fixnum_max" fdmax fd))
-                  (fd_set 1 fd) )
-                fdsw) ] )
-        (let ([n (cond [tm
-                        (##sys#check-number tm 'file-select)
-                        (##core#inline "C_C_select_t" (fx+ fdmax 1) tm) ]
-                       [else (##core#inline "C_C_select" (fx+ fdmax 1))] ) ] )
-          (cond [(fx< n 0)
-                 (posix-error #:file-error 'file-select "failed" fdsr fdsw) ]
-                [(fx= n 0) (values (if (pair? fdsr) '() #f) (if (pair? fdsw) '() #f))]
-                [else
-                 (values
-                  (and fdsr
-                       (if (fixnum? fdsr)
-                           (fd_test 0 fdsr)
-                           (let ([lstr '()])
-                             (for-each (lambda (fd) (when (fd_test 0 fd) (set! lstr (cons fd lstr)))) fdsr)
-                             lstr) ) )
-                  (and fdsw
-                       (if (fixnum? fdsw)
-                           (fd_test 1 fdsw)
-                           (let ([lstw '()])
-                             (for-each (lambda (fd) (when (fd_test 1 fd) (set! lstw (cons fd lstw)))) fdsw)
-                             lstw) ) ) ) ] ) ) ) ) ) )
+(define (file-select fdsr fdsw . timeout)
+  (let* ((tm (if (pair? timeout) (car timeout) #f))
+	 (fdsrl (cond ((not fdsr) '())
+		      ((fixnum? fdsr) (list fdsr))
+		      (else (##sys#check-list fdsr 'file-select)
+			    fdsr)))
+	 (fdswl (cond ((not fdsw) '())
+		      ((fixnum? fdsw) (list fdsw))
+		      (else (##sys#check-list fdsw 'file-select)
+			    fdsw)))
+	 (nfdsr (##sys#length fdsrl))
+	 (nfdsw (##sys#length fdswl))
+	 (nfds (fx+ nfdsr nfdsw))
+	 (fds-blob (##sys#make-blob
+		    (fx* nfds (foreign-value "sizeof(struct pollfd)" int)))))
+    (when tm (##sys#check-number tm))
+    (do ((i 0 (fx+ i 1))
+	 (fdsrl fdsrl (cdr fdsrl)))
+	((null? fdsrl))
+      ((foreign-lambda* void ((int i) (int fd) (scheme-pointer p))
+	 "struct pollfd *fds = p;"
+	 "fds[i].fd = fd; fds[i].events = POLLIN;") i (car fdsrl) fds-blob))
+    (do ((i nfdsr (fx+ i 1))
+	 (fdswl fdswl (cdr fdswl)))
+	((null? fdswl))
+      ((foreign-lambda* void ((int i) (int fd) (scheme-pointer p))
+	 "struct pollfd *fds = p;"
+	 "fds[i].fd = fd; fds[i].events = POLLOUT;") i (car fdswl) fds-blob))
+    (let ((n ((foreign-lambda int "poll" scheme-pointer int int)
+	      fds-blob nfds (if tm (inexact->exact (* (max 0 tm) 1000)) -1))))
+      (cond ((fx< n 0)
+	     (posix-error #:file-error 'file-select "failed" fdsr fdsw) )
+	    ((fx= n 0) (values (if (pair? fdsr) '() #f) (if (pair? fdsw) '() #f)))
+	    (else
+	     (let ((rl (let lp ((i 0) (res '()) (fds fdsrl))
+			 (cond ((null? fds) (##sys#fast-reverse res))
+			       (((foreign-lambda* bool ((int i) (scheme-pointer p))
+				   "struct pollfd *fds = p;"
+				   "C_return(fds[i].revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL));")
+				 i fds-blob)
+				(lp (fx+ i 1) (cons (car fds) res) (cdr fds)))
+			       (else (lp (fx+ i 1) res (cdr fds))))))
+		   (wl (let lp ((i nfdsr) (res '()) (fds fdswl))
+			 (cond ((null? fds) (##sys#fast-reverse res))
+			       (((foreign-lambda* bool ((int i) (scheme-pointer p))
+				   "struct pollfd *fds = p;"
+				   "C_return(fds[i].revents & (POLLOUT|POLLERR|POLLHUP|POLLNVAL));")
+				 i fds-blob)
+				(lp (fx+ i 1) (cons (car fds) res) (cdr fds)))
+			       (else (lp (fx+ i 1) res (cdr fds)))))))
+	       (values
+		(and fdsr (if (fixnum? fdsr) (and (memq fdsr rl) fdsr) rl))
+		(and fdsw (if (fixnum? fdsw) (and (memq fdsw wl) fdsw) wl)))))))))
 
 
 ;;; File attribute access:
@@ -893,6 +796,7 @@ EOF
 (define-foreign-variable _sighup int "SIGHUP")
 (define-foreign-variable _sigfpe int "SIGFPE")
 (define-foreign-variable _sigill int "SIGILL")
+(define-foreign-variable _sigbus int "SIGBUS")
 (define-foreign-variable _sigsegv int "SIGSEGV")
 (define-foreign-variable _sigabrt int "SIGABRT")
 (define-foreign-variable _sigtrap int "SIGTRAP")
@@ -938,6 +842,8 @@ EOF
 (define signal/usr1 _sigusr1)
 (define signal/usr2 _sigusr2)
 (define signal/winch _sigwinch)
+(define signal/bus _sigbus)
+(define signal/break 0)
 
 (define signals-list
   (list
@@ -945,7 +851,7 @@ EOF
     signal/segv signal/abrt signal/trap signal/quit signal/alrm signal/vtalrm
     signal/prof signal/io signal/urg signal/chld signal/cont signal/stop
     signal/tstp signal/pipe signal/xcpu signal/xfsz signal/usr1 signal/usr2
-    signal/winch))
+    signal/winch signal/bus))
 
 (define set-signal-mask!
   (lambda (sigs)
@@ -957,30 +863,38 @@ EOF
         (##core#inline "C_sigaddset" s) )
       sigs)
     (when (fx< (##core#inline "C_sigprocmask_set" 0) 0)
-      (posix-error #:process-error 'set-signal-mask! "cannot set signal mask") ) ) )
+      (posix-error #:process-error 'set-signal-mask! "cannot set signal mask") )))
 
-(define (signal-mask)
-  (let loop ([sigs signals-list] [mask '()])
-    (if (null? sigs)
-        mask
-        (let ([sig (car sigs)])
-          (loop (cdr sigs) (if (##core#inline "C_sigismember" sig) (cons sig mask) mask)) ) ) ) )
+(define signal-mask
+  (getter-with-setter
+   (lambda ()
+     (##core#inline "C_sigprocmask_get" 0)
+     (let loop ([sigs signals-list] [mask '()])
+       (if (null? sigs)
+	   mask
+	   (let ([sig (car sigs)])
+	     (loop (cdr sigs)
+		   (if (##core#inline "C_sigismember" sig) (cons sig mask) mask)) ) ) ) )
+   set-signal-mask!))
 
 (define (signal-masked? sig)
   (##sys#check-exact sig 'signal-masked?)
+  (##core#inline "C_sigprocmask_get" 0)
   (##core#inline "C_sigismember" sig) )
 
 (define (signal-mask! sig)
   (##sys#check-exact sig 'signal-mask!)
+  (##core#inline "C_sigemptyset" 0)
   (##core#inline "C_sigaddset" sig)
   (when (fx< (##core#inline "C_sigprocmask_block" 0) 0)
-      (posix-error #:process-error 'signal-mask! "cannot block signal") )  )
+    (posix-error #:process-error 'signal-mask! "cannot block signal") ))
 
 (define (signal-unmask! sig)
   (##sys#check-exact sig 'signal-unmask!)
-  (##core#inline "C_sigdelset" sig)
+  (##core#inline "C_sigemptyset" 0)
+  (##core#inline "C_sigaddset" sig)
   (when (fx< (##core#inline "C_sigprocmask_unblock" 0) 0)
-      (posix-error #:process-error 'signal-unmask! "cannot unblock signal") )  )
+    (posix-error #:process-error 'signal-unmask! "cannot unblock signal") ) )
 
 
 ;;; Getting system-, group- and user-information:
@@ -1045,7 +959,7 @@ EOF
 (define-foreign-variable _user-passwd nonnull-c-string "C_user->pw_passwd")
 (define-foreign-variable _user-uid int "C_user->pw_uid")
 (define-foreign-variable _user-gid int "C_user->pw_gid")
-(define-foreign-variable _user-gecos nonnull-c-string "C_user->pw_gecos")
+(define-foreign-variable _user-gecos nonnull-c-string "C_PW_GECOS")
 (define-foreign-variable _user-dir c-string "C_user->pw_dir")
 (define-foreign-variable _user-shell c-string "C_user->pw_shell")
 
@@ -1259,21 +1173,36 @@ EOF
 
 (define-foreign-variable _filename_max int "FILENAME_MAX")
 
-(define read-symbolic-link
+(define ##sys#read-symbolic-link
   (let ((buf (make-string (fx+ _filename_max 1))))
-    (lambda (fname #!optional canonicalize)
-      (##sys#check-string fname 'read-symbolic-link)
-      (let ((len (##core#inline 
-		  "C_do_readlink"
-		  (##sys#make-c-string (##sys#expand-home-path fname) 'read-symbolic-link) buf)))
-	(if (fx< len 0)
-	    (if canonicalize
-		fname
-		(posix-error #:file-error 'read-symbolic-link "cannot read symbolic link" fname))
-	    (let ((pathname (substring buf 0 len)))
-	      (if (and canonicalize (symbolic-link? pathname))
-		  (read-symbolic-link pathname 'canonicalize)
-		  pathname ) ) ) ) ) ) )
+    (lambda (fname location)
+      (let ((len (##core#inline
+                  "C_do_readlink"
+                  (##sys#make-c-string fname location) buf)))
+        (if (fx< len 0)
+            (posix-error #:file-error location "cannot read symbolic link" fname)
+            (substring buf 0 len))))))
+
+(define (read-symbolic-link fname #!optional canonicalize)
+  (##sys#check-string fname 'read-symbolic-link)
+  (let ((fname (##sys#expand-home-path fname)))
+    (if canonicalize
+        (receive (base-origin base-directory directory-components) (decompose-directory fname)
+          (let loop ((components directory-components)
+                     (result (string-append (or base-origin "") (or base-directory ""))))
+            (if (null? components)
+                result
+                (let ((pathname (make-pathname result (car components))))
+                  (if (file-exists? pathname)
+                      (loop (cdr components)
+                            (if (symbolic-link? pathname)
+                                (let ((target (##sys#read-symbolic-link pathname 'read-symbolic-link)))
+                                  (if (absolute-pathname? target)
+                                      target
+                                      (make-pathname result target)))
+                                pathname))
+                      (##sys#signal-hook #:file-error 'read-symbolic-link "could not canonicalize path with symbolic links, component does not exist" pathname))))))
+        (##sys#read-symbolic-link fname 'read-symbolic-link))))
 
 (define file-link
   (let ([link (foreign-lambda int "link" c-string c-string)])
@@ -1307,44 +1236,42 @@ EOF
 		   (##core#inline "C_subchar" buf bufpos)) )]
             [fetch
 	     (lambda ()
-	       (when (fx>= bufpos buflen)
-		 (let loop ()
-		   (let ([cnt (##core#inline "C_read" fd buf bufsiz)])
-		     (cond ((fx= cnt -1)
-			    (select _errno
-			      ((_ewouldblock _eagain)
-			       (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
-			       (##sys#thread-yield!)
-			       (loop) )
-			      ((_eintr)
-			       (##sys#dispatch-interrupt loop))
-			      (else (posix-error #:file-error loc "cannot read" fd nam) )))
-			   [(and more? (fx= cnt 0))
-					; When "more" keep trying, otherwise read once more
-					; to guard against race conditions
-			    (if (more?)
-				(begin
-				  (##sys#thread-yield!)
-				  (loop) )
-				(let ([cnt (##core#inline "C_read" fd buf bufsiz)])
-				  (when (fx= cnt -1)
-				    (if (or (fx= _errno _ewouldblock)
-					    (fx= _errno _eagain))
-					(set! cnt 0)
-					(posix-error #:file-error loc "cannot read" fd nam) ) )
-				  (set! buflen cnt)
-				  (set! bufpos 0) ) )]
-			   [else
-			    (set! buflen cnt)
-			    (set! bufpos 0)]) ) ) ) )] )
+	       (let loop ()
+		 (let ([cnt (##core#inline "C_read" fd buf bufsiz)])
+		   (cond ((fx= cnt -1)
+			  (select _errno
+			    ((_ewouldblock _eagain)
+			     (##sys#thread-block-for-i/o! ##sys#current-thread fd #:input)
+			     (##sys#thread-yield!)
+			     (loop) )
+			    ((_eintr)
+			     (##sys#dispatch-interrupt loop))
+			    (else (posix-error #:file-error loc "cannot read" fd nam) )))
+			 [(and more? (fx= cnt 0))
+			  ;; When "more" keep trying, otherwise read once more
+			  ;; to guard against race conditions
+			  (if (more?)
+			      (begin
+				(##sys#thread-yield!)
+				(loop) )
+			      (let ([cnt (##core#inline "C_read" fd buf bufsiz)])
+				(when (fx= cnt -1)
+				  (if (or (fx= _errno _ewouldblock)
+					  (fx= _errno _eagain))
+				      (set! cnt 0)
+				      (posix-error #:file-error loc "cannot read" fd nam) ) )
+				(set! buflen cnt)
+				(set! bufpos 0) ) )]
+			 [else
+			  (set! buflen cnt)
+			  (set! bufpos 0)]) ) )	 )] )
 	(letrec ([this-port
 		  (make-input-port
 		   (lambda ()		; read-char
-		     (fetch)
+		     (when (fx>= bufpos buflen)
+		       (fetch))
 		     (let ([ch (peek)])
-		       #; ; Allow increment since overflow is far, far away
 		       (unless (eof-object? ch) (set! bufpos (fx+ bufpos 1)))
-		       (set! bufpos (fx+ bufpos 1))
 		       ch ) )
 		   (lambda ()		; char-ready?
 		     (or (fx< bufpos buflen)
@@ -1356,57 +1283,55 @@ EOF
 			 (posix-error #:file-error loc "cannot close" fd nam) )
 		       (on-close) ) )
 		   (lambda ()		; peek-char
-		     (fetch)
+		     (when (fx>= bufpos buflen)
+		       (fetch))
 		     (peek) )
 		   (lambda (port n dest start) ; read-string!
 		     (let loop ([n (or n (fx- (##sys#size dest) start))] [m 0] [start start])
 		       (cond [(eq? 0 n) m]
 			     [(fx< bufpos buflen)
-                              (let* ([rest (fx- buflen bufpos)]
-                                     [n2 (if (fx< n rest) n rest)])
-                                (##core#inline "C_substring_copy" buf dest bufpos (fx+ bufpos n2) start)
-                                (set! bufpos (fx+ bufpos n2))
-                                (loop (fx- n n2) (fx+ m n2) (fx+ start n2)) ) ]
+			      (let* ([rest (fx- buflen bufpos)]
+				     [n2 (if (fx< n rest) n rest)])
+				(##core#inline "C_substring_copy" buf dest bufpos (fx+ bufpos n2) start)
+				(set! bufpos (fx+ bufpos n2))
+				(loop (fx- n n2) (fx+ m n2) (fx+ start n2)) ) ]
 			     [else
-                              (fetch)
-                              (if (eq? 0 buflen) 
-                                  m
-                                  (loop n m start) ) ] ) ) )
-		   (lambda (port limit)	; read-line
-		     (let loop ([str #f])
-		       (let ([bumper
-			      (lambda (cur ptr)
-				(let* ([cnt (fx- cur bufpos)]
-				       [dest
-					(if (eq? 0 cnt)
-					    (or str "")
-					    (let ([dest (##sys#make-string cnt)])
-					      (##core#inline "C_substring_copy"
-							     buf dest bufpos cur 0)
-					      (##sys#setislot port 5
-							      (fx+ (##sys#slot port 5) cnt))
-					      (if str
-						  (##sys#string-append str dest)
-						  dest ) ) ) ] )
-				  (set! bufpos ptr)
-				  (cond [(eq? cur ptr) ; no EOL encountered
-                                         (fetch)
-                                         (values dest (fx< bufpos buflen)) ]
-                                        [else ; at EOL
-					 (##sys#setislot port 4 (fx+ (##sys#slot port 4) 1))
-					 (##sys#setislot port 5 0)
-					 (values dest #f) ] ) ) ) ] )
-			 (cond [(fx< bufpos buflen)
-                                (let-values ([(dest cont?)
-                                              (##sys#scan-buffer-line buf buflen bufpos bumper)])
-                                  (if cont?
-                                      (loop dest)
-                                      dest ) ) ]
-			       [else
-                                (fetch)
-                                (if (fx< bufpos buflen)
-                                    (loop str)
-                                    #!eof) ] ) ) ) )
+			      (fetch)
+			      (if (eq? 0 buflen) 
+				  m
+				  (loop n m start) ) ] ) ) )
+		   (lambda (p limit)	; read-line
+		     (when (fx>= bufpos buflen)
+		       (fetch))
+		     (if (fx>= bufpos buflen)
+			 #!eof
+			 (let ((limit (or limit (fx- (##sys#fudge 21) bufpos))))
+			   (receive (next line full-line?)
+			       (##sys#scan-buffer-line
+				buf
+				(fxmin buflen (fx+ bufpos limit))
+				bufpos
+				(lambda (pos)
+				  (let ((nbytes (fx- pos bufpos)))
+				    (cond ((fx>= nbytes limit)
+					   (values #f pos #f))
+					  (else
+                                           (set! limit (fx- limit nbytes))
+					   (fetch)
+					   (if (fx< bufpos buflen)
+					       (values buf bufpos
+						       (fxmin buflen
+                                                              (fx+ bufpos limit)))
+					       (values #f bufpos #f)))))))
+			     ;; Update row & column position
+			     (if full-line?
+				 (begin
+				   (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1))
+				   (##sys#setislot p 5 0))
+				 (##sys#setislot p 5 (fx+ (##sys#slot p 5)
+							  (##sys#size line))))
+			     (set! bufpos next)
+			     line)) ) )
 		   (lambda (port)		; read-buffered
 		     (if (fx>= bufpos buflen)
 			 ""
@@ -1555,35 +1480,6 @@ EOF
 	"system error while trying to access file" filename) ) ) ) )
 
 
-;;; Environment access:
-
-(define setenv
-  (lambda (var val)
-    (##sys#check-string var 'setenv)
-    (##sys#check-string val 'setenv)
-    (##core#inline "C_setenv" (##sys#make-c-string var 'setenv) (##sys#make-c-string val 'setenv))
-    (##core#undefined) ) )
-
-(define (unsetenv var)
-  (##sys#check-string var 'unsetenv)
-  (##core#inline "C_unsetenv" (##sys#make-c-string var 'unsetenv))
-  (##core#undefined) )
-
-(define get-environment-variables
-  (let ([get (foreign-lambda c-string "C_getenventry" int)])
-    (lambda ()
-      (let loop ([i 0])
-        (let ([entry (get i)])
-          (if entry
-              (let scan ([j 0])
-                (if (char=? #\= (##core#inline "C_subchar" entry j))
-                    (cons (cons (##sys#substring entry 0 j)
-                                (##sys#substring entry (fx+ j 1) (##sys#size entry)))
-                          (loop (fx+ i 1)))
-                    (scan (fx+ j 1)) ) )
-              '() ) ) ) ) ) )
-
-
 ;;; Memory mapped I/O:
 
 (define-foreign-variable _prot_read int "PROT_READ")
@@ -1637,38 +1533,26 @@ EOF
 
 ;;; Time related things:
 
-(define time->string
-  (let ([asctime (foreign-lambda c-string "C_asctime" scheme-object)]
-        [strftime (foreign-lambda c-string "C_strftime" scheme-object scheme-object)])
-    (lambda (tm #!optional fmt)
-      (check-time-vector 'time->string tm)
-      (if fmt
-          (begin
-            (##sys#check-string fmt 'time->string)
-            (or (strftime tm (##sys#make-c-string fmt 'time->string))
-                (##sys#error 'time->string "time formatting overflows buffer" tm)) )
-          (let ([str (asctime tm)])
-            (if str
-                (##sys#substring str 0 (fx- (##sys#size str) 1))
-                (##sys#error 'time->string "cannot convert time vector to string" tm) ) ) ) ) ) )
-
 (define string->time
-  (let ([strptime (foreign-lambda scheme-object "C_strptime" scheme-object scheme-object scheme-object)])
+  (let ((strptime (foreign-lambda scheme-object "C_strptime" scheme-object scheme-object scheme-object scheme-pointer))
+        (tm-size (foreign-value "sizeof(struct tm)" int)))
     (lambda (tim #!optional (fmt "%a %b %e %H:%M:%S %Z %Y"))
       (##sys#check-string tim 'string->time)
       (##sys#check-string fmt 'string->time)
-      (strptime (##sys#make-c-string tim 'string->time) (##sys#make-c-string fmt) (make-vector 10 #f)) ) ) )
+      (strptime (##sys#make-c-string tim 'string->time) (##sys#make-c-string fmt) (make-vector 10 #f) (##sys#make-string tm-size #\nul)) ) ) )
 
-(define (utc-time->seconds tm)
-  (check-time-vector 'utc-time->seconds tm)
-  (let ((t (##core#inline_allocate ("C_a_timegm" 4) tm)))
-    (if (fp= -1.0 t)
-	(##sys#error 'utc-time->seconds "cannot convert time vector to seconds" tm) 
-	t)))
+(define utc-time->seconds
+  (let ((tm-size (foreign-value "sizeof(struct tm)" int)))
+    (lambda (tm)
+      (check-time-vector 'utc-time->seconds tm)
+      (let ((t (##core#inline_allocate ("C_a_timegm" 4) tm (##sys#make-string tm-size #\nul))))
+        (if (fp= -1.0 t)
+            (##sys#error 'utc-time->seconds "cannot convert time vector to seconds" tm)
+            t)))))
 
 (define local-timezone-abbreviation
   (foreign-lambda* c-string ()
-   "\n#if !defined(__CYGWIN__) && !defined(__SVR4) && !defined(__uClinux__) && !defined(__hpux__)\n"
+   "\n#if !defined(__CYGWIN__) && !defined(__SVR4) && !defined(__uClinux__) && !defined(__hpux__) && !defined(_AIX)\n"
    "time_t clock = time(NULL);"
    "struct tm *ltm = C_localtime(&clock);"
    "char *z = ltm ? (char *)ltm->tm_zone : 0;"
@@ -1756,14 +1640,19 @@ EOF
 ;;; Process handling:
 
 (define process-fork
-  (let ([fork (foreign-lambda int "C_fork")])
-    (lambda thunk
-      (let ([pid (fork)])
-      (cond [(fx= -1 pid) (posix-error #:process-error 'process-fork "cannot create child process")]
-            [(and (pair? thunk) (fx= pid 0))
-             ((car thunk))
-             ((foreign-lambda void "_exit" int) 0) ]
-            [else pid] ) ) ) ) )
+  (let ((fork (foreign-lambda int "C_fork")))
+    (lambda (#!optional thunk killothers)
+      (let ((pid (fork)))
+	(when (fx= -1 pid) 
+	  (posix-error #:process-error 'process-fork "cannot create child process"))
+	(if (and thunk (zero? pid))
+	    ((if killothers
+		 ##sys#kill-other-threads
+		 (lambda (thunk) (thunk)))
+	     (lambda ()
+	       (thunk)
+	       ((foreign-lambda void "_exit" int) 0) ))
+	    pid)))))
 
 (define process-execute
   ;; NOTE: We use c-string here instead of scheme-object.
@@ -1808,14 +1697,17 @@ EOF
 
 (define (##sys#process-wait pid nohang)
   (let* ([res (##core#inline "C_waitpid" pid (if nohang _wnohang 0))]
-         [norm (##core#inline "C_WIFEXITED" _wait-status)] )
-    (values
-      res
-      norm
-      (cond [norm (##core#inline "C_WEXITSTATUS" _wait-status)]
-            [(##core#inline "C_WIFSIGNALED" _wait-status)
-              (##core#inline "C_WTERMSIG" _wait-status)]
-            [else (##core#inline "C_WSTOPSIG" _wait-status)] ) ) ) )
+	 [norm (##core#inline "C_WIFEXITED" _wait-status)] )
+    (if (and (fx= res -1) (fx= _errno _eintr))
+	(##sys#dispatch-interrupt
+         (lambda () (##sys#process-wait pid nohang)))
+	(values
+	 res
+	 norm
+	 (cond [norm (##core#inline "C_WEXITSTATUS" _wait-status)]
+	       [(##core#inline "C_WIFSIGNALED" _wait-status)
+		(##core#inline "C_WTERMSIG" _wait-status)]
+	       [else (##core#inline "C_WSTOPSIG" _wait-status)] ) )) ) )
 
 (define parent-process-id (foreign-lambda int "C_getppid"))
 
@@ -1876,7 +1768,7 @@ EOF
             (lambda ()
               (vector-set! clsvec idx #t)
               (when (and (vector-ref clsvec idxa) (vector-ref clsvec idxb))
-                (receive [_ flg cod] (process-wait pid)
+                (receive [_ flg cod] (##sys#process-wait pid #f)
                   (unless flg
                     (##sys#signal-hook #:process-error loc
                       "abnormal process exit" pid cod)) ) ) ) )]

@@ -1,6 +1,6 @@
 ;;;; expand.scm - The HI/LO expander
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -33,6 +33,7 @@
   (fixnum)
   (hide match-expression
 	macro-alias
+	check-for-multiple-bindings
 	d dd dm dx map-se
 	lookup check-for-redef) 
   (not inline ##sys#syntax-error-hook ##sys#compiler-syntax-hook
@@ -41,6 +42,14 @@
 (include "common-declarations.scm")
 
 (define-syntax d (syntax-rules () ((_ . _) (void))))
+
+;; Macro to avoid "unused variable map-se" when "d" is disabled
+(define-syntax map-se
+  (syntax-rules ()
+    ((_ ?se)
+     (map (lambda (a) 
+	    (cons (car a) (if (symbol? (cdr a)) (cdr a) '<macro>)))
+	  ?se))))
 
 (set! ##sys#features
   (append '(#:hygienic-macros 
@@ -89,12 +98,6 @@
 		'<macro>
 		ua))
 	alias) ) )
-
-#+debugbuild
-(define (map-se se)
-  (map (lambda (a) 
-	 (cons (car a) (if (symbol? (cdr a)) (cdr a) '<macro>)))
-       se))
 
 (define (##sys#strip-syntax exp)
  ;; if se is given, retain bound vars
@@ -276,7 +279,7 @@
 			      (let ([bs (cadr body)])
 				(values
 				 `(##core#app
-				   (##core#letrec
+				   (##core#letrec*
 				    ([,bindings 
 				      (##core#loop-lambda
 				       ,(map (lambda (b) (car b)) bs) ,@(cddr body))])
@@ -981,7 +984,8 @@
 	      (body (cddr form)) )
 	  (cond ((not (pair? head))
 		 (##sys#check-syntax 'define form '(_ symbol . #(_ 0 1)))
-		 (##sys#register-export head (##sys#current-module))
+                 (let ((name (or (getp head '##core#macro-alias) head)))
+                   (##sys#register-export name (##sys#current-module)))
 		 (when (c (r 'define) head)
 		   (##sys#defjam-error x))
 		 `(##core#set! 
@@ -1005,7 +1009,8 @@
 	(cond ((not (pair? head))
 	       (##sys#check-syntax 'define-syntax head 'symbol)
 	       (##sys#check-syntax 'define-syntax body '#(_ 1))
-	       (##sys#register-export head (##sys#current-module))
+               (let ((name (or (getp head '##core#macro-alias) head)))
+                 (##sys#register-export name (##sys#current-module)))
 	       (when (c (r 'define-syntax) head)
 		 (##sys#defjam-error form))
 	       `(##core#define-syntax ,head ,(car body)))
@@ -1020,15 +1025,40 @@
 		 ,(car head)
 		 (##sys#er-transformer (##core#lambda ,(cdr head) ,@body))))))))))
 
+(define (check-for-multiple-bindings bindings form loc)
+  ;; assumes correct syntax
+  (let loop ((bs bindings) (seen '()) (warned '()))
+    (cond ((null? bs))
+	  ((and (memq (caar bs) seen)
+                (not (memq (caar bs) warned)))
+	   (##sys#warn 
+	    (string-append "variable bound multiple times in " loc " construct")
+	    (caar bs)
+	    form)
+	   (loop (cdr bs) seen (cons (caar bs) warned)))
+	  (else (loop (cdr bs) (cons (caar bs) seen) warned)))))
+
 (##sys#extend-macro-environment
  'let
  '()
  (##sys#er-transformer
   (lambda (x r c)
-    (if (and (pair? (cdr x)) (symbol? (cadr x)))
-	(##sys#check-syntax 'let x '(_ symbol #((symbol _) 0) . #(_ 1)))
-	(##sys#check-syntax 'let x '(_ #((symbol _) 0) . #(_ 1))))
+    (cond ((and (pair? (cdr x)) (symbol? (cadr x)))
+	   (##sys#check-syntax 'let x '(_ symbol #((symbol _) 0) . #(_ 1)))
+           (check-for-multiple-bindings (caddr x) x "let"))
+	  (else
+	   (##sys#check-syntax 'let x '(_ #((symbol _) 0) . #(_ 1)))
+           (check-for-multiple-bindings (cadr x) x "let")))
     `(##core#let ,@(cdr x)))))
+
+(##sys#extend-macro-environment
+ 'letrec*
+ '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    (##sys#check-syntax 'letrec* x '(_ #((symbol _) 0) . #(_ 1)))
+    (check-for-multiple-bindings (cadr x) x "letrec*")
+    `(##core#letrec* ,@(cdr x)))))
 
 (##sys#extend-macro-environment
  'letrec
@@ -1036,6 +1066,7 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax 'letrec x '(_ #((symbol _) 0) . #(_ 1)))
+    (check-for-multiple-bindings (cadr x) x "letrec")
     `(##core#letrec ,@(cdr x)))))
 
 (##sys#extend-macro-environment
@@ -1044,6 +1075,7 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax 'let-syntax x '(_ #((symbol _) 0) . #(_ 1)))
+    (check-for-multiple-bindings (cadr x) x "let-syntax")
     `(##core#let-syntax ,@(cdr x)))))
 
 (##sys#extend-macro-environment
@@ -1052,6 +1084,7 @@
  (##sys#er-transformer
   (lambda (x r c)
     (##sys#check-syntax 'letrec-syntax x '(_ #((symbol _) 0) . #(_ 1)))
+    (check-for-multiple-bindings (cadr x) x "letrec-syntax")
     `(##core#letrec-syntax ,@(cdr x)))))
 
 (##sys#extend-macro-environment
@@ -1111,24 +1144,38 @@
 	    (let ((clause (car clauses))
 		  (rclauses (cdr clauses)) )
 	      (##sys#check-syntax 'cond clause '#(_ 1))
-	      (cond ((c %else (car clause))
-		     (expand rclauses #t)
-		     `(##core#begin ,@(cdr clause)))
-		    (else?
+	      (cond (else?
 		     (##sys#warn
-		      "non-`else' clause following `else' clause in `cond'"
+		      (sprintf "clause following `~S' clause in `cond'" else?)
 		      (##sys#strip-syntax clause))
-		     (expand rclauses #t)
+		     (expand rclauses else?)
 		     '(##core#begin))
+		    ((or (c %else (car clause))
+                         (eq? #t (car clause))
+                         ;; Like "constant?" from support.scm
+                         (number? (car clause))
+                         (char? (car clause))
+                         (string? (car clause))
+                         (eof-object? (car clause))
+                         (blob? (car clause))
+                         (vector? (car clause))
+                         (##sys#srfi-4-vector? (car clause))
+                         (and (pair? (car clause))
+                              (c (r 'quote) (caar clause))))
+		     (expand rclauses (strip-syntax (car clause)))
+		     (if (null? (cdr clause))
+			 (car clause)
+			 `(##core#begin ,@(cdr clause))))
 		    ((null? (cdr clause)) 
 		     `(,%or ,(car clause) ,(expand rclauses #f)))
-		    ((c %=> (cadr clause))
+		    ((and (fx= (length clause) 3)
+			  (c %=> (cadr clause)))
 		     (let ((tmp (r 'tmp)))
 		       `(##core#let ((,tmp ,(car clause)))
 				    (##core#if ,tmp
 					       (,(caddr clause) ,tmp)
 					       ,(expand rclauses #f) ) ) ) )
-		    ((and (list? clause) (fx= (length clause) 4)
+		    ((and (fx= (length clause) 4)
 			  (c %=> (caddr clause)))
 		     (let ((tmp (r 'tmp)))
 		       `(##sys#call-with-values
@@ -1152,6 +1199,7 @@
 	  (body (cddr form)) )
       (let ((tmp (r 'tmp))
 	    (%or (r 'or))
+	    (%=> (r '=>))
 	    (%eqv? (r 'eqv?))
 	    (%else (r 'else)))
 	`(let ((,tmp ,exp))
@@ -1161,20 +1209,26 @@
 		  (let ((clause (car clauses))
 			(rclauses (cdr clauses)) )
 		    (##sys#check-syntax 'case clause '#(_ 1))
-		    (cond ((c %else (car clause))
-			   (expand rclauses #t)
-			   `(##core#begin ,@(cdr clause)) )
-			  (else?
-			   (##sys#notice
-			    "non-`else' clause following `else' clause in `case'"
+		    (cond (else?
+			   (##sys#warn
+			    "clause following `else' clause in `case'"
 			    (##sys#strip-syntax clause))
 			   (expand rclauses #t)
 			   '(##core#begin))
+			  ((c %else (car clause))
+			   (expand rclauses #t)
+			   (if (and (fx= (length clause) 3) ; (else => expr)
+				    (c %=> (cadr clause)))
+			       `(,(caddr clause) ,tmp)
+			       `(##core#begin ,@(cdr clause))))
 			  (else
 			   `(##core#if (,%or ,@(##sys#map
 						(lambda (x) `(,%eqv? ,tmp ',x))
 						(car clause)))
-				       (##core#begin ,@(cdr clause)) 
+				       ,(if (and (fx= (length clause) 3) ; ((...) => expr)
+						 (c %=> (cadr clause)))
+					    `(,(caddr clause) ,tmp)
+					    `(##core#begin ,@(cdr clause)))
 				       ,(expand rclauses #f) ) ) ) ) ) ) ) ) ) ) ) )
 
 (##sys#extend-macro-environment
@@ -1277,6 +1331,16 @@
  (##sys#er-transformer
   (lambda (form r c)
     (##sys#check-syntax 'delay form '(_ _))
+    `(,(r 'delay-force)
+      (##sys#make-promise
+       (##sys#call-with-values (##core#lambda () ,(cadr form)) ##sys#list))))))
+
+(##sys#extend-macro-environment
+ 'delay-force
+ '()
+ (##sys#er-transformer
+  (lambda (form r c)
+    (##sys#check-syntax 'delay-force form '(_ _))
     `(##sys#make-promise (##core#lambda () ,(cadr form))))))
 
 (##sys#extend-macro-environment
@@ -1348,6 +1412,13 @@
   (lambda (x r c)
     (let ((ids (cdr x)))
       `(##core#require-extension ,ids #t) ) ) ) )
+
+(##sys#extend-macro-environment
+ 'require-extension-for-syntax
+ '()
+ (##sys#er-transformer
+  (lambda (x r c)
+    `(,(r 'begin-for-syntax) (,(r 'require-extension) ,@(cdr x))))))
 
 (##sys#extend-macro-environment
  'module

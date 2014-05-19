@@ -1,6 +1,6 @@
 ;;;; library.scm - R5RS library for the CHICKEN compiler
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -29,27 +29,23 @@
   (unit library)
   (uses build-version)
   (disable-interrupts)
-  (hide ##sys#dynamic-unwind ##sys#find-symbol
-	##sys#grow-vector ##sys#default-parameter-vector 
+  (hide ##sys#dynamic-unwind
+	##sys#vector-resize ##sys#default-parameter-vector 
 	current-print-length setter-tag read-marks
 	##sys#print-exit
 	##sys#format-here-doc-warning
+	exit-in-progress
         maximal-string-length)
   (not inline ##sys#user-read-hook ##sys#error-hook ##sys#signal-hook ##sys#schedule
        ##sys#default-read-info-hook ##sys#infix-list-hook ##sys#sharp-number-hook
        ##sys#user-print-hook ##sys#user-interrupt-hook ##sys#step-hook)
   (foreign-declare #<<EOF
-#include <string.h>
-#include <ctype.h>
 #include <errno.h>
-#include <time.h>
 #include <float.h>
 
 #ifdef HAVE_SYSEXITS_H
 # include <sysexits.h>
 #endif
-
-#include <unistd.h>
 
 #ifndef EX_SOFTWARE
 # define EX_SOFTWARE	70
@@ -76,15 +72,21 @@ fast_read_line_from_file(C_word str, C_word port, C_word size) {
   char *buf = C_c_string(str);
   C_FILEPTR fp = C_port_file(port);
 
-  if ((c = C_getc(fp)) == EOF)
-    return errno == EINTR ? C_fix(-1) : C_SCHEME_END_OF_FILE;
+  if ((c = C_getc(fp)) == EOF) {
+    if (ferror(fp)) {
+      clearerr(fp);
+      return C_fix(-1);
+    } else { /* feof (fp) */
+      return C_SCHEME_END_OF_FILE;
+    }
+  }
 
   C_ungetc(c, fp);
 
   for (i = 0; i < n; i++) {
     c = C_getc(fp);
 
-    if(c == EOF && errno == EINTR) {
+    if(c == EOF && ferror(fp)) {
       clearerr(fp);
       return C_fix(-(i + 1));
     }
@@ -102,28 +104,20 @@ fast_read_line_from_file(C_word str, C_word port, C_word size) {
 static C_word
 fast_read_string_from_file(C_word dest, C_word port, C_word len, C_word pos)
 {
+  size_t m;
   int n = C_unfix (len);
   char * buf = ((char *)C_data_pointer (dest) + C_unfix (pos));
   C_FILEPTR fp = C_port_file (port);
 
-  size_t m = fread (buf, sizeof (char), n, fp);
+  if(feof(fp)) return C_SCHEME_END_OF_FILE;
 
-  if(m == EOF && errno == EINTR) {
-    clearerr(fp);
-    return C_fix(-1);
-  }
-  else if (m < n) {
-    if (feof (fp)) {
-      clearerr (fp);
-      if (0 == m)
-	return C_SCHEME_END_OF_FILE;
-    } else if (ferror (fp)) {
-      if (0 == m) {
-	return C_SCHEME_FALSE;
-      } else {
-	clearerr (fp);
-      }
-    }
+  m = fread (buf, sizeof (char), n, fp);
+
+  if (m < n) {
+    if (ferror(fp)) /* Report to Scheme, which may retry, so clear errors */
+      clearerr(fp);
+    else if (feof(fp) && 0 == m) /* eof but m > 0? Return data first, below */
+      return C_SCHEME_END_OF_FILE; /* Calling again will get us here */
   }
 
   return C_fix (m);
@@ -205,7 +199,7 @@ EOF
 (define (current-milliseconds) (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f))
 (define (current-gc-milliseconds) (##sys#fudge 31))
 (define ##sys#decode-seconds (##core#primitive "C_decode_seconds"))
-(define get-environment-variable (##core#primitive "C_get_environment_variable"))
+(define get-environment-variable (foreign-lambda c-string "C_getenv" c-string))
 
 (define (##sys#start-timer)
   (##sys#gc #t)
@@ -336,10 +330,29 @@ EOF
       (##core#inline "C_i_check_closure_2" x (car loc))
       (##core#inline "C_i_check_closure" x) ) )
 
-(define (##sys#force promise)
-  (if (##sys#structure? promise 'promise)
-      ((##sys#slot promise 1))
-      promise) )
+(define (##sys#force obj)
+  (if (##sys#structure? obj 'promise)
+      (let lp ((promise obj)
+	       (forward #f))
+	(let ((val (##sys#slot promise 1)))
+	  (cond ((null? val) (##sys#values))
+		((pair? val) (apply ##sys#values val))
+		((procedure? val)
+		 (when forward (##sys#setslot forward 1 promise))
+		 (let ((results (##sys#call-with-values val ##sys#list)))
+		   (cond ((not (procedure? (##sys#slot promise 1)))
+			  (lp promise forward)) ; in case of reentrance
+			 ((and (not (null? results)) (null? (cdr results))
+			       (##sys#structure? (##sys#slot results 0) 'promise))
+			  (let ((result0 (##sys#slot results 0)))
+			    (##sys#setslot promise 1 (##sys#slot result0 1))
+			    (lp promise result0)))
+			 (else
+			  (##sys#setslot promise 1 results)
+			  (apply ##sys#values results)))))
+		((##sys#structure? val 'promise)
+		 (lp val forward)))))
+      obj))
 
 (define force ##sys#force)
 
@@ -897,6 +910,7 @@ EOF
 (define real? number?)
 (define (rational? n) (##core#inline "C_i_rationalp" n))
 (define ##sys#flonum-fraction (##core#primitive "C_flonum_fraction"))
+(define ##sys#fprat (##core#primitive "C_flonum_rat"))
 (define (##sys#integer? x) (##core#inline "C_i_integerp" x))
 (define integer? ##sys#integer?)
 (define (##sys#exact? x) (##core#inline "C_i_exactp" x))
@@ -907,7 +921,6 @@ EOF
 (define (##sys#fits-in-int? n) (##core#inline "C_fits_in_int_p" n))
 (define (##sys#fits-in-unsigned-int? n) (##core#inline "C_fits_in_unsigned_int_p" n))
 (define (##sys#flonum-in-fixnum-range? n) (##core#inline "C_flonum_in_fixnum_range_p" n))
-(define (##sys#double->number n) (##core#inline "C_double_to_number" n))
 (define (zero? n) (##core#inline "C_i_zerop" n))
 (define (positive? n) (##core#inline "C_i_positivep" n))
 (define (negative? n) (##core#inline "C_i_negativep" n))
@@ -927,15 +940,23 @@ EOF
 
 (define (numerator n)
   (##sys#check-number n 'numerator)
-  (if (##core#inline "C_i_integerp" n)
-      n
-      (##sys#signal-hook #:type-error 'numerator "bad argument type - not a rational number" n) ) )
+  (cond
+   ((##core#inline "C_u_i_exactp" n) n)
+   ((##core#inline "C_i_finitep" n)
+    (receive (num denom) (##sys#fprat n) num))
+   (else
+    (##sys#signal-hook
+     #:type-error 'numerator "bad argument type - not a rational number" n)) ) )
 
 (define (denominator n)
   (##sys#check-number n 'denominator)
-  (if (##core#inline "C_i_integerp" n)
-      1
-      (##sys#signal-hook #:type-error 'numerator "bad argument type - not a rational number" n) ) )
+  (cond
+   ((##core#inline "C_u_i_exactp" n) 1)
+   ((##core#inline "C_i_finitep" n)
+    (receive (num denom) (##sys#fprat n) denom))
+   (else
+    (##sys#signal-hook
+     #:type-error 'denominator "bad argument type - not a rational number" n)) ) )
 
 (define magnitude abs)
 
@@ -1387,8 +1408,8 @@ EOF
   (let* ((len (##sys#size v))
 	 (j (or j len))
 	 (len2 (fx- j i)))
-    (##sys#check-range i 0 len 'subvector)
-    (##sys#check-range j 0 len 'subvector)
+    (##sys#check-range i 0 (fx+ len 1) 'subvector)
+    (##sys#check-range j 0 (fx+ len 1) 'subvector)
     (let ((v2 (make-vector len2)))
       (do ((k 0 (fx+ k 1)))
 	  ((fx>= k len2) v2)
@@ -1397,15 +1418,14 @@ EOF
 (define (vector-resize v n #!optional init)
   (##sys#check-vector v 'vector-resize)
   (##sys#check-exact n 'vector-resize)
-  (##sys#grow-vector v n init) )
+  (##sys#vector-resize v n init) )
 
-(define (##sys#grow-vector v n init)
-  (let ([v2 (##sys#make-vector n init)]
-	[len (##sys#size v)] )
-    (do ([i 0 (fx+ i 1)])
+(define (##sys#vector-resize v n init)
+  (let ((v2 (##sys#make-vector n init))
+	(len (min (##sys#size v) n)) )
+    (do ((i 0 (fx+ i 1)))
 	((fx>= i len) v2)
       (##sys#setslot v2 i (##sys#slot v i)) ) ) )
-	
 
 ;;; Characters:
 
@@ -1460,10 +1480,18 @@ EOF
 
 (let ((char-downcase char-downcase))
   (set! char-ci=? (lambda (x y) (eq? (char-downcase x) (char-downcase y))))
-  (set! char-ci>? (lambda (x y) (fx> (char-downcase x) (char-downcase y))))
-  (set! char-ci<? (lambda (x y) (fx< (char-downcase x) (char-downcase y))))
-  (set! char-ci>=? (lambda (x y) (fx>= (char-downcase x) (char-downcase y))))
-  (set! char-ci<=? (lambda (x y) (fx<= (char-downcase x) (char-downcase y)))) )
+  (set! char-ci>? (lambda (x y)
+		    (##core#inline "C_i_char_greaterp"
+				   (char-downcase x) (char-downcase y))))
+  (set! char-ci<? (lambda (x y)
+		    (##core#inline "C_i_char_lessp"
+				   (char-downcase x) (char-downcase y))))
+  (set! char-ci>=? (lambda (x y)
+		     (##core#inline "C_i_char_greater_or_equal_p"
+				    (char-downcase x) (char-downcase y))))
+  (set! char-ci<=? (lambda (x y)
+		     (##core#inline "C_i_char_less_or_equal_p"
+				    (char-downcase x) (char-downcase y)))) )
 
 (define (char-upper-case? c)
   (##sys#check-char c 'char-upper-case?)
@@ -1524,6 +1552,8 @@ EOF
 	       (and-let* ([a (assq x names-to-chars)])
 		 (##sys#slot a 1) ) ] ) ) ) ) )
 
+;; TODO: Use the character names here in the next release?  Or just
+;; use the numbers everywhere, for clarity?
 (char-name 'space #\space)
 (char-name 'tab #\tab)
 (char-name 'linefeed #\linefeed)
@@ -1531,8 +1561,10 @@ EOF
 (char-name 'vtab (integer->char 11))
 (char-name 'delete (integer->char 127))
 (char-name 'esc (integer->char 27))
+(char-name 'escape (integer->char 27))
 (char-name 'alarm (integer->char 7))
 (char-name 'nul (integer->char 0))
+(char-name 'null (integer->char 0))
 (char-name 'return #\return)
 (char-name 'page (integer->char 12))
 (char-name 'backspace (integer->char 8))
@@ -1750,15 +1782,29 @@ EOF
   (vector (lambda (p)			; read-char
 	    (let loop ()
 	      (let ((c (##core#inline "C_read_char" p)))
-		(if (eq? -1 c)		; EINTR
-		    (##sys#dispatch-interrupt loop)
-		    c))))
+		(cond
+		 ((eq? -1 c)
+		  (##sys#update-errno)
+		  (if (eq? (errno) (foreign-value "EINTR" int))
+		      (##sys#dispatch-interrupt loop)
+		      (##sys#signal-hook
+		       #:file-error 'read-char
+		       (##sys#string-append "cannot read from port - " strerror)
+		       p)))
+		 (else c)))))
 	  (lambda (p)			; peek-char
 	    (let loop ()
 	      (let ((c (##core#inline "C_peek_char" p)))
-		(if (eq? -1 c)		; EINTR
-		    (##sys#dispatch-interrupt loop)
-		    c))))
+		(cond
+		 ((eq? -1 c)
+		  (##sys#update-errno)
+		  (if (eq? (errno) (foreign-value "EINTR" int))
+		      (##sys#dispatch-interrupt loop)
+		      (##sys#signal-hook
+		       #:file-error 'peek-char
+		       (##sys#string-append "cannot read from port - " strerror)
+		       p)))
+		 (else c)))))
 	  (lambda (p c)			; write-char
 	    (##core#inline "C_display_char" p c) )
 	  (lambda (p s)			; write-string
@@ -1773,25 +1819,29 @@ EOF
 	  (lambda (p n dest start)		; read-string!
 	    (let loop ([rem (or n (fx- (##sys#size dest) start))] [act 0] [start start])
 	      (let ([len (##core#inline "fast_read_string_from_file" dest p rem start)])
-		(cond [(or (not len)	      ; error returns EOF
-			   (eof-object? len)) ; EOF returns 0 bytes read
-		       act]
-		      ((fx< len 0)	; EINTR
-		       (let ((len (fx< (fxneg len) 1)))
-			 (##sys#dispatch-interrupt
-			  (lambda () 
-			    (loop (fx- rem len) (fx+ act len) (fx+ start len))))))
-		      [(fx< len rem)
-		       (loop (fx- rem len) (fx+ act len) (fx+ start len))]
-		      [else
-		       (fx+ act len) ] ) )))
-	  (lambda (p limit)		; read-line
-	    (if limit (##sys#check-exact limit 'read-line))
+		(cond ((eof-object? len) ; EOF returns 0 bytes read
+		       act)
+		      ((fx< len 0)
+		       (##sys#update-errno)
+		       (if (eq? (errno) (foreign-value "EINTR" int))
+			   (##sys#dispatch-interrupt
+			    (lambda ()
+			      (loop (fx- rem len) (fx+ act len) (fx+ start len))))
+			   (##sys#signal-hook
+			    #:file-error 'read-string!
+			    (##sys#string-append "cannot read from port - " strerror)
+			    p n dest start)))
+		      ((fx< len rem)
+		       (loop (fx- rem len) (fx+ act len) (fx+ start len)))
+		      (else
+		       (fx+ act len) ) ) )))
+	  (lambda (p rlimit)		; read-line
+	    (if rlimit (##sys#check-exact rlimit 'read-line))
 	    (let ((sblen read-line-buffer-initial-size))
 	      (unless (##sys#slot p 12)
 		(##sys#setslot p 12 (##sys#make-string sblen)))
 	      (let loop ([len sblen]
-			 [limit (or limit maximal-string-length)]   ; guaranteed fixnum?
+			 [limit (or rlimit maximal-string-length)]   ; guaranteed fixnum?
 			 [buffer (##sys#slot p 12)]
 			 [result ""]
 			 [f #f])
@@ -1806,11 +1856,20 @@ EOF
 				   (##sys#make-string (fx* len 2))
 				   (##sys#string-append result buffer)
 				   #t)) ]
-			((fx< n 0)	; EINTR
-			 (let ((n (fx- (fxneg n) 1)))
-			   (##sys#dispatch-interrupt
-			    (lambda ()
-			      (loop len limit buffer result f)))))
+			((fx< n 0)
+			 (##sys#update-errno)
+			 (if (eq? (errno) (foreign-value "EINTR" int))
+			     (let ((n (fx- (fxneg n) 1)))
+			       (##sys#dispatch-interrupt
+				(lambda ()
+				  (loop len limit buffer
+					(##sys#string-append
+					 result (##sys#substring buffer 0 n))
+					#t))))
+			     (##sys#signal-hook
+			      #:file-error 'read-line
+			      (##sys#string-append "cannot read from port - " strerror)
+			      p rlimit)))
 			[f (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1))
 			   (##sys#string-append result (##sys#substring buffer 0 n))]
 			[else
@@ -1906,6 +1965,8 @@ EOF
 (define (##sys#pathname-resolution name thunk . _)
   (thunk (##sys#expand-home-path name)) )
 
+;; DEPRECATED: implicit $VAR- and ~-expansion will be removed in
+;; future versions.  See ticket #1001
 (define ##sys#expand-home-path
   (lambda (path)
     (let ((len (##sys#size path)))
@@ -2201,6 +2262,8 @@ EOF
 (define setter ##sys#setter)
 
 (define (getter-with-setter get set #!optional info)
+  (##sys#check-closure get 'getter-with-setter)
+  (##sys#check-closure set 'getter-with-setter)
   (let ((getdec (cond (info
 		       (##sys#check-string info 'getter-with-setter)
 		       (##sys#make-lambda-info info))
@@ -2257,7 +2320,7 @@ EOF
 	(set! count (fx+ count 1))
 	(when (fx>= i (##sys#size ##sys#default-parameter-vector))
 	  (set! ##sys#default-parameter-vector 
-	    (##sys#grow-vector
+	    (##sys#vector-resize
 	     ##sys#default-parameter-vector
 	     (fx+ i 1)
 	     (##core#undefined)) ) )
@@ -2266,7 +2329,7 @@ EOF
 	       (lambda (val n mode)
 		 (when (fx>= i n)
 		   (set! ##sys#current-parameter-vector
-		     (##sys#grow-vector
+		     (##sys#vector-resize
 		      ##sys#current-parameter-vector
 		      (fx+ i 1)
 		      ##sys#snafu) ) )
@@ -2482,12 +2545,37 @@ EOF
 		       ((#\U)
 			(let ([n (r-usequence "U" 8 16)])
 			  (if (##sys#unicode-surrogate? n)
-			      (##sys#read-error port (string-append "invalid escape (surrogate)" n))
+			      (##sys#read-error port "invalid escape (surrogate)" n)
 			      (loop (##sys#read-char-0 port) (r-cons-codepoint n lst)) )))
 		       ((#\\ #\' #\" #\|)
 			(loop (##sys#read-char-0 port) (cons c lst)))
+		       ((#\newline #\return #\space #\tab)
+			;; Read "escaped" <intraline ws>* <nl> <intraline ws>*
+			(let eat-ws ((c c) (nl? #f))
+			  (case c
+			    ((#\space #\tab)
+			     (eat-ws (##sys#read-char-0 port) nl?))
+			    ((#\return)
+			     (if nl?
+				 (loop c lst)
+			         (let ((nc (##sys#read-char-0 port)))
+			           (if (eq? nc #\newline) ; collapse \r\n
+				       (eat-ws (##sys#read-char-0 port) #t)
+				       (eat-ws nc #t)))))
+			    ((#\newline)
+			     (if nl?
+				 (loop c lst)
+				 (eat-ws (##sys#read-char-0 port) #t)))
+			    (else
+                             (unless nl?
+                               (##sys#read-warning 
+				port 
+				"escaped whitespace, but no newline - collapsing anyway"))
+                             (loop c lst)))))
 		       (else
-			(cond ((and (char-numeric? c)
+			(cond ((##core#inline "C_eofp" c)
+			       (##sys#read-error port "unterminated string"))
+			      ((and (char-numeric? c)
 				    (char>=? c #\0)
 				    (char<=? c #\7))
 			       (let ((ch (integer->char 
@@ -2608,7 +2696,7 @@ EOF
 			      (else (build-symbol tok)) ) ) ) ) ) ))
 
 	  (define (r-number-with-exactness radix)
-	    (cond [(char=? #\# (##sys#peek-char-0 port))
+	    (cond [(eq? #\# (##sys#peek-char-0 port))
 		   (##sys#read-char-0 port)
 		   (let ([c2 (##sys#read-char-0 port)])
 		     (cond [(eof-object? c2) 
@@ -2622,7 +2710,7 @@ EOF
 		  [else (r-number radix #f)] ) )
 	  
 	  (define (r-number-with-radix exactness)
-	    (cond [(char=? #\# (##sys#peek-char-0 port))
+	    (cond [(eq? #\# (##sys#peek-char-0 port))
 		   (##sys#read-char-0 port)
 		   (let ([c2 (##sys#read-char-0 port)])
 		     (cond [(eof-object? c2) (##sys#read-error port "unexpected end of numeric literal")]
@@ -2675,9 +2763,11 @@ EOF
 			 (if (and skw (eq? ksp #:suffix))
 			     (k (##sys#reverse-list->string (cdr lst)) #t)
 			     (k (##sys#reverse-list->string lst) pkw)))
+                        ((memq c reserved-characters)
+			  (reserved-character c))
 			(else
 			 (let ((c (##sys#read-char-0 port)))
-			   (case (and sep c)
+			   (case c
 			     ((#\|) 
 			      (let ((part (r-string #\|)))
 				(loop (append (##sys#fast-reverse (##sys#string->list part)) lst)
@@ -2784,26 +2874,22 @@ EOF
 		 ":"
 		 (##sys#string-append kwprefix tok)) ))
 
-          ; now have the state to make a decision.
+          ;; now have the state to make a decision.
           (set! reserved-characters
-	        (if psp
-	            (if sep
-	                '()
-	                '(#\[ #\] #\{ #\}) )
-	            (if sep
-	                '(#\|)
-	                '(#\[ #\] #\{ #\} #\|))))
+                (append (if (not psp) '(#\[ #\] #\{ #\}) '())
+                        (if (not sep) '(#\|) '())))
 
 	  (r-spaces)
 	  (let* ((c (##sys#peek-char-0 port))
 		 (srst (##sys#slot crt 1))
-		 (h (and srst (##sys#slot srst (char->integer c)) ) ) )
+		 (h (and (not (eof-object? c)) srst
+			 (##sys#slot srst (char->integer c)) ) ) )
 	    (if h
-	        ;then handled by read-table entry
+                ;; then handled by read-table entry
 		(##sys#call-with-values
 		 (lambda () (h c port))
 		 (lambda xs (if (null? xs) (readrec) (car xs))))
-		;otherwise chicken extended r5rs syntax
+		;; otherwise chicken extended r5rs syntax
 		(case c
 		  ((#\')
 		   (##sys#read-char-0 port)
@@ -2820,101 +2906,112 @@ EOF
 		  ((#\#)
 		   (##sys#read-char-0 port)
 		   (let ((dchar (##sys#peek-char-0 port)))
-		     (if (char-numeric? dchar)
-			 (let* ((n (string->number (r-digits)))
-				(dchar (##sys#peek-char-0 port))
-				(spdrst (##sys#slot crt 3)) 
-				(h (and spdrst (##sys#slot spdrst (char->integer dchar)) ) ) )
-	                         ;#<num> handled by parameterized # read-table entry?
-			   (cond (h (##sys#call-with-values
-				     (lambda () (h dchar port n))
-				     (lambda xs (if (null? xs) (readrec) (car xs)))))
-			         ;#<num>?
-				 ((or (eq? dchar #\)) (char-whitespace? dchar)) 
-				  (##sys#sharp-number-hook port n))
-				 (else (##sys#read-error
-					port
-					"invalid parameterized read syntax" 
-					dchar n) ) ) )
-			 (let* ((sdrst (##sys#slot crt 2))
-				(h (and sdrst (##sys#slot sdrst (char->integer dchar)) ) ) )
-			   (if h
-	                       ;then handled by # read-table entry
-			       (##sys#call-with-values
-				(lambda () (h dchar port))
-				(lambda xs (if (null? xs) (readrec) (car xs))))
-                	       ;otherwise chicken extended r5rs syntax
-			       (case (char-downcase dchar)
-				 ((#\x) (##sys#read-char-0 port) (r-number-with-exactness 16))
-				 ((#\d) (##sys#read-char-0 port) (r-number-with-exactness 10))
-				 ((#\o) (##sys#read-char-0 port) (r-number-with-exactness 8))
-				 ((#\b) (##sys#read-char-0 port) (r-number-with-exactness 2))
-				 ((#\i) (##sys#read-char-0 port) (r-number-with-radix 'i))
-				 ((#\e) (##sys#read-char-0 port) (r-number-with-radix 'e))
-				 ((#\c)
-				  (##sys#read-char-0 port)
-				  (let ([c (##sys#read-char-0 port)])
-				    (fluid-let ([csp 
-						 (cond [(eof-object? c)
-							(##sys#read-error port "unexpected end of input while reading `#c...' sequence")]
-						       [(eq? c #\i) #f]
-						       [(eq? c #\s) #t]
-						       [else (##sys#read-error port "invalid case specifier in `#c...' sequence" c)] ) ] )
-				      (readrec) ) ) )
-				 ((#\() (r-vector))
-				 ((#\\) (##sys#read-char-0 port) (r-char))
-				 ((#\|)
-				  (##sys#read-char-0 port)
-				  (r-comment) (readrec) )
-				 ((#\#) 
-				  (##sys#read-char-0 port)
-				  (r-ext-symbol) )
-				 ((#\;) 
-				  (##sys#read-char-0 port)
-				  (readrec) (readrec) )
-				 ((#\`) 
-				  (##sys#read-char-0 port)
-				  (list 'quasisyntax (readrec)) )
-				 ((#\$)
-				  (##sys#read-char-0 port)
-				  (let ((c (##sys#peek-char-0 port)))
-				    (cond ((char=? c #\{)
-					   (##sys#read-char-0 port)
-					   (##sys#read-bytevector-literal port))
-					  (else (list 'location (readrec)) ))))
-				 ((#\:) 
-				  (##sys#read-char-0 port)
-				  (let ((tok (r-token)))
-				    (if (eq? 0 (##sys#size tok))
-					(##sys#read-error port "empty keyword")
-					(build-keyword tok))))
-				 ((#\%)
-				  (build-symbol (##sys#string-append "#" (r-token))) )
-				 ((#\+)
-				  (##sys#read-char-0 port)
-				  (let ((tst (readrec)))
-				    (list 'cond-expand (list tst (readrec)) '(else)) ) )
-				 ((#\!)
-				  (##sys#read-char-0 port)
-				  (let ((c (##sys#peek-char-0 port)))
-				    (cond ((or (char-whitespace? c) (char=? #\/ c))
-					   (skip-to-eol)
-					   (readrec) )
-					  (else
-					   (let ([tok (r-token)])
-					     (cond [(string=? "eof" tok) #!eof]
-						   [(member tok '("optional" "rest" "key"))
-						    (build-symbol (##sys#string-append "#!" tok)) ]
-						   [else 
-						    (let ((a (assq (string->symbol tok) read-marks)))
-						      (if a
-							  ((##sys#slot a 1) port)
-							  (##sys#read-error
-							   port
-							   "invalid `#!' token" tok) ) ) ] ) ) ) ) ) )
-				 (else
-				  (##sys#call-with-values (lambda () (##sys#user-read-hook dchar port))
-							  (lambda xs (if (null? xs) (readrec) (car xs)))) ) ) ) ) ) ) )
+		     (cond
+		      ((eof-object? dchar)
+		       (##sys#read-error
+			port "unexpected end of input after reading #-sign"))
+		      ((char-numeric? dchar)
+		       (let* ((n (string->number (r-digits)))
+			      (dchar2 (##sys#peek-char-0 port))
+			      (spdrst (##sys#slot crt 3))
+			      (h (and (char? dchar2) spdrst
+				      (##sys#slot spdrst (char->integer dchar2)) ) ) )
+			 ;; #<num> handled by parameterized # read-table entry?
+			 (cond ((eof-object? dchar2)
+                                (##sys#read-error
+                                 port "unexpected end of input after reading"
+                                 c n))
+                               (h (##sys#call-with-values
+				   (lambda () (h dchar2 port n))
+				   (lambda xs (if (null? xs) (readrec) (car xs)))))
+                               ;; #<num>?
+			       ((or (eq? dchar2 #\)) (char-whitespace? dchar2))
+				(##sys#sharp-number-hook port n))
+			       (else (##sys#read-char-0 port) ; Consume it first
+				     (##sys#read-error
+				      port
+				      "invalid parameterized read syntax"
+				      c n dchar2) ) ) ))
+		      (else (let* ((sdrst (##sys#slot crt 2))
+				   (h (and sdrst (##sys#slot sdrst (char->integer dchar)) ) ) )
+			      (if h
+                                  ;; then handled by # read-table entry
+				  (##sys#call-with-values
+				   (lambda () (h dchar port))
+				   (lambda xs (if (null? xs) (readrec) (car xs))))
+                                  ;; otherwise chicken extended r5rs syntax
+				  (case (char-downcase dchar)
+				    ((#\x) (##sys#read-char-0 port) (r-number-with-exactness 16))
+				    ((#\d) (##sys#read-char-0 port) (r-number-with-exactness 10))
+				    ((#\o) (##sys#read-char-0 port) (r-number-with-exactness 8))
+				    ((#\b) (##sys#read-char-0 port) (r-number-with-exactness 2))
+				    ((#\i) (##sys#read-char-0 port) (r-number-with-radix 'i))
+				    ((#\e) (##sys#read-char-0 port) (r-number-with-radix 'e))
+				    ((#\c)
+				     (##sys#read-char-0 port)
+				     (let ([c (##sys#read-char-0 port)])
+				       (fluid-let ([csp
+						    (cond [(eof-object? c)
+							   (##sys#read-error port "unexpected end of input while reading `#c...' sequence")]
+							  [(eq? c #\i) #f]
+							  [(eq? c #\s) #t]
+							  [else (##sys#read-error port "invalid case specifier in `#c...' sequence" c)] ) ] )
+					 (readrec) ) ) )
+				    ((#\() (r-vector))
+				    ((#\\) (##sys#read-char-0 port) (r-char))
+				    ((#\|)
+				     (##sys#read-char-0 port)
+				     (r-comment) (readrec) )
+				    ((#\#)
+				     (##sys#read-char-0 port)
+				     (r-ext-symbol) )
+				    ((#\;)
+				     (##sys#read-char-0 port)
+				     (readrec) (readrec) )
+				    ((#\`)
+				     (##sys#read-char-0 port)
+				     (list 'quasisyntax (readrec)) )
+				    ((#\$)
+				     (##sys#read-char-0 port)
+				     (let ((c (##sys#peek-char-0 port)))
+				       (cond ((char=? c #\{)
+					      (##sys#read-char-0 port)
+					      (##sys#read-bytevector-literal port))
+					     (else (list 'location (readrec)) ))))
+				    ((#\:)
+				     (##sys#read-char-0 port)
+				     (let ((tok (r-token)))
+				       (if (eq? 0 (##sys#size tok))
+					   (##sys#read-error port "empty keyword")
+					   (build-keyword tok))))
+				    ((#\%)
+				     (build-symbol (##sys#string-append "#" (r-token))) )
+				    ((#\+)
+				     (##sys#read-char-0 port)
+				     (let ((tst (readrec)))
+				       (list 'cond-expand (list tst (readrec)) '(else)) ) )
+				    ((#\!)
+				     (##sys#read-char-0 port)
+				     (let ((c (##sys#peek-char-0 port)))
+				       (cond ((and (char? c)
+						   (or (char-whitespace? c) (char=? #\/ c)))
+					      (skip-to-eol)
+					      (readrec) )
+					     (else
+					      (let ([tok (r-token)])
+						(cond [(string=? "eof" tok) #!eof]
+						      [(member tok '("optional" "rest" "key"))
+						       (build-symbol (##sys#string-append "#!" tok)) ]
+						      [else
+						       (let ((a (assq (string->symbol tok) read-marks)))
+							 (if a
+							     ((##sys#slot a 1) port)
+							     (##sys#read-error
+							      port
+							      "invalid `#!' token" tok) ) ) ] ) ) ) ) ) )
+				    (else
+				     (##sys#call-with-values (lambda () (##sys#user-read-hook dchar port))
+							     (lambda xs (if (null? xs) (readrec) (car xs)))) ) ) ) )) ) ) )
 		  ((#\() (r-list #\( #\)))
 		  ((#\)) (##sys#read-char-0 port) (container c))
 		  ((#\") (##sys#read-char-0 port) (r-string #\"))
@@ -3034,9 +3131,13 @@ EOF
 	     (unless (##sys#slot crt slot)
 	       (##sys#setslot crt slot (##sys#make-vector 256 #f)) )
 	     (##sys#check-char chr loc)
-	     (let ([i (char->integer chr)])
+	     (let ((i (char->integer chr)))
 	       (##sys#check-range i 0 256 loc)
-	       (##sys#setslot (##sys#slot crt slot) i (wrap proc)) ) ) ) ) )
+              (cond (proc
+                     (##sys#check-closure proc loc)
+                     (##sys#setslot (##sys#slot crt slot) i (wrap proc)))
+                    (else
+                     (##sys#setslot (##sys#slot crt slot) i #f))))))))
  
   (set! set-read-syntax!
     (syntax-setter
@@ -3070,11 +3171,11 @@ EOF
   (##sys#make-structure 
    'read-table
    (let ((t1 (##sys#slot rt 1)))
-     (and t1 (##sys#grow-vector t1 (##sys#size t1) #f) ) )
+     (and t1 (##sys#vector-resize t1 (##sys#size t1) #f) ) )
    (let ((t2 (##sys#slot rt 2)))
-     (and t2 (##sys#grow-vector t2 (##sys#size t2) #f) ) )
+     (and t2 (##sys#vector-resize t2 (##sys#size t2) #f) ) )
    (let ((t3 (##sys#slot rt 3)))
-     (and t3 (##sys#grow-vector t3 (##sys#size t3) #f) ) ) ))
+     (and t3 (##sys#vector-resize t3 (##sys#size t3) #f) ) ) ))
 
 
 ;;; Output:
@@ -3132,7 +3233,7 @@ EOF
       (let ([csp (case-sensitive)]
 	    [ksp (keyword-style)]
 	    [length-limit (##sys#print-length-limit)]
-	    [special-characters '(#\( #\) #\, #\[ #\] #\{ #\} #\' #\" #\; #\ #\` #\|)] )
+	    [special-characters '(#\( #\) #\, #\[ #\] #\{ #\} #\' #\" #\; #\ #\` #\| #\\)] )
 
 	(define (outstr port str)
 	  (if length-limit
@@ -3189,8 +3290,7 @@ EOF
 	    (cond ((eq? len 0) #f)
 		  ((eq? len 1)
 		   (let ((c (##core#inline "C_subchar" str 0)))
-		     (cond ((or (eq? #\. c) (eq? #\# c) (eq? #\; c) (eq? #\, c) (eq? #\| c))
-			    #f)
+		     (cond ((or (eq? #\# c) (eq? #\. c)) #f)
 			   ((specialchar? c) #f)
 			   ((char-numeric? c) #f)
 			   (else #t))))
@@ -3200,8 +3300,8 @@ EOF
 			 (let ((c (##core#inline "C_subchar" str 0)))
 			   (cond ((or (char-numeric? c)
 				      (eq? c #\+)
-				      (eq? c #\-)
-				      (eq? c #\.) )
+				      (eq? c #\.)
+				      (eq? c #\-) )
 				  (not (##sys#string->number str)) )
 				 ((eq? c #\:) (not (eq? ksp #:prefix)))
 				 ((and (eq? c #\#)
@@ -3276,15 +3376,17 @@ EOF
 			      ((34) (outstr port "\\\""))
 			      ((92) (outstr port "\\\\"))
 			      (else
-			       (cond ((fx< chr 32)
+			       (cond ((or (fx< chr 32)
+					  (fx= chr 127))
 				      (outchr port #\\)
 				      (case chr
+                                        ((7) (outchr port #\a))
+					((8) (outchr port #\b))
 					((9) (outchr port #\t))
 					((10) (outchr port #\n))
-					((13) (outchr port #\r))
 					((11) (outchr port #\v))
 					((12) (outchr port #\f))
-					((8) (outchr port #\b))
+					((13) (outchr port #\r))
 					(else
 					 (outchr port #\x)
 					 (when (fx< chr 16) (outchr port #\0))
@@ -3491,8 +3593,7 @@ EOF
 	       [output (##sys#slot p 12)] )
 	   (##core#inline "C_substring_copy" str output 0 len position)
 	   (##sys#setislot p 10 (fx+ position len)) ) ) )
-     (lambda (p)			; close
-       (##sys#setislot p 10 (##sys#slot p 11)) )
+     void ; close
      (lambda (p) #f)			; flush-output
      (lambda (p)			; char-ready?
        (fx< (##sys#slot p 10) (##sys#slot p 11)) )
@@ -3510,17 +3611,18 @@ EOF
 	      (end (if limit (fx+ pos limit) size)))
 	 (if (fx>= pos size)
 	     #!eof
-	     (##sys#scan-buffer-line
-	      buf 
-	      (if (fx> end size) size end)
-	      pos 
-	      (lambda (pos2 next)
-		(when (not (eq? pos2 next))
-		  (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1)) )
-		(let ((dest (##sys#make-string (fx- pos2 pos))))
-		  (##core#inline "C_substring_copy" buf dest pos pos2 0)
-		  (##sys#setislot p 10 next)
-		  dest) ) ) ) ) )
+	     (receive (next line full-line?)
+		 (##sys#scan-buffer-line
+		  buf (if (fx> end size) size end) pos
+		  (lambda (pos) (values #f pos #f) ) )
+	       ;; Update row & column position
+	       (if full-line?
+		   (begin
+		     (##sys#setislot p 4 (fx+ (##sys#slot p 4) 1))
+		     (##sys#setislot p 5 0))
+		   (##sys#setislot p 5 (fx+ (##sys#slot p 5) (##sys#size line))))
+	       (##sys#setislot p 10 next)
+	       line) ) ) )
      (lambda (p)			; read-buffered
        (let ((pos (##sys#slot p 10))
 	     (string (##sys#slot p 12))
@@ -3532,18 +3634,49 @@ EOF
 	       buffered))))
      )))
 
-; Invokes the eol handler when EOL or EOS is reached.
-(define (##sys#scan-buffer-line buf limit pos k)
-  (let loop ((pos2 pos))
-    (if (fx>= pos2 limit)
-	(k pos2 pos2)
-	(let ((c (##core#inline "C_subchar" buf pos2)))
-	  (cond ((eq? c #\newline) (k pos2 (fx+ pos2 1)))
-		((and (eq? c #\return) 
-		      (fx> limit (fx+ pos2 1))
-		      (eq? (##core#inline "C_subchar" buf (fx+ pos2 1)) #\newline) )
-		 (k pos2 (fx+ pos2 2)) )
-		(else (loop (fx+ pos2 1))) ) ) ) ) )
+;; Invokes the eos handler when EOS is reached to get more data.
+;; The eos-handler is responsible for stopping, either when EOF is hit or
+;; a user-supplied limit is reached (ie, it's indistinguishable from EOF)
+(define (##sys#scan-buffer-line buf limit start-pos eos-handler)
+  (define (copy&append buf offset pos old-line)
+    (let* ((old-line-len (##sys#size old-line))
+	   (new-line (##sys#make-string (fx+ old-line-len (fx- pos offset)))))
+      (##core#inline "C_substring_copy" old-line new-line 0 old-line-len 0)
+      (##core#inline "C_substring_copy" buf new-line offset pos old-line-len)
+      new-line))
+  (let loop ((buf buf)
+	     (offset start-pos)
+	     (pos start-pos)
+	     (limit limit)
+	     (line ""))
+    (if (fx= pos limit)
+	(let ((line (copy&append buf offset pos line)))
+	  (receive (buf offset limit) (eos-handler pos)
+	    (if buf
+		(loop buf offset offset limit line)
+		(values offset line #f))))
+	(let ((c (##core#inline "C_subchar" buf pos)))
+	  (cond ((eq? c #\newline)
+		 (values (fx+ pos 1) (copy&append buf offset pos line) #t))
+		((and (eq? c #\return)	; \r\n -> drop \r from string
+		      (fx> limit (fx+ pos 1))
+		      (eq? (##core#inline "C_subchar" buf (fx+ pos 1)) #\newline))
+		 (values (fx+ pos 2) (copy&append buf offset pos line) #t))
+		((and (eq? c #\return)	; Edge case (#568): \r{read}[\n|xyz]
+		      (fx= limit (fx+ pos 1)))
+		 (let ((line (copy&append buf offset pos line)))
+		   (receive (buf offset limit) (eos-handler pos)
+		     (if buf
+			 (if (eq? (##core#inline "C_subchar" buf offset) #\newline)
+			     (values (fx+ offset 1) line #t)
+			     ;; "Restore" \r we didn't copy, loop w/ new string
+			     (loop buf offset offset limit
+				   (##sys#string-append line "\r")))
+			 ;; Restore \r here, too (when we reached EOF)
+			 (values offset (##sys#string-append line "\r") #t)))))
+		((eq? c #\return)
+		 (values (fx+ pos 1) (copy&append buf offset pos line) #t))
+		(else (loop buf offset (fx+ pos 1) limit line)) ) ) ) ) )
 
 (define (open-input-string string)
   (##sys#check-string string 'open-input-string)
@@ -3614,8 +3747,6 @@ EOF
 (define build-platform
   (let ([sym (string->symbol ((##core#primitive "C_build_platform")))])
     (lambda () sym) ) )
-
-(define (c-runtime) 'unknown)		; DEPRECATED
 
 (define ##sys#windows-platform
   (and (eq? 'windows (software-type))
@@ -3692,6 +3823,7 @@ EOF
 (when (##sys#fudge 24) (set! ##sys#features (cons #:dload ##sys#features)))
 (when (##sys#fudge 28) (set! ##sys#features (cons #:ptables ##sys#features)))
 (when (##sys#fudge 39) (set! ##sys#features (cons #:cross-chicken ##sys#features)))
+(when (##sys#fudge 3) (set! ##sys#features (cons #:64bit ##sys#features)))
 
 (set! ##sys#features
   (let ((major (##sys#string-append "chicken-" (##sys#number->string (##sys#fudge 41)))))
@@ -3853,17 +3985,17 @@ EOF
    (lambda ()
      ((##sys#exit-handler) _ex_software)) ) )
 
+(define exit-in-progress #f)
+
 (define exit-handler
   (make-parameter
-   (lambda code
-     (##sys#cleanup-before-exit)
-     (##core#inline
-      "C_exit_runtime"
-      (if (null? code)
-	  0
-	  (let ([code (car code)])
-	    (##sys#check-exact code)
-	    code) ) ) ) ) )
+   (lambda (#!optional (code 0))
+     (##sys#check-exact code)
+     (cond (exit-in-progress
+	    (##sys#warn "\"exit\" called while processing on-exit tasks"))
+	   (else
+	    (##sys#cleanup-before-exit)
+	    (##core#inline "C_exit_runtime" code))))))
 
 (define implicit-exit-handler
   (make-parameter
@@ -3876,19 +4008,25 @@ EOF
 
 (define force-finalizers (make-parameter #t))
 
-(define ##sys#cleanup-before-exit
-  (lambda ()
-    (when (##sys#fudge 37)
-      (##sys#print "\n" #f ##sys#standard-error)
-      (##sys#dump-heap-state))
-    (when (##sys#fudge 13)
-      (##sys#print "[debug] forcing finalizers...\n" #f ##sys#standard-error) )
-    (when (force-finalizers) (##sys#force-finalizers)) ) )
+(define ##sys#cleanup-tasks '())
+
+(define (##sys#cleanup-before-exit)
+  (set! exit-in-progress #t)
+  (when (##sys#fudge 37)		; -:H given?
+    (##sys#print "\n" #f ##sys#standard-error)
+    (##sys#dump-heap-state))
+  (let loop ()
+    (let ((tasks ##sys#cleanup-tasks))
+      (set! ##sys#cleanup-tasks '())
+      (unless (null? tasks)
+	(for-each (lambda (t) (t)) tasks)
+	(loop))))    
+  (when (##sys#fudge 13)		; debug mode
+    (##sys#print "[debug] forcing finalizers...\n" #f ##sys#standard-error) )
+  (when (force-finalizers) (##sys#force-finalizers)) )
 
 (define (on-exit thunk)
-  (set! ##sys#cleanup-before-exit
-    (let ((old ##sys#cleanup-before-exit))
-      (lambda () (old) (thunk)) ) ) )
+  (set! ##sys#cleanup-tasks (cons thunk ##sys#cleanup-tasks)))
 
 
 ;;; Condition handling:
@@ -4143,6 +4281,10 @@ EOF
 	((41) (apply ##sys#signal-hook #:type-error loc "bad argument type - not an output-port" args))
 	((42) (apply ##sys#signal-hook #:file-error loc "port already closed" args))
 	((43) (apply ##sys#signal-hook #:type-error loc "cannot represent string with NUL bytes as C string" args))
+	((44) (apply ##sys#signal-hook #:memory-error loc "segmentation violation" args))
+	((45) (apply ##sys#signal-hook #:arithmetic-error loc "floating-point exception" args))
+	((46) (apply ##sys#signal-hook #:runtime-error loc "illegal instruction" args))
+	((47) (apply ##sys#signal-hook #:memory-error loc "bus error" args))
 	(else (apply ##sys#signal-hook #:runtime-error loc "unknown internal error" args)) ) ) ) )
 
 
@@ -4161,6 +4303,11 @@ EOF
 (define (##sys#permanent? x) (##core#inline "C_permanentp" x))
 (define (##sys#block-address x) (##core#inline_allocate ("C_block_address" 4) x))
 (define (##sys#locative? x) (##core#inline "C_locativep" x))
+(define (##sys#srfi-4-vector? x)
+  (and (##core#inline "C_blockp" x)
+       (##sys#generic-structure? x)
+       (memq (##sys#slot x 0)
+             '(u8vector u16vector s8vector s16vector u32vector s32vector f32vector f64vector))))
 
 (define (##sys#null-pointer)
   (let ([ptr (##sys#make-pointer)])
@@ -4228,7 +4375,7 @@ EOF
     str2 ) )
 
 (define (##sys#poke-c-string b i s) 
-  (##core#inline "C_poke_c_string" b i (##sys#make-c-string s)) )
+  (##core#inline "C_poke_c_string" b i (##sys#make-c-string s) s) )
 
 (define (##sys#poke-integer b i n) (##core#inline "C_poke_integer" b i n))
 (define (##sys#poke-double b i n) (##core#inline "C_poke_double" b i n))
@@ -4286,6 +4433,7 @@ EOF
    from to
    offset1 offset2 bytes) )
 
+;; OBSOLETE
 (define ##sys#zap-strings (foreign-lambda void "C_zap_strings" scheme-object))
 
 (define (##sys#block-pointer x)
@@ -4312,8 +4460,8 @@ EOF
 (define (##sys#foreign-integer-argument x) (##core#inline "C_i_foreign_integer_argumentp" x))
 (define (##sys#foreign-integer64-argument x) (##core#inline "C_i_foreign_integer64_argumentp" x))
 
-(define (##sys#foreign-unsigned-integer64-argument x)
-  (##core#inline "C_i_foreign_unsigned_integer64_argumentp" x))
+(define (##sys#foreign-unsigned-integer-argument x)
+  (##core#inline "C_i_foreign_unsigned_integer_argumentp" x))
 
 (define (##sys#foreign-unsigned-integer64-argument x)
   (##core#inline "C_i_foreign_unsigned_integer64_argumentp" x))
@@ -4339,7 +4487,8 @@ EOF
     ##sys#standard-output
     ##sys#standard-error
     ##sys#default-exception-handler
-    (##sys#grow-vector ##sys#current-parameter-vector (##sys#size ##sys#current-parameter-vector) #f) )
+    (##sys#vector-resize ##sys#current-parameter-vector
+			 (##sys#size ##sys#current-parameter-vector) #f) )
    name					; #6 name
    (##core#undefined)			; #7 end-exception
    '()					; #8 owned mutexes
@@ -4349,7 +4498,9 @@ EOF
    '()					; #12 recipients
    #f) )				; #13 unblocked by timeout?
 
-(define ##sys#primordial-thread (##sys#make-thread #f 'running 'primordial ##sys#default-thread-quantum))
+(define ##sys#primordial-thread
+  (##sys#make-thread #f 'running 'primordial ##sys#default-thread-quantum))
+
 (define ##sys#current-thread ##sys#primordial-thread)
 
 (define (##sys#make-mutex id owner)
@@ -4371,6 +4522,9 @@ EOF
        (##sys#setslot ct 1 (lambda () (return (##core#undefined))))
        (##sys#schedule) ) ) ) )
 
+(define (##sys#kill-other-threads thunk)
+  (thunk))	     ; does nothing, will be modified by scheduler.scm
+
 
 ;;; Interrupt-handling:
 
@@ -4380,14 +4534,15 @@ EOF
 
 (define (##sys#interrupt-hook reason state)
   (let loop ((reason reason))
-    (cond ((and reason (##sys#slot ##sys#signal-vector reason)) =>
-	   (lambda (handler)
-	     (handler reason)
-	     (loop (##core#inline "C_i_pending_interrupt" #f))))
-	  ((fx> (##sys#slot ##sys#pending-finalizers 0) 0)
+    (when reason
+      (let ((handler (##sys#slot ##sys#signal-vector reason)))
+	(when handler
+	  (handler reason))
+	(loop (##core#inline "C_i_pending_interrupt" #f)))))
+    (cond ((fx> (##sys#slot ##sys#pending-finalizers 0) 0)
 	   (##sys#run-pending-finalizers state) )
 	  ((procedure? state) (state))
-	  (else (##sys#context-switch state) ) ) ) )
+	  (else (##sys#context-switch state) ) ) )
 
 (define (##sys#dispatch-interrupt k)
   (##sys#interrupt-hook
@@ -4422,8 +4577,7 @@ EOF
       (let ([ln (open-output-string)])
 	(do ([c (##sys#read-char-0 port) (##sys#read-char-0 port)])
 	    ((or (eof-object? c) (char=? #\newline c))
-	     (cond [(char? c) (get-output-string ln)]
-		   [else c] ) )
+	     (if (eof-object? c) c (get-output-string ln)))
 	  (##sys#write-char-0 c ln) ) ) )
     (define (read-escaped-sexp port skip-brace?)
       (when skip-brace? (##sys#read-char-0 port))
@@ -4446,7 +4600,7 @@ EOF
 		(let ([str (open-output-string)]
 		      [end (readln port)] 
 		      [f #f] )
-		  (let ((endlen (string-length end)))
+		  (let ((endlen (if (eof-object? end) 0 (string-length end))))
 		    (cond
 		     ((fx= endlen 0)
 		      (##sys#read-warning
@@ -4457,7 +4611,7 @@ EOF
 		       port "Whitespace after #<< here-doc tag"))
 		     ))			    
 		  (do ([ln (readln port) (readln port)])
-		      ((or (eof-object? ln) (string=? end ln)) 
+		      ((or (eof-object? ln) (string=? end ln))
 		       (when (eof-object? ln)
 			 (##sys#read-warning port
 			  (##sys#format-here-doc-warning end)))
@@ -4475,7 +4629,7 @@ EOF
 		      (set! str (open-output-string))
 		      s))
 
-		  (let ((endlen (string-length end)))
+		  (let ((endlen (if (eof-object? end) 0 (string-length end))))
 		    (cond
 		     ((fx= endlen 0)
 		      (##sys#read-warning
@@ -4527,23 +4681,23 @@ EOF
 
 ;;; command-line handling
 
-(define ##sys#get-argument (##core#primitive "C_get_argument"))
 
 (define argv				; includes program name
-  (let ((cache #f))
+  (let ((cache #f)
+        (fetch-arg (foreign-lambda* c-string ((scheme-object i))
+                     "C_return(C_main_argv[C_unfix(i)]);")))
     (lambda ()
-      (or cache
-	  (let ((v (let loop ((i 0))
-		     (let ((arg (##sys#get-argument i)))
-		       (if arg
-			   (cons arg (loop (fx+ i 1)))
-			   '())))))
-	    (set! cache v)
-	    v)))))
+      (unless cache
+        (set! cache (do ((i (fx- main_argc 1) (fx- i 1))
+                         (v '() (cons (fetch-arg i) v)))
+                        ((fx< i 0) v))))
+      cache)))
 
 (define program-name
   (make-parameter
-   (or (##sys#get-argument 0) "<unknown>") ; may happen if embedded in C application
+   (if (null? (argv))
+       "<unknown>" ; may happen if embedded in C application
+       (car (argv)))
    (lambda (x)
      (##sys#check-string x 'program-name)
      x) ) )
@@ -4579,32 +4733,49 @@ EOF
 (define ##sys#set-finalizer! (##core#primitive "C_register_finalizer"))
 
 (define set-finalizer! 
-  (lambda (x y)
-    (when (fx>= (##sys#fudge 26) _max_pending_finalizers)
-      (if (##core#inline "C_resize_pending_finalizers" (fx* 2 _max_pending_finalizers))
-	  (begin
-	    (set! ##sys#pending-finalizers (##sys#grow-vector ##sys#pending-finalizers
-							      (fx+ (fx* 2 _max_pending_finalizers) 1)
-							      (##core#undefined)))
-	    (when (##sys#fudge 13)
-	      (print "[debug] too many finalizers (" (##sys#fudge 26)
-		     "), resized max finalizers to " _max_pending_finalizers "...") ) )
-	  (begin
-	    (when (##sys#fudge 13)
-	      (print "[debug] too many finalizers (" (##sys#fudge 26) "), forcing ...") )
-	    (##sys#force-finalizers) ) ) )
-    (##sys#set-finalizer! x y) ) )
+  (let ((string-append string-append))
+    (lambda (x y)
+      (when (fx>= (##sys#fudge 26) _max_pending_finalizers)
+	(cond ((##core#inline "C_resize_pending_finalizers" (fx* 2 _max_pending_finalizers))
+	       (set! ##sys#pending-finalizers
+		 (##sys#vector-resize ##sys#pending-finalizers
+				      (fx+ (fx* 2 _max_pending_finalizers) 1)
+				      (##core#undefined)))
+	       (when (##sys#fudge 13)
+		 (##sys#print 
+		  (string-append
+		   "[debug] too many finalizers (" 
+		   (##sys#number->string (##sys#fudge 26))
+		   "), resized max finalizers to "
+		   (##sys#number->string _max_pending_finalizers)
+		   "\n")
+		  #f ##sys#standard-error)))
+	      (else
+	       (when (##sys#fudge 13)
+		 (##sys#print 
+		  (string-append
+		   "[debug] too many finalizers ("
+		   (##sys#fudge 26)
+		   "), forcing ...\n")
+		  #f ##sys#standard-error))
+	       (##sys#force-finalizers) ) ) )
+      (##sys#set-finalizer! x y) ) ) )
 
 (define ##sys#run-pending-finalizers
-  (let ([vector-fill! vector-fill!]
-	[working #f] )
+  (let ((vector-fill! vector-fill!)
+	(string-append string-append)
+	(working #f) )
     (lambda (state)
       (unless working
 	(set! working #t)
 	(let* ((c (##sys#slot ##sys#pending-finalizers 0)) )
 	  (when (##sys#fudge 13)
-	    (print "[debug] running " c " finalizer(s) (" (##sys#fudge 26) " live, "
-		   (##sys#fudge 27) " allocated) ..."))
+	    (##sys#print 
+	     (string-append "[debug] running " (##sys#number->string c)
+			    " finalizer(s) (" (##sys#number->string (##sys#fudge 26))
+			    " live, " (##sys#number->string (##sys#fudge 27))
+			    " allocated) ...\n")
+	     #f ##sys#standard-error))
 	  (do ([i 0 (fx+ i 1)])
 	      ((fx>= i c))
 	    (let ([i2 (fx+ 1 (fx* i 2))])
@@ -4666,26 +4837,14 @@ EOF
 ;;; Promises:
 
 (define (##sys#make-promise proc)
-  (let ([result-ready #f]
-	[results #f] )
-    (##sys#make-structure
-     'promise
-     (lambda ()
-       (if result-ready
-	   (apply ##sys#values results)
-	   (##sys#call-with-values 
-	    proc
-	    (lambda xs
-	      (if result-ready
-		  (apply ##sys#values results)
-		  (begin
-		    (set! result-ready #t)
-		    (set! results xs)
-		    (apply ##sys#values results) ) ) ) ) ) ) ) ) )
+  (##sys#make-structure 'promise proc))
 
 (define (promise? x)
   (##sys#structure? x 'promise) )
 
+(define (make-promise obj)
+  (if (promise? obj) obj
+      (##sys#make-promise (lambda () obj))))
 
 ;;; Internal string-reader:
 
@@ -4835,69 +4994,6 @@ EOF
 	  #:type-error loc
 	  "bad argument type - locative cannot refer to objects of this type" 
 	  obj) ] ) )
-
-
-;;; Importing from other namespaces:
-;
-; Some of these should go. Are they used anywhere?
-
-(define ##sys#find-symbol 
-  (foreign-lambda scheme-object "C_find_symbol" scheme-object c-pointer) )
-
-(define ##sys#find-symbol-table
-  (foreign-lambda c-pointer "C_find_symbol_table" c-string) )
-
-(define ##sys#import
-  (let ([enum-syms! (foreign-lambda scheme-object "C_enumerate_symbols" c-pointer scheme-object)])
-    (lambda (ns	 . more)
-      (let-optionals more ([syms '()] [prefix #f])
-	(let ([prefix
-	       (and prefix
-		    (cond [(symbol? prefix) (##sys#slot prefix 1)]
-			  [(string? prefix) prefix]
-			  [else (##sys#signal-hook #:type-error "bad argument type - invalid prefix" prefix)] ) ) ] )
-	  (let ([nsp (##sys#find-symbol-table (##sys#make-c-string (##sys#slot ns 1) 'import))])
-	    (define (copy s str)
-	      (let ([s2 (##sys#intern-symbol
-			 (if prefix
-			     (##sys#string-append prefix str)
-			     str) ) ] )
-		(##sys#setslot s2 0 (##sys#slot s 0)) ) )
-	    (unless nsp (##sys#error "undefined namespace" ns))
-	    (if (null? syms)
-		(let ([it (cons -1 '())])
-		  (let loop ()
-		    (let ([s (enum-syms! nsp it)])
-		      (when s 
-			(copy s (##sys#slot s 1))
-			(loop) ) ) ) )
-		(for-each
-		 (lambda (ss)
-		   (let ([old #f]
-			 [new #f] )
-		     (if (and (pair? ss) (pair? (##sys#slot ss 1)))
-			 (begin
-			   (set! old (##sys#slot ss 0))
-			   (set! new (##sys#slot (##sys#slot ss 1) 0)) )
-			 (begin
-			   (set! old ss)
-			   (set! new ss) ) )
-		     (let* ([str (##sys#slot old 1)]
-			    [s (##sys#find-symbol str nsp)] )
-		       (unless s
-			 (##sys#error "symbol not exported from namespace" ss ns) )
-		       (copy s (##sys#slot new 1)) ) ) )
-		 syms) ) ) ) ) ) ) )
-
-(define (##sys#namespace-ref ns sym . default)
-  (let ([s (##sys#find-symbol 
-	    (cond [(symbol? sym) (##sys#slot sym 1)]
-		  [(string? sym) sym]
-		  [else (##sys#signal-hook #:type-error "bad argument type - not a valid import name" sym)] ) 
-	    (##sys#find-symbol-table (##sys#make-c-string (##sys#slot ns 1) '##sys#namespace-ref)) ) ] )
-    (cond [s (##core#inline "C_retrieve" s)]
-	  [(pair? default) (car default)]
-	  [else (##sys#error "symbol not exported from namespace" sym ns)] ) ) )
 
 
 ;;; More memory info

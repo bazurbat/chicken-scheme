@@ -1,6 +1,6 @@
 ;;;; posix.import.scm - import library for "posix" module
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -30,6 +30,7 @@
    call-with-input-pipe
    call-with-output-pipe
    change-directory
+   change-directory*
    change-file-mode
    change-file-owner
    close-input-pipe
@@ -120,6 +121,7 @@
    file-stat
    file-test-lock
    file-truncate
+   file-type
    file-unlock
    file-write
    file-write-access?
@@ -213,9 +215,11 @@
    signal-unmask!
    signal/abrt
    signal/alrm
+   signal/break
    signal/chld
    signal/cont
    signal/fpe
+   signal/bus
    signal/hup
    signal/ill
    signal/int

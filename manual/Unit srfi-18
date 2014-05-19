@@ -4,10 +4,17 @@
 
 == Unit srfi-18
 
-A simple multithreading package, largely following the specification
+A multithreading package, largely following the specification
 of [[http://srfi.schemers.org/srfi-18/srfi-18.html|SRFI-18]].  This
 document contains the core of the SRFI-18 documentation as well as
 information on Chicken deviations from the spec.
+
+The threads implemented in CHICKEN are so called "green" threads,
+based on first-class continuations. Native threads that map directly
+to the threads provided by the operating system are not supported.
+The advantage of this is that threads are very lightweight and
+somewhat larger degree of determinism. The disadvantage is that
+execution of Scheme code on multiple processor cores is not available.
 
 SRFI-18 defines the following multithreading datatypes:
 

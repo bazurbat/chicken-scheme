@@ -1,6 +1,6 @@
 # Makefile.bsd - configuration for BSD UNIX -*- Makefile -*-
 #
-# Copyright (c) 2008-2012, The Chicken Team
+# Copyright (c) 2008-2014, The Chicken Team
 # Copyright (c) 2007, Felix L. Winkelmann
 # All rights reserved.
 #
@@ -34,15 +34,9 @@ SRCDIR = ./
 # platform configuration
 
 ARCH ?= $(shell sh $(SRCDIR)/config-arch.sh)
-SYSTEM ?= $(shell uname -s)
-# options
 
-# OpenBSD base still uses GCC 3.3.5 which does not support -fwrapv
-ifeq ($(SYSTEM), OpenBSD)
-C_COMPILER_OPTIONS ?= -fno-strict-aliasing -DHAVE_CHICKEN_CONFIG_H
-else
+# options
 C_COMPILER_OPTIONS ?= -fno-strict-aliasing -fwrapv -DHAVE_CHICKEN_CONFIG_H
-endif
 
 ifdef DEBUGBUILD
 C_COMPILER_OPTIMIZATION_OPTIONS ?= -g -Wall -Wno-unused
@@ -56,7 +50,7 @@ endif
 LINKER_LINK_SHARED_LIBRARY_OPTIONS = -shared
 LINKER_LINK_SHARED_DLOADABLE_OPTIONS = -shared -Wl,-R"$(RUNTIME_LINKER_PATH)" -Wl,-L.
 LINKER_LINK_SHARED_PROGRAM_OPTIONS = -Wl,-R"$(RUNTIME_LINKER_PATH)"
-LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,-soname,lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX).so$(SONAME_VERSION)
+LIBCHICKEN_SO_LINKER_OPTIONS = -Wl,-soname,lib$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX).so.$(BINARYVERSION)
 LIBRARIES = -lm -lpthread
 NEEDS_RELINKING = yes
 USES_SONAME = yes
@@ -83,17 +77,22 @@ chicken-config.h: chicken-defaults.h
 	echo "#define HAVE_LONG_LONG 1" >>$@
 	echo "#define HAVE_MEMMOVE 1" >>$@
 	echo "#define HAVE_MEMORY_H 1" >>$@
+	echo "#define HAVE_POSIX_POLL 1" >>$@
 	echo "#define HAVE_SIGACTION 1" >>$@
 	echo "#define HAVE_SIGSETJMP 1" >>$@
+	echo "#define HAVE_SIGPROCMASK 1" >>$@
 	echo "#define HAVE_STDINT_H 1" >>$@
 	echo "#define HAVE_STDLIB_H 1" >>$@
 	echo "#define HAVE_STRERROR 1" >>$@
 	echo "#define HAVE_STRINGS_H 1" >>$@
 	echo "#define HAVE_STRING_H 1" >>$@
+	echo "#define HAVE_STRLCAT 1" >>$@
+	echo "#define HAVE_STRLCPY 1" >>$@
 	echo "#define HAVE_STRTOLL 1" >>$@
 	echo "#define HAVE_STRTOQ 1" >>$@
 	echo "#define HAVE_SYS_STAT_H 1" >>$@
 	echo "#define HAVE_SYS_TYPES_H 1" >>$@
+	echo "#define HAVE_SETENV 1" >>$@
 	echo "#define HAVE_UNISTD_H 1" >>$@
 	echo "#define HAVE_UNSIGNED_LONG_LONG 1" >>$@
 	echo "#define STDC_HEADERS 1" >>$@

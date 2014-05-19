@@ -24,9 +24,6 @@ efficient code by omitting unnecessary type-checks.
 CHICKEN provides an intra-procedural flow-analysis pass and two
 compiler options for using type-information in this manner:
 
-{{-scrutinize}} will look for possibly incorrectly typed arguments to
-library procedure calls and generate warnings in such cases.
-
 {{-specialize}} will replace certain generic library procedure calls
 with faster type-specific operations.
 
@@ -115,9 +112,10 @@ or {{:}} should follow the syntax given below:
 <tr><th>BASICTYPE</th><th>meaning</th></tr>
 <tr><td>{{*}}</td><td>any value</td></tr>
 <tr><td>{{blob}}</td><td>byte vector</td></tr>
-<tr><td>{{boolean}}</td><td>boolean</td></tr>
+<tr><td>{{boolean}}</td><td>true or false</td></tr>
 <tr><td>{{char}}</td><td>character</td></tr>
 <tr><td>{{eof}}</td><td>end-of-file object</td></tr>
+<tr><td>{{false}}</td><td>boolean false</td></tr>
 <tr><td>{{fixnum}}</td><td>word-sized integer</td></tr>
 <tr><td>{{float}}</td><td>floating-point number</td></tr>
 <tr><td>{{list}}</td><td>null or pair</td></tr>
@@ -131,6 +129,7 @@ or {{:}} should follow the syntax given below:
 <tr><td>{{procedure}}</td><td>unspecific procedure</td></tr>
 <tr><td>{{string}}</td><td>string</td></tr>
 <tr><td>{{symbol}}</td><td>symbol</td></tr>
+<tr><td>{{true}}</td><td>boolean true</td></tr>
 <tr><td>{{vector}}</td><td>vector</td></tr>
 </table>
 
@@ -203,6 +202,10 @@ Additionally, some aliases are allowed:
 <tr><td>{{port}}</td><td>{{(or input-port output-port)}}</td></tr>
 <tr><td>{{void}}</td><td>{{undefined}}</td></tr>
 </table>
+
+For portability the aliases {{&optional}} and {{&rest}} are allowed
+in procedure type declarations as an alternative to {{#!optional}} and
+{{#!rest}}, respectively.
 
 
 ==== Predicates

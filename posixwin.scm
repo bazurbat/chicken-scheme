@@ -1,6 +1,6 @@
 ;;;; posixwin.scm - Miscellaneous file- and process-handling routines, available on Windows
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -47,9 +47,8 @@
 ; create-fifo  fifo?
 ; prot/...
 ; map/...
-; map-file-to-memory  unmap-file-from-memory  memory-mapped-file-pointer  memory-mapped-file?
 ; set-alarm!
-; terminal-port?  terminal-name
+; terminal-name
 ; process-fork	process-wait
 ; parent-process-id
 ; process-signal
@@ -64,7 +63,7 @@
 
 (declare
   (unit posix)
-  (uses scheduler irregex extras utils files ports)
+  (uses scheduler irregex extras files ports)
   (disable-interrupts)
   (hide $quote-args-list $exec-setup $exec-teardown)
   (not inline ##sys#interrupt-hook ##sys#user-interrupt-hook)
@@ -73,22 +72,14 @@
 # define WIN32_LEAN_AND_MEAN
 #endif
 
-#if (defined(HAVE_WINSOCK2_H) && defined(HAVE_WS2TCPIP_H))
-# include <winsock2.h>
-# include <ws2tcpip.h>
-#else
-# include <winsock.h>
-#endif
-
-#include <signal.h>
-#include <errno.h>
-#include <io.h>
-#include <stdio.h>
-#include <process.h>
-#include <fcntl.h>
 #include <direct.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <io.h>
+#include <process.h>
+#include <signal.h>
 #include <utime.h>
-#include <time.h>
+#include <winsock2.h>
 
 #define ARG_MAX		256
 #define PIPE_BUF	512
@@ -101,7 +92,6 @@ static C_TLS char *C_exec_env[ ENV_MAX ];
 static C_TLS struct group *C_group;
 static C_TLS int C_pipefds[ 2 ];
 static C_TLS time_t C_secs;
-static C_TLS struct tm C_tm;
 
 /* pipe handles */
 static C_TLS HANDLE C_rd0, C_wr0, C_wr0_, C_rd1, C_wr1, C_rd1_;
@@ -146,6 +136,7 @@ static DIR * C_fcall
 opendir(const char *name)
 {
     int name_len = strlen(name);
+    int what_len = name_len + 3;
     DIR *dir = (DIR *)malloc(sizeof(DIR));
     char *what;
     if (!dir)
@@ -153,18 +144,18 @@ opendir(const char *name)
 	errno = ENOMEM;
 	return NULL;
     }
-    what = (char *)malloc(name_len + 3);
+    what = (char *)malloc(what_len);
     if (!what)
     {
 	free(dir);
 	errno = ENOMEM;
 	return NULL;
     }
-    strcpy(what, name);
+    C_strlcpy(what, name, what_len);
     if (strchr("\\/", name[name_len - 1]))
-	strcat(what, "*");
+	C_strlcat(what, "*", what_len);
     else
-	strcat(what, "\\*");
+	C_strlcat(what, "\\*", what_len);
 
     dir->handle = _findfirst(what, &dir->fdata);
     if (dir->handle == -1)
@@ -212,11 +203,6 @@ readdir(DIR * dir)
 # define P_DETACH P_NOWAIT
 #endif
 
-#define C_opendir(x,h)		C_set_block_item(h, 0, (C_word) opendir(C_c_string(x)))
-#define C_closedir(h)		(closedir((DIR *)C_block_item(h, 0)), C_SCHEME_UNDEFINED)
-#define C_readdir(h,e)		C_set_block_item(e, 0, (C_word) readdir((DIR *)C_block_item(h, 0)))
-#define C_foundfile(e,b)	(strcpy(C_c_string(b), ((struct dirent *) C_block_item(e, 0))->d_name), C_fix(strlen(((struct dirent *) C_block_item(e, 0))->d_name)))
-
 #define open_binary_input_pipe(a, n, name)   C_mpointer(a, _popen(C_c_string(name), "r"))
 #define open_text_input_pipe(a, n, name)     open_binary_input_pipe(a, n, name)
 #define open_binary_output_pipe(a, n, name)  C_mpointer(a, _popen(C_c_string(name), "w"))
@@ -231,27 +217,7 @@ readdir(DIR * dir)
 
 #define C_getenventry(i)   environ[ i ]
 
-#define C_putenv(s)	    C_fix(putenv((char *)C_data_pointer(s)))
 #define C_lstat(fn)	    C_stat(fn)
-
-static C_word C_fcall
-C_setenv(C_word x, C_word y)
-{
-    char *sx = C_data_pointer(x),
-	 *sy = C_data_pointer(y);
-    int n1 = C_strlen(sx),
-	n2 = C_strlen(sy);
-    char *buf = (char *)C_malloc(n1 + n2 + 2);
-    if (buf == NULL)
-	return(C_fix(0));
-    else
-    {
-	C_strcpy(buf, sx);
-	buf[ n1 ] = '=';
-	C_strcpy(buf + n1 + 1, sy);
-	return(C_fix(putenv(buf)));
-    }
-}
 
 static void C_fcall
 C_set_arg_string(char **where, int i, char *dat, int len)
@@ -302,23 +268,6 @@ C_free_arg_string(char **where) {
 #define C_umask(m)          C_fix(_umask(C_unfix(m)))
 
 #define C_ctime(n)	    (C_secs = (n), ctime(&C_secs))
-
-#define C_tm_set_08(v) \
-        (memset(&C_tm, 0, sizeof(struct tm)), \
-        C_tm.tm_sec = C_unfix(C_block_item(v, 0)), \
-        C_tm.tm_min = C_unfix(C_block_item(v, 1)), \
-        C_tm.tm_hour = C_unfix(C_block_item(v, 2)), \
-        C_tm.tm_mday = C_unfix(C_block_item(v, 3)), \
-        C_tm.tm_mon = C_unfix(C_block_item(v, 4)), \
-        C_tm.tm_year = C_unfix(C_block_item(v, 5)), \
-        C_tm.tm_wday = C_unfix(C_block_item(v, 6)), \
-        C_tm.tm_yday = C_unfix(C_block_item(v, 7)), \
-        C_tm.tm_isdst = (C_block_item(v, 8) != C_SCHEME_FALSE))
-
-#define C_tm_set(v) (C_tm_set_08(v), &C_tm)
-
-#define C_asctime(v)    (asctime(C_tm_set(v)))
-#define C_a_mktime(ptr, c, v)  C_flonum(ptr, mktime(C_tm_set(v)))
 
 #define TIME_STRING_MAXLENGTH 255
 static char C_time_string [TIME_STRING_MAXLENGTH + 1];
@@ -387,15 +336,16 @@ static errmap_t errmap[] =
 static void C_fcall
 set_errno(DWORD w32err)
 {
-    errmap_t *map = errmap;
-    for (; errmap->win32; ++map)
+    errmap_t *map;
+    for (map = errmap; map->win32; ++map)
     {
-	if (errmap->win32 == w32err)
+	if (map->win32 == w32err)
 	{
-	    errno = errmap->libc;
+	    errno = map->libc;
 	    return;
 	}
     }
+    errno = ENOSYS; /* For lack of anything better */
 }
 
 static int C_fcall
@@ -405,163 +355,8 @@ set_last_errno()
     return 0;
 }
 
-/* Functions for creating process with redirected I/O */
-
 static int C_fcall
-zero_handles()
-{
-    C_rd0 = C_wr0 = C_wr0_ = INVALID_HANDLE_VALUE;
-    C_rd1 = C_wr1 = C_rd1_ = INVALID_HANDLE_VALUE;
-    C_save0 = C_save1 = INVALID_HANDLE_VALUE;
-    return 1;
-}
-
-static int C_fcall
-close_handles()
-{
-    if (C_rd0 != INVALID_HANDLE_VALUE)
-	CloseHandle(C_rd0);
-    if (C_rd1 != INVALID_HANDLE_VALUE)
-	CloseHandle(C_rd1);
-    if (C_wr0 != INVALID_HANDLE_VALUE)
-	CloseHandle(C_wr0);
-    if (C_wr1 != INVALID_HANDLE_VALUE)
-	CloseHandle(C_wr1);
-    if (C_rd1_ != INVALID_HANDLE_VALUE)
-	CloseHandle(C_rd1_);
-    if (C_wr0_ != INVALID_HANDLE_VALUE)
-	CloseHandle(C_wr0_);
-    if (C_save0 != INVALID_HANDLE_VALUE)
-    {
-	SetStdHandle(STD_INPUT_HANDLE, C_save0);
-	CloseHandle(C_save0);
-    }
-    if (C_save1 != INVALID_HANDLE_VALUE)
-    {
-	SetStdHandle(STD_OUTPUT_HANDLE, C_save1);
-	CloseHandle(C_save1);
-    }
-    return zero_handles();
-}
-
-static int C_fcall
-redir_io()
-{
-    SECURITY_ATTRIBUTES sa;
-    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-    sa.bInheritHandle = TRUE;
-    sa.lpSecurityDescriptor = NULL;
-
-    zero_handles();
-
-    C_save0 = GetStdHandle(STD_INPUT_HANDLE);
-    C_save1 = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (!CreatePipe(&C_rd0, &C_wr0, &sa, 0)
-	    || !SetStdHandle(STD_INPUT_HANDLE, C_rd0)
-	    || !DuplicateHandle(GetCurrentProcess(), C_wr0, GetCurrentProcess(),
-		&C_wr0_, 0, FALSE, DUPLICATE_SAME_ACCESS)
-	    || !CreatePipe(&C_rd1, &C_wr1, &sa, 0)
-	    || !SetStdHandle(STD_OUTPUT_HANDLE, C_wr1)
-	    || !DuplicateHandle(GetCurrentProcess(), C_rd1, GetCurrentProcess(),
-		&C_rd1_, 0, FALSE, DUPLICATE_SAME_ACCESS))
-    {
-	set_last_errno();
-	close_handles();
-	return 0;
-    }
-
-    CloseHandle(C_wr0);
-    C_wr0 = INVALID_HANDLE_VALUE;
-    CloseHandle(C_rd1);
-    C_rd1 = INVALID_HANDLE_VALUE;
-    return 1;
-}
-
-static int C_fcall
-run_process(char *cmdline)
-{
-    PROCESS_INFORMATION pi;
-    STARTUPINFO si;
-
-    ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
-    ZeroMemory(&si, sizeof(STARTUPINFO));
-    si.cb = sizeof(STARTUPINFO);
-
-    C_wr0_ = C_rd1_ = INVALID_HANDLE_VALUE; /* these handles are saved */
-
-    if (CreateProcess(NULL, cmdline, NULL, NULL, TRUE, 0, NULL,
-		      NULL, &si, &pi))
-    {
-	CloseHandle(pi.hThread);
-
-	SetStdHandle(STD_INPUT_HANDLE, C_save0);
-	SetStdHandle(STD_OUTPUT_HANDLE, C_save1);
-	C_save0 = C_save1 = INVALID_HANDLE_VALUE;
-
-	CloseHandle(C_rd0);
-	CloseHandle(C_wr1);
-	C_rd0 = C_wr1 = INVALID_HANDLE_VALUE;
-	return (int)pi.hProcess;
-    }
-    else
-	return set_last_errno();
-}
-
-static int C_fcall
-pipe_write(int hpipe, void* buf, int count)
-{
-    DWORD done = 0;
-    if (WriteFile((HANDLE)hpipe, buf, count, &done, NULL))
-	return 1;
-    else
-	return set_last_errno();
-}
-
-static int C_fcall
-pipe_read(int hpipe)
-{
-    DWORD done = 0;
-    /* TODO:
-    if (!pipe_ready(hpipe))
-	go_to_sleep;
-    */
-    if (ReadFile((HANDLE)hpipe, &C_rdbuf, 1, &done, NULL))
-    {
-	if (done > 0) /* not EOF yet */
-	    return 1;
-	else
-	    return -1;
-    }
-    return set_last_errno();
-}
-
-static int C_fcall
-pipe_ready(int hpipe)
-{
-    DWORD avail = 0;
-    if (PeekNamedPipe((HANDLE)hpipe, NULL, 0, NULL, &avail, NULL) && avail)
-	return 1;
-    else
-    {
-	Sleep(0); /* give pipe a chance */
-	if (PeekNamedPipe((HANDLE)hpipe, NULL, 0, NULL, &avail, NULL))
-	    return (avail > 0);
-	else
-	    return 0;
-    }
-}
-
-#define C_zero_handles() C_fix(zero_handles())
-#define C_close_handles() C_fix(close_handles())
-#define C_redir_io() (redir_io() ? C_SCHEME_TRUE : C_SCHEME_FALSE)
-#define C_run_process(cmdline) C_fix(run_process(C_c_string(cmdline)))
-#define C_pipe_write(h, b, n) (pipe_write(C_unfix(h), C_c_string(b), C_unfix(n)) ? C_SCHEME_TRUE : C_SCHEME_FALSE)
-#define C_pipe_read(h) C_fix(pipe_read(C_unfix(h)))
-#define C_pipe_ready(h) (pipe_ready(C_unfix(h)) ? C_SCHEME_TRUE : C_SCHEME_FALSE)
-#define close_handle(h) CloseHandle((HANDLE)h)
-
-static int C_fcall
-process_wait(int h, int t)
+process_wait(C_word h, C_word t)
 {
     if (WaitForSingleObject((HANDLE)h, (t ? 0 : INFINITE)) == WAIT_OBJECT_0)
     {
@@ -577,7 +372,7 @@ process_wait(int h, int t)
 }
 
 #define C_process_wait(p, t) (process_wait(C_unfix(p), C_truep(t)) ? C_SCHEME_TRUE : C_SCHEME_FALSE)
-#define C_sleep(t) (Sleep(C_unfix(t) * 1000), C_SCHEME_UNDEFINED)
+#define C_sleep(t) (Sleep(C_unfix(t) * 1000), C_fix(0))
 
 static int C_fcall
 get_hostname()
@@ -684,12 +479,12 @@ get_shlcmd()
     /* Do we need to build the shell command pathname? */
     if (!strlen(C_shlcmd))
     {
-	if (sysinfo())
+	if (sysinfo()) /* for C_isNT */
 	{
 	    char *cmdnam = C_isNT ? "\\cmd.exe" : "\\command.com";
 	    UINT len = GetSystemDirectory(C_shlcmd, sizeof(C_shlcmd) - strlen(cmdnam));
 	    if (len)
-		strcpy(C_shlcmd + len, cmdnam);
+		C_strlcpy(C_shlcmd + len, cmdnam, sizeof(C_shlcmd));
 	    else
 		return set_last_errno();
 	}
@@ -719,31 +514,6 @@ get_user_name()
 
 #define C_get_user_name() (get_user_name() ? C_SCHEME_TRUE : C_SCHEME_FALSE)
 
-/* User Information */
-
-#if 0
-static int C_fcall
-get_netinfo()
-{
-    HINSTANCE hNet = 0,
-	      hLoc = 0;
-
-    if (isNT)
-	hNet = LoadLibrary("netapi32.dll");
-    else
-    {
-	hLoc = LoadLibrary("rlocal32.dll");
-	hNet = LoadLibrary("radmin32.dll");
-	//hNet = LoadLibrary("netapi.dll");
-    }
-
-    if (!hNet)
-	return 0;
-
-    
-}
-#endif
-
 /*
     Spawn a process directly.
     Params:
@@ -764,7 +534,7 @@ get_netinfo()
 */
 static int C_fcall
 C_process(const char * app, const char * cmdlin, const char ** env,
-	  int * phandle,
+	  C_word * phandle,
 	  int * pstdin_fd, int * pstdout_fd, int * pstderr_fd,
 	  int params)
 {
@@ -802,15 +572,13 @@ C_process(const char * app, const char * cmdlin, const char ** env,
 		HANDLE parent_end;
 		if (modes[i]=='r') { child_io_handles[i]=a; parent_end=b; }
 		else		   { parent_end=a; child_io_handles[i]=b; }
-		success = (io_fds[i] = _open_osfhandle((long)parent_end,0)) >= 0;
+		success = (io_fds[i] = _open_osfhandle((C_word)parent_end,0)) >= 0;
+                /* Make new handle inheritable */
+		if (success)
+		  success = SetHandleInformation(child_io_handles[i], HANDLE_FLAG_INHERIT, -1);
 	    }
 	}
     }
-
-    /****** make handles inheritable */
-
-    for (i=0; i<3 && success; ++i)
-	success = SetHandleInformation(child_io_handles[i], HANDLE_FLAG_INHERIT, -1);
 
 #if 0 /* Requires a sorted list by key! */
     /****** create environment block if necessary ****/
@@ -827,7 +595,7 @@ C_process(const char * app, const char * cmdlin, const char ** env,
 	    char* pb = (char*)envblk;
 	    for (p = env; *p; ++p)
 	    {
-		strcpy(pb, *p);
+		C_strlcpy(pb, *p, len+1);
 		pb += strlen(*p) + 1;
 	    }
 	    *pb = '\0';
@@ -871,18 +639,24 @@ C_process(const char * app, const char * cmdlin, const char ** env,
     /****** cleanup & return *********/
 
     /* parent must close child end */
-    for (i=0; i<3; ++i) CloseHandle(child_io_handles[i]);
+    for (i=0; i<3; ++i) {
+	if (child_io_handles[i] != NULL)
+	    CloseHandle(child_io_handles[i]);
+    }
 
     if (success)
     {
-	*phandle = (int)child_process;
+	*phandle = (C_word)child_process;
 	*pstdin_fd = io_fds[0];
 	*pstdout_fd = io_fds[1];
 	*pstderr_fd = io_fds[2];
     }
     else
     {
-	for (i=0; i<3; ++i) _close(io_fds[i]);
+	for (i=0; i<3; ++i) {
+	    if (io_fds[i] != -1)
+		_close(io_fds[i]);
+	}
     }
 
     return success;
@@ -1391,33 +1165,6 @@ EOF
       fd) ) )
 
 
-;;; Environment access:
-
-(define setenv
-  (lambda (var val)
-    (##sys#check-string var 'setenv)
-    (##sys#check-string val 'setenv)
-    (##core#inline "C_setenv" (##sys#make-c-string var 'setenv) (##sys#make-c-string val 'setenv))
-    (##core#undefined) ) )
-
-(define (unsetenv var)
-  (##sys#check-string var 'unsetenv)
-  (##core#inline "C_putenv" (##sys#make-c-string var 'unsetenv))
-  (##core#undefined) )
-
-(define get-environment-variables
-  (let ([get (foreign-lambda c-string "C_getenventry" int)])
-    (lambda ()
-      (let loop ([i 0])
-	(let ([entry (get i)])
-	  (if entry
-	      (let scan ([j 0])
-		(if (char=? #\= (##core#inline "C_subchar" entry j))
-		    (cons (cons (substring entry 0 j) (substring entry (fx+ j 1) (##sys#size entry))) (loop (fx+ i 1)))
-		    (scan (fx+ j 1)) ) )
-	      '() ) ) ) ) ) )
-
-
 ;;; Time related things:
 
 (define local-timezone-abbreviation
@@ -1650,7 +1397,9 @@ EOF
     (values pid #t _exstatus)
     (values -1 #f #f) ) )
 
-(define sleep (foreign-lambda int "C_sleep" int))
+(define (sleep s)
+  (##sys#check-exact s 'sleep)
+  (##core#inline "C_sleep" s))
 
 (define-foreign-variable _hostname c-string "C_hostname")
 (define-foreign-variable _osver c-string "C_osver")
@@ -1684,6 +1433,170 @@ EOF
 	(##sys#error 'current-user-name "cannot retrieve current user-name") ) ) )
 
 
+;;; memory mapped files
+
+#>
+#define PROT_NONE       0
+#define PROT_READ       1
+#define PROT_WRITE      2
+#define PROT_EXEC       4
+#define MAP_FILE        0
+#define MAP_SHARED      1
+#define MAP_PRIVATE     2
+#define MAP_FIXED       0x10
+#define MAP_ANONYMOUS   0x20
+
+// This value is available starting with Windows XP with SP2 
+// and Windows Server 2003 with SP1.
+#ifndef FILE_MAP_EXECUTE
+#define FILE_MAP_EXECUTE 0x20
+#endif//FILE_MAP_EXECUTE
+
+static int page_flags[] =
+{
+    0,
+    PAGE_READONLY,
+    PAGE_READWRITE,
+    PAGE_READWRITE,
+    PAGE_EXECUTE_READ,
+    PAGE_EXECUTE_READ,
+    PAGE_EXECUTE_READWRITE
+};
+
+static int file_flags[] =
+{
+    0,
+    FILE_MAP_READ,
+    FILE_MAP_READ|FILE_MAP_WRITE,
+    FILE_MAP_READ|FILE_MAP_WRITE,
+    FILE_MAP_READ|FILE_MAP_EXECUTE,
+    FILE_MAP_READ|FILE_MAP_EXECUTE,
+    FILE_MAP_READ|FILE_MAP_WRITE|FILE_MAP_EXECUTE
+};
+
+void* mmap(void* addr,int len,int prot,int flags,int fd,int off)
+{
+    HANDLE hMap;
+    HANDLE hFile;
+
+    void* ptr;
+
+    if ((flags & MAP_FIXED) || (flags & MAP_PRIVATE) || (flags & MAP_ANONYMOUS))
+    {
+        errno = EINVAL;
+        return (void*)-1;
+    }
+
+    /*
+     * We must cast because _get_osfhandle returns intptr_t, but it must
+     * be compared with INVALID_HANDLE_VALUE, which is a HANDLE type.
+     * Who comes up with this shit?
+     */
+    hFile = (HANDLE)_get_osfhandle(fd);
+    if (hFile == INVALID_HANDLE_VALUE)
+    {
+        return (void*)-1;
+    }
+
+    hMap = CreateFileMapping(
+            hFile,
+            NULL,
+            page_flags[prot & (PROT_READ|PROT_WRITE|PROT_EXEC)],
+            0,
+            0,
+            NULL);
+
+    if (hMap == INVALID_HANDLE_VALUE)
+    {
+        set_last_errno();
+        return (void*)-1;
+    }
+
+    ptr = MapViewOfFile(
+            hMap,
+            file_flags[prot & (PROT_READ|PROT_WRITE|PROT_EXEC)],
+            0,
+            off,
+            len);
+
+    if (ptr == NULL)
+    {
+        set_last_errno();
+        ptr = (void*)-1;
+    }
+
+    CloseHandle(hMap);
+
+    return ptr;
+}
+
+int munmap(void* addr,int len)
+{
+    if (UnmapViewOfFile(addr))
+    {
+        errno = 0;
+        return 0;
+    }
+    set_last_errno();
+    return -1;
+}
+
+int is_bad_mmap(void* p)
+{
+    void* bad_ptr;
+    bad_ptr = (void*)-1;
+    return p == bad_ptr;
+}
+<#
+
+(define-foreign-variable _prot_none int "PROT_NONE")
+(define-foreign-variable _prot_read int "PROT_READ")
+(define-foreign-variable _prot_write int "PROT_WRITE")
+(define-foreign-variable _prot_exec int "PROT_EXEC")
+(define-foreign-variable _map_file int "MAP_FILE")
+(define-foreign-variable _map_shared int "MAP_SHARED")
+(define-foreign-variable _map_fixed int "MAP_FIXED")
+(define-foreign-variable _map_private int "MAP_PRIVATE")
+(define-foreign-variable _map_anonymous int "MAP_ANONYMOUS")
+
+(define prot/none _prot_none)
+(define prot/read _prot_read)
+(define prot/write _prot_write)
+(define prot/exec _prot_exec)
+(define map/file _map_file)
+(define map/shared _map_shared)
+(define map/private _map_private)
+(define map/fixed _map_fixed)
+(define map/anonymous _map_anonymous)
+
+(define map-file-to-memory
+  (let ([mmap (foreign-lambda c-pointer "mmap" c-pointer integer int int int integer)]
+        [bad-mmap? (foreign-lambda bool "is_bad_mmap" c-pointer)] )
+    (lambda (addr len prot flag fd . off)
+      (let ([addr (if (not addr) (##sys#null-pointer) addr)]
+            [off (if (pair? off) (car off) 0)] )
+        (unless (and (##core#inline "C_blockp" addr) (##core#inline "C_specialp" addr))
+          (##sys#signal-hook #:type-error 'map-file-to-memory "bad argument type - not a foreign pointer" addr) )
+        (let ([addr2 (mmap addr len prot flag fd off)])
+          (when (bad-mmap? addr2)
+            (posix-error #:file-error 'map-file-to-memory "cannot map file to memory" addr len prot flag fd off) )
+          (##sys#make-structure 'mmap addr2 len) ) ) ) ) )
+
+(define unmap-file-from-memory
+  (let ([munmap (foreign-lambda int "munmap" c-pointer integer)] )
+    (lambda (mmap . len)
+      (##sys#check-structure mmap 'mmap 'unmap-file-from-memory)
+      (let ([len (if (pair? len) (car len) (##sys#slot mmap 2))])
+        (unless (eq? 0 (munmap (##sys#slot mmap 1) len))
+      (posix-error #:file-error 'unmap-file-from-memory "cannot unmap file from memory" mmap len) ) ) ) ) )
+
+(define (memory-mapped-file-pointer mmap)
+  (##sys#check-structure mmap 'mmap 'memory-mapped-file-pointer)
+  (##sys#slot mmap 1) )
+
+(define (memory-mapped-file? x)
+  (##sys#structure? x 'mmap) )
+
 ;;; unimplemented stuff:
 
 (define-syntax define-unimplemented
@@ -1702,7 +1615,6 @@ EOF
 (define-unimplemented current-effective-user-name)
 (define-unimplemented current-group-id)
 (define-unimplemented current-user-id)
-(define-unimplemented map-file-to-memory)
 (define-unimplemented file-link)
 (define-unimplemented file-lock)
 (define-unimplemented file-lock/blocking)
@@ -1713,7 +1625,6 @@ EOF
 (define-unimplemented get-groups)
 (define-unimplemented group-information)
 (define-unimplemented initialize-groups)
-(define-unimplemented memory-mapped-file-pointer)
 (define-unimplemented parent-process-id)
 (define-unimplemented process-fork)
 (define-unimplemented process-group-id)
@@ -1731,7 +1642,6 @@ EOF
 (define-unimplemented signal-masked?)
 (define-unimplemented signal-unmask!)
 (define-unimplemented terminal-name)
-(define-unimplemented unmap-file-from-memory)
 (define-unimplemented user-information)
 (define-unimplemented utc-time->seconds)
 (define-unimplemented string->time)
@@ -1739,13 +1649,7 @@ EOF
 (define errno/wouldblock 0)
 
 (define (fifo? _) #f)
-(define (memory-mapped-file? _) #f)
 
-(define map/anonymous 0)
-(define map/file 0)
-(define map/fixed 0)
-(define map/private 0)
-(define map/shared 0)
 (define open/fsync 0)
 (define open/noctty 0)
 (define open/nonblock 0)
@@ -1753,7 +1657,3 @@ EOF
 (define perm/isgid 0)
 (define perm/isuid 0)
 (define perm/isvtx 0)
-(define prot/exec 0)
-(define prot/none 0)
-(define prot/read 0)
-(define prot/write 0)

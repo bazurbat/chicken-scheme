@@ -1,6 +1,6 @@
 ;;;; c-platform.scm - Platform specific parameters and definitions
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -64,7 +64,7 @@
      (bound-to-procedure
        ##sys#profile-entry ##sys#profile-exit) ) ) )
 
-(define units-used-by-default '(library eval)) 
+(define units-used-by-default '(library eval chicken-syntax)) 
 (define words-per-flonum 4)
 (define parameter-limit 1024)
 (define small-parameter-limit 128)
@@ -87,24 +87,23 @@
     compile-syntax tag-pointers accumulate-profile
     disable-stack-overflow-checks raw specialize
     emit-external-prototypes-first release local inline-global
-    analyze-only dynamic scrutinize no-argc-checks no-procedure-checks
+    analyze-only dynamic 
+    scrutinize 				; OBSOLETE
+    no-argc-checks no-procedure-checks
     no-procedure-checks-for-toplevel-bindings module
     no-bound-checks no-procedure-checks-for-usual-bindings no-compiler-syntax
     no-parentheses-synonyms no-symbol-escape r5rs-syntax emit-all-import-libraries
-    strict-types clustering
-    lambda-lift unboxing		; OBSOLETE
+    strict-types clustering lfa2
     setup-mode no-module-registration) )
 
 (define valid-compiler-options-with-argument
   '(debug 
     output-file include-path heap-size stack-size unit uses keyword-style require-extension 
     inline-limit profile-name 
-    disable-warning			; OBSOLETE
     parenthesis-synonyms
     prelude postlude prologue epilogue nursery extend feature no-feature types
     emit-import-library emit-inline-file static-extension consult-inline-file
     emit-type-file
-    heap-growth heap-shrinkage heap-initial-size ; DEPRECATED
     ffi-define ffi-include-path) )
 
 
@@ -184,7 +183,7 @@
     ##sys#foreign-char-argument ##sys#foreign-fixnum-argument ##sys#foreign-flonum-argument
     ##sys#foreign-block-argument ##sys#foreign-struct-wrapper-argument
     ##sys#foreign-string-argument ##sys#foreign-pointer-argument ##sys#void
-    ##sys#foreign-integer-argument ##sys#foreign-unsigned-integer-argument ##sys#double->number
+    ##sys#foreign-integer-argument ##sys#foreign-unsigned-integer-argument
     ##sys#peek-fixnum ##sys#setislot ##sys#poke-integer ##sys#permanent? ##sys#values ##sys#poke-double
     ##sys#intern-symbol ##sys#make-symbol ##sys#null-pointer? ##sys#peek-byte
     ##sys#file-exists?) )
@@ -966,7 +965,6 @@
 (rewrite '##sys#setislot 17 3 "C_i_set_i_slot")
 (rewrite '##sys#poke-integer 17 3 "C_poke_integer")
 (rewrite '##sys#poke-double 17 3 "C_poke_double")
-(rewrite '##sys#double->number 17 1 "C_double_to_number")
 (rewrite 'string=? 17 2 "C_i_string_equal_p" "C_u_i_string_equal_p")
 (rewrite 'string-ci=? 17 2 "C_i_string_ci_equal_p")
 (rewrite '##sys#fudge 17 1 "C_fudge")

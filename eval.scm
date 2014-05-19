@@ -1,6 +1,6 @@
 ;;;; eval.scm - Interpreter for CHICKEN
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -57,6 +57,7 @@
 (define-foreign-variable install-egg-home c-string "C_INSTALL_EGG_HOME")
 (define-foreign-variable installation-home c-string "C_INSTALL_SHARE_HOME")
 (define-foreign-variable binary-version int "C_BINARY_VERSION")
+(define-foreign-variable uses-soname? bool "C_USES_SONAME")
 (define-foreign-variable install-lib-name c-string "C_INSTALL_LIB_NAME")
 
 (define ##sys#core-library-modules
@@ -70,6 +71,7 @@
 
 (define default-dynamic-load-libraries
   `(,(string-append "lib" install-lib-name)))
+
 (define-constant cygwin-default-dynamic-load-libraries '("cygchicken-0"))
 (define-constant macosx-load-library-extension ".dylib")
 (define-constant windows-load-library-extension ".dll")
@@ -260,6 +262,8 @@
 			  (cond ((not var)
 				 (lambda (v)
 				   (##sys#error "unbound variable" x)))
+				((##sys#symbol-has-toplevel-binding? var)
+				 (lambda v (##sys#slot var 0)))
 				(else
 				 (lambda v (##core#inline "C_retrieve" var))))))
                       (else
@@ -292,10 +296,13 @@
 	       (if x
 		   (lambda v #t)
 		   (lambda v #f) ) ]
-	      [(or (char? x)
+	      ((or (char? x)
 		   (eof-object? x)
-		   (string? x) )
-	       (lambda v x) ]
+		   (string? x)
+		   (blob? x)
+		   (vector? x)
+		   (##sys#srfi-4-vector? x))
+	       (lambda v x) )
 	      [(not (pair? x)) 
 	       (##sys#syntax-error/context "illegal non-atomic object" x)]
 	      [(symbol? (##sys#slot x 0))
@@ -430,7 +437,7 @@
 				       (##sys#setslot v2 i (##core#app (##sys#slot vlist 0) v)) )
 				     (##core#app body (cons v2 v)) ) ) ) ] ) ) ]
 
-			 ((##core#letrec)
+			 ((##core#letrec*)
 			  (let ((bindings (cadr x))
 				(body (cddr x)) )
 			    (compile
@@ -443,6 +450,23 @@
 					    bindings)
 			       (##core#let () ,@body) )
 			     e h tf cntr se)))
+
+			((##core#letrec)
+			 (let* ((bindings (cadr x))
+				(vars (map car bindings))
+				(tmps (map gensym vars))
+				(body (cddr x)) )
+			   (compile
+			    `(##core#let
+			      ,(map (lambda (b)
+				      (list (car b) '(##core#undefined))) 
+				    bindings)
+			      (##core#let ,(map (lambda (t b) (list t (cadr b))) tmps bindings)
+					  ,@(map (lambda (v t)
+						   `(##core#set! ,v ,t))
+						 vars tmps)
+					  (##core#let () ,@body) ) )
+			      e h tf cntr se)))
 
 			 [(##core#lambda)
 			  (##sys#check-syntax 'lambda x '(_ lambda-list . #(_ 1)) #f se)
@@ -804,12 +828,15 @@
 (define (##sys#eval/meta form)
   (let ((oldcm (##sys#current-module))
 	(oldme (##sys#macro-environment))
+	(oldce (##sys#current-environment))
 	(mme (##sys#meta-macro-environment))
+	(cme (##sys#current-meta-environment))
 	(aee (##sys#active-eval-environment)))
     (dynamic-wind
 	(lambda () 
 	  (##sys#current-module #f)
 	  (##sys#macro-environment mme)
+	  (##sys#current-environment cme)
 	  (##sys#active-eval-environment ##sys#current-meta-environment))
 	(lambda ()
 	  ((##sys#compile-to-closure
@@ -820,6 +847,8 @@
 	(lambda ()
 	  (##sys#active-eval-environment aee)
 	  (##sys#current-module oldcm)
+	  (##sys#current-meta-environment (##sys#current-environment))
+	  (##sys#current-environment oldce)
 	  (##sys#meta-macro-environment (##sys#macro-environment))
 	  (##sys#macro-environment oldme)))))
 
@@ -983,7 +1012,7 @@
 		    (lambda () #f)
 		    (lambda ()
 		      (let ((c1 (peek-char in)))
-			(when (char=? c1 (integer->char 127))
+			(when (eq? c1 (integer->char 127))
 			  (##sys#error 
 			   'load 
 			   (##sys#string-append 
@@ -1038,8 +1067,7 @@
 
 (define dynamic-load-libraries 
   (let ((ext
-	 (if (and (memq (software-version) '(linux netbsd openbsd freebsd))
-		  (not (zero? binary-version))) ; allow "configless" build
+	 (if uses-soname?
 	     (string-append
 	      ##sys#load-library-extension
 	      "." 
@@ -1077,7 +1105,8 @@
 	      (let loop ([libs libs])
 		(cond [(null? libs) #f]
 		      [(##sys#dload (##sys#make-c-string (##sys#slot libs 0) 'load-library) top)
-		       (unless (memq id ##sys#features) (set! ##sys#features (cons id ##sys#features)))
+		       (unless (memq id ##sys#features)
+			 (set! ##sys#features (cons id ##sys#features)))
 		       #t]
 		      [else (loop (##sys#slot libs 1))] ) ) ) ) ) ) ) )
 
@@ -1273,7 +1302,7 @@
 	(if (fixnum? n)
 	    (##sys#intern-symbol
 	     (##sys#string-append "srfi-" (##sys#number->string n)))
-	    (##sys#syntax-error 'require-extension "invalid SRFI number" n)))
+	    (##sys#syntax-error-hook 'require-extension "invalid SRFI number" n)))
       (define (doit id impid)
 	(cond ((or (memq id builtin-features)
 		   (if comp?
@@ -1298,8 +1327,8 @@
 		#t id) )
 	      ((memq id ##sys#explicit-library-modules)
 	       (let* ((info (##sys#extension-information id 'require-extension))
-		      (nr (assq 'import-only info))
-		      (s (assq 'syntax info)))
+		      (nr (and info (assq 'import-only info)))
+		      (s (and info (assq 'syntax info))))
 		 (values
 		  `(##core#begin
 		    ,@(if s `((##core#require-for-syntax ',id)) '())
@@ -1406,6 +1435,7 @@
        (if (memq (car s)
 		 '(import 
 		    require-extension 
+		    require-extension-for-syntax
 		    require-library 
 		    begin-for-syntax
 		    export 
@@ -1504,6 +1534,9 @@
       (##sys#flush-output ##sys#standard-output) ) ) )
 
 (define ##sys#clear-trace-buffer (foreign-lambda void "C_clear_trace_buffer"))
+(define (##sys#resize-trace-buffer i)
+  (##sys#check-exact i)
+  (##core#inline "C_resize_trace_buffer" i))
 
 (define repl
   (let ((eval eval)
@@ -1590,7 +1623,7 @@
 		(##sys#read-prompt-hook)
 		(let ([exp ((or ##sys#repl-read-hook read))])
 		  (unless (eof-object? exp)
-		    (when (char=? #\newline (##sys#peek-char-0 ##sys#standard-input))
+		    (when (eq? #\newline (##sys#peek-char-0 ##sys#standard-input))
 		      (##sys#read-char-0 ##sys#standard-input) )
 		    (##sys#clear-trace-buffer)
 		    (set! ##sys#unbound-in-eval '())

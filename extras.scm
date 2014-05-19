@@ -1,6 +1,6 @@
 ;;; extras.scm - Optional non-standard extensions
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -27,7 +27,7 @@
 
 (declare
  (unit extras)
- (uses data-structures ports))
+ (uses data-structures))
 
 (declare
   (hide fprintf0 generic-write) )
@@ -73,12 +73,6 @@
 
 (define read-line
   (let ()
-    (define (fixup str len)
-      (##sys#substring
-       str 0
-       (if (and (fx>= len 1) (char=? #\return (##core#inline "C_subchar" str (fx- len 1))))
-	   (fx- len 1)
-	   len) ) )
     (lambda args
       (let* ([parg (pair? args)]
 	     [p (if parg (car args) ##sys#standard-input)]
@@ -148,9 +142,6 @@
 (define (##sys#read-string! n dest port start)
   (cond ((eq? n 0) 0)
 	(else
-	 (when (##sys#slot port 6)	; peeked?
-	   (##core#inline "C_setsubchar" dest start (##sys#read-char-0 port))
-	   (set! start (fx+ start 1)) )
 	 (let ((rdstring (##sys#slot (##sys#slot port 2) 7)))
            (if rdstring
 	       (let loop ((start start) (n n) (m 0))
@@ -176,10 +167,10 @@
 (define (read-string! n dest #!optional (port ##sys#standard-input) (start 0))
   (##sys#check-input-port port #t 'read-string!)
   (##sys#check-string dest 'read-string!)
-  (when n
-    (##sys#check-exact n 'read-string!)
-    (when (fx> (fx+ start n) (##sys#size dest))
-      (set! n (fx- (##sys#size dest) start))))
+  (when n (##sys#check-exact n 'read-string!))
+  (let ((dest-size (##sys#size dest)))
+    (unless (and n (fx<= (fx+ start n) dest-size))
+      (set! n (fx- dest-size start))))
   (##sys#check-exact start 'read-string!)
   (##sys#read-string! n dest port start) )
 
@@ -331,31 +322,43 @@
 	       (##sys#print obj #t s)
 	       (out (get-output-string s) col) ) )
 	    ((procedure? obj)   (out (##sys#procedure->string obj) col))
-	    ((string? obj)      (if display?
-				    (out obj col)
-				    (let loop ((i 0) (j 0) (col (out "\"" col)))
-				      (if (and col (fx< j (string-length obj)))
-					  (let ((c (string-ref obj j)))
-                                            (if (or (char=? c #\\)
-                                                    (char=? c #\"))
-                                                (loop j
-                                                      (+ j 1)
-                                                      (out "\\"
-                                                           (out (##sys#substring obj i j)
-                                                                col)))
-                                                (cond ((assq c '((#\tab . "\\t")
-                                                                 (#\newline . "\\n")
-                                                                 (#\return . "\\r")))
-                                                       =>
-                                                       (lambda (a)
-                                                         (let ((col2
-                                                                (out (##sys#substring obj i j) col)))
-                                                           (loop (fx+ j 1)
-                                                                 (fx+ j 1)
-                                                                 (out (cdr a) col2)))))
-                                                      (else (loop i (fx+ j 1) col)))))
-					  (out "\""
-					       (out (##sys#substring obj i j) col))))))
+	    ((string? obj)
+             (if display?
+		 (out obj col)
+		 (let loop ((i 0) (j 0) (col (out "\"" col)))
+		   (if (and col (fx< j (string-length obj)))
+		       (let ((c (string-ref obj j)))
+			 (cond
+			  ((or (char=? c #\\)
+			       (char=? c #\"))
+			   (loop j
+				 (+ j 1)
+				 (out "\\"
+				      (out (##sys#substring obj i j)
+					   col))))
+			  ((or (char<? c #\x20)
+			       (char=? c #\x7f))
+			   (loop (fx+ j 1)
+				 (fx+ j 1)
+				 (let ((col2
+					(out (##sys#substring obj i j) col)))
+				   (cond ((assq c '((#\tab . "\\t")
+						    (#\newline . "\\n")
+						    (#\return . "\\r")
+						    (#\vtab . "\\v")
+						    (#\page . "\\f")
+						    (#\alarm . "\\a")
+						    (#\backspace . "\\b")))
+					  =>
+					  (lambda (a)
+					    (out (cdr a) col2)))
+					 (else
+					  (out (number->string (char->integer c) 16)
+					       (out (if (char<? c #\x10) "0" "")
+						    (out "\\x" col2))))))))
+			  (else (loop i (fx+ j 1) col))))
+		       (out "\""
+			    (out (##sys#substring obj i j) col))))))
 	    ((char? obj)        (if display?
 				    (out (make-string 1 obj) col)
 				    (let ([code (char->integer obj)])
@@ -545,7 +548,7 @@
 
       (define (style head)
 	(case head
-	  ((lambda let* letrec define) pp-lambda)
+	  ((lambda let* letrec letrec* define) pp-lambda)
 	  ((if set!)                   pp-if)
 	  ((cond)                      pp-cond)
 	  ((case)                      pp-case)

@@ -1,6 +1,6 @@
 ;;;; compiler-namespace.scm - private namespace declarations for compiler units
 ;
-; Copyright (c) 2009-2012, The Chicken Team
+; Copyright (c) 2009-2014, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -43,7 +43,7 @@
  c-ify-string
  callback-names
  call-info
- canonicalize-list-of-type
+ canonicalize-list-type
  canonicalize-begin-body
  canonicalize-expression
  check-and-open-input-file
@@ -139,7 +139,6 @@
  final-foreign-type
  find-early-refs
  find-inlining-candidates
- find-lambda-container
  finish-foreign-result
  first-analysis
  fold-boolean
@@ -224,6 +223,7 @@
  perform-high-level-optimizations
  perform-inlining!
  perform-pre-optimization!
+ perform-secondary-flow-analysis
  posv
  posq
  postponed-initforms

@@ -1,6 +1,6 @@
 ;;; ports.scm - Optional non-standard ports
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -32,8 +32,9 @@
 ; OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-(declare (unit ports))
-
+(declare
+  (unit ports)
+  (uses extras))
 
 (include "common-declarations.scm")
 

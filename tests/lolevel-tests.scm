@@ -40,13 +40,6 @@
 
 ; pointer->address
 
-; null-pointer
-
-; null-pointer?
-
-(assert (null-pointer? (null-pointer)))
-(assert (null-pointer? (address->pointer #x0)))
-
 ; object->pointer
 
 ; pointer->object
@@ -224,7 +217,10 @@
 (define ev-tstvec (object-evict tstvec))
 (assert (not (eq? tstvec ev-tstvec)))
 (assert (object-evicted? ev-tstvec))
-(object-release ev-tstvec)
+(set! ev-tstvec
+  (let ((old ev-tstvec))
+    (object-release old)
+    #f))
 
 ; object-evict-to-location
 
@@ -242,11 +238,12 @@
 
 (assert (vector? some-bar))
 
-; mutate-procedure
+; mutate-procedure!
 
 (assert (equal? '(1 2) (foo 1 2)))
 
-(define new-foo (mutate-procedure foo (lambda (new) (lambda args (cons 'hello (apply new args))))))
+(define new-foo
+  (mutate-procedure! foo (lambda (new) (lambda args (cons 'hello (apply new args))))))
 
 (assert (not (eq? foo new-foo)))
 

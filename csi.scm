@@ -1,6 +1,6 @@
 ;;;; csi.scm - Interpreter stub for CHICKEN
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -26,7 +26,8 @@
 
 
 (declare
-  (uses chicken-syntax ports extras)
+  (uses chicken-syntax)	; OBSOLETE (but left to allow older chicken's to bootstrap)
+  (uses ports extras)
   (usual-integrations)
   (disable-interrupts)
   (compile-syntax)
@@ -172,7 +173,8 @@ EOF
 ;;; Chop terminating separator from pathname:
 
 (define (dirseparator? c)
-  (or (char=? c #\\) (char=? c #\/)))
+  (or (and ##sys#windows-platform (char=? c #\\))
+      (char=? c #\/)))
 
 (define chop-separator 
   (let ([substring substring] )
@@ -506,6 +508,7 @@ EOF
                    Installation prefix:\t~A~%~
                    Extension path:  \t~A~%~
                    Include path:    \t~A~%~
+                   Keyword style:   \t~A~%~
                    Symbol-table load:\t~S~%  ~
                      Avg bucket length:\t~S~%  ~
                      Total symbol count:\t~S~%~
@@ -520,6 +523,7 @@ EOF
 		    prefix
 		    (repository-path)
 		    ##sys#include-pathnames
+		    (symbol->string (keyword-style))
 		    (shorten (vector-ref sinfo 0))
 		    (shorten (vector-ref sinfo 1))
 		    (vector-ref sinfo 2)
@@ -658,7 +662,7 @@ EOF
 	    [(procedure? x)
 	     (let ([len (##sys#size x)])
 	       (descseq 
-		(sprintf "procedure with code pointer ~X" (##sys#peek-unsigned-integer x 0))
+		(sprintf "procedure with code pointer 0x~X" (##sys#peek-unsigned-integer x 0))
 		##sys#size ##sys#slot 1) ) ]
 	    [(port? x)
 	     (fprintf out
@@ -988,6 +992,7 @@ EOF
 	     (##sys#error "missing or invalid script argument"))
 	   (program-name (cadr script))
 	   (command-line-arguments (cddr script))
+	   ;; 2012-10-04 (felix) left 'script activated to avoid breaking too much code
 	   (register-feature! 'script)	; DEPRECATED
 	   (register-feature! 'chicken-script)
 	   (set-cdr! (cdr script) '()) 
@@ -1015,13 +1020,11 @@ EOF
 			  (cons (cadr p) (loop (cddr p)))) ) ]
 		[else '()] ) ) )
       (define (loadinit)
-	(let ([fn (##sys#string-append "./" init-file)])
-	  (if (file-exists? fn)
-	      (load fn)
-	      (let* ([prefix (chop-separator (or (get-environment-variable "HOME") "."))]
-		     [fn (string-append prefix "/" init-file)] )
-		(when (file-exists? fn) 
-		  (load fn) ) ) ) ) )
+	(and-let* ((home (get-environment-variable "HOME"))
+		   ((not (string=? home ""))))
+	  (let ((fn (string-append (chop-separator home) "/" init-file)))
+	    (when (file-exists? fn)
+		  (load fn) ) ) ) )
       (define (evalstring str #!optional (rec (lambda _ (void))))
 	(let ((in (open-input-string str)))
 	  (do ([x (read in) (read in)])
@@ -1030,9 +1033,7 @@ EOF
       (when (member* '("-h" "-help" "--help") args)
 	(print-usage)
 	(exit 0) )
-      (when (member* '("-v"		; DEPRECATED
-		       "-version") 
-		     args)
+      (when (member "-version" args)
 	(print-banner)
 	(exit 0) )
       (when (member "-setup-mode" args)

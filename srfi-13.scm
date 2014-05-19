@@ -150,23 +150,24 @@
 	 . body) ) ) ) ) )
 
 (define-syntax let-string-start+end
-  (lambda (form r c)
-    (##sys#check-syntax 'let-string-start+end form '(_ _ _ _ _ . _))
-    (let ((s-e-r (cadr form))
-	  (proc (caddr form))
-	  (s-exp (cadddr form))
-	  (args-exp (car (cddddr form)))
-	  (body (cdr (cddddr form)))
-	  (%receive (r 'receive))
-	  (%string-parse-start+end (r 'string-parse-start+end))
-	  (%string-parse-final-start+end (r 'string-parse-final-start+end)))
-      (if (pair? (cddr s-e-r))
-	  `(,%receive (,(caddr s-e-r) ,(car s-e-r) ,(cadr s-e-r))
-		      (,%string-parse-start+end ,proc ,s-exp ,args-exp)
-		      ,@body)
-	  `(,%receive ,s-e-r
-		      (,%string-parse-final-start+end ,proc ,s-exp ,args-exp)
-		      ,@body) ) )))
+  (er-macro-transformer
+   (lambda (form r c)
+     (##sys#check-syntax 'let-string-start+end form '(_ _ _ _ _ . _))
+     (let ((s-e-r (cadr form))
+           (proc (caddr form))
+           (s-exp (cadddr form))
+           (args-exp (car (cddddr form)))
+           (body (cdr (cddddr form)))
+           (%receive (r 'receive))
+           (%string-parse-start+end (r 'string-parse-start+end))
+           (%string-parse-final-start+end (r 'string-parse-final-start+end)))
+       (if (pair? (cddr s-e-r))
+           `(,%receive (,(caddr s-e-r) ,(car s-e-r) ,(cadr s-e-r))
+                       (,%string-parse-start+end ,proc ,s-exp ,args-exp)
+                       ,@body)
+           `(,%receive ,s-e-r
+                       (,%string-parse-final-start+end ,proc ,s-exp ,args-exp)
+                       ,@body) ) ))))
 
 
 ;;; Returns three values: rest start end
@@ -1065,7 +1066,7 @@
   (let-optionals* criteria+start+end ((criteria char-set:whitespace) rest)
     (let-string-start+end (start end) string-trim-right s rest
       (cond ((string-skip-right s criteria start end) =>
-	     (lambda (i) (%substring/shared s 0 (+ 1 i))))
+	     (lambda (i) (%substring/shared s start (+ 1 i))))
 	    (else "")))))
 
 (define (string-trim-both s . criteria+start+end)
@@ -1207,17 +1208,17 @@
   (let-string-start+end (start end) string-index-right str maybe-start+end
     (cond ((char? criteria)
 	   (let lp ((i (- end 1)))
-	     (and (>= i 0)
+	     (and (>= i start)
 		  (if (char=? criteria (string-ref str i)) i
 		      (lp (- i 1))))))
 	  ((char-set? criteria)
 	   (let lp ((i (- end 1)))
-	     (and (>= i 0)
+	     (and (>= i start)
 		  (if (char-set-contains? criteria (string-ref str i)) i
 		      (lp (- i 1))))))
 	  ((procedure? criteria)
 	   (let lp ((i (- end 1)))
-	     (and (>= i 0)
+	     (and (>= i start)
 		  (if (criteria (string-ref str i)) i
 		      (lp (- i 1))))))
 	  (else (##sys#error 'string-index-right "Second param is neither char-set, char, or predicate procedure."
@@ -1249,19 +1250,19 @@
   (let-string-start+end (start end) string-skip-right str maybe-start+end
     (cond ((char? criteria)
 	   (let lp ((i (- end 1)))
-	     (and (>= i 0)
+	     (and (>= i start)
 		  (if (char=? criteria (string-ref str i))
 		      (lp (- i 1))
 		      i))))
 	  ((char-set? criteria)
 	   (let lp ((i (- end 1)))
-	     (and (>= i 0)
+	     (and (>= i start)
 		  (if (char-set-contains? criteria (string-ref str i))
 		      (lp (- i 1))
 		      i))))
 	  ((procedure? criteria)
 	   (let lp ((i (- end 1)))
-	     (and (>= i 0)
+	     (and (>= i start)
 		  (if (criteria (string-ref str i)) (lp (- i 1))
 		      i))))
 	  (else (##sys#error 'string-skip-right "CRITERIA param is neither char-set or char."

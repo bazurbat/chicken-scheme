@@ -1,6 +1,6 @@
 ;;; srfi-69.scm - Optional non-standard extensions
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -125,19 +125,20 @@
 (define-constant flonum-magic 331804471)
 
 (define-syntax $flonum-hash
-  (lambda (form r c)
-    (let ( (flo (cadr form))
-           (_%subbyte (r '%subbyte))
-           (_flonum-magic (r 'flonum-magic))
-           (_fx+ (r 'fx+))
-           (_fx* (r 'fx*))
-           (_fxshl (r 'fxshl)) )
-    `(,_fx* ,_flonum-magic
-            ,(let loop ( (idx (fx- (##sys#size 1.0) 1)) )
-               (if (fx= 0 idx)
-                   `(,_%subbyte ,flo 0)
-                   `(,_fx+ (,_%subbyte ,flo ,idx)
-                           (,_fxshl ,(loop (fx- idx 1)) 1)) ) ) ) ) ) )
+  (er-macro-transformer
+   (lambda (form r c)
+     (let ( (flo (cadr form))
+            (_%subbyte (r '%subbyte))
+            (_flonum-magic (r 'flonum-magic))
+            (_fx+ (r 'fx+))
+            (_fx* (r 'fx*))
+            (_fxshl (r 'fxshl)) )
+       `(,_fx* ,_flonum-magic
+               ,(let loop ( (idx (fx- (##sys#size 1.0) 1)) )
+                  (if (fx= 0 idx)
+                      `(,_%subbyte ,flo 0)
+                      `(,_fx+ (,_%subbyte ,flo ,idx)
+                              (,_fxshl ,(loop (fx- idx 1)) 1)) ) ) ) ) )) )
 
 (define (##sys#number-hash-hook obj rnd)
   (*equal?-hash obj rnd) )
@@ -262,19 +263,32 @@
 
 ;; Equal Hash:
 
-;XXX Be nice if these were parameters
-(define-constant recursive-hash-max-depth 4)
-(define-constant recursive-hash-max-length 4)
+(define-constant default-recursive-hash-max-depth 4)
+(define-constant default-recursive-hash-max-length 4)
+
+(define *recursive-hash-max-depth* default-recursive-hash-max-depth)
+(define recursive-hash-max-depth (make-parameter default-recursive-hash-max-depth
+        (lambda (x)
+          (if (and (fixnum? x) (positive? x))
+              (begin
+                (set! *recursive-hash-max-depth* x)
+                x )
+              *recursive-hash-max-depth*))))
+
+(define *recursive-hash-max-length* default-recursive-hash-max-length)
+(define recursive-hash-max-length (make-parameter default-recursive-hash-max-length
+        (lambda (x)
+          (if (and (fixnum? x) (positive? x))
+              (begin
+                (set! *recursive-hash-max-length* x)
+                x )
+              *recursive-hash-max-length*))))
 
 ;; NOTE - These refer to identifiers available only within the body of '*equal?-hash'.
 
-(define-inline (%%list-hash obj rnd)
-  (fx+ (length obj)
-       (recursive-atomic-hash (##sys#slot obj 0) depth rnd)) )
-
 (define-inline (%%pair-hash obj rnd)
-  (fx+ (fxshl (recursive-atomic-hash (##sys#slot obj 0) depth rnd) 16)
-	(recursive-atomic-hash (##sys#slot obj 1) depth rnd)) )
+  (fx+ (fxshl (recursive-hash (##sys#slot obj 0) (fx+ depth 1) rnd) 16)
+	(recursive-hash (##sys#slot obj 1) (fx+ depth 1) rnd)) )
 
 (define-inline (%%port-hash obj rnd)
   (fx+ (fxxor (fxshl (##sys#peek-fixnum obj 0) 4) rnd) ; Little extra "identity"
@@ -295,7 +309,7 @@
     (let ([len (##sys#size obj)])
       (let loop ([hsh (fx+ len (fxxor seed rnd))]
 		 [i start]
-		 [len (fx- (fxmin recursive-hash-max-length len) start)] )
+		 [len (fx- (fxmax start (fxmin *recursive-hash-max-length* len)) start)] )
 	(if (fx= len 0)
 	    hsh
 	    (loop (fx+ hsh
@@ -304,16 +318,9 @@
 		  (fx+ i 1)
 		  (fx- len 1) ) ) ) ) )
 
-  ; Don't recurse into structured objects
-  (define (recursive-atomic-hash obj depth rnd)
-    (if (or (%eqv?-hash-object? obj)
-	    (%byte-block? obj))
-	(recursive-hash obj (fx+ depth 1) rnd)
-	(fxxor other-hash-value rnd) ) )
-
   ; Recurse into structured objects
   (define (recursive-hash obj depth rnd)
-    (cond [(fx>= depth recursive-hash-max-depth)
+    (cond [(fx>= depth *recursive-hash-max-depth*)
 				  (fxxor other-hash-value rnd)]
 	  [(fixnum? obj)	  (fxxor obj rnd)]
 	  [(char? obj)		  (fxxor (char->integer obj) rnd)]
@@ -327,7 +334,6 @@
 	  [(number? obj)	  (%non-fixnum-number-hash obj rnd)]
 	  [(%immediate? obj)	  (fxxor unknown-immediate-hash-value rnd)]
 	  [(%byte-block? obj)	  (%string-hash obj rnd)]
-	  [(list? obj)		  (%%list-hash obj rnd)]
 	  [(pair? obj)		  (%%pair-hash obj rnd)]
 	  [(%port? obj)		  (%%port-hash obj rnd)]
 	  [(%special? obj)	  (%%special-vector-hash obj rnd)]
@@ -351,8 +357,8 @@
   (##sys#check-exact bound 'string-hash)
   (let ((str (if start
                  (let ((end (or end (##sys#size str))))
-                   (##sys#check-range start 0 (##sys#size str) 'string-hash) 
-                   (##sys#check-range end 0 (##sys#size str) 'string-hash) 
+                   (##sys#check-range start 0 (##sys#size str) 'string-hash)
+                   (##sys#check-range end 0 (##sys#size str) 'string-hash)
                    (##sys#substring str start end))
                  str)) )
     (%hash/limit (%string-hash str randomization) bound) ) )
@@ -363,8 +369,8 @@
   (##sys#check-exact bound 'string-ci-hash)
   (let ((str (if start
                  (let ((end (or end (##sys#size str))))
-                   (##sys#check-range start 0 (##sys#size str) 'string-hash) 
-                   (##sys#check-range end 0 (##sys#size str) 'string-hash) 
+                   (##sys#check-range start 0 (##sys#size str) 'string-hash)
+                   (##sys#check-range end 0 (##sys#size str) 'string-hash)
                    (##sys#substring str start end))
                  str)) )
     (%hash/limit (%string-ci-hash str randomization) bound) ) )
@@ -433,7 +439,7 @@
 	      (##sys#check-exact hash 'hash user-function)
 	      (if (and (fx< hash bound) (fx>= hash 0))
 		  hash
-		  (##sys#signal-hook 
+		  (##sys#signal-hook
 		   #:bounds-error 'hash
 		   "Hash value out of bounds" bound hash user-function) )))))))
 

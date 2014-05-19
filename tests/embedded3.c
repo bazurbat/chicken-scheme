@@ -3,6 +3,12 @@
 #include <chicken.h>
 #include <assert.h>
  
+#ifdef C_SIXTY_FOUR
+# define UWORD_FORMAT_STRING           "0x%016lx"
+#else
+# define UWORD_FORMAT_STRING           "0x%08x"
+#endif
+
 extern double baz(int);
  
 int main() {
@@ -20,7 +26,7 @@ int main() {
  
   C_gc_protect(data, 1);
  
-  printf("data: %08x\n", val);
+  printf("data: "UWORD_FORMAT_STRING"\n", (C_uword)val);
  
   status = CHICKEN_eval_string_to_string("(bar)", buffer, 255);
   assert(!status);
@@ -32,7 +38,7 @@ int main() {
   assert(status);
  
   printf("-> %s\n", buffer);
-  printf("data: %08x\n", val);
+  printf("data: "UWORD_FORMAT_STRING"\n", (C_uword)val);
  
   status = CHICKEN_eval_to_string(val, buffer, 255);
   assert(status);

@@ -103,7 +103,8 @@
 (check "abc" 1.2 string)
 (check 'abc 1.2 symbol)
 (check #\x 1.2 char)
-(check #t 1.2 boolean)
+(check #t #f true)
+(check #f #t false)
 (check (+ 1 2) 'a number)
 (check '(1) 1.2 (list fixnum))
 (check '(a) 1.2 (list symbol))
@@ -126,7 +127,8 @@
 (ms "abc" 1.2 string)
 (ms 'abc 1.2 symbol)
 (ms #\x 1.2 char)
-(ms #t 1.2 boolean)
+(ms #t #f true)
+(ms #f #t false)
 (ms '(1) 1.2 (list fixnum))
 (ms '(1 . 2) '() pair)
 (ms + 1.2 procedure)
@@ -147,8 +149,8 @@
 
 (define n 1)
 
-(checkp boolean? #t boolean)
-(checkp boolean? #f boolean)
+(checkp boolean? #t true)
+(checkp boolean? #f false)
 (checkp pair? '(1 . 2) pair)
 (checkp null? '() null)
 (checkp symbol? 'a symbol)
@@ -170,6 +172,10 @@
 (checkp pointer-vector? (make-pointer-vector 1) pointer-vector)
 (checkp pointer? (address->pointer 1) pointer)
 
+(mn list null)
+(mn pair null)
+(mn pair list)
+
 (mn (procedure (*) *) (procedure () *))
 (m (procedure (#!rest) . *) (procedure (*) . *))
 (mn (procedure () *) (procedure () * *))
@@ -177,6 +183,58 @@
 (mx (forall (a) (procedure (#!rest a) a)) +)
 (mx (list fixnum) '(1))
 
+;;; pairs
+
+(: car-alike  (forall (a) ((pair a *) -> a)))
+(: cadr-alike (forall (a) ((pair * (pair a *)) -> a)))
+(: cddr-alike (forall (a) ((pair * (pair * a)) -> a)))
+
+(define car-alike car)
+(define cadr-alike cadr)
+(define cddr-alike cddr)
+
+(: l (list-of fixnum))
+(: p (pair fixnum (pair fixnum fixnum)))
+
+(define l '(1 2 3))
+(define p '(1 2 . 3))
+
+(mx fixnum (car-alike l))
+(mx fixnum (car-alike p))
+(mx fixnum (cadr-alike l))
+(mx fixnum (cadr-alike p))
+(mx list   (cddr-alike l))
+(mx fixnum (cddr-alike p))
+
+(ms '(1 2) '() pair)
+(ms '() '(1 2) (not pair))
+(ms '() '(1 . 2) (not pair))
+(ms '(1 2) '(1 . 2) (pair * pair))
+(ms '(1 2) '(1 . 2) (pair * list))
+(ms '(1 2) '(1 2 3) (pair * (pair * null)))
+(ms '(1 2) '(1 2 3) (pair * (pair * (not pair))))
+(ms '(1 2 3) '(1 2) (pair * (pair * (not null))))
+(ms '(1 2 . 3) '(1 2 3) (pair * (pair * fixnum)))
+
+(m (pair * null) (list *))
+(m (pair * (list *)) (list * *))
+(m (pair * (list fixnum)) (list * fixnum))
+(m (pair fixnum (list *)) (list fixnum *))
+(m (pair fixnum (pair * null)) (list fixnum *))
+(m (pair fixnum (pair fixnum null)) (list fixnum fixnum))
+(m (pair char (list fixnum)) (list char fixnum))
+(m (pair fixnum (list char)) (list fixnum char))
+(m (pair fixnum (list fixnum)) (list fixnum fixnum))
+
+(mn (pair * *) list)
+(mn (pair * list) list)
+(mn (pair fixnum *) (list-of *))
+(mn (pair fixnum *) (list-of fixnum))
+(mn (pair fixnum (list-of *)) (list-of fixnum))
+(mn (pair fixnum (list-of fixnum)) (list-of fixnum))
+(mn (pair char (list-of fixnum)) (list-of fixnum))
+(mn (pair fixnum (list-of char)) (list-of fixnum))
+(mn (pair fixnum (list-of fixnum)) (list-of fixnum))
 
 ;;; special cases
 
@@ -191,6 +249,13 @@
 	(fixnum 'fixnum)
 	(float 'float)
 	(number 'number))))
+
+(assert
+ (eq? 'boolean
+      (compiler-typecase (vector-ref '#(#t #f) x)
+	(true 'true)
+	(false 'false)
+	(boolean 'boolean))))
 
 (mx float (vector-ref '#(1 2 3.4) 2))
 (mx fixnum (vector-ref '#(1 2 3.4) 0))

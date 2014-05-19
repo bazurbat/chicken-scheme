@@ -1,6 +1,6 @@
 # defaults.make - default settings -*- Makefile -*-
 #
-# Copyright (c) 2008-2012, The Chicken Team
+# Copyright (c) 2008-2014, The Chicken Team
 # Copyright (c) 2007, Felix L. Winkelmann
 # All rights reserved.
 #
@@ -27,7 +27,7 @@
 
 # basic parameters
 
-BINARYVERSION = 6
+BINARYVERSION = 7
 STACKDIRECTION ?= 1
 CROSS_CHICKEN ?= 0
 
@@ -48,7 +48,7 @@ INCDIR = $(PREFIX)/include/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
 DOCDIR = $(DATADIR)/doc
 VARDIR ?= $(LIBDIR)
 CHICKENLIBDIR = $(VARDIR)/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
-EGGDIR = $(CHICKENLIBDIR)/$(BINARYVERSION)
+EGGDIR ?= $(CHICKENLIBDIR)/$(BINARYVERSION)
 
 ifdef WINDOWS_SHELL
 SPREFIX = $(subst /,$(SEP),$(PREFIX))
@@ -109,7 +109,7 @@ INSTALL_PROGRAM ?= xcopy
 MAKEDIR_COMMAND ?= -mkdir
 else
 INSTALL_PROGRAM ?= install
-MAKEDIR_COMMAND ?= mkdir
+MAKEDIR_COMMAND ?= install
 endif
 POSTINSTALL_STATIC_LIBRARY ?= true
 POSTINSTALL_PROGRAM ?= true
@@ -194,11 +194,11 @@ INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS ?= /Y
 INSTALL_PROGRAM_EXECUTABLE_OPTIONS ?= /Y
 INSTALL_PROGRAM_FILE_OPTIONS ?= /Y
 else
-INSTALL_PROGRAM_SHARED_LIBRARY_OPTIONS ?= -m755
-INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS ?= -m644
-INSTALL_PROGRAM_EXECUTABLE_OPTIONS ?= -m755
-INSTALL_PROGRAM_FILE_OPTIONS ?= -m644
-MAKEDIR_COMMAND_OPTIONS ?= -p
+INSTALL_PROGRAM_SHARED_LIBRARY_OPTIONS ?= -m 755
+INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS ?= -m 644
+INSTALL_PROGRAM_EXECUTABLE_OPTIONS ?= -m 755
+INSTALL_PROGRAM_FILE_OPTIONS ?= -m 644
+MAKEDIR_COMMAND_OPTIONS ?= -d -m 755
 endif
 ASSEMBLER_OPTIONS ?= $(C_COMPILER_OPTIONS)
 ASSEMBLER_OUTPUT_OPTION ?= -o
@@ -225,11 +225,15 @@ COPY_COMMAND = copy /Y
 HOSTNAME ?= $(shell hostname)
 UNAME_SYS ?= Windows
 BUILD_TAG ?= compiled $(BUILD_TIME) on $(HOSTNAME) ($(UNAME_SYS))
+# This is a poor man's version of $(file ...) in GNU Make 4.0
+# We should consider replacing it when it becomes so widespread
+# that systems (Debian, OS X, Haiku, Mingw, Cygwin) are shipping it
+echo = echo $(3)$(1)$(2)
 else
 COPY_COMMAND = cp
+echo = echo '$(subst ','\'',$(3))'$(1)$(2)
+#' fix Emacs syntax highlighting
 endif
-COPYMANY =
-
 
 # file extensions
 
@@ -340,182 +344,195 @@ all: $(TARGETS)
 
 # generic part of chicken-config.h
 
-ifndef CUSTOM_CHICKEN_DEFAULTS
 chicken-defaults.h:
 ifdef OPTIMIZE_FOR_SPEED
-	echo "/* (this build was optimized for speed) */" >$@
+	$(call echo, >,$@, /* (this build was optimized for speed) */)
 endif
-	echo "#define C_CHICKEN_PROGRAM \"$(CHICKEN_PROGRAM)$(EXE)\"" >>$@
-	echo "#ifndef C_INSTALL_CC" >>$@
-	echo "# define C_INSTALL_CC \"$(C_COMPILER)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_INSTALL_CXX" >>$@
-	echo "# define C_INSTALL_CXX \"$(CXX_COMPILER)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_INSTALL_RC_COMPILER" >>$@
-	echo "# define C_INSTALL_RC_COMPILER \"$(RC_COMPILER)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_INSTALL_CFLAGS" >>$@
-	echo "# define C_INSTALL_CFLAGS \"$(C_COMPILER_OPTIONS) $(C_COMPILER_OPTIMIZATION_OPTIONS)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_INSTALL_LDFLAGS" >>$@
-	echo "# define C_INSTALL_LDFLAGS \"$(LINKER_OPTIONS) $(LINKER_OPTIMIZATION_OPTIONS)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_INSTALL_PREFIX" >>$@
-	echo "# define C_INSTALL_PREFIX \"$(PREFIX)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_INSTALL_SHARE_HOME" >>$@
-	echo "# define C_INSTALL_SHARE_HOME \"$(DATADIR)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_INSTALL_BIN_HOME" >>$@
-	echo "# define C_INSTALL_BIN_HOME \"$(BINDIR)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_INSTALL_EGG_HOME" >>$@
-	echo "# define C_INSTALL_EGG_HOME \"$(EGGDIR)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_INSTALL_LIB_HOME" >>$@
-	echo "# define C_INSTALL_LIB_HOME \"$(LIBDIR)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_INSTALL_LIB_NAME" >>$@
-	echo "# define C_INSTALL_LIB_NAME \"$(INSTALL_LIB_NAME)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_INSTALL_STATIC_LIB_HOME" >>$@
-	echo "# define C_INSTALL_STATIC_LIB_HOME \"$(LIBDIR)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_INSTALL_INCLUDE_HOME" >>$@
-	echo "# define C_INSTALL_INCLUDE_HOME \"$(INCDIR)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_INSTALL_MORE_LIBS" >>$@
-	echo "# define C_INSTALL_MORE_LIBS \"$(LIBRARIES)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_INSTALL_MORE_STATIC_LIBS" >>$@
-	echo "# define C_INSTALL_MORE_STATIC_LIBS \"$(LIBRARIES)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_DEFAULT_TARGET_HEAP_SIZE" >>$@
-	echo "# define C_DEFAULT_TARGET_HEAP_SIZE 0" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_STACK_GROWS_DOWNWARD" >>$@
-	echo "# define C_STACK_GROWS_DOWNWARD $(STACKDIRECTION)" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_TARGET_MORE_LIBS" >>$@
-	echo "# define C_TARGET_MORE_LIBS \"$(TARGET_LIBRARIES)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_TARGET_MORE_STATIC_LIBS" >>$@
-	echo "# define C_TARGET_MORE_STATIC_LIBS \"$(TARGET_LIBRARIES)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_TARGET_CC" >>$@
-	echo "# define C_TARGET_CC \"$(TARGET_C_COMPILER)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_TARGET_CXX" >>$@
-	echo "# define C_TARGET_CXX \"$(TARGET_CXX_COMPILER)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_TARGET_RC_COMPILER" >>$@
-	echo "# define C_TARGET_RC_COMPILER \"$(TARGET_RC_COMPILER)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_TARGET_CFLAGS" >>$@
-	echo "# define C_TARGET_CFLAGS \"$(TARGET_C_COMPILER_OPTIONS) $(TARGET_C_COMPILER_OPTIMIZATION_OPTIONS)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_TARGET_LDFLAGS" >>$@
-	echo "# define C_TARGET_LDFLAGS \"$(TARGET_LINKER_OPTIONS) $(TARGET_LINKER_OPTIMIZATION_OPTIONS)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_TARGET_FEATURES" >>$@
-	echo "# define C_TARGET_FEATURES \"$(TARGET_FEATURES)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_CROSS_CHICKEN" >>$@
-	echo "# define C_CROSS_CHICKEN $(CROSS_CHICKEN)" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_TARGET_PREFIX" >>$@
-	echo "# define C_TARGET_PREFIX \"$(TARGET_PREFIX)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_TARGET_BIN_HOME" >>$@
-	echo "# define C_TARGET_BIN_HOME \"$(TARGET_PREFIX)/bin\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_TARGET_LIB_HOME" >>$@
-	echo "# define C_TARGET_LIB_HOME \"$(TARGET_PREFIX)/lib\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_TARGET_LIB_NAME" >>$@
-	echo "# define C_TARGET_LIB_NAME \"$(TARGET_LIB_NAME)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_TARGET_RUN_LIB_HOME" >>$@
-	echo "# define C_TARGET_RUN_LIB_HOME \"$(TARGET_RUN_PREFIX)/lib\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_TARGET_SHARE_HOME" >>$@
-	echo "# define C_TARGET_SHARE_HOME \"$(TARGET_PREFIX)/share\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_TARGET_INCLUDE_HOME" >>$@
-	echo "# define C_TARGET_INCLUDE_HOME \"$(TARGET_PREFIX)/include/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_TARGET_STATIC_LIB_HOME" >>$@
-	echo "# define C_TARGET_STATIC_LIB_HOME \"$(TARGET_PREFIX)/lib\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_CHICKEN_PROGRAM" >>$@
-	echo "# define C_CHICKEN_PROGRAM \"$(CHICKEN_PROGRAM)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_CSC_PROGRAM" >>$@
-	echo "# define C_CSC_PROGRAM \"$(CSC_PROGRAM)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_CSI_PROGRAM" >>$@
-	echo "# define C_CSI_PROGRAM \"$(CSI_PROGRAM)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_CHICKEN_BUG_PROGRAM" >>$@
-	echo "# define C_CHICKEN_BUG_PROGRAM \"$(CHICKEN_BUG_PROGRAM)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_CHICKEN_INSTALL_PROGRAM" >>$@
-	echo "# define C_CHICKEN_INSTALL_PROGRAM \"$(CHICKEN_INSTALL_PROGRAM)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_CHICKEN_UNINSTALL_PROGRAM" >>$@
-	echo "# define C_CHICKEN_UNINSTALL_PROGRAM \"$(CHICKEN_UNINSTALL_PROGRAM)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_CHICKEN_STATUS_PROGRAM" >>$@
-	echo "# define C_CHICKEN_STATUS_PROGRAM \"$(CHICKEN_STATUS_PROGRAM)\"" >>$@
-	echo "#endif" >>$@
-	echo "#ifndef C_WINDOWS_SHELL" >>$@
-ifdef WINDOWS_SHELL
-	echo "# define C_WINDOWS_SHELL 1" >>$@
+ifdef DEBUGBUILD
+	$(call echo, >>, $@,#define DEBUGBUILD 1)
+endif
+	$(call echo, >>, $@,#define C_CHICKEN_PROGRAM "$(CHICKEN_PROGRAM)$(EXE)")
+	$(call echo, >>, $@,#ifndef C_INSTALL_CC)
+	$(call echo, >>, $@,# define C_INSTALL_CC "$(C_COMPILER)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_INSTALL_CXX)
+	$(call echo, >>, $@,# define C_INSTALL_CXX "$(CXX_COMPILER)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_INSTALL_POSTINSTALL_PROGRAM)
+	$(call echo, >>, $@,# define C_INSTALL_POSTINSTALL_PROGRAM "$(POSTINSTALL_PROGRAM)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_INSTALL_RC_COMPILER)
+	$(call echo, >>, $@,# define C_INSTALL_RC_COMPILER "$(RC_COMPILER)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_INSTALL_CFLAGS)
+	$(call echo, >>, $@,# define C_INSTALL_CFLAGS "$(C_COMPILER_OPTIONS) $(C_COMPILER_OPTIMIZATION_OPTIONS)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_INSTALL_LDFLAGS)
+	$(call echo, >>, $@,# define C_INSTALL_LDFLAGS "$(LINKER_OPTIONS) $(LINKER_OPTIMIZATION_OPTIONS)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_INSTALL_PREFIX)
+	$(call echo, >>, $@,# define C_INSTALL_PREFIX "$(PREFIX)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_INSTALL_SHARE_HOME)
+	$(call echo, >>, $@,# define C_INSTALL_SHARE_HOME "$(DATADIR)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_INSTALL_BIN_HOME)
+	$(call echo, >>, $@,# define C_INSTALL_BIN_HOME "$(BINDIR)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_INSTALL_EGG_HOME)
+	$(call echo, >>, $@,# define C_INSTALL_EGG_HOME "$(EGGDIR)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_INSTALL_LIB_HOME)
+	$(call echo, >>, $@,# define C_INSTALL_LIB_HOME "$(LIBDIR)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_INSTALL_LIB_NAME)
+	$(call echo, >>, $@,# define C_INSTALL_LIB_NAME "$(INSTALL_LIB_NAME)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_INSTALL_STATIC_LIB_HOME)
+	$(call echo, >>, $@,# define C_INSTALL_STATIC_LIB_HOME "$(LIBDIR)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_INSTALL_INCLUDE_HOME)
+	$(call echo, >>, $@,# define C_INSTALL_INCLUDE_HOME "$(INCDIR)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_INSTALL_MORE_LIBS)
+	$(call echo, >>, $@,# define C_INSTALL_MORE_LIBS "$(LIBRARIES)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_INSTALL_MORE_STATIC_LIBS)
+	$(call echo, >>, $@,# define C_INSTALL_MORE_STATIC_LIBS "$(LIBRARIES)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_DEFAULT_TARGET_HEAP_SIZE)
+	$(call echo, >>, $@,# define C_DEFAULT_TARGET_HEAP_SIZE 0)
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_STACK_GROWS_DOWNWARD)
+	$(call echo, >>, $@,# define C_STACK_GROWS_DOWNWARD $(STACKDIRECTION))
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_TARGET_MORE_LIBS)
+	$(call echo, >>, $@,# define C_TARGET_MORE_LIBS "$(TARGET_LIBRARIES)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_TARGET_MORE_STATIC_LIBS)
+	$(call echo, >>, $@,# define C_TARGET_MORE_STATIC_LIBS "$(TARGET_LIBRARIES)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_TARGET_CC)
+	$(call echo, >>, $@,# define C_TARGET_CC "$(TARGET_C_COMPILER)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_TARGET_CXX)
+	$(call echo, >>, $@,# define C_TARGET_CXX "$(TARGET_CXX_COMPILER)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_TARGET_RC_COMPILER)
+	$(call echo, >>, $@,# define C_TARGET_RC_COMPILER "$(TARGET_RC_COMPILER)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_TARGET_CFLAGS)
+	$(call echo, >>, $@,# define C_TARGET_CFLAGS "$(TARGET_C_COMPILER_OPTIONS) $(TARGET_C_COMPILER_OPTIMIZATION_OPTIONS)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_TARGET_LDFLAGS)
+	$(call echo, >>, $@,# define C_TARGET_LDFLAGS "$(TARGET_LINKER_OPTIONS) $(TARGET_LINKER_OPTIMIZATION_OPTIONS)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_TARGET_FEATURES)
+	$(call echo, >>, $@,# define C_TARGET_FEATURES "$(TARGET_FEATURES)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_CROSS_CHICKEN)
+	$(call echo, >>, $@,# define C_CROSS_CHICKEN $(CROSS_CHICKEN))
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_TARGET_PREFIX)
+	$(call echo, >>, $@,# define C_TARGET_PREFIX "$(TARGET_PREFIX)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_TARGET_BIN_HOME)
+	$(call echo, >>, $@,# define C_TARGET_BIN_HOME "$(TARGET_PREFIX)/bin")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_TARGET_LIB_HOME)
+	$(call echo, >>, $@,# define C_TARGET_LIB_HOME "$(TARGET_PREFIX)/lib")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_TARGET_LIB_NAME)
+	$(call echo, >>, $@,# define C_TARGET_LIB_NAME "$(TARGET_LIB_NAME)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_TARGET_RUN_LIB_HOME)
+ifdef DLLSINPATH
+	$(call echo, >>, $@,# define C_TARGET_RUN_LIB_HOME "$(TARGET_RUN_PREFIX)/bin")
 else
-	echo "# define C_WINDOWS_SHELL 0" >>$@
+	$(call echo, >>, $@,# define C_TARGET_RUN_LIB_HOME "$(TARGET_RUN_PREFIX)/lib")
 endif
-	echo "#endif" >>$@
-	echo "#ifndef C_BINARY_VERSION" >>$@
-	echo "# define C_BINARY_VERSION $(BINARYVERSION)" >>$@
-	echo "#endif" >>$@
-	echo "/* END OF FILE */" >>$@
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_TARGET_SHARE_HOME)
+	$(call echo, >>, $@,# define C_TARGET_SHARE_HOME "$(TARGET_PREFIX)/share")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_TARGET_INCLUDE_HOME)
+	$(call echo, >>, $@,# define C_TARGET_INCLUDE_HOME "$(TARGET_PREFIX)/include/chicken")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_TARGET_STATIC_LIB_HOME)
+	$(call echo, >>, $@,# define C_TARGET_STATIC_LIB_HOME "$(TARGET_PREFIX)/lib")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_CHICKEN_PROGRAM)
+	$(call echo, >>, $@,# define C_CHICKEN_PROGRAM "$(CHICKEN_PROGRAM)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_CSC_PROGRAM)
+	$(call echo, >>, $@,# define C_CSC_PROGRAM "$(CSC_PROGRAM)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_CSI_PROGRAM)
+	$(call echo, >>, $@,# define C_CSI_PROGRAM "$(CSI_PROGRAM)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_CHICKEN_BUG_PROGRAM)
+	$(call echo, >>, $@,# define C_CHICKEN_BUG_PROGRAM "$(CHICKEN_BUG_PROGRAM)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_CHICKEN_INSTALL_PROGRAM)
+	$(call echo, >>, $@,# define C_CHICKEN_INSTALL_PROGRAM "$(CHICKEN_INSTALL_PROGRAM)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_CHICKEN_UNINSTALL_PROGRAM)
+	$(call echo, >>, $@,# define C_CHICKEN_UNINSTALL_PROGRAM "$(CHICKEN_UNINSTALL_PROGRAM)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_CHICKEN_STATUS_PROGRAM)
+	$(call echo, >>, $@,# define C_CHICKEN_STATUS_PROGRAM "$(CHICKEN_STATUS_PROGRAM)")
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_WINDOWS_SHELL)
+ifdef WINDOWS_SHELL
+	$(call echo, >>, $@,# define C_WINDOWS_SHELL 1)
+else
+	$(call echo, >>, $@,# define C_WINDOWS_SHELL 0)
 endif
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_BINARY_VERSION)
+	$(call echo, >>, $@,# define C_BINARY_VERSION $(BINARYVERSION))
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,#ifndef C_USES_SONAME)
+ifdef USES_SONAME
+	$(call echo, >>, $@,# define C_USES_SONAME 1)
+else
+	$(call echo, >>, $@,# define C_USES_SONAME 0)
+endif
+	$(call echo, >>, $@,#endif)
+	$(call echo, >>, $@,/* END OF FILE */)
 
-ifndef CUSTOM_RC_FILE
 chicken-install.rc:
-	echo '/* GENERATED */' >$@
-	echo '1 24 MOVEABLE PURE' >>$@
-	echo 'BEGIN' >>$@
-	echo '  "<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>\r\n"' >>$@
-	echo '  "<assembly xmlns=""urn:schemas-microsoft-com:asm.v1"" manifestVersion=""1.0"">\r\n"' >>$@
-	echo '  "  <assemblyIdentity version=""1.0.0.0"" processorArchitecture=""*"" name=""chicken-install"" type=""win32""/>\r\n"' >>$@
-	echo '  "  <ms_asmv2:trustInfo xmlns:ms_asmv2=""urn:schemas-microsoft-com:asm.v2"">\r\n"' >>$@
-	echo '  "    <ms_asmv2:security>\r\n"' >>$@
-	echo '  "      <ms_asmv2:requestedPrivileges>\r\n"' >>$@
-	echo '  "        <ms_asmv2:requestedExecutionLevel level=""asInvoker"" uiAccess=""false""/>\r\n"' >>$@
-	echo '  "      </ms_asmv2:requestedPrivileges>\r\n"' >>$@
-	echo '  "    </ms_asmv2:security>\r\n"' >>$@
-	echo '  "  </ms_asmv2:trustInfo>\r\n"' >>$@
-	echo '  "</assembly>\r\n"' >>$@
-	echo 'END' >>$@
-	echo '/* END OF FILE */' >>$@
+	$(call echo, >, $@,/* GENERATED */)
+	$(call echo, >>, $@,1 24 MOVEABLE PURE)
+	$(call echo, >>, $@,BEGIN)
+	$(call echo, >>, $@,  "<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>\r\n")
+	$(call echo, >>, $@,  "<assembly xmlns=""urn:schemas-microsoft-com:asm.v1"" manifestVersion=""1.0"">\r\n")
+	$(call echo, >>, $@,  "  <assemblyIdentity version=""1.0.0.0"" processorArchitecture=""*"" name=""$(PROGRAM_PREFIX)chicken-install$(PROGRAM_SUFFIX)"" type=""win32""/>\r\n")
+	$(call echo, >>, $@,  "  <ms_asmv2:trustInfo xmlns:ms_asmv2=""urn:schemas-microsoft-com:asm.v2"">\r\n")
+	$(call echo, >>, $@,  "    <ms_asmv2:security>\r\n")
+	$(call echo, >>, $@,  "      <ms_asmv2:requestedPrivileges>\r\n")
+	$(call echo, >>, $@,  "        <ms_asmv2:requestedExecutionLevel level=""asInvoker"" uiAccess=""false""/>\r\n")
+	$(call echo, >>, $@,  "      </ms_asmv2:requestedPrivileges>\r\n")
+	$(call echo, >>, $@,  "    </ms_asmv2:security>\r\n")
+	$(call echo, >>, $@,  "  </ms_asmv2:trustInfo>\r\n")
+	$(call echo, >>, $@,  "</assembly>\r\n")
+	$(call echo, >>, $@,END)
+	$(call echo, >>, $@,/* END OF FILE */)
 
 chicken-uninstall.rc:
-	echo '/* GENERATED */' >$@
-	echo '1 24 MOVEABLE PURE' >>$@
-	echo 'BEGIN' >>$@
-	echo '  "<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>\r\n"' >>$@
-	echo '  "<assembly xmlns=""urn:schemas-microsoft-com:asm.v1"" manifestVersion=""1.0"">\r\n"' >>$@
-	echo '  "  <assemblyIdentity version=""1.0.0.0"" processorArchitecture=""*"" name=""$(PROGRAM_PREFIX)chicken-install$(PROGRAM_SUFFIX)"" type=""win32""/>\r\n"' >>$@
-	echo '  "  <ms_asmv2:trustInfo xmlns:ms_asmv2=""urn:schemas-microsoft-com:asm.v2"">\r\n"' >>$@
-	echo '  "    <ms_asmv2:security>\r\n"' >>$@
-	echo '  "      <ms_asmv2:requestedPrivileges>\r\n"' >>$@
-	echo '  "        <ms_asmv2:requestedExecutionLevel level=""asInvoker"" uiAccess=""false""/>\r\n"' >>$@
-	echo '  "      </ms_asmv2:requestedPrivileges>\r\n"' >>$@
-	echo '  "    </ms_asmv2:security>\r\n"' >>$@
-	echo '  "  </ms_asmv2:trustInfo>\r\n"' >>$@
-	echo '  "</assembly>\r\n"' >>$@
-	echo 'END' >>$@
-	echo '/* END OF FILE */' >>$@
-endif
+	$(call echo, >, $@,/* GENERATED */)
+	$(call echo, >>, $@,1 24 MOVEABLE PURE)
+	$(call echo, >>, $@,BEGIN)
+	$(call echo, >>, $@,  "<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>\r\n")
+	$(call echo, >>, $@,  "<assembly xmlns=""urn:schemas-microsoft-com:asm.v1"" manifestVersion=""1.0"">\r\n")
+	$(call echo, >>, $@,  "  <assemblyIdentity version=""1.0.0.0"" processorArchitecture=""*"" name=""$(PROGRAM_PREFIX)chicken-uninstall$(PROGRAM_SUFFIX)"" type=""win32""/>\r\n")
+	$(call echo, >>, $@,  "  <ms_asmv2:trustInfo xmlns:ms_asmv2=""urn:schemas-microsoft-com:asm.v2"">\r\n")
+	$(call echo, >>, $@,  "    <ms_asmv2:security>\r\n")
+	$(call echo, >>, $@,  "      <ms_asmv2:requestedPrivileges>\r\n")
+	$(call echo, >>, $@,  "        <ms_asmv2:requestedExecutionLevel level=""asInvoker"" uiAccess=""false""/>\r\n")
+	$(call echo, >>, $@,  "      </ms_asmv2:requestedPrivileges>\r\n")
+	$(call echo, >>, $@,  "    </ms_asmv2:security>\r\n")
+	$(call echo, >>, $@,  "  </ms_asmv2:trustInfo>\r\n")
+	$(call echo, >>, $@,  "</assembly>\r\n")
+	$(call echo, >>, $@,END)
+	$(call echo, >>, $@,/* END OF FILE */)

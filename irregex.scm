@@ -1,6 +1,6 @@
 ;;;; irregex.scm - container for irregex-core.scm
 ;
-; Copyright (c) 2010-2012, The Chicken Team
+; Copyright (c) 2010-2014, The Chicken Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -45,15 +45,12 @@
    irregex-match
    irregex-match?
    irregex-match-data?
-   irregex-match-end
    irregex-match-end-chunk
    irregex-match-end-index
    irregex-match-names
    irregex-match-num-submatches
-   irregex-match-start
    irregex-match-start-chunk
    irregex-match-start-index
-   irregex-match-string
    irregex-match-subchunk
    irregex-match-substring
    irregex-match-valid-index?
@@ -84,6 +81,13 @@
 (include "common-declarations.scm")
 
 (register-feature! 'irregex)
+
+;; These should probably be taken out of irregex upstream
+(declare (unused filter integer-log cset-size remove))
+
+;; Due to usual-integrations, find is the one from library.scm,
+;; so find-tail is unused (it's only used in the "find" definition)
+(declare (unused find-tail))
 
 (define-syntax build-cache
   (er-macro-transformer 
@@ -125,6 +129,7 @@
 			      (##sys#slot ,%cache ,(add1 (* i 2)))
 			      ,(fold (add1 i))))))))))
 
+(declare (unused %%string-copy!))
 (define-compiler-syntax %%string-copy!
   (syntax-rules ()
     ((_ to tstart from fstart fend)
@@ -135,6 +140,7 @@
 	   (v fend))
        (##core#inline "C_substring_copy" z x u v y)))))
 
+(declare (unused %substring=?))
 (define-compiler-syntax %substring=?
   (syntax-rules ()
     ((_ a b start1 start2 len)
@@ -142,9 +148,9 @@
 
 (define-compiler-syntax make-irregex 
   (syntax-rules ()
-    ((_ dfa dfa/search dfa/extract nfa flags submatches lengths names)
+    ((_ dfa dfa/search nfa flags submatches lengths names)
      (##sys#make-structure
-      'regexp dfa dfa/search dfa/extract nfa flags submatches lengths names))))
+      'regexp dfa dfa/search nfa flags submatches lengths names))))
 
 (define-compiler-syntax make-irregex-match
   (syntax-rules ()
@@ -156,26 +162,32 @@
       #f                                 ; #3: chunka
       #f))))                             ; #4: fail
 
+(declare (unused reverse))
 (define-compiler-syntax reverse
   (syntax-rules ()
     ((_ lst) (##sys#fast-reverse lst))))
 
+(declare (unused bit-shl))
 (define-compiler-syntax bit-shl
   (syntax-rules ()
     ((_ n i) (fxshl n i))))
 
+(declare (unused bit-shr))
 (define-compiler-syntax bit-shr
   (syntax-rules ()
     ((_ n i) (fxshr n i))))
 
+(declare (unused bit-not))
 (define-compiler-syntax bit-not
   (syntax-rules ()
     ((_ n) (fxnot n))))
 
+(declare (unused bit-ior))
 (define-compiler-syntax bit-ior
   (syntax-rules ()
     ((_ a b) (fxior a b))))
 
+(declare (unused bit-and))
 (define-compiler-syntax bit-and
   (syntax-rules ()
     ((_ a b) (fxand a b))))
@@ -188,26 +200,39 @@
   (syntax-rules ()
     ((_ m i x) (##sys#setslot (##sys#slot m 1) i x))))
 
+(declare (unused irregex-match-start-chunk-set!))
 (define-compiler-syntax irregex-match-start-chunk-set!
   (syntax-rules ()
     ((_ m n start)
      (vector-set! (##sys#slot m 1) (* n 4) start))))
 
+(declare (unused irregex-match-start-index-set!))
 (define-compiler-syntax irregex-match-start-index-set!
   (syntax-rules ()
     ((_ m n start)
      (vector-set! (##sys#slot m 1) (+ 1 (* n 4)) start))))
 
+(declare (unused irregex-match-end-chunk-set!))
 (define-compiler-syntax irregex-match-end-chunk-set!
   (syntax-rules ()
     ((_ m n end)
      (vector-set! (##sys#slot m 1) (+ 2 (* n 4)) end))))
 
+(declare (unused irregex-match-end-index-set!))
 (define-compiler-syntax irregex-match-end-index-set!
   (syntax-rules ()
     ((_ m n end)
      (vector-set! (##sys#slot m 1) (+ 3 (* n 4)) end))))
 
+(declare (unused irregex-match-chunk&index-from-tag-set!))
+(define-compiler-syntax irregex-match-chunk&index-from-tag-set!
+  (syntax-rules ()
+    ((_ m t chunk index)
+     (begin
+       (vector-set! (##sys#slot m 1) (+ 4 (* t 2)) chunk)
+       (vector-set! (##sys#slot m 1) (+ 5 (* t 2)) index)))))
+
+(declare (unused %irregex-error))
 (define-compiler-syntax %irregex-error
   (syntax-rules ()
     ((_ args ...)

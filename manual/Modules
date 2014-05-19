@@ -343,6 +343,14 @@ and used in an identical manner:
   #;3> (greet "you")
   Hello, you !
 
+If you are depending on external libraries inside your module, follow the general rule of {{(import chicken scheme) (use anything-else)}} like so:
+
+ (module test (hello greet)
+   (import chicken scheme)
+   (use posix)
+   (use srfi-4)
+   ...)
+
 If you want to keep macro-definitions in a separate file, use import
 libraries:
 
@@ -370,9 +378,9 @@ load it manually:
   #;1> (import test)
   #;2> 
 
-Note that you must us import libraries if you compile code
+Note that you must use import libraries if you compile code
 that depends on other modules. The compiler will not execute
-the modules that are refered to by compiled code, and thus
+the modules that are referred to by compiled code, and thus
 the binding information and exported syntax of the former
 must be available separately.
 
@@ -380,7 +388,7 @@ must be available separately.
 === Functors
 
 A ''functor'' is a higher-order module that can be parameterized with
-other modules. A functor defines the body of a module for a set or
+other modules. A functor defines the body of a module for a set of
 argument modules and can be instantiated with concrete module names
 specializing the code contained in the functor. This is best explained
 with a silly and pointless example:
@@ -433,11 +441,9 @@ to a set of exports.
 
 The general syntax of a functor definition looks like this:
 
-<enscript highlight=scheme>
-(functor (FUNCTORNAME (ARGUMENTMODULE1 EXPORTS1) ...) 
-  FUNCTOREXPORTS
-  BODY)
-</enscript>
+<syntax>(functor (FUNCTORNAME (ARGUMENTMODULE1 EXPORTS1) ...) FUNCTOREXPORTS BODY)</syntax>
+
+Defines a "functor", a parameterized module.
 
 This functor definition does not generate any code. This is done
 by ''instantiating'' the functor for specific input modules:
@@ -447,7 +453,7 @@ by ''instantiating'' the functor for specific input modules:
 </enscript>
 
 Inside {{BODY}}, references to {{ARGUMENTMODULE}} will be replaced by
-the corresponding {{MODUELNAME}} argument. The instantiation expands
+the corresponding {{MODULENAME}} argument. The instantiation expands
 into the complete functor-code {{BODY}} and as such can be considered
 a particular sort of macro-expansion. Note that there is no
 requirement that a specific export of an argument-module must be

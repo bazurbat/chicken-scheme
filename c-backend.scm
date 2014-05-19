@@ -1,6 +1,6 @@
 ;;; c-backend.scm - C-generating backend for the CHICKEN compiler
 ;
-; Copyright (c) 2008-2012, The Chicken Team
+; Copyright (c) 2008-2014, The Chicken Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -139,7 +139,7 @@
 	     (gen #\)) )
 
 	    ((##core#update)
-	     (gen "C_mutate(((C_word *)")
+	     (gen "C_mutate2(((C_word *)")
 	     (expr (car subs) i)
 	     (gen ")+" (+ (first params) 1) ",")
 	     (expr (cadr subs) i) 
@@ -153,7 +153,7 @@
 	     (gen #\)) )
 
 	    ((##core#updatebox)
-	     (gen "C_mutate(((C_word *)")
+	     (gen "C_mutate2(((C_word *)")
 	     (expr (car subs) i)
 	     (gen ")+1,")
 	     (expr (cadr subs) i) 
@@ -199,8 +199,8 @@
 		   (block (second params)) 
 		   (var (third params)))
 	       (if block
-		   (gen "C_mutate(&lf[" index "]")
-		   (gen "C_mutate((C_word*)lf[" index "]+1") )
+		   (gen "C_mutate2(&lf[" index "]")
+		   (gen "C_mutate2((C_word*)lf[" index "]+1") )
 	       (gen " /* (set! " (uncommentify (##sys#symbol->qualified-string var)) " ...) */,")
 	       (expr (car subs) i)
 	       (gen #\)) ) )
@@ -1172,7 +1172,7 @@
       [(c-string-list c-string-list*) "C_char **"]
       [(blob nonnull-blob u8vector nonnull-u8vector) (str "unsigned char *")]
       [(u16vector nonnull-u16vector) (str "unsigned short *")]
-      [(s8vector nonnull-s8vector) (str "char *")]
+      [(s8vector nonnull-s8vector) (str "signed char *")]
       [(u32vector nonnull-u32vector) (str "unsigned int *")]
       [(s16vector nonnull-s16vector) (str "short *")]
       [(s32vector nonnull-s32vector) (str "int *")]
