@@ -14,6 +14,8 @@
 4.9.0
 
 - Security fixes
+  - CVE-2014-3776: read-u8vector! no longer reads beyond its buffer when
+    length is #f (thanks to Seth Alves).
   - CVE-2013-4385: read-string! no longer reads beyond its buffer when
     length is #f.
   - CVE-2013-1874: ./.csirc is no longer loaded from the current directory
