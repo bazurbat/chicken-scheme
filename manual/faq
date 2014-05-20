@@ -18,7 +18,7 @@ for the existence of CHICKEN are:
 
 * CHICKEN is portable because it generates C code that runs on a large number of platforms.
 
-* CHICKEN is extendable, since its code generation scheme and runtime system/garbage collector fits neatly into a C environment.
+* CHICKEN is extensible, since its code generation scheme and runtime system/garbage collector fits neatly into a C environment.
 
 * CHICKEN is free and can be freely distributed, including its source code.
 
@@ -720,9 +720,9 @@ Compile the program that uses the module:
 
 ==== Why is my program which uses regular expressions so slow?
 
-The regular expression engine has recently be replaced by [[http://wiki.call-cc.org/users/alex shinn|alex shinn]]'s excellent
+The regular expression engine has recently been replaced by [[http://wiki.call-cc.org/users/alex shinn|alex shinn]]'s excellent
 {{irregex}} library, which is fully implemented in Scheme. Precompiling regular
-expressions to internal form is somewhat slower than with the old PCRE-based
+expressions to internal forms is somewhat slower than with the old PCRE-based
 regex engine. It is advisable to use {{irregex}} to precompile regular expressions
 outside of time-critical loops and use them where performance matters.
 
@@ -731,8 +731,8 @@ outside of time-critical loops and use them where performance matters.
 
 ==== Why does a loop that doesn't {{cons}} still trigger garbage collections?
 
-Under CHICKENs implementation policy, tail recursion is achieved simply by avoiding
-to return from a function call. Since the programs are CPS converted, a continuous 
+Under CHICKEN's implementation policy, tail recursion is achieved simply by avoiding
+returns from function calls. Since the programs are CPS converted, a continuous
 sequence of nested procedure calls is performed. At some stage the stack-space has
 to run out and the current procedure and its parameters (including the current
 continuation) are stored somewhere in the runtime system. Now a minor garbage collection

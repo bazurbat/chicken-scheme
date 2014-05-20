@@ -24,6 +24,9 @@ efficient code by omitting unnecessary type-checks.
 CHICKEN provides an intra-procedural flow-analysis pass and two
 compiler options for using type-information in this manner:
 
+{{-scrutinize}} will look for possibly incorrectly typed arguments to
+library procedure calls and generate warnings in such cases.
+
 {{-specialize}} will replace certain generic library procedure calls
 with faster type-specific operations.
 
@@ -101,7 +104,7 @@ or {{:}} should follow the syntax given below:
 <tr><td>{{(struct STRUCTURENAME)}}</td><td>record structure of given kind</td></tr>
 <tr><td>{{(procedure [NAME] (VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]]) . RESULTS)}}</td><td>procedure type, optionally with name</td></tr>
 <tr><td>{{(VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]] -> . RESULTS)}}</td><td>alternative procedure type syntax</td></tr>
-<tr><td>{{(VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]] --> . RESULTS)}}</td><td>procedure type that is declared to modify locally held state</td></tr>
+<tr><td>{{(VALUETYPE ... [#!optional VALUETYPE ...] [#!rest [VALUETYPE]] --> . RESULTS)}}</td><td>procedure type that is declared not to modify locally held state</td></tr>
 <tr><td>{{(VALUETYPE -> VALUETYPE : VALUETYPE)}}</td><td>predicate procedure type</td></tr>
 <tr><td>{{(forall (TYPEVAR ...) VALUETYPE)}}</td><td>polymorphic type</td></tr>
 <tr><td>COMPLEXTYPE</td><td></td></tr>
@@ -310,7 +313,7 @@ compilation.
 
 ===== compiler-typecase
 
-<syntax>(compiler-typecase EXP (TYPE BODY ... [(else BODY ...)]) ...)</syntax>
+<syntax>(compiler-typecase EXP (TYPE BODY ...) ... [(else BODY ...)])</syntax>
 
 Evaluates {{EXP}} and executes the first clause which names a type that
 matches the type inferred during flow analysis as the result of {{EXP}}.
