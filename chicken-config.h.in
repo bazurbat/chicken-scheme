@@ -43,6 +43,9 @@
 #ifndef C_INSTALL_CXX
 # define C_INSTALL_CXX "@C_INSTALL_CXX@"
 #endif
+#ifndef C_INSTALL_POSTINSTALL_PROGRAM
+# define C_INSTALL_POSTINSTALL_PROGRAM "true"
+#endif
 #ifndef C_INSTALL_RC_COMPILER
 # define C_INSTALL_RC_COMPILER "@C_INSTALL_RC_COMPILER@"
 #endif
@@ -160,10 +163,13 @@
 #ifndef C_CHICKEN_STATUS_PROGRAM
 # define C_CHICKEN_STATUS_PROGRAM "@PROGRAM_PREFIX@chicken-status"
 #endif
-#ifndef C_WINDOWS_SHELL
-# define C_WINDOWS_SHELL 0
-#endif
 #ifndef C_BINARY_VERSION
 # define C_BINARY_VERSION @API_VERSION@
+#endif
+#ifndef C_USES_SONAME 
+#cmakedefine01 C_USES_SONAME
+#endif
+#ifndef C_WINDOWS_SHELL
+#cmakedefine01 C_WINDOWS_SHELL
 #endif
 /* END OF FILE */

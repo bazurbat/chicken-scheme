@@ -57,7 +57,8 @@ add_library(libchicken SHARED ${libchicken_SOURCES})
 target_link_libraries(libchicken ${CHICKEN_EXTRA_LIBRARIES})
 set_target_properties(libchicken PROPERTIES
     COMPILE_DEFINITIONS "PIC;C_BUILDING_LIBCHICKEN"
-    OUTPUT_NAME ${PROGRAM_PREFIX}chicken
+    PREFIX ""
+    OUTPUT_NAME lib${PROGRAM_PREFIX}chicken
     VERSION ${API_VERSION})
 install(TARGETS libchicken
     EXPORT ChickenTargets
@@ -67,7 +68,8 @@ if(NOT MSVC)
     add_library(libchicken-static STATIC ${libchicken_STATIC_SOURCES})
     set_target_properties(libchicken-static PROPERTIES
         COMPILE_DEFINITIONS "C_BUILDING_LIBCHICKEN"
-        OUTPUT_NAME ${PROGRAM_PREFIX}chicken)
+        PREFIX ""
+        OUTPUT_NAME lib${PROGRAM_PREFIX}chicken)
     install(TARGETS libchicken-static
         EXPORT ChickenTargets
         ARCHIVE DESTINATION ${INSTALL_LIBDIR})
@@ -130,27 +132,28 @@ if(NOT MSVC)
         RUNTIME DESTINATION ${INSTALL_BINDIR})
 endif()
 
-# utility programs
-set(utility_PROGRAMS csc chicken-install chicken-uninstall chicken-status
-    chicken-profile)
-
-foreach(program ${utility_PROGRAMS})
-    set(program_SOURCES)
-    add_chicken_sources(program_SOURCES ${program}.scm
-        OPTIONS ${PROGRAM_OPTIONS})
-    add_executable(${program} ${program_SOURCES})
-    target_link_libraries(${program} ${CHICKEN_LIBRARIES})
-    set_target_properties(${program} PROPERTIES
-        COMPILE_DEFINITIONS "PIC"
-        OUTPUT_NAME ${PROGRAM_PREFIX}${program})
-    install(TARGETS ${program}
-        RUNTIME DESTINATION ${INSTALL_BINDIR})
-endforeach()
-
-# setup-api
-set(setupapi_MODULES setup-api setup-download)
-
+# does not work yet
 if(NOT MSVC)
+    # utility programs
+    set(utility_PROGRAMS csc chicken-install chicken-uninstall chicken-status
+        chicken-profile)
+
+    foreach(program ${utility_PROGRAMS})
+        set(program_SOURCES)
+        add_chicken_sources(program_SOURCES ${program}.scm
+            OPTIONS ${PROGRAM_OPTIONS})
+        add_executable(${program} ${program_SOURCES})
+        target_link_libraries(${program} ${CHICKEN_LIBRARIES})
+        set_target_properties(${program} PROPERTIES
+            COMPILE_DEFINITIONS "PIC"
+            OUTPUT_NAME ${PROGRAM_PREFIX}${program})
+        install(TARGETS ${program}
+            RUNTIME DESTINATION ${INSTALL_BINDIR})
+    endforeach()
+
+    # setup-api
+    set(setupapi_MODULES setup-api setup-download)
+
     add_chicken_module(setup-api setup-api.scm
         EMIT setup-api
         OPTIONS ${LIBRARY_OPTIONS})
@@ -167,7 +170,6 @@ if(NOT MSVC)
         install(TARGETS ${module} ${module}.import
             LIBRARY DESTINATION ${INSTALL_EGGDIR})
     endforeach()
-
 endif()
 
 # import libraries

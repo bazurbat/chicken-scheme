@@ -2,7 +2,7 @@
 
 include(GNUInstallDirs)
 
-set(API_VERSION 6 CACHE STRING
+set(API_VERSION 7 CACHE STRING
     "Chicken API version")
 
 # TODO: is there a way to detect this?
@@ -151,9 +151,13 @@ function(_chicken_set_more_libs)
 endfunction()
 _chicken_set_more_libs()
 
+set(C_WINDOWS_SHELL 0)
+set(C_USES_SONAME 1)
+
 # TODO: investigate cygwin/mingw/win32 native
 if(WIN32)
     set(C_WINDOWS_SHELL 1)
+    set(C_USES_SONAME 0)
 endif()
 
 set(CHICKEN_CONFIG_H ${CMAKE_CURRENT_BINARY_DIR}/chicken-config.h)
