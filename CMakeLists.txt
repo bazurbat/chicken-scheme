@@ -10,10 +10,6 @@ include(ChickenBuildTag)
 include(ChickenApplyHack)
 include(ChickenConfigure)
 
-# set(CMAKE_INSTALL_RPATH .)
-# set(CMAKE_SKIP_BUILD_RPATH TRUE)
-# set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-
 # libchicken
 # use generated chicken-config.h
 include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
@@ -64,7 +60,7 @@ install(TARGETS libchicken
     EXPORT ChickenTargets
     DESTINATION ${INSTALL_LIBDIR})
 
-if(NOT MSVC)
+if(BUILD_STATIC_LIBS)
     add_library(libchicken-static STATIC ${libchicken_STATIC_SOURCES})
     set_target_properties(libchicken-static PROPERTIES
         COMPILE_DEFINITIONS "C_BUILDING_LIBCHICKEN"
@@ -111,7 +107,7 @@ install(TARGETS csi
     EXPORT ChickenTargets
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
-if(NOT MSVC)
+if(BUILD_STATIC_PROGRAMS)
     add_chicken_sources(csi_STATIC_SOURCES ${csi_SCM_SOURCES}
         STATIC OPTIONS ${PROGRAM_OPTIONS} -extend private-namespace.scm)
     add_executable(csi-static ${csi_STATIC_SOURCES})
@@ -188,20 +184,19 @@ foreach(lib ${import_LIBRARIES})
 endforeach()
 
 # config
+include(CMakePackageConfigHelpers)
 
-function(_chicken_generate_config)
-    # file(RELATIVE_PATH CONFIG_LIBDIR  ${INSTALL_DATADIR} ${INSTALL_LIBDIR})
-    # file(RELATIVE_PATH CONFIG_DATADIR ${INSTALL_DATADIR} ${INSTALL_DATADIR})
-    # file(RELATIVE_PATH CONFIG_EGGDIR  ${INSTALL_DATADIR} ${INSTALL_EGGDIR})
-    #
-    # file(RELATIVE_PATH CONFIG_TARGET_LIBDIR  ${INSTALL_DATADIR} ${TARGET_LIBDIR})
-    # file(RELATIVE_PATH CONFIG_TARGET_DATADIR ${INSTALL_DATADIR} ${TARGET_DATADIR})
-    # file(RELATIVE_PATH CONFIG_TARGET_EGGDIR  ${INSTALL_DATADIR} ${TARGET_EGGDIR})
+configure_package_config_file(
+    cmake/ChickenConfig.cmake.in
+    ${PROJECT_BINARY_DIR}/ChickenConfig.cmake
+    INSTALL_DESTINATION ${INSTALL_DATADIR}
+    PATH_VARS INSTALL_BINDIR INSTALL_LIBDIR INSTALL_EGGDIR INSTALL_DATADIR
+    NO_CHECK_REQUIRED_COMPONENTS_MACRO)
 
-    configure_file(cmake/ChickenConfig.cmake.in
-        ${PROJECT_BINARY_DIR}/ChickenConfig.cmake @ONLY)
-endfunction()
-_chicken_generate_config()
+write_basic_package_version_file(
+    ${PROJECT_BINARY_DIR}/ChickenConfigVersion.cmake
+    VERSION ${CHICKEN_VERSION}
+    COMPATIBILITY SameMajorVersion)
 
 # misc files
 install(FILES types.db

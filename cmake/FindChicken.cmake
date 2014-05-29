@@ -11,6 +11,10 @@ set(CHICKEN_TARGET_SYSTEM ${CHICKEN_HOST_SYSTEM} CACHE STRING
     "A compiler identifier of the target system")
 mark_as_advanced(CHICKEN_SYSTEM CHICKEN_HOST_SYSTEM CHICKEN_TARGET_SYSTEM)
 
+option(CHICKEN_HAVE_CONFIG_H "Use generated chicken-config.h" YES)
+option(CHICKEN_ENABLE_PTABLES "Enable procedure tables" YES)
+mark_as_advanced(CHICKEN_HAVE_CONFIG_H CHICKEN_ENABLE_PTABLES)
+
 set(CHICKEN_ROOT_DIR "" CACHE PATH "")
 set(CHICKEN_HOST_ROOT_DIR ${CHICKEN_ROOT_DIR} CACHE PATH "")
 
@@ -65,41 +69,48 @@ find_library(CHICKEN_STATIC_LIBRARY lib${_chicken_system}chicken.a
     NO_DEFAULT_PATH)
 find_library(CHICKEN_STATIC_LIBRARY lib${_chicken_system}chicken.a)
 
-option(CHICKEN_HAVE_CONFIG_H "Use generated chicken-config.h" YES)
-option(CHICKEN_ENABLE_PTABLES "Enable procedure tables" YES)
-mark_as_advanced(CHICKEN_HAVE_CONFIG_H CHICKEN_ENABLE_PTABLES)
+function(_chicken_set_c_flags)
+    if(CHICKEN_HAVE_CONFIG_H)
+        set(CHICKEN_C_DEFINITIONS "-DHAVE_CHICKEN_CONFIG_H")
+    endif()
+    if(CHICKEN_ENABLE_PTABLES)
+        set(CHICKEN_C_DEFINITIONS "${CHICKEN_C_DEFINITIONS} -DC_ENABLE_PTABLES")
+    endif()
+    string(STRIP ${CHICKEN_C_DEFINITIONS} CHICKEN_C_DEFINITIONS)
 
-if(CHICKEN_HAVE_CONFIG_H)
-    set(_chicken_c_definitions "${_chicken_c_definitions} -DHAVE_CHICKEN_CONFIG_H")
-endif()
-if(CHICKEN_ENABLE_PTABLES)
-    set(_chicken_c_definitions "${_chicken_c_definitions} -DC_ENABLE_PTABLES")
-endif()
-string(STRIP ${_chicken_c_definitions} _chicken_c_definitions)
+    set(CHICKEN_C_DEFINITIONS ${CHICKEN_C_DEFINITIONS} PARENT_SCOPE)
 
-if(MSVC)
-    set(_chicken_c_flags_common "/wd4101")
-    set(_chicken_c_flags_minsizerel "/O1 /Os /Oy")
-    set(_chicken_c_flags_release "/Ox /Ot /Oy")
-    set(_chicken_c_flags_debug "/Od /Zi")
-    # C4101 - unreferenced local variable
-else()
-    set(_chicken_c_flags_common "-fno-strict-aliasing -fwrapv")
-    set(_chicken_c_flags_minsizerel "-Os -fomit-frame-pointer")
-    set(_chicken_c_flags_release "-O3 -fomit-frame-pointer")
-    set(_chicken_c_flags_debug "-g -Wall -Wno-unused")
-endif()
+    if(MSVC)
+        # C4101 - unreferenced local variable
+        set(c_flags "/wd4101")
+        set(c_flags_minsizerel "/O1 /Os /Oy")
+        set(c_flags_release "/Ox /Ot /Oy")
+        set(c_flags_debug "/Od /Zi")
+    else()
+        set(c_flags "-fno-strict-aliasing -fwrapv")
+        set(c_flags_minsizerel "-Os -fomit-frame-pointer")
+        set(c_flags_release "-O3 -fomit-frame-pointer")
+        set(c_flags_debug "-g -Wall -Wno-unused")
+    endif()
 
-if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
-    set(_chicken_optimize_flags ${_chicken_c_flags_minsizerel})
-elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-    set(_chicken_optimize_flags ${_chicken_c_flags_release})
-elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(_chicken_optimize_flags ${_chicken_c_flags_debug})
-endif()
+    set(CHICKEN_C_FLAGS ${c_flags} CACHE STRING "")
+    set(CHICKEN_C_FLAGS_MINSIZEREL ${c_flags_minsizerel} CACHE STRING "")
+    set(CHICKEN_C_FLAGS_RELEASE ${c_flags_release} CACHE STRING "")
+    set(CHICKEN_C_FLAGS_DEBUG ${c_flags_debug} CACHE STRING "")
 
-set(CHICKEN_C_FLAGS "${_chicken_c_flags_common} ${_chicken_c_definitions} ${_chicken_optimize_flags}" CACHE STRING
-    "Compiler flags for Chicken generated files")
+    if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+        set(c_flags_config ${CHICKEN_C_FLAGS_MINSIZEREL})
+    elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+        set(c_flags_config ${CHICKEN_C_FLAGS_RELEASE})
+    elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(c_flags_config ${CHICKEN_C_FLAGS_DEBUG})
+    endif()
+
+    set(CHICKEN_GLOBAL_C_FLAGS
+        "${CHICKEN_C_DEFINITIONS} ${CHICKEN_C_FLAGS} ${c_flags_config}"
+        PARENT_SCOPE)
+endfunction()
+_chicken_set_c_flags()
 
 if(WIN32)
     # TODO: handle x64?
@@ -125,9 +136,6 @@ find_package_message(Chicken
 find_package_message(Chicken
     "  CHICKEN_STATIC_LIBRARY: ${CHICKEN_STATIC_LIBRARY}"
     "${CHICKEN_STATIC_LIBRARY}")
-find_package_message(Chicken
-    "  CHICKEN_C_FLAGS: ${CHICKEN_C_FLAGS}"
-    "${CHICKEN_C_FLAGS}")
 find_package_message(Chicken
     "  CHICKEN_EGGDIR: ${CHICKEN_EGGDIR}"
     "${CHICKEN_EGGDIR}")

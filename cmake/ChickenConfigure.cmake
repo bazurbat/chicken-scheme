@@ -1,14 +1,20 @@
 # - Chicken Parameters
 
 include(GNUInstallDirs)
+include(CMakeDependentOption)
 
-set(API_VERSION 7 CACHE STRING
-    "Chicken API version")
+set(API_VERSION 7 CACHE INTERNAL "")
 
 # TODO: is there a way to detect this?
 set(STACKDIRECTION 1)
 
+option(BUILD_STATIC_LIBS "Build static libraries" NO)
 option(BUILD_SHARED_LIBS "Build shared libraries" YES)
+
+cmake_dependent_option(BUILD_STATIC_PROGRAMS "Build static programs" YES
+    "BUILD_STATIC_LIBS" NO)
+mark_as_advanced(BUILD_STATIC_LIBS BUILD_SHARED_LIBS BUILD_STATIC_PROGRAMS)
+
 option(GC_HOOKS "Enable GC hooks" NO)
 option(COLLECT_ALL_SYMBOLS "Always collect all unused symbols" NO)
 mark_as_advanced(GC_HOOKS COLLECT_ALL_SYMBOLS)
@@ -151,24 +157,23 @@ function(_chicken_set_more_libs)
 endfunction()
 _chicken_set_more_libs()
 
-set(C_WINDOWS_SHELL 0)
 set(C_USES_SONAME 1)
+set(C_WINDOWS_SHELL 0)
 
 # TODO: investigate cygwin/mingw/win32 native
 if(WIN32)
-    set(C_WINDOWS_SHELL 1)
     set(C_USES_SONAME 0)
+    set(C_WINDOWS_SHELL 1)
 endif()
 
 set(CHICKEN_CONFIG_H ${CMAKE_CURRENT_BINARY_DIR}/chicken-config.h)
 configure_file("chicken-config.h.in" ${CHICKEN_CONFIG_H})
 
 # let CMake handle flag combinations
-set(CMAKE_C_FLAGS_MINSIZEREL "${_chicken_c_flags_minsizerel}")
-set(CMAKE_C_FLAGS_RELEASE "${_chicken_c_flags_release}")
-set(CMAKE_C_FLAGS_DEBUG "${_chicken_c_flags_debug}")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${_chicken_c_flags_common} ${_chicken_c_definitions}")
-set(CHICKEN_CONFIG_C_FLAGS ${CHICKEN_C_FLAGS})
-set(CHICKEN_C_FLAGS "")
+set(CMAKE_C_FLAGS "${CHICKEN_C_DEFINITIONS} ${CHICKEN_C_FLAGS}")
+set(CMAKE_C_FLAGS_MINSIZEREL ${CHICKEN_C_FLAGS_MINSIZEREL})
+set(CMAKE_C_FLAGS_RELEASE ${CHICKEN_C_FLAGS_RELEASE})
+set(CMAKE_C_FLAGS_DEBUG ${CHICKEN_C_FLAGS_DEBUG})
+unset(CHICKEN_GLOBAL_C_FLAGS)
 
 file(COPY types.db DESTINATION .)

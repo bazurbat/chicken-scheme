@@ -85,12 +85,15 @@ function(_chicken_command out_var in_filename)
     file(TO_CMAKE_PATH ${in_filename} in_filename)
     get_filename_component(in_path ${in_filename} PATH)
 
-    set(c_flags "${CHICKEN_C_FLAGS} ${command_c_flags}")
+    set(c_flags "${CHICKEN_GLOBAL_C_FLAGS} ${command_c_flags}")
 
     if(NOT in_path STREQUAL CMAKE_CURRENT_BINARY_DIR)
         list(APPEND command_options -include-path ${in_path})
         set(c_flags "${c_flags} -I\"${in_path}\"")
     endif()
+    foreach(path $ENV{CHICKEN_INCLUDE_PATH})
+        list(APPEND command_options -include-path ${path})
+    endforeach()
 
     set(c_flags "${c_flags} -I\"${CHICKEN_INCLUDE_DIRS}\"")
 
@@ -101,7 +104,7 @@ function(_chicken_command out_var in_filename)
         OUTPUT ${out_filename} ${command_output}
         COMMAND ${CHICKEN_EXECUTABLE}
         ARGS ${in_filename} -output-file ${out_filename}
-             ${CHICKEN_OPTIONS} ${command_options}
+             ${CHICKEN_OPTIONS} $ENV{CHICKEN_OPTIONS} ${command_options}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         DEPENDS ${in_filename} ${compile_DEPENDS}
         VERBATIM)
@@ -170,13 +173,17 @@ endfunction()
 function(install_chicken_modules name)
     cmake_parse_arguments(install
         ""
-        ""
-        "FILES"
+        "VERSION"
+        "PROGRAMS;FILES"
         ${ARGN})
     foreach(m ${${name}_CHICKEN_MODULES})
         install(TARGETS ${m}
             LIBRARY DESTINATION ${CHICKEN_EGGDIR})
     endforeach()
+    if(install_PROGRAMS)
+        install(PROGRAMS ${install_PROGRAMS}
+            DESTINATION ${CHICKEN_BINDIR})
+    endif()
     if(install_FILES)
         install(FILES ${install_FILES}
             DESTINATION ${CHICKEN_EGGDIR})
