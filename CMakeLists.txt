@@ -128,45 +128,45 @@ if(BUILD_STATIC_PROGRAMS)
         RUNTIME DESTINATION ${INSTALL_BINDIR})
 endif()
 
-# does not work yet
-if(NOT MSVC)
-    # utility programs
-    set(utility_PROGRAMS csc chicken-install chicken-uninstall chicken-status
-        chicken-profile)
+# utility programs
+set(utility_PROGRAMS csc chicken-install chicken-uninstall chicken-status
+    chicken-profile)
 
-    foreach(program ${utility_PROGRAMS})
-        set(program_SOURCES)
-        add_chicken_sources(program_SOURCES ${program}.scm
-            OPTIONS ${PROGRAM_OPTIONS})
-        add_executable(${program} ${program_SOURCES})
-        target_link_libraries(${program} ${CHICKEN_LIBRARIES})
-        set_target_properties(${program} PROPERTIES
-            COMPILE_DEFINITIONS "PIC"
-            OUTPUT_NAME ${PROGRAM_PREFIX}${program})
-        install(TARGETS ${program}
-            RUNTIME DESTINATION ${INSTALL_BINDIR})
-    endforeach()
+foreach(program ${utility_PROGRAMS})
+    set(program_SOURCES)
+    add_chicken_sources(program_SOURCES ${program}.scm
+        OPTIONS ${PROGRAM_OPTIONS})
+    add_executable(${program} ${program_SOURCES})
+    target_link_libraries(${program} ${CHICKEN_LIBRARIES})
+    set_target_properties(${program} PROPERTIES
+        COMPILE_DEFINITIONS "PIC"
+        OUTPUT_NAME ${PROGRAM_PREFIX}${program})
+    install(TARGETS ${program}
+        RUNTIME DESTINATION ${INSTALL_BINDIR})
+endforeach()
 
-    # setup-api
-    set(setupapi_MODULES setup-api setup-download)
+# setup-api
+set(setupapi_MODULES setup-api setup-download)
 
-    add_chicken_module(setup-api setup-api.scm
-        EMIT setup-api
-        OPTIONS ${LIBRARY_OPTIONS})
-    add_chicken_module(setup-download setup-download.scm
-        EMIT setup-download
-        OPTIONS ${LIBRARY_OPTIONS}
-        DEPENDS setup-api.import.scm)
+# use chicken.h from source tree for generated import libraries
+add_chicken_module(setup-api setup-api.scm
+    EMIT setup-api
+    OPTIONS ${LIBRARY_OPTIONS}
+    C_FLAGS -I"${PROJECT_SOURCE_DIR}")
+add_chicken_module(setup-download setup-download.scm
+    EMIT setup-download
+    OPTIONS ${LIBRARY_OPTIONS}
+    C_FLAGS -I"${PROJECT_SOURCE_DIR}"
+    DEPENDS setup-api.import.scm)
 
-    add_dependencies(chicken-install ${setupapi_MODULES})
-    add_dependencies(chicken-uninstall ${setupapi_MODULES})
-    add_dependencies(chicken-status ${setupapi_MODULES})
+add_dependencies(chicken-install ${setupapi_MODULES})
+add_dependencies(chicken-uninstall ${setupapi_MODULES})
+add_dependencies(chicken-status ${setupapi_MODULES})
 
-    foreach(module ${setupapi_MODULES})
-        install(TARGETS ${module} ${module}.import
-            LIBRARY DESTINATION ${INSTALL_EGGDIR})
-    endforeach()
-endif()
+foreach(module ${setupapi_MODULES})
+    install(TARGETS ${module} ${module}.import
+        LIBRARY DESTINATION ${INSTALL_EGGDIR})
+endforeach()
 
 # import libraries
 set(import_LIBRARIES

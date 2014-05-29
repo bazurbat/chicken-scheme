@@ -164,7 +164,9 @@ function(add_chicken_module name)
     add_chicken_library(${name} ${ARGN} MODULE EMIT ${compile_EMIT})
     foreach(lib ${compile_EMIT})
         add_chicken_library(${lib}.import MODULE
-            ${CMAKE_CURRENT_BINARY_DIR}/${lib}.import.scm)
+            ${CMAKE_CURRENT_BINARY_DIR}/${lib}.import.scm
+            SUFFIX ${compile_SUFFIX}
+            C_FLAGS ${compile_C_FLAGS})
     endforeach()
     set(${PROJECT_NAME}_CHICKEN_MODULES ${${PROJECT_NAME}_CHICKEN_MODULES}
         PARENT_SCOPE)
