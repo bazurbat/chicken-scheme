@@ -628,6 +628,21 @@
 	    mitigates this to some degree, but very large C files may still be
 	    uncompilable.  This is known to affect the html-tags egg.
 
+	Haiku:
+
+	  - The default GCC compiler is too old to support the -fwrapv
+	    option.  You can either remove the flag from Makefile.haiku,
+	    use a newer GCC, or supply your own C_COMPILER_OPTIONS on
+	    the Make command line.
+
+	  - The default Haiku BFS file system only supports timestamps
+	    with a granularity of one second.  This may cause trouble
+	    with pregenerated release or development snapshot tarballs
+	    due to the way files are pre-translated to C.  You'll either
+	    need to have CHICKEN installed, or touch the
+	    build-version.c file before building.
+
+
  6. Bootstrapping
 
         To build a bootstrapping compiler yourself, get the most
