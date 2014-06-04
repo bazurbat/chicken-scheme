@@ -971,7 +971,11 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_strlen                   strlen
 # define C_memset                   memset
 # define C_memmove                  memmove
-# define C_strncasecmp              strncasecmp
+# if (defined _WIN32)
+#  define C_strncasecmp              _strnicmp
+# else
+#  define C_strncasecmp              strncasecmp
+# endif
 # define C_malloc                   malloc
 # define C_calloc                   calloc
 # define C_free                     free

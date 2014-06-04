@@ -23,13 +23,15 @@
 #cmakedefine HAVE_UTIME_H
 
 #cmakedefine HAVE_ALLOCA
+#cmakedefine HAVE_GETPROCADDRESS
+#cmakedefine HAVE_LOADLIBRARY
 #cmakedefine HAVE_MEMMOVE
-#cmakedefine HAVE_STRERROR
-#cmakedefine HAVE_STRTOLL
-#cmakedefine HAVE_STRTOQ
 #cmakedefine HAVE_SIGACTION
 #cmakedefine HAVE_SIGPROCMASK
 #cmakedefine HAVE_SIGSETJMP
+#cmakedefine HAVE_STRERROR
+#cmakedefine HAVE_STRTOLL
+#cmakedefine HAVE_STRTOQ
 
 #cmakedefine01 DEBUGBUILD
 
