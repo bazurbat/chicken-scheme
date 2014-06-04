@@ -6,6 +6,20 @@
 
 === Making extra libraries and extensions available
 
+==== require-extension
+
+<macro>(require-extension ID ...)</macro>
+
+This is equivalent to {{(require-library ID ...)}} but performs an implicit
+{{import}}, if necessary. Since version 4.4.0, {{ID}} may also be an import specification
+(using {{rename}}, {{only}}, {{except}} or {{prefix}}).
+
+To make long matters short - just use {{require-extension}} and it will normally figure everything out for dynamically
+loadable extensions and core library units.
+
+This implementation of {{require-extension}} is compliant with [[http://srfi.schemers.org/srfi-55/srfi-55.html|SRFI-55]]
+(see the [[http://srfi.schemers.org/srfi-55/srfi-55.html|SRFI-55]] document for more information).
+
 ==== require-library
 
 <macro>(require-library ID ...)</macro>
@@ -32,27 +46,13 @@ During compilation, one of the following happens instead:
 * If {{ID}} names an installed extension with the {{syntax}} or {{require-at-runtime}} attribute, then the extension is loaded at compile-time, and code is emitted to {{(require ...)}} any needed run-time requirements.
 * Otherwise {{(require-library ID)}} is equivalent to {{(require 'ID)}}.
 
-To make long matters short - just use {{require-library}} and it will normally figure everything out for dynamically
-loadable extensions and core library units.
-
-{{ID}} should be a pure extension name and should not contain any path prefixes (for example {{dir/lib...}}) is illegal).
+{{ID}} should be a pure extension name and should not contain any path prefixes (for example {{dir/lib...}} is illegal).
 
 {{ID}} may also be a list that designates an extension-specifier. Currently the following extension specifiers are
 defined:
 
 * {{(srfi NUMBER ...)}} is required for SRFI-55 compatibility and is fully implemented
 * {{(version ID NUMBER)}} is equivalent to {{ID}}, but checks at compile-time whether the extension named {{ID}} is installed and whether its version is equal or higher than {{NUMBER}}. {{NUMBER}} may be a string or a number, the comparison is done lexicographically (using {{string>=?}}).
-
-==== require-extension
-
-<macro>(require-extension ID ...)</macro>
-
-This is equivalent to {{(require-library ID ...)}} but performs an implicit
-{{import}}, if necessary. Since version 4.4.0, {{ID}} may also be an import specification
-(using {{rename}}, {{only}}, {{except}} or {{prefix}}).
-
-This implementation of {{require-extension}} is compliant with [[http://srfi.schemers.org/srfi-55/srfi-55.html|SRFI-55]]
-(see the [[http://srfi.schemers.org/srfi-55/srfi-55.html|SRFI-55]] document for more information).
 
 ==== use
 
@@ -123,8 +123,8 @@ For more information see the documentation for
 
 <macro> (let-optionals ARGS ((VAR1 DEFAULT1) ...) BODY ...)</macro>
 
-Binding constructs for optional procedure arguments. {{ARGS}} should
-be a rest-parameter taken from a lambda-list. {{let-optionals}}
+Binding constructs for optional procedure arguments. {{ARGS}} is normally
+a rest-parameter taken from a lambda-list. {{let-optionals}}
 binds {{VAR1 ...}} to available arguments in parallel, or
 to {{DEFAULT1 ...}} if not enough arguments were provided.
 {{let-optionals*}} binds {{VAR1 ...}} sequentially, so every
@@ -140,8 +140,8 @@ arguments are provided.
 
 <macro> (let-optionals* ARGS ((VAR1 DEFAULT1) ... [RESTVAR]) BODY ...)</macro>
 
-Binding constructs for optional procedure arguments. {{ARGS}} should
-be a rest-parameter taken from a lambda-list. {{let-optionals}}
+Binding constructs for optional procedure arguments. {{ARGS}} is normally
+a rest-parameter taken from a lambda-list. {{let-optionals}}
 binds {{VAR1 ...}} to available arguments in parallel, or
 to {{DEFAULT1 ...}} if not enough arguments were provided.
 {{let-optionals*}} binds {{VAR1 ...}} sequentially, so every
@@ -161,7 +161,7 @@ an error if any excess arguments are provided.
 
 <macro>(and-let* (BINDING ...) EXP1 EXP2 ...)</macro>
 
-SRFI-2. Bind sequentially and execute body. {{BINDING}} can
+Bind sequentially and execute body. {{BINDING}} can
 be a list of a variable and an expression, a list with a single
 expression, or a single variable. If the value of an expression
 bound to a variable is {{#f}}, the {{and-let*}} form
@@ -283,7 +283,7 @@ variables.
 
 <macro>(define-constant NAME CONST)</macro>
 
-Define a variable with a constant value, evaluated at compile-time.
+Defines a variable with a constant value, evaluated at compile-time.
 Any reference to such a constant should appear textually '''after'''
 its definition. This construct is equivalent to {{define}} when
 evaluated or interpreted.  Constant definitions should only appear at
@@ -541,7 +541,7 @@ In addition the following feature-identifiers may exist: {{cross-chicken}},
 For further information, see the documentation for
 [[http://srfi.schemers.org/srfi-0/srfi-0.html|SRFI-0]].
 
-=== {{delay-force}}
+=== delay-force
 
 CHICKEN supports the R7RS {{delay-force}} syntax which allows for
 iterative lazy algorithms to be expressed in bounded space.
