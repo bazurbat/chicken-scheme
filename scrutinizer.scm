@@ -165,13 +165,13 @@
 		((eq? a 'deprecated)
 		 (report
 		  loc
-		  (sprintf "use of deprecated library procedure `~a'" id) )
+		  (sprintf "use of deprecated `~a'" id))
 		 '(*))
 		((and (pair? a) (eq? (car a) 'deprecated))
 		 (report
 		  loc
 		  (sprintf 
-		      "use of deprecated library procedure `~a' - consider using `~a' instead"
+		      "use of deprecated `~a' - consider `~a'"
 		    id (cadr a)))
 		 '(*))
 		(else (list a)))))

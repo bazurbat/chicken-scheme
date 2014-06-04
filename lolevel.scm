@@ -404,6 +404,8 @@ EOF
 
 ;;; Accessors for arbitrary vector-like block objects:
 
+(define (vector-like? x) (%generic-vector? x))
+
 (define block-set! ##sys#block-set!)
 
 (define block-ref 

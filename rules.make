@@ -653,7 +653,7 @@ testclean:
 
 .PHONY: check 
 
-check: $(CHICKEN_SHARED_EXECUTABLE) $(CSI_SHARED_EXECUTABLE) $(CSC_PROGRAM)$(EXE)
+check: $(TARGETS)
 ifndef WINDOWS_SHELL
 	cd tests; sh runtests.sh
 else

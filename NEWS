@@ -1,6 +1,21 @@
+4.9.1
+
+- Core libraries
+  - alist-ref from unit data-structures now gives an error when passed
+    a non-list, for consistency with assv/assq/assoc.
+
+- Unit lolevel:
+  - Restore long-lost but still documented "vector-like?" procedure (#983)
+
+- Unit "posix":
+  - set-file-position! now allows negative positions for seek/cur (thanks
+    to Seth Alves).
+
 4.9.0
 
 - Security fixes
+  - CVE-2014-3776: read-u8vector! no longer reads beyond its buffer when
+    length is #f (thanks to Seth Alves).
   - CVE-2013-4385: read-string! no longer reads beyond its buffer when
     length is #f.
   - CVE-2013-1874: ./.csirc is no longer loaded from the current directory

@@ -18,7 +18,7 @@ for the existence of CHICKEN are:
 
 * CHICKEN is portable because it generates C code that runs on a large number of platforms.
 
-* CHICKEN is extendable, since its code generation scheme and runtime system/garbage collector fits neatly into a C environment.
+* CHICKEN is extensible, since its code generation scheme and runtime system/garbage collector fits neatly into a C environment.
 
 * CHICKEN is free and can be freely distributed, including its source code.
 
@@ -98,7 +98,7 @@ protocol. Such a design would make native threads in Chicken
 essentially equivalent to Unix processes and shared memory.
 
 For a different approach to concurrency, please see the
-[[/egg/mpi|mpi]] egg.
+[[http://wiki.call-cc.org/egg/mpi|mpi]] egg.
 
 ==== Does CHICKEN support Unicode strings?
 
@@ -720,9 +720,9 @@ Compile the program that uses the module:
 
 ==== Why is my program which uses regular expressions so slow?
 
-The regular expression engine has recently be replaced by [[/users/alex shinn|alex shinn]]'s excellent
+The regular expression engine has recently been replaced by [[http://wiki.call-cc.org/users/alex shinn|alex shinn]]'s excellent
 {{irregex}} library, which is fully implemented in Scheme. Precompiling regular
-expressions to internal form is somewhat slower than with the old PCRE-based
+expressions to internal forms is somewhat slower than with the old PCRE-based
 regex engine. It is advisable to use {{irregex}} to precompile regular expressions
 outside of time-critical loops and use them where performance matters.
 
@@ -731,8 +731,8 @@ outside of time-critical loops and use them where performance matters.
 
 ==== Why does a loop that doesn't {{cons}} still trigger garbage collections?
 
-Under CHICKENs implementation policy, tail recursion is achieved simply by avoiding
-to return from a function call. Since the programs are CPS converted, a continuous 
+Under CHICKEN's implementation policy, tail recursion is achieved simply by avoiding
+returns from function calls. Since the programs are CPS converted, a continuous
 sequence of nested procedure calls is performed. At some stage the stack-space has
 to run out and the current procedure and its parameters (including the current
 continuation) are stored somewhere in the runtime system. Now a minor garbage collection
@@ -777,13 +777,13 @@ and wrap calls to {{set-finalizer!}} in it.
 
 ==== Does CSI support history and autocompletion?
 
-CSI doesn't support it natively but it can be activated with the [[http://wiki.call-cc.org/egg/readline|readline]] egg.
-After installing the egg, add the following to your {{~/.csirc}} or equivalent file:
+CSI doesn't support it natively but it can be activated with one of the [[http://wiki.call-cc.org/egg/readline|readline]], [[http://wiki.call-cc.org/egg/linenoise|linenoise]] or [[http://wiki.call-cc.org/egg/parley|parley]] eggs. Out of these three, the parley egg is recommended.
+After installing parley, add the following to your {{~/.csirc}} or equivalent file:
 
 <enscript highlight=scheme>
- (require-extension readline)
- (current-input-port (make-gnu-readline-port))
- (gnu-history-install-file-manager (string-append (or (getenv "HOME") ".") "/.csi.history"))
+(use parley)
+(let ((old (current-input-port)))
+  (current-input-port (make-parley-port old)))
 </enscript>
 
 Users of *nix-like systems (including Cygwin), may also want to check out [[http://utopia.knoware.nl/~hlub/rlwrap/|rlwrap]].  This program lets you "wrap" another process (e.g. {{rlwrap csi}}) with the readline library, giving you history, autocompletion, and the ability to set the keystroke set. Vi fans can get vi keystrokes by adding "set editing-mode vi" to their {{.inputrc}} file.
@@ -794,6 +794,16 @@ If you compile a file with a call to {{load}}, the code will be loaded at
 runtime and, if the file loaded is a Scheme source code file
 (instead of a shared object), it will be
 interpreted (even if the caller program is compiled).
+
+==== How do I use extended (non-standard) syntax in evaluated code at run-time?
+
+Normally, only standard Scheme syntax is available to the evaluator. To
+use the extensions provided in the CHICKEN compiler and interpreter,
+add:
+
+<enscript highlight=scheme>
+(require-library chicken-syntax)
+</enscript>
 
 === Extensions 
 
@@ -812,7 +822,7 @@ It should contain the path where you want eggs to be installed:
  $ chicken-install -init ~/eggs/lib/chicken/5
  $ chicken-install -p ~/eggs/ extensionname
 
-In order to make programs (including csi) see these eggs, you should set this variable when you run them. See the [[/man/4/Extensions#Changing repository location|Extensions/Changing repository location]] section of the manual for more information on that.
+In order to make programs (including csi) see these eggs, you should set this variable when you run them. See the [[Extensions#Changing repository location|Extensions/Changing repository location]] section of the manual for more information on that.
 
 Alternatively, you can call the {{repository-path}} Scheme procedure before loading the eggs, as in:
 
