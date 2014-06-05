@@ -57,7 +57,7 @@ else()
     set(C_TARGET_RC_COMPILER ${_chicken_target_system}windres CACHE STRING "")
 endif()
 
-set(CHICKEN_TARGET_ROOT_DIR "" CACHE INTERNAL "")
+set(CHICKEN_TARGET_ROOT_DIR "" CACHE PATH "")
 set(TARGET_RUN_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE INTERNAL "")
 
 set(PROGRAM_PREFIX ${_program_prefix} CACHE STRING
@@ -65,35 +65,41 @@ set(PROGRAM_PREFIX ${_program_prefix} CACHE STRING
 
 set(INSTALL_NAME       ${PROGRAM_PREFIX}chicken CACHE STRING
     "Canonical Chicken name")
-set(INSTALL_PREFIX     ${CMAKE_INSTALL_PREFIX} CACHE INTERNAL "")
+set(INSTALL_PREFIX     ${CMAKE_INSTALL_PREFIX})
 
 if(WIN32)
-    set(INSTALL_BINDIR     "." CACHE PATH "")
-    set(INSTALL_LIBDIR     ${INSTALL_BINDIR} CACHE PATH "")
-    set(INSTALL_EGGDIR     lib/${API_VERSION} CACHE PATH "")
-    set(INSTALL_DATADIR    "." CACHE PATH "")
-    set(INSTALL_DOCDIR     ${INSTALL_DATADIR}/doc CACHE PATH "")
-    set(INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE PATH "")
-    set(INSTALL_MANDIR     ${INSTALL_DOCDIR}/man CACHE PATH "")
+    set(INSTALL_BINDIR     ".")
+    set(INSTALL_LIBDIR     ${INSTALL_BINDIR})
+    set(INSTALL_EGGDIR     lib/${API_VERSION})
+    set(INSTALL_DATADIR    ".")
+    set(INSTALL_DOCDIR     ${INSTALL_DATADIR}/doc)
+    set(INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
+    set(INSTALL_MANDIR     ${INSTALL_DOCDIR}/man)
 else()
-    set(INSTALL_BINDIR     ${CMAKE_INSTALL_BINDIR} CACHE PATH "")
-    set(INSTALL_LIBDIR     lib CACHE PATH "")
-    set(INSTALL_EGGDIR     ${INSTALL_LIBDIR}/chicken/${API_VERSION} CACHE PATH "")
-    set(INSTALL_DATADIR    ${CMAKE_INSTALL_DATADIR}/chicken CACHE PATH "")
-    set(INSTALL_DOCDIR     ${INSTALL_DATADIR}/doc CACHE PATH "")
-    set(INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/chicken CACHE PATH "")
-    set(INSTALL_MANDIR     ${CMAKE_INSTALL_MANDIR}/man1 CACHE PATH "")
+    set(INSTALL_BINDIR     ${CMAKE_INSTALL_BINDIR})
+    set(INSTALL_LIBDIR     lib)
+    set(INSTALL_EGGDIR     ${INSTALL_LIBDIR}/chicken/${API_VERSION})
+    set(INSTALL_DATADIR    ${CMAKE_INSTALL_DATADIR}/chicken)
+    set(INSTALL_DOCDIR     ${INSTALL_DATADIR}/doc)
+    set(INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/chicken)
+    set(INSTALL_MANDIR     ${CMAKE_INSTALL_MANDIR}/man1)
 endif()
 
 set(TARGET_NAME        ${INSTALL_NAME} CACHE STRING
     "Canonical target Chicken name")
-set(TARGET_PREFIX      ${CHICKEN_TARGET_ROOT_DIR}${TARGET_RUN_PREFIX} CACHE INTERNAL "")
+set(TARGET_PREFIX      ${CHICKEN_TARGET_ROOT_DIR}${TARGET_RUN_PREFIX})
 
-set(TARGET_BINDIR      ${INSTALL_BINDIR} CACHE PATH "")
-set(TARGET_LIBDIR      ${INSTALL_LIBDIR} CACHE PATH "")
-set(TARGET_EGGDIR      ${TARGET_LIBDIR}/chicken/${API_VERSION} CACHE PATH "")
-set(TARGET_DATADIR     ${INSTALL_DATADIR} CACHE PATH "")
-set(TARGET_INCLUDEDIR  ${INSTALL_INCLUDEDIR} CACHE PATH "")
+set(TARGET_BINDIR      ${INSTALL_BINDIR})
+set(TARGET_LIBDIR      ${INSTALL_LIBDIR})
+set(TARGET_EGGDIR      ${TARGET_LIBDIR}/chicken/${API_VERSION})
+set(TARGET_DATADIR     ${INSTALL_DATADIR})
+set(TARGET_INCLUDEDIR  ${INSTALL_INCLUDEDIR})
+
+foreach(D BINDIR LIBDIR EGGDIR DATADIR INCLUDEDIR)
+    get_filename_component(INSTALL_FULL_${D} "${INSTALL_PREFIX}/${INSTALL_${D}}" ABSOLUTE)
+    get_filename_component(TARGET_FULL_${D} "${TARGET_PREFIX}/${TARGET_${D}}" ABSOLUTE)
+endforeach()
+get_filename_component(TARGET_FULL_RUN_LIBDIR "${TARGET_RUN_PREFIX}/${TARGET_LIBDIR}" ABSOLUTE)
 
 set(CHICKEN_OPTIONS -optimize-level 2 -inline -ignore-repository -feature
     chicken-bootstrap)
@@ -155,8 +161,13 @@ check_symbol_exists("sigaction"      "signal.h"  HAVE_SIGACTION)
 check_symbol_exists("sigprocmask"    "signal.h"  HAVE_SIGPROCMASK)
 check_symbol_exists("sigsetjmp"      "setjmp.h"  HAVE_SIGSETJMP)
 check_symbol_exists("strerror"       "string.h"  HAVE_STRERROR)
+check_symbol_exists("strlcat"        "string.h"  HAVE_STRLCAT)
+check_symbol_exists("strlcpy"        "string.h"  HAVE_STRLCPY)
 check_symbol_exists("strtoll"        "stdlib.h"  HAVE_STRTOLL)
 check_symbol_exists("strtoq"         "stdlib.h"  HAVE_STRTOQ)
+
+# FIXME: seems to be defined in every platform Makefile but not used anywhere
+set(STDC_HEADERS 1)
 
 function(_chicken_set_more_libs)
     # TODO: handle MSVC

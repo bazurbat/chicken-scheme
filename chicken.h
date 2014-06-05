@@ -567,10 +567,6 @@ static inline int isinf_ld (long double x)
  #define INT8_MIN   (-INT8_MAX - 1)
 */
 
-#if defined (_MSC_VER)
-# define snprintf _snprintf
-#endif
-
 #if defined(_MSC_VER)
 # define C_U64_MAX    _UI64_MAX
 # define C_S64_MIN    _I64_MIN
@@ -971,7 +967,7 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_strlen                   strlen
 # define C_memset                   memset
 # define C_memmove                  memmove
-# if (defined _WIN32)
+# if defined(_WIN32)
 #  define C_strncasecmp              _strnicmp
 # else
 #  define C_strncasecmp              strncasecmp
@@ -989,7 +985,11 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_fopen                    fopen
 # define C_fclose                   fclose
 # define C_strpbrk                  strpbrk
-# define C_snprintf                 snprintf
+# if defined(_WIN32)
+#  define C_snprintf                _snprintf
+# else
+#  define C_snprintf                snprintf
+# endif
 # define C_printf                   printf
 # define C_fprintf                  fprintf
 # define C_vfprintf                 vfprintf
