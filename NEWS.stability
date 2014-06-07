@@ -2,7 +2,7 @@ Chicken stability/4.9.0 branch log
 
 -----------------------------------
 
-Changes in HEAD:
+Changes in 4.9.0.1:
 
 a1c739e Fix minor version in chicken.h
 e203181 Add tests/version-tests.scm
