@@ -265,7 +265,7 @@
 				((##sys#symbol-has-toplevel-binding? var)
 				 (lambda v (##sys#slot var 0)))
 				(else
-				 (lambda v (##core#inline "C_retrieve" var))))))
+				 (lambda v (##core#inline "C_fast_retrieve" var))))))
                       (else
                        (case i
                          ((0) (lambda (v) 
