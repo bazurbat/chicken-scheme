@@ -1,3 +1,8 @@
+4.9.0.1
+
+- Runtime library
+  - C_MINOR_VERSION changed to 9; feature identifier chicken-4.8 => chicken-4.9
+
 4.9.0
 
 - Security fixes
