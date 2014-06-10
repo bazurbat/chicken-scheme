@@ -15,7 +15,7 @@ option(CHICKEN_HAVE_CONFIG_H "Use generated chicken-config.h" YES)
 option(CHICKEN_ENABLE_PTABLES "Enable procedure tables" YES)
 mark_as_advanced(CHICKEN_HAVE_CONFIG_H CHICKEN_ENABLE_PTABLES)
 
-set(CHICKEN_ROOT_DIR "" CACHE PATH "")
+set(CHICKEN_ROOT_DIR "$ENV{CHICKEN_PREFIX}" CACHE PATH "")
 set(CHICKEN_HOST_ROOT_DIR ${CHICKEN_ROOT_DIR} CACHE PATH "")
 
 if(CHICKEN_SYSTEM)
@@ -34,6 +34,10 @@ find_package(Chicken CONFIG QUIET
     NO_DEFAULT_PATH)
 find_package(Chicken CONFIG QUIET)
 
+# NOTE: search system paths before environment variables (PATH, etc.) to avoid
+# unexpected clashes with locally installed Chicken (in user home, build root
+# and such)
+
 find_program(CHICKEN_EXECUTABLE ${_chicken_host_system}chicken
     PATHS ${CHICKEN_HOST_ROOT_DIR}/bin
     NO_DEFAULT_PATH)
@@ -41,7 +45,10 @@ find_program(CHICKEN_EXECUTABLE ${_chicken_system}chicken
     PATHS ${CHICKEN_ROOT_DIR}/bin
     NO_DEFAULT_PATH)
 find_program(CHICKEN_EXECUTABLE
-    NAMES ${_chicken_host_system}chicken ${_chicken_system}chicken) 
+    NAMES ${_chicken_host_system}chicken ${_chicken_system}chicken
+    NO_SYSTEM_ENVIRONMENT_PATH)
+find_program(CHICKEN_EXECUTABLE
+    NAMES ${_chicken_host_system}chicken ${_chicken_system}chicken)
 
 find_program(CSI_EXECUTABLE ${_chicken_host_system}csi
     PATHS ${CHICKEN_HOST_ROOT_DIR}/bin
@@ -50,6 +57,9 @@ find_program(CSI_EXECUTABLE ${_chicken_system}chicken
     PATHS ${CHICKEN_ROOT_DIR}/bin
     NO_DEFAULT_PATH)
 find_program(CSI_EXECUTABLE
+    NAMES ${_chicken_host_system}csi ${_chicken_system}csi
+    NO_SYSTEM_ENVIRONMENT_PATH)
+find_program(CSI_EXECUTABLE
     NAMES ${_chicken_host_system}csi ${_chicken_system}csi)
 
 find_path(CHICKEN_INCLUDE_DIR chicken.h
@@ -57,16 +67,23 @@ find_path(CHICKEN_INCLUDE_DIR chicken.h
     PATH_SUFFIXES chicken
     NO_DEFAULT_PATH)
 find_path(CHICKEN_INCLUDE_DIR chicken.h
+    PATH_SUFFIXES chicken
+    NO_SYSTEM_ENVIRONMENT_PATH)
+find_path(CHICKEN_INCLUDE_DIR chicken.h
     PATH_SUFFIXES chicken)
 
 find_library(CHICKEN_LIBRARY ${_chicken_system}chicken
     PATHS ${CHICKEN_ROOT_DIR}/lib
     NO_DEFAULT_PATH)
+find_library(CHICKEN_LIBRARY ${_chicken_system}chicken
+    NO_SYSTEM_ENVIRONMENT_PATH)
 find_library(CHICKEN_LIBRARY ${_chicken_system}chicken)
 
 find_library(CHICKEN_STATIC_LIBRARY lib${_chicken_system}chicken.a
     PATHS ${CHICKEN_ROOT_DIR}/lib
     NO_DEFAULT_PATH)
+find_library(CHICKEN_STATIC_LIBRARY lib${_chicken_system}chicken.a
+    NO_SYSTEM_ENVIRONMENT_PATH)
 find_library(CHICKEN_STATIC_LIBRARY lib${_chicken_system}chicken.a)
 
 function(_chicken_set_c_flags)
