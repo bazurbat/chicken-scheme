@@ -37,23 +37,25 @@ SEP ?= /
 DESTDIR ?=
 PREFIX ?= /usr/local
 
-BINDIR = $(PREFIX)/bin
-LIBDIR = $(PREFIX)/lib
-SHAREDIR = $(PREFIX)/share
-DATADIR = $(SHAREDIR)/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
-TOPMANDIR = $(SHAREDIR)/man
-MANDIR = $(TOPMANDIR)/man1
-INCDIR = $(PREFIX)/include/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
-DOCDIR = $(DATADIR)/doc
+BINDIR ?= $(PREFIX)/bin
+LIBDIR ?= $(PREFIX)/lib
+SHAREDIR ?= $(PREFIX)/share
+DATADIR ?= $(SHAREDIR)/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
+INCLUDEDIR ?= $(PREFIX)/include
+MANDIR ?= $(SHAREDIR)/man
+
+DOCDIR ?= $(DATADIR)/doc
 VARDIR ?= $(LIBDIR)
-CHICKENLIBDIR = $(VARDIR)/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
+MAN1DIR ?= $(MANDIR)/man1
+CHICKENLIBDIR ?= $(VARDIR)/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
 EGGDIR ?= $(CHICKENLIBDIR)/$(BINARYVERSION)
+CHICKENINCDIR ?= $(INCLUDEDIR)/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
 
 # For the windows shell, we must distinguish between paths built into
 # binaries (system calls may use slash as a separator) and paths
 # passed to shell commands when installing.  We prefix the latter with
 # an 'I':
-INST_DIRS=BINDIR LIBDIR SHAREDIR DATADIR MANDIR INCDIR DOCDIR EGGDIR
+INST_DIRS=BINDIR LIBDIR SHAREDIR DATADIR MAN1DIR CHICKENINCDIR DOCDIR EGGDIR
 $(foreach dir,$(INST_DIRS),$(eval I$(dir)=$(subst /,$(SEP),$($(dir)))))
 
 INSTALL_LIB_NAME = $(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
@@ -361,7 +363,7 @@ endif
 	$(call echo, >>, $@,# define C_INSTALL_STATIC_LIB_HOME "$(LIBDIR)")
 	$(call echo, >>, $@,#endif)
 	$(call echo, >>, $@,#ifndef C_INSTALL_INCLUDE_HOME)
-	$(call echo, >>, $@,# define C_INSTALL_INCLUDE_HOME "$(INCDIR)")
+	$(call echo, >>, $@,# define C_INSTALL_INCLUDE_HOME "$(CHICKENINCDIR)")
 	$(call echo, >>, $@,#endif)
 	$(call echo, >>, $@,#ifndef C_INSTALL_MORE_LIBS)
 	$(call echo, >>, $@,# define C_INSTALL_MORE_LIBS "$(LIBRARIES)")

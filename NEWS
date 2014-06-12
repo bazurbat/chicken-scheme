@@ -25,6 +25,15 @@
     C_get_environment_variable[_2] functions.
   - C_mutate2 has been deprecated in favor of C_mutate
 
+- Build system
+  - MANDIR was renamed to MAN1DIR and TOPMANDIR was renamed to MANDIR
+     in order to comply with standard Makefile practice in UNIX.
+  - INCDIR was renamed to CHICKENINCDIR, and now derives from
+     INCLUDEDIR, which defaults to $(PREFIX)/include
+  - BINDIR, LIBDIR, SHAREDIR, INCLUDEDIR, MANDIR, MAN1DIR, DOCDIR,
+     CHICKENINCDIR and CHICKENLIBDIR will now also be taken from
+     the environment, if present (like PLATFORM, DESTDIR and PREFIX).
+
 4.9.0
 
 - Security fixes
