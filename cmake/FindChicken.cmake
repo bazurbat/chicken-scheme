@@ -13,7 +13,10 @@ mark_as_advanced(CHICKEN_SYSTEM CHICKEN_HOST_SYSTEM CHICKEN_TARGET_SYSTEM)
 
 option(CHICKEN_HAVE_CONFIG_H "Use generated chicken-config.h" YES)
 option(CHICKEN_ENABLE_PTABLES "Enable procedure tables" YES)
-mark_as_advanced(CHICKEN_HAVE_CONFIG_H CHICKEN_ENABLE_PTABLES)
+option(CHICKEN_EMIT_TYPES "Generate files with type declarations" NO)
+option(CHICKEN_EMIT_INLINES "Generate files with globally inlinable procedures" NO)
+mark_as_advanced(CHICKEN_HAVE_CONFIG_H CHICKEN_ENABLE_PTABLES
+    CHICKEN_EMIT_TYPES CHICKEN_EMIT_INLINES)
 
 set(CHICKEN_ROOT_DIR "$ENV{CHICKEN_PREFIX}" CACHE PATH "")
 set(CHICKEN_HOST_ROOT_DIR ${CHICKEN_ROOT_DIR} CACHE PATH "")
