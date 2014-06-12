@@ -35,7 +35,7 @@ shift $(($OPTIND - 1))
 
 # First argument after options is the file
 FILE=$1
-if [ "x$FILE" == "x" ]; then
+if [ "x$FILE" = "x" ]; then
     FILE="/dev/stdin"
 fi
 
@@ -55,7 +55,7 @@ if [ -n "$NOENSCRIPT" ]; then
 fi
 
 # Are we filtering out just the user code?
-if [ "x$ALL" == "x1" ]; then
+if [ "x$ALL" = "x1" ]; then
   $CSC $CSC_OPTS $FILE | $PASS2 2>/dev/null | $PASS3 2>/dev/null
 else
   $CSC $CSC_OPTS $FILE |\
