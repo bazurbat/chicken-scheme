@@ -2,6 +2,11 @@
 
 include(FindPackageMessage)
 include(FindPackageHandleStandardArgs)
+include(FeatureSummary)
+
+set_package_properties(Chicken PROPERTIES
+    URL http://call-cc.org/
+    DESCRIPTION "A practical and portable Scheme system")
 
 set(CHICKEN_SYSTEM "" CACHE STRING
     "A compiler identifier of the build system")
