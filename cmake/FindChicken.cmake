@@ -5,7 +5,7 @@ include(FindPackageHandleStandardArgs)
 include(FeatureSummary)
 
 set_package_properties(Chicken PROPERTIES
-    URL http://call-cc.org/
+    URL "http://call-cc.org"
     DESCRIPTION "A practical and portable Scheme system")
 
 set(CHICKEN_SYSTEM "" CACHE STRING
@@ -150,19 +150,19 @@ set(CHICKEN_LIBRARIES ${CHICKEN_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
 set(CHICKEN_STATIC_LIBRARIES ${CHICKEN_STATIC_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
 
 find_package_handle_standard_args(Chicken DEFAULT_MSG CHICKEN_EXECUTABLE)
-find_package_message(Chicken
+find_package_message(CSI_EXECUTABLE
     "  CSI_EXECUTABLE: ${CSI_EXECUTABLE}"
     "${CSI_EXECUTABLE}")
-find_package_message(Chicken
+find_package_message(CHICKEN_INCLUDE_DIR
     "  CHICKEN_INCLUDE_DIR: ${CHICKEN_INCLUDE_DIR}"
     "${CHICKEN_INCLUDE_DIR}")
-find_package_message(Chicken
+find_package_message(CHICKEN_LIBRARY
     "  CHICKEN_LIBRARY: ${CHICKEN_LIBRARY} (${CHICKEN_EXTRA_LIBRARIES})"
     "${CHICKEN_LIBRARY}")
-find_package_message(Chicken
+find_package_message(CHICKEN_STATIC_LIBRARY
     "  CHICKEN_STATIC_LIBRARY: ${CHICKEN_STATIC_LIBRARY}"
     "${CHICKEN_STATIC_LIBRARY}")
-find_package_message(Chicken
+find_package_message(CHICKEN_EGGDIR
     "  CHICKEN_EGGDIR: ${CHICKEN_EGGDIR}"
     "${CHICKEN_EGGDIR}")
 
