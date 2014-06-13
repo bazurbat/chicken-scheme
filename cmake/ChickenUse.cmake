@@ -225,7 +225,7 @@ endfunction()
 function(install_chicken_modules name)
     cmake_parse_arguments(install
         ""
-        "VERSION"
+        ""
         "TARGETS;PROGRAMS;FILES"
         ${ARGN})
     foreach(m ${${name}_CHICKEN_MODULES})
@@ -246,4 +246,44 @@ function(install_chicken_modules name)
         install(FILES ${install_FILES}
             DESTINATION ${CHICKEN_EGGDIR})
     endif()
+
+    get_property(EXTENSION_NAME GLOBAL PROPERTY _CHICKEN_${name}_NAME)
+    get_property(EXTENSION_VERSION GLOBAL PROPERTY _CHICKEN_${name}_VERSION)
+    get_property(EXTENSION_DESCRIPTION GLOBAL PROPERTY _CHICKEN_${name}_DESCRIPTION)
+    get_property(EXTENSION_URL GLOBAL PROPERTY _CHICKEN_${name}_URL)
+
+    set(config_in_filename ${PROJECT_SOURCE_DIR}/ChickenExtensionConfig.cmake.in)
+    set(config_out_filename ${PROJECT_BINARY_DIR}/chicken-${name}-config.cmake)
+
+    set(version_in_filename ${PROJECT_SOURCE_DIR}/ChickenExtensionVersion.cmake.in)
+    set(version_out_filename ${PROJECT_BINARY_DIR}/chicken-${name}-config-version.cmake)
+
+    if(EXISTS ${config_in_filename})
+        configure_file(${config_in_filename} ${config_out_filename} @ONLY)
+        configure_file(${version_in_filename} ${version_out_filename} @ONLY)
+        install(FILES ${config_out_filename} ${version_out_filename}
+            DESTINATION ${CHICKEN_DATADIR})
+    endif()
+endfunction()
+
+function(find_chicken_extension name)
+    set(package chicken-${name})
+    find_package(${package} ${ARGV1} REQUIRED CONFIG
+        PATHS ${CHICKEN_DATADIR})
+    find_package_handle_standard_args(${package} DEFAULT_MSG ${package}_VERSION)
+endfunction()
+
+function(define_chicken_extension name)
+    cmake_parse_arguments(extension
+        ""
+        "VERSION;DESCRIPTION;CATEGORY;LICENSE;URL"
+        "AUTHOR;MAINTAINER"
+        ${ARGN})
+    if(NOT extension_URL)
+        set(extension_URL "http://wiki.call-cc.org/eggref/4/${name}")
+    endif()
+    set_property(GLOBAL PROPERTY _CHICKEN_${name}_NAME chicken-${name})
+    set_property(GLOBAL PROPERTY _CHICKEN_${name}_VERSION ${extension_VERSION})
+    set_property(GLOBAL PROPERTY _CHICKEN_${name}_DESCRIPTION ${extension_DESCRIPTION})
+    set_property(GLOBAL PROPERTY _CHICKEN_${name}_URL ${extension_URL})
 endfunction()
