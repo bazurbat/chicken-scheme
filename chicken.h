@@ -711,7 +711,7 @@ static inline int isinf_ld (long double x)
 #elif defined(__MINGW32__)
 # define C_BUILD_PLATFORM "mingw32"
 #elif defined(_MSC_VER)
-# define C_BUILD_PLATFORM "msvc"
+# define C_BUILD_PLATFORM "mingw32" // mingw32 really means "windows" in Chicken
 #elif defined(__clang__)
 # define C_BUILD_PLATFORM "clang"
 #elif defined(_AIX)
