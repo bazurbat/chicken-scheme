@@ -191,14 +191,31 @@ if(WIN32)
     set(C_WINDOWS_SHELL 1)
 endif()
 
+if(MSVC)
+    set(CMAKE_C_FLAGS ${CHICKEN_C_DEFINITIONS})
+    set(CMAKE_C_FLAGS_MINSIZEREL "/O1 /Os /Oy ${CHICKEN_C_FLAGS}")
+    set(CMAKE_C_FLAGS_RELEASE "/Ox /Ot /Oy ${CHICKEN_C_FLAGS}")
+    set(CMAKE_C_FLAGS_DEBUG "/Od /Zi ${CHICKEN_C_FLAGS}")
+else()
+    set(CMAKE_C_FLAGS ${CHICKEN_C_DEFINITIONS})
+    set(CMAKE_C_FLAGS_MINSIZEREL "-Os -fomit-frame-pointer ${CHICKEN_C_FLAGS}")
+    set(CMAKE_C_FLAGS_RELEASE "-O3 -fomit-frame-pointer ${CHICKEN_C_FLAGS}")
+    set(CMAKE_C_FLAGS_DEBUG "-g -Wall -Wno-unused ${CHICKEN_C_FLAGS}")
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+    set(CHICKEN_C_FLAGS_CONFIG ${CMAKE_C_FLAGS_MINSIZEREL})
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(CHICKEN_C_FLAGS_CONFIG ${CMAKE_C_FLAGS_RELEASE})
+elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CHICKEN_C_FLAGS_CONFIG ${CMAKE_C_FLAGS_DEBUG})
+endif()
+
 set(CHICKEN_CONFIG_H ${CMAKE_CURRENT_BINARY_DIR}/chicken-config.h)
 configure_file("chicken-config.h.in" ${CHICKEN_CONFIG_H})
 
-# let CMake handle flag combinations
-set(CMAKE_C_FLAGS "${CHICKEN_C_DEFINITIONS} ${CHICKEN_C_FLAGS}")
-set(CMAKE_C_FLAGS_MINSIZEREL ${CHICKEN_C_FLAGS_MINSIZEREL})
-set(CMAKE_C_FLAGS_RELEASE ${CHICKEN_C_FLAGS_RELEASE})
-set(CMAKE_C_FLAGS_DEBUG ${CHICKEN_C_FLAGS_DEBUG})
-unset(CHICKEN_GLOBAL_C_FLAGS)
+# do not duplicate flags when compiling generated files
+set(CHICKEN_C_DEFINITIONS "")
+set(CHICKEN_C_FLAGS "")
 
 file(COPY types.db DESTINATION .)

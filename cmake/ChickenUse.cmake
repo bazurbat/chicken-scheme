@@ -125,7 +125,7 @@ function(_chicken_command out_var in_filename)
         endif()
     endforeach()
 
-    set(c_flags "${CHICKEN_GLOBAL_C_FLAGS} ${command_c_flags}")
+    set(c_flags "${CHICKEN_C_FLAGS} ${CHICKEN_C_DEFINITIONS} ${command_c_flags}")
 
     if(NOT in_path STREQUAL CMAKE_CURRENT_BINARY_DIR)
         list(APPEND command_options -include-path ${in_path})
