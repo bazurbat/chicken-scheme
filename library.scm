@@ -1906,18 +1906,6 @@ EOF
       (##core#inline "C_i_check_port_2" x 0 #t (car loc))
       (##core#inline "C_i_check_port" x 0 #t) ) )
 
-(define (##sys#check-port-mode port mode . loc) ; OBSOLETE
-  (unless (eq? mode (##sys#slot port 1))
-    (##sys#signal-hook
-     #:type-error (and (pair? loc) (car loc))
-     (if mode "port is not an input port" "port is not an output-port") port) ) )
-
-(define (##sys#check-port* p loc)	; OBSOLETE
-  (##sys#check-port p)
-  (when (##sys#slot p 8)
-    (##sys#signal-hook #:file-error loc "port already closed" p) )
-  p )
-
 (define (current-input-port . arg)
   (when (pair? arg)
     (let ([p (car arg)])

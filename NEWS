@@ -17,7 +17,8 @@
     C_retrieve_symbol_proc, C_i_foreign_number_vector_argumentp,
     C_display_flonum, C_enumerate_symbols
   - Removed several deprecated and undocumented internal procedures:
-    ##sys#zap-strings, ##sys#round, ##sys#foreign-number-vector-argument
+    ##sys#zap-strings, ##sys#round, ##sys#foreign-number-vector-argument,
+    ##sys#check-port-mode, ##sys#check-port*
 
 - C API
   - Removed deprecated C_get_argument[_2] and
