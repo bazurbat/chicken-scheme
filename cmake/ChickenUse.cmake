@@ -202,6 +202,11 @@ function(add_chicken_library name)
             NO_SONAME TRUE
             INSTALL_RPATH .
             BUILD_WITH_INSTALL_RPATH FALSE)
+        # NOTE: Chicken module search algorithm uses hardcoded ".so" suffix
+        if(WIN32)
+            set_target_properties(${name} PROPERTIES
+                SUFFIX ".so")
+        endif()
     endif()
 endfunction()
 
