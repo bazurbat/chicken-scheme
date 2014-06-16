@@ -221,7 +221,10 @@ function(add_chicken_module name)
         set(import_filename "${CMAKE_CURRENT_BINARY_DIR}/${lib}.import.scm")
         add_chicken_library(${lib}.import ${import_filename} MODULE
             C_FLAGS ${compile_C_FLAGS})
-        # add_dependencies(${name} ${lib}.import)
+        # ensure that import libraries are built after module, so that
+        # targets depending on import pull generating module too, this is
+        # needed to properly compile import-for-syntax and such forms
+        add_dependencies(${lib}.import ${name})
     endforeach()
     set(${PROJECT_NAME}_CHICKEN_MODULES ${${PROJECT_NAME}_CHICKEN_MODULES}
         PARENT_SCOPE)
