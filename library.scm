@@ -996,8 +996,6 @@ EOF
       x
       (##core#inline_allocate ("C_a_i_flonum_round_proper" 4) x)))
 
-(define ##sys#round round)		; this is obsolete and is used by the "numbers" egg (gmp version)
-
 (define remainder 
   (lambda (x y) (- x (* (quotient x y) y))) )
 
@@ -1907,18 +1905,6 @@ EOF
   (if (pair? loc)
       (##core#inline "C_i_check_port_2" x 0 #t (car loc))
       (##core#inline "C_i_check_port" x 0 #t) ) )
-
-(define (##sys#check-port-mode port mode . loc) ; OBSOLETE
-  (unless (eq? mode (##sys#slot port 1))
-    (##sys#signal-hook
-     #:type-error (and (pair? loc) (car loc))
-     (if mode "port is not an input port" "port is not an output-port") port) ) )
-
-(define (##sys#check-port* p loc)	; OBSOLETE
-  (##sys#check-port p)
-  (when (##sys#slot p 8)
-    (##sys#signal-hook #:file-error loc "port already closed" p) )
-  p )
 
 (define (current-input-port . arg)
   (when (pair? arg)
@@ -4433,9 +4419,6 @@ EOF
    from to
    offset1 offset2 bytes) )
 
-;; OBSOLETE
-(define ##sys#zap-strings (foreign-lambda void "C_zap_strings" scheme-object))
-
 (define (##sys#block-pointer x)
   (let ([ptr (##sys#make-pointer)])
     (##core#inline "C_pointer_to_block" ptr x)
@@ -4452,7 +4435,6 @@ EOF
 (define (##sys#foreign-struct-wrapper-argument t x) 
   (##core#inline "C_i_foreign_struct_wrapper_argumentp" t x))
 
-(define ##sys#foreign-number-vector-argument ##sys#foreign-struct-wrapper-argument) ;OBSOLETE
 (define (##sys#foreign-string-argument x) (##core#inline "C_i_foreign_string_argumentp" x))
 (define (##sys#foreign-symbol-argument x) (##core#inline "C_i_foreign_symbol_argumentp" x))
 (define (##sys#foreign-pointer-argument x) (##core#inline "C_i_foreign_pointer_argumentp" x))

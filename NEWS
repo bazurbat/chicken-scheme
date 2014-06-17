@@ -1,6 +1,35 @@
+4.9.1
+
+- Core libraries
+  - alist-ref from unit data-structures now gives an error when passed
+    a non-list, for consistency with assv/assq/assoc.
+
+- Unit lolevel:
+  - Restore long-lost but still documented "vector-like?" procedure (#983)
+
+- Unit "posix":
+  - set-file-position! now allows negative positions for seek/cur (thanks
+    to Seth Alves).
+
+- Runtime system:
+  - Removed several deprecated, undocumented parts of the C interface:
+    C_zap_strings, C_stack_check, C_retrieve, C_retrieve_proc,
+    C_retrieve_symbol_proc, C_i_foreign_number_vector_argumentp,
+    C_display_flonum, C_enumerate_symbols
+  - Removed several deprecated and undocumented internal procedures:
+    ##sys#zap-strings, ##sys#round, ##sys#foreign-number-vector-argument,
+    ##sys#check-port-mode, ##sys#check-port*
+
+- C API
+  - Removed deprecated C_get_argument[_2] and
+    C_get_environment_variable[_2] functions.
+  - C_mutate2 has been deprecated in favor of C_mutate
+
 4.9.0
 
 - Security fixes
+  - CVE-2014-3776: read-u8vector! no longer reads beyond its buffer when
+    length is #f (thanks to Seth Alves).
   - CVE-2013-4385: read-string! no longer reads beyond its buffer when
     length is #f.
   - CVE-2013-1874: ./.csirc is no longer loaded from the current directory

@@ -545,7 +545,7 @@
 		       'let 
 		       (map (lambda (v) 
 			      ;; for temporaries introduced by specialization
-			      (if (eq? '#:tmp v) (gensym) v)) ; OBSOLETE
+			      (if (eq? '#:tmp v) (error "SHOULD NOT HAPPEN") v)) ; OBSOLETE
 			    (unzip1 bs))
 		       (append (map (lambda (b) (walk (cadr b))) (cadr x))
 			       (list (walk body)) ) ) ) ) )

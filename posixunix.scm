@@ -266,11 +266,6 @@ static C_TLS sigset_t C_sigset;
 #define C_write(fd, b, n)   C_fix(write(C_unfix(fd), C_data_pointer(b), C_unfix(n)))
 #define C_mkstemp(t)        C_fix(mkstemp(C_c_string(t)))
 
-/* It is assumed that 'int' is-a 'long' */
-#define C_ftell(p)          C_fix(ftell(C_port_file(p)))
-#define C_fseek(p, n, w)    C_mk_nbool(fseek(C_port_file(p), C_num_to_int(n), C_unfix(w)))
-#define C_lseek(fd, o, w)     C_fix(lseek(C_unfix(fd), C_unfix(o), C_unfix(w)))
-
 #define C_ctime(n)          (C_secs = (n), ctime(&C_secs))
 
 #if defined(__SVR4) || defined(C_MACOSX) || defined(__ANDROID__) || defined(_AIX)
@@ -612,50 +607,6 @@ EOF
 	       (values
 		(and fdsr (if (fixnum? fdsr) (and (memq fdsr rl) fdsr) rl))
 		(and fdsw (if (fixnum? fdsw) (and (memq fdsw wl) fdsw) wl)))))))))
-
-
-;;; File attribute access:
-
-(define-foreign-variable _seek_set int "SEEK_SET")
-(define-foreign-variable _seek_cur int "SEEK_CUR")
-(define-foreign-variable _seek_end int "SEEK_END")
-
-(define seek/set _seek_set)
-(define seek/end _seek_end)
-(define seek/cur _seek_cur)
-
-(define set-file-position!
-  (lambda (port pos . whence)
-    (let ((whence (if (pair? whence) (car whence) _seek_set)))
-      (##sys#check-exact pos 'set-file-position!)
-      (##sys#check-exact whence 'set-file-position!)
-      (when (negative? pos)
-	(##sys#signal-hook #:bounds-error 'set-file-position! "invalid negative port position" pos port))
-      (unless (cond ((port? port)
-		     (and (eq? (##sys#slot port 7) 'stream)
-			  (##core#inline "C_fseek" port pos whence) ) )
-		    ((fixnum? port)
-		     (##core#inline "C_lseek" port pos whence))
-		    (else
-		     (##sys#signal-hook #:type-error 'set-file-position! "invalid file" port)) )
-	(posix-error #:file-error 'set-file-position! "cannot set file position" port pos) ) ) ) )
-
-(define file-position
-  (getter-with-setter
-   (lambda (port)
-     (let ((pos (cond ((port? port)
-		       (if (eq? (##sys#slot port 7) 'stream)
-			   (##core#inline "C_ftell" port)
-			   -1) )
-		      ((fixnum? port)
-		       (##core#inline "C_lseek" port 0 _seek_cur) )
-		      (else
-		       (##sys#signal-hook #:type-error 'file-position "invalid file" port)) ) ) )
-       (when (< pos 0)
-	 (posix-error #:file-error 'file-position "cannot retrieve file position of port" port) )
-       pos) )
-   set-file-position!		; doesn't accept WHENCE
-   "(file-position port)"))
 
 
 ;;; Directory stuff:

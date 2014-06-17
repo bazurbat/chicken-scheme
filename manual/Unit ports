@@ -39,9 +39,9 @@ and buffering the character).
 * {{READ-STRING!}} is called when {{read-string!}} is called (or the
 higher-level non-mutating {{read-string}}).  It will be invoked with 4
 arguments: the port created by {{make-input-port}}, the number of
-bytes to read, the string buffer in which to read (which may be
+bytes to read, a string (or sometimes a blob) to read into (which may be
 assumed to be big enough to hold the data) and the offset into the
-string at which to put the data to read.  It should return the number
+buffer at which to put the data to read.  It should return the number
 of bytes that have successfully been read, which should always be
 equal to the requested bytes unless EOF was hit, in which case it can
 be less.  If this procedure is not provided or {{#f}}, the buffer will

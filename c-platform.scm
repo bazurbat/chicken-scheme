@@ -788,8 +788,6 @@
 (rewrite 'lcm 18 1)
 (rewrite 'list 18 '())
 
-(rewrite 'argv 13 "C_get_argv" #t)
-
 (rewrite '* 16 2 "C_a_i_times" #t 4)	; words-per-flonum
 (rewrite '+ 16 2 "C_a_i_plus" #t 4)	; words-per-flonum
 (rewrite '- 16 2 "C_a_i_minus" #t 4)	; words-per-flonum
