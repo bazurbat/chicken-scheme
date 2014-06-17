@@ -215,5 +215,7 @@ configure_file("chicken-config.h.in" ${CHICKEN_CONFIG_H})
 # do not duplicate flags when compiling generated files
 set(CHICKEN_C_DEFINITIONS "")
 set(CHICKEN_C_FLAGS "")
+# do not use chicken.h from system include path
+set(CHICKEN_INCLUDE_DIRS "")
 
 file(COPY types.db DESTINATION .)

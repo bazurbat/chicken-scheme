@@ -11,12 +11,8 @@ include(ChickenApplyHack)
 include(ChickenConfigure)
 
 # libchicken
-# use generated chicken-config.h
+# to find generated chicken-config.h
 include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
-# use bundled chicken.h when cross-compiling
-if(CMAKE_CROSSCOMPILING)
-    set(CHICKEN_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
-endif()
 
 set_source_files_properties(runtime.c PROPERTIES
     OBJECT_DEPENDS ${CHICKEN_CONFIG_H})
@@ -157,7 +153,7 @@ add_chicken_module(setup-download setup-download.scm
     EMIT setup-download
     OPTIONS ${LIBRARY_OPTIONS}
     C_FLAGS -I"${PROJECT_SOURCE_DIR}"
-    DEPENDS setup-api.import.scm)
+    DEPENDS setup-api.import)
 
 add_dependencies(chicken-install ${setupapi_MODULES})
 add_dependencies(chicken-uninstall ${setupapi_MODULES})
