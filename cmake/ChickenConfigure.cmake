@@ -67,12 +67,10 @@ set(INSTALL_NAME       ${PROGRAM_PREFIX}chicken CACHE STRING
     "Canonical Chicken name")
 set(INSTALL_PREFIX     ${CMAKE_INSTALL_PREFIX})
 
-# NOTE: bin, lib/chicken/<api_version>, share/chicken are hardcoded in Chicken,
-# do not change
 if(WIN32)
     set(INSTALL_BINDIR     bin)
     set(INSTALL_LIBDIR     ${INSTALL_BINDIR})
-    set(INSTALL_EGGDIR     lib/chicken/${API_VERSION})
+    set(INSTALL_EGGDIR     lib)
     set(INSTALL_DATADIR    share/chicken)
     set(INSTALL_DOCDIR     doc)
     set(INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})

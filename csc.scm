@@ -67,6 +67,7 @@
 ;;; Parameters:
 
 (define mingw (eq? (build-platform) 'mingw32))
+(define msvc (eq? (build-platform) 'msvc))
 (define osx (eq? (software-version) 'macosx))
 (define cygwin (eq? (build-platform) 'cygwin))
 (define aix (eq? (build-platform) 'aix))
@@ -113,7 +114,7 @@
 (define executable-extension "")
 (define compile-output-flag "-o ")
 (define nonstatic-compilation-options '())
-(define shared-library-extension ##sys#load-dynamic-extension)
+(define shared-library-extension ##sys#load-library-extension)
 (define default-translation-optimization-options '())
 (define pic-options (if (or mingw cygwin) '("-DPIC") '("-fPIC" "-DPIC")))
 (define windows-shell WINDOWS_SHELL)

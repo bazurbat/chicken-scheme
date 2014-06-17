@@ -58,8 +58,8 @@
 ;;; Quote string for shell
 
 (define (qs str #!optional (platform (build-platform)))
-  (let ((delim (if (eq? platform 'mingw32) #\" #\'))
-	(escaped (if (eq? platform 'mingw32) "\"\"" "'\\''")))
+  (let ((delim (if ##sys#windows-platform #\" #\'))
+	(escaped (if ##sys#windows-platform "\"\"" "'\\''")))
     (string-append
      (string delim)
      (string-concatenate
@@ -83,7 +83,7 @@
     (lambda (filename #!key options output-file (load #t) verbose)
       (let* ((cscpath (or (file-exists? (make-pathname path csc)) "csc"))
 	     (tmpfile (and (not output-file) (create-temporary-file "so")))
-	     (crapshell (eq? (build-platform) 'mingw32))
+	     (crapshell ##sys#windows-platform)
 	     (cmd (sprintf "~a~a -s ~a ~a -o ~a~a" 
 		    (if crapshell "\"" "")
 		    (qs cscpath)

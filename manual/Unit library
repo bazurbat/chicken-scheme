@@ -467,6 +467,7 @@ building the executing system, which is one of the following:
 
  cygwin
  mingw32
+ msvc
  gnu
  intel
  clang

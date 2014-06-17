@@ -350,7 +350,7 @@ EOF
 ;;; normalize pathname for a particular platform
 
 (define normalize-pathname
-  (let ((bldplt (if (eq? (build-platform) 'mingw32) 'windows 'unix)) )
+  (let ((bldplt (if ##sys#windows-platform 'windows 'unix)))
     (define (addpart part parts)
       (cond ((string=? "." part) parts)
             ((string=? ".." part) 
