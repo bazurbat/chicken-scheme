@@ -190,12 +190,10 @@ if(WIN32)
 endif()
 
 if(MSVC)
-    set(CMAKE_C_FLAGS ${CHICKEN_C_DEFINITIONS})
     set(CMAKE_C_FLAGS_MINSIZEREL "/O1 /Os /Oy ${CHICKEN_C_FLAGS}")
     set(CMAKE_C_FLAGS_RELEASE "/Ox /Ot /Oy ${CHICKEN_C_FLAGS}")
     set(CMAKE_C_FLAGS_DEBUG "/Od /Zi ${CHICKEN_C_FLAGS}")
 else()
-    set(CMAKE_C_FLAGS ${CHICKEN_C_DEFINITIONS})
     set(CMAKE_C_FLAGS_MINSIZEREL "-Os -fomit-frame-pointer ${CHICKEN_C_FLAGS}")
     set(CMAKE_C_FLAGS_RELEASE "-O3 -fomit-frame-pointer ${CHICKEN_C_FLAGS}")
     set(CMAKE_C_FLAGS_DEBUG "-g -Wall -Wno-unused ${CHICKEN_C_FLAGS}")
@@ -213,7 +211,6 @@ set(CHICKEN_CONFIG_H ${CMAKE_CURRENT_BINARY_DIR}/chicken-config.h)
 configure_file("chicken-config.h.in" ${CHICKEN_CONFIG_H})
 
 # do not duplicate flags when compiling generated files
-set(CHICKEN_C_DEFINITIONS "")
 set(CHICKEN_C_FLAGS "")
 # do not use chicken.h from system include path
 set(CHICKEN_INCLUDE_DIRS "")

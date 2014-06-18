@@ -139,10 +139,8 @@ function(_chicken_command out_var in_filename)
         set(c_flags "${c_flags} -I\"${CHICKEN_INCLUDE_DIRS}\"")
     endif()
 
-    get_property(out_c_flags SOURCE ${out_filename} PROPERTY COMPILE_FLAGS)
-    set(out_c_flags "${out_c_flags} ${c_flags}")
-    string(STRIP ${out_c_flags} out_c_flags)
-    set_property(SOURCE ${out_filename} PROPERTY COMPILE_FLAGS ${out_c_flags})
+    set_property(SOURCE ${out_filename} APPEND_STRING PROPERTY
+        COMPILE_FLAGS " ${c_flags}")
 
     add_custom_command(
         OUTPUT ${out_filename} ${command_output}
