@@ -27,7 +27,7 @@
 
 (declare
   (unit tcp)
-  (uses extras scheduler)
+  (uses ports scheduler)
   (disable-interrupts) ; Avoid race conditions around errno/WSAGetLastError
   (export tcp-close tcp-listen tcp-connect tcp-accept tcp-accept-ready? ##sys#tcp-port->fileno tcp-listener? tcp-addresses
 	  tcp-abandon-port tcp-listener-port tcp-listener-fileno tcp-port-numbers tcp-buffer-size
