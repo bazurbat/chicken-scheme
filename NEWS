@@ -3,6 +3,9 @@
 - Core libraries
   - alist-ref from unit data-structures now gives an error when passed
     a non-list, for consistency with assv/assq/assoc.
+  - Unit tcp now implicitly depends on ports instead of extras.
+     This may break programs which don't use modules and forgot to
+     require extras but use procedures from it.
 
 - Unit lolevel:
   - Restore long-lost but still documented "vector-like?" procedure (#983)
