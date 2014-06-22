@@ -224,7 +224,7 @@ EOF
                  ((string? file)
                   (let ((path (##sys#make-c-string
 			       (##sys#platform-fixup-pathname
-				(##sys#expand-home-path file))
+                                file)
 			       loc)))
 		    (if link
 			(##core#inline "C_lstat" path)
@@ -253,7 +253,7 @@ EOF
    (lambda (f t)
      (##sys#check-number t 'set-file-modification-time)
      (let ((r ((foreign-lambda int "set_file_mtime" c-string scheme-object)
-	       (##sys#expand-home-path f) t)))
+	       f t)))
        (when (fx< r 0)
 	 (posix-error 
 	  #:file-error 'set-file-modification-time
@@ -429,21 +429,20 @@ EOF
 	(unless (fx= 0 (##core#inline "C_rmdir" sname))
 	  (posix-error #:file-error 'delete-directory "cannot delete directory" dir) )))
     (##sys#check-string name 'delete-directory)
-    (let ((name (##sys#expand-home-path name)))
-      (if recursive
-	  (let ((files (find-files ; relies on `find-files' to list dir-contents before dir
-			name 
-			dotfiles: #t
-			follow-symlinks: #f)))
-	    (for-each
-	     (lambda (f)
-	       ((cond ((symbolic-link? f) delete-file)
-		      ((directory? f) rmdir)
-		      (else delete-file))
-		f))
-	     files)
-	    (rmdir name))
-	  (rmdir name)))))
+    (if recursive
+      (let ((files (find-files ; relies on `find-files' to list dir-contents before dir
+                     name
+                     dotfiles: #t
+                     follow-symlinks: #f)))
+        (for-each
+          (lambda (f)
+            ((cond ((symbolic-link? f) delete-file)
+                   ((directory? f) rmdir)
+                   (else delete-file))
+             f))
+          files)
+        (rmdir name))
+      (rmdir name))))
 
 (define directory
   (lambda (#!optional (spec (current-directory)) show-dotfiles?)
@@ -453,7 +452,7 @@ EOF
 	  [entry (##sys#make-pointer)] )
       (##core#inline 
        "C_opendir"
-       (##sys#make-c-string (##sys#expand-home-path spec) 'directory) handle)
+       (##sys#make-c-string spec 'directory) handle)
       (if (##sys#null-pointer? handle)
 	  (posix-error #:file-error 'directory "cannot open directory" spec)
 	  (let loop ()
