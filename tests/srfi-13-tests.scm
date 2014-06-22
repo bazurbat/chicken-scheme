@@ -619,17 +619,65 @@
 
 (test "make-kmp-restart-vector" '#(-1) (make-kmp-restart-vector "a"))
 
-;;; The following two tests for make-kmp-restart-vector are
-;;; intentionally commented (see http://bugs.call-cc.org/ticket/878)
-;;; -- mario
+(test "make-kmp-restart-vector" '#(-1 0) (make-kmp-restart-vector "ab"))
 
-; This seems right to me, but is it?
-; (test "make-kmp-restart-vector" '#(-1 0) (make-kmp-restart-vector "ab"))
+; The following is from an example in the code.  It is the "optimised"
+; version; it's also valid to return #(-1 0 0 0 1 2), but that will
+; needlessly check the "a" twice before giving up.
+(test "make-kmp-restart-vector"
+      '#(-1 0 0 -1 1 2)
+      (make-kmp-restart-vector "abdabx"))
 
-; The following is from an example in the code, but I expect it is not right.
-; (test "make-kmp-restart-vector" '#(-1 0 0 -1 1 2) (make-kmp-restart-vector "abdabx"))
+;; Each entry in kmp-cases is a pattern, a string to match against and
+;; the expected run of the algorithm through the positions in the
+;; pattern.  So for example 0 1 2 means it looks at position 0 first,
+;; then at 1 and then at 2.
+;;
+;; This is easy to verify in simple cases; If there's a shared
+;; substring and matching fails, you try matching again starting at
+;; the end of the shared substring, otherwise you rewind.  For more
+;; complex cases, it's increasingly difficult for humans to verify :)
+(define kmp-cases
+  '(("abc" "xx" #f 0 0)
+    ("abc" "abc" #t 0 1 2)
+    ("abcd" "abc" #f 0 1 2)
+    ("abc" "abcd" #t 0 1 2)
+    ("abc" "aabc" #t 0 1 1 2)
+    ("ab" "aa" #f 0 1)
+    ("ab" "aab" #t 0 1 1)
+    ("abdabx" "abdbbabda" #f 0 1 2 3 0 0 1 2 3)
+    ("aabc" "axaabc" #t 0 1 0 1 2 3)
+    ("aabac" "aabaabac" #t 0 1 2 3 4 2 3 4)))
 
-
+(for-each
+ (lambda (test-case)
+   (let* ((pat (car test-case))
+	  (n (string-length pat))
+	  (str (cadr test-case))
+          (match? (caddr test-case))
+	  (steps (cdddr test-case))
+	  (rv (make-kmp-restart-vector pat)))
+     (call-with-input-string
+      str
+      (lambda (p)
+	(let lp ((i 0)
+		 (step 0)
+		 (steps steps))
+	  (cond
+	   ((or (= i n) (eof-object? (peek-char p)))
+	    (test-assert (sprintf "KMP match? ~S, case: ~S" match? test-case)
+			 (eq? (= i n) match?))
+	    (test-assert (sprintf "KMP empty remaining steps: ~S, case: ~S"
+			   steps test-case)
+			 (null? steps)))
+	   (else
+	    (let ((new-i (kmp-step pat rv (read-char p) i char=? 0))
+		  (expected-i (and (not (null? steps)) (car steps))))
+	      (test (sprintf "KMP step ~S (exp: ~S, act: ~S), case: ~S"
+		      step expected-i i test-case)
+		    expected-i i)
+	      (lp new-i (add1 step) (cdr steps))))))))))
+ kmp-cases)
 
 ; FIXME!  Implement tests for these:
 ;   string-kmp-partial-search
