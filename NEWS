@@ -8,6 +8,7 @@
      require extras but use procedures from it.
   - SRFI-13: fix string-copy! in cases source and destination strings'
     memory areas overlap (#1135).
+  - Fixed bug in make-kmp-restart-vector from SRFI-13.
 
 - Unit lolevel:
   - Restore long-lost but still documented "vector-like?" procedure (#983)

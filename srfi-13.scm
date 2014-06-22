@@ -1404,35 +1404,36 @@
                   ((c= char=?) rest) ; (procedure? c=))
      (receive (rest2 start end) (string-parse-start+end make-kmp-restart-vector pattern rest)
        (let* ((rvlen (- end start))
-	   (rv (make-vector rvlen -1)))
+	      (rv (make-vector rvlen -1)))
       (if (> rvlen 0)
 	  (let ((rvlen-1 (- rvlen 1))
 		(c0 (string-ref pattern start)))
 
 	    ;; Here's the main loop. We have set rv[0] ... rv[i].
 	    ;; K = I + START -- it is the corresponding index into PATTERN.
-	    (let lp1 ((i 0) (j -1) (k start))	
+	    (let lp1 ((i 0) (j -1) (k start))
 	      (if (< i rvlen-1)
 
-		  (let ((ck (string-ref pattern k)))
-		    ;; lp2 invariant:
-		    ;;   pat[(k-j) .. k-1] matches pat[start .. start+j-1]
-		    ;;   or j = -1.
-		    (let lp2 ((j j))
+		  ;; lp2 invariant:
+		  ;;   pat[(k-j) .. k-1] matches pat[start .. start+j-1]
+		  ;;   or j = -1.
+		  (let lp2 ((j j))
 
-		      (cond ((= j -1)
-			     (let ((i1 (+ i 1)))
-			       (vector-set! rv i1 (if (c= ck c0) -1 0))
-			       (lp1 i1 0 (+ k 1))))
+		    (cond ((= j -1)
+			   (let ((i1 (+ i 1))
+				 (ck+1 (string-ref pattern (add1 k))))
+			     (vector-set! rv i1 (if (c= ck+1 c0) -1 0))
+			     (lp1 i1 0 (+ k 1))))
 
-			    ;; pat[(k-j) .. k] matches pat[start..start+j].
-			    ((c= ck (string-ref pattern (+ j start)))
-			     (let* ((i1 (+ 1 i))
-				    (j1 (+ 1 j)))
-			       (vector-set! rv i1 j1)
-			       (lp1 i1 j1 (+ k 1))))
+			  ;; pat[(k-j) .. k] matches pat[start..start+j].
+			  ((c= (string-ref pattern k)
+			       (string-ref pattern (+ j start)))
+			   (let* ((i1 (+ 1 i))
+				  (j1 (+ 1 j)))
+			     (vector-set! rv i1 j1)
+			     (lp1 i1 j1 (+ k 1))))
 
-			    (else (lp2 (vector-ref rv j))))))))))
+			  (else (lp2 (vector-ref rv j)))))))))
       rv))))
 
 
