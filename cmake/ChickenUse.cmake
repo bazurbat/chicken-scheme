@@ -2,6 +2,17 @@
 
 include(CMakeParseArguments)
 
+# used internally for build-specific files
+set(CHICKEN_TMP_DIR ${CMAKE_BINARY_DIR}/_chicken)
+
+# The generated import libraries are collected to these directories which are
+# also added as include path to every command. Useful when compiling multiple
+# modules in various project subdirectories to not force user to hunt them
+# down along with dependencies and add include paths manually.
+set(CHICKEN_IMPORT_LIBRARY_DIR ${CHICKEN_TMP_DIR}/import)
+set(CHICKEN_IMPORT_LIBRARY_BINARY_DIR ${CHICKEN_TMP_DIR}/import_bin)
+
+# A lot of flexibility here. Maybe too much.
 macro(_chicken_parse_arguments)
     cmake_parse_arguments(compile
         "STATIC;SHARED;MODULE;EMBEDDED;EXTENSION;EMIT_IMPORTS;EMIT_TYPES;EMIT_INLINES"
@@ -13,6 +24,7 @@ macro(_chicken_parse_arguments)
     set(command_c_flags)
     set(command_output)
     set(command_depends)
+    set(command_import_libraries)
 
     list(APPEND compile_SOURCES ${compile_UNPARSED_ARGUMENTS})
 
@@ -52,8 +64,9 @@ macro(_chicken_parse_arguments)
 
     foreach(emit ${compile_EMIT_IMPORT_LIBRARIES})
         list(APPEND command_options -emit-import-library ${emit})
-        list(APPEND command_output ${emit}.import.scm)
+        list(APPEND command_import_libraries ${emit}.import.scm)
     endforeach()
+    list(APPEND command_output ${command_import_libraries})
 
     if(CHICKEN_EMIT_TYPES AND compile_EMIT AND NOT compile_EMIT_TYPE_FILE)
         set(compile_EMIT_TYPE_FILE ${compile_EMIT})
@@ -70,7 +83,28 @@ macro(_chicken_parse_arguments)
     endforeach()
 endmacro()
 
+# This function is called after every custom command to add necessary rules
+# for collecting import libraries to single directory.
+function(_chicken_add_import_library_copy_targets)
+    foreach(lib ${ARGN})
+        add_custom_command(
+            OUTPUT ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib}
+            COMMAND ${CMAKE_COMMAND} -E copy
+                ${CMAKE_CURRENT_BINARY_DIR}/${lib}
+                ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib}
+            DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${lib}
+            VERBATIM)
+        string(MAKE_C_IDENTIFIER copy_${lib} target_name)
+        add_custom_target(${target_name} ALL
+            DEPENDS ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib})
+    endforeach()
+endfunction()
+
+# This is main custom command generating function.
 function(_chicken_command out_var in_filename)
+    # set the variable empty just in case, because it later appended to
+    set(include_paths "")
+
     string(REGEX REPLACE
         "(.*)\\.scm$" "\\1${compile_SUFFIX}${output_suffix}.chicken.c"
         out_filename ${in_filename})
@@ -108,51 +142,80 @@ function(_chicken_command out_var in_filename)
 
     foreach(dep ${compile_DEPENDS})
         get_target_property(dep_location ${dep} LOCATION)
-        if(dep_location)
-            get_filename_component(dep_dir ${dep_location} DIRECTORY)
-            get_filename_component(dep_name ${dep_location} NAME_WE)
-            get_filename_component(dep_types "${dep_dir}/${dep_name}.types" ABSOLUTE)
-            get_filename_component(dep_inline "${dep_dir}/${dep_name}.inline" ABSOLUTE)
-            # message(STATUS "${dep}: ${dep_types} ${dep_inline}")
-            if(EXISTS ${dep_types} AND CHICKEN_EMIT_TYPES)
-                list(APPEND command_options -types ${dep_types})
-                list(APPEND command_depends ${dep_types})
-            endif()
-            if(EXISTS ${dep_inline} AND CHICKEN_EMIT_INLINES)
-                list(APPEND command_options -consult-inline-file ${dep_inline})
-                list(APPEND command_depends ${dep_inline})
-            endif()
+
+        get_filename_component(dep_dir ${dep_location} DIRECTORY)
+        get_filename_component(dep_name ${dep_location} NAME_WE)
+        get_filename_component(dep_types "${dep_dir}/${dep_name}.types" ABSOLUTE)
+        get_filename_component(dep_inline "${dep_dir}/${dep_name}.inline" ABSOLUTE)
+
+        if(EXISTS ${dep_types} AND CHICKEN_EMIT_TYPES)
+            list(APPEND command_options -types ${dep_types})
+            list(APPEND command_depends ${dep_types})
+        endif()
+
+        if(EXISTS ${dep_inline} AND CHICKEN_EMIT_INLINES)
+            list(APPEND command_options -consult-inline-file ${dep_inline})
+            list(APPEND command_depends ${dep_inline})
         endif()
     endforeach()
 
-    set(c_flags "${CHICKEN_C_FLAGS} ${CHICKEN_C_DEFINITIONS} ${command_c_flags}")
-
+    # First, try the directory of the source file if it is not the current
+    # (which is used by default). Needed for (include "<file>") forms.
     if(NOT in_path STREQUAL CMAKE_CURRENT_BINARY_DIR)
-        list(APPEND command_options -include-path ${in_path})
-        set(c_flags "${c_flags} -I\"${in_path}\"")
+        list(APPEND include_paths ${in_path})
     endif()
+
+    # then, search collected import libraries
+    list(APPEND include_paths ${CHICKEN_IMPORT_LIBRARY_DIR})
+
+    # then, try to add paths from user environment
     foreach(path $ENV{CHICKEN_INCLUDE_PATH})
-        list(APPEND command_options -include-path ${path})
+        list(APPEND include_paths ${path})
     endforeach()
 
+    # remove duplicates for nicer command lines in verbose mode
+    list(REMOVE_DUPLICATES include_paths)
+    foreach(i ${include_paths})
+        list(APPEND command_options -include-path ${i})
+    endforeach()
+
+    # Add global C flags, determined by find package, then command specific
+    # flags added by the user.
+    set(c_flags "${CHICKEN_C_FLAGS} ${command_c_flags}")
+
+    # Add the directory of the source file (needed to properly resolve inline
+    # C include declarations.
+    if(NOT in_path STREQUAL CMAKE_CURRENT_BINARY_DIR)
+        set(c_flags "${c_flags} -I\"${in_path}\"")
+    endif()
+
+    # Then add global include paths (system chicken.h and chicken-config.h).
     if(CHICKEN_INCLUDE_DIRS)
         set(c_flags "${c_flags} -I\"${CHICKEN_INCLUDE_DIRS}\"")
     endif()
 
+    # Append these flags to every C file generated by Chicken.
     set_property(SOURCE ${out_filename} APPEND_STRING PROPERTY
         COMPILE_FLAGS " ${c_flags}")
 
+    # The main generating command. Note the options order.
     add_custom_command(
         OUTPUT ${out_filename} ${command_output}
         COMMAND ${CHICKEN_EXECUTABLE}
-        ARGS ${in_filename} -output-file ${out_filename}
-             ${CHICKEN_OPTIONS} $ENV{CHICKEN_OPTIONS} ${command_options}
+            ${in_filename} -output-file ${out_filename}
+            ${CHICKEN_OPTIONS} ${command_options} $ENV{CHICKEN_OPTIONS}
         DEPENDS ${in_filename} ${compile_DEPENDS} ${command_depends}
         VERBATIM)
 
+    # collect import libraries
+    _chicken_add_import_library_copy_targets(${command_import_libraries})
+
+    # place the name of the resulting C file in the specified variable
     set(${out_var} ${out_filename} PARENT_SCOPE)
 endfunction()
 
+# Used by other add_chicken... functions, can be used directly for complex
+# cases.
 function(add_chicken_sources out_var)
     _chicken_parse_arguments(${ARGN})
     foreach(arg ${compile_SOURCES})
@@ -163,6 +226,7 @@ function(add_chicken_sources out_var)
     set(${out_var} ${${out_var}} PARENT_SCOPE)
 endfunction()
 
+# Convenience wrapper around add_executable.
 function(add_chicken_executable name)
     _chicken_parse_arguments(${ARGN})
     set(sources)
@@ -175,6 +239,7 @@ function(add_chicken_executable name)
     endif()
 endfunction()
 
+# Convenience wrapper around add_library.
 function(add_chicken_library name)
     _chicken_parse_arguments(${ARGN})
     if(compile_STATIC)
@@ -206,6 +271,8 @@ function(add_chicken_library name)
     endif()
 endfunction()
 
+# Even more convenient wrapper for compiling Chicken modules along with import
+# libraries.
 function(add_chicken_module name)
     _chicken_parse_arguments(MODULE ${ARGN})
     if(NOT compile_EMIT_IMPORT_LIBRARIES)
@@ -214,41 +281,54 @@ function(add_chicken_module name)
     add_chicken_library(${name} ${ARGN} MODULE
         EMIT_IMPORT_LIBRARIES ${compile_EMIT_IMPORT_LIBRARIES})
     foreach(lib ${compile_EMIT_IMPORT_LIBRARIES})
+        set(lib_target ${lib}.import)
         set(import_filename "${CMAKE_CURRENT_BINARY_DIR}/${lib}.import.scm")
-        add_chicken_library(${lib}.import ${import_filename} MODULE
+        add_chicken_library(${lib_target} ${import_filename} MODULE
             C_FLAGS ${compile_C_FLAGS})
         # ensure that import libraries are built after module, so that
         # targets depending on import pull generating module too, this is
         # needed to properly compile import-for-syntax and such forms
-        add_dependencies(${lib}.import ${name})
+        add_dependencies(${lib_target} ${name})
+        set_property(TARGET ${lib_target} PROPERTY
+            LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_IMPORT_LIBRARY_BINARY_DIR})
     endforeach()
     set(${PROJECT_NAME}_CHICKEN_MODULES ${${PROJECT_NAME}_CHICKEN_MODULES}
         PARENT_SCOPE)
 endfunction()
 
+# Used for installing modules. Needs more work.
 function(install_chicken_modules name)
     cmake_parse_arguments(install
         ""
         ""
         "TARGETS;PROGRAMS;FILES"
         ${ARGN})
+
+    find_package_handle_standard_args(ChickenConfig DEFAULT_MSG
+        Chicken_CONFIG
+        CHICKEN_EXTENSION_DIR CHICKEN_DATA_DIR
+        CHICKEN_RUNTIME_DIR CHICKEN_LIBRARY_DIR)
+    if(NOT CHICKENCONFIG_FOUND)
+        message(FATAL_ERROR "Chicken config was not found, can not install extensions.")
+    endif()
+
     foreach(m ${${name}_CHICKEN_MODULES})
         install(TARGETS ${m}
-            LIBRARY DESTINATION ${CHICKEN_EGGDIR})
+            LIBRARY DESTINATION ${CHICKEN_EXTENSION_DIR})
     endforeach()
     if(install_TARGETS)
         install(TARGETS ${install_TARGETS}
-            RUNTIME DESTINATION ${CHICKEN_BINDIR}
-            LIBRARY DESTINATION ${CHICKEN_EGGDIR}
-            ARCHIVE DESTINATION ${CHICKEN_EGGDIR})
+            RUNTIME DESTINATION ${CHICKEN_RUNTIME_DIR}
+            LIBRARY DESTINATION ${CHICKEN_EXTENSION_DIR}
+            ARCHIVE DESTINATION ${CHICKEN_EXTENSION_DIR})
     endif()
     if(install_PROGRAMS)
         install(PROGRAMS ${install_PROGRAMS}
-            DESTINATION ${CHICKEN_BINDIR})
+            DESTINATION ${CHICKEN_RUNTIME_DIR})
     endif()
     if(install_FILES)
         install(FILES ${install_FILES}
-            DESTINATION ${CHICKEN_EGGDIR})
+            DESTINATION ${CHICKEN_EXTENSION_DIR})
     endif()
 
     get_property(EXTENSION_NAME GLOBAL PROPERTY _CHICKEN_${name}_NAME)
@@ -257,26 +337,20 @@ function(install_chicken_modules name)
     get_property(EXTENSION_URL GLOBAL PROPERTY _CHICKEN_${name}_URL)
 
     set(config_in_filename ${PROJECT_SOURCE_DIR}/ChickenExtensionConfig.cmake.in)
-    set(config_out_filename ${PROJECT_BINARY_DIR}/chicken-${name}-config.cmake)
+    set(config_out_filename ${PROJECT_BINARY_DIR}/${name}-config.cmake)
 
     set(version_in_filename ${PROJECT_SOURCE_DIR}/ChickenExtensionVersion.cmake.in)
-    set(version_out_filename ${PROJECT_BINARY_DIR}/chicken-${name}-config-version.cmake)
+    set(version_out_filename ${PROJECT_BINARY_DIR}/${name}-config-version.cmake)
 
     if(EXISTS ${config_in_filename})
         configure_file(${config_in_filename} ${config_out_filename} @ONLY)
         configure_file(${version_in_filename} ${version_out_filename} @ONLY)
         install(FILES ${config_out_filename} ${version_out_filename}
-            DESTINATION ${CHICKEN_DATADIR})
+            DESTINATION ${CHICKEN_DATA_DIR})
     endif()
 endfunction()
 
-function(find_chicken_extension name)
-    set(package chicken-${name})
-    find_package(${package} ${ARGV1} REQUIRED CONFIG
-        PATHS ${CHICKEN_DATADIR})
-    find_package_handle_standard_args(${package} DEFAULT_MSG ${package}_VERSION)
-endfunction()
-
+# Used for declaring Chicken extension properties.
 function(define_chicken_extension name)
     cmake_parse_arguments(extension
         ""
@@ -286,8 +360,33 @@ function(define_chicken_extension name)
     if(NOT extension_URL)
         set(extension_URL "http://wiki.call-cc.org/eggref/4/${name}")
     endif()
-    set_property(GLOBAL PROPERTY _CHICKEN_${name}_NAME chicken-${name})
+    set_property(GLOBAL PROPERTY _CHICKEN_${name}_NAME ${name})
     set_property(GLOBAL PROPERTY _CHICKEN_${name}_VERSION ${extension_VERSION})
     set_property(GLOBAL PROPERTY _CHICKEN_${name}_DESCRIPTION ${extension_DESCRIPTION})
     set_property(GLOBAL PROPERTY _CHICKEN_${name}_URL ${extension_URL})
+endfunction()
+
+# A wrapper around find_package to search for Chicken extensions.
+function(find_chicken_extension name)
+    cmake_parse_arguments(extension
+        "REQUIRED"
+        "VERSION"
+        "DEPENDS"
+        ${ARGN})
+    if(NOT extension_VERSION)
+        if(extension_UNPARSED_ARGUMENTS)
+            set(extension_VERSION ${extension_UNPARSED_ARGUMENTS})
+        else()
+            set(extension_VERSION 0.0)
+        endif()
+    endif()
+    if(extension_REQUIRED)
+        set(extension_REQUIRED REQUIRED)
+    else()
+        set(extension_REQUIRED)
+    endif()
+
+    find_package(${name} ${extension_VERSION} CONFIG ${extension_REQUIRED}
+        PATHS ${CHICKEN_DATA_DIR})
+    find_package_handle_standard_args(${name} DEFAULT_MSG ${name}_VERSION)
 endfunction()

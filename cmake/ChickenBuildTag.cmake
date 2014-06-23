@@ -7,9 +7,9 @@ function(_chicken_write_buildtag)
     set(buildbranch ${CMAKE_CURRENT_BINARY_DIR}/buildbranch)
     set(buildtag ${CMAKE_CURRENT_BINARY_DIR}/buildtag.h)
 
-    file(STRINGS buildversion version LIMIT_COUNT 1)
+    file(STRINGS ${src_buildversion} version LIMIT_COUNT 1)
 
-    set(CHICKEN_VERSION "${buildversion}" CACHE INTERNAL "")
+    set(CHICKEN_VERSION "${version}" CACHE INTERNAL "")
 
     if(${src_buildversion} IS_NEWER_THAN ${buildversion})
         file(WRITE ${buildversion} ${version})

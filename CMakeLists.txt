@@ -1,13 +1,15 @@
 cmake_minimum_required(VERSION 2.8)
 cmake_policy(VERSION 2.8)
 
-project(chicken C)
-
 set(CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/cmake CACHE INTERNAL "")
+set(CMAKE_USER_MAKE_RULES_OVERRIDE
+    ${CMAKE_HOME_DIRECTORY}/cmake/ChickenPlatformOverride.cmake
+    CACHE INTERNAL "")
+
+project(chicken C ASM)
 
 find_package(Chicken REQUIRED)
 include(ChickenBuildTag)
-include(ChickenApplyHack)
 include(ChickenConfigure)
 
 # libchicken
@@ -17,11 +19,13 @@ include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 set_source_files_properties(runtime.c PROPERTIES
     OBJECT_DEPENDS ${CHICKEN_CONFIG_H})
 
-set(libchicken_SOURCES chicken.h runtime.c)
-if(APPLY_HACK)
-    list(APPEND libchicken_SOURCES apply-hack.${ARCH}.S)
-endif()
+set(libchicken_SOURCES chicken.h runtime.c ${CHICKEN_APPLY_HACK})
 set(libchicken_STATIC_SOURCES ${libchicken_SOURCES})
+
+foreach(s ${libchicken_SOURCES})
+    set_property(SOURCE ${s} APPEND_STRING PROPERTY
+        COMPILE_FLAGS " ${CHICKEN_C_FLAGS}")
+endforeach()
 
 if(WIN32)
     set(posix_scm posixwin.scm)
@@ -50,7 +54,7 @@ target_link_libraries(libchicken ${CHICKEN_EXTRA_LIBRARIES})
 set_target_properties(libchicken PROPERTIES
     COMPILE_DEFINITIONS "PIC;C_BUILDING_LIBCHICKEN"
     PREFIX ""
-    OUTPUT_NAME lib${PROGRAM_PREFIX}chicken
+    OUTPUT_NAME lib${CHICKEN_PROGRAM_PREFIX}chicken
     VERSION ${API_VERSION})
 install(TARGETS libchicken
     EXPORT ChickenTargets
@@ -61,7 +65,7 @@ if(BUILD_STATIC_LIBS)
     set_target_properties(libchicken-static PROPERTIES
         COMPILE_DEFINITIONS "C_BUILDING_LIBCHICKEN"
         PREFIX ""
-        OUTPUT_NAME lib${PROGRAM_PREFIX}chicken)
+        OUTPUT_NAME lib${CHICKEN_PROGRAM_PREFIX}chicken)
     install(TARGETS libchicken-static
         EXPORT ChickenTargets
         ARCHIVE DESTINATION ${INSTALL_LIBDIR})
@@ -74,18 +78,14 @@ set(CHICKEN_STATIC_LIBRARIES libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
 # chicken
 set(chicken_SCM_SOURCES chicken.scm batch-driver.scm compiler.scm
     optimizer.scm compiler-syntax.scm scrutinizer.scm support.scm
-    c-platform.scm c-backend.scm)
-# FIXME: crutch to allow using same macros for stability and master branches
-if(API_VERSION GREATER 6)
-    list(APPEND chicken_SCM_SOURCES lfa2.scm)
-endif()
+    c-platform.scm c-backend.scm lfa2.scm)
 add_chicken_sources(chicken_SOURCES ${chicken_SCM_SOURCES}
     OPTIONS ${COMPILER_OPTIONS})
 add_executable(chicken ${chicken_SOURCES})
 target_link_libraries(chicken ${CHICKEN_LIBRARIES})
 set_target_properties(chicken PROPERTIES
     COMPILE_DEFINITIONS "PIC"
-    OUTPUT_NAME ${PROGRAM_PREFIX}chicken)
+    OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}chicken)
 install(TARGETS chicken
     EXPORT ChickenTargets
     RUNTIME DESTINATION ${INSTALL_BINDIR})
@@ -98,7 +98,7 @@ add_executable(csi ${csi_SOURCES})
 target_link_libraries(csi ${CHICKEN_LIBRARIES})
 set_target_properties(csi PROPERTIES
     COMPILE_DEFINITIONS "PIC"
-    OUTPUT_NAME ${PROGRAM_PREFIX}csi)
+    OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}csi)
 install(TARGETS csi
     EXPORT ChickenTargets
     RUNTIME DESTINATION ${INSTALL_BINDIR})
@@ -109,7 +109,7 @@ if(BUILD_STATIC_PROGRAMS)
     add_executable(csi-static ${csi_STATIC_SOURCES})
     target_link_libraries(csi-static ${CHICKEN_STATIC_LIBRARIES})
     set_target_properties(csi-static PROPERTIES
-        OUTPUT_NAME ${PROGRAM_PREFIX}csi-static)
+        OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}csi-static)
     install(TARGETS csi-static
         RUNTIME DESTINATION ${INSTALL_BINDIR})
 
@@ -119,7 +119,7 @@ if(BUILD_STATIC_PROGRAMS)
     add_executable(chicken-bug ${chicken-bug_SOURCES})
     target_link_libraries(chicken-bug ${CHICKEN_STATIC_LIBRARIES})
     set_target_properties(chicken-bug PROPERTIES
-        OUTPUT_NAME ${PROGRAM_PREFIX}chicken-bug)
+        OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}chicken-bug)
     install(TARGETS chicken-bug
         RUNTIME DESTINATION ${INSTALL_BINDIR})
 endif()
@@ -136,7 +136,7 @@ foreach(program ${utility_PROGRAMS})
     target_link_libraries(${program} ${CHICKEN_LIBRARIES})
     set_target_properties(${program} PROPERTIES
         COMPILE_DEFINITIONS "PIC"
-        OUTPUT_NAME ${PROGRAM_PREFIX}${program})
+        OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}${program})
     install(TARGETS ${program}
         RUNTIME DESTINATION ${INSTALL_BINDIR})
 endforeach()
@@ -183,14 +183,14 @@ endforeach()
 include(CMakePackageConfigHelpers)
 
 configure_package_config_file(
-    cmake/ChickenConfig.cmake.in
-    ${PROJECT_BINARY_DIR}/ChickenConfig.cmake
+    cmake/chicken-config.cmake.in
+    ${PROJECT_BINARY_DIR}/chicken-config.cmake
     INSTALL_DESTINATION ${INSTALL_DATADIR}
     PATH_VARS INSTALL_BINDIR INSTALL_LIBDIR INSTALL_EGGDIR INSTALL_DATADIR
     NO_CHECK_REQUIRED_COMPONENTS_MACRO)
 
 write_basic_package_version_file(
-    ${PROJECT_BINARY_DIR}/ChickenConfigVersion.cmake
+    ${PROJECT_BINARY_DIR}/chicken-config-version.cmake
     VERSION ${CHICKEN_VERSION}
     COMPATIBILITY SameMajorVersion)
 
@@ -201,21 +201,26 @@ install(FILES types.db
 install(FILES chicken.h ${CHICKEN_CONFIG_H}
     DESTINATION ${INSTALL_INCLUDEDIR})
 
-install(FILES setup.defaults cmake/ChickenUse.cmake
+install(FILES setup.defaults
     DESTINATION ${INSTALL_DATADIR})
-install(FILES ${PROJECT_BINARY_DIR}/ChickenConfig.cmake
-    DESTINATION ${INSTALL_DATADIR})
+
+install(FILES ${PROJECT_BINARY_DIR}/chicken-config.cmake
+    DESTINATION ${INSTALL_DATADIR}
+    RENAME ${_chicken_program_prefix}chicken-config.cmake)
+install(FILES ${PROJECT_BINARY_DIR}/chicken-config-version.cmake
+    DESTINATION ${INSTALL_DATADIR}
+    RENAME ${_chicken_program_prefix}chicken-config-version.cmake)
 
 set(MAN_PAGES chicken csc csi chicken-install chicken-uninstall
     chicken-status chicken-profile chicken-bug)
 foreach(man ${MAN_PAGES})
     install(FILES ${man}.1
         DESTINATION ${INSTALL_MANDIR}
-        RENAME ${PROGRAM_PREFIX}${man}.1)
+        RENAME ${CHICKEN_PROGRAM_PREFIX}${man}.1)
 endforeach()
 
 install(FILES README LICENSE
     DESTINATION ${INSTALL_DOCDIR})
 
-install(EXPORT ChickenTargets
-    DESTINATION ${INSTALL_DATADIR})
+# install(EXPORT ChickenTargets
+#     DESTINATION ${INSTALL_DATADIR})

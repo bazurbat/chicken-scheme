@@ -4,25 +4,44 @@ include(FindPackageMessage)
 include(FindPackageHandleStandardArgs)
 include(FeatureSummary)
 
-set_package_properties(Chicken PROPERTIES
-    URL "http://call-cc.org"
-    DESCRIPTION "A practical and portable Scheme system")
+# always enable C first to be sure various cached variables are in place
+# these might be used later in scripts
+enable_language(C)
 
-set(CHICKEN_SYSTEM "" CACHE STRING
-    "A compiler identifier of the build system")
-set(CHICKEN_HOST_SYSTEM ${CHICKEN_SYSTEM} CACHE STRING
-    "A compiler identifier of the host system")
-set(CHICKEN_TARGET_SYSTEM ${CHICKEN_HOST_SYSTEM} CACHE STRING
-    "A compiler identifier of the target system")
-mark_as_advanced(CHICKEN_SYSTEM CHICKEN_HOST_SYSTEM CHICKEN_TARGET_SYSTEM)
+set_package_properties(Chicken PROPERTIES
+    DESCRIPTION "A practical and portable Scheme system"
+    URL "http://call-cc.org")
+
+# used for guessing repository location if everything else fails
+set(CHICKEN_API_VERSION 7 CACHE STRING
+    "Chicken API version")
+mark_as_advanced(CHICKEN_API_VERSION)
 
 option(CHICKEN_EMIT_TYPES "Generate files with type declarations" NO)
 option(CHICKEN_EMIT_INLINES "Generate files with globally inlinable procedures" NO)
 mark_as_advanced(CHICKEN_EMIT_TYPES CHICKEN_EMIT_INLINES)
 
-set(CHICKEN_ROOT_DIR "$ENV{CHICKEN_PREFIX}" CACHE PATH "")
-set(CHICKEN_HOST_ROOT_DIR ${CHICKEN_ROOT_DIR} CACHE PATH "")
+# There are 3 usual settings for system variables:
+# 1) building Chicken for the current machine - do not change anything
+# 2) building "cross" Chicken, that will generate C files for another
+#    architecture, but still running on the current machine - set target system
+#    for this case
+# 3) cross-compiling Chicken: you will need to build cross Chicken first, then
+#    use it to generate C files which are built by a cross-compiler - set host
+#    system to the identifier of the cross chicken
+# More complex combinations are possible. Specifically: source files are
+# generated for the target system, using the host system Chicken and built
+# by system cross-compiler (linked with its libchicken).
 
+set(CHICKEN_SYSTEM "" CACHE STRING
+    "A compiler identifier of the build system")
+set(CHICKEN_HOST_SYSTEM ${CHICKEN_SYSTEM} CACHE STRING
+    "A compiler identifier of the host system (that will run the executables)")
+set(CHICKEN_TARGET_SYSTEM ${CHICKEN_HOST_SYSTEM} CACHE STRING
+    "A compiler identifier of the target system (for generated C files)")
+mark_as_advanced(CHICKEN_SYSTEM CHICKEN_HOST_SYSTEM CHICKEN_TARGET_SYSTEM)
+
+# convenience variables for concatenation with paths and names
 if(CHICKEN_SYSTEM)
     set(_chicken_system "${CHICKEN_SYSTEM}-")
 endif()
@@ -33,95 +52,95 @@ if(CHICKEN_TARGET_SYSTEM)
     set(_chicken_target_system "${CHICKEN_TARGET_SYSTEM}-")
 endif()
 
+# Do not show error messages if the package was not found: there might be no
+# CMake aware Chicken installed and we are bootstrapping, try to quetly guess
+# the paths instead, this can also pull config file from install prefix, but it
+# should not cause any harm.
 find_package(Chicken CONFIG QUIET
-    PATHS ${CHICKEN_ROOT_DIR}/share
-    PATH_SUFFIXES chicken
-    NO_DEFAULT_PATH)
-find_package(Chicken CONFIG QUIET)
+    NAMES ${_chicken_system}chicken)
 
-# NOTE: search system paths before environment variables (PATH, etc.) to avoid
-# unexpected clashes with locally installed Chicken (in user home, build root
-# and such)
+if(NOT Chicken_FOUND)
+    message(STATUS "Chicken package config is not found, guessing defaults.")
 
-find_program(CHICKEN_EXECUTABLE ${_chicken_host_system}chicken
-    PATHS ${CHICKEN_HOST_ROOT_DIR}/bin
-    NO_DEFAULT_PATH)
-find_program(CHICKEN_EXECUTABLE ${_chicken_system}chicken
-    PATHS ${CHICKEN_ROOT_DIR}/bin
-    NO_DEFAULT_PATH)
+    find_path(CHICKEN_DATA_DIR setup.defaults
+        PATHS $ENV{CHICKEN_PREFIX}/share /usr/local/share /usr/share
+        PATH_SUFFIXES ${_chicken_system}chicken)
+
+    find_path(CHICKEN_EXTENSION_DIR types.db
+        PATHS $ENV{CHICKEN_REPOSITORY}
+        NO_DEFAULT_PATH)
+
+    find_path(CHICKEN_EXTENSION_DIR types.db
+        PATHS $ENV{CHICKEN_PREFIX}/lib /usr/local/lib /usr/lib
+        PATH_SUFFIXES ${_chicken_system}chicken/${CHICKEN_API_VERSION})
+endif()
+
+# host prefixed executables are searched as per convention to name cross
+# compilers by the target system
+
 find_program(CHICKEN_EXECUTABLE
-    NAMES ${_chicken_host_system}chicken ${_chicken_system}chicken
-    NO_SYSTEM_ENVIRONMENT_PATH)
-find_program(CHICKEN_EXECUTABLE
-    NAMES ${_chicken_host_system}chicken ${_chicken_system}chicken)
+    NAMES ${_chicken_host_system}chicken)
 
-find_program(CSI_EXECUTABLE ${_chicken_host_system}csi
-    PATHS ${CHICKEN_HOST_ROOT_DIR}/bin
-    NO_DEFAULT_PATH)
-find_program(CSI_EXECUTABLE ${_chicken_system}chicken
-    PATHS ${CHICKEN_ROOT_DIR}/bin
-    NO_DEFAULT_PATH)
-find_program(CSI_EXECUTABLE
-    NAMES ${_chicken_host_system}csi ${_chicken_system}csi
-    NO_SYSTEM_ENVIRONMENT_PATH)
-find_program(CSI_EXECUTABLE
-    NAMES ${_chicken_host_system}csi ${_chicken_system}csi)
+find_program(CHICKEN_CSI_EXECUTABLE
+    NAMES ${_chicken_host_system}csi)
+
+find_program(CHICKEN_INSTALL_EXECUTABLE
+    NAMES ${_chicken_host_system}chicken-install)
+
+# use include files and libraries from the system the final compiled
+# executables are intended to run on
 
 find_path(CHICKEN_INCLUDE_DIR chicken.h
-    PATHS ${CHICKEN_ROOT_DIR}/include
-    PATH_SUFFIXES chicken
-    NO_DEFAULT_PATH)
-find_path(CHICKEN_INCLUDE_DIR chicken.h
-    PATH_SUFFIXES chicken
-    NO_SYSTEM_ENVIRONMENT_PATH)
-find_path(CHICKEN_INCLUDE_DIR chicken.h
-    PATH_SUFFIXES chicken)
+    PATH_SUFFIXES ${_chicken_system}chicken)
 
-find_library(CHICKEN_LIBRARY ${_chicken_system}chicken
-    PATHS ${CHICKEN_ROOT_DIR}/lib
-    NO_DEFAULT_PATH)
-find_library(CHICKEN_LIBRARY ${_chicken_system}chicken
-    NO_SYSTEM_ENVIRONMENT_PATH)
 find_library(CHICKEN_LIBRARY ${_chicken_system}chicken)
 
+# Determine the location of the static library based on the location of the
+# just found dynamic library. This is needed to avoid picking libraries from
+# some other Chicken in the default paths.
+get_filename_component(_chicken_library_dir ${CHICKEN_LIBRARY} DIRECTORY)
 find_library(CHICKEN_STATIC_LIBRARY lib${_chicken_system}chicken.a
-    PATHS ${CHICKEN_ROOT_DIR}/lib
-    NO_DEFAULT_PATH)
-find_library(CHICKEN_STATIC_LIBRARY lib${_chicken_system}chicken.a
-    NO_SYSTEM_ENVIRONMENT_PATH)
-find_library(CHICKEN_STATIC_LIBRARY lib${_chicken_system}chicken.a)
+    HINTS ${_chicken_library_dir}
+    NO_SYSTEM_ENVIRONMENT_PATH
+    NO_CMAKE_SYSTEM_PATH)
 
-function(_chicken_set_c_flags)
-    if(MSVC)
-        # C4101 - unreferenced local variable
-        set(c_flags "/wd4101")
-    else()
-        set(c_flags "-fno-strict-aliasing -fwrapv")
-    endif()
+# these used to be options, but caused various problems and now are hardcoded
+set(CHICKEN_DEFINITIONS "-DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES")
 
-    set(CHICKEN_DEFINITIONS "-DHAVE_CHICKEN_CONFIG_H -DC_ENABLE_PTABLES")
-    set(CHICKEN_C_FLAGS "${c_flags} ${CHICKEN_DEFINITIONS}" CACHE STRING
-        "C compiler flags which are added to every file generated by Chicken")
-    mark_as_advanced(CHICKEN_C_FLAGS)
-endfunction()
-_chicken_set_c_flags()
-
-if(WIN32)
-    # TODO: handle x64?
+if(MSVC)
+    # C4101 - unreferenced local variable
+    set(_chicken_c_flags "/wd4101")
+    # TODO: add check for x64
     set(CHICKEN_EXTRA_LIBRARIES ws2_32)
-elseif(UNIX)
+else()
+    # Felix wrote, that these are required. Strict aliasing caused some real
+    # problems and wrapv disables some questionable aggressive compiler
+    # optimizations.
+    set(_chicken_c_flags "-fno-strict-aliasing -fwrapv")
     set(CHICKEN_EXTRA_LIBRARIES m)
 endif()
 list(APPEND CHICKEN_EXTRA_LIBRARIES ${CMAKE_DL_LIBS})
+
+set(CHICKEN_C_FLAGS "${_chicken_c_flags} ${CHICKEN_DEFINITIONS}" CACHE STRING
+    "C compiler flags which are added to every file generated by Chicken")
+mark_as_advanced(CHICKEN_C_FLAGS)
 
 set(CHICKEN_INCLUDE_DIRS ${CHICKEN_INCLUDE_DIR})
 set(CHICKEN_LIBRARIES ${CHICKEN_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
 set(CHICKEN_STATIC_LIBRARIES ${CHICKEN_STATIC_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES})
 
+set(CHICKEN_COMPILER ${CHICKEN_EXECUTABLE})
+set(CHICKEN_INTERPRETER ${CHICKEN_CSI_EXECUTABLE})
+
+# Consider Chicken found if we determined that at least executable is
+# available. Probably more comprehensive logic is needed to warn user that
+# configuration is incomplete but it causes problems when bootstrapping.
+# TODO: improve this
 find_package_handle_standard_args(Chicken DEFAULT_MSG CHICKEN_EXECUTABLE)
-find_package_message(CSI_EXECUTABLE
-    "  CSI_EXECUTABLE: ${CSI_EXECUTABLE}"
-    "${CSI_EXECUTABLE}")
+
+find_package_message(CHICKEN_CSI_EXECUTABLE
+    "  CHICKEN_CSI_EXECUTABLE: ${CHICKEN_CSI_EXECUTABLE}"
+    "${CHICKEN_CSI_EXECUTABLE}")
 find_package_message(CHICKEN_INCLUDE_DIR
     "  CHICKEN_INCLUDE_DIR: ${CHICKEN_INCLUDE_DIR}"
     "${CHICKEN_INCLUDE_DIR}")
@@ -131,8 +150,11 @@ find_package_message(CHICKEN_LIBRARY
 find_package_message(CHICKEN_STATIC_LIBRARY
     "  CHICKEN_STATIC_LIBRARY: ${CHICKEN_STATIC_LIBRARY}"
     "${CHICKEN_STATIC_LIBRARY}")
-find_package_message(CHICKEN_EGGDIR
-    "  CHICKEN_EGGDIR: ${CHICKEN_EGGDIR}"
-    "${CHICKEN_EGGDIR}")
+find_package_message(CHICKEN_DATA_DIR
+    "  CHICKEN_DATA_DIR: ${CHICKEN_DATA_DIR}"
+    "${CHICKEN_DATA_DIR}")
+find_package_message(CHICKEN_EXTENSION_DIR
+    "  CHICKEN_EXTENSION_DIR: ${CHICKEN_EXTENSION_DIR}"
+    "${CHICKEN_EXTENSION_DIR}")
 
 include(${CMAKE_CURRENT_LIST_DIR}/ChickenUse.cmake)

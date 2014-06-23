@@ -1,7 +1,8 @@
 # - Chicken Parameters
 
-include(GNUInstallDirs)
 include(CMakeDependentOption)
+include(GNUInstallDirs)
+include(FindPackageMessage)
 
 set(API_VERSION 7 CACHE INTERNAL "")
 
@@ -15,57 +16,54 @@ cmake_dependent_option(BUILD_STATIC_PROGRAMS "Build static programs" YES
     "BUILD_STATIC_LIBS" NO)
 mark_as_advanced(BUILD_STATIC_LIBS BUILD_SHARED_LIBS BUILD_STATIC_PROGRAMS)
 
-option(GC_HOOKS "Enable GC hooks" NO)
-option(COLLECT_ALL_SYMBOLS "Always collect all unused symbols" NO)
-mark_as_advanced(GC_HOOKS COLLECT_ALL_SYMBOLS)
+option(CHICKEN_GC_HOOKS "Enable GC hooks" NO)
+option(CHICKEN_COLLECT_ALL_SYMBOLS "Always collect all unused symbols" NO)
+mark_as_advanced(CHICKEN_GC_HOOKS CHICKEN_COLLECT_ALL_SYMBOLS)
 
-if(GC_HOOKS)
+if(CHICKEN_GC_HOOKS)
     set(C_GC_HOOKS 1)
 endif()
-if(COLLECT_ALL_SYMBOLS)
+if(CHICKEN_COLLECT_ALL_SYMBOLS)
     set(C_COLLECT_ALL_SYMBOLS 1)
 endif()
-if(APPLY_HACK)
-    set(C_HACKED_APPLY TRUE)
-endif()
 
-if(CMAKE_BUILD_TYPE STREQUAL "")
-    set(CMAKE_BUILD_TYPE "MinSizeRel" CACHE STRING
-        "The type of build (Debug, Release, MinSizeRel)"
-        FORCE)
-elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(DEBUGBUILD 1)
 endif()
 
-find_program(C_INSTALL_CC ${_chicken_host_system}gcc)
-find_program(C_INSTALL_CXX ${_chicken_host_system}g++)
-find_program(C_INSTALL_RC_COMPILER ${_chicken_host_system}windres)
+find_program(CHICKEN_INSTALL_CC ${_chicken_host_system}gcc)
+find_program(CHICKEN_INSTALL_CXX ${_chicken_host_system}g++)
+find_program(CHICKEN_INSTALL_RC_COMPILER ${_chicken_host_system}windres)
+mark_as_advanced(CHICKEN_INSTALL_CC CHICKEN_INSTALL_CXX CHICKEN_INSTALL_RC_COMPILER)
 
 if(NOT CHICKEN_HOST_SYSTEM STREQUAL CHICKEN_TARGET_SYSTEM)
     set(CHICKEN_CROSS 1)
-    set(_program_prefix ${_chicken_target_system})
+    set(_chicken_program_prefix ${_chicken_target_system})
 
-    set(C_TARGET_CC ${C_INSTALL_CC} CACHE STRING "")
-    set(C_TARGET_CXX ${C_INSTALL_CXX} CACHE STRING "")
-    set(C_TARGET_RC_COMPILER ${C_INSTALL_RC_COMPILER} CACHE STRING "")
+    set(CHICKEN_TARGET_CC ${CHICKEN_INSTALL_CC} CACHE STRING "")
+    set(CHICKEN_TARGET_CXX ${CHICKEN_INSTALL_CXX} CACHE STRING "")
+    set(CHICKEN_TARGET_RC_COMPILER ${CHICKEN_INSTALL_RC_COMPILER} CACHE STRING "")
 else()
     set(CHICKEN_CROSS 0)
-    set(_program_prefix "")
+    set(_chicken_program_prefix)
 
-    set(C_TARGET_CC ${_chicken_target_system}gcc CACHE STRING "")
-    set(C_TARGET_CXX ${_chicken_target_system}g++ CACHE STRING "")
-    set(C_TARGET_RC_COMPILER ${_chicken_target_system}windres CACHE STRING "")
+    set(CHICKEN_TARGET_CC ${_chicken_target_system}gcc CACHE STRING "")
+    set(CHICKEN_TARGET_CXX ${_chicken_target_system}g++ CACHE STRING "")
+    set(CHICKEN_TARGET_RC_COMPILER ${_chicken_target_system}windres CACHE STRING "")
 endif()
+mark_as_advanced(CHICKEN_TARGET_CC CHICKEN_TARGET_CXX CHICKEN_TARGET_RC_COMPILER)
 
 set(CHICKEN_TARGET_ROOT_DIR "" CACHE PATH "")
-set(TARGET_RUN_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE INTERNAL "")
+set(CHICKEN_TARGET_RUN_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE PATH "")
 
-set(PROGRAM_PREFIX ${_program_prefix} CACHE STRING
+set(CHICKEN_PROGRAM_PREFIX ${_chicken_program_prefix} CACHE STRING
     "Name prefix for generated executables")
+mark_as_advanced(CHICKEN_PROGRAM_PREFIX)
 
-set(INSTALL_NAME       ${PROGRAM_PREFIX}chicken CACHE STRING
+set(CHICKEN_INSTALL_NAME ${CHICKEN_PROGRAM_PREFIX}chicken CACHE STRING
     "Canonical Chicken name")
-set(INSTALL_PREFIX     ${CMAKE_INSTALL_PREFIX})
+set(INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+mark_as_advanced(CHICKEN_INSTALL_NAME)
 
 if(WIN32)
     set(INSTALL_BINDIR     bin)
@@ -78,28 +76,31 @@ if(WIN32)
 else()
     set(INSTALL_BINDIR     bin)
     set(INSTALL_LIBDIR     lib)
-    set(INSTALL_EGGDIR     lib/chicken/${API_VERSION})
-    set(INSTALL_DATADIR    share/chicken)
+    set(INSTALL_EGGDIR     lib/${CHICKEN_INSTALL_NAME}/${API_VERSION})
+    set(INSTALL_DATADIR    share/${CHICKEN_INSTALL_NAME})
     set(INSTALL_DOCDIR     ${INSTALL_DATADIR}/doc)
-    set(INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/chicken)
+    set(INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/${CHICKEN_INSTALL_NAME})
     set(INSTALL_MANDIR     ${CMAKE_INSTALL_MANDIR}/man1)
 endif()
 
-set(TARGET_NAME        ${INSTALL_NAME} CACHE STRING
+set(CHICKEN_TARGET_NAME        ${CHICKEN_INSTALL_NAME} CACHE STRING
     "Canonical target Chicken name")
-set(TARGET_PREFIX      ${CHICKEN_TARGET_ROOT_DIR}${TARGET_RUN_PREFIX})
+set(CHICKEN_TARGET_FEATURES "" CACHE STRING
+    "Target features")
+set(TARGET_PREFIX ${CHICKEN_TARGET_ROOT_DIR}${CHICKEN_TARGET_RUN_PREFIX})
+mark_as_advanced(CHICKEN_TARGET_NAME CHICKEN_TARGET_FEATURES)
 
 set(TARGET_BINDIR      ${INSTALL_BINDIR})
 set(TARGET_LIBDIR      ${INSTALL_LIBDIR})
-set(TARGET_EGGDIR      ${TARGET_LIBDIR}/chicken/${API_VERSION})
-set(TARGET_DATADIR     ${INSTALL_DATADIR})
-set(TARGET_INCLUDEDIR  ${INSTALL_INCLUDEDIR})
+set(TARGET_EGGDIR      ${TARGET_LIBDIR}/${CHICKEN_TARGET_NAME}/${API_VERSION})
+set(TARGET_DATADIR     share/${CHICKEN_TARGET_NAME})
+set(TARGET_INCLUDEDIR  ${CMAKE_INSTALL_INCLUDEDIR}/${CHICKEN_TARGET_NAME})
 
 foreach(D BINDIR LIBDIR EGGDIR DATADIR INCLUDEDIR)
     get_filename_component(INSTALL_FULL_${D} "${INSTALL_PREFIX}/${INSTALL_${D}}" ABSOLUTE)
     get_filename_component(TARGET_FULL_${D} "${TARGET_PREFIX}/${TARGET_${D}}" ABSOLUTE)
 endforeach()
-get_filename_component(TARGET_FULL_RUN_LIBDIR "${TARGET_RUN_PREFIX}/${TARGET_LIBDIR}" ABSOLUTE)
+get_filename_component(TARGET_FULL_RUN_LIBDIR "${CHICKEN_TARGET_RUN_PREFIX}/${TARGET_LIBDIR}" ABSOLUTE)
 
 set(CHICKEN_OPTIONS -optimize-level 2 -inline -ignore-repository -feature
     chicken-bootstrap)
@@ -189,16 +190,6 @@ if(WIN32)
     set(C_WINDOWS_SHELL 1)
 endif()
 
-if(MSVC)
-    set(CMAKE_C_FLAGS_MINSIZEREL "/O1 /Os /Oy ${CHICKEN_C_FLAGS}")
-    set(CMAKE_C_FLAGS_RELEASE "/Ox /Ot /Oy ${CHICKEN_C_FLAGS}")
-    set(CMAKE_C_FLAGS_DEBUG "/Od /Zi ${CHICKEN_C_FLAGS}")
-else()
-    set(CMAKE_C_FLAGS_MINSIZEREL "-Os -fomit-frame-pointer ${CHICKEN_C_FLAGS}")
-    set(CMAKE_C_FLAGS_RELEASE "-O3 -fomit-frame-pointer ${CHICKEN_C_FLAGS}")
-    set(CMAKE_C_FLAGS_DEBUG "-g -Wall -Wno-unused ${CHICKEN_C_FLAGS}")
-endif()
-
 if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
     set(CHICKEN_C_FLAGS_CONFIG ${CMAKE_C_FLAGS_MINSIZEREL})
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -206,12 +197,31 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CHICKEN_C_FLAGS_CONFIG ${CMAKE_C_FLAGS_DEBUG})
 endif()
+set(CHICKEN_C_FLAGS_CONFIG "${CMAKE_C_FLAGS} ${CHICKEN_C_FLAGS_CONFIG} ${CHICKEN_C_FLAGS}")
+
+function(_chicken_find_apply_hack)
+    if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+        set(arch x86-64)
+    elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "i686")
+        set(arch x86)
+    else()
+        set(arch ${CMAKE_SYSTEM_PROCESSOR})
+    endif()
+
+    set(source ${PROJECT_SOURCE_DIR}/apply-hack.${arch}.S)
+
+    if(EXISTS ${source} AND CMAKE_ASM_COMPILER_WORKS AND NOT MSVC)
+        set(CHICKEN_APPLY_HACK ${source} CACHE INTERNAL "")
+        set(C_HACKED_APPLY YES PARENT_SCOPE)
+        find_package_message(CHICKEN_APPLY_HACK "Found apply hack: ${source}"
+            "${CHICKEN_APPLY_HACK}")
+    endif()
+endfunction()
+_chicken_find_apply_hack()
 
 set(CHICKEN_CONFIG_H ${CMAKE_CURRENT_BINARY_DIR}/chicken-config.h)
 configure_file("chicken-config.h.in" ${CHICKEN_CONFIG_H})
 
-# do not duplicate flags when compiling generated files
-set(CHICKEN_C_FLAGS "")
 # do not use chicken.h from system include path
 set(CHICKEN_INCLUDE_DIRS "")
 
