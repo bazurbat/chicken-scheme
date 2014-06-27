@@ -34,6 +34,10 @@
     C_get_environment_variable[_2] functions.
   - C_mutate2 has been deprecated in favor of C_mutate
 
+- Foreign function interface
+  - The foreign type specifier "scheme-pointer" now accepts an optional
+    C pointer type (thanks to Moritz Heidkamp and Kristian Lein-Mathisen).
+
 - Build system
   - MANDIR was renamed to MAN1DIR and TOPMANDIR was renamed to MANDIR
      in order to comply with standard Makefile practice in UNIX.

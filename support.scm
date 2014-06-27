@@ -1113,6 +1113,18 @@
 			     (if ,tmp
 				 (slot-ref ,param 'this)
 				 '#f) ) ) ]
+		       [(scheme-pointer)
+			(let ([tmp (gensym)])
+			  `(let ([,tmp ,param])
+			     (if ,tmp
+				 ,(if unsafe
+				      tmp
+				      `(##sys#foreign-block-argument ,tmp) )
+				 '#f) ) ) ]
+		       [(nonnull-scheme-pointer)
+			(if unsafe
+			    param
+			    `(##sys#foreign-block-argument ,param) ) ]
 		       [(nonnull-instance)
 			`(slot-ref ,param 'this) ]
 		       [(const) (repeat (cadr t))]
@@ -1203,7 +1215,9 @@
 		    (next (if (vector? t2) (vector-ref t2 0) t2)) ) ]
 	      [(pair? t)
 	       (case (car t)
-		 [(ref nonnull-pointer pointer c-pointer nonnull-c-pointer function) (words->bytes 1)]
+		 [(ref nonnull-pointer pointer c-pointer nonnull-c-pointer function
+		       scheme-pointer nonnull-scheme-pointer)
+		  (words->bytes 1)]
 		 [else (err t)] ) ]
 	      [else (err t)] ) ) ) )
    (lambda () (quit "foreign type `~S' refers to itself" type)) ) )

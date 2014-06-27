@@ -1194,6 +1194,7 @@
 		(cond 
 		 ((and (= 2 len)
 		       (memq (car type) '(pointer nonnull-pointer c-pointer 
+						  scheme-pointer nonnull-scheme-pointer
 						  nonnull-c-pointer) ) )
 		  (foreign-type-declaration (cadr type) (string-append "*" target)) )
 		 ((and (= 2 len)
@@ -1297,6 +1298,8 @@
 	       ((nonnull-c-pointer) "C_c_pointer_nn(")
 	       ((instance) "C_c_pointer_or_null(")
 	       ((nonnull-instance) "C_c_pointer_nn(")
+	       ((scheme-pointer) "C_data_pointer_or_null(")
+	       ((nonnull-scheme-pointer) "C_data_pointer(")
 	       ((function) "C_c_pointer_or_null(")
 	       ((const) (foreign-argument-conversion (cadr type)))
 	       ((enum) "C_num_to_int(")

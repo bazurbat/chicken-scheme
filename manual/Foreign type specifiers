@@ -274,11 +274,17 @@ such objects using the core library routines in {{chicken.h}} and
 More information on object structure can be found in [[Data representation]].
 
 <type>scheme-pointer</type><br>
-<type>nonnull-scheme-pointer</type>
+<type>(scheme-pointer TYPE)</type><br>
+<type>nonnull-scheme-pointer</type><br>
+<type>(nonnull-scheme-pointer TYPE)</type>
 
 An untyped pointer to the ''contents'' of a non-immediate Scheme
 object; for example, the raw byte contents of a string. Only allowed
 as an argument type, not a return type.  
+
+The optional element type {{TYPE}} may be used to specify what C
+type should be used in the generated code. This avoids the need
+to cast the argument.
 
 The value {{#f}} is also allowed and is passed as a {{NULL}} pointer.
 For the {{nonnull-}} variant, passing {{#f}} will raise an exception.
@@ -382,6 +388,7 @@ The foreign type {{TYPE}} with an additional {{const}} qualifier.
 <tr><td>{{symbol}}</td><td>{{char *}}</td></tr>
 <tr><td>{{void}}</td><td>{{void}}</td></tr>
 <tr><td>{{([nonnull-]c-pointer TYPE)}}</td><td>{{TYPE *}}</td></tr>
+<tr><td>{{([nonnull-]scheme-pointer TYPE)}}</td><td>{{TYPE *}}</td></tr>
 <tr><td>{{(enum NAME)}}</td><td>{{enum NAME}}</td></tr>
 <tr><td>{{(struct NAME)}}</td><td>{{struct NAME}}</td></tr>
 <tr><td>{{(ref TYPE)}}</td><td>{{TYPE &}}</td></tr>
