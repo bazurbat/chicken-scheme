@@ -115,6 +115,18 @@
        (let ((x (string-copy "abcdefg")))
          (string-copy! x 2 "ZABCDEFG" 3 6)
          x))
+
+;; From Guile.  Thanks to Mark H Weaver.
+(test "string-copy!: overlapping src and dest, moving right"
+      "aabce"
+      (let ((str (string-copy "abcde")))
+	(string-copy! str 1 str 0 3) str))
+
+(test "string-copy!: overlapping src and dest, moving left"
+      "bcdde"
+      (let ((str (string-copy "abcde")))
+	(string-copy! str 0 str 1 4) str))
+
 (test "string-take" "Pete S"  (string-take "Pete Szilagyi" 6))
 (test "string-take" ""        (string-take "Pete Szilagyi" 0))
 (test "string-take" "Pete Szilagyi" (string-take "Pete Szilagyi" 13))
