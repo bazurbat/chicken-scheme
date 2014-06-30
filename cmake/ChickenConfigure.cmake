@@ -9,8 +9,8 @@ set(API_VERSION 7 CACHE INTERNAL "")
 # TODO: is there a way to detect this?
 set(STACKDIRECTION 1)
 
-option(BUILD_STATIC_LIBS "Build static libraries" NO)
 option(BUILD_SHARED_LIBS "Build shared libraries" YES)
+option(BUILD_STATIC_LIBS "Build static libraries" NO)
 
 cmake_dependent_option(BUILD_STATIC_PROGRAMS "Build static programs" YES
     "BUILD_STATIC_LIBS" NO)

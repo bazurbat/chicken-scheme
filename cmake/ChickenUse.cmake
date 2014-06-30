@@ -5,32 +5,45 @@ include(CMakeParseArguments)
 # used internally for build-specific files
 set(CHICKEN_TMP_DIR ${CMAKE_BINARY_DIR}/_chicken)
 
-# The generated import libraries are collected to these directories which are
+# The generated import libraries are collected into these directories which are
 # also added as include path to every command. Useful when compiling multiple
-# modules in various project subdirectories to not force user to hunt them
-# down along with dependencies and add include paths manually.
+# modules in various project subdirectories to not force user to hunt them down
+# along with dependencies and add include paths manually.
 set(CHICKEN_IMPORT_LIBRARY_DIR ${CHICKEN_TMP_DIR}/import)
 set(CHICKEN_IMPORT_LIBRARY_BINARY_DIR ${CHICKEN_TMP_DIR}/import_bin)
 
-# A lot of flexibility here. Maybe too much.
+# It seems there is no standard functions for this.
+function(_chicken_join out_var)
+    set(result "")
+    foreach(i ${ARGN})
+        set(result "${result} ${i}")
+    endforeach()
+    set(${out_var} ${result} PARENT_SCOPE)
+endfunction()
+
+# A lot of flexibility here. Maybe too much. Some option combinations do not
+# make sense together, diagnostics are not done, but the implementation is
+# simpler this way.
 macro(_chicken_parse_arguments)
     cmake_parse_arguments(compile
         "STATIC;SHARED;MODULE;EMBEDDED;EXTENSION;EMIT_IMPORTS;EMIT_TYPES;EMIT_INLINES"
         "SUFFIX;EMIT;EMIT_TYPE_FILE;EMIT_INLINE_FILE"
-        "SOURCES;C_SOURCES;EMIT_IMPORT_LIBRARIES;OPTIONS;C_FLAGS;DEPENDS"
+        "SOURCES;C_SOURCES;EMIT_IMPORT_LIBRARIES;OPTIONS;DEFINITIONS;C_FLAGS;DEPENDS"
         ${ARGN})
 
-    set(command_options)
-    set(command_c_flags)
-    set(command_output)
-    set(command_depends)
-    set(command_import_libraries)
+    # reset variables which are be appended to avoid conflicts with globals or
+    # multiple calls to the macro in the same scope
+    set(command_import_libraries "")
+    set(command_options "")
+    set(command_definitions "")
+    set(command_c_flags "")
+    set(command_depends "")
+    set(command_output "")
 
     list(APPEND compile_SOURCES ${compile_UNPARSED_ARGUMENTS})
 
     if(compile_STATIC)
         list(APPEND command_options -feature chicken-compile-static)
-        set(output_suffix ".static")
     endif()
 
     if(compile_MODULE)
@@ -42,12 +55,11 @@ macro(_chicken_parse_arguments)
 
     if(compile_SHARED)
         list(APPEND command_options -feature chicken-compile-shared)
-        set(command_c_flags "${command_c_flags} -DPIC -DC_SHARED")
+        list(APPEND command_definitions PIC C_SHARED)
     endif()
 
     if(compile_EMBEDDED)
-        set(command_c_flags "${command_c_flags} -DC_EMBEDDED")
-        set(output_suffix ".embedded")
+        list(APPEND command_definitions C_EMBEDDED)
     endif()
 
     if(compile_SHARED AND NOT compile_EMBEDDED)
@@ -78,13 +90,110 @@ macro(_chicken_parse_arguments)
 
     list(APPEND command_options ${compile_OPTIONS})
 
-    foreach(flag ${compile_C_FLAGS})
-        set(command_c_flags "${command_c_flags} ${flag}")
+    list(APPEND command_c_flags ${compile_C_FLAGS})
+endmacro()
+
+# Assumes that arguments are already parsed.
+macro(_chicken_command_add_type_options)
+    if(compile_EMIT_TYPE_FILE)
+        set(types_file ${compile_EMIT_TYPE_FILE}.types)
+    elseif(compile_EMIT_TYPES)
+        set(types_file ${in_name}.types)
+    endif()
+    if(types_file)
+        list(APPEND command_options -emit-type-file ${types_file})
+        list(APPEND command_output ${types_file})
+    endif()
+
+    if(compile_EMIT_INLINE_FILE)
+        set(inline_file ${compile_EMIT_INLINE_FILE}.inline)
+    elseif(compile_EMIT_INLINES)
+        set(inline_file ${in_name}.inline)
+    endif()
+    if(inline_file)
+        list(APPEND command_options -emit-inline-file ${inline_file})
+        list(APPEND command_output ${inline_file})
+    endif()
+
+    # For each command dependency assume that type and inline files with the
+    # same name are placed alongside and add an appropriate option to use it.
+    # Do so only if the corresponding global option is set.
+    foreach(dep ${compile_DEPENDS})
+        get_target_property(dep_location ${dep} LOCATION)
+
+        get_filename_component(dep_dir    ${dep_location} DIRECTORY)
+        get_filename_component(dep_name   ${dep_location} NAME_WE)
+        get_filename_component(dep_types  ${dep_dir}/${dep_name}.types  ABSOLUTE)
+        get_filename_component(dep_inline ${dep_dir}/${dep_name}.inline ABSOLUTE)
+
+        if(EXISTS ${dep_types} AND CHICKEN_EMIT_TYPES)
+            list(APPEND command_options -types ${dep_types})
+            list(APPEND command_depends ${dep_types})
+        endif()
+
+        if(EXISTS ${dep_inline} AND CHICKEN_EMIT_INLINES)
+            list(APPEND command_options -consult-inline-file ${dep_inline})
+            list(APPEND command_depends ${dep_inline})
+        endif()
     endforeach()
 endmacro()
 
-# This function is called after every custom command to add necessary rules
-# for collecting import libraries to single directory.
+macro(_chicken_command_add_include_paths)
+    # set the variable empty just in case, because it later appended to
+    set(include_paths "")
+
+    # First, try the directory of the source file if it is not the current
+    # (which is used by default). Needed for (include "<file>") forms.
+    if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
+        list(APPEND include_paths ${CMAKE_CURRENT_SOURCE_DIR})
+    endif()
+
+    # then, search collected import libraries
+    list(APPEND include_paths ${CHICKEN_IMPORT_LIBRARY_DIR})
+
+    # then, try to add paths from user environment
+    foreach(path $ENV{CHICKEN_INCLUDE_PATH})
+        list(APPEND include_paths ${path})
+    endforeach()
+
+    # remove duplicates for nicer command lines in verbose mode
+    list(REMOVE_DUPLICATES include_paths)
+    foreach(i ${include_paths})
+        list(APPEND command_options -include-path ${i})
+    endforeach()
+endmacro()
+
+function(_chicken_add_c_flags out_file)
+    # Use global C flags determined by find package first.
+    set(c_flags ${CHICKEN_C_FLAGS})
+
+    # Add the supplied arguments, intended for file specific flags.
+    list(APPEND c_flags ${ARGN})
+
+    # Add the directory of the source file (needed to properly resolve inline
+    # C include declarations. Do not add current directory to shorten command
+    # lines in verbose mode.
+    if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
+        list(APPEND c_flags -I${CMAKE_CURRENT_SOURCE_DIR})
+    endif()
+
+    # Add global include paths where chicken.h and chicken-config.h are.
+    # Empty check is needed when these are overridden, for example when
+    # bootstrapping the Chicken itself.
+    if(CHICKEN_INCLUDE_DIRS)
+        list(APPEND c_flags -I${CHICKEN_INCLUDE_DIRS})
+    endif()
+
+    set_property(SOURCE ${out_file} APPEND PROPERTY COMPILE_DEFINITIONS
+        ${CHICKEN_DEFINITIONS} ${command_definitions} ${compile_DEFINITIONS})
+
+    # compile flags property can not handle list
+    _chicken_join(c_flags ${c_flags})
+    set_property(SOURCE ${out_file} APPEND_STRING PROPERTY
+        COMPILE_FLAGS " ${c_flags}")
+endfunction()
+
+# Adds necessary rules for collecting import libraries to single directory.
 function(_chicken_add_import_library_copy_targets)
     foreach(lib ${ARGN})
         add_custom_command(
@@ -101,126 +210,59 @@ function(_chicken_add_import_library_copy_targets)
 endfunction()
 
 # This is main custom command generating function.
-function(_chicken_command out_var in_filename)
-    # set the variable empty just in case, because it later appended to
-    set(include_paths "")
-
+function(_chicken_command out_var in_file)
     string(REGEX REPLACE
-        "(.*)\\.scm$" "\\1${compile_SUFFIX}${output_suffix}.chicken.c"
-        out_filename ${in_filename})
+        "(.*)\\.scm$" "\\1${compile_SUFFIX}.chicken.c"
+        out_file ${in_file})
 
-    get_filename_component(out_name ${out_filename} NAME)
-    if(NOT IS_ABSOLUTE ${out_filename})
-        set(out_filename ${CMAKE_CURRENT_BINARY_DIR}/${out_name})
+    get_filename_component(in_file ${in_file} ABSOLUTE)
+    get_filename_component(in_name ${in_file} NAME_WE)
+    get_filename_component(in_path ${in_file} DIRECTORY)
+
+    # Output files specified with relative paths to current binary dir to
+    # avoid conflicts when single scm pulled from different subdirectories.
+    get_filename_component(out_filename ${out_file} NAME)
+    if(NOT IS_ABSOLUTE ${out_file})
+        set(out_file ${CMAKE_CURRENT_BINARY_DIR}/${out_filename})
     endif()
-    file(TO_CMAKE_PATH ${out_filename} out_filename)
+    get_filename_component(out_file ${out_file} ABSOLUTE)
+    get_filename_component(out_name ${out_file} NAME_WE)
+    get_filename_component(out_path ${out_file} DIRECTORY)
 
-    get_filename_component(in_name ${in_filename} NAME_WE)
-    get_filename_component(in_filename ${in_filename} ABSOLUTE)
-    file(TO_CMAKE_PATH ${in_filename} in_filename)
-    get_filename_component(in_path ${in_filename} PATH)
-
-    if(compile_EMIT_TYPE_FILE)
-        set(types_filename ${compile_EMIT_TYPE_FILE}.types)
-    elseif(compile_EMIT_TYPES)
-        set(types_filename ${in_name}.types)
-    endif()
-    if(types_filename)
-        list(APPEND command_options -emit-type-file ${types_filename})
-        list(APPEND command_output ${types_filename})
-    endif()
-
-    if(compile_EMIT_INLINE_FILE)
-        set(inline_filename ${compile_EMIT_INLINE_FILE}.inline)
-    elseif(compile_EMIT_INLINES)
-        set(inline_filename ${in_name}.inline)
-    endif()
-    if(inline_filename)
-        list(APPEND command_options -emit-inline-file ${inline_filename})
-        list(APPEND command_output ${inline_filename})
-    endif()
-
-    foreach(dep ${compile_DEPENDS})
-        get_target_property(dep_location ${dep} LOCATION)
-
-        get_filename_component(dep_dir ${dep_location} DIRECTORY)
-        get_filename_component(dep_name ${dep_location} NAME_WE)
-        get_filename_component(dep_types "${dep_dir}/${dep_name}.types" ABSOLUTE)
-        get_filename_component(dep_inline "${dep_dir}/${dep_name}.inline" ABSOLUTE)
-
-        if(EXISTS ${dep_types} AND CHICKEN_EMIT_TYPES)
-            list(APPEND command_options -types ${dep_types})
-            list(APPEND command_depends ${dep_types})
-        endif()
-
-        if(EXISTS ${dep_inline} AND CHICKEN_EMIT_INLINES)
-            list(APPEND command_options -consult-inline-file ${dep_inline})
-            list(APPEND command_depends ${dep_inline})
-        endif()
-    endforeach()
-
-    # First, try the directory of the source file if it is not the current
-    # (which is used by default). Needed for (include "<file>") forms.
-    if(NOT in_path STREQUAL CMAKE_CURRENT_BINARY_DIR)
-        list(APPEND include_paths ${in_path})
-    endif()
-
-    # then, search collected import libraries
-    list(APPEND include_paths ${CHICKEN_IMPORT_LIBRARY_DIR})
-
-    # then, try to add paths from user environment
-    foreach(path $ENV{CHICKEN_INCLUDE_PATH})
-        list(APPEND include_paths ${path})
-    endforeach()
-
-    # remove duplicates for nicer command lines in verbose mode
-    list(REMOVE_DUPLICATES include_paths)
-    foreach(i ${include_paths})
-        list(APPEND command_options -include-path ${i})
-    endforeach()
-
-    # Add global C flags, determined by find package, then command specific
-    # flags added by the user.
-    set(c_flags "${CHICKEN_C_FLAGS} ${command_c_flags}")
-
-    # Add the directory of the source file (needed to properly resolve inline
-    # C include declarations.
-    if(NOT in_path STREQUAL CMAKE_CURRENT_BINARY_DIR)
-        set(c_flags "${c_flags} -I\"${in_path}\"")
-    endif()
-
-    # Then add global include paths (system chicken.h and chicken-config.h).
-    if(CHICKEN_INCLUDE_DIRS)
-        set(c_flags "${c_flags} -I\"${CHICKEN_INCLUDE_DIRS}\"")
-    endif()
-
-    # Append these flags to every C file generated by Chicken.
-    set_property(SOURCE ${out_filename} APPEND_STRING PROPERTY
-        COMPILE_FLAGS " ${c_flags}")
-
-    # The main generating command. Note the options order.
-    add_custom_command(
-        OUTPUT ${out_filename} ${command_output}
-        COMMAND ${CHICKEN_EXECUTABLE}
-            ${in_filename} -output-file ${out_filename}
-            ${CHICKEN_OPTIONS} ${command_options} $ENV{CHICKEN_OPTIONS}
-        DEPENDS ${in_filename} ${compile_DEPENDS} ${command_depends}
-        VERBATIM)
-
-    # collect import libraries
+    _chicken_command_add_type_options()
+    _chicken_command_add_include_paths()
+    _chicken_add_c_flags(${out_file} ${command_c_flags})
     _chicken_add_import_library_copy_targets(${command_import_libraries})
 
-    # place the name of the resulting C file in the specified variable
-    set(${out_var} ${out_filename} PARENT_SCOPE)
+    add_custom_command(
+        OUTPUT ${out_file} ${command_output}
+        COMMAND ${CHICKEN_EXECUTABLE}
+            ${in_file} -output-file ${out_file}
+            ${CHICKEN_OPTIONS} ${command_options} $ENV{CHICKEN_OPTIONS}
+        DEPENDS ${in_file} ${compile_DEPENDS} ${command_depends}
+        VERBATIM)
+
+    set(${out_var} ${out_file} PARENT_SCOPE)
 endfunction()
 
-# Used by other add_chicken... functions, can be used directly for complex
-# cases.
+function(_chicken_target_link_libraries name)
+    if(compile_STATIC)
+        target_link_libraries(${name} ${CHICKEN_STATIC_LIBRARIES})
+    else()
+        target_link_libraries(${name} ${CHICKEN_LIBRARIES})
+    endif()
+endfunction()
+
+# Used by other add_chicken... functions, can be used directly to pass file
+# specific options or build source lists incrementally.
 function(add_chicken_sources out_var)
     _chicken_parse_arguments(${ARGN})
     foreach(arg ${compile_SOURCES})
-        _chicken_command(out_filename ${arg})
-        list(APPEND ${out_var} ${out_filename})
+        _chicken_command(out_file ${arg})
+        list(APPEND ${out_var} ${out_file})
+    endforeach()
+    foreach(s ${compile_C_SOURCES})
+        _chicken_add_c_flags(${s} ${compile_C_FLAGS})
     endforeach()
     list(APPEND ${out_var} ${compile_C_SOURCES})
     set(${out_var} ${${out_var}} PARENT_SCOPE)
@@ -232,11 +274,7 @@ function(add_chicken_executable name)
     set(sources)
     add_chicken_sources(sources ${ARGN})
     add_executable(${name} ${sources})
-    if(compile_STATIC)
-        target_link_libraries(${name} ${CHICKEN_STATIC_LIBRARIES})
-    else()
-        target_link_libraries(${name} ${CHICKEN_LIBRARIES})
-    endif()
+    _chicken_target_link_libraries(${name})
 endfunction()
 
 # Convenience wrapper around add_library.
@@ -255,11 +293,7 @@ function(add_chicken_library name)
     set(sources)
     add_chicken_sources(sources ${ARGN})
     add_library(${name} ${library_type} ${sources})
-    if(compile_STATIC)
-        target_link_libraries(${name} ${CHICKEN_STATIC_LIBRARIES})
-    else()
-        target_link_libraries(${name} ${CHICKEN_LIBRARIES})
-    endif()
+    _chicken_target_link_libraries(${name})
     if(compile_MODULE)
         # NOTE: BUILD_WITH_INSTALL_RPATH = true - breaks *.import.so during
         # compilation, false - breaks tests, need to handle this somehow
