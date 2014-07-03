@@ -325,35 +325,37 @@
  'set!-values '()
  (##sys#er-transformer
   (lambda (form r c)
-    (##sys#check-syntax 'set!-values form '(_ #(variable 0) _))
-    (let ((vars (cadr form))
+    (##sys#check-syntax 'set!-values form '(_ lambda-list _))
+    (let ((formals (cadr form))
 	  (exp (caddr form)))
-      (cond ((null? vars)
-	     ;; may this be simply "exp"?
-	     `(##sys#call-with-values
-	       (##core#lambda () ,exp)
-	       (##core#lambda () (##core#undefined))) )
-	    ((null? (cdr vars))
-	     `(##core#set! ,(car vars) ,exp)) 
-	    (else
-	     (let ([aliases (map gensym vars)])
-	       `(##sys#call-with-values
-		 (##core#lambda () ,exp)
-		 (##core#lambda ,aliases
-			   ,@(map (lambda (v a)
-				    `(##core#set! ,v ,a))
-				  vars aliases) ) ) ) ) ) ))))
+      (##sys#decompose-lambda-list
+       formals
+       (lambda (vars argc rest)
+	 (let ((aliases    (if (symbol? formals) '() (map gensym formals)))
+	       (rest-alias (if (not rest) '() (gensym rest))))
+	   `(##sys#call-with-values
+	     (##core#lambda () ,exp)
+	     (##core#lambda
+	      ,(append aliases rest-alias)
+	      ,@(map (lambda (v a) `(##core#set! ,v ,a)) vars aliases)
+	      ,@(cond
+		  ((null? formals) '((##core#undefined)))
+		  ((null? rest-alias) '())
+		  (else `((##core#set! ,rest ,rest-alias)))))))))))))
 
 (set! ##sys#define-values-definition
   (##sys#extend-macro-environment
    'define-values '()
    (##sys#er-transformer
     (lambda (form r c)
-      (##sys#check-syntax 'define-values form '(_ #(variable 0) _))
-      (for-each (lambda (nm)
-                  (let ((name (##sys#get nm '##core#macro-alias nm)))
-                    (##sys#register-export name (##sys#current-module))))
-                (cadr form))
+      (##sys#check-syntax 'define-values form '(_ lambda-list _))
+      (##sys#decompose-lambda-list
+       (cadr form)
+       (lambda (vars argc rest)
+         (for-each (lambda (nm)
+                     (let ((name (##sys#get nm '##core#macro-alias nm)))
+                       (##sys#register-export name (##sys#current-module))))
+                   vars)))
       `(,(r 'set!-values) ,@(cdr form))))))
 
 (##sys#extend-macro-environment
