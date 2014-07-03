@@ -191,6 +191,8 @@ install(FILES ${PROJECT_BINARY_DIR}/chicken-config.cmake
 install(FILES ${PROJECT_BINARY_DIR}/chicken-config-version.cmake
     DESTINATION ${INSTALL_DATADIR}
     RENAME ${_chicken_program_prefix}chicken-config-version.cmake)
+install(FILES ${CMAKE_HOME_DIRECTORY}/cmake/extract-depends.scm
+    DESTINATION ${INSTALL_DATADIR})
 
 set(MAN_PAGES chicken csc csi chicken-install chicken-uninstall
     chicken-status chicken-profile chicken-bug)

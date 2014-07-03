@@ -77,6 +77,8 @@ macro(_chicken_parse_arguments)
     foreach(emit ${compile_EMIT_IMPORT_LIBRARIES})
         list(APPEND command_options -emit-import-library ${emit})
         list(APPEND command_import_libraries ${emit}.import.scm)
+        set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/${emit}.import.scm
+            PROPERTY chicken_import_library YES)
     endforeach()
     list(APPEND command_output ${command_import_libraries})
 
@@ -144,8 +146,8 @@ macro(_chicken_command_add_include_paths)
 
     # First, try the directory of the source file if it is not the current
     # (which is used by default). Needed for (include "<file>") forms.
-    if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
-        list(APPEND include_paths ${CMAKE_CURRENT_SOURCE_DIR})
+    if(NOT in_path STREQUAL CMAKE_CURRENT_BINARY_DIR)
+        list(APPEND include_paths ${in_path})
     endif()
 
     # then, search collected import libraries
@@ -163,7 +165,10 @@ macro(_chicken_command_add_include_paths)
     endforeach()
 endmacro()
 
-function(_chicken_add_c_flags out_file)
+function(_chicken_add_c_flags in_file out_file)
+    get_filename_component(in_file ${in_file} ABSOLUTE)
+    get_filename_component(in_path ${in_file} DIRECTORY)
+
     # Use global C flags determined by find package first.
     set(c_flags ${CHICKEN_C_FLAGS})
 
@@ -173,7 +178,10 @@ function(_chicken_add_c_flags out_file)
     # Add the directory of the source file (needed to properly resolve inline
     # C include declarations. Do not add current directory to shorten command
     # lines in verbose mode.
-    if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
+    if(NOT in_path STREQUAL CMAKE_CURRENT_BINARY_DIR)
+        list(APPEND c_flags -I${in_path})
+    endif()
+    if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL in_path)
         list(APPEND c_flags -I${CMAKE_CURRENT_SOURCE_DIR})
     endif()
 
@@ -191,6 +199,52 @@ function(_chicken_add_c_flags out_file)
     _chicken_join(c_flags ${c_flags})
     set_property(SOURCE ${out_file} APPEND_STRING PROPERTY
         COMPILE_FLAGS " ${c_flags}")
+endfunction()
+
+function(_chicken_extract_depends out_var in_file out_file)
+    set(extra_depends "")
+
+    get_property(is_import_library SOURCE ${in_file}
+        PROPERTY chicken_import_library)
+
+    if(CHICKEN_EXTRACT_SCRIPT AND NOT is_import_library)
+        string(REGEX REPLACE "(.*)\\.c$" "\\1.d.cmake"
+            dep_file ${out_file})
+        set(extra_depends ${dep_file})
+
+        add_custom_command(
+            OUTPUT ${dep_file}
+            COMMAND ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT} ${in_file} ${dep_file}
+            COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_LIST_FILE}
+            DEPENDS ${in_file} ${ARGN}
+            VERBATIM)
+
+        include(${dep_file} OPTIONAL)
+
+        # message("EXTRA DEPENDS: ${in_file}")
+        if(depends)
+            list(REMOVE_DUPLICATES depends)
+        endif()
+        foreach(dep ${depends})
+            if(TARGET ${dep}.import)
+                list(APPEND extra_depends ${dep}.import)
+                # message("\t${dep}.import")
+            else()
+                get_filename_component(dep ${dep} ABSOLUTE)
+                if(EXISTS ${dep})
+                    list(APPEND extra_depends ${dep})
+                    # message("\t${dep}")
+                elseif(EXISTS ${dep}.scm)
+                    list(APPEND extra_depends ${dep}.scm)
+                    # message("\t${dep}.scm")
+                endif()
+            endif()
+        endforeach()
+    else()
+        set(extra_depends ${in_file} ${ARGN})
+    endif()
+
+    set(${out_var} ${extra_depends} PARENT_SCOPE)
 endfunction()
 
 # Adds necessary rules for collecting import libraries to single directory.
@@ -231,15 +285,21 @@ function(_chicken_command out_var in_file)
 
     _chicken_command_add_type_options()
     _chicken_command_add_include_paths()
-    _chicken_add_c_flags(${out_file} ${command_c_flags})
+    _chicken_add_c_flags(${in_file} ${out_file} ${command_c_flags})
     _chicken_add_import_library_copy_targets(${command_import_libraries})
+    if(CHICKEN_EXTRACT_DEPENDS)
+        _chicken_extract_depends(depends ${in_file} ${out_file}
+            ${compile_DEPENDS} ${command_depends})
+    else()
+        set(depends ${in_file} ${compile_DEPENDS} ${command_depends})
+    endif()
 
     add_custom_command(
         OUTPUT ${out_file} ${command_output}
         COMMAND ${CHICKEN_EXECUTABLE}
             ${in_file} -output-file ${out_file}
             ${CHICKEN_OPTIONS} ${command_options} $ENV{CHICKEN_OPTIONS}
-        DEPENDS ${in_file} ${compile_DEPENDS} ${command_depends}
+        DEPENDS ${depends}
         VERBATIM)
 
     set(${out_var} ${out_file} PARENT_SCOPE)
@@ -262,7 +322,7 @@ function(add_chicken_sources out_var)
         list(APPEND ${out_var} ${out_file})
     endforeach()
     foreach(s ${compile_C_SOURCES})
-        _chicken_add_c_flags(${s} ${compile_C_FLAGS})
+        _chicken_add_c_flags(${s} ${s} ${compile_C_FLAGS})
     endforeach()
     list(APPEND ${out_var} ${compile_C_SOURCES})
     set(${out_var} ${${out_var}} PARENT_SCOPE)

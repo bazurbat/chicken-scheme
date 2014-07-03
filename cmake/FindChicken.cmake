@@ -19,7 +19,8 @@ mark_as_advanced(CHICKEN_API_VERSION)
 
 option(CHICKEN_EMIT_TYPES "Generate files with type declarations" NO)
 option(CHICKEN_EMIT_INLINES "Generate files with globally inlinable procedures" NO)
-mark_as_advanced(CHICKEN_EMIT_TYPES CHICKEN_EMIT_INLINES)
+option(CHICKEN_EXTRACT_DEPENDS "Automatically extract source file dependencies" NO)
+mark_as_advanced(CHICKEN_EMIT_TYPES CHICKEN_EMIT_INLINES CHICKEN_EXTRACT_DEPENDS)
 
 # There are 3 usual settings for system variables:
 # 1) building Chicken for the current machine - do not change anything
@@ -91,6 +92,10 @@ find_program(CHICKEN_CSI_EXECUTABLE
 # Used to download extensions if not found in source directory.
 find_program(CHICKEN_INSTALL_EXECUTABLE
     NAMES ${_chicken_host_system}chicken-install)
+
+# Used for automatic dependency extraction during build.
+find_file(CHICKEN_EXTRACT_SCRIPT extract-depends.scm
+    HINTS ${CHICKEN_DATA_DIR})
 
 # Use include files and libraries from the system the final compiled
 # executables are intended to run on.
