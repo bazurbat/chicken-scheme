@@ -29,6 +29,9 @@
     ##sys#zap-strings, ##sys#round, ##sys#foreign-number-vector-argument,
     ##sys#check-port-mode, ##sys#check-port*
 
+- Syntax expander
+  - define-values and set!-values now support full lambda lists
+
 - C API
   - Removed deprecated C_get_argument[_2] and
     C_get_environment_variable[_2] functions.

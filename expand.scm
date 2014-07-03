@@ -438,6 +438,26 @@
    "redefinition of currently used defining form" ; help me find something better
    form))
 
+;;; Expansion of multiple values assignments.
+;
+; Given a lambda list and a multi-valued expression, returns a form that
+; will `set!` each variable to its corresponding value in order.
+
+(define (##sys#expand-multiple-values-assignment formals expr)
+  (##sys#decompose-lambda-list
+   formals
+   (lambda (vars argc rest)
+     (let ((aliases    (if (symbol? formals) '() (map gensym formals)))
+	   (rest-alias (if (not rest) '() (gensym rest))))
+       `(##sys#call-with-values
+	 (##core#lambda () ,expr)
+	 (##core#lambda
+	  ,(append aliases rest-alias)
+	  ,@(map (lambda (v a) `(##core#set! ,v ,a)) vars aliases)
+	  ,@(cond
+	      ((null? formals) '((##core#undefined)))
+	      ((null? rest-alias) '())
+	      (else `((##core#set! ,rest ,rest-alias))))))))))
 
 ;;; Expansion of bodies (and internal definitions)
 ;
@@ -478,18 +498,14 @@
 		 (result 
 		  `(##core#let
 		    ,(##sys#map
-		      (lambda (v) (##sys#list v (##sys#list '##core#undefined))) 
-		      (apply ##sys#append vars mvars) )
+		      (lambda (v) (##sys#list v '(##core#undefined)))
+		      (foldl (lambda (l v) ; flatten multi-value formals
+			       (##sys#append l (##sys#decompose-lambda-list
+						v (lambda (a _ _) a))))
+			     vars
+			     mvars))
 		    ,@(map (lambda (v x) `(##core#set! ,v ,x)) vars (reverse vals))
-		    ,@(map (lambda (vs x)
-			     (let ([tmps (##sys#map gensym vs)])
-			       `(##sys#call-with-values
-				 (##core#lambda () ,x)
-				 (##core#lambda 
-				  ,tmps 
-				  ,@(map (lambda (v t)
-					   `(##core#set! ,v ,t)) 
-					 vs tmps) ) ) ) ) 
+		    ,@(map ##sys#expand-multiple-values-assignment
 			   (reverse mvars)
 			   (reverse mvals) )
 		    ,@body) ) )
@@ -565,7 +581,7 @@
 		     (fini/syntax vars vals mvars mvals body) )
 		    ((comp 'define-values head)
 		     ;;XXX check for any of the variables being `define-values'
-		     (##sys#check-syntax 'define-values x '(_ #(_ 0) _) #f se)
+		     (##sys#check-syntax 'define-values x '(_ lambda-list _) #f se)
 		     (loop rest vars vals (cons (cadr x) mvars) (cons (caddr x) mvals)))
 		    ((comp '##core#begin head)
 		     (loop (##sys#append (cdr x) rest) vars vals mvars mvals) )

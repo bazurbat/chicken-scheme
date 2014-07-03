@@ -326,22 +326,7 @@
  (##sys#er-transformer
   (lambda (form r c)
     (##sys#check-syntax 'set!-values form '(_ lambda-list _))
-    (let ((formals (cadr form))
-	  (exp (caddr form)))
-      (##sys#decompose-lambda-list
-       formals
-       (lambda (vars argc rest)
-	 (let ((aliases    (if (symbol? formals) '() (map gensym formals)))
-	       (rest-alias (if (not rest) '() (gensym rest))))
-	   `(##sys#call-with-values
-	     (##core#lambda () ,exp)
-	     (##core#lambda
-	      ,(append aliases rest-alias)
-	      ,@(map (lambda (v a) `(##core#set! ,v ,a)) vars aliases)
-	      ,@(cond
-		  ((null? formals) '((##core#undefined)))
-		  ((null? rest-alias) '())
-		  (else `((##core#set! ,rest ,rest-alias)))))))))))))
+    (##sys#expand-multiple-values-assignment (cadr form) (caddr form)))))
 
 (set! ##sys#define-values-definition
   (##sys#extend-macro-environment
