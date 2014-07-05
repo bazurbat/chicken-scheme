@@ -30,7 +30,8 @@
     ##sys#check-port-mode, ##sys#check-port*
 
 - Syntax expander
-  - define-values and set!-values now support full lambda lists
+  - define-values, set!-values and letrec-values now support full lambda
+    lists as binding forms
 
 - C API
   - Removed deprecated C_get_argument[_2] and

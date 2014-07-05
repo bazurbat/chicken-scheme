@@ -416,21 +416,20 @@
  'letrec-values '()
  (##sys#er-transformer
   (lambda (form r c)
-    (##sys#check-syntax 'letrec-values form '(_ list . _))
+    (##sys#check-syntax 'letrec-values form '(_ #((lambda-list . _) 0) . _))
     (let ((vbindings (cadr form))
-	  (body (cddr form)))
-      (let* ([vars (apply ##sys#append (map (lambda (x) (car x)) vbindings))] 
-	     [aliases (map (lambda (v) (cons v (r (gensym v)))) vars)] 
-	     [lookup (lambda (v) (cdr (assq v aliases)))] )
-	`(##core#let
-	  ,(map (lambda (v) (##sys#list v '(##core#undefined))) vars)
-	  ,@(map (lambda (vb)
-		   `(##sys#call-with-values 
-		     (##core#lambda () ,(cadr vb))
-		     (##core#lambda ,(map lookup (car vb))
-			       ,@(map (lambda (v) `(##core#set! ,v ,(lookup v))) (car vb)) ) ) )
-		 vbindings)
-	  ,@body) ) ) ) ) )
+          (body (cddr form)))
+      (let ((vars  (map car vbindings))
+            (exprs (map cadr vbindings)))
+        `(##core#let
+          ,(map (lambda (v) (##sys#list v '(##core#undefined)))
+                (foldl (lambda (l v) ; flatten multi-value formals
+                         (##sys#append l (##sys#decompose-lambda-list
+					  v (lambda (a _ _) a))))
+                       '()
+                       vars))
+          ,@(map ##sys#expand-multiple-values-assignment vars exprs)
+          ,@body))))))
 
 (##sys#extend-macro-environment
  'nth-value 

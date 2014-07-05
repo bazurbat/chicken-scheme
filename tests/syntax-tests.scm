@@ -62,6 +62,16 @@
   (foo 33))
 )
 
+;; letrec-values
+
+(t '(0 1 2 3 (4) (5 6))
+   (letrec-values ((() (values))
+                   ((a) (values 0))
+                   ((b c) (values 1 2))
+                   ((d . e) (values 3 4))
+                   (f (values 5 6)))
+     (list a b c d e f)))
+
 ;; from r5rs:
 
 (t 45
