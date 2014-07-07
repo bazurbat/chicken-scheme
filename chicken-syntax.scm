@@ -1133,10 +1133,11 @@
  'functor '()
  (##sys#er-transformer
   (lambda (x r c)
-    (##sys#check-syntax 'functor x '(_ (symbol . #((symbol _) 0)) _ . _))
+    (##sys#check-syntax 'functor x '(_ (symbol . #((_ _) 0)) _ . _))
     (let* ((x (##sys#strip-syntax x))
 	   (head (cadr x))
 	   (name (car head))
+	   (args (cdr head))
 	   (exps (caddr x))
 	   (body (cdddr x))
 	   (registration
@@ -1145,8 +1146,14 @@
 	      ',(map (lambda (arg)
 		       (let ((argname (car arg))
 			     (exps (##sys#validate-exports (cadr arg) 'functor)))
+			 (unless (or (symbol? argname)
+				     (and (list? argname)
+					  (= 2 (length argname))
+					  (symbol? (car argname))
+					  (symbol? (cadr argname))))
+			   (##sys#syntax-error-hook "invalid functor argument" name arg))
 			 (cons argname exps)))
-		     (cdr head))
+		     args)
 	      ',(##sys#validate-exports exps 'functor)
 	      ',body)))
       `(##core#module

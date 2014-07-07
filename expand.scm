@@ -1475,7 +1475,7 @@
 			     '(##core#undefined))))
 		     (else
 		      (##sys#check-syntax 
-		       'module x '(_ symbol _ (symbol . #(_ 1))))
+		       'module x '(_ symbol _ (symbol . #(_ 0))))
 		      (##sys#instantiate-functor
 		       name
 		       (car app)	; functor name

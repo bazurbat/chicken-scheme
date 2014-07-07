@@ -823,15 +823,33 @@
 	     (cons name args) (cons fname (map car fargs))))
       `(##core#let-module-alias
 	,(let loop ((as args) (fas fargs))
-	   (cond ((null? as) (if (null? fas) '() (merr)))
+	   (cond ((null? as)
+		  ;; use default arguments (if available) or bail out
+		  (let loop2 ((fas fas))
+		    (if (null? fas)
+			'()
+			(let ((p (car fas)))
+			  (if (pair? (car p)) ; has default argument?
+			      (let ((alias (caar p))
+				    (mname (cadar p))
+				    (exps (cdr p)))
+				(##sys#match-functor-argument alias name mname exps fname)
+				(cons (list alias mname) (loop2 (cdr fas))))
+			      ;; no default argument, we have too few argument modules
+			      (merr))))))
+		 ;; more arguments given as defined for the functor
 		 ((null? fas) (merr))
 		 (else
+		  ;; otherwise match provided argument to functor argument
 		  (let* ((p (car fas))
-			 (alias (car p))
+			 (p1 (car p))
+			 (def? (pair? p1))
+			 (alias (if def? (car p1) p1))
 			 (mname (car as))
 			 (exps (cdr p)))
 		    (##sys#match-functor-argument alias name mname exps fname)
-		    (cons (list alias mname) (loop (cdr as) (cdr fas)))))))
+		    (cons (list alias mname)
+			  (loop (cdr as) (cdr fas)))))))
 	(##core#module
 	 ,name
 	 ,(if (eq? '* exports) #t exports)
@@ -844,7 +862,8 @@
 	(for-each
 	 (lambda (exp)
 	   (let ((sym (if (symbol? exp) exp (car exp))))
-	     (unless (##sys#find-export sym mod #f)
+	     (unless (or (assq sym (module-vexports mod))
+			 (assq sym (module-sexports mod)))
 	       (set! missing (cons sym missing)))))
 	 exps)
 	(when (pair? missing)

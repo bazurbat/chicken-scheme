@@ -29,6 +29,11 @@
     ##sys#zap-strings, ##sys#round, ##sys#foreign-number-vector-argument,
     ##sys#check-port-mode, ##sys#check-port*
 
+- Module system
+  - Allow functor arguments to be optional, with default implementations.
+  - Fixed a bug that prevented functors from being instantiated with
+     built-in modules.
+
 - Syntax expander
   - define-values, set!-values and letrec-values now support full lambda
     lists as binding forms
