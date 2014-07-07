@@ -242,34 +242,20 @@ function(_chicken_extract_depends out_var in_file dep_file)
     set(${out_var} ${depends} PARENT_SCOPE)
 endfunction()
 
-# Adds necessary rules for collecting import libraries to single directory.
-function(_chicken_add_import_library_copy_targets)
-    foreach(lib ${ARGN})
-        add_custom_command(
-            OUTPUT ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib}
-            COMMAND ${CMAKE_COMMAND} -E copy
-                ${CMAKE_CURRENT_BINARY_DIR}/${lib}
-                ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib}
-            DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${lib}
-            VERBATIM)
-        string(MAKE_C_IDENTIFIER copy_${lib} target_name)
-        add_custom_target(${target_name} ALL
-            DEPENDS ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib})
-    endforeach()
-endfunction()
-
 # This is main custom command generating function.
 function(_chicken_command out_var in_file)
     string(REGEX REPLACE
         "(.*)\\.scm$" "\\1${compile_SUFFIX}.chicken.c"
         out_file ${in_file})
 
+    get_filename_component(in_filename ${in_file} NAME)
     get_filename_component(in_file ${in_file} ABSOLUTE)
     get_filename_component(in_name ${in_file} NAME_WE)
     get_filename_component(in_path ${in_file} DIRECTORY)
 
-    # Output files specified with relative paths to current binary dir to
-    # avoid conflicts when single scm pulled from different subdirectories.
+    # Cut off possible relative parts from the supplied filepath and place the
+    # output file in the current binary dir to avoid conflicts when single scm
+    # pulled from different subdirectories.
     get_filename_component(out_filename ${out_file} NAME)
     if(NOT IS_ABSOLUTE ${out_file})
         set(out_file ${CMAKE_CURRENT_BINARY_DIR}/${out_filename})
@@ -277,19 +263,18 @@ function(_chicken_command out_var in_file)
     get_filename_component(out_file ${out_file} ABSOLUTE)
     get_filename_component(out_path ${out_file} DIRECTORY)
 
+    get_property(is_import_library SOURCE ${in_file}
+        PROPERTY chicken_import_library)
+
     file(WRITE ${CHICKEN_TMP_DIR}/${in_name} "")
 
     string(REGEX REPLACE
         "(.*)\\.c$" "\\1.d.cmake"
         dep_file ${out_file})
 
-    get_property(is_import_library SOURCE ${in_file}
-        PROPERTY chicken_import_library)
-
     _chicken_command_add_type_options()
     _chicken_command_add_include_paths()
     _chicken_add_c_flags(${in_file} ${out_file} ${command_c_flags})
-    _chicken_add_import_library_copy_targets(${command_import_libraries})
 
     if(CHICKEN_EXTRACT_DEPENDS AND CHICKEN_EXTRACT_SCRIPT AND NOT is_import_library)
         add_custom_command(OUTPUT ${dep_file}
@@ -305,13 +290,22 @@ function(_chicken_command out_var in_file)
         set(depends ${in_file} ${command_depends} ${compile_DEPENDS})
     endif()
 
-    add_custom_command(OUTPUT ${out_file} ${command_output}
+    list(INSERT command_output 0 ${out_file})
+
+    add_custom_command(OUTPUT ${command_output}
         COMMAND ${CHICKEN_EXECUTABLE}
             ${in_file} -output-file ${out_file}
             ${CHICKEN_OPTIONS} ${command_options} $ENV{CHICKEN_OPTIONS}
         # DEPENDS ${in_file} ${dep_file} ${compile_DEPENDS} ${command_depends} ${depends}
         DEPENDS ${depends}
         VERBATIM)
+
+    if(is_import_library)
+        add_custom_command(OUTPUT ${command_output}
+            COMMAND ${CMAKE_COMMAND}
+            ARGS -E copy ${in_file} ${CHICKEN_IMPORT_LIBRARY_DIR}/${in_filename}
+            VERBATIM APPEND)
+    endif()
 
     set(${out_var} ${out_file} PARENT_SCOPE)
 endfunction()
