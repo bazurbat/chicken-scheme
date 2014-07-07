@@ -1946,63 +1946,32 @@ EOF
           name))
       name)))
 
-(define (##sys#pathname-resolution name thunk . _)
-  (thunk (##sys#expand-home-path name)) )
-
-;; DEPRECATED: implicit $VAR- and ~-expansion will be removed in
-;; future versions.  See ticket #1001
-(define ##sys#expand-home-path
-  (lambda (path)
-    (let ((len (##sys#size path)))
-      (if (fx> len 0)
-	  (case (##core#inline "C_subchar" path 0)
-	    ((#\~) 
-	     (let ((rest (##sys#substring path 1 len)))
-	       (##sys#string-append (or (get-environment-variable "HOME") "") rest) ) )
-	    ((#\$) 
-	     (let loop ((i 1))
-	       (if (fx>= i len)
-		   path
-		   (let ((c (##core#inline "C_subchar" path i)))
-		     (if (or (eq? c #\/) (eq? c #\\))
-			 (##sys#string-append
-			  (or (get-environment-variable (##sys#substring path 1 i)) "")
-			  (##sys#substring path i len))
-			 (loop (fx+ i 1)) ) ) ) ) )
-	    (else path) )
-	  "") ) ) )
-
 (define open-input-file)
 (define open-output-file)
 (define close-input-port)
 (define close-output-port)
 
 (let ()
- 
   (define (open name inp modes loc)
     (##sys#check-string name loc)
-    (##sys#pathname-resolution
-     name
-     (lambda (name)
-       (let ([fmode (if inp "r" "w")]
-	     [bmode ""] )
-	 (do ([modes modes (##sys#slot modes 1)])
-	     ((null? modes))
-	   (let ([o (##sys#slot modes 0)])
-	     (case o
-	       [(#:binary) (set! bmode "b")]
-	       [(#:text) (set! bmode "")]
-	       [(#:append) 
-		(if inp
-		    (##sys#error loc "cannot use append mode with input file")
-		    (set! fmode "a") ) ]
-	       [else (##sys#error loc "invalid file option" o)] ) ) )
-	 (let ([port (##sys#make-port inp ##sys#stream-port-class name 'stream)])
-	   (unless (##sys#open-file-port port name (##sys#string-append fmode bmode))
-	     (##sys#update-errno)
-	     (##sys#signal-hook #:file-error loc (##sys#string-append "cannot open file - " strerror) name) )
-	   port) ) )
-     #:open (not inp) modes) )
+    (let ([fmode (if inp "r" "w")]
+          [bmode ""] )
+      (do ([modes modes (##sys#slot modes 1)])
+        ((null? modes))
+        (let ([o (##sys#slot modes 0)])
+          (case o
+            [(#:binary) (set! bmode "b")]
+            [(#:text) (set! bmode "")]
+            [(#:append)
+             (if inp
+               (##sys#error loc "cannot use append mode with input file")
+               (set! fmode "a") ) ]
+            [else (##sys#error loc "invalid file option" o)] ) ) )
+      (let ([port (##sys#make-port inp ##sys#stream-port-class name 'stream)])
+        (unless (##sys#open-file-port port name (##sys#string-append fmode bmode))
+          (##sys#update-errno)
+          (##sys#signal-hook #:file-error loc (##sys#string-append "cannot open file - " strerror) name) )
+        port) ) )
 
   (define (close port loc)
     (##sys#check-port port loc)
@@ -2072,25 +2041,17 @@ EOF
 
 (define (file-exists? name)
   (##sys#check-string name 'file-exists?)
-  (##sys#pathname-resolution
-    name
-    (lambda (name)
-      (and (##sys#file-exists? 
-	    (##sys#platform-fixup-pathname name) 
-	    #f #f 'file-exists?) 
-	   name) )
-    #:exists?) )
+  (and (##sys#file-exists?
+        (##sys#platform-fixup-pathname name)
+        #f #f 'file-exists?)
+       name) )
 
 (define (directory-exists? name)
   (##sys#check-string name 'directory-exists?)
-  (##sys#pathname-resolution
-   name
-   (lambda (name)
-     (and (##sys#file-exists?
-	   (##sys#platform-fixup-pathname name)
-	   #f #t 'directory-exists?)
-	  name) )
-   #:exists?) )
+  (and (##sys#file-exists?
+        (##sys#platform-fixup-pathname name)
+        #f #t 'directory-exists?)
+       name) )
 
 (define (##sys#flush-output port)
   ((##sys#slot (##sys#slot port 2) 5) port) ; flush-output
@@ -2121,33 +2082,22 @@ EOF
 
 (define (delete-file filename)
   (##sys#check-string filename 'delete-file)
-  (##sys#pathname-resolution
-   filename
-   (lambda (filename)
-     (unless (eq? 0 (##core#inline "C_delete_file" (##sys#make-c-string filename 'delete-file)))
-       (##sys#update-errno)
-       (##sys#signal-hook
-	#:file-error 'delete-file
-	(##sys#string-append "cannot delete file - " strerror) filename) )
-     filename)
-   #:delete) )
+  (unless (eq? 0 (##core#inline "C_delete_file" (##sys#make-c-string filename 'delete-file)))
+    (##sys#update-errno)
+    (##sys#signal-hook
+     #:file-error 'delete-file
+     (##sys#string-append "cannot delete file - " strerror) filename) )
+  filename)
 
 (define (rename-file old new)
   (##sys#check-string old 'rename-file)
   (##sys#check-string new 'rename-file)
-  (##sys#pathname-resolution
-   old
-   (lambda (old)
-     (##sys#pathname-resolution
-      new
-      (lambda (new)
-	(unless (eq? 0 (##core#inline "C_rename_file" (##sys#make-c-string old 'rename-file) (##sys#make-c-string new)))
-	  (##sys#update-errno)
-	  (##sys#signal-hook
-	   #:file-error 'rename-file
-	   (##sys#string-append "cannot rename file - " strerror) old new) )
-	new)))
-   #:rename new) )
+  (unless (eq? 0 (##core#inline "C_rename_file" (##sys#make-c-string old 'rename-file) (##sys#make-c-string new)))
+    (##sys#update-errno)
+    (##sys#signal-hook
+     #:file-error 'rename-file
+     (##sys#string-append "cannot rename file - " strerror) old new) )
+  new)
 
 
 ;;; Decorate procedure with arbitrary data

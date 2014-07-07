@@ -966,8 +966,6 @@
     (##sys#signal-hook #:type-error 'load "bad argument type - not a port or string" x) )
   (set! ##sys#load 
     (lambda (input evaluator pf #!optional timer printer)
-      (when (string? input) 
-	(set! input (##sys#expand-home-path input)) )
       (let* ((fname 
 	      (cond [(port? input) #f]
 		    [(not (string? input)) (badfile input)]

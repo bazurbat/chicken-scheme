@@ -186,12 +186,6 @@ an optional 2nd parameter: if not {{#f}} (which is the default),
 toplevel bindings to standard procedures are mutable and new toplevel
 bindings may be introduced.
 
-=== Pathnames expansion
-
-The ''tilde'' character ({{~}}) is automatically expanded in pathnames.
-Additionally, if a pathname starts with {{$VARIABLE...}}, then the prefix is replaced
-by the value of the given environment variable.
-
 === Optional arguments for port-related procedures
 
 If the procedures {{current-input-port}} and

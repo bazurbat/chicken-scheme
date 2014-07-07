@@ -167,8 +167,8 @@
 (list-tail (forall (a) (#(procedure #:clean #:enforce) list-tail ((list-of a) fixnum) (list-of a))))
 (list-ref (forall (a) (#(procedure #:clean #:enforce) list-ref ((list-of a) fixnum) a)))
 
-(append (#(procedure #:clean) append (#!rest list) *)) ; sic
-(##sys#append (#(procedure #:clean) ##sys#append (#!rest list) *))
+(append (#(procedure #:clean) append (#!rest *) *)) ; sic
+(##sys#append (#(procedure #:clean) ##sys#append (#!rest *) *))
 
 (reverse (forall (a) (#(procedure #:clean #:enforce) reverse ((list-of a)) (list-of a))))
 

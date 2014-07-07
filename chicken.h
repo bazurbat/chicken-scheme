@@ -1300,9 +1300,9 @@ extern double trunc(double);
 #define C_i_char_greater_or_equal_p(x, y)  C_mk_bool(C_character_code(x) >= C_character_code(y))
 #define C_i_char_less_or_equal_p(x, y)  C_mk_bool(C_character_code(x) <= C_character_code(y))
 #define C_substring_copy(s1, s2, start1, end1, start2) \
-                                        (C_memcpy((C_char *)C_data_pointer(s2) + C_unfix(start2), \
-                                                  (C_char *)C_data_pointer(s1) + C_unfix(start1), \
-                                                  C_unfix(end1) - C_unfix(start1) ), C_SCHEME_UNDEFINED)
+                                        (C_memmove((C_char *)C_data_pointer(s2) + C_unfix(start2), \
+                                                   (C_char *)C_data_pointer(s1) + C_unfix(start1), \
+                                                   C_unfix(end1) - C_unfix(start1) ), C_SCHEME_UNDEFINED)
 #define C_substring_compare(s1, s2, start1, start2, len) \
                                         C_mk_bool(C_memcmp((C_char *)C_data_pointer(s1) + C_unfix(start1), \
                                                            (C_char *)C_data_pointer(s2) + C_unfix(start2), \

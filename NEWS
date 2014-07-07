@@ -3,6 +3,15 @@
 - Core libraries
   - alist-ref from unit data-structures now gives an error when passed
     a non-list, for consistency with assv/assq/assoc.
+  - Unit tcp now implicitly depends on ports instead of extras.
+     This may break programs which don't use modules and forgot to
+     require extras but use procedures from it.
+  - SRFI-13: fix string-copy! in cases source and destination strings'
+    memory areas overlap (#1135).
+  - Fixed bug in make-kmp-restart-vector from SRFI-13.
+  - Removed deprecated implicit expansion of $VAR- and ~ in pathnames.
+     The ~-expansion functionality is now available in the
+     "pathname-expand" egg (#1001, #1079) (thanks to Florian Zumbiehl).
 
 - Unit lolevel:
   - Restore long-lost but still documented "vector-like?" procedure (#983)
@@ -24,6 +33,15 @@
   - Removed deprecated C_get_argument[_2] and
     C_get_environment_variable[_2] functions.
   - C_mutate2 has been deprecated in favor of C_mutate
+
+- Build system
+  - MANDIR was renamed to MAN1DIR and TOPMANDIR was renamed to MANDIR
+     in order to comply with standard Makefile practice in UNIX.
+  - INCDIR was renamed to CHICKENINCDIR, and now derives from
+     INCLUDEDIR, which defaults to $(PREFIX)/include
+  - BINDIR, LIBDIR, SHAREDIR, INCLUDEDIR, MANDIR, MAN1DIR, DOCDIR,
+     CHICKENINCDIR and CHICKENLIBDIR will now also be taken from
+     the environment, if present (like PLATFORM, DESTDIR and PREFIX).
 
 4.9.0
 

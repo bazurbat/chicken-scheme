@@ -52,12 +52,9 @@
 (test "../../foo" (normalize-pathname "../../foo" 'unix))
 (test "c:\\." (normalize-pathname "c:\\" 'windows))
 
-(define home (get-environment-variable "HOME"))
-
-(when home
-  (test (string-append home "/foo") (normalize-pathname "~/foo" 'unix))
-  (test "c:~/foo" (normalize-pathname "c:~/foo" 'unix))
-  (test (string-append home "\\foo") (normalize-pathname "c:~\\foo" 'windows)))
+(test "~/foo" (normalize-pathname "~/foo" 'unix))
+(test "c:~/foo" (normalize-pathname "c:~/foo" 'unix))
+(test "c:~\\foo" (normalize-pathname "c:~\\foo" 'windows))
 
 (assert (directory-null? "/.//"))
 (assert (directory-null? ""))

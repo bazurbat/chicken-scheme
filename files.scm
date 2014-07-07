@@ -385,14 +385,12 @@ EOF
 			    (display p out) )
 			  (cdr parts))
 			 (when (fx= i prev) (##sys#write-char-0 sep out))
-			 (let* ((r1 (get-output-string out))
-				(r (##sys#expand-home-path r1)))
-			   (when (string=? r1 r)
-			     (when abspath 
-			       (set! r (##sys#string-append (string sep) r)))
-			     (when drive
-			       (set! r (##sys#string-append drive r))))
-			   r))))
+			 (let ((r (get-output-string out)))
+                           (when abspath
+                             (set! r (##sys#string-append (string sep) r)))
+                           (when drive
+                             (set! r (##sys#string-append drive r)))
+                           r))))
 		  ((*char-pds? (string-ref path i))
 		   (when (and (null? parts) (fx= i prev))
 		     (set! abspath #t))

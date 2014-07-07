@@ -740,7 +740,7 @@ EOF
 	(##sys#check-string filename 'file-open)
 	(##sys#check-exact flags 'file-open)
 	(##sys#check-exact mode 'file-open)
-	(let ([fd (##core#inline "C_open" (##sys#make-c-string (##sys#expand-home-path filename) 'file-open) flags mode)])
+	(let ([fd (##core#inline "C_open" (##sys#make-c-string filename 'file-open) flags mode)])
 	  (when (eq? -1 fd)
 	    (##sys#update-errno)
 	    (##sys#signal-hook #:file-error 'file-open "cannot open file" filename flags mode) )
@@ -815,7 +815,7 @@ EOF
 (define create-directory
   (lambda (name #!optional parents?)
     (##sys#check-string name 'create-directory)
-    (let ((name (##sys#expand-home-path name)))
+    (let ((name name))
       (if parents?
           (create-directory-helper-parents name)
           (create-directory-helper name))
@@ -824,7 +824,7 @@ EOF
 (define change-directory
   (lambda (name)
     (##sys#check-string name 'change-directory)
-    (let ((sname (##sys#make-c-string (##sys#expand-home-path name) 'change-directory)))
+    (let ((sname (##sys#make-c-string name 'change-directory)))
       (unless (fx= 0 (##core#inline "C_chdir" sname))
 	(##sys#update-errno)
 	(##sys#signal-hook
@@ -1024,7 +1024,7 @@ EOF
   (lambda (fname m)
     (##sys#check-string fname 'change-file-mode)
     (##sys#check-exact m 'change-file-mode)
-    (when (fx< (##core#inline "C_chmod" (##sys#make-c-string (##sys#expand-home-path fname) 'change-file-mode) m) 0)
+    (when (fx< (##core#inline "C_chmod" (##sys#make-c-string fname 'change-file-mode) m) 0)
       (##sys#update-errno)
       (##sys#signal-hook #:file-error 'change-file-mode "cannot change file mode" fname m) ) ) )
 
@@ -1035,7 +1035,7 @@ EOF
 (let ()
   (define (check filename acc loc)
     (##sys#check-string filename loc)
-    (let ([r (fx= 0 (##core#inline "C_test_access" (##sys#make-c-string (##sys#expand-home-path filename) loc) acc))])
+    (let ([r (fx= 0 (##core#inline "C_test_access" (##sys#make-c-string filename loc) acc))])
       (unless r (##sys#update-errno))
       r) )
   (set! file-read-access? (lambda (filename) (check filename _r_ok 'file-read-access?)))
@@ -1218,7 +1218,7 @@ EOF
       (build-exec-argvec loc (and arglst ($quote-args-list arglst exactf)) setarg 1)
       (build-exec-argvec loc envlst setenv 0)
       (##core#inline "C_flushall")
-      (##sys#make-c-string (##sys#expand-home-path filename) loc) ) ) )
+      (##sys#make-c-string filename loc) ) ) )
 
 (define ($exec-teardown loc msg filename res)
   (##sys#update-errno)
