@@ -32,7 +32,11 @@ set(libchicken_SCM_SOURCES library.scm eval.scm data-structures.scm ports.scm
 
 set(chicken_SCM_SOURCES chicken.scm batch-driver.scm compiler.scm
     optimizer.scm compiler-syntax.scm scrutinizer.scm support.scm
-    c-platform.scm c-backend.scm lfa2.scm)
+    c-platform.scm c-backend.scm)
+
+if(API_VERSION GREATER 6)
+    list(APPEND chicken_SCM_SOURCES lfa2.scm)
+endif()
 
 set(utility_PROGRAMS csc chicken-install chicken-uninstall chicken-status
     chicken-profile)
@@ -162,6 +166,21 @@ endforeach()
 install(TARGETS ${import_LIBRARIES}
     DESTINATION ${INSTALL_EGGDIR})
 
+# chicken-extract
+
+# add_chicken_executable(chicken-extract
+#     ${CMAKE_HOME_DIRECTORY}/cmake/extract-depends.scm
+#     OPTIONS -include-path ${PROJECT_SOURCE_DIR})
+#
+# set_target_properties(chicken-extract PROPERTIES
+#     OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}chicken-extract)
+#
+# install(TARGETS chicken-extract
+#     DESTINATION ${INSTALL_BINDIR})
+
+install(FILES ${CMAKE_HOME_DIRECTORY}/cmake/extract-depends.scm
+    DESTINATION ${INSTALL_DATADIR})
+
 # config
 include(CMakePackageConfigHelpers)
 
@@ -191,8 +210,6 @@ install(FILES ${PROJECT_BINARY_DIR}/chicken-config.cmake
 install(FILES ${PROJECT_BINARY_DIR}/chicken-config-version.cmake
     DESTINATION ${INSTALL_DATADIR}
     RENAME ${_chicken_program_prefix}chicken-config-version.cmake)
-install(FILES ${CMAKE_HOME_DIRECTORY}/cmake/extract-depends.scm
-    DESTINATION ${INSTALL_DATADIR})
 
 set(MAN_PAGES chicken csc csi chicken-install chicken-uninstall
     chicken-status chicken-profile chicken-bug)

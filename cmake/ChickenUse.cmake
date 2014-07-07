@@ -201,50 +201,45 @@ function(_chicken_add_c_flags in_file out_file)
         COMPILE_FLAGS " ${c_flags}")
 endfunction()
 
-function(_chicken_extract_depends out_var in_file out_file)
-    set(extra_depends "")
+function(_chicken_create_depends in_file dep_file)
+    execute_process(
+        COMMAND ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT}
+            ${in_file} ${dep_file})
+endfunction()
 
-    get_property(is_import_library SOURCE ${in_file}
-        PROPERTY chicken_import_library)
+function(_chicken_extract_depends out_var in_file dep_file)
+    set(depends "")
 
-    if(CHICKEN_EXTRACT_SCRIPT AND NOT is_import_library)
-        string(REGEX REPLACE "(.*)\\.c$" "\\1.d.cmake"
-            dep_file ${out_file})
-        set(extra_depends ${dep_file})
+    include(${dep_file} OPTIONAL)
 
-        add_custom_command(
-            OUTPUT ${dep_file}
-            COMMAND ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT} ${in_file} ${dep_file}
-            COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_LIST_FILE}
-            DEPENDS ${in_file} ${ARGN}
-            VERBATIM)
-
-        include(${dep_file} OPTIONAL)
-
-        # message("EXTRA DEPENDS: ${in_file}")
-        if(depends)
-            list(REMOVE_DUPLICATES depends)
-        endif()
-        foreach(dep ${depends})
-            if(TARGET ${dep}.import)
-                list(APPEND extra_depends ${dep}.import)
-                # message("\t${dep}.import")
-            else()
-                get_filename_component(dep ${dep} ABSOLUTE)
-                if(EXISTS ${dep})
-                    list(APPEND extra_depends ${dep})
-                    # message("\t${dep}")
-                elseif(EXISTS ${dep}.scm)
-                    list(APPEND extra_depends ${dep}.scm)
-                    # message("\t${dep}.scm")
-                endif()
-            endif()
-        endforeach()
-    else()
-        set(extra_depends ${in_file} ${ARGN})
+    if(imports)
+        list(REMOVE_DUPLICATES imports)
+    endif()
+    if(includes)
+        list(REMOVE_DUPLICATES includes)
     endif()
 
-    set(${out_var} ${extra_depends} PARENT_SCOPE)
+    message("DEPENDS: ${in_file}")
+
+    foreach(i ${imports})
+        if(TARGET ${i} OR EXISTS ${CHICKEN_TMP_DIR}/${i})
+            message("\tT ${i}")
+            list(APPEND depends ${i})
+        else()
+            message("\t- ${i}")
+        endif()
+    endforeach()
+
+    foreach(i ${includes})
+        get_filename_component(i ${i} ABSOLUTE)
+        if(EXISTS ${i})
+            list(APPEND depends ${i})
+        elseif(EXISTS ${i}.scm)
+            list(APPEND depends ${i}.scm)
+        endif()
+    endforeach()
+
+    set(${out_var} ${depends} PARENT_SCOPE)
 endfunction()
 
 # Adds necessary rules for collecting import libraries to single directory.
@@ -280,25 +275,41 @@ function(_chicken_command out_var in_file)
         set(out_file ${CMAKE_CURRENT_BINARY_DIR}/${out_filename})
     endif()
     get_filename_component(out_file ${out_file} ABSOLUTE)
-    get_filename_component(out_name ${out_file} NAME_WE)
     get_filename_component(out_path ${out_file} DIRECTORY)
+
+    file(WRITE ${CHICKEN_TMP_DIR}/${in_name} "")
+
+    string(REGEX REPLACE
+        "(.*)\\.c$" "\\1.d.cmake"
+        dep_file ${out_file})
+
+    get_property(is_import_library SOURCE ${in_file}
+        PROPERTY chicken_import_library)
 
     _chicken_command_add_type_options()
     _chicken_command_add_include_paths()
     _chicken_add_c_flags(${in_file} ${out_file} ${command_c_flags})
     _chicken_add_import_library_copy_targets(${command_import_libraries})
-    if(CHICKEN_EXTRACT_DEPENDS)
-        _chicken_extract_depends(depends ${in_file} ${out_file}
-            ${compile_DEPENDS} ${command_depends})
+
+    if(CHICKEN_EXTRACT_DEPENDS AND CHICKEN_EXTRACT_SCRIPT AND NOT is_import_library)
+        add_custom_command(OUTPUT ${dep_file}
+            COMMAND ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT}
+                ${in_file} ${dep_file}
+            DEPENDS ${in_file}
+            VERBATIM)
+        if(NOT EXISTS ${dep_file})
+            _chicken_create_depends(${in_file} ${dep_file})
+        endif()
+        _chicken_extract_depends(depends ${in_file} ${dep_file})
     else()
-        set(depends ${in_file} ${compile_DEPENDS} ${command_depends})
+        set(depends ${in_file} ${command_depends} ${compile_DEPENDS})
     endif()
 
-    add_custom_command(
-        OUTPUT ${out_file} ${command_output}
+    add_custom_command(OUTPUT ${out_file} ${command_output}
         COMMAND ${CHICKEN_EXECUTABLE}
             ${in_file} -output-file ${out_file}
             ${CHICKEN_OPTIONS} ${command_options} $ENV{CHICKEN_OPTIONS}
+        # DEPENDS ${in_file} ${dep_file} ${compile_DEPENDS} ${command_depends} ${depends}
         DEPENDS ${depends}
         VERBATIM)
 
@@ -347,6 +358,7 @@ function(add_chicken_library name)
         list(APPEND ${PROJECT_NAME}_CHICKEN_MODULES ${name})
         set(${PROJECT_NAME}_CHICKEN_MODULES ${${PROJECT_NAME}_CHICKEN_MODULES}
             PARENT_SCOPE)
+        set_property(GLOBAL APPEND PROPERTY chicken_modules ${name})
     elseif(compile_SHARED)
         set(library_type SHARED)
     endif()

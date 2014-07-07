@@ -96,6 +96,8 @@ find_program(CHICKEN_INSTALL_EXECUTABLE
 # Used for automatic dependency extraction during build.
 find_file(CHICKEN_EXTRACT_SCRIPT extract-depends.scm
     HINTS ${CHICKEN_DATA_DIR})
+# find_program(CHICKEN_EXTRACT chicken-extract
+#     HINTS ${CHICKEN_RUNTIME_DIR})
 
 # Use include files and libraries from the system the final compiled
 # executables are intended to run on.
