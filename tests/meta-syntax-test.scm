@@ -1,7 +1,7 @@
 ;;;; meta-syntax-test.scm
 
 
-(module foo (bar listify)
+(module meta-syntax-test (bar listify)
   (import scheme chicken)
   (begin-for-syntax
    (define (baz x) 
@@ -20,9 +20,9 @@
      (lambda (e r c)
        (call-it-123 list)))))
 
-(module foo-usage (foo-user)
+(module meta-syntax-test-usage (foo-user)
   (import chicken scheme)
-  (begin-for-syntax (import (prefix foo foo:)))
+  (begin-for-syntax (import (prefix meta-syntax-test foo:)))
   (define-syntax testing
     (er-macro-transformer
      (lambda (x r c)

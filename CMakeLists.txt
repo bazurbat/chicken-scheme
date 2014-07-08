@@ -229,6 +229,4 @@ install(EXPORT chicken-targets
 
 add_custom_target(check COMMAND ctest)
 
-if(BUILD_TESTS)
-    add_subdirectory(tests)
-endif()
+add_subdirectory(tests EXCLUDE_FROM_ALL)
