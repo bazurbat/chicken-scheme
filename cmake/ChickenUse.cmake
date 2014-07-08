@@ -26,7 +26,7 @@ endfunction()
 # simpler this way.
 macro(_chicken_parse_arguments)
     cmake_parse_arguments(compile
-        "STATIC;SHARED;MODULE;EMBEDDED;EXTENSION;EMIT_IMPORTS;EMIT_TYPES;EMIT_INLINES"
+        "STATIC;SHARED;MODULE;EMBEDDED;EXTENSION;EMIT_TYPES;EMIT_INLINES"
         "SUFFIX;EMIT;EMIT_TYPE_FILE;EMIT_INLINE_FILE"
         "SOURCES;C_SOURCES;EMIT_IMPORT_LIBRARIES;OPTIONS;DEFINITIONS;C_FLAGS;DEPENDS"
         ${ARGN})
@@ -48,9 +48,6 @@ macro(_chicken_parse_arguments)
 
     if(compile_MODULE)
         set(compile_SHARED TRUE)
-        if(compile_EMIT AND NOT compile_EMIT_IMPORT_LIBRARIES)
-            set(compile_EMIT_IMPORT_LIBRARIES ${compile_EMIT})
-        endif()
     endif()
 
     if(compile_SHARED)
@@ -70,8 +67,8 @@ macro(_chicken_parse_arguments)
         list(APPEND command_options -feature compiling-extension)
     endif()
 
-    if(compile_EMIT_IMPORTS)
-        list(APPEND command_options -emit-all-import-libraries)
+    if(compile_EMIT AND NOT compile_EMIT_IMPORT_LIBRARIES)
+        set(compile_EMIT_IMPORT_LIBRARIES ${compile_EMIT})
     endif()
 
     foreach(emit ${compile_EMIT_IMPORT_LIBRARIES})
@@ -82,11 +79,11 @@ macro(_chicken_parse_arguments)
     endforeach()
     list(APPEND command_output ${command_import_libraries})
 
-    if(CHICKEN_EMIT_TYPES AND compile_EMIT AND NOT compile_EMIT_TYPE_FILE)
+    if(compile_EMIT_TYPES AND compile_EMIT AND NOT compile_EMIT_TYPE_FILE)
         set(compile_EMIT_TYPE_FILE ${compile_EMIT})
     endif()
 
-    if(CHICKEN_EMIT_INLINES AND compile_EMIT AND NOT compile_EMIT_INLINE_FILE)
+    if(compile_EMIT_INLINES AND compile_EMIT AND NOT compile_EMIT_INLINE_FILE)
         set(compile_EMIT_INLINE_FILE ${compile_EMIT})
     endif()
 

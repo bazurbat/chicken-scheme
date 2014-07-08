@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 cmake_policy(VERSION 2.8)
 
+enable_testing()
+
 # search for CMake includes in project directory first
 set(CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/cmake CACHE INTERNAL "")
 # override default platform compiler flags
@@ -224,3 +226,9 @@ install(FILES README LICENSE
 
 install(EXPORT chicken-targets
     DESTINATION ${INSTALL_DATADIR})
+
+add_custom_target(check COMMAND ctest)
+
+if(BUILD_TESTS)
+    add_subdirectory(tests)
+endif()

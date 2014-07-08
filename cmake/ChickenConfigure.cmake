@@ -9,6 +9,7 @@ set(API_VERSION 7 CACHE INTERNAL "")
 # TODO: is there a way to detect this?
 set(STACKDIRECTION 1)
 
+option(BUILD_TESTS "Build tests" YES)
 option(BUILD_SHARED_LIBS "Build shared libraries" YES)
 option(BUILD_STATIC_LIBS "Build static libraries" NO)
 
