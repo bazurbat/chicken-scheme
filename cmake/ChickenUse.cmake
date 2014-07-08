@@ -26,7 +26,7 @@ endfunction()
 # simpler this way.
 macro(_chicken_parse_arguments)
     cmake_parse_arguments(compile
-        "STATIC;SHARED;MODULE;EMBEDDED;EXTENSION;EMIT_TYPES;EMIT_INLINES"
+        "STATIC;SHARED;MODULE;EMBEDDED;EXTENSION"
         "SUFFIX;EMIT;EMIT_TYPE_FILE;EMIT_INLINE_FILE"
         "SOURCES;C_SOURCES;EMIT_IMPORT_LIBRARIES;OPTIONS;DEFINITIONS;C_FLAGS;DEPENDS"
         ${ARGN})
@@ -79,11 +79,11 @@ macro(_chicken_parse_arguments)
     endforeach()
     list(APPEND command_output ${command_import_libraries})
 
-    if(compile_EMIT_TYPES AND compile_EMIT AND NOT compile_EMIT_TYPE_FILE)
+    if(compile_EMIT AND CHICKEN_EMIT_TYPES AND NOT compile_EMIT_TYPE_FILE)
         set(compile_EMIT_TYPE_FILE ${compile_EMIT})
     endif()
 
-    if(compile_EMIT_INLINES AND compile_EMIT AND NOT compile_EMIT_INLINE_FILE)
+    if(compile_EMIT AND CHICKEN_EMIT_INLINES AND NOT compile_EMIT_INLINE_FILE)
         set(compile_EMIT_INLINE_FILE ${compile_EMIT})
     endif()
 
@@ -96,20 +96,12 @@ endmacro()
 macro(_chicken_command_add_type_options)
     if(compile_EMIT_TYPE_FILE)
         set(types_file ${compile_EMIT_TYPE_FILE}.types)
-    elseif(compile_EMIT_TYPES)
-        set(types_file ${in_name}.types)
-    endif()
-    if(types_file)
         list(APPEND command_options -emit-type-file ${types_file})
         list(APPEND command_output ${types_file})
     endif()
 
     if(compile_EMIT_INLINE_FILE)
         set(inline_file ${compile_EMIT_INLINE_FILE}.inline)
-    elseif(compile_EMIT_INLINES)
-        set(inline_file ${in_name}.inline)
-    endif()
-    if(inline_file)
         list(APPEND command_options -emit-inline-file ${inline_file})
         list(APPEND command_output ${inline_file})
     endif()
@@ -368,27 +360,40 @@ function(add_chicken_library name)
     endif()
 endfunction()
 
+function(add_chicken_import_library name)
+    _chicken_parse_arguments(MODULE ${ARGN})
+
+    set(target ${name}.import)
+    set(source ${CMAKE_CURRENT_BINARY_DIR}/${name}.import.scm)
+
+    add_chicken_library(${target} ${source} MODULE
+        C_FLAGS ${compile_C_FLAGS})
+
+    # ensure that import libraries are built after module, so that
+    # targets depending on import pull generating module too, this is
+    # needed to properly compile import-for-syntax and such forms
+    add_dependencies(${target} ${name})
+
+    set_property(TARGET ${target} PROPERTY
+        LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_IMPORT_LIBRARY_BINARY_DIR})
+endfunction()
+
 # Even more convenient wrapper for compiling Chicken modules along with import
 # libraries.
 function(add_chicken_module name)
     _chicken_parse_arguments(MODULE ${ARGN})
+
     if(NOT compile_EMIT_IMPORT_LIBRARIES)
         set(compile_EMIT_IMPORT_LIBRARIES ${name})
     endif()
+
     add_chicken_library(${name} ${ARGN} MODULE
         EMIT_IMPORT_LIBRARIES ${compile_EMIT_IMPORT_LIBRARIES})
+
     foreach(lib ${compile_EMIT_IMPORT_LIBRARIES})
-        set(lib_target ${lib}.import)
-        set(import_filename "${CMAKE_CURRENT_BINARY_DIR}/${lib}.import.scm")
-        add_chicken_library(${lib_target} ${import_filename} MODULE
-            C_FLAGS ${compile_C_FLAGS})
-        # ensure that import libraries are built after module, so that
-        # targets depending on import pull generating module too, this is
-        # needed to properly compile import-for-syntax and such forms
-        add_dependencies(${lib_target} ${name})
-        set_property(TARGET ${lib_target} PROPERTY
-            LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_IMPORT_LIBRARY_BINARY_DIR})
+        add_chicken_import_library(${lib})
     endforeach()
+
     set(${PROJECT_NAME}_CHICKEN_MODULES ${${PROJECT_NAME}_CHICKEN_MODULES}
         PARENT_SCOPE)
 endfunction()
