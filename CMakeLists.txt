@@ -188,7 +188,8 @@ include(CMakePackageConfigHelpers)
 configure_package_config_file(cmake/chicken-config.cmake.in
     ${PROJECT_BINARY_DIR}/chicken-config.cmake
     INSTALL_DESTINATION ${INSTALL_DATADIR}
-    PATH_VARS INSTALL_BINDIR INSTALL_LIBDIR INSTALL_EGGDIR INSTALL_DATADIR)
+    PATH_VARS INSTALL_BINDIR INSTALL_LIBDIR INSTALL_EGGDIR INSTALL_DATADIR
+        INSTALL_INCLUDEDIR)
 
 write_basic_package_version_file(
     ${PROJECT_BINARY_DIR}/chicken-config-version.cmake
