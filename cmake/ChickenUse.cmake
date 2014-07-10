@@ -24,15 +24,21 @@ endfunction()
 # A lot of flexibility here. Maybe too much. Some option combinations do not
 # make sense together, diagnostics are not done, but the implementation is
 # simpler this way.
-macro(_chicken_parse_arguments prefix)
+macro(_chicken_parse_arguments)
     cmake_parse_arguments(compile
         "STATIC;SHARED;MODULE;EMBEDDED;EXTENSION"
-        "NAME;SUFFIX;EMIT;EMIT_TYPE_FILE;EMIT_INLINE_FILE"
-        "SOURCES;C_SOURCES;EMIT_IMPORT_LIBRARIES;OPTIONS;DEFINITIONS;C_FLAGS;DEPENDS"
+        "EMIT;SUFFIX;EMIT_TYPE_FILE;EMIT_INLINE_FILE"
+        "SOURCES;C_SOURCES;EMIT_IMPORTS;OPTIONS;DEFINITIONS;C_FLAGS;DEPENDS"
         ${ARGN})
 
-    # reset variables which are be appended to avoid conflicts with globals or
-    # multiple calls to the macro in the same scope
+    list(APPEND compile_SOURCES ${compile_UNPARSED_ARGUMENTS})
+
+    if(compile_MODULE)
+        set(compile_SHARED TRUE)
+    endif()
+endmacro()
+
+macro(_chicken_command_prepare_arguments)
     set(command_import_libraries "")
     set(command_options "")
     set(command_definitions "")
@@ -40,14 +46,8 @@ macro(_chicken_parse_arguments prefix)
     set(command_depends "")
     set(command_output "")
 
-    list(APPEND compile_SOURCES ${compile_UNPARSED_ARGUMENTS})
-
     if(compile_STATIC)
         list(APPEND command_options -feature chicken-compile-static)
-    endif()
-
-    if(compile_MODULE)
-        set(compile_SHARED TRUE)
     endif()
 
     if(compile_SHARED)
@@ -67,39 +67,35 @@ macro(_chicken_parse_arguments prefix)
         list(APPEND command_options -feature compiling-extension)
     endif()
 
-    if(compile_EMIT AND NOT compile_EMIT_IMPORT_LIBRARIES)
-        set(compile_EMIT_IMPORT_LIBRARIES ${compile_EMIT})
-    endif()
-
-    foreach(emit ${compile_EMIT_IMPORT_LIBRARIES})
-        list(APPEND command_options -emit-import-library ${emit})
-        list(APPEND command_import_libraries ${emit}.import.scm)
-        set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/${emit}.import.scm
-            PROPERTY chicken_import_library YES)
+    foreach(lib ${compile_EMIT_IMPORTS})
+        list(APPEND command_options -emit-import-library ${lib})
+        list(APPEND command_import_libraries ${lib}.import.scm)
     endforeach()
-    list(APPEND command_output ${command_import_libraries})
-
-    if(compile_EMIT AND CHICKEN_EMIT_TYPES AND NOT compile_EMIT_TYPE_FILE)
-        set(compile_EMIT_TYPE_FILE ${compile_EMIT})
-    endif()
-
-    if(compile_EMIT AND CHICKEN_EMIT_INLINES AND NOT compile_EMIT_INLINE_FILE)
-        set(compile_EMIT_INLINE_FILE ${compile_EMIT})
-    endif()
+    foreach(lib ${command_import_libraries})
+        list(APPEND command_output ${lib} ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib})
+    endforeach()
 
     list(APPEND command_options ${compile_OPTIONS})
 
     list(APPEND command_c_flags ${compile_C_FLAGS})
+
+    _chicken_command_add_type_inline()
+    _chicken_command_add_include_paths()
 endmacro()
 
-# Assumes that arguments are already parsed.
-macro(_chicken_command_add_type_options)
+macro(_chicken_command_add_type_inline)
+    if(CHICKEN_EMIT_TYPES AND compile_EMIT AND NOT compile_EMIT_TYPE_FILE)
+        set(compile_EMIT_TYPE_FILE ${compile_EMIT})
+    endif()
     if(compile_EMIT_TYPE_FILE)
         set(types_file ${compile_EMIT_TYPE_FILE}.types)
         list(APPEND command_options -emit-type-file ${types_file})
         list(APPEND command_output ${types_file})
     endif()
 
+    if(CHICKEN_EMIT_INLINES AND compile_EMIT AND NOT compile_EMIT_INLINE_FILE)
+        set(compile_EMIT_INLINE_FILE ${compile_EMIT})
+    endif()
     if(compile_EMIT_INLINE_FILE)
         set(inline_file ${compile_EMIT_INLINE_FILE}.inline)
         list(APPEND command_options -emit-inline-file ${inline_file})
@@ -252,20 +248,16 @@ function(_chicken_command out_var in_file)
     get_filename_component(out_file ${out_file} ABSOLUTE)
     get_filename_component(out_path ${out_file} DIRECTORY)
 
-    get_property(is_import_library SOURCE ${in_file}
-        PROPERTY chicken_import_library)
-
     file(WRITE ${CHICKEN_TMP_DIR}/${in_name} "")
 
     string(REGEX REPLACE
         "(.*)\\.c$" "\\1.d.cmake"
         dep_file ${out_file})
 
-    _chicken_command_add_type_options()
-    _chicken_command_add_include_paths()
+    _chicken_command_prepare_arguments()
     _chicken_add_c_flags(${in_file} ${out_file} ${command_c_flags})
 
-    if(CHICKEN_EXTRACT_DEPENDS AND CHICKEN_EXTRACT_SCRIPT AND NOT is_import_library)
+    if(CHICKEN_EXTRACT_DEPENDS AND CHICKEN_EXTRACT_SCRIPT)
         add_custom_command(OUTPUT ${dep_file}
             COMMAND ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT}
                 ${in_file} ${dep_file}
@@ -289,12 +281,12 @@ function(_chicken_command out_var in_file)
         DEPENDS ${depends}
         VERBATIM)
 
-    if(is_import_library)
+    foreach(import ${command_import_libraries})
         add_custom_command(OUTPUT ${command_output}
             COMMAND ${CMAKE_COMMAND}
-            ARGS -E copy ${in_file} ${CHICKEN_IMPORT_LIBRARY_DIR}/${in_filename}
+            ARGS -E copy ${CMAKE_CURRENT_BINARY_DIR}/${import} ${CHICKEN_IMPORT_LIBRARY_DIR}/${import}
             VERBATIM APPEND)
-    endif()
+    endforeach()
 
     set(${out_var} ${out_file} PARENT_SCOPE)
 endfunction()
@@ -310,7 +302,7 @@ endfunction()
 # Used by other add_chicken... functions, can be used directly to pass file
 # specific options or build source lists incrementally.
 function(add_chicken_sources out_var)
-    _chicken_parse_arguments(compile ${ARGN})
+    _chicken_parse_arguments(${ARGN})
 
     foreach(arg ${compile_SOURCES})
         _chicken_command(out_file ${arg})
@@ -329,7 +321,7 @@ endfunction()
 function(add_chicken_executable name)
     set(sources)
 
-    add_chicken_sources(sources NAME ${name} ${ARGN})
+    add_chicken_sources(sources EMIT ${name} ${ARGN})
 
     add_executable(${name} ${sources})
     _chicken_target_link_libraries(${name})
@@ -337,55 +329,57 @@ endfunction()
 
 # Convenience wrapper around add_library.
 function(add_chicken_library name)
-    _chicken_parse_arguments(library ${ARGN})
+    cmake_parse_arguments(library
+        "STATIC;SHARED;MODULE" "" "" ${ARGN})
 
-    if(compile_STATIC)
+    if(library_STATIC)
         set(library_type STATIC)
-    elseif(compile_SHARED)
+    elseif(library_SHARED)
         set(library_type SHARED)
     else()
-        set(compile_MODULE TRUE)
         set(library_type MODULE)
-        if(NOT compile_EMIT)
-            set(compile_EMIT ${name})
-        endif()
+        set(library_MODULE TRUE)
     endif()
 
     set(sources)
-    add_chicken_sources(sources NAME ${name} ${ARGN})
+    add_chicken_sources(sources ${library_type} EMIT ${name} ${ARGN})
 
     add_library(${name} ${library_type} ${sources})
     _chicken_target_link_libraries(${name})
 
-    if(compile_MODULE)
-        # NOTE: BUILD_WITH_INSTALL_RPATH = true - breaks *.import.so during
-        # compilation, false - breaks tests, need to handle this somehow
+    if(library_MODULE)
         set_target_properties(${name} PROPERTIES
             PREFIX ""
-            NO_SONAME TRUE
-            INSTALL_RPATH .
-            BUILD_WITH_INSTALL_RPATH FALSE)
+            NO_SONAME TRUE)
 
         list(APPEND ${PROJECT_NAME}_CHICKEN_MODULES ${name})
     endif()
 
-    if(CHICKEN_COMPILE_IMPORTS)
-        foreach(emit ${compile_EMIT})
-            set(sources)
-            set(import ${emit}.import)
+    set(${PROJECT_NAME}_CHICKEN_MODULES ${${PROJECT_NAME}_CHICKEN_MODULES}
+        PARENT_SCOPE)
+endfunction()
 
-            add_chicken_sources(sources SHARED
-                ${CMAKE_CURRENT_BINARY_DIR}/${import}.scm
-                C_FLAGS ${compile_C_FLAGS})
+# Even more convenient wrapper for compiling Chicken modules along with import
+# libraries.
+function(add_chicken_module name)
+    _chicken_parse_arguments(${ARGN})
 
-            add_library(${import} MODULE ${sources})
-            _chicken_target_link_libraries(${import})
+    if(NOT compile_EMIT_IMPORTS)
+        set(compile_EMIT_IMPORTS ${name})
+    endif()
 
+    add_chicken_library(${name} MODULE ${ARGN}
+        EMIT_IMPORTS ${compile_EMIT_IMPORTS})
+
+    if(CHICKEN_BUILD_IMPORTS)
+        foreach(lib ${compile_EMIT_IMPORTS})
+            set(import ${lib}.import)
+
+            add_chicken_library(${import} MODULE
+                SOURCES ${CMAKE_CURRENT_BINARY_DIR}/${import}.scm)
             add_dependencies(${import} ${name})
             set_property(TARGET ${import} PROPERTY
                 LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_IMPORT_LIBRARY_BINARY_DIR})
-
-            list(APPEND ${PROJECT_NAME}_CHICKEN_MODULES ${import})
         endforeach()
     endif()
 

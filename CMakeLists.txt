@@ -143,13 +143,12 @@ if(BUILD_STATIC_PROGRAMS)
         RUNTIME DESTINATION ${INSTALL_BINDIR})
 endif()
 
-add_chicken_library(setup-api setup-api.scm
-    EMIT setup-api
+add_chicken_module(setup-api setup-api.scm
     OPTIONS ${LIBRARY_OPTIONS})
-add_chicken_library(setup-download setup-download.scm
-    EMIT setup-download
+
+add_chicken_module(setup-download setup-download.scm
     OPTIONS ${LIBRARY_OPTIONS}
-    DEPENDS setup-api.import)
+    DEPENDS setup-api)
 
 add_dependencies(chicken-install ${setupapi_MODULES})
 add_dependencies(chicken-uninstall ${setupapi_MODULES})
@@ -161,7 +160,7 @@ foreach(module ${setupapi_MODULES})
 endforeach()
 
 foreach(lib ${import_LIBRARIES})
-    add_chicken_library(${lib} ${lib}.scm SHARED
+    add_chicken_library(${lib} ${lib}.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
 endforeach()
 

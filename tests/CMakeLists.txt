@@ -52,7 +52,7 @@ add_compiled_test(scrutiny-tests-strict scrutiny-tests-strict.scm
 # specialization tests
 
 add_compiled_test(specialization-test-1 specialization-test-1.scm
-    EMIT_IMPORT_LIBRARIES foo EMIT_TYPE_FILE foo
+    EMIT_IMPORTS foo EMIT_TYPE_FILE foo
     OPTIONS -specialize -debug ox)
 
 add_compiled_test(specialization-test-2 specialization-test-2.scm
@@ -137,7 +137,7 @@ add_compiled_test(syntax2 syntax-tests-2.scm)
 # meta syntax tests
 
 add_compiled_test(meta-syntax meta-syntax-test.scm
-    EMIT_IMPORT_LIBRARIES meta-syntax-test)
+    EMIT_IMPORTS meta-syntax-test)
 
 add_interpreted_test(meta-syntax meta-syntax-test.scm -b
     -e "(import meta-syntax-test)"
@@ -156,12 +156,12 @@ add_test(NAME meta-syntax-2 COMMAND ${INTERPRET} -b
 
 # reexport tests
 
-add_chicken_library(reexport-m1 reexport-m1.scm EMIT reexport-m1)
-add_chicken_library(reexport-m3 reexport-m3.scm EMIT reexport-m3)
-add_chicken_library(reexport-m4 reexport-m4.scm EMIT reexport-m4
+add_chicken_library(reexport-m1 reexport-m1.scm EMIT_IMPORTS reexport-m1)
+add_chicken_library(reexport-m3 reexport-m3.scm EMIT_IMPORTS reexport-m3)
+add_chicken_library(reexport-m4 reexport-m4.scm EMIT_IMPORTS reexport-m4
     DEPENDS reexport-m3)
-add_chicken_library(reexport-m5 reexport-m5.scm EMIT reexport-m5)
-add_chicken_library(reexport-m6 reexport-m6.scm EMIT reexport-m6
+add_chicken_library(reexport-m5 reexport-m5.scm EMIT_IMPORTS reexport-m5)
+add_chicken_library(reexport-m6 reexport-m6.scm EMIT_IMPORTS reexport-m6
     DEPENDS reexport-m5)
 
 add_dependencies(check reexport-m1 reexport-m3 reexport-m4 reexport-m5
@@ -181,7 +181,7 @@ add_compiled_test(reexport-2 reexport-tests-2.scm
 
 # functor tests
 
-add_chicken_library(square-functor square-functor.scm)
+add_chicken_module(square-functor square-functor.scm)
 
 add_compiled_test(functor functor-tests.scm)
 add_interpreted_test(functor functor-tests.scm)
@@ -203,7 +203,7 @@ add_interpreted_test(import import-tests.scm)
 
 # import library tests
 
-add_chicken_library(import-library-test1 import-library-test1.scm)
+add_chicken_module(import-library-test1 import-library-test1.scm)
 
 # add_compiled_test(import-library import-library-test2.scm
 #     DEPENDS import-library-test1)
