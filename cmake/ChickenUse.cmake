@@ -72,6 +72,7 @@ macro(_chicken_command_prepare_arguments)
         list(APPEND command_import_libraries ${lib}.import.scm)
     endforeach()
     foreach(lib ${command_import_libraries})
+        set_property(SOURCE ${lib} PROPERTY chicken_import_library TRUE)
         list(APPEND command_output ${lib} ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib})
     endforeach()
 
@@ -193,7 +194,7 @@ function(_chicken_create_depends in_file dep_file)
 endfunction()
 
 function(_chicken_extract_depends out_var in_file dep_file)
-    set(depends "")
+    set(depends ${dep_file})
 
     include(${dep_file} OPTIONAL)
 
@@ -204,14 +205,21 @@ function(_chicken_extract_depends out_var in_file dep_file)
         list(REMOVE_DUPLICATES includes)
     endif()
 
-    message("DEPENDS: ${in_file}")
+    # message("DEPENDS: ${in_file}")
 
     foreach(i ${imports})
-        if(TARGET ${i} OR EXISTS ${CHICKEN_TMP_DIR}/${i})
-            message("\tT ${i}")
-            list(APPEND depends ${i})
+        # message("\t${i}")
+        if(CMAKE_GENERATOR MATCHES "Make")
+            # This check does not work for targets which CMake has not seen yet
+            # during generation process.
+            if(TARGET ${i}.import)
+                list(APPEND depends ${i}.import)
+            endif()
         else()
-            message("\t- ${i}")
+            # CMake Ninja generator adds bogus files as phony targets and this
+            # makes the extraction simpler.
+            # TODO: check other generators
+            list(APPEND depends ${CHICKEN_IMPORT_LIBRARY_DIR}/${i}.import.scm)
         endif()
     endforeach()
 
@@ -248,8 +256,6 @@ function(_chicken_command out_var in_file)
     get_filename_component(out_file ${out_file} ABSOLUTE)
     get_filename_component(out_path ${out_file} DIRECTORY)
 
-    file(WRITE ${CHICKEN_TMP_DIR}/${in_name} "")
-
     string(REGEX REPLACE
         "(.*)\\.c$" "\\1.d.cmake"
         dep_file ${out_file})
@@ -257,7 +263,11 @@ function(_chicken_command out_var in_file)
     _chicken_command_prepare_arguments()
     _chicken_add_c_flags(${in_file} ${out_file} ${command_c_flags})
 
-    if(CHICKEN_EXTRACT_DEPENDS AND CHICKEN_EXTRACT_SCRIPT)
+    get_property(is_import_library SOURCE ${in_file}
+        PROPERTY chicken_import_library)
+
+    set(depends ${in_file} ${command_depends} ${compile_DEPENDS})
+    if(CHICKEN_EXTRACT_DEPENDS AND CHICKEN_EXTRACT_SCRIPT AND NOT is_import_library)
         add_custom_command(OUTPUT ${dep_file}
             COMMAND ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT}
                 ${in_file} ${dep_file}
@@ -267,8 +277,6 @@ function(_chicken_command out_var in_file)
             _chicken_create_depends(${in_file} ${dep_file})
         endif()
         _chicken_extract_depends(depends ${in_file} ${dep_file})
-    else()
-        set(depends ${in_file} ${command_depends} ${compile_DEPENDS})
     endif()
 
     list(INSERT command_output 0 ${out_file})
@@ -277,7 +285,6 @@ function(_chicken_command out_var in_file)
         COMMAND ${CHICKEN_EXECUTABLE}
             ${in_file} -output-file ${out_file}
             ${CHICKEN_OPTIONS} ${command_options} $ENV{CHICKEN_OPTIONS}
-        # DEPENDS ${in_file} ${dep_file} ${compile_DEPENDS} ${command_depends} ${depends}
         DEPENDS ${depends}
         VERBATIM)
 
