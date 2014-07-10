@@ -266,7 +266,6 @@ function(_chicken_command out_var in_file)
     get_property(is_import_library SOURCE ${in_file}
         PROPERTY chicken_import_library)
 
-    set(depends ${in_file} ${command_depends} ${compile_DEPENDS})
     if(CHICKEN_EXTRACT_DEPENDS AND CHICKEN_EXTRACT_SCRIPT AND NOT is_import_library)
         add_custom_command(OUTPUT ${dep_file}
             COMMAND ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT}
@@ -285,7 +284,7 @@ function(_chicken_command out_var in_file)
         COMMAND ${CHICKEN_EXECUTABLE}
             ${in_file} -output-file ${out_file}
             ${CHICKEN_OPTIONS} ${command_options} $ENV{CHICKEN_OPTIONS}
-        DEPENDS ${depends}
+        DEPENDS ${in_file} ${command_depends} ${compile_DEPENDS} ${depends}
         VERBATIM)
 
     foreach(import ${command_import_libraries})
