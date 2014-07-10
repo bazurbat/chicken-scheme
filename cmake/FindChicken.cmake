@@ -97,16 +97,16 @@ find_program(CHICKEN_INSTALL_EXECUTABLE
 # Used for automatic dependency extraction during build.
 find_file(CHICKEN_EXTRACT_SCRIPT extract-depends.scm
     HINTS ${CHICKEN_DATA_DIR})
-# find_program(CHICKEN_EXTRACT chicken-extract
-#     HINTS ${CHICKEN_RUNTIME_DIR})
 
 # Use include files and libraries from the system the final compiled
 # executables are intended to run on.
 
 find_path(CHICKEN_INCLUDE_DIR chicken.h
+    HINTS ${CHICKEN_INCLUDE_DIR}
     PATH_SUFFIXES ${_chicken_system}chicken)
 
-find_library(CHICKEN_LIBRARY ${_chicken_system}chicken)
+find_library(CHICKEN_LIBRARY ${_chicken_system}chicken
+    HINTS ${CHICKEN_LIBRARY_DIR})
 
 # Determine the location of the static library based on the location of the
 # just found dynamic library. This is needed to avoid picking libraries from
@@ -147,7 +147,7 @@ set(CHICKEN_STATIC_LIBRARIES ${CHICKEN_STATIC_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES
 # We may need to wrap actual executables for some platforms, so it is
 # recommended to use these logical names in extension setup scripts.
 set(CHICKEN_COMPILER ${CHICKEN_EXECUTABLE})
-set(CHICKEN_INTERPRETER ${CHICKEN_CSI_EXECUTABLE})
+set(CHICKEN_INTERPRETER ${CHICKEN_CSI_EXECUTABLE} -R chicken-syntax)
 
 # Consider Chicken found if we determined that at least the executable is
 # available. Probably more comprehensive logic is needed to warn a user that
