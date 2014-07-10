@@ -139,8 +139,6 @@ add_compiled_test(syntax2 syntax-tests-2.scm)
 add_compiled_test(meta-syntax meta-syntax-test.scm
     EMIT_IMPORT_LIBRARIES meta-syntax-test)
 
-add_chicken_import_library(meta-syntax-test)
-
 add_interpreted_test(meta-syntax meta-syntax-test.scm -b
     -e "(import meta-syntax-test)"
     -e "(assert (equal? '((1)) (bar 1 2)))"
@@ -183,7 +181,7 @@ add_compiled_test(reexport-2 reexport-tests-2.scm
 
 # functor tests
 
-add_chicken_module(square-functor square-functor.scm)
+add_chicken_library(square-functor square-functor.scm)
 
 add_compiled_test(functor functor-tests.scm)
 add_interpreted_test(functor functor-tests.scm)
@@ -205,7 +203,7 @@ add_interpreted_test(import import-tests.scm)
 
 # import library tests
 
-add_chicken_module(import-library-test1 import-library-test1.scm)
+add_chicken_library(import-library-test1 import-library-test1.scm)
 
 # add_compiled_test(import-library import-library-test2.scm
 #     DEPENDS import-library-test1)

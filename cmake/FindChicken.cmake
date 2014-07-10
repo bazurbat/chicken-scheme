@@ -17,6 +17,7 @@ set(CHICKEN_API_VERSION 7 CACHE STRING
     "Chicken API version")
 mark_as_advanced(CHICKEN_API_VERSION)
 
+option(CHICKEN_COMPILE_IMPORTS "Compile generated import libraries" YES)
 option(CHICKEN_EMIT_TYPES "Generate files with type declarations" NO)
 option(CHICKEN_EMIT_INLINES "Generate files with globally inlinable procedures" NO)
 option(CHICKEN_EXTRACT_DEPENDS "Automatically extract source file dependencies" NO)
