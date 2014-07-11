@@ -205,20 +205,21 @@ function(_chicken_extract_depends out_var in_file dep_file)
         list(REMOVE_DUPLICATES includes)
     endif()
 
-    # message("DEPENDS: ${in_file}")
+    # message(STATUS "DEPENDS: ${in_file}")
 
     foreach(i ${imports})
-        # message("\t${i}")
         if(CMAKE_GENERATOR MATCHES "Make")
             # This check does not work for targets which CMake has not seen yet
             # during generation process.
-            if(TARGET ${i}.import)
-                list(APPEND depends ${i}.import)
+            if(TARGET ${i})
+                # message(STATUS "\tT ${i}")
+                list(APPEND depends ${i})
             endif()
         else()
             # CMake Ninja generator adds bogus files as phony targets and this
             # makes the extraction simpler.
             # TODO: check other generators
+            # message(STATUS "\t${CHICKEN_IMPORT_LIBRARY_BINARY_DIR}/${i}.import.scm")
             list(APPEND depends ${CHICKEN_IMPORT_LIBRARY_DIR}/${i}.import.scm)
         endif()
     endforeach()
@@ -266,6 +267,7 @@ function(_chicken_command out_var in_file)
     get_property(is_import_library SOURCE ${in_file}
         PROPERTY chicken_import_library)
 
+    set(depends "")
     if(CHICKEN_EXTRACT_DEPENDS AND CHICKEN_EXTRACT_SCRIPT AND NOT is_import_library)
         add_custom_command(OUTPUT ${dep_file}
             COMMAND ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT}
