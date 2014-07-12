@@ -130,6 +130,7 @@ check_type_size("long long"          LONG_LONG)
 check_type_size("unsigned long long" UNSIGNED_LONG_LONG)
 
 check_include_file("alloca.h"   HAVE_ALLOCA_H)
+check_include_file("direct.h"   HAVE_DIRECT_H)
 check_include_file("dirent.h"   HAVE_DIRENT_H)
 check_include_file("dlfcn.h"    HAVE_DLFCN_H)
 check_include_file("errno.h"    HAVE_ERRNO_H)

@@ -3,6 +3,7 @@
 #cmakedefine HAVE_UNSIGNED_LONG_LONG
 
 #cmakedefine HAVE_ALLOCA_H
+#cmakedefine HAVE_DIRECT_H
 #cmakedefine HAVE_DIRENT_H
 #cmakedefine HAVE_DLFCN_H
 #cmakedefine HAVE_ERRNO_H
