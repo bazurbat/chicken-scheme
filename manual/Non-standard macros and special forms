@@ -197,10 +197,12 @@ is the same as {{(letrec ((NAME (lambda (VARIABLE ...) BODY ...))) NAME)}}.
 
 ==== define-values
 
-<macro>(define-values (NAME ...) EXP)</macro>
+<macro>(define-values (NAME ...) VALUEEXP)</macro>
+<macro>(define-values (NAME1 ... NAMEn . NAMEn+1) VALUEEXP)</macro>
+<macro>(define-values NAME VALUEEXP)</macro>
 
 Defines several variables at once, with the result values of expression
-{{EXP}}.
+{{VALUEEXP}}, similar to {{set!-values}}.
 
 ==== fluid-let
 
@@ -212,17 +214,17 @@ This implements [[http://srfi.schemers.org/srfi-15/srfi-15.html|SRFI-15]].
 
 ==== let-values
 
-<macro>(let-values (((NAME ...) EXP) ...) BODY ...)</macro>
+<macro>(let-values (((NAME ...) VALUEEXP) ...) BODY ...)</macro>
 
-Binds multiple variables to the result values of {{EXP ...}}.
+Binds multiple variables to the result values of {{VALUEEXP ...}}.
 All variables are bound simultaneously.
 This implements [[http://srfi.schemers.org/srfi-11/srfi-11.html|SRFI-11]].
 
 ==== let*-values
 
-<macro>(let*-values (((NAME ...) EXP) ...) BODY ...)</macro>
+<macro>(let*-values (((NAME ...) VALUEEXP) ...) BODY ...)</macro>
 
-Binds multiple variables to the result values of {{EXP ...}}.
+Binds multiple variables to the result values of {{VALUEEXP ...}}.
 The variables are bound sequentially.
 This is also part of [[http://srfi.schemers.org/srfi-11/srfi-11.html|SRFI-11]].
 
@@ -234,9 +236,9 @@ This is also part of [[http://srfi.schemers.org/srfi-11/srfi-11.html|SRFI-11]].
 
 ==== letrec-values
 
-<macro>(letrec-values (((NAME ...) EXP) ...) BODY ...)</macro>
+<macro>(letrec-values (((NAME ...) VALUEEXP) ...) BODY ...)</macro>
 
-Binds the result values of {{EXP ...}} to multiple variables at once.
+Binds the result values of {{VALUEEXP ...}} to multiple variables at once.
 All variables are mutually recursive.
 
 <enscript highlight=scheme>
@@ -265,17 +267,20 @@ expression that evaluates to a parameter procedure.
 
 [[http://srfi.schemers.org/srfi-8/srfi-8.html|SRFI-8]].
 Syntactic sugar for {{call-with-values}}. Binds variables
-to the result values of {{VALUEEXP}} and evaluates {{BODY ...}}.
+to the result values of {{VALUEEXP}} and evaluates {{BODY ...}},
+similar {{define-values}} but lexically scoped.
 
 {{(receive VALUEEXP)}} is equivalent to {{(receive _ VALUEEXP _)}}.
 This shortened form is not described by SRFI-8.
 
 ==== set!-values
 
-<macro>(set!-values (NAME ...) EXP)</macro>
+<macro>(set!-values (NAME ...) VALUEEXP)</macro>
+<macro>(set!-values (NAME1 ... NAMEn . NAMEn+1) VALUEEXP)</macro>
+<macro>(set!-values NAME VALUEEXP)</macro>
 
-Assigns the result values of expression {{EXP}} to multiple
-variables.
+Assigns the result values of expression {{VALUEEXP}} to multiple
+variables, similar to {{define-values}}.
 
 === Substitution forms and macros
 
