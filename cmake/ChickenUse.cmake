@@ -2,15 +2,12 @@
 
 include(CMakeParseArguments)
 
-# used internally for build-specific files
-set(CHICKEN_TMP_DIR ${CMAKE_BINARY_DIR}/_chicken)
-
 # The generated import libraries are collected into these directories which are
 # also added as include path to every command. Useful when compiling multiple
 # modules in various project subdirectories to not force user to hunt them down
 # along with dependencies and add include paths manually.
 set(CHICKEN_IMPORT_LIBRARY_DIR ${CHICKEN_TMP_DIR}/import)
-set(CHICKEN_IMPORT_LIBRARY_BINARY_DIR ${CHICKEN_TMP_DIR}/import_bin)
+set(CHICKEN_LOCAL_REPOSITORY ${CHICKEN_TMP_DIR}/repository)
 
 # It seems there is no standard functions for this.
 function(_chicken_join out_var)
@@ -219,7 +216,7 @@ function(_chicken_extract_depends out_var in_file dep_file)
             # CMake Ninja generator adds bogus files as phony targets and this
             # makes the extraction simpler.
             # TODO: check other generators
-            # message(STATUS "\t${CHICKEN_IMPORT_LIBRARY_BINARY_DIR}/${i}.import.scm")
+            # message(STATUS "\t${CHICKEN_LOCAL_REPOSITORY}/${i}.import.scm")
             list(APPEND depends ${CHICKEN_IMPORT_LIBRARY_DIR}/${i}.import.scm)
         endif()
     endforeach()
@@ -282,12 +279,21 @@ function(_chicken_command out_var in_file)
 
     list(INSERT command_output 0 ${out_file})
 
+    # add_custom_command(OUTPUT ${command_output}
+    #     COMMAND ${CHICKEN_EXECUTABLE}
+    #         ${in_file} -output-file ${out_file}
+    #         ${CHICKEN_OPTIONS} ${command_options} $ENV{CHICKEN_OPTIONS}
+    #     DEPENDS ${in_file} ${command_depends} ${compile_DEPENDS} ${depends}
+    #     VERBATIM)
+    set(CHICKEN_COMMAND ${CHICKEN_EXECUTABLE}
+        ${in_file} -output-file ${out_file}
+        ${CHICKEN_OPTIONS} ${command_options})
     add_custom_command(OUTPUT ${command_output}
-        COMMAND ${CHICKEN_EXECUTABLE}
-            ${in_file} -output-file ${out_file}
-            ${CHICKEN_OPTIONS} ${command_options} $ENV{CHICKEN_OPTIONS}
-        DEPENDS ${in_file} ${command_depends} ${compile_DEPENDS} ${depends}
-        VERBATIM)
+        COMMAND ${CMAKE_COMMAND}
+            -DCHICKEN_COMMAND="${CHICKEN_COMMAND}"
+            -DCHICKEN_REPOSITORY="${CHICKEN_REPOSITORY}"
+            -P ${CHICKEN_RUN}
+        DEPENDS ${in_file} ${command_depends} ${compile_DEPENDS} ${depends})
 
     foreach(import ${command_import_libraries})
         add_custom_command(OUTPUT ${command_output}
@@ -333,6 +339,9 @@ function(add_chicken_executable name)
 
     add_executable(${name} ${sources})
     _chicken_target_link_libraries(${name})
+
+    set_property(TARGET ${name} APPEND PROPERTY
+        COMPILE_DEFINITIONS PIC)
 endfunction()
 
 # Convenience wrapper around add_library.
@@ -354,6 +363,9 @@ function(add_chicken_library name)
 
     add_library(${name} ${library_type} ${sources})
     _chicken_target_link_libraries(${name})
+
+    set_property(TARGET ${name} PROPERTY
+        LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_LOCAL_REPOSITORY})
 
     if(library_MODULE)
         set_target_properties(${name} PROPERTIES
@@ -387,7 +399,7 @@ function(add_chicken_module name)
                 SOURCES ${CMAKE_CURRENT_BINARY_DIR}/${import}.scm)
             add_dependencies(${import} ${name})
             set_property(TARGET ${import} PROPERTY
-                LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_IMPORT_LIBRARY_BINARY_DIR})
+                LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_LOCAL_REPOSITORY})
         endforeach()
     endif()
 

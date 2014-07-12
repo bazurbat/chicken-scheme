@@ -1,6 +1,14 @@
 project(chicken-tests C)
 
-set(CHICKEN_EXECUTABLE chicken)
+set(CHICKEN_COMMAND_WRAP TRUE)
+set(CHICKEN_REPOSITORY ${CHICKEN_LOCAL_REPOSITORY})
+
+get_target_property(chicken_path chicken LOCATION)
+set(CHICKEN_EXECUTABLE ${chicken_path})
+
+get_target_property(csi_path csi LOCATION)
+set(CHICKEN_CSI_EXECUTABLE ${csi_path})
+
 set(CHICKEN_OPTIONS -ignore-repository
     -types ${chicken_SOURCE_DIR}/types.db
     -include-path ${chicken_SOURCE_DIR})
@@ -12,8 +20,17 @@ set(INTERPRET csi -nq -R chicken-syntax
     -I ${CMAKE_CURRENT_BINARY_DIR})
 
 function(add_interpreted_test name target)
+    set(CHICKEN_COMMAND $<TARGET_FILE:csi> -nq -R chicken-syntax
+        -I ${chicken_BINARY_DIR}
+        -I ${CMAKE_CURRENT_SOURCE_DIR}
+        -I ${CMAKE_CURRENT_BINARY_DIR}
+        -s ${CMAKE_CURRENT_SOURCE_DIR}/${target}
+        ${ARGN})
     add_test(NAME ${name}-i COMMAND
-        ${INTERPRET} -s ${CMAKE_CURRENT_SOURCE_DIR}/${target} ${ARGN})
+        ${CMAKE_COMMAND}
+            "-DCHICKEN_COMMAND=$<JOIN:${CHICKEN_COMMAND}, >"
+            "-DCHICKEN_REPOSITORY=${CHICKEN_REPOSITORY}/$<CONFIGURATION>"
+            -P ${CHICKEN_RUN})
 endfunction()
 
 function(add_compiled_test name)
