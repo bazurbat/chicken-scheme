@@ -217,7 +217,9 @@ This implements [[http://srfi.schemers.org/srfi-15/srfi-15.html|SRFI-15]].
 <macro>(let-values (((NAME ...) VALUEEXP) ...) BODY ...)</macro>
 
 Binds multiple variables to the result values of {{VALUEEXP ...}}.
-All variables are bound simultaneously.
+All variables are bound simultaneously.  Like {{define-values}}, the
+{{(NAME ...)}} expression can be any basic lambda list (dotted tail
+notation is supported).
 This implements [[http://srfi.schemers.org/srfi-11/srfi-11.html|SRFI-11]].
 
 ==== let*-values
@@ -225,7 +227,9 @@ This implements [[http://srfi.schemers.org/srfi-11/srfi-11.html|SRFI-11]].
 <macro>(let*-values (((NAME ...) VALUEEXP) ...) BODY ...)</macro>
 
 Binds multiple variables to the result values of {{VALUEEXP ...}}.
-The variables are bound sequentially.
+The variables are bound sequentially.  Like {{let-values}}, the
+{{(NAME ...)}} expression can be any basic lambda list (dotted tail
+notation is supported).
 This is also part of [[http://srfi.schemers.org/srfi-11/srfi-11.html|SRFI-11]].
 
 <enscript highlight=scheme>
@@ -239,7 +243,9 @@ This is also part of [[http://srfi.schemers.org/srfi-11/srfi-11.html|SRFI-11]].
 <macro>(letrec-values (((NAME ...) VALUEEXP) ...) BODY ...)</macro>
 
 Binds the result values of {{VALUEEXP ...}} to multiple variables at once.
-All variables are mutually recursive.
+All variables are mutually recursive.  Like {{let-values}}, the
+{{(NAME ...)}} expression can be any basic lambda list (dotted tail
+notation is supported).
 
 <enscript highlight=scheme>
 (letrec-values (((odd even)
