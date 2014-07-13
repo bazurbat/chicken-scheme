@@ -216,7 +216,7 @@
 ;; Edge case
 (test "" read-escaped-string (string-append "    " (string #\newline) "    "))
 
-;; NOT YET (is ambiguous with existing \xNN syntax in Chicken)
+;; NOT YET (is ambiguous with existing \xNN syntax in CHICKEN)
 #;(test #\tab escaped-char "x9;")
 #;(test #\tab escaped-char "x09;")
 

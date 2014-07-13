@@ -1,6 +1,6 @@
 ;;;; csi.scm - Interpreter stub for CHICKEN
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2014, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -115,7 +115,7 @@ EOF
                                    (prefix, suffix or none)
         -no-parentheses-synonyms  disables list delimiter synonyms
         -no-symbol-escape         disables support for escaped symbols
-        -r5rs-syntax              disables the Chicken extensions to
+        -r5rs-syntax              disables the CHICKEN extensions to
                                    R5RS syntax
     -s  -script PATHNAME          use interpreter for shell scripts
         -ss PATHNAME              shell script with `main' procedure
@@ -1076,7 +1076,7 @@ EOF
 	(unless quiet (display "Disabled support for escaped symbols\n"))
 	(symbol-escape #f) )
       (when (member* '("-r5rs-syntax") args)
-	(unless quiet (display "Disabled the Chicken extensions to R5RS syntax\n"))
+	(unless quiet (display "Disabled the CHICKEN extensions to R5RS syntax\n"))
 	(case-sensitive #f)
 	(keyword-style #:none)
 	(parentheses-synonyms #f)

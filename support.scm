@@ -1,6 +1,6 @@
 ;;;; support.scm - Miscellaneous support code for the CHICKEN compiler
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2014, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -1662,7 +1662,7 @@ Usage: chicken FILENAME OPTION ...
                                   (prefix, suffix or none)
     -no-parentheses-synonyms     disables list delimiter synonyms
     -no-symbol-escape            disables support for escaped symbols
-    -r5rs-syntax                 disables the Chicken extensions to
+    -r5rs-syntax                 disables the CHICKEN extensions to
                                   R5RS syntax
     -compile-syntax              macros are made available at run-time
     -emit-import-library MODULE  write compile-time module information into

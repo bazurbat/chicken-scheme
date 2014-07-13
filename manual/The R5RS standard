@@ -1,4 +1,4 @@
-This document describes Chicken's R5RS support, with a heavy emphasis
+This document describes CHICKEN's R5RS support, with a heavy emphasis
 on syntax and procedures.  It is based directly on the
 ''Revised^5 Report on the Algorithmic Language Scheme''.
 [[toc:]]
@@ -3126,7 +3126,7 @@ implementations.
 <procedure>(transcript-on filename)</procedure><br>
 <procedure>(transcript-off)</procedure><br>
 
-(These procedures are not implemented in Chicken.)
+(These procedures are not implemented in CHICKEN.)
 
 Filename must be a string naming an output file to be created. The
 effect of transcript-on is to open the named file for output, and to

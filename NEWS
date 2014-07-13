@@ -245,7 +245,7 @@
     large values). Note that random shouldn't be used for
     security-critical code.
   - CVE-2012-6123: Added checks for embedded '\0' characters in strings
-    passed to some C functions on a lower level than Chicken's FFI.
+    passed to some C functions on a lower level than CHICKEN's FFI.
 
 - Build system
   - version information has been moved into a separate unit to make the
@@ -468,7 +468,7 @@
   - string-comparison handles embedded '\0' characters.
   - numerical predicates handle infinity and NaN correctly.
   - deprecated "[+-]nan", "[+-]inf" and other notations "accidentally"
-    accepted by Chicken due to the underlying C library's strtod() function,
+    accepted by CHICKEN due to the underlying C library's strtod() function,
     standardizing on "[+-]nan.0" and "[+-]inf.0" from R6RS (and soon R7RS),
     when displaying numbers only these forms are generated now.
   - signals are queued to some extent and the interrupt handling has

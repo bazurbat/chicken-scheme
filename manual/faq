@@ -3,7 +3,7 @@
 
 == FAQ
 
-This is the list of Frequently Asked Questions about Chicken Scheme.
+This is the list of Frequently Asked Questions about CHICKEN Scheme.
 If you have a question not answered here, feel free to post to the chicken-users mailing list;
 if you consider your question general enough, feel free to add it to this list.
 
@@ -94,7 +94,7 @@ require mandatory locking of every object that could be potentially
 shared between two threads. The garbage-collection algorithm would
 then become much more complex and inefficient, since the location of
 every object has to be accessed via a thread synchronization
-protocol. Such a design would make native threads in Chicken
+protocol. Such a design would make native threads in CHICKEN
 essentially equivalent to Unix processes and shared memory.
 
 For a different approach to concurrency, please see the
@@ -336,14 +336,14 @@ When you try to {{use}} a built-in unit such as {{srfi-18}}, you may get the fol
 
 Another symptom is that {{(require 'srfi-18)}} will silently fail.
 
-This typically happens because the Chicken libraries have been installed in a non-standard location, such as your home directory.  The workaround is to explicitly tell the dynamic linker where to look for your libraries:
+This typically happens because the CHICKEN libraries have been installed in a non-standard location, such as your home directory.  The workaround is to explicitly tell the dynamic linker where to look for your libraries:
 
  export DYLD_LIBRARY_PATH=~/scheme/chicken/lib:$DYLD_LIBRARY_PATH ;; Mac
  export LD_LIBRARY_PATH=~/scheme/chicken/lib:$LD_LIBRARY_PATH    ;; Linux
 
 ==== How can I increase the size of the trace shown when runtime errors are detected?
 
-When a runtime error is detected, Chicken will print the last entries from the trace of functions called
+When a runtime error is detected, CHICKEN will print the last entries from the trace of functions called
 (unless your executable was compiled with the {{-no-trace}} option.
 By default, only 16 entries will be shown.
 To increase this number pass the {{-:aN}} parameter to your executable.
@@ -813,7 +813,7 @@ add:
 contained in the three tools {{chicken-install}}, {{chicken-uninstall}} and {{chicken-status}}.
 See the [[Extensions]] chapter for more information.
 
-==== How can I install Chicken eggs to a non-default location?
+==== How can I install CHICKEN eggs to a non-default location?
 
 You can just set the {{CHICKEN_REPOSITORY}} environment variable.
 It should contain the path where you want eggs to be installed:

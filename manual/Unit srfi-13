@@ -9,7 +9,7 @@ omitted from this document.  For full documentation, see the
 document]].
 
 On systems that support dynamic loading, the {{srfi-13}} unit can
-be made available in the Chicken interpreter ({{csi}}) by entering
+be made available in the CHICKEN interpreter ({{csi}}) by entering
 
 <enscript highlight=scheme>
 (require-extension srfi-13)
@@ -29,7 +29,7 @@ This SRFI considers strings simply to be a sequence of "code points" or
 character encodings. Operations such as comparison or reversal are always
 done code point by code point.
 
-Chicken's native strings are simple byte sequences (not Unicode code points).
+CHICKEN's native strings are simple byte sequences (not Unicode code points).
 Comparison or reversal is done byte-wise.  If Unicode semantics are
 desired, see the [[/egg/utf8|utf8]] egg.
 
@@ -40,12 +40,12 @@ SRFI 13 makes no attempt to deal with these issues; it uses a simple 1-1
 locale- and context-independent case-mapping, specifically Unicode's 1-1
 case-mappings given in [[ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.txt]].
 
-On Chicken, case-mapping is restricted to operate on ASCII characters.
+On CHICKEN, case-mapping is restricted to operate on ASCII characters.
 
 === String equality & string normalisation
 
 SRFI 13 string equality is simply based upon comparing the encoding
-values used for the characters.  On Chicken, strings are compared 
+values used for the characters.  On CHICKEN, strings are compared 
 byte-wise.
 
 === String inequality
@@ -69,7 +69,7 @@ the string.
 
 === Shared storage
 
-Chicken does not currently have shared-text substrings, nor does its
+CHICKEN does not currently have shared-text substrings, nor does its
 implementation of SRFI 13 routines ever return one of the
 strings that was passed in as a parameter, as is allowed by the
 specification.

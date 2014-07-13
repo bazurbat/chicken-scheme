@@ -7,7 +7,7 @@
 A multithreading package, largely following the specification
 of [[http://srfi.schemers.org/srfi-18/srfi-18.html|SRFI-18]].  This
 document contains the core of the SRFI-18 documentation as well as
-information on Chicken deviations from the spec.
+information on CHICKEN deviations from the spec.
 
 The threads implemented in CHICKEN are so called "green" threads,
 based on first-class continuations. Native threads that map directly
@@ -26,7 +26,7 @@ SRFI-18 defines the following multithreading datatypes:
 It also defines a mechanism to handle exceptions and some multithreading
 exception datatypes.
 
-== Chicken implementation
+== CHICKEN implementation
 
 === Notes
 

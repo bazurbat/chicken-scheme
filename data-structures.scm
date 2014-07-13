@@ -1,6 +1,6 @@
 ;;; data-structures.scm - Optional data structures extensions
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2014, The CHICKEN Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without

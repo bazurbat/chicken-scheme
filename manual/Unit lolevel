@@ -19,7 +19,7 @@ The abstract class of ''pointer'' is divided into 2 categories:
 
 ; ''pointer-like object'' : is a closure, port, [[#Locatives|locative]], or a pointer object.
 
-SWIG-pointers are currently an issue due to "bitrot" in the SWIG Chicken
+SWIG-pointers are currently an issue due to "bitrot" in the SWIG CHICKEN
 translator. While they are considered a pointer object unexpected results are
 possible.
 

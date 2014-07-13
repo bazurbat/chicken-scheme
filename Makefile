@@ -1,7 +1,7 @@
 # See GNUmakefile for the actual makefile used by gmake
 
 all:
-	@echo "Sorry, Chicken can only be built with GNU Make."
+	@echo "Sorry, CHICKEN can only be built with GNU Make."
 	@echo ""
 	@echo "The '${MAKE}' command you just used is probably your system's"
 	@echo "default Make program, which apparently is not GNU Make."
