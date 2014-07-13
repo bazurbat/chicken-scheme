@@ -40,7 +40,6 @@
 # include <sys/mman.h>
 #endif
 
-#define C_w2b(x)                   C_fix(C_wordstobytes(C_unfix(x)))
 #define C_memmove_o(to, from, n, toff, foff) C_memmove((char *)(to) + (toff), (char *)(from) + (foff), (n))
 EOF
 ) )
@@ -424,7 +423,7 @@ EOF
 	[(##core#inline "C_byteblockp" x)
 	 (##sys#size x)]
 	[else
-	 (##core#inline "C_w2b" (##sys#size x))] ) )
+	 (##core#inline "C_bytes" (##sys#size x))] ) )
 
 
 ;;; Record objects:
