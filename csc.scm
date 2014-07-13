@@ -119,10 +119,7 @@
 (define windows-shell WINDOWS_SHELL)
 (define generate-manifest #f)
 
-(define libchicken
-  (if cygwin
-      (string-append "cyg" INSTALL_LIB_NAME "-0")
-      (string-append "lib" INSTALL_LIB_NAME)))
+(define libchicken (string-append "lib" INSTALL_LIB_NAME))
 
 (define default-library
   (string-append libchicken "." library-extension))

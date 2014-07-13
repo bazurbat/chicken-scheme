@@ -56,6 +56,10 @@
      CHICKENINCDIR and CHICKENLIBDIR will now also be taken from
      the environment, if present (like PLATFORM, DESTDIR and PREFIX).
 
+- Tools
+  - "csc"
+    - On Cygwin, -static now works again (thanks to Michele La Monaca)
+
 4.9.0
 
 - Security fixes
