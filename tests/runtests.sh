@@ -165,7 +165,7 @@ echo "*** Skipping \"feeley-dynwind\" for now ***"
 
 echo "======================================== lolevel tests ..."
 $interpret -s lolevel-tests.scm
-$compile lolevel-tests.scm
+$compile -specialize lolevel-tests.scm
 ./a.out
 
 echo "======================================== arithmetic tests ..."

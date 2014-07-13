@@ -1501,7 +1501,7 @@
 		 (((or port procedure symbol pair vector locative float pointer-vector))
 		  ;; would be applicable to all structure types, but we can't specify
 		  ;; "(struct *)" (yet)
-		  (##core#inline "C_w2b" (##sys#size #(1)))))
+		  (##core#inline "C_bytes" (##sys#size #(1)))))
 
 (number-of-slots (#(procedure #:clean) number-of-slots (*) fixnum)
 		 (((or vector symbol pair)) (##sys#size #(1))))

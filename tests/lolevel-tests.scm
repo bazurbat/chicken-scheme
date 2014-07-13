@@ -12,6 +12,28 @@
 (let ((s "..."))
   (assert-error (move-memory! "abc" s 3 -1)))
 
+; overlapping src and dest, moving "right" (from SRFI-13 tests)
+(assert (string=?
+	 "aabce"
+	 (let ((str (string-copy "abcde")))
+	   (move-memory! str str 3 0 1) str)))
+;; Specialisation rewrite from types.db
+(assert (string=?
+	 "aabce"
+	 (let ((str (string-copy "abcde")))
+	   (move-memory! (make-locative str) (make-locative str) 3 0 1) str)))
+
+; overlapping src and dest, moving "left" (from SRFI-13 tests)
+(assert (string=?
+	 "bcdde"
+	 (let ((str (string-copy "abcde")))
+	   (move-memory! str str 3 1) str)))
+;; Specialisation rewrite from types.db
+(assert (string=?
+	 "bcdde"
+	 (let ((str (string-copy "abcde")))
+	   (move-memory! (make-locative str) (make-locative str) 3 1) str)))
+
 ; object-copy
 
 ; allocate

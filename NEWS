@@ -3,6 +3,8 @@
 - Core libraries
   - SRFI-13: fix string-copy! in cases source and destination strings'
     memory areas overlap (#1135).
+  - Fixed another, similar bug in move-memory! for overlapping memory.
+  - Fixed broken specialisation for move-memory! on pointer types.
   - Fixed bug in make-kmp-restart-vector from SRFI-13.
 
 4.9.0.1
