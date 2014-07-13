@@ -106,7 +106,7 @@ macro(_chicken_command_add_type_inline)
     foreach(dep ${compile_DEPENDS})
         get_target_property(dep_location ${dep} LOCATION)
 
-        get_filename_component(dep_dir    ${dep_location} DIRECTORY)
+        get_filename_component(dep_dir    ${dep_location} PATH)
         get_filename_component(dep_name   ${dep_location} NAME_WE)
         get_filename_component(dep_types  ${dep_dir}/${dep_name}.types  ABSOLUTE)
         get_filename_component(dep_inline ${dep_dir}/${dep_name}.inline ABSOLUTE)
@@ -150,7 +150,7 @@ endmacro()
 
 function(_chicken_add_c_flags in_file out_file)
     get_filename_component(in_file ${in_file} ABSOLUTE)
-    get_filename_component(in_path ${in_file} DIRECTORY)
+    get_filename_component(in_path ${in_file} PATH)
 
     # Use global C flags determined by find package first.
     set(c_flags ${CHICKEN_C_FLAGS})
@@ -242,7 +242,7 @@ function(_chicken_command out_var in_file)
     get_filename_component(in_filename ${in_file} NAME)
     get_filename_component(in_file ${in_file} ABSOLUTE)
     get_filename_component(in_name ${in_file} NAME_WE)
-    get_filename_component(in_path ${in_file} DIRECTORY)
+    get_filename_component(in_path ${in_file} PATH)
 
     # Cut off possible relative parts from the supplied filepath and place the
     # output file in the current binary dir to avoid conflicts when single scm
@@ -252,7 +252,7 @@ function(_chicken_command out_var in_file)
         set(out_file ${CMAKE_CURRENT_BINARY_DIR}/${out_filename})
     endif()
     get_filename_component(out_file ${out_file} ABSOLUTE)
-    get_filename_component(out_path ${out_file} DIRECTORY)
+    get_filename_component(out_path ${out_file} PATH)
 
     string(REGEX REPLACE
         "(.*)\\.c$" "\\1.d.cmake"
@@ -279,21 +279,22 @@ function(_chicken_command out_var in_file)
 
     list(INSERT command_output 0 ${out_file})
 
-    # add_custom_command(OUTPUT ${command_output}
-    #     COMMAND ${CHICKEN_EXECUTABLE}
-    #         ${in_file} -output-file ${out_file}
-    #         ${CHICKEN_OPTIONS} ${command_options} $ENV{CHICKEN_OPTIONS}
-    #     DEPENDS ${in_file} ${command_depends} ${compile_DEPENDS} ${depends}
-    #     VERBATIM)
     set(CHICKEN_COMMAND ${CHICKEN_EXECUTABLE}
         ${in_file} -output-file ${out_file}
         ${CHICKEN_OPTIONS} ${command_options})
-    add_custom_command(OUTPUT ${command_output}
-        COMMAND ${CMAKE_COMMAND}
-            -DCHICKEN_COMMAND="${CHICKEN_COMMAND}"
-            -DCHICKEN_REPOSITORY="${CHICKEN_REPOSITORY}"
-            -P ${CHICKEN_RUN}
-        DEPENDS ${in_file} ${command_depends} ${compile_DEPENDS} ${depends})
+    if(CHICKEN_COMMAND_WRAP)
+        add_custom_command(OUTPUT ${command_output}
+            COMMAND ${CMAKE_COMMAND}
+                -DCHICKEN_COMMAND="${CHICKEN_COMMAND}"
+                -DCHICKEN_REPOSITORY="${CHICKEN_REPOSITORY}"
+                -P ${CHICKEN_RUN}
+            DEPENDS ${in_file} ${command_depends} ${compile_DEPENDS} ${depends})
+    else()
+        add_custom_command(OUTPUT ${command_output}
+            COMMAND ${CHICKEN_COMMAND}
+            DEPENDS ${in_file} ${command_depends} ${compile_DEPENDS} ${depends}
+            VERBATIM)
+    endif()
 
     foreach(import ${command_import_libraries})
         add_custom_command(OUTPUT ${command_output}

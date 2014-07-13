@@ -116,23 +116,17 @@ find_library(CHICKEN_LIBRARY ${_chicken_system}chicken
 # Determine the location of the static library based on the location of the
 # just found dynamic library. This is needed to avoid picking libraries from
 # some other Chicken in the default paths.
-get_filename_component(_chicken_library_dir ${CHICKEN_LIBRARY} DIRECTORY)
+get_filename_component(_chicken_library_dir ${CHICKEN_LIBRARY} PATH)
 find_library(CHICKEN_STATIC_LIBRARY lib${_chicken_system}chicken.a
     HINTS ${_chicken_library_dir}
     NO_SYSTEM_ENVIRONMENT_PATH
     NO_CMAKE_SYSTEM_PATH)
 
-if(MSVC)
+if(WIN32)
     # TODO: add check for x64
     set(CHICKEN_EXTRA_LIBRARIES ws2_32)
-    # C4101 - unreferenced local variable
-    set(_chicken_c_flags /wd4101)
 else()
     set(CHICKEN_EXTRA_LIBRARIES m)
-    # Felix wrote, that these are required. Strict aliasing caused some real
-    # problems and wrapv disables some questionable aggressive compiler
-    # optimizations with regard to signed integer overflow.
-    set(_chicken_c_flags -fno-strict-aliasing -fwrapv)
 endif()
 list(APPEND CHICKEN_EXTRA_LIBRARIES ${CMAKE_DL_LIBS})
 
@@ -142,6 +136,16 @@ set(CHICKEN_DEFINITIONS HAVE_CHICKEN_CONFIG_H C_ENABLE_PTABLES)
 if(MSVC)
     # Chicken causes a lot of these
     list(APPEND CHICKEN_DEFINITIONS _CRT_SECURE_NO_WARNINGS)
+endif()
+
+if(MSVC)
+    # C4101 - unreferenced local variable
+    set(_chicken_c_flags /wd4101)
+else()
+    # Felix wrote, that these are required. Strict aliasing caused some real
+    # problems and wrapv disables some questionable aggressive compiler
+    # optimizations with regard to signed integer overflow.
+    set(_chicken_c_flags -fno-strict-aliasing -fwrapv)
 endif()
 
 set(CHICKEN_C_FLAGS ${_chicken_c_flags} CACHE STRING

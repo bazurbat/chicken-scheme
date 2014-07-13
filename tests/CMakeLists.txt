@@ -19,6 +19,12 @@ set(INTERPRET csi -nq -R chicken-syntax
     -I ${CMAKE_CURRENT_SOURCE_DIR}
     -I ${CMAKE_CURRENT_BINARY_DIR})
 
+add_custom_target(copy_libchicken
+    COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_FILE:libchicken>
+        ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/$<TARGET_FILE_NAME:libchicken>)
+add_dependencies(check copy_libchicken)
+
 function(add_interpreted_test name target)
     set(CHICKEN_COMMAND $<TARGET_FILE:csi> -nq -R chicken-syntax
         -I ${chicken_BINARY_DIR}
@@ -28,7 +34,7 @@ function(add_interpreted_test name target)
         ${ARGN})
     add_test(NAME ${name}-i COMMAND
         ${CMAKE_COMMAND}
-            "-DCHICKEN_COMMAND=$<JOIN:${CHICKEN_COMMAND}, >"
+            "-DCHICKEN_COMMAND=${CHICKEN_COMMAND}"
             "-DCHICKEN_REPOSITORY=${CHICKEN_REPOSITORY}/$<CONFIGURATION>"
             -P ${CHICKEN_RUN})
 endfunction()
@@ -37,6 +43,7 @@ function(add_compiled_test name)
     add_chicken_executable(${name} ${ARGN})
     add_test(NAME ${name} COMMAND ${name})
     add_dependencies(check ${name})
+    set_property(TARGET ${name} PROPERTY FOLDER Tests)
 endfunction()
 
 file(COPY compiler.scm re-tests.txt meta-syntax-test.scm r4rstest.scm
@@ -94,7 +101,10 @@ add_test(NAME fft-specialized COMMAND fft-specialized 1000 7)
 
 # callback tests
 
-add_compiled_test(callback-tests callback-tests.scm)
+# fails to compile with: C2375
+if(NOT MSVC)
+    add_compiled_test(callback-tests callback-tests.scm)
+endif()
 
 # runtime tests
 
@@ -301,7 +311,10 @@ add_interpreted_test(srfi-18-simple-thread simple-thread-test.scm)
 
 add_interpreted_test(srfi-18-mutex mutex-test.scm)
 
-add_compiled_test(srfi-18-signal srfi-18-signal-test.scm)
+# tries to use sys/time.h unconditionally
+if(NOT MSVC)
+    add_compiled_test(srfi-18-signal srfi-18-signal-test.scm)
+endif()
 
 # data-structures tests
 
