@@ -23,8 +23,8 @@ endfunction()
 # simpler this way.
 macro(_chicken_parse_arguments)
     cmake_parse_arguments(compile
-        "STATIC;SHARED;MODULE;EMBEDDED;EXTENSION"
-        "EMIT;SUFFIX;EMIT_TYPE_FILE;EMIT_INLINE_FILE"
+        "STATIC;SHARED;MODULE;EMBEDDED;EXTENSION;NO_FILE"
+        "EMIT;SUFFIX;EMIT_TYPE_FILE;EMIT_INLINE_FILE;ERROR_FILE"
         "SOURCES;C_SOURCES;EMIT_IMPORTS;OPTIONS;DEFINITIONS;C_FLAGS;DEPENDS"
         ${ARGN})
 
@@ -276,23 +276,29 @@ function(_chicken_command out_var in_file)
         endif()
         _chicken_extract_depends(depends ${in_file} ${dep_file})
     endif()
+    set(depends ${in_file} ${command_depends} ${compile_DEPENDS} ${depends})
 
     list(INSERT command_output 0 ${out_file})
 
-    set(CHICKEN_COMMAND ${CHICKEN_EXECUTABLE}
-        ${in_file} -output-file ${out_file}
-        ${CHICKEN_OPTIONS} ${command_options})
+    set(chicken_command ${CHICKEN_EXECUTABLE} ${in_file})
+    if(NOT compile_NO_FILE)
+        list(APPEND chicken_command -output-file ${out_file})
+    endif()
+    list(APPEND chicken_command ${CHICKEN_OPTIONS} ${command_options})
+
     if(CHICKEN_COMMAND_WRAP)
         add_custom_command(OUTPUT ${command_output}
             COMMAND ${CMAKE_COMMAND}
-                -DCHICKEN_COMMAND="${CHICKEN_COMMAND}"
-                -DCHICKEN_REPOSITORY="${CHICKEN_REPOSITORY}"
-                -P ${CHICKEN_RUN}
-            DEPENDS ${in_file} ${command_depends} ${compile_DEPENDS} ${depends})
+                "-DCHICKEN_REPOSITORY=${CHICKEN_REPOSITORY}"
+                "-DCHICKEN_COMMAND=${chicken_command}"
+                "-DERROR_FILE=${compile_ERROR_FILE}"
+                -P "${CHICKEN_RUN}"
+            DEPENDS ${depends}
+            VERBATIM)
     else()
         add_custom_command(OUTPUT ${command_output}
-            COMMAND ${CHICKEN_COMMAND}
-            DEPENDS ${in_file} ${command_depends} ${compile_DEPENDS} ${depends}
+            COMMAND ${chicken_command}
+            DEPENDS ${depends}
             VERBATIM)
     endif()
 

@@ -47,6 +47,7 @@ function(add_compiled_test name)
 endfunction()
 
 file(COPY compiler.scm re-tests.txt meta-syntax-test.scm r4rstest.scm
+    scrutiny.expected scrutiny-2.expected
     DESTINATION .)
 
 # version tests
@@ -67,10 +68,26 @@ add_compiled_test(compiler-inlining inlining-tests.scm
 add_compiled_test(typematch typematch-tests.scm
     OPTIONS -specialize -no-warnings)
 
-add_compiled_test(scrutiny-tests-3 scrutiny-tests-3.scm
+add_chicken_sources(scrutiny_SOURCES scrutiny-tests.scm NO_FILE
+    OPTIONS -analyze-only -scrutinize -verbose
+    ERROR_FILE scrutiny.out)
+add_chicken_sources(scrutiny_SOURCES scrutiny-tests-2.scm NO_FILE
+    OPTIONS -analyze-only -scrutinize -verbose
+    ERROR_FILE scrutiny-2.out)
+
+add_custom_target(test-scrutiny
+    DEPENDS ${scrutiny_SOURCES})
+add_dependencies(check test-scrutiny)
+
+add_test(NAME scrutiny COMMAND ${CMAKE_COMMAND} -E compare_files
+    scrutiny.out scrutiny.expected)
+add_test(NAME scrutiny-2 COMMAND ${CMAKE_COMMAND} -E compare_files
+    scrutiny-2.out scrutiny-2.expected)
+
+add_compiled_test(scrutiny-3 scrutiny-tests-3.scm
     OPTIONS -specialize -block)
 
-add_compiled_test(scrutiny-tests-strict scrutiny-tests-strict.scm
+add_compiled_test(scrutiny-strict scrutiny-tests-strict.scm
     OPTIONS -strict-types -specialize)
 
 # specialization tests
