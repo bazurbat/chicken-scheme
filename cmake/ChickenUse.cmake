@@ -41,7 +41,7 @@ macro(_chicken_command_prepare_arguments)
     set(command_definitions "")
     set(command_c_flags "")
     set(command_depends "")
-    set(command_output "")
+    set(command_output ${compile_ERROR_FILE})
 
     if(compile_STATIC)
         list(APPEND command_options -feature chicken-compile-static)
@@ -278,7 +278,9 @@ function(_chicken_command out_var in_file)
     endif()
     set(depends ${in_file} ${command_depends} ${compile_DEPENDS} ${depends})
 
-    list(INSERT command_output 0 ${out_file})
+    if(NOT compile_NO_FILE)
+        list(INSERT command_output 0 ${out_file})
+    endif()
 
     set(chicken_command ${CHICKEN_EXECUTABLE} ${in_file})
     if(NOT compile_NO_FILE)
@@ -404,7 +406,8 @@ function(add_chicken_module name)
 
             add_chicken_library(${import} MODULE
                 SOURCES ${CMAKE_CURRENT_BINARY_DIR}/${import}.scm)
-            add_dependencies(${import} ${name})
+            # add_dependencies(${import} ${name})
+            add_dependencies(${name} ${import})
             set_property(TARGET ${import} PROPERTY
                 LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_LOCAL_REPOSITORY})
         endforeach()

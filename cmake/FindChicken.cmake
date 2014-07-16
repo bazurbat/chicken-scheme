@@ -171,6 +171,7 @@ endif()
 if(ERROR_FILE)
     execute_process(COMMAND \${CHICKEN_COMMAND}
         RESULT_VARIABLE CHICKEN_COMMAND_RESULT
+        OUTPUT_FILE \${ERROR_FILE}
         ERROR_FILE \${ERROR_FILE})
 else()
     execute_process(COMMAND \${CHICKEN_COMMAND}
