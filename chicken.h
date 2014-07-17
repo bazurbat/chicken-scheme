@@ -580,9 +580,9 @@ static inline int isinf_ld (long double x)
 #if defined(_MSC_VER)
 # define INFINITY (DBL_MAX+DBL_MAX)
 # define NAN (INFINITY-INFINITY)
-# define isinf(x) ((x)==INFINITY)
-# define isnan(x) ((x)==NAN)
-# define isnormal(x) (!isinf(x) && !isnan(x))
+# define isinf(x) (!_finite(x) && !_isnan(x))
+# define isnan(x) _isnan(x)
+# define isnormal(x) _finite(x)
 #endif
 
 #if defined(C_LLP)
