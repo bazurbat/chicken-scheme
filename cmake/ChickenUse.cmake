@@ -41,7 +41,7 @@ macro(_chicken_command_prepare_arguments)
     set(command_definitions "")
     set(command_c_flags "")
     set(command_depends "")
-    set(command_output ${compile_ERROR_FILE})
+    set(command_output "")
 
     if(compile_STATIC)
         list(APPEND command_options -feature chicken-compile-static)
@@ -278,15 +278,17 @@ function(_chicken_command out_var in_file)
     endif()
     set(depends ${in_file} ${command_depends} ${compile_DEPENDS} ${depends})
 
-    if(NOT compile_NO_FILE)
-        list(INSERT command_output 0 ${out_file})
-    endif()
-
     set(chicken_command ${CHICKEN_EXECUTABLE} ${in_file})
-    if(NOT compile_NO_FILE)
+    if(compile_NO_FILE)
+        if(compile_ERROR_FILE)
+            set(out_file ${compile_ERROR_FILE})
+        endif()
+    else()
         list(APPEND chicken_command -output-file ${out_file})
     endif()
     list(APPEND chicken_command ${CHICKEN_OPTIONS} ${command_options})
+
+    list(INSERT command_output 0 ${out_file})
 
     if(CHICKEN_COMMAND_WRAP)
         add_custom_command(OUTPUT ${command_output}

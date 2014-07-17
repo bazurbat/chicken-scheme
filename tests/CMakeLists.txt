@@ -18,7 +18,7 @@ set(CHICKEN_RUN_TRIM ${CHICKEN_TMP_DIR}/ChickenTrim.cmake)
 set(CMAKE_CONFIGURABLE_FILE_CONTENT
 "foreach(f \${FILES})
     file(READ \${f} input_data)
-    string(REGEX REPLACE \"\${PATTERN}\" \"\" output_data \${input_data})
+    string(REGEX REPLACE \"\${PATTERN}\" \"\" output_data \"\${input_data}\")
     file(WRITE \${f}.trimmed \${output_data})
 endforeach()")
 configure_file(${CMAKE_ROOT}/Modules/CMakeConfigurableFile.in

@@ -140,7 +140,8 @@ endif()
 
 if(MSVC)
     # C4101 - unreferenced local variable
-    set(_chicken_c_flags /wd4101)
+    # C4996 - The POSIX name for this item is deprecated
+    set(_chicken_c_flags /wd4101 /wd4996)
 else()
     # Felix wrote, that these are required. Strict aliasing caused some real
     # problems and wrapv disables some questionable aggressive compiler
@@ -171,14 +172,16 @@ endif()
 if(ERROR_FILE)
     execute_process(COMMAND \${CHICKEN_COMMAND}
         RESULT_VARIABLE CHICKEN_COMMAND_RESULT
-        OUTPUT_FILE \${ERROR_FILE}
-        ERROR_FILE \${ERROR_FILE})
+        OUTPUT_VARIABLE command_output
+        ERROR_VARIABLE command_output)
+    file(WRITE \${ERROR_FILE} \${command_output})
 else()
     execute_process(COMMAND \${CHICKEN_COMMAND}
         RESULT_VARIABLE CHICKEN_COMMAND_RESULT)
 endif()
 if(CHICKEN_COMMAND_RESULT)
-    message(FATAL_ERROR \"Command failed: \${CHICKEN_COMMAND_RESULT}\")
+    message(FATAL_ERROR \"Command failed: \${CHICKEN_COMMAND_RESULT}
+\${command_output}\")
 endif()")
 configure_file(${CMAKE_ROOT}/Modules/CMakeConfigurableFile.in
     ${CHICKEN_RUN} @ONLY)
