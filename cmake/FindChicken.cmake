@@ -180,8 +180,8 @@ else()
         RESULT_VARIABLE CHICKEN_COMMAND_RESULT)
 endif()
 if(CHICKEN_COMMAND_RESULT)
-    message(FATAL_ERROR \"Command failed: \${CHICKEN_COMMAND_RESULT}
-\${command_output}\")
+    message(\"\${command_output}\")
+    message(FATAL_ERROR \"Command failed: \${CHICKEN_COMMAND_RESULT}\")
 endif()")
 configure_file(${CMAKE_ROOT}/Modules/CMakeConfigurableFile.in
     ${CHICKEN_RUN} @ONLY)
