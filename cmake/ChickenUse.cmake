@@ -23,7 +23,7 @@ endfunction()
 # simpler this way.
 macro(_chicken_parse_arguments)
     cmake_parse_arguments(compile
-        "STATIC;SHARED;MODULE;EMBEDDED;EXTENSION;NO_FILE"
+        "STATIC;SHARED;MODULE;EMBEDDED;EXTENSION"
         "EMIT;SUFFIX;EMIT_TYPE_FILE;EMIT_INLINE_FILE;ERROR_FILE"
         "SOURCES;C_SOURCES;EMIT_IMPORTS;OPTIONS;DEFINITIONS;C_FLAGS;DEPENDS"
         ${ARGN})
@@ -279,10 +279,8 @@ function(_chicken_command out_var in_file)
     set(depends ${in_file} ${command_depends} ${compile_DEPENDS} ${depends})
 
     set(chicken_command ${CHICKEN_EXECUTABLE} ${in_file})
-    if(compile_NO_FILE)
-        if(compile_ERROR_FILE)
-            set(out_file ${compile_ERROR_FILE})
-        endif()
+    if(compile_ERROR_FILE)
+        set(out_file ${compile_ERROR_FILE})
     else()
         list(APPEND chicken_command -output-file ${out_file})
     endif()
