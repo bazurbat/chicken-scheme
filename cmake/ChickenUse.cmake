@@ -349,8 +349,10 @@ function(add_chicken_executable name)
     add_executable(${name} ${sources})
     _chicken_target_link_libraries(${name})
 
-    set_property(TARGET ${name} APPEND PROPERTY
-        COMPILE_DEFINITIONS PIC)
+    if(WIN32)
+        set_property(TARGET ${name} APPEND PROPERTY
+            COMPILE_DEFINITIONS PIC)
+    endif()
 endfunction()
 
 # Convenience wrapper around add_library.
