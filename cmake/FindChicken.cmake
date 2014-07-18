@@ -170,11 +170,14 @@ set(CMAKE_CONFIGURABLE_FILE_CONTENT
 endif()
 #message(\"CHICKEN: \${CHICKEN_COMMAND}\")
 if(ERROR_FILE)
+    if(NOT IS_ABSOLUTE ERROR_FILE)
+        set(ERROR_FILE \${CMAKE_CURRENT_BINARY_DIR}/\${ERROR_FILE})
+    endif()
     execute_process(COMMAND \${CHICKEN_COMMAND}
         RESULT_VARIABLE CHICKEN_COMMAND_RESULT
         OUTPUT_VARIABLE command_output
         ERROR_VARIABLE command_output)
-    file(WRITE \${ERROR_FILE} \${command_output})
+    file(WRITE \${ERROR_FILE} \"\${command_output}\")
 else()
     execute_process(COMMAND \${CHICKEN_COMMAND}
         RESULT_VARIABLE CHICKEN_COMMAND_RESULT)
