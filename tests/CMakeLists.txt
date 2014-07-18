@@ -73,6 +73,7 @@ endfunction()
 
 file(COPY compiler.scm re-tests.txt meta-syntax-test.scm r4rstest.scm
     scrutiny.expected scrutiny-2.expected dwindtst.expected r4rstest.out
+    import-library-test1.scm
     DESTINATION .)
 
 # version tests
@@ -303,13 +304,13 @@ add_interpreted_test(import import-tests.scm)
 # import library tests
 # TODO: handle running with or without compiled import library
 
-add_chicken_module(import-library-test1 import-library-test1.scm)
-
-# fails to compile
-# add_compiled_test(import-library import-library-test2.scm
-#     DEPENDS import-library-test1)
+add_chicken_module(import-library-test1 import-library-test1.scm
+    EMIT_IMPORTS import-library-test1-m)
+add_dependencies(check import-library-test1)
 
 add_interpreted_test(import-library import-library-test2.scm)
+
+add_compiled_test(import-library import-library-test2.scm)
 
 # optionals tests
 
