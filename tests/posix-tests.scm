@@ -1,5 +1,9 @@
 (use files posix lolevel)
 
+(define *csi* (if (null? (command-line-arguments))
+                "../csi"
+                (car (command-line-arguments))))
+
 (define-syntax assert-error
   (syntax-rules ()
     ((_ expr) 
@@ -33,12 +37,12 @@
 (assert-error (process-execute "false" '("123\x00456") '("foo\x00bar" "blabla") '("lalala" "qux\x00mooh")))
 
 (receive (in out pid)
-    (process "../csi" '("-n" "-e"
+    (process *csi* '("-n" "-e"
                         "(write 'err (current-error-port)) (write 'ok)"))
   (assert (equal? 'ok (read in))))
 
 (receive (in out pid err)
-    (process* "../csi" '("-n" "-e"
+    (process* *csi* '("-n" "-e"
                          "(write 'err (current-error-port)) (write 'ok)"))
   (assert (equal? 'ok (read in)))
   (assert (equal? 'err (read err))))

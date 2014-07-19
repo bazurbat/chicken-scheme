@@ -49,7 +49,12 @@ if(WIN32)
 endif()
 
 function(add_chicken_test name)
-    set(CHICKEN_COMMAND ${ARGN})
+    cmake_parse_arguments(test "" "PATH" "" ${ARGN})
+    if(test_PATH)
+        set(CHICKEN_RUN_PATH ${test_PATH})
+    endif()
+
+    set(CHICKEN_COMMAND ${test_UNPARSED_ARGUMENTS})
     set(ERROR_FILE ${name}.out)
     if(NOT test_WORKING_DIRECTORY)
         set(dir ${CMAKE_CURRENT_BINARY_DIR})
@@ -57,6 +62,7 @@ function(add_chicken_test name)
     add_test(NAME ${name} COMMAND ${CMAKE_COMMAND}
         "-DCHICKEN_COMMAND=${CHICKEN_COMMAND}"
         "-DCHICKEN_REPOSITORY=${CHICKEN_REPOSITORY}/$<CONFIGURATION>"
+        "-DPATH=${CHICKEN_RUN_PATH}"
         "-DERROR_FILE=${ERROR_FILE}"
         -P ${CHICKEN_RUN}
         WORKING_DIRECTORY ${dir})
@@ -78,14 +84,19 @@ function(add_interpreted_test name)
 endfunction()
 
 function(add_compiled_test name)
-    add_chicken_executable(${name} ${ARGN})
-    add_chicken_test(${name} $<TARGET_FILE:${name}>)
+    cmake_parse_arguments(test "" "ARGS" "" ${ARGN})
+
+    add_chicken_executable(${name} ${test_UNPARSED_ARGUMENTS})
+
+    add_chicken_test(${name} $<TARGET_FILE:${name}> ${test_ARGS})
+
     add_dependencies(check ${name})
-    set_property(TARGET ${name} PROPERTY FOLDER Tests)
 endfunction()
 
 set(used_FILES
     compiler.scm
+    ec-tests.scm
+    ec.scm
     import-library-test1.scm
     meta-syntax-test.scm
     r4rstest.scm
@@ -405,21 +416,21 @@ add_interpreted_test(modules-chained SCRIPT test-chained-modules.scm)
 add_interpreted_test(modules-chained-2
     $<TARGET_FILE:chained-modules>)
 
-# TODO: looks like there is wrong command line in runtests.sh - investigate
-# add_interpreted_test(modules-chained-3
-#     -e "(import m3) (s3)"
-#     $<TARGET_FILE:chained-modules>)
+add_interpreted_test(modules-chained-3
+    $<TARGET_FILE:chained-modules>
+    -e "(import m3) (s3)")
 
 # module tests (ec)
 
-# add_chicken_module(ec-mod ec.scm
-#     EMIT_IMPORTS ec)
-#
+add_chicken_module(ec-mod ec.scm EMIT_IMPORTS ec)
+add_dependencies(check ec-mod)
+
+add_interpreted_test(ec ec.scm ec-tests.scm)
+
+add_interpreted_test(ec-2 $<TARGET_FILE:ec-mod> ec-tests.scm)
+
 # add_compiled_test(ec ec-tests.scm
 #     DEPENDS ec-mod)
-
-# TODO: investigate command lines
-# add_interpreted_test(ec SCRIPT ec-tests.scm)
 
 # hash-table tests
 
@@ -478,12 +489,27 @@ add_interpreted_test(srfi-45 SCRIPT srfi-45-tests.scm)
 
 # posix tests
 
-add_compiled_test(posix posix-tests.scm)
+add_custom_command(OUTPUT tmpdir/.dotfile
+    COMMAND ${CMAKE_COMMAND} -E touch tmpdir/.dotfile
+    VERBATIM)
 
-# TODO: implement script part
+if(UNIX)
+    add_custom_command(OUTPUT tmpdir/symlink
+        COMMAND ${CMAKE_COMMAND} -E create_symlink /usr tmpdir/symlink
+        VERBATIM)
+    add_custom_target(prepare-posix-tests
+        DEPENDS tmpdir/.dotfile tmpdir/symlink)
+else()
+    add_custom_target(prepare-posix-tests
+        DEPENDS tmpdir/.dotfile)
+endif()
 
-# add_interpreted_test(posix
-#     -R posix -e "(delete-directory \"tmpdir\" #t)")
+add_dependencies(check prepare-posix-tests)
+
+add_compiled_test(posix posix-tests.scm ARGS $<TARGET_FILE:csi>)
+
+add_interpreted_test(posix
+    -R posix -e "(delete-directory \"tmpdir\" #t)")
 
 # signal tests
 
@@ -500,12 +526,15 @@ add_interpreted_test(glob SCRIPT test-glob.scm)
 
 # compiler/nursery stress test
 
-# TODO:
+foreach(s 100000 120000 200000 250000 300000 350000 400000 450000 500000)
+    add_chicken_test(compiler-nursery-stress-${s} $<TARGET_FILE:chicken>
+        -ignore-repository ${chicken_SOURCE_DIR}/utils.scm -:s${s}
+        -include-path ${chicken_SOURCE_DIR})
+endforeach()
 
 # symbol-GC tests
 
-# TODO: run command line
-# add_compiled_test(symbol-gc symbolgc-tests.scm)
+add_compiled_test(symbol-gc symbolgc-tests.scm ARGS "-:w")
 
 # finalizer tests
 
@@ -513,13 +542,9 @@ add_interpreted_test(finalizers SCRIPT test-finalizers.scm)
 
 add_compiled_test(finalizers test-finalizers.scm)
 
-# TODO: run command line
-add_compiled_test(finalizers2 test-finalizers-2.scm)
+add_compiled_test(finalizers-2 test-finalizers-2.scm)
 
-add_chicken_executable(finalizer-error finalizer-error-test.scm)
-add_dependencies(check finalizer-error)
-
-add_test(NAME finalizer-error COMMAND finalizer-error -:hg101)
+add_compiled_test(finalizer-error finalizer-error-test.scm ARGS "-:hg101")
 
 # locative stress test
 
@@ -538,3 +563,34 @@ add_compiled_test(embedded2 EMBEDDED embedded2.scm)
 add_compiled_test(embedded3 EMBEDDED embedded4.scm C_SOURCES embedded3.c)
 
 # private repository test
+
+# compilation failes with multiple errors
+if(NOT MSVC)
+
+add_chicken_executable(private-repository private-repository-test.scm
+    DEFINITIONS C_PRIVATE_REPOSITORY)
+add_dependencies(check private-repository)
+
+add_chicken_test(private-repository $<TARGET_FILE:private-repository>
+    ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>)
+
+add_chicken_test(private-repository-path $<TARGET_FILE:private-repository>
+    ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>
+    PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>)
+
+endif()
+
+# reinstall tests
+
+# NOTE: these are pretty nasty
+
+# add_chicken_test(reinstall-uninstall $<TARGET_FILE:chicken-uninstall>
+#     -force reverser)
+#
+# add_chicken_test(reinstall-install $<TARGET_FILE:chicken-install>
+#     -t local -l ${CMAKE_CURRENT_BINARY_DIR} -csi $<TARGET_FILE:csi>
+#     reverser:1.0)
+
+# deployment tests
+
+# NOTE: these are too
