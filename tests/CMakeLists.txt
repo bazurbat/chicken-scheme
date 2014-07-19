@@ -1,17 +1,11 @@
 project(chicken-tests C)
 
-set(CHICKEN_COMMAND_WRAP TRUE)
-set(CHICKEN_REPOSITORY ${CHICKEN_LOCAL_REPOSITORY})
-
-get_target_property(chicken_path chicken LOCATION)
-set(CHICKEN_EXECUTABLE ${chicken_path})
-
-get_target_property(csi_path csi LOCATION)
-set(CHICKEN_CSI_EXECUTABLE ${csi_path})
+set(CHICKEN_EXECUTABLE $<TARGET_FILE:chicken>)
 
 set(CHICKEN_OPTIONS -ignore-repository
     -types ${chicken_SOURCE_DIR}/types.db
     -include-path ${chicken_SOURCE_DIR})
+
 set(CHICKEN_INCLUDE_DIRS ${chicken_SOURCE_DIR})
 
 # Helper script for stripping absolute paths and converting CRLFs
@@ -29,16 +23,6 @@ endforeach()")
 configure_file(${CMAKE_ROOT}/Modules/CMakeConfigurableFile.in
     ${CHICKEN_RUN_TRIM} @ONLY)
 
-set(CHICKEN_RUN_FAIL ${CHICKEN_TMP_DIR}/ChickenRunFail.cmake)
-set(CMAKE_CONFIGURABLE_FILE_CONTENT
-"execute_process(COMMAND \${COMMAND}
-    RESULT_VARIABLE RESULT)
-if(NOT RESULT)
-    message(FATAL_ERROR \"Test failed: \${RESULT}\")
-endif()")
-configure_file(${CMAKE_ROOT}/Modules/CMakeConfigurableFile.in
-    ${CHICKEN_RUN_FAIL} @ONLY)
-
 if(WIN32)
     add_custom_target(copy_libchicken
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -49,30 +33,20 @@ if(WIN32)
 endif()
 
 function(add_chicken_test name)
-    cmake_parse_arguments(test "" "PATH" "" ${ARGN})
-    if(test_PATH)
-        set(CHICKEN_RUN_PATH ${test_PATH})
-    endif()
+    cmake_parse_arguments(test "" "PATH;OUTPUT_FILE" "" ${ARGN})
 
-    set(CHICKEN_COMMAND ${test_UNPARSED_ARGUMENTS})
-    set(ERROR_FILE ${name}.out)
-    if(NOT test_WORKING_DIRECTORY)
-        set(dir ${CMAKE_CURRENT_BINARY_DIR})
-    endif()
     add_test(NAME ${name} COMMAND ${CMAKE_COMMAND}
-        "-DCHICKEN_COMMAND=${CHICKEN_COMMAND}"
-        "-DCHICKEN_REPOSITORY=${CHICKEN_REPOSITORY}/$<CONFIGURATION>"
-        "-DPATH=${CHICKEN_RUN_PATH}"
-        "-DERROR_FILE=${ERROR_FILE}"
-        -P ${CHICKEN_RUN}
-        WORKING_DIRECTORY ${dir})
+        "-DCHICKEN_REPOSITORY=${CHICKEN_LOCAL_REPOSITORY}/$<CONFIGURATION>"
+        "-DCOMMAND=${test_UNPARSED_ARGUMENTS}"
+        "-DPATH=${test_PATH}"
+        "-DOUTPUT_FILE=${test_OUTPUT_FILE}"
+        -P ${CHICKEN_RUN})
 endfunction()
 
 function(add_interpreted_test name)
     cmake_parse_arguments(test "" "SCRIPT;WORKING_DIRECTORY" "" ${ARGN})
 
     set(command $<TARGET_FILE:csi> -bnq -R chicken-syntax
-        -I ${chicken_BINARY_DIR}
         -I ${CMAKE_CURRENT_SOURCE_DIR}
         -I ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -84,24 +58,17 @@ function(add_interpreted_test name)
 endfunction()
 
 function(add_compiled_test name)
-    cmake_parse_arguments(test "" "ARGS" "" ${ARGN})
+    cmake_parse_arguments(test "" "ARGS;OUTPUT_FILE" "" ${ARGN})
 
     add_chicken_executable(${name} ${test_UNPARSED_ARGUMENTS})
 
-    add_chicken_test(${name} $<TARGET_FILE:${name}> ${test_ARGS})
+    add_chicken_test(${name} $<TARGET_FILE:${name}> ${test_ARGS}
+        OUTPUT_FILE "${test_OUTPUT_FILE}")
 
     add_dependencies(tests ${name})
-endfunction()
 
-set(used_FILES
-    compiler.scm
-    ec-tests.scm
-    ec.scm
-    import-library-test1.scm
-    meta-syntax-test.scm
-    r4rstest.scm
-    re-tests.txt
-)
+    set_target_properties(${name} PROPERTIES FOLDER "Tests")
+endfunction()
 
 set(expected_FILES
     arithmetic-test.32.expected
@@ -112,8 +79,6 @@ set(expected_FILES
     scrutiny.expected
 )
 set(expected_FILES_prepared "")
-
-file(COPY ${used_FILES} DESTINATION .)
 
 foreach(f ${expected_FILES})
     list(APPEND expected_FILES_prepared ${f}.t)
@@ -215,10 +180,9 @@ add_test(NAME fft-specialized COMMAND fft-specialized 1000 7)
 if(NOT MSVC)
     add_compiled_test(callback callback-tests.scm)
 
-    add_test(NAME callback-2
-        COMMAND ${CMAKE_COMMAND}
-            "-DCOMMAND=$<TARGET_FILE:callback>;twice"
-            -P ${CHICKEN_RUN_FAIL})
+    add_chicken_test(callback-twice
+        $<TARGET_FILE:callback> twice)
+    set_tests_properties(callback-twice PROPERTIES WILL_FAIL TRUE)
 endif()
 
 # runtime tests
@@ -246,17 +210,19 @@ add_interpreted_test(reader SCRIPT reader-tests.scm)
 
 # dynamic-wind tests
 
-add_interpreted_test(dynamic-wind SCRIPT dwindtst.scm)
+add_interpreted_test(dynamic-wind SCRIPT dwindtst.scm
+    OUTPUT_FILE dynamic-wind-i.out)
 
-add_compiled_test(dynamic-wind dwindtst.scm)
+add_compiled_test(dynamic-wind dwindtst.scm
+    OUTPUT_FILE dynamic-wind.out)
 
-add_test(NAME dynamic-wind-out COMMAND ${CMAKE_COMMAND} -E compare_files
+add_test(NAME dynamic-wind-expected COMMAND ${CMAKE_COMMAND} -E compare_files
     dynamic-wind.out dwindtst.expected.t)
-set_tests_properties(dynamic-wind-out PROPERTIES DEPENDS dynamic-wind)
+set_tests_properties(dynamic-wind-expected PROPERTIES DEPENDS dynamic-wind)
 
-add_test(NAME dynamic-wind-i-out COMMAND ${CMAKE_COMMAND} -E compare_files
+add_test(NAME dynamic-wind-i-expected COMMAND ${CMAKE_COMMAND} -E compare_files
     dynamic-wind-i.out dwindtst.expected.t)
-set_tests_properties(dynamic-wind-i-out PROPERTIES DEPENDS dynamic-wind-i)
+set_tests_properties(dynamic-wind-i-expected PROPERTIES DEPENDS dynamic-wind-i)
 
 # takes very long time
 # add_interpreted_test(dynamic-wind-feeley SCRIPT feeley-dynwind.scm)
@@ -288,6 +254,13 @@ add_compiled_test(syntax syntax-tests.scm)
 add_compiled_test(syntax2 syntax-tests-2.scm)
 
 # meta syntax tests
+
+add_custom_command(OUTPUT meta-syntax-test.scm COMMAND ${CMAKE_COMMAND}
+    -E copy ${CMAKE_CURRENT_SOURCE_DIR}/meta-syntax-test.scm meta-syntax-test.scm
+    VERBATIM)
+add_custom_target(prepare-meta-syntax-tests
+    DEPENDS meta-syntax-test.scm)
+add_dependencies(tests prepare-meta-syntax-tests)
 
 add_compiled_test(meta-syntax meta-syntax-test.scm
     EMIT_IMPORTS meta-syntax-test)
@@ -366,7 +339,8 @@ add_dependencies(tests import-library-test1)
 
 add_interpreted_test(import-library SCRIPT import-library-test2.scm)
 
-add_compiled_test(import-library import-library-test2.scm)
+add_compiled_test(import-library import-library-test2.scm
+    DEPENDS import-library-test1)
 
 # optionals tests
 
@@ -383,12 +357,19 @@ add_interpreted_test(loopy SCRIPT loopy-test.scm)
 
 # r4rs tests
 
+add_custom_command(OUTPUT r4rstest.scm COMMAND ${CMAKE_COMMAND} -E copy
+    ${CMAKE_CURRENT_SOURCE_DIR}/r4rstest.scm r4rstest.scm)
+add_custom_target(prepare-r4rs-tests
+    DEPENDS r4rstest.scm)
+add_dependencies(tests prepare-r4rs-tests)
+
 add_interpreted_test(r4rs SCRIPT r4rstest.scm -i
+    OUTPUT_FILE r4rs-i.out
     -e "(set! ##sys#procedure->string (constantly \"#<procedure>\"))")
 
-add_test(NAME r4rs-out COMMAND ${CMAKE_COMMAND} -E compare_files
+add_test(NAME r4rs-expected COMMAND ${CMAKE_COMMAND} -E compare_files
     r4rs-i.out r4rstest.out.t)
-set_tests_properties(r4rs-out PROPERTIES DEPENDS r4rs)
+set_tests_properties(r4rs-expected PROPERTIES DEPENDS r4rs)
 
 # r5rs pitfalls
 
@@ -422,6 +403,14 @@ add_interpreted_test(modules-chained-3
 
 # module tests (ec)
 
+add_custom_command(OUTPUT ec.scm ec-tests.scm
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/ec.scm ec.scm
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/ec-tests.scm ec-tests.scm
+    VERBATIM)
+add_custom_target(prepare-ec-tests
+    DEPENDS ec.scm ec-tests.scm)
+add_dependencies(tests prepare-ec-tests)
+
 add_chicken_module(ec-mod ec.scm EMIT_IMPORTS ec)
 add_dependencies(tests ec-mod)
 
@@ -437,6 +426,13 @@ add_interpreted_test(ec-2 $<TARGET_FILE:ec-mod> ec-tests.scm)
 add_interpreted_test(hash-table SCRIPT hash-table-tests.scm)
 
 # port tests
+
+add_custom_command(OUTPUT compiler.scm COMMAND ${CMAKE_COMMAND} -E copy
+    ${CMAKE_CURRENT_SOURCE_DIR}/compiler.scm compiler.scm
+    VERBATIM)
+add_custom_target(prepare-port-tests
+    DEPENDS compiler.scm)
+add_dependencies(tests prepare-port-tests)
 
 add_interpreted_test(port SCRIPT port-tests.scm)
 
@@ -523,6 +519,13 @@ if(NOT MSVC)
 endif()
 
 # regular expression tests
+
+add_custom_command(OUTPUT re-tests.txt COMMAND ${CMAKE_COMMAND} -E copy
+    ${CMAKE_CURRENT_SOURCE_DIR}/re-tests.txt re-tests.txt
+    VERBATIM)
+add_custom_target(prepare-regex-tests
+    DEPENDS re-tests.txt)
+add_dependencies(tests prepare-regex-tests)
 
 add_interpreted_test(irregex SCRIPT test-irregex.scm)
 

@@ -288,20 +288,17 @@ function(_chicken_command out_var in_file)
 
     list(INSERT command_output 0 ${out_file})
 
-    if(CHICKEN_COMMAND_WRAP)
+    if(compile_ERROR_FILE)
         add_custom_command(OUTPUT ${command_output}
             COMMAND ${CMAKE_COMMAND}
-                "-DCHICKEN_REPOSITORY=${CHICKEN_REPOSITORY}"
-                "-DCHICKEN_COMMAND=${chicken_command}"
-                "-DERROR_FILE=${compile_ERROR_FILE}"
-                -P "${CHICKEN_RUN}"
-            DEPENDS ${depends}
-            VERBATIM)
+                "-DCOMMAND=${chicken_command}"
+                "-DOUTPUT_FILE=${compile_ERROR_FILE}"
+                -P ${CHICKEN_RUN}
+            DEPENDS ${depends} VERBATIM)
     else()
         add_custom_command(OUTPUT ${command_output}
             COMMAND ${chicken_command}
-            DEPENDS ${depends}
-            VERBATIM)
+            DEPENDS ${depends} VERBATIM)
     endif()
 
     foreach(import ${command_import_libraries})

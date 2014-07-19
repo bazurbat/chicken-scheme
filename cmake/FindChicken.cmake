@@ -20,10 +20,8 @@ mark_as_advanced(CHICKEN_API_VERSION)
 option(CHICKEN_BUILD_IMPORTS "Compile generated import libraries" YES)
 option(CHICKEN_EMIT_TYPES "Generate files with type declarations" NO)
 option(CHICKEN_EMIT_INLINES "Generate files with globally inlinable procedures" NO)
-option(CHICKEN_COMMAND_WRAP "Wrap chicken command" NO)
 option(CHICKEN_EXTRACT_DEPENDS "Automatically extract source file dependencies" NO)
-mark_as_advanced(CHICKEN_EMIT_TYPES CHICKEN_EMIT_INLINES
-    CHICKEN_COMMAND_WRAP CHICKEN_EXTRACT_DEPENDS)
+mark_as_advanced(CHICKEN_EMIT_TYPES CHICKEN_EMIT_INLINES CHICKEN_EXTRACT_DEPENDS)
 
 # There are 3 usual settings for system variables:
 # 1) building Chicken for the current machine - do not change anything
@@ -175,23 +173,23 @@ if(PATH)
   set(ENV{PATH} \"\${path}\")
   #message(\"P: \$ENV{PATH}\")
 endif()
-#message(\"CHICKEN: \${CHICKEN_COMMAND}\")
-if(ERROR_FILE)
-    if(NOT IS_ABSOLUTE ERROR_FILE)
-        set(ERROR_FILE \${CMAKE_CURRENT_BINARY_DIR}/\${ERROR_FILE})
+#message(\"CHICKEN: \${COMMAND}\")
+if(OUTPUT_FILE)
+    if(NOT IS_ABSOLUTE OUTPUT_FILE)
+        set(OUTPUT_FILE \${CMAKE_CURRENT_BINARY_DIR}/\${OUTPUT_FILE})
     endif()
-    execute_process(COMMAND \${CHICKEN_COMMAND}
-        RESULT_VARIABLE CHICKEN_COMMAND_RESULT
+    execute_process(COMMAND \${COMMAND}
+        RESULT_VARIABLE command_result
         OUTPUT_VARIABLE command_output
         ERROR_VARIABLE command_output)
-    file(WRITE \${ERROR_FILE} \"\${command_output}\")
+    file(WRITE \${OUTPUT_FILE} \"\${command_output}\")
 else()
-    execute_process(COMMAND \${CHICKEN_COMMAND}
-        RESULT_VARIABLE CHICKEN_COMMAND_RESULT)
+    execute_process(COMMAND \${COMMAND}
+        RESULT_VARIABLE command_result)
 endif()
-if(CHICKEN_COMMAND_RESULT)
+if(command_result)
     message(\"\${command_output}\")
-    message(FATAL_ERROR \"Command failed: \${CHICKEN_COMMAND_RESULT}\")
+    message(FATAL_ERROR \"Command failed: \${command_result}\")
 endif()")
 configure_file(${CMAKE_ROOT}/Modules/CMakeConfigurableFile.in
     ${CHICKEN_RUN} @ONLY)
