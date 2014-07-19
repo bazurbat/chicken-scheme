@@ -1,6 +1,6 @@
 ;;;; chicken-syntax.scm - non-standard syntax extensions
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2014, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -325,35 +325,22 @@
  'set!-values '()
  (##sys#er-transformer
   (lambda (form r c)
-    (##sys#check-syntax 'set!-values form '(_ #(variable 0) _))
-    (let ((vars (cadr form))
-	  (exp (caddr form)))
-      (cond ((null? vars)
-	     ;; may this be simply "exp"?
-	     `(##sys#call-with-values
-	       (##core#lambda () ,exp)
-	       (##core#lambda () (##core#undefined))) )
-	    ((null? (cdr vars))
-	     `(##core#set! ,(car vars) ,exp)) 
-	    (else
-	     (let ([aliases (map gensym vars)])
-	       `(##sys#call-with-values
-		 (##core#lambda () ,exp)
-		 (##core#lambda ,aliases
-			   ,@(map (lambda (v a)
-				    `(##core#set! ,v ,a))
-				  vars aliases) ) ) ) ) ) ))))
+    (##sys#check-syntax 'set!-values form '(_ lambda-list _))
+    (##sys#expand-multiple-values-assignment (cadr form) (caddr form)))))
 
 (set! ##sys#define-values-definition
   (##sys#extend-macro-environment
    'define-values '()
    (##sys#er-transformer
     (lambda (form r c)
-      (##sys#check-syntax 'define-values form '(_ #(variable 0) _))
-      (for-each (lambda (nm)
-                  (let ((name (##sys#get nm '##core#macro-alias nm)))
-                    (##sys#register-export name (##sys#current-module))))
-                (cadr form))
+      (##sys#check-syntax 'define-values form '(_ lambda-list _))
+      (##sys#decompose-lambda-list
+       (cadr form)
+       (lambda (vars argc rest)
+         (for-each (lambda (nm)
+                     (let ((name (##sys#get nm '##core#macro-alias nm)))
+                       (##sys#register-export name (##sys#current-module))))
+                   vars)))
       `(,(r 'set!-values) ,@(cdr form))))))
 
 (##sys#extend-macro-environment
@@ -429,21 +416,20 @@
  'letrec-values '()
  (##sys#er-transformer
   (lambda (form r c)
-    (##sys#check-syntax 'letrec-values form '(_ list . _))
+    (##sys#check-syntax 'letrec-values form '(_ #((lambda-list . _) 0) . _))
     (let ((vbindings (cadr form))
-	  (body (cddr form)))
-      (let* ([vars (apply ##sys#append (map (lambda (x) (car x)) vbindings))] 
-	     [aliases (map (lambda (v) (cons v (r (gensym v)))) vars)] 
-	     [lookup (lambda (v) (cdr (assq v aliases)))] )
-	`(##core#let
-	  ,(map (lambda (v) (##sys#list v '(##core#undefined))) vars)
-	  ,@(map (lambda (vb)
-		   `(##sys#call-with-values 
-		     (##core#lambda () ,(cadr vb))
-		     (##core#lambda ,(map lookup (car vb))
-			       ,@(map (lambda (v) `(##core#set! ,v ,(lookup v))) (car vb)) ) ) )
-		 vbindings)
-	  ,@body) ) ) ) ) )
+          (body (cddr form)))
+      (let ((vars  (map car vbindings))
+            (exprs (map cadr vbindings)))
+        `(##core#let
+          ,(map (lambda (v) (##sys#list v '(##core#undefined)))
+                (foldl (lambda (l v) ; flatten multi-value formals
+                         (##sys#append l (##sys#decompose-lambda-list
+					  v (lambda (a _ _) a))))
+                       '()
+                       vars))
+          ,@(map ##sys#expand-multiple-values-assignment vars exprs)
+          ,@body))))))
 
 (##sys#extend-macro-environment
  'nth-value 
@@ -1147,10 +1133,11 @@
  'functor '()
  (##sys#er-transformer
   (lambda (x r c)
-    (##sys#check-syntax 'functor x '(_ (symbol . #((symbol _) 0)) _ . _))
+    (##sys#check-syntax 'functor x '(_ (symbol . #((_ _) 0)) _ . _))
     (let* ((x (##sys#strip-syntax x))
 	   (head (cadr x))
 	   (name (car head))
+	   (args (cdr head))
 	   (exps (caddr x))
 	   (body (cdddr x))
 	   (registration
@@ -1159,8 +1146,14 @@
 	      ',(map (lambda (arg)
 		       (let ((argname (car arg))
 			     (exps (##sys#validate-exports (cadr arg) 'functor)))
+			 (unless (or (symbol? argname)
+				     (and (list? argname)
+					  (= 2 (length argname))
+					  (symbol? (car argname))
+					  (symbol? (cadr argname))))
+			   (##sys#syntax-error-hook "invalid functor argument" name arg))
 			 (cons argname exps)))
-		     (cdr head))
+		     args)
 	      ',(##sys#validate-exports exps 'functor)
 	      ',body)))
       `(##core#module

@@ -1,7 +1,7 @@
 # GNUmakefile - toplevel makefile.  This simply includes the
 # platform-specific makefile or quits when no platform is selected.
 #
-# Copyright (c) 2008-2014, The Chicken Team
+# Copyright (c) 2008-2014, The CHICKEN Team
 # Copyright (c) 2007, Felix L. Winkelmann
 # All rights reserved.
 #

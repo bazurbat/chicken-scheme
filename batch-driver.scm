@@ -1,6 +1,6 @@
 ;;;; batch-driver.scm - Driver procedure for the compiler
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2014, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -262,7 +262,7 @@
       (dribble "Disabled support for escaped symbols")
       (symbol-escape #f) )
     (when (memq '("-r5rs-syntax") options)
-      (dribble "Disabled the Chicken extensions to R5RS syntax")
+      (dribble "Disabled the CHICKEN extensions to R5RS syntax")
       (case-sensitive #f)
       (keyword-style #:none)
       (parentheses-synonyms #f)

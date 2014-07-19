@@ -143,7 +143,7 @@ the source text should be read from standard input.
 
 ; -prologue FILENAME : Includes the file named {{FILENAME}} at the start of the compiled source file.  The include-path is not searched. This option may be given multiple times.
 
-; -r5rs-syntax : Disables the Chicken extensions to R5RS syntax. Does not disable [[Non-standard read syntax|non-standard read syntax]].
+; -r5rs-syntax : Disables the CHICKEN extensions to R5RS syntax. Does not disable [[Non-standard read syntax|non-standard read syntax]].
 
 ; -raw : Disables the generation of any implicit code that uses the Scheme libraries (that is all runtime system files besides {{runtime.c}} and {{chicken.h}}).
 

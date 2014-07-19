@@ -1,6 +1,6 @@
 ;;;; compiler-namespace.scm - A simple namespace system to keep compiler variables hidden
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2014, The CHICKEN Team
 ; Copyright (c) 2007, Felix L. Winkelmann
 ; All rights reserved.
 ;

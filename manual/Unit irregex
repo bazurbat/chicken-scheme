@@ -13,7 +13,7 @@ standard Scheme strings, or over arbitrarily chunked streams of
 strings.
 
 On systems that support dynamic loading, the {{irregex}} unit can
-be made available in the Chicken interpreter ({{csi}}) by entering
+be made available in the CHICKEN interpreter ({{csi}}) by entering
 
 <enscript highlight=scheme>
 (require-extension irregex)

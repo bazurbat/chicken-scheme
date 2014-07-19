@@ -17,7 +17,7 @@
 (require 'flymake)
 
 (defgroup flymake-chicken nil
-  "Flymake Chicken Customizations")
+  "Flymake CHICKEN Customizations")
 
 (defcustom flymake-chicken-program "chicken-flymake"
   "How to invoke csc."

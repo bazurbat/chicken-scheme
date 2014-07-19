@@ -29,10 +29,23 @@
     ##sys#zap-strings, ##sys#round, ##sys#foreign-number-vector-argument,
     ##sys#check-port-mode, ##sys#check-port*
 
+- Module system
+  - Allow functor arguments to be optional, with default implementations.
+  - Fixed a bug that prevented functors from being instantiated with
+     built-in modules.
+
+- Syntax expander
+  - define-values, set!-values and letrec-values now support full lambda
+    lists as binding forms
+
 - C API
   - Removed deprecated C_get_argument[_2] and
     C_get_environment_variable[_2] functions.
   - C_mutate2 has been deprecated in favor of C_mutate
+
+- Foreign function interface
+  - The foreign type specifier "scheme-pointer" now accepts an optional
+    C pointer type (thanks to Moritz Heidkamp and Kristian Lein-Mathisen).
 
 - Build system
   - MANDIR was renamed to MAN1DIR and TOPMANDIR was renamed to MANDIR
@@ -232,7 +245,7 @@
     large values). Note that random shouldn't be used for
     security-critical code.
   - CVE-2012-6123: Added checks for embedded '\0' characters in strings
-    passed to some C functions on a lower level than Chicken's FFI.
+    passed to some C functions on a lower level than CHICKEN's FFI.
 
 - Build system
   - version information has been moved into a separate unit to make the
@@ -455,7 +468,7 @@
   - string-comparison handles embedded '\0' characters.
   - numerical predicates handle infinity and NaN correctly.
   - deprecated "[+-]nan", "[+-]inf" and other notations "accidentally"
-    accepted by Chicken due to the underlying C library's strtod() function,
+    accepted by CHICKEN due to the underlying C library's strtod() function,
     standardizing on "[+-]nan.0" and "[+-]inf.0" from R6RS (and soon R7RS),
     when displaying numbers only these forms are generated now.
   - signals are queued to some extent and the interrupt handling has

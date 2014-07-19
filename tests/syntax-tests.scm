@@ -62,6 +62,16 @@
   (foo 33))
 )
 
+;; letrec-values
+
+(t '(0 1 2 3 (4) (5 6))
+   (letrec-values ((() (values))
+                   ((a) (values 0))
+                   ((b c) (values 1 2))
+                   ((d . e) (values 3 4))
+                   (f (values 5 6)))
+     (list a b c d e f)))
+
 ;; from r5rs:
 
 (t 45
@@ -722,8 +732,9 @@
     ((_) 1)))
 
 (define (f1) 3)
-(define v1 9)
-(define v2 10)
+(define-values (v1 v2) (values 9 10))
+(define-values (v3 . v4) (values 11 12))
+(define-values v56 (values 13))
 
 (let ()
   (define-syntax s2
@@ -731,6 +742,8 @@
       ((_) 2)))
   42
   (define-values (v1 v2) (values 1 2))
+  (define-values (v3 . v4) (values 3 4))
+  (define-values v56 (values 5 6))
   43
   (define (f1) 4)
   (define ((f2)) 4)
@@ -738,13 +751,18 @@
   (assert (= 4 ((f2))))
   (assert (= 2 (s2)))
   (assert (= 1 v1))
-  (assert (= 2 v2)))
+  (assert (= 2 v2))
+  (assert (= 3 v3))
+  (assert (equal? (list 4) v4))
+  (assert (equal? (list 5 6) v56)))
 
 (assert (= 1 (s2)))
 (assert (= 3 (f1)))
 (assert (= 9 v1))
 (assert (= 10 v2))
-
+(assert (= 11 v3))
+(assert (equal? (list 12) v4))
+(assert (equal? (list 13) v56))
 
 ;;; redefining definition forms (disabled, since we can not catch this error easily)
 
