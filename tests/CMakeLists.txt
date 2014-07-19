@@ -489,8 +489,12 @@ add_interpreted_test(srfi-45 SCRIPT srfi-45-tests.scm)
 
 # posix tests
 
+add_custom_command(OUTPUT tmpdir
+    COMMAND ${CMAKE_COMMAND} -E make_directory tmpdir
+    VERBATIM)
 add_custom_command(OUTPUT tmpdir/.dotfile
     COMMAND ${CMAKE_COMMAND} -E touch tmpdir/.dotfile
+    DEPENDS tmpdir
     VERBATIM)
 
 if(UNIX)
