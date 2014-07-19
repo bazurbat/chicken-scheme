@@ -45,7 +45,7 @@ if(WIN32)
             $<TARGET_FILE:libchicken>
             ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/$<TARGET_FILE_NAME:libchicken>
         DEPENDS libchicken VERBATIM)
-    add_dependencies(check copy_libchicken)
+    add_dependencies(tests copy_libchicken)
 endif()
 
 function(add_chicken_test name)
@@ -90,7 +90,7 @@ function(add_compiled_test name)
 
     add_chicken_test(${name} $<TARGET_FILE:${name}> ${test_ARGS})
 
-    add_dependencies(check ${name})
+    add_dependencies(tests ${name})
 endfunction()
 
 set(used_FILES
@@ -130,7 +130,7 @@ endforeach()
 add_custom_target(prepare_expected_files
     DEPENDS ${expected_FILES_prepared})
 
-add_dependencies(check prepare_expected_files)
+add_dependencies(tests prepare_expected_files)
 
 # version tests
 
@@ -170,7 +170,7 @@ add_custom_command(
 
 add_custom_target(scrutiny-tests-prepare
     DEPENDS scrutiny.out.t scrutiny-2.out.t)
-add_dependencies(check scrutiny-tests-prepare)
+add_dependencies(tests scrutiny-tests-prepare)
 
 add_test(NAME scrutiny COMMAND ${CMAKE_COMMAND} -E compare_files
     scrutiny.out.t scrutiny.expected.t)
@@ -204,7 +204,7 @@ add_chicken_executable(fft-specialized fft.scm
     OPTIONS -optimize-level 2 -debug-level 0 -local -disable-interrupts
         -block -specialize -debug x)
 
-add_dependencies(check fft-normal fft-specialized)
+add_dependencies(tests fft-normal fft-specialized)
 
 add_test(NAME fft-normal COMMAND fft-normal 1000 7)
 add_test(NAME fft-specialized COMMAND fft-specialized 1000 7)
@@ -269,7 +269,7 @@ add_compiled_test(lolevel lolevel-tests.scm)
 
 # arithmetic tests
 
-add_interpreted_test(arithmetic SCRIPT arithmetic-test.scm -D check)
+add_interpreted_test(arithmetic SCRIPT arithmetic-test.scm -D tests)
 
 # pretty printer tests
 
@@ -320,7 +320,7 @@ add_chicken_library(reexport-m5 reexport-m5.scm EMIT_IMPORTS reexport-m5)
 add_chicken_library(reexport-m6 reexport-m6.scm EMIT_IMPORTS reexport-m6
     DEPENDS reexport-m5)
 
-add_dependencies(check reexport-m1 reexport-m3 reexport-m4 reexport-m5
+add_dependencies(tests reexport-m1 reexport-m3 reexport-m4 reexport-m5
     reexport-m6)
 
 add_interpreted_test(reexport-m2 SCRIPT reexport-m2.scm)
@@ -362,7 +362,7 @@ add_interpreted_test(import SCRIPT import-tests.scm)
 
 add_chicken_module(import-library-test1 import-library-test1.scm
     EMIT_IMPORTS import-library-test1-m)
-add_dependencies(check import-library-test1)
+add_dependencies(tests import-library-test1)
 
 add_interpreted_test(import-library SCRIPT import-library-test2.scm)
 
@@ -409,7 +409,7 @@ add_compiled_test(module module-tests-compiled.scm)
 
 add_chicken_module(chained-modules test-chained-modules.scm
     EMIT_IMPORTS m3)
-add_dependencies(check chained-modules)
+add_dependencies(tests chained-modules)
 
 add_interpreted_test(modules-chained SCRIPT test-chained-modules.scm)
 
@@ -423,7 +423,7 @@ add_interpreted_test(modules-chained-3
 # module tests (ec)
 
 add_chicken_module(ec-mod ec.scm EMIT_IMPORTS ec)
-add_dependencies(check ec-mod)
+add_dependencies(tests ec-mod)
 
 add_interpreted_test(ec ec.scm ec-tests.scm)
 
@@ -504,7 +504,7 @@ else()
         DEPENDS tmpdir/.dotfile)
 endif()
 
-add_dependencies(check prepare-posix-tests)
+add_dependencies(tests prepare-posix-tests)
 
 add_compiled_test(posix posix-tests.scm ARGS $<TARGET_FILE:csi>)
 
@@ -569,7 +569,7 @@ if(NOT MSVC)
 
 add_chicken_executable(private-repository private-repository-test.scm
     DEFINITIONS C_PRIVATE_REPOSITORY)
-add_dependencies(check private-repository)
+add_dependencies(tests private-repository)
 
 add_chicken_test(private-repository $<TARGET_FILE:private-repository>
     ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>)
