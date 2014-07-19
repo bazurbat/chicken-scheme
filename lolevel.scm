@@ -1,6 +1,6 @@
 ;;;; lolevel.scm - Low-level routines for CHICKEN
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2014, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -403,6 +403,8 @@ EOF
 
 
 ;;; Accessors for arbitrary vector-like block objects:
+
+(define (vector-like? x) (%generic-vector? x))
 
 (define block-set! ##sys#block-set!)
 

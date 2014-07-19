@@ -1,6 +1,6 @@
 # defaults.make - default settings -*- Makefile -*-
 #
-# Copyright (c) 2008-2014, The Chicken Team
+# Copyright (c) 2008-2014, The CHICKEN Team
 # Copyright (c) 2007, Felix L. Winkelmann
 # All rights reserved.
 #
@@ -34,47 +34,29 @@ CROSS_CHICKEN ?= 0
 # directories
 
 SEP ?= /
-SRCDIR ?= .$(SEP)
 DESTDIR ?=
 PREFIX ?= /usr/local
 
-BINDIR = $(PREFIX)/bin
-LIBDIR = $(PREFIX)/lib
-SHAREDIR = $(PREFIX)/share
-DATADIR = $(SHAREDIR)/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
-TOPMANDIR = $(SHAREDIR)/man
-MANDIR = $(TOPMANDIR)/man1
-INCDIR = $(PREFIX)/include/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
-DOCDIR = $(DATADIR)/doc
-VARDIR ?= $(LIBDIR)
-CHICKENLIBDIR = $(VARDIR)/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
-EGGDIR ?= $(CHICKENLIBDIR)/$(BINARYVERSION)
+BINDIR ?= $(PREFIX)/bin
+LIBDIR ?= $(PREFIX)/lib
+SHAREDIR ?= $(PREFIX)/share
+DATADIR ?= $(SHAREDIR)/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
+INCLUDEDIR ?= $(PREFIX)/include
+MANDIR ?= $(SHAREDIR)/man
 
-ifdef WINDOWS_SHELL
-SPREFIX = $(subst /,$(SEP),$(PREFIX))
-IBINDIR = $(SPREFIX)$(SEP)bin
-ILIBDIR = $(SPREFIX)$(SEP)lib
-ISHAREDIR = $(SPREFIX)$(SEP)share
-IDATADIR = $(ISHAREDIR)$(SEP)$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
-ITOPMANDIR = $(ISHAREDIR)$(SEP)man
-IMANDIR = $(ITOPMANDIR)$(SEP)man1
-IINCDIR = $(SPREFIX)$(SEP)include$(SEP)$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
-IDOCDIR = $(IDATADIR)$(SEP)doc
-ICHICKENLIBDIR = $(ILIBDIR)$(SEP)$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
-IEGGDIR = $(ICHICKENLIBDIR)$(SEP)$(BINARYVERSION)
-else
-SPREFIX = $(PREFIX)
-IBINDIR = $(BINDIR)
-ILIBDIR = $(LIBDIR)
-ISHAREDIR = $(SHAREDIR)
-IDATADIR = $(DATADIR)
-ITOPMANDIR = $(TOPMANDIR)
-IMANDIR = $(MANDIR)
-IINCDIR = $(INCDIR)
-IDOCDIR = $(DOCDIR)
-ICHICKENLIBDIR = $(CHICKENLIBDIR)
-IEGGDIR = $(EGGDIR)
-endif
+DOCDIR ?= $(DATADIR)/doc
+VARDIR ?= $(LIBDIR)
+MAN1DIR ?= $(MANDIR)/man1
+CHICKENLIBDIR ?= $(VARDIR)/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
+EGGDIR ?= $(CHICKENLIBDIR)/$(BINARYVERSION)
+CHICKENINCDIR ?= $(INCLUDEDIR)/$(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
+
+# For the windows shell, we must distinguish between paths built into
+# binaries (system calls may use slash as a separator) and paths
+# passed to shell commands when installing.  We prefix the latter with
+# an 'I':
+INST_DIRS=BINDIR LIBDIR SHAREDIR DATADIR MAN1DIR CHICKENINCDIR DOCDIR EGGDIR
+$(foreach dir,$(INST_DIRS),$(eval I$(dir)=$(subst /,$(SEP),$($(dir)))))
 
 INSTALL_LIB_NAME = $(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
 RUNTIME_LINKER_PATH ?= .
@@ -98,16 +80,13 @@ RC_COMPILER ?= windres
 endif
 endif
 LINKER ?= $(C_COMPILER)
-ifdef WINDOWS_SHELL
-REMOVE_COMMAND ?= del
-else
-REMOVE_COMMAND ?= rm
-endif
 ASSEMBLER ?= $(C_COMPILER)
 ifdef WINDOWS_SHELL
+REMOVE_COMMAND ?= del
 INSTALL_PROGRAM ?= xcopy
 MAKEDIR_COMMAND ?= -mkdir
 else
+REMOVE_COMMAND ?= rm
 INSTALL_PROGRAM ?= install
 MAKEDIR_COMMAND ?= install
 endif
@@ -183,17 +162,14 @@ ifdef WINDOWS_SHELL
 REMOVE_COMMAND_OPTIONS ?= /f /q
 REMOVE_COMMAND_RECURSIVE_OPTIONS ?= /f /s /q
 MAKE_WRITABLE_COMMAND ?= rem
-else
-REMOVE_COMMAND_OPTIONS ?= -f
-REMOVE_COMMAND_RECURSIVE_OPTIONS ?= -fr
-MAKE_WRITABLE_COMMAND ?= chmod 0755
-endif
-ifdef WINDOWS_SHELL
 INSTALL_PROGRAM_SHARED_LIBRARY_OPTIONS ?= /Y
 INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS ?= /Y
 INSTALL_PROGRAM_EXECUTABLE_OPTIONS ?= /Y
 INSTALL_PROGRAM_FILE_OPTIONS ?= /Y
 else
+REMOVE_COMMAND_OPTIONS ?= -f
+REMOVE_COMMAND_RECURSIVE_OPTIONS ?= -fr
+MAKE_WRITABLE_COMMAND ?= chmod 0755
 INSTALL_PROGRAM_SHARED_LIBRARY_OPTIONS ?= -m 755
 INSTALL_PROGRAM_STATIC_LIBRARY_OPTIONS ?= -m 644
 INSTALL_PROGRAM_EXECUTABLE_OPTIONS ?= -m 755
@@ -331,11 +307,6 @@ ifdef WINDOWS
 TARGETS += chicken.rc$(O)
 endif
 
-ifeq ($(HEAD),)
-HEAD = HEAD
-endif
-
-
 # main rule
 
 .PHONY: all
@@ -392,7 +363,7 @@ endif
 	$(call echo, >>, $@,# define C_INSTALL_STATIC_LIB_HOME "$(LIBDIR)")
 	$(call echo, >>, $@,#endif)
 	$(call echo, >>, $@,#ifndef C_INSTALL_INCLUDE_HOME)
-	$(call echo, >>, $@,# define C_INSTALL_INCLUDE_HOME "$(INCDIR)")
+	$(call echo, >>, $@,# define C_INSTALL_INCLUDE_HOME "$(CHICKENINCDIR)")
 	$(call echo, >>, $@,#endif)
 	$(call echo, >>, $@,#ifndef C_INSTALL_MORE_LIBS)
 	$(call echo, >>, $@,# define C_INSTALL_MORE_LIBS "$(LIBRARIES)")

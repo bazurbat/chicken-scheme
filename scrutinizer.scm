@@ -1,6 +1,6 @@
 ;;;; scrutinizer.scm - The CHICKEN Scheme compiler (local flow analysis)
 ;
-; Copyright (c) 2009-2014, The Chicken Team
+; Copyright (c) 2009-2014, The CHICKEN Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -165,13 +165,13 @@
 		((eq? a 'deprecated)
 		 (report
 		  loc
-		  (sprintf "use of deprecated library procedure `~a'" id) )
+		  (sprintf "use of deprecated `~a'" id))
 		 '(*))
 		((and (pair? a) (eq? (car a) 'deprecated))
 		 (report
 		  loc
 		  (sprintf 
-		      "use of deprecated library procedure `~a' - consider using `~a' instead"
+		      "use of deprecated `~a' - consider `~a'"
 		    id (cadr a)))
 		 '(*))
 		(else (list a)))))

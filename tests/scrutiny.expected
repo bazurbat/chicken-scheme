@@ -94,10 +94,10 @@ Warning: in toplevel procedure `foo#blabla':
   (scrutiny-tests.scm:133) in procedure call to `+', expected argument #2 of type `number', but was given an argument of type `symbol'
 
 Warning: at toplevel:
-  use of deprecated library procedure `deprecated-procedure'
+  use of deprecated `deprecated-procedure'
 
 Warning: at toplevel:
-  use of deprecated library procedure `another-deprecated-procedure' - consider using `replacement-procedure' instead
+  use of deprecated `another-deprecated-procedure' - consider `replacement-procedure'
 
 Warning: at toplevel:
   (scrutiny-tests.scm:158) in procedure call to `apply1', expected argument #2 of type `(list-of number)', but was given an argument of type `(list symbol fixnum fixnum)'

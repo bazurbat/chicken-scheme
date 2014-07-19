@@ -1,6 +1,6 @@
 ;;;; library.scm - R5RS library for the CHICKEN compiler
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2014, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -996,8 +996,6 @@ EOF
       x
       (##core#inline_allocate ("C_a_i_flonum_round_proper" 4) x)))
 
-(define ##sys#round round)		; this is obsolete and is used by the "numbers" egg (gmp version)
-
 (define remainder 
   (lambda (x y) (- x (* (quotient x y) y))) )
 
@@ -1908,18 +1906,6 @@ EOF
       (##core#inline "C_i_check_port_2" x 0 #t (car loc))
       (##core#inline "C_i_check_port" x 0 #t) ) )
 
-(define (##sys#check-port-mode port mode . loc) ; OBSOLETE
-  (unless (eq? mode (##sys#slot port 1))
-    (##sys#signal-hook
-     #:type-error (and (pair? loc) (car loc))
-     (if mode "port is not an input port" "port is not an output-port") port) ) )
-
-(define (##sys#check-port* p loc)	; OBSOLETE
-  (##sys#check-port p)
-  (when (##sys#slot p 8)
-    (##sys#signal-hook #:file-error loc "port already closed" p) )
-  p )
-
 (define (current-input-port . arg)
   (when (pair? arg)
     (let ([p (car arg)])
@@ -1962,63 +1948,32 @@ EOF
 		name) )
 	  name) ) ) )
 
-(define (##sys#pathname-resolution name thunk . _)
-  (thunk (##sys#expand-home-path name)) )
-
-;; DEPRECATED: implicit $VAR- and ~-expansion will be removed in
-;; future versions.  See ticket #1001
-(define ##sys#expand-home-path
-  (lambda (path)
-    (let ((len (##sys#size path)))
-      (if (fx> len 0)
-	  (case (##core#inline "C_subchar" path 0)
-	    ((#\~) 
-	     (let ((rest (##sys#substring path 1 len)))
-	       (##sys#string-append (or (get-environment-variable "HOME") "") rest) ) )
-	    ((#\$) 
-	     (let loop ((i 1))
-	       (if (fx>= i len)
-		   path
-		   (let ((c (##core#inline "C_subchar" path i)))
-		     (if (or (eq? c #\/) (eq? c #\\))
-			 (##sys#string-append
-			  (or (get-environment-variable (##sys#substring path 1 i)) "")
-			  (##sys#substring path i len))
-			 (loop (fx+ i 1)) ) ) ) ) )
-	    (else path) )
-	  "") ) ) )
-
 (define open-input-file)
 (define open-output-file)
 (define close-input-port)
 (define close-output-port)
 
 (let ()
- 
   (define (open name inp modes loc)
     (##sys#check-string name loc)
-    (##sys#pathname-resolution
-     name
-     (lambda (name)
-       (let ([fmode (if inp "r" "w")]
-	     [bmode ""] )
-	 (do ([modes modes (##sys#slot modes 1)])
-	     ((null? modes))
-	   (let ([o (##sys#slot modes 0)])
-	     (case o
-	       [(#:binary) (set! bmode "b")]
-	       [(#:text) (set! bmode "")]
-	       [(#:append) 
-		(if inp
-		    (##sys#error loc "cannot use append mode with input file")
-		    (set! fmode "a") ) ]
-	       [else (##sys#error loc "invalid file option" o)] ) ) )
-	 (let ([port (##sys#make-port inp ##sys#stream-port-class name 'stream)])
-	   (unless (##sys#open-file-port port name (##sys#string-append fmode bmode))
-	     (##sys#update-errno)
-	     (##sys#signal-hook #:file-error loc (##sys#string-append "cannot open file - " strerror) name) )
-	   port) ) )
-     #:open (not inp) modes) )
+    (let ([fmode (if inp "r" "w")]
+          [bmode ""] )
+      (do ([modes modes (##sys#slot modes 1)])
+        ((null? modes))
+        (let ([o (##sys#slot modes 0)])
+          (case o
+            [(#:binary) (set! bmode "b")]
+            [(#:text) (set! bmode "")]
+            [(#:append)
+             (if inp
+               (##sys#error loc "cannot use append mode with input file")
+               (set! fmode "a") ) ]
+            [else (##sys#error loc "invalid file option" o)] ) ) )
+      (let ([port (##sys#make-port inp ##sys#stream-port-class name 'stream)])
+        (unless (##sys#open-file-port port name (##sys#string-append fmode bmode))
+          (##sys#update-errno)
+          (##sys#signal-hook #:file-error loc (##sys#string-append "cannot open file - " strerror) name) )
+        port) ) )
 
   (define (close port loc)
     (##sys#check-port port loc)
@@ -2088,25 +2043,17 @@ EOF
 
 (define (file-exists? name)
   (##sys#check-string name 'file-exists?)
-  (##sys#pathname-resolution
-    name
-    (lambda (name)
-      (and (##sys#file-exists? 
-	    (##sys#platform-fixup-pathname name) 
-	    #f #f 'file-exists?) 
-	   name) )
-    #:exists?) )
+  (and (##sys#file-exists?
+        (##sys#platform-fixup-pathname name)
+        #f #f 'file-exists?)
+       name) )
 
 (define (directory-exists? name)
   (##sys#check-string name 'directory-exists?)
-  (##sys#pathname-resolution
-   name
-   (lambda (name)
-     (and (##sys#file-exists?
-	   (##sys#platform-fixup-pathname name)
-	   #f #t 'directory-exists?)
-	  name) )
-   #:exists?) )
+  (and (##sys#file-exists?
+        (##sys#platform-fixup-pathname name)
+        #f #t 'directory-exists?)
+       name) )
 
 (define (##sys#flush-output port)
   ((##sys#slot (##sys#slot port 2) 5) port) ; flush-output
@@ -2137,33 +2084,22 @@ EOF
 
 (define (delete-file filename)
   (##sys#check-string filename 'delete-file)
-  (##sys#pathname-resolution
-   filename
-   (lambda (filename)
-     (unless (eq? 0 (##core#inline "C_delete_file" (##sys#make-c-string filename 'delete-file)))
-       (##sys#update-errno)
-       (##sys#signal-hook
-	#:file-error 'delete-file
-	(##sys#string-append "cannot delete file - " strerror) filename) )
-     filename)
-   #:delete) )
+  (unless (eq? 0 (##core#inline "C_delete_file" (##sys#make-c-string filename 'delete-file)))
+    (##sys#update-errno)
+    (##sys#signal-hook
+     #:file-error 'delete-file
+     (##sys#string-append "cannot delete file - " strerror) filename) )
+  filename)
 
 (define (rename-file old new)
   (##sys#check-string old 'rename-file)
   (##sys#check-string new 'rename-file)
-  (##sys#pathname-resolution
-   old
-   (lambda (old)
-     (##sys#pathname-resolution
-      new
-      (lambda (new)
-	(unless (eq? 0 (##core#inline "C_rename_file" (##sys#make-c-string old 'rename-file) (##sys#make-c-string new)))
-	  (##sys#update-errno)
-	  (##sys#signal-hook
-	   #:file-error 'rename-file
-	   (##sys#string-append "cannot rename file - " strerror) old new) )
-	new)))
-   #:rename new) )
+  (unless (eq? 0 (##core#inline "C_rename_file" (##sys#make-c-string old 'rename-file) (##sys#make-c-string new)))
+    (##sys#update-errno)
+    (##sys#signal-hook
+     #:file-error 'rename-file
+     (##sys#string-append "cannot rename file - " strerror) old new) )
+  new)
 
 
 ;;; Decorate procedure with arbitrary data
@@ -4433,9 +4369,6 @@ EOF
    from to
    offset1 offset2 bytes) )
 
-;; OBSOLETE
-(define ##sys#zap-strings (foreign-lambda void "C_zap_strings" scheme-object))
-
 (define (##sys#block-pointer x)
   (let ([ptr (##sys#make-pointer)])
     (##core#inline "C_pointer_to_block" ptr x)
@@ -4452,7 +4385,6 @@ EOF
 (define (##sys#foreign-struct-wrapper-argument t x) 
   (##core#inline "C_i_foreign_struct_wrapper_argumentp" t x))
 
-(define ##sys#foreign-number-vector-argument ##sys#foreign-struct-wrapper-argument) ;OBSOLETE
 (define (##sys#foreign-string-argument x) (##core#inline "C_i_foreign_string_argumentp" x))
 (define (##sys#foreign-symbol-argument x) (##core#inline "C_i_foreign_symbol_argumentp" x))
 (define (##sys#foreign-pointer-argument x) (##core#inline "C_i_foreign_pointer_argumentp" x))
@@ -5079,13 +5011,16 @@ EOF
       (pstr ", ")
       (pnum gctime)
       (pstr "s GC time (major)")))
-  (let ((mut (##sys#slot info 2)))
+  (let ((mut (##sys#slot info 2))
+	(umut (##sys#slot info 3)))
     (when (fx> mut 0)
       (pstr ", ")
       (pnum mut)
-      (pstr " mutations")))
-  (let ((minor (##sys#slot info 3))
-	(major (##sys#slot info 4)))
+      (pchr #\/)
+      (pnum umut)
+      (pstr " mutations (total/tracked)")))
+  (let ((minor (##sys#slot info 4))
+	(major (##sys#slot info 5)))
     (when (or (fx> minor 0) (fx> major 0))
       (pstr ", ")
       (pnum major)

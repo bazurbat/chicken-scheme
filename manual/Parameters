@@ -3,7 +3,7 @@
 
 == Parameters
 
-Parameters are Chicken's form of dynamic variables, except that they are
+Parameters are CHICKEN's form of dynamic variables, except that they are
 procedures rather than actual variables.  A parameter is a procedure of
 zero or one arguments. To retrieve the value of a parameter call the
 parameter-procedure with zero arguments. To change the setting of the

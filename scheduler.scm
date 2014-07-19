@@ -1,6 +1,6 @@
 ; scheduler.scm - Basic scheduler for multithreading
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2014, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -154,6 +154,7 @@ EOF
     (set! ##sys#current-thread thread)
     (##sys#setslot thread 3 'running)
     (##sys#restore-thread-state-buffer thread)
+    ;;XXX WRONG! this sets the t/i-period ("quantum") for the _next_ thread
     (##core#inline "C_set_initial_timer_interrupt_period" (##sys#slot thread 9))
     ((##sys#slot thread 1)) )
   (let* ([ct ##sys#current-thread]

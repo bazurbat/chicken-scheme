@@ -1,6 +1,6 @@
 ;;;; c-platform.scm - Platform specific parameters and definitions
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2014, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -787,8 +787,6 @@
 (rewrite 'gcd 18 0)
 (rewrite 'lcm 18 1)
 (rewrite 'list 18 '())
-
-(rewrite 'argv 13 "C_get_argv" #t)
 
 (rewrite '* 16 2 "C_a_i_times" #t 4)	; words-per-flonum
 (rewrite '+ 16 2 "C_a_i_plus" #t 4)	; words-per-flonum

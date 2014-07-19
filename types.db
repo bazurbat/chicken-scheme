@@ -1,6 +1,6 @@
 ;;;; types.db - Type-information for core library functions -*- Scheme -*-
 ;
-; Copyright (c) 2009-2014, The Chicken Team
+; Copyright (c) 2009-2014, The CHICKEN Team
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
@@ -167,8 +167,8 @@
 (list-tail (forall (a) (#(procedure #:clean #:enforce) list-tail ((list-of a) fixnum) (list-of a))))
 (list-ref (forall (a) (#(procedure #:clean #:enforce) list-ref ((list-of a) fixnum) a)))
 
-(append (#(procedure #:clean) append (#!rest list) *)) ; sic
-(##sys#append (#(procedure #:clean) ##sys#append (#!rest list) *))
+(append (#(procedure #:clean) append (#!rest *) *)) ; sic
+(##sys#append (#(procedure #:clean) ##sys#append (#!rest *) *))
 
 (reverse (forall (a) (#(procedure #:clean #:enforce) reverse ((list-of a)) (list-of a))))
 
@@ -1302,7 +1302,7 @@
 (read-line (#(procedure #:enforce) read-line (#!optional input-port (or false fixnum)) (or eof string)))
 (read-lines (#(procedure #:enforce) read-lines (#!optional (or input-port string) fixnum) (list-of string)))
 (read-string (#(procedure #:enforce) read-string (#!optional * input-port) string))
-(read-string! (#(procedure #:enforce) read-string! (fixnum string #!optional input-port fixnum) fixnum))
+(read-string! (#(procedure #:enforce) read-string! ((or fixnum false) string #!optional input-port fixnum) fixnum))
 (read-token (#(procedure #:enforce) read-token ((procedure (char) *) #!optional input-port) string))
 (sprintf (#(procedure #:enforce) sprintf (string #!rest) string))
 (write-byte (#(procedure #:enforce) write-byte (fixnum #!optional output-port) undefined))
@@ -2457,7 +2457,7 @@
 (make-u32vector (#(procedure #:clean #:enforce) make-u32vector (fixnum #!optional * * *) (struct u32vector)))
 (make-u8vector (#(procedure #:clean #:enforce) make-u8vector (fixnum #!optional * * *) (struct u8vector)))
 (read-u8vector (#(procedure #:enforce) read-u8vector (#!optional fixnum input-port) (struct u8vector)))
-(read-u8vector! (#(procedure #:enforce) read-u8vector! (fixnum (struct u8vector) #!optional input-port fixnum) number))
+(read-u8vector! (#(procedure #:enforce) read-u8vector! ((or fixnum false) (struct u8vector) #!optional input-port fixnum) number))
 (release-number-vector (procedure release-number-vector (*) undefined))
 (s16vector (#(procedure #:clean #:enforce) s16vector (#!rest fixnum) (struct s16vector)))
 (s16vector->blob (#(procedure #:clean #:enforce) s16vector->blob ((struct s16vector)) blob))

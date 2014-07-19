@@ -1,6 +1,6 @@
 ;;;; posixwin.scm - Miscellaneous file- and process-handling routines, available on Windows
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2014, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -47,9 +47,8 @@
 ; create-fifo  fifo?
 ; prot/...
 ; map/...
-; map-file-to-memory  unmap-file-from-memory  memory-mapped-file-pointer  memory-mapped-file?
 ; set-alarm!
-; terminal-port?  terminal-name
+; terminal-name
 ; process-fork	process-wait
 ; parent-process-id
 ; process-signal
@@ -258,11 +257,6 @@ C_free_arg_string(char **where) {
 #define C_read(fd, b, n)    C_fix(read(C_unfix(fd), C_data_pointer(b), C_unfix(n)))
 #define C_write(fd, b, n)   C_fix(write(C_unfix(fd), C_data_pointer(b), C_unfix(n)))
 #define C_mkstemp(t)	    C_fix(mktemp(C_c_string(t)))
-
-/* It is assumed that 'int' is-a 'long' */
-#define C_ftell(p)          C_fix(ftell(C_port_file(p)))
-#define C_fseek(p, n, w)    C_mk_nbool(fseek(C_port_file(p), C_num_to_int(n), C_unfix(w)))
-#define C_lseek(fd, o, w)   C_fix(lseek(C_unfix(fd), C_unfix(o), C_unfix(w)))
 
 #define C_flushall()	    C_fix(_flushall())
 
@@ -742,7 +736,7 @@ EOF
 	(##sys#check-string filename 'file-open)
 	(##sys#check-exact flags 'file-open)
 	(##sys#check-exact mode 'file-open)
-	(let ([fd (##core#inline "C_open" (##sys#make-c-string (##sys#expand-home-path filename) 'file-open) flags mode)])
+	(let ([fd (##core#inline "C_open" (##sys#make-c-string filename 'file-open) flags mode)])
 	  (when (eq? -1 fd)
 	    (##sys#update-errno)
 	    (##sys#signal-hook #:file-error 'file-open "cannot open file" filename flags mode) )
@@ -793,64 +787,6 @@ EOF
       (values fd (##sys#substring buf 0 (fx- path-length 1) ) ) ) ) )
 
 
-;;; File attribute access:
-
-(define-foreign-variable _seek_set int "SEEK_SET")
-(define-foreign-variable _seek_cur int "SEEK_CUR")
-(define-foreign-variable _seek_end int "SEEK_END")
-
-(define seek/set _seek_set)
-(define seek/end _seek_end)
-(define seek/cur _seek_cur)
-
-(define (symbolic-link? fname)
-  (##sys#check-string fname 'symbolic-link?)
-  #f)
-
-(let ((stat-type
-       (lambda (name)
-	 (lambda (fname)
-	   (##sys#check-string fname name)
-	   #f))))
-  (set! character-device? (stat-type 'character-device?))
-  (set! block-device? (stat-type 'block-device?))
-  (set! fifo? (stat-type 'fifo?))
-  (set! socket? (stat-type 'socket?)))
-
-(define set-file-position!
-   (lambda (port pos . whence)
-     (let ((whence (if (pair? whence) (car whence) _seek_set)))
-       (##sys#check-exact pos 'set-file-position!)
-       (##sys#check-exact whence 'set-file-position!)
-       (when (negative? pos)
-         (##sys#signal-hook #:bounds-error 'set-file-position! "invalid negative port position" pos port))
-       (unless (cond ((port? port)
-		      (and (eq? (##sys#slot port 7) 'stream)
-			   (##core#inline "C_fseek" port pos whence) ) )
-		     ((fixnum? port)
-		      (##core#inline "C_lseek" port pos whence))
-		     (else
-		      (##sys#signal-hook #:type-error 'set-file-position! "invalid file" port)) )
-	 (posix-error #:file-error 'set-file-position! "cannot set file position" port pos) ) ) ) )
-
-(define file-position
-  (getter-with-setter
-   (lambda (port)
-     (let ((pos (cond ((port? port)
-		       (if (eq? (##sys#slot port 7) 'stream)
-			   (##core#inline "C_ftell" port) 
-			   -1) )
-		      ((fixnum? port)
-		       (##core#inline "C_lseek" port 0 _seek_cur))
-		      (else
-		       (##sys#signal-hook #:type-error 'file-position "invalid file" port)) ) ) )
-       (when (< pos 0)
-	 (posix-error #:file-error 'file-position "cannot retrieve file position of port" port) )
-       pos) )
-   set-file-position!
-   "(file-position port)") )		; doesn't accept WHENCE
-
-
 ;;; Directory stuff:
 
 (define-inline (create-directory-helper name)
@@ -875,7 +811,7 @@ EOF
 (define create-directory
   (lambda (name #!optional parents?)
     (##sys#check-string name 'create-directory)
-    (let ((name (##sys#expand-home-path name)))
+    (let ((name name))
       (if parents?
           (create-directory-helper-parents name)
           (create-directory-helper name))
@@ -884,7 +820,7 @@ EOF
 (define change-directory
   (lambda (name)
     (##sys#check-string name 'change-directory)
-    (let ((sname (##sys#make-c-string (##sys#expand-home-path name) 'change-directory)))
+    (let ((sname (##sys#make-c-string name 'change-directory)))
       (unless (fx= 0 (##core#inline "C_chdir" sname))
 	(##sys#update-errno)
 	(##sys#signal-hook
@@ -1084,7 +1020,7 @@ EOF
   (lambda (fname m)
     (##sys#check-string fname 'change-file-mode)
     (##sys#check-exact m 'change-file-mode)
-    (when (fx< (##core#inline "C_chmod" (##sys#make-c-string (##sys#expand-home-path fname) 'change-file-mode) m) 0)
+    (when (fx< (##core#inline "C_chmod" (##sys#make-c-string fname 'change-file-mode) m) 0)
       (##sys#update-errno)
       (##sys#signal-hook #:file-error 'change-file-mode "cannot change file mode" fname m) ) ) )
 
@@ -1095,7 +1031,7 @@ EOF
 (let ()
   (define (check filename acc loc)
     (##sys#check-string filename loc)
-    (let ([r (fx= 0 (##core#inline "C_test_access" (##sys#make-c-string (##sys#expand-home-path filename) loc) acc))])
+    (let ([r (fx= 0 (##core#inline "C_test_access" (##sys#make-c-string filename loc) acc))])
       (unless r (##sys#update-errno))
       r) )
   (set! file-read-access? (lambda (filename) (check filename _r_ok 'file-read-access?)))
@@ -1278,7 +1214,7 @@ EOF
       (build-exec-argvec loc (and arglst ($quote-args-list arglst exactf)) setarg 1)
       (build-exec-argvec loc envlst setenv 0)
       (##core#inline "C_flushall")
-      (##sys#make-c-string (##sys#expand-home-path filename) loc) ) ) )
+      (##sys#make-c-string filename loc) ) ) )
 
 (define ($exec-teardown loc msg filename res)
   (##sys#update-errno)

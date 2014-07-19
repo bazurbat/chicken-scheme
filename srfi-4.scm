@@ -1,6 +1,6 @@
 ;;;; srfi-4.scm - Homogeneous numeric vectors
 ;
-; Copyright (c) 2008-2014, The Chicken Team
+; Copyright (c) 2008-2014, The CHICKEN Team
 ; Copyright (c) 2000-2007, Felix L. Winkelmann
 ; All rights reserved.
 ;
@@ -653,12 +653,12 @@ EOF
   (##sys#check-input-port port #t 'read-u8vector!)
   (##sys#check-exact start 'read-u8vector!)
   (##sys#check-structure dest 'u8vector 'read-u8vector!)
-  (let ((dest (##sys#slot dest 1)))
-    (when n
-      (##sys#check-exact n 'read-u8vector!)
-      (when (fx> (fx+ start n) (##sys#size dest))
-	(set! n (fx- (##sys#size dest) start))))
-    (##sys#read-string! n dest port start) ) )
+  (when n (##sys#check-exact n 'read-u8vector!))
+  (let* ((dest (##sys#slot dest 1))
+	 (size (##sys#size dest)))
+    (unless (and n (fx<= (fx+ start n) size))
+      (set! n (fx- size start)))
+    (##sys#read-string! n dest port start)))
 
 (define read-u8vector
   (let ()

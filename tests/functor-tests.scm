@@ -132,6 +132,68 @@
  99)
 
 
+;; Test optional functor arguments
+
+(functor (greet ((X default-writer) (write-greeting))) *
+  (import scheme X)
+  (define (greetings) (write-greeting 'Hello!)))
+
+(module default-writer (write-greeting)
+  (import scheme)
+  (define write-greeting list))
+
+(module writer (write-greeting)
+  (import scheme)
+  (define write-greeting vector))
+
+(module greet1 = (greet writer))
+(module greet2 = (greet))
+
+(test-equal
+ "optional functor argument #1"
+ (module m2 ()
+	 (import greet1)
+	 (greetings))
+ '#(Hello!))
+
+(test-equal
+ "optional functor argument #2"
+ (module m3 ()
+	 (import greet2)
+	 (greetings))
+ '(Hello!))
+
+
+;; Optional functor syntax with builtin ("primitive") modules:
+
+(functor (wrapper ((X scheme) (vector))) *
+  (import (except scheme vector) X)
+  (define (wrap x) (vector x)))
+
+(module default-wrapper (vector)
+  (import scheme))
+
+(module list-wrapper (vector)
+  (import (rename (only scheme list) (list vector))))
+
+(module lwrap = (wrapper list-wrapper))
+(module vwrap = (wrapper))
+
+(test-equal
+ "primitive optional functor argument #1"
+ (module m4 ()
+	 (import lwrap)
+	 (wrap 99))
+ '(99))
+
+(test-equal
+ "primitive optional functor argument #2"
+ (module m5 ()
+	 (import vwrap)
+	 (wrap 99))
+ '#(99))
+
+
 ;;
 
 (test-end)

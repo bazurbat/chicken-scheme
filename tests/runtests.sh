@@ -52,7 +52,7 @@ CHICKEN_INSTALL=${TEST_DIR}/../chicken-install
 CHICKEN_UNINSTALL=${TEST_DIR}/../chicken-uninstall
 ASMFLAGS=
 FAST_OPTIONS="-O5 -d0 -b -disable-interrupts"
-COMPILE_OPTIONS="-compiler ${TEST_DIR}/../chicken -v -I${TEST_DIR}/.. -L${TEST_DIR}/.. -include-path ${TEST_DIR}/.."
+COMPILE_OPTIONS="-compiler ${TEST_DIR}/../chicken -v -I${TEST_DIR}/.. -L${TEST_DIR}/.. -rpath ${TEST_DIR}/.. -include-path ${TEST_DIR}/.."
 
 TEST_DIR_SEXPR=`../csi -n -include-path .. -e "(use posix) (write (current-directory))"`
 SETUP_PREFIX="-e (use files setup-api)"
@@ -70,6 +70,8 @@ interpret="../csi -n -include-path ${TEST_DIR}/.."
 
 rm -f *.exe *.so *.o *.import.* a.out ../foo.import.*
 
+echo "======================================== version tests ..."
+$interpret -s version-tests.scm
 
 echo "======================================== compiler tests ..."
 $compile compiler-tests.scm
@@ -396,10 +398,11 @@ $compile -e embedded3.c embedded4.scm
 echo "======================================== private repository test ..."
 mkdir -p tmp
 $compile private-repository-test.scm -private-repository -o tmp/xxx
-tmp/xxx $PWD/tmp
-PATH=$PWD/tmp:$PATH xxx $PWD/tmp
+tmp/xxx ${TEST_DIR}/tmp
+# This MUST be `pwd`: ${PWD} is not portable, and ${TEST_DIR} breaks mingw-msys
+PATH=`pwd`/tmp:$PATH xxx ${TEST_DIR}/tmp
 # this may crash, if the PATH contains a non-matching libchicken.dll on Windows:
-#PATH=$PATH:$PWD/tmp xxx $PWD/tmp
+#PATH=$PATH:${TEST_DIR}/tmp xxx ${TEST_DIR}/tmp
 rm -fr rev-app rev-app-2 reverser/*.import.* reverser/*.so
 
 echo "======================================== reinstall tests"

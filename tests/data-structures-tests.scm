@@ -7,6 +7,20 @@
     ((_ expr)
      (assert (handle-exceptions _ #t expr #f)))))
 
+(assert (equal? 'bar (alist-ref 'foo '((foo . bar)))))
+(assert (not (alist-ref 'foo '())))
+(assert (not (alist-ref 'foo '((bar . foo)))))
+(assert-error (alist-ref 'foo 'bar))
+(assert-error (alist-ref 'foo '(bar)))
+
+(let ((cmp (lambda (x y) (eqv? x y))))
+  (assert (equal? 'bar (alist-ref 'foo '((foo . bar)) cmp)))
+  (assert (not (alist-ref 'foo '() cmp)))
+  (assert (not (alist-ref 'foo '((bar . foo)) cmp)))
+  (assert-error (alist-ref 'foo 'bar cmp))
+  (assert-error (alist-ref 'foo '(bar) cmp)))
+
+
 (let ((alist '((foo . 123) ("bar" . "baz"))))
   (alist-update! 'foo 999 alist)
   (assert (= (alist-ref 'foo alist) 999))
