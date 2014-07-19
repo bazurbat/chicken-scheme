@@ -7593,6 +7593,22 @@ C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word
         return 2;
       }
     }
+#ifdef _MSC_VER
+    else if (len == 7) {
+        if ((*str == '+' || *str == '-') &&
+            C_strchr("1", *(str+1)) &&
+            C_strchr(".", *(str+2)) &&
+            C_strchr("#", *(str+3)) &&
+            C_strchr("I", *(str+4)) &&
+            C_strchr("N", *(str+5))) {
+            if (C_strchr("F", *(str+6)))
+                *flo = INFINITY;
+            else if (C_strchr("D", *(str+6)))
+                *flo = NAN;
+            return 2;
+        }
+    }
+#endif
     /* Prevent C parser from accepting things like "-inf" on its own... */
     for(n = 0; n < len; ++n) {
       if (C_strchr("+-0123456789e.", *(str+n)) == NULL)
