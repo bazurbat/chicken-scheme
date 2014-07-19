@@ -14,12 +14,17 @@ set(CHICKEN_OPTIONS -ignore-repository
     -include-path ${chicken_SOURCE_DIR})
 set(CHICKEN_INCLUDE_DIRS ${chicken_SOURCE_DIR})
 
+# Helper script for stripping absolute paths and converting CRLFs
 set(CHICKEN_RUN_TRIM ${CHICKEN_TMP_DIR}/ChickenTrim.cmake)
 set(CMAKE_CONFIGURABLE_FILE_CONTENT
 "foreach(f \${FILES})
     file(READ \${f} input_data)
-    string(REGEX REPLACE \"\${PATTERN}\" \"\" output_data \"\${input_data}\")
-    file(WRITE \${f}.trimmed \${output_data})
+    if(PATTERN)
+        string(REGEX REPLACE \"\${PATTERN}\" \"\" output_data \"\${input_data}\")
+    else()
+        set(output_data \"\${input_data}\")
+    endif()
+    file(WRITE \${f}.t \"\${output_data}\")
 endforeach()")
 configure_file(${CMAKE_ROOT}/Modules/CMakeConfigurableFile.in
     ${CHICKEN_RUN_TRIM} @ONLY)
@@ -38,7 +43,8 @@ if(WIN32)
     add_custom_target(copy_libchicken
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:libchicken>
-            ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/$<TARGET_FILE_NAME:libchicken>)
+            ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/$<TARGET_FILE_NAME:libchicken>
+        DEPENDS libchicken VERBATIM)
     add_dependencies(check copy_libchicken)
 endif()
 
@@ -78,11 +84,42 @@ function(add_compiled_test name)
     set_property(TARGET ${name} PROPERTY FOLDER Tests)
 endfunction()
 
-file(COPY compiler.scm re-tests.txt meta-syntax-test.scm r4rstest.scm
-    scrutiny.expected scrutiny-2.expected dwindtst.expected r4rstest.out
-    import-library-test1.scm arithmetic-test.32.expected
+set(used_FILES
+    compiler.scm
+    import-library-test1.scm
+    meta-syntax-test.scm
+    r4rstest.scm
+    re-tests.txt
+)
+
+set(expected_FILES
+    arithmetic-test.32.expected
     arithmetic-test.64.expected
-    DESTINATION .)
+    dwindtst.expected
+    r4rstest.out
+    scrutiny-2.expected
+    scrutiny.expected
+)
+set(expected_FILES_prepared "")
+
+file(COPY ${used_FILES} DESTINATION .)
+
+foreach(f ${expected_FILES})
+    list(APPEND expected_FILES_prepared ${f}.t)
+    add_custom_command(OUTPUT ${f}
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_CURRENT_SOURCE_DIR}/${f}
+            ${CMAKE_CURRENT_BINARY_DIR}/${f}
+        DEPENDS ${f} VERBATIM)
+    add_custom_command(OUTPUT ${f}.t
+        COMMAND ${CMAKE_COMMAND} "-DFILES=${f}" -P ${CHICKEN_RUN_TRIM}
+        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${f} VERBATIM)
+endforeach()
+
+add_custom_target(prepare_expected_files
+    DEPENDS ${expected_FILES_prepared})
+
+add_dependencies(check prepare_expected_files)
 
 # version tests
 
@@ -113,7 +150,7 @@ add_custom_target(scrutiny-tests-build
     DEPENDS ${scrutiny_SOURCES})
 
 add_custom_command(
-    OUTPUT scrutiny.out.trimmed scrutiny-2.out.trimmed
+    OUTPUT scrutiny.out.t scrutiny-2.out.t
     COMMAND ${CMAKE_COMMAND}
         "-DFILES=scrutiny.out;scrutiny-2.out"
         "-DPATTERN=${CMAKE_CURRENT_SOURCE_DIR}/"
@@ -121,16 +158,13 @@ add_custom_command(
     DEPENDS scrutiny-tests-build VERBATIM)
 
 add_custom_target(scrutiny-tests-prepare
-    DEPENDS scrutiny.out.trimmed scrutiny-2.out.trimmed)
+    DEPENDS scrutiny.out.t scrutiny-2.out.t)
 add_dependencies(check scrutiny-tests-prepare)
 
 add_test(NAME scrutiny COMMAND ${CMAKE_COMMAND} -E compare_files
-    scrutiny.out.trimmed scrutiny.expected)
+    scrutiny.out.t scrutiny.expected.t)
 add_test(NAME scrutiny-2 COMMAND ${CMAKE_COMMAND} -E compare_files
-    scrutiny-2.out.trimmed scrutiny-2.expected)
-
-set_tests_properties(scrutiny scrutiny-2 PROPERTIES REQUIRED_FILES
-    "scrutiny.out.trimmed;scrutiny-2.out.trimmed")
+    scrutiny-2.out.t scrutiny-2.expected.t)
 
 add_compiled_test(scrutiny-3 scrutiny-tests-3.scm
     OPTIONS -specialize -block)
@@ -206,11 +240,11 @@ add_interpreted_test(dynamic-wind SCRIPT dwindtst.scm)
 add_compiled_test(dynamic-wind dwindtst.scm)
 
 add_test(NAME dynamic-wind-out COMMAND ${CMAKE_COMMAND} -E compare_files
-    dynamic-wind.out dwindtst.expected)
+    dynamic-wind.out dwindtst.expected.t)
 set_tests_properties(dynamic-wind-out PROPERTIES DEPENDS dynamic-wind)
 
 add_test(NAME dynamic-wind-i-out COMMAND ${CMAKE_COMMAND} -E compare_files
-    dynamic-wind-i.out dwindtst.expected)
+    dynamic-wind-i.out dwindtst.expected.t)
 set_tests_properties(dynamic-wind-i-out PROPERTIES DEPENDS dynamic-wind-i)
 
 # takes very long time
@@ -342,7 +376,7 @@ add_interpreted_test(r4rs SCRIPT r4rstest.scm -i
     -e "(set! ##sys#procedure->string (constantly \"#<procedure>\"))")
 
 add_test(NAME r4rs-out COMMAND ${CMAKE_COMMAND} -E compare_files
-    r4rs-i.out r4rstest.out)
+    r4rs-i.out r4rstest.out.t)
 set_tests_properties(r4rs-out PROPERTIES DEPENDS r4rs)
 
 # r5rs pitfalls
@@ -453,7 +487,10 @@ add_compiled_test(posix posix-tests.scm)
 
 # signal tests
 
-add_compiled_test(signal signal-tests.scm)
+# causes debugger hook
+if(NOT MSVC)
+    add_compiled_test(signal signal-tests.scm)
+endif()
 
 # regular expression tests
 
