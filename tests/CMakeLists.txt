@@ -33,12 +33,13 @@ if(WIN32)
 endif()
 
 function(add_chicken_test name)
-    cmake_parse_arguments(test "" "PATH;OUTPUT_FILE" "" ${ARGN})
+    cmake_parse_arguments(test "" "PATH;OUTPUT_FILE" "ENVIRONMENT" ${ARGN})
 
     add_test(NAME ${name} COMMAND ${CMAKE_COMMAND}
         "-DCHICKEN_REPOSITORY=${CHICKEN_LOCAL_REPOSITORY}/$<CONFIGURATION>"
         "-DCOMMAND=${test_UNPARSED_ARGUMENTS}"
         "-DPATH=${test_PATH}"
+        "-DENVIRONMENT=${test_ENVIRONMENT}"
         "-DOUTPUT_FILE=${test_OUTPUT_FILE}"
         -P ${CHICKEN_RUN})
 endfunction()
@@ -589,15 +590,44 @@ endif()
 
 # reinstall tests
 
-# NOTE: these are pretty nasty
+set(CSC_OPTIONS -compiler $<TARGET_FILE:chicken> -v
+    -I${chicken_SOURCE_DIR}
+    -L${chicken_SOURCE_DIR}
+    -rpath ${chicken_SOURCE_DIR}
+    -include-path ${chicken_SOURCE_DIR})
+_chicken_join(CSC_OPTIONS ${CSC_OPTIONS})
 
-# add_chicken_test(reinstall-uninstall $<TARGET_FILE:chicken-uninstall>
-#     -force reverser)
-#
-# add_chicken_test(reinstall-install $<TARGET_FILE:chicken-install>
-#     -t local -l ${CMAKE_CURRENT_BINARY_DIR} -csi $<TARGET_FILE:csi>
-#     reverser:1.0)
+set(CSI_OPTIONS "-e (use files setup-api)"
+    "-e (register-program \"csc\" \"$<TARGET_FILE:csc>\")"
+    "-e (register-program \"chicken\" \"$<TARGET_FILE:chicken>\")"
+    "-e (register-program \"csi\" \"$<TARGET_FILE:csi>\")")
+_chicken_join(CSI_OPTIONS ${CSI_OPTIONS})
+
+add_chicken_test(reinstall-uninstall $<TARGET_FILE:chicken-uninstall>
+    -force reverser)
+
+add_chicken_test(reinstall-install $<TARGET_FILE:chicken-install>
+    -t local -l ${CMAKE_CURRENT_SOURCE_DIR} -csi $<TARGET_FILE:csi> reverser:1.0
+    ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS} CSI_OPTIONS=${CSI_OPTIONS})
+
+set_tests_properties(reinstall-install PROPERTIES DEPENDS reinstall-uninstall)
+
+add_interpreted_test(reinstall-rev-app
+    ${CMAKE_CURRENT_SOURCE_DIR}/rev-app.scm "1.0")
+
+set_tests_properties(reinstall-rev-app-i PROPERTIES DEPENDS reinstall-install)
+
+add_chicken_test(reinstall-force $<TARGET_FILE:chicken-install>
+    -t local -l ${CMAKE_CURRENT_SOURCE_DIR} -reinstall -force -csi $<TARGET_FILE:csi>
+    ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS} CSI_OPTIONS=${CSI_OPTIONS})
+
+set_tests_properties(reinstall-force PROPERTIES DEPENDS reinstall-rev-app)
+
+add_interpreted_test(reinstall-rev-app-2
+    ${CMAKE_CURRENT_SOURCE_DIR}/rev-app.scm "1.0")
+
+set_tests_properties(reinstall-rev-app-2-i PROPERTIES DEPENDS reinstall-force)
 
 # deployment tests
 
-# NOTE: these are too
+# TODO
