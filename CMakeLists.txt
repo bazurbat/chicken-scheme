@@ -236,3 +236,18 @@ install(EXPORT chicken-targets
     NAMESPACE chicken_)
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
+
+set(CPACK_PACKAGE_NAME "CHICKEN")
+set(CPACK_PACKAGE_VERSION_MAJOR 4)
+set(CPACK_PACKAGE_VERSION_MINOR 9)
+set(CPACK_PACKAGE_VERSION_PATCH 1)
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A practical and portable Scheme system")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+
+if(UNIX)
+    set(CPACK_GENERATOR STGZ)
+elseif(MSVC)
+    set(CPACK_GENERATOR ZIP)
+endif()
+
+include(CPack)
