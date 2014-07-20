@@ -432,12 +432,14 @@ function(add_chicken_library name)
     add_library(${name} ${library_type} ${sources})
     _chicken_target_link_libraries(${name})
 
-    if(CHICKEN_CROSS)
-        set_property(TARGET ${name} PROPERTY
-            LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_LOCAL_REPOSITORY})
-    else()
+    set_property(TARGET ${name} PROPERTY
+        LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_LOCAL_REPOSITORY})
+
+    # bring compiled libraries back to build tree, necessary when using
+    # require-library in ...-for-syntax forms
+    if(CHICKEN_USE_LOCAL_LIBRARIES)
         add_custom_target(copy_${name} ALL COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:${name}> ${CHICKEN_LOCAL_REPOSITORY}/$<TARGET_FILE_NAME:${name}>
+            $<TARGET_FILE:${name}> ${CMAKE_CURRENT_SOURCE_DIR}
             DEPENDS ${name} VERBATIM)
     endif()
 
