@@ -26,48 +26,6 @@ set(CHICKEN_TMP_DIR ${CMAKE_BINARY_DIR}/_chicken)
 set(CHICKEN_IMPORT_LIBRARY_DIR ${CHICKEN_TMP_DIR}/import)
 set(CHICKEN_LOCAL_REPOSITORY ${CHICKEN_TMP_DIR}/repository)
 
-set(CHICKEN_RUN ${CHICKEN_TMP_DIR}/ChickenRun.cmake)
-
-set(CMAKE_CONFIGURABLE_FILE_CONTENT
-"if(CHICKEN_REPOSITORY)
-  set(ENV{CHICKEN_REPOSITORY} \${CHICKEN_REPOSITORY})
-endif()
-if(PATH)
-  file(TO_CMAKE_PATH \"\$ENV{PATH}\" path)
-  list(INSERT path 0 \"\${PATH}\")
-  file(TO_NATIVE_PATH \"\${path}\" path)
-  set(ENV{PATH} \"\${path}\")
-  #message(\"P: \$ENV{PATH}\")
-endif()
-foreach(e \${ENVIRONMENT})
-    string(FIND \${e} = k)
-    math(EXPR v \"\${k} + 1\")
-    string(SUBSTRING \${e} 0 \${k} key)
-    string(SUBSTRING \${e} \${v} -1 val)
-    message(\"e: \${e}: \${s} \${key} \${val}\")
-    set(ENV{\${key}} \"\${val}\")
-endforeach()
-#message(\"CHICKEN: \${COMMAND}\")
-if(OUTPUT_FILE)
-    if(NOT IS_ABSOLUTE OUTPUT_FILE)
-        set(OUTPUT_FILE \${CMAKE_CURRENT_BINARY_DIR}/\${OUTPUT_FILE})
-    endif()
-    execute_process(COMMAND \${COMMAND}
-        RESULT_VARIABLE command_result
-        OUTPUT_VARIABLE command_output
-        ERROR_VARIABLE command_output)
-    file(WRITE \${OUTPUT_FILE} \"\${command_output}\")
-else()
-    execute_process(COMMAND \${COMMAND}
-        RESULT_VARIABLE command_result)
-endif()
-if(command_result)
-    message(\"\${command_output}\")
-    message(FATAL_ERROR \"Command failed: \${command_result}\")
-endif()")
-configure_file(${CMAKE_ROOT}/Modules/CMakeConfigurableFile.in
-    ${CHICKEN_RUN} @ONLY)
-
 # It seems there is no standard functions for this.
 function(_chicken_join out_var)
     set(result "")
