@@ -100,6 +100,7 @@ endforeach()
 
 install(TARGETS libchicken chicken csi ${utility_PROGRAMS}
     EXPORT chicken-targets
+    ARCHIVE DESTINATION ${INSTALL_LIBDIR}
     LIBRARY DESTINATION ${INSTALL_LIBDIR}
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
@@ -158,6 +159,7 @@ add_dependencies(chicken-status ${setupapi_MODULES})
 
 foreach(module ${setupapi_MODULES})
     install(TARGETS ${module} ${module}.import
+        ARCHIVE DESTINATION ${INSTALL_EGGDIR}
         LIBRARY DESTINATION ${INSTALL_EGGDIR})
 endforeach()
 
