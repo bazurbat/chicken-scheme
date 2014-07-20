@@ -195,6 +195,11 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CHICKEN_C_FLAGS_CONFIG ${CMAKE_C_FLAGS_DEBUG})
 endif()
+
+foreach(D ${CHICKEN_DEFINITIONS})
+    list(INSERT CHICKEN_C_FLAGS_CONFIG 0 -D${D})
+endforeach()
+
 _chicken_join(CHICKEN_C_FLAGS_CONFIG ${CHICKEN_C_FLAGS_CONFIG} ${CHICKEN_C_FLAGS})
 
 function(_chicken_find_apply_hack)
