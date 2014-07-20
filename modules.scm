@@ -681,59 +681,49 @@
       (for-each
        (lambda (spec)
 	 (let-values (((vsv vss vsi) (import-spec spec)))
-	   (let ((prims '()))
-	     (dd `(IMPORT: ,loc))
-	     (dd `(V: ,(if cm (module-name cm) '<toplevel>) ,(map-se vsv)))
-	     (dd `(S: ,(if cm (module-name cm) '<toplevel>) ,(map-se vss)))
-	     (##sys#mark-imported-symbols vsv) ; mark imports as ##core#aliased
-	     (for-each
-	      (lambda (imp)
-		(let* ((id (car imp))
-		       (aid (cdr imp))
-		       (prim (getp aid '##core#primitive)))
-		  (when prim
-		    (set! prims (cons imp prims)))
-		  (and-let* ((a (assq id (import-env)))
-			     ((not (eq? aid (cdr a)))))
-		    (##sys#notice "re-importing already imported identifier" id))))
-	      vsv)
-	     (for-each
-	      (lambda (imp)
-		(and-let* ((a (assq (car imp) (macro-env)))
-			   ((not (eq? (cdr imp) (cdr a)))))
-		  (##sys#notice "re-importing already imported syntax" (car imp))) )
-	      vss)
-	     (when reexp?
-	       (unless cm
-		 (##sys#syntax-error-hook loc "`reexport' only valid inside a module"))
-	       (let ((el (module-export-list cm)))
-		 (cond ((eq? #t el)
-			(set-module-sexports! cm (append vss (module-sexports cm)))
-			(set-module-exist-list!
-			 cm
-			 (append (module-exist-list cm)
-				 (map car vsv)
-				 (map car vss))))
-		       (else
-			(set-module-export-list!
-			 cm
-			 (append
-			  (let ((xl (module-export-list cm)))
-			    (if (eq? #t xl) '() xl))
-			  (map car vsv)
-			  (map car vss))))))
-	       (set-module-iexports! 
-		cm
-		(merge-se (module-iexports cm) vsi))
-	       (when (pair? prims)
-		 (set-module-meta-expressions! 
-		  cm
-		  (append
-		   (module-meta-expressions cm)
-		   `((##sys#mark-primitive ',prims)))))
-	       (dm "export-list: " (module-export-list cm)))
-	     (import-env (append vsv (import-env)))
-	     (macro-env (append vss (macro-env))))))
+	   (dd `(IMPORT: ,loc))
+	   (dd `(V: ,(if cm (module-name cm) '<toplevel>) ,(map-se vsv)))
+	   (dd `(S: ,(if cm (module-name cm) '<toplevel>) ,(map-se vss)))
+	   (##sys#mark-imported-symbols vsv) ; mark imports as ##core#aliased
+	   (for-each
+	    (lambda (imp)
+	      (and-let* ((id (car imp))
+			 (a (assq id (import-env)))
+			 (aid (cdr imp))
+			 ((not (eq? aid (cdr a)))))
+		(##sys#notice "re-importing already imported identifier" id)))
+	    vsv)
+	   (for-each
+	    (lambda (imp)
+	      (and-let* ((a (assq (car imp) (macro-env)))
+			 ((not (eq? (cdr imp) (cdr a)))))
+		(##sys#notice "re-importing already imported syntax" (car imp))))
+	    vss)
+	   (when reexp?
+	     (unless cm
+	       (##sys#syntax-error-hook loc "`reexport' only valid inside a module"))
+	     (let ((el (module-export-list cm)))
+	       (cond ((eq? #t el)
+		      (set-module-sexports! cm (append vss (module-sexports cm)))
+		      (set-module-exist-list!
+		       cm
+		       (append (module-exist-list cm)
+			       (map car vsv)
+			       (map car vss))))
+		     (else
+		      (set-module-export-list!
+		       cm
+		       (append
+			(let ((xl (module-export-list cm)))
+			  (if (eq? #t xl) '() xl))
+			(map car vsv)
+			(map car vss))))))
+	     (set-module-iexports!
+	      cm
+	      (merge-se (module-iexports cm) vsi))
+	     (dm "export-list: " (module-export-list cm)))
+	   (import-env (append vsv (import-env)))
+	   (macro-env (append vss (macro-env)))))
        (cdr x))
       '(##core#undefined))))
 

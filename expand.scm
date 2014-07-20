@@ -921,11 +921,6 @@
 
 ;;; Macro definitions:
 
-(define (##sys#mark-primitive prims)
-  (for-each
-   (lambda (a) (putp (cdr a) '##core#primitive (car a)))
-   prims))
-
 (##sys#extend-macro-environment
  'import '() 
  (##sys#er-transformer 
