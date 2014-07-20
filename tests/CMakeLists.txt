@@ -93,10 +93,15 @@ foreach(f ${expected_FILES})
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${f} VERBATIM)
 endforeach()
 
-add_custom_target(prepare_expected_files
-    DEPENDS ${expected_FILES_prepared})
+add_custom_command(OUTPUT ${CHICKEN_LOCAL_REPOSITORY}/types.db
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/types.db ${CHICKEN_LOCAL_REPOSITORY}
+        DEPENDS ${CMAKE_SOURCE_DIR}/types.db VERBATIM)
 
-add_dependencies(tests prepare_expected_files)
+add_custom_target(prepare-tests
+    DEPENDS ${expected_FILES_prepared} ${CHICKEN_LOCAL_REPOSITORY}/types.db)
+
+add_dependencies(tests prepare-tests)
 
 # version tests
 
@@ -590,10 +595,20 @@ endif()
 
 # reinstall tests
 
+add_custom_command(OUTPUT rev-app.scm
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/rev-app.scm ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS rev-app.scm VERBATIM)
+
+add_custom_target(prepare-install-tests
+    DEPENDS rev-app.scm)
+
+add_dependencies(tests prepare-install-tests)
+
 set(CSC_OPTIONS -compiler $<TARGET_FILE:chicken> -v
-    -I${chicken_SOURCE_DIR}
-    -L${chicken_SOURCE_DIR}
-    -rpath ${chicken_SOURCE_DIR}
+    -I${chicken_SOURCE_DIR} -I${chicken_BINARY_DIR}
+    -L${chicken_SOURCE_DIR} -L${chicken_BINARY_DIR}
+    -rpath ${chicken_BINARY_DIR}
     -include-path ${chicken_SOURCE_DIR})
 _chicken_join(CSC_OPTIONS ${CSC_OPTIONS})
 
@@ -613,7 +628,7 @@ add_chicken_test(reinstall-install $<TARGET_FILE:chicken-install>
 set_tests_properties(reinstall-install PROPERTIES DEPENDS reinstall-uninstall)
 
 add_interpreted_test(reinstall-rev-app
-    ${CMAKE_CURRENT_SOURCE_DIR}/rev-app.scm "1.0")
+    rev-app.scm 1.0)
 
 set_tests_properties(reinstall-rev-app-i PROPERTIES DEPENDS reinstall-install)
 
@@ -624,10 +639,43 @@ add_chicken_test(reinstall-force $<TARGET_FILE:chicken-install>
 set_tests_properties(reinstall-force PROPERTIES DEPENDS reinstall-rev-app)
 
 add_interpreted_test(reinstall-rev-app-2
-    ${CMAKE_CURRENT_SOURCE_DIR}/rev-app.scm "1.0")
+    ${CMAKE_CURRENT_SOURCE_DIR}/rev-app.scm 1.0)
 
 set_tests_properties(reinstall-rev-app-2-i PROPERTIES DEPENDS reinstall-force)
 
 # deployment tests
 
-# TODO
+# TODO: figure out ORIGIN stuff
+
+add_chicken_test(deployment-install $<TARGET_FILE:chicken-install>
+    -t local -l ${CMAKE_CURRENT_SOURCE_DIR} reverser
+    ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS} CSI_OPTIONS=${CSI_OPTIONS})
+
+set_tests_properties(deployment-install PROPERTIES
+    DEPENDS reinstall-uninstall)
+
+add_chicken_test(deployment-deploy $<TARGET_FILE:csc>
+    -deploy rev-app.scm
+    ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS} CSI_OPTIONS=${CSI_OPTIONS})
+
+set_tests_properties(deployment-deploy PROPERTIES DEPENDS deployment-install)
+
+add_chicken_test(deployment-prefix $<TARGET_FILE:chicken-install>
+    -t local -l ${CMAKE_CURRENT_SOURCE_DIR} -deploy -prefix rev-app reverser
+    ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS} CSI_OPTIONS=${CSI_OPTIONS})
+
+set_tests_properties(deployment-prefix PROPERTIES
+    DEPENDS deployment-deploy)
+
+add_chicken_test(deployment-run-1
+    ${CMAKE_CURRENT_BINARY_DIR}/rev-app/rev-app 1.1)
+
+add_test(NAME deployment-stub-copy COMMAND
+    ${CMAKE_COMMAND} -E copy_directory rev-app rev-app-2)
+
+set_tests_properties(deployment-stub-copy PROPERTIES DEPENDS deployment-run-1)
+
+add_chicken_test(deployment-run-2
+    ${CMAKE_CURRENT_BINARY_DIR}/rev-app-2/rev-app 1.1)
+
+set_tests_properties(deployment-run-2 PROPERTIES DEPENDS deployment-stub-copy)
