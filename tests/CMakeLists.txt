@@ -46,7 +46,7 @@ endfunction()
 function(add_interpreted_test name)
     cmake_parse_arguments(test "" "SCRIPT;WORKING_DIRECTORY" "" ${ARGN})
 
-    set(command $<TARGET_FILE:csi> -bnq -R chicken-syntax
+    set(command $<TARGET_FILE:csi> -bnq
         -I ${CMAKE_CURRENT_SOURCE_DIR}
         -I ${CMAKE_CURRENT_BINARY_DIR})
 
