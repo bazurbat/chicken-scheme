@@ -1,6 +1,23 @@
-# - Chicken Use Module
+# - Chicken Use module
 
 include(CMakeParseArguments)
+include(FeatureSummary)
+include(FindPackageHandleStandardArgs)
+
+option(CHICKEN_BUILD_IMPORTS "Compile generated import libraries" YES)
+option(CHICKEN_EMIT_TYPES "Generate files with type declarations" NO)
+option(CHICKEN_EMIT_INLINES "Generate files with globally inlinable procedures" NO)
+option(CHICKEN_EXTRACT_DEPENDS "Automatically extract source file dependencies" NO)
+mark_as_advanced(CHICKEN_EMIT_TYPES CHICKEN_EMIT_INLINES CHICKEN_EXTRACT_DEPENDS)
+
+if(CHICKEN_HOST_SYSTEM STREQUAL CHICKEN_TARGET_SYSTEM)
+    set(CHICKEN_CROSS 0)
+else()
+    set(CHICKEN_CROSS 1)
+endif()
+
+# used internally for build-specific files
+set(CHICKEN_TMP_DIR ${CMAKE_BINARY_DIR}/_chicken)
 
 # The generated import libraries are collected into these directories which are
 # also added as include path to every command. Useful when compiling multiple
@@ -8,6 +25,40 @@ include(CMakeParseArguments)
 # along with dependencies and add include paths manually.
 set(CHICKEN_IMPORT_LIBRARY_DIR ${CHICKEN_TMP_DIR}/import)
 set(CHICKEN_LOCAL_REPOSITORY ${CHICKEN_TMP_DIR}/repository)
+
+set(CHICKEN_RUN ${CHICKEN_TMP_DIR}/ChickenRun.cmake)
+
+set(CMAKE_CONFIGURABLE_FILE_CONTENT
+"if(CHICKEN_REPOSITORY)
+  set(ENV{CHICKEN_REPOSITORY} \${CHICKEN_REPOSITORY})
+endif()
+if(PATH)
+  file(TO_CMAKE_PATH \"\$ENV{PATH}\" path)
+  list(INSERT path 0 \"\${PATH}\")
+  file(TO_NATIVE_PATH \"\${path}\" path)
+  set(ENV{PATH} \"\${path}\")
+  #message(\"P: \$ENV{PATH}\")
+endif()
+#message(\"CHICKEN: \${COMMAND}\")
+if(OUTPUT_FILE)
+    if(NOT IS_ABSOLUTE OUTPUT_FILE)
+        set(OUTPUT_FILE \${CMAKE_CURRENT_BINARY_DIR}/\${OUTPUT_FILE})
+    endif()
+    execute_process(COMMAND \${COMMAND}
+        RESULT_VARIABLE command_result
+        OUTPUT_VARIABLE command_output
+        ERROR_VARIABLE command_output)
+    file(WRITE \${OUTPUT_FILE} \"\${command_output}\")
+else()
+    execute_process(COMMAND \${COMMAND}
+        RESULT_VARIABLE command_result)
+endif()
+if(command_result)
+    message(\"\${command_output}\")
+    message(FATAL_ERROR \"Command failed: \${command_result}\")
+endif()")
+configure_file(${CMAKE_ROOT}/Modules/CMakeConfigurableFile.in
+    ${CHICKEN_RUN} @ONLY)
 
 # It seems there is no standard functions for this.
 function(_chicken_join out_var)
@@ -135,6 +186,8 @@ macro(_chicken_command_add_include_paths)
 
     # then, search collected import libraries
     list(APPEND include_paths ${CHICKEN_IMPORT_LIBRARY_DIR})
+
+    list(APPEND include_paths ${CHICKEN_DATA_DIR})
 
     # then, try to add paths from user environment
     foreach(path $ENV{CHICKEN_INCLUDE_PATH})
@@ -379,8 +432,14 @@ function(add_chicken_library name)
     add_library(${name} ${library_type} ${sources})
     _chicken_target_link_libraries(${name})
 
-    set_property(TARGET ${name} PROPERTY
-        LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_LOCAL_REPOSITORY})
+    if(CHICKEN_CROSS)
+        set_property(TARGET ${name} PROPERTY
+            LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_LOCAL_REPOSITORY})
+    else()
+        add_custom_target(copy_${name} ALL COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:${name}> ${CHICKEN_LOCAL_REPOSITORY}/$<TARGET_FILE_NAME:${name}>
+            DEPENDS ${name} VERBATIM)
+    endif()
 
     if(library_MODULE)
         set_target_properties(${name} PROPERTIES
@@ -414,8 +473,11 @@ function(add_chicken_module name)
                 SOURCES ${CMAKE_CURRENT_BINARY_DIR}/${import}.scm)
             # add_dependencies(${import} ${name})
             add_dependencies(${name} ${import})
-            set_property(TARGET ${import} PROPERTY
-                LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_LOCAL_REPOSITORY})
+
+            if(CHICKEN_CROSS)
+                set_property(TARGET ${import} PROPERTY
+                    LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_LOCAL_REPOSITORY})
+            endif()
         endforeach()
     endif()
 

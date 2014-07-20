@@ -1,27 +1,21 @@
-# - Find Chicken
+# - Find Chicken module
 
-include(FindPackageMessage)
-include(FindPackageHandleStandardArgs)
 include(FeatureSummary)
-
-# Always enable C first to be sure various cached variables are in place which
-# might be used later in scripts.
-enable_language(C)
+include(FindPackageHandleStandardArgs)
+include(FindPackageMessage)
 
 set_package_properties(Chicken PROPERTIES
     DESCRIPTION "A practical and portable Scheme system"
     URL "http://call-cc.org")
 
+# Always enable C first to be sure various cached variables are in place which
+# might be used later in scripts.
+enable_language(C)
+
 # Used for guessing repository location if everything else fails.
 set(CHICKEN_API_VERSION 7 CACHE STRING
     "Chicken API version")
 mark_as_advanced(CHICKEN_API_VERSION)
-
-option(CHICKEN_BUILD_IMPORTS "Compile generated import libraries" YES)
-option(CHICKEN_EMIT_TYPES "Generate files with type declarations" NO)
-option(CHICKEN_EMIT_INLINES "Generate files with globally inlinable procedures" NO)
-option(CHICKEN_EXTRACT_DEPENDS "Automatically extract source file dependencies" NO)
-mark_as_advanced(CHICKEN_EMIT_TYPES CHICKEN_EMIT_INLINES CHICKEN_EXTRACT_DEPENDS)
 
 # There are 3 usual settings for system variables:
 # 1) building Chicken for the current machine - do not change anything
@@ -34,9 +28,6 @@ mark_as_advanced(CHICKEN_EMIT_TYPES CHICKEN_EMIT_INLINES CHICKEN_EXTRACT_DEPENDS
 # More complex combinations are possible. Specifically: source files are
 # generated for the target system, using the host system Chicken and built
 # by system cross-compiler (linked with its libchicken).
-
-# used internally for build-specific files
-set(CHICKEN_TMP_DIR ${CMAKE_BINARY_DIR}/_chicken)
 
 set(CHICKEN_SYSTEM "" CACHE STRING
     "A compiler identifier of the build system")
@@ -160,39 +151,6 @@ set(CHICKEN_STATIC_LIBRARIES ${CHICKEN_STATIC_LIBRARY} ${CHICKEN_EXTRA_LIBRARIES
 # recommended to use these logical names in extension setup scripts.
 set(CHICKEN_COMPILER ${CHICKEN_EXECUTABLE})
 set(CHICKEN_INTERPRETER ${CHICKEN_CSI_EXECUTABLE} -R chicken-syntax)
-
-set(CHICKEN_RUN ${CHICKEN_TMP_DIR}/ChickenRun.cmake)
-set(CMAKE_CONFIGURABLE_FILE_CONTENT
-"if(CHICKEN_REPOSITORY)
-  set(ENV{CHICKEN_REPOSITORY} \${CHICKEN_REPOSITORY})
-endif()
-if(PATH)
-  file(TO_CMAKE_PATH \"\$ENV{PATH}\" path)
-  list(INSERT path 0 \"\${PATH}\")
-  file(TO_NATIVE_PATH \"\${path}\" path)
-  set(ENV{PATH} \"\${path}\")
-  #message(\"P: \$ENV{PATH}\")
-endif()
-#message(\"CHICKEN: \${COMMAND}\")
-if(OUTPUT_FILE)
-    if(NOT IS_ABSOLUTE OUTPUT_FILE)
-        set(OUTPUT_FILE \${CMAKE_CURRENT_BINARY_DIR}/\${OUTPUT_FILE})
-    endif()
-    execute_process(COMMAND \${COMMAND}
-        RESULT_VARIABLE command_result
-        OUTPUT_VARIABLE command_output
-        ERROR_VARIABLE command_output)
-    file(WRITE \${OUTPUT_FILE} \"\${command_output}\")
-else()
-    execute_process(COMMAND \${COMMAND}
-        RESULT_VARIABLE command_result)
-endif()
-if(command_result)
-    message(\"\${command_output}\")
-    message(FATAL_ERROR \"Command failed: \${command_result}\")
-endif()")
-configure_file(${CMAKE_ROOT}/Modules/CMakeConfigurableFile.in
-    ${CHICKEN_RUN} @ONLY)
 
 # Consider Chicken found if we determined that at least the executable is
 # available. Probably more comprehensive logic is needed to warn a user that

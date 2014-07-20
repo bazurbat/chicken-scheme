@@ -171,27 +171,24 @@ install(TARGETS ${import_LIBRARIES}
 
 # chicken-extract
 
-# add_chicken_executable(chicken-extract
-#     ${CMAKE_HOME_DIRECTORY}/cmake/extract-depends.scm
-#     OPTIONS -include-path ${PROJECT_SOURCE_DIR})
-#
-# set_target_properties(chicken-extract PROPERTIES
-#     OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}chicken-extract)
-#
-# install(TARGETS chicken-extract
-#     DESTINATION ${INSTALL_BINDIR})
-
 install(FILES ${CMAKE_HOME_DIRECTORY}/cmake/extract-depends.scm
     DESTINATION ${INSTALL_DATADIR})
 
 # config
+
 include(CMakePackageConfigHelpers)
 
 configure_package_config_file(cmake/chicken-config.cmake.in
     ${PROJECT_BINARY_DIR}/chicken-config.cmake
     INSTALL_DESTINATION ${INSTALL_DATADIR}
-    PATH_VARS INSTALL_BINDIR INSTALL_LIBDIR INSTALL_EGGDIR INSTALL_DATADIR
-        INSTALL_INCLUDEDIR)
+    PATH_VARS
+        INSTALL_BINDIR
+        INSTALL_LIBDIR
+        INSTALL_EGGDIR
+        INSTALL_DATADIR
+        INSTALL_INCLUDEDIR
+        CHICKEN_EXTRACT_SCRIPT
+)
 
 write_basic_package_version_file(
     ${PROJECT_BINARY_DIR}/chicken-config-version.cmake
@@ -199,6 +196,7 @@ write_basic_package_version_file(
     COMPATIBILITY SameMajorVersion)
 
 # misc files
+
 install(FILES types.db
     DESTINATION ${INSTALL_EGGDIR})
 
@@ -206,6 +204,11 @@ install(FILES chicken.h ${CHICKEN_CONFIG_H}
     DESTINATION ${INSTALL_INCLUDEDIR})
 
 install(FILES setup.defaults
+    DESTINATION ${INSTALL_DATADIR})
+
+install(FILES
+    ${PROJECT_SOURCE_DIR}/cmake/FindChicken.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/ChickenUse.cmake
     DESTINATION ${INSTALL_DATADIR})
 
 install(FILES ${PROJECT_BINARY_DIR}/chicken-config.cmake
@@ -227,6 +230,7 @@ install(FILES README LICENSE
     DESTINATION ${INSTALL_DOCDIR})
 
 install(EXPORT chicken-targets
-    DESTINATION ${INSTALL_DATADIR})
+    DESTINATION ${INSTALL_DATADIR}
+    NAMESPACE chicken_)
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
