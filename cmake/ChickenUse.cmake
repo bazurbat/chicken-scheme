@@ -154,7 +154,10 @@ macro(_chicken_command_add_include_paths)
     # then, search collected import libraries
     list(APPEND include_paths ${CHICKEN_IMPORT_LIBRARY_DIR})
 
-    list(APPEND include_paths ${CHICKEN_DATA_DIR})
+    # some eggs install files there, but it may be empty when bootstrapping
+    if(CHICKEN_DATA_DIR)
+        list(APPEND include_paths ${CHICKEN_DATA_DIR})
+    endif()
 
     # then, try to add paths from user environment
     foreach(path $ENV{CHICKEN_INCLUDE_PATH})
