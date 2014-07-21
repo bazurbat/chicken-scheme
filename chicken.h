@@ -130,6 +130,9 @@
 #if defined(HAVE_PROCESS_H)
 # include <process.h>
 #endif
+#if defined(HAVE_IO_H)
+# include <io.h>
+#endif
 
 
 /* Byteorder in machine word */
@@ -1016,7 +1019,11 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_fgets                    fgets
 # define C_ungetc                   ungetc
 # define C_system                   system
-# define C_isatty                   isatty
+# if defined(_MSC_VER)
+#  define C_isatty                  _isatty
+# else
+#  define C_isatty                  isatty
+# endif
 # define C_fileno                   fileno
 # define C_select                   select
 # if defined(HAVE_SIGACTION)
@@ -1367,7 +1374,7 @@ extern double trunc(double);
 #define C_poke_pointer_or_null(b, i, x) (C_set_block_item(b, C_unfix(i), (C_word)C_data_pointer_or_null(x)), C_SCHEME_UNDEFINED)
 #define C_qfree(ptr)                    (C_free(C_c_pointer_nn(ptr)), C_SCHEME_UNDEFINED)
 
-#define C_tty_portp(p)                  C_mk_bool(isatty(fileno(C_port_file(p))))
+#define C_tty_portp(p)                  C_mk_bool(C_isatty(fileno(C_port_file(p))))
 
 #define C_emit_eval_trace_info(x, y, z) C_emit_trace_info2("<eval>", x, y, z)
 #define C_emit_syntax_trace_info(x, y, z) C_emit_trace_info2("<syntax>", x, y, z)
