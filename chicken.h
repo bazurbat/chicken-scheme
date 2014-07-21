@@ -127,6 +127,9 @@
 #if defined(HAVE_SYS_TYPES_H)
 # include <sys/types.h>
 #endif
+#if defined(HAVE_PROCESS_H)
+# include <process.h>
+#endif
 
 
 /* Byteorder in machine word */
@@ -1066,7 +1069,11 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_readlink                 readlink
 # define C_getcwd                   getcwd
 # define C_access                   access
-# define C_getpid                   getpid
+# if defined(_MSC_VER)
+#  define C_getpid                  _getpid
+# else
+#  define C_getpid                  getpid
+# endif
 # define C_getenv                   getenv
 # ifdef __linux__
 extern double round(double);
