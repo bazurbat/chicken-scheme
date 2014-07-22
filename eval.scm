@@ -1056,6 +1056,9 @@
 	      (eq? (machine-type) 'hppa)) hppa-load-library-extension]
 	[else default-load-library-extension] ) )
 
+; some eggs are using this
+(define ##sys#load-dynamic-extension ##sys#load-library-extension)
+
 (define ##sys#default-dynamic-load-libraries 
   (case (build-platform)
     ((cygwin) cygwin-default-dynamic-load-libraries)
