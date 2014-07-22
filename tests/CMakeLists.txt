@@ -37,9 +37,9 @@ function(add_chicken_test name)
 
     add_test(NAME ${name} COMMAND ${CMAKE_COMMAND}
         "-DCHICKEN_REPOSITORY=${CHICKEN_LOCAL_REPOSITORY}/$<CONFIGURATION>"
-        "-DCOMMAND=${test_UNPARSED_ARGUMENTS}"
         "-DPATH=${test_PATH}"
         "-DENVIRONMENT=${test_ENVIRONMENT}"
+        "-DCOMMAND=${test_UNPARSED_ARGUMENTS}"
         "-DOUTPUT_FILE=${test_OUTPUT_FILE}"
         -P ${CHICKEN_RUN})
 endfunction()
@@ -593,6 +593,8 @@ add_chicken_test(private-repository-path $<TARGET_FILE:private-repository>
 
 endif()
 
+if(NOT MSVC)
+
 # reinstall tests
 
 add_custom_command(OUTPUT rev-app.scm
@@ -679,3 +681,5 @@ add_chicken_test(deployment-run-2
     ${CMAKE_CURRENT_BINARY_DIR}/rev-app-2/rev-app 1.1)
 
 set_tests_properties(deployment-run-2 PROPERTIES DEPENDS deployment-stub-copy)
+
+endif(NOT MSVC)
