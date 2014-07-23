@@ -241,7 +241,7 @@ add_compiled_test(lolevel lolevel-tests.scm)
 
 # arithmetic tests
 
-add_interpreted_test(arithmetic SCRIPT arithmetic-test.scm -D tests)
+add_interpreted_test(arithmetic SCRIPT arithmetic-test.scm -D check)
 
 # pretty printer tests
 
