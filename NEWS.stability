@@ -7,4 +7,4 @@ Changes in 4.9.0.1:
 a1c739e Fix minor version in chicken.h
 e203181 Add tests/version-tests.scm
 a25d200 Fix #1133
-
+e29b85b Fix #1136
