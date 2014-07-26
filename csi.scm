@@ -43,21 +43,16 @@ EOF
 
 (include "banner")
 
-(private csi 
-  print-usage print-banner
-  run hexdump
-  parse-option-string chop-separator lookup-script-file
-  report describe dump hexdump bytevector-data get-config
-  tty-input?
-  history-list history-count history-add history-ref history-clear history-show)
-
 (declare
   (always-bound
     ##sys#windows-platform)
-  (hide parse-option-string bytevector-data member* canonicalize-args 
+  (hide parse-option-string bytevector-data member* canonicalize-args
 	describer-table dirseparator? circular-list? improper-pairs?
 	show-frameinfo selected-frame select-frame copy-from-frame
-	findall command-table default-editor csi-eval) )
+	findall command-table default-editor csi-eval print-usage
+	print-banner run hexdump chop-separator lookup-script-file report
+	describe dump tty-input? history-list history-count
+	history-add history-ref history-clear history-show) )
 
 
 ;;; Parameters:

@@ -506,14 +506,14 @@ expand.c: $(SRCDIR)expand.scm $(SRCDIR)synrules.scm $(SRCDIR)common-declarations
 	$(bootstrap-lib)
 modules.c: $(SRCDIR)modules.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
-extras.c: $(SRCDIR)extras.scm $(SRCDIR)private-namespace.scm $(SRCDIR)common-declarations.scm
+extras.c: $(SRCDIR)extras.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 posixunix.c: $(SRCDIR)posixunix.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 posixwin.c: $(SRCDIR)posixwin.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 srfi-69.c: $(SRCDIR)srfi-69.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) -extend $(SRCDIR)private-namespace.scm
+	$(bootstrap-lib)
 irregex.c: $(SRCDIR)irregex.scm $(SRCDIR)irregex-core.scm $(SRCDIR)irregex-utils.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 #
@@ -574,8 +574,8 @@ endef
 $(foreach obj, $(COMPILER_OBJECTS_1),\
           $(eval $(call declare-bootstrap-compiler-object,$(obj))))
 
-csi.c: $(SRCDIR)csi.scm $(SRCDIR)banner.scm $(SRCDIR)private-namespace.scm
-	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ -extend $(SRCDIR)private-namespace.scm
+csi.c: $(SRCDIR)csi.scm $(SRCDIR)banner.scm
+	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@
 chicken-profile.c: $(SRCDIR)chicken-profile.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
 chicken-install.c: $(SRCDIR)chicken-install.scm setup-download.c setup-api.c
