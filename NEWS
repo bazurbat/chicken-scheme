@@ -61,6 +61,10 @@
 - Tools
   - "csc"
     - On Cygwin, -static now works again (thanks to Michele La Monaca)
+  - "chicken-install"
+    - When using chicken-install -retrieve, and an error occurs during
+       retrieval (or the egg doesn't exist), the egg's directory is
+       now properly cleaned up (#1109, thanks to Alex Charlton)
 
 4.9.0
 
