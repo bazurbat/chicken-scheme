@@ -120,6 +120,10 @@
 (define generate-manifest #f)
 
 (define libchicken (string-append "lib" INSTALL_LIB_NAME))
+(define dynamic-libchicken
+  (if cygwin
+      (string-append "cyg" INSTALL_LIB_NAME "-0")
+      libchicken))
 
 (define default-library
   (string-append libchicken "." library-extension))
@@ -974,7 +978,7 @@ EOF
 (define (copy-libraries targetdir)
   (let ((lib (make-pathname
 	      (target-lib-path) 
-	      libchicken
+	      dynamic-libchicken
 	      (cond (osx "dylib")
 		    ((or mingw cygwin) "dll")
 		    (else (string-append
