@@ -24,6 +24,8 @@
 - Unit "posix":
   - set-file-position! now allows negative positions for seek/cur (thanks
     to Seth Alves).
+  - file-mkstemp now works correctly on Windows, it now returns valid
+    file descriptors (#819, thanks to Michele La Monaca).
 
 - Runtime system:
   - Removed several deprecated, undocumented parts of the C interface:

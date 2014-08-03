@@ -198,7 +198,6 @@ readdir(DIR * dir)
 #endif /* ifndef __WATCOMC__ */
 
 #ifdef __WATCOMC__
-# define mktemp _mktemp
 /* there is no P_DETACH in Watcom CRTL */
 # define P_DETACH P_NOWAIT
 #endif
@@ -256,7 +255,6 @@ C_free_arg_string(char **where) {
 #define C_open(fn, fl, m)   C_fix(open(C_c_string(fn), C_unfix(fl), C_unfix(m)))
 #define C_read(fd, b, n)    C_fix(read(C_unfix(fd), C_data_pointer(b), C_unfix(n)))
 #define C_write(fd, b, n)   C_fix(write(C_unfix(fd), C_data_pointer(b), C_unfix(n)))
-#define C_mkstemp(t)	    C_fix(mktemp(C_c_string(t)))
 
 #define C_flushall()	    C_fix(_flushall())
 
@@ -778,14 +776,37 @@ EOF
 (define file-mkstemp
   (lambda (template)
     (##sys#check-string template 'file-mkstemp)
-    (let* ([buf (##sys#make-c-string template 'file-mkstemp)]
-	   [fd (##core#inline "C_mkstemp" buf)]
-	   [path-length (string-length buf)])
-      (when (eq? -1 fd)
-	(##sys#update-errno)
-	(##sys#signal-hook #:file-error 'file-mkstemp "cannot create temporary file" template) )
-      (values fd (##sys#substring buf 0 (fx- path-length 1) ) ) ) ) )
-
+    (let* ((diz "0123456789abcdefghijklmnopqrstuvwxyz")
+	   (diz-len (string-length diz))
+	   (max-attempts (* diz-len diz-len diz-len))
+	   (tmpl (string-copy template)) ; We'll overwrite this later
+	   (tmpl-len (string-length tmpl))
+	   (first-x (let loop ((i (fx- tmpl-len 1)))
+		      (if (and (fx>= i 0)
+			       (eq? (string-ref tmpl i) #\X))
+			  (loop (fx- i 1))
+			  (fx+ i 1)))))
+      (cond ((not (directory-exists? (or (pathname-directory template) ".")))
+	     ;; Quit early instead of looping needlessly with C_open
+	     ;; failing every time.  This is a race condition, but not
+	     ;; a security-critical one.
+	     (##sys#signal-hook #:file-error 'file-mkstemp "non-existent directory" template))
+	    ((fx= first-x tmpl-len)
+	     (##sys#signal-hook #:file-error 'file-mkstemp "invalid template" template)))
+      (let loop ((count 1))
+	(let suffix-loop ((index (fx- tmpl-len 1)))
+	  (when (fx>= index first-x)
+	    (string-set! tmpl index (string-ref diz (random diz-len)))
+	    (suffix-loop (fx- index 1))))
+	(let ((fd (##core#inline "C_open"
+				 (##sys#make-c-string tmpl 'file-open)
+				 (bitwise-ior open/rdwr open/creat open/excl)
+				 (fxior _s_irusr _s_iwusr))))
+	  (if (eq? -1 fd)
+	      (if (fx< count max-attempts)
+		  (loop (fx+ count 1))
+		  (posix-error #:file-error 'file-mkstemp "cannot create temporary file" template))
+	      (values fd tmpl)))))))
 
 ;;; Directory stuff:
 
