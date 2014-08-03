@@ -10,6 +10,10 @@
   - Fixed broken specialisation for move-memory! on pointer types.
   - Fixed bug in make-kmp-restart-vector from SRFI-13.
 
+- Unit "posix":
+  - file-mkstemp now works correctly on Windows, it now returns valid
+    file descriptors (#819, thanks to Michele La Monaca).
+
 4.9.0.1
 
 - Runtime library
