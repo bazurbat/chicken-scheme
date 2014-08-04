@@ -64,7 +64,7 @@
 #endif
 
 /* TODO: Include sys/select.h? Windows doesn't seem to have it... */
-#ifdef HAVE_POSIX_POLL
+#ifndef NO_POSIX_POLL
 #  include <poll.h>
 #endif
 
@@ -4124,12 +4124,7 @@ C_regparm C_word C_fcall C_execute_shell_command(C_word string)
  */
 C_regparm int C_fcall C_check_fd_ready(int fd)
 {
-#ifdef HAVE_POSIX_POLL
-  struct pollfd ps;
-  ps.fd = fd;
-  ps.events = POLLIN;
-  return poll(&ps, 1, 0);
-#else
+#ifdef NO_POSIX_POLL
   fd_set in;
   struct timeval tm;
   int rv;
@@ -4139,6 +4134,11 @@ C_regparm int C_fcall C_check_fd_ready(int fd)
   rv = select(fd + 1, &in, NULL, NULL, &tm);
   if(rv > 0) { rv = FD_ISSET(fd, &in) ? 1 : 0; }
   return rv;
+#else
+  struct pollfd ps;
+  ps.fd = fd;
+  ps.events = POLLIN;
+  return poll(&ps, 1, 0);
 #endif
 }
 
