@@ -1,5 +1,8 @@
 4.9.1
 
+- Security fixes
+  - Use POSIX poll() on Android (CVE pending).
+
 - Core libraries
   - alist-ref from unit data-structures now gives an error when passed
     a non-list, for consistency with assv/assq/assoc.
