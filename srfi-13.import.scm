@@ -29,6 +29,7 @@
  '(check-substring-spec
    kmp-step
    make-kmp-restart-vector
+   reverse-list->string
    string->list
    string-any
    string-append/shared
