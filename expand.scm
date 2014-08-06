@@ -99,7 +99,7 @@
 		ua))
 	alias) ) )
 
-(define (##sys#strip-syntax exp)
+(define (strip-syntax exp)
  ;; if se is given, retain bound vars
  (let ((seen '()))
    (let walk ((x exp))
@@ -125,7 +125,7 @@
                 (##sys#setslot vec i (walk (##sys#slot x i))))))
            (else x)))))
 
-(define strip-syntax ##sys#strip-syntax)
+(define ##sys#strip-syntax strip-syntax)
 
 (define (##sys#extend-se se vars #!optional (aliases (map gensym vars)))
   (for-each
@@ -306,14 +306,14 @@
 
 ;;; User-level macroexpansion
 
-(define (##sys#expand exp #!optional (se (##sys#current-environment)) cs?)
+(define (expand exp #!optional (se (##sys#current-environment)) cs?)
   (let loop ((exp exp))
     (let-values (((exp2 m) (##sys#expand-0 exp se cs?)))
       (if m
 	  (loop exp2)
 	  exp2) ) ) )
 
-(define expand ##sys#expand)
+(define ##sys#expand expand)
 
 
 ;;; Extended (DSSSL-style) lambda lists
@@ -635,9 +635,11 @@
 (define ##sys#syntax-error-culprit #f)
 (define ##sys#syntax-context '())
 
-(define (##sys#syntax-error-hook . args)
+(define (syntax-error . args)
   (apply ##sys#signal-hook #:syntax-error
 	 (##sys#strip-syntax args)))
+
+(define ##sys#syntax-error-hook syntax-error)
 
 (define ##sys#syntax-error/context
   (lambda (msg arg)
@@ -687,8 +689,6 @@
 					 (loop (cdr lst)))))))))
 			   (else (loop (cdr cx))))))))
 	  (##sys#syntax-error-hook (get-output-string out))))))
-
-(define syntax-error ##sys#syntax-error-hook)
 
 (define (##sys#syntax-rules-mismatch input)
   (##sys#syntax-error-hook "no rule matches form" input))
@@ -912,11 +912,11 @@
 	   ;; unhygienically this way.
 	   (mirror-rename (handler (rename form) rename compare)) ) ) )))
 
-(define (##sys#er-transformer handler) (make-er/ir-transformer handler #t))
-(define (##sys#ir-transformer handler) (make-er/ir-transformer handler #f))
+(define (er-macro-transformer handler) (make-er/ir-transformer handler #t))
+(define (ir-macro-transformer handler) (make-er/ir-transformer handler #f))
 
-(define er-macro-transformer ##sys#er-transformer)
-(define ir-macro-transformer ##sys#ir-transformer)
+(define ##sys#er-transformer er-macro-transformer)
+(define ##sys#ir-transformer ir-macro-transformer)
 
 
 ;;; Macro definitions:
