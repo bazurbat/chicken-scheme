@@ -2173,7 +2173,8 @@
 
 ;;; Canonicalize complex pair/list type for matching with "list-of"
 ;
-; - returns #f if not possibly matchable with "list-of"
+; Returns an equivalent (list ...) form, or the original argument if no
+; canonicalization could be done.
 
 (define (canonicalize-list-type t)
   (cond ((not (pair? t)) t)
