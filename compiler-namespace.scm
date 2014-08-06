@@ -306,5 +306,4 @@
  with-debugging-output
  words
  words->bytes
- words-per-flonum
- zap-strings-flag) 
+ words-per-flonum) 
