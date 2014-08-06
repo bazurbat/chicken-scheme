@@ -2262,7 +2262,7 @@
                    (val (first (node-parameters index)))
                    ((fixnum? val))
                    ((>= val 0))
-                   ((< val (length (cdr arg1)))))   ;XXX could warn on failure (but needs location)
+                   ((<= val (length (cdr arg1)))))   ;XXX could warn on failure (but needs location)
           (let ((rest (list-tail (cdr arg1) val)))
             (list (if (null? rest)
                       'null
