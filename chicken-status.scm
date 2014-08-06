@@ -168,7 +168,7 @@ EOF
                                         (else (map ##sys#glob->regexp pats)))))
                                 (eggs/exts ((if eggs gather-eggs gather-extensions) patterns)))
                            (if (null? eggs/exts)
-                               (print "(none)")
+                               (display "(none)\n" (current-error-port))
                                ((cond (eggs list-installed-eggs)
                                       (files list-installed-files)
                                       (else list-installed-extensions))
