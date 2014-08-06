@@ -274,7 +274,7 @@
     (define (fragment x)
       (let ((x (build-expression-tree x)))
 	(let walk ((x x) (d 0))
-	  (cond ((atom? x) x)
+	  (cond ((atom? x) (##sys#strip-syntax x))
 		((>= d +fragment-max-depth+) '...)
 		((list? x)
 		 (let* ((len (length x))
@@ -282,7 +282,7 @@
 				(append (take x +fragment-max-length+) '(...))
 				x)))
 		   (map (cute walk <> (add1 d)) xs)))
-		(else x)))))
+		(else (##sys#strip-syntax x))))))
 
     (define (pp-fragment x)
       (string-chomp
