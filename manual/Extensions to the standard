@@ -69,17 +69,6 @@ is supported, as CHICKEN implements [[http://srfi.schemers.org/srfi-17/srfi-17.h
 
 The {{cond}} form supports [[http://srfi.schemers.org/srfi-61|SRFI-61]].
 
-=== Binding values in {{letrec}}
-
-It is allowed for initialization values of bindings in a {{letrec}}
-construct to refer to previous variables in the same set of bindings, so
-
- (letrec ((foo 123)
-          (bar foo) )
-   bar)
-
-is allowed and returns {{123}}.
-
 === {{begin}}
 
 {{(begin)}} is allowed in non-toplevel contexts and evaluates
