@@ -263,6 +263,9 @@
 (mx fixnum (##sys#vector-ref '#(1 2 3.4) 0))
 (mx (vector fixnum float) (vector 1 2.3))
 (mx (list fixnum float) (list 1 2.3))
+(mx (list fixnum float) (list-copy (list 1 2.3)))
+(mx (pair fixnum float) (list-copy (cons 1 2.3)))
+(mx fixnum (list-copy 1))
 
 (: f1 (forall (a) ((list-of a) -> a)))
 (define (f1 x) (car x))

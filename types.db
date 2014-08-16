@@ -1924,7 +1924,7 @@
 (last (#(procedure #:clean #:enforce) last (pair) *))
 (last-pair (#(procedure #:clean #:enforce) last-pair (pair) *))
 (length+ (#(procedure #:clean #:enforce) length+ (list) *))
-(list-copy (forall (a) (#(procedure #:clean #:enforce) list-copy ((list-of a)) (list-of a))))
+(list-copy (forall (a) (#(procedure #:pure) list-copy (a) a)))
 (list-index (forall (a) (#(procedure #:enforce) list-index ((procedure (a #!rest) *) (list-of a) #!rest list) *)))
 (list-tabulate (forall (a) (#(procedure #:enforce) list-tabulate (fixnum (procedure (fixnum) a)) (list-of a))))
 (list= (#(procedure #:clean #:enforce) list= (#!optional (procedure (list list) *) #!rest list) boolean)
