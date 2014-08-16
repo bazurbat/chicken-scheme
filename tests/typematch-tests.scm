@@ -49,9 +49,11 @@
 (define-syntax mx
   (syntax-rules ()
     ((_ t x) 
-     (compiler-typecase 
-      x
-      (t 'ok)))))
+     (begin
+       (print 'x " = " 't)
+       (compiler-typecase
+	x
+	(t 'ok))))))
 
 (define-syntax mn
   (er-macro-transformer
@@ -266,6 +268,14 @@
 (mx (list fixnum float) (list-copy (list 1 2.3)))
 (mx (pair fixnum float) (list-copy (cons 1 2.3)))
 (mx fixnum (list-copy 1))
+(mx fixnum (list-ref (list 1 2.3) 0))
+(mx fixnum (list-ref (cons 1 2.3) 0))
+(mx float (list-ref (list 1 2.3) 1))
+(mx (list fixnum float) (list-tail (list 1 2.3) 0))
+(mx (pair fixnum float) (list-tail (cons 1 2.3) 0))
+(mx (list float) (list-tail (list 1 2.3) 1))
+(mx float (list-tail (cons 1 2.3) 1))
+(mx null  (list-tail (list 1 2.3) 2))
 
 (: f1 (forall (a) ((list-of a) -> a)))
 (define (f1 x) (car x))
