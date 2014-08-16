@@ -2179,42 +2179,60 @@
   (define-special-case vector-ref vector-ref-result-type)
   (define-special-case ##sys#vector-ref vector-ref-result-type))
 
-(let ()
-  (define (list-ref-result-type node args rtypes)
-    (or (and-let* ((subs (node-subexpressions node))
-                   ((= (length subs) 3))
-                   (arg1 (walked-result (second args)))
-                   ((pair? arg1))
-                   ((eq? 'list (car arg1)))
-                   (index (third subs))
-                   ((eq? 'quote (node-class index)))
-                   (val (first (node-parameters index)))
-                   ((fixnum? val))
-                   ((>= val 0))  ;XXX could warn on failure (but needs location)
-                   ((< val (length (cdr arg1)))))
-          (list (list-ref (cdr arg1) val)))
-	rtypes))
-  (define-special-case list-ref list-ref-result-type)
-  (define-special-case ##sys#list-ref list-ref-result-type))
 
-(define-special-case list-tail
-  (lambda (node args rtypes)
-    (or (and-let* ((subs (node-subexpressions node))
-                   ((= (length subs) 3))
-                   (arg1 (walked-result (second args)))
-                   ((pair? arg1))
-                   ((eq? 'list (car arg1)))
-                   (index (third subs))
-                   ((eq? 'quote (node-class index)))
-                   (val (first (node-parameters index)))
-                   ((fixnum? val))
-                   ((>= val 0))
-                   ((<= val (length (cdr arg1)))))   ;XXX could warn on failure (but needs location)
-          (let ((rest (list-tail (cdr arg1) val)))
-            (list (if (null? rest)
-                      'null
-                      `(list ,@rest)))))
-	rtypes)))
+;;; List-related special cases
+;
+; Preserve known element types for list-ref, list-tail.
+
+(let ()
+
+  (define (list-or-null a)
+    (if (null? a) 'null `(list ,@a)))
+
+  ;; Split a list or pair type form at index i, calling k with the two
+  ;; sections of the type or returning #f if it doesn't match that far.
+  (define (split-list-type l i k)
+    (cond ((not (pair? l))
+	   (and (fx= i 0) (eq? l 'null) (k l l)))
+	  ((eq? (first l) 'list)
+	   (and (fx< i (length l))
+		(receive (left right) (split-at (cdr l) i)
+		  (k (list-or-null left)
+		     (list-or-null right)))))
+	  ((eq? (first l) 'pair)
+	   (let lp ((a '()) (l l) (i i))
+	     (cond ((fx= i 0)
+		    (k (list-or-null (reverse a)) l))
+		   ((and (pair? l)
+			 (eq? (first l) 'pair))
+		    (lp (cons (second l) a)
+                        (third l)
+                        (sub1 i)))
+		   (else #f))))
+	  (else #f)))
+
+  (define (list+index-call-result-type-special-case k)
+    (lambda (node args rtypes)
+      (or (and-let* ((subs (node-subexpressions node))
+		     ((= (length subs) 3))
+		     (arg1 (walked-result (second args)))
+		     (index (third subs))
+		     ((eq? 'quote (node-class index)))
+		     (val (first (node-parameters index)))
+		     ((fixnum? val))
+		     ((>= val 0)))
+	    (split-list-type arg1 val k))
+	  rtypes)))
+
+  (define-special-case list-ref
+    (list+index-call-result-type-special-case
+     (lambda (_ result-type)
+       (and (pair? result-type)
+	    (list (cadr result-type))))))
+
+  (define-special-case list-tail
+    (list+index-call-result-type-special-case
+     (lambda (_ result-type) (list result-type)))))
 
 (define-special-case list
   (lambda (node args rtypes)
