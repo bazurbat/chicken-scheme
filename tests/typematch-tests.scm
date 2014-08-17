@@ -1,7 +1,7 @@
 ;;;; typematch-tests.scm
 
 
-(use lolevel data-structures)
+(use srfi-1 lolevel data-structures)
 
 
 (define-syntax check
@@ -276,6 +276,16 @@
 (mx (list float) (list-tail (list 1 2.3) 1))
 (mx float (list-tail (cons 1 2.3) 1))
 (mx null  (list-tail (list 1 2.3) 2))
+(mx (list fixnum float) (drop (list 1 2.3) 0))
+(mx (pair fixnum float) (drop (cons 1 2.3) 0))
+(mx (list float) (drop (list 1 2.3) 1))
+(mx float (drop (cons 1 2.3) 1))
+(mx null (drop (list 1 2.3) 2))
+(mx null (take (list 1 2.3) 0))
+(mx null (take (cons 1 2.3) 0))
+(mx (list fixnum) (take (list 1 2.3) 1))
+(mx (list fixnum) (take (cons 1 2.3) 1))
+(mx (list fixnum float) (take (list 1 2.3) 2))
 
 (: f1 (forall (a) ((list-of a) -> a)))
 (define (f1 x) (car x))

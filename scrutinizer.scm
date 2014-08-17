@@ -2182,7 +2182,9 @@
 
 ;;; List-related special cases
 ;
-; Preserve known element types for list-ref, list-tail.
+; Preserve known element types for:
+;
+;   list-ref, list-tail, drop, take
 
 (let ()
 
@@ -2231,6 +2233,14 @@
 	    (list (cadr result-type))))))
 
   (define-special-case list-tail
+    (list+index-call-result-type-special-case
+     (lambda (_ result-type) (list result-type))))
+
+  (define-special-case take
+    (list+index-call-result-type-special-case
+     (lambda (result-type _) (list result-type))))
+
+  (define-special-case drop
     (list+index-call-result-type-special-case
      (lambda (_ result-type) (list result-type)))))
 
