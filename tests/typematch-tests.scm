@@ -286,6 +286,10 @@
 (mx (list fixnum) (take (list 1 2.3) 1))
 (mx (list fixnum) (take (cons 1 2.3) 1))
 (mx (list fixnum float) (take (list 1 2.3) 2))
+(mx (list * *) (make-list 2))
+(mx (list string string) (make-list 2 "a"))
+(mx (vector * *) (make-vector 2))
+(mx (vector string string) (make-vector 2 "a"))
 
 (: f1 (forall (a) ((list-of a) -> a)))
 (define (f1 x) (car x))
