@@ -109,6 +109,7 @@
 (define-constant +fragment-max-length+ 6)
 (define-constant +fragment-max-depth+ 4)
 (define-constant +maximal-union-type-length+ 20)
+(define-constant +maximal-complex-object-constructor-result-type-length+ 256)
 
 
 (define specialization-statistics '())
@@ -2265,6 +2266,34 @@
     `((vector ,@(map walked-result (cdr args))))))
 
 
+;;; Special cases for make-list/make-vector with a known size
+;
+; e.g. (make-list 3 #\a) => (list char char char)
+
+(let ()
+
+  (define (complex-object-constructor-result-type-special-case type)
+    (lambda (node args rtypes)
+      (or (and-let* ((subs (node-subexpressions node))
+		     (fill (case (length subs)
+			     ((2) '*)
+			     ((3) (walked-result (third args)))
+			     (else #f)))
+		     (sub2 (second subs))
+		     ((eq? 'quote (node-class sub2)))
+		     (size (first (node-parameters sub2)))
+		     ((fixnum? size))
+		     ((<= 0 size +maximal-complex-object-constructor-result-type-length+)))
+	    `((,type ,@(make-list size fill))))
+	  rtypes)))
+
+  (define-special-case make-list
+    (complex-object-constructor-result-type-special-case 'list))
+
+  (define-special-case make-vector
+    (complex-object-constructor-result-type-special-case 'vector)))
+
+
 ;;; perform check over all typevar instantiations
 
 (define (over-all-instantiations tlist typeenv exact process)
@@ -2308,7 +2337,8 @@
 
     (ddd " over-all-instantiations: ~s exact=~a" tlist exact)
     ;; process all tlist elements
-    (let loop ((ts tlist) (ok #f))
+    (let loop ((ts (delete-duplicates tlist equal?))
+	       (ok #f))
       (cond ((null? ts)
 	     (cond ((or ok (null? tlist))
 		    (for-each 

@@ -561,6 +561,7 @@
 
 (vector? (#(procedure #:pure #:predicate vector) vector? (*) boolean))
 
+;; special-cased (see scrutinizer.scm)
 (make-vector (forall (a) (#(procedure #:clean #:enforce) make-vector (fixnum #!optional a) 
 			  (vector-of a))))
 
@@ -1956,6 +1957,7 @@
  ((procedure) (let ((#(tmp) #(1))) '#t))
  ((procedure list) (let ((#(tmp1) #(1)) (#(tmp2) #(2))) '#t)))
 
+;; special-cased (see scrutinizer.scm)
 (make-list (forall (a) (#(procedure #:clean #:enforce) make-list (fixnum #!optional a) (list-of a))))
 
 (map!
