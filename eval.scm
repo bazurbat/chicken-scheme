@@ -373,13 +373,13 @@
 						    ((symbol? (cdr a))))
 					   (##sys#notice "assignment to imported value binding" var)))
 				       (let ((var
-					      (if (not (assq x se))
+					      (if (not (assq x se)) ;XXX this looks wrong
 						  (and (not static)
 						       (##sys#alias-global-hook j #t cntr))
 						  (or (##sys#get j '##core#primitive) j))))
 					 (if (not var) ; static
 					     (lambda (v)
-					       (##sys#error 'eval "environment is not mutable" evalenv var))
+					       (##sys#error 'eval "environment is not mutable" evalenv var)) ;XXX var?
 					     (lambda (v)
 					       (##sys#setslot var 0 (##core#app val v))) ) ) ]
 				      [(zero? i) (lambda (v) (##sys#setslot (##sys#slot v 0) j (##core#app val v)))]
