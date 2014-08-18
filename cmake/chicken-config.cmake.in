@@ -38,4 +38,7 @@ set(CHICKEN_INCLUDE_DIRS ${CHICKEN_INCLUDE_DIR})
 set(CHICKEN_LIBRARIES chicken_libchicken ${CHICKEN_EXTRA_LIBRARIES})
 set(CHICKEN_STATIC_LIBRARIES chicken_libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
 
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(Chicken DEFAULT_MSG CHICKEN_EXECUTABLE)
+
 include("${CMAKE_CURRENT_LIST_DIR}/ChickenUse.cmake")
