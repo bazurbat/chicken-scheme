@@ -136,14 +136,6 @@
    initialize-groups
    local-time->seconds
    local-timezone-abbreviation
-   map-file-to-memory
-   map/anonymous
-   map/file
-   map/fixed
-   map/private
-   map/shared
-   memory-mapped-file-pointer
-   memory-mapped-file?
    open-input-file*
    open-input-pipe
    open-output-file*
@@ -189,10 +181,6 @@
    process-run
    process-signal
    process-wait
-   prot/exec
-   prot/none
-   prot/read
-   prot/write
    read-symbolic-link
    regular-file?
    seconds->local-time
@@ -253,7 +241,6 @@
    terminal-port?
    terminal-size
    time->string
-   unmap-file-from-memory
    unsetenv
    user-information
    utc-time->seconds

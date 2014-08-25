@@ -32,7 +32,6 @@
    alist-update
    any?
    atom?
-   binary-search
    butlast
    chop
    complement
@@ -48,22 +47,10 @@
    identity
    intersperse
    join
-   list->queue
    list-of?
-   make-queue
    merge
    merge!
    o
-   queue->list
-   queue-add!
-   queue-empty?
-   queue-first
-   queue-last
-   queue-length
-   queue-push-back!
-   queue-push-back-list!
-   queue-remove!
-   queue?
    rassoc
    reverse-string-append
    sort

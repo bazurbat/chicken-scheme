@@ -1036,90 +1036,6 @@ the environment of the current process. If the variable is not defined,
 nothing happens.
 
 
-=== Memory mapped I/O
-
-Memory mapped I/O takes the contents of a file descriptor and places them in memory.
- 
-==== memory-mapped-file?
-
-<procedure>(memory-mapped-file? X)</procedure>
-
-Returns {{#t}}, if {{X}} is an object representing a memory
-mapped file, or {{#f}} otherwise.
-
-==== map-file-to-memory
-
-<procedure>(map-file-to-memory ADDRESS LEN PROTECTION FLAG FILENO [OFFSET])</procedure>
-
-Maps a section of a file to memory using the C function
-{{mmap()}}.  {{ADDRESS}} should be a foreign pointer object
-or {{#f}}; {{LEN}} specifies the size of the section to
-be mapped; {{PROTECTION}} should be one or more of the flags
-{{prot/read, prot/write, prot/exec}} or {{prot/none}}
-'''bitwise-ior'''ed together; {{FLAG}} should be one or more of
-the flags {{map/fixed, map/shared, map/private, map/anonymous}} or
-{{map/file}}; {{FILENO}} should be the file-descriptor of the
-mapped file. The optional argument {{OFFSET}} gives the offset of
-the section of the file to be mapped and defaults to 0. This procedure
-returns an object representing the mapped file section.  The procedure
-{{move-memory!}} can be used to access the mapped memory.
-
-==== memory-mapped-file-pointer
-
-<procedure>(memory-mapped-file-pointer MMAP)</procedure>
-
-Returns a machine pointer to the start of the memory region to which
-the file is mapped.
-
-==== unmap-file-from-memory
-
-<procedure>(unmap-file-from-memory MMAP [LEN])</procedure>
-
-Unmaps the section of a file mapped to memory using the C function
-{{munmap()}}.  {{MMAP}} should be a mapped file as returned
-by the procedure {{map-file-to-memory}}.  The optional argument
-{{LEN}} specifies the length of the section to be unmapped and
-defaults to the complete length given when the file was mapped.
-
-==== Memory Mapped I/O Example
-
-<enscript highlight=scheme>
-;; example-mmap.scm
-;;
-;; basic example of memory mapped I/O
-;;
-;; This example does no error checking or cleanup, and serves
-;; only to demonstrate how the mmap functions work together.
-;;
-(use posix)
-(use lolevel)
-
-       ; open a file using the posix module, so we have the file descriptor.
-(let* ((fd   (file-open "example-mmap.scm" (+ open/rdonly open/nonblock)))
-       ; fstat(2) the file descriptor fd to determine its size
-       (size (file-size fd))
-       ; mmap(2) the file for reading.
-       (mmap (map-file-to-memory #f
-                                 size
-                                 prot/read
-                                 (+ map/file map/shared)
-                                 fd))
-       ; return a pointer object to the beginning of the memory map.
-       (buf  (memory-mapped-file-pointer mmap))
-       ; allocate a string the same size as the file.
-       (str  (make-string size)))
-  ; copy the mapped memory into a string
-  (move-memory! buf str size)
-  (display str)
-  ; alternately, print the string byte-by-byte without copying.
-  (let loop ((p buf)
-             (i 0))
-    (unless (= i size)
-      (display (integer->char (pointer-s8-ref p)))
-      (loop (pointer+ p 1) (+ i 1)))))
-</enscript>
-
-
 === Date and time routines
 
 ==== seconds->local-time
@@ -1386,7 +1302,6 @@ not be obtained. On Windows, this procedure always returns {{0}},
 ; {{initialize-groups}} : {{initgroups}}
 ; {{local-time->seconds}} : {{mktime}}
 ; {{local-timezone-abbreviation}} : {{localtime}}
-; {{map-file-to-memory}} : {{mmap}}
 ; {{open-input-file*}} : {{fdopen}}
 ; {{open-output-file*}} : {{fdopen}}
 ; {{open-input-pipe}} : {{popen}}
@@ -1419,7 +1334,6 @@ not be obtained. On Windows, this procedure always returns {{0}},
 ; {{terminal-port?}} : {{isatty}}
 ; {{time->string}} : {{asctime}}
 ; {{unsetenv}} : {{putenv}}
-; {{unmap-file-from-memory}} : {{munmap}}
 ; {{user-information}} : {{getpwnam/getpwuid}}
 ; {{utc-time->seconds}} : {{timegm}}
 

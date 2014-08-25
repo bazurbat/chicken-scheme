@@ -50,12 +50,6 @@
    object->pointer
    object-become!
    object-copy
-   object-evict
-   object-evict-to-location
-   object-evicted?
-   object-release
-   object-size
-   object-unevict
    pointer->address
    pointer-like?
    pointer->object

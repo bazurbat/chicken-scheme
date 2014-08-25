@@ -1199,7 +1199,6 @@
        ((pair) (let ((#(tmp) #(1))) '#f))
        (((not (or pair list))) (let ((#(tmp) #(1))) '#t)))
 
-(binary-search (forall (a) (#(procedure #:enforce) binary-search ((vector-of a) (procedure (a) *)) *)))
 (butlast (forall (a) (#(procedure #:clean #:enforce) butlast ((pair a *)) (list-of a))))
 (chop (forall (a) (#(procedure #:clean #:enforce) chop ((list-of a) fixnum) (list-of a))))
 (complement (#(procedure #:clean #:enforce) complement ((procedure (#!rest) *)) (procedure (#!rest) boolean)))
@@ -1215,9 +1214,7 @@
 (identity (forall (a) (#(procedure #:pure) identity (a) a)))
 (intersperse (#(procedure #:clean #:enforce) intersperse (list *) list))
 (join (#(procedure #:clean #:enforce) join ((list-of list) #!optional list) list))
-(list->queue (#(procedure #:clean #:enforce) list->queue (list) (struct queue)))
 (list-of? (#(procedure #:clean #:enforce) list-of? ((procedure (*) *)) (procedure (list) boolean)))
-(make-queue (#(procedure #:pure) make-queue () (struct queue)))
 
 (merge 
  (forall (e)
@@ -1228,22 +1225,6 @@
 	 (#(procedure #:enforce) merge! ((list-of e) (list-of e) (procedure (e e) *)) (list-of e))))
 
 (o (#(procedure #:clean #:enforce) o (#!rest (procedure (*) *)) (procedure (*) *)))
-(queue->list (#(procedure #:clean #:enforce) queue->list ((struct queue)) list))
-(queue-add! (#(procedure #:clean #:enforce) queue-add! ((struct queue) *) undefined))
-
-(queue-empty? (#(procedure #:clean #:enforce) queue-empty? ((struct queue)) boolean)
-	      (((struct queue)) (##core#inline "C_i_nullp" (##sys#slot #(1) '1))))
-
-(queue-first (#(procedure #:clean #:enforce) queue-first ((struct queue)) *))
-(queue-last (#(procedure #:clean #:enforce) queue-last ((struct queue)) *))
-
-(queue-length (#(procedure #:clean #:enforce) queue-length ((struct queue)) fixnum)
-	      (((struct queue)) (##sys#slot #(1) '3)))
-
-(queue-push-back! (#(procedure #:clean #:enforce) queue-push-back! ((struct queue) *) undefined))
-(queue-push-back-list! (#(procedure #:clean #:enforce) queue-push-back-list! ((struct queue) list) undefined))
-(queue-remove! (#(procedure #:clean #:enforce) queue-remove! ((struct queue)) *))
-(queue? (#(procedure #:pure #:predicate (struct queue)) queue? (*) boolean))
 
 (rassoc (#(procedure #:clean #:enforce) rassoc (* (list-of pair) #!optional (procedure (* *) *)) *))
 (reverse-string-append (#(procedure #:clean #:enforce) reverse-string-append ((list-of string)) string))
@@ -1509,12 +1490,6 @@
 (object->pointer (#(procedure #:clean) object->pointer (*) *))
 (object-become! (procedure object-become! (list) *))
 (object-copy (#(procedure #:clean) object-copy (*) *))
-(object-evict (#(procedure #:clean #:enforce) object-evict (* #!optional (procedure (fixnum) pointer)) *))
-(object-evict-to-location (#(procedure #:clean #:enforce) object-evict-to-location (* (or pointer locative procedure port) #!optional fixnum) * pointer))
-(object-evicted? (#(procedure #:pure) object-evicted? (*) boolean))
-(object-release (#(procedure #:enforce) object-release (* #!optional (procedure (pointer) *)) *))
-(object-size (#(procedure #:clean) object-size (*) fixnum))
-(object-unevict (procedure object-unevict (* #!optional *) *))
 (pointer+ (#(procedure #:clean #:enforce) pointer+ ((or pointer procedure port locative) fixnum) pointer))
 
 (pointer->address (#(procedure #:clean #:enforce) pointer->address ((or pointer procedure port locative)) number)
@@ -1718,14 +1693,6 @@
 (initialize-groups (#(procedure #:clean #:enforce) initialize-groups (string fixnum) undefined))
 (local-time->seconds (#(procedure #:clean #:enforce) local-time->seconds ((vector fixnum fixnum fixnum fixnum fixnum fixnum fixnum fixnum boolean fixnum)) number))
 (local-timezone-abbreviation (#(procedure #:clean) local-timezone-abbreviation () string))
-(map-file-to-memory (#(procedure #:clean #:enforce) map-file-to-memory (* fixnum fixnum fixnum fixnum #!optional fixnum) (struct mmap)))
-(map/anonymous fixnum)
-(map/file fixnum)
-(map/fixed fixnum)
-(map/private fixnum)
-(map/shared fixnum)
-(memory-mapped-file-pointer (#(procedure #:clean #:enforce) memory-mapped-file-pointer ((struct mmap)) pointer))
-(memory-mapped-file? (#(procedure #:clean #:predicate (struct mmap)) memory-mapped-file? (*) boolean))
 (open-input-file* (#(procedure #:clean #:enforce) open-input-file* (fixnum #!optional symbol) input-port))
 (open-input-pipe (#(procedure #:clean #:enforce) open-input-pipe (string #!optional symbol) input-port))
 (open-output-file* (#(procedure #:clean #:enforce) open-output-file* (fixnum #!optional symbol) output-port))
@@ -1775,10 +1742,6 @@
 (process-run (#(procedure #:clean #:enforce) process-run (string #!optional (list-of string)) fixnum))
 (process-signal (#(procedure #:clean #:enforce) process-signal (fixnum #!optional fixnum) undefined))
 (process-wait (#(procedure #:clean #:enforce) process-wait (#!optional fixnum *) fixnum fixnum fixnum))
-(prot/exec fixnum)
-(prot/none fixnum)
-(prot/read fixnum)
-(prot/write fixnum)
 (read-symbolic-link (#(procedure #:clean #:enforce) read-symbolic-link (string #!optional boolean) string))
 (regular-file? (#(procedure #:clean #:enforce) regular-file? ((or string fixnum)) boolean))
 (seconds->local-time (#(procedure #:clean #:enforce) seconds->local-time (#!optional number) (vector fixnum fixnum fixnum fixnum fixnum fixnum fixnum fixnum boolean fixnum)))

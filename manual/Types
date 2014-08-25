@@ -186,12 +186,10 @@ these names directly in type-specifications - {{TYPE}} corresponds to
 <tr><td>{{f32vector}}</td><td>SRFI-4 byte vector</td></tr>
 <tr><td>{{f64vector}}</td><td>SRFI-4 byte vector</td></tr>
 <tr><td>{{thread}}</td><td>SRFI-18 thread</td></tr>
-<tr><td>{{queue}}</td><td>see "data-structures" unit</td></tr>
 <tr><td>{{environment}}</td><td>evaluation environment</td></tr>
 <tr><td>{{time}}</td><td>SRFI-18 "time" object</td></tr>
 <tr><td>{{continuation}}</td><td>continuation object</td></tr>
 <tr><td>{{lock}}</td><td>lock object from "posix" unit</td></tr>
-<tr><td>{{mmap}}</td><td>memory mapped file</td></tr>
 <tr><td>{{condition}}</td><td>object representing exception</td></tr>
 <tr><td>{{hash-table}}</td><td>SRFI-69 hash-table</td></tr>
 <tr><td>{{tcp-listener}}</td><td>listener object from "tcp" unit</td></tr>

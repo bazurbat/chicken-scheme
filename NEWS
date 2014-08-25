@@ -1,3 +1,9 @@
+5.0.0 (preliminary)
+
+- Removed support for memory-mapped files (posix), queues (data-structures),
+  binary-search (data-structures) and object-eviction (lolevel). These
+  are now available as eggs.
+
 4.9.1
 
 - Security fixes

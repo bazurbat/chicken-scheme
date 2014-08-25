@@ -77,7 +77,6 @@ CHICKEN contains code from several people:
 ; Richard O'Keefe : sorting routines.
 ; Alex Shinn : the [[http://synthcode.com/scheme/irregex/|irregex]] regular expression package.
 ; Olin Shivers : implementation of {{let-optionals[*]}} and reference implementations of SRFI-1, SRFI-13 and SRFI-14.
-; Andrew Wilcox : queues.
 
 The documentation and examples for explicit renaming macros was taken from
 the following paper:

@@ -1429,57 +1429,6 @@ EOF
 	"system error while trying to access file" filename) ) ) ) )
 
 
-;;; Memory mapped I/O:
-
-(define-foreign-variable _prot_read int "PROT_READ")
-(define-foreign-variable _prot_write int "PROT_WRITE")
-(define-foreign-variable _prot_exec int "PROT_EXEC")
-(define-foreign-variable _prot_none int "PROT_NONE")
-
-(define prot/read _prot_read)
-(define prot/write _prot_write)
-(define prot/exec _prot_exec)
-(define prot/none _prot_none)
-
-(define-foreign-variable _map_fixed int "MAP_FIXED")
-(define-foreign-variable _map_shared int "MAP_SHARED")
-(define-foreign-variable _map_private int "MAP_PRIVATE")
-(define-foreign-variable _map_anonymous int "MAP_ANON")
-(define-foreign-variable _map_file int "MAP_FILE")
-
-(define map/fixed _map_fixed)
-(define map/shared _map_shared)
-(define map/private _map_private)
-(define map/anonymous _map_anonymous)
-(define map/file _map_file)
-
-(define map-file-to-memory
-  (let ([mmap (foreign-lambda c-pointer "mmap" c-pointer integer int int int integer)] )
-    (lambda (addr len prot flag fd . off)
-      (let ([addr (if (not addr) (##sys#null-pointer) addr)]
-            [off (if (pair? off) (car off) 0)] )
-        (unless (and (##core#inline "C_blockp" addr) (##core#inline "C_specialp" addr))
-	  (##sys#signal-hook #:type-error 'map-file-to-memory "bad argument type - not a foreign pointer" addr) )
-        (let ([addr2 (mmap addr len prot flag fd off)])
-          (when (eq? -1 (##sys#pointer->address addr2))
-	    (posix-error #:file-error 'map-file-to-memory "cannot map file to memory" addr len prot flag fd off) )
-          (##sys#make-structure 'mmap addr2 len) ) ) ) ) )
-
-(define unmap-file-from-memory
-  (let ([munmap (foreign-lambda int "munmap" c-pointer integer)] )
-    (lambda (mmap . len)
-      (##sys#check-structure mmap 'mmap 'unmap-file-from-memory)
-      (let ([len (if (pair? len) (car len) (##sys#slot mmap 2))])
-        (unless (eq? 0 (munmap (##sys#slot mmap 1) len))
-	  (posix-error #:file-error 'unmap-file-from-memory "cannot unmap file from memory" mmap len) ) ) ) ) )
-
-(define (memory-mapped-file-pointer mmap)
-  (##sys#check-structure mmap 'mmap 'memory-mapped-file-pointer)
-  (##sys#slot mmap 1) )
-
-(define (memory-mapped-file? x)
-  (##sys#structure? x 'mmap) )
-
 ;;; Time related things:
 
 (define string->time
