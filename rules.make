@@ -44,7 +44,7 @@ LIBCHICKEN_SHARED_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=$(O))
 LIBCHICKEN_STATIC_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=-static$(O))
 
 COMPILER_OBJECTS_1 = \
-	chicken batch-driver compiler optimizer lfa2 compiler-syntax scrutinizer support \
+	chicken batch-driver core optimizer lfa2 compiler-syntax scrutinizer support \
 	c-platform c-backend
 COMPILER_OBJECTS        = $(COMPILER_OBJECTS_1:=$(O))
 COMPILER_STATIC_OBJECTS = $(COMPILER_OBJECTS_1:=-static$(O))
@@ -489,26 +489,48 @@ define declare-emitted-import-lib-dependency
 $(1).import.scm: $(1).c
 endef
 
+define declare-emitted-compiler-import-lib-dependency
+.SECONDARY: chicken.compiler.$(1).import.scm
+chicken.compiler.$(1).import.scm: $(1).c
+endef
+
 $(foreach lib, $(SETUP_API_OBJECTS_1),\
           $(eval $(call declare-emitted-import-lib-dependency,$(lib))))
 
 $(foreach lib, $(filter-out chicken,$(COMPILER_OBJECTS_1)),\
-          $(eval $(call declare-emitted-import-lib-dependency,$(lib))))
+          $(eval $(call declare-emitted-compiler-import-lib-dependency,$(lib))))
 
-chicken.c: chicken.scm batch-driver.import.scm c-platform.import.scm
-batch-driver.c: batch-driver.scm compiler.import.scm \
-		compiler-syntax.import.scm optimizer.import.scm \
-		scrutinizer.import.scm c-platform.import.scm \
-		lfa2.import.scm c-backend.import.scm support.import.scm
-c-platform.c: c-platform.scm optimizer.import.scm support.import.scm \
-		compiler.import.scm
-c-backend.c: c-backend.scm c-platform.import.scm support.import.scm \
-		compiler.import.scm
-compiler.c: compiler.scm scrutinizer.import.scm support.import.scm
-optimizer.c: optimizer.scm support.import.scm
-scrutinizer.c: scrutinizer.scm support.import.scm
-lfa2.c: lfa2.scm support.import.scm
-compiler-syntax.c: compiler-syntax.scm support.import.scm compiler.import.scm
+chicken.c: chicken.scm \
+		chicken.compiler.batch-driver.import.scm \
+		chicken.compiler.c-platform.import.scm
+batch-driver.c: batch-driver.scm \
+		chicken.compiler.core.import.scm \
+		chicken.compiler.compiler-syntax.import.scm \
+		chicken.compiler.optimizer.import.scm \
+		chicken.compiler.scrutinizer.import.scm \
+		chicken.compiler.c-platform.import.scm \
+		chicken.compiler.lfa2.import.scm \
+		chicken.compiler.c-backend.import.scm \
+		chicken.compiler.support.import.scm
+c-platform.c: c-platform.scm \
+		chicken.compiler.optimizer.import.scm \
+		chicken.compiler.support.import.scm \
+		chicken.compiler.core.import.scm
+c-backend.c: c-backend.scm \
+		chicken.compiler.c-platform.import.scm \
+		chicken.compiler.support.import.scm \
+		chicken.compiler.core.import.scm
+core.c: core.scm \
+		chicken.compiler.scrutinizer.import.scm \
+		chicken.compiler.support.import.scm
+optimizer.c: optimizer.scm \
+		chicken.compiler.support.import.scm
+scrutinizer.c: scrutinizer.scm \
+		chicken.compiler.support.import.scm
+lfa2.c: lfa2.scm chicken.compiler.support.import.scm
+compiler-syntax.c: compiler-syntax.scm \
+		chicken.compiler.support.import.scm \
+		chicken.compiler.core.import.scm
 
 define profile-flags
 $(if $(filter $(basename $(1)),$(PROFILE_OBJECTS)),-profile)
@@ -583,7 +605,8 @@ $(foreach obj, $(IMPORT_LIBRARIES),\
 
 define declare-bootstrap-compiler-object
 $(1).c: $$(SRCDIR)$(1).scm $$(SRCDIR)tweaks.scm
-	$$(CHICKEN) $$< $$(CHICKEN_PROGRAM_OPTIONS) -emit-import-library $(1) -output-file $$@ 
+	$$(CHICKEN) $$< $$(CHICKEN_PROGRAM_OPTIONS) -emit-import-library chicken.compiler.$(1) \
+		-output-file $$@ 
 endef
 
 $(foreach obj, $(COMPILER_OBJECTS_1),\

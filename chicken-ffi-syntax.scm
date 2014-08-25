@@ -31,7 +31,7 @@
   (fixnum))
 
 ;; IMPORTANT: These macros expand directly into fully qualified names
-;; from the "c-backend" and "support" modules.
+;; from the "chicken.compiler.c-backend" and "chicken.compiler.support" modules.
 
 #+(not debugbuild)
 (declare
@@ -173,7 +173,7 @@
 		  'foreign-value
 		  "bad argument type - not a string or symbol" 
 		  code))))
-	(##core#the ,(support#foreign-type->scrutiny-type
+	(##core#the ,(chicken.compiler.support#foreign-type->scrutiny-type
 		      (##sys#strip-syntax (caddr form))
 		      'result) 
 		    #f ,tmp) ) ) ) ) )
@@ -217,8 +217,9 @@
 	   (args (##sys#strip-syntax (if hasrtype (caddr form) (cadr form))))
 	   (argtypes (map car args)))
       `(##core#the (procedure
-		    ,(map (cut support#foreign-type->scrutiny-type <> 'arg) argtypes)
-		    ,(support#foreign-type->scrutiny-type rtype 'result))
+		    ,(map (cut chicken.compiler.support#foreign-type->scrutiny-type <> 'arg)
+			  argtypes)
+		    ,(chicken.compiler.support#foreign-type->scrutiny-type rtype 'result))
 		   #f
 		   (##core#foreign-primitive ,@(cdr form)))))))
 
@@ -229,9 +230,9 @@
   (lambda (form r c)
     (##sys#check-syntax 'foreign-lambda form '(_ _ _ . _))
     `(##core#the
-      (procedure ,(map (cut support#foreign-type->scrutiny-type <> 'arg)
+      (procedure ,(map (cut chicken.compiler.support#foreign-type->scrutiny-type <> 'arg)
 		       (##sys#strip-syntax (cdddr form)))
-		 ,(support#foreign-type->scrutiny-type
+		 ,(chicken.compiler.support#foreign-type->scrutiny-type
 		   (##sys#strip-syntax (cadr form)) 'result))
       #f
       (##core#foreign-lambda ,@(cdr form))))))
@@ -243,9 +244,12 @@
   (lambda (form r c)
     (##sys#check-syntax 'foreign-lambda* form '(_ _ _ _ . _))
     `(##core#the
-      (procedure ,(map (lambda (a) (support#foreign-type->scrutiny-type (car a) 'arg))
+      (procedure ,(map (lambda (a)
+			 (chicken.compiler.support#foreign-type->scrutiny-type
+			  (car a)
+			  'arg))
 			(##sys#strip-syntax (caddr form)))
-		  ,(support#foreign-type->scrutiny-type
+		  ,(chicken.compiler.support#foreign-type->scrutiny-type
 		    (##sys#strip-syntax (cadr form)) 'result))
       #f
       (##core#foreign-lambda* ,@(cdr form))))))
@@ -257,9 +261,9 @@
   (lambda (form r c)
     (##sys#check-syntax 'foreign-safe-lambda form '(_ _ _ . _))
     `(##core#the
-      (procedure ,(map (cut support#foreign-type->scrutiny-type <> 'arg)
+      (procedure ,(map (cut chicken.compiler.support#foreign-type->scrutiny-type <> 'arg)
 			(##sys#strip-syntax (cdddr form)))
-		  ,(support#foreign-type->scrutiny-type
+		  ,(chicken.compiler.support#foreign-type->scrutiny-type
 		    (##sys#strip-syntax (cadr form)) 'result))
       #f
       (##core#foreign-safe-lambda ,@(cdr form))))))
@@ -271,9 +275,10 @@
   (lambda (form r c)
     (##sys#check-syntax 'foreign-safe-lambda* form '(_ _ _ _ . _))
     `(##core#the
-      (procedure ,(map (lambda (a) (support#foreign-type->scrutiny-type (car a) 'arg))
+      (procedure ,(map (lambda (a)
+			 (chicken.compiler.support#foreign-type->scrutiny-type (car a) 'arg))
 			(##sys#strip-syntax (caddr form)))
-		  ,(support#foreign-type->scrutiny-type
+		  ,(chicken.compiler.support#foreign-type->scrutiny-type
 		    (##sys#strip-syntax (cadr form)) 'result))
       #f
       (##core#foreign-safe-lambda* ,@(cdr form))))))
@@ -290,7 +295,7 @@
 	    (if (string? t)
 		t
 		;; TODO: Backend should be configurable
-		(c-backend#foreign-type-declaration t ""))))
+		(chicken.compiler.c-backend#foreign-type-declaration t ""))))
       `(##core#begin
 	(##core#define-foreign-variable ,tmp size_t ,(string-append "sizeof(" decl ")"))
 	(##core#the fixnum #f ,tmp))))))

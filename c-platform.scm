@@ -33,7 +33,7 @@
   (uses srfi-1 data-structures
 	optimizer support compiler))
 
-(module c-platform
+(module chicken.compiler.c-platform
     (default-declarations default-profiling-declarations
      units-used-by-default
      valid-compiler-options valid-compiler-options-with-argument
@@ -43,7 +43,9 @@
      parameter-limit small-parameter-limit)
 
 (import chicken scheme srfi-1 data-structures
-	optimizer support compiler)
+	chicken.compiler.optimizer
+	chicken.compiler.support
+	chicken.compiler.core)
 
 (include "tweaks")
 

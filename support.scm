@@ -29,7 +29,7 @@
 	 (not inline ##sys#user-read-hook) ; XXX: Is this needed?
 	 (uses data-structures srfi-1 files extras ports) )
 
-(module support
+(module chicken.compiler.support
     (compiler-cleanup-hook bomb collected-debugging-output debugging
      debugging-chicken with-debugging-output quit-compiling
      emit-syntax-trace-info check-signature posq posv stringify symbolify

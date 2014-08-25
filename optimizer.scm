@@ -30,14 +30,14 @@
   (uses srfi-1 data-structures
 	support) )
 
-(module optimizer
+(module chicken.compiler.optimizer
     (scan-toplevel-assignments perform-high-level-optimizations
      transform-direct-lambdas! determine-loop-and-dispatch
      eq-inline-operator membership-test-operators membership-unfold-limit
      default-optimization-passes rewrite)
 
 (import chicken scheme srfi-1 data-structures
-	support)
+	chicken.compiler.support)
 
 (include "tweaks")
 
