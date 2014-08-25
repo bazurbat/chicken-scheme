@@ -256,13 +256,11 @@ endif
 CHICKEN_OPTIONS += $(EXTRA_CHICKEN_OPTIONS)
 CHICKEN_LIBRARY_OPTIONS = $(CHICKEN_OPTIONS) -explicit-use -no-trace
 CHICKEN_PROGRAM_OPTIONS = $(CHICKEN_OPTIONS) -no-lambda-info -local
-CHICKEN_COMPILER_OPTIONS = $(CHICKEN_PROGRAM_OPTIONS) -extend private-namespace.scm
 CHICKEN_DYNAMIC_OPTIONS = $(CHICKEN_OPTIONS) -feature chicken-compile-shared -dynamic
 CHICKEN_IMPORT_LIBRARY_OPTIONS = $(CHICKEN_DYNAMIC_OPTIONS) -no-trace
 
 ifndef DEBUGBUILD
 CHICKEN_PROGRAM_OPTIONS += -no-trace
-CHICKEN_COMPILER_OPTIONS += -no-trace
 endif
 
 CHICKEN_PROGRAM_OPTIONS += $(if $(PROFILE_OBJECTS),-profile)
@@ -370,9 +368,6 @@ endif
 	$(call echo, >>, $@,#endif)
 	$(call echo, >>, $@,#ifndef C_INSTALL_MORE_STATIC_LIBS)
 	$(call echo, >>, $@,# define C_INSTALL_MORE_STATIC_LIBS "$(LIBRARIES)")
-	$(call echo, >>, $@,#endif)
-	$(call echo, >>, $@,#ifndef C_DEFAULT_TARGET_HEAP_SIZE)
-	$(call echo, >>, $@,# define C_DEFAULT_TARGET_HEAP_SIZE 0)
 	$(call echo, >>, $@,#endif)
 	$(call echo, >>, $@,#ifndef C_STACK_GROWS_DOWNWARD)
 	$(call echo, >>, $@,# define C_STACK_GROWS_DOWNWARD $(STACKDIRECTION))

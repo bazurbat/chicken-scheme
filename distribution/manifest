@@ -6,12 +6,17 @@ config-arch.sh
 identify.sh
 banner.scm
 batch-driver.scm
+batch-driver.import.scm
 batch-driver.c
 c-backend.c
+c-backend.import.scm
 c-platform.c
+c-platform.import.scm
 chicken-profile.c
 chicken.c
+chicken.import.scm
 compiler.c
+compiler.import.scm
 csc.c
 csi.c
 eval.c
@@ -22,8 +27,11 @@ extras.c
 library.c
 lolevel.c
 optimizer.c
+optimizer.import.scm
 compiler-syntax.c
+compiler-syntax.import.scm
 scrutinizer.c
+scrutinizer.import.scm
 irregex.c
 posixunix.c
 posixwin.c
@@ -37,6 +45,7 @@ srfi-18.c
 srfi-4.c
 stub.c
 support.c
+support.import.scm
 tcp.c
 utils.c
 build.scm
@@ -76,6 +85,7 @@ irregex.scm
 irregex-core.scm
 irregex-utils.scm
 lfa2.c
+lfa2.import.scm
 lfa2.scm
 posixunix.scm
 posixwin.scm
@@ -234,8 +244,6 @@ GNUmakefile
 config.make
 rules.make
 defaults.make
-private-namespace.scm
-compiler-namespace.scm
 synrules.scm
 expand.scm
 expand.c

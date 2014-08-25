@@ -25,16 +25,32 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
-(declare (unit platform))
+;; TODO: Rename c-platform back to "platform" and turn it into a
+;; functor?  This may require the creation of an additional file.
+;; Same goes for "backend" and "driver".
+(declare
+  (unit c-platform)
+  (uses srfi-1 data-structures
+	optimizer support compiler))
 
+(module c-platform
+    (default-declarations default-profiling-declarations
+     units-used-by-default
+     valid-compiler-options valid-compiler-options-with-argument
 
-(include "compiler-namespace")
+     ;; For consumption by c-backend *only*
+     target-include-file words-per-flonum
+     parameter-limit small-parameter-limit)
+
+(import chicken scheme srfi-1 data-structures
+	optimizer support compiler)
+
 (include "tweaks")
 
 
 ;;; Parameters:
 
-(define default-optimization-passes 3)
+(default-optimization-passes 3)
 
 (define default-declarations
   '((always-bound
@@ -51,30 +67,22 @@
      ##sys#foreign-block-argument ##sys#foreign-string-argument ##sys#foreign-pointer-argument ##sys#foreign-integer-argument
      ##sys#call-with-current-continuation) ) )
 
-(define default-debugging-declarations
-  '((##core#declare
-      '(uses debugger)
-      '(bound-to-procedure
-	##sys#push-debug-frame ##sys#pop-debug-frame ##sys#check-debug-entry ##sys#check-debug-assignment
-	##sys#register-debug-lambdas ##sys#register-debug-variables ##sys#debug-call) ) ) )
-
 (define default-profiling-declarations
   '((##core#declare
      (uses profiler)
      (bound-to-procedure
        ##sys#profile-entry ##sys#profile-exit) ) ) )
 
-(define units-used-by-default '(library eval chicken-syntax)) 
+(define units-used-by-default '(library eval chicken-syntax))
 (define words-per-flonum 4)
 (define parameter-limit 1024)
 (define small-parameter-limit 128)
-(define unlikely-variables '(unquote unquote-splicing))
 
-(define eq-inline-operator "C_eqp")
-(define membership-test-operators
+(eq-inline-operator "C_eqp")
+(membership-test-operators
   '(("C_i_memq" . "C_eqp") ("C_u_i_memq" . "C_eqp") ("C_i_member" . "C_i_equalp")
     ("C_i_memv" . "C_i_eqvp") ) )
-(define membership-unfold-limit 20)
+(membership-unfold-limit 20)
 (define target-include-file "chicken.h")
 
 (define valid-compiler-options
@@ -89,7 +97,7 @@
     emit-external-prototypes-first release local inline-global
     analyze-only dynamic 
     scrutinize 				; OBSOLETE
-    no-argc-checks no-procedure-checks
+    no-argc-checks no-procedure-checks no-parentheses-synonyms
     no-procedure-checks-for-toplevel-bindings module
     no-bound-checks no-procedure-checks-for-usual-bindings no-compiler-syntax
     no-parentheses-synonyms no-symbol-escape r5rs-syntax emit-all-import-libraries
@@ -100,7 +108,6 @@
   '(debug 
     output-file include-path heap-size stack-size unit uses keyword-style require-extension 
     inline-limit profile-name 
-    parenthesis-synonyms
     prelude postlude prologue epilogue nursery extend feature no-feature types
     emit-import-library emit-inline-file static-extension consult-inline-file
     emit-type-file
@@ -109,7 +116,7 @@
 
 ;;; Standard and extended bindings:
 
-(define default-standard-bindings
+(set! default-standard-bindings
   '(not boolean? apply call-with-current-continuation eq? eqv? equal? pair? cons car cdr caar cadr
     cdar cddr caaar caadr cadar caddr cdaar cdadr cddar cdddr caaaar caaadr caadar caaddr cadaar
     cadadr caddar cadddr cdaaar cdaadr cdadar cdaddr cddaar cddadr cdddar cddddr set-car! set-cdr!
@@ -130,7 +137,7 @@
     list-ref abs char-ready? peek-char list->string string->list
     current-input-port current-output-port) )
 
-(define default-extended-bindings
+(set! default-extended-bindings
   '(bitwise-and alist-cons xcons
     bitwise-ior bitwise-xor bitwise-not add1 sub1 fx+ fx- fx* fx/
     fx+? fx-? fx*? fx/? fxmod o fp/?
@@ -166,7 +173,7 @@
     current-error-port current-thread
     printf sprintf format fprintf get-keyword) )
 
-(define internal-bindings
+(set! internal-bindings
   '(##sys#slot ##sys#setslot ##sys#block-ref ##sys#block-set!
     ##sys#call-with-current-continuation ##sys#size ##sys#byte ##sys#setbyte
     ##sys#pointer? ##sys#generic-structure? ##sys#structure? ##sys#check-structure
@@ -220,7 +227,7 @@
     pointer-f32-ref pointer-f32-set!
     pointer-f64-ref pointer-f64-set!))
 
-(define foldable-bindings
+(set! foldable-bindings
   (lset-difference 
    eq?
    (lset-union eq? default-standard-bindings default-extended-bindings)
@@ -470,22 +477,22 @@
        (and (= (length callargs) 1)
 	    (call-with-current-continuation
 	     (lambda (return)
-	       (let ([arg (first callargs)])
+	       (let ((arg (first callargs)))
 		 (make-node
 		  '##core#call (list #t)
 		  (list
 		   cont
-		   (cond [(and (eq? '##core#variable (node-class arg))
-			       (eq? 'vector (get db (first (node-parameters arg)) 'rest-parameter)) )
+		   (cond ((and (eq? '##core#variable (node-class arg))
+			       (eq? 'vector (db-get db (first (node-parameters arg)) 'rest-parameter)) )
 			  (make-node
 			   '##core#inline 
 			   (if unsafe
 			       '("C_slot")
 			       '("C_i_vector_ref") )
-			   (list arg (qnode index)) ) ]
-			 [(and unsafe iop2) (make-node '##core#inline (list iop2) callargs)]
-			 [iop1 (make-node '##core#inline (list iop1) callargs)]
-			 [else (return #f)] ) ) ) ) ) ) ) ) ) )
+			   (list arg (qnode index)) ) )
+			 ((and unsafe iop2) (make-node '##core#inline (list iop2) callargs))
+			 (iop1 (make-node '##core#inline (list iop1) callargs))
+			 (else (return #f)) ) ) ) ) ) ) ) ) ) )
 
   (rewrite-c..r 'car "C_i_car" "C_u_i_car" 0)
   (rewrite-c..r '##sys#car "C_i_car" "C_u_i_car" 0)
@@ -516,7 +523,7 @@
 	  (and (eq? '##core#variable (node-class arg1))	; probably not needed
 	       (eq? '##core#variable (node-class arg2))
 	       (and-let* ((sym (car (node-parameters arg2)))
-			  (val (get db sym 'value)) )
+			  (val (db-get db sym 'value)) )
 		 (and (eq? '##core#lambda (node-class val))
 		      (let ((llist (third (node-parameters val))))
 			(and (proper-list? llist)
@@ -1066,19 +1073,19 @@
   (define (rewrite-call/cc db classargs cont callargs)
     ;; (call/cc <var>), <var> = (lambda (kont k) ... k is never used ...) -> (<var> #f)
     (and (= 1 (length callargs))
-	 (let ([val (first callargs)])
+	 (let ((val (first callargs)))
 	   (and (eq? '##core#variable (node-class val))
-		(and-let* ([proc (get db (first (node-parameters val)) 'value)]
-			   [(eq? '##core#lambda (node-class proc))] )
-		  (let ([llist (third (node-parameters proc))])
-		    (decompose-lambda-list 
+		(and-let* ((proc (db-get db (first (node-parameters val)) 'value))
+			   ((eq? '##core#lambda (node-class proc))) )
+		  (let ((llist (third (node-parameters proc))))
+		    (##sys#decompose-lambda-list 
 		     llist
 		     (lambda (vars argc rest)
 		       (and (= argc 2)
-			    (let ([var (or rest (second llist))])
-			      (and (not (get db var 'references))
-				   (not (get db var 'assigned)) 
-				   (not (get db var 'inline-transient))
+			    (let ((var (or rest (second llist))))
+			      (and (not (db-get db var 'references))
+				   (not (db-get db var 'assigned)) 
+				   (not (db-get db var 'inline-transient))
 				   (make-node
 				    '##core#call (list #t)
 				    (list val cont (qnode #f)) ) ) ) ) ) ) ) ) ) ) ) )
@@ -1142,7 +1149,7 @@
 	   '##core#call (list #t) 
 	   (list cont
 		 (if (and (eq? '##core#variable (node-class arg))
-			  (not (get db (car (node-parameters arg)) 'global)) )
+			  (not (db-get db (car (node-parameters arg)) 'global)) )
 		     (qnode #t)
 		     (make-node 
 		      '##core#inline '("C_anyp")
@@ -1203,3 +1210,4 @@
 		    '##core#inline_allocate
 		    '("C_a_i_cons" 3) 
 		    (list (second callargs) (varnode tmp)))))))))))
+)

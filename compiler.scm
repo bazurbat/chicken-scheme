@@ -263,10 +263,60 @@
 
 
 (declare
- (unit compiler))
+ (unit compiler)
+ (uses srfi-1 extras data-structures
+       scrutinizer support) )
 
+(module compiler
+    (analyze-expression canonicalize-expression compute-database-statistics
+     initialize-compiler perform-closure-conversion perform-cps-conversion
+     prepare-for-code-generation
 
-(include "compiler-namespace")
+     ;; These are both exported for use in eval.scm (which is a bit of
+     ;; a hack). file-requirements is also used by batch-driver
+     process-declaration file-requirements
+
+     ;; Various ugly global boolean flags that get set by the (batch) driver
+     all-import-libraries bootstrap-mode compiler-syntax-enabled
+     emit-closure-info emit-profile enable-inline-files explicit-use-flag
+     first-analysis no-bound-checks enable-module-registration
+     optimize-leaf-routines standalone-executable undefine-shadowed-macros
+     verbose-mode local-definitions enable-specialization block-compilation
+     inline-locally inline-substitutions-enabled strict-variable-types
+
+     ;; These are set by the (batch) driver, and read by the (c) backend
+     disable-stack-overflow-checking emit-trace-info external-protos-first
+     external-variables insert-timer-checks no-argc-checks
+     no-global-procedure-checks no-procedure-checks
+
+     ;; Other, non-boolean, flags set by (batch) driver
+     profiled-procedures import-libraries inline-max-size
+     extended-bindings standard-bindings
+
+     ;; non-booleans set by the (batch) driver, and read by the (c) backend
+     target-heap-size target-stack-size unit-name used-units
+
+     ;; bindings, set by the (c) platform
+     default-extended-bindings default-standard-bindings
+     internal-bindings foldable-bindings
+
+     ;; Only read or called by the (c) backend
+     foreign-declarations foreign-lambda-stubs foreign-stub-argument-types
+     foreign-stub-argument-names foreign-stub-body foreign-stub-callback
+     foreign-stub-cps foreign-stub-id foreign-stub-name foreign-stub-return-type
+     lambda-literal-id lambda-literal-external lambda-literal-argument-count
+     lambda-literal-rest-argument lambda-literal-rest-argument-mode
+     lambda-literal-temporaries lambda-literal-unboxed-temporaries
+     lambda-literal-callee-signatures lambda-literal-allocated
+     lambda-literal-closure-size lambda-literal-looping
+     lambda-literal-customizable lambda-literal-body lambda-literal-direct
+
+     ;; Tables and databases that really should not be exported
+     constant-table immutable-constants inline-table line-number-database-2
+     line-number-database-size)
+
+(import chicken scheme foreign srfi-1 extras data-structures
+	scrutinizer support)
 
 (define (d arg1 . more)
   (when (##sys#fudge 13)		; debug mode?
@@ -282,27 +332,22 @@
 (define-inline (gensym-f-id) (gensym 'f_))
 
 (define-foreign-variable installation-home c-string "C_INSTALL_SHARE_HOME")
-(define-foreign-variable default-target-heap-size int "C_DEFAULT_TARGET_HEAP_SIZE")
 
-(define-constant foreign-type-table-size 301)
 (define-constant initial-analysis-database-size 3001)
 (define-constant default-line-number-database-size 997)
 (define-constant inline-table-size 301)
 (define-constant constant-table-size 301)
 (define-constant file-requirements-size 301)
-(define-constant real-name-table-size 997)
 (define-constant default-inline-max-size 20)
 
 
 ;;; Global variables containing compilation parameters:
 
 (define unit-name #f)
-(define number-type 'generic)
 (define standard-bindings '())
 (define extended-bindings '())
 (define insert-timer-checks #t)
 (define used-units '())
-(define unsafe #f)
 (define foreign-declarations '())
 (define emit-trace-info #f)
 (define block-compilation #f)
@@ -315,11 +360,9 @@
 (define no-argc-checks #f)
 (define no-procedure-checks #f)
 (define no-global-procedure-checks #f)
-(define source-filename #f)
 (define safe-globals-flag #f)
 (define explicit-use-flag #f)
 (define disable-stack-overflow-checking #f)
-(define require-imports-flag #f)
 (define external-protos-first #f)
 (define inline-max-size default-inline-max-size)
 (define emit-closure-info #t)
@@ -349,31 +392,28 @@
 (define inline-table-used #f)
 (define constant-table #f)
 (define constants-used #f)
-(define broken-constant-nodes '())
 (define inline-substitutions-enabled #f)
 (define direct-call-ids '())
 (define first-analysis #t)
-(define foreign-type-table #f)
 (define foreign-variables '())
 (define foreign-lambda-stubs '())
-(define foreign-callback-stubs '())
 (define external-variables '())
-(define profile-lambda-list '())
-(define profile-lambda-index 0)
-(define profile-info-vector-name #f)
 (define external-to-pointer '())
-(define real-name-table #f)
 (define location-pointer-map '())
 (define pending-canonicalizations '())
 (define defconstant-bindings '())
 (define callback-names '())
 (define toplevel-scope #t)
 (define toplevel-lambda-id #f)
-(define csc-control-file #f)
-(define data-declarations '())
 (define file-requirements #f)
-(define postponed-initforms '())
 
+(define unlikely-variables '(unquote unquote-splicing))
+
+;;; Initial bindings.  These are supplied (set!) by the (c-)platform
+(define default-extended-bindings '())
+(define default-standard-bindings '())
+(define internal-bindings '())
+(define foldable-bindings '())
 
 ;;; Initialize globals:
 
@@ -387,15 +427,54 @@
   (if constant-table
       (vector-fill! constant-table '())
       (set! constant-table (make-vector constant-table-size '())) )
-  (set! profile-info-vector-name (make-random-name 'profile-info))
-  (set! real-name-table (make-vector real-name-table-size '()))
+  (reset-profile-info-vector-name!)
+  (clear-real-name-table!)
   (if file-requirements
       (vector-fill! file-requirements '())
       (set! file-requirements (make-vector file-requirements-size '())) )
-  (if foreign-type-table
-      (vector-fill! foreign-type-table '())
-      (set! foreign-type-table (make-vector foreign-type-table-size '())) ) )
+  (clear-foreign-type-table!) )
 
+
+;;; Compute general statistics from analysis database:
+;
+; - Returns:
+;
+;   current-program-size
+;   original-program-size
+;   number of known variables
+;   number of known procedures
+;   number of global variables
+;   number of known call-sites
+;   number of database entries
+;   average bucket load
+
+(define (compute-database-statistics db)
+  (let ((nprocs 0)
+	(nvars 0)
+	(nglobs 0)
+	(entries 0)
+	(nsites 0) )
+    (##sys#hash-table-for-each
+     (lambda (sym plist)
+       (for-each
+	(lambda (prop)
+	  (set! entries (+ entries 1))
+	  (case (car prop)
+	    ((global) (set! nglobs (+ nglobs 1)))
+	    ((value)
+	     (set! nvars (+ nvars 1))
+	     (if (eq? '##core#lambda (node-class (cdr prop)))
+		 (set! nprocs (+ nprocs 1)) ) )
+	    ((call-sites) (set! nsites (+ nsites (length (cdr prop))))) ) )
+	plist) )
+     db)
+    (values current-program-size
+	    original-program-size
+	    nvars
+	    nprocs
+	    nglobs
+	    nsites
+	    entries) ) )
 
 ;;; Expand macros and canonicalize expressions:
 
@@ -658,7 +737,7 @@
 			      (llist obody) 
 			      (##sys#expand-extended-lambda-list 
 			       llist obody ##sys#error se) ) )
-			   (decompose-lambda-list
+			   (##sys#decompose-lambda-list
 			    llist
 			    (lambda (vars argc rest)
 			      (let* ((aliases (map gensym vars))
@@ -1054,7 +1133,7 @@
 			   (cond [(pair? conv)
 				  (let ([arg (gensym)]
 					[ret (gensym)] )
-				    (##sys#hash-table-set! foreign-type-table name (vector type arg ret))
+				    (register-foreign-type! name type arg ret)
 				    (mark-variable arg '##compiler#always-bound)
 				    (mark-variable ret '##compiler#always-bound)
 				    (hide-variable arg)
@@ -1067,7 +1146,7 @@
 					 ,(if (pair? (cdr conv)) (second conv) '##sys#values)) ) 
 				     e se dest ldest h ln) ) ]
 				 [else
-				  (##sys#hash-table-set! foreign-type-table name type)
+				  (register-foreign-type! name type)
 				  '(##core#undefined) ] ) ) )
 
 			((##core#define-external-variable)
@@ -1094,7 +1173,7 @@
 			   (set! location-pointer-map
 			     (cons (list alias store type) location-pointer-map) )
 			   (walk
-			    `(let (,(let ([size (words (estimate-foreign-result-location-size type))])
+			    `(let (,(let ([size (bytes->words (estimate-foreign-result-location-size type))])
 				      ;; Add 2 words: 1 for the header, 1 for double-alignment:
 				      ;; Note: C_a_i_bytevector takes number of words, not bytes
 				      (list 
@@ -1122,7 +1201,7 @@
 				[valexp (third x)]
 				[val (handle-exceptions ex
 					 ;; could show line number here
-					 (quit "error in constant evaluation of ~S for named constant `~S'" 
+					 (quit-compiling "error in constant evaluation of ~S for named constant `~S'" 
 					       valexp name)
 				       (if (and (not (symbol? valexp))
 						(collapsable-literal? valexp))
@@ -1144,7 +1223,7 @@
 				    (mark-variable var '##compiler#always-bound)
 				    (walk `(define ,var ',val) e se #f #f h ln) ) )
 				 (else
-				  (quit "invalid compile-time value for named constant `~S'"
+				  (quit-compiling "invalid compile-time value for named constant `~S'"
 					name)))))
 
 			((##core#declare)
@@ -1169,7 +1248,7 @@
 			     (if (valid-c-identifier? raw-c-name)
 				 (set! callback-names
 				   (cons (cons raw-c-name name) callback-names))
-				 (quit "name `~S' of external definition is not a valid C identifier"
+				 (quit-compiling "name `~S' of external definition is not a valid C identifier"
 				       raw-c-name) )
 			     (when (or (not (proper-list? vars)) 
 				       (not (proper-list? atypes))
@@ -1481,7 +1560,8 @@
 	      (for-each 
 	       (cut mark-variable <> '##compiler#pure #t) 
 	       (globalize-all syms))
-	      (quit "invalid arguments to `constant' declaration: ~S" spec)) ) )
+	      (quit-compiling
+	       "invalid arguments to `constant' declaration: ~S" spec)) ) )
        ((emit-import-library)
 	(set! import-libraries
 	  (append
@@ -1629,19 +1709,21 @@
 	 ,(if (zero? rsize) 
 	      (foreign-type-convert-result (append head (cons '(##core#undefined) rest)) rtype)
 	      (let ([ft (final-foreign-type rtype)]
-		    [ws (words rsize)] )
+		    [ws (bytes->words rsize)] )
 		`(let ([,bufvar (##core#inline_allocate ("C_a_i_bytevector" ,(+ 2 ws)) ',ws)])
 		   ,(foreign-type-convert-result
 		     (finish-foreign-result ft (append head (cons bufvar rest)))
 		     rtype) ) ) ) ) ) ) )
 
 (define (expand-foreign-lambda exp callback?)
-  (let* ([name (third exp)]
-	 [sname (cond ((symbol? name) (symbol->string (##sys#strip-syntax name)))
+  (let* ((name (third exp))
+	 (sname (cond ((symbol? name) (symbol->string (##sys#strip-syntax name)))
 		      ((string? name) name)
-		      (else (quit "name `~s' of foreign procedure has wrong type" name)) ) ]
-	 [rtype (second exp)]
-	 [argtypes (cdddr exp)] )
+		      (else (quit-compiling
+			     "name `~s' of foreign procedure has wrong type"
+			     name)) ) )
+	 (rtype (second exp))
+	 (argtypes (cdddr exp)) )
     (create-foreign-stub rtype sname argtypes #f #f callback? callback?) ) )
 
 (define (expand-foreign-lambda* exp callback?)
@@ -1740,12 +1822,9 @@
 				     (list (make-node 'set! (list (first params)) (list r))
 					   (k (varnode t1)) ) ) ) ) ) )
 	((##core#foreign-callback-wrapper)
-	 (let ([id (gensym-f-id)]
-	       [lam (first subs)] )
-	   (set! foreign-callback-stubs
-	     (cons (apply make-foreign-callback-stub id params) foreign-callback-stubs) )
-	   ;; mark to avoid leaf-routine optimization
-	   (mark-variable id '##compiler#callback-lambda)
+	 (let ((id (gensym-f-id))
+	       (lam (first subs)) )
+	   (register-foreign-callback-stub! id params)
 	   (cps-lambda id (first (node-parameters lam)) (node-subexpressions lam) k) ) )
 	((##core#inline ##core#inline_allocate ##core#inline_ref ##core#inline_update ##core#inline_loc_ref 
 			##core#inline_loc_update)
@@ -1817,18 +1896,6 @@
   (walk node values) )
 
 
-;;; Foreign callback stub type:
-
-(define-record-type foreign-callback-stub
-  (make-foreign-callback-stub id name qualifiers return-type argument-types)
-  foreign-callback-stub?
-  (id foreign-callback-stub-id)		; symbol
-  (name foreign-callback-stub-name)	; string
-  (qualifiers foreign-callback-stub-qualifiers)	; string
-  (return-type foreign-callback-stub-return-type) ; type-specifier
-  (argument-types foreign-callback-stub-argument-types)) ; (type-specifier ...)
-
-
 ;;; Perform source-code analysis:
 
 (define (analyze-expression node)
@@ -1855,9 +1922,9 @@
 	     (unless (memq var localenv)
 	       (grow 1)
 	       (cond ((memq var env) 
-		      (put! db var 'captured #t))
-		     ((not (get db var 'global)) 
-		      (put! db var 'global #t) ) ) ) ) )
+		      (db-put! db var 'captured #t))
+		     ((not (db-get db var 'global)) 
+		      (db-put! db var 'global #t) ) ) ) ) )
 	  
 	  ((##core#callunit ##core#recurse)
 	   (grow 1)
@@ -1879,18 +1946,18 @@
 		   (walk (car vals) env (append params localenv) env2 here #f)
 		   (let ([var (car vars)]
 			 [val (car vals)] )
-		     (put! db var 'home here)
+		     (db-put! db var 'home here)
 		     (assign var val env2 here)
 		     (walk val env localenv fullenv here #f) 
 		     (loop (cdr vars) (cdr vals)) ) ) ) ) )
 
 	  ((lambda) ; this is an intermediate lambda, slightly different
 	   (grow 1) ; from '##core#lambda nodes (params = (LLIST));
-	   (decompose-lambda-list	; CPS will convert this into ##core#lambda
+	   (##sys#decompose-lambda-list	; CPS will convert this into ##core#lambda
 	    (first params)
 	    (lambda (vars argc rest)
 	      (for-each 
-	       (lambda (var) (put! db var 'unknown #t))
+	       (lambda (var) (db-put! db var 'unknown #t))
 	       vars)
 	      (let ([tl toplevel-scope])
 		(set! toplevel-scope #f)
@@ -1899,22 +1966,22 @@
 
 	  ((##core#lambda ##core#direct_lambda)
 	   (grow 1)
-	   (decompose-lambda-list
+	   (##sys#decompose-lambda-list
 	    (third params)
 	    (lambda (vars argc rest)
 	      (let ([id (first params)]
 		    [size0 current-program-size] )
 		(when here
 		  (collect! db here 'contains id)
-		  (put! db id 'contained-in here) )
+		  (db-put! db id 'contained-in here) )
 		(for-each 
 		 (lambda (var)
-		   (put! db var 'home here)
-		   (put! db var 'unknown #t) )
+		   (db-put! db var 'home here)
+		   (db-put! db var 'unknown #t) )
 		 vars)
 		(when rest
-		  (put! db rest 'rest-parameter 'list) )
-		(when (simple-lambda-node? n) (put! db id 'simple #t))
+		  (db-put! db rest 'rest-parameter 'list) )
+		(when (simple-lambda-node? n) (db-put! db id 'simple #t))
 		(let ([tl toplevel-scope])
 		  (unless toplevel-lambda-id (set! toplevel-lambda-id id))
 		  (when (and (second params) (not (eq? toplevel-lambda-id id)))
@@ -1933,21 +2000,21 @@
 		  (warning "redefinition of standard binding" var) )
 		 ((extended)
 		  (warning "redefinition of extended binding" var) ) ))
-	     (put! db var 'potential-value val)
+	     (db-put! db var 'potential-value val)
 	     (unless (memq var localenv)
 	       (grow 1)
 	       (cond ((memq var env) 
-		      (put! db var 'captured #t))
-		     ((not (get db var 'global)) 
-		      (put! db var 'global #t) ) ) )
+		      (db-put! db var 'captured #t))
+		     ((not (db-get db var 'global)) 
+		      (db-put! db var 'global #t) ) ) )
 	     (assign var val fullenv here)
-	     (unless toplevel-scope (put! db var 'assigned-locally #t))
-	     (put! db var 'assigned #t)
+	     (unless toplevel-scope (db-put! db var 'assigned-locally #t))
+	     (db-put! db var 'assigned #t)
 	     (walk (car subs) env localenv fullenv here #f) ) )
 
 	  ((##core#primitive ##core#inline)
 	   (let ((id (first params)))
-	     (when (and first-analysis here (symbol? id) (##sys#hash-table-ref real-name-table id))
+	     (when (and first-analysis here (symbol? id) (get-real-name id))
 	       (set-real-name! id here) )
 	     (walkeach subs env localenv fullenv here #f) ) )
 
@@ -1958,30 +2025,30 @@
 
     (define (assign var val env here)
       (cond ((eq? '##core#undefined (node-class val))
-	     (put! db var 'undefined #t) )
+	     (db-put! db var 'undefined #t) )
 	    ((and (eq? '##core#variable (node-class val)) ; assignment to itself
 		  (eq? var (first (node-parameters val))) ) )
 	    ((or (memq var env)
 		 (variable-mark var '##compiler#constant)
-		 (not (variable-visible? var)))
-	     (let ((props (get-all db var 'unknown 'value))
-		   (home (get db var 'home)) )
+		 (not (variable-visible? var block-compilation)))
+	     (let ((props (db-get-all db var 'unknown 'value))
+		   (home (db-get db var 'home)) )
 	       (unless (assq 'unknown props)
 		 (if (assq 'value props)
-		     (put! db var 'unknown #t)
+		     (db-put! db var 'unknown #t)
 		     (if (or (not home) (eq? here home))
-			 (put! db var 'value val)
-			 (put! db var 'unknown #t) ) ) ) ) )
+			 (db-put! db var 'value val)
+			 (db-put! db var 'unknown #t) ) ) ) ) )
 	    ((and (or local-definitions
 		      (variable-mark var '##compiler#local))
-		  (not (get db var 'unknown)))
-	     (let ((home (get db var 'home)))
-	       (cond ((get db var 'local-value)
-		      (put! db var 'unknown #t))
+		  (not (db-get db var 'unknown)))
+	     (let ((home (db-get db var 'home)))
+	       (cond ((db-get db var 'local-value)
+		      (db-put! db var 'unknown #t))
 		     ((or (not home) (eq? here home))
-		      (put! db var 'local-value val)	       )
-		     (else (put! db var 'unknown #t)))))
-	    (else (put! db var 'unknown #t)) ) )
+		      (db-put! db var 'local-value val)	       )
+		     (else (db-put! db var 'unknown #t)))))
+	    (else (db-put! db var 'unknown #t)) ) )
     
     (define (ref var node)
       (collect! db var 'references node) )
@@ -2054,7 +2121,7 @@
 		    global
 		    (null? references)
 		    (not (variable-mark sym '##compiler#unused))
-		    (not (variable-visible? sym))
+		    (not (variable-visible? sym block-compilation))
 		    (not (variable-mark sym '##compiler#constant)) )
 	   (##sys#notice 
 	    (sprintf "global variable `~S' is only locally visible and never used"
@@ -2073,8 +2140,9 @@
 		  (when (and (eq? '##core#lambda (node-class value))
 			     (or (not (second valparams))
 				 (every 
-				  (lambda (v) (get db v 'global))
-				  (nth-value 0 (scan-free-variables value)) ) ) )
+				  (lambda (v) (db-get db v 'global))
+				  (nth-value 0 (scan-free-variables
+						value block-compilation)) ) ) )
 		    (if (and (= 1 nreferences) (= 1 ncall-sites))
 			(quick-put! plist 'contractable #t)
 			(quick-put! plist 'inlinable #t) ) ) ) )
@@ -2082,13 +2150,14 @@
 		;; Make 'inlinable, if it is declared local and has a value
 		(let ((valparams (node-parameters local-value)))
 		  (when (eq? '##core#lambda (node-class local-value))
-		    (let-values (((vars hvars) (scan-free-variables local-value)))
-		      (when (and (get db sym 'global)
+		    (let-values (((vars hvars) (scan-free-variables
+						local-value block-compilation)))
+		      (when (and (db-get db sym 'global)
 				 (pair? hvars))
 			(quick-put! plist 'hidden-refs #t))
 		      (when (or (not (second valparams))
 				(every 
-				 (lambda (v) (get db v 'global)) 
+				 (lambda (v) (db-get db v 'global)) 
 				 vars))
 			(quick-put! plist 'inlinable #t) ) ) ) ) )
 	       ((variable-mark sym '##compiler#inline-global) =>
@@ -2122,28 +2191,28 @@
 	 ;;  - if the procedure is internal (a continuation) do NOT mark unused parameters.
 	 ;;  - also: if procedure has rest-parameter and no unused params, mark f-id as 'explicit-rest.
 	 (when value
-	   (let ([has #f])
+	   (let ((has #f))
 	     (when (and (eq? '##core#lambda (node-class value))
 			(= nreferences ncall-sites) )
-	       (let ([lparams (node-parameters value)])
+	       (let ((lparams (node-parameters value)))
 		 (when (second lparams)
-		   (decompose-lambda-list
+		   (##sys#decompose-lambda-list
 		    (third lparams)
 		    (lambda (vars argc rest)
 		      (unless rest
 			(for-each
 			 (lambda (var)
-			   (cond [(and (not (get db var 'references))
-				       (not (get db var 'assigned)) )
-				  (put! db var 'unused #t)
+			   (cond ((and (not (db-get db var 'references))
+				       (not (db-get db var 'assigned)) )
+				  (db-put! db var 'unused #t)
 				  (set! has #t)
-				  #t]
-				 [else #f] ) )
+				  #t)
+				 (else #f) ) )
 			 vars) )
-		      (cond [(and has (not (rassoc sym callback-names eq?)))
-			     (put! db (first lparams) 'has-unused-parameters #t) ]
-			    [rest
-			     (put! db (first lparams) 'explicit-rest #t) ] ) ) ) ) ) ) ) )
+		      (cond ((and has (not (rassoc sym callback-names eq?)))
+			     (db-put! db (first lparams) 'has-unused-parameters #t) )
+			    (rest
+			     (db-put! db (first lparams) 'explicit-rest #t) ) ) ) ) ) ) ) ) )
 
 	 ;; Make 'removable, if it has no references and is not assigned to, and if it 
 	 ;; has either a value that does not cause any side-effects or if it is 'undefined:
@@ -2152,7 +2221,7 @@
 		    (or (and value
 			     (if (eq? '##core#variable (node-class value))
 				 (let ((varname (first (node-parameters value))))
-				   (or (not (get db varname 'global))
+				   (or (not (db-get db varname 'global))
 				       (variable-mark varname '##core#always-bound)
 				       (intrinsic? varname)))
 				 (not (expression-has-side-effects? value db)) ))
@@ -2168,40 +2237,42 @@
 	 ;;    it was contracted).
 	 (when (and value (not global))
 	   (when (eq? '##core#variable (node-class value))
-	     (let* ([name (first (node-parameters value))]
-		    [nrefs (get db name 'references)] )
+	     (let* ((name (first (node-parameters value)))
+		    (nrefs (db-get db name 'references)) )
 	       (when (and (not captured)
-			  (or (and (not (get db name 'unknown)) (get db name 'value))
-			      (and (not (get db name 'captured))
+			  (or (and (not (db-get db name 'unknown))
+				   (db-get db name 'value))
+			      (and (not (db-get db name 'captured))
 				   nrefs
 				   (= 1 (length nrefs))
 				   (not assigned)
-				   (not (get db name 'assigned)) 
-				   (or (not (variable-visible? name))
-				       (not (get db name 'global))) ) ))
+				   (not (db-get db name 'assigned)) 
+				   (or (not (variable-visible?
+					     name block-compilation))
+				       (not (db-get db name 'global))) ) ))
 		 (quick-put! plist 'replacable name) 
-		 (put! db name 'replacing #t) ) ) ) )
+		 (db-put! db name 'replacing #t) ) ) ) )
 
 	 ;; Make 'replacable, if it has a known value of the form: '(lambda (<xvar>) (<kvar> <xvar>))' and
 	 ;;  is an internally created procedure: (See above for 'replacing)
 	 (when (and value (eq? '##core#lambda (node-class value)))
-	   (let ([params (node-parameters value)])
+	   (let ((params (node-parameters value)))
 	     (when (not (second params))
-	       (let ([llist (third params)]
-		     [body (first (node-subexpressions value))] )
+	       (let ((llist (third params))
+		     (body (first (node-subexpressions value))) )
 		 (when (and (pair? llist) 
 			    (null? (cdr llist))
 			    (eq? '##core#call (node-class body)) )
-		   (let ([subs (node-subexpressions body)])
+		   (let ((subs (node-subexpressions body)))
 		     (when (= 2 (length subs))
-		       (let ([v1 (first subs)]
-			     [v2 (second subs)] )
+		       (let ((v1 (first subs))
+			     (v2 (second subs)) )
 			 (when (and (eq? '##core#variable (node-class v1))
 				    (eq? '##core#variable (node-class v2))
 				    (eq? (first llist) (first (node-parameters v2))) )
-			   (let ([kvar (first (node-parameters v1))])
+			   (let ((kvar (first (node-parameters v1))))
 			     (quick-put! plist 'replacable kvar)
-			     (put! db kvar 'replacing #t) ) ) ) ) ) ) ) ) ) ) ) )
+			     (db-put! db kvar 'replacing #t) ) ) ) ) ) ) ) ) ) ) ) )
 
      db)
 
@@ -2223,11 +2294,11 @@
 	(customizable '())
 	(lexicals '()))
 
-    (define (test sym item) (get db sym item))
+    (define (test sym item) (db-get db sym item))
   
     (define (register-customizable! var id)
       (set! customizable (lset-adjoin eq? customizable var)) 
-      (put! db id 'customizable #t) )
+      (db-put! db id 'customizable #t) )
 
     (define (register-direct-call! id)
       (set! direct-calls (add1 direct-calls))
@@ -2296,7 +2367,7 @@
 						     (proper-list? llist) ) ] )
 					  (when (and name 
 						     (not (llist-match? llist (cdr subs))))
-					    (quit
+					    (quit-compiling
 					     "~a: procedure `~a' called with wrong number of arguments" 
 					     (source-info->line name)
 					     (if (pair? name) (cadr name) name)))
@@ -2309,14 +2380,14 @@
 	     (concatenate (map (lambda (n) (gather n here locals)) subs) ) ))
 
 	  ((##core#lambda ##core#direct_lambda)
-	   (decompose-lambda-list
+	   (##sys#decompose-lambda-list
 	    (third params)
 	    (lambda (vars argc rest)
 	      (let ((id (if here (first params) 'toplevel)))
 		(fluid-let ((lexicals (append locals lexicals)))
 		  (let ((c (delete-duplicates (gather (first subs) id vars) eq?)))
-		    (put! db id 'closure-size (length c))
-		    (put! db id 'captured-variables c)
+		    (db-put! db id 'closure-size (length c))
+		    (db-put! db id 'captured-variables c)
 		    (lset-difference eq? c locals vars)))))))
 	
 	  (else (concatenate (map (lambda (n) (gather n here locals)) subs)) ) ) ))
@@ -2361,24 +2432,24 @@
 		  (maptransform subs here closure) ) ) ) )
 
 	  ((##core#lambda ##core#direct_lambda)
-	   (let ([llist (third params)])
-	     (decompose-lambda-list
+	   (let ((llist (third params)))
+	     (##sys#decompose-lambda-list
 	      llist
 	      (lambda (vars argc rest)
-		(let* ([boxedvars (filter (lambda (v) (test v 'boxed)) vars)]
-		       [boxedaliases (map cons boxedvars (map gensym boxedvars))]
-		       [cvar (gensym 'c)]
-		       [id (if here (first params) 'toplevel)]
-		       [capturedvars (or (test id 'captured-variables) '())]
-		       [csize (or (test id 'closure-size) 0)] 
-		       [info (and emit-closure-info (second params) (pair? llist))] )
+		(let* ((boxedvars (filter (lambda (v) (test v 'boxed)) vars))
+		       (boxedaliases (map cons boxedvars (map gensym boxedvars)))
+		       (cvar (gensym 'c))
+		       (id (if here (first params) 'toplevel))
+		       (capturedvars (or (test id 'captured-variables) '()))
+		       (csize (or (test id 'closure-size) 0)) 
+		       (info (and emit-closure-info (second params) (pair? llist))) )
 		  ;; If rest-parameter is boxed: mark it as 'boxed-rest
 		  ;;  (if we don't do this than preparation will think the (boxed) alias
 		  ;;  of the rest-parameter is never used)
-		  (and-let* ([rest]
-			     [(test rest 'boxed)]
-			     [rp (test rest 'rest-parameter)] )
-		    (put! db (cdr (assq rest boxedaliases)) 'boxed-rest #t) )
+		  (and-let* ((rest)
+			     ((test rest 'boxed))
+			     (rp (test rest 'rest-parameter)) )
+		    (db-put! db (cdr (assq rest boxedaliases)) 'boxed-rest #t) )
 		  (make-node
 		   '##core#closure (list (+ csize (if info 2 1)))
 		   (cons
@@ -2491,6 +2562,7 @@
   lambda-literal?
   (id lambda-literal-id)			       ; symbol
   (external lambda-literal-external)		       ; boolean
+  ;; lambda-literal-arguments is used nowhere
   (arguments lambda-literal-arguments)		       ; (symbol ...)
   (argument-count lambda-literal-argument-count)       ; integer
   (rest-argument lambda-literal-rest-argument)	       ; symbol | #f
@@ -2498,6 +2570,7 @@
   (unboxed-temporaries lambda-literal-unboxed-temporaries) ; ((sym . utype) ...)
   (callee-signatures lambda-literal-callee-signatures) ; (integer ...)
   (allocated lambda-literal-allocated)		       ; integer
+  ;; lambda-literal-directly-called is used nowhere
   (directly-called lambda-literal-directly-called)     ; boolean
   (closure-size lambda-literal-closure-size)	       ; integer
   (looping lambda-literal-looping)		       ; boolean
@@ -2535,8 +2608,8 @@
 		       unsafe
 		       (variable-mark var '##compiler#always-bound)
 		       (intrinsic? var))]
-	     [blockvar (and (get db var 'assigned)
-			    (not (variable-visible? var)))])
+	     [blockvar (and (db-get db var 'assigned)
+			    (not (variable-visible? var block-compilation)))])
 	(when blockvar (set! fastrefs (add1 fastrefs)))
 	(make-node
 	 '##core#global
@@ -2568,11 +2641,11 @@
 	   (make-node class params (mapwalk subs e e-count here boxes)) )
 
 	  ((##core#inline_ref)
-	   (set! allocated (+ allocated (words (estimate-foreign-result-size (second params)))))
+	   (set! allocated (+ allocated (bytes->words (estimate-foreign-result-size (second params)))))
 	   (make-node class params '()) )
 
 	  ((##core#inline_loc_ref)
-	   (set! allocated (+ allocated (words (estimate-foreign-result-size (first params)))))
+	   (set! allocated (+ allocated (bytes->words (estimate-foreign-result-size (first params)))))
 	   (make-node class params (mapwalk subs e e-count here boxes)) )
 
 	  ((##core#closure) 
@@ -2607,26 +2680,27 @@
 	     (set! allocated 0)
 	     (set! signatures '())
 	     (set! looping 0)
-	     (decompose-lambda-list
+	     (##sys#decompose-lambda-list
 	      (third params)
 	      (lambda (vars argc rest)
-		(let* ([id (first params)]
-		       [rest-mode
+		(let* ((id (first params))
+		       (rest-mode
 			(and rest
-			     (let ([rrefs (get db rest 'references)])
-			       (cond [(get db rest 'assigned) 'list]
-				     [(and (not (get db rest 'boxed-rest)) (or (not rrefs) (null? rrefs))) 'none] 
-				     [else (get db rest 'rest-parameter)] ) ) ) ]
-		       [body (walk 
+			     (let ((rrefs (db-get db rest 'references)))
+			       (cond ((db-get db rest 'assigned) 'list)
+				     ((and (not (db-get db rest 'boxed-rest))
+					   (or (not rrefs) (null? rrefs))) 'none) 
+				     (else (db-get db rest 'rest-parameter)) ) ) ) )
+		       (body (walk 
 			      (car subs)
 			      (##sys#fast-reverse (if (eq? 'none rest-mode)
-                                                      (butlast vars)
-                                                      vars))
-                              (if (eq? 'none rest-mode)
+						      (butlast vars)
+						      vars))
+			      (if (eq? 'none rest-mode)
 				  (fx- (length vars) 1)
 				  (length vars))
 			      id
-			      '()) ] )
+			      '()) ) )
 		  (when (eq? rest-mode 'none)
 		    (debugging 'o "unused rest argument" rest id))
 		  (when (and direct rest)
@@ -2645,13 +2719,13 @@
                     signatures
                     allocated
                     (or direct (memq id direct-call-ids))
-                    (or (get db id 'closure-size) 0)
+                    (or (db-get db id 'closure-size) 0)
                     (and (not rest)
                          (> looping 0)
                          (begin
                            (debugging 'o "identified direct recursive calls" id looping)
                            #t) )
-                    (or direct (get db id 'customizable))
+                    (or direct (db-get db id 'customizable))
                     rest-mode
                     body
                     direct) )
@@ -2684,18 +2758,19 @@
 		    (walk (second subs) e e-count here boxes) ) ) ) )
 
 	  ((set!)
-	   (let ([var (first params)]
-		 [val (first subs)] )
+	   (let ((var (first params))
+		 (val (first subs)) )
 	     (cond ((posq var e)
 		    => (lambda (i)
                          (make-node '##core#setlocal
                                     (list (fx- e-count (fx+ i 1)))
                                     (list (walk val e e-count here boxes)) ) ) )
 		   (else
-		    (let* ([cval (node-class val)]
-			   [blockvar (not (variable-visible? var))]
-			   [immf (or (and (eq? cval 'quote) (immediate? (first (node-parameters val))))
-				     (eq? '##core#undefined cval) ) ] )
+		    (let* ((cval (node-class val))
+			   (blockvar (not (variable-visible?
+					   var block-compilation)))
+			   (immf (or (and (eq? cval 'quote) (immediate? (first (node-parameters val))))
+				     (eq? '##core#undefined cval) ) ) )
 		      (when blockvar (set! fastsets (add1 fastsets)))
 		      (make-node
 		       (if immf '##core#setglobal_i '##core#setglobal)
@@ -2707,7 +2782,7 @@
 		       (list (walk (car subs) e e-count here boxes)) ) ) ) ) ) )
 
 	  ((##core#call) 
-	   (let ([len (length (cdr subs))])
+	   (let ((len (length (cdr subs))))
 	     (set! signatures (lset-adjoin = signatures len)) 
 	     (when (and (>= (length params) 3) (eq? here (third params)))
 	       (set! looping (add1 looping)) )
@@ -2729,7 +2804,7 @@
 				       "coerced inexact literal number `~S' to fixnum ~S" 
 				     c (inexact->exact c)))
 				  (immediate-literal (inexact->exact c)) )
-				 (else (quit "cannot coerce inexact literal `~S' to fixnum" c)) ) )
+				 (else (quit-compiling "cannot coerce inexact literal `~S' to fixnum" c)) ) )
 			  (else (make-node '##core#literal (list (literal c)) '())) ) )
 		   ((immediate? c) (immediate-literal c))
 		   (else (make-node '##core#literal (list (literal c)) '())) ) ) )
@@ -2817,3 +2892,4 @@
 	(debugging 'o "fast global assignments" fastsets))
       (values node2 (##sys#fast-reverse literals)
               (##sys#fast-reverse lambda-info-literals) lambda-table) ) ) )
+)

@@ -28,13 +28,14 @@
 (declare
   (uses chicken-syntax chicken-ffi-syntax 
 	srfi-1 srfi-4 utils files extras data-structures support
-	compiler optimizer lfa2 compiler-syntax scrutinizer driver platform backend 
+	compiler optimizer lfa2 compiler-syntax scrutinizer
+	;; TODO: These three need to be made configurable somehow
+	batch-driver c-platform c-backend
 	srfi-69))
 
 
-(include "compiler-namespace")
 (include "tweaks")
-
+(import batch-driver c-platform)
 
 ;;; Prefix argument list with default options:
 
@@ -71,6 +72,7 @@
 ;;; Run compiler with command-line options:
 
 (receive (filename options) ((or (user-options-pass) process-command-line) compiler-arguments)
+  ;; TODO: Perhaps option parsing should be moved to batch-driver?
   (let loop ((os options))
     (unless (null? os)
       (let ((o (car os))
@@ -142,11 +144,11 @@
 	      ((memq o valid-compiler-options-with-argument)
 	       (if (pair? rest)
 		   (loop (cdr rest))
-		   (quit "missing argument to `-~s' option" o) ) )
+		   (quit-compiling "missing argument to `-~s' option" o) ) )
 	      (else
 	       (warning 
 		"invalid compiler option (ignored)" 
 		(if (string? o) o (conc "-" o)) )
 	       (loop rest) ) ) ) ) )
-  (apply compile-source-file filename options)
+  (apply compile-source-file filename compiler-arguments options)
   (exit) )

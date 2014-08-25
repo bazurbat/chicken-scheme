@@ -27,14 +27,27 @@
 
 (declare
   (unit optimizer)
-  (not inline ##sys#compiler-syntax-hook) )
+  (uses srfi-1 data-structures
+	support) )
 
+(module optimizer
+    (scan-toplevel-assignments perform-high-level-optimizations
+     transform-direct-lambdas! determine-loop-and-dispatch
+     eq-inline-operator membership-test-operators membership-unfold-limit
+     default-optimization-passes rewrite)
 
-(include "compiler-namespace")
+(import chicken scheme srfi-1 data-structures
+	support)
+
 (include "tweaks")
 
 (define-constant maximal-number-of-free-variables-for-liftable 16)
 
+;; These are parameterized by the platform implementation
+(define eq-inline-operator (make-parameter #f))
+(define membership-test-operators (make-parameter #f))
+(define membership-unfold-limit (make-parameter #f))
+(define default-optimization-passes (make-parameter #f))
 
 ;;; Scan toplevel expressions for assignments:
 
@@ -130,16 +143,18 @@
 
 (define simplifications (make-vector 301 '()))
 (define simplified-ops '())
+(define broken-constant-nodes '())
 
-(define (perform-high-level-optimizations node db)
-  (let ([removed-lets 0]
-	[removed-ifs 0]
-	[replaced-vars 0]
-	[rest-consers '()]
-	[simplified-classes '()]
-	[dirty #f] )
+(define (perform-high-level-optimizations
+	 node db block-compilation may-inline inline-limit may-rewrite)
+  (let ((removed-lets 0)
+	(removed-ifs 0)
+	(replaced-vars 0)
+	(rest-consers '())
+	(simplified-classes '())
+	(dirty #f) )
 
-    (define (test sym item) (get db sym item))
+    (define (test sym item) (db-get db sym item))
     (define (constant-node? n) (eq? 'quote (node-class n)))
     (define (node-value n) (first (node-parameters n)))
     (define (touch) (set! dirty #t))
@@ -148,14 +163,15 @@
       (for-each (cut set-cdr! <> #f) gae))
 
     (define (simplify n)
-      (or (and-let* ([entry (##sys#hash-table-ref simplifications (node-class n))])
+      (or (and-let* ((entry (##sys#hash-table-ref
+			     simplifications (node-class n))))
 	    (any (lambda (s)
-		   (and-let* ([vars (second s)]
-			      [env (match-node n (first s) vars)] 
-			      [n2 (apply (third s) db
-					 (map (lambda (v) (cdr (assq v env))) vars) ) ] )
-		     (let* ([name (caar s)]
-			    [counter (assq name simplified-classes)] )
+		   (and-let* ((vars (second s))
+			      (env (match-node n (first s) vars)) 
+			      (n2 (apply (third s) db may-rewrite
+					 (map (lambda (v) (cdr (assq v env))) vars) ) ) )
+		     (let* ((name (caar s))
+			    (counter (assq name simplified-classes)) )
 		       (if counter
 			   (set-cdr! counter (add1 (cdr counter)))
 			   (set! simplified-classes (alist-cons name 1 simplified-classes)) )
@@ -216,7 +232,7 @@
              (lambda (rvar)
                (let ((final-var (replace-var rvar)))
                  ;; Store intermediate vars to avoid recurring same chain again
-                 (put! db var 'replacable final-var)
+                 (db-put! db var 'replacable final-var)
                  final-var)))
             (else var)))
     
@@ -267,7 +283,7 @@
 	   (let ((llist (third params))
 		 (id (first params)))
 	     (cond [(test id 'has-unused-parameters)
-		    (decompose-lambda-list
+		    (##sys#decompose-lambda-list
 		     llist
 		     (lambda (vars argc rest)
 		       (receive (unused used) (partition (lambda (v) (test v 'unused)) vars)
@@ -284,7 +300,7 @@
 				(fourth params) )
 			  (list (walk (first subs) (cons id fids) '())) ) ) ) ) ]
 		   [(test id 'explicit-rest)
-		    (decompose-lambda-list
+		    (##sys#decompose-lambda-list
 		     llist
 		     (lambda (vars argc rest)
 		       (touch)
@@ -323,7 +339,7 @@
 			   (check-signature var args llist)
 			   (debugging 'o "contracted procedure" info)
 			   (touch)
-			   (for-each (cut put! db <> 'inline-target #t) fids)
+			   (for-each (cut db-put! db <> 'inline-target #t) fids)
 			   (walk
 			    (inline-lambda-bindings
 			     llist args (first (node-subexpressions lval)) #f db
@@ -356,26 +372,26 @@
 			 ;; callee is a lambda
 			 (let* ([lparams (node-parameters lval)]
 				[llist (third lparams)] )
-			   (decompose-lambda-list
+			   (##sys#decompose-lambda-list
 			    llist
 			    (lambda (vars argc rest)
 			      (let ((ifid (first lparams))
 				    (external (node? (variable-mark var '##compiler#inline-global))))
-				(cond ((and inline-locally 
+				(cond ((and may-inline 
 					    (test var 'inlinable)
 					    (not (test ifid 'inline-target)) ; inlinable procedure has changed
 					    (not (test ifid 'explicit-rest))
 					    (case (variable-mark var '##compiler#inline) 
 					      ((no) #f)
 					      (else 
-					       (or external (< (fourth lparams) inline-max-size)))))
+					       (or external (< (fourth lparams) inline-limit)))))
 				       (debugging 
 					'i
 					(if external
 					    "global inlining" 	
 					    "inlining")
 					info ifid (fourth lparams))
-				       (for-each (cut put! db <> 'inline-target #t) fids)
+				       (for-each (cut db-put! db <> 'inline-target #t) fids)
 				       (check-signature var args llist)
 				       (debugging 'o "inlining procedure" info)
 				       (call/cc
@@ -480,7 +496,7 @@
 		    (touch)
 		    (make-node '##core#undefined '() '()) )
 		   ((and (or (not (test var 'global))
-			     (not (variable-visible? var)))
+			     (not (variable-visible? var block-compilation)))
 			 (not (test var 'inline-transient))
 			 (not (test var 'references)) 
 			 (not (expression-has-side-effects? (first subs) db)) )
@@ -551,7 +567,7 @@
 	(removed-nots 0) )
 
     (define (touch) (set! dirty #t) #t)
-    (define (test sym prop) (get db sym prop))
+    (define (test sym prop) (db-get db sym prop))
 
     (debugging 'p "pre-optimization phase...")
 
@@ -563,7 +579,7 @@
 		  (subs (node-subexpressions n))
 		  (kont (first (node-parameters (second subs))))
 		  (lnode (and (not (test kont 'unknown)) (test kont 'value)))
-		  (krefs (get-list db kont 'references)) )
+		  (krefs (db-get-list db kont 'references)) )
 	     ;; Call-site has one argument and a known continuation (which is a ##core#lambda)
 	     ;;  that has only one use:
 	     (when (and lnode krefs (= 1 (length krefs)) (= 3 (length subs))
@@ -574,7 +590,7 @@
 		 ;; Continuation has one parameter?
 		 (if (and (proper-list? llist) (null? (cdr llist)))
 		     (let* ((var (car llist))
-			    (refs (get-list db var 'references)) )
+			    (refs (db-get-list db var 'references)) )
 		       ;; Parameter is only used once?
 		       (if (and refs (= 1 (length refs)) (eq? 'if (node-class body)))
 			   ;; Continuation contains an 'if' node?
@@ -609,10 +625,11 @@
  ;; (<named-call> ...) -> (<primitive-call/inline> ...)
  `((##core#call d (##core#variable (a)) b . c)
    (a b c d)
-   ,(lambda (db a b c d)
+   ,(lambda (db may-rewrite a b c d)
       (let loop ((entries (or (##sys#hash-table-ref substitution-table a) '())))
 	(cond ((null? entries) #f)
-	      ((simplify-named-call db d a b (caar entries) (cdar entries) c)
+	      ((simplify-named-call db may-rewrite d a b
+				    (caar entries) (cdar entries) c)
 	       => (lambda (r)
 		    (let ((as (assq a simplified-ops)))
 		      (if as 
@@ -640,12 +657,12 @@
 		     body2
 		     rest) ) ) )
    (var0 var1 var2 op const1 const2 body1 body2 d1 d2 rest)
-   ,(lambda (db var0 var1 var2 op const1 const2 body1 body2 d1 d2 rest)
-      (and (equal? op eq-inline-operator)
+   ,(lambda (db may-rewrite var0 var1 var2 op const1 const2 body1 body2 d1 d2 rest)
+      (and (equal? op (eq-inline-operator))
 	   (immediate? const1)
 	   (immediate? const2)
-	   (= 1 (length (get-list db var1 'references)))
-	   (= 1 (length (get-list db var2 'references)))
+	   (= 1 (length (db-get-list db var1 'references)))
+	   (= 1 (length (db-get-list db var2 'references)))
 	   (make-node
 	    '##core#switch
 	    '(2)
@@ -667,10 +684,10 @@
 	    body
 	    (##core#switch (n) (##core#variable (var0)) . clauses) ) )
    (var op var0 const d body n clauses)
-   ,(lambda (db var op var0 const d body n clauses)
-      (and (equal? op eq-inline-operator)
+   ,(lambda (db may-rewrite var op var0 const d body n clauses)
+      (and (equal? op (eq-inline-operator))
 	   (immediate? const)
-	   (= 1 (length (get-list db var 'references)))
+	   (= 1 (length (db-get-list db var 'references)))
 	   (make-node
 	    '##core#switch
 	    (list (add1 n))
@@ -691,47 +708,47 @@
  `((let (var1) (##core#undefined ())
 	more)
    (var1 more)
-   ,(lambda (db var1 more)
-      (let loop1 ([vars (list var1)] 
-		  [body more] )
-	(let ([c (node-class body)]
-	      [params (node-parameters body)] 
-	      [subs (node-subexpressions body)] )
+   ,(lambda (db may-rewrite var1 more)
+      (let loop1 ((vars (list var1)) 
+		  (body more) )
+	(let ((c (node-class body))
+	      (params (node-parameters body)) 
+	      (subs (node-subexpressions body)) )
 	  (and (eq? c 'let)
 	       (null? (cdr params))
-               (not (get db (first params) 'inline-transient))
-               (not (get db (first params) 'references))
-	       (let* ([val (first subs)]
-		      [valparams (node-parameters val)]
-		      [valsubs (node-subexpressions val)] )
+               (not (db-get db (first params) 'inline-transient))
+               (not (db-get db (first params) 'references))
+	       (let* ((val (first subs))
+		      (valparams (node-parameters val))
+		      (valsubs (node-subexpressions val)) )
 		 (case (node-class val)
-		   [(##core#undefined) (loop1 (cons (first params) vars) (second subs))]
-		   [(set!)
-		    (let ([allvars (reverse vars)])
+		   ((##core#undefined) (loop1 (cons (first params) vars) (second subs)))
+		   ((set!)
+		    (let ((allvars (reverse vars)))
 		      (and (pair? allvars)
 			   (eq? (first valparams) (first allvars))
-			   (let loop2 ([vals (list (first valsubs))]
-				       [vars (cdr allvars)] 
-				       [body (second subs)] )
-			     (let ([c (node-class body)]
-				   [params (node-parameters body)]
-				   [subs (node-subexpressions body)] )
-			       (cond [(and (eq? c 'let)
+			   (let loop2 ((vals (list (first valsubs)))
+				       (vars (cdr allvars)) 
+				       (body (second subs)) )
+			     (let ((c (node-class body))
+				   (params (node-parameters body))
+				   (subs (node-subexpressions body)) )
+			       (cond ((and (eq? c 'let)
 					   (null? (cdr params))
-					   (not (get db (first params) 'inline-transient))
-					   (not (get db (first params) 'references))
+					   (not (db-get db (first params) 'inline-transient))
+					   (not (db-get db (first params) 'references))
 					   (pair? vars)
 					   (eq? 'set! (node-class (first subs)))
 					   (eq? (car vars) (first (node-parameters (first subs)))) )
 				      (loop2 (cons (first (node-subexpressions (first subs))) vals)
 					     (cdr vars)
-					     (second subs) ) ]
-				     [(null? vars)
+					     (second subs) ) )
+				     ((null? vars)
 				      (receive (n progress) 
 					  (reorganize-recursive-bindings allvars (reverse vals) body) 
-					(and progress n) ) ]
-				     [else #f] ) ) ) ) ) ]
-		   [else #f] ) ) ) ) ) ) )
+					(and progress n) ) )
+				     (else #f) ) ) ) ) ) )
+		   (else #f) ) ) ) ) ) ) )
 
  ;; (let ((<var1> <var2>))
  ;;   (<var1> ...) )
@@ -741,8 +758,8 @@
  `((let (var1) (##core#variable (var2))
 	(##core#call p (##core#variable (var1)) . more) ) ; `p' was `#t', bombed also
    (var1 var2 p more)
-   ,(lambda (db var1 var2 p more)
-      (and (= 1 (length (get-list db var1 'references)))
+   ,(lambda (db may-rewrite var1 var2 p more)
+      (and (= 1 (length (db-get-list db var1 'references)))
 	   (make-node
 	    '##core#call p
 	    (cons (varnode var2) more) ) ) ) )
@@ -758,9 +775,9 @@
 	    x
 	    y) ) 
    (var op args d x y)
-   ,(lambda (db var op args d x y)
-      (and (not (equal? op eq-inline-operator))
-	   (= 1 (length (get-list db var 'references)))
+   ,(lambda (db may-rewrite var op args d x y)
+      (and (not (equal? op (eq-inline-operator)))
+	   (= 1 (length (db-get-list db var 'references)))
 	   (make-node
 	    'if d
 	    (list (make-node '##core#inline (list op) args)
@@ -779,8 +796,8 @@
        (##core#call d2 (##core#variable (var)) y)
        (##core#call d3 (##core#variable (var)) z) )
    (d1 d2 d3 x y z var)
-   ,(lambda (db d1 d2 d3 x y z var)
-      (and inline-substitutions-enabled
+   ,(lambda (db may-rewrite d1 d2 d3 x y z var)
+      (and may-rewrite
 	   (make-node
 	    '##core#call d2
 	    (list (varnode var)
@@ -794,10 +811,10 @@
        y
        z)
    (d1 op x clist y z)
-   ,(lambda (db d1 op x clist y z)
-      (and-let* ([opa (assoc op membership-test-operators)]
+   ,(lambda (db may-rewrite d1 op x clist y z)
+      (and-let* ([opa (assoc op (membership-test-operators))]
 		 [(proper-list? clist)]
-		 [(< (length clist) membership-unfold-limit)] )
+		 [(< (length clist) (membership-unfold-limit))] )
 	(let ([var (gensym)]
 	      [eop (list (cdr opa))] )
 	  (make-node
@@ -916,8 +933,9 @@
   (let ((old (or (##sys#hash-table-ref substitution-table name) '())))
     (##sys#hash-table-set! substitution-table name (append old (list class-and-args))) ) )
 
-(define (simplify-named-call db params name cont class classargs callargs)
-  (define (test sym prop) (get db sym prop))
+(define (simplify-named-call db may-rewrite params name cont
+			     class classargs callargs)
+  (define (test sym prop) (db-get db sym prop))
   (define (defarg x)
     (cond ((symbol? x) (varnode x))
 	  ((and (pair? x) (eq? 'quote (car x))) (qnode (cadr x)))
@@ -936,7 +954,7 @@
 			  (eq? '##core#variable (node-class arg2))
 			  (equal? (node-parameters arg1) (node-parameters arg2))
 			  (make-node '##core#call (list #t) (list cont (qnode #t))) ) ) )
-	      (and inline-substitutions-enabled
+	      (and may-rewrite
 		   (make-node
 		    '##core#call (list #t) 
 		    (list cont (make-node '##core#inline (list (second classargs)) callargs)) ) ) ) ) )
@@ -944,7 +962,7 @@
     ;; (<op> ...) -> (##core#inline <iop> ...)
     ((2) ; classargs = (<argc> <iop> <safe>)
      ;; - <safe> by be 'specialized (see rule #16 below)
-     (and inline-substitutions-enabled
+     (and may-rewrite
 	  (= (length callargs) (first classargs))
 	  (intrinsic? name)
 	  (or (third classargs) unsafe)
@@ -958,7 +976,7 @@
     ;; (<op> ...) -> <var>
     ((3) ; classargs = (<var> <argc>)
      ;; - <argc> may be #f
-     (and inline-substitutions-enabled
+     (and may-rewrite
 	  (intrinsic? name)
 	  (or (not (second classargs)) (= (length callargs) (second classargs)))
 	  (fold-right
@@ -969,7 +987,7 @@
 
     ;; (<op> a b) -> (<primitiveop> a (quote <i>) b)
     ((4) ; classargs = (<primitiveop> <i>)
-     (and inline-substitutions-enabled
+     (and may-rewrite
 	  unsafe
 	  (= 2 (length callargs))
 	  (intrinsic? name)
@@ -983,7 +1001,7 @@
     ;; (<op> a) -> (##core#inline <iop> a (quote <x>))
     ((5) ; classargs = (<iop> <x> <numtype>)
      ;; - <numtype> may be #f
-     (and inline-substitutions-enabled
+     (and may-rewrite
 	  (intrinsic? name)
 	  (= 1 (length callargs))
 	  (let ((ntype (third classargs)))
@@ -997,7 +1015,7 @@
     ;; (<op> a) -> (##core#inline <iop1> (##core#inline <iop2> a))
     ((6) ; classargs = (<iop1> <iop2> <safe>)
       (and (or (third classargs) unsafe)
-	   inline-substitutions-enabled
+	   may-rewrite
 	   (= 1 (length callargs))
 	   (intrinsic? name)
 	   (make-node '##core#call (list #t)
@@ -1009,7 +1027,7 @@
     ;; (<op> ...) -> (##core#inline <iop> ... (quote <x>))
     ((7) ; classargs = (<argc> <iop> <x> <safe>)
      (and (or (fourth classargs) unsafe)
-	  inline-substitutions-enabled
+	  may-rewrite
 	  (= (length callargs) (first classargs))
 	  (intrinsic? name)
 	  (make-node '##core#call (list #t)
@@ -1020,32 +1038,32 @@
 
     ;; (<op> ...) -> <<call procedure <proc> with <classargs>, <cont> and <callargs> >>
     ((8) ; classargs = (<proc> ...)
-     (and inline-substitutions-enabled
+     (and may-rewrite
 	  (intrinsic? name)
 	  ((first classargs) db classargs cont callargs) ) )
 
     ;; (<op> <x1> ...) -> (##core#inline "C_and" (##core#inline <iop> <x1> <x2>) ...)
     ;; (<op> [<x>]) -> (quote #t)
     ((9) ; classargs = (<iop-fixnum> <iop-flonum> <fixnum-safe> <flonum-safe>)
-     (and inline-substitutions-enabled
+     (and may-rewrite
 	  (intrinsic? name)
 	  (if (< (length callargs) 2)
 	      (make-node '##core#call (list #t) (list cont (qnode #t)))
 	      (and (or (and unsafe (not (eq? number-type 'generic)))
 		       (and (eq? number-type 'fixnum) (third classargs))
 		       (and (eq? number-type 'flonum) (fourth classargs)) )
-		   (let* ([names (map (lambda (z) (gensym)) callargs)]
-			  [vars (map varnode names)] )
+		   (let* ((names (map (lambda (z) (gensym)) callargs))
+			  (vars (map varnode names)) )
 		     (fold-right
 		      (lambda (x n y) (make-node 'let (list n) (list x y)))
 		      (make-node
 		       '##core#call (list #t)
 		       (list 
 			cont
-			(let ([op (list
+			(let ((op (list
 				   (if (eq? number-type 'fixnum)
 				       (first classargs)
-				       (second classargs) ) ) ] )
+				       (second classargs) ) ) ) )
 			  (fold-boolean
 			   (lambda (x y) (make-node '##core#inline op (list x y))) 
 			   vars) ) ) )
@@ -1053,7 +1071,7 @@
 
     ;; (<op> a [b]) -> (<primitiveop> a (quote <i>) b)
     ((10) ; classargs = (<primitiveop> <i> <bvar> <safe>)
-     (and inline-substitutions-enabled
+     (and may-rewrite
 	  (or (fourth classargs) unsafe)
 	  (intrinsic? name)
 	  (let ((n (length callargs)))
@@ -1070,10 +1088,10 @@
     ;; (<op> ...) -> (<primitiveop> ...)
     ((11) ; classargs = (<argc> <primitiveop> <safe>)
      ;; <argc> may be #f.
-     (and inline-substitutions-enabled
+     (and may-rewrite
 	  (or (third classargs) unsafe)
 	  (intrinsic? name)
-	  (let ([argc (first classargs)])
+	  (let ((argc (first classargs)))
 	    (and (or (not argc)
 		     (= (length callargs) (first classargs)) )
 		 (make-node '##core#call (list #t (second classargs))
@@ -1084,7 +1102,7 @@
     ;; (<op> a) -> a
     ;; (<op> ...) -> (<primitiveop> ...)
     ((12) ; classargs = (<primitiveop> <safe> <maxargc>)
-     (and inline-substitutions-enabled
+     (and may-rewrite
 	  (intrinsic? name)
 	  (or (second classargs) unsafe)
 	  (let ((n (length callargs)))
@@ -1097,7 +1115,7 @@
 
     ;; (<op> ...) -> ((##core#proc <primitiveop>) ...)
     ((13) ; classargs = (<primitiveop> <safe>)
-     (and inline-substitutions-enabled
+     (and may-rewrite
 	  (intrinsic? name)
 	  (or (second classargs) unsafe)
 	  (let ((pname (first classargs)))
@@ -1107,7 +1125,7 @@
 
     ;; (<op> <x> ...) -> (##core#inline <iop-safe>/<iop-unsafe> <x> ...)
     ((14) ; classargs = (<numtype> <argc> <iop-safe> <iop-unsafe>)
-     (and inline-substitutions-enabled
+     (and may-rewrite
 	  (= (second classargs) (length callargs))
 	  (intrinsic? name)
 	  (eq? number-type (first classargs))
@@ -1123,7 +1141,7 @@
     ;; (<op> <x>) -> (<primitiveop> <x>)   - if numtype1
     ;;             | <x>                   - if numtype2
     ((15) ; classargs = (<numtype1> <numtype2> <primitiveop> <safe>)
-     (and inline-substitutions-enabled
+     (and may-rewrite
 	  (= 1 (length callargs))
 	  (or unsafe (fourth classargs))
 	  (intrinsic? name)
@@ -1148,7 +1166,7 @@
 	   (safe (third classargs))
 	   (w (fourth classargs))
 	   (counted (and (pair? (cddddr classargs)) (fifth classargs))))
-       (and inline-substitutions-enabled
+       (and may-rewrite
 	    (or (not argc) (= rargc argc))
 	    (intrinsic? name)
 	    (or unsafe safe)
@@ -1160,14 +1178,14 @@
 		    (list (if (and counted (positive? rargc) (<= rargc 8))
 			      (conc (second classargs) rargc)
 			      (second classargs) )
-			  (cond [(eq? #t w) (add1 rargc)]
-				[(pair? w) (* rargc (car w))]
-				[else w] ) )
+			  (cond ((eq? #t w) (add1 rargc))
+				((pair? w) (* rargc (car w)))
+				(else w) ) )
 		    callargs) ) ) ) ) )
 
     ;; (<op> ...) -> (##core#inline <iop>/<unsafe-iop> ...)
     ((17) ; classargs = (<argc> <iop-safe> [<iop-unsafe>])
-     (and inline-substitutions-enabled
+     (and may-rewrite
 	  (= (length callargs) (first classargs))
 	  (intrinsic? name)
 	  (make-node
@@ -1181,7 +1199,7 @@
 
     ;; (<op>) -> (quote <null>)
     ((18) ; classargs = (<null>)
-     (and inline-substitutions-enabled
+     (and may-rewrite
 	  (null? callargs)
 	  (intrinsic? name)
 	  (make-node '##core#call (list #t) (list cont (qnode (first classargs))) ) ) )
@@ -1192,20 +1210,20 @@
     ;; (<op> <x1> ...) -> (##core#inline <ufixop> <x1> (##core#inline <ufixop> ...)) [fixnum-mode + unsafe]
     ;; - Remove "<id>" from arguments.
     ((19) ; classargs = (<id> <fixop> <ufixop> <fixmode>)
-     (and inline-substitutions-enabled
+     (and may-rewrite
 	  (intrinsic? name)
-	  (let* ([id (first classargs)]
-		 [fixop (if unsafe (third classargs) (second classargs))]
-		 [callargs 
+	  (let* ((id (first classargs))
+		 (fixop (if unsafe (third classargs) (second classargs)))
+		 (callargs 
 		  (remove
 		   (lambda (x)
 		     (and (eq? 'quote (node-class x))
 			  (eq? id (first (node-parameters x))) ) ) 
-		   callargs) ] )
-	    (cond [(null? callargs) (make-node '##core#call (list #t) (list cont (qnode id)))]
-		  [(null? (cdr callargs))
-		   (make-node '##core#call (list #t) (list cont (first callargs))) ]
-		  [(or (fourth classargs) (eq? number-type 'fixnum))
+		   callargs) ) )
+	    (cond ((null? callargs) (make-node '##core#call (list #t) (list cont (qnode id))))
+		  ((null? (cdr callargs))
+		   (make-node '##core#call (list #t) (list cont (first callargs))) )
+		  ((or (fourth classargs) (eq? number-type 'fixnum))
 		   (make-node
 		    '##core#call (list #t)
 		    (list
@@ -1213,14 +1231,14 @@
 		     (fold-inner
 		      (lambda (x y)
 			(make-node '##core#inline (list fixop) (list x y)) )
-		      callargs) ) ) ]
-		  [else #f] ) ) ) )
+		      callargs) ) ) )
+		  (else #f) ) ) ) )
 
     ;; (<op> ...) -> (##core#inline <iop> <arg1> ... (quote <x>) <argN>)
     ((20) ; classargs = (<argc> <iop> <x> <safe>)
-     (let ([n (length callargs)])
+     (let ((n (length callargs)))
        (and (or (fourth classargs) unsafe)
-	    inline-substitutions-enabled
+	    may-rewrite
 	    (= n (first classargs))
 	    (intrinsic? name)
 	    (make-node
@@ -1228,7 +1246,7 @@
 	     (list cont
 		   (make-node 
 		    '##core#inline (list (second classargs))
-		    (let-values ([(head tail) (split-at callargs (sub1 n))])
+		    (let-values (((head tail) (split-at callargs (sub1 n))))
 		      (append head
 			      (list (qnode (third classargs)))
 			      tail) ) ) ) ) ) ) )
@@ -1239,22 +1257,22 @@
     ;; (<op> <x1> ...) -> (##core#inline <[u]fixop> <x1> (##core#inline <[u]fixop> ...)) [fixnum-mode (perhaps unsafe)]
     ;; - Remove "<id>" from arguments.
     ((21) ; classargs = (<id> <fixop> <ufixop> <genop> <words>)
-     (and inline-substitutions-enabled
+     (and may-rewrite
 	  (intrinsic? name)
-	  (let* ([id (first classargs)]
-		 [words (fifth classargs)]
-		 [genop (fourth classargs)]
-		 [fixop (if unsafe (third classargs) (second classargs))]
-		 [callargs 
+	  (let* ((id (first classargs))
+		 (words (fifth classargs))
+		 (genop (fourth classargs))
+		 (fixop (if unsafe (third classargs) (second classargs)))
+		 (callargs 
 		  (remove
 		   (lambda (x)
 		     (and (eq? 'quote (node-class x))
 			  (eq? id (first (node-parameters x))) ) ) 
-		   callargs) ] )
-	    (cond [(null? callargs) (make-node '##core#call (list #t) (list cont (qnode id)))]
-		  [(null? (cdr callargs))
-		   (make-node '##core#call (list #t) (list cont (first callargs))) ]
-		  [else
+		   callargs) ) )
+	    (cond ((null? callargs) (make-node '##core#call (list #t) (list cont (qnode id))))
+		  ((null? (cdr callargs))
+		   (make-node '##core#call (list #t) (list cont (first callargs))) )
+		  (else
 		   (make-node
 		    '##core#call (list #t)
 		    (list
@@ -1264,15 +1282,15 @@
 			(if (eq? number-type 'fixnum)
 			    (make-node '##core#inline (list fixop) (list x y))
 			    (make-node '##core#inline_allocate (list genop words) (list x y)) ) )
-		      callargs) ) ) ] ) ) ) )
+		      callargs) ) ) ) ) ) ) )
 
     ;; (<alloc-op> ...) -> (##core#inline_allocate (<aiop> <words>) ...)
     ;; (<alloc-op> ...) -> (##core#inline <fxop> ...) [fixnum mode]
     ((22) ; classargs = (<argc> <aiop> <safe> <words> <fxop>)
-     (let ([argc (first classargs)]
-	   [rargc (length callargs)]
-	   [w (fourth classargs)] )
-       (and inline-substitutions-enabled
+     (let ((argc (first classargs))
+	   (rargc (length callargs))
+	   (w (fourth classargs)) )
+       (and may-rewrite
 	    (= rargc argc)
 	    (intrinsic? name)
 	    (or (third classargs) unsafe)
@@ -1294,7 +1312,7 @@
     ;; - default args in classargs should be either symbol or (optionally) 
     ;;   quoted literal
     ((23) ; classargs = (<minargc> <primitiveop> <literal1>|<varable1> ...)
-     (and inline-substitutions-enabled
+     (and may-rewrite
 	  (intrinsic? name)
 	  (let ([argc (first classargs)])
 	    (and (>= (length callargs) (first classargs))
@@ -1321,10 +1339,10 @@
 ;;; Optimize direct leaf routines:
 
 (define (transform-direct-lambdas! node db)
-  (let ([dirty #f]
-	[inner-ks '()] 
-	[hoistable '()] 
-	[allocated 0] )
+  (let ((dirty #f)
+	(inner-ks '()) 
+	(hoistable '()) 
+	(allocated 0) )
 
     ;; Process node tree and walk lambdas that meet the following constraints:
     ;;  - Only external lambdas (no CPS redexes),
@@ -1334,18 +1352,18 @@
     ;;  - The lambda is not marked as a callback lambda
 
     (define (walk d n dn)
-      (let ([params (node-parameters n)]
-	    [subs (node-subexpressions n)] )
+      (let ((params (node-parameters n))
+	    (subs (node-subexpressions n)) )
 	(case (node-class n)
-	  [(##core#lambda)
-	   (let ([llist (third params)])
+	  ((##core#lambda)
+	   (let ((llist (third params)))
 	     (if (and d
 		      (second params)
-		      (not (get db d 'unknown))
+		      (not (db-get db d 'unknown))
 		      (proper-list? llist)
-		      (and-let* ([val (get db d 'value)]
-				 [refs (get-list db d 'references)]
-				 [sites (get-list db d 'call-sites)] )
+		      (and-let* ((val (db-get db d 'value))
+				 (refs (db-get-list db d 'references))
+				 (sites (db-get-list db d 'call-sites)) )
 			;; val must be lambda, since `sites' is set
 			(and (eq? n val)
 			     (not (variable-mark
@@ -1354,87 +1372,87 @@
 			     (= (length refs) (length sites))
 			     (scan (first subs) (first llist) d dn (cons d llist)) ) ) )
 		 (transform n d inner-ks hoistable dn allocated) 
-		 (walk #f (first subs) #f) ) ) ]
-	  [(set!) (walk (first params) (first subs) #f)]
-	  [(let)
+		 (walk #f (first subs) #f) ) ) )
+	  ((set!) (walk (first params) (first subs) #f))
+	  ((let)
 	   (walk (first params) (first subs) n)
-	   (walk #f (second subs) #f) ]
-	  [else (for-each (lambda (x) (walk #f x #f)) subs)] ) ) )
+	   (walk #f (second subs) #f) )
+	  (else (for-each (lambda (x) (walk #f x #f)) subs)) ) ) )
 
     (define (scan n kvar fnvar destn env)
-      (let ([closures '()]
-	    [recursive #f] )
+      (let ((closures '())
+	    (recursive #f) )
 	(define (rec n v vn e)
-	  (let ([params (node-parameters n)]
-		[subs (node-subexpressions n)] )
+	  (let ((params (node-parameters n))
+		(subs (node-subexpressions n)) )
 	    (case (node-class n)
-	      [(##core#variable)
-	       (let ([v (first params)])
-		 (or (not (get db v 'boxed))
+	      ((##core#variable)
+	       (let ((v (first params)))
+		 (or (not (db-get db v 'boxed))
 		     (not (memq v env))
 		     (and (not recursive)
 			  (begin
 			    (set! allocated (+ allocated 2))
-			    #t) ) ) ) ]
-	      [(##core#lambda)
+			    #t) ) ) ) )
+	      ((##core#lambda)
 	       (and v
-		    (decompose-lambda-list
+		    (##sys#decompose-lambda-list
 		     (third params)
 		     (lambda (vars argc rest)
 		       (set! closures (cons v closures))
-		       (rec (first subs) #f #f (append vars e)) ) ) ) ]
-	      [(##core#inline_allocate)
+		       (rec (first subs) #f #f (append vars e)) ) ) ) )
+	      ((##core#inline_allocate)
 	       (and (not recursive)
 		    (begin
 		      (set! allocated (+ allocated (second params)))
-		      (every (lambda (x) (rec x #f #f e)) subs) ) ) ]
-	      [(##core#direct_lambda)
+		      (every (lambda (x) (rec x #f #f e)) subs) ) ) )
+	      ((##core#direct_lambda)
 	       (and vn destn
 		    (null? (scan-used-variables (first subs) e)) 
 		    (begin
 		      (set! hoistable (alist-cons v vn hoistable))
-		      #t) ) ]
-	      [(##core#inline_ref)
-	       (and (let ([n (estimate-foreign-result-size (second params))])
+		      #t) ) )
+	      ((##core#inline_ref)
+	       (and (let ((n (estimate-foreign-result-size (second params))))
 		      (or (zero? n)
 			  (and (not recursive)
 			       (begin
 				 (set! allocated (+ allocated n))
 				 #t) ) ) )
-		    (every (lambda (x) (rec x #f #f e)) subs) ) ]
-	      [(##core#inline_loc_ref)
-	       (and (let ([n (estimate-foreign-result-size (first params))])
+		    (every (lambda (x) (rec x #f #f e)) subs) ) )
+	      ((##core#inline_loc_ref)
+	       (and (let ((n (estimate-foreign-result-size (first params))))
 		      (or (zero? n)
 			  (and (not recursive)
 			       (begin
 				 (set! allocated (+ allocated n))
 				 #t) ) ) )
-		    (every (lambda (x) (rec x #f #f e)) subs) ) ]
-	      [(##core#call)
-	       (let ([fn (first subs)])
+		    (every (lambda (x) (rec x #f #f e)) subs) ) )
+	      ((##core#call)
+	       (let ((fn (first subs)))
 		 (and (eq? '##core#variable (node-class fn))
-		      (let ([v (first (node-parameters fn))])
-			(cond [(eq? v fnvar)
+		      (let ((v (first (node-parameters fn))))
+			(cond ((eq? v fnvar)
 			       (and (zero? allocated)
-				    (let ([k (second subs)])
+				    (let ((k (second subs)))
 				      (when (eq? '##core#variable (node-class k))
 					(set! inner-ks (cons (first (node-parameters k)) inner-ks)) )
 				      (set! recursive #t)
-				      #t) ) ]
-			      [else (eq? v kvar)] ) )
-		      (every (lambda (x) (rec x #f #f e)) (cdr subs)) ) ) ]
-	      [(##core#direct_call)
-	       (let ([n (fourth params)])
+				      #t) ) )
+			      (else (eq? v kvar)) ) )
+		      (every (lambda (x) (rec x #f #f e)) (cdr subs)) ) ) )
+	      ((##core#direct_call)
+	       (let ((n (fourth params)))
 		 (or (zero? n)
 		     (and (not recursive)
 			  (begin
 			    (set! allocated (+ allocated n))
-			    (every (lambda (x) (rec x #f #f e)) subs) ) ) ) ) ]
-	      [(set!) (rec (first subs) (first params) #f e)]
-	      [(let)
+			    (every (lambda (x) (rec x #f #f e)) subs) ) ) ) ) )
+	      ((set!) (rec (first subs) (first params) #f e))
+	      ((let)
 	       (and (rec (first subs) (first params) n e)
-		    (rec (second subs) #f #f (append params e)) ) ]
-	      [else (every (lambda (x) (rec x #f #f e)) subs)] ) ) )
+		    (rec (second subs) #f #f (append params e)) ) )
+	      (else (every (lambda (x) (rec x #f #f e)) subs)) ) ) )
 	(set! inner-ks '())
 	(set! hoistable '())
 	(set! allocated 0)
@@ -1446,11 +1464,11 @@
 	  (debugging 'o "direct leaf routine with hoistable closures/allocation" fnvar (delay (unzip1 hoistable)) allocated)
 	  (debugging 'o "direct leaf routine/allocation" fnvar allocated) )
       (set! dirty #t)
-      (let* ([params (node-parameters n)]
-	     [argc (length (third params))]
-	     [klambdas '()] 
-	     [sites (or (get db fnvar 'call-sites) '())]
-	     [ksites '()] )
+      (let* ((params (node-parameters n))
+	     (argc (length (third params)))
+	     (klambdas '()) 
+	     (sites (or (db-get db fnvar 'call-sites) '()))
+	     (ksites '()) )
 	(if (and (list? params) (= (length params) 4) (list? (caddr params)))
 	    (let ((id (car params))
 		  (kvar (caaddr params))
@@ -1475,7 +1493,7 @@
 			     (set! ksites (alist-cons #f n ksites))
 			     (cond [(eq? kvar (first arg0p))
 				    (unless (= argc (length (cdr subs)))
-				      (quit
+				      (quit-compiling
 				       "known procedure called recursively with wrong number of arguments: `~A'" 
 				       fnvar) )
 				    (node-class-set! n '##core#recurse)
@@ -1486,7 +1504,7 @@
 					 (let* ([klam (cdr a)]
 						[kbody (first (node-subexpressions klam))] )
 					   (unless (= argc (length (cdr subs)))
-					     (quit
+					     (quit-compiling
 					      "known procedure called recursively with wrong number of arguments: `~A'" 
 					      fnvar) )
 					   (node-class-set! n 'let)
@@ -1518,7 +1536,7 @@
 	      (let* ([n (cdr site)]
 		     [nsubs (node-subexpressions n)] )
 		(unless (= argc (length (cdr nsubs)))
-		  (quit
+		  (quit-compiling
 		   "known procedure called with wrong number of arguments: `~A'"
 		   fnvar) )
 		(node-subexpressions-set!
@@ -1626,7 +1644,7 @@
 		    (walk val e)
 		    (walk body (cons var e))))))
 	  ((##core#lambda ##core#direct_lambda)
-	   (decompose-lambda-list
+	   (##sys#decompose-lambda-list
 	    (third params)
 	    (lambda (vars argc rest)
 	      ;; walk recursively, with cleared cluster state
@@ -1660,7 +1678,7 @@
 			     (pparams (node-parameters proc))
 			     (llist (third pparams))
 			     (aliases (map gensym llist)))
-			(decompose-lambda-list
+			(##sys#decompose-lambda-list
 			 llist
 			 (lambda (vars argc rest)
 			   (let ((body (first (node-subexpressions proc)))
@@ -1760,4 +1778,4 @@
 
      groups)
     (values node (pair? groups))))
-
+)

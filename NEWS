@@ -40,6 +40,9 @@
   - Allow functor arguments to be optional, with default implementations.
   - Fixed a bug that prevented functors from being instantiated with
      built-in modules.
+  - The compiler has been modularised, for improved namespacing.  This
+     means names from the compiler should not leak out into the compiled
+     program's (macro) namespace anymore.
 
 - Syntax expander
   - define-values, set!-values and letrec-values now support full lambda
@@ -70,6 +73,9 @@
     - When using chicken-install -retrieve, and an error occurs during
        retrieval (or the egg doesn't exist), the egg's directory is
        now properly cleaned up (#1109, thanks to Alex Charlton)
+  - "chicken"
+    - The compiler option -no-parentheses-synonyms has been fixed.
+
 
 4.9.0
 

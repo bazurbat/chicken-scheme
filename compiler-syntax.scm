@@ -25,10 +25,16 @@
 
 
 (declare 
-  (unit compiler-syntax) )
+  (unit compiler-syntax)
+  (uses srfi-1 data-structures
+	support compiler) )
 
+(module compiler-syntax
+    (compiler-syntax-statistics)
 
-(include "compiler-namespace")
+(import chicken scheme srfi-1 data-structures
+	support compiler)
+
 (include "tweaks.scm")
 
 
@@ -312,3 +318,4 @@
 			       (,f ,zvar (##sys#slot ,lstvar 0)))
 			      ,zvar))))
       x))
+)

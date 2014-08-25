@@ -13,6 +13,9 @@
 
 (assert (eq? 'ok (foo)))
 
+(assert (= 1 (foreign-type-size "char")))
+(let ((bytes-in-a-word (##sys#fudge 7)))
+  (assert (= bytes-in-a-word (foreign-type-size "C_word"))))
 
 ;; test hiding of unexported toplevel variables
 

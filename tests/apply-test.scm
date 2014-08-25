@@ -1,4 +1,4 @@
-(require-extension srfi-1)
+(require-extension srfi-1 extras)
 
 (define max-argcount ##sys#apply-argument-limit)
 

@@ -26,18 +26,17 @@
 
 (declare
   (unit scrutinizer)
-  (hide specialize-node! specialization-statistics
-	procedure-type? named? procedure-result-types procedure-argument-types
-	noreturn-type? rest-type procedure-name d-depth
-	noreturn-procedure-type? trail trail-restore walked-result 
-	typename multiples procedure-arguments procedure-results
-	smash-component-types! generate-type-checks! over-all-instantiations
-	compatible-types? type<=? match-types resolve match-argument-types))
+  (uses srfi-1 data-structures extras ports files
+	support) )
 
+(module scrutinizer
+    (scrutinize load-type-database emit-type-file
+     validate-type check-and-validate-type install-specializations)
 
-(include "compiler-namespace")
+(import chicken scheme srfi-1 data-structures extras ports files
+	support)
+
 (include "tweaks")
-
 
 (define d-depth 0)
 (define scrutiny-debug #t)
@@ -123,7 +122,7 @@
   (first (node-parameters n)))		; assumes ##core#the/result node
 
 
-(define (scrutinize node db complain specialize)
+(define (scrutinize node db complain specialize strict block-compilation)
   (let ((blist '())			; (((VAR . FLOW) TYPE) ...)
 	(aliased '())
 	(noreturn #f)
@@ -187,8 +186,8 @@
 
     (define (variable-result id e loc flow)
       (cond ((blist-type id flow) => list)
-	    ((and (not strict-variable-types)
-		  (get db id 'assigned) 
+	    ((and (not strict)
+		  (db-get db id 'assigned) 
 		  (not (variable-mark id '##compiler#declared-type)))
 	     '(*))
 	    ((assq id e) =>
@@ -442,8 +441,7 @@
 	    (loop (cdr a))))))
 
     (define (initial-argument-types dest vars argc)
-      (if (and dest 
-	       strict-variable-types
+      (if (and dest strict
 	       (variable-mark dest '##compiler#declared-type))
 	  (let* ((ptype (variable-mark dest '##compiler#type))
 		 (typeenv (type-typeenv ptype)))
@@ -546,13 +544,13 @@
 				   (walk val e loc var #f flow #f) 
 				   loc)))
 			  (when (and (eq? (node-class val) '##core#variable)
-				     (not (get db var 'assigned)))
+				     (not (db-get db var 'assigned)))
 			    (let ((var2 (first (node-parameters val))))
-			      (unless (get db var2 'assigned) ;XXX too conservative?
+			      (unless (db-get db var2 'assigned) ;XXX too conservative?
 				(set! aliased (alist-cons var var2 aliased)))))
 			  (loop (cdr vars) (cdr body) (alist-cons (car vars) t e2))))))
 		 ((##core#lambda lambda)
-		  (decompose-lambda-list
+		  (##sys#decompose-lambda-list
 		   (first params)
 		   (lambda (vars argc rest)
 		     (let* ((namelst (if dest (list dest) '()))
@@ -589,7 +587,7 @@
 			     (list
 			      (let loop ((argc argc) (vars vars) (args args))
 				(cond ((zero? argc) args)
-				      ((and (not (get db (car vars) 'assigned))
+				      ((and (not (db-get db (car vars) 'assigned))
 					    (assoc (cons (car vars) initial-tag) blist))
 				       =>
 				       (lambda (a)
@@ -621,7 +619,7 @@
                                         (and (pair? type)
                                              (eq? (car type) 'deprecated))))
 			       (not (match-types type rt typeenv)))
-		      ((if strict-variable-types report-error report)
+		      ((if strict report-error report)
 		       loc
 		       (sprintf 
 			   "assignment of value of type `~a' to toplevel variable `~a' does not match declared type `~a'"
@@ -630,11 +628,11 @@
 		    (when (and (not type) ;XXX global declaration could allow this
 			       (not b)
 			       (not (eq? '* rt))
-			       (not (get db var 'unknown)))
-		      (and-let* ((val (or (get db var 'value)
-					  (get db var 'local-value))))
+			       (not (db-get db var 'unknown)))
+		      (and-let* ((val (or (db-get db var 'value)
+					  (db-get db var 'local-value))))
 			(when (and (eq? val (first subs))
-				   (or (not (variable-visible? var))
+				   (or (not (variable-visible? var block-compilation))
 				       (not (eq? (variable-mark var '##compiler#inline) 
 						 'no))))
 			  (let ((rtlst (list (cons #f (tree-copy rt)))))
@@ -648,7 +646,7 @@
 			      (mark-variable var '##compiler#type rt))))))
 		    (when b
 		      (cond ((eq? 'undefined (cdr b)) (set-cdr! b rt))
-			    #;(strict-variable-types
+			    #;(strict
 			     (let ((ot (or (blist-type var flow) (cdr b))))
 			       ;;XXX compiler-syntax for "map" will introduce
 			       ;;    assignments that trigger this warning, so this
@@ -661,8 +659,7 @@
 				    var ot rt)
 				  #t)))))
 		      ;; don't use "add-to-blist" since the current operation does not affect aliases
-		      (let ((t (if (or strict-variable-types
-				       (not (get db var 'captured)))
+		      (let ((t (if (or strict (not (db-get db var 'captured)))
 				   rt 
 				   '*))
 			    (fl (car flow)))
@@ -708,7 +705,7 @@
 		    (let-values (((r specialized?) 
 				  (call-result n args e loc params typeenv)))
 		      (define (smash)
-			(when (and (not strict-variable-types)
+			(when (and (not strict)
 				   (or (not pn)
 				       (and
 					(not (variable-mark pn '##compiler#pure))
@@ -733,7 +730,7 @@
 					 (oparg? (eq? arg (first subs)))
 					 (pred (and pt
 						    ctags
-						    (not (get db var 'assigned)) 
+						    (not (db-get db var 'assigned)) 
 						    (not oparg?))))
 				    (cond (pred
 					   ;;XXX is this needed? "typeenv" is the te of "args",
@@ -762,7 +759,7 @@
 								(if (type<=? t argr)
 								    t
 								    argr)))
-							     ((get db var 'assigned) '*)
+							     ((db-get db var 'assigned) '*)
 							     ((type<=? (cdr a) argr) (cdr a))
 							     (else argr))))
 					       (d "  assuming: ~a -> ~a (flow: ~a)" 
@@ -807,7 +804,7 @@
 				(length rt))))
 			   (when (and (second params)
 				      (not (type<=? t (first rt))))
-			     ((if strict-variable-types report-error report-notice)
+			     ((if strict report-error report-notice)
 			      loc
 			      (sprintf
 				  "expression returns a result of type `~a', but is declared to return `~a', which is not a subtype"
@@ -820,15 +817,16 @@
 		    ;; first exp is always a variable so ts must be of length 1
 		    (let loop ((types (cdr params)) (subs (cdr subs)))
 		      (cond ((null? types)
-			     (quit "~a~ano clause applies in `compiler-typecase' for expression of type `~s':~a" 
-				   (location-name loc)
-				   (if (first params) 
-				       (sprintf "(~a) " (first params))
-				       "")
-				   (car ts)
-				   (string-concatenate
-				    (map (lambda (t) (sprintf "\n    ~a" t))
-					 (cdr params)))))
+			     (quit-compiling
+			      "~a~ano clause applies in `compiler-typecase' for expression of type `~s':~a" 
+			      (location-name loc)
+			      (if (first params) 
+				  (sprintf "(~a) " (first params))
+				  "")
+			      (car ts)
+			      (string-intersperse
+			       (map (lambda (t) (sprintf "\n    ~a" t))
+				    (cdr params)) "")))
 			    ((match-types (car types) (car ts) 
 					  (append (type-typeenv (car types)) typeenv)
 					  #t)
@@ -862,7 +860,7 @@
       (when (positive? dropped-branches)
 	(debugging '(o e) "dropped branches" dropped-branches))
       (when errors
-	(quit "some variable types do not satisfy strictness"))
+	(quit-compiling "some variable types do not satisfy strictness"))
       rn)))
       
 
@@ -1807,13 +1805,11 @@
 
 ;;; type-db processing
 
-(define (load-type-database name #!optional (path (repository-path)))
+(define (load-type-database name specialize #!optional (path (repository-path)))
   (define (clean! name)
-    (when enable-specialization 
-      (mark-variable name '##compiler#clean #t)))
+    (when specialize (mark-variable name '##compiler#clean #t)))
   (define (pure! name)
-    (when enable-specialization 
-      (mark-variable name '##compiler#pure #t)))
+    (when specialize (mark-variable name '##compiler#pure #t)))
   (and-let* ((dbfile (file-exists? (make-pathname path name))))
     (debugging 'p (sprintf "loading type database `~a' ...~%" dbfile))
     (fluid-let ((scrutiny-debug #f))
@@ -1867,14 +1863,14 @@
        (read-file dbfile))
       #t)))
 
-(define (emit-type-file filename db)
-  (with-output-to-file filename
+(define (emit-type-file source-file type-file db block-compilation)
+  (with-output-to-file type-file
     (lambda ()
       (print "; GENERATED BY CHICKEN " (chicken-version) " FROM "
-	     source-filename "\n")
+	     source-file "\n")
       (##sys#hash-table-for-each
        (lambda (sym plist)
-	 (when (and (variable-visible? sym)
+	 (when (and (variable-visible? sym block-compilation)
 		    (variable-mark sym '##compiler#declared-type))
 	   (let ((specs (or (variable-mark sym '##compiler#specializations) '()))
 		 (type (variable-mark sym '##compiler#type))
@@ -2353,3 +2349,4 @@
 	    (else 
 	     (restore)
 	     (loop (cdr ts) ok))))))
+)

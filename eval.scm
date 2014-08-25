@@ -720,7 +720,8 @@
 
 			 [(##core#declare)
 			  (if (memq #:compiling ##sys#features)
-			      (for-each (lambda (d) (##compiler#process-declaration d se)) (cdr x)) 
+			      ;; XXX FIXME: This is a bit of a hack.  Why is it needed at all?
+			      (for-each (lambda (d) (compiler#process-declaration d se)) (cdr x)) 
 			      (##sys#notice
 			       "declarations are ignored in interpreted code"
 			       x) )
@@ -1286,7 +1287,8 @@
       (define (add-req id syntax?)
 	(when comp?
 	  (##sys#hash-table-update!
-	   ##compiler#file-requirements
+	   ;; XXX FIXME: This is a bit of a hack.  Why is it needed at all?
+	   compiler#file-requirements
 	   (if syntax? 'dynamic/syntax 'dynamic)
 	   (cut lset-adjoin eq? <> id) ;XXX assumes compiler has srfi-1 loaded
 	   (lambda () (list id)))))

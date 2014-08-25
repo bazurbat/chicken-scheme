@@ -298,6 +298,48 @@
    (m29-baz))
  'foo)
 
+;; Ensure that the modules system is simply an aliasing mechanism:
+;; Module instantion does not create multiple variable copies.
+
+(module m31 *
+  (import chicken scheme)
+  (define mutation-count 0)
+  (define (internally-mutate!)
+    (set! mutation-count (add1 mutation-count)))
+  (define (get-count)
+    mutation-count))
+
+(module m32 *
+  (import chicken scheme m31)
+  (define (externally-mutate!)
+    (set! mutation-count (add1 mutation-count))))
+
+(import m31 m32)
+(test-equal
+ "initial state"
+ 0 mutation-count)
+
+(internally-mutate!)
+
+(test-equal
+ "After mutating inside defining module"
+ 1 mutation-count)
+
+(set! mutation-count 2)
+
+(test-equal
+ "After mutating outside module"
+ 2 mutation-count)
+
+(externally-mutate!)
+
+(test-equal
+ "After mutation by another module"
+ 3 mutation-count)
+
+(test-equal
+ "Internal getter returns same thing"
+ 3 (get-count))
 
 (test-end "modules")
 

@@ -34,18 +34,22 @@
 
 (declare
   (unit lfa2)
-  (hide d-depth lfa2-debug d dd +type-check-map+ +predicate-map+))
+  (uses srfi-1
+	support) )
 
+(module lfa2
+    (perform-secondary-flow-analysis)
 
-(include "compiler-namespace")
+(import chicken scheme srfi-1
+	support)
+
 (include "tweaks")
-
 
 (define d-depth 0)
 (define lfa2-debug #t)
 
 (define (d fstr . args)
-  (when (and scrutiny-debug (##sys#fudge 13))
+  (when (and lfa2-debug (##sys#fudge 13))
     (printf "[debug|~a] ~a~?~%" d-depth (make-string d-depth #\space) fstr args)) )
 
 (define dd d)
@@ -183,14 +187,14 @@
 	    (else (set! stats (alist-cons elim 1 stats)))))
  
     (define (assigned? var)
-      (get db var 'assigned))
+      (db-get db var 'assigned))
 
     (define (droppable? n)
       (or (memq (node-class n) 
 		'(quote ##core#undefined ##core#primitive ##core#lambda))
 	  (and (eq? '##core#variable (node-class n))
 	       (let ((var (first (node-parameters n))))
-		 (or (not (get db var 'global))
+		 (or (not (db-get db var 'global))
 		     (variable-mark var '##compiler#always-bound))))))
 
     (define (drop! n)
@@ -359,3 +363,4 @@
 	 (for-each 
 	  (lambda (ss) (printf "  ~a:\t~a~%" (car ss) (cdr ss)))
 	  stats))))))
+)

@@ -25,12 +25,21 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
-(declare (unit backend))
+;; TODO: Rename c-backend back to "backend" and turn it into a
+;; functor?  This may require the creation of an additional file.
+;; Same goes for "platform" and "driver".
+(declare
+  (unit c-backend)
+  (uses srfi-1 data-structures
+	c-platform compiler support))
 
+(module c-backend
+    (generate-code
+     ;; For "foreign" (aka chicken-ffi-syntax):
+     foreign-type-declaration)
 
-(include "compiler-namespace")
-(include "tweaks")
-
+(import chicken scheme foreign srfi-1 data-structures
+	compiler c-platform support)
 
 ;;; Write atoms to output-port:
 
@@ -49,17 +58,14 @@
    (lambda (x) (display x output))
    (intersperse lst #\space) ) )
 
-
-;;; Unique id/prefix:
-
-(define unique-id
-  (string->c-identifier
-   (sprintf "C_~X_~A_" (random #x1000000) (current-seconds)) ) )
-
+;; Hacky procedures to make certain names more suitable for use in C.
+;; TODO: Slashify should probably be changed to convert \ into \\?
+(define (slashify s) (string-translate (->string s) "\\" "/"))
+(define (uncommentify s) (string-translate* (->string s) '(("*/" . "*_/"))))
 
 ;;; Generate target code:
 
-(define (generate-code literals lliterals lambda-table out source-file dynamic db)
+(define (generate-code literals lliterals lambda-table out source-file user-supplied-options dynamic db)
   ;; Don't truncate floating-point precision!
   (flonum-print-precision (+ flonum-maximum-decimal-exponent 1))
   (let ()
@@ -477,7 +483,7 @@
 		   (string-split (chicken-version #t) "\n") ) 
 	      "")
 	     "   command line: ")
-	(gen-list compiler-arguments)
+	(gen-list user-supplied-options)
 	(gen #t)
 	(cond [unit-name (gen "   unit: " unit-name)]
 	      [else 
@@ -679,7 +685,7 @@
 	    [(block-variable-literal? lit) 0]
 	    [(##sys#immediate? lit) (bad-literal lit)]
 	    [(##core#inline "C_lambdainfop" lit) 0]
-	    [(##sys#bytevector? lit) (+ 2 (words (##sys#size lit))) ] ; drops "permanent" property!
+	    [(##sys#bytevector? lit) (+ 2 (bytes->words (##sys#size lit))) ] ; drops "permanent" property!
 	    [(##sys#generic-structure? lit)
 	     (let ([n (##sys#size lit)])
 	       (let loop ([i 0] [s (+ 2 n)])
@@ -1075,41 +1081,40 @@
 (define (generate-foreign-callback-stubs stubs db)
   (for-each
    (lambda (stub)
-     (let* ([id (foreign-callback-stub-id stub)]
-	    [rname (real-name2 id db)]
-	    [rtype (foreign-callback-stub-return-type stub)]
-	    [argtypes (foreign-callback-stub-argument-types stub)]
-	    [n (length argtypes)]
-	    [vlist (make-argument-list n "t")] )
+     (let* ((id (foreign-callback-stub-id stub))
+	    (rname (real-name2 id db))
+	    (rtype (foreign-callback-stub-return-type stub))
+	    (argtypes (foreign-callback-stub-argument-types stub))
+	    (n (length argtypes))
+	    (vlist (make-argument-list n "t")) )
 
        (define (compute-size type var ns)
 	 (case type
-	   [(char int int32 short bool void unsigned-short scheme-object unsigned-char unsigned-int unsigned-int32
+	   ((char int int32 short bool void unsigned-short scheme-object unsigned-char unsigned-int unsigned-int32
 		  byte unsigned-byte)
-	    ns]
-	   [(float double c-pointer unsigned-integer unsigned-integer32 long integer integer32 
+	    ns)
+	   ((float double c-pointer unsigned-integer unsigned-integer32 long integer integer32 
 		   unsigned-long size_t
 		   nonnull-c-pointer number unsigned-integer64 integer64 c-string-list
 		   c-string-list*)
-	    (string-append ns "+3") ]
-	   [(c-string c-string* unsigned-c-string unsigned-c-string unsigned-c-string*)
-	    (string-append ns "+2+(" var "==NULL?1:C_bytestowords(C_strlen(" var ")))") ]
-	   [(nonnull-c-string nonnull-c-string* nonnull-unsigned-c-string nonnull-unsigned-c-string* symbol)
-	    (string-append ns "+2+C_bytestowords(C_strlen(" var "))") ]
-	   [else
-	    (cond [(and (symbol? type) (##sys#hash-table-ref foreign-type-table type)) 
-		   => (lambda (t)
-			(compute-size (if (vector? t) (vector-ref t 0) t) var ns) ) ]
-		  [(pair? type)
+	    (string-append ns "+3") )
+	   ((c-string c-string* unsigned-c-string unsigned-c-string unsigned-c-string*)
+	    (string-append ns "+2+(" var "==NULL?1:C_bytestowords(C_strlen(" var ")))") )
+	   ((nonnull-c-string nonnull-c-string* nonnull-unsigned-c-string nonnull-unsigned-c-string* symbol)
+	    (string-append ns "+2+C_bytestowords(C_strlen(" var "))") )
+	   (else
+	    (cond ((and (symbol? type) (lookup-foreign-type type)) 
+		   => (lambda (t) (compute-size (vector-ref t 0) var ns) ) )
+		  ((pair? type)
 		   (case (car type)
-		     [(ref pointer c-pointer nonnull-pointer nonnull-c-pointer function instance 
+		     ((ref pointer c-pointer nonnull-pointer nonnull-c-pointer function instance 
 			   nonnull-instance instance-ref)
-		      (string-append ns "+3") ]
-		     [(const) (compute-size (cadr type) var ns)]
-		     [else ns] ) ]
-		  [else ns] ) ] ) )
+		      (string-append ns "+3") )
+		     ((const) (compute-size (cadr type) var ns))
+		     (else ns) ) )
+		  (else ns) ) ) ) )
 
-       (let ([sizestr (fold compute-size "0" argtypes vlist)])
+       (let ((sizestr (fold compute-size "0" argtypes vlist)))
 	 (gen #t)
 	 (when rname
 	   (gen #t "/* from " (cleanup rname) " */") )
@@ -1131,12 +1136,12 @@
    stubs) )
 
 (define (generate-foreign-callback-header cls stub)
-  (let* ([name (foreign-callback-stub-name stub)]
-	 [quals (foreign-callback-stub-qualifiers stub)]
-	 [rtype (foreign-callback-stub-return-type stub)]
-	 [argtypes (foreign-callback-stub-argument-types stub)]
-	 [n (length argtypes)]
-	 [vlist (make-argument-list n "t")] )
+  (let* ((name (foreign-callback-stub-name stub))
+	 (quals (foreign-callback-stub-qualifiers stub))
+	 (rtype (foreign-callback-stub-return-type stub))
+	 (argtypes (foreign-callback-stub-argument-types stub))
+	 (n (length argtypes))
+	 (vlist (make-argument-list n "t")) )
     (gen #t cls #\space (foreign-type-declaration rtype "") quals #\space name #\()
     (pair-for-each
      (lambda (vs ts)
@@ -1149,47 +1154,47 @@
 ;; Create type declarations
 
 (define (foreign-type-declaration type target)
-  (let ([err (lambda () (quit "illegal foreign type `~A'" type))]
-	[str (lambda (ts) (string-append ts " " target))] )
+  (let ((err (lambda () (quit-compiling "illegal foreign type `~A'" type)))
+	(str (lambda (ts) (string-append ts " " target))) )
     (case type
-      [(scheme-object) (str "C_word")]
-      [(char byte) (str "C_char")]
-      [(unsigned-char unsigned-byte) (str "unsigned C_char")]
-      [(unsigned-int unsigned-integer) (str "unsigned int")]
-      [(unsigned-int32 unsigned-integer32) (str "C_u32")]
-      [(int integer bool) (str "int")]
-      [(size_t) (str "size_t")]
-      [(int32 integer32) (str "C_s32")]
-      [(integer64) (str "C_s64")]
-      [(unsigned-integer64) (str "C_u64")]
-      [(short) (str "short")]
-      [(long) (str "long")]
-      [(unsigned-short) (str "unsigned short")]
-      [(unsigned-long) (str "unsigned long")]
-      [(float) (str "float")]
-      [(double number) (str "double")]
-      [(c-pointer nonnull-c-pointer scheme-pointer nonnull-scheme-pointer) (str "void *")]
-      [(c-string-list c-string-list*) "C_char **"]
-      [(blob nonnull-blob u8vector nonnull-u8vector) (str "unsigned char *")]
-      [(u16vector nonnull-u16vector) (str "unsigned short *")]
-      [(s8vector nonnull-s8vector) (str "signed char *")]
-      [(u32vector nonnull-u32vector) (str "unsigned int *")]
-      [(s16vector nonnull-s16vector) (str "short *")]
-      [(s32vector nonnull-s32vector) (str "int *")]
-      [(f32vector nonnull-f32vector) (str "float *")]
-      [(f64vector nonnull-f64vector) (str "double *")]
+      ((scheme-object) (str "C_word"))
+      ((char byte) (str "C_char"))
+      ((unsigned-char unsigned-byte) (str "unsigned C_char"))
+      ((unsigned-int unsigned-integer) (str "unsigned int"))
+      ((unsigned-int32 unsigned-integer32) (str "C_u32"))
+      ((int integer bool) (str "int"))
+      ((size_t) (str "size_t"))
+      ((int32 integer32) (str "C_s32"))
+      ((integer64) (str "C_s64"))
+      ((unsigned-integer64) (str "C_u64"))
+      ((short) (str "short"))
+      ((long) (str "long"))
+      ((unsigned-short) (str "unsigned short"))
+      ((unsigned-long) (str "unsigned long"))
+      ((float) (str "float"))
+      ((double number) (str "double"))
+      ((c-pointer nonnull-c-pointer scheme-pointer nonnull-scheme-pointer) (str "void *"))
+      ((c-string-list c-string-list*) "C_char **")
+      ((blob nonnull-blob u8vector nonnull-u8vector) (str "unsigned char *"))
+      ((u16vector nonnull-u16vector) (str "unsigned short *"))
+      ((s8vector nonnull-s8vector) (str "signed char *"))
+      ((u32vector nonnull-u32vector) (str "unsigned int *"))
+      ((s16vector nonnull-s16vector) (str "short *"))
+      ((s32vector nonnull-s32vector) (str "int *"))
+      ((f32vector nonnull-f32vector) (str "float *"))
+      ((f64vector nonnull-f64vector) (str "double *"))
       ((pointer-vector nonnull-pointer-vector) (str "void **"))
-      [(nonnull-c-string c-string nonnull-c-string* c-string* symbol) 
-       (str "char *")]
-      [(nonnull-unsigned-c-string nonnull-unsigned-c-string* unsigned-c-string unsigned-c-string*)
-       (str "unsigned char *")]
-      [(void) (str "void")]
-      [else
-       (cond [(and (symbol? type) (##sys#hash-table-ref foreign-type-table type))
+      ((nonnull-c-string c-string nonnull-c-string* c-string* symbol) 
+       (str "char *"))
+      ((nonnull-unsigned-c-string nonnull-unsigned-c-string* unsigned-c-string unsigned-c-string*)
+       (str "unsigned char *"))
+      ((void) (str "void"))
+      (else
+       (cond ((and (symbol? type) (lookup-foreign-type type))
 	      => (lambda (t)
-		   (foreign-type-declaration (if (vector? t) (vector-ref t 0) t) target)) ]
-	     [(string? type) (str type)]
-	     [(list? type)
+		   (foreign-type-declaration (vector-ref t 0) target)) )
+	     ((string? type) (str type))
+	     ((list? type)
 	      (let ((len (length type)))
 		(cond 
 		 ((and (= 2 len)
@@ -1238,14 +1243,15 @@
 			   argtypes) 
 		      ",")
 		     ")" ) ) )
-		 (else (err)) ) ) ]
-	     [else (err)] ) ] ) ) )
+		 (else (err)) ) ) )
+	     (else (err)) ) ) ) ) )
 
 
 ;; Generate expression to convert argument from Scheme data
 
 (define (foreign-argument-conversion type)
-  (let ([err (lambda () (quit "illegal foreign argument type `~A'" type))])
+  (let ((err (lambda ()
+	       (quit-compiling "illegal foreign argument type `~A'" type))))
     (case type
       ((scheme-object) "(")
       ((char unsigned-char) "C_character_code((C_word)")
@@ -1289,33 +1295,34 @@
 			 nonnull-unsigned-c-string* symbol) "C_c_string(")
       ((bool) "C_truep(")
       (else
-       (cond [(and (symbol? type) (##sys#hash-table-ref foreign-type-table type))
+       (cond ((and (symbol? type) (lookup-foreign-type type))
 	      => (lambda (t)
-		   (foreign-argument-conversion (if (vector? t) (vector-ref t 0) t)) ) ]
-	     [(and (list? type) (>= (length type) 2))
+		   (foreign-argument-conversion (vector-ref t 0)) ) )
+	     ((and (list? type) (>= (length type) 2))
 	      (case (car type)
-	       ((c-pointer) "C_c_pointer_or_null(")
-	       ((nonnull-c-pointer) "C_c_pointer_nn(")
-	       ((instance) "C_c_pointer_or_null(")
-	       ((nonnull-instance) "C_c_pointer_nn(")
-	       ((scheme-pointer) "C_data_pointer_or_null(")
-	       ((nonnull-scheme-pointer) "C_data_pointer(")
-	       ((function) "C_c_pointer_or_null(")
-	       ((const) (foreign-argument-conversion (cadr type)))
-	       ((enum) "C_num_to_int(")
-	       ((ref)
-		(string-append "*(" (foreign-type-declaration (cadr type) "*")
-			       ")C_c_pointer_nn("))
-	       ((instance-ref)
-		(string-append "*(" (cadr type) "*)C_c_pointer_nn("))
-	       (else (err)) ) ]
-	     [else (err)] ) ) ) ) )
+		((c-pointer) "C_c_pointer_or_null(")
+		((nonnull-c-pointer) "C_c_pointer_nn(")
+		((instance) "C_c_pointer_or_null(")
+		((nonnull-instance) "C_c_pointer_nn(")
+		((scheme-pointer) "C_data_pointer_or_null(")
+		((nonnull-scheme-pointer) "C_data_pointer(")
+		((function) "C_c_pointer_or_null(")
+		((const) (foreign-argument-conversion (cadr type)))
+		((enum) "C_num_to_int(")
+		((ref)
+		 (string-append "*(" (foreign-type-declaration (cadr type) "*")
+				")C_c_pointer_nn("))
+		((instance-ref)
+		 (string-append "*(" (cadr type) "*)C_c_pointer_nn("))
+		(else (err)) ) )
+	     (else (err)) ) ) ) ) )
 
 
 ;; Generate suitable conversion of a result value into Scheme data
 	    
 (define (foreign-result-conversion type dest)
-  (let ([err (lambda () (quit "illegal foreign return type `~A'" type))])
+  (let ((err (lambda ()
+	       (quit-compiling "illegal foreign return type `~A'" type))))
     (case type
       ((char unsigned-char) "C_make_character((C_word)")
       ((int int32) "C_fix((C_word)")
@@ -1340,10 +1347,10 @@
       ((bool) "C_mk_bool(")
       ((void scheme-object) "((C_word)")
       (else
-       (cond [(and (symbol? type) (##sys#hash-table-ref foreign-type-table type))
+       (cond ((and (symbol? type) (lookup-foreign-type type))
 	      => (lambda (x)
-		   (foreign-result-conversion (if (vector? x) (vector-ref x 0) x) dest)) ]
-	     [(and (list? type) (>= (length type) 2))
+		   (foreign-result-conversion (vector-ref x 0) dest)) )
+	     ((and (list? type) (>= (length type) 2))
 	      (case (car type)
 		((nonnull-pointer nonnull-c-pointer)
 		 (sprintf "C_mpointer(&~A,(void*)" dest) )
@@ -1360,8 +1367,8 @@
 		 (sprintf "C_mpointer_or_false(&~a,(void*)" dest) )
 		((function) (sprintf "C_mpointer(&~a,(void*)" dest))
 		((enum) (sprintf "C_int_to_num(&~a," dest))
-		(else (err)) ) ]
-	     [else (err)] ) ) ) ) )
+		(else (err)) ) )
+	     (else (err)) ) ) ) ) )
 
 
 ;;; Encoded literals as strings, to be decoded by "C_decode_literal()"
@@ -1428,3 +1435,4 @@ return((C_header_bits(lit) >> 24) & 0xff);
 	      (encode-size len)
 	      (list-tabulate len (lambda (i) (encode-literal (##sys#slot lit i)))))
 	     ""))))) )
+)
