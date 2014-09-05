@@ -2265,6 +2265,15 @@
   (lambda (node args rtypes)
     `((vector ,@(map walked-result (cdr args))))))
 
+(define-special-case reverse
+  (lambda (node args rtypes)
+    (or (and-let* ((subs (node-subexpressions node))
+		   ((= (length subs) 2))
+		   (arg1 (walked-result (second args)))
+		   ((pair? arg1))
+		   ((eq? (car arg1) 'list)))
+	  `((list ,@(reverse (cdr arg1)))))
+	rtypes)))
 
 ;;; Special cases for make-list/make-vector with a known size
 ;

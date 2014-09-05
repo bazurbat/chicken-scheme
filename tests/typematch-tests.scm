@@ -290,6 +290,10 @@
 (mx (list string string) (make-list 2 "a"))
 (mx (vector * *) (make-vector 2))
 (mx (vector string string) (make-vector 2 "a"))
+(mx null (reverse '()))
+(mx list (reverse (the list (list 1 "2"))))
+(mx (list string fixnum) (reverse (list 1 "2")))
+(mx (list fixnum string) (reverse (cons "1" (cons 2 '()))))
 
 (: f1 (forall (a) ((list-of a) -> a)))
 (define (f1 x) (car x))
