@@ -170,7 +170,9 @@
 (append (#(procedure #:clean) append (#!rest *) *)) ; sic
 (##sys#append (#(procedure #:clean) ##sys#append (#!rest *) *))
 
-(reverse (forall (a) (#(procedure #:clean #:enforce) reverse ((list-of a)) (list-of a))))
+;; special cased (see scrutinizer.scm)
+(reverse (forall (a) (#(procedure #:clean #:enforce) reverse ((list-of a)) (list-of a)))
+         ((null) (null) (let ((#(tmp) #(1))) '())))
 
 (memq (forall (a b) (#(procedure #:clean) memq (a (list-of b)) (or false (list-of b))))
       ((* list) (##core#inline "C_u_i_memq" #(1) #(2))))
