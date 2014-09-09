@@ -1389,7 +1389,7 @@
 		  (cdr e)))
 	       (else t)))))
     (let ((t2 (simplify t)))
-      (when (pair? typeenv)
+      (when (pair? used)
 	(set! t2 
 	  `(forall ,(filter-map
 		     (lambda (e)
