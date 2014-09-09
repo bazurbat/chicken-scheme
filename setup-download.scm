@@ -24,8 +24,8 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
-(require-library extras irregex posix utils setup-api srfi-1 data-structures tcp srfi-13
-		 files)
+(require-library extras irregex posix utils setup-api srfi-1 data-structures tcp
+		 srfi-14 files)
 
 
 (module setup-download (retrieve-extension
@@ -38,7 +38,7 @@
 			temporary-directory)
 
   (import scheme chicken foreign)
-  (import extras irregex posix utils srfi-1 data-structures tcp srfi-13 srfi-14 files
+  (import extras irregex posix utils srfi-1 data-structures tcp srfi-14 files
 	  setup-api)
 
   (define-constant +default-tcp-connect-timeout+ 30000) ; 30 seconds
@@ -82,14 +82,23 @@
     (when version (warning "extension has no such version - using default" egg version)) )
 
   (define (list-eggs/local dir)
-    (string-concatenate (map (cut string-append <> "\n") (directory dir))) )
+    (string-intersperse (map (cut string-append <> "\n") (directory dir)) "") )
 
   (define (list-egg-versions/local name dir)
     (let ((eggdir (make-pathname dir (string-append name "/tags"))))
       (cond ((directory-exists? eggdir)
-	     (string-concatenate
-	      (map (cut string-append <> "\n") (directory eggdir))))
+	     (string-intersperse
+	      (map (cut string-append <> "\n") (directory eggdir))
+	      ""))
 	    (else "unknown\n"))))
+
+  ;; Simpler replacement for SRFI-13's string-suffix?
+  (define (string-suffix? suffix s)
+    (let ((len-s (string-length s))
+	  (len-suffix (string-length suffix)))
+      (and (not (< len-s len-suffix))
+	   (string=? suffix
+		     (substring s (fx- len-s len-suffix))))))
 
   (define (locate-egg/local egg dir #!optional version destination clean)
     (let* ((eggdir (make-pathname dir egg))
@@ -162,9 +171,10 @@
           [parg (if password (string-append "--password='" password "'") "")])
       (let ([cmd (make-svn-ls-cmd uarg parg repo)])
         (d "listing extension directory ...~%  ~a~%" cmd)
-        (string-concatenate
+        (string-intersperse
          (map (lambda (s) (string-append (string-chomp s "/") "\n"))
-              (with-input-from-pipe cmd read-lines))) ) ) )
+              (with-input-from-pipe cmd read-lines))
+	 ""))))
 
   (define (list-egg-versions/svn name repo #!optional username password)
     (let* ((uarg (if username (string-append "--username='" username "'") ""))
@@ -173,9 +183,10 @@
 	   (input (with-input-from-pipe cmd read-lines)))
       (if (null? input)
 	  "unknown\n"
-	  (string-concatenate
+	  (string-intersperse
 	   (map (lambda (s) (string-append (string-chomp s "/") "\n"))
-		(with-input-from-pipe cmd read-lines))) ) ))
+		(with-input-from-pipe cmd read-lines))
+	   ""))))
 
   (define (locate-egg/svn egg repo #!optional version destination username password)
     (let* ([uarg (if username (string-append "--username='" username "'") "")]
@@ -326,7 +337,7 @@
 		(network-failure "invalid response from server" h1)))
 	  (let loop ()
 	    (let ([ln (read-line in)])
-	      (unless (string-null? ln)
+	      (unless (equal? ln "")
 		(when (match-chunked-transfer-encoding ln) (set! chunked #t))
 		(d "~a~%" ln)
 		(loop) ) ) ) )
@@ -336,6 +347,14 @@
 	    (close-input-port in)
 	    (set! in (open-input-string data))) ) )
       (values in out)))
+
+  ;; Simpler replacement for SRFI-13's string-every
+  (define (string-every criteria s)
+    (let ((end (string-length s)))
+      (let lp ((i 0))
+	(or (fx>= i end)
+	    (and (char-set-contains? criteria (string-ref s i))
+		 (lp (fx+ i 1)))))))
 
   (define (http-retrieve-files in out dest)
     (d "reading files ...~%")
@@ -415,18 +434,20 @@
 	       (error "invalid response from server - please try again"))
 	      ((zero? size)
 	       (d "~%")
-	       (string-concatenate-reverse data))
+	       (string-intersperse (reverse data) ""))
 	      (else
 	       (let ([chunk (read-string size in)])
 		 (d ".")
 		 (read-line in)
 		 (get-chunks (cons chunk data)) ) ) ) ) ))
 
-  (define slashes (char-set #\\ #\/))
+  (define slashes '("\\" "/"))
 
   (define (valid-extension-name? name)
     (and (not (member name '("" ".." ".")))
-	 (not (string-index name slashes))))
+	 (not (any (lambda (slash)
+		     (substring-index slash name))
+		   slashes))))
 
   (define (check-egg-name name)
     (unless (valid-extension-name? name)

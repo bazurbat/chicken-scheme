@@ -23,7 +23,6 @@
 * [[Unit irregex]] Regular expressions
 * [[Unit srfi-1]] List Library
 * [[Unit srfi-4]] Homogeneous numeric vectors
-* [[Unit srfi-13]] String library
 * [[Unit srfi-14]] Character set library              
 * [[Unit srfi-18]] multithreading
 * [[Unit srfi-69]] Hashtable Library

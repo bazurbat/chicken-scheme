@@ -26,14 +26,14 @@
 
 (require-library
  setup-api
- srfi-1 posix data-structures utils ports irregex srfi-13 files)
+ srfi-1 posix data-structures utils ports irregex files)
 
 
 (module main ()
   
   (import scheme chicken foreign)
   (import setup-api)
-  (import srfi-1 posix data-structures utils ports irregex srfi-13 files)
+  (import srfi-1 posix data-structures utils ports irregex files)
 
   (define-foreign-variable C_TARGET_LIB_HOME c-string)
   (define-foreign-variable C_BINARY_VERSION int)
@@ -70,11 +70,12 @@
 	    (fini 1) 
 	    (signal ex))
       (yes-or-no? 
-       (string-concatenate
+       (string-intersperse
 	(append
 	 '("About to delete the following extensions:\n\n")
 	 (map (cut string-append "  " <> "\n") eggs)
-	 '("\nDo you want to proceed?")))
+	 '("\nDo you want to proceed?"))
+	"")
        default: "no"
        abort: (abort-setup))))
 

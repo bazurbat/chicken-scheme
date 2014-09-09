@@ -30,7 +30,7 @@
  (data-structures 
   extras files foreign irregex lolevel ports tcp utils
   posix irregex setup-api setup-download
-  srfi-1 srfi-4 srfi-13 srfi-14 srfi-18 srfi-69 
+  srfi-1 srfi-4 srfi-14 srfi-18 srfi-69
   ->) )
 
 

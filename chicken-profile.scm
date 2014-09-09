@@ -28,7 +28,7 @@
 (declare
   (block)
   (uses srfi-1
-	srfi-13
+	data-structures
 	srfi-69
 	posix
 	utils))
@@ -225,7 +225,7 @@ EOF
 			   (list 0 0 0 0 0)
 			   (cons headers data))])
       (define (print-row row)
-	(print (string-join (map format-string row column-widths alignments) spacer)))
+	(print (string-intersperse (map format-string row column-widths alignments) spacer)))
       (print-row headers)
       (print (make-string (+ (reduce + 0 column-widths)
 			     (* spacing (- (length alignments) 1)))

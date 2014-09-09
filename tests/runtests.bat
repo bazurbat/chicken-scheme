@@ -370,10 +370,6 @@ echo ======================================== srfi-4 tests ...
 %interpret% -s srfi-4-tests.scm
 if errorlevel 1 exit /b 1
 
-echo ======================================== srfi-13 tests ...
-%interpret% -s srfi-13-tests.scm
-if errorlevel 1 exit /b 1
-
 echo ======================================== srfi-14 tests ...
 %compile% srfi-14-tests.scm
 if errorlevel 1 exit /b 1

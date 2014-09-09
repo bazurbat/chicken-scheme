@@ -8,7 +8,7 @@ This unit contains a "grab bag" of procedures without a good home, and which
 don't have to be available by default (as compared to the [[Unit
 extras|extras]] unit).
 
-This unit uses the {{extras}} and {{srfi-13}} units.
+This unit uses the {{extras}} unit.
 
 
 === Executing shell commands with formatstring and error checking

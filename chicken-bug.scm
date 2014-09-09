@@ -24,7 +24,7 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
-(require-extension srfi-13 posix tcp data-structures utils extras)
+(require-extension posix tcp data-structures utils extras)
 
 
 (define-constant +bug-report-file+ "chicken-bug-report.~a-~a-~a")
@@ -101,7 +101,7 @@ EOF
   (let loop ((data '()))
     (let ((ln (read-line)))
       (cond ((or (eof-object? ln) (string=? "." ln))
-	     (string-concatenate-reverse data) )
+	     (string-intersperse (reverse data) ""))
 	    (else (loop (cons ln data)))))))
 
 (define (justify n)

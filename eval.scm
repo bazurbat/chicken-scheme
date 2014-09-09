@@ -61,7 +61,7 @@
 (define-foreign-variable install-lib-name c-string "C_INSTALL_LIB_NAME")
 
 (define ##sys#core-library-modules
-  '(extras lolevel utils files tcp irregex posix srfi-1 srfi-4 srfi-13 
+  '(extras lolevel utils files tcp irregex posix srfi-1 srfi-4
 	   srfi-14 srfi-18 srfi-69 data-structures ports))
 
 (define ##sys#core-syntax-modules

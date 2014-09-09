@@ -4,7 +4,7 @@
 (module mini-salmonella ()
 
 (import scheme chicken)
-(use posix files extras data-structures srfi-1 setup-api srfi-13 utils)
+(use posix files extras data-structures srfi-1 setup-api utils)
 
 (define (usage code)
   (print "usage: mini-salmonella [-h] [-test] [-debug] [-download] [-trunk] EGGDIR [PREFIX]")

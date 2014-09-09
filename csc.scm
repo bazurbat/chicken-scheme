@@ -27,7 +27,7 @@
 
 (declare
   (block)
-  (uses data-structures ports srfi-1 srfi-13 utils files extras))
+  (uses data-structures ports srfi-1 utils files extras))
 
 (define-foreign-variable INSTALL_BIN_HOME c-string "C_INSTALL_BIN_HOME")
 (define-foreign-variable INSTALL_CC c-string "C_INSTALL_CC")
@@ -1030,6 +1030,16 @@ EOF
     (if q 
 	(string-append "\"" (string-translate* s '(("\"" . "\\\""))) "\"")
 	s) ) )
+
+;; Simpler replacement for SRFI-13's string-any
+(define (string-any criteria s)
+  (let ((end (string-length s)))
+    (let lp ((i 0))
+      (let ((c (string-ref s i))
+            (i1 (+ i 1)))
+        (if (= i1 end) (criteria c)
+            (or (criteria c)
+                (lp i1)))))))
 
 (define (quote-option x)
   (cond ((string-any (cut char=? #\" <>) x) x)

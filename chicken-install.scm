@@ -25,12 +25,12 @@
 
 
 (require-library setup-download setup-api)
-(require-library srfi-1 posix data-structures utils irregex ports extras srfi-13 files)
+(require-library srfi-1 posix data-structures utils irregex ports extras files)
 
 (module main ()
 
   (import scheme chicken srfi-1 posix data-structures utils irregex ports extras
-          srfi-13 files)
+          files)
   (import setup-download setup-api)
 
   (import foreign)
@@ -47,7 +47,6 @@
       "ports.import.so"
       "files.import.so"
       "posix.import.so"
-      "srfi-13.import.so"
       "srfi-69.import.so"
       "extras.import.so"
       "srfi-14.import.so"
@@ -370,7 +369,7 @@
 		 (next)))))))
 
   (define (make-replace-extension-question e+d+v upgrade)
-    (string-concatenate
+    (string-intersperse
      (append
       (list "The following installed extensions are outdated, because `"
             (car e+d+v)
@@ -392,7 +391,8 @@
 		 " -> " (cdr e) ")"
 		 #\newline) )))
        upgrade)
-      '("\nDo you want to replace the existing extensions?"))))
+      '("\nDo you want to replace the existing extensions?"))
+     ""))
 
   (define (override-version egg)
     (let ((name (string->symbol (if (pair? egg) (car egg) egg))))

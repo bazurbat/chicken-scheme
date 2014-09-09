@@ -39,7 +39,6 @@ profiler.c
 scheduler.c
 srfi-69.c
 srfi-1.c
-srfi-13.c
 srfi-14.c
 srfi-18.c
 srfi-4.c
@@ -95,7 +94,6 @@ runtime.c
 scheduler.scm
 srfi-69.scm
 srfi-1.scm
-srfi-13.scm
 srfi-14.scm
 srfi-18.scm
 srfi-4.scm
@@ -126,7 +124,6 @@ tests/runtests.sh
 tests/runtests.bat
 tests/runbench.sh
 tests/srfi-4-tests.scm
-tests/srfi-13-tests.scm
 tests/srfi-18-signal-test.scm
 tests/srfi-14-tests.scm
 tests/srfi-45-tests.scm
@@ -267,7 +264,6 @@ srfi-1.import.scm
 srfi-4.import.scm
 data-structures.import.scm
 posix.import.scm
-srfi-13.import.scm
 srfi-69.import.scm
 extras.import.scm
 irregex.import.scm
@@ -280,7 +276,6 @@ srfi-1.import.c
 srfi-4.import.c
 data-structures.import.c
 posix.import.c
-srfi-13.import.c
 srfi-69.import.c
 extras.import.c
 irregex.import.c
@@ -361,7 +356,6 @@ manual-html/Unit ports.html
 manual-html/Unit posix.html
 manual-html/Unit irregex.html
 manual-html/Unit srfi-1.html
-manual-html/Unit srfi-13.html
 manual-html/Unit srfi-14.html
 manual-html/Unit srfi-18.html
 manual-html/Unit srfi-4.html

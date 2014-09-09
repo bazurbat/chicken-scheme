@@ -935,6 +935,6 @@ The ASCII blank characters are the first two characters above -- horizontal
 tab and space. Latin-1 adds the no-break space.
 
 ---
-Previous: [[Unit srfi-13]]
+Previous: [[Unit srfi-4]]
 
 Next: [[Unit srfi-18]]

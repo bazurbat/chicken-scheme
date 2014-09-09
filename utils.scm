@@ -27,7 +27,7 @@
 
 (declare
   (unit utils)
-  (uses eval extras srfi-13 posix files irregex)
+  (uses data-structures eval extras posix files irregex)
   (fixnum)
   (disable-interrupts) )
 
@@ -62,13 +62,14 @@
 	(escaped (if (eq? platform 'mingw32) "\"\"" "'\\''")))
     (string-append
      (string delim)
-     (string-concatenate
+     (string-intersperse
       (map (lambda (c)
 	     (cond
 	      ((char=? c delim) escaped)
 	      ((char=? c #\nul) (error 'qs "NUL character can not be represented in shell string" str))
 	      (else (string c))))
-	   (string->list str)))
+	   (string->list str))
+      "")
      (string delim))))
 
 

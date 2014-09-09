@@ -24,7 +24,7 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
-(require-library srfi-1 irregex utils posix srfi-13 extras ports data-structures files)
+(require-library srfi-1 irregex utils posix extras ports data-structures files)
 
 ; This code is partially quite messy and the API is not overly consistent,
 ; mainly because it has grown "organically" while the old chicken-setup program
@@ -67,7 +67,7 @@
   
   (import scheme chicken foreign
 	  irregex utils posix ports extras data-structures
-	  srfi-1 srfi-13 files)
+	  srfi-1 files)
 
 ;;; Constants, variables and parameters
 
@@ -232,6 +232,11 @@
 (define (target-prefix fname)
   (and-let* ((tp (runtime-prefix)))
     (make-pathname tp fname)))
+
+;; Simpler replacement for SRFI-13's string-prefix?
+(define (string-prefix? prefix s)
+  (let ((pos (substring-index prefix s)))
+    (and pos (zero? pos))))
 
 (define (fixpath prg)
   (cond ((string=? prg "csc")
@@ -589,7 +594,7 @@
 
 (define (extension-version #!optional defver)
   (let ([ver (cadr (extension-name-and-version))])
-    (if (string-null? ver)
+    (if (equal? ver "")
         (and defver (->string defver))
         ver ) ) )
 
