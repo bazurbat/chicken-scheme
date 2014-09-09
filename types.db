@@ -156,11 +156,11 @@
 (##sys#list (#(procedure #:pure) ##sys#list (#!rest) list))
 
 (length (#(procedure #:clean #:enforce) length (list) fixnum) ; may loop
-	((null) '0)
+	((null) (let ((#(tmp) #(1))) '0))
 	((list) (##core#inline "C_u_i_length" #(1))))
 
 (##sys#length (#(procedure #:clean #:enforce) ##sys#length (list) fixnum)
-	      ((null) '0)
+	      ((null) (let ((#(tmp) #(1))) '0))
 	      ((list) (##core#inline "C_u_i_length" #(1))))
 
 ;; these are special cased (see scrutinizer.scm)
