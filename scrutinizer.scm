@@ -893,79 +893,6 @@
 		 (cute set-car! (cddr t) <>))))))))
 
 
-;;; Converting type into string
-
-(define (typename t)
-  (define (argument-string args)
-    (let* ((len (length (delete '#!optional args eq?)))
-	   (m (multiples len)))
-      ;;XXX not quite right for rest/optional arguments
-      (cond ((memq '#!rest args)
-	     (sprintf "~a or more arguments" len))
-	    ((zero? len) "zero arguments")
-	    (else
-	     (sprintf 
-		 "~a argument~a of type~a ~a"
-	       len m m
-	       (string-intersperse (map typename args) ", "))))))
-  (define (result-string results)
-    (if (eq? '* results) 
-	"an unknown number of values"
-	(let* ((len (length results))
-	       (m (multiples len)))
-	  (if (zero? len)
-	      "zero values"
-	      (sprintf 
-		  "~a value~a of type~a ~a"
-		len m m
-		(string-intersperse (map typename results) ", "))))))
-  (case t
-    ((*) "anything")
-    ((char) "character")
-    (else
-     (cond ((symbol? t) (symbol->string t))
-	   ((pair? t)
-	    (case (car t)
-	      ((procedure) 
-	       (if (or (string? (cadr t)) (symbol? (cadr t)))
-		   (->string (cadr t))
-		   (sprintf "a procedure with ~a returning ~a"
-		     (argument-string (cadr t))
-		     (result-string (cddr t)))))
-	      ((or)
-	       (string-intersperse
-		(map typename (cdr t))
-		" OR "))
-	      ((struct)
-	       (sprintf "a structure of type ~a" (cadr t)))
-	      ((forall) 
-	       (sprintf "~a (for all ~a)"
-		 (typename (third t))
-		 (string-intersperse
-		  (map (lambda (tv)
-			 (if (symbol? tv)
-			     (symbol->string tv)
-			     (sprintf "~a being ~a" (first tv) (typename (second tv)))))
-		       (second t))
-		  " ")))
-	      ((not)
-	       (sprintf "NOT ~a" (typename (second t))))
-	      ((pair)
-	       (sprintf "a pair wth car ~a and cdr ~a"
-		 (typename (second t))
-		 (typename (third t))))
-	      ((vector-of)
-	       (sprintf "a vector with element type ~a" (typename (second t))))
-	      ((list-of)
-	       (sprintf "a list with element type ~a" (typename (second t))))
-	      ((vector list)
-	       (sprintf "a ~a with the element types ~a"
-		 (car t)
-		 (map typename (cdr t))))
-	      (else (bomb "typename: invalid type" t))))
-	   (else (bomb "typename: invalid type" t))))))
-
-
 ;;; Type-matching
 ;
 ; - "exact" means: first argument must match second one exactly
@@ -1387,7 +1314,7 @@
 		  (cdr e)))
 	       (else t)))))
     (let ((t2 (simplify t)))
-      (when (pair? typeenv)
+      (when (pair? used)
 	(set! t2 
 	  `(forall ,(filter-map
 		     (lambda (e)
