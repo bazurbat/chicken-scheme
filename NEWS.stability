@@ -8,3 +8,15 @@ a1c739e Fix minor version in chicken.h
 e203181 Add tests/version-tests.scm
 a25d200 Fix #1133
 e29b85b Fix #1136
+
+-----------------------------------
+
+Changes in 4.9.0.2:
+
+b200f49 Fix #1133 by adding ports (and dropping extras) in unit tcp's "uses" declaration
+299ae5d Fix file-mkstemp behaviour on Windows (#819).
+1c5f5bd Remove outdated manual section on letrec binding references
+5678255 Set HAVE_POSIX_POLL for Android
+01dd396 Fix bug in move-memory! for overlapping memory regions (#1136).
+ff2dfea Fix #878 which was indeed a bug, caused by an incorrect hand-rolled optimisation.
+f5b4d9b C_substring_copy: use C_memmove instead of C_memcpy
