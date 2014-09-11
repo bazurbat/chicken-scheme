@@ -37,7 +37,7 @@ SETUP_API_OBJECTS_1 = setup-api setup-download
 
 LIBCHICKEN_SCHEME_OBJECTS_1 = \
        library eval data-structures ports files extras lolevel utils tcp srfi-1 srfi-4 \
-       srfi-14 srfi-18 srfi-69 $(POSIXFILE) irregex scheduler \
+       srfi-14 $(POSIXFILE) irregex scheduler \
        profiler stub expand modules chicken-syntax chicken-ffi-syntax build-version
 LIBCHICKEN_OBJECTS_1 = $(LIBCHICKEN_SCHEME_OBJECTS_1) runtime
 LIBCHICKEN_SHARED_OBJECTS = $(LIBCHICKEN_OBJECTS_1:=$(O))
@@ -552,8 +552,6 @@ posixunix.c: $(SRCDIR)posixunix.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-de
 	$(bootstrap-lib) 
 posixwin.c: $(SRCDIR)posixwin.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
-srfi-69.c: $(SRCDIR)srfi-69.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib)
 irregex.c: $(SRCDIR)irregex.scm $(SRCDIR)irregex-core.scm $(SRCDIR)irregex-utils.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 #
@@ -578,8 +576,6 @@ srfi-1.c: $(SRCDIR)srfi-1.scm $(SRCDIR)common-declarations.scm
 srfi-4.c: $(SRCDIR)srfi-4.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 srfi-14.c: $(SRCDIR)srfi-14.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) 
-srfi-18.c: $(SRCDIR)srfi-18.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 utils.c: $(SRCDIR)utils.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 

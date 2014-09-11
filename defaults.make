@@ -275,7 +275,7 @@ CHICKEN_INSTALL_PROGRAM = $(PROGRAM_PREFIX)chicken-install$(PROGRAM_SUFFIX)
 CHICKEN_UNINSTALL_PROGRAM = $(PROGRAM_PREFIX)chicken-uninstall$(PROGRAM_SUFFIX)
 CHICKEN_STATUS_PROGRAM = $(PROGRAM_PREFIX)chicken-status$(PROGRAM_SUFFIX)
 CHICKEN_BUG_PROGRAM = $(PROGRAM_PREFIX)chicken-bug$(PROGRAM_SUFFIX)
-IMPORT_LIBRARIES = chicken lolevel srfi-1 srfi-4 data-structures ports files posix srfi-69 extras srfi-14 tcp foreign srfi-18 utils csi irregex
+IMPORT_LIBRARIES = chicken lolevel srfi-1 srfi-4 data-structures ports files posix extras srfi-14 tcp foreign utils csi irregex
 IMPORT_LIBRARIES += setup-api setup-download
 
 ifdef STATICBUILD

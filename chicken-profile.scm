@@ -29,9 +29,10 @@
   (block)
   (uses srfi-1
 	data-structures
-	srfi-69
 	posix
 	utils))
+
+(define symbol-table-size 3001)
 
 (define sort-by #f)
 (define file #f)
@@ -151,16 +152,24 @@ EOF
 	(set! percent-digits (arg-digit 2)))
       (error "invalid argument to -decimals option" arg)))
 
+(define (make-sysmbol-table)
+  (make-vector symbol-table-size '()))
+
 (define (read-profile)
-  (let ((hash (make-hash-table eq?)))
+  (let ((hash (make-symbol-table)))
     (do ((line (read) (read)))
 	((eof-object? line))
-      (hash-table-set!
+      (##sys#hash-table-set!
        hash (first line)
        (map (lambda (x y) (and x y (+ x y)))
-	    (hash-table-ref/default hash (first line) '(0 0)) 
+	    (or (##sys#hash-table-ref hash (first line)) '(0 0))
 	    (cdr line))))
-    (hash-table->alist hash)))
+    (let ((alist '()))
+      (##sys#hash-table-for-each
+       (lambda (sym counts)
+	 (set! alist (alist-cons sym counts alist)))
+       hash)
+      alist)))
 
 (define (format-string str cols #!optional right (padc #\space))
   (let* ((len (string-length str))

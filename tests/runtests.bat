@@ -146,8 +146,6 @@ a.out >dwindtst.out
 if errorlevel 1 exit /b 1
 fc /w dwindtst.expected dwindtst.out
 if errorlevel 1 exit /b 1
-echo *** Skipping "feeley-dynwind" for now ***
-rem %interpret% -s feeley-dynwind.scm
 
 echo ======================================== lolevel tests ...
 %interpret% -s lolevel-tests.scm
@@ -346,10 +344,6 @@ if errorlevel 1 exit /b 1
 rem %compile% ec-tests.scm
 rem a.out        # takes ages to compile
 
-echo ======================================== hash-table tests ...
-%interpret% -s hash-table-tests.scm
-if errorlevel 1 exit /b 1
-
 echo ======================================== port tests ...
 %interpret% -s port-tests.scm
 if errorlevel 1 exit /b 1
@@ -378,12 +372,6 @@ if errorlevel 1 exit /b 1
 
 echo ======================================== condition tests ...
 %interpret% -s condition-tests.scm
-if errorlevel 1 exit /b 1
-
-echo ======================================== srfi-18 tests ...
-%interpret% -s simple-thread-test.scm
-if errorlevel 1 exit /b 1
-%interpret% -s mutex-test.scm
 if errorlevel 1 exit /b 1
 
 echo ======================================== data-structures tests ...

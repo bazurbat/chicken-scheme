@@ -104,7 +104,7 @@ For a different approach to concurrency, please see the
 
 The system does not directly support Unicode, but there is an extension for UTF-8 strings: [[http://wiki.call-cc.org/egg/utf8|utf8]].
 
-=== Why are `dynamic-wind' thunks not executed when a SRFI-18 thread signals an error?
+=== Why are `dynamic-wind' thunks not executed when a thread signals an error?
 
 Here is what Marc Feeley, the author of [[http://srfi.schemers.org/srfi-18|SRFI-18]] has to
 say about this subject:
@@ -321,20 +321,20 @@ the file containing the sharp-comma form, like this:
  (print #,(integer->char 33))
 </enscript>
 
-==== Why do built-in units, such as srfi-1, srfi-18, and posix fail to load?
+==== Why do built-in units, such as srfi-1 and posix fail to load?
 
-When you try to {{use}} a built-in unit such as {{srfi-18}}, you may get the following error:
+When you try to {{use}} a built-in unit such as {{posix}}, you may get the following error:
 
 <enscript highlight=scheme>
- #;1> (use srfi-18)
- ; loading library srfi-18 ...
+ #;1> (use posix)
+ ; loading library posix ...
  Error: (load-library) unable to load library
- srfi-18
+ posix
  "dlopen(libchicken.dylib, 9): image not found"                ;; on a Mac
  "libchicken.so: cannot open shared object file: No such file or directory"  ;; Linux
 </enscript>
 
-Another symptom is that {{(require 'srfi-18)}} will silently fail.
+Another symptom is that {{(require 'posix)}} will silently fail.
 
 This typically happens because the CHICKEN libraries have been installed in a non-standard location, such as your home directory.  The workaround is to explicitly tell the dynamic linker where to look for your libraries:
 

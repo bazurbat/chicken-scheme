@@ -300,9 +300,7 @@
 	|   |       |-- setup-download.so
 	|   |       |-- srfi-1.import.so
 	|   |       |-- srfi-14.import.so
-	|   |       |-- srfi-18.import.so
 	|   |       |-- srfi-4.import.so
-	|   |       |-- srfi-69.import.so
 	|   |       |-- tcp.import.so
 	|   |       |-- types.db
 	|   |       `-- utils.import.so

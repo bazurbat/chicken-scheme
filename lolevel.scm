@@ -27,7 +27,6 @@
 
 (declare
   (unit lolevel)
-  (uses srfi-69)
   (hide ipc-hook-0 *set-invalid-procedure-call-handler! xproc-tag
    ##sys#check-block
    ##sys#check-become-alist

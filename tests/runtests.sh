@@ -39,9 +39,9 @@ for x in setup-api.so setup-api.import.so setup-download.so \
       setup-download.import.so chicken.import.so lolevel.import.so \
       srfi-1.import.so srfi-4.import.so data-structures.import.so \
       ports.import.so files.import.so posix.import.so \
-      srfi-69.import.so extras.import.so \
+      extras.import.so \
       irregex.import.so srfi-14.import.so tcp.import.so \
-      foreign.import.so srfi-18.import.so \
+      foreign.import.so \
       utils.import.so csi.import.so irregex.import.so types.db; do
   cp ../$x test-repository
 done
@@ -160,8 +160,6 @@ diff $DIFF_OPTS dwindtst.expected dwindtst.out
 $compile dwindtst.scm
 ./a.out >dwindtst.out
 diff $DIFF_OPTS dwindtst.expected dwindtst.out
-echo "*** Skipping \"feeley-dynwind\" for now ***"
-# $interpret -s feeley-dynwind.scm
 
 echo "======================================== lolevel tests ..."
 $interpret -s lolevel-tests.scm
@@ -292,9 +290,6 @@ $interpret -bnq ec.so ec-tests.scm
 # $compile ec-tests.scm
 # ./a.out        # takes ages to compile
 
-echo "======================================== hash-table tests ..."
-$interpret -s hash-table-tests.scm
-
 echo "======================================== port tests ..."
 $interpret -s port-tests.scm
 
@@ -315,12 +310,6 @@ $compile srfi-14-tests.scm
 
 echo "======================================== condition tests ..."
 $interpret -s condition-tests.scm
-
-echo "======================================== srfi-18 tests ..."
-$interpret -s simple-thread-test.scm
-$interpret -s mutex-test.scm
-$compile srfi-18-signal-test.scm
-./a.out
 
 echo "======================================== data-structures tests ..."
 $interpret -s data-structures-tests.scm
@@ -343,10 +332,6 @@ if test -z "$MSYSTEM"; then
 fi
 
 $interpret -R posix -e '(delete-directory "tmpdir" #t)'
-
-echo "======================================== signal tests ..."
-$compile signal-tests.scm
-./a.out
 
 echo "======================================== regular expression tests ..."
 $interpret -bnq test-irregex.scm

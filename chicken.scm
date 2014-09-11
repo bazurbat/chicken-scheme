@@ -30,8 +30,7 @@
 	srfi-1 srfi-4 utils files extras data-structures support
 	compiler optimizer lfa2 compiler-syntax scrutinizer
 	;; TODO: These three need to be made configurable somehow
-	batch-driver c-platform c-backend
-	srfi-69))
+	batch-driver c-platform c-backend))
 
 
 (include "tweaks")

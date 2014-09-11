@@ -258,27 +258,6 @@ EOF
 (define (read-echo-line/pos str limit)
   (read-process-line/pos "echo" (list "-n" str) limit))
 
-(use srfi-18)
-(define (read-tcp-line/pos str limit)
-  (let ((pn 8079))
-    (thread-start! (lambda ()
-		     (let ((L (tcp-listen pn)))
-		       (let-values (((i o) (tcp-accept L)))
-			 (display str o)
-			 (close-input-port i)
-			 (close-output-port o)
-			 (tcp-close L)))))
-    (let-values (((i o)
-		  (let lp ((n 10))
-		    (if (zero? n)
-			(error "timeout connecting to server")
-			(condition-case (tcp-connect "localhost" pn)
-					((exn i/o net) (thread-sleep! 0.1) (lp (- n 1))))))))
-      (let ((rc (read-line/pos i limit)))
-	(close-input-port i)
-	(close-output-port o)
-	rc))))
-
 (define (test-port-position proc)
   (test-equal "advance row when encountering delim" 
 	      (proc "abcde\nfghi" 6)
@@ -381,14 +360,6 @@ EOF
 (test-group
  "read-line process port position tests"
  (test-port-position read-echo-line/pos))
-
-;; Disabled because currently fragile if port is already taken by
-;; another service.
-;; Uncomment locally to run.
-#;
-(test-group
- "read-line TCP port position tests"
- (test-port-position read-tcp-line/pos))
 
 ;;;
 
