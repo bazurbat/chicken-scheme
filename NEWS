@@ -1,7 +1,8 @@
 4.9.0.2
 
 - Security fixes
-  - Use POSIX poll() on Android (CVE pending).
+  - CVE-2014-6310: Use POSIX poll() on Android platform to avoid
+    potential select() buffer overrun.
 
 - Core libraries
   - SRFI-13: fix string-copy! in cases source and destination strings'
