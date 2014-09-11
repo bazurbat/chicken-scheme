@@ -1,7 +1,8 @@
 4.9.1
 
 - Security fixes
-  - Use POSIX poll() on Android (CVE pending).
+  - CVE-2014-6310: Use POSIX poll() on Android platform to avoid
+    potential select() buffer overrun.
 
 - Core libraries
   - alist-ref from unit data-structures now gives an error when passed
