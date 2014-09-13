@@ -721,7 +721,7 @@
 			 [(##core#declare)
 			  (if (memq #:compiling ##sys#features)
 			      ;; XXX FIXME: This is a bit of a hack.  Why is it needed at all?
-			      (for-each (lambda (d) (compiler#process-declaration d se)) (cdr x)) 
+			      (for-each (lambda (d) (chicken.compiler.core#process-declaration d se)) (cdr x)) 
 			      (##sys#notice
 			       "declarations are ignored in interpreted code"
 			       x) )
