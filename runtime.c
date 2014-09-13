@@ -1449,7 +1449,7 @@ C_word CHICKEN_continue(C_word k)
 C_regparm void C_fcall initial_trampoline(void *proc)
 {
   TOPLEVEL top = (TOPLEVEL)proc;
-  C_word closure = (C_word)C_alloc(2);
+  C_word closure = (C_word)C_alloc(C_SIZEOF_CLOSURE(1));
 
   ((C_SCHEME_BLOCK *)closure)->header = C_CLOSURE_TYPE | 1;
   C_set_block_item(closure, 0, (C_word)termination_continuation);
@@ -1894,7 +1894,7 @@ C_word C_fcall C_callback(C_word closure, int argc)
   jmp_buf prev;
 #endif
   C_word 
-    *a = C_alloc(3),
+    *a = C_alloc(C_SIZEOF_CLOSURE(2)),
     k = C_closure(&a, 2, (C_word)callback_return_continuation, C_SCHEME_FALSE);
   int old = chicken_is_running;
 
@@ -1952,7 +1952,7 @@ void C_fcall C_callback_adjust_stack(C_word *a, int size)
 C_word C_fcall C_callback_wrapper(void *proc, int argc)
 {
   C_word
-    *a = C_alloc(2),
+    *a = C_alloc(C_SIZEOF_CLOSURE(1)),
     closure = C_closure(&a, 1, (C_word)proc),
     result;
   
@@ -3629,8 +3629,7 @@ void handle_interrupt(void *trampoline, void *proc)
 
   /* Build vector with context information: */
   n = C_temporary_stack_bottom - C_temporary_stack;
-  /* 19 <=> 2 headers + trampoline + proc + 1 extra slot + 9 for interning + 5 for string */
-  p = C_alloc(19 + n);
+  p = C_alloc(C_SIZEOF_VECTOR(2) + C_SIZEOF_VECTOR(n+1));
   x = (C_word)p;
   *(p++) = C_VECTOR_TYPE | C_BYTEBLOCK_BIT | (2 * sizeof(C_word));
   *(p++) = (C_word)trampoline;
@@ -4014,7 +4013,7 @@ void C_ccall C_stop_timer(C_word c, C_word closure, C_word k)
 {
   double t0 = C_cpu_milliseconds() - timer_start_ms;
   C_word 
-    ab[ WORDS_PER_FLONUM * 2 + 7 ], /* 2 flonums, 1 vector of 6 elements */
+    ab[ WORDS_PER_FLONUM * 2 + C_SIZEOF_VECTOR(6) ],
     *a = ab,
     elapsed = C_flonum(&a, t0 / 1000.0),
     gc_time = C_flonum(&a, gc_ms / 1000.0),
@@ -6085,7 +6084,7 @@ PTR_O_p0_##p0(((n0-2)&0xFE)+1));
 
 void C_ccall C_call_cc(C_word c, C_word closure, C_word k, C_word cont)
 {
-  C_word *a = C_alloc(3),
+  C_word *a = C_alloc(C_SIZEOF_CLOSURE(2)),
          wrapper;
   void *pr = (void *)C_block_item(cont,0);
 
@@ -6205,7 +6204,7 @@ void C_ccall C_apply_values(C_word c, C_word closure, C_word k, C_word lst)
 
 void C_ccall C_call_with_values(C_word c, C_word closure, C_word k, C_word thunk, C_word kont)
 {
-  C_word *a = C_alloc(4),
+  C_word *a = C_alloc(C_SIZEOF_CLOSURE(3)),
          kk;
 
   if(c != 4) C_bad_argc(c, 4);
@@ -6223,7 +6222,7 @@ void C_ccall C_call_with_values(C_word c, C_word closure, C_word k, C_word thunk
 
 void C_ccall C_u_call_with_values(C_word c, C_word closure, C_word k, C_word thunk, C_word kont)
 {
-  C_word *a = C_alloc(4),
+  C_word *a = C_alloc(C_SIZEOF_CLOSURE(3)),
          kk;
 
   kk = C_closure(&a, 3, (C_word)values_continuation, kont, k);
@@ -7800,7 +7799,7 @@ void make_structure_2(void *dummy)
   C_word k = C_restore,
       type = C_restore,
       size = C_rest_count(0),
-      *a = C_alloc(size + 2),
+      *a = C_alloc(C_SIZEOF_STRUCTURE(size+1)),
       *s = a,
       s0 = (C_word)s;
 
@@ -7881,7 +7880,7 @@ void C_ccall C_get_symbol_table_info(C_word c, C_word closure, C_word k)
   int n = 0, total;
   C_SYMBOL_TABLE *stp;
   C_word x, y,
-         ab[ WORDS_PER_FLONUM * 2 + 5 ], /* 2 flonums + 1 vector of 4 elements */
+         ab[ WORDS_PER_FLONUM * 2 + C_SIZEOF_VECTOR(4) ],
          *a = ab;
 
   for(stp = symbol_table_list; stp != NULL; stp = stp->next)
@@ -7896,7 +7895,7 @@ void C_ccall C_get_symbol_table_info(C_word c, C_word closure, C_word k)
 
 void C_ccall C_get_memory_info(C_word c, C_word closure, C_word k)
 {
-  C_word ab[ 3 ], *a = ab;
+  C_word ab[ C_SIZEOF_VECTOR(2) ], *a = ab;
 
   C_kontinue(k, C_vector(&a, 2, C_fix(heap_size), C_fix(stack_size)));
 }
@@ -7945,7 +7944,7 @@ void C_ccall C_decode_seconds(C_word c, C_word closure, C_word k, C_word secs, C
 {
   time_t tsecs;
   struct tm *tmt;
-  C_word ab[ 11 ], *a = ab,
+  C_word ab[ C_SIZEOF_VECTOR(10) ], *a = ab,
          info;
 
   tsecs = (time_t)((secs & C_FIXNUM_BIT) != 0 ? C_unfix(secs) : C_flonum_magnitude(secs));
@@ -8612,7 +8611,7 @@ static void copy_closure_2(void *dummy)
     proc = C_restore;
   int cells = C_header_size(proc);
   C_word
-    *ptr = C_alloc(cells + 1),
+    *ptr = C_alloc(C_SIZEOF_CLOSURE(cells)),
     *p = ptr;
 
   *(p++) = C_CLOSURE_TYPE | cells;
@@ -8626,7 +8625,7 @@ static void copy_closure_2(void *dummy)
 
 void C_call_with_cthulhu(C_word c, C_word self, C_word k, C_word proc)
 {
-  C_word *a = C_alloc(3);
+  C_word *a = C_alloc(C_SIZEOF_CLOSURE(1));
   
   k = C_closure(&a, 1, (C_word)termination_continuation);
   C_apply(4, C_SCHEME_UNDEFINED, k, proc, C_SCHEME_END_OF_LIST);

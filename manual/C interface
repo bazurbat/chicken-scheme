@@ -359,6 +359,10 @@ accessor macros instead).
 
  [C function] C_word C_vector (C_word **ptr, int length, ...)
 
+===== C_structure
+
+ [C function] C_word C_structure (C_word **ptr, int length, ...)
+
 ===== C_list
 
  [C function] C_word C_list (C_word **ptr, int length, ...)
@@ -487,6 +491,18 @@ and can also be simulated by declaring a stack-allocated array of
  [C macro] int C_SIZEOF_VECTOR (int length)
 
 Returns the size in words needed for allocation of vector with ''length'' elements.
+
+===== C_SIZEOF_CLOSURE
+
+ [C macro] int C_SIZEOF_CLOSURE (int length)
+
+Returns the size in words needed for allocation of a closure with {{length}} slots.  The C function pointer also counts as a slot, so always remember to include it when calculating {{length}}.
+
+===== C_SIZEOF_STRUCT
+
+ [C macro] int C_SIZEOF_STRUCT (int length)
+
+Returns the size in words needed for allocation of a structure (record type) object with {{length}} slots.  The structure's type tag also counts as a slot, so always remember to include it when calculating {{length}}.
 
 ===== C_SIZEOF_INTERNED_SYMBOL
 

@@ -489,6 +489,8 @@ static inline int isinf_ld (long double x)
 #define C_SIZEOF_BUCKET           3
 #define C_SIZEOF_LOCATIVE         5
 #define C_SIZEOF_PORT             16
+#define C_SIZEOF_STRUCTURE(n)     ((n)+1)
+#define C_SIZEOF_CLOSURE(n)       ((n)+1)
 
 /* Fixed size types have pre-computed header tags */
 #define C_PAIR_TAG                (C_PAIR_TYPE | (C_SIZEOF_PAIR - 1))
