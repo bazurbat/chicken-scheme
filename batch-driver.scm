@@ -34,15 +34,21 @@
 	;; TODO: Backend should be configurable
 	scrutinizer lfa2 c-platform c-backend) )
 
-(module batch-driver
+(module chicken.compiler.batch-driver
     (compile-source-file
 
      user-options-pass user-read-pass user-preprocessor-pass user-pass
      user-post-analysis-pass)
 
 (import chicken scheme extras data-structures files srfi-1
-	support compiler-syntax compiler optimizer scrutinizer lfa2
-	c-platform c-backend)
+	chicken.compiler.support
+	chicken.compiler.compiler-syntax
+	chicken.compiler.core
+	chicken.compiler.optimizer
+	chicken.compiler.scrutinizer
+	chicken.compiler.lfa2
+	chicken.compiler.c-platform
+	chicken.compiler.c-backend)
 
 (include "tweaks")
 

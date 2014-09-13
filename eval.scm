@@ -1288,7 +1288,7 @@
 	(when comp?
 	  (##sys#hash-table-update!
 	   ;; XXX FIXME: This is a bit of a hack.  Why is it needed at all?
-	   compiler#file-requirements
+	   chicken.compiler.core#file-requirements
 	   (if syntax? 'dynamic/syntax 'dynamic)
 	   (cut lset-adjoin eq? <> id) ;XXX assumes compiler has srfi-1 loaded
 	   (lambda () (list id)))))

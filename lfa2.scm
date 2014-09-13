@@ -37,11 +37,11 @@
   (uses srfi-1
 	support) )
 
-(module lfa2
+(module chicken.compiler.lfa2
     (perform-secondary-flow-analysis)
 
 (import chicken scheme srfi-1
-	support)
+	chicken.compiler.support)
 
 (include "tweaks")
 

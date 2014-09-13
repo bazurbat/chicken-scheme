@@ -29,12 +29,12 @@
   (uses srfi-1 data-structures extras ports files
 	support) )
 
-(module scrutinizer
+(module chicken.compiler.scrutinizer
     (scrutinize load-type-database emit-type-file
      validate-type check-and-validate-type install-specializations)
 
 (import chicken scheme srfi-1 data-structures extras ports files
-	support)
+	chicken.compiler.support)
 
 (include "tweaks")
 

@@ -1177,9 +1177,12 @@
 	'(##core#undefined)
 	(let* ((type1 (##sys#strip-syntax (caddr x)))
 	       (name1 (cadr x)))
-	  ;; we need pred/pure info, so not using "scrutinizer#check-and-validate-type"
+	  ;; we need pred/pure info, so not using
+	  ;; "chicken.compiler.scrutinizer#check-and-validate-type"
 	  (let-values (((type pred pure)
-			(scrutinizer#validate-type type1 (##sys#strip-syntax name1))))
+			(chicken.compiler.scrutinizer#validate-type
+			 type1
+			 (##sys#strip-syntax name1))))
 	    (cond ((not type)
 		   (syntax-error ': "invalid type syntax" name1 type1))
 		  (else
@@ -1195,7 +1198,7 @@
     (##sys#check-syntax 'the x '(_ _ _))
     (if (not (memq #:compiling ##sys#features)) 
 	(caddr x)
-	`(##core#the ,(scrutinizer#check-and-validate-type (cadr x) 'the)
+	`(##core#the ,(chicken.compiler.scrutinizer#check-and-validate-type (cadr x) 'the)
 		     #t
 		     ,(caddr x))))))
 
@@ -1238,13 +1241,13 @@
 			   (cons atypes
 				 (if (and rtypes (pair? rtypes))
 				     (list
-				      (map (cut scrutinizer#check-and-validate-type 
+				      (map (cut chicken.compiler.scrutinizer#check-and-validate-type
 					     <>
 					     'define-specialization)
 					   rtypes)
 				      spec)
 				     (list spec))))
-			  (or (support#variable-mark
+			  (or (chicken.compiler.support#variable-mark
 			       gname
 			       '##compiler#local-specializations)
 			      '())))
@@ -1264,7 +1267,7 @@
 				(cdr args)
 				(cons (car arg) anames)
 				(cons 
-				 (scrutinizer#check-and-validate-type 
+				 (chicken.compiler.scrutinizer#check-and-validate-type 
 				  (cadr arg) 
 				  'define-specialization)
 				 atypes)))
@@ -1290,7 +1293,7 @@
 				(if (eq? hd 'else)
 				    'else
 				    (if val
-					(scrutinizer#check-and-validate-type
+					(chicken.compiler.scrutinizer#check-and-validate-type
 					 hd
 					 'compiler-typecase)
 					hd))
@@ -1311,7 +1314,9 @@
 	       (##sys#put/restore!
 		(,%quote ,name)
 		(,%quote ##compiler#type-abbreviation)
-		(,%quote ,(scrutinizer#check-and-validate-type t0 'define-type name))))))))))
+		(,%quote
+		 ,(chicken.compiler.scrutinizer#check-and-validate-type
+		   t0 'define-type name))))))))))
 
 
 ;; capture current macro env

@@ -29,11 +29,12 @@
   (uses srfi-1 data-structures
 	support compiler) )
 
-(module compiler-syntax
+(module chicken.compiler.compiler-syntax
     (compiler-syntax-statistics)
 
 (import chicken scheme srfi-1 data-structures
-	support compiler)
+	chicken.compiler.support
+	chicken.compiler.core)
 
 (include "tweaks.scm")
 

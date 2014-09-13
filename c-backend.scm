@@ -33,13 +33,15 @@
   (uses srfi-1 data-structures
 	c-platform compiler support))
 
-(module c-backend
+(module chicken.compiler.c-backend
     (generate-code
      ;; For "foreign" (aka chicken-ffi-syntax):
      foreign-type-declaration)
 
 (import chicken scheme foreign srfi-1 data-structures
-	compiler c-platform support)
+	chicken.compiler.core
+	chicken.compiler.c-platform
+	chicken.compiler.support)
 
 ;;; Write atoms to output-port:
 
