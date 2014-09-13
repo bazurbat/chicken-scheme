@@ -54,17 +54,11 @@
 
 ;;; Support definitions
 
-;; duoplicates code in the hope of being inlined
+;; duplicates code in the hope of being inlined
 (define (lookup id se)
   (cond ((##core#inline "C_u_i_assq" id se) => cdr)
 	((getp id '##core#macro-alias))
 	(else #f)))
-
-#+debugbuild
-(define (map-se se)
-  (map (lambda (a) 
-	 (cons (car a) (if (symbol? (cdr a)) (cdr a) '<macro>)))
-       se))
 
 
 ;;; low-level module support
