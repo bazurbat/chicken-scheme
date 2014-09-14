@@ -281,8 +281,6 @@ Everything from the {{library}}, {{eval}} and {{expand}} library units.
  [module] srfi-1
  [module] srfi-4
  [module] srfi-14
- [module] srfi-18
- [module] srfi-69
  [module] tcp
  [module] utils
 
