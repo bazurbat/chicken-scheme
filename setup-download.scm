@@ -180,6 +180,7 @@
       (let* ((locn (string-append
 		    locn
 		    "?name=" egg
+		    "&release=" (->string (##sys#fudge 41))
 		    (if version (string-append "&version=" version) "")
 		    "&mode=" (->string *mode*)
 		    (if tests "&tests=yes" "")))
