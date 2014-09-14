@@ -30,7 +30,6 @@
 
 (module setup-download (retrieve-extension
 			locate-egg/local
-			locate-egg/svn
 			locate-egg/http
 			gather-egg-information
 			list-extensions
@@ -158,74 +157,6 @@
 				       (return #f))
 				   (with-input-from-file meta read))))))))))
        ls)))
-
-  (define (make-svn-ls-cmd uarg parg pnam #!key recursive?)
-    (conc "svn ls " uarg #\space parg (if recursive? " -R " " ") (qs pnam)) )
-
-  (define (make-svn-export-cmd uarg parg dir tmpdir)
-    (conc "svn export " uarg #\space parg #\space #\" dir #\" #\space #\" tmpdir #\"
-          (if *quiet* " 1>&2" "")) )
-
-  (define (list-eggs/svn repo #!optional username password)
-    (let ([uarg (if username (string-append "--username='" username "'") "")]
-          [parg (if password (string-append "--password='" password "'") "")])
-      (let ([cmd (make-svn-ls-cmd uarg parg repo)])
-        (d "listing extension directory ...~%  ~a~%" cmd)
-        (string-intersperse
-         (map (lambda (s) (string-append (string-chomp s "/") "\n"))
-              (with-input-from-pipe cmd read-lines))
-	 ""))))
-
-  (define (list-egg-versions/svn name repo #!optional username password)
-    (let* ((uarg (if username (string-append "--username='" username "'") ""))
-	   (parg (if password (string-append "--password='" password "'") ""))
-	   (cmd (make-svn-ls-cmd uarg parg (make-pathname repo (string-append name "/tags"))))
-	   (input (with-input-from-pipe cmd read-lines)))
-      (if (null? input)
-	  "unknown\n"
-	  (string-intersperse
-	   (map (lambda (s) (string-append (string-chomp s "/") "\n"))
-		(with-input-from-pipe cmd read-lines))
-	   ""))))
-
-  (define (locate-egg/svn egg repo #!optional version destination username password)
-    (let* ([uarg (if username (string-append "--username='" username "'") "")]
-	   [parg (if password (string-append "--password='" password "'") "")]
-	   [cmd (make-svn-ls-cmd uarg parg (make-pathname repo egg) recursive?: #t)])
-      (d "checking available versions ...~%  ~a~%" cmd)
-      (let* ([files (with-input-from-pipe cmd read-lines)]
-	     [tagver (existing-version
-	              egg version
-	              (filter-map
-                       (lambda (f) 
-			 (and-let* ((m (irregex-search "^tags/([^/]+)/" f))) 
-			   (irregex-match-substring m 1)))
-                       files))])
-	(let-values ([(filedir ver)
-	              (if tagver
-                          (values (string-append "tags/" tagver) tagver)
-                          (begin
-                            (when-no-such-version-warning egg version)
-                            (if (member "trunk/" files)
-                                (values "trunk" "trunk")
-                                (values "" "") ) ) ) ] )
-          (let* ((tmpdir (make-pathname (or destination (get-temporary-directory)) egg))
-                 (cmd (make-svn-export-cmd 
-		       uarg parg
-		       (conc 
-			repo #\/ egg #\/
-			(if (eq? *mode* 'meta)
-			    (metafile filedir egg)
-			    filedir))
-		       (if (eq? *mode* 'meta)
-			   (begin
-			     (create-directory tmpdir)
-			     (metafile tmpdir egg))
-			   tmpdir))))
-	    (d "  ~a~%" cmd)
-	    (if (zero? (system cmd))
-                (values tmpdir ver)
-	        (values #f "") ) ) ) ) ) )
 
   (define (metafile dir egg)
     (conc dir #\/ egg ".meta"))
@@ -464,8 +395,6 @@
       (case transport
 	((local)
 	 (locate-egg/local name location version destination clean) )
-	((svn)
-	 (locate-egg/svn name location version destination username password) )
 	((http)
 	 (locate-egg/http name location version destination tests proxy-host proxy-port proxy-user-pass) )
 	(else
@@ -477,8 +406,6 @@
       (case transport
 	((local)
 	 (list-eggs/local location) )
-	((svn)
-	 (list-eggs/svn location username password) )
 	((http)
 	 (list-eggs/http location proxy-host proxy-port proxy-user-pass))
 	(else
@@ -490,8 +417,6 @@
       (case transport
 	((local)
 	 (list-egg-versions/local name location) )
-	((svn)
-	 (list-egg-versions/svn name location username password) )
 	(else
 	 (error "cannot list extensions - unsupported transport" transport) ) ) ) )
 
