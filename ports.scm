@@ -169,12 +169,12 @@
     (thunk) ) )
 
 (define (with-output-to-port port thunk)
-  (##sys#check-output-port port #t 'with-output-from-port)
+  (##sys#check-output-port port #t 'with-output-to-port)
   (fluid-let ([##sys#standard-output port])
     (thunk) ) )
 
 (define (with-error-output-to-port port thunk)
-  (##sys#check-output-port port #t 'with-error-output-from-port)
+  (##sys#check-output-port port #t 'with-error-output-to-port)
   (fluid-let ([##sys#standard-error port])
     (thunk) ) )
 
