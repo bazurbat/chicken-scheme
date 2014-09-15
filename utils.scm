@@ -183,7 +183,7 @@ C_confirmation_dialog(char *msg, char *caption, int def, int abort) { return -1;
 		  ((0) "no")
 		  ((1) "yes")
 		  (else "abort")))
-	      (string-trim-both (read-line))))
+	      (read-line)))
 	(let loop ()
 	  (unless gui
 	    (printf "~%~A (yes/no~a) " str (if abort "/abort" ""))
