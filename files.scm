@@ -370,9 +370,7 @@ EOF
 		   (when (fx> i prev)
 		     (set! parts (addpart (##sys#substring path prev i) parts)))
 		   (if (null? parts)
-		       (let ((r (if abspath
-				    (##sys#string-append (string sep) ".")
-				    (##sys#string-append "." (string sep)) )))
+		       (let ((r (if abspath (string sep) ".")))
 			 (if drive
 			     (##sys#string-append drive r)
 			     r))

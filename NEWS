@@ -20,6 +20,8 @@
   - Removed deprecated implicit expansion of $VAR- and ~ in pathnames.
      The ~-expansion functionality is now available in the
      "pathname-expand" egg (#1001, #1079) (thanks to Florian Zumbiehl).
+  - normalize-pathname has been simplified to avoid adding trailing
+     slashes or dots (#1153, thanks to Michele La Monaca and Mario Goulart).
 
 - Unit lolevel:
   - Restore long-lost but still documented "vector-like?" procedure (#983)
