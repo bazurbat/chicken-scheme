@@ -1481,7 +1481,7 @@
 	      (for-each 
 	       (cut mark-variable <> '##compiler#pure #t) 
 	       (globalize-all syms))
-	      (quit "invalid arguments to `constant' declaration: ~S" spec)) ) )
+	      (quit "invalid arguments to `pure' declaration: ~S" spec))))
        ((emit-import-library)
 	(set! import-libraries
 	  (append
