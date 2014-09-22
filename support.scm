@@ -66,7 +66,8 @@
      source-info->string source-info->line call-info constant-form-eval
      dump-nodes read-info-hook read/source-info big-fixnum?
      hide-variable export-variable variable-visible?
-     mark-variable variable-mark intrinsic? foldable? load-identifier-database
+     mark-variable variable-mark intrinsic? predicate? foldable?
+     load-identifier-database
      print-version print-usage print-debug-options
 
      ;; XXX: These are evil globals that were too hairy to get rid of.
@@ -1561,6 +1562,7 @@
 (define intrinsic? (cut variable-mark <> '##compiler#intrinsic))
 ;; Used only in optimizer.scm
 (define foldable? (cut variable-mark <> '##compiler#foldable))
+(define predicate? (cut variable-mark <> '##compiler#predicate))
 
 
 ;;; Load support files

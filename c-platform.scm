@@ -147,7 +147,7 @@
     fp> fp< fp= fp>= fp<= fxand fxnot fxior fxxor fxshr fxshl bit-set? fxodd? fxeven?
     fpfloor fpceiling fptruncate fpround fpsin fpcos fptan fpasin fpacos fpatan
     fpatan2 fpexp fpexpt fplog fpsqrt fpabs fpinteger?
-    arithmetic-shift void flush-output thread-specific thread-specific-set!
+    arithmetic-shift void flush-output
     not-pair? atom? null-list? print print* error proper-list? call/cc
     blob-size u8vector->blob/shared s8vector->blob/shared u16vector->blob/shared
     s16vector->blob/shared u32vector->blob/shared s32vector->blob/shared
@@ -156,9 +156,11 @@
     blob->s16vector/shared blob->u32vector/shared blob->s32vector/shared
     blob->f32vector/shared blob->f64vector/shared
     block-ref block-set! number-of-slots substring-index substring-index-ci
-    hash-table-ref any? read-string substring=? substring-ci=?
-    first second third fourth make-record-instance
-    foldl foldr
+    any? read-string substring=? substring-ci=? blob=? equal=?
+    first second third fourth fifth sixth seventh eighth ninth tenth
+    alist-ref length+ rassoc real-part imag-part
+    last last-pair string->symbol symbol-append
+    make-record-instance foldl foldr
     u8vector-length s8vector-length u16vector-length s16vector-length u32vector-length 
     s32vector-length
     f32vector-length f64vector-length setter
@@ -195,45 +197,7 @@
     ##sys#foreign-integer-argument ##sys#foreign-unsigned-integer-argument
     ##sys#peek-fixnum ##sys#setislot ##sys#poke-integer ##sys#permanent? ##sys#values ##sys#poke-double
     ##sys#intern-symbol ##sys#make-symbol ##sys#null-pointer? ##sys#peek-byte
-    ##sys#file-exists?) )
-
-(define non-foldable-bindings
-  '(vector
-    cons list string make-vector make-string string->symbol values current-input-port current-output-port
-    read-char write-char printf fprintf format
-    apply call-with-current-continuation set-car! set-cdr! write-char newline write display
-    peek-char char-ready?
-    read read-char for-each map string-set! vector-set! string-fill! vector-fill! open-input-file
-    open-output-file close-input-port close-output-port call-with-input-port call-with-output-port
-    call-with-values eval
-    ##sys#slot ##sys#setslot ##sys#call-with-current-continuation ##sys#fudge flush-output print void
-    u8vector->blob/shared s8vector->blob/shared u16vector->blob/shared s16vector->blob/shared u32vector->blob/shared
-    f32vector->blob/shared f64vector->blob/shared
-    s32vector->blob/shared read-string read-string! o
-    address->pointer pointer->address
-    ##sys#make-structure print* ##sys#make-vector ##sys#apply ##sys#setislot ##sys#block-ref
-    ##sys#byte ##sys#setbyte ##sys#get-keyword get-keyword
-    u8vector-length s8vector-length u16vector-length s16vector-length u32vector-length s32vector-length
-    f32vector-length f64vector-length ##sys#apply-values ##sys#setter setter
-    f32vector-set! f64vector-set!
-    u8vector-ref s8vector-ref u16vector-ref s16vector-ref u32vector-ref s32vector-ref
-    u8vector-set! s8vector-set! u16vector-set! s16vector-set! u32vector-set! s32vector-set!
-    ##sys#intern-symbol ##sys#make-symbol make-record-instance error ##sys#block-set!
-    current-error-port current-thread
-    pointer-u8-ref pointer-u8-set!
-    pointer-s8-ref pointer-s8-set!
-    pointer-u16-ref pointer-u16-set!
-    pointer-s16-ref pointer-s16-set!
-    pointer-u32-ref pointer-u32-set!
-    pointer-s32-ref pointer-s32-set!
-    pointer-f32-ref pointer-f32-set!
-    pointer-f64-ref pointer-f64-set!))
-
-(set! foldable-bindings
-  (lset-difference 
-   eq?
-   (lset-union eq? default-standard-bindings default-extended-bindings)
-   non-foldable-bindings) )
+    ##sys#file-exists? ##sys#substring-index ##sys#substring-index-ci ##sys#lcm ##sys#gcd))
 
 (for-each
  (cut mark-variable <> '##compiler#pure '#t)
@@ -1068,9 +1032,6 @@
   (rewrite 'make-vector 8 rewrite-make-vector)
   (rewrite '##sys#make-vector 8 rewrite-make-vector) )
 
-(rewrite 'thread-specific 7 1 "C_slot" 10 #f)
-(rewrite 'thread-specific-set! 20 2 "C_i_setslot" 10 #f)
-
 (let ()
   (define (rewrite-call/cc db classargs cont callargs)
     ;; (call/cc <var>), <var> = (lambda (kont k) ... k is never used ...) -> (<var> #f)
@@ -1099,7 +1060,6 @@
 (define setter-map
   '((car . set-car!)
     (cdr . set-cdr!)
-    (hash-table-ref . hash-table-set!)
     (block-ref . block-set!)
     (locative-ref . locative-set!)
     (u8vector-ref . u8vector-set!)

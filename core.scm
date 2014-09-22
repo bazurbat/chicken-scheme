@@ -297,8 +297,7 @@
      target-heap-size target-stack-size unit-name used-units
 
      ;; bindings, set by the (c) platform
-     default-extended-bindings default-standard-bindings
-     internal-bindings foldable-bindings
+     default-extended-bindings default-standard-bindings internal-bindings
 
      ;; Only read or called by the (c) backend
      foreign-declarations foreign-lambda-stubs foreign-stub-argument-types
@@ -414,7 +413,6 @@
 (define default-extended-bindings '())
 (define default-standard-bindings '())
 (define internal-bindings '())
-(define foldable-bindings '())
 
 ;;; Initialize globals:
 

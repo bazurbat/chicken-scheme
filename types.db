@@ -37,7 +37,8 @@
 ; - "#(procedure PROPERTY ...)" may be used in place of "procedure", properties are:
 ;     #:clean - procedure does not modify state that might be used locally
 ;     #:enforce - when procedure returns, arguments are of correct type
-;     #:predicate TYPE - procedure is a predicate on TYPE
+;     #:foldable - procedure may be constant-folded
+;     #:predicate TYPE - procedure is a predicate on TYPE (implies #:foldable)
 ;     #:pure - procedure has no side effects
 ; - "#:clean" means: will not invoke procedures that modify local variables and
 ;   will not modify list or vector data held locally (note that I/O may invoke
@@ -46,22 +47,24 @@
 ;   since arity-mismatch will for example always have a side effect.
 ; - "#:enforce" means: after return from this procedure, the argument is of
 ;   the correct type (it would have signalled an error otherwise)
+; - "#:foldable" means: when applied to constant arguments, direct calls
+;   to this procedure may be evaluated at compile time.
 
 
 ;; scheme
 
-(not (#(procedure #:pure) not (*) boolean)
+(not (#(procedure #:pure #:foldable) not (*) boolean)
      (((not boolean)) (let ((#(tmp) #(1))) '#f)))
 
 (boolean? (#(procedure #:pure #:predicate boolean) boolean? (*) boolean))
 
-(eq? (#(procedure #:pure) eq? (* *) boolean))
+(eq? (#(procedure #:pure #:foldable) eq? (* *) boolean))
 
-(eqv? (#(procedure #:pure) eqv? (* *) boolean)
+(eqv? (#(procedure #:pure #:foldable) eqv? (* *) boolean)
       (((not float) *) (eq? #(1) #(2)))
       ((* (not float)) (eq? #(1) #(2))))
 
-(equal? (#(procedure #:pure) equal? (* *) boolean)
+(equal? (#(procedure #:pure #:foldable) equal? (* *) boolean)
 	(((or fixnum symbol char eof null) *) (eq? #(1) #(2)))
 	((* (or fixnum symbol char eof null)) (eq? #(1) #(2))))
 
@@ -71,74 +74,74 @@
 
 (##sys#cons (forall (a b) (#(procedure #:pure) ##sys#cons (a b) (pair a b))))
 
-(car (forall (a) (#(procedure #:clean #:enforce) car ((pair a *)) a)) ((pair) (##core#inline "C_u_i_car" #(1))))
-(cdr (forall (a) (#(procedure #:clean #:enforce) cdr ((pair * a)) a)) ((pair) (##core#inline "C_u_i_cdr" #(1))))
+(car (forall (a) (#(procedure #:clean #:enforce #:foldable) car ((pair a *)) a)) ((pair) (##core#inline "C_u_i_car" #(1))))
+(cdr (forall (a) (#(procedure #:clean #:enforce #:foldable) cdr ((pair * a)) a)) ((pair) (##core#inline "C_u_i_cdr" #(1))))
 
-(caar (forall (a) (#(procedure #:clean #:enforce) caar ((pair (pair a *) *)) a))
+(caar (forall (a) (#(procedure #:clean #:enforce #:foldable) caar ((pair (pair a *) *)) a))
       (((pair (pair * *) *)) (##core#inline "C_u_i_car" (##core#inline "C_u_i_car" #(1)))))
-(cadr (forall (a) (#(procedure #:clean #:enforce) cadr ((pair * (pair a *))) a))
+(cadr (forall (a) (#(procedure #:clean #:enforce #:foldable) cadr ((pair * (pair a *))) a))
       (((pair * (pair * *))) (##core#inline "C_u_i_car" (##core#inline "C_u_i_cdr" #(1)))))
-(cdar (forall (a) (#(procedure #:clean #:enforce) cdar ((pair (pair * a) *)) a))
+(cdar (forall (a) (#(procedure #:clean #:enforce #:foldable) cdar ((pair (pair * a) *)) a))
       (((pair (pair * *) *)) (##core#inline "C_u_i_cdr" (##core#inline "C_u_i_car" #(1)))))
-(cddr (forall (a) (#(procedure #:clean #:enforce) cddr ((pair * (pair * a))) a))
+(cddr (forall (a) (#(procedure #:clean #:enforce #:foldable) cddr ((pair * (pair * a))) a))
       (((pair * (pair * *))) (##core#inline "C_u_i_cdr" (##core#inline "C_u_i_cdr" #(1)))))
 
-(caaar (forall (a) (#(procedure #:clean #:enforce) caaar ((pair (pair (pair a *) *) *)) a))
+(caaar (forall (a) (#(procedure #:clean #:enforce #:foldable) caaar ((pair (pair (pair a *) *) *)) a))
        (((pair (pair (pair * *) *) *))
 	(##core#inline "C_u_i_car"
 		       (##core#inline "C_u_i_car" (##core#inline "C_u_i_car" #(1))))))
 
-(caadr (forall (a) (#(procedure #:clean #:enforce) caadr ((pair * (pair (pair a *) *))) a))
+(caadr (forall (a) (#(procedure #:clean #:enforce #:foldable) caadr ((pair * (pair (pair a *) *))) a))
        (((pair * (pair (pair * *) *)))
 	(##core#inline "C_u_i_car"
 		       (##core#inline "C_u_i_car" (##core#inline "C_u_i_cdr" #(1))))))
 
-(cadar (forall (a) (#(procedure #:clean #:enforce) cadar ((pair (pair * (pair a *)) *)) a))
+(cadar (forall (a) (#(procedure #:clean #:enforce #:foldable) cadar ((pair (pair * (pair a *)) *)) a))
        (((pair (pair * (pair * *)) *))
 	(##core#inline "C_u_i_car"
 		       (##core#inline "C_u_i_cdr" (##core#inline "C_u_i_car" #(1))))))
 
-(caddr (forall (a) (#(procedure #:clean #:enforce) caddr ((pair * (pair * (pair a *)))) a))
+(caddr (forall (a) (#(procedure #:clean #:enforce #:foldable) caddr ((pair * (pair * (pair a *)))) a))
        (((pair * (pair * (pair * *))))
 	(##core#inline "C_u_i_car"
 		       (##core#inline "C_u_i_cdr" (##core#inline "C_u_i_cdr" #(1))))))
 
-(cdaar (forall (a) (#(procedure #:clean #:enforce) cdaar ((pair (pair (pair * a) *) *)) a))
+(cdaar (forall (a) (#(procedure #:clean #:enforce #:foldable) cdaar ((pair (pair (pair * a) *) *)) a))
        (((pair (pair (pair * *) *) *))
 	(##core#inline "C_u_i_cdr"
 		       (##core#inline "C_u_i_car" (##core#inline "C_u_i_car" #(1))))))
 
-(cdadr (forall (a) (#(procedure #:clean #:enforce) cdadr ((pair * (pair (pair * a) *))) a))
+(cdadr (forall (a) (#(procedure #:clean #:enforce #:foldable) cdadr ((pair * (pair (pair * a) *))) a))
        (((pair * (pair (pair * *) *)))
 	(##core#inline "C_u_i_cdr"
 		       (##core#inline "C_u_i_car" (##core#inline "C_u_i_cdr" #(1))))))
 
-(cddar (forall (a) (#(procedure #:clean #:enforce) cddar ((pair (pair * (pair * a)) *)) a))
+(cddar (forall (a) (#(procedure #:clean #:enforce #:foldable) cddar ((pair (pair * (pair * a)) *)) a))
        (((pair (pair * (pair * *)) *))
 	(##core#inline "C_u_i_cdr"
 		       (##core#inline "C_u_i_cdr" (##core#inline "C_u_i_car" #(1))))))
 
-(cdddr (forall (a) (#(procedure #:clean #:enforce) cdddr ((pair * (pair * (pair * a)))) a))
+(cdddr (forall (a) (#(procedure #:clean #:enforce #:foldable) cdddr ((pair * (pair * (pair * a)))) a))
        (((pair * (pair * (pair * *))))
 	(##core#inline "C_u_i_cdr"
 		       (##core#inline "C_u_i_cdr" (##core#inline "C_u_i_cdr" #(1))))))
 
-(caaaar (forall (a) (#(procedure #:clean #:enforce) caaaar ((pair (pair (pair (pair a *) *) *) *)) a)))
-(caaadr (forall (a) (#(procedure #:clean #:enforce) caaadr ((pair * (pair (pair (pair a *) *) *))) a)))
-(caadar (forall (a) (#(procedure #:clean #:enforce) caadar ((pair (pair * (pair (pair a *) *)) *)) a)))
-(caaddr (forall (a) (#(procedure #:clean #:enforce) caaddr ((pair * (pair * (pair (pair a *) *)))) a)))
-(cadaar (forall (a) (#(procedure #:clean #:enforce) cadaar ((pair (pair (pair * (pair a *)) *) *)) a)))
-(cadadr (forall (a) (#(procedure #:clean #:enforce) cadadr ((pair * (pair (pair * (pair a *)) *))) a)))
-(caddar (forall (a) (#(procedure #:clean #:enforce) caddar ((pair (pair * (pair * (pair a *))) *)) a)))
-(cadddr (forall (a) (#(procedure #:clean #:enforce) cadddr ((pair * (pair * (pair * (pair a *))))) a)))
-(cdaaar (forall (a) (#(procedure #:clean #:enforce) cdaaar ((pair (pair (pair (pair * a) *) *) *)) a)))
-(cdaadr (forall (a) (#(procedure #:clean #:enforce) cdaadr ((pair * (pair (pair (pair * a) *) *))) a)))
-(cdadar (forall (a) (#(procedure #:clean #:enforce) cdadar ((pair (pair * (pair (pair * a) *)) *)) a)))
-(cdaddr (forall (a) (#(procedure #:clean #:enforce) cdaddr ((pair * (pair * (pair (pair * a) *)))) a)))
-(cddaar (forall (a) (#(procedure #:clean #:enforce) cddaar ((pair (pair (pair * (pair * a)) *) *)) a)))
-(cddadr (forall (a) (#(procedure #:clean #:enforce) cddadr ((pair * (pair (pair * (pair * a)) *))) a)))
-(cdddar (forall (a) (#(procedure #:clean #:enforce) cdddar ((pair (pair * (pair * (pair * a))) *)) a)))
-(cddddr (forall (a) (#(procedure #:clean #:enforce) cddddr ((pair * (pair * (pair * (pair * a))))) a)))
+(caaaar (forall (a) (#(procedure #:clean #:enforce #:foldable) caaaar ((pair (pair (pair (pair a *) *) *) *)) a)))
+(caaadr (forall (a) (#(procedure #:clean #:enforce #:foldable) caaadr ((pair * (pair (pair (pair a *) *) *))) a)))
+(caadar (forall (a) (#(procedure #:clean #:enforce #:foldable) caadar ((pair (pair * (pair (pair a *) *)) *)) a)))
+(caaddr (forall (a) (#(procedure #:clean #:enforce #:foldable) caaddr ((pair * (pair * (pair (pair a *) *)))) a)))
+(cadaar (forall (a) (#(procedure #:clean #:enforce #:foldable) cadaar ((pair (pair (pair * (pair a *)) *) *)) a)))
+(cadadr (forall (a) (#(procedure #:clean #:enforce #:foldable) cadadr ((pair * (pair (pair * (pair a *)) *))) a)))
+(caddar (forall (a) (#(procedure #:clean #:enforce #:foldable) caddar ((pair (pair * (pair * (pair a *))) *)) a)))
+(cadddr (forall (a) (#(procedure #:clean #:enforce #:foldable) cadddr ((pair * (pair * (pair * (pair a *))))) a)))
+(cdaaar (forall (a) (#(procedure #:clean #:enforce #:foldable) cdaaar ((pair (pair (pair (pair * a) *) *) *)) a)))
+(cdaadr (forall (a) (#(procedure #:clean #:enforce #:foldable) cdaadr ((pair * (pair (pair (pair * a) *) *))) a)))
+(cdadar (forall (a) (#(procedure #:clean #:enforce #:foldable) cdadar ((pair (pair * (pair (pair * a) *)) *)) a)))
+(cdaddr (forall (a) (#(procedure #:clean #:enforce #:foldable) cdaddr ((pair * (pair * (pair (pair * a) *)))) a)))
+(cddaar (forall (a) (#(procedure #:clean #:enforce #:foldable) cddaar ((pair (pair (pair * (pair * a)) *) *)) a)))
+(cddadr (forall (a) (#(procedure #:clean #:enforce #:foldable) cddadr ((pair * (pair (pair * (pair * a)) *))) a)))
+(cdddar (forall (a) (#(procedure #:clean #:enforce #:foldable) cdddar ((pair (pair * (pair * (pair * a))) *)) a)))
+(cddddr (forall (a) (#(procedure #:clean #:enforce #:foldable) cddddr ((pair * (pair * (pair * (pair * a))))) a)))
 
 (set-car! (#(procedure #:enforce) set-car! (pair *) undefined) 
 	  ((pair (or fixnum char boolean eof null undefined)) (##sys#setislot #(1) '0 #(2)))
@@ -155,17 +158,17 @@
 (list (#(procedure #:pure) list (#!rest) list))
 (##sys#list (#(procedure #:pure) ##sys#list (#!rest) list))
 
-(length (#(procedure #:clean #:enforce) length (list) fixnum) ; may loop
+(length (#(procedure #:clean #:enforce #:foldable) length (list) fixnum) ; may loop
 	((null) (let ((#(tmp) #(1))) '0))
 	((list) (##core#inline "C_u_i_length" #(1))))
 
-(##sys#length (#(procedure #:clean #:enforce) ##sys#length (list) fixnum)
+(##sys#length (#(procedure #:clean #:enforce #:foldable) ##sys#length (list) fixnum)
 	      ((null) (let ((#(tmp) #(1))) '0))
 	      ((list) (##core#inline "C_u_i_length" #(1))))
 
 ;; these are special cased (see scrutinizer.scm)
-(list-tail (forall (a) (#(procedure #:clean #:enforce) list-tail ((list-of a) fixnum) (list-of a))))
-(list-ref (forall (a) (#(procedure #:clean #:enforce) list-ref ((list-of a) fixnum) a)))
+(list-tail (forall (a) (#(procedure #:clean #:enforce #:foldable) list-tail ((list-of a) fixnum) (list-of a))))
+(list-ref (forall (a) (#(procedure #:clean #:enforce #:foldable) list-ref ((list-of a) fixnum) a)))
 
 (append (#(procedure #:clean) append (#!rest *) *)) ; sic
 (##sys#append (#(procedure #:clean) ##sys#append (#!rest *) *))
@@ -174,14 +177,18 @@
 (reverse (forall (a) (#(procedure #:clean #:enforce) reverse ((list-of a)) (list-of a)))
          ((null) (null) (let ((#(tmp) #(1))) '())))
 
-(memq (forall (a b) (#(procedure #:clean) memq (a (list-of b)) (or false (list-of b))))
+(memq (forall (a b) (#(procedure #:clean #:foldable) memq
+                    (a (list-of b))
+                    (or false (list-of b))))
       ((* list) (##core#inline "C_u_i_memq" #(1) #(2))))
 
-(memv (forall (a b) (#(procedure #:clean) memv (a (list-of b)) (or false (list-of b))))
+(memv (forall (a b) (#(procedure #:clean #:foldable) memv
+                    (a (list-of b))
+                    (or false (list-of b))))
       (((or symbol procedure immediate) list)
        (##core#inline "C_u_i_memq" #(1) #(2))))
 
-(member (forall (a b) (#(procedure #:clean) member
+(member (forall (a b) (#(procedure #:clean #:foldable) member
 		       (a (list-of b) #!optional (procedure (b a) *)) ; sic
 		       (or false (list-of b))))
 	(((or symbol procedure immediate) list)
@@ -189,20 +196,22 @@
 	((* (list-of (or symbol procedure immediate)))
 	 (##core#inline "C_u_i_memq" #(1) #(2))))
 
-(assq (forall (a b) (#(procedure #:clean) assq (* (list-of (pair a b)))
+(assq (forall (a b) (#(procedure #:clean #:foldable) assq
+		     (* (list-of (pair a b)))
 		     (or false (pair a b))))
       ((* (list-of pair)) (##core#inline "C_u_i_assq" #(1) #(2))))
 
-(assv (forall (a b) (#(procedure #:clean) assv (* (list-of (pair a b))) 
+(assv (forall (a b) (#(procedure #:clean #:foldable) assv
+		     (* (list-of (pair a b)))
 		     (or false (pair a b))))
       (((or symbol immediate procedure) (list-of pair))
        (##core#inline "C_u_i_assq" #(1) #(2)))
       ((* (list-of (pair (or symbol procedure immediate) *)))
        (##core#inline "C_u_i_assq" #(1) #(2))))
 
-(assoc (forall (a b c) (#(procedure #:clean) assoc (a (list-of (pair b c))
-						      #!optional (procedure (b a) *)) ; sic
-			(or false (pair b c))))
+(assoc (forall (a b c) (#(procedure #:clean #:foldable) assoc
+                       (a (list-of (pair b c)) #!optional (procedure (b a) *)) ; sic
+                       (or false (pair b c))))
        (((or symbol procedure immediate) (list-of pair))
 	(##core#inline "C_u_i_assq" #(1) #(2)))
        ((* (list-of (pair (or symbol procedure immediate) *)))
@@ -210,54 +219,54 @@
 
 (symbol? (#(procedure #:pure #:predicate symbol) symbol? (*) boolean))
 
-(symbol-append (#(procedure #:clean #:enforce) symbol-append (#!rest symbol) symbol))
-(symbol->string (#(procedure #:clean #:enforce) symbol->string (symbol) string))
-(string->symbol (#(procedure #:clean #:enforce) string->symbol (string) symbol))
+(symbol-append (#(procedure #:clean #:enforce #:foldable) symbol-append (#!rest symbol) symbol))
+(symbol->string (#(procedure #:clean #:enforce #:foldable) symbol->string (symbol) string))
+(string->symbol (#(procedure #:clean #:enforce #:foldable) string->symbol (string) symbol))
 
 (number? (#(procedure #:pure #:predicate number) number? (*) boolean))
 
 ;;XXX predicate?
-(integer? (#(procedure #:pure) integer? (*) boolean)
+(integer? (#(procedure #:pure #:foldable) integer? (*) boolean)
 	  ((fixnum) (let ((#(tmp) #(1))) '#t))
 	  ((float) (##core#inline "C_u_i_fpintegerp" #(1))))
 
 (real? (#(procedure #:pure #:predicate number) real? (*) boolean))
 (complex? (#(procedure #:pure #:predicate number) complex? (*) boolean))
-(exact? (#(procedure #:clean #:enforce) exact? (number) boolean)
+(exact? (#(procedure #:clean #:enforce #:foldable) exact? (number) boolean)
         ((fixnum) (let ((#(tmp) #(1))) '#t))
         ((float) (let ((#(tmp) #(1))) '#f)))
-(inexact? (#(procedure #:clean #:enforce) inexact? (number) boolean)
+(inexact? (#(procedure #:clean #:enforce #:foldable) inexact? (number) boolean)
           ((fixnum) (let ((#(tmp) #(1))) '#f))
           ((float) (let ((#(tmp) #(1))) '#t)))
 
 ;;XXX predicate?
-(rational? (#(procedure #:pure) rational? (*) boolean)
+(rational? (#(procedure #:pure #:foldable) rational? (*) boolean)
 	   ((fixnum) (let ((#(tmp) #(1))) '#t)))
 
-(zero? (#(procedure #:clean #:enforce) zero? (number) boolean) 
+(zero? (#(procedure #:clean #:enforce #:foldable) zero? (number) boolean)
        ((fixnum) (eq? #(1) '0))
        ((number) (##core#inline "C_u_i_zerop" #(1))))
 
-(odd? (#(procedure #:clean #:enforce) odd? (number) boolean) ((fixnum) (fxodd? #(1))))
-(even? (#(procedure #:clean #:enforce) even? (number) boolean) ((fixnum) (fxeven? #(1))))
+(odd? (#(procedure #:clean #:enforce #:foldable) odd? (number) boolean) ((fixnum) (fxodd? #(1))))
+(even? (#(procedure #:clean #:enforce #:foldable) even? (number) boolean) ((fixnum) (fxeven? #(1))))
 
-(positive? (#(procedure #:clean #:enforce) positive? (number) boolean)
+(positive? (#(procedure #:clean #:enforce #:foldable) positive? (number) boolean)
 	   ((fixnum) (##core#inline "C_fixnum_greaterp" #(1) '0))
 	   ((number) (##core#inline "C_u_i_positivep" #(1))))
 
-(negative? (#(procedure #:clean #:enforce) negative? (number) boolean)
+(negative? (#(procedure #:clean #:enforce #:foldable) negative? (number) boolean)
 	   ((fixnum) (##core#inline "C_fixnum_lessp" #(1) '0))
 	   ((number) (##core#inline "C_u_i_negativep" #(1))))
 
-(max (#(procedure #:clean #:enforce) max (#!rest number) number)
+(max (#(procedure #:clean #:enforce #:foldable) max (#!rest number) number)
      ((fixnum fixnum) (fxmax #(1) #(2)))
      ((float float) (##core#inline "C_i_flonum_max" #(1) #(2))))
 
-(min (#(procedure #:clean #:enforce) min (#!rest number) number)
+(min (#(procedure #:clean #:enforce #:foldable) min (#!rest number) number)
      ((fixnum fixnum) (fxmin #(1) #(2)))
      ((float float) (##core#inline "C_i_flonum_min" #(1) #(2))))
 
-(+ (#(procedure #:clean #:enforce) + (#!rest number) number)
+(+ (#(procedure #:clean #:enforce #:foldable) + (#!rest number) number)
    (() (fixnum) '0)
    ((fixnum) (fixnum) #(1))
    ((float) (float) #(1))
@@ -276,7 +285,7 @@
    ((float float) (float)
     (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) #(2))))
 
-(- (#(procedure #:clean #:enforce) - (number #!rest number) number)
+(- (#(procedure #:clean #:enforce #:foldable) - (number #!rest number) number)
    ((fixnum) (fixnum)
     (##core#inline "C_u_fixnum_negate" #(1)))
    ((float fixnum) (float)
@@ -294,7 +303,7 @@
    ((float) (float) 
     (##core#inline_allocate ("C_a_i_flonum_negate" 4) #(1))))
 
-(* (#(procedure #:clean #:enforce) * (#!rest number) number)
+(* (#(procedure #:clean #:enforce #:foldable) * (#!rest number) number)
    (() (fixnum) '1)
    ((fixnum) (fixnum) #(1))
    ((float) (float) #(1))
@@ -312,7 +321,7 @@
    ((float float) (float)
     (##core#inline_allocate ("C_a_i_flonum_times" 4) #(1) #(2))))
 
-(/ (#(procedure #:clean #:enforce) / (number #!rest number) number)
+(/ (#(procedure #:clean #:enforce #:foldable) / (number #!rest number) number)
    ((float fixnum) (float)
     (##core#inline_allocate 
      ("C_a_i_flonum_quotient_checked" 4) 
@@ -326,7 +335,7 @@
    ((float float) (float)
     (##core#inline_allocate ("C_a_i_flonum_quotient_checked" 4) #(1) #(2))))
 
-(= (#(procedure #:clean #:enforce) = (#!rest number) boolean)
+(= (#(procedure #:clean #:enforce #:foldable) = (#!rest number) boolean)
    (() '#t)
    ((number) (let ((#(tmp) #(1))) '#t))
    ((fixnum fixnum) (eq? #(1) #(2)))
@@ -340,7 +349,7 @@
 		    #(2)))
    ((float float) (##core#inline "C_flonum_equalp" #(1) #(2))))
 
-(> (#(procedure #:clean #:enforce) > (#!rest number) boolean)
+(> (#(procedure #:clean #:enforce #:foldable) > (#!rest number) boolean)
    (() '#t)
    ((number) (let ((#(tmp) #(1))) '#t))
    ((fixnum fixnum) (fx> #(1) #(2)))
@@ -354,7 +363,7 @@
 		    #(2)))
    ((float float) (##core#inline "C_flonum_greaterp" #(1) #(2))))
 
-(< (#(procedure #:clean #:enforce) < (#!rest number) boolean)
+(< (#(procedure #:clean #:enforce #:foldable) < (#!rest number) boolean)
    (() '#t)
    ((number) (let ((#(tmp) #(1))) '#t))
    ((fixnum fixnum) (fx< #(1) #(2)))
@@ -368,7 +377,7 @@
 		    #(2)))
    ((float float) (##core#inline "C_flonum_lessp" #(1) #(2))))
 
-(>= (#(procedure #:clean #:enforce) >= (#!rest number) boolean)
+(>= (#(procedure #:clean #:enforce #:foldable) >= (#!rest number) boolean)
     (() '#t)
     ((number) (let ((#(tmp) #(1))) '#t))
     ((fixnum fixnum) (fx>= #(1) #(2)))
@@ -382,7 +391,7 @@
 		     #(2)))
     ((float float) (##core#inline "C_flonum_greater_or_equal_p" #(1) #(2))))
 
-(<= (#(procedure #:clean #:enforce) <= (#!rest number) boolean)
+(<= (#(procedure #:clean #:enforce #:foldable) <= (#!rest number) boolean)
     (() '#t)
     ((number) (let ((#(tmp) #(1))) '#t))
     ((fixnum fixnum) (fx<= #(1) #(2)))
@@ -396,60 +405,67 @@
 		     #(2)))
     ((float float) (##core#inline "C_flonum_less_or_equal_p" #(1) #(2))))
 
-(quotient (#(procedure #:clean #:enforce) quotient (number number) number)
+(quotient (#(procedure #:clean #:enforce #:foldable) quotient (number number) number)
 	  ;;XXX flonum/mixed case
 	  ((fixnum fixnum) (fixnum)
 	   (##core#inline "C_fixnum_divide" #(1) #(2))))
 
-(remainder (#(procedure #:clean #:enforce) remainder (number number) number)
+(remainder (#(procedure #:clean #:enforce #:foldable) remainder (number number) number)
 	   ;;XXX flonum/mixed case
 	   ((fixnum fixnum) (fixnum)
 	    (##core#inline "C_fixnum_modulo" #(1) #(2))))
 
-(modulo (#(procedure #:clean #:enforce) modulo (number number) number))
+(modulo (#(procedure #:clean #:enforce #:foldable) modulo (number number) number))
 
-(gcd (#(procedure #:clean #:enforce) gcd (#!rest number) number) ((* *) (##sys#gcd #(1) #(2))))
-(lcm (#(procedure #:clean #:enforce) lcm (#!rest number) number) ((* *) (##sys#lcm #(1) #(2))))
+(gcd (#(procedure #:clean #:enforce #:foldable) gcd (#!rest number) number)
+     ((number number) (##sys#gcd #(1) #(2))))
 
-(abs (#(procedure #:clean #:enforce) abs (number) number)
+(##sys#gcd (#(procedure #:clean #:enforce #:foldable) gcd (number number) number))
+
+(lcm (#(procedure #:clean #:enforce #:foldable) lcm (#!rest number) number)
+     ((number number) (##sys#lcm #(1) #(2))))
+
+(##sys#lcm (#(procedure #:clean #:enforce #:foldable) lcm (number number) number))
+
+(abs (#(procedure #:clean #:enforce #:foldable) abs (number) number)
      ((fixnum) (fixnum)
       (##core#inline "C_fixnum_abs" #(1)))
      ((float) (float)
       (##core#inline_allocate ("C_a_i_flonum_abs" 4) #(1))))
 
-(floor (#(procedure #:clean #:enforce) floor (number) number)
+(floor (#(procedure #:clean #:enforce #:foldable) floor (number) number)
        ((fixnum) (fixnum) #(1))
        ((float) (float)
 	(##core#inline_allocate ("C_a_i_flonum_floor" 4) #(1))))
 
-(ceiling (#(procedure #:clean #:enforce) ceiling (number) number)
+(ceiling (#(procedure #:clean #:enforce #:foldable) ceiling (number) number)
 	 ((fixnum) (fixnum) #(1))
 	 ((float) (float)
 	  (##core#inline_allocate ("C_a_i_flonum_ceiling" 4) #(1))))
 
-(truncate (#(procedure #:clean #:enforce) truncate (number) number)
+(truncate (#(procedure #:clean #:enforce #:foldable) truncate (number) number)
 	  ((fixnum) (fixnum) #(1))
 	  ((float) (float)
 	   (##core#inline_allocate ("C_a_i_flonum_truncate" 4) #(1))))
 
-(round (#(procedure #:clean #:enforce) round (number) number)
+(round (#(procedure #:clean #:enforce #:foldable) round (number) number)
        ((fixnum) (fixnum) #(1))
        ((float) (float)
 	(##core#inline_allocate ("C_a_i_flonum_round_proper" 4) #(1))))
 
-(exact->inexact (#(procedure #:clean #:enforce) exact->inexact (number) float)
+(exact->inexact (#(procedure #:clean #:enforce #:foldable) exact->inexact (number) float)
 		((float) #(1))
 		((fixnum) (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))))
 
-(inexact->exact (#(procedure #:clean #:enforce) inexact->exact (number) fixnum) ((fixnum) #(1)))
+(inexact->exact (#(procedure #:clean #:enforce #:foldable) inexact->exact (number) fixnum) ((fixnum) #(1)))
 
-(exp (#(procedure #:clean #:enforce) exp (number) float)
+(exp (#(procedure #:clean #:enforce #:foldable) exp (number) float)
      ((float) (##core#inline_allocate ("C_a_i_flonum_exp" 4) #(1))))
 
-(log (#(procedure #:clean #:enforce) log (number) float)
+(log (#(procedure #:clean #:enforce #:foldable) log (number) float)
      ((float) (##core#inline_allocate ("C_a_i_flonum_log" 4) #(1))))
 
-(expt (#(procedure #:clean #:enforce) expt (number number) number)
+(expt (#(procedure #:clean #:enforce #:foldable) expt (number number) number)
       ((float float) (float)
        (##core#inline_allocate ("C_a_i_flonum_expt" 4) #(1) #(2)))
       ((float fixnum) (float)
@@ -461,25 +477,25 @@
 			       (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
 			       #(2))))
 
-(sqrt (#(procedure #:clean #:enforce) sqrt (number) float)
+(sqrt (#(procedure #:clean #:enforce #:foldable) sqrt (number) float)
       ((float) (##core#inline_allocate ("C_a_i_flonum_sqrt" 4) #(1))))
 
-(sin (#(procedure #:clean #:enforce) sin (number) float)
+(sin (#(procedure #:clean #:enforce #:foldable) sin (number) float)
      ((float) (##core#inline_allocate ("C_a_i_flonum_sin" 4) #(1))))
 
-(cos (#(procedure #:clean #:enforce) cos (number) float)
+(cos (#(procedure #:clean #:enforce #:foldable) cos (number) float)
      ((float) (##core#inline_allocate ("C_a_i_flonum_cos" 4) #(1))))
 
-(tan (#(procedure #:clean #:enforce) tan (number) float)
+(tan (#(procedure #:clean #:enforce #:foldable) tan (number) float)
      ((float) (##core#inline_allocate ("C_a_i_flonum_tan" 4) #(1))))
 
-(asin (#(procedure #:clean #:enforce) asin (number) float) 
+(asin (#(procedure #:clean #:enforce #:foldable) asin (number) float)
       ((float) (##core#inline_allocate ("C_a_i_flonum_asin" 4) #(1))))
 
-(acos (#(procedure #:clean #:enforce) acos (number) float)
+(acos (#(procedure #:clean #:enforce #:foldable) acos (number) float)
       ((float) (##core#inline_allocate ("C_a_i_flonum_acos" 4) #(1))))
 
-(atan (#(procedure #:clean #:enforce) atan (number #!optional number) float)
+(atan (#(procedure #:clean #:enforce #:foldable) atan (number #!optional number) float)
       ((float) (##core#inline_allocate ("C_a_i_flonum_atan" 4) #(1)))
       ((float fixnum)
        (##core#inline_allocate ("C_a_i_flonum_atan2" 4) 
@@ -491,60 +507,62 @@
 			       #(2)))
       ((float float) (##core#inline_allocate ("C_a_i_flonum_atan2" 4) #(1) #(2))))
 
-(number->string (#(procedure #:clean #:enforce) number->string (number #!optional fixnum) string)
+(number->string (#(procedure #:clean #:enforce #:foldable) number->string (number #!optional fixnum) string)
 		((fixnum) (##sys#fixnum->string #(1))))
 
-(string->number (#(procedure #:clean #:enforce) string->number (string #!optional fixnum) 
+(##sys#fixnum->string (#(procedure #:clean #:enforce #:foldable) ##sys#fixnum->string (fixnum) string))
+
+(string->number (#(procedure #:clean #:enforce #:foldable) string->number (string #!optional fixnum)
 		 (or number false)))
 
 (char? (#(procedure #:pure #:predicate char) char? (*) boolean))
 
 ;; we could rewrite these, but this is done by the optimizer anyway (safe)
-(char=? (#(procedure #:clean #:enforce) char=? (char char) boolean))
-(char>? (#(procedure #:clean #:enforce) char>? (char char) boolean))
-(char<? (#(procedure #:clean #:enforce) char<? (char char) boolean))
-(char>=? (#(procedure #:clean #:enforce) char>=? (char char) boolean))
-(char<=? (#(procedure #:clean #:enforce) char<=? (char char) boolean))
+(char=? (#(procedure #:clean #:enforce #:foldable) char=? (char char) boolean))
+(char>? (#(procedure #:clean #:enforce #:foldable) char>? (char char) boolean))
+(char<? (#(procedure #:clean #:enforce #:foldable) char<? (char char) boolean))
+(char>=? (#(procedure #:clean #:enforce #:foldable) char>=? (char char) boolean))
+(char<=? (#(procedure #:clean #:enforce #:foldable) char<=? (char char) boolean))
 
-(char-ci=? (#(procedure #:clean #:enforce) char-ci=? (char char) boolean))
-(char-ci<? (#(procedure #:clean #:enforce) char-ci<? (char char) boolean))
-(char-ci>? (#(procedure #:clean #:enforce) char-ci>? (char char) boolean))
-(char-ci>=? (#(procedure #:clean #:enforce) char-ci>=? (char char) boolean))
-(char-ci<=? (#(procedure #:clean #:enforce) char-ci<=? (char char) boolean))
-(char-alphabetic? (#(procedure #:clean #:enforce) char-alphabetic? (char) boolean))
-(char-whitespace? (#(procedure #:clean #:enforce) char-whitespace? (char) boolean))
-(char-numeric? (#(procedure #:clean #:enforce) char-numeric? (char) boolean))
-(char-upper-case? (#(procedure #:clean #:enforce) char-upper-case? (char) boolean))
-(char-lower-case? (#(procedure #:clean #:enforce) char-lower-case? (char) boolean))
-(char-upcase (#(procedure #:clean #:enforce) char-upcase (char) char))
-(char-downcase (#(procedure #:clean #:enforce) char-downcase (char) char))
+(char-ci=? (#(procedure #:clean #:enforce #:foldable) char-ci=? (char char) boolean))
+(char-ci<? (#(procedure #:clean #:enforce #:foldable) char-ci<? (char char) boolean))
+(char-ci>? (#(procedure #:clean #:enforce #:foldable) char-ci>? (char char) boolean))
+(char-ci>=? (#(procedure #:clean #:enforce #:foldable) char-ci>=? (char char) boolean))
+(char-ci<=? (#(procedure #:clean #:enforce #:foldable) char-ci<=? (char char) boolean))
+(char-alphabetic? (#(procedure #:clean #:enforce #:foldable) char-alphabetic? (char) boolean))
+(char-whitespace? (#(procedure #:clean #:enforce #:foldable) char-whitespace? (char) boolean))
+(char-numeric? (#(procedure #:clean #:enforce #:foldable) char-numeric? (char) boolean))
+(char-upper-case? (#(procedure #:clean #:enforce #:foldable) char-upper-case? (char) boolean))
+(char-lower-case? (#(procedure #:clean #:enforce #:foldable) char-lower-case? (char) boolean))
+(char-upcase (#(procedure #:clean #:enforce #:foldable) char-upcase (char) char))
+(char-downcase (#(procedure #:clean #:enforce #:foldable) char-downcase (char) char))
 
-(char->integer (#(procedure #:clean #:enforce) char->integer (char) fixnum))
-(integer->char (#(procedure #:clean #:enforce) integer->char (fixnum) char))
+(char->integer (#(procedure #:clean #:enforce #:foldable) char->integer (char) fixnum))
+(integer->char (#(procedure #:clean #:enforce #:foldable) integer->char (fixnum) char))
 
 (string? (#(procedure #:pure #:predicate string) string? (*) boolean))
 
-(string=? (#(procedure #:clean #:enforce) string=? (string string) boolean)
+(string=? (#(procedure #:clean #:enforce #:foldable) string=? (string string) boolean)
 	  ((string string) (##core#inline "C_u_i_string_equal_p" #(1) #(2))))
 
-(string>? (#(procedure #:clean #:enforce) string>? (string string) boolean))
-(string<? (#(procedure #:clean #:enforce) string<? (string string) boolean))
-(string>=? (#(procedure #:clean #:enforce) string>=? (string string) boolean))
-(string<=? (#(procedure #:clean #:enforce) string<=? (string string) boolean))
-(string-ci=? (#(procedure #:clean #:enforce) string-ci=? (string string) boolean))
-(string-ci<? (#(procedure #:clean #:enforce) string-ci<? (string string) boolean))
-(string-ci>? (#(procedure #:clean #:enforce) string-ci>? (string string) boolean))
-(string-ci>=? (#(procedure #:clean #:enforce) string-ci>=? (string string) boolean))
-(string-ci<=? (#(procedure #:clean #:enforce) string-ci<=? (string string) boolean))
+(string>? (#(procedure #:clean #:enforce #:foldable) string>? (string string) boolean))
+(string<? (#(procedure #:clean #:enforce #:foldable) string<? (string string) boolean))
+(string>=? (#(procedure #:clean #:enforce #:foldable) string>=? (string string) boolean))
+(string<=? (#(procedure #:clean #:enforce #:foldable) string<=? (string string) boolean))
+(string-ci=? (#(procedure #:clean #:enforce #:foldable) string-ci=? (string string) boolean))
+(string-ci<? (#(procedure #:clean #:enforce #:foldable) string-ci<? (string string) boolean))
+(string-ci>? (#(procedure #:clean #:enforce #:foldable) string-ci>? (string string) boolean))
+(string-ci>=? (#(procedure #:clean #:enforce #:foldable) string-ci>=? (string string) boolean))
+(string-ci<=? (#(procedure #:clean #:enforce #:foldable) string-ci<=? (string string) boolean))
 
 (make-string (#(procedure #:clean #:enforce) make-string (fixnum #!optional char) string)
 	     ((fixnum char) (##sys#make-string #(1) #(2)))
 	     ((fixnum) (##sys#make-string #(1) '#\space)))
 
-(string-length (#(procedure #:clean #:enforce) string-length (string) fixnum)
+(string-length (#(procedure #:clean #:enforce #:foldable) string-length (string) fixnum)
 	       ((string) (##sys#size #(1))))
 
-(string-ref (#(procedure #:clean #:enforce) string-ref (string fixnum) char)
+(string-ref (#(procedure #:clean #:enforce #:foldable) string-ref (string fixnum) char)
 	    ((string fixnum) (##core#inline "C_subchar" #(1) #(2))))
 
 (string-set! (#(procedure #:enforce) string-set! (string fixnum char) undefined)
@@ -568,8 +586,8 @@
 			  (vector-of a))))
 
 ;; these are special cased (see scrutinizer.scm)
-(vector-ref (forall (a) (#(procedure #:clean #:enforce) vector-ref ((vector-of a) fixnum) a)))
-(##sys#vector-ref (forall (a) (#(procedure #:clean #:enforce) ##sys#vector-ref ((vector-of a) fixnum) a)))
+(vector-ref (forall (a) (#(procedure #:clean #:enforce #:foldable) vector-ref ((vector-of a) fixnum) a)))
+(##sys#vector-ref (forall (a) (#(procedure #:clean #:enforce #:foldable) ##sys#vector-ref ((vector-of a) fixnum) a)))
 
 (vector-set! (#(procedure #:enforce) vector-set! (vector fixnum *) undefined))
 
@@ -577,9 +595,9 @@
 (vector (#(procedure #:pure) vector (#!rest) vector))
 (##sys#vector (#(procedure #:pure) ##sys#vector (#!rest) vector))
 
-(vector-length (#(procedure #:clean #:enforce) vector-length (vector) fixnum)
+(vector-length (#(procedure #:clean #:enforce #:foldable) vector-length (vector) fixnum)
 	       ((vector) (##sys#size #(1))))
-(##sys#vector-length (#(procedure #:clean #:enforce) ##sys#vector-length (vector) fixnum)
+(##sys#vector-length (#(procedure #:clean #:enforce #:foldable) ##sys#vector-length (vector) fixnum)
 		     ((vector) (##sys#size #(1))))
 
 (vector->list (forall (a) (#(procedure #:clean #:enforce) vector->list ((vector-of a)) (list-of a))))
@@ -680,10 +698,10 @@
 (eval (procedure eval (* #!optional (struct environment)) . *))
 (char-ready? (#(procedure #:enforce) char-ready? (#!optional input-port) boolean))
 
-(imag-part (#(procedure #:clean #:enforce) imag-part (number) number)
+(imag-part (#(procedure #:clean #:enforce #:foldable) imag-part (number) number)
 	   (((or fixnum float number)) (let ((#(tmp) #(1))) '0)))
 
-(real-part (#(procedure #:clean #:enforce) real-part (number) number)
+(real-part (#(procedure #:clean #:enforce #:foldable) real-part (number) number)
 	   (((or fixnum float number)) #(1)))
 
 (magnitude (#(procedure #:clean #:enforce) magnitude (number) number)
@@ -694,7 +712,7 @@
 
 (numerator (#(procedure #:clean #:enforce) numerator (number) number)
 	   ((fixnum) (fixnum) #(1)))
-	   
+
 (denominator (#(procedure #:clean #:enforce) denominator (number) number)
 	     ((fixnum) (fixnum) (let ((#(tmp) #(1))) '1)))
 
@@ -716,39 +734,39 @@
 (abort (procedure abort (*) noreturn))
 (##sys#abort (procedure abort (*) noreturn))
 
-(add1 (#(procedure #:clean #:enforce) add1 (number) number)
+(add1 (#(procedure #:clean #:enforce #:foldable) add1 (number) number)
       ((float) (float) 
        (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) '1.0)))
 
 (argc+argv (#(procedure #:clean) argc+argv () fixnum (list-of string) fixnum))
 (argv (#(procedure #:clean) argv () (list-of string)))
-(arithmetic-shift (#(procedure #:clean #:enforce) arithmetic-shift (number number) number))
+(arithmetic-shift (#(procedure #:clean #:enforce #:foldable) arithmetic-shift (number number) number))
 
-(bit-set? (#(procedure #:clean #:enforce) bit-set? (number fixnum) boolean)
+(bit-set? (#(procedure #:clean #:enforce #:foldable) bit-set? (number fixnum) boolean)
 	  ((fixnum fixnum) (##core#inline "C_u_i_bit_setp" #(1) #(2))))
 
-(bitwise-and (#(procedure #:clean #:enforce) bitwise-and (#!rest number) number)
+(bitwise-and (#(procedure #:clean #:enforce #:foldable) bitwise-and (#!rest number) number)
 	     ((fixnum fixnum) (fixnum)
 	      (##core#inline "C_fixnum_and" #(1) #(2))))
 
-(bitwise-ior (#(procedure #:clean #:enforce) bitwise-ior (#!rest number) number)
+(bitwise-ior (#(procedure #:clean #:enforce #:foldable) bitwise-ior (#!rest number) number)
 	     ((fixnum fixnum) (fixnum)
 	      (##core#inline "C_fixnum_or" #(1) #(2))))
 
-(bitwise-not (#(procedure #:clean #:enforce) bitwise-not (number) number))
+(bitwise-not (#(procedure #:clean #:enforce #:foldable) bitwise-not (number) number))
 
-(bitwise-xor (#(procedure #:clean #:enforce) bitwise-xor (#!rest number) number)
+(bitwise-xor (#(procedure #:clean #:enforce #:foldable) bitwise-xor (#!rest number) number)
 	     ((fixnum fixnum) (fixnum) 
 	      (##core#inline "C_fixnum_xor" #(1) #(2))))
 
 (blob->string (#(procedure #:clean #:enforce) blob->string (blob) string))
 
-(blob-size (#(procedure #:clean #:enforce) blob-size (blob) fixnum)
+(blob-size (#(procedure #:clean #:enforce #:foldable) blob-size (blob) fixnum)
 	   ((blob) (##sys#size #(1))))
 
 (blob? (#(procedure #:pure #:predicate blob) blob? (*) boolean))
 
-(blob=? (#(procedure #:clean #:enforce) blob=? (blob blob) boolean))
+(blob=? (#(procedure #:clean #:enforce #:foldable) blob=? (blob blob) boolean))
 (build-platform (#(procedure #:pure) build-platform () symbol))
 (call/cc (#(procedure #:enforce) call/cc ((procedure (*) . *)) . *))
 (case-sensitive (#(procedure #:clean) case-sensitive (#!optional *) *))
@@ -796,7 +814,7 @@
 (delete-file (#(procedure #:clean #:enforce) delete-file (string) string))
 (enable-warnings (#(procedure #:clean) enable-warnings (#!optional *) *))
 
-(equal=? (#(procedure #:clean) equal=? (* *) boolean)
+(equal=? (#(procedure #:clean #:foldable) equal=? (* *) boolean)
 	 ((fixnum fixnum) (eq? #(1) #(2)))
 	 (((or symbol char eof null) *) (eq? #(1) #(2)))
 	 ((* (or symbol char eof null undefined)) (eq? #(1) #(2)))
@@ -821,7 +839,7 @@
 (file-exists? (#(procedure #:clean #:enforce) file-exists? (string) (or false string)))
 (directory-exists? (#(procedure #:clean #:enforce) directory-exists? (string) (or false string)))
 
-(finite? (#(procedure #:clean #:enforce) finite? (number) boolean)
+(finite? (#(procedure #:clean #:enforce #:foldable) finite? (number) boolean)
 	 ((fixnum) (let ((#(tmp) #(1))) '#t))
 	 (((or float number)) (##core#inline "C_i_finitep" #(1))))
 
@@ -849,116 +867,116 @@
 
 (force-finalizers (procedure force-finalizers () undefined))
 
-(fp- (#(procedure #:clean #:enforce) fp- (float float) float)
+(fp- (#(procedure #:clean #:enforce #:foldable) fp- (float float) float)
      ((float float) (##core#inline_allocate ("C_a_i_flonum_difference" 4) #(1) #(2)) ))
 
-(fp* (#(procedure #:clean #:enforce) fp* (float float) float)
+(fp* (#(procedure #:clean #:enforce #:foldable) fp* (float float) float)
      ((float float) (##core#inline_allocate ("C_a_i_flonum_times" 4) #(1) #(2)) ))
 
-(fp/ (#(procedure #:clean #:enforce) fp/ (float float) float)
+(fp/ (#(procedure #:clean #:enforce #:foldable) fp/ (float float) float)
      ((float float) (##core#inline_allocate ("C_a_i_flonum_quotient" 4) #(1) #(2)) ))
 
-(fp+ (#(procedure #:clean #:enforce) fp+ (float float) float)
+(fp+ (#(procedure #:clean #:enforce #:foldable) fp+ (float float) float)
      ((float float) (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) #(2)) ))
 
-(fp< (#(procedure #:clean #:enforce) fp< (float float) boolean)
+(fp< (#(procedure #:clean #:enforce #:foldable) fp< (float float) boolean)
      ((float float) (##core#inline "C_flonum_lessp" #(1) #(2)) ))
 
-(fp<= (#(procedure #:clean #:enforce) fp<= (float float) boolean)
+(fp<= (#(procedure #:clean #:enforce #:foldable) fp<= (float float) boolean)
       ((float float) (##core#inline "C_flonum_less_or_equal_p" #(1) #(2)) ))
 
-(fp= (#(procedure #:clean #:enforce) fp= (float float) boolean)
+(fp= (#(procedure #:clean #:enforce #:foldable) fp= (float float) boolean)
      ((float float) (##core#inline "C_flonum_equalp" #(1) #(2)) ))
 
-(fp> (#(procedure #:clean #:enforce) fp> (float float) boolean)
+(fp> (#(procedure #:clean #:enforce #:foldable) fp> (float float) boolean)
      ((float float) (##core#inline "C_flonum_greaterp" #(1) #(2)) ))
 
-(fp>= (#(procedure #:clean #:enforce) fp>= (float float) boolean)
+(fp>= (#(procedure #:clean #:enforce #:foldable) fp>= (float float) boolean)
       ((float float) (##core#inline "C_flonum_greater_or_equal_p" #(1) #(2)) ))
 
-(fpabs (#(procedure #:clean #:enforce) fpabs (float) float)
+(fpabs (#(procedure #:clean #:enforce #:foldable) fpabs (float) float)
        ((float) (##core#inline_allocate ("C_a_i_flonum_abs" 4) #(1) )))
 
-(fpacos (#(procedure #:clean #:enforce) fpacos (float) float)
+(fpacos (#(procedure #:clean #:enforce #:foldable) fpacos (float) float)
        ((float) (##core#inline_allocate ("C_a_i_flonum_acos" 4) #(1) )))
 
-(fpasin (#(procedure #:clean #:enforce) fpasin (float) float)
+(fpasin (#(procedure #:clean #:enforce #:foldable) fpasin (float) float)
 	((float) (##core#inline_allocate ("C_a_i_flonum_asin" 4) #(1) )))
 
-(fpatan (#(procedure #:clean #:enforce) fpatan (float) float)
+(fpatan (#(procedure #:clean #:enforce #:foldable) fpatan (float) float)
 	((float) (##core#inline_allocate ("C_a_i_flonum_atan" 4) #(1) )))
 
-(fpatan2 (#(procedure #:clean #:enforce) fpatan2 (float float) float)
+(fpatan2 (#(procedure #:clean #:enforce #:foldable) fpatan2 (float float) float)
 	 ((float float) (##core#inline_allocate ("C_a_i_flonum_atan2" 4)
 						#(1) #(2))))
-(fpceiling (#(procedure #:clean #:enforce) fpceiling (float) float)
+(fpceiling (#(procedure #:clean #:enforce #:foldable) fpceiling (float) float)
 	   ((float) (##core#inline_allocate ("C_a_i_flonum_ceiling" 4) #(1) )))
 
-(fpcos (#(procedure #:clean #:enforce) fpcos (float) float)
+(fpcos (#(procedure #:clean #:enforce #:foldable) fpcos (float) float)
        ((float) (##core#inline_allocate ("C_a_i_flonum_cos" 4) #(1) )))
 
-(fpexp (#(procedure #:clean #:enforce) fpexp (float) float)
+(fpexp (#(procedure #:clean #:enforce #:foldable) fpexp (float) float)
        ((float) (##core#inline_allocate ("C_a_i_flonum_exp" 4) #(1) )))
 
-(fpexpt (#(procedure #:clean #:enforce) fpexpt (float float) float)
+(fpexpt (#(procedure #:clean #:enforce #:foldable) fpexpt (float float) float)
 	((float float) (##core#inline_allocate ("C_a_i_flonum_expt" 4)
 					       #(1) #(2))))
 
-(fpfloor (#(procedure #:clean #:enforce) fpfloor (float) float)
+(fpfloor (#(procedure #:clean #:enforce #:foldable) fpfloor (float) float)
 	 ((float) (##core#inline_allocate ("C_a_i_flonum_floor" 4) #(1) )))
 
-(fpinteger? (#(procedure #:clean #:enforce) fpinteger? (float) boolean)
+(fpinteger? (#(procedure #:clean #:enforce #:foldable) fpinteger? (float) boolean)
 	    ((float) (##core#inline "C_u_i_fpintegerp" #(1) )))
 
-(fplog (#(procedure #:clean #:enforce) fplog (float) float)
+(fplog (#(procedure #:clean #:enforce #:foldable) fplog (float) float)
        ((float) (##core#inline_allocate ("C_a_i_flonum_log" 4) #(1) )))
 
-(fpmax (#(procedure #:clean #:enforce) fpmax (float float) float)
+(fpmax (#(procedure #:clean #:enforce #:foldable) fpmax (float float) float)
        ((float float) (##core#inline "C_i_flonum_max" #(1) #(2))))
 
-(fpmin (#(procedure #:clean #:enforce) fpmin (float float) float)
+(fpmin (#(procedure #:clean #:enforce #:foldable) fpmin (float float) float)
        ((float float) (##core#inline "C_i_flonum_min" #(1) #(2))))
 
-(fpneg (#(procedure #:clean #:enforce) fpneg (float) float)
+(fpneg (#(procedure #:clean #:enforce #:foldable) fpneg (float) float)
        ((float) (##core#inline_allocate ("C_a_i_flonum_negate" 4) #(1) )))
 
-(fpround (#(procedure #:clean #:enforce) fpround (float) float)
+(fpround (#(procedure #:clean #:enforce #:foldable) fpround (float) float)
 	 ((float) (##core#inline_allocate ("C_a_i_flonum_round" 4) #(1) )))
 
-(fpsin (#(procedure #:clean #:enforce) fpsin (float) float)
+(fpsin (#(procedure #:clean #:enforce #:foldable) fpsin (float) float)
        ((float) (##core#inline_allocate ("C_a_i_flonum_sin" 4) #(1) )))
 
-(fpsqrt (#(procedure #:clean #:enforce) fpsqrt (float) float)
+(fpsqrt (#(procedure #:clean #:enforce #:foldable) fpsqrt (float) float)
 	((float) (##core#inline_allocate ("C_a_i_flonum_sqrt" 4) #(1) )))
 
-(fptan (#(procedure #:clean #:enforce) fptan (float) float)
+(fptan (#(procedure #:clean #:enforce #:foldable) fptan (float) float)
        ((float) (##core#inline_allocate ("C_a_i_flonum_tan" 4) #(1) )))
 
-(fptruncate (#(procedure #:clean #:enforce) fptruncate (float) float)
+(fptruncate (#(procedure #:clean #:enforce #:foldable) fptruncate (float) float)
 	    ((float) (##core#inline_allocate ("C_a_i_flonum_truncate" 4) #(1) )))
 
 ;;XXX should these be enforcing?
-(fx- (#(procedure #:clean) fx- (fixnum fixnum) fixnum))
-(fx* (#(procedure #:clean) fx* (fixnum fixnum) fixnum))
-(fx/ (#(procedure #:clean) fx/ (fixnum fixnum) fixnum))
-(fx+ (#(procedure #:clean) fx+ (fixnum fixnum) fixnum))
-(fx< (#(procedure #:clean) fx< (fixnum fixnum) boolean))
-(fx<= (#(procedure #:clean) fx<= (fixnum fixnum) boolean))
-(fx= (#(procedure #:clean) fx= (fixnum fixnum) boolean))
-(fx> (#(procedure #:clean) fx> (fixnum fixnum) boolean))
-(fx>= (#(procedure #:clean) fx>= (fixnum fixnum) boolean))
-(fxand (#(procedure #:clean) fxand (fixnum fixnum) fixnum))
-(fxeven? (#(procedure #:clean) fxeven? (fixnum) boolean))
-(fxior (#(procedure #:clean) fxior (fixnum fixnum) fixnum))
-(fxmax (#(procedure #:clean) fxmax (fixnum fixnum) fixnum))
-(fxmin (#(procedure #:clean) fxmin (fixnum fixnum) fixnum))
-(fxmod (#(procedure #:clean) fxmod (fixnum fixnum) fixnum))
-(fxneg (#(procedure #:clean) fxneg (fixnum) fixnum))
-(fxnot (#(procedure #:clean) fxnot (fixnum) fixnum))
-(fxodd? (#(procedure #:clean) fxodd? (fixnum) boolean))
-(fxshl (#(procedure #:clean) fxshl (fixnum fixnum) fixnum))
-(fxshr (#(procedure #:clean) fxshr (fixnum fixnum) fixnum))
-(fxxor (#(procedure #:clean) fxxor (fixnum fixnum) fixnum))
+(fx- (#(procedure #:clean #:foldable) fx- (fixnum fixnum) fixnum))
+(fx* (#(procedure #:clean #:foldable) fx* (fixnum fixnum) fixnum))
+(fx/ (#(procedure #:clean #:foldable) fx/ (fixnum fixnum) fixnum))
+(fx+ (#(procedure #:clean #:foldable) fx+ (fixnum fixnum) fixnum))
+(fx< (#(procedure #:clean #:foldable) fx< (fixnum fixnum) boolean))
+(fx<= (#(procedure #:clean #:foldable) fx<= (fixnum fixnum) boolean))
+(fx= (#(procedure #:clean #:foldable) fx= (fixnum fixnum) boolean))
+(fx> (#(procedure #:clean #:foldable) fx> (fixnum fixnum) boolean))
+(fx>= (#(procedure #:clean #:foldable) fx>= (fixnum fixnum) boolean))
+(fxand (#(procedure #:clean #:foldable) fxand (fixnum fixnum) fixnum))
+(fxeven? (#(procedure #:clean #:foldable) fxeven? (fixnum) boolean))
+(fxior (#(procedure #:clean #:foldable) fxior (fixnum fixnum) fixnum))
+(fxmax (#(procedure #:clean #:foldable) fxmax (fixnum fixnum) fixnum))
+(fxmin (#(procedure #:clean #:foldable) fxmin (fixnum fixnum) fixnum))
+(fxmod (#(procedure #:clean #:foldable) fxmod (fixnum fixnum) fixnum))
+(fxneg (#(procedure #:clean #:foldable) fxneg (fixnum) fixnum))
+(fxnot (#(procedure #:clean #:foldable) fxnot (fixnum) fixnum))
+(fxodd? (#(procedure #:clean #:foldable) fxodd? (fixnum) boolean))
+(fxshl (#(procedure #:clean #:foldable) fxshl (fixnum fixnum) fixnum))
+(fxshr (#(procedure #:clean #:foldable) fxshr (fixnum fixnum) fixnum))
+(fxxor (#(procedure #:clean #:foldable) fxxor (fixnum fixnum) fixnum))
 (gc (#(procedure #:clean) gc (#!optional *) fixnum))
 (gensym (#(procedure #:clean) gensym (#!optional (or string symbol)) symbol))
 
@@ -1077,7 +1095,7 @@
 (string->uninterned-symbol (#(procedure #:clean #:enforce) string->uninterned-symbol (string) symbol))
 (strip-syntax (#(procedure #:clean) strip-syntax (*) *))
 
-(sub1 (#(procedure #:clean #:enforce) sub1 (number) number)
+(sub1 (#(procedure #:clean #:enforce #:foldable) sub1 (number) number)
       ((float) (float)
        (##core#inline_allocate ("C_a_i_flonum_difference" 4) #(1) '1.0)))
 
@@ -1177,9 +1195,12 @@
  ((*) (##core#inline "C_i_check_port" #(1) '0 '#t))
  ((* *) (##core#inline "C_i_check_port_2" #(1) '0 '#t #(2))))
 
+(##sys#slot (#(procedure #:enforce) ##sys#slot (* fixnum) *))
+
 (##sys#setslot (#(procedure #:enforce) ##sys#setslot (* fixnum *) *)
 	       #;((* fixnum immediate) (##sys#setislot #(1) #(2) #(3)))) ; too dangerous
-(##sys#size (#(procedure #:pure) ##sys#size (*) fixnum))
+
+(##sys#size (#(procedure #:pure #:foldable) ##sys#size (*) fixnum))
 
 (##sys#standard-input input-port)
 (##sys#standard-output output-port)
@@ -1191,11 +1212,11 @@
 (->string (procedure ->string (*) string)
 	  ((string) #(1)))
 
-(alist-ref (#(procedure #:clean #:enforce) alist-ref (* (list-of pair) #!optional (procedure (* *) *) *) *))
+(alist-ref (#(procedure #:clean #:enforce #:foldable) alist-ref (* (list-of pair) #!optional (procedure (* *) *) *) *))
 (alist-update! (#(procedure #:enforce) alist-update! (* * (list-of pair) #!optional (procedure (* *) *)) *))
-(alist-update (#(procedure #:clean #:enforce) alist-update (* * (list-of pair) #!optional (procedure (* *) *) *) *))
+(alist-update (#(procedure #:clean #:enforce #:foldable) alist-update (* * (list-of pair) #!optional (procedure (* *) *) *) *))
 
-(any? (#(procedure #:pure) any? (*) boolean)
+(any? (#(procedure #:pure #:foldable) any? (*) boolean)
       ((*) (let ((#(tmp) #(1))) '#t)))
 
 (atom? (#(procedure #:pure) atom? (*) boolean)
@@ -1214,7 +1235,7 @@
 (each (#(procedure #:clean #:enforce) each (#!rest procedure) procedure))
 (flatten (#(procedure #:clean #:enforce) flatten (#!rest *) list))
 (flip (#(procedure #:clean #:enforce) flip ((procedure (* *) . *)) (procedure (* *) . *)))
-(identity (forall (a) (#(procedure #:pure) identity (a) a)))
+(identity (forall (a) (#(procedure #:pure #:foldable) identity (a) a)))
 (intersperse (#(procedure #:clean #:enforce) intersperse (list *) list))
 (join (#(procedure #:clean #:enforce) join ((list-of list) #!optional list) list))
 (list-of? (#(procedure #:clean #:enforce) list-of? ((procedure (*) *)) (procedure (list) boolean)))
@@ -1229,7 +1250,7 @@
 
 (o (#(procedure #:clean #:enforce) o (#!rest (procedure (*) *)) (procedure (*) *)))
 
-(rassoc (#(procedure #:clean #:enforce) rassoc (* (list-of pair) #!optional (procedure (* *) *)) *))
+(rassoc (#(procedure #:clean #:enforce #:foldable) rassoc (* (list-of pair) #!optional (procedure (* *) *)) *))
 (reverse-string-append (#(procedure #:clean #:enforce) reverse-string-append ((list-of string)) string))
 
 (sort
@@ -1256,17 +1277,27 @@
 (string-split (#(procedure #:clean #:enforce) string-split (string #!optional string *) (list-of string)))
 (string-translate (#(procedure #:clean #:enforce) string-translate (string * #!optional *) string))
 (string-translate* (#(procedure #:clean #:enforce) string-translate* (string (list-of (pair string string))) string))
-(substring-ci=? (#(procedure #:clean #:enforce) substring-ci=? (string string #!optional fixnum fixnum fixnum) boolean))
+(substring-ci=? (#(procedure #:clean #:enforce #:foldable) substring-ci=? (string string #!optional fixnum fixnum fixnum) boolean))
 
-(substring-index (#(procedure #:clean #:enforce) substring-index (string string #!optional fixnum) (or false fixnum))
+(substring-index (#(procedure #:clean #:enforce #:foldable) substring-index (string string #!optional fixnum) (or false fixnum))
 		 ((* *) (##sys#substring-index #(1) #(2) '0))
 		 ((* * *) (##sys#substring-index #(1) #(2) #(3))))
 
-(substring-index-ci (#(procedure #:clean #:enforce) substring-index-ci (string string #!optional fixnum) (or false fixnum))
+(##sys#substring-index
+ (#(procedure #:clean #:enforce #:foldable) ##sys#substring-index
+  (string string fixnum)
+  (or false fixnum)))
+
+(substring-index-ci (#(procedure #:clean #:enforce #:foldable) substring-index-ci (string string #!optional fixnum) (or false fixnum))
 		    ((* *) (##sys#substring-index-ci #(1) #(2) '0))
 		    ((* * *) (##sys#substring-index-ci #(1) #(2) #(3))))
 
-(substring=? (#(procedure #:clean #:enforce) substring=? (string string #!optional fixnum fixnum fixnum) boolean))
+(##sys#substring-index-ci
+ (#(procedure #:clean #:enforce #:foldable) ##sys#substring-index-ci
+  (string string fixnum)
+  (or false fixnum)))
+
+(substring=? (#(procedure #:clean #:enforce #:foldable) substring=? (string string #!optional fixnum fixnum fixnum) boolean))
 (tail? (#(procedure #:clean) tail? (* *) boolean))
 
 
@@ -1288,7 +1319,7 @@
 (read-string (#(procedure #:enforce) read-string (#!optional * input-port) string))
 (read-string! (#(procedure #:enforce) read-string! ((or fixnum false) string #!optional input-port fixnum) fixnum))
 (read-token (#(procedure #:enforce) read-token ((procedure (char) *) #!optional input-port) string))
-(sprintf (#(procedure #:enforce) sprintf (string #!rest) string))
+(sprintf (#(procedure #:enforce #:foldable) sprintf (string #!rest) string))
 (write-byte (#(procedure #:enforce) write-byte (fixnum #!optional output-port) undefined))
 (write-line (#(procedure #:enforce) write-line (string #!optional output-port) undefined))
 (write-string (#(procedure #:enforce) write-string (string #!optional * output-port) undefined))
@@ -1487,7 +1518,7 @@
 		  ;; "(struct *)" (yet)
 		  (##core#inline "C_bytes" (##sys#size #(1)))))
 
-(number-of-slots (#(procedure #:clean) number-of-slots (*) fixnum)
+(number-of-slots (#(procedure #:clean #:foldable) number-of-slots (*) fixnum)
 		 (((or vector symbol pair)) (##sys#size #(1))))
 
 (object->pointer (#(procedure #:clean) object->pointer (*) *))
@@ -1858,12 +1889,12 @@
 (drop-right (forall (a) (#(procedure #:enforce) drop-right ((list-of a) fixnum) (list-of a))))
 (drop-right! (forall (a) (#(procedure #:enforce) drop-right! ((list-of a) fixnum) (list-of a))))
 (drop-while (forall (a) (#(procedure #:enforce) drop-while ((procedure (a) *) (list-of a)) (list-of a))))
-(eighth (#(procedure #:clean #:enforce) eighth (pair) *))
+(eighth (#(procedure #:clean #:enforce #:foldable) eighth (pair) *))
 
 (every
  (forall (a) (#(procedure #:enforce) every ((procedure (a #!rest) *) (list-of a) #!rest list) *)))
 
-(fifth (#(procedure #:clean #:enforce) fifth (pair) *))
+(fifth (#(procedure #:clean #:enforce #:foldable) fifth (pair) *))
 (filter (forall (a) (#(procedure #:enforce) filter ((procedure (a) *) (list-of a)) (list-of a))))
 (filter! (forall (a) (#(procedure #:enforce) filter! ((procedure (a) *) (list-of a)) (list-of a))))
 
@@ -1873,13 +1904,13 @@
 (find (forall (a) (#(procedure #:enforce) find ((procedure (a) *) (list-of a)) *)))
 (find-tail (forall (a) (#(procedure #:enforce) find-tail ((procedure (a) *) (list-of a)) *)))
 
-(first (forall (a) (#(procedure #:clean #:enforce) first ((pair a *)) a))
+(first (forall (a) (#(procedure #:clean #:enforce #:foldable) first ((pair a *)) a))
        ((pair) (##core#inline "C_u_i_car" #(1))))
 
 (fold (#(procedure #:enforce) fold ((procedure (* #!rest) *) * #!rest list) *)) ;XXX
 (fold-right (#(procedure #:enforce) fold-right ((procedure (* #!rest) *) * #!rest list) *)) ;XXX
 
-(fourth (forall (a) (#(procedure #:clean #:enforce) fourth ((pair * (pair * (pair * (pair a *))))) a))
+(fourth (forall (a) (#(procedure #:clean #:enforce #:foldable) fourth ((pair * (pair * (pair * (pair a *))))) a))
 	(((pair * (pair * (pair * (pair * *)))))
 	 (##core#inline "C_u_i_car" 
 			(##core#inline "C_u_i_cdr"
@@ -1887,9 +1918,9 @@
 						      (##core#inline "C_u_i_cdr" #(1)))))))
 
 (iota (#(procedure #:clean #:enforce) iota (fixnum #!optional fixnum fixnum) (list-of number)))
-(last (#(procedure #:clean #:enforce) last (pair) *))
-(last-pair (#(procedure #:clean #:enforce) last-pair (pair) *))
-(length+ (#(procedure #:clean #:enforce) length+ (list) *))
+(last (#(procedure #:clean #:enforce #:foldable) last (pair) *))
+(last-pair (#(procedure #:clean #:enforce #:foldable) last-pair (pair) *))
+(length+ (#(procedure #:clean #:enforce #:foldable) length+ (list) *))
 (list-copy (forall (a) (#(procedure #:pure) list-copy (a) a)))
 (list-index (forall (a) (#(procedure #:enforce) list-index ((procedure (a #!rest) *) (list-of a) #!rest list) *)))
 (list-tabulate (forall (a) (#(procedure #:enforce) list-tabulate (fixnum (procedure (fixnum) a)) (list-of a))))
@@ -1970,13 +2001,13 @@
   (a b)
   (#(procedure #:enforce) map-in-order ((procedure (a #!rest) b) (list-of a) #!rest list) (list-of b))))
 
-(ninth (#(procedure #:clean #:enforce) ninth (pair) *))
+(ninth (#(procedure #:clean #:enforce #:foldable) ninth (pair) *))
 
-(not-pair? (#(procedure #:clean) not-pair? (*) boolean)
+(not-pair? (#(procedure #:clean #:foldable) not-pair? (*) boolean)
 	   ((pair) (let ((#(tmp) #(1))) '#f))
 	   (((not (or pair list))) (let ((#(tmp) #(1))) '#t)))
 
-(null-list? (#(procedure #:clean #:enforce) null-list? (list) boolean)
+(null-list? (#(procedure #:clean #:enforce #:foldable) null-list? (list) boolean)
 	    ((pair) (let ((#(tmp) #(1))) '#f))
 	    ((list) (let ((#(tmp) #(1))) '#f))
 	    ((null) (let ((#(tmp) #(1))) '#t)))
@@ -1987,7 +2018,7 @@
 (partition (forall (a) (#(procedure #:enforce) partition ((procedure (a) *) (list-of a)) (list-of a) (list-of a))))
 (partition! (forall (a) (#(procedure #:enforce) partition! ((procedure (a) *) (list-of a)) (list-of a) (list-of a))))
 
-(proper-list? (#(procedure #:clean) proper-list? (*) boolean)
+(proper-list? (#(procedure #:clean #:foldable) proper-list? (*) boolean)
 	      ((null) (let ((#(tmp) #(1))) '#t)))
 
 (reduce (#(procedure #:enforce) reduce ((procedure (* *) *) * list) *)) ;XXX
@@ -1996,11 +2027,11 @@
 (remove! (forall (a) (#(procedure #:enforce) remove! ((procedure (a) *) (list-of a)) (list-of a))))
 (reverse! (forall (a) (#(procedure #:enforce) reverse! ((list-of a)) (list-of a))))
 
-(second (forall (a) (#(procedure #:clean #:enforce) second ((pair * (pair a *))) a))
+(second (forall (a) (#(procedure #:clean #:enforce #:foldable) second ((pair * (pair a *))) a))
 	(((pair * (pair * *))) (##core#inline "C_u_i_car" (##core#inline "C_u_i_cdr" #(1)))))
 
-(seventh (#(procedure #:clean #:enforce) seventh (pair) *))
-(sixth (#(procedure #:clean #:enforce) sixth (pair) *))
+(seventh (#(procedure #:clean #:enforce #:foldable) seventh (pair) *))
+(sixth (#(procedure #:clean #:enforce #:foldable) sixth (pair) *))
 (span (forall (a) (#(procedure #:enforce) span ((procedure (a) *) (list-of a)) (list-of a) (list-of a))))
 (span! (forall (a) (#(procedure #:enforce) span! ((procedure (a) *) (list-of a)) (list-of a) (list-of a))))
 (split-at (forall (a) (#(procedure #:enforce) split-at ((list-of a) fixnum) (list-of a) (list-of a))))
@@ -2010,9 +2041,9 @@
 (take-right (forall (a) (#(procedure #:enforce) take-right ((list-of a) fixnum) (list-of a))))
 (take-while (forall (a) (#(procedure #:enforce) take-while ((procedure (a) *) (list-of a)) (list-of a))))
 (take-while! (forall (a) (#(procedure #:enforce) take-while! ((procedure (a) *) (list-of a)) (list-of a))))
-(tenth (#(procedure #:clean #:enforce) tenth (pair) *))
+(tenth (#(procedure #:clean #:enforce #:foldable) tenth (pair) *))
 
-(third (forall (a) (#(procedure #:clean #:enforce) third ((pair * (pair * (pair a *)))) a))
+(third (forall (a) (#(procedure #:clean #:enforce #:foldable) third ((pair * (pair * (pair a *)))) a))
        (((pair * (pair * (pair * *))))
 	(##core#inline "C_u_i_car" 
 		       (##core#inline "C_u_i_cdr" (##core#inline "C_u_i_cdr" #(1))))))

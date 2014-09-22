@@ -408,6 +408,7 @@ and compiler settings:
 {{>}}
 {{abs}}
 {{acos}}
+{{append}}
 {{apply}}
 {{asin}}
 {{assoc}}
@@ -478,6 +479,7 @@ and compiler settings:
 {{read-string}} 
 {{real?}}
 {{remainder}}
+{{reverse}}
 {{round}}
 {{set-car!}}
 {{set-cdr!}}
@@ -521,6 +523,8 @@ The following extended bindings are handled specially:
 {{block-ref}}
 {{block-set!}}
 {{call/cc}}
+{{call-with-input-file}}
+{{call-with-output-file}}
 {{current-error-port}}
 {{current-thread}}
 {{error}}
@@ -546,10 +550,7 @@ The following extended bindings are handled specially:
 {{fp<=}}
 {{fp<}}
 {{fp=}}
-{{fp=}}
 {{fp>=}}
-{{fp>=}}
-{{fp>}}
 {{fp>}}
 {{fpabs}}
 {{fpacos}}
@@ -595,8 +596,9 @@ The following extended bindings are handled specially:
 {{fxshl}}
 {{fxshr}}
 {{fxxor}}
-{{hash-table-ref}}
 {{identity}}
+{{list->string}}
+{{list->vector}}
 {{locative->object}}
 {{locative-ref}}
 {{locative-set!}}
@@ -644,14 +646,15 @@ The following extended bindings are handled specially:
 {{second}}
 {{signum}}
 {{sprintf}}
+{{string-append}}
+{{string->list}}
 {{sub1}}
+{{substring}}
 {{substring-ci=?}}
 {{substring-index-ci}}
 {{substring-index}}
 {{substring=?}}
 {{third}}
-{{thread-specific-set!}}
-{{thread-specific}}
 {{u16vector->blob/shared}}
 {{u16vector-length}}
 {{u16vector-ref}}
@@ -664,6 +667,7 @@ The following extended bindings are handled specially:
 {{u8vector-length}}
 {{u8vector-ref}}
 {{u8vector-set!}}
+{{vector->list}}
 {{xcons}}
 
 ==== What's the difference betweem "block" and "local" mode?

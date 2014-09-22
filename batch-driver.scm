@@ -85,15 +85,11 @@
       (when initial
 	(for-each
 	 (lambda (s)
-	   (mark-variable s '##compiler#intrinsic 'standard)
-	   (when (memq s foldable-bindings)
-	     (mark-variable s '##compiler#foldable #t)))
+	   (mark-variable s '##compiler#intrinsic 'standard))
 	 standard-bindings)
 	(for-each
 	 (lambda (s)
-	   (mark-variable s '##compiler#intrinsic 'extended)
-	   (when (memq s foldable-bindings)
-	     (mark-variable s '##compiler#foldable #t)))
+	   (mark-variable s '##compiler#intrinsic 'extended))
 	 extended-bindings)
 	(for-each
 	 (lambda (s)

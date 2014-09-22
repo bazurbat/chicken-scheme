@@ -203,8 +203,9 @@
 		(if (eq? '##core#variable (node-class (car subs)))
 		    (let ((var (first (node-parameters (car subs)))))
 		      (if (and (intrinsic? var)
-			       (foldable? var)
-			       (every constant-node? (cddr subs)) )
+			       (or (foldable? var)
+				   (predicate? var))
+			       (every constant-node? (cddr subs)))
 			  (constant-form-eval
 			   var
 			   (cddr subs)
