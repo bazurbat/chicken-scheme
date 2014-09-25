@@ -161,3 +161,36 @@
 ;; multiple-value return syntax
 (: mv (-> . *))
 (: mv (procedure () . *))
+
+;; procedures from the type environment should still enforce, etc.
+(let ((x (the (or fixnum string) _))
+      (f (the (forall (a)
+                (a -> (-> a)))
+              (lambda (a)
+                (lambda () a)))))
+  (((f +)) x)  ; (or fixnum string) -> fixnum
+  (fixnum? x)) ; should report
+
+;; typeset reduction
+
+(: char-or-string? (* -> boolean : (or char string)))
+
+(let ((x _))
+  (if (char-or-string? x)
+      (symbol? x)   ; should report with x = (or char string)
+      (string? x))) ; should not report
+
+(let ((x (the fixnum _)))
+  (if (char-or-string? x)
+      (symbol? x)   ; should report with x = (or char string)
+      (string? x))) ; should report with x = fixnum
+
+(let ((x (the (or char symbol) _)))
+  (if (char-or-string? x)
+      (symbol? x)   ; should report with x = char
+      (string? x))) ; should report with x = symbol
+
+(let ((x (the (or char symbol string) _)))
+  (if (char-or-string? x)
+      (symbol? x)   ; should report with x = (or char string)
+      (string? x))) ; should report with x = symbol

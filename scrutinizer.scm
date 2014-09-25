@@ -30,7 +30,7 @@
 	procedure-type? named? procedure-result-types procedure-argument-types
 	noreturn-type? rest-type procedure-name d-depth
 	noreturn-procedure-type? trail trail-restore walked-result 
-	multiples procedure-arguments procedure-results
+	multiples procedure-arguments procedure-results typeset-min
 	smash-component-types! generate-type-checks! over-all-instantiations
 	compatible-types? type<=? match-types resolve match-argument-types))
 
@@ -462,7 +462,8 @@
 			    (and-let* ((t2 (rec (third t))))
 			      `(forall ,(second t) ,t2)))
 			   ((or) 
-			    `(or ,@(remove (cut match-types <> pt typeenv #t) (cdr t))))
+			    (let ((ts (filter (cut match-types <> pt typeenv) (cdr t))))
+			      (and (pair? ts) `(or ,@ts))))
 			   (else #f))))))
 	(simplify-type tnew)))
 
@@ -743,14 +744,19 @@
 						pn var pt (car ctags))
 					     (add-to-blist 
 					      var (car ctags)
-					      (if (and a (type<=? (cdr a) pt)) (cdr a) pt))
+					      (cond ((not a) pt)
+						    ((typeset-min pt (cdr a)))
+						    ((reduce-typeset
+						      (cdr a) pt
+						      (type-typeenv `(or ,(cdr a) ,pt))))
+						    (else pt)))
 					     ;; if the variable type is an "or"-type, we can
 					     ;; can remove all elements that match the predicate
 					     ;; type
 					     (when a
 					       ;;XXX hack, again:
 					       (let* ((tenv2 (type-typeenv `(or ,(cdr a) ,pt)))
-						      (at (reduce-typeset (cdr a) pt tenv2)))
+						      (at (reduce-typeset (cdr a) `(not ,pt) tenv2)))
 						 (when at
 						   (d "  predicate `~a' indicates `~a' is ~a in flow ~a"
 						      pn var at (cdr ctags))
@@ -763,7 +769,10 @@
 								    t
 								    argr)))
 							     ((get db var 'assigned) '*)
-							     ((type<=? (cdr a) argr) (cdr a))
+							     ((typeset-min (cdr a) argr))
+							     ((reduce-typeset
+							       (cdr a) argr
+							       (type-typeenv `(or ,(cdr a) ,argr))))
 							     (else argr))))
 					       (d "  assuming: ~a -> ~a (flow: ~a)" 
 						  var ar (car flow))
@@ -1376,8 +1385,13 @@
   (or (type<=? t1 t2)
       (type<=? t2 t1)))
 
+(define (typeset-min t1 t2)
+  (cond ((type<=? t1 t2) t1)
+	((type<=? t2 t1) t2)
+	(else #f)))
 
 (define (type<=? t1 t2)
+  ;; NOTE various corner cases require t1 and t2 to have been simplified.
   (let* ((typeenv (append-map type-typeenv (list t1 t2)))
 	 (trail0 trail)
 	 (r (let test ((t1 t1) (t2 t2))
@@ -1393,13 +1407,16 @@
 		     (lambda (e) 
 		       (cond ((second e) (test t1 (second e)))
 			     (else
-			      (set-cdr! e t1)
+			      (set-car! (cdr e) t1)
 			      (or (not (third e))
 				  (test t1 (third e)))))))
-		    ((memq t2 '(* undefined)))
+		    ((memq t2 '(* undefined)) #t)
+		    ((memq t1 '(* undefined)) #f)
 		    ((eq? 'pair t1) (test '(pair * *) t2))
 		    ((eq? 'vector t1) (test '(vector-of *) t2))
 		    ((eq? 'list t1) (test '(list-of *) t2))
+		    ((eq? 'boolean t1) (test '(or true false) t2))
+		    ((eq? 'number t1) (test '(or fixnum float) t2))
 		    ((and (eq? 'null t1)
 			  (pair? t2) 
 			  (eq? (car t2) 'list-of)))
@@ -1407,6 +1424,23 @@
 		     (test (third t1) t2))
 		    ((and (pair? t2) (eq? 'forall (car t2)))
 		     (test t1 (third t2)))
+		    ((and (pair? t1) (eq? 'or (first t1)))
+		     (over-all-instantiations
+		      (cdr t1)
+		      typeenv
+		      #t
+		      (lambda (t) (test t t2))))
+		    ((and (pair? t2) (eq? 'or (first t2)))
+		     (over-all-instantiations
+		      (cdr t2)
+		      typeenv
+		      #f
+		      (lambda (t) (test t1 t))))
+		    ((and (pair? t1) (eq? 'not (first t1)))
+		     (and (pair? t2) (eq? 'not (first t2))
+			  (test (second t2) (second t1))))
+		    ((and (pair? t2) (eq? 'not (first t2)))
+		     (not (test t1 (second t2)))) ; sic
 		    (else
 		     (case t2
 		       ((procedure) (and (pair? t1) (eq? 'procedure (car t1))))
@@ -1418,12 +1452,6 @@
 		       (else
 			(cond ((not (pair? t1)) #f)
 			      ((not (pair? t2)) #f)
-			      ((eq? 'or (car t2))
-			       (over-all-instantiations
-				(cdr t2)
-				typeenv
-				#t
-				(lambda (t) (test t1 t))))
 			      ((and (eq? 'vector (car t1)) (eq? 'vector-of (car t2)))
 			       (every (cute test <> (second t2)) (cdr t1)))
 			      ((and (eq? 'vector-of (car t1)) (eq? 'vector (car t2)))
@@ -1444,12 +1472,6 @@
 			      ((not (eq? (car t1) (car t2))) #f)
 			      (else
 			       (case (car t1)
-				 ((or) 
-				  (over-all-instantiations
-				   (cdr t1)
-				   typeenv
-				   #t
-				   (lambda (t) (test t t2))))
 				 ((vector-of list-of) (test (second t1) (second t2)))
 				 ((pair) (every test (cdr t1) (cdr t2)))
 				 ((list vector)
@@ -1714,9 +1736,11 @@
 	      ((pair list vector vector-of list-of) 
 	       (cons (car t) (map (cut resolve <> done) (cdr t))))
 	      ((procedure)
-	       (let* ((argtypes (procedure-arguments t))
+	       (let* ((name (procedure-name t))
+		      (argtypes (procedure-arguments t))
 		      (rtypes (procedure-results t)))
 		 `(procedure
+		   ,@(if name (list name) '())
 		   ,(let loop ((args argtypes))
 		      (cond ((null? args) '())
 			    ((eq? '#!rest (car args))

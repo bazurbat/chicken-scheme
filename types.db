@@ -1015,7 +1015,7 @@
 
 (port-position (#(procedure #:clean #:enforce) port-position (#!optional port) fixnum fixnum))
 
-(port? (#(procedure #:pure) port? (*) boolean))
+(port? (#(procedure #:pure #:predicate (or input-port output-port)) port? (*) boolean))
 
 (print (procedure print (#!rest *) undefined))
 (print-call-chain (#(procedure #:clean #:enforce) print-call-chain (#!optional output-port fixnum * string) undefined))
@@ -1523,7 +1523,7 @@
 (pointer->object (#(procedure #:clean #:enforce) pointer->object (pointer) *)
 		 ((pointer) (##core#inline "C_pointer_to_object" #(1))))
 
-(pointer-like? (#(procedure #:pure) pointer-like? (*) boolean) ;XXX predicate?
+(pointer-like? (#(procedure #:pure #:predicate (or pointer locative procedure port)) pointer-like? (*) boolean)
 	       (((or pointer locative procedure port)) (let ((#(tmp) #(1))) '#t)))
 
 (pointer-f32-ref (#(procedure #:clean #:enforce) pointer-f32-ref (pointer) number))
