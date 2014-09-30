@@ -1413,7 +1413,7 @@
 
 (irregex-match-num-submatches (#(procedure #:enforce) irregex-match-num-submatches ((struct regexp-match)) fixnum)
                               (((struct regexp-match))
-                               (fx- (fx/ (##sys#size ##sys#slot #(1) 1) 4) 2)))
+                               (fx- (fx/ (##sys#size (##sys#slot #(1) '1)) '4) '2)))
 
 (irregex-new-matches (procedure irregex-new-matches (*) *)) ; really only for internal use..
 (irregex-opt (#(procedure #:clean #:enforce) irregex-opt (list) *))
