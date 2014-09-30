@@ -21,6 +21,7 @@
   - SRFI-1: Check argument types in lset and list= procedures (#1085).
   - Fixed another, similar bug in move-memory! for overlapping memory.
   - Fixed broken specialisation for move-memory! on pointer types.
+  - Fixed broken specialisation for irregex-match-num-submatches.
   - Fixed bug in make-kmp-restart-vector from SRFI-13.
   - Removed deprecated implicit expansion of $VAR- and ~ in pathnames.
      The ~-expansion functionality is now available in the
