@@ -148,7 +148,8 @@
     fpfloor fpceiling fptruncate fpround fpsin fpcos fptan fpasin fpacos fpatan
     fpatan2 fpexp fpexpt fplog fpsqrt fpabs fpinteger?
     arithmetic-shift void flush-output
-    not-pair? atom? null-list? print print* error proper-list? call/cc
+    not-pair? atom? null-list? dotted-list? circular-list?
+    print print* error proper-list? call/cc
     blob-size u8vector->blob/shared s8vector->blob/shared u16vector->blob/shared
     s16vector->blob/shared u32vector->blob/shared s32vector->blob/shared
     f32vector->blob/shared f64vector->blob/shared

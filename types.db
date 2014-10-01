@@ -1219,7 +1219,7 @@
 (any? (#(procedure #:pure #:foldable) any? (*) boolean)
       ((*) (let ((#(tmp) #(1))) '#t)))
 
-(atom? (#(procedure #:pure) atom? (*) boolean)
+(atom? (#(procedure #:pure #:foldable) atom? (*) boolean)
        ((pair) (let ((#(tmp) #(1))) '#f))
        (((not (or pair list))) (let ((#(tmp) #(1))) '#t)))
 
@@ -1868,7 +1868,7 @@
 (car+cdr (forall (a b) (#(procedure #:clean #:enforce) car+cdr ((pair a b)) a b)))
 (circular-list (#(procedure #:clean) circular-list (#!rest) list))
 
-(circular-list? (#(procedure #:clean) circular-list? (*) boolean)
+(circular-list? (#(procedure #:clean #:foldable) circular-list? (*) boolean)
 		((null) (let ((#(tmp) #(1))) '#f)))
 
 (concatenate (#(procedure #:clean #:enforce) concatenate ((list-of list)) list))
@@ -1884,7 +1884,7 @@
 (delete-duplicates!
  (forall (a) (#(procedure #:enforce) delete-duplicates! ((list-of a) #!optional (procedure (a *) *)) (list-of a))))
 
-(dotted-list? (#(procedure #:clean) dotted-list? (*) boolean))
+(dotted-list? (#(procedure #:clean #:foldable) dotted-list? (*) boolean))
 (drop (forall (a) (#(procedure #:enforce) drop ((list-of a) fixnum) (list-of a))))
 (drop-right (forall (a) (#(procedure #:enforce) drop-right ((list-of a) fixnum) (list-of a))))
 (drop-right! (forall (a) (#(procedure #:enforce) drop-right! ((list-of a) fixnum) (list-of a))))
