@@ -402,6 +402,7 @@
 (define (null-list? l) (##core#inline "C_i_null_list_p" l))           
 
 (define (list= = . lists)
+  (##sys#check-closure = 'list=)
   (or (null? lists) ; special case
       (let lp1 ((list-a (car lists)) (others (cdr lists)))
 	(or (null? others)
@@ -1458,6 +1459,7 @@
 
 (define (lset<= = . lists)
 ;  (check-arg procedure? = lset<=)
+  (##sys#check-closure = 'lset<=)
   (or (not (pair? lists)) ; 0-ary case
       (let lp ((s1 (car lists)) (rest (cdr lists)))
 	(or (not (pair? rest))
@@ -1468,6 +1470,7 @@
 
 (define (lset= = . lists)
 ;  (check-arg procedure? = lset=)
+  (##sys#check-closure = 'lset=)
   (or (not (pair? lists)) ; 0-ary case
       (let lp ((s1 (car lists)) (rest (cdr lists)))
 	(or (not (pair? rest))
@@ -1480,12 +1483,14 @@
 
 (define (lset-adjoin = lis . elts)
 ;  (check-arg procedure? = lset-adjoin)
+  (##sys#check-closure = 'lset-adjoin)
   (fold (lambda (elt ans) (if (member elt ans =) ans (cons elt ans)))
 	lis elts))
 
 
 (define (lset-union = . lists)
 ;  (check-arg procedure? = lset-union)
+  (##sys#check-closure = 'lset-union)
   (reduce (lambda (lis ans)		; Compute ANS + LIS.
 	    (cond ((null? lis) ans)	; Don't copy any lists
 		  ((null? ans) lis) 	; if we don't have to.
@@ -1499,6 +1504,7 @@
 
 (define (lset-union! = . lists)
 ;  (check-arg procedure? = lset-union!)
+  (##sys#check-closure = 'lset-union!)
   (reduce (lambda (lis ans)		; Splice new elts of LIS onto the front of ANS.
 	    (cond ((null? lis) ans)	; Don't copy any lists
 		  ((null? ans) lis) 	; if we don't have to.
@@ -1515,6 +1521,7 @@
 
 (define (lset-intersection = lis1 . lists)
 ;  (check-arg procedure? = lset-intersection)
+  (##sys#check-closure = 'lset-intersection)
   (let ((lists (delete lis1 lists eq?))) ; Throw out any LIS1 vals.
     (cond ((any null-list? lists) '())		; Short cut
 	  ((null? lists)          lis1)		; Short cut
@@ -1524,6 +1531,7 @@
 
 (define (lset-intersection! = lis1 . lists)
 ;  (check-arg procedure? = lset-intersection!)
+  (##sys#check-closure = 'lset-intersection!)
   (let ((lists (delete lis1 lists eq?))) ; Throw out any LIS1 vals.
     (cond ((any null-list? lists) '())		; Short cut
 	  ((null? lists)          lis1)		; Short cut
@@ -1534,6 +1542,7 @@
 
 (define (lset-difference = lis1 . lists)
 ;  (check-arg procedure? = lset-difference)
+  (##sys#check-closure = 'lset-difference)
   (let ((lists (filter pair? lists)))	; Throw out empty lists.
     (cond ((null? lists)     lis1)	; Short cut
 	  ((memq lis1 lists) '())	; Short cut
@@ -1544,6 +1553,7 @@
 
 (define (lset-difference! = lis1 . lists)
 ;  (check-arg procedure? = lset-difference!)
+  (##sys#check-closure = 'lset-difference!)
   (let ((lists (filter pair? lists)))	; Throw out empty lists.
     (cond ((null? lists)     lis1)	; Short cut
 	  ((memq lis1 lists) '())	; Short cut
@@ -1555,6 +1565,7 @@
 
 (define (lset-xor = . lists)
 ;  (check-arg procedure? = lset-xor)
+  (##sys#check-closure = 'lset-xor)
   (reduce (lambda (b a)			; Compute A xor B:
 	    ;; Note that this code relies on the constant-time
 	    ;; short-cuts provided by LSET-DIFF+INTERSECTION,
@@ -1577,6 +1588,7 @@
 
 (define (lset-xor! = . lists)
 ;  (check-arg procedure? = lset-xor!)
+  (##sys#check-closure = 'lset-xor!)
   (reduce (lambda (b a)			; Compute A xor B:
 	    ;; Note that this code relies on the constant-time
 	    ;; short-cuts provided by LSET-DIFF+INTERSECTION,
@@ -1600,6 +1612,7 @@
 
 (define (lset-diff+intersection = lis1 . lists)
 ;  (check-arg procedure? = lset-diff+intersection)
+  (##sys#check-closure = 'lset-diff+intersection)
   (cond ((every null-list? lists) (values lis1 '()))	; Short cut
 	((memq lis1 lists)        (values '() lis1))	; Short cut
 	(else (partition (lambda (elt)
@@ -1609,6 +1622,7 @@
 
 (define (lset-diff+intersection! = lis1 . lists)
 ;  (check-arg procedure? = lset-diff+intersection!)
+  (##sys#check-closure = 'lset-diff+intersection!)
   (cond ((every null-list? lists) (values lis1 '()))	; Short cut
 	((memq lis1 lists)        (values '() lis1))	; Short cut
 	(else (partition! (lambda (elt)

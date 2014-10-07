@@ -1562,7 +1562,7 @@
 	       (cut mark-variable <> '##compiler#pure #t)
 	       (globalize-all syms))
 	      (quit-compiling
-	       "invalid arguments to `constant' declaration: ~S" spec)) ) )
+	       "invalid arguments to `pure' declaration: ~S" spec))))
        ((emit-import-library)
 	(set! import-libraries
 	  (append
