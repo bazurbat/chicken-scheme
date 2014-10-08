@@ -213,13 +213,15 @@
   (lambda (form r c)
     (##sys#check-syntax 'foreign-primitive form '(_ _ . _))
     (let* ((hasrtype (and (pair? (cddr form)) (not (string? (caddr form)))))
-	   (rtype (or (and hasrtype (##sys#strip-syntax (cadr form))) 'void))
+	   (rtype (and hasrtype (##sys#strip-syntax (cadr form))))
 	   (args (##sys#strip-syntax (if hasrtype (caddr form) (cadr form))))
 	   (argtypes (map car args)))
       `(##core#the (procedure
 		    ,(map (cut chicken.compiler.support#foreign-type->scrutiny-type <> 'arg)
 			  argtypes)
-		    ,(chicken.compiler.support#foreign-type->scrutiny-type rtype 'result))
+		    ,@(if (not rtype)
+			  '* ; special case for C_values(...)
+			  (list (chicken.compiler.support#foreign-type->scrutiny-type rtype 'result))))
 		   #f
 		   (##core#foreign-primitive ,@(cdr form)))))))
 
