@@ -167,13 +167,13 @@ function to call Scheme functions and allocate Scheme data-objects. See [[Callba
 
 <macro>(foreign-primitive [RETURNTYPE] ((ARGTYPE VARIABLE) ...) STRING ...)</macro>
 
-This is also similar to {{foreign-lambda*}} but the code will be executed
-in a ''primitive'' CPS context, which means it will not actually return, but
-call its continuation on exit. This means that code inside this form may
-allocate Scheme data on the C stack (the ''nursery'') with {{C_alloc}}
-(see below). If the {{RETURNTYPE}} is omitted it defaults to {{void}}.
-You can return multiple values inside the body of the {{foreign-primitive}}
-form by calling this C function:
+This is also similar to {{foreign-lambda*}} but the code will be
+executed in a ''primitive'' CPS context, which means it will not
+actually return, but call its continuation on exit. This means that code
+inside this form may allocate Scheme data on the C stack (the
+''nursery'') with {{C_alloc}} (see below). You can return multiple
+values inside the body of the {{foreign-primitive}} form by calling this
+C function:
 
 <enscript highlight=scheme>
 C_values(N + 2, C_SCHEME_UNDEFINED, C_k, X1, ...)
