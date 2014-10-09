@@ -389,7 +389,7 @@
     (when (memq 'no-symbol-escape options) 
       (dribble "Disabled support for escaped symbols")
       (symbol-escape #f) )
-    (when (memq '("-r5rs-syntax") options)
+    (when (memq 'r5rs-syntax options)
       (dribble "Disabled the CHICKEN extensions to R5RS syntax")
       (case-sensitive #f)
       (keyword-style #:none)

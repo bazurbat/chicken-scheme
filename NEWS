@@ -86,7 +86,7 @@
        now properly cleaned up (#1109, thanks to Alex Charlton)
   - "chicken"
     - The compiler option -no-parentheses-synonyms has been fixed.
-
+    - The -r5rs-syntax option did nothing; this has been fixed.
 
 4.9.0
 
