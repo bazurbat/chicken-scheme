@@ -75,6 +75,8 @@
     - When using chicken-install -retrieve, and an error occurs during
        retrieval (or the egg doesn't exist), the egg's directory is
        now properly cleaned up (#1109, thanks to Alex Charlton)
+  - "chicken"
+    - The -r5rs-syntax option did nothing; this has been fixed.
 
 4.9.0
 
