@@ -76,7 +76,7 @@
 (define (%irregex-error arg1 . args)
   (apply 
    error 
-   (if (symbol? loc1)
+   (if (symbol? arg1)
        (cons (string-append (symbol->string arg1) ": " (car args))
 	     (cdr args))
        args)))
