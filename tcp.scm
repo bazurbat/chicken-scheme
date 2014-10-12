@@ -359,6 +359,7 @@ EOF
       (let* ((buf (make-string +input-buffer-size+))
 	     (data (vector fd #f #f buf 0))
 	     (buflen 0)
+	     (bufpos 0)
 	     (bufindex 0)
 	     (iclosed #f) 
 	     (oclosed #f)
