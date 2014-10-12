@@ -1174,7 +1174,7 @@ EOF
 	       (let ((res (##sys#file-select-one fd)))
 		 (if (fx= -1 res)
 		     (if (or (fx= _errno _ewouldblock)
-			     (rx= _errno _eagain))
+			     (fx= _errno _eagain))
 			 #f
 			 (posix-error #:file-error loc "cannot select" fd nam))
 		     (fx= 1 res))))]
