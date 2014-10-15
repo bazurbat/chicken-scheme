@@ -54,7 +54,7 @@ function(add_interpreted_test name)
     if(test_SCRIPT)
         set(args -s ${CMAKE_CURRENT_SOURCE_DIR}/${test_SCRIPT})
     endif()
-    
+
     add_chicken_test(${name}-i ${command} ${test_UNPARSED_ARGUMENTS} ${args})
 endfunction()
 
