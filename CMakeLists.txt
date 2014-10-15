@@ -190,6 +190,8 @@ install(FILES setup.defaults
     DESTINATION ${INSTALL_DATADIR})
 
 install(FILES
+    ${PROJECT_SOURCE_DIR}/cmake/ChickenExtensionConfig.cmake.in
+    ${PROJECT_SOURCE_DIR}/cmake/ChickenExtensionVersion.cmake.in
     ${PROJECT_SOURCE_DIR}/cmake/FindChicken.cmake
     ${PROJECT_SOURCE_DIR}/cmake/ChickenUse.cmake
     ${PROJECT_SOURCE_DIR}/cmake/ChickenRun.cmake

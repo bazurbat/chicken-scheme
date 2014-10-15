@@ -497,10 +497,10 @@ function(install_chicken_modules name)
     get_property(EXTENSION_DESCRIPTION GLOBAL PROPERTY _CHICKEN_${name}_DESCRIPTION)
     get_property(EXTENSION_URL GLOBAL PROPERTY _CHICKEN_${name}_URL)
 
-    set(config_in_filename ${PROJECT_SOURCE_DIR}/ChickenExtensionConfig.cmake.in)
+    set(config_in_filename ${CHICKEN_DATA_DIR}/ChickenExtensionConfig.cmake.in)
     set(config_out_filename ${PROJECT_BINARY_DIR}/${name}-config.cmake)
 
-    set(version_in_filename ${PROJECT_SOURCE_DIR}/ChickenExtensionVersion.cmake.in)
+    set(version_in_filename ${CHICKEN_DATA_DIR}/ChickenExtensionVersion.cmake.in)
     set(version_out_filename ${PROJECT_BINARY_DIR}/${name}-config-version.cmake)
 
     if(EXISTS ${config_in_filename})
