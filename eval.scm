@@ -1065,21 +1065,19 @@
     ((cygwin) cygwin-default-dynamic-load-libraries)
     (else default-dynamic-load-libraries) ) )
 
-(define dynamic-load-libraries 
-  (let ((ext
-	 (if uses-soname?
-	     (string-append
-	      ##sys#load-library-extension
-	      "." 
-	      (number->string binary-version))
-	     ##sys#load-library-extension)))
-    (define complete
-      (cut ##sys#string-append <> ext))
-    (make-parameter
-     (map complete ##sys#default-dynamic-load-libraries)
-     (lambda (x)
-       (##sys#check-list x)
-       x) ) ) )
+(define (make-dynamic-library-name name)
+  (let ((version (number->string binary-version))
+        (extension ##sys#load-library-extension))
+    (apply string-append
+           (cond (osx (list name "." version extension))
+                 (else (if uses-soname?
+                         (list name extension "." version)
+                         (list name extension)))))))
+
+(define dynamic-load-libraries
+  (make-parameter
+    (map make-dynamic-library-name ##sys#default-dynamic-load-libraries)
+    (lambda (x) (##sys#check-list x) x)))
 
 (define ##sys#load-library-0
   (let ([string-append string-append]
