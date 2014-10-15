@@ -40,7 +40,7 @@ for x in setup-api.so setup-api.import.so setup-download.so \
       srfi-1.import.so srfi-4.import.so data-structures.import.so \
       ports.import.so files.import.so posix.import.so \
       extras.import.so \
-      irregex.import.so srfi-14.import.so tcp.import.so \
+      irregex.import.so tcp.import.so \
       foreign.import.so \
       utils.import.so csi.import.so irregex.import.so types.db; do
   cp ../$x test-repository
@@ -303,10 +303,6 @@ $compile numbers-string-conversion-tests.scm
 
 echo "======================================== srfi-4 tests ..."
 $interpret -s srfi-4-tests.scm
-
-echo "======================================== srfi-14 tests ..."
-$compile srfi-14-tests.scm
-./a.out
 
 echo "======================================== condition tests ..."
 $interpret -s condition-tests.scm

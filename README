@@ -299,7 +299,6 @@
 	|   |       |-- setup-download.import.so
 	|   |       |-- setup-download.so
 	|   |       |-- srfi-1.import.so
-	|   |       |-- srfi-14.import.so
 	|   |       |-- srfi-4.import.so
 	|   |       |-- tcp.import.so
 	|   |       |-- types.db

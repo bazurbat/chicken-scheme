@@ -25,7 +25,7 @@
 
 
 (require-library extras irregex posix utils setup-api srfi-1 data-structures tcp
-		 srfi-14 files)
+		 files)
 
 
 (module setup-download (retrieve-extension
@@ -37,7 +37,7 @@
 			temporary-directory)
 
   (import scheme chicken foreign)
-  (import extras irregex posix utils srfi-1 data-structures tcp srfi-14 files
+  (import extras irregex posix utils srfi-1 data-structures tcp files
 	  setup-api)
 
   (define-constant +default-tcp-connect-timeout+ 30000) ; 30 seconds
@@ -280,14 +280,6 @@
 	    (set! in (open-input-string data))) ) )
       (values in out)))
 
-  ;; Simpler replacement for SRFI-13's string-every
-  (define (string-every criteria s)
-    (let ((end (string-length s)))
-      (let lp ((i 0))
-	(or (fx>= i end)
-	    (and (char-set-contains? criteria (string-ref s i))
-		 (lp (fx+ i 1)))))))
-
   (define (http-retrieve-files in out dest)
     (d "reading files ...~%")
     (let ((version #f))
@@ -306,8 +298,8 @@
 			   (else
 			    (set! version v)))
 		     (open-input-string ln))))
-		((string-every char-set:whitespace ln)
-		 (skip))
+		((irregex-match '(* ("\x09\x0a\x0b\x0c\x0d\x20\xa0")) ln)
+		 (skip)) ; Blank line.
 		(else
 		 (error "unrecognized file-information - possibly corrupt transmission" 
 			ln)))))

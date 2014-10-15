@@ -23,7 +23,6 @@
 * [[Unit irregex]] Regular expressions
 * [[Unit srfi-1]] List Library
 * [[Unit srfi-4]] Homogeneous numeric vectors
-* [[Unit srfi-14]] Character set library              
 * [[Unit posix]] Unix-like services
 * [[Unit utils]] Shell scripting and file operations
 * [[Unit tcp]] Basic TCP-sockets

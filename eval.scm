@@ -62,7 +62,7 @@
 
 (define ##sys#core-library-modules
   '(extras lolevel utils files tcp irregex posix srfi-1 srfi-4
-	   srfi-14 data-structures ports))
+	   data-structures ports))
 
 (define ##sys#core-syntax-modules
   '(chicken-syntax chicken-ffi-syntax))

@@ -48,7 +48,6 @@
       "files.import.so"
       "posix.import.so"
       "extras.import.so"
-      "srfi-14.import.so"
       "tcp.import.so"
       "foreign.import.so"
       "utils.import.so"
