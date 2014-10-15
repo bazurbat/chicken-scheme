@@ -10,31 +10,42 @@
 (set! ##sys#user-read-hook
   (let ([old-hook ##sys#user-read-hook])
     (lambda (char port)
-      (if (char=? #\> char)	       
-	  (let* ((_ (read-char port))		; swallow #\>
-		 (text (scan-sharp-greater-string port)))
-	    `(declare (foreign-declare ,text)) )
-	  (old-hook char port) ) ) ) )
+      (if (char=? #\> char)
+          (let* ((_ (read-char port))           ; swallow #\>
+                 (text (scan-sharp-greater-string port)))
+            `(declare (foreign-declare ,text)) )
+          (old-hook char port) ) ) ) )
 
 (define (scan-sharp-greater-string port)
   (let ([out (open-output-string)])
     (let loop ()
       (let ([c (read-char port)])
-	(cond [(eof-object? c) (quit "unexpected end of `#> ... <#' sequence")]
-	      [(char=? c #\newline)
-	       (newline out)
-	       (loop) ]
-	      [(char=? c #\<)
-	       (let ([c (read-char port)])
-		 (if (eqv? #\# c)
-		     (get-output-string out)
-		     (begin
-		       (write-char #\< out)
-		       (write-char c out) 
-		       (loop) ) ) ) ]
-	      [else
-	       (write-char c out)
-	       (loop) ] ) ) ) ) )
+        (cond [(eof-object? c) (quit "unexpected end of `#> ... <#' sequence")]
+              [(char=? c #\newline)
+               (newline out)
+               (loop) ]
+              [(char=? c #\<)
+               (let ([c (read-char port)])
+                 (if (eqv? #\# c)
+                     (get-output-string out)
+                     (begin
+                       (write-char #\< out)
+                       (write-char c out) 
+                       (loop) ) ) ) ]
+              [else
+               (write-char c out)
+               (loop) ] ) ) ) ) )
+
+(define (extract-names import)
+  (let loop ((import import) (names '()))
+    (cond ((symbol? import) (cons import names))
+          ((pair? import)
+           (case (car import)
+             ((srfi)
+              (map (compose (cut string-append "srfi-" <>) number->string)
+                   (cdr import)))
+             ((only except prefix rename)
+              (loop (cadr import) names)))))))
 
 (define (get-imports ls)
   (when (pair? ls)
@@ -42,19 +53,8 @@
           (rest  (cdr ls)))
       (case first
         ((import use requre require-extension require-library)
-         (for-each (lambda (e)
-                     (define name (if (pair? e)
-                                    (case (car e)
-                                      ((only except rename prefix)
-                                       (cadr e))
-                                      ((srfi)
-                                       (cdr e)))
-                                    e))
-                     (and (not (memq name modules))
-                          (set! imports (if (pair? name)
-                                          (map (compose (cut string-append "stfi-" <>) number->string) name)
-                                          (cons name imports)))))
-                   rest))
+         (set! imports (append imports
+                               (apply append (map extract-names rest)))))
         ((module)
          (set! modules (cons (car rest) modules))
          (get-imports (cdr rest)))
