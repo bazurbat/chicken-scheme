@@ -158,6 +158,15 @@ set(CHICKEN_INTERPRETER ${CHICKEN_CSI_EXECUTABLE})
 find_package_handle_standard_args(Chicken DEFAULT_MSG CHICKEN_EXECUTABLE)
 
 # Detailed information useful when cross-compiling or debugging setup scripts. 
+find_package_message(CHICKEN_SYSTEM
+    "  CHICKEN_SYSTEM: ${CHICKEN_SYSTEM}"
+    "${CHICKEN_SYSTEM}")
+find_package_message(CHICKEN_HOST_SYSTEM
+    "  CHICKEN_HOST_SYSTEM: ${CHICKEN_HOST_SYSTEM}"
+    "${CHICKEN_HOST_SYSTEM}")
+find_package_message(CHICKEN_TARGET_SYSTEM
+    "  CHICKEN_TARGET_SYSTEM: ${CHICKEN_TARGET_SYSTEM}"
+    "${CHICKEN_TARGET_SYSTEM}")
 find_package_message(CHICKEN_CSI_EXECUTABLE
     "  CHICKEN_CSI_EXECUTABLE: ${CHICKEN_CSI_EXECUTABLE}"
     "${CHICKEN_CSI_EXECUTABLE}")

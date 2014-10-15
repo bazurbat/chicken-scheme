@@ -233,11 +233,9 @@ write_basic_package_version_file(
     COMPATIBILITY SameMajorVersion)
 
 install(FILES ${PROJECT_BINARY_DIR}/chicken-config.cmake
-    DESTINATION ${INSTALL_DATADIR}
-    RENAME ${_chicken_program_prefix}chicken-config.cmake)
+    DESTINATION ${INSTALL_DATADIR})
 install(FILES ${PROJECT_BINARY_DIR}/chicken-config-version.cmake
-    DESTINATION ${INSTALL_DATADIR}
-    RENAME ${_chicken_program_prefix}chicken-config-version.cmake)
+    DESTINATION ${INSTALL_DATADIR})
 
 # tests
 
