@@ -52,6 +52,7 @@
     (let ((first (car ls))
           (rest  (cdr ls)))
       (case first
+        ((quote quasiquote))
         ((import use requre require-extension require-library)
          (set! imports (append imports
                                (apply append (map extract-names rest)))))
