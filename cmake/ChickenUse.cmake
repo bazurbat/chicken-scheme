@@ -95,55 +95,34 @@ macro(_chicken_command_prepare_arguments)
 
     list(APPEND command_c_flags ${compile_C_FLAGS})
 
-    _chicken_command_add_type_inline()
-    _chicken_command_add_include_paths()
+    _chicken_command_emit_type()
+    _chicken_command_emit_inline()
+    _chicken_command_include_paths()
 endmacro()
 
-macro(_chicken_command_add_type_inline)
-    if(CHICKEN_EMIT_TYPES AND compile_EMIT AND NOT compile_EMIT_TYPE_FILE)
-        set(compile_EMIT_TYPE_FILE ${compile_EMIT})
+macro(_chicken_command_emit_type)
+    if(CHICKEN_EMIT_TYPES AND NOT compile_EMIT_TYPE_FILE)
+        set(compile_EMIT_TYPE_FILE ${in_name})
     endif()
     if(compile_EMIT_TYPE_FILE)
         set(types_file ${compile_EMIT_TYPE_FILE}.types)
         list(APPEND command_options -emit-type-file ${types_file})
         list(APPEND command_output ${types_file})
     endif()
+endmacro()
 
-    if(CHICKEN_EMIT_INLINES AND compile_EMIT AND NOT compile_EMIT_INLINE_FILE)
-        set(compile_EMIT_INLINE_FILE ${compile_EMIT})
+macro(_chicken_command_emit_inline)
+    if(CHICKEN_EMIT_INLINES AND NOT compile_EMIT_INLINE_FILE)
+        set(compile_EMIT_INLINE_FILE ${in_name})
     endif()
     if(compile_EMIT_INLINE_FILE)
         set(inline_file ${compile_EMIT_INLINE_FILE}.inline)
         list(APPEND command_options -emit-inline-file ${inline_file})
         list(APPEND command_output ${inline_file})
     endif()
-
-    # For each command dependency assume that type and inline files with the
-    # same name are placed alongside and add an appropriate option to use it.
-    # Do so only if the corresponding global option is set.
-    foreach(dep ${compile_DEPENDS})
-        if(CHICKEN_EMIT_TYPES OR CHICKEN_EMIT_INLINES)
-            get_target_property(dep_location ${dep} LOCATION)
-
-            get_filename_component(dep_dir    ${dep_location} PATH)
-            get_filename_component(dep_name   ${dep_location} NAME_WE)
-            get_filename_component(dep_types  ${dep_dir}/${dep_name}.types  ABSOLUTE)
-            get_filename_component(dep_inline ${dep_dir}/${dep_name}.inline ABSOLUTE)
-
-            if(EXISTS ${dep_types} AND CHICKEN_EMIT_TYPES)
-                list(APPEND command_options -types ${dep_types})
-                list(APPEND command_depends ${dep_types})
-            endif()
-
-            if(EXISTS ${dep_inline} AND CHICKEN_EMIT_INLINES)
-                list(APPEND command_options -consult-inline-file ${dep_inline})
-                list(APPEND command_depends ${dep_inline})
-            endif()
-        endif()
-    endforeach()
 endmacro()
 
-macro(_chicken_command_add_include_paths)
+macro(_chicken_command_include_paths)
     # set the variable empty just in case, because it later appended to
     set(include_paths "")
 
