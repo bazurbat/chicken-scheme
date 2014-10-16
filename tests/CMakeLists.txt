@@ -1,6 +1,6 @@
 project(chicken-tests C)
 
-set(CHICKEN_EXECUTABLE $<TARGET_FILE:chicken>)
+set(CHICKEN_EXECUTABLE $<TARGET_FILE:chicken-compiler>)
 
 set(CHICKEN_OPTIONS -ignore-repository
     -types ${chicken_SOURCE_DIR}/types.db
@@ -454,28 +454,9 @@ add_compiled_test(numbers-string-conversion numbers-string-conversion-tests.scm)
 
 add_interpreted_test(srfi-4 SCRIPT srfi-4-tests.scm)
 
-# srfi-13 tests
-
-add_interpreted_test(srfi-13 SCRIPT srfi-13-tests.scm)
-
-# srfi-14 tests
-
-add_compiled_test(srfi-14 srfi-14-tests.scm)
-
 # condition tests
 
 add_interpreted_test(condition SCRIPT condition-tests.scm)
-
-# srfi-18 tests
-
-add_interpreted_test(srfi-18-simple-thread SCRIPT simple-thread-test.scm)
-
-add_interpreted_test(srfi-18-mutex SCRIPT mutex-test.scm)
-
-# tries to use sys/time.h unconditionally
-if(NOT MSVC)
-    add_compiled_test(srfi-18-signal srfi-18-signal-test.scm)
-endif()
 
 # data-structures tests
 
@@ -517,13 +498,6 @@ add_compiled_test(posix posix-tests.scm ARGS $<TARGET_FILE:csi>)
 add_interpreted_test(posix
     -R posix -e "(delete-directory \"tmpdir\" #t)")
 
-# signal tests
-
-# causes debugger hook
-if(NOT MSVC)
-    add_compiled_test(signal signal-tests.scm)
-endif()
-
 # regular expression tests
 
 add_custom_command(OUTPUT re-tests.txt COMMAND ${CMAKE_COMMAND} -E copy
@@ -540,7 +514,7 @@ add_interpreted_test(glob SCRIPT test-glob.scm)
 # compiler/nursery stress test
 
 foreach(s 100000 120000 200000 250000 300000 350000 400000 450000 500000)
-    add_chicken_test(compiler-nursery-stress-${s} $<TARGET_FILE:chicken>
+    add_chicken_test(compiler-nursery-stress-${s} $<TARGET_FILE:chicken-compiler>
         -ignore-repository ${chicken_SOURCE_DIR}/utils.scm -:s${s}
         -include-path ${chicken_SOURCE_DIR})
 endforeach()
@@ -607,7 +581,7 @@ add_custom_target(prepare-install-tests
 
 add_dependencies(tests prepare-install-tests)
 
-set(CSC_OPTIONS -compiler $<TARGET_FILE:chicken> -v
+set(CSC_OPTIONS -compiler $<TARGET_FILE:chicken-compiler> -v
     -I${chicken_SOURCE_DIR} -I${chicken_BINARY_DIR}
     -L${chicken_SOURCE_DIR} -L${chicken_BINARY_DIR}
     -rpath ${chicken_BINARY_DIR}
@@ -616,7 +590,7 @@ _chicken_join(CSC_OPTIONS ${CSC_OPTIONS})
 
 set(CSI_OPTIONS "-e (use files setup-api)"
     "-e (register-program \"csc\" \"$<TARGET_FILE:csc>\")"
-    "-e (register-program \"chicken\" \"$<TARGET_FILE:chicken>\")"
+    "-e (register-program \"chicken\" \"$<TARGET_FILE:chicken-compiler>\")"
     "-e (register-program \"csi\" \"$<TARGET_FILE:csi>\")")
 _chicken_join(CSI_OPTIONS ${CSI_OPTIONS})
 

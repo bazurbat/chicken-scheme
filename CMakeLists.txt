@@ -4,7 +4,6 @@ if(POLICY CMP0042)
     cmake_policy(SET CMP0042 NEW)
 endif()
 
-
 enable_testing()
 
 # search for CMake includes in project directory first
@@ -19,7 +18,10 @@ find_package(Chicken REQUIRED)
 include(ChickenBuildTag)
 include(ChickenConfigure)
 
+set(CHICKEN_EXTRACT_DEPENDS YES)
+
 set(CHICKEN_RUN ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
+set(CHICKEN_EXTRACT_SCRIPT ${CMAKE_SOURCE_DIR}/cmake/extract-depends.scm)
 
 add_custom_target(tests)
 
@@ -34,38 +36,47 @@ else()
     set(posix_scm posixunix.scm)
 endif()
 
-set(libchicken_SCM_SOURCES library.scm eval.scm data-structures.scm ports.scm
-    files.scm extras.scm lolevel.scm utils.scm tcp.scm srfi-1.scm srfi-4.scm
-    srfi-13.scm srfi-14.scm srfi-18.scm ${posix_scm} irregex.scm
-    scheduler.scm profiler.scm stub.scm expand.scm modules.scm
-    chicken-syntax.scm chicken-ffi-syntax.scm build-version.scm)
+set(libchicken_SCM_SOURCES
+    ${posix_scm}
+    build-version.scm
+    chicken-ffi-syntax.scm
+    chicken-syntax.scm
+    data-structures.scm
+    eval.scm
+    expand.scm
+    extras.scm
+    files.scm
+    irregex.scm
+    library.scm
+    lolevel.scm
+    modules.scm
+    ports.scm
+    profiler.scm
+    scheduler.scm
+    srfi-1.scm
+    srfi-4.scm
+    stub.scm
+    tcp.scm
+    utils.scm
+)
 
-set(chicken_SCM_SOURCES chicken.scm batch-driver.scm compiler.scm
-    optimizer.scm compiler-syntax.scm scrutinizer.scm support.scm
-    c-platform.scm c-backend.scm)
-
-if(API_VERSION GREATER 6)
-    list(APPEND chicken_SCM_SOURCES lfa2.scm)
-endif()
-
-set(utility_PROGRAMS csc chicken-install chicken-uninstall chicken-status
-    chicken-profile)
+set(utility_PROGRAMS
+    chicken-install
+    chicken-profile
+    chicken-status
+    chicken-uninstall
+    csc
+)
 
 set(setupapi_MODULES setup-api setup-download)
 
-set(import_LIBRARIES
-    chicken.import lolevel.import srfi-1.import srfi-4.import
-    data-structures.import ports.import files.import posix.import
-    srfi-13.import srfi-69.import extras.import srfi-14.import tcp.import
-    foreign.import srfi-18.import utils.import csi.import irregex.import)
+# runtime
 
 add_chicken_sources(libchicken_SOURCES
     C_SOURCES ${libchicken_C_SOURCES})
 add_chicken_sources(libchicken_SOURCES
     SOURCES ${libchicken_SCM_SOURCES}
     OPTIONS ${LIBRARY_OPTIONS})
-add_chicken_sources(libchicken_SOURCES srfi-69.scm
-    OPTIONS ${LIBRARY_OPTIONS} -extend private-namespace.scm)
 
 add_library(libchicken SHARED ${libchicken_SOURCES})
 target_link_libraries(libchicken ${CHICKEN_EXTRA_LIBRARIES})
@@ -80,16 +91,40 @@ set_target_properties(libchicken PROPERTIES
     OUTPUT_NAME lib${CHICKEN_PROGRAM_PREFIX}chicken
     VERSION ${API_VERSION})
 
-add_chicken_executable(chicken ${chicken_SCM_SOURCES}
+# compiler
+
+set(compiler_MODULES
+    batch-driver
+    c-backend
+    c-platform
+    compiler-syntax
+    core
+    lfa2
+    optimizer
+    scrutinizer
+    support
+)
+
+set(compiler_SOURCES)
+
+foreach(m ${compiler_MODULES})
+    add_chicken_sources(compiler_SOURCES ${m}.scm
+        EMIT_IMPORTS chicken.compiler.${m}
+        ${ARGN})
+endforeach()
+
+add_chicken_executable(chicken-compiler
+    SOURCES chicken.scm
+    C_SOURCES ${compiler_SOURCES}
     OPTIONS ${COMPILER_OPTIONS})
 
-set_target_properties(chicken PROPERTIES
+set_target_properties(chicken-compiler PROPERTIES
     COMPILE_DEFINITIONS PIC
     OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}chicken)
 
 add_chicken_executable(csi
     SOURCES csi.scm
-    OPTIONS ${PROGRAM_OPTIONS} -extend private-namespace.scm)
+    OPTIONS ${PROGRAM_OPTIONS})
 
 set_target_properties(csi PROPERTIES
     COMPILE_DEFINITIONS PIC
@@ -104,7 +139,7 @@ foreach(program ${utility_PROGRAMS})
         OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}${program})
 endforeach()
 
-install(TARGETS libchicken chicken csi ${utility_PROGRAMS}
+install(TARGETS libchicken chicken-compiler csi ${utility_PROGRAMS}
     EXPORT chicken-targets
     ARCHIVE DESTINATION ${INSTALL_LIBDIR}
     LIBRARY DESTINATION ${INSTALL_LIBDIR}
@@ -117,8 +152,6 @@ add_chicken_sources(libchicken_STATIC_SOURCES
 add_chicken_sources(libchicken_STATIC_SOURCES STATIC
     SOURCES ${libchicken_SCM_SOURCES}
     OPTIONS ${LIBRARY_OPTIONS})
-add_chicken_sources(libchicken_STATIC_SOURCES srfi-69.scm STATIC
-    OPTIONS ${LIBRARY_OPTIONS} -extend private-namespace.scm)
 
 add_library(libchicken-static STATIC ${libchicken_STATIC_SOURCES})
 
@@ -139,7 +172,7 @@ endif(BUILD_STATIC_LIBS)
 
 if(BUILD_STATIC_PROGRAMS)
     add_chicken_executable(csi-static csi.scm STATIC
-        OPTIONS ${PROGRAM_OPTIONS} -extend private-namespace.scm)
+        OPTIONS ${PROGRAM_OPTIONS})
     set_target_properties(csi-static PROPERTIES
         OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}csi-static)
 
@@ -168,14 +201,6 @@ foreach(module ${setupapi_MODULES})
         ARCHIVE DESTINATION ${INSTALL_EGGDIR}
         LIBRARY DESTINATION ${INSTALL_EGGDIR})
 endforeach()
-
-foreach(lib ${import_LIBRARIES})
-    add_chicken_library(${lib} ${lib}.scm
-        OPTIONS ${IMPORT_LIBRARY_OPTIONS})
-endforeach()
-
-install(TARGETS ${import_LIBRARIES}
-    DESTINATION ${INSTALL_EGGDIR})
 
 # chicken-extract
 

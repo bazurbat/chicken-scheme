@@ -105,8 +105,7 @@ set(CHICKEN_OPTIONS -optimize-level 2 -inline -ignore-repository -feature
     chicken-bootstrap)
 set(LIBRARY_OPTIONS -explicit-use -no-trace)
 set(PROGRAM_OPTIONS -no-lambda-info -local)
-set(COMPILER_OPTIONS ${PROGRAM_OPTIONS} -extend
-    private-namespace.scm)
+set(COMPILER_OPTIONS ${PROGRAM_OPTIONS})
 set(IMPORT_LIBRARY_OPTIONS -no-trace)
 
 if(DEFINED DEBUGBUILD)
