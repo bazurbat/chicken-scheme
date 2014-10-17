@@ -71,6 +71,10 @@ if(NOT Chicken_FOUND)
     find_path(CHICKEN_EXTENSION_DIR types.db
         PATHS $ENV{CHICKEN_PREFIX}/lib /usr/local/lib /usr/lib
         PATH_SUFFIXES ${_chicken_system}chicken/${CHICKEN_API_VERSION})
+else()
+    find_package_message(CHICKEN_CONFIG
+        "Using Chicken config: ${Chicken_CONFIG}"
+        "${Chicken_CONFIG}")
 endif()
 
 # host prefixed executables are searched as per convention to name cross
@@ -96,11 +100,11 @@ find_file(CHICKEN_EXTRACT_SCRIPT extract-depends.scm
 # executables are intended to run on.
 
 find_path(CHICKEN_INCLUDE_DIR chicken.h
-    HINTS ${CHICKEN_INCLUDE_DIR}
+    HINTS ${CHICKEN_INCLUDE_DIR} $ENV{CHICKEN_PREFIX}/include
     PATH_SUFFIXES ${_chicken_system}chicken)
 
 find_library(CHICKEN_LIBRARY ${_chicken_system}chicken
-    HINTS ${CHICKEN_LIBRARY_DIR})
+    HINTS ${CHICKEN_LIBRARY_DIR} $ENV{CHICKEN_PREFIX}/lib)
 
 # Determine the location of the static library based on the location of the
 # just found dynamic library. This is needed to avoid picking libraries from
