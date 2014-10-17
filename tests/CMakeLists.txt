@@ -1,6 +1,8 @@
 project(chicken-tests C)
 
+set(CHICKEN_EXTRACT_DEPENDS NO)
 set(CHICKEN_EXECUTABLE $<TARGET_FILE:chicken-compiler>)
+set(CHICKEN_INTERPRETER $<TARGET_FILE:csi>)
 
 set(CHICKEN_OPTIONS -ignore-repository
     -types ${chicken_SOURCE_DIR}/types.db
