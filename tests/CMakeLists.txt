@@ -627,37 +627,37 @@ set_tests_properties(reinstall-rev-app-2-i PROPERTIES DEPENDS reinstall-force)
 
 # TODO: figure out ORIGIN stuff
 
-add_chicken_test(deployment-install $<TARGET_FILE:chicken-install>
-    -t local -l ${CMAKE_CURRENT_SOURCE_DIR} reverser
-    ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS} CSI_OPTIONS=${CSI_OPTIONS})
-
-set_tests_properties(deployment-install PROPERTIES
-    DEPENDS reinstall-uninstall)
-
-add_chicken_test(deployment-deploy $<TARGET_FILE:csc>
-    -deploy rev-app.scm
-    ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS} CSI_OPTIONS=${CSI_OPTIONS})
-
-set_tests_properties(deployment-deploy PROPERTIES DEPENDS deployment-install)
-
-add_chicken_test(deployment-prefix $<TARGET_FILE:chicken-install>
-    -t local -l ${CMAKE_CURRENT_SOURCE_DIR} -deploy -prefix rev-app reverser
-    ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS} CSI_OPTIONS=${CSI_OPTIONS})
-
-set_tests_properties(deployment-prefix PROPERTIES
-    DEPENDS deployment-deploy)
-
-add_chicken_test(deployment-run-1
-    ${CMAKE_CURRENT_BINARY_DIR}/rev-app/rev-app 1.1)
-
-add_test(NAME deployment-stub-copy COMMAND
-    ${CMAKE_COMMAND} -E copy_directory rev-app rev-app-2)
-
-set_tests_properties(deployment-stub-copy PROPERTIES DEPENDS deployment-run-1)
-
-add_chicken_test(deployment-run-2
-    ${CMAKE_CURRENT_BINARY_DIR}/rev-app-2/rev-app 1.1)
-
-set_tests_properties(deployment-run-2 PROPERTIES DEPENDS deployment-stub-copy)
+# add_chicken_test(deployment-install $<TARGET_FILE:chicken-install>
+#     -t local -l ${CMAKE_CURRENT_SOURCE_DIR} reverser
+#     ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS} CSI_OPTIONS=${CSI_OPTIONS})
+#
+# set_tests_properties(deployment-install PROPERTIES
+#     DEPENDS reinstall-uninstall)
+#
+# add_chicken_test(deployment-deploy $<TARGET_FILE:csc>
+#     -deploy rev-app.scm
+#     ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS} CSI_OPTIONS=${CSI_OPTIONS})
+#
+# set_tests_properties(deployment-deploy PROPERTIES DEPENDS deployment-install)
+#
+# add_chicken_test(deployment-prefix $<TARGET_FILE:chicken-install>
+#     -t local -l ${CMAKE_CURRENT_SOURCE_DIR} -deploy -prefix rev-app reverser
+#     ENVIRONMENT CSC_OPTIONS=${CSC_OPTIONS} CSI_OPTIONS=${CSI_OPTIONS})
+#
+# set_tests_properties(deployment-prefix PROPERTIES
+#     DEPENDS deployment-deploy)
+#
+# add_chicken_test(deployment-run-1
+#     ${CMAKE_CURRENT_BINARY_DIR}/rev-app/rev-app 1.1)
+#
+# add_test(NAME deployment-stub-copy COMMAND
+#     ${CMAKE_COMMAND} -E copy_directory rev-app rev-app-2)
+#
+# set_tests_properties(deployment-stub-copy PROPERTIES DEPENDS deployment-run-1)
+#
+# add_chicken_test(deployment-run-2
+#     ${CMAKE_CURRENT_BINARY_DIR}/rev-app-2/rev-app 1.1)
+#
+# set_tests_properties(deployment-run-2 PROPERTIES DEPENDS deployment-stub-copy)
 
 endif(NOT MSVC)
