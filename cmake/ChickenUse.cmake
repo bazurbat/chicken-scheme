@@ -5,10 +5,8 @@ include(FeatureSummary)
 include(FindPackageHandleStandardArgs)
 
 option(CHICKEN_BUILD_IMPORTS "Compile generated import libraries" YES)
-option(CHICKEN_EMIT_TYPES "Generate files with type declarations" NO)
-option(CHICKEN_EMIT_INLINES "Generate files with globally inlinable procedures" NO)
 option(CHICKEN_EXTRACT_DEPENDS "Automatically extract source file dependencies" NO)
-mark_as_advanced(CHICKEN_EMIT_TYPES CHICKEN_EMIT_INLINES CHICKEN_EXTRACT_DEPENDS)
+mark_as_advanced(CHICKEN_EXTRACT_DEPENDS)
 
 if(CHICKEN_HOST_SYSTEM STREQUAL CHICKEN_TARGET_SYSTEM)
     set(CHICKEN_CROSS 0)
@@ -42,7 +40,7 @@ endfunction()
 macro(_chicken_parse_arguments)
     cmake_parse_arguments(compile
         "STATIC;SHARED;MODULE;EMBEDDED;EXTENSION"
-        "EMIT;SUFFIX;EMIT_TYPE_FILE;EMIT_INLINE_FILE;ERROR_FILE"
+        "EMIT;SUFFIX;ERROR_FILE"
         "SOURCES;C_SOURCES;EMIT_IMPORTS;OPTIONS;DEFINITIONS;C_FLAGS;DEPENDS"
         ${ARGN})
 
@@ -95,31 +93,7 @@ macro(_chicken_command_prepare_arguments)
 
     list(APPEND command_c_flags ${compile_C_FLAGS})
 
-    _chicken_command_emit_type()
-    _chicken_command_emit_inline()
     _chicken_command_include_paths()
-endmacro()
-
-macro(_chicken_command_emit_type)
-    if(CHICKEN_EMIT_TYPES AND NOT compile_EMIT_TYPE_FILE)
-        set(compile_EMIT_TYPE_FILE ${in_name})
-    endif()
-    if(compile_EMIT_TYPE_FILE)
-        set(types_file ${compile_EMIT_TYPE_FILE}.types)
-        list(APPEND command_options -emit-type-file ${types_file})
-        list(APPEND command_output ${types_file})
-    endif()
-endmacro()
-
-macro(_chicken_command_emit_inline)
-    if(CHICKEN_EMIT_INLINES AND NOT compile_EMIT_INLINE_FILE)
-        set(compile_EMIT_INLINE_FILE ${in_name})
-    endif()
-    if(compile_EMIT_INLINE_FILE)
-        set(inline_file ${compile_EMIT_INLINE_FILE}.inline)
-        list(APPEND command_options -emit-inline-file ${inline_file})
-        list(APPEND command_output ${inline_file})
-    endif()
 endmacro()
 
 macro(_chicken_command_include_paths)

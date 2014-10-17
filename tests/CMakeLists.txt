@@ -157,8 +157,8 @@ add_compiled_test(scrutiny-strict scrutiny-tests-strict.scm
 # specialization tests
 
 add_compiled_test(specialization-test-1 specialization-test-1.scm
-    EMIT_IMPORTS foo EMIT_TYPE_FILE foo
-    OPTIONS -specialize -debug ox)
+    EMIT_IMPORTS foo
+    OPTIONS -specialize -debug ox -emit-type-file foo.types)
 
 add_compiled_test(specialization-test-2 specialization-test-2.scm
     OPTIONS -types foo.types -specialize -debug ox
