@@ -1069,7 +1069,8 @@
   (let ((version (number->string binary-version))
         (extension ##sys#load-library-extension))
     (apply string-append
-           (cond (osx (list name "." version extension))
+           (cond ((eq? (software-version) 'macosx)
+                  (list name "." version extension))
                  (else (if uses-soname?
                          (list name extension "." version)
                          (list name extension)))))))
