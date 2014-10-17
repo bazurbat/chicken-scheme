@@ -110,7 +110,7 @@ set(compiler_SOURCES)
 foreach(m ${compiler_MODULES})
     add_chicken_sources(compiler_SOURCES ${m}.scm
         EMIT_IMPORTS chicken.compiler.${m}
-        ${ARGN})
+        OPTIONS ${PROGRAM_OPTIONS})
 endforeach()
 
 add_chicken_executable(chicken-compiler
