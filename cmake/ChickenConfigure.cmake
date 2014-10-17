@@ -105,7 +105,6 @@ set(CHICKEN_OPTIONS -optimize-level 2 -inline -ignore-repository -feature
     chicken-bootstrap)
 set(LIBRARY_OPTIONS -explicit-use -no-trace)
 set(PROGRAM_OPTIONS -no-lambda-info -local)
-set(COMPILER_OPTIONS ${PROGRAM_OPTIONS})
 set(IMPORT_LIBRARY_OPTIONS -no-trace)
 
 if(DEFINED DEBUGBUILD)
@@ -113,7 +112,6 @@ if(DEFINED DEBUGBUILD)
 else()
     list(APPEND CHICKEN_OPTIONS -no-warnings)
     list(APPEND PROGRAM_OPTIONS -no-trace)
-    list(APPEND COMPILER_OPTIONS -no-trace)
 endif()
 
 if(NOT DEFINED BUILDING_CHICKEN_BOOT)

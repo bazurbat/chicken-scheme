@@ -116,7 +116,7 @@ endforeach()
 add_chicken_executable(chicken-compiler
     SOURCES chicken.scm
     C_SOURCES ${compiler_SOURCES}
-    OPTIONS ${COMPILER_OPTIONS})
+    OPTIONS ${PROGRAM_OPTIONS})
 
 set_target_properties(chicken-compiler PROPERTIES
     COMPILE_DEFINITIONS PIC
