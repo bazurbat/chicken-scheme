@@ -37,6 +37,8 @@ endif()
 function(add_chicken_test name)
     cmake_parse_arguments(test "" "PATH;OUTPUT_FILE" "ENVIRONMENT" ${ARGN})
 
+    list(APPEND test_ENVIRONMENT LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR})
+
     add_test(NAME ${name} COMMAND ${CMAKE_COMMAND}
         "-DCHICKEN_REPOSITORY=${CHICKEN_LOCAL_REPOSITORY}/$<CONFIGURATION>"
         "-DPATH=${test_PATH}"
