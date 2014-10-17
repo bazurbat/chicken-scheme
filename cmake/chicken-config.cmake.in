@@ -31,7 +31,7 @@ if(CHICKEN_HOST_SYSTEM)
     find_program(CHICKEN_INSTALL_EXECUTABLE
         NAMES ${CHICKEN_HOST_SYSTEM}-chicken-install)
 else()
-    get_target_property(CHICKEN_EXECUTABLE chicken_chicken LOCATION)
+    get_target_property(CHICKEN_EXECUTABLE chicken_chicken-compiler LOCATION)
     get_target_property(CHICKEN_CSI_EXECUTABLE chicken_csi LOCATION)
     get_target_property(CHICKEN_INSTALL_EXECUTABLE chicken_chicken-install LOCATION)
 endif()
