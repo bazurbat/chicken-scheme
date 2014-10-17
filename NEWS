@@ -49,6 +49,8 @@
 - Syntax expander
   - define-values, set!-values and letrec-values now support full lambda
     lists as binding forms
+  - cond expands correctly when a constant is used in combination with =>
+     (thanks to Michele La Monaca)
 
 - C API
   - Removed deprecated C_get_argument[_2] and

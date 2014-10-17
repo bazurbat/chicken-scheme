@@ -196,6 +196,11 @@
 (let ((baz 100))
   (t "no baz" (kw baz)))
 
+;; Optimisation to rewrite constants with =>, reported by Michele La Monaca
+(t 2 (cond (1 2)))
+(f (cond (1 => string-length)))
+(t #t (cond (1 => odd?)))
+
 (t 'ok
 (let ((=> #f))
   (cond (#t => 'ok)))
