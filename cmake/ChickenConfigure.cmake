@@ -151,6 +151,10 @@ check_include_file("sysexits.h" HAVE_SYSEXITS_H)
 check_include_file("unistd.h"   HAVE_UNISTD_H)
 check_include_file("utime.h"    HAVE_UTIME_H)
 
+if(NOT HAVE_POSIX_POLL)
+    set(NO_POSIX_POLL 1)
+endif()
+
 if(HAVE_ALLOCA_H)
     check_symbol_exists("alloca"     "alloca.h" HAVE_ALLOCA)
 elseif(HAVE_MALLOC_H)

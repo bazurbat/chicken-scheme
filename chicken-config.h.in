@@ -38,6 +38,8 @@
 #cmakedefine HAVE_STRTOLL
 #cmakedefine HAVE_STRTOQ
 
+#cmakedefine NO_POSIX_POLL
+
 #cmakedefine01 STDC_HEADERS
 
 #cmakedefine01 DEBUGBUILD
