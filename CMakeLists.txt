@@ -68,8 +68,6 @@ set(utility_PROGRAMS
     csc
 )
 
-set(setupapi_MODULES setup-api setup-download)
-
 # runtime
 
 add_chicken_sources(libchicken_SOURCES
@@ -147,26 +145,26 @@ install(TARGETS libchicken chicken-compiler csi ${utility_PROGRAMS}
 
 if(BUILD_STATIC_LIBS)
 
-add_chicken_sources(libchicken_STATIC_SOURCES
-    C_SOURCES ${libchicken_C_SOURCES})
-add_chicken_sources(libchicken_STATIC_SOURCES STATIC
-    SOURCES ${libchicken_SCM_SOURCES}
-    OPTIONS ${LIBRARY_OPTIONS})
+    add_chicken_sources(libchicken_STATIC_SOURCES
+        C_SOURCES ${libchicken_C_SOURCES})
+    add_chicken_sources(libchicken_STATIC_SOURCES STATIC
+        SOURCES ${libchicken_SCM_SOURCES}
+        OPTIONS ${LIBRARY_OPTIONS})
 
-add_library(libchicken-static STATIC ${libchicken_STATIC_SOURCES})
+    add_library(libchicken-static STATIC ${libchicken_STATIC_SOURCES})
 
-set_property(TARGET libchicken-static PROPERTY COMPILE_DEFINITIONS
-    PIC C_BUILDING_LIBCHICKEN)
+    set_property(TARGET libchicken-static PROPERTY COMPILE_DEFINITIONS
+        PIC C_BUILDING_LIBCHICKEN)
 
-set_target_properties(libchicken-static PROPERTIES
-    PREFIX ""
-    OUTPUT_NAME lib${CHICKEN_PROGRAM_PREFIX}chicken)
+    set_target_properties(libchicken-static PROPERTIES
+        PREFIX ""
+        OUTPUT_NAME lib${CHICKEN_PROGRAM_PREFIX}chicken)
 
-install(TARGETS libchicken-static
-    EXPORT chicken-targets
-    ARCHIVE DESTINATION ${INSTALL_LIBDIR})
+    install(TARGETS libchicken-static
+        EXPORT chicken-targets
+        ARCHIVE DESTINATION ${INSTALL_LIBDIR})
 
-set(CHICKEN_STATIC_LIBRARIES libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
+    set(CHICKEN_STATIC_LIBRARIES libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
 
 endif(BUILD_STATIC_LIBS)
 
@@ -184,6 +182,37 @@ if(BUILD_STATIC_PROGRAMS)
     install(TARGETS csi-static chicken-bug
         RUNTIME DESTINATION ${INSTALL_BINDIR})
 endif()
+
+# import libraries
+
+set(import_LIBRARIES
+    chicken.import
+    csi.import
+    data-structures.import
+    extras.import
+    files.import
+    foreign.import
+    irregex.import
+    lolevel.import
+    ports.import
+    posix.import
+    srfi-1.import
+    srfi-4.import
+    tcp.import
+    utils.import
+)
+
+foreach(lib ${import_LIBRARIES})
+    add_chicken_library(${lib} ${lib}.scm
+        OPTIONS ${IMPORT_LIBRARY_OPTIONS})
+endforeach()
+
+install(TARGETS ${import_LIBRARIES}
+    DESTINATION ${INSTALL_EGGDIR})
+
+# setup api
+
+set(setupapi_MODULES setup-api setup-download)
 
 add_chicken_module(setup-api setup-api.scm
     OPTIONS ${LIBRARY_OPTIONS})
@@ -249,12 +278,12 @@ configure_package_config_file(cmake/chicken-config.cmake.in
     ${PROJECT_BINARY_DIR}/chicken-config.cmake
     INSTALL_DESTINATION ${INSTALL_DATADIR}
     PATH_VARS
-        INSTALL_BINDIR
-        INSTALL_LIBDIR
-        INSTALL_EGGDIR
-        INSTALL_DATADIR
-        INSTALL_INCLUDEDIR
-)
+    INSTALL_BINDIR
+    INSTALL_LIBDIR
+    INSTALL_EGGDIR
+    INSTALL_DATADIR
+    INSTALL_INCLUDEDIR
+    )
 
 write_basic_package_version_file(
     ${PROJECT_BINARY_DIR}/chicken-config-version.cmake
