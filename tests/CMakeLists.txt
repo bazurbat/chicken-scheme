@@ -43,6 +43,8 @@ function(add_chicken_test name)
         list(APPEND test_ENVIRONMENT DYLD_LIBRARY_PATH=${chicken_BINARY_DIR})
     endif()
 
+    list(APPEND test_ENVIRONMENT BUILD_DIR=${chicken_BINARY_DIR})
+
     add_test(NAME ${name} COMMAND ${CMAKE_COMMAND}
         "-DCHICKEN_REPOSITORY=${CHICKEN_LOCAL_REPOSITORY}/$<CONFIGURATION>"
         "-DPATH=${test_PATH}"
