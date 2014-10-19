@@ -188,7 +188,7 @@ EOF
     "int len = sizeof(struct sockaddr_in);"
     "if(getsockname(s, (struct sockaddr *)&sa, (socklen_t *)&len) != 0) C_return(NULL);"
     "ptr = (unsigned char *)&sa.sin_addr;"
-    "snprintf(addr_buffer, sizeof(addr_buffer), \"%d.%d.%d.%d\", ptr[ 0 ], ptr[ 1 ], ptr[ 2 ], ptr[ 3 ]);"
+    "C_snprintf(addr_buffer, sizeof(addr_buffer), \"%d.%d.%d.%d\", ptr[ 0 ], ptr[ 1 ], ptr[ 2 ], ptr[ 3 ]);"
     "C_return(addr_buffer);") )
 
 (define ##net#getsockport
@@ -212,7 +212,7 @@ EOF
     "unsigned int len = sizeof(struct sockaddr_in);"
     "if(getpeername(s, (struct sockaddr *)&sa, ((socklen_t *)&len)) != 0) C_return(NULL);"
     "ptr = (unsigned char *)&sa.sin_addr;"
-    "snprintf(addr_buffer, sizeof(addr_buffer), \"%d.%d.%d.%d\", ptr[ 0 ], ptr[ 1 ], ptr[ 2 ], ptr[ 3 ]);"
+    "C_snprintf(addr_buffer, sizeof(addr_buffer), \"%d.%d.%d.%d\", ptr[ 0 ], ptr[ 1 ], ptr[ 2 ], ptr[ 3 ]);"
     "C_return(addr_buffer);") )
 
 (define ##net#startup
