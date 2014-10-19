@@ -234,9 +234,6 @@ add_test(NAME dynamic-wind-i-expected COMMAND ${CMAKE_COMMAND} -E compare_files
     dynamic-wind-i.out dwindtst.expected.t)
 set_tests_properties(dynamic-wind-i-expected PROPERTIES DEPENDS dynamic-wind-i)
 
-# takes very long time
-# add_interpreted_test(dynamic-wind-feeley SCRIPT feeley-dynwind.scm)
-
 # lolevel tests
 
 add_interpreted_test(lolevel SCRIPT lolevel-tests.scm)
@@ -430,10 +427,6 @@ add_interpreted_test(ec-2 $<TARGET_FILE:ec-mod> ec-tests.scm)
 
 # add_compiled_test(ec ec-tests.scm
 #     DEPENDS ec-mod)
-
-# hash-table tests
-
-add_interpreted_test(hash-table SCRIPT hash-table-tests.scm)
 
 # port tests
 
