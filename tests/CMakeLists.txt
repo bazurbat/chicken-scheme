@@ -499,6 +499,8 @@ add_compiled_test(posix posix-tests.scm ARGS $<TARGET_FILE:csi>)
 add_interpreted_test(posix
     -R posix -e "(delete-directory \"tmpdir\" #t)")
 
+set_property(TEST posix-i PROPERTY DEPENDS posix)
+
 # regular expression tests
 
 add_custom_command(OUTPUT re-tests.txt COMMAND ${CMAKE_COMMAND} -E copy
