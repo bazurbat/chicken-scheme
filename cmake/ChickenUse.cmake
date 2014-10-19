@@ -477,6 +477,9 @@ function(define_chicken_extension name)
         "VERSION;DESCRIPTION;CATEGORY;LICENSE;URL"
         "AUTHOR;MAINTAINER"
         ${ARGN})
+    if(NOT extension_VERSION)
+        set(extension_VERSION 0.0)
+    endif()
     if(NOT extension_URL)
         set(extension_URL "http://wiki.call-cc.org/eggref/4/${name}")
     endif()
