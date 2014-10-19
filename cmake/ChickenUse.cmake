@@ -372,6 +372,10 @@ function(add_chicken_library name)
         set_target_properties(${name} PROPERTIES
             PREFIX ""
             NO_SONAME TRUE)
+        if(APPLE)
+            set_target_properties(${name} PROPERTIES
+                SUFFIX ".dylib")
+        endif()
 
         list(APPEND ${PROJECT_NAME}_CHICKEN_MODULES ${name})
     endif()
