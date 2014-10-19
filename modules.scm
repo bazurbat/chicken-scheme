@@ -590,7 +590,7 @@
 	     (vexp (module-vexports mod))
 	     (sexp (module-sexports mod))
 	     (iexp (module-iexports mod)))
-	(values vexp sexp iexp)))
+	(values (module-name mod) vexp sexp iexp)))
     (define (import-spec spec)
       (cond ((symbol? spec) (import-name spec))
 	    ((or (not (list? spec)) (< (length spec) 2))
@@ -600,13 +600,15 @@
 	      (##sys#intern-symbol
 	       (##sys#string-append "srfi-" (##sys#number->string (cadr spec))))))
 	    (else
-	     (let ((s (car spec)))
-	       (let-values (((impv imps impi) (import-spec (cadr spec))))
-		 (cond ((c %only s)
+	     (let ((head (car spec))
+		   (imports (cddr spec)))
+	       (let-values (((form impv imps impi) (import-spec (cadr spec))))
+		 (cond ((c %only head)
 			(##sys#check-syntax loc spec '(_ _ . #(symbol 0)))
-			(let ((ids (map resolve (cddr spec))))
+			(let ((ids (map resolve imports)))
 			  (let loop ((ids ids) (v '()) (s '()))
-			    (cond ((null? ids) (values v s impi))
+			    (cond ((null? ids)
+				   (values `(,head ,form ,@imports) v s impi))
 				  ((assq (car ids) impv) =>
 				   (lambda (a) 
 				     (loop (cdr ids) (cons a v) s)))
@@ -614,27 +616,28 @@
 				   (lambda (a) 
 				     (loop (cdr ids) v (cons a s))))
 				  (else (loop (cdr ids) v s))))))
-		       ((c %except s)
+		       ((c %except head)
 			(##sys#check-syntax loc spec '(_ _ . #(symbol 0)))
-			(let ((ids (map resolve (cddr spec))))
+			(let ((ids (map resolve imports)))
 			  (let loop ((impv impv) (v '()))
 			    (cond ((null? impv)
 				   (let loop ((imps imps) (s '()))
-				     (cond ((null? imps) (values v s impi))
+				     (cond ((null? imps)
+					    (values `(,head ,form ,@imports) v s impi))
 					   ((memq (caar imps) ids) (loop (cdr imps) s))
 					   (else (loop (cdr imps) (cons (car imps) s))))))
 				  ((memq (caar impv) ids) (loop (cdr impv) v))
 				  (else (loop (cdr impv) (cons (car impv) v)))))))
-		       ((c %rename s)
+		       ((c %rename head)
 			(##sys#check-syntax loc spec '(_ _ . #((symbol symbol) 0)))
-			(let loop ((impv impv) (imps imps) (v '()) (s '()) (ids (cddr spec)))
+			(let loop ((impv impv) (imps imps) (v '()) (s '()) (ids imports))
 			  (cond ((null? impv) 
 				 (cond ((null? imps)
 					(for-each
 					 (lambda (id)
 					   (##sys#warn "renamed identifier not imported" id) )
 					 ids)
-					(values v s impi))
+					(values `(,head ,form ,@imports) v s impi))
 				       ((assq (caar imps) ids) =>
 					(lambda (a)
 					  (loop impv (cdr imps)
@@ -651,30 +654,29 @@
 				(else (loop (cdr impv) imps
 					    (cons (car impv) v)
 					    s ids)))))
-		       ((c %prefix s)
+		       ((c %prefix head)
 			(##sys#check-syntax loc spec '(_ _ _))
-			(let ((pref (tostr (caddr spec))))
+			(let ((pref (caddr spec)))
 			  (define (ren imp)
 			    (cons 
 			     (##sys#string->symbol 
-			      (##sys#string-append pref (##sys#symbol->string (car imp))) )
+			      (##sys#string-append (tostr pref) (##sys#symbol->string (car imp))))
 			     (cdr imp) ) )
-			  (values (map ren impv) (map ren imps) impi)))
+			  (values (list head form pref) (map ren impv) (map ren imps) impi)))
 		       (else (##sys#syntax-error-hook loc "invalid import specification" spec))))))))
     (##sys#check-syntax loc x '(_ . #(_ 1)))
     (let ((cm (##sys#current-module)))
-      (when cm
-	;; save import form
-	(if meta?
-	    (set-module-meta-import-forms! 
-	     cm
-	     (append (module-meta-import-forms cm) (cdr x)))
-	    (set-module-import-forms!
-	     cm 
-	     (append (module-import-forms cm) (cdr x)))))
       (for-each
        (lambda (spec)
-	 (let-values (((vsv vss vsi) (import-spec spec)))
+	 (let-values (((form vsv vss vsi) (import-spec spec)))
+	   (when cm ; save import form
+	     (if meta?
+		 (set-module-meta-import-forms!
+		  cm
+		  (append (module-meta-import-forms cm) (list form)))
+		 (set-module-import-forms!
+		  cm
+		  (append (module-import-forms cm) (list form)))))
 	   (dd `(IMPORT: ,loc))
 	   (dd `(V: ,(if cm (module-name cm) '<toplevel>) ,(map-se vsv)))
 	   (dd `(S: ,(if cm (module-name cm) '<toplevel>) ,(map-se vss)))

@@ -1,8 +1,14 @@
 5.0.0 (preliminary)
 
-- Removed support for memory-mapped files (posix), queues (data-structures),
-  binary-search (data-structures) and object-eviction (lolevel). These
-  are now available as eggs.
+- Core libraries
+  - Removed support for memory-mapped files (posix), queues (data-structures),
+    binary-search (data-structures) and object-eviction (lolevel). These
+    are now available as eggs.
+
+- Module system
+  - The compiler has been modularised, for improved namespacing.  This
+     means names from the compiler should not leak out into the compiled
+     program's (macro) namespace anymore.
 
 4.9.1
 
@@ -51,9 +57,8 @@
   - Allow functor arguments to be optional, with default implementations.
   - Fixed a bug that prevented functors from being instantiated with
      built-in modules.
-  - The compiler has been modularised, for improved namespacing.  This
-     means names from the compiler should not leak out into the compiled
-     program's (macro) namespace anymore.
+  - Fixed generation of import libraries for instantiated functors
+     (#1149, thanks to Juergen Lorenz).
 
 - Syntax expander
   - define-values, set!-values and letrec-values now support full lambda
