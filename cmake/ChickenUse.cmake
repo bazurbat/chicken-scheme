@@ -180,21 +180,27 @@ function(_chicken_extract_depends out_var in_file dep_file)
         list(REMOVE_DUPLICATES includes)
     endif()
 
-    # message(STATUS "DEPENDS: ${in_file}")
+    if(CHICKEN_PRINT_DEPENDS)
+        message(STATUS "DEPENDS: ${in_file}")
+    endif()
 
     foreach(i ${imports})
         if(CMAKE_GENERATOR MATCHES "Make")
             # This check does not work for targets which CMake has not seen yet
             # during generation process.
             if(TARGET ${i})
-                # message(STATUS "\tT ${i}")
+                if(CHICKEN_PRINT_DEPENDS)
+                    message(STATUS "\tT ${i}")
+                endif()
                 list(APPEND depends ${i})
             endif()
         else()
             # CMake Ninja generator adds bogus files as phony targets and this
             # makes the extraction simpler.
             # TODO: check other generators
-            # message(STATUS "\t${CHICKEN_LOCAL_REPOSITORY}/${i}.import.scm")
+            if(CHICKEN_PRINT_DEPENDS)
+                message(STATUS "\t${CHICKEN_LOCAL_REPOSITORY}/${i}.import.scm")
+            endif()
             list(APPEND depends ${CHICKEN_IMPORT_LIBRARY_DIR}/${i}.import.scm)
         endif()
     endforeach()
