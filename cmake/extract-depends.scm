@@ -1,6 +1,9 @@
 (import scheme chicken)
 (use data-structures extras)
 
+(define core-modules
+  `(scheme chicken foreign ,@##sys#core-library-modules ,@##sys#core-syntax-modules))
+
 (define modules '())
 (define imports '())
 (define includes '())
@@ -36,16 +39,17 @@
                (write-char c out)
                (loop) ] ) ) ) ) )
 
-(define (extract-names import)
-  (let loop ((import import) (names '()))
-    (cond ((symbol? import) (cons import names))
-          ((pair? import)
-           (case (car import)
+(define (extract-names expr)
+  (let loop ((expr expr) (names '()))
+    (cond ((symbol? expr)
+           (if (memq expr core-modules) names (cons expr names)))
+          ((pair? expr)
+           (case (car expr)
              ((srfi)
               (map (compose (cut string-append "srfi-" <>) number->string)
-                   (cdr import)))
+                   (cdr expr)))
              ((only except prefix rename)
-              (loop (cadr import) names)))))))
+              (loop (cadr expr) names)))))))
 
 (define (get-imports ls)
   (when (pair? ls)
