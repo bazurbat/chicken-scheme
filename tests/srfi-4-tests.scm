@@ -1,7 +1,7 @@
 ;;;; srfi-4-tests.scm
 
 
-(use srfi-1 srfi-4)
+(use srfi-1 srfi-4 ports)
 
 
 (define-syntax test1
@@ -54,3 +54,33 @@
   (assert (equal? u8vec #u8(112 113 114 115 116 107 108 109 110 111)))
   (assert (= 6  (read-u8vector! 10 u8vec input)))
   (assert (equal? u8vec #u8(117 118 119 120 121 122 108 109 110 111))))
+
+(assert (string=?
+	 "abc"
+	 (with-output-to-string
+	   (lambda ()
+	     (write-u8vector #u8(97 98 99))))))
+
+(assert (string=?
+	 "bc"
+	 (with-output-to-string
+	   (lambda ()
+	     (write-u8vector #u8(97 98 99) (current-output-port) 1)))))
+
+(assert (string=?
+	 "a"
+	 (with-output-to-string
+	   (lambda ()
+	     (write-u8vector #u8(97 98 99) (current-output-port) 0 1)))))
+
+(assert (string=?
+	 "b"
+	 (with-output-to-string
+	   (lambda ()
+	     (write-u8vector #u8(97 98 99) (current-output-port) 1 2)))))
+
+(assert (string=?
+	 ""
+	 (with-output-to-string
+	   (lambda ()
+	     (write-u8vector #u8())))))

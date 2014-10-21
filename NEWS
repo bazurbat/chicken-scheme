@@ -35,6 +35,9 @@
   - normalize-pathname has been simplified to avoid adding trailing
      slashes or dots (#1153, thanks to Michele La Monaca and Mario Goulart).
 
+- Unit srfi-4:
+   - write-u8vector has been made more efficient (thanks to Thomas Hintz).
+
 - Unit lolevel:
   - Restore long-lost but still documented "vector-like?" procedure (#983)
 

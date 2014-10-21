@@ -639,15 +639,19 @@ EOF
 (define (subf32vector v from to) (subnvector v 'f32vector 4 from to 'subf32vector))
 (define (subf64vector v from to) (subnvector v 'f64vector 8 from to 'subf64vector))
 
-(define (write-u8vector v #!optional (port ##sys#standard-output) (from 0)
-			(to (u8vector-length v)))
+(define (write-u8vector v #!optional (port ##sys#standard-output) (from 0) to)
   (##sys#check-structure v 'u8vector 'write-u8vector)
   (##sys#check-output-port port #t 'write-u8vector)
-  (do ((i from (fx+ i 1)))
-      ((fx>= i to))
-    (##sys#write-char-0 
-     (integer->char (##core#inline "C_u_i_u8vector_ref" v i))
-     port) ) )
+  (let ((len (##core#inline "C_u_i_8vector_length" v)))
+    (check-range from 0 (fx+ (or to len) 1) 'write-u8vector)
+    (when to (check-range to from (fx+ len 1) 'write-u8vector))
+    ; using (write-string) since the "data" slot of a u8vector is
+    ; represented the same as a string
+    ((##sys#slot (##sys#slot port 2) 3) ; write-string
+     port
+     (if (and (fx= from 0) (or (not to) (fx= to len)))
+	 (##sys#slot v 1)
+	 (##sys#slot (subu8vector v from (or to len)) 1)))))
 
 (define (read-u8vector! n dest #!optional (port ##sys#standard-input) (start 0))
   (##sys#check-input-port port #t 'read-u8vector!)
