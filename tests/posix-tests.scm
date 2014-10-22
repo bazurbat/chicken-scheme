@@ -1,7 +1,10 @@
 (use files posix lolevel)
 
 (define build-dir (get-environment-variable "BUILD_DIR"))
-(define csi-path (make-pathname build-dir "csi"))
+(define csi-path
+  (if build-dir
+    (make-pathname build-dir "csi")
+    (car (command-line-arguments))))
 
 (define-syntax assert-error
   (syntax-rules ()
