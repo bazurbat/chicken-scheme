@@ -1197,8 +1197,8 @@
 		 p0) ) )
 	(let loop ((paths (##sys#append
 			   (if ##sys#setup-mode '(".") '())
-			   (if rp (list rp) '())
 			   (if inc? ##sys#include-pathnames '())
+			   (if rp (list rp) '())
 			   (if ##sys#setup-mode '() '("."))) ))
 	  (and (pair? paths)
 	       (let ((pa (##sys#slot paths 0)))
