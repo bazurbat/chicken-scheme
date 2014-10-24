@@ -592,7 +592,7 @@ static inline int isinf_ld (long double x)
 # define C_S64_MAX    INT64_MAX
 #endif
 
-#if defined(_MSC_VER)
+#if _MSC_VER < 1800
 # define INFINITY (DBL_MAX+DBL_MAX)
 # define NAN (INFINITY-INFINITY)
 # define isinf(x) (!_finite(x) && !_isnan(x))
