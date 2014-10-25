@@ -208,6 +208,7 @@ set(import_LIBRARIES
 )
 
 foreach(lib ${import_LIBRARIES})
+    set_property(SOURCE ${lib}.scm PROPERTY chicken_import_library TRUE)
     add_chicken_library(${lib} ${lib}.scm
         OPTIONS ${IMPORT_LIBRARY_OPTIONS})
 endforeach()
