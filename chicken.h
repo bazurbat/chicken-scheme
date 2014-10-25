@@ -85,7 +85,7 @@
 # define C_XXXBSD
 #endif
 
-#if /*defined(__GNUC__) &&*/ (defined(__linux__) || defined(C_XXXBSD) || defined(__HAIKU__))
+#if /*defined(__GNUC__) &&*/ (defined(__linux__) || defined(C_XXXBSD))
 # define C_GNU_ENV
 #endif
 
@@ -698,8 +698,6 @@ void *alloca ();
 # define C_SOFTWARE_VERSION "macosx"
 #elif defined(__DragonFly__)
 # define C_SOFTWARE_VERSION "dragonfly"
-#elif defined(__HAIKU__)
-# define C_SOFTWARE_VERSION "haiku"
 #else
 # define C_SOFTWARE_VERSION "unknown"
 #endif
