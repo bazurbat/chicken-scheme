@@ -146,8 +146,6 @@
 # include <endian.h>
 #elif defined(C_XXXBSD)
 # include <machine/endian.h>
-#elif defined(_AIX)
-# include <sys/machine.h>
 #endif
 
 #if defined(__MINGW32__) || defined(__WATCOMC__) || defined(_MSC_VER)
@@ -664,7 +662,7 @@ void *alloca ();
 
 #if defined(__MINGW32__) || defined(_WIN32) || defined(__WINNT__)
 # define C_SOFTWARE_TYPE "windows"
-#elif defined(__unix__) || defined(C_XXXBSD) || defined(_AIX)
+#elif defined(__unix__) || defined(C_XXXBSD)
 # define C_SOFTWARE_TYPE "unix"
 #elif defined(ECOS)
 # define C_SOFTWARE_TYPE "ecos"
@@ -678,8 +676,6 @@ void *alloca ();
 # define C_BUILD_PLATFORM "msvc"
 #elif defined(__clang__)
 # define C_BUILD_PLATFORM "clang"
-#elif defined(_AIX)
-# define C_BUILD_PLATFORM "aix"
 #elif defined(__GNUC__)
 # define C_BUILD_PLATFORM "gnu"
 #elif defined(__MWERKS__)
@@ -706,8 +702,6 @@ void *alloca ();
 # define C_SOFTWARE_VERSION "dragonfly"
 #elif defined(__HAIKU__)
 # define C_SOFTWARE_VERSION "haiku"
-#elif defined(_AIX)
-# define C_SOFTWARE_VERSION "aix"
 #else
 # define C_SOFTWARE_VERSION "unknown"
 #endif

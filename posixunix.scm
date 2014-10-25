@@ -250,7 +250,7 @@ static C_TLS sigset_t C_sigset;
 
 #define C_ctime(n)          (C_secs = (n), ctime(&C_secs))
 
-#if defined(C_MACOSX) || defined(_AIX)
+#if defined(C_MACOSX)
 /* Seen here: http://lists.samba.org/archive/samba-technical/2002-November/025571.html */
 
 static time_t C_timegm(struct tm *t)
@@ -1428,7 +1428,7 @@ EOF
 
 (define local-timezone-abbreviation
   (foreign-lambda* c-string ()
-   "\n#if !defined(__uClinux__) && !defined(_AIX)\n"
+   "\n#if !defined(__uClinux__)\n"
    "time_t clock = time(NULL);"
    "struct tm *ltm = C_localtime(&clock);"
    "char *z = ltm ? (char *)ltm->tm_zone : 0;"
