@@ -97,10 +97,6 @@
 # define C_NONUNIX
 #endif
 
-#if defined(__sun) && defined(__SVR4)
-# define C_SOLARIS
-#endif
-
 #if defined(__MINGW64__) || defined(_WIN64)
 # define C_LLP
 #endif
@@ -154,10 +150,6 @@
 # include <arpa/nameser.h>
 #elif defined(_AIX)
 # include <sys/machine.h>
-#elif defined(__sun)
-# include <sys/isa_defs.h>
-#elif defined(__SVR4)
-# include <sys/byteorder.h>
 #endif
 
 #if defined(__MINGW32__) || defined(__WATCOMC__) || defined(_MSC_VER)
@@ -365,19 +357,6 @@ void *alloca ();
 #define ___u64              C_u64
 #define ___s64              C_s64
 
-
-#if defined(C_SOLARIS) && !defined(isinf)
-# define isinf(x) \
-     (sizeof (x) == sizeof (long double) ? isinf_ld (x) \
-      : sizeof (x) == sizeof (double) ? isinf_d (x) \
-      : isinf_f (x))
-static inline int isinf_f  (float       x)
-{ return !isnan (x) && isnan (x - x); }
-static inline int isinf_d  (double      x)
-{ return !isnan (x) && isnan (x - x); }
-static inline int isinf_ld (long double x)
-{ return !isnan (x) && isnan (x - x); }
-#endif
 
 /* Mingw's isnormal() is broken on 32bit; use GCC's builtin (see #1062) */
 #ifdef __MINGW32__
@@ -702,9 +681,7 @@ static inline int isinf_ld (long double x)
 # define C_SOFTWARE_TYPE "unknown"
 #endif
 
-#if defined(__SUNPRO_C)
-# define C_BUILD_PLATFORM "sun"
-#elif defined(__MINGW32__)
+#if defined(__MINGW32__)
 # define C_BUILD_PLATFORM "mingw32"
 #elif defined(_MSC_VER)
 # define C_BUILD_PLATFORM "msvc"
@@ -740,12 +717,6 @@ static inline int isinf_ld (long double x)
 # define C_SOFTWARE_VERSION "dragonfly"
 #elif defined(__HAIKU__)
 # define C_SOFTWARE_VERSION "haiku"
-#elif defined(__sun)
-# if defined(__SVR4)
-#   define C_SOFTWARE_VERSION "solaris"
-# else
-#   define C_SOFTWARE_VERSION "sunos"
-# endif
 #elif defined(_AIX)
 # define C_SOFTWARE_VERSION "aix"
 #elif defined(__GNU__)

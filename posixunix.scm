@@ -57,11 +57,6 @@ static C_TLS int C_wait_status;
 #include <pwd.h>
 #include <utime.h>
 
-#if defined(__sun) && defined(__SVR4)
-# include <sys/tty.h>
-# include <termios.h>
-#endif
-
 #ifdef HAVE_GRP_H
 #include <grp.h>
 #endif
@@ -214,7 +209,7 @@ static void C_fcall C_free_arg_string(char **where) {
 #define C_execvp(f)         C_fix(execvp(C_data_pointer(f), C_exec_args))
 #define C_execve(f)         C_fix(execve(C_data_pointer(f), C_exec_args, C_exec_env))
 
-#if defined(__FreeBSD__) || defined(C_MACOSX) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__sgi__) || defined(sgi) || defined(__DragonFly__) || defined(__SUNPRO_C)
+#if defined(__FreeBSD__) || defined(C_MACOSX) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__sgi__) || defined(sgi) || defined(__DragonFly__)
 static C_TLS int C_uw;
 # define C_WIFEXITED(n)      (C_uw = C_unfix(n), C_mk_bool(WIFEXITED(C_uw)))
 # define C_WIFSIGNALED(n)    (C_uw = C_unfix(n), C_mk_bool(WIFSIGNALED(C_uw)))
@@ -255,7 +250,7 @@ static C_TLS sigset_t C_sigset;
 
 #define C_ctime(n)          (C_secs = (n), ctime(&C_secs))
 
-#if defined(__SVR4) || defined(C_MACOSX) || defined(_AIX)
+#if defined(C_MACOSX) || defined(_AIX)
 /* Seen here: http://lists.samba.org/archive/samba-technical/2002-November/025571.html */
 
 static time_t C_timegm(struct tm *t)
@@ -1433,7 +1428,7 @@ EOF
 
 (define local-timezone-abbreviation
   (foreign-lambda* c-string ()
-   "\n#if !defined(__SVR4) && !defined(__uClinux__) && !defined(__hpux__) && !defined(_AIX)\n"
+   "\n#if !defined(__uClinux__) && !defined(__hpux__) && !defined(_AIX)\n"
    "time_t clock = time(NULL);"
    "struct tm *ltm = C_localtime(&clock);"
    "char *z = ltm ? (char *)ltm->tm_zone : 0;"
