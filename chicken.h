@@ -81,7 +81,7 @@
 # define C_MACOSX
 #endif
 
-#if defined(C_MACOSX) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+#if defined(C_MACOSX)
 # define C_XXXBSD
 #endif
 
@@ -688,16 +688,8 @@ void *alloca ();
 
 #if defined(__linux__)
 # define C_SOFTWARE_VERSION "linux"
-#elif defined(__FreeBSD__)
-# define C_SOFTWARE_VERSION "freebsd"
-#elif defined(__NetBSD__)
-# define C_SOFTWARE_VERSION "netbsd"
-#elif defined(__OpenBSD__)
-# define C_SOFTWARE_VERSION "openbsd"
 #elif defined(C_MACOSX)
 # define C_SOFTWARE_VERSION "macosx"
-#elif defined(__DragonFly__)
-# define C_SOFTWARE_VERSION "dragonfly"
 #else
 # define C_SOFTWARE_VERSION "unknown"
 #endif
