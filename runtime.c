@@ -393,7 +393,6 @@ static C_TLS size_t
   heap_size;
 static C_TLS C_char 
   buffer[ STRING_BUFFER_SIZE ],
-  *private_repository = NULL,
   *current_module_name,
   *save_string;
 static C_TLS C_SYMBOL_TABLE
@@ -4249,7 +4248,7 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
     return C_fix(C_MOST_POSITIVE_FIXNUM);
 
   case C_fix(22):		/* does this process use a private egg-repository? */
-    return C_mk_bool(private_repository != NULL);
+    return C_SCHEME_FALSE;
 
   case C_fix(23):		/* seconds since process startup */
     return C_fix(C_startup_time_seconds);
@@ -8958,20 +8957,6 @@ C_regparm C_word C_fcall
 C_decode_literal(C_word **ptr, C_char *str)
 {
   return decode_literal2(ptr, &str, NULL);
-}
-
-
-void
-C_use_private_repository(C_char *path)
-{
-  private_repository = path == NULL ? NULL : C_strdup(path);
-}
-
-
-C_char *
-C_private_repository_path()
-{
-  return private_repository;
 }
 
 

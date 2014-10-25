@@ -338,7 +338,7 @@ void *alloca ();
 
 /* Have a GUI? */
 
-#if defined(C_WINDOWS_GUI) || defined(C_GUI) || defined(C_PRIVATE_REPOSITORY)
+#if defined(C_WINDOWS_GUI) || defined(C_GUI)
 # ifdef _WIN32
 #  include <windows.h>
 #  ifndef WINAPI
@@ -1622,12 +1622,6 @@ extern double trunc(double);
 #define C_ub_i_pointer_f32_set(p, n)    (*((float *)(p)) = (n))
 #define C_ub_i_pointer_f64_set(p, n)    (*((double *)(p)) = (n))
 
-#ifdef C_PRIVATE_REPOSITORY
-# define C_private_repository(fname)     C_use_private_repository(C_path_to_executable(fname))
-#else
-# define C_private_repository(fname)
-#endif
-
 /* left for backwards-compatibility */
 #define C_gui_nongui_marker
 
@@ -1643,7 +1637,6 @@ extern double trunc(double);
   int WINAPI WinMain(HINSTANCE me, HINSTANCE you, LPSTR cmdline, int show) \
   { \
     C_gui_mode = 1; \
-    C_private_repository(NULL);		      \
     return CHICKEN_main(0, NULL, (void *)C_toplevel); \
   }
 # else
@@ -1651,7 +1644,6 @@ extern double trunc(double);
   int main(int argc, char *argv[]) \
   { \
     C_set_gui_mode; \
-    C_private_repository(argv[ 0 ]);			\
     return CHICKEN_main(argc, argv, (void*)C_toplevel); \
   }
 # endif
@@ -1871,8 +1863,6 @@ C_fctexport C_word C_fcall C_lookup_symbol(C_word sym) C_regparm;
 C_fctexport void C_do_register_finalizer(C_word x, C_word proc);
 C_fctexport int C_do_unregister_finalizer(C_word x);
 C_fctexport C_word C_dbg_hook(C_word x);
-C_fctexport void C_use_private_repository(C_char *path);
-C_fctexport C_char *C_private_repository_path();
 
 C_fctimport void C_ccall C_toplevel(C_word c, C_word self, C_word k) C_noret;
 C_fctimport void C_ccall C_invalid_procedure(int c, C_word self, ...) C_noret;
@@ -2988,168 +2978,6 @@ C_inline size_t C_strlcat(char *dst, const char *src, size_t sz)
 }
 #endif
 
-
-#ifdef C_PRIVATE_REPOSITORY
-# if defined(C_MACOSX) && defined(C_GUI)
-#  include <CoreFoundation/CoreFoundation.h>
-# elif defined(__HAIKU__)
-#  include <kernel/image.h>
-# endif
-
-C_inline C_char *
-C_path_to_executable(C_char *fname)
-{
-  C_char *buffer = (C_char *)C_malloc(C_MAX_PATH);
-
-  if(buffer == NULL) return NULL;
-
-# if defined(__linux__) || defined(__sun)
-  C_char linkname[64]; /* /proc/<pid>/exe */
-  pid_t pid;
-  int ret;
-	
-  pid = C_getpid();
-#  ifdef __linux__
-  C_snprintf(linkname, sizeof(linkname), "/proc/%i/exe", pid);
-#  else
-  C_snprintf(linkname, sizeof(linkname), "/proc/%i/path/a.out", pid); /* SunOS / Solaris */
-#  endif
-  ret = C_readlink(linkname, buffer, C_MAX_PATH - 1);
-
-  if(ret == -1 || ret >= C_MAX_PATH - 1)
-    return NULL;
-
-  for(--ret; ret > 0 && buffer[ ret ] != '/'; --ret);
-
-  buffer[ ret ] = '\0';
-  return buffer;
-# elif defined(_WIN32) && !defined(__CYGWIN__)
-  int i;
-  int n = GetModuleFileName(NULL, buffer, C_MAX_PATH - 1);
-
-  if(n == 0 || n >= C_MAX_PATH - 1)
-    return NULL;
-
-  for(i = n - 1; i >= 0 && buffer[ i ] != '\\'; --i);
-
-  buffer[ i ] = '\0';
-  return buffer;
-# elif defined(C_MACOSX) && defined(C_GUI)
-  CFBundleRef bundle = CFBundleGetMainBundle();
-  CFURLRef url = CFBundleCopyExecutableURL(bundle);
-  int i;
-  
-  if(CFURLGetFileSystemRepresentation(url, true, buffer, C_MAX_PATH)) {
-    for(i = C_strlen(buffer); i >= 0 && buffer[ i ] != '/'; --i);
-
-    buffer[ i ] = '\0';
-    return buffer;
-  }
-  else return NULL;  
-# elif defined(__unix__) || defined(__unix) || defined(C_XXXBSD) || defined(_AIX)
-  int i, j, k, l;
-  C_char *path, *dname;
-
-  /* found on stackoverflow.com: */
-
-  /* no name given (execve) */
-  if(fname == NULL) return NULL;
-
-  i = C_strlen(fname) - 1;
-
-  while(i >= 0 && fname[ i ] != '/') --i;
-
-  /* absolute path */
-  if(*fname == '/') {
-    fname[ i ] = '\0';
-    C_strlcpy(buffer, fname, C_MAX_PATH);
-    return buffer;
-  }
-  else {
-    /* try current dir */
-    if(C_getcwd(buffer, C_MAX_PATH - 1) == NULL)
-      return NULL;
-
-    C_strlcat(buffer, "/", C_MAX_PATH);
-    C_strlcat(buffer, fname, C_MAX_PATH);
-  
-    if(C_access(buffer, F_OK) == 0) {
-      for(i = C_strlen(buffer); i >= 0 && buffer[ i ] != '/'; --i);
-
-      buffer[ i ] = '\0';
-      return buffer; 
-    }
-  
-    /* walk PATH */
-    path = C_getenv("PATH");
-  
-    if(path == NULL) return NULL;
-
-    for(l = j = k = 0; !l; ++k) {
-      switch(path[ k ]) {
-
-      case '\0':
-	if(k == 0) return NULL;	/* empty PATH */
-	else l = 1;
-	/* fall through */
-	
-      case ':':
-	C_strncpy(buffer, path + j, k - j);
-	buffer[ k - j ] = '\0';
-	C_strlcat(buffer, "/", C_MAX_PATH);
-	C_strlcat(buffer, fname, C_MAX_PATH);
-
-	if(C_access(buffer, F_OK) == 0) {
-	  dname = C_strdup(buffer);
-	  l = C_readlink(dname, buffer, C_MAX_PATH - 1);
-
-	  if(l == -1) {
-	    /* not a symlink (we ignore other errors here */
-	    buffer[ k - j ] = '\0';
-	  }
-	  else {
-	    while(l > 0 && buffer[ l ] != '/') --l;
-	  
-	    C_free(dname);
-	    buffer[ l ] = '\0';
-	  }
-
-	  return buffer;
-	}
-	else j = k + 1;
-
-	break;
-
-      default: ;
-      }      
-    }
-
-    return NULL;
-  }
-# elif defined(__HAIKU__)
-{
-  image_info info;
-  int32 cookie = 0;
-  int32 i;
-
-  while (get_next_image_info(0, &cookie, &info) == B_OK) {
-    if (info.type == B_APP_IMAGE) {
-      C_strlcpy(buffer, info.name, C_MAX_PATH);
-
-      for(i = C_strlen(buffer); i >= 0 && buffer[ i ] != '/'; --i);
-
-      buffer[ i ] = '\0';
-
-      return buffer;
-    }
-  }
-}
-  return NULL;
-# else
-  return NULL;
-# endif
-}
-#endif
 
 C_END_C_DECLS
 
