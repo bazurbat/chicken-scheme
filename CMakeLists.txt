@@ -18,6 +18,8 @@ find_package(Chicken REQUIRED)
 include(ChickenBuildTag)
 include(ChickenConfigure)
 
+option(CHICKEN_BUILD_TESTS "Build tests" NO)
+
 set(CHICKEN_EXTRACT_DEPENDS YES)
 
 set(CHICKEN_RUN ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
@@ -303,7 +305,9 @@ install(FILES ${PROJECT_BINARY_DIR}/chicken-config-version.cmake
 
 # tests
 
-add_subdirectory(tests EXCLUDE_FROM_ALL)
+if(CHICKEN_BUILD_TESTS)
+    add_subdirectory(tests EXCLUDE_FROM_ALL)
+endif()
 
 # cpack
 
