@@ -34,14 +34,7 @@
    ##sys#check-generic-vector
    pv-buf-ref pv-buf-set!)
   (not inline ipc-hook-0 ##sys#invalid-procedure-call-hook)
-  (foreign-declare #<<EOF
-#ifndef C_NONUNIX
-# include <sys/mman.h>
-#endif
-
-#define C_memmove_o(to, from, n, toff, foff) C_memmove((char *)(to) + (toff), (char *)(from) + (foff), (n))
-EOF
-) )
+  (foreign-declare "#include \"lolevel.h\""))
 
 (include "common-declarations.scm")
 
