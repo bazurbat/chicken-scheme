@@ -62,14 +62,6 @@ set(libchicken_SCM_SOURCES
     utils.scm
 )
 
-set(utility_PROGRAMS
-    chicken-install
-    chicken-profile
-    chicken-status
-    chicken-uninstall
-    csc
-)
-
 # runtime
 
 add_chicken_sources(libchicken_SOURCES
@@ -135,6 +127,10 @@ set_target_properties(csi PROPERTIES
     COMPILE_DEFINITIONS PIC
     OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}csi)
 
+set(utility_PROGRAMS
+    chicken-profile
+)
+
 foreach(program ${utility_PROGRAMS})
     add_chicken_executable(${program} ${program}.scm
         OPTIONS ${PROGRAM_OPTIONS})
@@ -175,21 +171,6 @@ if(BUILD_STATIC_LIBS)
 
 endif(BUILD_STATIC_LIBS)
 
-if(BUILD_STATIC_PROGRAMS)
-    add_chicken_executable(csi-static csi.scm STATIC
-        OPTIONS ${PROGRAM_OPTIONS})
-    set_target_properties(csi-static PROPERTIES
-        OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}csi-static)
-
-    add_chicken_executable(chicken-bug chicken-bug.scm STATIC
-        OPTIONS ${PROGRAM_OPTIONS})
-    set_target_properties(chicken-bug PROPERTIES
-        OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}chicken-bug)
-
-    install(TARGETS csi-static chicken-bug
-        RUNTIME DESTINATION ${INSTALL_BINDIR})
-endif()
-
 # import libraries
 
 set(import_LIBRARIES
@@ -218,27 +199,6 @@ endforeach()
 install(TARGETS ${import_LIBRARIES}
     DESTINATION ${INSTALL_EGGDIR})
 
-# setup api
-
-set(setupapi_MODULES setup-api setup-download)
-
-add_chicken_module(setup-api setup-api.scm
-    OPTIONS ${LIBRARY_OPTIONS})
-
-add_chicken_module(setup-download setup-download.scm
-    OPTIONS ${LIBRARY_OPTIONS}
-    DEPENDS setup-api)
-
-add_dependencies(chicken-install ${setupapi_MODULES})
-add_dependencies(chicken-uninstall ${setupapi_MODULES})
-add_dependencies(chicken-status ${setupapi_MODULES})
-
-foreach(module ${setupapi_MODULES})
-    install(TARGETS ${module} ${module}.import
-        ARCHIVE DESTINATION ${INSTALL_EGGDIR}
-        LIBRARY DESTINATION ${INSTALL_EGGDIR})
-endforeach()
-
 # chicken-extract
 
 install(FILES ${CMAKE_HOME_DIRECTORY}/cmake/extract-depends.scm
@@ -252,9 +212,6 @@ install(FILES types.db
 install(FILES chicken.h ${CHICKEN_CONFIG_H}
     DESTINATION ${INSTALL_INCLUDEDIR})
 
-install(FILES setup.defaults
-    DESTINATION ${INSTALL_DATADIR})
-
 install(FILES
     ${PROJECT_SOURCE_DIR}/cmake/ChickenExtensionConfig.cmake.in
     ${PROJECT_SOURCE_DIR}/cmake/ChickenExtensionVersion.cmake.in
@@ -263,8 +220,7 @@ install(FILES
     ${PROJECT_SOURCE_DIR}/cmake/ChickenRun.cmake
     DESTINATION ${INSTALL_DATADIR})
 
-set(MAN_PAGES chicken csc csi chicken-install chicken-uninstall
-    chicken-status chicken-profile chicken-bug)
+set(MAN_PAGES chicken csi chicken-profile)
 foreach(man ${MAN_PAGES})
     install(FILES ${man}.1
         DESTINATION ${INSTALL_MANDIR}

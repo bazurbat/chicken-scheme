@@ -88,10 +88,6 @@ find_program(CHICKEN_EXECUTABLE
 find_program(CHICKEN_CSI_EXECUTABLE
     NAMES ${_chicken_host_system}csi)
 
-# Used to download extensions if not found in source directory.
-find_program(CHICKEN_INSTALL_EXECUTABLE
-    NAMES ${_chicken_host_system}chicken-install)
-
 # Used for automatic dependency extraction during build.
 find_file(CHICKEN_EXTRACT_SCRIPT extract-depends.scm
     HINTS ${CHICKEN_DATA_DIR})
