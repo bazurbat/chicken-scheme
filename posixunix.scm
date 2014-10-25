@@ -209,7 +209,7 @@ static void C_fcall C_free_arg_string(char **where) {
 #define C_execvp(f)         C_fix(execvp(C_data_pointer(f), C_exec_args))
 #define C_execve(f)         C_fix(execve(C_data_pointer(f), C_exec_args, C_exec_env))
 
-#if defined(C_MACOSX) || defined(__sgi__) || defined(sgi)
+#if defined(C_MACOSX)
 static C_TLS int C_uw;
 # define C_WIFEXITED(n)      (C_uw = C_unfix(n), C_mk_bool(WIFEXITED(C_uw)))
 # define C_WIFSIGNALED(n)    (C_uw = C_unfix(n), C_mk_bool(WIFSIGNALED(C_uw)))
