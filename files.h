@@ -12,7 +12,7 @@
 # endif
 # define C_mkdir(str)       C_fix(_mkdir(C_c_string(str)))
 #else
-# define C_mkdir(str)	    C_fix(mkdir(C_c_string(str)))
+# define C_mkdir(str)       C_fix(mkdir(C_c_string(str)))
 #endif
 
 #endif

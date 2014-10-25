@@ -4,7 +4,7 @@
 
 int main()
 {
-  CHICKEN_run((void*)CHICKEN_default_toplevel);
+    CHICKEN_run((void*)CHICKEN_default_toplevel);
 
-  return 0;
+    return 0;
 }

@@ -9,10 +9,10 @@
 #endif
 
 #ifndef EX_SOFTWARE
-# define EX_SOFTWARE	70
+# define EX_SOFTWARE    70
 #endif
 
-#define C_close_file(p)	      (C_fclose((C_FILEPTR)(C_port_file(p))), C_SCHEME_UNDEFINED)
+#define C_close_file(p)       (C_fclose((C_FILEPTR)(C_port_file(p))), C_SCHEME_UNDEFINED)
 #define C_a_f64peek(ptr, c, b, i)  C_flonum(ptr, ((double *)C_data_pointer(b))[ C_unfix(i) ])
 #define C_fetch_c_strlen(b, i) C_fix(strlen((C_char *)C_block_item(b, C_unfix(i))))
 #define C_asciiz_strlen(str) C_fix(strlen(C_c_string(str)))
@@ -53,16 +53,16 @@ fast_read_line_from_file(C_word str, C_word port, C_word size) {
         }
 
         switch (c) {
-            case '\r':	if ((c = C_getc(fp)) != '\n') C_ungetc(c, fp);
-            case EOF:	clearerr(fp);
-            case '\n':	return C_fix(i);
+        case '\r':  if ((c = C_getc(fp)) != '\n') C_ungetc(c, fp);
+        case EOF:   clearerr(fp);
+        case '\n':  return C_fix(i);
         }
         buf[i] = c;
     }
     return C_SCHEME_FALSE;
 }
 
-    static C_word
+static C_word
 fast_read_string_from_file(C_word dest, C_word port, C_word len, C_word pos)
 {
     size_t m;
@@ -84,13 +84,13 @@ fast_read_string_from_file(C_word dest, C_word port, C_word len, C_word pos)
     return C_fix (m);
 }
 
-    static C_word
+static C_word
 shallow_equal(C_word x, C_word y)
 {
     /* assumes x and y are non-immediate */
     int i, len = C_header_size(x);
 
-    if(C_header_size(y) != len) return C_SCHEME_FALSE;      
+    if(C_header_size(y) != len) return C_SCHEME_FALSE;
     else return C_mk_bool(!C_memcmp((void *)x, (void *)y, len * sizeof(C_word)));
 }
 

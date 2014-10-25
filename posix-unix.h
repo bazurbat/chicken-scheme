@@ -156,10 +156,10 @@ static void C_fcall C_free_arg_string(char **where) {
     while((*where) != NULL) C_free(*(where++));
 }
 
-#define C_set_exec_arg(i, a, len)	C_set_arg_string(C_exec_args, i, a, len)
-#define C_free_exec_args()		C_free_arg_string(C_exec_args)
-#define C_set_exec_env(i, a, len)	C_set_arg_string(C_exec_env, i, a, len)
-#define C_free_exec_env()		C_free_arg_string(C_exec_env)
+#define C_set_exec_arg(i, a, len)       C_set_arg_string(C_exec_args, i, a, len)
+#define C_free_exec_args()              C_free_arg_string(C_exec_args)
+#define C_set_exec_env(i, a, len)       C_set_arg_string(C_exec_env, i, a, len)
+#define C_free_exec_env()               C_free_arg_string(C_exec_env)
 
 #define C_execvp(f)         C_fix(execvp(C_data_pointer(f), C_exec_args))
 #define C_execve(f)         C_fix(execve(C_data_pointer(f), C_exec_args, C_exec_env))
@@ -264,7 +264,7 @@ extern pid_t getpgid(pid_t pid);
 #define C_tm_get_08(v, tm)  cpy_tmstc08_to_tmvec( (v), (tm) )
 #define C_tm_get_9(v, tm)   cpy_tmstc9_to_tmvec( (v), (tm) )
 
-    static C_word
+static C_word
 C_tm_get( C_word v, void *tm )
 {
     C_tm_get_08( v, (struct tm *)tm );
@@ -314,7 +314,7 @@ static int set_file_mtime(char *filename, C_word tm)
     return utime(filename, &tb);
 }
 
-static C_word C_i_fifo_p(C_word name) 
+static C_word C_i_fifo_p(C_word name)
 {
     struct stat buf;
     int res;

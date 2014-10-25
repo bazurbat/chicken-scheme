@@ -7,7 +7,9 @@
 #include <sys/stat.h>
 
 static int C_not_implemented(void);
-int C_not_implemented() { return -1; }
+int C_not_implemented() {
+    return -1;
+}
 
 #define C_curdir(buf)       (getcwd(C_c_string(buf), 1024) ? C_fix(strlen(C_c_string(buf))) : C_SCHEME_FALSE)
 
@@ -85,7 +87,7 @@ static char C_time_string [TIME_STRING_MAXLENGTH + 1];
 # endif
 static C_word C_fcall C_setenv(C_word x, C_word y) {
     char *sx = C_c_string(x),
-         *sy = (y == C_SCHEME_FALSE ? "" : C_c_string(y));
+    *sy = (y == C_SCHEME_FALSE ? "" : C_c_string(y));
     int n1 = C_strlen(sx), n2 = C_strlen(sy);
     int buf_len = n1 + n2 + 2;
     char *buf = (char *)C_malloc(buf_len);

@@ -1,30 +1,30 @@
 
 /* chicken.h - General headerfile for compiler generated executables
-;
-; Copyright (c) 2008-2014, The CHICKEN Team
-; Copyright (c) 2000-2007, Felix L. Winkelmann
-; All rights reserved.
-;
-; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
-; conditions are met:
-;
-;   Redistributions of source code must retain the above copyright notice, this list of conditions and the following
-;     disclaimer.
-;   Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following
-;     disclaimer in the documentation and/or other materials provided with the distribution.
-;   Neither the name of the author nor the names of its contributors may be used to endorse or promote
-;     products derived from this software without specific prior written permission.
-;
-; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-; OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
-; AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR
-; CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-; SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-; OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-; POSSIBILITY OF SUCH DAMAGE.
-*/
+   ;
+   ; Copyright (c) 2008-2014, The CHICKEN Team
+   ; Copyright (c) 2000-2007, Felix L. Winkelmann
+   ; All rights reserved.
+   ;
+   ; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
+   ; conditions are met:
+   ;
+   ;   Redistributions of source code must retain the above copyright notice, this list of conditions and the following
+   ;     disclaimer.
+   ;   Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following
+   ;     disclaimer in the documentation and/or other materials provided with the distribution.
+   ;   Neither the name of the author nor the names of its contributors may be used to endorse or promote
+   ;     products derived from this software without specific prior written permission.
+   ;
+   ; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
+   ; OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+   ; AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR
+   ; CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+   ; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+   ; SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+   ; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+   ; OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+   ; POSSIBILITY OF SUCH DAMAGE.
+ */
 
 /* Configuration: */
 
@@ -252,8 +252,8 @@ void *alloca ();
 #endif
 
 #ifndef C_cblock
-# define C_cblock                 do{
-# define C_cblockend              }while(0)
+# define C_cblock                 do {
+# define C_cblockend              } while(0)
 # define C_noret
 # define C_noret_decl(name)
 #endif
@@ -511,19 +511,19 @@ void *alloca ();
 #define C_header                  C_uword
 
 /* if all else fails, use these:
- #define UINT64_MAX (18446744073709551615ULL)
- #define INT64_MAX  (9223372036854775807LL)
- #define INT64_MIN  (-INT64_MAX - 1)
- #define UINT32_MAX (4294967295U)
- #define INT32_MAX  (2147483647)
- #define INT32_MIN  (-INT32_MAX - 1)
- #define UINT16_MAX (65535U)
- #define INT16_MAX  (32767)
- #define INT16_MIN  (-INT16_MAX - 1)
- #define UINT8_MAX  (255)
- #define INT8_MAX   (127)
- #define INT8_MIN   (-INT8_MAX - 1)
-*/
+   #define UINT64_MAX (18446744073709551615ULL)
+   #define INT64_MAX  (9223372036854775807LL)
+   #define INT64_MIN  (-INT64_MAX - 1)
+   #define UINT32_MAX (4294967295U)
+   #define INT32_MAX  (2147483647)
+   #define INT32_MIN  (-INT32_MAX - 1)
+   #define UINT16_MAX (65535U)
+   #define INT16_MAX  (32767)
+   #define INT16_MIN  (-INT16_MAX - 1)
+   #define UINT8_MAX  (255)
+   #define INT8_MAX   (127)
+   #define INT8_MIN   (-INT8_MAX - 1)
+ */
 
 #if defined(_MSC_VER)
 # define C_U64_MAX    _UI64_MAX
@@ -685,34 +685,34 @@ void *alloca ();
 
 typedef struct C_block_struct
 {
-  C_header header;
+    C_header header;
 #if (__STDC_VERSION__ >= 199901L)
-  C_word data[];
+    C_word data[];
 #else
-  C_word data[ 1 ];
+    C_word data[ 1 ];
 #endif
 } C_SCHEME_BLOCK;
 
 typedef struct C_symbol_table_struct
 {
-  char *name;
-  unsigned int size;
-  unsigned int rand;
-  C_word *table;
-  struct C_symbol_table_struct *next;
+    char *name;
+    unsigned int size;
+    unsigned int rand;
+    C_word *table;
+    struct C_symbol_table_struct *next;
 } C_SYMBOL_TABLE;
 
 typedef struct C_gc_root_struct
 {
-  C_word value;
-  struct C_gc_root_struct *next, *prev;
-  int finalizable;
+    C_word value;
+    struct C_gc_root_struct *next, *prev;
+    int finalizable;
 } C_GC_ROOT;
 
 typedef struct C_ptable_entry_struct
 {
-  C_char *id;
-  void *ptr;
+    C_char *id;
+    void *ptr;
 } C_PTABLE_ENTRY;
 
 #ifdef __x86_64__
@@ -747,20 +747,20 @@ typedef struct C_ptable_entry_struct
  *  declare 2 as much functions as DECL_C_PROC_p<N>...
  */
 #define DECL_C_PROC_p0( n0,  p7,p6,p5,p4,p3,p2,p1,p0) \
-    typedef void (C_ccall *C_proc##n0) (C_WORD_p7_##p7 C_WORD_p6_##p6 \
-                                        C_WORD_p5_##p5 C_WORD_p4_##p4 \
-                                        C_WORD_p3_##p3 C_WORD_p2_##p2 \
-                                        C_WORD_p1_##p1 C_WORD_p0_##p0 \
-                                        C_word C_AMD64_ABI_WEIRDNESS) C_noret;
+    typedef void (C_ccall *C_proc ## n0)(C_WORD_p7_ ## p7 C_WORD_p6_ ## p6 \
+                                         C_WORD_p5_ ## p5 C_WORD_p4_ ## p4 \
+                                         C_WORD_p3_ ## p3 C_WORD_p2_ ## p2 \
+                                         C_WORD_p1_ ## p1 C_WORD_p0_ ## p0 \
+                                         C_word C_AMD64_ABI_WEIRDNESS) C_noret;
 #define DECL_C_PROC_p1( n0,n1,  p7,p6,p5,p4,p3,p2,p1) \
-        DECL_C_PROC_p0 (n0,  p7,p6,p5,p4,p3,p2,p1,0) \
-        DECL_C_PROC_p0 (n1,  p7,p6,p5,p4,p3,p2,p1,1)
+    DECL_C_PROC_p0 (n0,  p7,p6,p5,p4,p3,p2,p1,0) \
+    DECL_C_PROC_p0 (n1,  p7,p6,p5,p4,p3,p2,p1,1)
 #define DECL_C_PROC_p2( n0,n1,n2,n3,  p7,p6,p5,p4,p3,p2) \
-        DECL_C_PROC_p1 (n0,n1,  p7,p6,p5,p4,p3,p2,0) \
-        DECL_C_PROC_p1 (n2,n3,  p7,p6,p5,p4,p3,p2,1)
+    DECL_C_PROC_p1 (n0,n1,  p7,p6,p5,p4,p3,p2,0) \
+    DECL_C_PROC_p1 (n2,n3,  p7,p6,p5,p4,p3,p2,1)
 #define DECL_C_PROC_p3( n0,n1,n2,n3,n4,n5,n6,n7,  p7,p6,p5,p4,p3) \
-        DECL_C_PROC_p2 (n0,n1,n2,n3,  p7,p6,p5,p4,p3,0) \
-        DECL_C_PROC_p2 (n4,n5,n6,n7,  p7,p6,p5,p4,p3,1)
+    DECL_C_PROC_p2 (n0,n1,n2,n3,  p7,p6,p5,p4,p3,0) \
+    DECL_C_PROC_p2 (n4,n5,n6,n7,  p7,p6,p5,p4,p3,1)
 
 DECL_C_PROC_p1 (2,3,  0,0,0,0,0,0,1)
 DECL_C_PROC_p2 (4,5,6,7,  0,0,0,0,0,1)
@@ -837,30 +837,30 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 # define C_VAL2(x)                 C__PREV_TMPST.n2
 # define C__STR(x)                 #x
 # define C__CHECK_panic(a,s,f,l)                                       \
-  ((a) ? (void)0 :                                                     \
-   C_panic_hook("Low-level type assertion " s " failed at " f ":" C__STR(l)))
+    ((a) ? (void)0 :                                                     \
+     C_panic_hook("Low-level type assertion " s " failed at " f ":" C__STR(l)))
 # define C__CHECK_core(v,a,s,x)                                         \
-  ({ struct {                                                           \
-      typeof(v) n1;                                                     \
-  } C__TMPST = { .n1 = (v) };                                           \
-    typeof(C__TMPST) C__PREV_TMPST=C__TMPST;                            \
-    C__CHECK_panic(a,s,__FILE__,__LINE__);                              \
-    x; })
+    ({ struct {                                                           \
+           typeof(v)n1;                                                     \
+       } C__TMPST = { .n1 = (v) };                                           \
+       typeof(C__TMPST)C__PREV_TMPST=C__TMPST;                            \
+       C__CHECK_panic(a,s,__FILE__,__LINE__);                              \
+       x; })
 # define C__CHECK2_core(v1,v2,a,s,x)                                    \
-  ({ struct {                                                           \
-      typeof(v1) n1;                                                    \
-      typeof(v2) n2;                                                    \
-  } C__TMPST = { .n1 = (v1), .n2 = (v2) };                              \
-    typeof(C__TMPST) C__PREV_TMPST=C__TMPST;                            \
-    C__CHECK_panic(a,s,__FILE__,__LINE__);                              \
-    x; })
+    ({ struct {                                                           \
+           typeof(v1)n1;                                                    \
+           typeof(v2)n2;                                                    \
+       } C__TMPST = { .n1 = (v1), .n2 = (v2) };                              \
+       typeof(C__TMPST)C__PREV_TMPST=C__TMPST;                            \
+       C__CHECK_panic(a,s,__FILE__,__LINE__);                              \
+       x; })
 # define C_CHECK(v,a,x)            C__CHECK_core(v,a,#a,x)
 # define C_CHECK2(v1,v2,a,x)       C__CHECK2_core(v1,v2,a,#a,x)
 /*
  * Convenience for using Scheme-predicates.
  */
-# define C_CHECKp(v,a,x)           C__CHECK_core(v,C_truep(a),#a"=#t",x)
-# define C_CHECK2p(v1,v2,a,x)      C__CHECK2_core(v1,v2,C_truep(a),#a"=#t",x)
+# define C_CHECKp(v,a,x)           C__CHECK_core(v,C_truep(a),#a "=#t",x)
+# define C_CHECK2p(v1,v2,a,x)      C__CHECK2_core(v1,v2,C_truep(a),#a "=#t",x)
 #else
 # define C_VAL1(x)                 (x)
 # define C_VAL2(x)                 (x)
@@ -1013,7 +1013,7 @@ extern double trunc(double);
 # define C_strtow                  C_strtol
 #endif
 
-#define C_return(x)                return(x)
+#define C_return(x)                return (x)
 #define C_resize_stack(n)          C_do_resize_stack(n)
 #define C_memcpy_slots(t, f, n)    C_memcpy((t), (f), (n) * sizeof(C_word))
 /* Without check: initialisation of a newly allocated header */
@@ -1026,10 +1026,10 @@ extern double trunc(double);
 #define C_header_size(bh)          (C_block_header(bh) & C_HEADER_SIZE_MASK)
 #define C_make_header(type, size)  ((C_header)(((type) & C_HEADER_BITS_MASK) | ((size) & C_HEADER_SIZE_MASK)))
 #define C_symbol_value(x)          (C_block_item(x, 0))
-#define C_save(x)	           (*(--C_temporary_stack) = (C_word)(x))
+#define C_save(x)                  (*(--C_temporary_stack) = (C_word)(x))
 #define C_adjust_stack(n)          (C_temporary_stack -= (n))
 #define C_rescue(x, i)             (C_temporary_stack[ i ] = (x))
-#define C_save_rest(s, c, n)  	   do { if((C_temporary_stack - (c - (n))) < C_temporary_stack_limit) C_temp_stack_overflow(); for(va_start(v, s); c-- > (n); C_save(va_arg(v, C_word))); }while(0)
+#define C_save_rest(s, c, n)       do { if((C_temporary_stack - (c - (n))) < C_temporary_stack_limit) C_temp_stack_overflow(); for(va_start(v, s); c-- > (n); C_save(va_arg(v, C_word))) ; } while(0)
 #define C_rest_count(c)            ((C_temporary_stack_bottom - C_temporary_stack) - (c))
 #define C_restore                  (*(C_temporary_stack++))
 #define C_heaptop                  ((C_word **)(&C_fromspace_top))
@@ -1038,9 +1038,9 @@ extern double trunc(double);
 #define C_alloc(n)                 ((C_word *)C_alloca((n) * sizeof(C_word)))
 #if defined (__llvm__) && defined (__GNUC__)
 # if defined (__i386__)
-#  define C_stack_pointer ({C_word *sp; __asm__ __volatile__("movl %%esp,%0":"=r"(sp):);sp;})
+#  define C_stack_pointer ({C_word *sp; __asm__ __volatile__ ("movl %%esp,%0" : "=r" (sp) :); sp; })
 # elif defined (__x86_64__)
-#  define C_stack_pointer ({C_word *sp; __asm__ __volatile__("movq %%rsp,%0":"=r"(sp):);sp;})
+#  define C_stack_pointer ({C_word *sp; __asm__ __volatile__ ("movq %%rsp,%0" : "=r" (sp) :); sp; })
 # else
 #  define C_stack_pointer ((C_word *)C_alloca(1))
 # endif
@@ -1106,23 +1106,23 @@ extern double trunc(double);
 # define C_demand(n)              (C_stress && ((C_word)(C_stack_pointer - C_stack_limit) > (n)))
 # define C_stack_probe(p)         (C_stress && ((C_word *)(p) >= C_stack_limit))
 
-# define C_stack_check1(err)      if(!C_disable_overflow_check) {	\
-                                    do { C_byte *_sp = (C_byte*)(C_stack_pointer); \
-				      if(_sp < (C_byte *)C_stack_limit && \
-					 ((C_byte *)C_stack_limit - _sp) > C_STACK_RESERVE) \
-					err; }				\
-				    while(0);}
+# define C_stack_check1(err)      if(!C_disable_overflow_check) {       \
+        do { C_byte *_sp = (C_byte*)(C_stack_pointer); \
+             if(_sp < (C_byte *)C_stack_limit && \
+                ((C_byte *)C_stack_limit - _sp) > C_STACK_RESERVE) \
+                 err; }                          \
+        while(0); }
 
 #else
 # define C_demand(n)              (C_stress && ((C_word)(C_stack_limit - C_stack_pointer) > (n)))
 # define C_stack_probe(p)         (C_stress && ((C_word *)(p) < C_stack_limit))
 
-# define C_stack_check1(err)      if(!C_disable_overflow_check) {	\
-                                    do { C_byte *_sp = (C_byte*)(C_stack_pointer); \
-				      if(_sp > (C_byte *)C_stack_limit && \
-					 (_sp - (C_byte *)C_stack_limit) > C_STACK_RESERVE) \
-					err; }				\
-				    while(0);}
+# define C_stack_check1(err)      if(!C_disable_overflow_check) {       \
+        do { C_byte *_sp = (C_byte*)(C_stack_pointer); \
+             if(_sp > (C_byte *)C_stack_limit && \
+                (_sp - (C_byte *)C_stack_limit) > C_STACK_RESERVE) \
+                 err; }                          \
+        while(0); }
 
 #endif
 
@@ -1215,7 +1215,7 @@ extern double trunc(double);
 #define C_display_fixnum(p, n)          (C_fprintf(C_port_file(p), C_text("%d"), C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_display_char(p, c)            (C_fputc(C_character_code(c), C_port_file(p)), C_SCHEME_UNDEFINED)
 #define C_display_string(p, s)          (C_fwrite(C_data_pointer(s), sizeof(C_char), C_header_size(s), \
-                                         C_port_file(p)), C_SCHEME_UNDEFINED)
+                                                  C_port_file(p)), C_SCHEME_UNDEFINED)
 #define C_flush_output(port)            (C_fflush(C_port_file(port)), C_SCHEME_UNDEFINED)
 
 #define C_fix_to_char(x)                (C_make_character(C_unfix(x)))
@@ -1226,22 +1226,22 @@ extern double trunc(double);
 #define C_i_char_greater_or_equal_p(x, y)  C_mk_bool(C_character_code(x) >= C_character_code(y))
 #define C_i_char_less_or_equal_p(x, y)  C_mk_bool(C_character_code(x) <= C_character_code(y))
 #define C_substring_copy(s1, s2, start1, end1, start2) \
-                                        (C_memmove((C_char *)C_data_pointer(s2) + C_unfix(start2), \
-                                                   (C_char *)C_data_pointer(s1) + C_unfix(start1), \
-                                                   C_unfix(end1) - C_unfix(start1) ), C_SCHEME_UNDEFINED)
+    (C_memmove((C_char *)C_data_pointer(s2) + C_unfix(start2), \
+               (C_char *)C_data_pointer(s1) + C_unfix(start1), \
+               C_unfix(end1) - C_unfix(start1) ), C_SCHEME_UNDEFINED)
 #define C_substring_compare(s1, s2, start1, start2, len) \
-                                        C_mk_bool(C_memcmp((C_char *)C_data_pointer(s1) + C_unfix(start1), \
-                                                           (C_char *)C_data_pointer(s2) + C_unfix(start2), \
-                                                           C_unfix(len) ) == 0)
+    C_mk_bool(C_memcmp((C_char *)C_data_pointer(s1) + C_unfix(start1), \
+                       (C_char *)C_data_pointer(s2) + C_unfix(start2), \
+                       C_unfix(len) ) == 0)
 #define C_substring_compare_case_insensitive(s1, s2, start1, start2, len) \
-                                        C_mk_bool(C_memcasecmp((C_char *)C_data_pointer(s1) + C_unfix(start1), \
-                                                                (C_char *)C_data_pointer(s2) + C_unfix(start2), \
-                                                                C_unfix(len) ) == 0)
+    C_mk_bool(C_memcasecmp((C_char *)C_data_pointer(s1) + C_unfix(start1), \
+                           (C_char *)C_data_pointer(s2) + C_unfix(start2), \
+                           C_unfix(len) ) == 0)
 /* this does not use C_mutate: */
 #define C_subvector_copy(v1, v2, start1, end1, start2) \
-                                        (C_memcpy_slots((C_char *)C_data_pointer(v2) + C_unfix(start2), \
-                                                  (C_char *)C_data_pointer(v1) + C_unfix(start1), \
-						  C_unfix(end1) - C_unfix(start1) ), C_SCHEME_UNDEFINED)
+    (C_memcpy_slots((C_char *)C_data_pointer(v2) + C_unfix(start2), \
+                    (C_char *)C_data_pointer(v1) + C_unfix(start1), \
+                    C_unfix(end1) - C_unfix(start1) ), C_SCHEME_UNDEFINED)
 #define C_words(n)                      C_fix(C_bytestowords(C_unfix(n)))
 #define C_bytes(n)                      C_fix(C_wordstobytes(C_unfix(n)))
 #define C_random_fixnum(n)              C_fix((C_word)(((double)rand())/(RAND_MAX + 1.0) * C_unfix(n)))
@@ -1269,12 +1269,12 @@ extern double trunc(double);
 
 #define C_copy_memory(to, from, n)      (C_memcpy(C_data_pointer(to), C_data_pointer(from), C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_copy_ptr_memory(to, from, n, toff, foff) \
-  (C_memmove(C_pointer_address(to) + C_unfix(toff), C_pointer_address(from) + C_unfix(foff), \
-	     C_unfix(n)), C_SCHEME_UNDEFINED)
+    (C_memmove(C_pointer_address(to) + C_unfix(toff), C_pointer_address(from) + C_unfix(foff), \
+               C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_set_memory(to, c, n)          (C_memset(C_data_pointer(to), C_character_code(c), C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_string_compare(to, from, n)   C_fix(C_memcmp(C_c_string(to), C_c_string(from), C_unfix(n)))
 #define C_string_compare_case_insensitive(from, to, n) \
-                                        C_fix(C_memcasecmp(C_c_string(from), C_c_string(to), C_unfix(n)))
+    C_fix(C_memcasecmp(C_c_string(from), C_c_string(to), C_unfix(n)))
 #define C_rename_file(old, new)         C_fix(rename(C_c_string(old), C_c_string(new)))
 #define C_delete_file(fname)            C_fix(remove(C_c_string(fname)))
 #define C_poke_double(b, i, n)          (((double *)C_data_pointer(b))[ C_unfix(i) ] = C_c_double(n), C_SCHEME_UNDEFINED)
@@ -1308,13 +1308,13 @@ extern double trunc(double);
 #endif
 
 #define C_set_initial_timer_interrupt_period(n) \
-  (C_initial_timer_interrupt_period = C_unfix(n), C_SCHEME_UNDEFINED)
+    (C_initial_timer_interrupt_period = C_unfix(n), C_SCHEME_UNDEFINED)
 
 
 #ifdef HAVE_STATEMENT_EXPRESSIONS
-# define C_a_i(a, n)                    ({C_word *tmp = *a; *a += (n); tmp;})
+# define C_a_i(a, n)                    ({C_word *tmp = *a; *a += (n); tmp; })
 # define C_a_i_cons(a, n, car, cdr)     ({C_word tmp = (C_word)(*a); (*a)[0] = C_PAIR_TYPE | 2; *a += 3; \
-                                          C_set_block_item(tmp, 0, car); C_set_block_item(tmp, 1, cdr); tmp;})
+                                          C_set_block_item(tmp, 0, car); C_set_block_item(tmp, 1, cdr); tmp; })
 #else
 # define C_a_i_cons(a, n, car, cdr)     C_a_pair(a, car, cdr)
 #endif /* HAVE_STATEMENT_EXPRESSIONS */
@@ -1393,7 +1393,7 @@ extern double trunc(double);
 #define C_a_i_divide(ptr, n, x, y)      C_2_divide(ptr, x, y)
 
 #ifdef HAVE_STATEMENT_EXPRESSIONS
-# define C_i_not_pair_p(x)              ({C_word tmp = (x); C_mk_bool(C_immediatep(tmp) || C_block_header(tmp) != C_PAIR_TAG);})
+# define C_i_not_pair_p(x)              ({C_word tmp = (x); C_mk_bool(C_immediatep(tmp) || C_block_header(tmp) != C_PAIR_TAG); })
 #else
 # define C_i_not_pair_p                 C_i_not_pair_p_2
 #endif
@@ -1453,43 +1453,43 @@ extern double trunc(double);
 #define C_u_i_pointer_u16_ref(ptr)        C_fix(*((unsigned short *)C_block_item(ptr, 0)))
 #define C_u_i_pointer_s16_ref(ptr)        C_fix(*((short *)C_block_item(ptr, 0)))
 #define C_a_u_i_pointer_u32_ref(ap, n, ptr)  \
-  C_unsigned_int_to_num(ap, *((C_u32 *)C_block_item(ptr, 0)))
+    C_unsigned_int_to_num(ap, *((C_u32 *)C_block_item(ptr, 0)))
 #define C_a_u_i_pointer_s32_ref(ap, n, ptr)  \
-  C_int_to_num(ap, *((C_s32 *)C_block_item(ptr, 0)))
+    C_int_to_num(ap, *((C_s32 *)C_block_item(ptr, 0)))
 #define C_a_u_i_pointer_f32_ref(ap, n, ptr)  C_flonum(ap, *((float *)C_block_item(ptr, 0)))
 #define C_a_u_i_pointer_f64_ref(ap, n, ptr)  C_flonum(ap, *((double *)C_block_item(ptr, 0)))
 #define C_u_i_pointer_u8_set(ptr, x)  \
-  (*((unsigned char *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
+    (*((unsigned char *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
 #define C_u_i_pointer_s8_set(ptr, x)  \
-  (*((signed char *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
+    (*((signed char *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
 #define C_u_i_pointer_u16_set(ptr, x)  \
-  (*((unsigned short *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
+    (*((unsigned short *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
 #define C_u_i_pointer_s16_set(ptr, x)  \
-  (*((short *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
+    (*((short *)C_block_item(ptr, 0)) = C_unfix(x), C_SCHEME_UNDEFINED)
 #define C_u_i_pointer_u32_set(ptr, x)  \
-  (*((C_u32 *)C_block_item(ptr, 0)) = C_num_to_unsigned_int(x), C_SCHEME_UNDEFINED)
+    (*((C_u32 *)C_block_item(ptr, 0)) = C_num_to_unsigned_int(x), C_SCHEME_UNDEFINED)
 #define C_u_i_pointer_s32_set(ptr, x)  \
-  (*((C_s32 *)C_block_item(ptr, 0)) = C_num_to_int(x), C_SCHEME_UNDEFINED)
+    (*((C_s32 *)C_block_item(ptr, 0)) = C_num_to_int(x), C_SCHEME_UNDEFINED)
 #define C_u_i_pointer_f32_set(ptr, x)  \
-  (*((float *)C_block_item(ptr, 0)) = C_flonum_magnitude(x), C_SCHEME_UNDEFINED)
+    (*((float *)C_block_item(ptr, 0)) = C_flonum_magnitude(x), C_SCHEME_UNDEFINED)
 #define C_u_i_pointer_f64_set(ptr, x)  \
-  (*((double *)C_block_item(ptr, 0)) = C_flonum_magnitude(x), C_SCHEME_UNDEFINED)
+    (*((double *)C_block_item(ptr, 0)) = C_flonum_magnitude(x), C_SCHEME_UNDEFINED)
 
 #ifdef C_BIG_ENDIAN
 # ifdef C_SIXTY_FOUR
 #  define C_lihdr(x, y, z)              ((C_LAMBDA_INFO_TYPE >> 56) & 0xff), \
-                                        0, 0, 0, 0, (x), (y), (z)
+    0, 0, 0, 0, (x), (y), (z)
 # else
 #  define C_lihdr(x, y, z)              ((C_LAMBDA_INFO_TYPE >> 24) & 0xff), \
-                                        (x), (y), (z)
+    (x), (y), (z)
 # endif
 #else
 # ifdef C_SIXTY_FOUR
 #  define C_lihdr(x, y, z)              (z), (y), (x), 0, 0, 0, 0, \
-                                        ((C_LAMBDA_INFO_TYPE >> 56) & 0xff)
+    ((C_LAMBDA_INFO_TYPE >> 56) & 0xff)
 # else
 #  define C_lihdr(x, y, z)              (z), (y), (x), \
-                                        ((C_LAMBDA_INFO_TYPE >> 24) & 0xff)
+    ((C_LAMBDA_INFO_TYPE >> 24) & 0xff)
 # endif
 #endif
 
@@ -1527,10 +1527,10 @@ extern double trunc(double);
 
 #if !defined(C_EMBEDDED) && !defined(C_SHARED)
 #  define C_main_entry_point                            \
-int main(int argc, char *argv[])                        \
-{                                                       \
-    return CHICKEN_main(argc, argv, (void*)C_toplevel); \
-}
+    int main(int argc, char *argv[])                        \
+    {                                                       \
+        return CHICKEN_main(argc, argv, (void*)C_toplevel); \
+    }
 #else
 #  define C_main_entry_point
 #endif
@@ -1580,16 +1580,16 @@ int main(int argc, char *argv[])                        \
 
 C_varextern C_TLS time_t C_startup_time_seconds;
 C_varextern C_TLS C_word
-  *C_temporary_stack,
-  *C_temporary_stack_bottom,
-  *C_temporary_stack_limit,
-  *C_stack_limit;
+*C_temporary_stack,
+*C_temporary_stack_bottom,
+*C_temporary_stack_limit,
+*C_stack_limit;
 C_varextern C_TLS C_long
-  C_timer_interrupt_counter,
-  C_initial_timer_interrupt_period;
+    C_timer_interrupt_counter,
+    C_initial_timer_interrupt_period;
 C_varextern C_TLS C_byte
-  *C_fromspace_top,
-  *C_fromspace_limit;
+*C_fromspace_top,
+*C_fromspace_limit;
 #ifdef HAVE_SIGSETJMP
 C_varextern C_TLS sigjmp_buf C_restart;
 #else
@@ -1604,20 +1604,20 @@ C_varextern C_TLS void (*C_post_gc_hook)(int mode, C_long ms);
 C_varextern C_TLS void (*C_panic_hook)(C_char *msg);
 
 C_varextern C_TLS int
-  C_abort_on_thread_exceptions,
-  C_interrupts_enabled,
-  C_disable_overflow_check,
-  C_enable_gcweak,
-  C_heap_size_is_fixed,
-  C_max_pending_finalizers,
-  C_trace_buffer_size,
-  C_main_argc;
+    C_abort_on_thread_exceptions,
+    C_interrupts_enabled,
+    C_disable_overflow_check,
+    C_enable_gcweak,
+    C_heap_size_is_fixed,
+    C_max_pending_finalizers,
+    C_trace_buffer_size,
+    C_main_argc;
 C_varextern C_TLS C_uword
-  C_heap_growth,
-  C_heap_shrinkage;
+    C_heap_growth,
+    C_heap_shrinkage;
 C_varextern C_TLS char
-  **C_main_argv,
-  *C_dlerror;
+**C_main_argv,
+*C_dlerror;
 C_varextern C_TLS C_uword C_maximal_heap_size;
 C_varextern C_TLS int (*C_gc_mutation_hook)(C_word *slot, C_word val);
 C_varextern C_TLS void (*C_gc_trace_hook)(C_word *var, int mode);
@@ -1804,7 +1804,7 @@ C_fctexport void C_ccall C_call_with_cthulhu(C_word c, C_word self, C_word k, C_
 C_fctexport void C_ccall C_copy_closure(C_word c, C_word closure, C_word k, C_word proc) C_noret;
 C_fctexport void C_ccall C_dump_heap_state(C_word x, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_filter_heap_objects(C_word x, C_word closure, C_word k, C_word func,
-					       C_word vector, C_word userarg) C_noret;
+                                               C_word vector, C_word userarg) C_noret;
 C_fctexport time_t C_fcall C_seconds(C_long *ms) C_regparm;
 C_fctexport C_word C_a_i_list(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_string(C_word **a, int c, ...);
@@ -1953,16 +1953,16 @@ C_fctexport C_word C_fcall C_decode_literal(C_word **ptr, C_char *str) C_regparm
 C_fctexport C_word C_fcall C_i_pending_interrupt(C_word dummy) C_regparm;
 
 /* defined in eval.scm: */
-C_fctexport  void  CHICKEN_get_error_message(char *buf,int bufsize);
-C_fctexport  int  CHICKEN_load(char * filename);
-C_fctexport  int  CHICKEN_read(char * str,C_word *result);
-C_fctexport  int  CHICKEN_apply_to_string(C_word func,C_word args,char *buf,int bufsize);
-C_fctexport  int  CHICKEN_apply(C_word func,C_word args,C_word *result);
-C_fctexport  int  CHICKEN_eval_string_to_string(char *str,char *buf,int bufsize);
-C_fctexport  int  CHICKEN_eval_to_string(C_word exp,char *buf,int bufsize);
-C_fctexport  int  CHICKEN_eval_string(char * str,C_word *result);
-C_fctexport  int  CHICKEN_eval(C_word exp,C_word *result);
-C_fctexport  int  CHICKEN_yield();
+C_fctexport void  CHICKEN_get_error_message(char *buf,int bufsize);
+C_fctexport int  CHICKEN_load(char * filename);
+C_fctexport int  CHICKEN_read(char * str,C_word *result);
+C_fctexport int  CHICKEN_apply_to_string(C_word func,C_word args,char *buf,int bufsize);
+C_fctexport int  CHICKEN_apply(C_word func,C_word args,C_word *result);
+C_fctexport int  CHICKEN_eval_string_to_string(char *str,char *buf,int bufsize);
+C_fctexport int  CHICKEN_eval_to_string(C_word exp,char *buf,int bufsize);
+C_fctexport int  CHICKEN_eval_string(char * str,C_word *result);
+C_fctexport int  CHICKEN_eval(C_word exp,C_word *result);
+C_fctexport int  CHICKEN_yield();
 
 C_fctexport void C_default_5fstub_toplevel(C_word c,C_word d,C_word k) C_noret;
 
@@ -1973,857 +1973,857 @@ C_fctexport void C_default_5fstub_toplevel(C_word c,C_word d,C_word k) C_noret;
 
 C_inline C_word *C_a_i(C_word **a, int n)
 {
-  C_word *p = *a;
-  
-  *a += n;
-  return p;
+    C_word *p = *a;
+
+    *a += n;
+    return p;
 }
 
 #endif
 
-C_inline C_word 
+C_inline C_word
 C_mutate(C_word *slot, C_word val)
 {
-  if(!C_immediatep(val)) return C_mutate_slot(slot, val);
-  else return *slot = val;
+    if(!C_immediatep(val)) return C_mutate_slot(slot, val);
+    else return *slot = val;
 }
 
-C_inline C_word 
+C_inline C_word
 C_mutate2(C_word *slot, C_word val) /* OBSOLETE */
 {
-  if(!C_immediatep(val)) return C_mutate_slot(slot, val);
-  else return *slot = val;
+    if(!C_immediatep(val)) return C_mutate_slot(slot, val);
+    else return *slot = val;
 }
 
 C_inline C_word C_permanentp(C_word x)
 {
-  return C_mk_bool(!C_immediatep(x) && !C_in_stackp(x) && !C_in_heapp(x));
+    return C_mk_bool(!C_immediatep(x) && !C_in_stackp(x) && !C_in_heapp(x));
 }
 
 
 C_inline C_word C_flonum(C_word **ptr, double n)
 {
-  C_word 
+    C_word
     *p = *ptr,
     *p0;
 
 #ifndef C_SIXTY_FOUR
 #ifndef C_DOUBLE_IS_32_BITS
-  /* Align double on 8-byte boundary: */
-  if(C_aligned8(p)) ++p;
+    /* Align double on 8-byte boundary: */
+    if(C_aligned8(p)) ++p;
 #endif
 #endif
 
-  p0 = p;
-  *(p++) = C_FLONUM_TAG;
-  *((double *)p) = n;
-  *ptr = p + sizeof(double) / sizeof(C_word);
-  return (C_word)p0;
+    p0 = p;
+    *(p++) = C_FLONUM_TAG;
+    *((double *)p) = n;
+    *ptr = p + sizeof(double) / sizeof(C_word);
+    return (C_word)p0;
 }
 
 
 C_inline C_word C_string_to_pbytevector(C_word s)
 {
-  return C_pbytevector(C_header_size(s), (C_char *)C_data_pointer(s));
+    return C_pbytevector(C_header_size(s), (C_char *)C_data_pointer(s));
 }
 
 
 C_inline C_word C_flonum_in_fixnum_range_p(C_word n)
 {
-  double f = C_flonum_magnitude(n);
+    double f = C_flonum_magnitude(n);
 
-  return C_mk_bool(f <= (double)C_MOST_POSITIVE_FIXNUM && f >= (double)C_MOST_NEGATIVE_FIXNUM);
+    return C_mk_bool(f <= (double)C_MOST_POSITIVE_FIXNUM && f >= (double)C_MOST_NEGATIVE_FIXNUM);
 }
 
 
 C_inline C_word C_double_to_number(C_word n)
 {
-  double m, f = C_flonum_magnitude(n);
+    double m, f = C_flonum_magnitude(n);
 
-  if(f <= (double)C_MOST_POSITIVE_FIXNUM
-     && f >= (double)C_MOST_NEGATIVE_FIXNUM && C_modf(f, &m) == 0.0) 
-    return C_fix(f);
-  else return n;
+    if(f <= (double)C_MOST_POSITIVE_FIXNUM
+       && f >= (double)C_MOST_NEGATIVE_FIXNUM && C_modf(f, &m) == 0.0)
+        return C_fix(f);
+    else return n;
 }
 
 
 C_inline C_word C_fits_in_int_p(C_word x)
 {
-  double n, m;
+    double n, m;
 
-  if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
+    if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
 
-  n = C_flonum_magnitude(x);
-  return C_mk_bool(C_modf(n, &m) == 0.0 && n >= C_WORD_MIN && n <= C_WORD_MAX);
+    n = C_flonum_magnitude(x);
+    return C_mk_bool(C_modf(n, &m) == 0.0 && n >= C_WORD_MIN && n <= C_WORD_MAX);
 }
 
 
 C_inline C_word C_fits_in_unsigned_int_p(C_word x)
 {
-  double n, m;
+    double n, m;
 
-  if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
+    if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
 
-  n = C_flonum_magnitude(x);
-  return C_mk_bool(C_modf(n, &m) == 0.0 && n >= 0 && n <= C_UWORD_MAX);
+    n = C_flonum_magnitude(x);
+    return C_mk_bool(C_modf(n, &m) == 0.0 && n >= 0 && n <= C_UWORD_MAX);
 }
 
 
 C_inline double C_c_double(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return (double)C_unfix(x);
-  else return C_flonum_magnitude(x);
+    if(x & C_FIXNUM_BIT) return (double)C_unfix(x);
+    else return C_flonum_magnitude(x);
 }
 
 
 C_inline C_word C_num_to_int(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_unfix(x);
-  else return (int)C_flonum_magnitude(x);
+    if(x & C_FIXNUM_BIT) return C_unfix(x);
+    else return (int)C_flonum_magnitude(x);
 }
 
 
 C_inline C_s64 C_num_to_int64(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return (C_s64)C_unfix(x);
-  else return (C_s64)C_flonum_magnitude(x);
+    if(x & C_FIXNUM_BIT) return (C_s64)C_unfix(x);
+    else return (C_s64)C_flonum_magnitude(x);
 }
 
 
 C_inline C_u64 C_num_to_uint64(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return (C_u64)C_unfix(x);
-  else return (C_u64)C_flonum_magnitude(x);
+    if(x & C_FIXNUM_BIT) return (C_u64)C_unfix(x);
+    else return (C_u64)C_flonum_magnitude(x);
 }
 
 
 C_inline C_uword C_num_to_unsigned_int(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_unfix(x);
-  else return (unsigned int)C_flonum_magnitude(x);
+    if(x & C_FIXNUM_BIT) return C_unfix(x);
+    else return (unsigned int)C_flonum_magnitude(x);
 }
 
 
 C_inline C_word C_int_to_num(C_word **ptr, C_word n)
 {
-  if(C_fitsinfixnump(n)) return C_fix(n);
-  else return C_flonum(ptr, (double)n);
+    if(C_fitsinfixnump(n)) return C_fix(n);
+    else return C_flonum(ptr, (double)n);
 }
 
 
 C_inline C_word C_unsigned_int_to_num(C_word **ptr, C_uword n)
 {
-  if(C_ufitsinfixnump(n)) return C_fix(n);
-  else return C_flonum(ptr, (double)n);
+    if(C_ufitsinfixnump(n)) return C_fix(n);
+    else return C_flonum(ptr, (double)n);
 }
 
 
 C_inline C_word C_long_to_num(C_word **ptr, C_long n)
 {
-  if(C_fitsinfixnump(n)) return C_fix(n);
-  else return C_flonum(ptr, (double)n);
+    if(C_fitsinfixnump(n)) return C_fix(n);
+    else return C_flonum(ptr, (double)n);
 }
 
 
 C_inline C_word C_unsigned_long_to_num(C_word **ptr, C_ulong n)
 {
-  if(C_ufitsinfixnump(n)) return C_fix(n);
-  else return C_flonum(ptr, (double)n);
+    if(C_ufitsinfixnump(n)) return C_fix(n);
+    else return C_flonum(ptr, (double)n);
 }
 
 
 C_inline C_word C_flonum_in_int_range_p(C_word n)
 {
-  double m = C_flonum_magnitude(n);
+    double m = C_flonum_magnitude(n);
 
-  return C_mk_bool(m >= C_WORD_MIN && m <= C_WORD_MAX);
+    return C_mk_bool(m >= C_WORD_MIN && m <= C_WORD_MAX);
 }
 
 
 C_inline C_word C_flonum_in_uint_range_p(C_word n)
 {
-  double m = C_flonum_magnitude(n);
+    double m = C_flonum_magnitude(n);
 
-  return C_mk_bool(m >= 0 && m <= C_UWORD_MAX);
+    return C_mk_bool(m >= 0 && m <= C_UWORD_MAX);
 }
 
 
 C_inline char *C_string_or_null(C_word x)
 {
-  return C_truep(x) ? C_c_string(x) : NULL;
+    return C_truep(x) ? C_c_string(x) : NULL;
 }
 
 
-C_inline void *C_data_pointer_or_null(C_word x) 
+C_inline void *C_data_pointer_or_null(C_word x)
 {
-  return C_truep(x) ? C_data_pointer(x) : NULL;
+    return C_truep(x) ? C_data_pointer(x) : NULL;
 }
 
 
-C_inline void *C_srfi_4_vector_or_null(C_word x) 
+C_inline void *C_srfi_4_vector_or_null(C_word x)
 {
-  return C_truep(x) ? C_srfi_4_vector(x) : NULL;
+    return C_truep(x) ? C_srfi_4_vector(x) : NULL;
 }
 
 
-C_inline void *C_c_pointer_vector_or_null(C_word x) 
+C_inline void *C_c_pointer_vector_or_null(C_word x)
 {
-  return C_truep(x) ? C_data_pointer(C_block_item(x, 2)) : NULL;
+    return C_truep(x) ? C_data_pointer(C_block_item(x, 2)) : NULL;
 }
 
 
-C_inline void *C_c_pointer_or_null(C_word x) 
+C_inline void *C_c_pointer_or_null(C_word x)
 {
-  return C_truep(x) ? (void *)C_block_item(x, 0) : NULL;
+    return C_truep(x) ? (void *)C_block_item(x, 0) : NULL;
 }
 
 
-C_inline void *C_scheme_or_c_pointer(C_word x) 
+C_inline void *C_scheme_or_c_pointer(C_word x)
 {
-  return C_anypointerp(x) ? (void *)C_block_item(x, 0) : C_data_pointer(x);
+    return C_anypointerp(x) ? (void *)C_block_item(x, 0) : C_data_pointer(x);
 }
 
 
 C_inline C_long C_num_to_long(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_unfix(x);
-  else return (C_long)C_flonum_magnitude(x);
+    if(x & C_FIXNUM_BIT) return C_unfix(x);
+    else return (C_long)C_flonum_magnitude(x);
 }
 
 
 C_inline C_ulong C_num_to_unsigned_long(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_unfix(x);
-  else return (C_ulong)C_flonum_magnitude(x);
+    if(x & C_FIXNUM_BIT) return C_unfix(x);
+    else return (C_ulong)C_flonum_magnitude(x);
 }
 
 
 C_inline C_word C_u_i_string_equal_p(C_word x, C_word y)
 {
-  C_word n;
+    C_word n;
 
-  n = C_header_size(x);
-  return C_mk_bool(n == C_header_size(y)
-         && !C_memcmp((char *)C_data_pointer(x), (char *)C_data_pointer(y), n));
+    n = C_header_size(x);
+    return C_mk_bool(n == C_header_size(y)
+                     && !C_memcmp((char *)C_data_pointer(x), (char *)C_data_pointer(y), n));
 }
 
 /* Like memcmp but case insensitive (to strncasecmp as memcmp is to strncmp) */
 C_inline int C_memcasecmp(const char *x, const char *y, unsigned int len)
 {
-  const unsigned char *ux = (const unsigned char *)x;
-  const unsigned char *uy = (const unsigned char *)y;
+    const unsigned char *ux = (const unsigned char *)x;
+    const unsigned char *uy = (const unsigned char *)y;
 
-  while (len--) {
-    if (tolower(*ux++) != tolower(*uy++))
-      return (tolower(*--ux) - tolower(*--uy));
-  }
-  return 0;
+    while (len--) {
+        if (tolower(*ux++) != tolower(*uy++))
+            return (tolower(*--ux) - tolower(*--uy));
+    }
+    return 0;
 }
 
 C_inline C_word C_i_eqvp(C_word x, C_word y)
 {
-  return
-    C_mk_bool(x == y ||
-	      (!C_immediatep(x) && !C_immediatep(y) &&
-	       C_block_header(x) == C_FLONUM_TAG && C_block_header(y) == C_FLONUM_TAG &&
-	       C_flonum_magnitude(x) == C_flonum_magnitude(y) ) );
+    return
+        C_mk_bool(x == y ||
+                  (!C_immediatep(x) && !C_immediatep(y) &&
+                   C_block_header(x) == C_FLONUM_TAG && C_block_header(y) == C_FLONUM_TAG &&
+                   C_flonum_magnitude(x) == C_flonum_magnitude(y) ) );
 }
 
 
 C_inline C_word C_i_symbolp(C_word x)
 {
-  return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_SYMBOL_TAG);
+    return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_SYMBOL_TAG);
 }
 
 
 C_inline C_word C_i_pairp(C_word x)
 {
-  return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_PAIR_TAG);
+    return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_PAIR_TAG);
 }
 
 
 C_inline C_word C_i_stringp(C_word x)
 {
-  return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_STRING_TYPE);
+    return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_STRING_TYPE);
 }
 
 
 C_inline C_word C_i_locativep(C_word x)
 {
-  return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_LOCATIVE_TAG);
+    return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_LOCATIVE_TAG);
 }
 
 
 C_inline C_word C_i_vectorp(C_word x)
 {
-  return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_VECTOR_TYPE);
+    return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_VECTOR_TYPE);
 }
 
 
 C_inline C_word C_i_portp(C_word x)
 {
-  return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_PORT_TYPE);
+    return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_PORT_TYPE);
 }
 
 
 C_inline C_word C_i_closurep(C_word x)
 {
-  return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_CLOSURE_TYPE);
+    return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_CLOSURE_TYPE);
 }
 
 
 C_inline C_word C_i_numberp(C_word x)
 {
-  return C_mk_bool((x & C_FIXNUM_BIT)
-         || (!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG));
+    return C_mk_bool((x & C_FIXNUM_BIT)
+                     || (!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG));
 }
 
 
 C_inline C_word C_i_rationalp(C_word x)
 {
-  if((x & C_FIXNUM_BIT) != 0) return C_SCHEME_TRUE;
+    if((x & C_FIXNUM_BIT) != 0) return C_SCHEME_TRUE;
 
-  if((!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG)) {
-    double n = C_flonum_magnitude(x);
-      
-    if(!C_isinf(n) && !C_isnan(n)) return C_SCHEME_TRUE;
-  }
+    if((!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG)) {
+        double n = C_flonum_magnitude(x);
 
-  return C_SCHEME_FALSE;
+        if(!C_isinf(n) && !C_isnan(n)) return C_SCHEME_TRUE;
+    }
+
+    return C_SCHEME_FALSE;
 }
 
 
 C_inline C_word C_u_i_fpintegerp(C_word x)
 {
-  double dummy, val;
+    double dummy, val;
 
-  val = C_flonum_magnitude(x);
+    val = C_flonum_magnitude(x);
 
-  if(C_isnan(val) || C_isinf(val)) return C_SCHEME_FALSE;
+    if(C_isnan(val) || C_isinf(val)) return C_SCHEME_FALSE;
 
-  return C_mk_bool(C_modf(val, &dummy) == 0.0);
+    return C_mk_bool(C_modf(val, &dummy) == 0.0);
 }
 
 
 C_inline int C_ub_i_fpintegerp(double x)
 {
-  double dummy;
+    double dummy;
 
-  return C_modf(x, &dummy) == 0.0;
+    return C_modf(x, &dummy) == 0.0;
 }
 
 
 C_inline C_word C_i_integerp(C_word x)
 {
-  double dummy, val;
+    double dummy, val;
 
-  if (x & C_FIXNUM_BIT)
-	  return C_SCHEME_TRUE;
-  if (C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG)
-	  return C_SCHEME_FALSE;
+    if (x & C_FIXNUM_BIT)
+        return C_SCHEME_TRUE;
+    if (C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG)
+        return C_SCHEME_FALSE;
 
-  val = C_flonum_magnitude(x);
-  if(C_isnan(val) || C_isinf(val)) return C_SCHEME_FALSE;
+    val = C_flonum_magnitude(x);
+    if(C_isnan(val) || C_isinf(val)) return C_SCHEME_FALSE;
 
-  return C_mk_bool(C_modf(val, &dummy) == 0.0);
+    return C_mk_bool(C_modf(val, &dummy) == 0.0);
 }
 
 
 C_inline C_word C_i_flonump(C_word x)
 {
-  return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG);
+    return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG);
 }
 
 
 C_inline C_word C_i_finitep(C_word x)
 {
-  double val;
-  
-  if((x & C_FIXNUM_BIT) != 0) return C_SCHEME_TRUE;
-  
-  val = C_flonum_magnitude(x);
-  if(C_isnan(val) || C_isinf(val)) return C_SCHEME_FALSE;
-  else return C_SCHEME_TRUE;
+    double val;
+
+    if((x & C_FIXNUM_BIT) != 0) return C_SCHEME_TRUE;
+
+    val = C_flonum_magnitude(x);
+    if(C_isnan(val) || C_isinf(val)) return C_SCHEME_FALSE;
+    else return C_SCHEME_TRUE;
 }
 
 
 C_inline C_word C_i_fixnum_min(C_word x, C_word y)
 {
-  return ((C_word)x < (C_word)y) ? x : y;
+    return ((C_word)x < (C_word)y) ? x : y;
 }
 
 
 C_inline C_word C_i_fixnum_max(C_word x, C_word y)
 {
-  return ((C_word)x > (C_word)y) ? x : y;
+    return ((C_word)x > (C_word)y) ? x : y;
 }
 
 
 C_inline C_word C_fixnum_divide(C_word x, C_word y)
 {
-  if(y == C_fix(0)) C_div_by_zero_error("fx/");
-  return C_u_fixnum_divide(x, y);
+    if(y == C_fix(0)) C_div_by_zero_error("fx/");
+    return C_u_fixnum_divide(x, y);
 }
 
 
 C_inline C_word C_fixnum_modulo(C_word x, C_word y)
 {
-  if(y == C_fix(0)) C_div_by_zero_error("fxmod");
-  return C_u_fixnum_modulo(x, y);
+    if(y == C_fix(0)) C_div_by_zero_error("fxmod");
+    return C_u_fixnum_modulo(x, y);
 }
 
 
 C_inline C_word C_i_fixnum_arithmetic_shift(C_word n, C_word c)
 {
-  if(C_unfix(c) < 0) return C_fixnum_shift_right(n, C_u_fixnum_negate(c));
-  else return C_fixnum_shift_left(n, c);
+    if(C_unfix(c) < 0) return C_fixnum_shift_right(n, C_u_fixnum_negate(c));
+    else return C_fixnum_shift_left(n, c);
 }
 
 
 C_inline C_word C_i_flonum_min(C_word x, C_word y)
 {
-  double 
-    xf = C_flonum_magnitude(x),
-    yf = C_flonum_magnitude(y);
+    double
+        xf = C_flonum_magnitude(x),
+        yf = C_flonum_magnitude(y);
 
-  return xf < yf ? x : y;
+    return xf < yf ? x : y;
 }
 
 
 C_inline C_word C_i_flonum_max(C_word x, C_word y)
 {
-  double 
-    xf = C_flonum_magnitude(x),
-    yf = C_flonum_magnitude(y);
+    double
+        xf = C_flonum_magnitude(x),
+        yf = C_flonum_magnitude(y);
 
-  return xf > yf ? x : y;
+    return xf > yf ? x : y;
 }
 
 
 C_inline C_word
 C_a_i_flonum_quotient_checked(C_word **ptr, int c, C_word n1, C_word n2)
 {
-  double n3 = C_flonum_magnitude(n2);
+    double n3 = C_flonum_magnitude(n2);
 
-  if(n3 == 0.0) C_div_by_zero_error("fp/?");
-  return C_flonum(ptr, C_flonum_magnitude(n1) / n3);
+    if(n3 == 0.0) C_div_by_zero_error("fp/?");
+    return C_flonum(ptr, C_flonum_magnitude(n1) / n3);
 }
 
 
 C_inline double
 C_ub_i_flonum_quotient_checked(double n1, double n2)
 {
-  if(n2 == 0.0) C_div_by_zero_error("fp/?");
-  return n1 / n2;
+    if(n2 == 0.0) C_div_by_zero_error("fp/?");
+    return n1 / n2;
 }
 
 
 C_inline C_word C_i_safe_pointerp(C_word x)
 {
-  if(C_immediatep(x)) return C_SCHEME_FALSE;
+    if(C_immediatep(x)) return C_SCHEME_FALSE;
 
-  switch(C_block_header(x)) {
-  case C_POINTER_TAG:
-  case C_SWIG_POINTER_TAG:
-  case C_TAGGED_POINTER_TAG:
-    return C_SCHEME_TRUE;
-  }
+    switch(C_block_header(x)) {
+    case C_POINTER_TAG:
+    case C_SWIG_POINTER_TAG:
+    case C_TAGGED_POINTER_TAG:
+        return C_SCHEME_TRUE;
+    }
 
-  return C_SCHEME_FALSE;
+    return C_SCHEME_FALSE;
 }
 
 
 C_inline C_word C_u_i_assq(C_word x, C_word lst)
 {
-  C_word a;
+    C_word a;
 
-  while(!C_immediatep(lst)) {
-    a = C_u_i_car(lst);
+    while(!C_immediatep(lst)) {
+        a = C_u_i_car(lst);
 
-    if(C_u_i_car(a) == x) return a;
-    else lst = C_u_i_cdr(lst);
-  }
+        if(C_u_i_car(a) == x) return a;
+        else lst = C_u_i_cdr(lst);
+    }
 
-  return C_SCHEME_FALSE;
+    return C_SCHEME_FALSE;
 }
 
 
 C_inline C_word
 C_fast_retrieve(C_word sym)
 {
-  C_word val = C_block_item(sym, 0);
+    C_word val = C_block_item(sym, 0);
 
-  if(val == C_SCHEME_UNBOUND)
-    C_unbound_variable(sym);
+    if(val == C_SCHEME_UNBOUND)
+        C_unbound_variable(sym);
 
-  return val;
+    return val;
 }
 
 
 C_inline void *
 C_fast_retrieve_proc(C_word closure)
 {
-  if(C_immediatep(closure) || C_header_bits(closure) != C_CLOSURE_TYPE) 
-    return (void *)C_invalid_procedure;
-  else 
-    return (void *)C_block_item(closure, 0);
+    if(C_immediatep(closure) || C_header_bits(closure) != C_CLOSURE_TYPE)
+        return (void *)C_invalid_procedure;
+    else
+        return (void *)C_block_item(closure, 0);
 }
 
 
 C_inline void *
 C_fast_retrieve_symbol_proc(C_word sym)
 {
-  return C_fast_retrieve_proc(C_fast_retrieve(sym));
+    return C_fast_retrieve_proc(C_fast_retrieve(sym));
 }
 
 
 C_inline C_word C_a_i_vector1(C_word **ptr, int n, C_word x1)
 {
-  C_word *p = *ptr, *p0 = p; 
+    C_word *p = *ptr, *p0 = p;
 
-  *(p++) = C_VECTOR_TYPE | 1;
-  *(p++) = x1;
-  *ptr = p;
-  return (C_word)p0;
+    *(p++) = C_VECTOR_TYPE | 1;
+    *(p++) = x1;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 
 C_inline C_word C_a_i_vector2(C_word **ptr, int n, C_word x1, C_word x2)
 {
-  C_word *p = *ptr, *p0 = p; 
+    C_word *p = *ptr, *p0 = p;
 
-  *(p++) = C_VECTOR_TYPE | 2;
-  *(p++) = x1;
-  *(p++) = x2;
-  *ptr = p;
-  return (C_word)p0;
+    *(p++) = C_VECTOR_TYPE | 2;
+    *(p++) = x1;
+    *(p++) = x2;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 
 C_inline C_word C_a_i_vector3(C_word **ptr, int n, C_word x1, C_word x2, C_word x3)
 {
-  C_word *p = *ptr, *p0 = p; 
+    C_word *p = *ptr, *p0 = p;
 
-  *(p++) = C_VECTOR_TYPE | 3;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *ptr = p;
-  return (C_word)p0;
+    *(p++) = C_VECTOR_TYPE | 3;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 
 C_inline C_word C_a_i_vector4(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4)
 {
-  C_word *p = *ptr, *p0 = p; 
+    C_word *p = *ptr, *p0 = p;
 
-  *(p++) = C_VECTOR_TYPE | 4;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *(p++) = x4;
-  *ptr = p;
-  return (C_word)p0;
+    *(p++) = C_VECTOR_TYPE | 4;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *(p++) = x4;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 
 C_inline C_word C_a_i_vector5(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
-			      C_word x5)
+                              C_word x5)
 {
-  C_word *p = *ptr, *p0 = p; 
+    C_word *p = *ptr, *p0 = p;
 
-  *(p++) = C_VECTOR_TYPE | 5;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *(p++) = x4;
-  *(p++) = x5;
-  *ptr = p;
-  return (C_word)p0;
+    *(p++) = C_VECTOR_TYPE | 5;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *(p++) = x4;
+    *(p++) = x5;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 
 C_inline C_word C_a_i_vector6(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
-			      C_word x5, C_word x6)
+                              C_word x5, C_word x6)
 {
-  C_word *p = *ptr, *p0 = p; 
+    C_word *p = *ptr, *p0 = p;
 
-  *(p++) = C_VECTOR_TYPE | 6;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *(p++) = x4;
-  *(p++) = x5;
-  *(p++) = x6;
-  *ptr = p;
-  return (C_word)p0;
+    *(p++) = C_VECTOR_TYPE | 6;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *(p++) = x4;
+    *(p++) = x5;
+    *(p++) = x6;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 
 C_inline C_word C_a_i_vector7(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
-			      C_word x5, C_word x6, C_word x7)
+                              C_word x5, C_word x6, C_word x7)
 {
-  C_word *p = *ptr, *p0 = p; 
+    C_word *p = *ptr, *p0 = p;
 
-  *(p++) = C_VECTOR_TYPE | 7;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *(p++) = x4;
-  *(p++) = x5;
-  *(p++) = x6;
-  *(p++) = x7;
-  *ptr = p;
-  return (C_word)p0;
+    *(p++) = C_VECTOR_TYPE | 7;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *(p++) = x4;
+    *(p++) = x5;
+    *(p++) = x6;
+    *(p++) = x7;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 
 C_inline C_word C_a_i_vector8(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
-			      C_word x5, C_word x6, C_word x7, C_word x8)
+                              C_word x5, C_word x6, C_word x7, C_word x8)
 {
-  C_word *p = *ptr, *p0 = p; 
+    C_word *p = *ptr, *p0 = p;
 
-  *(p++) = C_VECTOR_TYPE | 8;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *(p++) = x4;
-  *(p++) = x5;
-  *(p++) = x6;
-  *(p++) = x7;
-  *(p++) = x8;
-  *ptr = p;
-  return (C_word)p0;
+    *(p++) = C_VECTOR_TYPE | 8;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *(p++) = x4;
+    *(p++) = x5;
+    *(p++) = x6;
+    *(p++) = x7;
+    *(p++) = x8;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 
 C_inline C_word C_fcall C_a_pair(C_word **ptr, C_word car, C_word cdr)
 {
-  C_word *p = *ptr, *p0 = p;
- 
-  *(p++) = C_PAIR_TYPE | (C_SIZEOF_PAIR - 1);
-  *(p++) = car;
-  *(p++) = cdr;
-  *ptr = p;
-  return (C_word)p0;
+    C_word *p = *ptr, *p0 = p;
+
+    *(p++) = C_PAIR_TYPE | (C_SIZEOF_PAIR - 1);
+    *(p++) = car;
+    *(p++) = cdr;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 C_inline C_word C_fcall C_a_bucket(C_word **ptr, C_word head, C_word tail)
 {
-  C_word *p = *ptr, *p0 = p;
+    C_word *p = *ptr, *p0 = p;
 
-  *(p++) = C_BUCKET_TYPE | (C_SIZEOF_BUCKET - 1);
-  *(p++) = head;
-  *(p++) = tail;
-  *ptr = p;
-  return (C_word)p0;
+    *(p++) = C_BUCKET_TYPE | (C_SIZEOF_BUCKET - 1);
+    *(p++) = head;
+    *(p++) = tail;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 
 C_inline C_word C_a_i_list1(C_word **a, int n, C_word x1)
 {
-  return C_a_pair(a, x1, C_SCHEME_END_OF_LIST);
+    return C_a_pair(a, x1, C_SCHEME_END_OF_LIST);
 }
 
 
 C_inline C_word C_a_i_list2(C_word **a, int n, C_word x1, C_word x2)
 {
-  C_word x = C_a_pair(a, x2, C_SCHEME_END_OF_LIST);
+    C_word x = C_a_pair(a, x2, C_SCHEME_END_OF_LIST);
 
-  return C_a_pair(a, x1, x);
+    return C_a_pair(a, x1, x);
 }
 
 
 C_inline C_word C_a_i_list3(C_word **a, int n, C_word x1, C_word x2, C_word x3)
 {
-  C_word x = C_pair(a, x3, C_SCHEME_END_OF_LIST);
+    C_word x = C_pair(a, x3, C_SCHEME_END_OF_LIST);
 
-  x = C_a_pair(a, x2, x);
-  return C_a_pair(a, x1, x);
+    x = C_a_pair(a, x2, x);
+    return C_a_pair(a, x1, x);
 }
 
 
 C_inline C_word C_a_i_list4(C_word **a, int n, C_word x1, C_word x2, C_word x3, C_word x4)
 {
-  C_word x = C_pair(a, x4, C_SCHEME_END_OF_LIST);
+    C_word x = C_pair(a, x4, C_SCHEME_END_OF_LIST);
 
-  x = C_a_pair(a, x3, x);
-  x = C_a_pair(a, x2, x);
-  return C_a_pair(a, x1, x);
+    x = C_a_pair(a, x3, x);
+    x = C_a_pair(a, x2, x);
+    return C_a_pair(a, x1, x);
 }
 
 
 C_inline C_word C_a_i_list5(C_word **a, int n, C_word x1, C_word x2, C_word x3, C_word x4,
-			    C_word x5)
+                            C_word x5)
 {
-  C_word x = C_pair(a, x5, C_SCHEME_END_OF_LIST);
+    C_word x = C_pair(a, x5, C_SCHEME_END_OF_LIST);
 
-  x = C_a_pair(a, x4, x);
-  x = C_a_pair(a, x3, x);
-  x = C_a_pair(a, x2, x);
-  return C_a_pair(a, x1, x);
+    x = C_a_pair(a, x4, x);
+    x = C_a_pair(a, x3, x);
+    x = C_a_pair(a, x2, x);
+    return C_a_pair(a, x1, x);
 }
 
 
 C_inline C_word C_a_i_list6(C_word **a, int n, C_word x1, C_word x2, C_word x3, C_word x4,
-			    C_word x5, C_word x6)
+                            C_word x5, C_word x6)
 {
-  C_word x = C_pair(a, x6, C_SCHEME_END_OF_LIST);
+    C_word x = C_pair(a, x6, C_SCHEME_END_OF_LIST);
 
-  x = C_a_pair(a, x5, x);
-  x = C_a_pair(a, x4, x);
-  x = C_a_pair(a, x3, x);
-  x = C_a_pair(a, x2, x);
-  return C_a_pair(a, x1, x);
+    x = C_a_pair(a, x5, x);
+    x = C_a_pair(a, x4, x);
+    x = C_a_pair(a, x3, x);
+    x = C_a_pair(a, x2, x);
+    return C_a_pair(a, x1, x);
 }
 
 
 C_inline C_word C_a_i_list7(C_word **a, int n, C_word x1, C_word x2, C_word x3, C_word x4,
-			    C_word x5, C_word x6, C_word x7)
+                            C_word x5, C_word x6, C_word x7)
 {
-  C_word x = C_pair(a, x7, C_SCHEME_END_OF_LIST);
+    C_word x = C_pair(a, x7, C_SCHEME_END_OF_LIST);
 
-  x = C_a_pair(a, x6, x);
-  x = C_a_pair(a, x5, x);
-  x = C_a_pair(a, x4, x);
-  x = C_a_pair(a, x3, x);
-  x = C_a_pair(a, x2, x);
-  return C_a_pair(a, x1, x);
+    x = C_a_pair(a, x6, x);
+    x = C_a_pair(a, x5, x);
+    x = C_a_pair(a, x4, x);
+    x = C_a_pair(a, x3, x);
+    x = C_a_pair(a, x2, x);
+    return C_a_pair(a, x1, x);
 }
 
 
 C_inline C_word C_a_i_list8(C_word **a, int n, C_word x1, C_word x2, C_word x3, C_word x4,
-			    C_word x5, C_word x6, C_word x7, C_word x8)
+                            C_word x5, C_word x6, C_word x7, C_word x8)
 {
-  C_word x = C_pair(a, x8, C_SCHEME_END_OF_LIST);
+    C_word x = C_pair(a, x8, C_SCHEME_END_OF_LIST);
 
-  x = C_a_pair(a, x7, x);
-  x = C_a_pair(a, x6, x);
-  x = C_a_pair(a, x5, x);
-  x = C_a_pair(a, x4, x);
-  x = C_a_pair(a, x3, x);
-  x = C_a_pair(a, x2, x);
-  return C_a_pair(a, x1, x);
+    x = C_a_pair(a, x7, x);
+    x = C_a_pair(a, x6, x);
+    x = C_a_pair(a, x5, x);
+    x = C_a_pair(a, x4, x);
+    x = C_a_pair(a, x3, x);
+    x = C_a_pair(a, x2, x);
+    return C_a_pair(a, x1, x);
 }
 
 
 C_inline C_word C_a_i_record1(C_word **ptr, int n, C_word x1)
 {
-  C_word *p = *ptr, *p0 = p; 
+    C_word *p = *ptr, *p0 = p;
 
-  *(p++) = C_STRUCTURE_TYPE | 1;
-  *(p++) = x1;
-  *ptr = p;
-  return (C_word)p0;
+    *(p++) = C_STRUCTURE_TYPE | 1;
+    *(p++) = x1;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 
 C_inline C_word C_a_i_record2(C_word **ptr, int n, C_word x1, C_word x2)
 {
-  C_word *p = *ptr, *p0 = p; 
+    C_word *p = *ptr, *p0 = p;
 
-  *(p++) = C_STRUCTURE_TYPE | 2;
-  *(p++) = x1;
-  *(p++) = x2;
-  *ptr = p;
-  return (C_word)p0;
+    *(p++) = C_STRUCTURE_TYPE | 2;
+    *(p++) = x1;
+    *(p++) = x2;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 
 C_inline C_word C_a_i_record3(C_word **ptr, int n, C_word x1, C_word x2, C_word x3)
 {
-  C_word *p = *ptr, *p0 = p; 
+    C_word *p = *ptr, *p0 = p;
 
-  *(p++) = C_STRUCTURE_TYPE | 3;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *ptr = p;
-  return (C_word)p0;
+    *(p++) = C_STRUCTURE_TYPE | 3;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 
 C_inline C_word C_a_i_record4(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4)
 {
-  C_word *p = *ptr, *p0 = p; 
+    C_word *p = *ptr, *p0 = p;
 
-  *(p++) = C_STRUCTURE_TYPE | 4;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *(p++) = x4;
-  *ptr = p;
-  return (C_word)p0;
+    *(p++) = C_STRUCTURE_TYPE | 4;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *(p++) = x4;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 
 C_inline C_word C_a_i_record5(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
-				 C_word x5)
+                              C_word x5)
 {
-  C_word *p = *ptr, *p0 = p; 
+    C_word *p = *ptr, *p0 = p;
 
-  *(p++) = C_STRUCTURE_TYPE | 5;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *(p++) = x4;
-  *(p++) = x5;
-  *ptr = p;
-  return (C_word)p0;
+    *(p++) = C_STRUCTURE_TYPE | 5;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *(p++) = x4;
+    *(p++) = x5;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 
 C_inline C_word C_a_i_record6(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
-				 C_word x5, C_word x6)
+                              C_word x5, C_word x6)
 {
-  C_word *p = *ptr, *p0 = p; 
+    C_word *p = *ptr, *p0 = p;
 
-  *(p++) = C_STRUCTURE_TYPE | 6;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *(p++) = x4;
-  *(p++) = x5;
-  *(p++) = x6;
-  *ptr = p;
-  return (C_word)p0;
+    *(p++) = C_STRUCTURE_TYPE | 6;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *(p++) = x4;
+    *(p++) = x5;
+    *(p++) = x6;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 
 C_inline C_word C_a_i_record7(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
-				 C_word x5, C_word x6, C_word x7)
+                              C_word x5, C_word x6, C_word x7)
 {
-  C_word *p = *ptr, *p0 = p; 
+    C_word *p = *ptr, *p0 = p;
 
-  *(p++) = C_STRUCTURE_TYPE | 7;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *(p++) = x4;
-  *(p++) = x5;
-  *(p++) = x6;
-  *(p++) = x7;
-  *ptr = p;
-  return (C_word)p0;
+    *(p++) = C_STRUCTURE_TYPE | 7;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *(p++) = x4;
+    *(p++) = x5;
+    *(p++) = x6;
+    *(p++) = x7;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 
 C_inline C_word C_a_i_record8(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
-				 C_word x5, C_word x6, C_word x7, C_word x8)
+                              C_word x5, C_word x6, C_word x7, C_word x8)
 {
-  C_word *p = *ptr, *p0 = p; 
+    C_word *p = *ptr, *p0 = p;
 
-  *(p++) = C_STRUCTURE_TYPE | 8;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *(p++) = x4;
-  *(p++) = x5;
-  *(p++) = x6;
-  *(p++) = x7;
-  *(p++) = x8;
-  *ptr = p;
-  return (C_word)p0;
+    *(p++) = C_STRUCTURE_TYPE | 8;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *(p++) = x4;
+    *(p++) = x5;
+    *(p++) = x6;
+    *(p++) = x7;
+    *(p++) = x8;
+    *ptr = p;
+    return (C_word)p0;
 }
 
 /* These strl* functions are based on public domain code by C.B. Falconer */
@@ -2832,18 +2832,18 @@ C_inline C_word C_a_i_record8(C_word **ptr, int n, C_word x1, C_word x2, C_word 
 #else
 C_inline size_t C_strlcpy(char *dst, const char *src, size_t sz)
 {
-   const char *start = src;
+    const char *start = src;
 
-   if (sz--) {
-      while ((*dst++ = *src))
-         if (sz--) src++;
-         else {
-            *(--dst) = '\0';
-            break;
-         }
-   }
-   while (*src++) continue;
-   return src - start - 1;
+    if (sz--) {
+        while ((*dst++ = *src))
+            if (sz--) src++;
+            else {
+                *(--dst) = '\0';
+                break;
+            }
+    }
+    while (*src++) continue;
+    return src - start - 1;
 }
 #endif
 
@@ -2852,12 +2852,12 @@ C_inline size_t C_strlcpy(char *dst, const char *src, size_t sz)
 #else
 C_inline size_t C_strlcat(char *dst, const char *src, size_t sz)
 {
-   char  *start = dst;
+    char  *start = dst;
 
-   while (*dst++)    /* assumes sz >= strlen(dst) */
-      if (sz) sz--;    /* i.e. well formed string */
-   dst--;
-   return dst - start + C_strlcpy(dst, src, sz);
+    while (*dst++)   /* assumes sz >= strlen(dst) */
+        if (sz) sz--;  /* i.e. well formed string */
+    dst--;
+    return dst - start + C_strlcpy(dst, src, sz);
 }
 #endif
 

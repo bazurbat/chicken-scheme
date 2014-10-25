@@ -5,21 +5,21 @@
 # include <winsock2.h>
 # include <ws2tcpip.h>
 /* Beware: winsock2.h must come BEFORE windows.h */
-# define socklen_t	 int
+# define socklen_t       int
 static WSADATA wsa;
 # ifndef SHUT_RD
-#  define SHUT_RD	  SD_RECEIVE
+#  define SHUT_RD         SD_RECEIVE
 # endif
 # ifndef SHUT_WR
-#  define SHUT_WR	  SD_SEND
+#  define SHUT_WR         SD_SEND
 # endif
 
-# define typecorrect_getsockopt(socket, level, optname, optval, optlen)	\
+# define typecorrect_getsockopt(socket, level, optname, optval, optlen) \
     getsockopt(socket, level, optname, (char *)optval, optlen)
 
 static C_word make_socket_nonblocking (C_word sock) {
     int fd = C_unfix(sock);
-    C_return(C_mk_bool(ioctlsocket(fd, FIONBIO, (void *)&fd) != SOCKET_ERROR)) ;
+    C_return(C_mk_bool(ioctlsocket(fd, FIONBIO, (void *)&fd) != SOCKET_ERROR));
 }
 
 /* This is a bit of a hack, but it keeps things simple */
@@ -83,7 +83,7 @@ static char addr_buffer[ 20 ];
 
 static int C_set_socket_options(int socket)
 {
-    int yes = 1; 
+    int yes = 1;
     int r;
 
     r = setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes, sizeof(int));
