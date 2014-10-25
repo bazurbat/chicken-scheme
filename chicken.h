@@ -28,12 +28,6 @@
 
 /* Configuration: */
 
-/*
- * The Watcom (__WATCOMC__), Metroworks (__MWERKS__), and Delorie (__DJGPP__)
- * compilers are not currently supported but existing references remain,
- * just in case.
- */
-
 #ifndef ___CHICKEN
 #define ___CHICKEN
 
@@ -89,7 +83,7 @@
 # define C_GNU_ENV
 #endif
 
-#if defined(__MINGW32__) || defined(__WATCOMC__) || defined(__MWERKS__) || defined(_MSC_VER)
+#if defined(__MINGW32__) || defined(_MSC_VER)
 /*
  * XXX This should probably be renamed or changed because it's misleading.
  * For example, Haiku is not a Unix either, but this doesn't get defined there.
@@ -148,7 +142,7 @@
 # include <machine/endian.h>
 #endif
 
-#if defined(__MINGW32__) || defined(__WATCOMC__) || defined(_MSC_VER)
+#if defined(__MINGW32__) || defined(_MSC_VER)
 # include <malloc.h>
 #endif
 
@@ -214,7 +208,7 @@ void *alloca ();
 #   undef  C_varextern
 #   define C_varextern             C_extern __declspec(dllimport)
 #  endif
-# elif defined(__WATCOMC__) || defined(_MSC_VER)
+# elif defined(_MSC_VER)
 #  undef  C_fctimport
 #  define C_fctimport              __declspec(dllexport)
 #  undef  C_externimport
@@ -259,8 +253,6 @@ void *alloca ();
 # if defined(__i386__) && !defined(__clang__)
 #  define C_regparm               __attribute__ ((regparm(3)))
 # endif
-#elif defined(__WATCOMC__)
-# define C_ccall                  __cdecl
 #endif
 
 #ifndef C_cblock
@@ -676,12 +668,8 @@ void *alloca ();
 # define C_BUILD_PLATFORM "clang"
 #elif defined(__GNUC__)
 # define C_BUILD_PLATFORM "gnu"
-#elif defined(__MWERKS__)
-# define C_BUILD_PLATFORM "metrowerks"
 #elif defined(__INTEL_COMPILER)
 # define C_BUILD_PLATFORM "intel"
-#elif defined(__WATCOMC__)
-# define C_BUILD_PLATFORM "watcom"
 #else
 # define C_BUILD_PLATFORM "unknown"
 #endif
