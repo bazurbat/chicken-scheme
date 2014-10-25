@@ -348,7 +348,6 @@ C_TLS void (*C_post_gc_hook)(int mode, C_long ms) = NULL;
 C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
 
 C_TLS int
-  C_gui_mode = 0,
   C_abort_on_thread_exceptions,
   C_enable_repl,
   C_interrupts_enabled,
@@ -555,16 +554,6 @@ C_dbg(C_char *prefix, C_char *fstr, ...)
 int CHICKEN_main(int argc, char *argv[], void *toplevel) 
 {
   C_word h, s, n;
-
-  if(C_gui_mode) {
-#ifdef _WIN32
-    parse_argv(GetCommandLine());
-    argc = C_main_argc;
-    argv = C_main_argv;
-#else
-    /* ??? */
-#endif
-  }
 
   pass_serious_signals = 0;
   CHICKEN_parse_command_line(argc, argv, &h, &s, &n);
@@ -1250,7 +1239,6 @@ void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *st
 		 " -:x              deliver uncaught exceptions of other threads to primordial one\n"
 		 " -:b              enter REPL on error\n"
 		 " -:B              sound bell on major GC\n"
-		 " -:G              force GUI mode\n"
 		 " -:aSIZE          set trace-buffer/call-chain size\n"
 		 " -:H              dump heap state on exit\n"
 		 " -:S              do not handle segfaults or other serious conditions\n"
@@ -1286,10 +1274,6 @@ void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *st
 
 	case 'B':
 	  gc_bell = 1;
-	  break;
-
-	case 'G':
-	  C_gui_mode = 1;
 	  break;
 
 	case 'H':
@@ -1487,14 +1471,6 @@ void usual_panic(C_char *msg)
 
   C_dbg_hook(C_SCHEME_UNDEFINED);
 
-  if(C_gui_mode) {
-    C_snprintf(buffer, sizeof(buffer), C_text("%s\n\n%s"), msg, dmp);
-#if defined(_WIN32) && !defined(__CYGWIN__)
-    MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONERROR);
-    ExitProcess(1);
-#endif
-  } /* fall through if not WIN32 GUI app */
-
   C_dbg("panic", C_text("%s - execution terminated\n\n%s"), msg, dmp);
   C_exit(1);
 }
@@ -1503,14 +1479,6 @@ void usual_panic(C_char *msg)
 void horror(C_char *msg)
 {
   C_dbg_hook(C_SCHEME_UNDEFINED);
-
-  if(C_gui_mode) {
-    C_snprintf(buffer, sizeof(buffer), C_text("%s"), msg);
-#if defined(_WIN32) && !defined(__CYGWIN__)
-    MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONERROR);
-    ExitProcess(1);
-#endif
-  } /* fall through */
 
   C_dbg("horror", C_text("\n%s - execution terminated"), msg);  
   C_exit(1);
@@ -3889,27 +3857,6 @@ C_word C_halt(C_word msg)
 {
   C_char *dmp = msg != C_SCHEME_FALSE ? C_dump_trace(0) : NULL;
 
-  if(C_gui_mode) {
-    if(msg != C_SCHEME_FALSE) {
-      int n = C_header_size(msg);
-
-      if (n >= sizeof(buffer))
-	n = sizeof(buffer) - 1;
-      C_strlcpy(buffer, (C_char *)C_data_pointer(msg), n);
-      /* XXX msg isn't checked for NUL bytes, but we can't barf here either! */
-    }
-    else C_strlcpy(buffer, C_text("(aborted)"), sizeof(buffer));
-
-    C_strlcat(buffer, C_text("\n\n"), sizeof(buffer));
-
-    if(dmp != NULL) C_strlcat(buffer, dmp, sizeof(buffer));
-
-#if defined(_WIN32) && !defined(__CYGWIN__) 
-    MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONERROR);
-    ExitProcess(1);
-#endif
-  } /* otherwise fall through */
-
   if(msg != C_SCHEME_FALSE) {
     C_fwrite(C_data_pointer(msg), C_header_size(msg), sizeof(C_char), C_stderr);
     C_fputc('\n', C_stderr);
@@ -3932,17 +3879,6 @@ C_word C_message(C_word msg)
    */
   if (memchr(C_c_string(msg), '\0', n) != NULL)
     barf(C_ASCIIZ_REPRESENTATION_ERROR, "##sys#message", msg);
-
-  if(C_gui_mode) {
-    if (n >= sizeof(buffer))
-      n = sizeof(buffer) - 1;
-    C_strncpy(buffer, C_c_string(msg), n);
-    buffer[ n ] = '\0';
-#if defined(_WIN32) && !defined(__CYGWIN__)
-    MessageBox(NULL, buffer, C_text("CHICKEN runtime"), MB_OK | MB_ICONEXCLAMATION);
-    return C_SCHEME_UNDEFINED;
-#endif
-  } /* fall through */
 
   C_fwrite(C_c_string(msg), n, sizeof(C_char), stdout);
   C_putchar('\n');
@@ -4180,17 +4116,9 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
 #endif
 
   case C_fix(4):		/* is this a console application? */
-    return C_mk_bool(!C_gui_mode);
+    return C_SCHEME_TRUE;
 
   case C_fix(5):		/* is this a GUI/console or Windows-GUI application? (silly) */
-    if(C_gui_mode) {
-#ifdef _WIN32
-      return C_fix(1);
-#else
-      return C_SCHEME_FALSE;
-#endif
-    }
-
     return C_fix(0);
 
   case C_fix(6): 		/* milliseconds CPU */

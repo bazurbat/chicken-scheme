@@ -336,19 +336,6 @@ void *alloca ();
 # endif
 #endif
 
-/* Have a GUI? */
-
-#if defined(C_WINDOWS_GUI) || defined(C_GUI)
-# ifdef _WIN32
-#  include <windows.h>
-#  ifndef WINAPI
-#   define WINAPI
-#  endif
-# endif
-#else
-# define C_GENERIC_CONSOLE
-#endif
-
 /* Needed for pre-emptive threading */
 
 #define C_TIMER_INTERRUPTS
@@ -1622,33 +1609,14 @@ extern double trunc(double);
 #define C_ub_i_pointer_f32_set(p, n)    (*((float *)(p)) = (n))
 #define C_ub_i_pointer_f64_set(p, n)    (*((double *)(p)) = (n))
 
-/* left for backwards-compatibility */
-#define C_gui_nongui_marker
-
-#ifdef C_GUI
-# define C_set_gui_mode                 C_gui_mode = 1
-#else
-# define C_set_gui_mode
-#endif
-
 #if !defined(C_EMBEDDED) && !defined(C_SHARED)
-# if (defined(C_WINDOWS_GUI) || defined(C_GUI)) && defined(_WIN32)
-#  define C_main_entry_point            \
-  int WINAPI WinMain(HINSTANCE me, HINSTANCE you, LPSTR cmdline, int show) \
-  { \
-    C_gui_mode = 1; \
-    return CHICKEN_main(0, NULL, (void *)C_toplevel); \
-  }
-# else
-#  define C_main_entry_point            \
-  int main(int argc, char *argv[]) \
-  { \
-    C_set_gui_mode; \
+#  define C_main_entry_point                            \
+int main(int argc, char *argv[])                        \
+{                                                       \
     return CHICKEN_main(argc, argv, (void*)C_toplevel); \
-  }
-# endif
+}
 #else
-# define C_main_entry_point
+#  define C_main_entry_point
 #endif
 
 #define C_alloc_flonum                  C_word *___tmpflonum = C_alloc(WORDS_PER_FLONUM)
@@ -1713,7 +1681,6 @@ C_varextern C_TLS jmp_buf C_restart;
 #endif
 C_varextern C_TLS void *C_restart_address;
 C_varextern C_TLS int C_entry_point_status;
-C_varextern C_TLS int C_gui_mode;
 
 C_varextern C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
 C_varextern C_TLS void (*C_pre_gc_hook)(int mode);

@@ -2221,4 +2221,3 @@
 (compile-file (#(procedure #:clean #:enforce) compile-file (string #!rest) (or false string)))
 (compile-file-options (#(procedure #:clean #:enforce) compile-file-options (#!optional (list-of string)) (list-of string)))
 (scan-input-lines (#(procedure #:enforce) scan-input-lines (* #!optional input-port) *))
-(yes-or-no? (#(procedure #:enforce) yes-or-no? (string #!rest) *))
