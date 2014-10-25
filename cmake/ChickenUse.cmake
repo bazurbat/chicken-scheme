@@ -150,9 +150,9 @@ function(_chicken_add_c_flags in_file out_file)
     # Add global include paths where chicken.h and chicken-config.h are.
     # Empty check is needed when these are overridden, for example when
     # bootstrapping the Chicken itself.
-    if(CHICKEN_INCLUDE_DIRS)
-        list(APPEND c_flags -I${CHICKEN_INCLUDE_DIRS})
-    endif()
+    foreach(i ${CHICKEN_INCLUDE_DIRS})
+        list(APPEND c_flags -I${i})
+    endforeach()
 
     set_property(SOURCE ${out_file} APPEND PROPERTY COMPILE_DEFINITIONS
         ${CHICKEN_DEFINITIONS} ${command_definitions} ${compile_DEFINITIONS})

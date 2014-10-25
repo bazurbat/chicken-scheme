@@ -115,8 +115,7 @@ else()
 endif()
 
 if(NOT DEFINED BUILDING_CHICKEN_BOOT)
-    list(APPEND CHICKEN_OPTIONS -specialize -types
-        ${PROJECT_SOURCE_DIR}/types.db)
+    list(APPEND CHICKEN_OPTIONS -specialize -types ${CHICKEN_TYPES_DB})
 endif()
 
 include(CheckIncludeFile)
@@ -216,7 +215,7 @@ function(_chicken_find_apply_hack)
         set(arch ${CMAKE_SYSTEM_PROCESSOR})
     endif()
 
-    set(source ${PROJECT_SOURCE_DIR}/apply-hack.${arch}.S)
+    set(source ${CMAKE_CURRENT_SOURCE_DIR}/apply-hack.${arch}.S)
 
     if(EXISTS ${source} AND CMAKE_ASM_COMPILER_WORKS AND NOT MSVC)
         set(CHICKEN_APPLY_HACK ${source} CACHE INTERNAL "")
@@ -235,6 +234,6 @@ set(CHICKEN_CONFIG_H ${CMAKE_CURRENT_BINARY_DIR}/chicken-config.h)
 configure_file("chicken-config.h.in" ${CHICKEN_CONFIG_H})
 
 # do not use chicken.h from system include path
-set(CHICKEN_INCLUDE_DIRS "")
+set(CHICKEN_INCLUDE_DIRS ${chicken_BINARY_DIR})
 
-file(COPY types.db DESTINATION .)
+file(COPY ${CHICKEN_TYPES_DB} DESTINATION .)

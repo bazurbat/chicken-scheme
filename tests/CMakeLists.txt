@@ -5,10 +5,10 @@ set(CHICKEN_EXECUTABLE $<TARGET_FILE:chicken-compiler>)
 set(CHICKEN_INTERPRETER $<TARGET_FILE:csi>)
 
 set(CHICKEN_OPTIONS -ignore-repository
-    -types ${chicken_SOURCE_DIR}/types.db
+    -types ${CHICKEN_TYPES_DB}
     -include-path ${chicken_SOURCE_DIR})
 
-set(CHICKEN_INCLUDE_DIRS ${chicken_SOURCE_DIR})
+set(CHICKEN_INCLUDE_DIRS ${chicken_BINARY_DIR} ${chicken_SOURCE_DIR})
 
 # Helper script for stripping absolute paths and converting CRLFs
 set(CHICKEN_RUN_TRIM ${CHICKEN_TMP_DIR}/ChickenTrim.cmake)
@@ -103,8 +103,8 @@ endforeach()
 
 add_custom_command(OUTPUT ${CHICKEN_LOCAL_REPOSITORY}/types.db
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/types.db ${CHICKEN_LOCAL_REPOSITORY}
-        DEPENDS ${CMAKE_SOURCE_DIR}/types.db VERBATIM)
+        ${CHICKEN_TYPES_DB} ${CHICKEN_LOCAL_REPOSITORY}
+        DEPENDS ${CHICKEN_TYPES_DB} VERBATIM)
 
 add_custom_target(prepare-tests
     DEPENDS ${expected_FILES_prepared} ${CHICKEN_LOCAL_REPOSITORY}/types.db)
