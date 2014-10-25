@@ -84,10 +84,6 @@
 #endif
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-/*
- * XXX This should probably be renamed or changed because it's misleading.
- * For example, Haiku is not a Unix either, but this doesn't get defined there.
- */
 # define C_NONUNIX
 #endif
 
