@@ -664,8 +664,6 @@ void *alloca ();
 # define C_SOFTWARE_TYPE "windows"
 #elif defined(__unix__) || defined(C_XXXBSD)
 # define C_SOFTWARE_TYPE "unix"
-#elif defined(ECOS)
-# define C_SOFTWARE_TYPE "ecos"
 #else
 # define C_SOFTWARE_TYPE "unknown"
 #endif

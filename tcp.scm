@@ -107,10 +107,6 @@ static C_word make_socket_nonblocking (C_word sock) {
 # define call_in_progress()       (errno == EINPROGRESS)
 #endif
 
-#ifdef ECOS
-#include <sys/sockio.h>
-#endif
-
 #ifndef h_addr
 # define h_addr  h_addr_list[ 0 ]
 #endif

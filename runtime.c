@@ -73,12 +73,6 @@
 
 #else
 
-#ifdef ECOS
-#include <cyg/kernel/kapi.h>
-static C_TLS int timezone;
-#define NSIG                          32
-#endif
-
 #endif
 
 #ifndef RTLD_GLOBAL
