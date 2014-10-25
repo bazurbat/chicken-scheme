@@ -30,16 +30,7 @@
   (usual-integrations)
   (disable-interrupts)
   (compile-syntax)
-  (foreign-declare #<<EOF
-#include <signal.h>
-
-#if defined(HAVE_DIRECT_H)
-# include <direct.h>
-#else
-# define _getcwd(buf, len)       NULL
-#endif
-EOF
-) )
+  (foreign-declare "#include \"csi.h\""))
 
 (include "banner")
 
