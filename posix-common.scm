@@ -69,7 +69,7 @@ static struct tm *
 C_tm_set( C_word v, void *tm )
 {
   C_tm_set_08( v, (struct tm *)tm );
-#if defined(C_GNU_ENV) && !defined(__CYGWIN__) && !defined(__uClinux__)
+#if defined(C_GNU_ENV) && !defined(__uClinux__)
   C_tm_set_9( v, (struct tm *)tm );
 #endif
   return tm;
@@ -105,7 +105,7 @@ static char C_time_string [TIME_STRING_MAXLENGTH + 1];
 # define C_unsetenv(s)      (unsetenv((char *)C_data_pointer(s)), C_SCHEME_TRUE)
 # define C_setenv(x, y)     C_fix(setenv((char *)C_data_pointer(x), (char *)C_data_pointer(y), 1))
 #else
-# if defined(_WIN32) && !defined(__CYGWIN__)
+# if defined(_WIN32)
 #  define C_unsetenv(s)      C_setenv(s, C_SCHEME_FALSE)
 # else
 #  define C_unsetenv(s)      C_fix(putenv((char *)C_data_pointer(s)))
@@ -420,7 +420,7 @@ EOF
       (change-directory dir)
       (let* ((buffer (make-string 1024))
 	     (len (##core#inline "C_curdir" buffer)) )
-	#+(or unix cygwin)
+	#+(or unix)
 	(##sys#update-errno)
 	(if len
 	    (##sys#substring buffer 0 len)

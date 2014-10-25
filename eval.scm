@@ -72,7 +72,6 @@
 (define default-dynamic-load-libraries
   `(,(string-append "lib" install-lib-name)))
 
-(define-constant cygwin-default-dynamic-load-libraries '("cygchicken-0"))
 (define-constant macosx-load-library-extension ".dylib")
 (define-constant windows-load-library-extension ".dll")
 (define-constant hppa-load-library-extension ".sl")
@@ -1060,10 +1059,7 @@
 ; some eggs are using this
 (define ##sys#load-dynamic-extension ##sys#load-library-extension)
 
-(define ##sys#default-dynamic-load-libraries 
-  (case (build-platform)
-    ((cygwin) cygwin-default-dynamic-load-libraries)
-    (else default-dynamic-load-libraries) ) )
+(define ##sys#default-dynamic-load-libraries default-dynamic-load-libraries)
 
 (define (make-dynamic-library-name name)
   (let ((version (number->string binary-version))

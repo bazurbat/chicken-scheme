@@ -97,7 +97,7 @@ static C_TLS int timezone;
 # define RTLD_LAZY                     0
 #endif
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(_WIN32)
 /* Include winsock2 to get select() for check_fd_ready() */
 # include <winsock2.h>
 # include <windows.h>
@@ -118,7 +118,7 @@ static C_TLS int timezone;
 #endif
 
 #ifdef C_HACKED_APPLY
-# if defined(C_MACOSX) || defined(__MINGW32__) || defined(__CYGWIN__)
+# if defined(C_MACOSX) || defined(__MINGW32__)
 extern void C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 # else
 extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
@@ -1788,7 +1788,7 @@ C_regparm time_t C_fcall C_seconds(C_long *ms)
 
 C_regparm double C_fcall C_cpu_milliseconds(void)
 {
-#if defined(C_NONUNIX) || defined(__CYGWIN__)
+#if defined(C_NONUNIX)
     if(CLOCKS_PER_SEC == 1000) return clock();
     else return C_floor(((double)clock() / (double)CLOCKS_PER_SEC) * 1000);
 #else
@@ -3991,7 +3991,7 @@ C_regparm C_word C_fcall C_read_char(C_word port)
     }
     /* Found here:
        http://mail.python.org/pipermail/python-bugs-list/2002-July/012579.html */
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(_WIN32)
     else if(GetLastError() == ERROR_OPERATION_ABORTED) return C_fix(-1);
 #endif
     else return C_SCHEME_END_OF_FILE;
@@ -4012,7 +4012,7 @@ C_regparm C_word C_fcall C_peek_char(C_word port)
       return C_fix(-1);
     }
     /* see above */
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(_WIN32)
     else if(GetLastError() == ERROR_OPERATION_ABORTED) return C_fix(-1);
 #endif
     else return C_SCHEME_END_OF_FILE;
@@ -4125,7 +4125,7 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
     return C_fix(CLOCKS_PER_SEC);
 
   case C_fix(11):		/* not a unix system? */
-#if defined(C_NONUNIX) || defined(__CYGWIN__)
+#if defined(C_NONUNIX)
     return C_SCHEME_FALSE;
 #else
     return C_SCHEME_TRUE;
@@ -7903,7 +7903,7 @@ void C_ccall C_decode_seconds(C_word c, C_word closure, C_word k, C_word secs, C
 #ifdef C_GNU_ENV
                   /* negative for west of UTC, but we want positive */
 		  C_fix(-tmt->tm_gmtoff)
-#elif defined(__CYGWIN__) || defined(__MINGW32__) || defined(_WIN32) || defined(__WINNT__)
+#elif defined(__MINGW32__) || defined(_WIN32) || defined(__WINNT__)
                   C_fix(mode == C_SCHEME_FALSE ? _timezone : 0) /* does not account for DST */
 #else
                   C_fix(mode == C_SCHEME_FALSE ? timezone : 0)  /* does not account for DST */
@@ -8265,7 +8265,7 @@ C_a_i_cpu_time(C_word **a, int c, C_word buf)
 {
   C_word u, s = C_fix(0);
 
-#if defined(C_NONUNIX) || defined(__CYGWIN__)
+#if defined(C_NONUNIX)
   if(CLOCKS_PER_SEC == 1000) u = clock();
   else u = C_number(a, C_floor(((double)clock() / (double)CLOCKS_PER_SEC) * 1000));
 #else

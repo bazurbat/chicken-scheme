@@ -146,8 +146,6 @@
 
 #if defined(__MINGW32__)
 # include <sys/param.h>
-#elif defined(__CYGWIN__)
-# include <endian.h>
 #elif defined(__linux__)
 # include <endian.h>
 #elif defined(C_XXXBSD)
@@ -223,7 +221,7 @@ void *alloca ();
 #define C_externimport             C_extern
 #define C_externexport             C_extern
 #if defined(PIC)
-# if defined(__CYGWIN__) || defined(__MINGW32__)
+# if defined(__MINGW32__)
 #  ifndef C_BUILDING_LIBCHICKEN
 #   undef  C_varextern
 #   define C_varextern             C_extern __declspec(dllimport)
@@ -694,7 +692,7 @@ static inline int isinf_ld (long double x)
 # define C_MACHINE_TYPE "unknown"
 #endif
 
-#if defined(__CYGWIN__) || defined(__MINGW32__) || defined(_WIN32) || defined(__WINNT__)
+#if defined(__MINGW32__) || defined(_WIN32) || defined(__WINNT__)
 # define C_SOFTWARE_TYPE "windows"
 #elif defined(__unix__) || defined(C_XXXBSD) || defined(_AIX)
 # define C_SOFTWARE_TYPE "unix"
@@ -704,9 +702,7 @@ static inline int isinf_ld (long double x)
 # define C_SOFTWARE_TYPE "unknown"
 #endif
 
-#if defined(__CYGWIN__)
-# define C_BUILD_PLATFORM "cygwin"
-#elif defined(__SUNPRO_C)
+#if defined(__SUNPRO_C)
 # define C_BUILD_PLATFORM "sun"
 #elif defined(__MINGW32__)
 # define C_BUILD_PLATFORM "mingw32"

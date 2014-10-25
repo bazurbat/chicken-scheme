@@ -3683,9 +3683,7 @@ EOF
     (lambda () sym) ) )
 
 (define ##sys#windows-platform
-  (and (eq? 'windows (software-type))
-       ;; Still windows even if 'Linux-like'
-       (not (eq? 'cygwin (build-platform)))) )
+  (eq? 'windows (software-type)))
 
 (define (chicken-version #!optional full)
   (define (get-config)

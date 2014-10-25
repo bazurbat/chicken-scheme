@@ -74,11 +74,7 @@ static C_TLS int C_wait_status;
 #endif
 
 #ifndef PIPE_BUF
-# ifdef __CYGWIN__
-#  define PIPE_BUF       _POSIX_PIPE_BUF
-# else
-#  define PIPE_BUF 1024
-# endif
+# define PIPE_BUF 1024
 #endif
 
 #ifndef O_BINARY
@@ -235,11 +231,7 @@ static C_TLS int C_uw;
 # define C_WSTOPSIG(n)       C_fix(WSTOPSIG(C_unfix(n)))
 #endif
 
-#ifdef __CYGWIN__
-# define C_mkfifo(fn, m)    C_fix(-1);
-#else
-# define C_mkfifo(fn, m)    C_fix(mkfifo((char *)C_data_pointer(fn), C_unfix(m)))
-#endif
+#define C_mkfifo(fn, m)    C_fix(mkfifo((char *)C_data_pointer(fn), C_unfix(m)))
 
 #define C_flock_setup(t, s, n) (C_flock.l_type = C_unfix(t), C_flock.l_start = C_num_to_int(s), C_flock.l_whence = SEEK_SET, C_flock.l_len = C_num_to_int(n), C_SCHEME_UNDEFINED)
 #define C_flock_test(p)     (fcntl(fileno(C_port_file(p)), F_GETLK, &C_flock) >= 0 ? (C_flock.l_type == F_UNLCK ? C_fix(0) : C_fix(C_flock.l_pid)) : C_SCHEME_FALSE)
@@ -326,7 +318,7 @@ static C_word
 C_tm_get( C_word v, void *tm )
 {
   C_tm_get_08( v, (struct tm *)tm );
-#if defined(C_GNU_ENV) && !defined(__CYGWIN__) && !defined(__uClinux__)
+#if defined(C_GNU_ENV) && !defined(__uClinux__)
   C_tm_get_9( v, (struct tm *)tm );
 #endif
   return v;
@@ -380,12 +372,8 @@ static C_word C_i_fifo_p(C_word name)
   res = stat(C_c_string(name), &buf);
 
   if(res != 0) {
-#ifdef __CYGWIN__
-    return C_SCHEME_FALSE;
-#else
     if(errno == ENOENT) return C_fix(0);
     else return C_fix(res);
-#endif
   }
 
   if((buf.st_mode & S_IFMT) == S_IFIFO) return C_SCHEME_TRUE;
@@ -1445,7 +1433,7 @@ EOF
 
 (define local-timezone-abbreviation
   (foreign-lambda* c-string ()
-   "\n#if !defined(__CYGWIN__) && !defined(__SVR4) && !defined(__uClinux__) && !defined(__hpux__) && !defined(_AIX)\n"
+   "\n#if !defined(__SVR4) && !defined(__uClinux__) && !defined(__hpux__) && !defined(_AIX)\n"
    "time_t clock = time(NULL);"
    "struct tm *ltm = C_localtime(&clock);"
    "char *z = ltm ? (char *)ltm->tm_zone : 0;"

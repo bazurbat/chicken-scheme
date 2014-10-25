@@ -52,16 +52,12 @@
 # include <sys/time.h>
 static C_word C_msleep(C_word ms);
 C_word C_msleep(C_word ms) {
-#ifdef __CYGWIN__
-  if(usleep(C_unfix(ms) * 1000) == -1) return C_SCHEME_FALSE;
-#else
   struct timespec ts;
   unsigned long mss = C_unfix(ms);
   ts.tv_sec = mss / 1000;
   ts.tv_nsec = (mss % 1000) * 1000000;
-  
+
   if(nanosleep(&ts, NULL) == -1) return C_SCHEME_FALSE;
-#endif
   return C_SCHEME_TRUE;
 }
 #endif
