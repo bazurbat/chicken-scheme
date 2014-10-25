@@ -146,8 +146,6 @@
 # include <endian.h>
 #elif defined(C_XXXBSD)
 # include <machine/endian.h>
-#elif defined(__hpux__)
-# include <arpa/nameser.h>
 #elif defined(_AIX)
 # include <sys/machine.h>
 #endif
@@ -317,13 +315,8 @@ void *alloca ();
 #endif
 
 #if C_STACK_GROWS_DOWNWARD == -1
-# ifdef __hppa__
-#  undef C_STACK_GROWS_DOWNWARD
-#  define C_STACK_GROWS_DOWNWARD 0
-# else
 #  undef C_STACK_GROWS_DOWNWARD
 #  define C_STACK_GROWS_DOWNWARD 1
-# endif
 #endif
 
 /* Needed for pre-emptive threading */
@@ -649,8 +642,6 @@ void *alloca ();
 # define C_MACHINE_TYPE "alpha"
 #elif defined(__mips__)
 # define C_MACHINE_TYPE "mips"
-#elif defined(__hppa__)
-# define C_MACHINE_TYPE "hppa"
 #elif defined(__sparc_v9__) || defined(__sparcv9)
 # define C_MACHINE_TYPE "ultrasparc"
 #elif defined(__sparc__)
@@ -711,8 +702,6 @@ void *alloca ();
 # define C_SOFTWARE_VERSION "openbsd"
 #elif defined(C_MACOSX)
 # define C_SOFTWARE_VERSION "macosx"
-#elif defined(__hpux__)
-# define C_SOFTWARE_VERSION "hpux"
 #elif defined(__DragonFly__)
 # define C_SOFTWARE_VERSION "dragonfly"
 #elif defined(__HAIKU__)

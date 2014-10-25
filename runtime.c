@@ -8064,56 +8064,8 @@ void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word ent
 # undef DLOAD_2_DEFINED
 #endif
 
-#if !defined(NO_DLOAD2) && defined(HAVE_DL_H) && !defined(DLOAD_2_DEFINED)
-# ifdef __hpux__
-#  define DLOAD_2_DEFINED
-void dload_2(void *dummy)
-{
-  void *handle, *p;
-  C_word entry = C_restore,
-         name = C_restore,
-         k = C_restore;
-  C_char *mname = (C_char *)C_data_pointer(name);
-
-  /*
-   * C_fprintf(C_stderr,
-   *   "shl_loading %s : %s\n",
-   *   (char *) C_data_pointer(name),
-   *   (char *) C_data_pointer(entry));
-   */
-
-  if ((handle = (void *) shl_load(mname,
-				  BIND_IMMEDIATE | DYNAMIC_PATH,
-				  0L)) != NULL) {
-    shl_t shl_handle = (shl_t) handle;
-
-    /*** This version does not check for C_dynamic_and_unsafe. Fix it. */
-    if (shl_findsym(&shl_handle, (char *) C_data_pointer(entry), TYPE_PROCEDURE, &p) == 0) {
-      current_module_name = C_strdup(mname);
-      current_module_handle = handle;
-
-      if(debug_mode) {
-	C_dbg(C_text("debug"), C_text("loading compiled module `%s' (handle is " UWORD_FORMAT_STRING ")\n"),
-	      current_module_name, (C_uword)current_module_handle);
-      }
-
-      ((C_proc2)p)(2, C_SCHEME_UNDEFINED, k);
-    } else {
-      C_dlerror = (char *) C_strerror(errno);
-      shl_unload(shl_handle);
-    }
-  } else {
-    C_dlerror = (char *) C_strerror(errno);
-  }
-
-  C_kontinue(k, C_SCHEME_FALSE);
-}
-# endif
-#endif
-
 
 #if !defined(NO_DLOAD2) && defined(HAVE_DLFCN_H) && !defined(DLOAD_2_DEFINED)
-# ifndef __hpux__
 #  define DLOAD_2_DEFINED
 void dload_2(void *dummy)
 {
@@ -8159,7 +8111,6 @@ void dload_2(void *dummy)
   C_dlerror = (char *)dlerror();
   C_kontinue(k, C_SCHEME_FALSE);
 }
-# endif
 #endif
 
 

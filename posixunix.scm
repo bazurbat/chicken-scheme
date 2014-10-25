@@ -1428,7 +1428,7 @@ EOF
 
 (define local-timezone-abbreviation
   (foreign-lambda* c-string ()
-   "\n#if !defined(__uClinux__) && !defined(__hpux__) && !defined(_AIX)\n"
+   "\n#if !defined(__uClinux__) && !defined(_AIX)\n"
    "time_t clock = time(NULL);"
    "struct tm *ltm = C_localtime(&clock);"
    "char *z = ltm ? (char *)ltm->tm_zone : 0;"

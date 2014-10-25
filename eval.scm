@@ -74,7 +74,6 @@
 
 (define-constant macosx-load-library-extension ".dylib")
 (define-constant windows-load-library-extension ".dll")
-(define-constant hppa-load-library-extension ".sl")
 (define-constant default-load-library-extension ".so")
 (define-constant environment-table-size 301)
 (define-constant source-file-extension ".scm")
@@ -1052,8 +1051,6 @@
 (define ##sys#load-library-extension 	; this is crude...
   (cond [(eq? (software-type) 'windows) windows-load-library-extension]
 	[(eq? (software-version) 'macosx) macosx-load-library-extension]
-	[(and (eq? (software-version) 'hpux) 
-	      (eq? (machine-type) 'hppa)) hppa-load-library-extension]
 	[else default-load-library-extension] ) )
 
 ; some eggs are using this
