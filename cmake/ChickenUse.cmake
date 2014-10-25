@@ -277,7 +277,7 @@ function(_chicken_command out_var in_file)
             ARGS -E copy ${CMAKE_CURRENT_BINARY_DIR}/${import} ${CHICKEN_IMPORT_LIBRARY_DIR}/${import}
             VERBATIM APPEND)
         # sometimes timestamp of generated import library is not updated
-        if(WIN32)
+        if(MSVC90)
             add_custom_command(OUTPUT ${command_output}
                 COMMAND ${CMAKE_COMMAND}
                 ARGS -E touch_nocreate ${CMAKE_CURRENT_BINARY_DIR}/${import}
