@@ -32,8 +32,15 @@
 ; OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (module runtime.platform
-()
+        (
+         is-64bit
+        )
 
-(import scheme chicken)
+(import scheme chicken foreign)
+
+(foreign-declare "#include \"platform.h\"")
+
+(define is-64bit
+  (foreign-lambda bool "is_64bit"))
 
 )
