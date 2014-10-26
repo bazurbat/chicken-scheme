@@ -33,7 +33,7 @@
                      (get-output-string out)
                      (begin
                        (write-char #\< out)
-                       (write-char c out) 
+                       (write-char c out)
                        (loop) ) ) ) ]
               [else
                (write-char c out)

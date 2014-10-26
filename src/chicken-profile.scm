@@ -28,9 +28,9 @@
 (declare
   (block)
   (uses srfi-1
-	data-structures
-	posix
-	utils))
+        data-structures
+        posix
+        utils))
 
 (define symbol-table-size 3001)
 
@@ -69,69 +69,69 @@ EOF
 (define (run args)
   (let loop ([args args])
     (if (null? args)
-	(begin
-	  (unless file 
-	    (set! file
-	      (let ((fs (glob "PROFILE.*")))
-		(if (null? fs)
-		    (error "no PROFILEs found")
-		    (first (sort fs 
-				 (lambda (f1 f2)
-				   (> (file-modification-time f1)
-				      (file-modification-time f2))) ) ) ) ) ) )
-	  (write-profile) )
-	(let ([arg (car args)]
-	      [rest (cdr args)] )
-	  (define (next-arg)
-	    (if (null? rest)
-		(error "missing argument to option" arg)
-		(let ((narg (car rest)))
-		  (set! rest (cdr rest))
-		  narg)))
-	  (define (next-number)
-	    (let ((n (string->number (next-arg))))
-	      (if (and n (> n 0)) n (error "invalid argument to option" arg))))
-	  (cond 
-	   [(member arg '("-h" "-help" "--help")) (print-usage)]
-	   [(string=? arg "-version")
-	    (print "chicken-profile - Version " (chicken-version))
-	    (exit) ]
-	   [(string=? arg "-release")
-	    (print (chicken-version))
-	    (exit) ]
-	   [(string=? arg "-no-unused") (set! no-unused #t)]
-	   [(string=? arg "-top") (set! top (next-number))]
-	   [(string=? arg "-sort-by-calls") (set! sort-by sort-by-calls)]
-	   [(string=? arg "-sort-by-time") (set! sort-by sort-by-time)]
-	   [(string=? arg "-sort-by-avg") (set! sort-by sort-by-avg)]
-	   [(string=? arg "-sort-by-name") (set! sort-by sort-by-name)]
-	   [(string=? arg "-decimals") (set-decimals (next-arg))]
-	   [(and (> (string-length arg) 1) (char=? #\- (string-ref arg 0)))
-	    (error "invalid option" arg) ]
-	   [file (print-usage)]
-	   [else (set! file arg)] )
-	  (loop rest) ) ) ) )
+        (begin
+          (unless file
+            (set! file
+              (let ((fs (glob "PROFILE.*")))
+                (if (null? fs)
+                    (error "no PROFILEs found")
+                    (first (sort fs
+                                 (lambda (f1 f2)
+                                   (> (file-modification-time f1)
+                                      (file-modification-time f2))) ) ) ) ) ) )
+          (write-profile) )
+        (let ([arg (car args)]
+              [rest (cdr args)] )
+          (define (next-arg)
+            (if (null? rest)
+                (error "missing argument to option" arg)
+                (let ((narg (car rest)))
+                  (set! rest (cdr rest))
+                  narg)))
+          (define (next-number)
+            (let ((n (string->number (next-arg))))
+              (if (and n (> n 0)) n (error "invalid argument to option" arg))))
+          (cond
+           [(member arg '("-h" "-help" "--help")) (print-usage)]
+           [(string=? arg "-version")
+            (print "chicken-profile - Version " (chicken-version))
+            (exit) ]
+           [(string=? arg "-release")
+            (print (chicken-version))
+            (exit) ]
+           [(string=? arg "-no-unused") (set! no-unused #t)]
+           [(string=? arg "-top") (set! top (next-number))]
+           [(string=? arg "-sort-by-calls") (set! sort-by sort-by-calls)]
+           [(string=? arg "-sort-by-time") (set! sort-by sort-by-time)]
+           [(string=? arg "-sort-by-avg") (set! sort-by sort-by-avg)]
+           [(string=? arg "-sort-by-name") (set! sort-by sort-by-name)]
+           [(string=? arg "-decimals") (set-decimals (next-arg))]
+           [(and (> (string-length arg) 1) (char=? #\- (string-ref arg 0)))
+            (error "invalid option" arg) ]
+           [file (print-usage)]
+           [else (set! file arg)] )
+          (loop rest) ) ) ) )
 
 (define (sort-by-calls x y)
   (let ([c1 (second x)]
-	[c2 (second y)] )
+        [c2 (second y)] )
     (if (eqv? c1 c2)
-	(> (third x) (third y))
-	(if c1 (if c2 (> c1 c2) #t) #t) ) ) )
+        (> (third x) (third y))
+        (if c1 (if c2 (> c1 c2) #t) #t) ) ) )
 
 (define (sort-by-time x y)
   (let ([c1 (third x)]
-	[c2 (third y)] )
+        [c2 (third y)] )
     (if (= c1 c2)
-	(> (second x) (second y))
-	(> c1 c2) ) ) )
+        (> (second x) (second y))
+        (> c1 c2) ) ) )
 
 (define (sort-by-avg x y)
   (let ([c1 (cadddr x)]
-	[c2 (cadddr y)] )
+        [c2 (cadddr y)] )
     (if (eqv? c1 c2)
-	(> (third x) (third y))
-	(> c1 c2) ) ) )
+        (> (third x) (third y))
+        (> c1 c2) ) ) )
 
 (define (sort-by-name x y)
   (string<? (symbol->string (first x)) (symbol->string (first y))) )
@@ -141,15 +141,15 @@ EOF
 (define (set-decimals arg)
   (if (= (string-length arg) 3)
       (begin
-	(define (arg-digit n)
-	  (let ((n (- (char->integer (string-ref arg n))
-		      (char->integer #\0))))
-	    (if (<= 0 n 9)
-		(if (= n 9) 8 n) ; 9 => overflow in format-real
-		(error "invalid argument to -decimals option" arg))))
-	(set! seconds-digits (arg-digit 0))
-	(set! average-digits (arg-digit 1))
-	(set! percent-digits (arg-digit 2)))
+        (define (arg-digit n)
+          (let ((n (- (char->integer (string-ref arg n))
+                      (char->integer #\0))))
+            (if (<= 0 n 9)
+                (if (= n 9) 8 n) ; 9 => overflow in format-real
+                (error "invalid argument to -decimals option" arg))))
+        (set! seconds-digits (arg-digit 0))
+        (set! average-digits (arg-digit 1))
+        (set! percent-digits (arg-digit 2)))
       (error "invalid argument to -decimals option" arg)))
 
 (define (make-sysmbol-table)
@@ -158,25 +158,25 @@ EOF
 (define (read-profile)
   (let ((hash (make-symbol-table)))
     (do ((line (read) (read)))
-	((eof-object? line))
+        ((eof-object? line))
       (##sys#hash-table-set!
        hash (first line)
        (map (lambda (x y) (and x y (+ x y)))
-	    (or (##sys#hash-table-ref hash (first line)) '(0 0))
-	    (cdr line))))
+            (or (##sys#hash-table-ref hash (first line)) '(0 0))
+            (cdr line))))
     (let ((alist '()))
       (##sys#hash-table-for-each
        (lambda (sym counts)
-	 (set! alist (alist-cons sym counts alist)))
+         (set! alist (alist-cons sym counts alist)))
        hash)
       alist)))
 
 (define (format-string str cols #!optional right (padc #\space))
   (let* ((len (string-length str))
-	 (pad (make-string (fxmax 0 (fx- cols len)) padc)) )
+         (pad (make-string (fxmax 0 (fx- cols len)) padc)) )
     (if right
-	(string-append pad str)
-	(string-append str pad) ) ) )
+        (string-append pad str)
+        (string-append str pad) ) ) )
 
 (define (format-real n d)
   (let ((exact-value (inexact->exact (truncate n))))
@@ -186,59 +186,59 @@ EOF
      (substring
       (number->string
        (inexact->exact
-	(truncate
-	 (* (- n exact-value -1) (expt 10 d)))))
+        (truncate
+         (* (- n exact-value -1) (expt 10 d)))))
       1 (+ d 1)))))
 
 (define (write-profile)
   (print "reading `" file "' ...\n")
   (let* ((data0 (with-input-from-file file read-profile))
-	 (max-t (foldl (lambda (r t) (max r (third t))) 0 data0))
-	 (data (sort (map
-		      (lambda (t)
-			(append
-			 t
-			 (let ((c (second t)) ; count
-			       (t (third t))) ; total time
-			   (list (or (and c (> c 0) (/ t c)) ; time / count
-				     0)
-				 (or (and (> max-t 0) (* (/ t max-t) 100)) ; % of max-time
-				     0)
-				 ))))
-		      data0)
+         (max-t (foldl (lambda (r t) (max r (third t))) 0 data0))
+         (data (sort (map
+                      (lambda (t)
+                        (append
+                         t
+                         (let ((c (second t)) ; count
+                               (t (third t))) ; total time
+                           (list (or (and c (> c 0) (/ t c)) ; time / count
+                                     0)
+                                 (or (and (> max-t 0) (* (/ t max-t) 100)) ; % of max-time
+                                     0)
+                                 ))))
+                      data0)
                      sort-by)))
     (if (< 0 top (length data))
-	(set! data (take data top)))
+        (set! data (take data top)))
     (set! data (map (lambda (entry)
-		      (let ([c (second entry)] ; count
-			    [t (third entry)]  ; total time
-			    [a (fourth entry)] ; average time
-			    [p (fifth entry)] ) ; % of max time
-			(list (##sys#symbol->qualified-string (first entry))
-			      (if (not c) "overflow" (number->string c))
-			      (format-real (/ t 1000) seconds-digits)
-			      (format-real (/ a 1000) average-digits)
-			      (format-real p percent-digits))))
-		    (remove (lambda (entry) 
-			      (if (second entry) 
-				  (and (zero? (second entry)) no-unused)
-				  #f) )
-			    data)))
+                      (let ([c (second entry)] ; count
+                            [t (third entry)]  ; total time
+                            [a (fourth entry)] ; average time
+                            [p (fifth entry)] ) ; % of max time
+                        (list (##sys#symbol->qualified-string (first entry))
+                              (if (not c) "overflow" (number->string c))
+                              (format-real (/ t 1000) seconds-digits)
+                              (format-real (/ a 1000) average-digits)
+                              (format-real p percent-digits))))
+                    (remove (lambda (entry)
+                              (if (second entry)
+                                  (and (zero? (second entry)) no-unused)
+                                  #f) )
+                            data)))
     (let* ([headers (list "procedure" "calls" "seconds" "average" "percent")]
-	   [alignments (list #f #t #t #t #t)]
-	   [spacing 2]
-	   [spacer (make-string spacing #\space)]
-	   [column-widths (fold
-			   (lambda (row max-widths)
-			     (map max (map string-length row) max-widths))
-			   (list 0 0 0 0 0)
-			   (cons headers data))])
+           [alignments (list #f #t #t #t #t)]
+           [spacing 2]
+           [spacer (make-string spacing #\space)]
+           [column-widths (fold
+                           (lambda (row max-widths)
+                             (map max (map string-length row) max-widths))
+                           (list 0 0 0 0 0)
+                           (cons headers data))])
       (define (print-row row)
-	(print (string-intersperse (map format-string row column-widths alignments) spacer)))
+        (print (string-intersperse (map format-string row column-widths alignments) spacer)))
       (print-row headers)
       (print (make-string (+ (reduce + 0 column-widths)
-			     (* spacing (- (length alignments) 1)))
-			  #\-))
+                             (* spacing (- (length alignments) 1)))
+                          #\-))
       (for-each print-row data))))
-  
+
 (run (command-line-arguments))
