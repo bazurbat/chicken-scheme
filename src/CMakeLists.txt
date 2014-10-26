@@ -5,6 +5,8 @@ include(ChickenConfigure)
 
 include_directories(BEFORE ${chicken_SOURCE_DIR} ${chicken_BINARY_DIR})
 
+# set(CHICKEN_LIBRARY_PATH ${chicken_BINARY_DIR})
+
 # runtime
 
 set(libchicken_C_SOURCES chicken.h runtime.c ${CHICKEN_APPLY_HACK})

@@ -263,6 +263,7 @@ function(_chicken_command out_var in_file)
                     "-DCOMMAND=${chicken_command}"
                     "-DOUTPUT_FILE=${compile_ERROR_FILE}"
                     "-DCHICKEN_REPOSITORY=${CHICKEN_REPOSITORY}"
+                    "-DLIBRARY_PATH=${CHICKEN_LIBRARY_PATH}"
                     -P ${CHICKEN_RUN}
             DEPENDS ${depends} VERBATIM)
     else()
@@ -271,6 +272,7 @@ function(_chicken_command out_var in_file)
                     "-DCOMMAND=${chicken_command}"
                     "-DOUTPUT_FILE=${compile_ERROR_FILE}"
                     "-DCHICKEN_REPOSITORY=${CHICKEN_REPOSITORY}"
+                    "-DLIBRARY_PATH=${CHICKEN_LIBRARY_PATH}"
                     -P ${CHICKEN_RUN}
             DEPENDS ${depends} VERBATIM)
     endif()
