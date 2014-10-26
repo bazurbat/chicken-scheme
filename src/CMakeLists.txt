@@ -3,6 +3,8 @@ project(chicken C ASM)
 include(ChickenBuildTag)
 include(ChickenConfigure)
 
+include_directories(BEFORE ${chicken_SOURCE_DIR} ${chicken_BINARY_DIR})
+
 # runtime
 
 set(libchicken_C_SOURCES chicken.h runtime.c ${CHICKEN_APPLY_HACK})
@@ -54,6 +56,8 @@ set_target_properties(libchicken PROPERTIES
     PREFIX ""
     OUTPUT_NAME lib${CHICKEN_PROGRAM_PREFIX}chicken
     VERSION ${API_VERSION})
+
+add_subdirectory(runtime)
 
 # compiler
 
