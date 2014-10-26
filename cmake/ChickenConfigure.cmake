@@ -31,11 +31,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(DEBUGBUILD 1)
 endif()
 
-find_program(CHICKEN_INSTALL_CC ${_chicken_host_system}gcc)
-find_program(CHICKEN_INSTALL_CXX ${_chicken_host_system}g++)
-find_program(CHICKEN_INSTALL_RC_COMPILER ${_chicken_host_system}windres)
-mark_as_advanced(CHICKEN_INSTALL_CC CHICKEN_INSTALL_CXX CHICKEN_INSTALL_RC_COMPILER)
-
 if(NOT CHICKEN_HOST_SYSTEM STREQUAL CHICKEN_TARGET_SYSTEM)
     set(CHICKEN_CROSS 1)
     set(_chicken_program_prefix ${_chicken_target_system})
@@ -84,10 +79,8 @@ endif()
 
 set(CHICKEN_TARGET_NAME        ${CHICKEN_INSTALL_NAME} CACHE STRING
     "Canonical target Chicken name")
-set(CHICKEN_TARGET_FEATURES "" CACHE STRING
-    "Target features")
 set(TARGET_PREFIX ${CHICKEN_TARGET_ROOT_DIR}${CHICKEN_TARGET_RUN_PREFIX})
-mark_as_advanced(CHICKEN_TARGET_NAME CHICKEN_TARGET_FEATURES)
+mark_as_advanced(CHICKEN_TARGET_NAME)
 
 set(TARGET_BINDIR      ${INSTALL_BINDIR})
 set(TARGET_LIBDIR      ${INSTALL_LIBDIR})
@@ -172,39 +165,12 @@ check_symbol_exists("strtoq"         "stdlib.h"  HAVE_STRTOQ)
 # FIXME: seems to be defined in every platform Makefile but not used anywhere
 set(STDC_HEADERS 1)
 
-function(_chicken_set_more_libs)
-    # TODO: handle MSVC
-    set(libs "")
-    foreach(lib ${CHICKEN_EXTRA_LIBRARIES})
-        set(libs "${libs} -l${lib}")
-    endforeach()
-    string(STRIP ${libs} libs)
-    set(MORE_LIBS ${libs} PARENT_SCOPE)
-endfunction()
-_chicken_set_more_libs()
-
 set(C_USES_SONAME 1)
-set(C_WINDOWS_SHELL 0)
 
 # TODO: investigate cygwin/mingw/win32 native
 if(WIN32)
     set(C_USES_SONAME 0)
-    set(C_WINDOWS_SHELL 1)
 endif()
-
-if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
-    set(CHICKEN_C_FLAGS_CONFIG ${CMAKE_C_FLAGS_MINSIZEREL})
-elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-    set(CHICKEN_C_FLAGS_CONFIG ${CMAKE_C_FLAGS_RELEASE})
-elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CHICKEN_C_FLAGS_CONFIG ${CMAKE_C_FLAGS_DEBUG})
-endif()
-
-foreach(D ${CHICKEN_DEFINITIONS})
-    list(INSERT CHICKEN_C_FLAGS_CONFIG 0 -D${D})
-endforeach()
-
-_chicken_join(CHICKEN_C_FLAGS_CONFIG ${CHICKEN_C_FLAGS_CONFIG} ${CHICKEN_C_FLAGS})
 
 function(_chicken_find_apply_hack)
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
