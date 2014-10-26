@@ -2188,31 +2188,6 @@
 (##sys#srfi-4-vector? (#(procedure #:pure #:predicate (or (struct u8vector) (struct u16vector) (struct s8vector) (struct s16vector) (struct u32vector) (struct s32vector) (struct f32vector) (struct f64vector))) ##sys#srfi-4-vector? (*) boolean))
 
 
-;; tcp
-
-(tcp-abandon-port (#(procedure #:clean #:enforce) tcp-abandon-port (port) undefined))
-(tcp-accept (#(procedure #:clean #:enforce) tcp-accept ((struct tcp-listener)) input-port output-port))
-(tcp-accept-ready? (#(procedure #:clean #:enforce) tcp-accept-ready? ((struct tcp-listener)) boolean))
-(tcp-accept-timeout (#(procedure #:clean #:enforce) tcp-accept-timeout (#!optional (or false number)) (or false number)))
-(tcp-addresses (#(procedure #:clean #:enforce) tcp-addresses (port) string string))
-(tcp-buffer-size (#(procedure #:clean #:enforce) tcp-buffer-size (#!optional fixnum) fixnum))
-(tcp-close (#(procedure #:clean #:enforce) tcp-close ((struct tcp-listener)) undefined))
-(tcp-connect (#(procedure #:clean #:enforce) tcp-connect (string #!optional fixnum) input-port output-port))
-(tcp-connect-timeout (#(procedure #:clean #:enforce) tcp-connect-timeout (#!optional (or false number)) (or false number)))
-(tcp-listen (#(procedure #:clean #:enforce) tcp-listen (fixnum #!optional fixnum *) (struct tcp-listener)))
-
-(tcp-listener-fileno (#(procedure #:clean #:enforce) tcp-listener-fileno ((struct tcp-listener)) fixnum)
-		     (((struct tcp-listener)) (##sys#slot #(1) '1)))
-
-(tcp-listener-port (#(procedure #:clean #:enforce) tcp-listener-port ((struct tcp-listener)) fixnum))
-
-(tcp-listener? (#(procedure #:clean #:predicate (struct tcp-listener)) tcp-listener? (*) boolean))
-
-(tcp-port-numbers (#(procedure #:clean #:enforce) tcp-port-numbers (port) fixnum fixnum))
-(tcp-read-timeout (#(procedure #:clean #:enforce) tcp-read-timeout (#!optional (or false number)) (or false number)))
-(tcp-write-timeout (#(procedure #:clean #:enforce) tcp-write-timeout (#!optional (or false number)) (or false number)))
-
-
 ;; utils
 
 (read-all (#(procedure #:enforce) read-all (#!optional (or input-port string)) string))

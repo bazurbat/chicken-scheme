@@ -33,7 +33,6 @@ set(libchicken_SCM_SOURCES
     srfi-1.scm
     srfi-4.scm
     stub.scm
-    tcp.scm
     utils.scm
 )
 
@@ -159,7 +158,6 @@ set(import_LIBRARIES
     posix.import
     srfi-1.import
     srfi-4.import
-    tcp.import
     utils.import
 )
 
