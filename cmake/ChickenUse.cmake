@@ -255,25 +255,24 @@ function(_chicken_command out_var in_file)
 
     list(INSERT command_output 0 ${out_file})
 
-    if(compile_ERROR_FILE)
+    if(CHICKEN_EXTRACT_DEPENDS AND NOT is_import_library)
         add_custom_command(OUTPUT ${command_output}
+            COMMAND ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT}
+                    ${in_file} ${dep_file}
             COMMAND ${CMAKE_COMMAND}
-                "-DCOMMAND=${chicken_command}"
-                "-DOUTPUT_FILE=${compile_ERROR_FILE}"
-                -P ${CHICKEN_RUN}
+                    "-DCOMMAND=${chicken_command}"
+                    "-DOUTPUT_FILE=${compile_ERROR_FILE}"
+                    "-DCHICKEN_REPOSITORY=${CHICKEN_REPOSITORY}"
+                    -P ${CHICKEN_RUN}
             DEPENDS ${depends} VERBATIM)
     else()
-        if(CHICKEN_EXTRACT_DEPENDS AND NOT is_import_library)
-            add_custom_command(OUTPUT ${command_output}
-                COMMAND ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT}
-                        ${in_file} ${dep_file}
-                COMMAND ${chicken_command}
-                DEPENDS ${depends} VERBATIM)
-        else()
-            add_custom_command(OUTPUT ${command_output}
-                COMMAND ${chicken_command}
-                DEPENDS ${depends} VERBATIM)
-        endif()
+        add_custom_command(OUTPUT ${command_output}
+            COMMAND ${CMAKE_COMMAND}
+                    "-DCOMMAND=${chicken_command}"
+                    "-DOUTPUT_FILE=${compile_ERROR_FILE}"
+                    "-DCHICKEN_REPOSITORY=${CHICKEN_REPOSITORY}"
+                    -P ${CHICKEN_RUN}
+            DEPENDS ${depends} VERBATIM)
     endif()
 
     foreach(import ${command_import_libraries})
