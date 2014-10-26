@@ -73,45 +73,6 @@
      (string delim))))
 
 
-;;; Compile and load file
-
-(define compile-file-options (make-parameter '("-O2" "-d2")))
-
-(define compile-file
-  (let ((csc (foreign-value "C_CSC_PROGRAM" c-string))
-	(load-file load)
-	(path (foreign-value "C_INSTALL_BIN_HOME" c-string)) )
-    (lambda (filename #!key options output-file (load #t) verbose)
-      (let* ((cscpath (or (file-exists? (make-pathname path csc)) "csc"))
-	     (tmpfile (and (not output-file) (create-temporary-file "so")))
-	     (crapshell ##sys#windows-platform)
-	     (cmd (sprintf "~a~a -s ~a ~a -o ~a~a" 
-		    (if crapshell "\"" "")
-		    (qs cscpath)
-		    (string-intersperse
-		     (or options
-			 (compile-file-options)))
-		    (qs filename)
-		    (qs (or output-file tmpfile))
-		    (if crapshell "\"" ""))))
-	(when verbose (print "  " cmd))
-	(let ((status (system cmd)))
-	  (cond ((zero? status)
-		 (unless output-file 
-		   (on-exit
-		    (lambda ()
-		      (handle-exceptions ex #f (delete-file* tmpfile)))))
-		 (when load
-		   (let ((f (or output-file tmpfile)))
-		     (handle-exceptions ex
-			 (begin
-			   (delete-file* f)
-			   (abort ex))
-		       (load-file f)
-		       f))))
-		(else #f)))))))
-
-
 ;;; Scan lines until regex or predicate matches
 
 (define scan-input-lines
