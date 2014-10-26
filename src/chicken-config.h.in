@@ -28,6 +28,7 @@
 #cmakedefine HAVE_GETPROCADDRESS
 #cmakedefine HAVE_LOADLIBRARY
 #cmakedefine HAVE_MEMMOVE
+#cmakedefine HAVE_SETENV
 #cmakedefine HAVE_SIGACTION
 #cmakedefine HAVE_SIGPROCMASK
 #cmakedefine HAVE_SIGSETJMP
