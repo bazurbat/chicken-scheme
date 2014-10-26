@@ -16,8 +16,6 @@ add_custom_target(tests)
 
 find_package(Chicken REQUIRED)
 
-option(CHICKEN_BUILD_TESTS "Build tests" NO)
-
 set(CHICKEN_EXTRACT_DEPENDS YES)
 
 set(CHICKEN_RUN ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
@@ -25,10 +23,7 @@ set(CHICKEN_EXTRACT_SCRIPT ${CMAKE_SOURCE_DIR}/cmake/extract-depends.scm)
 set(CHICKEN_TYPES_DB ${CMAKE_SOURCE_DIR}/misc/types.db)
 
 add_subdirectory(src)
-
-if(CHICKEN_BUILD_TESTS)
-    add_subdirectory(tests EXCLUDE_FROM_ALL)
-endif()
+add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 # cpack
 
