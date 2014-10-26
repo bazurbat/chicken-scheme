@@ -36,12 +36,12 @@ set(libchicken_SCM_SOURCES
     srfi-4.scm
     stub.scm
     utils.scm
+    runtime/platform.scm
 )
 
 add_chicken_sources(libchicken_SOURCES
-    C_SOURCES ${libchicken_C_SOURCES})
-add_chicken_sources(libchicken_SOURCES
     SOURCES ${libchicken_SCM_SOURCES}
+    C_SOURCES ${libchicken_C_SOURCES}
     OPTIONS ${LIBRARY_OPTIONS})
 
 add_library(libchicken SHARED ${libchicken_SOURCES})

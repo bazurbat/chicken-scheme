@@ -31,16 +31,9 @@
 ; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 ; OF THE POSSIBILITY OF SUCH DAMAGE.
 
-(module runtime.platform
-        (
-         is-64bit
-        )
-
-(import scheme chicken foreign)
+(declare (unit runtime.platform))
 
 (foreign-declare "#include \"platform.h\"")
 
-(define is-64bit
+(define runtime.platform:is-64bit
   (foreign-lambda bool "is_64bit"))
-
-)
