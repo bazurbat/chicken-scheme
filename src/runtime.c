@@ -4072,10 +4072,6 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
     double tgc;
 
     switch(fudge_factor) {
-    case C_fix(1): return C_SCHEME_END_OF_FILE; /* eof object */
-    case C_fix(2):                            /* get time */
-        panic(C_text("(##sys#fudge 2) [get time] not implemented"));
-
     case C_fix(3):              /* 64-bit system? */
 #ifdef C_SIXTY_FOUR
         return C_SCHEME_TRUE;
@@ -4086,20 +4082,8 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
     case C_fix(4):              /* is this a console application? */
         return C_SCHEME_TRUE;
 
-    case C_fix(5):              /* is this a GUI/console or Windows-GUI application? (silly) */
-        return C_fix(0);
-
-    case C_fix(6):              /* milliseconds CPU */
-        panic(C_text("(##sys#fudge 6) [current CPU milliseconds] not implemented"));
-
     case C_fix(7):              /* wordsize */
         return C_fix(sizeof(C_word));
-
-    case C_fix(8):              /* words needed for double */
-        return C_fix(C_wordsperdouble(1));
-
-    case C_fix(9):              /* latency */
-        return C_fix(last_interrupt_latency);
 
     case C_fix(10):             /* clocks per sec */
         return C_fix(CLOCKS_PER_SEC);
@@ -4123,31 +4107,14 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
     case C_fix(15):             /* symbol-gc enabled? */
         return C_mk_bool(C_enable_gcweak);
 
-    case C_fix(16):             /* milliseconds (wall clock) */
-        panic(C_text("(##sys#fudge 16) [current wall clock milliseconds] not implemented"));
-
     case C_fix(17):             /* fixed heap? */
         return(C_mk_bool(C_heap_size_is_fixed));
 
     case C_fix(18):             /* stack direction */
         return(C_fix(C_STACK_GROWS_DOWNWARD));
 
-    case C_fix(19):             /* number of locatives */
-        for(i = j = 0; i < locative_table_count; ++i)
-            if(locative_table[ i ] != C_SCHEME_UNDEFINED) ++j;
-        return C_fix(j);
-
-    case C_fix(20):             /* unused */
-        return C_SCHEME_FALSE;
-
     case C_fix(21):             /* largest fixnum */
         return C_fix(C_MOST_POSITIVE_FIXNUM);
-
-    case C_fix(22):             /* does this process use a private egg-repository? */
-        return C_SCHEME_FALSE;
-
-    case C_fix(23):             /* seconds since process startup */
-        return C_fix(C_startup_time_seconds);
 
     case C_fix(24):             /* dynamic loading available? */
 #ifdef NO_DLOAD2
@@ -4172,12 +4139,6 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
         return C_SCHEME_FALSE;
 #endif
 
-    case C_fix(29):             /* size of ring-buffer used to hold trace entries */
-        return C_fix(C_trace_buffer_size);
-
-    case C_fix(30):             /* unused */
-        return C_SCHEME_FALSE;
-
     case C_fix(31):             /* GC time since last invocation */
         tgc = timer_accumulated_gc_ms;
         timer_accumulated_gc_ms = 0;
@@ -4200,23 +4161,12 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
         return C_fix(126);
 #endif
 
-    case C_fix(35):             /* unused */
-        /* used to be apply-hook indicator */
-        return C_SCHEME_FALSE;
-
     case C_fix(36):             /* toggle debug mode */
         debug_mode = !debug_mode;
         return C_mk_bool(debug_mode);
 
     case C_fix(37):             /* heap-dump enabled? */
         return C_mk_bool(dump_heap_on_exit);
-
-    case C_fix(38):             /* SVN revision of built sources */
-#ifdef C_SVN_REVISION
-        return C_fix(C_SVN_REVISION);
-#else
-        return C_fix(0);
-#endif
 
     case C_fix(39):             /* is this a cross-chicken? */
 #if defined(C_CROSS_CHICKEN) && C_CROSS_CHICKEN
@@ -4245,7 +4195,8 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
     case C_fix(43):             /* minor CHICKEN version */
         return C_fix(C_MINOR_VERSION);
 
-    default: return C_SCHEME_UNDEFINED;
+    default:
+        panic(C_text("unknown fudge factor"));
     }
 }
 
