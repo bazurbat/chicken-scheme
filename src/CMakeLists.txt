@@ -38,7 +38,6 @@ set(libchicken_SCM_SOURCES
     srfi-4.scm
     stub.scm
     utils.scm
-    runtime/platform.scm
 )
 
 add_chicken_sources(libchicken_SOURCES
