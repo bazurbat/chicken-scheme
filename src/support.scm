@@ -79,8 +79,6 @@
 (include "tweaks")
 (include "banner")
 
-(use (prefix runtime.platform platform:))
-
 ;; Evil globals
 (define number-type 'generic)
 (define unsafe #f)
@@ -1531,7 +1529,7 @@
 
 (define (big-fixnum? x)	;; XXX: This should probably be in c-platform
   (and (fixnum? x)
-       (platform:is-64bit)
+       (##sys#fudge 3)			; 64 bit?
        (or (fx> x 1073741823)
 	   (fx< x -1073741824) ) ) )
 
