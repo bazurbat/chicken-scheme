@@ -60,6 +60,7 @@ set_target_properties(libchicken PROPERTIES
     VERSION ${API_VERSION})
 
 add_subdirectory(runtime)
+add_subdirectory(library)
 
 # compiler
 
