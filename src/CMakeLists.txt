@@ -3,13 +3,22 @@ project(chicken C ASM)
 include(ChickenBuildTag)
 include(ChickenConfigure)
 
-include_directories(BEFORE ${chicken_SOURCE_DIR} ${chicken_BINARY_DIR})
+include_directories(BEFORE
+    ${LIBUV_INCLUDE_DIRS}
+    ${chicken_SOURCE_DIR}
+    ${chicken_BINARY_DIR})
 
 # set(CHICKEN_LIBRARY_PATH ${chicken_BINARY_DIR})
 
 # runtime
 
-set(libchicken_C_SOURCES chicken.h runtime.c ${CHICKEN_APPLY_HACK})
+set(libchicken_C_SOURCES
+    ${CHICKEN_APPLY_HACK}
+    chicken.h
+    runtime.c
+    uvffi.c
+    uvffi.h
+)
 
 if(WIN32)
     set(posix_scm posixwin.scm)
@@ -46,7 +55,9 @@ add_chicken_sources(libchicken_SOURCES
     OPTIONS ${LIBRARY_OPTIONS})
 
 add_library(libchicken SHARED ${libchicken_SOURCES})
-target_link_libraries(libchicken ${CHICKEN_EXTRA_LIBRARIES})
+target_link_libraries(libchicken
+    ${CHICKEN_EXTRA_LIBRARIES}
+    ${LIBUV_LIBRARIES})
 
 set(CHICKEN_LIBRARIES libchicken ${CHICKEN_EXTRA_LIBRARIES})
 
