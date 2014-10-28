@@ -8,11 +8,11 @@
 ; conditions are met:
 ;
 ;   Redistributions of source code must retain the above copyright notice, this list of conditions and the following
-;     disclaimer. 
+;     disclaimer.
 ;   Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following
-;     disclaimer in the documentation and/or other materials provided with the distribution. 
+;     disclaimer in the documentation and/or other materials provided with the distribution.
 ;   Neither the name of the author nor the names of its contributors may be used to endorse or promote
-;     products derived from this software without specific prior written permission. 
+;     products derived from this software without specific prior written permission.
 ;
 ; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
 ; OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
@@ -29,10 +29,10 @@
   (unit scheduler)
   (disable-interrupts)
   (hide ready-queue-head ready-queue-tail ##sys#timeout-list
-	##sys#update-thread-state-buffer ##sys#restore-thread-state-buffer
-	remove-from-ready-queue ##sys#unblock-threads-for-i/o ##sys#force-primordial
-	fdset-set fdset-test create-fdset stderr
-	##sys#clear-i/o-state-for-thread! ##sys#abandon-mutexes) 
+        ##sys#update-thread-state-buffer ##sys#restore-thread-state-buffer
+        remove-from-ready-queue ##sys#unblock-threads-for-i/o ##sys#force-primordial
+        fdset-set fdset-test create-fdset stderr
+        ##sys#clear-i/o-state-for-thread! ##sys#abandon-mutexes)
   (not inline ##sys#interrupt-hook)
   (unsafe)
   (foreign-declare "#include \"scheduler.h\""))
@@ -40,18 +40,18 @@
 (include "common-declarations.scm")
 
 #;(begin
-  (define stderr ##sys#standard-error) ; use default stderr port
-  (define (dbg . args)
-    (parameterize ((##sys#print-length-limit #f))
-      (for-each
-       (lambda (x)
-	 (display x stderr))
-       args)
-      (newline stderr))))
+(define stderr ##sys#standard-error) ; use default stderr port
+(define (dbg . args)
+  (parameterize ((##sys#print-length-limit #f))
+                (for-each
+                  (lambda (x)
+                    (display x stderr))
+                  args)
+                (newline stderr))))
 
 (define-syntax dbg
   (syntax-rules ()
-    ((_ . _) #f))) 
+    ((_ . _) #f)))
 
 (define-syntax panic
   (syntax-rules ()
@@ -67,8 +67,8 @@
     (##core#inline "C_set_initial_timer_interrupt_period" (##sys#slot thread 9))
     ((##sys#slot thread 1)) )
   (let* ([ct ##sys#current-thread]
-	 [eintr #f]
-	 [cts (##sys#slot ct 3)] )
+         [eintr #f]
+         [cts (##sys#slot ct 3)] )
     (dbg "==================== scheduling, current: " ct ", ready: " ready-queue-head)
     (##sys#update-thread-state-buffer ct)
     ;; Put current thread on ready-queue:
@@ -78,53 +78,53 @@
     (let loop1 ()
       ;; Unblock threads waiting for timeout:
       (unless (null? ##sys#timeout-list)
-	(let ((now (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f)))
-	  (let loop ((lst ##sys#timeout-list))
-	    (if (null? lst)
-		(set! ##sys#timeout-list '())
-		(let* ([tmo1 (caar lst)] ; timeout of thread on list
-		       [tto (cdar lst)]	 ; thread on list
-		       [tmo2 (##sys#slot tto 4)] ) ; timeout value stored in thread
-		  (dbg "timeout: " tto " -> " tmo2 " (now: " now ")")
-		  (if (equal? tmo1 tmo2)  ;XXX why do we check this?
-		      (if (fp>= now tmo1) ; timeout reached?
-			  (begin
-			    (##sys#setislot tto 13 #t) ; mark as being unblocked by timeout
-			    (##sys#clear-i/o-state-for-thread! tto)
-			    (##sys#thread-basic-unblock! tto)
-			    (loop (cdr lst)) )
-			  (begin
-			    (set! ##sys#timeout-list lst) 
-			    ;; If there are no threads blocking on a select call (fd-list)
-			    ;; but there are threads in the timeout list then sleep for
-			    ;; the number of milliseconds of next thread to wake up.
-			    (when (and (null? ready-queue-head)
-				       (null? ##sys#fd-list) 
-				       (pair? ##sys#timeout-list))
-			      (let ((tmo1 (caar ##sys#timeout-list)))
-				(set! eintr
-				  (and (not (##core#inline 
-					     "C_msleep" 
-					     (fxmax 
-					      0
-					      (##core#inline "C_quickflonumtruncate" (fp- tmo1 now)))))
-				       (foreign-value
-					"C_signal_interrupted_p" bool) ) ) ) ) ) )
-		      (loop (cdr lst)) ) ) ) ) ) )
+        (let ((now (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f)))
+          (let loop ((lst ##sys#timeout-list))
+            (if (null? lst)
+              (set! ##sys#timeout-list '())
+              (let* ([tmo1 (caar lst)] ; timeout of thread on list
+                     [tto (cdar lst)]	 ; thread on list
+                     [tmo2 (##sys#slot tto 4)] ) ; timeout value stored in thread
+                (dbg "timeout: " tto " -> " tmo2 " (now: " now ")")
+                (if (equal? tmo1 tmo2)  ;XXX why do we check this?
+                  (if (fp>= now tmo1) ; timeout reached?
+                    (begin
+                      (##sys#setislot tto 13 #t) ; mark as being unblocked by timeout
+                      (##sys#clear-i/o-state-for-thread! tto)
+                      (##sys#thread-basic-unblock! tto)
+                      (loop (cdr lst)) )
+                    (begin
+                      (set! ##sys#timeout-list lst)
+                      ;; If there are no threads blocking on a select call (fd-list)
+                      ;; but there are threads in the timeout list then sleep for
+                      ;; the number of milliseconds of next thread to wake up.
+                      (when (and (null? ready-queue-head)
+                                 (null? ##sys#fd-list)
+                                 (pair? ##sys#timeout-list))
+                        (let ((tmo1 (caar ##sys#timeout-list)))
+                          (set! eintr
+                            (and (not (##core#inline
+                                       "C_msleep"
+                                       (fxmax
+                                         0
+                                         (##core#inline "C_quickflonumtruncate" (fp- tmo1 now)))))
+                                 (foreign-value
+                                   "C_signal_interrupted_p" bool) ) ) ) ) ) )
+                  (loop (cdr lst)) ) ) ) ) ) )
       ;; Unblock threads blocked by I/O:
       (if eintr
-	  (##sys#force-primordial)	; force it to handle user-interrupt
-	  (unless (null? ##sys#fd-list)
-	    (##sys#unblock-threads-for-i/o) ) )
+        (##sys#force-primordial)	; force it to handle user-interrupt
+        (unless (null? ##sys#fd-list)
+          (##sys#unblock-threads-for-i/o) ) )
       ;; Fetch and activate next ready thread:
       (let loop2 ()
-	(let ([nt (remove-from-ready-queue)])
-	  (cond [(not nt) 
-		 (if (and (null? ##sys#timeout-list) (null? ##sys#fd-list))
-		     (panic "deadlock")
-		     (loop1) ) ]
-		[(eq? (##sys#slot nt 3) 'ready) (switch nt)]
-		[else (loop2)] ) ) ) ) ) )
+        (let ([nt (remove-from-ready-queue)])
+          (cond [(not nt)
+                 (if (and (null? ##sys#timeout-list) (null? ##sys#fd-list))
+                   (panic "deadlock")
+                   (loop1) ) ]
+                [(eq? (##sys#slot nt 3) 'ready) (switch nt)]
+                [else (loop2)] ) ) ) ) ) )
 
 (define (##sys#force-primordial)
   (dbg "primordial thread forced due to interrupt")
@@ -139,18 +139,18 @@
 (define (##sys#add-to-ready-queue thread)
   (##sys#setslot thread 3 'ready)
   (let ((new-pair (cons thread '())))
-    (cond ((eq? '() ready-queue-head) 
-	   (set! ready-queue-head new-pair))
-	  (else (set-cdr! ready-queue-tail new-pair)) )
+    (cond ((eq? '() ready-queue-head)
+           (set! ready-queue-head new-pair))
+          (else (set-cdr! ready-queue-tail new-pair)) )
     (set! ready-queue-tail new-pair) ) )
 
 (define (remove-from-ready-queue)
   (let ((first-pair ready-queue-head))
     (and (not (null? first-pair))
-	 (let ((first-cdr (cdr first-pair)))
-	   (set! ready-queue-head first-cdr)
-	   (when (eq? '() first-cdr) (set! ready-queue-tail '()))
-	   (car first-pair) ) ) ) )
+         (let ((first-cdr (cdr first-pair)))
+           (set! ready-queue-head first-cdr)
+           (when (eq? '() first-cdr) (set! ready-queue-tail '()))
+           (car first-pair) ) ) ) )
 
 (define (##sys#update-thread-state-buffer thread)
   (let ([buf (##sys#slot thread 5)])
@@ -166,7 +166,7 @@
     (set! ##sys#dynamic-winds (##sys#slot buf 0))
     (set! ##sys#standard-input (##sys#slot buf 1))
     (set! ##sys#standard-output (##sys#slot buf 2))
-    (set! ##sys#standard-error (##sys#slot buf 3)) 
+    (set! ##sys#standard-error (##sys#slot buf 3))
     (set! ##sys#current-exception-handler (##sys#slot buf 4))
     (set! ##sys#current-parameter-vector (##sys#slot buf 5)) ) )
 
@@ -174,9 +174,9 @@
   (let ([oldhook ##sys#interrupt-hook])
     (lambda (reason state)
       (when (fx= reason 255)		; C_TIMER_INTERRUPT_NUMBER
-	(let ([ct ##sys#current-thread])
-	  (##sys#setslot ct 1 (lambda () (oldhook reason state))) 
-	  (##sys#schedule) ) )		; expected not to return!
+        (let ([ct ##sys#current-thread])
+          (##sys#setslot ct 1 (lambda () (oldhook reason state)))
+          (##sys#schedule) ) )		; expected not to return!
       (oldhook reason state) ) ) )
 
 (define ##sys#timeout-list '())
@@ -184,28 +184,28 @@
 (define (##sys#remove-from-timeout-list t)
   (let loop ((l ##sys#timeout-list) (prev #f))
     (if (null? l)
-	l
-	(let ((h (##sys#slot l 0))
-	      (r (##sys#slot l 1)))
-	  (if (eq? (##sys#slot h 1) t)
-	      (if prev
-		  (set-cdr! prev r)
-		  (set! ##sys#timeout-list r))
-	      (loop r l))))))
+      l
+      (let ((h (##sys#slot l 0))
+            (r (##sys#slot l 1)))
+        (if (eq? (##sys#slot h 1) t)
+          (if prev
+            (set-cdr! prev r)
+            (set! ##sys#timeout-list r))
+          (loop r l))))))
 
 (define (##sys#thread-block-for-timeout! t tm)
   (dbg t " blocks for timeout " tm)
   (unless (flonum? tm)	  ; to catch old code that uses fixnum timeouts
     (panic
-     (sprintf "##sys#thread-block-for-timeout!: invalid timeout: ~S" tm)))
+      (sprintf "##sys#thread-block-for-timeout!: invalid timeout: ~S" tm)))
   (when (fp> tm 0.0)
     ;; This should really use a balanced tree:
     (let loop ([tl ##sys#timeout-list] [prev #f])
       (if (or (null? tl) (fp< tm (caar tl)))
-	  (if prev
-	      (set-cdr! prev (cons (cons tm t) tl))
-	      (set! ##sys#timeout-list (cons (cons tm t) tl)) )
-	  (loop (cdr tl) tl) ) ) 
+        (if prev
+          (set-cdr! prev (cons (cons tm t) tl))
+          (set! ##sys#timeout-list (cons (cons tm t) tl)) )
+        (loop (cdr tl) tl) ) )
     (##sys#setslot t 3 'blocked)
     (##sys#setislot t 13 #f)
     (##sys#setslot t 4 tm) ) )
@@ -215,7 +215,7 @@
   (let ([state (##sys#slot t2 3)])
     (unless (or (eq? state 'dead) (eq? state 'terminated))
       (##sys#setslot t2 12 (cons t (##sys#slot t2 12)))
-      (##sys#setslot t 3 'blocked) 
+      (##sys#setslot t 3 'blocked)
       (##sys#setislot t 13 #f)
       (##sys#setslot t 11 t2) ) ) )
 
@@ -224,17 +224,17 @@
     (unless (null? ms)
       (##sys#for-each
        (lambda (m)
-	 (##sys#setislot m 2 #f)
-	 (##sys#setislot m 4 #t) 
-	 (##sys#setislot m 5 #f)
-	 (let ((wts (##sys#slot m 3)))
-	   (unless (null? wts)
-	     (for-each
-	      (lambda (t2)
-		(dbg "  unblocking: " t2)
-		(##sys#thread-unblock! t2) )
-	      wts) ) )
-	 (##sys#setislot m 3 '()) )
+         (##sys#setislot m 2 #f)
+         (##sys#setislot m 4 #t)
+         (##sys#setislot m 5 #f)
+         (let ((wts (##sys#slot m 3)))
+           (unless (null? wts)
+             (for-each
+               (lambda (t2)
+                 (dbg "  unblocking: " t2)
+                 (##sys#thread-unblock! t2) )
+               wts) ) )
+         (##sys#setislot m 3 '()) )
        ms) ) ) )
 
 (define (##sys#thread-kill! t s)
@@ -242,10 +242,10 @@
   (##sys#abandon-mutexes t)
   (let ((blocked (##sys#slot t 11)))
     (cond
-     ((##sys#structure? blocked 'condition-variable)
-      (##sys#setslot blocked 2 (##sys#delq t (##sys#slot blocked 2))))
-     ((##sys#structure? blocked 'thread)
-      (##sys#setslot blocked 12 (##sys#delq t (##sys#slot blocked 12))))) )
+      ((##sys#structure? blocked 'condition-variable)
+       (##sys#setslot blocked 2 (##sys#delq t (##sys#slot blocked 2))))
+      ((##sys#structure? blocked 'thread)
+       (##sys#setslot blocked 12 (##sys#delq t (##sys#slot blocked 12))))) )
   (##sys#remove-from-timeout-list t)
   (##sys#clear-i/o-state-for-thread! t)
   (##sys#setslot t 3 s)
@@ -255,11 +255,11 @@
   (let ((rs (##sys#slot t 12)))
     (unless (null? rs)
       (for-each
-       (lambda (t2)
-	 (dbg "  checking: " t2 " (" (##sys#slot t2 3) ") -> " (##sys#slot t2 11))
-	 (when (eq? (##sys#slot t2 11) t)
-	   (##sys#thread-basic-unblock! t2) ) )
-       rs) ) )
+        (lambda (t2)
+          (dbg "  checking: " t2 " (" (##sys#slot t2 3) ") -> " (##sys#slot t2 11))
+          (when (eq? (##sys#slot t2 11) t)
+            (##sys#thread-basic-unblock! t2) ) )
+        rs) ) )
   (##sys#setislot t 12 '()) )
 
 (define (##sys#thread-basic-unblock! t)
@@ -270,19 +270,19 @@
 
 (define (##sys#default-exception-handler arg)
   (let ([ct ##sys#current-thread])
-    (dbg "exception: " ct " -> " 
-	 (if (##sys#structure? arg 'condition) (##sys#slot arg 2) arg))
+    (dbg "exception: " ct " -> "
+         (if (##sys#structure? arg 'condition) (##sys#slot arg 2) arg))
     (cond ((foreign-value "C_abort_on_thread_exceptions" bool)
-	   (let* ([pt ##sys#primordial-thread]
-		  [ptx (##sys#slot pt 1)] )
-	     (##sys#setslot 
-	      pt 1 
-	      (lambda ()
-		(##sys#signal arg)
-		(ptx) ) )
-	     (##sys#thread-unblock! pt) ) )
-	  (else
-	   (##sys#show-exception-warning arg "in thread" ct)))
+           (let* ([pt ##sys#primordial-thread]
+                  [ptx (##sys#slot pt 1)] )
+             (##sys#setslot
+              pt 1
+              (lambda ()
+                (##sys#signal arg)
+                (ptx) ) )
+             (##sys#thread-unblock! pt) ) )
+          (else
+            (##sys#show-exception-warning arg "in thread" ct)))
     (##sys#setslot ct 7 arg)
     (##sys#thread-kill! ct 'terminated)
     (##sys#schedule) ) )
@@ -297,13 +297,13 @@
   (let loop ((lst ##sys#fd-list))
     (unless (null? lst)
       (let ((fd (caar lst)))
-	(for-each
-	 (lambda (t)
-	   (let ((p (##sys#slot t 11)))
-             (when (pair? p) ; (FD . RWFLAGS)? (can also be mutex or thread)
-               (fdset-set fd (cdr p)))))
-	 (cdar lst))
-	(loop (cdr lst))))))
+        (for-each
+          (lambda (t)
+            (let ((p (##sys#slot t 11)))
+              (when (pair? p) ; (FD . RWFLAGS)? (can also be mutex or thread)
+                (fdset-set fd (cdr p)))))
+          (cdar lst))
+        (loop (cdr lst))))))
 
 (define (fdset-set fd i/o)
   (let ((fdset-add! (foreign-lambda void "C_fdset_add" int bool bool)))
@@ -313,8 +313,8 @@
       ((#f #:output) (fdset-add! fd #f #t))
       ((#:all) (fdset-add! fd #t #t))
       (else
-       (panic
-        (sprintf "fdset-set: invalid i/o direction: ~S (fd = ~S)" i/o fd))))))
+        (panic
+          (sprintf "fdset-set: invalid i/o direction: ~S (fd = ~S)" i/o fd))))))
 
 (define (fdset-test inf outf i/o)
   (case i/o
@@ -322,82 +322,82 @@
     ((#f #:output) outf)
     ((#:all) (or inf outf))
     (else
-     (panic (sprintf "fdset-test: invalid i/o direction: ~S (i = ~S, o = ~S)"
-              i/o inf outf)))))
+      (panic (sprintf "fdset-test: invalid i/o direction: ~S (i = ~S, o = ~S)"
+                      i/o inf outf)))))
 
 (define (##sys#thread-block-for-i/o! t fd i/o)
   (dbg t " blocks for I/O " fd " in mode " i/o)
   #;(unless (memq i/o '(#:all #:input #:output))
-    (panic (sprintf "##sys#thread-block-for-i/o!: invalid i/o mode: ~S" i/o)))
-  (let loop ([lst ##sys#fd-list])
-    (if (null? lst) 
-	(set! ##sys#fd-list (cons (list fd t) ##sys#fd-list)) 
-	(let ([a (car lst)])
-	  (if (fx= fd (car a)) 
-	      (##sys#setslot a 1 (cons t (cdr a)))
-	      (loop (cdr lst)) ) ) ) )
-  (##sys#setslot t 3 'blocked)
-  (##sys#setislot t 13 #f)
-  (##sys#setslot t 11 (cons fd i/o)) )
+  (panic (sprintf "##sys#thread-block-for-i/o!: invalid i/o mode: ~S" i/o)))
+(let loop ([lst ##sys#fd-list])
+  (if (null? lst)
+    (set! ##sys#fd-list (cons (list fd t) ##sys#fd-list))
+    (let ([a (car lst)])
+      (if (fx= fd (car a))
+        (##sys#setslot a 1 (cons t (cdr a)))
+        (loop (cdr lst)) ) ) ) )
+(##sys#setslot t 3 'blocked)
+(##sys#setislot t 13 #f)
+(##sys#setslot t 11 (cons fd i/o)) )
 
 (define (##sys#unblock-threads-for-i/o)
   (dbg "fd-list: " ##sys#fd-list)
   (create-fdset)
   (let* ((to? (pair? ##sys#timeout-list))
-	 (rq? (pair? ready-queue-head))
-	 (tmo (if (and to? (not rq?)) ; no thread was unblocked by timeout, so wait
-		  (let* ((tmo1 (caar ##sys#timeout-list))
-			 (now (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f)))
-		    (fpmax 0.0 (fp- tmo1 now)) )
-		  0.0) ) )		; otherwise immediate timeout.
+         (rq? (pair? ready-queue-head))
+         (tmo (if (and to? (not rq?)) ; no thread was unblocked by timeout, so wait
+                (let* ((tmo1 (caar ##sys#timeout-list))
+                       (now (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f)))
+                  (fpmax 0.0 (fp- tmo1 now)) )
+                0.0) ) )		; otherwise immediate timeout.
     (dbg "waiting for I/O with timeout " tmo)
     (let ((n ((foreign-lambda int "C_ready_fds_timeout" bool double)
-	      (or rq? to?) tmo)))
+              (or rq? to?) tmo)))
       (dbg n " fds ready")
       (cond [(eq? -1 n)
-	     (dbg "select(2)/poll(2) returned with result -1" )
-	     (##sys#force-primordial)]
-	    [(fx> n 0)
-	     (set! ##sys#fd-list
-	       (let loop ((n n) (pos 0) (lst ##sys#fd-list))
-		 (if (or (zero? n) (null? lst))
-		     lst
-		     (let* ((a (car lst))
-			    (fd (car a))
-			    ;; pos *must* match position of fd in ##sys#fd-list
-			    ;; This is checked in C_fd_ready with assert()
-			    (inf (##core#inline "C_fd_input_ready" fd pos))
-			    (outf (##core#inline "C_fd_output_ready" fd pos)))
-		       (dbg "fd " fd " state: input=" inf ", output=" outf)
-		       (if (or inf outf)
-			   (let loop2 ((threads (cdr a)) (keep '()))
-			     (if (null? threads)
-				 (if (null? keep)
-				     (loop (sub1 n) (add1 pos) (cdr lst))
-				     (cons (cons fd keep)
-                                           (loop (sub1 n) (add1 pos) (cdr lst))))
-				 (let* ((t (car threads))
-					(p (##sys#slot t 11)) )
-				   (dbg "checking " t " " p)
-				   (cond ((##sys#slot t 13) ; unblocked by timeout?
-					  (dbg t " unblocked by timeout")
-					  (loop2 (cdr threads) keep))
-					 ((not (pair? p)) ; not blocked for I/O?
-					  ;; thread on fd-list is not blocked for I/O - this
-					  ;; is incorrect but will be ignored, just let it run
-					  (when (##sys#slot t 4) ; also blocked for timeout?
-					    (##sys#remove-from-timeout-list t))
-					  (##sys#thread-basic-unblock! t) 
-					  (loop2 (cdr threads) keep))
-					 ((not (eq? fd (car p)))
-					  (panic (sprintf "thread is registered for I/O on unknown file-descriptor: ~S (expected ~S)" (car p) fd)))
-					 ((fdset-test inf outf (cdr p))
-					  (when (##sys#slot t 4) ; also blocked for timeout?
-					    (##sys#remove-from-timeout-list t))
-					  (##sys#thread-basic-unblock! t) 
-					  (loop2 (cdr threads) keep))
-					 (else (loop2 (cdr threads) (cons t keep)))))))
-			   (cons a (loop n (add1 pos) (cdr lst))) ) ) ) ) ) ] ))) )
+             (dbg "select(2)/poll(2) returned with result -1" )
+             (##sys#force-primordial)]
+            [(fx> n 0)
+             (set! ##sys#fd-list
+               (let loop ((n n) (pos 0) (lst ##sys#fd-list))
+                 (if (or (zero? n) (null? lst))
+                   lst
+                   (let* ((a (car lst))
+                          (fd (car a))
+                          ;; pos *must* match position of fd in ##sys#fd-list
+                          ;; This is checked in C_fd_ready with assert()
+                          (inf (##core#inline "C_fd_input_ready" fd pos))
+                          (outf (##core#inline "C_fd_output_ready" fd pos)))
+                     (dbg "fd " fd " state: input=" inf ", output=" outf)
+                     (if (or inf outf)
+                       (let loop2 ((threads (cdr a)) (keep '()))
+                         (if (null? threads)
+                           (if (null? keep)
+                             (loop (sub1 n) (add1 pos) (cdr lst))
+                             (cons (cons fd keep)
+                                   (loop (sub1 n) (add1 pos) (cdr lst))))
+                           (let* ((t (car threads))
+                                  (p (##sys#slot t 11)) )
+                             (dbg "checking " t " " p)
+                             (cond ((##sys#slot t 13) ; unblocked by timeout?
+                                    (dbg t " unblocked by timeout")
+                                    (loop2 (cdr threads) keep))
+                                   ((not (pair? p)) ; not blocked for I/O?
+                                    ;; thread on fd-list is not blocked for I/O - this
+                                    ;; is incorrect but will be ignored, just let it run
+                                    (when (##sys#slot t 4) ; also blocked for timeout?
+                                      (##sys#remove-from-timeout-list t))
+                                    (##sys#thread-basic-unblock! t)
+                                    (loop2 (cdr threads) keep))
+                                   ((not (eq? fd (car p)))
+                                    (panic (sprintf "thread is registered for I/O on unknown file-descriptor: ~S (expected ~S)" (car p) fd)))
+                                   ((fdset-test inf outf (cdr p))
+                                    (when (##sys#slot t 4) ; also blocked for timeout?
+                                      (##sys#remove-from-timeout-list t))
+                                    (##sys#thread-basic-unblock! t)
+                                    (loop2 (cdr threads) keep))
+                                   (else (loop2 (cdr threads) (cons t keep)))))))
+                       (cons a (loop n (add1 pos) (cdr lst))) ) ) ) ) ) ] ))) )
 
 
 ;;; Clear I/O state for unblocked thread
@@ -406,18 +406,18 @@
   (when (pair? (##sys#slot t 11))
     (let ((fd (car (##sys#slot t 11))))
       (set! ##sys#fd-list
-	(let loop ((lst ##sys#fd-list))
-	  (if (null? lst)
-	      '()
-	      (let* ((a (car lst))
-		     (fd2 (car a)) )
-		(if (eq? fd fd2)
-		    (let ((ts (##sys#delq t (cdr a)))) ; remove from fd-list entry
-		      (cond ((null? ts) (cdr lst))
-			    (else
-			     (##sys#setslot a 1 ts) ; fd-list entry is list with t removed
-			     lst) ) )
-		    (cons a (loop (cdr lst)))))))))))
+        (let loop ((lst ##sys#fd-list))
+          (if (null? lst)
+            '()
+            (let* ((a (car lst))
+                   (fd2 (car a)) )
+              (if (eq? fd fd2)
+                (let ((ts (##sys#delq t (cdr a)))) ; remove from fd-list entry
+                  (cond ((null? ts) (cdr lst))
+                        (else
+                          (##sys#setslot a 1 ts) ; fd-list entry is list with t removed
+                          lst) ) )
+                (cons a (loop (cdr lst)))))))))))
 
 
 ;;; Get list of all threads that are ready or waiting for timeout or waiting for I/O:
@@ -425,23 +425,23 @@
 ; (contributed by Joerg Wittenberger)
 
 (define (##sys#all-threads #!optional
-			   (cns (lambda (queue arg val init)
-				  (cons val init)))
-			   (init '()))
+         (cns (lambda (queue arg val init)
+                (cons val init)))
+         (init '()))
   (let loop ((l ready-queue-head) (i init))
     (if (pair? l)
-	(loop (cdr l) (cns 'ready #f (car l) i))
-	(let loop ((l ##sys#fd-list) (i i))
-	  (if (pair? l)
-	      (loop (cdr l)
-		    (let ((fd (caar l)))
-		      (let loop ((l (cdar l)))
-			(if (null? l) i
-			    (cns 'i/o fd (car l) (loop (cdr l)))))))
-	      (let loop ((l ##sys#timeout-list) (i i))
-		(if (pair? l)
-		    (loop (cdr l) (cns 'timeout (caar l) (cdar l) i))
-		    i)))))))
+      (loop (cdr l) (cns 'ready #f (car l) i))
+      (let loop ((l ##sys#fd-list) (i i))
+        (if (pair? l)
+          (loop (cdr l)
+                (let ((fd (caar l)))
+                  (let loop ((l (cdar l)))
+                    (if (null? l) i
+                      (cns 'i/o fd (car l) (loop (cdr l)))))))
+          (let loop ((l ##sys#timeout-list) (i i))
+            (if (pair? l)
+              (loop (cdr l) (cns 'timeout (caar l) (cdar l) i))
+              i)))))))
 
 
 ;;; Remove all waiting threads from the relevant queues with the exception of the current thread:
@@ -451,7 +451,7 @@
     (set! ready-queue-head '())
     (set! ready-queue-tail '())
     (set! ##sys#fd-list '())
-    (set! ##sys#timeout-list '()) 
+    (set! ##sys#timeout-list '())
     all) )
 
 
@@ -468,7 +468,7 @@
 
 (define (##sys#thread-unblock! t)
   (when (or (eq? 'blocked (##sys#slot t 3))
-	    (eq? 'sleeping (##sys#slot t 3)))
+            (eq? 'sleeping (##sys#slot t 3)))
     (##sys#remove-from-timeout-list t)
     (##sys#clear-i/o-state-for-thread! t)
     (##sys#thread-basic-unblock! t) ) )
@@ -477,25 +477,25 @@
 ;;; Kill all threads in fd-, io- and timeout-lists and assign one thread as the
 ;   new primordial one. Overrides "##sys#kill-all-threads" in library.scm.
 
-(set! ##sys#kill-other-threads 
+(set! ##sys#kill-other-threads
   (let ((exit exit))
     (lambda (thunk)
       (let ((primordial ##sys#current-thread))
-	(define (suspend t)
-	  (unless (eq? t primordial)
-	    (##sys#setslot t 3 'suspended))
-	  (##sys#setslot t 11 #f)      ; block-object (thread/mutex/fd & flags)
-	  (##sys#setslot t 12 '()))    ; recipients (waiting for join)
-	(set! ##sys#primordial-thread primordial)
-	(set! ready-queue-head (list primordial))
-	(set! ready-queue-tail ready-queue-head)
-	(suspend primordial)	     ; clear block-obj. and recipients
-	(for-each
-	 (lambda (a) (suspend (cdr a)))
-	 ##sys#timeout-list)
-	(set! ##sys#timeout-list '())
-	(for-each
-	 (lambda (a) (suspend (cdr a)))
-	 ##sys#fd-list)
-	(thunk)
-	(exit)))))
+        (define (suspend t)
+          (unless (eq? t primordial)
+            (##sys#setslot t 3 'suspended))
+          (##sys#setslot t 11 #f)      ; block-object (thread/mutex/fd & flags)
+          (##sys#setslot t 12 '()))    ; recipients (waiting for join)
+        (set! ##sys#primordial-thread primordial)
+        (set! ready-queue-head (list primordial))
+        (set! ready-queue-tail ready-queue-head)
+        (suspend primordial)	     ; clear block-obj. and recipients
+        (for-each
+          (lambda (a) (suspend (cdr a)))
+          ##sys#timeout-list)
+        (set! ##sys#timeout-list '())
+        (for-each
+          (lambda (a) (suspend (cdr a)))
+          ##sys#fd-list)
+        (thunk)
+        (exit)))))
