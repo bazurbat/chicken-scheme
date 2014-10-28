@@ -4,7 +4,7 @@ set(CHICKEN_EXTRACT_DEPENDS NO)
 set(CHICKEN_EXECUTABLE $<TARGET_FILE:chicken-compiler>)
 set(CHICKEN_INTERPRETER $<TARGET_FILE:csi>)
 set(CHICKEN_LIBRARIES libchicken ${CHICKEN_EXTRA_LIBRARIES})
-set(CHICKEN_REPOSITORY ${CHICKEN_LOCAL_REPOSITORY})
+set(CHICKEN_REPOSITORY ${CHICKEN_LOCAL_REPOSITORY}/$<CONFIGURATION>)
 # set(CHICKEN_LIBRARY_PATH ${chicken_BINARY_DIR})
 
 set(CHICKEN_OPTIONS -ignore-repository
@@ -37,49 +37,9 @@ if(WIN32)
     add_dependencies(tests copy_libchicken)
 endif()
 
-function(add_chicken_test name)
-    cmake_parse_arguments(test "" "PATH;OUTPUT_FILE" "ENVIRONMENT" ${ARGN})
-
-    if(UNIX AND NOT APPLE)
-        list(APPEND test_ENVIRONMENT LD_LIBRARY_PATH=${chicken_BINARY_DIR})
-    elseif(APPLE)
-        list(APPEND test_ENVIRONMENT DYLD_LIBRARY_PATH=${chicken_BINARY_DIR})
-    endif()
-
-    add_test(NAME ${name} COMMAND ${CMAKE_COMMAND}
-        "-DCHICKEN_REPOSITORY=${CHICKEN_LOCAL_REPOSITORY}/$<CONFIGURATION>"
-        "-DPATH=${test_PATH}"
-        "-DENVIRONMENT=${test_ENVIRONMENT}"
-        "-DCOMMAND=${test_UNPARSED_ARGUMENTS}"
-        "-DOUTPUT_FILE=${test_OUTPUT_FILE}"
-        -P ${CHICKEN_RUN})
-endfunction()
-
-function(add_interpreted_test name)
-    cmake_parse_arguments(test "" "SCRIPT;WORKING_DIRECTORY" "" ${ARGN})
-
-    set(command $<TARGET_FILE:csi> -bnq -R chicken-syntax
-        -I ${CMAKE_CURRENT_SOURCE_DIR}
-        -I ${CMAKE_CURRENT_BINARY_DIR})
-
-    if(test_SCRIPT)
-        set(args -s ${CMAKE_CURRENT_SOURCE_DIR}/${test_SCRIPT})
-    endif()
-
-    add_chicken_test(${name}-i ${command} ${test_UNPARSED_ARGUMENTS} ${args})
-endfunction()
-
 function(add_compiled_test name)
-    cmake_parse_arguments(test "" "ARGS;OUTPUT_FILE" "" ${ARGN})
-
-    add_chicken_executable(${name} ${test_UNPARSED_ARGUMENTS})
-
-    add_chicken_test(${name} $<TARGET_FILE:${name}> ${test_ARGS}
-        OUTPUT_FILE "${test_OUTPUT_FILE}")
-
+    add_chicken_test(${name} ${ARGN})
     add_dependencies(tests ${name})
-
-    set_target_properties(${name} PROPERTIES FOLDER "Tests")
 endfunction()
 
 set(expected_FILES
@@ -116,7 +76,7 @@ add_dependencies(tests prepare-tests)
 
 # version tests
 
-add_interpreted_test(version SCRIPT version-tests.scm)
+add_chicken_interpreted_test(version SCRIPT version-tests.scm)
 
 # compiler tests
 
@@ -197,7 +157,7 @@ add_test(NAME fft-specialized COMMAND fft-specialized 1000 7)
 if(NOT MSVC)
     add_compiled_test(callback callback-tests.scm)
 
-    add_chicken_test(callback-twice
+    _chicken_add_test(callback-twice
         $<TARGET_FILE:callback> twice)
     set_tests_properties(callback-twice PROPERTIES WILL_FAIL TRUE)
 endif()
@@ -206,7 +166,7 @@ endif()
 
 add_compiled_test(apply apply-test.scm)
 
-add_interpreted_test(apply SCRIPT apply-test.scm)
+add_chicken_interpreted_test(apply SCRIPT apply-test.scm)
 
 add_compiled_test(gc-hooks test-gc-hooks.scm)
 
@@ -215,19 +175,19 @@ add_compiled_test(gc-hooks test-gc-hooks.scm)
 add_compiled_test(library library-tests.scm
     OPTIONS -specialize)
 
-add_interpreted_test(library SCRIPT library-tests.scm)
+add_chicken_interpreted_test(library SCRIPT library-tests.scm)
 
 add_compiled_test(records-and-setters records-and-setters-test.scm)
 
-add_interpreted_test(records-and-setters SCRIPT records-and-setters-test.scm)
+add_chicken_interpreted_test(records-and-setters SCRIPT records-and-setters-test.scm)
 
 # reader tests
 
-add_interpreted_test(reader SCRIPT reader-tests.scm)
+add_chicken_interpreted_test(reader SCRIPT reader-tests.scm)
 
 # dynamic-wind tests
 
-add_interpreted_test(dynamic-wind SCRIPT dwindtst.scm
+add_chicken_interpreted_test(dynamic-wind SCRIPT dwindtst.scm
     OUTPUT_FILE dynamic-wind-i.out)
 
 add_compiled_test(dynamic-wind dwindtst.scm
@@ -243,25 +203,25 @@ set_tests_properties(dynamic-wind-i-expected PROPERTIES DEPENDS dynamic-wind-i)
 
 # lolevel tests
 
-add_interpreted_test(lolevel SCRIPT lolevel-tests.scm)
+add_chicken_interpreted_test(lolevel SCRIPT lolevel-tests.scm)
 
 add_compiled_test(lolevel lolevel-tests.scm)
 
 # arithmetic tests
 
-add_interpreted_test(arithmetic SCRIPT arithmetic-test.scm -D check)
+add_chicken_interpreted_test(arithmetic SCRIPT arithmetic-test.scm -D check)
 
 # pretty printer tests
 
-add_interpreted_test(pretty-printer SCRIPT pp-test.scm)
+add_chicken_interpreted_test(pretty-printer SCRIPT pp-test.scm)
 
 # evaluation environment tests
 
-add_interpreted_test(environment SCRIPT environment-tests.scm)
+add_chicken_interpreted_test(environment SCRIPT environment-tests.scm)
 
 # syntax tests
 
-add_interpreted_test(syntax SCRIPT syntax-tests.scm)
+add_chicken_interpreted_test(syntax SCRIPT syntax-tests.scm)
 
 add_compiled_test(syntax syntax-tests.scm)
 
@@ -279,14 +239,14 @@ add_dependencies(tests prepare-meta-syntax-tests)
 add_compiled_test(meta-syntax meta-syntax-test.scm
     EMIT_IMPORTS meta-syntax-test)
 
-add_interpreted_test(meta-syntax meta-syntax-test.scm
+add_chicken_interpreted_test(meta-syntax meta-syntax-test.scm
     -e "(import meta-syntax-test)"
     -e "(assert (equal? '((1)) (bar 1 2)))"
     -e "(assert (equal? '(list 1 2 3) (listify)))"
     -e "(import meta-syntax-test-usage)"
     -e "(assert (equal? '(1) (foo-user)))")
 
-add_interpreted_test(meta-syntax-2
+add_chicken_interpreted_test(meta-syntax-2
     -e "(require-library meta-syntax-test)"
     -e "(import meta-syntax-test)"
     -e "(assert (equal? '((1)) (bar 1 2)))"
@@ -310,12 +270,12 @@ add_chicken_library(reexport-m6 reexport-m6.scm EMIT_IMPORTS reexport-m6
 add_dependencies(tests reexport-m1 reexport-m3 reexport-m4 reexport-m5
     reexport-m6)
 
-add_interpreted_test(reexport-m2 SCRIPT reexport-m2.scm)
+add_chicken_interpreted_test(reexport-m2 SCRIPT reexport-m2.scm)
 
 add_compiled_test(reexport-m2 reexport-m2.scm
     DEPENDS reexport-m1)
 
-add_interpreted_test(reexport SCRIPT reexport-tests.scm)
+add_chicken_interpreted_test(reexport SCRIPT reexport-tests.scm)
 
 add_compiled_test(reexport reexport-tests.scm)
 
@@ -327,14 +287,14 @@ add_compiled_test(reexport-2 reexport-tests-2.scm
 add_chicken_module(square-functor square-functor.scm)
 
 add_compiled_test(functor functor-tests.scm)
-add_interpreted_test(functor SCRIPT functor-tests.scm)
+add_chicken_interpreted_test(functor SCRIPT functor-tests.scm)
 
 add_compiled_test(functor-simple simple-functors-test.scm)
-add_interpreted_test(functor-simple SCRIPT simple-functors-test.scm)
+add_chicken_interpreted_test(functor-simple SCRIPT simple-functors-test.scm)
 
 add_compiled_test(functor-use-square use-square-functor.scm
     DEPENDS square-functor)
-add_interpreted_test(functor-use-square SCRIPT use-square-functor.scm)
+add_chicken_interpreted_test(functor-use-square SCRIPT use-square-functor.scm)
 
 # compiler syntax tests
 
@@ -342,7 +302,7 @@ add_compiled_test(compiler-syntax compiler-syntax-tests.scm)
 
 # import tests
 
-add_interpreted_test(import SCRIPT import-tests.scm)
+add_chicken_interpreted_test(import SCRIPT import-tests.scm)
 
 # import library tests
 # TODO: handle running with or without compiled import library
@@ -351,23 +311,23 @@ add_chicken_module(import-library-test1 import-library-test1.scm
     EMIT_IMPORTS import-library-test1-m)
 add_dependencies(tests import-library-test1)
 
-add_interpreted_test(import-library SCRIPT import-library-test2.scm)
+add_chicken_interpreted_test(import-library SCRIPT import-library-test2.scm)
 
 add_compiled_test(import-library import-library-test2.scm
     DEPENDS import-library-test1)
 
 # optionals tests
 
-add_interpreted_test(optional SCRIPT test-optional.scm)
+add_chicken_interpreted_test(optional SCRIPT test-optional.scm)
 add_compiled_test(optional test-optional.scm)
 
 # syntax tests (matchable)
 
-add_interpreted_test(matchable SCRIPT matchable.scm)
+add_chicken_interpreted_test(matchable SCRIPT matchable.scm)
 
 # syntax tests (loopy-loop)
 
-add_interpreted_test(loopy SCRIPT loopy-test.scm)
+add_chicken_interpreted_test(loopy SCRIPT loopy-test.scm)
 
 # r4rs tests
 
@@ -377,7 +337,7 @@ add_custom_target(prepare-r4rs-tests
     DEPENDS r4rstest.scm)
 add_dependencies(tests prepare-r4rs-tests)
 
-add_interpreted_test(r4rs SCRIPT r4rstest.scm -i
+add_chicken_interpreted_test(r4rs SCRIPT r4rstest.scm -i
     OUTPUT_FILE r4rs-i.out
     -e "(set! ##sys#procedure->string (constantly \"#<procedure>\"))")
 
@@ -387,16 +347,16 @@ set_tests_properties(r4rs-expected PROPERTIES DEPENDS r4rs)
 
 # r5rs pitfalls
 
-add_interpreted_test(r5rs SCRIPT r5rs_pitfalls.scm -i)
+add_chicken_interpreted_test(r5rs SCRIPT r5rs_pitfalls.scm -i)
 
 # r7rs tests
 
-add_interpreted_test(r7rs SCRIPT r7rs-tests.scm -i)
+add_chicken_interpreted_test(r7rs SCRIPT r7rs-tests.scm -i)
 
 # module tests
 
-add_interpreted_test(module1 SCRIPT module-tests.scm)
-add_interpreted_test(module2 SCRIPT module-tests-2.scm)
+add_chicken_interpreted_test(module1 SCRIPT module-tests.scm)
+add_chicken_interpreted_test(module2 SCRIPT module-tests-2.scm)
 
 add_compiled_test(module module-tests-compiled.scm)
 
@@ -406,12 +366,12 @@ add_chicken_module(chained-modules test-chained-modules.scm
     EMIT_IMPORTS m3)
 add_dependencies(tests chained-modules)
 
-add_interpreted_test(modules-chained SCRIPT test-chained-modules.scm)
+add_chicken_interpreted_test(modules-chained SCRIPT test-chained-modules.scm)
 
-add_interpreted_test(modules-chained-2
+add_chicken_interpreted_test(modules-chained-2
     $<TARGET_FILE:chained-modules>)
 
-add_interpreted_test(modules-chained-3
+add_chicken_interpreted_test(modules-chained-3
     $<TARGET_FILE:chained-modules>
     -e "(import m3) (s3)")
 
@@ -428,9 +388,9 @@ add_dependencies(tests prepare-ec-tests)
 add_chicken_module(ec-mod ec.scm EMIT_IMPORTS ec)
 add_dependencies(tests ec-mod)
 
-add_interpreted_test(ec ec.scm ec-tests.scm)
+add_chicken_interpreted_test(ec ec.scm ec-tests.scm)
 
-add_interpreted_test(ec-2 $<TARGET_FILE:ec-mod> ec-tests.scm)
+add_chicken_interpreted_test(ec-2 $<TARGET_FILE:ec-mod> ec-tests.scm)
 
 # add_compiled_test(ec ec-tests.scm
 #     DEPENDS ec-mod)
@@ -444,7 +404,7 @@ add_custom_target(prepare-port-tests
     DEPENDS compiler.scm)
 add_dependencies(tests prepare-port-tests)
 
-add_interpreted_test(port SCRIPT port-tests.scm)
+add_chicken_interpreted_test(port SCRIPT port-tests.scm)
 
 # fixnum tests
 
@@ -456,23 +416,23 @@ add_compiled_test(numbers-string-conversion numbers-string-conversion-tests.scm)
 
 # srfi-4 tests
 
-add_interpreted_test(srfi-4 SCRIPT srfi-4-tests.scm)
+add_chicken_interpreted_test(srfi-4 SCRIPT srfi-4-tests.scm)
 
 # condition tests
 
-add_interpreted_test(condition SCRIPT condition-tests.scm)
+add_chicken_interpreted_test(condition SCRIPT condition-tests.scm)
 
 # data-structures tests
 
-add_interpreted_test(data-structures SCRIPT data-structures-tests.scm)
+add_chicken_interpreted_test(data-structures SCRIPT data-structures-tests.scm)
 
 # path tests
 
-add_interpreted_test(path SCRIPT path-tests.scm)
+add_chicken_interpreted_test(path SCRIPT path-tests.scm)
 
 # srfi-45 tests
 
-add_interpreted_test(srfi-45 SCRIPT srfi-45-tests.scm)
+add_chicken_interpreted_test(srfi-45 SCRIPT srfi-45-tests.scm)
 
 # posix tests
 
@@ -499,7 +459,7 @@ add_dependencies(tests prepare-posix-tests)
 
 add_compiled_test(posix posix-tests.scm ARGS ${CHICKEN_INTERPRETER})
 
-add_interpreted_test(posix
+add_chicken_interpreted_test(posix
     -R posix -e "(delete-directory \"tmpdir\" #t)")
 
 set_property(TEST posix-i PROPERTY DEPENDS posix)
@@ -513,14 +473,14 @@ add_custom_target(prepare-regex-tests
     DEPENDS re-tests.txt)
 add_dependencies(tests prepare-regex-tests)
 
-add_interpreted_test(irregex SCRIPT test-irregex.scm)
+add_chicken_interpreted_test(irregex SCRIPT test-irregex.scm)
 
-add_interpreted_test(glob SCRIPT test-glob.scm)
+add_chicken_interpreted_test(glob SCRIPT test-glob.scm)
 
 # compiler/nursery stress test
 
 foreach(s 100000 120000 200000 250000 300000 350000 400000 450000 500000)
-    add_chicken_test(compiler-nursery-stress-${s} $<TARGET_FILE:chicken-compiler>
+    _chicken_add_test(compiler-nursery-stress-${s} $<TARGET_FILE:chicken-compiler>
         -ignore-repository ${chicken_SOURCE_DIR}/utils.scm -:s${s}
         -include-path ${chicken_SOURCE_DIR})
 endforeach()
@@ -531,7 +491,7 @@ add_compiled_test(symbol-gc symbolgc-tests.scm ARGS "-:w")
 
 # finalizer tests
 
-add_interpreted_test(finalizers SCRIPT test-finalizers.scm)
+add_chicken_interpreted_test(finalizers SCRIPT test-finalizers.scm)
 
 add_compiled_test(finalizers test-finalizers.scm)
 
@@ -545,7 +505,7 @@ add_compiled_test(locative-stress locative-stress-test.scm)
 
 # syntax rules stress test
 
-add_interpreted_test(syntax-rules SCRIPT syntax-rule-stress-test.scm)
+add_chicken_interpreted_test(syntax-rules SCRIPT syntax-rule-stress-test.scm)
 
 # embedding tests
 

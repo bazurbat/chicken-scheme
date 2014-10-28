@@ -503,3 +503,45 @@ function(find_chicken_extension name)
         PATHS ${CHICKEN_DATA_DIR})
     find_package_handle_standard_args(${name} DEFAULT_MSG ${name}_VERSION)
 endfunction()
+
+function(_chicken_add_test name)
+    cmake_parse_arguments(test "" "PATH;OUTPUT_FILE" "ENVIRONMENT" ${ARGN})
+
+    if(UNIX AND NOT APPLE)
+        list(APPEND test_ENVIRONMENT LD_LIBRARY_PATH=${chicken_BINARY_DIR})
+    elseif(APPLE)
+        list(APPEND test_ENVIRONMENT DYLD_LIBRARY_PATH=${chicken_BINARY_DIR})
+    endif()
+
+    add_test(NAME ${name} COMMAND ${CMAKE_COMMAND}
+        "-DPATH=${test_PATH}"
+        "-DENVIRONMENT=${test_ENVIRONMENT}"
+        "-DCHICKEN_REPOSITORY=${CHICKEN_REPOSITORY}"
+        "-DCOMMAND=${test_UNPARSED_ARGUMENTS}"
+        "-DOUTPUT_FILE=${test_OUTPUT_FILE}"
+        -P ${CHICKEN_RUN})
+endfunction()
+
+function(add_chicken_test name)
+    cmake_parse_arguments(test "" "ARGS;OUTPUT_FILE" "" ${ARGN})
+
+    add_chicken_executable(${name} ${test_UNPARSED_ARGUMENTS})
+
+    _chicken_add_test(${name} $<TARGET_FILE:${name}> ${test_ARGS}
+        OUTPUT_FILE "${test_OUTPUT_FILE}")
+endfunction()
+
+function(add_chicken_interpreted_test name)
+    cmake_parse_arguments(test "" "SCRIPT" "" ${ARGN})
+
+    set(command ${CHICKEN_INTERPRETER} -bnq -R chicken-syntax
+        -I ${CMAKE_CURRENT_SOURCE_DIR}
+        -I ${CMAKE_CURRENT_BINARY_DIR})
+
+    if(test_SCRIPT)
+        set(args -s ${CMAKE_CURRENT_SOURCE_DIR}/${test_SCRIPT})
+    endif()
+
+    # NOTE: order of arguments matters
+    _chicken_add_test(${name}-i ${command} ${test_UNPARSED_ARGUMENTS} ${args})
+endfunction()
