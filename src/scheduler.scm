@@ -24,7 +24,6 @@
 ; OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ; POSSIBILITY OF SUCH DAMAGE.
 
-
 (declare
   (unit scheduler)
   (disable-interrupts)
@@ -34,10 +33,27 @@
         fdset-set fdset-test create-fdset stderr
         ##sys#clear-i/o-state-for-thread! ##sys#abandon-mutexes)
   (not inline ##sys#interrupt-hook)
-  (unsafe)
-  (foreign-declare "#include \"scheduler.h\""))
+  (unsafe))
+
+(foreign-declare "#include \"scheduler.h\"")
+(foreign-declare "#include \"uvffi.h\"")
 
 (include "common-declarations.scm")
+
+(define-foreign-type uv_timer_t* (c-pointer "uv_timer_t"))
+(define-foreign-type uv_poll_t* (c-pointer "uv_poll_t"))
+(define current-timer-event (foreign-lambda uv_timer_t* "current_timer_event"))
+(define current-poll-event (foreign-lambda uv_poll_t* "current_poll_event"))
+(define uvtimer-start (foreign-lambda c-pointer "uvtimer_start" float))
+(define uvtimer-stop (foreign-lambda void "uvtimer_stop" uv_timer_t*))
+(define (uvpoll-start fd i/o)
+  ((foreign-lambda c-pointer "uvpoll_start" int int)
+   fd (case i/o
+        ((#t #:input) 1)
+        ((#f #:output) 2)
+        ((#:all) 3))))
+(define uvpoll-stop (foreign-lambda void "uvpoll_stop" uv_poll_t*))
+(define run-uv-nowait (foreign-lambda int "run_uv_nowait"))
 
 #;(begin
 (define stderr ##sys#standard-error) ; use default stderr port
@@ -58,6 +74,58 @@
     ((_ msg) (##core#inline "C_halt" msg))))
 
 (define (##sys#schedule)
+  (define (switch thread)
+    (dbg "switching to " thread)
+    (set! ##sys#current-thread thread)
+    (##sys#setslot thread 3 'running)
+    (##sys#restore-thread-state-buffer thread)
+    ;;XXX WRONG! this sets the t/i-period ("quantum") for the _next_ thread
+    (##core#inline "C_set_initial_timer_interrupt_period" (##sys#slot thread 9))
+    ((##sys#slot thread 1)) )
+  (let* ([ct ##sys#current-thread]
+         [eintr #f]
+         [cts (##sys#slot ct 3)] )
+    (dbg "==================== scheduling, current: " ct ", ready: " ready-queue-head)
+    (##sys#update-thread-state-buffer ct)
+    ;; Put current thread on ready-queue:
+    (when (or (eq? cts 'running) (eq? cts 'ready)) ; should ct really be 'ready? - normally not.
+      (##sys#setislot ct 13 #f)                    ; clear timeout-unblock flag
+      (##sys#add-to-ready-queue ct) )
+    (let loop1 ()
+      (run-uv-nowait)
+      (cond ((current-timer-event)
+             (let loop ((lst ##sys#timeout-list))
+               (if (null? lst)
+                 (uvtimer-stop (current-timer-event));event without thread?
+                 (let* ([tmo1 (caar lst)] ; timeout of thread on list
+                        [tto (cdar lst)]   ; thread on list
+                        [tmo2 (##sys#slot tto 4)] ) ; timeout value stored in thread
+                   (if (= (current-timer-event) tmo1) ; timeout reached?
+                     (begin
+                       (##sys#setislot tto 13 #t) ; mark as being unblocked by timeout
+                       (##sys#clear-i/o-state-for-thread! tto)
+                       (##sys#thread-basic-unblock! tto)
+                       (##sys#remove-from-timeout-list tto)
+                       (loop1))
+                     (loop (cdr lst)) ) ) ) ))
+            ((current-poll-event)
+             ;; Unblock threads blocked by I/O:
+             (if eintr
+               (##sys#force-primordial)       ; force it to handle user-interrupt
+               (unless (null? ##sys#fd-list)
+                 (##sys#unblock-threads-for-i/o) ) ))
+            (else
+              ;; Fetch and activate next ready thread:
+              (let loop2 ()
+                (let ([nt (remove-from-ready-queue)])
+                  (cond [(not nt) 
+                         (if (and (null? ##sys#timeout-list) (null? ##sys#fd-list))
+                           (panic "deadlock")
+                           (loop1) ) ]
+                        [(eq? (##sys#slot nt 3) 'ready) (switch nt)]
+                        [else (loop2)] ) ) ) ) ) ) ) )
+
+#;(define (##sys#schedule)
   (define (switch thread)
     (dbg "switching to " thread)
     (set! ##sys#current-thread thread)
@@ -188,12 +256,36 @@
       (let ((h (##sys#slot l 0))
             (r (##sys#slot l 1)))
         (if (eq? (##sys#slot h 1) t)
+          (begin (uvtimer-stop (##sys#slot h 0))
+                 (if prev
+                   (set-cdr! prev r)
+                   (set! ##sys#timeout-list r)))
+          (loop r l))))))
+
+#;(define (##sys#remove-from-timeout-list t)
+  (let loop ((l ##sys#timeout-list) (prev #f))
+    (if (null? l)
+      l
+      (let ((h (##sys#slot l 0))
+            (r (##sys#slot l 1)))
+        (if (eq? (##sys#slot h 1) t)
           (if prev
             (set-cdr! prev r)
             (set! ##sys#timeout-list r))
           (loop r l))))))
 
 (define (##sys#thread-block-for-timeout! t tm)
+  (dbg t " blocks for timeout " tm)
+  (unless (flonum? tm)    ; to catch old code that uses fixnum timeouts
+    (panic
+      (sprintf "##sys#thread-block-for-timeout!: invalid timeout: ~S" tm)))
+  (when (fp> tm 0.0)
+    (set! ##sys#timeout-list (cons (cons (uvtimer-start tm) t) tl))
+    (##sys#setslot t 3 'blocked)
+    (##sys#setislot t 13 #f)
+    (##sys#setslot t 4 tm) ) )
+
+#;(define (##sys#thread-block-for-timeout! t tm)
   (dbg t " blocks for timeout " tm)
   (unless (flonum? tm)	  ; to catch old code that uses fixnum timeouts
     (panic
@@ -328,19 +420,34 @@
 (define (##sys#thread-block-for-i/o! t fd i/o)
   (dbg t " blocks for I/O " fd " in mode " i/o)
   #;(unless (memq i/o '(#:all #:input #:output))
-  (panic (sprintf "##sys#thread-block-for-i/o!: invalid i/o mode: ~S" i/o)))
-(let loop ([lst ##sys#fd-list])
-  (if (null? lst)
-    (set! ##sys#fd-list (cons (list fd t) ##sys#fd-list))
-    (let ([a (car lst)])
-      (if (fx= fd (car a))
-        (##sys#setslot a 1 (cons t (cdr a)))
-        (loop (cdr lst)) ) ) ) )
-(##sys#setslot t 3 'blocked)
-(##sys#setislot t 13 #f)
-(##sys#setslot t 11 (cons fd i/o)) )
+    (panic (sprintf "##sys#thread-block-for-i/o!: invalid i/o mode: ~S" i/o)))
+  (let loop ([lst ##sys#fd-list])
+    (if (null? lst) 
+      (set! ##sys#fd-list (cons (list fd t (uvpoll-start fd i/o)) ##sys#fd-list)) 
+      (let ([a (car lst)])
+        (if (fx= fd (car a)) 
+          (##sys#setslot a 1 (cons t (cdr a)))
+          (loop (cdr lst)) ) ) ) )
+  (##sys#setslot t 3 'blocked)
+  (##sys#setislot t 13 #f)
+  (##sys#setslot t 11 (cons fd i/o)) )
 
-(define (##sys#unblock-threads-for-i/o)
+#;(define (##sys#thread-block-for-i/o! t fd i/o)
+  (dbg t " blocks for I/O " fd " in mode " i/o)
+  #;(unless (memq i/o '(#:all #:input #:output))
+    (panic (sprintf "##sys#thread-block-for-i/o!: invalid i/o mode: ~S" i/o)))
+  (let loop ([lst ##sys#fd-list])
+    (if (null? lst)
+      (set! ##sys#fd-list (cons (list fd t) ##sys#fd-list))
+      (let ([a (car lst)])
+        (if (fx= fd (car a))
+          (##sys#setslot a 1 (cons t (cdr a)))
+          (loop (cdr lst)) ) ) ) )
+  (##sys#setslot t 3 'blocked)
+  (##sys#setislot t 13 #f)
+  (##sys#setslot t 11 (cons fd i/o)) )
+
+#;(define (##sys#unblock-threads-for-i/o)
   (dbg "fd-list: " ##sys#fd-list)
   (create-fdset)
   (let* ((to? (pair? ##sys#timeout-list))
