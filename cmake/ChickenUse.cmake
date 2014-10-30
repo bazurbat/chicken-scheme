@@ -86,9 +86,9 @@ macro(_chicken_command_prepare_arguments)
     endforeach()
 
     foreach(lib ${command_import_libraries})
-        set_property(SOURCE ${lib} PROPERTY chicken_import_library TRUE)
-        get_filename_component(_lib_path ${lib} ABSOLUTE)
-        list(APPEND command_output ${_lib_path} ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib})
+        set_source_files_properties(${lib} PROPERTIES
+            chicken_import_library TRUE GENERATED TRUE)
+        list(APPEND command_output ${lib} ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib})
     endforeach()
 
     list(APPEND command_options ${compile_OPTIONS})
