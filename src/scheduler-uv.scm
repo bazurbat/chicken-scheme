@@ -94,18 +94,20 @@
       (run-uv-nowait)
       (cond ((current-timer-event)
              (let loop ((lst ##sys#timeout-list))
+               (dbg " timeout list " lst)
                (if (null? lst)
-                 (uvtimer-stop (current-timer-event));event without thread?
+                 (begin
+                   (uvtimer-stop (current-timer-event));event without thread?
+                   (set! ##sys#timeout-list '()))
                  (let* ([tmo1 (caar lst)] ; timeout of thread on list
                         [tto (cdar lst)]   ; thread on list
                         [tmo2 (##sys#slot tto 4)] ) ; timeout value stored in thread
-                   (if (= (current-timer-event) tmo1) ; timeout reached?
+                   (if (equal? (current-timer-event) tmo1) ; timeout reached?
                      (begin
                        (##sys#setislot tto 13 #t) ; mark as being unblocked by timeout
                        (##sys#clear-i/o-state-for-thread! tto)
                        (##sys#thread-basic-unblock! tto)
-                       (##sys#remove-from-timeout-list tto)
-                       (loop1))
+                       (##sys#remove-from-timeout-list tto))
                      (loop (cdr lst)) ) ) ) ))
             ((current-poll-event)
              ;; Unblock threads blocked by I/O:
@@ -181,6 +183,7 @@
 
 (define (##sys#remove-from-timeout-list t)
   (let loop ((l ##sys#timeout-list) (prev #f))
+    (dbg t " remove from timeout list: " l)
     (if (null? l)
       l
       (let ((h (##sys#slot l 0))
@@ -198,7 +201,7 @@
     (panic
       (sprintf "##sys#thread-block-for-timeout!: invalid timeout: ~S" tm)))
   (when (fp> tm 0.0)
-    (set! ##sys#timeout-list (cons (cons (uvtimer-start tm) t) tl))
+    (set! ##sys#timeout-list (cons (cons (uvtimer-start tm) t) ##sys#timeout-list))
     (##sys#setslot t 3 'blocked)
     (##sys#setislot t 13 #f)
     (##sys#setslot t 4 tm) ) )

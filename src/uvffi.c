@@ -49,7 +49,7 @@ uv_timer_t * uvtimer_start(float tm)
 {
     uv_timer_t *timer = malloc(sizeof(uv_timer_t));
     uv_timer_init(uv_default_loop(), timer);
-    uv_timer_start(timer, timer_cb, (int)(tm*1000), 0);
+    uv_timer_start(timer, timer_cb, (int)tm, 0);
     return timer;
 }
 
