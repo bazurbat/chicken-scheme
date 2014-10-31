@@ -148,6 +148,10 @@ function(_chicken_add_c_flags in_file out_file)
         list(APPEND c_flags -I${CMAKE_CURRENT_SOURCE_DIR})
     endif()
 
+    if(UNIX)
+        list(APPEND c_flags -Wno-unused-variable -Wno-unused-function)
+    endif()
+
     # Add global include paths where chicken.h and chicken-config.h are.
     # Empty check is needed when these are overridden, for example when
     # bootstrapping the Chicken itself.
@@ -323,6 +327,7 @@ function(add_chicken_sources out_var)
         _chicken_add_c_flags(${s} ${s} ${compile_C_FLAGS})
     endforeach()
 
+    list(APPEND ${out_var} ${compile_SOURCES})
     list(APPEND ${out_var} ${compile_C_SOURCES})
     set(${out_var} ${${out_var}} PARENT_SCOPE)
 endfunction()
