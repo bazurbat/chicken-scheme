@@ -3560,8 +3560,6 @@
 	      " "
 	      (##sys#number->string (##sys#pointer->address x) 16)
 	      ">") )
-	    ((##core#inline "C_swigpointerp" x)
-	     (string-append "#<SWIG pointer 0x" (##sys#number->string (##sys#pointer->address x) 16) ">") )
 	    (else
 	     (string-append "#<pointer 0x" (##sys#number->string (##sys#pointer->address x) 16) ">") ) ) ) ) )
 
