@@ -27,6 +27,9 @@
 
 
 #include "chicken.h"
+#include "runtime/error.h"
+#include "runtime/symbol_table.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
@@ -384,9 +387,6 @@ static C_TLS C_char
     buffer[ STRING_BUFFER_SIZE ],
 *current_module_name,
 *save_string;
-static C_TLS C_SYMBOL_TABLE
-*symbol_table,
-*symbol_table_list;
 static C_TLS C_word
 **collectibles,
 **collectibles_top,
@@ -397,10 +397,8 @@ static C_TLS C_word
 **mutation_stack_top,
 *stack_bottom,
 *locative_table,
-  error_location,
   interrupt_hook_symbol,
   current_thread_symbol,
-  error_hook_symbol,
   pending_finalizers_symbol,
   callback_continuation_stack_symbol,
 *forwarding_table;
@@ -474,10 +472,6 @@ static void parse_argv(C_char *cmds);
 static void initialize_symbol_table(void);
 static void global_signal_handler(int signum);
 static C_word arg_val(C_char *arg);
-static void barf(int code, char *loc, ...) C_noret;
-static void panic(C_char *msg) C_noret;
-static void usual_panic(C_char *msg) C_noret;
-static void horror(C_char *msg) C_noret;
 static void C_fcall initial_trampoline(void *proc) C_regparm C_noret;
 static C_ccall void termination_continuation(C_word c, C_word self, C_word result) C_noret;
 static void C_fcall mark_system_globals(void) C_regparm;
@@ -486,14 +480,11 @@ static WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word con
 static C_ccall void values_continuation(C_word c, C_word closure, C_word dummy, ...) C_noret;
 static C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stable);
 static C_regparm int C_fcall C_in_new_heapp(C_word x);
-static C_word C_fcall hash_string(int len, C_char *str, C_word m, C_word r, int ci) C_regparm;
-static C_word C_fcall lookup(C_word key, int len, C_char *str, C_SYMBOL_TABLE *stable) C_regparm;
 static double compute_symbol_table_load(double *avg_bucket_len, int *total);
 static C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word *fix, double *flo) C_regparm;
 static C_word C_fcall maybe_inexact_to_exact(C_word n) C_regparm;
 static void C_fcall remark_system_globals(void) C_regparm;
 static void C_fcall really_remark(C_word *x) C_regparm;
-static C_word C_fcall intern0(C_char *name) C_regparm;
 static void C_fcall update_locative_table(int mode) C_regparm;
 static LF_LIST *find_module_handle(C_char *name);
 
@@ -519,20 +510,6 @@ static C_PTABLE_ENTRY *create_initial_ptable();
 #if !defined(NO_DLOAD2) && (defined(HAVE_DLFCN_H) || defined(HAVE_DL_H) || (defined(HAVE_LOADLIBRARY) && defined(HAVE_GETPROCADDRESS)))
 static void dload_2(void *dummy) C_noret;
 #endif
-
-
-static void
-C_dbg(C_char *prefix, C_char *fstr, ...)
-{
-    va_list va;
-
-    va_start(va, fstr);
-    C_fflush(C_stdout);
-    C_fprintf(C_stderr, "[%s] ", prefix);
-    C_vfprintf(C_stderr, fstr, va);
-    C_fflush(C_stderr);
-    va_end(va);
-}
 
 
 /* Startup code: */
@@ -1437,309 +1414,6 @@ void C_ccall termination_continuation(C_word c, C_word self, C_word result)
 }
 
 
-/* Signal unrecoverable runtime error: */
-
-void panic(C_char *msg)
-{
-    if(C_panic_hook != NULL) C_panic_hook(msg);
-
-    usual_panic(msg);
-}
-
-
-void usual_panic(C_char *msg)
-{
-    C_char *dmp = C_dump_trace(0);
-
-    C_dbg_hook(C_SCHEME_UNDEFINED);
-
-    C_dbg("panic", C_text("%s - execution terminated\n\n%s"), msg, dmp);
-    C_exit(1);
-}
-
-
-void horror(C_char *msg)
-{
-    C_dbg_hook(C_SCHEME_UNDEFINED);
-
-    C_dbg("horror", C_text("\n%s - execution terminated"), msg);
-    C_exit(1);
-}
-
-
-/* Error-hook, called from C-level runtime routines: */
-
-void barf(int code, char *loc, ...)
-{
-    C_char *msg;
-    C_word err = error_hook_symbol;
-    int c, i;
-    va_list v;
-
-    C_dbg_hook(C_SCHEME_UNDEFINED);
-
-    C_temporary_stack = C_temporary_stack_bottom;
-    err = C_block_item(err, 0);
-
-    if(C_immediatep(err))
-        panic(C_text("`##sys#error-hook' is not defined - the `library' unit was probably not linked with this executable"));
-
-    switch(code) {
-    case C_BAD_ARGUMENT_COUNT_ERROR:
-        msg = C_text("bad argument count");
-        c = 3;
-        break;
-
-    case C_BAD_MINIMUM_ARGUMENT_COUNT_ERROR:
-        msg = C_text("too few arguments");
-        c = 3;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_ERROR:
-        msg = C_text("bad argument type");
-        c = 1;
-        break;
-
-    case C_UNBOUND_VARIABLE_ERROR:
-        msg = C_text("unbound variable");
-        c = 1;
-        break;
-
-    case C_TOO_MANY_PARAMETERS_ERROR:
-        msg = C_text("parameter limit exceeded");
-        c = 0;
-        break;
-
-    case C_OUT_OF_MEMORY_ERROR:
-        msg = C_text("not enough memory");
-        c = 0;
-        break;
-
-    case C_DIVISION_BY_ZERO_ERROR:
-        msg = C_text("division by zero");
-        c = 0;
-        break;
-
-    case C_OUT_OF_RANGE_ERROR:
-        msg = C_text("out of range");
-        c = 2;
-        break;
-
-    case C_NOT_A_CLOSURE_ERROR:
-        msg = C_text("call of non-procedure");
-        c = 1;
-        break;
-
-    case C_CONTINUATION_CANT_RECEIVE_VALUES_ERROR:
-        msg = C_text("continuation cannot receive multiple values");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_CYCLIC_LIST_ERROR:
-        msg = C_text("bad argument type - not a non-cyclic list");
-        c = 1;
-        break;
-
-    case C_TOO_DEEP_RECURSION_ERROR:
-        msg = C_text("recursion too deep");
-        c = 0;
-        break;
-
-    case C_CANT_REPRESENT_INEXACT_ERROR:
-        msg = C_text("inexact number cannot be represented as an exact number");
-        c = 1;
-        break;
-
-    case C_NOT_A_PROPER_LIST_ERROR:
-        msg = C_text("bad argument type - not a proper list");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_FIXNUM_ERROR:
-        msg = C_text("bad argument type - not a fixnum");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_STRING_ERROR:
-        msg = C_text("bad argument type - not a string");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_PAIR_ERROR:
-        msg = C_text("bad argument type - not a pair");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_BOOLEAN_ERROR:
-        msg = C_text("bad argument type - not a boolean");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_LOCATIVE_ERROR:
-        msg = C_text("bad argument type - not a locative");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_LIST_ERROR:
-        msg = C_text("bad argument type - not a list");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR:
-        msg = C_text("bad argument type - not a number");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_SYMBOL_ERROR:
-        msg = C_text("bad argument type - not a symbol");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_VECTOR_ERROR:
-        msg = C_text("bad argument type - not a vector");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_CHAR_ERROR:
-        msg = C_text("bad argument type - not a character");
-        c = 1;
-        break;
-
-    case C_STACK_OVERFLOW_ERROR:
-        msg = C_text("stack overflow");
-        c = 0;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_BAD_STRUCT_ERROR:
-        msg = C_text("bad argument type - not a structure of the required type");
-        c = 2;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_BYTEVECTOR_ERROR:
-        msg = C_text("bad argument type - not a blob");
-        c = 1;
-        break;
-
-    case C_LOST_LOCATIVE_ERROR:
-        msg = C_text("locative refers to reclaimed object");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_BLOCK_ERROR:
-        msg = C_text("bad argument type - not a non-immediate value");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_NUMBER_VECTOR_ERROR:
-        msg = C_text("bad argument type - not a number vector");
-        c = 2;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR:
-        msg = C_text("bad argument type - not an integer");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR:
-        msg = C_text("bad argument type - not an unsigned integer");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_POINTER_ERROR:
-        msg = C_text("bad argument type - not a pointer");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_TAGGED_POINTER_ERROR:
-        msg = C_text("bad argument type - not a tagged pointer");
-        c = 2;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR:
-        msg = C_text("bad argument type - not a flonum");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_CLOSURE_ERROR:
-        msg = C_text("bad argument type - not a procedure");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR:
-        msg = C_text("bad argument type - invalid base");
-        c = 1;
-        break;
-
-    case C_CIRCULAR_DATA_ERROR:
-        msg = C_text("recursion too deep or circular data encountered");
-        c = 0;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_PORT_ERROR:
-        msg = C_text("bad argument type - not a port");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_INPUT_PORT_ERROR:
-        msg = C_text("bad argument type - not an input-port");
-        c = 1;
-        break;
-
-    case C_BAD_ARGUMENT_TYPE_NO_OUTPUT_PORT_ERROR:
-        msg = C_text("bad argument type - not an output-port");
-        c = 1;
-        break;
-
-    case C_PORT_CLOSED_ERROR:
-        msg = C_text("port already closed");
-        c = 1;
-        break;
-
-    case C_ASCIIZ_REPRESENTATION_ERROR:
-        msg = C_text("cannot represent string with NUL bytes as C string");
-        c = 1;
-        break;
-
-    case C_MEMORY_VIOLATION_ERROR:
-        msg = C_text("segmentation violation");
-        c = 0;
-        break;
-
-    default: panic(C_text("illegal internal error code"));
-    }
-
-    if(!C_immediatep(err)) {
-        C_save(C_fix(code));
-
-        if(loc != NULL)
-            C_save(intern0(loc));
-        else {
-            C_save(error_location);
-            error_location = C_SCHEME_FALSE;
-        }
-
-        va_start(v, loc);
-        i = c;
-
-        while(i--)
-            C_save(va_arg(v, C_word));
-
-        va_end(v);
-        /* No continuation is passed: '##sys#error-hook' may not return: */
-        C_do_apply(c + 2, err, C_SCHEME_UNDEFINED);
-    }
-    else panic(msg);
-}
-
-
-/* Hook for setting breakpoints */
-
-C_word C_dbg_hook(C_word dummy)
-{
-    return dummy;
-}
-
-
 /* Timing routines: */
 
 C_regparm double C_fcall C_milliseconds(void)
@@ -2044,17 +1718,6 @@ C_regparm C_word C_fcall C_h_intern_in(C_word *slot, int len, C_char *str, C_SYM
 }
 
 
-C_regparm C_word C_fcall intern0(C_char *str)
-{
-    int len = C_strlen(str);
-    int key = hash_string(len, str, symbol_table->size, symbol_table->rand, 0);
-    C_word s;
-
-    if(C_truep(s = lookup(key, len, str, symbol_table))) return s;
-    else return C_SCHEME_FALSE;
-}
-
-
 C_regparm C_word C_fcall C_lookup_symbol(C_word sym)
 {
     int key;
@@ -2079,37 +1742,6 @@ C_regparm C_word C_fcall C_intern3(C_word **ptr, C_char *str, C_word value)
 
     C_mutate2(&C_block_item(s,0), value);
     return s;
-}
-
-
-C_regparm C_word C_fcall hash_string(int len, C_char *str, C_word m, C_word r, int ci)
-{
-    C_uword key = r;
-
-    if (ci)
-        while(len--) key ^= (key << 6) + (key >> 2) + C_tolower((int)(*str++));
-    else
-        while(len--) key ^= (key << 6) + (key >> 2) + *(str++);
-
-    return (C_word)(key % (C_uword)m);
-}
-
-
-C_regparm C_word C_fcall lookup(C_word key, int len, C_char *str, C_SYMBOL_TABLE *stable)
-{
-    C_word bucket, sym, s;
-
-    for(bucket = stable->table[ key ]; bucket != C_SCHEME_END_OF_LIST;
-        bucket = C_block_item(bucket,1)) {
-        sym = C_block_item(bucket,0);
-        s = C_block_item(sym, 1);
-
-        if(C_header_size(s) == (C_word)len
-           && !C_memcmp(str, (C_char *)C_data_pointer(s), len))
-            return sym;
-    }
-
-    return C_SCHEME_FALSE;
 }
 
 

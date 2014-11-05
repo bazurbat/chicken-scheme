@@ -16,6 +16,8 @@ set(libchicken_C_SOURCES
     ${CHICKEN_APPLY_HACK}
     chicken.h
     runtime.c
+    runtime/error.c
+    runtime/symbol_table.c
     uvffi.c
     uvffi.h
 )
