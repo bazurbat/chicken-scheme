@@ -284,16 +284,6 @@ Time complexity: O (|V| + |E|)
 If a cycle is detected during the sorting process, an exception of the
 condition kinds {{(exn runtime cycle)}} is thrown.
 
-=== Random numbers
-
-
-==== random-seed
-
-<procedure>(random-seed [SEED])</procedure>
-
-Seeds the random number generator with {{SEED}} (an exact integer) or 
-{{(current-seconds)}} if {{SEED}} is not given.
-
 
 === Strings
 
