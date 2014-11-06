@@ -1,7 +1,8 @@
 #ifndef RUNTIME_SYMBOL_TABLE_H
 #define RUNTIME_SYMBOL_TABLE_H
 
-#include <chicken.h>
+#include <runtime/definitions.h>
+#include <runtime/types.h>
 
 extern C_TLS C_SYMBOL_TABLE
     *symbol_table,

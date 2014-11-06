@@ -1,5 +1,4 @@
 #include "uvffi.h"
-#include "chicken.h"
 #include <uv.h>
 #include <stdlib.h>
 

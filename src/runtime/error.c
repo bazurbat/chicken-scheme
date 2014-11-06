@@ -1,5 +1,6 @@
 #include "error.h"
 #include "symbol_table.h"
+#include <chicken.h>
 
 C_TLS C_word
     error_hook_symbol,
