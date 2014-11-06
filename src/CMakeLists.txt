@@ -22,6 +22,8 @@ set(libchicken_C_SOURCES
     runtime/error.h
     runtime/fixnum.c
     runtime/fixnum.h
+    runtime/foreign.c
+    runtime/foreign.h
     runtime/symbol_table.c
     runtime/symbol_table.h
     uvffi.c

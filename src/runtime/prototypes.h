@@ -271,21 +271,6 @@ C_fctexport C_word C_fcall C_a_i_string_to_number(C_word **a, int c, C_word str,
 C_fctexport C_word C_fcall C_a_i_exact_to_inexact(C_word **a, int c, C_word n) C_regparm;
 C_fctexport C_word C_fcall C_i_file_exists_p(C_word name, C_word file, C_word dir) C_regparm;
 
-C_fctexport C_word C_fcall C_i_foreign_char_argumentp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_foreign_fixnum_argumentp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_foreign_flonum_argumentp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_foreign_block_argumentp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_foreign_struct_wrapper_argumentp(C_word t, C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_foreign_string_argumentp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_foreign_symbol_argumentp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_foreign_tagged_pointer_argumentp(C_word x, C_word t) C_regparm;
-C_fctexport C_word C_fcall C_i_foreign_pointer_argumentp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_foreign_scheme_or_c_pointer_argumentp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_foreign_integer_argumentp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_foreign_integer64_argumentp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_foreign_unsigned_integer64_argumentp(C_word x) C_regparm;
-
 C_fctexport C_char *C_lookup_procedure_id(void *ptr);
 C_fctexport void *C_lookup_procedure_ptr(C_char *id);
 C_fctexport C_char *C_executable_path();
