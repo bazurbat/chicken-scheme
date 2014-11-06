@@ -24,6 +24,8 @@ set(libchicken_C_SOURCES
     runtime/error.h
     runtime/fixnum.c
     runtime/fixnum.h
+    runtime/flonum.c
+    runtime/flonum.h
     runtime/foreign.c
     runtime/foreign.h
     runtime/symbol_table.c

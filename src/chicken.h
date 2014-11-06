@@ -9,10 +9,11 @@
 #include <runtime/variables.h>
 #include <runtime/prototypes.h>
 #include <runtime/inline_functions.h>
+#include <runtime/check.h>
 #include <runtime/fixnum.h>
+#include <runtime/flonum.h>
 #include <runtime/arithmetic.h>
 #include <runtime/error.h>
 #include <runtime/foreign.h>
-#include <runtime/check.h>
 
 #endif /* CHICKEN_H */

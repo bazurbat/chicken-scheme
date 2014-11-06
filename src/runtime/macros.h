@@ -790,4 +790,28 @@ extern double trunc(double);
 #define C_i_true2(dummy1, dummy2)      ((dummy1), (dummy2), C_SCHEME_TRUE)
 #define C_i_true3(dummy1, dummy2, dummy3)  ((dummy1), (dummy2), (dummy3), C_SCHEME_TRUE)
 
+/* from runtime.c */
+
+#ifdef BITWISE_UINT_ONLY
+#define C_check_uint(x, f, n, w)    if(((x) & C_FIXNUM_BIT) != 0) n = C_unfix(x); \
+    else if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG) \
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, w, x); \
+    else { double _m; \
+           f = C_flonum_magnitude(x); \
+           if(modf(f, &_m) != 0.0 || f < 0 || f > C_UWORD_MAX) \
+               barf(C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR, w, x); \
+           else n = (C_uword)f; \
+    }
+#else
+#define C_check_uint(x, f, n, w)    if(((x) & C_FIXNUM_BIT) != 0) n = C_unfix(x); \
+    else if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG) \
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, w, x); \
+    else { double _m; \
+           f = C_flonum_magnitude(x); \
+           if(modf(f, &_m) != 0.0 || f > C_UWORD_MAX) \
+               barf(C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR, w, x); \
+           else n = (C_uword)f; \
+    }
+#endif
+
 #endif /* RUNTIME_MACROS_H */
