@@ -18,6 +18,8 @@ set(libchicken_C_SOURCES
     runtime.c
     runtime/arithmetic.c
     runtime/arithmetic.h
+    runtime/check.c
+    runtime/check.h
     runtime/error.c
     runtime/error.h
     runtime/fixnum.c
