@@ -17,7 +17,11 @@ set(libchicken_C_SOURCES
     chicken.h
     runtime.c
     runtime/error.c
+    runtime/error.h
+    runtime/fixnum.c
+    runtime/fixnum.h
     runtime/symbol_table.c
+    runtime/symbol_table.h
     uvffi.c
     uvffi.h
 )

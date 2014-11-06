@@ -1898,13 +1898,6 @@ C_fctexport C_word C_fcall C_a_i_acos(C_word **a, int c, C_word n) C_regparm;
 C_fctexport C_word C_fcall C_a_i_atan(C_word **a, int c, C_word n) C_regparm;
 C_fctexport C_word C_fcall C_a_i_atan2(C_word **a, int c, C_word n1, C_word n2) C_regparm;
 C_fctexport C_word C_fcall C_a_i_sqrt(C_word **a, int c, C_word n) C_regparm;
-C_fctexport C_word C_fcall C_i_o_fixnum_plus(C_word x, C_word y) C_regparm;
-C_fctexport C_word C_fcall C_i_o_fixnum_difference(C_word x, C_word y) C_regparm;
-C_fctexport C_word C_fcall C_i_o_fixnum_times(C_word x, C_word y) C_regparm;
-C_fctexport C_word C_fcall C_i_o_fixnum_quotient(C_word x, C_word y) C_regparm;
-C_fctexport C_word C_fcall C_i_o_fixnum_and(C_word x, C_word y) C_regparm;
-C_fctexport C_word C_fcall C_i_o_fixnum_ior(C_word x, C_word y) C_regparm;
-C_fctexport C_word C_fcall C_i_o_fixnum_xor(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_a_i_flonum_round_proper(C_word **a, int c, C_word n) C_regparm;
 C_fctexport C_word C_fcall C_i_getprop(C_word sym, C_word prop, C_word def) C_regparm;
 C_fctexport C_word C_fcall C_putprop(C_word **a, C_word sym, C_word prop, C_word val) C_regparm;
@@ -1960,6 +1953,7 @@ C_fctexport int  CHICKEN_yield();
 
 C_fctexport void C_default_5fstub_toplevel(C_word c,C_word d,C_word k) C_noret;
 
+#include <runtime/fixnum.h>
 
 /* Inline functions: */
 
