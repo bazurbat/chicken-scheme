@@ -54,7 +54,6 @@ C_fctexport C_word C_fcall C_start_timer(void) C_regparm;
 C_fctexport C_word C_exit_runtime(C_word code);
 C_fctexport C_word C_fcall C_read_char(C_word port) C_regparm;
 C_fctexport C_word C_fcall C_peek_char(C_word port) C_regparm;
-C_fctexport C_word C_fcall C_execute_shell_command(C_word string) C_regparm;
 C_fctexport int C_fcall C_check_fd_ready(int fd) C_regparm;
 C_fctexport C_word C_fcall C_char_ready_p(C_word port) C_regparm;
 C_fctexport C_word C_fcall C_fudge(C_word fudge_factor) C_regparm;
