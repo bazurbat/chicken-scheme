@@ -106,4 +106,10 @@ extern C_TLS int
 
 C_fctexport void C_ccall C_gc(C_word c, C_word closure, C_word k, ...) C_noret;
 
+C_fctexport void C_ccall C_register_finalizer(C_word c, C_word closure, C_word k, C_word x, C_word proc) C_noret;
+C_fctexport void C_do_register_finalizer(C_word x, C_word proc);
+C_fctexport int C_do_unregister_finalizer(C_word x);
+
+C_fctexport C_word C_resize_pending_finalizers(C_word size);
+
 #endif /* RUNTIME_GC_H */
