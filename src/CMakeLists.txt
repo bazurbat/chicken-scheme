@@ -22,6 +22,8 @@ set(libchicken_C_SOURCES
     runtime/arithmetic.h
     runtime/check.c
     runtime/check.h
+    runtime/continuations.c
+    runtime/continuations.h
     runtime/debug.c
     runtime/debug.h
     runtime/errors.c

@@ -24,5 +24,6 @@
 #include <runtime/system.h>
 #include <runtime/platform.h>
 #include <runtime/apply.h>
+#include <runtime/continuations.h>
 
 #endif /* CHICKEN_H */
