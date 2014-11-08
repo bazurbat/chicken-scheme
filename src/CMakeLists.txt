@@ -48,6 +48,8 @@ set(libchicken_C_SOURCES
     runtime/symbol_table.h
     runtime/system.c
     runtime/system.h
+    runtime/timing.c
+    runtime/timing.h
     runtime/trace.c
     runtime/trace.h
     uvffi.c
