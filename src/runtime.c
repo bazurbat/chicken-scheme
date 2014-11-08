@@ -2046,20 +2046,6 @@ C_word C_fcall C_closure(C_word **ptr, int cells, C_word proc, ...)
 }
 
 
-/* obsolete: replaced by C_a_pair in chicken.h */
-C_regparm C_word C_fcall C_pair(C_word **ptr, C_word car, C_word cdr)
-{
-    C_word *p = *ptr,
-    *p0 = p;
-
-    *(p++) = C_PAIR_TYPE | (C_SIZEOF_PAIR - 1);
-    *(p++) = car;
-    *(p++) = cdr;
-    *ptr = p;
-    return (C_word)p0;
-}
-
-
 C_regparm C_word C_fcall C_number(C_word **ptr, double n)
 {
     C_word

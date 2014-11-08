@@ -69,7 +69,6 @@ C_fctexport void C_unbound_error(C_word sym) C_noret;
 C_fctexport void C_no_closure_error(C_word x) C_noret;
 C_fctexport void C_div_by_zero_error(char *loc) C_noret;
 C_fctexport C_word C_closure(C_word **ptr, int cells, C_word proc, ...);
-C_fctexport C_word C_fcall C_pair(C_word **ptr, C_word car, C_word cdr) C_regparm;
 C_fctexport C_word C_fcall C_number(C_word **ptr, double n) C_regparm;
 C_fctexport C_word C_fcall C_mpointer(C_word **ptr, void *mp) C_regparm;
 C_fctexport C_word C_fcall C_mpointer_or_false(C_word **ptr, void *mp) C_regparm;
