@@ -58,12 +58,6 @@ C_inline C_word C_flonum(C_word **ptr, double n)
 }
 
 
-C_inline C_word C_string_to_pbytevector(C_word s)
-{
-    return C_pbytevector(C_header_size(s), (C_char *)C_data_pointer(s));
-}
-
-
 C_inline C_word C_flonum_in_fixnum_range_p(C_word n)
 {
     double f = C_flonum_magnitude(n);

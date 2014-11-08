@@ -25,6 +25,256 @@ C_regparm C_word C_fcall C_get_print_precision(void)
     return C_fix(flonum_print_precision);
 }
 
+/* Allocate and initialize record: */
+
+C_regparm C_word C_fcall C_string(C_word **ptr, int len, C_char *str)
+{
+    C_word strblock = (C_word)(*ptr);
+
+    *ptr = (C_word *)((C_word)(*ptr) + sizeof(C_header) + C_align(len));
+    C_block_header_init(strblock, C_STRING_TYPE | len);
+    C_memcpy(C_data_pointer(strblock), str, len);
+    return strblock;
+}
+
+C_regparm C_word C_fcall C_static_string(C_word **ptr, int len, C_char *str)
+{
+    C_word *dptr = (C_word *)C_malloc(sizeof(C_header) + C_align(len));
+    C_word strblock;
+
+    if(dptr == NULL)
+        panic(C_text("out of memory - cannot allocate static string"));
+
+    strblock = (C_word)dptr;
+    C_block_header_init(strblock, C_STRING_TYPE | len);
+    C_memcpy(C_data_pointer(strblock), str, len);
+    return strblock;
+}
+
+C_regparm C_word C_fcall C_static_lambda_info(C_word **ptr, int len, C_char *str)
+{
+    int dlen = sizeof(C_header) + C_align(len);
+    void *dptr = C_malloc(dlen);
+    C_word strblock;
+
+    if(dptr == NULL)
+        panic(C_text("out of memory - cannot allocate static lambda info"));
+
+    strblock = (C_word)dptr;
+    C_block_header_init(strblock, C_LAMBDA_INFO_TYPE | len);
+    C_memcpy(C_data_pointer(strblock), str, len);
+    return strblock;
+}
+
+C_regparm C_word C_fcall C_bytevector(C_word **ptr, int len, C_char *str)
+{
+    C_word strblock = C_string(ptr, len, str);
+
+    (void)C_string_to_bytevector(strblock);
+    return strblock;
+}
+
+C_regparm C_word C_fcall C_static_bytevector(C_word **ptr, int len, C_char *str)
+{
+    C_word strblock = C_static_string(ptr, len, str);
+
+    C_block_header_init(strblock, C_BYTEVECTOR_TYPE | len);
+    return strblock;
+}
+
+C_regparm C_word C_fcall C_pbytevector(int len, C_char *str)
+{
+    C_SCHEME_BLOCK *pbv = C_malloc(len + sizeof(C_header));
+
+    if(pbv == NULL) panic(C_text("out of memory - cannot allocate permanent blob"));
+
+    pbv->header = C_BYTEVECTOR_TYPE | len;
+    C_memcpy(pbv->data, str, len);
+    return (C_word)pbv;
+}
+
+C_regparm C_word C_fcall C_string_aligned8(C_word **ptr, int len, C_char *str)
+{
+    C_word *p = *ptr,
+    *p0;
+
+#ifndef C_SIXTY_FOUR
+    /* Align on 8-byte boundary: */
+    if(C_aligned8(p)) ++p;
+#endif
+
+    p0 = p;
+    *ptr = p + 1 + C_bytestowords(len);
+    *(p++) = C_STRING_TYPE | C_8ALIGN_BIT | len;
+    C_memcpy(p, str, len);
+    return (C_word)p0;
+}
+
+C_regparm C_word C_fcall C_string2(C_word **ptr, C_char *str)
+{
+    C_word strblock = (C_word)(*ptr);
+    int len;
+
+    if(str == NULL) return C_SCHEME_FALSE;
+
+    len = C_strlen(str);
+    *ptr = (C_word *)((C_word)(*ptr) + sizeof(C_header) + C_align(len));
+    C_block_header_init(strblock, C_STRING_TYPE | len);
+    C_memcpy(C_data_pointer(strblock), str, len);
+    return strblock;
+}
+
+C_regparm C_word C_fcall C_string2_safe(C_word **ptr, int max, C_char *str)
+{
+    C_word strblock = (C_word)(*ptr);
+    int len;
+
+    if(str == NULL) return C_SCHEME_FALSE;
+
+    len = C_strlen(str);
+
+    if(len >= max) {
+        C_snprintf(buffer, sizeof(buffer), C_text("foreign string result exceeded maximum of %d bytes"), max);
+        panic(buffer);
+    }
+
+    *ptr = (C_word *)((C_word)(*ptr) + sizeof(C_header) + C_align(len));
+    C_block_header_init(strblock, C_STRING_TYPE | len);
+    C_memcpy(C_data_pointer(strblock), str, len);
+    return strblock;
+}
+
+C_word C_fcall C_closure(C_word **ptr, int cells, C_word proc, ...)
+{
+    va_list va;
+    C_word *p = *ptr,
+    *p0 = p;
+
+    *p = C_CLOSURE_TYPE | cells;
+    *(++p) = proc;
+
+    for(va_start(va, proc); --cells; *(++p) = va_arg(va, C_word)) ;
+
+    va_end(va);
+    *ptr = p + 1;
+    return (C_word)p0;
+}
+
+C_regparm C_word C_fcall C_number(C_word **ptr, double n)
+{
+    C_word
+    *p = *ptr,
+    *p0;
+    double m;
+
+    if(n <= (double)C_MOST_POSITIVE_FIXNUM
+       && n >= (double)C_MOST_NEGATIVE_FIXNUM && modf(n, &m) == 0.0) {
+        return C_fix(n);
+    }
+
+#ifndef C_SIXTY_FOUR
+#ifndef C_DOUBLE_IS_32_BITS
+    /* Align double on 8-byte boundary: */
+    if(C_aligned8(p)) ++p;
+#endif
+#endif
+
+    p0 = p;
+    *(p++) = C_FLONUM_TAG;
+    *((double *)p) = n;
+    *ptr = p + sizeof(double) / sizeof(C_word);
+    return (C_word)p0;
+}
+
+C_regparm C_word C_fcall C_mpointer(C_word **ptr, void *mp)
+{
+    C_word
+    *p = *ptr,
+    *p0 = p;
+
+    *(p++) = C_POINTER_TYPE | 1;
+    *((void **)p) = mp;
+    *ptr = p + 1;
+    return (C_word)p0;
+}
+
+C_regparm C_word C_fcall C_mpointer_or_false(C_word **ptr, void *mp)
+{
+    C_word
+    *p = *ptr,
+    *p0 = p;
+
+    if(mp == NULL) return C_SCHEME_FALSE;
+
+    *(p++) = C_POINTER_TYPE | 1;
+    *((void **)p) = mp;
+    *ptr = p + 1;
+    return (C_word)p0;
+}
+
+C_regparm C_word C_fcall C_taggedmpointer(C_word **ptr, C_word tag, void *mp)
+{
+    C_word
+    *p = *ptr,
+    *p0 = p;
+
+    *(p++) = C_TAGGED_POINTER_TAG;
+    *((void **)p) = mp;
+    *(++p) = tag;
+    *ptr = p + 1;
+    return (C_word)p0;
+}
+
+C_regparm C_word C_fcall C_taggedmpointer_or_false(C_word **ptr, C_word tag, void *mp)
+{
+    C_word
+    *p = *ptr,
+    *p0 = p;
+
+    if(mp == NULL) return C_SCHEME_FALSE;
+
+    *(p++) = C_TAGGED_POINTER_TAG;
+    *((void **)p) = mp;
+    *(++p) = tag;
+    *ptr = p + 1;
+    return (C_word)p0;
+}
+
+C_word C_vector(C_word **ptr, int n, ...)
+{
+    va_list v;
+    C_word
+    *p = *ptr,
+    *p0 = p;
+
+    *(p++) = C_VECTOR_TYPE | n;
+    va_start(v, n);
+
+    while(n--)
+        *(p++) = va_arg(v, C_word);
+
+    *ptr = p;
+    va_end(v);
+    return (C_word)p0;
+}
+
+C_word C_structure(C_word **ptr, int n, ...)
+{
+    va_list v;
+    C_word *p = *ptr,
+    *p0 = p;
+
+    *(p++) = C_STRUCTURE_TYPE | n;
+    va_start(v, n);
+
+    while(n--)
+        *(p++) = va_arg(v, C_word);
+
+    *ptr = p;
+    va_end(v);
+    return (C_word)p0;
+}
+
 /* Inline versions of some standard procedures: */
 
 C_word C_a_i_list(C_word **a, int c, ...)
@@ -520,6 +770,11 @@ fail:
 
 fini:
     return n;
+}
+
+C_regparm C_word C_string_to_pbytevector(C_word s)
+{
+    return C_pbytevector(C_header_size(s), (C_char *)C_data_pointer(s));
 }
 
 C_regparm C_word C_fcall C_i_assoc(C_word x, C_word lst)

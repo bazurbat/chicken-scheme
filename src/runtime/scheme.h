@@ -3,6 +3,24 @@
 
 #include "definitions.h"
 
+C_fctexport C_word C_fcall C_string(C_word **ptr, int len, C_char *str) C_regparm;
+C_fctexport C_word C_fcall C_static_string(C_word **ptr, int len, C_char *str) C_regparm;
+C_fctexport C_word C_fcall C_static_lambda_info(C_word **ptr, int len, C_char *str) C_regparm;
+C_fctexport C_word C_fcall C_bytevector(C_word **ptr, int len, C_char *str) C_regparm;
+C_fctexport C_word C_fcall C_static_bytevector(C_word **ptr, int len, C_char *str) C_regparm;
+C_fctexport C_word C_fcall C_pbytevector(int len, C_char *str) C_regparm;
+C_fctexport C_word C_fcall C_string_aligned8(C_word **ptr, int len, C_char *str) C_regparm;
+C_fctexport C_word C_fcall C_string2(C_word **ptr, C_char *str) C_regparm;
+C_fctexport C_word C_fcall C_string2_safe(C_word **ptr, int max, C_char *str) C_regparm;
+C_fctexport C_word C_closure(C_word **ptr, int cells, C_word proc, ...);
+C_fctexport C_word C_fcall C_number(C_word **ptr, double n) C_regparm;
+C_fctexport C_word C_fcall C_mpointer(C_word **ptr, void *mp) C_regparm;
+C_fctexport C_word C_fcall C_mpointer_or_false(C_word **ptr, void *mp) C_regparm;
+C_fctexport C_word C_fcall C_taggedmpointer(C_word **ptr, C_word tag, void *mp) C_regparm;
+C_fctexport C_word C_fcall C_taggedmpointer_or_false(C_word **ptr, C_word tag, void *mp) C_regparm;
+C_fctexport C_word C_vector(C_word **ptr, int n, ...);
+C_fctexport C_word C_structure(C_word **ptr, int n, ...);
+
 C_fctexport C_word C_fcall C_set_print_precision(C_word n) C_regparm;
 C_fctexport C_word C_fcall C_get_print_precision(void) C_regparm;
 
@@ -16,8 +34,10 @@ C_word C_fcall C_a_i_smart_mpointer(C_word **ptr, int c, C_word x);
 C_word C_fcall maybe_inexact_to_exact(C_word n) C_regparm;
 
 C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word *fix, double *flo) C_regparm;
+
 C_fctexport void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, ...) C_noret;
 C_fctexport C_word C_fcall C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix) C_regparm;
+C_fctexport C_word C_string_to_pbytevector(C_word s) C_regparm;
 
 C_fctexport C_word C_fcall C_i_assoc(C_word x, C_word lst) C_regparm;
 C_fctexport C_word C_fcall C_i_assq(C_word x, C_word lst) C_regparm;
