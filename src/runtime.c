@@ -1724,6 +1724,66 @@ C_regparm C_word C_fcall C_evict_block(C_word from, C_word ptr)
     return (C_word)p;
 }
 
+void C_ccall C_values(C_word c, C_word closure, C_word k, ...)
+{
+    va_list v;
+    C_word n = c;
+
+    if(c < 2) C_bad_min_argc(c, 2);
+
+    va_start(v, k);
+
+    /* Check continuation whether it receives multiple values: */
+    if(C_block_item(k, 0) == (C_word)values_continuation) {
+        while(c-- > 2)
+            C_save(va_arg(v, C_word));
+
+        va_end(v);
+        C_do_apply(n - 2, k, C_SCHEME_UNBOUND); /* unbound value marks direct invocation */
+    }
+
+    if(c != 3) {
+#ifdef RELAX_MULTIVAL_CHECK
+        if(c == 2) n = C_SCHEME_UNDEFINED;
+        else n = va_arg(v, C_word);
+#else
+        barf(C_CONTINUATION_CANT_RECEIVE_VALUES_ERROR, "values", k);
+#endif
+    }
+    else n = va_arg(v, C_word);
+
+    va_end(v);
+    C_kontinue(k, n);
+}
+
+void C_ccall C_apply_values(C_word c, C_word closure, C_word k, C_word lst)
+{
+    C_word n;
+
+    if(c != 3) C_bad_argc(c, 3);
+
+    /* Check continuation wether it receives multiple values: */
+    if(C_block_item(k, 0) == (C_word)values_continuation) {
+        for(n = 0; !C_immediatep(lst) && C_block_header(lst) == C_PAIR_TAG; ++n) {
+            C_save(C_u_i_car(lst));
+            lst = C_u_i_cdr(lst);
+        }
+
+        C_do_apply(n, k, C_SCHEME_UNBOUND); /* unbound value marks direct invocation */
+    }
+
+    if(C_immediatep(lst) || (C_block_header(lst) == C_PAIR_TAG && C_u_i_cdr(lst) == C_SCHEME_END_OF_LIST)) {
+#ifdef RELAX_MULTIVAL_CHECK
+        if(C_immediatep(lst)) n = C_SCHEME_UNDEFINED;
+        else n = C_u_i_car(lst);
+#else
+        barf(C_CONTINUATION_CANT_RECEIVE_VALUES_ERROR, "values", k);
+#endif
+    }
+    else n = C_u_i_car(lst);
+
+    C_kontinue(k, n);
+}
 
 void C_ccall C_open_file_port(C_word c, C_word closure, C_word k, C_word port, C_word channel, C_word mode)
 {
