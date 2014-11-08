@@ -22,5 +22,6 @@
 #include <runtime/heap.h>
 #include <runtime/trace.h>
 #include <runtime/system.h>
+#include <runtime/platform.h>
 
 #endif /* CHICKEN_H */

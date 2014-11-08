@@ -88,16 +88,10 @@ C_fctexport void C_ccall C_make_structure(C_word c, C_word closure, C_word k, C_
 C_fctexport void C_ccall C_make_pointer(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_make_tagged_pointer(C_word c, C_word closure, C_word k, C_word tag) C_noret;
 C_fctexport void C_ccall C_return_to_host(C_word c, C_word closure, C_word k) C_noret;
-C_fctexport void C_ccall C_get_memory_info(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_context_switch(C_word c, C_word closure, C_word k, C_word state) C_noret;
 C_fctexport void C_ccall C_peek_signed_integer(C_word c, C_word closure, C_word k, C_word v, C_word index) C_noret;
 C_fctexport void C_ccall C_peek_unsigned_integer(C_word c, C_word closure, C_word k, C_word v, C_word index) C_noret;
 C_fctexport void C_ccall C_decode_seconds(C_word c, C_word closure, C_word k, C_word secs, C_word mode) C_noret;
-C_fctexport void C_ccall C_software_type(C_word c, C_word closure, C_word k) C_noret;
-C_fctexport void C_ccall C_machine_type(C_word c, C_word closure, C_word k) C_noret;
-C_fctexport void C_ccall C_machine_byte_order(C_word c, C_word closure, C_word k) C_noret;
-C_fctexport void C_ccall C_software_version(C_word c, C_word closure, C_word k) C_noret;
-C_fctexport void C_ccall C_build_platform(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_register_finalizer(C_word c, C_word closure, C_word k, C_word x, C_word proc) C_noret;
 C_fctexport void C_ccall C_set_dlopen_flags(C_word c, C_word closure, C_word k, C_word now, C_word global) C_noret;
 C_fctexport void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word entry) C_noret;

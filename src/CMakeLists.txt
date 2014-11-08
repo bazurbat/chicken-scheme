@@ -34,6 +34,8 @@ set(libchicken_C_SOURCES
     runtime/gc.h
     runtime/heap.c
     runtime/heap.h
+    runtime/platform.c
+    runtime/platform.h
     runtime/scheme.c
     runtime/scheme.h
     runtime/symbol_table.c

@@ -1,7 +1,6 @@
 # runtime
 
 set(runtime_MODULES
-    platform
 )
 
 foreach(name ${runtime_MODULES})
