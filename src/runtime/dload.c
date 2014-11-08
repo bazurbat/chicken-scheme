@@ -1,6 +1,10 @@
 #include "dload.h"
 #include <chicken.h>
 
+#ifdef _WIN32
+# include <windows.h>
+#endif
+
 #if !defined(NO_DLOAD2) && (defined(HAVE_DLFCN_H) || defined(HAVE_DL_H) || (defined(HAVE_LOADLIBRARY) && defined(HAVE_GETPROCADDRESS)))
 static void dload_2(void *dummy) C_noret;
 #endif
