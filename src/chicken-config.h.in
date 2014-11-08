@@ -5,6 +5,7 @@
 #cmakedefine HAVE_DIRECT_H
 #cmakedefine HAVE_DIRENT_H
 #cmakedefine HAVE_DLFCN_H
+#cmakedefine HAVE_DL_H
 #cmakedefine HAVE_ERRNO_H
 #cmakedefine HAVE_GRP_H
 #cmakedefine HAVE_INTTYPES_H

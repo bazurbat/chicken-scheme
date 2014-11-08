@@ -26,6 +26,8 @@ set(libchicken_C_SOURCES
     runtime/continuations.h
     runtime/debug.c
     runtime/debug.h
+    runtime/dload.c
+    runtime/dload.h
     runtime/errors.c
     runtime/errors.h
     runtime/fixnum.c

@@ -85,8 +85,6 @@ C_fctexport void C_ccall C_peek_signed_integer(C_word c, C_word closure, C_word 
 C_fctexport void C_ccall C_peek_unsigned_integer(C_word c, C_word closure, C_word k, C_word v, C_word index) C_noret;
 C_fctexport void C_ccall C_decode_seconds(C_word c, C_word closure, C_word k, C_word secs, C_word mode) C_noret;
 C_fctexport void C_ccall C_register_finalizer(C_word c, C_word closure, C_word k, C_word x, C_word proc) C_noret;
-C_fctexport void C_ccall C_set_dlopen_flags(C_word c, C_word closure, C_word k, C_word now, C_word global) C_noret;
-C_fctexport void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word entry) C_noret;
 C_fctexport void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table) C_noret;
 C_fctexport void C_ccall C_locative_ref(C_word c, C_word closure, C_word k, C_word loc) C_noret;
 C_fctexport void C_ccall C_copy_closure(C_word c, C_word closure, C_word k, C_word proc) C_noret;
