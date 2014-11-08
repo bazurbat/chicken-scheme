@@ -20,6 +20,8 @@ set(libchicken_C_SOURCES
     runtime/arithmetic.h
     runtime/check.c
     runtime/check.h
+    runtime/debug.c
+    runtime/debug.h
     runtime/errors.c
     runtime/errors.h
     runtime/fixnum.c
@@ -28,10 +30,16 @@ set(libchicken_C_SOURCES
     runtime/flonum.h
     runtime/foreign.c
     runtime/foreign.h
+    runtime/gc.c
+    runtime/gc.h
+    runtime/heap.c
+    runtime/heap.h
     runtime/scheme.c
     runtime/scheme.h
     runtime/symbol_table.c
     runtime/symbol_table.h
+    runtime/trace.c
+    runtime/trace.h
     uvffi.c
     uvffi.h
 )

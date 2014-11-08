@@ -104,4 +104,6 @@ DECL_C_PROC_p3 (112,113,114,115,116,117,118,119,  0,1,1,1,0)
 DECL_C_PROC_p3 (120,121,122,123,124,125,126,127,  0,1,1,1,1)
 DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 
+typedef void (C_fcall *TRAMPOLINE)(void *proc) C_regparm C_noret;
+
 #endif /* RUNTIME_TYPES_H */

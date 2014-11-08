@@ -2,6 +2,7 @@
 #define RUNTIME_INLINE_FUNCTIONS_H
 
 #include "errors.h"
+#include "heap.h"
 
 /* Inline functions: */
 

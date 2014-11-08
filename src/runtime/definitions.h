@@ -653,4 +653,56 @@ void *alloca ();
 #define INITIAL_TIMER_INTERRUPT_PERIOD 10000
 #define HDUMP_TABLE_SIZE               1001
 
+#ifdef C_SIXTY_FOUR
+# define DEFAULT_STACK_SIZE            (1024 * 1024)
+#else
+# define DEFAULT_STACK_SIZE            (256 * 1024)
+#endif
+
+#define DEFAULT_HEAP_SIZE              DEFAULT_STACK_SIZE
+#define MINIMAL_HEAP_SIZE              DEFAULT_STACK_SIZE
+#define DEFAULT_MAXIMAL_HEAP_SIZE      0x7ffffff0
+#define DEFAULT_HEAP_GROWTH            200
+#define DEFAULT_HEAP_SHRINKAGE         50
+#define DEFAULT_HEAP_SHRINKAGE_USED    25
+
+#define DEFAULT_MUTATION_STACK_SIZE    1024
+
+#define DEFAULT_SYMBOL_TABLE_SIZE      2999
+#define DEFAULT_FORWARDING_TABLE_SIZE  32
+#define DEFAULT_LOCATIVE_TABLE_SIZE    32
+#define DEFAULT_COLLECTIBLES_SIZE      1024
+#define DEFAULT_TRACE_BUFFER_SIZE      16
+#define MIN_TRACE_BUFFER_SIZE          3
+
+#define STRING_BUFFER_SIZE             4096
+
+#define WEAK_TABLE_SIZE                997
+#define WEAK_HASH_ITERATIONS           4
+#define WEAK_HASH_DISPLACEMENT         7
+#define WEAK_COUNTER_MASK              3
+#define WEAK_COUNTER_MAX               2
+
+/* Constants: */
+
+#ifdef C_SIXTY_FOUR
+# define ALIGNMENT_HOLE_MARKER         ((C_word)0xfffffffffffffffeL)
+# define FORWARDING_BIT_SHIFT          63
+# define UWORD_FORMAT_STRING           "0x%016lx"
+# define UWORD_COUNT_FORMAT_STRING     "%u"
+#else
+# define ALIGNMENT_HOLE_MARKER         ((C_word)0xfffffffe)
+# define FORWARDING_BIT_SHIFT          31
+# define UWORD_FORMAT_STRING           "0x%08x"
+# define UWORD_COUNT_FORMAT_STRING     "%u"
+#endif
+
+#ifdef C_LLP
+# define LONG_FORMAT_STRING            "%lldf"
+#else
+# define LONG_FORMAT_STRING            "%ld"
+#endif
+
+#define MAX_PENDING_INTERRUPTS         100
+
 #endif
