@@ -37,9 +37,11 @@ extern C_TLS C_word
     **mutation_stack_limit,
     **mutation_stack_top;
 
-extern C_TLS int
+C_varextern C_TLS int
     C_enable_gcweak,
     C_max_pending_finalizers;
+
+C_TLS void (*C_gc_trace_hook)(C_word *var, int mode);
 
 extern C_TLS int
     gc_bell,

@@ -32,9 +32,7 @@ C_varextern C_TLS int
     C_abort_on_thread_exceptions,
     C_interrupts_enabled,
     C_disable_overflow_check,
-    C_enable_gcweak,
     C_heap_size_is_fixed,
-    C_max_pending_finalizers,
     C_trace_buffer_size,
     C_main_argc;
 C_varextern C_TLS C_uword
@@ -45,7 +43,6 @@ C_varextern C_TLS char
 *C_dlerror;
 C_varextern C_TLS C_uword C_maximal_heap_size;
 C_varextern C_TLS int (*C_gc_mutation_hook)(C_word *slot, C_word val);
-C_varextern C_TLS void (*C_gc_trace_hook)(C_word *var, int mode);
 C_varextern C_TLS C_word (*C_get_unbound_variable_value_hook)(C_word sym);
 
 #endif /* RUNTIME_VARIABLES_H */
