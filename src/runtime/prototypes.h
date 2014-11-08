@@ -131,7 +131,6 @@ C_fctexport void C_ccall C_set_dlopen_flags(C_word c, C_word closure, C_word k, 
 C_fctexport void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word entry) C_noret;
 C_fctexport void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table) C_noret;
 C_fctexport void C_ccall C_locative_ref(C_word c, C_word closure, C_word k, C_word loc) C_noret;
-C_fctexport void C_ccall C_call_with_cthulhu(C_word c, C_word self, C_word k, C_word proc) C_noret;
 C_fctexport void C_ccall C_copy_closure(C_word c, C_word closure, C_word k, C_word proc) C_noret;
 C_fctexport void C_ccall C_dump_heap_state(C_word x, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_filter_heap_objects(C_word x, C_word closure, C_word k, C_word func,

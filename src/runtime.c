@@ -4900,17 +4900,6 @@ static void copy_closure_2(void *dummy)
 }
 
 
-/* Creating black holes: */
-
-void C_call_with_cthulhu(C_word c, C_word self, C_word k, C_word proc)
-{
-    C_word *a = C_alloc(C_SIZEOF_CLOSURE(1));
-
-    k = C_closure(&a, 1, (C_word)termination_continuation);
-    C_apply(4, C_SCHEME_UNDEFINED, k, proc, C_SCHEME_END_OF_LIST);
-}
-
-
 /* decoding of literals in compressed format */
 
 static C_regparm C_uword C_fcall decode_size(C_char **str)
