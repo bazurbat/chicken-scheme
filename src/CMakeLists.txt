@@ -20,8 +20,8 @@ set(libchicken_C_SOURCES
     runtime/arithmetic.h
     runtime/check.c
     runtime/check.h
-    runtime/error.c
-    runtime/error.h
+    runtime/errors.c
+    runtime/errors.h
     runtime/fixnum.c
     runtime/fixnum.h
     runtime/flonum.c

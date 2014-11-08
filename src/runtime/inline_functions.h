@@ -1,6 +1,8 @@
 #ifndef RUNTIME_INLINE_FUNCTIONS_H
 #define RUNTIME_INLINE_FUNCTIONS_H
 
+#include "errors.h"
+
 /* Inline functions: */
 
 C_BEGIN_C_DECLS

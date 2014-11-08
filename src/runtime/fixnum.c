@@ -1,5 +1,5 @@
 #include "fixnum.h"
-#include "error.h"
+#include "errors.h"
 
 /* fixnum arithmetic with overflow detection (from "Hacker's Delight" by Hank Warren)
    These routines return #f if the operation failed due to overflow.

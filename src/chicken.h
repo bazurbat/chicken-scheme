@@ -13,7 +13,7 @@
 #include <runtime/fixnum.h>
 #include <runtime/flonum.h>
 #include <runtime/arithmetic.h>
-#include <runtime/error.h>
+#include <runtime/errors.h>
 #include <runtime/foreign.h>
 #include <runtime/scheme.h>
 

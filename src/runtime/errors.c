@@ -1,4 +1,4 @@
-#include "error.h"
+#include "errors.h"
 #include "symbol_table.h"
 #include <chicken.h>
 
@@ -324,4 +324,65 @@ void barf(int code, char *loc, ...)
         C_do_apply(c + 2, err, C_SCHEME_UNDEFINED);
     }
     else panic(msg);
+}
+
+/* Print error messages and exit: */
+
+void C_bad_memory(void)
+{
+    panic(C_text("there is not enough stack-space to run this executable"));
+}
+
+void C_bad_memory_2(void)
+{
+    panic(C_text("there is not enough heap-space to run this executable - try using the '-:h...' option"));
+}
+
+/* The following two can be thrown out in the next release... */
+
+void C_bad_argc(int c, int n)
+{
+    C_bad_argc_2(c, n, C_SCHEME_FALSE);
+}
+
+void C_bad_min_argc(int c, int n)
+{
+    C_bad_min_argc_2(c, n, C_SCHEME_FALSE);
+}
+
+void C_bad_argc_2(int c, int n, C_word closure)
+{
+    barf(C_BAD_ARGUMENT_COUNT_ERROR, NULL, C_fix(n - 2), C_fix(c - 2), closure);
+}
+
+void C_bad_min_argc_2(int c, int n, C_word closure)
+{
+    barf(C_BAD_MINIMUM_ARGUMENT_COUNT_ERROR, NULL, C_fix(n - 2), C_fix(c - 2), closure);
+}
+
+void C_stack_overflow(void)
+{
+    barf(C_STACK_OVERFLOW_ERROR, NULL);
+}
+
+void C_temp_stack_overflow(void)
+{
+    /* Just raise a "too many parameters" error; it isn't very useful to
+       show a different message here. */
+    barf(C_TOO_MANY_PARAMETERS_ERROR, NULL);
+}
+
+void C_unbound_error(C_word sym)
+{
+    barf(C_UNBOUND_VARIABLE_ERROR, NULL, sym);
+}
+
+void C_no_closure_error(C_word x)
+{
+    barf(C_NOT_A_CLOSURE_ERROR, NULL, x);
+}
+
+void C_div_by_zero_error(char *loc)
+{
+    barf(C_DIVISION_BY_ZERO_ERROR, loc);
 }
