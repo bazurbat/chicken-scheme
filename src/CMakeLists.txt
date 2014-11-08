@@ -28,6 +28,8 @@ set(libchicken_C_SOURCES
     runtime/flonum.h
     runtime/foreign.c
     runtime/foreign.h
+    runtime/scheme.c
+    runtime/scheme.h
     runtime/symbol_table.c
     runtime/symbol_table.h
     uvffi.c

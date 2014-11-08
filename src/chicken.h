@@ -15,5 +15,6 @@
 #include <runtime/arithmetic.h>
 #include <runtime/error.h>
 #include <runtime/foreign.h>
+#include <runtime/scheme.h>
 
 #endif /* CHICKEN_H */
