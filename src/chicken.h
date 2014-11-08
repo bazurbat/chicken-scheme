@@ -23,5 +23,6 @@
 #include <runtime/trace.h>
 #include <runtime/system.h>
 #include <runtime/platform.h>
+#include <runtime/apply.h>
 
 #endif /* CHICKEN_H */

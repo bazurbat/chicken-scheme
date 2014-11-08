@@ -16,6 +16,8 @@ set(libchicken_C_SOURCES
     ${CHICKEN_APPLY_HACK}
     chicken.h
     runtime.c
+    runtime/apply.c
+    runtime/apply.h
     runtime/arithmetic.c
     runtime/arithmetic.h
     runtime/check.c

@@ -70,8 +70,6 @@ C_fctexport C_word C_dbg_hook(C_word x);
 C_fctimport void C_ccall C_toplevel(C_word c, C_word self, C_word k) C_noret;
 C_fctimport void C_ccall C_invalid_procedure(int c, C_word self, ...) C_noret;
 C_fctexport void C_ccall C_stop_timer(C_word c, C_word closure, C_word k) C_noret;
-C_fctexport void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...) C_noret;
-C_fctexport void C_ccall C_do_apply(C_word n, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_call_cc(C_word c, C_word closure, C_word k, C_word cont) C_noret;
 C_fctexport void C_ccall C_continuation_graft(C_word c, C_word closure, C_word k, C_word kk, C_word proc) C_noret;
 C_fctexport void C_ccall C_values(C_word c, C_word closure, C_word k, ...) C_noret;
