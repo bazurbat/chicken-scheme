@@ -15,8 +15,12 @@ include_directories(BEFORE
 set(libchicken_C_SOURCES
     ${CHICKEN_APPLY_HACK}
     chicken.h
+    foreign/constructors.c
+    foreign/constructors.h
     foreign/locatives.c
     foreign/locatives.h
+    foreign/predicates.c
+    foreign/predicates.h
     gc/finalizers.c
     gc/finalizers.h
     gc/gc.c
@@ -53,10 +57,6 @@ set(libchicken_C_SOURCES
     runtime/dload.h
     runtime/errors.c
     runtime/errors.h
-    runtime/foreign.c
-    runtime/foreign.c
-    runtime/foreign.h
-    runtime/foreign.h
     runtime/inexact.c
     runtime/inexact.h
     runtime/interrupts.c

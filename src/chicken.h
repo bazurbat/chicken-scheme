@@ -15,7 +15,6 @@
 #include <runtime/definitions.h>
 #include <runtime/dload.h>
 #include <runtime/errors.h>
-#include <runtime/foreign.h>
 #include <runtime/inexact.h>
 #include <runtime/interrupts.h>
 #include <runtime/lists.h>
@@ -34,7 +33,9 @@
 #include <runtime/types.h>
 #include <runtime/vectors.h>
 
+#include "foreign/constructors.h"
 #include "foreign/locatives.h"
+#include "foreign/predicates.h"
 
 #include "math/arithmetic.h"
 #include "math/constructors.h"
