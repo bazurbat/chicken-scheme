@@ -251,4 +251,36 @@ C_regparm C_word C_fcall C_a_i_flonum_round_proper(C_word **ptr, int c, C_word n
     return C_flonum(ptr, r);
 }
 
+void C_ccall C_flonum_fraction(C_word c, C_word closure, C_word k, C_word n)
+{
+    double i, fn = C_flonum_magnitude(n);
+    C_alloc_flonum;
 
+    C_kontinue_flonum(k, modf(fn, &i));
+}
+
+void C_ccall C_flonum_rat(C_word c, C_word closure, C_word k, C_word n)
+{
+    double frac, tmp, numer, denom, fn = C_flonum_magnitude(n);
+    double ga, gb;
+    C_word ab[WORDS_PER_FLONUM * 2], *ap = ab;
+    int i = 0;
+
+    if (isnormal(fn)) {
+        /* Calculate bit-length of the fractional part (ie, after decimal point) */
+        frac = fn;
+        while(!C_isnan(frac) && !C_isinf(frac) && C_modf(frac, &tmp) != 0.0) {
+            frac *= 2;
+            if (i++ > 3000) /* should this be flonum-maximum-exponent? */
+                barf(C_CANT_REPRESENT_INEXACT_ERROR, "fprat", n);
+        }
+
+        /* Now we can compute the rational number r = 2^i/X*2^i = numer/denom. */
+        denom = pow(2, i);
+        numer = fn*denom;
+    } else { /* denormalised/subnormal number: [+-]1.0/+inf.0 */
+        numer = fn > 0.0 ? 1.0 : -1.0;
+        denom = INFINITY; /* +inf */
+    }
+    C_values(4, C_SCHEME_UNDEFINED, k, C_flonum(&ap, numer), C_flonum(&ap, denom));
+}

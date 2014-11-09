@@ -101,6 +101,11 @@ static WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word con
 static void C_fcall really_mark(C_word *x) C_regparm;
 static void C_fcall really_remark(C_word *x) C_regparm;
 static void C_fcall update_locative_table(int mode) C_regparm;
+static void allocate_vector_2(void *dummy) C_noret;
+static void become_2(void *dummy) C_noret;
+
+C_TLS void (*C_pre_gc_hook)(int mode) = NULL;
+C_TLS void (*C_post_gc_hook)(int mode, C_long ms) = NULL;
 
 static void gc_2(void *dummy)
 {
@@ -1356,3 +1361,83 @@ C_word C_resize_pending_finalizers(C_word size)
     C_max_pending_finalizers = sz;
     return C_SCHEME_TRUE;
 }
+
+C_regparm C_word C_fcall C_mutate_slot(C_word *slot, C_word val)
+{
+    unsigned int mssize, newmssize, bytes;
+
+    ++mutation_count;
+    /* Mutation stack exists to track mutations pointing from elsewhere
+     * into nursery.  Stuff pointing anywhere else can be skipped, as
+     * well as mutations on nursery objects.
+     */
+    if(!C_in_stackp(val) || C_in_stackp((C_word)slot))
+        return *slot = val;
+
+#ifdef C_GC_HOOKS
+    if(C_gc_mutation_hook != NULL && C_gc_mutation_hook(slot, val)) return val;
+#endif
+
+    if(mutation_stack_top >= mutation_stack_limit) {
+        assert(mutation_stack_top == mutation_stack_limit);
+        mssize = mutation_stack_top - mutation_stack_bottom;
+        newmssize = mssize * 2;
+        bytes = newmssize * sizeof(C_word *);
+
+        if(debug_mode)
+            C_dbg(C_text("debug"), C_text("resizing mutation-stack from " UWORD_COUNT_FORMAT_STRING "k to " UWORD_COUNT_FORMAT_STRING "k ...\n"),
+                  (mssize * sizeof(C_word *)) / 1024, bytes / 1024);
+
+        mutation_stack_bottom = (C_word **)realloc(mutation_stack_bottom, bytes);
+
+        if(mutation_stack_bottom == NULL)
+            panic(C_text("out of memory - cannot re-allocate mutation stack"));
+
+        mutation_stack_limit = mutation_stack_bottom + newmssize;
+        mutation_stack_top = mutation_stack_bottom + mssize;
+    }
+
+    *(mutation_stack_top++) = slot;
+    ++tracked_mutation_count;
+    return *slot = val;
+}
+
+void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table)
+{
+    C_word tp, x, old, neu, i, *p;
+
+    i = forwarding_table_size;
+    p = forwarding_table;
+
+    for(tp = table; tp != C_SCHEME_END_OF_LIST; tp = C_u_i_cdr(tp)) {
+        x = C_u_i_car(tp);
+        old = C_u_i_car(x);
+        neu = C_u_i_cdr(x);
+
+        if(i == 0) {
+            if((forwarding_table = (C_word *)realloc(forwarding_table, (forwarding_table_size + 1) * 4 * sizeof(C_word))) == NULL)
+                panic(C_text("out of memory - cannot re-allocate forwarding table"));
+
+            i = forwarding_table_size;
+            p = forwarding_table + forwarding_table_size * 2;
+            forwarding_table_size *= 2;
+        }
+
+        *(p++) = old;
+        *(p++) = neu;
+        --i;
+    }
+
+    *p = 0;
+    C_fromspace_top = C_fromspace_limit;
+    C_save_and_reclaim((void *)become_2, NULL, 1, k);
+}
+
+
+void become_2(void *dummy)
+{
+    C_word k = C_restore;
+    *forwarding_table = 0;
+    C_kontinue(k, C_SCHEME_UNDEFINED);
+}
+

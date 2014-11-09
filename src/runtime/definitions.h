@@ -685,6 +685,8 @@ void *alloca ();
 
 /* Constants: */
 
+#define TEMPORARY_STACK_SIZE           2048
+
 #ifdef C_SIXTY_FOUR
 # define ALIGNMENT_HOLE_MARKER         ((C_word)0xfffffffffffffffeL)
 # define FORWARDING_BIT_SHIFT          63

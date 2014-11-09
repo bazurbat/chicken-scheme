@@ -9,6 +9,25 @@
 static void dload_2(void *dummy) C_noret;
 #endif
 
+
+#ifndef RTLD_GLOBAL
+# define RTLD_GLOBAL                   0
+#endif
+
+#ifndef RTLD_NOW
+# define RTLD_NOW                      0
+#endif
+
+#ifndef RTLD_LAZY
+# define RTLD_LAZY                     0
+#endif
+
+#ifndef RTLD_LOCAL
+# define RTLD_LOCAL                    0
+#endif
+
+C_TLS char *C_dlerror;
+
 C_TLS int dlopen_flags;
 
 /* Dynamic loading of shared objects: */

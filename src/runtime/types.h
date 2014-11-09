@@ -105,5 +105,7 @@ DECL_C_PROC_p3 (120,121,122,123,124,125,126,127,  0,1,1,1,1)
 DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 
 typedef void (C_fcall *TRAMPOLINE)(void *proc) C_regparm C_noret;
+C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
+C_TLS int (*C_gc_mutation_hook)(C_word *slot, C_word val);
 
 #endif /* RUNTIME_TYPES_H */

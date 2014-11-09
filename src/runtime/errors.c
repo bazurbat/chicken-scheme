@@ -6,6 +6,8 @@ C_TLS C_word
     error_hook_symbol,
     error_location;
 
+C_TLS void (*C_panic_hook)(C_char *msg) = NULL;
+
 static C_regparm C_word C_fcall intern0(C_char *str)
 {
     int len = C_strlen(str);
@@ -386,3 +388,15 @@ void C_div_by_zero_error(char *loc)
 {
     barf(C_DIVISION_BY_ZERO_ERROR, loc);
 }
+
+void C_unbound_variable(C_word sym)
+{
+    barf(C_UNBOUND_VARIABLE_ERROR, NULL, sym);
+}
+
+void C_ccall C_invalid_procedure(int c, C_word self, ...)
+{
+    barf(C_NOT_A_CLOSURE_ERROR, NULL, self);
+}
+
+

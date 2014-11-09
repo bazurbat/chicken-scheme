@@ -21,7 +21,6 @@ C_varextern C_TLS sigjmp_buf C_restart;
 C_varextern C_TLS jmp_buf C_restart;
 #endif
 C_varextern C_TLS void *C_restart_address;
-C_varextern C_TLS int C_entry_point_status;
 
 C_varextern C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
 C_varextern C_TLS void (*C_pre_gc_hook)(int mode);

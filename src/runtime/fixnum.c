@@ -5,6 +5,8 @@
    These routines return #f if the operation failed due to overflow.
  */
 
+static C_TLS C_char buffer[ STRING_BUFFER_SIZE ];
+
 C_regparm C_word C_fcall C_i_o_fixnum_plus(C_word n1, C_word n2)
 {
     C_word x1, x2, s;
@@ -134,4 +136,22 @@ C_regparm C_word C_fcall C_i_o_fixnum_xor(C_word n1, C_word n2)
 
     if(((r & C_INT_SIGN_BIT) >> 1) != (r & C_INT_TOP_BIT)) return C_SCHEME_FALSE;
     else return C_fix(r);
+}
+
+/* special case for fixnum arg and decimal radix */
+void C_ccall C_fixnum_to_string(C_word c, C_word self, C_word k, C_word num)
+{
+    C_word *a, s;
+    int n;
+
+    /*XXX is this necessary? */
+#ifdef C_SIXTY_FOUR
+    C_snprintf(buffer, sizeof(buffer), C_text(LONG_FORMAT_STRING), C_unfix(num));
+#else
+    C_snprintf(buffer, sizeof(buffer), C_text("%d"), C_unfix(num));
+#endif
+    n = C_strlen(buffer);
+    a = C_alloc(C_bytestowords(n) + 1);
+    s = C_string2(&a, buffer);
+    C_kontinue(k, s);
 }

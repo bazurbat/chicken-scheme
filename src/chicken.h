@@ -27,6 +27,14 @@
 #include <runtime/continuations.h>
 #include <runtime/dload.h>
 #include <runtime/timing.h>
-#include <runtime/locatives.h>
+#include <runtime/foreign.h>
+#include <runtime/callbacks.h>
+#include <runtime/signals.h>
+#include <runtime/interrupts.h>
+#include <runtime/api.h>
+#include <runtime/compiler.h>
+#include <runtime/nursery.h>
+#include <runtime/inexact.h>
+#include <runtime/reader.h>
 
 #endif /* CHICKEN_H */

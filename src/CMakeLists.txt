@@ -16,12 +16,18 @@ set(libchicken_C_SOURCES
     ${CHICKEN_APPLY_HACK}
     chicken.h
     runtime.c
+    runtime/api.c
+    runtime/api.h
     runtime/apply.c
     runtime/apply.h
     runtime/arithmetic.c
     runtime/arithmetic.h
+    runtime/callbacks.c
+    runtime/callbacks.h
     runtime/check.c
     runtime/check.h
+    runtime/compiler.c
+    runtime/compiler.h
     runtime/continuations.c
     runtime/continuations.h
     runtime/debug.c
@@ -35,17 +41,27 @@ set(libchicken_C_SOURCES
     runtime/flonum.c
     runtime/flonum.h
     runtime/foreign.c
+    runtime/foreign.c
+    runtime/foreign.h
     runtime/foreign.h
     runtime/gc.c
     runtime/gc.h
     runtime/heap.c
     runtime/heap.h
-    runtime/locatives.c
-    runtime/locatives.h
+    runtime/inexact.c
+    runtime/inexact.h
+    runtime/interrupts.c
+    runtime/interrupts.h
+    runtime/nursery.c
+    runtime/nursery.h
     runtime/platform.c
     runtime/platform.h
+    runtime/reader.c
+    runtime/reader.h
     runtime/scheme.c
     runtime/scheme.h
+    runtime/signals.c
+    runtime/signals.h
     runtime/symbol_table.c
     runtime/symbol_table.h
     runtime/system.c

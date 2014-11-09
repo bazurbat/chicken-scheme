@@ -1420,3 +1420,49 @@ C_regparm C_word C_fcall C_u_i_zerop(C_word x)
 
     return C_mk_bool(C_flonum_magnitude(x) == 0.0);
 }
+
+C_regparm C_word C_fcall C_u_i_string_hash(C_word str, C_word rnd)
+{
+    int len = C_header_size(str);
+    C_char *ptr = C_data_pointer(str);
+    return C_fix(hash_string(len, ptr, C_MOST_POSITIVE_FIXNUM, C_unfix(rnd), 0));
+}
+
+C_regparm C_word C_fcall C_u_i_string_ci_hash(C_word str, C_word rnd)
+{
+    int len = C_header_size(str);
+    C_char *ptr = C_data_pointer(str);
+    return C_fix(hash_string(len, ptr, C_MOST_POSITIVE_FIXNUM, C_unfix(rnd), 1));
+}
+
+/* Cons the rest-aguments together: */
+
+C_regparm C_word C_fcall C_restore_rest(C_word *ptr, int num)
+{
+    C_word x = C_SCHEME_END_OF_LIST;
+    C_SCHEME_BLOCK *node;
+
+    while(num--) {
+        node = (C_SCHEME_BLOCK *)ptr;
+        ptr += 3;
+        node->header = C_PAIR_TYPE | (C_SIZEOF_PAIR - 1);
+        node->data[ 0 ] = C_restore;
+        node->data[ 1 ] = x;
+        x = (C_word)node;
+    }
+
+    return x;
+}
+
+/* I? */
+C_regparm C_word C_fcall C_restore_rest_vector(C_word *ptr, int num)
+{
+    C_word *p0 = ptr;
+
+    *(ptr++) = C_VECTOR_TYPE | num;
+    ptr += num;
+
+    while(num--) *(--ptr) = C_restore;
+
+    return (C_word)p0;
+}

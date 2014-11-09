@@ -14,6 +14,8 @@ C_TLS unsigned int
 static C_TLS double
     timer_start_ms;
 
+C_TLS time_t C_startup_time_seconds;
+
 /* Timing routines: */
 
 C_regparm double C_fcall C_milliseconds(void)
