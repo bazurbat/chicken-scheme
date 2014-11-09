@@ -2,7 +2,15 @@
 #define RUNTIME_SYMBOL_TABLE_H
 
 #include <runtime/definitions.h>
-#include <runtime/types.h>
+
+typedef struct C_symbol_table_struct
+{
+    char *name;
+    unsigned int size;
+    unsigned int rand;
+    C_word *table;
+    struct C_symbol_table_struct *next;
+} C_SYMBOL_TABLE;
 
 extern C_TLS C_SYMBOL_TABLE
     *symbol_table,

@@ -1,39 +1,5 @@
-#ifndef RUNTIME_TYPES_H
-#define RUNTIME_TYPES_H
-
-/* Types: */
-
-typedef struct C_block_struct
-{
-    C_header header;
-#if (__STDC_VERSION__ >= 199901L)
-    C_word data[];
-#else
-    C_word data[ 1 ];
-#endif
-} C_SCHEME_BLOCK;
-
-typedef struct C_symbol_table_struct
-{
-    char *name;
-    unsigned int size;
-    unsigned int rand;
-    C_word *table;
-    struct C_symbol_table_struct *next;
-} C_SYMBOL_TABLE;
-
-typedef struct C_gc_root_struct
-{
-    C_word value;
-    struct C_gc_root_struct *next, *prev;
-    int finalizable;
-} C_GC_ROOT;
-
-typedef struct C_ptable_entry_struct
-{
-    C_char *id;
-    void *ptr;
-} C_PTABLE_ENTRY;
+#ifndef RUNTIME_NASTY_MACROS_H
+#define RUNTIME_NASTY_MACROS_H
 
 #ifdef __x86_64__
 # define C_AMD64_ABI_WEIRDNESS      , ...
@@ -104,10 +70,4 @@ DECL_C_PROC_p3 (112,113,114,115,116,117,118,119,  0,1,1,1,0)
 DECL_C_PROC_p3 (120,121,122,123,124,125,126,127,  0,1,1,1,1)
 DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 
-typedef void (C_fcall *TRAMPOLINE)(void *proc) C_regparm C_noret;
-C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
-C_TLS int (*C_gc_mutation_hook)(C_word *slot, C_word val);
-
-C_fctexport void C_default_5fstub_toplevel(C_word c,C_word d,C_word k) C_noret;
-
-#endif /* RUNTIME_TYPES_H */
+#endif /* RUNTIME_NASTY_MACROS_H */

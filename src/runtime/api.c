@@ -49,6 +49,9 @@ static C_TLS C_char
 
 typedef void (*TOPLEVEL)(C_word c, C_word self, C_word k) C_noret;
 
+C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
+C_TLS int (*C_gc_mutation_hook)(C_word *slot, C_word val);
+
 void generic_trampoline(void *dummy)
 {
     C_word k = C_restore;

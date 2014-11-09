@@ -9,6 +9,44 @@ extern C_TLS int fake_tty_flag;
 extern C_TLS int forwarding_table_size;
 extern C_TLS int C_enable_repl;
 
+C_varextern C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
+C_varextern C_TLS int (*C_gc_mutation_hook)(C_word *slot, C_word val);
+
+C_fctexport void C_default_5fstub_toplevel(C_word c,C_word d,C_word k) C_noret;
+
+typedef struct C_block_struct
+{
+    C_header header;
+#if (__STDC_VERSION__ >= 199901L)
+    C_word data[];
+#else
+    C_word data[ 1 ];
+#endif
+} C_SCHEME_BLOCK;
+
+typedef struct C_ptable_entry_struct
+{
+    C_char *id;
+    void *ptr;
+} C_PTABLE_ENTRY;
+
+typedef struct C_gc_root_struct
+{
+    C_word value;
+    struct C_gc_root_struct *next, *prev;
+    int finalizable;
+} C_GC_ROOT;
+
+typedef void (C_fcall *TRAMPOLINE)(void *proc) C_regparm C_noret;
+
+#define CHICKEN_gc_root_ref(root)      (((C_GC_ROOT *)(root))->value)
+#define CHICKEN_gc_root_set(root, x)   C_mutate2(&((C_GC_ROOT *)(root))->value, (x))
+
+#define CHICKEN_global_ref(root)       C_u_i_car(((C_GC_ROOT *)(root))->value)
+#define CHICKEN_global_set(root, x)    C_mutate2(&C_u_i_car(((C_GC_ROOT *)(root))->value), (x))
+
+#define CHICKEN_default_toplevel       ((void *)C_default_5fstub_toplevel)
+
 void generic_trampoline(void *dummy) C_noret;
 
 C_fctexport int CHICKEN_main(int argc, char *argv[], void *toplevel);

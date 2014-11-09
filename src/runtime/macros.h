@@ -3,14 +3,6 @@
 
 /* Macros: */
 
-#define CHICKEN_gc_root_ref(root)      (((C_GC_ROOT *)(root))->value)
-#define CHICKEN_gc_root_set(root, x)   C_mutate2(&((C_GC_ROOT *)(root))->value, (x))
-
-#define CHICKEN_global_ref(root)       C_u_i_car(((C_GC_ROOT *)(root))->value)
-#define CHICKEN_global_set(root, x)    C_mutate2(&C_u_i_car(((C_GC_ROOT *)(root))->value), (x))
-
-#define CHICKEN_default_toplevel       ((void *)C_default_5fstub_toplevel)
-
 #define C_align4(n)                (((n) + 3) & ~3)
 #define C_align8(n)                (((n) + 7) & ~7)
 #define C_align16(n)               (((n) + 15) & ~15)

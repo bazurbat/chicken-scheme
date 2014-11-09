@@ -51,6 +51,7 @@ set(libchicken_C_SOURCES
     runtime/inexact.h
     runtime/interrupts.c
     runtime/interrupts.h
+    runtime/nasty_macros.h
     runtime/nursery.c
     runtime/nursery.h
     runtime/platform.c

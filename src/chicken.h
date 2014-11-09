@@ -4,7 +4,6 @@
 #define CHICKEN_H
 
 #include <runtime/definitions.h>
-#include <runtime/types.h>
 #include <runtime/macros.h>
 #include <runtime/variables.h>
 #include <runtime/symbol_table.h>
@@ -35,5 +34,6 @@
 #include <runtime/nursery.h>
 #include <runtime/inexact.h>
 #include <runtime/reader.h>
+#include <runtime/nasty_macros.h>
 
 #endif /* CHICKEN_H */

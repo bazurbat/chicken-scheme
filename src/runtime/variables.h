@@ -22,7 +22,6 @@ C_varextern C_TLS jmp_buf C_restart;
 #endif
 C_varextern C_TLS void *C_restart_address;
 
-C_varextern C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
 C_varextern C_TLS void (*C_pre_gc_hook)(int mode);
 C_varextern C_TLS void (*C_post_gc_hook)(int mode, C_long ms);
 C_varextern C_TLS void (*C_panic_hook)(C_char *msg);
@@ -41,7 +40,6 @@ C_varextern C_TLS char
 **C_main_argv,
 *C_dlerror;
 C_varextern C_TLS C_uword C_maximal_heap_size;
-C_varextern C_TLS int (*C_gc_mutation_hook)(C_word *slot, C_word val);
 C_varextern C_TLS C_word (*C_get_unbound_variable_value_hook)(C_word sym);
 
 #endif /* RUNTIME_VARIABLES_H */
