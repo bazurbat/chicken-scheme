@@ -6,7 +6,6 @@
 #include "../memory/gc.h"
 #include <setjmp.h>
 
-extern C_TLS int chicken_is_running;
 extern C_TLS int stack_size_changed;
 extern C_TLS int forwarding_table_size;
 

@@ -21,7 +21,6 @@
 #include <runtime/reader.h>
 #include <runtime/records.h>
 #include <runtime/scheme.h>
-#include <runtime/signals.h>
 #include <runtime/strings.h>
 #include <runtime/symbol_table.h>
 #include <runtime/trace.h>
@@ -46,6 +45,7 @@
 #include "system/dload.h"
 #include "system/files.h"
 #include "system/platform.h"
+#include "system/signals.h"
 #include "system/timing.h"
 
 #endif /* CHICKEN_H */

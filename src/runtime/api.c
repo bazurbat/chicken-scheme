@@ -37,7 +37,6 @@
 
 static C_TLS int chicken_is_initialized;
 
-C_TLS int chicken_is_running;
 C_TLS int stack_size_changed;
 C_TLS int forwarding_table_size;
 

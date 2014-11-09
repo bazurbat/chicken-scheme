@@ -87,9 +87,6 @@
 #  define C_sigsetjmp              sigsetjmp
 #  define C_siglongjmp             siglongjmp
 #endif
-#ifdef HAVE_SIGPROCMASK
-# define C_sigprocmask             sigprocmask
-#endif
 #define C_setjmp                   setjmp
 #define C_longjmp                  longjmp
 #define C_alloca                   alloca

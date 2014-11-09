@@ -62,8 +62,6 @@ set(libchicken_C_SOURCES
     runtime/reader.h
     runtime/scheme.c
     runtime/scheme.h
-    runtime/signals.c
-    runtime/signals.h
     runtime/symbol_table.c
     runtime/symbol_table.h
     runtime/trace.c
@@ -74,6 +72,8 @@ set(libchicken_C_SOURCES
     system/files.h
     system/platform.c
     system/platform.h
+    system/signals.c
+    system/signals.h
     system/timing.c
     system/timing.h
     uvffi.c
