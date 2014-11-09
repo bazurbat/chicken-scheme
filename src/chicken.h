@@ -13,7 +13,6 @@
 #include <runtime/cxr.h>
 #include <runtime/debug.h>
 #include <runtime/definitions.h>
-#include <runtime/dload.h>
 #include <runtime/errors.h>
 #include <runtime/interrupts.h>
 #include <runtime/lists.h>
@@ -44,6 +43,7 @@
 #include "memory/heap.h"
 #include "memory/nursery.h"
 
+#include "system/dload.h"
 #include "system/files.h"
 #include "system/platform.h"
 #include "system/timing.h"

@@ -1,7 +1,7 @@
-#ifndef RUNTIME_DLOAD_H
-#define RUNTIME_DLOAD_H
+#ifndef SYSTEM_DLOAD_H
+#define SYSTEM_DLOAD_H
 
-#include "definitions.h"
+#include <runtime/definitions.h>
 
 #if !defined(PIC)
 # define NO_DLOAD2
@@ -19,7 +19,10 @@
 
 extern C_TLS int dlopen_flags;
 
+extern C_TLS C_char *current_module_name;
+extern C_TLS void *current_module_handle;
+
 C_fctexport void C_ccall C_set_dlopen_flags(C_word c, C_word closure, C_word k, C_word now, C_word global) C_noret;
 C_fctexport void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word entry) C_noret;
 
-#endif /* RUNTIME_DLOAD_H */
+#endif /* SYSTEM_DLOAD_H */

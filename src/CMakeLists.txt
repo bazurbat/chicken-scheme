@@ -53,8 +53,6 @@ set(libchicken_C_SOURCES
     runtime/continuations.h
     runtime/debug.c
     runtime/debug.h
-    runtime/dload.c
-    runtime/dload.h
     runtime/errors.c
     runtime/errors.h
     runtime/interrupts.c
@@ -70,6 +68,8 @@ set(libchicken_C_SOURCES
     runtime/symbol_table.h
     runtime/trace.c
     runtime/trace.h
+    system/dload.c
+    system/dload.h
     system/files.c
     system/files.h
     system/platform.c

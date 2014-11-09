@@ -82,9 +82,6 @@ extern C_TLS C_word
     **collectibles_top,
     **collectibles_limit;
 
-extern C_TLS C_char *current_module_name;
-extern C_TLS void *current_module_handle;
-
 extern C_TLS double gc_ms,
        timer_accumulated_gc_ms;
 

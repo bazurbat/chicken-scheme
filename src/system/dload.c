@@ -1,5 +1,12 @@
 #include "dload.h"
-#include <chicken.h>
+#include <memory/gc.h>
+#include <memory/nursery.h>
+#include <runtime/aliases.h>
+#include <runtime/debug.h>
+#include <runtime/errors.h>
+#include <runtime/macros.h>
+#include <runtime/strings.h>
+#include <runtime/types.h>
 
 #ifdef _WIN32
 # include <windows.h>
@@ -8,7 +15,6 @@
 #if !defined(NO_DLOAD2) && (defined(HAVE_DLFCN_H) || defined(HAVE_DL_H) || (defined(HAVE_LOADLIBRARY) && defined(HAVE_GETPROCADDRESS)))
 static void dload_2(void *dummy) C_noret;
 #endif
-
 
 #ifndef RTLD_GLOBAL
 # define RTLD_GLOBAL                   0
@@ -29,6 +35,9 @@ static void dload_2(void *dummy) C_noret;
 C_TLS char *C_dlerror;
 
 C_TLS int dlopen_flags;
+
+C_TLS C_char *current_module_name;
+C_TLS void *current_module_handle;
 
 /* Dynamic loading of shared objects: */
 
@@ -57,13 +66,13 @@ void C_ccall C_dload(C_word c, C_word closure, C_word k, C_word name, C_word ent
 
 #if !defined(NO_DLOAD2) && defined(HAVE_DLFCN_H) && !defined(DLOAD_2_DEFINED)
 #  define DLOAD_2_DEFINED
+
 void dload_2(void *dummy)
 {
     void *handle, *p, *p2;
-    C_word
-        entry = C_restore,
-        name = C_restore,
-        k = C_restore;
+    C_word entry = C_restore,
+           name = C_restore,
+           k = C_restore;
     C_char *topname = (C_char *)C_data_pointer(entry);
     C_char *mname = (C_char *)C_data_pointer(name);
     C_char *tmp;
@@ -101,18 +110,20 @@ void dload_2(void *dummy)
     C_dlerror = (char *)dlerror();
     C_kontinue(k, C_SCHEME_FALSE);
 }
+
 #endif
 
 #if !defined(NO_DLOAD2) && (defined(HAVE_LOADLIBRARY) && defined(HAVE_GETPROCADDRESS)) && !defined(DLOAD_2_DEFINED)
 # define DLOAD_2_DEFINED
+
 void dload_2(void *dummy)
 {
     HINSTANCE handle;
     FARPROC p = NULL, p2;
     C_word
         entry = C_restore,
-        name = C_restore,
-        k = C_restore;
+              name = C_restore,
+              k = C_restore;
     C_char *topname = (C_char *)C_data_pointer(entry);
     C_char *mname = (C_char *)C_data_pointer(name);
 
@@ -143,4 +154,5 @@ void dload_2(void *dummy)
     C_dlerror = (char *) C_strerror(errno);
     C_kontinue(k, C_SCHEME_FALSE);
 }
+
 #endif
