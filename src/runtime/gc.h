@@ -112,4 +112,23 @@ C_fctexport int C_do_unregister_finalizer(C_word x);
 
 C_fctexport C_word C_resize_pending_finalizers(C_word size);
 
+C_fctexport void C_initialize_lf(C_word *lf, int count);
+C_fctexport void *C_register_lf(C_word *lf, int count);
+C_fctexport void *C_register_lf2(C_word *lf, int count, C_PTABLE_ENTRY *ptable);
+C_fctexport void C_unregister_lf(void *handle);
+
+C_fctexport C_word C_fcall C_mutate_slot(C_word *slot, C_word val) C_regparm;
+C_fctexport void C_fcall C_reclaim(void *trampoline, void *proc) C_regparm C_noret;
+C_fctexport void C_save_and_reclaim(void *trampoline, void *proc, int n, ...) C_noret;
+C_fctexport void C_fcall C_rereclaim2(C_uword size, int double_plus) C_regparm;
+C_fctexport int C_fcall C_in_fromspacep(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_set_gc_report(C_word flag) C_regparm;
+C_fctexport void C_fcall C_gc_protect(C_word **addr, int n) C_regparm;
+C_fctexport void C_fcall C_gc_unprotect(int n) C_regparm;
+C_fctexport void C_ccall C_allocate_vector(C_word c, C_word closure, C_word k, C_word size, C_word type, C_word init, C_word align8) C_noret;
+
+C_fctexport C_char *C_lookup_procedure_id(void *ptr);
+C_fctexport void *C_lookup_procedure_ptr(C_char *id);
+C_fctexport void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table) C_noret;
+
 #endif /* RUNTIME_GC_H */

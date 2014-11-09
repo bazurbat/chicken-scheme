@@ -85,4 +85,11 @@ C_fctexport C_word C_fcall C_u_i_oddp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_u_i_positivep(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_u_i_zerop(C_word x) C_regparm;
 
+C_fctexport C_word C_fcall C_i_bit_setp(C_word n, C_word i) C_regparm;
+
+C_fctexport C_word C_fcall C_restore_rest(C_word *ptr, int num) C_regparm;
+C_fctexport C_word C_fcall C_restore_rest_vector(C_word *ptr, int num) C_regparm;
+C_fctexport C_word C_fcall C_u_i_string_hash(C_word str, C_word rnd) C_regparm;
+C_fctexport C_word C_fcall C_u_i_string_ci_hash(C_word str, C_word rnd) C_regparm;
+
 #endif /* RUNTIME_SCHEME_H */

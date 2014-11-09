@@ -20,8 +20,6 @@ C_fctexport void C_ccall C_dump_heap_state(C_word x, C_word closure, C_word k) C
 C_fctexport void C_ccall C_filter_heap_objects(C_word x, C_word closure, C_word k, C_word func,
                                                C_word vector, C_word userarg) C_noret;
 
-void generic_trampoline(void *dummy) C_noret;
-
 C_regparm int C_fcall C_in_new_heapp(C_word x);
 
 C_byte * heap_alloc (size_t size, C_byte **page_aligned);

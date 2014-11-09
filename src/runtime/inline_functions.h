@@ -3,6 +3,8 @@
 
 #include "errors.h"
 #include "heap.h"
+#include "gc.h"
+#include "nursery.h"
 
 /* Inline functions: */
 

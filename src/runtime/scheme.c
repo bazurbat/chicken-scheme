@@ -1466,3 +1466,21 @@ C_regparm C_word C_fcall C_restore_rest_vector(C_word *ptr, int num)
 
     return (C_word)p0;
 }
+
+C_regparm C_word C_fcall C_i_bit_setp(C_word n, C_word i)
+{
+    double f1;
+    C_uword nn1;
+    int index;
+
+    if((i & C_FIXNUM_BIT) == 0)
+        barf(C_BAD_ARGUMENT_TYPE_NO_FIXNUM_ERROR, "bit-set?", i);
+
+    index = C_unfix(i);
+
+    if(index < 0 || index >= C_WORD_SIZE)
+        barf(C_OUT_OF_RANGE_ERROR, "bit-set?", n, i);
+
+    C_check_uint(n, f1, nn1, "bit-set?");
+    return C_mk_bool((nn1 & (1 << index)) != 0);
+}

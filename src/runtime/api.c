@@ -21,10 +21,6 @@
 
 #include <signal.h>
 
-static C_PTABLE_ENTRY *create_initial_ptable();
-static void parse_argv(C_char *cmds);
-static C_word arg_val(C_char *arg);
-
 static C_TLS int chicken_is_initialized;
 
 C_TLS int chicken_is_running;
@@ -51,13 +47,18 @@ C_TLS void *C_restart_address;
 static C_TLS C_char
     buffer[ STRING_BUFFER_SIZE ];
 
-static void C_fcall initial_trampoline(void *proc) C_regparm C_noret;
-
 typedef void (*TOPLEVEL)(C_word c, C_word self, C_word k) C_noret;
+
+void generic_trampoline(void *dummy)
+{
+    C_word k = C_restore;
+
+    C_kontinue(k, C_SCHEME_UNDEFINED);
+}
 
 /* Trampoline called at system startup: */
 
-C_regparm void C_fcall initial_trampoline(void *proc)
+static C_regparm C_noret void C_fcall initial_trampoline(void *proc)
 {
     TOPLEVEL top = (TOPLEVEL)proc;
     C_word closure = (C_word)C_alloc(C_SIZEOF_CLOSURE(1));
@@ -66,8 +67,6 @@ C_regparm void C_fcall initial_trampoline(void *proc)
     C_set_block_item(closure, 0, (C_word)termination_continuation);
     (top)(2, C_SCHEME_UNDEFINED, closure);
 }
-
-
 
 /* Startup code: */
 
@@ -85,42 +84,79 @@ int CHICKEN_main(int argc, char *argv[], void *toplevel)
     return 0;
 }
 
-/* Custom argv parser for Windoze: */
-
-void parse_argv(C_char *cmds)
-{
-    C_char *ptr = cmds,
-           *bptr0, *bptr, *aptr;
-    int n = 0;
-
-    C_main_argv = (C_char **)malloc(MAXIMAL_NUMBER_OF_COMMAND_LINE_ARGUMENTS * sizeof(C_char *));
-
-    if(C_main_argv == NULL)
-        panic(C_text("cannot allocate argument-list buffer"));
-
-    C_main_argc = 0;
-
-    for(;; ) {
-        while(isspace((int)(*ptr))) ++ptr;
-
-        if(*ptr == '\0') break;
-
-        for(bptr0 = bptr = buffer; !isspace((int)(*ptr)) && *ptr != '\0'; *(bptr++) = *(ptr++))
-            ++n;
-
-        *bptr = '\0';
-
-        aptr = (C_char*) malloc(sizeof(C_char) * (n + 1));
-        if (!aptr)
-            panic(C_text("cannot allocate argument buffer"));
-
-        C_strlcpy(aptr, bptr0, sizeof(C_char) * (n + 1));
-
-        C_main_argv[ C_main_argc++ ] = aptr;
-    }
-}
-
 /* Initialize runtime system: */
+
+static C_PTABLE_ENTRY *create_initial_ptable()
+{
+    /* IMPORTANT: hardcoded table size -
+     *        this must match the number of C_pte calls + 1 (NULL terminator)! */
+    C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 56);
+    int i = 0;
+
+    if(pt == NULL)
+        panic(C_text("out of memory - cannot create initial ptable"));
+
+    C_pte(termination_continuation);
+    C_pte(callback_return_continuation);
+    C_pte(values_continuation);
+    C_pte(call_cc_values_wrapper);
+    C_pte(call_cc_wrapper);
+    C_pte(C_gc);
+    C_pte(C_allocate_vector);
+    C_pte(C_make_structure);
+    C_pte(C_ensure_heap_reserve);
+    C_pte(C_return_to_host);
+    C_pte(C_get_symbol_table_info);
+    C_pte(C_get_memory_info);
+    C_pte(C_decode_seconds);
+    C_pte(C_stop_timer);
+    C_pte(C_dload);
+    C_pte(C_set_dlopen_flags);
+    C_pte(C_become);
+    C_pte(C_apply_values);
+    C_pte(C_times);
+    C_pte(C_minus);
+    C_pte(C_plus);
+    C_pte(C_divide);
+    C_pte(C_nequalp);
+    C_pte(C_greaterp);
+    /* IMPORTANT: have you read the comments at the start and the end of this function? */
+    C_pte(C_lessp);
+    C_pte(C_greater_or_equal_p);
+    C_pte(C_less_or_equal_p);
+    C_pte(C_quotient);
+    C_pte(C_flonum_fraction);
+    C_pte(C_flonum_rat);
+    C_pte(C_expt);
+    C_pte(C_number_to_string);
+    C_pte(C_make_symbol);
+    C_pte(C_string_to_symbol);
+    C_pte(C_apply);
+    C_pte(C_call_cc);
+    C_pte(C_values);
+    C_pte(C_call_with_values);
+    C_pte(C_continuation_graft);
+    C_pte(C_open_file_port);
+    C_pte(C_software_type);
+    C_pte(C_machine_type);
+    C_pte(C_machine_byte_order);
+    C_pte(C_software_version);
+    C_pte(C_build_platform);
+    C_pte(C_make_pointer);
+    C_pte(C_make_tagged_pointer);
+    C_pte(C_peek_signed_integer);
+    C_pte(C_peek_unsigned_integer);
+    C_pte(C_context_switch);
+    C_pte(C_register_finalizer);
+    C_pte(C_locative_ref);
+    C_pte(C_copy_closure);
+    C_pte(C_dump_heap_state);
+    C_pte(C_filter_heap_objects);
+
+    /* IMPORTANT: did you remember the hardcoded pte table size? */
+    pt[ i ].id = NULL;
+    return pt;
+}
 
 int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 {
@@ -284,76 +320,59 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
     return 1;
 }
 
-static C_PTABLE_ENTRY *create_initial_ptable()
+C_word CHICKEN_run(void *toplevel)
 {
-    /* IMPORTANT: hardcoded table size -
-     *        this must match the number of C_pte calls + 1 (NULL terminator)! */
-    C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 56);
-    int i = 0;
+    if(!chicken_is_initialized && !CHICKEN_initialize(0, 0, 0, toplevel))
+        panic(C_text("could not initialize"));
 
-    if(pt == NULL)
-        panic(C_text("out of memory - cannot create initial ptable"));
+    if(chicken_is_running)
+        panic(C_text("re-invocation of Scheme world while process is already running"));
 
-    C_pte(termination_continuation);
-    C_pte(callback_return_continuation);
-    C_pte(values_continuation);
-    C_pte(call_cc_values_wrapper);
-    C_pte(call_cc_wrapper);
-    C_pte(C_gc);
-    C_pte(C_allocate_vector);
-    C_pte(C_make_structure);
-    C_pte(C_ensure_heap_reserve);
-    C_pte(C_return_to_host);
-    C_pte(C_get_symbol_table_info);
-    C_pte(C_get_memory_info);
-    C_pte(C_decode_seconds);
-    C_pte(C_stop_timer);
-    C_pte(C_dload);
-    C_pte(C_set_dlopen_flags);
-    C_pte(C_become);
-    C_pte(C_apply_values);
-    C_pte(C_times);
-    C_pte(C_minus);
-    C_pte(C_plus);
-    C_pte(C_divide);
-    C_pte(C_nequalp);
-    C_pte(C_greaterp);
-    /* IMPORTANT: have you read the comments at the start and the end of this function? */
-    C_pte(C_lessp);
-    C_pte(C_greater_or_equal_p);
-    C_pte(C_less_or_equal_p);
-    C_pte(C_quotient);
-    C_pte(C_flonum_fraction);
-    C_pte(C_flonum_rat);
-    C_pte(C_expt);
-    C_pte(C_number_to_string);
-    C_pte(C_make_symbol);
-    C_pte(C_string_to_symbol);
-    C_pte(C_apply);
-    C_pte(C_call_cc);
-    C_pte(C_values);
-    C_pte(C_call_with_values);
-    C_pte(C_continuation_graft);
-    C_pte(C_open_file_port);
-    C_pte(C_software_type);
-    C_pte(C_machine_type);
-    C_pte(C_machine_byte_order);
-    C_pte(C_software_version);
-    C_pte(C_build_platform);
-    C_pte(C_make_pointer);
-    C_pte(C_make_tagged_pointer);
-    C_pte(C_peek_signed_integer);
-    C_pte(C_peek_unsigned_integer);
-    C_pte(C_context_switch);
-    C_pte(C_register_finalizer);
-    C_pte(C_locative_ref);
-    C_pte(C_copy_closure);
-    C_pte(C_dump_heap_state);
-    C_pte(C_filter_heap_objects);
+    chicken_is_running = chicken_ran_once = 1;
+    return_to_host = 0;
 
-    /* IMPORTANT: did you remember the hardcoded pte table size? */
-    pt[ i ].id = NULL;
-    return pt;
+#if C_STACK_GROWS_DOWNWARD
+    C_stack_limit = (C_word *)((C_byte *)C_stack_pointer - stack_size);
+#else
+    C_stack_limit = (C_word *)((C_byte *)C_stack_pointer + stack_size);
+#endif
+
+    stack_bottom = C_stack_pointer;
+
+    if(debug_mode)
+        C_dbg(C_text("debug"), C_text("stack bottom is 0x%lx.\n"), (C_word)stack_bottom);
+
+    /* The point of (usually) no return... */
+#ifdef HAVE_SIGSETJMP
+    C_sigsetjmp(C_restart, 0);
+#else
+    C_setjmp(C_restart);
+#endif
+
+    serious_signal_occurred = 0;
+
+    if(!return_to_host)
+        (C_restart_trampoline)(C_restart_address);
+
+    chicken_is_running = 0;
+    return C_restore;
+}
+
+C_word CHICKEN_continue(C_word k)
+{
+    if(C_temporary_stack_bottom != C_temporary_stack)
+        panic(C_text("invalid temporary stack level"));
+
+    if(!chicken_is_initialized)
+        panic(C_text("runtime system has not been initialized - `CHICKEN_run' has probably not been called"));
+
+    C_save(k);
+    return CHICKEN_run(NULL);
+}
+
+void *CHICKEN_new_gc_root()
+{
+    return CHICKEN_new_gc_root_2(0);
 }
 
 void *CHICKEN_new_gc_root_2(int finalizable)
@@ -372,11 +391,6 @@ void *CHICKEN_new_gc_root_2(int finalizable)
 
     gc_root_list = r;
     return (void *)r;
-}
-
-void *CHICKEN_new_gc_root()
-{
-    return CHICKEN_new_gc_root_2(0);
 }
 
 void *CHICKEN_new_finalizable_gc_root()
@@ -425,6 +439,39 @@ void CHICKEN_interrupt()
 }
 
 /* Parse runtime options from command-line: */
+
+static C_word arg_val(C_char *arg)
+{
+    int len;
+    C_char *end;
+    C_long val, mul = 1;
+
+    if (arg == NULL) panic(C_text("illegal runtime-option argument"));
+
+    len = C_strlen(arg);
+
+    if(len < 1) panic(C_text("illegal runtime-option argument"));
+
+    switch(arg[ len - 1 ]) {
+    case 'k':
+    case 'K': mul = 1024; break;
+
+    case 'm':
+    case 'M': mul = 1024 * 1024; break;
+
+    case 'g':
+    case 'G': mul = 1024 * 1024 * 1024; break;
+
+    default: mul = 1;
+    }
+
+    val = C_strtow(arg, &end, 10);
+
+    if((mul != 1 ? end[ 1 ] != '\0' : end[ 0 ] != '\0'))
+        panic(C_text("invalid runtime-option argument suffix"));
+
+    return val * mul;
+}
 
 void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *stack, C_word *symbols)
 {
@@ -565,100 +612,11 @@ next:;
         }
 }
 
-C_word arg_val(C_char *arg)
-{
-    int len;
-    C_char *end;
-    C_long val, mul = 1;
-
-    if (arg == NULL) panic(C_text("illegal runtime-option argument"));
-
-    len = C_strlen(arg);
-
-    if(len < 1) panic(C_text("illegal runtime-option argument"));
-
-    switch(arg[ len - 1 ]) {
-    case 'k':
-    case 'K': mul = 1024; break;
-
-    case 'm':
-    case 'M': mul = 1024 * 1024; break;
-
-    case 'g':
-    case 'G': mul = 1024 * 1024 * 1024; break;
-
-    default: mul = 1;
-    }
-
-    val = C_strtow(arg, &end, 10);
-
-    if((mul != 1 ? end[ 1 ] != '\0' : end[ 0 ] != '\0'))
-        panic(C_text("invalid runtime-option argument suffix"));
-
-    return val * mul;
-}
-
-
-/* Run embedded code with arguments: */
-
-C_word CHICKEN_run(void *toplevel)
-{
-    if(!chicken_is_initialized && !CHICKEN_initialize(0, 0, 0, toplevel))
-        panic(C_text("could not initialize"));
-
-    if(chicken_is_running)
-        panic(C_text("re-invocation of Scheme world while process is already running"));
-
-    chicken_is_running = chicken_ran_once = 1;
-    return_to_host = 0;
-
-#if C_STACK_GROWS_DOWNWARD
-    C_stack_limit = (C_word *)((C_byte *)C_stack_pointer - stack_size);
-#else
-    C_stack_limit = (C_word *)((C_byte *)C_stack_pointer + stack_size);
-#endif
-
-    stack_bottom = C_stack_pointer;
-
-    if(debug_mode)
-        C_dbg(C_text("debug"), C_text("stack bottom is 0x%lx.\n"), (C_word)stack_bottom);
-
-    /* The point of (usually) no return... */
-#ifdef HAVE_SIGSETJMP
-    C_sigsetjmp(C_restart, 0);
-#else
-    C_setjmp(C_restart);
-#endif
-
-    serious_signal_occurred = 0;
-
-    if(!return_to_host)
-        (C_restart_trampoline)(C_restart_address);
-
-    chicken_is_running = 0;
-    return C_restore;
-}
-
-
-C_word CHICKEN_continue(C_word k)
-{
-    if(C_temporary_stack_bottom != C_temporary_stack)
-        panic(C_text("invalid temporary stack level"));
-
-    if(!chicken_is_initialized)
-        panic(C_text("runtime system has not been initialized - `CHICKEN_run' has probably not been called"));
-
-    C_save(k);
-    return CHICKEN_run(NULL);
-}
-
-
 C_regparm void C_fcall C_toplevel_entry(C_char *name)
 {
     if(debug_mode)
         C_dbg(C_text("debug"), C_text("entering toplevel %s...\n"), name);
 }
-
 
 C_word C_halt(C_word msg)
 {
@@ -676,7 +634,6 @@ C_word C_halt(C_word msg)
     return 0;
 }
 
-
 C_word C_message(C_word msg)
 {
     unsigned int n = C_header_size(msg);
@@ -692,20 +649,11 @@ C_word C_message(C_word msg)
     return C_SCHEME_UNDEFINED;
 }
 
-
 C_word C_exit_runtime(C_word code)
 {
     exit(C_unfix(code));
     return 0;                   /* to please the compiler... */
 }
-
-void generic_trampoline(void *dummy)
-{
-    C_word k = C_restore;
-
-    C_kontinue(k, C_SCHEME_UNDEFINED);
-}
-
 
 void C_ccall C_return_to_host(C_word c, C_word closure, C_word k)
 {
@@ -713,7 +661,6 @@ void C_ccall C_return_to_host(C_word c, C_word closure, C_word k)
     C_save(k);
     C_reclaim((void *)generic_trampoline, NULL);
 }
-
 
 void C_ccall C_context_switch(C_word c, C_word closure, C_word k, C_word state)
 {
@@ -726,23 +673,3 @@ void C_ccall C_context_switch(C_word c, C_word closure, C_word k, C_word state)
     trampoline = (TRAMPOLINE)C_block_item(adrs,0);
     trampoline((void *)C_block_item(adrs,1));
 }
-
-C_regparm C_word C_fcall C_i_bit_setp(C_word n, C_word i)
-{
-    double f1;
-    C_uword nn1;
-    int index;
-
-    if((i & C_FIXNUM_BIT) == 0)
-        barf(C_BAD_ARGUMENT_TYPE_NO_FIXNUM_ERROR, "bit-set?", i);
-
-    index = C_unfix(i);
-
-    if(index < 0 || index >= C_WORD_SIZE)
-        barf(C_OUT_OF_RANGE_ERROR, "bit-set?", n, i);
-
-    C_check_uint(n, f1, nn1, "bit-set?");
-    return C_mk_bool((nn1 & (1 << index)) != 0);
-}
-
-

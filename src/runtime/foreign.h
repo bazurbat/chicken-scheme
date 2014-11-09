@@ -23,4 +23,8 @@ C_fctexport C_word C_fcall C_i_foreign_integer64_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_unsigned_integer64_argumentp(C_word x) C_regparm;
 
+C_fctexport void C_ccall C_make_structure(C_word c, C_word closure, C_word k, C_word type, ...) C_noret;
+C_fctexport void C_ccall C_make_pointer(C_word c, C_word closure, C_word k) C_noret;
+C_fctexport void C_ccall C_make_tagged_pointer(C_word c, C_word closure, C_word k, C_word tag) C_noret;
+
 #endif /* RUNTIME_FOREIGN_H */

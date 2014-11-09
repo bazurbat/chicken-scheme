@@ -108,4 +108,6 @@ typedef void (C_fcall *TRAMPOLINE)(void *proc) C_regparm C_noret;
 C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
 C_TLS int (*C_gc_mutation_hook)(C_word *slot, C_word val);
 
+C_fctexport void C_default_5fstub_toplevel(C_word c,C_word d,C_word k) C_noret;
+
 #endif /* RUNTIME_TYPES_H */
