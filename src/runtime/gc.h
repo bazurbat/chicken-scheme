@@ -2,7 +2,7 @@
 #define RUNTIME_GC_H
 
 #include "definitions.h"
-#include "api.h"
+#include "types.h"
 
 typedef struct finalizer_node_struct
 {

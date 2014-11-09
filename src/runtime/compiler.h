@@ -2,6 +2,8 @@
 #define RUNTIME_COMPILER_H
 
 #include "definitions.h"
+#include "types.h"
+#include "errors.h"
 
 #ifdef C_BIG_ENDIAN
 # ifdef C_SIXTY_FOUR
@@ -41,5 +43,28 @@ C_fctexport void C_ccall C_copy_closure(C_word c, C_word closure, C_word k, C_wo
 C_fctexport C_word C_fcall C_i_getprop(C_word sym, C_word prop, C_word def) C_regparm;
 C_fctexport C_word C_fcall C_putprop(C_word **a, C_word sym, C_word prop, C_word val) C_regparm;
 C_fctexport C_word C_fcall C_i_get_keyword(C_word key, C_word args, C_word def) C_regparm;
+
+C_inline C_word C_fast_retrieve(C_word sym)
+{
+    C_word val = C_block_item(sym, 0);
+
+    if(val == C_SCHEME_UNBOUND)
+        C_unbound_variable(sym);
+
+    return val;
+}
+
+C_inline void * C_fast_retrieve_proc(C_word closure)
+{
+    if(C_immediatep(closure) || C_header_bits(closure) != C_CLOSURE_TYPE)
+        return (void *)C_invalid_procedure;
+    else
+        return (void *)C_block_item(closure, 0);
+}
+
+C_inline void * C_fast_retrieve_symbol_proc(C_word sym)
+{
+    return C_fast_retrieve_proc(C_fast_retrieve(sym));
+}
 
 #endif /* RUNTIME_COMPILER_H */

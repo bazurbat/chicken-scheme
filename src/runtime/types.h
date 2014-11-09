@@ -2,8 +2,7 @@
 #define RUNTIME_TYPES_H
 
 #include "definitions.h"
-
-/* Macros: */
+#include "aliases.h"
 
 #define C_align4(n)                (((n) + 3) & ~3)
 #define C_align8(n)                (((n) + 7) & ~7)
@@ -30,6 +29,31 @@
 # define C_UWORD_MAX               UINT_MAX
 #endif
 
+#define C_flonum_magnitude(x)      (*(double *)C_data_pointer(x))
+
+typedef struct C_block_struct
+{
+    C_header header;
+#if (__STDC_VERSION__ >= 199901L)
+    C_word data[];
+#else
+    C_word data[ 1 ];
+#endif
+} C_SCHEME_BLOCK;
+
+typedef struct C_gc_root_struct
+{
+    C_word value;
+    struct C_gc_root_struct *next, *prev;
+    int finalizable;
+} C_GC_ROOT;
+
+typedef struct C_ptable_entry_struct
+{
+    C_char *id;
+    void *ptr;
+} C_PTABLE_ENTRY;
+
 #define C_data_pointer(b)          ((void *)(((C_SCHEME_BLOCK *)(b))->data))
 
 #define C_anypointerp(x)          C_mk_bool(C_block_header(x) == C_POINTER_TAG || C_block_header(x) == C_TAGGED_POINTER_TAG)
@@ -37,9 +61,7 @@
 #define C_return(x)                return (x)
 #define C_resize_stack(n)          C_do_resize_stack(n)
 #define C_memcpy_slots(t, f, n)    C_memcpy((t), (f), (n) * sizeof(C_word))
-/* Without check: initialisation of a newly allocated header */
 #define C_block_header_init(x,h)   (((C_SCHEME_BLOCK *)(x))->header = (h))
-/* These two must result in an lvalue, hence the (*foo(&bar)) faffery */
 #define C_block_header(x)          (((C_SCHEME_BLOCK *)(x))->header)
 #define C_block_item(x,i)          (((C_SCHEME_BLOCK *)(x))->data [ i ])
 #define C_set_block_item(x,i,y)    (C_block_item(x, i) = (y))
@@ -209,5 +231,87 @@
 #endif
 
 #define C_u_i_bit_setp(x, i)            C_mk_bool((C_unfix(x) & (1 << C_unfix(i))) != 0)
+
+C_inline C_word C_i_symbolp(C_word x)
+{
+    return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_SYMBOL_TAG);
+}
+
+C_inline C_word C_i_pairp(C_word x)
+{
+    return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_PAIR_TAG);
+}
+
+C_inline C_word C_i_stringp(C_word x)
+{
+    return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_STRING_TYPE);
+}
+
+C_inline C_word C_i_locativep(C_word x)
+{
+    return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_LOCATIVE_TAG);
+}
+
+C_inline C_word C_i_vectorp(C_word x)
+{
+    return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_VECTOR_TYPE);
+}
+
+C_inline C_word C_i_portp(C_word x)
+{
+    return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_PORT_TYPE);
+}
+
+C_inline C_word C_i_closurep(C_word x)
+{
+    return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_CLOSURE_TYPE);
+}
+
+C_inline C_word C_i_numberp(C_word x)
+{
+    return C_mk_bool((x & C_FIXNUM_BIT)
+                     || (!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG));
+}
+
+C_inline int C_ub_i_fpintegerp(double x)
+{
+    double dummy;
+
+    return C_modf(x, &dummy) == 0.0;
+}
+
+C_inline C_word C_fcall C_a_pair(C_word **ptr, C_word car, C_word cdr)
+{
+    C_word *p = *ptr, *p0 = p;
+
+    *(p++) = C_PAIR_TYPE | (C_SIZEOF_PAIR - 1);
+    *(p++) = car;
+    *(p++) = cdr;
+    *ptr = p;
+    return (C_word)p0;
+}
+
+C_inline C_word C_fcall C_a_bucket(C_word **ptr, C_word head, C_word tail)
+{
+    C_word *p = *ptr, *p0 = p;
+
+    *(p++) = C_BUCKET_TYPE | (C_SIZEOF_BUCKET - 1);
+    *(p++) = head;
+    *(p++) = tail;
+    *ptr = p;
+    return (C_word)p0;
+}
+
+#ifndef HAVE_STATEMENT_EXPRESSIONS
+
+C_inline C_word *C_a_i(C_word **a, int n)
+{
+    C_word *p = *a;
+
+    *a += n;
+    return p;
+}
+
+#endif
 
 #endif /* RUNTIME_TYPES_H */

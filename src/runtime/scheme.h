@@ -2,6 +2,8 @@
 #define RUNTIME_SCHEME_H
 
 #include "definitions.h"
+#include "types.h"
+#include "cxr.h"
 
 C_fctexport C_word C_fcall C_string(C_word **ptr, int len, C_char *str) C_regparm;
 C_fctexport C_word C_fcall C_static_string(C_word **ptr, int len, C_char *str) C_regparm;
@@ -91,5 +93,19 @@ C_fctexport C_word C_fcall C_restore_rest(C_word *ptr, int num) C_regparm;
 C_fctexport C_word C_fcall C_restore_rest_vector(C_word *ptr, int num) C_regparm;
 C_fctexport C_word C_fcall C_u_i_string_hash(C_word str, C_word rnd) C_regparm;
 C_fctexport C_word C_fcall C_u_i_string_ci_hash(C_word str, C_word rnd) C_regparm;
+
+C_inline C_word C_u_i_assq(C_word x, C_word lst)
+{
+    C_word a;
+
+    while(!C_immediatep(lst)) {
+        a = C_u_i_car(lst);
+
+        if(C_u_i_car(a) == x) return a;
+        else lst = C_u_i_cdr(lst);
+    }
+
+    return C_SCHEME_FALSE;
+}
 
 #endif /* RUNTIME_SCHEME_H */

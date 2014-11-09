@@ -1,7 +1,10 @@
 #ifndef RUNTIME_FLONUM_H
 #define RUNTIME_FLONUM_H
 
-#include <runtime/definitions.h>
+#include "definitions.h"
+#include "types.h"
+#include "aliases.h"
+#include "errors.h"
 
 C_fctexport C_word C_fcall C_a_i_abs(C_word **a, int c, C_word n) C_regparm;
 
@@ -59,7 +62,6 @@ C_fctexport void C_ccall C_flonum_rat(C_word c, C_word closure, C_word k, C_word
 #define C_a_i_fix_to_flo(p, n, f)       C_flonum(p, C_unfix(f))
 #define C_cast_to_flonum(n)             ((double)(n))
 
-#define C_flonum_magnitude(x)      (*(double *)C_data_pointer(x))
 #define C_quickflonumtruncate(n)   (C_fix((C_word)C_flonum_magnitude(n)))
 #define C_a_double_to_num(ptr, n)       C_double_to_number(C_flonum(ptr, n))
 
@@ -119,5 +121,107 @@ C_fctexport void C_ccall C_flonum_rat(C_word c, C_word closure, C_word k, C_word
 #define C_a_u_i_f64vector_ref(ptr, n, b, i)  C_flonum(ptr, ((double *)C_data_pointer(C_block_item((b), 1)))[ C_unfix(i) ])
 #define C_u_i_f32vector_set(v, i, x)    ((((float *)C_data_pointer(C_block_item((v), 1)))[ C_unfix(i) ] = C_flonum_magnitude(x)), C_SCHEME_UNDEFINED)
 #define C_u_i_f64vector_set(v, i, x)    ((((double *)C_data_pointer(C_block_item((v), 1)))[ C_unfix(i) ] = C_flonum_magnitude(x)), C_SCHEME_UNDEFINED)
+
+C_inline C_word C_flonum(C_word **ptr, double n)
+{
+    C_word
+    *p = *ptr,
+    *p0;
+
+#ifndef C_SIXTY_FOUR
+#ifndef C_DOUBLE_IS_32_BITS
+    /* Align double on 8-byte boundary: */
+    if(C_aligned8(p)) ++p;
+#endif
+#endif
+
+    p0 = p;
+    *(p++) = C_FLONUM_TAG;
+    *((double *)p) = n;
+    *ptr = p + sizeof(double) / sizeof(C_word);
+    return (C_word)p0;
+}
+
+C_inline C_word C_i_flonump(C_word x)
+{
+    return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG);
+}
+
+C_inline C_word C_flonum_in_fixnum_range_p(C_word n)
+{
+    double f = C_flonum_magnitude(n);
+
+    return C_mk_bool(f <= (double)C_MOST_POSITIVE_FIXNUM && f >= (double)C_MOST_NEGATIVE_FIXNUM);
+}
+
+C_inline C_word C_flonum_in_int_range_p(C_word n)
+{
+    double m = C_flonum_magnitude(n);
+
+    return C_mk_bool(m >= C_WORD_MIN && m <= C_WORD_MAX);
+}
+
+C_inline C_word C_flonum_in_uint_range_p(C_word n)
+{
+    double m = C_flonum_magnitude(n);
+
+    return C_mk_bool(m >= 0 && m <= C_UWORD_MAX);
+}
+
+C_inline C_word C_i_flonum_min(C_word x, C_word y)
+{
+    double
+        xf = C_flonum_magnitude(x),
+        yf = C_flonum_magnitude(y);
+
+    return xf < yf ? x : y;
+}
+
+C_inline C_word C_i_flonum_max(C_word x, C_word y)
+{
+    double
+        xf = C_flonum_magnitude(x),
+        yf = C_flonum_magnitude(y);
+
+    return xf > yf ? x : y;
+}
+
+C_inline C_word C_a_i_flonum_quotient_checked(C_word **ptr, int c, C_word n1, C_word n2)
+{
+    double n3 = C_flonum_magnitude(n2);
+
+    if(n3 == 0.0) C_div_by_zero_error("fp/?");
+    return C_flonum(ptr, C_flonum_magnitude(n1) / n3);
+}
+
+C_inline double C_ub_i_flonum_quotient_checked(double n1, double n2)
+{
+    if(n2 == 0.0) C_div_by_zero_error("fp/?");
+    return n1 / n2;
+}
+
+C_inline C_word C_i_rationalp(C_word x)
+{
+    if((x & C_FIXNUM_BIT) != 0) return C_SCHEME_TRUE;
+
+    if((!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG)) {
+        double n = C_flonum_magnitude(x);
+
+        if(!C_isinf(n) && !C_isnan(n)) return C_SCHEME_TRUE;
+    }
+
+    return C_SCHEME_FALSE;
+}
+
+C_inline C_word C_u_i_fpintegerp(C_word x)
+{
+    double dummy, val;
+
+    val = C_flonum_magnitude(x);
+
+    if(C_isnan(val) || C_isinf(val)) return C_SCHEME_FALSE;
+
+    return C_mk_bool(C_modf(val, &dummy) == 0.0);
+}
 
 #endif /* RUNTIME_FLONUM_H */

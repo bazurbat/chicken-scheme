@@ -78,4 +78,121 @@
 #define C_string_to_bytevector(s)       (C_block_header(s) = C_header_size(s) | C_BYTEVECTOR_TYPE, C_SCHEME_UNDEFINED)
 #define C_string_to_lambdainfo(s)       (C_block_header(s) = C_header_size(s) | C_LAMBDA_INFO_TYPE, C_SCHEME_UNDEFINED)
 
+C_inline C_word C_a_i_vector1(C_word **ptr, int n, C_word x1)
+{
+    C_word *p = *ptr, *p0 = p;
+
+    *(p++) = C_VECTOR_TYPE | 1;
+    *(p++) = x1;
+    *ptr = p;
+    return (C_word)p0;
+}
+
+C_inline C_word C_a_i_vector2(C_word **ptr, int n, C_word x1, C_word x2)
+{
+    C_word *p = *ptr, *p0 = p;
+
+    *(p++) = C_VECTOR_TYPE | 2;
+    *(p++) = x1;
+    *(p++) = x2;
+    *ptr = p;
+    return (C_word)p0;
+}
+
+C_inline C_word C_a_i_vector3(C_word **ptr, int n, C_word x1, C_word x2, C_word x3)
+{
+    C_word *p = *ptr, *p0 = p;
+
+    *(p++) = C_VECTOR_TYPE | 3;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *ptr = p;
+    return (C_word)p0;
+}
+
+C_inline C_word C_a_i_vector4(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4)
+{
+    C_word *p = *ptr, *p0 = p;
+
+    *(p++) = C_VECTOR_TYPE | 4;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *(p++) = x4;
+    *ptr = p;
+    return (C_word)p0;
+}
+
+C_inline C_word C_a_i_vector5(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+                              C_word x5)
+{
+    C_word *p = *ptr, *p0 = p;
+
+    *(p++) = C_VECTOR_TYPE | 5;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *(p++) = x4;
+    *(p++) = x5;
+    *ptr = p;
+    return (C_word)p0;
+}
+
+C_inline C_word C_a_i_vector6(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+                              C_word x5, C_word x6)
+{
+    C_word *p = *ptr, *p0 = p;
+
+    *(p++) = C_VECTOR_TYPE | 6;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *(p++) = x4;
+    *(p++) = x5;
+    *(p++) = x6;
+    *ptr = p;
+    return (C_word)p0;
+}
+
+C_inline C_word C_a_i_vector7(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+                              C_word x5, C_word x6, C_word x7)
+{
+    C_word *p = *ptr, *p0 = p;
+
+    *(p++) = C_VECTOR_TYPE | 7;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *(p++) = x4;
+    *(p++) = x5;
+    *(p++) = x6;
+    *(p++) = x7;
+    *ptr = p;
+    return (C_word)p0;
+}
+
+C_inline C_word C_a_i_vector8(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+                              C_word x5, C_word x6, C_word x7, C_word x8)
+{
+    C_word *p = *ptr, *p0 = p;
+
+    *(p++) = C_VECTOR_TYPE | 8;
+    *(p++) = x1;
+    *(p++) = x2;
+    *(p++) = x3;
+    *(p++) = x4;
+    *(p++) = x5;
+    *(p++) = x6;
+    *(p++) = x7;
+    *(p++) = x8;
+    *ptr = p;
+    return (C_word)p0;
+}
+
+C_inline void *C_srfi_4_vector_or_null(C_word x)
+{
+    return C_truep(x) ? C_srfi_4_vector(x) : NULL;
+}
+
 #endif /* RUNTIME_VECTORS_H */

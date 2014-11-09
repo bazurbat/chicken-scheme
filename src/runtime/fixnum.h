@@ -2,6 +2,8 @@
 #define RUNTIME_FIXNUM_H
 
 #include "definitions.h"
+#include "errors.h"
+#include "types.h"
 
 #define C_fix(n)                   (((C_word)(n) << C_FIXNUM_SHIFT) | C_FIXNUM_BIT)
 #define C_unfix(x)                 ((x) >> C_FIXNUM_SHIFT)
@@ -50,6 +52,44 @@
 
 #define C_i_fixnumevenp(x)              C_mk_nbool((x) & 0x00000002)
 #define C_i_fixnumoddp(x)               C_mk_bool((x) & 0x00000002)
+
+C_inline C_word C_i_fixnum_min(C_word x, C_word y)
+{
+    return ((C_word)x < (C_word)y) ? x : y;
+}
+
+C_inline C_word C_i_fixnum_max(C_word x, C_word y)
+{
+    return ((C_word)x > (C_word)y) ? x : y;
+}
+
+C_inline C_word C_fixnum_divide(C_word x, C_word y)
+{
+    if(y == C_fix(0)) C_div_by_zero_error("fx/");
+    return C_u_fixnum_divide(x, y);
+}
+
+C_inline C_word C_fixnum_modulo(C_word x, C_word y)
+{
+    if(y == C_fix(0)) C_div_by_zero_error("fxmod");
+    return C_u_fixnum_modulo(x, y);
+}
+
+C_inline C_word C_i_fixnum_arithmetic_shift(C_word n, C_word c)
+{
+    if(C_unfix(c) < 0) return C_fixnum_shift_right(n, C_u_fixnum_negate(c));
+    else return C_fixnum_shift_left(n, c);
+}
+
+C_inline C_word C_double_to_number(C_word n)
+{
+    double m, f = C_flonum_magnitude(n);
+
+    if(f <= (double)C_MOST_POSITIVE_FIXNUM
+       && f >= (double)C_MOST_NEGATIVE_FIXNUM && C_modf(f, &m) == 0.0)
+        return C_fix(f);
+    else return n;
+}
 
 C_fctexport C_word C_fcall C_i_o_fixnum_plus(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_o_fixnum_difference(C_word x, C_word y) C_regparm;

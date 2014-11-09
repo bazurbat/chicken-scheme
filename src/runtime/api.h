@@ -2,6 +2,10 @@
 #define RUNTIME_API_H
 
 #include "definitions.h"
+#include "types.h"
+#include "gc.h"
+#include "flonum.h"
+#include "fixnum.h"
 
 extern C_TLS int chicken_is_running;
 extern C_TLS int stack_size_changed;
@@ -11,7 +15,6 @@ extern C_TLS int C_enable_repl;
 
 C_varextern C_TLS int
     C_abort_on_thread_exceptions;
-
 
 C_varextern C_TLS int
     C_disable_overflow_check,
@@ -33,29 +36,6 @@ C_varextern C_TLS jmp_buf C_restart;
 #endif
 
 C_varextern C_TLS void *C_restart_address;
-
-typedef struct C_block_struct
-{
-    C_header header;
-#if (__STDC_VERSION__ >= 199901L)
-    C_word data[];
-#else
-    C_word data[ 1 ];
-#endif
-} C_SCHEME_BLOCK;
-
-typedef struct C_ptable_entry_struct
-{
-    C_char *id;
-    void *ptr;
-} C_PTABLE_ENTRY;
-
-typedef struct C_gc_root_struct
-{
-    C_word value;
-    struct C_gc_root_struct *next, *prev;
-    int finalizable;
-} C_GC_ROOT;
 
 typedef void (C_fcall *TRAMPOLINE)(void *proc) C_regparm C_noret;
 
@@ -102,5 +82,17 @@ C_fctexport void C_ccall C_return_to_host(C_word c, C_word closure, C_word k) C_
 C_fctexport void C_ccall C_context_switch(C_word c, C_word closure, C_word k, C_word state) C_noret;
 
 C_fctimport void C_ccall C_toplevel(C_word c, C_word self, C_word k) C_noret;
+
+C_inline C_word C_mutate(C_word *slot, C_word val)
+{
+    if(!C_immediatep(val)) return C_mutate_slot(slot, val);
+    else return *slot = val;
+}
+
+C_inline C_word C_mutate2(C_word *slot, C_word val) /* OBSOLETE */
+{
+    if(!C_immediatep(val)) return C_mutate_slot(slot, val);
+    else return *slot = val;
+}
 
 #endif /* RUNTIME_API_H */

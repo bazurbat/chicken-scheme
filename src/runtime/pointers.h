@@ -3,6 +3,8 @@
 
 #include "definitions.h"
 #include "types.h"
+#include "nursery.h"
+#include "heap.h"
 
 #if defined (__llvm__) && defined (__GNUC__)
 # if defined (__i386__)
@@ -87,5 +89,43 @@
 #define C_ub_i_pointer_s32_set(p, n)    (*((C_s32 *)(p)) = (n))
 #define C_ub_i_pointer_f32_set(p, n)    (*((float *)(p)) = (n))
 #define C_ub_i_pointer_f64_set(p, n)    (*((double *)(p)) = (n))
+
+C_inline C_word C_i_safe_pointerp(C_word x)
+{
+    if(C_immediatep(x)) return C_SCHEME_FALSE;
+
+    switch(C_block_header(x)) {
+    case C_POINTER_TAG:
+    case C_TAGGED_POINTER_TAG:
+        return C_SCHEME_TRUE;
+    }
+
+    return C_SCHEME_FALSE;
+}
+
+C_inline void *C_data_pointer_or_null(C_word x)
+{
+    return C_truep(x) ? C_data_pointer(x) : NULL;
+}
+
+C_inline void *C_c_pointer_vector_or_null(C_word x)
+{
+    return C_truep(x) ? C_data_pointer(C_block_item(x, 2)) : NULL;
+}
+
+C_inline void *C_c_pointer_or_null(C_word x)
+{
+    return C_truep(x) ? (void *)C_block_item(x, 0) : NULL;
+}
+
+C_inline void *C_scheme_or_c_pointer(C_word x)
+{
+    return C_anypointerp(x) ? (void *)C_block_item(x, 0) : C_data_pointer(x);
+}
+
+C_inline C_word C_permanentp(C_word x)
+{
+    return C_mk_bool(!C_immediatep(x) && !C_in_stackp(x) && !C_in_heapp(x));
+}
 
 #endif /* RUNTIME_POINTERS_H */
