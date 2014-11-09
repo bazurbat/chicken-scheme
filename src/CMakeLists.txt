@@ -17,6 +17,8 @@ set(libchicken_C_SOURCES
     chicken.h
     foreign/locatives.c
     foreign/locatives.h
+    gc/finalizers.c
+    gc/finalizers.h
     gc/gc.c
     gc/gc.h
     gc/heap.c

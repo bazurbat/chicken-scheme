@@ -42,6 +42,7 @@
 #include "math/flonum.h"
 #include "math/predicates.h"
 
+#include "gc/finalizers.h"
 #include "gc/gc.h"
 #include "gc/heap.h"
 #include "gc/nursery.h"

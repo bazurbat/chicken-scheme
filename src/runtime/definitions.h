@@ -307,7 +307,6 @@
 /* Constants: */
 
 #define C_STACK_RESERVE                   0x10000
-#define C_DEFAULT_MAX_PENDING_FINALIZERS  2048
 
 #define C_IMMEDIATE_MARK_BITS     0x00000003
 #define C_IMMEDIATE_TYPE_BITS     0x0000000f

@@ -6,24 +6,9 @@
 #include <runtime/interrupts.h>
 #include "nursery.h"
 #include "heap.h"
+#include "finalizers.h"
 
 #define WEAK_TABLE_SIZE                997
-
-typedef struct finalizer_node_struct
-{
-    struct finalizer_node_struct *next, *previous;
-    C_word item, finalizer;
-} FINALIZER_NODE;
-
-extern C_TLS FINALIZER_NODE
-    *finalizer_list,
-    *finalizer_free_list,
-    **pending_finalizer_indices;
-
-extern C_TLS int
-    live_finalizer_count,
-    allocated_finalizer_count,
-    pending_finalizer_count;
 
 extern C_TLS C_byte
     *heapspace1,
@@ -43,8 +28,7 @@ extern C_TLS C_word
     **mutation_stack_top;
 
 C_varextern C_TLS int
-    C_enable_gcweak,
-    C_max_pending_finalizers;
+    C_enable_gcweak;
 
 C_TLS void (*C_gc_trace_hook)(C_word *var, int mode);
 
@@ -98,8 +82,6 @@ extern C_TLS C_word
 extern C_TLS C_char *current_module_name;
 extern C_TLS void *current_module_handle;
 
-extern C_TLS C_word pending_finalizers_symbol;
-
 extern C_TLS double gc_ms,
        timer_accumulated_gc_ms;
 
@@ -109,12 +91,6 @@ extern C_TLS int
     handling_interrupts;
 
 C_fctexport void C_ccall C_gc(C_word c, C_word closure, C_word k, ...) C_noret;
-
-C_fctexport void C_ccall C_register_finalizer(C_word c, C_word closure, C_word k, C_word x, C_word proc) C_noret;
-C_fctexport void C_do_register_finalizer(C_word x, C_word proc);
-C_fctexport int C_do_unregister_finalizer(C_word x);
-
-C_fctexport C_word C_resize_pending_finalizers(C_word size);
 
 C_fctexport void C_initialize_lf(C_word *lf, int count);
 C_fctexport void *C_register_lf(C_word *lf, int count);

@@ -41,33 +41,20 @@ C_TLS C_word
     **mutation_stack_limit,
     **mutation_stack_top;
 
-C_TLS int
 #ifdef C_COLLECT_ALL_SYMBOLS
-    C_enable_gcweak = 1,
+C_TLS int C_enable_gcweak = 1;
 #else
-    C_enable_gcweak = 0,
+C_TLS int C_enable_gcweak = 0;
 #endif
-    C_max_pending_finalizers = C_DEFAULT_MAX_PENDING_FINALIZERS;
 
 static C_TLS int gc_mode;
-
-C_TLS C_word pending_finalizers_symbol;
 
 C_TLS double gc_ms,
       timer_accumulated_gc_ms;
 
-C_TLS int
-    weak_table_randomization,
-    live_finalizer_count,
-    allocated_finalizer_count,
-    pending_finalizer_count;
+C_TLS int weak_table_randomization;
 
 C_TLS LF_LIST *lf_list;
-
-C_TLS FINALIZER_NODE
-    *finalizer_list,
-    *finalizer_free_list,
-    **pending_finalizer_indices;
 
 C_TLS int
     gc_bell,
@@ -1293,81 +1280,6 @@ C_regparm WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word 
     }
 
     return NULL;
-}
-
-/* Register finalizer: */
-
-void C_ccall C_register_finalizer(C_word c, C_word closure, C_word k, C_word x, C_word proc)
-{
-    if(C_immediatep(x) || (!C_in_stackp(x) && !C_in_heapp(x))) /* not GCable? */
-        C_kontinue(k, x);
-
-    C_do_register_finalizer(x, proc);
-    C_kontinue(k, x);
-}
-
-void C_ccall C_do_register_finalizer(C_word x, C_word proc)
-{
-    C_word *ptr;
-    int n, i;
-    FINALIZER_NODE *flist;
-
-    if(finalizer_free_list == NULL) {
-        if((flist = (FINALIZER_NODE *)C_malloc(sizeof(FINALIZER_NODE))) == NULL)
-            panic(C_text("out of memory - cannot allocate finalizer node"));
-
-        ++allocated_finalizer_count;
-    }
-    else {
-        flist = finalizer_free_list;
-        finalizer_free_list = flist->next;
-    }
-
-    if(finalizer_list != NULL) finalizer_list->previous = flist;
-
-    flist->previous = NULL;
-    flist->next = finalizer_list;
-    finalizer_list = flist;
-
-    if(C_in_stackp(x)) C_mutate_slot(&flist->item, x);
-    else flist->item = x;
-
-    if(C_in_stackp(proc)) C_mutate_slot(&flist->finalizer, proc);
-    else flist->finalizer = proc;
-
-    ++live_finalizer_count;
-}
-
-int C_do_unregister_finalizer(C_word x)
-{
-    int n;
-    FINALIZER_NODE *flist;
-
-    for(flist = finalizer_list; flist != NULL; flist = flist->next) {
-        if(flist->item == x) {
-            if(flist->previous == NULL) finalizer_list = flist->next;
-            else flist->previous->next = flist->next;
-
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-C_word C_resize_pending_finalizers(C_word size)
-{
-    int sz = C_num_to_int(size);
-
-    FINALIZER_NODE **newmem =
-        (FINALIZER_NODE **)C_realloc(pending_finalizer_indices, sz * sizeof(FINALIZER_NODE *));
-
-    if (newmem == NULL)
-        return C_SCHEME_FALSE;
-
-    pending_finalizer_indices = newmem;
-    C_max_pending_finalizers = sz;
-    return C_SCHEME_TRUE;
 }
 
 C_regparm C_word C_fcall C_mutate_slot(C_word *slot, C_word val)
