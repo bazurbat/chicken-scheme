@@ -5,7 +5,6 @@
 
 #include <runtime/definitions.h>
 #include <runtime/macros.h>
-#include <runtime/variables.h>
 #include <runtime/symbol_table.h>
 #include <runtime/inline_functions.h>
 #include <runtime/check.h>

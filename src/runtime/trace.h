@@ -15,6 +15,9 @@ extern C_TLS TRACE_INFO *trace_buffer_limit;
 extern C_TLS C_word current_thread_symbol;
 extern C_TLS int show_trace;
 
+C_varextern C_TLS int
+    C_trace_buffer_size;
+
 C_fctexport void C_fcall C_trace(C_char *name) C_regparm;
 C_fctexport C_word C_fcall C_emit_trace_info2(char *raw, C_word x, C_word y, C_word t) C_regparm;
 C_fctexport C_char *C_dump_trace(int start);

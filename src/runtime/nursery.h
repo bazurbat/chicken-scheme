@@ -6,6 +6,12 @@
 extern C_TLS C_word *stack_bottom;
 extern C_TLS C_word *saved_stack_limit;
 
+C_varextern C_TLS C_word
+    *C_temporary_stack,
+    *C_temporary_stack_bottom,
+    *C_temporary_stack_limit,
+    *C_stack_limit;
+
 C_fctexport void C_check_nursery_minimum(C_word size);
 
 C_fctexport void C_do_resize_stack(C_word stack);

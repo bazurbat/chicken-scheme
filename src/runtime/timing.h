@@ -7,6 +7,8 @@ extern C_TLS unsigned int
     mutation_count,
     tracked_mutation_count;
 
+C_varextern C_TLS time_t C_startup_time_seconds;
+
 C_fctexport double C_fcall C_milliseconds(void) C_regparm;
 C_fctexport time_t C_fcall C_seconds(C_long *ms) C_regparm;
 C_fctexport double C_fcall C_cpu_milliseconds(void) C_regparm;

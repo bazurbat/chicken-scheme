@@ -60,6 +60,10 @@ extern C_TLS C_GC_ROOT *gc_root_list;
 
 void handle_interrupt(void *trampoline, void *proc) C_noret;
 
+C_varextern C_TLS void (*C_pre_gc_hook)(int mode);
+C_varextern C_TLS void (*C_post_gc_hook)(int mode, C_long ms);
+C_varextern C_TLS void (*C_panic_hook)(C_char *msg);
+
 typedef struct weak_table_entry_struct
 {
     C_word item,                /* item weakly held (symbol) */
