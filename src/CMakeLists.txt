@@ -21,14 +21,6 @@ set(libchicken_C_SOURCES
     foreign/locatives.h
     foreign/predicates.c
     foreign/predicates.h
-    gc/finalizers.c
-    gc/finalizers.h
-    gc/gc.c
-    gc/gc.h
-    gc/heap.c
-    gc/heap.h
-    gc/nursery.c
-    gc/nursery.h
     math/arithmetic.c
     math/arithmetic.h
     math/constructors.c
@@ -39,6 +31,14 @@ set(libchicken_C_SOURCES
     math/flonum.h
     math/predicates.c
     math/predicates.h
+    memory/finalizers.c
+    memory/finalizers.h
+    memory/gc.c
+    memory/gc.h
+    memory/heap.c
+    memory/heap.h
+    memory/nursery.c
+    memory/nursery.h
     runtime/api.c
     runtime/api.h
     runtime/apply.c

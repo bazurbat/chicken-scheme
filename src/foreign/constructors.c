@@ -1,6 +1,6 @@
 #include "constructors.h"
-#include <gc/gc.h>
-#include <gc/nursery.h>
+#include <memory/gc.h>
+#include <memory/nursery.h>
 #include <runtime/macros.h>
 #include <runtime/pointers.h>
 #include <runtime/scheme.h>

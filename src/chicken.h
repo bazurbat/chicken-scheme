@@ -43,9 +43,9 @@
 #include "math/flonum.h"
 #include "math/predicates.h"
 
-#include "gc/finalizers.h"
-#include "gc/gc.h"
-#include "gc/heap.h"
-#include "gc/nursery.h"
+#include "memory/finalizers.h"
+#include "memory/gc.h"
+#include "memory/heap.h"
+#include "memory/nursery.h"
 
 #endif /* CHICKEN_H */
