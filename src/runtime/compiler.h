@@ -3,6 +3,37 @@
 
 #include "definitions.h"
 
+#ifdef C_BIG_ENDIAN
+# ifdef C_SIXTY_FOUR
+#  define C_lihdr(x, y, z)              ((C_LAMBDA_INFO_TYPE >> 56) & 0xff), \
+    0, 0, 0, 0, (x), (y), (z)
+# else
+#  define C_lihdr(x, y, z)              ((C_LAMBDA_INFO_TYPE >> 24) & 0xff), \
+    (x), (y), (z)
+# endif
+#else
+# ifdef C_SIXTY_FOUR
+#  define C_lihdr(x, y, z)              (z), (y), (x), 0, 0, 0, 0, \
+    ((C_LAMBDA_INFO_TYPE >> 56) & 0xff)
+# else
+#  define C_lihdr(x, y, z)              (z), (y), (x), \
+    ((C_LAMBDA_INFO_TYPE >> 24) & 0xff)
+# endif
+#endif
+
+#if !defined(C_EMBEDDED) && !defined(C_SHARED)
+#  define C_main_entry_point                            \
+    int main(int argc, char *argv[])                        \
+    {                                                       \
+        return CHICKEN_main(argc, argv, (void*)C_toplevel); \
+    }
+#else
+#  define C_main_entry_point
+#endif
+
+#define C_emit_eval_trace_info(x, y, z) C_emit_trace_info2("<eval>", x, y, z)
+#define C_emit_syntax_trace_info(x, y, z) C_emit_trace_info2("<syntax>", x, y, z)
+
 C_fctexport C_word C_fcall C_retrieve2(C_word val, char *name) C_regparm;
 C_fctexport C_word C_fcall C_copy_block(C_word from, C_word to) C_regparm;
 C_fctexport C_word C_fcall C_evict_block(C_word from, C_word ptr) C_regparm;

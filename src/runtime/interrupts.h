@@ -3,6 +3,19 @@
 
 #include "definitions.h"
 
+#ifdef C_TIMER_INTERRUPTS
+# ifdef PARANOIA
+#  define C_check_for_interrupt         C_paranoid_check_for_interrupt()
+# else
+#  define C_check_for_interrupt         if(--C_timer_interrupt_counter <= 0) C_raise_interrupt(C_TIMER_INTERRUPT_NUMBER)
+# endif
+#else
+# define C_check_for_interrupt
+#endif
+
+#define C_set_initial_timer_interrupt_period(n) \
+    (C_initial_timer_interrupt_period = C_unfix(n), C_SCHEME_UNDEFINED)
+
 extern C_TLS double last_interrupt_latency;
 
 C_varextern C_TLS int

@@ -3,6 +3,11 @@
 
 #include <runtime/definitions.h>
 
+#define C_a_i_times( ptr, n, x, y)      C_2_times( ptr, x, y)
+#define C_a_i_plus(  ptr, n, x, y)      C_2_plus(  ptr, x, y)
+#define C_a_i_minus( ptr, n, x, y)      C_2_minus( ptr, x, y)
+#define C_a_i_divide(ptr, n, x, y)      C_2_divide(ptr, x, y)
+
 C_fctexport void C_ccall C_times(C_word c, C_word closure, C_word k, ...) C_noret;
 C_fctexport C_word C_fcall C_2_times(C_word **ptr, C_word x, C_word y) C_regparm;
 

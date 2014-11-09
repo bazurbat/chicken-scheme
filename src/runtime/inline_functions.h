@@ -5,6 +5,12 @@
 #include "heap.h"
 #include "gc.h"
 #include "nursery.h"
+#include "flonum.h"
+#include "fixnum.h"
+#include "vectors.h"
+#include "cxr.h"
+#include "types.h"
+#include "aliases.h"
 
 /* Inline functions: */
 

@@ -4,6 +4,10 @@
 
 #define percentage(n, p)             ((C_long)(((double)(n) * (double)p) / 100))
 
+#define is_fptr(x)                   (((x) & C_GC_FORWARDING_BIT) != 0)
+#define ptr_to_fptr(x)               ((((x) >> FORWARDING_BIT_SHIFT) & 1) | C_GC_FORWARDING_BIT | ((x) & ~1))
+#define fptr_to_ptr(x)               (((x) << FORWARDING_BIT_SHIFT) | ((x) & ~(C_GC_FORWARDING_BIT | 1)))
+
 #define GC_MINOR           0
 #define GC_MAJOR           1
 #define GC_REALLOC         2
