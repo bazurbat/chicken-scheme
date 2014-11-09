@@ -1938,31 +1938,6 @@ void become_2(void *dummy)
 }
 
 
-C_regparm C_word C_fcall
-C_a_i_cpu_time(C_word **a, int c, C_word buf)
-{
-    C_word u, s = C_fix(0);
-
-#if defined(C_NONUNIX)
-    if(CLOCKS_PER_SEC == 1000) u = clock();
-    else u = C_number(a, C_floor(((double)clock() / (double)CLOCKS_PER_SEC) * 1000));
-#else
-    struct rusage ru;
-
-    if(C_getrusage(RUSAGE_SELF, &ru) == -1) u = 0;
-    else {
-        u = C_number(a, C_floor((double)ru.ru_utime.tv_sec * 1000 + ru.ru_utime.tv_usec / 1000));
-        s = C_number(a, C_floor((double)ru.ru_stime.tv_sec * 1000 + ru.ru_stime.tv_usec / 1000));
-    }
-#endif
-
-    /* buf must not be in nursery */
-    C_set_block_item(buf, 0, u);
-    C_set_block_item(buf, 1, s);
-    return buf;
-}
-
-
 C_regparm C_word C_fcall C_a_i_make_locative(C_word **a, int c, C_word type, C_word object, C_word index, C_word weak)
 {
     C_word *loc = *a;
