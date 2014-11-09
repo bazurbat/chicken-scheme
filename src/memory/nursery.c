@@ -11,6 +11,8 @@ C_TLS C_word
 *C_temporary_stack_limit,
 *C_stack_limit;
 
+C_TLS int C_disable_overflow_check;
+
 /* Modify stack-size at runtime: */
 
 void C_do_resize_stack(C_word stack)

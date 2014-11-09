@@ -16,7 +16,6 @@ C_varextern C_TLS int
     C_abort_on_thread_exceptions;
 
 C_varextern C_TLS int
-    C_disable_overflow_check,
     C_main_argc;
 
 C_varextern C_TLS char

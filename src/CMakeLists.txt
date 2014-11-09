@@ -57,8 +57,6 @@ set(libchicken_C_SOURCES
     runtime/dload.h
     runtime/errors.c
     runtime/errors.h
-    runtime/inexact.c
-    runtime/inexact.h
     runtime/interrupts.c
     runtime/interrupts.h
     runtime/macros.h

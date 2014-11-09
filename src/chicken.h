@@ -15,7 +15,6 @@
 #include <runtime/definitions.h>
 #include <runtime/dload.h>
 #include <runtime/errors.h>
-#include <runtime/inexact.h>
 #include <runtime/interrupts.h>
 #include <runtime/lists.h>
 #include <runtime/macros.h>

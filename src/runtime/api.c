@@ -53,7 +53,6 @@ C_TLS char **C_main_argv;
 C_TLS int
     C_abort_on_thread_exceptions,
     C_interrupts_enabled,
-    C_disable_overflow_check,
     C_main_argc;
 
 C_TLS void *C_restart_address;
