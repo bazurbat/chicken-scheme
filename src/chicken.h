@@ -18,7 +18,6 @@
 #include <runtime/interrupts.h>
 #include <runtime/lists.h>
 #include <runtime/macros.h>
-#include <runtime/platform.h>
 #include <runtime/pointers.h>
 #include <runtime/reader.h>
 #include <runtime/records.h>
@@ -26,8 +25,6 @@
 #include <runtime/signals.h>
 #include <runtime/strings.h>
 #include <runtime/symbol_table.h>
-#include <runtime/system.h>
-#include <runtime/timing.h>
 #include <runtime/trace.h>
 #include <runtime/types.h>
 #include <runtime/vectors.h>
@@ -46,5 +43,9 @@
 #include "memory/gc.h"
 #include "memory/heap.h"
 #include "memory/nursery.h"
+
+#include "system/files.h"
+#include "system/platform.h"
+#include "system/timing.h"
 
 #endif /* CHICKEN_H */

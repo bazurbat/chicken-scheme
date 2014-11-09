@@ -1,12 +1,8 @@
-#ifndef RUNTIME_TIMING_H
-#define RUNTIME_TIMING_H
+#ifndef SYSTEM_TIMING_H
+#define SYSTEM_TIMING_H
 
-#include "definitions.h"
+#include <runtime/definitions.h>
 #include <time.h>
-
-extern C_TLS unsigned int
-    mutation_count,
-    tracked_mutation_count;
 
 C_varextern C_TLS time_t C_startup_time_seconds;
 
@@ -19,4 +15,4 @@ C_fctexport void C_ccall C_stop_timer(C_word c, C_word closure, C_word k) C_nore
 
 C_fctexport C_word C_fcall C_a_i_cpu_time(C_word **a, int c, C_word buf) C_regparm;
 
-#endif /* RUNTIME_TIMING_H */
+#endif /* SYSTEM_TIMING_H */

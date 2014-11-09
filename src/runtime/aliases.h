@@ -74,7 +74,6 @@
 #define C_sigaction                sigaction
 #endif
 #define C_signal                   signal
-#define C_getrusage                getrusage
 #define C_tolower                  tolower
 #define C_toupper                  toupper
 #define C_gettimeofday             gettimeofday

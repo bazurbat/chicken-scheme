@@ -39,9 +39,7 @@ static C_TLS int chicken_is_initialized;
 
 C_TLS int chicken_is_running;
 C_TLS int stack_size_changed;
-C_TLS int fake_tty_flag;
 C_TLS int forwarding_table_size;
-C_TLS int C_enable_repl;
 
 static C_TLS int
     return_to_host,

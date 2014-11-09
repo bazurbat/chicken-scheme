@@ -1,7 +1,10 @@
-#ifndef RUNTIME_PLATFORM_H
-#define RUNTIME_PLATFORM_H
+#ifndef SYSTEM_PLATFORM_H
+#define SYSTEM_PLATFORM_H
 
-#include "definitions.h"
+#include <runtime/definitions.h>
+
+extern C_TLS int fake_tty_flag;
+extern C_TLS int C_enable_repl;
 
 C_fctexport void C_ccall C_software_type(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_software_version(C_word c, C_word closure, C_word k) C_noret;
@@ -14,4 +17,4 @@ C_fctexport void C_ccall C_build_platform(C_word c, C_word closure, C_word k) C_
 C_fctexport void C_ccall C_get_memory_info(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport C_word C_fcall C_fudge(C_word fudge_factor) C_regparm;
 
-#endif /* RUNTIME_PLATFORM_H */
+#endif /* SYSTEM_PLATFORM_H */

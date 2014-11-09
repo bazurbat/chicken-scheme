@@ -10,6 +10,9 @@
 
 #define WEAK_TABLE_SIZE                997
 
+extern C_TLS unsigned int mutation_count;
+extern C_TLS unsigned int tracked_mutation_count;
+
 extern C_TLS C_byte
     *heapspace1,
     *heapspace2,

@@ -60,8 +60,6 @@ set(libchicken_C_SOURCES
     runtime/interrupts.c
     runtime/interrupts.h
     runtime/macros.h
-    runtime/platform.c
-    runtime/platform.h
     runtime/reader.c
     runtime/reader.h
     runtime/scheme.c
@@ -70,12 +68,14 @@ set(libchicken_C_SOURCES
     runtime/signals.h
     runtime/symbol_table.c
     runtime/symbol_table.h
-    runtime/system.c
-    runtime/system.h
-    runtime/timing.c
-    runtime/timing.h
     runtime/trace.c
     runtime/trace.h
+    system/files.c
+    system/files.h
+    system/platform.c
+    system/platform.h
+    system/timing.c
+    system/timing.h
     uvffi.c
     uvffi.h
 )

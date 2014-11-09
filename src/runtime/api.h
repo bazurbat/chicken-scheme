@@ -8,9 +8,7 @@
 
 extern C_TLS int chicken_is_running;
 extern C_TLS int stack_size_changed;
-extern C_TLS int fake_tty_flag;
 extern C_TLS int forwarding_table_size;
-extern C_TLS int C_enable_repl;
 
 C_varextern C_TLS int
     C_abort_on_thread_exceptions;

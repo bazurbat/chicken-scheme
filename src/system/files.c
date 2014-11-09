@@ -1,5 +1,7 @@
-#include "system.h"
-#include <chicken.h>
+#include "files.h"
+#include <math/fixnum.h>
+#include <runtime/macros.h>
+#include <runtime/types.h>
 
 #include <errno.h>
 #ifdef HAVE_SYS_STAT_H

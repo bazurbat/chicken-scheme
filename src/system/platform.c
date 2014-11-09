@@ -1,5 +1,12 @@
 #include "platform.h"
-#include <chicken.h>
+#include <math/fixnum.h>
+#include <memory/gc.h>
+#include <memory/heap.h>
+#include <runtime/debug.h>
+#include <runtime/macros.h>
+#include <runtime/scheme.h>
+
+#include <time.h>
 
 #if defined(C_BIG_ENDIAN)
 # define C_MACHINE_BYTE_ORDER "big-endian"
@@ -60,6 +67,9 @@
 #else
 # define C_SOFTWARE_VERSION "unknown"
 #endif
+
+C_TLS int fake_tty_flag;
+C_TLS int C_enable_repl;
 
 void C_ccall C_software_type(C_word c, C_word closure, C_word k)
 {

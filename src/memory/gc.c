@@ -24,6 +24,9 @@
 C_TLS C_char *current_module_name;
 C_TLS void *current_module_handle;
 
+C_TLS unsigned int mutation_count;
+C_TLS unsigned int tracked_mutation_count;
+
 C_TLS C_byte
     *heapspace1,
     *heapspace2,

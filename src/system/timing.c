@@ -1,5 +1,11 @@
 #include "timing.h"
-#include <chicken.h>
+#include <math/arithmetic.h>
+#include <math/fixnum.h>
+#include <math/flonum.h>
+#include <memory/gc.h>
+#include <runtime/macros.h>
+#include <runtime/scheme.h>
+#include <runtime/types.h>
 
 #if !defined(C_NONUNIX)
 # include <sys/time.h>
@@ -7,9 +13,7 @@
 
 #endif
 
-C_TLS unsigned int
-    mutation_count,
-    tracked_mutation_count;
+#define C_getrusage                getrusage
 
 static C_TLS double
     timer_start_ms;
