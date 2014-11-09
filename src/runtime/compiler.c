@@ -104,7 +104,7 @@ C_regparm C_word C_fcall C_putprop(C_word **ptr, C_word sym, C_word prop, C_word
 
     while(pl != C_SCHEME_END_OF_LIST) {
         if(C_block_item(pl, 0) == prop) {
-            C_mutate2(&C_u_i_car(C_u_i_cdr(pl)), val);
+            C_mutate(&C_u_i_car(C_u_i_cdr(pl)), val);
             return val;
         }
         else pl = C_u_i_cdr(C_u_i_cdr(pl));

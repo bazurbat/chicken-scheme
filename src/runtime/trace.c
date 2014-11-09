@@ -153,12 +153,12 @@ C_word C_fetch_trace(C_word starti, C_word buffer)
             if(ptr >= trace_buffer_limit) ptr = trace_buffer;
 
             /* outside-pointer, will be ignored by GC */
-            C_mutate2(&C_block_item(buffer, p++), (C_word)ptr->raw);
+            C_mutate(&C_block_item(buffer, p++), (C_word)ptr->raw);
 
             /* subject to GC */
-            C_mutate2(&C_block_item(buffer, p++), ptr->cooked1);
-            C_mutate2(&C_block_item(buffer, p++), ptr->cooked2);
-            C_mutate2(&C_block_item(buffer, p++), ptr->thread);
+            C_mutate(&C_block_item(buffer, p++), ptr->cooked1);
+            C_mutate(&C_block_item(buffer, p++), ptr->cooked2);
+            C_mutate(&C_block_item(buffer, p++), ptr->thread);
         }
     }
 

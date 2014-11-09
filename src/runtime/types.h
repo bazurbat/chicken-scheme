@@ -205,10 +205,10 @@ typedef struct C_ptable_entry_struct
 #define C_a_int_to_num(ptr, n, i)       C_int_to_num(ptr, i)
 #define C_a_unsigned_int_to_num(ptr, n, i)  C_unsigned_int_to_num(ptr, i)
 #define C_list                          C_a_i_list
-#define C_i_setslot(x, i, y)            (C_mutate2(&C_block_item(x, C_unfix(i)), y), C_SCHEME_UNDEFINED)
+#define C_i_setslot(x, i, y)            (C_mutate(&C_block_item(x, C_unfix(i)), y), C_SCHEME_UNDEFINED)
 #define C_i_set_i_slot(x, i, y)         (C_set_block_item(x, C_unfix(i), y), C_SCHEME_UNDEFINED)
-#define C_u_i_set_car(p, x)             (C_mutate2(&C_u_i_car(p), x), C_SCHEME_UNDEFINED)
-#define C_u_i_set_cdr(p, x)             (C_mutate2(&C_u_i_cdr(p), x), C_SCHEME_UNDEFINED)
+#define C_u_i_set_car(p, x)             (C_mutate(&C_u_i_car(p), x), C_SCHEME_UNDEFINED)
+#define C_u_i_set_cdr(p, x)             (C_mutate(&C_u_i_cdr(p), x), C_SCHEME_UNDEFINED)
 #define C_a_i_putprop(p, c, x, y, z)    C_putprop(p, x, y, z)
 
 #define C_i_not(x)                      (C_truep(x) ? C_SCHEME_FALSE : C_SCHEME_TRUE)

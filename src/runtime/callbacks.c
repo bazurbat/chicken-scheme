@@ -27,7 +27,7 @@ C_word C_fcall C_restore_callback_continuation(void)
     assert(!C_immediatep(p) && C_block_header(p) == C_PAIR_TAG);
     k = C_u_i_car(p);
 
-    C_mutate2(&C_block_item(callback_continuation_stack_symbol, 0), C_u_i_cdr(p));
+    C_mutate(&C_block_item(callback_continuation_stack_symbol, 0), C_u_i_cdr(p));
     --callback_continuation_level;
     return k;
 }
@@ -42,7 +42,7 @@ C_word C_fcall C_restore_callback_continuation2(int level)
 
     k = C_u_i_car(p);
 
-    C_mutate2(&C_block_item(callback_continuation_stack_symbol, 0), C_u_i_cdr(p));
+    C_mutate(&C_block_item(callback_continuation_stack_symbol, 0), C_u_i_cdr(p));
     --callback_continuation_level;
     return k;
 }

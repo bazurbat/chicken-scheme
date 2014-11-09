@@ -99,7 +99,7 @@ C_regparm C_word C_fcall C_i_locative_set(C_word loc, C_word x)
         barf(C_LOST_LOCATIVE_ERROR, "locative-set!", loc);
 
     switch(C_unfix(C_block_item(loc, 2))) {
-    case C_SLOT_LOCATIVE: C_mutate2(ptr, x); break;
+    case C_SLOT_LOCATIVE: C_mutate(ptr, x); break;
 
     case C_CHAR_LOCATIVE:
                           if((x & C_IMMEDIATE_TYPE_BITS) != C_CHARACTER_BITS)

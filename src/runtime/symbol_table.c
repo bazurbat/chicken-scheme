@@ -72,7 +72,7 @@ static C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE
            heap-top (say, in a toplevel literal frame allocation) then we have
            to inform the memory manager that a 2nd gen. block points to a
            1st gen. block, hence the mutation: */
-        C_mutate2(&C_block_item(bucket,1), b2);
+        C_mutate(&C_block_item(bucket,1), b2);
         stable->table[ key ] = bucket;
     }
 
@@ -291,7 +291,7 @@ C_regparm C_word C_fcall C_intern3(C_word **ptr, C_char *str, C_word value)
 {
     C_word s = C_intern_in(ptr, C_strlen(str), str, symbol_table);
 
-    C_mutate2(&C_block_item(s,0), value);
+    C_mutate(&C_block_item(s,0), value);
     return s;
 }
 

@@ -39,10 +39,10 @@ C_varextern C_TLS void *C_restart_address;
 typedef void (C_fcall *TRAMPOLINE)(void *proc) C_regparm C_noret;
 
 #define CHICKEN_gc_root_ref(root)      (((C_GC_ROOT *)(root))->value)
-#define CHICKEN_gc_root_set(root, x)   C_mutate2(&((C_GC_ROOT *)(root))->value, (x))
+#define CHICKEN_gc_root_set(root, x)   C_mutate(&((C_GC_ROOT *)(root))->value, (x))
 
 #define CHICKEN_global_ref(root)       C_u_i_car(((C_GC_ROOT *)(root))->value)
-#define CHICKEN_global_set(root, x)    C_mutate2(&C_u_i_car(((C_GC_ROOT *)(root))->value), (x))
+#define CHICKEN_global_set(root, x)    C_mutate(&C_u_i_car(((C_GC_ROOT *)(root))->value), (x))
 
 #define CHICKEN_default_toplevel       ((void *)C_default_5fstub_toplevel)
 
@@ -81,17 +81,5 @@ C_fctexport void C_ccall C_return_to_host(C_word c, C_word closure, C_word k) C_
 C_fctexport void C_ccall C_context_switch(C_word c, C_word closure, C_word k, C_word state) C_noret;
 
 C_fctimport void C_ccall C_toplevel(C_word c, C_word self, C_word k) C_noret;
-
-C_inline C_word C_mutate(C_word *slot, C_word val)
-{
-    if(!C_immediatep(val)) return C_mutate_slot(slot, val);
-    else return *slot = val;
-}
-
-C_inline C_word C_mutate2(C_word *slot, C_word val) /* OBSOLETE */
-{
-    if(!C_immediatep(val)) return C_mutate_slot(slot, val);
-    else return *slot = val;
-}
 
 #endif /* RUNTIME_API_H */

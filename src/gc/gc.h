@@ -130,4 +130,13 @@ C_fctexport C_char *C_lookup_procedure_id(void *ptr);
 C_fctexport void *C_lookup_procedure_ptr(C_char *id);
 C_fctexport void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table) C_noret;
 
+// This is needed for bootstrapping
+#define C_mutate2 C_mutate
+
+C_inline C_word C_mutate(C_word *slot, C_word val)
+{
+    if(!C_immediatep(val)) return C_mutate_slot(slot, val);
+    else return *slot = val;
+}
+
 #endif /* RUNTIME_GC_H */

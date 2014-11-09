@@ -1199,7 +1199,7 @@ C_regparm C_word C_fcall C_i_set_car(C_word x, C_word val)
     if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG)
         barf(C_BAD_ARGUMENT_TYPE_ERROR, "set-car!", x);
 
-    C_mutate2(&C_u_i_car(x), val);
+    C_mutate(&C_u_i_car(x), val);
     return C_SCHEME_UNDEFINED;
 }
 
@@ -1208,7 +1208,7 @@ C_regparm C_word C_fcall C_i_set_cdr(C_word x, C_word val)
     if(C_immediatep(x) || C_block_header(x) != C_PAIR_TAG)
         barf(C_BAD_ARGUMENT_TYPE_ERROR, "set-cdr!", x);
 
-    C_mutate2(&C_u_i_cdr(x), val);
+    C_mutate(&C_u_i_cdr(x), val);
     return C_SCHEME_UNDEFINED;
 }
 
@@ -1342,7 +1342,7 @@ C_regparm C_word C_fcall C_i_vector_set(C_word v, C_word i, C_word x)
 
         if(j < 0 || j >= C_header_size(v)) barf(C_OUT_OF_RANGE_ERROR, "vector-set!", v, i);
 
-        C_mutate2(&C_block_item(v, j), x);
+        C_mutate(&C_block_item(v, j), x);
     }
     else barf(C_BAD_ARGUMENT_TYPE_ERROR, "vector-set!", i);
 
