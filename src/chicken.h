@@ -6,7 +6,6 @@
 #include <runtime/aliases.h>
 #include <runtime/api.h>
 #include <runtime/apply.h>
-#include <runtime/arithmetic.h>
 #include <runtime/callbacks.h>
 #include <runtime/check.h>
 #include <runtime/compiler.h>
@@ -16,8 +15,6 @@
 #include <runtime/definitions.h>
 #include <runtime/dload.h>
 #include <runtime/errors.h>
-#include <runtime/fixnum.h>
-#include <runtime/flonum.h>
 #include <runtime/foreign.h>
 #include <runtime/gc.h>
 #include <runtime/heap.h>
@@ -25,7 +22,6 @@
 #include <runtime/interrupts.h>
 #include <runtime/lists.h>
 #include <runtime/macros.h>
-#include <runtime/numbers.h>
 #include <runtime/nursery.h>
 #include <runtime/platform.h>
 #include <runtime/pointers.h>
@@ -40,5 +36,11 @@
 #include <runtime/trace.h>
 #include <runtime/types.h>
 #include <runtime/vectors.h>
+
+#include "math/arithmetic.h"
+#include "math/constructors.h"
+#include "math/fixnum.h"
+#include "math/flonum.h"
+#include "math/predicates.h"
 
 #endif /* CHICKEN_H */

@@ -15,12 +15,20 @@ include_directories(BEFORE
 set(libchicken_C_SOURCES
     ${CHICKEN_APPLY_HACK}
     chicken.h
+    math/arithmetic.c
+    math/arithmetic.h
+    math/constructors.c
+    math/constructors.h
+    math/fixnum.c
+    math/fixnum.h
+    math/flonum.c
+    math/flonum.h
+    math/predicates.c
+    math/predicates.h
     runtime/api.c
     runtime/api.h
     runtime/apply.c
     runtime/apply.h
-    runtime/arithmetic.c
-    runtime/arithmetic.h
     runtime/callbacks.c
     runtime/callbacks.h
     runtime/check.c
@@ -35,10 +43,6 @@ set(libchicken_C_SOURCES
     runtime/dload.h
     runtime/errors.c
     runtime/errors.h
-    runtime/fixnum.c
-    runtime/fixnum.h
-    runtime/flonum.c
-    runtime/flonum.h
     runtime/foreign.c
     runtime/foreign.c
     runtime/foreign.h

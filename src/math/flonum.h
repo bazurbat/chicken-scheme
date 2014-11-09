@@ -1,10 +1,11 @@
-#ifndef RUNTIME_FLONUM_H
-#define RUNTIME_FLONUM_H
+#ifndef MATH_FLONUM_H
+#define MATH_FLONUM_H
 
-#include "definitions.h"
-#include "types.h"
-#include "aliases.h"
-#include "errors.h"
+#include "common.h"
+#include <runtime/definitions.h>
+#include <runtime/types.h>
+#include <runtime/aliases.h>
+#include <runtime/errors.h>
 
 C_fctexport C_word C_fcall C_a_i_abs(C_word **a, int c, C_word n) C_regparm;
 
@@ -224,4 +225,4 @@ C_inline C_word C_u_i_fpintegerp(C_word x)
     return C_mk_bool(C_modf(val, &dummy) == 0.0);
 }
 
-#endif /* RUNTIME_FLONUM_H */
+#endif /* MATH_FLONUM_H */

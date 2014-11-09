@@ -1,5 +1,4 @@
 #include "arithmetic.h"
-#include "fixnum.h"
 #include <chicken.h>
 
 void C_ccall C_times(C_word c, C_word closure, C_word k, ...)

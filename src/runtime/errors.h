@@ -1,7 +1,7 @@
 #ifndef RUNTIME_ERROR_H
 #define RUNTIME_ERROR_H
 
-#include <runtime/definitions.h>
+#include "definitions.h"
 
 extern C_TLS C_word
     error_hook_symbol,

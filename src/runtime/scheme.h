@@ -108,4 +108,13 @@ C_inline C_word C_u_i_assq(C_word x, C_word lst)
     return C_SCHEME_FALSE;
 }
 
+C_inline C_word C_i_eqvp(C_word x, C_word y)
+{
+    return
+        C_mk_bool(x == y ||
+                  (!C_immediatep(x) && !C_immediatep(y) &&
+                   C_block_header(x) == C_FLONUM_TAG && C_block_header(y) == C_FLONUM_TAG &&
+                   C_flonum_magnitude(x) == C_flonum_magnitude(y) ) );
+}
+
 #endif /* RUNTIME_SCHEME_H */

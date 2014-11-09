@@ -73,8 +73,6 @@
 #if defined(HAVE_LIMITS_H)
 # include <limits.h>
 #endif
-#include <math.h>
-#include <float.h>
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -501,14 +499,6 @@ void *alloca ();
 # define C_U64_MAX    UINT64_MAX
 # define C_S64_MIN    INT64_MIN
 # define C_S64_MAX    INT64_MAX
-#endif
-
-#if _MSC_VER && _MSC_VER < 1800
-# define INFINITY (DBL_MAX+DBL_MAX)
-# define NAN (INFINITY-INFINITY)
-# define isinf(x) (!_finite(x) && !_isnan(x))
-# define isnan(x) _isnan(x)
-# define isnormal(x) _finite(x)
 #endif
 
 #if defined(C_LLP)

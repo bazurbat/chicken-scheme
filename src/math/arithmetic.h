@@ -1,6 +1,7 @@
-#ifndef RUNTIME_ARITHMETIC_H
-#define RUNTIME_ARITHMETIC_H
+#ifndef MATH_ARITHMETIC_H
+#define MATH_ARITHMETIC_H
 
+#include "common.h"
 #include <runtime/definitions.h>
 
 #define C_a_i_times( ptr, n, x, y)      C_2_times( ptr, x, y)
@@ -39,4 +40,4 @@ C_fctexport C_word C_fcall C_i_less_or_equalp(C_word x, C_word y) C_regparm;
 
 C_fctexport void C_ccall C_expt(C_word c, C_word closure, C_word k, C_word n1, C_word n2) C_noret;
 
-#endif /* RUNTIME_ARITHMETIC_H */
+#endif /* MATH_ARITHMETIC_H */

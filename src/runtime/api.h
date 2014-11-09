@@ -4,8 +4,6 @@
 #include "definitions.h"
 #include "types.h"
 #include "gc.h"
-#include "flonum.h"
-#include "fixnum.h"
 
 extern C_TLS int chicken_is_running;
 extern C_TLS int stack_size_changed;

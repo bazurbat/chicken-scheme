@@ -1,9 +1,10 @@
-#ifndef RUNTIME_FIXNUM_H
-#define RUNTIME_FIXNUM_H
+#ifndef MATH_FIXNUM_H
+#define MATH_FIXNUM_H
 
-#include "definitions.h"
-#include "errors.h"
-#include "types.h"
+#include "common.h"
+#include <runtime/definitions.h>
+#include <runtime/errors.h>
+#include <runtime/types.h>
 
 #define C_fix(n)                   (((C_word)(n) << C_FIXNUM_SHIFT) | C_FIXNUM_BIT)
 #define C_unfix(x)                 ((x) >> C_FIXNUM_SHIFT)
@@ -101,4 +102,4 @@ C_fctexport C_word C_fcall C_i_o_fixnum_xor(C_word x, C_word y) C_regparm;
 
 C_fctexport void C_ccall C_fixnum_to_string(C_word c, C_word closure, C_word k, C_word num) C_noret;
 
-#endif
+#endif /* MATH_FIXNUM_H */

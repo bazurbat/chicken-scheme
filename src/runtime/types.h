@@ -93,9 +93,6 @@ typedef struct C_ptable_entry_struct
 #define C_port_file(p)             ((C_FILEPTR)C_block_item(p, 0))
 #define C_and(x, y)                (C_truep(x) ? (y) : C_SCHEME_FALSE)
 
-#define C_isnan(f)                 isnan(f)
-#define C_isinf(f)                 isinf(f)
-
 #define C_zero_length_p(x)        C_mk_bool(C_header_size(x) == 0)
 #define C_boundp(x)               C_mk_bool(C_block_item(x, 0) != C_SCHEME_UNBOUND)
 #define C_unboundvaluep(x)        C_mk_bool((x) == C_SCHEME_UNBOUND)
@@ -271,13 +268,6 @@ C_inline C_word C_i_numberp(C_word x)
 {
     return C_mk_bool((x & C_FIXNUM_BIT)
                      || (!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG));
-}
-
-C_inline int C_ub_i_fpintegerp(double x)
-{
-    double dummy;
-
-    return C_modf(x, &dummy) == 0.0;
 }
 
 C_inline C_word C_fcall C_a_pair(C_word **ptr, C_word car, C_word cdr)
