@@ -1,7 +1,8 @@
 #include "signals.h"
-#include <runtime/errors.h>
-#include <memory/gc.h>
 #include <math/fixnum.h>
+#include <memory/gc.h>
+#include <runtime/errors.h>
+#include <scheduler/interrupts.h>
 
 #include <signal.h>
 

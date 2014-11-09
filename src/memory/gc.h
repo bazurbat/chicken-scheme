@@ -3,7 +3,6 @@
 
 #include <runtime/definitions.h>
 #include <runtime/types.h>
-#include <runtime/interrupts.h>
 #include "nursery.h"
 #include "heap.h"
 #include "finalizers.h"
@@ -43,7 +42,6 @@ extern C_TLS int
     gc_count_2;
 
 extern C_TLS C_word
-    interrupt_hook_symbol,
     callback_continuation_stack_symbol,
     *forwarding_table;
 
@@ -84,11 +82,6 @@ extern C_TLS C_word
 
 extern C_TLS double gc_ms,
        timer_accumulated_gc_ms;
-
-extern C_TLS int
-    pending_interrupts[ MAX_PENDING_INTERRUPTS ],
-    pending_interrupts_count,
-    handling_interrupts;
 
 C_fctexport void C_ccall C_gc(C_word c, C_word closure, C_word k, ...) C_noret;
 

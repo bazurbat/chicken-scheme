@@ -1,7 +1,19 @@
 #include "interrupts.h"
-#include <chicken.h>
+#include <runtime/apply.h>
+#include <runtime/types.h>
+#include <runtime/errors.h>
+#include <memory/nursery.h>
+#include <math/fixnum.h>
+#include <system/timing.h>
 
 C_TLS double last_interrupt_latency;
+
+C_TLS C_word interrupt_hook_symbol;
+
+C_TLS int
+    pending_interrupts[ MAX_PENDING_INTERRUPTS ],
+    pending_interrupts_count,
+    handling_interrupts;
 
 static C_TLS double interrupt_time;
 

@@ -64,7 +64,6 @@ C_TLS int
     gc_count_2;
 
 C_TLS C_word
-    interrupt_hook_symbol,
     callback_continuation_stack_symbol,
     *forwarding_table;
 
@@ -84,11 +83,6 @@ C_TLS C_word
     **collectibles,
     **collectibles_top,
     **collectibles_limit;
-
-C_TLS int
-    pending_interrupts[ MAX_PENDING_INTERRUPTS ],
-    pending_interrupts_count,
-    handling_interrupts;
 
 static void C_fcall remark_system_globals(void) C_regparm;
 static void C_fcall mark_system_globals(void) C_regparm;

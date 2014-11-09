@@ -55,8 +55,6 @@ set(libchicken_C_SOURCES
     runtime/debug.h
     runtime/errors.c
     runtime/errors.h
-    runtime/interrupts.c
-    runtime/interrupts.h
     runtime/macros.h
     runtime/reader.c
     runtime/reader.h
@@ -66,6 +64,8 @@ set(libchicken_C_SOURCES
     runtime/symbol_table.h
     runtime/trace.c
     runtime/trace.h
+    scheduler/interrupts.c
+    scheduler/interrupts.h
     system/dload.c
     system/dload.h
     system/files.c

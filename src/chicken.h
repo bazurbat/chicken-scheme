@@ -14,7 +14,6 @@
 #include <runtime/debug.h>
 #include <runtime/definitions.h>
 #include <runtime/errors.h>
-#include <runtime/interrupts.h>
 #include <runtime/lists.h>
 #include <runtime/macros.h>
 #include <runtime/pointers.h>
@@ -47,5 +46,7 @@
 #include "system/platform.h"
 #include "system/signals.h"
 #include "system/timing.h"
+
+#include "scheduler/interrupts.h"
 
 #endif /* CHICKEN_H */
