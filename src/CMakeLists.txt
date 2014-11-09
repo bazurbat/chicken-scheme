@@ -15,6 +15,12 @@ include_directories(BEFORE
 set(libchicken_C_SOURCES
     ${CHICKEN_APPLY_HACK}
     chicken.h
+    gc/gc.c
+    gc/gc.h
+    gc/heap.c
+    gc/heap.h
+    gc/nursery.c
+    gc/nursery.h
     math/arithmetic.c
     math/arithmetic.h
     math/constructors.c
@@ -47,17 +53,11 @@ set(libchicken_C_SOURCES
     runtime/foreign.c
     runtime/foreign.h
     runtime/foreign.h
-    runtime/gc.c
-    runtime/gc.h
-    runtime/heap.c
-    runtime/heap.h
     runtime/inexact.c
     runtime/inexact.h
     runtime/interrupts.c
     runtime/interrupts.h
     runtime/macros.h
-    runtime/nursery.c
-    runtime/nursery.h
     runtime/platform.c
     runtime/platform.h
     runtime/reader.c

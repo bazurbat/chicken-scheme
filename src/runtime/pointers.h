@@ -3,8 +3,8 @@
 
 #include "definitions.h"
 #include "types.h"
-#include "nursery.h"
-#include "heap.h"
+#include "../gc/nursery.h"
+#include "../gc/heap.h"
 
 #if defined (__llvm__) && defined (__GNUC__)
 # if defined (__i386__)

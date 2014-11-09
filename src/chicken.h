@@ -16,13 +16,10 @@
 #include <runtime/dload.h>
 #include <runtime/errors.h>
 #include <runtime/foreign.h>
-#include <runtime/gc.h>
-#include <runtime/heap.h>
 #include <runtime/inexact.h>
 #include <runtime/interrupts.h>
 #include <runtime/lists.h>
 #include <runtime/macros.h>
-#include <runtime/nursery.h>
 #include <runtime/platform.h>
 #include <runtime/pointers.h>
 #include <runtime/reader.h>
@@ -42,5 +39,9 @@
 #include "math/fixnum.h"
 #include "math/flonum.h"
 #include "math/predicates.h"
+
+#include "gc/gc.h"
+#include "gc/heap.h"
+#include "gc/nursery.h"
 
 #endif /* CHICKEN_H */

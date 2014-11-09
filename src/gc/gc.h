@@ -1,8 +1,8 @@
 #ifndef RUNTIME_GC_H
 #define RUNTIME_GC_H
 
-#include "definitions.h"
-#include "types.h"
+#include <runtime/definitions.h>
+#include <runtime/types.h>
 
 typedef struct finalizer_node_struct
 {

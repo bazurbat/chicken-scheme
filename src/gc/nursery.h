@@ -1,7 +1,7 @@
 #ifndef RUNTIME_NURSERY_H
 #define RUNTIME_NURSERY_H
 
-#include "definitions.h"
+#include <runtime/definitions.h>
 
 #ifdef C_STRESS_TEST
 # define C_STRESS_FAILURE          3
