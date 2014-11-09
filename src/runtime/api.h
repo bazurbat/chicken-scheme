@@ -4,6 +4,7 @@
 #include "definitions.h"
 #include "types.h"
 #include "../gc/gc.h"
+#include <setjmp.h>
 
 extern C_TLS int chicken_is_running;
 extern C_TLS int stack_size_changed;

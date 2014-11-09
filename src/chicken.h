@@ -34,6 +34,8 @@
 #include <runtime/types.h>
 #include <runtime/vectors.h>
 
+#include "foreign/locatives.h"
+
 #include "math/arithmetic.h"
 #include "math/constructors.h"
 #include "math/fixnum.h"

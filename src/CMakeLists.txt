@@ -15,6 +15,8 @@ include_directories(BEFORE
 set(libchicken_C_SOURCES
     ${CHICKEN_APPLY_HACK}
     chicken.h
+    foreign/locatives.c
+    foreign/locatives.h
     gc/gc.c
     gc/gc.h
     gc/heap.c

@@ -68,7 +68,6 @@ C_TLS int
     gc_count_2;
 
 C_TLS C_word
-    *locative_table,
     interrupt_hook_symbol,
     callback_continuation_stack_symbol,
     *forwarding_table;
@@ -89,10 +88,6 @@ C_TLS C_word
     **collectibles,
     **collectibles_top,
     **collectibles_limit;
-
-C_TLS int
-    locative_table_size,
-    locative_table_count;
 
 C_TLS int
     pending_interrupts[ MAX_PENDING_INTERRUPTS ],

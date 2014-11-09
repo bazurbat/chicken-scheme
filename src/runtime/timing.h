@@ -2,6 +2,7 @@
 #define RUNTIME_TIMING_H
 
 #include "definitions.h"
+#include <time.h>
 
 extern C_TLS unsigned int
     mutation_count,

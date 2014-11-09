@@ -67,35 +67,26 @@
 /* Headers */
 
 #include <ctype.h>
-#if defined(HAVE_INTTYPES_H)
-# include <inttypes.h>
-#endif
-#if defined(HAVE_LIMITS_H)
-# include <limits.h>
-#endif
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdio.h>
+
+/* #if defined(HAVE_INTTYPES_H) */
+/* # include <inttypes.h> */
+/* #endif */
+
 #if defined(HAVE_STDLIB_H)
 #include <stdlib.h>
 #endif
+
 #if defined(HAVE_STRING_H)
 #include <string.h>
 #endif
-#include <time.h>
-#if defined(HAVE_UNISTD_H)
-# include <unistd.h>
-#endif
-#if defined(HAVE_SYS_TYPES_H)
-# include <sys/types.h>
-#endif
-#if defined(HAVE_PROCESS_H)
-# include <process.h>
-#endif
-#if defined(HAVE_IO_H)
-# include <io.h>
-#endif
+
+/* #if defined(HAVE_SYS_TYPES_H) */
+/* # include <sys/types.h> */
+/* #endif */
+
+/* #if defined(HAVE_PROCESS_H) */
+/* # include <process.h> */
+/* #endif */
 
 
 /* Byteorder in machine word */
@@ -114,11 +105,11 @@
 
 /* Much better with stack allocation API */
 
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif !defined(alloca) /* predefined by HP cc +Olibcalls */
-void *alloca ();
-#endif
+/* #ifdef HAVE_ALLOCA_H */
+/* # include <alloca.h> */
+/* #elif !defined(alloca) #<{(| predefined by HP cc +Olibcalls |)}># */
+/* void *alloca (); */
+/* #endif */
 
 
 /* CHICKEN Core C API */
@@ -435,18 +426,6 @@ void *alloca ();
 #define C_TAGGED_POINTER_TAG      (C_TAGGED_POINTER_TYPE | (C_SIZEOF_TAGGED_POINTER - 1))
 #define C_SYMBOL_TAG              (C_SYMBOL_TYPE | (C_SIZEOF_SYMBOL - 1))
 #define C_FLONUM_TAG              (C_FLONUM_TYPE | sizeof(double))
-
-/* Locative subtypes */
-#define C_SLOT_LOCATIVE           0
-#define C_CHAR_LOCATIVE           1
-#define C_U8_LOCATIVE             2
-#define C_S8_LOCATIVE             3
-#define C_U16_LOCATIVE            4
-#define C_S16_LOCATIVE            5
-#define C_U32_LOCATIVE            6
-#define C_S32_LOCATIVE            7
-#define C_F32_LOCATIVE            8
-#define C_F64_LOCATIVE            9
 
 #if defined (__MINGW32__) || defined (_MSC_VER)
 # define C_s64                    __int64

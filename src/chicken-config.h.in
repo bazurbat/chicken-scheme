@@ -9,7 +9,6 @@
 #cmakedefine HAVE_ERRNO_H
 #cmakedefine HAVE_GRP_H
 #cmakedefine HAVE_INTTYPES_H
-#cmakedefine HAVE_IO_H
 #cmakedefine HAVE_LIMITS_H
 #cmakedefine HAVE_MALLOC_H
 #cmakedefine HAVE_MEMORY_H

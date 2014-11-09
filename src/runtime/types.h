@@ -4,6 +4,13 @@
 #include "definitions.h"
 #include "aliases.h"
 
+#if defined(HAVE_LIMITS_H)
+# include <limits.h>
+#endif
+
+#include <stdarg.h>
+#include <stdio.h>
+
 #define C_align4(n)                (((n) + 3) & ~3)
 #define C_align8(n)                (((n) + 7) & ~7)
 #define C_align16(n)               (((n) + 15) & ~15)

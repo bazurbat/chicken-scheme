@@ -6,6 +6,10 @@
 #include <runtime/errors.h>
 #include <runtime/types.h>
 
+#if defined(HAVE_UNISTD_H)
+# include <unistd.h>
+#endif
+
 #define C_fix(n)                   (((C_word)(n) << C_FIXNUM_SHIFT) | C_FIXNUM_BIT)
 #define C_unfix(x)                 ((x) >> C_FIXNUM_SHIFT)
 

@@ -51,7 +51,6 @@ extern C_TLS int
     gc_count_2;
 
 extern C_TLS C_word
-    *locative_table,
     interrupt_hook_symbol,
     callback_continuation_stack_symbol,
     *forwarding_table;
@@ -90,10 +89,6 @@ extern C_TLS C_word
     **collectibles,
     **collectibles_top,
     **collectibles_limit;
-
-extern C_TLS int
-    locative_table_size,
-    locative_table_count;
 
 extern C_TLS C_char *current_module_name;
 extern C_TLS void *current_module_handle;
