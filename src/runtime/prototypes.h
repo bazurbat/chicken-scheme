@@ -80,11 +80,7 @@ C_fctexport void C_ccall C_peek_signed_integer(C_word c, C_word closure, C_word 
 C_fctexport void C_ccall C_peek_unsigned_integer(C_word c, C_word closure, C_word k, C_word v, C_word index) C_noret;
 C_fctexport void C_ccall C_decode_seconds(C_word c, C_word closure, C_word k, C_word secs, C_word mode) C_noret;
 C_fctexport void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table) C_noret;
-C_fctexport void C_ccall C_locative_ref(C_word c, C_word closure, C_word k, C_word loc) C_noret;
 C_fctexport void C_ccall C_copy_closure(C_word c, C_word closure, C_word k, C_word proc) C_noret;
-C_fctexport C_word C_fcall C_i_locative_set(C_word loc, C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_locative_to_object(C_word loc) C_regparm;
-C_fctexport C_word C_fcall C_a_i_make_locative(C_word **a, int c, C_word type, C_word object, C_word index, C_word weak) C_regparm;
 C_fctexport C_word C_fcall C_i_bit_setp(C_word n, C_word i) C_regparm;
 C_fctexport C_word C_fcall C_i_getprop(C_word sym, C_word prop, C_word def) C_regparm;
 C_fctexport C_word C_fcall C_putprop(C_word **a, C_word sym, C_word prop, C_word val) C_regparm;

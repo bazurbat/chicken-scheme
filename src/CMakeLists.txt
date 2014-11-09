@@ -40,6 +40,8 @@ set(libchicken_C_SOURCES
     runtime/gc.h
     runtime/heap.c
     runtime/heap.h
+    runtime/locatives.c
+    runtime/locatives.h
     runtime/platform.c
     runtime/platform.h
     runtime/scheme.c

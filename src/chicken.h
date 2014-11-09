@@ -27,5 +27,6 @@
 #include <runtime/continuations.h>
 #include <runtime/dload.h>
 #include <runtime/timing.h>
+#include <runtime/locatives.h>
 
 #endif /* CHICKEN_H */
