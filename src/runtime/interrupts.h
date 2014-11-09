@@ -3,6 +3,10 @@
 
 #include "definitions.h"
 
+#define C_TIMER_INTERRUPT_NUMBER  255
+
+#define MAX_PENDING_INTERRUPTS         100
+
 #ifdef C_TIMER_INTERRUPTS
 # ifdef PARANOIA
 #  define C_check_for_interrupt         C_paranoid_check_for_interrupt()

@@ -1,6 +1,8 @@
 #include "heap.h"
 #include <chicken.h>
 
+#define HDUMP_TABLE_SIZE               1001
+
 typedef struct hdump_bucket_struct
 {
     C_word key;

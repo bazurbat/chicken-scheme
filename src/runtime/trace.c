@@ -2,6 +2,10 @@
 #include <chicken.h>
 #include <assert.h>
 
+#define DEFAULT_TRACE_BUFFER_SIZE      16
+
+#define MIN_TRACE_BUFFER_SIZE          3
+
 C_TLS TRACE_INFO *trace_buffer;
 
 C_TLS TRACE_INFO *trace_buffer_limit;

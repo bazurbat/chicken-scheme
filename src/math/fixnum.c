@@ -1,6 +1,12 @@
 #include "fixnum.h"
 #include <chicken.h>
 
+#ifdef C_LLP
+# define LONG_FORMAT_STRING            "%lldf"
+#else
+# define LONG_FORMAT_STRING            "%ld"
+#endif
+
 /* fixnum arithmetic with overflow detection (from "Hacker's Delight" by Hank Warren)
    These routines return #f if the operation failed due to overflow.
  */

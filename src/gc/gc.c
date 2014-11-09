@@ -2,6 +2,15 @@
 #include <chicken.h>
 #include <assert.h>
 
+#define DEFAULT_HEAP_SHRINKAGE_USED    25
+
+#define MINIMAL_HEAP_SIZE              DEFAULT_STACK_SIZE
+
+#define WEAK_HASH_ITERATIONS           4
+#define WEAK_HASH_DISPLACEMENT         7
+#define WEAK_COUNTER_MASK              3
+#define WEAK_COUNTER_MAX               2
+
 #define percentage(n, p)             ((C_long)(((double)(n) * (double)p) / 100))
 
 #define is_fptr(x)                   (((x) & C_GC_FORWARDING_BIT) != 0)

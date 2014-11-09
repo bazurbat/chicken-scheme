@@ -3,6 +3,9 @@
 
 #include <runtime/definitions.h>
 #include <runtime/types.h>
+#include <runtime/interrupts.h>
+
+#define WEAK_TABLE_SIZE                997
 
 typedef struct finalizer_node_struct
 {

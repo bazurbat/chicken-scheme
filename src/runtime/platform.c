@@ -1,6 +1,66 @@
 #include "platform.h"
 #include <chicken.h>
 
+#if defined(C_BIG_ENDIAN)
+# define C_MACHINE_BYTE_ORDER "big-endian"
+#elif defined(C_LITTLE_ENDIAN)
+# define C_MACHINE_BYTE_ORDER "little-endian"
+#endif
+
+#if defined(__alpha__)
+# define C_MACHINE_TYPE "alpha"
+#elif defined(__mips__)
+# define C_MACHINE_TYPE "mips"
+#elif defined(__sparc_v9__) || defined(__sparcv9)
+# define C_MACHINE_TYPE "ultrasparc"
+#elif defined(__sparc__)
+# define C_MACHINE_TYPE "sparc"
+#elif defined(__powerpc64__) || defined(_ARCH_PPC64)
+# define C_MACHINE_TYPE "ppc64"
+#elif defined(__ppc__) || defined(__powerpc__) || defined(_ARCH_PPC)
+# define C_MACHINE_TYPE "ppc"
+#elif defined(_M_IX86) || defined(__i386__)
+# define C_MACHINE_TYPE "x86"
+#elif defined(__ia64__)
+# define C_MACHINE_TYPE "ia64"
+#elif defined(__x86_64__)
+# define C_MACHINE_TYPE "x86-64"
+#elif defined(__arm__)
+# define C_MACHINE_TYPE "arm"
+#else
+# define C_MACHINE_TYPE "unknown"
+#endif
+
+#if defined(__MINGW32__) || defined(_WIN32) || defined(__WINNT__)
+# define C_SOFTWARE_TYPE "windows"
+#elif defined(__unix__) || defined(C_XXXBSD)
+# define C_SOFTWARE_TYPE "unix"
+#else
+# define C_SOFTWARE_TYPE "unknown"
+#endif
+
+#if defined(__MINGW32__)
+# define C_BUILD_PLATFORM "mingw32"
+#elif defined(_MSC_VER)
+# define C_BUILD_PLATFORM "msvc"
+#elif defined(__clang__)
+# define C_BUILD_PLATFORM "clang"
+#elif defined(__GNUC__)
+# define C_BUILD_PLATFORM "gnu"
+#elif defined(__INTEL_COMPILER)
+# define C_BUILD_PLATFORM "intel"
+#else
+# define C_BUILD_PLATFORM "unknown"
+#endif
+
+#if defined(__linux__)
+# define C_SOFTWARE_VERSION "linux"
+#elif defined(C_MACOSX)
+# define C_SOFTWARE_VERSION "macosx"
+#else
+# define C_SOFTWARE_VERSION "unknown"
+#endif
+
 void C_ccall C_software_type(C_word c, C_word closure, C_word k)
 {
     C_word *a, s;

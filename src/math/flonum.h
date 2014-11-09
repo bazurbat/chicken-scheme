@@ -7,6 +7,8 @@
 #include <runtime/aliases.h>
 #include <runtime/errors.h>
 
+#define WORDS_PER_FLONUM               C_SIZEOF_FLONUM
+
 C_fctexport C_word C_fcall C_a_i_abs(C_word **a, int c, C_word n) C_regparm;
 
 C_fctexport C_word C_fcall C_a_i_bitwise_and(C_word **a, int c, C_word n1, C_word n2) C_regparm;

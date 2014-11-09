@@ -503,124 +503,7 @@
 # define C_text(x)                (x)
 #endif
 
-#define C_TIMER_INTERRUPT_NUMBER  255
-
-#define C_BAD_ARGUMENT_COUNT_ERROR                    1
-#define C_BAD_MINIMUM_ARGUMENT_COUNT_ERROR            2
-#define C_BAD_ARGUMENT_TYPE_ERROR                     3
-#define C_UNBOUND_VARIABLE_ERROR                      4
-#define C_TOO_MANY_PARAMETERS_ERROR                   5
-#define C_OUT_OF_MEMORY_ERROR                         6
-#define C_DIVISION_BY_ZERO_ERROR                      7
-#define C_OUT_OF_RANGE_ERROR                          8
-#define C_NOT_A_CLOSURE_ERROR                         9
-#define C_CONTINUATION_CANT_RECEIVE_VALUES_ERROR      10
-#define C_BAD_ARGUMENT_TYPE_CYCLIC_LIST_ERROR         11
-#define C_TOO_DEEP_RECURSION_ERROR                    12
-#define C_CANT_REPRESENT_INEXACT_ERROR                13
-#define C_NOT_A_PROPER_LIST_ERROR                     14
-#define C_BAD_ARGUMENT_TYPE_NO_FIXNUM_ERROR           15
-#define C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR           16
-#define C_BAD_ARGUMENT_TYPE_NO_STRING_ERROR           17
-#define C_BAD_ARGUMENT_TYPE_NO_PAIR_ERROR             18
-#define C_BAD_ARGUMENT_TYPE_NO_LIST_ERROR             19
-#define C_BAD_ARGUMENT_TYPE_NO_CHAR_ERROR             20
-#define C_BAD_ARGUMENT_TYPE_NO_VECTOR_ERROR           21
-#define C_BAD_ARGUMENT_TYPE_NO_SYMBOL_ERROR           22
-#define C_STACK_OVERFLOW_ERROR                        23
-#define C_BAD_ARGUMENT_TYPE_BAD_STRUCT_ERROR          24
-#define C_BAD_ARGUMENT_TYPE_NO_BYTEVECTOR_ERROR       25
-#define C_LOST_LOCATIVE_ERROR                         26
-#define C_BAD_ARGUMENT_TYPE_NO_BLOCK_ERROR            27
-#define C_BAD_ARGUMENT_TYPE_NO_NUMBER_VECTOR_ERROR    28
-#define C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR          29
-#define C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR         30
-#define C_BAD_ARGUMENT_TYPE_NO_POINTER_ERROR          31
-#define C_BAD_ARGUMENT_TYPE_NO_TAGGED_POINTER_ERROR   32
-#define C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR           33
-#define C_BAD_ARGUMENT_TYPE_NO_CLOSURE_ERROR          34
-#define C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR            35
-#define C_CIRCULAR_DATA_ERROR                         36
-#define C_BAD_ARGUMENT_TYPE_NO_BOOLEAN_ERROR          37
-#define C_BAD_ARGUMENT_TYPE_NO_LOCATIVE_ERROR         38
-#define C_BAD_ARGUMENT_TYPE_NO_PORT_ERROR             39
-#define C_BAD_ARGUMENT_TYPE_NO_INPUT_PORT_ERROR       40
-#define C_BAD_ARGUMENT_TYPE_NO_OUTPUT_PORT_ERROR      41
-#define C_PORT_CLOSED_ERROR                           42
-#define C_ASCIIZ_REPRESENTATION_ERROR                 43
-#define C_MEMORY_VIOLATION_ERROR                      44
-#define C_FLOATING_POINT_EXCEPTION_ERROR              45
-#define C_ILLEGAL_INSTRUCTION_ERROR                   46
-#define C_BUS_ERROR                                   47
-
-
-/* Platform information */
-#if defined(C_BIG_ENDIAN)
-# define C_MACHINE_BYTE_ORDER "big-endian"
-#elif defined(C_LITTLE_ENDIAN)
-# define C_MACHINE_BYTE_ORDER "little-endian"
-#endif
-
-#if defined(__alpha__)
-# define C_MACHINE_TYPE "alpha"
-#elif defined(__mips__)
-# define C_MACHINE_TYPE "mips"
-#elif defined(__sparc_v9__) || defined(__sparcv9)
-# define C_MACHINE_TYPE "ultrasparc"
-#elif defined(__sparc__)
-# define C_MACHINE_TYPE "sparc"
-#elif defined(__powerpc64__) || defined(_ARCH_PPC64)
-# define C_MACHINE_TYPE "ppc64"
-#elif defined(__ppc__) || defined(__powerpc__) || defined(_ARCH_PPC)
-# define C_MACHINE_TYPE "ppc"
-#elif defined(_M_IX86) || defined(__i386__)
-# define C_MACHINE_TYPE "x86"
-#elif defined(__ia64__)
-# define C_MACHINE_TYPE "ia64"
-#elif defined(__x86_64__)
-# define C_MACHINE_TYPE "x86-64"
-#elif defined(__arm__)
-# define C_MACHINE_TYPE "arm"
-#else
-# define C_MACHINE_TYPE "unknown"
-#endif
-
-#if defined(__MINGW32__) || defined(_WIN32) || defined(__WINNT__)
-# define C_SOFTWARE_TYPE "windows"
-#elif defined(__unix__) || defined(C_XXXBSD)
-# define C_SOFTWARE_TYPE "unix"
-#else
-# define C_SOFTWARE_TYPE "unknown"
-#endif
-
-#if defined(__MINGW32__)
-# define C_BUILD_PLATFORM "mingw32"
-#elif defined(_MSC_VER)
-# define C_BUILD_PLATFORM "msvc"
-#elif defined(__clang__)
-# define C_BUILD_PLATFORM "clang"
-#elif defined(__GNUC__)
-# define C_BUILD_PLATFORM "gnu"
-#elif defined(__INTEL_COMPILER)
-# define C_BUILD_PLATFORM "intel"
-#else
-# define C_BUILD_PLATFORM "unknown"
-#endif
-
-#if defined(__linux__)
-# define C_SOFTWARE_VERSION "linux"
-#elif defined(C_MACOSX)
-# define C_SOFTWARE_VERSION "macosx"
-#else
-# define C_SOFTWARE_VERSION "unknown"
-#endif
-
 #define C_MAX_PATH         PATH_MAX
-
-/* from runtime.c */
-#define WORDS_PER_FLONUM               C_SIZEOF_FLONUM
-#define INITIAL_TIMER_INTERRUPT_PERIOD 10000
-#define HDUMP_TABLE_SIZE               1001
 
 #ifdef C_SIXTY_FOUR
 # define DEFAULT_STACK_SIZE            (1024 * 1024)
@@ -628,29 +511,7 @@
 # define DEFAULT_STACK_SIZE            (256 * 1024)
 #endif
 
-#define DEFAULT_HEAP_SIZE              DEFAULT_STACK_SIZE
-#define MINIMAL_HEAP_SIZE              DEFAULT_STACK_SIZE
-#define DEFAULT_MAXIMAL_HEAP_SIZE      0x7ffffff0
-#define DEFAULT_HEAP_GROWTH            200
-#define DEFAULT_HEAP_SHRINKAGE         50
-#define DEFAULT_HEAP_SHRINKAGE_USED    25
-
-#define DEFAULT_MUTATION_STACK_SIZE    1024
-
-#define DEFAULT_SYMBOL_TABLE_SIZE      2999
-#define DEFAULT_FORWARDING_TABLE_SIZE  32
-#define DEFAULT_LOCATIVE_TABLE_SIZE    32
-#define DEFAULT_COLLECTIBLES_SIZE      1024
-#define DEFAULT_TRACE_BUFFER_SIZE      16
-#define MIN_TRACE_BUFFER_SIZE          3
-
 #define STRING_BUFFER_SIZE             4096
-
-#define WEAK_TABLE_SIZE                997
-#define WEAK_HASH_ITERATIONS           4
-#define WEAK_HASH_DISPLACEMENT         7
-#define WEAK_COUNTER_MASK              3
-#define WEAK_COUNTER_MAX               2
 
 /* Constants: */
 
@@ -667,13 +528,5 @@
 # define UWORD_FORMAT_STRING           "0x%08x"
 # define UWORD_COUNT_FORMAT_STRING     "%u"
 #endif
-
-#ifdef C_LLP
-# define LONG_FORMAT_STRING            "%lldf"
-#else
-# define LONG_FORMAT_STRING            "%ld"
-#endif
-
-#define MAX_PENDING_INTERRUPTS         100
 
 #endif
