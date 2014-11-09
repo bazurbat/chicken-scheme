@@ -11,6 +11,10 @@
 #  include <poll.h>
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #ifndef EOVERFLOW
 # define EOVERFLOW  0
 #endif
