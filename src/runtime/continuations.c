@@ -1,6 +1,8 @@
 #include "continuations.h"
 #include <chicken.h>
 
+#define RELAX_MULTIVAL_CHECK
+
 void C_ccall call_cc_wrapper(C_word c, C_word closure, C_word k, C_word result)
 {
     C_word cont = C_block_item(closure,1);
@@ -34,7 +36,7 @@ void C_ccall call_cc_values_wrapper(C_word c, C_word closure, C_word k, ...)
 void C_ccall C_call_cc(C_word c, C_word closure, C_word k, C_word cont)
 {
     C_word *a = C_alloc(C_SIZEOF_CLOSURE(2)),
-            wrapper;
+           wrapper;
     void *pr = (void *)C_block_item(cont,0);
 
     if(C_immediatep(cont) || C_header_bits(cont) != C_CLOSURE_TYPE)
@@ -54,10 +56,71 @@ void C_ccall C_continuation_graft(C_word c, C_word self, C_word k, C_word kk, C_
     ((C_proc2)C_fast_retrieve_proc(proc))(2, proc, C_block_item(kk, 1));
 }
 
+void C_ccall C_values(C_word c, C_word closure, C_word k, ...)
+{
+    va_list v;
+    C_word n = c;
+
+    if(c < 2) C_bad_min_argc(c, 2);
+
+    va_start(v, k);
+
+    /* Check continuation whether it receives multiple values: */
+    if(C_block_item(k, 0) == (C_word)values_continuation) {
+        while(c-- > 2)
+            C_save(va_arg(v, C_word));
+
+        va_end(v);
+        C_do_apply(n - 2, k, C_SCHEME_UNBOUND); /* unbound value marks direct invocation */
+    }
+
+    if(c != 3) {
+#ifdef RELAX_MULTIVAL_CHECK
+        if(c == 2) n = C_SCHEME_UNDEFINED;
+        else n = va_arg(v, C_word);
+#else
+        barf(C_CONTINUATION_CANT_RECEIVE_VALUES_ERROR, "values", k);
+#endif
+    }
+    else n = va_arg(v, C_word);
+
+    va_end(v);
+    C_kontinue(k, n);
+}
+
+void C_ccall C_apply_values(C_word c, C_word closure, C_word k, C_word lst)
+{
+    C_word n;
+
+    if(c != 3) C_bad_argc(c, 3);
+
+    /* Check continuation wether it receives multiple values: */
+    if(C_block_item(k, 0) == (C_word)values_continuation) {
+        for(n = 0; !C_immediatep(lst) && C_block_header(lst) == C_PAIR_TAG; ++n) {
+            C_save(C_u_i_car(lst));
+            lst = C_u_i_cdr(lst);
+        }
+
+        C_do_apply(n, k, C_SCHEME_UNBOUND); /* unbound value marks direct invocation */
+    }
+
+    if(C_immediatep(lst) || (C_block_header(lst) == C_PAIR_TAG && C_u_i_cdr(lst) == C_SCHEME_END_OF_LIST)) {
+#ifdef RELAX_MULTIVAL_CHECK
+        if(C_immediatep(lst)) n = C_SCHEME_UNDEFINED;
+        else n = C_u_i_car(lst);
+#else
+        barf(C_CONTINUATION_CANT_RECEIVE_VALUES_ERROR, "values", k);
+#endif
+    }
+    else n = C_u_i_car(lst);
+
+    C_kontinue(k, n);
+}
+
 void C_ccall C_call_with_values(C_word c, C_word closure, C_word k, C_word thunk, C_word kont)
 {
     C_word *a = C_alloc(C_SIZEOF_CLOSURE(3)),
-            kk;
+           kk;
 
     if(c != 4) C_bad_argc(c, 4);
 
@@ -74,7 +137,7 @@ void C_ccall C_call_with_values(C_word c, C_word closure, C_word k, C_word thunk
 void C_ccall C_u_call_with_values(C_word c, C_word closure, C_word k, C_word thunk, C_word kont)
 {
     C_word *a = C_alloc(C_SIZEOF_CLOSURE(3)),
-            kk;
+           kk;
 
     kk = C_closure(&a, 3, (C_word)values_continuation, kont, k);
     C_do_apply(0, thunk, kk);
@@ -85,7 +148,7 @@ void C_ccall values_continuation(C_word c, C_word closure, C_word arg0, ...)
     C_word kont = C_block_item(closure, 1),
            k = C_block_item(closure, 2),
            n = c,
-    *ptr;
+           *ptr;
     va_list v;
 
     if(arg0 == C_SCHEME_UNBOUND) { /* This continuation was called by 'values'... */
