@@ -4,6 +4,8 @@
 #include <runtime/definitions.h>
 #include <runtime/types.h>
 #include <runtime/interrupts.h>
+#include "nursery.h"
+#include "heap.h"
 
 #define WEAK_TABLE_SIZE                997
 
@@ -132,6 +134,11 @@ C_fctexport void C_ccall C_allocate_vector(C_word c, C_word closure, C_word k, C
 C_fctexport C_char *C_lookup_procedure_id(void *ptr);
 C_fctexport void *C_lookup_procedure_ptr(C_char *id);
 C_fctexport void C_ccall C_become(C_word c, C_word closure, C_word k, C_word table) C_noret;
+
+C_inline C_word C_permanentp(C_word x)
+{
+    return C_mk_bool(!C_immediatep(x) && !C_in_stackp(x) && !C_in_heapp(x));
+}
 
 // This is needed for bootstrapping
 #define C_mutate2 C_mutate

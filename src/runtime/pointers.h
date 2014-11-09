@@ -3,8 +3,6 @@
 
 #include "definitions.h"
 #include "types.h"
-#include "../gc/nursery.h"
-#include "../gc/heap.h"
 
 #if defined (__llvm__) && defined (__GNUC__)
 # if defined (__i386__)
@@ -31,8 +29,6 @@
 
 #define C_pointer_address(x)            ((C_byte *)C_block_item((x), 0))
 
-#define C_offset_pointer(x, y)          (C_pointer_address(x) + (y))
-
 #define C_pointer_to_block(p, x)        (C_set_block_item(p, 0, (C_word)C_data_pointer(x)), C_SCHEME_UNDEFINED)
 
 #define C_null_pointerp(x)              C_mk_bool((void *)C_block_item(x, 0) == NULL)
@@ -40,11 +36,6 @@
 #define C_copy_pointer(from, to)        (C_set_block_item(to, 0, C_block_item(from, 0)), C_SCHEME_UNDEFINED)
 #define C_pointer_to_object(ptr)        C_block_item(ptr, 0)
 
-#define C_poke_pointer(b, i, x)         (C_set_block_item(b, C_unfix(i), (C_word)C_data_pointer(x)), C_SCHEME_UNDEFINED)
-#define C_poke_pointer_or_null(b, i, x) (C_set_block_item(b, C_unfix(i), (C_word)C_data_pointer_or_null(x)), C_SCHEME_UNDEFINED)
-
-#define C_a_i_data_mpointer(ptr, n, x)  C_mpointer(ptr, C_data_pointer(x))
-#define C_a_i_mpointer(ptr, n, x)       C_mpointer(ptr, (x))
 #define C_a_u_i_pointer_inc(ptr, n, p, i) C_mpointer(ptr, (C_char *)(p) + C_unfix(i))
 #define C_pointer_eqp(x, y)             C_mk_bool(C_c_pointer_nn(x) == C_c_pointer_nn(y))
 
@@ -68,27 +59,6 @@
     (*((C_u32 *)C_block_item(ptr, 0)) = C_num_to_unsigned_int(x), C_SCHEME_UNDEFINED)
 #define C_u_i_pointer_s32_set(ptr, x)  \
     (*((C_s32 *)C_block_item(ptr, 0)) = C_num_to_int(x), C_SCHEME_UNDEFINED)
-
-#define C_ub_i_pointer_inc(p, n)        ((void *)((unsigned char *)(p) + (n)))
-#define C_ub_i_pointer_eqp(p1, p2)      ((p1) == (p2))
-#define C_ub_i_null_pointerp(p)         ((p) == NULL)
-
-#define C_ub_i_pointer_u8_ref(p)        (*((unsigned char *)(p)))
-#define C_ub_i_pointer_s8_ref(p)        (*((signed char *)(p)))
-#define C_ub_i_pointer_u16_ref(p)       (*((unsigned short *)(p)))
-#define C_ub_i_pointer_s16_ref(p)       (*((short *)(p)))
-#define C_ub_i_pointer_u32_ref(p)       (*((C_u32 *)(p)))
-#define C_ub_i_pointer_s32_ref(p)       (*((C_s32 *)(p)))
-#define C_ub_i_pointer_f32_ref(p)       (*((float *)(p)))
-#define C_ub_i_pointer_f64_ref(p)       (*((double *)(p)))
-#define C_ub_i_pointer_u8_set(p, n)     (*((unsigned char *)(p)) = (n))
-#define C_ub_i_pointer_s8_set(p, n)     (*((signed char *)(p)) = (n))
-#define C_ub_i_pointer_u16_set(p, n)    (*((unsigned short *)(p)) = (n))
-#define C_ub_i_pointer_s16_set(p, n)    (*((short *)(p)) = (n))
-#define C_ub_i_pointer_u32_set(p, n)    (*((C_u32 *)(p)) = (n))
-#define C_ub_i_pointer_s32_set(p, n)    (*((C_s32 *)(p)) = (n))
-#define C_ub_i_pointer_f32_set(p, n)    (*((float *)(p)) = (n))
-#define C_ub_i_pointer_f64_set(p, n)    (*((double *)(p)) = (n))
 
 C_inline C_word C_i_safe_pointerp(C_word x)
 {
@@ -116,16 +86,6 @@ C_inline void *C_c_pointer_vector_or_null(C_word x)
 C_inline void *C_c_pointer_or_null(C_word x)
 {
     return C_truep(x) ? (void *)C_block_item(x, 0) : NULL;
-}
-
-C_inline void *C_scheme_or_c_pointer(C_word x)
-{
-    return C_anypointerp(x) ? (void *)C_block_item(x, 0) : C_data_pointer(x);
-}
-
-C_inline C_word C_permanentp(C_word x)
-{
-    return C_mk_bool(!C_immediatep(x) && !C_in_stackp(x) && !C_in_heapp(x));
 }
 
 #endif /* RUNTIME_POINTERS_H */
