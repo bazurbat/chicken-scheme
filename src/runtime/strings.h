@@ -2,6 +2,38 @@
 #define RUNTIME_STRINGS_H
 
 #include "definitions.h"
+#include "types.h"
+
+C_fctexport C_word C_fcall C_string(C_word **ptr, int len, C_char *str) C_regparm;
+C_fctexport C_word C_fcall C_static_string(C_word **ptr, int len, C_char *str) C_regparm;
+
+C_fctexport C_word C_fcall C_string_aligned8(C_word **ptr, int len, C_char *str) C_regparm;
+C_fctexport C_word C_fcall C_string2(C_word **ptr, C_char *str) C_regparm;
+C_fctexport C_word C_fcall C_string2_safe(C_word **ptr, int max, C_char *str) C_regparm;
+
+C_fctexport C_word C_a_i_string(C_word **a, int c, ...);
+
+C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word *fix, double *flo) C_regparm;
+
+C_fctexport void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, ...) C_noret;
+C_fctexport C_word C_fcall C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix) C_regparm;
+C_fctexport C_word C_string_to_pbytevector(C_word s) C_regparm;
+
+C_fctexport C_word C_fcall C_i_string_ci_equal_p(C_word x, C_word y) C_regparm;
+C_fctexport C_word C_fcall C_i_string_equal_p(C_word x, C_word y) C_regparm;
+C_fctexport C_word C_fcall C_i_string_length(C_word s) C_regparm;
+C_fctexport C_word C_fcall C_i_string_ref(C_word s, C_word i) C_regparm;
+C_fctexport C_word C_fcall C_i_string_set(C_word s, C_word i, C_word c) C_regparm;
+
+C_fctexport C_word C_fcall C_u_i_string_hash(C_word str, C_word rnd) C_regparm;
+C_fctexport C_word C_fcall C_u_i_string_ci_hash(C_word str, C_word rnd) C_regparm;
+
+C_word C_fcall maybe_inexact_to_exact(C_word n) C_regparm;
+C_fctexport C_word C_fcall C_i_inexact_to_exact(C_word n) C_regparm;
+
+C_fctexport C_word C_fcall C_pbytevector(int len, C_char *str) C_regparm;
+
+C_word C_fcall hash_string(int len, C_char *str, C_word m, C_word r, int ci) C_regparm;
 
 C_inline char *C_string_or_null(C_word x)
 {

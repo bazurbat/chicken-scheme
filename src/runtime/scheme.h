@@ -5,15 +5,9 @@
 #include "types.h"
 #include "cxr.h"
 
-C_fctexport C_word C_fcall C_string(C_word **ptr, int len, C_char *str) C_regparm;
-C_fctexport C_word C_fcall C_static_string(C_word **ptr, int len, C_char *str) C_regparm;
 C_fctexport C_word C_fcall C_static_lambda_info(C_word **ptr, int len, C_char *str) C_regparm;
 C_fctexport C_word C_fcall C_bytevector(C_word **ptr, int len, C_char *str) C_regparm;
 C_fctexport C_word C_fcall C_static_bytevector(C_word **ptr, int len, C_char *str) C_regparm;
-C_fctexport C_word C_fcall C_pbytevector(int len, C_char *str) C_regparm;
-C_fctexport C_word C_fcall C_string_aligned8(C_word **ptr, int len, C_char *str) C_regparm;
-C_fctexport C_word C_fcall C_string2(C_word **ptr, C_char *str) C_regparm;
-C_fctexport C_word C_fcall C_string2_safe(C_word **ptr, int max, C_char *str) C_regparm;
 C_fctexport C_word C_closure(C_word **ptr, int cells, C_word proc, ...);
 C_fctexport C_word C_fcall C_number(C_word **ptr, double n) C_regparm;
 C_fctexport C_word C_fcall C_mpointer(C_word **ptr, void *mp) C_regparm;
@@ -29,17 +23,9 @@ C_fctexport C_word C_fcall C_get_print_precision(void) C_regparm;
 C_fctexport C_word C_a_i_list(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_port(C_word **a, int c);
 C_fctexport C_word C_a_i_record(C_word **a, int c, ...);
-C_fctexport C_word C_a_i_string(C_word **a, int c, ...);
 C_fctexport C_word C_fcall C_a_i_bytevector(C_word **a, int c, C_word x) C_regparm;
 C_word C_fcall C_a_i_smart_mpointer(C_word **ptr, int c, C_word x);
 
-C_word C_fcall maybe_inexact_to_exact(C_word n) C_regparm;
-
-C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word *fix, double *flo) C_regparm;
-
-C_fctexport void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, ...) C_noret;
-C_fctexport C_word C_fcall C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix) C_regparm;
-C_fctexport C_word C_string_to_pbytevector(C_word s) C_regparm;
 
 C_fctexport C_word C_fcall C_i_assoc(C_word x, C_word lst) C_regparm;
 C_fctexport C_word C_fcall C_i_assq(C_word x, C_word lst) C_regparm;
@@ -53,7 +39,6 @@ C_fctexport C_word C_fcall C_i_cddr(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_cdr(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_evenp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_exactp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_inexact_to_exact(C_word n) C_regparm;
 C_fctexport C_word C_fcall C_i_inexactp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_length(C_word lst) C_regparm;
 C_fctexport C_word C_fcall C_i_list_tail(C_word lst, C_word i) C_regparm;
@@ -66,11 +51,6 @@ C_fctexport C_word C_fcall C_i_oddp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_positivep(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_set_car(C_word p, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_set_cdr(C_word p, C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_string_ci_equal_p(C_word x, C_word y) C_regparm;
-C_fctexport C_word C_fcall C_i_string_equal_p(C_word x, C_word y) C_regparm;
-C_fctexport C_word C_fcall C_i_string_length(C_word s) C_regparm;
-C_fctexport C_word C_fcall C_i_string_ref(C_word s, C_word i) C_regparm;
-C_fctexport C_word C_fcall C_i_string_set(C_word s, C_word i, C_word c) C_regparm;
 C_fctexport C_word C_fcall C_i_vector_length(C_word v) C_regparm;
 C_fctexport C_word C_fcall C_i_vector_ref(C_word v, C_word i) C_regparm;
 C_fctexport C_word C_fcall C_i_vector_set(C_word v, C_word i, C_word x) C_regparm;
@@ -87,8 +67,6 @@ C_fctexport C_word C_fcall C_i_bit_setp(C_word n, C_word i) C_regparm;
 
 C_fctexport C_word C_fcall C_restore_rest(C_word *ptr, int num) C_regparm;
 C_fctexport C_word C_fcall C_restore_rest_vector(C_word *ptr, int num) C_regparm;
-C_fctexport C_word C_fcall C_u_i_string_hash(C_word str, C_word rnd) C_regparm;
-C_fctexport C_word C_fcall C_u_i_string_ci_hash(C_word str, C_word rnd) C_regparm;
 
 C_inline C_word C_u_i_assq(C_word x, C_word lst)
 {

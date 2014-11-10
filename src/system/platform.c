@@ -6,6 +6,7 @@
 #include <runtime/macros.h>
 #include <runtime/scheme.h>
 #include <scheduler/interrupts.h>
+#include <runtime/strings.h>
 
 #include <time.h>
 
