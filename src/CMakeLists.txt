@@ -54,6 +54,8 @@ set(libchicken_C_SOURCES
     runtime/compiler.h
     runtime/continuations.c
     runtime/continuations.h
+    runtime/cxr.c
+    runtime/cxr.h
     runtime/debug.c
     runtime/debug.h
     runtime/errors.c
@@ -80,6 +82,7 @@ set(libchicken_C_SOURCES
     system/timing.c
     system/timing.h
 )
+
 if(LIBUV_FOUND)
     list(APPEND libchicken_C_SOURCES uvffi.c uvffi.h)
 endif()

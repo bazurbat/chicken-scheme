@@ -1,6 +1,10 @@
 #ifndef RUNTIME_CXR_H
 #define RUNTIME_CXR_H
 
+#include <runtime/definitions.h>
+#include <runtime/types.h>
+#include <runtime/errors.h>
+
 #define C_u_i_car(x)                    (C_block_item(x, 0))
 #define C_u_i_cdr(x)                    (C_block_item(x, 1))
 #define C_u_i_caar(x)                   C_u_i_car( C_u_i_car( x ) )
@@ -31,5 +35,10 @@
 #define C_u_i_cddadr(x)                 C_u_i_cdr( C_u_i_cdadr( x ) )
 #define C_u_i_cdddar(x)                 C_u_i_cdr( C_u_i_cddar( x ) )
 #define C_u_i_cddddr(x)                 C_u_i_cdr( C_u_i_cdddr( x ) )
+
+C_fctexport C_word C_fcall C_i_cadddr(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_caddr(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_cddddr(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_cdddr(C_word x) C_regparm;
 
 #endif /* RUNTIME_CXR_H */
