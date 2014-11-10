@@ -18,7 +18,6 @@
 #include <runtime/pointers.h>
 #include <runtime/reader.h>
 #include <runtime/records.h>
-#include <runtime/scheme.h>
 #include <runtime/symbol_table.h>
 #include <runtime/trace.h>
 #include <runtime/types.h>
@@ -28,6 +27,7 @@
 #include "scheme/vectors.h"
 
 #include "foreign/constructors.h"
+#include "foreign/data.h"
 #include "foreign/locatives.h"
 #include "foreign/predicates.h"
 

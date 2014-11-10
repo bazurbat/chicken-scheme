@@ -20,6 +20,8 @@ set(libchicken_C_SOURCES
     chicken.h
     foreign/constructors.c
     foreign/constructors.h
+    foreign/data.c
+    foreign/data.h
     foreign/locatives.c
     foreign/locatives.h
     foreign/predicates.c
@@ -63,8 +65,6 @@ set(libchicken_C_SOURCES
     runtime/macros.h
     runtime/reader.c
     runtime/reader.h
-    runtime/scheme.c
-    runtime/scheme.h
     runtime/symbol_table.c
     runtime/symbol_table.h
     runtime/trace.c

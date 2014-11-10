@@ -244,4 +244,3 @@ C_regparm C_word C_fcall C_restore_rest(C_word *ptr, int num)
 
     return x;
 }
-

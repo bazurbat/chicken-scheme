@@ -4,7 +4,6 @@
 #include <memory/heap.h>
 #include <runtime/debug.h>
 #include <runtime/macros.h>
-#include <runtime/scheme.h>
 #include <scheduler/interrupts.h>
 #include <scheme/strings.h>
 #include <scheme/vectors.h>

@@ -21,6 +21,8 @@ C_fctexport C_word C_fcall C_i_memq(C_word x, C_word lst) C_regparm;
 C_fctexport C_word C_fcall C_i_memv(C_word x, C_word lst) C_regparm;
 C_fctexport C_word C_fcall C_u_i_memq(C_word x, C_word lst) C_regparm;
 
+C_fctexport C_word C_fcall C_restore_rest(C_word *ptr, int num) C_regparm;
+
 C_inline C_word C_a_i_list1(C_word **a, int n, C_word x1)
 {
     return C_a_pair(a, x1, C_SCHEME_END_OF_LIST);

@@ -2,6 +2,21 @@
 #define MATH_PREDICATES_H
 
 #include "arithmetic.h"
+#include <runtime/definitions.h>
+#include <runtime/types.h>
+
+C_fctexport C_word C_fcall C_i_evenp(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_exactp(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_inexactp(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_negativep(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_oddp(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_positivep(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_zerop(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_u_i_evenp(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_u_i_negativep(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_u_i_oddp(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_u_i_positivep(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_u_i_zerop(C_word x) C_regparm;
 
 C_inline C_word C_i_integerp(C_word x)
 {

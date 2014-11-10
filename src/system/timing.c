@@ -1,10 +1,10 @@
 #include "timing.h"
+#include <foreign/constructors.h>
 #include <math/arithmetic.h>
 #include <math/fixnum.h>
 #include <math/flonum.h>
 #include <memory/gc.h>
 #include <runtime/macros.h>
-#include <runtime/scheme.h>
 #include <runtime/types.h>
 #include <scheme/vectors.h>
 
