@@ -1,7 +1,6 @@
 #include "vectors.h"
 #include <math/fixnum.h>
 #include <memory/gc.h>
-#include <memory/nursery.h>
 #include <runtime/errors.h>
 #include <runtime/types.h>
 #include <scheme/strings.h>

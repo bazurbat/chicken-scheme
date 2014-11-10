@@ -42,8 +42,6 @@ set(libchicken_C_SOURCES
     memory/gc.h
     memory/heap.c
     memory/heap.h
-    memory/nursery.c
-    memory/nursery.h
     runtime/api.c
     runtime/api.h
     runtime/apply.c

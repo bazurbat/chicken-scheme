@@ -1,8 +1,8 @@
 #include "arithmetic.h"
 #include "fixnum.h"
 #include "flonum.h"
+#include <memory/gc.h>
 #include <runtime/macros.h>
-#include <memory/nursery.h>
 
 #include <stdarg.h>
 

@@ -1,6 +1,5 @@
 #include "dload.h"
 #include <memory/gc.h>
-#include <memory/nursery.h>
 #include <runtime/aliases.h>
 #include <runtime/debug.h>
 #include <runtime/errors.h>

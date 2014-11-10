@@ -1,7 +1,7 @@
 #include "lists.h"
 #include <math/arithmetic.h>
 #include <math/fixnum.h>
-#include <memory/nursery.h>
+#include <memory/gc.h>
 #include <runtime/errors.h>
 #include <runtime/types.h>
 

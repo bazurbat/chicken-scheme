@@ -40,7 +40,6 @@
 #include "memory/finalizers.h"
 #include "memory/gc.h"
 #include "memory/heap.h"
-#include "memory/nursery.h"
 
 #include "system/dload.h"
 #include "system/files.h"

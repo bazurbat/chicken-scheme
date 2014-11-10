@@ -1,7 +1,6 @@
 #include "constructors.h"
 #include <math/fixnum.h>
 #include <memory/gc.h>
-#include <memory/nursery.h>
 #include <runtime/macros.h>
 #include <runtime/pointers.h>
 #include <runtime/types.h>
