@@ -3,13 +3,11 @@
 
 #include <runtime/definitions.h>
 
-#ifndef NSIG
-#define NSIG 32
-#endif
+#include <signal.h>
 
 extern volatile C_TLS int serious_signal_occurred;
 
-extern C_TLS int signal_mapping_table[ NSIG ];
+extern C_TLS int signal_mapping_table[NSIG];
 
 extern C_TLS int chicken_is_running;
 

@@ -294,7 +294,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
         C_sigaction(SIGILL, &sa, NULL);
         C_sigaction(SIGSEGV, &sa, NULL);
 #else
-# ifndef _MSC_VER
+# ifndef _WIN32
         C_signal(SIGBUS, global_signal_handler);
 # endif
         C_signal(SIGILL, global_signal_handler);

@@ -3,8 +3,11 @@ project(chicken C ASM)
 include(ChickenBuildTag)
 include(ChickenConfigure)
 
+if(LIBUV_FOUND)
+    include_directories(BEFORE ${LIBUV_INCLUDE_DIRS})
+endif()
+
 include_directories(BEFORE
-    ${LIBUV_INCLUDE_DIRS}
     ${chicken_SOURCE_DIR}
     ${chicken_BINARY_DIR})
 
@@ -76,9 +79,10 @@ set(libchicken_C_SOURCES
     system/signals.h
     system/timing.c
     system/timing.h
-    uvffi.c
-    uvffi.h
 )
+if(LIBUV_FOUND)
+    list(APPEND libchicken_C_SOURCES uvffi.c uvffi.h)
+endif()
 
 if(WIN32)
     set(posix_scm posixwin.scm)
@@ -116,8 +120,10 @@ add_chicken_sources(libchicken_SOURCES
 
 add_library(libchicken SHARED ${libchicken_SOURCES})
 target_link_libraries(libchicken
-    ${CHICKEN_EXTRA_LIBRARIES}
-    ${LIBUV_LIBRARIES})
+    ${CHICKEN_EXTRA_LIBRARIES})
+if(LIBUV_FOUND)
+    target_link_libraries(libchicken ${LIBUV_LIBRARIES})
+endif()
 
 set(CHICKEN_LIBRARIES libchicken ${CHICKEN_EXTRA_LIBRARIES})
 

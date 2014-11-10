@@ -68,9 +68,9 @@
 
 #include <ctype.h>
 
-/* #if defined(HAVE_INTTYPES_H) */
-/* # include <inttypes.h> */
-/* #endif */
+#if defined(HAVE_INTTYPES_H)
+# include <inttypes.h>
+#endif
 
 #if defined(HAVE_STDLIB_H)
 #include <stdlib.h>

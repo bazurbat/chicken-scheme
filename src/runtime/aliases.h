@@ -108,7 +108,7 @@
 #ifdef __linux__
 extern double round(double);
 extern double trunc(double);
-#elif defined(_MSC_VER)
+#elif _MSC_VER && _MSC_VER < 1800
 #define round(fp) ((int)((fp) >= 0 ? (fp) + 0.5 : (fp) - 0.5))
 #define trunc(fp) ((int)(fp))
 #endif

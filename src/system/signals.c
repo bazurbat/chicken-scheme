@@ -4,19 +4,13 @@
 #include <runtime/errors.h>
 #include <scheduler/interrupts.h>
 
-#include <signal.h>
-
-#ifndef SIGBUS
-# define SIGBUS                      0
-#endif
-
 #ifdef HAVE_SIGPROCMASK
 # define C_sigprocmask             sigprocmask
 #endif
 
 volatile C_TLS int serious_signal_occurred = 0;
 
-C_TLS int signal_mapping_table[ NSIG ];
+C_TLS int signal_mapping_table[NSIG];
 
 C_TLS int chicken_is_running;
 
