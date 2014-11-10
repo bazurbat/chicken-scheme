@@ -3,8 +3,8 @@
 #include <memory/gc.h>
 #include <memory/nursery.h>
 #include <runtime/errors.h>
-#include <runtime/strings.h>
 #include <runtime/types.h>
+#include <scheme/strings.h>
 
 C_regparm C_word C_fcall C_bytevector(C_word **ptr, int len, C_char *str)
 {

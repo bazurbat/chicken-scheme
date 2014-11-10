@@ -20,11 +20,12 @@
 #include <runtime/reader.h>
 #include <runtime/records.h>
 #include <runtime/scheme.h>
-#include <runtime/strings.h>
 #include <runtime/symbol_table.h>
 #include <runtime/trace.h>
 #include <runtime/types.h>
-#include <runtime/vectors.h>
+
+#include "scheme/strings.h"
+#include "scheme/vectors.h"
 
 #include "foreign/constructors.h"
 #include "foreign/locatives.h"

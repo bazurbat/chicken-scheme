@@ -1,7 +1,7 @@
-#ifndef RUNTIME_VECTORS_H
-#define RUNTIME_VECTORS_H
+#ifndef SCHEME_VECTORS_H
+#define SCHEME_VECTORS_H
 
-#include "definitions.h"
+#include <runtime/definitions.h>
 #include <runtime/types.h>
 
 #define C_a_i_vector                    C_vector
@@ -209,4 +209,4 @@ C_inline void *C_srfi_4_vector_or_null(C_word x)
     return C_truep(x) ? C_srfi_4_vector(x) : NULL;
 }
 
-#endif /* RUNTIME_VECTORS_H */
+#endif /* SCHEME_VECTORS_H */

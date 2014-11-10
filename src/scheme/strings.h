@@ -1,8 +1,8 @@
-#ifndef RUNTIME_STRINGS_H
-#define RUNTIME_STRINGS_H
+#ifndef SCHEME_STRINGS_H
+#define SCHEME_STRINGS_H
 
-#include "definitions.h"
-#include "types.h"
+#include <runtime/definitions.h>
+#include <runtime/types.h>
 
 C_fctexport C_word C_fcall C_string(C_word **ptr, int len, C_char *str) C_regparm;
 C_fctexport C_word C_fcall C_static_string(C_word **ptr, int len, C_char *str) C_regparm;
@@ -97,4 +97,4 @@ C_inline size_t C_strlcat(char *dst, const char *src, size_t sz)
 }
 #endif
 
-#endif /* RUNTIME_STRINGS_H */
+#endif /* SCHEME_STRINGS_H */

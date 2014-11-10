@@ -5,9 +5,9 @@
 #include <runtime/debug.h>
 #include <runtime/macros.h>
 #include <runtime/scheme.h>
-#include <runtime/strings.h>
-#include <runtime/vectors.h>
 #include <scheduler/interrupts.h>
+#include <scheme/strings.h>
+#include <scheme/vectors.h>
 
 #include <time.h>
 

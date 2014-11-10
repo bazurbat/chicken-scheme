@@ -6,7 +6,7 @@
 #include <runtime/macros.h>
 #include <runtime/scheme.h>
 #include <runtime/types.h>
-#include <runtime/vectors.h>
+#include <scheme/vectors.h>
 
 #if !defined(C_NONUNIX)
 # include <sys/time.h>
