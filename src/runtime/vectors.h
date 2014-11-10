@@ -2,6 +2,7 @@
 #define RUNTIME_VECTORS_H
 
 #include "definitions.h"
+#include <runtime/types.h>
 
 #define C_a_i_vector                    C_vector
 
@@ -77,6 +78,19 @@
 #define C_vector_to_closure(v)          (C_block_header(v) |= C_CLOSURE_TYPE, C_SCHEME_UNDEFINED)
 #define C_string_to_bytevector(s)       (C_block_header(s) = C_header_size(s) | C_BYTEVECTOR_TYPE, C_SCHEME_UNDEFINED)
 #define C_string_to_lambdainfo(s)       (C_block_header(s) = C_header_size(s) | C_LAMBDA_INFO_TYPE, C_SCHEME_UNDEFINED)
+
+C_fctexport C_word C_fcall C_bytevector(C_word **ptr, int len, C_char *str) C_regparm;
+C_fctexport C_word C_fcall C_static_bytevector(C_word **ptr, int len, C_char *str) C_regparm;
+
+C_fctexport C_word C_vector(C_word **ptr, int n, ...);
+
+C_fctexport C_word C_fcall C_a_i_bytevector(C_word **a, int c, C_word x) C_regparm;
+
+C_fctexport C_word C_fcall C_i_vector_length(C_word v) C_regparm;
+C_fctexport C_word C_fcall C_i_vector_ref(C_word v, C_word i) C_regparm;
+C_fctexport C_word C_fcall C_i_vector_set(C_word v, C_word i, C_word x) C_regparm;
+
+C_fctexport C_word C_fcall C_restore_rest_vector(C_word *ptr, int num) C_regparm;
 
 C_inline C_word C_a_i_vector1(C_word **ptr, int n, C_word x1)
 {

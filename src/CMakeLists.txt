@@ -62,15 +62,17 @@ set(libchicken_C_SOURCES
     runtime/errors.h
     runtime/macros.h
     runtime/reader.c
-    runtime/strings.h
-    runtime/strings.c
     runtime/reader.h
     runtime/scheme.c
     runtime/scheme.h
+    runtime/strings.c
+    runtime/strings.h
     runtime/symbol_table.c
     runtime/symbol_table.h
     runtime/trace.c
     runtime/trace.h
+    runtime/vectors.c
+    runtime/vectors.h
     scheduler/interrupts.c
     scheduler/interrupts.h
     system/dload.c

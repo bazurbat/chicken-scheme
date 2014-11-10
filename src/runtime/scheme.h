@@ -6,15 +6,12 @@
 #include "cxr.h"
 
 C_fctexport C_word C_fcall C_static_lambda_info(C_word **ptr, int len, C_char *str) C_regparm;
-C_fctexport C_word C_fcall C_bytevector(C_word **ptr, int len, C_char *str) C_regparm;
-C_fctexport C_word C_fcall C_static_bytevector(C_word **ptr, int len, C_char *str) C_regparm;
 C_fctexport C_word C_closure(C_word **ptr, int cells, C_word proc, ...);
 C_fctexport C_word C_fcall C_number(C_word **ptr, double n) C_regparm;
 C_fctexport C_word C_fcall C_mpointer(C_word **ptr, void *mp) C_regparm;
 C_fctexport C_word C_fcall C_mpointer_or_false(C_word **ptr, void *mp) C_regparm;
 C_fctexport C_word C_fcall C_taggedmpointer(C_word **ptr, C_word tag, void *mp) C_regparm;
 C_fctexport C_word C_fcall C_taggedmpointer_or_false(C_word **ptr, C_word tag, void *mp) C_regparm;
-C_fctexport C_word C_vector(C_word **ptr, int n, ...);
 C_fctexport C_word C_structure(C_word **ptr, int n, ...);
 
 C_fctexport C_word C_fcall C_set_print_precision(C_word n) C_regparm;
@@ -23,7 +20,6 @@ C_fctexport C_word C_fcall C_get_print_precision(void) C_regparm;
 C_fctexport C_word C_a_i_list(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_port(C_word **a, int c);
 C_fctexport C_word C_a_i_record(C_word **a, int c, ...);
-C_fctexport C_word C_fcall C_a_i_bytevector(C_word **a, int c, C_word x) C_regparm;
 C_word C_fcall C_a_i_smart_mpointer(C_word **ptr, int c, C_word x);
 
 
@@ -51,9 +47,6 @@ C_fctexport C_word C_fcall C_i_oddp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_positivep(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_set_car(C_word p, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_set_cdr(C_word p, C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_vector_length(C_word v) C_regparm;
-C_fctexport C_word C_fcall C_i_vector_ref(C_word v, C_word i) C_regparm;
-C_fctexport C_word C_fcall C_i_vector_set(C_word v, C_word i, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_zerop(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_u_i_evenp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_u_i_length(C_word lst) C_regparm;
@@ -66,7 +59,6 @@ C_fctexport C_word C_fcall C_u_i_zerop(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_bit_setp(C_word n, C_word i) C_regparm;
 
 C_fctexport C_word C_fcall C_restore_rest(C_word *ptr, int num) C_regparm;
-C_fctexport C_word C_fcall C_restore_rest_vector(C_word *ptr, int num) C_regparm;
 
 C_inline C_word C_u_i_assq(C_word x, C_word lst)
 {
