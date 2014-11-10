@@ -4,6 +4,9 @@
 #include <runtime/definitions.h>
 #include <runtime/types.h>
 
+C_fctexport C_word C_fcall C_set_print_precision(C_word n) C_regparm;
+C_fctexport C_word C_fcall C_get_print_precision(void) C_regparm;
+
 C_fctexport C_word C_fcall C_string(C_word **ptr, int len, C_char *str) C_regparm;
 C_fctexport C_word C_fcall C_static_string(C_word **ptr, int len, C_char *str) C_regparm;
 

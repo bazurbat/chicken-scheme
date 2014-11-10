@@ -14,43 +14,20 @@ C_fctexport C_word C_fcall C_taggedmpointer(C_word **ptr, C_word tag, void *mp) 
 C_fctexport C_word C_fcall C_taggedmpointer_or_false(C_word **ptr, C_word tag, void *mp) C_regparm;
 C_fctexport C_word C_structure(C_word **ptr, int n, ...);
 
-C_fctexport C_word C_fcall C_set_print_precision(C_word n) C_regparm;
-C_fctexport C_word C_fcall C_get_print_precision(void) C_regparm;
-
-C_fctexport C_word C_a_i_list(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_port(C_word **a, int c);
 C_fctexport C_word C_a_i_record(C_word **a, int c, ...);
 C_word C_fcall C_a_i_smart_mpointer(C_word **ptr, int c, C_word x);
 
 
-C_fctexport C_word C_fcall C_i_assoc(C_word x, C_word lst) C_regparm;
-C_fctexport C_word C_fcall C_i_assq(C_word x, C_word lst) C_regparm;
-C_fctexport C_word C_fcall C_i_assv(C_word x, C_word lst) C_regparm;
 C_fctexport C_word C_fcall C_i_block_ref(C_word x, C_word i) C_regparm;
-C_fctexport C_word C_fcall C_i_caar(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_cadr(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_car(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_cdar(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_cddr(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_cdr(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_evenp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_exactp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_inexactp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_length(C_word lst) C_regparm;
-C_fctexport C_word C_fcall C_i_list_tail(C_word lst, C_word i) C_regparm;
-C_fctexport C_word C_fcall C_i_listp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_member(C_word x, C_word lst) C_regparm;
-C_fctexport C_word C_fcall C_i_memq(C_word x, C_word lst) C_regparm;
-C_fctexport C_word C_fcall C_i_memv(C_word x, C_word lst) C_regparm;
 C_fctexport C_word C_fcall C_i_negativep(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_oddp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_positivep(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_set_car(C_word p, C_word x) C_regparm;
-C_fctexport C_word C_fcall C_i_set_cdr(C_word p, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_zerop(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_u_i_evenp(C_word x) C_regparm;
-C_fctexport C_word C_fcall C_u_i_length(C_word lst) C_regparm;
-C_fctexport C_word C_fcall C_u_i_memq(C_word x, C_word lst) C_regparm;
 C_fctexport C_word C_fcall C_u_i_negativep(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_u_i_oddp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_u_i_positivep(C_word x) C_regparm;
@@ -59,28 +36,5 @@ C_fctexport C_word C_fcall C_u_i_zerop(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_bit_setp(C_word n, C_word i) C_regparm;
 
 C_fctexport C_word C_fcall C_restore_rest(C_word *ptr, int num) C_regparm;
-
-C_inline C_word C_u_i_assq(C_word x, C_word lst)
-{
-    C_word a;
-
-    while(!C_immediatep(lst)) {
-        a = C_u_i_car(lst);
-
-        if(C_u_i_car(a) == x) return a;
-        else lst = C_u_i_cdr(lst);
-    }
-
-    return C_SCHEME_FALSE;
-}
-
-C_inline C_word C_i_eqvp(C_word x, C_word y)
-{
-    return
-        C_mk_bool(x == y ||
-                  (!C_immediatep(x) && !C_immediatep(y) &&
-                   C_block_header(x) == C_FLONUM_TAG && C_block_header(y) == C_FLONUM_TAG &&
-                   C_flonum_magnitude(x) == C_flonum_magnitude(y) ) );
-}
 
 #endif /* RUNTIME_SCHEME_H */

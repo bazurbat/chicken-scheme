@@ -1,4 +1,5 @@
 #include "cxr.h"
+#include <scheme/pairs.h>
 
 C_regparm C_word C_fcall C_i_cadddr(C_word x)
 {

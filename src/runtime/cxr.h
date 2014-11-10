@@ -5,12 +5,6 @@
 #include <runtime/types.h>
 #include <runtime/errors.h>
 
-#define C_u_i_car(x)                    (C_block_item(x, 0))
-#define C_u_i_cdr(x)                    (C_block_item(x, 1))
-#define C_u_i_caar(x)                   C_u_i_car( C_u_i_car( x ) )
-#define C_u_i_cadr(x)                   C_u_i_car( C_u_i_cdr( x ) )
-#define C_u_i_cdar(x)                   C_u_i_cdr( C_u_i_car( x ) )
-#define C_u_i_cddr(x)                   C_u_i_cdr( C_u_i_cdr( x ) )
 #define C_u_i_caaar(x)                  C_u_i_car( C_u_i_caar( x ) )
 #define C_u_i_caadr(x)                  C_u_i_car( C_u_i_cadr( x ) )
 #define C_u_i_cadar(x)                  C_u_i_car( C_u_i_cdar( x ) )

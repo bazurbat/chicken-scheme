@@ -1,8 +1,25 @@
-#ifndef RUNTIME_LISTS_H
-#define RUNTIME_LISTS_H
+#ifndef SCHEME_LISTS_H
+#define SCHEME_LISTS_H
 
-#include "definitions.h"
-#include "types.h"
+#include "pairs.h"
+#include <runtime/types.h>
+#include <runtime/definitions.h>
+
+C_fctexport C_word C_a_i_list(C_word **a, int c, ...);
+C_fctexport C_word C_fcall C_i_list_tail(C_word lst, C_word i) C_regparm;
+C_fctexport C_word C_fcall C_i_listp(C_word x) C_regparm;
+
+C_fctexport C_word C_fcall C_i_length(C_word lst) C_regparm;
+C_fctexport C_word C_fcall C_u_i_length(C_word lst) C_regparm;
+
+C_fctexport C_word C_fcall C_i_assoc(C_word x, C_word lst) C_regparm;
+C_fctexport C_word C_fcall C_i_assq(C_word x, C_word lst) C_regparm;
+C_fctexport C_word C_fcall C_i_assv(C_word x, C_word lst) C_regparm;
+
+C_fctexport C_word C_fcall C_i_member(C_word x, C_word lst) C_regparm;
+C_fctexport C_word C_fcall C_i_memq(C_word x, C_word lst) C_regparm;
+C_fctexport C_word C_fcall C_i_memv(C_word x, C_word lst) C_regparm;
+C_fctexport C_word C_fcall C_u_i_memq(C_word x, C_word lst) C_regparm;
 
 C_inline C_word C_a_i_list1(C_word **a, int n, C_word x1)
 {
@@ -83,4 +100,27 @@ C_inline C_word C_a_i_list8(C_word **a, int n, C_word x1, C_word x2, C_word x3, 
     return C_a_pair(a, x1, x);
 }
 
-#endif /* RUNTIME_LISTS_H */
+C_inline C_word C_u_i_assq(C_word x, C_word lst)
+{
+    C_word a;
+
+    while(!C_immediatep(lst)) {
+        a = C_u_i_car(lst);
+
+        if(C_u_i_car(a) == x) return a;
+        else lst = C_u_i_cdr(lst);
+    }
+
+    return C_SCHEME_FALSE;
+}
+
+C_inline C_word C_i_eqvp(C_word x, C_word y)
+{
+    return
+        C_mk_bool(x == y ||
+                  (!C_immediatep(x) && !C_immediatep(y) &&
+                   C_block_header(x) == C_FLONUM_TAG && C_block_header(y) == C_FLONUM_TAG &&
+                   C_flonum_magnitude(x) == C_flonum_magnitude(y) ) );
+}
+
+#endif /* SCHEME_LISTS_H */

@@ -71,6 +71,10 @@ set(libchicken_C_SOURCES
     runtime/trace.h
     scheduler/interrupts.c
     scheduler/interrupts.h
+    scheme/lists.c
+    scheme/lists.h
+    scheme/pairs.c
+    scheme/pairs.h
     scheme/strings.c
     scheme/strings.h
     scheme/vectors.c

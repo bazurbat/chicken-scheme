@@ -14,7 +14,6 @@
 #include <runtime/debug.h>
 #include <runtime/definitions.h>
 #include <runtime/errors.h>
-#include <runtime/lists.h>
 #include <runtime/macros.h>
 #include <runtime/pointers.h>
 #include <runtime/reader.h>
@@ -24,6 +23,7 @@
 #include <runtime/trace.h>
 #include <runtime/types.h>
 
+#include "scheme/lists.h"
 #include "scheme/strings.h"
 #include "scheme/vectors.h"
 
