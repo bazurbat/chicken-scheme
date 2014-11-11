@@ -1,11 +1,18 @@
-# runtime
+set(sources
 
-set(runtime_MODULES
+    aliases
+    api
+    check
+    compiler
+    debug
+    definitions
+    errors
+    macros
+    reader
+    symbol_table
+    trace
+    types
+
 )
 
-foreach(name ${runtime_MODULES})
-    add_chicken_library(runtime.${name} MODULE
-        SOURCES ${name}.scm
-        EMIT_IMPORTS runtime.${name}
-        OPTIONS ${LIBRARY_OPTIONS} -include-path ${chicken_SOURCE_DIR})
-endforeach()
+_add_libchicken_sources(runtime ${sources})

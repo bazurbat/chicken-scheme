@@ -15,81 +15,31 @@ include_directories(BEFORE
 
 # runtime
 
+macro(_add_libchicken_sources dir)
+    foreach(s ${ARGN})
+        list(APPEND libchicken_C_SOURCES ${dir}/${s}.h)
+        if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${s}.c)
+            list(APPEND libchicken_C_SOURCES ${dir}/${s}.c)
+        endif()
+        install(FILES ${s}.h DESTINATION ${INSTALL_INCLUDEDIR}/${dir})
+    endforeach()
+
+    set(libchicken_C_SOURCES ${libchicken_C_SOURCES} PARENT_SCOPE)
+endmacro()
+
 set(libchicken_C_SOURCES
     ${CHICKEN_APPLY_HACK}
-    chicken.h
-    foreign/constructors.c
-    foreign/callbacks.c
-    foreign/callbacks.h
-    foreign/constructors.h
-    foreign/data.c
-    foreign/data.h
-    foreign/locatives.c
-    foreign/locatives.h
-    foreign/predicates.c
-    foreign/predicates.h
-    foreign/records.c
-    foreign/records.h
-    math/arithmetic.c
-    math/arithmetic.h
-    math/constructors.c
-    math/constructors.h
-    math/fixnum.c
-    math/fixnum.h
-    math/flonum.c
-    math/flonum.h
-    math/predicates.c
-    math/predicates.h
-    memory/finalizers.c
-    memory/finalizers.h
-    memory/gc.c
-    memory/gc.h
-    memory/heap.c
-    memory/heap.h
-    runtime/api.c
-    runtime/api.h
-    runtime/check.c
-    runtime/check.h
-    runtime/compiler.c
-    runtime/compiler.h
-    runtime/debug.c
-    runtime/debug.h
-    runtime/errors.c
-    runtime/errors.h
-    runtime/macros.h
-    runtime/reader.c
-    runtime/reader.h
-    runtime/symbol_table.c
-    runtime/symbol_table.h
-    runtime/trace.c
-    runtime/trace.h
-    scheduler/interrupts.c
-    scheduler/interrupts.h
-    scheme/apply.c
-    scheme/apply.h
-    scheme/continuations.c
-    scheme/continuations.h
-    scheme/cxr.c
-    scheme/cxr.h
-    scheme/lists.c
-    scheme/lists.h
-    scheme/pairs.c
-    scheme/pairs.h
-    scheme/strings.c
-    scheme/strings.h
-    scheme/vectors.c
-    scheme/vectors.h
-    system/dload.c
-    system/dload.h
-    system/files.c
-    system/files.h
-    system/platform.c
-    system/platform.h
-    system/signals.c
-    system/signals.h
-    system/timing.c
-    system/timing.h
-)
+    ${chicken_HEADERS}
+    chicken.h)
+
+add_subdirectory(foreign)
+add_subdirectory(library)
+add_subdirectory(math)
+add_subdirectory(memory)
+add_subdirectory(runtime)
+add_subdirectory(scheduler)
+add_subdirectory(scheme)
+add_subdirectory(system)
 
 if(LIBUV_FOUND)
     list(APPEND libchicken_C_SOURCES uvffi.c uvffi.h)
@@ -122,7 +72,7 @@ set(libchicken_SCM_SOURCES
     srfi-4.scm
     stub.scm
     utils.scm
-)
+    )
 
 add_chicken_sources(libchicken_SOURCES
     SOURCES ${libchicken_SCM_SOURCES}
@@ -146,9 +96,6 @@ set_target_properties(libchicken PROPERTIES
     OUTPUT_NAME lib${CHICKEN_PROGRAM_PREFIX}chicken
     VERSION ${API_VERSION})
 
-add_subdirectory(runtime)
-add_subdirectory(library)
-
 # compiler
 
 set(compiler_MODULES
@@ -161,7 +108,7 @@ set(compiler_MODULES
     optimizer
     scrutinizer
     support
-)
+    )
 
 set(compiler_SOURCES)
 
@@ -195,7 +142,7 @@ set_target_properties(csi PROPERTIES
 
 set(utility_PROGRAMS
     chicken-profile
-)
+    )
 
 foreach(program ${utility_PROGRAMS})
     add_chicken_executable(${program} ${program}.scm
@@ -253,7 +200,7 @@ set(import_LIBRARIES
     srfi-1.import
     srfi-4.import
     utils.import
-)
+    )
 
 foreach(lib ${import_LIBRARIES})
     set_property(SOURCE ${lib}.scm PROPERTY chicken_import_library TRUE)
