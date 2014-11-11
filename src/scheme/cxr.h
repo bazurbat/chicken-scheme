@@ -1,5 +1,5 @@
-#ifndef RUNTIME_CXR_H
-#define RUNTIME_CXR_H
+#ifndef SCHEME_CXR_H
+#define SCHEME_CXR_H
 
 #include <runtime/definitions.h>
 #include <runtime/types.h>
@@ -35,4 +35,4 @@ C_fctexport C_word C_fcall C_i_caddr(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_cddddr(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_cdddr(C_word x) C_regparm;
 
-#endif /* RUNTIME_CXR_H */
+#endif /* SCHEME_CXR_H */

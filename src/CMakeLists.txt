@@ -56,8 +56,6 @@ set(libchicken_C_SOURCES
     runtime/compiler.h
     runtime/continuations.c
     runtime/continuations.h
-    runtime/cxr.c
-    runtime/cxr.h
     runtime/debug.c
     runtime/debug.h
     runtime/errors.c
@@ -71,6 +69,8 @@ set(libchicken_C_SOURCES
     runtime/trace.h
     scheduler/interrupts.c
     scheduler/interrupts.h
+    scheme/cxr.c
+    scheme/cxr.h
     scheme/lists.c
     scheme/lists.h
     scheme/pairs.c

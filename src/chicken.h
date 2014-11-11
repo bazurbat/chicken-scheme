@@ -10,7 +10,6 @@
 #include <runtime/check.h>
 #include <runtime/compiler.h>
 #include <runtime/continuations.h>
-#include <runtime/cxr.h>
 #include <runtime/debug.h>
 #include <runtime/definitions.h>
 #include <runtime/errors.h>
@@ -20,6 +19,7 @@
 #include <runtime/trace.h>
 #include <runtime/types.h>
 
+#include "scheme/cxr.h"
 #include "scheme/lists.h"
 #include "scheme/strings.h"
 #include "scheme/vectors.h"
