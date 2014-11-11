@@ -2,6 +2,8 @@
 #include "symbol_table.h"
 #include <chicken.h>
 
+#define C_vfprintf                 vfprintf
+
 C_TLS C_word
     error_hook_symbol,
     error_location;

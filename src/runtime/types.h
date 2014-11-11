@@ -90,9 +90,6 @@ typedef struct C_ptable_entry_struct
 #define C_make_character(c)        (((((C_uword)(c)) & C_CHAR_BIT_MASK) << C_CHAR_SHIFT) | C_CHARACTER_BITS)
 #define C_character_code(x)        (((C_word)(x) >> C_CHAR_SHIFT) & C_CHAR_BIT_MASK)
 
-/* XXX Sometimes this is (ab)used on bytevectors (ie, blob=? uses string_compare) */
-#define C_c_string(x)              ((C_char *)C_data_pointer(x))
-
 #define C_truep(x)                 ((x) != C_SCHEME_FALSE)
 #define C_immediatep(x)            ((x) & C_IMMEDIATE_MARK_BITS)
 #define C_mk_bool(x)               ((x) ? C_SCHEME_TRUE : C_SCHEME_FALSE)
@@ -189,8 +186,6 @@ typedef struct C_ptable_entry_struct
 #define C_poke_double(b, i, n)          (((double *)C_data_pointer(b))[ C_unfix(i) ] = C_c_double(n), C_SCHEME_UNDEFINED)
 #define C_poke_c_string(b, i, from, s)  (C_strlcpy((char *)C_block_item(b, C_unfix(i)), C_data_pointer(from), s), C_SCHEME_UNDEFINED)
 #define C_peek_byte(ptr, i)             C_fix(((unsigned char *)C_u_i_car(ptr))[ C_unfix(i) ])
-#define C_dupstr(s)                     C_strdup(C_data_pointer(s))
-#define C_qfree(ptr)                    (C_free(C_c_pointer_nn(ptr)), C_SCHEME_UNDEFINED)
 
 #define C_tty_portp(p)                  C_mk_bool(C_isatty(fileno(C_port_file(p))))
 
@@ -202,9 +197,7 @@ typedef struct C_ptable_entry_struct
 # define C_a_i_cons(a, n, car, cdr)     C_a_pair(a, car, cdr)
 #endif /* HAVE_STATEMENT_EXPRESSIONS */
 
-#define C_a_int_to_num(ptr, n, i)       C_int_to_num(ptr, i)
 #define C_a_unsigned_int_to_num(ptr, n, i)  C_unsigned_int_to_num(ptr, i)
-#define C_list                          C_a_i_list
 #define C_i_setslot(x, i, y)            (C_mutate(&C_block_item(x, C_unfix(i)), y), C_SCHEME_UNDEFINED)
 #define C_i_set_i_slot(x, i, y)         (C_set_block_item(x, C_unfix(i), y), C_SCHEME_UNDEFINED)
 #define C_u_i_set_car(p, x)             (C_mutate(&C_u_i_car(p), x), C_SCHEME_UNDEFINED)

@@ -7,6 +7,11 @@
 
 #include <errno.h>
 
+#define C_strncmp                  strncmp
+#define C_strchr                   strchr
+#define C_strtod                   strtod
+#define C_strpbrk                  strpbrk
+
 #define STRING_BUFFER_SIZE             4096
 static C_TLS C_char buffer[ STRING_BUFFER_SIZE ];
 

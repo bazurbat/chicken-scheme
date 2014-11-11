@@ -1,6 +1,5 @@
 #include "dload.h"
 #include <memory/gc.h>
-#include <runtime/aliases.h>
 #include <runtime/debug.h>
 #include <runtime/errors.h>
 #include <runtime/macros.h>
@@ -10,6 +9,18 @@
 #ifdef _WIN32
 # include <windows.h>
 #endif
+
+#define C_dlopen                   dlopen
+#define C_dlclose                  dlclose
+#define C_dlsym                    dlsym
+#define C_strerror                 strerror
+
+#if defined(_WIN32)
+# define C_strncasecmp              _strnicmp
+#else
+# define C_strncasecmp              strncasecmp
+#endif
+#define C_strdup                   strdup
 
 #if !defined(NO_DLOAD2) && (defined(HAVE_DLFCN_H) || defined(HAVE_DL_H) || (defined(HAVE_LOADLIBRARY) && defined(HAVE_GETPROCADDRESS)))
 static void dload_2(void *dummy) C_noret;

@@ -2,6 +2,7 @@
 #include <math/fixnum.h>
 #include <runtime/macros.h>
 #include <runtime/types.h>
+#include <scheme/strings.h>
 
 #include <errno.h>
 #ifdef HAVE_SYS_STAT_H
@@ -20,6 +21,11 @@
 #ifndef EOVERFLOW
 # define EOVERFLOW  0
 #endif
+
+#define C_stdin                    stdin
+#define C_strncpy                  strncpy
+#define C_fopen                    fopen
+#define C_system                   system
 
 static C_TLS C_char buffer[ STRING_BUFFER_SIZE ];
 

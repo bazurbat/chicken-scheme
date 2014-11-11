@@ -4,6 +4,9 @@
 #include <runtime/definitions.h>
 #include <runtime/types.h>
 
+/* XXX Sometimes this is (ab)used on bytevectors (ie, blob=? uses string_compare) */
+#define C_c_string(x)              ((C_char *)C_data_pointer(x))
+
 C_fctexport C_word C_fcall C_set_print_precision(C_word n) C_regparm;
 C_fctexport C_word C_fcall C_get_print_precision(void) C_regparm;
 
