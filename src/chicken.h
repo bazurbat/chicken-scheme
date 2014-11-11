@@ -5,11 +5,8 @@
 
 #include <runtime/aliases.h>
 #include <runtime/api.h>
-#include <runtime/apply.h>
-#include <runtime/callbacks.h>
 #include <runtime/check.h>
 #include <runtime/compiler.h>
-#include <runtime/continuations.h>
 #include <runtime/debug.h>
 #include <runtime/definitions.h>
 #include <runtime/errors.h>
@@ -19,11 +16,14 @@
 #include <runtime/trace.h>
 #include <runtime/types.h>
 
+#include "scheme/apply.h"
+#include "scheme/continuations.h"
 #include "scheme/cxr.h"
 #include "scheme/lists.h"
 #include "scheme/strings.h"
 #include "scheme/vectors.h"
 
+#include "foreign/callbacks.h"
 #include "foreign/constructors.h"
 #include "foreign/data.h"
 #include "foreign/locatives.h"

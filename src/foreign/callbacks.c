@@ -1,6 +1,18 @@
 #include "callbacks.h"
-#include <chicken.h>
+#include <foreign/constructors.h>
+#include <memory/gc.h>
+#include <runtime/api.h>
+#include <runtime/debug.h>
+#include <runtime/errors.h>
+#include <runtime/types.h>
+#include <scheme/apply.h>
+#include <scheme/pairs.h>
+#include <system/signals.h>
+
 #include <assert.h>
+#ifdef HAVE_SIGSETJMP
+# include <setjmp.h>
+#endif
 
 C_TLS int callback_continuation_level;
 

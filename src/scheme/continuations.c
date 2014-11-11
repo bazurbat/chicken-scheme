@@ -1,5 +1,13 @@
 #include "continuations.h"
-#include <chicken.h>
+#include <foreign/constructors.h>
+#include <memory/gc.h>
+#include <runtime/compiler.h>
+#include <runtime/debug.h>
+#include <runtime/errors.h>
+#include <runtime/macros.h>
+#include <runtime/types.h>
+#include <scheme/apply.h>
+#include <scheme/pairs.h>
 
 #define RELAX_MULTIVAL_CHECK
 

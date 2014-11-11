@@ -1,7 +1,7 @@
-#ifndef RUNTIME_CONTINUATIONS_H
-#define RUNTIME_CONTINUATIONS_H
+#ifndef SCHEME_CONTINUATIONS_H
+#define SCHEME_CONTINUATIONS_H
 
-#include "definitions.h"
+#include <runtime/definitions.h>
 
 C_ccall void call_cc_wrapper(C_word c, C_word closure, C_word k, C_word result) C_noret;
 C_ccall void call_cc_values_wrapper(C_word c, C_word closure, C_word k, ...) C_noret;
@@ -16,4 +16,4 @@ C_fctexport void C_ccall C_u_call_with_values(C_word c, C_word closure, C_word k
 C_ccall void values_continuation(C_word c, C_word closure, C_word dummy, ...) C_noret;
 C_ccall void termination_continuation(C_word c, C_word self, C_word result) C_noret;
 
-#endif /* RUNTIME_CONTINUATIONS_H */
+#endif /* SCHEME_CONTINUATIONS_H */

@@ -1,7 +1,7 @@
-#ifndef RUNTIME_CALLBACKS_H
-#define RUNTIME_CALLBACKS_H
+#ifndef FOREIGN_CALLBACKS_H
+#define FOREIGN_CALLBACKS_H
 
-#include "definitions.h"
+#include <runtime/definitions.h>
 
 extern C_TLS int callback_continuation_level;
 
@@ -14,4 +14,4 @@ C_fctexport C_word C_fcall C_callback(C_word closure, int argc);
 C_fctexport C_word C_fcall C_callback_wrapper(void *proc, int argc);
 C_fctexport void C_fcall C_callback_adjust_stack(C_word *base, int size);
 
-#endif /* RUNTIME_CALLBACKS_H */
+#endif /* FOREIGN_CALLBACKS_H */

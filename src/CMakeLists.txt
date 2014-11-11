@@ -19,6 +19,8 @@ set(libchicken_C_SOURCES
     ${CHICKEN_APPLY_HACK}
     chicken.h
     foreign/constructors.c
+    foreign/callbacks.c
+    foreign/callbacks.h
     foreign/constructors.h
     foreign/data.c
     foreign/data.h
@@ -46,16 +48,10 @@ set(libchicken_C_SOURCES
     memory/heap.h
     runtime/api.c
     runtime/api.h
-    runtime/apply.c
-    runtime/apply.h
-    runtime/callbacks.c
-    runtime/callbacks.h
     runtime/check.c
     runtime/check.h
     runtime/compiler.c
     runtime/compiler.h
-    runtime/continuations.c
-    runtime/continuations.h
     runtime/debug.c
     runtime/debug.h
     runtime/errors.c
@@ -69,6 +65,10 @@ set(libchicken_C_SOURCES
     runtime/trace.h
     scheduler/interrupts.c
     scheduler/interrupts.h
+    scheme/apply.c
+    scheme/apply.h
+    scheme/continuations.c
+    scheme/continuations.h
     scheme/cxr.c
     scheme/cxr.h
     scheme/lists.c

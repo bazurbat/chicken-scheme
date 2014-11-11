@@ -1,9 +1,9 @@
 #include "interrupts.h"
 #include <math/fixnum.h>
 #include <memory/gc.h>
-#include <runtime/apply.h>
 #include <runtime/errors.h>
 #include <runtime/types.h>
+#include <scheme/apply.h>
 #include <system/timing.h>
 
 C_TLS double last_interrupt_latency;

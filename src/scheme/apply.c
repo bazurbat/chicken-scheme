@@ -1,5 +1,10 @@
 #include "apply.h"
-#include <chicken.h>
+#include <memory/gc.h>
+#include <runtime/errors.h>
+#include <runtime/macros.h>
+#include <scheme/pairs.h>
+
+#include <stdarg.h>
 
 void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...)
 {
