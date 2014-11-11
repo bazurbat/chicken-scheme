@@ -576,7 +576,7 @@ scavenge:
         *x = (C_word)p2;
         p2->header = h;
         p->header = ptr_to_fptr((C_uword)p2);
-        C_memcpy(p2->data, p->data, bytes);
+        memcpy(p2->data, p->data, bytes);
     }
     else { /* (major GC) */
            /* Increase counter (saturated at 2) if weakly held item (someone pointed to this object): */
@@ -927,7 +927,7 @@ C_regparm void C_fcall really_remark(C_word *x)
     p2->header = h;
     assert(!is_fptr(h));
     p->header = ptr_to_fptr((C_word)p2);
-    C_memcpy(p2->data, p->data, bytes);
+    memcpy(p2->data, p->data, bytes);
 }
 
 /* GC protection of user-variables: */
@@ -947,7 +947,7 @@ C_regparm void C_fcall C_gc_protect(C_word **addr, int n)
         collectibles_limit = collectibles + k * 2;
     }
 
-    C_memcpy(collectibles_top, addr, n * sizeof(C_word *));
+    memcpy(collectibles_top, addr, n * sizeof(C_word *));
     collectibles_top += n;
 }
 

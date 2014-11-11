@@ -67,7 +67,7 @@ typedef struct C_ptable_entry_struct
 
 #define C_return(x)                return (x)
 #define C_resize_stack(n)          C_do_resize_stack(n)
-#define C_memcpy_slots(t, f, n)    C_memcpy((t), (f), (n) * sizeof(C_word))
+#define C_memcpy_slots(t, f, n)    memcpy((t), (f), (n) * sizeof(C_word))
 #define C_block_header_init(x,h)   (((C_SCHEME_BLOCK *)(x))->header = (h))
 #define C_block_header(x)          (((C_SCHEME_BLOCK *)(x))->header)
 #define C_block_item(x,i)          (((C_SCHEME_BLOCK *)(x))->data [ i ])
@@ -173,7 +173,7 @@ typedef struct C_ptable_entry_struct
 # define C_poke_integer_32              C_poke_integer
 #endif
 
-#define C_copy_memory(to, from, n)      (C_memcpy(C_data_pointer(to), C_data_pointer(from), C_unfix(n)), C_SCHEME_UNDEFINED)
+#define C_copy_memory(to, from, n)      (memcpy(C_data_pointer(to), C_data_pointer(from), C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_copy_ptr_memory(to, from, n, toff, foff) \
     (C_memmove(C_pointer_address(to) + C_unfix(toff), C_pointer_address(from) + C_unfix(foff), \
                C_unfix(n)), C_SCHEME_UNDEFINED)

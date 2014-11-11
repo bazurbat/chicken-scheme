@@ -41,7 +41,7 @@ C_regparm C_word C_fcall C_string(C_word **ptr, int len, C_char *str)
 
     *ptr = (C_word *)((C_word)(*ptr) + sizeof(C_header) + C_align(len));
     C_block_header_init(strblock, C_STRING_TYPE | len);
-    C_memcpy(C_data_pointer(strblock), str, len);
+    memcpy(C_data_pointer(strblock), str, len);
     return strblock;
 }
 
@@ -55,7 +55,7 @@ C_regparm C_word C_fcall C_static_string(C_word **ptr, int len, C_char *str)
 
     strblock = (C_word)dptr;
     C_block_header_init(strblock, C_STRING_TYPE | len);
-    C_memcpy(C_data_pointer(strblock), str, len);
+    memcpy(C_data_pointer(strblock), str, len);
     return strblock;
 }
 
@@ -72,7 +72,7 @@ C_regparm C_word C_fcall C_string_aligned8(C_word **ptr, int len, C_char *str)
     p0 = p;
     *ptr = p + 1 + C_bytestowords(len);
     *(p++) = C_STRING_TYPE | C_8ALIGN_BIT | len;
-    C_memcpy(p, str, len);
+    memcpy(p, str, len);
     return (C_word)p0;
 }
 
@@ -86,7 +86,7 @@ C_regparm C_word C_fcall C_string2(C_word **ptr, C_char *str)
     len = C_strlen(str);
     *ptr = (C_word *)((C_word)(*ptr) + sizeof(C_header) + C_align(len));
     C_block_header_init(strblock, C_STRING_TYPE | len);
-    C_memcpy(C_data_pointer(strblock), str, len);
+    memcpy(C_data_pointer(strblock), str, len);
     return strblock;
 }
 
@@ -106,7 +106,7 @@ C_regparm C_word C_fcall C_string2_safe(C_word **ptr, int max, C_char *str)
 
     *ptr = (C_word *)((C_word)(*ptr) + sizeof(C_header) + C_align(len));
     C_block_header_init(strblock, C_STRING_TYPE | len);
-    C_memcpy(C_data_pointer(strblock), str, len);
+    memcpy(C_data_pointer(strblock), str, len);
     return strblock;
 }
 
@@ -386,7 +386,7 @@ fail:
 
     if(n >= STRING_BUFFER_SIZE - 1) goto fail;
 
-    C_memcpy(sptr = buffer, C_c_string(str), n > (STRING_BUFFER_SIZE - 1) ? STRING_BUFFER_SIZE : n);
+    memcpy(sptr = buffer, C_c_string(str), n > (STRING_BUFFER_SIZE - 1) ? STRING_BUFFER_SIZE : n);
     buffer[ n ] = '\0';
     if (n != strlen(buffer)) /* Don't barf; this is simply invalid number syntax */
         goto fail;
@@ -649,7 +649,7 @@ C_regparm C_word C_fcall C_pbytevector(int len, C_char *str)
     if(pbv == NULL) panic(C_text("out of memory - cannot allocate permanent blob"));
 
     pbv->header = C_BYTEVECTOR_TYPE | len;
-    C_memcpy(pbv->data, str, len);
+    memcpy(pbv->data, str, len);
     return (C_word)pbv;
 }
 

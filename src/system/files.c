@@ -64,7 +64,7 @@ C_regparm C_word C_fcall C_execute_shell_command(C_word string)
             barf(C_OUT_OF_MEMORY_ERROR, "system");
     }
 
-    C_memcpy(buf, C_data_pointer(string), n);
+    memcpy(buf, C_data_pointer(string), n);
     buf[ n ] = '\0';
     if (n != strlen(buf))
         barf(C_ASCIIZ_REPRESENTATION_ERROR, "get-environment-variable", string);

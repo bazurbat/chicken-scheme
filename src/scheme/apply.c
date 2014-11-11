@@ -67,7 +67,7 @@ void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...)
     buf[ 0 ] = n + 2;
     buf[ 1 ] = fn;
     buf[ 2 ] = k;
-    C_memcpy(&buf[ 3 ], C_temporary_stack_limit, n * sizeof(C_word));
+    memcpy(&buf[ 3 ], C_temporary_stack_limit, n * sizeof(C_word));
     proc = (void *)C_block_item(fn, 0);
     C_do_apply_hack(proc, buf, n + 3);
 #else

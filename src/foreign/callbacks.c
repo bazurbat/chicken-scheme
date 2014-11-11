@@ -74,7 +74,7 @@ C_word C_fcall C_callback(C_word closure, int argc)
     if(old && C_block_item(callback_continuation_stack_symbol, 0) == C_SCHEME_END_OF_LIST)
         panic(C_text("callback invoked in non-safe context"));
 
-    C_memcpy(&prev, &C_restart, sizeof(C_restart));
+    memcpy(&prev, &C_restart, sizeof(C_restart));
     callback_returned_flag = 0;
     chicken_is_running = 1;
 
@@ -88,7 +88,7 @@ C_word C_fcall C_callback(C_word closure, int argc)
 
     if(!callback_returned_flag) (C_restart_trampoline)(C_restart_address);
     else {
-        C_memcpy(&C_restart, &prev, sizeof(C_restart));
+        memcpy(&C_restart, &prev, sizeof(C_restart));
         callback_returned_flag = 0;
     }
 

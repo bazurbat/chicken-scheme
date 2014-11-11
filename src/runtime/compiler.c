@@ -31,11 +31,11 @@ C_regparm C_word C_fcall C_copy_block(C_word from, C_word to)
 
     if(C_header_bits(from) & C_BYTEBLOCK_BIT) {
         bytes = n;
-        C_memcpy((C_SCHEME_BLOCK *)to, (C_SCHEME_BLOCK *)from, bytes + sizeof(C_header));
+        memcpy((C_SCHEME_BLOCK *)to, (C_SCHEME_BLOCK *)from, bytes + sizeof(C_header));
     }
     else {
         bytes = C_wordstobytes(n);
-        C_memcpy((C_SCHEME_BLOCK *)to, (C_SCHEME_BLOCK *)from, bytes + sizeof(C_header));
+        memcpy((C_SCHEME_BLOCK *)to, (C_SCHEME_BLOCK *)from, bytes + sizeof(C_header));
     }
 
     return to;
@@ -51,7 +51,7 @@ C_regparm C_word C_fcall C_evict_block(C_word from, C_word ptr)
     if(C_header_bits(from) & C_BYTEBLOCK_BIT) bytes = n;
     else bytes = C_wordstobytes(n);
 
-    C_memcpy(p, (C_SCHEME_BLOCK *)from, bytes + sizeof(C_header));
+    memcpy(p, (C_SCHEME_BLOCK *)from, bytes + sizeof(C_header));
     return (C_word)p;
 }
 

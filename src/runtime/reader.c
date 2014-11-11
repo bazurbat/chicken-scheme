@@ -251,7 +251,7 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
         data = *ptr;
 
         if((bits & C_BYTEBLOCK_BIT) != 0) {
-            C_memcpy(data, *str, size);
+            memcpy(data, *str, size);
             size = C_align(size);
             *str += size;
             *ptr = (C_word *)C_align((C_word)(*ptr) + size);

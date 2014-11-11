@@ -126,7 +126,7 @@ C_regparm C_word C_fcall C_static_lambda_info(C_word **ptr, int len, C_char *str
 
     strblock = (C_word)dptr;
     C_block_header_init(strblock, C_LAMBDA_INFO_TYPE | len);
-    C_memcpy(C_data_pointer(strblock), str, len);
+    memcpy(C_data_pointer(strblock), str, len);
     return strblock;
 }
 

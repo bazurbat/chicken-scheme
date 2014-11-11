@@ -1724,7 +1724,7 @@
        (store-result (eval (read i)) result)) )))
 
 #>
-#define C_copy_result_string(str, buf, n)  (C_memcpy((char *)C_block_item(buf, 0), C_c_string(str), C_unfix(n)), ((char *)C_block_item(buf, 0))[ C_unfix(n) ] = '\0', C_SCHEME_TRUE)
+#define C_copy_result_string(str, buf, n)  (memcpy((char *)C_block_item(buf, 0), C_c_string(str), C_unfix(n)), ((char *)C_block_item(buf, 0))[ C_unfix(n) ] = '\0', C_SCHEME_TRUE)
 <#
 
 (define (store-string str bufsize buf)

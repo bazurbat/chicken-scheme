@@ -155,7 +155,7 @@ C_set_arg_string(char **where, int i, char *dat, int len)
     if (dat)
     {
         ptr = (char *)C_malloc(len + 1);
-        C_memcpy(ptr, dat, len);
+        memcpy(ptr, dat, len);
         ptr[ len ] = '\0';
         /* Can't barf() here, so the NUL byte check happens in Scheme */
     }

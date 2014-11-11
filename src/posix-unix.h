@@ -144,7 +144,7 @@ static void C_fcall C_set_arg_string(char **where, int i, char *a, int len) {
     char *ptr;
     if(a != NULL) {
         ptr = (char *)C_malloc(len + 1);
-        C_memcpy(ptr, a, len);
+        memcpy(ptr, a, len);
         ptr[ len ] = '\0';
         /* Can't barf() here, so the NUL byte check happens in Scheme */
     }

@@ -5,7 +5,6 @@
 
 #define C_FILEPTR                  FILE *
 
-#define C_memcpy                   memcpy
 #define C_memcmp                   memcmp
 #define C_strcmp                   strcmp
 #define C_strlen                   strlen

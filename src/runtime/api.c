@@ -682,7 +682,7 @@ void C_ccall C_context_switch(C_word c, C_word closure, C_word k, C_word state)
     TRAMPOLINE trampoline;
 
     C_temporary_stack = C_temporary_stack_bottom - n;
-    C_memcpy(C_temporary_stack, (C_word *)state + 2, n * sizeof(C_word));
+    memcpy(C_temporary_stack, (C_word *)state + 2, n * sizeof(C_word));
     trampoline = (TRAMPOLINE)C_block_item(adrs,0);
     trampoline((void *)C_block_item(adrs,1));
 }

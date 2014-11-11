@@ -92,7 +92,7 @@ void handle_interrupt(void *trampoline, void *proc)
     x = (C_word)p;
     *(p++) = C_VECTOR_TYPE | (n + 1);
     *(p++) = C_restore;
-    C_memcpy(p, C_temporary_stack, n * sizeof(C_word));
+    memcpy(p, C_temporary_stack, n * sizeof(C_word));
 
     /* Restore state to the one at the time of the interrupt: */
     C_temporary_stack = C_temporary_stack_bottom;
