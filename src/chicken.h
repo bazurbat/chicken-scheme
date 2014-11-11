@@ -15,7 +15,6 @@
 #include <runtime/definitions.h>
 #include <runtime/errors.h>
 #include <runtime/macros.h>
-#include <runtime/pointers.h>
 #include <runtime/reader.h>
 #include <runtime/records.h>
 #include <runtime/symbol_table.h>

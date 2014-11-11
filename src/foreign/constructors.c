@@ -1,9 +1,10 @@
 #include "constructors.h"
+#include <foreign/data.h>
 #include <math/fixnum.h>
 #include <memory/gc.h>
 #include <runtime/macros.h>
-#include <runtime/pointers.h>
 #include <runtime/types.h>
+
 #include <stdarg.h>
 
 static void make_structure_2(void *dummy) C_noret;
