@@ -477,16 +477,16 @@ i_like_spaghetti:
 #endif
 
         if(gc_mode == GC_MINOR)
-            C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), (C_uword)count);
+            C_fprintf(stderr, C_text("\t" UWORD_FORMAT_STRING), (C_uword)count);
 
-        C_fputc('\n', C_stderr);
+        C_fputc('\n', stderr);
         C_dbg("GC", C_text(" from\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING),
               (C_uword)fromspace_start, (C_uword)C_fromspace_top, (C_uword)C_fromspace_limit);
 
         if(gc_mode == GC_MAJOR)
-            C_fprintf(C_stderr, C_text("\t" UWORD_FORMAT_STRING), (C_uword)count);
+            C_fprintf(stderr, C_text("\t" UWORD_FORMAT_STRING), (C_uword)count);
 
-        C_fputc('\n', C_stderr);
+        C_fputc('\n', stderr);
         C_dbg("GC", C_text("   to\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING " \n"),
               (C_uword)tospace_start, (C_uword)tospace_top,
               (C_uword)tospace_limit);

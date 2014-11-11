@@ -22,7 +22,6 @@
 # define EOVERFLOW  0
 #endif
 
-#define C_stdin                    stdin
 #define C_strncpy                  strncpy
 #define C_fopen                    fopen
 #define C_system                   system
@@ -85,9 +84,9 @@ void C_ccall C_open_file_port(C_word c, C_word closure, C_word k, C_word port, C
     char *buf;
 
     switch(channel) {
-    case C_fix(0): fp = C_stdin; break;
-    case C_fix(1): fp = C_stdout; break;
-    case C_fix(2): fp = C_stderr; break;
+    case C_fix(0): fp = stdin; break;
+    case C_fix(1): fp = stdout; break;
+    case C_fix(2): fp = stderr; break;
     default:
         n = C_header_size(channel);
         buf = buffer;

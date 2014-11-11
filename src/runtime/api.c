@@ -636,8 +636,8 @@ C_word C_halt(C_word msg)
     C_char *dmp = msg != C_SCHEME_FALSE ? C_dump_trace(0) : NULL;
 
     if(msg != C_SCHEME_FALSE) {
-        C_fwrite(C_data_pointer(msg), C_header_size(msg), sizeof(C_char), C_stderr);
-        C_fputc('\n', C_stderr);
+        C_fwrite(C_data_pointer(msg), C_header_size(msg), sizeof(C_char), stderr);
+        C_fputc('\n', stderr);
     }
 
     if(dmp != NULL)
