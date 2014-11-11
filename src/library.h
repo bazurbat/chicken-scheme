@@ -91,7 +91,7 @@ shallow_equal(C_word x, C_word y)
     int i, len = C_header_size(x);
 
     if(C_header_size(y) != len) return C_SCHEME_FALSE;
-    else return C_mk_bool(!C_memcmp((void *)x, (void *)y, len * sizeof(C_word)));
+    else return C_mk_bool(!memcmp((void *)x, (void *)y, len * sizeof(C_word)));
 }
 
 #endif

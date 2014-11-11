@@ -404,7 +404,7 @@ loop:
     else if((bits = header & C_HEADER_BITS_MASK) & C_BYTEBLOCK_BIT) {
         if(header == C_FLONUM_TAG && C_block_header(y) == C_FLONUM_TAG)
             return C_flonum_magnitude(x) == C_flonum_magnitude(y);
-        else return !C_memcmp(C_data_pointer(x), C_data_pointer(y), header & C_HEADER_SIZE_MASK);
+        else return !memcmp(C_data_pointer(x), C_data_pointer(y), header & C_HEADER_SIZE_MASK);
     }
     else if(header == C_SYMBOL_TAG) return 0;
     else {
@@ -414,7 +414,7 @@ loop:
         if(bits & C_SPECIALBLOCK_BIT) {
             /* do not recurse into closures */
             if(C_header_bits(x) == C_CLOSURE_TYPE)
-                return !C_memcmp((void *)x, (void *)y, n * sizeof(C_word));
+                return !memcmp((void *)x, (void *)y, n * sizeof(C_word));
             else if(C_block_item(x, 0) != C_block_item(y, 0)) return 0;
             else ++i;
 

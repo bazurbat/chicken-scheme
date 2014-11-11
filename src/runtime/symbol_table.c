@@ -15,7 +15,7 @@ C_regparm C_word C_fcall lookup(C_word key, int len, C_char *str, C_SYMBOL_TABLE
         s = C_block_item(sym, 1);
 
         if(C_header_size(s) == (C_word)len
-           && !C_memcmp(str, (C_char *)C_data_pointer(s), len))
+           && !memcmp(str, (C_char *)C_data_pointer(s), len))
             return sym;
     }
 

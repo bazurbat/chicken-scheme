@@ -52,7 +52,7 @@ C_inline C_word C_u_i_string_equal_p(C_word x, C_word y)
 
     n = C_header_size(x);
     return C_mk_bool(n == C_header_size(y)
-                     && !C_memcmp((char *)C_data_pointer(x), (char *)C_data_pointer(y), n));
+                     && !memcmp((char *)C_data_pointer(x), (char *)C_data_pointer(y), n));
 }
 
 /* Like memcmp but case insensitive (to strncasecmp as memcmp is to strncmp) */

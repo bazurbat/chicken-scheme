@@ -148,7 +148,7 @@ typedef struct C_ptable_entry_struct
                (C_char *)C_data_pointer(s1) + C_unfix(start1), \
                C_unfix(end1) - C_unfix(start1) ), C_SCHEME_UNDEFINED)
 #define C_substring_compare(s1, s2, start1, start2, len) \
-    C_mk_bool(C_memcmp((C_char *)C_data_pointer(s1) + C_unfix(start1), \
+    C_mk_bool(memcmp((C_char *)C_data_pointer(s1) + C_unfix(start1), \
                        (C_char *)C_data_pointer(s2) + C_unfix(start2), \
                        C_unfix(len) ) == 0)
 #define C_substring_compare_case_insensitive(s1, s2, start1, start2, len) \
@@ -178,7 +178,7 @@ typedef struct C_ptable_entry_struct
     (C_memmove(C_pointer_address(to) + C_unfix(toff), C_pointer_address(from) + C_unfix(foff), \
                C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_set_memory(to, c, n)          (C_memset(C_data_pointer(to), C_character_code(c), C_unfix(n)), C_SCHEME_UNDEFINED)
-#define C_string_compare(to, from, n)   C_fix(C_memcmp(C_c_string(to), C_c_string(from), C_unfix(n)))
+#define C_string_compare(to, from, n)   C_fix(memcmp(C_c_string(to), C_c_string(from), C_unfix(n)))
 #define C_string_compare_case_insensitive(from, to, n) \
     C_fix(C_memcasecmp(C_c_string(from), C_c_string(to), C_unfix(n)))
 #define C_rename_file(old, new)         C_fix(rename(C_c_string(old), C_c_string(new)))

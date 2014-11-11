@@ -547,7 +547,7 @@ C_regparm C_word C_fcall C_i_string_equal_p(C_word x, C_word y)
     n = C_header_size(x);
 
     return C_mk_bool(n == C_header_size(y)
-                     && !C_memcmp((char *)C_data_pointer(x), (char *)C_data_pointer(y), n));
+                     && !memcmp((char *)C_data_pointer(x), (char *)C_data_pointer(y), n));
 }
 
 C_regparm C_word C_fcall C_i_string_length(C_word s)
