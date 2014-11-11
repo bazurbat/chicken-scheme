@@ -16,7 +16,6 @@
 #include <runtime/errors.h>
 #include <runtime/macros.h>
 #include <runtime/reader.h>
-#include <runtime/records.h>
 #include <runtime/symbol_table.h>
 #include <runtime/trace.h>
 #include <runtime/types.h>
@@ -29,6 +28,7 @@
 #include "foreign/data.h"
 #include "foreign/locatives.h"
 #include "foreign/predicates.h"
+#include "foreign/records.h"
 
 #include "math/arithmetic.h"
 #include "math/constructors.h"

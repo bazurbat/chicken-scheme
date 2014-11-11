@@ -26,6 +26,8 @@ set(libchicken_C_SOURCES
     foreign/locatives.h
     foreign/predicates.c
     foreign/predicates.h
+    foreign/records.c
+    foreign/records.h
     math/arithmetic.c
     math/arithmetic.h
     math/constructors.c

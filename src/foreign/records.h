@@ -1,7 +1,9 @@
-#ifndef RUNTIME_RECORDS_H
-#define RUNTIME_RECORDS_H
+#ifndef FOREIGN_RECORDS_H
+#define FOREIGN_RECORDS_H
 
-#include "definitions.h"
+#include <runtime/definitions.h>
+
+C_fctexport C_word C_a_i_record(C_word **a, int c, ...);
 
 C_inline C_word C_a_i_record1(C_word **ptr, int n, C_word x1)
 {
@@ -115,4 +117,4 @@ C_inline C_word C_a_i_record8(C_word **ptr, int n, C_word x1, C_word x2, C_word 
     return (C_word)p0;
 }
 
-#endif /* RUNTIME_RECORDS_H */
+#endif /* FOREIGN_RECORDS_H */

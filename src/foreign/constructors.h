@@ -11,7 +11,6 @@ C_fctexport C_word C_structure(C_word **ptr, int n, ...);
 C_fctexport C_word C_closure(C_word **ptr, int cells, C_word proc, ...);
 
 C_fctexport C_word C_a_i_port(C_word **a, int c);
-C_fctexport C_word C_a_i_record(C_word **a, int c, ...);
 
 C_fctexport C_word C_fcall C_static_lambda_info(C_word **ptr, int len, C_char *str) C_regparm;
 C_fctexport C_word C_fcall C_number(C_word **ptr, double n) C_regparm;
