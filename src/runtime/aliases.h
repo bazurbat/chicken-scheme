@@ -33,7 +33,6 @@
 #else
 # define C_getpid                  getpid
 #endif
-#define C_getenv                   getenv
 #ifdef __linux__
 extern double round(double);
 extern double trunc(double);

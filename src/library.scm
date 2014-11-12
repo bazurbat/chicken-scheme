@@ -105,7 +105,7 @@
 (define (current-milliseconds) (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f))
 (define (current-gc-milliseconds) (##sys#fudge 31))
 (define ##sys#decode-seconds (##core#primitive "C_decode_seconds"))
-(define get-environment-variable (foreign-lambda c-string "C_getenv" c-string))
+(define get-environment-variable (foreign-lambda c-string "getenv" c-string))
 
 (define (##sys#start-timer)
   (##sys#gc #t)
