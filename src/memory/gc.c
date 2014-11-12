@@ -1197,7 +1197,7 @@ LF_LIST *find_module_handle(char *name)
     LF_LIST *np;
 
     for(np = lf_list; np != NULL; np = np->next) {
-        if(np->module_name != NULL && !C_strcmp(np->module_name, name))
+        if(np->module_name != NULL && !strcmp(np->module_name, name))
             return np;
     }
 
@@ -1228,7 +1228,7 @@ void *C_lookup_procedure_ptr(C_char *id)
 
         if(pt != NULL) {
             while(pt->id != NULL) {
-                if(!C_strcmp(id, pt->id)) return pt->ptr;
+                if(!strcmp(id, pt->id)) return pt->ptr;
                 else ++pt;
             }
         }

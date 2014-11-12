@@ -148,7 +148,7 @@ C_regparm C_SYMBOL_TABLE *C_find_symbol_table(char *name)
     C_SYMBOL_TABLE *stp;
 
     for(stp = symbol_table_list; stp != NULL; stp = stp->next)
-        if(!C_strcmp(name, stp->name)) return stp;
+        if(!strcmp(name, stp->name)) return stp;
 
     return NULL;
 }
