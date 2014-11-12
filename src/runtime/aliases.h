@@ -24,10 +24,6 @@
 #else
 # define C_isatty                  isatty
 #endif
-/*
- * It is undefined whether regular setjmp/longjmp save/restore signal mask
- * so try to use versions that we know won't try to save & restore.
- */
 #if defined(_MSC_VER)
 # define C_getpid                  _getpid
 #else
