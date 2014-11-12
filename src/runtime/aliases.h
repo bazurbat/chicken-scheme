@@ -5,7 +5,9 @@
 
 #define C_FILEPTR                  FILE *
 
+// temp for bootstrapping
 #define C_strlen                   strlen
+
 #define C_memset                   memset
 #define C_memmove                  memmove
 #define C_malloc                   malloc

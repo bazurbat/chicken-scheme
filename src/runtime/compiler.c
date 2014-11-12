@@ -11,7 +11,7 @@ C_regparm C_word C_fcall C_retrieve2(C_word val, char *name)
     int len;
 
     if(val == C_SCHEME_UNBOUND) {
-        len = C_strlen(name);
+        len = strlen(name);
         /* this is ok: we won't return from `C_retrieve2'
          * (or the value isn't needed). */
         p = C_alloc(C_SIZEOF_STRING(len));

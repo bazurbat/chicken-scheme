@@ -90,7 +90,7 @@ void dload_2(void *dummy)
 
     if((handle = C_dlopen(mname, dlopen_flags)) != NULL) {
         if((p = C_dlsym(handle, topname)) == NULL) {
-            tmp_len = C_strlen(topname) + 2;
+            tmp_len = strlen(topname) + 2;
             tmp = (C_char *)C_malloc(tmp_len);
 
             if(tmp == NULL)

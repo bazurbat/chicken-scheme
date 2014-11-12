@@ -156,7 +156,7 @@ void C_ccall C_fixnum_to_string(C_word c, C_word self, C_word k, C_word num)
 #else
     C_snprintf(buffer, sizeof(buffer), C_text("%d"), C_unfix(num));
 #endif
-    n = C_strlen(buffer);
+    n = strlen(buffer);
     a = C_alloc(C_bytestowords(n) + 1);
     s = C_string2(&a, buffer);
     C_kontinue(k, s);

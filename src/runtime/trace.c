@@ -84,8 +84,8 @@ C_char *C_dump_trace(int start)
         for(; i--; ++ptr) {
             if(ptr >= trace_buffer_limit) ptr = trace_buffer;
 
-            if(C_strlen(result) > STRING_BUFFER_SIZE - 32) {
-                result_len = C_strlen(result) * 2;
+            if(strlen(result) > STRING_BUFFER_SIZE - 32) {
+                result_len = strlen(result) * 2;
                 result = C_realloc(result, result_len);
                 if(result == NULL)
                     horror(C_text("out of memory - cannot reallocate trace-dump buffer"));

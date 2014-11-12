@@ -12,7 +12,7 @@ C_TLS void (*C_panic_hook)(C_char *msg) = NULL;
 
 static C_regparm C_word C_fcall intern0(C_char *str)
 {
-    int len = C_strlen(str);
+    int len = strlen(str);
     int key = hash_string(len, str, symbol_table->size, symbol_table->rand, 0);
     C_word s;
 

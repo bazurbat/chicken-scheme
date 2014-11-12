@@ -1101,9 +1101,9 @@
                    c-string-list*)
             (string-append ns "+3") )
            ((c-string c-string* unsigned-c-string unsigned-c-string unsigned-c-string*)
-            (string-append ns "+2+(" var "==NULL?1:C_bytestowords(C_strlen(" var ")))") )
+            (string-append ns "+2+(" var "==NULL?1:C_bytestowords(strlen(" var ")))") )
            ((nonnull-c-string nonnull-c-string* nonnull-unsigned-c-string nonnull-unsigned-c-string* symbol)
-            (string-append ns "+2+C_bytestowords(C_strlen(" var "))") )
+            (string-append ns "+2+C_bytestowords(strlen(" var "))") )
            (else
             (cond ((and (symbol? type) (lookup-foreign-type type))
                    => (lambda (t) (compute-size (vector-ref t 0) var ns) ) )

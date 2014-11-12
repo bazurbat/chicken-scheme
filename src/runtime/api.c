@@ -426,7 +426,7 @@ void CHICKEN_delete_gc_root(void *root)
 void *CHICKEN_global_lookup(char *name)
 {
     int
-        len = C_strlen(name),
+        len = strlen(name),
             key = hash_string(len, name, symbol_table->size, symbol_table->rand, 0);
     C_word s;
     void *root = CHICKEN_new_gc_root();
@@ -461,7 +461,7 @@ static C_word arg_val(C_char *arg)
 
     if (arg == NULL) panic(C_text("illegal runtime-option argument"));
 
-    len = C_strlen(arg);
+    len = strlen(arg);
 
     if(len < 1) panic(C_text("illegal runtime-option argument"));
 

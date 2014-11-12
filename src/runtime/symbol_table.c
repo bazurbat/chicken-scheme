@@ -272,12 +272,12 @@ C_regparm C_word C_fcall C_h_intern_in(C_word *slot, int len, C_char *str, C_SYM
 
 C_regparm C_word C_fcall C_intern2(C_word **ptr, C_char *str)
 {
-    return C_intern_in(ptr, C_strlen(str), str, symbol_table);
+    return C_intern_in(ptr, strlen(str), str, symbol_table);
 }
 
 C_regparm C_word C_fcall C_intern3(C_word **ptr, C_char *str, C_word value)
 {
-    C_word s = C_intern_in(ptr, C_strlen(str), str, symbol_table);
+    C_word s = C_intern_in(ptr, strlen(str), str, symbol_table);
 
     C_mutate(&C_block_item(s,0), value);
     return s;
@@ -289,7 +289,7 @@ C_regparm void *C_fcall C_retrieve2_symbol_proc(C_word val, char *name)
     int len;
 
     if(val == C_SCHEME_UNBOUND) {
-        len = C_strlen(name);
+        len = strlen(name);
         /* this is ok: we won't return from `C_retrieve2' (or the value isn't needed). */
         p = C_alloc(C_SIZEOF_STRING(len));
         barf(C_UNBOUND_VARIABLE_ERROR, NULL, C_string2(&p, name));

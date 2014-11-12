@@ -83,7 +83,7 @@ C_regparm C_word C_fcall C_string2(C_word **ptr, C_char *str)
 
     if(str == NULL) return C_SCHEME_FALSE;
 
-    len = C_strlen(str);
+    len = strlen(str);
     *ptr = (C_word *)((C_word)(*ptr) + sizeof(C_header) + C_align(len));
     C_block_header_init(strblock, C_STRING_TYPE | len);
     memcpy(C_data_pointer(strblock), str, len);
@@ -97,7 +97,7 @@ C_regparm C_word C_fcall C_string2_safe(C_word **ptr, int max, C_char *str)
 
     if(str == NULL) return C_SCHEME_FALSE;
 
-    len = C_strlen(str);
+    len = strlen(str);
 
     if(len >= max) {
         C_snprintf(buffer, sizeof(buffer), C_text("foreign string result exceeded maximum of %d bytes"), max);
@@ -176,7 +176,7 @@ C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word
     C_word n;
     C_char *eptr, *eptr2;
     double fn;
-    int len = C_strlen(str);
+    int len = strlen(str);
 
     if(radix == 10) {
         if (len == 6) {
@@ -231,7 +231,7 @@ C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word
 
         if(fn == HUGE_VAL && errno == ERANGE) return 0;
         else if(eptr2 == str) return 0;
-        else if(*eptr2 == '\0' || (eptr != eptr2 && !C_strncmp(eptr2, ".0", C_strlen(eptr2)))) {
+        else if(*eptr2 == '\0' || (eptr != eptr2 && !C_strncmp(eptr2, ".0", strlen(eptr2)))) {
             *flo = fn;
             return 2;
         }
@@ -239,7 +239,7 @@ C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word
         return 0;
     }
     else if((n & C_INT_SIGN_BIT) != ((n << 1) & C_INT_SIGN_BIT)) { /* doesn't fit into fixnum? */
-        if(*eptr == '\0' || !C_strncmp(eptr, ".0", C_strlen(eptr))) {
+        if(*eptr == '\0' || !C_strncmp(eptr, ".0", strlen(eptr))) {
             *flo = (double)n;
             return 2;
         }
@@ -345,7 +345,7 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 
         if((p = C_strpbrk(buffer, C_text(".eE"))) == NULL) {
             if(*buffer == 'i' || *buffer == 'n') { /* inf or nan */
-                C_memmove(buffer + 1, buffer, C_strlen(buffer) + 1);
+                C_memmove(buffer + 1, buffer, strlen(buffer) + 1);
                 *buffer = '+';
             }
             else if(buffer[ 1 ] != 'i') C_strlcat(buffer, C_text(".0"), sizeof(buffer)); /* negative infinity? */
@@ -359,7 +359,7 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 fini:
     if(neg) *(--p) = '-';
 
-    radix = C_strlen(p);
+    radix = strlen(p);
     a = C_alloc((C_bytestowords(radix) + 1));
     radix = C_string(&a, radix, p);
     C_kontinue(k, radix);
