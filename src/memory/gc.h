@@ -23,10 +23,10 @@
 # elif defined (__x86_64__)
 #  define C_stack_pointer ({C_word *sp; __asm__ __volatile__ ("movq %%rsp,%0" : "=r" (sp) :); sp; })
 # else
-#  define C_stack_pointer ((C_word *)C_alloca(1))
+#  define C_stack_pointer ((C_word *)alloca(1))
 # endif
 #else
-# define C_stack_pointer ((C_word *)C_alloca(0))
+# define C_stack_pointer ((C_word *)alloca(0))
 #endif
 
 #if C_STACK_GROWS_DOWNWARD

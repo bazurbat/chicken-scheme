@@ -4,7 +4,7 @@
 #include <runtime/definitions.h>
 #include <runtime/types.h>
 
-#define C_stack_pointer_test       ((C_word *)C_alloca(1))
+#define C_stack_pointer_test       ((C_word *)alloca(1))
 
 #define C_c_pointer(x)             ((void *)(x))
 #define C_c_pointer_nn(x)          ((void *)C_block_item(x, 0))

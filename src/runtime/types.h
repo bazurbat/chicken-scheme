@@ -85,7 +85,7 @@ typedef struct C_ptable_entry_struct
 #define C_heaptop                  ((C_word **)(&C_fromspace_top))
 #define C_pick(n)                  (C_temporary_stack[ n ])
 #define C_drop(n)                  (C_temporary_stack += (n))
-#define C_alloc(n)                 ((C_word *)C_alloca((n) * sizeof(C_word)))
+#define C_alloc(n)                 ((C_word *)alloca((n) * sizeof(C_word)))
 #define C_demand_2(n)              (((C_word *)C_fromspace_top + (n)) < (C_word *)C_fromspace_limit)
 #define C_make_character(c)        (((((C_uword)(c)) & C_CHAR_BIT_MASK) << C_CHAR_SHIFT) | C_CHARACTER_BITS)
 #define C_character_code(x)        (((C_word)(x) >> C_CHAR_SHIFT) & C_CHAR_BIT_MASK)
