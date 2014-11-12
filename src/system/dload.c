@@ -91,7 +91,7 @@ void dload_2(void *dummy)
     if((handle = C_dlopen(mname, dlopen_flags)) != NULL) {
         if((p = C_dlsym(handle, topname)) == NULL) {
             tmp_len = strlen(topname) + 2;
-            tmp = (C_char *)C_malloc(tmp_len);
+            tmp = (C_char *)malloc(tmp_len);
 
             if(tmp == NULL)
                 panic(C_text("out of memory - cannot allocate toplevel name string"));
@@ -99,7 +99,7 @@ void dload_2(void *dummy)
             C_strlcpy(tmp, C_text("_"), tmp_len);
             C_strlcat(tmp, topname, tmp_len);
             p = C_dlsym(handle, tmp);
-            C_free(tmp);
+            free(tmp);
         }
 
         if(p != NULL) {

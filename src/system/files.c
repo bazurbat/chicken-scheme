@@ -60,7 +60,7 @@ C_regparm C_word C_fcall C_execute_shell_command(C_word string)
     (void)fflush(NULL);
 
     if(n >= STRING_BUFFER_SIZE) {
-        if((buf = (char *)C_malloc(n + 1)) == NULL)
+        if((buf = (char *)malloc(n + 1)) == NULL)
             barf(C_OUT_OF_MEMORY_ERROR, "system");
     }
 
@@ -71,7 +71,7 @@ C_regparm C_word C_fcall C_execute_shell_command(C_word string)
 
     n = C_system(buf);
 
-    if(buf != buffer) C_free(buf);
+    if(buf != buffer) free(buf);
 
     return C_fix(n);
 }
@@ -92,7 +92,7 @@ void C_ccall C_open_file_port(C_word c, C_word closure, C_word k, C_word port, C
         buf = buffer;
 
         if(n >= STRING_BUFFER_SIZE) {
-            if((buf = (char *)C_malloc(n + 1)) == NULL)
+            if((buf = (char *)malloc(n + 1)) == NULL)
                 barf(C_OUT_OF_MEMORY_ERROR, "open");
         }
 
@@ -108,7 +108,7 @@ void C_ccall C_open_file_port(C_word c, C_word closure, C_word k, C_word port, C
             barf(C_ASCIIZ_REPRESENTATION_ERROR, "open", mode);
         fp = C_fopen(buf, fmode);
 
-        if(buf != buffer) C_free(buf);
+        if(buf != buffer) free(buf);
     }
 
     C_set_block_item(port, 0, (C_word)fp);

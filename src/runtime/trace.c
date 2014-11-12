@@ -65,7 +65,7 @@ C_char *C_dump_trace(int start)
     int i, result_len;
 
     result_len = STRING_BUFFER_SIZE;
-    if((result = (char *)C_malloc(result_len)) == NULL)
+    if((result = (char *)malloc(result_len)) == NULL)
         horror(C_text("out of memory - cannot allocate trace-dump buffer"));
 
     *result = '\0';
@@ -86,7 +86,7 @@ C_char *C_dump_trace(int start)
 
             if(strlen(result) > STRING_BUFFER_SIZE - 32) {
                 result_len = strlen(result) * 2;
-                result = C_realloc(result, result_len);
+                result = realloc(result, result_len);
                 if(result == NULL)
                     horror(C_text("out of memory - cannot reallocate trace-dump buffer"));
             }
@@ -109,7 +109,7 @@ C_regparm void C_fcall C_clear_trace_buffer(void)
         if(C_trace_buffer_size < MIN_TRACE_BUFFER_SIZE)
             C_trace_buffer_size = MIN_TRACE_BUFFER_SIZE;
 
-        trace_buffer = (TRACE_INFO *)C_malloc(sizeof(TRACE_INFO) * C_trace_buffer_size);
+        trace_buffer = (TRACE_INFO *)malloc(sizeof(TRACE_INFO) * C_trace_buffer_size);
 
         if(trace_buffer == NULL)
             panic(C_text("out of memory - cannot allocate trace-buffer"));

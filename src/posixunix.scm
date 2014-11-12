@@ -613,8 +613,8 @@
 
 (define _ensure-groups
   (foreign-lambda* bool ([int n])
-    "if(C_groups != NULL) C_free(C_groups);"
-    "C_groups = (gid_t *)C_malloc(sizeof(gid_t) * n);"
+    "if(C_groups != NULL) free(C_groups);"
+    "C_groups = (gid_t *)malloc(sizeof(gid_t) * n);"
     "if(C_groups == NULL) C_return(0);"
     "else C_return(1);") )
 

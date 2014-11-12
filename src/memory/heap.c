@@ -59,7 +59,7 @@ C_regparm int C_fcall C_in_heapp(C_word x)
 C_byte * heap_alloc (size_t size, C_byte **page_aligned)
 {
     C_byte *p;
-    p = (C_byte *)C_malloc (size + page_size);
+    p = (C_byte *)malloc (size + page_size);
 
     if (p != NULL && page_aligned) *page_aligned = align_to_page (p);
 
@@ -68,13 +68,13 @@ C_byte * heap_alloc (size_t size, C_byte **page_aligned)
 
 void heap_free (C_byte *ptr, size_t size)
 {
-    C_free (ptr);
+    free (ptr);
 }
 
 C_byte * heap_realloc (C_byte *ptr, size_t old_size, size_t new_size, C_byte **page_aligned)
 {
     C_byte *p;
-    p = (C_byte *)C_realloc (ptr, new_size + page_size);
+    p = (C_byte *)realloc (ptr, new_size + page_size);
 
     if (p != NULL && page_aligned) *page_aligned = align_to_page (p);
 
@@ -156,7 +156,7 @@ static void hdump_count(C_word key, int n, int t)
         else b = b->next;
     }
 
-    b = (HDUMP_BUCKET *)C_malloc(sizeof(HDUMP_BUCKET));
+    b = (HDUMP_BUCKET *)malloc(sizeof(HDUMP_BUCKET));
 
     if(b == 0)
         panic(C_text("out of memory - can not allocate heap-dump table-bucket"));
@@ -181,7 +181,7 @@ static void dump_heap_state_2(void *dummy)
     C_word x, key, *p;
     int imm = 0, blk = 0;
 
-    hdump_table = (HDUMP_BUCKET **)C_malloc(HDUMP_TABLE_SIZE * sizeof(HDUMP_BUCKET *));
+    hdump_table = (HDUMP_BUCKET **)malloc(HDUMP_TABLE_SIZE * sizeof(HDUMP_BUCKET *));
 
     if(hdump_table == NULL)
         panic(C_text("out of memory - can not allocate heap-dump table"));
@@ -282,14 +282,14 @@ static void dump_heap_state_2(void *dummy)
                           (unsigned int)b->total);
 
             C_fputc('\n', stderr);
-            C_free(b);
+            free(b);
         }
     }
 
     C_fprintf(stderr, C_text("\ntotal number of blocks: " UWORD_COUNT_FORMAT_STRING
                                ", immediates: " UWORD_COUNT_FORMAT_STRING "\n"),
               (unsigned int)blk, (unsigned int)imm);
-    C_free(hdump_table);
+    free(hdump_table);
     C_kontinue(k, C_SCHEME_UNDEFINED);
 }
 

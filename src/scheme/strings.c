@@ -47,7 +47,7 @@ C_regparm C_word C_fcall C_string(C_word **ptr, int len, C_char *str)
 
 C_regparm C_word C_fcall C_static_string(C_word **ptr, int len, C_char *str)
 {
-    C_word *dptr = (C_word *)C_malloc(sizeof(C_header) + C_align(len));
+    C_word *dptr = (C_word *)malloc(sizeof(C_header) + C_align(len));
     C_word strblock;
 
     if(dptr == NULL)
@@ -644,7 +644,7 @@ C_regparm C_word C_fcall C_i_inexact_to_exact(C_word n)
 
 C_regparm C_word C_fcall C_pbytevector(int len, C_char *str)
 {
-    C_SCHEME_BLOCK *pbv = C_malloc(len + sizeof(C_header));
+    C_SCHEME_BLOCK *pbv = malloc(len + sizeof(C_header));
 
     if(pbv == NULL) panic(C_text("out of memory - cannot allocate permanent blob"));
 

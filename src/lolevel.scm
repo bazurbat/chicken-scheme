@@ -195,8 +195,8 @@
 
 ;;; Pointer operations:
 
-(define allocate (foreign-lambda c-pointer "C_malloc" int))
-(define free (foreign-lambda void "C_free" c-pointer))
+(define allocate (foreign-lambda c-pointer "malloc" int))
+(define free (foreign-lambda void "free" c-pointer))
 
 (define (pointer? x) (%pointer? x))
 

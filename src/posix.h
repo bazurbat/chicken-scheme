@@ -90,7 +90,7 @@ static C_word C_fcall C_setenv(C_word x, C_word y) {
     *sy = (y == C_SCHEME_FALSE ? "" : C_c_string(y));
     int n1 = strlen(sx), n2 = strlen(sy);
     int buf_len = n1 + n2 + 2;
-    char *buf = (char *)C_malloc(buf_len);
+    char *buf = (char *)malloc(buf_len);
     if(buf == NULL) return(C_fix(0));
     else {
         C_strlcpy(buf, sx, buf_len);

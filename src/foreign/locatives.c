@@ -45,7 +45,7 @@ C_regparm C_word C_fcall C_a_i_make_locative(C_word **a, int c, C_word type, C_w
             C_dbg(C_text("debug"), C_text("resizing locative table from %d to %d (count is %d)\n"),
                   locative_table_size, locative_table_size * 2, locative_table_count);
 
-        locative_table = (C_word *)C_realloc(locative_table, locative_table_size * 2 * sizeof(C_word));
+        locative_table = (C_word *)realloc(locative_table, locative_table_size * 2 * sizeof(C_word));
 
         if(locative_table == NULL)
             panic(C_text("out of memory - cannot resize locative table"));

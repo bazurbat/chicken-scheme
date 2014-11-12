@@ -938,7 +938,7 @@ C_regparm void C_fcall C_gc_protect(C_word **addr, int n)
 
     if(collectibles_top + n >= collectibles_limit) {
         k = collectibles_limit - collectibles;
-        collectibles = (C_word **)C_realloc(collectibles, sizeof(C_word *) * k * 2);
+        collectibles = (C_word **)realloc(collectibles, sizeof(C_word *) * k * 2);
 
         if(collectibles == NULL)
             panic(C_text("out of memory - cannot allocate GC protection vector"));
@@ -1173,7 +1173,7 @@ void *C_register_lf(C_word *lf, int count)
 
 void *C_register_lf2(C_word *lf, int count, C_PTABLE_ENTRY *ptable)
 {
-    LF_LIST *node = (LF_LIST *)C_malloc(sizeof(LF_LIST));
+    LF_LIST *node = (LF_LIST *)malloc(sizeof(LF_LIST));
     LF_LIST *np;
     int status = 0;
 
@@ -1214,8 +1214,8 @@ void C_unregister_lf(void *handle)
 
     if (lf_list == node) lf_list = node->next;
 
-    C_free(node->module_name);
-    C_free(node);
+    free(node->module_name);
+    free(node);
 }
 
 void *C_lookup_procedure_ptr(C_char *id)

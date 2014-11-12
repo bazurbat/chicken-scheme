@@ -118,7 +118,7 @@ C_word C_a_i_port(C_word **ptr, int n)
 C_regparm C_word C_fcall C_static_lambda_info(C_word **ptr, int len, C_char *str)
 {
     int dlen = sizeof(C_header) + C_align(len);
-    void *dptr = C_malloc(dlen);
+    void *dptr = malloc(dlen);
     C_word strblock;
 
     if(dptr == NULL)

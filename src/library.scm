@@ -4228,7 +4228,7 @@
 
 (define ##sys#peek-and-free-c-string-list 
   (let ((fetch (foreign-lambda c-string "C_peek_c_string_at" c-pointer int))
-	(free (foreign-lambda void "C_free" c-pointer)))
+	(free (foreign-lambda void "free" c-pointer)))
     (lambda (ptr n)
       (let ((lst (let loop ((i 0))
 		   (if (and n (fx>= i n))

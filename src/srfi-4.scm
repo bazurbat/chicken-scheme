@@ -256,13 +256,13 @@ EOF
 
 (let* ([ext-alloc
 	(foreign-lambda* scheme-object ([int bytes])
-	  "C_word *buf = (C_word *)C_malloc(bytes + sizeof(C_header));"
+	  "C_word *buf = (C_word *)malloc(bytes + sizeof(C_header));"
 	  "if(buf == NULL) C_return(C_SCHEME_FALSE);"
 	  "C_block_header_init(buf, C_make_header(C_BYTEVECTOR_TYPE, bytes));"
 	  "C_return(buf);") ]
        [ext-free
 	(foreign-lambda* void ([scheme-object bv])
-	  "C_free((void *)C_block_item(bv, 1));") ]
+	  "free((void *)C_block_item(bv, 1));") ]
        [alloc
 	(lambda (loc len ext?)
 	  (if ext?

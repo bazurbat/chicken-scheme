@@ -154,7 +154,7 @@ C_set_arg_string(char **where, int i, char *dat, int len)
     char *ptr;
     if (dat)
     {
-        ptr = (char *)C_malloc(len + 1);
+        ptr = (char *)malloc(len + 1);
         memcpy(ptr, dat, len);
         ptr[ len ] = '\0';
         /* Can't barf() here, so the NUL byte check happens in Scheme */
@@ -166,7 +166,7 @@ C_set_arg_string(char **where, int i, char *dat, int len)
 
 static void C_fcall
 C_free_arg_string(char **where) {
-    while (*where) C_free(*(where++));
+    while (*where) free(*(where++));
 }
 
 #define C_set_exec_arg(i, a, len)       C_set_arg_string(C_exec_args, i, a, len)
@@ -514,7 +514,7 @@ C_process(const char * app, const char * cmdlin, const char ** env,
 
         for (p = env; *p; ++p) len += strlen(*p) + 1;
 
-        if (envblk = C_malloc(len + 1))
+        if (envblk = malloc(len + 1))
         {
             char* pb = (char*)envblk;
             for (p = env; *p; ++p)

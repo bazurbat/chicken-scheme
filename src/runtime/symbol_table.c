@@ -108,7 +108,7 @@ C_regparm C_SYMBOL_TABLE *C_new_symbol_table(char *name, unsigned int size)
 
     if((stp = C_find_symbol_table(name)) != NULL) return stp;
 
-    if((stp = (C_SYMBOL_TABLE *)C_malloc(sizeof(C_SYMBOL_TABLE))) == NULL)
+    if((stp = (C_SYMBOL_TABLE *)malloc(sizeof(C_SYMBOL_TABLE))) == NULL)
         return NULL;
 
     stp->name = name;
@@ -116,7 +116,7 @@ C_regparm C_SYMBOL_TABLE *C_new_symbol_table(char *name, unsigned int size)
     stp->next = symbol_table_list;
     stp->rand = rand();
 
-    if((stp->table = (C_word *)C_malloc(size * sizeof(C_word))) == NULL)
+    if((stp->table = (C_word *)malloc(size * sizeof(C_word))) == NULL)
         return NULL;
 
     for(i = 0; i < stp->size; stp->table[ i++ ] = C_SCHEME_END_OF_LIST) ;

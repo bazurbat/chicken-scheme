@@ -143,7 +143,7 @@ static C_TLS struct stat C_statbuf;
 static void C_fcall C_set_arg_string(char **where, int i, char *a, int len) {
     char *ptr;
     if(a != NULL) {
-        ptr = (char *)C_malloc(len + 1);
+        ptr = (char *)malloc(len + 1);
         memcpy(ptr, a, len);
         ptr[ len ] = '\0';
         /* Can't barf() here, so the NUL byte check happens in Scheme */
@@ -153,7 +153,7 @@ static void C_fcall C_set_arg_string(char **where, int i, char *a, int len) {
 }
 
 static void C_fcall C_free_arg_string(char **where) {
-    while((*where) != NULL) C_free(*(where++));
+    while((*where) != NULL) free(*(where++));
 }
 
 #define C_set_exec_arg(i, a, len)       C_set_arg_string(C_exec_args, i, a, len)

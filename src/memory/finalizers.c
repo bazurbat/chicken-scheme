@@ -36,7 +36,7 @@ void C_ccall C_do_register_finalizer(C_word x, C_word proc)
     FINALIZER_NODE *flist;
 
     if(finalizer_free_list == NULL) {
-        if((flist = (FINALIZER_NODE *)C_malloc(sizeof(FINALIZER_NODE))) == NULL)
+        if((flist = (FINALIZER_NODE *)malloc(sizeof(FINALIZER_NODE))) == NULL)
             panic(C_text("out of memory - cannot allocate finalizer node"));
 
         ++allocated_finalizer_count;
@@ -83,7 +83,7 @@ C_word C_resize_pending_finalizers(C_word size)
     int sz = C_num_to_int(size);
 
     FINALIZER_NODE **newmem =
-        (FINALIZER_NODE **)C_realloc(pending_finalizer_indices, sz * sizeof(FINALIZER_NODE *));
+        (FINALIZER_NODE **)realloc(pending_finalizer_indices, sz * sizeof(FINALIZER_NODE *));
 
     if (newmem == NULL)
         return C_SCHEME_FALSE;

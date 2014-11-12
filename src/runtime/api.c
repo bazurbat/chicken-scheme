@@ -103,7 +103,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
 {
     /* IMPORTANT: hardcoded table size -
      *        this must match the number of C_pte calls + 1 (NULL terminator)! */
-    C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 56);
+    C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)malloc(sizeof(C_PTABLE_ENTRY) * 56);
     int i = 0;
 
     if(pt == NULL)
@@ -212,14 +212,14 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
     C_set_or_change_heap_size(heap ? heap : DEFAULT_HEAP_SIZE, 0);
 
     /* Allocate temporary stack: */
-    if((C_temporary_stack_limit = (C_word *)C_malloc(TEMPORARY_STACK_SIZE * sizeof(C_word))) == NULL)
+    if((C_temporary_stack_limit = (C_word *)malloc(TEMPORARY_STACK_SIZE * sizeof(C_word))) == NULL)
         return 0;
 
     C_temporary_stack_bottom = C_temporary_stack_limit + TEMPORARY_STACK_SIZE;
     C_temporary_stack = C_temporary_stack_bottom;
 
     /* Allocate mutation stack: */
-    mutation_stack_bottom = (C_word **)C_malloc(DEFAULT_MUTATION_STACK_SIZE * sizeof(C_word *));
+    mutation_stack_bottom = (C_word **)malloc(DEFAULT_MUTATION_STACK_SIZE * sizeof(C_word *));
 
     if(mutation_stack_bottom == NULL) return 0;
 
@@ -230,7 +230,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 
     /* Allocate weak item table: */
     if(C_enable_gcweak) {
-        weak_item_table = (WEAK_TABLE_ENTRY *)C_calloc(WEAK_TABLE_SIZE, sizeof(WEAK_TABLE_ENTRY));
+        weak_item_table = (WEAK_TABLE_ENTRY *)calloc(WEAK_TABLE_SIZE, sizeof(WEAK_TABLE_ENTRY));
 
         if(weak_item_table == NULL)
             return 0;
@@ -240,13 +240,13 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
     finalizer_list = NULL;
     finalizer_free_list = NULL;
     pending_finalizer_indices =
-        (FINALIZER_NODE **)C_malloc(C_max_pending_finalizers * sizeof(FINALIZER_NODE *));
+        (FINALIZER_NODE **)malloc(C_max_pending_finalizers * sizeof(FINALIZER_NODE *));
 
     if(pending_finalizer_indices == NULL) return 0;
 
     /* Initialize forwarding table: */
     forwarding_table =
-        (C_word *)C_malloc((DEFAULT_FORWARDING_TABLE_SIZE + 1) * 2 * sizeof(C_word));
+        (C_word *)malloc((DEFAULT_FORWARDING_TABLE_SIZE + 1) * 2 * sizeof(C_word));
 
     if(forwarding_table == NULL) return 0;
 
@@ -254,7 +254,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
     forwarding_table_size = DEFAULT_FORWARDING_TABLE_SIZE;
 
     /* Initialize locative table: */
-    locative_table = (C_word *)C_malloc(DEFAULT_LOCATIVE_TABLE_SIZE * sizeof(C_word));
+    locative_table = (C_word *)malloc(DEFAULT_LOCATIVE_TABLE_SIZE * sizeof(C_word));
 
     if(locative_table == NULL) return 0;
 
@@ -262,7 +262,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
     locative_table_count = 0;
 
     /* Setup collectibles: */
-    collectibles = (C_word **)C_malloc(sizeof(C_word *) * DEFAULT_COLLECTIBLES_SIZE);
+    collectibles = (C_word **)malloc(sizeof(C_word *) * DEFAULT_COLLECTIBLES_SIZE);
 
     if(collectibles == NULL) return 0;
 
@@ -390,7 +390,7 @@ void *CHICKEN_new_gc_root()
 
 void *CHICKEN_new_gc_root_2(int finalizable)
 {
-    C_GC_ROOT *r = (C_GC_ROOT *)C_malloc(sizeof(C_GC_ROOT));
+    C_GC_ROOT *r = (C_GC_ROOT *)malloc(sizeof(C_GC_ROOT));
 
     if(r == NULL)
         panic(C_text("out of memory - cannot allocate GC root"));
@@ -420,7 +420,7 @@ void CHICKEN_delete_gc_root(void *root)
 
     if(r->next != NULL) r->next->prev = r->prev;
 
-    C_free(root);
+    free(root);
 }
 
 void *CHICKEN_global_lookup(char *name)
