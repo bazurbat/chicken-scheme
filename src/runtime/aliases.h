@@ -25,10 +25,6 @@
 # define C_isatty                  isatty
 #endif
 #define C_fileno                   fileno
-#if defined(HAVE_SIGACTION)
-#define C_sigaction                sigaction
-#endif
-#define C_signal                   signal
 #define C_gettimeofday             gettimeofday
 #define C_gmtime                   gmtime
 #define C_localtime                localtime
@@ -36,12 +32,6 @@
  * It is undefined whether regular setjmp/longjmp save/restore signal mask
  * so try to use versions that we know won't try to save & restore.
  */
-#if defined(HAVE_SIGSETJMP)
-#  define C_sigsetjmp              sigsetjmp
-#  define C_siglongjmp             siglongjmp
-#endif
-#define C_setjmp                   setjmp
-#define C_longjmp                  longjmp
 #define C_alloca                   alloca
 #if defined(_MSC_VER)
 # define C_getpid                  _getpid

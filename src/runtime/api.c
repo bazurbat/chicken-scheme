@@ -289,17 +289,17 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
         sa.sa_flags = 0;
         sigfillset(&sa.sa_mask); /* See note in C_establish_signal_handler() */
         sa.sa_handler = global_signal_handler;
-        C_sigaction(SIGBUS, &sa, NULL);
-        C_sigaction(SIGFPE, &sa, NULL);
-        C_sigaction(SIGILL, &sa, NULL);
-        C_sigaction(SIGSEGV, &sa, NULL);
+        sigaction(SIGBUS, &sa, NULL);
+        sigaction(SIGFPE, &sa, NULL);
+        sigaction(SIGILL, &sa, NULL);
+        sigaction(SIGSEGV, &sa, NULL);
 #else
 # ifndef _WIN32
-        C_signal(SIGBUS, global_signal_handler);
+        signal(SIGBUS, global_signal_handler);
 # endif
-        C_signal(SIGILL, global_signal_handler);
-        C_signal(SIGFPE, global_signal_handler);
-        C_signal(SIGSEGV, global_signal_handler);
+        signal(SIGILL, global_signal_handler);
+        signal(SIGFPE, global_signal_handler);
+        signal(SIGSEGV, global_signal_handler);
 #endif
     }
 
@@ -357,9 +357,9 @@ C_word CHICKEN_run(void *toplevel)
 
     /* The point of (usually) no return... */
 #ifdef HAVE_SIGSETJMP
-    C_sigsetjmp(C_restart, 0);
+    sigsetjmp(C_restart, 0);
 #else
-    C_setjmp(C_restart);
+    setjmp(C_restart);
 #endif
 
     serious_signal_occurred = 0;

@@ -79,9 +79,9 @@ C_word C_fcall C_callback(C_word closure, int argc)
     chicken_is_running = 1;
 
 #ifdef HAVE_SIGSETJMP
-    if(!C_sigsetjmp(C_restart, 0)) C_do_apply(argc, closure, k);
+    if(!sigsetjmp(C_restart, 0)) C_do_apply(argc, closure, k);
 #else
-    if(!C_setjmp(C_restart)) C_do_apply(argc, closure, k);
+    if(!setjmp(C_restart)) C_do_apply(argc, closure, k);
 #endif
 
     serious_signal_occurred = 0;

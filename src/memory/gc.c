@@ -208,9 +208,9 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
     /* Entry point for second-level GC (on explicit request or because of full fromspace): */
 #ifdef HAVE_SIGSETJMP
-    if(C_sigsetjmp(gc_restart, 0) || start >= C_fromspace_limit) {
+    if(sigsetjmp(gc_restart, 0) || start >= C_fromspace_limit) {
 #else
-    if(C_setjmp(gc_restart) || start >= C_fromspace_limit) {
+    if(setjmp(gc_restart) || start >= C_fromspace_limit) {
 #endif
         if(gc_bell) {
             putchar(7);
@@ -503,9 +503,9 @@ i_like_spaghetti:
 
     /* Unwind stack completely */
 #ifdef HAVE_SIGSETJMP
-    C_siglongjmp(C_restart, 1);
+    siglongjmp(C_restart, 1);
 #else
-    C_longjmp(C_restart, 1);
+    longjmp(C_restart, 1);
 #endif
 }
 
@@ -565,9 +565,9 @@ C_regparm void C_fcall really_mark(C_word *x)
 
         if(((C_byte *)p2 + bytes + sizeof(C_word)) > C_fromspace_limit)
 #ifdef HAVE_SIGSETJMP
-            C_siglongjmp(gc_restart, 1);
+            siglongjmp(gc_restart, 1);
 #else
-            C_longjmp(gc_restart, 1);
+            longjmp(gc_restart, 1);
 #endif
 
         C_fromspace_top = (C_byte *)p2 + C_align(bytes) + sizeof(C_word);
@@ -640,9 +640,9 @@ scavenge:
 
             gc_mode = GC_REALLOC;
 #ifdef HAVE_SIGSETJMP
-            C_siglongjmp(gc_restart, 1);
+            siglongjmp(gc_restart, 1);
 #else
-            C_longjmp(gc_restart, 1);
+            longjmp(gc_restart, 1);
 #endif
         }
 

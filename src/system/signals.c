@@ -78,7 +78,7 @@ void global_signal_handler(int signum)
     C_raise_interrupt(signal_mapping_table[ signum ]);
 #ifndef HAVE_SIGACTION
     /* not necessarily needed, but older UNIXen may not leave the handler installed: */
-    C_signal(signum, global_signal_handler);
+    signal(signum, global_signal_handler);
 #endif
 }
 
@@ -89,7 +89,7 @@ C_regparm C_word C_fcall C_establish_signal_handler(C_word signum, C_word reason
     struct sigaction newsig;
 #endif
 
-    if(reason == C_SCHEME_FALSE) C_signal(sig, SIG_IGN);
+    if(reason == C_SCHEME_FALSE) signal(sig, SIG_IGN);
     else {
         signal_mapping_table[ sig ] = C_unfix(reason);
 #if defined(HAVE_SIGACTION)
@@ -99,9 +99,9 @@ C_regparm C_word C_fcall C_establish_signal_handler(C_word signum, C_word reason
            concurrently arrive while it's doing this, to avoid races. */
         sigfillset(&newsig.sa_mask);
         newsig.sa_handler = global_signal_handler;
-        C_sigaction(sig, &newsig, NULL);
+        sigaction(sig, &newsig, NULL);
 #else
-        C_signal(sig, global_signal_handler);
+        signal(sig, global_signal_handler);
 #endif
     }
 
