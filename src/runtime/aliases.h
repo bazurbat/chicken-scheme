@@ -8,7 +8,6 @@
 // temp for bootstrapping
 #define C_strlen                   strlen
 
-#define C_fclose                   fclose
 #if defined(_WIN32)
 # define C_snprintf                _snprintf
 #else
