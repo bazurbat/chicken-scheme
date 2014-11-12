@@ -1114,7 +1114,7 @@ void allocate_vector_2(void *dummy)
         *(v0++) = C_STRING_TYPE | size;
 
         if(C_truep(init))
-            C_memset(v0, C_character_code(init), size);
+            memset(v0, C_character_code(init), size);
     }
 
     C_kontinue(k, v);

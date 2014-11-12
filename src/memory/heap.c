@@ -186,7 +186,7 @@ static void dump_heap_state_2(void *dummy)
     if(hdump_table == NULL)
         panic(C_text("out of memory - can not allocate heap-dump table"));
 
-    C_memset(hdump_table, 0, sizeof(HDUMP_BUCKET *) * HDUMP_TABLE_SIZE);
+    memset(hdump_table, 0, sizeof(HDUMP_BUCKET *) * HDUMP_TABLE_SIZE);
 
     scan = fromspace_start;
 

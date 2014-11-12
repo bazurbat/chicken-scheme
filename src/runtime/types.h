@@ -177,7 +177,7 @@ typedef struct C_ptable_entry_struct
 #define C_copy_ptr_memory(to, from, n, toff, foff) \
     (C_memmove(C_pointer_address(to) + C_unfix(toff), C_pointer_address(from) + C_unfix(foff), \
                C_unfix(n)), C_SCHEME_UNDEFINED)
-#define C_set_memory(to, c, n)          (C_memset(C_data_pointer(to), C_character_code(c), C_unfix(n)), C_SCHEME_UNDEFINED)
+#define C_set_memory(to, c, n)          (memset(C_data_pointer(to), C_character_code(c), C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_string_compare(to, from, n)   C_fix(memcmp(C_c_string(to), C_c_string(from), C_unfix(n)))
 #define C_string_compare_case_insensitive(from, to, n) \
     C_fix(C_memcasecmp(C_c_string(from), C_c_string(to), C_unfix(n)))
