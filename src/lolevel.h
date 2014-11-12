@@ -5,7 +5,7 @@
 # include <sys/mman.h>
 #endif
 
-#define C_memmove_o(to, from, n, toff, foff) C_memmove((char *)(to) + (toff), (char *)(from) + (foff), (n))
+#define C_memmove_o(to, from, n, toff, foff) memmove((char *)(to) + (toff), (char *)(from) + (foff), (n))
 
 #define nmax(x, y)                   ((x) > (y) ? (x) : (y))
 #define nmin(x, y)                   ((x) < (y) ? (x) : (y))

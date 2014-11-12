@@ -8,7 +8,6 @@
 // temp for bootstrapping
 #define C_strlen                   strlen
 
-#define C_memmove                  memmove
 #define C_malloc                   malloc
 #define C_calloc                   calloc
 #define C_free                     free

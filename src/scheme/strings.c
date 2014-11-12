@@ -345,7 +345,7 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
 
         if((p = C_strpbrk(buffer, C_text(".eE"))) == NULL) {
             if(*buffer == 'i' || *buffer == 'n') { /* inf or nan */
-                C_memmove(buffer + 1, buffer, strlen(buffer) + 1);
+                memmove(buffer + 1, buffer, strlen(buffer) + 1);
                 *buffer = '+';
             }
             else if(buffer[ 1 ] != 'i') C_strlcat(buffer, C_text(".0"), sizeof(buffer)); /* negative infinity? */
