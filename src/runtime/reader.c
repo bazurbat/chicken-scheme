@@ -55,7 +55,7 @@ C_regparm C_word C_fcall C_char_ready_p(C_word port)
     /* The best we can currently do on Windows... */
     return C_SCHEME_TRUE;
 #else
-    int fd = C_fileno(C_port_file(port));
+    int fd = fileno(C_port_file(port));
     return C_mk_bool(C_check_fd_ready(fd) == 1);
 #endif
 }

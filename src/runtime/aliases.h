@@ -24,7 +24,6 @@
 #else
 # define C_isatty                  isatty
 #endif
-#define C_fileno                   fileno
 #define C_gettimeofday             gettimeofday
 #define C_gmtime                   gmtime
 #define C_localtime                localtime
