@@ -24,9 +24,6 @@
 #else
 # define C_isatty                  isatty
 #endif
-#define C_gettimeofday             gettimeofday
-#define C_gmtime                   gmtime
-#define C_localtime                localtime
 /*
  * It is undefined whether regular setjmp/longjmp save/restore signal mask
  * so try to use versions that we know won't try to save & restore.

@@ -1099,7 +1099,7 @@
   (foreign-lambda* c-string ()
    "\n#if !defined(__uClinux__)\n"
    "time_t clock = time(NULL);"
-   "struct tm *ltm = C_localtime(&clock);"
+   "struct tm *ltm = localtime(&clock);"
    "char *z = ltm ? (char *)ltm->tm_zone : 0;"
    "\n#else\n"
    "char *z = (daylight ? tzname[1] : tzname[0]);"

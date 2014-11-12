@@ -187,7 +187,7 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
 # endif
 #else
     struct timeval tv;
-    C_gettimeofday(&tv, NULL);
+    gettimeofday(&tv, NULL);
     C_startup_time_seconds = tv.tv_sec;
     /* Make sure tzname, timezone, and daylight are set */
     tzset();

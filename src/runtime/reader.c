@@ -95,8 +95,8 @@ void C_ccall C_decode_seconds(C_word c, C_word closure, C_word k, C_word secs, C
 
     tsecs = (time_t)((secs & C_FIXNUM_BIT) != 0 ? C_unfix(secs) : C_flonum_magnitude(secs));
 
-    if(mode == C_SCHEME_FALSE) tmt = C_localtime(&tsecs);
-    else tmt = C_gmtime(&tsecs);
+    if(mode == C_SCHEME_FALSE) tmt = localtime(&tsecs);
+    else tmt = gmtime(&tsecs);
 
     if(tmt  == NULL)
         C_kontinue(k, C_SCHEME_FALSE);

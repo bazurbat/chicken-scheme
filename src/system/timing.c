@@ -31,7 +31,7 @@ C_regparm double C_fcall C_milliseconds(void)
 #else
     struct timeval tv;
 
-    if(C_gettimeofday(&tv, NULL) == -1) return 0;
+    if(gettimeofday(&tv, NULL) == -1) return 0;
     else return
         C_floor(((double)tv.tv_sec - C_startup_time_seconds) * 1000.0 + tv.tv_usec / 1000);
 #endif
@@ -46,7 +46,7 @@ C_regparm time_t C_fcall C_seconds(C_long *ms)
 #else
     struct timeval tv;
 
-    if(C_gettimeofday(&tv, NULL) == -1) {
+    if(gettimeofday(&tv, NULL) == -1) {
         if(ms != NULL) *ms = 0;
 
         return (time_t)0;
