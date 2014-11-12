@@ -44,7 +44,7 @@ C_regparm C_word C_fcall C_peek_char(C_word port)
         else return C_SCHEME_END_OF_FILE;
     }
 
-    C_ungetc(c, fp);
+    ungetc(c, fp);
     return C_make_character(c);
 }
 

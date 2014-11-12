@@ -138,7 +138,7 @@ static int from_n_nary(C_char *str, int base, double *r)
     C_char *ptr = str;
 
     while(*ptr != '\0') {
-        int c = C_tolower((int)(*(ptr++)));
+        int c = tolower((int)(*(ptr++)));
 
         if(c < '0') return 0;
         else if(c >= '0' + base) {
@@ -392,7 +392,7 @@ fail:
         goto fail;
 
     while(*sptr == '#') {
-        switch(C_tolower((int)*(++sptr))) {
+        switch(tolower((int)*(++sptr))) {
         case 'b': if(radixpf) goto fail; else { radix = 2; radixpf = 1; } break;
         case 'o': if(radixpf) goto fail; else { radix = 8; radixpf = 1; } break;
         case 'd': if(radixpf) goto fail; else { radix = 10; radixpf = 1; } break;
@@ -407,7 +407,7 @@ fail:
 
     /* Scan for embedded special characters and do basic sanity checking: */
     for(eptr = sptr, rptr = sptr; *eptr != '\0'; ++eptr) {
-        switch(C_tolower((int)*eptr)) {
+        switch(tolower((int)*eptr)) {
         case '.':
             if(periodf || ratf || expf) goto fail;
 
@@ -437,7 +437,7 @@ fail:
         case 's':
             /* Don't set exp flag if we see the "f" in "inf.0" (preceded by 'n') */
             /* Other failure modes are handled elsewhere. */
-            if(radix == 10 && eptr > sptr && C_tolower((int)*(eptr-1)) != 'n') {
+            if(radix == 10 && eptr > sptr && tolower((int)*(eptr-1)) != 'n') {
                 if (ratf) goto fail;
 
                 expf = 1;
@@ -527,7 +527,7 @@ C_regparm C_word C_fcall C_i_string_ci_equal_p(C_word x, C_word y)
     p2 = (char *)C_data_pointer(y);
 
     while(n--) {
-        if(C_tolower((int)(*(p1++))) != C_tolower((int)(*(p2++))))
+        if(tolower((int)(*(p1++))) != tolower((int)(*(p2++))))
             return C_SCHEME_FALSE;
     }
 
@@ -658,7 +658,7 @@ C_regparm C_word C_fcall hash_string(int len, C_char *str, C_word m, C_word r, i
     C_uword key = r;
 
     if (ci)
-        while(len--) key ^= (key << 6) + (key >> 2) + C_tolower((int)(*str++));
+        while(len--) key ^= (key << 6) + (key >> 2) + tolower((int)(*str++));
     else
         while(len--) key ^= (key << 6) + (key >> 2) + *(str++);
 

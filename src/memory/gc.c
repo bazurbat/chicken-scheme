@@ -213,7 +213,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
     if(C_setjmp(gc_restart) || start >= C_fromspace_limit) {
 #endif
         if(gc_bell) {
-            C_putchar(7);
+            putchar(7);
             fflush(stdout);
         }
 

@@ -42,7 +42,7 @@ fast_read_line_from_file(C_word str, C_word port, C_word size) {
         }
     }
 
-    C_ungetc(c, fp);
+    ungetc(c, fp);
 
     for (i = 0; i < n; i++) {
         c = C_getc(fp);
@@ -53,7 +53,7 @@ fast_read_line_from_file(C_word str, C_word port, C_word size) {
         }
 
         switch (c) {
-        case '\r':  if ((c = C_getc(fp)) != '\n') C_ungetc(c, fp);
+        case '\r':  if ((c = C_getc(fp)) != '\n') ungetc(c, fp);
         case EOF:   clearerr(fp);
         case '\n':  return C_fix(i);
         }

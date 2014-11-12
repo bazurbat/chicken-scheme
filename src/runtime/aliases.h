@@ -14,13 +14,11 @@
 # define C_snprintf                snprintf
 #endif
 #define C_exit                     exit
-#define C_putchar                  putchar
 #if (defined getc_unlocked || _POSIX_C_SOURCE >= 199506L)
 # define C_getc                    getc_unlocked
 #else
 # define C_getc                    getc
 #endif
-#define C_ungetc                   ungetc
 #if defined(_MSC_VER)
 # define C_isatty                  _isatty
 #else
@@ -31,8 +29,6 @@
 #define C_sigaction                sigaction
 #endif
 #define C_signal                   signal
-#define C_tolower                  tolower
-#define C_toupper                  toupper
 #define C_gettimeofday             gettimeofday
 #define C_gmtime                   gmtime
 #define C_localtime                localtime
@@ -47,11 +43,6 @@
 #define C_setjmp                   setjmp
 #define C_longjmp                  longjmp
 #define C_alloca                   alloca
-#define C_isalpha                  isalpha
-#define C_isdigit                  isdigit
-#define C_isspace                  isspace
-#define C_islower                  islower
-#define C_isupper                  isupper
 #if defined(_MSC_VER)
 # define C_getpid                  _getpid
 #else

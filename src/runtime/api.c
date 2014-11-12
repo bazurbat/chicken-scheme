@@ -658,7 +658,7 @@ C_word C_message(C_word msg)
         barf(C_ASCIIZ_REPRESENTATION_ERROR, "##sys#message", msg);
 
     fwrite(C_c_string(msg), n, sizeof(C_char), stdout);
-    C_putchar('\n');
+    putchar('\n');
     return C_SCHEME_UNDEFINED;
 }
 
