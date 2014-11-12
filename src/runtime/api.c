@@ -636,8 +636,8 @@ C_word C_halt(C_word msg)
     C_char *dmp = msg != C_SCHEME_FALSE ? C_dump_trace(0) : NULL;
 
     if(msg != C_SCHEME_FALSE) {
-        C_fwrite(C_data_pointer(msg), C_header_size(msg), sizeof(C_char), stderr);
-        C_fputc('\n', stderr);
+        fwrite(C_data_pointer(msg), C_header_size(msg), sizeof(C_char), stderr);
+        fputc('\n', stderr);
     }
 
     if(dmp != NULL)
@@ -657,7 +657,7 @@ C_word C_message(C_word msg)
     if (memchr(C_c_string(msg), '\0', n) != NULL)
         barf(C_ASCIIZ_REPRESENTATION_ERROR, "##sys#message", msg);
 
-    C_fwrite(C_c_string(msg), n, sizeof(C_char), stdout);
+    fwrite(C_c_string(msg), n, sizeof(C_char), stdout);
     C_putchar('\n');
     return C_SCHEME_UNDEFINED;
 }

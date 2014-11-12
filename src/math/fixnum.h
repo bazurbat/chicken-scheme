@@ -49,7 +49,7 @@
 #define C_fixnum_decrease(n)            (C_u_fixnum_decrease(n) | C_FIXNUM_BIT)
 #define C_fixnum_abs(n)                 C_fix(abs(C_unfix(n)))
 
-#define C_display_fixnum(p, n)          (C_fprintf(C_port_file(p), C_text("%d"), C_unfix(n)), C_SCHEME_UNDEFINED)
+#define C_display_fixnum(p, n)          (fprintf(C_port_file(p), C_text("%d"), C_unfix(n)), C_SCHEME_UNDEFINED)
 
 #define C_random_fixnum(n)              C_fix((C_word)(((double)rand())/(RAND_MAX + 1.0) * C_unfix(n)))
 

@@ -25,10 +25,10 @@ void C_dbg(C_char *prefix, C_char *fstr, ...)
     va_list va;
 
     va_start(va, fstr);
-    C_fflush(stdout);
-    C_fprintf(stderr, "[%s] ", prefix);
+    fflush(stdout);
+    fprintf(stderr, "[%s] ", prefix);
     C_vfprintf(stderr, fstr, va);
-    C_fflush(stderr);
+    fflush(stderr);
     va_end(va);
 }
 

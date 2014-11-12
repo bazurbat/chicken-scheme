@@ -243,50 +243,50 @@ static void dump_heap_state_2(void *dummy)
             b2 = b->next;
 
             switch(b->key) {
-            case C_fix(1): C_fprintf(stderr,              C_text("fixnum         ")); break;
-            case C_SCHEME_TRUE: C_fprintf(stderr,         C_text("boolean        ")); break;
-            case C_SCHEME_END_OF_LIST: C_fprintf(stderr,  C_text("null           ")); break;
-            case C_SCHEME_UNDEFINED: C_fprintf(stderr,  C_text("void           ")); break;
-            case C_make_character('A'): C_fprintf(stderr, C_text("character      ")); break;
-            case C_SCHEME_END_OF_FILE: C_fprintf(stderr,  C_text("eof            ")); break;
-            case C_SCHEME_UNBOUND: C_fprintf(stderr,      C_text("unbound        ")); break;
-            case C_SYMBOL_TYPE: C_fprintf(stderr,         C_text("symbol         ")); break;
-            case C_STRING_TYPE: C_fprintf(stderr,         C_text("string         ")); break;
-            case C_PAIR_TYPE: C_fprintf(stderr,           C_text("pair           ")); break;
-            case C_CLOSURE_TYPE: C_fprintf(stderr,        C_text("closure        ")); break;
-            case C_FLONUM_TYPE: C_fprintf(stderr,         C_text("flonum         ")); break;
-            case C_PORT_TYPE: C_fprintf(stderr,           C_text("port           ")); break;
-            case C_POINTER_TYPE: C_fprintf(stderr,        C_text("pointer        ")); break;
-            case C_LOCATIVE_TYPE: C_fprintf(stderr,       C_text("locative       ")); break;
-            case C_TAGGED_POINTER_TYPE: C_fprintf(stderr, C_text("tagged pointer ")); break;
-            case C_LAMBDA_INFO_TYPE: C_fprintf(stderr,    C_text("lambda info    ")); break;
-            case C_BUCKET_TYPE: C_fprintf(stderr,         C_text("bucket         ")); break;
-            case C_VECTOR_TYPE: C_fprintf(stderr,         C_text("vector         ")); break;
-            case C_BYTEVECTOR_TYPE: C_fprintf(stderr,     C_text("bytevector     ")); break;
+            case C_fix(1): fprintf(stderr,              C_text("fixnum         ")); break;
+            case C_SCHEME_TRUE: fprintf(stderr,         C_text("boolean        ")); break;
+            case C_SCHEME_END_OF_LIST: fprintf(stderr,  C_text("null           ")); break;
+            case C_SCHEME_UNDEFINED: fprintf(stderr,  C_text("void           ")); break;
+            case C_make_character('A'): fprintf(stderr, C_text("character      ")); break;
+            case C_SCHEME_END_OF_FILE: fprintf(stderr,  C_text("eof            ")); break;
+            case C_SCHEME_UNBOUND: fprintf(stderr,      C_text("unbound        ")); break;
+            case C_SYMBOL_TYPE: fprintf(stderr,         C_text("symbol         ")); break;
+            case C_STRING_TYPE: fprintf(stderr,         C_text("string         ")); break;
+            case C_PAIR_TYPE: fprintf(stderr,           C_text("pair           ")); break;
+            case C_CLOSURE_TYPE: fprintf(stderr,        C_text("closure        ")); break;
+            case C_FLONUM_TYPE: fprintf(stderr,         C_text("flonum         ")); break;
+            case C_PORT_TYPE: fprintf(stderr,           C_text("port           ")); break;
+            case C_POINTER_TYPE: fprintf(stderr,        C_text("pointer        ")); break;
+            case C_LOCATIVE_TYPE: fprintf(stderr,       C_text("locative       ")); break;
+            case C_TAGGED_POINTER_TYPE: fprintf(stderr, C_text("tagged pointer ")); break;
+            case C_LAMBDA_INFO_TYPE: fprintf(stderr,    C_text("lambda info    ")); break;
+            case C_BUCKET_TYPE: fprintf(stderr,         C_text("bucket         ")); break;
+            case C_VECTOR_TYPE: fprintf(stderr,         C_text("vector         ")); break;
+            case C_BYTEVECTOR_TYPE: fprintf(stderr,     C_text("bytevector     ")); break;
             /* XXX this is sort of funny: */
-            case C_BYTEBLOCK_BIT: C_fprintf(stderr,        C_text("blob           ")); break;
+            case C_BYTEBLOCK_BIT: fprintf(stderr,        C_text("blob           ")); break;
             default:
                 x = b->key;
 
                 if(!C_immediatep(x) && C_header_bits(x) == C_SYMBOL_TYPE) {
                     x = C_block_item(x, 1);
-                    C_fprintf(stderr, C_text("`%.*s'"), (int)C_header_size(x), C_c_string(x));
+                    fprintf(stderr, C_text("`%.*s'"), (int)C_header_size(x), C_c_string(x));
                 }
-                else C_fprintf(stderr, C_text("unknown key " UWORD_FORMAT_STRING), (C_uword)b->key);
+                else fprintf(stderr, C_text("unknown key " UWORD_FORMAT_STRING), (C_uword)b->key);
             }
 
-            C_fprintf(stderr, C_text("\t" UWORD_COUNT_FORMAT_STRING), b->count);
+            fprintf(stderr, C_text("\t" UWORD_COUNT_FORMAT_STRING), b->count);
 
             if(b->total > 0)
-                C_fprintf(stderr, C_text("\t" UWORD_COUNT_FORMAT_STRING " bytes"),
+                fprintf(stderr, C_text("\t" UWORD_COUNT_FORMAT_STRING " bytes"),
                           (unsigned int)b->total);
 
-            C_fputc('\n', stderr);
+            fputc('\n', stderr);
             free(b);
         }
     }
 
-    C_fprintf(stderr, C_text("\ntotal number of blocks: " UWORD_COUNT_FORMAT_STRING
+    fprintf(stderr, C_text("\ntotal number of blocks: " UWORD_COUNT_FORMAT_STRING
                                ", immediates: " UWORD_COUNT_FORMAT_STRING "\n"),
               (unsigned int)blk, (unsigned int)imm);
     free(hdump_table);

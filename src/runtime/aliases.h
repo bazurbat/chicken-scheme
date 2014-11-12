@@ -13,12 +13,7 @@
 #else
 # define C_snprintf                snprintf
 #endif
-#define C_fprintf                  fprintf
-#define C_fflush                   fflush
 #define C_exit                     exit
-#define C_fwrite                   fwrite
-#define C_fputs                    fputs
-#define C_fputc                    fputc
 #define C_putchar                  putchar
 #if (defined getc_unlocked || _POSIX_C_SOURCE >= 199506L)
 # define C_getc                    getc_unlocked

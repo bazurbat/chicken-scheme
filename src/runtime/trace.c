@@ -27,8 +27,8 @@ C_TLS C_word current_thread_symbol;
 C_regparm void C_fcall C_trace(C_char *name)
 {
     if(show_trace) {
-        C_fputs(name, stderr);
-        C_fputc('\n', stderr);
+        fputs(name, stderr);
+        fputc('\n', stderr);
     }
 
     if(trace_buffer_top >= trace_buffer_limit) {

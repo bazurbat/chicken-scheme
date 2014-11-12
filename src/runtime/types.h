@@ -131,10 +131,10 @@ typedef struct C_ptable_entry_struct
 #define C_setsubchar(x, i, n)     (((C_char *)C_data_pointer(x))[ C_unfix(i) ] = C_character_code(n), C_SCHEME_UNDEFINED)
 #define C_setsubbyte(x, i, n)     (((C_char *)C_data_pointer(x))[ C_unfix(i) ] = C_unfix(n), C_SCHEME_UNDEFINED)
 
-#define C_display_char(p, c)            (C_fputc(C_character_code(c), C_port_file(p)), C_SCHEME_UNDEFINED)
-#define C_display_string(p, s)          (C_fwrite(C_data_pointer(s), sizeof(C_char), C_header_size(s), \
+#define C_display_char(p, c)            (fputc(C_character_code(c), C_port_file(p)), C_SCHEME_UNDEFINED)
+#define C_display_string(p, s)          (fwrite(C_data_pointer(s), sizeof(C_char), C_header_size(s), \
                                                   C_port_file(p)), C_SCHEME_UNDEFINED)
-#define C_flush_output(port)            (C_fflush(C_port_file(port)), C_SCHEME_UNDEFINED)
+#define C_flush_output(port)            (fflush(C_port_file(port)), C_SCHEME_UNDEFINED)
 
 #define C_fix_to_char(x)                (C_make_character(C_unfix(x)))
 #define C_char_to_fix(x)                (C_fix(C_character_code(x)))

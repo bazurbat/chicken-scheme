@@ -214,7 +214,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 #endif
         if(gc_bell) {
             C_putchar(7);
-            C_fflush(stdout);
+            fflush(stdout);
         }
 
         tgc = C_cpu_milliseconds();
@@ -477,16 +477,16 @@ i_like_spaghetti:
 #endif
 
         if(gc_mode == GC_MINOR)
-            C_fprintf(stderr, C_text("\t" UWORD_FORMAT_STRING), (C_uword)count);
+            fprintf(stderr, C_text("\t" UWORD_FORMAT_STRING), (C_uword)count);
 
-        C_fputc('\n', stderr);
+        fputc('\n', stderr);
         C_dbg("GC", C_text(" from\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING),
               (C_uword)fromspace_start, (C_uword)C_fromspace_top, (C_uword)C_fromspace_limit);
 
         if(gc_mode == GC_MAJOR)
-            C_fprintf(stderr, C_text("\t" UWORD_FORMAT_STRING), (C_uword)count);
+            fprintf(stderr, C_text("\t" UWORD_FORMAT_STRING), (C_uword)count);
 
-        C_fputc('\n', stderr);
+        fputc('\n', stderr);
         C_dbg("GC", C_text("   to\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING "\t" UWORD_FORMAT_STRING " \n"),
               (C_uword)tospace_start, (C_uword)tospace_top,
               (C_uword)tospace_limit);
