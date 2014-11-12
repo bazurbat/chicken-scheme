@@ -8,8 +8,6 @@
 // temp for bootstrapping
 #define C_strlen                   strlen
 
-#define C_strtol                   strtol
-#define C_strtoll                  strtoll
 #define C_fclose                   fclose
 #if defined(_WIN32)
 # define C_snprintf                _snprintf
@@ -75,9 +73,9 @@ extern double trunc(double);
 #endif
 
 #ifdef C_LLP
-# define C_strtow                  C_strtoll
+# define C_strtow                  strtoll
 #else
-# define C_strtow                  C_strtol
+# define C_strtow                  strtol
 #endif
 
 #endif /* RUNTIME_ALIASES_H */
