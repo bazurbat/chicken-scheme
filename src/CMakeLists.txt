@@ -27,9 +27,18 @@ macro(_add_libchicken_sources dir)
     set(libchicken_C_SOURCES ${libchicken_C_SOURCES} PARENT_SCOPE)
 endmacro()
 
+set(chicken_HEADERS
+    ../include/chicken.h
+    ../include/definitions.h
+    ../include/macros.h
+    ../include/types.h
+    ../include/version.h
+)
+
 set(libchicken_C_SOURCES
     ${CHICKEN_APPLY_HACK}
-    ${chicken_HEADERS})
+    ${chicken_HEADERS}
+)
 
 add_subdirectory(foreign)
 add_subdirectory(library)
@@ -220,7 +229,7 @@ install(FILES ${CMAKE_HOME_DIRECTORY}/cmake/extract-depends.scm
 install(FILES ${CHICKEN_TYPES_DB}
     DESTINATION ${INSTALL_EGGDIR})
 
-install(FILES chicken.h ${CHICKEN_CONFIG_H}
+install(FILES ${chicken_HEADERS} ${CHICKEN_CONFIG_H}
     DESTINATION ${INSTALL_INCLUDEDIR})
 
 install(FILES
