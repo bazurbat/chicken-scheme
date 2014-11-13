@@ -3,8 +3,8 @@
 
 #include <common.h>
 
-extern C_TLS int fake_tty_flag;
-extern C_TLS int C_enable_repl;
+extern int fake_tty_flag;
+extern int C_enable_repl;
 
 C_fctexport void C_ccall C_software_type(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_software_version(C_word c, C_word closure, C_word k) C_noret;

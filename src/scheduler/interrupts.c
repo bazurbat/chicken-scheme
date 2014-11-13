@@ -5,18 +5,18 @@
 #include <scheme/apply.h>
 #include <system/timing.h>
 
-C_TLS double last_interrupt_latency;
+double last_interrupt_latency;
 
-C_TLS C_word interrupt_hook_symbol;
+C_word interrupt_hook_symbol;
 
-C_TLS int
+int
     pending_interrupts[ MAX_PENDING_INTERRUPTS ],
     pending_interrupts_count,
     handling_interrupts;
 
-static C_TLS double interrupt_time;
+static double interrupt_time;
 
-C_TLS C_long
+C_long
     C_timer_interrupt_counter,
     C_initial_timer_interrupt_period;
 

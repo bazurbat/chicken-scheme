@@ -13,7 +13,7 @@ int C_not_implemented() {
 
 #define C_curdir(buf)       (getcwd(C_c_string(buf), 1024) ? C_fix(strlen(C_c_string(buf))) : C_SCHEME_FALSE)
 
-static C_TLS struct stat C_statbuf;
+static struct stat C_statbuf;
 
 #define C_stat_type         (C_statbuf.st_mode & S_IFMT)
 #define C_stat(fn)          C_fix(stat((char *)C_data_pointer(fn), &C_statbuf))

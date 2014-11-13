@@ -12,7 +12,7 @@
 #define C_strpbrk                  strpbrk
 
 #define STRING_BUFFER_SIZE             4096
-static C_TLS C_char buffer[ STRING_BUFFER_SIZE ];
+static C_char buffer[ STRING_BUFFER_SIZE ];
 
 #ifdef C_DOUBLE_IS_32_BITS
 # define FLONUM_PRINT_PRECISION         7
@@ -20,7 +20,7 @@ static C_TLS C_char buffer[ STRING_BUFFER_SIZE ];
 # define FLONUM_PRINT_PRECISION         15
 #endif
 
-static C_TLS int flonum_print_precision = FLONUM_PRINT_PRECISION;
+static int flonum_print_precision = FLONUM_PRINT_PRECISION;
 
 C_regparm C_word C_fcall C_set_print_precision(C_word n)
 {

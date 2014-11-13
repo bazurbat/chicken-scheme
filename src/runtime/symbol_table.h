@@ -12,7 +12,7 @@ typedef struct C_symbol_table_struct
     struct C_symbol_table_struct *next;
 } C_SYMBOL_TABLE;
 
-extern C_TLS C_SYMBOL_TABLE
+extern C_SYMBOL_TABLE
     *symbol_table,
     *symbol_table_list;
 

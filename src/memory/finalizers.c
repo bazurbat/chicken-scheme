@@ -6,17 +6,17 @@
 
 #define C_DEFAULT_MAX_PENDING_FINALIZERS  2048
 
-C_TLS int C_max_pending_finalizers = C_DEFAULT_MAX_PENDING_FINALIZERS;
+int C_max_pending_finalizers = C_DEFAULT_MAX_PENDING_FINALIZERS;
 
-C_TLS FINALIZER_NODE *finalizer_list;
-C_TLS FINALIZER_NODE *finalizer_free_list;
-C_TLS FINALIZER_NODE **pending_finalizer_indices;
+FINALIZER_NODE *finalizer_list;
+FINALIZER_NODE *finalizer_free_list;
+FINALIZER_NODE **pending_finalizer_indices;
 
-C_TLS C_word pending_finalizers_symbol;
+C_word pending_finalizers_symbol;
 
-C_TLS int live_finalizer_count;
-C_TLS int allocated_finalizer_count;
-C_TLS int pending_finalizer_count;
+int live_finalizer_count;
+int allocated_finalizer_count;
+int pending_finalizer_count;
 
 void C_ccall C_register_finalizer(C_word c, C_word closure, C_word k, C_word x, C_word proc)
 {

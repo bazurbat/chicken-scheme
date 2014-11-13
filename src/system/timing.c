@@ -14,10 +14,10 @@
 
 #define C_getrusage                getrusage
 
-static C_TLS double
+static double
     timer_start_ms;
 
-C_TLS time_t C_startup_time_seconds;
+time_t C_startup_time_seconds;
 
 /* Timing routines: */
 

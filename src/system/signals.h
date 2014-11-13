@@ -5,11 +5,11 @@
 
 #include <signal.h>
 
-extern volatile C_TLS int serious_signal_occurred;
+extern volatile int serious_signal_occurred;
 
-extern C_TLS int signal_mapping_table[NSIG];
+extern int signal_mapping_table[NSIG];
 
-extern C_TLS int chicken_is_running;
+extern int chicken_is_running;
 
 void global_signal_handler(int signum);
 

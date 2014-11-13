@@ -52,12 +52,12 @@
 
 #endif
 
-extern C_TLS C_word *stack_bottom;
-extern C_TLS C_word *saved_stack_limit;
+extern C_word *stack_bottom;
+extern C_word *saved_stack_limit;
 
-C_varextern C_TLS int C_disable_overflow_check;
+C_varextern int C_disable_overflow_check;
 
-C_varextern C_TLS C_word
+C_varextern C_word
     *C_temporary_stack,
     *C_temporary_stack_bottom,
     *C_temporary_stack_limit,
@@ -68,10 +68,10 @@ C_fctexport void C_check_nursery_minimum(C_word size);
 C_fctexport void C_do_resize_stack(C_word stack);
 C_fctexport int C_in_stackp(C_word x) C_regparm;
 
-extern C_TLS unsigned int mutation_count;
-extern C_TLS unsigned int tracked_mutation_count;
+extern unsigned int mutation_count;
+extern unsigned int tracked_mutation_count;
 
-extern C_TLS C_byte
+extern C_byte
     *heapspace1,
     *heapspace2,
     *fromspace_start,
@@ -83,34 +83,34 @@ extern C_TLS C_byte
     *new_tospace_limit,
     *heap_scan_top;
 
-extern C_TLS C_word
+extern C_word
     **mutation_stack_bottom,
     **mutation_stack_limit,
     **mutation_stack_top;
 
-C_varextern C_TLS int
+C_varextern int
     C_enable_gcweak;
 
-C_TLS void (*C_gc_trace_hook)(C_word *var, int mode);
+void (*C_gc_trace_hook)(C_word *var, int mode);
 
-extern C_TLS int
+extern int
     gc_bell,
     gc_report_flag,
     gc_count_1,
     gc_count_1_total,
     gc_count_2;
 
-extern C_TLS C_word
+extern C_word
     callback_continuation_stack_symbol,
     *forwarding_table;
 
-extern C_TLS C_GC_ROOT *gc_root_list;
+extern C_GC_ROOT *gc_root_list;
 
 void handle_interrupt(void *trampoline, void *proc) C_noret;
 
-C_varextern C_TLS void (*C_pre_gc_hook)(int mode);
-C_varextern C_TLS void (*C_post_gc_hook)(int mode, C_long ms);
-C_varextern C_TLS void (*C_panic_hook)(C_char *msg);
+C_varextern void (*C_pre_gc_hook)(int mode);
+C_varextern void (*C_post_gc_hook)(int mode, C_long ms);
+C_varextern void (*C_panic_hook)(C_char *msg);
 
 typedef struct weak_table_entry_struct
 {
@@ -118,7 +118,7 @@ typedef struct weak_table_entry_struct
            container;           /* object holding reference to symbol, lowest 3 bits are */
 } WEAK_TABLE_ENTRY;             /*   also used as a counter, saturated at 2 or more */
 
-extern C_TLS WEAK_TABLE_ENTRY *weak_item_table;
+extern WEAK_TABLE_ENTRY *weak_item_table;
 
 typedef struct lf_list_struct
 {
@@ -130,16 +130,16 @@ typedef struct lf_list_struct
     char *module_name;
 } LF_LIST;
 
-extern C_TLS LF_LIST *lf_list;
+extern LF_LIST *lf_list;
 
-extern C_TLS unsigned int stack_size;
+extern unsigned int stack_size;
 
-extern C_TLS C_word
+extern C_word
     **collectibles,
     **collectibles_top,
     **collectibles_limit;
 
-extern C_TLS double gc_ms,
+extern double gc_ms,
        timer_accumulated_gc_ms;
 
 C_fctexport void C_ccall C_gc(C_word c, C_word closure, C_word k, ...) C_noret;

@@ -8,11 +8,11 @@
 # define C_sigprocmask             sigprocmask
 #endif
 
-volatile C_TLS int serious_signal_occurred = 0;
+volatile int serious_signal_occurred = 0;
 
-C_TLS int signal_mapping_table[NSIG];
+int signal_mapping_table[NSIG];
 
-C_TLS int chicken_is_running;
+int chicken_is_running;
 
 void global_signal_handler(int signum);
 

@@ -517,14 +517,14 @@
                 #t "C_externimport void C_ccall C_" uu "_toplevel(C_word c,C_word d,C_word k) C_noret;"))
          used-units)
         (unless (zero? n)
-          (gen #t #t "static C_TLS C_word lf[" n "];") )
+          (gen #t #t "static C_word lf[" n "];") )
         (gen #t "static double C_possibly_force_alignment;")
         (do ((i 0 (add1 i))
              (llits lliterals (cdr llits)))
             ((null? llits))
           (let* ((ll (##sys#lambda-info->string (car llits)))
                  (llen (string-length ll)))
-            (gen #t "static C_char C_TLS li" i "[] C_aligned={C_lihdr("
+            (gen #t "static C_char li" i "[] C_aligned={C_lihdr("
                  (arithmetic-shift llen -16) #\,
                  (bitwise-and #xff (arithmetic-shift llen -8)) #\,
                  (bitwise-and #xff llen)
@@ -784,7 +784,7 @@
                       (gen "C_ccall ") )
                   (gen id) ]
                  [else
-                  (gen "static C_TLS int toplevel_initialized=0;")
+                  (gen "static int toplevel_initialized=0;")
                   (unless unit-name
                     (gen #t "C_main_entry_point") )
                   (gen #t "C_noret_decl(toplevel_trampoline)"

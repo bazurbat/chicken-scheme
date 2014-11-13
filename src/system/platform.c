@@ -69,8 +69,8 @@
 # define C_SOFTWARE_VERSION "unknown"
 #endif
 
-C_TLS int fake_tty_flag;
-C_TLS int C_enable_repl;
+int fake_tty_flag;
+int C_enable_repl;
 
 void C_ccall C_software_type(C_word c, C_word closure, C_word k)
 {

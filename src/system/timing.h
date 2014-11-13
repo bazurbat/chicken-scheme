@@ -4,7 +4,7 @@
 #include <common.h>
 #include <time.h>
 
-C_varextern C_TLS time_t C_startup_time_seconds;
+C_varextern time_t C_startup_time_seconds;
 
 C_fctexport double C_fcall C_milliseconds(void) C_regparm;
 C_fctexport time_t C_fcall C_seconds(C_long *ms) C_regparm;

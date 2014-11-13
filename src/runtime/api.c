@@ -35,32 +35,32 @@
 
 #include <signal.h>
 
-static C_TLS int chicken_is_initialized;
+static int chicken_is_initialized;
 
-C_TLS int stack_size_changed;
-C_TLS int forwarding_table_size;
+int stack_size_changed;
+int forwarding_table_size;
 
-static C_TLS int
+static int
     return_to_host,
     chicken_ran_once,
     pass_serious_signals = 1;
 
-C_TLS char **C_main_argv;
+char **C_main_argv;
 
-C_TLS int
+int
     C_abort_on_thread_exceptions,
     C_interrupts_enabled,
     C_main_argc;
 
-C_TLS void *C_restart_address;
+void *C_restart_address;
 
-static C_TLS C_char
+static C_char
     buffer[ STRING_BUFFER_SIZE ];
 
 typedef void (*TOPLEVEL)(C_word c, C_word self, C_word k) C_noret;
 
-C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
-C_TLS int (*C_gc_mutation_hook)(C_word *slot, C_word val);
+void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
+int (*C_gc_mutation_hook)(C_word *slot, C_word val);
 
 void generic_trampoline(void *dummy)
 {
@@ -643,7 +643,7 @@ C_word C_halt(C_word msg)
     if(dmp != NULL)
         C_dbg("", C_text("\n%s"), dmp);
 
-    C_exit(EX_SOFTWARE);
+    exit(EX_SOFTWARE);
     return 0;
 }
 

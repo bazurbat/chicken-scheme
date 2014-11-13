@@ -4,11 +4,11 @@
 
 #define C_vfprintf                 vfprintf
 
-C_TLS C_word
+C_word
     error_hook_symbol,
     error_location;
 
-C_TLS void (*C_panic_hook)(C_char *msg) = NULL;
+void (*C_panic_hook)(C_char *msg) = NULL;
 
 static C_regparm C_word C_fcall intern0(C_char *str)
 {
@@ -53,7 +53,7 @@ void usual_panic(C_char *msg)
     C_dbg_hook(C_SCHEME_UNDEFINED);
 
     C_dbg("panic", C_text("%s - execution terminated\n\n%s"), msg, dmp);
-    C_exit(1);
+    exit(1);
 }
 
 
@@ -62,7 +62,7 @@ void horror(C_char *msg)
     C_dbg_hook(C_SCHEME_UNDEFINED);
 
     C_dbg("horror", C_text("\n%s - execution terminated"), msg);
-    C_exit(1);
+    exit(1);
 }
 
 

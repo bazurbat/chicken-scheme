@@ -40,12 +40,12 @@ static void dload_2(void *dummy) C_noret;
 # define RTLD_LOCAL                    0
 #endif
 
-C_TLS char *C_dlerror;
+char *C_dlerror;
 
-C_TLS int dlopen_flags;
+int dlopen_flags;
 
-C_TLS C_char *current_module_name;
-C_TLS void *current_module_handle;
+C_char *current_module_name;
+void *current_module_handle;
 
 /* Dynamic loading of shared objects: */
 

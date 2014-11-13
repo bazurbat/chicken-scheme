@@ -24,30 +24,30 @@
 # define ENV_MAX        1024
 #endif
 
-static C_TLS char *C_exec_args[ ARG_MAX ];
-static C_TLS char *C_exec_env[ ENV_MAX ];
-static C_TLS struct group *C_group;
-static C_TLS int C_pipefds[ 2 ];
-static C_TLS time_t C_secs;
+static char *C_exec_args[ ARG_MAX ];
+static char *C_exec_env[ ENV_MAX ];
+static struct group *C_group;
+static int C_pipefds[ 2 ];
+static time_t C_secs;
 
 /* pipe handles */
-static C_TLS HANDLE C_rd0, C_wr0, C_wr0_, C_rd1, C_wr1, C_rd1_;
-static C_TLS HANDLE C_save0, C_save1; /* saved I/O handles */
-static C_TLS char C_rdbuf; /* one-char buffer for read */
-static C_TLS int C_exstatus;
+static HANDLE C_rd0, C_wr0, C_wr0_, C_rd1, C_wr1, C_rd1_;
+static HANDLE C_save0, C_save1; /* saved I/O handles */
+static char C_rdbuf; /* one-char buffer for read */
+static int C_exstatus;
 
 /* platform information; initialized for cached testing */
-static C_TLS char C_hostname[256] = "";
-static C_TLS char C_osver[16] = "";
-static C_TLS char C_osrel[16] = "";
-static C_TLS char C_processor[16] = "";
-static C_TLS char C_shlcmd[256] = "";
+static char C_hostname[256] = "";
+static char C_osver[16] = "";
+static char C_osrel[16] = "";
+static char C_processor[16] = "";
+static char C_shlcmd[256] = "";
 
 /* Windows NT or better */
 static int C_isNT = 0;
 
 /* Current user name */
-static C_TLS TCHAR C_username[255 + 1] = "";
+static TCHAR C_username[255 + 1] = "";
 
 /* Directory Operations */
 

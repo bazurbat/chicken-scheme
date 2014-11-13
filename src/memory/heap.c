@@ -10,36 +10,36 @@ typedef struct hdump_bucket_struct
     struct hdump_bucket_struct *next;
 } HDUMP_BUCKET;
 
-static C_TLS HDUMP_BUCKET **hdump_table;
+static HDUMP_BUCKET **hdump_table;
 
-C_TLS int
+int
     C_heap_size_is_fixed;
 
-C_TLS int heap_size_changed;
+int heap_size_changed;
 
-C_TLS int page_size;
+int page_size;
 
-C_TLS C_uword
+C_uword
     C_heap_growth,
     C_heap_shrinkage;
 
-C_TLS C_uword C_maximal_heap_size;
+C_uword C_maximal_heap_size;
 
-C_TLS int dump_heap_on_exit;
+int dump_heap_on_exit;
 
-C_TLS size_t heap_size;
+size_t heap_size;
 
-C_TLS size_t
+size_t
     heapspace1_size,
     heapspace2_size;
 
-C_TLS C_byte
+C_byte
 *C_fromspace_top,
 *C_fromspace_limit;
 #ifdef HAVE_SIGSETJMP
-C_TLS sigjmp_buf C_restart;
+sigjmp_buf C_restart;
 #else
-C_TLS jmp_buf C_restart;
+jmp_buf C_restart;
 #endif
 
 /* Align memory to page boundary */

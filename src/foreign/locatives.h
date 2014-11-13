@@ -15,9 +15,9 @@
 #define C_F32_LOCATIVE            8
 #define C_F64_LOCATIVE            9
 
-extern C_TLS C_word *locative_table;
-extern C_TLS int locative_table_size;
-extern C_TLS int locative_table_count;
+extern C_word *locative_table;
+extern int locative_table_size;
+extern int locative_table_count;
 
 C_fctexport C_word C_fcall C_a_i_make_locative(C_word **a, int c, C_word type, C_word object, C_word index, C_word weak) C_regparm;
 C_fctexport void C_ccall C_locative_ref(C_word c, C_word closure, C_word k, C_word loc) C_noret;

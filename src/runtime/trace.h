@@ -9,13 +9,13 @@ typedef struct trace_info_struct
     C_word cooked1, cooked2, thread;
 } TRACE_INFO;
 
-extern C_TLS TRACE_INFO *trace_buffer;
-extern C_TLS TRACE_INFO *trace_buffer_limit;
+extern TRACE_INFO *trace_buffer;
+extern TRACE_INFO *trace_buffer_limit;
 
-extern C_TLS C_word current_thread_symbol;
-extern C_TLS int show_trace;
+extern C_word current_thread_symbol;
+extern int show_trace;
 
-C_varextern C_TLS int
+C_varextern int
     C_trace_buffer_size;
 
 C_fctexport void C_fcall C_trace(C_char *name) C_regparm;

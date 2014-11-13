@@ -1,7 +1,6 @@
 set(sources
 
     arithmetic
-    common
     constructors
     fixnum
     flonum

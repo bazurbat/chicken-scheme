@@ -6,23 +6,23 @@
 
 #define MIN_TRACE_BUFFER_SIZE          3
 
-C_TLS TRACE_INFO *trace_buffer;
+TRACE_INFO *trace_buffer;
 
-C_TLS TRACE_INFO *trace_buffer_limit;
+TRACE_INFO *trace_buffer_limit;
 
-static C_TLS TRACE_INFO
+static TRACE_INFO
     *trace_buffer_top;
 
-C_TLS int
+int
     C_trace_buffer_size = DEFAULT_TRACE_BUFFER_SIZE;
 
-C_TLS int
+int
     show_trace;
 
-static C_TLS int
+static int
     trace_buffer_full;
 
-C_TLS C_word current_thread_symbol;
+C_word current_thread_symbol;
 
 C_regparm void C_fcall C_trace(C_char *name)
 {

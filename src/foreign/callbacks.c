@@ -13,11 +13,11 @@
 # include <setjmp.h>
 #endif
 
-C_TLS int callback_continuation_level;
+int callback_continuation_level;
 
 C_ccall void callback_return_continuation(C_word c, C_word self, C_word r) C_noret;
 
-static C_TLS int callback_returned_flag;
+static int callback_returned_flag;
 
 /* Support code for callbacks: */
 

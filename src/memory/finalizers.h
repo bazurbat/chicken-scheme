@@ -9,17 +9,17 @@ typedef struct finalizer_node_struct
     C_word item, finalizer;
 } FINALIZER_NODE;
 
-C_varextern C_TLS int C_max_pending_finalizers;
+C_varextern int C_max_pending_finalizers;
 
-extern C_TLS FINALIZER_NODE *finalizer_list;
-extern C_TLS FINALIZER_NODE *finalizer_free_list;
-extern C_TLS FINALIZER_NODE **pending_finalizer_indices;
+extern FINALIZER_NODE *finalizer_list;
+extern FINALIZER_NODE *finalizer_free_list;
+extern FINALIZER_NODE **pending_finalizer_indices;
 
-extern C_TLS C_word pending_finalizers_symbol;
+extern C_word pending_finalizers_symbol;
 
-extern C_TLS int live_finalizer_count;
-extern C_TLS int allocated_finalizer_count;
-extern C_TLS int pending_finalizer_count;
+extern int live_finalizer_count;
+extern int allocated_finalizer_count;
+extern int pending_finalizer_count;
 
 C_fctexport void C_ccall C_register_finalizer(C_word c, C_word closure, C_word k, C_word x, C_word proc) C_noret;
 C_fctexport void C_do_register_finalizer(C_word x, C_word proc);

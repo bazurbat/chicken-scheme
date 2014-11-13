@@ -51,7 +51,7 @@
 #define C_ILLEGAL_INSTRUCTION_ERROR                   46
 #define C_BUS_ERROR                                   47
 
-extern C_TLS C_word
+extern C_word
     error_hook_symbol,
     error_location;
 

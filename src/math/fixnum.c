@@ -11,7 +11,7 @@
    These routines return #f if the operation failed due to overflow.
  */
 
-static C_TLS C_char buffer[ STRING_BUFFER_SIZE ];
+static C_char buffer[ STRING_BUFFER_SIZE ];
 
 C_regparm C_word C_fcall C_i_o_fixnum_plus(C_word n1, C_word n2)
 {

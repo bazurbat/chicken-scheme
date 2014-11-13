@@ -24,7 +24,7 @@
 #define C_fopen                    fopen
 #define C_system                   system
 
-static C_TLS C_char buffer[ STRING_BUFFER_SIZE ];
+static C_char buffer[ STRING_BUFFER_SIZE ];
 
 C_regparm C_word C_fcall C_i_file_exists_p(C_word name, C_word file, C_word dir)
 {

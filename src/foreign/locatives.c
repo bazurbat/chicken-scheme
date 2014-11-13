@@ -5,9 +5,9 @@
 #include <runtime/debug.h>
 #include <runtime/reader.h>
 
-C_TLS C_word *locative_table;
-C_TLS int locative_table_size;
-C_TLS int locative_table_count;
+C_word *locative_table;
+int locative_table_size;
+int locative_table_count;
 
 C_regparm C_word C_fcall C_a_i_make_locative(C_word **a, int c, C_word type, C_word object, C_word index, C_word weak)
 {

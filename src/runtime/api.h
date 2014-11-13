@@ -5,31 +5,31 @@
 #include "../memory/gc.h"
 #include <setjmp.h>
 
-extern C_TLS int stack_size_changed;
-extern C_TLS int forwarding_table_size;
+extern int stack_size_changed;
+extern int forwarding_table_size;
 
-C_varextern C_TLS int
+C_varextern int
     C_abort_on_thread_exceptions;
 
-C_varextern C_TLS int
+C_varextern int
     C_main_argc;
 
-C_varextern C_TLS char
+C_varextern char
     **C_main_argv,
     *C_dlerror;
 
-C_varextern C_TLS void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
-C_varextern C_TLS int (*C_gc_mutation_hook)(C_word *slot, C_word val);
+C_varextern void (C_fcall *C_restart_trampoline)(void *proc) C_regparm C_noret;
+C_varextern int (*C_gc_mutation_hook)(C_word *slot, C_word val);
 
 C_fctexport void C_default_5fstub_toplevel(C_word c,C_word d,C_word k) C_noret;
 
 #ifdef HAVE_SIGSETJMP
-C_varextern C_TLS sigjmp_buf C_restart;
+C_varextern sigjmp_buf C_restart;
 #else
-C_varextern C_TLS jmp_buf C_restart;
+C_varextern jmp_buf C_restart;
 #endif
 
-C_varextern C_TLS void *C_restart_address;
+C_varextern void *C_restart_address;
 
 typedef void (C_fcall *TRAMPOLINE)(void *proc) C_regparm C_noret;
 

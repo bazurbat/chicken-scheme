@@ -1,7 +1,7 @@
 #ifndef _POSIX_UNIX_H_
 #define _POSIX_UNIX_H_
 
-static C_TLS int C_wait_status;
+static int C_wait_status;
 
 #include <sys/time.h>
 #include <sys/wait.h>
@@ -64,16 +64,16 @@ extern char **environ;
 # define FILENAME_MAX          1024
 #endif
 
-static C_TLS char *C_exec_args[ ARG_MAX ];
-static C_TLS char *C_exec_env[ ENV_MAX ];
-static C_TLS struct utsname C_utsname;
-static C_TLS struct flock C_flock;
-static C_TLS DIR *temphandle;
-static C_TLS struct passwd *C_user;
+static char *C_exec_args[ ARG_MAX ];
+static char *C_exec_env[ ENV_MAX ];
+static struct utsname C_utsname;
+static struct flock C_flock;
+static DIR *temphandle;
+static struct passwd *C_user;
 #ifdef HAVE_GRP_H
-static C_TLS struct group *C_group;
+static struct group *C_group;
 #else
-static C_TLS struct {
+static struct {
     char *gr_name, gr_passwd;
     int gr_gid;
     char *gr_mem[ 1 ];
@@ -82,11 +82,11 @@ static C_TLS struct {
 
 # define C_PW_GECOS (C_user->pw_gecos)
 
-static C_TLS int C_pipefds[ 2 ];
-static C_TLS time_t C_secs;
-static C_TLS struct timeval C_timeval;
-static C_TLS char C_hostbuf[ 256 ];
-static C_TLS struct stat C_statbuf;
+static int C_pipefds[ 2 ];
+static time_t C_secs;
+static struct timeval C_timeval;
+static char C_hostbuf[ 256 ];
+static struct stat C_statbuf;
 
 #define C_mkdir(str)        C_fix(mkdir(C_c_string(str), S_IRWXU | S_IRWXG | S_IRWXO))
 #define C_fchdir(fd)        C_fix(fchdir(C_unfix(fd)))
@@ -165,7 +165,7 @@ static void C_fcall C_free_arg_string(char **where) {
 #define C_execve(f)         C_fix(execve(C_data_pointer(f), C_exec_args, C_exec_env))
 
 #if defined(C_MACOSX)
-static C_TLS int C_uw;
+static int C_uw;
 # define C_WIFEXITED(n)      (C_uw = C_unfix(n), C_mk_bool(WIFEXITED(C_uw)))
 # define C_WIFSIGNALED(n)    (C_uw = C_unfix(n), C_mk_bool(WIFSIGNALED(C_uw)))
 # define C_WIFSTOPPED(n)     (C_uw = C_unfix(n), C_mk_bool(WIFSTOPPED(C_uw)))
@@ -188,7 +188,7 @@ static C_TLS int C_uw;
 #define C_flock_lock(p)     C_fix(fcntl(fileno(C_port_file(p)), F_SETLK, &C_flock))
 #define C_flock_lockw(p)    C_fix(fcntl(fileno(C_port_file(p)), F_SETLKW, &C_flock))
 
-static C_TLS sigset_t C_sigset;
+static sigset_t C_sigset;
 #define C_sigemptyset(d)    (sigemptyset(&C_sigset), C_SCHEME_UNDEFINED)
 #define C_sigaddset(s)      (sigaddset(&C_sigset, C_unfix(s)), C_SCHEME_UNDEFINED)
 #define C_sigdelset(s)      (sigdelset(&C_sigset, C_unfix(s)), C_SCHEME_UNDEFINED)

@@ -1,11 +1,6 @@
 #ifndef CHICKEN_DEFINITIONS_H
 #define CHICKEN_DEFINITIONS_H
 
-/* Configuration: */
-
-#define C_MAJOR_VERSION   5
-#define C_MINOR_VERSION   0
-
 #ifndef _ISOC99_SOURCE
 # define _ISOC99_SOURCE
 #endif
@@ -22,22 +17,9 @@
 # define _SVID_SOURCE
 #endif
 
-/*
- * glibc >= 2.20 synonym for _BSD_SOURCE & _SVID_SOURCE.
- */
 #ifndef _DEFAULT_SOURCE
 # define _DEFAULT_SOURCE
 #endif
-
-/*
- * N.B. This file MUST not rely upon "chicken-config.h"
- */
-#if defined(HAVE_CONFIG_H) || defined(HAVE_CHICKEN_CONFIG_H)
-# include <chicken-config.h>
-#endif
-
-
-/* Kind of platform */
 
 #if defined(__LP64__) || defined(_LP64) || defined(__MINGW64__) || defined(_WIN64)
 # define C_SIXTY_FOUR
@@ -51,7 +33,7 @@
 # define C_XXXBSD
 #endif
 
-#if /*defined(__GNUC__) &&*/ (defined(__linux__) || defined(C_XXXBSD))
+#if defined(__linux__) || defined(C_XXXBSD)
 # define C_GNU_ENV
 #endif
 
@@ -63,34 +45,28 @@
 # define C_LLP
 #endif
 
-
-/* Headers */
+#include <chicken-config.h>
 
 #include <ctype.h>
 #include <math.h>
+#include <stdarg.h>
+#include <stdio.h>
+
+#if defined(HAVE_STDLIB_H)
+# include <stdlib.h>
+#endif
+
+#if defined(HAVE_LIMITS_H)
+# include <limits.h>
+#endif
 
 #if defined(HAVE_INTTYPES_H)
 # include <inttypes.h>
 #endif
 
-#if defined(HAVE_STDLIB_H)
-#include <stdlib.h>
-#endif
-
 #if defined(HAVE_STRING_H)
-#include <string.h>
+# include <string.h>
 #endif
-
-/* #if defined(HAVE_SYS_TYPES_H) */
-/* # include <sys/types.h> */
-/* #endif */
-
-/* #if defined(HAVE_PROCESS_H) */
-/* # include <process.h> */
-/* #endif */
-
-
-/* Byteorder in machine word */
 
 #if defined(__MINGW32__)
 # include <sys/param.h>
@@ -104,16 +80,9 @@
 # include <malloc.h>
 #endif
 
-/* Much better with stack allocation API */
-
-/* #ifdef HAVE_ALLOCA_H */
-/* # include <alloca.h> */
-/* #elif !defined(alloca) #<{(| predefined by HP cc +Olibcalls |)}># */
-/* void *alloca (); */
-/* #endif */
-
-
-/* CHICKEN Core C API */
+#ifdef HAVE_ALLOCA_H
+# include <alloca.h>
+#endif
 
 #if defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN
 # define C_BIG_ENDIAN
@@ -137,10 +106,6 @@
 # define C_LITTLE_ENDIAN
 #endif
 
-/* Make sure some common C identifiers are availble w/ Windows */
-
-/* Could be used by C++ source */
-
 #ifdef __cplusplus
 # define C_extern                  extern "C"
 # define C_BEGIN_C_DECLS           extern "C" {
@@ -151,10 +116,6 @@
 # define C_END_C_DECLS
 #endif
 
-
-/* Function declaration modes */
-
-/* Visibility */
 #define C_varextern                C_extern
 #define C_fctimport
 #define C_fctexport
@@ -186,9 +147,8 @@
 # endif
 #endif
 
-/* Language specifics: */
 #if defined(__GNUC__) || defined(__INTEL_COMPILER)
-#define HAVE_STATEMENT_EXPRESSIONS 1
+# define HAVE_STATEMENT_EXPRESSIONS 1
 #endif
 
 #if !defined(__clang__) && !defined(__has_attribute)
@@ -244,68 +204,13 @@
 # define C_inline                  static
 #endif
 
-/* Thread Local Stoarage */
-#ifdef C_ENABLE_TLS
-# if defined(__GNUC__)
-#  define C_TLS                    __thread
-# endif
-#endif
-
-#ifndef C_TLS
-# define C_TLS
-#endif
-
-
-/* Stack growth direction; used to compute stack addresses */
-
-#ifndef C_STACK_GROWS_DOWNWARD
-# define C_STACK_GROWS_DOWNWARD    -1
-#endif
-
-#if C_STACK_GROWS_DOWNWARD == -1
-#  undef C_STACK_GROWS_DOWNWARD
-#  define C_STACK_GROWS_DOWNWARD 1
-#endif
-
-/* Needed for pre-emptive threading */
-
 #define C_TIMER_INTERRUPTS
-
-/* For the `bind' (and the obsolete `easyffi'): */
-
-#define ___fixnum           int
-#define ___number           double
-#define ___bool             int
-#define ___byte             char
-#define ___scheme_value     C_word
-#define ___scheme_pointer   void *
-#define ___blob             void *
-#define ___pointer_vector   void **
-#define ___symbol           char *
-#define ___safe
-#define ___declare(x, y)
-#define ___specialize
-#define ___abstract
-#define ___discard
-#define ___in
-#define ___out
-#define ___inout
-#define ___mutable
-#define ___length(var)
-#define ___pointer
-#define ___u32              C_u32
-#define ___s32              C_s32
-#define ___u64              C_u64
-#define ___s64              C_s64
-
 
 /* Mingw's isnormal() is broken on 32bit; use GCC's builtin (see #1062) */
 #ifdef __MINGW32__
 # undef isnormal
 # define isnormal __builtin_isnormal
 #endif
-
-/* Constants: */
 
 #define C_STACK_RESERVE                   0x10000
 
@@ -427,76 +332,6 @@
 #define C_SYMBOL_TAG              (C_SYMBOL_TYPE | (C_SIZEOF_SYMBOL - 1))
 #define C_FLONUM_TAG              (C_FLONUM_TYPE | sizeof(double))
 
-#if defined (__MINGW32__) || defined (_MSC_VER)
-# define C_s64                    __int64
-# define C_u64                    unsigned __int64
-#else
-# define C_s64                    int64_t
-# define C_u64                    uint64_t
-#endif
-
-#ifdef C_SIXTY_FOUR
-# ifdef C_LLP
-#  define C_word                  C_s64
-# else
-#  define C_word                  long
-# endif
-# define C_u32                    uint32_t
-# define C_s32                    int32_t
-#else
-# define C_word                   int
-# define C_u32                    unsigned int
-# define C_s32                    int
-#endif
-
-#define C_char                    char
-#define C_uchar                   unsigned C_char
-#define C_byte                    char
-#define C_uword                   unsigned C_word
-#define C_header                  C_uword
-
-/* if all else fails, use these:
-   #define UINT64_MAX (18446744073709551615ULL)
-   #define INT64_MAX  (9223372036854775807LL)
-   #define INT64_MIN  (-INT64_MAX - 1)
-   #define UINT32_MAX (4294967295U)
-   #define INT32_MAX  (2147483647)
-   #define INT32_MIN  (-INT32_MAX - 1)
-   #define UINT16_MAX (65535U)
-   #define INT16_MAX  (32767)
-   #define INT16_MIN  (-INT16_MAX - 1)
-   #define UINT8_MAX  (255)
-   #define INT8_MAX   (127)
-   #define INT8_MIN   (-INT8_MAX - 1)
- */
-
-#if defined(_MSC_VER)
-# define C_U64_MAX    _UI64_MAX
-# define C_S64_MIN    _I64_MIN
-# define C_S64_MAX    _I64_MAX
-#else
-# define C_U64_MAX    UINT64_MAX
-# define C_S64_MIN    INT64_MIN
-# define C_S64_MAX    INT64_MAX
-#endif
-
-#if defined(C_LLP)
-# define C_long                   C_s64
-# ifndef LONG_LONG_MAX
-#  define C_LONG_MAX              LLONG_MAX
-#  define C_LONG_MIN              LLONG_MIN
-# else
-#  define C_LONG_MAX              LONG_LONG_MAX
-#  define C_LONG_MIN              LONG_LONG_MIN
-# endif
-#else
-# define C_long                   long
-# define C_LONG_MAX               LONG_MAX
-# define C_LONG_MIN               LONG_MIN
-#endif
-
-#define C_ulong                   unsigned C_long
-
 #if _MSC_VER && _MSC_VER < 1800
 # define INFINITY (DBL_MAX+DBL_MAX)
 # define NAN (INFINITY-INFINITY)
@@ -505,14 +340,6 @@
 # define isnormal(x) _finite(x)
 #endif
 
-#ifdef __cplusplus
-# define C_text(x)                ((C_char *)(x))
-#else
-# define C_text(x)                (x)
-#endif
-
-#define C_MAX_PATH         PATH_MAX
-
 #ifdef C_SIXTY_FOUR
 # define DEFAULT_STACK_SIZE            (1024 * 1024)
 #else
@@ -520,8 +347,6 @@
 #endif
 
 #define STRING_BUFFER_SIZE             4096
-
-/* Constants: */
 
 #define TEMPORARY_STACK_SIZE           2048
 
@@ -537,38 +362,36 @@
 # define UWORD_COUNT_FORMAT_STRING     "%u"
 #endif
 
-#define C_FILEPTR                  FILE *
-
-// temp for bootstrapping
-#define C_strlen                   strlen
-
 #if defined(_WIN32)
 # define C_snprintf                _snprintf
 #else
 # define C_snprintf                snprintf
 #endif
-#define C_exit                     exit
+
 #if (defined getc_unlocked || _POSIX_C_SOURCE >= 199506L)
 # define C_getc                    getc_unlocked
 #else
 # define C_getc                    getc
 #endif
+
 #if defined(_MSC_VER)
 # define C_isatty                  _isatty
 #else
 # define C_isatty                  isatty
 #endif
+
 #if defined(_MSC_VER)
 # define C_getpid                  _getpid
 #else
 # define C_getpid                  getpid
 #endif
+
 #ifdef __linux__
 extern double round(double);
 extern double trunc(double);
 #elif _MSC_VER && _MSC_VER < 1800
-#define round(fp) ((int)((fp) >= 0 ? (fp) + 0.5 : (fp) - 0.5))
-#define trunc(fp) ((int)(fp))
+# define round(fp) ((int)((fp) >= 0 ? (fp) + 0.5 : (fp) - 0.5))
+# define trunc(fp) ((int)(fp))
 #endif
 
 #ifdef C_LLP
@@ -576,5 +399,15 @@ extern double trunc(double);
 #else
 # define C_strtow                  strtol
 #endif
+
+#define C_align4(n)                (((n) + 3) & ~3)
+#define C_align8(n)                (((n) + 7) & ~7)
+#define C_align16(n)               (((n) + 15) & ~15)
+
+#define C_aligned8(n)              ((((C_word)(n)) & 7) == 0)
+
+/* for bootstrapping */
+#define C_TLS
+#define C_strlen                   strlen
 
 #endif /* CHICKEN_DEFINITIONS_H */

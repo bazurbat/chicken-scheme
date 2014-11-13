@@ -21,22 +21,22 @@
 #define GC_MAJOR           1
 #define GC_REALLOC         2
 
-C_TLS C_word *stack_bottom;
+C_word *stack_bottom;
 
-C_TLS C_word *saved_stack_limit;
+C_word *saved_stack_limit;
 
-C_TLS C_word
+C_word
 *C_temporary_stack,
 *C_temporary_stack_bottom,
 *C_temporary_stack_limit,
 *C_stack_limit;
 
-C_TLS int C_disable_overflow_check;
+int C_disable_overflow_check;
 
-C_TLS unsigned int mutation_count;
-C_TLS unsigned int tracked_mutation_count;
+unsigned int mutation_count;
+unsigned int tracked_mutation_count;
 
-C_TLS C_byte
+C_byte
     *heapspace1,
     *heapspace2,
     *fromspace_start,
@@ -48,50 +48,50 @@ C_TLS C_byte
     *new_tospace_limit,
     *heap_scan_top;
 
-C_TLS C_word
+C_word
     **mutation_stack_bottom,
     **mutation_stack_limit,
     **mutation_stack_top;
 
 #ifdef C_COLLECT_ALL_SYMBOLS
-C_TLS int C_enable_gcweak = 1;
+int C_enable_gcweak = 1;
 #else
-C_TLS int C_enable_gcweak = 0;
+int C_enable_gcweak = 0;
 #endif
 
-static C_TLS int gc_mode;
+static int gc_mode;
 
-C_TLS double gc_ms,
+double gc_ms,
       timer_accumulated_gc_ms;
 
-C_TLS int weak_table_randomization;
+int weak_table_randomization;
 
-C_TLS LF_LIST *lf_list;
+LF_LIST *lf_list;
 
-C_TLS int
+int
     gc_bell,
     gc_report_flag = 0,
     gc_count_1,
     gc_count_1_total,
     gc_count_2;
 
-C_TLS C_word
+C_word
     callback_continuation_stack_symbol,
     *forwarding_table;
 
-C_TLS C_GC_ROOT *gc_root_list = NULL;
+C_GC_ROOT *gc_root_list = NULL;
 
-C_TLS WEAK_TABLE_ENTRY *weak_item_table;
+WEAK_TABLE_ENTRY *weak_item_table;
 
 #ifdef HAVE_SIGSETJMP
-static C_TLS sigjmp_buf gc_restart;
+static sigjmp_buf gc_restart;
 #else
-static C_TLS jmp_buf gc_restart;
+static jmp_buf gc_restart;
 #endif
 
-C_TLS unsigned int stack_size;
+unsigned int stack_size;
 
-C_TLS C_word
+C_word
     **collectibles,
     **collectibles_top,
     **collectibles_limit;
@@ -105,8 +105,8 @@ static void C_fcall update_locative_table(int mode) C_regparm;
 static void allocate_vector_2(void *dummy) C_noret;
 static void become_2(void *dummy) C_noret;
 
-C_TLS void (*C_pre_gc_hook)(int mode) = NULL;
-C_TLS void (*C_post_gc_hook)(int mode, C_long ms) = NULL;
+void (*C_pre_gc_hook)(int mode) = NULL;
+void (*C_post_gc_hook)(int mode, C_long ms) = NULL;
 
 static void gc_2(void *dummy)
 {

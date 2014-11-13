@@ -20,18 +20,18 @@
 #define C_set_initial_timer_interrupt_period(n) \
     (C_initial_timer_interrupt_period = C_unfix(n), C_SCHEME_UNDEFINED)
 
-extern C_TLS double last_interrupt_latency;
+extern double last_interrupt_latency;
 
-C_varextern C_TLS int
+C_varextern int
     C_interrupts_enabled;
 
-C_varextern C_TLS C_long
+C_varextern C_long
     C_timer_interrupt_counter,
     C_initial_timer_interrupt_period;
 
-extern C_TLS C_word interrupt_hook_symbol;
+extern C_word interrupt_hook_symbol;
 
-extern C_TLS int
+extern int
     pending_interrupts[ MAX_PENDING_INTERRUPTS ],
     pending_interrupts_count,
     handling_interrupts;

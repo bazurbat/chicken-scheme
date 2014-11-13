@@ -1,7 +1,7 @@
 #include "symbol_table.h"
 #include <chicken.h>
 
-C_TLS C_SYMBOL_TABLE
+C_SYMBOL_TABLE
     *symbol_table,
     *symbol_table_list;
 

@@ -3,26 +3,26 @@
 
 #include <common.h>
 
-extern C_TLS int page_size;
-extern C_TLS int dump_heap_on_exit;
+extern int page_size;
+extern int dump_heap_on_exit;
 
-extern C_TLS size_t heap_size;
-extern C_TLS int heap_size_changed;
+extern size_t heap_size;
+extern int heap_size_changed;
 
-C_varextern C_TLS C_uword C_maximal_heap_size;
+C_varextern C_uword C_maximal_heap_size;
 
-C_varextern C_TLS C_byte
+C_varextern C_byte
     *C_fromspace_top,
     *C_fromspace_limit;
 
-C_varextern C_TLS int
+C_varextern int
     C_heap_size_is_fixed;
 
-C_varextern C_TLS C_uword
+C_varextern C_uword
     C_heap_growth,
     C_heap_shrinkage;
 
-extern C_TLS size_t
+extern size_t
     heapspace1_size,
     heapspace2_size;
 
