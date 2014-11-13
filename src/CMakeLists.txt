@@ -29,8 +29,7 @@ endmacro()
 
 set(libchicken_C_SOURCES
     ${CHICKEN_APPLY_HACK}
-    ${chicken_HEADERS}
-    chicken.h)
+    ${chicken_HEADERS})
 
 add_subdirectory(foreign)
 add_subdirectory(library)

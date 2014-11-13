@@ -1,0 +1,7 @@
+#ifndef CHICKEN_VERSION_H
+#define CHICKEN_VERSION_H
+
+#define C_MAJOR_VERSION   5
+#define C_MINOR_VERSION   0
+
+#endif /* CHICKEN_VERSION_H */
