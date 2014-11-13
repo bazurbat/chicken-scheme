@@ -1,7 +1,7 @@
 #ifndef MATH_FLONUM_H
 #define MATH_FLONUM_H
 
-#include "common.h"
+#include <common.h>
 #include <runtime/errors.h>
 
 #define WORDS_PER_FLONUM               C_SIZEOF_FLONUM
@@ -96,26 +96,26 @@ C_fctexport void C_ccall C_flonum_rat(C_word c, C_word closure, C_word k, C_word
 #define C_a_i_flonum_quotient(ptr, c, n1, n2) C_flonum(ptr, C_flonum_magnitude(n1) / C_flonum_magnitude(n2))
 #define C_a_i_flonum_negate(ptr, c, n)  C_flonum(ptr, -C_flonum_magnitude(n))
 
-#define C_a_i_flonum_sin(ptr, c, x)     C_flonum(ptr, C_sin(C_flonum_magnitude(x)))
-#define C_a_i_flonum_cos(ptr, c, x)     C_flonum(ptr, C_cos(C_flonum_magnitude(x)))
-#define C_a_i_flonum_tan(ptr, c, x)     C_flonum(ptr, C_tan(C_flonum_magnitude(x)))
-#define C_a_i_flonum_asin(ptr, c, x)    C_flonum(ptr, C_asin(C_flonum_magnitude(x)))
-#define C_a_i_flonum_acos(ptr, c, x)    C_flonum(ptr, C_acos(C_flonum_magnitude(x)))
-#define C_a_i_flonum_atan(ptr, c, x)    C_flonum(ptr, C_atan(C_flonum_magnitude(x)))
-#define C_a_i_flonum_atan2(ptr, c, x, y)  C_flonum(ptr, C_atan2(C_flonum_magnitude(x), C_flonum_magnitude(y)))
-#define C_a_i_flonum_exp(ptr, c, x)     C_flonum(ptr, C_exp(C_flonum_magnitude(x)))
-#define C_a_i_flonum_expt(ptr, c, x, y)  C_flonum(ptr, C_pow(C_flonum_magnitude(x), C_flonum_magnitude(y)))
-#define C_a_i_flonum_log(ptr, c, x)     C_flonum(ptr, C_log(C_flonum_magnitude(x)))
-#define C_a_i_flonum_sqrt(ptr, c, x)    C_flonum(ptr, C_sqrt(C_flonum_magnitude(x)))
-#define C_a_i_flonum_abs(ptr, c, x)     C_flonum(ptr, C_fabs(C_flonum_magnitude(x)))
+#define C_a_i_flonum_sin(ptr, c, x)     C_flonum(ptr, sin(C_flonum_magnitude(x)))
+#define C_a_i_flonum_cos(ptr, c, x)     C_flonum(ptr, cos(C_flonum_magnitude(x)))
+#define C_a_i_flonum_tan(ptr, c, x)     C_flonum(ptr, tan(C_flonum_magnitude(x)))
+#define C_a_i_flonum_asin(ptr, c, x)    C_flonum(ptr, asin(C_flonum_magnitude(x)))
+#define C_a_i_flonum_acos(ptr, c, x)    C_flonum(ptr, acos(C_flonum_magnitude(x)))
+#define C_a_i_flonum_atan(ptr, c, x)    C_flonum(ptr, atan(C_flonum_magnitude(x)))
+#define C_a_i_flonum_atan2(ptr, c, x, y)  C_flonum(ptr, atan2(C_flonum_magnitude(x), C_flonum_magnitude(y)))
+#define C_a_i_flonum_exp(ptr, c, x)     C_flonum(ptr, exp(C_flonum_magnitude(x)))
+#define C_a_i_flonum_expt(ptr, c, x, y)  C_flonum(ptr, pow(C_flonum_magnitude(x), C_flonum_magnitude(y)))
+#define C_a_i_flonum_log(ptr, c, x)     C_flonum(ptr, log(C_flonum_magnitude(x)))
+#define C_a_i_flonum_sqrt(ptr, c, x)    C_flonum(ptr, sqrt(C_flonum_magnitude(x)))
+#define C_a_i_flonum_abs(ptr, c, x)     C_flonum(ptr, fabs(C_flonum_magnitude(x)))
 
 #define C_alloc_flonum                  C_word *___tmpflonum = C_alloc(WORDS_PER_FLONUM)
 #define C_kontinue_flonum(k, n)         C_kontinue((k), C_flonum(&___tmpflonum, (n)))
 
-#define C_a_i_flonum_truncate(ptr, n, x)  C_flonum(ptr, C_trunc(C_flonum_magnitude(x)))
-#define C_a_i_flonum_ceiling(ptr, n, x)  C_flonum(ptr, C_ceil(C_flonum_magnitude(x)))
-#define C_a_i_flonum_floor(ptr, n, x)   C_flonum(ptr, C_floor(C_flonum_magnitude(x)))
-#define C_a_i_flonum_round(ptr, n, x)   C_flonum(ptr, C_round(C_flonum_magnitude(x)))
+#define C_a_i_flonum_truncate(ptr, n, x)  C_flonum(ptr, trunc(C_flonum_magnitude(x)))
+#define C_a_i_flonum_ceiling(ptr, n, x)  C_flonum(ptr, ceil(C_flonum_magnitude(x)))
+#define C_a_i_flonum_floor(ptr, n, x)   C_flonum(ptr, floor(C_flonum_magnitude(x)))
+#define C_a_i_flonum_round(ptr, n, x)   C_flonum(ptr, round(C_flonum_magnitude(x)))
 
 #define C_a_u_i_f32vector_ref(ptr, n, b, i)  C_flonum(ptr, ((float *)C_data_pointer(C_block_item((b), 1)))[ C_unfix(i) ])
 #define C_a_u_i_f64vector_ref(ptr, n, b, i)  C_flonum(ptr, ((double *)C_data_pointer(C_block_item((b), 1)))[ C_unfix(i) ])
@@ -207,7 +207,7 @@ C_inline C_word C_i_rationalp(C_word x)
     if((!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG)) {
         double n = C_flonum_magnitude(x);
 
-        if(!C_isinf(n) && !C_isnan(n)) return C_SCHEME_TRUE;
+        if(!isinf(n) && !isnan(n)) return C_SCHEME_TRUE;
     }
 
     return C_SCHEME_FALSE;
@@ -219,9 +219,9 @@ C_inline C_word C_u_i_fpintegerp(C_word x)
 
     val = C_flonum_magnitude(x);
 
-    if(C_isnan(val) || C_isinf(val)) return C_SCHEME_FALSE;
+    if(isnan(val) || isinf(val)) return C_SCHEME_FALSE;
 
-    return C_mk_bool(C_modf(val, &dummy) == 0.0);
+    return C_mk_bool(modf(val, &dummy) == 0.0);
 }
 
 #endif /* MATH_FLONUM_H */

@@ -95,7 +95,7 @@ C_regparm C_word C_fcall C_a_i_arithmetic_shift(C_word **a, int c, C_word n1, C_
 
         f = C_flonum_magnitude(n1);
 
-        if(C_isnan(f) || C_isinf(f) || C_modf(f, &m) != 0.0)
+        if(isnan(f) || isinf(f) || modf(f, &m) != 0.0)
             barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "arithmetic-shift", n1);
 
         if(f < C_WORD_MIN || f > C_UWORD_MAX)
@@ -269,7 +269,7 @@ void C_ccall C_flonum_rat(C_word c, C_word closure, C_word k, C_word n)
     if (isnormal(fn)) {
         /* Calculate bit-length of the fractional part (ie, after decimal point) */
         frac = fn;
-        while(!C_isnan(frac) && !C_isinf(frac) && C_modf(frac, &tmp) != 0.0) {
+        while(!isnan(frac) && !isinf(frac) && modf(frac, &tmp) != 0.0) {
             frac *= 2;
             if (i++ > 3000) /* should this be flonum-maximum-exponent? */
                 barf(C_CANT_REPRESENT_INEXACT_ERROR, "fprat", n);

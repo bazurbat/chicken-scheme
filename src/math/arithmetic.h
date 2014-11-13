@@ -1,7 +1,7 @@
 #ifndef MATH_ARITHMETIC_H
 #define MATH_ARITHMETIC_H
 
-#include "common.h"
+#include <common.h>
 
 #define C_a_i_times( ptr, n, x, y)      C_2_times( ptr, x, y)
 #define C_a_i_plus(  ptr, n, x, y)      C_2_plus(  ptr, x, y)

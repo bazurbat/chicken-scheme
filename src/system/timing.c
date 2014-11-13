@@ -25,13 +25,13 @@ C_regparm double C_fcall C_milliseconds(void)
 {
 #ifdef C_NONUNIX
     if(CLOCKS_PER_SEC == 1000) return clock();
-    else return C_floor(((double)clock() / (double)CLOCKS_PER_SEC) * 1000);
+    else return floor(((double)clock() / (double)CLOCKS_PER_SEC) * 1000);
 #else
     struct timeval tv;
 
     if(gettimeofday(&tv, NULL) == -1) return 0;
     else return
-        C_floor(((double)tv.tv_sec - C_startup_time_seconds) * 1000.0 + tv.tv_usec / 1000);
+        floor(((double)tv.tv_sec - C_startup_time_seconds) * 1000.0 + tv.tv_usec / 1000);
 #endif
 }
 
@@ -61,13 +61,13 @@ C_regparm double C_fcall C_cpu_milliseconds(void)
 {
 #if defined(C_NONUNIX)
     if(CLOCKS_PER_SEC == 1000) return clock();
-    else return C_floor(((double)clock() / (double)CLOCKS_PER_SEC) * 1000);
+    else return floor(((double)clock() / (double)CLOCKS_PER_SEC) * 1000);
 #else
     struct rusage ru;
 
     if(C_getrusage(RUSAGE_SELF, &ru) == -1) return 0;
     else return
-        C_floor(((double)ru.ru_utime.tv_sec + ru.ru_stime.tv_sec) * 1000
+        floor(((double)ru.ru_utime.tv_sec + ru.ru_stime.tv_sec) * 1000
                 + ((double)ru.ru_utime.tv_usec + ru.ru_stime.tv_usec) / 1000);
 #endif
 }
@@ -105,14 +105,14 @@ C_regparm C_word C_fcall C_a_i_cpu_time(C_word **a, int c, C_word buf)
 
 #if defined(C_NONUNIX)
     if(CLOCKS_PER_SEC == 1000) u = clock();
-    else u = C_number(a, C_floor(((double)clock() / (double)CLOCKS_PER_SEC) * 1000));
+    else u = C_number(a, floor(((double)clock() / (double)CLOCKS_PER_SEC) * 1000));
 #else
     struct rusage ru;
 
     if(C_getrusage(RUSAGE_SELF, &ru) == -1) u = 0;
     else {
-        u = C_number(a, C_floor((double)ru.ru_utime.tv_sec * 1000 + ru.ru_utime.tv_usec / 1000));
-        s = C_number(a, C_floor((double)ru.ru_stime.tv_sec * 1000 + ru.ru_stime.tv_usec / 1000));
+        u = C_number(a, floor((double)ru.ru_utime.tv_sec * 1000 + ru.ru_utime.tv_usec / 1000));
+        s = C_number(a, floor((double)ru.ru_stime.tv_sec * 1000 + ru.ru_stime.tv_usec / 1000));
     }
 #endif
 

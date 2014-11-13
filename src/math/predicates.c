@@ -11,7 +11,7 @@ C_regparm C_word C_fcall C_i_evenp(C_word x)
         barf(C_BAD_ARGUMENT_TYPE_ERROR, "even?", x);
 
     val = C_flonum_magnitude(x);
-    if(C_isnan(val) || C_isinf(val) || C_modf(val, &dummy) != 0.0)
+    if(isnan(val) || isinf(val) || modf(val, &dummy) != 0.0)
         barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "even?", x);
 
     return C_mk_bool(fmod(val, 2.0) == 0.0);
@@ -56,7 +56,7 @@ C_regparm C_word C_fcall C_i_oddp(C_word x)
         barf(C_BAD_ARGUMENT_TYPE_ERROR, "odd?", x);
 
     val = C_flonum_magnitude(x);
-    if(C_isnan(val) || C_isinf(val) || C_modf(val, &dummy) != 0.0)
+    if(isnan(val) || isinf(val) || modf(val, &dummy) != 0.0)
         barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "odd?", x);
 
     return C_mk_bool(fmod(val, 2.0) != 0.0);

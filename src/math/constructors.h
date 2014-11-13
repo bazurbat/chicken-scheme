@@ -1,7 +1,7 @@
 #ifndef MATH_CONSTRUCTORS_H
 #define MATH_CONSTRUCTORS_H
 
-#include "common.h"
+#include <common.h>
 #include "fixnum.h"
 #include "flonum.h"
 

@@ -2,7 +2,7 @@
 #define CHICKEN_H
 
 #include "version.h"
-#include <common.h>
+#include "definitions.h"
 #include "types.h"
 #include "macros.h"
 

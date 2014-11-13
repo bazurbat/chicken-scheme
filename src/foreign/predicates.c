@@ -112,7 +112,7 @@ C_regparm C_word C_fcall C_i_foreign_integer64_argumentp(C_word x)
     if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
         m = C_flonum_magnitude(x);
 
-        if(m >= C_S64_MIN && m <= C_S64_MAX && C_modf(m, &r) == 0.0) return x;
+        if(m >= C_S64_MIN && m <= C_S64_MAX && modf(m, &r) == 0.0) return x;
     }
 
     barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, NULL, x);
@@ -128,7 +128,7 @@ C_regparm C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x)
     if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
         m = C_flonum_magnitude(x);
 
-        if(m >= 0 && m <= C_UWORD_MAX && C_modf(m, &r) == 0.0) return x;
+        if(m >= 0 && m <= C_UWORD_MAX && modf(m, &r) == 0.0) return x;
     }
 
     barf(C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR, NULL, x);
@@ -144,7 +144,7 @@ C_regparm C_word C_fcall C_i_foreign_unsigned_integer64_argumentp(C_word x)
     if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
         m = C_flonum_magnitude(x);
 
-        if(m >= 0 && m <= C_U64_MAX && C_modf(m, &r) == 0.0) return x;
+        if(m >= 0 && m <= C_U64_MAX && modf(m, &r) == 0.0) return x;
     }
 
     barf(C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR, NULL, x);

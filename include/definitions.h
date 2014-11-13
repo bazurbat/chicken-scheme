@@ -67,6 +67,7 @@
 /* Headers */
 
 #include <ctype.h>
+#include <math.h>
 
 #if defined(HAVE_INTTYPES_H)
 # include <inttypes.h>
@@ -495,6 +496,14 @@
 #endif
 
 #define C_ulong                   unsigned C_long
+
+#if _MSC_VER && _MSC_VER < 1800
+# define INFINITY (DBL_MAX+DBL_MAX)
+# define NAN (INFINITY-INFINITY)
+# define isinf(x) (!_finite(x) && !_isnan(x))
+# define isnan(x) _isnan(x)
+# define isnormal(x) _finite(x)
+#endif
 
 #ifdef __cplusplus
 # define C_text(x)                ((C_char *)(x))

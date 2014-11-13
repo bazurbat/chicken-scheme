@@ -327,12 +327,12 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
             }
         }
 
-        if(C_isnan(f)) {
+        if(isnan(f)) {
             C_strlcpy(buffer, C_text("+nan.0"), sizeof(buffer));
             p = buffer;
             goto fini;
         }
-        else if(C_isinf(f)) {
+        else if(isinf(f)) {
             C_snprintf(buffer, sizeof(buffer), "%cinf.0", f > 0 ? '+' : '-');
             p = buffer;
             goto fini;

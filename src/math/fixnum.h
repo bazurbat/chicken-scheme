@@ -1,7 +1,7 @@
 #ifndef MATH_FIXNUM_H
 #define MATH_FIXNUM_H
 
-#include "common.h"
+#include <common.h>
 #include <runtime/errors.h>
 
 #if defined(HAVE_UNISTD_H)
@@ -89,7 +89,7 @@ C_inline C_word C_double_to_number(C_word n)
     double m, f = C_flonum_magnitude(n);
 
     if(f <= (double)C_MOST_POSITIVE_FIXNUM
-       && f >= (double)C_MOST_NEGATIVE_FIXNUM && C_modf(f, &m) == 0.0)
+       && f >= (double)C_MOST_NEGATIVE_FIXNUM && modf(f, &m) == 0.0)
         return C_fix(f);
     else return n;
 }
