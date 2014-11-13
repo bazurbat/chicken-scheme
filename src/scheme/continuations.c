@@ -4,8 +4,6 @@
 #include <runtime/compiler.h>
 #include <runtime/debug.h>
 #include <runtime/errors.h>
-#include <runtime/macros.h>
-#include <runtime/types.h>
 #include <scheme/apply.h>
 #include <scheme/pairs.h>
 

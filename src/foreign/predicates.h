@@ -1,7 +1,7 @@
 #ifndef FOREIGN_PREDICATES_H
 #define FOREIGN_PREDICATES_H
 
-#include <runtime/definitions.h>
+#include <common.h>
 
 C_fctexport C_word C_fcall C_i_foreign_char_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_fixnum_argumentp(C_word x) C_regparm;

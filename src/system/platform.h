@@ -1,7 +1,7 @@
 #ifndef SYSTEM_PLATFORM_H
 #define SYSTEM_PLATFORM_H
 
-#include <runtime/definitions.h>
+#include <common.h>
 
 extern C_TLS int fake_tty_flag;
 extern C_TLS int C_enable_repl;

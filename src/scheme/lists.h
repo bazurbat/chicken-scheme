@@ -2,8 +2,7 @@
 #define SCHEME_LISTS_H
 
 #include "pairs.h"
-#include <runtime/types.h>
-#include <runtime/definitions.h>
+#include <common.h>
 
 C_fctexport C_word C_a_i_list(C_word **a, int c, ...);
 C_fctexport C_word C_fcall C_i_list_tail(C_word lst, C_word i) C_regparm;

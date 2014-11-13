@@ -1,7 +1,7 @@
 #ifndef FOREIGN_CALLBACKS_H
 #define FOREIGN_CALLBACKS_H
 
-#include <runtime/definitions.h>
+#include <common.h>
 
 extern C_TLS int callback_continuation_level;
 

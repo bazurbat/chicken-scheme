@@ -2,8 +2,6 @@
 #include <foreign/data.h>
 #include <math/fixnum.h>
 #include <memory/gc.h>
-#include <runtime/macros.h>
-#include <runtime/types.h>
 
 #include <stdarg.h>
 

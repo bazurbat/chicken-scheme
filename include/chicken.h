@@ -2,19 +2,18 @@
 #define CHICKEN_H
 
 #include "version.h"
+#include <common.h>
+#include "types.h"
+#include "macros.h"
 
-#include <runtime/aliases.h>
 #include <runtime/api.h>
 #include <runtime/check.h>
 #include <runtime/compiler.h>
 #include <runtime/debug.h>
-#include <runtime/definitions.h>
 #include <runtime/errors.h>
-#include <runtime/macros.h>
 #include <runtime/reader.h>
 #include <runtime/symbol_table.h>
 #include <runtime/trace.h>
-#include <runtime/types.h>
 
 #include <scheme/apply.h>
 #include <scheme/continuations.h>

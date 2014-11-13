@@ -2,7 +2,6 @@
 #include <math/fixnum.h>
 #include <math/flonum.h>
 #include <runtime/errors.h>
-#include <runtime/types.h>
 
 C_regparm C_word C_fcall C_i_block_ref(C_word x, C_word i)
 {

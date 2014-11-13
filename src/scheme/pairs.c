@@ -1,7 +1,6 @@
 #include "pairs.h"
 #include <memory/gc.h>
 #include <runtime/errors.h>
-#include <runtime/types.h>
 
 C_regparm C_word C_fcall C_i_caar(C_word x)
 {

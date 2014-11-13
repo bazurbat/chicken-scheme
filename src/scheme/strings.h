@@ -1,8 +1,7 @@
 #ifndef SCHEME_STRINGS_H
 #define SCHEME_STRINGS_H
 
-#include <runtime/definitions.h>
-#include <runtime/types.h>
+#include <common.h>
 
 /* XXX Sometimes this is (ab)used on bytevectors (ie, blob=? uses string_compare) */
 #define C_c_string(x)              ((C_char *)C_data_pointer(x))

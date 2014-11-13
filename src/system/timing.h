@@ -1,7 +1,7 @@
 #ifndef SYSTEM_TIMING_H
 #define SYSTEM_TIMING_H
 
-#include <runtime/definitions.h>
+#include <common.h>
 #include <time.h>
 
 C_varextern C_TLS time_t C_startup_time_seconds;

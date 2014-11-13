@@ -2,7 +2,6 @@
 #include <math/fixnum.h>
 #include <memory/gc.h>
 #include <runtime/errors.h>
-#include <runtime/types.h>
 #include <scheme/apply.h>
 #include <system/timing.h>
 

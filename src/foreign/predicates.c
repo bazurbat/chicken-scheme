@@ -1,7 +1,6 @@
 #include "predicates.h"
 #include <math/arithmetic.h>
 #include <runtime/errors.h>
-#include <runtime/types.h>
 
 /*XXX these are not correctly named */
 

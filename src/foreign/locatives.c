@@ -3,7 +3,6 @@
 #include <math/fixnum.h>
 #include <runtime/api.h>
 #include <runtime/debug.h>
-#include <runtime/macros.h>
 #include <runtime/reader.h>
 
 C_TLS C_word *locative_table;

@@ -2,8 +2,7 @@
 #define MATH_PREDICATES_H
 
 #include "arithmetic.h"
-#include <runtime/definitions.h>
-#include <runtime/types.h>
+#include <common.h>
 
 C_fctexport C_word C_fcall C_i_evenp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_exactp(C_word x) C_regparm;

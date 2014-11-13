@@ -3,7 +3,6 @@
 #include <math/predicates.h>
 #include <math/fixnum.h>
 #include <math/flonum.h>
-#include <runtime/macros.h>
 
 #include <errno.h>
 

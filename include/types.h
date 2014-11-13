@@ -1,8 +1,5 @@
-#ifndef RUNTIME_TYPES_H
-#define RUNTIME_TYPES_H
-
-#include "definitions.h"
-#include "aliases.h"
+#ifndef CHICKEN_TYPES_H
+#define CHICKEN_TYPES_H
 
 #if defined(HAVE_LIMITS_H)
 # include <limits.h>
@@ -304,4 +301,4 @@ C_inline C_word *C_a_i(C_word **a, int n)
 
 #endif
 
-#endif /* RUNTIME_TYPES_H */
+#endif /* CHICKEN_TYPES_H */

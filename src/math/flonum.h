@@ -2,9 +2,6 @@
 #define MATH_FLONUM_H
 
 #include "common.h"
-#include <runtime/definitions.h>
-#include <runtime/types.h>
-#include <runtime/aliases.h>
 #include <runtime/errors.h>
 
 #define WORDS_PER_FLONUM               C_SIZEOF_FLONUM

@@ -3,7 +3,6 @@
 #include <math/fixnum.h>
 #include <memory/gc.h>
 #include <runtime/errors.h>
-#include <runtime/types.h>
 
 C_word C_a_i_list(C_word **a, int c, ...)
 {

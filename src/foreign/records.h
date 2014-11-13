@@ -1,7 +1,7 @@
 #ifndef FOREIGN_RECORDS_H
 #define FOREIGN_RECORDS_H
 
-#include <runtime/definitions.h>
+#include <common.h>
 
 C_fctexport C_word C_a_i_record(C_word **a, int c, ...);
 

@@ -1,8 +1,7 @@
 #ifndef SCHEME_CXR_H
 #define SCHEME_CXR_H
 
-#include <runtime/definitions.h>
-#include <runtime/types.h>
+#include <common.h>
 #include <runtime/errors.h>
 
 #define C_u_i_caaar(x)                  C_u_i_car( C_u_i_caar( x ) )

@@ -4,8 +4,6 @@
 #include <math/fixnum.h>
 #include <math/flonum.h>
 #include <memory/gc.h>
-#include <runtime/macros.h>
-#include <runtime/types.h>
 #include <scheme/vectors.h>
 
 #if !defined(C_NONUNIX)

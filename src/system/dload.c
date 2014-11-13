@@ -2,8 +2,6 @@
 #include <memory/gc.h>
 #include <runtime/debug.h>
 #include <runtime/errors.h>
-#include <runtime/macros.h>
-#include <runtime/types.h>
 #include <scheme/strings.h>
 
 #ifdef _WIN32

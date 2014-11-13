@@ -3,8 +3,6 @@
 #include "heap.h"
 #include <math/constructors.h>
 #include <runtime/errors.h>
-#include <runtime/macros.h>
-#include <runtime/types.h>
 
 #define C_DEFAULT_MAX_PENDING_FINALIZERS  2048
 

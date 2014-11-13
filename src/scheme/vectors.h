@@ -1,8 +1,7 @@
 #ifndef SCHEME_VECTORS_H
 #define SCHEME_VECTORS_H
 
-#include <runtime/definitions.h>
-#include <runtime/types.h>
+#include <common.h>
 
 #define C_a_i_vector                    C_vector
 

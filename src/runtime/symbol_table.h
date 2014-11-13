@@ -1,7 +1,7 @@
 #ifndef RUNTIME_SYMBOL_TABLE_H
 #define RUNTIME_SYMBOL_TABLE_H
 
-#include <runtime/definitions.h>
+#include <common.h>
 
 typedef struct C_symbol_table_struct
 {

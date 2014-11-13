@@ -1,7 +1,7 @@
 #ifndef RUNTIME_ERROR_H
 #define RUNTIME_ERROR_H
 
-#include "definitions.h"
+#include <common.h>
 
 #define C_BAD_ARGUMENT_COUNT_ERROR                    1
 #define C_BAD_MINIMUM_ARGUMENT_COUNT_ERROR            2

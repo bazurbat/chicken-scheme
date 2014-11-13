@@ -1,7 +1,7 @@
 #ifndef SYSTEM_DLOAD_H
 #define SYSTEM_DLOAD_H
 
-#include <runtime/definitions.h>
+#include <common.h>
 
 #if !defined(PIC)
 # define NO_DLOAD2

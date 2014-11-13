@@ -1,7 +1,6 @@
 #include "apply.h"
 #include <memory/gc.h>
 #include <runtime/errors.h>
-#include <runtime/macros.h>
 #include <scheme/pairs.h>
 
 #include <stdarg.h>

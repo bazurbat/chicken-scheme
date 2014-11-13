@@ -1,7 +1,7 @@
 #ifndef GC_FINALIZERS_H
 #define GC_FINALIZERS_H
 
-#include <runtime/definitions.h>
+#include <common.h>
 
 typedef struct finalizer_node_struct
 {

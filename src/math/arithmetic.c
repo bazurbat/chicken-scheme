@@ -2,7 +2,6 @@
 #include "fixnum.h"
 #include "flonum.h"
 #include <memory/gc.h>
-#include <runtime/macros.h>
 
 #include <stdarg.h>
 

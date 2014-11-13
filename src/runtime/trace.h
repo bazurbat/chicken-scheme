@@ -1,7 +1,7 @@
 #ifndef RUNTIME_TRACE_H
 #define RUNTIME_TRACE_H
 
-#include "definitions.h"
+#include <common.h>
 
 typedef struct trace_info_struct
 {

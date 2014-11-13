@@ -1,8 +1,7 @@
 #ifndef RUNTIME_COMPILER_H
 #define RUNTIME_COMPILER_H
 
-#include "definitions.h"
-#include "types.h"
+#include <common.h>
 #include "errors.h"
 
 #ifdef C_BIG_ENDIAN

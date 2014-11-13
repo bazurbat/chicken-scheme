@@ -1,7 +1,7 @@
 #ifndef SCHEME_CONTINUATIONS_H
 #define SCHEME_CONTINUATIONS_H
 
-#include <runtime/definitions.h>
+#include <common.h>
 
 C_ccall void call_cc_wrapper(C_word c, C_word closure, C_word k, C_word result) C_noret;
 C_ccall void call_cc_values_wrapper(C_word c, C_word closure, C_word k, ...) C_noret;

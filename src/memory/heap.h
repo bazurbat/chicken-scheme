@@ -1,7 +1,7 @@
 #ifndef RUNTIME_HEAP_H
 #define RUNTIME_HEAP_H
 
-#include <runtime/definitions.h>
+#include <common.h>
 
 extern C_TLS int page_size;
 extern C_TLS int dump_heap_on_exit;

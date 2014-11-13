@@ -1,7 +1,7 @@
 #ifndef RUNTIME_CHECK_H
 #define RUNTIME_CHECK_H
 
-#include <runtime/definitions.h>
+#include <common.h>
 
 #define C_i_check_closure(x)            C_i_check_closure_2(x, C_SCHEME_FALSE)
 #define C_i_check_exact(x)              C_i_check_exact_2(x, C_SCHEME_FALSE)

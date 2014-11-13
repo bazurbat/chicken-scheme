@@ -2,9 +2,7 @@
 #define MATH_FIXNUM_H
 
 #include "common.h"
-#include <runtime/definitions.h>
 #include <runtime/errors.h>
-#include <runtime/types.h>
 
 #if defined(HAVE_UNISTD_H)
 # include <unistd.h>

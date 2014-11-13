@@ -4,7 +4,6 @@
 #include <runtime/api.h>
 #include <runtime/debug.h>
 #include <runtime/errors.h>
-#include <runtime/types.h>
 #include <scheme/apply.h>
 #include <scheme/pairs.h>
 #include <system/signals.h>

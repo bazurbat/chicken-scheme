@@ -1,8 +1,7 @@
 #ifndef FOREIGN_DATA_H
 #define FOREIGN_DATA_H
 
-#include <runtime/definitions.h>
-#include <runtime/types.h>
+#include <common.h>
 
 #define C_stack_pointer_test       ((C_word *)alloca(1))
 

@@ -1,7 +1,7 @@
 #ifndef RUNTIME_READER_H
 #define RUNTIME_READER_H
 
-#include "definitions.h"
+#include <common.h>
 
 C_fctexport C_word C_fcall C_read_char(C_word port) C_regparm;
 C_fctexport C_word C_fcall C_peek_char(C_word port) C_regparm;

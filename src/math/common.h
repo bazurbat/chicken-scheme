@@ -1,6 +1,7 @@
 #ifndef MATH_COMMON_H
 #define MATH_COMMON_H
 
+#include <common.h>
 #include <math.h>
 
 #define C_acos                 acos

@@ -1,7 +1,7 @@
 #ifndef RUNTIME_DEBUG_H
 #define RUNTIME_DEBUG_H
 
-#include "definitions.h"
+#include <common.h>
 
 extern C_TLS int debug_mode;
 

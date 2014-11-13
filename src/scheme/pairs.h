@@ -1,7 +1,7 @@
 #ifndef SCHEME_PAIRS_H
 #define SCHEME_PAIRS_H
 
-#include <runtime/definitions.h>
+#include <common.h>
 
 #define C_u_i_car(x)                    (C_block_item(x, 0))
 #define C_u_i_cdr(x)                    (C_block_item(x, 1))

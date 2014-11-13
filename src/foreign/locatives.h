@@ -1,7 +1,7 @@
 #ifndef FOREIGN_LOCATIVES_H
 #define FOREIGN_LOCATIVES_H
 
-#include <runtime/definitions.h>
+#include <common.h>
 
 /* Locative subtypes */
 #define C_SLOT_LOCATIVE           0

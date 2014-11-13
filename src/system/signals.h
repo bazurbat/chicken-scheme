@@ -1,7 +1,7 @@
 #ifndef SYSTEM_SIGNALS_H
 #define SYSTEM_SIGNALS_H
 
-#include <runtime/definitions.h>
+#include <common.h>
 
 #include <signal.h>
 

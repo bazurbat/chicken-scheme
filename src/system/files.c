@@ -1,7 +1,5 @@
 #include "files.h"
 #include <math/fixnum.h>
-#include <runtime/macros.h>
-#include <runtime/types.h>
 #include <scheme/strings.h>
 
 #include <errno.h>

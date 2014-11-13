@@ -1,8 +1,7 @@
 #ifndef RUNTIME_API_H
 #define RUNTIME_API_H
 
-#include "definitions.h"
-#include "types.h"
+#include <common.h>
 #include "../memory/gc.h"
 #include <setjmp.h>
 

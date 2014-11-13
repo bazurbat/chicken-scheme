@@ -1,7 +1,7 @@
 #ifndef SCHEME_APPLY_H
 #define SCHEME_APPLY_H
 
-#include <runtime/definitions.h>
+#include <common.h>
 
 #ifdef C_HACKED_APPLY
 # if defined(C_MACOSX) || defined(__MINGW32__)

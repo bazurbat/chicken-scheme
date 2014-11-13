@@ -1,7 +1,7 @@
 #ifndef SCHEDULER_INTERRUPTS_H
 #define SCHEDULER_INTERRUPTS_H
 
-#include <runtime/definitions.h>
+#include <common.h>
 
 #define C_TIMER_INTERRUPT_NUMBER  255
 

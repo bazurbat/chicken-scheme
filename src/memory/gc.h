@@ -1,8 +1,7 @@
 #ifndef RUNTIME_GC_H
 #define RUNTIME_GC_H
 
-#include <runtime/definitions.h>
-#include <runtime/types.h>
+#include <common.h>
 #include "heap.h"
 #include "finalizers.h"
 
