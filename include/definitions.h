@@ -68,6 +68,14 @@
 # include <string.h>
 #endif
 
+#ifdef HAVE_PROCESS_H
+# include <process.h> /* _getpid */
+#endif
+
+#ifdef HAVE_IO_H
+# include <io.h> /* _isatty */
+#endif
+
 #if defined(__MINGW32__)
 # include <sys/param.h>
 #elif defined(__linux__)
