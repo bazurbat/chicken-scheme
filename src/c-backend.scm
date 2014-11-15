@@ -78,6 +78,12 @@
       (or (##sys#hash-table-ref lambda-table id)
           (bomb "can't find lambda" id) ) )
 
+    (define (gen-line-directive source-info)
+      (when (pair? source-info)
+        (let ((lst (string-split (car source-info) ":")))
+          (when (= 2 (length lst))
+            (gen #t "#line " (cadr lst) " \"" (car lst) "\"")))))
+
     ;; Compile a single expression
     (define (expression node temps ll)
 
@@ -243,9 +249,10 @@
                     (empty-closure (and customizable (zero? (lambda-literal-closure-size (find-lambda call-id)))))
                     (fn (car subs)) )
                (when name
-                 (if emit-trace-info
-                     (gen #t "C_trace(\"" (slashify name-str) "\");")
-                     (gen #t "/* " (uncommentify name-str) " */") ) )
+                 (cond (emit-trace-info
+                         (gen-line-directive name)
+                         (gen #t "C_trace(\"" (slashify name-str) "\");"))
+                       (else (gen #t "/* " (uncommentify name-str) " */"))))
                (cond ((eq? '##core#proc (node-class fn))
                       (let ([fpars (node-parameters fn)])
                         (gen #t (first fpars) #\( nf ",0,") )
