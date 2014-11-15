@@ -154,7 +154,7 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
     int i, j;
     double tgc;
 
-    switch(fudge_factor) {
+    switch (fudge_factor) {
     case C_fix(3):              /* 64-bit system? */
 #ifdef C_SIXTY_FOUR
         return C_SCHEME_TRUE;
@@ -280,5 +280,6 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
 
     default:
         panic(C_text("unknown fudge factor"));
+        return C_SCHEME_FALSE;
     }
 }
