@@ -51,6 +51,9 @@ add_subdirectory(system)
 
 if(LIBUV_FOUND)
     list(APPEND libchicken_C_SOURCES uvffi.c uvffi.h)
+    set(scheduler_scm scheduler-uv.scm)
+else()
+    set(scheduler_scm scheduler.scm)
 endif()
 
 if(WIN32)
@@ -60,7 +63,9 @@ else()
 endif()
 
 set(libchicken_SCM_SOURCES
+
     ${posix_scm}
+    ${scheduler_scm}
     build-version.scm
     chicken-ffi-syntax.scm
     chicken-syntax.scm
@@ -75,12 +80,12 @@ set(libchicken_SCM_SOURCES
     modules.scm
     ports.scm
     profiler.scm
-    scheduler.scm
     srfi-1.scm
     srfi-4.scm
     stub.scm
     utils.scm
-    )
+
+)
 
 add_chicken_sources(libchicken_SOURCES
     SOURCES ${libchicken_SCM_SOURCES}

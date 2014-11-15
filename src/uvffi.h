@@ -1,6 +1,8 @@
 #ifndef CHICKEN_UVFFI_H
 #define CHICKEN_UVFFI_H
 
+#include <uv.h>
+
 struct uv_poll_s * current_poll_event();
 struct uv_timer_s * current_timer_event();
 struct uv_poll_s * uvpoll_start(int fd, int events);

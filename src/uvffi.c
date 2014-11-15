@@ -1,5 +1,4 @@
 #include "uvffi.h"
-#include <uv.h>
 #include <stdlib.h>
 
 /* #include "c:/dev/libuv/include/uv.h" */

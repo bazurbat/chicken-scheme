@@ -201,7 +201,7 @@
     (panic
       (sprintf "##sys#thread-block-for-timeout!: invalid timeout: ~S" tm)))
   (when (fp> tm 0.0)
-    (set! ##sys#timeout-list (cons (cons (uvtimer-start tm) t) ##sys#timeout-list))
+    (set! ##sys#timeout-list (cons (cons (uvtimer-start (- tm (current-milliseconds))) t) ##sys#timeout-list))
     (##sys#setslot t 3 'blocked)
     (##sys#setislot t 13 #f)
     (##sys#setslot t 4 tm) ) )
