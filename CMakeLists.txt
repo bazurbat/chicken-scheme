@@ -24,6 +24,11 @@ set(CHICKEN_RUN ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
 set(CHICKEN_EXTRACT_SCRIPT ${CMAKE_SOURCE_DIR}/cmake/extract-depends.scm)
 set(CHICKEN_TYPES_DB ${CMAKE_SOURCE_DIR}/misc/types.db)
 
+if(CMAKE_GENERATOR STREQUAL "Xcode")
+    set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/build)
+    set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/build)
+endif()
+
 include_directories(include)
 
 add_subdirectory(src)
