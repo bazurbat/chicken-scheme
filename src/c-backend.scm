@@ -95,9 +95,9 @@
             ((##core#immediate)
              (case (first params)
                ((bool) (gen (if (second params) "C_SCHEME_TRUE" "C_SCHEME_FALSE")))
-               ((char) (gen "C_make_character(" (char->integer (second params)) #\)))
+               ((char) (gen "C_make_character(" (char->integer (second params)) ")"))
                ((nil) (gen "C_SCHEME_END_OF_LIST"))
-               ((fix) (gen "C_fix(" (second params) #\)))
+               ((fix) (gen "C_fix(" (second params) ")"))
                ((eof) (gen "C_SCHEME_END_OF_FILE"))
                (else (bomb "bad immediate")) ) )
 
@@ -150,28 +150,28 @@
              (expr (car subs) i)
              (gen #\, (first params) #\,)
              (expr (cadr subs) i)
-             (gen #\)) )
+             (gen ")") )
 
             ((##core#update)
              (gen "C_mutate(((C_word *)")
              (expr (car subs) i)
              (gen ")+" (+ (first params) 1) ",")
              (expr (cadr subs) i)
-             (gen #\)) )
+             (gen ")") )
 
             ((##core#updatebox_i)
              (gen "C_set_block_item(")
              (expr (car subs) i)
              (gen ",0,")
              (expr (cadr subs) i)
-             (gen #\)) )
+             (gen ")") )
 
             ((##core#updatebox)
              (gen "C_mutate(((C_word *)")
              (expr (car subs) i)
              (gen ")+1,")
              (expr (cadr subs) i)
-             (gen #\)) )
+             (gen ")") )
 
             ((##core#closure)
              (let ((n (first params)))
@@ -204,7 +204,7 @@
                           (gen "lf[" index "]")
                           (gen "C_retrieve2(lf[" index "],"
                                (c-ify-string (##sys#symbol->qualified-string
-                                              (fourth params))) #\)) ) ]
+                                              (fourth params))) ")") ) ]
                      [safe (gen "*((C_word*)lf[" index "]+1)")]
                      [else (gen "C_fast_retrieve(lf[" index "])")] ) ) )
 
@@ -217,7 +217,7 @@
                    (gen "C_mutate((C_word*)lf[" index "]+1") )
                (gen " /* (set! " (uncommentify (##sys#symbol->qualified-string var)) " ...) */,")
                (expr (car subs) i)
-               (gen #\)) ) )
+               (gen ")") ) )
 
             ((##core#setglobal_i)
              (let ((index (first params))
@@ -232,7 +232,7 @@
                       (gen "C_set_block_item(lf[" index "] /* "
                            (uncommentify (##sys#symbol->qualified-string var)) " */,0,")
                       (expr (car subs) i)
-                      (gen #\)) ] ) ) )
+                      (gen ")") ] ) ) )
 
             ((##core#undefined) (gen "C_SCHEME_UNDEFINED"))
 
@@ -255,7 +255,7 @@
                        (else (gen #t "/* " (uncommentify name-str) " */"))))
                (cond ((eq? '##core#proc (node-class fn))
                       (let ([fpars (node-parameters fn)])
-                        (gen #t (first fpars) #\( nf ",0,") )
+                        (gen #t (first fpars) "(" nf ",0,") )
                       (expr-args args i)
                       (gen ");") )
                      (call-id
@@ -279,7 +279,7 @@
                                (gen #t #\t nc #\=)
                                (expr fn i)
                                (gen #\;) )
-                             (gen #t call-id #\()
+                             (gen #t call-id "(")
                              (unless customizable (gen nf #\,))
                              (unless empty-closure (gen #\t nc #\,))
                              (expr-args args i)
@@ -306,7 +306,7 @@
                                    (gen "C_fast_retrieve_proc(" carg ")")
                                    (gen "C_retrieve2_symbol_proc(" carg ","
                                         (c-ify-string (##sys#symbol->qualified-string
-                                                       (fourth gparams))) #\)) ) )
+                                                       (fourth gparams))) ")") ) )
                               (safe
                                (set! carg
                                  (string-append "*((C_word*)lf[" (number->string index) "]+1)"))
@@ -350,10 +350,10 @@
                          ts (iota n 1 1) )
                         (gen #t "goto loop;") ) )
                      (else
-                      (gen call-id #\()
+                      (gen call-id "(")
                       (unless empty-closure (gen "t0,"))
                       (expr-args subs i)
-                      (gen #\)) ) ) ) )
+                      (gen ")") ) ) ) )
 
             ((##core#direct_call)
              (let* ((args (cdr subs))
@@ -365,15 +365,15 @@
                     (allocating (not (zero? demand)))
                     (empty-closure (zero? (lambda-literal-closure-size (find-lambda call-id))))
                     (fn (car subs)) )
-               (gen call-id #\()
+               (gen call-id "(")
                (when allocating
-                 (gen "C_a_i(&a," demand #\))
+                 (gen "C_a_i(&a," demand ")")
                  (when (or (not empty-closure) (pair? args)) (gen #\,)) )
                (unless empty-closure
                  (expr fn i)
                  (when (pair? args) (gen #\,)) )
                (when (pair? args) (expr-args args i))
-               (gen #\)) ) )
+               (gen ")") ) )
 
             ((##core#callunit)
              ;; The code generated here does not use the extra temporary needed for standard calls, so we have
@@ -390,9 +390,9 @@
              (gen ");") )
 
             ((##core#inline)
-             (gen (first params) #\()
+             (gen (first params) "(")
              (expr-args subs i)
-             (gen #\)) )
+             (gen ")") )
 
             ((##core#inline_allocate)
              (gen (first params) "(&a," (length subs))
@@ -400,14 +400,14 @@
                  (begin
                    (gen #\,)
                    (expr-args subs i) ) )
-             (gen #\)) )
+             (gen ")") )
 
             ((##core#inline_ref)
-             (gen (foreign-result-conversion (second params) "a") (first params) #\)) )
+             (gen (foreign-result-conversion (second params) "a") (first params) ")") )
 
             ((##core#inline_update)
              (let ([t (second params)])
-               (gen #\( (first params) "=(" (foreign-type-declaration t "") #\) (foreign-argument-conversion t))
+               (gen "(" (first params) "=(" (foreign-type-declaration t "") ")" (foreign-argument-conversion t))
                (expr (first subs) i)
                (gen "),C_SCHEME_UNDEFINED)") ) )
 
@@ -436,7 +436,7 @@
             ((##core#inline_unboxed)    ;XXX is this needed?
              (gen (first params) "(")
              (expr-args subs i)
-             (gen #\)))
+             (gen ")"))
 
             ((##core#switch)
              (gen #t "switch(")
@@ -460,7 +460,7 @@
              (expr (second subs) i)
              (gen #\:)
              (expr (third subs) i)
-             (gen #\)) )
+             (gen ")") )
 
             (else (bomb "bad form" (node-class n))) ) ) )
 
@@ -535,7 +535,7 @@
                  (arithmetic-shift llen -16) #\,
                  (bitwise-and #xff (arithmetic-shift llen -8)) #\,
                  (bitwise-and #xff llen)
-                 #\))
+                 ")")
             (do ((n 0 (add1 n)))
                 ((>= n llen))
               (gen #\, (char->integer (string-ref ll n))) )
@@ -578,7 +578,7 @@
                       (gen "C_noret_decl(C_" uname ")" #t)
                       (gen "C_externexport void C_ccall ")
                       (gen "C_" uname) ) ] )
-             (gen #\()
+             (gen "(")
              (unless customizable (gen "C_word c,"))
              (when (and direct (not (zero? allocated)))
                (gen "C_word *a")
@@ -593,7 +593,7 @@
                           (apply gen varlist)
                           (gen ",C_word t" (+ n 1) ") C_noret;") ) ) ]
                    [else
-                    (gen #\))
+                    (gen ")")
                     ;;(when customizable (gen " C_c_regparm"))
                     (unless direct (gen " C_noret"))
                     (gen #\;) ] ) ) )
@@ -653,7 +653,7 @@
                            #t "static void C_fcall tr" id "(void *dummy) C_regparm C_noret;")
                       (gen #t "C_regparm static void C_fcall tr" id "(void *dummy){")
                       (restore argc)
-                      (gen #t id #\()
+                      (gen #t id "(")
                       (let ([al (make-argument-list argc "t")])
                         (apply gen (intersperse al #\,)) )
                       (gen ");}") ]
@@ -799,7 +799,7 @@
                        #t "C_regparm static void C_fcall toplevel_trampoline(void *dummy){"
                        #t "C_" topname "(2,C_SCHEME_UNDEFINED,C_restore);}"
                        #t #t "void C_ccall C_" topname) ] )
-           (gen #\()
+           (gen "(")
            (unless customizable (gen "C_word c,"))
            (when (and direct (not (zero? demand)))
              (gen "C_word *a")
@@ -1044,11 +1044,11 @@
        (if cps
            (gen #t "C_noret_decl(" id ")"
                 #t "static void C_ccall " id "(C_word C_c,C_word C_self,C_word C_k,")
-           (gen #t "static C_word C_fcall " id #\() )
+           (gen #t "static C_word C_fcall " id "(") )
        (apply gen varlist)
        (if cps
            (gen ") C_noret;" #t "static void C_ccall " id "(C_word C_c,C_word C_self,C_word C_k,")
-           (gen ") C_regparm;" #t "C_regparm static C_word C_fcall " id #\() )
+           (gen ") C_regparm;" #t "C_regparm static C_word C_fcall " id "(") )
        (apply gen varlist)
        (gen "){")
        (gen #t "C_word C_r=C_SCHEME_UNDEFINED,*C_a=(C_word*)C_buf;")
@@ -1058,7 +1058,7 @@
                (foreign-type-declaration
                 type
                 (if name (symbol->string name) (sprintf "t~a" index)) )
-               "=(" (foreign-type-declaration type "") #\)
+               "=(" (foreign-type-declaration type "") ")"
                (foreign-argument-conversion type) "C_a" index ");") )
         types (iota n) names)
        (when callback (gen #t "int C_level=C_save_callback_continuation(&C_a,C_k);"))
@@ -1075,9 +1075,9 @@
               (if (not (eq? rtype 'void))
                   (gen #t "C_r=" rconv)
                   (gen #t) )
-              (gen sname #\()
+              (gen sname "(")
               (apply gen (intersperse (make-argument-list n "t") #\,))
-              (unless (eq? rtype 'void) (gen #\)))
+              (unless (eq? rtype 'void) (gen ")"))
               (gen ");")
               (cond [callback
                      (gen #t "C_k=C_restore_callback_continuation2(C_level);"
@@ -1139,8 +1139,8 @@
           argtypes)
          (unless (eq? 'void rtype)
            (gen #t "return " (foreign-argument-conversion rtype)) )
-         (gen "C_callback_wrapper((void *)" id #\, n #\))
-         (unless (eq? 'void rtype) (gen #\)))
+         (gen "C_callback_wrapper((void *)" id #\, n ")")
+         (unless (eq? 'void rtype) (gen ")"))
          (gen ";}") ) ) )
    stubs) )
 
@@ -1151,13 +1151,13 @@
          (argtypes (foreign-callback-stub-argument-types stub))
          (n (length argtypes))
          (vlist (make-argument-list n "t")) )
-    (gen #t cls #\space (foreign-type-declaration rtype "") quals #\space name #\()
+    (gen #t cls #\space (foreign-type-declaration rtype "") quals #\space name "(")
     (pair-for-each
      (lambda (vs ts)
        (gen (foreign-type-declaration (car ts) (car vs)))
        (when (pair? (cdr vs)) (gen #\,)) )
      vlist argtypes)
-    (gen #\)) ) )
+    (gen ")") ) )
 
 
 ;; Create type declarations
