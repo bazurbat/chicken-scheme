@@ -229,7 +229,7 @@ install(FILES ${CMAKE_HOME_DIRECTORY}/cmake/extract-depends.scm
 install(FILES ${CHICKEN_TYPES_DB}
     DESTINATION ${INSTALL_EGGDIR})
 
-install(FILES ${chicken_HEADERS} ${CHICKEN_CONFIG_H}
+install(FILES ${chicken_HEADERS} common.h ${CHICKEN_CONFIG_H}
     DESTINATION ${INSTALL_INCLUDEDIR})
 
 install(FILES
