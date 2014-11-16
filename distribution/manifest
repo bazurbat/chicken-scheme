@@ -1,4 +1,3 @@
-INSTALL
 LICENSE
 NEWS
 README
@@ -44,11 +43,10 @@ support.c
 chicken.compiler.support.import.scm
 tcp.c
 utils.c
-build.scm
 buildversion
 buildbranch
-chicken.compiler.c-backend.scm
-chicken.compiler.c-platform.scm
+c-backend.scm
+c-platform.scm
 chicken-ffi-syntax.scm
 chicken-ffi-syntax.c
 chicken-profile.1
@@ -133,7 +131,6 @@ tests/port-tests.scm
 tests/test-gc-hooks.scm
 tests/test-glob.scm
 tests/matchable.scm
-tests/match-tests.scm
 tests/module-tests.scm
 tests/module-tests-2.scm
 tests/test-finalizers.scm
@@ -243,8 +240,6 @@ chicken.import.scm
 chicken.import.c
 foreign.import.scm
 foreign.import.c
-compiler.import.scm
-compiler.import.c
 lolevel.import.scm
 srfi-1.import.scm
 srfi-4.import.scm
