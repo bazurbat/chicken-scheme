@@ -85,7 +85,11 @@ macro(_chicken_command_prepare_arguments)
 
     foreach(lib ${command_import_libraries})
         set_source_files_properties(${lib} PROPERTIES
-            chicken_import_library TRUE GENERATED TRUE)
+            chicken_import_library TRUE)
+        # Visual Studio seems to not like targets with many outputs
+        if(NOT EXISTS ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib})
+            list(APPEND command_output ${lib})
+        endif()
         list(APPEND command_output ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib})
     endforeach()
 
@@ -210,8 +214,6 @@ function(_chicken_command out_var in_file)
     get_property(is_import_library SOURCE ${in_file}
         PROPERTY chicken_import_library)
 
-    list(INSERT command_output 0 ${out_file})
-
     if(CHICKEN_EXTRACT_SCRIPT AND NOT is_import_library)
         string(REGEX REPLACE
             "(.*)\\.scm$" "\\1.chicken.d"
@@ -223,24 +225,29 @@ function(_chicken_command out_var in_file)
             set(dep_path ${CMAKE_CURRENT_BINARY_DIR}/${dep_file})
         endif()
 
-        add_custom_command(OUTPUT ${dep_file}
+        add_custom_command(OUTPUT ${dep_file}.stamp
             COMMAND ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT}
                     ${in_path} ${dep_path}
+            COMMAND ${CMAKE_COMMAND} -E touch ${dep_file}.stamp
             MAIN_DEPENDENCY ${in_file}
             VERBATIM)
 
         set(xdepends "")
-        _chicken_extract_depends(xdepends ${dep_file})
+        _chicken_extract_depends(xdepends ${dep_path})
     endif()
 
-    set(depends ${dep_path} ${command_depends} ${compile_DEPENDS} ${xdepends})
+    set(depends ${command_depends} ${compile_DEPENDS} ${xdepends})
 
     set(chicken_command ${CHICKEN_EXECUTABLE} ${in_path})
+
     if(compile_ERROR_FILE)
         set(out_file ${compile_ERROR_FILE})
     else()
         list(APPEND chicken_command -output-file ${out_file})
     endif()
+
+    list(INSERT command_output 0 ${out_file})
+
     list(APPEND chicken_command ${CHICKEN_OPTIONS} ${command_options})
 
     if(CHICKEN_PRINT_DEPENDS)
