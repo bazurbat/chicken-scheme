@@ -109,43 +109,7 @@ set_target_properties(libchicken PROPERTIES
     OUTPUT_NAME lib${CHICKEN_PROGRAM_PREFIX}chicken
     VERSION ${API_VERSION})
 
-# compiler
-
-set(compiler_MODULES
-    batch-driver
-    c-backend
-    c-platform
-    compiler-syntax
-    core
-    lfa2
-    optimizer
-    scrutinizer
-    support
-    )
-
-set(compiler_SOURCES)
-
-foreach(m ${compiler_MODULES})
-    add_chicken_sources(compiler_SOURCES ${m}.scm
-        EMIT_IMPORTS chicken.compiler.${m}
-        OPTIONS ${PROGRAM_OPTIONS})
-
-    add_chicken_library(chicken.compiler.${m}.import MODULE
-        SOURCES ${CMAKE_CURRENT_BINARY_DIR}/chicken.compiler.${m}.import.scm)
-    install(TARGETS chicken.compiler.${m}.import
-        DESTINATION ${INSTALL_EGGDIR})
-endforeach()
-
-add_chicken_executable(chicken-compiler
-    SOURCES chicken.scm
-    C_SOURCES ${compiler_SOURCES}
-    OPTIONS ${PROGRAM_OPTIONS})
-
-set_target_properties(chicken-compiler PROPERTIES
-    COMPILE_DEFINITIONS PIC
-    OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}chicken)
-
-# set(CHICKEN_EXECUTABLE $<TARGET_FILE:chicken-compiler>)
+add_subdirectory(compiler)
 
 add_chicken_executable(csi
     SOURCES csi.scm
@@ -168,7 +132,7 @@ foreach(program ${utility_PROGRAMS})
         OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}${program})
 endforeach()
 
-install(TARGETS libchicken chicken-compiler csi ${utility_PROGRAMS}
+install(TARGETS libchicken csi ${utility_PROGRAMS}
     EXPORT chicken-targets
     ARCHIVE DESTINATION ${INSTALL_LIBDIR}
     LIBRARY DESTINATION ${INSTALL_LIBDIR}
@@ -202,7 +166,6 @@ endif(BUILD_STATIC_LIBS)
 # import libraries
 
 set(import_LIBRARIES
-    chicken.import
     csi.import
     data-structures.import
     extras.import
