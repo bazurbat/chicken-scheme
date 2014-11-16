@@ -225,12 +225,14 @@ function(_chicken_command out_var in_file)
             set(dep_path ${CMAKE_CURRENT_BINARY_DIR}/${dep_file})
         endif()
 
-        add_custom_command(OUTPUT ${dep_file}.stamp
-            COMMAND ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT}
-                    ${in_path} ${dep_path}
-            COMMAND ${CMAKE_COMMAND} -E touch ${dep_file}.stamp
-            MAIN_DEPENDENCY ${in_file}
-            VERBATIM)
+        # This speeds up clean build because the most backends can not handle
+        # initial dependency extraction and recalculation
+        if(NOT EXISTS ${dep_path})
+            message(STATUS "Generating ${dep_file}")
+            execute_process(COMMAND
+                ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT}
+                ${in_path} ${dep_path})
+        endif()
 
         set(xdepends "")
         _chicken_extract_depends(xdepends ${dep_path})
@@ -279,6 +281,14 @@ function(_chicken_command out_var in_file)
             COMMAND ${chicken_command}
             MAIN_DEPENDENCY ${in_file}
             DEPENDS ${depends} VERBATIM)
+    endif()
+
+    if(CHICKEN_EXTRACT_SCRIPT AND NOT is_import_library)
+        add_custom_command(OUTPUT ${command_output}
+            COMMAND ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT}
+                    ${in_path} ${dep_path}
+            MAIN_DEPENDENCY ${in_file}
+            VERBATIM APPEND)
     endif()
 
     foreach(import ${command_import_libraries})
@@ -377,10 +387,7 @@ function(add_chicken_library name)
                 SUFFIX ".dylib")
         endif()
 
-        list(APPEND ${PROJECT_NAME}_CHICKEN_MODULES ${name})
-
-        set(${PROJECT_NAME}_CHICKEN_MODULES ${${PROJECT_NAME}_CHICKEN_MODULES}
-            PARENT_SCOPE)
+        set_property(DIRECTORY APPEND PROPERTY CHICKEN_MODULES ${name})
     endif()
 endfunction()
 
@@ -411,9 +418,6 @@ function(add_chicken_module name)
             endif()
         endforeach()
     endif()
-
-    set(${PROJECT_NAME}_CHICKEN_MODULES ${${PROJECT_NAME}_CHICKEN_MODULES}
-        PARENT_SCOPE)
 endfunction()
 
 # Used for installing modules. Needs more work.
@@ -424,6 +428,14 @@ function(install_chicken_modules name)
         "TARGETS;PROGRAMS;FILES"
         ${ARGN})
 
+    get_property(modules DIRECTORY PROPERTY CHICKEN_MODULES)
+
+    if(CHICKEN_BOOTSTRAP)
+        install(TARGETS ${modules}
+            LIBRARY DESTINATION ${INSTALL_EGGDIR})
+        return()
+    endif()
+
     find_package_handle_standard_args(ChickenConfig DEFAULT_MSG
         Chicken_CONFIG
         CHICKEN_EXTENSION_DIR CHICKEN_DATA_DIR
@@ -432,7 +444,7 @@ function(install_chicken_modules name)
         message(FATAL_ERROR "Chicken config was not found, can not install extensions.")
     endif()
 
-    foreach(m ${${name}_CHICKEN_MODULES})
+    foreach(m ${modules})
         install(TARGETS ${m}
             LIBRARY DESTINATION ${CHICKEN_EXTENSION_DIR})
     endforeach()

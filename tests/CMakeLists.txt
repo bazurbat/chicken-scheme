@@ -322,8 +322,10 @@ add_chicken_interpreted_test(import SCRIPT import-tests.scm)
 
 add_chicken_module(import-library-test1 import-library-test1.scm
     EMIT_IMPORTS import-library-test1-m)
-set_property(TARGET import-library-test1 import-library-test1-m.import
-    PROPERTY FOLDER "Tests")
+set_property(TARGET import-library-test1 PROPERTY FOLDER "Tests")
+if(CHICKEN_BUILD_IMPORTS)
+    set_property(TARGET import-library-test1-m.import PROPERTY FOLDER "Tests")
+endif()
 add_dependencies(TESTS_BUILD import-library-test1)
 
 add_chicken_interpreted_test(import-library SCRIPT import-library-test2.scm)
@@ -381,7 +383,10 @@ add_compiled_test(module module-tests-compiled.scm)
 
 add_chicken_module(chained-modules test-chained-modules.scm
     EMIT_IMPORTS m3)
-set_property(TARGET chained-modules m3.import PROPERTY FOLDER "Tests")
+set_property(TARGET chained-modules PROPERTY FOLDER "Tests")
+if(CHICKEN_BUILD_IMPORTS)
+    set_property(TARGET m3.import PROPERTY FOLDER "Tests")
+endif()
 add_dependencies(TESTS_BUILD chained-modules)
 
 add_chicken_interpreted_test(modules-chained SCRIPT test-chained-modules.scm)
@@ -404,10 +409,11 @@ add_custom_target(prepare-ec-tests
 add_dependencies(TESTS_BUILD prepare-ec-tests)
 
 add_chicken_module(ec-mod ec.scm EMIT_IMPORTS ec)
+set_property(TARGET prepare-ec-tests ec-mod PROPERTY FOLDER "Tests")
+if(CHICKEN_BUILD_IMPORTS)
+set_property(TARGET ec.import PROPERTY FOLDER "Tests")
+endif()
 add_dependencies(TESTS_BUILD ec-mod)
-
-set_property(TARGET prepare-ec-tests ec-mod ec.import
-    PROPERTY FOLDER "Tests")
 
 add_chicken_interpreted_test(ec ec.scm ec-tests.scm)
 

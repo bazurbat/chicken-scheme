@@ -94,8 +94,9 @@ foreach(D BINDIR LIBDIR EGGDIR DATADIR INCLUDEDIR)
 endforeach()
 get_filename_component(TARGET_FULL_RUN_LIBDIR "${CHICKEN_TARGET_RUN_PREFIX}/${TARGET_LIBDIR}" ABSOLUTE)
 
-set(CHICKEN_OPTIONS -optimize-level 2 -inline -ignore-repository -feature
-    chicken-bootstrap)
+set(CHICKEN_OPTIONS -optimize-level 2 -inline)
+list(APPEND CHICKEN_OPTIONS -ignore-repository)
+list(APPEND CHICKEN_OPTIONS -feature chicken-bootstrap)
 set(LIBRARY_OPTIONS -explicit-use -no-trace)
 set(PROGRAM_OPTIONS -no-lambda-info -local)
 set(IMPORT_LIBRARY_OPTIONS -no-trace)

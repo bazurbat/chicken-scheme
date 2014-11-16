@@ -145,7 +145,7 @@ set_target_properties(chicken-compiler PROPERTIES
     COMPILE_DEFINITIONS PIC
     OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}chicken)
 
-set(CHICKEN_EXECUTABLE $<TARGET_FILE:chicken-compiler>)
+# set(CHICKEN_EXECUTABLE $<TARGET_FILE:chicken-compiler>)
 
 add_chicken_executable(csi
     SOURCES csi.scm
