@@ -33,7 +33,7 @@
         batch-driver c-platform c-backend))
 
 
-(include "tweaks")
+(include "compiler/tweaks")
 (import chicken.compiler.batch-driver
         chicken.compiler.c-platform)
 

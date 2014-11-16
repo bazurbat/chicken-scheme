@@ -41,7 +41,6 @@ set(libchicken_C_SOURCES
 )
 
 add_subdirectory(foreign)
-add_subdirectory(library)
 add_subdirectory(math)
 add_subdirectory(memory)
 add_subdirectory(runtime)
@@ -166,6 +165,7 @@ endif(BUILD_STATIC_LIBS)
 # import libraries
 
 set(import_LIBRARIES
+    chicken.import
     csi.import
     data-structures.import
     extras.import
@@ -178,7 +178,7 @@ set(import_LIBRARIES
     srfi-1.import
     srfi-4.import
     utils.import
-    )
+)
 
 foreach(lib ${import_LIBRARIES})
     set_property(SOURCE ${lib}.scm PROPERTY chicken_import_library TRUE)

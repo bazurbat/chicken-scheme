@@ -1,3 +1,6 @@
+add_subdirectory(library)
+
+set(compiler_OPTIONS ${PROGRAM_OPTIONS} -include-path ${chicken_SOURCE_DIR})
 
 set(compiler_MODULES
 
@@ -18,8 +21,7 @@ set(compiler_SOURCES)
 foreach(m ${compiler_MODULES})
     add_chicken_sources(compiler_SOURCES ${m}.scm
         EMIT_IMPORTS chicken.compiler.${m}
-        OPTIONS ${PROGRAM_OPTIONS} -include-path ${chicken_SOURCE_DIR})
-
+        OPTIONS ${compiler_OPTIONS})
     add_chicken_library(chicken.compiler.${m}.import MODULE
         SOURCES ${CMAKE_CURRENT_BINARY_DIR}/chicken.compiler.${m}.import.scm)
     install(TARGETS chicken.compiler.${m}.import
@@ -27,27 +29,16 @@ foreach(m ${compiler_MODULES})
 endforeach()
 
 add_chicken_executable(chicken-compiler
-    SOURCES chicken.scm
+    SOURCES ../chicken.scm
     C_SOURCES ${compiler_SOURCES}
-    OPTIONS ${PROGRAM_OPTIONS} -include-path ${chicken_SOURCE_DIR})
+    OPTIONS ${compiler_OPTIONS})
+
+target_link_libraries(chicken-compiler libchicken-compiler)
 
 set_target_properties(chicken-compiler PROPERTIES
     COMPILE_DEFINITIONS PIC
     OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}chicken)
 
-# set(CHICKEN_EXECUTABLE $<TARGET_FILE:chicken-compiler>)
-
 install(TARGETS chicken-compiler
     EXPORT chicken-targets
     RUNTIME DESTINATION ${INSTALL_BINDIR})
-
-set(import_LIBRARIES chicken.import)
-
-foreach(lib ${import_LIBRARIES})
-    set_property(SOURCE ${lib}.scm PROPERTY chicken_import_library TRUE)
-    add_chicken_library(${lib} ${lib}.scm
-        OPTIONS ${IMPORT_LIBRARY_OPTIONS})
-endforeach()
-
-install(TARGETS ${import_LIBRARIES}
-    DESTINATION ${INSTALL_EGGDIR})
