@@ -4,6 +4,8 @@ if(POLICY CMP0042)
     cmake_policy(SET CMP0042 NEW)
 endif()
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 # search for CMake includes in the project directory first
 set(CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/cmake CACHE INTERNAL "")
 # override default platform compiler flags
@@ -14,11 +16,10 @@ find_package(Libuv)
 
 enable_testing()
 
-add_custom_target(tests)
+add_custom_target(TESTS_BUILD)
+# set_property(TARGET TESTS_BUILD PROPERTY FOLDER "Tests")
 
 find_package(Chicken REQUIRED)
-
-set(CHICKEN_EXTRACT_DEPENDS YES)
 
 set(CHICKEN_RUN ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
 set(CHICKEN_EXTRACT_SCRIPT ${CMAKE_SOURCE_DIR}/cmake/extract-depends.scm)
