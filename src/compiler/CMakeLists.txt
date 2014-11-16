@@ -37,7 +37,7 @@ target_link_libraries(chicken-compiler libchicken-compiler)
 
 set_target_properties(chicken-compiler PROPERTIES
     COMPILE_DEFINITIONS PIC
-    OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}chicken)
+    OUTPUT_NAME chicken)
 
 install(TARGETS chicken-compiler
     EXPORT chicken-targets

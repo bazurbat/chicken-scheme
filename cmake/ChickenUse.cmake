@@ -6,12 +6,6 @@ include(FindPackageHandleStandardArgs)
 
 option(CHICKEN_BUILD_IMPORTS "Compile generated import libraries" YES)
 
-if(CHICKEN_HOST_SYSTEM STREQUAL CHICKEN_TARGET_SYSTEM)
-    set(CHICKEN_CROSS 0)
-else()
-    set(CHICKEN_CROSS 1)
-endif()
-
 # used internally for build-specific files
 set(CHICKEN_TMP_DIR ${CMAKE_BINARY_DIR}/_chicken)
 
@@ -419,11 +413,6 @@ function(add_chicken_module name)
                 SOURCES ${CMAKE_CURRENT_BINARY_DIR}/${import}.scm)
             # add_dependencies(${import} ${name})
             add_dependencies(${name} ${import})
-
-            if(CHICKEN_CROSS)
-                set_property(TARGET ${import} PROPERTY
-                    LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_LOCAL_REPOSITORY})
-            endif()
         endforeach()
     endif()
 endfunction()

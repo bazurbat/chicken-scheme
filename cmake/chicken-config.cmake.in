@@ -9,9 +9,6 @@ endif()
 set(CHICKEN_VERSION       "@CHICKEN_VERSION@")
 set(CHICKEN_API_VERSION   "@CHICKEN_API_VERSION@")
 
-set(CHICKEN_HOST_SYSTEM   "@CHICKEN_HOST_SYSTEM@" CACHE STRING "")
-set(CHICKEN_TARGET_SYSTEM "@CHICKEN_TARGET_SYSTEM@" CACHE STRING "")
-
 set(CHICKEN_RUNTIME_DIR   "@PACKAGE_INSTALL_BINDIR@")
 set(CHICKEN_LIBRARY_DIR   "@PACKAGE_INSTALL_LIBDIR@")
 set(CHICKEN_EXTENSION_DIR "@PACKAGE_INSTALL_EGGDIR@")
@@ -27,15 +24,8 @@ set(CHICKEN_C_FLAGS         "@CHICKEN_C_FLAGS@")
 
 include("${CMAKE_CURRENT_LIST_DIR}/chicken-targets.cmake")
 
-if(CHICKEN_HOST_SYSTEM)
-    find_program(CHICKEN_EXECUTABLE
-        NAMES ${CHICKEN_HOST_SYSTEM}-chicken)
-    find_program(CHICKEN_CSI_EXECUTABLE
-        NAMES ${CHICKEN_HOST_SYSTEM}-csi)
-else()
-    get_target_property(CHICKEN_EXECUTABLE chicken_chicken-compiler LOCATION)
-    get_target_property(CHICKEN_CSI_EXECUTABLE chicken_csi LOCATION)
-endif()
+get_target_property(CHICKEN_EXECUTABLE chicken_chicken-compiler LOCATION)
+get_target_property(CHICKEN_CSI_EXECUTABLE chicken_csi LOCATION)
 
 get_target_property(CHICKEN_LIBRARY chicken_libchicken LOCATION)
 get_target_property(CHICKEN_STATIC_LIBRARY chicken_libchicken-static LOCATION)

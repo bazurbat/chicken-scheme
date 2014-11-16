@@ -251,13 +251,6 @@ C_regparm C_word C_fcall C_fudge(C_word fudge_factor)
     case C_fix(37):             /* heap-dump enabled? */
         return C_mk_bool(dump_heap_on_exit);
 
-    case C_fix(39):             /* is this a cross-chicken? */
-#if defined(C_CROSS_CHICKEN) && C_CROSS_CHICKEN
-        return C_SCHEME_TRUE;
-#else
-        return C_SCHEME_FALSE;
-#endif
-
     case C_fix(40):             /* assembly stub for "apply" available? */
 #if defined(C_HACKED_APPLY)
         return C_SCHEME_TRUE;

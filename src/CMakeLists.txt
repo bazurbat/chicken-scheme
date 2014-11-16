@@ -105,7 +105,7 @@ set_property(TARGET libchicken PROPERTY COMPILE_DEFINITIONS
 
 set_target_properties(libchicken PROPERTIES
     PREFIX ""
-    OUTPUT_NAME lib${CHICKEN_PROGRAM_PREFIX}chicken
+    OUTPUT_NAME libchicken
     VERSION ${API_VERSION})
 
 add_subdirectory(compiler)
@@ -116,7 +116,7 @@ add_chicken_executable(csi
 
 set_target_properties(csi PROPERTIES
     COMPILE_DEFINITIONS PIC
-    OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}csi)
+    OUTPUT_NAME csi)
 
 set(utility_PROGRAMS
     chicken-profile
@@ -128,7 +128,7 @@ foreach(program ${utility_PROGRAMS})
 
     set_target_properties(${program} PROPERTIES
         COMPILE_DEFINITIONS PIC
-        OUTPUT_NAME ${CHICKEN_PROGRAM_PREFIX}${program})
+        OUTPUT_NAME ${program})
 endforeach()
 
 install(TARGETS libchicken csi ${utility_PROGRAMS}
@@ -152,7 +152,7 @@ if(BUILD_STATIC_LIBS)
 
     set_target_properties(libchicken-static PROPERTIES
         PREFIX ""
-        OUTPUT_NAME lib${CHICKEN_PROGRAM_PREFIX}chicken)
+        OUTPUT_NAME libchicken)
 
     install(TARGETS libchicken-static
         EXPORT chicken-targets
@@ -214,7 +214,7 @@ set(MAN_PAGES chicken csi chicken-profile)
 foreach(man ${MAN_PAGES})
     install(FILES ${CMAKE_SOURCE_DIR}/doc/${man}.1
         DESTINATION ${INSTALL_MANDIR}
-        RENAME ${CHICKEN_PROGRAM_PREFIX}${man}.1)
+        RENAME ${man}.1)
 endforeach()
 
 foreach(doc README.md LICENSE)

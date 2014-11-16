@@ -31,30 +31,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(DEBUGBUILD 1)
 endif()
 
-if(NOT CHICKEN_HOST_SYSTEM STREQUAL CHICKEN_TARGET_SYSTEM)
-    set(CHICKEN_CROSS 1)
-    set(_chicken_program_prefix ${_chicken_target_system})
-    if(CHICKEN_TARGET_SYSTEM)
-        set(_chicken_target_suffix -${CHICKEN_TARGET_SYSTEM})
-    endif()
-else()
-    set(CHICKEN_CROSS 0)
-    set(_chicken_program_prefix)
-endif()
-
-set(CHICKEN_TARGET_CC ${_chicken_target_system}gcc CACHE STRING "")
-set(CHICKEN_TARGET_CXX ${_chicken_target_system}g++ CACHE STRING "")
-set(CHICKEN_TARGET_RC_COMPILER ${_chicken_target_system}windres CACHE STRING "")
-mark_as_advanced(CHICKEN_TARGET_CC CHICKEN_TARGET_CXX CHICKEN_TARGET_RC_COMPILER)
-
-set(CHICKEN_TARGET_ROOT_DIR "" CACHE PATH "")
-set(CHICKEN_TARGET_RUN_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE PATH "")
-
-set(CHICKEN_PROGRAM_PREFIX ${_chicken_program_prefix} CACHE STRING
-    "Name prefix for generated executables")
-mark_as_advanced(CHICKEN_PROGRAM_PREFIX)
-
-set(CHICKEN_INSTALL_NAME ${CHICKEN_PROGRAM_PREFIX}chicken CACHE STRING
+set(CHICKEN_INSTALL_NAME chicken CACHE STRING
     "Canonical Chicken name")
 set(INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 mark_as_advanced(CHICKEN_INSTALL_NAME)
@@ -77,23 +54,6 @@ else()
     set(INSTALL_MANDIR     ${CMAKE_INSTALL_MANDIR}/man1)
 endif()
 
-set(CHICKEN_TARGET_NAME        ${CHICKEN_INSTALL_NAME} CACHE STRING
-    "Canonical target Chicken name")
-set(TARGET_PREFIX ${CHICKEN_TARGET_ROOT_DIR}${CHICKEN_TARGET_RUN_PREFIX})
-mark_as_advanced(CHICKEN_TARGET_NAME)
-
-set(TARGET_BINDIR      ${INSTALL_BINDIR})
-set(TARGET_LIBDIR      ${INSTALL_LIBDIR})
-set(TARGET_EGGDIR      ${TARGET_LIBDIR}/${CHICKEN_TARGET_NAME}/${API_VERSION})
-set(TARGET_DATADIR     share/${CHICKEN_TARGET_NAME})
-set(TARGET_INCLUDEDIR  ${CMAKE_INSTALL_INCLUDEDIR}/${CHICKEN_TARGET_NAME})
-
-foreach(D BINDIR LIBDIR EGGDIR DATADIR INCLUDEDIR)
-    get_filename_component(INSTALL_FULL_${D} "${INSTALL_PREFIX}/${INSTALL_${D}}" ABSOLUTE)
-    get_filename_component(TARGET_FULL_${D} "${TARGET_PREFIX}/${TARGET_${D}}" ABSOLUTE)
-endforeach()
-get_filename_component(TARGET_FULL_RUN_LIBDIR "${CHICKEN_TARGET_RUN_PREFIX}/${TARGET_LIBDIR}" ABSOLUTE)
-
 set(CHICKEN_OPTIONS -optimize-level 2 -inline)
 list(APPEND CHICKEN_OPTIONS -ignore-repository)
 list(APPEND CHICKEN_OPTIONS -feature chicken-bootstrap)
@@ -108,7 +68,7 @@ else()
     list(APPEND PROGRAM_OPTIONS -no-trace)
 endif()
 
-if(NOT DEFINED BUILDING_CHICKEN_BOOT)
+if(NOT DEFINED CHICKEN_BOOTSTRAP)
     list(APPEND CHICKEN_OPTIONS -specialize -types ${CHICKEN_TYPES_DB})
 endif()
 
