@@ -1,4 +1,3 @@
-INSTALL
 LICENSE
 NEWS
 README
@@ -39,7 +38,6 @@ stub.c
 support.c
 tcp.c
 utils.c
-build.scm
 buildversion
 buildbranch
 c-backend.scm
@@ -138,7 +136,6 @@ tests/port-tests.scm
 tests/test-gc-hooks.scm
 tests/test-glob.scm
 tests/matchable.scm
-tests/match-tests.scm
 tests/module-tests.scm
 tests/module-tests-2.scm
 tests/test-finalizers.scm
@@ -252,8 +249,6 @@ chicken.import.scm
 chicken.import.c
 foreign.import.scm
 foreign.import.c
-compiler.import.scm
-compiler.import.c
 lolevel.import.scm
 srfi-1.import.scm
 srfi-4.import.scm
