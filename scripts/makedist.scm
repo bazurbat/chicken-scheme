@@ -55,13 +55,14 @@
 	   (print "creating " d)
 	   (create-directory d 'with-parents))))
      (delete-duplicates (filter-map prefix files) string=?))
-    (let ((missing '()))
-      (for-each
-       (lambda (f)
-	 (if (file-exists? f)
-	     (run (cp -p ,(qs f) ,(qs (make-pathname distname f))))
-	     (set! f (cons f missing))))
-       files)
+    (let ((missing
+	   (foldl (lambda (missing f)
+		    (cond
+		     ((file-exists? f)
+		      (run (cp -p ,(qs f) ,(qs (make-pathname distname f))))
+		      missing)
+		     (else (cons f missing))))
+		  '() files)))
       (unless (null? missing)
 	(warning "files missing" missing) ) )
     (run (tar cfz ,(conc distname ".tar.gz") ,distname))
