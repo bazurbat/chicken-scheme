@@ -207,6 +207,11 @@ function(_chicken_command out_var in_file)
 
     get_filename_component(in_path ${in_file} ABSOLUTE)
     get_filename_component(in_dir  ${in_path} DIRECTORY)
+    if(IS_ABSOLUTE ${out_file})
+        set(out_path ${out_file})
+    else()
+        get_filename_component(out_path ${CMAKE_CURRENT_BINARY_DIR}/${out_file} ABSOLUTE)
+    endif()
 
     _chicken_command_prepare_arguments()
     _chicken_add_c_flags(${in_file} ${out_file} ${command_c_flags})
@@ -248,7 +253,7 @@ function(_chicken_command out_var in_file)
         list(APPEND chicken_command -output-file ${out_file})
     endif()
 
-    list(INSERT command_output 0 ${out_file})
+    list(INSERT command_output 0 ${out_path})
 
     list(APPEND chicken_command ${CHICKEN_OPTIONS} ${command_options})
 
@@ -308,7 +313,7 @@ function(_chicken_command out_var in_file)
         endif()
     endforeach()
 
-    set(${out_var} ${out_file} PARENT_SCOPE)
+    set(${out_var} ${out_path} PARENT_SCOPE)
 endfunction()
 
 function(_chicken_target_link_libraries name)
