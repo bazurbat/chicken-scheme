@@ -295,7 +295,7 @@
     (when (or unit-name dynamic)
       (set! standalone-executable #f))
     (when (memq 'ignore-repository options)
-      (set! ##sys#dload-disabled #t)
+      ;(set! ##sys#dload-disabled #t)
       (repository-path #f))
     (set! enable-specialization (memq 'specialize options))
     (set! debugging-chicken
