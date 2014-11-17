@@ -8,14 +8,12 @@
 
 #if !defined(C_NONUNIX)
 # include <sys/time.h>
+# include <sys/resource.h>
 #else
 
 #endif
 
-#define C_getrusage                getrusage
-
-static double
-    timer_start_ms;
+static double timer_start_ms;
 
 time_t C_startup_time_seconds;
 
@@ -65,7 +63,7 @@ C_regparm double C_fcall C_cpu_milliseconds(void)
 #else
     struct rusage ru;
 
-    if(C_getrusage(RUSAGE_SELF, &ru) == -1) return 0;
+    if(getrusage(RUSAGE_SELF, &ru) == -1) return 0;
     else return
         floor(((double)ru.ru_utime.tv_sec + ru.ru_stime.tv_sec) * 1000
                 + ((double)ru.ru_utime.tv_usec + ru.ru_stime.tv_usec) / 1000);
@@ -109,7 +107,7 @@ C_regparm C_word C_fcall C_a_i_cpu_time(C_word **a, int c, C_word buf)
 #else
     struct rusage ru;
 
-    if(C_getrusage(RUSAGE_SELF, &ru) == -1) u = 0;
+    if(getrusage(RUSAGE_SELF, &ru) == -1) u = 0;
     else {
         u = C_number(a, floor((double)ru.ru_utime.tv_sec * 1000 + ru.ru_utime.tv_usec / 1000));
         s = C_number(a, floor((double)ru.ru_stime.tv_sec * 1000 + ru.ru_stime.tv_usec / 1000));

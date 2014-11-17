@@ -26,7 +26,6 @@
 #if !defined(C_NONUNIX)
 
 # include <sys/time.h>
-# include <sys/resource.h>
 # include <sys/wait.h>
 
 #else
