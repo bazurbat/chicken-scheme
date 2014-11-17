@@ -12,7 +12,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/cmake CACHE INTERNAL "")
 set(CMAKE_USER_MAKE_RULES_OVERRIDE
     ${CMAKE_HOME_DIRECTORY}/cmake/ChickenPlatformOverride.cmake)
 
-find_package(Libuv)
+if(CHICKEN_USE_LIBUV)
+    find_package(Libuv REQUIRED)
+endif()
 
 enable_testing()
 
