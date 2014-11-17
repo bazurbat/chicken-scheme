@@ -22,14 +22,14 @@
 # endif
 #endif
 
-#if !defined(C_EMBEDDED) && !defined(C_SHARED)
-#  define C_main_entry_point                            \
-    int main(int argc, char *argv[])                        \
-    {                                                       \
-        return CHICKEN_main(argc, argv, (void*)C_toplevel); \
-    }
+#if defined(C_EMBEDDED) || defined(C_SHARED)
+# define C_main_entry_point
 #else
-#  define C_main_entry_point
+# define C_main_entry_point \
+int main(int argc, char *argv[]) \
+{ \
+  return CHICKEN_main(argc, argv, (void*)C_toplevel); \
+}
 #endif
 
 #define C_emit_eval_trace_info(x, y, z) C_emit_trace_info2("<eval>", x, y, z)
