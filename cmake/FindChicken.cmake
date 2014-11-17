@@ -8,10 +8,6 @@ set_package_properties(Chicken PROPERTIES
     DESCRIPTION "A practical and portable Scheme system"
     URL "http://call-cc.org")
 
-# Always enable C first to be sure various cached variables are in place which
-# might be used later in scripts.
-enable_language(C)
-
 # Used for guessing repository location if everything else fails.
 set(CHICKEN_API_VERSION 7 CACHE STRING
     "Chicken API version")
@@ -21,7 +17,7 @@ mark_as_advanced(CHICKEN_API_VERSION)
 # CMake aware Chicken installed or we are cross-compiling, try to quetly guess
 # the paths instead, this can also pull config file from install prefix, but it
 # should not cause any harm.
-find_package(Chicken CONFIG QUIET NAMES chicken)
+find_package(Chicken QUIET CONFIG)
 
 if(NOT Chicken_FOUND)
     find_package_message(CHICKEN_CONFIG

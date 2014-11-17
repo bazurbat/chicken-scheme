@@ -527,9 +527,9 @@ function(_chicken_add_test name)
     cmake_parse_arguments(test "" "PATH;OUTPUT_FILE" "ENVIRONMENT" ${ARGN})
 
     if(UNIX AND NOT APPLE)
-        list(APPEND test_ENVIRONMENT LD_LIBRARY_PATH=${chicken_BINARY_DIR})
+        list(APPEND test_ENVIRONMENT LD_LIBRARY_PATH=${chicken_BINARY_DIR}/src)
     elseif(APPLE)
-        list(APPEND test_ENVIRONMENT DYLD_LIBRARY_PATH=${chicken_BINARY_DIR})
+        list(APPEND test_ENVIRONMENT DYLD_LIBRARY_PATH=${chicken_BINARY_DIR}/src)
     endif()
 
     add_test(NAME ${name} COMMAND ${CMAKE_COMMAND}

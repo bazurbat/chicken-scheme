@@ -167,6 +167,6 @@ set(CHICKEN_CONFIG_H ${CMAKE_CURRENT_BINARY_DIR}/chicken-config.h)
 configure_file("chicken-config.h.in" ${CHICKEN_CONFIG_H})
 
 # do not use chicken.h from system include path
-set(CHICKEN_INCLUDE_DIRS ${chicken_BINARY_DIR})
+set(CHICKEN_INCLUDE_DIRS ${chicken_BINARY_DIR}/src)
 
 file(COPY ${CHICKEN_TYPES_DB} DESTINATION .)

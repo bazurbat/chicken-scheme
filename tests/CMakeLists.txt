@@ -5,14 +5,16 @@ set(CHICKEN_COMPILER $<TARGET_FILE:chicken-compiler>)
 set(CHICKEN_INTERPRETER $<TARGET_FILE:csi>)
 set(CHICKEN_LIBRARIES libchicken ${CHICKEN_EXTRA_LIBRARIES})
 set(CHICKEN_REPOSITORY ${CHICKEN_LOCAL_REPOSITORY}/$<CONFIGURATION>)
-set(CHICKEN_LIBRARY_PATH ${chicken_BINARY_DIR})
+set(CHICKEN_LIBRARY_PATH ${chicken_BINARY_DIR}/src)
 set(CHICKEN_COMMAND_WRAP YES)
 
 set(CHICKEN_OPTIONS -ignore-repository
     -types ${CHICKEN_TYPES_DB}
-    -include-path ${chicken_SOURCE_DIR})
+    -include-path ${chicken_SOURCE_DIR}/src)
 
-set(CHICKEN_INCLUDE_DIRS ${chicken_BINARY_DIR} ${chicken_SOURCE_DIR})
+set(CHICKEN_INCLUDE_DIRS ${chicken_BINARY_DIR} ${chicken_SOURCE_DIR}/src)
+
+include_directories(${chicken_BINARY_DIR}/src)
 
 # Helper script for stripping absolute paths and converting CRLFs
 set(CHICKEN_RUN_TRIM ${CHICKEN_TMP_DIR}/ChickenTrim.cmake)
@@ -35,13 +37,13 @@ if(WIN32)
             $<TARGET_FILE:libchicken>
             ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/$<TARGET_FILE_NAME:libchicken>
         DEPENDS libchicken VERBATIM)
-    add_dependencies(TESTS_BUILD copy_libchicken)
+    add_dependencies(BUILD_TESTS copy_libchicken)
     set_property(TARGET copy_libchicken PROPERTY FOLDER "Tests")
 endif()
 
 function(add_compiled_test name)
     add_chicken_test(${name} ${ARGN})
-    add_dependencies(TESTS_BUILD ${name})
+    add_dependencies(BUILD_TESTS ${name})
     set_target_properties(${name} PROPERTIES FOLDER "Tests")
 endfunction()
 
@@ -76,7 +78,7 @@ add_custom_target(prepare-tests
     DEPENDS ${expected_FILES_prepared} ${CHICKEN_LOCAL_REPOSITORY}/types.db)
 set_property(TARGET prepare-tests PROPERTY FOLDER "Tests")
 
-add_dependencies(TESTS_BUILD prepare-tests)
+add_dependencies(BUILD_TESTS prepare-tests)
 
 # version tests
 
@@ -117,7 +119,7 @@ add_custom_command(
 
 add_custom_target(scrutiny-tests-prepare
     DEPENDS scrutiny.out.t scrutiny-2.out.t)
-add_dependencies(TESTS_BUILD scrutiny-tests-prepare)
+add_dependencies(BUILD_TESTS scrutiny-tests-prepare)
 set_target_properties(scrutiny-tests-prepare PROPERTIES FOLDER "Tests")
 
 add_test(NAME scrutiny COMMAND ${CMAKE_COMMAND} -E compare_files
@@ -152,7 +154,7 @@ add_chicken_executable(fft-specialized fft.scm
     OPTIONS -optimize-level 2 -debug-level 0 -local -disable-interrupts
         -block -specialize -debug x)
 
-add_dependencies(TESTS_BUILD fft-normal fft-specialized)
+add_dependencies(BUILD_TESTS fft-normal fft-specialized)
 
 add_test(NAME fft-normal COMMAND fft-normal 1000 7)
 add_test(NAME fft-specialized COMMAND fft-specialized 1000 7)
@@ -243,7 +245,7 @@ add_custom_command(OUTPUT meta-syntax-test.scm COMMAND ${CMAKE_COMMAND}
     VERBATIM)
 add_custom_target(prepare-meta-syntax-tests
     DEPENDS meta-syntax-test.scm)
-add_dependencies(TESTS_BUILD prepare-meta-syntax-tests)
+add_dependencies(BUILD_TESTS prepare-meta-syntax-tests)
 set_property(TARGET prepare-meta-syntax-tests PROPERTY FOLDER "Tests")
 
 add_compiled_test(meta-syntax meta-syntax-test.scm
@@ -279,7 +281,7 @@ add_chicken_library(reexport-m6 reexport-m6.scm EMIT_IMPORTS reexport-m6
 set_property(TARGET reexport-m1 reexport-m3 reexport-m4 reexport-m5 reexport-m6
     PROPERTY FOLDER "Tests")
 
-add_dependencies(TESTS_BUILD reexport-m1 reexport-m3 reexport-m4 reexport-m5
+add_dependencies(BUILD_TESTS reexport-m1 reexport-m3 reexport-m4 reexport-m5
     reexport-m6)
 
 add_chicken_interpreted_test(reexport-m2 SCRIPT reexport-m2.scm)
@@ -326,7 +328,7 @@ set_property(TARGET import-library-test1 PROPERTY FOLDER "Tests")
 if(CHICKEN_BUILD_IMPORTS)
     set_property(TARGET import-library-test1-m.import PROPERTY FOLDER "Tests")
 endif()
-add_dependencies(TESTS_BUILD import-library-test1)
+add_dependencies(BUILD_TESTS import-library-test1)
 
 add_chicken_interpreted_test(import-library SCRIPT import-library-test2.scm)
 
@@ -352,7 +354,7 @@ add_custom_command(OUTPUT r4rstest.scm COMMAND ${CMAKE_COMMAND} -E copy
     ${CMAKE_CURRENT_SOURCE_DIR}/r4rstest.scm r4rstest.scm)
 add_custom_target(prepare-r4rs-tests
     DEPENDS r4rstest.scm)
-add_dependencies(TESTS_BUILD prepare-r4rs-tests)
+add_dependencies(BUILD_TESTS prepare-r4rs-tests)
 
 set_property(TARGET prepare-r4rs-tests PROPERTY FOLDER "Tests")
 
@@ -387,7 +389,7 @@ set_property(TARGET chained-modules PROPERTY FOLDER "Tests")
 if(CHICKEN_BUILD_IMPORTS)
     set_property(TARGET m3.import PROPERTY FOLDER "Tests")
 endif()
-add_dependencies(TESTS_BUILD chained-modules)
+add_dependencies(BUILD_TESTS chained-modules)
 
 add_chicken_interpreted_test(modules-chained SCRIPT test-chained-modules.scm)
 
@@ -406,14 +408,14 @@ add_custom_command(OUTPUT ec.scm ec-tests.scm
     VERBATIM)
 add_custom_target(prepare-ec-tests
     DEPENDS ec.scm ec-tests.scm)
-add_dependencies(TESTS_BUILD prepare-ec-tests)
+add_dependencies(BUILD_TESTS prepare-ec-tests)
 
 add_chicken_module(ec-mod ec.scm EMIT_IMPORTS ec)
 set_property(TARGET prepare-ec-tests ec-mod PROPERTY FOLDER "Tests")
 if(CHICKEN_BUILD_IMPORTS)
 set_property(TARGET ec.import PROPERTY FOLDER "Tests")
 endif()
-add_dependencies(TESTS_BUILD ec-mod)
+add_dependencies(BUILD_TESTS ec-mod)
 
 add_chicken_interpreted_test(ec ec.scm ec-tests.scm)
 
@@ -429,7 +431,7 @@ add_custom_command(OUTPUT compiler.scm COMMAND ${CMAKE_COMMAND} -E copy
     VERBATIM)
 add_custom_target(prepare-port-tests
     DEPENDS compiler.scm)
-add_dependencies(TESTS_BUILD prepare-port-tests)
+add_dependencies(BUILD_TESTS prepare-port-tests)
 
 set_property(TARGET prepare-port-tests PROPERTY FOLDER "Tests")
 
@@ -484,7 +486,7 @@ else()
         DEPENDS tmpdir/.dotfile)
 endif()
 
-add_dependencies(TESTS_BUILD prepare-posix-tests)
+add_dependencies(BUILD_TESTS prepare-posix-tests)
 
 set_property(TARGET prepare-posix-tests PROPERTY FOLDER "Tests")
 
@@ -502,7 +504,7 @@ add_custom_command(OUTPUT re-tests.txt COMMAND ${CMAKE_COMMAND} -E copy
     VERBATIM)
 add_custom_target(prepare-regex-tests
     DEPENDS re-tests.txt)
-add_dependencies(TESTS_BUILD prepare-regex-tests)
+add_dependencies(BUILD_TESTS prepare-regex-tests)
 
 set_property(TARGET prepare-regex-tests PROPERTY FOLDER "Tests")
 
@@ -514,8 +516,8 @@ add_chicken_interpreted_test(glob SCRIPT test-glob.scm)
 
 foreach(s 100000 120000 200000 250000 300000 350000 400000 450000 500000)
     _chicken_add_test(compiler-nursery-stress-${s} $<TARGET_FILE:chicken-compiler>
-        -ignore-repository ${chicken_SOURCE_DIR}/utils.scm -:s${s}
-        -include-path ${chicken_SOURCE_DIR})
+        -ignore-repository ${chicken_SOURCE_DIR}/src/utils.scm -:s${s}
+        -include-path ${chicken_SOURCE_DIR}/src)
 endforeach()
 
 # symbol-GC tests

@@ -1,6 +1,7 @@
 add_subdirectory(library)
 
-set(compiler_OPTIONS ${PROGRAM_OPTIONS} -include-path ${chicken_SOURCE_DIR})
+set(compiler_OPTIONS ${PROGRAM_OPTIONS}
+    -include-path ${chicken_SOURCE_DIR}/src)
 
 set(compiler_MODULES
 

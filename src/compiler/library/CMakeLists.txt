@@ -1,4 +1,5 @@
-set(libcompiler_OPTIONS ${PROGRAM_OPTIONS} -include-path ${chicken_SOURCE_DIR})
+set(libcompiler_OPTIONS ${PROGRAM_OPTIONS}
+    -include-path ${chicken_SOURCE_DIR}/src)
 
 set(libcompiler_MODULES
     srfi-14

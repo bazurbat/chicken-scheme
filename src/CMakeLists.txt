@@ -1,5 +1,3 @@
-project(chicken C ASM)
-
 include(ChickenBuildTag)
 include(ChickenConfigure)
 
@@ -8,8 +6,8 @@ if(LIBUV_FOUND)
 endif()
 
 include_directories(BEFORE
-    ${chicken_SOURCE_DIR}
-    ${chicken_BINARY_DIR})
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR})
 
 # set(CHICKEN_LIBRARY_PATH ${chicken_BINARY_DIR})
 
@@ -229,27 +227,30 @@ install(EXPORT chicken-targets
     NAMESPACE chicken_)
 
 # config
+# rename generated configs on installation because find_package will find
+# them in adjacent build directories with names starting with "chicken" prefix
 
 include(CMakePackageConfigHelpers)
 
 configure_package_config_file(
     ${CMAKE_SOURCE_DIR}/cmake/chicken-config.cmake.in
-    ${PROJECT_BINARY_DIR}/chicken-config.cmake
+    ${PROJECT_BINARY_DIR}/config.cmake
     INSTALL_DESTINATION ${INSTALL_DATADIR}
-    PATH_VARS
-    INSTALL_BINDIR
-    INSTALL_LIBDIR
-    INSTALL_EGGDIR
-    INSTALL_DATADIR
-    INSTALL_INCLUDEDIR
-    )
+    PATH_VARS INSTALL_BINDIR
+              INSTALL_LIBDIR
+              INSTALL_EGGDIR
+              INSTALL_DATADIR
+              INSTALL_INCLUDEDIR)
+
+install(FILES ${PROJECT_BINARY_DIR}/config.cmake
+    DESTINATION ${INSTALL_DATADIR}
+    RENAME chicken-config.cmake)
 
 write_basic_package_version_file(
-    ${PROJECT_BINARY_DIR}/chicken-config-version.cmake
+    ${PROJECT_BINARY_DIR}/version.cmake
     VERSION ${CHICKEN_VERSION}
     COMPATIBILITY SameMajorVersion)
 
-install(FILES ${PROJECT_BINARY_DIR}/chicken-config.cmake
-    DESTINATION ${INSTALL_DATADIR})
-install(FILES ${PROJECT_BINARY_DIR}/chicken-config-version.cmake
-    DESTINATION ${INSTALL_DATADIR})
+install(FILES ${PROJECT_BINARY_DIR}/version.cmake
+    DESTINATION ${INSTALL_DATADIR}
+    RENAME chicken-config-version.cmake)
