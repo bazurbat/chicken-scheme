@@ -54,6 +54,10 @@ else()
     set(INSTALL_MANDIR     ${CMAKE_INSTALL_MANDIR}/man1)
 endif()
 
+foreach(D EGGDIR DATADIR)
+    get_filename_component(INSTALL_FULL_${D} "${INSTALL_PREFIX}/${INSTALL_${D}}" ABSOLUTE)
+endforeach()
+
 set(CHICKEN_OPTIONS -optimize-level 2 -inline)
 list(APPEND CHICKEN_OPTIONS -ignore-repository)
 list(APPEND CHICKEN_OPTIONS -feature chicken-bootstrap)
