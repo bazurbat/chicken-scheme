@@ -54,4 +54,5 @@ set_target_properties(libchicken-compiler PROPERTIES
 install(TARGETS libchicken-compiler
     EXPORT chicken-targets
     ARCHIVE DESTINATION ${INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${INSTALL_LIBDIR}
     RUNTIME DESTINATION ${INSTALL_BINDIR})
