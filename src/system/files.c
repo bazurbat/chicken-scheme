@@ -3,17 +3,17 @@
 #include <scheme/strings.h>
 
 #include <errno.h>
+
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
 
-/* TODO: Include sys/select.h? Windows doesn't seem to have it... */
 #ifndef NO_POSIX_POLL
-#  include <poll.h>
+# include <poll.h>
 #endif
 
 #ifdef _WIN32
-#include <windows.h>
+# include <winsock2.h> // fd_set
 #endif
 
 #ifndef EOVERFLOW

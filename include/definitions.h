@@ -92,6 +92,13 @@
 # include <alloca.h>
 #endif
 
+#ifdef _WIN32
+# ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+# endif
+# include <windows.h>
+#endif
+
 #if defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN
 # define C_BIG_ENDIAN
 #elif defined(BYTE_ORDER) && defined(BIG_ENDIAN) && BYTE_ORDER == BIG_ENDIAN

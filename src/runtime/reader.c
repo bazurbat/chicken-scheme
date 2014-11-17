@@ -1,10 +1,6 @@
 #include "reader.h"
 #include <chicken.h>
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
 C_regparm C_word C_fcall C_read_char(C_word port)
 {
     C_FILEPTR fp = C_port_file(port);
