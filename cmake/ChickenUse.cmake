@@ -239,7 +239,7 @@ function(_chicken_command out_var in_file)
 
     set(depends ${command_depends} ${compile_DEPENDS} ${xdepends})
 
-    set(chicken_command ${CHICKEN_EXECUTABLE} ${in_path})
+    set(chicken_command ${CHICKEN_COMPILER} ${in_path})
 
     if(compile_ERROR_FILE)
         set(out_file ${compile_ERROR_FILE})
