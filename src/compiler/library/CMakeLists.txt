@@ -24,12 +24,32 @@ add_chicken_library(srfi-13.import MODULE
 install(TARGETS srfi-13.import
     DESTINATION ${INSTALL_EGGDIR})
 
+add_chicken_sources(libcompiler_SOURCES fmt.scm
+    DEPENDS ${CHICKEN_IMPORT_LIBRARY_DIR}/srfi-13.import.scm
+    EMIT_IMPORTS fmt
+    OPTIONS ${libcompiler_OPTIONS})
+add_chicken_library(fmt.import MODULE
+    SOURCES ${CMAKE_CURRENT_BINARY_DIR}/fmt.import.scm)
+install(TARGETS fmt.import
+    DESTINATION ${INSTALL_EGGDIR})
+
+add_chicken_sources(libcompiler_SOURCES fmt-c.scm
+    DEPENDS ${CHICKEN_IMPORT_LIBRARY_DIR}/fmt.import.scm
+    EMIT_IMPORTS fmt-c
+    OPTIONS ${libcompiler_OPTIONS})
+add_chicken_library(fmt-c.import MODULE
+    SOURCES ${CMAKE_CURRENT_BINARY_DIR}/fmt-c.import.scm)
+install(TARGETS fmt-c.import
+    DESTINATION ${INSTALL_EGGDIR})
+
 add_library(libchicken-compiler SHARED ${libcompiler_SOURCES})
 
 target_link_libraries(libchicken-compiler libchicken)
 
-set_property(TARGET libchicken-compiler
-    PROPERTY COMPILE_DEFINITIONS PIC)
+set_target_properties(libchicken-compiler PROPERTIES
+    COMPILE_DEFINITIONS PIC
+    PREFIX ""
+    OUTPUT_NAME chicken-compiler)
 
 install(TARGETS libchicken-compiler
     EXPORT chicken-targets

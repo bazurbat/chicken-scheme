@@ -110,6 +110,8 @@ set_target_properties(libchicken PROPERTIES
 
 add_subdirectory(compiler)
 
+# set(CHICKEN_EXECUTABLE $<TARGET_FILE:chicken-compiler>)
+
 add_chicken_executable(csi
     SOURCES csi.scm
     OPTIONS ${PROGRAM_OPTIONS})
