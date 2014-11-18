@@ -1,8 +1,6 @@
 #ifndef CHICKEN_TYPES_H
 #define CHICKEN_TYPES_H
 
-#include "definitions.h"
-
 /* For the `bind' (and the obsolete `easyffi'): */
 
 #define ___fixnum                  int

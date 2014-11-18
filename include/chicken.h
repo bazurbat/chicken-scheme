@@ -1,7 +1,10 @@
 #ifndef CHICKEN_H
 #define CHICKEN_H
 
-#include "version.h"
+#ifdef HAVE_CHICKEN_CONFIG_H
+# include <chicken-config.h>
+#endif
+
 #include "definitions.h"
 #include "types.h"
 #include "macros.h"

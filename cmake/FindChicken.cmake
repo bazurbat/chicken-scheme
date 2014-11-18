@@ -83,7 +83,7 @@ list(APPEND CHICKEN_EXTRA_LIBRARIES ${CMAKE_DL_LIBS})
 
 # These used to be options, but caused various problems and are hardcoded for
 # now.
-set(CHICKEN_DEFINITIONS HAVE_CHICKEN_CONFIG_H C_ENABLE_PTABLES)
+set(CHICKEN_DEFINITIONS C_ENABLE_PTABLES)
 if(MSVC)
     # Chicken causes a lot of these
     list(APPEND CHICKEN_DEFINITIONS _CRT_SECURE_NO_WARNINGS)

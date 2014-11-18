@@ -30,7 +30,6 @@ set(chicken_HEADERS
     ../include/definitions.h
     ../include/macros.h
     ../include/types.h
-    ../include/version.h
 )
 
 set(libchicken_C_SOURCES
