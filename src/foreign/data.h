@@ -8,6 +8,9 @@
 #define C_c_pointer(x)             ((void *)(x))
 #define C_c_pointer_nn(x)          ((void *)C_block_item(x, 0))
 
+// this is used by foreigners and socket eggs
+#define C_qfree(ptr)              (free(C_c_pointer_nn(ptr)), C_SCHEME_UNDEFINED)
+
 #define C_pointerp(x)             C_mk_bool(C_block_header(x) == C_POINTER_TAG)
 #define C_taggedpointerp(x)       C_mk_bool(C_block_header(x) == C_TAGGED_POINTER_TAG)
 
