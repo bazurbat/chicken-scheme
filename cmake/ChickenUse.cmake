@@ -310,14 +310,6 @@ function(_chicken_command out_var in_file)
     set(${out_var} ${out_path} PARENT_SCOPE)
 endfunction()
 
-function(_chicken_target_link_libraries name)
-    if(compile_STATIC)
-        target_link_libraries(${name} ${CHICKEN_STATIC_LIBRARIES})
-    else()
-        target_link_libraries(${name} ${CHICKEN_LIBRARIES})
-    endif()
-endfunction()
-
 # Used by other add_chicken... functions, can be used directly to pass file
 # specific options or build source lists incrementally.
 function(add_chicken_sources out_var)
@@ -339,12 +331,19 @@ endfunction()
 
 # Convenience wrapper around add_executable.
 function(add_chicken_executable name)
+    cmake_parse_arguments(compile
+        "STATIC;SHARED;MODULE" "" "" ${ARGN})
     set(sources)
 
     add_chicken_sources(sources ${ARGN})
 
     add_executable(${name} ${sources})
-    _chicken_target_link_libraries(${name})
+
+    if(compile_STATIC)
+        target_link_libraries(${name} ${CHICKEN_STATIC_LIBRARIES})
+    else()
+        target_link_libraries(${name} ${CHICKEN_LIBRARIES})
+    endif()
 
     if(WIN32)
         set_property(TARGET ${name} APPEND PROPERTY
@@ -370,7 +369,12 @@ function(add_chicken_library name)
     add_chicken_sources(sources ${library_type} ${ARGN})
 
     add_library(${name} ${library_type} ${sources})
-    _chicken_target_link_libraries(${name})
+
+    if(library_STATIC)
+        target_link_libraries(${name} ${CHICKEN_STATIC_LIBRARIES})
+    else()
+        target_link_libraries(${name} ${CHICKEN_LIBRARIES})
+    endif()
 
     set_property(TARGET ${name} PROPERTY
         LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_LOCAL_REPOSITORY})
