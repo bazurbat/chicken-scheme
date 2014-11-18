@@ -214,6 +214,7 @@ function(_chicken_command out_var in_file)
         PROPERTY chicken_import_library)
 
     if(CHICKEN_DEPENDS AND NOT is_import_library)
+        set(command_with_depends YES)
         string(REGEX REPLACE
             "(.*)\\.scm$" "\\1.chicken.d"
             dep_file ${in_file})
@@ -228,7 +229,13 @@ function(_chicken_command out_var in_file)
         # initial dependency extraction and recalculation
         if(NOT EXISTS ${dep_path})
             message(STATUS "Generating ${dep_file}")
-            execute_process(COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path})
+            if(CHICKEN_BOOTSTRAP)
+                execute_process(COMMAND ${CHICKEN_INTERPRETER} -ss
+                    ${chicken_SOURCE_DIR}/src/chicken-depends.scm
+                    ${in_path} ${dep_path})
+            else()
+                execute_process(COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path})
+            endif()
         endif()
 
         set(xdepends "")
@@ -266,6 +273,12 @@ function(_chicken_command out_var in_file)
         endforeach()
     endif()
 
+    if(command_with_depends)
+        add_custom_command(OUTPUT ${command_output}
+            COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path}
+            MAIN_DEPENDENCY ${in_file} VERBATIM)
+    endif()
+
     if(CHICKEN_COMMAND_WRAP)
         add_custom_command(OUTPUT ${command_output}
             COMMAND ${CMAKE_COMMAND}
@@ -277,17 +290,17 @@ function(_chicken_command out_var in_file)
             MAIN_DEPENDENCY ${in_file}
             DEPENDS ${depends} VERBATIM)
     else()
-        add_custom_command(OUTPUT ${command_output}
-            COMMAND ${chicken_command}
-            MAIN_DEPENDENCY ${in_file}
-            DEPENDS ${depends} VERBATIM)
-    endif()
-
-    if(CHICKEN_DEPENDS AND NOT is_import_library)
-        add_custom_command(OUTPUT ${command_output}
-            COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path}
-            MAIN_DEPENDENCY ${in_file}
-            VERBATIM APPEND)
+        if(command_with_depends)
+            add_custom_command(OUTPUT ${command_output}
+                COMMAND ${chicken_command}
+                MAIN_DEPENDENCY ${in_file}
+                DEPENDS ${depends} VERBATIM APPEND)
+        else()
+            add_custom_command(OUTPUT ${command_output}
+                COMMAND ${chicken_command}
+                MAIN_DEPENDENCY ${in_file}
+                DEPENDS ${depends} VERBATIM)
+        endif()
     endif()
 
     foreach(import ${command_import_libraries})

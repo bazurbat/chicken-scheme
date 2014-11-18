@@ -201,11 +201,6 @@ endforeach()
 install(TARGETS ${import_LIBRARIES}
     DESTINATION ${INSTALL_EGGDIR})
 
-# chicken-extract
-
-install(FILES ${CMAKE_HOME_DIRECTORY}/cmake/extract-depends.scm
-    DESTINATION ${INSTALL_DATADIR})
-
 # misc files
 
 install(FILES ${CHICKEN_TYPES_DB}

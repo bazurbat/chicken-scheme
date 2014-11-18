@@ -43,7 +43,6 @@ add_custom_target(BUILD_TESTS)
 find_package(Chicken REQUIRED)
 
 set(CHICKEN_BOOTSTRAP YES)
-set(CHICKEN_DEPENDS "")
 set(CHICKEN_RUN ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
 set(CHICKEN_TYPES_DB ${CMAKE_SOURCE_DIR}/misc/types.db)
 
