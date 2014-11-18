@@ -1,6 +1,6 @@
 project(chicken-tests C)
 
-set(CHICKEN_EXTRACT_SCRIPT "")
+set(CHICKEN_DEPENDS "")
 set(CHICKEN_COMPILER $<TARGET_FILE:chicken-compiler>)
 set(CHICKEN_INTERPRETER $<TARGET_FILE:csi>)
 set(CHICKEN_LIBRARIES libchicken ${CHICKEN_EXTRA_LIBRARIES})

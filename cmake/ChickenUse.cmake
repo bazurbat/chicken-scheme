@@ -213,7 +213,7 @@ function(_chicken_command out_var in_file)
     get_property(is_import_library SOURCE ${in_file}
         PROPERTY chicken_import_library)
 
-    if(CHICKEN_EXTRACT_SCRIPT AND NOT is_import_library)
+    if(CHICKEN_DEPENDS AND NOT is_import_library)
         string(REGEX REPLACE
             "(.*)\\.scm$" "\\1.chicken.d"
             dep_file ${in_file})
@@ -228,9 +228,7 @@ function(_chicken_command out_var in_file)
         # initial dependency extraction and recalculation
         if(NOT EXISTS ${dep_path})
             message(STATUS "Generating ${dep_file}")
-            execute_process(COMMAND
-                ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT}
-                ${in_path} ${dep_path})
+            execute_process(COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path})
         endif()
 
         set(xdepends "")
@@ -285,10 +283,9 @@ function(_chicken_command out_var in_file)
             DEPENDS ${depends} VERBATIM)
     endif()
 
-    if(CHICKEN_EXTRACT_SCRIPT AND NOT is_import_library)
+    if(CHICKEN_DEPENDS AND NOT is_import_library)
         add_custom_command(OUTPUT ${command_output}
-            COMMAND ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT}
-                    ${in_path} ${dep_path}
+            COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path}
             MAIN_DEPENDENCY ${in_file}
             VERBATIM APPEND)
     endif()

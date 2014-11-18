@@ -50,13 +50,6 @@ find_program(CHICKEN_EXECUTABLE chicken)
 # May be used in extension setup scripts.
 find_program(CHICKEN_CSI_EXECUTABLE csi)
 
-# Used for automatic dependency extraction during build.
-find_file(CHICKEN_EXTRACT_SCRIPT extract-depends.scm
-    HINTS ${CHICKEN_DATA_DIR})
-
-# Use include files and libraries from the system the final compiled
-# executables are intended to run on.
-
 find_path(CHICKEN_INCLUDE_DIR chicken.h
     HINTS ${CHICKEN_INCLUDE_DIR} $ENV{CHICKEN_PREFIX}/include
     PATH_SUFFIXES chicken)

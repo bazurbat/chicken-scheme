@@ -89,13 +89,12 @@ add_chicken_sources(libchicken_SOURCES
     OPTIONS ${LIBRARY_OPTIONS})
 
 add_library(libchicken SHARED ${libchicken_SOURCES})
+
 target_link_libraries(libchicken
     ${CHICKEN_EXTRA_LIBRARIES})
 if(LIBUV_FOUND)
     target_link_libraries(libchicken ${LIBUV_LIBRARIES})
 endif()
-
-set(CHICKEN_LIBRARIES libchicken ${CHICKEN_EXTRA_LIBRARIES})
 
 set_property(TARGET libchicken PROPERTY COMPILE_DEFINITIONS
     PIC C_BUILDING_LIBCHICKEN)
@@ -104,6 +103,45 @@ set_target_properties(libchicken PROPERTIES
     PREFIX ""
     OUTPUT_NAME libchicken
     VERSION ${API_VERSION})
+
+install(TARGETS libchicken
+    EXPORT chicken-targets
+    LIBRARY DESTINATION ${INSTALL_BINDIR})
+
+set(CHICKEN_LIBRARIES libchicken ${CHICKEN_EXTRA_LIBRARIES})
+
+if(BUILD_STATIC_LIBS)
+
+    add_chicken_sources(libchicken_STATIC_SOURCES STATIC
+        SOURCES ${libchicken_SCM_SOURCES}
+        C_SOURCES ${libchicken_C_SOURCES}
+        OPTIONS ${LIBRARY_OPTIONS})
+
+    add_library(libchicken-static STATIC ${libchicken_STATIC_SOURCES})
+
+    set_target_properties(libchicken-static PROPERTIES
+        PREFIX ""
+        OUTPUT_NAME libchicken)
+
+    set_property(TARGET libchicken-static PROPERTY COMPILE_DEFINITIONS
+        PIC C_BUILDING_LIBCHICKEN)
+
+    install(TARGETS libchicken-static
+        EXPORT chicken-targets
+        ARCHIVE DESTINATION ${INSTALL_LIBDIR})
+
+    set(CHICKEN_STATIC_LIBRARIES libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
+
+endif(BUILD_STATIC_LIBS)
+
+add_chicken_executable(chicken-depends
+    SOURCES chicken-depends.scm)
+
+install(TARGETS chicken-depends
+    EXPORT chicken-targets
+    RUNTIME DESTINATION ${INSTALL_BINDIR})
+
+set(CHICKEN_DEPENDS $<TARGET_FILE:chicken-depends>)
 
 add_subdirectory(compiler)
 
@@ -130,36 +168,9 @@ foreach(program ${utility_PROGRAMS})
         OUTPUT_NAME ${program})
 endforeach()
 
-install(TARGETS libchicken csi ${utility_PROGRAMS}
+install(TARGETS csi ${utility_PROGRAMS}
     EXPORT chicken-targets
-    ARCHIVE DESTINATION ${INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${INSTALL_LIBDIR}
     RUNTIME DESTINATION ${INSTALL_BINDIR})
-
-if(BUILD_STATIC_LIBS)
-
-    add_chicken_sources(libchicken_STATIC_SOURCES
-        C_SOURCES ${libchicken_C_SOURCES})
-    add_chicken_sources(libchicken_STATIC_SOURCES STATIC
-        SOURCES ${libchicken_SCM_SOURCES}
-        OPTIONS ${LIBRARY_OPTIONS})
-
-    add_library(libchicken-static STATIC ${libchicken_STATIC_SOURCES})
-
-    set_property(TARGET libchicken-static PROPERTY COMPILE_DEFINITIONS
-        PIC C_BUILDING_LIBCHICKEN)
-
-    set_target_properties(libchicken-static PROPERTIES
-        PREFIX ""
-        OUTPUT_NAME libchicken)
-
-    install(TARGETS libchicken-static
-        EXPORT chicken-targets
-        ARCHIVE DESTINATION ${INSTALL_LIBDIR})
-
-    set(CHICKEN_STATIC_LIBRARIES libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
-
-endif(BUILD_STATIC_LIBS)
 
 # import libraries
 
