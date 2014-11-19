@@ -1,7 +1,5 @@
 ;;; srfi-69.scm - Optional non-standard extensions
 
-(declare (unit srfi-69))
-
 (declare
  (usual-integrations))
 

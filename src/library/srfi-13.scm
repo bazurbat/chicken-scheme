@@ -1,8 +1,5 @@
 ;;;; srfi-13.scm - Shivers' reference implementation of SRFI-13
 
-(declare (unit srfi-13)
-  (uses srfi-14))
-
 (declare
   (fixnum)
   (disable-interrupts))

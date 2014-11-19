@@ -1,5 +1,3 @@
-add_subdirectory(library)
-
 set(compiler_OPTIONS ${PROGRAM_OPTIONS}
     -include-path ${chicken_SOURCE_DIR}/src)
 
@@ -33,8 +31,6 @@ add_chicken_executable(chicken-compiler
     SOURCES ../chicken.scm
     C_SOURCES ${compiler_SOURCES}
     OPTIONS ${compiler_OPTIONS})
-
-target_link_libraries(chicken-compiler libchicken-compiler)
 
 set_target_properties(chicken-compiler PROPERTIES
     COMPILE_DEFINITIONS PIC

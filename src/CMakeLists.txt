@@ -147,7 +147,9 @@ set(CHICKEN_DEPENDS $<TARGET_FILE:chicken-depends>)
 
 add_subdirectory(compiler)
 
-# set(CHICKEN_EXECUTABLE $<TARGET_FILE:chicken-compiler>)
+set(CHICKEN_COMPILER $<TARGET_FILE:chicken-compiler>)
+
+add_subdirectory(library)
 
 add_chicken_executable(csi
     SOURCES csi.scm

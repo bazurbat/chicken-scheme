@@ -3,9 +3,6 @@
 ;; Copyright (c) 2007 Alex Shinn.  All rights reserved.
 ;; BSD-style license: http://synthcode.com/license.txt
 
-(declare (unit fmt-c)
-  (uses fmt srfi-1 srfi-13))
-
 (module fmt-c
 (fmt-in-macro? fmt-expression? fmt-return? fmt-default-type
  fmt-newline-before-brace? fmt-braceless-bodies?

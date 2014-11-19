@@ -5,9 +5,6 @@
 
 ;; (require-extension (srfi 1 6 13 23 69))
 
-(declare (unit fmt)
-  (uses ports data-structures extras srfi-1 srfi-13 srfi-69))
-
 (module fmt
 (apply-cat cat columnar comma-char copy-fmt-state decimal-align decimal-char
 display-to-string downcase dsp ellipses fit fit/both fit/left fix fl fmt

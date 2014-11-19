@@ -80,11 +80,7 @@ macro(_chicken_command_prepare_arguments)
     foreach(lib ${command_import_libraries})
         set_source_files_properties(${lib} PROPERTIES
             chicken_import_library TRUE)
-        # Visual Studio seems to not like targets with many outputs
-        if(NOT EXISTS ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib})
-            list(APPEND command_output ${lib})
-        endif()
-        list(APPEND command_output ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib})
+        list(APPEND command_output ${lib} ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib})
     endforeach()
 
     list(APPEND command_options ${compile_OPTIONS})
@@ -233,12 +229,13 @@ function(_chicken_command out_var in_file)
         # depend on them, which in turn causes all modules to depend on each
         # other (seems to affect Visual Studio the most).
         if(NOT EXISTS ${dep_path})
-            message(STATUS "Generating ${dep_file}")
             if(CMAKE_CROSSCOMPILING OR CHICKEN_BOOTSTRAP)
+                message(STATUS "Extracting dependencies from: ${in_path} (FI)")
                 execute_process(COMMAND ${CHICKEN_INTERPRETER}
                     -ss ${chicken_SOURCE_DIR}/src/chicken-depends.scm
                     ${in_path} ${dep_path})
             else()
+                message(STATUS "Extracting dependencies from: ${in_path} (F)")
                 execute_process(COMMAND ${CHICKEN_DEPENDS}
                     ${in_path} ${dep_path})
             endif()
@@ -287,10 +284,12 @@ function(_chicken_command out_var in_file)
                 COMMAND ${CHICKEN_INTERPRETER}
                     -ss ${chicken_SOURCE_DIR}/src/chicken-depends.scm
                     ${in_path} ${dep_path}
+                COMMENT "Extracting dependencies from: ${in_path} (I)"
                 MAIN_DEPENDENCY ${in_file} VERBATIM)
         else()
             add_custom_command(OUTPUT ${dep_stamp}
                 COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path}
+                COMMENT "Extracting dependencies from: ${in_path}"
                 MAIN_DEPENDENCY ${in_file} VERBATIM)
         endif()
         add_custom_command(OUTPUT ${dep_stamp}

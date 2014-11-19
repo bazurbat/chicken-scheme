@@ -1,7 +1,5 @@
 ;;;; srfi-18.scm - Simple thread unit - felix
 
-(declare (unit srfi-18))
-
 (declare
   (uses scheduler)
   (usual-integrations)

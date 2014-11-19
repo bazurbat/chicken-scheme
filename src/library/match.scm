@@ -42,8 +42,6 @@
 ;; 2006/12/24 - bugfixes
 ;; 2006/12/01 - non-linear patterns, shared variables in OR, get!/set!
 
-(declare (unit match))
-
 (module match *
 
 (import scheme chicken)
