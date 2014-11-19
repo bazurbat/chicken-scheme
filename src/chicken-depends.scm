@@ -1,12 +1,29 @@
 (import scheme chicken)
-(use data-structures extras)
+(use data-structures extras srfi-1)
+
+(define library-modules '(srfi-13 srfi-14 srfi-18 srfi-69))
 
 (define core-modules
-  `(scheme chicken foreign ,@##sys#core-library-modules ,@##sys#core-syntax-modules))
+  (remove (cut memq <> library-modules)
+          `(list scheme chicken foreign
+                 ,@##sys#core-library-modules
+                 ,@##sys#core-syntax-modules)))
 
 (define modules '())
 (define imports '())
 (define includes '())
+
+; (register-feature! 'debug)
+
+(cond-expand
+  (debug
+    (define-syntax d
+      (syntax-rules ()
+        ((_ arg args ...)
+         (print arg args ...)))))
+  (else
+    (define-syntax d
+      (syntax-rules () ((_ . _) (void))))))
 
 ;; copied from chicken/support.scm
 
@@ -44,6 +61,7 @@
 (define (extract-names expr)
   (let loop ((expr expr) (names '()))
     (cond ((symbol? expr)
+           (d "symbol " expr (if (memq expr core-modules) " (core)" ""))
            (if (memq expr core-modules) names (cons expr names)))
           ((pair? expr)
            (case (car expr)
@@ -61,7 +79,8 @@
         ((quote quasiquote))
         ((import use requre require-extension require-library)
          (set! imports (append imports
-                               (apply append (map extract-names rest)))))
+                               (apply append (map extract-names rest))))
+         (d "imports: " imports))
         ((module)
          (set! modules (cons (car rest) modules))
          (get-imports (cdr rest)))
