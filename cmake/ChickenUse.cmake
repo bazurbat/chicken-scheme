@@ -225,6 +225,7 @@ function(_chicken_command out_var in_file)
         endif()
 
         set(command_with_depends YES)
+        set(dep_stamp ${dep_path}.stamp)
 
         # Generating dependencies on first pass speeds up clean build. Also
         # stamp trick is used to break dependency cycle: dep files are
@@ -233,7 +234,7 @@ function(_chicken_command out_var in_file)
         # other (seems to affect Visual Studio the most).
         if(NOT EXISTS ${dep_path})
             message(STATUS "Generating ${dep_file}")
-            if(CHICKEN_BOOTSTRAP)
+            if(CMAKE_CROSSCOMPILING OR CHICKEN_BOOTSTRAP)
                 execute_process(COMMAND ${CHICKEN_INTERPRETER}
                     -ss ${chicken_SOURCE_DIR}/src/chicken-depends.scm
                     ${in_path} ${dep_path})
@@ -242,7 +243,7 @@ function(_chicken_command out_var in_file)
                     ${in_path} ${dep_path})
             endif()
             execute_process(COMMAND ${CMAKE_COMMAND}
-                -E touch ${dep_path}.stamp)
+                -E touch ${dep_stamp})
         endif()
 
         set(xdepends "")
@@ -281,10 +282,20 @@ function(_chicken_command out_var in_file)
     endif()
 
     if(command_with_depends)
-        add_custom_command(OUTPUT ${dep_path}.stamp
-            COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path}
-            COMMAND ${CMAKE_COMMAND} -E touch ${dep_path}.stamp
-            MAIN_DEPENDENCY ${in_file} VERBATIM)
+        if(CMAKE_CROSSCOMPILING)
+            add_custom_command(OUTPUT ${dep_stamp}
+                COMMAND ${CHICKEN_INTERPRETER}
+                    -ss ${chicken_SOURCE_DIR}/src/chicken-depends.scm
+                    ${in_path} ${dep_path}
+                MAIN_DEPENDENCY ${in_file} VERBATIM)
+        else()
+            add_custom_command(OUTPUT ${dep_stamp}
+                COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path}
+                MAIN_DEPENDENCY ${in_file} VERBATIM)
+        endif()
+        add_custom_command(OUTPUT ${dep_stamp}
+            COMMAND ${CMAKE_COMMAND} -E touch ${dep_stamp}
+            VERBATIM APPEND)
     endif()
 
     if(CHICKEN_COMMAND_WRAP)
