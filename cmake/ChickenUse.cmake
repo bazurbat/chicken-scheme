@@ -214,7 +214,6 @@ function(_chicken_command out_var in_file)
         PROPERTY chicken_import_library)
 
     if(CHICKEN_DEPENDS AND NOT is_import_library)
-        set(command_with_depends YES)
         string(REGEX REPLACE
             "(.*)\\.scm$" "\\1.chicken.d"
             dep_file ${in_file})
@@ -225,17 +224,25 @@ function(_chicken_command out_var in_file)
             set(dep_path ${CMAKE_CURRENT_BINARY_DIR}/${dep_file})
         endif()
 
-        # This speeds up clean build because the most backends can not handle
-        # initial dependency extraction and recalculation
+        set(command_with_depends YES)
+
+        # Generating dependencies on first pass speeds up clean build. Also
+        # stamp trick is used to break dependency cycle: dep files are
+        # included in this .cmake file, which causes the toplevel solution to
+        # depend on them, which in turn causes all modules to depend on each
+        # other (seems to affect Visual Studio the most).
         if(NOT EXISTS ${dep_path})
             message(STATUS "Generating ${dep_file}")
             if(CHICKEN_BOOTSTRAP)
-                execute_process(COMMAND ${CHICKEN_INTERPRETER} -ss
-                    ${chicken_SOURCE_DIR}/src/chicken-depends.scm
+                execute_process(COMMAND ${CHICKEN_INTERPRETER}
+                    -ss ${chicken_SOURCE_DIR}/src/chicken-depends.scm
                     ${in_path} ${dep_path})
             else()
-                execute_process(COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path})
+                execute_process(COMMAND ${CHICKEN_DEPENDS}
+                    ${in_path} ${dep_path})
             endif()
+            execute_process(COMMAND ${CMAKE_COMMAND}
+                -E touch ${dep_path}.stamp)
         endif()
 
         set(xdepends "")
@@ -274,8 +281,9 @@ function(_chicken_command out_var in_file)
     endif()
 
     if(command_with_depends)
-        add_custom_command(OUTPUT ${command_output}
+        add_custom_command(OUTPUT ${dep_path}.stamp
             COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path}
+            COMMAND ${CMAKE_COMMAND} -E touch ${dep_path}.stamp
             MAIN_DEPENDENCY ${in_file} VERBATIM)
     endif()
 
@@ -290,17 +298,10 @@ function(_chicken_command out_var in_file)
             MAIN_DEPENDENCY ${in_file}
             DEPENDS ${depends} VERBATIM)
     else()
-        if(command_with_depends)
-            add_custom_command(OUTPUT ${command_output}
-                COMMAND ${chicken_command}
-                MAIN_DEPENDENCY ${in_file}
-                DEPENDS ${depends} VERBATIM APPEND)
-        else()
-            add_custom_command(OUTPUT ${command_output}
-                COMMAND ${chicken_command}
-                MAIN_DEPENDENCY ${in_file}
-                DEPENDS ${depends} VERBATIM)
-        endif()
+        add_custom_command(OUTPUT ${command_output}
+            COMMAND ${chicken_command}
+            MAIN_DEPENDENCY ${in_file}
+            DEPENDS ${depends} VERBATIM)
     endif()
 
     foreach(import ${command_import_libraries})
