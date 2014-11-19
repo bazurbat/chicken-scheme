@@ -255,7 +255,7 @@ function(_chicken_command out_var in_file)
     set(chicken_command ${CHICKEN_COMPILER} ${in_path})
 
     if(compile_ERROR_FILE)
-        set(out_file ${compile_ERROR_FILE})
+        set(out_path ${compile_ERROR_FILE})
     else()
         list(APPEND chicken_command -output-file ${out_file})
     endif()
