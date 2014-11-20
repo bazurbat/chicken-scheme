@@ -10,7 +10,8 @@ set(library_MODULES
     fmt fmt-c)
 
 foreach(m ${library_MODULES})
-    add_chicken_module(${m} ${m}.scm)
+    add_chicken_module(${m} ${m}.scm
+        OPTIONS ${library_OPTIONS})
     install(TARGETS ${m}
         DESTINATION ${INSTALL_EGGDIR})
     if(NOT CMAKE_CROSSCOMPILING)
