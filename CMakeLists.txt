@@ -9,6 +9,9 @@ if(POLICY CMP0048)
     cmake_policy(SET CMP0048 NEW)
 endif()
 
+# set_property(GLOBAL PROPERTY GLOBAL_DEPENDS_DEBUG_MODE YES)
+# set_property(GLOBAL PROPERTY GLOBAL_DEPENDS_NO_CYCLES YES)
+
 # search for CMake includes in the project directory first
 set(CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/cmake CACHE INTERNAL "")
 # override default platform compiler flags
