@@ -21,10 +21,12 @@ foreach(m ${compiler_MODULES})
     add_chicken_sources(compiler_SOURCES ${m}.scm
         EMIT_IMPORTS chicken.compiler.${m}
         OPTIONS ${compiler_OPTIONS})
-    add_chicken_library(chicken.compiler.${m}.import MODULE
-        SOURCES ${CMAKE_CURRENT_BINARY_DIR}/chicken.compiler.${m}.import.scm)
-    install(TARGETS chicken.compiler.${m}.import
-        DESTINATION ${INSTALL_EGGDIR})
+    if(CHICKEN_BUILD_IMPORTS)
+        add_chicken_library(chicken.compiler.${m}.import MODULE
+            SOURCES ${CHICKEN_IMPORT_LIBRARY_DIR}/chicken.compiler.${m}.import.scm)
+        install(TARGETS chicken.compiler.${m}.import
+            DESTINATION ${INSTALL_EGGDIR})
+    endif()
 endforeach()
 
 add_chicken_executable(chicken-compiler
