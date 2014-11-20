@@ -27,36 +27,34 @@
 
 ;; copied from chicken/support.scm
 
-(cond-expand
-  (chicken-script
-    (set! ##sys#user-read-hook
-      (let ([old-hook ##sys#user-read-hook])
-        (lambda (char port)
-          (if (char=? #\> char)
-            (let* ((_ (read-char port))           ; swallow #\>
-                   (text (scan-sharp-greater-string port)))
-              `(declare (foreign-declare ,text)) )
-            (old-hook char port) ) ) ) )
-    (define (scan-sharp-greater-string port)
-      (let ([out (open-output-string)])
-        (let loop ()
-          (let ([c (read-char port)])
-            (cond [(eof-object? c) (quit "unexpected end of `#> ... <#' sequence")]
-                  [(char=? c #\newline)
-                   (newline out)
-                   (loop) ]
-                  [(char=? c #\<)
-                   (let ([c (read-char port)])
-                     (if (eqv? #\# c)
-                       (get-output-string out)
-                       (begin
-                         (write-char #\< out)
-                         (write-char c out)
-                         (loop) ) ) ) ]
-                  [else
-                    (write-char c out)
-                    (loop) ] ) ) ) ) ))
-  (else))
+(set! ##sys#user-read-hook
+  (let ([old-hook ##sys#user-read-hook])
+    (lambda (char port)
+      (if (char=? #\> char)
+        (let* ((_ (read-char port))           ; swallow #\>
+               (text (scan-sharp-greater-string port)))
+          `(declare (foreign-declare ,text)) )
+        (old-hook char port) ) ) ) )
+
+(define (scan-sharp-greater-string port)
+  (let ([out (open-output-string)])
+    (let loop ()
+      (let ([c (read-char port)])
+        (cond [(eof-object? c) (quit "unexpected end of `#> ... <#' sequence")]
+              [(char=? c #\newline)
+               (newline out)
+               (loop) ]
+              [(char=? c #\<)
+               (let ([c (read-char port)])
+                 (if (eqv? #\# c)
+                   (get-output-string out)
+                   (begin
+                     (write-char #\< out)
+                     (write-char c out)
+                     (loop) ) ) ) ]
+              [else
+                (write-char c out)
+                (loop) ] ) ) ) ) )
 
 (define (extract-names expr)
   (let loop ((expr expr) (names '()))

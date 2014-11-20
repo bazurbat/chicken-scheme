@@ -42,6 +42,9 @@ add_custom_target(BUILD_TESTS)
 
 find_package(Chicken REQUIRED)
 
+if(CMAKE_CROSSCOMPILING)
+    set(CHICKEN_BUILD_IMPORTS NO)
+endif()
 set(CHICKEN_BOOTSTRAP YES)
 set(CHICKEN_RUN ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
 set(CHICKEN_TYPES_DB ${CMAKE_SOURCE_DIR}/misc/types.db)

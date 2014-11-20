@@ -143,11 +143,18 @@ install(TARGETS chicken-depends
     EXPORT chicken-targets
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
-set(CHICKEN_DEPENDS $<TARGET_FILE:chicken-depends>)
+if(CMAKE_CROSSCOMPILING OR CHICKEN_BOOTSTRAP)
+    set(CHICKEN_DEPENDS ${CHICKEN_INTERPRETER} -ss
+        ${chicken_SOURCE_DIR}/src/chicken-depends.scm)
+else()
+    set(CHICKEN_DEPENDS $<TARGET_FILE:chicken-depends>)
+endif()
 
 add_subdirectory(compiler)
 
-set(CHICKEN_COMPILER $<TARGET_FILE:chicken-compiler>)
+if(NOT CMAKE_CROSSCOMPILING)
+    set(CHICKEN_COMPILER $<TARGET_FILE:chicken-compiler>)
+endif()
 
 add_subdirectory(library)
 
@@ -217,6 +224,7 @@ install(FILES
     ${CMAKE_SOURCE_DIR}/cmake/FindChicken.cmake
     ${CMAKE_SOURCE_DIR}/cmake/ChickenUse.cmake
     ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake
+    ${chicken_SOURCE_DIR}/src/chicken-depends.scm
     DESTINATION ${INSTALL_DATADIR})
 
 set(MAN_PAGES chicken csi chicken-profile)

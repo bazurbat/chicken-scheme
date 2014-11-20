@@ -11,6 +11,10 @@ set(library_MODULES
 
 foreach(m ${library_MODULES})
     add_chicken_module(${m} ${m}.scm)
-    install(TARGETS ${m} ${m}.import
+    install(TARGETS ${m}
         DESTINATION ${INSTALL_EGGDIR})
+    if(NOT CMAKE_CROSSCOMPILING)
+        install(TARGETS ${m}.import
+            DESTINATION ${INSTALL_EGGDIR})
+    endif()
 endforeach()

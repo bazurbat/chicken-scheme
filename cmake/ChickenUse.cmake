@@ -102,7 +102,9 @@ macro(_chicken_command_include_paths)
 
     # then, search collected import libraries
     list(APPEND include_paths ${CHICKEN_IMPORT_LIBRARY_DIR})
-    list(APPEND include_paths ${CHICKEN_LOCAL_REPOSITORY})
+    if(NOT CMAKE_CROSSCOMPILING)
+        list(APPEND include_paths ${CHICKEN_LOCAL_REPOSITORY})
+    endif()
 
     # some eggs install files there, but it may be empty when bootstrapping
     if(CHICKEN_DATA_DIR)
@@ -229,18 +231,10 @@ function(_chicken_command out_var in_file)
         # depend on them, which in turn causes all modules to depend on each
         # other (seems to affect Visual Studio the most).
         if(NOT EXISTS ${dep_path})
-            if(CMAKE_CROSSCOMPILING OR CHICKEN_BOOTSTRAP)
-                message(STATUS "Extracting dependencies from: ${in_path} (FI)")
-                execute_process(COMMAND ${CHICKEN_INTERPRETER}
-                    -ss ${chicken_SOURCE_DIR}/src/chicken-depends.scm
-                    ${in_path} ${dep_path})
-            else()
-                message(STATUS "Extracting dependencies from: ${in_path} (F)")
-                execute_process(COMMAND ${CHICKEN_DEPENDS}
-                    ${in_path} ${dep_path})
-            endif()
-            execute_process(COMMAND ${CMAKE_COMMAND}
-                -E touch ${dep_stamp})
+            message(STATUS "Extracting dependencies from: ${in_path} (F)")
+            execute_process(
+                COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path}
+                COMMAND ${CMAKE_COMMAND} -E touch ${dep_stamp})
         endif()
 
         set(xdepends "")
@@ -279,22 +273,11 @@ function(_chicken_command out_var in_file)
     endif()
 
     if(command_with_depends)
-        if(CMAKE_CROSSCOMPILING)
-            add_custom_command(OUTPUT ${dep_stamp}
-                COMMAND ${CHICKEN_INTERPRETER}
-                    -ss ${chicken_SOURCE_DIR}/src/chicken-depends.scm
-                    ${in_path} ${dep_path}
-                COMMENT "Extracting dependencies from: ${in_path} (I)"
-                MAIN_DEPENDENCY ${in_file} VERBATIM)
-        else()
-            add_custom_command(OUTPUT ${dep_stamp}
-                COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path}
-                COMMENT "Extracting dependencies from: ${in_path}"
-                MAIN_DEPENDENCY ${in_file} VERBATIM)
-        endif()
         add_custom_command(OUTPUT ${dep_stamp}
+            COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path}
             COMMAND ${CMAKE_COMMAND} -E touch ${dep_stamp}
-            VERBATIM APPEND)
+            COMMENT "Extracting dependencies from: ${in_path}"
+            MAIN_DEPENDENCY ${in_file} VERBATIM)
     endif()
 
     if(CHICKEN_COMMAND_WRAP)
@@ -430,7 +413,7 @@ function(add_chicken_module name)
     add_chicken_library(${name} MODULE ${ARGN}
         EMIT_IMPORTS ${compile_EMIT_IMPORTS})
 
-    if(CHICKEN_BUILD_IMPORTS)
+    if(CHICKEN_BUILD_IMPORTS AND NOT CMAKE_CROSSCOMPILING)
         foreach(lib ${compile_EMIT_IMPORTS})
             set(import ${lib}.import)
 
