@@ -4,7 +4,11 @@ include(CMakeParseArguments)
 include(FeatureSummary)
 include(FindPackageHandleStandardArgs)
 
-option(CHICKEN_BUILD_IMPORTS "Compile generated import libraries" YES)
+option(CHICKEN_AUTO_DEPENDS "Regenerate dependencies when source files change" YES)
+option(CHICKEN_BUILD_IMPORTS "Compile emitted import libraries" YES)
+if(CMAKE_CROSSCOMPILING)
+    set(CHICKEN_BUILD_IMPORTS NO)
+endif()
 
 # used internally for build-specific files
 set(CHICKEN_TMP_DIR ${CMAKE_BINARY_DIR}/_chicken)
@@ -44,11 +48,10 @@ macro(_chicken_parse_arguments)
 endmacro()
 
 macro(_chicken_command_prepare_arguments)
-    set(command_import_libraries "")
     set(command_options "")
     set(command_definitions "")
     set(command_c_flags "")
-    set(command_depends "")
+    set(command_import_libraries "")
     set(command_output "")
 
     if(compile_STATIC)
@@ -72,19 +75,18 @@ macro(_chicken_command_prepare_arguments)
         list(APPEND command_options -feature compiling-extension)
     endif()
 
-    foreach(lib ${compile_EMIT_IMPORTS})
-        list(APPEND command_options -emit-import-library ${lib})
-        list(APPEND command_import_libraries ${lib}.import.scm)
+    foreach(emit ${compile_EMIT_IMPORTS})
+        list(APPEND command_options -emit-import-library ${emit})
+        list(APPEND command_import_libraries ${emit}.import.scm)
     endforeach()
 
     foreach(lib ${command_import_libraries})
-        set_source_files_properties(${lib} PROPERTIES
-            chicken_import_library TRUE)
-        list(APPEND command_output ${lib} ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib})
+        list(APPEND command_output ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib})
+        set_property(SOURCE ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib}
+            PROPERTY chicken_import_library YES)
     endforeach()
 
     list(APPEND command_options ${compile_OPTIONS})
-
     list(APPEND command_c_flags ${compile_C_FLAGS})
 
     _chicken_command_include_paths()
@@ -102,9 +104,6 @@ macro(_chicken_command_include_paths)
 
     # then, search collected import libraries
     list(APPEND include_paths ${CHICKEN_IMPORT_LIBRARY_DIR})
-    if(NOT CMAKE_CROSSCOMPILING)
-        list(APPEND include_paths ${CHICKEN_LOCAL_REPOSITORY})
-    endif()
 
     # some eggs install files there, but it may be empty when bootstrapping
     if(CHICKEN_DATA_DIR)
@@ -213,14 +212,8 @@ function(_chicken_command out_var in_file)
 
     if(CHICKEN_DEPENDS AND NOT is_import_library)
         string(REGEX REPLACE
-            "(.*)\\.scm$" "\\1.chicken.d"
-            dep_file ${in_file})
-
-        if(IS_ABSOLUTE ${dep_file})
-            set(dep_path ${dep_file})
-        else()
-            set(dep_path ${CMAKE_CURRENT_BINARY_DIR}/${dep_file})
-        endif()
+            "(.*)\\.chicken.c$" "\\1.chicken.d"
+            dep_path ${out_path})
 
         set(command_with_depends YES)
         set(dep_stamp ${dep_path}.stamp)
@@ -241,7 +234,7 @@ function(_chicken_command out_var in_file)
         _chicken_extract_depends(xdepends ${dep_path})
     endif()
 
-    set(depends ${command_depends} ${compile_DEPENDS} ${xdepends})
+    set(depends ${compile_DEPENDS} ${xdepends})
 
     set(chicken_command ${CHICKEN_COMPILER} ${in_path})
 
@@ -261,9 +254,6 @@ function(_chicken_command out_var in_file)
         else()
             message(STATUS "${in_file} => ${command_output}")
         endif()
-        foreach(d ${command_depends})
-            message(STATUS "\t${d}")
-        endforeach()
         foreach(d ${compile_DEPENDS})
             message(STATUS "=\t${d}")
         endforeach()
@@ -272,7 +262,7 @@ function(_chicken_command out_var in_file)
         endforeach()
     endif()
 
-    if(command_with_depends)
+    if(command_with_depends AND CHICKEN_AUTO_DEPENDS)
         add_custom_command(OUTPUT ${dep_stamp}
             COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path}
             COMMAND ${CMAKE_COMMAND} -E touch ${dep_stamp}
@@ -297,18 +287,22 @@ function(_chicken_command out_var in_file)
             DEPENDS ${depends} VERBATIM)
     endif()
 
-    foreach(import ${command_import_libraries})
+    foreach(lib ${command_import_libraries})
+        # chicken is way too smart and does not rewrite import files when the
+        # content is not changed, timestamp is not updated and this confuses
+        # build tools
         add_custom_command(OUTPUT ${command_output}
-            COMMAND ${CMAKE_COMMAND}
-            ARGS -E copy ${CMAKE_CURRENT_BINARY_DIR}/${import} ${CHICKEN_IMPORT_LIBRARY_DIR}/${import}
+            COMMAND ${CMAKE_COMMAND} -E touch_nocreate
+                ${CMAKE_CURRENT_BINARY_DIR}/${lib}
             VERBATIM APPEND)
-        # sometimes timestamp of generated import library is not updated
-        if(MSVC90)
-            add_custom_command(OUTPUT ${command_output}
-                COMMAND ${CMAKE_COMMAND}
-                ARGS -E touch_nocreate ${CMAKE_CURRENT_BINARY_DIR}/${import}
-                VERBATIM APPEND)
-        endif()
+
+        # collect import libraries into a single directory for easier reference
+        # from other rules
+        add_custom_command(OUTPUT ${command_output}
+            COMMAND ${CMAKE_COMMAND} -E copy
+                ${CMAKE_CURRENT_BINARY_DIR}/${lib}
+                ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib}
+            VERBATIM APPEND)
     endforeach()
 
     set(${out_var} ${out_path} PARENT_SCOPE)
@@ -413,14 +407,10 @@ function(add_chicken_module name)
     add_chicken_library(${name} MODULE ${ARGN}
         EMIT_IMPORTS ${compile_EMIT_IMPORTS})
 
-    if(CHICKEN_BUILD_IMPORTS AND NOT CMAKE_CROSSCOMPILING)
-        foreach(lib ${compile_EMIT_IMPORTS})
-            set(import ${lib}.import)
-
-            add_chicken_library(${import} MODULE
-                SOURCES ${CMAKE_CURRENT_BINARY_DIR}/${import}.scm)
-            # add_dependencies(${import} ${name})
-            add_dependencies(${name} ${import})
+    if(CHICKEN_BUILD_IMPORTS)
+        foreach(m ${compile_EMIT_IMPORTS})
+            add_chicken_library(${m}.import MODULE
+                SOURCES ${CHICKEN_IMPORT_LIBRARY_DIR}/${m}.import.scm)
         endforeach()
     endif()
 endfunction()
