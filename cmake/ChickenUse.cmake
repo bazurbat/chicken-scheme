@@ -6,8 +6,11 @@ include(FindPackageHandleStandardArgs)
 
 option(CHICKEN_AUTO_DEPENDS "Regenerate dependencies when source files change" YES)
 option(CHICKEN_BUILD_IMPORTS "Compile emitted import libraries" YES)
-if(CMAKE_CROSSCOMPILING)
-    set(CHICKEN_BUILD_IMPORTS NO)
+
+if(MSVC)
+    # MSBuild goes crazy over this and tries to rebuild everything as many
+    # times as there are combinations of build commands
+    set(CHICKEN_AUTO_DEPENDS NO)
 endif()
 
 # used internally for build-specific files
@@ -223,8 +226,8 @@ function(_chicken_command out_var in_file)
         # included in this .cmake file, which causes the toplevel solution to
         # depend on them, which in turn causes all modules to depend on each
         # other (seems to affect Visual Studio the most).
-        if(NOT EXISTS ${dep_path})
-            message(STATUS "Extracting dependencies from: ${in_path} (F)")
+        if(${in_path} IS_NEWER_THAN ${dep_path})
+            message(STATUS "Extracting dependencies from: ${in_path}")
             execute_process(
                 COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path}
                 COMMAND ${CMAKE_COMMAND} -E touch ${dep_stamp})
@@ -266,7 +269,7 @@ function(_chicken_command out_var in_file)
         add_custom_command(OUTPUT ${dep_stamp}
             COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path}
             COMMAND ${CMAKE_COMMAND} -E touch ${dep_stamp}
-            COMMENT "Extracting dependencies from: ${in_path}"
+            COMMENT "Regenerating dependencies from: ${in_path}"
             MAIN_DEPENDENCY ${in_file} VERBATIM)
     endif()
 

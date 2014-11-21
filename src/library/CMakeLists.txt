@@ -14,8 +14,6 @@ foreach(m ${library_MODULES})
         OPTIONS ${library_OPTIONS})
     install(TARGETS ${m}
         DESTINATION ${INSTALL_EGGDIR})
-    if(NOT CMAKE_CROSSCOMPILING)
-        install(TARGETS ${m}.import
-            DESTINATION ${INSTALL_EGGDIR})
-    endif()
+    install(TARGETS ${m}.import
+        DESTINATION ${INSTALL_EGGDIR})
 endforeach()
