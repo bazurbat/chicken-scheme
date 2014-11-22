@@ -22,7 +22,10 @@ project(chicken C ASM)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-if(MSVC)
+if(WIN32)
+    # Windows tries to load shared libraries from the same directory where
+    # the executable is placed. To bootstrap properly we need this to use the
+    # just compiled runtime.
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
@@ -45,7 +48,6 @@ add_custom_target(BUILD_TESTS)
 
 find_package(Chicken REQUIRED)
 
-set(CHICKEN_BOOTSTRAP YES)
 set(CHICKEN_RUN ${CMAKE_SOURCE_DIR}/cmake/ChickenRun.cmake)
 set(CHICKEN_TYPES_DB ${CMAKE_SOURCE_DIR}/misc/types.db)
 

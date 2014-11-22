@@ -9,7 +9,7 @@ include_directories(BEFORE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR})
 
-# set(CHICKEN_LIBRARY_PATH ${chicken_BINARY_DIR})
+set(CHICKEN_BOOTSTRAP YES)
 
 # runtime
 
@@ -155,6 +155,8 @@ add_subdirectory(compiler)
 if(NOT CMAKE_CROSSCOMPILING)
     set(CHICKEN_COMPILER $<TARGET_FILE:chicken-compiler>)
 endif()
+
+set(CHICKEN_BOOTSTRAP NO)
 
 add_subdirectory(library)
 
