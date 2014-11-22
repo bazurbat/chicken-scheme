@@ -1,5 +1,10 @@
 (import scheme chicken)
-(use data-structures extras srfi-1)
+(use data-structures extras)
+
+(define (remove pred ls)
+  (cond ((null? ls) '())
+        ((pred (car ls)) (remove pred (cdr ls)))
+        (else (cons (car ls) (remove pred (cdr ls))))))
 
 (define library-modules '(srfi-13 srfi-14 srfi-18 srfi-69))
 
