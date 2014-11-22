@@ -141,7 +141,7 @@ add_compiled_test(specialization-test-1 specialization-test-1.scm
 
 add_compiled_test(specialization-test-2 specialization-test-2.scm
     OPTIONS -types foo.types -specialize -debug ox
-    DEPENDS foo.import.scm)
+    DEPENDS ${CHICKEN_IMPORT_LIBRARY_DIR}/foo.import.scm)
 
 # specialization benchmark
 
