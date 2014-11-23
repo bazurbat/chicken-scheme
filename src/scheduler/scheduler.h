@@ -3,8 +3,6 @@
 
 #include <common.h>
 
-#include <uv.h>
-
 #ifdef HAVE_ERRNO_H
 # include <errno.h>
 # define C_signal_interrupted_p     C_mk_bool(errno == EINTR)
@@ -91,15 +89,24 @@ C_inline void C_fdset_add(int fd, int input, int output) {
 }
 #endif
 
-struct uv_poll_s * current_poll_event();
-struct uv_timer_s * current_timer_event();
-struct uv_poll_s * uvpoll_start(int fd, int events);
-void uvpoll_stop(struct uv_poll_s *p);
-struct uv_timer_s * uvtimer_start(float tm);
-void uvtimer_stop(struct uv_timer_s *p);
-int run_uv_nowait();
+struct scheduler_t
+{
+    void *pending_timers[2];
+    void *pending_polls[2];
+} scheduler;
 
-int run_once();
-int run_nowait();
+void scheduler_init(struct scheduler_t *s);
+void scheduler_destroy(struct scheduler_t *s);
+
+int scheduler_poll(struct scheduler_t *s);
+int scheduler_run_once(struct scheduler_t *s);
+
+struct uv_timer_s *scheduler_timer_new(struct scheduler_t *s, float timeout);
+struct uv_timer_s *scheduler_timer_next(struct scheduler_t *s);
+void scheduler_timer_delete(struct uv_timer_s *timer);
+
+struct uv_poll_s *scheduler_poll_new(struct scheduler_t *s, int fd, int events);
+struct uv_poll_s *scheduler_poll_next(struct scheduler_t *s);
+void scheduler_poll_delete(struct uv_poll_s *poll);
 
 #endif /* SCHEDULER_H */

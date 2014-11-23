@@ -1,4 +1,5 @@
 #include "api.h"
+#include "../scheduler/scheduler.h"
 #include <chicken.h>
 
 #define C_pte(name)                  pt[ i ].id = #name; pt[ i++ ].ptr = (void *)name;
@@ -329,6 +330,9 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
     callback_continuation_level = 0;
     gc_ms = 0;
     (void)C_randomize(C_fix(time(NULL)));
+
+    scheduler_init(&scheduler);
+
     return 1;
 }
 

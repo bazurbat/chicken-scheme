@@ -11,29 +11,43 @@
   (not inline ##sys#interrupt-hook)
   (unsafe))
 
-(foreign-declare "#include \"scheduler.h\"")
+#>
+#include "scheduler.h"
+<#
 
 (register-feature! 'libuv-scheduler)
 
 (include "../common-declarations.scm")
 
-(define-foreign-type uv_timer_t* (c-pointer "uv_timer_t"))
-(define-foreign-type uv_poll_t* (c-pointer "uv_poll_t"))
-(define current-timer-event (foreign-lambda uv_timer_t* "current_timer_event"))
-(define current-poll-event (foreign-lambda uv_poll_t* "current_poll_event"))
-(define uvtimer-start (foreign-lambda c-pointer "uvtimer_start" float))
-(define uvtimer-stop (foreign-lambda void "uvtimer_stop" uv_timer_t*))
-(define (uvpoll-start fd i/o)
-  ((foreign-lambda c-pointer "uvpoll_start" int int)
-   fd (case i/o
-        ((#t #:input) 1)
-        ((#f #:output) 2)
-        ((#:all) 3))))
-(define uvpoll-stop (foreign-lambda void "uvpoll_stop" uv_poll_t*))
-(define run-uv-nowait (foreign-lambda int "run_uv_nowait"))
+(define-foreign-type uv-timer (c-pointer (struct "uv_timer_s")))
+(define-foreign-type uv-poll (c-pointer (struct "uv_poll_s")))
 
-(define run-once (foreign-lambda int "run_once"))
-(define run-nowait (foreign-lambda int "run_nowait"))
+(define poll
+  (foreign-lambda* int ()
+    "scheduler_poll(&scheduler);"))
+(define run-once
+  (foreign-lambda* int ()
+    "scheduler_run_once(&scheduler);"))
+
+(define timer-new
+  (foreign-lambda* uv-timer ((float timeout))
+    "C_return(scheduler_timer_new(&scheduler, timeout));"))
+(define timer-next!
+  (foreign-lambda* uv-timer ()
+    "C_return(scheduler_timer_next(&scheduler));"))
+(define timer-delete
+  (foreign-lambda* void ((uv-timer timer))
+    "scheduler_timer_delete(timer);"))
+
+(define poll-new
+  (foreign-lambda* uv-poll ((int fd) (int events))
+    "C_return(scheduler_poll_new(&scheduler, fd, events));"))
+(define poll-next!
+  (foreign-lambda* uv-poll ()
+    "C_return(scheduler_poll_next(&scheduler));"))
+(define poll-delete
+  (foreign-lambda* void ((uv-poll poll))
+    "scheduler_poll_delete(poll);"))
 
 (begin
   (define stderr ##sys#standard-error) ; use default stderr port
@@ -70,42 +84,46 @@
     (when (or (eq? cts 'running) (eq? cts 'ready)) ; should ct really be 'ready? - normally not.
       (##sys#setislot ct 13 #f)                    ; clear timeout-unblock flag
       (##sys#add-to-ready-queue ct) )
-    (let loop ((r (run-nowait)))
+    (let event-loop ((status (poll)))
 
       ;; Unblock threads waiting for timeout:
-      (when (current-timer-event)
-        (dbg "timer event: " (current-timer-event) "; "
-             "timeout-list: " ##sys#timeout-list)
-        (let loop ((tl ##sys#timeout-list))
-          (if (null? tl)
-            (set! ##sys#timeout-list '())
-            (let ((timer (caar tl)) (thread (cdar tl)))
-              (if (equal? timer (current-timer-event))
-                (begin
-                  (##sys#setislot thread 13 #t) ; mark as being unblocked by timer
-                  (##sys#clear-i/o-state-for-thread! thread)
-                  (##sys#thread-basic-unblock! thread)
-                  (##sys#remove-from-timeout-list thread))
-                (loop (cdr tl)))))))
+      (let get-pending ((pending-timer (timer-next!)))
+        (when pending-timer
+          (dbg "timer event: " pending-timer "; "
+               "timeout-list: " ##sys#timeout-list)
+          (let loop ((tl ##sys#timeout-list))
+            (if (null? tl)
+              (set! ##sys#timeout-list '())
+              (let ((timer (caar tl)) (thread (cdar tl)))
+                (if (equal? timer pending-timer)
+                  (begin
+                    (##sys#setislot thread 13 #t) ; mark as being unblocked by timer
+                    (##sys#clear-i/o-state-for-thread! thread)
+                    (##sys#thread-basic-unblock! thread)
+                    (##sys#remove-from-timeout-list thread))
+                  (loop (cdr tl))))))
+          (get-pending (timer-next!))))
 
       ;; Unblock threads blocked by I/O:
-      (when (current-poll-event)
-        (dbg "current-poll-event: " (current-poll-event) "; "
-             "fd-list: " ##sys#fd-list)
-        (if eintr
-          (##sys#force-primordial) ; force it to handle user-interrupt
-          (unless (null? ##sys#fd-list)
-            (##sys#unblock-threads-for-i/o))))
+      (let get-pending ((pending-poll (poll-next!)))
+        (when pending-poll
+          (dbg "poll event: " pending-poll "; "
+               "fd-list: " ##sys#fd-list)
+          (if eintr
+            (##sys#force-primordial) ; force it to handle user-interrupt
+            (unless (null? ##sys#fd-list)
+              (##sys#unblock-threads-for-i/o)))
+          (get-pending (poll-next!))))
 
       ;; Fetch and activate next ready thread:
-      (let fetch-loop ((next-thread (remove-from-ready-queue)))
+      (let fetch-next ((next-thread (remove-from-ready-queue)))
         (if next-thread
           (if (eq? (##sys#slot next-thread 3) 'ready)
             (switch next-thread)
-            (fetch-loop (remove-from-ready-queue)))
+            (fetch-next (remove-from-ready-queue)))
           (if (and (null? ##sys#timeout-list) (null? ##sys#fd-list))
             (panic "deadlock")
-            (loop (run-once))))))))
+            (event-loop (run-once))))))))
 
 (define (##sys#force-primordial)
   (dbg "primordial thread forced due to interrupt")
@@ -170,7 +188,7 @@
       (let ((h (##sys#slot l 0))
             (r (##sys#slot l 1)))
         (if (eq? (##sys#slot h 1) t)
-          (begin (uvtimer-stop (##sys#slot h 0))
+          (begin (timer-delete (##sys#slot h 0))
                  (if prev
                    (set-cdr! prev r)
                    (set! ##sys#timeout-list r)))
@@ -182,7 +200,7 @@
     (panic
       (sprintf "##sys#thread-block-for-timeout!: invalid timeout: ~S" tm)))
   (when (fp> tm 0.0)
-    (set! ##sys#timeout-list (cons (cons (uvtimer-start tm) t) ##sys#timeout-list))
+    (set! ##sys#timeout-list (cons (cons (timer-new tm) t) ##sys#timeout-list))
     (##sys#setslot t 3 'blocked)
     (##sys#setislot t 13 #f)
     (##sys#setslot t 4 tm) ) )
@@ -275,7 +293,7 @@
     (panic (sprintf "##sys#thread-block-for-i/o!: invalid i/o mode: ~S" i/o)))
   (let loop ([lst ##sys#fd-list])
     (if (null? lst) 
-      (set! ##sys#fd-list (cons (list fd t (uvpoll-start fd i/o)) ##sys#fd-list)) 
+      (set! ##sys#fd-list (cons (list fd t (poll-new fd i/o)) ##sys#fd-list)) 
       (let ([a (car lst)])
         (if (fx= fd (car a)) 
           (##sys#setslot a 1 (cons t (cdr a)))

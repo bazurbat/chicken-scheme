@@ -1,78 +1,122 @@
 #include "scheduler.h"
+#include "queue.h"
+#include <uv.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-static uv_poll_t *current_poll_event_;
-uv_poll_t *current_poll_event()
+struct timer_t
 {
-    return current_poll_event_;
+    uv_timer_t handle;
+    QUEUE queue;
+};
+
+struct poll_t
+{
+    uv_poll_t handle;
+    QUEUE queue;
+};
+
+static void close_cb(uv_handle_t *handle)
+{
+    free(handle);
 }
 
-static uv_timer_t *current_timer_event_;
-uv_timer_t *current_timer_event()
+static void timer_cb(uv_timer_t *handle)
 {
-    return current_timer_event_;
+    struct scheduler_t *s = handle->data;
+    struct timer_t *t = container_of(handle, struct timer_t, handle);
+
+    uv_timer_stop(&t->handle);
+    QUEUE_INSERT_TAIL(&s->pending_timers, &t->queue);
 }
 
-void poll_event_cb(uv_poll_t *handle, int status, int events)
+static void poll_cb(uv_poll_t *handle, int status, int events)
 {
-    current_poll_event_ = handle;
+    struct scheduler_t *s = handle->data;
+    struct poll_t *p = container_of(handle, struct poll_t, handle);
+
+    uv_poll_stop(&p->handle);
+    QUEUE_INSERT_TAIL(&s->pending_polls, &p->queue);
 }
 
-uv_poll_t * uvpoll_start(int fd, int events)
+void scheduler_init(struct scheduler_t *s)
 {
-    uv_poll_t *watcher = malloc(sizeof(uv_poll_t));
-    uv_poll_init(uv_default_loop(), watcher,fd);
-    uv_poll_start(watcher, events, poll_event_cb);
-    return watcher;
+    QUEUE_INIT(&s->pending_timers);
+    QUEUE_INIT(&s->pending_polls);
 }
 
-void uvpoll_stop(uv_poll_t *p)
+void scheduler_destroy(struct scheduler_t *scheduler)
 {
-    uv_poll_stop(p);
-    free(p);
 }
 
-void timer_cb(uv_timer_t *handle)
+int scheduler_poll(struct scheduler_t *s)
 {
-    current_timer_event_ = handle;
-    fprintf(stderr, "timer cb %p\n", handle);
-}
-
-uv_timer_t * uvtimer_start(float tm)
-{
-    uv_timer_t *timer = malloc(sizeof(uv_timer_t));
-    uv_timer_init(uv_default_loop(), timer);
-    uv_timer_start(timer, timer_cb, (int)tm, 0);
-    fprintf(stderr, "timer start: %f\n", tm);
-    return timer;
-}
-
-void uvtimer_stop(uv_timer_t *p)
-{
-    uv_timer_stop(p);
-    free(p);
-}
-
-int run_uv_nowait()
-{
-    current_timer_event_ = 0;
-    current_poll_event_ = 0;
     return uv_run(uv_default_loop(), UV_RUN_NOWAIT);
 }
 
-int run_once()
+int scheduler_run_once(struct scheduler_t *s)
 {
-    fprintf(stderr, "run once\n");
-    current_timer_event_ = 0;
-    current_poll_event_ = 0;
     return uv_run(uv_default_loop(), UV_RUN_ONCE);
 }
 
-int run_nowait()
+uv_timer_t *scheduler_timer_new(struct scheduler_t *s, float timeout)
 {
-    fprintf(stderr, "run nowait\n");
-    current_timer_event_ = 0;
-    current_poll_event_ = 0;
-    return uv_run(uv_default_loop(), UV_RUN_NOWAIT);
+    struct timer_t *timer = malloc(sizeof(struct timer_t));
+    if (!timer) return 0;
+
+    uv_timer_t *handle = &timer->handle;
+    uv_timer_init(uv_default_loop(), handle);
+    uv_timer_start(handle, timer_cb, (int)timeout, 0);
+    handle->data = s;
+
+    return handle;
+}
+
+uv_timer_t *scheduler_timer_next(struct scheduler_t *s)
+{
+    if (QUEUE_EMPTY(&s->pending_timers))
+        return 0;
+
+    QUEUE *q = QUEUE_HEAD(&s->pending_timers);
+    struct timer_t *t = QUEUE_DATA(q, struct timer_t, queue);
+
+    QUEUE_REMOVE(q);
+
+    return &t->handle;
+}
+
+void scheduler_timer_delete(uv_timer_t *handle)
+{
+    uv_close((uv_handle_t *)handle, close_cb);
+}
+
+uv_poll_t *scheduler_poll_new(struct scheduler_t *s, int fd, int events)
+{
+    struct poll_t *poll = malloc(sizeof(struct poll_t));
+    if (!poll) return 0;
+
+    uv_poll_t *handle = &poll->handle;
+    uv_poll_init(uv_default_loop(), handle, fd);
+    uv_poll_start(handle, events, poll_cb);
+    handle->data = s;
+
+    return handle;
+}
+
+uv_poll_t *scheduler_poll_next(struct scheduler_t *s)
+{
+    if (QUEUE_EMPTY(&s->pending_polls))
+        return 0;
+
+    QUEUE *q = QUEUE_HEAD(&s->pending_polls);
+    struct poll_t *p = QUEUE_DATA(q, struct poll_t, queue);
+
+    QUEUE_REMOVE(q);
+
+    return &p->handle;
+}
+
+void scheduler_poll_delete(uv_poll_t *handle)
+{
+    uv_close((uv_handle_t *)handle, close_cb);
 }
