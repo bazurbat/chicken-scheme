@@ -1,5 +1,9 @@
-#ifndef _SCHEDULER_H_
-#define _SCHEDULER_H_
+#ifndef SCHEDULER_H
+#define SCHEDULER_H
+
+#include <common.h>
+
+#include <uv.h>
 
 #ifdef HAVE_ERRNO_H
 # include <errno.h>
@@ -37,8 +41,8 @@ static fd_set C_fdset_input, C_fdset_output;
 
 C_inline int C_ready_fds_timeout(int to, double tm) {
     struct timeval timeout;
-    timeout.tv_sec = tm / 1000;
-    timeout.tv_usec = fmod(tm, 1000) * 1000;
+    timeout.tv_sec = (long)(tm / 1000);
+    timeout.tv_usec = (long)(fmod(tm, 1000) * 1000);
     /* we use FD_SETSIZE, but really should use max fd */
     return select(FD_SETSIZE, &C_fdset_input, &C_fdset_output, NULL, to ? &timeout : NULL);
 }
@@ -87,4 +91,15 @@ C_inline void C_fdset_add(int fd, int input, int output) {
 }
 #endif
 
-#endif
+struct uv_poll_s * current_poll_event();
+struct uv_timer_s * current_timer_event();
+struct uv_poll_s * uvpoll_start(int fd, int events);
+void uvpoll_stop(struct uv_poll_s *p);
+struct uv_timer_s * uvtimer_start(float tm);
+void uvtimer_stop(struct uv_timer_s *p);
+int run_uv_nowait();
+
+int run_once();
+int run_nowait();
+
+#endif /* SCHEDULER_H */

@@ -11,11 +11,11 @@
   (not inline ##sys#interrupt-hook)
   (unsafe))
 
-(foreign-declare "#include \"uvffi.h\"")
+(foreign-declare "#include \"scheduler.h\"")
 
 (register-feature! 'libuv-scheduler)
 
-(include "common-declarations.scm")
+(include "../common-declarations.scm")
 
 (define-foreign-type uv_timer_t* (c-pointer "uv_timer_t"))
 (define-foreign-type uv_poll_t* (c-pointer "uv_poll_t"))

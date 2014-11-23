@@ -37,7 +37,7 @@
 
 (foreign-declare "#include \"scheduler.h\"")
 
-(include "common-declarations.scm")
+(include "../common-declarations.scm")
 
 #;(begin
 (define stderr ##sys#standard-error) ; use default stderr port

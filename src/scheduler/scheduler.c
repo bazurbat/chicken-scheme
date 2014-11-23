@@ -1,4 +1,4 @@
-#include "uvffi.h"
+#include "scheduler.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -33,7 +33,7 @@ void uvpoll_stop(uv_poll_t *p)
     free(p);
 }
 
-void timer_cb(uv_timer_t *handle, int status)
+void timer_cb(uv_timer_t *handle)
 {
     current_timer_event_ = handle;
     fprintf(stderr, "timer cb %p\n", handle);

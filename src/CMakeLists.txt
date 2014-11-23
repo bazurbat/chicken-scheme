@@ -46,10 +46,10 @@ add_subdirectory(scheme)
 add_subdirectory(system)
 
 if(LIBUV_FOUND)
-    list(APPEND libchicken_C_SOURCES uvffi.c uvffi.h)
-    set(scheduler_scm scheduler-uv.scm)
+    list(APPEND libchicken_C_SOURCES scheduler/scheduler.c)
+    set(scheduler_scm scheduler/scheduler-uv.scm)
 else()
-    set(scheduler_scm scheduler.scm)
+    set(scheduler_scm scheduler/scheduler.scm)
 endif()
 
 if(WIN32)
