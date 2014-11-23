@@ -149,7 +149,7 @@ function(_chicken_add_c_flags in_file out_file)
         list(APPEND c_flags -Wno-unused-variable -Wno-unused-function)
     endif()
 
-    # Add global include paths where chicken.h and chicken-config.h are.
+    # Add global include paths where chicken.h and config.h are.
     # Empty check is needed when these are overridden, for example when
     # bootstrapping the Chicken itself.
     foreach(i ${CHICKEN_INCLUDE_DIRS})

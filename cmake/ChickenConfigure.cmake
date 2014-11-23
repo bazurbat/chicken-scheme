@@ -163,8 +163,8 @@ set(CMAKE_ASM_FLAGS_MINSIZEREL ${CMAKE_C_FLAGS_MINSIZEREL})
 set(CMAKE_ASM_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
 set(CMAKE_ASM_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
 
-set(CHICKEN_CONFIG_H ${CMAKE_CURRENT_BINARY_DIR}/chicken-config.h)
-configure_file("chicken-config.h.in" ${CHICKEN_CONFIG_H})
+set(CHICKEN_CONFIG_H ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+configure_file("config.h.in" ${CHICKEN_CONFIG_H})
 
 # do not use chicken.h from system include path
 set(CHICKEN_INCLUDE_DIRS ${chicken_BINARY_DIR}/src)

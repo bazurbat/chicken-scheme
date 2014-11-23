@@ -2,7 +2,7 @@
 #define CHICKEN_H
 
 #ifdef HAVE_CHICKEN_CONFIG_H
-# include <chicken-config.h>
+# include <config.h>
 #endif
 
 #include "definitions.h"
