@@ -1,28 +1,4 @@
-; scheduler.scm - Basic scheduler for multithreading
-;
-; Copyright (c) 2008-2014, The CHICKEN Team
-; Copyright (c) 2000-2007, Felix L. Winkelmann
-; All rights reserved.
-;
-; Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
-; conditions are met:
-;
-;   Redistributions of source code must retain the above copyright notice, this list of conditions and the following
-;     disclaimer.
-;   Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following
-;     disclaimer in the documentation and/or other materials provided with the distribution.
-;   Neither the name of the author nor the names of its contributors may be used to endorse or promote
-;     products derived from this software without specific prior written permission.
-;
-; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-; OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
-; AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR
-; CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-; SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-; OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-; POSSIBILITY OF SUCH DAMAGE.
+; scheduler-uv.scm - libuv based scheduler for multithreading
 
 (declare
   (unit scheduler)
@@ -36,6 +12,8 @@
   (unsafe))
 
 (foreign-declare "#include \"uvffi.h\"")
+
+(register-feature! 'libuv-scheduler)
 
 (include "common-declarations.scm")
 
@@ -54,17 +32,19 @@
 (define uvpoll-stop (foreign-lambda void "uvpoll_stop" uv_poll_t*))
 (define run-uv-nowait (foreign-lambda int "run_uv_nowait"))
 
-#;(begin
-(define stderr ##sys#standard-error) ; use default stderr port
-(define (dbg . args)
-  (parameterize ((##sys#print-length-limit #f))
-                (for-each
-                  (lambda (x)
-                    (display x stderr))
-                  args)
-                (newline stderr))))
+(define run-once (foreign-lambda int "run_once"))
+(define run-nowait (foreign-lambda int "run_nowait"))
 
-(define-syntax dbg
+(begin
+  (define stderr ##sys#standard-error) ; use default stderr port
+  (define (dbg . args)
+    (parameterize ((##sys#print-length-limit #f))
+                  (display (current-milliseconds) stderr)
+                  (display ": " stderr)
+                  (for-each (lambda (x) (display x stderr)) args)
+                  (newline stderr))))
+
+#;(define-syntax dbg
   (syntax-rules ()
     ((_ . _) #f)))
 
@@ -90,41 +70,42 @@
     (when (or (eq? cts 'running) (eq? cts 'ready)) ; should ct really be 'ready? - normally not.
       (##sys#setislot ct 13 #f)                    ; clear timeout-unblock flag
       (##sys#add-to-ready-queue ct) )
-    (let loop1 ()
-      (run-uv-nowait)
-      (cond ((current-timer-event)
-             (let loop ((lst ##sys#timeout-list))
-               (dbg " timeout list " lst)
-               (if (null? lst)
-                 (begin
-                   (uvtimer-stop (current-timer-event));event without thread?
-                   (set! ##sys#timeout-list '()))
-                 (let* ([tmo1 (caar lst)] ; timeout of thread on list
-                        [tto (cdar lst)]   ; thread on list
-                        [tmo2 (##sys#slot tto 4)] ) ; timeout value stored in thread
-                   (if (equal? (current-timer-event) tmo1) ; timeout reached?
-                     (begin
-                       (##sys#setislot tto 13 #t) ; mark as being unblocked by timeout
-                       (##sys#clear-i/o-state-for-thread! tto)
-                       (##sys#thread-basic-unblock! tto)
-                       (##sys#remove-from-timeout-list tto))
-                     (loop (cdr lst)) ) ) ) ))
-            ((current-poll-event)
-             ;; Unblock threads blocked by I/O:
-             (if eintr
-               (##sys#force-primordial)       ; force it to handle user-interrupt
-               (unless (null? ##sys#fd-list)
-                 (##sys#unblock-threads-for-i/o) ) ))
-            (else
-              ;; Fetch and activate next ready thread:
-              (let loop2 ()
-                (let ([nt (remove-from-ready-queue)])
-                  (cond [(not nt) 
-                         (if (and (null? ##sys#timeout-list) (null? ##sys#fd-list))
-                           (panic "deadlock")
-                           (loop1) ) ]
-                        [(eq? (##sys#slot nt 3) 'ready) (switch nt)]
-                        [else (loop2)] ) ) ) ) ) ) ) )
+    (let loop ((r (run-nowait)))
+
+      ;; Unblock threads waiting for timeout:
+      (when (current-timer-event)
+        (dbg "timer event: " (current-timer-event) "; "
+             "timeout-list: " ##sys#timeout-list)
+        (let loop ((tl ##sys#timeout-list))
+          (if (null? tl)
+            (set! ##sys#timeout-list '())
+            (let ((timer (caar tl)) (thread (cdar tl)))
+              (if (equal? timer (current-timer-event))
+                (begin
+                  (##sys#setislot thread 13 #t) ; mark as being unblocked by timer
+                  (##sys#clear-i/o-state-for-thread! thread)
+                  (##sys#thread-basic-unblock! thread)
+                  (##sys#remove-from-timeout-list thread))
+                (loop (cdr tl)))))))
+
+      ;; Unblock threads blocked by I/O:
+      (when (current-poll-event)
+        (dbg "current-poll-event: " (current-poll-event) "; "
+             "fd-list: " ##sys#fd-list)
+        (if eintr
+          (##sys#force-primordial) ; force it to handle user-interrupt
+          (unless (null? ##sys#fd-list)
+            (##sys#unblock-threads-for-i/o))))
+
+      ;; Fetch and activate next ready thread:
+      (let fetch-loop ((next-thread (remove-from-ready-queue)))
+        (if next-thread
+          (if (eq? (##sys#slot next-thread 3) 'ready)
+            (switch next-thread)
+            (fetch-loop (remove-from-ready-queue)))
+          (if (and (null? ##sys#timeout-list) (null? ##sys#fd-list))
+            (panic "deadlock")
+            (loop (run-once))))))))
 
 (define (##sys#force-primordial)
   (dbg "primordial thread forced due to interrupt")
@@ -137,6 +118,7 @@
 (define (##sys#ready-queue) ready-queue-head)
 
 (define (##sys#add-to-ready-queue thread)
+  (dbg "add-to-ready-queue: " thread)
   (##sys#setslot thread 3 'ready)
   (let ((new-pair (cons thread '())))
     (cond ((eq? '() ready-queue-head)
@@ -183,7 +165,6 @@
 
 (define (##sys#remove-from-timeout-list t)
   (let loop ((l ##sys#timeout-list) (prev #f))
-    (dbg t " remove from timeout list: " l)
     (if (null? l)
       l
       (let ((h (##sys#slot l 0))
@@ -201,7 +182,7 @@
     (panic
       (sprintf "##sys#thread-block-for-timeout!: invalid timeout: ~S" tm)))
   (when (fp> tm 0.0)
-    (set! ##sys#timeout-list (cons (cons (uvtimer-start (- tm (current-milliseconds))) t) ##sys#timeout-list))
+    (set! ##sys#timeout-list (cons (cons (uvtimer-start tm) t) ##sys#timeout-list))
     (##sys#setslot t 3 'blocked)
     (##sys#setislot t 13 #f)
     (##sys#setslot t 4 tm) ) )

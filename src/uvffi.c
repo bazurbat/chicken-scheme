@@ -1,11 +1,6 @@
 #include "uvffi.h"
+#include <stdio.h>
 #include <stdlib.h>
-
-/* #include "c:/dev/libuv/include/uv.h" */
-/* #pragma comment(lib,"c:/dev/libuv/Release/lib/libuv.lib") */
-/* #pragma comment(lib,"psapi.lib") */
-/* #pragma comment(lib,"Iphlpapi.lib") */
-/* #include "uvffi.h" */
 
 static uv_poll_t *current_poll_event_;
 uv_poll_t *current_poll_event()
@@ -41,6 +36,7 @@ void uvpoll_stop(uv_poll_t *p)
 void timer_cb(uv_timer_t *handle, int status)
 {
     current_timer_event_ = handle;
+    fprintf(stderr, "timer cb %p\n", handle);
 }
 
 uv_timer_t * uvtimer_start(float tm)
@@ -48,6 +44,7 @@ uv_timer_t * uvtimer_start(float tm)
     uv_timer_t *timer = malloc(sizeof(uv_timer_t));
     uv_timer_init(uv_default_loop(), timer);
     uv_timer_start(timer, timer_cb, (int)tm, 0);
+    fprintf(stderr, "timer start: %f\n", tm);
     return timer;
 }
 
@@ -59,6 +56,22 @@ void uvtimer_stop(uv_timer_t *p)
 
 int run_uv_nowait()
 {
+    current_timer_event_ = 0;
+    current_poll_event_ = 0;
+    return uv_run(uv_default_loop(), UV_RUN_NOWAIT);
+}
+
+int run_once()
+{
+    fprintf(stderr, "run once\n");
+    current_timer_event_ = 0;
+    current_poll_event_ = 0;
+    return uv_run(uv_default_loop(), UV_RUN_ONCE);
+}
+
+int run_nowait()
+{
+    fprintf(stderr, "run nowait\n");
     current_timer_event_ = 0;
     current_poll_event_ = 0;
     return uv_run(uv_default_loop(), UV_RUN_NOWAIT);

@@ -11,4 +11,7 @@ struct uv_timer_s * uvtimer_start(float tm);
 void uvtimer_stop(struct uv_timer_s *p);
 int run_uv_nowait();
 
+int run_once();
+int run_nowait();
+
 #endif
