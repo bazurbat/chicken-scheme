@@ -47,9 +47,11 @@ add_subdirectory(system)
 
 if(LIBUV_FOUND)
     list(APPEND libchicken_C_SOURCES scheduler/scheduler.c)
-    set(scheduler_scm scheduler/scheduler-uv.scm)
+    add_chicken_sources(libchicken_SOURCES scheduler/scheduler-uv.scm
+        OPTIONS ${LIBRARY_OPTIONS} -include-path ${chicken_SOURCE_DIR}/src
+        EMIT_IMPORTS scheduler)
 else()
-    set(scheduler_scm scheduler/scheduler.scm)
+    add_chicken_sources(libchicken_SOURCES scheduler/scheduler.scm)
 endif()
 
 if(WIN32)
@@ -61,7 +63,6 @@ endif()
 set(libchicken_SCM_SOURCES
 
     ${posix_scm}
-    ${scheduler_scm}
     build-version.scm
     chicken-ffi-syntax.scm
     chicken-syntax.scm
@@ -111,6 +112,13 @@ install(TARGETS libchicken
     RUNTIME DESTINATION ${INSTALL_LIBDIR})
 
 set(CHICKEN_LIBRARIES libchicken ${CHICKEN_EXTRA_LIBRARIES})
+
+if(LIBUV_FOUND)
+    add_chicken_library(scheduler.import MODULE
+        SOURCES ${CHICKEN_IMPORT_LIBRARY_DIR}/scheduler.import.scm)
+    install(TARGETS scheduler.import
+        DESTINATION ${INSTALL_EGGDIR})
+endif()
 
 if(BUILD_STATIC_LIBS)
 

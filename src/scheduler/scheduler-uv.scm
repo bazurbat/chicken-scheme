@@ -11,6 +11,10 @@
   (not inline ##sys#interrupt-hook)
   (unsafe))
 
+(module scheduler
+(##sys#schedule)
+(import scheme chicken foreign)
+
 #>
 #include "scheduler.h"
 <#
@@ -400,3 +404,5 @@
           ##sys#fd-list)
         (thunk)
         (exit)))))
+
+)
