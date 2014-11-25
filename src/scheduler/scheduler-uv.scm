@@ -92,8 +92,7 @@
           (dbg "timer event: " pending-timer "; "
                "timeout-list: " ##sys#timeout-list)
           (let loop ((tl ##sys#timeout-list))
-            (if (null? tl)
-              (set! ##sys#timeout-list '())
+            (unless (null? tl)
               (let ((timer (caar tl)) (thread (cdar tl)))
                 (if (equal? timer pending-timer)
                   (begin
