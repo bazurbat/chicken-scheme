@@ -8,108 +8,55 @@ set_package_properties(Chicken PROPERTIES
     DESCRIPTION "A practical and portable Scheme system"
     URL "http://call-cc.org")
 
-# Always enable C first to be sure various cached variables are in place which
-# might be used later in scripts.
-enable_language(C)
-
 # Used for guessing repository location if everything else fails.
 set(CHICKEN_API_VERSION 7 CACHE STRING
     "Chicken API version")
 mark_as_advanced(CHICKEN_API_VERSION)
 
-# There are 3 usual settings for system variables:
-# 1) building Chicken for the current machine - do not change anything
-# 2) building "cross" Chicken, that will generate C files for another
-#    architecture, but still running on the current machine - set target system
-#    for this case
-# 3) cross-compiling Chicken: you will need to build cross Chicken first, then
-#    use it to generate C files which are built by a cross-compiler - set host
-#    system to the identifier of the cross chicken
-# More complex combinations are possible. Specifically: source files are
-# generated for the target system, using the host system Chicken and built
-# by system cross-compiler (linked with its libchicken).
-
-set(CHICKEN_SYSTEM "" CACHE STRING
-    "A compiler identifier of the build system")
-set(CHICKEN_HOST_SYSTEM ${CHICKEN_SYSTEM} CACHE STRING
-    "A compiler identifier of the host system (that will run the executables)")
-set(CHICKEN_TARGET_SYSTEM ${CHICKEN_HOST_SYSTEM} CACHE STRING
-    "A compiler identifier of the target system (for generated C files)")
-mark_as_advanced(CHICKEN_SYSTEM CHICKEN_HOST_SYSTEM CHICKEN_TARGET_SYSTEM)
-
-# convenience variables for concatenation with paths and names
-if(CHICKEN_SYSTEM)
-    set(_chicken_system "${CHICKEN_SYSTEM}-")
-endif()
-if(CHICKEN_HOST_SYSTEM)
-    set(_chicken_host_system "${CHICKEN_HOST_SYSTEM}-")
-endif()
-if(CHICKEN_TARGET_SYSTEM)
-    set(_chicken_target_system "${CHICKEN_TARGET_SYSTEM}-")
-endif()
-
 # Do not show error messages if the package was not found: there might be no
 # CMake aware Chicken installed or we are cross-compiling, try to quetly guess
 # the paths instead, this can also pull config file from install prefix, but it
 # should not cause any harm.
-find_package(Chicken CONFIG QUIET
-    NAMES ${_chicken_system}chicken)
+find_package(Chicken QUIET CONFIG)
+
+find_program(CHICKEN_EXECUTABLE chicken)
+
+find_program(CHICKEN_CSI_EXECUTABLE csi)
+
+find_path(CHICKEN_INCLUDE_DIR chicken.h
+    HINTS $ENV{CHICKEN_PREFIX}/include
+    PATH_SUFFIXES chicken)
+
+find_library(CHICKEN_LIBRARY chicken
+    HINTS $ENV{CHICKEN_PREFIX}/lib)
+
+get_filename_component(_chicken_prefix ${CHICKEN_INCLUDE_DIR} PATH)
+get_filename_component(_chicken_lib_dir ${CHICKEN_LIBRARY} PATH)
+string(REGEX REPLACE "^(.*)/include$" "\\1" _chicken_prefix ${_chicken_prefix})
+
+find_library(CHICKEN_STATIC_LIBRARY libchicken.a
+    HINTS ${_chicken_lib_dir}
+    NO_SYSTEM_ENVIRONMENT_PATH
+    NO_CMAKE_SYSTEM_PATH)
 
 if(NOT Chicken_FOUND)
-    find_package_message(CHICKEN_CONFIG
-        "Chicken package config is not found, guessing defaults."
-        "${Chicken_FOUND}")
-
-    find_path(CHICKEN_DATA_DIR setup.defaults
-        PATHS $ENV{CHICKEN_PREFIX}/share /usr/local/share /usr/share
-        PATH_SUFFIXES ${_chicken_system}chicken)
+    find_path(CHICKEN_DATA_DIR
+        NAME setup.defaults chicken-config.cmake
+        HINTS ${_chicken_prefix}/share
+              $ENV{CHICKEN_PREFIX}/share
+        PATHS /usr/local/share /usr/share
+        PATH_SUFFIXES chicken)
 
     find_path(CHICKEN_EXTENSION_DIR types.db
-        PATHS $ENV{CHICKEN_REPOSITORY}
+        HINTS ${_chicken_lib_dir}/chicken/${CHICKEN_API_VERSION}
+              $ENV{CHICKEN_REPOSITORY}
         NO_DEFAULT_PATH)
 
     find_path(CHICKEN_EXTENSION_DIR types.db
-        PATHS $ENV{CHICKEN_PREFIX}/lib /usr/local/lib /usr/lib
-        PATH_SUFFIXES ${_chicken_system}chicken/${CHICKEN_API_VERSION})
+        HINTS $ENV{CHICKEN_PREFIX}/lib
+        PATHS /usr/local/lib /usr/lib
+        PATH_SUFFIXES chicken/${CHICKEN_API_VERSION})
 endif()
-
-# host prefixed executables are searched as per convention to name cross
-# compilers by the target system
-
-# Chicken compiler - used to generate C files from scm, required.
-find_program(CHICKEN_EXECUTABLE
-    NAMES ${_chicken_host_system}chicken)
-
-# May be used in extension setup scripts.
-find_program(CHICKEN_CSI_EXECUTABLE
-    NAMES ${_chicken_host_system}csi)
-
-# Used to download extensions if not found in source directory.
-find_program(CHICKEN_INSTALL_EXECUTABLE
-    NAMES ${_chicken_host_system}chicken-install)
-
-# Used for automatic dependency extraction during build.
-find_file(CHICKEN_EXTRACT_SCRIPT extract-depends.scm
-    HINTS ${CHICKEN_DATA_DIR})
-
-# Use include files and libraries from the system the final compiled
-# executables are intended to run on.
-
-find_path(CHICKEN_INCLUDE_DIR chicken.h
-    HINTS ${CHICKEN_INCLUDE_DIR}
-    PATH_SUFFIXES ${_chicken_system}chicken)
-
-find_library(CHICKEN_LIBRARY ${_chicken_system}chicken
-    HINTS ${CHICKEN_LIBRARY_DIR})
-
-# Determine the location of the static library based on the location of the
-# just found dynamic library. This is needed to avoid picking libraries from
-# some other Chicken in the default paths.
-get_filename_component(_chicken_library_dir ${CHICKEN_LIBRARY} PATH)
-find_library(CHICKEN_STATIC_LIBRARY lib${_chicken_system}chicken.a
-    HINTS ${_chicken_library_dir}
-    NO_SYSTEM_ENVIRONMENT_PATH
-    NO_CMAKE_SYSTEM_PATH)
 
 if(WIN32)
     # TODO: add check for x64
@@ -121,7 +68,7 @@ list(APPEND CHICKEN_EXTRA_LIBRARIES ${CMAKE_DL_LIBS})
 
 # These used to be options, but caused various problems and are hardcoded for
 # now.
-set(CHICKEN_DEFINITIONS HAVE_CHICKEN_CONFIG_H C_ENABLE_PTABLES)
+set(CHICKEN_DEFINITIONS C_ENABLE_PTABLES)
 if(MSVC)
     # Chicken causes a lot of these
     list(APPEND CHICKEN_DEFINITIONS _CRT_SECURE_NO_WARNINGS)
@@ -158,15 +105,6 @@ set(CHICKEN_INTERPRETER ${CHICKEN_CSI_EXECUTABLE})
 find_package_handle_standard_args(Chicken DEFAULT_MSG CHICKEN_EXECUTABLE)
 
 # Detailed information useful when cross-compiling or debugging setup scripts. 
-find_package_message(CHICKEN_SYSTEM
-    "  CHICKEN_SYSTEM: ${CHICKEN_SYSTEM}"
-    "${CHICKEN_SYSTEM}")
-find_package_message(CHICKEN_HOST_SYSTEM
-    "  CHICKEN_HOST_SYSTEM: ${CHICKEN_HOST_SYSTEM}"
-    "${CHICKEN_HOST_SYSTEM}")
-find_package_message(CHICKEN_TARGET_SYSTEM
-    "  CHICKEN_TARGET_SYSTEM: ${CHICKEN_TARGET_SYSTEM}"
-    "${CHICKEN_TARGET_SYSTEM}")
 find_package_message(CHICKEN_CSI_EXECUTABLE
     "  CHICKEN_CSI_EXECUTABLE: ${CHICKEN_CSI_EXECUTABLE}"
     "${CHICKEN_CSI_EXECUTABLE}")

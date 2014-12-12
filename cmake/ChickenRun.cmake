@@ -11,6 +11,11 @@ if(PATH)
     set(ENV{PATH} "${path}")
 endif()
 
+if(LIBRARY_PATH)
+    set(ENV{LD_LIBRARY_PATH} "${LIBRARY_PATH}")
+    set(ENV{DYLD_LIBRARY_PATH} "${LIBRARY_PATH}")
+endif()
+
 foreach(pair ${ENVIRONMENT})
     string(FIND ${pair} = key_len)
     math(EXPR val_begin "${key_len} + 1")

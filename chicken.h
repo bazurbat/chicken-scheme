@@ -56,6 +56,10 @@
 # define _SVID_SOURCE
 #endif
 
+#ifndef _DEFAULT_SOURCE
+# define _DEFAULT_SOURCE
+#endif
+
 /*
  * N.B. This file MUST not rely upon "chicken-config.h"
  */

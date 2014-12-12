@@ -1,9 +1,34 @@
 (import scheme chicken)
-(use data-structures extras)
+(use data-structures files posix extras)
+
+(define (remove pred ls)
+  (cond ((null? ls) '())
+        ((pred (car ls)) (remove pred (cdr ls)))
+        (else (cons (car ls) (remove pred (cdr ls))))))
+
+(define library-modules '(srfi-13 srfi-14 srfi-18 srfi-69))
+
+(define core-modules
+  (remove (cut memq <> library-modules)
+          `(list scheme chicken foreign
+                 ,@##sys#core-library-modules
+                 ,@##sys#core-syntax-modules)))
 
 (define modules '())
 (define imports '())
 (define includes '())
+
+; (register-feature! 'debug)
+
+(cond-expand
+  (debug
+    (define-syntax d
+      (syntax-rules ()
+        ((_ arg args ...)
+         (print arg args ...)))))
+  (else
+    (define-syntax d
+      (syntax-rules () ((_ . _) (void))))))
 
 ;; copied from chicken/support.scm
 
@@ -11,10 +36,10 @@
   (let ([old-hook ##sys#user-read-hook])
     (lambda (char port)
       (if (char=? #\> char)
-          (let* ((_ (read-char port))           ; swallow #\>
-                 (text (scan-sharp-greater-string port)))
-            `(declare (foreign-declare ,text)) )
-          (old-hook char port) ) ) ) )
+        (let* ((_ (read-char port))           ; swallow #\>
+               (text (scan-sharp-greater-string port)))
+          `(declare (foreign-declare ,text)) )
+        (old-hook char port) ) ) ) )
 
 (define (scan-sharp-greater-string port)
   (let ([out (open-output-string)])
@@ -27,34 +52,38 @@
               [(char=? c #\<)
                (let ([c (read-char port)])
                  (if (eqv? #\# c)
-                     (get-output-string out)
-                     (begin
-                       (write-char #\< out)
-                       (write-char c out) 
-                       (loop) ) ) ) ]
+                   (get-output-string out)
+                   (begin
+                     (write-char #\< out)
+                     (write-char c out)
+                     (loop) ) ) ) ]
               [else
-               (write-char c out)
-               (loop) ] ) ) ) ) )
+                (write-char c out)
+                (loop) ] ) ) ) ) )
 
-(define (extract-names import)
-  (let loop ((import import) (names '()))
-    (cond ((symbol? import) (cons import names))
-          ((pair? import)
-           (case (car import)
+(define (extract-names expr)
+  (let loop ((expr expr) (names '()))
+    (cond ((symbol? expr)
+           (d "symbol " expr (if (memq expr core-modules) " (core)" ""))
+           (if (memq expr core-modules) names (cons expr names)))
+          ((pair? expr)
+           (case (car expr)
              ((srfi)
               (map (compose (cut string-append "srfi-" <>) number->string)
-                   (cdr import)))
+                   (cdr expr)))
              ((only except prefix rename)
-              (loop (cadr import) names)))))))
+              (loop (cadr expr) names)))))))
 
 (define (get-imports ls)
   (when (pair? ls)
     (let ((first (car ls))
           (rest  (cdr ls)))
       (case first
+        ((quote quasiquote))
         ((import use requre require-extension require-library)
          (set! imports (append imports
-                               (apply append (map extract-names rest)))))
+                               (apply append (map extract-names rest))))
+         (d "imports: " imports))
         ((module)
          (set! modules (cons (car rest) modules))
          (get-imports (cdr rest)))
@@ -84,6 +113,9 @@
       (write-string (string-intersperse (map ->string includes)))
       (write-string ")")(newline))
   (and (file-exists? out-file) (delete-file out-file))
+  (create-directory (pathname-directory out-file) #t)
   (with-output-to-file out-file write-imports)))
 
-; (main (command-line-arguments))
+(cond-expand
+  (chicken-script)
+  (else (main (command-line-arguments))))

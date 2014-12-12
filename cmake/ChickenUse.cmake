@@ -4,16 +4,13 @@ include(CMakeParseArguments)
 include(FeatureSummary)
 include(FindPackageHandleStandardArgs)
 
-option(CHICKEN_BUILD_IMPORTS "Compile generated import libraries" YES)
-option(CHICKEN_EMIT_TYPES "Generate files with type declarations" NO)
-option(CHICKEN_EMIT_INLINES "Generate files with globally inlinable procedures" NO)
-option(CHICKEN_EXTRACT_DEPENDS "Automatically extract source file dependencies" NO)
-mark_as_advanced(CHICKEN_EMIT_TYPES CHICKEN_EMIT_INLINES CHICKEN_EXTRACT_DEPENDS)
+option(CHICKEN_AUTO_DEPENDS "Regenerate dependencies when source files change" YES)
+option(CHICKEN_BUILD_IMPORTS "Compile emitted import libraries" YES)
 
-if(CHICKEN_HOST_SYSTEM STREQUAL CHICKEN_TARGET_SYSTEM)
-    set(CHICKEN_CROSS 0)
-else()
-    set(CHICKEN_CROSS 1)
+if(MSVC)
+    # MSBuild goes crazy over this and tries to rebuild everything as many
+    # times as there are combinations of build commands
+    set(CHICKEN_AUTO_DEPENDS NO)
 endif()
 
 # used internally for build-specific files
@@ -42,7 +39,7 @@ endfunction()
 macro(_chicken_parse_arguments)
     cmake_parse_arguments(compile
         "STATIC;SHARED;MODULE;EMBEDDED;EXTENSION"
-        "EMIT;SUFFIX;EMIT_TYPE_FILE;EMIT_INLINE_FILE;ERROR_FILE"
+        "SUFFIX;ERROR_FILE"
         "SOURCES;C_SOURCES;EMIT_IMPORTS;OPTIONS;DEFINITIONS;C_FLAGS;DEPENDS"
         ${ARGN})
 
@@ -54,11 +51,10 @@ macro(_chicken_parse_arguments)
 endmacro()
 
 macro(_chicken_command_prepare_arguments)
-    set(command_import_libraries "")
     set(command_options "")
     set(command_definitions "")
     set(command_c_flags "")
-    set(command_depends "")
+    set(command_import_libraries "")
     set(command_output "")
 
     if(compile_STATIC)
@@ -82,44 +78,21 @@ macro(_chicken_command_prepare_arguments)
         list(APPEND command_options -feature compiling-extension)
     endif()
 
-    foreach(lib ${compile_EMIT_IMPORTS})
-        list(APPEND command_options -emit-import-library ${lib})
-        list(APPEND command_import_libraries ${lib}.import.scm)
+    foreach(emit ${compile_EMIT_IMPORTS})
+        list(APPEND command_options -emit-import-library ${emit})
+        list(APPEND command_import_libraries ${emit}.import.scm)
     endforeach()
+
     foreach(lib ${command_import_libraries})
-        set_property(SOURCE ${lib} PROPERTY chicken_import_library TRUE)
-        list(APPEND command_output ${lib} ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib})
+        list(APPEND command_output ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib})
+        set_property(SOURCE ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib}
+            PROPERTY chicken_import_library YES)
     endforeach()
 
     list(APPEND command_options ${compile_OPTIONS})
-
     list(APPEND command_c_flags ${compile_C_FLAGS})
 
-    _chicken_command_emit_type()
-    _chicken_command_emit_inline()
     _chicken_command_include_paths()
-endmacro()
-
-macro(_chicken_command_emit_type)
-    if(CHICKEN_EMIT_TYPES AND NOT compile_EMIT_TYPE_FILE)
-        set(compile_EMIT_TYPE_FILE ${in_name})
-    endif()
-    if(compile_EMIT_TYPE_FILE)
-        set(types_file ${compile_EMIT_TYPE_FILE}.types)
-        list(APPEND command_options -emit-type-file ${types_file})
-        list(APPEND command_output ${types_file})
-    endif()
-endmacro()
-
-macro(_chicken_command_emit_inline)
-    if(CHICKEN_EMIT_INLINES AND NOT compile_EMIT_INLINE_FILE)
-        set(compile_EMIT_INLINE_FILE ${in_name})
-    endif()
-    if(compile_EMIT_INLINE_FILE)
-        set(inline_file ${compile_EMIT_INLINE_FILE}.inline)
-        list(APPEND command_options -emit-inline-file ${inline_file})
-        list(APPEND command_output ${inline_file})
-    endif()
 endmacro()
 
 macro(_chicken_command_include_paths)
@@ -128,8 +101,8 @@ macro(_chicken_command_include_paths)
 
     # First, try the directory of the source file if it is not the current
     # (which is used by default). Needed for (include "<file>") forms.
-    if(NOT in_path STREQUAL CMAKE_CURRENT_BINARY_DIR)
-        list(APPEND include_paths ${in_path})
+    if(NOT in_dir STREQUAL CMAKE_CURRENT_BINARY_DIR)
+        list(APPEND include_paths ${in_dir})
     endif()
 
     # then, search collected import libraries
@@ -172,12 +145,16 @@ function(_chicken_add_c_flags in_file out_file)
         list(APPEND c_flags -I${CMAKE_CURRENT_SOURCE_DIR})
     endif()
 
-    # Add global include paths where chicken.h and chicken-config.h are.
+    if(UNIX)
+        list(APPEND c_flags -Wno-unused-variable -Wno-unused-function)
+    endif()
+
+    # Add global include paths where chicken.h and config.h are.
     # Empty check is needed when these are overridden, for example when
     # bootstrapping the Chicken itself.
-    if(CHICKEN_INCLUDE_DIRS)
-        list(APPEND c_flags -I${CHICKEN_INCLUDE_DIRS})
-    endif()
+    foreach(i ${CHICKEN_INCLUDE_DIRS})
+        list(APPEND c_flags -I${i})
+    endforeach()
 
     set_property(SOURCE ${out_file} APPEND PROPERTY COMPILE_DEFINITIONS
         ${CHICKEN_DEFINITIONS} ${command_definitions} ${compile_DEFINITIONS})
@@ -188,16 +165,10 @@ function(_chicken_add_c_flags in_file out_file)
         COMPILE_FLAGS " ${c_flags}")
 endfunction()
 
-function(_chicken_create_depends in_file dep_file)
-    execute_process(
-        COMMAND ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT}
-            ${in_file} ${dep_file})
-endfunction()
+function(_chicken_extract_depends out_var dep_path)
+    set(result "")
 
-function(_chicken_extract_depends out_var in_file dep_file)
-    set(depends ${dep_file})
-
-    include(${dep_file} OPTIONAL)
+    include(${dep_path} OPTIONAL)
 
     if(imports)
         list(REMOVE_DUPLICATES imports)
@@ -206,35 +177,20 @@ function(_chicken_extract_depends out_var in_file dep_file)
         list(REMOVE_DUPLICATES includes)
     endif()
 
-    # message(STATUS "DEPENDS: ${in_file}")
-
     foreach(i ${imports})
-        if(CMAKE_GENERATOR MATCHES "Make")
-            # This check does not work for targets which CMake has not seen yet
-            # during generation process.
-            if(TARGET ${i})
-                # message(STATUS "\tT ${i}")
-                list(APPEND depends ${i})
-            endif()
-        else()
-            # CMake Ninja generator adds bogus files as phony targets and this
-            # makes the extraction simpler.
-            # TODO: check other generators
-            # message(STATUS "\t${CHICKEN_LOCAL_REPOSITORY}/${i}.import.scm")
-            list(APPEND depends ${CHICKEN_IMPORT_LIBRARY_DIR}/${i}.import.scm)
-        endif()
+        list(APPEND result ${CHICKEN_IMPORT_LIBRARY_DIR}/${i}.import.scm)
     endforeach()
 
     foreach(i ${includes})
-        get_filename_component(i ${i} ABSOLUTE)
-        if(EXISTS ${i})
-            list(APPEND depends ${i})
-        elseif(EXISTS ${i}.scm)
-            list(APPEND depends ${i}.scm)
+        get_filename_component(source ${i} ABSOLUTE)
+        if(EXISTS ${source})
+            list(APPEND result ${source})
+        elseif(EXISTS ${source}.scm)
+            list(APPEND result ${source}.scm)
         endif()
     endforeach()
 
-    set(${out_var} ${depends} PARENT_SCOPE)
+    set(${out_var} ${result} PARENT_SCOPE)
 endfunction()
 
 # This is main custom command generating function.
@@ -243,91 +199,121 @@ function(_chicken_command out_var in_file)
         "(.*)\\.scm$" "\\1${compile_SUFFIX}.chicken.c"
         out_file ${in_file})
 
-    get_filename_component(in_filename ${in_file} NAME)
-    get_filename_component(in_file ${in_file} ABSOLUTE)
-    get_filename_component(in_name ${in_file} NAME_WE)
-    get_filename_component(in_path ${in_file} PATH)
+    get_filename_component(in_path ${in_file} ABSOLUTE)
+    get_filename_component(in_dir  ${in_path} DIRECTORY)
 
-    # Cut off possible relative parts from the supplied filepath and place the
-    # output file in the current binary dir to avoid conflicts when single scm
-    # pulled from different subdirectories.
-    get_filename_component(out_filename ${out_file} NAME)
-    if(NOT IS_ABSOLUTE ${out_file})
-        set(out_file ${CMAKE_CURRENT_BINARY_DIR}/${out_filename})
+    if(IS_ABSOLUTE ${out_file})
+        set(out_path ${out_file})
+    else()
+        # Cut off possible relative parts from the supplied filepath and place
+        # the output file in the current binary dir to avoid conflicts when
+        # single scm pulled from different subdirectories.
+        get_filename_component(out_name ${out_file} NAME)
+        get_filename_component(out_path ${CMAKE_CURRENT_BINARY_DIR}/${out_name} ABSOLUTE)
     endif()
-    get_filename_component(out_file ${out_file} ABSOLUTE)
-    get_filename_component(out_path ${out_file} PATH)
-
-    string(REGEX REPLACE
-        "(.*)\\.c$" "\\1.d.cmake"
-        dep_file ${out_file})
 
     _chicken_command_prepare_arguments()
-    _chicken_add_c_flags(${in_file} ${out_file} ${command_c_flags})
+    _chicken_add_c_flags(${in_file} ${out_path} ${command_c_flags})
 
     get_property(is_import_library SOURCE ${in_file}
         PROPERTY chicken_import_library)
 
-    set(depends "")
-    if(CHICKEN_EXTRACT_DEPENDS AND CHICKEN_EXTRACT_SCRIPT AND NOT is_import_library)
-        add_custom_command(OUTPUT ${dep_file}
-            COMMAND ${CHICKEN_INTERPRETER} -ss ${CHICKEN_EXTRACT_SCRIPT}
-                ${in_file} ${dep_file}
-            DEPENDS ${in_file}
-            VERBATIM)
-        if(NOT EXISTS ${dep_file})
-            _chicken_create_depends(${in_file} ${dep_file})
-        endif()
-        _chicken_extract_depends(depends ${in_file} ${dep_file})
-    endif()
-    set(depends ${in_file} ${command_depends} ${compile_DEPENDS} ${depends})
+    if(CHICKEN_DEPENDS AND NOT is_import_library)
+        string(REGEX REPLACE
+            "(.*)\\.chicken.c$" "\\1.chicken.d"
+            dep_path ${out_path})
 
-    set(chicken_command ${CHICKEN_EXECUTABLE} ${in_file})
-    if(compile_ERROR_FILE)
-        set(out_file ${compile_ERROR_FILE})
-    else()
-        list(APPEND chicken_command -output-file ${out_file})
+        set(command_with_depends YES)
+        set(dep_stamp ${dep_path}.stamp)
+
+        # Generating dependencies on first pass speeds up clean build. Also
+        # stamp trick is used to break dependency cycle: dep files are
+        # included in this .cmake file, which causes the toplevel solution to
+        # depend on them, which in turn causes all modules to depend on each
+        # other (seems to affect Visual Studio the most).
+        if(${in_path} IS_NEWER_THAN ${dep_path})
+            message(STATUS "Extracting dependencies from: ${in_path}")
+            execute_process(
+                COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path}
+                COMMAND ${CMAKE_COMMAND} -E touch ${dep_stamp})
+        endif()
+
+        set(xdepends "")
+        _chicken_extract_depends(xdepends ${dep_path})
     endif()
+
+    set(depends ${compile_DEPENDS} ${xdepends})
+
+    set(chicken_command ${CHICKEN_COMPILER} ${in_path})
+
+    if(compile_ERROR_FILE)
+        set(out_path ${compile_ERROR_FILE})
+    else()
+        list(APPEND chicken_command -output-file ${out_path})
+    endif()
+
+    list(INSERT command_output 0 ${out_path})
+
     list(APPEND chicken_command ${CHICKEN_OPTIONS} ${command_options})
 
-    list(INSERT command_output 0 ${out_file})
+    if(CHICKEN_PRINT_DEPENDS)
+        if(is_import_library)
+            message(STATUS "I ${in_file} => ${command_output}")
+        else()
+            message(STATUS "${in_file} => ${command_output}")
+        endif()
+        foreach(d ${compile_DEPENDS})
+            message(STATUS "=\t${d}")
+        endforeach()
+        foreach(d ${xdepends})
+            message(STATUS "+\t${d}")
+        endforeach()
+    endif()
 
-    if(compile_ERROR_FILE)
+    if(command_with_depends AND CHICKEN_AUTO_DEPENDS)
+        add_custom_command(OUTPUT ${dep_stamp}
+            COMMAND ${CHICKEN_DEPENDS} ${in_path} ${dep_path}
+            COMMAND ${CMAKE_COMMAND} -E touch ${dep_stamp}
+            COMMENT "Regenerating dependencies from: ${in_path}"
+            MAIN_DEPENDENCY ${in_file} VERBATIM)
+    endif()
+
+    if(CHICKEN_COMMAND_WRAP)
         add_custom_command(OUTPUT ${command_output}
             COMMAND ${CMAKE_COMMAND}
-                "-DCOMMAND=${chicken_command}"
-                "-DOUTPUT_FILE=${compile_ERROR_FILE}"
-                -P ${CHICKEN_RUN}
+            "-DCOMMAND=${chicken_command}"
+            "-DOUTPUT_FILE=${compile_ERROR_FILE}"
+            "-DCHICKEN_REPOSITORY=${CHICKEN_REPOSITORY}"
+            "-DLIBRARY_PATH=${CHICKEN_LIBRARY_PATH}"
+            -P ${CHICKEN_RUN}
+            MAIN_DEPENDENCY ${in_file}
             DEPENDS ${depends} VERBATIM)
     else()
         add_custom_command(OUTPUT ${command_output}
             COMMAND ${chicken_command}
+            MAIN_DEPENDENCY ${in_file}
             DEPENDS ${depends} VERBATIM)
     endif()
 
-    foreach(import ${command_import_libraries})
+    foreach(lib ${command_import_libraries})
+        # chicken is way too smart and does not rewrite import files when the
+        # content is not changed, timestamp is not updated and this confuses
+        # build tools
         add_custom_command(OUTPUT ${command_output}
-            COMMAND ${CMAKE_COMMAND}
-            ARGS -E copy ${CMAKE_CURRENT_BINARY_DIR}/${import} ${CHICKEN_IMPORT_LIBRARY_DIR}/${import}
+            COMMAND ${CMAKE_COMMAND} -E touch_nocreate
+                ${CMAKE_CURRENT_BINARY_DIR}/${lib}
             VERBATIM APPEND)
-        # sometimes timestamp of generated import library is not updated
-        if(WIN32)
-            add_custom_command(OUTPUT ${command_output}
-                COMMAND ${CMAKE_COMMAND}
-                ARGS -E touch_nocreate ${CMAKE_CURRENT_BINARY_DIR}/${import}
-                VERBATIM APPEND)
-        endif()
+
+        # collect import libraries into a single directory for easier reference
+        # from other rules
+        add_custom_command(OUTPUT ${command_output}
+            COMMAND ${CMAKE_COMMAND} -E copy
+                ${CMAKE_CURRENT_BINARY_DIR}/${lib}
+                ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib}
+            VERBATIM APPEND)
     endforeach()
 
-    set(${out_var} ${out_file} PARENT_SCOPE)
-endfunction()
-
-function(_chicken_target_link_libraries name)
-    if(compile_STATIC)
-        target_link_libraries(${name} ${CHICKEN_STATIC_LIBRARIES})
-    else()
-        target_link_libraries(${name} ${CHICKEN_LIBRARIES})
-    endif()
+    set(${out_var} ${out_path} PARENT_SCOPE)
 endfunction()
 
 # Used by other add_chicken... functions, can be used directly to pass file
@@ -344,18 +330,26 @@ function(add_chicken_sources out_var)
         _chicken_add_c_flags(${s} ${s} ${compile_C_FLAGS})
     endforeach()
 
+    list(APPEND ${out_var} ${compile_SOURCES})
     list(APPEND ${out_var} ${compile_C_SOURCES})
     set(${out_var} ${${out_var}} PARENT_SCOPE)
 endfunction()
 
 # Convenience wrapper around add_executable.
 function(add_chicken_executable name)
+    cmake_parse_arguments(compile
+        "STATIC;SHARED;MODULE" "" "" ${ARGN})
     set(sources)
 
-    add_chicken_sources(sources EMIT ${name} ${ARGN})
+    add_chicken_sources(sources ${ARGN})
 
     add_executable(${name} ${sources})
-    _chicken_target_link_libraries(${name})
+
+    if(compile_STATIC)
+        target_link_libraries(${name} ${CHICKEN_STATIC_LIBRARIES})
+    else()
+        target_link_libraries(${name} ${CHICKEN_LIBRARIES})
+    endif()
 
     if(WIN32)
         set_property(TARGET ${name} APPEND PROPERTY
@@ -378,32 +372,35 @@ function(add_chicken_library name)
     endif()
 
     set(sources)
-    add_chicken_sources(sources ${library_type} EMIT ${name} ${ARGN})
+    add_chicken_sources(sources ${library_type} ${ARGN})
 
     add_library(${name} ${library_type} ${sources})
-    _chicken_target_link_libraries(${name})
+
+    if(library_STATIC)
+        target_link_libraries(${name} ${CHICKEN_STATIC_LIBRARIES})
+    else()
+        target_link_libraries(${name} ${CHICKEN_LIBRARIES})
+    endif()
 
     set_property(TARGET ${name} PROPERTY
         LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_LOCAL_REPOSITORY})
-
-    # bring compiled libraries back to build tree, necessary when using
-    # require-library in ...-for-syntax forms
-    if(CHICKEN_USE_LOCAL_LIBRARIES)
-        add_custom_target(copy_${name} ALL COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:${name}> ${CMAKE_CURRENT_SOURCE_DIR}
-            DEPENDS ${name} VERBATIM)
+    if(library_STATIC OR library_SHARED)
+        set_target_properties(${name} PROPERTIES FOLDER "Libraries")
+    elseif(library_MODULE)
+        set_target_properties(${name} PROPERTIES FOLDER "Modules")
     endif()
 
     if(library_MODULE)
         set_target_properties(${name} PROPERTIES
             PREFIX ""
             NO_SONAME TRUE)
+        if(APPLE)
+            set_target_properties(${name} PROPERTIES
+                SUFFIX ".dylib")
+        endif()
 
-        list(APPEND ${PROJECT_NAME}_CHICKEN_MODULES ${name})
+        set_property(DIRECTORY APPEND PROPERTY CHICKEN_MODULES ${name})
     endif()
-
-    set(${PROJECT_NAME}_CHICKEN_MODULES ${${PROJECT_NAME}_CHICKEN_MODULES}
-        PARENT_SCOPE)
 endfunction()
 
 # Even more convenient wrapper for compiling Chicken modules along with import
@@ -419,23 +416,11 @@ function(add_chicken_module name)
         EMIT_IMPORTS ${compile_EMIT_IMPORTS})
 
     if(CHICKEN_BUILD_IMPORTS)
-        foreach(lib ${compile_EMIT_IMPORTS})
-            set(import ${lib}.import)
-
-            add_chicken_library(${import} MODULE
-                SOURCES ${CMAKE_CURRENT_BINARY_DIR}/${import}.scm)
-            # add_dependencies(${import} ${name})
-            add_dependencies(${name} ${import})
-
-            if(CHICKEN_CROSS)
-                set_property(TARGET ${import} PROPERTY
-                    LIBRARY_OUTPUT_DIRECTORY ${CHICKEN_LOCAL_REPOSITORY})
-            endif()
+        foreach(m ${compile_EMIT_IMPORTS})
+            add_chicken_library(${m}.import MODULE
+                SOURCES ${CHICKEN_IMPORT_LIBRARY_DIR}/${m}.import.scm)
         endforeach()
     endif()
-
-    set(${PROJECT_NAME}_CHICKEN_MODULES ${${PROJECT_NAME}_CHICKEN_MODULES}
-        PARENT_SCOPE)
 endfunction()
 
 # Used for installing modules. Needs more work.
@@ -446,6 +431,14 @@ function(install_chicken_modules name)
         "TARGETS;PROGRAMS;FILES"
         ${ARGN})
 
+    get_property(modules DIRECTORY PROPERTY CHICKEN_MODULES)
+
+    if(CHICKEN_BOOTSTRAP)
+        install(TARGETS ${modules}
+            LIBRARY DESTINATION ${INSTALL_EGGDIR})
+        return()
+    endif()
+
     find_package_handle_standard_args(ChickenConfig DEFAULT_MSG
         Chicken_CONFIG
         CHICKEN_EXTENSION_DIR CHICKEN_DATA_DIR
@@ -454,7 +447,7 @@ function(install_chicken_modules name)
         message(FATAL_ERROR "Chicken config was not found, can not install extensions.")
     endif()
 
-    foreach(m ${${name}_CHICKEN_MODULES})
+    foreach(m ${modules})
         install(TARGETS ${m}
             LIBRARY DESTINATION ${CHICKEN_EXTENSION_DIR})
     endforeach()
@@ -499,6 +492,9 @@ function(define_chicken_extension name)
         "VERSION;DESCRIPTION;CATEGORY;LICENSE;URL"
         "AUTHOR;MAINTAINER"
         ${ARGN})
+    if(NOT extension_VERSION)
+        set(extension_VERSION 0.0)
+    endif()
     if(NOT extension_URL)
         set(extension_URL "http://wiki.call-cc.org/eggref/4/${name}")
     endif()
@@ -531,4 +527,46 @@ function(find_chicken_extension name)
     find_package(${name} ${extension_VERSION} CONFIG ${extension_REQUIRED}
         PATHS ${CHICKEN_DATA_DIR})
     find_package_handle_standard_args(${name} DEFAULT_MSG ${name}_VERSION)
+endfunction()
+
+function(_chicken_add_test name)
+    cmake_parse_arguments(test "" "PATH;OUTPUT_FILE" "ENVIRONMENT" ${ARGN})
+
+    if(UNIX AND NOT APPLE)
+        list(APPEND test_ENVIRONMENT LD_LIBRARY_PATH=${chicken_BINARY_DIR}/src)
+    elseif(APPLE)
+        list(APPEND test_ENVIRONMENT DYLD_LIBRARY_PATH=${chicken_BINARY_DIR}/src)
+    endif()
+
+    add_test(NAME ${name} COMMAND ${CMAKE_COMMAND}
+        "-DPATH=${test_PATH}"
+        "-DENVIRONMENT=${test_ENVIRONMENT}"
+        "-DCHICKEN_REPOSITORY=${CHICKEN_REPOSITORY}"
+        "-DCOMMAND=${test_UNPARSED_ARGUMENTS}"
+        "-DOUTPUT_FILE=${test_OUTPUT_FILE}"
+        -P ${CHICKEN_RUN})
+endfunction()
+
+function(add_chicken_test name)
+    cmake_parse_arguments(test "" "ARGS;OUTPUT_FILE" "" ${ARGN})
+
+    add_chicken_executable(${name} ${test_UNPARSED_ARGUMENTS})
+
+    _chicken_add_test(${name} $<TARGET_FILE:${name}> ${test_ARGS}
+        OUTPUT_FILE "${test_OUTPUT_FILE}")
+endfunction()
+
+function(add_chicken_interpreted_test name)
+    cmake_parse_arguments(test "" "SCRIPT" "" ${ARGN})
+
+    set(command ${CHICKEN_INTERPRETER} -bnq -R chicken-syntax
+        -I ${CMAKE_CURRENT_SOURCE_DIR}
+        -I ${CMAKE_CURRENT_BINARY_DIR})
+
+    if(test_SCRIPT)
+        set(args -s ${CMAKE_CURRENT_SOURCE_DIR}/${test_SCRIPT})
+    endif()
+
+    # NOTE: order of arguments matters
+    _chicken_add_test(${name}-i ${command} ${test_UNPARSED_ARGUMENTS} ${args})
 endfunction()
