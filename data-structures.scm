@@ -307,15 +307,21 @@
   (define (traverse which where start test loc)
     (##sys#check-string which loc)
     (##sys#check-string where loc)
-    (let ([wherelen (##sys#size where)]
-	  [whichlen (##sys#size which)] )
+    (let* ((wherelen (##sys#size where))
+	   (whichlen (##sys#size which))
+	   (end (fx- wherelen whichlen)))
       (##sys#check-exact start loc)
-      (let loop ([istart start] [iend whichlen])
-	(cond [(fx> iend wherelen) #f]
-	      [(test istart whichlen) istart]
-	      [else 
-	       (loop (fx+ istart 1)
-		     (fx+ iend 1) ) ] ) ) ) )
+      (if (and (fx>= start 0)
+	       (fx> wherelen start))
+	  (let loop ((istart start))
+	    (cond ((fx> istart end) #f)
+		  ((test istart whichlen) istart)
+		  (else (loop (fx+ istart 1)))))
+	  (##sys#error-hook (foreign-value "C_OUT_OF_RANGE_ERROR" int)
+			    loc
+			    start
+			    wherelen))))
+
   (set! ##sys#substring-index 
     (lambda (which where start)
       (traverse 
