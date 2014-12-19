@@ -298,18 +298,18 @@ function(_chicken_command out_var in_file)
     foreach(lib ${command_import_libraries})
         # chicken is way too smart and does not rewrite import files when the
         # content is not changed, timestamp is not updated and this confuses
-        # build tools
-        add_custom_command(OUTPUT ${command_output}
-            COMMAND ${CMAKE_COMMAND} -E touch_nocreate
-                ${CMAKE_CURRENT_BINARY_DIR}/${lib}
-            VERBATIM APPEND)
+        # build tools (needs additional testing especially with MSVC)
+        # add_custom_command(OUTPUT ${command_output}
+        #     COMMAND ${CMAKE_COMMAND} -E touch_nocreate
+        #         ${CMAKE_CURRENT_BINARY_DIR}/${lib}
+        #     VERBATIM APPEND)
 
         # collect import libraries into a single directory for easier reference
         # from other rules
         add_custom_command(OUTPUT ${command_output}
-            COMMAND ${CMAKE_COMMAND} -E copy
-                ${CMAKE_CURRENT_BINARY_DIR}/${lib}
-                ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib}
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    ${CMAKE_CURRENT_BINARY_DIR}/${lib}
+                    ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib}
             VERBATIM APPEND)
     endforeach()
 
