@@ -6,7 +6,7 @@ if(MSVC)
     set(CMAKE_C_FLAGS_DEBUG_INIT "/Od /Zi")
 else()
     set(CMAKE_C_FLAGS_MINSIZEREL_INIT "-Os -fomit-frame-pointer")
-    set(CMAKE_C_FLAGS_RELEASE_INIT "-O3 -fomit-frame-pointer")
+    set(CMAKE_C_FLAGS_RELEASE_INIT "-O2 -fomit-frame-pointer")
     set(CMAKE_C_FLAGS_DEBUG_INIT "-g -Wall -Wno-unused")
 endif()
 
