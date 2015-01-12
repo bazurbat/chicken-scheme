@@ -220,7 +220,7 @@
 (symbol? (#(procedure #:pure #:predicate symbol) symbol? (*) boolean))
 
 (symbol-append (#(procedure #:clean #:enforce #:foldable) symbol-append (#!rest symbol) symbol))
-(symbol->string (#(procedure #:clean #:enforce #:foldable) symbol->string (symbol) string))
+(symbol->string (#(procedure #:clean #:enforce) symbol->string (symbol) string))
 (string->symbol (#(procedure #:clean #:enforce #:foldable) string->symbol (string) symbol))
 
 (number? (#(procedure #:pure #:predicate number) number? (*) boolean))
@@ -507,10 +507,10 @@
 			       #(2)))
       ((float float) (##core#inline_allocate ("C_a_i_flonum_atan2" 4) #(1) #(2))))
 
-(number->string (#(procedure #:clean #:enforce #:foldable) number->string (number #!optional fixnum) string)
+(number->string (#(procedure #:clean #:enforce) number->string (number #!optional fixnum) string)
 		((fixnum) (##sys#fixnum->string #(1))))
 
-(##sys#fixnum->string (#(procedure #:clean #:enforce #:foldable) ##sys#fixnum->string (fixnum) string))
+(##sys#fixnum->string (#(procedure #:clean #:enforce) ##sys#fixnum->string (fixnum) string))
 
 (string->number (#(procedure #:clean #:enforce #:foldable) string->number (string #!optional fixnum)
 		 (or number false)))
