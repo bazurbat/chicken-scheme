@@ -747,6 +747,9 @@ EOF
 (define flonum-minimum-decimal-exponent (foreign-value "DBL_MIN_10_EXP" int))
 
 (define (flonum? x) (##core#inline "C_i_flonump" x))
+(define (bignum? x) (##core#inline "C_i_bignump" x))
+(define (ratnum? x) (##sys#structure? x '##sys#ratnum))
+(define (cplxnum? x) (##sys#structure? x '##sys#cplxnum))
 
 (define (finite? x) 
   (##sys#check-number x 'finite?)
@@ -903,8 +906,6 @@ EOF
 (define complex? number?)
 (define real? number?)
 (define (rational? n) (##core#inline "C_i_rationalp" n))
-(define ##sys#flonum-fraction (##core#primitive "C_flonum_fraction"))
-(define ##sys#fprat (##core#primitive "C_flonum_rat"))
 (define (integer? x) (##core#inline "C_i_integerp" x))
 (define ##sys#integer? integer?)
 (define (exact? x) (##core#inline "C_i_exactp" x))
@@ -932,25 +933,40 @@ EOF
   (##sys#check-number n 'imag-part)
   0)
 
-(define (numerator n)
-  (##sys#check-number n 'numerator)
+;;; Rationals
+
+(define-inline (%ratnum-numerator c) (##sys#slot c 1))
+(define-inline (%ratnum-denominator c) (##sys#slot c 2))
+(define-inline (%make-ratnum r i) (##sys#make-structure '##sys#ratnum r i))
+
+(define (ratnum m n)
   (cond
-   ((##core#inline "C_u_i_exactp" n) n)
-   ((##core#inline "C_i_finitep" n)
-    (receive (num denom) (##sys#fprat n) num))
-   (else
-    (##sys#signal-hook
-     #:type-error 'numerator "bad argument type - not a rational number" n)) ) )
+   ((eq? n 1) m)
+   ((eq? n -1) (- m))
+   ((negative? n) (%make-ratnum (- m) (- n)))
+   (else (%make-ratnum m n))))
+
+(define (numerator n)
+  (cond ((exact-integer? n) n)
+        ((##core#inline "C_i_flonump" n)
+         (cond ((not (finite? n)) (bad-inexact 'numerator n))
+               ((##core#inline "C_u_i_fpintegerp" n) n)
+               (else (exact->inexact (numerator (inexact->exact n))))))
+        ((ratnum? n) (%ratnum-numerator n))
+        (else (##sys#signal-hook
+	       #:type-error 'numerator
+	       "bad argument type - not a rational number" n))))
 
 (define (denominator n)
-  (##sys#check-number n 'denominator)
-  (cond
-   ((##core#inline "C_u_i_exactp" n) 1)
-   ((##core#inline "C_i_finitep" n)
-    (receive (num denom) (##sys#fprat n) denom))
-   (else
-    (##sys#signal-hook
-     #:type-error 'denominator "bad argument type - not a rational number" n)) ) )
+  (cond ((exact-integer? n) 1)
+        ((##core#inline "C_i_flonump" n)
+         (cond ((not (finite? n)) (bad-inexact 'denominator n))
+               ((##core#inline "C_u_i_fpintegerp" n) 1.0)
+               (else (exact->inexact (denominator (inexact->exact n))))))
+        ((ratnum? n) (%ratnum-denominator n))
+        (else (##sys#signal-hook
+	       #:type-error 'numerator
+	       "bad argument type - not a rational number" n))))
 
 (define magnitude abs)
 

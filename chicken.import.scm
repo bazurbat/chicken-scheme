@@ -31,6 +31,7 @@
    argc+argv
    argv
    arithmetic-shift
+   bignum?
    bit-set?
    bitwise-and
    bitwise-ior
@@ -56,6 +57,7 @@
    continuation-return
    continuation?
    copy-read-table
+   cplxnum?
    cpu-time
    current-error-port
    current-exception-handler
@@ -194,6 +196,7 @@
    promise?
    put!
    quit
+   ratnum?
    register-feature!
    remprop!
    rename-file

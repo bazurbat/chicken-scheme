@@ -512,6 +512,7 @@ The following extended bindings are handled specially:
 {{any?}}
 {{arithmetic-shift}}
 {{atom?}}
+{{bignum?}}
 {{bit-set?}}
 {{bitwise-and}}
 {{bitwise-ior}}

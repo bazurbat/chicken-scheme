@@ -38,6 +38,37 @@ platforms).
 Returns {{#t}} if the bit at the position {{INDEX}} in the integer {{N}} is
 set, or {{#f}} otherwise. The rightmost/least-significant bit is bit 0.
 
+==== bignum?
+
+<procedure>(bignum? X)</procedure>
+
+Returns {{#t}} if {{X}} is a bignum (integer larger than fits in a
+fixnum), or {{#f}} otherwise.
+
+==== cplxnum?
+
+<procedure>(cplxnum? X)</procedure>
+
+Returns {{#t}} if {{X}} is a true complex number (it has an imaginary
+component), or {{#f}} otherwise.
+
+Please note that {{complex?}} will always return {{#t}} for any number
+type supported by CHICKEN, so you can use this predicate if you want
+to know the representational type of a number.
+
+==== ratnum?
+
+<procedure>(ratnum? X)</procedure>
+
+Returns {{#t}} if {{X}} is a true rational number (it is a fraction
+with a denominator that's not 1), or {{#f}} otherwise.
+
+Please note that {{rational?}} will always return {{#t}} for any
+number type supported by CHICKEN except complex numbers and non-finite
+flonums, so you can use this predicate if you want to know the
+representational type of a number.
+
+
 ==== Arithmetic fixnum operations
 
 <procedure>(fx+ N1 N2)</procedure>

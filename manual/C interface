@@ -207,11 +207,29 @@ Is {{x}} a fixnum object?
 
 Is {{x}} ''not'' a fixnum object?
 
+===== C_bignump
+
+ [C macro] C_word C_bignump(C_word x)
+
+Is {{x}} a Scheme bignum object?  Accepts only non-immediate objects.
+
 ===== C_i_numberp
 
  [C function] C_word C_i_numberp(C_word x)
 
-Is {{x}} a number object (fixnum or flonum)?
+Is {{x}} a number object (fixnum, bignum, flonum, ratnum, cplxnum)?
+
+===== C_i_bignump
+
+ [C function] C_word C_i_bignump(C_word x)
+
+Is {{x}} a Scheme bignum object?
+
+===== C_i_flonump
+
+ [C function] C_word C_i_flonump(C_word x)
+
+Is {{x}} a flonum object?
 
 ===== C_pointerp
 
@@ -504,6 +522,18 @@ Returns the size in words needed for allocation of a closure with {{length}} slo
 
 Returns the size in words needed for allocation of a structure (record type) object with {{length}} slots.  The structure's type tag also counts as a slot, so always remember to include it when calculating {{length}}.
 
+===== C_SIZEOF_BIGNUM
+
+ [C macro] int C_SIZEOF_BIGNUM (int length)
+
+Returns the size in words needed for allocation of a bignum object with {{length}} word-sized digits (limbs).
+
+===== C_SIZEOF_FIX_BIGNUM
+
+ [C macro] int C_SIZEOF_FIX_BIGNUM
+
+The size in words needed for allocation of a bignum object which is large enough to store any fixnum (ie, if it were converted to a denormalized bignum, because if a number ''can'' be represented as a fixnum, it ''will'' be).
+
 ===== C_SIZEOF_INTERNED_SYMBOL
 
  [C macro] int C_SIZEOF_INTERNED_SYMBOL (int length)
@@ -743,6 +773,33 @@ Is {{x}} an inexact number (i.e., not a fixnum)?
 
 Is {{x}} a finite number?  This returns false only when {{x}} is a
 flonum representing {{-inf}} or {{+inf}}.
+
+==== Bignums
+
+===== C_bignum_negativep
+
+ [C macro] int C_bignum_negativep(C_word b)
+
+Returns nonzero if the bignum {{b}} is negative, zero if it is not.
+
+===== C_bignum_digits
+
+ [C macro] C_uword *C_bignum_digits(C_word b)
+
+Returns a pointer to the first digit (the least significant one) of the bignum {{b}}.
+
+===== C_bignum_size
+
+ [C macro] C_word C_bignum_size(b)
+
+Returns the number of digits in the bignum {{b}}, as an unboxed C number.  If you want a fixnum, use {{C_u_i_bignum_size}}.
+
+===== C_u_i_bignum_size
+
+ [C macro] C_word C_u_i_bignum_size(b)
+
+Returns the number of digits in the bignum {{b}}, as a Scheme fixnum.  If you want an unboxed integer, use {{C_bignum_size}}.
+
 
 ==== Fixnums
 

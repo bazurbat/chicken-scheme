@@ -216,6 +216,7 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #define nmin(x, y)                   ((x) < (y) ? (x) : (y))
 #define percentage(n, p)             ((C_long)(((double)(n) * (double)p) / 100))
 
+#define free_tmp_bignum(b)           C_free((void *)(b))
 #define is_fptr(x)                   (((x) & C_GC_FORWARDING_BIT) != 0)
 #define ptr_to_fptr(x)               ((((x) >> FORWARDING_BIT_SHIFT) & 1) | C_GC_FORWARDING_BIT | ((x) & ~1))
 #define fptr_to_ptr(x)               (((x) << FORWARDING_BIT_SHIFT) | ((x) & ~(C_GC_FORWARDING_BIT | 1)))
@@ -325,7 +326,9 @@ C_TLS C_word
   *C_temporary_stack,
   *C_temporary_stack_bottom,
   *C_temporary_stack_limit,
-  *C_stack_limit;
+  *C_stack_limit,
+   C_ratnum_type_tag,
+   C_cplxnum_type_tag;
 C_TLS C_long
   C_timer_interrupt_counter,
   C_initial_timer_interrupt_period;
@@ -512,6 +515,8 @@ static C_ccall void call_cc_wrapper(C_word c, C_word closure, C_word k, C_word r
 static C_ccall void call_cc_values_wrapper(C_word c, C_word closure, C_word k, ...) C_noret;
 static void gc_2(void *dummy) C_noret;
 static void allocate_vector_2(void *dummy) C_noret;
+static void allocate_bignum_2(void *dummy) C_noret;
+static C_word allocate_tmp_bignum(C_word size, C_word negp, C_word initp);
 static void make_structure_2(void *dummy) C_noret;
 static void generic_trampoline(void *dummy) C_noret;
 static void handle_interrupt(void *trampoline, void *proc) C_noret;
@@ -784,7 +789,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size -
      this must match the number of C_pte calls + 1 (NULL terminator)! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 56);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 54);
   int i = 0;
 
   if(pt == NULL)
@@ -819,8 +824,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_greater_or_equal_p);
   C_pte(C_less_or_equal_p);
   C_pte(C_quotient);
-  C_pte(C_flonum_fraction);
-  C_pte(C_flonum_rat);
   C_pte(C_expt);
   C_pte(C_number_to_string);
   C_pte(C_make_symbol);
@@ -1006,6 +1009,8 @@ void initialize_symbol_table(void)
   for(i = 0; i < symbol_table->size; symbol_table->table[ i++ ] = C_SCHEME_END_OF_LIST);
 
   /* Obtain reference to hooks for later: */
+  C_ratnum_type_tag = C_intern2(C_heaptop, C_text("\003sysratnum"));
+  C_cplxnum_type_tag = C_intern2(C_heaptop, C_text("\003syscplxnum"));
   interrupt_hook_symbol = C_intern2(C_heaptop, C_text("\003sysinterrupt-hook"));
   error_hook_symbol = C_intern2(C_heaptop, C_text("\003syserror-hook"));
   callback_continuation_stack_symbol = C_intern3(C_heaptop, C_text("\003syscallback-continuation-stack"), C_SCHEME_END_OF_LIST);
@@ -3073,6 +3078,8 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
 C_regparm void C_fcall mark_system_globals(void)
 {
+  mark(&C_ratnum_type_tag);
+  mark(&C_cplxnum_type_tag);
   mark(&interrupt_hook_symbol);
   mark(&error_hook_symbol);
   mark(&callback_continuation_stack_symbol);
@@ -3411,6 +3418,8 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
 
 C_regparm void C_fcall remark_system_globals(void)
 {
+  remark(&C_ratnum_type_tag);
+  remark(&C_cplxnum_type_tag);
   remark(&interrupt_hook_symbol);
   remark(&error_hook_symbol);
   remark(&callback_continuation_stack_symbol);
@@ -7258,6 +7267,115 @@ void allocate_vector_2(void *dummy)
 }
 
 
+void C_ccall
+C_allocate_bignum(C_word c, C_word self, C_word k, C_word size, C_word negp, C_word initp)
+{
+  C_uword bytes = C_wordstobytes(C_unfix(size) + 1); /* add slot for negp */
+
+  if(bytes > C_HEADER_SIZE_MASK)
+    barf(C_OUT_OF_RANGE_ERROR, NULL, size, C_fix(C_HEADER_SIZE_MASK));
+
+  bytes += sizeof(C_word); /* header slot */
+
+  C_save(k);
+  C_save(negp);
+  C_save(initp);
+  C_save(C_fix(bytes));
+
+  if(!C_demand(C_bytestowords(bytes))) {
+    /* Allocate on heap: */
+    if((C_uword)(C_fromspace_limit - C_fromspace_top) < (bytes + stack_size * 2))
+      C_fromspace_top = C_fromspace_limit; /* trigger major GC */
+  
+    C_save(C_SCHEME_TRUE);
+    C_reclaim((void *)allocate_bignum_2, NULL);
+  }
+
+  C_save(C_SCHEME_FALSE);
+  allocate_bignum_2(NULL);
+}
+
+static void allocate_bignum_2(void *dummy)
+{
+  C_word  mode = C_restore;
+  C_uword bytes = C_unfix(C_restore);
+  C_word  initp = C_restore;
+  C_word  negp = C_restore;
+  C_word  k = C_restore;
+  C_word  *v0, v;
+
+  if(C_truep(mode)) {
+    while((C_uword)(C_fromspace_limit - C_fromspace_top) < (bytes + stack_size)) {
+      if(C_heap_size_is_fixed)
+	panic(C_text("out of memory - cannot allocate bignum (heap resizing disabled)"));
+
+      C_save(k);
+      C_rereclaim2(percentage(heap_size, C_heap_growth) + (C_uword)bytes, 0);
+      k = C_restore;
+    }
+
+    v0 = (C_word *)C_align((C_word)C_fromspace_top);
+    C_fromspace_top += C_align(bytes);
+  }
+  else v0 = C_alloc(C_bytestowords(bytes));
+
+  v = (C_word)v0;
+
+  *(v0++) = C_BIGNUM_TYPE | (bytes-sizeof(C_word)); /* subtract header again */
+
+  *(v0++) = C_truep(negp);
+  if(C_truep(initp)) C_memset(v0, '\0', bytes - sizeof(C_word));
+
+  C_kontinue(k, v);
+}
+
+static C_word allocate_tmp_bignum(C_word size, C_word negp, C_word initp)
+{
+  C_word *mem = C_malloc(C_wordstobytes(C_SIZEOF_BIGNUM(C_unfix(size)))),
+          bignum = (C_word)mem;
+  if (mem == NULL) abort();     /* TODO: panic */
+  
+  C_block_header_init(bignum, C_BIGNUM_TYPE | C_wordstobytes(C_unfix(size)+1));
+  C_set_block_item(bignum, 0, C_truep(negp));
+
+  if (C_truep(initp)) {
+    C_memset(((C_uword *)C_data_pointer(bignum))+1,
+             0, C_wordstobytes(C_unfix(size)));
+  }
+
+  return bignum;
+}
+
+/* Simplification: scan trailing zeroes, then return a fixnum if the
+ * value fits, or trim the bignum's length. */
+C_regparm C_word C_fcall C_bignum_simplify(C_word big)
+{
+  C_uword *start = C_bignum_digits(big),
+          *last_digit = start + C_bignum_size(big) - 1,
+          *scan = last_digit, tmp;
+  int length;
+
+  while (scan >= start && *scan == 0)
+    scan--;
+  length = scan - start + 1;
+  
+  switch(length) {
+  case 0:
+    return C_fix(0);
+  case 1:
+    tmp = *start;
+    if (C_bignum_negativep(big) ?
+        !(tmp & C_INT_SIGN_BIT) && C_fitsinfixnump(-(C_word)tmp) :
+        C_ufitsinfixnump(tmp))
+      return C_bignum_negativep(big) ? C_fix(-(C_word)tmp) : C_fix(tmp);
+    /* FALLTHROUGH */
+  default:
+    if (scan < last_digit) C_bignum_mutate_size(big, length);
+    return big;
+  }
+}
+
+
 void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word string)
 {
   int len, key;
@@ -7277,41 +7395,6 @@ void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word strin
     s = add_symbol(&a, key, string, symbol_table);
 
   C_kontinue(k, s);
-}
-
-
-void C_ccall C_flonum_fraction(C_word c, C_word closure, C_word k, C_word n)
-{
-  double i, fn = C_flonum_magnitude(n);
-  C_alloc_flonum;
-
-  C_kontinue_flonum(k, modf(fn, &i));
-}
-
-void C_ccall C_flonum_rat(C_word c, C_word closure, C_word k, C_word n)
-{
-  double frac, tmp, numer, denom, fn = C_flonum_magnitude(n);
-  double ga, gb;
-  C_word ab[WORDS_PER_FLONUM * 2], *ap = ab;
-  int i = 0;
-
-  if (isnormal(fn)) {
-    /* Calculate bit-length of the fractional part (ie, after decimal point) */
-    frac = fn;
-    while(!C_isnan(frac) && !C_isinf(frac) && C_modf(frac, &tmp) != 0.0) {
-      frac *= 2;
-      if (i++ > 3000) /* should this be flonum-maximum-exponent? */
-        barf(C_CANT_REPRESENT_INEXACT_ERROR, "fprat", n);
-    }
-    
-    /* Now we can compute the rational number r = 2^i/X*2^i = numer/denom. */
-    denom = pow(2, i);
-    numer = fn*denom;
-  } else { /* denormalised/subnormal number: [+-]1.0/+inf.0 */
-    numer = fn > 0.0 ? 1.0 : -1.0;
-    denom = 1.0/0.0; /* +inf */
-  }
-  C_values(4, C_SCHEME_UNDEFINED, k, C_flonum(&ap, numer), C_flonum(&ap, denom));
 }
 
 

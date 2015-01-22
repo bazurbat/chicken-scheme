@@ -411,10 +411,21 @@ static inline int isinf_ld (long double x)
 #ifdef C_SIXTY_FOUR
 # define C_MOST_POSITIVE_FIXNUM   0x3fffffffffffffffL
 # define C_WORD_SIZE              64
+# define C_HALF_WORD_SIZE         32
 #else
 # define C_MOST_POSITIVE_FIXNUM   0x3fffffff
 # define C_WORD_SIZE              32
+# define C_HALF_WORD_SIZE         16
 #endif
+
+/* These might fit better in runtime.c? */
+#define C_BIGNUM_DIGIT_LENGTH           C_WORD_SIZE
+#define C_BIGNUM_HALF_DIGIT_LENGTH      C_HALF_WORD_SIZE
+#define C_BIGNUM_BITS_TO_DIGITS(n) \
+        (((n) + (C_BIGNUM_DIGIT_LENGTH - 1)) / C_BIGNUM_DIGIT_LENGTH)
+#define C_BIGNUM_DIGIT_LO_HALF(d)       (C_uhword)(d)
+#define C_BIGNUM_DIGIT_HI_HALF(d)       (C_uhword)((d) >> C_BIGNUM_HALF_DIGIT_LENGTH)
+#define C_BIGNUM_DIGIT_COMBINE(h,l)     ((C_uword)(h) << C_BIGNUM_HALF_DIGIT_LENGTH|(C_uhword)(l))
 
 #define C_MOST_POSITIVE_32_BIT_FIXNUM  0x3fffffff
 #define C_MOST_NEGATIVE_FIXNUM    (-C_MOST_POSITIVE_FIXNUM - 1)
@@ -435,7 +446,7 @@ static inline int isinf_ld (long double x)
 # define C_PAIR_TYPE              (0x0300000000000000L)
 # define C_CLOSURE_TYPE           (0x0400000000000000L | C_SPECIALBLOCK_BIT)
 # define C_FLONUM_TYPE            (0x0500000000000000L | C_BYTEBLOCK_BIT | C_8ALIGN_BIT)
-/*       unused                   (0x0600000000000000L ...) */
+# define C_BIGNUM_TYPE            (0x0600000000000000L | C_BYTEBLOCK_BIT)
 # define C_PORT_TYPE              (0x0700000000000000L | C_SPECIALBLOCK_BIT)
 # define C_STRUCTURE_TYPE         (0x0800000000000000L)
 # define C_POINTER_TYPE           (0x0900000000000000L | C_SPECIALBLOCK_BIT)
@@ -465,7 +476,7 @@ static inline int isinf_ld (long double x)
 # else
 #  define C_FLONUM_TYPE           (0x05000000 | C_BYTEBLOCK_BIT | C_8ALIGN_BIT)
 # endif
-/*       unused                   (0x06000000 ...) */
+# define C_BIGNUM_TYPE            (0x06000000 | C_BYTEBLOCK_BIT)
 # define C_PORT_TYPE              (0x07000000 | C_SPECIALBLOCK_BIT)
 # define C_STRUCTURE_TYPE         (0x08000000)
 # define C_POINTER_TYPE           (0x09000000 | C_SPECIALBLOCK_BIT)
@@ -498,6 +509,9 @@ static inline int isinf_ld (long double x)
 #define C_SIZEOF_PORT             16
 #define C_SIZEOF_STRUCTURE(n)     ((n)+1)
 #define C_SIZEOF_CLOSURE(n)       ((n)+1)
+#define C_SIZEOF_BIGNUM(n)        ((n)+2)
+/* This is for convenience and allows flexibility in representation */
+#define C_SIZEOF_FIX_BIGNUM       C_SIZEOF_BIGNUM(1)
 
 /* Fixed size types have pre-computed header tags */
 #define C_PAIR_TAG                (C_PAIR_TYPE | (C_SIZEOF_PAIR - 1))
@@ -531,13 +545,16 @@ static inline int isinf_ld (long double x)
 #ifdef C_SIXTY_FOUR
 # ifdef C_LLP
 #  define C_word                  C_s64
+#  define C_hword                 long
 # else
 #  define C_word                  long
+#  define C_hword                 int
 # endif
 # define C_u32                    uint32_t
 # define C_s32                    int32_t
 #else
 # define C_word                   int
+# define C_hword                  short
 # define C_u32                    unsigned int
 # define C_s32                    int
 #endif
@@ -546,6 +563,7 @@ static inline int isinf_ld (long double x)
 #define C_uchar                   unsigned C_char
 #define C_byte                    char
 #define C_uword                   unsigned C_word
+#define C_uhword                  unsigned C_hword
 #define C_header                  C_uword
 
 /* if all else fails, use these:
@@ -1067,6 +1085,7 @@ extern double trunc(double);
 #define C_set_block_item(x,i,y)    (C_block_item(x, i) = (y))
 #define C_header_bits(bh)          (C_block_header(bh) & C_HEADER_BITS_MASK)
 #define C_header_size(bh)          (C_block_header(bh) & C_HEADER_SIZE_MASK)
+#define C_bignum_size(b)           (C_bytestowords(C_header_size(b))-1)
 #define C_make_header(type, size)  ((C_header)(((type) & C_HEADER_BITS_MASK) | ((size) & C_HEADER_SIZE_MASK)))
 #define C_symbol_value(x)          (C_block_item(x, 0))
 #define C_save(x)	           (*(--C_temporary_stack) = (C_word)(x))
@@ -1108,6 +1127,9 @@ extern double trunc(double);
 #define C_mk_nbool(x)              ((x) ? C_SCHEME_FALSE : C_SCHEME_TRUE)
 #define C_port_file(p)             C_CHECKp(p,C_portp(C_VAL1(p)),(C_FILEPTR)C_block_item(C_VAL1(p), 0))
 #define C_data_pointer(b)          C_CHECKp(b,C_blockp((C_word)C_VAL1(b)),(void *)(((C_SCHEME_BLOCK *)(C_VAL1(b)))->data))
+#define C_bignum_negativep(b)      C_CHECKp(b,C_bignump(C_VAL1(b)),(C_block_item(b,0)!=0))
+#define C_bignum_digits(b)         C_CHECKp(b,C_bignump(C_VAL1(b)),(((C_uword *)C_data_pointer(C_VAL1(b)))+1))
+#define C_bignum_mutate_size(b,s)  (C_block_header(b) = (C_BIGNUM_TYPE | C_wordstobytes((s)+1)))
 #define C_fitsinfixnump(n)         (((n) & C_INT_SIGN_BIT) == (((n) & C_INT_TOP_BIT) << 1))
 #define C_ufitsinfixnump(n)        (((n) & (C_INT_SIGN_BIT | (C_INT_SIGN_BIT >> 1))) == 0)
 #define C_quickflonumtruncate(n)   (C_fix((C_word)C_flonum_magnitude(n)))
@@ -1176,6 +1198,7 @@ extern double trunc(double);
 #define C_forwardedp(x)           C_mk_bool((C_block_header(x) & C_GC_FORWARDING_BIT) != 0)
 #define C_immp(x)                 C_mk_bool(C_immediatep(x))
 #define C_flonump(x)              C_mk_bool(C_block_header(x) == C_FLONUM_TAG)
+#define C_bignump(x)              C_mk_bool(C_header_bits(x) == C_BIGNUM_TYPE)
 #define C_stringp(x)              C_mk_bool(C_header_bits(x) == C_STRING_TYPE)
 #define C_symbolp(x)              C_mk_bool(C_block_header(x) == C_SYMBOL_TAG)
 #define C_pairp(x)                C_mk_bool(C_block_header(x) == C_PAIR_TAG)
@@ -1290,6 +1313,7 @@ extern double trunc(double);
 #define C_random_fixnum(n)              C_fix((C_word)(((double)rand())/(RAND_MAX + 1.0) * C_unfix(n)))
 #define C_randomize(n)                  (srand(C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_block_size(x)                 C_fix(C_header_size(x))
+#define C_u_i_bignum_size(b)            C_fix(C_bignum_size(b))
 #define C_pointer_address(x)            ((C_byte *)C_block_item((x), 0))
 #define C_block_address(ptr, n, x)      C_a_unsigned_int_to_num(ptr, n, x)
 #define C_offset_pointer(x, y)          (C_pointer_address(x) + (y))
@@ -1653,7 +1677,9 @@ C_varextern C_TLS C_word
   *C_temporary_stack,
   *C_temporary_stack_bottom,
   *C_temporary_stack_limit,
-  *C_stack_limit;
+  *C_stack_limit,
+   C_ratnum_type_tag,
+   C_cplxnum_type_tag;
 C_varextern C_TLS C_long
   C_timer_interrupt_counter,
   C_initial_timer_interrupt_period;
@@ -1844,10 +1870,9 @@ C_fctexport void C_ccall C_expt(C_word c, C_word closure, C_word k, C_word n1, C
 C_fctexport void C_ccall C_gc(C_word c, C_word closure, C_word k, ...) C_noret;
 C_fctexport void C_ccall C_open_file_port(C_word c, C_word closure, C_word k, C_word port, C_word channel, C_word mode) C_noret;
 C_fctexport void C_ccall C_allocate_vector(C_word c, C_word closure, C_word k, C_word size, C_word type, C_word init, C_word align8) C_noret;
+C_fctexport void C_ccall C_allocate_bignum(C_word c, C_word self, C_word k, C_word size, C_word negp, C_word initp) C_noret;
 C_fctexport void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word string) C_noret;
 C_fctexport void C_ccall C_build_symbol(C_word c, C_word closure, C_word k, C_word string) C_noret;
-C_fctexport void C_ccall C_flonum_fraction(C_word c, C_word closure, C_word k, C_word n) C_noret;
-C_fctexport void C_ccall C_flonum_rat(C_word c, C_word closure, C_word k, C_word n) C_noret;
 C_fctexport void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2) C_noret;
 C_fctexport void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, ...) C_noret;
 C_fctexport void C_ccall C_fixnum_to_string(C_word c, C_word closure, C_word k, C_word num) C_noret;
@@ -1879,6 +1904,7 @@ C_fctexport void C_ccall C_dump_heap_state(C_word x, C_word closure, C_word k) C
 C_fctexport void C_ccall C_filter_heap_objects(C_word x, C_word closure, C_word k, C_word func,
 					       C_word vector, C_word userarg) C_noret;
 C_fctexport time_t C_fcall C_seconds(C_long *ms) C_regparm;
+C_fctexport C_word C_fcall C_bignum_simplify(C_word big) C_regparm;
 C_fctexport C_word C_a_i_list(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_string(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_record(C_word **a, int c, ...);
@@ -2344,11 +2370,20 @@ C_inline C_word C_i_closurep(C_word x)
   return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_CLOSURE_TYPE);
 }
 
+C_inline C_word C_i_bignump(C_word x)
+{
+  return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_BIGNUM_TYPE);
+}
 
 C_inline C_word C_i_numberp(C_word x)
 {
-  return C_mk_bool((x & C_FIXNUM_BIT)
-         || (!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG));
+  return C_mk_bool((x & C_FIXNUM_BIT) ||
+                   (!C_immediatep(x) && 
+                    (C_block_header(x) == C_FLONUM_TAG ||
+                     C_header_bits(x) == C_BIGNUM_TYPE ||
+                     (C_header_bits(x) == C_STRUCTURE_TYPE &&
+                      (C_block_item(x, 0) == C_ratnum_type_tag ||
+                       C_block_item(x, 0) == C_cplxnum_type_tag)))));
 }
 
 
@@ -2897,6 +2932,57 @@ C_inline C_word C_a_i_record8(C_word **ptr, int n, C_word x1, C_word x2, C_word 
   *(p++) = x8;
   *ptr = p;
   return (C_word)p0;
+}
+
+/* Silly (this is not normalized) but in some cases needed internally */
+C_inline C_word C_bignum0(C_word **ptr)
+{
+  C_word *p = *ptr, p0 = (C_word)p;
+
+  /* Not using C_a_i_vector4, to make it easier to rewrite later */
+  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(1);
+  *(p++) = 0; /* zero is always positive */
+  *ptr = p;
+
+  return p0;
+}
+
+C_inline C_word C_bignum1(C_word **ptr, int negp, C_uword d1)
+{
+  C_word *p = *ptr, p0 = (C_word)p;
+
+  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(2);
+  *(p++) = negp;
+  *(p++) = d1;
+  *ptr = p;
+
+  return p0;
+}
+
+/* Here d1, d2, ... are low to high (ie, little endian)! */
+C_inline C_word C_bignum2(C_word **ptr, int negp, C_uword d1, C_uword d2)
+{
+  C_word *p = *ptr, p0 = (C_word)p;
+
+  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(3);
+  *(p++) = negp;
+  *(p++) = d1;
+  *(p++) = d2;
+  *ptr = p;
+
+  return p0;
+}
+
+/* TODO: Is this correctly named?  Shouldn't it accept an argcount? */
+C_inline C_word C_a_u_i_fix_to_big(C_word **ptr, C_word x)
+{
+  x = C_unfix(x);
+  if (x < 0)
+    return C_bignum1(ptr, 1, -x);
+  else if (x == 0)
+    return C_bignum0(ptr);
+  else
+    return C_bignum1(ptr, 0, x);
 }
 
 /* These strl* functions are based on public domain code by C.B. Falconer */
