@@ -225,11 +225,29 @@ Is {{x}} a number object (fixnum, bignum, flonum, ratnum, cplxnum)?
 
 Is {{x}} a Scheme bignum object?
 
+===== C_i_cplxnump
+
+ [C function] C_word C_i_cplxnump(C_word x)
+
+Is {{x}} a Scheme cplxnum object?
+
+===== C_i_ratnump
+
+ [C function] C_word C_i_ratnump(C_word x)
+
+Is {{x}} a Scheme ratnum object?
+
 ===== C_i_flonump
 
  [C function] C_word C_i_flonump(C_word x)
 
 Is {{x}} a flonum object?
+
+===== C_i_exact_integerp
+
+ [C macro] C_word C_i_exact_integerp(C_word x)
+
+Is {{x}} an exact integer (i.e., a fixnum or a bignum)?
 
 ===== C_pointerp
 
@@ -751,21 +769,21 @@ Is the (byte- or heterogenous) vector {{v}} nonempty?
 
 ==== Numbers
 
-These procedures accept any type of number, so you can pass in either
-a fixnum or a flonum.  You shouldn't pass in another type though,
-since that could crash your program.
+These procedures accept any type of number, so you can pass in a
+fixnum, a flonum, a bignum, a ratnum or a cplxnum.  You shouldn't pass
+in another type though, since that could crash your program.
 
 ===== C_u_i_exactp
 
  [C macro] C_word C_u_i_exactp(C_word x)
 
-Is {{x}} an exact number (i.e., a fixnum)?
+Is {{x}} an exact number (i.e., a fixnum, bignum, ratnum or exact cplxnum)?
 
 ===== C_u_i_inexactp
 
  [C macro] C_word C_u_i_inexactp(C_word x)
 
-Is {{x}} an inexact number (i.e., not a fixnum)?
+Is {{x}} an inexact number (i.e., a flonum or an inexact cplxnum)?
 
 ===== C_i_finitep
 
@@ -948,6 +966,20 @@ Returns {{C_SCHEME_TRUE}} when {{n1}} is less than {{n2}},
 
 Returns {{C_SCHEME_TRUE}} when {{n1}} is less than or equal to
 {{n2}}, {{C_SCHEME_FALSE}} if not.
+
+===== C_i_fixnum_positivep
+
+ [C macro] C_word C_i_fixnum_positivep(C_word n)
+
+Returns {{C_SCHEME_TRUE}} when {{n}} is a positive fixnum,
+{{C_SCHEME_FALSE}} if it is zero or negative.
+
+===== C_i_fixnum_negativep
+
+ [C macro] C_word C_i_fixnum_negativep(C_word n)
+
+Returns {{C_SCHEME_TRUE}} when {{n}} is a negative fixnum,
+{{C_SCHEME_FALSE}} if it is zero or positive.
 
 ===== C_fixnum_increase
 
@@ -1208,6 +1240,58 @@ Calculates the square root of {{n}}.
  [C macro] C_word C_a_i_flonum_abs(C_word **ptr, int c, C_word n)
 
 Calculates the absolute value of {{n}}.
+
+===== C_u_i_flonum_nanp
+
+ [C macro] C_word C_u_i_flonum_nanp(C_word n)
+
+Is {{n}} a flonum NaN value?
+
+===== C_u_i_flonum_finitep
+
+ [C macro] C_word C_u_i_flonum_finitep(C_word n)
+
+Is {{n}} a finite flonum (i.e., not NaN or one of the infinities)?
+
+===== C_u_i_flonum_infinitep
+
+ [C macro] C_word C_u_i_flonum_infinitep(C_word n)
+
+Is {{n}} an infinite flonum?
+
+==== Exact integers
+
+Often you know a value is an integer, but you don't know whether it's
+a fixnum or a bignum.  In those cases, there are some optimized C
+functions and macros to perform operations on them.
+
+===== C_i_integer_evenp
+
+ [C macro] C_word C_i_integer_evenp(C_word n)
+
+Returns {{C_SCHEME_TRUE}} when {{n}} is an even fixnum or bignum,
+{{C_SCHEME_FALSE}} if it is odd.
+
+===== C_i_integer_oddp
+
+ [C macro] C_word C_i_integer_oddp(C_word n)
+
+Returns {{C_SCHEME_TRUE}} when {{n}} is an odd fixnum or bignum,
+{{C_SCHEME_FALSE}} if it is even.
+
+===== C_i_integer_positivep
+
+ [C macro] C_word C_i_integer_positivep(C_word n)
+
+Returns {{C_SCHEME_TRUE}} when {{n}} is a positive fixnum or bignum,
+{{C_SCHEME_FALSE}} if it is zero or negative.
+
+===== C_i_integer_negativep
+
+ [C macro] C_word C_i_integer_negativep(C_word n)
+
+Returns {{C_SCHEME_TRUE}} when {{n}} is a negative fixnum or bignum,
+{{C_SCHEME_FALSE}} if it is zero or positive.
 
 
 ==== Pointers

@@ -73,6 +73,7 @@
    er-macro-transformer
    errno
    error
+   exact-integer?
    exit
    exit-handler
    expand
@@ -159,6 +160,7 @@
    get-properties
    getter-with-setter
    implicit-exit-handler
+   infinite?
    ir-macro-transformer
    keyword->string
    keyword-style
@@ -179,6 +181,7 @@
    module-environment
    most-negative-fixnum
    most-positive-fixnum
+   nan?
    on-exit
    open-input-string
    open-output-string

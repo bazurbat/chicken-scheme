@@ -45,6 +45,13 @@ set, or {{#f}} otherwise. The rightmost/least-significant bit is bit 0.
 Returns {{#t}} if {{X}} is a bignum (integer larger than fits in a
 fixnum), or {{#f}} otherwise.
 
+==== exact-integer?
+
+<procedure>(exact-integer? X)</procedure>
+
+Returns {{#t}} if {{X}} is an exact integer (i.e., a fixnum or a
+bignum), or {{#f}} otherwise.
+
 ==== cplxnum?
 
 <procedure>(cplxnum? X)</procedure>
@@ -224,11 +231,30 @@ all floating-point numbers of a certain precision is given by the
 formula {{ceil(1+N*log10(2))}}, where N is the number of bits of
 precision; for double-precision, {{N=53}}.
 
+==== nan?
+
+<procedure>(nan? N)</procedure>
+
+Returns {{#t}} if {{N}} is not a number (a IEEE flonum NaN-value).  If
+{{N}} is a complex number, it's considered nan if it has a real or
+imaginary component that's nan.
+
+==== finite?
+
+<procedure>(infinite? N)</procedure>
+
+Returns {{#t}} if {{N}} is negative or positive infinity, and {{#f}}
+otherwise.  If {{N}} is a complex number, it's considered infinite if
+it has a real or imaginary component that's infinite.
+
 ==== finite?
 
 <procedure>(finite? N)</procedure>
 
-Returns {{#f}} if {{N}} is negative or positive infinity, and {{#t}} otherwise.
+Returns {{#t}} if {{N}} represents a finite number and {{#f}}
+otherwise.  Positive and negative infinity as well as NaNs are not
+considered finite.  If {{N}} is a complex number, it's considered
+finite if both the real and imaginary components are finite.
 
 ==== signum
 

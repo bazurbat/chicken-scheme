@@ -521,6 +521,7 @@ static inline int isinf_ld (long double x)
 #define C_SWIG_POINTER_TAG        (C_SWIG_POINTER_TYPE | (C_wordstobytes(C_SIZEOF_SWIG_POINTER - 1)))
 #define C_SYMBOL_TAG              (C_SYMBOL_TYPE | (C_SIZEOF_SYMBOL - 1))
 #define C_FLONUM_TAG              (C_FLONUM_TYPE | sizeof(double))
+#define C_STRUCTURE3_TAG          (C_STRUCTURE_TYPE | 3)
 
 /* Locative subtypes */
 #define C_SLOT_LOCATIVE           0
@@ -657,6 +658,9 @@ static inline int isinf_ld (long double x)
 #define C_FLOATING_POINT_EXCEPTION_ERROR              45
 #define C_ILLEGAL_INSTRUCTION_ERROR                   46
 #define C_BUS_ERROR                                   47
+#define C_BAD_ARGUMENT_TYPE_NO_EXACT_ERROR            48
+#define C_BAD_ARGUMENT_TYPE_NO_INEXACT_ERROR          49
+#define C_BAD_ARGUMENT_TYPE_NO_REAL_ERROR             50
 
 
 /* Platform information */
@@ -1157,6 +1161,7 @@ extern double trunc(double);
 
 #define C_isnan(f)                 isnan(f)
 #define C_isinf(f)                 isinf(f)
+#define C_isfinite(f)              isfinite(f)
 
 #ifdef C_STRESS_TEST
 # define C_STRESS_FAILURE          3
@@ -1226,8 +1231,6 @@ extern double trunc(double);
 #define C_eqp(x, y)               C_mk_bool((x) == (y))
 #define C_vemptyp(x)              C_mk_bool(C_header_size(x) == 0)
 #define C_notvemptyp(x)           C_mk_bool(C_header_size(x) > 0)
-#define C_u_i_exactp(x)           C_mk_bool((x) & C_FIXNUM_BIT)
-#define C_u_i_inexactp(x)         C_mk_bool(((x) & C_FIXNUM_BIT) == 0)
 
 #define C_slot(x, i)              C_block_item(x, C_unfix(i))
 #define C_subbyte(x, i)           C_fix(((C_byte *)C_data_pointer(x))[ C_unfix(i) ] & 0xff)
@@ -1408,6 +1411,8 @@ extern double trunc(double);
 #define C_i_equalp(x, y)                C_mk_bool(C_equalp((x), (y)))
 #define C_i_fixnumevenp(x)              C_mk_nbool((x) & 0x00000002)
 #define C_i_fixnumoddp(x)               C_mk_bool((x) & 0x00000002)
+#define C_i_fixnum_negativep(x)         C_mk_bool((x) & C_INT_SIGN_BIT)
+#define C_i_fixnum_positivep(x)         C_mk_bool(!((x) & C_INT_SIGN_BIT) && (x) != C_fix(0))
 #define C_i_nullp(x)                    C_mk_bool((x) == C_SCHEME_END_OF_LIST)
 #define C_i_structurep(x, s)            C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_STRUCTURE_TYPE && C_block_item(x, 0) == (s))
 
@@ -1659,6 +1664,9 @@ extern double trunc(double);
 #define C_a_i_flonum_log(ptr, c, x)     C_flonum(ptr, C_log(C_flonum_magnitude(x)))
 #define C_a_i_flonum_sqrt(ptr, c, x)    C_flonum(ptr, C_sqrt(C_flonum_magnitude(x)))
 #define C_a_i_flonum_abs(ptr, c, x)     C_flonum(ptr, C_fabs(C_flonum_magnitude(x)))
+#define C_u_i_flonum_nanp(x)            C_mk_bool(C_isnan(C_flonum_magnitude(x)))
+#define C_u_i_flonum_infinitep(x)       C_mk_bool(C_isinf(C_flonum_magnitude(x)))
+#define C_u_i_flonum_finitep(x)         C_mk_bool(C_isfinite(C_flonum_magnitude(x)))
 
 #define C_a_i_current_milliseconds(ptr, c, dummy) C_flonum(ptr, C_milliseconds())
 
@@ -1919,12 +1927,19 @@ C_fctexport C_word C_fcall C_i_set_cdr(C_word p, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_vector_set(C_word v, C_word i, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_exactp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_inexactp(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_nanp(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_finitep(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_infinitep(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_zerop(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_u_i_zerop(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_positivep(C_word x) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_u_i_positivep(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_integer_positivep(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_negativep(C_word x) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_u_i_negativep(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_integer_negativep(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_car(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_cdr(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_caar(C_word x) C_regparm;
@@ -1936,10 +1951,14 @@ C_fctexport C_word C_fcall C_i_cdddr(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_cadddr(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_cddddr(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_list_tail(C_word lst, C_word i) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_i_evenp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_u_i_evenp(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_integer_evenp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_oddp(C_word x) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_u_i_oddp(C_word x) C_regparm;
+C_fctexport C_word C_fcall C_i_integer_oddp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_vector_ref(C_word v, C_word i) C_regparm;
 C_fctexport C_word C_fcall C_i_block_ref(C_word x, C_word i) C_regparm;
 C_fctexport C_word C_fcall C_i_string_set(C_word s, C_word i, C_word c) C_regparm;
@@ -2381,23 +2400,37 @@ C_inline C_word C_i_numberp(C_word x)
                    (!C_immediatep(x) && 
                     (C_block_header(x) == C_FLONUM_TAG ||
                      C_header_bits(x) == C_BIGNUM_TYPE ||
-                     (C_header_bits(x) == C_STRUCTURE_TYPE &&
+                     (C_block_header(x) == C_STRUCTURE3_TAG &&
                       (C_block_item(x, 0) == C_ratnum_type_tag ||
                        C_block_item(x, 0) == C_cplxnum_type_tag)))));
 }
 
+/* All numbers are real, except for cplxnums */
+C_inline C_word C_i_realp(C_word x)
+{
+  return C_mk_bool((x & C_FIXNUM_BIT) ||
+                   (!C_immediatep(x) && 
+                    (C_block_header(x) == C_FLONUM_TAG ||
+                     C_header_bits(x) == C_BIGNUM_TYPE ||
+                     (C_header_bits(x) == C_STRUCTURE_TYPE &&
+                      C_block_item(x, 0) == C_ratnum_type_tag))));
+}
 
+/* All finite real numbers are rational */
 C_inline C_word C_i_rationalp(C_word x)
 {
-  if((x & C_FIXNUM_BIT) != 0) return C_SCHEME_TRUE;
-
-  if((!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG)) {
+  if(x & C_FIXNUM_BIT) {
+    return C_SCHEME_TRUE;
+  } else if (C_immediatep(x)) {
+    return C_SCHEME_FALSE;
+  } else if(C_block_header(x) == C_FLONUM_TAG) {
     double n = C_flonum_magnitude(x);
-      
-    if(!C_isinf(n) && !C_isnan(n)) return C_SCHEME_TRUE;
+    return C_mk_bool(!C_isinf(n) && !C_isnan(n));
+  } else {
+    return C_mk_bool(C_header_bits(x) == C_BIGNUM_TYPE ||
+                     (C_header_bits(x) == C_STRUCTURE_TYPE &&
+                      C_block_item(x, 0) == C_ratnum_type_tag));
   }
-
-  return C_SCHEME_FALSE;
 }
 
 
@@ -2420,12 +2453,54 @@ C_inline int C_ub_i_fpintegerp(double x)
   return C_modf(x, &dummy) == 0.0;
 }
 
+C_inline C_word C_i_exact_integerp(C_word x)
+{
+  return C_mk_bool((x) & C_FIXNUM_BIT ||
+                   (!C_immediatep(x) && (C_header_bits(x) == C_BIGNUM_TYPE)));
+}
+
+C_inline C_word C_u_i_exactp(C_word x)
+{
+  if (C_truep(C_i_exact_integerp(x))) {
+    return C_SCHEME_TRUE;
+  } else if (C_block_header(x) == C_FLONUM_TAG) {
+    return C_SCHEME_FALSE;
+  } else if (C_block_header(x) != C_STRUCTURE3_TAG) {
+    return C_SCHEME_FALSE;
+  } else if (C_block_item(x, 0) == C_ratnum_type_tag) {
+    return C_SCHEME_TRUE;
+  } else if (C_block_item(x, 0) != C_cplxnum_type_tag) {
+    return C_SCHEME_FALSE;
+  } else {
+    x = C_block_item(x, 1);
+    /* r and i are always the same exactness, and we assume they
+     * always store a number.
+     */
+    return C_mk_bool(C_immediatep(x) || (C_block_header(x) != C_FLONUM_TAG));
+  }
+}
+
+C_inline C_word C_u_i_inexactp(C_word x)
+{
+  if (C_immediatep(x)) {
+    return C_SCHEME_FALSE;
+  } else if (C_block_header(x) == C_FLONUM_TAG) {
+    return C_SCHEME_TRUE;
+  } else if (C_block_header(x) != C_STRUCTURE3_TAG ||
+             C_block_item(x, 0) != C_cplxnum_type_tag) {
+    return C_SCHEME_FALSE;
+  } else {
+    x = C_block_item(x, 1); /* r and i are always the same exactness */
+    return C_mk_bool(!C_immediatep(x) && (C_block_header(x) == C_FLONUM_TAG));
+  }
+}
 
 C_inline C_word C_i_integerp(C_word x)
 {
   double dummy, val;
 
-  if (x & C_FIXNUM_BIT)
+  if (x & C_FIXNUM_BIT ||
+      (!C_immediatep(x) && (C_header_bits(x) == C_BIGNUM_TYPE)))
 	  return C_SCHEME_TRUE;
   if (C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG)
 	  return C_SCHEME_FALSE;
@@ -2442,16 +2517,18 @@ C_inline C_word C_i_flonump(C_word x)
   return C_mk_bool(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG);
 }
 
-
-C_inline C_word C_i_finitep(C_word x)
+C_inline C_word C_i_cplxnump(C_word x)
 {
-  double val;
-  
-  if((x & C_FIXNUM_BIT) != 0) return C_SCHEME_TRUE;
-  
-  val = C_flonum_magnitude(x);
-  if(C_isnan(val) || C_isinf(val)) return C_SCHEME_FALSE;
-  else return C_SCHEME_TRUE;
+  return C_mk_bool(!C_immediatep(x) &&
+                   C_block_header(x) == C_STRUCTURE3_TAG &&
+                   C_block_item(x, 0) == C_cplxnum_type_tag);
+}
+
+C_inline C_word C_i_ratnump(C_word x)
+{
+  return C_mk_bool(!C_immediatep(x) &&
+                   C_block_header(x) == C_STRUCTURE3_TAG &&
+                   C_block_item(x, 0) == C_ratnum_type_tag);
 }
 
 

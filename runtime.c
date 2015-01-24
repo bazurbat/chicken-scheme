@@ -1758,6 +1758,21 @@ void barf(int code, char *loc, ...)
     c = 0;
     break;
 
+  case C_BAD_ARGUMENT_TYPE_NO_EXACT_ERROR:
+    msg = C_text("bad argument type - not an exact number");
+    c = 1;
+    break;
+
+  case C_BAD_ARGUMENT_TYPE_NO_INEXACT_ERROR:
+    msg = C_text("bad argument type - not an inexact number");
+    c = 1;
+    break;
+
+  case C_BAD_ARGUMENT_TYPE_NO_REAL_ERROR:
+    msg = C_text("bad argument type - not an real");
+    c = 1;
+    break;
+
   default: panic(C_text("illegal internal error code"));
   }
   
@@ -4663,136 +4678,280 @@ C_word C_fcall C_a_i_smart_mpointer(C_word **ptr, int c, C_word x)
   return (C_word)p0;
 }
 
+C_regparm C_word C_fcall C_i_nanp(C_word x)
+{
+  if (x & C_FIXNUM_BIT) {
+    return C_SCHEME_FALSE;
+  } else if (C_immediatep(x)) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "nan?", x);
+  } else if (C_block_header(x) == C_FLONUM_TAG) {
+    return C_u_i_flonum_nanp(x);
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    return C_SCHEME_FALSE;
+  } else if (C_block_header(x) == C_STRUCTURE3_TAG) {
+    if (C_block_item(x, 0) == C_ratnum_type_tag)
+      return C_SCHEME_FALSE;
+    else if (C_block_item(x, 0) == C_cplxnum_type_tag)
+      return C_mk_bool(C_truep(C_i_nanp(C_block_item(x, 1))) ||
+		       C_truep(C_i_nanp(C_block_item(x, 2))));
+    else
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "nan?", x);
+  } else {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "nan?", x);
+  }
+}
+
+C_regparm C_word C_fcall C_i_finitep(C_word x)
+{
+  if (x & C_FIXNUM_BIT) {
+    return C_SCHEME_TRUE;
+  } else if (C_immediatep(x)) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "finite?", x);
+  } else if (C_block_header(x) == C_FLONUM_TAG) {
+    return C_u_i_flonum_finitep(x);
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    return C_SCHEME_TRUE;
+  } else if (C_block_header(x) == C_STRUCTURE3_TAG) {
+    if (C_block_item(x, 0) == C_ratnum_type_tag)
+      return C_SCHEME_TRUE;
+    else if (C_block_item(x, 0) == C_cplxnum_type_tag)
+      return C_and(C_i_finitep(C_block_item(x, 1)),
+		   C_i_finitep(C_block_item(x, 2)));
+    else
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "finite?", x);
+  } else {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "finite?", x);
+  }
+}
+
+C_regparm C_word C_fcall C_i_infinitep(C_word x)
+{
+  if (x & C_FIXNUM_BIT) {
+    return C_SCHEME_FALSE;
+  } else if (C_immediatep(x)) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "infinite?", x);
+  } else if (C_block_header(x) == C_FLONUM_TAG) {
+    return C_u_i_flonum_infinitep(x);
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    return C_SCHEME_FALSE;
+  } else if (C_block_header(x) == C_STRUCTURE3_TAG) {
+    if (C_block_item(x, 0) == C_ratnum_type_tag)
+      return C_SCHEME_FALSE;
+    else if (C_block_item(x, 0) == C_cplxnum_type_tag)
+      return C_mk_bool(C_truep(C_i_infinitep(C_block_item(x, 1))) ||
+                       C_truep(C_i_infinitep(C_block_item(x, 2))));
+    else
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "infinite?", x);
+  } else {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "infinite?", x);
+  }
+}
 
 C_regparm C_word C_fcall C_i_exactp(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
-
-  if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG)
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "exact?", x);
-
-  return C_SCHEME_FALSE;
+  if (x & C_FIXNUM_BIT) {
+    return C_SCHEME_TRUE;
+  } else if (C_immediatep(x)) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "exact?", x);
+  } else if (C_block_header(x) == C_FLONUM_TAG) {
+    return C_SCHEME_FALSE;
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    return C_SCHEME_TRUE;
+  } else if (C_block_header(x) == C_STRUCTURE3_TAG) {
+    if (C_block_item(x, 0) == C_ratnum_type_tag)
+      return C_SCHEME_TRUE;
+    else if (C_block_item(x, 0) == C_cplxnum_type_tag)
+      return C_i_exactp(C_block_item(x, 1)); /* Exactness of i and r matches */
+    else
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "exact?", x);
+  } else {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "exact?", x);
+  }
 }
 
 
 C_regparm C_word C_fcall C_i_inexactp(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_SCHEME_FALSE;
-
-  if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG)
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "inexact?", x);
-
-  return C_SCHEME_TRUE;
+  if (x & C_FIXNUM_BIT) {
+    return C_SCHEME_FALSE;
+  } else if (C_immediatep(x)) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "inexact?", x);
+  } else if (C_block_header(x) == C_FLONUM_TAG) {
+    return C_SCHEME_TRUE;
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    return C_SCHEME_FALSE;
+  } else if (C_block_header(x) == C_STRUCTURE3_TAG) {
+    if (C_block_item(x, 0) == C_ratnum_type_tag)
+      return C_SCHEME_FALSE;
+    else if (C_block_item(x, 0) == C_cplxnum_type_tag)
+      return C_i_inexactp(C_block_item(x, 1)); /* Exactness of i and r matches */
+    else
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "inexact?", x);
+  } else {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "inexact?", x);
+  }
 }
 
 
 C_regparm C_word C_fcall C_i_zerop(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_mk_bool(x == C_fix(0));
-
-  if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG)
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "zero?", x);
-
-  return C_mk_bool(C_flonum_magnitude(x) == 0.0);
+  if (x & C_FIXNUM_BIT) {
+    return C_mk_bool(x == C_fix(0));
+  } else if (C_immediatep(x)) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "zero?", x);
+  } else if (C_block_header(x) == C_FLONUM_TAG) {
+    return C_mk_bool(C_flonum_magnitude(x) == 0.0);
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE ||
+	     (C_block_header(x) == C_STRUCTURE3_TAG &&
+	      (C_block_item(x, 0) == C_ratnum_type_tag ||
+	       C_block_item(x, 0) == C_cplxnum_type_tag))) {
+    return C_SCHEME_FALSE;
+  } else {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "zero?", x);
+  }
 }
-
 
 /* I */
 C_regparm C_word C_fcall C_u_i_zerop(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_mk_bool(x == C_fix(0));
-
-  return C_mk_bool(C_flonum_magnitude(x) == 0.0);
+  return C_mk_bool(x == C_fix(0) ||
+                   (!C_immediatep(x) &&
+                    C_block_header(x) == C_FLONUM_TAG &&
+                    C_flonum_magnitude(x) == 0.0));
 }
 
 
 C_regparm C_word C_fcall C_i_positivep(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_mk_bool(C_unfix(x) > 0);
-
-  if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG)
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "positive?", x);
-
-  return C_mk_bool(C_flonum_magnitude(x) > 0.0);
+  if (x & C_FIXNUM_BIT)
+    return C_i_fixnum_positivep(x);
+  else if (C_immediatep(x))
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "positive?", x);
+  else if (C_block_header(x) == C_FLONUM_TAG)
+    return C_mk_bool(C_flonum_magnitude(x) > 0.0);
+  else if (C_header_bits(x) == C_BIGNUM_TYPE)
+    return C_mk_nbool(C_bignum_negativep(x));
+  else if (C_block_header(x) == C_STRUCTURE3_TAG &&
+           (C_block_item(x, 0) == C_ratnum_type_tag))
+    return C_i_integer_positivep(C_block_item(x, 1));
+  else if (C_block_header(x) == C_STRUCTURE3_TAG &&
+           (C_block_item(x, 0) == C_cplxnum_type_tag))
+    barf(C_BAD_ARGUMENT_TYPE_NO_REAL_ERROR, "positive?", x);
+  else
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "positive?", x);
 }
 
+C_regparm C_word C_fcall C_i_integer_positivep(C_word x)
+{
+  if (x & C_FIXNUM_BIT) return C_i_fixnum_positivep(x);
+  else return C_mk_nbool(C_bignum_negativep(x));
+}
 
-/* I */
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_u_i_positivep(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_mk_bool(C_unfix(x) > 0);
-
-  return C_mk_bool(C_flonum_magnitude(x) > 0.0);
+  return C_i_positivep(x);
 }
 
 
 C_regparm C_word C_fcall C_i_negativep(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_mk_bool(C_unfix(x) < 0);
-
-  if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG)
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "negative?", x);
-
-  return C_mk_bool(C_flonum_magnitude(x) < 0.0);
+  if (x & C_FIXNUM_BIT)
+    return C_i_fixnum_negativep(x);
+  else if (C_immediatep(x))
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "negative?", x);
+  else if (C_block_header(x) == C_FLONUM_TAG)
+    return C_mk_bool(C_flonum_magnitude(x) < 0.0);
+  else if (C_header_bits(x) == C_BIGNUM_TYPE)
+    return C_mk_bool(C_bignum_negativep(x));
+  else if (C_block_header(x) == C_STRUCTURE3_TAG &&
+           (C_block_item(x, 0) == C_ratnum_type_tag))
+    return C_i_integer_negativep(C_block_item(x, 1));
+  else if (C_block_header(x) == C_STRUCTURE3_TAG &&
+           (C_block_item(x, 0) == C_cplxnum_type_tag))
+    barf(C_BAD_ARGUMENT_TYPE_NO_REAL_ERROR, "negative?", x);
+  else
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "negative?", x);
 }
 
 
-/* I */
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_u_i_negativep(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_mk_bool(C_unfix(x) < 0);
+  return C_i_negativep(x);
+}
 
-  return C_mk_bool(C_flonum_magnitude(x) < 0.0);
+C_regparm C_word C_fcall C_i_integer_negativep(C_word x)
+{
+  if (x & C_FIXNUM_BIT) return C_i_fixnum_negativep(x);
+  else return C_mk_bool(C_bignum_negativep(x));
 }
 
 
 C_regparm C_word C_fcall C_i_evenp(C_word x)
 {
-  double val, dummy;
-  if(x & C_FIXNUM_BIT) return C_mk_nbool(x & 0x02);
-
-  if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG)
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "even?", x);
-
-  val = C_flonum_magnitude(x);
-  if(C_isnan(val) || C_isinf(val) || C_modf(val, &dummy) != 0.0)
+  if(x & C_FIXNUM_BIT) {
+    return C_i_fixnumevenp(x);
+  } else if(C_immediatep(x)) {
     barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "even?", x);
-
-  return C_mk_bool(fmod(val, 2.0) == 0.0);
+  } else if (C_block_header(x) == C_FLONUM_TAG) {
+    double val, dummy;
+    val = C_flonum_magnitude(x);
+    if(C_isnan(val) || C_isinf(val) || C_modf(val, &dummy) != 0.0)
+      barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "even?", x);
+    else
+      return C_mk_bool(fmod(val, 2.0) == 0.0);
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    return C_mk_nbool(C_bignum_digits(x)[0] & 1);
+  } else { /* No need to try extended number */
+    barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "even?", x);
+  }
 }
 
-
-/* I */
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_u_i_evenp(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_mk_nbool(x & 0x02);
+  return C_i_evenp(x);
+}
 
-  return C_mk_bool(fmod(C_flonum_magnitude(x), 2.0) == 0.0);
+C_regparm C_word C_fcall C_i_integer_evenp(C_word x)
+{
+  if (x & C_FIXNUM_BIT) return C_i_fixnumevenp(x);
+  return C_mk_nbool(C_bignum_digits(x)[0] & 1);
 }
 
 
 C_regparm C_word C_fcall C_i_oddp(C_word x)
 {
-  double val, dummy;
-  if(x & C_FIXNUM_BIT) return C_mk_bool(x & 0x02);
-
-  if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG)
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "odd?", x);
-
-  val = C_flonum_magnitude(x);
-  if(C_isnan(val) || C_isinf(val) || C_modf(val, &dummy) != 0.0)
+  if(x & C_FIXNUM_BIT) {
+    return C_i_fixnumoddp(x);
+  } else if(C_immediatep(x)) {
     barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "odd?", x);
-
-  return C_mk_bool(fmod(val, 2.0) != 0.0);
+  } else if(C_block_header(x) == C_FLONUM_TAG) {
+    double val, dummy;
+    val = C_flonum_magnitude(x);
+    if(C_isnan(val) || C_isinf(val) || C_modf(val, &dummy) != 0.0)
+      barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "odd?", x);
+    else
+      return C_mk_bool(fmod(val, 2.0) != 0.0);
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    return C_mk_bool(C_bignum_digits(x)[0] & 1);
+  } else {
+    barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "odd?", x);
+  }
 }
 
 
-/* I */
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_u_i_oddp(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_mk_bool(x & 0x02);
+  return C_i_oddp(x);
+}
 
-  return C_mk_bool(fmod(C_flonum_magnitude(x), 2.0) != 0.0);
+C_regparm C_word C_fcall C_i_integer_oddp(C_word x)
+{
+  if (x & C_FIXNUM_BIT) return C_i_fixnumoddp(x);
+  return C_mk_bool(C_bignum_digits(x)[0] & 1);
 }
 
 
@@ -5559,9 +5718,9 @@ C_regparm C_word C_fcall C_i_check_closure_2(C_word x, C_word loc)
 
 C_regparm C_word C_fcall C_i_check_exact_2(C_word x, C_word loc)
 {
-  if((x & C_FIXNUM_BIT) == 0) {
+  if(C_u_i_exactp(x) == C_SCHEME_FALSE) {
     error_location = loc;
-    barf(C_BAD_ARGUMENT_TYPE_NO_FIXNUM_ERROR, NULL, x);
+    barf(C_BAD_ARGUMENT_TYPE_NO_EXACT_ERROR, NULL, x);
   }
 
   return C_SCHEME_UNDEFINED;
@@ -5572,7 +5731,7 @@ C_regparm C_word C_fcall C_i_check_inexact_2(C_word x, C_word loc)
 {
   if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG) {
     error_location = loc;
-    barf(C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR, NULL, x);
+    barf(C_BAD_ARGUMENT_TYPE_NO_INEXACT_ERROR, NULL, x);
   }
 
   return C_SCHEME_UNDEFINED;
@@ -5592,7 +5751,7 @@ C_regparm C_word C_fcall C_i_check_char_2(C_word x, C_word loc)
 
 C_regparm C_word C_fcall C_i_check_number_2(C_word x, C_word loc)
 {
-  if((x & C_FIXNUM_BIT) == 0 && (C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG)) {
+  if (C_i_numberp(x) == C_SCHEME_FALSE) {
     error_location = loc;
     barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, NULL, x);
   }

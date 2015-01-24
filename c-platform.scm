@@ -145,7 +145,7 @@
     fx= fx> fx< fx>= fx<= fixnum? fxneg fxmax fxmin identity fp+ fp- fp* fp/ fpmin fpmax fpneg
     fp> fp< fp= fp>= fp<= fxand fxnot fxior fxxor fxshr fxshl bit-set? fxodd? fxeven?
     fpfloor fpceiling fptruncate fpround fpsin fpcos fptan fpasin fpacos fpatan
-    fpatan2 fpexp fpexpt fplog fpsqrt fpabs fpinteger?
+    fpatan2 fpexp fpexpt fplog fpsqrt fpabs fpinteger? exact-integer?
     arithmetic-shift void flush-output
     atom? print print* error call/cc
     blob-size u8vector->blob/shared s8vector->blob/shared u16vector->blob/shared
@@ -156,9 +156,8 @@
     blob->f32vector/shared blob->f64vector/shared
     block-ref block-set! number-of-slots substring-index substring-index-ci
     any? read-string substring=? substring-ci=? blob=? equal=?
-    alist-ref rassoc real-part imag-part
-    string->symbol symbol-append
-    make-record-instance foldl foldr
+    alist-ref rassoc make-polar make-rectangular real-part imag-part
+    string->symbol symbol-append make-record-instance foldl foldr
     u8vector-length s8vector-length u16vector-length s16vector-length u32vector-length 
     s32vector-length
     f32vector-length f64vector-length setter
@@ -166,7 +165,7 @@
     f32vector-ref f64vector-ref f32vector-set! f64vector-set!
     u8vector-set! s8vector-set! u16vector-set! s16vector-set! u32vector-set! s32vector-set!
     locative-ref locative-set! locative->object locative?
-    pointer->object flonum? finite? address->pointer pointer->address
+    pointer->object flonum? nan? finite? infinite? address->pointer pointer->address
     pointer+ pointer=?
     pointer-u8-ref pointer-s8-ref pointer-u16-ref pointer-s16-ref
     pointer-u32-ref pointer-s32-ref pointer-f32-ref pointer-f64-ref
@@ -574,20 +573,23 @@
 (rewrite 'number? 2 1 "C_i_numberp" #t)
 (rewrite 'complex? 2 1 "C_i_numberp" #t)
 (rewrite 'rational? 2 1 "C_i_rationalp" #t)
-(rewrite 'real? 2 1 "C_i_numberp" #t)
+(rewrite 'real? 2 1 "C_i_realp" #t)
 (rewrite 'integer? 2 1 "C_i_integerp" #t)
+(rewrite 'exact-integer? 2 1 "C_i_exact_integerp" #t)
 (rewrite 'flonum? 2 1 "C_i_flonump" #t)
 (rewrite 'fixnum? 2 1 "C_fixnump" #t)
 (rewrite 'bignum? 2 1 "C_i_bignump" #t)
+(rewrite 'cplxnum? 2 1 "C_i_cplxnump" #t)
+(rewrite 'ratnum? 2 1 "C_i_ratnump" #t)
+(rewrite 'nan? 2 1 "C_i_nanp" #f)
 (rewrite 'finite? 2 1 "C_i_finitep" #f)
+(rewrite 'infinite? 2 1 "C_i_infinitep" #f)
 (rewrite 'fpinteger? 2 1 "C_u_i_fpintegerp" #f)
 (rewrite '##sys#pointer? 2 1 "C_anypointerp" #t)
 (rewrite 'pointer? 2 1 "C_i_safe_pointerp" #t)
 (rewrite '##sys#generic-structure? 2 1 "C_structurep" #t)
-(rewrite 'exact? 2 1 "C_fixnump" #f)
 (rewrite 'exact? 2 1 "C_i_exactp" #t)
 (rewrite 'exact? 2 1 "C_u_i_exactp" #f)
-(rewrite 'inexact? 2 1 "C_nfixnump" #f)
 (rewrite 'inexact? 2 1 "C_i_inexactp" #t)
 (rewrite 'inexact? 2 1 "C_u_i_inexactp" #f)
 (rewrite 'list? 2 1 "C_i_listp" #t)

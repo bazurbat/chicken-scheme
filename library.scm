@@ -314,6 +314,12 @@ EOF
      (foreign-value "C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR" int)
      (and (pair? loc) (car loc)) x) ) )
 
+(define (##sys#check-real x . loc)
+  (unless (##core#inline "C_i_realp" x) 
+    (##sys#error-hook
+     (foreign-value "C_BAD_ARGUMENT_TYPE_NO_REAL_ERROR" int)
+     (and (pair? loc) (car loc)) x) ) )
+
 (define (##sys#check-range i from to . loc)
   (##sys#check-exact i loc)
   (unless (and (fx<= from i) (fx< i to))
@@ -431,8 +437,11 @@ EOF
 
 (define (##sys#error-not-a-proper-list arg #!optional loc)
   (##sys#error-hook
-   (foreign-value "C_NOT_A_PROPER_LIST_ERROR" int) 
-   loc arg))
+   (foreign-value "C_NOT_A_PROPER_LIST_ERROR" int) loc arg))
+
+(define (##sys#error-bad-number arg #!optional loc)
+  (##sys#error-hook
+   (foreign-value "C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR" int) loc arg))
 
 (define (append . lsts)
   (if (eq? lsts '())
@@ -748,12 +757,12 @@ EOF
 
 (define (flonum? x) (##core#inline "C_i_flonump" x))
 (define (bignum? x) (##core#inline "C_i_bignump" x))
-(define (ratnum? x) (##sys#structure? x '##sys#ratnum))
-(define (cplxnum? x) (##sys#structure? x '##sys#cplxnum))
+(define (ratnum? x) (##core#inline "C_i_ratnump" x))
+(define (cplxnum? x) (##core#inline "C_i_cplxnump" x))
 
-(define (finite? x) 
-  (##sys#check-number x 'finite?)
-  (##core#inline "C_i_finitep" x) )
+(define (finite? x) (##core#inline "C_i_finitep" x))
+(define (infinite? x) (##core#inline "C_i_infinitep" x))
+(define (nan? x) (##core#inline "C_i_nanp" x))
 
 (define-inline (fp-check-flonum x loc)
   (unless (flonum? x)
@@ -904,9 +913,10 @@ EOF
 (define (number? x) (##core#inline "C_i_numberp" x))
 (define ##sys#number? number?)
 (define complex? number?)
-(define real? number?)
+(define (real? x) (##core#inline "C_i_realp" x))
 (define (rational? n) (##core#inline "C_i_rationalp" n))
 (define (integer? x) (##core#inline "C_i_integerp" x))
+(define (exact-integer? x) (##core#inline "C_i_exact_integerp" x))
 (define ##sys#integer? integer?)
 (define (exact? x) (##core#inline "C_i_exactp" x))
 (define (inexact? x) (##core#inline "C_i_inexactp" x))
@@ -921,19 +931,50 @@ EOF
 (define (negative? n) (##core#inline "C_i_negativep" n))
 (define (abs n) (##core#inline_allocate ("C_a_i_abs" 4) n))	; 4 => words-per-flonum
 
+;;; Complex numbers
+
+(define-inline (%cplxnum-real c) (##sys#slot c 1))
+(define-inline (%cplxnum-imag c) (##sys#slot c 2))
+
+(define-inline (%ratnum-numerator c) (##sys#slot c 1))
+(define-inline (%ratnum-denominator c) (##sys#slot c 2))
+
+(define (make-complex r i)
+  (if (or (eq? i 0) (and (##core#inline "C_i_flonump" i) (fp= i 0.0)))
+      r
+      (##sys#make-structure '##sys#cplxnum
+			    (if (inexact? i) (exact->inexact r) r)
+			    (if (inexact? r) (exact->inexact i) i)) ) )
+
+(define (make-rectangular r i)
+  (##sys#check-real r 'make-rectangular)
+  (##sys#check-real i 'make-rectangular)
+  (make-complex r i) )
+
+(define (make-polar r phi)
+  (##sys#check-real r 'make-polar)
+  (##sys#check-real phi 'make-polar)
+  (let ((fphi (exact->inexact phi)))
+    (make-complex (* r (##core#inline_allocate ("C_a_i_cos" 4) fphi))
+                  (* r (##core#inline_allocate ("C_a_i_sin" 4) fphi)))))
+
+(define (real-part x)
+  (cond ((cplxnum? x) (%cplxnum-real x))
+        ((number? x) x)
+        (else (##sys#error-bad-number x 'real-part))))
+
+(define (imag-part x)
+  (cond ((cplxnum? x) (%cplxnum-imag x))
+        ((##core#inline "C_i_flonump" x) 0.0)
+        ((number? x) 0)
+        (else (##sys#error-bad-number x 'imag-part))))
+
 (define (angle n)
   (##sys#check-number n 'angle)
   (if (< n 0) (fp* 2.0 (acos 0.0)) 0.0) )
 
-(define (real-part n)
-  (##sys#check-number n 'real-part)
-  n)
 
-(define (imag-part n)
-  (##sys#check-number n 'imag-part)
-  0)
-
-;;; Rationals
+;;; Rational numbers
 
 (define-inline (%ratnum-numerator c) (##sys#slot c 1))
 (define-inline (%ratnum-denominator c) (##sys#slot c 2))
@@ -4231,6 +4272,9 @@ EOF
 	((45) (apply ##sys#signal-hook #:arithmetic-error loc "floating-point exception" args))
 	((46) (apply ##sys#signal-hook #:runtime-error loc "illegal instruction" args))
 	((47) (apply ##sys#signal-hook #:memory-error loc "bus error" args))
+	((48) (apply ##sys#signal-hook #:type-error loc "bad argument type - not an exact number" args))
+	((49) (apply ##sys#signal-hook #:type-error loc "bad argument type - not an inexact number" args))
+	((50) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a real" args))
 	(else (apply ##sys#signal-hook #:runtime-error loc "unknown internal error" args)) ) ) ) )
 
 

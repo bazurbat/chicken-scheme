@@ -893,7 +893,8 @@
 	     close-input-port close-output-port load read eof-object? read-char
 	     peek-char write display write-char newline with-input-from-file
 	     with-output-to-file eval
-	     char-ready? imag-part real-part magnitude numerator denominator
+	     char-ready? imag-part real-part make-rectangular make-polar
+	     magnitude numerator denominator
 	     scheme-report-environment null-environment interaction-environment
 	     else))
       (r4rs-syntax

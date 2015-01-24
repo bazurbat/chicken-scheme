@@ -464,6 +464,8 @@ and compiler settings:
 {{member}}
 {{memq}}
 {{memv}}
+{{make-polar}}
+{{make-rectangular}}
 {{negative?}}
 {{not}}
 {{null?}}
@@ -594,6 +596,7 @@ The following extended bindings are handled specially:
 {{fxshr}}
 {{fxxor}}
 {{identity}}
+{{infinite?}}
 {{list->string}}
 {{list->vector}}
 {{locative->object}}
@@ -601,6 +604,7 @@ The following extended bindings are handled specially:
 {{locative-set!}}
 {{locative?}}
 {{make-record-instance}}
+{{nan?}}
 {{number-of-slots}}
 {{o}}
 {{pointer+}}
