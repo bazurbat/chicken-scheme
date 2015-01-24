@@ -419,6 +419,7 @@ static inline int isinf_ld (long double x)
 #endif
 
 /* These might fit better in runtime.c? */
+#define C_fitsinbignumhalfdigitp(n)     (C_BIGNUM_DIGIT_HI_HALF(n) == 0)
 #define C_BIGNUM_DIGIT_LENGTH           C_WORD_SIZE
 #define C_BIGNUM_HALF_DIGIT_LENGTH      C_HALF_WORD_SIZE
 #define C_BIGNUM_BITS_TO_DIGITS(n) \
@@ -1265,6 +1266,7 @@ extern double trunc(double);
 #define C_u_fixnum_decrease(n)          ((n) - (1 << C_FIXNUM_SHIFT))
 #define C_fixnum_decrease(n)            (C_u_fixnum_decrease(n) | C_FIXNUM_BIT)
 #define C_fixnum_abs(n)                 C_fix(abs(C_unfix(n)))
+#define C_i_fixnum_length(x)            C_fix(C_ilen(((x) & C_INT_SIGN_BIT) ? ~C_unfix(x) : C_unfix(x)))
 
 #define C_flonum_equalp(n1, n2)         C_mk_bool(C_flonum_magnitude(n1) == C_flonum_magnitude(n2))
 #define C_flonum_greaterp(n1, n2)       C_mk_bool(C_flonum_magnitude(n1) > C_flonum_magnitude(n2))
@@ -1882,8 +1884,11 @@ C_fctexport void C_ccall C_allocate_bignum(C_word c, C_word self, C_word k, C_wo
 C_fctexport void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word string) C_noret;
 C_fctexport void C_ccall C_build_symbol(C_word c, C_word closure, C_word k, C_word string) C_noret;
 C_fctexport void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2) C_noret;
+C_fctexport void C_ccall C_digits_to_integer(C_word c, C_word self, C_word k, C_word n, C_word start, C_word end, C_word radix, C_word negp) C_noret;
 C_fctexport void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, ...) C_noret;
-C_fctexport void C_ccall C_fixnum_to_string(C_word c, C_word closure, C_word k, C_word num) C_noret;
+C_fctexport void C_ccall C_fixnum_to_string(C_word c, C_word closure, C_word k, C_word num, C_word radix) C_noret;
+C_fctexport void C_ccall C_flonum_to_string(C_word c, C_word closure, C_word k, C_word num, C_word radix) C_noret;
+C_fctexport void C_ccall C_integer_to_string(C_word c, C_word closure, C_word k, C_word num, C_word radix) C_noret;
 C_fctexport void C_ccall C_make_structure(C_word c, C_word closure, C_word k, C_word type, ...) C_noret;
 C_fctexport void C_ccall C_make_symbol(C_word c, C_word closure, C_word k, C_word name) C_noret;
 C_fctexport void C_ccall C_make_pointer(C_word c, C_word closure, C_word k) C_noret;
@@ -2010,6 +2015,7 @@ C_fctexport C_word C_fcall C_a_i_bitwise_and(C_word **a, int c, C_word n1, C_wor
 C_fctexport C_word C_fcall C_a_i_bitwise_ior(C_word **a, int c, C_word n1, C_word n2) C_regparm;
 C_fctexport C_word C_fcall C_a_i_bitwise_not(C_word **a, int c, C_word n1) C_regparm;
 C_fctexport C_word C_fcall C_i_bit_setp(C_word n, C_word i) C_regparm;
+C_fctexport C_word C_fcall C_i_integer_length(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_a_i_bitwise_xor(C_word **a, int c, C_word n1, C_word n2) C_regparm;
 C_fctexport C_word C_fcall C_a_i_arithmetic_shift(C_word **a, int c, C_word n1, C_word n2) C_regparm;
 C_fctexport C_word C_fcall C_a_i_exp(C_word **a, int c, C_word n) C_regparm;
@@ -2036,6 +2042,7 @@ C_fctexport C_word C_fcall C_i_get_keyword(C_word key, C_word args, C_word def) 
 C_fctexport double C_fcall C_milliseconds(void) C_regparm;
 C_fctexport double C_fcall C_cpu_milliseconds(void) C_regparm;
 C_fctexport C_word C_fcall C_a_i_cpu_time(C_word **a, int c, C_word buf) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix) C_regparm;
 C_fctexport C_word C_fcall C_a_i_exact_to_inexact(C_word **a, int c, C_word n) C_regparm;
 C_fctexport C_word C_fcall C_i_file_exists_p(C_word name, C_word file, C_word dir) C_regparm;
@@ -3060,6 +3067,26 @@ C_inline C_word C_a_u_i_fix_to_big(C_word **ptr, C_word x)
     return C_bignum0(ptr);
   else
     return C_bignum1(ptr, 0, x);
+}
+
+/*
+ * From Hacker's Delight by Henry S. Warren
+ * based on a modified nlz() from section 5-3 (fig. 5-7)
+ */
+C_inline int C_ilen(C_uword x)
+{
+  C_uword y;
+  C_word n = 0;
+
+#ifdef C_SIXTY_FOUR
+  y = x >> 32; if (y != 0) { n += 32; x = y; }
+#endif
+  y = x >> 16; if (y != 0) { n += 16; x = y; }
+  y = x >>  8; if (y != 0) { n +=  8; x = y; }
+  y = x >>  4; if (y != 0) { n +=  4; x = y; }
+  y = x >>  2; if (y != 0) { n +=  2; x = y; }
+  y = x >>  1; if (y != 0) return n + 2;
+  return n + x;
 }
 
 /* These strl* functions are based on public domain code by C.B. Falconer */

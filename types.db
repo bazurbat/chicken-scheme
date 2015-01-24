@@ -534,9 +534,18 @@
       ((float float) (##core#inline_allocate ("C_a_i_flonum_atan2" 4) #(1) #(2))))
 
 (number->string (#(procedure #:clean #:enforce) number->string (number #!optional fixnum) string)
-		((fixnum) (##sys#fixnum->string #(1))))
+		((fixnum fixnum) (##sys#fixnum->string #(1) #(2)))
+		((fixnum) (##sys#fixnum->string #(1) '10))
+		((integer fixnum) (##sys#integer->string #(1) #(2)))
+		((integer) (##sys#integer->string #(1) '10))
+		((float fixnum) (##sys#flonum->string #(1) #(2)))
+		((float) (##sys#flonum->string #(1) '10))
+		((* *) (##sys#number->string #(1) #(2)))
+		((*) (##sys#number->string #(1) '10)))
 
-(##sys#fixnum->string (#(procedure #:clean #:enforce) ##sys#fixnum->string (fixnum) string))
+(##sys#fixnum->string (#(procedure #:clean #:enforce) ##sys#fixnum->string (fixnum fixnum) string))
+(##sys#integer->string (#(procedure #:clean #:enforce) ##sys#integer->string (integer fixnum) string))
+(##sys#flonum->string (#(procedure #:clean #:enforce) ##sys#flonum->string (float fixnum) string))
 
 (string->number (#(procedure #:clean #:enforce #:foldable) string->number (string #!optional fixnum)
 		 (or number false)))
@@ -774,6 +783,9 @@
 (argc+argv (#(procedure #:clean) argc+argv () fixnum (list-of string) fixnum))
 (argv (#(procedure #:clean) argv () (list-of string)))
 (arithmetic-shift (#(procedure #:clean #:enforce #:foldable) arithmetic-shift (number number) number))
+(integer-length (#(procedure #:clean #:enforce #:foldable) integer-length (integer) fixnum)
+		((fixnum) (##core#inline "C_i_fixnum_length" #(1)))
+		((*) (##core#inline "C_i_integer_length" #(1))))
 
 (bignum? (#(procedure #:pure #:predicate bignum) bignum? (*) boolean))
 
@@ -1026,6 +1038,7 @@
 (fxshl (#(procedure #:clean #:foldable) fxshl (fixnum fixnum) fixnum))
 (fxshr (#(procedure #:clean #:foldable) fxshr (fixnum fixnum) fixnum))
 (fxxor (#(procedure #:clean #:foldable) fxxor (fixnum fixnum) fixnum))
+(fxlen (#(procedure #:clean #:foldable) fxlen (fixnum) fixnum))
 (gc (#(procedure #:clean) gc (#!optional *) fixnum))
 (gensym (#(procedure #:clean) gensym (#!optional (or string symbol)) symbol))
 

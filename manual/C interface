@@ -1023,6 +1023,12 @@ Returns the smallest of the two fixnums {{n1}} and {{n2}}.
 
 Returns the largest of the two fixnums {{n1}} and {{n2}}.
 
+===== C_i_fixnum_length
+
+ [C function] C_word C_i_fixnum_length(C_word x)
+
+Returns the integer length in bits of the fixnum {{x}} (as a fixnum).
+
 
 ==== Flonums
 

@@ -489,6 +489,7 @@ static void initialize_symbol_table(void);
 static void global_signal_handler(int signum);
 static C_word arg_val(C_char *arg);
 static void barf(int code, char *loc, ...) C_noret;
+static void try_extended_number(char *ext_proc_name, C_word c, C_word k, ...) C_noret;
 static void panic(C_char *msg) C_noret;
 static void usual_panic(C_char *msg) C_noret;
 static void horror(C_char *msg) C_noret;
@@ -504,6 +505,9 @@ static C_word C_fcall hash_string(int len, C_char *str, C_word m, C_word r, int 
 static C_word C_fcall lookup(C_word key, int len, C_char *str, C_SYMBOL_TABLE *stable) C_regparm;
 static double compute_symbol_table_load(double *avg_bucket_len, int *total);
 static C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word *fix, double *flo) C_regparm;
+static void digits_to_integer_2(C_word c, C_word self, C_word result) C_noret;
+static C_regparm C_word str_to_bignum(C_word bignum, char *str, char *str_end, int radix);
+static void bignum_to_str_2(C_word c, C_word self, C_word string) C_noret;
 static C_word C_fcall maybe_inexact_to_exact(C_word n) C_regparm;
 static void C_fcall remark_system_globals(void) C_regparm;
 static void C_fcall really_remark(C_word *x) C_regparm;
@@ -517,6 +521,8 @@ static void gc_2(void *dummy) C_noret;
 static void allocate_vector_2(void *dummy) C_noret;
 static void allocate_bignum_2(void *dummy) C_noret;
 static C_word allocate_tmp_bignum(C_word size, C_word negp, C_word initp);
+static C_uword bignum_digits_destructive_scale_up_with_carry(C_uword *start, C_uword *end, C_uword factor, C_uword carry);
+static C_uword bignum_digits_destructive_scale_down(C_uword *start, C_uword *end, C_uword denominator);
 static void make_structure_2(void *dummy) C_noret;
 static void generic_trampoline(void *dummy) C_noret;
 static void handle_interrupt(void *trampoline, void *proc) C_noret;
@@ -789,7 +795,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size -
      this must match the number of C_pte calls + 1 (NULL terminator)! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 54);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 58);
   int i = 0;
 
   if(pt == NULL)
@@ -849,6 +855,10 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_copy_closure);
   C_pte(C_dump_heap_state);
   C_pte(C_filter_heap_objects);
+  C_pte(C_digits_to_integer);
+  C_pte(C_fixnum_to_string);
+  C_pte(C_integer_to_string);
+  C_pte(C_flonum_to_string);
 
   /* IMPORTANT: did you remember the hardcoded pte table size? */
   pt[ i ].id = NULL;
@@ -1797,6 +1807,38 @@ void barf(int code, char *loc, ...)
     C_do_apply(c + 2, err, C_SCHEME_UNDEFINED); 
   }
   else panic(msg);
+}
+
+
+/* Never use extended number hook procedure names longer than this! */
+/* Current longest name: numbers#@bignum-2-divrem-burnikel-ziegler */
+#define MAX_EXTNUM_HOOK_NAME 64
+
+/* This exists so that we don't have to create any extra closures */
+static void try_extended_number(char *ext_proc_name, C_word c, C_word k, ...)
+{
+  static C_word ab[C_SIZEOF_STRING(MAX_EXTNUM_HOOK_NAME)];
+  int i;
+  va_list v;
+  C_word ext_proc_sym, ext_proc = C_SCHEME_FALSE, *a = ab;
+
+  ext_proc_sym = C_lookup_symbol(C_intern2(&a, ext_proc_name));
+
+  if(!C_immediatep(ext_proc_sym))
+    ext_proc = C_block_item(ext_proc_sym, 0);
+
+  if (!C_immediatep(ext_proc) && C_closurep(ext_proc)) {
+    va_start(v, k);
+    i = c - 1;
+
+    while(i--)
+      C_save(va_arg(v, C_word));
+
+    va_end(v);
+    C_do_apply(c - 1, ext_proc, k);
+  } else {
+    barf(C_UNBOUND_VARIABLE_ERROR, NULL, ext_proc_sym);
+  }
 }
 
 
@@ -5391,6 +5433,27 @@ C_regparm C_word C_fcall C_a_i_bitwise_xor(C_word **a, int c, C_word n1, C_word 
   else return C_flonum(a, nn1);
 }
 
+C_regparm C_word C_fcall C_i_integer_length(C_word x)
+{
+  if (x & C_FIXNUM_BIT) {
+    return C_i_fixnum_length(x);
+  } else if (C_truep(C_i_bignump(x))) {
+    C_uword result = (C_bignum_size(x) - 1) * C_BIGNUM_DIGIT_LENGTH,
+            *last_digit = C_bignum_digits(x) + C_bignum_size(x) - 1,
+            last_digit_length = C_ilen(*last_digit);
+
+    /* If *only* the highest bit is set, negating will give one less bit */
+    if (C_bignum_negativep(x) &&
+        *last_digit == ((C_uword)1 << (last_digit_length-1))) {
+      C_uword *startx = C_bignum_digits(x);
+      while (startx < last_digit && *startx == 0) ++startx;
+      if (startx == last_digit) result--;
+    }
+    return C_fix(result + last_digit_length);
+  } else {
+    barf(C_BAD_ARGUMENT_TYPE_NO_EXACT_ERROR, "integer-length", x);
+  }
+}
 
 C_regparm C_word C_fcall C_i_bit_setp(C_word n, C_word i)
 {
@@ -7534,6 +7597,64 @@ C_regparm C_word C_fcall C_bignum_simplify(C_word big)
   }
 }
 
+/* Copy all the digits from source to target, obliterating what was
+ * there.  If target is larger than source, the most significant
+ * digits will remain untouched.
+ */
+C_inline void bignum_digits_destructive_copy(C_word target, C_word source)
+{
+  C_memcpy(C_bignum_digits(target), C_bignum_digits(source),
+           C_wordstobytes(C_bignum_size(source)));
+}
+
+static C_uword
+bignum_digits_destructive_scale_up_with_carry(C_uword *start, C_uword *end, C_uword factor, C_uword carry)
+{
+  C_uword digit, p;
+
+  assert(C_fitsinbignumhalfdigitp(carry));
+  assert(C_fitsinbignumhalfdigitp(factor));
+
+  /* See fixnum_times.  Substitute xlo = factor, xhi = 0, y = digit
+   * and simplify the result to reduce variable usage.
+   */
+  while (start < end) {
+    digit = (*start);
+
+    p = factor * C_BIGNUM_DIGIT_LO_HALF(digit) + carry;
+    carry = C_BIGNUM_DIGIT_LO_HALF(p);
+
+    p = factor * C_BIGNUM_DIGIT_HI_HALF(digit) + C_BIGNUM_DIGIT_HI_HALF(p);
+    (*start++) = C_BIGNUM_DIGIT_COMBINE(C_BIGNUM_DIGIT_LO_HALF(p), carry);
+    carry = C_BIGNUM_DIGIT_HI_HALF(p);
+  }
+  return carry;
+}
+
+static C_uword
+bignum_digits_destructive_scale_down(C_uword *start, C_uword *end, C_uword denominator)
+{
+  C_uword digit, k = 0;
+  C_uhword q_j_hi, q_j_lo;
+
+  /* Single digit divisor case from Hacker's Delight, Figure 9-1,
+   * adapted to modify u[] in-place instead of writing to q[].
+   */
+  while (start < end) {
+    digit = (*--end);
+
+    k = C_BIGNUM_DIGIT_COMBINE(k, C_BIGNUM_DIGIT_HI_HALF(digit)); /* j */
+    q_j_hi = k / denominator;
+    k -= q_j_hi * denominator;
+
+    k = C_BIGNUM_DIGIT_COMBINE(k, C_BIGNUM_DIGIT_LO_HALF(digit)); /* j-1 */
+    q_j_lo = k / denominator;
+    k -= q_j_lo * denominator;
+    
+    *end = C_BIGNUM_DIGIT_COMBINE(q_j_hi, q_j_lo);
+  }
+  return k;
+}
 
 void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word string)
 {
@@ -7644,6 +7765,7 @@ void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2
 }
 
 
+/* TODO OBSOLETE XXX: This needs to go, but still translated by c-platform */
 C_regparm C_word C_fcall
 C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix0)
 {
@@ -7783,6 +7905,110 @@ C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix0)
   return n;
 }
 
+void C_ccall
+C_digits_to_integer(C_word c, C_word self, C_word k, C_word str,
+                    C_word start, C_word end, C_word radix, C_word negp)
+{
+  assert((C_unfix(radix) > 1) && C_fitsinbignumhalfdigitp(C_unfix(radix)));
+  
+  if (start == end) {
+    C_kontinue(k, C_SCHEME_FALSE);
+  } else {
+    C_word kab[C_SIZEOF_CLOSURE(6)], *ka = kab, k2, size;
+    size_t nbits;
+    k2 = C_closure(&ka, 6, (C_word)digits_to_integer_2, k, str, start, end, radix);
+
+    nbits = (C_unfix(end) - C_unfix(start)) * C_ilen(C_unfix(radix)-1);
+    size = C_fix(C_BIGNUM_BITS_TO_DIGITS(nbits));
+    C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_FALSE);
+  }
+}
+
+C_inline int hex_char_to_digit(int ch)
+{
+  if (ch == (int)'#') return 0; /* Hash characters in numbers are mapped to 0 */
+  else if (ch >= (int)'a') return ch - (int)'a' + 10; /* lower hex */
+  else if (ch >= (int)'A') return ch - (int)'A' + 10; /* upper hex */
+  else return ch - (int)'0'; /* decimal (OR INVALID; handled elsewhere) */
+}
+
+static void
+digits_to_integer_2(C_word c, C_word self, C_word result)
+{
+  C_word k = C_block_item(self, 1),
+         str = C_block_item(self, 2),
+         start = C_unfix(C_block_item(self, 3)),
+         end = C_unfix(C_block_item(self, 4)),
+         radix = C_unfix(C_block_item(self, 5));
+  char *s = C_c_string(str);
+
+  C_kontinue(k, str_to_bignum(result, s + start, s + end, radix));
+}
+
+/* Write from digit character stream to bignum.  Bignum does not need
+ * to be initialised.  Returns the bignum, or a fixnum.  Assumes the
+ * string contains only digits that fit within radix (checked by
+ * string->number).
+ */
+static C_regparm C_word
+str_to_bignum(C_word bignum, char *str, char *str_end, int radix)
+{
+  int radix_shift, str_digit;
+  C_uword *digits = C_bignum_digits(bignum),
+          *end_digits = digits + C_bignum_size(bignum), big_digit = 0;
+
+  /* Below, we try to save up as much as possible in big_digit, and
+   * only when it exceeds what we would be able to multiply easily, we
+   * scale up the bignum and add what we saved up.
+   */
+  radix_shift = C_ilen(radix) - 1;
+  if (((C_uword)1 << radix_shift) == radix) { /* Power of two? */
+    int n = 0; /* Number of bits read so far into current big digit */
+
+    /* Read from least to most significant digit to avoid shifting or scaling */
+    while (str_end > str) {
+      str_digit = hex_char_to_digit((int)*--str_end);
+
+      big_digit |= (C_uword)str_digit << n;
+      n += radix_shift;
+
+      if (n >= C_BIGNUM_DIGIT_LENGTH) {
+	n -= C_BIGNUM_DIGIT_LENGTH;
+	*digits++ = big_digit;
+	big_digit = str_digit >> (radix_shift - n);
+      }
+    }
+    assert(n < C_BIGNUM_DIGIT_LENGTH);
+    /* If radix isn't an exact divisor of digit length, write final digit */
+    if (n > 0) *digits++ = big_digit;
+    assert(digits == end_digits);
+  } else {			  /* Not a power of two */
+    C_uword *last_digit = digits, factor;  /* bignum starts as zero */
+
+    do {
+      factor = radix;
+      while (str < str_end && C_fitsinbignumhalfdigitp(factor)) {
+        str_digit = hex_char_to_digit((int)*str++);
+	factor *= radix;
+	big_digit = radix * big_digit + str_digit;
+      }
+
+      big_digit = bignum_digits_destructive_scale_up_with_carry(
+                   digits, last_digit, factor / radix, big_digit);
+
+      if (big_digit) {
+	(*last_digit++) = big_digit; /* Move end */
+        big_digit = 0;
+      }
+    } while (str < str_end);
+
+    /* Set remaining digits to zero so bignum_simplify can do its work */
+    assert(last_digit <= end_digits);
+    while (last_digit < end_digits) *last_digit++ = 0;
+  }
+
+  return C_bignum_simplify(bignum);
+}
 
 static int from_n_nary(C_char *str, int base, double *r)
 {
@@ -7807,6 +8033,7 @@ static int from_n_nary(C_char *str, int base, double *r)
 }
 
 
+/* TODO OBSOLETE XXX: This needs to go, but still used in decode_literal */
 C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word *fix, double *flo)
 {
   C_ulong ln;
@@ -7873,129 +8100,135 @@ C_regparm C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word
 }
 
 
-static char *to_n_nary(C_uword num, C_uword base)
+static char *to_n_nary(C_uword num, C_uword base, int negp, int as_flonum)
 {
+  static char *digits = "0123456789abcdef";
   char *p;
-  static char digits[] ={ '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
-  buffer [ 66 ] = '\0';
+  C_uword shift = C_ilen(base) - 1;
+  int mask = (1 << shift) - 1;
+  if (as_flonum) {
+    buffer[68] = '\0';
+    buffer[67] = '0';
+    buffer[66] = '.';
+  } else {
+    buffer[66] = '\0';
+  }
   p = buffer + 66;
-
-  do {
-    *(--p) = digits [ num % base ];
-    num /= base;
-  } while (num);
-
+  if (mask == base - 1) {
+    do {
+      *(--p) = digits [ num & mask ];
+      num >>= shift;
+    } while (num);
+  } else {
+    do {
+      *(--p) = digits [ num % base ];
+      num /= base;
+    } while (num);
+  }
+  if (negp) *(--p) = '-';
   return p;
 }
 
 
 void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, ...)
 {
-  C_word radix, *a;
-  C_char *p;
-  double f;
-  va_list v;
-  int neg = 0;
+  C_word radix;
 
-  if(c == 3) radix = 10;
-  else if(c == 4) {
+  if(c == 3) {
+    radix = C_fix(10);
+  } else if(c == 4) {
+    va_list v;
+
     va_start(v, num);
     radix = va_arg(v, C_word);
     va_end(v);
     
-    if(radix & C_FIXNUM_BIT) radix = C_unfix(radix);
-    else barf(C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR, "number->string", radix);
+    if(!(radix & C_FIXNUM_BIT))
+      barf(C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR, "number->string", radix);
+  } else {
+    C_bad_argc(c, 3);
   }
-  else C_bad_argc(c, 3);
 
   if(num & C_FIXNUM_BIT) {
-    num = C_unfix(num);
-
-    if(num < 0) {
-      neg = 1;
-      num = -num;
-    }
-
-    if((radix < 2) || (radix > 16)){
-      barf(C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR, "number->string", C_fix(radix));
-    }
-
-    switch(radix) {
-#ifdef C_SIXTY_FOUR
-    case 8: C_snprintf(p = buffer + 1, sizeof(buffer) -1 , C_text("%llo"), (long long)num); break;
-    case 10: C_snprintf(p = buffer + 1, sizeof(buffer) - 1, C_text("%lld"), (long long)num); break;
-    case 16: C_snprintf(p = buffer + 1, sizeof(buffer) - 1, C_text("%llx"), (long long)num); break;
-#else
-    case 8: C_snprintf(p = buffer + 1, sizeof(buffer) - 1, C_text("%o"), num); break;
-    case 10: C_snprintf(p = buffer + 1, sizeof(buffer) - 1, C_text("%d"), num); break;
-    case 16: C_snprintf(p = buffer + 1, sizeof(buffer) - 1, C_text("%x"), num); break;
-#endif
-    default: 
-      p = to_n_nary(num, radix);
-    }
+    C_fixnum_to_string(4, (C_word)NULL, k, num, radix);
+  } else if (C_immediatep(num)) {
+    barf(C_BAD_ARGUMENT_TYPE_ERROR, "number->string", num);
+  } else if(C_block_header(num) == C_FLONUM_TAG) {
+    C_flonum_to_string(4, (C_word)NULL, k, num, radix);
+  } else if (C_header_bits(num) == C_BIGNUM_TYPE) {
+    C_integer_to_string(4, (C_word)NULL, k, num, radix);
+  } else {
+    try_extended_number("\003sysextended-number->string", 3, k, num, radix);
   }
-  else if(!C_immediatep(num) && C_block_header(num) == C_FLONUM_TAG) {
-    f = C_flonum_magnitude(num);
+}
 
-    if(C_fits_in_unsigned_int_p(num) == C_SCHEME_TRUE) {
-      if(f < 0) {
-	neg = 1;
-	f = -f;
-      }
+void C_ccall 
+C_fixnum_to_string(C_word c, C_word self, C_word k, C_word num, C_word radix)
+{
+  C_char *p;
+  C_word *a, neg = num & C_INT_SIGN_BIT ? 1 : 0;
 
-      if((radix < 2) || (radix > 16)){
-	barf(C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR, "number->string", C_fix(radix));
-      }
+  radix = C_unfix(radix);
+  if (radix < 2 || radix > 16) {
+    barf(C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR, "number->string", C_fix(radix));
+  }
 
-      switch(radix) {
-      case 8:
-	C_snprintf(p = buffer, sizeof(buffer), "%o", (unsigned int)f);
-	goto fini;
+  num = neg ? -C_unfix(num) : C_unfix(num);
+  p = to_n_nary(num, radix, neg, 0);
 
-      case 16:
-	C_snprintf(p = buffer, sizeof(buffer), "%x", (unsigned int)f);
-	goto fini;
+  num = C_strlen(p);
+  a = C_alloc((C_bytestowords(num) + 1));
+  C_kontinue(k, C_string(&a, num, p));
+}
 
-      case 10: break;		/* force output of decimal point to retain
-				   read/write invariance (the little we support) */
+void C_ccall
+C_flonum_to_string(C_word c, C_word self, C_word k, C_word num, C_word radix)
+{
+  C_word *a;
+  C_char *p;
+  double f;
 
-      default:
-	p = to_n_nary((unsigned int)f, radix);
-	goto fini;
+  radix = C_unfix(radix);
+  f = C_flonum_magnitude(num);
 
-      }
-    } 
+  /* XXX TODO: Should inexacts be printable in other bases than 10?
+   * Perhaps output a string starting with #i?
+   * Right now something like (number->string 1e40 16) results in
+   * a string that can't be read back using string->number.
+   */
+  if((radix < 2) || (radix > 16)){
+    barf(C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR, "number->string", C_fix(radix));
+  }
 
-    if(C_isnan(f)) {
-      C_strlcpy(buffer, C_text("+nan.0"), sizeof(buffer));
-      p = buffer;
-      goto fini;
+  if(C_fits_in_unsigned_int_p(num) == C_SCHEME_TRUE) { /* Use fast int code */
+    if(f < 0) {
+      p = to_n_nary((C_uword)-f, radix, 1, 1);
+    } else {
+      p = to_n_nary((C_uword)f, radix, 0, 1);
     }
-    else if(C_isinf(f)) {
-      C_snprintf(buffer, sizeof(buffer), "%cinf.0", f > 0 ? '+' : '-');
-      p = buffer;
-      goto fini;
-    }
-
+  } else if(C_isnan(f)) {
+    p = "+nan.0";
+  } else if(C_isinf(f)) {
+    p = f > 0 ? "+inf.0" : "-inf.0";
+  } else { /* Doesn't fit an unsigned int and not "special"; use system libc */
     C_snprintf(buffer, STRING_BUFFER_SIZE, C_text("%.*g"),
-	       flonum_print_precision, f);
+               /* XXX: flonum_print_precision */
+               (int)C_unfix(C_get_print_precision()), f);
     buffer[STRING_BUFFER_SIZE-1] = '\0';
 
     if((p = C_strpbrk(buffer, C_text(".eE"))) == NULL) {
-      if(*buffer == 'i' || *buffer == 'n') { /* inf or nan */
-	C_memmove(buffer + 1, buffer, C_strlen(buffer) + 1);
-	*buffer = '+';
-      }
-      else if(buffer[ 1 ] != 'i') C_strlcat(buffer, C_text(".0"), sizeof(buffer)); /* negative infinity? */
+      /* Already checked for these, so shouldn't happen */
+      assert(*buffer != 'i'); /* "inf" */
+      assert(*buffer != 'n'); /* "nan" */
+      /* Ensure integral flonums w/o expt are always terminated by .0 */
+#if defined(HAVE_STRLCAT) || !defined(C_strcat)
+      C_strlcat(buffer, C_text(".0"), sizeof(buffer));
+#else
+      C_strcat(buffer, C_text(".0"));
+#endif
     }
-
     p = buffer;
   }
-  else
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "number->string", num);
-
- fini:
-  if(neg) *(--p) = '-';
 
   radix = C_strlen(p);
   a = C_alloc((C_bytestowords(radix) + 1));
@@ -8003,26 +8236,155 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
   C_kontinue(k, radix);
 }
 
-
-/* special case for fixnum arg and decimal radix */
-void C_ccall 
-C_fixnum_to_string(C_word c, C_word self, C_word k, C_word num)
+void C_ccall
+C_integer_to_string(C_word c, C_word self, C_word k, C_word num, C_word radix)
 {
-  C_word *a, s;
-  int n;
+  if (num & C_FIXNUM_BIT) {
+    C_fixnum_to_string(4, (C_word)NULL, k, num, radix);
+  } else {
+    int len, radix_shift;
+    size_t nbits;
 
-  /*XXX is this necessary? */
-#ifdef C_SIXTY_FOUR
-  C_snprintf(buffer, sizeof(buffer), C_text(LONG_FORMAT_STRING), C_unfix(num));
-#else
-  C_snprintf(buffer, sizeof(buffer), C_text("%d"), C_unfix(num));
-#endif
-  n = C_strlen(buffer);
-  a = C_alloc(C_bytestowords(n) + 1);
-  s = C_string2(&a, buffer);
-  C_kontinue(k, s);
+    if ((C_unfix(radix) < 2) || (C_unfix(radix) > 16)) {
+      barf(C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR, "number->string", radix);
+    }
+
+    /* Approximation of the number of radix digits we'll need.  We try
+     * to be as precise as possible to avoid memmove overhead at the end
+     * of the non-powers of two part of the conversion procedure, which
+     * we may need to do because we write strings back-to-front, and
+     * pointers must be aligned (even for byte blocks).
+     */
+    len = C_bignum_size(num)-1;
+
+    nbits  = (size_t)len * C_BIGNUM_DIGIT_LENGTH;
+    nbits += C_ilen(C_bignum_digits(num)[len]);
+
+    len = C_ilen(C_unfix(radix))-1;
+    len = (nbits + len - 1) / len;
+    len += C_bignum_negativep(num) ? 1 : 0; /* Add space for negative sign */
+    
+    radix_shift = C_ilen(C_unfix(radix)) - 1;
+    /* TODO: Activate later */
+    /* if (len > C_RECURSIVE_TO_STRING_THRESHOLD && */
+    /*     /\* The power of two fast path is much faster than recursion *\/ */
+    /*     ((C_uword)1 << radix_shift) != C_unfix(radix)) { */
+    /*   try_extended_number("numbers#@integer->string/recursive", */
+    /*                       4, k, num, radix, C_fix(len)); */
+    /* } else { */
+      C_word k2, negp = C_mk_bool(C_bignum_negativep(num)), *ka;
+      ka = C_alloc(C_SIZEOF_CLOSURE(4));
+      k2 = C_closure(&ka, 4, (C_word)bignum_to_str_2, k, num, radix);
+      C_allocate_vector(6, (C_word)NULL, k2, C_fix(len),
+                        /* Byte vec, no initialization, align at 8 bytes */
+                        C_SCHEME_TRUE, C_SCHEME_FALSE, C_SCHEME_FALSE);
+    /* } */
+  }
 }
 
+static void
+bignum_to_str_2(C_word c, C_word self, C_word string)
+{
+  static char *characters = "0123456789abcdef";
+  C_word k = C_block_item(self, 1),
+         bignum = C_block_item(self, 2),
+         radix = C_unfix(C_block_item(self, 3));
+  char *buf = C_c_string(string), *index = buf + C_header_size(string) - 1;
+  int radix_shift, negp = (C_bignum_negativep(bignum) ? 1 : 0);
+
+  radix_shift = C_ilen(radix) - 1;
+  if (((C_uword)1 << radix_shift) == radix) { /* Power of two? */
+    int radix_mask = radix - 1, big_digit_len = 0, radix_digit;
+    C_uword *scan, *end, big_digit = 0;
+
+    scan = C_bignum_digits(bignum);
+    end = scan + C_bignum_size(bignum);
+
+    while (scan < end) {
+      /* If radix isn't an exact divisor of digit length, handle overlap */
+      if (big_digit_len == 0) {
+        big_digit = *scan++;
+        big_digit_len = C_BIGNUM_DIGIT_LENGTH;
+      } else {
+        assert(index >= buf);
+	radix_digit = big_digit;
+        big_digit = *scan++;
+	radix_digit |= (big_digit << big_digit_len) & radix_mask;
+	big_digit >>= (radix_shift - big_digit_len);
+        big_digit_len = C_BIGNUM_DIGIT_LENGTH - big_digit_len;
+      }
+
+      while(big_digit_len >= radix_shift && index >= buf) {
+	radix_digit = big_digit & radix_mask;
+        *index-- = characters[radix_digit];
+	big_digit >>= radix_shift;
+	big_digit_len -= radix_shift;
+      }
+    }
+
+    assert(big_digit < radix);
+
+    /* Final digit (like overlap at start of while loop) */
+    if (big_digit) *index-- = characters[big_digit];
+
+    if (negp) {
+      /* Loop above might've overwritten sign position with a zero */
+      if (*(index+1) == '0') *(index+1) = '-';
+      else *index-- = '-';
+    }
+
+    /* Length calculation is always precise for radix powers of two. */
+    assert(index == buf-1);
+  } else {
+    C_uword base, *start, *scan, big_digit;
+    C_word working_copy;
+    int steps, i;
+
+    working_copy = allocate_tmp_bignum(C_fix(C_bignum_size(bignum)),
+                                       C_mk_bool(negp), C_SCHEME_FALSE);
+    bignum_digits_destructive_copy(working_copy, bignum);
+
+    start = C_bignum_digits(working_copy);
+
+    scan = start + C_bignum_size(bignum);
+    /* Calculate the largest power of radix that fits a halfdigit:
+     * steps = log10(2^halfdigit_bits), base = 10^steps
+     */
+    for(steps = 0, base = radix; C_fitsinbignumhalfdigitp(base); base *= radix)
+      steps++;
+
+    base /= radix; /* Back down: we overshot in the loop */
+
+    while (scan > start) {
+      big_digit = bignum_digits_destructive_scale_down(start, scan, base);
+
+      if (*(scan-1) == 0) scan--; /* Adjust if we exhausted the highest digit */
+
+      for(i = 0; i < steps && index >= buf; ++i) {
+	C_word tmp = big_digit / radix;
+        *index-- = characters[big_digit - (tmp*radix)]; /* big_digit % radix */
+        big_digit = tmp;
+      }
+    }
+    assert(index >= buf-1);
+    free_tmp_bignum(working_copy);
+
+    /* Move index onto first nonzero digit.  We're writing a bignum
+       here: it can't consist of only zeroes. */
+    while(*++index == '0');
+  
+    if (negp) *--index = '-';
+  
+    /* Shorten with distance between start and index. */
+    if (buf != index) {
+      i = C_header_size(string) - (index - buf);
+      C_memmove(buf, index, i); /* Move start of number to beginning. */
+      C_block_header(string) = C_STRING_TYPE | i; /* Mutate strlength. */
+    }
+  }
+
+  C_kontinue(k, string);
+}
 
 void C_ccall C_make_structure(C_word c, C_word closure, C_word k, C_word type, ...)
 {

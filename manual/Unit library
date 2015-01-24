@@ -38,6 +38,13 @@ platforms).
 Returns {{#t}} if the bit at the position {{INDEX}} in the integer {{N}} is
 set, or {{#f}} otherwise. The rightmost/least-significant bit is bit 0.
 
+==== integer-length
+
+<procedure>(integer-length N)</procedure>
+
+Returns the number of bits needed to represent the exact integer N in
+2's complement notation.
+
 ==== bignum?
 
 <procedure>(bignum? X)</procedure>

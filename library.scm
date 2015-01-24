@@ -35,7 +35,11 @@
 	##sys#print-exit
 	##sys#format-here-doc-warning
 	exit-in-progress
-        maximal-string-length)
+        maximal-string-length
+	##sys#integer-power ##sys#integer-quotient
+	make-complex
+	+maximum-allowed-exponent+ mantexp->dbl ldexp round-quotient
+	##sys#string->compnum)
   (not inline ##sys#user-read-hook ##sys#error-hook ##sys#signal-hook ##sys#schedule
        ##sys#default-read-info-hook ##sys#infix-list-hook ##sys#sharp-number-hook
        ##sys#user-print-hook ##sys#user-interrupt-hook ##sys#step-hook)
@@ -443,6 +447,10 @@ EOF
   (##sys#error-hook
    (foreign-value "C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR" int) loc arg))
 
+(define (##sys#error-bad-base arg #!optional loc)
+  (##sys#error-hook
+   (foreign-value "C_BAD_ARGUMENT_TYPE_BAD_BASE_ERROR" int) loc arg))
+
 (define (append . lsts)
   (if (eq? lsts '())
       lsts
@@ -735,6 +743,7 @@ EOF
 (define (fxshr x y) (##core#inline "C_fixnum_shift_right" x y))
 (define (fxodd? x) (##core#inline "C_i_fixnumoddp" x))
 (define (fxeven? x) (##core#inline "C_i_fixnumevenp" x))
+(define (fxlen x) (##core#inline "C_i_fixnum_length" x))
 (define (fx/ x y) (##core#inline "C_fixnum_divide" x y) )
 (define (fxmod x y) (##core#inline "C_fixnum_modulo" x y) )
 
@@ -896,6 +905,13 @@ EOF
   (fp-check-flonum x 'fpinteger?)
   (##core#inline "C_u_i_fpintegerp" x))
 
+;; Placeholders for later
+(define (##sys#+-2 a b) (+ a b))
+(define (##sys#*-2 a b) (* a b))
+(define (##sys#/-2 a b) (/ a b))
+(define (##sys#integer-power a b) (expt a b))
+(define (##sys#integer-quotient a b) (quotient a b))
+
 (define * (##core#primitive "C_times"))
 (define - (##core#primitive "C_minus"))
 (define + (##core#primitive "C_plus"))
@@ -955,8 +971,9 @@ EOF
   (##sys#check-real r 'make-polar)
   (##sys#check-real phi 'make-polar)
   (let ((fphi (exact->inexact phi)))
-    (make-complex (* r (##core#inline_allocate ("C_a_i_cos" 4) fphi))
-                  (* r (##core#inline_allocate ("C_a_i_sin" 4) fphi)))))
+    (make-complex
+     (##sys#*-2 r (##core#inline_allocate ("C_a_i_cos" 4) fphi))
+     (##sys#*-2 r (##core#inline_allocate ("C_a_i_sin" 4) fphi)))))
 
 (define (real-part x)
   (cond ((cplxnum? x) (%cplxnum-real x))
@@ -1148,19 +1165,289 @@ EOF
 		  (##sys#lcm head n2)
 		  (##sys#slot next 1)) #f) ) ) ) ) ) )
 
-(define (string->number str #!optional (radix 10) exactness)
-  (let ((num (##core#inline_allocate ("C_a_i_string_to_number" 4) str radix)))
-    (case exactness
-      ((i) (##core#inline_allocate ("C_a_i_exact_to_inexact" 4) num))
-      ;; If inf/nan, don't error but just return #f
-      ((e) (and num
-                (##core#inline "C_i_finitep" num)
-                (##core#inline "C_i_inexact_to_exact" num)))
-      (else num))))
+(define ##sys#extended-number->string
+  (let ((string-append string-append))
+    (lambda (n base)
+      (cond
+       ((ratnum? n)
+	(string-append (number->string (%ratnum-numerator n) base)
+		       "/"
+		       (number->string (%ratnum-denominator n) base)))
+       ;; What about bases that include an "i"?  That could lead to
+       ;; ambiguous results.
+       ((cplxnum? n) (let ((r (%cplxnum-real n))
+                           (i (%cplxnum-imag n)) )
+                       (string-append
+                        (number->string r base)
+                        ;; The infinities and NaN always print their sign
+                        (if (and (finite? i) (positive? i)) "+" "")
+                        (number->string i base) "i") ))
+       (else (##sys#error-bad-number 'number->string n)))  ) ) )
 
-(define ##sys#string->number string->number)
+(define number->string (##core#primitive "C_number_to_string"))
+(define ##sys#number->string number->string) ; for printer
+
+;; We try to prevent memory exhaustion attacks by limiting the
+;; maximum exponent value.  Perhaps this should be a parameter?
+(define-constant +maximum-allowed-exponent+ 10000)
+
+;; From "Easy Accurate Reading and Writing of Floating-Point Numbers"
+;; by Aubrey Jaffer.
+(define (mantexp->dbl mant point)
+  (if (not (negative? point))
+      (exact->inexact (##sys#*-2 mant (##sys#integer-power 10 point)))
+      (let* ((scl (##sys#integer-power 10 (abs point)))
+	     (bex (fx- (fx- (integer-length mant) (integer-length scl))
+                       flonum-precision)))
+        (if (fx< bex 0)
+            (let* ((num (arithmetic-shift mant (fxneg bex)))
+                   (quo (round-quotient num scl)))
+              (cond ((> (integer-length quo) flonum-precision)
+                     ;; Too many bits of quotient; readjust
+                     (set! bex (fx+ 1 bex))
+                     (set! quo (round-quotient num (##sys#*-2 scl 2)))))
+              (ldexp (exact->inexact quo) bex))
+            ;; Fall back to exact calculation in extreme cases
+            (##sys#*-2 mant (##sys#integer-power 10 point))))))
+
+(define ldexp (foreign-lambda double "ldexp" double int))
+
+;; Should we export this?
+(define (round-quotient n d)
+  (let ((q (##sys#integer-quotient n d)))
+    (if ((if (even? q) > >=) (##sys#*-2 (abs (remainder n d)) 2) (abs d))
+        (##sys#+-2 q (if (eqv? (negative? n) (negative? d)) 1 -1))
+        q)))
+
+;; Shorthand for readability.  TODO: Replace other C_subchar calls with this
+(define-inline (%subchar s i) (##core#inline "C_subchar" s i))
+(define (##sys#string->compnum radix str offset exactness)
+  (define (go-inexact!)
+    ;; Go inexact unless exact was requested (with #e prefix)
+    (unless (eq? exactness 'e) (set! exactness 'i)))
+  (define (safe-exponent value e)
+    (and e (cond
+            ((not value) 0)
+            ((> e +maximum-allowed-exponent+)
+             (and (eq? exactness 'i)
+                  (cond ((zero? value) 0.0)
+                        ((> value 0.0) +inf.0)
+                        (else -inf.0))))
+            ((< e (fxneg +maximum-allowed-exponent+))
+             (and (eq? exactness 'i) +0.0))
+            ((eq? exactness 'i) (mantexp->dbl value e))
+            (else (##sys#*-2 value (##sys#integer-power 10 e))))))
+  (define (make-nan)
+    ;; Return fresh NaNs, so eqv? returns #f on two read NaNs.  This
+    ;; is not mandated by the standard, but compatible with earlier
+    ;; CHICKENs and it just makes more sense.
+    (##core#inline_allocate ("C_a_i_flonum_quotient" 4) 0.0 0.0))
+  (let* ((len (##sys#size str))
+         (0..r (integer->char (fx+ (char->integer #\0) (fx- radix 1))))
+         (a..r (integer->char (fx+ (char->integer #\a) (fx- radix 11))))
+         (A..r (integer->char (fx+ (char->integer #\A) (fx- radix 11))))
+         ;; Ugly flag which we need (note that "exactness" is mutated too!)
+         ;; Since there is (almost) no backtracking we can do this.
+         (seen-hashes? #f)
+         ;; All these procedures return #f or an object consed onto an end
+         ;; position.  If the cdr is false, that's the end of the string.
+         ;; If just #f is returned, the string contains invalid number syntax.
+         (scan-digits
+          (lambda (start)
+            (let lp ((i start))
+              (if (fx= i len)
+                  (and (fx> i start) (cons i #f))
+                  (let ((c (%subchar str i)))
+                    (if (fx<= radix 10)
+                        (if (and (char>=? c #\0) (char<=? c 0..r))
+                            (lp (fx+ i 1))
+                            (and (fx> i start) (cons i i)))
+                        (if (or (and (char>=? c #\0) (char<=? c #\9))
+                                (and (char>=? c #\a) (char<=? c a..r))
+                                (and (char>=? c #\A) (char<=? c A..r)))
+                            (lp (fx+ i 1))
+                            (and (fx> i start) (cons i i)))))))))
+         (scan-hashes
+          (lambda (start)
+            (let lp ((i start))
+              (if (fx= i len)
+                  (and (fx> i start) (cons i #f))
+                  (let ((c (%subchar str i)))
+                    (if (eq? c #\#)
+                        (lp (fx+ i 1))
+                        (and (fx> i start) (cons i i))))))))
+         (scan-digits+hashes
+          (lambda (start neg? all-hashes-ok?)
+            (let* ((digits (and (not seen-hashes?) (scan-digits start)))
+                   (hashes (if digits
+                               (and (cdr digits) (scan-hashes (cdr digits)))
+                               (and all-hashes-ok? (scan-hashes start))))
+                   (end (or hashes digits)))
+              (and-let* ((end)
+                         (num ((##core#primitive "C_digits_to_integer")
+                               str start (car end) radix neg?)))
+                (when hashes            ; Eeewww. Feeling dirty yet?
+                  (set! seen-hashes? #t)
+                  (go-inexact!))
+                (cons num (cdr end))))))
+         (scan-exponent
+          (lambda (start)
+            (and (fx< start len)
+                 (let ((sign (case (%subchar str start)
+                               ((#\+) 'pos) ((#\-) 'neg) (else #f))))
+                   (and-let* ((start (if sign (fx+ start 1) start))
+                              (end (scan-digits start)))
+                     (go-inexact!)
+                     (cons ((##core#primitive "C_digits_to_integer")
+                            str start (car end) radix (eq? sign 'neg))
+                           (cdr end)))))))
+         (scan-decimal-tail             ; The part after the decimal dot
+          (lambda (start neg? decimal-head)
+            (and (fx< start len)
+                 (let* ((tail (scan-digits+hashes start neg? decimal-head))
+                        (next (if tail (cdr tail) start)))
+                   (and (or decimal-head (not next)
+                            (fx> next start)) ; Don't allow empty "."
+                        (case (and next (%subchar str next))
+                          ((#\e #\s #\f #\d #\l
+                            #\E #\S #\F #\D #\L)
+                           (and-let* (((fx> len next))
+                                      (ee (scan-exponent (fx+ next 1)))
+                                      (e (car ee))
+                                      (h (safe-exponent decimal-head e)))
+                             (let* ((te (and tail (fx- e (fx- (cdr tail) start))))
+                                    (num (and tail (car tail)))
+                                    (t (safe-exponent num te)))
+                               (cons (if t (##sys#+-2 h t) h) (cdr ee)))))
+                          (else (let* ((last (or next len))
+                                       (te (and tail (fx- start last)))
+                                       (num (and tail (car tail)))
+                                       (t (safe-exponent num te))
+                                       (h (or decimal-head 0)))
+                                  (cons (if t (##sys#+-2 h t) h) next)))))))))
+         (scan-ureal
+          (lambda (start neg?)
+            (if (and (fx> len (fx+ start 1)) (eq? radix 10)
+                     (eq? (%subchar str start) #\.))
+                (begin
+                  (go-inexact!)
+                  (scan-decimal-tail (fx+ start 1) neg? #f))
+                (and-let* ((end (scan-digits+hashes start neg? #f)))
+                  (case (and (cdr end) (%subchar str (cdr end)))
+                    ((#\.)
+                     (go-inexact!)
+                     (and (eq? radix 10)
+                          (if (fx> len (fx+ (cdr end) 1))
+                              (scan-decimal-tail (fx+ (cdr end) 1) neg? (car end))
+                              (cons (car end) #f))))
+                    ((#\e #\s #\f #\d #\l
+                      #\E #\S #\F #\D #\L)
+                     (and-let* (((eq? radix 10))
+                                ((fx> len (cdr end)))
+                                (ee (scan-exponent (fx+ (cdr end) 1)))
+                                (num (car end))
+                                (val (safe-exponent num (car ee))))
+                       (cons val (cdr ee))))
+                    ((#\/)
+                     (set! seen-hashes? #f) ; Reset flag for denominator
+                     (and-let* (((fx> len (cdr end)))
+                                (d (scan-digits+hashes (fx+ (cdr end) 1) #f #f))
+                                (num (car end))
+                                (denom (car d)))
+                       (if (not (eq? denom 0))
+                           (cons (##sys#/-2 num denom) (cdr d))
+                           ;; Hacky: keep around an inexact until we decide we
+                           ;; *really* need exact values, then fail at the end.
+                           (and (not (eq? exactness 'e))
+                                (case (signum num)
+                                  ((-1) (cons -inf.0 (cdr d)))
+                                  ((0)  (cons (make-nan) (cdr d)))
+                                  ((+1) (cons +inf.0 (cdr d))))))))
+                    (else end))))))
+         (scan-real
+          (lambda (start)
+            (and (fx< start len)
+                 (let* ((sign (case (%subchar str start)
+                                ((#\+) 'pos) ((#\-) 'neg) (else #f)))
+                        (next (if sign (fx+ start 1) start)))
+                   (and (fx< next len)
+                        (case (%subchar str next)
+                          ((#\i #\I)
+                           (or (and sign
+                                    (cond
+                                     ((fx= (fx+ next 1) len) ; [+-]i
+                                      (cons (if (eq? sign 'neg) -1 1) next))
+                                     ((and (fx<= (fx+ next 5) len)
+                                           (string-ci=? (substring str next (fx+ next 5)) "inf.0"))
+                                      (go-inexact!)
+                                      (cons (if (eq? sign 'neg) -inf.0 +inf.0)
+                                            (and (fx< (fx+ next 5) len)
+                                                 (fx+ next 5))))
+                                     (else #f)))
+                               (scan-ureal next (eq? sign 'neg))))
+                          ((#\n #\N)
+                           (or (and sign
+                                    (fx<= (fx+ next 5) len)
+                                    (string-ci=? (substring str next (fx+ next 5)) "nan.0")
+                                    (begin (go-inexact!)
+                                           (cons (make-nan)
+                                                 (and (fx< (fx+ next 5) len)
+                                                      (fx+ next 5)))))
+                               (scan-ureal next (eq? sign 'neg))))
+                          (else (scan-ureal next (eq? sign 'neg)))))))))
+         (number (and-let* ((r1 (scan-real offset)))
+                   (case (and (cdr r1) (%subchar str (cdr r1)))
+                     ((#f) (car r1))
+                     ((#\i #\I) (and (fx= len (fx+ (cdr r1) 1))
+                                     (or (eq? (%subchar str offset) #\+) ; ugh
+                                         (eq? (%subchar str offset) #\-))
+                                     (make-rectangular 0 (car r1))))
+                     ((#\+ #\-)
+                      (set! seen-hashes? #f) ; Reset flag for imaginary part
+                      (and-let* ((r2 (scan-real (cdr r1)))
+                                 ((cdr r2))
+                                 ((fx= len (fx+ (cdr r2) 1)))
+                                 ((or (eq? (%subchar str (cdr r2)) #\i)
+                                      (eq? (%subchar str (cdr r2)) #\I))))
+                        (make-rectangular (car r1) (car r2))))
+                     ((#\@)
+                      (set! seen-hashes? #f) ; Reset flag for angle
+                      (and-let* ((r2 (scan-real (fx+ (cdr r1) 1)))
+                                 ((not (cdr r2))))
+                        (make-polar (car r1) (car r2))))
+                     (else #f)))))
+    (and number (if (eq? exactness 'i)
+                    (exact->inexact number)
+                    ;; Ensure we didn't encounter +inf.0 or +nan.0 with #e
+                    (and (finite? number) number)))))
+
+(define (string->number str #!optional (base 10))
+  (##sys#check-string str 'string->number)
+  (unless (and (##core#inline "C_fixnump" base)
+               (fx< 1 base) (fx< base 37)) ; We only have 0-9 and the alphabet!
+    (##sys#error-bad-base base 'string->number))
+  (let scan-prefix ((i 0)
+                    (exness #f)
+                    (radix #f)
+                    (len (##sys#size str)))
+    (if (and (fx< (fx+ i 2) len) (eq? (%subchar str i) #\#))
+        (case (%subchar str (fx+ i 1))
+          ((#\i #\I) (and (not exness) (scan-prefix (fx+ i 2) 'i radix len)))
+          ((#\e #\E) (and (not exness) (scan-prefix (fx+ i 2) 'e radix len)))
+          ((#\b #\B) (and (not radix) (scan-prefix (fx+ i 2) exness 2 len)))
+          ((#\o #\O) (and (not radix) (scan-prefix (fx+ i 2) exness 8 len)))
+          ((#\d #\D) (and (not radix) (scan-prefix (fx+ i 2) exness 10 len)))
+          ((#\x #\X) (and (not radix) (scan-prefix (fx+ i 2) exness 16 len)))
+          (else #f))
+        (##sys#string->compnum (or radix base) str i exness))))
+
+(define (##sys#string->number str #!optional (radix 10) exactness)
+  (##sys#string->compnum radix str 0 exactness))
+
 (define number->string (##core#primitive "C_number_to_string"))
 (define ##sys#fixnum->string (##core#primitive "C_fixnum_to_string"))
+(define ##sys#flonum->string (##core#primitive "C_flonum_to_string"))
+(define ##sys#integer->string (##core#primitive "C_integer_to_string"))
 (define ##sys#number->string number->string)
 
 (define (flonum-print-precision #!optional prec)
@@ -2431,15 +2718,14 @@ EOF
 	(current-read-table current-read-table)
 	(kwprefix (string (integer->char 0))))
     (lambda (port infohandler)
-      (let ([csp (case-sensitive)]
-	    [ksp (keyword-style)]
-	    [psp (parentheses-synonyms)]
-	    [sep (symbol-escape)]
-	    [crt (current-read-table)]
-	    [rat-flag #f]
+      (let ((csp (case-sensitive))
+	    (ksp (keyword-style))
+	    (psp (parentheses-synonyms))
+	    (sep (symbol-escape))
+	    (crt (current-read-table))
 	    ; set below - needs more state to make a decision
 	    (terminating-characters '(#\, #\; #\( #\) #\' #\" #\[ #\] #\{ #\}))
-	    [reserved-characters #f] )
+	    (reserved-characters #f) )
 
 	(define (container c)
 	  (##sys#read-error port "unexpected list terminator" c) )
@@ -2661,7 +2947,6 @@ EOF
 		  (##sys#read-error port "invalid vector syntax" lst) ) ) )
 	  
 	  (define (r-number radix exactness)
-	    (set! rat-flag #f)
 	    (r-xtoken
 	     (lambda (tok kw)
 	       (cond (kw
@@ -2671,16 +2956,9 @@ EOF
 		      (##sys#read-error port "invalid use of `.'"))
 		     ((and (fx> (##sys#size tok) 0) (char=? (string-ref tok 0) #\#))
 		      (##sys#read-error port "unexpected prefix in number syntax" tok))
-		     (else
-		      (let ((val (##sys#string->number tok (or radix 10) exactness)) )
-			(cond (val
-			       (when (and (##sys#inexact? val) (not (eq? exactness 'i)) rat-flag)
-				 (##sys#read-warning
-				  port
-				  "cannot represent exact fraction - coerced to flonum" tok) )
-			       val)
-			      (radix (##sys#read-error port "illegal number syntax" tok))
-			      (else (build-symbol tok)) ) ) ) ) ) ))
+		     ((##sys#string->number tok (or radix 10) exactness))
+		     (radix (##sys#read-error port "illegal number syntax" tok))
+		     (else (build-symbol tok))  ) ) ))
 
 	  (define (r-number-with-exactness radix)
 	    (cond [(eq? #\# (##sys#peek-char-0 port))
@@ -2717,7 +2995,6 @@ EOF
 		    ((char=? c #\x00)
 		     (##sys#read-error port "attempt to read expression from something that looks like binary data"))
 		    (else
-		     (when (char=? c #\/) (set! rat-flag #t))
 		     (read-unreserved-char-0 port)
 		     (loop (##sys#peek-char-0 port) 
 		           (cons (if csp c (char-downcase c)) lst) ) ) ) ) )
@@ -3485,8 +3762,11 @@ EOF
 	   (thunk)))))))
 
 
-;;; Bitwise fixnum operations:
+;;; Bitwise operations:
 
+;; From SRFI-33
+(define (integer-length x) (##core#inline "C_i_integer_length" x))
+ 
 (define (bitwise-and . xs)
   (let loop ([x -1] [xs xs])
     (if (null? xs)

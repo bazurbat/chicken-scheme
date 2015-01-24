@@ -140,6 +140,7 @@
    fxand
    fxeven?
    fxior
+   fxlen
    fxmax
    fxmin
    fxmod
@@ -161,6 +162,7 @@
    getter-with-setter
    implicit-exit-handler
    infinite?
+   integer-length
    ir-macro-transformer
    keyword->string
    keyword-style

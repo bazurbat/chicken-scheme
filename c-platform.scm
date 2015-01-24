@@ -142,11 +142,11 @@
 (set! default-extended-bindings
   '(bignum? cplxnum? ratnum? bitwise-and bitwise-ior bitwise-xor bitwise-not
     add1 sub1 fx+ fx- fx* fx/ fx+? fx-? fx*? fx/? fxmod o fp/?
-    fx= fx> fx< fx>= fx<= fixnum? fxneg fxmax fxmin identity fp+ fp- fp* fp/ fpmin fpmax fpneg
+    fx= fx> fx< fx>= fx<= fixnum? fxneg fxmax fxmin fxlen identity fp+ fp- fp* fp/ fpmin fpmax fpneg
     fp> fp< fp= fp>= fp<= fxand fxnot fxior fxxor fxshr fxshl bit-set? fxodd? fxeven?
     fpfloor fpceiling fptruncate fpround fpsin fpcos fptan fpasin fpacos fpatan
     fpatan2 fpexp fpexpt fplog fpsqrt fpabs fpinteger? exact-integer?
-    arithmetic-shift void flush-output
+    integer-length arithmetic-shift void flush-output
     atom? print print* error call/cc
     blob-size u8vector->blob/shared s8vector->blob/shared u16vector->blob/shared
     s16vector->blob/shared u32vector->blob/shared s32vector->blob/shared
@@ -629,6 +629,7 @@
 (rewrite 'fxmin 2 2 "C_i_fixnum_min" #t)
 (rewrite 'fpmax 2 2 "C_i_flonum_max" #f)
 (rewrite 'fpmin 2 2 "C_i_flonum_min" #f)
+(rewrite 'fxlen 2 1 "C_i_fixnum_length" #t)
 (rewrite 'char-numeric? 2 1 "C_u_i_char_numericp" #t)
 (rewrite 'char-alphabetic? 2 1 "C_u_i_char_alphabeticp" #t)
 (rewrite 'char-whitespace? 2 1 "C_u_i_char_whitespacep" #t)
@@ -820,24 +821,6 @@
 (rewrite 'fpround 16 1 "C_a_i_flonum_round" #f words-per-flonum)
 (rewrite 'fpceiling 16 1 "C_a_i_flonum_ceiling" #f words-per-flonum)
 (rewrite 'fpround 16 1 "C_a_i_flonum_floor" #f words-per-flonum)
-
-(rewrite
- 'string->number 8
- (lambda (db classargs cont callargs)
-   ;; (string->number X) -> (##core#inline_allocate ("C_a_i_string_to_number" 4) X 10)
-   ;; (string->number X Y) -> (##core#inline_allocate ("C_a_i_string_to_number" 4) X Y)
-   (define (build x y)
-     (make-node
-      '##core#call (list #t)
-      (list cont
-	    (make-node
-	     '##core#inline_allocate 
-	     '("C_a_i_string_to_number" 4) ; words-per-flonum
-	     (list x y)))))
-   (case (length callargs)
-     ((1) (build (first callargs) (qnode 10)))
-     ((2) (build (first callargs) (second callargs)))
-     (else #f))))
 
 (rewrite 'cons 16 2 "C_a_i_cons" #t 3)
 (rewrite '##sys#cons 16 2 "C_a_i_cons" #t 3)
@@ -1122,6 +1105,18 @@
 	       (make-node
 		'##core#inline 
 		(list (if (eq? number-type 'fixnum) "C_u_i_bit_setp" "C_i_bit_setp"))
+		callargs) ) ) ) ) )
+
+(rewrite
+ 'integer-length 8
+ (lambda (db classargs cont callargs)
+   (and (= 1 (length callargs))
+	(make-node
+	 '##core#call (list #t)
+	 (list cont
+	       (make-node
+		'##core#inline 
+		(list (if (eq? number-type 'fixnum) "C_i_fixnum_length" "C_i_integer_length"))
 		callargs) ) ) ) ) )
 
 (rewrite 'read-char 23 0 '##sys#read-char/port '##sys#standard-input)
