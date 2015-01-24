@@ -38,6 +38,9 @@
   (no-bound-checks)
   (no-procedure-checks))
 
+(include "mini-srfi-1.scm")
+
+
 (##sys#provide 'chicken-syntax)
 
 
@@ -781,13 +784,13 @@
 	,(append minvars rvar)
 	(##core#let
         ((,lvar (,%length ,rvar)))
-	 ,(fold-right
-	   (lambda (c body)
+	 ,(foldr
+	   (lambda (body c)
 	     (##sys#decompose-lambda-list
 	      (car c)
 	      (lambda (vars argc rest)
 		(##sys#check-syntax 'case-lambda (car c) 'lambda-list)
-		`(##core#if ,(let ([a2 (fx- argc mincount)])
+		`(##core#if ,(let ((a2 (fx- argc mincount)))
 			       (if rest
 				   (if (zero? a2)
 				       #t
