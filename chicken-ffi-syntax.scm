@@ -38,8 +38,9 @@
   (no-bound-checks)
   (no-procedure-checks))
 
-(##sys#provide
- 'chicken-ffi-syntax)
+(include "mini-srfi-1.scm")
+
+(##sys#provide 'chicken-ffi-syntax)
 
 (define ##sys#chicken-ffi-macro-environment
   (let ((me0 (##sys#macro-environment)))
@@ -122,20 +123,22 @@
 		(list (cons a (cddr b)))
 		'() ) )
 	  bindings aliases)
-	,(fold-right
-	  (lambda (b a rest)
-	    (if (= 3 (length b))
-		`(##core#let-location
-		  ,(car b)
-		  ,(cadr b)
-		  ,a
-		  ,rest)
-		`(##core#let-location
-		  ,(car b)
-		  ,(cadr b)
-		  ,rest) ) )
-	  `(##core#let () ,@body)
-	  bindings aliases) ) ) ) ) )
+	,(let loop ((bindings bindings) (aliases aliases))
+	   (if (null? bindings)
+	       `(##core#let () ,@body)
+	       (let ((b (car bindings))
+		     (a (car aliases))
+		     (rest (loop (cdr bindings) (cdr aliases))))
+		 (if (= 3 (length b))
+		     `(##core#let-location
+		       ,(car b)
+		       ,(cadr b)
+		       ,a
+		       ,rest)
+		     `(##core#let-location
+		       ,(car b)
+		       ,(cadr b)
+		       ,rest) ) ))))))))
 
 
 ;;; Embedding code directly:
