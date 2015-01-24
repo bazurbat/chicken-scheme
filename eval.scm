@@ -1284,13 +1284,17 @@
 (define ##sys#do-the-right-thing
   (let ((vector->list vector->list))
     (lambda (id comp? imp?)
+      (define (adjoin lst)
+	(if (memq id lst)
+	    lst
+	    (cons id lst)))
       (define (add-req id syntax?)
 	(when comp?
 	  (##sys#hash-table-update!
 	   ;; XXX FIXME: This is a bit of a hack.  Why is it needed at all?
 	   chicken.compiler.core#file-requirements
 	   (if syntax? 'dynamic/syntax 'dynamic)
-	   (cut lset-adjoin eq? <> id) ;XXX assumes compiler has srfi-1 loaded
+	   adjoin
 	   (lambda () (list id)))))
       (define (impform x id builtin?)
 	`(##core#begin
