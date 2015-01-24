@@ -152,7 +152,7 @@ EOF
 	(set! percent-digits (arg-digit 2)))
       (error "invalid argument to -decimals option" arg)))
 
-(define (make-sysmbol-table)
+(define (make-symbol-table)
   (make-vector symbol-table-size '()))
 
 (define (read-profile)
