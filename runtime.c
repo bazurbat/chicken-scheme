@@ -527,6 +527,7 @@ static C_regparm void bignum_divrem(C_word c, C_word self, C_word k, C_word x, C
 static void divrem_intflo_2(C_word c, C_word self, ...) C_noret;
 static void bignum_divrem_fixnum_2(C_word c, C_word self, C_word negated_big) C_noret;
 static C_word rat_cmp(C_word x, C_word y);
+static void flo_to_int_2(C_word c, C_word self, C_word result) C_noret;
 static void fabs_frexp_to_digits(C_uword exp, double sign, C_uword *start, C_uword *scan);
 static C_word flo_to_tmp_bignum(C_word x);
 static C_word int_flo_cmp(C_word intnum, C_word flonum);
@@ -542,6 +543,7 @@ static C_word C_fcall convert_string_to_number(C_char *str, int radix, C_word *f
 static void digits_to_integer_2(C_word c, C_word self, C_word result) C_noret;
 static C_regparm C_word str_to_bignum(C_word bignum, char *str, char *str_end, int radix);
 static void bignum_to_str_2(C_word c, C_word self, C_word string) C_noret;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 static C_word C_fcall maybe_inexact_to_exact(C_word n) C_regparm;
 static void C_fcall remark_system_globals(void) C_regparm;
 static void C_fcall really_remark(C_word *x) C_regparm;
@@ -836,7 +838,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size -
      this must match the number of C_pte calls + 1 (NULL terminator)! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 74);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 73);
   int i = 0;
 
   if(pt == NULL)
@@ -875,7 +877,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_greater_or_equal_p);
   C_pte(C_less_or_equal_p);
   C_pte(C_quotient);
-  C_pte(C_expt);
   C_pte(C_number_to_string);
   C_pte(C_make_symbol);
   C_pte(C_string_to_symbol);
@@ -5382,6 +5383,7 @@ C_regparm C_word C_fcall C_u_i_length(C_word lst)
   return C_fix(n);
 }
 
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word maybe_inexact_to_exact(C_word n)
 {
   double m;
@@ -5396,6 +5398,7 @@ C_regparm C_word maybe_inexact_to_exact(C_word n)
   return C_SCHEME_FALSE;
 }
 
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_i_inexact_to_exact(C_word n)
 {
   C_word r;
@@ -7848,6 +7851,41 @@ C_regparm double C_fcall C_bignum_to_double(C_word bignum)
   return(C_bignum_negativep(bignum) ? -accumulator : accumulator);
 }
 
+void C_ccall C_u_flo_to_int(C_word c, C_word self, C_word k, C_word x)
+{
+  int exponent;
+  double significand = frexp(C_flonum_magnitude(x), &exponent);
+
+  assert(C_truep(C_u_i_fpintegerp(x)));
+
+  if (exponent <= 0) {
+    C_kontinue(k, C_fix(0));
+  } else if (exponent == 1) { /* TODO: check significand * 2^exp fits fixnum? */
+    C_kontinue(k, significand < 0.0 ? C_fix(-1) : C_fix(1));
+  } else {
+    C_word kab[C_SIZEOF_CLOSURE(4) + C_SIZEOF_FLONUM], *ka = kab, k2, size,
+           negp = C_mk_bool(C_flonum_magnitude(x) < 0.0),
+           sign = C_flonum(&ka, fabs(significand));
+
+    k2 = C_closure(&ka, 4, (C_word)flo_to_int_2, k, C_fix(exponent), sign);
+
+    size = C_fix(C_BIGNUM_BITS_TO_DIGITS(exponent));
+    C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_FALSE);
+  }
+}
+
+static void flo_to_int_2(C_word c, C_word self, C_word result)
+{
+  C_word k = C_block_item(self, 1);
+  C_uword exponent = C_unfix(C_block_item(self, 2)),
+          *start = C_bignum_digits(result),
+          *scan = start + C_bignum_size(result);
+  double significand = C_flonum_magnitude(C_block_item(self, 3));
+
+  fabs_frexp_to_digits(exponent, significand, start, scan);
+  C_kontinue(k, C_bignum_simplify(result));
+}
+
 static void
 fabs_frexp_to_digits(C_uword exp, double sign, C_uword *start, C_uword *scan)
 {
@@ -8440,34 +8478,6 @@ C_regparm C_word C_fcall C_i_integer_less_or_equalp(C_word x, C_word y)
   }
 }
 
-void C_ccall C_expt(C_word c, C_word closure, C_word k, C_word n1, C_word n2)
-{
-  double m1, m2;
-  C_word r;
-  C_alloc_flonum;
-
-  if(c != 4) C_bad_argc(c, 4);
-
-  if(n1 & C_FIXNUM_BIT) m1 = C_unfix(n1);
-  else if(!C_immediatep(n1) && C_block_header(n1) == C_FLONUM_TAG)
-    m1 = C_flonum_magnitude(n1);
-  else barf(C_BAD_ARGUMENT_TYPE_ERROR, "expt", n1);
-
-  if(n2 & C_FIXNUM_BIT) m2 = C_unfix(n2);
-  else if(!C_immediatep(n2) && C_block_header(n2) == C_FLONUM_TAG)
-    m2 = C_flonum_magnitude(n2);
-  else barf(C_BAD_ARGUMENT_TYPE_ERROR, "expt", n2);
-
-  m1 = pow(m1, m2);
-  r = (C_word)m1;
-
-  if(r == m1 && (n1 & C_FIXNUM_BIT) && (n2 & C_FIXNUM_BIT) && modf(m1, &m2) == 0.0 && C_fitsinfixnump(r))
-    C_kontinue(k, C_fix(r));
-
-  C_kontinue_flonum(k, m1);
-}
-
-
 void C_ccall C_gc(C_word c, C_word closure, C_word k, ...)
 {
   int f;
@@ -9055,6 +9065,7 @@ void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word strin
 }
 
 
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall 
 C_a_i_exact_to_inexact(C_word **a, int c, C_word n)
 {

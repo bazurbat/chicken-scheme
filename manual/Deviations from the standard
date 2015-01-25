@@ -15,20 +15,12 @@ is 120.  This is an implementation restriction that is unlikely
 to be lifted.
 
 
-=== {{numerator}}, {{denominator}} and {{rationalize}}
-
-The {{numerator}} and {{denominator}} procedures cannot be
-applied to inexact numbers, and the procedure {{rationalize}} is not
-implemented at all.
-
-
 === Numeric string-conversion considerations
 
-The runtime system uses the numerical string-conversion
-routines of the underlying C library and so does only understand
-standard (C-library) syntax for floating-point constants.  Consequently,
-the procedures {{string->number}}, {{read}}, {{write}}, and {{display}} do not obey
-read/write invariance to inexact numbers.
+In some cases the runtime system uses the numerical string-conversion
+routines of the underlying C library.  Consequently, the procedures
+{{string->number}}, {{read}}, {{write}}, and {{display}} do not obey
+read/write invariance for inexact numbers.
 
 
 === Environments and non-standard syntax

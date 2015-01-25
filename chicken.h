@@ -664,7 +664,6 @@ static inline int isinf_ld (long double x)
 #define C_BAD_ARGUMENT_TYPE_NO_REAL_ERROR             50
 #define C_BAD_ARGUMENT_TYPE_COMPLEX_NO_ORDERING_ERROR 51
 
-
 /* Platform information */
 #if defined(C_BIG_ENDIAN)
 # define C_MACHINE_BYTE_ORDER "big-endian"
@@ -1903,13 +1902,13 @@ C_fctexport void C_ccall C_u_integer_quotient(C_word c, C_word self, C_word k, C
 C_fctexport void C_ccall C_basic_remainder(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_u_integer_remainder(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
-void C_ccall C_u_integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+C_fctexport void C_ccall C_u_integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+C_fctexport void C_ccall C_u_flo_to_int(C_word c, C_word self, C_word k, C_word x) C_noret;
 C_fctexport void C_ccall C_nequalp(C_word c, C_word closure, C_word k, ...) C_noret;
 C_fctexport void C_ccall C_greaterp(C_word c, C_word closure, C_word k, ...) C_noret;
 C_fctexport void C_ccall C_lessp(C_word c, C_word closure, C_word k, ...) C_noret;
 C_fctexport void C_ccall C_greater_or_equal_p(C_word c, C_word closure, C_word k, ...) C_noret;
 C_fctexport void C_ccall C_less_or_equal_p(C_word c, C_word closure, C_word k, ...) C_noret;
-C_fctexport void C_ccall C_expt(C_word c, C_word closure, C_word k, C_word n1, C_word n2) C_noret;
 C_fctexport void C_ccall C_gc(C_word c, C_word closure, C_word k, ...) C_noret;
 C_fctexport void C_ccall C_open_file_port(C_word c, C_word closure, C_word k, C_word port, C_word channel, C_word mode) C_noret;
 C_fctexport void C_ccall C_allocate_vector(C_word c, C_word closure, C_word k, C_word size, C_word type, C_word init, C_word align8) C_noret;
@@ -2014,6 +2013,7 @@ C_fctexport C_word C_fcall C_i_memv(C_word x, C_word lst) C_regparm;
 C_fctexport C_word C_fcall C_i_member(C_word x, C_word lst) C_regparm;
 C_fctexport C_word C_fcall C_i_length(C_word lst) C_regparm;
 C_fctexport C_word C_fcall C_u_i_length(C_word lst) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_i_inexact_to_exact(C_word n) C_regparm;
 C_fctexport C_word C_fcall C_i_check_closure_2(C_word x, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_exact_2(C_word x, C_word loc) C_regparm;
@@ -2090,9 +2090,11 @@ C_fctexport double C_fcall C_milliseconds(void) C_regparm;
 C_fctexport double C_fcall C_cpu_milliseconds(void) C_regparm;
 C_fctexport double C_fcall C_bignum_to_double(C_word bignum) C_regparm;
 
+
 C_fctexport C_word C_fcall C_a_i_cpu_time(C_word **a, int c, C_word buf) C_regparm;
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_a_i_exact_to_inexact(C_word **a, int c, C_word n) C_regparm;
 C_fctexport C_word C_fcall C_i_file_exists_p(C_word name, C_word file, C_word dir) C_regparm;
 

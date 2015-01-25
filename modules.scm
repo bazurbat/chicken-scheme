@@ -875,8 +875,9 @@
 	     member assq assv assoc symbol? symbol->string string->symbol number?
 	     integer? exact? real? complex? inexact? rational? zero? odd? even?
 	     positive? negative?  max min + - * / = > < >= <= quotient remainder
-	     modulo gcd lcm abs floor ceiling truncate round exact->inexact
-	     inexact->exact exp log expt sqrt sin cos tan asin acos atan
+	     modulo gcd lcm abs floor ceiling truncate round rationalize
+	     exact->inexact inexact->exact exp log expt sqrt
+	     sin cos tan asin acos atan
 	     number->string string->number char? char=? char>? char<? char>=?
 	     char<=? char-ci=? char-ci<? char-ci>?  char-ci>=? char-ci<=?
 	     char-alphabetic? char-whitespace? char-numeric? char-upper-case?

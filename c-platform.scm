@@ -127,7 +127,8 @@
     integer->char eof-object? vector-length string-length string-ref string-set! vector-ref 
     vector-set! char=? char<? char>? char>=? char<=? gcd lcm reverse symbol? string->symbol
     number? complex? real? integer? rational? odd? even? positive? negative? exact? inexact?
-    max min quotient remainder modulo floor ceiling truncate round exact->inexact inexact->exact
+    max min quotient remainder modulo floor ceiling truncate round rationalize
+    exact->inexact inexact->exact
     exp log sin expt sqrt cos tan asin acos atan number->string string->number char-ci=?
     char-ci<? char-ci>? char-ci>=? char-ci<=? char-alphabetic? char-whitespace? char-numeric?
     char-lower-case? char-upper-case? char-upcase char-downcase string? string=? string>? string<?
@@ -539,17 +540,6 @@
 (rewrite 'fpneg 16 1 "C_a_i_flonum_negate" #f words-per-flonum)
 (rewrite 'fpgcd 16 2 "C_a_i_flonum_gcd" #f words-per-flonum)
 
-(rewrite 'exp 16 1 "C_a_i_exp" #t words-per-flonum)
-(rewrite 'sin 16 1 "C_a_i_sin" #t words-per-flonum)
-(rewrite 'cos 16 1 "C_a_i_cos" #t words-per-flonum)
-(rewrite 'tan 16 1 "C_a_i_tan" #t words-per-flonum)
-(rewrite 'log 16 1 "C_a_i_log" #t words-per-flonum)
-(rewrite 'asin 16 1 "C_a_i_asin" #t words-per-flonum)
-(rewrite 'acos 16 1 "C_a_i_acos" #t words-per-flonum)
-(rewrite 'atan 16 1 "C_a_i_atan" #t words-per-flonum)
-(rewrite 'sqrt 16 1 "C_a_i_sqrt" #t words-per-flonum)
-(rewrite 'atan 16 2 "C_a_i_atan2" #t words-per-flonum)
-
 (rewrite 'zero? 5 "C_eqp" 0 'fixnum)
 (rewrite 'zero? 2 1 "C_i_zerop" #t)
 (rewrite 'zero? 2 1 "C_u_i_zerop" #f)
@@ -570,7 +560,6 @@
 (rewrite 'vector-length 2 1 "C_i_vector_length" #t)
 (rewrite '##sys#vector-length 2 1 "C_i_vector_length" #t)
 (rewrite 'string-length 2 1 "C_i_string_length" #t)
-(rewrite 'inexact->exact 2 1 "C_i_inexact_to_exact" #t)
 
 (rewrite '##sys#check-exact 2 1 "C_i_check_exact" #t)
 (rewrite '##sys#check-number 2 1 "C_i_check_number" #t)
@@ -624,8 +613,6 @@
 (rewrite 'gcd 18 0)
 (rewrite 'lcm 18 1)
 (rewrite 'list 18 '())
-
-(rewrite 'exact->inexact 16 1 "C_a_i_exact_to_inexact" #t 4) ; words-per-flonum
 
 (rewrite '= 17 2 "C_i_nequalp")
 (rewrite '> 17 2 "C_i_greaterp")
