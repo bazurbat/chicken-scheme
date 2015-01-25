@@ -797,7 +797,7 @@
 				       `(,%>= ,lvar ,a2) )
 				   `(,%eq? ,lvar ,a2) ) )
 			    ,(receive (vars1 vars2)
-				 (split-at! (take vars argc) mincount)
+				 (split-at (take vars argc) mincount)
 			       (let ((bindings
 				      (let build ((vars2 vars2) (vrest rvar))
 					(if (null? vars2)
