@@ -29,7 +29,8 @@
   (hide take span drop partition split-at append-map every any cons* concatenate delete
 	first second third fourth alist-cons delete-duplicates fifth
 	filter filter-map unzip1 last list-index lset-adjoin lset-difference
-	lset-union lset-intersection list-tabulate lset<= lset= length+))
+	lset-union lset-intersection list-tabulate lset<= lset= length+ find find-tail
+	iota make-list))
 
 
 (define (partition pred lst)
@@ -113,7 +114,7 @@
 	(let* ((x (car lst))
 	       (tail (cdr lst))
 	       (new-tail (loop (delete/eq? x tail))))
-	  (if (eq? tail new-tail) 
+	  (if (equal? tail new-tail) 
 	      lst
 	      (cons x new-tail))))))
 
@@ -199,3 +200,19 @@
 	      len))
 	len)))
 
+(define (find pred lst)
+  (let loop ((lst lst))
+    (cond ((null? lst) #f)
+	  ((pred (car lst)) (car lst))
+	  (else (loop (cdr lst))))))
+
+(define (find-tail pred ls)
+  (let lp ((ls ls))
+    (cond ((null? ls) #f)
+	  ((pred (car ls)) ls)
+	  (else (lp (cdr ls))))))
+
+(define (iota n) (list-tabulate n (lambda (i) i)))
+
+(define (make-list n x)
+  (list-tabulate n (lambda _ x)))

@@ -264,7 +264,7 @@
 
 (declare
  (unit compiler)
- (uses srfi-1 extras data-structures
+ (uses extras data-structures
        scrutinizer support) )
 
 (module chicken.compiler.core
@@ -314,7 +314,7 @@
      constant-table immutable-constants inline-table line-number-database-2
      line-number-database-size)
 
-(import chicken scheme foreign srfi-1 extras data-structures
+(import chicken scheme foreign extras data-structures
 	chicken.compiler.scrutinizer
 	chicken.compiler.support)
 
@@ -327,7 +327,7 @@
 (define-syntax d (syntax-rules () ((_ . _) (void))))
 
 (include "tweaks")
-
+(include "mini-srfi-1.scm")
 
 (define-inline (gensym-f-id) (gensym 'f_))
 

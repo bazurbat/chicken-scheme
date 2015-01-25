@@ -27,7 +27,7 @@
 
 (declare
   (unit optimizer)
-  (uses srfi-1 data-structures
+  (uses data-structures
 	support) )
 
 (module chicken.compiler.optimizer
@@ -36,10 +36,11 @@
      eq-inline-operator membership-test-operators membership-unfold-limit
      default-optimization-passes rewrite)
 
-(import chicken scheme srfi-1 data-structures
+(import chicken scheme data-structures
 	chicken.compiler.support)
 
 (include "tweaks")
+(include "mini-srfi-1.scm")
 
 (define-constant maximal-number-of-free-variables-for-liftable 16)
 

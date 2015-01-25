@@ -26,17 +26,18 @@
 
 (declare
   (unit scrutinizer)
-  (uses srfi-1 data-structures extras ports files
+  (uses data-structures extras ports files
 	support) )
 
 (module chicken.compiler.scrutinizer
     (scrutinize load-type-database emit-type-file
      validate-type check-and-validate-type install-specializations)
 
-(import chicken scheme srfi-1 data-structures extras ports files
+(import chicken scheme data-structures extras ports files
 	chicken.compiler.support)
 
 (include "tweaks")
+(include "mini-srfi-1.scm")
 
 (define d-depth 0)
 (define scrutiny-debug #t)
@@ -933,7 +934,7 @@
 	    (else #f))))
   
   (define (match-rest rtype args opt)	;XXX currently ignores `opt'
-    (let-values (((head tail) (break (cut eq? '#!rest <>) args)))
+    (let-values (((head tail) (span (lambda (x) (not (eq? '#!rest x))) args)))
       (and (every			
 	    (lambda (t)
 	      (or (eq? '#!optional t)
@@ -961,6 +962,12 @@
     (fluid-let ((exact #f)
 		(all #f))
       (match1 t1 t2)))
+
+  (define (every-match1 lst1 lst2)
+    (let loop ((lst1 lst1) (lst2 lst2))
+      (cond ((null? lst1))
+	    ((match1 (car lst1) (car lst2)) (loop (cdr lst1) (cdr lst2)))
+	    (else #f))))
 
   (define (match1 t1 t2)
     ;; note: the order of determining the type is important
@@ -1082,11 +1089,11 @@
 		(and (match-args args1 args2)
 		     (match-results results1 results2))))
 	     ((struct) (equal? t1 t2))
-	     ((pair) (every match1 (cdr t1) (cdr t2)))
+	     ((pair) (every-match1 (cdr t1) (cdr t2)))
 	     ((list-of vector-of) (match1 (second t1) (second t2)))
 	     ((list vector)
 	      (and (= (length t1) (length t2))
-		   (every match1 (cdr t1) (cdr t2))))
+		   (every-match1 (cdr t1) (cdr t2))))
 	     (else #f) ) )
 	  ((and (pair? t1) (eq? 'pair (car t1)))
 	   (and (pair? t2)
@@ -1244,7 +1251,7 @@
 			   ((every procedure-type? ts)
 			    (if (any (cut eq? 'procedure <>) ts)
 				'procedure
-				(reduce
+				(foldl
 				 (lambda (t pt)
 				   (let* ((name1 (procedure-name t))
 					  (atypes1 (procedure-arguments t))
@@ -1257,10 +1264,10 @@
 				      (if (and name1 name2 (eq? name1 name2)) (list name1) '())
 				      (list (merge-argument-types atypes1 atypes2))
 				      (merge-result-types rtypes1 rtypes2))))
-				 #f
-				 ts)))
-			   ((lset= eq? '(true false) ts) 'boolean)
-			   ((lset= eq? '(fixnum float) ts) 'number)
+				 (car ts)
+				 (cdr ts))))
+			   ((lset= '(true false) ts) 'boolean)
+			   ((lset= '(fixnum float) ts) 'number)
 			   (else
 			    (let* ((ts (append-map
 					(lambda (t)
@@ -1320,7 +1327,7 @@
 		  (else t)))
 	       ((assq t typeenv) =>
 		(lambda (e)
-		  (set! used (lset-adjoin eq? used t))
+		  (set! used (lset-adjoin used t))
 		  (cdr e)))
 	       (else t)))))
     (let ((t2 (simplify t)))
@@ -1472,10 +1479,15 @@
 			      (else
 			       (case (car t1)
 				 ((vector-of list-of) (test (second t1) (second t2)))
-				 ((pair) (every test (cdr t1) (cdr t2)))
+				 ((pair) 
+				  (and (test (second t1) (second t2))
+				       (test (third t1) (third t2))))
 				 ((list vector)
 				  (and (= (length t1) (length t2))
-				       (every test (cdr t1) (cdr t2))))
+				       (let loop ((lst1 (cdr t1)) (lst2 (cdr t2)))
+					 (or (null? lst1)
+					     (and (test (car lst1) (car lst2))
+						  (loop (cdr lst1) (cdr lst2)))))))
 				 ((struct) (eq? (cadr t1) (cadr t2)))
 				 ((procedure)
 				  (let ((args1 (if (named? t1) (caddr t1) (cadr t1)))
@@ -2064,7 +2076,7 @@
 		   ,(map (lambda (tv)
 			   (cond ((assq tv constraints) => identity)
 				 (else tv)))
-			 (delete-duplicates typevars eq?))
+			 (delete-duplicates typevars))
 		   ,type)))
 	     (let ((type2 (simplify-type type)))
 	       (values 
@@ -2334,7 +2346,7 @@
 
     ;; collect candidates for each typevar
     (define (collect)
-      (let* ((vars (delete-duplicates (concatenate (map unzip1 insts)) eq?))
+      (let* ((vars (delete-duplicates (concatenate (map unzip1 insts))))
 	     (all (map (lambda (var)
 			 (cons
 			  var
@@ -2351,7 +2363,7 @@
 
     (ddd " over-all-instantiations: ~s exact=~a" tlist exact)
     ;; process all tlist elements
-    (let loop ((ts (delete-duplicates tlist equal?))
+    (let loop ((ts (delete-duplicates tlist))
 	       (ok #f))
       (cond ((null? ts)
 	     (cond ((or ok (null? tlist))

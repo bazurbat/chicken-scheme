@@ -29,7 +29,7 @@
 ;; Same goes for "backend" and "platform".
 (declare
   (unit batch-driver)
-  (uses extras data-structures files srfi-1
+  (uses extras data-structures files
 	support compiler-syntax compiler optimizer
 	;; TODO: Backend should be configurable
 	scrutinizer lfa2 c-platform c-backend) )
@@ -40,7 +40,7 @@
      user-options-pass user-read-pass user-preprocessor-pass user-pass
      user-post-analysis-pass)
 
-(import chicken scheme extras data-structures files srfi-1
+(import chicken scheme extras data-structures files
 	chicken.compiler.support
 	chicken.compiler.compiler-syntax
 	chicken.compiler.core
