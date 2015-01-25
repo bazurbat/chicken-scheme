@@ -95,10 +95,10 @@
 	'()
 	(append (car lst) (loop (cdr lst))))))
 
-(define (delete x lst)
+(define (delete x lst #!optional (test eq?))
   (let loop ((lst lst))
     (cond ((null? lst) lst)
-	  ((eq? x (car lst)) (cdr lst))
+	  ((test x (car lst)) (cdr lst))
 	  (else (cons (car lst) (loop (cdr lst)))) ) ) )
 
 (define (first x) (car x))
@@ -107,13 +107,13 @@
 (define (fourth x) (cadddr x))
 (define (fifth x) (car (cddddr x)))
 
-(define (delete-duplicates lst)
+(define (delete-duplicates lst #!optional (test equal?))
   (let loop ((lst lst))
     (if (null? lst)
 	lst
 	(let* ((x (car lst))
 	       (tail (cdr lst))
-	       (new-tail (loop (delete/eq? x tail))))
+	       (new-tail (loop (delete x tail test))))
 	  (if (equal? tail new-tail) 
 	      lst
 	      (cons x new-tail))))))
@@ -182,7 +182,7 @@
 (define (lset<= s1 s2)
   (every (lambda (s) (memq s s2)) s1))
 
-(define (lset= s1 s2)
+(define (lset= s1 s2)+
   (and (eq? (length s1) (length s2))
        (every (lambda (s) (memq s s2)) s1)))
 

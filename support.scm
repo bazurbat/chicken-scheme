@@ -27,7 +27,7 @@
 
 (declare (unit support)
 	 (not inline ##sys#user-read-hook) ; XXX: Is this needed?
-	 (uses data-structures srfi-1 files extras ports) )
+	 (uses data-structures files extras ports) )
 
 (module chicken.compiler.support
     (compiler-cleanup-hook bomb collected-debugging-output debugging
@@ -75,9 +75,10 @@
      ;; in a lot of other places.
      number-type unsafe)
 
-(import chicken scheme foreign data-structures srfi-1 files extras ports)
+(import chicken scheme foreign data-structures files extras ports)
 
 (include "tweaks")
+(include "mini-srfi-1.scm")
 (include "banner")
 
 ;; Evil globals
@@ -136,7 +137,7 @@
   (define (test-mode mode set)
     (if (symbol? mode)
 	(memq mode set)
-	(pair? (lset-intersection eq? mode set))))
+	(pair? (lset-intersection mode set))))
   (cond ((test-mode mode debugging-chicken)
 	 (let ((txt (with-output-to-string thunk)))
 	   (display txt)
@@ -359,9 +360,14 @@
 			  (if (exn? ex) 
 			      (exn-msg ex)
 			      (->string ex) ) ) 
-	(let ([xs (with-input-from-string
+	(let ((xs (with-input-from-string
 		      str
-		    (lambda () (unfold eof-object? values (lambda (x) (read)) (read))))])
+		    (lambda ()
+		      (let loop ((lst '()))
+			(let ((x (read)))
+			  (if (eof-object? x)
+			      (apply values (reverse lst))
+			      (loop (cons x lst)))))))))
 	  (cond [(null? xs) '(##core#undefined)]
 		[(null? (cdr xs)) (car xs)]
 		[else `(begin ,@xs)] ) ) ) ) ) )
@@ -490,7 +496,7 @@
     (define (walk x)
       (cond ((symbol? x) (varnode x))
 	    ((node? x) x)
-	    ((not-pair? x) (bomb "bad expression" x))
+	    ((not (pair? x)) (bomb "bad expression" x))
 	    ((symbol? (car x))
 	     (case (car x)
 	       ((if ##core#undefined) (make-node (car x) '() (map walk (cdr x))))
@@ -559,7 +565,7 @@
 		  (make-node
 		   '##core#foreign-callback-wrapper
 		   (list name (cadr (third x)) (cadr (fourth x)) (cadr (fifth x)))
-		   (list (walk (sixth x))) ) ) )
+		   (list (walk (list-ref x 5))) ) ) )
 	       ((##core#inline_allocate ##core#inline_ref ##core#inline_update
 					##core#inline_loc_ref ##core#inline_loc_update)
 		(make-node (first x) (second x) (map walk (cddr x))) )
@@ -657,21 +663,23 @@
 	      [body (if copy? 
 			(copy-node-tree-and-rename body vars rlist db cfk)
 			body) ] )
-	 (fold-right
-	  (lambda (var val body) (make-node 'let (list var) (list val body)) )
-	  (if rest
-	      (make-node
-	       'let (list (last rlist))
-	       (list (if (null? rargs)
-			 (qnode '())
-			 (make-node
-			  '##core#inline_allocate
-			  (list "C_a_i_list" (* 3 (length rargs))) 
-			  rargs) )
-		     body) )
-	      body)
-	  (take rlist argc)
-	  largs) ) ) ) ) )
+	 (let loop ((vars (take rlist argc))
+		    (vals largs))
+	   (if (null? vars)
+	       (if rest
+		   (make-node
+		    'let (list (last rlist))
+		    (list (if (null? rargs)
+			      (qnode '())
+			      (make-node
+			       '##core#inline_allocate
+			       (list "C_a_i_list" (* 3 (length rargs))) 
+			       rargs) )
+			  body) )
+		   body)
+	       (make-node 'let (list (car vars))
+			  (list (car vals))
+			  (loop (cdr vars) (cdr vals))))))))))
 
 ;; Copy along with the above
 (define (copy-node-tree-and-rename node vars aliases db cfk)
@@ -1299,12 +1307,12 @@
 	  ((##core#variable) 
 	   (let ((var (first params)))
 	     (unless (memq var e)
-	       (set! vars (lset-adjoin eq? vars var))
+	       (set! vars (lset-adjoin vars var))
 	       (unless (variable-visible? var block-compilation) 
-		 (set! hvars (lset-adjoin eq? hvars var))))))
+		 (set! hvars (lset-adjoin hvars var))))))
 	  ((set!)
 	   (let ((var (first params)))
-	     (unless (memq var e) (set! vars (lset-adjoin eq? vars var)))
+	     (unless (memq var e) (set! vars (lset-adjoin vars var)))
 	     (walk (car subs) e) ) )
 	  ((let) 
 	   (walk (first subs) e)
