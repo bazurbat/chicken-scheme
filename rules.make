@@ -500,10 +500,10 @@ $(foreach lib, $(SETUP_API_OBJECTS_1),\
 $(foreach lib, $(filter-out chicken,$(COMPILER_OBJECTS_1)),\
           $(eval $(call declare-emitted-compiler-import-lib-dependency,$(lib))))
 
-chicken.c: chicken.scm \
+chicken.c: chicken.scm mini-srfi-1.scm \
 		chicken.compiler.batch-driver.import.scm \
 		chicken.compiler.c-platform.import.scm
-batch-driver.c: batch-driver.scm \
+batch-driver.c: batch-driver.scm mini-srfi-1.scm \
 		chicken.compiler.core.import.scm \
 		chicken.compiler.compiler-syntax.import.scm \
 		chicken.compiler.optimizer.import.scm \
@@ -520,14 +520,14 @@ c-backend.c: c-backend.scm \
 		chicken.compiler.c-platform.import.scm \
 		chicken.compiler.support.import.scm \
 		chicken.compiler.core.import.scm
-core.c: core.scm \
+core.c: core.scm mini-srfi-1.scm \
 		chicken.compiler.scrutinizer.import.scm \
 		chicken.compiler.support.import.scm
-optimizer.c: optimizer.scm \
+optimizer.c: optimizer.scm mini-srfi-1.scm \
 		chicken.compiler.support.import.scm
 scrutinizer.c: scrutinizer.scm \
 		chicken.compiler.support.import.scm
-lfa2.c: lfa2.scm chicken.compiler.support.import.scm
+lfa2.c: lfa2.scm chicken.compiler.support.import.scm mini-srfi-1.scm
 compiler-syntax.c: compiler-syntax.scm \
 		chicken.compiler.support.import.scm \
 		chicken.compiler.core.import.scm
