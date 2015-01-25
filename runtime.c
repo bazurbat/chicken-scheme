@@ -512,6 +512,20 @@ static WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word con
 static C_ccall void values_continuation(C_word c, C_word closure, C_word dummy, ...) C_noret;
 static C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stable);
 static C_regparm int C_fcall C_in_new_heapp(C_word x);
+static void bignum_negate_2(C_word c, C_word self, C_word new_big);
+static void bignum_times_bignum_unsigned(C_word k, C_word x, C_word y, C_word negp) C_noret;
+static void bignum_times_bignum_unsigned_2(C_word c, C_word self, C_word result) C_noret;
+static void integer_times_2(C_word c, C_word self, C_word new_big) C_noret;
+static void bignum_plus_unsigned(C_word k, C_word x, C_word y, C_word negp) C_noret;
+static void bignum_plus_unsigned_2(C_word c, C_word self, C_word result) C_noret;
+static void bignum_minus_unsigned(C_word k, C_word x, C_word y) C_noret;
+static void bignum_minus_unsigned_2(C_word c, C_word self, C_word result) C_noret;
+static C_regparm void basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_r, C_word return_q) C_noret;
+static C_regparm void integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_q, C_word return_r) C_noret;
+static C_word bignum_remainder_unsigned_halfdigit(C_word num, C_word den);
+static C_regparm void bignum_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_q, C_word return_r) C_noret;
+static void divrem_intflo_2(C_word c, C_word self, ...) C_noret;
+static void bignum_divrem_fixnum_2(C_word c, C_word self, C_word negated_big) C_noret;
 static C_word rat_cmp(C_word x, C_word y);
 static void fabs_frexp_to_digits(C_uword exp, double sign, C_uword *start, C_uword *scan);
 static C_word flo_to_tmp_bignum(C_word x);
@@ -546,6 +560,10 @@ static C_uword bignum_digits_destructive_scale_down(C_uword *start, C_uword *end
 static C_uword bignum_digits_destructive_shift_right(C_uword *start, C_uword *end, int shift_right, int negp);
 static C_uword bignum_digits_destructive_shift_left(C_uword *start, C_uword *end, int shift_left);
 static C_regparm void bignum_digits_multiply(C_word x, C_word y, C_word result);
+static void bignum_divide_2_unsigned(C_word c, C_word self, C_word quotient);
+static void bignum_divide_2_unsigned_2(C_word c, C_word self, C_word remainder);
+static void bignum_destructive_divide_unsigned_small(C_word c, C_word self, C_word quotient);
+static C_regparm void bignum_destructive_divide_normalized(C_word big_u, C_word big_v, C_word big_q);
 static void make_structure_2(void *dummy) C_noret;
 static void generic_trampoline(void *dummy) C_noret;
 static void handle_interrupt(void *trampoline, void *proc) C_noret;
@@ -818,7 +836,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size -
      this must match the number of C_pte calls + 1 (NULL terminator)! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 58);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 74);
   int i = 0;
 
   if(pt == NULL)
@@ -842,9 +860,13 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_set_dlopen_flags);
   C_pte(C_become);
   C_pte(C_apply_values);
+  /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
   C_pte(C_times);
+  /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
   C_pte(C_minus);
+  /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
   C_pte(C_plus);
+  /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
   C_pte(C_divide);
   C_pte(C_nequalp);
   C_pte(C_greaterp);
@@ -874,6 +896,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_peek_unsigned_integer);
   C_pte(C_context_switch);
   C_pte(C_register_finalizer);
+  /* IMPORTANT: have you read the comments at the start and the end of this function? */
   C_pte(C_locative_ref);
   C_pte(C_copy_closure);
   C_pte(C_dump_heap_state);
@@ -882,6 +905,22 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_fixnum_to_string);
   C_pte(C_integer_to_string);
   C_pte(C_flonum_to_string);
+  C_pte(C_abs);
+  C_pte(C_u_integer_abs);
+  C_pte(C_negate);
+  C_pte(C_u_integer_negate);
+  C_pte(C_2_basic_plus);
+  C_pte(C_2_basic_minus);
+  C_pte(C_2_basic_times);
+  C_pte(C_basic_quotient);
+  C_pte(C_basic_remainder);
+  C_pte(C_basic_divrem);
+  C_pte(C_u_2_integer_plus);
+  C_pte(C_u_2_integer_minus);
+  C_pte(C_u_2_integer_times);
+  C_pte(C_u_integer_quotient);
+  C_pte(C_u_integer_remainder);
+  C_pte(C_u_integer_divrem);
 
   /* IMPORTANT: did you remember the hardcoded pte table size? */
   pt[ i ].id = NULL;
@@ -1839,7 +1878,7 @@ void barf(int code, char *loc, ...)
 
 
 /* Never use extended number hook procedure names longer than this! */
-/* Current longest name: numbers#@bignum-2-divrem-burnikel-ziegler */
+/* Current longest name: ##sys#bignum-divrem-burnikel-ziegler */
 #define MAX_EXTNUM_HOOK_NAME 64
 
 /* This exists so that we don't have to create any extra closures */
@@ -2453,6 +2492,10 @@ void C_div_by_zero_error(char *loc)
   barf(C_DIVISION_BY_ZERO_ERROR, loc);
 }
 
+void C_not_an_integer_error(char *loc, C_word x)
+{
+  barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, loc, x);
+}
 
 /* Allocate and initialize record: */
 
@@ -5408,7 +5451,38 @@ C_regparm C_word C_fcall C_i_vector_set(C_word v, C_word i, C_word x)
   return C_SCHEME_UNDEFINED;
 }
 
+void C_ccall C_abs(C_word c, C_word self, C_word k, C_word x)
+{
+  if (c != 3) {
+    C_bad_argc_2(c, 3, self);
+  } else if (x & C_FIXNUM_BIT) {
+    C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
+    C_kontinue(k, C_a_i_fixnum_abs(&a, 1, x));
+  } else if (C_immediatep(x)) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "abs", x);
+  } else if (C_block_header(x) == C_FLONUM_TAG) {
+    C_word *a = C_alloc(C_SIZEOF_FLONUM);
+    C_kontinue(k, C_a_i_flonum_abs(&a, 1, x));
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    C_u_integer_abs(3, (C_word)NULL, k, x);
+  } else {
+    try_extended_number("\003sysextended-abs", 2, k, x);
+  }
+}
 
+void C_ccall C_u_integer_abs(C_word c, C_word self, C_word k, C_word x)
+{
+  if (x & C_FIXNUM_BIT) {
+    C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
+    C_kontinue(k, C_a_i_fixnum_abs(&a, 1, x));
+  } else if (C_bignum_negativep(x)) {
+    C_u_integer_negate(3, (C_word)NULL, k, x);
+  } else {
+    C_kontinue(k, x);
+  }
+}
+
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_a_i_abs(C_word **a, int c, C_word x)
 {
   if(x & C_FIXNUM_BIT) return C_fix(labs(C_unfix(x)));
@@ -5419,6 +5493,56 @@ C_regparm C_word C_fcall C_a_i_abs(C_word **a, int c, C_word x)
   return C_flonum(a, fabs(C_flonum_magnitude(x)));
 }
 
+void C_ccall C_negate(C_word c, C_word self, C_word k, C_word x)
+{
+  if (x & C_FIXNUM_BIT) {
+    C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
+    C_kontinue(k, C_a_i_fixnum_negate(&a, 1, x));
+  } else if (C_immediatep(x)) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", x);
+  } else if (C_block_header(x) == C_FLONUM_TAG) {
+    C_word *a = C_alloc(C_SIZEOF_FLONUM);
+    C_kontinue(k, C_a_i_flonum_negate(&a, 1, x));
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    C_u_integer_negate(3, (C_word)NULL, k, x);
+  } else {
+    try_extended_number("\003sysextended-negate", 2, k, x);
+  }
+}
+
+void C_ccall C_u_integer_negate(C_word c, C_word self, C_word k, C_word x)
+{
+  if (x & C_FIXNUM_BIT) {
+    C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
+    C_kontinue(k, C_a_i_fixnum_negate(&a, 1, x));
+  } else {
+    if (C_bignum_negated_fitsinfixnump(x)) {
+      C_kontinue(k, C_fix(C_MOST_NEGATIVE_FIXNUM));
+    } else {
+      C_word *ka, k2, negp = C_mk_nbool(C_bignum_negativep(x)),
+             size = C_fix(C_bignum_size(x));
+      ka = C_alloc(C_SIZEOF_CLOSURE(3));
+      k2 = C_closure(&ka, 3, (C_word)bignum_negate_2, k, x);
+      C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_FALSE);
+    }
+  }
+}
+
+/* Copy all the digits from source to target, obliterating what was
+ * there.  If target is larger than source, the most significant
+ * digits will remain untouched.
+ */
+C_inline void bignum_digits_destructive_copy(C_word target, C_word source)
+{
+  C_memcpy(C_bignum_digits(target), C_bignum_digits(source),
+           C_wordstobytes(C_bignum_size(source)));
+}
+
+static void bignum_negate_2(C_word c, C_word self, C_word new_big)
+{
+  bignum_digits_destructive_copy(new_big, C_block_item(self, 2) /* old_big */);
+  C_kontinue(C_block_item(self, 1), C_bignum_simplify(new_big));
+}
 
 C_regparm C_word C_fcall C_a_i_bitwise_and(C_word **a, int c, C_word n1, C_word n2)
 {
@@ -6526,6 +6650,151 @@ void C_ccall values_continuation(C_word c, C_word closure, C_word arg0, ...)
 }
 
 
+void C_ccall
+C_2_basic_times(C_word c, C_word self, C_word k, C_word x, C_word y)
+{
+  if (x & C_FIXNUM_BIT) {
+    if (y & C_FIXNUM_BIT) {
+      C_word *a = C_alloc(C_SIZEOF_BIGNUM(2));
+      C_kontinue(k, C_a_i_fixnum_times(&a, 2, x, y));
+    } else if (C_immediatep(y)) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", y);
+    } else if (C_block_header(y) == C_FLONUM_TAG) {
+      C_word *a = C_alloc(C_SIZEOF_FLONUM);
+      C_kontinue(k, C_flonum(&a, (double)C_unfix(x) * C_flonum_magnitude(y)));
+    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+      C_u_2_integer_times(4, (C_word)NULL, k, x, y);
+    } else {
+      try_extended_number("\003sysextended-times", 3, k, x, y);
+    }
+  } else if (C_immediatep(x)) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", x);
+  } else if (C_block_header(x) == C_FLONUM_TAG) {
+    C_word *a = C_alloc(C_SIZEOF_FLONUM);
+    if (y & C_FIXNUM_BIT) {
+      C_kontinue(k, C_flonum(&a, C_flonum_magnitude(x) * (double)C_unfix(y)));
+    } else if (C_immediatep(y)) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", y);
+    } else if (C_block_header(y) == C_FLONUM_TAG) {
+      C_kontinue(k, C_a_i_flonum_times(&a, 2, x, y));
+    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+      C_kontinue(k, C_flonum(&a, C_flonum_magnitude(x)*C_bignum_to_double(y)));
+    } else {
+      try_extended_number("\003sysextended-times", 3, k, x, y);
+    }
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    if (y & C_FIXNUM_BIT) {
+      C_u_2_integer_times(4, (C_word)NULL, k, x, y);
+    } else if (C_immediatep(y)) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", x);
+    } else if (C_block_header(y) == C_FLONUM_TAG) {
+      C_word *a = C_alloc(C_SIZEOF_FLONUM);
+      C_kontinue(k, C_flonum(&a, C_bignum_to_double(x)*C_flonum_magnitude(y)));
+    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+      C_u_2_integer_times(4, (C_word)NULL, k, x, y);
+    } else {
+      try_extended_number("\003sysextended-times", 3, k, x, y);
+    }
+  } else {
+    try_extended_number("\003sysextended-times", 3, k, x, y);
+  }
+}
+
+void C_ccall
+C_u_2_integer_times(C_word c, C_word self, C_word k, C_word x, C_word y)
+{
+  if (x & C_FIXNUM_BIT) {
+    if (y & C_FIXNUM_BIT) {
+      C_word *a = C_alloc(C_SIZEOF_BIGNUM(2));
+      C_kontinue(k, C_a_i_fixnum_times(&a, 2, x, y));
+    } else {
+      C_word tmp = x; /* swap to ensure x is a bignum and y a fixnum */
+      x = y;
+      y = tmp;
+    }
+  }
+  /* Here, we know for sure that X is a bignum */
+  if (y == C_fix(0)) {
+    C_kontinue(k, C_fix(0));
+  } else if (y == C_fix(1)) {
+    C_kontinue(k, x);
+  } else if (y == C_fix(-1)) {
+    C_u_integer_negate(3, (C_word)NULL, k, x);
+  } else if (y & C_FIXNUM_BIT) { /* Any other fixnum */
+    C_word absy = (y & C_INT_SIGN_BIT) ? -C_unfix(y) : C_unfix(y),
+           negp = C_mk_bool((y & C_INT_SIGN_BIT) ?
+                            !C_bignum_negativep(x) :
+                            C_bignum_negativep(x));
+  
+    if (C_fitsinbignumhalfdigitp(absy) ||
+        (((C_uword)1 << (C_ilen(absy)-1)) == absy && C_fitsinfixnump(absy))) {
+      C_word size, k2, *a = C_alloc(C_SIZEOF_CLOSURE(4));
+      k2 = C_closure(&a, 4, (C_word)integer_times_2, k, x, C_fix(absy));
+      size = C_fix(C_bignum_size(x) + 1); /* Needs _at most_ one more digit */
+      C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_FALSE);
+    } else {
+      C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
+      y = C_a_u_i_fix_to_big(&a, y);
+      bignum_times_bignum_unsigned(k, x, y, negp);
+    }
+  } else {
+    C_word negp = C_bignum_negativep(x) ?
+                  !C_bignum_negativep(y) :
+                  C_bignum_negativep(y);
+    bignum_times_bignum_unsigned(k, x, y, C_mk_bool(negp));
+  }
+}
+
+static void integer_times_2(C_word c, C_word self, C_word new_big)
+{
+  C_word k = C_block_item(self, 1),
+	 old_bigx = C_block_item(self, 2),
+	 absy = C_unfix(C_block_item(self, 3));
+  C_uword *digits = C_bignum_digits(new_big),
+	  *end_digit = digits + C_bignum_size(old_bigx);
+  int shift;
+
+  bignum_digits_destructive_copy(new_big, old_bigx);
+
+  /* Scale up, and sanitise the result. */
+  shift = C_ilen(absy) - 1;
+  if (((C_uword)1 << shift) == absy) { /* Power of two? */
+    *end_digit = bignum_digits_destructive_shift_left(digits, end_digit, shift);
+  } else {
+    *end_digit =
+      bignum_digits_destructive_scale_up_with_carry(digits, end_digit, absy, 0);
+  }
+  C_kontinue(k, C_bignum_simplify(new_big));
+}
+
+static void
+bignum_times_bignum_unsigned(C_word k, C_word x, C_word y, C_word negp)
+{
+  if (C_bignum_size(y) < C_bignum_size(x)) { /* Ensure size(x) <= size(y) */
+    C_word z = x;
+    x = y;
+    y = z;
+  }
+
+  /* TODO: Activate later */
+  /* if (C_bignum_size(x) < C_KARATSUBA_THRESHOLD) {  /\* Gradebook *\/ */
+    C_word kab[C_SIZEOF_CLOSURE(4)], *ka = kab, k2, size;
+    k2 = C_closure(&ka, 4, (C_word)bignum_times_bignum_unsigned_2, k, x, y);
+    size = C_fix(C_bignum_size(x) + C_bignum_size(y));
+    C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_TRUE);
+  /* } else { */
+  /*   try_extended_number("numbers#@bignum-2-times-karatsuba", 3, k, x, y); */
+  /* } */
+}
+
+static void bignum_times_bignum_unsigned_2(C_word c, C_word self, C_word result)
+{
+  bignum_digits_multiply(C_block_item(self, 2), C_block_item(self, 3), result);
+  C_kontinue(C_block_item(self, 1), C_bignum_simplify(result));
+}
+
+
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 void C_ccall C_times(C_word c, C_word closure, C_word k, ...)
 {
   va_list v;
@@ -6575,6 +6844,7 @@ void C_ccall C_times(C_word c, C_word closure, C_word k, ...)
 }
 
 
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_2_times(C_word **ptr, C_word x, C_word y)
 {
   C_word iresult;
@@ -6603,7 +6873,137 @@ C_regparm C_word C_fcall C_2_times(C_word **ptr, C_word x, C_word y)
   return C_flonum(ptr, 0.0/0.0);
 }
 
+static void bignum_plus_unsigned(C_word k, C_word x, C_word y, C_word negp)
+{
+  C_word kab[C_SIZEOF_CLOSURE(4)], *ka = kab, k2, size;
 
+  if (C_bignum_size(y) > C_bignum_size(x)) {  /* Ensure size(y) <= size(x) */
+    C_word z = x;
+    x = y;
+    y = z;
+  }
+
+  k2 = C_closure(&ka, 4, (C_word)bignum_plus_unsigned_2, k, x, y);
+  
+  size = C_fix(C_bignum_size(x) + 1); /* One more digit, for possible carry. */
+  C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_FALSE);
+}
+
+static void bignum_plus_unsigned_2(C_word c, C_word self, C_word result)
+{
+  C_word k = C_block_item(self, 1),
+         x = C_block_item(self, 2),
+         y = C_block_item(self, 3);
+  C_uword *scan_y = C_bignum_digits(y),
+          *end_y = scan_y + C_bignum_size(y),
+          *scan_r = C_bignum_digits(result),
+          *end_r = scan_r + C_bignum_size(result),
+          sum, digit;
+  int carry = 0;
+
+  /* Copy x into r so we can operate on two pointers, which is faster
+   * than three, and we can stop earlier after adding y.  It's slower
+   * if x and y have equal length.  On average it's slightly faster.
+   */
+  bignum_digits_destructive_copy(result, x);
+  *(end_r-1) = 0; /* Ensure most significant digit is initialised */
+
+  /* Move over x and y simultaneously, destructively adding digits w/ carry. */
+  while (scan_y < end_y) {
+    digit = *scan_r;
+    if (carry) {
+      sum = digit + *scan_y++ + 1;
+      carry = sum <= digit;
+    } else {
+      sum = digit + *scan_y++;
+      carry = sum < digit;
+    }
+    (*scan_r++) = sum;
+  }
+  
+  /* The end of y, the smaller number.  Propagate carry into the rest of x. */
+  while (carry) {
+    sum = (*scan_r) + 1;
+    carry = (sum == 0);
+    (*scan_r++) = sum;
+  }
+  assert(scan_r <= end_r);
+
+  C_kontinue(k, C_bignum_simplify(result));
+}
+
+void C_ccall
+C_2_basic_plus(C_word c, C_word self, C_word k, C_word x, C_word y)
+{
+  if (x & C_FIXNUM_BIT) {
+    if (y & C_FIXNUM_BIT) {
+      C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
+      C_kontinue(k, C_a_i_fixnum_plus(&a, 2, x, y));
+    } else if (C_immediatep(y)) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", y);
+    } else if (C_block_header(y) == C_FLONUM_TAG) {
+      C_word *a = C_alloc(C_SIZEOF_FLONUM);
+      C_kontinue(k, C_flonum(&a, (double)C_unfix(x) + C_flonum_magnitude(y)));
+    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+      C_u_2_integer_plus(4, (C_word)NULL, k, x, y);
+    } else {
+      try_extended_number("\003sysextended-plus", 3, k, x, y);
+    }
+  } else if (C_immediatep(x)) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", x);
+  } else if (C_block_header(x) == C_FLONUM_TAG) {
+    C_word *a = C_alloc(C_SIZEOF_FLONUM);
+    if (y & C_FIXNUM_BIT) {
+      C_kontinue(k, C_flonum(&a, C_flonum_magnitude(x) + (double)C_unfix(y)));
+    } else if (C_immediatep(y)) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", y);
+    } else if (C_block_header(y) == C_FLONUM_TAG) {
+      C_kontinue(k, C_a_i_flonum_plus(&a, 2, x, y));
+    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+      C_kontinue(k, C_flonum(&a, C_flonum_magnitude(x)+C_bignum_to_double(y)));
+    } else {
+      try_extended_number("\003sysextended-plus", 3, k, x, y);
+    }
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    if (y & C_FIXNUM_BIT) {
+      C_u_2_integer_plus(4, (C_word)NULL, k, x, y);
+    } else if (C_immediatep(y)) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", y);
+    } else if (C_block_header(y) == C_FLONUM_TAG) {
+      C_word *a = C_alloc(C_SIZEOF_FLONUM);
+      C_kontinue(k, C_flonum(&a, C_bignum_to_double(x)+C_flonum_magnitude(y)));
+    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+      C_u_2_integer_plus(4, (C_word)NULL, k, x, y);
+    } else {
+      try_extended_number("\003sysextended-plus", 3, k, x, y);
+    }
+  } else {
+    try_extended_number("\003sysextended-plus", 3, k, x, y);
+  }
+}
+
+void C_ccall
+C_u_2_integer_plus(C_word c, C_word self, C_word k, C_word x, C_word y)
+{
+  if ((x & y) & C_FIXNUM_BIT) {
+    C_word ab[C_SIZEOF_FIX_BIGNUM], *a = ab;
+    C_kontinue(k, C_a_i_fixnum_plus(&a, 2, x, y));
+  } else {
+    C_word ab[C_SIZEOF_FIX_BIGNUM * 2], *a = ab;
+    if (x & C_FIXNUM_BIT) x = C_a_u_i_fix_to_big(&a, x);
+    if (y & C_FIXNUM_BIT) y = C_a_u_i_fix_to_big(&a, y);
+
+    if (C_bignum_negativep(x)) {
+      if (C_bignum_negativep(y)) bignum_plus_unsigned(k, x, y, C_SCHEME_TRUE);
+      else bignum_minus_unsigned(k, y, x);
+    } else {
+      if (C_bignum_negativep(y)) bignum_minus_unsigned(k, x, y);
+      else bignum_plus_unsigned(k, x, y, C_SCHEME_FALSE);
+    }
+  }
+}
+
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 void C_ccall C_plus(C_word c, C_word closure, C_word k, ...)
 {
   va_list v;
@@ -6653,6 +7053,7 @@ void C_ccall C_plus(C_word c, C_word closure, C_word k, ...)
 }
 
 
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_2_plus(C_word **ptr, C_word x, C_word y)
 {
   C_word iresult;
@@ -6681,7 +7082,140 @@ C_regparm C_word C_fcall C_2_plus(C_word **ptr, C_word x, C_word y)
   return C_flonum(ptr, 0.0/0.0);
 }
 
+static void bignum_minus_unsigned(C_word k, C_word x, C_word y)
+{
+  C_word kab[C_SIZEOF_CLOSURE(4)], *ka = kab, k2, size;
 
+  switch(bignum_cmp_unsigned(x, y)) {
+  case 0:	      /* x = y, return 0 */
+    C_kontinue(k, C_fix(0));
+  case -1:	      /* abs(x) < abs(y), return -(abs(y) - abs(x)) */
+    k2 = C_closure(&ka, 4, (C_word)bignum_minus_unsigned_2, k, y, x);
+    
+    size = C_fix(C_bignum_size(y)); /* Maximum size of result is length of y. */
+    C_allocate_bignum(5, (C_word)NULL, k2, size, C_SCHEME_TRUE, C_SCHEME_FALSE);
+  case 1:	      /* abs(x) > abs(y), return abs(x) - abs(y) */
+  default:
+    k2 = C_closure(&ka, 4, (C_word)bignum_minus_unsigned_2, k, x, y);
+    
+    size = C_fix(C_bignum_size(x)); /* Maximum size of result is length of x. */
+    C_allocate_bignum(5, (C_word)NULL, k2, size, C_SCHEME_FALSE, C_SCHEME_FALSE);
+    break;
+  }
+}
+
+static void bignum_minus_unsigned_2(C_word c, C_word self, C_word result)
+{
+  C_word k = C_block_item(self, 1),
+         x = C_block_item(self, 2),
+         y = C_block_item(self, 3);
+  C_uword *scan_r = C_bignum_digits(result),
+          *end_r = scan_r + C_bignum_size(result),
+          *scan_y = C_bignum_digits(y),
+          *end_y = scan_y + C_bignum_size(y),
+          difference, digit;
+  int borrow = 0;
+
+  bignum_digits_destructive_copy(result, x); /* See bignum_plus_unsigned_2 */
+
+  /* Destructively subtract y's digits w/ borrow from and back into r. */
+  while (scan_y < end_y) {
+    digit = *scan_r;
+    if (borrow) {
+      difference = digit - *scan_y++ - 1;
+      borrow = difference >= digit;
+    } else {
+      difference = digit - *scan_y++;
+      borrow = difference > digit;
+    }
+    (*scan_r++) = difference;
+  }
+
+  /* The end of y, the smaller number.  Propagate borrow into the rest of x. */
+  while (borrow) {
+    digit = *scan_r;
+    difference = digit - borrow;
+    borrow = difference >= digit;
+    (*scan_r++) = difference;
+  }
+
+  assert(scan_r <= end_r);
+
+  C_kontinue(k, C_bignum_simplify(result));
+}
+
+void C_ccall
+C_2_basic_minus(C_word c, C_word self, C_word k, C_word x, C_word y)
+{
+  if (x & C_FIXNUM_BIT) {
+    if (y & C_FIXNUM_BIT) {
+      C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
+      C_kontinue(k, C_a_i_fixnum_difference(&a, 2, x, y));
+    } else if (C_immediatep(y)) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", y);
+    } else if (C_block_header(y) == C_FLONUM_TAG) {
+      C_word *a = C_alloc(C_SIZEOF_FLONUM);
+      C_kontinue(k, C_flonum(&a, (double)C_unfix(x) - C_flonum_magnitude(y)));
+    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+      C_u_2_integer_minus(4, (C_word)NULL, k, x, y);
+    } else {
+      try_extended_number("\003sysextended-minus", 3, k, x, y);
+    }
+  } else if (C_immediatep(x)) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", x);
+  } else if (C_block_header(x) == C_FLONUM_TAG) {
+    C_word *a = C_alloc(C_SIZEOF_FLONUM);
+    if (y & C_FIXNUM_BIT) {
+      C_kontinue(k, C_flonum(&a, C_flonum_magnitude(x) - (double)C_unfix(y)));
+    } else if (C_immediatep(y)) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", y);
+    } else if (C_block_header(y) == C_FLONUM_TAG) {
+      C_kontinue(k, C_a_i_flonum_difference(&a, 2, x, y)); /* XXX NAMING! */
+    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+      C_kontinue(k, C_flonum(&a, C_flonum_magnitude(x)-C_bignum_to_double(y)));
+    } else {
+      try_extended_number("\003sysextended-minus", 3, k, x, y);
+    }
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    if (y & C_FIXNUM_BIT) {
+      C_u_2_integer_minus(4, (C_word)NULL, k, x, y);
+    } else if (C_immediatep(y)) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", y);
+    } else if (C_block_header(y) == C_FLONUM_TAG) {
+      C_word *a = C_alloc(C_SIZEOF_FLONUM);
+      C_kontinue(k, C_flonum(&a, C_bignum_to_double(x)-C_flonum_magnitude(y)));
+    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+      C_u_2_integer_minus(4, (C_word)NULL, k, x, y);
+    } else {
+      try_extended_number("\003sysextended-minus", 3, k, x, y);
+    }
+  } else {
+    try_extended_number("\003sysextended-minus", 3, k, x, y);
+  }
+}
+
+void C_ccall
+C_u_2_integer_minus(C_word c, C_word self, C_word k, C_word x, C_word y)
+{
+  if ((x & y) & C_FIXNUM_BIT) {
+    C_word ab[C_SIZEOF_FIX_BIGNUM], *a = ab;
+    C_kontinue(k, C_a_i_fixnum_difference(&a, 2, x, y));
+  } else {
+    C_word ab[C_SIZEOF_FIX_BIGNUM * 2], *a = ab;
+    if (x & C_FIXNUM_BIT) x = C_a_u_i_fix_to_big(&a, x);
+    if (y & C_FIXNUM_BIT) y = C_a_u_i_fix_to_big(&a, y);
+
+    if (C_bignum_negativep(x)) {
+      if (C_bignum_negativep(y)) bignum_minus_unsigned(k, y, x);
+      else bignum_plus_unsigned(k, x, y, C_SCHEME_TRUE);
+    } else {
+      if (C_bignum_negativep(y)) bignum_plus_unsigned(k, x, y, C_SCHEME_FALSE);
+      else bignum_minus_unsigned(k, x, y);
+    }
+  }
+}
+
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 void C_ccall C_minus(C_word c, C_word closure, C_word k, C_word n1, ...)
 {
   va_list v;
@@ -6748,6 +7282,7 @@ void C_ccall C_minus(C_word c, C_word closure, C_word k, C_word n1, ...)
 }
 
 
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_2_minus(C_word **ptr, C_word x, C_word y)
 {
   C_word iresult;
@@ -6778,6 +7313,7 @@ C_regparm C_word C_fcall C_2_minus(C_word **ptr, C_word x, C_word y)
 
 
 
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...)
 {
   va_list v;
@@ -6871,6 +7407,321 @@ void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...)
 }
 
 
+/* This is ugly but really cleans up the code below */
+#define RETURN_Q_AND_OR_R(calc_q, calc_r)                 \
+  if (C_truep(C_and(return_q, return_r))) {               \
+    C_values(4, C_SCHEME_UNDEFINED, k, calc_q, calc_r);   \
+  } else if (C_truep(return_r)) {                         \
+    C_kontinue(k, calc_r);                                \
+  } else {                                                \
+    C_kontinue(k, calc_q);                                \
+  }
+
+/* Lossy; we could be in "quotient&remainder" or "modulo" */
+#define DIVREM_LOC ((C_truep(C_and(return_q, return_r))) ? "/" :	\
+                    (C_truep(return_q) ? "quotient" : "remainder"))
+
+/* Another huge and ugly dispatch function.  This is the fundamental
+ * division function.  It decides what functions to call depending on
+ * whether we want to see the quotient and/or the remainder.  It only
+ * knows about the "basic" types: fixnums, bignums and flonums.  The
+ * Scheme "##sys#/" procedure handles ratnums and cplxnums.
+ */
+static C_regparm void
+basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_q, C_word return_r)
+{
+  if (x & C_FIXNUM_BIT) {
+    if (y & C_FIXNUM_BIT) {
+      C_word ab[C_SIZEOF_FIX_BIGNUM], *a = ab;
+      if (y == C_fix(0)) C_div_by_zero_error(DIVREM_LOC);
+
+      RETURN_Q_AND_OR_R(C_a_i_fixnum_quotient_checked(&a, 2, x, y),
+                        C_i_fixnum_remainder_checked(x, y));
+    } else if (C_immediatep(y)) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, DIVREM_LOC, y);
+    } else if (C_block_header(y) == C_FLONUM_TAG) {
+      C_word ab[C_SIZEOF_FLONUM*3], *a = ab;
+      if (C_flonum_magnitude(y) == 0.0) C_div_by_zero_error(DIVREM_LOC);
+
+      x = C_a_i_fix_to_flo(&a, 1, x);
+      RETURN_Q_AND_OR_R(C_a_i_flonum_actual_quotient_checked(&a, 2, x, y),
+                        C_a_i_flonum_remainder_checked(&a, 2, x, y));
+    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+      integer_divrem(6, (C_word)NULL, k, x, y, return_q, return_r);
+    } else {
+      barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, DIVREM_LOC, y);
+    }
+  } else if (C_immediatep(x)) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, DIVREM_LOC, x);
+  } else if (C_block_header(x) == C_FLONUM_TAG) {
+    if (!C_truep(C_u_i_fpintegerp(x))) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, DIVREM_LOC, x);
+    } else if (y & C_FIXNUM_BIT) {
+      C_word ab[C_SIZEOF_FLONUM*3], *a = ab;
+      if (y == C_fix(0)) C_div_by_zero_error(DIVREM_LOC);
+
+      y = C_a_i_fix_to_flo(&a, 1, y);
+      RETURN_Q_AND_OR_R(C_a_i_flonum_actual_quotient_checked(&a, 2, x, y),
+                        C_a_i_flonum_remainder_checked(&a, 2, x, y));
+    } else if (C_immediatep(y)) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, DIVREM_LOC, y);
+    } else if (C_block_header(y) == C_FLONUM_TAG) {
+      C_word ab[C_SIZEOF_FLONUM*3], *a = ab;
+      if (C_flonum_magnitude(y) == 0.0) C_div_by_zero_error(DIVREM_LOC);
+
+      RETURN_Q_AND_OR_R(C_a_i_flonum_actual_quotient_checked(&a, 2, x, y),
+                        C_a_i_flonum_remainder_checked(&a, 2, x, y));
+    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+      C_word k2, ab[C_SIZEOF_CLOSURE(3)], *a = ab;
+      x = flo_to_tmp_bignum(x);
+      k2 = C_closure(&a, 3, (C_word)divrem_intflo_2, k, x);
+      integer_divrem(6, (C_word)NULL, k2, x, y, return_q, return_r);
+    } else {
+      barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, DIVREM_LOC, y);
+    }
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    if (y & C_FIXNUM_BIT) {
+      integer_divrem(6, (C_word)NULL, k, x, y, return_q, return_r);
+    } else if (C_immediatep(y)) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, DIVREM_LOC, y);
+    } else if (C_block_header(y) == C_FLONUM_TAG) {
+      if (!C_truep(C_u_i_fpintegerp(y))) {
+        barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, DIVREM_LOC, y);
+      } else if (C_flonum_magnitude(y) == 0.0) {
+        C_div_by_zero_error(DIVREM_LOC);
+      } else {
+        C_word k2, ab[C_SIZEOF_CLOSURE(3)], *a = ab;
+        y = flo_to_tmp_bignum(y);
+        k2 = C_closure(&a, 3, (C_word)divrem_intflo_2, k, y);
+        integer_divrem(6, (C_word)NULL, k2, x, y, return_q, return_r);
+      }
+    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+      bignum_divrem(6, (C_word)NULL, k, x, y, return_q, return_r);
+    } else {
+      barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, DIVREM_LOC, y);
+    }
+  } else {
+    barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, DIVREM_LOC, x);
+  }
+}
+
+static void divrem_intflo_2(C_word c, C_word self, ...)
+{
+  C_word k = C_block_item(self, 1), x, y;
+  va_list v;
+
+  va_start(v, self);
+  if (c == 2) {
+    C_word ab[C_SIZEOF_FLONUM], *a = ab;
+    x = va_arg(v, C_word);
+    va_end(v);
+    if (x & C_FIXNUM_BIT) x = C_a_i_fix_to_flo(&a, 1, x);
+    else x = C_a_u_i_big_to_flo(&a, 1, x);
+    free_tmp_bignum(C_block_item(self, 2));
+    C_kontinue(k, x);
+  } else { /* c == 3 */
+    C_word ab[C_SIZEOF_FLONUM*2], *a = ab;
+    x = va_arg(v, C_word);
+    y = va_arg(v, C_word);
+    va_end(v);
+
+    if (x & C_FIXNUM_BIT) x = C_a_i_fix_to_flo(&a, 1, x);
+    else x = C_a_u_i_big_to_flo(&a, 1, x);
+    if (y & C_FIXNUM_BIT) y = C_a_i_fix_to_flo(&a, 1, y);
+    else y = C_a_u_i_big_to_flo(&a, 1, y);
+    free_tmp_bignum(C_block_item(self, 2));
+    C_values(4, C_SCHEME_UNDEFINED, k, x, y);
+  }
+}
+
+static void bignum_divrem_fixnum_2(C_word c, C_word self, C_word negated_big)
+{
+   C_word k = C_block_item(self, 1),
+          return_q = C_block_item(self, 2),
+          return_r = C_block_item(self, 3);
+   RETURN_Q_AND_OR_R(negated_big, C_fix(0));
+}
+
+static C_regparm void
+integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_q, C_word return_r)
+{
+  if (!(y & C_FIXNUM_BIT)) { /* y is bignum. */
+    if (x & C_FIXNUM_BIT) {
+      /* abs(x) < abs(y), so it will always be [0, x] except for this case: */
+      if (x == C_fix(C_MOST_NEGATIVE_FIXNUM) &&
+          C_bignum_negated_fitsinfixnump(y)) {
+	RETURN_Q_AND_OR_R(C_fix(-1), C_fix(0));
+      } else {
+	RETURN_Q_AND_OR_R(C_fix(0), x);
+      }
+    } else {
+      bignum_divrem(4, (C_word)NULL, k, x, y, return_q, return_r);
+    }
+  } else if (x & C_FIXNUM_BIT) { /* both x and y are fixnum. */
+    C_word ab[C_SIZEOF_FIX_BIGNUM], *a = ab;
+    if (y == C_fix(0)) C_div_by_zero_error(DIVREM_LOC);
+
+    RETURN_Q_AND_OR_R(C_a_i_fixnum_quotient_checked(&a, 2, x, y),
+                      C_i_fixnum_remainder_checked(x, y));
+  } else { /* x is bignum, y is fixnum. */
+    C_word absy = (y & C_INT_SIGN_BIT) ? -C_unfix(y) : C_unfix(y);
+
+    if (y == C_fix(1)) {
+      RETURN_Q_AND_OR_R(x, C_fix(0));
+    } else if (y == C_fix(0)) {
+      C_div_by_zero_error(DIVREM_LOC);
+    } else if (y == C_fix(-1)) {
+      C_word *ka, k2;
+      ka = C_alloc(C_SIZEOF_CLOSURE(4));      
+      k2 = C_closure(&ka, 4, (C_word)bignum_divrem_fixnum_2,
+                     k, return_q, return_r);
+      C_u_integer_negate(3, (C_word)NULL, k2, x);
+    } else if (C_fitsinbignumhalfdigitp(absy) ||
+               ((((C_uword)1 << (C_ilen(absy)-1)) == absy) &&
+                C_fitsinfixnump(absy))) {
+      if (C_truep(return_q)) {
+        C_word q_negp = C_mk_bool((y & C_INT_SIGN_BIT) ?
+                                  !(C_bignum_negativep(x)) :
+                                  C_bignum_negativep(x)),
+                r_negp = C_mk_bool(C_bignum_negativep(x)),
+                *ka, k2, size;
+	ka = C_alloc(C_SIZEOF_CLOSURE(9));
+        size = C_fix(C_bignum_size(x));
+        k2 = C_closure(&ka, 7,
+                       (C_word)bignum_destructive_divide_unsigned_small,
+                       k, x, C_fix(absy),
+                       return_q, return_r, C_SCHEME_FALSE);
+        C_allocate_bignum(5, (C_word)NULL, k2, size, q_negp, C_SCHEME_FALSE);
+      } else {
+        C_word rem;
+	C_uword next_power = (C_uword)1 << (C_ilen(absy)-1);
+
+	if (next_power == absy) { /* Is absy a power of two? */
+          rem = *(C_bignum_digits(x)) & (next_power - 1);
+        } else { /* Too bad, we have to do some real work */
+          rem = bignum_remainder_unsigned_halfdigit(x, absy);
+	}
+        C_kontinue(k, C_bignum_negativep(x) ? C_fix(-rem) : C_fix(rem));
+      }
+    } else {			/* Just divide it as two bignums */
+      C_word ab[C_SIZEOF_FIX_BIGNUM], *a = ab;
+      bignum_divrem(6, (C_word)NULL, k, x, C_a_u_i_fix_to_big(&a, y),
+                    return_q, return_r);
+    }
+  }
+}
+
+static C_regparm void
+bignum_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_q, C_word return_r)
+{
+  C_word q_negp = C_mk_bool(C_bignum_negativep(y) ?
+                            !C_bignum_negativep(x) :
+                            C_bignum_negativep(x)),
+         r_negp = C_mk_bool(C_bignum_negativep(x)), size;
+
+  switch(bignum_cmp_unsigned(x, y)) {
+  case 0:
+    RETURN_Q_AND_OR_R(C_truep(q_negp) ? C_fix(-1) : C_fix(1), C_fix(0));
+  case -1:
+    RETURN_Q_AND_OR_R(C_fix(0), x);
+  case 1:
+  default:
+    size = C_bignum_size(y);
+    /* TODO: Activate later */
+    /* if (size > C_BURNIKEL_ZIEGLER_THRESHOLD && */
+    /*     /\* This avoids endless recursion for odd Ns just above threshold *\/ */
+    /*     !(size & 1 && size < (C_BURNIKEL_ZIEGLER_THRESHOLD << 1))) { */
+    /*   try_extended_number("\003sysbignum-divrem-burnikel-ziegler", 5, */
+    /*     		  k, x, y, return_q, return_r); */
+    /* } else */ if (C_truep(return_q)) {
+      C_word kab[C_SIZEOF_FIX_BIGNUM+C_SIZEOF_CLOSURE(9)], *ka = kab, k2;
+      k2 = C_closure(&ka, 9, (C_word)bignum_divide_2_unsigned, k, x, y,
+                     return_q, return_r, r_negp,
+                     /* Will be filled in later */
+                     C_SCHEME_UNDEFINED, C_SCHEME_UNDEFINED);
+      size = C_fix(C_bignum_size(x) + 1 - C_bignum_size(y));
+      C_allocate_bignum(5, (C_word)NULL, k2, size, q_negp, C_SCHEME_FALSE);
+    } else { /* We can skip bignum_divide_2_unsigned if we need no quotient */
+      C_word kab[C_SIZEOF_FIX_BIGNUM+C_SIZEOF_CLOSURE(9)], *ka = kab, k2;
+      k2 = C_closure(&ka, 9, (C_word)bignum_divide_2_unsigned_2, k, x, y,
+                     return_q, return_r, r_negp,
+                     /* Will be filled in later */
+                     C_SCHEME_UNDEFINED, C_SCHEME_UNDEFINED);
+      size = C_fix(C_bignum_size(x) + 1); /* May need to be normalized */
+      C_allocate_bignum(5, (C_word)NULL, k2, size, r_negp, C_SCHEME_FALSE);
+    }
+  }
+}
+
+static C_word bignum_remainder_unsigned_halfdigit(C_word num, C_word den)
+{
+  C_uword *start = C_bignum_digits(num),
+          *scan = start + C_bignum_size(num),
+          rem = 0, two_digits;
+
+  assert((den > 1) && (C_fitsinbignumhalfdigitp(den)));
+  while (start < scan) {
+    two_digits = (*--scan);
+    rem = C_BIGNUM_DIGIT_COMBINE(rem, C_BIGNUM_DIGIT_HI_HALF(two_digits)) % den;
+    rem = C_BIGNUM_DIGIT_COMBINE(rem, C_BIGNUM_DIGIT_LO_HALF(two_digits)) % den;
+  }
+  return rem;
+}
+
+/* External interface for the above internal divrem functions */
+void C_ccall
+C_basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y)
+{
+  if (c != 4) C_bad_argc_2(c, 4, self);
+  basic_divrem(6, (C_word)NULL, k, x, y, C_SCHEME_TRUE, C_SCHEME_TRUE);
+}
+
+void C_ccall
+C_u_integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y)
+{
+  integer_divrem(6, (C_word)NULL, k, x, y, C_SCHEME_TRUE, C_SCHEME_TRUE);
+}
+
+void C_ccall
+C_basic_remainder(C_word c, C_word self, C_word k, C_word x, C_word y)
+{
+  if (c != 4) C_bad_argc_2(c, 4, self);
+  basic_divrem(6, (C_word)NULL, k, x, y, C_SCHEME_FALSE, C_SCHEME_TRUE);
+}
+
+void C_ccall
+C_u_integer_remainder(C_word c, C_word self, C_word k, C_word x, C_word y)
+{
+  integer_divrem(6, (C_word)NULL, k, x, y, C_SCHEME_FALSE, C_SCHEME_TRUE);
+}
+
+void C_ccall
+C_basic_quotient(C_word c, C_word self, C_word k, C_word x, C_word y)
+{
+  if (c != 4) C_bad_argc_2(c, 4, self);
+  basic_divrem(6, (C_word)NULL, k, x, y, C_SCHEME_TRUE, C_SCHEME_FALSE);
+}
+
+void C_ccall
+C_u_integer_quotient(C_word c, C_word self, C_word k, C_word x, C_word y)
+{
+  integer_divrem(6, (C_word)NULL, k, x, y, C_SCHEME_TRUE, C_SCHEME_FALSE);
+}
+
+
+static void bignum_divide_2_unsigned(C_word c, C_word self, C_word quotient)
+{
+  C_word numerator = C_block_item(self, 2),
+         remainder_negp = C_block_item(self, 6),
+	 size = C_fix(C_bignum_size(numerator) + 1);
+
+  /* Nice: We can recycle the current closure */
+  C_set_block_item(self, 0, (C_word)bignum_divide_2_unsigned_2);
+  C_set_block_item(self, 7, quotient);
+  C_allocate_bignum(5, (C_word)NULL, self, size, remainder_negp, C_SCHEME_FALSE);
+}
+
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_2_divide(C_word **ptr, C_word x, C_word y)
 {
   C_word iresult;
@@ -6982,6 +7833,19 @@ static C_word rat_cmp(C_word x, C_word y)
   free_tmp_bignum(t);
   free_tmp_bignum(s);
   return result;
+}
+
+C_regparm double C_fcall C_bignum_to_double(C_word bignum)
+{
+  double accumulator = 0;
+  C_uword *start = C_bignum_digits(bignum),
+          *scan = start + C_bignum_size(bignum);
+  while (start < scan) {
+    accumulator *= (C_word)1 << C_BIGNUM_HALF_DIGIT_LENGTH;
+    accumulator *= (C_word)1 << C_BIGNUM_HALF_DIGIT_LENGTH;
+    accumulator += (*--scan);
+  }
+  return(C_bignum_negativep(bignum) ? -accumulator : accumulator);
 }
 
 static void
@@ -7879,16 +8743,6 @@ C_regparm C_word C_fcall C_bignum_simplify(C_word big)
   }
 }
 
-/* Copy all the digits from source to target, obliterating what was
- * there.  If target is larger than source, the most significant
- * digits will remain untouched.
- */
-C_inline void bignum_digits_destructive_copy(C_word target, C_word source)
-{
-  C_memcpy(C_bignum_digits(target), C_bignum_digits(source),
-           C_wordstobytes(C_bignum_size(source)));
-}
-
 static C_uword
 bignum_digits_destructive_scale_up_with_carry(C_uword *start, C_uword *end, C_uword factor, C_uword carry)
 {
@@ -7996,6 +8850,188 @@ bignum_digits_multiply(C_word x, C_word y, C_word result)
   }
 }
 
+/* For help understanding this algorithm, see:
+   Knuth, Donald E., "The Art of Computer Programming",
+   volume 2, "Seminumerical Algorithms"
+   section 4.3.1, "Multiple-Precision Arithmetic".
+
+   [Yeah, that's a nice book but that particular section is not
+   helpful at all, which is also pointed out by P. Brinch Hansen's
+   "Multiple-Length Division Revisited: A Tour Of The Minefield".
+   That's a more down-to-earth step-by-step explanation of the
+   algorithm.  Add to this the C implementation in Hacker's Delight
+   (section 9-2, p141--142) and you may be able to grok this...
+   ...barely, if you're as math-challenged as I am -- sjamaan]
+*/
+
+static void bignum_divide_2_unsigned_2(C_word c, C_word self, C_word remainder)
+{
+  C_word k = C_block_item(self, 1),
+         numerator = C_block_item(self, 2),
+         denominator = C_block_item(self, 3),
+         return_quotient = C_block_item(self, 4),
+         return_remainder = C_block_item(self, 5),
+         /* This one may be overwritten with the remainder */
+         /* remainder_negp = C_block_item(self, 6), */
+         quotient = C_block_item(self, 7),
+	 length = C_bignum_size(denominator);
+  C_uword d1 = *(C_bignum_digits(denominator) + length - 1),
+          *startr = C_bignum_digits(remainder),
+          *endr = startr + C_bignum_size(remainder);
+  int shift;
+
+  shift = C_BIGNUM_DIGIT_LENGTH - C_ilen(d1); /* nlz */
+
+  /* We have to work on halfdigits, so we shift out only the necessary
+   * amount in order fill out that halfdigit (base is halved).
+   * This trick is shamelessly stolen from Gauche :)
+   * See below for part 2 of the trick.
+   */
+  if (shift >= C_BIGNUM_HALF_DIGIT_LENGTH)
+    shift -= C_BIGNUM_HALF_DIGIT_LENGTH;
+
+  /* Code below won't always set high halfdigit of quotient, so do it here. */
+  if (quotient != C_SCHEME_UNDEFINED)
+    C_bignum_digits(quotient)[C_bignum_size(quotient)-1] = 0;
+
+  bignum_digits_destructive_copy(remainder, numerator);
+  *(endr-1) = 0;    /* Ensure most significant digit is initialised */
+  if (shift == 0) { /* Already normalized */
+    bignum_destructive_divide_normalized(remainder, denominator, quotient);
+  } else { /* Requires normalisation; allocate scratch denominator for this */
+    C_uword *startnd;
+    C_word ndenom;
+
+    bignum_digits_destructive_shift_left(startr, endr, shift);
+
+    ndenom = allocate_tmp_bignum(C_fix(length), C_SCHEME_FALSE, C_SCHEME_FALSE);
+    startnd = C_bignum_digits(ndenom);
+    bignum_digits_destructive_copy(ndenom, denominator);
+    bignum_digits_destructive_shift_left(startnd, startnd+length, shift);
+
+    bignum_destructive_divide_normalized(remainder, ndenom, quotient);
+    if (C_truep(return_remainder)) /* Otherwise, don't bother shifting back */
+      bignum_digits_destructive_shift_right(startr, endr, shift, 0);
+
+    free_tmp_bignum(ndenom);
+  }
+
+  if (C_truep(return_remainder)) {
+    if (C_truep(return_quotient)) {
+      C_values(4, C_SCHEME_UNDEFINED, k,
+               C_bignum_simplify(quotient), C_bignum_simplify(remainder));
+    } else {
+      C_kontinue(k, C_bignum_simplify(remainder));
+    }
+  } else {
+    assert(C_truep(return_quotient));
+    C_kontinue(k, C_bignum_simplify(quotient));
+  }
+}
+
+/* "small" is either a number that fits a halfdigit, or a power of two */
+static void
+bignum_destructive_divide_unsigned_small(C_word c, C_word self, C_word quotient)
+{
+  C_word k = C_block_item(self, 1),
+         numerator = C_block_item(self, 2),
+         denominator = C_unfix(C_block_item(self, 3)),
+         /* return_quotient = C_block_item(self, 4), */
+         return_remainder = C_block_item(self, 5),
+         remainder_negp = C_block_item(self, 6);
+  C_uword *start = C_bignum_digits(quotient),
+          *end = start + C_bignum_size(quotient),
+          remainder;
+  int shift_amount;
+
+  bignum_digits_destructive_copy(quotient, numerator);
+
+  shift_amount = C_ilen(denominator)-1;
+  if (((C_uword)1 << shift_amount) == denominator) { /* Power of two?  Shift! */
+    remainder = bignum_digits_destructive_shift_right(start,end,shift_amount,0);
+    assert(C_ufitsinfixnump(remainder));
+  } else {
+    remainder = bignum_digits_destructive_scale_down(start, end, denominator);
+    assert(C_fitsinbignumhalfdigitp(remainder));
+  }
+
+  quotient = C_bignum_simplify(quotient);
+
+  if (C_truep(return_remainder)) {
+    remainder = C_truep(remainder_negp) ? -remainder : remainder;
+    C_values(4, C_SCHEME_UNDEFINED, k, quotient, C_fix(remainder));
+  } else {
+    C_kontinue(k, quotient);
+  }
+}
+
+static C_regparm void
+bignum_destructive_divide_normalized(C_word big_u, C_word big_v, C_word big_q)
+{
+  C_uword *v = C_bignum_digits(big_v),
+          *u = C_bignum_digits(big_u),
+          *q = big_q == C_SCHEME_UNDEFINED ? NULL : C_bignum_digits(big_q),
+           p,               /* product of estimated quotient & "denominator" */
+           hat, qhat, rhat, /* estimated quotient and remainder digit */
+           vn_1, vn_2;      /* "cached" values v[n-1], v[n-2] */
+  C_word t, k;              /* Two helpers: temp/final remainder and "borrow" */
+  /* We use plain ints here, which theoretically may not be enough on
+   * 64-bit for an insanely huge number, but it is a _lot_ faster.
+   */
+  int n = C_bignum_size(big_v) * 2,       /* in halfwords */
+      m = (C_bignum_size(big_u) * 2) - 2; /* Correct for extra digit */
+  int i, j;		   /* loop  vars */
+
+  /* Part 2 of Gauche's aforementioned trick: */
+  if (C_uhword_ref(v, n-1) == 0) n--;
+
+  /* These won't change during the loop, but are used in every step. */
+  vn_1 = C_uhword_ref(v, n-1);
+  vn_2 = C_uhword_ref(v, n-2);
+
+  /* See also Hacker's Delight, Figure 9-1.  This is almost exactly that. */
+  for (j = m - n; j >= 0; j--) {
+    hat = C_BIGNUM_DIGIT_COMBINE(C_uhword_ref(u, j+n), C_uhword_ref(u, j+n-1));
+    if (hat == 0) {
+      if (q != NULL) C_uhword_set(q, j, 0);
+      continue;
+    }
+    qhat = hat / vn_1;
+    rhat = hat % vn_1;
+
+    /* Two whiles is faster than one big check with an OR.  Thanks, Gauche! */
+    while(qhat >= (1L << C_BIGNUM_HALF_DIGIT_LENGTH)) { qhat--; rhat += vn_1; }
+    while(qhat * vn_2 > C_BIGNUM_DIGIT_COMBINE(rhat, C_uhword_ref(u, j+n-2))
+	  && rhat < (1L << C_BIGNUM_HALF_DIGIT_LENGTH)) {
+      qhat--;
+      rhat += vn_1;
+    }
+
+    /* Multiply and subtract */
+    k = 0;
+    for (i = 0; i < n; i++) {
+      p = qhat * C_uhword_ref(v, i);
+      t = C_uhword_ref(u, i+j) - k - C_BIGNUM_DIGIT_LO_HALF(p);
+      C_uhword_set(u, i+j, t);
+      k = C_BIGNUM_DIGIT_HI_HALF(p) - (t >> C_BIGNUM_HALF_DIGIT_LENGTH);
+    }
+    t = C_uhword_ref(u,j+n) - k;
+    C_uhword_set(u, j+n, t);
+
+    if (t < 0) {		/* Subtracted too much? */
+      qhat--;
+      k = 0;
+      for (i = 0; i < n; i++) {
+        t = (C_uword)C_uhword_ref(u, i+j) + C_uhword_ref(v, i) + k;
+        C_uhword_set(u, i+j, t);
+	k = t >> C_BIGNUM_HALF_DIGIT_LENGTH;
+      }
+      C_uhword_set(u, j+n, (C_uhword_ref(u, j+n) + k));
+    }
+    if (q != NULL) C_uhword_set(q, j, qhat);
+  } /* end j */
+}
+
 
 void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word string)
 {
@@ -8057,7 +9093,32 @@ C_regparm C_word C_fcall C_a_i_flonum_round_proper(C_word **ptr, int c, C_word n
   return C_flonum(ptr, r);
 }
 
+C_regparm C_word C_fcall
+C_a_i_flonum_gcd(C_word **p, C_word n, C_word x, C_word y)
+{
+   double xub, yub, r;
 
+   if (!C_truep(C_u_i_fpintegerp(x)))
+     barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "gcd", x);
+   if (!C_truep(C_u_i_fpintegerp(y)))
+     barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "gcd", y);
+
+   xub = C_flonum_magnitude(x);
+   yub = C_flonum_magnitude(y);
+
+   if (xub < 0.0) xub = -xub;
+   if (yub < 0.0) yub = -yub;
+   
+   while(yub != 0.0) {
+     r = fmod(xub, yub);
+     xub = yub;
+     yub = r;
+   }
+   return C_flonum(p, xub);
+}
+
+
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2)
 {
   double f1, f2, r;

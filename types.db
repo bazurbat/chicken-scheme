@@ -298,7 +298,10 @@
    (() (fixnum) '0)
    ((fixnum) (fixnum) #(1))
    ((float) (float) #(1))
-   ((number) #(1))
+   ((integer) (integer) #(1))
+   ((ratnum) (ratnum) #(1))
+   ((cplxnum) (cplxnum) #(1))
+   ((number) (number) #(1))
    ((float fixnum) (float)
     (##core#inline_allocate 
      ("C_a_i_flonum_plus" 4) 
@@ -311,11 +314,19 @@
      (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
      #(2)))
    ((float float) (float)
-    (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) #(2))))
+    (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) #(2)))
+   ((fixnum fixnum) (integer)
+    (##core#inline_allocate ("C_a_i_fixnum_plus" 3) #(1) #(2)))
+   ((integer integer) (integer)
+    (##sys#integer-plus #(1) #(2)))
+   ((number number) (number)
+    (##sys#+-2 #(1) #(2))))
 
 (- (#(procedure #:clean #:enforce #:foldable) - (number #!rest number) number)
-   ((fixnum) (fixnum)
-    (##core#inline "C_u_fixnum_negate" #(1)))
+   ((fixnum) (integer) (##core#inline_allocate ("C_a_i_fixnum_negate" 3) #(1)))
+   ((integer) (integer) (##sys#integer-negate #(1)))
+   ((float) (float) (##core#inline_allocate ("C_a_i_flonum_negate" 4) #(1)))
+   ((number) (number) (##sys#negate #(1)))
    ((float fixnum) (float)
     (##core#inline_allocate 
      ("C_a_i_flonum_difference" 4) 
@@ -328,13 +339,21 @@
      #(2)))
    ((float float) (float)
     (##core#inline_allocate ("C_a_i_flonum_difference" 4) #(1) #(2)))
-   ((float) (float) 
-    (##core#inline_allocate ("C_a_i_flonum_negate" 4) #(1))))
+   ((fixnum fixnum) (integer)
+    (##core#inline_allocate ("C_a_i_fixnum_difference" 3) #(1) #(2)))
+   ((integer integer) (integer)
+    (##sys#integer-minus #(1) #(2)))
+   ((number number) (number)
+    (##sys#--2 #(1) #(2))))
 
 (* (#(procedure #:clean #:enforce #:foldable) * (#!rest number) number)
    (() (fixnum) '1)
    ((fixnum) (fixnum) #(1))
    ((float) (float) #(1))
+   ((bignum) (bignum) #(1))
+   ((integer) (integer) #(1))
+   ((ratnum) (ratnum) #(1))
+   ((cplxnum) (cplxnum) #(1))
    ((number) (number) #(1))
    ((float fixnum) (float)
     (##core#inline_allocate 
@@ -347,21 +366,32 @@
      (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
      #(2)))
    ((float float) (float)
-    (##core#inline_allocate ("C_a_i_flonum_times" 4) #(1) #(2))))
+    (##core#inline_allocate ("C_a_i_flonum_times" 4) #(1) #(2)))
+   ((fixnum fixnum) (integer)
+    (##core#inline_allocate ("C_a_i_fixnum_times" 4) #(1) #(2)))
+   ((integer integer) (integer)
+    (##sys#integer-times #(1) #(2)))
+   ((number number) (number)
+    (##sys#*-2 #(1) #(2))))
 
 (/ (#(procedure #:clean #:enforce #:foldable) / (number #!rest number) number)
    ((float fixnum) (float)
-    (##core#inline_allocate 
-     ("C_a_i_flonum_quotient_checked" 4) 
-     #(1) 
+    ;; This is the only checked one because the divisor is an exact value
+    (##core#inline_allocate
+     ("C_a_i_flonum_quotient_checked" 4)
+     #(1)
      (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
    ((fixnum float) (float)
-    (##core#inline_allocate 
-     ("C_a_i_flonum_quotient_checked" 4) 
+    (##core#inline_allocate
+     ("C_a_i_flonum_quotient" 4)
      (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
      #(2)))
    ((float float) (float)
-    (##core#inline_allocate ("C_a_i_flonum_quotient_checked" 4) #(1) #(2))))
+    (##core#inline_allocate ("C_a_i_flonum_quotient" 4) #(1) #(2)))
+   ((integer integer) ((or integer ratnum))
+    (##sys#/-2 #(1) #(2)))
+   ((number number) (number)
+    (##sys#/-2 #(1) #(2))))
 
 (= (#(procedure #:clean #:enforce #:foldable) = (#!rest number) boolean)
    (() '#t)
@@ -403,33 +433,72 @@
     ((float float) (##core#inline "C_flonum_less_or_equal_p" #(1) #(2)))
     ((number number) (##core#inline "C_i_less_or_equalp" #(1) #(2))))
 
-(quotient (#(procedure #:clean #:enforce #:foldable) quotient (number number) number)
+(quotient (#(procedure #:clean #:enforce #:foldable) quotient ((or integer float) (or integer float)) (or integer float))
 	  ;;XXX flonum/mixed case
-	  ((fixnum fixnum) (fixnum)
-	   (##core#inline "C_fixnum_divide" #(1) #(2))))
+	  ((float float) (float)
+	   (##core#inline_allocate
+	    ("C_a_i_flonum_actual_quotient_checked" 4) #(1) #(2)))
+	  ((fixnum fixnum) (integer)
+	   (##core#inline_allocate ("C_a_i_fixnum_quotient_checked" 3)
+				   #(1) #(2)))
+	  ((integer integer) (integer)
+	   (##sys#integer-quotient #(1) #(2))))
 
-(remainder (#(procedure #:clean #:enforce #:foldable) remainder (number number) number)
+(remainder (#(procedure #:clean #:enforce #:foldable) remainder ((or integer float) (or integer float)) (or integer float))
+	  ((float float) (float)
+	   (##core#inline_allocate
+	    ("C_a_i_flonum_remainder_checked" 4) #(1) #(2)))
 	   ;;XXX flonum/mixed case
 	   ((fixnum fixnum) (fixnum)
-	    (##core#inline "C_fixnum_modulo" #(1) #(2))))
+	    (##core#inline "C_i_fixnum_remainder_checked" #(1) #(2)))
+	   ((integer integer) (integer)
+	    (##sys#integer-remainder #(1) #(2))))
 
-(modulo (#(procedure #:clean #:enforce #:foldable) modulo (number number) number))
+(quotient&remainder (#(procedure #:clean #:enforce #:foldable) quotient&remainder ((or integer float) (or integer float)) (or integer float) (or integer float))
+	  ((float float) (float float)
+	   (let ((#(tmp1) #(1)))
+	     (let ((#(tmp2) #(2)))
+	       (##sys#values
+		(##core#inline_allocate
+		 ("C_a_i_flonum_actual_quotient_checked" 4) #(tmp1) #(tmp2))
+		(##core#inline_allocate
+		 ("C_a_i_flonum_remainder_checked" 4) #(tmp1) #(tmp2))))))
+	   ;;XXX flonum/mixed case
+	   ((fixnum fixnum) (integer fixnum)
+	    (let ((#(tmp1) #(1)))
+	      (let ((#(tmp2) #(2)))
+		(##sys#values
+		 (##core#inline_allocate ("C_a_i_fixnum_quotient_checked" 3)
+					 #(tmp1) #(tmp2))
+		 (##core#inline
+		  "C_i_fixnum_remainder_checked" #(tmp1) #(tmp2))))))
+	   ((integer integer) (integer integer)
+	    (##sys#integer-quotient&remainder #(1) #(2))))
 
-(gcd (#(procedure #:clean #:enforce #:foldable) gcd (#!rest number) number)
-     ((number number) (##sys#gcd #(1) #(2))))
+;; TODO: Add nonspecializing type specific entries, to help flow analysis?
+(quotient&modulo (#(procedure #:clean #:enforce #:foldable) quotient&modulo ((or integer float) (or integer float)) (or integer float) (or integer float)))
+
+(modulo (#(procedure #:clean #:enforce #:foldable) modulo ((or integer float) (or integer float)) (or integer float)))
+
+(gcd (#(procedure #:clean #:enforce #:foldable) gcd (#!rest (or integer float)) (or integer float))
+     (() '0)
+     ((fixnum fixnum) (fixnum) (fxgcd #(1) #(2)))
+     ((float float) (float) (fpgcd #(1) #(2)))
+     ((integer integer) (integer) (##sys#integer-gcd #(1) #(2)))
+     ((number number) (number) (##sys#gcd #(1) #(2))))
 
 (##sys#gcd (#(procedure #:clean #:enforce #:foldable) gcd (number number) number))
 
 (lcm (#(procedure #:clean #:enforce #:foldable) lcm (#!rest number) number)
+     (() '1)
      ((number number) (##sys#lcm #(1) #(2))))
 
 (##sys#lcm (#(procedure #:clean #:enforce #:foldable) lcm (number number) number))
 
 (abs (#(procedure #:clean #:enforce #:foldable) abs (number) number)
-     ((fixnum) (fixnum)
-      (##core#inline "C_fixnum_abs" #(1)))
-     ((float) (float)
-      (##core#inline_allocate ("C_a_i_flonum_abs" 4) #(1))))
+     ((fixnum) (integer) (##core#inline_allocate ("C_a_i_fixnum_abs" 3) #(1)))
+     ((float) (float) (##core#inline_allocate ("C_a_i_flonum_abs" 4) #(1)))
+     ((integer) (integer) (##sys#integer-abs #(1))))
 
 (floor (#(procedure #:clean #:enforce #:foldable) floor (number) number)
        ((fixnum) (fixnum) #(1))
@@ -714,21 +783,21 @@
 	   ((float) (let ((#(tmp) #(1))) '0.0))
 	   ((cplxnum) (##sys#slot #(1) '2)))
 
-(magnitude (#(procedure #:clean #:enforce) magnitude (number) number)
-	   ((fixnum) (fixnum)
-	    (##core#inline "C_fixnum_abs" #(1)))
-	   ((float) (float)
-	    (##core#inline_allocate ("C_a_i_flonum_abs" 4) #(1))))
+(magnitude (#(procedure #:clean #:enforce #:foldable) magnitude (number) number)
+	   ((fixnum) (integer) (##core#inline_allocate ("C_a_i_fixnum_abs" 3) #(1)))
+	   ((integer) (##sys#integer-abs #(1)))
+	   ((float) (float) (##core#inline_allocate ("C_a_i_flonum_abs" 4) #(1)))
+	   (((or fixnum float bignum ratnum)) (abs #(1))))
 
 (numerator (#(procedure #:clean #:enforce #:foldable) numerator ((or float integer ratnum)) (or float integer))
-           ((fixnum) (fixnum) #(1))
-           ((bignum) (bignum) #(1))
-           ((integer) (integer) #(1))
-           ((ratnum) (integer) (##sys#slot #(1) '1)))
+	   ((fixnum) (fixnum) #(1))
+	   ((bignum) (bignum) #(1))
+	   ((integer) (integer) #(1))
+	   ((ratnum) (integer) (##sys#slot #(1) '1)))
 
 (denominator (#(procedure #:clean #:enforce #:foldable) denominator ((or float integer ratnum)) (or float integer))
-             ((integer) (fixnum) (let ((#(tmp) #(1))) '1))
-             ((ratnum) (integer) (##sys#slot #(1) '1)))
+	     ((integer) (fixnum) (let ((#(tmp) #(1))) '1))
+	     ((ratnum) (integer) (##sys#slot #(1) '2)))
 
 (scheme-report-environment 
  (#(procedure #:clean #:enforce) scheme-report-environment (#!optional fixnum) (struct environment)))
@@ -749,6 +818,7 @@
 (##sys#abort (procedure abort (*) noreturn))
 
 (add1 (#(procedure #:clean #:enforce #:foldable) add1 (number) number)
+      ((integer) (integer) (##sys#integer-plus #(1) '1))
       ((float) (float) 
        (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) '1.0)))
 
@@ -909,6 +979,9 @@
 (fp/ (#(procedure #:clean #:enforce #:foldable) fp/ (float float) float)
      ((float float) (##core#inline_allocate ("C_a_i_flonum_quotient" 4) #(1) #(2)) ))
 
+(fpgcd (#(procedure #:clean #:enforce #:foldable) fpgcd (float float) float)
+       ((float float) (##core#inline_allocate ("C_a_i_flonum_gcd" 4) #(1) #(2)) ))
+
 (fp+ (#(procedure #:clean #:enforce #:foldable) fp+ (float float) float)
      ((float float) (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) #(2)) ))
 
@@ -992,6 +1065,7 @@
 (fx- (#(procedure #:clean #:foldable) fx- (fixnum fixnum) fixnum))
 (fx* (#(procedure #:clean #:foldable) fx* (fixnum fixnum) fixnum))
 (fx/ (#(procedure #:clean #:foldable) fx/ (fixnum fixnum) fixnum))
+(fxgcd (#(procedure #:clean #:foldable) fxgcd (fixnum fixnum) fixnum))
 (fx+ (#(procedure #:clean #:foldable) fx+ (fixnum fixnum) fixnum))
 (fx< (#(procedure #:clean #:foldable) fx< (fixnum fixnum) boolean))
 (fx<= (#(procedure #:clean #:foldable) fx<= (fixnum fixnum) boolean))
@@ -1004,6 +1078,7 @@
 (fxmax (#(procedure #:clean #:foldable) fxmax (fixnum fixnum) fixnum))
 (fxmin (#(procedure #:clean #:foldable) fxmin (fixnum fixnum) fixnum))
 (fxmod (#(procedure #:clean #:foldable) fxmod (fixnum fixnum) fixnum))
+(fxrem (#(procedure #:clean #:foldable) fxrem (fixnum fixnum) fixnum))
 (fxneg (#(procedure #:clean #:foldable) fxneg (fixnum) fixnum))
 (fxnot (#(procedure #:clean #:foldable) fxnot (fixnum) fixnum))
 (fxodd? (#(procedure #:clean #:foldable) fxodd? (fixnum) boolean))
@@ -1133,6 +1208,7 @@
 (strip-syntax (#(procedure #:clean) strip-syntax (*) *))
 
 (sub1 (#(procedure #:clean #:enforce #:foldable) sub1 (number) number)
+      ((integer) (integer) (##sys#integer-minus #(1) '1))
       ((float) (float)
        (##core#inline_allocate ("C_a_i_flonum_difference" 4) #(1) '1.0)))
 

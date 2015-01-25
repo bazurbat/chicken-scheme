@@ -66,12 +66,13 @@
 (assert (inexact? 1.1))
 (assert-fail (inexact? 'foo))
 
+;; Division by inexact zero used to fail, but now it returns +inf.0
 (assert-fail (/ 1 1 0))
-(assert-fail (/ 1 1 0.0))
-(assert-fail (/ 1 0.0))
+(assert (eqv? +inf.0 (/ 1 1 0.0)))
+(assert (eqv? +inf.0 (/ 1 0.0)))
 (assert-fail (/ 1 0))
 (assert-fail (/ 0))
-(assert-fail (/ 0.0))
+(assert (eqv? +inf.0 (/ 0.0)))
 
 (assert (fixnum? (/ 1)))
 

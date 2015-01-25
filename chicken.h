@@ -1135,6 +1135,8 @@ extern double trunc(double);
 #define C_data_pointer(b)          C_CHECKp(b,C_blockp((C_word)C_VAL1(b)),(void *)(((C_SCHEME_BLOCK *)(C_VAL1(b)))->data))
 #define C_bignum_negativep(b)      C_CHECKp(b,C_bignump(C_VAL1(b)),(C_block_item(b,0)!=0))
 #define C_bignum_digits(b)         C_CHECKp(b,C_bignump(C_VAL1(b)),(((C_uword *)C_data_pointer(C_VAL1(b)))+1))
+#define C_fitsinbignumhalfdigitp(n)(C_BIGNUM_DIGIT_HI_HALF(n) == 0)
+#define C_bignum_negated_fitsinfixnump(b) (C_bignum_size(b) == 1 && (C_bignum_negativep(b) ? C_ufitsinfixnump(*C_bignum_digits(b)) : !(*C_bignum_digits(b) & C_INT_SIGN_BIT) && C_fitsinfixnump(-(C_word)*C_bignum_digits(b))))
 #define C_bignum_mutate_size(b,s)  (C_block_header(b) = (C_BIGNUM_TYPE | C_wordstobytes((s)+1)))
 #define C_fitsinfixnump(n)         (((n) & C_INT_SIGN_BIT) == (((n) & C_INT_TOP_BIT) << 1))
 #define C_ufitsinfixnump(n)        (((n) & (C_INT_SIGN_BIT | (C_INT_SIGN_BIT >> 1))) == 0)
@@ -1241,12 +1243,16 @@ extern double trunc(double);
 #define C_setsubchar(x, i, n)     (((C_char *)C_data_pointer(x))[ C_unfix(i) ] = C_character_code(n), C_SCHEME_UNDEFINED)
 #define C_setsubbyte(x, i, n)     (((C_char *)C_data_pointer(x))[ C_unfix(i) ] = C_unfix(n), C_SCHEME_UNDEFINED)
 
+/* XXX TODO OBSOLETE, but still used by fx* */
 #define C_fixnum_times(n1, n2)          (C_fix(C_unfix(n1) * C_unfix(n2)))
+/* XXX TODO OBSOLETE, but still used by C_fixnum_plus, which is fx+ */
 #define C_u_fixnum_plus(n1, n2)         (((n1) - C_FIXNUM_BIT) + (n2))
 #define C_fixnum_plus(n1, n2)           (C_u_fixnum_plus(n1, n2) | C_FIXNUM_BIT)
+/* XXX TODO OBSOLETE, but still used by C_fixnum_difference, which is fx- */
 #define C_u_fixnum_difference(n1, n2)   ((n1) - (n2) + C_FIXNUM_BIT)
 #define C_fixnum_difference(n1, n2)     (C_u_fixnum_difference(n1, n2) | C_FIXNUM_BIT)
 #define C_u_fixnum_divide(n1, n2)       (C_fix(C_unfix(n1) / C_unfix(n2)))
+/* XXX TODO OBSOLETE, but still used by C_fixnum_modulo, which is fxmod */
 #define C_u_fixnum_modulo(n1, n2)       (C_fix(C_unfix(n1) % C_unfix(n2)))
 #define C_u_fixnum_and(n1, n2)          ((n1) & (n2))
 #define C_fixnum_and(n1, n2)            (C_u_fixnum_and(n1, n2) | C_FIXNUM_BIT)
@@ -1256,6 +1262,7 @@ extern double trunc(double);
 #define C_fixnum_not(n)                 ((~(n)) | C_FIXNUM_BIT)
 #define C_fixnum_shift_left(n1, n2)     (C_fix(C_unfix(n1) << C_unfix(n2)))
 #define C_fixnum_shift_right(n1, n2)    (((n1) >> C_unfix(n2)) | C_FIXNUM_BIT)
+/* XXX TODO OBSOLETE, but still used by C_fixnum_negate, which is fxneg */
 #define C_u_fixnum_negate(n)            (-(n) + 2 * C_FIXNUM_BIT)
 #define C_fixnum_negate(n)              (C_u_fixnum_negate(n) | C_FIXNUM_BIT)
 #define C_fixnum_greaterp(n1, n2)       (C_mk_bool((C_word)(n1) > (C_word)(n2)))
@@ -1266,7 +1273,9 @@ extern double trunc(double);
 #define C_fixnum_increase(n)            (C_u_fixnum_increase(n) | C_FIXNUM_BIT)
 #define C_u_fixnum_decrease(n)          ((n) - (1 << C_FIXNUM_SHIFT))
 #define C_fixnum_decrease(n)            (C_u_fixnum_decrease(n) | C_FIXNUM_BIT)
+/* XXX TODO: This should probably be renamed C_u_fixnum_abs or something */
 #define C_fixnum_abs(n)                 C_fix(abs(C_unfix(n)))
+#define C_a_i_fixnum_abs(ptr, n, x)     (((x) & C_INT_SIGN_BIT) ? C_a_i_fixnum_negate((ptr), (n), (x)) : (x))
 #define C_i_fixnum_length(x)            C_fix(C_ilen(((x) & C_INT_SIGN_BIT) ? ~C_unfix(x) : C_unfix(x)))
 
 #define C_flonum_equalp(n1, n2)         C_mk_bool(C_flonum_magnitude(n1) == C_flonum_magnitude(n2))
@@ -1320,6 +1329,7 @@ extern double trunc(double);
 #define C_randomize(n)                  (srand(C_unfix(n)), C_SCHEME_UNDEFINED)
 #define C_block_size(x)                 C_fix(C_header_size(x))
 #define C_u_i_bignum_size(b)            C_fix(C_bignum_size(b))
+#define C_a_u_i_big_to_flo(p, n, b)     C_flonum(p, C_bignum_to_double(b))
 #define C_pointer_address(x)            ((C_byte *)C_block_item((x), 0))
 #define C_block_address(ptr, n, x)      C_a_unsigned_int_to_num(ptr, n, x)
 #define C_offset_pointer(x, y)          (C_pointer_address(x) + (y))
@@ -1462,6 +1472,7 @@ extern double trunc(double);
 #define C_u_i_cdddar(x)                 C_u_i_cdr( C_u_i_cddar( x ) )
 #define C_u_i_cddddr(x)                 C_u_i_cdr( C_u_i_cdddr( x ) )
 
+/* XXX TODO OBSOLETE: These 4 can be removed after recompiling c-platform.scm */
 #define C_a_i_times( ptr, n, x, y)      C_2_times( ptr, x, y)
 #define C_a_i_plus(  ptr, n, x, y)      C_2_plus(  ptr, x, y)
 #define C_a_i_minus( ptr, n, x, y)      C_2_minus( ptr, x, y)
@@ -1799,6 +1810,7 @@ C_fctexport void C_temp_stack_overflow(void) C_noret;
 C_fctexport void C_unbound_error(C_word sym) C_noret;
 C_fctexport void C_no_closure_error(C_word x) C_noret;
 C_fctexport void C_div_by_zero_error(char *loc) C_noret;
+C_fctexport void C_not_an_integer_error(char *loc, C_word x) C_noret;
 C_fctexport C_word C_closure(C_word **ptr, int cells, C_word proc, ...);
 C_fctexport C_word C_fcall C_pair(C_word **ptr, C_word car, C_word cdr) C_regparm;
 C_fctexport C_word C_fcall C_number(C_word **ptr, double n) C_regparm;
@@ -1860,6 +1872,8 @@ C_fctexport C_char *C_private_repository_path();
 C_fctimport void C_ccall C_toplevel(C_word c, C_word self, C_word k) C_noret;
 C_fctimport void C_ccall C_invalid_procedure(int c, C_word self, ...) C_noret;
 C_fctexport void C_ccall C_stop_timer(C_word c, C_word closure, C_word k) C_noret;
+C_fctexport void C_ccall C_abs(C_word c, C_word self, C_word k, C_word x) C_noret;
+C_fctexport void C_ccall C_u_integer_abs(C_word c, C_word self, C_word k, C_word x) C_noret;
 C_fctexport void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...) C_noret;
 C_fctexport void C_ccall C_do_apply(C_word n, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_call_cc(C_word c, C_word closure, C_word k, C_word cont) C_noret;
@@ -1868,10 +1882,28 @@ C_fctexport void C_ccall C_values(C_word c, C_word closure, C_word k, ...) C_nor
 C_fctexport void C_ccall C_apply_values(C_word c, C_word closure, C_word k, C_word lst) C_noret;
 C_fctexport void C_ccall C_call_with_values(C_word c, C_word closure, C_word k, C_word thunk, C_word kont) C_noret;
 C_fctexport void C_ccall C_u_call_with_values(C_word c, C_word closure, C_word k, C_word thunk, C_word kont) C_noret;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport void C_ccall C_times(C_word c, C_word closure, C_word k, ...) C_noret;
+C_fctexport void C_ccall C_2_basic_times(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+C_fctexport void C_ccall C_u_2_integer_times(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport void C_ccall C_plus(C_word c, C_word closure, C_word k, ...) C_noret;
+C_fctexport void C_ccall C_2_basic_plus(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+C_fctexport void C_ccall C_u_2_integer_plus(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport void C_ccall C_minus(C_word c, C_word closure, C_word k, C_word n1, ...) C_noret;
+C_fctexport void C_ccall C_negate(C_word c, C_word self, C_word k, C_word x) C_noret;
+C_fctexport void C_ccall C_u_integer_negate(C_word c, C_word self, C_word k, C_word x) C_noret;
+C_fctexport void C_ccall C_2_basic_minus(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+C_fctexport void C_ccall C_u_2_integer_minus(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...) C_noret;
+C_fctexport void C_ccall C_basic_quotient(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+C_fctexport void C_ccall C_u_integer_quotient(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+C_fctexport void C_ccall C_basic_remainder(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+C_fctexport void C_ccall C_u_integer_remainder(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+C_fctexport void C_ccall C_basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+void C_ccall C_u_integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_nequalp(C_word c, C_word closure, C_word k, ...) C_noret;
 C_fctexport void C_ccall C_greaterp(C_word c, C_word closure, C_word k, ...) C_noret;
 C_fctexport void C_ccall C_lessp(C_word c, C_word closure, C_word k, ...) C_noret;
@@ -1884,6 +1916,7 @@ C_fctexport void C_ccall C_allocate_vector(C_word c, C_word closure, C_word k, C
 C_fctexport void C_ccall C_allocate_bignum(C_word c, C_word self, C_word k, C_word size, C_word negp, C_word initp) C_noret;
 C_fctexport void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word string) C_noret;
 C_fctexport void C_ccall C_build_symbol(C_word c, C_word closure, C_word k, C_word string) C_noret;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2) C_noret;
 C_fctexport void C_ccall C_digits_to_integer(C_word c, C_word self, C_word k, C_word n, C_word start, C_word end, C_word radix, C_word negp) C_noret;
 C_fctexport void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, ...) C_noret;
@@ -1924,6 +1957,7 @@ C_fctexport C_word C_a_i_string(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_record(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_port(C_word **a, int c);
 C_fctexport C_word C_fcall C_a_i_bytevector(C_word **a, int c, C_word x) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_a_i_abs(C_word **a, int c, C_word n) C_regparm;
 C_fctexport C_word C_fcall C_i_listp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_string_equal_p(C_word x, C_word y) C_regparm;
@@ -1996,9 +2030,13 @@ C_fctexport C_word C_fcall C_i_check_vector_2(C_word x, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_structure_2(C_word x, C_word st, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_char_2(C_word x, C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_i_check_port_2(C_word x, C_word in, C_word op, C_word loc) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_2_times(C_word **ptr, C_word x, C_word y) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_2_plus(C_word **ptr, C_word x, C_word y) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_2_minus(C_word **ptr, C_word x, C_word y) C_regparm;
+  /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_2_divide(C_word **ptr, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_bignum_cmp(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_nequalp(C_word x, C_word y) C_regparm;
@@ -2043,11 +2081,15 @@ C_fctexport C_word C_fcall C_i_o_fixnum_and(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_o_fixnum_ior(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_o_fixnum_xor(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_a_i_flonum_round_proper(C_word **a, int c, C_word n) C_regparm;
+C_fctexport C_word C_fcall C_a_i_flonum_gcd(C_word **p, C_word n, C_word x, C_word y) C_regparm;
+
 C_fctexport C_word C_fcall C_i_getprop(C_word sym, C_word prop, C_word def) C_regparm;
 C_fctexport C_word C_fcall C_putprop(C_word **a, C_word sym, C_word prop, C_word val) C_regparm;
 C_fctexport C_word C_fcall C_i_get_keyword(C_word key, C_word args, C_word def) C_regparm;
 C_fctexport double C_fcall C_milliseconds(void) C_regparm;
 C_fctexport double C_fcall C_cpu_milliseconds(void) C_regparm;
+C_fctexport double C_fcall C_bignum_to_double(C_word bignum) C_regparm;
+
 C_fctexport C_word C_fcall C_a_i_cpu_time(C_word **a, int c, C_word buf) C_regparm;
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix) C_regparm;
@@ -2561,6 +2603,56 @@ C_inline C_word C_i_ratnump(C_word x)
                    C_block_item(x, 0) == C_ratnum_type_tag);
 }
 
+/* Silly (this is not normalized) but in some cases needed internally */
+C_inline C_word C_bignum0(C_word **ptr)
+{
+  C_word *p = *ptr, p0 = (C_word)p;
+
+  /* Not using C_a_i_vector4, to make it easier to rewrite later */
+  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(1);
+  *(p++) = 0; /* zero is always positive */
+  *ptr = p;
+
+  return p0;
+}
+
+C_inline C_word C_bignum1(C_word **ptr, int negp, C_uword d1)
+{
+  C_word *p = *ptr, p0 = (C_word)p;
+
+  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(2);
+  *(p++) = negp;
+  *(p++) = d1;
+  *ptr = p;
+
+  return p0;
+}
+
+/* Here d1, d2, ... are low to high (ie, little endian)! */
+C_inline C_word C_bignum2(C_word **ptr, int negp, C_uword d1, C_uword d2)
+{
+  C_word *p = *ptr, p0 = (C_word)p;
+
+  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(3);
+  *(p++) = negp;
+  *(p++) = d1;
+  *(p++) = d2;
+  *ptr = p;
+
+  return p0;
+}
+
+/* TODO: Is this correctly named?  Shouldn't it accept an argcount? */
+C_inline C_word C_a_u_i_fix_to_big(C_word **ptr, C_word x)
+{
+  x = C_unfix(x);
+  if (x < 0)
+    return C_bignum1(ptr, 1, -x);
+  else if (x == 0)
+    return C_bignum0(ptr);
+  else
+    return C_bignum1(ptr, 0, x);
+}
 
 C_inline C_word C_i_fixnum_min(C_word x, C_word y)
 {
@@ -2573,6 +2665,18 @@ C_inline C_word C_i_fixnum_max(C_word x, C_word y)
   return ((C_word)x > (C_word)y) ? x : y;
 }
 
+C_inline C_word C_i_fixnum_gcd(C_word x, C_word y)
+{
+   x = (x & C_INT_SIGN_BIT) ? -C_unfix(x) : C_unfix(x);
+   y = (y & C_INT_SIGN_BIT) ? -C_unfix(y) : C_unfix(y);
+   
+   while(y != 0) {
+     C_word r = x % y;
+     x = y;
+     y = r;
+   }
+   return C_fix(x);
+}
 
 C_inline C_word C_fixnum_divide(C_word x, C_word y)
 {
@@ -2587,6 +2691,31 @@ C_inline C_word C_fixnum_modulo(C_word x, C_word y)
   return C_u_fixnum_modulo(x, y);
 }
 
+/* XXX: Naming convention is inconsistent!  There's C_fixnum_divide()
+ * but also C_a_i_flonum_quotient_checked()
+ */
+C_inline C_word
+C_a_i_fixnum_quotient_checked(C_word **ptr, int c, C_word x, C_word y)
+{
+  if (y == C_fix(0)) {
+    C_div_by_zero_error("fx/");
+  } else if (x == C_fix(C_MOST_NEGATIVE_FIXNUM) && y == C_fix(-1)) {
+    return C_bignum1(ptr, 0, -C_MOST_NEGATIVE_FIXNUM); /* Special case */
+  } else {
+    return C_u_fixnum_divide(x, y); /* Inconsistent, too: missing _i_ */
+  }
+}
+
+C_inline C_word C_i_fixnum_remainder_checked(C_word x, C_word y)
+{
+  if (y == C_fix(0)) {
+    C_div_by_zero_error("fxrem");
+  } else {
+    x = C_unfix(x);
+    y = C_unfix(y);
+    return C_fix(x - ((x / y) * y));
+  }
+}
 
 C_inline C_word C_i_fixnum_arithmetic_shift(C_word n, C_word c)
 {
@@ -2594,6 +2723,79 @@ C_inline C_word C_i_fixnum_arithmetic_shift(C_word n, C_word c)
   else return C_fixnum_shift_left(n, c);
 }
 
+C_inline C_word C_a_i_fixnum_negate(C_word **ptr, C_word n, C_word x)
+{
+  /* Exceptional situation: this will cause an overflow to itself */
+  if (x == C_fix(C_MOST_NEGATIVE_FIXNUM)) /* C_fitsinfixnump(x) */
+    return C_bignum1(ptr, 0, -C_MOST_NEGATIVE_FIXNUM);
+  else
+    return C_fix(-C_unfix(x));
+}
+
+C_inline C_word C_a_i_fixnum_difference(C_word **ptr, C_word n, C_word x, C_word y)
+{
+  C_word z = C_unfix(x) - C_unfix(y);
+
+  if(!C_fitsinfixnump(z)) {
+    /* TODO: function/macro returning either fixnum or bignum from a C int */
+    /* This should help with the C API/FFI too. */
+    return C_bignum1(ptr, z < 0, labs(z));
+  } else {
+    return C_fix(z);
+  }
+}
+
+C_inline C_word C_a_i_fixnum_plus(C_word **ptr, C_word n, C_word x, C_word y)
+{
+  /* Exceptional situation: this will cause a real underflow */
+  if (x == C_fix(C_MOST_NEGATIVE_FIXNUM) && y == C_fix(C_MOST_NEGATIVE_FIXNUM)) {
+    return C_bignum1(ptr, 1, ((C_uword)-C_MOST_NEGATIVE_FIXNUM) << 1);
+  } else {
+    C_word z = C_unfix(x) + C_unfix(y);
+
+    if(!C_fitsinfixnump(z)) {
+      /* TODO: function/macro returning either fixnum or bignum from a C int */
+      /* This should help with the C API/FFI too. */
+      return C_bignum1(ptr, z < 0, labs(z));
+    } else {
+      return C_fix(z);
+    }
+  }
+}
+
+C_inline C_word C_a_i_fixnum_times(C_word **ptr, C_word n, C_word x, C_word y)
+{
+  C_uword negp, xhi, xlo, yhi, ylo, p, rhi, rlo;
+
+  negp = ((x & C_INT_SIGN_BIT) ? !(y & C_INT_SIGN_BIT) : (y & C_INT_SIGN_BIT));
+  x = (x & C_INT_SIGN_BIT) ? -C_unfix(x) : C_unfix(x);
+  y = (y & C_INT_SIGN_BIT) ? -C_unfix(y) : C_unfix(y);
+
+  xhi = C_BIGNUM_DIGIT_HI_HALF(x); xlo = C_BIGNUM_DIGIT_LO_HALF(x);
+  yhi = C_BIGNUM_DIGIT_HI_HALF(y); ylo = C_BIGNUM_DIGIT_LO_HALF(y);
+  
+  /* This is simply bignum_digits_multiply unrolled for 2x2 halfdigits */
+  p = xlo * ylo;
+  rlo = C_BIGNUM_DIGIT_LO_HALF(p);
+
+  p = xhi * ylo + C_BIGNUM_DIGIT_HI_HALF(p);
+  rhi = C_BIGNUM_DIGIT_HI_HALF(p);
+
+  p = xlo * yhi + C_BIGNUM_DIGIT_LO_HALF(p);
+  rlo = C_BIGNUM_DIGIT_COMBINE(C_BIGNUM_DIGIT_LO_HALF(p), rlo);
+
+  rhi = xhi * yhi + C_BIGNUM_DIGIT_HI_HALF(p) + rhi;
+
+  if (rhi) {
+    return C_bignum2(ptr, negp != 0, rlo, rhi);
+  } else if (negp ?
+             ((rlo & C_INT_SIGN_BIT) || !C_fitsinfixnump(-(C_word)rlo)) :
+             !C_ufitsinfixnump(rlo)) {
+    return C_bignum1(ptr, negp != 0, rlo);
+  } else {
+    return C_fix(negp ? -rlo : rlo);
+  }
+}
 
 C_inline C_word C_i_flonum_min(C_word x, C_word y)
 {
@@ -2630,6 +2832,44 @@ C_ub_i_flonum_quotient_checked(double n1, double n2)
 {
   if(n2 == 0.0) C_div_by_zero_error("fp/?");
   return n1 / n2;
+}
+
+/* More weirdness: the other flonum_quotient macros and inline functions
+ * do not compute the quotient but the "plain" division!
+ */
+C_inline C_word
+C_a_i_flonum_actual_quotient_checked(C_word **ptr, int c, C_word x, C_word y)
+{
+  double dy = C_flonum_magnitude(y), r;
+
+  if(dy == 0.0) {
+    C_div_by_zero_error("quotient");
+  } else if (!C_truep(C_u_i_fpintegerp(x))) {
+    C_not_an_integer_error("quotient", x);
+  } else if (!C_truep(C_u_i_fpintegerp(y))) {
+    C_not_an_integer_error("quotient", y);
+  } else {
+    modf(C_flonum_magnitude(x) / dy, &r);
+    return C_flonum(ptr, r);
+  }
+}
+
+C_inline C_word
+C_a_i_flonum_remainder_checked(C_word **ptr, int c, C_word x, C_word y)
+{
+  double dx = C_flonum_magnitude(x),
+         dy = C_flonum_magnitude(y), r;
+
+  if(dy == 0.0) {
+    C_div_by_zero_error("remainder");
+  } else if (!C_truep(C_u_i_fpintegerp(x))) {
+    C_not_an_integer_error("remainder", x);
+  } else if (!C_truep(C_u_i_fpintegerp(y))) {
+    C_not_an_integer_error("remainder", y);
+  } else {
+    modf(dx / dy, &r);
+    return C_flonum(ptr, dx - r * dy);
+  }
 }
 
 
@@ -3039,57 +3279,6 @@ C_inline C_word C_a_i_record8(C_word **ptr, int n, C_word x1, C_word x2, C_word 
   *(p++) = x8;
   *ptr = p;
   return (C_word)p0;
-}
-
-/* Silly (this is not normalized) but in some cases needed internally */
-C_inline C_word C_bignum0(C_word **ptr)
-{
-  C_word *p = *ptr, p0 = (C_word)p;
-
-  /* Not using C_a_i_vector4, to make it easier to rewrite later */
-  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(1);
-  *(p++) = 0; /* zero is always positive */
-  *ptr = p;
-
-  return p0;
-}
-
-C_inline C_word C_bignum1(C_word **ptr, int negp, C_uword d1)
-{
-  C_word *p = *ptr, p0 = (C_word)p;
-
-  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(2);
-  *(p++) = negp;
-  *(p++) = d1;
-  *ptr = p;
-
-  return p0;
-}
-
-/* Here d1, d2, ... are low to high (ie, little endian)! */
-C_inline C_word C_bignum2(C_word **ptr, int negp, C_uword d1, C_uword d2)
-{
-  C_word *p = *ptr, p0 = (C_word)p;
-
-  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(3);
-  *(p++) = negp;
-  *(p++) = d1;
-  *(p++) = d2;
-  *ptr = p;
-
-  return p0;
-}
-
-/* TODO: Is this correctly named?  Shouldn't it accept an argcount? */
-C_inline C_word C_a_u_i_fix_to_big(C_word **ptr, C_word x)
-{
-  x = C_unfix(x);
-  if (x < 0)
-    return C_bignum1(ptr, 1, -x);
-  else if (x == 0)
-    return C_bignum0(ptr);
-  else
-    return C_bignum1(ptr, 0, x);
 }
 
 /*

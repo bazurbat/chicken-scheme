@@ -846,13 +846,25 @@ Is {{x}} an odd fixnum?
 
  [C macro] C_word C_fixnum_times(C_word n1, C_word n2)
 
-Multiply fixnum n1 by fixnum n2.
+Multiply fixnum n1 by fixnum n2.  Will not overflow into a bignum, but
+will handle overflows safely in the sense that it always produces a
+fixnum.
+
+===== C_a_i_fixnum_times
+
+ [C macro] C_word C_a_i_fixnum_times(C_word **ptr, C_word n, C_word x, C_word y)
+
+Calculate {{x}} * {{y}}, safely overflowing into a bignum, using the
+storage in {{ptr}} (which should be at least {{C_SIZEOF_BIGNUM(2)}}).
+
 
 ===== C_fixnum_plus
 
  [C macro] C_word C_fixnum_plus(C_word n1, C_word n2)
 
-Add fixnum {{n1}} to fixnum {{n2}}.
+Add fixnum {{n1}} to fixnum {{n2}}.  Will not overflow into a bignum,
+but will handle overflows safely in the sense that it always produces
+a fixnum.
 
 ===== C_u_fixnum_plus
 
@@ -860,17 +872,33 @@ Add fixnum {{n1}} to fixnum {{n2}}.
 
 Like {{C_fixnum_plus}}, but unsafe (assumes no overflow/underflow).
 
+===== C_a_i_fixnum_plus
+
+ [C macro] C_word C_a_i_fixnum_plus(C_word **ptr, C_word n, C_word x, C_word y)
+
+Calculate {{x}} + {{y}}, safely overflowing into a bignum, using the
+storage in {{ptr}} (which should be at least {{C_SIZEOF_FIX_BIGNUM}}).
+
 ===== C_fixnum_difference
 
  [C macro] C_word C_fixnum_difference(C_word n1, C_word n2)
 
-Calculate {{n1}} - {{n2}}.
+Calculate {{n1}} - {{n2}}.  Will not overflow into a bignum, but will
+handle overflows safely in the sense that it always produces a fixnum.
 
 ===== C_u_fixnum_difference
 
  [C macro] C_word C_u_fixnum_difference(C_word n1, C_word n2)
 
 Like {{C_fixnum_difference}}, but unsafe (assumes no overflow/underflow).
+
+===== C_a_i_fixnum_difference
+
+ [C macro] C_word C_a_i_fixnum_difference(C_word **ptr, C_word n, C_word x, C_word y)
+
+Calculate {{x}} - {{y}}, safely overflowing into a bignum, using the
+storage in {{ptr}} (which should be at least {{C_SIZEOF_FIX_BIGNUM}}).
+
 
 ===== C_fixnum_divide
 ===== C_u_fixnum_divide
@@ -887,7 +915,25 @@ division). {{C_fixnum_divide}} signals an error if {{n2}} is zero.
  [C macro] C_word C_fixnum_modulo(C_word n1, C_word n2)
  [C macro] C_word C_u_fixnum_modulo(C_word n1, C_word n2)
 
-Calculate {{n1}} modulo {{n2}}. {{C_fixnum_modulo}} signals an error if {{n2}} is zero.
+Calculate {{n1}} modulo {{n2}}. {{C_fixnum_modulo}} signals an error if {{n2}} is zero.  Neither handles overflow into bignums.
+
+===== C_a_i_fixnum_quotient_checked
+
+ [C macro] C_word C_a_i_fixnum_quotient_checked(C_word **ptr, C_word n, C_word x, C_word y)
+
+Calculate integer division of {{x}} / {{y}}, safely overflowing into a
+bignum (which can happen when dividing by {{C_MOST_NEGATIVE_FIXNUM}}),
+using the storage in {{ptr}} (which should be at least
+{{C_SIZEOF_FIX_BIGNUM}}).  If {{y}} is zero, this will signal an
+error.
+
+===== C_i_fixnum_remainder_checked
+
+ [C macro] C_word C_i_fixnum_remainder_checked(C_word x, C_word y)
+
+Calculate the remainder of integer division {{x}} / {{y}}.  If {{y}}
+is zero, this will signal an error.
+
 
 ===== C_fixnum_and
 
@@ -942,7 +988,17 @@ Shift the integral value of {{n1}} right by {{n2}}
 
  [C macro] C_word C_fixnum_negate(C_word n)
 
-Negate {{n}}, i.e. return {{-n}}.
+Negate {{n}}, i.e. return {{-n}}.  This will ''not'' overflow into a
+bignum.
+
+===== C_a_i_fixnum_negate
+
+ [C macro] C_word C_a_i_fixnum_negate(C_word **ptr, C_word n, C_word x)
+
+Negate {{n}}, i.e. return {{-n}}.  This will not overflow into a
+bignum, using the storage pointed to by {{ptr}}, which should at least
+be {{C_SIZEOF_FIX_BIGNUM}}.
+
 
 ===== C_fixnum_greaterp
 
@@ -1018,15 +1074,21 @@ Returns the absolute value of {{n}}.
 
 ===== C_i_fixnum_min
 
- [C function] C_word C_fixnum_min(C_word n1, C_word n2)
+ [C function] C_word C_i_fixnum_min(C_word n1, C_word n2)
 
 Returns the smallest of the two fixnums {{n1}} and {{n2}}.
 
 ===== C_i_fixnum_max
 
- [C function] C_word C_fixnum_max(C_word n1, C_word n2)
+ [C function] C_word C_i_fixnum_max(C_word n1, C_word n2)
 
 Returns the largest of the two fixnums {{n1}} and {{n2}}.
+
+===== C_i_fixnum_gcd
+
+ [C function] C_word C_i_fixnum_gcd(C_word n1, C_word n2)
+
+Returns the greatest common divisor of the two fixnums {{n1}} and {{n2}}.
 
 ===== C_i_fixnum_length
 
@@ -1120,8 +1182,31 @@ Multiplies the flonum {{n1}} by the flonum {{n2}}, using the storage at
 ===== C_a_i_flonum_quotient
 
  [C macro] C_word C_a_i_flonum_quotient(C_word **ptr, int c, C_word n1, C_word n2)
+ [C macro] C_word C_a_i_flonum_quotient_checked(C_word **ptr, int c, C_word n1, C_word n2)
 
-Calculates the quotient of the flonum {{n1}} divided by the flonum
+These are misnamed because they don't calculate the Scheme "quotient",
+but the simple result of flonum {{n1}} divided by the flonum {{n2}},
+using the storage at {{ptr}}.  {{c}} should always be 2.
+
+{{C_a_i_flonum_checked}} will signal an error if {{n2}} is zero.
+
+===== C_a_i_flonum_actual_quotient_checked
+
+ [C macro] C_word C_a_i_flonum_actual_quotient_checked(C_word **ptr, int c, C_word n1, C_word n2)
+
+Due to the misnaming of {{C_a_i_flonum_quotient[_checked]}}, this
+function has a peculiar name.  It calculates the Scheme integer
+quotient of {{n1}} divided by {{n2}}, using the storage at {{ptr}}.
+{{c}} should always be 2.
+
+If {{n2}} is zero or either of the numbers is not an integral flonum,
+an error will be signaled.
+
+===== C_a_i_flonum_gcd
+
+ [C macro] C_word C_a_i_flonum_gcd(C_word **ptr, int c, C_word n1, C_word n2)
+
+Calculates the greatest common divisor of the flonums {{n1}} and
 {{n2}}, using the storage at {{ptr}}.  {{c}} should always be 2.
 
 ===== C_a_i_flonum_negate

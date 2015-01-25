@@ -82,6 +82,15 @@ number type supported by CHICKEN except complex numbers and non-finite
 flonums, so you can use this predicate if you want to know the
 representational type of a number.
 
+==== Division with quotient and remainder
+
+<procedure>(quotient&remainder X Y)</procedure>
+<procedure>(quotient&modulo X Y)</procedure>
+
+Returns two values: the quotient and the remainder (or modulo) of
+{{X}} divided by {{Y}}.  Could be defined as {{(values (quotient X Y)
+(remainder X Y))}}, but is much more efficient when dividing very
+large numbers.
 
 ==== Arithmetic fixnum operations
 
@@ -90,6 +99,7 @@ representational type of a number.
 <procedure>(fx* N1 N2)</procedure>
 <procedure>(fx/ N1 N2)</procedure>
 <procedure>(fxmod N1 N2)</procedure>
+<procedure>(fxrem N1 N2)</procedure>
 <procedure>(fxneg N)</procedure>
 <procedure>(fxmin N1 N2)</procedure>
 <procedure>(fxmax N1 N2)</procedure>
@@ -99,13 +109,14 @@ representational type of a number.
 <procedure>(fxnot N)</procedure>
 <procedure>(fxshl N1 N2)</procedure>
 <procedure>(fxshr N1 N2)</procedure>
+<procedure>(fxgcd N1 N2)</procedure>
 
 {{fx+}} and friends are arithmetic fixnum operations.  These procedures do not
 check their arguments, so non-fixnum parameters will result in incorrect
 results. {{fxneg}} negates its argument.
 
-On division by zero, {{fx/}} and {{fxmod}} signal a condition of kind
-{{(exn arithmetic)}}.
+On division by zero, {{fx/}}, {{fxmod}} and {{fxrem}} signal a
+condition of kind {{(exn arithmetic)}}.
 
 {{fxshl}} and {{fxshr}} perform arithmetic shift left and right,
 respectively.
@@ -143,6 +154,7 @@ Platform-specific fixnum limits.
 <procedure>(fp- X Y)</procedure>
 <procedure>(fp* X Y)</procedure>
 <procedure>(fp/ X Y)</procedure>
+<procedure>(fpgcd X Y)</procedure>
 <procedure>(fpneg X)</procedure>
 <procedure>(fpmin X Y)</procedure>
 <procedure>(fpmax X Y)</procedure>

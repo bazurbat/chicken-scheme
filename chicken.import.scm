@@ -120,6 +120,7 @@
    fpcos
    fpinteger?
    fplog
+   fpgcd
    fpmax
    fpmin
    fpneg
@@ -139,6 +140,7 @@
    fx>=
    fxand
    fxeven?
+   fxgcd
    fxior
    fxlen
    fxmax
@@ -147,9 +149,11 @@
    fxneg
    fxnot
    fxodd?
+   fxrem
    fxshl
    fxshr
    fxxor
+   fxlen
    gc
    gensym
    get
@@ -201,6 +205,8 @@
    promise?
    put!
    quit
+   quotient&modulo
+   quotient&remainder
    ratnum?
    register-feature!
    remprop!
