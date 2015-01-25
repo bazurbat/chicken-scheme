@@ -34,16 +34,18 @@
 
 
 (include "tweaks")
+
 (import chicken.compiler.batch-driver 
 	chicken.compiler.c-platform)
+
+(include "mini-srfi-1.scm")
+
 
 ;;; Prefix argument list with default options:
 
 (define compiler-arguments
   (append
-   (remove 
-    (lambda (x) (string=? x ""))
-    (string-split (or (get-environment-variable "CHICKEN_OPTIONS") "")))
+   (string-split (or (get-environment-variable "CHICKEN_OPTIONS") ""))
    (cdr (argv))))
 
 
