@@ -51,6 +51,7 @@
 	chicken.compiler.c-backend)
 
 (include "tweaks")
+(include "mini-srfi-1.scm")
 
 (define-constant funny-message-timeout 60000)
 
@@ -441,7 +442,7 @@
       (for-each
        (lambda (f) (load (##sys#resolve-include-filename f #f #t))) 
        extends) )
-    (set! ##sys#features (delete #:compiler-extension ##sys#features eq?))
+    (set! ##sys#features (delete #:compiler-extension ##sys#features))
     (set! ##sys#features (cons '#:compiling ##sys#features))
     (set! upap (user-post-analysis-pass))
 
