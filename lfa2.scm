@@ -44,6 +44,7 @@
 	chicken.compiler.support)
 
 (include "tweaks")
+(include "mini-srfi-1.scm")
 
 (define d-depth 0)
 (define lfa2-debug #t)
