@@ -26,22 +26,40 @@
 
 
 (declare 
-  (hide take split-at! append-map every any))
+  (hide take span drop partition split-at append-map every any cons* concatenate delete
+	first second third fourth alist-cons delete-duplicates fifth
+	filter filter-map unzip1 last list-index lset-adjoin lset-difference
+	lset-union lset-intersection list-tabulate lset<= lset=))
 
+
+(define (partition pred lst)
+  (let loop ((yes '()) (no '()) (lst lst))
+    (cond ((null? lst) (values (reverse yes) (reverse no)))
+	  ((pred (car lst)) (loop (cons (car lst) yes) no (cdr lst)))
+	  (else (loop yes (cons (car lst) no) (cdr lst))))))
+
+(define (span pred lst)
+  (let loop ((lst lst) (head '()))
+    (cond ((null? lst) (values (reverse head) lst))
+	  ((pred (car lst)) (loop (cdr lst) (cons (car lst) head)))
+	  (else (values (reverse head) lst)))))
 
 (define (take lst n)
   (if (fx<= n 0)
       lst
       (cons (car lst) (take lst (fx- n 1)))))
 
-(define (split-at! lst n)
-  (let loop ((n n) (prev #f) (node lst))
+(define (drop lst n)
+  (let loop ((lst lst) (n n))
     (if (fx<= n 0)
-	(cond (prev
-	       (set-cdr! prev '())
-	       (values lst node))
-	      (else values '() lst))
-	(loop (fx- n 1) node (cdr node)))))
+	lst
+	(loop (cdr lst) (fx- n 1)))))
+
+(define (split-at lst n)
+  (let loop ((n n) (prev '()) (node lst))
+    (if (fx<= n 0)
+	(values (reverse prev) node)
+	(loop (fx- n 1) (cons (car node) prev) (cdr node)))))
 
 (define (append-map proc lst1 . lsts)
   (if (null? lsts)
@@ -63,3 +81,106 @@
     (cond ((null? lst) #f)
 	  ((pred (car lst)))
 	  (else (loop (cdr lst))))))
+
+(define (cons* x1 . xs)
+  (let loop ((x x1) (rest xs))
+    (if (null? rest)
+	x
+	(cons x (loop (car rest) (cdr rest))))))
+
+(define (concatenate lst)
+  (let loop ((lst lst))
+    (if (null? lst) 
+	'()
+	(append (car lst) (loop (cdr lst))))))
+
+(define (delete x lst)
+  (let loop ((lst lst))
+    (cond ((null? lst) lst)
+	  ((eq? x (car lst)) (cdr lst))
+	  (else (cons (car lst) (loop (cdr lst)))) ) ) )
+
+(define (first x) (car x))
+(define (second x) (cadr x))
+(define (third x) (caddr x))
+(define (fourth x) (cadddr x))
+(define (fifth x) (car (cddddr x)))
+
+(define (delete-duplicates lst)
+  (let loop ((lst lst))
+    (if (null? lst)
+	lst
+	(let* ((x (car lst))
+	       (tail (cdr lst))
+	       (new-tail (loop (delete/eq? x tail))))
+	  (if (eq? tail new-tail) 
+	      lst
+	      (cons x new-tail))))))
+
+(define (alist-cons x y z) (cons (cons x y) z))
+
+(define (filter pred lst)
+  (foldr (lambda (x r) (if (pred x) (cons x r) r)) '() lst))
+
+(define (filter-map pred lst)
+  (foldr (lambda (x r) 
+	   (cond ((pred x) => (lambda (y) (cons y r)))
+		 (else r)))
+	 '()
+	 lst))
+
+(define (unzip1 lst) (map (lambda (x) (car x)) lst))
+
+(define (last lst)
+  (let loop ((lst lst))
+    (if (null? (cdr lst))
+	(car lst)
+	(loop (cdr lst)))))
+
+(define (list-index pred lst)
+  (let loop ((i 0) (lst lst))
+    (cond ((null? lst) #f)
+	  ((pred (car lst)) i)
+	  (else (loop (fx+ i 1) (cdr lst))))))
+
+(define (lset-adjoin lst . vals)
+  (let loop ((vals vals) (lst lst))
+    (cond ((null? vals) lst)
+	  ((memq (car vals) lst) (loop (cdr vals) lst))
+	  (else (loop (cdr vals) (cons (car vals) lst))))))
+
+(define (lset-difference ls . lss)
+  (foldl
+   (lambda (ls lst)
+     (filter (lambda (x) (not (memq x lst))) ls))
+   ls
+   lss))
+
+(define (lset-union ls . lss)
+  (foldl
+   (lambda (ls lst)
+     (foldl
+      (lambda (ls x)
+	(if (any (lambda (y) (eq? y x)) ls)
+	    ls
+	    (cons x ls)))
+      ls lst))
+   '() lss))
+
+(define (lset-intersection ls1 . lss)
+  (filter (lambda (x)
+	    (every (lambda (lis) (memq x lis)) lss))
+	  ls1))
+  
+(define (list-tabulate n proc)
+  (let loop ((i 0))
+    (if (fx>= i n)
+	'()
+	(cons (proc i) (loop (fx+ i 1))))))
+
+(define (lset<= s1 s2)
+  (every (lambda (s) (memq s s2)) s1))
+
+(define (lset= s1 s2)
+  (and (eq? (length s1) (length s2))
+       (every (lambda (s) (memq s s2)) s1)))
