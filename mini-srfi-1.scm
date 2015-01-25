@@ -29,7 +29,7 @@
   (hide take span drop partition split-at append-map every any cons* concatenate delete
 	first second third fourth alist-cons delete-duplicates fifth
 	filter filter-map unzip1 last list-index lset-adjoin lset-difference
-	lset-union lset-intersection list-tabulate lset<= lset=))
+	lset-union lset-intersection list-tabulate lset<= lset= length+))
 
 
 (define (partition pred lst)
@@ -184,3 +184,18 @@
 (define (lset= s1 s2)
   (and (eq? (length s1) (length s2))
        (every (lambda (s) (memq s s2)) s1)))
+
+;; from SRFI-1 ref. impl.
+(define (length+ x)			; Returns #f if X is circular.
+  (let lp ((x x) (lag x) (len 0))
+    (if (pair? x)
+	(let ((x (cdr x))
+	      (len (fx+ len 1)))
+	  (if (pair? x)
+	      (let ((x   (cdr x))
+		    (lag (cdr lag))
+		    (len (fx+ len 1)))
+		(and (not (eq? x lag)) (lp x lag len)))
+	      len))
+	len)))
+
