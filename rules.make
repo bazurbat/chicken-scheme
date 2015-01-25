@@ -528,7 +528,7 @@ optimizer.c: optimizer.scm mini-srfi-1.scm \
 scrutinizer.c: scrutinizer.scm \
 		chicken.compiler.support.import.scm
 lfa2.c: lfa2.scm chicken.compiler.support.import.scm mini-srfi-1.scm
-compiler-syntax.c: compiler-syntax.scm \
+compiler-syntax.c: compiler-syntax.scm mini-srfi-1.scm \
 		chicken.compiler.support.import.scm \
 		chicken.compiler.core.import.scm
 
@@ -612,11 +612,11 @@ chicken-profile.c: $(SRCDIR)chicken-profile.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
 chicken-install.c: $(SRCDIR)chicken-install.scm setup-download.c setup-api.c
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
-chicken-uninstall.c: $(SRCDIR)chicken-uninstall.scm
+chicken-uninstall.c: $(SRCDIR)chicken-uninstall.scm $(SRCDIR)mini-srfi-1.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
-chicken-status.c: $(SRCDIR)chicken-status.scm
+chicken-status.c: $(SRCDIR)chicken-status.scm $(SRCDIR)mini-srfi-1.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
-csc.c: $(SRCDIR)csc.scm
+csc.c: $(SRCDIR)csc.scm mini-srfi-1.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
 chicken-bug.c: $(SRCDIR)chicken-bug.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
