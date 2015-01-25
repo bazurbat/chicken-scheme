@@ -144,7 +144,7 @@
   (if (and (fx> (length x) 1)
 	   (memq 'o extended-bindings) ) ; s.a.
       (let ((%tmp (r 'tmp)))
-	`(,(r 'lambda) (,%tmp) ,(fold-right list %tmp (cdr x)))) ;XXX use foldr
+	`(,(r 'lambda) (,%tmp) ,(foldr list %tmp (cdr x))))
       x))
 
 (define-internal-compiler-syntax ((sprintf #%sprintf format #%format) x r c)
