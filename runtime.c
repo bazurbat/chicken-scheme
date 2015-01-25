@@ -216,6 +216,17 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #define nmin(x, y)                   ((x) < (y) ? (x) : (y))
 #define percentage(n, p)             ((C_long)(((double)(n) * (double)p) / 100))
 
+/* The bignum digit representation is fullword- little endian, so on
+ * LE machines the halfdigits are numbered in the same order.  On BE
+ * machines, we must swap the odd and even positions.
+ */
+#ifdef C_BIG_ENDIAN
+#define C_uhword_ref(x, p)           ((C_uhword *)(x))[(p)^1]
+#else
+#define C_uhword_ref(x, p)           ((C_uhword *)(x))[(p)]
+#endif
+#define C_uhword_set(x, p, d)        (C_uhword_ref(x,p) = (d))
+
 #define free_tmp_bignum(b)           C_free((void *)(b))
 #define is_fptr(x)                   (((x) & C_GC_FORWARDING_BIT) != 0)
 #define ptr_to_fptr(x)               ((((x) >> FORWARDING_BIT_SHIFT) & 1) | C_GC_FORWARDING_BIT | ((x) & ~1))
@@ -501,6 +512,15 @@ static WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word con
 static C_ccall void values_continuation(C_word c, C_word closure, C_word dummy, ...) C_noret;
 static C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stable);
 static C_regparm int C_fcall C_in_new_heapp(C_word x);
+static C_word rat_cmp(C_word x, C_word y);
+static void fabs_frexp_to_digits(C_uword exp, double sign, C_uword *start, C_uword *scan);
+static C_word flo_to_tmp_bignum(C_word x);
+static C_word int_flo_cmp(C_word intnum, C_word flonum);
+static C_word flo_int_cmp(C_word flonum, C_word intnum);
+static C_word rat_flo_cmp(C_word ratnum, C_word flonum);
+static C_word flo_rat_cmp(C_word flonum, C_word ratnum);
+static C_word basic_cmp(C_word x, C_word y, char *loc, int eqp);
+static int bignum_cmp_unsigned(C_word x, C_word y);
 static C_word C_fcall hash_string(int len, C_char *str, C_word m, C_word r, int ci) C_regparm;
 static C_word C_fcall lookup(C_word key, int len, C_char *str, C_SYMBOL_TABLE *stable) C_regparm;
 static double compute_symbol_table_load(double *avg_bucket_len, int *total);
@@ -523,6 +543,9 @@ static void allocate_bignum_2(void *dummy) C_noret;
 static C_word allocate_tmp_bignum(C_word size, C_word negp, C_word initp);
 static C_uword bignum_digits_destructive_scale_up_with_carry(C_uword *start, C_uword *end, C_uword factor, C_uword carry);
 static C_uword bignum_digits_destructive_scale_down(C_uword *start, C_uword *end, C_uword denominator);
+static C_uword bignum_digits_destructive_shift_right(C_uword *start, C_uword *end, int shift_right, int negp);
+static C_uword bignum_digits_destructive_shift_left(C_uword *start, C_uword *end, int shift_left);
+static C_regparm void bignum_digits_multiply(C_word x, C_word y, C_word result);
 static void make_structure_2(void *dummy) C_noret;
 static void generic_trampoline(void *dummy) C_noret;
 static void handle_interrupt(void *trampoline, void *proc) C_noret;
@@ -1780,6 +1803,11 @@ void barf(int code, char *loc, ...)
 
   case C_BAD_ARGUMENT_TYPE_NO_REAL_ERROR:
     msg = C_text("bad argument type - not an real");
+    c = 1;
+    break;
+
+  case C_BAD_ARGUMENT_TYPE_COMPLEX_NO_ORDERING_ERROR:
+    msg = C_text("bad argument type - complex number has no ordering");
     c = 1;
     break;
 
@@ -6888,411 +6916,665 @@ C_regparm C_word C_fcall C_2_divide(C_word **ptr, C_word x, C_word y)
   else return C_fix(iresult);
 }
 
+/* Compare two numbers as ratnums.  Either may be rat-, fix- or bignums */
+static C_word rat_cmp(C_word x, C_word y)
+{
+  C_word ab[C_SIZEOF_FIX_BIGNUM*4], *a = ab, x1, x2, y1, y2,
+         s, t, ssize, tsize, result, negp;
+  C_uword *scan;
+
+  /* Check for 1 or 0; if x or y is this, the other must be the ratnum */
+  if (x == C_fix(0)) {	      /* Only the sign of y1 matters */
+    return basic_cmp(x, C_block_item(y, 1), "ratcmp", 0);
+  } else if (x == C_fix(1)) { /* x1*y1 <> x2*y2 --> y2 <> y1 | x1/x2 = 1/1 */
+    return basic_cmp(C_block_item(y, 2), C_block_item(y, 1), "ratcmp", 0);
+  } else if (y == C_fix(0)) { /* Only the sign of x1 matters */
+    return basic_cmp(C_block_item(x, 1), y, "ratcmp", 0);
+  } else if (y == C_fix(1)) { /* x1*y1 <> x2*y2 --> x1 <> x2 | y1/y2 = 1/1 */
+    return basic_cmp(C_block_item(x, 1), C_block_item(x, 2), "ratcmp", 0);
+  }
+
+  /* Extract components x=x1/x2 and y=y1/y2 */
+  if (x & C_FIXNUM_BIT || (C_header_bits(x) == C_BIGNUM_TYPE)) {
+    x1 = x;
+    x2 = C_fix(1);
+  } else {
+    x1 = C_block_item(x, 1);
+    x2 = C_block_item(x, 2);
+  }
+
+  if (y & C_FIXNUM_BIT || (C_header_bits(y) == C_BIGNUM_TYPE)) {
+    y1 = y;
+    y2 = C_fix(1);
+  } else {
+    y1 = C_block_item(y, 1);
+    y2 = C_block_item(y, 2);
+  }
+
+  /* We only want to deal with bignums (this is tricky enough) */
+  if (x1 & C_FIXNUM_BIT) x1 = C_a_u_i_fix_to_big(&a, x1);
+  if (x2 & C_FIXNUM_BIT) x2 = C_a_u_i_fix_to_big(&a, x2);
+  if (y1 & C_FIXNUM_BIT) y1 = C_a_u_i_fix_to_big(&a, y1);
+  if (y2 & C_FIXNUM_BIT) y2 = C_a_u_i_fix_to_big(&a, y2);
+
+  /* We multiply using schoolbook method, so this will be very slow in
+   * extreme cases.  This is a tradeoff we make so that comparisons
+   * are inlineable, which makes a big difference for the common case.
+   */
+  ssize = C_fix(C_bignum_size(x1) + C_bignum_size(y2));
+  negp = C_mk_bool(C_bignum_negativep(x1));
+  s = allocate_tmp_bignum(C_fix(ssize), negp, C_SCHEME_TRUE);
+  bignum_digits_multiply(x1, y2, s); /* Swap args if x1 < y2? */
+
+  tsize = C_fix(C_bignum_size(y1) + C_bignum_size(x2));
+  negp = C_mk_bool(C_bignum_negativep(y1));
+  t = allocate_tmp_bignum(C_fix(tsize), negp, C_SCHEME_TRUE);
+  bignum_digits_multiply(y1, x2, t); /* Swap args if y1 < x2? */
+
+  /* Shorten the numbers if needed */
+  for (scan = C_bignum_digits(s)+ssize-1; *scan == 0; scan--) ssize--;
+  C_bignum_mutate_size(s, ssize);
+  for (scan = C_bignum_digits(t)+tsize-1; *scan == 0; scan--) tsize--;
+  C_bignum_mutate_size(t, tsize);
+
+  result = C_i_bignum_cmp(s, t);
+
+  free_tmp_bignum(t);
+  free_tmp_bignum(s);
+  return result;
+}
+
+static void
+fabs_frexp_to_digits(C_uword exp, double sign, C_uword *start, C_uword *scan)
+{
+  C_uword digit, odd_bits = exp % C_BIGNUM_DIGIT_LENGTH;
+
+  assert(C_isfinite(sign));
+  assert(0.5 <= sign && sign < 1); /* Guaranteed by frexp() and fabs() */
+  assert((scan - start) == C_BIGNUM_BITS_TO_DIGITS(exp));
+  
+  if (odd_bits > 0) { /* Handle most significant digit first */
+    sign *= (C_uword)1 << odd_bits;
+    digit = (C_uword)sign;
+    (*--scan) = digit;
+    sign -= (double)digit;
+  }
+
+  while (start < scan && sign > 0) {
+    sign *= pow(2.0, C_BIGNUM_DIGIT_LENGTH);
+    digit = (C_uword)sign;
+    (*--scan) = digit;
+    sign -= (double)digit;
+  }
+
+  /* Finish up by clearing any remaining, lower, digits */
+  while (start < scan)
+    (*--scan) = 0;
+}
+
+static C_word flo_to_tmp_bignum(C_word x)
+{
+  /* TODO: allocating and initialising the bignum is pointless if we
+   * already know the number of limbs in the comparand.  In fact,
+   * bignum_cmp will first check the number of limbs and *then*
+   * compare.  Instead, we can check beforehand and check the limbs
+   * directly against the generated limbs, without allocating at all!
+   */
+  C_word tmp_big, negp = C_mk_bool(C_flonum_magnitude(x) < 0.0);
+  int exponent;
+  double significand = frexp(C_flonum_magnitude(x), &exponent);
+
+  assert(C_u_i_fpintegerp(x));
+
+  if (exponent <= 0) {
+    tmp_big = allocate_tmp_bignum(C_fix(0), C_SCHEME_FALSE, C_SCHEME_FALSE);
+  } else if (exponent == 1) { /* TODO: check significand * 2^exp fits fixnum? */
+    /* Don't use fix_to_big to simplify caller code: it can just free this */
+    tmp_big = allocate_tmp_bignum(C_fix(1), negp, C_SCHEME_FALSE);
+    C_bignum_digits(tmp_big)[0] = 1;
+  } else {
+    C_uword size, *start, *end;
+
+    size = C_fix(C_BIGNUM_BITS_TO_DIGITS(exponent));
+
+    tmp_big = allocate_tmp_bignum(size, negp, C_SCHEME_FALSE);
+    start = C_bignum_digits(tmp_big);
+    end = start + C_bignum_size(tmp_big);
+
+    fabs_frexp_to_digits(exponent, fabs(significand), start, end);
+  }
+  return tmp_big;
+}
+
+/* This is a bit weird: We have to compare flonums as bignums due to
+ * precision loss on 64-bit platforms.  For simplicity, we convert
+ * fixnums to bignums here.
+ */
+static C_word int_flo_cmp(C_word intnum, C_word flonum)
+{
+  C_word ab[C_SIZEOF_FIX_BIGNUM + C_SIZEOF_FLONUM], *a = ab, x, y, res;
+  double i, f;
+
+  f = C_flonum_magnitude(flonum);
+
+  if (C_isnan(f)) {
+    return C_SCHEME_FALSE; /* "mu" */
+  } else if (C_isinf(f)) {
+    return C_fix((f > 0.0) ? -1 : 1); /* x is smaller if f is +inf.0 */
+  } else {
+    f = modf(f, &i);
+
+    x = (intnum & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, intnum) : intnum;
+    y = flo_to_tmp_bignum(C_flonum(&a, i));
+
+    res = C_i_bignum_cmp(x, y);
+    free_tmp_bignum(y);
+
+    if (res == C_fix(0)) /* Use fraction to break tie. If f > 0, x is smaller */
+      return C_fix((f > 0.0) ? -1 : ((f < 0.0) ? 1 : 0));
+    else
+      return res;
+  }
+}
+
+/* For convenience (ie, to reduce the degree of mindfuck) */
+static C_word flo_int_cmp(C_word flonum, C_word intnum)
+{
+  C_word res = int_flo_cmp(intnum, flonum);
+  switch(res) {
+  case C_fix(1): return C_fix(-1);
+  case C_fix(-1): return C_fix(1);
+  default: return res; /* Can be either C_fix(0) or C_SCHEME_FALSE(!) */
+  }
+}
+
+/* This code is completely braindead, but at least it allows us to do
+ * inline comparisons!
+ */
+static C_word rat_flo_cmp(C_word ratnum, C_word flonum)
+{
+  C_word ab[C_SIZEOF_FIX_BIGNUM * 2 + C_SIZEOF_FLONUM], *a = ab,
+         num, denom, ibig, res, nscaled, iscaled, negp;
+  C_uword *scan;
+  int shift_amount, ilen, nlen;
+  double i, f;
+
+  f = C_flonum_magnitude(flonum);
+
+  if (C_isnan(f)) {
+    return C_SCHEME_FALSE; /* "mu" */
+  } else if (C_isinf(f)) {
+    return C_fix((f > 0.0) ? -1 : 1); /* x is smaller if f is +inf.0 */
+  } else {
+    /* Scale up the floating-point number to become a whole integer,
+     * and remember power of two (# of bits) to shift the numerator.
+     */
+    shift_amount = 0;
+
+    /* TODO: This doesn't work for denormalized flonums! */
+    while (modf(f, &i) != 0.0) {
+      f = ldexp(f, 1);
+      shift_amount++;
+    }
+
+    i = f; /* TODO: split i and f so it'll work for denormalized flonums */
+
+    num = C_block_item(ratnum, 1);
+    num = (num & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, num) : num;
+
+    if (C_bignum_negativep(num) && i >= 0.0) { /* Save time if signs differ */
+      return C_fix(-1);
+    } else if (!C_bignum_negativep(num) && i <= 0.0) { /* num is never 0 */
+      return C_fix(1);
+    } else {
+      negp = C_mk_bool(C_bignum_negativep(num));
+
+      denom = C_block_item(ratnum, 2);
+      denom = (denom & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, denom) : denom;
+
+      ibig = flo_to_tmp_bignum(C_flonum(&a, i));
+
+      nlen = C_bignum_size(num) + C_bignum_size(denom);
+      ilen = C_bignum_size(ibig) + C_bignum_size(denom);
+
+      /* Now, multiply the scaled flonum by the denominator, so we can
+       * compare it directly to the scaled numerator.  Unfortunately,
+       * this won't use Karatsuba multiplication, so for large numbers
+       * it will be slower than it could be if comparisons were done
+       * in CPS context.
+       */
+      iscaled = allocate_tmp_bignum(C_fix(ilen), negp, C_SCHEME_TRUE);
+      bignum_digits_multiply(denom, ibig, iscaled); /* Swap args if i < d? */
+      free_tmp_bignum(ibig);
+
+      nlen += C_BIGNUM_BITS_TO_DIGITS(shift_amount);
+      nscaled = allocate_tmp_bignum(C_fix(nlen), negp, C_SCHEME_TRUE);
+
+      scan = C_bignum_digits(nscaled) + shift_amount / C_BIGNUM_DIGIT_LENGTH;
+      C_memcpy(scan, C_bignum_digits(num), C_wordstobytes(C_bignum_size(num)));
+      shift_amount = shift_amount % C_BIGNUM_DIGIT_LENGTH;
+      if(shift_amount > 0) {
+        bignum_digits_destructive_shift_left(
+         scan, C_bignum_digits(nscaled) + nlen, shift_amount);
+      }
+
+      /* Shorten the numbers if needed */
+      for (scan = C_bignum_digits(iscaled)+ilen-1; *scan == 0; scan--) ilen--;
+      C_bignum_mutate_size(iscaled, ilen);
+      for (scan = C_bignum_digits(nscaled)+nlen-1; *scan == 0; scan--) nlen--;
+      C_bignum_mutate_size(nscaled, nlen);
+
+      /* Finally, we're ready to compare them! */
+      res = C_i_bignum_cmp(nscaled, iscaled);
+      free_tmp_bignum(nscaled);
+      free_tmp_bignum(iscaled);
+
+      return res;
+    }
+  }
+}
+
+static C_word flo_rat_cmp(C_word flonum, C_word ratnum)
+{
+  C_word res = rat_flo_cmp(ratnum, flonum);
+  switch(res) {
+  case C_fix(1): return C_fix(-1);
+  case C_fix(-1): return C_fix(1);
+  default: return res; /* Can be either C_fix(0) or C_SCHEME_FALSE(!) */
+  }
+}
+
+/* The primitive comparison operator.  eqp should be 1 if we're only
+ * interested in equality testing (can speed things up and in case of
+ * compnums, equality checking is the only available operation).  This
+ * may return #f, in case there is no answer (for NaNs) or as a quick
+ * and dirty non-zero answer when eqp is true.  Ugly but effective :)
+ */
+static C_word basic_cmp(C_word x, C_word y, char *loc, int eqp)
+{
+  if (x & C_FIXNUM_BIT) {
+    if (y & C_FIXNUM_BIT) {
+      return C_fix((x < y) ? -1 : ((x > y) ? 1 : 0));
+    } else if (C_immediatep(y)) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
+    } else if (C_block_header(y) == C_FLONUM_TAG) {
+      return int_flo_cmp(x, y);
+    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+      C_word ab[C_SIZEOF_FIX_BIGNUM], *a = ab;
+      return C_i_bignum_cmp(C_a_u_i_fix_to_big(&a, x), y);
+    } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
+      if (C_block_item(y, 0) == C_ratnum_type_tag) {
+        if (eqp) return C_SCHEME_FALSE;
+        else return rat_cmp(x, y);
+      } else if (C_block_item(y, 0) == C_cplxnum_type_tag) {
+        if (eqp) return C_SCHEME_FALSE;
+        else barf(C_BAD_ARGUMENT_TYPE_COMPLEX_NO_ORDERING_ERROR, loc, y);
+      } else {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
+      }
+    } else {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
+    }
+  } else if (C_immediatep(x)) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, x);
+  } else if (C_block_header(x) == C_FLONUM_TAG) {
+    if (y & C_FIXNUM_BIT) {
+      return flo_int_cmp(x, y);
+    } else if (C_immediatep(y)) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
+    } else if (C_block_header(y) == C_FLONUM_TAG) {
+      double a = C_flonum_magnitude(x), b = C_flonum_magnitude(y);
+      if (C_isnan(a) || C_isnan(b)) return C_SCHEME_FALSE; /* "mu" */
+      else return C_fix((a < b) ? -1 : ((a > b) ? 1 : 0));
+    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+      return flo_int_cmp(x, y);
+    } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
+      if (C_block_item(y, 0) == C_ratnum_type_tag) {
+        return flo_rat_cmp(x, y);
+      } else if (C_block_item(y, 0) == C_cplxnum_type_tag) {
+	if (eqp) return C_SCHEME_FALSE;
+        else barf(C_BAD_ARGUMENT_TYPE_COMPLEX_NO_ORDERING_ERROR, loc, y);
+      } else {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
+      }
+    } else {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
+    }
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    if (y & C_FIXNUM_BIT) {
+      C_word ab[C_SIZEOF_FIX_BIGNUM], *a = ab;
+      return C_i_bignum_cmp(x, C_a_u_i_fix_to_big(&a, y));
+    } else if (C_immediatep(y)) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
+    } else if (C_block_header(y) == C_FLONUM_TAG) {
+      return int_flo_cmp(x, y);
+    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+      return C_i_bignum_cmp(x, y);
+    } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
+      if (C_block_item(y, 0) == C_ratnum_type_tag) {
+        if (eqp) return C_SCHEME_FALSE;
+        else return rat_cmp(x, y);
+      } else if (C_block_item(y, 0) == C_cplxnum_type_tag) {
+        if (eqp) return C_SCHEME_FALSE;
+        else barf(C_BAD_ARGUMENT_TYPE_COMPLEX_NO_ORDERING_ERROR, loc, y);
+      } else {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
+      }
+    } else {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
+    }
+  } else if (C_block_header(x) == C_STRUCTURE3_TAG &&
+             (C_block_item(x, 0) == C_ratnum_type_tag)) {
+    if (y & C_FIXNUM_BIT) {
+      if (eqp) return C_SCHEME_FALSE;
+      else return rat_cmp(x, y);
+    } else if (C_immediatep(y)) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
+    } else if (C_block_header(y) == C_FLONUM_TAG) {
+      return rat_flo_cmp(x, y);
+    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+      if (eqp) return C_SCHEME_FALSE;
+      else return rat_cmp(x, y);
+    } else if (C_block_header(y) == C_STRUCTURE3_TAG &&
+               (C_block_item(y, 0) == C_ratnum_type_tag)) {
+      if (eqp) {
+        return C_and(C_and(C_i_integer_equalp(C_block_item(x, 1),
+                                              C_block_item(y, 1)),
+                           C_i_integer_equalp(C_block_item(x, 2),
+                                              C_block_item(y, 2))),
+                     C_fix(0));
+      } else {
+        return rat_cmp(x, y);
+      }
+    } else if (C_block_header(y) == C_STRUCTURE3_TAG &&
+               (C_block_item(y, 0) == C_cplxnum_type_tag)) {
+      if (eqp) return C_SCHEME_FALSE;
+      else barf(C_BAD_ARGUMENT_TYPE_COMPLEX_NO_ORDERING_ERROR, loc, y);
+    } else {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
+    }
+  } else if (C_block_header(x) == C_STRUCTURE3_TAG &&
+             (C_block_item(x, 0) == C_cplxnum_type_tag)) {
+    if (!eqp) {
+      barf(C_BAD_ARGUMENT_TYPE_COMPLEX_NO_ORDERING_ERROR, loc, x);
+    } else if (y & C_FIXNUM_BIT) {
+      return C_SCHEME_FALSE;
+    } else if (C_immediatep(y)) {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
+    } else if (C_block_header(y) == C_FLONUM_TAG ||
+               C_header_bits(y) == C_BIGNUM_TYPE ||
+               (C_block_header(y) == C_STRUCTURE3_TAG &&
+                (C_block_item(y, 0) == C_ratnum_type_tag))) {
+      return C_SCHEME_FALSE;
+    } else if (C_block_header(y) == C_STRUCTURE3_TAG &&
+               (C_block_item(y, 0) == C_cplxnum_type_tag)) {
+      return C_and(C_and(C_i_nequalp(C_block_item(x, 1), C_block_item(y, 1)),
+                         C_i_nequalp(C_block_item(x, 2), C_block_item(y, 2))),
+                   C_fix(0));
+    } else {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
+    }
+  } else {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, x);
+  }
+}
+
+static int bignum_cmp_unsigned(C_word x, C_word y)
+{
+  C_word xlen = C_bignum_size(x), ylen = C_bignum_size(y);
+
+  if (xlen < ylen) {
+    return -1;
+  } else if (xlen > ylen) {
+    return 1;
+  } else if (x == y) {
+    return 0;
+  } else {
+    C_uword *startx = C_bignum_digits(x),
+            *scanx = startx + xlen,
+            *scany = C_bignum_digits(y) + ylen;
+
+    while (startx < scanx) {
+      C_uword xdigit = (*--scanx), ydigit = (*--scany);
+      if (xdigit < ydigit)
+        return -1;
+      if (xdigit > ydigit)
+        return 1;
+    }
+    return 0;
+  }
+}
+
+C_regparm C_word C_fcall C_i_bignum_cmp(C_word x, C_word y)
+{
+  if (C_bignum_negativep(x)) {
+    if (C_bignum_negativep(y)) { /* Largest negative number is smallest */
+      return C_fix(bignum_cmp_unsigned(y, x));
+    } else {
+      return C_fix(-1);
+    }
+  } else {
+    if (C_bignum_negativep(y)) {
+      return C_fix(1);
+    } else {
+      return C_fix(bignum_cmp_unsigned(x, y));
+    }
+  }
+}
 
 void C_ccall C_nequalp(C_word c, C_word closure, C_word k, ...)
 {
-  C_word x, i2, f, fflag, ilast;
-  double flast, f2;
+  C_word x, y, result;
   va_list v;
 
+  if (c < 4) C_bad_argc_2(c, 4, closure);
+
   c -= 2; 
-  f = 1;
   va_start(v, k);
 
-  if(c == 0) goto cont;
-  
   x = va_arg(v, C_word);
-
-  if(x & C_FIXNUM_BIT) {
-    fflag = 0;
-    ilast = C_unfix(x);
-  }
-  else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-    fflag = 1;
-    flast = C_flonum_magnitude(x);
-  }
-  else barf(C_BAD_ARGUMENT_TYPE_ERROR, "=", x);
-
   while(--c) {
-    x = va_arg(v, C_word);
-    
-    if(x & C_FIXNUM_BIT) {
-      if(fflag) {
-	f = flast == (f2 = (double)C_unfix(x));
-        flast = f2;
-      }
-      else {
-	f = ilast == (i2 = C_unfix(x));
-	ilast = i2;
-      }
-    }
-    else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-      if(fflag) {
-	f = flast == (f2 = C_flonum_magnitude(x));
-	flast = f2;
-      }
-      else {
-	f = (double)ilast == (f2 = C_flonum_magnitude(x));
-	flast = f2;
-	fflag = 1;
-      }
-    }
-    else barf(C_BAD_ARGUMENT_TYPE_ERROR, "=", x);
-
-    if(!f) break;
+    y = va_arg(v, C_word);
+    result = C_i_nequalp(x, y);
+    if (result == C_SCHEME_FALSE) break;
   }
 
- cont:
   va_end(v);
-  C_kontinue(k, C_mk_bool(f));
+  C_kontinue(k, result);
 }
-
 
 C_regparm C_word C_fcall C_i_nequalp(C_word x, C_word y)
 {
-  if(x & C_FIXNUM_BIT) {
-    if(y & C_FIXNUM_BIT) return C_mk_bool(x == y);
-    else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
-      return C_mk_bool((double)C_unfix(x) == C_flonum_magnitude(y));
+   return C_mk_bool(basic_cmp(x, y, "=", 1) == C_fix(0));
+}
 
-    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "=", y);
-  }
-  else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-    if(y & C_FIXNUM_BIT) return C_mk_bool(C_flonum_magnitude(x) == (double)C_unfix(y));
-    else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
-      return C_mk_bool(C_flonum_magnitude(x) == C_flonum_magnitude(y));
-    
-    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "=", y);
-  }
-  else barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "=", x);
-
-  return C_SCHEME_FALSE;
+C_regparm C_word C_fcall C_i_integer_equalp(C_word x, C_word y)
+{
+  if (x & C_FIXNUM_BIT)
+    return C_mk_bool(x == y);
+  else if (y & C_FIXNUM_BIT)
+    return C_SCHEME_FALSE;
+  else
+    return C_mk_bool(C_i_bignum_cmp(x, y) == C_fix(0));
 }
 
 
 void C_ccall C_greaterp(C_word c, C_word closure, C_word k, ...)
 {
-  C_word x, i2, f, fflag, ilast;
-  double flast, f2;
+  C_word x, y, result;
   va_list v;
 
+  if (c < 4) C_bad_argc_2(c, 4, closure);
+
   c -= 2; 
-  f = 1;
   va_start(v, k);
 
-  if(c == 0) goto cont;
-  
   x = va_arg(v, C_word);
-
-  if(x & C_FIXNUM_BIT) {
-    fflag = 0;
-    ilast = C_unfix(x);
-  }
-  else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-    fflag = 1;
-    flast = C_flonum_magnitude(x);
-  }
-  else barf(C_BAD_ARGUMENT_TYPE_ERROR, ">", x);
-
   while(--c) {
-    x = va_arg(v, C_word);
-    
-    if(x & C_FIXNUM_BIT) {
-      if(fflag) {
-	f = flast > (f2 = (double)C_unfix(x));
-        flast = f2;
-      }
-      else {
-	f = ilast > (i2 = C_unfix(x));
-	ilast = i2;
-      }
-    }
-    else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-      if(fflag) {
-	f = flast > (f2 = C_flonum_magnitude(x));
-	flast = f2;
-      }
-      else {
-	f = (double)ilast > (f2 = C_flonum_magnitude(x));
-	flast = f2;
-	fflag = 1;
-      }
-    }
-    else barf(C_BAD_ARGUMENT_TYPE_ERROR, ">", x);
-
-    if(!f) break;
+    y = va_arg(v, C_word);
+    result = C_i_greaterp(x, y);
+    if (result == C_SCHEME_FALSE) break;
+    x = y;
   }
 
- cont:
   va_end(v);
-  C_kontinue(k, C_mk_bool(f));
+  C_kontinue(k, result);
 }
 
 
 C_regparm C_word C_fcall C_i_greaterp(C_word x, C_word y)
 {
-  if(x & C_FIXNUM_BIT) {
-    if(y & C_FIXNUM_BIT) return C_mk_bool(x > y);
-    else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
-      return C_mk_bool((double)C_unfix(x) > C_flonum_magnitude(y));
-
-    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, ">", y);
-  }
-  else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-    if(y & C_FIXNUM_BIT) return C_mk_bool(C_flonum_magnitude(x) > (double)C_unfix(y));
-    else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
-      return C_mk_bool(C_flonum_magnitude(x) > C_flonum_magnitude(y));
-    
-    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, ">", y);
-  }
-  else barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, ">", x);
-
-  return C_SCHEME_FALSE;
+   return C_mk_bool(basic_cmp(x, y, ">", 0) == C_fix(1));
 }
 
+C_regparm C_word C_fcall C_i_integer_greaterp(C_word x, C_word y)
+{
+  if (x & C_FIXNUM_BIT) {
+    if (y & C_FIXNUM_BIT) {
+      return C_mk_bool(C_unfix(x) > C_unfix(y));
+    } else {
+      return C_mk_bool(C_bignum_negativep(y));
+    }
+  } else if (y & C_FIXNUM_BIT) {
+    return C_mk_nbool(C_bignum_negativep(x));
+  } else {
+    return C_mk_bool(C_i_bignum_cmp(x, y) == C_fix(1));
+  }
+}
 
 void C_ccall C_lessp(C_word c, C_word closure, C_word k, ...)
 {
-  C_word x, i2, f, fflag, ilast;
-  double flast, f2;
+  C_word x, y, result;
   va_list v;
 
+  if (c < 4) C_bad_argc_2(c, 4, closure);
+
   c -= 2; 
-  f = 1;
   va_start(v, k);
 
-  if(c == 0) goto cont;
-  
   x = va_arg(v, C_word);
-
-  if(x &C_FIXNUM_BIT) {
-    fflag = 0;
-    ilast = C_unfix(x);
-  }
-  else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-    fflag = 1;
-    flast = C_flonum_magnitude(x);
-  }
-  else barf(C_BAD_ARGUMENT_TYPE_ERROR, "<", x);
-
   while(--c) {
-    x = va_arg(v, C_word);
-    
-    if(x &C_FIXNUM_BIT) {
-      if(fflag) {
-	f = flast < (f2 = (double)C_unfix(x));
-        flast = f2;
-      }
-      else {
-	f = ilast < (i2 = C_unfix(x));
-	ilast = i2;
-      }
-    }
-    else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-      if(fflag) {
-	f = flast < (f2 = C_flonum_magnitude(x));
-	flast = f2;
-      }
-      else {
-	f = (double)ilast < (f2 = C_flonum_magnitude(x));
-	flast = f2;
-	fflag = 1;
-      }
-    }
-    else barf(C_BAD_ARGUMENT_TYPE_ERROR, "<", x);
-
-    if(!f) break;
+    y = va_arg(v, C_word);
+    result = C_i_lessp(x, y);
+    if (result == C_SCHEME_FALSE) break;
+    x = y;
   }
 
- cont:
   va_end(v);
-  C_kontinue(k, C_mk_bool(f));
+  C_kontinue(k, result);
 }
 
 
 C_regparm C_word C_fcall C_i_lessp(C_word x, C_word y)
 {
-  if(x & C_FIXNUM_BIT) {
-    if(y & C_FIXNUM_BIT) return C_mk_bool(x < y);
-    else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
-      return C_mk_bool((double)C_unfix(x) < C_flonum_magnitude(y));
-
-    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "<", y);
-  }
-  else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-    if(y & C_FIXNUM_BIT) return C_mk_bool(C_flonum_magnitude(x) < (double)C_unfix(y));
-    else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
-      return C_mk_bool(C_flonum_magnitude(x) < C_flonum_magnitude(y));
-    
-    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "<", y);
-  }
-  else barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "<", x);
-
-  return C_SCHEME_FALSE;
+   return C_mk_bool(basic_cmp(x, y, "<", 0) == C_fix(-1));
 }
 
+C_regparm C_word C_fcall C_i_integer_lessp(C_word x, C_word y)
+{
+  if (x & C_FIXNUM_BIT) {
+    if (y & C_FIXNUM_BIT) {
+      return C_mk_bool(C_unfix(x) < C_unfix(y));
+    } else {
+      return C_mk_nbool(C_bignum_negativep(y));
+    }
+  } else if (y & C_FIXNUM_BIT) {
+    return C_mk_bool(C_bignum_negativep(x));
+  } else {
+    return C_mk_bool(C_i_bignum_cmp(x, y) == C_fix(-1));
+  }
+}
 
 void C_ccall C_greater_or_equal_p(C_word c, C_word closure, C_word k, ...)
 {
-  C_word x, i2, f, fflag, ilast;
-  double flast, f2;
+  C_word x, y, result;
   va_list v;
 
+  if (c < 4) C_bad_argc_2(c, 4, closure);
+
   c -= 2; 
-  f = 1;
   va_start(v, k);
 
-  if(c == 0) goto cont;
-  
   x = va_arg(v, C_word);
-
-  if(x &C_FIXNUM_BIT) {
-    fflag = 0;
-    ilast = C_unfix(x);
-  }
-  else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-    fflag = 1;
-    flast = C_flonum_magnitude(x);
-  }
-  else barf(C_BAD_ARGUMENT_TYPE_ERROR, ">=", x);
-
   while(--c) {
-    x = va_arg(v, C_word);
-    
-    if(x &C_FIXNUM_BIT) {
-      if(fflag) {
-	f = flast >= (f2 = (double)C_unfix(x));
-        flast = f2;
-      }
-      else {
-	f = ilast >= (i2 = C_unfix(x));
-	ilast = i2;
-      }
-    }
-    else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-      if(fflag) {
-	f = flast >= (f2 = C_flonum_magnitude(x));
-	flast = f2;
-      }
-      else {
-	f = (double)ilast >= (f2 = C_flonum_magnitude(x));
-	flast = f2;
-	fflag = 1;
-      }
-    }
-    else barf(C_BAD_ARGUMENT_TYPE_ERROR, ">=", x);
-
-    if(!f) break;
+    y = va_arg(v, C_word);
+    result = C_i_greater_or_equalp(x, y);
+    if (result == C_SCHEME_FALSE) break;
+    x = y;
   }
 
- cont:
   va_end(v);
-  C_kontinue(k, C_mk_bool(f));
+  C_kontinue(k, result);
 }
 
 
 C_regparm C_word C_fcall C_i_greater_or_equalp(C_word x, C_word y)
 {
-  if(x & C_FIXNUM_BIT) {
-    if(y & C_FIXNUM_BIT) return C_mk_bool(x >= y);
-    else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
-      return C_mk_bool((double)C_unfix(x) >= C_flonum_magnitude(y));
-
-    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, ">=", y);
-  }
-  else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-    if(y & C_FIXNUM_BIT) return C_mk_bool(C_flonum_magnitude(x) >= (double)C_unfix(y));
-    else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
-      return C_mk_bool(C_flonum_magnitude(x) >= C_flonum_magnitude(y));
-    
-    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, ">=", y);
-  }
-  else barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, ">=", x);
-
-  return C_SCHEME_FALSE;
+   C_word res = basic_cmp(x, y, ">=", 0);
+   return C_mk_bool(res == C_fix(0) || res == C_fix(1));
 }
 
+C_regparm C_word C_fcall C_i_integer_greater_or_equalp(C_word x, C_word y)
+{
+  if (x & C_FIXNUM_BIT) {
+    if (y & C_FIXNUM_BIT) {
+      return C_mk_bool(C_unfix(x) >= C_unfix(y));
+    } else {
+      return C_mk_bool(C_bignum_negativep(y));
+    }
+  } else if (y & C_FIXNUM_BIT) {
+    return C_mk_nbool(C_bignum_negativep(x));
+  } else {
+    C_word res = C_i_bignum_cmp(x, y);
+    return C_mk_bool(res == C_fix(0) || res == C_fix(1));
+  }
+}
 
 void C_ccall C_less_or_equal_p(C_word c, C_word closure, C_word k, ...)
 {
-  C_word x, i2, f, fflag, ilast;
-  double flast, f2;
+  C_word x, y, result;
   va_list v;
 
+  if (c < 4) C_bad_argc_2(c, 4, closure);
+
   c -= 2; 
-  f = 1;
   va_start(v, k);
 
-  if(c == 0) goto cont;
-  
   x = va_arg(v, C_word);
-
-  if(x &C_FIXNUM_BIT) {
-    fflag = 0;
-    ilast = C_unfix(x);
-  }
-  else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-    fflag = 1;
-    flast = C_flonum_magnitude(x);
-  }
-  else barf(C_BAD_ARGUMENT_TYPE_ERROR, "<=", x);
-
   while(--c) {
-    x = va_arg(v, C_word);
-    
-    if(x &C_FIXNUM_BIT) {
-      if(fflag) {
-	f = flast <= (f2 = (double)C_unfix(x));
-        flast = f2;
-      }
-      else {
-	f = ilast <= (i2 = C_unfix(x));
-	ilast = i2;
-      }
-    }
-    else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-      if(fflag) {
-	f = flast <= (f2 = C_flonum_magnitude(x));
-	flast = f2;
-      }
-      else {
-	f = (double)ilast <= (f2 = C_flonum_magnitude(x));
-	flast = f2;
-	fflag = 1;
-      }
-    }
-    else barf(C_BAD_ARGUMENT_TYPE_ERROR, "<=", x);
-
-    if(!f) break;
+    y = va_arg(v, C_word);
+    result = C_i_less_or_equalp(x, y);
+    if (result == C_SCHEME_FALSE) break;
+    x = y;
   }
 
- cont:
   va_end(v);
-  C_kontinue(k, C_mk_bool(f));
+  C_kontinue(k, result);
 }
 
 
 C_regparm C_word C_fcall C_i_less_or_equalp(C_word x, C_word y)
 {
-  if(x & C_FIXNUM_BIT) {
-    if(y & C_FIXNUM_BIT) return C_mk_bool(x <= y);
-    else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
-      return C_mk_bool((double)C_unfix(x) <= C_flonum_magnitude(y));
-
-    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "<=", y);
-  }
-  else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-    if(y & C_FIXNUM_BIT) return C_mk_bool(C_flonum_magnitude(x) <= (double)C_unfix(y));
-    else if(!C_immediatep(y) && C_block_header(y) == C_FLONUM_TAG)
-      return C_mk_bool(C_flonum_magnitude(x) <= C_flonum_magnitude(y));
-    
-    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "<=", y);
-  }
-  else barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "<=", x);
-
-  return C_SCHEME_FALSE;
+   C_word res = basic_cmp(x, y, "<=", 0);
+   return C_mk_bool(res == C_fix(0) || res == C_fix(-1));
 }
 
+
+C_regparm C_word C_fcall C_i_integer_less_or_equalp(C_word x, C_word y)
+{
+  if (x & C_FIXNUM_BIT) {
+    if (y & C_FIXNUM_BIT) {
+      return C_mk_bool(C_unfix(x) <= C_unfix(y));
+    } else {
+      return C_mk_nbool(C_bignum_negativep(y));
+    }
+  } else if (y & C_FIXNUM_BIT) {
+    return C_mk_bool(C_bignum_negativep(x));
+  } else {
+    C_word res = C_i_bignum_cmp(x, y);
+    return C_mk_bool(res == C_fix(0) || res == C_fix(-1));
+  }
+}
 
 void C_ccall C_expt(C_word c, C_word closure, C_word k, C_word n1, C_word n2)
 {
@@ -7655,6 +7937,65 @@ bignum_digits_destructive_scale_down(C_uword *start, C_uword *end, C_uword denom
   }
   return k;
 }
+
+static C_uword
+bignum_digits_destructive_shift_right(C_uword *start, C_uword *end, int shift_right, int negp)
+{
+  int shift_left = C_BIGNUM_DIGIT_LENGTH - shift_right;
+  C_uword digit, carry = negp ? ((~(C_uword)0) << shift_left) : 0;
+
+  assert(shift_right < C_BIGNUM_DIGIT_LENGTH);
+
+  while (start < end) {
+    digit = *(--end);
+    *end = (digit >> shift_right) | carry;
+    carry = digit << shift_left;
+  }
+  return carry >> shift_left; /* The bits that were shifted out to the right */
+}
+
+static C_uword
+bignum_digits_destructive_shift_left(C_uword *start, C_uword *end, int shift_left)
+{
+  C_uword carry = 0, digit;
+  int shift_right = C_BIGNUM_DIGIT_LENGTH - shift_left;
+
+  assert(shift_left < C_BIGNUM_DIGIT_LENGTH);
+
+  while (start < end) {
+    digit = *start;
+    (*start++) = (digit << shift_left) | carry;
+    carry = digit >> shift_right;
+  }
+  return carry;	 /* This would end up as most significant digit if it fit */
+}
+
+static C_regparm void
+bignum_digits_multiply(C_word x, C_word y, C_word result)
+{
+  C_uword product,
+          *xd = C_bignum_digits(x),
+          *yd = C_bignum_digits(y),
+          *rd = C_bignum_digits(result);
+  C_uhword carry, yj;
+  /* Lengths in halfwords */
+  int i, j, length_x = C_bignum_size(x) * 2, length_y = C_bignum_size(y) * 2;
+
+  /* From Hacker's Delight, Figure 8-1 (top part) */
+  for (j = 0; j < length_y; ++j) {
+    yj = C_uhword_ref(yd, j);
+    if (yj == 0) continue;
+    carry = 0;
+    for (i = 0; i < length_x; ++i) {
+      product = (C_uword)C_uhword_ref(xd, i) * yj +
+                (C_uword)C_uhword_ref(rd, i + j) + carry;
+      C_uhword_set(rd, i + j, product);
+      carry = C_BIGNUM_DIGIT_HI_HALF(product);
+    }
+    C_uhword_set(rd, j + length_x, carry);
+  }
+}
+
 
 void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word string)
 {

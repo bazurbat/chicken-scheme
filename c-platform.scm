@@ -352,19 +352,22 @@
 
 (let ()
   (define (eqv?-id db classargs cont callargs)
-    ;; (eqv? <var> <var>) -> (quote #t)
-    ;; (eqv? ...) -> (##core#inline "C_eqp" ...) [one argument is a constant and not a flonum]
+    ;; (eqv? <var> <var>) -> (quote #t)          [two identical objects]
+    ;; (eqv? ...) -> (##core#inline "C_eqp" ...)
+    ;; [one argument is a constant and either immediate or not a number]
     (and (= (length callargs) 2)
-	 (let ([arg1 (first callargs)]
-	       [arg2 (second callargs)] )
+	 (let ((arg1 (first callargs))
+	       (arg2 (second callargs)) )
 	   (or (and (eq? '##core#variable (node-class arg1))
 		    (eq? '##core#variable (node-class arg2))
 		    (equal? (node-parameters arg1) (node-parameters arg2))
 		    (make-node '##core#call (list #t) (list cont (qnode #t))) )
 	       (and (or (and (eq? 'quote (node-class arg1))
-			     (not (flonum? (first (node-parameters arg1)))) )
+			     (let ((p1 (first (node-parameters arg1))))
+			       (or (immediate? p1) (not (number? p1)))) )
 			(and (eq? 'quote (node-class arg2))
-			     (not (flonum? (first (node-parameters arg2)))) ) )
+			     (let ((p2 (first (node-parameters arg2))))
+			       (or (immediate? p2) (not (number? p2)))) ) )
 		    (make-node
 		     '##core#call (list #t) 
 		     (list cont (make-node '##core#inline '("C_eqp") callargs)) ) ) ) ) ) )

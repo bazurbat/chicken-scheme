@@ -662,6 +662,7 @@ static inline int isinf_ld (long double x)
 #define C_BAD_ARGUMENT_TYPE_NO_EXACT_ERROR            48
 #define C_BAD_ARGUMENT_TYPE_NO_INEXACT_ERROR          49
 #define C_BAD_ARGUMENT_TYPE_NO_REAL_ERROR             50
+#define C_BAD_ARGUMENT_TYPE_COMPLEX_NO_ORDERING_ERROR 51
 
 
 /* Platform information */
@@ -1999,11 +2000,17 @@ C_fctexport C_word C_fcall C_2_times(C_word **ptr, C_word x, C_word y) C_regparm
 C_fctexport C_word C_fcall C_2_plus(C_word **ptr, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_2_minus(C_word **ptr, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_2_divide(C_word **ptr, C_word x, C_word y) C_regparm;
+C_fctexport C_word C_fcall C_i_bignum_cmp(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_nequalp(C_word x, C_word y) C_regparm;
+C_fctexport C_word C_fcall C_i_integer_equalp(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_greaterp(C_word x, C_word y) C_regparm;
+C_fctexport C_word C_fcall C_i_integer_greaterp(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_lessp(C_word x, C_word y) C_regparm;
+C_fctexport C_word C_fcall C_i_integer_lessp(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_greater_or_equalp(C_word x, C_word y) C_regparm;
+C_fctexport C_word C_fcall C_i_integer_greater_or_equalp(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_less_or_equalp(C_word x, C_word y) C_regparm;
+C_fctexport C_word C_fcall C_i_integer_less_or_equalp(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_not_pair_p_2(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_null_list_p(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_string_null_p(C_word x) C_regparm;
@@ -2345,15 +2352,31 @@ C_inline int C_memcasecmp(const char *x, const char *y, unsigned int len)
   return 0;
 }
 
-C_inline C_word C_i_eqvp(C_word x, C_word y)
+C_inline C_word basic_eqvp(C_word x, C_word y)
 {
-  return
-    C_mk_bool(x == y ||
-	      (!C_immediatep(x) && !C_immediatep(y) &&
-	       C_block_header(x) == C_FLONUM_TAG && C_block_header(y) == C_FLONUM_TAG &&
-	       C_flonum_magnitude(x) == C_flonum_magnitude(y) ) );
+  return (x == y ||
+
+          (!C_immediatep(x) && !C_immediatep(y) &&
+           C_block_header(x) == C_block_header(y) &&
+           
+           ((C_block_header(x) == C_FLONUM_TAG &&
+             C_flonum_magnitude(x) == C_flonum_magnitude(y)) ||
+            
+            (C_header_bits(x) == C_BIGNUM_TYPE &&
+             C_i_bignum_cmp(x, y) == C_fix(0)))));
 }
 
+C_inline C_word C_i_eqvp(C_word x, C_word y)
+{
+   return C_mk_bool(basic_eqvp(x, y) ||
+                    (!C_immediatep(x) && !C_immediatep(y) &&
+                     C_block_header(x) == C_block_header(y) &&
+                     C_block_header(x) == C_STRUCTURE3_TAG &&
+                     (C_block_item(x, 0) == C_ratnum_type_tag ||
+                      C_block_item(x, 0) == C_cplxnum_type_tag) &&
+                     basic_eqvp(C_block_item(x, 1), C_block_item(y, 1)) &&
+                     basic_eqvp(C_block_item(x, 2), C_block_item(y, 2))));
+}
 
 C_inline C_word C_i_symbolp(C_word x)
 {

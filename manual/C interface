@@ -818,6 +818,11 @@ Returns the number of digits in the bignum {{b}}, as an unboxed C number.  If yo
 
 Returns the number of digits in the bignum {{b}}, as a Scheme fixnum.  If you want an unboxed integer, use {{C_bignum_size}}.
 
+===== C_i_bignum_cmp
+
+ [C macro] C_word C_i_bignum_cmp(x, y)
+
+Compares the bignums {{x}} and {{y}} and returns the fixnums {{-1}}, {{0}} or {{1}} if {{x}} is less than, equal to or greater than {{y}}, respectively.
 
 ==== Fixnums
 
@@ -1298,6 +1303,41 @@ Returns {{C_SCHEME_TRUE}} when {{n}} is a positive fixnum or bignum,
 
 Returns {{C_SCHEME_TRUE}} when {{n}} is a negative fixnum or bignum,
 {{C_SCHEME_FALSE}} if it is zero or positive.
+
+===== C_i_integer_equalp
+
+ [C macro] C_word C_i_integer_equalp(x, y)
+
+Returns {{C_SCHEME_TRUE}} when {{x}} and {{y}} are numerically equal,
+{{C_SCHEME_FALSE}} if they differ.
+
+===== C_i_integer_greaterp
+
+ [C macro] C_word C_i_integer_greaterp(x, y)
+
+Returns {{C_SCHEME_TRUE}} when {{x}} is greater than {{y}},
+{{C_SCHEME_FALSE}} if it is equal or less.
+
+===== C_i_integer_greater_or_equalp
+
+ [C macro] C_word C_i_integer_greaterp(x, y)
+
+Returns {{C_SCHEME_TRUE}} when {{x}} is greater than or equal to {{y}},
+{{C_SCHEME_FALSE}} if it is less.
+
+===== C_i_integer_lessp
+
+ [C macro] C_word C_i_integer_lessp(x, y)
+
+Returns {{C_SCHEME_TRUE}} when {{x}} is less than {{y}},
+{{C_SCHEME_FALSE}} if it is equal or greater.
+
+===== C_i_integer_less_or_equalp
+
+ [C macro] C_word C_i_integer_less_or_equalp(x, y)
+
+Returns {{C_SCHEME_TRUE}} when {{x}} is less than or equal to {{y}},
+{{C_SCHEME_FALSE}} if it is greater.
 
 
 ==== Pointers

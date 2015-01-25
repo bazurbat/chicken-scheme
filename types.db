@@ -61,12 +61,14 @@
 (eq? (#(procedure #:pure #:foldable) eq? (* *) boolean))
 
 (eqv? (#(procedure #:pure #:foldable) eqv? (* *) boolean)
-      (((not float) *) (eq? #(1) #(2)))
-      ((* (not float)) (eq? #(1) #(2))))
+      (((or immediate symbol) *) (eq? #(1) #(2)))
+      ((* (or immediate symbol)) (eq? #(1) #(2)))
+      ((* *) (##core#inline "C_i_eqvp" #(1) #(2))))
 
 (equal? (#(procedure #:pure #:foldable) equal? (* *) boolean)
-	(((or fixnum symbol char eof null) *) (eq? #(1) #(2)))
-	((* (or fixnum symbol char eof null)) (eq? #(1) #(2))))
+	(((or immediate symbol) *) (eq? #(1) #(2)))
+	((* (or immediate symbol)) (eq? #(1) #(2)))
+	((number number) (##core#inline "C_i_eqvp" #(1) #(2))))
 
 (pair? (#(procedure #:pure #:predicate pair) pair? (*) boolean))
 
@@ -365,71 +367,41 @@
    (() '#t)
    ((number) (let ((#(tmp) #(1))) '#t))
    ((fixnum fixnum) (eq? #(1) #(2)))
-   ((float fixnum) (##core#inline
-		    "C_flonum_equalp"
-		    #(1) 
-		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
-   ((fixnum float) (##core#inline
-		    "C_flonum_equalp"
-		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
-		    #(2)))
-   ((float float) (##core#inline "C_flonum_equalp" #(1) #(2))))
+   ((float float) (##core#inline "C_flonum_equalp" #(1) #(2)))
+   ((integer integer) (##core#inline "C_i_integer_equalp" #(1) #(2)))
+   ((number number) (##core#inline "C_i_nequalp" #(1) #(2))))
 
 (> (#(procedure #:clean #:enforce #:foldable) > (#!rest number) boolean)
    (() '#t)
    ((number) (let ((#(tmp) #(1))) '#t))
    ((fixnum fixnum) (fx> #(1) #(2)))
-   ((float fixnum) (##core#inline
-		    "C_flonum_greaterp"
-		    #(1) 
-		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
-   ((fixnum float) (##core#inline
-		    "C_flonum_greaterp"
-		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
-		    #(2)))
-   ((float float) (##core#inline "C_flonum_greaterp" #(1) #(2))))
+   ((float float) (##core#inline "C_flonum_greaterp" #(1) #(2)))
+   ((integer integer) (##core#inline "C_i_integer_greaterp" #(1) #(2)))
+   ((number number) (##core#inline "C_i_greaterp" #(1) #(2))))
 
 (< (#(procedure #:clean #:enforce #:foldable) < (#!rest number) boolean)
    (() '#t)
    ((number) (let ((#(tmp) #(1))) '#t))
    ((fixnum fixnum) (fx< #(1) #(2)))
-   ((float fixnum) (##core#inline
-		    "C_flonum_lessp"
-		    #(1) 
-		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
-   ((fixnum float) (##core#inline
-		    "C_flonum_lessp"
-		    (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
-		    #(2)))
-   ((float float) (##core#inline "C_flonum_lessp" #(1) #(2))))
+   ((integer integer) (##core#inline "C_i_integer_lessp" #(1) #(2)))
+   ((float float) (##core#inline "C_flonum_lessp" #(1) #(2)))
+   ((number number) (##core#inline "C_i_lessp" #(1) #(2))))
 
 (>= (#(procedure #:clean #:enforce #:foldable) >= (#!rest number) boolean)
     (() '#t)
     ((number) (let ((#(tmp) #(1))) '#t))
     ((fixnum fixnum) (fx>= #(1) #(2)))
-    ((float fixnum) (##core#inline
-		     "C_flonum_greater_or_equal_p"
-		     #(1) 
-		     (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
-    ((fixnum float) (##core#inline
-		     "C_flonum_greater_or_equal_p"
-		     (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
-		     #(2)))
-    ((float float) (##core#inline "C_flonum_greater_or_equal_p" #(1) #(2))))
+    ((integer integer) (##core#inline "C_i_integer_greater_or_equalp" #(1) #(2)))
+    ((float float) (##core#inline "C_flonum_greater_or_equal_p" #(1) #(2)))
+    ((number number) (##core#inline "C_i_greater_or_equalp" #(1) #(2))))
 
 (<= (#(procedure #:clean #:enforce #:foldable) <= (#!rest number) boolean)
     (() '#t)
     ((number) (let ((#(tmp) #(1))) '#t))
     ((fixnum fixnum) (fx<= #(1) #(2)))
-    ((float fixnum) (##core#inline
-		     "C_flonum_less_or_equal_p"
-		     #(1) 
-		     (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(2))))
-    ((fixnum float) (##core#inline
-		     "C_flonum_less_or_equal_p"
-		     (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))
-		     #(2)))
-    ((float float) (##core#inline "C_flonum_less_or_equal_p" #(1) #(2))))
+    ((integer integer) (##core#inline "C_i_integer_less_or_equalp" #(1) #(2)))
+    ((float float) (##core#inline "C_flonum_less_or_equal_p" #(1) #(2)))
+    ((number number) (##core#inline "C_i_less_or_equalp" #(1) #(2))))
 
 (quotient (#(procedure #:clean #:enforce #:foldable) quotient (number number) number)
 	  ;;XXX flonum/mixed case
@@ -866,9 +838,9 @@
 
 (equal=? (#(procedure #:clean #:foldable) equal=? (* *) boolean)
 	 ((fixnum fixnum) (eq? #(1) #(2)))
-	 (((or symbol char eof null) *) (eq? #(1) #(2)))
+	 (((or symbol char eof null undefined) *) (eq? #(1) #(2)))
 	 ((* (or symbol char eof null undefined)) (eq? #(1) #(2)))
-	 (((or float fixnum number) (or float fixnum number)) (= #(1) #(2))))
+	 ((number number) (= #(1) #(2))))
 
 (er-macro-transformer
  (#(procedure #:clean #:enforce) 
