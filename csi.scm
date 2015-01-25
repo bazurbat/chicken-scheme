@@ -597,29 +597,36 @@ EOF
 			     (else (loop2 n len)) ) ) ) ) ) ) ) )
       (when (##sys#permanent? x)
 	(fprintf out "statically allocated (0x~X) " (##sys#block-address x)) )
-      (cond [(char? x)
+      (cond ((char? x)
 	     (let ([code (char->integer x)])
-	       (fprintf out "character ~S, code: ~S, #x~X, #o~O~%" x code code code) ) ]
-	    [(eq? x #t) (fprintf out "boolean true~%")]
-	    [(eq? x #f) (fprintf out "boolean false~%")]
-	    [(null? x) (fprintf out "empty list~%")]
-	    [(eof-object? x) (fprintf out "end-of-file object~%")]
-	    [(eq? (##sys#void) x) (fprintf out "unspecified object~%")]
-	    [(fixnum? x)
-	     (fprintf out "exact integer ~S~%  #x~X~%  #o~O~%  #b~B" x x x x)
+	       (fprintf out "character ~S, code: ~S, #x~X, #o~O~%" x code code code) ) )
+	    ((eq? x #t) (fprintf out "boolean true~%"))
+	    ((eq? x #f) (fprintf out "boolean false~%"))
+	    ((null? x) (fprintf out "empty list~%"))
+	    ((eof-object? x) (fprintf out "end-of-file object~%"))
+	    ((eq? (##sys#void) x) (fprintf out "unspecified object~%"))
+	    ((fixnum? x)
+	     (fprintf out "exact immediate integer ~S~%  #x~X~%  #o~O~%  #b~B"
+	       x x x x)
 	     (let ([code (integer->char x)])
 	       (when (fx< x #x10000) (fprintf out ", character ~S" code)) )
-	     (##sys#write-char-0 #\newline ##sys#standard-output) ]
-	    [(eq? x (##sys#slot '##sys#arbitrary-unbound-symbol 0))
-	     (fprintf out "unbound value~%") ]
-	    [(flonum? x) (fprintf out "inexact number ~S~%" x)]
-	    [(number? x) (fprintf out "number ~S~%" x)]
-	    [(string? x) (descseq "string" ##sys#size string-ref 0)]
-	    [(vector? x) (descseq "vector" ##sys#size ##sys#slot 0)]
+	     (##sys#write-char-0 #\newline ##sys#standard-output) )
+	    ((bignum? x)
+	     (fprintf out "exact large integer ~S~%  #x~X~%  #o~O~%  #b~B~%"
+	       x x x x) )
+	    ((eq? x (##sys#slot '##sys#arbitrary-unbound-symbol 0))
+	     (fprintf out "unbound value~%") )
+	    ((flonum? x) (fprintf out "inexact rational number ~S~%" x))
+	    ((ratnum? x) (fprintf out "exact ratio ~S~%" x))
+	    ((cplxnum? x) (fprintf out "~A complex number ~S~%"
+			    (if (exact? x) "exact" "inexact") x))
+	    ((number? x) (fprintf out "number ~S~%" x))
+	    ((string? x) (descseq "string" ##sys#size string-ref 0))
+	    ((vector? x) (descseq "vector" ##sys#size ##sys#slot 0))
 	    ((keyword? x)
 	     (fprintf out "keyword symbol with name ~s~%" 
 	       (##sys#symbol->string x)))
-	    [(symbol? x)
+	    ((symbol? x)
 	     (unless (##sys#symbol-has-toplevel-binding? x)
 	       (display "unbound " out))
 	     (let ((q (##sys#qualified-symbol? x)))
@@ -639,58 +646,58 @@ EOF
 		    1000
 		    (lambda ()
 		      (write (cadr plist) out) ) )
-		   (newline out) ) ) ) ]
-	    [(or (circular-list? x) (improper-pairs? x))
+		   (newline out) ) ) ) )
+	    ((or (circular-list? x) (improper-pairs? x))
 	     (fprintf out "circular structure: ")
 	     (let loop-print ((x x)
-                              (cdr-refs (list x)))
-               (cond ((or (atom? x)
-                          (null? x)) (printf "eol~%"))
-                     ((memq (car x) cdr-refs)
-                      (fprintf out "(circle)~%" ))
+			      (cdr-refs (list x)))
+	       (cond ((or (atom? x)
+			  (null? x)) (printf "eol~%"))
+		     ((memq (car x) cdr-refs)
+		      (fprintf out "(circle)~%" ))
 		     ((not (memq (car x) cdr-refs))
 		      (fprintf out "~S -> " (car x))
-		      (loop-print (cdr x) (cons (car x)  cdr-refs) ))))]
-	    [(list? x) (descseq "list" length list-ref 0)]
-	    [(pair? x) (fprintf out "pair with car ~S~%and cdr ~S~%" (car x) (cdr x))]
-	    [(procedure? x)
+		      (loop-print (cdr x) (cons (car x)  cdr-refs) )))))
+	    ((list? x) (descseq "list" length list-ref 0))
+	    ((pair? x) (fprintf out "pair with car ~S~%and cdr ~S~%" (car x) (cdr x)))
+	    ((procedure? x)
 	     (let ([len (##sys#size x)])
 	       (descseq 
 		(sprintf "procedure with code pointer 0x~X" (##sys#peek-unsigned-integer x 0))
-		##sys#size ##sys#slot 1) ) ]
-	    [(port? x)
+		##sys#size ##sys#slot 1) ) )
+	    ((port? x)
 	     (fprintf out
-		      "~A port of type ~A with name ~S and file pointer ~X~%"
-		      (if (##sys#slot x 1) "input" "output")
-		      (##sys#slot x 7)
-		      (##sys#slot x 3)
-		      (##sys#peek-unsigned-integer x 0) ) ]
-	    [(##sys#locative? x)
+		 "~A port of type ~A with name ~S and file pointer ~X~%"
+	       (if (##sys#slot x 1) "input" "output")
+	       (##sys#slot x 7)
+	       (##sys#slot x 3)
+	       (##sys#peek-unsigned-integer x 0) ) )
+	    ((##sys#locative? x)
 	     (fprintf out "locative~%  pointer ~X~%  index ~A~%  type ~A~%"
-		      (##sys#peek-unsigned-integer x 0)
-		      (##sys#slot x 1)
-		      (case (##sys#slot x 2) 
-			[(0) "slot"]
-			[(1) "char"]
-			[(2) "u8vector"]
-			[(3) "s8vector"]
-			[(4) "u16vector"]
-			[(5) "s16vector"]
-			[(6) "u32vector"]
-			[(7) "s32vector"]
-			[(8) "f32vector"]
-			[(9) "f64vector"] ) ) ]
-	    [(##sys#pointer? x) (fprintf out "machine pointer ~X~%" (##sys#peek-unsigned-integer x 0))]
-	    [(##sys#bytevector? x)
+	       (##sys#peek-unsigned-integer x 0)
+	       (##sys#slot x 1)
+	       (case (##sys#slot x 2) 
+		 ((0) "slot")
+		 ((1) "char")
+		 ((2) "u8vector")
+		 ((3) "s8vector")
+		 ((4) "u16vector")
+		 ((5) "s16vector")
+		 ((6) "u32vector")
+		 ((7) "s32vector")
+		 ((8) "f32vector")
+		 ((9) "f64vector") ) ) )
+	    ((##sys#pointer? x) (fprintf out "machine pointer ~X~%" (##sys#peek-unsigned-integer x 0)))
+	    ((##sys#bytevector? x)
 	     (let ([len (##sys#size x)])
 	       (fprintf out "blob of size ~S:~%" len)
-	       (hexdump x len ##sys#byte out) ) ]
-	    [(##core#inline "C_lambdainfop" x)
-	     (fprintf out "lambda information: ~s~%" (##sys#lambda-info->string x)) ]
-	    [(##sys#structure? x 'hash-table)
+	       (hexdump x len ##sys#byte out) ) )
+	    ((##core#inline "C_lambdainfop" x)
+	     (fprintf out "lambda information: ~s~%" (##sys#lambda-info->string x)) )
+	    ((##sys#structure? x 'hash-table)
 	     (let ((n (##sys#slot x 2)))
 	       (fprintf out "hash-table with ~S element~a~%  comparison procedure: ~A~%"
-			n (if (fx= n 1) "" "s")  (##sys#slot x 3)) )
+		 n (if (fx= n 1) "" "s")  (##sys#slot x 3)) )
 	     (fprintf out "  hash function: ~a~%" (##sys#slot x 4))
 	     ;; this copies code out of srfi-69.scm, but we don't want to depend on it
 	     (let* ((vec (##sys#slot x 1))
@@ -701,8 +708,8 @@ EOF
 		  (lambda (bucket)
 		    (fprintf out " ~S\t-> ~S~%"
 		      (##sys#slot bucket 0) (##sys#slot bucket 1)) )
-		  (##sys#slot vec i)) ) ) ]
-	    [(##sys#structure? x 'condition)
+		  (##sys#slot vec i)) ) ) )
+	    ((##sys#structure? x 'condition)
 	     (fprintf out "condition: ~s~%" (##sys#slot x 1))
 	     (for-each
 	      (lambda (k)
@@ -716,8 +723,8 @@ EOF
 			 (fprintf out "\t~s: ~s" (cdar props) (cadr props)) ))
 		      (newline out))
 		    (loop (cddr props)) ) ) )
-	      (##sys#slot x 1) ) ]
-	    [(##sys#generic-structure? x)
+	      (##sys#slot x 1) ) )
+	    ((##sys#generic-structure? x)
 	     (let ([st (##sys#slot x 0)])
 	       (cond ((##sys#hash-table-ref describer-table st) => (cut <> x out))
 		     ((assq st bytevector-data) =>
@@ -725,8 +732,8 @@ EOF
 			(apply descseq (append (map eval (cdr data)) (list 0)))) )
 		     (else
 		      (fprintf out "structure of type `~S':~%" (##sys#slot x 0))
-		      (descseq #f ##sys#size ##sys#slot 1) ) ) ) ]
-	    [else (fprintf out "unknown object~%")] )
+		      (descseq #f ##sys#size ##sys#slot 1) ) ) ) )
+	    (else (fprintf out "unknown object~%")) )
       (##sys#void) ) ) )
 
 (define (set-describer! tag proc)
