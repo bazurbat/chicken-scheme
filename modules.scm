@@ -32,6 +32,7 @@
   (not inline ##sys#alias-global-hook))
 
 (include "common-declarations.scm")
+(include "mini-srfi-1.scm")
 
 (define-syntax d (syntax-rules () ((_ . _) (void))))
 
@@ -189,7 +190,7 @@
        (##sys#module-rename sym (module-name mod)) 
        mod exp #f)
       (and-let* ((a (assq sym ulist)))
-	(set-module-undefined-list! mod (##sys#delq a ulist)))
+	(set-module-undefined-list! mod (delete a ulist)))
       (check-for-redef sym (##sys#current-environment) (##sys#macro-environment))
       (set-module-exist-list! mod (cons sym (module-exist-list mod)))
       (when exp
@@ -643,14 +644,14 @@
 					  (loop impv (cdr imps)
 						v
 						(cons (cons (cadr a) (cdar imps)) s)
-						(##sys#delq a ids))))
+						(delete a ids))))
 				       (else (loop impv (cdr imps) v (cons (car imps) s) ids))))
 				((assq (caar impv) ids) =>
 				 (lambda (a)
 				   (loop (cdr impv) imps
 					 (cons (cons (cadr a) (cdar impv)) v)
 					 s
-					 (##sys#delq a ids))))
+					 (delete a ids))))
 				(else (loop (cdr impv) imps
 					    (cons (car impv) v)
 					    s ids)))))

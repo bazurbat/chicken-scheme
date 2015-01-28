@@ -728,7 +728,7 @@
 	     eggs)
 	    same?)))
       (unless (and (= (length eggs) (length eggs2))
-		   (every (lambda (egg) (find (cut same=? <> egg) eggs2)) eggs))
+		   (every (lambda (egg) (find (cut same? <> egg) eggs2)) eggs))
 	(print "mapped " eggs " to " eggs2))
       eggs2))
 

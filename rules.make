@@ -545,7 +545,7 @@ eval.c: $(SRCDIR)eval.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 expand.c: $(SRCDIR)expand.scm $(SRCDIR)synrules.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
-modules.c: $(SRCDIR)modules.scm $(SRCDIR)common-declarations.scm
+modules.c: $(SRCDIR)modules.scm $(SRCDIR)common-declarations.scm $(SRCDIR)mini-srfi-1.scm
 	$(bootstrap-lib)
 extras.c: $(SRCDIR)extras.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
@@ -620,10 +620,10 @@ csc.c: $(SRCDIR)csc.scm mini-srfi-1.scm
 chicken-bug.c: $(SRCDIR)chicken-bug.scm
 	$(CHICKEN) $< $(CHICKEN_PROGRAM_OPTIONS) -output-file $@ 
 
-setup-api.c: $(SRCDIR)setup-api.scm
+setup-api.c: $(SRCDIR)setup-api.scm $(SRCDIR)mini-srfi-1.scm
 	$(CHICKEN) $< $(CHICKEN_DYNAMIC_OPTIONS) -emit-import-library setup-api \
 	  -output-file $@ 
-setup-download.c: $(SRCDIR)setup-download.scm setup-api.c
+setup-download.c: $(SRCDIR)setup-download.scm setup-api.c $(SRCDIR)mini-srfi-1.scm
 	$(CHICKEN) $< $(CHICKEN_DYNAMIC_OPTIONS) -emit-import-library setup-download \
 	  -output-file $@ 
 

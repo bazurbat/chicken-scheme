@@ -429,12 +429,6 @@ EOF
 (define (list-tail lst i) (##core#inline "C_i_list_tail" lst i))
 (define (list-ref lst i) (##core#inline "C_i_list_ref" lst i))
 
-(define (##sys#delq x lst)
-  (let loop ([lst lst])
-    (cond ((null? lst) lst)
-	  ((eq? x (##sys#slot lst 0)) (##sys#slot lst 1))
-	  (else (cons (##sys#slot lst 0) (loop (##sys#slot lst 1)))) ) ) )
-
 (define (##sys#error-not-a-proper-list arg #!optional loc)
   (##sys#error-hook
    (foreign-value "C_NOT_A_PROPER_LIST_ERROR" int) 

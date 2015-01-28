@@ -69,6 +69,8 @@
 	  irregex utils posix ports extras data-structures
 	  files)
 
+(include "mini-srfi-1.scm")
+
 ;;; Constants, variables and parameters
 
 (define-constant setup-file-extension "setup-info")

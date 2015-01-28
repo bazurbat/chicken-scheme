@@ -573,7 +573,7 @@
 		  (warning
 		   (sprintf "reference to variable `~s' possibly unintended" x) )))
 	   (resolve-variable x e se dest ldest h))
-	  ((not-pair? x)
+	  ((not (pair? x))
 	   (if (constant? x)
 	       `(quote ,x)
 	       (##sys#syntax-error/context "illegal atomic form" x)))

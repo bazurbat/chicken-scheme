@@ -40,6 +40,8 @@
   (import extras irregex posix utils data-structures tcp files
 	  setup-api)
 
+  (include "mini-srfi-1.scm")
+
   (define-constant +default-tcp-connect-timeout+ 30000) ; 30 seconds
   (define-constant +default-tcp-read/write-timeout+ 30000) ; 30 seconds
 

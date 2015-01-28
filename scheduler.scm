@@ -31,7 +31,7 @@
   (hide ready-queue-head ready-queue-tail ##sys#timeout-list
 	##sys#update-thread-state-buffer ##sys#restore-thread-state-buffer
 	remove-from-ready-queue ##sys#unblock-threads-for-i/o ##sys#force-primordial
-	fdset-set fdset-test create-fdset stderr
+	fdset-set fdset-test create-fdset stderr delq
 	##sys#clear-i/o-state-for-thread! ##sys#abandon-mutexes) 
   (not inline ##sys#interrupt-hook)
   (unsafe)
@@ -147,6 +147,13 @@ EOF
 (define-syntax panic
   (syntax-rules ()
     ((_ msg) (##core#inline "C_halt" msg))))
+
+(define (delq x lst)
+  (let loop ([lst lst])
+    (cond ((null? lst) lst)
+	  ((eq? x (##sys#slot lst 0)) (##sys#slot lst 1))
+	  (else (cons (##sys#slot lst 0) (loop (##sys#slot lst 1)))) ) ) )
+
 
 (define (##sys#schedule)
   (define (switch thread)
@@ -334,9 +341,9 @@ EOF
   (let ((blocked (##sys#slot t 11)))
     (cond
      ((##sys#structure? blocked 'condition-variable)
-      (##sys#setslot blocked 2 (##sys#delq t (##sys#slot blocked 2))))
+      (##sys#setslot blocked 2 (delq t (##sys#slot blocked 2))))
      ((##sys#structure? blocked 'thread)
-      (##sys#setslot blocked 12 (##sys#delq t (##sys#slot blocked 12))))) )
+      (##sys#setslot blocked 12 (delq t (##sys#slot blocked 12))))) )
   (##sys#remove-from-timeout-list t)
   (##sys#clear-i/o-state-for-thread! t)
   (##sys#setslot t 3 s)
@@ -503,7 +510,7 @@ EOF
 	      (let* ((a (car lst))
 		     (fd2 (car a)) )
 		(if (eq? fd fd2)
-		    (let ((ts (##sys#delq t (cdr a)))) ; remove from fd-list entry
+		    (let ((ts (delq t (cdr a)))) ; remove from fd-list entry
 		      (cond ((null? ts) (cdr lst))
 			    (else
 			     (##sys#setslot a 1 ts) ; fd-list entry is list with t removed

@@ -177,7 +177,7 @@
 		  (gen "a[" j "]=")
 		  (expr x i)
 		  (gen #\,) )
-		subs (iota n 1 1) )
+		subs (list-tabulate n add1))
 	       (gen "tmp=(C_word)a,a+=" (add1 n) ",tmp)") ) )
 
 	    ((##core#box) 
@@ -256,8 +256,8 @@
 		     (call-id
 		      (cond ((and (eq? call-id (lambda-literal-id ll))
 				  (lambda-literal-looping ll) )
-			     (let* ([temps (lambda-literal-temporaries ll)]
-				    [ts (iota n (+ temps nf) 1)] )
+			     (let* ((temps (lambda-literal-temporaries ll))
+				    (ts (list-tabulate n (lambda (i) (+ temps nf i)))))
 			       (for-each
 				(lambda (arg tr)
 				  (gen #t #\t tr #\=)
@@ -266,7 +266,7 @@
 				args ts)
 			       (for-each
 				(lambda (from to) (gen #t #\t to "=t" from #\;))
-				ts (iota n 1 1) )
+				ts (list-tabulate n add1))
 			       (unless customizable (gen #t "c=" nf #\;))
 			       (gen #t "goto loop;") ) )
 			    (else
@@ -332,8 +332,8 @@
 		    [call-id (second params)] 
 		    [empty-closure (zero? (lambda-literal-closure-size ll))] )
 	       (cond (tailcall
-		      (let* ([temps (lambda-literal-temporaries ll)]
-			     [ts (iota n (+ temps nf) 1)] )
+		      (let* ((temps (lambda-literal-temporaries ll))
+			     (ts (list-tabulate n (cut + temps nf <>))))
 			(for-each
 			 (lambda (arg tr)
 			   (gen #t #\t tr #\=)
@@ -342,7 +342,7 @@
 			 subs ts)
 			(for-each
 			 (lambda (from to) (gen #t #\t to "=t" from #\;))
-			 ts (iota n 1 1) )
+			 ts (list-tabulate n add1))
 			(gen #t "goto loop;") ) )
 		     (else
 		      (gen call-id #\()
@@ -460,11 +460,10 @@
 	    (else (bomb "bad form" (node-class n))) ) ) )
     
       (define (expr-args args i)
-	(pair-for-each
-	 (lambda (xs)
-	   (if (not (eq? xs args)) (gen #\,))
-	   (expr (car xs) i) )
-	 args) )
+	(let loop ((xs args))
+	  (unless (null? xs)
+	    (unless (eq? xs args) (gen #\,))
+	    (expr (car xs) i) )))
 
       (expr node temps) )
   
