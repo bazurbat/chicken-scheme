@@ -1,8 +1,17 @@
 ;;;; typematch-tests.scm
 
 
-(use srfi-1 lolevel data-structures)
+(use lolevel data-structures)
 
+
+(define (make-list n x)
+  (list-tabulate n (lambda _ x)))
+
+(define (list-tabulate n proc)
+  (let loop ((i 0))
+    (if (fx>= i n)
+	'()
+	(cons (proc i) (loop (fx+ i 1))))))
 
 (define-syntax check
   (syntax-rules ()

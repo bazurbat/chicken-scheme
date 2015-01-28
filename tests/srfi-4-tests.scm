@@ -1,7 +1,7 @@
 ;;;; srfi-4-tests.scm
 
 
-(use srfi-1 srfi-4 ports)
+(use srfi-4 ports)
 
 
 (define-syntax test1

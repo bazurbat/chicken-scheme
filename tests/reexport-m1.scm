@@ -2,5 +2,5 @@
 
 (module reexport-m1 ()
   (import scheme chicken)
-  (require-library srfi-1)
-  (reexport (only srfi-1 cons*)))
+  (require-library srfi-4)
+  (reexport (only srfi-4 u8vector)))

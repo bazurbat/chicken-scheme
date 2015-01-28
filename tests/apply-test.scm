@@ -1,4 +1,12 @@
-(require-extension srfi-1 extras)
+(require-extension extras)
+
+(define (list-tabulate n proc)
+  (let loop ((i 0))
+    (if (fx>= i n)
+	'()
+	(cons (proc i) (loop (fx+ i 1))))))
+
+(define (iota n) (list-tabulate n (lambda (i) i)))
 
 (define max-argcount ##sys#apply-argument-limit)
 

@@ -1,6 +1,6 @@
 ;;;; library-tests.scm
 
-(use srfi-1 extras ports)
+(use extras ports)
 
 (define-syntax assert-fail
   (syntax-rules ()
