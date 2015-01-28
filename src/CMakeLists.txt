@@ -55,7 +55,8 @@ if(LIBUV_FOUND)
         OPTIONS ${LIBRARY_OPTIONS} -include-path ${chicken_SOURCE_DIR}/src
         EMIT_IMPORTS scheduler)
 else()
-    add_chicken_sources(libchicken_SOURCES scheduler/scheduler.scm)
+    add_chicken_sources(libchicken_SOURCES scheduler/scheduler.scm
+        OPTIONS ${LIBRARY_OPTIONS} -include-path ${chicken_SOURCE_DIR}/src)
 endif()
 
 if(WIN32)
