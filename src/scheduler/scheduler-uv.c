@@ -1,5 +1,6 @@
-#include "scheduler.h"
-#include "queue.h"
+#include "scheduler-uv.h"
+#include <common.h>
+#include <queue.h>
 #include <uv.h>
 #include <stdio.h>
 #include <stdlib.h>

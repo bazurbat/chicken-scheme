@@ -17,6 +17,7 @@
 
 #>
 #include "scheduler.h"
+#include "scheduler-uv.h"
 <#
 
 (register-feature! 'libuv-scheduler)

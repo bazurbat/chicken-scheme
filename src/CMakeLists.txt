@@ -47,7 +47,7 @@ add_subdirectory(scheme)
 add_subdirectory(system)
 
 if(LIBUV_FOUND)
-    list(APPEND libchicken_C_SOURCES uv/uv-ffi.c scheduler/scheduler.c)
+    list(APPEND libchicken_C_SOURCES uv/uv-ffi.c scheduler/scheduler-uv.c)
     add_chicken_sources(libchicken_SOURCES uv/uv.scm
         OPTIONS ${LIBRARY_OPTIONS} -include-path ${chicken_SOURCE_DIR}/src
         EMIT_IMPORTS uv)
