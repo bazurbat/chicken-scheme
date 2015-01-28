@@ -3,6 +3,7 @@ include(ChickenConfigure)
 
 if(LIBUV_FOUND)
     include_directories(BEFORE ${LIBUV_INCLUDE_DIRS})
+    set(HAVE_LIBUV YES)
 endif()
 
 include_directories(BEFORE

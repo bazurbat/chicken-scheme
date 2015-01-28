@@ -84,6 +84,8 @@
 #cmakedefine HAVE_STRTOLL
 #cmakedefine HAVE_STRTOQ
 
+#cmakedefine HAVE_LIBUV
+
 #cmakedefine NO_POSIX_POLL
 
 #cmakedefine01 STDC_HEADERS
