@@ -36,7 +36,6 @@ posixunix.c
 posixwin.c
 profiler.c
 scheduler.c
-srfi-1.c
 srfi-4.c
 stub.c
 support.c
@@ -87,7 +86,6 @@ posix-common.scm
 profiler.scm
 runtime.c
 scheduler.scm
-srfi-1.scm
 srfi-4.scm
 stub.scm
 support.scm
@@ -241,7 +239,6 @@ chicken.import.c
 foreign.import.scm
 foreign.import.c
 lolevel.import.scm
-srfi-1.import.scm
 srfi-4.import.scm
 data-structures.import.scm
 posix.import.scm
@@ -250,7 +247,6 @@ irregex.import.scm
 tcp.import.scm
 utils.import.scm
 lolevel.import.c
-srfi-1.import.c
 srfi-4.import.c
 data-structures.import.c
 posix.import.c
@@ -330,7 +326,6 @@ manual-html/Unit lolevel.html
 manual-html/Unit ports.html
 manual-html/Unit posix.html
 manual-html/Unit irregex.html
-manual-html/Unit srfi-1.html
 manual-html/Unit srfi-4.html
 manual-html/Unit tcp.html
 manual-html/Unit utils.html
