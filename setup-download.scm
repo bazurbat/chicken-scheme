@@ -24,7 +24,7 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
-(require-library extras irregex posix utils setup-api srfi-1 data-structures tcp
+(require-library extras irregex posix utils setup-api data-structures tcp
 		 files)
 
 
@@ -37,7 +37,7 @@
 			temporary-directory)
 
   (import scheme chicken foreign)
-  (import extras irregex posix utils srfi-1 data-structures tcp files
+  (import extras irregex posix utils data-structures tcp files
 	  setup-api)
 
   (define-constant +default-tcp-connect-timeout+ 30000) ; 30 seconds

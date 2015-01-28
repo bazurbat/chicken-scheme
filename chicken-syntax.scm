@@ -766,7 +766,6 @@
 	(if (fx>= i n)
 	    '()
 	    (cons (r (gensym)) (loop (fx+ i 1))) ) ) )
-    (require 'srfi-1)			; ugh...
     (let* ((mincount (apply min (map (lambda (c)
 				       (##sys#decompose-lambda-list 
 					(car c)

@@ -27,7 +27,7 @@
 
 (declare
   (block)
-  (uses data-structures ports srfi-1 utils files extras))
+  (uses data-structures ports utils files extras))
 
 (include "mini-srfi-1.scm")
 
