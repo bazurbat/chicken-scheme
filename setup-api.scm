@@ -66,8 +66,8 @@
      setup-error-handling)
   
   (import scheme chicken foreign
-	  irregex utils posix ports extras data-structures
-	  files)
+	  irregex utils posix extras data-structures files
+	  chicken.ports)
 
 (include "mini-srfi-1.scm")
 

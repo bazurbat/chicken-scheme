@@ -284,6 +284,7 @@
 	|   |-- chicken
 	|   |   `-- 7
 	|   |       |-- chicken.import.so
+	|   |       |-- chicken.ports.import.so
 	|   |       |-- csi.import.so
 	|   |       |-- data-structures.import.so
 	|   |       |-- extras.import.so
@@ -292,7 +293,6 @@
 	|   |       |-- irregex.import.so
 	|   |       |-- lolevel.import.so
 	|   |       |-- modules.db
-	|   |       |-- ports.import.so
 	|   |       |-- posix.import.so
 	|   |       |-- setup-api.import.so
 	|   |       |-- setup-api.so
@@ -305,8 +305,8 @@
 	|   |-- libchicken.a
 	|   |-- libchicken.dll.a                      (Windows)
 	|   |-- libchicken.dylib                      (Macintosh)
-	|   |-- libchicken.so -> libchicken.so.6      (Unix)
-	|   `-- libchicken.so.6			      (Unix)
+	|   |-- libchicken.so -> libchicken.so.7      (Unix)
+	|   `-- libchicken.so.7			      (Unix)
 	`-- share
 	    |-- chicken
 	    |   |-- doc

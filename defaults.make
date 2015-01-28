@@ -265,6 +265,13 @@ endif
 
 CHICKEN_PROGRAM_OPTIONS += $(if $(PROFILE_OBJECTS),-profile)
 
+# import libraries
+
+PRIMITIVE_IMPORT_LIBRARIES = chicken lolevel srfi-4 data-structures files
+PRIMITIVE_IMPORT_LIBRARIES += posix extras tcp foreign utils csi irregex
+PRIMITIVE_IMPORT_LIBRARIES += setup-api setup-download
+DYNAMIC_IMPORT_LIBRARIES = ports
+
 # targets
 
 CHICKEN_PROGRAM = $(PROGRAM_PREFIX)chicken$(PROGRAM_SUFFIX)
@@ -275,8 +282,8 @@ CHICKEN_INSTALL_PROGRAM = $(PROGRAM_PREFIX)chicken-install$(PROGRAM_SUFFIX)
 CHICKEN_UNINSTALL_PROGRAM = $(PROGRAM_PREFIX)chicken-uninstall$(PROGRAM_SUFFIX)
 CHICKEN_STATUS_PROGRAM = $(PROGRAM_PREFIX)chicken-status$(PROGRAM_SUFFIX)
 CHICKEN_BUG_PROGRAM = $(PROGRAM_PREFIX)chicken-bug$(PROGRAM_SUFFIX)
-IMPORT_LIBRARIES = chicken lolevel srfi-4 data-structures ports files posix extras tcp foreign utils csi irregex
-IMPORT_LIBRARIES += setup-api setup-download
+IMPORT_LIBRARIES = $(PRIMITIVE_IMPORT_LIBRARIES) \
+		   $(foreach lib,$(DYNAMIC_IMPORT_LIBRARIES),chicken.$(lib))
 
 ifdef STATICBUILD
 CHICKEN_STATIC_EXECUTABLE = $(CHICKEN_PROGRAM)$(EXE)

@@ -1790,24 +1790,24 @@
 
 ;; ports
 
-(call-with-input-string (#(procedure #:enforce) call-with-input-string (string (procedure (input-port) . *)) . *))
-(call-with-output-string (#(procedure #:enforce) call-with-output-string ((procedure (output-port) . *)) string))
-(copy-port (#(procedure #:enforce) copy-port (* * #!optional (procedure (*) *) (procedure (* output-port) *)) undefined)) 
-(make-input-port (#(procedure #:clean #:enforce) make-input-port ((procedure () (or char eof)) (procedure () *) (procedure () . *) #!optional * * * *) input-port))
-(make-output-port (#(procedure #:clean #:enforce) make-output-port ((procedure (string) . *) (procedure () . *) #!optional (procedure () . *)) output-port))
-(port-for-each (#(procedure #:enforce) port-for-each ((procedure (*) *) (procedure () . *)) undefined))
+(chicken.ports#call-with-input-string (#(procedure #:enforce) chicken.ports#call-with-input-string (string (procedure (input-port) . *)) . *))
+(chicken.ports#call-with-output-string (#(procedure #:enforce) chicken.ports#call-with-output-string ((procedure (output-port) . *)) string))
+(chicken.ports#copy-port (#(procedure #:enforce) chicken.ports#copy-port (* * #!optional (procedure (*) *) (procedure (* output-port) *)) undefined))
+(chicken.ports#make-input-port (#(procedure #:clean #:enforce) chicken.ports#make-input-port ((procedure () (or char eof)) (procedure () *) (procedure () . *) #!optional * * * *) input-port))
+(chicken.ports#make-output-port (#(procedure #:clean #:enforce) chicken.ports#make-output-port ((procedure (string) . *) (procedure () . *) #!optional (procedure () . *)) output-port))
+(chicken.ports#port-for-each (#(procedure #:enforce) chicken.ports#port-for-each ((procedure (*) *) (procedure () . *)) undefined))
 
-(port-map
- (forall (a b) (#(procedure #:enforce) port-map ((procedure (a) b) (procedure () a)) (list-of b))))
+(chicken.ports#port-map
+ (forall (a b) (#(procedure #:enforce) chicken.ports#port-map ((procedure (a) b) (procedure () a)) (list-of b))))
 
-(port-fold (#(procedure #:enforce) port-fold ((procedure (* *) *) * (procedure () *)) *))
-(make-broadcast-port (#(procedure #:clean #:enforce) make-broadcast-port (#!rest output-port) output-port))
-(make-concatenated-port (#(procedure #:clean #:enforce) make-concatenated-port (port #!rest input-port) input-port))
-(with-error-output-to-port (#(procedure #:enforce) with-error-output-to-port (output-port (procedure () . *)) . *))
-(with-input-from-port (#(procedure #:enforce) with-input-from-port (input-port (procedure () . *)) . *))
-(with-input-from-string (#(procedure #:enforce) with-input-from-string (string (procedure () . *)) . *))
-(with-output-to-port (#(procedure #:enforce) with-output-to-port (output-port (procedure () . *)) . *))
-(with-output-to-string (#(procedure #:enforce) with-output-to-string ((procedure () . *)) . *))
+(chicken.ports#port-fold (#(procedure #:enforce) chicken.ports#port-fold ((procedure (* *) *) * (procedure () *)) *))
+(chicken.ports#make-broadcast-port (#(procedure #:clean #:enforce) chicken.ports#make-broadcast-port (#!rest output-port) output-port))
+(chicken.ports#make-concatenated-port (#(procedure #:clean #:enforce) chicken.ports#make-concatenated-port (port #!rest input-port) input-port))
+(chicken.ports#with-error-output-to-port (#(procedure #:enforce) chicken.ports#with-error-output-to-port (output-port (procedure () . *)) . *))
+(chicken.ports#with-input-from-port (#(procedure #:enforce) chicken.ports#with-input-from-port (input-port (procedure () . *)) . *))
+(chicken.ports#with-input-from-string (#(procedure #:enforce) chicken.ports#with-input-from-string (string (procedure () . *)) . *))
+(chicken.ports#with-output-to-port (#(procedure #:enforce) chicken.ports#with-output-to-port (output-port (procedure () . *)) . *))
+(chicken.ports#with-output-to-string (#(procedure #:enforce) chicken.ports#with-output-to-string ((procedure () . *)) . *))
 
 
 ;; posix

@@ -29,11 +29,11 @@
 
 (module main ()
 
-  (import scheme chicken posix data-structures utils irregex ports extras
-          files)
+  (import scheme chicken posix data-structures utils irregex extras files)
   (import setup-download setup-api)
 
   (import foreign)
+  (import chicken.ports)
 
   (include "mini-srfi-1.scm")
 
@@ -42,11 +42,11 @@
     '("setup-api.so" "setup-api.import.so"
       "setup-download.so" "setup-download.import.so"
       "chicken.import.so"
+      "chicken.ports.import.so"
       "lolevel.import.so"
       "srfi-1.import.so"
       "srfi-4.import.so"
       "data-structures.import.so"
-      "ports.import.so"
       "files.import.so"
       "posix.import.so"
       "extras.import.so"

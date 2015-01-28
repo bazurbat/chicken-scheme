@@ -33,7 +33,8 @@
   
   (import scheme chicken foreign)
   (import setup-api)
-  (import posix data-structures utils ports irregex files)
+  (import posix data-structures utils irregex files)
+  (import chicken.ports)
 
   (include "mini-srfi-1.scm")
 

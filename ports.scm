@@ -36,6 +36,26 @@
   (unit ports)
   (uses extras))
 
+(module chicken.ports
+  (call-with-input-string
+   call-with-output-string
+   copy-port
+   make-input-port
+   make-output-port
+   port-for-each
+   port-map
+   port-fold
+   make-broadcast-port
+   make-concatenated-port
+   with-error-output-to-port
+   with-input-from-port
+   with-input-from-string
+   with-output-to-port
+   with-output-to-string)
+
+(import scheme chicken)
+(import extras)
+
 (include "common-declarations.scm")
 
 (register-feature! 'ports)
@@ -266,3 +286,5 @@
 	   (port (##sys#make-port #f class "(custom)" 'custom)) )
       (##sys#set-port-data! port data) 
       port) ) )
+
+)

@@ -43,6 +43,8 @@
 
 (include "posix-common.scm")
 
+(import chicken.ports)
+
 
 (declare
   (foreign-declare #<<EOF

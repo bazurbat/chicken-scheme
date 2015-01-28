@@ -913,6 +913,7 @@
   (##sys#register-primitive-module 'r5rs-null '() r4rs-syntax))
 
 (##sys#register-module-alias 'r5rs 'scheme)
+(##sys#register-module-alias 'ports 'chicken.ports)
 
 (register-feature! 'module-environments)
 

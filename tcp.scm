@@ -142,6 +142,8 @@ EOF
 
 (include "common-declarations.scm")
 
+(import chicken.ports)
+
 (register-feature! 'tcp)
 
 (define-foreign-type sockaddr* (pointer "struct sockaddr"))
