@@ -2202,7 +2202,7 @@
 ;
 ; Preserve known element types for:
 ;
-;   list-ref, list-tail, drop, take
+;   list-ref, list-tail
 
 (let ()
 
@@ -2251,14 +2251,6 @@
 	    (list (cadr result-type))))))
 
   (define-special-case list-tail
-    (list+index-call-result-type-special-case
-     (lambda (_ result-type) (list result-type))))
-
-  (define-special-case take
-    (list+index-call-result-type-special-case
-     (lambda (result-type _) (list result-type))))
-
-  (define-special-case drop
     (list+index-call-result-type-special-case
      (lambda (_ result-type) (list result-type)))))
 
@@ -2312,9 +2304,6 @@
 		     ((<= 0 size +maximal-complex-object-constructor-result-type-length+)))
 	    `((,type ,@(make-list size fill))))
 	  rtypes)))
-
-  (define-special-case make-list
-    (complex-object-constructor-result-type-special-case 'list))
 
   (define-special-case make-vector
     (complex-object-constructor-result-type-special-case 'vector)))
