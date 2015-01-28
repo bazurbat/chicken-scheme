@@ -19,52 +19,44 @@ mark_as_advanced(CHICKEN_API_VERSION)
 # should not cause any harm.
 find_package(Chicken QUIET CONFIG)
 
-if(NOT Chicken_FOUND)
-    find_package_message(CHICKEN_CONFIG
-        "Chicken package config is not found, guessing defaults."
-        "${Chicken_FOUND}")
-
-    find_path(CHICKEN_DATA_DIR setup.defaults
-        PATHS $ENV{CHICKEN_PREFIX}/share /usr/local/share /usr/share
-        PATH_SUFFIXES chicken)
-
-    find_path(CHICKEN_EXTENSION_DIR types.db
-        PATHS $ENV{CHICKEN_REPOSITORY}
-        NO_DEFAULT_PATH)
-
-    find_path(CHICKEN_EXTENSION_DIR types.db
-        PATHS $ENV{CHICKEN_PREFIX}/lib /usr/local/lib /usr/lib
-        PATH_SUFFIXES chicken/${CHICKEN_API_VERSION})
-else()
-    find_package_message(CHICKEN_CONFIG
-        "Using Chicken config: ${Chicken_CONFIG}"
-        "${Chicken_CONFIG}")
-endif()
-
-# host prefixed executables are searched as per convention to name cross
-# compilers by the target system
-
-# Chicken compiler - used to generate C files from scm, required.
 find_program(CHICKEN_EXECUTABLE chicken)
 
-# May be used in extension setup scripts.
 find_program(CHICKEN_CSI_EXECUTABLE csi)
 
 find_path(CHICKEN_INCLUDE_DIR chicken.h
-    HINTS ${CHICKEN_INCLUDE_DIR} $ENV{CHICKEN_PREFIX}/include
+    HINTS $ENV{CHICKEN_PREFIX}/include
     PATH_SUFFIXES chicken)
 
 find_library(CHICKEN_LIBRARY chicken
-    HINTS ${CHICKEN_LIBRARY_DIR} $ENV{CHICKEN_PREFIX}/lib)
+    HINTS $ENV{CHICKEN_PREFIX}/lib)
 
-# Determine the location of the static library based on the location of the
-# just found dynamic library. This is needed to avoid picking libraries from
-# some other Chicken in the default paths.
-get_filename_component(_chicken_library_dir ${CHICKEN_LIBRARY} PATH)
+get_filename_component(_chicken_prefix ${CHICKEN_INCLUDE_DIR} PATH)
+get_filename_component(_chicken_lib_dir ${CHICKEN_LIBRARY} PATH)
+string(REGEX REPLACE "^(.*)/include$" "\\1" _chicken_prefix ${_chicken_prefix})
+
 find_library(CHICKEN_STATIC_LIBRARY libchicken.a
-    HINTS ${_chicken_library_dir}
+    HINTS ${_chicken_lib_dir}
     NO_SYSTEM_ENVIRONMENT_PATH
     NO_CMAKE_SYSTEM_PATH)
+
+if(NOT Chicken_FOUND)
+    find_path(CHICKEN_DATA_DIR
+        NAME setup.defaults chicken-config.cmake
+        HINTS ${_chicken_prefix}/share
+              $ENV{CHICKEN_PREFIX}/share
+        PATHS /usr/local/share /usr/share
+        PATH_SUFFIXES chicken)
+
+    find_path(CHICKEN_EXTENSION_DIR types.db
+        HINTS ${_chicken_lib_dir}/chicken/${CHICKEN_API_VERSION}
+              $ENV{CHICKEN_REPOSITORY}
+        NO_DEFAULT_PATH)
+
+    find_path(CHICKEN_EXTENSION_DIR types.db
+        HINTS $ENV{CHICKEN_PREFIX}/lib
+        PATHS /usr/local/lib /usr/lib
+        PATH_SUFFIXES chicken/${CHICKEN_API_VERSION})
+endif()
 
 if(WIN32)
     # TODO: add check for x64

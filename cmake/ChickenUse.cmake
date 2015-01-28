@@ -201,14 +201,19 @@ function(_chicken_command out_var in_file)
 
     get_filename_component(in_path ${in_file} ABSOLUTE)
     get_filename_component(in_dir  ${in_path} DIRECTORY)
+
     if(IS_ABSOLUTE ${out_file})
         set(out_path ${out_file})
     else()
-        get_filename_component(out_path ${CMAKE_CURRENT_BINARY_DIR}/${out_file} ABSOLUTE)
+        # Cut off possible relative parts from the supplied filepath and place
+        # the output file in the current binary dir to avoid conflicts when
+        # single scm pulled from different subdirectories.
+        get_filename_component(out_name ${out_file} NAME)
+        get_filename_component(out_path ${CMAKE_CURRENT_BINARY_DIR}/${out_name} ABSOLUTE)
     endif()
 
     _chicken_command_prepare_arguments()
-    _chicken_add_c_flags(${in_file} ${out_file} ${command_c_flags})
+    _chicken_add_c_flags(${in_file} ${out_path} ${command_c_flags})
 
     get_property(is_import_library SOURCE ${in_file}
         PROPERTY chicken_import_library)
@@ -244,7 +249,7 @@ function(_chicken_command out_var in_file)
     if(compile_ERROR_FILE)
         set(out_path ${compile_ERROR_FILE})
     else()
-        list(APPEND chicken_command -output-file ${out_file})
+        list(APPEND chicken_command -output-file ${out_path})
     endif()
 
     list(INSERT command_output 0 ${out_path})
@@ -293,18 +298,18 @@ function(_chicken_command out_var in_file)
     foreach(lib ${command_import_libraries})
         # chicken is way too smart and does not rewrite import files when the
         # content is not changed, timestamp is not updated and this confuses
-        # build tools
-        add_custom_command(OUTPUT ${command_output}
-            COMMAND ${CMAKE_COMMAND} -E touch_nocreate
-                ${CMAKE_CURRENT_BINARY_DIR}/${lib}
-            VERBATIM APPEND)
+        # build tools (needs additional testing especially with MSVC)
+        # add_custom_command(OUTPUT ${command_output}
+        #     COMMAND ${CMAKE_COMMAND} -E touch_nocreate
+        #         ${CMAKE_CURRENT_BINARY_DIR}/${lib}
+        #     VERBATIM APPEND)
 
         # collect import libraries into a single directory for easier reference
         # from other rules
         add_custom_command(OUTPUT ${command_output}
-            COMMAND ${CMAKE_COMMAND} -E copy
-                ${CMAKE_CURRENT_BINARY_DIR}/${lib}
-                ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib}
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    ${CMAKE_CURRENT_BINARY_DIR}/${lib}
+                    ${CHICKEN_IMPORT_LIBRARY_DIR}/${lib}
             VERBATIM APPEND)
     endforeach()
 
