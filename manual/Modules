@@ -278,7 +278,6 @@ Everything from the {{library}}, {{eval}} and {{expand}} library units.
  [module] lolevel
  [module] posix
  [module] regex
- [module] srfi-1
  [module] srfi-4
  [module] tcp
  [module] utils

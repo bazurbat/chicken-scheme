@@ -321,7 +321,7 @@ the file containing the sharp-comma form, like this:
  (print #,(integer->char 33))
 </enscript>
 
-==== Why do built-in units, such as srfi-1 and posix fail to load?
+==== Why do built-in units, such as srfi-4 and posix fail to load?
 
 When you try to {{use}} a built-in unit such as {{posix}}, you may get the following error:
 
