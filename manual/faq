@@ -66,7 +66,7 @@ parameter {{case-sensitivity}} to {{#t}}.
 
 ==== Why doesn't CHICKEN support the full numeric tower by default?
 
-The short answer is to use the [[http://wiki.call-cc.org/egg/numbers|numbers]] egg:
+The short answer is to use the [[/egg/numbers|numbers]] egg:
 
 <enscript highlight=scheme>
 % chicken-install numbers
@@ -98,11 +98,11 @@ protocol. Such a design would make native threads in CHICKEN
 essentially equivalent to Unix processes and shared memory.
 
 For a different approach to concurrency, please see the
-[[http://wiki.call-cc.org/egg/mpi|mpi]] egg.
+[[/egg/mpi|mpi]] egg.
 
 ==== Does CHICKEN support Unicode strings?
 
-The system does not directly support Unicode, but there is an extension for UTF-8 strings: [[http://wiki.call-cc.org/egg/utf8|utf8]].
+The system does not directly support Unicode, but there is an extension for UTF-8 strings: [[/egg/utf8|utf8]].
 
 === Why are `dynamic-wind' thunks not executed when a SRFI-18 thread signals an error?
 
@@ -720,7 +720,7 @@ Compile the program that uses the module:
 
 ==== Why is my program which uses regular expressions so slow?
 
-The regular expression engine has recently been replaced by [[http://wiki.call-cc.org/users/alex shinn|alex shinn]]'s excellent
+The regular expression engine has recently been replaced by [[/users/alex shinn|alex shinn]]'s excellent
 {{irregex}} library, which is fully implemented in Scheme. Precompiling regular
 expressions to internal forms is somewhat slower than with the old PCRE-based
 regex engine. It is advisable to use {{irregex}} to precompile regular expressions
@@ -777,8 +777,11 @@ and wrap calls to {{set-finalizer!}} in it.
 
 ==== Does CSI support history and autocompletion?
 
-CSI doesn't support it natively but it can be activated with one of the [[http://wiki.call-cc.org/egg/readline|readline]], [[http://wiki.call-cc.org/egg/linenoise|linenoise]] or [[http://wiki.call-cc.org/egg/parley|parley]] eggs. Out of these three, the parley egg is recommended.
-After installing parley, add the following to your {{~/.csirc}} or equivalent file:
+CSI doesn't support it natively but it can be activated with one of the
+[[/egg/readline|readline]], [[/egg/linenoise|linenoise]] or
+[[/egg/parley|parley]] eggs. Out of these three, the parley egg is
+recommended. After installing parley, add the following to your
+{{~/.csirc}} or equivalent file:
 
 <enscript highlight=scheme>
 (use parley)

@@ -24,9 +24,6 @@ efficient code by omitting unnecessary type-checks.
 CHICKEN provides an intra-procedural flow-analysis pass and two
 compiler options for using type-information in this manner:
 
-{{-scrutinize}} will look for possibly incorrectly typed arguments to
-library procedure calls and generate warnings in such cases.
-
 {{-specialize}} will replace certain generic library procedure calls
 with faster type-specific operations.
 

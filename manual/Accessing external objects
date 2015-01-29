@@ -103,7 +103,7 @@ See that {{define-foreign-variable}} will not generate C declarations
 or memory allocation code; use it to include references to variables
 in external C code. To actually create Scheme variables visible from C,
 use {{define-external}} (see the Manual section on
-[[http://wiki.call-cc.org/man/4/Callbacks|Callbacks]]).
+[[/man/4/Callbacks|Callbacks]]).
 For example, the following code:
 <enscript lang="scheme">
 (import foreign)

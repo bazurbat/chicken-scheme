@@ -153,10 +153,9 @@ The master CHICKEN website is
 basic information about CHICKEN, downloads, and pointers to other key
 resources. 
 
-The CHICKEN wiki ([[http://wiki.call-cc.org]]) contains the most
-current version of the User's manual, along with various tutorials and
-other useful documents. The list of eggs is at
-[[http://wiki.call-cc.org/egg-index]].
+The CHICKEN wiki ([[http://wiki.call-cc.org]]) contains the most current
+version of the User's manual, along with various tutorials and other
+useful documents. The list of eggs is at [[/egg-index]].
 
 A very useful search facility for questions about CHICKEN is found at
 [[http://api.call-cc.org]]. The CHICKEN issue tracker is at
@@ -208,9 +207,8 @@ can pretty much ignore the C compiler once you have installed it.)
 Refer to the {{README}} file for the version you're installing for
 more information on the installation process. 
 
-Alternatively, third party packages in binary format are available.
-See [[http://wiki.call-cc.org/platforms]] for information about how to
-obtain them.
+Alternatively, third party packages in binary format are available. See
+[[/platforms]] for information about how to obtain them.
 
 === Development environments
 
@@ -270,10 +268,9 @@ including proportional fonts.
 
 * Vim ([[http://www.vim.org]]) is a highly configurable text
 editor built to enable efficient and fast text editing. It is an
-improved version of the vi editor distributed with most UNIX
-systems. Vim comes with generic Lisp (and therefore Scheme) editing
-capabilities out of the box. See [[http://wiki.call-cc.org/Vim]]
-for a few tips on using Vim with CHICKEN.
+improved version of the vi editor distributed with most UNIX systems.
+Vim comes with generic Lisp (and therefore Scheme) editing capabilities
+out of the box. See [[/Vim]] for a few tips on using Vim with CHICKEN.
 
 In the rest of this chapter, we'll assume that you are using an editor
 of your choice and a regular terminal window for executing your
