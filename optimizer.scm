@@ -214,7 +214,7 @@
 			     (cond ((not ok)
 				    (unless odirty (set! dirty #f))
 				    (set! broken-constant-nodes
-				      (lset-adjoin eq? broken-constant-nodes n1))
+				      (lset-adjoin broken-constant-nodes n1))
 				    n1)
 				   (else
 				    (touch)

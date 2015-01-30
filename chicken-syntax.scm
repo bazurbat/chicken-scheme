@@ -784,7 +784,7 @@
 	(##core#let
         ((,lvar (,%length ,rvar)))
 	 ,(foldr
-	   (lambda (body c)
+	   (lambda (c body)
 	     (##sys#decompose-lambda-list
 	      (car c)
 	      (lambda (vars argc rest)

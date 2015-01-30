@@ -40,11 +40,11 @@
   (define (bar) 99))
 
 (define foo-env (module-environment 'foo))
-(define srfi-4-env (module-environment 'srfi-4))
+(define ds-env (module-environment 'data-structures))
 
 (test-equal (eval '(bar) foo-env) 99)
 (test-error (eval 'baz foo-env))
-(test-equal (eval '(u8vector 1 2) srfi-4-env) '#u8(1 2))
-(test-error (eval 'baz srf-4-env))
+(test-equal (eval '(conc 1 2) ds-env) "12")
+(test-error (eval 'baz ds-env))
 
 (test-end)

@@ -2384,7 +2384,7 @@
 	    (lambda (vars argc rest)
 	      (let ((id (if here (first params) 'toplevel)))
 		(fluid-let ((lexicals (append locals lexicals)))
-		  (let ((c (delete-duplicates (gather (first subs) id vars))))
+		  (let ((c (delete-duplicates (gather (first subs) id vars) eq?)))
 		    (db-put! db id 'closure-size (length c))
 		    (db-put! db id 'captured-variables c)
 		    (lset-difference c locals vars)))))))

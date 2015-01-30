@@ -20,9 +20,9 @@
 	  (assert (= 99 (,(conc "vector-ref") x 1)))
 	  (assert (= 2 (,(conc "vector-length") x)))
 	  (assert
-	   (every =
-		  '(100 99)
-		  (,(conc "vector->list") x))))))))
+	   (let ((result (,(conc "vector->list") x)))
+	     (and (= 100 (car result))
+		  (= 99 (cadr result))))))))))
 
 (test1 u8)
 (test1 u16)

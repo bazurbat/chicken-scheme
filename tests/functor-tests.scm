@@ -13,6 +13,11 @@
 (include "test-queue")
 (include "breadth-first")
 
+(define (take lst n)
+  (if (fx<= n 0)
+      '()
+      (cons (car lst) (take (cdr lst) (fx- n 1)))))
+
 
 (module queue1 QUEUE
   (import (rename scheme

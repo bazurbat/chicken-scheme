@@ -1252,7 +1252,7 @@
 			    (if (any (cut eq? 'procedure <>) ts)
 				'procedure
 				(foldl
-				 (lambda (t pt)
+				 (lambda (pt t)
 				   (let* ((name1 (procedure-name t))
 					  (atypes1 (procedure-arguments t))
 					  (rtypes1 (procedure-results t))
@@ -2076,7 +2076,7 @@
 		   ,(map (lambda (tv)
 			   (cond ((assq tv constraints) => identity)
 				 (else tv)))
-			 (delete-duplicates typevars))
+			 (delete-duplicates typevars eq?))
 		   ,type)))
 	     (let ((type2 (simplify-type type)))
 	       (values 
@@ -2335,7 +2335,7 @@
 
     ;; collect candidates for each typevar
     (define (collect)
-      (let* ((vars (delete-duplicates (concatenate (map unzip1 insts))))
+      (let* ((vars (delete-duplicates (concatenate (map unzip1 insts)) eq?))
 	     (all (map (lambda (var)
 			 (cons
 			  var
@@ -2352,7 +2352,7 @@
 
     (ddd " over-all-instantiations: ~s exact=~a" tlist exact)
     ;; process all tlist elements
-    (let loop ((ts (delete-duplicates tlist))
+    (let loop ((ts (delete-duplicates tlist eq?))
 	       (ok #f))
       (cond ((null? ts)
 	     (cond ((or ok (null? tlist))

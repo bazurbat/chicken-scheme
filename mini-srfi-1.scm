@@ -48,7 +48,7 @@
 (define (take lst n)
   (if (fx<= n 0)
       '()
-      (cons (car lst) (take lst (fx- n 1)))))
+      (cons (car lst) (take (cdr lst) (fx- n 1)))))
 
 (define (drop lst n)
   (let loop ((lst lst) (n n))

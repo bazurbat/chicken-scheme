@@ -7,6 +7,18 @@
     ((_ exp)
      (assert (handle-exceptions ex #t exp #f)))))
 
+(define (list-tabulate n proc)
+  (let loop ((i 0))
+    (if (fx>= i n)
+	'()
+	(cons (proc i) (loop (fx+ i 1))))))
+
+(define (every pred lst)
+  (let loop ((lst lst))
+    (cond ((null? lst))
+	  ((not (pred (car lst))) #f)
+	  (else (loop (cdr lst))))))
+
 ;; numbers
 
 (assert (not (not 3)))
@@ -226,7 +238,7 @@
 ;; by Christian Kellermann
 (assert 
  (equal?
-  (map (lambda (n) (number->string 32 n)) (iota 15 2))
+  (map (lambda (n) (number->string 32 n)) (list-tabulate 15 (cut + 2 <>)))
   '("100000" "1012" "200" "112" "52" "44" "40" "35" "32" "2A" "28" "26" "24" "22" "20")))
 
 

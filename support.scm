@@ -646,10 +646,10 @@
    llist
    (lambda (vars argc rest)
      (receive (largs rargs) (split-at args argc)
-       (let* ([rlist (if copy? (map gensym vars) vars)]
-	      [body (if copy? 
+       (let* ((rlist (if copy? (map gensym vars) vars))
+	      (body (if copy? 
 			(copy-node-tree-and-rename body vars rlist db cfk)
-			body) ] )
+			body) ) )
 	 (let loop ((vars (take rlist argc))
 		    (vals largs))
 	   (if (null? vars)
