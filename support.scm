@@ -32,7 +32,7 @@
 (module chicken.compiler.support
     (compiler-cleanup-hook bomb collected-debugging-output debugging
      debugging-chicken with-debugging-output quit-compiling
-     emit-syntax-trace-info check-signature posq posv stringify symbolify
+     emit-syntax-trace-info check-signature stringify symbolify
      build-lambda-list string->c-identifier c-ify-string valid-c-identifier?
      bytes->words words->bytes
      check-and-open-input-file close-checked-input-file fold-inner
@@ -195,19 +195,6 @@
 
 
 ;;; Generic utility routines:
-
-;; XXX: Don't posq and posv belong better in library or data-structures?
-(define (posq x lst)
-  (let loop ([lst lst] [i 0])
-    (cond [(null? lst) #f]
-	  [(eq? x (car lst)) i]
-	  [else (loop (cdr lst) (add1 i))] ) ) )
-
-(define (posv x lst)
-  (let loop ([lst lst] [i 0])
-    (cond [(null? lst) #f]
-	  [(eqv? x (car lst)) i]
-	  [else (loop (cdr lst) (add1 i))] ) ) )
 
 (define (stringify x)
   (cond ((string? x) x)

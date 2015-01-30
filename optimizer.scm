@@ -1072,8 +1072,8 @@
 				vars) ) ) )
 			   (make-node 'let 
 				      (list (car names))
-				      (list (car callargs))
-				      (loop (cdr callargs) (cdr names))))))))))
+				      (list (car callargs)
+					    (loop (cdr callargs) (cdr names)))))))))))
 
     ;; (<op> a [b]) -> (<primitiveop> a (quote <i>) b)
     ((10) ; classargs = (<primitiveop> <i> <bvar> <safe>)

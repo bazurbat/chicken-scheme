@@ -50,6 +50,7 @@
 <#
 
 (include "common-declarations.scm")
+(include "mini-srfi-1.scm")
 
 (define-syntax d (syntax-rules () ((_ . _) (void))))
 

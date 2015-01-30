@@ -30,7 +30,7 @@
 	first second third fourth alist-cons delete-duplicates fifth
 	filter filter-map unzip1 last list-index lset-adjoin lset-difference
 	lset-union lset-intersection list-tabulate lset<= lset= length+ find find-tail
-	iota make-list))
+	iota make-list posq posv))
 
 
 (define (partition pred lst)
@@ -47,7 +47,7 @@
 
 (define (take lst n)
   (if (fx<= n 0)
-      lst
+      '()
       (cons (car lst) (take lst (fx- n 1)))))
 
 (define (drop lst n)
@@ -216,3 +216,16 @@
 
 (define (make-list n x)
   (list-tabulate n (lambda _ x)))
+
+(define (posq x lst)
+  (let loop ((i 0) (lst lst))
+    (cond ((null? lst) #f)
+	  ((eq? (car lst) x) i)
+	  (else (loop (fx+ i 1) (cdr lst))))))
+
+(define (posv x lst)
+  (let loop ((i 0) (lst lst))
+    (cond ((null? lst) #f)
+	  ((eqv? (car lst) x) i)
+	  (else (loop (fx+ i 1) (cdr lst))))))
+

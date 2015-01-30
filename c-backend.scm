@@ -463,7 +463,8 @@
 	(let loop ((xs args))
 	  (unless (null? xs)
 	    (unless (eq? xs args) (gen #\,))
-	    (expr (car xs) i) )))
+	    (expr (car xs) i)
+	    (loop (cdr xs)))))
 
       (expr node temps) )
   
@@ -1153,7 +1154,8 @@
     (let loop ((vs vlist) (ts argtypes))
       (unless (null? vs)
 	(gen (foreign-type-declaration (car ts) (car vs)))
-	(when (pair? (cdr vs)) (gen #\,)) ))
+	(when (pair? (cdr vs)) (gen #\,))
+	(loop (cdr vs) (cdr ts))))
     (gen #\)) ) )
 
 
