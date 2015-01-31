@@ -305,7 +305,23 @@ $compile fixnum-tests.scm
 ./a.out
 
 echo "======================================== string->number tests ..."
-$compile numbers-string-conversion-tests.scm
+$interpret -s numbers-string-conversion-tests.scm
+$compile -specialize numbers-string-conversion-tests.scm
+./a.out
+
+echo "======================================== basic numeric ops tests ..."
+$interpret -s numbers-test.scm
+$compile -specialize numbers-test.scm
+./a.out
+
+echo "======================================== Alex Shinn's numeric ops tests ..."
+$interpret -s numbers-test-ashinn.scm
+$compile -specialize numbers-test-ashinn.scm
+./a.out
+
+echo "======================================== Gauche's numeric ops tests ..."
+$interpret -s numbers-test-gauche.scm
+$compile -specialize numbers-test-gauche.scm
 ./a.out
 
 echo "======================================== srfi-4 tests ..."

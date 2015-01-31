@@ -366,7 +366,33 @@ a.out
 if errorlevel 1 exit /b 1
 
 echo ======================================== string->number tests ...
-%compile% numbers-string-conversion-tests.scm
+%interpret% -s numbers-string-conversion-tests.scm
+if errorlevel 1 exit /b 1
+%compile% -specialize numbers-string-conversion-tests.scm
+if errorlevel 1 exit /b 1
+a.out
+if errorlevel 1 exit /b 1
+
+echo ======================================== basic numeric ops tests ...
+%interpret% -s numbers-test.scm
+if errorlevel 1 exit /b 1
+%compile% -specialize numbers-test.scm
+if errorlevel 1 exit /b 1
+a.out
+if errorlevel 1 exit /b 1
+
+echo ======================================== Alex Shinns numeric ops tests ...
+%interpret% -s numbers-test-ashinn.scm
+if errorlevel 1 exit /b 1
+%compile% -specialize numbers-test-ashinn.scm
+if errorlevel 1 exit /b 1
+a.out
+if errorlevel 1 exit /b 1
+
+echo ======================================== Gauche numeric ops tests ...
+%interpret% -s numbers-test-gauche.scm
+if errorlevel 1 exit /b 1
+%compile% -specialize numbers-test-gauche.scm
 if errorlevel 1 exit /b 1
 a.out
 if errorlevel 1 exit /b 1

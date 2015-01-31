@@ -123,6 +123,9 @@ tests/embedded4.scm
 tests/condition-tests.scm
 tests/fixnum-tests.scm
 tests/numbers-string-conversion-tests.scm
+tests/numbers-tests.scm
+tests/numbers-tests-ashinn.scm
+tests/numbers-tests-gauche.scm
 tests/path-tests.scm
 tests/posix-tests.scm
 tests/r4rstest.out

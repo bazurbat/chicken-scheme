@@ -2,6 +2,7 @@
 ;
 ; by Alex Shinn, lifted from match-test by felix
 
+(use data-structures) ; for "->string"
 
 (define *pass* 0)
 (define *fail* 0)
@@ -74,11 +75,28 @@
             '("(PASS)" name)
             '("(FAIL)" name ": expected " expect " but got " result)))
 
+(define current-test-epsilon (make-parameter 1e-5))
+
+(define (approx-equal? a b epsilon)
+  (cond
+   ((> (abs a) (abs b)) (approx-equal? b a epsilon))
+   ((zero? a) (< (abs b) epsilon))
+   (else (< (abs (/ (- a b) b)) epsilon))))
+
+(define (test-equal? expect res)
+  (or (equal? expect res)
+      (and (number? expect)
+           (inexact? expect)
+           (inexact? res)
+           (approx-equal? expect res (current-test-epsilon)))))
+
+(define current-test-comparator (make-parameter test-equal?))
+
 (define-syntax test-equal
   (syntax-rules ()
     ((_ name expr value eq) (run-equal name (lambda () expr) value eq))
-    ((_ name expr value) (run-equal name (lambda () expr) value equal?))
-    ((_ expr value) (run-equal (->string 'expr) (lambda () expr) value equal?))))
+    ((_ name expr value) (run-equal name (lambda () expr) value (current-test-comparator)))
+    ((_ expr value) (run-equal (->string 'expr) (lambda () expr) value (current-test-comparator)))))
 
 (define-syntax test-error
   (syntax-rules ()
