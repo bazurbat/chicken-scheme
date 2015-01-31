@@ -556,6 +556,7 @@
 (rewrite 'string-length 2 1 "C_i_string_length" #t)
 
 (rewrite '##sys#check-exact 2 1 "C_i_check_exact" #t)
+(rewrite '##sys#check-fixnum 2 1 "C_i_check_fixnum" #t)
 (rewrite '##sys#check-number 2 1 "C_i_check_number" #t)
 (rewrite '##sys#check-list 2 1 "C_i_check_list" #t)
 (rewrite '##sys#check-pair 2 1 "C_i_check_pair" #t)
@@ -568,6 +569,7 @@
 (rewrite '##sys#check-structure 2 2 "C_i_check_structure" #t)
 (rewrite '##sys#check-char 2 1 "C_i_check_char" #t)
 (rewrite '##sys#check-exact 2 2 "C_i_check_exact_2" #t)
+(rewrite '##sys#check-fixnum 2 2 "C_i_check_fixnum_2" #t)
 (rewrite '##sys#check-number 2 2 "C_i_check_number_2" #t)
 (rewrite '##sys#check-list 2 2 "C_i_check_list_2" #t)
 (rewrite '##sys#check-pair 2 2 "C_i_check_pair_2" #t)

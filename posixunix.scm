@@ -492,8 +492,8 @@ EOF
 (define file-control
   (let ([fcntl (foreign-lambda int fcntl int int long)])
     (lambda (fd cmd #!optional (arg 0))
-      (##sys#check-exact fd 'file-control)
-      (##sys#check-exact cmd 'file-control)
+      (##sys#check-fixnum fd 'file-control)
+      (##sys#check-fixnum cmd 'file-control)
       (let ([res (fcntl fd cmd arg)])
         (if (fx= res -1)
             (posix-error #:file-error 'file-control "cannot control file" fd cmd)
@@ -504,8 +504,8 @@ EOF
     (lambda (filename flags . mode)
       (let ([mode (if (pair? mode) (car mode) defmode)])
         (##sys#check-string filename 'file-open)
-        (##sys#check-exact flags 'file-open)
-        (##sys#check-exact mode 'file-open)
+        (##sys#check-fixnum flags 'file-open)
+        (##sys#check-fixnum mode 'file-open)
         (let ([fd (##core#inline "C_open" (##sys#make-c-string filename 'file-open) flags mode)])
           (when (eq? -1 fd)
             (posix-error #:file-error 'file-open "cannot open file" filename flags mode) )
@@ -513,14 +513,14 @@ EOF
 
 (define file-close
   (lambda (fd)
-    (##sys#check-exact fd 'file-close)
+    (##sys#check-fixnum fd 'file-close)
     (when (fx< (##core#inline "C_close" fd) 0)
       (posix-error #:file-error 'file-close "cannot close file" fd) ) ) )
 
 (define file-read
   (lambda (fd size . buffer)
-    (##sys#check-exact fd 'file-read)
-    (##sys#check-exact size 'file-read)
+    (##sys#check-fixnum fd 'file-read)
+    (##sys#check-fixnum size 'file-read)
     (let ([buf (if (pair? buffer) (car buffer) (make-string size))])
       (unless (and (##core#inline "C_blockp" buf) (##core#inline "C_byteblockp" buf))
 	(##sys#signal-hook #:type-error 'file-read "bad argument type - not a string or blob" buf) )
@@ -531,11 +531,11 @@ EOF
 
 (define file-write
   (lambda (fd buffer . size)
-    (##sys#check-exact fd 'file-write)
+    (##sys#check-fixnum fd 'file-write)
     (unless (and (##core#inline "C_blockp" buffer) (##core#inline "C_byteblockp" buffer))
       (##sys#signal-hook #:type-error 'file-write "bad argument type - not a string or blob" buffer) )
     (let ([size (if (pair? size) (car size) (##sys#size buffer))])
-      (##sys#check-exact size 'file-write)
+      (##sys#check-fixnum size 'file-write)
       (let ([n (##core#inline "C_write" fd buffer size)])
         (when (eq? -1 n)
           (posix-error #:file-error 'file-write "cannot write to file" fd size) )
@@ -638,7 +638,7 @@ EOF
       name)))
 
 (define (change-directory* fd)
-  (##sys#check-exact fd 'change-directory*) 
+  (##sys#check-fixnum fd 'change-directory*) 
   (unless (fx= 0 (##core#inline "C_fchdir" fd)) 
     (posix-error #:file-error 'change-directory* "cannot change current directory" fd) )
   fd)
@@ -809,7 +809,7 @@ EOF
     (##core#inline "C_sigemptyset" 0)
     (for-each
       (lambda (s)
-        (##sys#check-exact s 'set-signal-mask!)
+        (##sys#check-fixnum s 'set-signal-mask!)
         (##core#inline "C_sigaddset" s) )
       sigs)
     (when (fx< (##core#inline "C_sigprocmask_set" 0) 0)
@@ -828,19 +828,19 @@ EOF
    set-signal-mask!))
 
 (define (signal-masked? sig)
-  (##sys#check-exact sig 'signal-masked?)
+  (##sys#check-fixnum sig 'signal-masked?)
   (##core#inline "C_sigprocmask_get" 0)
   (##core#inline "C_sigismember" sig) )
 
 (define (signal-mask! sig)
-  (##sys#check-exact sig 'signal-mask!)
+  (##sys#check-fixnum sig 'signal-mask!)
   (##core#inline "C_sigemptyset" 0)
   (##core#inline "C_sigaddset" sig)
   (when (fx< (##core#inline "C_sigprocmask_block" 0) 0)
     (posix-error #:process-error 'signal-mask! "cannot block signal") ))
 
 (define (signal-unmask! sig)
-  (##sys#check-exact sig 'signal-unmask!)
+  (##sys#check-fixnum sig 'signal-unmask!)
   (##core#inline "C_sigemptyset" 0)
   (##core#inline "C_sigaddset" sig)
   (when (fx< (##core#inline "C_sigprocmask_unblock" 0) 0)
@@ -996,14 +996,14 @@ EOF
        (##sys#update-errno)
        (##sys#error 'set-groups! "cannot set supplementary group ids" lst0) ) )
     (let ([n (##sys#slot lst 0)])
-      (##sys#check-exact n 'set-groups!)
+      (##sys#check-fixnum n 'set-groups!)
       (##core#inline "C_set_gid" i n) ) ) )
 
 (define initialize-groups
   (let ([init (foreign-lambda int "initgroups" c-string int)])
     (lambda (user id)
       (##sys#check-string user 'initialize-groups)
-      (##sys#check-exact id 'initialize-groups)
+      (##sys#check-fixnum id 'initialize-groups)
       (when (fx< (init user id) 0)
       (##sys#update-errno)
       (##sys#error 'initialize-groups "cannot initialize supplementary group ids" user id) ) ) ) )
@@ -1057,15 +1057,15 @@ EOF
 (define change-file-mode
   (lambda (fname m)
     (##sys#check-string fname 'change-file-mode)
-    (##sys#check-exact m 'change-file-mode)
+    (##sys#check-fixnum m 'change-file-mode)
     (when (fx< (##core#inline "C_chmod" (##sys#make-c-string fname 'change-file-mode) m) 0)
       (posix-error #:file-error 'change-file-mode "cannot change file mode" fname m) ) ) )
 
 (define change-file-owner
   (lambda (fn uid gid)
     (##sys#check-string fn 'change-file-owner)
-    (##sys#check-exact uid 'change-file-owner)
-    (##sys#check-exact gid 'change-file-owner)
+    (##sys#check-fixnum uid 'change-file-owner)
+    (##sys#check-fixnum gid 'change-file-owner)
     (when (fx< (##core#inline "C_chown" (##sys#make-c-string fn 'change-file-owner) uid gid) 0)
       (posix-error #:file-error 'change-file-owner "cannot change file owner" fn uid gid) ) ) )
 
@@ -1093,15 +1093,15 @@ EOF
 (define process-group-id
   (getter-with-setter
    (lambda (pid)
-     (##sys#check-exact pid 'process-group-id)
+     (##sys#check-fixnum pid 'process-group-id)
      (let ([a (##core#inline "C_getpgid" pid)])
        (when (fx< a 0)
          (##sys#update-errno)
          (##sys#error 'process-group-id "cannot retrieve process group ID" pid) )
        a))
    (lambda (pid pgid)
-     (##sys#check-exact pid 'set-process-group-id!)
-     (##sys#check-exact pgid 'set-process-group-id!)
+     (##sys#check-fixnum pid 'set-process-group-id!)
+     (##sys#check-fixnum pgid 'set-process-group-id!)
      (when (fx< (##core#inline "C_setpgid" pid pgid) 0)
        (##sys#update-errno)
        (##sys#error 'set-process-group-id! "cannot set process group ID" pid pgid) ) )
@@ -1410,7 +1410,7 @@ EOF
   (lambda (fname . mode)
     (##sys#check-string fname 'create-fifo)
     (let ([mode (if (pair? mode) (car mode) (fxior _s_irwxu (fxior _s_irwxg _s_irwxo)))])
-      (##sys#check-exact mode 'create-fifo)
+      (##sys#check-fixnum mode 'create-fifo)
       (when (fx< (##core#inline "C_mkfifo" (##sys#make-c-string fname 'create-fifo) mode) 0)
       (posix-error #:file-error 'create-fifo "cannot create FIFO" fname mode) ) ) ) )
 
@@ -1483,7 +1483,7 @@ EOF
 		  [(#:line) _iolbf]
 		  [(#:none) _ionbf]
 		  [else (##sys#error 'set-buffering-mode! "invalid buffering-mode" mode port)] ) ] )
-      (##sys#check-exact size 'set-buffering-mode!)
+      (##sys#check-fixnum size 'set-buffering-mode!)
       (when (fx< (if (eq? 'stream (##sys#slot port 7))
 		     (##core#inline "C_setvbuf" port mode size)
 		     -1)
@@ -1614,8 +1614,8 @@ EOF
 (define process-signal
   (lambda (id . sig)
     (let ([sig (if (pair? sig) (car sig) _sigterm)])
-      (##sys#check-exact id 'process-signal)
-      (##sys#check-exact sig 'process-signal)
+      (##sys#check-fixnum id 'process-signal)
+      (##sys#check-fixnum sig 'process-signal)
       (let ([r (##core#inline "C_kill" id sig)])
       (when (fx= r -1) (posix-error #:process-error 'process-signal "could not send signal to process" id sig) ) ) ) ) )
 

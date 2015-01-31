@@ -276,6 +276,11 @@ EOF
       (##core#inline "C_i_check_number_2" x (car loc))
       (##core#inline "C_i_check_number" x) ) )
 
+(define (##sys#check-fixnum x . loc) 
+  (if (pair? loc)
+      (##core#inline "C_i_check_fixnum_2" x (car loc))
+      (##core#inline "C_i_check_fixnum" x) ) )
+
 (define (##sys#check-exact x . loc) 
   (if (pair? loc)
       (##core#inline "C_i_check_exact_2" x (car loc))
@@ -329,7 +334,7 @@ EOF
     (##sys#error-bad-real x (and (pair? loc) (car loc))) ) )
 
 (define (##sys#check-range i from to . loc)
-  (##sys#check-exact i loc)
+  (##sys#check-fixnum i loc)
   (unless (and (fx<= from i) (fx< i to))
     (##sys#error-hook
      (foreign-value "C_OUT_OF_RANGE_ERROR" int)
@@ -526,7 +531,7 @@ EOF
   (%make-string size fill))
 
 (define (make-string size . fill)
-  (##sys#check-exact size 'make-string)
+  (##sys#check-fixnum size 'make-string)
   (when (fx< size 0)
     (##sys#signal-hook #:bounds-error 'make-string "size is negative" size))
   (%make-string
@@ -596,10 +601,10 @@ EOF
 
 (define (substring s start . end)
   (##sys#check-string s 'substring)
-  (##sys#check-exact start 'substring)
+  (##sys#check-fixnum start 'substring)
   (let ([end (if (pair? end) 
 		 (let ([end (car end)])
-		   (##sys#check-exact end 'substring)
+		   (##sys#check-fixnum end 'substring)
 		   end) 
 		 (##sys#size s) ) ] )
     (let ([len (##sys#size s)])
@@ -2108,7 +2113,7 @@ EOF
 (define (flonum-print-precision #!optional prec)
   (let ([prev (##core#inline "C_get_print_precision")])
     (when prec
-      (##sys#check-exact prec 'flonum-print-precision)
+      (##sys#check-fixnum prec 'flonum-print-precision)
       (##core#inline "C_set_print_precision" prec) )
     prev ) )
 
@@ -2292,7 +2297,7 @@ EOF
     bv) )
 
 (define (make-blob size)
-  (##sys#check-exact size 'make-blob)
+  (##sys#check-fixnum size 'make-blob)
   (##sys#make-blob size) )
 
 (define (blob? x)
@@ -2333,7 +2338,7 @@ EOF
 (define (vector-set! v i x) (##core#inline "C_i_vector_set" v i x))
 
 (define (make-vector size . fill)
-  (##sys#check-exact size 'make-vector)
+  (##sys#check-fixnum size 'make-vector)
   (when (fx< size 0) (##sys#error 'make-vector "size is negative" size))
   (##sys#allocate-vector
    size #f
@@ -2382,7 +2387,7 @@ EOF
   (let* ((len-from (##sys#size from))
 	 (len-to (##sys#size to))
 	 (n (if (pair? n) (car n) (fxmin len-to len-from))) )
-    (##sys#check-exact n 'vector-copy!)
+    (##sys#check-fixnum n 'vector-copy!)
     (when (or (fx> n len-to) (fx> n len-from))
       (##sys#signal-hook 
        #:bounds-error 'vector-copy!
@@ -2405,7 +2410,7 @@ EOF
 
 (define (vector-resize v n #!optional init)
   (##sys#check-vector v 'vector-resize)
-  (##sys#check-exact n 'vector-resize)
+  (##sys#check-fixnum n 'vector-resize)
   (##sys#vector-resize v n init) )
 
 (define (##sys#vector-resize v n init)
@@ -2424,7 +2429,7 @@ EOF
   (##core#inline "C_fix" (##core#inline "C_character_code" c)) )
 
 (define (integer->char n)
-  (##sys#check-exact n 'integer->char)
+  (##sys#check-fixnum n 'integer->char)
   (##core#inline "C_make_character" (##core#inline "C_unfix" n)) )
 
 (define (char=? c1 c2)
@@ -2824,7 +2829,7 @@ EOF
 		      (else
 		       (fx+ act len) ) ) )))
 	  (lambda (p rlimit)		; read-line
-	    (if rlimit (##sys#check-exact rlimit 'read-line))
+	    (if rlimit (##sys#check-fixnum rlimit 'read-line))
 	    (let ((sblen read-line-buffer-initial-size))
 	      (unless (##sys#slot p 12)
 		(##sys#setslot p 12 (##sys#make-string sblen)))
@@ -4873,7 +4878,7 @@ EOF
 				     (thread ##sys#current-thread)
 				     (header "\n\tCall history:\n") )
   (##sys#check-output-port port #t 'print-call-chain)
-  (##sys#check-exact start 'print-call-chain)
+  (##sys#check-fixnum start 'print-call-chain)
   (##sys#check-string header 'print-call-chain)
   (let ((ct (##sys#get-call-chain start thread)))
     (##sys#really-print-call-chain port ct header)
@@ -4940,7 +4945,7 @@ EOF
 (define exit-handler
   (make-parameter
    (lambda (#!optional (code 0))
-     (##sys#check-exact code)
+     (##sys#check-fixnum code)
      (cond (exit-in-progress
 	    (##sys#warn "\"exit\" called while processing on-exit tasks"))
 	   (else

@@ -732,8 +732,8 @@ EOF
     (lambda (filename flags . mode)
       (let ([mode (if (pair? mode) (car mode) defmode)])
 	(##sys#check-string filename 'file-open)
-	(##sys#check-exact flags 'file-open)
-	(##sys#check-exact mode 'file-open)
+	(##sys#check-fixnum flags 'file-open)
+	(##sys#check-fixnum mode 'file-open)
 	(let ([fd (##core#inline "C_open" (##sys#make-c-string filename 'file-open) flags mode)])
 	  (when (eq? -1 fd)
 	    (##sys#update-errno)
@@ -742,15 +742,15 @@ EOF
 
 (define file-close
   (lambda (fd)
-    (##sys#check-exact fd 'file-close)
+    (##sys#check-fixnum fd 'file-close)
     (when (fx< (##core#inline "C_close" fd) 0)
       (##sys#update-errno)
       (##sys#signal-hook #:file-error 'file-close "cannot close file" fd) ) ) )
 
 (define file-read
   (lambda (fd size . buffer)
-    (##sys#check-exact fd 'file-read)
-    (##sys#check-exact size 'file-read)
+    (##sys#check-fixnum fd 'file-read)
+    (##sys#check-fixnum size 'file-read)
     (let ([buf (if (pair? buffer) (car buffer) (make-string size))])
       (unless (and (##core#inline "C_blockp" buf) (##core#inline "C_byteblockp" buf))
 	(##sys#signal-hook #:type-error 'file-read "bad argument type - not a string or blob" buf) )
@@ -762,11 +762,11 @@ EOF
 
 (define file-write
   (lambda (fd buffer . size)
-    (##sys#check-exact fd 'file-write)
+    (##sys#check-fixnum fd 'file-write)
     (unless (and (##core#inline "C_blockp" buffer) (##core#inline "C_byteblockp" buffer))
       (##sys#signal-hook #:type-error 'file-write "bad argument type - not a string or blob" buffer) )
     (let ([size (if (pair? size) (car size) (##sys#size buffer))])
-      (##sys#check-exact size 'file-write)
+      (##sys#check-fixnum size 'file-write)
       (let ([n (##core#inline "C_write" fd buffer size)])
 	(when (eq? -1 n)
 	  (##sys#update-errno)
@@ -1040,7 +1040,7 @@ EOF
 (define change-file-mode
   (lambda (fname m)
     (##sys#check-string fname 'change-file-mode)
-    (##sys#check-exact m 'change-file-mode)
+    (##sys#check-fixnum m 'change-file-mode)
     (when (fx< (##core#inline "C_chmod" (##sys#make-c-string fname 'change-file-mode) m) 0)
       (##sys#update-errno)
       (##sys#signal-hook #:file-error 'change-file-mode "cannot change file mode" fname m) ) ) )
@@ -1091,11 +1091,11 @@ EOF
 	  port) ) )
   (set! open-input-file*
     (lambda (fd . m)
-      (##sys#check-exact fd 'open-input-file*)
+      (##sys#check-fixnum fd 'open-input-file*)
       (check fd #t (##core#inline_allocate ("C_fdopen" 2) fd (mode #t m 'open-input-file*))) ) )
   (set! open-output-file*
     (lambda (fd . m)
-      (##sys#check-exact fd 'open-output-file*)
+      (##sys#check-fixnum fd 'open-output-file*)
       (check fd #f (##core#inline_allocate ("C_fdopen" 2) fd (mode #f m 'open-output-file*)) ) ) ) )
 
 (define port->fileno
@@ -1111,11 +1111,11 @@ EOF
 
 (define duplicate-fileno
   (lambda (old . new)
-    (##sys#check-exact old duplicate-fileno)
+    (##sys#check-fixnum old duplicate-fileno)
     (let ([fd (if (null? new)
 		  (##core#inline "C_dup" old)
 		  (let ([n (car new)])
-		    (##sys#check-exact n 'duplicate-fileno)
+		    (##sys#check-fixnum n 'duplicate-fileno)
 		    (##core#inline "C_dup2" old n) ) ) ] )
       (when (fx< fd 0)
 	(##sys#update-errno)
@@ -1162,7 +1162,7 @@ EOF
 		  [(###line) _iolbf]
 		  [(###none) _ionbf]
 		  [else (##sys#error 'set-buffering-mode! "invalid buffering-mode" mode port)] ) ] )
-      (##sys#check-exact size 'set-buffering-mode!)
+      (##sys#check-fixnum size 'set-buffering-mode!)
       (when (fx< (if (eq? 'stream (##sys#slot port 7))
 		     (##core#inline "C_setvbuf" port mode size)
 		     -1)
@@ -1356,7 +1356,7 @@ EOF
     (values -1 #f #f) ) )
 
 (define (sleep s)
-  (##sys#check-exact s 'sleep)
+  (##sys#check-fixnum s 'sleep)
   (##core#inline "C_sleep" s))
 
 (define-foreign-variable _hostname c-string "C_hostname")

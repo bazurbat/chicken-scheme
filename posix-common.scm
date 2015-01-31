@@ -313,8 +313,8 @@ EOF
 (define set-file-position!
   (lambda (port pos . whence)
     (let ((whence (if (pair? whence) (car whence) _seek_set)))
-      (##sys#check-exact pos 'set-file-position!)
-      (##sys#check-exact whence 'set-file-position!)
+      (##sys#check-fixnum pos 'set-file-position!)
+      (##sys#check-fixnum whence 'set-file-position!)
       (unless (cond ((port? port)
 		     (and (eq? (##sys#slot port 7) 'stream)
 			  (##core#inline "C_fseek" port pos whence) ) )
@@ -371,11 +371,11 @@ EOF
           port) ) )
   (set! open-input-file*
     (lambda (fd . m)
-      (##sys#check-exact fd 'open-input-file*)
+      (##sys#check-fixnum fd 'open-input-file*)
       (check 'open-input-file* fd #t (##core#inline_allocate ("C_fdopen" 2) fd (mode #t m 'open-input-file*))) ) )
   (set! open-output-file*
     (lambda (fd . m)
-      (##sys#check-exact fd 'open-output-file*)
+      (##sys#check-fixnum fd 'open-output-file*)
       (check 'open-output-file* fd #f (##core#inline_allocate ("C_fdopen" 2) fd (mode #f m 'open-output-file*)) ) ) ) )
 
 (define port->fileno
@@ -396,11 +396,11 @@ EOF
 
 (define duplicate-fileno
   (lambda (old . new)
-    (##sys#check-exact old duplicate-fileno)
+    (##sys#check-fixnum old duplicate-fileno)
     (let ([fd (if (null? new)
                   (##core#inline "C_dup" old)
                   (let ([n (car new)])
-                    (##sys#check-exact n 'duplicate-fileno)
+                    (##sys#check-fixnum n 'duplicate-fileno)
                     (##core#inline "C_dup2" old n) ) ) ] )
       (when (fx< fd 0)
         (posix-error #:file-error 'duplicate-fileno "cannot duplicate file-descriptor" old) )
@@ -541,12 +541,12 @@ EOF
 (define file-creation-mode
   (getter-with-setter
    (lambda (#!optional um)
-     (when um (##sys#check-exact um 'file-creation-mode))
+     (when um (##sys#check-fixnum um 'file-creation-mode))
      (let ((um2 (##core#inline "C_umask" (or um 0))))
        (unless um (##core#inline "C_umask" um2)) ; restore
        um2))
    (lambda (um)
-     (##sys#check-exact um 'file-creation-mode)
+     (##sys#check-fixnum um 'file-creation-mode)
      (##core#inline "C_umask" um))
    "(file-creation-mode mode)"))
 
@@ -633,14 +633,14 @@ EOF
 ;;; Signals
 
 (define (set-signal-handler! sig proc)
-  (##sys#check-exact sig 'set-signal-handler!)
+  (##sys#check-fixnum sig 'set-signal-handler!)
   (##core#inline "C_establish_signal_handler" sig (and proc sig))
   (vector-set! ##sys#signal-vector sig proc) )
 
 (define signal-handler
   (getter-with-setter
    (lambda (sig)
-     (##sys#check-exact sig 'signal-handler)
+     (##sys#check-fixnum sig 'signal-handler)
      (##sys#slot ##sys#signal-vector sig) )
    set-signal-handler!))
 
@@ -653,7 +653,7 @@ EOF
   (lambda args
     (let-optionals* args ([pid #f] [nohang #f])
       (let ([pid (or pid -1)])
-        (##sys#check-exact pid 'process-wait)
+        (##sys#check-fixnum pid 'process-wait)
         (receive [epid enorm ecode] (##sys#process-wait pid nohang)
           (if (fx= epid -1)
               (posix-error #:process-error 'process-wait "waiting for child process failed" pid)

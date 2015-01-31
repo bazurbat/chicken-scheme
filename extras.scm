@@ -59,11 +59,11 @@
   (let ((nn (if (null? n)
 		(##sys#flo2fix (fp/ (current-seconds) 1000.0)) ; wall clock time
 		(car n))))
-    (##sys#check-exact nn 'randomize)
+    (##sys#check-fixnum nn 'randomize)
     (##core#inline "C_randomize" nn) ) )
 
 (define (random n)
-  (##sys#check-exact n 'random)
+  (##sys#check-fixnum n 'random)
   (if (eq? n 0)
       0
       (##core#inline "C_random_fixnum" n) ) )
@@ -167,11 +167,11 @@
 (define (read-string! n dest #!optional (port ##sys#standard-input) (start 0))
   (##sys#check-input-port port #t 'read-string!)
   (##sys#check-string dest 'read-string!)
-  (when n (##sys#check-exact n 'read-string!))
+  (when n (##sys#check-fixnum n 'read-string!))
   (let ((dest-size (##sys#size dest)))
     (unless (and n (fx<= (fx+ start n) dest-size))
       (set! n (fx- dest-size start))))
-  (##sys#check-exact start 'read-string!)
+  (##sys#check-fixnum start 'read-string!)
   (##sys#read-string! n dest port start) )
 
 (define-constant read-string-buffer-size 2048)
@@ -179,7 +179,7 @@
 (define ##sys#read-string/port
   (lambda (n p)
     (##sys#check-input-port p #t 'read-string)
-    (cond (n (##sys#check-exact n 'read-string)
+    (cond (n (##sys#check-fixnum n 'read-string)
 	     (let* ((str (##sys#make-string n))
 		    (n2 (##sys#read-string! n str p 0)) )
 	       (if (eq? n n2)
@@ -235,7 +235,7 @@
     (##sys#check-string s 'write-string)
     (let-optionals more ([n #f] [port ##sys#standard-output])
       (##sys#check-output-port port #t 'write-string)
-      (when n (##sys#check-exact n 'write-string))
+      (when n (##sys#check-fixnum n 'write-string))
       ((##sys#slot (##sys#slot port 2) 3) ; write-string
        port
        (if (and n (fx< n (##sys#size s)))
@@ -253,7 +253,7 @@
 	(char->integer x) ) ) )
 
 (define (write-byte byte #!optional (port ##sys#standard-output))
-  (##sys#check-exact byte 'write-byte)
+  (##sys#check-fixnum byte 'write-byte)
   (##sys#check-output-port port #t 'write-byte)
   (##sys#write-char-0 (integer->char byte) port) )
 

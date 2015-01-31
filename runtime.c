@@ -6256,6 +6256,15 @@ C_regparm C_word C_fcall C_i_check_closure_2(C_word x, C_word loc)
   return C_SCHEME_UNDEFINED;
 }
 
+C_regparm C_word C_fcall C_i_check_fixnum_2(C_word x, C_word loc)
+{
+  if(!(x & C_FIXNUM_BIT)) {
+    error_location = loc;
+    barf(C_BAD_ARGUMENT_TYPE_NO_FIXNUM_ERROR, NULL, x);
+  }
+
+  return C_SCHEME_UNDEFINED;
+}
 
 C_regparm C_word C_fcall C_i_check_exact_2(C_word x, C_word loc)
 {

@@ -1460,7 +1460,7 @@
   (##sys#setslot r5n 2 (strip (##sys#slot r5n 2)))
   (set! scheme-report-environment
     (lambda (n)
-      (##sys#check-exact n 'scheme-report-environment)
+      (##sys#check-fixnum n 'scheme-report-environment)
       (case n
 	((4) r4s)
 	((5) r5s)
@@ -1470,7 +1470,7 @@
 	  "unsupported scheme report environment version" n)) ) ) )
   (set! null-environment
     (lambda (n)
-      (##sys#check-exact n 'null-environment)
+      (##sys#check-fixnum n 'null-environment)
       (case n
 	((4) r4n)
 	((5) r5n)
@@ -1540,7 +1540,7 @@
 
 (define ##sys#clear-trace-buffer (foreign-lambda void "C_clear_trace_buffer"))
 (define (##sys#resize-trace-buffer i)
-  (##sys#check-exact i)
+  (##sys#check-fixnum i)
   (##core#inline "C_resize_trace_buffer" i))
 
 (define repl

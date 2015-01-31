@@ -41,17 +41,17 @@ EOF
 
 ;;; Helper routines:
 
-(declare (hide ##sys#check-exact-interval))
+(declare (hide ##sys#check-fixnum-interval))
 
-(define ##sys#check-exact-interval
+(define ##sys#check-fixnum-interval
   (lambda (n from to loc)
-    (##sys#check-exact n loc)
+    (##sys#check-fixnum n loc)
     (if (or (##core#inline "C_fixnum_lessp" n from)
 	    (##core#inline "C_fixnum_greaterp" n to) )
 	(##sys#error loc "numeric value is not in expected range" n from to) ) ) )
 
 (define-inline (check-range i from to loc)
-  (##sys#check-exact i loc)
+  (##sys#check-fixnum i loc)
   (unless (and (fx<= from i) (fx< i to))
     (##sys#error-hook
      (foreign-value "C_OUT_OF_RANGE_ERROR" int)
@@ -98,7 +98,7 @@ EOF
 (define (u8vector-set! x i y)
   (##sys#check-structure x 'u8vector 'u8vector-set!)
   (let ((len (##core#inline "C_u_i_8vector_length" x)))
-    (##sys#check-exact y 'u8vector-set!)
+    (##sys#check-fixnum y 'u8vector-set!)
     (when (fx< y 0)
       (##sys#error 'u8vector-set! "argument may not be negative" y))
     (check-range i 0 len 'u8vector-set!)
@@ -107,14 +107,14 @@ EOF
 (define (s8vector-set! x i y)
   (##sys#check-structure x 's8vector 's8vector-set!)
   (let ((len (##core#inline "C_u_i_8vector_length" x)))
-    (##sys#check-exact y 's8vector-set!)
+    (##sys#check-fixnum y 's8vector-set!)
     (check-range i 0 len 's8vector-set!)
     (##core#inline "C_u_i_s8vector_set" x i y)))
 
 (define (u16vector-set! x i y)
   (##sys#check-structure x 'u16vector 'u16vector-set!)
   (let ((len (##core#inline "C_u_i_16vector_length" x)))
-    (##sys#check-exact y 'u16vector-set!)
+    (##sys#check-fixnum y 'u16vector-set!)
     (when (fx< y 0)
       (##sys#error 'u16vector-set! "argument may not be negative" y))
     (check-range i 0 len 'u16vector-set!)
@@ -123,7 +123,7 @@ EOF
 (define (s16vector-set! x i y)
   (##sys#check-structure x 's16vector 's16vector-set!)
   (let ((len (##core#inline "C_u_i_16vector_length" x)))
-    (##sys#check-exact y 's16vector-set!)
+    (##sys#check-fixnum y 's16vector-set!)
     (check-range i 0 len 's16vector-set!)
     (##core#inline "C_u_i_s16vector_set" x i y)))
 
@@ -281,85 +281,85 @@ EOF
 
   (set! make-u8vector
     (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
-      (##sys#check-exact len 'make-u8vector)
+      (##sys#check-fixnum len 'make-u8vector)
       (let ((v (##sys#make-structure 'u8vector (alloc 'make-u8vector len ext?))))
 	(when (and ext? fin?) (set-finalizer! v ext-free))
 	(if (not init)
 	    v
 	    (begin
-	      (##sys#check-exact-interval init 0 #xff 'make-u8vector)
+	      (##sys#check-fixnum-interval init 0 #xff 'make-u8vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##core#inline "C_u_i_u8vector_set" v i init) ) ) ) ) ) )
 
   (set! make-s8vector
     (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
-      (##sys#check-exact len 'make-s8vector)
+      (##sys#check-fixnum len 'make-s8vector)
       (let ((v (##sys#make-structure 's8vector (alloc 'make-s8vector len ext?))))
 	(when (and ext? fin?) (set-finalizer! v ext-free))
 	(if (not init)
 	    v
 	    (begin
-	      (##sys#check-exact-interval init -128 127 'make-s8vector)
+	      (##sys#check-fixnum-interval init -128 127 'make-s8vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##core#inline "C_u_i_s8vector_set" v i init) ) ) ) ) ) )
 
   (set! make-u16vector
     (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
-      (##sys#check-exact len 'make-u16vector)
+      (##sys#check-fixnum len 'make-u16vector)
       (let ((v (##sys#make-structure 'u16vector (alloc 'make-u16vector (##core#inline "C_fixnum_shift_left" len 1) ext?))))
 	(when (and ext? fin?) (set-finalizer! v ext-free))
 	(if (not init)
 	    v
 	    (begin
-	      (##sys#check-exact-interval init 0 #xffff 'make-u16vector)
+	      (##sys#check-fixnum-interval init 0 #xffff 'make-u16vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##core#inline "C_u_i_u16vector_set" v i init) ) ) ) ) ) )
 
   (set! make-s16vector
     (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
-      (##sys#check-exact len 'make-s16vector)
+      (##sys#check-fixnum len 'make-s16vector)
       (let ((v (##sys#make-structure 's16vector (alloc 'make-s16vector (##core#inline "C_fixnum_shift_left" len 1) ext?))))
 	(when (and ext? fin?) (set-finalizer! v ext-free))
 	(if (not init)
 	    v
 	    (begin
-	      (##sys#check-exact-interval init -32768 32767 'make-s16vector)
+	      (##sys#check-fixnum-interval init -32768 32767 'make-s16vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##core#inline "C_u_i_s16vector_set" v i init) ) ) ) ) ) )
 
   (set! make-u32vector
     (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
-      (##sys#check-exact len 'make-u32vector)
+      (##sys#check-fixnum len 'make-u32vector)
       (let ((v (##sys#make-structure 'u32vector (alloc 'make-u32vector (##core#inline "C_fixnum_shift_left" len 2) ext?))))
 	(when (and ext? fin?) (set-finalizer! v ext-free))
 	(if (not init)
 	    v
 	    (begin
-	      (##sys#check-exact init 'make-u32vector)
+	      (##sys#check-fixnum init 'make-u32vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##core#inline "C_u_i_u32vector_set" v i init) ) ) ) ) ) )
 
   (set! make-s32vector
     (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
-      (##sys#check-exact len 'make-s32vector)
+      (##sys#check-fixnum len 'make-s32vector)
       (let ((v (##sys#make-structure 's32vector (alloc 'make-s32vector (##core#inline "C_fixnum_shift_left" len 2) ext?))))
 	(when (and ext? fin?) (set-finalizer! v ext-free))
 	(if (not init)
 	    v
 	    (begin
-	      (##sys#check-exact init 'make-s32vector)
+	      (##sys#check-fixnum init 'make-s32vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##core#inline "C_u_i_s32vector_set" v i init) ) ) ) ) ) )
 
   (set! make-f32vector
     (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
-      (##sys#check-exact len 'make-f32vector)
+      (##sys#check-fixnum len 'make-f32vector)
       (let ((v (##sys#make-structure 'f32vector (alloc 'make-f32vector (##core#inline "C_fixnum_shift_left" len 2) ext?))))
 	(when (and ext? fin?) (set-finalizer! v ext-free))
 	(if (not init)
@@ -374,7 +374,7 @@ EOF
 
   (set! make-f64vector
     (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
-      (##sys#check-exact len 'make-f64vector)
+      (##sys#check-fixnum len 'make-f64vector)
       (let ((v (##sys#make-structure
 		'f64vector
 		(alloc 'make-f64vector (##core#inline "C_fixnum_shift_left" len 3) ext?))))
@@ -655,9 +655,9 @@ EOF
 
 (define (read-u8vector! n dest #!optional (port ##sys#standard-input) (start 0))
   (##sys#check-input-port port #t 'read-u8vector!)
-  (##sys#check-exact start 'read-u8vector!)
+  (##sys#check-fixnum start 'read-u8vector!)
   (##sys#check-structure dest 'u8vector 'read-u8vector!)
-  (when n (##sys#check-exact n 'read-u8vector!))
+  (when n (##sys#check-fixnum n 'read-u8vector!))
   (let* ((dest (##sys#slot dest 1))
 	 (size (##sys#size dest)))
     (unless (and n (fx<= (fx+ start n) size))
@@ -675,7 +675,7 @@ EOF
 	 str2) ) )
     (lambda (#!optional n (p ##sys#standard-input))
       (##sys#check-input-port p #t 'read-u8vector)
-      (cond (n (##sys#check-exact n 'read-u8vector)
+      (cond (n (##sys#check-fixnum n 'read-u8vector)
 	       (let* ((str (##sys#allocate-vector n #t #f #t))
 		      (n2 (##sys#read-string! n str p 0)) )
 		 (##core#inline "C_string_to_bytevector" str)

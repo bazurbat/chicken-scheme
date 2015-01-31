@@ -313,10 +313,10 @@ EOF
 (define-constant default-backlog 100)
 
 (define (tcp-listen port #!optional (backlog default-backlog) host)
-  (##sys#check-exact port)
+  (##sys#check-fixnum port)
   (when (or (fx< port 0) (fx> port 65535))
     (##sys#signal-hook #:domain-error 'tcp-listen "invalid port number" port) )
-  (##sys#check-exact backlog)
+  (##sys#check-fixnum backlog)
   (let ((s (##net#bind-socket _sock_stream host port)))
     (when (eq? _socket_error (##net#listen s backlog))
       (network-error/close 'tcp-listen "cannot listen on socket" s port) )
@@ -343,7 +343,7 @@ EOF
 
 (let ()
   (define ((check loc) x)
-    (when x (##sys#check-exact x loc))
+    (when x (##sys#check-fixnum x loc))
     x)
   (define minute (fx* 60 1000))
   (set! tcp-read-timeout (make-parameter minute (check 'tcp-read-timeout)))
@@ -584,7 +584,7 @@ EOF
     (unless port
       (set!-values (host port) (##net#parse-host host "tcp"))
       (unless port (##sys#signal-hook #:domain-error 'tcp-connect "no port specified" host)) )
-    (##sys#check-exact port)
+    (##sys#check-fixnum port)
     (unless (##net#gethostaddr addr host port)
       (##sys#signal-hook #:network-error 'tcp-connect "cannot find host address" host) )
     (let ((s (##net#socket _af_inet _sock_stream 0)) )

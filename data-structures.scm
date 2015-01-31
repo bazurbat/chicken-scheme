@@ -153,7 +153,7 @@
 
 (define chop
   (lambda (lst n)
-    (##sys#check-exact n 'chop)
+    (##sys#check-fixnum n 'chop)
     (when (fx<= n 0) (##sys#error 'chop "invalid numeric argument" n))
     (let ([len (length lst)])
       (let loop ([lst lst] [i len])
@@ -310,7 +310,7 @@
     (let* ((wherelen (##sys#size where))
 	   (whichlen (##sys#size which))
 	   (end (fx- wherelen whichlen)))
-      (##sys#check-exact start loc)
+      (##sys#check-fixnum start loc)
       (if (and (fx>= start 0)
 	       (fx> wherelen start))
 	  (let loop ((istart start))
@@ -375,8 +375,8 @@
   (let ((len (or n
 		 (fxmin (fx- (##sys#size s1) start1)
 			(fx- (##sys#size s2) start2) ) ) ) )
-    (##sys#check-exact start1 'substring=?)
-    (##sys#check-exact start2 'substring=?)
+    (##sys#check-fixnum start1 'substring=?)
+    (##sys#check-fixnum start2 'substring=?)
     (##core#inline "C_substring_compare" s1 s2 start1 start2 len) ) )
 
 (define (substring=? s1 s2 #!optional (start1 0) (start2 0) len)
@@ -388,8 +388,8 @@
   (let ((len (or n
 		 (fxmin (fx- (##sys#size s1) start1)
 			(fx- (##sys#size s2) start2) ) ) ) )
-    (##sys#check-exact start1 'substring-ci=?)
-    (##sys#check-exact start2 'substring-ci=?)
+    (##sys#check-fixnum start1 'substring-ci=?)
+    (##sys#check-fixnum start2 'substring-ci=?)
     (##core#inline "C_substring_compare_case_insensitive"
 		   s1 s2 start1 start2 len) ) )
 
@@ -546,7 +546,7 @@
 
 (define (string-chop str len)
   (##sys#check-string str 'string-chop)
-  (##sys#check-exact len 'string-chop)
+  (##sys#check-fixnum len 'string-chop)
   (let ([total (##sys#size str)])
     (let loop ([total total] [pos 0])
       (cond [(fx<= total 0) '()]
