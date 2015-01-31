@@ -319,6 +319,11 @@ EOF
   (unless (##core#inline "C_i_exact_integerp" x)
     (##sys#error-bad-exact-integer x (and (pair? loc) (car loc))) ) )
 
+(define (##sys#check-exact-uinteger x . loc)
+  (when (or (not (##core#inline "C_i_exact_integerp" x))
+	    (##core#inline "C_i_integer_negativep" x))
+    (##sys#error-bad-exact-uinteger x (and (pair? loc) (car loc))) ) )
+
 (define (##sys#check-real x . loc)
   (unless (##core#inline "C_i_realp" x)
     (##sys#error-bad-real x (and (pair? loc) (car loc))) ) )
@@ -453,6 +458,10 @@ EOF
 (define (##sys#error-bad-exact-integer arg #!optional loc)
   (##sys#error-hook
    (foreign-value "C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR" int) loc arg))
+
+(define (##sys#error-bad-exact-uinteger arg #!optional loc)
+  (##sys#error-hook
+   (foreign-value "C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR" int) loc arg))
 
 (define (##sys#error-bad-inexact arg #!optional loc)
   (##sys#error-hook
@@ -1073,10 +1082,13 @@ EOF
                              (##sys#integer-times
 			      b/g1 (##sys#integer-quotient d g2)))))))))
 
-(define (signum n)
-  (cond ((> n 0) (if (##sys#exact? n) 1 1.0))
-	((< n 0) (if (##sys#exact? n) -1 -1.0))
-	(else (if (##sys#exact? n) 0 0.0) ) ) )
+(define (##sys#extended-signum x)
+  (cond
+   ((ratnum? x) (##core#inline "C_u_i_integer_signum" (%ratnum-numerator x)))
+   ((cplxnum? x) (make-polar 1 (angle x)))
+   (else (##sys#error-bad-number x 'signum))))
+
+(define signum (##core#primitive "C_signum"))
 
 (define (flonum->ratnum x)
   ;; Try to multiply by two until we reach an integer
@@ -1143,8 +1155,8 @@ EOF
                        ;; minimum flonum exponent.
                        (let* ((s (min (fx- flonum-precision 1)
                                       (fx- e minimum-denorm-flonum-expt)))
-                              (normalized (##sys#/-2 (arithmetic-shift n s) d))
-                              (r (round normalized))
+                              (norm (##sys#/-2 (##sys#integer-shift n s) d))
+                              (r (round norm))
                               (fraction (exact->inexact r))
                               (exp (fx- e s)))
                          (let ((res (fp* fraction (expt 2.0 exp))))
@@ -1152,15 +1164,15 @@ EOF
                 (scale (lambda (n d)  ; Here, 1/2 <= n/d < 2   [N3]
                          (if (##sys#<-2 n d) ; n/d < 1?
                              ;; Scale left [N3]; only needed once (see note in M3)
-                             (rnd (arithmetic-shift n 1) d (fx- e 1))
+                             (rnd (##sys#integer-shift n 1) d (fx- e 1))
                              ;; Already normalized
                              (rnd n d e)))))
            ;; After this step, which shifts the smaller number to
            ;; align with the larger, "f" in algorithm N is represented
            ;; in the procedures above by n/d.
            (if (negative? e)
-               (scale (arithmetic-shift an (##sys#--2 0 e)) d1)
-               (scale an (arithmetic-shift d1 e)))))
+               (scale (##sys#integer-shift an (##sys#--2 0 e)) d1)
+               (scale an (##sys#integer-shift d1 e)))))
         ((cplxnum? x)
          (make-complex (exact->inexact (%cplxnum-real x))
                        (exact->inexact (%cplxnum-imag x))))
@@ -1596,15 +1608,100 @@ EOF
 	 (##core#inline_allocate
 	  ("C_a_i_atan" 4) (exact->inexact n)))))
 
-;; TODO: replace this with an actual sqrt implementation
-(define (##sys#sqrt/loc loc x)
-  (##core#inline_allocate ("C_a_i_sqrt" 4) n))
+;; This is "Karatsuba Square Root" as described by Paul Zimmermann,
+;; which is 3/2K(n) + O(n log n) for an input of 2n words, where K(n)
+;; is the number of operations performed by Karatsuba multiplication.
+(define (##sys#exact-integer-sqrt a)
+  ;; Because we assume a3b+a2 >= b^2/4, we must check a few edge cases:
+  (if (and (fixnum? a) (fx<= a 4))
+      (case a
+        ((0 1) (values a 0))
+        ((2)   (values 1 1))
+        ((3)   (values 1 2))
+        ((4)   (values 2 0))
+        (else  (error "this should never happen")))
+      (let*-values
+          (((len/4) (fxshr (fx+ (integer-length a) 1) 2))
+           ((len/2) (fxshl len/4 1))
+           ((s^ r^) (##sys#exact-integer-sqrt
+		     (##sys#integer-shift a (fxneg len/2))))
+           ((mask)  (##sys#--2 (##sys#integer-shift 1 len/4) 1))
+           ((a0)    (##sys#integer-bitwise-and a mask))
+           ((a1)    (##sys#integer-bitwise-and
+		     (##sys#integer-shift a (fxneg len/4)) mask))
+           ((q u)   (##sys#integer-quotient&remainder
+		     (##sys#+-2 (arithmetic-shift r^ len/4) a1)
+		     (##sys#integer-shift s^ 1)))
+           ((s)     (##sys#+-2 (##sys#integer-shift s^ len/4) q))
+           ((r)     (##sys#+-2 (##sys#integer-shift u len/4)
+			       (##sys#--2 a0 (##sys#*-2 q q)))))
+        (if (negative? r)
+            (values (##sys#--2 s 1)
+		    (##sys#--2 (##sys#+-2 r (##sys#integer-shift s 1)) 1))
+            (values s r)))))
+
+(define (exact-integer-sqrt x)
+  (##sys#check-exact-uinteger x 'exact-integer-sqrt)
+  (##sys#exact-integer-sqrt x))
+
+;; This procedure is so large because it tries very hard to compute
+;; exact results if at all possible.
+(define (##sys#sqrt/loc loc n)
+  (cond ((cplxnum? n)     ; Must be checked before we call "negative?"
+         (let ((p (##sys#/-2 (angle n) 2))
+               (m (##core#inline_allocate ("C_a_i_sqrt" 4) (magnitude n))) )
+           (make-complex (##sys#*-2 m (cos p)) (##sys#*-2 m (sin p)) ) ))
+        ((negative? n)
+         (make-complex .0 (##core#inline_allocate
+			   ("C_a_i_sqrt" 4) (exact->inexact (##sys#negate n)))))
+        ((exact-integer? n)
+         (receive (s^2 r) (##sys#exact-integer-sqrt n)
+           (if (eq? 0 r)
+               s^2
+               (##core#inline_allocate ("C_a_i_sqrt" 4) (exact->inexact n)))))
+        ((ratnum? n) ; Try to compute exact sqrt (we already know n is positive)
+         (receive (ns^2 nr) (##sys#exact-integer-sqrt (%ratnum-numerator n))
+           (if (eq? nr 0)
+               (receive (ds^2 dr)
+		   (##sys#exact-integer-sqrt (%ratnum-denominator n))
+                 (if (eq? dr 0)
+                     (##sys#/-2 ns^2 ds^2)
+                     (##sys#sqrt/loc loc (exact->inexact n))))
+               (##sys#sqrt/loc loc (exact->inexact n)))))
+        (else (##core#inline_allocate ("C_a_i_sqrt" 4) (exact->inexact n)))))
 
 (define (sqrt x) (##sys#sqrt/loc 'sqrt x))
 
-;; TODO: unimplemented
+(define (exact-integer-nth-root k n)
+  (##sys#check-exact-uinteger k 'exact-integer-nth-root)
+  (##sys#check-exact-uinteger n 'exact-integer-nth-root)
+  (##sys#exact-integer-nth-root/loc 'exact-integer-nth-root k n))
+
+;; Generalized Newton's algorithm for positive integers, with a little help
+;; from Wikipedia ;)  https://en.wikipedia.org/wiki/Nth_root_algorithm
 (define (##sys#exact-integer-nth-root/loc loc k n)
-  (error "not yet implemented"))
+  (if (or (eq? 0 k) (eq? 1 k) (eq? 1 n)) ; Maybe call exact-integer-sqrt on n=2?
+      (values k 0)
+      (let ((len (integer-length k)))
+	(if (##sys#<-2 len n)       ; Idea from Gambit: 2^{len-1} <= k < 2^{len}
+	    (values 1 (##sys#--2 k 1)) ; Since x >= 2, we know x^{n} can't exist
+	    ;; Set initial guess to (at least) 2^ceil(ceil(log2(k))/n)
+	    (let* ((shift-amount (inexact->exact (ceiling (/ (fx+ len 1) n))))
+		   (g0 (arithmetic-shift 1 shift-amount))
+		   (n-1 (##sys#--2 n 1)))
+	      (let lp ((g0 g0)
+		       (g1 (quotient
+			    (##sys#+-2
+			     (##sys#*-2 n-1 g0)
+			     (quotient k (##sys#integer-power g0 n-1)))
+			    n)))
+		(if (##sys#<-2 g1 g0)
+		    (lp g1 (quotient
+			    (##sys#+-2
+			     (##sys#*-2 n-1 g1)
+			     (quotient k (##sys#integer-power g1 n-1)))
+			    n))
+		    (values g0 (##sys#--2 k (##sys#integer-power g0 n))))))))))
 
 (define (##sys#integer-power base e)
   (define (square x) (##sys#*-2 x x))
@@ -1614,7 +1711,7 @@ EOF
         (cond
          ((eq? e2 0) res)
          ((even? e2)	     ; recursion is faster than iteration here
-          (##sys#*-2 res (square (lp 1 (arithmetic-shift e2 -1)))))
+          (##sys#*-2 res (square (lp 1 (##sys#integer-shift e2 -1)))))
          (else
           (lp (##sys#*-2 res base) (##sys#--2 e2 1)))))))
 
@@ -1758,7 +1855,7 @@ EOF
 	     (bex (fx- (fx- (integer-length mant) (integer-length scl))
                        flonum-precision)))
         (if (fx< bex 0)
-            (let* ((num (arithmetic-shift mant (fxneg bex)))
+            (let* ((num (##sys#integer-shift mant (fxneg bex)))
                    (quo (round-quotient num scl)))
               (cond ((> (integer-length quo) flonum-precision)
                      ;; Too many bits of quotient; readjust

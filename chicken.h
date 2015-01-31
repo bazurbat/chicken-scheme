@@ -1276,6 +1276,7 @@ extern double trunc(double);
 /* XXX TODO: This should probably be renamed C_u_fixnum_abs or something */
 #define C_fixnum_abs(n)                 C_fix(abs(C_unfix(n)))
 #define C_a_i_fixnum_abs(ptr, n, x)     (((x) & C_INT_SIGN_BIT) ? C_a_i_fixnum_negate((ptr), (n), (x)) : (x))
+#define C_i_fixnum_signum(x)            ((x) == C_fix(0) ? (x) : (((x) & C_INT_SIGN_BIT) ? C_fix(-1) : C_fix(1)))
 #define C_i_fixnum_length(x)            C_fix(C_ilen(((x) & C_INT_SIGN_BIT) ? ~C_unfix(x) : C_unfix(x)))
 
 #define C_flonum_equalp(n1, n2)         C_mk_bool(C_flonum_magnitude(n1) == C_flonum_magnitude(n2))
@@ -1289,6 +1290,7 @@ extern double trunc(double);
 #define C_a_i_flonum_times(ptr, c, n1, n2) C_flonum(ptr, C_flonum_magnitude(n1) * C_flonum_magnitude(n2))
 #define C_a_i_flonum_quotient(ptr, c, n1, n2) C_flonum(ptr, C_flonum_magnitude(n1) / C_flonum_magnitude(n2))
 #define C_a_i_flonum_negate(ptr, c, n)  C_flonum(ptr, -C_flonum_magnitude(n))
+#define C_a_u_i_flonum_signum(ptr, n, x) (C_flonum_magnitude(x) == 0.0 ? (x) : ((C_flonum_magnitude(x) < 0.0) ? C_flonum(ptr, -1.0) : C_flonum(ptr, 1.0)))
 
 #define C_a_i_address_to_pointer(ptr, c, addr)  C_mpointer(ptr, (void *)C_num_to_unsigned_int(addr))
 #define C_a_i_pointer_to_address(ptr, c, pptr)  C_unsigned_int_to_num(ptr, (unsigned int)C_c_pointer_nn(pptr))
@@ -1875,6 +1877,7 @@ C_fctimport void C_ccall C_invalid_procedure(int c, C_word self, ...) C_noret;
 C_fctexport void C_ccall C_stop_timer(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_abs(C_word c, C_word self, C_word k, C_word x) C_noret;
 C_fctexport void C_ccall C_u_integer_abs(C_word c, C_word self, C_word k, C_word x) C_noret;
+C_fctexport void C_ccall C_signum(C_word c, C_word self, C_word k, C_word x) C_noret;
 C_fctexport void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...) C_noret;
 C_fctexport void C_ccall C_do_apply(C_word n, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_call_cc(C_word c, C_word closure, C_word k, C_word cont) C_noret;
@@ -2841,6 +2844,11 @@ C_inline C_word C_i_flonum_max(C_word x, C_word y)
   return xf > yf ? x : y;
 }
 
+C_inline C_word C_u_i_integer_signum(C_word x)
+{
+  if (x & C_FIXNUM_BIT) return C_i_fixnum_signum(x);
+  else return (C_bignum_negativep(x) ? C_fix(-1) : C_fix(1));
+}
 
 C_inline C_word
 C_a_i_flonum_quotient_checked(C_word **ptr, int c, C_word n1, C_word n2)

@@ -849,6 +849,12 @@
 (arithmetic-shift (#(procedure #:clean #:enforce #:foldable) arithmetic-shift (integer fixnum) integer)
 		  ((integer fixnum) (##sys#integer-shift #(1) #(2))))
 
+(exact-integer-nth-root (#(procedure #:clean #:enforce #:foldable) exact-integer-nth-root (integer integer) integer integer)
+		    ((integer integer) (##sys#exact-integer-nth-root/loc 'exact-integer-nth-root #(1) #(2))))
+
+(exact-integer-sqrt (#(procedure #:clean #:enforce #:foldable) exact-integer-sqrt (integer) integer integer)
+		    ((integer) (##sys#exact-integer-sqrt #(1))))
+
 (bignum? (#(procedure #:pure #:predicate bignum) bignum? (*) boolean))
 
 (bit-set? (#(procedure #:clean #:enforce #:foldable) bit-set? (integer integer) boolean)
@@ -1230,7 +1236,16 @@
 
 (setter (#(procedure #:clean #:enforce) setter (procedure) procedure))
 (signal (procedure signal (*) . *))
-(signum (#(procedure #:clean #:enforce) signum (number) number))
+
+(signum (#(procedure #:clean #:enforce) signum (number) (or fixnum float cplxnum))
+	((fixnum) (fixnum) (##core#inline "C_i_fixnum_signum" #(1)))
+	((integer) (fixnum) (##core#inline "C_u_i_integer_signum" #(1)))
+	((float) (float)
+	 (##core#inline_allocate ("C_a_u_i_flonum_signum" 4) #(1)))
+	((ratnum) (fixnum)
+	 (##core#inline "C_u_i_integer_signum" (##sys#slot #(1) '1)))
+	((cplxnum) ((or float cplxnum)) (##sys#extended-signum #(1))))
+
 (software-type (#(procedure #:pure) software-type () symbol))
 (software-version (#(procedure #:pure) software-version () symbol))
 (string->blob (#(procedure #:clean #:enforce) string->blob (string) blob))
@@ -1261,7 +1276,6 @@
 
 (with-exception-handler
  (#(procedure #:enforce) with-exception-handler ((procedure (*) . *) (procedure () . *)) . *))
-
 
 ;; chicken (internal)
 

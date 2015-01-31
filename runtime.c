@@ -832,7 +832,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size -
      this must match the number of C_pte calls + 1 (NULL terminator)! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 77);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 78);
   int i = 0;
 
   if(pt == NULL)
@@ -900,6 +900,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_integer_to_string);
   C_pte(C_flonum_to_string);
   /* IMPORTANT: have you read the comments at the start and the end of this function? */
+  C_pte(C_signum);
   C_pte(C_abs);
   C_pte(C_u_integer_abs);
   C_pte(C_negate);
@@ -5492,6 +5493,25 @@ void C_ccall C_u_integer_abs(C_word c, C_word self, C_word k, C_word x)
     C_kontinue(k, x);
   }
 }
+
+void C_ccall C_signum(C_word c, C_word self, C_word k, C_word x)
+{
+  if (c != 3) {
+    C_bad_argc_2(c, 3, self);
+  } else if (x & C_FIXNUM_BIT) {
+    C_kontinue(k, C_i_fixnum_signum(x));
+  } else if (C_immediatep(x)) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "signum", x);
+  } else if (C_block_header(x) == C_FLONUM_TAG) {
+    C_word *a = C_alloc(C_SIZEOF_FLONUM);
+    C_kontinue(k, C_a_u_i_flonum_signum(&a, 1, x));
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    C_kontinue(k, C_bignum_negativep(x) ? C_fix(-1) : C_fix(1));
+  } else {
+    try_extended_number("\003sysextended-signum", 2, k, x);
+  }
+}
+
 
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_a_i_abs(C_word **a, int c, C_word x)

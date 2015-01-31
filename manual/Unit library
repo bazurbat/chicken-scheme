@@ -43,6 +43,25 @@ set, or {{#f}} otherwise. The rightmost/least-significant bit is bit 0.
 Returns the number of bits needed to represent the exact integer N in
 2's complement notation.
 
+==== exact-integer-sqrt
+
+<procedure>(exact-integer-sqrt K)</procedure>
+
+Returns two values {{s}} and {{r}}, where {{s^2 + r = K}} and {{K < (s+1)^2}}.
+In other words, {{s}} is the closest square root we can find that's equal to or
+smaller than {{K}}, and {{r}} is the rest if {{K}} isn't a neat square of two numbers.
+
+This procedure is compatible with the R7RS specification.
+
+==== exact-integer-nth-root
+
+<procedure>(exact-integer-nth-root K N)</procedure>
+
+Like {{exact-integer-sqrt}}, but with any base value.  Calculates
+{{\sqrt[N]{K}}}, the {{N}}th root of {{K}} and returns two values
+{{s}} and {{r}} where {{s^N + r = K}} and {{K < (s+1)^N}}.
+
+
 ==== bignum?
 
 <procedure>(bignum? X)</procedure>
@@ -277,10 +296,12 @@ finite if both the real and imaginary components are finite.
 
 <procedure>(signum N)</procedure>
 
-Returns {{1}} if {{N}} is positive, {{-1}} if {{N}}
-is negative or {{0}} if {{N}} is zero. {{signum}} is exactness preserving.
+For real numbers, returns {{1}} if {{N}} is positive, {{-1}} if {{N}}
+is negative or {{0}} if {{N}} is zero. {{signum}} is exactness
+preserving.
 
-
+For complex numbers, returns a complex number of the same angle but
+with magnitude 1.
 
 === File Input/Output
 
