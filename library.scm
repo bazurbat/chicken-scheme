@@ -315,6 +315,10 @@ EOF
   (unless (##core#inline "C_i_integerp" x)
     (##sys#error-bad-integer x (and (pair? loc) (car loc))) ) )
 
+(define (##sys#check-exact-integer x . loc)
+  (unless (##core#inline "C_i_exact_integerp" x)
+    (##sys#error-bad-exact-integer x (and (pair? loc) (car loc))) ) )
+
 (define (##sys#check-real x . loc)
   (unless (##core#inline "C_i_realp" x)
     (##sys#error-bad-real x (and (pair? loc) (car loc))) ) )
@@ -443,6 +447,10 @@ EOF
    (foreign-value "C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR" int) loc arg))
 
 (define (##sys#error-bad-integer arg #!optional loc)
+  (##sys#error-hook
+   (foreign-value "C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR" int) loc arg))
+
+(define (##sys#error-bad-exact-integer arg #!optional loc)
   (##sys#error-hook
    (foreign-value "C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR" int) loc arg))
 
@@ -1122,7 +1130,7 @@ EOF
          ;; bringing the two numbers to within the same powers of two.
          ;; See algorithms M & N in Knuth, 4.2.1
          (let* ((n1 (%ratnum-numerator x))
-                (an ((##core#primitive "C_u_integer_abs") n1))
+                (an (##sys#integer-abs n1))
                 (d1 (%ratnum-denominator x))
                 ;; Approximate distance between the numbers in powers
                 ;; of 2 ie, 2^e-1 < n/d < 2^e+1 (e is the *un*biased
@@ -4314,36 +4322,67 @@ EOF
 ;; From SRFI-33
 (define (integer-length x) (##core#inline "C_i_integer_length" x))
  
+(define ##sys#integer-bitwise-and (##core#primitive "C_u_2_integer_bitwise_and"))
+(define ##sys#integer-bitwise-ior (##core#primitive "C_u_2_integer_bitwise_ior"))
+(define ##sys#integer-bitwise-xor (##core#primitive "C_u_2_integer_bitwise_xor"))
+(define ##sys#integer-shift (##core#primitive "C_u_integer_shift"))
+
 (define (bitwise-and . xs)
-  (let loop ([x -1] [xs xs])
-    (if (null? xs)
-	x
-	(loop (##core#inline_allocate ("C_a_i_bitwise_and" 4) x (##sys#slot xs 0))
-	      (##sys#slot xs 1)) ) ) )
+  (if (null? xs)
+      -1
+      (let ((x1 (##sys#slot xs 0)))
+	(##sys#check-exact-integer x1 'bitwise-and)
+        (let loop ((x x1) (xs (##sys#slot xs 1)))
+          (if (null? xs)
+              x
+              (let ((xi (##sys#slot xs 0)))
+		(##sys#check-exact-integer xi 'bitwise-and)
+                (loop
+                 (##sys#integer-bitwise-and x xi)
+                 (##sys#slot xs 1) ) ) ) ))) )
 
 (define (bitwise-ior . xs)
-  (let loop ([x 0] [xs xs])
-    (if (null? xs)
-	x
-	(loop (##core#inline_allocate ("C_a_i_bitwise_ior" 4) x (##sys#slot xs 0)) 
-	      (##sys#slot xs 1)) ) ) )
+  (if (null? xs)
+      0
+      (let ((x1 (##sys#slot xs 0)))
+	(##sys#check-exact-integer x1 'bitwise-ior)
+        (let loop ((x x1) (xs (##sys#slot xs 1)))
+          (if (null? xs)
+              x
+              (let ((xi (##sys#slot xs 0)))
+		(##sys#check-exact-integer xi 'bitwise-ior)
+                (loop
+		 (##sys#integer-bitwise-ior x xi)
+                 (##sys#slot xs 1) ) ) ) ))) )
 
 (define (bitwise-xor . xs)
-  (let loop ([x 0] [xs xs])
-    (if (null? xs)
-	x
-	(loop (##core#inline_allocate ("C_a_i_bitwise_xor" 4) x (##sys#slot xs 0))
-	      (##sys#slot xs 1)) ) ) )
+  (if (null? xs)
+      0
+      (let ((x1 (##sys#slot xs 0)))
+	(##sys#check-exact-integer x1 'bitwise-xor)
+        (let loop ((x x1) (xs (##sys#slot xs 1)))
+          (if (null? xs)
+              x
+              (let ((xi (##sys#slot xs 0)))
+		(##sys#check-exact-integer xi 'bitwise-xor)
+                (loop
+		 (##sys#integer-bitwise-xor x xi)
+                 (##sys#slot xs 1) ) ) ) ))) )
 
-(define (bitwise-not x)
-  (##core#inline_allocate ("C_a_i_bitwise_not" 4) x) )
+(define (bitwise-not n)
+  (##sys#check-exact-integer n 'bitwise-not)
+  (##sys#integer-minus -1 n))
 
-(define (arithmetic-shift x y)
-  (##core#inline_allocate ("C_a_i_arithmetic_shift" 4) x y) )
+(define (arithmetic-shift n m)
+  (##sys#check-exact-integer n 'arithmetic-shift)
+  ;; Strictly speaking, shifting *right* is okay for any number
+  ;; (ie, shifting by a negative bignum would just result in 0 or -1)...
+  (unless (##core#inline "C_fixnump" m)
+    (##sys#signal-hook #:type-error 'arithmetic-shift
+                       "can only shift by fixnum amounts" n m))
+  (##sys#integer-shift n m))
 
-(define (bit-set? n i)
-  (##core#inline "C_i_bit_setp" n i) )
-
+(define (bit-set? n i) (##core#inline "C_i_bit_setp" n i))
 
 ;;; String ports:
 ;
@@ -5103,6 +5142,7 @@ EOF
 	((49) (apply ##sys#signal-hook #:type-error loc "bad argument type - not an inexact number" args))
 	((50) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a real" args))
 	((51) (apply ##sys#signal-hook #:type-error loc "bad argument type - complex number has no ordering" args))
+	((52) (apply ##sys#signal-hook #:type-error loc "bad argument type - not an exact integer" args))
 	(else (apply ##sys#signal-hook #:runtime-error loc "unknown internal error" args)) ) ) ) )
 
 

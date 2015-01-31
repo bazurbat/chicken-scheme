@@ -663,6 +663,7 @@ static inline int isinf_ld (long double x)
 #define C_BAD_ARGUMENT_TYPE_NO_INEXACT_ERROR          49
 #define C_BAD_ARGUMENT_TYPE_NO_REAL_ERROR             50
 #define C_BAD_ARGUMENT_TYPE_COMPLEX_NO_ORDERING_ERROR 51
+#define C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR    52
 
 /* Platform information */
 #if defined(C_BIG_ENDIAN)
@@ -1810,6 +1811,7 @@ C_fctexport void C_unbound_error(C_word sym) C_noret;
 C_fctexport void C_no_closure_error(C_word x) C_noret;
 C_fctexport void C_div_by_zero_error(char *loc) C_noret;
 C_fctexport void C_not_an_integer_error(char *loc, C_word x) C_noret;
+C_fctexport void C_not_an_uinteger_error(char *loc, C_word x) C_noret;
 C_fctexport C_word C_closure(C_word **ptr, int cells, C_word proc, ...);
 C_fctexport C_word C_fcall C_pair(C_word **ptr, C_word car, C_word cdr) C_regparm;
 C_fctexport C_word C_fcall C_number(C_word **ptr, double n) C_regparm;
@@ -1904,6 +1906,11 @@ C_fctexport void C_ccall C_u_integer_remainder(C_word c, C_word self, C_word k, 
 C_fctexport void C_ccall C_basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_u_integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_u_flo_to_int(C_word c, C_word self, C_word k, C_word x) C_noret;
+C_fctexport void C_ccall C_u_integer_shift(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+C_fctexport void C_ccall C_u_2_integer_bitwise_and(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+C_fctexport void C_ccall C_u_2_integer_bitwise_ior(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+C_fctexport void C_ccall C_u_2_integer_bitwise_xor(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+
 C_fctexport void C_ccall C_nequalp(C_word c, C_word closure, C_word k, ...) C_noret;
 C_fctexport void C_ccall C_greaterp(C_word c, C_word closure, C_word k, ...) C_noret;
 C_fctexport void C_ccall C_lessp(C_word c, C_word closure, C_word k, ...) C_noret;
@@ -2036,7 +2043,7 @@ C_fctexport C_word C_fcall C_2_times(C_word **ptr, C_word x, C_word y) C_regparm
 C_fctexport C_word C_fcall C_2_plus(C_word **ptr, C_word x, C_word y) C_regparm;
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_2_minus(C_word **ptr, C_word x, C_word y) C_regparm;
-  /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_2_divide(C_word **ptr, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_bignum_cmp(C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_i_nequalp(C_word x, C_word y) C_regparm;
@@ -2056,12 +2063,17 @@ C_fctexport C_word C_fcall C_i_null_pointerp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_locative_set(C_word loc, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_locative_to_object(C_word loc) C_regparm;
 C_fctexport C_word C_fcall C_a_i_make_locative(C_word **a, int c, C_word type, C_word object, C_word index, C_word weak) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_a_i_bitwise_and(C_word **a, int c, C_word n1, C_word n2) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_a_i_bitwise_ior(C_word **a, int c, C_word n1, C_word n2) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_a_i_bitwise_not(C_word **a, int c, C_word n1) C_regparm;
 C_fctexport C_word C_fcall C_i_bit_setp(C_word n, C_word i) C_regparm;
 C_fctexport C_word C_fcall C_i_integer_length(C_word x) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_a_i_bitwise_xor(C_word **a, int c, C_word n1, C_word n2) C_regparm;
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_a_i_arithmetic_shift(C_word **a, int c, C_word n1, C_word n2) C_regparm;
 C_fctexport C_word C_fcall C_a_i_exp(C_word **a, int c, C_word n) C_regparm;
 C_fctexport C_word C_fcall C_a_i_log(C_word **a, int c, C_word n) C_regparm;
@@ -2732,6 +2744,17 @@ C_inline C_word C_a_i_fixnum_negate(C_word **ptr, C_word n, C_word x)
     return C_bignum1(ptr, 0, -C_MOST_NEGATIVE_FIXNUM);
   else
     return C_fix(-C_unfix(x));
+}
+
+C_inline C_word C_i_fixnum_bit_setp(C_word n, C_word i)
+{
+    if (i & C_INT_SIGN_BIT) {
+      C_not_an_uinteger_error("bit-set?", i);
+    } else {
+      i = C_unfix(i);
+      if (i >= C_WORD_SIZE) return C_mk_bool(n & C_INT_SIGN_BIT);
+      else return C_mk_bool((C_unfix(n) & ((C_word)1 << i)) != 0);
+    }
 }
 
 C_inline C_word C_a_i_fixnum_difference(C_word **ptr, C_word n, C_word x, C_word y)

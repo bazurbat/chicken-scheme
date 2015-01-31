@@ -27,9 +27,7 @@ Adds/subtracts 1 from {{N}}.
 
 Binary integer operations. {{arithmetic-shift}} shifts the argument {{N1}} by
 {{N2}} bits to the left. If {{N2}} is negative, then {{N1}} is shifted to the
-right. These operations only accept exact integers or inexact integers in word
-range (32 bit signed on 32-bit platforms, or 64 bit signed on 64-bit
-platforms).
+right. These operations only accept exact integers.
 
 ==== bit-set?
 

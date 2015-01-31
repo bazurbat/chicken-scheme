@@ -232,25 +232,13 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #define ptr_to_fptr(x)               ((((x) >> FORWARDING_BIT_SHIFT) & 1) | C_GC_FORWARDING_BIT | ((x) & ~1))
 #define fptr_to_ptr(x)               (((x) << FORWARDING_BIT_SHIFT) | ((x) & ~(C_GC_FORWARDING_BIT | 1)))
 
-#define C_check_flonum(x, w)        if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG) \
-                                       barf(C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR, w, x);
 #define C_check_real(x, w, v)       if(((x) & C_FIXNUM_BIT) != 0) v = C_unfix(x); \
                                      else if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG) \
                                        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, w, x); \
                                      else v = C_flonum_magnitude(x);
 
 
-/* these could be shorter in unsafe mode: */
-#define C_check_int(x, f, n, w)     if(((x) & C_FIXNUM_BIT) != 0) n = C_unfix(x); \
-                                     else if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG) \
-                                       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, w, x); \
-                                     else { double _m; \
-                                       f = C_flonum_magnitude(x); \
-                                       if(modf(f, &_m) != 0.0 || f < C_WORD_MIN || f > C_WORD_MAX) \
-                                         barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, w, x); \
-                                       else n = (C_word)f; \
-                                     }
-
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 #ifdef BITWISE_UINT_ONLY
 #define C_check_uint(x, f, n, w)    if(((x) & C_FIXNUM_BIT) != 0) n = C_unfix(x); \
                                      else if(C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG) \
@@ -273,6 +261,7 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
                                       }
 #endif
 
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 #ifdef C_SIXTY_FOUR
 #define C_limit_fixnum(n)            ((n) & C_MOST_POSITIVE_FIXNUM)
 #else
@@ -513,6 +502,10 @@ static C_ccall void values_continuation(C_word c, C_word closure, C_word dummy, 
 static C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stable);
 static C_regparm int C_fcall C_in_new_heapp(C_word x);
 static void bignum_negate_2(C_word c, C_word self, C_word new_big);
+static void bignum_bitwise_and_2(C_word c, C_word self, C_word result) C_noret;
+static void bignum_bitwise_ior_2(C_word c, C_word self, C_word result) C_noret;
+static void bignum_bitwise_xor_2(C_word c, C_word self, C_word result) C_noret;
+static void bignum_actual_shift(C_word c, C_word self, C_word result) C_noret;
 static void bignum_times_bignum_unsigned(C_word k, C_word x, C_word y, C_word negp) C_noret;
 static void bignum_times_bignum_unsigned_2(C_word c, C_word self, C_word result) C_noret;
 static void integer_times_2(C_word c, C_word self, C_word new_big) C_noret;
@@ -557,6 +550,7 @@ static void gc_2(void *dummy) C_noret;
 static void allocate_vector_2(void *dummy) C_noret;
 static void allocate_bignum_2(void *dummy) C_noret;
 static C_word allocate_tmp_bignum(C_word size, C_word negp, C_word initp);
+static void bignum_digits_destructive_negate(C_word bignum);
 static C_uword bignum_digits_destructive_scale_up_with_carry(C_uword *start, C_uword *end, C_uword factor, C_uword carry);
 static C_uword bignum_digits_destructive_scale_down(C_uword *start, C_uword *end, C_uword denominator);
 static C_uword bignum_digits_destructive_shift_right(C_uword *start, C_uword *end, int shift_right, int negp);
@@ -838,7 +832,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size -
      this must match the number of C_pte calls + 1 (NULL terminator)! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 73);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 77);
   int i = 0;
 
   if(pt == NULL)
@@ -897,7 +891,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_peek_unsigned_integer);
   C_pte(C_context_switch);
   C_pte(C_register_finalizer);
-  /* IMPORTANT: have you read the comments at the start and the end of this function? */
   C_pte(C_locative_ref);
   C_pte(C_copy_closure);
   C_pte(C_dump_heap_state);
@@ -906,6 +899,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_fixnum_to_string);
   C_pte(C_integer_to_string);
   C_pte(C_flonum_to_string);
+  /* IMPORTANT: have you read the comments at the start and the end of this function? */
   C_pte(C_abs);
   C_pte(C_u_integer_abs);
   C_pte(C_negate);
@@ -922,6 +916,10 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_u_integer_quotient);
   C_pte(C_u_integer_remainder);
   C_pte(C_u_integer_divrem);
+  C_pte(C_u_2_integer_bitwise_and);
+  C_pte(C_u_2_integer_bitwise_ior);
+  C_pte(C_u_2_integer_bitwise_xor);
+  C_pte(C_u_integer_shift);
 
   /* IMPORTANT: did you remember the hardcoded pte table size? */
   pt[ i ].id = NULL;
@@ -1851,6 +1849,11 @@ void barf(int code, char *loc, ...)
     c = 1;
     break;
 
+  case C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR:
+    msg = C_text("bad argument type - not an exact integer");
+    c = 1;
+    break;
+
   default: panic(C_text("illegal internal error code"));
   }
   
@@ -2496,6 +2499,11 @@ void C_div_by_zero_error(char *loc)
 void C_not_an_integer_error(char *loc, C_word x)
 {
   barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, loc, x);
+}
+
+void C_not_an_uinteger_error(char *loc, C_word x)
+{
+  barf(C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR, loc, x);
 }
 
 /* Allocate and initialize record: */
@@ -5547,6 +5555,7 @@ static void bignum_negate_2(C_word c, C_word self, C_word new_big)
   C_kontinue(C_block_item(self, 1), C_bignum_simplify(new_big));
 }
 
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_a_i_bitwise_and(C_word **a, int c, C_word n1, C_word n2)
 {
   double f1, f2;
@@ -5561,6 +5570,7 @@ C_regparm C_word C_fcall C_a_i_bitwise_and(C_word **a, int c, C_word n1, C_word 
 }
 
 
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_a_i_bitwise_ior(C_word **a, int c, C_word n1, C_word n2)
 {
   double f1, f2;
@@ -5575,6 +5585,7 @@ C_regparm C_word C_fcall C_a_i_bitwise_ior(C_word **a, int c, C_word n1, C_word 
 }
 
 
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_a_i_bitwise_xor(C_word **a, int c, C_word n1, C_word n2)
 {
   double f1, f2;
@@ -5606,29 +5617,65 @@ C_regparm C_word C_fcall C_i_integer_length(C_word x)
     }
     return C_fix(result + last_digit_length);
   } else {
-    barf(C_BAD_ARGUMENT_TYPE_NO_EXACT_ERROR, "integer-length", x);
+    barf(C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR, "integer-length", x);
   }
+}
+
+/* This returns a tmp bignum negated copy of X (must be freed!) when
+ * the number is negative, or #f if it doesn't need to be negated.
+ * The size can be larger or smaller than X (it may be 1-padded).
+ */
+C_inline C_word maybe_negate_bignum_for_bitwise_op(C_word x, C_word size)
+{
+  C_word nx = C_SCHEME_FALSE, xsize;
+  if (C_bignum_negativep(x)) {
+    nx = allocate_tmp_bignum(C_fix(size), C_SCHEME_FALSE, C_SCHEME_FALSE);
+    xsize = C_bignum_size(x);
+    /* Copy up until requested size, and init any remaining upper digits */
+    C_memcpy(C_bignum_digits(nx), C_bignum_digits(x),
+             C_wordstobytes(nmin(size, xsize)));
+    if (size > xsize)
+      C_memset(C_bignum_digits(nx)+xsize, 0, C_wordstobytes(size-xsize));
+    bignum_digits_destructive_negate(nx);
+  }
+  return nx;
 }
 
 C_regparm C_word C_fcall C_i_bit_setp(C_word n, C_word i)
 {
-  double f1;
-  C_uword nn1;
-  int index;
+  if (!C_truep(C_i_exact_integerp(n))) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR, "bit-set?", n);
+  } else if (!(i & C_FIXNUM_BIT)) {
+    if (!C_immediatep(i) && (C_header_bits(i) == C_BIGNUM_TYPE) &&
+        !C_bignum_negativep(i)) {
+      return C_i_integer_negativep(n); /* A bit silly, but strictly correct */
+    } else {
+      barf(C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR, "bit-set?", i);
+    }
+  } else if (i & C_INT_SIGN_BIT) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR, "bit-set?", i);
+  } else {
+    i = C_unfix(i);
+    if (n & C_FIXNUM_BIT) {
+      if (i >= C_WORD_SIZE) return C_mk_bool(n & C_INT_SIGN_BIT);
+      else return C_mk_bool((C_unfix(n) & ((C_word)1 << i)) != 0);
+    } else {
+      C_word nn, d;
+      d = i / C_BIGNUM_DIGIT_LENGTH;
+      if (d >= C_bignum_size(n)) return C_mk_bool(C_bignum_negativep(n));
 
-  if((i & C_FIXNUM_BIT) == 0) 
-    barf(C_BAD_ARGUMENT_TYPE_NO_FIXNUM_ERROR, "bit-set?", i);
+      /* TODO: this isn't necessary, is it? */
+      if (C_truep(nn = maybe_negate_bignum_for_bitwise_op(n, d))) n = nn;
 
-  index = C_unfix(i);
-
-  if(index < 0 || index >= C_WORD_SIZE)
-    barf(C_OUT_OF_RANGE_ERROR, "bit-set?", n, i);
-
-  C_check_uint(n, f1, nn1, "bit-set?");
-  return C_mk_bool((nn1 & (1 << index)) != 0);
+      i %= C_BIGNUM_DIGIT_LENGTH;
+      d = C_mk_bool((C_bignum_digits(n)[d] & (C_uword)1 << i) != 0);
+      if (C_truep(nn)) free_tmp_bignum(nn);
+      return d;
+    }
+  }
 }
 
-
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_a_i_bitwise_not(C_word **a, int c, C_word n)
 {
   double f;
@@ -5641,7 +5688,163 @@ C_regparm C_word C_fcall C_a_i_bitwise_not(C_word **a, int c, C_word n)
   else return C_flonum(a, nn);
 }
 
+void C_ccall
+C_u_2_integer_bitwise_and(C_word c, C_word self, C_word k, C_word x, C_word y)
+{
+  if ((x & y) & C_FIXNUM_BIT) {
+    C_kontinue(k, C_u_fixnum_and(x, y));
+  } else {
+    C_word kab[C_SIZEOF_FIX_BIGNUM*2], *ka = kab, negp, size, k2;
+    if (x & C_FIXNUM_BIT) x = C_a_u_i_fix_to_big(&ka, x);
+    if (y & C_FIXNUM_BIT) y = C_a_u_i_fix_to_big(&ka, y);
 
+    negp = C_mk_bool(C_bignum_negativep(x) && C_bignum_negativep(y));
+    /* Allow negative 1-bits to propagate */
+    if (C_bignum_negativep(x) || C_bignum_negativep(y))
+      size = C_fix(nmax(C_bignum_size(x), C_bignum_size(y)) + 1);
+    else
+      size = C_fix(nmin(C_bignum_size(x), C_bignum_size(y)));
+
+    ka = C_alloc(C_SIZEOF_CLOSURE(4)); /* Why faster than static alloc? */
+    k2 = C_closure(&ka, 4, (C_word)bignum_bitwise_and_2, k, x, y);
+    C_allocate_bignum(5, (C_word)NULL, k2, C_fix(size), negp, C_SCHEME_FALSE);
+  }
+}
+
+static void bignum_bitwise_and_2(C_word c, C_word self, C_word result)
+{
+  C_word k = C_block_item(self, 1),
+	 x = C_block_item(self, 2),
+	 y = C_block_item(self, 3),
+         size = C_bignum_size(result), nx, ny;
+  C_uword *scanr = C_bignum_digits(result),
+          *endr = scanr + C_bignum_size(result),
+          *scans1, *ends1, *scans2;
+
+  if (C_truep(nx = maybe_negate_bignum_for_bitwise_op(x, size))) x = nx;
+  if (C_truep(ny = maybe_negate_bignum_for_bitwise_op(y, size))) y = ny;
+
+  if (C_bignum_size(x) < C_bignum_size(y)) {
+    scans1 = C_bignum_digits(x); ends1 = scans1 + C_bignum_size(x);
+    scans2 = C_bignum_digits(y);
+  } else {
+    scans1 = C_bignum_digits(y); ends1 = scans1 + C_bignum_size(y);
+    scans2 = C_bignum_digits(x);
+  }
+
+  while (scans1 < ends1) *scanr++ = *scans1++ & *scans2++;
+  C_memset(scanr, 0, C_wordstobytes(endr - scanr));
+
+  if (C_truep(nx)) free_tmp_bignum(nx);
+  if (C_truep(ny)) free_tmp_bignum(ny);
+  if (C_bignum_negativep(result)) bignum_digits_destructive_negate(result);
+
+  C_kontinue(k, C_bignum_simplify(result));
+}
+
+void C_ccall
+C_u_2_integer_bitwise_ior(C_word c, C_word self, C_word k, C_word x, C_word y)
+{
+  if ((x & y) & C_FIXNUM_BIT) {
+    C_kontinue(k, C_u_fixnum_or(x, y));
+  } else {
+    C_word kab[C_SIZEOF_FIX_BIGNUM*2], *ka = kab, negp, size, k2;
+    if (x & C_FIXNUM_BIT) x = C_a_u_i_fix_to_big(&ka, x);
+    if (y & C_FIXNUM_BIT) y = C_a_u_i_fix_to_big(&ka, y);
+
+    ka = C_alloc(C_SIZEOF_CLOSURE(4)); /* Why faster than static alloc? */
+    k2 = C_closure(&ka, 4, (C_word)bignum_bitwise_ior_2, k, x, y);
+    size = C_fix(nmax(C_bignum_size(x), C_bignum_size(y)) + 1);
+    negp = C_mk_bool(C_bignum_negativep(x) || C_bignum_negativep(y));
+    C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_FALSE);
+  }
+}
+
+static void bignum_bitwise_ior_2(C_word c, C_word self, C_word result)
+{
+  C_word k = C_block_item(self, 1),
+	 x = C_block_item(self, 2),
+	 y = C_block_item(self, 3),
+         size = C_bignum_size(result), nx, ny;
+  C_uword *scanr = C_bignum_digits(result),
+          *endr = scanr + C_bignum_size(result),
+          *scans1, *ends1, *scans2, *ends2;
+
+  if (C_truep(nx = maybe_negate_bignum_for_bitwise_op(x, size))) x = nx;
+  if (C_truep(ny = maybe_negate_bignum_for_bitwise_op(y, size))) y = ny;
+
+  if (C_bignum_size(x) < C_bignum_size(y)) {
+    scans1 = C_bignum_digits(x); ends1 = scans1 + C_bignum_size(x);
+    scans2 = C_bignum_digits(y); ends2 = scans2 + C_bignum_size(y);
+  } else {
+    scans1 = C_bignum_digits(y); ends1 = scans1 + C_bignum_size(y);
+    scans2 = C_bignum_digits(x); ends2 = scans2 + C_bignum_size(x);
+  }
+
+  while (scans1 < ends1) *scanr++ = *scans1++ | *scans2++;
+  while (scans2 < ends2) *scanr++ = *scans2++;
+  if (scanr < endr) *scanr++ = 0; /* Only done when result is positive */
+  assert(scanr == endr);
+
+  if (C_truep(nx)) free_tmp_bignum(nx);
+  if (C_truep(ny)) free_tmp_bignum(ny);
+  if (C_bignum_negativep(result)) bignum_digits_destructive_negate(result);
+
+  C_kontinue(k, C_bignum_simplify(result));
+}
+
+void C_ccall
+C_u_2_integer_bitwise_xor(C_word c, C_word self, C_word k, C_word x, C_word y)
+{
+  if ((x & y) & C_FIXNUM_BIT) {
+    C_kontinue(k, C_fixnum_xor(x, y));
+  } else {
+    C_word kab[C_SIZEOF_FIX_BIGNUM*2], *ka = kab, size, k2, negp;
+    if (x & C_FIXNUM_BIT) x = C_a_u_i_fix_to_big(&ka, x);
+    if (y & C_FIXNUM_BIT) y = C_a_u_i_fix_to_big(&ka, y);
+
+    ka = C_alloc(C_SIZEOF_CLOSURE(4)); /* Why faster than static alloc? */
+    k2 = C_closure(&ka, 4, (C_word)bignum_bitwise_xor_2, k, x, y);
+    size = C_fix(nmax(C_bignum_size(x), C_bignum_size(y)) + 1);
+    negp = C_mk_bool(C_bignum_negativep(x) != C_bignum_negativep(y));
+    C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_FALSE);
+  }
+}
+
+static void bignum_bitwise_xor_2(C_word c, C_word self, C_word result)
+{
+  C_word k = C_block_item(self, 1),
+	 x = C_block_item(self, 2),
+	 y = C_block_item(self, 3),
+         size = C_bignum_size(result), nx, ny;
+  C_uword *scanr = C_bignum_digits(result),
+          *endr = scanr + C_bignum_size(result),
+          *scans1, *ends1, *scans2, *ends2;
+
+  if (C_truep(nx = maybe_negate_bignum_for_bitwise_op(x, size))) x = nx;
+  if (C_truep(ny = maybe_negate_bignum_for_bitwise_op(y, size))) y = ny;
+
+  if (C_bignum_size(x) < C_bignum_size(y)) {
+    scans1 = C_bignum_digits(x); ends1 = scans1 + C_bignum_size(x);
+    scans2 = C_bignum_digits(y); ends2 = scans2 + C_bignum_size(y);
+  } else {
+    scans1 = C_bignum_digits(y); ends1 = scans1 + C_bignum_size(y);
+    scans2 = C_bignum_digits(x); ends2 = scans2 + C_bignum_size(x);
+  }
+
+  while (scans1 < ends1) *scanr++ = *scans1++ ^ *scans2++;
+  while (scans2 < ends2) *scanr++ = *scans2++;
+  if (scanr < endr) *scanr++ = 0; /* Only done when result is positive */
+  assert(scanr == endr);
+
+  if (C_truep(nx)) free_tmp_bignum(nx);
+  if (C_truep(ny)) free_tmp_bignum(ny);
+  if (C_bignum_negativep(result)) bignum_digits_destructive_negate(result);
+
+  C_kontinue(k, C_bignum_simplify(result));
+}
+
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_a_i_arithmetic_shift(C_word **a, int c, C_word n1, C_word n2)
 {
   C_word nn;
@@ -5698,6 +5901,106 @@ C_regparm C_word C_fcall C_a_i_arithmetic_shift(C_word **a, int c, C_word n1, C_
     if(C_ufitsinfixnump(unn)) return C_fix(unn);
     else return C_flonum(a, unn);
   }
+}
+
+void C_ccall /* x is any exact integer but y is _always_ a fixnum */
+C_u_integer_shift(C_word c, C_word self, C_word k, C_word x, C_word y)
+{
+  C_word ab[C_SIZEOF_FIX_BIGNUM], *a = ab;
+
+  y = C_unfix(y);
+  if (y == 0 || x == C_fix(0)) { /* Done (no shift) */
+    C_kontinue(k, x);
+  } else if (x & C_FIXNUM_BIT) {
+    if (y < 0) {
+      /* Don't shift more than a word's length (that's undefined in C!) */
+      if (-y < C_WORD_SIZE) {
+        C_kontinue(k, C_fix(C_unfix(x) >> -y));
+      } else {
+        C_kontinue(k, (x < 0) ? C_fix(-1) : C_fix(0));
+      }
+    } else if (y > 0 && y < C_WORD_SIZE-2 &&
+               /* After shifting, the length still fits a fixnum */
+               (C_ilen(C_unfix(x)) + y) < C_WORD_SIZE-2) {
+      C_kontinue(k, C_fix(C_unfix(x) << y));
+    } else {
+      x = C_a_u_i_fix_to_big(&a, x);
+    }
+  }
+
+  {
+    C_word ab[C_SIZEOF_CLOSURE(6)], *a = ab,
+           k2, size, negp, digit_offset, bit_offset;
+
+    negp = C_mk_bool(C_bignum_negativep(x));
+  
+    if (y > 0) { /* y is guaranteed not to be 0 here */
+      digit_offset = y / C_BIGNUM_DIGIT_LENGTH;
+      bit_offset =   y % C_BIGNUM_DIGIT_LENGTH;
+
+      k2 = C_closure(&a, 6, (C_word)bignum_actual_shift, k,
+                     x, C_SCHEME_TRUE, C_fix(digit_offset), C_fix(bit_offset));
+      size = C_fix(C_bignum_size(x) + digit_offset + 1);
+      C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_FALSE);
+    } else if (-y >= C_bignum_size(x) * (C_word)C_BIGNUM_DIGIT_LENGTH) {
+      /* All bits are shifted out, just return 0 or -1 */
+      C_kontinue(k, C_truep(negp) ? C_fix(-1) : C_fix(0));
+    } else {
+      digit_offset = -y / C_BIGNUM_DIGIT_LENGTH;
+      bit_offset =   -y % C_BIGNUM_DIGIT_LENGTH;
+    
+      k2 = C_closure(&a, 6, (C_word)bignum_actual_shift, k,
+                     x, C_SCHEME_FALSE, C_fix(digit_offset), C_fix(bit_offset));
+
+      size = C_fix(C_bignum_size(x) - digit_offset);
+      C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_FALSE);
+    }
+  }
+}
+
+static void bignum_actual_shift(C_word c, C_word self, C_word result)
+{
+  C_word k = C_block_item(self, 1),
+         x = C_block_item(self, 2),
+         shift_left = C_truep(C_block_item(self, 3)),
+         digit_offset = C_unfix(C_block_item(self, 4)),
+         bit_offset = C_unfix(C_block_item(self, 5));
+  C_uword *startr = C_bignum_digits(result),
+          *startx = C_bignum_digits(x),
+          *endx = startx + C_bignum_size(x),
+          *endr = startr + C_bignum_size(result);
+
+  if (shift_left) {
+    /* Initialize only the lower digits we're skipping and the MSD */
+    C_memset(startr, 0, C_wordstobytes(digit_offset));
+    *(endr-1) = 0;
+    startr += digit_offset;
+    /* Can't use bignum_digits_destructive_copy because it assumes
+     * we want to copy from the start.
+     */
+    C_memcpy(startr, startx, C_wordstobytes(endx-startx));
+    if(bit_offset > 0)
+      bignum_digits_destructive_shift_left(startr, endr, bit_offset);
+  } else {
+    C_word nx, size = C_bignum_size(x) + 1;
+    if (C_truep(nx = maybe_negate_bignum_for_bitwise_op(x, size))) {
+      startx = C_bignum_digits(nx); /* update startx; x and endx are unused */
+    }
+
+    startx += digit_offset;
+    /* Can't use bignum_digits_destructive_copy because that assumes
+     * target is at least as big as source.
+     */
+    C_memcpy(startr, startx, C_wordstobytes(endr-startr));
+    if(bit_offset > 0)
+      bignum_digits_destructive_shift_right(startr,endr,bit_offset,C_truep(nx));
+
+    if (C_truep(nx)) {
+      free_tmp_bignum(nx);
+      bignum_digits_destructive_negate(result);
+    }
+  }
+  C_kontinue(k, C_bignum_simplify(result));
 }
 
 
@@ -8750,6 +9053,24 @@ C_regparm C_word C_fcall C_bignum_simplify(C_word big)
   default:
     if (scan < last_digit) C_bignum_mutate_size(big, length);
     return big;
+  }
+}
+
+static void bignum_digits_destructive_negate(C_word result)
+{
+  C_uword *scan, *end, digit, sum;
+
+  scan = C_bignum_digits(result);
+  end = scan + C_bignum_size(result);
+
+  do {
+    digit = ~*scan;
+    sum = digit + 1;
+    *scan++ = sum;
+  } while (sum == 0 && scan < end);
+
+  for (; scan < end; scan++) {
+    *scan = ~*scan;
   }
 }
 

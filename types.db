@@ -842,29 +842,42 @@
 
 (argc+argv (#(procedure #:clean) argc+argv () fixnum (list-of string) fixnum))
 (argv (#(procedure #:clean) argv () (list-of string)))
-(arithmetic-shift (#(procedure #:clean #:enforce #:foldable) arithmetic-shift (number number) number))
 (integer-length (#(procedure #:clean #:enforce #:foldable) integer-length (integer) fixnum)
 		((fixnum) (##core#inline "C_i_fixnum_length" #(1)))
 		((*) (##core#inline "C_i_integer_length" #(1))))
 
+(arithmetic-shift (#(procedure #:clean #:enforce #:foldable) arithmetic-shift (integer fixnum) integer)
+		  ((integer fixnum) (##sys#integer-shift #(1) #(2))))
+
 (bignum? (#(procedure #:pure #:predicate bignum) bignum? (*) boolean))
 
-(bit-set? (#(procedure #:clean #:enforce #:foldable) bit-set? (number fixnum) boolean)
-	  ((fixnum fixnum) (##core#inline "C_u_i_bit_setp" #(1) #(2))))
+(bit-set? (#(procedure #:clean #:enforce #:foldable) bit-set? (integer integer) boolean)
+	  ((fixnum fixnum) (##core#inline "C_i_fixnum_bit_setp" #(1) #(2)))
+	  ((* *) (##core#inline "C_i_bit_setp" #(1) #(2))))
 
-(bitwise-and (#(procedure #:clean #:enforce #:foldable) bitwise-and (#!rest number) number)
-	     ((fixnum fixnum) (fixnum)
-	      (##core#inline "C_fixnum_and" #(1) #(2))))
+(bitwise-and (#(procedure #:clean #:enforce #:foldable) bitwise-and (#!rest integer) integer)
+           (() '-1)
+           ((fixnum) (fixnum) #(1))
+           ((integer) #(1))
+           ((fixnum fixnum) (fixnum) (##core#inline "C_u_fixnum_and" #(1) #(2)))
+           ((integer integer) (##sys#integer-bitwise-and #(1) #(2))))
 
-(bitwise-ior (#(procedure #:clean #:enforce #:foldable) bitwise-ior (#!rest number) number)
-	     ((fixnum fixnum) (fixnum)
-	      (##core#inline "C_fixnum_or" #(1) #(2))))
+(bitwise-ior (#(procedure #:clean #:enforce #:foldable) bitwise-ior (#!rest integer) integer)
+           (() '0)
+           ((fixnum) (fixnum) #(1))
+           ((integer) #(1))
+           ((fixnum fixnum) (fixnum) (##core#inline "C_u_fixnum_or" #(1) #(2)))
+           ((integer integer) (##sys#integer-bitwise-ior #(1) #(2))))
 
-(bitwise-not (#(procedure #:clean #:enforce #:foldable) bitwise-not (number) number))
+(bitwise-xor (#(procedure #:clean #:enforce #:foldable) bitwise-xor (#!rest integer) integer)
+           (() '0)
+           ((fixnum) (fixnum) #(1))
+           ((integer) #(1))
+           ((fixnum fixnum) (fixnum) (##core#inline "C_fixnum_xor" #(1) #(2)))
+           ((integer integer) (##sys#integer-bitwise-xor #(1) #(2))))
 
-(bitwise-xor (#(procedure #:clean #:enforce #:foldable) bitwise-xor (#!rest number) number)
-	     ((fixnum fixnum) (fixnum) 
-	      (##core#inline "C_fixnum_xor" #(1) #(2))))
+(bitwise-not (#(procedure #:clean #:enforce #:foldable) bitwise-not (integer) integer)
+	     ((integer) (##sys#integer-minus '-1 #(1))))
 
 (blob->string (#(procedure #:clean #:enforce) blob->string (blob) string))
 
