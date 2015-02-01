@@ -2535,6 +2535,28 @@ C_regparm C_word C_fcall C_static_string(C_word **ptr, int len, C_char *str)
   return strblock;
 }
 
+C_regparm C_word C_fcall C_static_bignum(C_word **ptr, int len, C_char *str)
+{
+  C_word *dptr, bignum, retval, size, negp = 0;
+
+  if (*str == '+' || *str == '-') {
+    negp = ((*str++) == '-') ? 1 : 0;
+    --len;
+  }
+  size = C_BIGNUM_BITS_TO_DIGITS(len << 2);
+
+  dptr = (C_word *)C_malloc(C_wordstobytes(C_SIZEOF_BIGNUM(size)));
+  if(dptr == NULL)
+    panic(C_text("out of memory - cannot allocate static bignum"));
+
+  bignum = (C_word)dptr;
+  C_block_header_init(bignum, C_BIGNUM_TYPE | C_wordstobytes(size + 1));
+  C_set_block_item(bignum, 0, negp);
+
+  retval = str_to_bignum(bignum, str, str + len, 16);
+  if (retval & C_FIXNUM_BIT) C_free(dptr); /* Might have been simplified */
+  return retval;
+}
 
 C_regparm C_word C_fcall C_static_lambda_info(C_word **ptr, int len, C_char *str)
 {
@@ -11259,6 +11281,14 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
       bits = C_FLONUM_TYPE;
       break;
 
+#ifdef C_SIXTY_FOUR
+    case (C_BIGNUM_TYPE >> (24 + 32)) & 0xff:
+#else
+    case (C_BIGNUM_TYPE >> 24) & 0xff:
+#endif
+      bits = C_BIGNUM_TYPE;
+      break;
+
     default: 
       panic(C_text("invalid encoded special literal"));
     }
@@ -11282,6 +11312,11 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
       panic(C_text("invalid encoded numeric literal"));
       break;
 
+    /* XXX OBSOLETE: remove when we get rid of convert_string_to_number,
+     * which can be done after recompilation when we know bignums are
+     * always encoded as bignums.  Then this can be moved to the switch()
+     * below.
+     */
     case 1:			/* fixnum */
       val = C_fix(ln);
       break;
@@ -11324,6 +11359,13 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
   case C_LAMBDA_INFO_TYPE:
     /* lambda infos are always allocated statically */
     val = C_static_lambda_info(ptr, size, *str);
+    *str += size;
+    break;
+
+  /* This cannot be encoded as a blob due to endianness differences */
+  case C_BIGNUM_TYPE:
+    /* bignums are also allocated statically */
+    val = C_static_bignum(ptr, size, *str);
     *str += size;
     break;
 

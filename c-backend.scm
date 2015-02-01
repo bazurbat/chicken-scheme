@@ -680,23 +680,27 @@
       (bomb "type of literal not supported" lit) )
 
     (define (literal-size lit)
-      (cond [(immediate? lit) 0]
-	    [(string? lit) 0]
-	    [(number? lit) words-per-flonum]
-	    [(symbol? lit) 10]		; size of symbol, and possibly a bucket
-	    [(pair? lit) (+ 3 (literal-size (car lit)) (literal-size (cdr lit)))]
-	    [(vector? lit) (+ 1 (vector-length lit) (foldl + 0 (map literal-size (vector->list lit))))]
-	    [(block-variable-literal? lit) 0]
-	    [(##sys#immediate? lit) (bad-literal lit)]
-	    [(##core#inline "C_lambdainfop" lit) 0]
-	    [(##sys#bytevector? lit) (+ 2 (bytes->words (##sys#size lit))) ] ; drops "permanent" property!
-	    [(##sys#generic-structure? lit)
+      (cond ((immediate? lit) 0)
+	    ((big-fixnum? lit) 0)       ; immediate or statically allocated
+	    ((string? lit) 0)		; statically allocated
+	    ((bignum? lit) 0)		; statically allocated
+	    ((flonum? lit) words-per-flonum)
+	    ((symbol? lit) 10)          ; size of symbol, and possibly a bucket
+	    ((pair? lit) (+ 3 (literal-size (car lit)) (literal-size (cdr lit))))
+	    ((vector? lit)
+	     (+ 1 (vector-length lit)
+                (foldl + 0 (map literal-size (vector->list lit)))))
+	    ((block-variable-literal? lit) 0) ; excluded from generated code
+	    ((##sys#immediate? lit) (bad-literal lit))
+	    ((##core#inline "C_lambdainfop" lit) 0) ; statically allocated
+	    ((##sys#bytevector? lit) (+ 2 (bytes->words (##sys#size lit))) ) ; drops "permanent" property!
+	    ((##sys#generic-structure? lit)
 	     (let ([n (##sys#size lit)])
 	       (let loop ([i 0] [s (+ 2 n)])
 		 (if (>= i n)
 		     s
-		     (loop (add1 i) (+ s (literal-size (##sys#slot lit i)))) ) ) ) ]
-	    [else (bad-literal lit)] ) )
+		     (loop (add1 i) (+ s (literal-size (##sys#slot lit i)))) ) ) ) )
+	    (else (bad-literal lit))) )
 
     (define (gen-lit lit to)
       ;; we do simple immediate literals directly to avoid a function call:
@@ -1410,16 +1414,21 @@ return((C_header_bits(lit) >> 24) & 0xff);
 	 ((null? lit) "\xff\x0e")
 	 ((eof-object? lit) "\xff\x3e")
 	 ((eq? (void) lit) "\xff\x1e")
-	 ((fixnum? lit)
-	  (if (not (big-fixnum? lit))
-	      (string-append
-	       "\xff\x01"
-	       (string (integer->char (bitwise-and #xff (arithmetic-shift lit -24)))
-		       (integer->char (bitwise-and #xff (arithmetic-shift lit -16)))
-		       (integer->char (bitwise-and #xff (arithmetic-shift lit -8)))
-		       (integer->char (bitwise-and #xff lit)) ) )
-	      (string-append "\xff\x55" (number->string lit) "\x00") ) )
-	 ((number? lit)
+	 ;; The big-fixnum? check can probably be simplified
+	 ((and (fixnum? lit) (not (big-fixnum? lit)))
+	  (string-append
+	   "\xff\x01"
+	   (string (integer->char (bitwise-and #xff (arithmetic-shift lit -24)))
+		   (integer->char (bitwise-and #xff (arithmetic-shift lit -16)))
+		   (integer->char (bitwise-and #xff (arithmetic-shift lit -8)))
+		   (integer->char (bitwise-and #xff lit)) ) ) )
+	 ((exact-integer? lit)
+	  ;; Encode as hex to save space and get exact size
+	  ;; calculation.  We could encode as base 32 to save more
+	  ;; space, but that makes debugging harder.
+	  (let ((str (number->string lit 16)))
+	    (string-append "\x46" (encode-size (string-length str)) str)))
+	 ((flonum? lit)
 	  (string-append "\x55" (number->string lit) "\x00") )
 	 ((symbol? lit)
 	  (let ((str (##sys#slot lit 1)))
