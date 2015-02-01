@@ -1856,6 +1856,11 @@ void barf(int code, char *loc, ...)
     c = 1;
     break;
 
+  case C_BAD_ARGUMENT_TYPE_FOREIGN_LIMITATION:
+    msg = C_text("number does not fit in foreign type");
+    c = 1;
+    break;
+
   default: panic(C_text("illegal internal error code"));
   }
   
@@ -6663,6 +6668,12 @@ C_regparm C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x)
 
   if((x & C_FIXNUM_BIT) != 0) return x;
 
+  if(!C_immediatep(x) && C_header_bits(x) == C_BIGNUM_TYPE) {
+    if (C_bignum_size(x) == 1) return x;
+    else barf(C_BAD_ARGUMENT_TYPE_FOREIGN_LIMITATION, NULL, x);
+  }
+
+  /* XXX OBSOLETE: This should be removed on the next round */
   if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
     m = C_flonum_magnitude(x);
 
@@ -6680,6 +6691,16 @@ C_regparm C_word C_fcall C_i_foreign_unsigned_integer64_argumentp(C_word x)
 
   if((x & C_FIXNUM_BIT) != 0) return x;
 
+  if(!C_immediatep(x) && C_header_bits(x) == C_BIGNUM_TYPE) {
+#ifdef C_SIXTY_FOUR
+    if (C_bignum_size(x) == 1) return x;
+#else
+    if (C_bignum_size(x) <= 2) return x;
+#endif
+    else barf(C_BAD_ARGUMENT_TYPE_FOREIGN_LIMITATION, NULL, x);
+  }
+
+  /* XXX OBSOLETE: This should be removed on the next round */
   if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
     m = C_flonum_magnitude(x);
 

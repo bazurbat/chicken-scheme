@@ -687,6 +687,7 @@ static inline int isinf_ld (long double x)
 #define C_BAD_ARGUMENT_TYPE_NO_REAL_ERROR             50
 #define C_BAD_ARGUMENT_TYPE_COMPLEX_NO_ORDERING_ERROR 51
 #define C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR    52
+#define C_BAD_ARGUMENT_TYPE_FOREIGN_LIMITATION        53
 
 /* Platform information */
 #if defined(C_BIG_ENDIAN)
@@ -2264,6 +2265,45 @@ C_inline C_word C_double_to_number(C_word n)
   else return n;
 }
 
+/* Silly (this is not normalized) but in some cases needed internally */
+C_inline C_word C_bignum0(C_word **ptr)
+{
+  C_word *p = *ptr, p0 = (C_word)p;
+
+  /* Not using C_a_i_vector4, to make it easier to rewrite later */
+  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(1);
+  *(p++) = 0; /* zero is always positive */
+  *ptr = p;
+
+  return p0;
+}
+
+C_inline C_word C_bignum1(C_word **ptr, int negp, C_uword d1)
+{
+  C_word *p = *ptr, p0 = (C_word)p;
+
+  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(2);
+  *(p++) = negp;
+  *(p++) = d1;
+  *ptr = p;
+
+  return p0;
+}
+
+/* Here d1, d2, ... are low to high (ie, little endian)! */
+C_inline C_word C_bignum2(C_word **ptr, int negp, C_uword d1, C_uword d2)
+{
+  C_word *p = *ptr, p0 = (C_word)p;
+
+  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(3);
+  *(p++) = negp;
+  *(p++) = d1;
+  *(p++) = d2;
+  *ptr = p;
+
+  return p0;
+}
+
 
 C_inline C_word C_fits_in_int_p(C_word x)
 {
@@ -2271,6 +2311,13 @@ C_inline C_word C_fits_in_int_p(C_word x)
 
   if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
 
+  if(!C_immediatep(x) && C_header_bits(x) == C_BIGNUM_TYPE) {
+    return C_mk_bool(C_bignum_size(x) == 1 &&
+                     (!C_bignum_negativep(x) ||
+                      !(C_bignum_digits(x)[0] & C_INT_SIGN_BIT)));
+  }
+
+  /* XXX OBSOLETE remove on the next round, remove check above */
   n = C_flonum_magnitude(x);
   return C_mk_bool(C_modf(n, &m) == 0.0 && n >= C_WORD_MIN && n <= C_WORD_MAX);
 }
@@ -2282,6 +2329,11 @@ C_inline C_word C_fits_in_unsigned_int_p(C_word x)
 
   if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
 
+  if(!C_immediatep(x) && C_header_bits(x) == C_BIGNUM_TYPE) {
+    return C_mk_bool(C_bignum_size(x) == 1);
+  }
+
+  /* XXX OBSOLETE remove on the next round, remove check above */
   n = C_flonum_magnitude(x);
   return C_mk_bool(C_modf(n, &m) == 0.0 && n >= 0 && n <= C_UWORD_MAX);
 }
@@ -2296,73 +2348,117 @@ C_inline double C_c_double(C_word x)
 
 C_inline C_word C_num_to_int(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_unfix(x);
-  else return (int)C_flonum_magnitude(x);
+  if(x & C_FIXNUM_BIT) {
+    return C_unfix(x);
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    if (C_bignum_negativep(x)) return -(C_word)C_bignum_digits(x)[0];
+    else return (C_word)C_bignum_digits(x)[0];  /* should never be larger */
+  } else {
+    /* XXX OBSOLETE remove on the next round, remove check above */
+    return (C_word)C_flonum_magnitude(x);
+  }
 }
 
 
 C_inline C_s64 C_num_to_int64(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return (C_s64)C_unfix(x);
-  else return (C_s64)C_flonum_magnitude(x);
+  if(x & C_FIXNUM_BIT) {
+    return (C_s64)C_unfix(x);
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    C_s64 num = C_bignum_digits(x)[0];
+#ifndef C_SIXTY_FOUR
+    if (C_bignum_size(x) > 1) num |= ((C_s64)C_bignum_digits(x)[1]) << 32;
+#endif
+    if (C_bignum_negativep(x)) return -num;
+    else return num;
+  } else {
+    /* XXX OBSOLETE remove on the next round, remove check above */
+    return (C_s64)C_flonum_magnitude(x);
+  }
 }
 
 
 C_inline C_u64 C_num_to_uint64(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return (C_u64)C_unfix(x);
-  else return (C_u64)C_flonum_magnitude(x);
+  if(x & C_FIXNUM_BIT) {
+    return (C_u64)C_unfix(x);
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    C_u64 num = C_bignum_digits(x)[0];
+#ifndef C_SIXTY_FOUR
+    if (C_bignum_size(x) > 1) num |= ((C_u64)C_bignum_digits(x)[1]) << 32;
+#endif
+    return num;
+  } else {
+    /* XXX OBSOLETE remove on the next round, remove check above */
+    return (C_u64)C_flonum_magnitude(x);
+  }
 }
 
 
 C_inline C_uword C_num_to_unsigned_int(C_word x)
 {
-  if(x & C_FIXNUM_BIT) return C_unfix(x);
-  else return (unsigned int)C_flonum_magnitude(x);
+  if(x & C_FIXNUM_BIT) {
+    return (C_uword)C_unfix(x);
+  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+    return C_bignum_digits(x)[0]; /* should never be larger */
+  } else {
+    /* XXX OBSOLETE remove on the next round, remove check above */
+    return (C_uword)C_flonum_magnitude(x);
+  }
 }
 
 
 C_inline C_word C_int_to_num(C_word **ptr, C_word n)
 {
   if(C_fitsinfixnump(n)) return C_fix(n);
-  else return C_flonum(ptr, (double)n);
+  else return C_bignum1(ptr, n < 0, labs(n));
 }
 
 
 C_inline C_word C_unsigned_int_to_num(C_word **ptr, C_uword n)
 {
   if(C_ufitsinfixnump(n)) return C_fix(n);
-  else return C_flonum(ptr, (double)n);
+  else return C_bignum1(ptr, 0, n);
 }
 
+C_inline C_word C_int64_to_num(C_word **ptr, C_s64 n)
+{
+  if(C_fitsinfixnump(n)) {
+    return C_fix(n);
+  } else {
+    C_u64 un = n < 0 ? -n : n;
+#ifdef C_SIXTY_FOUR
+    return C_bignum1(ptr, n < 0, un);
+#else
+    C_word res = C_bignum2(ptr, n < 0, (C_uword)un, (C_uword)(un >> 32));
+    return C_bignum_simplify(res);
+#endif
+  }
+}
+
+C_inline C_word C_uint64_to_num(C_word **ptr, C_u64 n)
+{
+  if(C_ufitsinfixnump(n)) {
+    return C_fix(n);
+  } else {
+#ifdef C_SIXTY_FOUR
+    return C_bignum1(ptr, 0, n);
+#else
+    C_word res = C_bignum2(ptr, 0, (C_uword)n, (C_uword)(n >> 32));
+    return C_bignum_simplify(res);
+#endif
+  }
+}
 
 C_inline C_word C_long_to_num(C_word **ptr, C_long n)
 {
-  if(C_fitsinfixnump(n)) return C_fix(n);
-  else return C_flonum(ptr, (double)n);
+  return C_int64_to_num(ptr, (C_s64)n);
 }
 
 
 C_inline C_word C_unsigned_long_to_num(C_word **ptr, C_ulong n)
 {
-  if(C_ufitsinfixnump(n)) return C_fix(n);
-  else return C_flonum(ptr, (double)n);
-}
-
-
-C_inline C_word C_flonum_in_int_range_p(C_word n)
-{
-  double m = C_flonum_magnitude(n);
-
-  return C_mk_bool(m >= C_WORD_MIN && m <= C_WORD_MAX);
-}
-
-
-C_inline C_word C_flonum_in_uint_range_p(C_word n)
-{
-  double m = C_flonum_magnitude(n);
-
-  return C_mk_bool(m >= 0 && m <= C_UWORD_MAX);
+  return C_uint64_to_num(ptr, (C_u64)n);
 }
 
 
@@ -2647,45 +2743,6 @@ C_inline C_word C_i_ratnump(C_word x)
                    C_block_item(x, 0) == C_ratnum_type_tag);
 }
 
-/* Silly (this is not normalized) but in some cases needed internally */
-C_inline C_word C_bignum0(C_word **ptr)
-{
-  C_word *p = *ptr, p0 = (C_word)p;
-
-  /* Not using C_a_i_vector4, to make it easier to rewrite later */
-  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(1);
-  *(p++) = 0; /* zero is always positive */
-  *ptr = p;
-
-  return p0;
-}
-
-C_inline C_word C_bignum1(C_word **ptr, int negp, C_uword d1)
-{
-  C_word *p = *ptr, p0 = (C_word)p;
-
-  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(2);
-  *(p++) = negp;
-  *(p++) = d1;
-  *ptr = p;
-
-  return p0;
-}
-
-/* Here d1, d2, ... are low to high (ie, little endian)! */
-C_inline C_word C_bignum2(C_word **ptr, int negp, C_uword d1, C_uword d2)
-{
-  C_word *p = *ptr, p0 = (C_word)p;
-
-  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(3);
-  *(p++) = negp;
-  *(p++) = d1;
-  *(p++) = d2;
-  *ptr = p;
-
-  return p0;
-}
-
 /* TODO: Is this correctly named?  Shouldn't it accept an argcount? */
 C_inline C_word C_a_u_i_fix_to_big(C_word **ptr, C_word x)
 {
@@ -2792,8 +2849,6 @@ C_inline C_word C_a_i_fixnum_difference(C_word **ptr, C_word n, C_word x, C_word
   C_word z = C_unfix(x) - C_unfix(y);
 
   if(!C_fitsinfixnump(z)) {
-    /* TODO: function/macro returning either fixnum or bignum from a C int */
-    /* This should help with the C API/FFI too. */
     return C_bignum1(ptr, z < 0, labs(z));
   } else {
     return C_fix(z);
@@ -2809,8 +2864,6 @@ C_inline C_word C_a_i_fixnum_plus(C_word **ptr, C_word n, C_word x, C_word y)
     C_word z = C_unfix(x) + C_unfix(y);
 
     if(!C_fitsinfixnump(z)) {
-      /* TODO: function/macro returning either fixnum or bignum from a C int */
-      /* This should help with the C API/FFI too. */
       return C_bignum1(ptr, z < 0, labs(z));
     } else {
       return C_fix(z);

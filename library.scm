@@ -5442,6 +5442,7 @@ EOF
 	((50) (apply ##sys#signal-hook #:type-error loc "bad argument type - not a real" args))
 	((51) (apply ##sys#signal-hook #:type-error loc "bad argument type - complex number has no ordering" args))
 	((52) (apply ##sys#signal-hook #:type-error loc "bad argument type - not an exact integer" args))
+	((53) (apply ##sys#signal-hook #:type-error loc "number does not fit in foreign type" args))
 	(else (apply ##sys#signal-hook #:runtime-error loc "unknown internal error" args)) ) ) ) )
 
 
