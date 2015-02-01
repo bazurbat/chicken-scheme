@@ -502,6 +502,7 @@ static C_ccall void values_continuation(C_word c, C_word closure, C_word dummy, 
 static C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stable);
 static C_regparm int C_fcall C_in_new_heapp(C_word x);
 static void bignum_negate_2(C_word c, C_word self, C_word new_big);
+static void bignum_actual_extraction(C_word c, C_word self, C_word result) C_noret;
 static void bignum_bitwise_and_2(C_word c, C_word self, C_word result) C_noret;
 static void bignum_bitwise_ior_2(C_word c, C_word self, C_word result) C_noret;
 static void bignum_bitwise_xor_2(C_word c, C_word self, C_word result) C_noret;
@@ -5641,6 +5642,57 @@ C_regparm C_word C_fcall C_i_integer_length(C_word x)
   }
 }
 
+/* This is currently only used by Karatsuba multiplication and
+ * Burnikel-Ziegler division.  It is not intended as a public API!
+ */
+void C_ccall
+C_u_bignum_extract_digits(C_word c, C_word self, C_word k, C_word x, C_word start, C_word end)
+{
+  if (x & C_FIXNUM_BIT) { /* Needed? */
+    if (C_unfix(start) == 0 && (end == C_SCHEME_FALSE || C_unfix(end) > 0))
+      C_kontinue(k, x);
+    else
+      C_kontinue(k, C_fix(0));
+  } else {
+    C_word negp, size;
+
+    negp = C_mk_bool(C_bignum_negativep(x)); /* Always false */
+
+    start = C_unfix(start);
+    /* We might get passed larger values than actually fits; pad w/ zeroes */
+    if (end == C_SCHEME_FALSE) end = C_bignum_size(x);
+    else end = nmin(C_unfix(end), C_bignum_size(x));
+    assert(start >= 0);
+
+    size = end - start;
+
+    if (size == 0 || start >= C_bignum_size(x)) {
+      C_kontinue(k, C_fix(0));
+    } else {
+      C_word k2, kab[C_SIZEOF_CLOSURE(5)], *ka = kab;
+      k2 = C_closure(&ka, 5, (C_word)bignum_actual_extraction,
+                     k, x, C_fix(start), C_fix(end));
+      C_allocate_bignum(5, (C_word)NULL, k2, C_fix(size), negp, C_SCHEME_FALSE);
+    }
+  }
+}
+
+static void bignum_actual_extraction(C_word c, C_word self, C_word result)
+{
+  C_word k = C_block_item(self, 1),
+         x = C_block_item(self, 2),
+         start = C_unfix(C_block_item(self, 3)),
+         end = C_unfix(C_block_item(self, 4));
+  C_uword *result_digits = C_bignum_digits(result),
+          *x_digits = C_bignum_digits(x);
+
+  /* Can't use bignum_digits_destructive_copy because that assumes
+   * target is at least as big as source.
+   */
+  C_memcpy(result_digits, x_digits + start, C_wordstobytes(end-start));
+  C_kontinue(k, C_bignum_simplify(result));
+}
+
 /* This returns a tmp bignum negated copy of X (must be freed!) when
  * the number is negative, or #f if it doesn't need to be negated.
  * The size can be larger or smaller than X (it may be 1-padded).
@@ -7111,15 +7163,14 @@ bignum_times_bignum_unsigned(C_word k, C_word x, C_word y, C_word negp)
     y = z;
   }
 
-  /* TODO: Activate later */
-  /* if (C_bignum_size(x) < C_KARATSUBA_THRESHOLD) {  /\* Gradebook *\/ */
+  if (C_bignum_size(x) < C_KARATSUBA_THRESHOLD) {  /* Gradebook */
     C_word kab[C_SIZEOF_CLOSURE(4)], *ka = kab, k2, size;
     k2 = C_closure(&ka, 4, (C_word)bignum_times_bignum_unsigned_2, k, x, y);
     size = C_fix(C_bignum_size(x) + C_bignum_size(y));
     C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_TRUE);
-  /* } else { */
-  /*   try_extended_number("numbers#@bignum-2-times-karatsuba", 3, k, x, y); */
-  /* } */
+  } else {
+    try_extended_number("\003sysbignum-times-karatsuba", 3, k, x, y);
+  }
 }
 
 static void bignum_times_bignum_unsigned_2(C_word c, C_word self, C_word result)
@@ -7962,13 +8013,12 @@ bignum_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return
   case 1:
   default:
     size = C_bignum_size(y);
-    /* TODO: Activate later */
-    /* if (size > C_BURNIKEL_ZIEGLER_THRESHOLD && */
-    /*     /\* This avoids endless recursion for odd Ns just above threshold *\/ */
-    /*     !(size & 1 && size < (C_BURNIKEL_ZIEGLER_THRESHOLD << 1))) { */
-    /*   try_extended_number("\003sysbignum-divrem-burnikel-ziegler", 5, */
-    /*     		  k, x, y, return_q, return_r); */
-    /* } else */ if (C_truep(return_q)) {
+    if (size > C_BURNIKEL_ZIEGLER_THRESHOLD &&
+        /* This avoids endless recursion for odd Ns just above threshold */
+        !(size & 1 && size < (C_BURNIKEL_ZIEGLER_THRESHOLD << 1))) {
+      try_extended_number("\003sysbignum-divrem-burnikel-ziegler", 5,
+        		  k, x, y, return_q, return_r);
+    } else if (C_truep(return_q)) {
       C_word kab[C_SIZEOF_FIX_BIGNUM+C_SIZEOF_CLOSURE(9)], *ka = kab, k2;
       k2 = C_closure(&ka, 9, (C_word)bignum_divide_2_unsigned, k, x, y,
                      return_q, return_r, r_negp,
@@ -10028,20 +10078,19 @@ C_integer_to_string(C_word c, C_word self, C_word k, C_word num, C_word radix)
     len += C_bignum_negativep(num) ? 1 : 0; /* Add space for negative sign */
     
     radix_shift = C_ilen(C_unfix(radix)) - 1;
-    /* TODO: Activate later */
-    /* if (len > C_RECURSIVE_TO_STRING_THRESHOLD && */
-    /*     /\* The power of two fast path is much faster than recursion *\/ */
-    /*     ((C_uword)1 << radix_shift) != C_unfix(radix)) { */
-    /*   try_extended_number("numbers#@integer->string/recursive", */
-    /*                       4, k, num, radix, C_fix(len)); */
-    /* } else { */
+    if (len > C_RECURSIVE_TO_STRING_THRESHOLD &&
+        /* The power of two fast path is much faster than recursion */
+        ((C_uword)1 << radix_shift) != C_unfix(radix)) {
+      try_extended_number("\003sysinteger->string/recursive",
+                          4, k, num, radix, C_fix(len));
+    } else {
       C_word k2, negp = C_mk_bool(C_bignum_negativep(num)), *ka;
       ka = C_alloc(C_SIZEOF_CLOSURE(4));
       k2 = C_closure(&ka, 4, (C_word)bignum_to_str_2, k, num, radix);
       C_allocate_vector(6, (C_word)NULL, k2, C_fix(len),
                         /* Byte vec, no initialization, align at 8 bytes */
                         C_SCHEME_TRUE, C_SCHEME_FALSE, C_SCHEME_FALSE);
-    /* } */
+    }
   }
 }
 

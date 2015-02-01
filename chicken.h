@@ -418,6 +418,29 @@ static inline int isinf_ld (long double x)
 # define C_HALF_WORD_SIZE         16
 #endif
 
+/* Tunable performance-related constants */
+#ifndef C_KARATSUBA_THRESHOLD
+/* This defines when we'll switch from schoolbook to Karatsuba
+ * multiplication.  The smallest of the two numbers determines the
+ * switch.  It is pretty high right now because it generates a bit
+ * more garbage and GC overhead dominates the algorithmic performance
+ * gains.  If the GC is improved, this can be readjusted.
+ */
+# define C_KARATSUBA_THRESHOLD        70
+#endif
+#ifndef C_BURNIKEL_ZIEGLER_THRESHOLD
+/* This defines when to switch from schoolbook to Burnikel-Ziegler
+ * division.  It creates even more garbage than Karatsuba :(
+ */
+# define C_BURNIKEL_ZIEGLER_THRESHOLD 300
+#endif
+#ifndef C_RECURSIVE_TO_STRING_THRESHOLD
+/* This threshold is in terms of the expected string length.  It
+ * depends on division speed: if you change the above, change this too.
+ */
+# define C_RECURSIVE_TO_STRING_THRESHOLD 750
+#endif
+
 /* These might fit better in runtime.c? */
 #define C_fitsinbignumhalfdigitp(n)     (C_BIGNUM_DIGIT_HI_HALF(n) == 0)
 #define C_BIGNUM_DIGIT_LENGTH           C_WORD_SIZE
@@ -1911,6 +1934,7 @@ C_fctexport void C_ccall C_basic_divrem(C_word c, C_word self, C_word k, C_word 
 C_fctexport void C_ccall C_u_integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_u_flo_to_int(C_word c, C_word self, C_word k, C_word x) C_noret;
 C_fctexport void C_ccall C_u_integer_shift(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+C_fctexport void C_ccall C_u_bignum_extract_digits(C_word c, C_word self, C_word k, C_word x, C_word start, C_word end) C_noret;
 C_fctexport void C_ccall C_u_2_integer_bitwise_and(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_u_2_integer_bitwise_ior(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_u_2_integer_bitwise_xor(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;

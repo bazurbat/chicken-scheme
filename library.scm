@@ -38,7 +38,7 @@
         maximal-string-length find-ratio-between find-ratio
 	make-complex flonum->ratnum ratnum rat+/- minimum-denorm-flonum-expt
 	+maximum-allowed-exponent+ mantexp->dbl ldexp round-quotient
-	##sys#string->compnum)
+	##sys#string->compnum ##sys#bignum-extract-digits ##sys#internal-gcd)
   (not inline ##sys#user-read-hook ##sys#error-hook ##sys#signal-hook ##sys#schedule
        ##sys#default-read-info-hook ##sys#infix-list-hook ##sys#sharp-number-hook
        ##sys#user-print-hook ##sys#user-interrupt-hook ##sys#step-hook)
@@ -746,6 +746,10 @@ EOF
 
 
 ;;; Numeric routines:
+;; Abbreviations of paper and book titles used in comments are:
+;; [Knuth] Donald E. Knuth, "The Art of Computer Programming", Volume 2
+;; [MpNT]  Tiplea at al., "MpNT: A Multi-Precision Number Theory Package"
+;; [MCA]   Richard P. Brent & Paul Zimmermann, "Modern Computer Arithmetic"
 
 (define most-positive-fixnum (foreign-value "C_MOST_POSITIVE_FIXNUM" int))
 (define most-negative-fixnum (foreign-value "C_MOST_NEGATIVE_FIXNUM" int))
@@ -1308,6 +1312,48 @@ EOF
                   (loop (##sys#slot args 1)
 			(##sys#*-2 x (##sys#slot args 0))) ) )  ) ) ) )
 
+(define-inline (%bignum-digit-count b) (##core#inline "C_u_i_bignum_size" b))
+(define ##sys#bignum-extract-digits
+  (##core#primitive "C_u_bignum_extract_digits"))
+
+;; Karatsuba multiplication: invoked from C when the two numbers are
+;; large enough to make it worthwhile.  Complexity is O(n^log2(3)),
+;; where n is max(len(x), len(y)).  The description in [Knuth, 4.3.3]
+;; leaves a lot to be desired.  [MCA, 1.3.2] and [MpNT, 3.2] are a bit
+;; easier to understand.  We assume that length(x) <= length(y).
+(define (##sys#bignum-times-karatsuba x y)
+  (let* ((same? (eqv? x y))             ; Check before calling (abs)
+         (rs (fx* (##core#inline "C_u_i_integer_signum" x)
+                  (##core#inline "C_u_i_integer_signum" y)))
+         (x (##sys#integer-abs x))
+         (n (%bignum-digit-count y))
+         (n/2 (fxshr n 1))
+         (bits (fx* n/2 (foreign-value "C_BIGNUM_DIGIT_LENGTH" int)))
+         (x-hi (##sys#bignum-extract-digits x n/2 #f))
+         (x-lo (##sys#bignum-extract-digits x 0 n/2)))
+    (if same?              ; This looks pointless, but reduces garbage
+        (let* ((a  (##sys#*-2 x-hi x-hi))
+               (b  (##sys#*-2 x-lo x-lo))
+               (ab (##sys#--2 x-hi x-lo))
+               (c  (##sys#*-2 ab ab)))
+          (##sys#+-2 (##sys#integer-shift a (fxshl bits 1))
+		     (##sys#+-2 (##sys#integer-shift
+				 (##sys#+-2 b (##sys#--2 a c))
+				 bits)
+                  b)))
+        (let* ((y (##sys#integer-abs y))
+               (y-hi (##sys#bignum-extract-digits y n/2 #f))
+               (y-lo (##sys#bignum-extract-digits y 0 n/2))
+               (a  (##sys#*-2 x-hi y-hi))
+               (b  (##sys#*-2 x-lo y-lo))
+               (c  (##sys#*-2 (##sys#--2 x-hi x-lo)
+			      (##sys#--2 y-hi y-lo))))
+          (##sys#*-2 rs (##sys#+-2 (##sys#integer-shift a (fxshl bits 1))
+				   (##sys#+-2 (##sys#integer-shift
+					       (##sys#+-2 b (##sys#--2 a c))
+					       bits)
+					      b)))))))
+
 (define (##sys#extended-times x y)
   (define (nonrat*rat x y)
     ;; a/b * c/d = a*c / b*d  [with b = 1]
@@ -1403,6 +1449,102 @@ EOF
                (ratnum num denom))))
         ((not (number? x)) (##sys#error-bad-number x '/))
         (else (##sys#error-bad-number y '/))) )
+
+;; Burnikel-Ziegler recursive division: Split high number (x) in three
+;; or four parts and divide by the lowest number (y), split in two
+;; parts.  There are descriptions in [MpNT, 4.2], [MCA, 1.4.3] and the
+;; paper "Fast Recursive Division" by Christoph Burnikel & Joachim
+;; Ziegler is freely available.  There is also a description in Karl
+;; Hasselstrom's thesis "Fast Division of Integers".
+;;
+;; The complexity of this is supposedly O(r*s^{log(3)-1} + r*log(s)),
+;; where s is the length of a, and r is the length of b (in digits).
+;;
+;; TODO: See if it's worthwhile to implement "division without remainder"
+;; from the Burnikel-Ziegler paper.
+(define (##sys#bignum-divrem-burnikel-ziegler x y return-quot? return-rem?)
+  (define-inline (digit-bits n)
+    (fx* (foreign-value "C_BIGNUM_DIGIT_LENGTH" int) n))
+  (define DIV-LIMIT (foreign-value "C_BURNIKEL_ZIEGLER_THRESHOLD" int))
+
+  ;; Here and in 2n/1n we pass both b and [b1, b2] to avoid splitting
+  ;; up the number more than once.
+  (define (burnikel-ziegler-3n/2n a12 a3 b b1 b2 n)
+    (receive (q^ r1)
+        (if (##sys#<-2 (##sys#integer-shift a12 (fxneg (digit-bits n))) b1)
+            (let* ((n/2 (fxshr n 1))
+                   (b11 (##sys#bignum-extract-digits b1 n/2 #f))
+                   (b12 (##sys#bignum-extract-digits b1 0 n/2)))
+              (burnikel-ziegler-2n/1n a12 b1 b11 b12 n))
+            (let ((base*n (digit-bits n)))
+              (values (##sys#--2 (##sys#integer-shift 1 base*n) 1) ; B^n-1
+                      (##sys#+-2 (##sys#--2 a12 (##sys#integer-shift b1 base*n))
+				 b1))))
+      (let ((r1a3 (##sys#+-2 (##sys#integer-shift r1 (digit-bits n)) a3)))
+        (let lp ((r^ (##sys#--2 r1a3 (##sys#*-2 q^ b2)))
+                 (q^ q^))
+          (if (negative? r^)
+              (lp (##sys#+-2 r^ b) (##sys#--2 q^ 1))
+              (values q^ r^))))))
+
+  (define (burnikel-ziegler-2n/1n a b b1 b2 n)
+    (if (or (fxodd? n) (fx< n DIV-LIMIT))
+        (##sys#integer-quotient&remainder a b)
+        (let* ((n/2 (fxshr n 1))
+               ;; Split a and b into n-sized parts a1,..,a4 and b1,b2
+               (a12 (##sys#bignum-extract-digits a n #f))
+               (a3  (##sys#bignum-extract-digits a n/2 n))
+               (a4  (##sys#bignum-extract-digits a 0 n/2)))
+          (receive (q1 r1) (burnikel-ziegler-3n/2n a12 a3 b b1 b2 n/2)
+            (receive (q2 r) (burnikel-ziegler-3n/2n r1 a4 b b1 b2 n/2)
+              (values (##sys#+-2 (##sys#integer-shift q1 (digit-bits n/2))
+				 q2)
+		      r))))))
+
+  ;; The caller will ensure that abs(x) > abs(y)
+  (let* ((q-neg? (if (negative? y) (not (negative? x)) (negative? x)))
+         (r-neg? (negative? x))
+         (x (abs x))
+         (y (abs y))
+         (s (%bignum-digit-count y))
+         ;; Define m as min{2^k|(2^k)*BURNIKEL_ZIEGLER_THRESHOLD > s}
+         ;; This ensures we shift as little as possible (less pressure
+         ;; on the GC) while maintaining a power of two until we drop
+         ;; below the threshold, so we can always split N in half.
+         (m (fxshl 1 (integer-length (fx/ s DIV-LIMIT))))
+         (j (fx/ (fx+ s (fx- m 1)) m))  ; j = s/m, rounded up
+         (n (fx* j m))
+         (norm-shift (fx- (digit-bits n) (integer-length y)))
+         (x (##sys#integer-shift x norm-shift))
+         (y (##sys#integer-shift y norm-shift))
+         ;; l needs to be the smallest value so that a < base^{l*n}/2
+         (l (fx/ (fx+ (%bignum-digit-count x) (fx- n 1)) n))
+         (l (if (fx= (digit-bits l) (integer-length x)) (fx+ l 1) l))
+         (t (fxmax l 2))
+         (y-hi (##sys#bignum-extract-digits y (fxshr n 1) #f))
+         (y-lo (##sys#bignum-extract-digits y 0 (fxshr n 1))))
+    (let lp ((zi (##sys#integer-shift x (fxneg (digit-bits (fx* (fx- t 2) n)))))
+             (i (fx- t 2))
+             (quot 0))
+      (receive (qi ri) (burnikel-ziegler-2n/1n zi y y-hi y-lo n)
+        (let ((quot (##sys#+-2 (##sys#integer-shift quot (digit-bits n)) qi)))
+          (if (fx> i 0)
+              (let ((zi-1 (let* ((base*n*i-1 (fx* n (fx- i 1)))
+                                 (base*n*i   (fx* n i))
+                                 (xi-1 (##sys#bignum-extract-digits
+					x base*n*i-1 base*n*i)))
+                            (##sys#+-2 (##sys#integer-shift ri (digit-bits n))
+				       xi-1))))
+                (lp zi-1 (fx- i 1) quot))
+              (let ((rem (if (or (not return-rem?) (eq? 0 norm-shift))
+                             ri
+                             (##sys#integer-shift ri (fxneg norm-shift)))))
+                ;; Return requested values (quot, rem or both) with correct sign:
+                (cond ((and return-quot? return-rem?)
+                       (values (if q-neg? (- quot) quot)
+                               (if r-neg? (- rem) rem)))
+                      (return-quot? (if q-neg? (- quot) quot))
+                      (else (if r-neg? (- rem) rem))))))))))
 
 (define (floor x)
   (cond ((exact-integer? x) x)
@@ -1770,14 +1912,56 @@ EOF
                   (##sys#integer-power a b)))) )
 
 (define (##sys#integer-gcd a b)
-  ;; Currently this is only Euclidean GCD algorithm. TODO: Restore
-  ;; Lehmer's algorithm when everything else has been implemented.
+  (define k fixnum-precision) ; Can be anything between 2 and min(F, B).
+  (define k/2 (fx/ k 2))      ; F is fixnum precision and B bits in a big digit
+
+  ;; This is Lehmer's GCD algorithm with Jebelean's quotient test, as
+  ;; it is presented in the paper "An Analysis of Lehmer’s Euclidean
+  ;; GCD Algorithm", by J. Sorenson.  Fuck the ACM and their goddamn
+  ;; paywall; you can currently find the paper here:
+  ;; http://www.csie.nuk.edu.tw/~cychen/gcd/An%20analysis%20of%20Lehmer%27s%20Euclidean%20GCD%20algorithm.pdf
+  ;; If that URI fails, it's also explained in [MpNT, 5.2]
+  ;;
+  ;; The basic idea is to avoid divisions which yield only small
+  ;; quotients, in which the remainder won't reduce the numbers by
+  ;; much.  This can be detected by dividing only the leading k bits.
+  (define (lehmer-gcd u v)
+    (let ((-h (fxneg (fx- (integer-length u) k))))
+      (let lp ((i-even? #t)
+               (u^ (arithmetic-shift u -h))
+               (v^ (arithmetic-shift v -h))
+               (x-prev 1) (y-prev 0)
+               (x-curr 0) (y-curr 1))
+        (let* ((q^ (fx/ u^ v^))     ; Estimated quotient for this step
+               (x-next (fx- x-prev (fx* q^ x-curr)))
+               (y-next (fx- y-prev (fx* q^ y-curr))))
+          ;; Euclidian GCD swap on u^ and v^
+          (let ((u^ v^)
+                (v^ (fx- u^ (fx* q^ v^))))
+            (let ((done? (if i-even?
+                             (or (fx< v^ (fxneg y-next))
+                                 (fx< (fx- u^ v^) (fx- x-next x-curr)))
+                             (or (fx< v^ (fxneg x-next))
+                                 (fx< (fx- u^ v^) (fx- y-next y-curr))))))
+              (if done?
+                  (values (+ (* x-prev u) (* y-prev v))
+                          (+ (* x-curr u) (* y-curr v)))
+                  (lp (not i-even?) u^ v^ x-curr y-curr x-next y-next))))))))
+
+  ;; This implements the basic Euclidian GCD algorithm, with a
+  ;; conditional call to Lehmer's GCD algorithm when the length
+  ;; difference between a and b is at most one halfdigit.
+  ;; The complexity of the whole thing is supposedly O(n^2/log n)
+  ;; where n is the number of bits in a and b.
   (let* ((a (abs a)) (b (abs b))   ; Enforce loop invariant on input:
          (swap? (##sys#<-2 a b)))  ; both must be positive, and a >= b
     (let lp ((a (if swap? b a))
              (b (if swap? a b)))
       (cond ((eq? b 0) a)
-            ((fixnum? a) (fxgcd a b)) ; b MUST be fixnum due to loop invariant
+	    ((fx< (fx- (integer-length a) (integer-length b)) k/2)
+             (receive (a b) (lehmer-gcd a b)
+               (if (eq? b 0) a (lp b (##sys#integer-remainder a b)))))
+	    ((fixnum? a) (fxgcd a b)) ; b MUST be fixnum due to loop invariant
             (else (lp b (##sys#integer-remainder a b)))))))
 
 ;; Useful for sane error messages
@@ -1824,6 +2008,19 @@ EOF
               (loop (quotient (##sys#*-2 head n2)
                      (##sys#internal-gcd 'lcm head n2))
                     (##sys#slot next 1)) ) )  ) ) )
+
+;; This simple enough idea is from
+;; http://www.numberworld.org/y-cruncher/algorithms/radix-conversion.html
+(define (##sys#integer->string/recursive n base expected-string-size)
+  (let*-values (((halfsize) (fxshr (fx+ expected-string-size 1) 1))
+                ((b^M/2) (##sys#integer-power base halfsize))
+                ((hi lo) (quotient&remainder n b^M/2))
+                ((strhi) (number->string hi base))
+                ((strlo) (number->string (abs lo) base)))
+    (string-append strhi
+                   ;; Fix up any leading zeroes that were stripped from strlo
+                   (make-string (fx- halfsize (string-length strlo)) #\0)
+                   strlo)))
 
 (define ##sys#extended-number->string
   (let ((string-append string-append))
