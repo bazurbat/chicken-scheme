@@ -653,7 +653,7 @@
 		     (setup tmpcopy)))))))
 	 eggs+dirs+vers
 	 (let loop ((i num))
-	   (if (fx= 1 i)
+	   (if (zero? i)
 	       '()
 	       (cons num (loop (fx- i 1)))))))))
 
