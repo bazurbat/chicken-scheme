@@ -291,6 +291,9 @@ SECTION(6 5 5)
 (#<procedure> "#e")  ==> #t
 (#<procedure> "#")  ==> #t
 (#<procedure> "#i0/0")  ==> #t
+(#<procedure> 0.0-1.0i)  ==> #t
+(#<procedure> 0.0+1.0i)  ==> #t
+(#<procedure> 2.0+1.0i)  ==> #t
 SECTION(6 5 9)
 (#<procedure> 0)  ==> "0"
 (#<procedure> 100)  ==> "100"
@@ -601,6 +604,41 @@ SECTION(6 5 5)
 
 Passed all tests
 
+;testing bignums; 
+SECTION(6 5 7)
+(#<procedure> 33333333333333333333 3)  ==> 0
+(#<procedure> 33333333333333333333 -3)  ==> 0
+(#<procedure> 33333333333333333333 3)  ==> 0
+(#<procedure> 33333333333333333333 -3)  ==> 0
+(#<procedure> 33333333333333333332 3)  ==> 2
+(#<procedure> 33333333333333333332 -3)  ==> -1
+(#<procedure> 33333333333333333332 3)  ==> 2
+(#<procedure> 33333333333333333332 -3)  ==> 2
+(#<procedure> -33333333333333333332 3)  ==> 1
+(#<procedure> -33333333333333333332 -3)  ==> -2
+(#<procedure> -33333333333333333332 3)  ==> -2
+(#<procedure> -33333333333333333332 -3)  ==> -2
+(#<procedure> 3 33333333333333333333)  ==> 3
+(#<procedure> -3 33333333333333333333)  ==> 33333333333333333330
+(#<procedure> 3 33333333333333333333)  ==> 3
+(#<procedure> -3 33333333333333333333)  ==> -3
+(#<procedure> 3 -33333333333333333333)  ==> -33333333333333333330
+(#<procedure> -3 -33333333333333333333)  ==> -3
+(#<procedure> 3 -33333333333333333333)  ==> 3
+(#<procedure> -3 -33333333333333333333)  ==> -3
+(#<procedure> -2177452800 86400)  ==> 0
+(#<procedure> 2177452800 -86400)  ==> 0
+(#<procedure> 2177452800 86400)  ==> 0
+(#<procedure> -2177452800 -86400)  ==> 0
+(#<procedure> 0 -2177452800)  ==> 0
+(remainder #t)  ==> #t
+(remainder #t)  ==> #t
+SECTION(6 5 8)
+(#<procedure> "281474976710655325431")  ==> 281474976710655325431
+(#<procedure> 281474976710655325431)  ==> "281474976710655325431"
+
+Passed all tests
+Skipping bignum-inexact comparisons due to printing inconsistencies
 To fully test continuations, Scheme 4, and DELAY/FORCE do:
 (test-cont) (test-sc4) (test-delay)
 
