@@ -41,14 +41,10 @@ EOF
 
 ;;; Helper routines:
 
-(declare (hide ##sys#check-fixnum-interval))
-
-(define ##sys#check-fixnum-interval
-  (lambda (n from to loc)
-    (##sys#check-fixnum n loc)
-    (if (or (##core#inline "C_fixnum_lessp" n from)
-	    (##core#inline "C_fixnum_greaterp" n to) )
-	(##sys#error loc "numeric value is not in expected range" n from to) ) ) )
+(define-inline (check-int/flonum x loc)
+  (unless (or (##core#inline "C_i_exact_integerp" x)
+	      (##core#inline "C_i_flonump" x))
+    (##sys#error-hook (foreign-value "C_BAD_ARGUMENT_TYPE_NO_FLONUM_ERROR" int) loc x) ) )
 
 (define-inline (check-range i from to loc)
   (##sys#check-fixnum i loc)
@@ -57,6 +53,18 @@ EOF
      (foreign-value "C_OUT_OF_RANGE_ERROR" int)
      loc i from to) ) )
 
+(define-inline (check-uint-length obj len loc)
+  (##sys#check-exact-uinteger obj loc)
+  (when (fx> (integer-length obj) len)
+    (##sys#error-hook
+     (foreign-value "C_OUT_OF_RANGE_ERROR" int) loc obj 0 (expt 2 len))))
+
+(define-inline (check-int-length obj len loc)
+  (##sys#check-exact-integer obj loc)
+  (when (fx> (integer-length obj) (fx- len 1))
+    (##sys#error-hook
+     (foreign-value "C_OUT_OF_RANGE_ERROR" int)
+     loc obj (- (expt 2 len)) (sub1 (expt 2 len)))))
 
 ;;; Get vector length:
 
@@ -92,84 +100,75 @@ EOF
   (##sys#check-structure x 'f64vector 'f64vector-length)
   (##core#inline "C_u_i_64vector_length" x))
 
+;; XXX TODO: u64/s64-vectors
 
 ;;; Safe accessors:
 
 (define (u8vector-set! x i y)
   (##sys#check-structure x 'u8vector 'u8vector-set!)
   (let ((len (##core#inline "C_u_i_8vector_length" x)))
-    (##sys#check-fixnum y 'u8vector-set!)
-    (when (fx< y 0)
-      (##sys#error 'u8vector-set! "argument may not be negative" y))
+    (check-uint-length y 8 'u8vector-set!)
     (check-range i 0 len 'u8vector-set!)
     (##core#inline "C_u_i_u8vector_set" x i y)))
 
 (define (s8vector-set! x i y)
   (##sys#check-structure x 's8vector 's8vector-set!)
   (let ((len (##core#inline "C_u_i_8vector_length" x)))
-    (##sys#check-fixnum y 's8vector-set!)
+    (check-int-length y 8 's8vector-set!)
     (check-range i 0 len 's8vector-set!)
     (##core#inline "C_u_i_s8vector_set" x i y)))
 
 (define (u16vector-set! x i y)
   (##sys#check-structure x 'u16vector 'u16vector-set!)
   (let ((len (##core#inline "C_u_i_16vector_length" x)))
-    (##sys#check-fixnum y 'u16vector-set!)
-    (when (fx< y 0)
-      (##sys#error 'u16vector-set! "argument may not be negative" y))
+    (check-uint-length y 16 'u16vector-set!)
     (check-range i 0 len 'u16vector-set!)
     (##core#inline "C_u_i_u16vector_set" x i y)))
 
 (define (s16vector-set! x i y)
   (##sys#check-structure x 's16vector 's16vector-set!)
   (let ((len (##core#inline "C_u_i_16vector_length" x)))
-    (##sys#check-fixnum y 's16vector-set!)
+    (check-int-length y 16 's16vector-set!)
     (check-range i 0 len 's16vector-set!)
     (##core#inline "C_u_i_s16vector_set" x i y)))
 
 (define (u32vector-set! x i y)
   (##sys#check-structure x 'u32vector 'u32vector-set!)
   (let ((len (##core#inline "C_u_i_32vector_length" x)))
-    (##sys#check-integer y 'u32vector-set!)
-    (cond ((negative? y)
-	   (##sys#error 'u32vector-set! "argument may not be negative" y) )
-	  ((not (##sys#fits-in-unsigned-int? y))
-	   (##sys#error 'u32vector-set! "argument exceeds integer range" y) ) )
+    (check-uint-length y 32 'u32vector-set!)
     (check-range i 0 len 'u32vector-set!)
     (##core#inline "C_u_i_u32vector_set" x i y)))
 
 (define (s32vector-set! x i y)
   (##sys#check-structure x 's32vector 's32vector-set!)
   (let ((len (##core#inline "C_u_i_32vector_length" x)))
-    (##sys#check-integer y 's32vector-set!)
-    (unless (##sys#fits-in-int? y)
-      (##sys#error 's32vector-set! "argument exceeds integer range" y) )
+    (check-int-length y 32 's32vector-set!)
     (check-range i 0 len 's32vector-set!)
     (##core#inline "C_u_i_s32vector_set" x i y)))
 
 (define (f32vector-set! x i y)
   (##sys#check-structure x 'f32vector 'f32vector-set!)
   (let ((len (##core#inline "C_u_i_32vector_length" x)))
-    (##sys#check-number y 'f32vector-set!)
+    (check-int/flonum y 'f32vector-set!)
     (check-range i 0 len 'f32vector-set!)
     (##core#inline
      "C_u_i_f32vector_set"
      x i 
-     (if (##core#inline "C_blockp" y)
+     (if (##core#inline "C_i_flonump" y)
 	 y
-	 (##core#inline_allocate ("C_a_i_fix_to_flo" 4) y)))))
+	 (##core#inline_allocate ("C_a_u_i_int_to_flo" 4) y)))))
 
 (define (f64vector-set! x i y)
   (##sys#check-structure x 'f64vector 'f64vector-set!)
   (let ((len (##core#inline "C_u_i_64vector_length" x)))
-    (##sys#check-number y 'f64vector-set!)
+    (check-int/flonum y 'f64vector-set!)
     (check-range i 0 len 'f64vector-set!)
     (##core#inline
      "C_u_i_f64vector_set"
      x i 
-     (if (##core#inline "C_blockp" y)
+     (if (##core#inline "C_i_flonump" y)
 	 y
-	 (##core#inline_allocate ("C_a_i_fix_to_flo" 4) y)))))
+	 (##core#inline_allocate ("C_a_u_i_int_to_flo" 4) y)))))
 
 (define u8vector-ref
   (getter-with-setter
@@ -287,7 +286,7 @@ EOF
 	(if (not init)
 	    v
 	    (begin
-	      (##sys#check-fixnum-interval init 0 #xff 'make-u8vector)
+	      (check-uint-length init 8 'make-u8vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##core#inline "C_u_i_u8vector_set" v i init) ) ) ) ) ) )
@@ -300,7 +299,7 @@ EOF
 	(if (not init)
 	    v
 	    (begin
-	      (##sys#check-fixnum-interval init -128 127 'make-s8vector)
+	      (check-uint-length init 8 'make-s8vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##core#inline "C_u_i_s8vector_set" v i init) ) ) ) ) ) )
@@ -313,7 +312,7 @@ EOF
 	(if (not init)
 	    v
 	    (begin
-	      (##sys#check-fixnum-interval init 0 #xffff 'make-u16vector)
+	      (check-uint-length init 16 'make-u16vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##core#inline "C_u_i_u16vector_set" v i init) ) ) ) ) ) )
@@ -326,7 +325,7 @@ EOF
 	(if (not init)
 	    v
 	    (begin
-	      (##sys#check-fixnum-interval init -32768 32767 'make-s16vector)
+	      (check-int-length init 16 'make-s16vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##core#inline "C_u_i_s16vector_set" v i init) ) ) ) ) ) )
@@ -339,7 +338,7 @@ EOF
 	(if (not init)
 	    v
 	    (begin
-	      (##sys#check-fixnum init 'make-u32vector)
+	      (check-uint-length init 32 'make-u32vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##core#inline "C_u_i_u32vector_set" v i init) ) ) ) ) ) )
@@ -352,7 +351,7 @@ EOF
 	(if (not init)
 	    v
 	    (begin
-	      (##sys#check-fixnum init 'make-s32vector)
+	      (check-int-length init 32 'make-s32vector)
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##core#inline "C_u_i_s32vector_set" v i init) ) ) ) ) ) )
@@ -365,9 +364,9 @@ EOF
 	(if (not init)
 	    v
 	    (begin
-	      (##sys#check-number init 'make-f32vector)
-	      (unless (##core#inline "C_blockp" init)
-		(set! init (##core#inline_allocate ("C_a_i_fix_to_flo" 4) init)) )
+	      (check-int/flonum init 'make-f32vector)
+	      (unless (##core#inline "C_i_flonump" init)
+		(set! init (##core#inline_allocate ("C_a_u_i_int_to_flo" 4) init)))
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##core#inline "C_u_i_f32vector_set" v i init) ) ) ) ) ) )
@@ -382,9 +381,9 @@ EOF
 	(if (not init)
 	    v
 	    (begin
-	      (##sys#check-number init 'make-f64vector)
-	      (unless (##core#inline "C_blockp" init)
-		(set! init (##core#inline_allocate ("C_a_i_fix_to_flo" 4) init)) )
+	      (check-int/flonum init 'make-f64vector)
+	      (unless (##core#inline "C_i_flonump" init)
+		(set! init (##core#inline_allocate ("C_a_u_i_int_to_flo" 4) init)) )
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##core#inline "C_u_i_f64vector_set" v i init) ) ) ) ) ) ) )

@@ -1437,6 +1437,7 @@ extern double trunc(double);
 #define C_pointer_eqp(x, y)             C_mk_bool(C_c_pointer_nn(x) == C_c_pointer_nn(y))
 #define C_a_int_to_num(ptr, n, i)       C_int_to_num(ptr, i)
 #define C_a_unsigned_int_to_num(ptr, n, i)  C_unsigned_int_to_num(ptr, i)
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-backend.scm */
 #define C_a_double_to_num(ptr, n)       C_double_to_number(C_flonum(ptr, n))
 #define C_a_i_vector                    C_vector
 #define C_list                          C_a_i_list
@@ -2247,6 +2248,7 @@ C_inline C_word C_string_to_pbytevector(C_word s)
 }
 
 
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_inline C_word C_flonum_in_fixnum_range_p(C_word n)
 {
   double f = C_flonum_magnitude(n);
@@ -2254,7 +2256,7 @@ C_inline C_word C_flonum_in_fixnum_range_p(C_word n)
   return C_mk_bool(f <= (double)C_MOST_POSITIVE_FIXNUM && f >= (double)C_MOST_NEGATIVE_FIXNUM);
 }
 
-
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-backend.scm */
 C_inline C_word C_double_to_number(C_word n)
 {
   double m, f = C_flonum_magnitude(n);
@@ -2305,6 +2307,7 @@ C_inline C_word C_bignum2(C_word **ptr, int negp, C_uword d1, C_uword d2)
 }
 
 
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_inline C_word C_fits_in_int_p(C_word x)
 {
   double n, m;
@@ -2317,12 +2320,12 @@ C_inline C_word C_fits_in_int_p(C_word x)
                       !(C_bignum_digits(x)[0] & C_INT_SIGN_BIT)));
   }
 
-  /* XXX OBSOLETE remove on the next round, remove check above */
   n = C_flonum_magnitude(x);
   return C_mk_bool(C_modf(n, &m) == 0.0 && n >= C_WORD_MIN && n <= C_WORD_MAX);
 }
 
 
+/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_inline C_word C_fits_in_unsigned_int_p(C_word x)
 {
   double n, m;
@@ -2345,6 +2348,11 @@ C_inline double C_c_double(C_word x)
   else return C_flonum_magnitude(x);
 }
 
+C_inline C_word C_a_u_i_int_to_flo(C_word **ptr, int n, C_word x)
+{
+  if(x & C_FIXNUM_BIT) return C_a_i_fix_to_flo(ptr, n, x);
+  else return C_a_u_i_big_to_flo(ptr, n, x);
+}
 
 C_inline C_word C_num_to_int(C_word x)
 {

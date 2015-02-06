@@ -2,36 +2,58 @@
 
 
 (use srfi-4 ports)
-
+(import-for-syntax chicken)
 
 (define-syntax test1
+  (er-macro-transformer
+   (lambda (x r c)
+     (let* ((t (strip-syntax (cadr x)))
+	    (name (symbol->string (strip-syntax t)))
+	    (min (caddr x))
+	    (max (cadddr x)))
+       (define (conc op)
+	 (string->symbol (string-append name op)))
+       `(let ((x (,(conc "vector") 100 101)))
+	  (assert (eqv? 100 (,(conc "vector-ref") x 0)))
+	  (assert (,(conc "vector?") x))
+	  (assert (number-vector? x))
+	  (,(conc "vector-set!") x 1 99)
+	  (assert (eqv? 99 (,(conc "vector-ref") x 1)))
+	  (assert (= 2 (,(conc "vector-length") x)))
+	  (assert
+	   (let ((result (,(conc "vector->list") x)))
+	     (and (eqv? 100 (car result))
+		  (eqv? 99 (cadr result))))))))))
+
+(test1 u8 0 255)
+(test1 u16 0 65535)
+(test1 u32 0 4294967295)
+(test1 s8 -128 127)
+(test1 s16 -32768 32767)
+(test1 s32 -2147483648 2147483647)
+
+(define-syntax test2
   (er-macro-transformer
    (lambda (x r c)
      (let* ((t (strip-syntax (cadr x)))
 	    (name (symbol->string (strip-syntax t))))
        (define (conc op)
 	 (string->symbol (string-append name op)))
-       `(let ((x (,(conc "vector") 100 101)))
-	  (print x)
-	  (assert (= 100 (,(conc "vector-ref") x 0)))
-          (assert (,(conc "vector?") x))
-          (assert (number-vector? x))
+       `(let ((x (,(conc "vector") 100 101.0)))
+	  (assert (eqv? 100.0 (,(conc "vector-ref") x 0)))
+	  (assert (eqv? 101.0 (,(conc "vector-ref") x 1)))
+	  (assert (,(conc "vector?") x))
+	  (assert (number-vector? x))
 	  (,(conc "vector-set!") x 1 99)
-	  (assert (= 99 (,(conc "vector-ref") x 1)))
+	  (assert (eqv? 99.0 (,(conc "vector-ref") x 1)))
 	  (assert (= 2 (,(conc "vector-length") x)))
-	  (assert
+          (assert
 	   (let ((result (,(conc "vector->list") x)))
-	     (and (= 100 (car result))
-		  (= 99 (cadr result))))))))))
+	     (and (eqv? 100.0 (car result))
+		  (eqv? 99.0 (cadr result))))))))))
 
-(test1 u8)
-(test1 u16)
-(test1 u32)
-(test1 s8)
-(test1 s16)
-(test1 s32)
-(test1 f32)
-(test1 f64)
+(test2 f32)
+(test2 f64)
 
 ;; Test implicit quoting/self evaluation
 (assert (equal? #u8(1 2 3) '#u8(1 2 3)))

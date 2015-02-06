@@ -2020,7 +2020,7 @@
 (blob->u32vector/shared (#(procedure #:clean #:enforce) blob->u32vector/shared (blob) (struct u32vector)))
 (blob->u8vector (#(procedure #:clean #:enforce) blob->u8vector (blob) (struct u8vector)))
 (blob->u8vector/shared (#(procedure #:clean #:enforce) blob->u8vector/shared (blob) (struct u8vector)))
-(f32vector (#(procedure #:clean #:enforce) f32vector (#!rest number) (struct f32vector)))
+(f32vector (#(procedure #:clean #:enforce) f32vector (#!rest (or integer float)) (struct f32vector)))
 (f32vector->blob (#(procedure #:clean #:enforce) f32vector->blob ((struct f32vector)) blob))
 (f32vector->blob/shared (#(procedure #:clean #:enforce) f32vector->blob/shared ((struct f32vector)) blob))
 (f32vector->list (#(procedure #:clean #:enforce) f32vector->list ((struct f32vector)) (list-of float)))
@@ -2029,11 +2029,11 @@
 		  (((struct f32vector)) (##core#inline "C_u_i_32vector_length" #(1))))
 
 (f32vector-ref (#(procedure #:clean #:enforce) f32vector-ref ((struct f32vector) fixnum) float))
-(f32vector-set! (#(procedure #:clean #:enforce) f32vector-set! ((struct f32vector) fixnum number) undefined))
+(f32vector-set! (#(procedure #:clean #:enforce) f32vector-set! ((struct f32vector) fixnum (or integer float)) undefined))
 
 (f32vector? (#(procedure #:pure #:predicate (struct f32vector)) f32vector? (*) boolean))
 
-(f64vector (#(procedure #:clean #:enforce) f64vector (#!rest number) (struct f64vector)))
+(f64vector (#(procedure #:clean #:enforce) f64vector (#!rest (or integer float)) (struct f64vector)))
 (f64vector->blob (#(procedure #:clean #:enforce) f64vector->blob ((struct f32vector)) blob))
 (f64vector->blob/shared (#(procedure #:clean #:enforce) f64vector->blob/shared ((struct f64vector)) blob))
 (f64vector->list (#(procedure #:clean #:enforce) f64vector->list ((struct f64vector)) (list-of float)))
@@ -2042,28 +2042,28 @@
 		  (((struct f32vector)) (##core#inline "C_u_i_64vector_length" #(1))))
 
 (f64vector-ref (#(procedure #:clean #:enforce) f64vector-ref ((struct f64vector) fixnum) float))
-(f64vector-set! (#(procedure #:clean #:enforce) f64vector-set! ((struct f64vector) fixnum number) undefined))
+(f64vector-set! (#(procedure #:clean #:enforce) f64vector-set! ((struct f64vector) fixnum (or integer float)) undefined))
 
 (f64vector? (#(procedure #:pure #:predicate (struct f64vector)) f64vector? (*) boolean))
 
-(list->f32vector (#(procedure #:clean #:enforce) list->f32vector ((list-of number)) (struct f32vector)))
-(list->f64vector (#(procedure #:clean #:enforce) list->f64vector ((list-of number)) (struct f64vector)))
+(list->f32vector (#(procedure #:clean #:enforce) list->f32vector ((list-of (or float integer))) (struct f32vector)))
+(list->f64vector (#(procedure #:clean #:enforce) list->f64vector ((list-of (or float integer))) (struct f64vector)))
 (list->s16vector (#(procedure #:clean #:enforce) list->s16vector ((list-of fixnum)) (struct s16vector)))
-(list->s32vector (#(procedure #:clean #:enforce) list->s32vector ((list-of number)) (struct s32vector)))
+(list->s32vector (#(procedure #:clean #:enforce) list->s32vector ((list-of integer)) (struct s32vector)))
 (list->s8vector (#(procedure #:clean #:enforce) list->s8vector ((list-of fixnum)) (struct s8vector)))
 (list->u16vector (#(procedure #:clean #:enforce) list->u16vector ((list-of fixnum)) (struct u16vector)))
-(list->u32vector (#(procedure #:clean #:enforce) list->u32vector ((list-of number)) (struct u32vector)))
+(list->u32vector (#(procedure #:clean #:enforce) list->u32vector ((list-of integer)) (struct u32vector)))
 (list->u8vector (#(procedure #:clean #:enforce) list->u8vector ((list-of fixnum)) (struct u8vector)))
-(make-f32vector (#(procedure #:clean #:enforce) make-f32vector (fixnum #!optional * * *) (struct f32vector)))
-(make-f64vector (#(procedure #:clean #:enforce) make-f64vector (fixnum #!optional * * *) (struct f64vector)))
-(make-s16vector (#(procedure #:clean #:enforce) make-s16vector (fixnum #!optional * * *) (struct s16vector)))
-(make-s32vector (#(procedure #:clean #:enforce) make-s32vector (fixnum #!optional * * *) (struct s32vector)))
-(make-s8vector (#(procedure #:clean #:enforce) make-s8vector (fixnum #!optional * * *) (struct s8vector)))
-(make-u16vector (#(procedure #:clean #:enforce) make-u16vector (fixnum #!optional * * *) (struct u16vector)))
-(make-u32vector (#(procedure #:clean #:enforce) make-u32vector (fixnum #!optional * * *) (struct u32vector)))
-(make-u8vector (#(procedure #:clean #:enforce) make-u8vector (fixnum #!optional * * *) (struct u8vector)))
+(make-f32vector (#(procedure #:clean #:enforce) make-f32vector (fixnum #!optional (or integer float false) boolean boolean) (struct f32vector)))
+(make-f64vector (#(procedure #:clean #:enforce) make-f64vector (fixnum #!optional (or integer float false) boolean) (struct f64vector)))
+(make-s16vector (#(procedure #:clean #:enforce) make-s16vector (fixnum #!optional (or fixnum false) boolean boolean) (struct s16vector)))
+(make-s32vector (#(procedure #:clean #:enforce) make-s32vector (fixnum #!optional (or integer false) boolean boolean) (struct s32vector)))
+(make-s8vector (#(procedure #:clean #:enforce) make-s8vector (fixnum #!optional (or fixnum false) boolean boolean) (struct s8vector)))
+(make-u16vector (#(procedure #:clean #:enforce) make-u16vector (fixnum #!optional (or fixnum false) boolean boolean) (struct u16vector)))
+(make-u32vector (#(procedure #:clean #:enforce) make-u32vector (fixnum #!optional (or integer false) boolean boolean) (struct u32vector)))
+(make-u8vector (#(procedure #:clean #:enforce) make-u8vector (fixnum #!optional (or fixnum false) boolean boolean) (struct u8vector)))
 (read-u8vector (#(procedure #:enforce) read-u8vector (#!optional fixnum input-port) (struct u8vector)))
-(read-u8vector! (#(procedure #:enforce) read-u8vector! ((or fixnum false) (struct u8vector) #!optional input-port fixnum) number))
+(read-u8vector! (#(procedure #:enforce) read-u8vector! ((or fixnum false) (struct u8vector) #!optional input-port fixnum) integer))
 (release-number-vector (procedure release-number-vector (*) undefined))
 (s16vector (#(procedure #:clean #:enforce) s16vector (#!rest fixnum) (struct s16vector)))
 (s16vector->blob (#(procedure #:clean #:enforce) s16vector->blob ((struct s16vector)) blob))
@@ -2078,16 +2078,16 @@
 
 (s16vector? (#(procedure #:pure #:predicate (struct s16vector)) s16vector? (*) boolean))
 
-(s32vector (#(procedure #:clean #:enforce) s32vector (#!rest number) (struct s32vector)))
+(s32vector (#(procedure #:clean #:enforce) s32vector (#!rest integer) (struct s32vector)))
 (s32vector->blob (#(procedure #:clean #:enforce) s32vector->blob ((struct 32vector)) blob))
 (s32vector->blob/shared (#(procedure #:clean #:enforce) s32vector->blob/shared ((struct s32vector)) blob))
-(s32vector->list (#(procedure #:clean #:enforce) s32vector->list ((struct s32vector)) (list-of number)))
+(s32vector->list (#(procedure #:clean #:enforce) s32vector->list ((struct s32vector)) (list-of integer)))
 
 (s32vector-length (#(procedure #:clean #:enforce) s32vector-length ((struct s32vector)) fixnum)
 		  (((struct s32vector)) (##core#inline "C_u_i_32vector_length" #(1))))
 
-(s32vector-ref (#(procedure #:clean #:enforce) s32vector-ref ((struct s32vector) fixnum) number))
-(s32vector-set! (#(procedure #:clean #:enforce) s32vector-set! ((struct s32vector) fixnum number) undefined))
+(s32vector-ref (#(procedure #:clean #:enforce) s32vector-ref ((struct s32vector) fixnum) integer))
+(s32vector-set! (#(procedure #:clean #:enforce) s32vector-set! ((struct s32vector) fixnum integer) undefined))
 
 (s32vector? (#(procedure #:pure #:predicate (struct s32vector)) s32vector? (*) boolean))
 
@@ -2125,16 +2125,16 @@
 
 (u16vector? (#(procedure #:pure #:predicate (struct u16vector)) u16vector? (*) boolean))
 
-(u32vector (#(procedure #:clean #:enforce) u32vector (#!rest number) (struct u32vector)))
+(u32vector (#(procedure #:clean #:enforce) u32vector (#!rest integer) (struct u32vector)))
 (u32vector->blob (#(procedure #:clean #:enforce) u32vector->blob ((struct u32vector)) blob))
 (u32vector->blob/shared (#(procedure #:clean #:enforce) u32vector->blob/shared ((struct u32vector)) blob))
-(u32vector->list (#(procedure #:clean #:enforce) u32vector->list ((struct u32vector)) (list-of number)))
+(u32vector->list (#(procedure #:clean #:enforce) u32vector->list ((struct u32vector)) (list-of integer)))
 
 (u32vector-length (#(procedure #:clean #:enforce) u32vector-length ((struct u32vector)) fixnum)
 		  (((struct u32vector)) (##core#inline "C_u_i_32vector_length" #(1))))
 
-(u32vector-ref (#(procedure #:clean #:enforce) u32vector-ref ((struct u32vector) fixnum) number))
-(u32vector-set! (#(procedure #:clean #:enforce) u32vector-set! ((struct u32vector) fixnum number) undefined))
+(u32vector-ref (#(procedure #:clean #:enforce) u32vector-ref ((struct u32vector) fixnum) integer))
+(u32vector-set! (#(procedure #:clean #:enforce) u32vector-set! ((struct u32vector) fixnum integer) undefined))
 
 (u32vector? (#(procedure #:pure #:predicate (struct u32vector)) u32vector? (*) boolean))
 

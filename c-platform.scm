@@ -184,7 +184,7 @@
     ##sys#check-port ##sys#check-input-port ##sys#check-output-port
     ##sys#check-open-port
     ##sys#check-char ##sys#check-vector ##sys#check-byte-vector ##sys#list ##sys#cons
-    ##sys#call-with-values ##sys#fits-in-int? ##sys#fits-in-unsigned-int? ##sys#flonum-in-fixnum-range? 
+    ##sys#call-with-values ##sys#flonum-in-fixnum-range? 
     ##sys#fudge ##sys#immediate? ##sys#direct-return ##sys#context-switch
     ##sys#make-structure ##sys#apply ##sys#apply-values ##sys#continuation-graft
     ##sys#bytevector? ##sys#make-vector ##sys#setter ##sys#car ##sys#cdr ##sys#pair?
@@ -200,13 +200,10 @@
 (for-each
  (cut mark-variable <> '##compiler#pure '#t)
  '(##sys#slot ##sys#block-ref ##sys#size ##sys#byte
-    ##sys#pointer? ##sys#generic-structure? ##sys#fits-in-int? ##sys#fits-in-unsigned-int? ##sys#flonum-in-fixnum-range? 
-    ##sys#fudge ##sys#immediate?
-    ##sys#bytevector? ##sys#pair?
-    ##sys#eq? ##sys#list? ##sys#vector? ##sys#eqv? 
+    ##sys#pointer? ##sys#generic-structure? ##sys#fudge ##sys#immediate?
+    ##sys#bytevector? ##sys#pair? ##sys#eq? ##sys#list? ##sys#vector? ##sys#eqv? 
     ##sys#get-keyword			; ok it isn't, but this is only used for ext. llists
-    ##sys#void
-    ##sys#permanent?))
+    ##sys#void ##sys#permanent?))
 
 
 ;;; Rewriting-definitions for this platform:
@@ -733,9 +730,6 @@
 (rewrite 'string=? 17 2 "C_i_string_equal_p" "C_u_i_string_equal_p")
 (rewrite 'string-ci=? 17 2 "C_i_string_ci_equal_p")
 (rewrite '##sys#fudge 17 1 "C_fudge")
-(rewrite '##sys#fits-in-int? 17 1 "C_fits_in_int_p")
-(rewrite '##sys#fits-in-unsigned-int? 17 1 "C_fits_in_unsigned_int_p")
-(rewrite '##sys#flonum-in-fixnum-range? 17 1 "C_flonum_in_fixnum_range_p")
 (rewrite '##sys#permanent? 17 1 "C_permanentp")
 (rewrite '##sys#null-pointer? 17 1 "C_null_pointerp" "C_null_pointerp")
 (rewrite '##sys#immediate? 17 1 "C_immp")
