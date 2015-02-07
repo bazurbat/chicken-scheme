@@ -28,8 +28,7 @@
 (declare
   (block)
   (uses data-structures
-	posix
-	utils))
+	posix))
 
 (include "mini-srfi-1.scm")
 

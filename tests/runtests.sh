@@ -38,11 +38,12 @@ mkdir -p test-repository
 for x in setup-api.so setup-api.import.so setup-download.so \
       setup-download.import.so chicken.import.so lolevel.import.so \
       srfi-4.import.so data-structures.import.so \
-      chicken.ports.import.so files.import.so posix.import.so \
+      chicken.ports.import.so chicken.utils.import.so files.import.so \
+      posix.import.so \
       extras.import.so \
       irregex.import.so tcp.import.so \
       foreign.import.so \
-      utils.import.so csi.import.so irregex.import.so types.db; do
+      csi.import.so irregex.import.so types.db; do
   cp ../$x test-repository
 done
 

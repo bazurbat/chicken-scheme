@@ -510,7 +510,8 @@ $(foreach lib, $(filter-out chicken,$(COMPILER_OBJECTS_1)),\
 
 chicken.c: chicken.scm mini-srfi-1.scm \
 		chicken.compiler.batch-driver.import.scm \
-		chicken.compiler.c-platform.import.scm
+		chicken.compiler.c-platform.import.scm \
+		chicken.utils.import.scm
 batch-driver.c: batch-driver.scm mini-srfi-1.scm \
 		chicken.compiler.core.import.scm \
 		chicken.compiler.compiler-syntax.import.scm \
@@ -543,22 +544,30 @@ compiler-syntax.c: compiler-syntax.scm mini-srfi-1.scm \
 		chicken.compiler.core.import.scm
 support.c: support.scm mini-srfi-1.scm \
 		chicken.ports.import.scm
+csc.c: csc.scm \
+		chicken.utils.import.scm
 csi.c: csi.scm \
 		chicken.ports.import.scm
+chicken-bug.c: chicken-bug.scm \
+		chicken.utils.import.scm
 chicken-status.c: chicken-status.scm \
 		chicken.ports.import.scm \
 		setup-api.import.scm
 chicken-install.c: chicken-install.scm \
 		chicken.ports.import.scm \
+		chicken.utils.import.scm \
 		setup-api.import.scm \
 		setup-download.import.scm
 chicken-uninstall.c: chicken-uninstall.scm \
 		chicken.ports.import.scm \
+		chicken.utils.import.scm \
 		setup-api.import.scm
 setup-api.c: setup-api.scm \
-		chicken.ports.import.scm
+		chicken.ports.import.scm \
+		chicken.utils.import.scm
 setup-download.c: setup-download.scm \
 		chicken.ports.import.scm \
+		chicken.utils.import.scm \
 		setup-api.import.scm
 posixunix.c: posixunix.scm \
 		chicken.ports.import.scm
@@ -606,7 +615,7 @@ tcp.c: $(SRCDIR)tcp.scm $(SRCDIR)common-declarations.scm
 srfi-4.c: $(SRCDIR)srfi-4.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 utils.c: $(SRCDIR)utils.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) 
+	$(bootstrap-lib) -emit-import-library chicken.utils
 scheduler.c: $(SRCDIR)scheduler.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 profiler.c: $(SRCDIR)profiler.scm $(SRCDIR)common-declarations.scm

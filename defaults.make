@@ -268,9 +268,9 @@ CHICKEN_PROGRAM_OPTIONS += $(if $(PROFILE_OBJECTS),-profile)
 # import libraries
 
 PRIMITIVE_IMPORT_LIBRARIES = chicken lolevel srfi-4 data-structures files
-PRIMITIVE_IMPORT_LIBRARIES += posix extras tcp foreign utils csi irregex
+PRIMITIVE_IMPORT_LIBRARIES += posix extras tcp foreign csi irregex
 PRIMITIVE_IMPORT_LIBRARIES += setup-api setup-download
-DYNAMIC_IMPORT_LIBRARIES = ports
+DYNAMIC_IMPORT_LIBRARIES = ports utils
 
 # targets
 
