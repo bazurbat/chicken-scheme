@@ -64,7 +64,7 @@
 
 #define C_direct_continuation(dummy)  t1
 
-#define C_a_get_current_seconds(ptr, c, dummy)  C_flonum(ptr, time(NULL))
+#define C_a_get_current_seconds(ptr, c, dummy)  C_int64_to_num(ptr, time(NULL))
 #define C_peek_c_string_at(ptr, i)    ((C_char *)(((C_char **)ptr)[ i ]))
 
 static C_word
@@ -217,7 +217,6 @@ EOF
 (define ##sys#void void)
 (define ##sys#undefined-value (##core#undefined))
 (define (##sys#halt msg) (##core#inline "C_halt" msg))
-(define (##sys#flo2fix n) (##core#inline "C_quickflonumtruncate" n))
 (define ##sys#become! (##core#primitive "C_become"))
 (define (##sys#block-ref x i) (##core#inline "C_i_block_ref" x i))
 (define ##sys#apply-values (##core#primitive "C_apply_values"))

@@ -74,7 +74,7 @@ static fd_set C_fdset_input, C_fdset_output;
 #define C_fd_input_ready(fd,pos)  C_mk_bool(FD_ISSET(C_unfix(fd), &C_fdset_input))
 #define C_fd_output_ready(fd,pos)  C_mk_bool(FD_ISSET(C_unfix(fd), &C_fdset_output))
 
-C_inline int C_ready_fds_timeout(int to, double tm) {
+C_inline int C_ready_fds_timeout(int to, unsigned int tm) {
   struct timeval timeout;
   timeout.tv_sec = tm / 1000;
   timeout.tv_usec = fmod(tm, 1000) * 1000;
@@ -107,8 +107,8 @@ C_inline int C_fd_ready(int fd, int pos, int what) {
 #define C_fd_input_ready(fd,pos)  C_mk_bool(C_fd_ready(C_unfix(fd), C_unfix(pos),POLLIN|POLLERR|POLLHUP|POLLNVAL))
 #define C_fd_output_ready(fd,pos)  C_mk_bool(C_fd_ready(C_unfix(fd), C_unfix(pos),POLLOUT|POLLERR|POLLHUP|POLLNVAL))
 
-C_inline int C_ready_fds_timeout(int to, double tm) {
-  return poll(C_fdset_set, C_fdset_nfds, to ? (int)tm : -1);
+C_inline int C_ready_fds_timeout(int to, unsigned int tm) {
+  return poll(C_fdset_set, C_fdset_nfds, to ? tm : -1);
 }
 
 C_inline void C_prepare_fdset(int length) {
@@ -185,7 +185,7 @@ EOF
 		       [tmo2 (##sys#slot tto 4)] ) ; timeout value stored in thread
 		  (dbg "timeout: " tto " -> " tmo2 " (now: " now ")")
 		  (if (equal? tmo1 tmo2)  ;XXX why do we check this?
-		      (if (fp>= now tmo1) ; timeout reached?
+		      (if (>= now tmo1) ; timeout reached?
 			  (begin
 			    (##sys#setislot tto 13 #t) ; mark as being unblocked by timeout
 			    (##sys#clear-i/o-state-for-thread! tto)
@@ -203,9 +203,7 @@ EOF
 				(set! eintr
 				  (and (not (##core#inline 
 					     "C_msleep" 
-					     (fxmax 
-					      0
-					      (##core#inline "C_quickflonumtruncate" (fp- tmo1 now)))))
+					     (max 0 (- tmo1 now))))
 				       (foreign-value
 					"C_signal_interrupted_p" bool) ) ) ) ) ) )
 		      (loop (cdr lst)) ) ) ) ) ) )
@@ -293,13 +291,10 @@ EOF
 
 (define (##sys#thread-block-for-timeout! t tm)
   (dbg t " blocks for timeout " tm)
-  (unless (flonum? tm)	  ; to catch old code that uses fixnum timeouts
-    (panic
-     (sprintf "##sys#thread-block-for-timeout!: invalid timeout: ~S" tm)))
-  (when (fp> tm 0.0)
+  (when (> tm 0)
     ;; This should really use a balanced tree:
     (let loop ([tl ##sys#timeout-list] [prev #f])
-      (if (or (null? tl) (fp< tm (caar tl)))
+      (if (or (null? tl) (< tm (caar tl)))
 	  (if prev
 	      (set-cdr! prev (cons (cons tm t) tl))
 	      (set! ##sys#timeout-list (cons (cons tm t) tl)) )
@@ -446,10 +441,10 @@ EOF
 	 (tmo (if (and to? (not rq?)) ; no thread was unblocked by timeout, so wait
 		  (let* ((tmo1 (caar ##sys#timeout-list))
 			 (now (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f)))
-		    (fpmax 0.0 (fp- tmo1 now)) )
+		    (max 0 (- tmo1 now)) )
 		  0.0) ) )		; otherwise immediate timeout.
     (dbg "waiting for I/O with timeout " tmo)
-    (let ((n ((foreign-lambda int "C_ready_fds_timeout" bool double)
+    (let ((n ((foreign-lambda int "C_ready_fds_timeout" bool unsigned-integer)
 	      (or rq? to?) tmo)))
       (dbg n " fds ready")
       (cond [(eq? -1 n)

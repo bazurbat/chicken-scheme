@@ -302,7 +302,7 @@ static time_t C_timegm(struct tm *t)
 #define C_timegm timegm
 #endif
 
-#define C_a_timegm(ptr, c, v, tm)  C_flonum(ptr, C_timegm(C_tm_set((v), C_data_pointer(tm))))
+#define C_a_timegm(ptr, c, v, tm)  C_int64_to_num(ptr, C_timegm(C_tm_set((v), C_data_pointer(tm))))
 
 #ifdef __linux__
 extern char *strptime(const char *s, const char *format, struct tm *tm);
@@ -569,7 +569,7 @@ EOF
 	 (nfds (fx+ nfdsr nfdsw))
 	 (fds-blob (##sys#make-blob
 		    (fx* nfds (foreign-value "sizeof(struct pollfd)" int)))))
-    (when tm (##sys#check-number tm))
+    (when tm (##sys#check-exact-integer tm))
     (do ((i 0 (fx+ i 1))
 	 (fdsrl fdsrl (cdr fdsrl)))
 	((null? fdsrl))
@@ -583,7 +583,7 @@ EOF
 	 "struct pollfd *fds = p;"
 	 "fds[i].fd = fd; fds[i].events = POLLOUT;") i (car fdswl) fds-blob))
     (let ((n ((foreign-lambda int "poll" scheme-pointer int int)
-	      fds-blob nfds (if tm (inexact->exact (* (max 0 tm) 1000)) -1))))
+	      fds-blob nfds (if tm (* (max 0 tm) 1000) -1))))
       (cond ((fx< n 0)
 	     (posix-error #:file-error 'file-select "failed" fdsr fdsw) )
 	    ((fx= n 0) (values (if (pair? fdsr) '() #f) (if (pair? fdsw) '() #f)))
@@ -1351,7 +1351,7 @@ EOF
 
 (define file-truncate
   (lambda (fname off)
-    (##sys#check-number off 'file-truncate)
+    (##sys#check-exact-integer off 'file-truncate)
     (when (fx< (cond [(string? fname) (##core#inline "C_truncate" (##sys#make-c-string fname 'file-truncate) off)]
 		     [(fixnum? fname) (##core#inline "C_ftruncate" fname off)]
 		     [else (##sys#error 'file-truncate "invalid file" fname)] )
@@ -1370,10 +1370,10 @@ EOF
     (let-optionals* args ([start 0]
                           [len #t] )
       (##sys#check-port port loc)
-      (##sys#check-number start loc)
+      (##sys#check-exact-integer start loc)
       (if (eq? #t len)
           (set! len 0)
-          (##sys#check-number len loc) )
+          (##sys#check-exact-integer len loc) )
       (##core#inline "C_flock_setup" (if (##sys#slot port 1) _f_rdlck _f_wrlck) start len)
       (##sys#make-structure 'lock port start len) ) )
   (define (err msg lock loc)

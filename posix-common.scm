@@ -81,7 +81,7 @@ static char C_time_string [TIME_STRING_MAXLENGTH + 1];
 
 #define C_strftime(v, f, tm) \
         (strftime(C_time_string, sizeof(C_time_string), C_c_string(f), C_tm_set((v), (tm))) ? C_time_string : NULL)
-#define C_a_mktime(ptr, c, v, tm)  C_flonum(ptr, mktime(C_tm_set((v), C_data_pointer(tm))))
+#define C_a_mktime(ptr, c, v, tm)  C_int64_to_num(ptr, mktime(C_tm_set((v), C_data_pointer(tm))))
 #define C_asctime(v, tm)    (asctime(C_tm_set((v), (tm))))
 
 #define C_fdopen(a, n, fd, m) C_mpointer(a, fdopen(C_unfix(fd), C_c_string(m)))
@@ -97,9 +97,9 @@ static char C_time_string [TIME_STRING_MAXLENGTH + 1];
 #define C_foundfile(e,b,l)    (C_strlcpy(C_c_string(b), ((struct dirent *) C_block_item(e, 0))->d_name, l), C_fix(strlen(((struct dirent *) C_block_item(e, 0))->d_name)))
 
 /* It is assumed that 'int' is-a 'long' */
-#define C_ftell(p)          C_fix(ftell(C_port_file(p)))
-#define C_fseek(p, n, w)    C_mk_nbool(fseek(C_port_file(p), C_num_to_int(n), C_unfix(w)))
-#define C_lseek(fd, o, w)     C_fix(lseek(C_unfix(fd), C_unfix(o), C_unfix(w)))
+#define C_ftell(a, n, p)    C_int64_to_num(a, ftell(C_port_file(p)))
+#define C_fseek(p, n, w)    C_mk_nbool(fseek(C_port_file(p), C_num_to_int64(n), C_unfix(w)))
+#define C_lseek(fd, o, w)     C_fix(lseek(C_unfix(fd), C_num_to_int64(o), C_unfix(w)))
 
 #ifdef HAVE_SETENV
 # define C_unsetenv(s)      (unsetenv((char *)C_data_pointer(s)), C_SCHEME_TRUE)
@@ -192,9 +192,9 @@ EOF
 (define-foreign-variable _stat_st_nlink unsigned-int "C_statbuf.st_nlink")
 (define-foreign-variable _stat_st_gid unsigned-int "C_statbuf.st_gid")
 (define-foreign-variable _stat_st_size integer64 "C_statbuf.st_size")
-(define-foreign-variable _stat_st_mtime double "C_statbuf.st_mtime")
-(define-foreign-variable _stat_st_atime double "C_statbuf.st_atime")
-(define-foreign-variable _stat_st_ctime double "C_statbuf.st_ctime")
+(define-foreign-variable _stat_st_mtime integer64 "C_statbuf.st_mtime")
+(define-foreign-variable _stat_st_atime integer64 "C_statbuf.st_atime")
+(define-foreign-variable _stat_st_ctime integer64 "C_statbuf.st_ctime")
 (define-foreign-variable _stat_st_uid unsigned-int "C_statbuf.st_uid")
 (define-foreign-variable _stat_st_mode unsigned-int "C_statbuf.st_mode")
 (define-foreign-variable _stat_st_dev unsigned-int "C_statbuf.st_dev")
@@ -251,7 +251,7 @@ EOF
    (lambda (f)
      (##sys#stat f #f #t 'file-modification-time) _stat_st_mtime)
    (lambda (f t)
-     (##sys#check-number t 'set-file-modification-time)
+     (##sys#check-exact-integer t 'set-file-modification-time)
      (let ((r ((foreign-lambda int "set_file_mtime" c-string scheme-object)
 	       f t)))
        (when (fx< r 0)
@@ -329,7 +329,7 @@ EOF
    (lambda (port)
      (let ((pos (cond ((port? port)
 		       (if (eq? (##sys#slot port 7) 'stream)
-			   (##core#inline "C_ftell" port)
+			   (##core#inline_allocate ("C_ftell" 4) port)
 			   -1) )
 		      ((fixnum? port)
 		       (##core#inline "C_lseek" port 0 _seek_cur) )
@@ -559,17 +559,17 @@ EOF
     (##sys#error loc "time vector too short" tm) ) )
 
 (define (seconds->local-time #!optional (secs (current-seconds)))
-  (##sys#check-number secs 'seconds->local-time)
+  (##sys#check-exact-integer secs 'seconds->local-time)
   (##sys#decode-seconds secs #f) )
 
 (define (seconds->utc-time #!optional (secs (current-seconds)))
-  (##sys#check-number secs 'seconds->utc-time)
+  (##sys#check-exact-integer secs 'seconds->utc-time)
   (##sys#decode-seconds secs #t) )
 
 (define seconds->string
   (let ([ctime (foreign-lambda c-string "C_ctime" integer)])
     (lambda (#!optional (secs (current-seconds)))
-      (##sys#check-number secs 'seconds->string)
+      (##sys#check-exact-integer secs 'seconds->string)
       (let ([str (ctime secs)])
         (if str
             (##sys#substring str 0 (fx- (##sys#size str) 1))

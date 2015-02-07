@@ -1166,7 +1166,6 @@ extern double trunc(double);
 #define C_bignum_mutate_size(b,s)  (C_block_header(b) = (C_BIGNUM_TYPE | C_wordstobytes((s)+1)))
 #define C_fitsinfixnump(n)         (((n) & C_INT_SIGN_BIT) == (((n) & C_INT_TOP_BIT) << 1))
 #define C_ufitsinfixnump(n)        (((n) & (C_INT_SIGN_BIT | (C_INT_SIGN_BIT >> 1))) == 0)
-#define C_quickflonumtruncate(n)   (C_fix((C_word)C_flonum_magnitude(n)))
 #define C_and(x, y)                (C_truep(x) ? (y) : C_SCHEME_FALSE)
 #define C_c_bytevector(x)          ((unsigned char *)C_data_pointer(x))
 #define C_c_bytevector_or_null(x)  ((unsigned char *)C_data_pointer_or_null(x))
@@ -1735,7 +1734,7 @@ extern double trunc(double);
 #define C_u_i_flonum_infinitep(x)       C_mk_bool(C_isinf(C_flonum_magnitude(x)))
 #define C_u_i_flonum_finitep(x)         C_mk_bool(C_isfinite(C_flonum_magnitude(x)))
 
-#define C_a_i_current_milliseconds(ptr, c, dummy) C_flonum(ptr, C_milliseconds())
+#define C_a_i_current_milliseconds(ptr, c, dummy) C_uint64_to_num(ptr, C_milliseconds())
 
 #define C_i_noop1(dummy)               ((dummy), C_SCHEME_UNDEFINED)
 #define C_i_noop2(dummy1, dummy2)      ((dummy1), (dummy2), C_SCHEME_UNDEFINED)
@@ -2157,8 +2156,8 @@ C_fctexport C_word C_fcall C_a_i_flonum_gcd(C_word **p, C_word n, C_word x, C_wo
 C_fctexport C_word C_fcall C_i_getprop(C_word sym, C_word prop, C_word def) C_regparm;
 C_fctexport C_word C_fcall C_putprop(C_word **a, C_word sym, C_word prop, C_word val) C_regparm;
 C_fctexport C_word C_fcall C_i_get_keyword(C_word key, C_word args, C_word def) C_regparm;
-C_fctexport double C_fcall C_milliseconds(void) C_regparm;
-C_fctexport double C_fcall C_cpu_milliseconds(void) C_regparm;
+C_fctexport C_u64 C_fcall C_milliseconds(void) C_regparm;
+C_fctexport C_u64 C_fcall C_cpu_milliseconds(void) C_regparm;
 C_fctexport double C_fcall C_bignum_to_double(C_word bignum) C_regparm;
 
 

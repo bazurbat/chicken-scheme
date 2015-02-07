@@ -75,7 +75,8 @@
 
 ;;; Entry and exit into/out of profiled lambda:
 
-(define cpu-ms (foreign-lambda double "C_cpu_milliseconds"))
+;; XXX TODO: Should be changed to unsigned-integer64 after bootstrapping
+(define cpu-ms (foreign-lambda unsigned-integer "C_cpu_milliseconds"))
 
 (define ##sys#profile-entry 
   (let ((maxfix most-positive-fixnum))
@@ -106,8 +107,8 @@
       (let ((t (##sys#slot vec it)))
 	(##sys#setslot
 	 vec it 
-	 (fp+ (if (eq? t 0) 0.0 t)
-	      (fp- (cpu-ms) (##sys#slot vec it0))))))))
+	 (+ (if (eq? t 0) 0 t)
+	    (- (cpu-ms) (##sys#slot vec it0))))))))
 
 
 ;;; Generate profile:
