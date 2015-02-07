@@ -62,9 +62,9 @@
 
 (define +type-check-map+
   '(("C_i_check_closure" procedure)
-    ("C_i_check_exact" fixnum)
-    ("C_i_check_inexact" flonum)
-    ("C_i_check_number" fixnum flonum number)
+    ("C_i_check_exact" fixnum bignum integer ratnum)
+    ("C_i_check_inexact" flonum)	; Or an inexact cplxnum...
+    ("C_i_check_number" fixnum integer bignum ratnum flonum cplxnum number)
     ("C_i_check_string" string)
     ("C_i_check_bytevector" blob)
     ("C_i_check_symbol" symbol)
@@ -76,9 +76,9 @@
     ("C_i_check_structure" *struct*)	; special case
     ("C_i_check_char" char)
     ("C_i_check_closure_2" procedure)
-    ("C_i_check_exact_2" fixnum)
-    ("C_i_check_inexact_2" flonum)
-    ("C_i_check_number_2" fixnum flonum number)
+    ("C_i_check_exact_2" fixnum bignum integer ratnum)
+    ("C_i_check_inexact_2" flonum)	; Or an inexact cplxnum...
+    ("C_i_check_number_2" fixnum integer bignum ratnum flonum cplxnum number)
     ("C_i_check_string_2" string)
     ("C_i_check_bytevector_2" blob)
     ("C_i_check_symbol_2" symbol)
@@ -96,8 +96,12 @@
 (define +predicate-map+
   '(("C_i_closurep" procedure)
     ("C_fixnump" fixnum)
+    ("C_bignump" bignum)
+    ("C_i_exact_integerp" integer fixnum bignum)
     ("C_i_flonump" flonum)
-    ("C_i_numberp" number)
+    ("C_i_numberp" number fixnum integer bignum ratnum flonum cplxnum)
+    ("C_i_ratnump" ratnum)
+    ("C_i_cplxnump" cplxnum)
     ("C_stringp" string)
     ("C_bytevectorp" blob)
     ("C_i_symbolp" symbol)
@@ -150,6 +154,11 @@
     ("C_a_i_cons" pair)
     ("C_a_i_flonum" flonum)
     ("C_a_i_fix_to_flo" flonum)
+    ("C_a_i_big_to_flo" flonum)
+    ("C_a_i_fix_to_big" bignum)
+    ("C_a_i_bignum0" bignum)
+    ("C_a_i_bignum1" bignum)
+    ("C_a_i_bignum2" bignum)
     ;;XXX there are endless more - is it worth it?
     ))
 
@@ -164,7 +173,11 @@
       (cond ((string? lit) 'string)
 	    ((symbol? lit) 'symbol)
 	    ((fixnum? lit) 'fixnum)
+	    ((bignum? lit) 'bignum)
 	    ((flonum? lit) 'float)
+	    ((ratnum? lit) 'ratnum)
+	    ((cplxnum? lit) 'cplxnum)
+	    ((exact-integer? lit) 'integer)
 	    ((number? lit) 
 	     (case number-type 
 	       ((fixnum) 'fixnum)
