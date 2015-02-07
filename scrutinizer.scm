@@ -1969,9 +1969,9 @@
 			 deprecated noreturn values))
 	     t)
 	    ((memq t '(u8vector s8vector u16vector s16vector u32vector s32vector
-				f32vector f64vector thread queue environment time
-				continuation lock mmap condition hash-table
-				tcp-listener))
+				u64vector s64vector f32vector f64vector
+				thread queue environment time continuation
+				lock mmap condition hash-table tcp-listener))
 	     `(struct ,t))
 	    ((eq? t 'immediate)
 	     '(or eof null fixnum char boolean))

@@ -34,12 +34,16 @@
    blob->s16vector/shared
    blob->s32vector
    blob->s32vector/shared
+   blob->s64vector
+   blob->s64vector/shared
    blob->s8vector
    blob->s8vector/shared
    blob->u16vector
    blob->u16vector/shared
    blob->u32vector
    blob->u32vector/shared
+   blob->u64vector
+   blob->u64vector/shared
    blob->u8vector
    blob->u8vector/shared
    f32vector
@@ -64,17 +68,21 @@
    list->f64vector
    list->s16vector
    list->s32vector
+   list->s64vector
    list->s8vector
    list->u16vector
    list->u32vector
+   list->u64vector
    list->u8vector
    make-f32vector
    make-f64vector
    make-s16vector
    make-s32vector
+   make-s64vector
    make-s8vector
    make-u16vector
    make-u32vector
+   make-u64vector
    make-u8vector
    read-u8vector
    read-u8vector!
@@ -97,6 +105,15 @@
    s32vector-ref
    s32vector-set!
    s32vector?
+   s64vector
+   s64vector->blob
+   s64vector->blob/shared
+   s64vector->byte-vector
+   s64vector->list
+   s64vector-length
+   s64vector-ref
+   s64vector-set!
+   s64vector?
    s8vector
    s8vector->blob
    s8vector->blob/shared
@@ -110,9 +127,11 @@
    subf64vector
    subs16vector
    subs32vector
+   subs64vector
    subs8vector
    subu16vector
    subu32vector
+   subu64vector
    subu8vector
    u16vector
    u16vector->blob
@@ -132,6 +151,15 @@
    u32vector-ref
    u32vector-set!
    u32vector?
+   u64vector
+   u64vector->blob
+   u64vector->blob/shared
+   u64vector->byte-vector
+   u64vector->list
+   u64vector-length
+   u64vector-ref
+   u64vector-set!
+   u64vector?
    u8vector
    u8vector->blob
    u8vector->blob/shared

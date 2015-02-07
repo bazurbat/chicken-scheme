@@ -28,9 +28,11 @@
 (test1 u8 0 255)
 (test1 u16 0 65535)
 (test1 u32 0 4294967295)
+(test1 u64 0 18446744073709551615)
 (test1 s8 -128 127)
 (test1 s16 -32768 32767)
 (test1 s32 -2147483648 2147483647)
+(test1 s64 -9223372036854775808 9223372036854775807)
 
 (define-syntax test2
   (er-macro-transformer
@@ -61,7 +63,9 @@
 (assert (equal? #u16(1 2 3) '#u16(1 2 3)))
 (assert (equal? #s16(-1 2 3) '#s16(-1 2 3)))
 (assert (equal? #u32(1 2 3) '#u32(1 2 3)))
+(assert (equal? #u64(1 2 3) '#u64(1 2 3)))
 (assert (equal? #s32(-1 2 3) '#s32(-1 2 3)))
+(assert (equal? #s64(-1 2 3) '#s64(-1 2 3)))
 (assert (equal? #f32(1 2 3) '#f32(1 2 3)))
 (assert (equal? #f64(-1 2 3) '#f64(-1 2 3)))
 

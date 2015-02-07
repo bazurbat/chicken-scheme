@@ -151,20 +151,24 @@
     atom? print print* error call/cc
     blob-size u8vector->blob/shared s8vector->blob/shared u16vector->blob/shared
     s16vector->blob/shared u32vector->blob/shared s32vector->blob/shared
+    u64vector->blob/shared s64vector->blob/shared
     f32vector->blob/shared f64vector->blob/shared
     blob->u8vector/shared blob->s8vector/shared blob->u16vector/shared
     blob->s16vector/shared blob->u32vector/shared blob->s32vector/shared
+    blob->u64vector/shared blob->s64vector/shared
     blob->f32vector/shared blob->f64vector/shared
     block-ref block-set! number-of-slots substring-index substring-index-ci
     any? read-string substring=? substring-ci=? blob=? equal=?
     alist-ref rassoc make-polar make-rectangular real-part imag-part
     string->symbol symbol-append make-record-instance foldl foldr
-    u8vector-length s8vector-length u16vector-length s16vector-length u32vector-length 
-    s32vector-length
+    u8vector-length s8vector-length u16vector-length s16vector-length
+    u32vector-length u64vector-length s32vector-length s64vector-length
     f32vector-length f64vector-length setter
-    u8vector-ref s8vector-ref u16vector-ref s16vector-ref u32vector-ref s32vector-ref
+    u8vector-ref s8vector-ref u16vector-ref s16vector-ref
+    u32vector-ref s32vector-ref u64vector-ref s64vector-ref
     f32vector-ref f64vector-ref f32vector-set! f64vector-set!
-    u8vector-set! s8vector-set! u16vector-set! s16vector-set! u32vector-set! s32vector-set!
+    u8vector-set! s8vector-set! u16vector-set! s16vector-set!
+    u32vector-set! s32vector-set! u64vector-set! s64vector-set!
     locative-ref locative-set! locative->object locative?
     pointer->object flonum? nan? finite? infinite? address->pointer pointer->address
     pointer+ pointer=?
@@ -748,6 +752,7 @@
 
 (rewrite 'blob-size 2 1 "C_block_size" #f)
 
+;; TODO: Move this stuff to types.db
 (rewrite 'u8vector-ref 2 2 "C_u_i_u8vector_ref" #f)
 (rewrite 's8vector-ref 2 2 "C_u_i_s8vector_ref" #f)
 (rewrite 'u16vector-ref 2 2 "C_u_i_u16vector_ref" #f)
@@ -756,15 +761,14 @@
 (rewrite 'f32vector-ref 16 2 "C_a_u_i_f32vector_ref" #f words-per-flonum)
 (rewrite 'f64vector-ref 16 2 "C_a_u_i_f64vector_ref" #f words-per-flonum)
 
-(rewrite 'u32vector-ref 22 2 "C_a_u_i_u32vector_ref" #f words-per-flonum "C_u_i_u32vector_ref")
-(rewrite 's32vector-ref 22 2 "C_a_u_i_s32vector_ref" #f words-per-flonum "C_u_i_s32vector_ref")
-
 (rewrite 'u8vector-set! 2 3 "C_u_i_u8vector_set" #f)
 (rewrite 's8vector-set! 2 3 "C_u_i_s8vector_set" #f)
 (rewrite 'u16vector-set! 2 3 "C_u_i_u16vector_set" #f)
 (rewrite 's16vector-set! 2 3 "C_u_i_s16vector_set" #f)
 (rewrite 'u32vector-set! 2 3 "C_u_i_u32vector_set" #f)
 (rewrite 's32vector-set! 2 3 "C_u_i_s32vector_set" #f)
+(rewrite 'u64vector-set! 2 3 "C_u_i_u32vector_set" #f)
+(rewrite 's64vector-set! 2 3 "C_u_i_s32vector_set" #f)
 (rewrite 'f32vector-set! 2 3 "C_u_i_f32vector_set" #f)
 (rewrite 'f64vector-set! 2 3 "C_u_i_f64vector_set" #f)
 
@@ -774,6 +778,8 @@
 (rewrite 's16vector-length 2 1 "C_u_i_16vector_length" #f)
 (rewrite 'u32vector-length 2 1 "C_u_i_32vector_length" #f)
 (rewrite 's32vector-length 2 1 "C_u_i_32vector_length" #f)
+(rewrite 'u64vector-length 2 1 "C_u_i_64vector_length" #f)
+(rewrite 's64vector-length 2 1 "C_u_i_64vector_length" #f)
 (rewrite 'f32vector-length 2 1 "C_u_i_32vector_length" #f)
 (rewrite 'f64vector-length 2 1 "C_u_i_64vector_length" #f)
 
@@ -785,6 +791,8 @@
 (rewrite 's16vector->blob/shared 7 1 "C_slot" 1 #f)
 (rewrite 'u32vector->blob/shared 7 1 "C_slot" 1 #f)
 (rewrite 's32vector->blob/shared 7 1 "C_slot" 1 #f)
+(rewrite 'u64vector->blob/shared 7 1 "C_slot" 1 #f)
+(rewrite 's64vector->blob/shared 7 1 "C_slot" 1 #f)
 (rewrite 'f32vector->blob/shared 7 1 "C_slot" 1 #f)
 (rewrite 'f64vector->blob/shared 7 1 "C_slot" 1 #f)
 
@@ -853,6 +861,8 @@
     (s16vector-ref . s16vector-set!)
     (u32vector-ref . u32vector-set!)
     (s32vector-ref . s32vector-set!)
+    (u64vector-ref . u64vector-set!)
+    (s64vector-ref . s64vector-set!)
     (f32vector-ref . f32vector-set!)
     (f64vector-ref . f64vector-set!)
     (pointer-u8-ref . pointer-u8-set!)

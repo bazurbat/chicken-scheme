@@ -179,6 +179,19 @@ Returns the unsigned 32-bit integer at the address designated by {{POINTER}}.
 
 Returns the signed 32-bit integer at the address designated by {{POINTER}}.
 
+==== pointer-u64-ref
+
+<procedure>(pointer-u64-ref POINTER)</procedure>
+
+Returns the unsigned 64-bit integer at the address designated by {{POINTER}}.
+
+
+==== pointer-s64-ref
+
+<procedure>(pointer-s64-ref POINTER)</procedure>
+
+Returns the signed 64-bit integer at the address designated by {{POINTER}}.
+
 
 ==== pointer-f32-ref
 
@@ -240,6 +253,22 @@ Stores the unsigned 32-bit integer {{N}} at the address designated by {{POINTER}
 <procedure>(set! (pointer-s32-ref POINTER) N)</procedure>
 
 Stores the 32-bit integer {{N}} at the address designated by {{POINTER}}.
+
+
+==== pointer-u64-set!
+
+<procedure>(pointer-u64-set! POINTER N)</procedure><br>
+<procedure>(set! (pointer-u64-ref POINTER) N)</procedure>
+
+Stores the unsigned 64-bit integer {{N}} at the address designated by {{POINTER}}.
+
+
+==== pointer-s64-set!
+
+<procedure>(pointer-s64-set! POINTER N)</procedure><br>
+<procedure>(set! (pointer-s64-ref POINTER) N)</procedure>
+
+Stores the 64-bit integer {{N}} at the address designated by {{POINTER}}.
 
 
 ==== pointer-f32-set!

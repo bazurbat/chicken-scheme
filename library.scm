@@ -5462,7 +5462,7 @@ EOF
   (and (##core#inline "C_blockp" x)
        (##sys#generic-structure? x)
        (memq (##sys#slot x 0)
-             '(u8vector u16vector s8vector s16vector u32vector s32vector f32vector f64vector))))
+             '(u8vector u16vector s8vector s16vector u32vector s32vector u64vector s64vector f32vector f64vector))))
 
 (define (##sys#null-pointer)
   (let ([ptr (##sys#make-pointer)])
@@ -6100,42 +6100,50 @@ EOF
 	 (##core#inline_allocate ("C_a_i_make_locative" 5) 2 obj index weak?) ]
 	[(##sys#generic-structure? obj)
 	 (case (##sys#slot obj 0)
-	   [(u8vector)
+	   ((u8vector)
 	    (let ([v (##sys#slot obj 1)])
 	      (##sys#check-range index 0 (##sys#size v) loc)
-	      (##core#inline_allocate ("C_a_i_make_locative" 5) 2 v index weak?))  ]
-	   [(s8vector)
+	      (##core#inline_allocate ("C_a_i_make_locative" 5) 2 v index weak?))  )
+	   ((s8vector)
 	    (let ([v (##sys#slot obj 1)])
 	      (##sys#check-range index 0 (##sys#size v) loc)
-	      (##core#inline_allocate ("C_a_i_make_locative" 5) 3 v index weak?) ) ]
-	   [(u16vector)
+	      (##core#inline_allocate ("C_a_i_make_locative" 5) 3 v index weak?) ) )
+	   ((u16vector)
 	    (let ([v (##sys#slot obj 1)])
 	      (##sys#check-range index 0 (##sys#size v) loc)
-	      (##core#inline_allocate ("C_a_i_make_locative" 5) 4 v index weak?) ) ]
-	   [(s16vector)
+	      (##core#inline_allocate ("C_a_i_make_locative" 5) 4 v index weak?) ) )
+	   ((s16vector)
 	    (let ([v (##sys#slot obj 1)])
 	      (##sys#check-range index 0 (##sys#size v) loc)
-	      (##core#inline_allocate ("C_a_i_make_locative" 5) 5 v index weak?) ) ]
-	   [(u32vector)
+	      (##core#inline_allocate ("C_a_i_make_locative" 5) 5 v index weak?) ) )
+	   ((u32vector)
 	    (let ([v (##sys#slot obj 1)])
 	      (##sys#check-range index 0 (##sys#size v) loc)
-	      (##core#inline_allocate ("C_a_i_make_locative" 5) 6 v index weak?) ) ]
-	   [(s32vector)
+	      (##core#inline_allocate ("C_a_i_make_locative" 5) 6 v index weak?) ) )
+	   ((s32vector)
 	    (let ([v (##sys#slot obj 1)])
 	      (##sys#check-range index 0 (##sys#size v) loc)
-	      (##core#inline_allocate ("C_a_i_make_locative" 5) 7 v index weak?) ) ]
-	   [(f32vector)
+	      (##core#inline_allocate ("C_a_i_make_locative" 5) 7 v index weak?) ) )
+	   ((u64vector)
 	    (let ([v (##sys#slot obj 1)])
 	      (##sys#check-range index 0 (##sys#size v) loc)
-	      (##core#inline_allocate ("C_a_i_make_locative" 5) 8 v index weak?) ) ]
-	   [(f64vector)
+	      (##core#inline_allocate ("C_a_i_make_locative" 5) 8 v index weak?) ) )
+	   ((s64vector)
 	    (let ([v (##sys#slot obj 1)])
 	      (##sys#check-range index 0 (##sys#size v) loc)
-	      (##core#inline_allocate ("C_a_i_make_locative" 5) 9 v index weak?) ) ]
+	      (##core#inline_allocate ("C_a_i_make_locative" 5) 9 v index weak?) ) )
+	   ((f32vector)
+	    (let ([v (##sys#slot obj 1)])
+	      (##sys#check-range index 0 (##sys#size v) loc)
+	      (##core#inline_allocate ("C_a_i_make_locative" 5) 10 v index weak?) ) )
+	   ((f64vector)
+	    (let ([v (##sys#slot obj 1)])
+	      (##sys#check-range index 0 (##sys#size v) loc)
+	      (##core#inline_allocate ("C_a_i_make_locative" 5) 11 v index weak?) ) )
 	   ;;XXX pointer-vector currently not supported
-	   [else 
+	   (else 
 	    (##sys#check-range index 0 (fx- (##sys#size obj) 1) loc)
-	    (##core#inline_allocate ("C_a_i_make_locative" 5) 0 obj (fx+ index 1) weak?) ] ) ]
+	    (##core#inline_allocate ("C_a_i_make_locative" 5) 0 obj (fx+ index 1) weak?) ) ) ]
 	[(string? obj)
 	 (##sys#check-range index 0 (##sys#size obj) loc)
 	 (##core#inline_allocate ("C_a_i_make_locative" 5) 1 obj index weak?) ] 

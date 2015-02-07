@@ -556,8 +556,10 @@ static inline int isinf_ld (long double x)
 #define C_S16_LOCATIVE            5
 #define C_U32_LOCATIVE            6
 #define C_S32_LOCATIVE            7
-#define C_F32_LOCATIVE            8
-#define C_F64_LOCATIVE            9
+#define C_U64_LOCATIVE            8
+#define C_S64_LOCATIVE            9
+#define C_F32_LOCATIVE            10
+#define C_F64_LOCATIVE            11
 
 #if defined (__MINGW32__)
 # define C_s64                    __int64
@@ -1181,6 +1183,10 @@ extern double trunc(double);
 #define C_c_u32vector_or_null(x)   ((C_u32 *)C_srfi_4_vector_or_null(x))
 #define C_c_s32vector(x)           ((C_s32 *)C_srfi_4_vector(x))
 #define C_c_s32vector_or_null(x)   ((C_s32 *)C_srfi_4_vector_or_null(x))
+#define C_c_u64vector(x)           ((C_u64 *)C_srfi_4_vector(x))
+#define C_c_u64vector_or_null(x)   ((C_u64 *)C_srfi_4_vector_or_null(x))
+#define C_c_s64vector(x)           ((C_s64 *)C_srfi_4_vector(x))
+#define C_c_s64vector_or_null(x)   ((C_s64 *)C_srfi_4_vector_or_null(x))
 #define C_c_f32vector(x)           ((float *)C_srfi_4_vector(x))
 #define C_c_f32vector_or_null(x)   ((float *)C_srfi_4_vector_or_null(x))
 #define C_c_f64vector(x)           ((double *)C_srfi_4_vector(x))
@@ -1538,6 +1544,8 @@ extern double trunc(double);
 #define C_u_i_s16vector_length          C_u_i_16vector_length
 #define C_u_i_u32vector_length          C_u_i_32vector_length
 #define C_u_i_s32vector_length          C_u_i_32vector_length
+#define C_u_i_u64vector_length          C_u_i_64vector_length
+#define C_u_i_s64vector_length          C_u_i_64vector_length
 #define C_u_i_f32vector_length          C_u_i_32vector_length
 #define C_u_i_f64vector_length          C_u_i_64vector_length
 
@@ -1553,12 +1561,17 @@ extern double trunc(double);
 #define C_a_u_i_u32vector_ref(ptr, c, x, i)  C_unsigned_int_to_num(ptr, ((C_u32 *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ])
 #define C_a_u_i_s32vector_ref(ptr, c, x, i)  C_int_to_num(ptr, ((C_s32 *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ])
 
+#define C_a_u_i_u64vector_ref(ptr, c, x, i)  C_uint64_to_num(ptr, ((C_u64 *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ])
+#define C_a_u_i_s64vector_ref(ptr, c, x, i)  C_int64_to_num(ptr, ((C_s64 *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ])
+
 #define C_u_i_u8vector_set(x, i, v)     ((((unsigned char *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ] = C_unfix(v)), C_SCHEME_UNDEFINED)
 #define C_u_i_s8vector_set(x, i, v)     ((((signed char *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ] = C_unfix(v)), C_SCHEME_UNDEFINED)
 #define C_u_i_u16vector_set(x, i, v)    ((((unsigned short *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ] = C_unfix(v)), C_SCHEME_UNDEFINED)
 #define C_u_i_s16vector_set(x, i, v)    ((((short *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ] = C_unfix(v)), C_SCHEME_UNDEFINED)
 #define C_u_i_u32vector_set(x, i, v)    ((((C_u32 *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ] = C_num_to_unsigned_int(v)), C_SCHEME_UNDEFINED)
 #define C_u_i_s32vector_set(x, i, v)    ((((C_s32 *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ] = C_num_to_int(v)), C_SCHEME_UNDEFINED)
+#define C_u_i_u64vector_set(x, i, v)    ((((C_u64 *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ] = C_num_to_uint64(v)), C_SCHEME_UNDEFINED)
+#define C_u_i_s64vector_set(x, i, v)    ((((C_s64 *)C_data_pointer(C_block_item((x), 1)))[ C_unfix(i) ] = C_num_to_int64(v)), C_SCHEME_UNDEFINED)
 
 #define C_u_i_bit_setp(x, i)            C_mk_bool((C_unfix(x) & (1 << C_unfix(i))) != 0)
 
@@ -1570,6 +1583,10 @@ extern double trunc(double);
   C_unsigned_int_to_num(ap, *((C_u32 *)C_block_item(ptr, 0)))
 #define C_a_u_i_pointer_s32_ref(ap, n, ptr)  \
   C_int_to_num(ap, *((C_s32 *)C_block_item(ptr, 0)))
+#define C_a_u_i_pointer_u64_ref(ap, n, ptr)  \
+  C_uint64_to_num(ap, *((C_u64 *)C_block_item(ptr, 0)))
+#define C_a_u_i_pointer_s64_ref(ap, n, ptr)  \
+  C_int64_to_num(ap, *((C_s64 *)C_block_item(ptr, 0)))
 #define C_a_u_i_pointer_f32_ref(ap, n, ptr)  C_flonum(ap, *((float *)C_block_item(ptr, 0)))
 #define C_a_u_i_pointer_f64_ref(ap, n, ptr)  C_flonum(ap, *((double *)C_block_item(ptr, 0)))
 #define C_u_i_pointer_u8_set(ptr, x)  \
@@ -1584,6 +1601,10 @@ extern double trunc(double);
   (*((C_u32 *)C_block_item(ptr, 0)) = C_num_to_unsigned_int(x), C_SCHEME_UNDEFINED)
 #define C_u_i_pointer_s32_set(ptr, x)  \
   (*((C_s32 *)C_block_item(ptr, 0)) = C_num_to_int(x), C_SCHEME_UNDEFINED)
+#define C_u_i_pointer_u64_set(ptr, x)  \
+  (*((C_u64 *)C_block_item(ptr, 0)) = C_num_to_uint64(x), C_SCHEME_UNDEFINED)
+#define C_u_i_pointer_s64_set(ptr, x)  \
+  (*((C_s64 *)C_block_item(ptr, 0)) = C_num_to_int64(x), C_SCHEME_UNDEFINED)
 #define C_u_i_pointer_f32_set(ptr, x)  \
   (*((float *)C_block_item(ptr, 0)) = C_flonum_magnitude(x), C_SCHEME_UNDEFINED)
 #define C_u_i_pointer_f64_set(ptr, x)  \
@@ -1628,6 +1649,8 @@ extern double trunc(double);
 #define C_ub_i_pointer_s16_ref(p)       (*((short *)(p)))
 #define C_ub_i_pointer_u32_ref(p)       (*((C_u32 *)(p)))
 #define C_ub_i_pointer_s32_ref(p)       (*((C_s32 *)(p)))
+#define C_ub_i_pointer_u64_ref(p)       (*((C_u64 *)(p)))
+#define C_ub_i_pointer_s64_ref(p)       (*((C_s64 *)(p)))
 #define C_ub_i_pointer_f32_ref(p)       (*((float *)(p)))
 #define C_ub_i_pointer_f64_ref(p)       (*((double *)(p)))
 #define C_ub_i_pointer_u8_set(p, n)     (*((unsigned char *)(p)) = (n))
@@ -1636,6 +1659,8 @@ extern double trunc(double);
 #define C_ub_i_pointer_s16_set(p, n)    (*((short *)(p)) = (n))
 #define C_ub_i_pointer_u32_set(p, n)    (*((C_u32 *)(p)) = (n))
 #define C_ub_i_pointer_s32_set(p, n)    (*((C_s32 *)(p)) = (n))
+#define C_ub_i_pointer_u64_set(p, n)    (*((C_u64 *)(p)) = (n))
+#define C_ub_i_pointer_s64_set(p, n)    (*((C_s64 *)(p)) = (n))
 #define C_ub_i_pointer_f32_set(p, n)    (*((float *)(p)) = (n))
 #define C_ub_i_pointer_f64_set(p, n)    (*((double *)(p)) = (n))
 
@@ -1971,6 +1996,8 @@ C_fctexport void C_ccall C_get_memory_info(C_word c, C_word closure, C_word k) C
 C_fctexport void C_ccall C_context_switch(C_word c, C_word closure, C_word k, C_word state) C_noret;
 C_fctexport void C_ccall C_peek_signed_integer(C_word c, C_word closure, C_word k, C_word v, C_word index) C_noret;
 C_fctexport void C_ccall C_peek_unsigned_integer(C_word c, C_word closure, C_word k, C_word v, C_word index) C_noret;
+C_fctexport void C_ccall C_peek_int64(C_word c, C_word closure, C_word k, C_word v, C_word index) C_noret;
+C_fctexport void C_ccall C_peek_uint64(C_word c, C_word closure, C_word k, C_word v, C_word index) C_noret;
 C_fctexport void C_ccall C_decode_seconds(C_word c, C_word closure, C_word k, C_word secs, C_word mode) C_noret;
 C_fctexport void C_ccall C_software_type(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_machine_type(C_word c, C_word closure, C_word k) C_noret;

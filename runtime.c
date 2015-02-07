@@ -833,7 +833,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size -
      this must match the number of C_pte calls + 1 (NULL terminator)! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 78);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 80);
   int i = 0;
 
   if(pt == NULL)
@@ -890,6 +890,8 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_make_tagged_pointer);
   C_pte(C_peek_signed_integer);
   C_pte(C_peek_unsigned_integer);
+  C_pte(C_peek_int64);
+  C_pte(C_peek_uint64);
   C_pte(C_context_switch);
   C_pte(C_register_finalizer);
   C_pte(C_locative_ref);
@@ -10383,27 +10385,32 @@ void C_ccall C_context_switch(C_word c, C_word closure, C_word k, C_word state)
 
 void C_ccall C_peek_signed_integer(C_word c, C_word closure, C_word k, C_word v, C_word index)
 {
-  C_word x = C_block_item(v, C_unfix(index));
-  C_alloc_flonum;
-
-  if((x & C_INT_SIGN_BIT) != ((x << 1) & C_INT_SIGN_BIT)) {
-    C_kontinue_flonum(k, (double)x);
-  }
-
-  C_kontinue(k, C_fix(x));
+  C_word ab[C_SIZEOF_BIGNUM(1)], *a = ab;
+  C_uword num = ((C_word *)C_data_pointer(v))[ C_unfix(index) ];
+  C_kontinue(k, C_int_to_num(&a, num));
 }
 
 
 void C_ccall C_peek_unsigned_integer(C_word c, C_word closure, C_word k, C_word v, C_word index)
 {
-  C_word x = C_block_item(v, C_unfix(index));
-  C_alloc_flonum;
+  C_word ab[C_SIZEOF_BIGNUM(1)], *a = ab;
+  C_uword num = ((C_word *)C_data_pointer(v))[ C_unfix(index) ];
+  C_kontinue(k, C_unsigned_int_to_num(&a, num));
+}
 
-  if((x & C_INT_SIGN_BIT) || ((x << 1) & C_INT_SIGN_BIT)) {
-    C_kontinue_flonum(k, (double)(C_uword)x);
-  }
+void C_ccall C_peek_int64(C_word c, C_word closure, C_word k, C_word v, C_word index)
+{
+  C_word ab[C_SIZEOF_BIGNUM(2)], *a = ab;
+  C_s64 num = ((C_s64 *)C_data_pointer(v))[ C_unfix(index) ];
+  C_kontinue(k, C_int64_to_num(&a, num));
+}
 
-  C_kontinue(k, C_fix(x));
+
+void C_ccall C_peek_uint64(C_word c, C_word closure, C_word k, C_word v, C_word index)
+{
+  C_word ab[C_SIZEOF_BIGNUM(2)], *a = ab;
+  C_u64 num = ((C_u64 *)C_data_pointer(v))[ C_unfix(index) ];
+  C_kontinue(k, C_uint64_to_num(&a, num));
 }
 
 
@@ -10826,6 +10833,8 @@ C_regparm C_word C_fcall C_a_i_make_locative(C_word **a, int c, C_word type, C_w
   case C_U32_LOCATIVE:
   case C_F32_LOCATIVE:
   case C_S32_LOCATIVE: in *= 4; break;
+  case C_U64_LOCATIVE:
+  case C_S64_LOCATIVE:
   case C_F64_LOCATIVE: in *= 8; break;
   }
 
@@ -10882,6 +10891,8 @@ void C_ccall C_locative_ref(C_word c, C_word closure, C_word k, C_word loc)
   case C_S16_LOCATIVE: C_kontinue(k, C_fix(*((short *)ptr)));
   case C_U32_LOCATIVE: C_peek_unsigned_integer(0, 0, k, (C_word)(ptr - 1), 0);
   case C_S32_LOCATIVE: C_peek_signed_integer(0, 0, k, (C_word)(ptr - 1), 0);
+  case C_U64_LOCATIVE: C_peek_uint64(0, 0, k, (C_word)(ptr - 1), 0);
+  case C_S64_LOCATIVE: C_peek_int64(0, 0, k, (C_word)(ptr - 1), 0);
   case C_F32_LOCATIVE: C_kontinue_flonum(k, *((float *)ptr));
   case C_F64_LOCATIVE: C_kontinue_flonum(k, *((double *)ptr));
   default: panic(C_text("bad locative type"));
@@ -10940,17 +10951,31 @@ C_regparm C_word C_fcall C_i_locative_set(C_word loc, C_word x)
     break;
 
   case C_U32_LOCATIVE: 
-    if((x & C_FIXNUM_BIT) == 0 && (C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG))
+    if(!C_truep(C_i_exact_integerp(x)))
       barf(C_BAD_ARGUMENT_TYPE_ERROR, "locative-set!", x);
 
     *((C_u32 *)ptr) = C_num_to_unsigned_int(x); 
     break;
 
   case C_S32_LOCATIVE: 
-    if((x & C_FIXNUM_BIT) == 0 && (C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG))
+    if(!C_truep(C_i_exact_integerp(x)))
       barf(C_BAD_ARGUMENT_TYPE_ERROR, "locative-set!", x);
     
     *((C_s32 *)ptr) = C_num_to_int(x); 
+    break;
+
+  case C_U64_LOCATIVE: 
+    if(!C_truep(C_i_exact_integerp(x)))
+      barf(C_BAD_ARGUMENT_TYPE_ERROR, "locative-set!", x);
+
+    *((C_u64 *)ptr) = C_num_to_uint64(x); 
+    break;
+
+  case C_S64_LOCATIVE: 
+    if(!C_truep(C_i_exact_integerp(x)))
+      barf(C_BAD_ARGUMENT_TYPE_ERROR, "locative-set!", x);
+    
+    *((C_s64 *)ptr) = C_num_to_int64(x); 
     break;
 
   case C_F32_LOCATIVE: 

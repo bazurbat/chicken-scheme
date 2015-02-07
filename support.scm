@@ -955,6 +955,7 @@
   (let ((tmap '((nonnull-u8vector . u8vector) (nonnull-u16vector . u16vector)
 		(nonnull-s8vector . s8vector) (nonnull-s16vector . s16vector)
 		(nonnull-u32vector . u32vector) (nonnull-s32vector . s32vector)
+		(nonnull-u64vector . u64vector) (nonnull-s64vector . s64vector)
 		(nonnull-f32vector . f32vector) (nonnull-f64vector . f64vector))))
     (lambda (param type)
       (follow-without-loop
@@ -990,7 +991,8 @@
 	      (if unsafe
 		  param
 		  `(##sys#foreign-struct-wrapper-argument 'pointer-vector ,param) ) )
-	     ((u8vector u16vector s8vector s16vector u32vector s32vector f32vector f64vector)
+	     ((u8vector u16vector s8vector s16vector u32vector s32vector
+			u64vector s64vector f32vector f64vector)
 	      (let ((tmp (gensym)))
 		`(let ((,tmp ,param))
 		   (if ,tmp
@@ -998,7 +1000,10 @@
 			    tmp
 			    `(##sys#foreign-struct-wrapper-argument ',t ,tmp) )
 		       '#f) ) ) )
-	     ((nonnull-u8vector nonnull-u16vector nonnull-s8vector nonnull-s16vector nonnull-u32vector nonnull-s32vector 
+	     ((nonnull-u8vector nonnull-u16vector
+				nonnull-s8vector nonnull-s16vector
+				nonnull-u32vector nonnull-s32vector
+				nonnull-u64vector nonnull-s64vector
 				nonnull-f32vector nonnull-f64vector)
 	      (if unsafe
 		  param
@@ -1231,7 +1236,7 @@
 	 ((arg) '(or boolean pointer-vector))
 	 (else 'pointer-vector)))
       ((nonnull-pointer-vector) 'pointer-vector)
-      ((u8vector u16vector s8vector s16vector u32vector s32vector f32vector f64vector)
+      ((u8vector u16vector s8vector s16vector u32vector s32vector u64vector s64vector f32vector f64vector)
        (case mode
 	 ((arg) `(or boolean (struct ,ft)))
 	 (else `(struct ,ft))))
@@ -1241,6 +1246,8 @@
       ((nonnull-s16vector) '(struct s16vector))
       ((nonnull-u32vector) '(struct u32vector))
       ((nonnull-s32vector) '(struct s32vector))
+      ((nonnull-u64vector) '(struct u64vector))
+      ((nonnull-s64vector) '(struct s64vector))
       ((nonnull-f32vector) '(struct f32vector))
       ((nonnull-f64vector) '(struct f64vector))
       ((integer long size_t integer32 unsigned-integer32 integer64 unsigned-integer64

@@ -92,6 +92,14 @@ EOF
   (##sys#check-structure x 's32vector 's32vector-length)
   (##core#inline "C_u_i_32vector_length" x))
 
+(define (u64vector-length x)
+  (##sys#check-structure x 'u64vector 'u64vector-length)
+  (##core#inline "C_u_i_64vector_length" x))
+
+(define (s64vector-length x)
+  (##sys#check-structure x 's64vector 's64vector-length)
+  (##core#inline "C_u_i_64vector_length" x))
+
 (define (f32vector-length x)
   (##sys#check-structure x 'f32vector 'f32vector-length)
   (##core#inline "C_u_i_32vector_length" x))
@@ -145,6 +153,20 @@ EOF
     (check-int-length y 32 's32vector-set!)
     (check-range i 0 len 's32vector-set!)
     (##core#inline "C_u_i_s32vector_set" x i y)))
+
+(define (u64vector-set! x i y)
+  (##sys#check-structure x 'u64vector 'u64vector-set!)
+  (let ((len (##core#inline "C_u_i_64vector_length" x)))
+    (check-uint-length y 64 'u64vector-set!)
+    (check-range i 0 len 'u64vector-set!)
+    (##core#inline "C_u_i_u64vector_set" x i y)))
+
+(define (s64vector-set! x i y)
+  (##sys#check-structure x 's64vector 's64vector-set!)
+  (let ((len (##core#inline "C_u_i_64vector_length" x)))
+    (check-int-length y 64 's64vector-set!)
+    (check-range i 0 len 's64vector-set!)
+    (##core#inline "C_u_i_s64vector_set" x i y)))
 
 (define (f32vector-set! x i y)
   (##sys#check-structure x 'f32vector 'f32vector-set!)
@@ -216,7 +238,7 @@ EOF
      (##sys#check-structure x 'u32vector 'u32vector-ref)
      (let ((len (##core#inline "C_u_i_u32vector_length" x)))
        (check-range i 0 len 'u32vector-ref)
-       (##core#inline_allocate ("C_a_u_i_u32vector_ref" 4) x i)))
+       (##core#inline_allocate ("C_a_u_i_u32vector_ref" 3) x i)))
    u32vector-set!
    "(u32vector-ref v i)"))
 
@@ -226,9 +248,29 @@ EOF
      (##sys#check-structure x 's32vector 's32vector-ref)
      (let ((len (##core#inline "C_u_i_s32vector_length" x)))
        (check-range i 0 len 's32vector-ref)
-       (##core#inline_allocate ("C_a_u_i_s32vector_ref" 4) x i)))
+       (##core#inline_allocate ("C_a_u_i_s32vector_ref" 3) x i)))
    s32vector-set!
    "(s32vector-ref v i)"))
+
+(define u64vector-ref
+  (getter-with-setter
+   (lambda (x i)
+     (##sys#check-structure x 'u64vector 'u64vector-ref)
+     (let ((len (##core#inline "C_u_i_u64vector_length" x)))
+       (check-range i 0 len 'u64vector-ref)
+       (##core#inline_allocate ("C_a_u_i_u64vector_ref" 4) x i)))
+   u64vector-set!
+   "(u64vector-ref v i)"))
+
+(define s64vector-ref
+  (getter-with-setter
+   (lambda (x i)
+     (##sys#check-structure x 's64vector 's64vector-ref)
+     (let ((len (##core#inline "C_u_i_s64vector_length" x)))
+       (check-range i 0 len 's64vector-ref)
+       (##core#inline_allocate ("C_a_u_i_s64vector_ref" 4) x i)))
+   s64vector-set!
+   "(s64vector-ref v i)"))
 
 (define f32vector-ref
   (getter-with-setter
@@ -343,6 +385,19 @@ EOF
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##core#inline "C_u_i_u32vector_set" v i init) ) ) ) ) ) )
 
+  (set! make-u64vector
+    (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
+      (##sys#check-fixnum len 'make-u64vector)
+      (let ((v (##sys#make-structure 'u64vector (alloc 'make-u64vector (##core#inline "C_fixnum_shift_left" len 3) ext?))))
+	(when (and ext? fin?) (set-finalizer! v ext-free))
+	(if (not init)
+	    v
+	    (begin
+	      (check-uint-length init 64 'make-u64vector)
+	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
+		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
+		(##core#inline "C_u_i_u64vector_set" v i init) ) ) ) ) ) )
+
   (set! make-s32vector
     (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
       (##sys#check-fixnum len 'make-s32vector)
@@ -355,6 +410,19 @@ EOF
 	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
 		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
 		(##core#inline "C_u_i_s32vector_set" v i init) ) ) ) ) ) )
+
+   (set! make-s64vector
+    (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
+      (##sys#check-fixnum len 'make-s64vector)
+      (let ((v (##sys#make-structure 's64vector (alloc 'make-s64vector (##core#inline "C_fixnum_shift_left" len 3) ext?))))
+	(when (and ext? fin?) (set-finalizer! v ext-free))
+	(if (not init)
+	    v
+	    (begin
+	      (check-int-length init 64 'make-s64vector)
+	      (do ((i 0 (##core#inline "C_fixnum_plus" i 1)))
+		  ((##core#inline "C_fixnum_greater_or_equal_p" i len) v)
+		(##core#inline "C_u_i_s64vector_set" v i init) ) ) ) ) ) )
 
   (set! make-f32vector
     (lambda (len #!optional (init #f)  (ext? #f) (fin? #t))
@@ -418,6 +486,8 @@ EOF
 (list->NNNvector s16vector)
 (list->NNNvector u32vector)
 (list->NNNvector s32vector)
+(list->NNNvector u64vector)
+(list->NNNvector s64vector)
 (list->NNNvector f32vector)
 (list->NNNvector f64vector)
 
@@ -442,6 +512,12 @@ EOF
 (define s32vector
   (lambda xs (list->s32vector xs)) )
 
+(define u64vector
+  (lambda xs (list->u64vector xs)) )
+
+(define s64vector
+  (lambda xs (list->s64vector xs)) )
+
 (define f32vector
   (lambda xs (list->f32vector xs)) )
 
@@ -455,7 +531,7 @@ EOF
   (er-macro-transformer
    (lambda (x r c)
      (let* ((tag (##sys#strip-syntax (cadr x)))
-	    (alloc? (pair? (cddr x)))
+	    (alloc (and (pair? (cddr x)) (caddr x)))
 	    (name (string->symbol (string-append (symbol->string tag) "->list"))))
        `(define (,name v)
 	  (##sys#check-structure v ',tag ',name)
@@ -464,8 +540,8 @@ EOF
 	      (if (fx>= i len)
 		  '()
 		  (cons 
-		   ,(if alloc?
-			`(##core#inline_allocate (,(conc "C_a_u_i_" tag "_ref") 4) v i)
+		   ,(if alloc
+			`(##core#inline_allocate (,(conc "C_a_u_i_" tag "_ref") ,alloc) v i)
 			`(##core#inline ,(conc "C_u_i_" tag "_ref") v i))
 		   (loop (fx+ i 1)) ) ) ) ) ) ) )))
 
@@ -473,10 +549,13 @@ EOF
 (NNNvector->list s8vector)
 (NNNvector->list u16vector)
 (NNNvector->list s16vector)
-(NNNvector->list u32vector #t)
-(NNNvector->list s32vector #t)
-(NNNvector->list f32vector #t)
-(NNNvector->list f64vector #t)
+;; The alloc amounts here are for 32-bit words; this over-allocates on 64-bits
+(NNNvector->list u32vector 2)
+(NNNvector->list s32vector 2)
+(NNNvector->list u64vector 3)
+(NNNvector->list s64vector 3)
+(NNNvector->list f32vector 4)
+(NNNvector->list f64vector 4)
 
 
 ;;; Predicates:
@@ -487,6 +566,8 @@ EOF
 (define (s16vector? x) (##sys#structure? x 's16vector))
 (define (u32vector? x) (##sys#structure? x 'u32vector))
 (define (s32vector? x) (##sys#structure? x 's32vector))
+(define (u64vector? x) (##sys#structure? x 'u64vector))
+(define (s64vector? x) (##sys#structure? x 's64vector))
 (define (f32vector? x) (##sys#structure? x 'f32vector))
 (define (f64vector? x) (##sys#structure? x 'f64vector))
 
@@ -536,6 +617,8 @@ EOF
 (define s16vector->blob/shared (pack 's16vector 's16vector->blob/shared))
 (define u32vector->blob/shared (pack 'u32vector 'u32vector->blob/shared))
 (define s32vector->blob/shared (pack 's32vector 's32vector->blob/shared))
+(define u64vector->blob/shared (pack 'u64vector 'u64vector->blob/shared))
+(define s64vector->blob/shared (pack 's64vector 's64vector->blob/shared))
 (define f32vector->blob/shared (pack 'f32vector 'f32vector->blob/shared))
 (define f64vector->blob/shared (pack 'f64vector 'f64vector->blob/shared))
 
@@ -545,6 +628,8 @@ EOF
 (define s16vector->blob (pack-copy 's16vector 's16vector->blob))
 (define u32vector->blob (pack-copy 'u32vector 'u32vector->blob))
 (define s32vector->blob (pack-copy 's32vector 's32vector->blob))
+(define u64vector->blob (pack-copy 'u64vector 'u64vector->blob))
+(define s64vector->blob (pack-copy 's64vector 's64vector->blob))
 (define f32vector->blob (pack-copy 'f32vector 'f32vector->blob))
 (define f64vector->blob (pack-copy 'f64vector 'f64vector->blob))
 
@@ -554,6 +639,8 @@ EOF
 (define blob->s16vector/shared (unpack 's16vector 2 'blob->s16vector/shared))
 (define blob->u32vector/shared (unpack 'u32vector 4 'blob->u32vector/shared))
 (define blob->s32vector/shared (unpack 's32vector 4 'blob->s32vector/shared))
+(define blob->u64vector/shared (unpack 'u64vector 4 'blob->u64vector/shared))
+(define blob->s64vector/shared (unpack 's64vector 4 'blob->s64vector/shared))
 (define blob->f32vector/shared (unpack 'f32vector 4 'blob->f32vector/shared))
 (define blob->f64vector/shared (unpack 'f64vector 8 'blob->f64vector/shared))
 
@@ -563,6 +650,8 @@ EOF
 (define blob->s16vector (unpack-copy 's16vector 2 'blob->s16vector))
 (define blob->u32vector (unpack-copy 'u32vector 4 'blob->u32vector))
 (define blob->s32vector (unpack-copy 's32vector 4 'blob->s32vector))
+(define blob->u64vector (unpack-copy 'u64vector 4 'blob->u64vector))
+(define blob->s64vector (unpack-copy 's64vector 4 'blob->s64vector))
 (define blob->f32vector (unpack-copy 'f32vector 4 'blob->f32vector))
 (define blob->f64vector (unpack-copy 'f64vector 8 'blob->f64vector))
 
@@ -578,6 +667,8 @@ EOF
 		       's16 list->s16vector
 		       'u32 list->u32vector
 		       's32 list->s32vector
+		       'u64 list->u64vector
+		       's64 list->s64vector
 		       'f32 list->f32vector
 		       'f64 list->f64vector) ] )
     (lambda (char port)
@@ -602,6 +693,8 @@ EOF
 			 (s16vector s16 ,s16vector->list)
 			 (u32vector u32 ,u32vector->list)
 			 (s32vector s32 ,s32vector->list)
+			 (u64vector u64 ,u64vector->list)
+			 (s64vector s64 ,s64vector->list)
 			 (f32vector f32 ,f32vector->list)
 			 (f64vector f64 ,f64vector->list) ) ) ) )
 	(cond (tag
@@ -632,9 +725,11 @@ EOF
 (define (subu8vector v from to) (subnvector v 'u8vector 1 from to 'subu8vector))
 (define (subu16vector v from to) (subnvector v 'u16vector 2 from to 'subu16vector))
 (define (subu32vector v from to) (subnvector v 'u32vector 4 from to 'subu32vector))
+(define (subu64vector v from to) (subnvector v 'u64vector 8 from to 'subu64vector))
 (define (subs8vector v from to) (subnvector v 's8vector 1 from to 'subs8vector))
 (define (subs16vector v from to) (subnvector v 's16vector 2 from to 'subs16vector))
 (define (subs32vector v from to) (subnvector v 's32vector 4 from to 'subs32vector))
+(define (subs64vector v from to) (subnvector v 's64vector 4 from to 'subs64vector))
 (define (subf32vector v from to) (subnvector v 'f32vector 4 from to 'subf32vector))
 (define (subf64vector v from to) (subnvector v 'f64vector 8 from to 'subf64vector))
 

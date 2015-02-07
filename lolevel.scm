@@ -119,17 +119,18 @@ EOF
 ;;; Move arbitrary blocks of memory around:
 
 (define move-memory!
-  (let ([memmove1 (foreign-lambda void "C_memmove_o" c-pointer c-pointer int int int)]
-	[memmove2 (foreign-lambda void "C_memmove_o" c-pointer scheme-pointer int int int)]
-	[memmove3 (foreign-lambda void "C_memmove_o" scheme-pointer c-pointer int int int)]
-	[memmove4 (foreign-lambda void "C_memmove_o" scheme-pointer scheme-pointer int int int)]
-	[typerr (lambda (x)
+  (let ((memmove1 (foreign-lambda void "C_memmove_o" c-pointer c-pointer int int int))
+	(memmove2 (foreign-lambda void "C_memmove_o" c-pointer scheme-pointer int int int))
+	(memmove3 (foreign-lambda void "C_memmove_o" scheme-pointer c-pointer int int int))
+	(memmove4 (foreign-lambda void "C_memmove_o" scheme-pointer scheme-pointer int int int))
+	(typerr (lambda (x)
 		  (##sys#error-hook
 		   (foreign-value "C_BAD_ARGUMENT_TYPE_ERROR" int)
-		   'move-memory! x))]
-	[slot1structs '(mmap
-			u8vector u16vector u32vector s8vector s16vector s32vector
-			f32vector f64vector)] )
+		   'move-memory! x)))
+	(slot1structs '(mmap
+			u8vector u16vector u32vector u64vector
+			s8vector s16vector s32vector s64vector
+			f32vector f64vector)) )
     (lambda (from to #!optional n (foffset 0) (toffset 0))
       ;
       (define (nosizerr)
@@ -283,8 +284,10 @@ EOF
 ;	5	s16vector		(C_S16_LOCATIVE)
 ;	6	u32vector		(C_U32_LOCATIVE)
 ;	7	s32vector		(C_S32_LOCATIVE)
-;	8	f32vector		(C_F32_LOCATIVE)
-;	9	f64vector		(C_F64_LOCATIVE)
+;	8	u64vector		(C_U32_LOCATIVE)
+;	9	s64vector		(C_S32_LOCATIVE)
+;	10	f32vector		(C_F32_LOCATIVE)
+;	11	f64vector		(C_F64_LOCATIVE)
 ; 3	Object or #f, if weak (C_word)
 
 (define (make-locative obj . index)
@@ -313,6 +316,8 @@ EOF
 (define (pointer-s16-set! p n) (##core#inline "C_u_i_pointer_s16_set" p n))
 (define (pointer-u32-set! p n) (##core#inline "C_u_i_pointer_u32_set" p n))
 (define (pointer-s32-set! p n) (##core#inline "C_u_i_pointer_s32_set" p n))
+(define (pointer-u64-set! p n) (##core#inline "C_u_i_pointer_u64_set" p n))
+(define (pointer-s64-set! p n) (##core#inline "C_u_i_pointer_s64_set" p n))
 (define (pointer-f32-set! p n) (##core#inline "C_u_i_pointer_f32_set" p n))
 (define (pointer-f64-set! p n) (##core#inline "C_u_i_pointer_f64_set" p n))
 
@@ -342,15 +347,27 @@ EOF
 
 (define pointer-u32-ref
   (getter-with-setter
-   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_u32_ref" 4) p)) ;XXX hardcoded size
+   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_u32_ref" 3) p)) ;XXX hardcoded size
    pointer-u32-set!
    "(pointer-u32-ref p)"))
 
 (define pointer-s32-ref
   (getter-with-setter
-   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_s32_ref" 4) p)) ;XXX hardcoded size
+   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_s32_ref" 3) p)) ;XXX hardcoded size
    pointer-s32-set!
    "(pointer-s32-ref p)"))
+
+(define pointer-u64-ref
+  (getter-with-setter
+   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_u64_ref" 4) p)) ;XXX hardcoded size
+   pointer-u64-set!
+   "(pointer-u64-ref p)"))
+
+(define pointer-s64-ref
+  (getter-with-setter
+   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_s64_ref" 4) p)) ;XXX hardcoded size
+   pointer-s64-set!
+   "(pointer-s64-ref p)"))
 
 (define pointer-f32-ref
   (getter-with-setter

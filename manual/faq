@@ -638,6 +638,10 @@ The following extended bindings are handled specially:
 {{s32vector-length}}
 {{s32vector-ref}}
 {{s32vector-set!}}
+{{s64vector->blob/shared}}
+{{s64vector-length}}
+{{s64vector-ref}}
+{{s64vector-set!}}
 {{s8vector->blob/shared}}
 {{s8vector-length}}
 {{s8vector-ref}}
@@ -660,6 +664,10 @@ The following extended bindings are handled specially:
 {{u32vector-length}}
 {{u32vector-ref}}
 {{u32vector-set!}}
+{{u64vector->blob/shared}}
+{{u64vector-length}}
+{{u64vector-ref}}
+{{u64vector-set!}}
 {{u8vector->blob/shared}}
 {{u8vector-length}}
 {{u8vector-ref}}

@@ -88,6 +88,10 @@
 
 ; pointer-s32-set!
 
+; pointer-u64-set!
+
+; pointer-s64-set!
+
 ; pointer-f32-set!
 
 ; pointer-f64-set!
@@ -111,6 +115,10 @@
 ; pointer-u32-ref
 
 ; pointer-s32-ref
+
+; pointer-u64-ref
+
+; pointer-s64-ref
 
 ; pointer-f32-ref
 
