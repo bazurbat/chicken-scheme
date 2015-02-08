@@ -414,7 +414,11 @@ We can easily instantiate the functor for other inputs:
 <enscript highlight=scheme>
 (module stars (multiply)
   (import scheme)
-  (use srfi-1)
+  (define (list-tabulate n f)
+    (let loop ((i 0))
+      (if (= i n)
+          '()
+          (cons (f i) (loop (+ i 1))))))
   (define (multiply x y) 
     (list-tabulate x (lambda _ (list-tabulate y (lambda _ '*))))))
 
