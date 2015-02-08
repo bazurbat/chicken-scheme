@@ -30,6 +30,8 @@
   (uses data-structures
 	posix))
 
+(import chicken.data-structures)
+
 (include "mini-srfi-1.scm")
 
 (define symbol-table-size 3001)

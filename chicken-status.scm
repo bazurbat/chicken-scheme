@@ -30,8 +30,9 @@
 (module main ()
   
   (import scheme chicken foreign)
-  (import posix data-structures irregex files setup-api extras)
-  (import chicken.ports)
+  (import posix irregex files setup-api extras)
+  (import chicken.data-structures
+	  chicken.ports)
 
   (include "mini-srfi-1.scm")
 

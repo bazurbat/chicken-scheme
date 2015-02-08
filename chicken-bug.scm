@@ -24,9 +24,11 @@
 ; POSSIBILITY OF SUCH DAMAGE.
 
 
-(require-extension posix tcp data-structures utils extras)
+(require-library posix tcp data-structures utils extras)
 
-(import chicken.utils)
+(import posix tcp extras
+	chicken.data-structures
+	chicken.utils)
 
 (define-constant +bug-report-file+ "chicken-bug-report.~a-~a-~a")
 

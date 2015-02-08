@@ -52,6 +52,8 @@
 EOF
 ))
 
+(import chicken.data-structures)
+
 (include "common-declarations.scm")
 
 (register-feature! 'files)

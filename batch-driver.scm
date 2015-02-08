@@ -40,7 +40,8 @@
      user-options-pass user-read-pass user-preprocessor-pass user-pass
      user-post-analysis-pass)
 
-(import chicken scheme extras data-structures files
+(import chicken scheme extras files
+	chicken.data-structures
 	chicken.compiler.support
 	chicken.compiler.compiler-syntax
 	chicken.compiler.core

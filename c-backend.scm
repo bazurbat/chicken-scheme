@@ -38,7 +38,8 @@
      ;; For "foreign" (aka chicken-ffi-syntax):
      foreign-type-declaration)
 
-(import chicken scheme foreign data-structures
+(import chicken scheme foreign
+	chicken.data-structures
 	chicken.compiler.core
 	chicken.compiler.c-platform
 	chicken.compiler.support)

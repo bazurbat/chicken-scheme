@@ -511,6 +511,7 @@ $(foreach lib, $(filter-out chicken,$(COMPILER_OBJECTS_1)),\
 chicken.c: chicken.scm mini-srfi-1.scm \
 		chicken.compiler.batch-driver.import.scm \
 		chicken.compiler.c-platform.import.scm \
+		chicken.data-structures.import.scm \
 		chicken.utils.import.scm
 batch-driver.c: batch-driver.scm mini-srfi-1.scm \
 		chicken.compiler.core.import.scm \
@@ -520,52 +521,72 @@ batch-driver.c: batch-driver.scm mini-srfi-1.scm \
 		chicken.compiler.c-platform.import.scm \
 		chicken.compiler.lfa2.import.scm \
 		chicken.compiler.c-backend.import.scm \
-		chicken.compiler.support.import.scm
+		chicken.compiler.support.import.scm \
+		chicken.data-structures.import.scm
 c-platform.c: c-platform.scm mini-srfi-1.scm \
 		chicken.compiler.optimizer.import.scm \
 		chicken.compiler.support.import.scm \
-		chicken.compiler.core.import.scm
+		chicken.compiler.core.import.scm \
+		chicken.data-structures.import.scm
 c-backend.c: c-backend.scm mini-srfi-1.scm \
 		chicken.compiler.c-platform.import.scm \
 		chicken.compiler.support.import.scm \
-		chicken.compiler.core.import.scm
+		chicken.compiler.core.import.scm \
+		chicken.data-structures.import.scm
 core.c: core.scm mini-srfi-1.scm \
 		chicken.compiler.scrutinizer.import.scm \
-		chicken.compiler.support.import.scm
+		chicken.compiler.support.import.scm \
+		chicken.data-structures.import.scm
 optimizer.c: optimizer.scm mini-srfi-1.scm \
-		chicken.compiler.support.import.scm
+		chicken.compiler.support.import.scm \
+		chicken.data-structures.import.scm
 scrutinizer.c: scrutinizer.scm mini-srfi-1.scm \
 		chicken.compiler.support.import.scm \
+		chicken.data-structures.import.scm \
 		chicken.ports.import.scm
 lfa2.c: lfa2.scm mini-srfi-1.scm \
 		chicken.compiler.support.import.scm
 compiler-syntax.c: compiler-syntax.scm mini-srfi-1.scm \
 		chicken.compiler.support.import.scm \
-		chicken.compiler.core.import.scm
+		chicken.compiler.core.import.scm \
+		chicken.data-structures.import.scm
+chicken-ffi-syntax.c: chicken-ffi-syntax.scm \
+		chicken.data-structures.import.scm
 support.c: support.scm mini-srfi-1.scm \
+		chicken.data-structures.import.scm \
 		chicken.ports.import.scm
 csc.c: csc.scm \
+		chicken.data-structures.import.scm \
 		chicken.utils.import.scm
 csi.c: csi.scm \
+		chicken.data-structures.import.scm \
 		chicken.ports.import.scm
 chicken-bug.c: chicken-bug.scm \
+		chicken.data-structures.import.scm \
 		chicken.utils.import.scm
+chicken-profile.c: chicken-profile.scm \
+		chicken.data-structures.import.scm
 chicken-status.c: chicken-status.scm \
+		chicken.data-structures.import.scm \
 		chicken.ports.import.scm \
 		setup-api.import.scm
 chicken-install.c: chicken-install.scm \
+		chicken.data-structures.import.scm \
 		chicken.ports.import.scm \
 		chicken.utils.import.scm \
 		setup-api.import.scm \
 		setup-download.import.scm
 chicken-uninstall.c: chicken-uninstall.scm \
+		chicken.data-structures.import.scm \
 		chicken.ports.import.scm \
 		chicken.utils.import.scm \
 		setup-api.import.scm
 setup-api.c: setup-api.scm \
+		chicken.data-structures.import.scm \
 		chicken.ports.import.scm \
 		chicken.utils.import.scm
 setup-download.c: setup-download.scm \
+		chicken.data-structures.import.scm \
 		chicken.ports.import.scm \
 		chicken.utils.import.scm \
 		setup-api.import.scm
@@ -573,8 +594,14 @@ posixunix.c: posixunix.scm \
 		chicken.ports.import.scm
 posixwin.c: posixwin.scm \
 		chicken.ports.import.scm
+extras.c: extras.scm \
+		chicken.data-structures.import.scm
+files.c: files.scm \
+		chicken.data-structures.import.scm
 tcp.c: tcp.scm \
 		chicken.ports.import.scm
+utils.c: utils.scm \
+		chicken.data-structures.import.scm
 
 define profile-flags
 $(if $(filter $(basename $(1)),$(PROFILE_OBJECTS)),-profile)
@@ -603,7 +630,7 @@ chicken-syntax.c: $(SRCDIR)chicken-syntax.scm $(SRCDIR)common-declarations.scm $
 chicken-ffi-syntax.c: $(SRCDIR)chicken-ffi-syntax.scm $(SRCDIR)common-declarations.scm $(SRCDIR)mini-srfi-1.scm
 	$(bootstrap-lib)
 data-structures.c: $(SRCDIR)data-structures.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib)
+	$(bootstrap-lib) -emit-import-library chicken.data-structures
 ports.c: $(SRCDIR)ports.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) -emit-import-library chicken.ports
 files.c: $(SRCDIR)files.scm $(SRCDIR)common-declarations.scm

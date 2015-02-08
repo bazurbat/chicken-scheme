@@ -32,9 +32,10 @@
 (module chicken.compiler.compiler-syntax
     (compiler-syntax-statistics)
 
-(import chicken scheme data-structures
+(import chicken scheme
 	chicken.compiler.support
-	chicken.compiler.core)
+	chicken.compiler.core
+	chicken.data-structures)
 
 (include "tweaks.scm")
 (include "mini-srfi-1.scm")

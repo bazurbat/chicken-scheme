@@ -32,6 +32,8 @@
 (declare
   (hide fprintf0 generic-write) )
 
+(import chicken.data-structures)
+
 (include "common-declarations.scm")
 
 (register-feature! 'extras)

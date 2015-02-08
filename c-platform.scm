@@ -42,7 +42,8 @@
      target-include-file words-per-flonum
      parameter-limit small-parameter-limit)
 
-(import chicken scheme data-structures
+(import chicken scheme
+	chicken.data-structures
 	chicken.compiler.optimizer
 	chicken.compiler.support
 	chicken.compiler.core)

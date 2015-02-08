@@ -37,7 +37,8 @@
 
 (import chicken.compiler.batch-driver 
 	chicken.compiler.c-platform
-        chicken.utils)
+	chicken.data-structures
+	chicken.utils)
 
 (include "mini-srfi-1.scm")
 

@@ -26,7 +26,7 @@
 
 
 (declare
-  (uses ports extras)
+  (uses data-structures ports extras)
   (usual-integrations)
   (disable-interrupts)
   (compile-syntax)
@@ -54,7 +54,8 @@ EOF
 	describe dump tty-input? history-list history-count
 	history-add history-ref history-clear history-show) )
 
-(import chicken.ports)
+(import chicken.data-structures
+	chicken.ports)
 
 
 ;;; Parameters:

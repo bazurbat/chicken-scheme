@@ -240,6 +240,8 @@ files.import.scm
 files.import.c
 chicken.import.scm
 chicken.import.c
+chicken.data-structures.import.scm
+chicken.data-structures.import.c
 chicken.ports.import.scm
 chicken.ports.import.c
 chicken.utils.import.scm
@@ -248,14 +250,12 @@ foreign.import.scm
 foreign.import.c
 lolevel.import.scm
 srfi-4.import.scm
-data-structures.import.scm
 posix.import.scm
 extras.import.scm
 irregex.import.scm
 tcp.import.scm
 lolevel.import.c
 srfi-4.import.c
-data-structures.import.c
 posix.import.c
 extras.import.c
 irregex.import.c

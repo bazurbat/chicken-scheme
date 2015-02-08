@@ -37,8 +37,9 @@
 			temporary-directory)
 
   (import scheme chicken foreign)
-  (import extras irregex posix data-structures tcp files
+  (import extras irregex posix tcp files
 	  setup-api
+	  chicken.data-structures
 	  chicken.utils)
 
   (include "mini-srfi-1.scm")

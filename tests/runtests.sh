@@ -37,7 +37,7 @@ mkdir -p test-repository
 
 for x in setup-api.so setup-api.import.so setup-download.so \
       setup-download.import.so chicken.import.so lolevel.import.so \
-      srfi-4.import.so data-structures.import.so \
+      srfi-4.import.so chicken.data-structures.import.so \
       chicken.ports.import.so chicken.utils.import.so files.import.so \
       posix.import.so \
       extras.import.so \
@@ -266,7 +266,7 @@ $interpret -s loopy-test.scm
 
 echo "======================================== r4rstest ..."
 echo "(expect mult-float-print-test to fail)"
-$interpret -e '(set! ##sys#procedure->string (constantly "#<procedure>"))' \
+$interpret -R data-structures -e '(set! ##sys#procedure->string (constantly "#<procedure>"))' \
   -i -s r4rstest.scm >r4rstest.log
 
 diff $DIFF_OPTS r4rstest.out r4rstest.log

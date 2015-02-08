@@ -531,19 +531,19 @@ EOF
 (define-syntax NNNvector->list
   (er-macro-transformer
    (lambda (x r c)
-     (let* ((tag (##sys#strip-syntax (cadr x)))
+     (let* ((tag (symbol->string (##sys#strip-syntax (cadr x))))
 	    (alloc (and (pair? (cddr x)) (caddr x)))
-	    (name (string->symbol (string-append (symbol->string tag) "->list"))))
+	    (name (string->symbol (string-append tag "->list"))))
        `(define (,name v)
-	  (##sys#check-structure v ',tag ',name)
-	  (let ((len (##core#inline ,(conc "C_u_i_" tag "_length") v)))
+	  (##sys#check-structure v ',(string->symbol tag) ',name)
+	  (let ((len (##core#inline ,(string-append "C_u_i_" tag "_length") v)))
 	    (let loop ((i 0))
 	      (if (fx>= i len)
 		  '()
 		  (cons 
 		   ,(if alloc
-			`(##core#inline_allocate (,(conc "C_a_u_i_" tag "_ref") ,alloc) v i)
-			`(##core#inline ,(conc "C_u_i_" tag "_ref") v i))
+			`(##core#inline_allocate (,(string-append "C_a_u_i_" tag "_ref") ,alloc) v i)
+			`(##core#inline ,(string-append "C_u_i_" tag "_ref") v i))
 		   (loop (fx+ i 1)) ) ) ) ) ) ) )))
 
 (NNNvector->list u8vector)

@@ -2,6 +2,7 @@
 
 
 (import foreign)
+(use-for-syntax data-structures)
 (use srfi-4)
 
 ;; test dropping of previous toplevel assignments
