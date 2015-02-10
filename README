@@ -286,6 +286,7 @@
 	|   |       |-- chicken.import.so
 	|   |       |-- chicken.data-structures.import.so
 	|   |       |-- chicken.ports.import.so
+	|   |       |-- chicken.tcp.import.so
 	|   |       |-- chicken.utils.import.so
 	|   |       |-- csi.import.so
 	|   |       |-- extras.import.so
@@ -300,7 +301,6 @@
 	|   |       |-- setup-download.import.so
 	|   |       |-- setup-download.so
 	|   |       |-- srfi-4.import.so
-	|   |       |-- tcp.import.so
 	|   |       `-- types.db
 	|   |-- libchicken.a
 	|   |-- libchicken.dll.a                      (Windows)

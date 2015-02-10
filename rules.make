@@ -563,6 +563,7 @@ csi.c: csi.scm \
 		chicken.ports.import.scm
 chicken-bug.c: chicken-bug.scm \
 		chicken.data-structures.import.scm \
+		chicken.tcp.import.scm \
 		chicken.utils.import.scm
 chicken-profile.c: chicken-profile.scm \
 		chicken.data-structures.import.scm
@@ -588,6 +589,7 @@ setup-api.c: setup-api.scm \
 setup-download.c: setup-download.scm \
 		chicken.data-structures.import.scm \
 		chicken.ports.import.scm \
+		chicken.tcp.import.scm \
 		chicken.utils.import.scm \
 		setup-api.import.scm
 posixunix.c: posixunix.scm \
@@ -638,7 +640,7 @@ files.c: $(SRCDIR)files.scm $(SRCDIR)common-declarations.scm
 lolevel.c: $(SRCDIR)lolevel.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 tcp.c: $(SRCDIR)tcp.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) 
+	$(bootstrap-lib) -emit-import-library chicken.tcp
 srfi-4.c: $(SRCDIR)srfi-4.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib) 
 utils.c: $(SRCDIR)utils.scm $(SRCDIR)common-declarations.scm

@@ -29,9 +29,6 @@
   (unit tcp)
   (uses ports scheduler)
   (disable-interrupts) ; Avoid race conditions around errno/WSAGetLastError
-  (export tcp-close tcp-listen tcp-connect tcp-accept tcp-accept-ready? ##sys#tcp-port->fileno tcp-listener? tcp-addresses
-	  tcp-abandon-port tcp-listener-port tcp-listener-fileno tcp-port-numbers tcp-buffer-size
-	  tcp-read-timeout tcp-write-timeout tcp-accept-timeout tcp-connect-timeout)
   (foreign-declare #<<EOF
 #ifdef _WIN32
 # include <winsock2.h>
@@ -140,9 +137,16 @@ static int C_set_socket_options(int socket)
 EOF
 ) )
 
-(include "common-declarations.scm")
+(module chicken.tcp
+  (tcp-close tcp-listen tcp-connect tcp-accept tcp-accept-ready?
+   tcp-listener? tcp-addresses tcp-abandon-port tcp-listener-port
+   tcp-listener-fileno tcp-port-numbers tcp-buffer-size tcp-read-timeout
+   tcp-write-timeout tcp-accept-timeout tcp-connect-timeout)
 
+(import scheme chicken foreign)
 (import chicken.ports)
+
+(include "common-declarations.scm")
 
 (register-feature! 'tcp)
 
@@ -660,3 +664,5 @@ EOF
 (define (tcp-listener-fileno l)
   (##sys#check-structure l 'tcp-listener 'tcp-listener-fileno)
   (##sys#slot l 1) )
+
+)

@@ -26,8 +26,9 @@
 
 (require-library posix tcp data-structures utils extras)
 
-(import posix tcp extras
+(import posix extras
 	chicken.data-structures
+	chicken.tcp
 	chicken.utils)
 
 (define-constant +bug-report-file+ "chicken-bug-report.~a-~a-~a")

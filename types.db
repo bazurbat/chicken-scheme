@@ -2215,27 +2215,27 @@
 
 ;; tcp
 
-(tcp-abandon-port (#(procedure #:clean #:enforce) tcp-abandon-port (port) undefined))
-(tcp-accept (#(procedure #:clean #:enforce) tcp-accept ((struct tcp-listener)) input-port output-port))
-(tcp-accept-ready? (#(procedure #:clean #:enforce) tcp-accept-ready? ((struct tcp-listener)) boolean))
-(tcp-accept-timeout (#(procedure #:clean #:enforce) tcp-accept-timeout (#!optional (or false integer)) (or false integer)))
-(tcp-addresses (#(procedure #:clean #:enforce) tcp-addresses (port) string string))
-(tcp-buffer-size (#(procedure #:clean #:enforce) tcp-buffer-size (#!optional fixnum) fixnum))
-(tcp-close (#(procedure #:clean #:enforce) tcp-close ((struct tcp-listener)) undefined))
-(tcp-connect (#(procedure #:clean #:enforce) tcp-connect (string #!optional fixnum) input-port output-port))
-(tcp-connect-timeout (#(procedure #:clean #:enforce) tcp-connect-timeout (#!optional (or false integer)) (or false integer)))
-(tcp-listen (#(procedure #:clean #:enforce) tcp-listen (fixnum #!optional fixnum *) (struct tcp-listener)))
+(chicken.tcp#tcp-abandon-port (#(procedure #:clean #:enforce) chicken.tcp#tcp-abandon-port (port) undefined))
+(chicken.tcp#tcp-accept (#(procedure #:clean #:enforce) chicken.tcp#tcp-accept ((struct tcp-listener)) input-port output-port))
+(chicken.tcp#tcp-accept-ready? (#(procedure #:clean #:enforce) chicken.tcp#tcp-accept-ready? ((struct tcp-listener)) boolean))
+(chicken.tcp#tcp-accept-timeout (#(procedure #:clean #:enforce) chicken.tcp#tcp-accept-timeout (#!optional (or false integer)) (or false integer)))
+(chicken.tcp#tcp-addresses (#(procedure #:clean #:enforce) chicken.tcp#tcp-addresses (port) string string))
+(chicken.tcp#tcp-buffer-size (#(procedure #:clean #:enforce) chicken.tcp#tcp-buffer-size (#!optional fixnum) fixnum))
+(chicken.tcp#tcp-close (#(procedure #:clean #:enforce) chicken.tcp#tcp-close ((struct tcp-listener)) undefined))
+(chicken.tcp#tcp-connect (#(procedure #:clean #:enforce) chicken.tcp#tcp-connect (string #!optional fixnum) input-port output-port))
+(chicken.tcp#tcp-connect-timeout (#(procedure #:clean #:enforce) chicken.tcp#tcp-connect-timeout (#!optional (or false integer)) (or false integer)))
+(chicken.tcp#tcp-listen (#(procedure #:clean #:enforce) chicken.tcp#tcp-listen (fixnum #!optional fixnum *) (struct tcp-listener)))
 
-(tcp-listener-fileno (#(procedure #:clean #:enforce) tcp-listener-fileno ((struct tcp-listener)) fixnum)
+(chicken.tcp#tcp-listener-fileno (#(procedure #:clean #:enforce) chicken.tcp#tcp-listener-fileno ((struct tcp-listener)) fixnum)
 		     (((struct tcp-listener)) (##sys#slot #(1) '1)))
 
-(tcp-listener-port (#(procedure #:clean #:enforce) tcp-listener-port ((struct tcp-listener)) fixnum))
+(chicken.tcp#tcp-listener-port (#(procedure #:clean #:enforce) chicken.tcp#tcp-listener-port ((struct tcp-listener)) fixnum))
 
-(tcp-listener? (#(procedure #:clean #:predicate (struct tcp-listener)) tcp-listener? (*) boolean))
+(chicken.tcp#tcp-listener? (#(procedure #:clean #:predicate (struct tcp-listener)) chicken.tcp#tcp-listener? (*) boolean))
 
-(tcp-port-numbers (#(procedure #:clean #:enforce) tcp-port-numbers (port) fixnum fixnum))
-(tcp-read-timeout (#(procedure #:clean #:enforce) tcp-read-timeout (#!optional (or false integer)) (or false integer)))
-(tcp-write-timeout (#(procedure #:clean #:enforce) tcp-write-timeout (#!optional (or false integer)) (or false integer)))
+(chicken.tcp#tcp-port-numbers (#(procedure #:clean #:enforce) chicken.tcp#tcp-port-numbers (port) fixnum fixnum))
+(chicken.tcp#tcp-read-timeout (#(procedure #:clean #:enforce) chicken.tcp#tcp-read-timeout (#!optional (or false integer)) (or false integer)))
+(chicken.tcp#tcp-write-timeout (#(procedure #:clean #:enforce) chicken.tcp#tcp-write-timeout (#!optional (or false integer)) (or false integer)))
 
 
 ;; utils
