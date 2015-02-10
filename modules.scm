@@ -917,6 +917,7 @@
 (##sys#register-module-alias 'files 'chicken.files)
 (##sys#register-module-alias 'lolevel 'chicken.lolevel)
 (##sys#register-module-alias 'ports 'chicken.ports)
+(##sys#register-module-alias 'posix 'chicken.posix)
 (##sys#register-module-alias 'tcp 'chicken.tcp)
 (##sys#register-module-alias 'utils 'chicken.utils)
 

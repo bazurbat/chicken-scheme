@@ -41,9 +41,10 @@
    qs)
 
 (import scheme chicken)
-(import extras foreign irregex posix)
+(import extras foreign irregex)
 (import chicken.data-structures
-	chicken.files)
+	chicken.files
+	chicken.posix)
 
 (include "common-declarations.scm")
 

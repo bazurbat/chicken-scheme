@@ -30,7 +30,8 @@
   (uses data-structures
 	posix))
 
-(import chicken.data-structures)
+(import chicken.data-structures
+	chicken.posix)
 
 (include "mini-srfi-1.scm")
 

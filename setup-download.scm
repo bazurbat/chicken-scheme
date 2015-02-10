@@ -37,10 +37,11 @@
 			temporary-directory)
 
   (import scheme chicken foreign)
-  (import extras irregex posix
+  (import extras irregex
 	  setup-api
 	  chicken.data-structures
 	  chicken.files
+	  chicken.posix
 	  chicken.tcp
 	  chicken.utils)
 

@@ -288,6 +288,7 @@
 	|   |       |-- chicken.files.import.so
 	|   |       |-- chicken.lolevel.import.so
 	|   |       |-- chicken.ports.import.so
+	|   |       |-- chicken.posix.import.so
 	|   |       |-- chicken.tcp.import.so
 	|   |       |-- chicken.utils.import.so
 	|   |       |-- csi.import.so
@@ -295,7 +296,6 @@
 	|   |       |-- foreign.import.so
 	|   |       |-- irregex.import.so
 	|   |       |-- modules.db
-	|   |       |-- posix.import.so
 	|   |       |-- setup-api.import.so
 	|   |       |-- setup-api.so
 	|   |       |-- setup-download.import.so

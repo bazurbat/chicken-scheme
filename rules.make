@@ -508,6 +508,10 @@ $(foreach lib, $(DYNAMIC_IMPORT_LIBRARIES),\
 $(foreach lib, $(filter-out chicken,$(COMPILER_OBJECTS_1)),\
           $(eval $(call declare-emitted-compiler-import-lib-dependency,$(lib))))
 
+# posix declared manually, as it varies based on POSIXFILE
+.SECONDARY: chicken.posix.import.scm
+chicken.posix.import.scm: $(POSIXFILE).c
+
 chicken.c: chicken.scm mini-srfi-1.scm \
 		chicken.compiler.batch-driver.import.scm \
 		chicken.compiler.c-platform.import.scm \
@@ -575,11 +579,13 @@ chicken-status.c: chicken-status.scm \
 		chicken.data-structures.import.scm \
 		chicken.files.import.scm \
 		chicken.ports.import.scm \
+		chicken.posix.import.scm \
 		setup-api.import.scm
 chicken-install.c: chicken-install.scm \
 		chicken.data-structures.import.scm \
 		chicken.files.import.scm \
 		chicken.ports.import.scm \
+		chicken.posix.import.scm \
 		chicken.utils.import.scm \
 		setup-api.import.scm \
 		setup-download.import.scm
@@ -587,17 +593,20 @@ chicken-uninstall.c: chicken-uninstall.scm \
 		chicken.data-structures.import.scm \
 		chicken.files.import.scm \
 		chicken.ports.import.scm \
+		chicken.posix.import.scm \
 		chicken.utils.import.scm \
 		setup-api.import.scm
 setup-api.c: setup-api.scm \
 		chicken.data-structures.import.scm \
 		chicken.files.import.scm \
 		chicken.ports.import.scm \
+		chicken.posix.import.scm \
 		chicken.utils.import.scm
 setup-download.c: setup-download.scm \
 		chicken.data-structures.import.scm \
 		chicken.files.import.scm \
 		chicken.ports.import.scm \
+		chicken.posix.import.scm \
 		chicken.tcp.import.scm \
 		chicken.utils.import.scm \
 		setup-api.import.scm
@@ -615,7 +624,8 @@ tcp.c: tcp.scm \
 		chicken.ports.import.scm
 utils.c: utils.scm \
 		chicken.data-structures.import.scm \
-		chicken.files.import.scm
+		chicken.files.import.scm \
+		chicken.posix.import.scm
 
 define profile-flags
 $(if $(filter $(basename $(1)),$(PROFILE_OBJECTS)),-profile)
@@ -634,9 +644,9 @@ modules.c: $(SRCDIR)modules.scm $(SRCDIR)common-declarations.scm $(SRCDIR)mini-s
 extras.c: $(SRCDIR)extras.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 posixunix.c: $(SRCDIR)posixunix.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) 
+	$(bootstrap-lib) -emit-import-library chicken.posix
 posixwin.c: $(SRCDIR)posixwin.scm $(SRCDIR)posix-common.scm $(SRCDIR)common-declarations.scm
-	$(bootstrap-lib) 
+	$(bootstrap-lib) -emit-import-library chicken.posix
 irregex.c: $(SRCDIR)irregex.scm $(SRCDIR)irregex-core.scm $(SRCDIR)irregex-utils.scm $(SRCDIR)common-declarations.scm
 	$(bootstrap-lib)
 chicken-syntax.c: $(SRCDIR)chicken-syntax.scm $(SRCDIR)common-declarations.scm $(SRCDIR)mini-srfi-1.scm
@@ -720,10 +730,10 @@ dist: distfiles html
 # Jim's `manual-labor' must be installed (just run "chicken-install manual-labor")
 html:
 	$(MAKEDIR_COMMAND) $(MAKEDIR_COMMAND_OPTIONS) $(SRCDIR)manual-html
-	manual-labor $(SRCDIR)manual $(SRCDIR)manual-html
-	$(COPY_COMMAND) $(SRCDIR)chicken.png manual-html
-	$(COPY_COMMAND) $(SRCDIR)manual.css manual-html
-	$(COPY_COMMAND) $(SRCDIR)index.html manual-html
+	#manual-labor $(SRCDIR)manual $(SRCDIR)manual-html
+	#$(COPY_COMMAND) $(SRCDIR)chicken.png manual-html
+	#$(COPY_COMMAND) $(SRCDIR)manual.css manual-html
+	#$(COPY_COMMAND) $(SRCDIR)index.html manual-html
 
 # cleaning up
 

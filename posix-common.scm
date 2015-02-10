@@ -25,7 +25,6 @@
 
 
 (declare 
-  (hide ##sys#stat posix-error check-time-vector ##sys#find-files)
   (foreign-declare #<<EOF
 
 #include <signal.h>
@@ -351,6 +350,9 @@ EOF
 (define fileno/stdin _stdin_fileno)
 (define fileno/stdout _stdout_fileno)
 (define fileno/stderr _stderr_fileno)
+
+(define open-input-file*)
+(define open-output-file*)
 
 (let ()
   (define (mode inp m loc)
