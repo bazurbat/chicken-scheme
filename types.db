@@ -1662,31 +1662,31 @@
 
 ;; lolevel
 
-(address->pointer (#(procedure #:clean #:enforce) address->pointer (fixnum) pointer)
+(chicken.lolevel#address->pointer (#(procedure #:clean #:enforce) chicken.lolevel#address->pointer (fixnum) pointer)
 		  ((fixnum) (##sys#address->pointer #(1))))
 
-(align-to-word
+(chicken.lolevel#align-to-word
  (#(procedure #:clean) 
-  align-to-word
+  chicken.lolevel#align-to-word
   ((or number pointer locative procedure port)) 
   (or pointer number)))
 
-(allocate (#(procedure #:clean #:enforce) allocate (fixnum) (or false pointer)))
-(block-ref (#(procedure #:clean #:enforce) block-ref (* fixnum) *))
-(block-set! (#(procedure #:enforce) block-set! (* fixnum *) *))
-(extend-procedure (#(procedure #:clean #:enforce) extend-procedure (procedure *) procedure))
-(extended-procedure? (#(procedure #:clean) extended-procedure (*) boolean))
-(free (#(procedure #:clean #:enforce) free (pointer) undefined))
-(locative->object (#(procedure #:clean #:enforce) locative->object (locative) *))
-(locative-ref (#(procedure #:clean #:enforce) locative-ref (locative) *))
-(locative-set! (#(procedure #:enforce) locative-set! (locative *) *))
-(locative? (#(procedure #:pure #:predicate locative) locative? (*) boolean))
-(make-locative (#(procedure #:clean #:enforce) make-locative (* #!optional fixnum) locative))
-(make-pointer-vector (#(procedure #:clean #:enforce) make-pointer-vector (fixnum #!optional (or pointer false)) pointer-vector))
-(make-record-instance (#(procedure #:clean) make-record-instance (symbol #!rest) *))
-(make-weak-locative (#(procedure #:clean #:enforce) make-weak-locative (* #!optional fixnum) locative))
+(chicken.lolevel#allocate (#(procedure #:clean #:enforce) chicken.lolevel#allocate (fixnum) (or false pointer)))
+(chicken.lolevel#block-ref (#(procedure #:clean #:enforce) chicken.lolevel#block-ref (* fixnum) *))
+(chicken.lolevel#block-set! (#(procedure #:enforce) chicken.lolevel#block-set! (* fixnum *) *))
+(chicken.lolevel#extend-procedure (#(procedure #:clean #:enforce) chicken.lolevel#extend-procedure (procedure *) procedure))
+(chicken.lolevel#extended-procedure? (#(procedure #:clean) chicken.lolevel#extended-procedure (*) boolean))
+(chicken.lolevel#free (#(procedure #:clean #:enforce) chicken.lolevel#free (pointer) undefined))
+(chicken.lolevel#locative->object (#(procedure #:clean #:enforce) chicken.lolevel#locative->object (locative) *))
+(chicken.lolevel#locative-ref (#(procedure #:clean #:enforce) chicken.lolevel#locative-ref (locative) *))
+(chicken.lolevel#locative-set! (#(procedure #:enforce) chicken.lolevel#locative-set! (locative *) *))
+(chicken.lolevel#locative? (#(procedure #:pure #:predicate locative) chicken.lolevel#locative? (*) boolean))
+(chicken.lolevel#make-locative (#(procedure #:clean #:enforce) chicken.lolevel#make-locative (* #!optional fixnum) locative))
+(chicken.lolevel#make-pointer-vector (#(procedure #:clean #:enforce) chicken.lolevel#make-pointer-vector (fixnum #!optional (or pointer false)) pointer-vector))
+(chicken.lolevel#make-record-instance (#(procedure #:clean) chicken.lolevel#make-record-instance (symbol #!rest) *))
+(chicken.lolevel#make-weak-locative (#(procedure #:clean #:enforce) chicken.lolevel#make-weak-locative (* #!optional fixnum) locative))
 
-(move-memory! (#(procedure #:enforce) move-memory! (* * #!optional fixnum fixnum fixnum) *)
+(chicken.lolevel#move-memory! (#(procedure #:enforce) chicken.lolevel#move-memory! (* * #!optional fixnum fixnum fixnum) *)
 	      ((pointer pointer fixnum)
 	       (##core#inline "C_copy_ptr_memory" #(2) #(1) #(3) '0 '0))
 	      ((pointer pointer fixnum fixnum)
@@ -1700,92 +1700,92 @@
 	      ((locative locative fixnum fixnum fixnum)
 	       (##core#inline "C_copy_ptr_memory" #(2) #(1) #(3) #(5) #(4))))
 
-(mutate-procedure!
- (#(procedure #:enforce) mutate-procedure! (procedure (procedure (procedure) . *)) procedure))
+(chicken.lolevel#mutate-procedure!
+ (#(procedure #:enforce) chicken.lolevel#mutate-procedure! (procedure (procedure (procedure) . *)) procedure))
 
-(number-of-bytes (#(procedure #:clean) number-of-bytes (*) fixnum)
+(chicken.lolevel#number-of-bytes (#(procedure #:clean) chicken.lolevel#number-of-bytes (*) fixnum)
 		 (((or blob string)) (##sys#size #(1)))
 		 (((or port procedure symbol pair vector locative float pointer-vector))
 		  ;; would be applicable to all structure types, but we can't specify
 		  ;; "(struct *)" (yet)
 		  (##core#inline "C_bytes" (##sys#size #(1)))))
 
-(number-of-slots (#(procedure #:clean #:foldable) number-of-slots (*) fixnum)
+(chicken.lolevel#number-of-slots (#(procedure #:clean #:foldable) chicken.lolevel#number-of-slots (*) fixnum)
 		 (((or vector symbol pair)) (##sys#size #(1))))
 
-(object->pointer (#(procedure #:clean) object->pointer (*) *))
-(object-become! (procedure object-become! (list) *))
-(object-copy (#(procedure #:clean) object-copy (*) *))
-(pointer+ (#(procedure #:clean #:enforce) pointer+ ((or pointer procedure port locative) fixnum) pointer))
+(chicken.lolevel#object->pointer (#(procedure #:clean) chicken.lolevel#object->pointer (*) *))
+(chicken.lolevel#object-become! (procedure chicken.lolevel#object-become! (list) *))
+(chicken.lolevel#object-copy (#(procedure #:clean) chicken.lolevel#object-copy (*) *))
+(chicken.lolevel#pointer+ (#(procedure #:clean #:enforce) chicken.lolevel#pointer+ ((or pointer procedure port locative) fixnum) pointer))
 
-(pointer->address (#(procedure #:clean #:enforce) pointer->address ((or pointer procedure port locative)) integer)
+(chicken.lolevel#pointer->address (#(procedure #:clean #:enforce) chicken.lolevel#pointer->address ((or pointer procedure port locative)) integer)
 		  ((pointer) (##sys#pointer->address #(1))))
 
-(pointer->object (#(procedure #:clean #:enforce) pointer->object (pointer) *)
+(chicken.lolevel#pointer->object (#(procedure #:clean #:enforce) chicken.lolevel#pointer->object (pointer) *)
 		 ((pointer) (##core#inline "C_pointer_to_object" #(1))))
 
-(pointer-like? (#(procedure #:pure #:predicate (or pointer locative procedure port)) pointer-like? (*) boolean)
+(chicken.lolevel#pointer-like? (#(procedure #:pure #:predicate (or pointer locative procedure port)) chicken.lolevel#pointer-like? (*) boolean)
 	       (((or pointer locative procedure port)) (let ((#(tmp) #(1))) '#t)))
 
-(pointer-f32-ref (#(procedure #:clean #:enforce) pointer-f32-ref (pointer) number))
-(pointer-f32-set! (#(procedure #:clean #:enforce) pointer-f32-set! (pointer number) undefined))
-(pointer-f64-ref (#(procedure #:clean #:enforce) pointer-f64-ref (pointer) number))
-(pointer-f64-set! (#(procedure #:clean #:enforce) pointer-f64-set! (pointer number) undefined))
-(pointer-vector (#(procedure #:clean #:enforce) pointer-vector (#!rest pointer-vector) boolean))
+(chicken.lolevel#pointer-f32-ref (#(procedure #:clean #:enforce) chicken.lolevel#pointer-f32-ref (pointer) number))
+(chicken.lolevel#pointer-f32-set! (#(procedure #:clean #:enforce) chicken.lolevel#pointer-f32-set! (pointer number) undefined))
+(chicken.lolevel#pointer-f64-ref (#(procedure #:clean #:enforce) chicken.lolevel#pointer-f64-ref (pointer) number))
+(chicken.lolevel#pointer-f64-set! (#(procedure #:clean #:enforce) chicken.lolevel#pointer-f64-set! (pointer number) undefined))
+(chicken.lolevel#pointer-vector (#(procedure #:clean #:enforce) chicken.lolevel#pointer-vector (#!rest pointer-vector) boolean))
 
-(pointer-vector? (#(procedure #:pure #:predicate pointer-vector) pointer-vector? (*) boolean))
+(chicken.lolevel#pointer-vector? (#(procedure #:pure #:predicate pointer-vector) chicken.lolevel#pointer-vector? (*) boolean))
 
-(pointer-vector-fill! (#(procedure #:clean #:enforce) pointer-vector-fill! (pointer-vector (or pointer false)) undefined))
+(chicken.lolevel#pointer-vector-fill! (#(procedure #:clean #:enforce) chicken.lolevel#pointer-vector-fill! (pointer-vector (or pointer false)) undefined))
 
-(pointer-vector-length (#(procedure #:clean #:enforce) pointer-vector-length (pointer-vector) fixnum)
+(chicken.lolevel#pointer-vector-length (#(procedure #:clean #:enforce) chicken.lolevel#pointer-vector-length (pointer-vector) fixnum)
 		       ((pointer-vector) (##sys#slot #(1) '1)))
 
-(pointer-vector-ref (#(procedure #:clean #:enforce) pointer-vector-ref (pointer-vector fixnum) (or pointer false)))
-(pointer-vector-set! (#(procedure #:clean #:enforce) pointer-vector-set! (pointer-vector fixnum (or pointer false)) undefined))
-(pointer-s16-ref (#(procedure #:clean #:enforce) pointer-s16-ref (pointer) fixnum))
-(pointer-s16-set! (#(procedure #:clean #:enforce) pointer-s16-set! (pointer fixnum) undefined))
-(pointer-s32-ref (#(procedure #:clean #:enforce) pointer-s32-ref (pointer) integer))
-(pointer-s32-set! (#(procedure #:clean #:enforce) pointer-s32-set! (pointer integer) undefined))
-(pointer-s64-ref (#(procedure #:clean #:enforce) pointer-s64-ref (pointer) integer))
-(pointer-s64-set! (#(procedure #:clean #:enforce) pointer-s64-set! (pointer integer) undefined))
-(pointer-s8-ref (#(procedure #:clean #:enforce) pointer-s8-ref (pointer) fixnum))
-(pointer-s8-set! (#(procedure #:clean #:enforce) pointer-s8-set! (pointer fixnum) undefined))
+(chicken.lolevel#pointer-vector-ref (#(procedure #:clean #:enforce) chicken.lolevel#pointer-vector-ref (pointer-vector fixnum) (or pointer false)))
+(chicken.lolevel#pointer-vector-set! (#(procedure #:clean #:enforce) chicken.lolevel#pointer-vector-set! (pointer-vector fixnum (or pointer false)) undefined))
+(chicken.lolevel#pointer-s16-ref (#(procedure #:clean #:enforce) chicken.lolevel#pointer-s16-ref (pointer) fixnum))
+(chicken.lolevel#pointer-s16-set! (#(procedure #:clean #:enforce) chicken.lolevel#pointer-s16-set! (pointer fixnum) undefined))
+(chicken.lolevel#pointer-s32-ref (#(procedure #:clean #:enforce) chicken.lolevel#pointer-s32-ref (pointer) integer))
+(chicken.lolevel#pointer-s32-set! (#(procedure #:clean #:enforce) chicken.lolevel#pointer-s32-set! (pointer integer) undefined))
+(chicken.lolevel#pointer-s64-ref (#(procedure #:clean #:enforce) chicken.lolevel#pointer-s64-ref (pointer) integer))
+(chicken.lolevel#pointer-s64-set! (#(procedure #:clean #:enforce) chicken.lolevel#pointer-s64-set! (pointer integer) undefined))
+(chicken.lolevel#pointer-s8-ref (#(procedure #:clean #:enforce) chicken.lolevel#pointer-s8-ref (pointer) fixnum))
+(chicken.lolevel#pointer-s8-set! (#(procedure #:clean #:enforce) chicken.lolevel#pointer-s8-set! (pointer fixnum) undefined))
 
-(pointer-tag (#(procedure #:clean #:enforce) pointer-tag ((or pointer locative procedure port)) *)
+(chicken.lolevel#pointer-tag (#(procedure #:clean #:enforce) chicken.lolevel#pointer-tag ((or pointer locative procedure port)) *)
 	     (((or locative procedure port)) (let ((#(tmp) #(1))) '#f)))
 
-(pointer-u16-ref (#(procedure #:clean #:enforce) pointer-u16-ref (pointer) fixnum))
-(pointer-u16-set! (#(procedure #:clean #:enforce) pointer-u16-set! (pointer fixnum) undefined))
-(pointer-u32-ref (#(procedure #:clean #:enforce) pointer-u32-ref (pointer) integer))
-(pointer-u32-set! (#(procedure #:clean #:enforce) pointer-u32-set! (pointer integer) undefined))
-(pointer-u64-ref (#(procedure #:clean #:enforce) pointer-u64-ref (pointer) integer))
-(pointer-u64-set! (#(procedure #:clean #:enforce) pointer-u64-set! (pointer integer) undefined))
-(pointer-u8-ref (#(procedure #:clean #:enforce) pointer-u8-ref (pointer) fixnum))
-(pointer-u8-set! (#(procedure #:clean #:enforce) pointer-u8-set! (pointer fixnum) undefined))
+(chicken.lolevel#pointer-u16-ref (#(procedure #:clean #:enforce) chicken.lolevel#pointer-u16-ref (pointer) fixnum))
+(chicken.lolevel#pointer-u16-set! (#(procedure #:clean #:enforce) chicken.lolevel#pointer-u16-set! (pointer fixnum) undefined))
+(chicken.lolevel#pointer-u32-ref (#(procedure #:clean #:enforce) chicken.lolevel#pointer-u32-ref (pointer) integer))
+(chicken.lolevel#pointer-u32-set! (#(procedure #:clean #:enforce) chicken.lolevel#pointer-u32-set! (pointer integer) undefined))
+(chicken.lolevel#pointer-u64-ref (#(procedure #:clean #:enforce) chicken.lolevel#pointer-u64-ref (pointer) integer))
+(chicken.lolevel#pointer-u64-set! (#(procedure #:clean #:enforce) chicken.lolevel#pointer-u64-set! (pointer integer) undefined))
+(chicken.lolevel#pointer-u8-ref (#(procedure #:clean #:enforce) chicken.lolevel#pointer-u8-ref (pointer) fixnum))
+(chicken.lolevel#pointer-u8-set! (#(procedure #:clean #:enforce) chicken.lolevel#pointer-u8-set! (pointer fixnum) undefined))
 
-(pointer=? (#(procedure #:clean #:enforce) pointer=? ((or pointer locative procedure port)
+(chicken.lolevel#pointer=? (#(procedure #:clean #:enforce) chicken.lolevel#pointer=? ((or pointer locative procedure port)
 				  (or pointer locative procedure port)) boolean)
 	   ((pointer pointer) (##core#inline "C_pointer_eqp" #(1) #(2))))
 
-(pointer? (#(procedure #:clean #:predicate pointer) pointer? (*) boolean))
+(chicken.lolevel#pointer? (#(procedure #:clean #:predicate pointer) chicken.lolevel#pointer? (*) boolean))
 
-(procedure-data (#(procedure #:clean #:enforce) procedure-data (procedure) *))
-(record->vector (#(procedure #:clean) record->vector (*) vector))
+(chicken.lolevel#procedure-data (#(procedure #:clean #:enforce) chicken.lolevel#procedure-data (procedure) *))
+(chicken.lolevel#record->vector (#(procedure #:clean) chicken.lolevel#record->vector (*) vector))
 
-(record-instance? (#(procedure #:clean) record-instance? (* #!optional symbol) boolean)
+(chicken.lolevel#record-instance? (#(procedure #:clean) chicken.lolevel#record-instance? (* #!optional symbol) boolean)
 		  ((* symbol) (##sys#structure? #(1) #(2)))
 		  ((*) (let ((#(tmp) #(1)))
 			 (if (##sys#immediate? #(tmp))
 			     '#f
 			     (##sys#generic-structure? #(tmp))))))
 
-(record-instance-length (#(procedure #:clean) record-instance-length (*) fixnum))
-(record-instance-slot (#(procedure #:clean #:enforce) record-instance-slot (* fixnum) *))
-(record-instance-slot-set! (#(procedure #:clean #:enforce) record-instance-slot-set! (* fixnum *) undefined))
-(record-instance-type (#(procedure #:clean) record-instance-type (*) *))
-(set-procedure-data! (#(procedure #:clean #:enforce) set-procedure-data! (procedure *) undefined))
-(tag-pointer (#(procedure #:clean #:enforce) tag-pointer (pointer *) pointer))
-(tagged-pointer? (#(procedure #:clean #:enforce) tagged-pointer? (* #!optional *) boolean))
+(chicken.lolevel#record-instance-length (#(procedure #:clean) chicken.lolevel#record-instance-length (*) fixnum))
+(chicken.lolevel#record-instance-slot (#(procedure #:clean #:enforce) chicken.lolevel#record-instance-slot (* fixnum) *))
+(chicken.lolevel#record-instance-slot-set! (#(procedure #:clean #:enforce) chicken.lolevel#record-instance-slot-set! (* fixnum *) undefined))
+(chicken.lolevel#record-instance-type (#(procedure #:clean) chicken.lolevel#record-instance-type (*) *))
+(chicken.lolevel#set-procedure-data! (#(procedure #:clean #:enforce) chicken.lolevel#set-procedure-data! (procedure *) undefined))
+(chicken.lolevel#tag-pointer (#(procedure #:clean #:enforce) chicken.lolevel#tag-pointer (pointer *) pointer))
+(chicken.lolevel#tagged-pointer? (#(procedure #:clean #:enforce) chicken.lolevel#tagged-pointer? (* #!optional *) boolean))
 
 
 ;; ports
