@@ -1,6 +1,6 @@
 ;;;; syntax-tests.scm - various macro tests
 
-
+(use-for-syntax extras)
 (use extras)
 
 

@@ -61,8 +61,9 @@ EOF
    pathname-strip-extension normalize-pathname)
 
 (import scheme chicken foreign)
-(import extras irregex)
-(import chicken.data-structures)
+(import irregex)
+(import chicken.data-structures
+	chicken.extras)
 
 (include "common-declarations.scm")
 

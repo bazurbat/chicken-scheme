@@ -314,10 +314,11 @@
      constant-table immutable-constants inline-table line-number-database-2
      line-number-database-size)
 
-(import chicken scheme foreign extras
+(import chicken scheme foreign
 	chicken.compiler.scrutinizer
 	chicken.compiler.support
-	chicken.data-structures)
+	chicken.data-structures
+	chicken.extras)
 
 (define (d arg1 . more)
   (when (##sys#fudge 13)		; debug mode?

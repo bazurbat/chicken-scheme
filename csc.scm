@@ -30,6 +30,7 @@
   (uses data-structures utils files extras))
 
 (import chicken.data-structures
+	chicken.extras
 	chicken.files
 	chicken.utils)
 

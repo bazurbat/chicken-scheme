@@ -29,9 +29,13 @@
  (unit extras)
  (uses data-structures))
 
-(declare
-  (hide fprintf0 generic-write) )
+(module chicken.extras
+  (format fprintf pp pretty-print pretty-print-width printf
+   random randomize read-buffered read-byte read-file read-line
+   read-lines read-string read-string! read-token sprintf
+   write-byte write-line write-string)
 
+(import scheme chicken)
 (import chicken.data-structures)
 
 (include "common-declarations.scm")
@@ -655,3 +659,4 @@
 
 (register-feature! 'srfi-28)
 
+)

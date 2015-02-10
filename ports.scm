@@ -54,7 +54,7 @@
    with-output-to-string)
 
 (import scheme chicken)
-(import extras)
+(import chicken.extras)
 
 (include "common-declarations.scm")
 

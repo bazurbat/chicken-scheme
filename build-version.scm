@@ -36,10 +36,12 @@
    (lambda (x r c)
      (let ((fn (cadr x)))
        (and (file-exists? fn)
-	    (let ((ver (with-input-from-file (cadr x) read-line)))
-	      (if (or (eof-object? ver) (string=? ver ""))
-		  #f
-		  ver)))))))
+	    (call-with-input-file (cadr x)
+	     (lambda (p)
+	       (let ((ver ((##sys#slot (##sys#slot p 2) 8) p 256))) ; read-line
+		 (if (or (eof-object? ver) (string=? ver ""))
+		     #f
+		     ver)))))))))
 
 (define (##sys#build-tag)   (foreign-value "C_BUILD_TAG" c-string))
 (define ##sys#build-id      (read-version "buildid"))

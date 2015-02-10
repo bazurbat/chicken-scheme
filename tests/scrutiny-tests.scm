@@ -18,7 +18,7 @@
 (let ((bar +))
   (bar 3 'a))				; expected number, got symbol
 
-(pp)					; expected 1 argument, got 0
+(string?)				; expected 1 argument, got 0
 
 (print (cpu-time))			; expected 1 result, got 2
 (print (values))			; expected 1 result, got 0

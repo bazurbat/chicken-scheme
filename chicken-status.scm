@@ -30,8 +30,9 @@
 (module main ()
   
   (import scheme chicken foreign)
-  (import irregex setup-api extras)
+  (import irregex setup-api)
   (import chicken.data-structures
+	  chicken.extras
 	  chicken.files
 	  chicken.ports
 	  chicken.posix)

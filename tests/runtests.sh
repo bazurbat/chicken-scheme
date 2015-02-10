@@ -40,7 +40,7 @@ for x in setup-api.so setup-api.import.so setup-download.so \
       srfi-4.import.so chicken.data-structures.import.so \
       chicken.ports.import.so chicken.utils.import.so chicken.files.import.so \
       chicken.posix.import.so \
-      extras.import.so \
+      chicken.extras.import.so \
       irregex.import.so chicken.tcp.import.so \
       foreign.import.so \
       csi.import.so irregex.import.so types.db; do

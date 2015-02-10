@@ -203,12 +203,15 @@ EOF
   (er-macro-transformer
    (lambda (x r c)
      ;; no need to rename here
-     (let ((name (cadr x)))
+     (let* ((mode (cadr x))
+	    (name (symbol->string mode)))
        `(##core#begin
 	 (declare
 	   (foreign-declare
-	    ,(sprintf "#ifndef ~a~%#define ~a S_IFREG~%#endif~%" name name)))
-	 (define-foreign-variable ,name unsigned-int))))))
+	     ,(string-append "#ifndef " name "\n"
+			     "#define " name " S_IFREG\n"
+			     "#endif\n")))
+	 (define-foreign-variable ,mode unsigned-int))))))
 
 (stat-mode S_IFLNK)
 (stat-mode S_IFREG)

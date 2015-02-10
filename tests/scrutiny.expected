@@ -22,7 +22,7 @@ Warning: at toplevel:
   (scrutiny-tests.scm:19) in procedure call to `bar', expected argument #2 of type `number', but was given an argument of type `symbol'
 
 Warning: at toplevel:
-  (scrutiny-tests.scm:21) in procedure call to `pp', expected 1 argument, but was given 0 arguments
+  (scrutiny-tests.scm:21) in procedure call to `string?', expected 1 argument, but was given 0 arguments
 
 Warning: at toplevel:
   expected in argument #1 of procedure call `(print (cpu-time))' a single result, but were given 2 results
