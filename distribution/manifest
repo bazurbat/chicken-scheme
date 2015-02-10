@@ -236,12 +236,12 @@ modules.c
 chicken-syntax.scm
 chicken-syntax.c
 common-declarations.scm
-files.import.scm
-files.import.c
 chicken.import.scm
 chicken.import.c
 chicken.data-structures.import.scm
 chicken.data-structures.import.c
+chicken.files.import.scm
+chicken.files.import.c
 chicken.ports.import.scm
 chicken.ports.import.c
 chicken.tcp.import.scm

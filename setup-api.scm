@@ -66,8 +66,9 @@
      setup-error-handling)
   
   (import scheme chicken foreign
-	  irregex posix extras files
+	  irregex posix extras
 	  chicken.data-structures
+	  chicken.files
 	  chicken.ports
 	  chicken.utils)
 

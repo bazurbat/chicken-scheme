@@ -41,10 +41,10 @@
 
 ;;; common code
 
+(import chicken.files
+	chicken.ports)
+
 (include "posix-common.scm")
-
-(import chicken.ports)
-
 
 (declare
   (foreign-declare #<<EOF

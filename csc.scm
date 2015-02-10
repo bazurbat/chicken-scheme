@@ -30,6 +30,7 @@
   (uses data-structures utils files extras))
 
 (import chicken.data-structures
+	chicken.files
 	chicken.utils)
 
 (include "mini-srfi-1.scm")
