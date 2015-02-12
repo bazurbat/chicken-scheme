@@ -41,10 +41,10 @@
    qs)
 
 (import scheme chicken)
-(import foreign)
 (import chicken.data-structures
 	chicken.extras
 	chicken.files
+	chicken.foreign
 	chicken.posix
 	chicken.irregex)
 

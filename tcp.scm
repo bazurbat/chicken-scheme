@@ -143,8 +143,9 @@ EOF
    tcp-listener-fileno tcp-port-numbers tcp-buffer-size tcp-read-timeout
    tcp-write-timeout tcp-accept-timeout tcp-connect-timeout)
 
-(import scheme chicken foreign)
-(import chicken.ports)
+(import scheme chicken)
+(import chicken.foreign
+	chicken.ports)
 
 (include "common-declarations.scm")
 

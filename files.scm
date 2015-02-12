@@ -60,9 +60,10 @@ EOF
    pathname-replace-file pathname-strip-directory
    pathname-strip-extension normalize-pathname)
 
-(import scheme chicken foreign)
+(import scheme chicken)
 (import chicken.data-structures
 	chicken.extras
+	chicken.foreign
 	chicken.irregex)
 
 (include "common-declarations.scm")

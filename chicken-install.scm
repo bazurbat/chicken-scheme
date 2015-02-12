@@ -32,10 +32,10 @@
   (import scheme chicken)
   (import setup-download setup-api)
 
-  (import foreign)
   (import chicken.data-structures
 	  chicken.extras
 	  chicken.files
+	  chicken.foreign
 	  chicken.irregex
 	  chicken.ports
 	  chicken.posix
@@ -51,6 +51,7 @@
       "chicken.data-structures.import.so"
       "chicken.extras.import.so"
       "chicken.files.import.so"
+      "chicken.foreign.import.so"
       "chicken.irregex.import.so"
       "chicken.lolevel.import.so"
       "chicken.ports.import.so"
@@ -59,7 +60,6 @@
       "chicken.utils.import.so"
       "srfi-1.import.so"
       "srfi-4.import.so"
-      "foreign.import.so"
       "csi.import.so"
       "types.db"))
 

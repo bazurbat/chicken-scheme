@@ -287,6 +287,7 @@
 	|   |       |-- chicken.data-structures.import.so
 	|   |       |-- chicken.extras.import.so
 	|   |       |-- chicken.files.import.so
+	|   |       |-- chicken.foreign.import.so
 	|   |       |-- chicken.lolevel.import.so
 	|   |       |-- chicken.irregex.import.so
 	|   |       |-- chicken.ports.import.so
@@ -294,7 +295,6 @@
 	|   |       |-- chicken.tcp.import.so
 	|   |       |-- chicken.utils.import.so
 	|   |       |-- csi.import.so
-	|   |       |-- foreign.import.so
 	|   |       |-- modules.db
 	|   |       |-- setup-api.import.so
 	|   |       |-- setup-api.so

@@ -86,8 +86,9 @@
    terminal-port? terminal-size time->string unsetenv user-information
    utc-time->seconds with-input-from-pipe with-output-to-pipe)
 
-(import scheme chicken foreign)
+(import scheme chicken)
 (import chicken.files
+	chicken.foreign
 	chicken.irregex
 	chicken.ports)
 

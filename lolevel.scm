@@ -54,7 +54,8 @@ EOF
    record-instance-slot-set! record-instance-type record-instance?
    set-procedure-data! tag-pointer tagged-pointer? vector-like?)
 
-(import scheme chicken foreign)
+(import scheme chicken)
+(import chicken.foreign)
 
 (include "common-declarations.scm")
 

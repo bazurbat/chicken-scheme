@@ -38,11 +38,12 @@
      ;; For "foreign" (aka chicken-ffi-syntax):
      foreign-type-declaration)
 
-(import chicken scheme foreign
+(import chicken scheme
 	chicken.data-structures
 	chicken.compiler.core
 	chicken.compiler.c-platform
-	chicken.compiler.support)
+	chicken.compiler.support
+	chicken.foreign)
 
 (include "mini-srfi-1.scm")
 

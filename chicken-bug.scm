@@ -28,6 +28,7 @@
 
 (import chicken.data-structures
 	chicken.extras
+	chicken.foreign
 	chicken.posix
 	chicken.tcp
 	chicken.utils)

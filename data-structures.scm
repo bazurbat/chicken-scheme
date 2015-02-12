@@ -42,7 +42,8 @@
    any? constantly complement compose
    conjoin disjoin each flip identity list-of? o)
 
-(import scheme chicken foreign)
+(import scheme chicken)
+(import chicken.foreign)
 
 (include "common-declarations.scm")
 

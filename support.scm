@@ -75,10 +75,11 @@
      ;; in a lot of other places.
      number-type unsafe)
 
-(import chicken scheme foreign
+(import chicken scheme
 	chicken.data-structures
 	chicken.extras
 	chicken.files
+	chicken.foreign
 	chicken.ports)
 
 (include "tweaks")
