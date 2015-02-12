@@ -265,7 +265,8 @@
 (zero? (#(procedure #:clean #:enforce #:foldable) zero? (number) boolean)
        ((integer) (eq? #(1) '0))
        (((or cplxnum ratnum)) '#f)
-       ((number) (##core#inline "C_u_i_zerop" #(1))))
+       ((number) (##core#inline "C_u_i_zerop" #(1)))
+       ((*) (##core#inline "C_i_zerop" #(1))))
 
 (odd? (#(procedure #:clean #:enforce #:foldable) odd? (number) boolean)
 	       ((fixnum) (##core#inline "C_i_fixnumoddp" #(1)))
@@ -319,7 +320,7 @@
     (##core#inline_allocate ("C_a_i_fixnum_plus" 3) #(1) #(2)))
    ((integer integer) (integer)
     (##sys#integer-plus #(1) #(2)))
-   ((number number) (number)
+   ((* *) (number)
     (##sys#+-2 #(1) #(2))))
 
 (- (#(procedure #:clean #:enforce #:foldable) - (number #!rest number) number)
@@ -343,7 +344,7 @@
     (##core#inline_allocate ("C_a_i_fixnum_difference" 3) #(1) #(2)))
    ((integer integer) (integer)
     (##sys#integer-minus #(1) #(2)))
-   ((number number) (number)
+   ((* *) (number)
     (##sys#--2 #(1) #(2))))
 
 (* (#(procedure #:clean #:enforce #:foldable) * (#!rest number) number)
@@ -371,7 +372,7 @@
     (##core#inline_allocate ("C_a_i_fixnum_times" 4) #(1) #(2)))
    ((integer integer) (integer)
     (##sys#integer-times #(1) #(2)))
-   ((number number) (number)
+   ((* *) (number)
     (##sys#*-2 #(1) #(2))))
 
 (/ (#(procedure #:clean #:enforce #:foldable) / (number #!rest number) number)
@@ -390,7 +391,7 @@
     (##core#inline_allocate ("C_a_i_flonum_quotient" 4) #(1) #(2)))
    ((integer integer) ((or integer ratnum))
     (##sys#/-2 #(1) #(2)))
-   ((number number) (number)
+   ((* *) (number)
     (##sys#/-2 #(1) #(2))))
 
 (= (#(procedure #:clean #:enforce #:foldable) = (#!rest number) boolean)
@@ -399,7 +400,7 @@
    ((fixnum fixnum) (eq? #(1) #(2)))
    ((float float) (##core#inline "C_flonum_equalp" #(1) #(2)))
    ((integer integer) (##core#inline "C_i_integer_equalp" #(1) #(2)))
-   ((number number) (##core#inline "C_i_nequalp" #(1) #(2))))
+   ((* *) (##core#inline "C_i_nequalp" #(1) #(2))))
 
 (> (#(procedure #:clean #:enforce #:foldable) > (#!rest number) boolean)
    (() '#t)
@@ -407,7 +408,7 @@
    ((fixnum fixnum) (fx> #(1) #(2)))
    ((float float) (##core#inline "C_flonum_greaterp" #(1) #(2)))
    ((integer integer) (##core#inline "C_i_integer_greaterp" #(1) #(2)))
-   ((number number) (##core#inline "C_i_greaterp" #(1) #(2))))
+   ((* *) (##core#inline "C_i_greaterp" #(1) #(2))))
 
 (< (#(procedure #:clean #:enforce #:foldable) < (#!rest number) boolean)
    (() '#t)
@@ -415,7 +416,7 @@
    ((fixnum fixnum) (fx< #(1) #(2)))
    ((integer integer) (##core#inline "C_i_integer_lessp" #(1) #(2)))
    ((float float) (##core#inline "C_flonum_lessp" #(1) #(2)))
-   ((number number) (##core#inline "C_i_lessp" #(1) #(2))))
+   ((* *) (##core#inline "C_i_lessp" #(1) #(2))))
 
 (>= (#(procedure #:clean #:enforce #:foldable) >= (#!rest number) boolean)
     (() '#t)
@@ -423,7 +424,7 @@
     ((fixnum fixnum) (fx>= #(1) #(2)))
     ((integer integer) (##core#inline "C_i_integer_greater_or_equalp" #(1) #(2)))
     ((float float) (##core#inline "C_flonum_greater_or_equal_p" #(1) #(2)))
-    ((number number) (##core#inline "C_i_greater_or_equalp" #(1) #(2))))
+    ((* *) (##core#inline "C_i_greater_or_equalp" #(1) #(2))))
 
 (<= (#(procedure #:clean #:enforce #:foldable) <= (#!rest number) boolean)
     (() '#t)
@@ -431,7 +432,7 @@
     ((fixnum fixnum) (fx<= #(1) #(2)))
     ((integer integer) (##core#inline "C_i_integer_less_or_equalp" #(1) #(2)))
     ((float float) (##core#inline "C_flonum_less_or_equal_p" #(1) #(2)))
-    ((number number) (##core#inline "C_i_less_or_equalp" #(1) #(2))))
+    ((* *) (##core#inline "C_i_less_or_equalp" #(1) #(2))))
 
 (quotient (#(procedure #:clean #:enforce #:foldable) quotient ((or integer float) (or integer float)) (or integer float))
 	  ;;XXX flonum/mixed case
@@ -485,15 +486,15 @@
      ((fixnum fixnum) (fixnum) (fxgcd #(1) #(2)))
      ((float float) (float) (fpgcd #(1) #(2)))
      ((integer integer) (integer) (##sys#integer-gcd #(1) #(2)))
-     ((number number) (number) (##sys#gcd #(1) #(2))))
+     ((* *) (##sys#gcd #(1) #(2))))
 
-(##sys#gcd (#(procedure #:clean #:enforce #:foldable) gcd (number number) number))
+(##sys#gcd (#(procedure #:clean #:enforce #:foldable) ##sys#gcd (number number) number))
 
 (lcm (#(procedure #:clean #:enforce #:foldable) lcm (#!rest number) number)
      (() '1)
-     ((number number) (##sys#lcm #(1) #(2))))
+     ((* *) (##sys#lcm #(1) #(2))))
 
-(##sys#lcm (#(procedure #:clean #:enforce #:foldable) lcm (number number) number))
+(##sys#lcm (#(procedure #:clean #:enforce #:foldable) ##sys#lcm (number number) number))
 
 (abs (#(procedure #:clean #:enforce #:foldable) abs (number) number)
      ((fixnum) (integer) (##core#inline_allocate ("C_a_i_fixnum_abs" 3) #(1)))
@@ -540,7 +541,7 @@
 (log (#(procedure #:clean #:enforce #:foldable) log (number) (or float cplxnum))
      ;; Unfortunately this doesn't work when the argument is negative
      ;;((float) (float) (##core#inline_allocate ("C_a_i_flonum_log" 4) #(1)))
-     ((number) (##sys#log-1 #(1))))
+     ((*) (##sys#log-1 #(1))))
 
 (expt (#(procedure #:clean #:enforce #:foldable) expt (number number) number)
       ;; This breaks in some extreme edge cases... Worth disabling?
