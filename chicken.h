@@ -2590,6 +2590,7 @@ C_inline C_word C_i_eqvp(C_word x, C_word y)
                      C_block_header(x) == C_STRUCTURE3_TAG &&
                      (C_block_item(x, 0) == C_ratnum_type_tag ||
                       C_block_item(x, 0) == C_cplxnum_type_tag) &&
+                     C_block_item(x, 0) == C_block_item(y, 0) &&
                      basic_eqvp(C_block_item(x, 1), C_block_item(y, 1)) &&
                      basic_eqvp(C_block_item(x, 2), C_block_item(y, 2))));
 }
