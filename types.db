@@ -1542,7 +1542,7 @@
 
 ;; irregex
 
-(irregex (#(procedure #:clean) irregex (#!rest) (struct regexp)))
+(chicken.irregex#irregex (#(procedure #:clean) chicken.irregex#irregex (#!rest) (struct regexp)))
 
 ;; Both of these DFA accessors return either #f or a DFA vector.
 ;; TODO: Should we spec out the entire DFA type layout?  It's plenty complex, so we don't
@@ -1551,100 +1551,99 @@
 ;; the car of each list is a number (for init-state), false or an alist;
 ;; the cdr is a list of alists, which contains a char (or vector) and two alists
 ;; These alists have types themselves, of course...
-(irregex-dfa (#(procedure #:clean #:enforce) irregex-dfa ((struct regexp)) (or false vector))
+(chicken.irregex#irregex-dfa (#(procedure #:clean #:enforce) chicken.irregex#irregex-dfa ((struct regexp)) (or false vector))
 	     (((struct regexp)) (##sys#slot #(1) '1)))
 
-(irregex-dfa/search (#(procedure #:clean #:enforce) irregex-dfa/search ((struct regexp)) (or false vector))
+(chicken.irregex#irregex-dfa/search (#(procedure #:clean #:enforce) chicken.irregex#irregex-dfa/search ((struct regexp)) (or false vector))
 		    (((struct regexp)) (##sys#slot #(1) '2)))
 
 ;; Procedure type returned by irregex-nfa is a matcher type (it is misnamed)
 ;; which is another complex procedure type.
-(irregex-nfa (#(procedure #:clean #:enforce) irregex-nfa ((struct regexp)) (or false procedure))
+(chicken.irregex#irregex-nfa (#(procedure #:clean #:enforce) chicken.irregex#irregex-nfa ((struct regexp)) (or false procedure))
 	     (((struct regexp)) (##sys#slot #(1) '3)))
 
-(irregex-flags (#(procedure #:clean #:enforce) irregex-flags ((struct regexp)) fixnum)
+(chicken.irregex#irregex-flags (#(procedure #:clean #:enforce) chicken.irregex#irregex-flags ((struct regexp)) fixnum)
 	       (((struct regexp)) (##sys#slot #(1) '4)))
 
-(irregex-num-submatches (#(procedure #:clean #:enforce) irregex-num-submatches ((struct regexp))
+(chicken.irregex#irregex-num-submatches (#(procedure #:clean #:enforce) chicken.irregex#irregex-num-submatches ((struct regexp))
 				   fixnum)
 			(((struct regexp)) (##sys#slot #(1) '5)))
 
-(irregex-lengths (#(procedure #:clean #:enforce) irregex-lengths ((struct regexp))
+(chicken.irregex#irregex-lengths (#(procedure #:clean #:enforce) chicken.irregex#irregex-lengths ((struct regexp))
                   (vector-of (or false pair)))
 		 (((struct regexp)) (##sys#slot #(1) '6)))
 
 ;; XXX: Submatch names ought to be symbols according to the docs, but this is
 ;;      not enforced anywhere, so we can't assume it in the return type here.
-(irregex-names (#(procedure #:clean #:enforce) irregex-names ((struct regexp))
+(chicken.irregex#irregex-names (#(procedure #:clean #:enforce) chicken.irregex#irregex-names ((struct regexp))
                 (list-of (pair * fixnum)))
 	       (((struct regexp)) (##sys#slot #(1) '7)))
 
 ;; XXX: specialize these? (how?)
-(irregex-extract (#(procedure #:clean #:enforce) irregex-extract (* string #!optional fixnum fixnum)
+(chicken.irregex#irregex-extract (#(procedure #:clean #:enforce) chicken.irregex#irregex-extract (* string #!optional fixnum fixnum)
                   (list-of string)))
-(irregex-split (#(procedure #:clean #:enforce) irregex-split (* string #!optional fixnum fixnum)
+(chicken.irregex#irregex-split (#(procedure #:clean #:enforce) chicken.irregex#irregex-split (* string #!optional fixnum fixnum)
                 (list-of string)))
 
-(irregex-fold (forall (a) (#(procedure #:enforce) irregex-fold (* (procedure (fixnum (struct regexp-match) a) a) a string #!optional (procedure (fixnum *) *) fixnum fixnum) a)))
+(chicken.irregex#irregex-fold (forall (a) (#(procedure #:enforce) chicken.irregex#irregex-fold (* (procedure (fixnum (struct regexp-match) a) a) a string #!optional (procedure (fixnum *) *) fixnum fixnum) a)))
 ;; XXX TODO: chunker is a plain vector
-(irregex-fold/chunked (forall (a c) (#(procedure #:enforce) irregex-fold/chunked (* (procedure (c fixnum (struct regexp-match) a) a) a vector c #!optional (procedure (c fixnum a) a) fixnum fixnum) a)))
-(irregex-reset-matches! (procedure irregex-reset-matches! ((struct regexp-match))
+(chicken.irregex#irregex-fold/chunked (forall (a c) (#(procedure #:enforce) chicken.irregex#irregex-fold/chunked (* (procedure (c fixnum (struct regexp-match) a) a) a vector c #!optional (procedure (c fixnum a) a) fixnum fixnum) a)))
+(chicken.irregex#irregex-reset-matches! (procedure chicken.irregex#irregex-reset-matches! ((struct regexp-match))
                                    (struct regexp-match)))
 
 ;; A silly procedure, but at least we can "inline" it like this
-(irregex-match? (#(procedure #:clean #:enforce) irregex-match? (* string #!optional fixnum fixnum)
-                 boolean)
+(chicken.irregex#irregex-match? (#(procedure #:clean #:enforce) chicken.irregex#irregex-match? (* string #!optional fixnum fixnum) boolean)
                 ((* string) (and (irregex-match #(1) #(2)) '#t))
                 ((* string fixnum) (and (irregex-match #(1) #(2) #(3)) '#t))
                 ((* string fixnum fixnum) (and (irregex-match #(1) #(2) #(3) #(4)) '#t)))
 ;; These two return #f or a match object
-(irregex-match (#(procedure #:clean #:enforce) irregex-match (* string #!optional fixnum fixnum)
+(chicken.irregex#irregex-match (#(procedure #:clean #:enforce) chicken.irregex#irregex-match (* string #!optional fixnum fixnum)
                 (or false (struct regexp-match))))
 ;; XXX chunker is a plain vector
 ;; Not marked clean because we don't know what chunker procedures will do
-(irregex-match/chunked (#(procedure #:enforce) irregex-match/chunked (* vector * #!optional fixnum)
+(chicken.irregex#irregex-match/chunked (#(procedure #:enforce) chicken.irregex#irregex-match/chunked (* vector * #!optional fixnum)
                         (or false (struct regexp-match))))
 
-(irregex-match-data? (#(procedure #:pure #:predicate (struct regexp-match)) irregex-match-data? (*) boolean))
+(chicken.irregex#irregex-match-data? (#(procedure #:pure #:predicate (struct regexp-match)) chicken.irregex#irregex-match-data? (*) boolean))
 
-(irregex-match-end-index (#(procedure #:clean #:enforce) irregex-match-end-index ((struct regexp-match) #!optional *) fixnum))
-(irregex-match-end-chunk (#(procedure #:clean #:enforce) irregex-match-end-chunk ((struct regexp-match) #!optional *) *))
-(irregex-match-start-index (#(procedure #:clean #:enforce) irregex-match-start-index ((struct regexp-match) #!optional *) fixnum))
-(irregex-match-start-chunk (#(procedure #:clean #:enforce) irregex-match-start-chunk ((struct regexp-match) #!optional *) *))
-(irregex-match-substring (#(procedure #:clean #:enforce) irregex-match-substring ((struct regexp-match) #!optional *) *))
-(irregex-match-subchunk (#(procedure #:clean #:enforce) irregex-match-subchunk ((struct regexp-match) #!optional *) *))
+(chicken.irregex#irregex-match-end-index (#(procedure #:clean #:enforce) chicken.irregex#irregex-match-end-index ((struct regexp-match) #!optional *) fixnum))
+(chicken.irregex#irregex-match-end-chunk (#(procedure #:clean #:enforce) chicken.irregex#irregex-match-end-chunk ((struct regexp-match) #!optional *) *))
+(chicken.irregex#irregex-match-start-index (#(procedure #:clean #:enforce) chicken.irregex#irregex-match-start-index ((struct regexp-match) #!optional *) fixnum))
+(chicken.irregex#irregex-match-start-chunk (#(procedure #:clean #:enforce) chicken.irregex#irregex-match-start-chunk ((struct regexp-match) #!optional *) *))
+(chicken.irregex#irregex-match-substring (#(procedure #:clean #:enforce) chicken.irregex#irregex-match-substring ((struct regexp-match) #!optional *) *))
+(chicken.irregex#irregex-match-subchunk (#(procedure #:clean #:enforce) chicken.irregex#irregex-match-subchunk ((struct regexp-match) #!optional *) *))
 
-(irregex-match-names (#(procedure #:clean #:enforce) irregex-match-names ((struct regexp-match)) list)
+(chicken.irregex#irregex-match-names (#(procedure #:clean #:enforce) chicken.irregex#irregex-match-names ((struct regexp-match)) list)
 		     (((struct regexp-match)) (##sys#slot #(1) '2)))
 
-(irregex-match-num-submatches (#(procedure #:enforce) irregex-match-num-submatches ((struct regexp-match)) fixnum)
+(chicken.irregex#irregex-match-num-submatches (#(procedure #:enforce) chicken.irregex#irregex-match-num-submatches ((struct regexp-match)) fixnum)
                               (((struct regexp-match))
                                (fx- (fx/ (##sys#size (##sys#slot #(1) '1)) '4) '2)))
 
-(irregex-new-matches (procedure irregex-new-matches (*) *)) ; really only for internal use..
-(irregex-opt (#(procedure #:clean #:enforce) irregex-opt (list) *))
-(irregex-quote (#(procedure #:clean #:enforce) irregex-quote (string) string))
+(chicken.irregex#irregex-new-matches (procedure chicken.irregex#irregex-new-matches (*) *)) ; really only for internal use..
+(chicken.irregex#irregex-opt (#(procedure #:clean #:enforce) chicken.irregex#irregex-opt (list) *))
+(chicken.irregex#irregex-quote (#(procedure #:clean #:enforce) chicken.irregex#irregex-quote (string) string))
 
-(irregex-replace (#(procedure #:enforce) irregex-replace (* string #!rest) string))
-(irregex-replace/all (#(procedure #:enforce) irregex-replace/all (* string #!rest) string))
+(chicken.irregex#irregex-replace (#(procedure #:enforce) chicken.irregex#irregex-replace (* string #!rest) string))
+(chicken.irregex#irregex-replace/all (#(procedure #:enforce) chicken.irregex#irregex-replace/all (* string #!rest) string))
 ;; Returns a list of strings, but *only* when all user-procedures do
-(irregex-apply-match (procedure ((struct regexp-match) list) list)) ; internal use
+(chicken.irregex#irregex-apply-match (procedure ((struct regexp-match) list) list)) ; internal use
 
 ;; These return #f or a match object
-(irregex-search (#(procedure #:clean #:enforce) irregex-search (* string #!optional fixnum fixnum)
+(chicken.irregex#irregex-search (#(procedure #:clean #:enforce) chicken.irregex#irregex-search (* string #!optional fixnum fixnum)
                  (or false (struct regexp-match))))
 ;; XXX chunker is a plain vector
-(irregex-search/chunked (#(procedure #:enforce) irregex-search/chunked (* vector * #!optional fixnum *)
+(chicken.irregex#irregex-search/chunked (#(procedure #:enforce) chicken.irregex#irregex-search/chunked (* vector * #!optional fixnum *)
                          (or false (struct regexp-match))))
-(irregex-search/matches (#(procedure #:enforce) irregex-search/matches (* vector * * fixnum (struct regexp-match))
+(chicken.irregex#irregex-search/matches (#(procedure #:enforce) chicken.irregex#irregex-search/matches (* vector * * fixnum (struct regexp-match))
                          (or false (struct regexp-match))))
-(irregex-match-valid-index? 
- (#(procedure #:clean #:enforce) irregex-match-valid-index? ((struct regexp-match) *) boolean))
+(chicken.irregex#irregex-match-valid-index?
+ (#(procedure #:clean #:enforce) chicken.irregex#irregex-match-valid-index? ((struct regexp-match) *) boolean))
 
-(irregex? (#(procedure #:pure #:predicate (struct regexp)) irregex? (*) boolean))
+(chicken.irregex#irregex? (#(procedure #:pure #:predicate (struct regexp)) chicken.irregex#irregex? (*) boolean))
 
-(make-irregex-chunker
- (#(procedure #:enforce) make-irregex-chunker 
+(chicken.irregex#make-irregex-chunker
+ (#(procedure #:enforce) chicken.irregex#make-irregex-chunker
 	    ((procedure (*) *)
 	     (procedure (*) *)
 	     #!optional
@@ -1653,10 +1652,10 @@
 	     (procedure (* fixnum * fixnum) string)
 	     (procedure (* fixnum * fixnum) *))
 	    *))
-(maybe-string->sre (#(procedure #:clean) maybe-string->sre (*) *))
-(sre->irregex (#(procedure #:clean) sre->irregex (#!rest) *))
-(string->irregex (#(procedure #:clean #:enforce) string->irregex (string #!rest) *))
-(string->sre (#(procedure #:clean #:enforce) string->sre (string #!rest) *))
+(chicken.irregex#maybe-string->sre (#(procedure #:clean) chicken.irregex#maybe-string->sre (*) *))
+(chicken.irregex#sre->irregex (#(procedure #:clean) chicken.irregex#sre->irregex (#!rest) *))
+(chicken.irregex#string->irregex (#(procedure #:clean #:enforce) chicken.irregex#string->irregex (string #!rest) *))
+(chicken.irregex#string->sre (#(procedure #:clean #:enforce) chicken.irregex#string->sre (string #!rest) *))
 
 
 ;; lolevel

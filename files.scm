@@ -36,7 +36,7 @@
 
 (declare
   (unit files)
-  (uses extras irregex data-structures)
+  (uses data-structures extras irregex)
   (fixnum)
   (disable-interrupts) 
   (foreign-declare #<<EOF
@@ -61,9 +61,9 @@ EOF
    pathname-strip-extension normalize-pathname)
 
 (import scheme chicken foreign)
-(import irregex)
 (import chicken.data-structures
-	chicken.extras)
+	chicken.extras
+	chicken.irregex)
 
 (include "common-declarations.scm")
 

@@ -41,9 +41,10 @@ for x in setup-api.so setup-api.import.so setup-download.so \
       chicken.ports.import.so chicken.utils.import.so chicken.files.import.so \
       chicken.posix.import.so \
       chicken.extras.import.so \
-      irregex.import.so chicken.tcp.import.so \
+      chicken.irregex.import.so \
+      chicken.tcp.import.so \
       foreign.import.so \
-      csi.import.so irregex.import.so types.db; do
+      csi.import.so types.db; do
   cp ../$x test-repository
 done
 

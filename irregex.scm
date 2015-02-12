@@ -25,58 +25,27 @@
 
 
 
-(declare (unit irregex))
-
 (declare
+  (unit irregex)
   (no-procedure-checks)
-  (fixnum)
-  (export
-   ##sys#glob->regexp
-   irregex
-   irregex-apply-match
-   irregex-dfa
-   irregex-dfa/extract
-   irregex-dfa/search
-   irregex-extract
-   irregex-flags
-   irregex-fold
-   irregex-fold/chunked
-   irregex-lengths
-   irregex-match
-   irregex-match?
-   irregex-match-data?
-   irregex-match-end-chunk
-   irregex-match-end-index
-   irregex-match-names
-   irregex-match-num-submatches
-   irregex-match-start-chunk
-   irregex-match-start-index
-   irregex-match-subchunk
-   irregex-match-substring
-   irregex-match-valid-index?
-   irregex-match/chunked
-   irregex-names
-   irregex-new-matches
-   irregex-nfa
-   irregex-num-submatches
-   irregex-opt
-   irregex-quote
-   irregex-replace
-   irregex-replace/all
-   irregex-reset-matches!
-   irregex-search
-   irregex-search/chunked
-   irregex-search/matches
-   irregex-split
-   irregex? 
-   make-irregex-chunker
-   maybe-string->sre
-   irregex-search/chunked
-   sre->irregex
-   sre->string
-   string->irregex
-   string->sre
-   ))
+  (fixnum))
+
+(module chicken.irregex
+  (irregex irregex-apply-match irregex-dfa irregex-dfa/search
+   irregex-extract irregex-flags irregex-fold irregex-fold/chunked
+   irregex-lengths irregex-match irregex-match? irregex-match-data?
+   irregex-match-end-chunk irregex-match-end-index irregex-match-names
+   irregex-match-num-submatches irregex-match-start-chunk
+   irregex-match-start-index irregex-match-subchunk
+   irregex-match-substring irregex-match-valid-index?
+   irregex-match/chunked irregex-names irregex-new-matches irregex-nfa
+   irregex-num-submatches irregex-opt irregex-quote irregex-replace
+   irregex-replace/all irregex-reset-matches! irregex-search
+   irregex-search/chunked irregex-search/matches irregex-split irregex?
+   make-irregex-chunker maybe-string->sre sre->irregex sre->string
+   string->irregex string->sre)
+
+(import scheme chicken)
 
 (include "common-declarations.scm")
 
@@ -288,3 +257,5 @@
 				      (loop2 (cdr rest) (cons (car rest) s))))))
 			    (else (cons c (loop rest (memq c '(#\\ #\/))))))))))))
 	(if sre? sre (irregex sre))))))
+
+)

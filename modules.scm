@@ -916,6 +916,7 @@
 (##sys#register-module-alias 'data-structures 'chicken.data-structures)
 (##sys#register-module-alias 'extras 'chicken.extras)
 (##sys#register-module-alias 'files 'chicken.files)
+(##sys#register-module-alias 'irregex 'chicken.irregex)
 (##sys#register-module-alias 'lolevel 'chicken.lolevel)
 (##sys#register-module-alias 'ports 'chicken.ports)
 (##sys#register-module-alias 'posix 'chicken.posix)

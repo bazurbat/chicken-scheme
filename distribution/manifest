@@ -244,6 +244,8 @@ chicken.extras.import.scm
 chicken.extras.import.c
 chicken.files.import.scm
 chicken.files.import.c
+chicken.irregex.import.scm
+chicken.irregex.import.c
 chicken.lolevel.import.scm
 chicken.lolevel.import.c
 chicken.ports.import.scm
@@ -257,9 +259,7 @@ chicken.utils.import.c
 foreign.import.scm
 foreign.import.c
 srfi-4.import.scm
-irregex.import.scm
 srfi-4.import.c
-irregex.import.c
 csi.import.scm
 csi.import.c
 setup-download.scm
