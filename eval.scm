@@ -1310,10 +1310,10 @@
 	    (##sys#syntax-error-hook 'require-extension "invalid SRFI number" n)))
       (define (doit id impid)
 	(cond ((or (memq id builtin-features)
-		   (if comp?
-		       (memq id builtin-features/compiled)
-		       (##sys#feature? id) ) )
-	       (values (impform '(##core#undefined) impid #t) #t id) )
+		   (and comp? (memq id builtin-features/compiled)))
+	       (values (impform '(##core#undefined) impid #t) #t id))
+	      ((and (not comp?) (##sys#feature? id))
+	       (values (impform '(##core#undefined) impid #f) #t id))
 	      ((memq id ##sys#core-library-modules)
 	       (values
 		(impform
