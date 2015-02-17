@@ -45,7 +45,7 @@
         Building CHICKEN requires GNU Make. Other "make" derivates are
         not supported. If you are using a Windows system and do not
         have GNU Make, download
-        http://www.call-with-current-continuation.org/tarballs/UnxUtils.zip.
+        http://code.call-cc.org/legacy-eggs/tarballs/UnxUtils.zip.
         It contains a precompiled set of UNIX utilities, which among
         other useful tools contains "make".
 
@@ -354,7 +354,7 @@
         A selection of 3rd party libraries, together with source and
         binary packages for tools helpful for development with CHICKEN
         are also available at:
-        <http://www.call-with-current-continuation.org/tarballs/>.
+        <http://code.call-cc.org/legacy-eggs/tarballs/>.
 
         
  5. Platform issues
