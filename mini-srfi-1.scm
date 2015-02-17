@@ -26,6 +26,11 @@
 
 
 (declare 
+  (unused take span drop partition split-at append-map every any cons* concatenate delete
+	  first second third fourth alist-cons delete-duplicates fifth
+	  filter filter-map unzip1 last list-index lset-adjoin lset-difference
+	  lset-union lset-intersection list-tabulate lset<= lset= length+ find find-tail
+	  iota make-list posq posv)
   (hide take span drop partition split-at append-map every any cons* concatenate delete
 	first second third fourth alist-cons delete-duplicates fifth
 	filter filter-map unzip1 last list-index lset-adjoin lset-difference
