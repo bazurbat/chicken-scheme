@@ -327,6 +327,7 @@ C_TLS C_word
   *C_temporary_stack_bottom,
   *C_temporary_stack_limit,
   *C_stack_limit,
+   C_bignum_type_tag,
    C_ratnum_type_tag,
    C_cplxnum_type_tag;
 C_TLS C_long
@@ -1084,6 +1085,7 @@ void initialize_symbol_table(void)
   for(i = 0; i < symbol_table->size; symbol_table->table[ i++ ] = C_SCHEME_END_OF_LIST);
 
   /* Obtain reference to hooks for later: */
+  C_bignum_type_tag = C_intern2(C_heaptop, C_text("\003sysbignum"));
   C_ratnum_type_tag = C_intern2(C_heaptop, C_text("\003sysratnum"));
   C_cplxnum_type_tag = C_intern2(C_heaptop, C_text("\003syscplxnum"));
   interrupt_hook_symbol = C_intern2(C_heaptop, C_text("\003sysinterrupt-hook"));
@@ -2542,7 +2544,7 @@ C_regparm C_word C_fcall C_static_string(C_word **ptr, int len, C_char *str)
 
 C_regparm C_word C_fcall C_static_bignum(C_word **ptr, int len, C_char *str)
 {
-  C_word *dptr, bignum, retval, size, negp = 0;
+  C_word *dptr, bignum, bigvec, retval, size, negp = 0;
 
   if (*str == '+' || *str == '-') {
     negp = ((*str++) == '-') ? 1 : 0;
@@ -2550,16 +2552,19 @@ C_regparm C_word C_fcall C_static_bignum(C_word **ptr, int len, C_char *str)
   }
   size = C_BIGNUM_BITS_TO_DIGITS(len << 2);
 
-  dptr = (C_word *)C_malloc(C_wordstobytes(C_SIZEOF_BIGNUM(size)));
+  dptr = (C_word *)C_malloc(C_wordstobytes(C_SIZEOF_INTERNAL_BIGNUM_VECTOR(size)));
   if(dptr == NULL)
     panic(C_text("out of memory - cannot allocate static bignum"));
 
-  bignum = (C_word)dptr;
-  C_block_header_init(bignum, C_BIGNUM_TYPE | C_wordstobytes(size + 1));
-  C_set_block_item(bignum, 0, negp);
+  bigvec = (C_word)dptr;
+  C_block_header_init(bigvec, C_STRING_TYPE | C_wordstobytes(size + 1));
+  C_set_block_item(bigvec, 0, negp);
+  /* This needs to be allocated at ptr, not dptr, because GC moves type tag */
+  bignum = C_a_i_record2(ptr, 2, C_bignum_type_tag, bigvec);
 
   retval = str_to_bignum(bignum, str, str + len, 16);
-  if (retval & C_FIXNUM_BIT) C_free(dptr); /* Might have been simplified */
+  if (retval & C_FIXNUM_BIT)
+    C_free(dptr); /* Might have been simplified */
   return retval;
 }
 
@@ -3244,6 +3249,7 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
 
 C_regparm void C_fcall mark_system_globals(void)
 {
+  mark(&C_bignum_type_tag);
   mark(&C_ratnum_type_tag);
   mark(&C_cplxnum_type_tag);
   mark(&interrupt_hook_symbol);
@@ -3584,6 +3590,7 @@ C_regparm void C_fcall C_rereclaim2(C_uword size, int double_plus)
 
 C_regparm void C_fcall remark_system_globals(void)
 {
+  remark(&C_bignum_type_tag);
   remark(&C_ratnum_type_tag);
   remark(&C_cplxnum_type_tag);
   remark(&interrupt_hook_symbol);
@@ -4837,7 +4844,7 @@ C_regparm C_word C_fcall C_i_nanp(C_word x)
     barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "nan?", x);
   } else if (C_block_header(x) == C_FLONUM_TAG) {
     return C_u_i_flonum_nanp(x);
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     return C_SCHEME_FALSE;
   } else if (C_block_header(x) == C_STRUCTURE3_TAG) {
     if (C_block_item(x, 0) == C_ratnum_type_tag)
@@ -4860,7 +4867,7 @@ C_regparm C_word C_fcall C_i_finitep(C_word x)
     barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "finite?", x);
   } else if (C_block_header(x) == C_FLONUM_TAG) {
     return C_u_i_flonum_finitep(x);
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     return C_SCHEME_TRUE;
   } else if (C_block_header(x) == C_STRUCTURE3_TAG) {
     if (C_block_item(x, 0) == C_ratnum_type_tag)
@@ -4883,7 +4890,7 @@ C_regparm C_word C_fcall C_i_infinitep(C_word x)
     barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "infinite?", x);
   } else if (C_block_header(x) == C_FLONUM_TAG) {
     return C_u_i_flonum_infinitep(x);
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     return C_SCHEME_FALSE;
   } else if (C_block_header(x) == C_STRUCTURE3_TAG) {
     if (C_block_item(x, 0) == C_ratnum_type_tag)
@@ -4906,7 +4913,7 @@ C_regparm C_word C_fcall C_i_exactp(C_word x)
     barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "exact?", x);
   } else if (C_block_header(x) == C_FLONUM_TAG) {
     return C_SCHEME_FALSE;
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     return C_SCHEME_TRUE;
   } else if (C_block_header(x) == C_STRUCTURE3_TAG) {
     if (C_block_item(x, 0) == C_ratnum_type_tag)
@@ -4929,7 +4936,7 @@ C_regparm C_word C_fcall C_i_inexactp(C_word x)
     barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "inexact?", x);
   } else if (C_block_header(x) == C_FLONUM_TAG) {
     return C_SCHEME_TRUE;
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     return C_SCHEME_FALSE;
   } else if (C_block_header(x) == C_STRUCTURE3_TAG) {
     if (C_block_item(x, 0) == C_ratnum_type_tag)
@@ -4952,8 +4959,8 @@ C_regparm C_word C_fcall C_i_zerop(C_word x)
     barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "zero?", x);
   } else if (C_block_header(x) == C_FLONUM_TAG) {
     return C_mk_bool(C_flonum_magnitude(x) == 0.0);
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE ||
-	     (C_block_header(x) == C_STRUCTURE3_TAG &&
+  } else if (C_truep(C_bignump(x)) ||
+             (C_block_header(x) == C_STRUCTURE3_TAG &&
 	      (C_block_item(x, 0) == C_ratnum_type_tag ||
 	       C_block_item(x, 0) == C_cplxnum_type_tag))) {
     return C_SCHEME_FALSE;
@@ -4980,7 +4987,7 @@ C_regparm C_word C_fcall C_i_positivep(C_word x)
     barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "positive?", x);
   else if (C_block_header(x) == C_FLONUM_TAG)
     return C_mk_bool(C_flonum_magnitude(x) > 0.0);
-  else if (C_header_bits(x) == C_BIGNUM_TYPE)
+  else if (C_truep(C_bignump(x)))
     return C_mk_nbool(C_bignum_negativep(x));
   else if (C_block_header(x) == C_STRUCTURE3_TAG &&
            (C_block_item(x, 0) == C_ratnum_type_tag))
@@ -5013,7 +5020,7 @@ C_regparm C_word C_fcall C_i_negativep(C_word x)
     barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "negative?", x);
   else if (C_block_header(x) == C_FLONUM_TAG)
     return C_mk_bool(C_flonum_magnitude(x) < 0.0);
-  else if (C_header_bits(x) == C_BIGNUM_TYPE)
+  else if (C_truep(C_bignump(x)))
     return C_mk_bool(C_bignum_negativep(x));
   else if (C_block_header(x) == C_STRUCTURE3_TAG &&
            (C_block_item(x, 0) == C_ratnum_type_tag))
@@ -5052,7 +5059,7 @@ C_regparm C_word C_fcall C_i_evenp(C_word x)
       barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "even?", x);
     else
       return C_mk_bool(fmod(val, 2.0) == 0.0);
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     return C_mk_nbool(C_bignum_digits(x)[0] & 1);
   } else { /* No need to try extended number */
     barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "even?", x);
@@ -5085,7 +5092,7 @@ C_regparm C_word C_fcall C_i_oddp(C_word x)
       barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "odd?", x);
     else
       return C_mk_bool(fmod(val, 2.0) != 0.0);
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     return C_mk_bool(C_bignum_digits(x)[0] & 1);
   } else {
     barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, "odd?", x);
@@ -5503,7 +5510,7 @@ void C_ccall C_abs(C_word c, C_word self, C_word k, C_word x)
   } else if (C_block_header(x) == C_FLONUM_TAG) {
     C_word *a = C_alloc(C_SIZEOF_FLONUM);
     C_kontinue(k, C_a_i_flonum_abs(&a, 1, x));
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     C_u_integer_abs(3, (C_word)NULL, k, x);
   } else {
     try_extended_number("\003sysextended-abs", 2, k, x);
@@ -5533,7 +5540,7 @@ void C_ccall C_signum(C_word c, C_word self, C_word k, C_word x)
   } else if (C_block_header(x) == C_FLONUM_TAG) {
     C_word *a = C_alloc(C_SIZEOF_FLONUM);
     C_kontinue(k, C_a_u_i_flonum_signum(&a, 1, x));
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     C_kontinue(k, C_bignum_negativep(x) ? C_fix(-1) : C_fix(1));
   } else {
     try_extended_number("\003sysextended-signum", 2, k, x);
@@ -5562,7 +5569,7 @@ void C_ccall C_negate(C_word c, C_word self, C_word k, C_word x)
   } else if (C_block_header(x) == C_FLONUM_TAG) {
     C_word *a = C_alloc(C_SIZEOF_FLONUM);
     C_kontinue(k, C_a_i_flonum_negate(&a, 1, x));
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     C_u_integer_negate(3, (C_word)NULL, k, x);
   } else {
     try_extended_number("\003sysextended-negate", 2, k, x);
@@ -5745,8 +5752,7 @@ C_regparm C_word C_fcall C_i_bit_setp(C_word n, C_word i)
   if (!C_truep(C_i_exact_integerp(n))) {
     barf(C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR, "bit-set?", n);
   } else if (!(i & C_FIXNUM_BIT)) {
-    if (!C_immediatep(i) && (C_header_bits(i) == C_BIGNUM_TYPE) &&
-        !C_bignum_negativep(i)) {
+    if (!C_immediatep(i) && C_truep(C_bignump(i)) && !C_bignum_negativep(i)) {
       return C_i_integer_negativep(n); /* A bit silly, but strictly correct */
     } else {
       barf(C_BAD_ARGUMENT_TYPE_NO_UINTEGER_ERROR, "bit-set?", i);
@@ -6668,7 +6674,7 @@ C_regparm C_word C_fcall C_i_foreign_unsigned_integer_argumentp(C_word x)
 
   if((x & C_FIXNUM_BIT) != 0) return x;
 
-  if(!C_immediatep(x) && C_header_bits(x) == C_BIGNUM_TYPE) {
+  if(C_truep(C_i_bignump(x))) {
     if (C_bignum_size(x) == 1) return x;
     else barf(C_BAD_ARGUMENT_TYPE_FOREIGN_LIMITATION, NULL, x);
   }
@@ -6691,7 +6697,7 @@ C_regparm C_word C_fcall C_i_foreign_unsigned_integer64_argumentp(C_word x)
 
   if((x & C_FIXNUM_BIT) != 0) return x;
 
-  if(!C_immediatep(x) && C_header_bits(x) == C_BIGNUM_TYPE) {
+  if(C_truep(C_i_bignump(x))) {
 #ifdef C_SIXTY_FOUR
     if (C_bignum_size(x) == 1) return x;
 #else
@@ -7092,7 +7098,7 @@ C_2_basic_times(C_word c, C_word self, C_word k, C_word x, C_word y)
     } else if (C_block_header(y) == C_FLONUM_TAG) {
       C_word *a = C_alloc(C_SIZEOF_FLONUM);
       C_kontinue(k, C_flonum(&a, (double)C_unfix(x) * C_flonum_magnitude(y)));
-    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+    } else if (C_truep(C_bignump(y))) {
       C_u_2_integer_times(4, (C_word)NULL, k, x, y);
     } else {
       try_extended_number("\003sysextended-times", 3, k, x, y);
@@ -7107,12 +7113,12 @@ C_2_basic_times(C_word c, C_word self, C_word k, C_word x, C_word y)
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", y);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
       C_kontinue(k, C_a_i_flonum_times(&a, 2, x, y));
-    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+    } else if (C_truep(C_bignump(y))) {
       C_kontinue(k, C_flonum(&a, C_flonum_magnitude(x)*C_bignum_to_double(y)));
     } else {
       try_extended_number("\003sysextended-times", 3, k, x, y);
     }
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     if (y & C_FIXNUM_BIT) {
       C_u_2_integer_times(4, (C_word)NULL, k, x, y);
     } else if (C_immediatep(y)) {
@@ -7120,7 +7126,7 @@ C_2_basic_times(C_word c, C_word self, C_word k, C_word x, C_word y)
     } else if (C_block_header(y) == C_FLONUM_TAG) {
       C_word *a = C_alloc(C_SIZEOF_FLONUM);
       C_kontinue(k, C_flonum(&a, C_bignum_to_double(x)*C_flonum_magnitude(y)));
-    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+    } else if (C_truep(C_bignump(y))) {
       C_u_2_integer_times(4, (C_word)NULL, k, x, y);
     } else {
       try_extended_number("\003sysextended-times", 3, k, x, y);
@@ -7373,7 +7379,7 @@ C_2_basic_plus(C_word c, C_word self, C_word k, C_word x, C_word y)
     } else if (C_block_header(y) == C_FLONUM_TAG) {
       C_word *a = C_alloc(C_SIZEOF_FLONUM);
       C_kontinue(k, C_flonum(&a, (double)C_unfix(x) + C_flonum_magnitude(y)));
-    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+    } else if (C_truep(C_bignump(y))) {
       C_u_2_integer_plus(4, (C_word)NULL, k, x, y);
     } else {
       try_extended_number("\003sysextended-plus", 3, k, x, y);
@@ -7388,12 +7394,12 @@ C_2_basic_plus(C_word c, C_word self, C_word k, C_word x, C_word y)
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", y);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
       C_kontinue(k, C_a_i_flonum_plus(&a, 2, x, y));
-    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+    } else if (C_truep(C_bignump(y))) {
       C_kontinue(k, C_flonum(&a, C_flonum_magnitude(x)+C_bignum_to_double(y)));
     } else {
       try_extended_number("\003sysextended-plus", 3, k, x, y);
     }
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     if (y & C_FIXNUM_BIT) {
       C_u_2_integer_plus(4, (C_word)NULL, k, x, y);
     } else if (C_immediatep(y)) {
@@ -7401,7 +7407,7 @@ C_2_basic_plus(C_word c, C_word self, C_word k, C_word x, C_word y)
     } else if (C_block_header(y) == C_FLONUM_TAG) {
       C_word *a = C_alloc(C_SIZEOF_FLONUM);
       C_kontinue(k, C_flonum(&a, C_bignum_to_double(x)+C_flonum_magnitude(y)));
-    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+    } else if (C_truep(C_bignump(y))) {
       C_u_2_integer_plus(4, (C_word)NULL, k, x, y);
     } else {
       try_extended_number("\003sysextended-plus", 3, k, x, y);
@@ -7585,7 +7591,7 @@ C_2_basic_minus(C_word c, C_word self, C_word k, C_word x, C_word y)
     } else if (C_block_header(y) == C_FLONUM_TAG) {
       C_word *a = C_alloc(C_SIZEOF_FLONUM);
       C_kontinue(k, C_flonum(&a, (double)C_unfix(x) - C_flonum_magnitude(y)));
-    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+    } else if (C_truep(C_bignump(y))) {
       C_u_2_integer_minus(4, (C_word)NULL, k, x, y);
     } else {
       try_extended_number("\003sysextended-minus", 3, k, x, y);
@@ -7600,12 +7606,12 @@ C_2_basic_minus(C_word c, C_word self, C_word k, C_word x, C_word y)
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", y);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
       C_kontinue(k, C_a_i_flonum_difference(&a, 2, x, y)); /* XXX NAMING! */
-    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+    } else if (C_truep(C_bignump(y))) {
       C_kontinue(k, C_flonum(&a, C_flonum_magnitude(x)-C_bignum_to_double(y)));
     } else {
       try_extended_number("\003sysextended-minus", 3, k, x, y);
     }
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     if (y & C_FIXNUM_BIT) {
       C_u_2_integer_minus(4, (C_word)NULL, k, x, y);
     } else if (C_immediatep(y)) {
@@ -7613,7 +7619,7 @@ C_2_basic_minus(C_word c, C_word self, C_word k, C_word x, C_word y)
     } else if (C_block_header(y) == C_FLONUM_TAG) {
       C_word *a = C_alloc(C_SIZEOF_FLONUM);
       C_kontinue(k, C_flonum(&a, C_bignum_to_double(x)-C_flonum_magnitude(y)));
-    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+    } else if (C_truep(C_bignump(y))) {
       C_u_2_integer_minus(4, (C_word)NULL, k, x, y);
     } else {
       try_extended_number("\003sysextended-minus", 3, k, x, y);
@@ -7875,7 +7881,7 @@ basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_
       x = C_a_i_fix_to_flo(&a, 1, x);
       RETURN_Q_AND_OR_R(C_a_i_flonum_actual_quotient_checked(&a, 2, x, y),
                         C_a_i_flonum_remainder_checked(&a, 2, x, y));
-    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+    } else if (C_truep(C_bignump(y))) {
       integer_divrem(6, (C_word)NULL, k, x, y, return_q, return_r);
     } else {
       barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, DIVREM_LOC, y);
@@ -7900,7 +7906,7 @@ basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_
 
       RETURN_Q_AND_OR_R(C_a_i_flonum_actual_quotient_checked(&a, 2, x, y),
                         C_a_i_flonum_remainder_checked(&a, 2, x, y));
-    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+    } else if (C_truep(C_bignump(y))) {
       C_word k2, ab[C_SIZEOF_CLOSURE(3)], *a = ab;
       x = flo_to_tmp_bignum(x);
       k2 = C_closure(&a, 3, (C_word)divrem_intflo_2, k, x);
@@ -7908,7 +7914,7 @@ basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_
     } else {
       barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, DIVREM_LOC, y);
     }
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     if (y & C_FIXNUM_BIT) {
       integer_divrem(6, (C_word)NULL, k, x, y, return_q, return_r);
     } else if (C_immediatep(y)) {
@@ -7924,7 +7930,7 @@ basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_
         k2 = C_closure(&a, 3, (C_word)divrem_intflo_2, k, y);
         integer_divrem(6, (C_word)NULL, k2, x, y, return_q, return_r);
       }
-    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+    } else if (C_truep(C_bignump(y))) {
       bignum_divrem(6, (C_word)NULL, k, x, y, return_q, return_r);
     } else {
       barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, DIVREM_LOC, y);
@@ -8214,7 +8220,7 @@ static C_word rat_cmp(C_word x, C_word y)
   }
 
   /* Extract components x=x1/x2 and y=y1/y2 */
-  if (x & C_FIXNUM_BIT || (C_header_bits(x) == C_BIGNUM_TYPE)) {
+  if (x & C_FIXNUM_BIT || C_truep(C_bignump(x))) {
     x1 = x;
     x2 = C_fix(1);
   } else {
@@ -8222,7 +8228,7 @@ static C_word rat_cmp(C_word x, C_word y)
     x2 = C_block_item(x, 2);
   }
 
-  if (y & C_FIXNUM_BIT || (C_header_bits(y) == C_BIGNUM_TYPE)) {
+  if (y & C_FIXNUM_BIT || C_truep(C_bignump(y))) {
     y1 = y;
     y2 = C_fix(1);
   } else {
@@ -8526,7 +8532,7 @@ static C_word basic_cmp(C_word x, C_word y, char *loc, int eqp)
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
       return int_flo_cmp(x, y);
-    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+    } else if (C_truep(C_bignump(y))) {
       C_word ab[C_SIZEOF_FIX_BIGNUM], *a = ab;
       return C_i_bignum_cmp(C_a_u_i_fix_to_big(&a, x), y);
     } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
@@ -8553,7 +8559,7 @@ static C_word basic_cmp(C_word x, C_word y, char *loc, int eqp)
       double a = C_flonum_magnitude(x), b = C_flonum_magnitude(y);
       if (C_isnan(a) || C_isnan(b)) return C_SCHEME_FALSE; /* "mu" */
       else return C_fix((a < b) ? -1 : ((a > b) ? 1 : 0));
-    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+    } else if (C_truep(C_bignump(y))) {
       return flo_int_cmp(x, y);
     } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
       if (C_block_item(y, 0) == C_ratnum_type_tag) {
@@ -8567,7 +8573,7 @@ static C_word basic_cmp(C_word x, C_word y, char *loc, int eqp)
     } else {
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
     }
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     if (y & C_FIXNUM_BIT) {
       C_word ab[C_SIZEOF_FIX_BIGNUM], *a = ab;
       return C_i_bignum_cmp(x, C_a_u_i_fix_to_big(&a, y));
@@ -8575,7 +8581,7 @@ static C_word basic_cmp(C_word x, C_word y, char *loc, int eqp)
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
       return int_flo_cmp(x, y);
-    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+    } else if (C_truep(C_bignump(y))) {
       return C_i_bignum_cmp(x, y);
     } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
       if (C_block_item(y, 0) == C_ratnum_type_tag) {
@@ -8599,7 +8605,7 @@ static C_word basic_cmp(C_word x, C_word y, char *loc, int eqp)
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
       return rat_flo_cmp(x, y);
-    } else if (C_header_bits(y) == C_BIGNUM_TYPE) {
+    } else if (C_truep(C_bignump(y))) {
       if (eqp) return C_SCHEME_FALSE;
       else return rat_cmp(x, y);
     } else if (C_block_header(y) == C_STRUCTURE3_TAG &&
@@ -8629,9 +8635,9 @@ static C_word basic_cmp(C_word x, C_word y, char *loc, int eqp)
     } else if (C_immediatep(y)) {
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, loc, y);
     } else if (C_block_header(y) == C_FLONUM_TAG ||
-               C_header_bits(y) == C_BIGNUM_TYPE ||
+               C_truep(C_bignump(x)) ||
                (C_block_header(y) == C_STRUCTURE3_TAG &&
-                (C_block_item(y, 0) == C_ratnum_type_tag))) {
+                C_block_item(y, 0) == C_ratnum_type_tag)) {
       return C_SCHEME_FALSE;
     } else if (C_block_header(y) == C_STRUCTURE3_TAG &&
                (C_block_item(y, 0) == C_cplxnum_type_tag)) {
@@ -9073,12 +9079,12 @@ void allocate_vector_2(void *dummy)
 void C_ccall
 C_allocate_bignum(C_word c, C_word self, C_word k, C_word size, C_word negp, C_word initp)
 {
-  C_uword bytes = C_wordstobytes(C_unfix(size) + 1); /* add slot for negp */
+  C_uword bytes = C_wordstobytes(C_SIZEOF_INTERNAL_BIGNUM_VECTOR(C_unfix(size)));
 
   if(bytes > C_HEADER_SIZE_MASK)
     barf(C_OUT_OF_RANGE_ERROR, NULL, size, C_fix(C_HEADER_SIZE_MASK));
 
-  bytes += sizeof(C_word); /* header slot */
+  bytes += C_wordstobytes(C_SIZEOF_STRUCTURE(2)); /* Add wrapper struct */
 
   C_save(k);
   C_save(negp);
@@ -9105,7 +9111,7 @@ static void allocate_bignum_2(void *dummy)
   C_word  initp = C_restore;
   C_word  negp = C_restore;
   C_word  k = C_restore;
-  C_word  *v0, v;
+  C_word  *v0, *v1, bigvec;
 
   if(C_truep(mode)) {
     while((C_uword)(C_fromspace_limit - C_fromspace_top) < (bytes + stack_size)) {
@@ -9122,31 +9128,34 @@ static void allocate_bignum_2(void *dummy)
   }
   else v0 = C_alloc(C_bytestowords(bytes));
 
-  v = (C_word)v0;
+  v1 = v0 + C_SIZEOF_STRUCTURE(2);
+  bigvec = (C_word)v1;
+  bytes -= C_wordstobytes(C_SIZEOF_STRUCTURE(2));
+  bytes -= sizeof(C_word); /* internal bignum vector's header */
 
-  *(v0++) = C_BIGNUM_TYPE | (bytes-sizeof(C_word)); /* subtract header again */
+  *(v1++) = C_STRING_TYPE | bytes;
 
-  *(v0++) = C_truep(negp);
-  if(C_truep(initp)) C_memset(v0, '\0', bytes - sizeof(C_word));
+  *(v1++) = C_truep(negp);
+  if(C_truep(initp)) C_memset(v1, '\0', bytes - sizeof(C_word));
 
-  C_kontinue(k, v);
+  C_kontinue(k, C_a_i_record2(&v0, 2, C_bignum_type_tag, bigvec));
 }
 
 static C_word allocate_tmp_bignum(C_word size, C_word negp, C_word initp)
 {
   C_word *mem = C_malloc(C_wordstobytes(C_SIZEOF_BIGNUM(C_unfix(size)))),
-          bignum = (C_word)mem;
+          bigvec = (C_word)(mem + C_SIZEOF_STRUCTURE(2));
   if (mem == NULL) abort();     /* TODO: panic */
   
-  C_block_header_init(bignum, C_BIGNUM_TYPE | C_wordstobytes(C_unfix(size)+1));
-  C_set_block_item(bignum, 0, C_truep(negp));
+  C_block_header_init(bigvec, C_STRING_TYPE | C_wordstobytes(C_unfix(size)+1));
+  C_set_block_item(bigvec, 0, C_truep(negp));
 
   if (C_truep(initp)) {
-    C_memset(((C_uword *)C_data_pointer(bignum))+1,
+    C_memset(((C_uword *)C_data_pointer(bigvec))+1,
              0, C_wordstobytes(C_unfix(size)));
   }
 
-  return bignum;
+  return C_a_i_record2(&mem, 2, C_bignum_type_tag, bigvec);
 }
 
 /* Simplification: scan trailing zeroes, then return a fixnum if the
@@ -10011,7 +10020,7 @@ void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, 
     barf(C_BAD_ARGUMENT_TYPE_ERROR, "number->string", num);
   } else if(C_block_header(num) == C_FLONUM_TAG) {
     C_flonum_to_string(4, (C_word)NULL, k, num, radix);
-  } else if (C_header_bits(num) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(num))) {
     C_integer_to_string(4, (C_word)NULL, k, num, radix);
   } else {
     try_extended_number("\003sysextended-number->string", 3, k, num, radix);
@@ -11326,11 +11335,11 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
       break;
 
 #ifdef C_SIXTY_FOUR
-    case (C_BIGNUM_TYPE >> (24 + 32)) & 0xff:
+    case ((C_STRING_TYPE | C_GC_FORWARDING_BIT) >> (24 + 32)) & 0xff:
 #else
-    case (C_BIGNUM_TYPE >> 24) & 0xff:
+    case ((C_STRING_TYPE | C_GC_FORWARDING_BIT) >> 24) & 0xff:
 #endif
-      bits = C_BIGNUM_TYPE;
+      bits = (C_STRING_TYPE | C_GC_FORWARDING_BIT);
       break;
 
     default: 
@@ -11380,6 +11389,13 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
   size = decode_size(str);
 
   switch(bits) {
+  /* This cannot be encoded as a blob due to endianness differences */
+  case (C_STRING_TYPE | C_GC_FORWARDING_BIT): /* This represents "exact int" */
+    /* bignums are also allocated statically */
+    val = C_static_bignum(ptr, size, *str);
+    *str += size;
+    break;
+
   case C_STRING_TYPE:
     /* strings are always allocated statically */
     val = C_static_string(ptr, size, *str);
@@ -11403,13 +11419,6 @@ static C_regparm C_word C_fcall decode_literal2(C_word **ptr, C_char **str,
   case C_LAMBDA_INFO_TYPE:
     /* lambda infos are always allocated statically */
     val = C_static_lambda_info(ptr, size, *str);
-    *str += size;
-    break;
-
-  /* This cannot be encoded as a blob due to endianness differences */
-  case C_BIGNUM_TYPE:
-    /* bignums are also allocated statically */
-    val = C_static_bignum(ptr, size, *str);
     *str += size;
     break;
 

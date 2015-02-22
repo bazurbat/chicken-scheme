@@ -347,25 +347,25 @@ EOF
 
 (define pointer-u32-ref
   (getter-with-setter
-   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_u32_ref" 3) p)) ;XXX hardcoded size
+   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_u32_ref" 6) p)) ;XXX hardcoded size
    pointer-u32-set!
    "(pointer-u32-ref p)"))
 
 (define pointer-s32-ref
   (getter-with-setter
-   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_s32_ref" 3) p)) ;XXX hardcoded size
+   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_s32_ref" 6) p)) ;XXX hardcoded size
    pointer-s32-set!
    "(pointer-s32-ref p)"))
 
 (define pointer-u64-ref
   (getter-with-setter
-   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_u64_ref" 4) p)) ;XXX hardcoded size
+   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_u64_ref" 7) p)) ;XXX hardcoded size
    pointer-u64-set!
    "(pointer-u64-ref p)"))
 
 (define pointer-s64-ref
   (getter-with-setter
-   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_s64_ref" 4) p)) ;XXX hardcoded size
+   (lambda (p) (##core#inline_allocate ("C_a_u_i_pointer_s64_ref" 7) p)) ;XXX hardcoded size
    pointer-s64-set!
    "(pointer-s64-ref p)"))
 

@@ -470,7 +470,7 @@ static inline int isinf_ld (long double x)
 # define C_PAIR_TYPE              (0x0300000000000000L)
 # define C_CLOSURE_TYPE           (0x0400000000000000L | C_SPECIALBLOCK_BIT)
 # define C_FLONUM_TYPE            (0x0500000000000000L | C_BYTEBLOCK_BIT | C_8ALIGN_BIT)
-# define C_BIGNUM_TYPE            (0x0600000000000000L | C_BYTEBLOCK_BIT)
+/*       unused                   (0x0600000000000000L ...) */
 # define C_PORT_TYPE              (0x0700000000000000L | C_SPECIALBLOCK_BIT)
 # define C_STRUCTURE_TYPE         (0x0800000000000000L)
 # define C_POINTER_TYPE           (0x0900000000000000L | C_SPECIALBLOCK_BIT)
@@ -500,7 +500,7 @@ static inline int isinf_ld (long double x)
 # else
 #  define C_FLONUM_TYPE           (0x05000000 | C_BYTEBLOCK_BIT | C_8ALIGN_BIT)
 # endif
-# define C_BIGNUM_TYPE            (0x06000000 | C_BYTEBLOCK_BIT)
+/*       unused                   (0x06000000 ...) */
 # define C_PORT_TYPE              (0x07000000 | C_SPECIALBLOCK_BIT)
 # define C_STRUCTURE_TYPE         (0x08000000)
 # define C_POINTER_TYPE           (0x09000000 | C_SPECIALBLOCK_BIT)
@@ -533,9 +533,12 @@ static inline int isinf_ld (long double x)
 #define C_SIZEOF_PORT             16
 #define C_SIZEOF_STRUCTURE(n)     ((n)+1)
 #define C_SIZEOF_CLOSURE(n)       ((n)+1)
-#define C_SIZEOF_BIGNUM(n)        ((n)+2)
+#define C_SIZEOF_INTERNAL_BIGNUM_VECTOR(n) (C_SIZEOF_VECTOR((n)+1))
+#define C_internal_bignum_vector(b)        (C_block_item(b,1))
+
 /* This is for convenience and allows flexibility in representation */
 #define C_SIZEOF_FIX_BIGNUM       C_SIZEOF_BIGNUM(1)
+#define C_SIZEOF_BIGNUM(n)        (C_SIZEOF_INTERNAL_BIGNUM_VECTOR(n)+C_SIZEOF_STRUCTURE(2))
 
 /* Fixed size types have pre-computed header tags */
 #define C_PAIR_TAG                (C_PAIR_TYPE | (C_SIZEOF_PAIR - 1))
@@ -546,6 +549,7 @@ static inline int isinf_ld (long double x)
 #define C_SYMBOL_TAG              (C_SYMBOL_TYPE | (C_SIZEOF_SYMBOL - 1))
 #define C_FLONUM_TAG              (C_FLONUM_TYPE | sizeof(double))
 #define C_STRUCTURE3_TAG          (C_STRUCTURE_TYPE | 3)
+#define C_STRUCTURE2_TAG          (C_STRUCTURE_TYPE | 2)
 
 /* Locative subtypes */
 #define C_SLOT_LOCATIVE           0
@@ -1117,7 +1121,7 @@ extern double trunc(double);
 #define C_set_block_item(x,i,y)    (C_block_item(x, i) = (y))
 #define C_header_bits(bh)          (C_block_header(bh) & C_HEADER_BITS_MASK)
 #define C_header_size(bh)          (C_block_header(bh) & C_HEADER_SIZE_MASK)
-#define C_bignum_size(b)           (C_bytestowords(C_header_size(b))-1)
+#define C_bignum_size(b)           (C_bytestowords(C_header_size(C_internal_bignum_vector(b)))-1)
 #define C_make_header(type, size)  ((C_header)(((type) & C_HEADER_BITS_MASK) | ((size) & C_HEADER_SIZE_MASK)))
 #define C_symbol_value(x)          (C_block_item(x, 0))
 #define C_save(x)	           (*(--C_temporary_stack) = (C_word)(x))
@@ -1159,11 +1163,11 @@ extern double trunc(double);
 #define C_mk_nbool(x)              ((x) ? C_SCHEME_FALSE : C_SCHEME_TRUE)
 #define C_port_file(p)             C_CHECKp(p,C_portp(C_VAL1(p)),(C_FILEPTR)C_block_item(C_VAL1(p), 0))
 #define C_data_pointer(b)          C_CHECKp(b,C_blockp((C_word)C_VAL1(b)),(void *)(((C_SCHEME_BLOCK *)(C_VAL1(b)))->data))
-#define C_bignum_negativep(b)      C_CHECKp(b,C_bignump(C_VAL1(b)),(C_block_item(b,0)!=0))
-#define C_bignum_digits(b)         C_CHECKp(b,C_bignump(C_VAL1(b)),(((C_uword *)C_data_pointer(C_VAL1(b)))+1))
+#define C_bignum_negativep(b)      C_CHECKp(b,C_bignump(C_VAL1(b)),(C_block_item(C_internal_bignum_vector(C_VAL1(b)),0)!=0))
+#define C_bignum_digits(b)         C_CHECKp(b,C_bignump(C_VAL1(b)),(((C_uword *)C_data_pointer(C_internal_bignum_vector(C_VAL1(b))))+1))
 #define C_fitsinbignumhalfdigitp(n)(C_BIGNUM_DIGIT_HI_HALF(n) == 0)
 #define C_bignum_negated_fitsinfixnump(b) (C_bignum_size(b) == 1 && (C_bignum_negativep(b) ? C_ufitsinfixnump(*C_bignum_digits(b)) : !(*C_bignum_digits(b) & C_INT_SIGN_BIT) && C_fitsinfixnump(-(C_word)*C_bignum_digits(b))))
-#define C_bignum_mutate_size(b,s)  (C_block_header(b) = (C_BIGNUM_TYPE | C_wordstobytes((s)+1)))
+#define C_bignum_mutate_size(b, s) (C_block_header(C_internal_bignum_vector(b)) = (C_STRING_TYPE | C_wordstobytes((s)+1)))
 #define C_fitsinfixnump(n)         (((n) & C_INT_SIGN_BIT) == (((n) & C_INT_TOP_BIT) << 1))
 #define C_ufitsinfixnump(n)        (((n) & (C_INT_SIGN_BIT | (C_INT_SIGN_BIT >> 1))) == 0)
 #define C_and(x, y)                (C_truep(x) ? (y) : C_SCHEME_FALSE)
@@ -1236,7 +1240,7 @@ extern double trunc(double);
 #define C_forwardedp(x)           C_mk_bool((C_block_header(x) & C_GC_FORWARDING_BIT) != 0)
 #define C_immp(x)                 C_mk_bool(C_immediatep(x))
 #define C_flonump(x)              C_mk_bool(C_block_header(x) == C_FLONUM_TAG)
-#define C_bignump(x)              C_mk_bool(C_header_bits(x) == C_BIGNUM_TYPE)
+#define C_bignump(x)              C_mk_bool(C_block_header(x) == C_STRUCTURE2_TAG && C_block_item(x, 0) == C_bignum_type_tag)
 #define C_stringp(x)              C_mk_bool(C_header_bits(x) == C_STRING_TYPE)
 #define C_symbolp(x)              C_mk_bool(C_block_header(x) == C_SYMBOL_TAG)
 #define C_pairp(x)                C_mk_bool(C_block_header(x) == C_PAIR_TAG)
@@ -1752,6 +1756,7 @@ C_varextern C_TLS C_word
   *C_temporary_stack_bottom,
   *C_temporary_stack_limit,
   *C_stack_limit,
+   C_bignum_type_tag,
    C_ratnum_type_tag,
    C_cplxnum_type_tag;
 C_varextern C_TLS C_long
@@ -2293,29 +2298,147 @@ C_inline C_word C_double_to_number(C_word n)
   else return n;
 }
 
+C_inline C_word C_a_i_record1(C_word **ptr, int n, C_word x1)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_STRUCTURE_TYPE | 1;
+  *(p++) = x1;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_record2(C_word **ptr, int n, C_word x1, C_word x2)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_STRUCTURE_TYPE | 2;
+  *(p++) = x1;
+  *(p++) = x2;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_record3(C_word **ptr, int n, C_word x1, C_word x2, C_word x3)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_STRUCTURE_TYPE | 3;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_record4(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_STRUCTURE_TYPE | 4;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *(p++) = x4;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_record5(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+				 C_word x5)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_STRUCTURE_TYPE | 5;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *(p++) = x4;
+  *(p++) = x5;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_record6(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+				 C_word x5, C_word x6)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_STRUCTURE_TYPE | 6;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *(p++) = x4;
+  *(p++) = x5;
+  *(p++) = x6;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_record7(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+				 C_word x5, C_word x6, C_word x7)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_STRUCTURE_TYPE | 7;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *(p++) = x4;
+  *(p++) = x5;
+  *(p++) = x6;
+  *(p++) = x7;
+  *ptr = p;
+  return (C_word)p0;
+}
+
+
+C_inline C_word C_a_i_record8(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
+				 C_word x5, C_word x6, C_word x7, C_word x8)
+{
+  C_word *p = *ptr, *p0 = p; 
+
+  *(p++) = C_STRUCTURE_TYPE | 8;
+  *(p++) = x1;
+  *(p++) = x2;
+  *(p++) = x3;
+  *(p++) = x4;
+  *(p++) = x5;
+  *(p++) = x6;
+  *(p++) = x7;
+  *(p++) = x8;
+  *ptr = p;
+  return (C_word)p0;
+}
+
 /* Silly (this is not normalized) but in some cases needed internally */
 C_inline C_word C_bignum0(C_word **ptr)
 {
   C_word *p = *ptr, p0 = (C_word)p;
 
-  /* Not using C_a_i_vector4, to make it easier to rewrite later */
-  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(1);
+  *(p++) = C_STRING_TYPE | C_wordstobytes(1);
   *(p++) = 0; /* zero is always positive */
   *ptr = p;
 
-  return p0;
+  return C_a_i_record2(ptr, 2, C_bignum_type_tag, p0);
 }
 
 C_inline C_word C_bignum1(C_word **ptr, int negp, C_uword d1)
 {
   C_word *p = *ptr, p0 = (C_word)p;
 
-  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(2);
+  *(p++) = C_STRING_TYPE | C_wordstobytes(2);
   *(p++) = negp;
   *(p++) = d1;
   *ptr = p;
 
-  return p0;
+  return C_a_i_record2(ptr, 2, C_bignum_type_tag, p0);
 }
 
 /* Here d1, d2, ... are low to high (ie, little endian)! */
@@ -2323,14 +2446,22 @@ C_inline C_word C_bignum2(C_word **ptr, int negp, C_uword d1, C_uword d2)
 {
   C_word *p = *ptr, p0 = (C_word)p;
 
-  *(p++) = C_BIGNUM_TYPE | C_wordstobytes(3);
+  *(p++) = C_STRING_TYPE | C_wordstobytes(3);
   *(p++) = negp;
   *(p++) = d1;
   *(p++) = d2;
   *ptr = p;
 
-  return p0;
+  return C_a_i_record2(ptr, 2, C_bignum_type_tag, p0);
 }
+
+C_inline C_word C_i_bignump(C_word x)
+{
+  return C_mk_bool(!C_immediatep(x) &&
+                   C_block_header(x) == C_STRUCTURE2_TAG &&
+                   C_block_item(x, 0) == C_bignum_type_tag);
+}
+
 
 
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
@@ -2340,7 +2471,7 @@ C_inline C_word C_fits_in_int_p(C_word x)
 
   if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
 
-  if(!C_immediatep(x) && C_header_bits(x) == C_BIGNUM_TYPE) {
+  if(C_truep(C_i_bignump(x))) {
     return C_mk_bool(C_bignum_size(x) == 1 &&
                      (!C_bignum_negativep(x) ||
                       !(C_bignum_digits(x)[0] & C_INT_SIGN_BIT)));
@@ -2357,10 +2488,7 @@ C_inline C_word C_fits_in_unsigned_int_p(C_word x)
   double n, m;
 
   if(x & C_FIXNUM_BIT) return C_SCHEME_TRUE;
-
-  if(!C_immediatep(x) && C_header_bits(x) == C_BIGNUM_TYPE) {
-    return C_mk_bool(C_bignum_size(x) == 1);
-  }
+  if(C_truep(C_i_bignump(x))) return C_mk_bool(C_bignum_size(x) == 1);
 
   /* XXX OBSOLETE remove on the next round, remove check above */
   n = C_flonum_magnitude(x);
@@ -2384,7 +2512,7 @@ C_inline C_word C_num_to_int(C_word x)
 {
   if(x & C_FIXNUM_BIT) {
     return C_unfix(x);
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     if (C_bignum_negativep(x)) return -(C_word)C_bignum_digits(x)[0];
     else return (C_word)C_bignum_digits(x)[0];  /* should never be larger */
   } else {
@@ -2398,7 +2526,7 @@ C_inline C_s64 C_num_to_int64(C_word x)
 {
   if(x & C_FIXNUM_BIT) {
     return (C_s64)C_unfix(x);
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     C_s64 num = C_bignum_digits(x)[0];
 #ifndef C_SIXTY_FOUR
     if (C_bignum_size(x) > 1) num |= ((C_s64)C_bignum_digits(x)[1]) << 32;
@@ -2416,7 +2544,7 @@ C_inline C_u64 C_num_to_uint64(C_word x)
 {
   if(x & C_FIXNUM_BIT) {
     return (C_u64)C_unfix(x);
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     C_u64 num = C_bignum_digits(x)[0];
 #ifndef C_SIXTY_FOUR
     if (C_bignum_size(x) > 1) num |= ((C_u64)C_bignum_digits(x)[1]) << 32;
@@ -2433,7 +2561,7 @@ C_inline C_uword C_num_to_unsigned_int(C_word x)
 {
   if(x & C_FIXNUM_BIT) {
     return (C_uword)C_unfix(x);
-  } else if (C_header_bits(x) == C_BIGNUM_TYPE) {
+  } else if (C_truep(C_bignump(x))) {
     return C_bignum_digits(x)[0]; /* should never be larger */
   } else {
     /* XXX OBSOLETE remove on the next round, remove check above */
@@ -2577,8 +2705,10 @@ C_inline C_word basic_eqvp(C_word x, C_word y)
            
            ((C_block_header(x) == C_FLONUM_TAG &&
              C_flonum_magnitude(x) == C_flonum_magnitude(y)) ||
-            
-            (C_header_bits(x) == C_BIGNUM_TYPE &&
+
+            (C_block_header(x) == C_STRUCTURE2_TAG &&
+             C_block_item(x, 0) == C_bignum_type_tag &&
+             C_block_item(y, 0) == C_bignum_type_tag &&
              C_i_bignum_cmp(x, y) == C_fix(0)))));
 }
 
@@ -2636,17 +2766,12 @@ C_inline C_word C_i_closurep(C_word x)
   return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_CLOSURE_TYPE);
 }
 
-C_inline C_word C_i_bignump(C_word x)
-{
-  return C_mk_bool(!C_immediatep(x) && C_header_bits(x) == C_BIGNUM_TYPE);
-}
-
 C_inline C_word C_i_numberp(C_word x)
 {
   return C_mk_bool((x & C_FIXNUM_BIT) ||
                    (!C_immediatep(x) && 
                     (C_block_header(x) == C_FLONUM_TAG ||
-                     C_header_bits(x) == C_BIGNUM_TYPE ||
+                     C_truep(C_bignump(x)) ||
                      (C_block_header(x) == C_STRUCTURE3_TAG &&
                       (C_block_item(x, 0) == C_ratnum_type_tag ||
                        C_block_item(x, 0) == C_cplxnum_type_tag)))));
@@ -2658,8 +2783,8 @@ C_inline C_word C_i_realp(C_word x)
   return C_mk_bool((x & C_FIXNUM_BIT) ||
                    (!C_immediatep(x) && 
                     (C_block_header(x) == C_FLONUM_TAG ||
-                     C_header_bits(x) == C_BIGNUM_TYPE ||
-                     (C_header_bits(x) == C_STRUCTURE_TYPE &&
+                     C_truep(C_bignump(x)) ||
+                     (C_block_header(x) == C_STRUCTURE3_TAG &&
                       C_block_item(x, 0) == C_ratnum_type_tag))));
 }
 
@@ -2674,8 +2799,8 @@ C_inline C_word C_i_rationalp(C_word x)
     double n = C_flonum_magnitude(x);
     return C_mk_bool(!C_isinf(n) && !C_isnan(n));
   } else {
-    return C_mk_bool(C_header_bits(x) == C_BIGNUM_TYPE ||
-                     (C_header_bits(x) == C_STRUCTURE_TYPE &&
+    return C_mk_bool(C_truep(C_bignump(x)) ||
+                     (C_block_header(x) == C_STRUCTURE3_TAG &&
                       C_block_item(x, 0) == C_ratnum_type_tag));
   }
 }
@@ -2702,8 +2827,7 @@ C_inline int C_ub_i_fpintegerp(double x)
 
 C_inline C_word C_i_exact_integerp(C_word x)
 {
-  return C_mk_bool((x) & C_FIXNUM_BIT ||
-                   (!C_immediatep(x) && (C_header_bits(x) == C_BIGNUM_TYPE)));
+  return C_mk_bool((x) & C_FIXNUM_BIT || C_truep(C_i_bignump(x)));
 }
 
 C_inline C_word C_u_i_exactp(C_word x)
@@ -2746,11 +2870,10 @@ C_inline C_word C_i_integerp(C_word x)
 {
   double dummy, val;
 
-  if (x & C_FIXNUM_BIT ||
-      (!C_immediatep(x) && (C_header_bits(x) == C_BIGNUM_TYPE)))
-	  return C_SCHEME_TRUE;
+  if (x & C_FIXNUM_BIT || C_truep(C_i_bignump(x)))
+    return C_SCHEME_TRUE;
   if (C_immediatep(x) || C_block_header(x) != C_FLONUM_TAG)
-	  return C_SCHEME_FALSE;
+    return C_SCHEME_FALSE;
 
   val = C_flonum_magnitude(x);
   if(C_isnan(val) || C_isinf(val)) return C_SCHEME_FALSE;
@@ -3309,125 +3432,6 @@ C_inline C_word C_a_i_list8(C_word **a, int n, C_word x1, C_word x2, C_word x3, 
   return C_a_pair(a, x1, x);
 }
 
-
-C_inline C_word C_a_i_record1(C_word **ptr, int n, C_word x1)
-{
-  C_word *p = *ptr, *p0 = p; 
-
-  *(p++) = C_STRUCTURE_TYPE | 1;
-  *(p++) = x1;
-  *ptr = p;
-  return (C_word)p0;
-}
-
-
-C_inline C_word C_a_i_record2(C_word **ptr, int n, C_word x1, C_word x2)
-{
-  C_word *p = *ptr, *p0 = p; 
-
-  *(p++) = C_STRUCTURE_TYPE | 2;
-  *(p++) = x1;
-  *(p++) = x2;
-  *ptr = p;
-  return (C_word)p0;
-}
-
-
-C_inline C_word C_a_i_record3(C_word **ptr, int n, C_word x1, C_word x2, C_word x3)
-{
-  C_word *p = *ptr, *p0 = p; 
-
-  *(p++) = C_STRUCTURE_TYPE | 3;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *ptr = p;
-  return (C_word)p0;
-}
-
-
-C_inline C_word C_a_i_record4(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4)
-{
-  C_word *p = *ptr, *p0 = p; 
-
-  *(p++) = C_STRUCTURE_TYPE | 4;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *(p++) = x4;
-  *ptr = p;
-  return (C_word)p0;
-}
-
-
-C_inline C_word C_a_i_record5(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
-				 C_word x5)
-{
-  C_word *p = *ptr, *p0 = p; 
-
-  *(p++) = C_STRUCTURE_TYPE | 5;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *(p++) = x4;
-  *(p++) = x5;
-  *ptr = p;
-  return (C_word)p0;
-}
-
-
-C_inline C_word C_a_i_record6(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
-				 C_word x5, C_word x6)
-{
-  C_word *p = *ptr, *p0 = p; 
-
-  *(p++) = C_STRUCTURE_TYPE | 6;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *(p++) = x4;
-  *(p++) = x5;
-  *(p++) = x6;
-  *ptr = p;
-  return (C_word)p0;
-}
-
-
-C_inline C_word C_a_i_record7(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
-				 C_word x5, C_word x6, C_word x7)
-{
-  C_word *p = *ptr, *p0 = p; 
-
-  *(p++) = C_STRUCTURE_TYPE | 7;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *(p++) = x4;
-  *(p++) = x5;
-  *(p++) = x6;
-  *(p++) = x7;
-  *ptr = p;
-  return (C_word)p0;
-}
-
-
-C_inline C_word C_a_i_record8(C_word **ptr, int n, C_word x1, C_word x2, C_word x3, C_word x4,
-				 C_word x5, C_word x6, C_word x7, C_word x8)
-{
-  C_word *p = *ptr, *p0 = p; 
-
-  *(p++) = C_STRUCTURE_TYPE | 8;
-  *(p++) = x1;
-  *(p++) = x2;
-  *(p++) = x3;
-  *(p++) = x4;
-  *(p++) = x5;
-  *(p++) = x6;
-  *(p++) = x7;
-  *(p++) = x8;
-  *ptr = p;
-  return (C_word)p0;
-}
 
 /*
  * From Hacker's Delight by Henry S. Warren

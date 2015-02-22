@@ -681,9 +681,9 @@
 
     (define (literal-size lit)
       (cond ((immediate? lit) 0)
-	    ((big-fixnum? lit) 0)       ; immediate or statically allocated
+	    ((big-fixnum? lit) 3)       ; immediate if fixnum, bignum see below
 	    ((string? lit) 0)		; statically allocated
-	    ((bignum? lit) 0)		; statically allocated
+	    ((bignum? lit) 3)		; internal vector statically allocated
 	    ((flonum? lit) words-per-flonum)
 	    ((symbol? lit) 10)          ; size of symbol, and possibly a bucket
 	    ((pair? lit) (+ 3 (literal-size (car lit)) (literal-size (cdr lit))))
@@ -1435,9 +1435,12 @@ return((C_header_bits(lit) >> 24) & 0xff);
 	 ((exact-integer? lit)
 	  ;; Encode as hex to save space and get exact size
 	  ;; calculation.  We could encode as base 32 to save more
-	  ;; space, but that makes debugging harder.
+	  ;; space, but that makes debugging harder.  The type tag is
+	  ;; a bit of a hack: we encode as "GC forwarded" string to
+	  ;; get a unique new type, as bignums don't have their own
+	  ;; type tag (they're encoded as structures).
 	  (let ((str (number->string lit 16)))
-	    (string-append "\x46" (encode-size (string-length str)) str)))
+	    (string-append "\xc2" (encode-size (string-length str)) str)))
 	 ((flonum? lit)
 	  (string-append "\x55" (number->string lit) "\x00") )
 	 ((symbol? lit)

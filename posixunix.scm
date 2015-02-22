@@ -1443,7 +1443,7 @@ EOF
   (let ((tm-size (foreign-value "sizeof(struct tm)" int)))
     (lambda (tm)
       (check-time-vector 'utc-time->seconds tm)
-      (let ((t (##core#inline_allocate ("C_a_timegm" 4) tm (##sys#make-string tm-size #\nul))))
+      (let ((t (##core#inline_allocate ("C_a_timegm" 7) tm (##sys#make-string tm-size #\nul))))
         (if (fp= -1.0 t)
             (##sys#error 'utc-time->seconds "cannot convert time vector to seconds" tm)
             t)))))

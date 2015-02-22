@@ -86,13 +86,6 @@ a flat closure representation is used).
 64 bit architectures) contain a 64-bit floating-point number, in the
 representation used by the host system's C compiler.
 
-'''bignums''': byte-vector objects with type bits {{C_BIGNUM_TYPE}},
-currently 0110.  The first word of the data element contains 0 if the
-number is positive or 1 if it is negative.  The remaining data encodes
-the bignum's digits (sometimes called "bigits" or "limbs"), which are
-accessed as machine words.  The internal byte representation will be
-stored in the endianness of the host machine.
-
 '''ports''': special vector objects with type bits
 {{C_PORT_TYPE}}, currently 0111. The first slot contains a pointer to a file-
 stream, if this is a file-pointer, or NULL if not. The other slots

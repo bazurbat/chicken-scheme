@@ -199,7 +199,7 @@ EOF
 (define return-to-host (##core#primitive "C_return_to_host"))
 (define ##sys#symbol-table-info (##core#primitive "C_get_symbol_table_info"))
 (define ##sys#memory-info (##core#primitive "C_get_memory_info"))
-(define (current-milliseconds) (##core#inline_allocate ("C_a_i_current_milliseconds" 4) #f))
+(define (current-milliseconds) (##core#inline_allocate ("C_a_i_current_milliseconds" 7) #f))
 (define (current-gc-milliseconds) (##sys#fudge 31))
 (define ##sys#decode-seconds (##core#primitive "C_decode_seconds"))
 (define get-environment-variable (foreign-lambda c-string "C_getenv" c-string))
@@ -232,7 +232,7 @@ EOF
   (##sys#setslot x i y) )
 
 (define (current-seconds) 
-  (##core#inline_allocate ("C_a_get_current_seconds" 4) #f))
+  (##core#inline_allocate ("C_a_get_current_seconds" 7) #f))
 
 (define cpu-time
   (let ((buf (vector #f #f)))
@@ -5456,7 +5456,7 @@ EOF
 (define (##sys#bytevector? x) (##core#inline "C_bytevectorp" x))
 (define (##sys#string->pbytevector s) (##core#inline "C_string_to_pbytevector" s))
 (define (##sys#permanent? x) (##core#inline "C_permanentp" x))
-(define (##sys#block-address x) (##core#inline_allocate ("C_block_address" 4) x))
+(define (##sys#block-address x) (##core#inline_allocate ("C_block_address" 6) x))
 (define (##sys#locative? x) (##core#inline "C_locativep" x))
 (define (##sys#srfi-4-vector? x)
   (and (##core#inline "C_blockp" x)
@@ -5478,8 +5478,8 @@ EOF
     ptr) )
 
 (define (##sys#pointer->address ptr)
-  ;;XXX '4' is platform dependent!
-  (##core#inline_allocate ("C_a_unsigned_int_to_num" 4) (##sys#slot ptr 0)) )
+  ;;XXX '6' is platform dependent!
+  (##core#inline_allocate ("C_a_unsigned_int_to_num" 6) (##sys#slot ptr 0)) )
 
 (define (##sys#make-c-string str #!optional (loc '##sys#make-c-string))
   (let* ([len (##sys#size str)]

@@ -317,14 +317,14 @@
    ((float float) (float)
     (##core#inline_allocate ("C_a_i_flonum_plus" 4) #(1) #(2)))
    ((fixnum fixnum) (integer)
-    (##core#inline_allocate ("C_a_i_fixnum_plus" 3) #(1) #(2)))
+    (##core#inline_allocate ("C_a_i_fixnum_plus" 6) #(1) #(2)))
    ((integer integer) (integer)
     (##sys#integer-plus #(1) #(2)))
    ((* *) (number)
     (##sys#+-2 #(1) #(2))))
 
 (- (#(procedure #:clean #:enforce #:foldable) - (number #!rest number) number)
-   ((fixnum) (integer) (##core#inline_allocate ("C_a_i_fixnum_negate" 3) #(1)))
+   ((fixnum) (integer) (##core#inline_allocate ("C_a_i_fixnum_negate" 6) #(1)))
    ((integer) (integer) (##sys#integer-negate #(1)))
    ((float) (float) (##core#inline_allocate ("C_a_i_flonum_negate" 4) #(1)))
    ((number) (number) (##sys#negate #(1)))
@@ -341,7 +341,7 @@
    ((float float) (float)
     (##core#inline_allocate ("C_a_i_flonum_difference" 4) #(1) #(2)))
    ((fixnum fixnum) (integer)
-    (##core#inline_allocate ("C_a_i_fixnum_difference" 3) #(1) #(2)))
+    (##core#inline_allocate ("C_a_i_fixnum_difference" 6) #(1) #(2)))
    ((integer integer) (integer)
     (##sys#integer-minus #(1) #(2)))
    ((* *) (number)
@@ -369,7 +369,7 @@
    ((float float) (float)
     (##core#inline_allocate ("C_a_i_flonum_times" 4) #(1) #(2)))
    ((fixnum fixnum) (integer)
-    (##core#inline_allocate ("C_a_i_fixnum_times" 4) #(1) #(2)))
+    (##core#inline_allocate ("C_a_i_fixnum_times" 7) #(1) #(2)))
    ((integer integer) (integer)
     (##sys#integer-times #(1) #(2)))
    ((* *) (number)
@@ -440,7 +440,7 @@
 	   (##core#inline_allocate
 	    ("C_a_i_flonum_actual_quotient_checked" 4) #(1) #(2)))
 	  ((fixnum fixnum) (integer)
-	   (##core#inline_allocate ("C_a_i_fixnum_quotient_checked" 3)
+	   (##core#inline_allocate ("C_a_i_fixnum_quotient_checked" 6)
 				   #(1) #(2)))
 	  ((integer integer) (integer)
 	   (##sys#integer-quotient #(1) #(2))))
@@ -469,7 +469,7 @@
 	    (let ((#(tmp1) #(1)))
 	      (let ((#(tmp2) #(2)))
 		(##sys#values
-		 (##core#inline_allocate ("C_a_i_fixnum_quotient_checked" 3)
+		 (##core#inline_allocate ("C_a_i_fixnum_quotient_checked" 6)
 					 #(tmp1) #(tmp2))
 		 (##core#inline
 		  "C_i_fixnum_remainder_checked" #(tmp1) #(tmp2))))))
@@ -497,7 +497,7 @@
 (##sys#lcm (#(procedure #:clean #:enforce #:foldable) ##sys#lcm (number number) number))
 
 (abs (#(procedure #:clean #:enforce #:foldable) abs (number) number)
-     ((fixnum) (integer) (##core#inline_allocate ("C_a_i_fixnum_abs" 3) #(1)))
+     ((fixnum) (integer) (##core#inline_allocate ("C_a_i_fixnum_abs" 6) #(1)))
      ((float) (float) (##core#inline_allocate ("C_a_i_flonum_abs" 4) #(1)))
      ((integer) (integer) (##sys#integer-abs #(1))))
 
@@ -792,7 +792,7 @@
 	   ((cplxnum) (##sys#slot #(1) '2)))
 
 (magnitude (#(procedure #:clean #:enforce #:foldable) magnitude (number) number)
-	   ((fixnum) (integer) (##core#inline_allocate ("C_a_i_fixnum_abs" 3) #(1)))
+	   ((fixnum) (integer) (##core#inline_allocate ("C_a_i_fixnum_abs" 6) #(1)))
 	   ((integer) (##sys#integer-abs #(1)))
 	   ((float) (float) (##core#inline_allocate ("C_a_i_flonum_abs" 4) #(1)))
 	   (((or fixnum float bignum ratnum)) (abs #(1))))
