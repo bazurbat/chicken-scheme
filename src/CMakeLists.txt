@@ -66,7 +66,6 @@ set(libchicken_SCM_SOURCES
     lolevel.scm
     modules.scm
     ports.scm
-    profiler.scm
     srfi-1.scm
     srfi-4.scm
     stub.scm
@@ -156,20 +155,7 @@ set_target_properties(csi PROPERTIES
     COMPILE_DEFINITIONS PIC
     OUTPUT_NAME csi)
 
-set(utility_PROGRAMS
-    chicken-profile
-    )
-
-foreach(program ${utility_PROGRAMS})
-    add_chicken_executable(${program} ${program}.scm
-        OPTIONS ${PROGRAM_OPTIONS})
-
-    set_target_properties(${program} PROPERTIES
-        COMPILE_DEFINITIONS PIC
-        OUTPUT_NAME ${program})
-endforeach()
-
-install(TARGETS csi ${utility_PROGRAMS}
+install(TARGETS csi
     EXPORT chicken-targets
     RUNTIME DESTINATION ${INSTALL_BINDIR})
 
@@ -217,7 +203,7 @@ install(FILES
     ${chicken_SOURCE_DIR}/src/chicken-depends.scm
     DESTINATION ${INSTALL_DATADIR})
 
-set(MAN_PAGES chicken csi chicken-profile)
+set(MAN_PAGES chicken csi)
 foreach(man ${MAN_PAGES})
     install(FILES ${CMAKE_SOURCE_DIR}/doc/${man}.1
         DESTINATION ${INSTALL_MANDIR}
