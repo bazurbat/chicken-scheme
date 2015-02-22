@@ -429,7 +429,8 @@ add_dependencies(BUILD_TESTS prepare-port-tests)
 
 set_property(TARGET prepare-port-tests PROPERTY FOLDER "Tests")
 
-add_chicken_interpreted_test(port SCRIPT port-tests.scm)
+# TODO: remove posix dependent tests
+#add_chicken_interpreted_test(port SCRIPT port-tests.scm)
 
 # fixnum tests
 
@@ -458,38 +459,6 @@ add_chicken_interpreted_test(path SCRIPT path-tests.scm)
 # srfi-45 tests
 
 add_chicken_interpreted_test(srfi-45 SCRIPT srfi-45-tests.scm)
-
-# posix tests
-
-add_custom_command(OUTPUT tmpdir
-    COMMAND ${CMAKE_COMMAND} -E make_directory tmpdir
-    VERBATIM)
-add_custom_command(OUTPUT tmpdir/.dotfile
-    COMMAND ${CMAKE_COMMAND} -E touch tmpdir/.dotfile
-    DEPENDS tmpdir
-    VERBATIM)
-
-if(UNIX)
-    add_custom_command(OUTPUT tmpdir/symlink
-        COMMAND ${CMAKE_COMMAND} -E create_symlink /usr tmpdir/symlink
-        VERBATIM)
-    add_custom_target(prepare-posix-tests
-        DEPENDS tmpdir/.dotfile tmpdir/symlink)
-else()
-    add_custom_target(prepare-posix-tests
-        DEPENDS tmpdir/.dotfile)
-endif()
-
-add_dependencies(BUILD_TESTS prepare-posix-tests)
-
-set_property(TARGET prepare-posix-tests PROPERTY FOLDER "Tests")
-
-add_compiled_test(posix posix-tests.scm ARGS ${CHICKEN_INTERPRETER})
-
-add_chicken_interpreted_test(posix
-    -R posix -e "(delete-directory \"tmpdir\" #t)")
-
-set_property(TEST posix-i PROPERTY DEPENDS posix)
 
 # regular expression tests
 

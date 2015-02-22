@@ -27,7 +27,7 @@
 
 (declare
   (unit utils)
-  (uses data-structures eval extras posix files irregex)
+  (uses data-structures eval extras files irregex)
   (fixnum)
   (disable-interrupts) )
 

@@ -44,15 +44,8 @@ add_subdirectory(system)
 add_chicken_sources(libchicken_SOURCES scheduler/scheduler.scm
     OPTIONS ${LIBRARY_OPTIONS} -include-path ${chicken_SOURCE_DIR}/src)
 
-if(WIN32)
-    set(posix_scm posixwin.scm)
-else()
-    set(posix_scm posixunix.scm)
-endif()
-
 set(libchicken_SCM_SOURCES
 
-    ${posix_scm}
     build-version.scm
     chicken-ffi-syntax.scm
     chicken-syntax.scm
@@ -171,7 +164,6 @@ set(import_LIBRARIES
     irregex.import
     lolevel.import
     ports.import
-    posix.import
     srfi-1.import
     srfi-4.import
     utils.import
