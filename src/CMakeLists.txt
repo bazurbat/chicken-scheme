@@ -1,11 +1,6 @@
 include(ChickenBuildTag)
 include(ChickenConfigure)
 
-if(LIBUV_FOUND)
-    include_directories(BEFORE ${LIBUV_INCLUDE_DIRS})
-    set(HAVE_LIBUV YES)
-endif()
-
 include_directories(BEFORE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR})
@@ -46,18 +41,8 @@ add_subdirectory(scheduler)
 add_subdirectory(scheme)
 add_subdirectory(system)
 
-if(LIBUV_FOUND)
-    list(APPEND libchicken_C_SOURCES uv/uv-ffi.c scheduler/scheduler-uv.c)
-    add_chicken_sources(libchicken_SOURCES uv/uv.scm
-        OPTIONS ${LIBRARY_OPTIONS} -include-path ${chicken_SOURCE_DIR}/src
-        EMIT_IMPORTS uv)
-    add_chicken_sources(libchicken_SOURCES scheduler/scheduler-uv.scm
-        OPTIONS ${LIBRARY_OPTIONS} -include-path ${chicken_SOURCE_DIR}/src
-        EMIT_IMPORTS scheduler)
-else()
-    add_chicken_sources(libchicken_SOURCES scheduler/scheduler.scm
-        OPTIONS ${LIBRARY_OPTIONS} -include-path ${chicken_SOURCE_DIR}/src)
-endif()
+add_chicken_sources(libchicken_SOURCES scheduler/scheduler.scm
+    OPTIONS ${LIBRARY_OPTIONS} -include-path ${chicken_SOURCE_DIR}/src)
 
 if(WIN32)
     set(posix_scm posixwin.scm)
@@ -98,9 +83,6 @@ add_library(libchicken SHARED ${libchicken_SOURCES})
 
 target_link_libraries(libchicken
     ${CHICKEN_EXTRA_LIBRARIES})
-if(LIBUV_FOUND)
-    target_link_libraries(libchicken ${LIBUV_LIBRARIES})
-endif()
 
 set_property(TARGET libchicken PROPERTY COMPILE_DEFINITIONS
     PIC C_BUILDING_LIBCHICKEN)
@@ -117,15 +99,6 @@ install(TARGETS libchicken
     RUNTIME DESTINATION ${INSTALL_LIBDIR})
 
 set(CHICKEN_LIBRARIES libchicken ${CHICKEN_EXTRA_LIBRARIES})
-
-if(LIBUV_FOUND)
-    add_chicken_library(uv.import MODULE
-        SOURCES ${CHICKEN_IMPORT_LIBRARY_DIR}/uv.import.scm)
-    add_chicken_library(scheduler.import MODULE
-        SOURCES ${CHICKEN_IMPORT_LIBRARY_DIR}/scheduler.import.scm)
-    install(TARGETS uv.import scheduler.import
-        DESTINATION ${INSTALL_EGGDIR})
-endif()
 
 if(BUILD_STATIC_LIBS)
 

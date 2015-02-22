@@ -1,7 +1,4 @@
 #include "api.h"
-#ifdef HAVE_LIBUV
-#include "../scheduler/scheduler.h"
-#endif
 #include <chicken.h>
 
 #define C_pte(name)                  pt[ i ].id = #name; pt[ i++ ].ptr = (void *)name;
@@ -332,10 +329,6 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
     callback_continuation_level = 0;
     gc_ms = 0;
     (void)C_randomize(C_fix(time(NULL)));
-
-#ifdef HAVE_LIBUV
-    scheduler_init(&scheduler);
-#endif
 
     return 1;
 }

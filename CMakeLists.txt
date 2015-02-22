@@ -37,10 +37,6 @@ elseif(XCODE_VERSION)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/build)
 endif()
 
-if(CHICKEN_USE_LIBUV)
-    find_package(Libuv REQUIRED)
-endif()
-
 enable_testing()
 
 add_custom_target(BUILD_TESTS)
