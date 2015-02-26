@@ -1,0 +1,57 @@
+# - Chicken package config file
+
+@PACKAGE_INIT@
+
+set(CHICKEN_VERSION       "@CHICKEN_VERSION@")
+set(CHICKEN_API_VERSION   "@CHICKEN_API_VERSION@")
+
+set(CHICKEN_RUNTIME_DIR   "@PACKAGE_INSTALL_BINDIR@")
+set(CHICKEN_LIBRARY_DIR   "@PACKAGE_INSTALL_LIBDIR@")
+set(CHICKEN_EXTENSION_DIR "@PACKAGE_INSTALL_EGGDIR@")
+set(CHICKEN_DATA_DIR      "@PACKAGE_INSTALL_DATADIR@")
+set(CHICKEN_INCLUDE_DIR   "@PACKAGE_INSTALL_INCLUDEDIR@")
+
+set(CHICKEN_RUN            "${CMAKE_CURRENT_LIST_DIR}/ChickenRun.cmake")
+
+set(CHICKEN_EXTRA_LIBRARIES "@CHICKEN_EXTRA_LIBRARIES@")
+set(CHICKEN_DEFINITIONS     "@CHICKEN_DEFINITIONS@")
+set(CHICKEN_C_FLAGS         "@CHICKEN_C_FLAGS@")
+
+include("${CMAKE_CURRENT_LIST_DIR}/chicken-targets.cmake")
+
+get_target_property(CHICKEN_EXECUTABLE chicken_chicken-compiler LOCATION)
+get_target_property(CHICKEN_CSI_EXECUTABLE chicken_csi LOCATION)
+
+get_target_property(CHICKEN_LIBRARY chicken_libchicken LOCATION)
+if(TARGET chicken_libchicken-static)
+    get_target_property(CHICKEN_STATIC_LIBRARY chicken_libchicken-static LOCATION)
+else()
+    set(CHICKEN_STATIC_LIBRARY NO)
+endif()
+
+if(NOT CHICKEN_COMPILER)
+    set(CHICKEN_COMPILER ${CHICKEN_EXECUTABLE})
+endif()
+if(NOT CHICKEN_INTERPRETER)
+    set(CHICKEN_INTERPRETER ${CHICKEN_CSI_EXECUTABLE})
+endif()
+if(NOT CHICKEN_DEPENDS)
+    set(CHICKEN_DEPENDS ${CHICKEN_INTERPRETER} -ss
+        ${CMAKE_CURRENT_LIST_DIR}/chicken-depends.scm)
+endif()
+
+set(CHICKEN_INCLUDE_DIRS ${CHICKEN_INCLUDE_DIR})
+set(CHICKEN_LIBRARIES chicken_libchicken ${CHICKEN_EXTRA_LIBRARIES})
+set(CHICKEN_STATIC_LIBRARIES chicken_libchicken-static ${CHICKEN_EXTRA_LIBRARIES})
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(Chicken DEFAULT_MSG
+    CHICKEN_COMPILER CHICKEN_INTERPRETER CHICKEN_DEPENDS)
+find_package_message(CHICKEN_INTERPRETER
+    "  INTERPRETER: ${CHICKEN_INTERPRETER}"
+    "${CHICKEN_INTERPRETER}")
+find_package_message(CHICKEN_DEPENDS
+    "  DEPENDS: ${CHICKEN_DEPENDS}"
+    "${CHICKEN_DEPENDS}")
+
+include("${CMAKE_CURRENT_LIST_DIR}/ChickenUse.cmake")

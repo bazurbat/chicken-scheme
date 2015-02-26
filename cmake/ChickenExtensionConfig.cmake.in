@@ -1,0 +1,4 @@
+include(FeatureSummary)
+set_package_properties(@EXTENSION_NAME@ PROPERTIES
+    DESCRIPTION "@EXTENSION_DESCRIPTION@"
+    URL "@EXTENSION_URL@")
