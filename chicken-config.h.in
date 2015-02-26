@@ -1,0 +1,182 @@
+/* GENERATED */
+#cmakedefine HAVE_LONG_LONG
+#cmakedefine HAVE_UNSIGNED_LONG_LONG
+
+#cmakedefine HAVE_ALLOCA_H
+#cmakedefine HAVE_DIRECT_H
+#cmakedefine HAVE_DIRENT_H
+#cmakedefine HAVE_DLFCN_H
+#cmakedefine HAVE_ERRNO_H
+#cmakedefine HAVE_GRP_H
+#cmakedefine HAVE_INTTYPES_H
+#cmakedefine HAVE_LIMITS_H
+#cmakedefine HAVE_MALLOC_H
+#cmakedefine HAVE_MEMORY_H
+#cmakedefine HAVE_POSIX_POLL
+#cmakedefine HAVE_STDINT_H
+#cmakedefine HAVE_STDLIB_H
+#cmakedefine HAVE_STRINGS_H
+#cmakedefine HAVE_STRING_H
+#cmakedefine HAVE_SYSEXITS_H
+#cmakedefine HAVE_SYS_STAT_H
+#cmakedefine HAVE_SYS_TYPES_H
+#cmakedefine HAVE_UNISTD_H
+#cmakedefine NO_POSIX_POLL
+
+#cmakedefine HAVE_ALLOCA
+#cmakedefine HAVE_GETPROCADDRESS
+#cmakedefine HAVE_LOADLIBRARY
+#cmakedefine HAVE_MEMMOVE
+#cmakedefine HAVE_SIGACTION
+#cmakedefine HAVE_SIGPROCMASK
+#cmakedefine HAVE_SIGSETJMP
+#cmakedefine HAVE_STRERROR
+#cmakedefine HAVE_STRLCAT
+#cmakedefine HAVE_STRLCPY
+#cmakedefine HAVE_STRTOLL
+#cmakedefine HAVE_STRTOQ
+
+#cmakedefine01 DEBUGBUILD
+
+#cmakedefine C_GC_HOOKS
+#cmakedefine C_COLLECT_ALL_SYMBOLS
+#cmakedefine C_HACKED_APPLY
+
+#define STDC_HEADERS 1
+
+#ifndef C_INSTALL_CC
+# define C_INSTALL_CC "@CHICKEN_INSTALL_CC@"
+#endif
+#ifndef C_INSTALL_CXX
+# define C_INSTALL_CXX "@CHICKEN_INSTALL_CXX@"
+#endif
+#ifndef C_INSTALL_POSTINSTALL_PROGRAM
+# define C_INSTALL_POSTINSTALL_PROGRAM "true"
+#endif
+#ifndef C_INSTALL_RC_COMPILER
+# define C_INSTALL_RC_COMPILER "@CHICKEN_INSTALL_RC_COMPILER@"
+#endif
+#ifndef C_INSTALL_CFLAGS
+# define C_INSTALL_CFLAGS "@CMAKE_C_FLAGS@ @CHICKEN_C_FLAGS_CONFIG@"
+#endif
+#ifndef C_INSTALL_LDFLAGS
+# define C_INSTALL_LDFLAGS "@CMAKE_EXE_LINKER_FLAGS@"
+#endif
+#ifndef C_INSTALL_PREFIX
+# define C_INSTALL_PREFIX "@CMAKE_INSTALL_PREFIX@"
+#endif
+#ifndef C_INSTALL_SHARE_HOME
+# define C_INSTALL_SHARE_HOME "@INSTALL_FULL_DATADIR@"
+#endif
+#ifndef C_INSTALL_BIN_HOME
+# define C_INSTALL_BIN_HOME "@INSTALL_FULL_BINDIR@"
+#endif
+#ifndef C_INSTALL_EGG_HOME
+# define C_INSTALL_EGG_HOME "@INSTALL_FULL_EGGDIR@"
+#endif
+#ifndef C_INSTALL_LIB_HOME
+# define C_INSTALL_LIB_HOME "@INSTALL_FULL_LIBDIR@"
+#endif
+#ifndef C_INSTALL_LIB_NAME
+# define C_INSTALL_LIB_NAME "@CHICKEN_INSTALL_NAME@"
+#endif
+#ifndef C_INSTALL_STATIC_LIB_HOME
+# define C_INSTALL_STATIC_LIB_HOME "@INSTALL_FULL_LIBDIR@"
+#endif
+#ifndef C_INSTALL_INCLUDE_HOME
+# define C_INSTALL_INCLUDE_HOME "@INSTALL_FULL_INCLUDEDIR@"
+#endif
+#ifndef C_INSTALL_MORE_LIBS
+# define C_INSTALL_MORE_LIBS "@CHICKEN_CONFIG_MORE_LIBS@"
+#endif
+#ifndef C_INSTALL_MORE_STATIC_LIBS
+# define C_INSTALL_MORE_STATIC_LIBS "@CHICKEN_CONFIG_MORE_LIBS@"
+#endif
+#ifndef C_DEFAULT_TARGET_HEAP_SIZE
+# define C_DEFAULT_TARGET_HEAP_SIZE 0
+#endif
+#ifndef C_STACK_GROWS_DOWNWARD
+# define C_STACK_GROWS_DOWNWARD @STACKDIRECTION@
+#endif
+#ifndef C_TARGET_MORE_LIBS
+# define C_TARGET_MORE_LIBS "@CHICKEN_CONFIG_MORE_LIBS@"
+#endif
+#ifndef C_TARGET_MORE_STATIC_LIBS
+# define C_TARGET_MORE_STATIC_LIBS "@CHICKEN_CONFIG_MORE_LIBS@"
+#endif
+#ifndef C_TARGET_CC
+# define C_TARGET_CC "@CHICKEN_TARGET_CC@"
+#endif
+#ifndef C_TARGET_CXX
+# define C_TARGET_CXX "@CHICKEN_TARGET_CXX@"
+#endif
+#ifndef C_TARGET_RC_COMPILER
+# define C_TARGET_RC_COMPILER "@CHICKEN_TARGET_RC_COMPILER@"
+#endif
+#ifndef C_TARGET_CFLAGS
+# define C_TARGET_CFLAGS "@CHICKEN_C_FLAGS_CONFIG@"
+#endif
+#ifndef C_TARGET_LDFLAGS
+# define C_TARGET_LDFLAGS "@CMAKE_EXE_LINKER_FLAGS@"
+#endif
+#ifndef C_TARGET_FEATURES
+# define C_TARGET_FEATURES "@CHICKEN_TARGET_FEATURES@"
+#endif
+#ifndef C_CROSS_CHICKEN
+# define C_CROSS_CHICKEN @CHICKEN_CONFIG_CROSS@
+#endif
+#ifndef C_TARGET_PREFIX
+# define C_TARGET_PREFIX "@TARGET_PREFIX@"
+#endif
+#ifndef C_TARGET_BIN_HOME
+# define C_TARGET_BIN_HOME "@TARGET_FULL_BINDIR@"
+#endif
+#ifndef C_TARGET_LIB_HOME
+# define C_TARGET_LIB_HOME "@TARGET_FULL_LIBDIR@"
+#endif
+#ifndef C_TARGET_LIB_NAME
+# define C_TARGET_LIB_NAME "@CHICKEN_TARGET_NAME@"
+#endif
+#ifndef C_TARGET_RUN_LIB_HOME
+# define C_TARGET_RUN_LIB_HOME "@TARGET_FULL_RUN_LIBDIR@"
+#endif
+#ifndef C_TARGET_SHARE_HOME
+# define C_TARGET_SHARE_HOME "@TARGET_FULL_DATADIR@"
+#endif
+#ifndef C_TARGET_INCLUDE_HOME
+# define C_TARGET_INCLUDE_HOME "@TARGET_FULL_INCLUDEDIR@"
+#endif
+#ifndef C_TARGET_STATIC_LIB_HOME
+# define C_TARGET_STATIC_LIB_HOME "@TARGET_FULL_LIBDIR@"
+#endif
+#ifndef C_CHICKEN_PROGRAM
+# define C_CHICKEN_PROGRAM "chicken"
+#endif
+#ifndef C_CSC_PROGRAM
+# define C_CSC_PROGRAM "csc"
+#endif
+#ifndef C_CSI_PROGRAM
+# define C_CSI_PROGRAM "csi"
+#endif
+#ifndef C_CHICKEN_BUG_PROGRAM
+# define C_CHICKEN_BUG_PROGRAM "chicken-bug"
+#endif
+#ifndef C_CHICKEN_INSTALL_PROGRAM
+# define C_CHICKEN_INSTALL_PROGRAM "chicken-install"
+#endif
+#ifndef C_CHICKEN_UNINSTALL_PROGRAM
+# define C_CHICKEN_UNINSTALL_PROGRAM "chicken-uninstall"
+#endif
+#ifndef C_CHICKEN_STATUS_PROGRAM
+# define C_CHICKEN_STATUS_PROGRAM "chicken-status"
+#endif
+#ifndef C_BINARY_VERSION
+# define C_BINARY_VERSION @API_VERSION@
+#endif
+#ifndef C_USES_SONAME
+#cmakedefine01 C_USES_SONAME
+#endif
+#ifndef C_WINDOWS_SHELL
+#cmakedefine01 C_WINDOWS_SHELL
+#endif
+/* END OF FILE */
