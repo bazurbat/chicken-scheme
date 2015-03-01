@@ -1209,9 +1209,17 @@ extern double trunc(double);
 
 #define C_stack_overflow_check    C_stack_check1(C_stack_overflow())
 
+/* TODO: The C_scratch_usage checks should probably be moved.  Maybe
+ * we should add a core#allocate_scratch_inline which will insert
+ * C_demand/C_stack_probe-like checks to copy the result onto the
+ * stack or reclaim, but in a clever way so it's only done at the
+ * "end" of a C function.
+ */
+#define C_scratch_usage           (C_scratchspace_top - C_scratchspace_start)
+
 #if C_STACK_GROWS_DOWNWARD
-# define C_demand(n)              (C_stress && ((C_word)(C_stack_pointer - C_stack_limit) > (n)))
-# define C_stack_probe(p)         (C_stress && ((C_word *)(p) >= C_stack_limit))
+# define C_demand(n)              (C_stress && ((C_word)(C_stack_pointer - C_stack_limit) > ((n)+C_scratch_usage)))
+# define C_stack_probe(p)         (C_stress && (((C_word *)(p)-C_scratch_usage) >= C_stack_limit))
 
 # define C_stack_check1(err)      if(!C_disable_overflow_check) {	\
                                     do { C_byte *_sp = (C_byte*)(C_stack_pointer); \
@@ -1221,8 +1229,8 @@ extern double trunc(double);
 				    while(0);}
 
 #else
-# define C_demand(n)              (C_stress && ((C_word)(C_stack_limit - C_stack_pointer) > (n)))
-# define C_stack_probe(p)         (C_stress && ((C_word *)(p) < C_stack_limit))
+# define C_demand(n)              (C_stress && ((C_word)(C_stack_limit - C_stack_pointer) > ((n)+C_scratch_usage)))
+# define C_stack_probe(p)         (C_stress && (((C_word *)(p)+C_scratch_usage) < C_stack_limit))
 
 # define C_stack_check1(err)      if(!C_disable_overflow_check) {	\
                                     do { C_byte *_sp = (C_byte*)(C_stack_pointer); \
@@ -1756,6 +1764,9 @@ C_varextern C_TLS C_word
   *C_temporary_stack_bottom,
   *C_temporary_stack_limit,
   *C_stack_limit,
+  *C_scratchspace_start,
+  *C_scratchspace_top,
+  *C_scratchspace_limit,
    C_bignum_type_tag,
    C_ratnum_type_tag,
    C_cplxnum_type_tag;
@@ -1883,6 +1894,7 @@ C_fctexport C_word C_fcall C_swigmpointer(C_word **ptr, void *mp, void *sdata) C
 C_fctexport C_word C_vector(C_word **ptr, int n, ...);
 C_fctexport C_word C_structure(C_word **ptr, int n, ...);
 C_fctexport C_word C_fcall C_mutate_slot(C_word *slot, C_word val) C_regparm;
+C_fctexport C_word C_fcall C_scratch_alloc(C_uword size) C_regparm;
 C_fctexport void C_fcall C_reclaim(void *trampoline, void *proc) C_regparm C_noret;
 C_fctexport void C_save_and_reclaim(void *trampoline, void *proc, int n, ...) C_noret;
 C_fctexport void C_fcall C_rereclaim2(C_uword size, int double_plus) C_regparm;
@@ -1892,6 +1904,7 @@ C_fctexport void *C_fcall C_retrieve2_symbol_proc(C_word val, char *name) C_regp
 C_fctexport int C_in_stackp(C_word x) C_regparm;
 C_fctexport int C_fcall C_in_heapp(C_word x) C_regparm;
 C_fctexport int C_fcall C_in_fromspacep(C_word x) C_regparm;
+C_fctexport int C_fcall C_in_scratchspacep(C_word x) C_regparm;
 C_fctexport void C_fcall C_trace(C_char *name) C_regparm;
 C_fctexport C_word C_fcall C_emit_trace_info2(char *raw, C_word x, C_word y, C_word t) C_regparm;
 C_fctexport C_word C_fcall C_u_i_string_hash(C_word str, C_word rnd) C_regparm;
@@ -1932,7 +1945,6 @@ C_fctimport void C_ccall C_toplevel(C_word c, C_word self, C_word k) C_noret;
 C_fctimport void C_ccall C_invalid_procedure(int c, C_word self, ...) C_noret;
 C_fctexport void C_ccall C_stop_timer(C_word c, C_word closure, C_word k) C_noret;
 C_fctexport void C_ccall C_abs(C_word c, C_word self, C_word k, C_word x) C_noret;
-C_fctexport void C_ccall C_u_integer_abs(C_word c, C_word self, C_word k, C_word x) C_noret;
 C_fctexport void C_ccall C_signum(C_word c, C_word self, C_word k, C_word x) C_noret;
 C_fctexport void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...) C_noret;
 C_fctexport void C_ccall C_do_apply(C_word n, C_word closure, C_word k) C_noret;
@@ -1953,7 +1965,6 @@ C_fctexport void C_ccall C_u_2_integer_plus(C_word c, C_word self, C_word k, C_w
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport void C_ccall C_minus(C_word c, C_word closure, C_word k, C_word n1, ...) C_noret;
 C_fctexport void C_ccall C_negate(C_word c, C_word self, C_word k, C_word x) C_noret;
-C_fctexport void C_ccall C_u_integer_negate(C_word c, C_word self, C_word k, C_word x) C_noret;
 C_fctexport void C_ccall C_2_basic_minus(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_u_2_integer_minus(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
@@ -2172,6 +2183,9 @@ C_fctexport C_word C_fcall C_a_i_string_to_number(C_word **a, int c, C_word str,
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport C_word C_fcall C_a_i_exact_to_inexact(C_word **a, int c, C_word n) C_regparm;
 C_fctexport C_word C_fcall C_i_file_exists_p(C_word name, C_word file, C_word dir) C_regparm;
+
+C_fctexport C_word C_fcall C_s_a_u_i_integer_negate(C_word **ptr, C_word n, C_word x) C_regparm;
+
 
 C_fctexport C_word C_fcall C_i_foreign_char_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_fixnum_argumentp(C_word x) C_regparm;
@@ -2989,6 +3003,17 @@ C_inline C_word C_a_i_fixnum_negate(C_word **ptr, C_word n, C_word x)
     return C_bignum1(ptr, 0, -C_MOST_NEGATIVE_FIXNUM);
   else
     return C_fix(-C_unfix(x));
+}
+
+C_inline C_word C_s_a_u_i_integer_abs(C_word **ptr, C_word n, C_word x)
+{
+  if (x & C_FIXNUM_BIT) {
+    return C_a_i_fixnum_abs(ptr, 1, x);
+  } else if (C_bignum_negativep(x)) {
+    return C_s_a_u_i_integer_negate(ptr, n, x);
+  } else {
+    return x;
+  }
 }
 
 C_inline C_word C_i_fixnum_bit_setp(C_word n, C_word i)

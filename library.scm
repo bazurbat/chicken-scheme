@@ -1189,7 +1189,9 @@ EOF
 ;;; Basic arithmetic:
 
 (define abs (##core#primitive "C_abs"))
-(define ##sys#integer-abs (##core#primitive "C_u_integer_abs"))
+;; OBSOLETE: Remove this (or change to define-inline)
+(define (##sys#integer-abs x)
+  (##core#inline_allocate ("C_s_a_u_i_integer_abs" 6) x))
 (define (##sys#extended-abs x)
   (cond ((ratnum? x)
          (%make-ratnum (##sys#integer-abs (%ratnum-numerator x))
@@ -1243,7 +1245,9 @@ EOF
         (else (##sys#error-bad-number y '+)) ) )
 
 (define ##sys#negate (##core#primitive "C_negate"))
-(define ##sys#integer-negate (##core#primitive "C_u_integer_negate"))
+;; OBSOLETE: Remove this (or change to define-inline)
+(define (##sys#integer-negate x)
+  (##core#inline_allocate ("C_s_a_u_i_integer_negate" 6) x))
 
 (define (- arg1 . args)
   (if (null? args)

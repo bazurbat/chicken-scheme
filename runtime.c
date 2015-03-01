@@ -146,6 +146,7 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #define DEFAULT_SYMBOL_TABLE_SIZE      2999
 #define DEFAULT_HEAP_SIZE              DEFAULT_STACK_SIZE
 #define MINIMAL_HEAP_SIZE              DEFAULT_STACK_SIZE
+#define DEFAULT_SCRATCH_SPACE_SIZE     256
 #define DEFAULT_MAXIMAL_HEAP_SIZE      0x7ffffff0
 #define DEFAULT_HEAP_GROWTH            200
 #define DEFAULT_HEAP_SHRINKAGE         50
@@ -327,6 +328,9 @@ C_TLS C_word
   *C_temporary_stack_bottom,
   *C_temporary_stack_limit,
   *C_stack_limit,
+  *C_scratchspace_start,
+  *C_scratchspace_top,
+  *C_scratchspace_limit,
    C_bignum_type_tag,
    C_ratnum_type_tag,
    C_cplxnum_type_tag;
@@ -393,7 +397,8 @@ static C_TLS C_byte
 static C_TLS size_t
   heapspace1_size,
   heapspace2_size,
-  heap_size;
+  heap_size,
+  scratchspace_size;
 static C_TLS C_char 
   buffer[ STRING_BUFFER_SIZE ],
   *private_repository = NULL,
@@ -502,7 +507,6 @@ static WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word con
 static C_ccall void values_continuation(C_word c, C_word closure, C_word dummy, ...) C_noret;
 static C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stable);
 static C_regparm int C_fcall C_in_new_heapp(C_word x);
-static void bignum_negate_2(C_word c, C_word self, C_word new_big);
 static void bignum_actual_extraction(C_word c, C_word self, C_word result) C_noret;
 static void bignum_bitwise_and_2(C_word c, C_word self, C_word result) C_noret;
 static void bignum_bitwise_ior_2(C_word c, C_word self, C_word result) C_noret;
@@ -520,7 +524,6 @@ static C_regparm void integer_divrem(C_word c, C_word self, C_word k, C_word x, 
 static C_word bignum_remainder_unsigned_halfdigit(C_word num, C_word den);
 static C_regparm void bignum_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_q, C_word return_r) C_noret;
 static void divrem_intflo_2(C_word c, C_word self, ...) C_noret;
-static void bignum_divrem_fixnum_2(C_word c, C_word self, C_word negated_big) C_noret;
 static C_word rat_cmp(C_word x, C_word y);
 static void flo_to_int_2(C_word c, C_word self, C_word result) C_noret;
 static void fabs_frexp_to_digits(C_uword exp, double sign, C_uword *start, C_uword *scan);
@@ -552,6 +555,7 @@ static void gc_2(void *dummy) C_noret;
 static void allocate_vector_2(void *dummy) C_noret;
 static void allocate_bignum_2(void *dummy) C_noret;
 static C_word allocate_tmp_bignum(C_word size, C_word negp, C_word initp);
+static C_word allocate_scratch_bignum(C_word **ptr, C_word size, C_word negp, C_word initp);
 static void bignum_digits_destructive_negate(C_word bignum);
 static C_uword bignum_digits_destructive_scale_up_with_carry(C_uword *start, C_uword *end, C_uword factor, C_uword carry);
 static C_uword bignum_digits_destructive_scale_down(C_uword *start, C_uword *end, C_uword denominator);
@@ -819,6 +823,10 @@ int CHICKEN_initialize(int heap, int stack, int symbols, void *toplevel)
   error_location = C_SCHEME_FALSE;
   C_pre_gc_hook = NULL;
   C_post_gc_hook = NULL;
+  C_scratchspace_start = NULL;
+  C_scratchspace_top = NULL;
+  C_scratchspace_limit = NULL;
+  scratchspace_size = 0;
   live_finalizer_count = 0;
   allocated_finalizer_count = 0;
   current_module_name = NULL;
@@ -834,7 +842,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size -
      this must match the number of C_pte calls + 1 (NULL terminator)! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 80);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 78);
   int i = 0;
 
   if(pt == NULL)
@@ -906,9 +914,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   /* IMPORTANT: have you read the comments at the start and the end of this function? */
   C_pte(C_signum);
   C_pte(C_abs);
-  C_pte(C_u_integer_abs);
   C_pte(C_negate);
-  C_pte(C_u_integer_negate);
   C_pte(C_2_basic_plus);
   C_pte(C_2_basic_minus);
   C_pte(C_2_basic_times);
@@ -2394,6 +2400,11 @@ C_regparm int C_fcall C_in_fromspacep(C_word x)
   return (ptr >= fromspace_start && ptr < C_fromspace_limit);
 }
 
+C_regparm int C_fcall C_in_scratchspacep(C_word x)
+{
+  C_word *ptr = (C_word *)(C_uword)x;
+  return (ptr >= C_scratchspace_start && ptr < C_scratchspace_limit);
+}
 
 /* Cons the rest-aguments together: */
 
@@ -2876,6 +2887,144 @@ C_mutate_slot(C_word *slot, C_word val)
   return *slot = val;
 }
 
+/* Allocate memory in scratch space, "size" is in words, like C_alloc.
+ * The memory in the scratch space is laid out as follows: First,
+ * there's a count that indicates how big the object originally was,
+ * followed by a pointer to the slot in the object which points to the
+ * object in scratch space, finally followed by the object itself.
+ * The reason we store the slot pointer is so that we can figure out
+ * whether the object is still "live" when reallocating; that's
+ * because we don't have a saved continuation from where we can trace
+ * the live data.  The reason we store the total length of the object
+ * is because we may be mutating in-place the lengths of the stored
+ * objects, and we need to know how much to skip over while scanning.
+ */
+C_regparm C_word C_fcall C_scratch_alloc(C_uword size)
+{
+  C_word result;
+  
+  if (C_scratchspace_top + size + 2 >= C_scratchspace_limit) {
+    C_word *new_scratch_start, *new_scratch_top, *new_scratch_limit;
+    C_uword needed = scratchspace_size + size + 2,
+            new_size = nmax(scratchspace_size, DEFAULT_SCRATCH_SPACE_SIZE);
+
+    /* Increase by a factor of 2^n so we can store the requested size */
+    while (new_size < needed) new_size <<= 1;
+    
+  scratchspace_realloc:
+    /* TODO: Maybe we should work with two semispaces to reduce mallocs? */
+    new_scratch_start = (C_word *)C_malloc(C_wordstobytes(new_size));
+    if (new_scratch_start == NULL)
+      panic(C_text("out of memory - cannot (re-)allocate scratch space"));
+    new_scratch_top = new_scratch_start;
+    new_scratch_limit = new_scratch_start + new_size;
+
+    if(debug_mode) 
+      C_dbg(C_text("debug"), C_text("resizing scratchspace dynamically from " UWORD_COUNT_FORMAT_STRING "k to " UWORD_COUNT_FORMAT_STRING "k ...\n"), 
+	    C_wordstobytes(scratchspace_size) / 1024,
+            C_wordstobytes(new_size) / 1024);
+
+    if(gc_report_flag) {
+      C_dbg(C_text("GC"), C_text("(old) scratchspace: \tstart=" UWORD_FORMAT_STRING 
+				 ", \tlimit=" UWORD_FORMAT_STRING "\n"),
+            (C_word)C_scratchspace_start, (C_word)C_scratchspace_limit);
+      C_dbg(C_text("GC"), C_text("(new) scratchspace:   \tstart=" UWORD_FORMAT_STRING
+                                 ", \tlimit=" UWORD_FORMAT_STRING "\n"),
+            (C_word)new_scratch_start, (C_word)new_scratch_limit);
+    }
+    
+    /* Move scratch data into new space and mutate slots pointing there.
+     * This is basically a much-simplified version of really_mark.
+     */
+    if (C_scratchspace_start != NULL) {
+      C_word val, *sscan, *slot;
+      C_uword n, words;
+      C_header h;
+      C_SCHEME_BLOCK *p, *p2;
+
+      sscan = C_scratchspace_start;
+
+      while (sscan < C_scratchspace_top) {
+        words = *sscan;
+        slot = (C_word *)*(sscan+1);
+
+        if (*(sscan+2) == ALIGNMENT_HOLE_MARKER) val = (C_word)(sscan+3);
+        else val = (C_word)(sscan+2);
+
+        sscan += words + 2;
+        
+        p = (C_SCHEME_BLOCK *)val;
+        h = p->header;
+        if (is_fptr(h)) /* TODO: Support scratch->scratch pointers? */
+          panic(C_text("Unexpected forwarding pointer in scratch space"));
+
+        p2 = (C_SCHEME_BLOCK *)(new_scratch_top+2);
+
+#ifndef C_SIXTY_FOUR
+        if ((h & C_8ALIGN_BIT) && C_aligned8(p2) &&
+            (C_word *)p2 < new_scratch_limit) {
+          *((C_word *)p2) = ALIGNMENT_HOLE_MARKER;
+          p2 = (C_SCHEME_BLOCK *)((C_word *)p2 + 1);
+        }
+#endif
+
+        /* If orig slot still points here, copy data and update it */
+        if (slot != NULL) {
+          assert(C_in_stackp((C_word)slot) && *slot == val);
+          n = C_header_size(p);
+          n = (h & C_BYTEBLOCK_BIT) ? C_bytestowords(n) : n;
+          
+          *slot = (C_word)p2;
+          /* size = header plus block size plus optional alignment hole */
+          *new_scratch_top = ((C_word *)p2-(C_word *)new_scratch_top-2) + n + 1;
+          *(new_scratch_top+1) = (C_word)slot;
+          
+          new_scratch_top = (C_word *)p2 + n + 1;
+          if(new_scratch_top > new_scratch_limit)
+            panic(C_text("out of memory - scratch space full while resizing"));
+
+          p2->header = h;
+          p->header = ptr_to_fptr((C_uword)p2);
+          C_memcpy(p2->data, p->data, C_wordstobytes(n));
+        }
+      }
+      free(C_scratchspace_start);
+    }
+    C_scratchspace_start = new_scratch_start;
+    C_scratchspace_top = new_scratch_top;
+    C_scratchspace_limit = new_scratch_limit;
+    scratchspace_size = new_size;
+
+    needed = nmax(C_scratch_usage + size + 2, DEFAULT_SCRATCH_SPACE_SIZE);
+    /* Allow scratch space to shrink if we go below an eighth of its usage */
+    if (needed < (new_size >> 3)) {
+      new_size = nmax(new_size >> 2, DEFAULT_SCRATCH_SPACE_SIZE);
+      goto scratchspace_realloc;
+    }
+  }
+  assert(C_scratchspace_top + size + 2 <= C_scratchspace_limit);
+
+  *C_scratchspace_top = size;
+  *(C_scratchspace_top+1) = (C_word)NULL; /* Nothing points here 'til mutated */
+  result = (C_word)(C_scratchspace_top+2);
+  C_scratchspace_top += size + 2;
+  return result;
+}
+
+/* Register an object's slot as holding data to scratch space.  Only
+ * one slot can point to a scratch space object; the object in scratch
+ * space is preceded by a pointer that points to this slot (or NULL).
+ */
+C_regparm C_word C_fcall C_mutate_scratch_slot(C_word *slot, C_word val)
+{
+  C_word *ptr = (C_word *)val;
+  assert(C_in_scratchspacep(val));
+  assert(slot == NULL || C_in_stackp((C_word)slot));
+  if (*(ptr-1) == ALIGNMENT_HOLE_MARKER) --ptr;
+  *(ptr-1) = (C_word)slot; /* Remember the slot pointing here, for realloc */
+  if (slot != NULL) *slot = val;
+  return val; 
+}
 
 /* Initiate garbage collection: */
 
@@ -3234,6 +3383,15 @@ C_regparm void C_fcall C_reclaim(void *trampoline, void *proc)
     C_dbg("GC", C_text("%d locatives (from %d)\n"), locative_table_count, locative_table_size);
   }
 
+  /* GC will have copied any live objects out of scratch space: clear it */
+  if (C_scratchspace_start != NULL) {
+    C_free(C_scratchspace_start);
+    C_scratchspace_start = NULL;
+    C_scratchspace_top = NULL;
+    C_scratchspace_limit = NULL;
+    scratchspace_size = 0;
+  }
+
   if(gc_mode == GC_MAJOR) gc_count_1 = 0;
 
   if(C_post_gc_hook != NULL) C_post_gc_hook(gc_mode, (C_long)tgc);
@@ -3270,7 +3428,7 @@ C_regparm void C_fcall really_mark(C_word *x)
 
   val = *x;
 
-  if (!C_in_stackp(val) && !C_in_heapp(val)) {
+  if (!C_in_stackp(val) && !C_in_heapp(val) && !C_in_scratchspacep(val)) {
 #ifdef C_GC_HOOKS
       if(C_gc_trace_hook != NULL) 
 	C_gc_trace_hook(x, gc_mode);
@@ -3611,7 +3769,8 @@ C_regparm void C_fcall really_remark(C_word *x)
 
   val = *x;
 
-  if (!C_in_stackp(val) && !C_in_heapp(val) && !C_in_new_heapp(val)) {
+  if (!C_in_stackp(val) && !C_in_heapp(val) &&
+      !C_in_new_heapp(val) && !C_in_scratchspacep(val)) {
 #ifdef C_GC_HOOKS
       if(C_gc_trace_hook != NULL) 
 	C_gc_trace_hook(x, gc_mode);
@@ -5511,21 +5670,10 @@ void C_ccall C_abs(C_word c, C_word self, C_word k, C_word x)
     C_word *a = C_alloc(C_SIZEOF_FLONUM);
     C_kontinue(k, C_a_i_flonum_abs(&a, 1, x));
   } else if (C_truep(C_bignump(x))) {
-    C_u_integer_abs(3, (C_word)NULL, k, x);
+    C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
+    C_kontinue(k, C_s_a_u_i_integer_abs(&a, 1, x));
   } else {
     try_extended_number("\003sysextended-abs", 2, k, x);
-  }
-}
-
-void C_ccall C_u_integer_abs(C_word c, C_word self, C_word k, C_word x)
-{
-  if (x & C_FIXNUM_BIT) {
-    C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
-    C_kontinue(k, C_a_i_fixnum_abs(&a, 1, x));
-  } else if (C_bignum_negativep(x)) {
-    C_u_integer_negate(3, (C_word)NULL, k, x);
-  } else {
-    C_kontinue(k, x);
   }
 }
 
@@ -5570,27 +5718,10 @@ void C_ccall C_negate(C_word c, C_word self, C_word k, C_word x)
     C_word *a = C_alloc(C_SIZEOF_FLONUM);
     C_kontinue(k, C_a_i_flonum_negate(&a, 1, x));
   } else if (C_truep(C_bignump(x))) {
-    C_u_integer_negate(3, (C_word)NULL, k, x);
+    C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
+    C_kontinue(k, C_s_a_u_i_integer_negate(&a, 1, x));
   } else {
     try_extended_number("\003sysextended-negate", 2, k, x);
-  }
-}
-
-void C_ccall C_u_integer_negate(C_word c, C_word self, C_word k, C_word x)
-{
-  if (x & C_FIXNUM_BIT) {
-    C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
-    C_kontinue(k, C_a_i_fixnum_negate(&a, 1, x));
-  } else {
-    if (C_bignum_negated_fitsinfixnump(x)) {
-      C_kontinue(k, C_fix(C_MOST_NEGATIVE_FIXNUM));
-    } else {
-      C_word *ka, k2, negp = C_mk_nbool(C_bignum_negativep(x)),
-             size = C_fix(C_bignum_size(x));
-      ka = C_alloc(C_SIZEOF_CLOSURE(3));
-      k2 = C_closure(&ka, 3, (C_word)bignum_negate_2, k, x);
-      C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_FALSE);
-    }
   }
 }
 
@@ -5604,11 +5735,24 @@ C_inline void bignum_digits_destructive_copy(C_word target, C_word source)
            C_wordstobytes(C_bignum_size(source)));
 }
 
-static void bignum_negate_2(C_word c, C_word self, C_word new_big)
+C_regparm C_word C_fcall
+C_s_a_u_i_integer_negate(C_word **ptr, C_word n, C_word x)
 {
-  bignum_digits_destructive_copy(new_big, C_block_item(self, 2) /* old_big */);
-  C_kontinue(C_block_item(self, 1), C_bignum_simplify(new_big));
+  if (x & C_FIXNUM_BIT) {
+    return C_a_i_fixnum_negate(ptr, 1, x);
+  } else {
+    if (C_bignum_negated_fitsinfixnump(x)) {
+      return C_fix(C_MOST_NEGATIVE_FIXNUM);
+    } else {
+      C_word res, negp = C_mk_nbool(C_bignum_negativep(x)),
+             size = C_fix(C_bignum_size(x));
+      res = allocate_scratch_bignum(ptr, size, negp, C_SCHEME_FALSE);
+      bignum_digits_destructive_copy(res, x);
+      return C_bignum_simplify(res);
+    }
+  }
 }
+
 
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_a_i_bitwise_and(C_word **a, int c, C_word n1, C_word n2)
@@ -7155,7 +7299,8 @@ C_u_2_integer_times(C_word c, C_word self, C_word k, C_word x, C_word y)
   } else if (y == C_fix(1)) {
     C_kontinue(k, x);
   } else if (y == C_fix(-1)) {
-    C_u_integer_negate(3, (C_word)NULL, k, x);
+    C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
+    C_kontinue(k, C_s_a_u_i_integer_negate(&a, 1, x));
   } else if (y & C_FIXNUM_BIT) { /* Any other fixnum */
     C_word absy = (y & C_INT_SIGN_BIT) ? -C_unfix(y) : C_unfix(y),
            negp = C_mk_bool((y & C_INT_SIGN_BIT) ?
@@ -7969,14 +8114,6 @@ static void divrem_intflo_2(C_word c, C_word self, ...)
   }
 }
 
-static void bignum_divrem_fixnum_2(C_word c, C_word self, C_word negated_big)
-{
-   C_word k = C_block_item(self, 1),
-          return_q = C_block_item(self, 2),
-          return_r = C_block_item(self, 3);
-   RETURN_Q_AND_OR_R(negated_big, C_fix(0));
-}
-
 static C_regparm void
 integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_q, C_word return_r)
 {
@@ -8006,11 +8143,8 @@ integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word retur
     } else if (y == C_fix(0)) {
       C_div_by_zero_error(DIVREM_LOC);
     } else if (y == C_fix(-1)) {
-      C_word *ka, k2;
-      ka = C_alloc(C_SIZEOF_CLOSURE(4));      
-      k2 = C_closure(&ka, 4, (C_word)bignum_divrem_fixnum_2,
-                     k, return_q, return_r);
-      C_u_integer_negate(3, (C_word)NULL, k2, x);
+      C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
+      RETURN_Q_AND_OR_R(C_s_a_u_i_integer_negate(&a, 1, x), C_fix(0));
     } else if (C_fitsinbignumhalfdigitp(absy) ||
                ((((C_uword)1 << (C_ilen(absy)-1)) == absy) &&
                 C_fitsinfixnump(absy))) {
@@ -8946,7 +9080,6 @@ void C_ccall C_gc(C_word c, C_word closure, C_word k, ...)
 void gc_2(void *dummy)
 {
   C_word k = C_restore;
-  
   C_kontinue(k, C_fix((C_uword)C_fromspace_limit - (C_uword)C_fromspace_top));
 }
 
@@ -9156,6 +9289,23 @@ static C_word allocate_tmp_bignum(C_word size, C_word negp, C_word initp)
   }
 
   return C_a_i_record2(&mem, 2, C_bignum_type_tag, bigvec);
+}
+
+static C_word allocate_scratch_bignum(C_word **ptr, C_word size, C_word negp, C_word initp)
+{
+  C_word big, bigvec = C_scratch_alloc(C_SIZEOF_INTERNAL_BIGNUM_VECTOR(C_unfix(size)));
+  
+  C_block_header_init(bigvec, C_STRING_TYPE | C_wordstobytes(C_unfix(size)+1));
+  C_set_block_item(bigvec, 0, C_truep(negp));
+
+  if (C_truep(initp)) {
+    C_memset(((C_uword *)C_data_pointer(bigvec))+1,
+             0, C_wordstobytes(C_unfix(size)));
+  }
+
+  big = C_a_i_record2(ptr, 2, C_bignum_type_tag, bigvec);
+  C_mutate_scratch_slot(&C_internal_bignum_vector(big), bigvec);
+  return big;
 }
 
 /* Simplification: scan trailing zeroes, then return a fixnum if the
@@ -10532,8 +10682,9 @@ void C_ccall C_software_version(C_word c, C_word closure, C_word k)
 
 void C_ccall C_register_finalizer(C_word c, C_word closure, C_word k, C_word x, C_word proc)
 {
-  if(C_immediatep(x) || (!C_in_stackp(x) && !C_in_heapp(x))) /* not GCable? */
-    C_kontinue(k, x);
+  if(C_immediatep(x) ||
+     (!C_in_stackp(x) && !C_in_heapp(x) && !C_in_scratchspacep(x)))
+    C_kontinue(k, x); /* not GCable */
 
   C_do_register_finalizer(x, proc);
   C_kontinue(k, x);
