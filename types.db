@@ -486,7 +486,8 @@
      (() '0)
      ((fixnum fixnum) (fixnum) (fxgcd #(1) #(2)))
      ((float float) (float) (fpgcd #(1) #(2)))
-     ((integer integer) (integer) (##sys#integer-gcd #(1) #(2)))
+     ((integer integer) (integer)
+      (##core#inline_allocate ("C_s_a_u_i_integer_gcd" 6) #(1) #(2)))
      ((* *) (##sys#gcd #(1) #(2))))
 
 (##sys#gcd (#(procedure #:clean #:enforce #:foldable) ##sys#gcd (number number) number))

@@ -1894,58 +1894,9 @@ EOF
                   (exact->inexact (##sys#integer-power a (inexact->exact b)))
                   (##sys#integer-power a b)))) )
 
+;; OBSOLETE: Remove this (or change to define-inline)
 (define (##sys#integer-gcd a b)
-  (define k fixnum-precision) ; Can be anything between 2 and min(F, B).
-  (define k/2 (fx/ k 2))      ; F is fixnum precision and B bits in a big digit
-
-  ;; This is Lehmer's GCD algorithm with Jebelean's quotient test, as
-  ;; it is presented in the paper "An Analysis of Lehmer’s Euclidean
-  ;; GCD Algorithm", by J. Sorenson.  Fuck the ACM and their goddamn
-  ;; paywall; you can currently find the paper here:
-  ;; http://www.csie.nuk.edu.tw/~cychen/gcd/An%20analysis%20of%20Lehmer%27s%20Euclidean%20GCD%20algorithm.pdf
-  ;; If that URI fails, it's also explained in [MpNT, 5.2]
-  ;;
-  ;; The basic idea is to avoid divisions which yield only small
-  ;; quotients, in which the remainder won't reduce the numbers by
-  ;; much.  This can be detected by dividing only the leading k bits.
-  (define (lehmer-gcd u v)
-    (let ((-h (fxneg (fx- (integer-length u) k))))
-      (let lp ((i-even? #t)
-               (u^ (arithmetic-shift u -h))
-               (v^ (arithmetic-shift v -h))
-               (x-prev 1) (y-prev 0)
-               (x-curr 0) (y-curr 1))
-        (let* ((q^ (fx/ u^ v^))     ; Estimated quotient for this step
-               (x-next (fx- x-prev (fx* q^ x-curr)))
-               (y-next (fx- y-prev (fx* q^ y-curr))))
-          ;; Euclidian GCD swap on u^ and v^
-          (let ((u^ v^)
-                (v^ (fx- u^ (fx* q^ v^))))
-            (let ((done? (if i-even?
-                             (or (fx< v^ (fxneg y-next))
-                                 (fx< (fx- u^ v^) (fx- x-next x-curr)))
-                             (or (fx< v^ (fxneg x-next))
-                                 (fx< (fx- u^ v^) (fx- y-next y-curr))))))
-              (if done?
-                  (values (+ (* x-prev u) (* y-prev v))
-                          (+ (* x-curr u) (* y-curr v)))
-                  (lp (not i-even?) u^ v^ x-curr y-curr x-next y-next))))))))
-
-  ;; This implements the basic Euclidian GCD algorithm, with a
-  ;; conditional call to Lehmer's GCD algorithm when the length
-  ;; difference between a and b is at most one halfdigit.
-  ;; The complexity of the whole thing is supposedly O(n^2/log n)
-  ;; where n is the number of bits in a and b.
-  (let* ((a (abs a)) (b (abs b))   ; Enforce loop invariant on input:
-         (swap? (##sys#<-2 a b)))  ; both must be positive, and a >= b
-    (let lp ((a (if swap? b a))
-             (b (if swap? a b)))
-      (cond ((eq? b 0) a)
-	    ((fx< (fx- (integer-length a) (integer-length b)) k/2)
-             (receive (a b) (lehmer-gcd a b)
-               (if (eq? b 0) a (lp b (##sys#integer-remainder a b)))))
-	    ((fixnum? a) (fxgcd a b)) ; b MUST be fixnum due to loop invariant
-            (else (lp b (##sys#integer-remainder a b)))))))
+  (##core#inline_allocate ("C_s_a_u_i_integer_gcd" 6) a b))
 
 ;; Useful for sane error messages
 (define (##sys#internal-gcd loc a b)

@@ -217,6 +217,9 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 #define nmin(x, y)                   ((x) < (y) ? (x) : (y))
 #define percentage(n, p)             ((C_long)(((double)(n) * (double)p) / 100))
 
+#define clear_buffer_object(buf, obj) C_migrate_buffer_object(NULL, (C_word *)(buf), C_buf_end(buf), (obj))
+#define move_buffer_object(ptr, buf, obj) C_migrate_buffer_object(ptr, (C_word *)(buf), C_buf_end(buf), (obj))
+
 /* The bignum digit representation is fullword- little endian, so on
  * LE machines the halfdigits are numbered in the same order.  On BE
  * machines, we must swap the odd and even positions.
@@ -565,6 +568,7 @@ static C_regparm void bignum_digits_multiply(C_word x, C_word y, C_word result);
 static void bignum_divide_2_unsigned(C_word c, C_word self, C_word quotient);
 static void bignum_divide_2_unsigned_2(C_word c, C_word self, C_word remainder);
 static void bignum_destructive_divide_unsigned_small(C_word c, C_word self, C_word quotient);
+static C_regparm void bignum_destructive_divide_full(C_word numerator, C_word denominator, C_word quotient, C_word remainder, C_word return_remainder);
 static C_regparm void bignum_destructive_divide_normalized(C_word big_u, C_word big_v, C_word big_q);
 static void make_structure_2(void *dummy) C_noret;
 static void generic_trampoline(void *dummy) C_noret;
@@ -2901,6 +2905,14 @@ C_mutate_slot(C_word *slot, C_word val)
  * the live data.  The reason we store the total length of the object
  * is because we may be mutating in-place the lengths of the stored
  * objects, and we need to know how much to skip over while scanning.
+ *
+ * If the allocating function returns, it *must* first mark all the
+ * values in scratch space as reclaimable.  This is needed because
+ * there is no way to distinguish between a stale pointer into scratch
+ * space that's still somewhere on the stack in "uninitialized" memory
+ * versus a word that's been recycled by the next called function,
+ * which now holds a value that happens to have the same bit pattern
+ * but represents another thing entirely.
  */
 C_regparm C_word C_fcall C_scratch_alloc(C_uword size)
 {
@@ -3012,6 +3024,73 @@ C_regparm C_word C_fcall C_scratch_alloc(C_uword size)
   result = (C_word)(C_scratchspace_top+2);
   C_scratchspace_top += size + 2;
   return result;
+}
+
+/* Given a root object, scan its slots recursively (the objects
+ * themselves should be shallow and non-recursive), and migrate every
+ * object stored between the memory boundaries to the supplied
+ * pointer.  Scratch data pointed to by objects between the memory
+ * boundaries is updated to point to the new memory region.  If the
+ * supplied pointer is NULL, the scratch memory is marked reclaimable.
+ */
+C_regparm C_word C_fcall
+C_migrate_buffer_object(C_word **ptr, C_word *start, C_word *end, C_word obj)
+{
+  C_word size, header, *data, *p = NULL, obj_in_buffer;
+
+  if (C_immediatep(obj)) return obj;
+
+  size = C_header_size(obj);
+  header = C_block_header(obj);
+  data = C_data_pointer(obj);
+  obj_in_buffer = (obj >= (C_word)start && obj < (C_word)end);
+
+  /* Only copy object if we have a target pointer and it's in the buffer */
+  if (ptr != NULL && obj_in_buffer) {
+    p = *ptr;
+    obj = (C_word)p; /* Return the object's new location at the end */
+  }
+
+  if (p != NULL) *p++ = header;
+  
+  if (header & C_BYTEBLOCK_BIT) {
+    if (p != NULL) {
+      *ptr = (C_word *)((C_byte *)(*ptr) + sizeof(C_header) + C_align(size));
+      C_memcpy(p, data, size);
+    }
+  } else {
+    if (p != NULL) *ptr += size + 1;
+    
+    if(header & C_SPECIALBLOCK_BIT) {
+      if (p != NULL) *(p++) = *data;
+      size--;
+      data++;
+    }
+
+    /* TODO: See if we can somehow make this use Cheney's algorithm */
+    while(size--) {
+      C_word slot = *data;
+
+      if(!C_immediatep(slot)) {
+        if (C_in_scratchspacep(slot)) {
+          if (obj_in_buffer) { /* Otherwise, don't touch scratch backpointer */
+            /* TODO: Support recursing into objects in scratch space? */
+            C_word *sp = (C_word *)slot;
+
+            if (*(sp-1) == ALIGNMENT_HOLE_MARKER) --sp;
+            *(sp-1) = (C_word)p; /* This is why we traverse even if p = NULL */
+            *data = C_SCHEME_UNBOUND; /* Ensure old reference is killed dead */
+          }
+        } else { /* Slot is not a scratchspace object: check sub-objects */
+          slot = C_migrate_buffer_object(ptr, start, end, slot);
+        }
+      }
+      if (p != NULL) *(p++) = slot;
+      else *data = slot; /* Sub-object may have moved! */
+      data++;
+    }
+  }
+  return obj; /* Should be NULL if ptr was NULL */
 }
 
 /* Register an object's slot as holding data to scratch space.  Only
@@ -5763,7 +5842,7 @@ C_s_a_u_i_integer_negate(C_word **ptr, C_word n, C_word x)
     } else {
       C_word res, negp = C_mk_nbool(C_bignum_negativep(x)),
              size = C_fix(C_bignum_size(x));
-      res = allocate_scratch_bignum(ptr, size, negp, C_SCHEME_FALSE);
+      res = C_allocate_scratch_bignum(ptr, size, negp, C_SCHEME_FALSE);
       bignum_digits_destructive_copy(res, x);
       return C_bignum_simplify(res);
     }
@@ -9308,7 +9387,8 @@ static C_word allocate_tmp_bignum(C_word size, C_word negp, C_word initp)
   return C_a_i_record2(&mem, 2, C_bignum_type_tag, bigvec);
 }
 
-static C_word allocate_scratch_bignum(C_word **ptr, C_word size, C_word negp, C_word initp)
+C_regparm C_word C_fcall
+C_allocate_scratch_bignum(C_word **ptr, C_word size, C_word negp, C_word initp)
 {
   C_word big, bigvec = C_scratch_alloc(C_SIZEOF_INTERNAL_BIGNUM_VECTOR(C_unfix(size)));
   
@@ -9326,7 +9406,10 @@ static C_word allocate_scratch_bignum(C_word **ptr, C_word size, C_word negp, C_
 }
 
 /* Simplification: scan trailing zeroes, then return a fixnum if the
- * value fits, or trim the bignum's length. */
+ * value fits, or trim the bignum's length.  If the bignum was stored
+ * in scratch space, we mark it as reclaimable.  This means any
+ * references to the original bignum are invalid after simplification!
+ */
 C_regparm C_word C_fcall C_bignum_simplify(C_word big)
 {
   C_uword *start = C_bignum_digits(big),
@@ -9340,13 +9423,18 @@ C_regparm C_word C_fcall C_bignum_simplify(C_word big)
   
   switch(length) {
   case 0:
+    if (C_in_scratchspacep(C_internal_bignum_vector(big)))
+      C_mutate_scratch_slot(NULL, C_internal_bignum_vector(big));
     return C_fix(0);
   case 1:
     tmp = *start;
     if (C_bignum_negativep(big) ?
         !(tmp & C_INT_SIGN_BIT) && C_fitsinfixnump(-(C_word)tmp) :
-        C_ufitsinfixnump(tmp))
+        C_ufitsinfixnump(tmp)) {
+      if (C_in_scratchspacep(C_internal_bignum_vector(big)))
+        C_mutate_scratch_slot(NULL, C_internal_bignum_vector(big));
       return C_bignum_negativep(big) ? C_fix(-(C_word)tmp) : C_fix(tmp);
+    }
     /* FALLTHROUGH */
   default:
     if (scan < last_digit) C_bignum_mutate_size(big, length);
@@ -9502,48 +9590,10 @@ static void bignum_divide_2_unsigned_2(C_word c, C_word self, C_word remainder)
          return_remainder = C_block_item(self, 5),
          /* This one may be overwritten with the remainder */
          /* remainder_negp = C_block_item(self, 6), */
-         quotient = C_block_item(self, 7),
-	 length = C_bignum_size(denominator);
-  C_uword d1 = *(C_bignum_digits(denominator) + length - 1),
-          *startr = C_bignum_digits(remainder),
-          *endr = startr + C_bignum_size(remainder);
-  int shift;
+         quotient = C_block_item(self, 7);
 
-  shift = C_BIGNUM_DIGIT_LENGTH - C_ilen(d1); /* nlz */
-
-  /* We have to work on halfdigits, so we shift out only the necessary
-   * amount in order fill out that halfdigit (base is halved).
-   * This trick is shamelessly stolen from Gauche :)
-   * See below for part 2 of the trick.
-   */
-  if (shift >= C_BIGNUM_HALF_DIGIT_LENGTH)
-    shift -= C_BIGNUM_HALF_DIGIT_LENGTH;
-
-  /* Code below won't always set high halfdigit of quotient, so do it here. */
-  if (quotient != C_SCHEME_UNDEFINED)
-    C_bignum_digits(quotient)[C_bignum_size(quotient)-1] = 0;
-
-  bignum_digits_destructive_copy(remainder, numerator);
-  *(endr-1) = 0;    /* Ensure most significant digit is initialised */
-  if (shift == 0) { /* Already normalized */
-    bignum_destructive_divide_normalized(remainder, denominator, quotient);
-  } else { /* Requires normalisation; allocate scratch denominator for this */
-    C_uword *startnd;
-    C_word ndenom;
-
-    bignum_digits_destructive_shift_left(startr, endr, shift);
-
-    ndenom = allocate_tmp_bignum(C_fix(length), C_SCHEME_FALSE, C_SCHEME_FALSE);
-    startnd = C_bignum_digits(ndenom);
-    bignum_digits_destructive_copy(ndenom, denominator);
-    bignum_digits_destructive_shift_left(startnd, startnd+length, shift);
-
-    bignum_destructive_divide_normalized(remainder, ndenom, quotient);
-    if (C_truep(return_remainder)) /* Otherwise, don't bother shifting back */
-      bignum_digits_destructive_shift_right(startr, endr, shift, 0);
-
-    free_tmp_bignum(ndenom);
-  }
+  bignum_destructive_divide_full(numerator, denominator,
+                                 quotient, remainder, return_remainder);
 
   if (C_truep(return_remainder)) {
     if (C_truep(return_quotient)) {
@@ -9591,6 +9641,52 @@ bignum_destructive_divide_unsigned_small(C_word c, C_word self, C_word quotient)
     C_values(4, C_SCHEME_UNDEFINED, k, quotient, C_fix(remainder));
   } else {
     C_kontinue(k, quotient);
+  }
+}
+
+static C_regparm void
+bignum_destructive_divide_full(C_word numerator, C_word denominator, C_word quotient, C_word remainder, C_word return_remainder)
+{
+  C_word length = C_bignum_size(denominator);
+  C_uword d1 = *(C_bignum_digits(denominator) + length - 1),
+          *startr = C_bignum_digits(remainder),
+          *endr = startr + C_bignum_size(remainder);
+  int shift;
+
+  shift = C_BIGNUM_DIGIT_LENGTH - C_ilen(d1); /* nlz */
+
+  /* We have to work on halfdigits, so we shift out only the necessary
+   * amount in order fill out that halfdigit (base is halved).
+   * This trick is shamelessly stolen from Gauche :)
+   * See below for part 2 of the trick.
+   */
+  if (shift >= C_BIGNUM_HALF_DIGIT_LENGTH)
+    shift -= C_BIGNUM_HALF_DIGIT_LENGTH;
+
+  /* Code below won't always set high halfdigit of quotient, so do it here. */
+  if (quotient != C_SCHEME_UNDEFINED)
+    C_bignum_digits(quotient)[C_bignum_size(quotient)-1] = 0;
+
+  bignum_digits_destructive_copy(remainder, numerator);
+  *(endr-1) = 0;    /* Ensure most significant digit is initialised */
+  if (shift == 0) { /* Already normalized */
+    bignum_destructive_divide_normalized(remainder, denominator, quotient);
+  } else { /* Requires normalisation; allocate scratch denominator for this */
+    C_uword *startnd;
+    C_word ndenom;
+
+    bignum_digits_destructive_shift_left(startr, endr, shift);
+
+    ndenom = allocate_tmp_bignum(C_fix(length), C_SCHEME_FALSE, C_SCHEME_FALSE);
+    startnd = C_bignum_digits(ndenom);
+    bignum_digits_destructive_copy(ndenom, denominator);
+    bignum_digits_destructive_shift_left(startnd, startnd+length, shift);
+
+    bignum_destructive_divide_normalized(remainder, ndenom, quotient);
+    if (C_truep(return_remainder)) /* Otherwise, don't bother shifting back */
+      bignum_digits_destructive_shift_right(startr, endr, shift, 0);
+
+    free_tmp_bignum(ndenom);
   }
 }
 
@@ -9745,6 +9841,92 @@ C_a_i_flonum_gcd(C_word **p, C_word n, C_word x, C_word y)
      yub = r;
    }
    return C_flonum(p, xub);
+}
+
+/* Because this must be inlineable (due to + and - using this for
+ * ratnums), we can't use burnikel-ziegler division here, until we
+ * have a C implementation that doesn't consume stack.  However,
+ * we *can* use Lehmer's GCD.
+ */
+C_regparm C_word C_fcall
+C_s_a_u_i_integer_gcd(C_word **ptr, C_word n, C_word x, C_word y)
+{
+   C_word ab[2][C_SIZEOF_FIX_BIGNUM*4], *a, res, size, i = 0;
+
+   /* Ensure loop invariant: abs(x) >= abs(y) */
+   if (x & C_FIXNUM_BIT) {
+     if (y & C_FIXNUM_BIT) {
+       return C_i_fixnum_gcd(x, y);
+     } else { /* x is fixnum, y is bignum: swap */
+       C_word tmp = y;
+       y = x;
+       x = tmp;
+     }
+   } else if (!(y & C_FIXNUM_BIT)) { /* Both are bignums: compare */
+     switch (bignum_cmp_unsigned(x, y)) {
+     case -1:
+     {
+       C_word tmp = y;
+       y = x;
+       x = tmp;
+       break;
+     }
+     case 0: /* gcd(x, x) = abs(x); Try to reuse positive argument, if any */
+       if (!C_bignum_negativep(x)) return x;
+       else return C_s_a_u_i_integer_abs(ptr, 1, y);
+     default: /* Do nothing: x > y */
+       break;
+     }
+   }
+
+   while(y != C_fix(0)) {
+     /* x and y are stored in the same buffer, as well as a result */
+     a = ab[i++];
+     if (i == 2) i = 0;
+
+     if (x & C_FIXNUM_BIT) {
+       return C_i_fixnum_gcd(x, y);
+     } else if (y & C_FIXNUM_BIT) {
+       C_word absy = y & C_INT_SIGN_BIT ? -C_unfix(y) : C_unfix(y),
+              next_power = (C_uword)1 << (C_ilen(absy)-1);
+
+       if (next_power == absy && C_fitsinfixnump(absy)) {
+         y = C_fix(*(C_bignum_digits(x)) & (next_power - 1));
+         clear_buffer_object(ab[i], x);
+         x = C_fix(absy);
+       } else if (C_fitsinbignumhalfdigitp(absy)) {
+         y = C_fix(bignum_remainder_unsigned_halfdigit(x, absy));
+         clear_buffer_object(ab[i], x);
+         x = C_fix(absy);
+       } else {
+         absy = C_a_u_i_fix_to_big(&a, y);
+         size = C_fix(C_bignum_size(x) + 1);
+         res = C_allocate_scratch_bignum(&a, size, C_SCHEME_FALSE,
+                                         C_SCHEME_FALSE);
+         bignum_destructive_divide_full(x, absy, C_SCHEME_UNDEFINED, res,
+                                        C_SCHEME_TRUE);
+         clear_buffer_object(ab[i], x);
+         x = y;
+         y = C_bignum_simplify(res);
+       }
+     } else { /* Both x and y are bignums */
+       /* TODO: re-implement Lehmer's GCD algorithm in C? */
+       size = C_fix(C_bignum_size(x) + 1);
+       res = C_allocate_scratch_bignum(&a, size, C_SCHEME_FALSE, C_SCHEME_FALSE);
+       bignum_destructive_divide_full(x, y, C_SCHEME_UNDEFINED, res,
+                                      C_SCHEME_TRUE);
+       y = move_buffer_object(&a, ab[i], y);
+       clear_buffer_object(ab[i], x);
+       x = y;
+       y = C_bignum_simplify(res);
+     }
+   }
+
+   res = C_s_a_u_i_integer_abs(ptr, 1, x);
+   res = move_buffer_object(ptr, ab, res);
+   clear_buffer_object(ab, x);
+   clear_buffer_object(ab, y);
+   return res;
 }
 
 

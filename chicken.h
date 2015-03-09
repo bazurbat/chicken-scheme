@@ -919,6 +919,8 @@ DECL_C_PROC_p0 (128,  1,0,0,0,0,0,0,0)
 
 #define C_aligned8(n)              ((((C_word)(n)) & 7) == 0)
 
+#define C_buf_end(b)               ((C_word *)((C_byte *)(b) + sizeof(b)))
+
 /* This is word-size dependent: */
 #ifdef C_SIXTY_FOUR
 # define C_align(n)                C_align8(n)
@@ -1897,6 +1899,7 @@ C_fctexport C_word C_vector(C_word **ptr, int n, ...);
 C_fctexport C_word C_structure(C_word **ptr, int n, ...);
 C_fctexport C_word C_fcall C_mutate_slot(C_word *slot, C_word val) C_regparm;
 C_fctexport C_word C_fcall C_scratch_alloc(C_uword size) C_regparm;
+C_fctexport C_word C_fcall C_migrate_buffer_object(C_word **ptr, C_word *start, C_word *end, C_word obj) C_regparm;
 C_fctexport void C_fcall C_reclaim(void *trampoline, void *proc) C_regparm C_noret;
 C_fctexport void C_save_and_reclaim(void *trampoline, void *proc, int n, ...) C_noret;
 C_fctexport void C_fcall C_rereclaim2(C_uword size, int double_plus) C_regparm;
@@ -2031,6 +2034,8 @@ C_fctexport void C_ccall C_filter_heap_objects(C_word x, C_word closure, C_word 
 					       C_word vector, C_word userarg) C_noret;
 C_fctexport time_t C_fcall C_seconds(C_long *ms) C_regparm;
 C_fctexport C_word C_fcall C_bignum_simplify(C_word big) C_regparm;
+C_fctexport C_word C_fcall C_allocate_scratch_bignum(C_word **ptr, C_word size, C_word negp, C_word initp) C_regparm;
+C_fctexport C_word C_fcall C_bignum_rewrap(C_word **p, C_word big) C_regparm;
 C_fctexport C_word C_a_i_list(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_string(C_word **a, int c, ...);
 C_fctexport C_word C_a_i_record(C_word **a, int c, ...);
@@ -2187,7 +2192,7 @@ C_fctexport C_word C_fcall C_i_file_exists_p(C_word name, C_word file, C_word di
 C_fctexport C_word C_fcall C_s_a_i_abs(C_word **ptr, C_word n, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_s_a_i_negate(C_word **ptr, C_word n, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_s_a_u_i_integer_negate(C_word **ptr, C_word n, C_word x) C_regparm;
-
+C_fctexport C_word C_fcall C_s_a_u_i_integer_gcd(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 
 C_fctexport C_word C_fcall C_i_foreign_char_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_fixnum_argumentp(C_word x) C_regparm;
