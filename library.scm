@@ -1208,7 +1208,9 @@ EOF
 			(##sys#+-2 x (##sys#slot args 0))) ) )  ) ) ) )
 
 (define ##sys#+-2 (##core#primitive "C_2_basic_plus"))
-(define ##sys#integer-plus (##core#primitive "C_u_2_integer_plus"))
+;; OBSOLETE: Remove this (or change to define-inline)
+(define (##sys#integer-plus x y)
+  (##core#inline_allocate ("C_s_a_u_i_integer_plus" 6) x y))
 
 (define (##sys#extended-plus x y)
   (cond ((or (cplxnum? x) (cplxnum? y))
@@ -1252,7 +1254,9 @@ EOF
 		  (##sys#--2 x (##sys#slot args 0))) ) ) ) )
 
 (define ##sys#--2 (##core#primitive "C_2_basic_minus"))
-(define ##sys#integer-minus (##core#primitive "C_u_2_integer_minus"))
+;; OBSOLETE: Remove this (or change to define-inline)
+(define (##sys#integer-minus x y)
+  (##core#inline_allocate ("C_s_a_u_i_integer_minus" 6) x y))
 
 (define (##sys#extended-minus x y)
   (cond ((or (cplxnum? x) (cplxnum? y))

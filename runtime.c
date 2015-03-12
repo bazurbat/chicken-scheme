@@ -518,10 +518,8 @@ static void bignum_actual_shift(C_word c, C_word self, C_word result) C_noret;
 static void bignum_times_bignum_unsigned(C_word k, C_word x, C_word y, C_word negp) C_noret;
 static void bignum_times_bignum_unsigned_2(C_word c, C_word self, C_word result) C_noret;
 static void integer_times_2(C_word c, C_word self, C_word new_big) C_noret;
-static void bignum_plus_unsigned(C_word k, C_word x, C_word y, C_word negp) C_noret;
-static void bignum_plus_unsigned_2(C_word c, C_word self, C_word result) C_noret;
-static void bignum_minus_unsigned(C_word k, C_word x, C_word y) C_noret;
-static void bignum_minus_unsigned_2(C_word c, C_word self, C_word result) C_noret;
+static C_word bignum_plus_unsigned(C_word **ptr, C_word x, C_word y, C_word negp);
+static C_word bignum_minus_unsigned(C_word **ptr, C_word x, C_word y);
 static C_regparm void basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_r, C_word return_q) C_noret;
 static C_regparm void integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_q, C_word return_r) C_noret;
 static C_word bignum_remainder_unsigned_halfdigit(C_word num, C_word den);
@@ -846,7 +844,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size -
      this must match the number of C_pte calls + 1 (NULL terminator)! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 76);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 74);
   int i = 0;
 
   if(pt == NULL)
@@ -923,8 +921,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_basic_quotient);
   C_pte(C_basic_remainder);
   C_pte(C_basic_divrem);
-  C_pte(C_u_2_integer_plus);
-  C_pte(C_u_2_integer_minus);
   C_pte(C_u_2_integer_times);
   C_pte(C_u_integer_quotient);
   C_pte(C_u_integer_remainder);
@@ -7549,9 +7545,11 @@ C_regparm C_word C_fcall C_2_times(C_word **ptr, C_word x, C_word y)
   return C_flonum(ptr, 0.0/0.0);
 }
 
-static void bignum_plus_unsigned(C_word k, C_word x, C_word y, C_word negp)
+static C_word bignum_plus_unsigned(C_word **ptr, C_word x, C_word y, C_word negp)
 {
-  C_word kab[C_SIZEOF_CLOSURE(4)], *ka = kab, k2, size;
+  C_word size, result;
+  C_uword sum, digit, *scan_y, *end_y, *scan_r, *end_r;
+  int carry = 0;
 
   if (C_bignum_size(y) > C_bignum_size(x)) {  /* Ensure size(y) <= size(x) */
     C_word z = x;
@@ -7559,23 +7557,13 @@ static void bignum_plus_unsigned(C_word k, C_word x, C_word y, C_word negp)
     y = z;
   }
 
-  k2 = C_closure(&ka, 4, (C_word)bignum_plus_unsigned_2, k, x, y);
-  
   size = C_fix(C_bignum_size(x) + 1); /* One more digit, for possible carry. */
-  C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_FALSE);
-}
+  result = C_allocate_scratch_bignum(ptr, size, negp, C_SCHEME_FALSE);
 
-static void bignum_plus_unsigned_2(C_word c, C_word self, C_word result)
-{
-  C_word k = C_block_item(self, 1),
-         x = C_block_item(self, 2),
-         y = C_block_item(self, 3);
-  C_uword *scan_y = C_bignum_digits(y),
-          *end_y = scan_y + C_bignum_size(y),
-          *scan_r = C_bignum_digits(result),
-          *end_r = scan_r + C_bignum_size(result),
-          sum, digit;
-  int carry = 0;
+  scan_y = C_bignum_digits(y);
+  end_y = scan_y + C_bignum_size(y);
+  scan_r = C_bignum_digits(result);
+  end_r = scan_r + C_bignum_size(result);
 
   /* Copy x into r so we can operate on two pointers, which is faster
    * than three, and we can stop earlier after adding y.  It's slower
@@ -7605,7 +7593,7 @@ static void bignum_plus_unsigned_2(C_word c, C_word self, C_word result)
   }
   assert(scan_r <= end_r);
 
-  C_kontinue(k, C_bignum_simplify(result));
+  return C_bignum_simplify(result);
 }
 
 void C_ccall
@@ -7621,7 +7609,8 @@ C_2_basic_plus(C_word c, C_word self, C_word k, C_word x, C_word y)
       C_word *a = C_alloc(C_SIZEOF_FLONUM);
       C_kontinue(k, C_flonum(&a, (double)C_unfix(x) + C_flonum_magnitude(y)));
     } else if (C_truep(C_bignump(y))) {
-      C_u_2_integer_plus(4, (C_word)NULL, k, x, y);
+      C_word ab[C_SIZEOF_BIGNUM_WRAPPER], *a = ab;
+      C_kontinue(k, C_s_a_u_i_integer_plus(&a, 2, x, y));
     } else {
       try_extended_number("\003sysextended-plus", 3, k, x, y);
     }
@@ -7642,14 +7631,16 @@ C_2_basic_plus(C_word c, C_word self, C_word k, C_word x, C_word y)
     }
   } else if (C_truep(C_bignump(x))) {
     if (y & C_FIXNUM_BIT) {
-      C_u_2_integer_plus(4, (C_word)NULL, k, x, y);
+      C_word ab[C_SIZEOF_BIGNUM_WRAPPER], *a = ab;
+      C_kontinue(k, C_s_a_u_i_integer_plus(&a, 2, x, y));
     } else if (C_immediatep(y)) {
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", y);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
       C_word *a = C_alloc(C_SIZEOF_FLONUM);
       C_kontinue(k, C_flonum(&a, C_bignum_to_double(x)+C_flonum_magnitude(y)));
     } else if (C_truep(C_bignump(y))) {
-      C_u_2_integer_plus(4, (C_word)NULL, k, x, y);
+      C_word ab[C_SIZEOF_BIGNUM_WRAPPER], *a = ab;
+      C_kontinue(k, C_s_a_u_i_integer_plus(&a, 2, x, y));
     } else {
       try_extended_number("\003sysextended-plus", 3, k, x, y);
     }
@@ -7658,23 +7649,28 @@ C_2_basic_plus(C_word c, C_word self, C_word k, C_word x, C_word y)
   }
 }
 
-void C_ccall
-C_u_2_integer_plus(C_word c, C_word self, C_word k, C_word x, C_word y)
+C_regparm C_word C_fcall
+C_s_a_u_i_integer_plus(C_word **ptr, C_word n, C_word x, C_word y)
 {
   if ((x & y) & C_FIXNUM_BIT) {
-    C_word ab[C_SIZEOF_FIX_BIGNUM], *a = ab;
-    C_kontinue(k, C_a_i_fixnum_plus(&a, 2, x, y));
+    return C_a_i_fixnum_plus(ptr, 2, x, y);
   } else {
-    C_word ab[C_SIZEOF_FIX_BIGNUM * 2], *a = ab;
+    C_word ab[C_SIZEOF_FIX_BIGNUM * 2 + C_SIZEOF_BIGNUM_WRAPPER], *a = ab;
     if (x & C_FIXNUM_BIT) x = C_a_u_i_fix_to_big(&a, x);
     if (y & C_FIXNUM_BIT) y = C_a_u_i_fix_to_big(&a, y);
 
     if (C_bignum_negativep(x)) {
-      if (C_bignum_negativep(y)) bignum_plus_unsigned(k, x, y, C_SCHEME_TRUE);
-      else bignum_minus_unsigned(k, y, x);
+      if (C_bignum_negativep(y)) {
+        return bignum_plus_unsigned(ptr, x, y, C_SCHEME_TRUE);
+      } else {
+        return bignum_minus_unsigned(ptr, y, x);
+      }
     } else {
-      if (C_bignum_negativep(y)) bignum_minus_unsigned(k, x, y);
-      else bignum_plus_unsigned(k, x, y, C_SCHEME_FALSE);
+      if (C_bignum_negativep(y)) {
+        return bignum_minus_unsigned(ptr, x, y);
+      } else {
+        return bignum_plus_unsigned(ptr, x, y, C_SCHEME_FALSE);
+      }
     }
   }
 }
@@ -7758,41 +7754,35 @@ C_regparm C_word C_fcall C_2_plus(C_word **ptr, C_word x, C_word y)
   return C_flonum(ptr, 0.0/0.0);
 }
 
-static void bignum_minus_unsigned(C_word k, C_word x, C_word y)
+static C_word bignum_minus_unsigned(C_word **ptr, C_word x, C_word y)
 {
-  C_word kab[C_SIZEOF_CLOSURE(4)], *ka = kab, k2, size;
+  C_word res, size;
+  C_uword *scan_r, *end_r, *scan_y, *end_y, difference, digit;
+  int borrow = 0;
 
   switch(bignum_cmp_unsigned(x, y)) {
   case 0:	      /* x = y, return 0 */
-    C_kontinue(k, C_fix(0));
+    return C_fix(0);
   case -1:	      /* abs(x) < abs(y), return -(abs(y) - abs(x)) */
-    k2 = C_closure(&ka, 4, (C_word)bignum_minus_unsigned_2, k, y, x);
-    
     size = C_fix(C_bignum_size(y)); /* Maximum size of result is length of y. */
-    C_allocate_bignum(5, (C_word)NULL, k2, size, C_SCHEME_TRUE, C_SCHEME_FALSE);
+    res = C_allocate_scratch_bignum(ptr, size, C_SCHEME_TRUE, C_SCHEME_FALSE);
+    size = y;
+    y = x;
+    x = size;
+    break;
   case 1:	      /* abs(x) > abs(y), return abs(x) - abs(y) */
   default:
-    k2 = C_closure(&ka, 4, (C_word)bignum_minus_unsigned_2, k, x, y);
-    
     size = C_fix(C_bignum_size(x)); /* Maximum size of result is length of x. */
-    C_allocate_bignum(5, (C_word)NULL, k2, size, C_SCHEME_FALSE, C_SCHEME_FALSE);
+    res = C_allocate_scratch_bignum(ptr, size, C_SCHEME_FALSE, C_SCHEME_FALSE);
     break;
   }
-}
 
-static void bignum_minus_unsigned_2(C_word c, C_word self, C_word result)
-{
-  C_word k = C_block_item(self, 1),
-         x = C_block_item(self, 2),
-         y = C_block_item(self, 3);
-  C_uword *scan_r = C_bignum_digits(result),
-          *end_r = scan_r + C_bignum_size(result),
-          *scan_y = C_bignum_digits(y),
-          *end_y = scan_y + C_bignum_size(y),
-          difference, digit;
-  int borrow = 0;
+  scan_r = C_bignum_digits(res);
+  end_r = scan_r + C_bignum_size(res);
+  scan_y = C_bignum_digits(y);
+  end_y = scan_y + C_bignum_size(y);
 
-  bignum_digits_destructive_copy(result, x); /* See bignum_plus_unsigned_2 */
+  bignum_digits_destructive_copy(res, x); /* See bignum_plus_unsigned */
 
   /* Destructively subtract y's digits w/ borrow from and back into r. */
   while (scan_y < end_y) {
@@ -7817,7 +7807,7 @@ static void bignum_minus_unsigned_2(C_word c, C_word self, C_word result)
 
   assert(scan_r <= end_r);
 
-  C_kontinue(k, C_bignum_simplify(result));
+  return C_bignum_simplify(res);
 }
 
 void C_ccall
@@ -7833,7 +7823,8 @@ C_2_basic_minus(C_word c, C_word self, C_word k, C_word x, C_word y)
       C_word *a = C_alloc(C_SIZEOF_FLONUM);
       C_kontinue(k, C_flonum(&a, (double)C_unfix(x) - C_flonum_magnitude(y)));
     } else if (C_truep(C_bignump(y))) {
-      C_u_2_integer_minus(4, (C_word)NULL, k, x, y);
+      C_word ab[C_SIZEOF_BIGNUM_WRAPPER], *a = ab;
+      C_kontinue(k, C_s_a_u_i_integer_minus(&a, 2, x, y));
     } else {
       try_extended_number("\003sysextended-minus", 3, k, x, y);
     }
@@ -7854,14 +7845,16 @@ C_2_basic_minus(C_word c, C_word self, C_word k, C_word x, C_word y)
     }
   } else if (C_truep(C_bignump(x))) {
     if (y & C_FIXNUM_BIT) {
-      C_u_2_integer_minus(4, (C_word)NULL, k, x, y);
+      C_word ab[C_SIZEOF_BIGNUM_WRAPPER], *a = ab;
+      C_kontinue(k, C_s_a_u_i_integer_minus(&a, 2, x, y));
     } else if (C_immediatep(y)) {
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", y);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
       C_word *a = C_alloc(C_SIZEOF_FLONUM);
       C_kontinue(k, C_flonum(&a, C_bignum_to_double(x)-C_flonum_magnitude(y)));
     } else if (C_truep(C_bignump(y))) {
-      C_u_2_integer_minus(4, (C_word)NULL, k, x, y);
+      C_word ab[C_SIZEOF_BIGNUM_WRAPPER], *a = ab;
+      C_kontinue(k, C_s_a_u_i_integer_minus(&a, 2, x, y));
     } else {
       try_extended_number("\003sysextended-minus", 3, k, x, y);
     }
@@ -7870,23 +7863,28 @@ C_2_basic_minus(C_word c, C_word self, C_word k, C_word x, C_word y)
   }
 }
 
-void C_ccall
-C_u_2_integer_minus(C_word c, C_word self, C_word k, C_word x, C_word y)
+C_regparm C_word C_fcall
+C_s_a_u_i_integer_minus(C_word **ptr, C_word n, C_word x, C_word y)
 {
   if ((x & y) & C_FIXNUM_BIT) {
-    C_word ab[C_SIZEOF_FIX_BIGNUM], *a = ab;
-    C_kontinue(k, C_a_i_fixnum_difference(&a, 2, x, y));
+    return C_a_i_fixnum_difference(ptr, 2, x, y);
   } else {
-    C_word ab[C_SIZEOF_FIX_BIGNUM * 2], *a = ab;
+    C_word ab[C_SIZEOF_FIX_BIGNUM * 2 + C_SIZEOF_BIGNUM_WRAPPER], *a = ab;
     if (x & C_FIXNUM_BIT) x = C_a_u_i_fix_to_big(&a, x);
     if (y & C_FIXNUM_BIT) y = C_a_u_i_fix_to_big(&a, y);
 
     if (C_bignum_negativep(x)) {
-      if (C_bignum_negativep(y)) bignum_minus_unsigned(k, y, x);
-      else bignum_plus_unsigned(k, x, y, C_SCHEME_TRUE);
+      if (C_bignum_negativep(y)) {
+        return bignum_minus_unsigned(ptr, y, x);
+      } else {
+        return bignum_plus_unsigned(ptr, x, y, C_SCHEME_TRUE);
+      }
     } else {
-      if (C_bignum_negativep(y)) bignum_plus_unsigned(k, x, y, C_SCHEME_FALSE);
-      else bignum_minus_unsigned(k, x, y);
+      if (C_bignum_negativep(y)) {
+        return bignum_plus_unsigned(ptr, x, y, C_SCHEME_FALSE);
+      } else {
+        return bignum_minus_unsigned(ptr, x, y);
+      }
     }
   }
 }

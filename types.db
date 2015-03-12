@@ -319,7 +319,7 @@
    ((fixnum fixnum) (integer)
     (##core#inline_allocate ("C_a_i_fixnum_plus" 6) #(1) #(2)))
    ((integer integer) (integer)
-    (##sys#integer-plus #(1) #(2)))
+    (##core#inline_allocate ("C_s_a_u_i_integer_plus" 6) #(1) #(2)))
    ((* *) (number)
     (##sys#+-2 #(1) #(2))))
 
@@ -344,7 +344,7 @@
    ((fixnum fixnum) (integer)
     (##core#inline_allocate ("C_a_i_fixnum_difference" 6) #(1) #(2)))
    ((integer integer) (integer)
-    (##sys#integer-minus #(1) #(2)))
+    (##core#inline_allocate ("C_s_a_u_i_integer_minus" 6) #(1) #(2)))
    ((* *) (number)
     (##sys#--2 #(1) #(2))))
 
