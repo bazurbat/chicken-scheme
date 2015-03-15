@@ -532,7 +532,8 @@
 
 (exact->inexact (#(procedure #:clean #:enforce #:foldable) exact->inexact (number) (or float cplxnum))
 		((float) (float) #(1))
-		((fixnum) (float) (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))))
+		((fixnum) (float) (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1)))
+		((number) (##core#inline_allocate ("C_a_i_exact_to_inexact" 12) #(1))))
 
 (inexact->exact (#(procedure #:clean #:enforce #:foldable) inexact->exact (number) (or integer ratnum))
 		((fixnum) (fixnum) #(1))
@@ -811,8 +812,10 @@
                           (##core#inline_allocate ("C_a_i_fix_to_flo" 4) #(1))))
        ((cplxnum) (##core#inline_allocate
 		   ("C_a_i_flonum_atan2" 4)
-		   (##sys#exact->inexact (##sys#slot #(1) '2))
-		   (##sys#exact->inexact (##sys#slot #(1) '1)))))
+		   (##core#inline_allocate ("C_a_i_exact_to_inexact" 12)
+					   (##sys#slot #(1) '2))
+		   (##core#inline_allocate ("C_a_i_exact_to_inexact" 12)
+					   (##sys#slot #(1) '1)))))
 
 (numerator (#(procedure #:clean #:enforce #:foldable) numerator ((or float integer ratnum)) (or float integer))
 	   ((fixnum) (fixnum) #(1))

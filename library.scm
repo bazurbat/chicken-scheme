@@ -36,7 +36,7 @@
 	##sys#format-here-doc-warning
 	exit-in-progress
         maximal-string-length find-ratio-between find-ratio
-	make-complex flonum->ratnum ratnum rat+/- minimum-denorm-flonum-expt
+	make-complex flonum->ratnum ratnum rat+/-
 	+maximum-allowed-exponent+ mantexp->dbl ldexp round-quotient
 	##sys#string->compnum ##sys#bignum-extract-digits ##sys#internal-gcd)
   (not inline ##sys#user-read-hook ##sys#error-hook ##sys#signal-hook ##sys#schedule
@@ -1130,58 +1130,8 @@ EOF
                        (inexact->exact (%cplxnum-imag x))))
         (else (##sys#error-bad-number x 'inexact->exact))))
 
-;; Exponent of the lowest allowed flonum; if we get any lower we get zero.
-;; In other words, this is the first (smallest) flonum after 0.
-;; Equal to (expt 2.0 (- flonum-minimum-exponent flonum-precision))
-(define minimum-denorm-flonum-expt (fx- flonum-minimum-exponent flonum-precision))
-
 (define (exact->inexact x)
-  (cond ((##core#inline "C_fixnump" x)
-         (##core#inline_allocate ("C_a_i_fix_to_flo" 4) x))
-        ((##core#inline "C_i_flonump" x) x)
-        ((##core#inline "C_i_bignump" x)
-         (##core#inline_allocate ("C_a_u_i_big_to_flo" 4) x))
-        ((ratnum? x)
-         ;; This tries to keep the numbers within representable ranges
-         ;; and tries to drop as few significant digits as possible by
-         ;; bringing the two numbers to within the same powers of two.
-         ;; See algorithms M & N in Knuth, 4.2.1
-         (let* ((n1 (%ratnum-numerator x))
-                (an (##sys#integer-abs n1))
-                (d1 (%ratnum-denominator x))
-                ;; Approximate distance between the numbers in powers
-                ;; of 2 ie, 2^e-1 < n/d < 2^e+1 (e is the *un*biased
-                ;; value of e_w in M2)
-                ;; XXX: What if b != 2 (ie, flonum-radix is not 2)?
-                (e (fx- (integer-length an) (integer-length d1)))
-                (rnd (lambda (n d e) ; Here, 1 <= n/d < 2  (normalized) [N5]
-                       ;; Cannot shift above the available precision,
-                       ;; and can't have an exponent that's below the
-                       ;; minimum flonum exponent.
-                       (let* ((s (min (fx- flonum-precision 1)
-                                      (fx- e minimum-denorm-flonum-expt)))
-                              (norm (##sys#/-2 (##sys#integer-shift n s) d))
-                              (r (round norm))
-                              (fraction (exact->inexact r))
-                              (exp (fx- e s)))
-                         (let ((res (fp* fraction (expt 2.0 exp))))
-                           (if (negative? n1) (##sys#--2 0 res) res)))))
-                (scale (lambda (n d)  ; Here, 1/2 <= n/d < 2   [N3]
-                         (if (##sys#<-2 n d) ; n/d < 1?
-                             ;; Scale left [N3]; only needed once (see note in M3)
-                             (rnd (##sys#integer-shift n 1) d (fx- e 1))
-                             ;; Already normalized
-                             (rnd n d e)))))
-           ;; After this step, which shifts the smaller number to
-           ;; align with the larger, "f" in algorithm N is represented
-           ;; in the procedures above by n/d.
-           (if (negative? e)
-               (scale (##sys#integer-shift an (##sys#--2 0 e)) d1)
-               (scale an (##sys#integer-shift d1 e)))))
-        ((cplxnum? x)
-         (make-complex (exact->inexact (%cplxnum-real x))
-                       (exact->inexact (%cplxnum-imag x))))
-        (else (##sys#error-bad-number x 'exact->inexact))))
+  (##core#inline_allocate ("C_a_i_exact_to_inexact" 12) x))
 
 (define ##sys#exact->inexact exact->inexact)
 (define ##sys#inexact->exact inexact->exact)

@@ -9777,17 +9777,171 @@ void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word strin
   C_kontinue(k, s);
 }
 
-
-/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
-C_regparm C_word C_fcall 
-C_a_i_exact_to_inexact(C_word **a, int c, C_word n)
+C_inline int integer_length_abs(C_word x)
 {
-  if(n & C_FIXNUM_BIT) 
-    return C_flonum(a, (double)C_unfix(n));
-  else if(C_immediatep(n) || C_block_header(n) != C_FLONUM_TAG)
-    barf(C_BAD_ARGUMENT_TYPE_ERROR, "exact->inexact", n);
+  if (x & C_FIXNUM_BIT) {
+    return C_ilen(labs(C_unfix(x)));
+  } else {
+    C_uword result = (C_bignum_size(x) - 1) * C_BIGNUM_DIGIT_LENGTH,
+            *last_digit = C_bignum_digits(x) + C_bignum_size(x) - 1,
+            last_digit_length = C_ilen(*last_digit);
+    return result + last_digit_length;
+  }
+}
 
-  return n;
+/* This will usually return a flonum, but it may also return a cplxnum
+ * consisting of two flonums, making for a total of 12 words.
+ */
+C_regparm C_word C_fcall 
+C_a_i_exact_to_inexact(C_word **ptr, int c, C_word n)
+{
+  if (n & C_FIXNUM_BIT) {
+    return C_flonum(ptr, (double)C_unfix(n));
+  } else if (C_immediatep(n)) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "exact->inexact", n);
+  } else if (C_block_header(n) == C_FLONUM_TAG) {
+    return n;
+  } else if (C_truep(C_bignump(n))) {
+    return C_a_u_i_big_to_flo(ptr, c, n);
+  } else if (C_block_header(n) == C_STRUCTURE3_TAG &&
+             (C_block_item(n, 0) == C_cplxnum_type_tag)) {
+    return C_cplxnum(ptr, C_a_i_exact_to_inexact(ptr, 1, C_block_item(n, 1)),
+                     C_a_i_exact_to_inexact(ptr, 1, C_block_item(n, 2)));
+  /* The horribly painful case: ratnums */
+  } else if (C_block_header(n) == C_STRUCTURE3_TAG &&
+             (C_block_item(n, 0) == C_ratnum_type_tag)) {
+    /* This tries to keep the numbers within representable ranges and
+     * tries to drop as few significant digits as possible by bringing
+     * the two numbers to within the same powers of two.  See
+     * algorithms M & N in Knuth, 4.2.1.
+     */
+     C_word num = C_block_item(n, 1), denom = C_block_item(n, 2),
+             /* e = approx. distance between the numbers in powers of 2.
+              * ie, 2^e-1 < n/d < 2^e+1 (e is the *un*biased value of
+              * e_w in M2.  TODO: What if b!=2 (ie, flonum-radix isn't 2)?
+              */
+             e = integer_length_abs(num) - integer_length_abs(denom),
+             ab[C_SIZEOF_FIX_BIGNUM*4], *a = ab, tmp1 = 0, tmp2 = 0, tmp3 = 0,
+             shift_amount, negp = C_i_integer_negativep(num), q, r, len;
+     C_uword *d;
+     double res, fraction;
+
+     /* Simplify logic by ensuring bignums */
+     if (num & C_FIXNUM_BIT) num = C_a_u_i_fix_to_big(&a, num);
+     if (denom & C_FIXNUM_BIT) denom = C_a_u_i_fix_to_big(&a, denom);
+
+     /* Align numbers by shifting the smaller to the same size of the
+      * larger. After this, "f" in alg. N is represented by num/denom.
+      */
+     if (e < 0) {
+       tmp1 = allocate_tmp_bignum(C_fix(C_bignum_size(denom)),
+                                  C_SCHEME_FALSE, C_SCHEME_TRUE);
+       d = C_bignum_digits(tmp1) - e / C_BIGNUM_DIGIT_LENGTH;
+       C_memcpy(d, C_bignum_digits(num), C_wordstobytes(C_bignum_size(num)));
+       shift_amount = -e % C_BIGNUM_DIGIT_LENGTH;
+       if(shift_amount > 0) {
+         bignum_digits_destructive_shift_left(
+           d, C_bignum_digits(tmp1) + C_bignum_size(tmp1), shift_amount);
+       }
+       num = tmp1;
+     } else if (e > 0) {
+       tmp1 = allocate_tmp_bignum(C_fix(C_bignum_size(num)),
+                                  C_SCHEME_FALSE, C_SCHEME_TRUE);
+       d = C_bignum_digits(tmp1) + e / C_BIGNUM_DIGIT_LENGTH;
+       C_memcpy(d, C_bignum_digits(denom), C_wordstobytes(C_bignum_size(denom)));
+       shift_amount = e % C_BIGNUM_DIGIT_LENGTH;
+       if(shift_amount > 0) {
+         bignum_digits_destructive_shift_left(
+           d, C_bignum_digits(tmp1) + C_bignum_size(tmp1), shift_amount);
+       }
+       denom = tmp1;
+     }
+     /* From here on, 1/2 <= n/d < 2 [N3] */
+     if (C_truep(C_i_integer_lessp(num, denom))) { /* n/d < 1? */
+       len = C_bignum_size(num) + 1;
+       tmp2 = allocate_tmp_bignum(C_fix(len), C_SCHEME_FALSE, C_SCHEME_FALSE);
+       bignum_digits_destructive_copy(tmp2, num);
+       d = C_bignum_digits(tmp2);
+       d[len-1] = 0; /* Init most significant digit */
+       bignum_digits_destructive_shift_left(d, d + len, 1);
+       num = tmp2;
+       e -= 1;
+     }
+
+     /* Here, 1 <= n/d < 2 (normalized) [N5] */
+     shift_amount = nmin(DBL_MANT_DIG-1, e - (DBL_MIN_EXP - DBL_MANT_DIG));
+
+     len = C_bignum_size(num) + shift_amount / C_BIGNUM_DIGIT_LENGTH + 1;
+     tmp3 = allocate_tmp_bignum(C_fix(len), C_SCHEME_FALSE, C_SCHEME_TRUE);
+     d = C_bignum_digits(tmp3) + shift_amount / C_BIGNUM_DIGIT_LENGTH;
+     C_memcpy(d, C_bignum_digits(num), C_wordstobytes(C_bignum_size(num)));
+     shift_amount = shift_amount % C_BIGNUM_DIGIT_LENGTH;
+     if (shift_amount > 0) {
+       bignum_digits_destructive_shift_left(
+         d, C_bignum_digits(tmp3) + len, shift_amount);
+     }
+     num = tmp3;
+
+     /* Now, calculate round(num/denom).  We start with a quotient&remainder */
+     switch(bignum_cmp_unsigned(num, denom)) {
+     case 0:                    /* q = 1, r = 0 */
+       q = allocate_tmp_bignum(C_fix(1), C_SCHEME_FALSE, C_SCHEME_FALSE);
+       *(C_bignum_digits(q)) = 1;
+       r = allocate_tmp_bignum(C_fix(0), C_SCHEME_FALSE, C_SCHEME_FALSE);
+       break;
+
+     case -1:                   /* q = 0, r = num */
+       q = allocate_tmp_bignum(C_fix(0), C_SCHEME_FALSE, C_SCHEME_FALSE);
+       len = C_bignum_size(num) + 1; /* Ensure we can shift left by one */
+       r = allocate_tmp_bignum(C_fix(len), C_SCHEME_FALSE, C_SCHEME_FALSE);
+       bignum_digits_destructive_copy(r, num);
+       d = C_bignum_digits(r);
+       d[len-1] = 0; /* Initialize most significant digit */
+       bignum_digits_destructive_shift_left(d, d + len, 1);
+       break;
+
+     case 1:
+     default:
+       len = C_bignum_size(num) + 1 - C_bignum_size(denom);
+       q = allocate_tmp_bignum(C_fix(len), C_SCHEME_FALSE, C_SCHEME_FALSE);
+       len = C_bignum_size(num) + 1; /* LEN */
+       r = allocate_tmp_bignum(C_fix(len), C_SCHEME_FALSE, C_SCHEME_FALSE);
+       bignum_destructive_divide_full(num, denom, q, r, C_SCHEME_TRUE);
+       d = C_bignum_digits(r);
+       /* There should always be room to shift left by 1 because of LEN */
+       assert(C_ilen(d[len-1]) < C_BIGNUM_DIGIT_LENGTH);
+       bignum_digits_destructive_shift_left(d, d + len, 1);
+       break;
+     }
+
+     /* Now q is the quotient, but to "round" result we need to
+      * adjust.  This follows the semantics of the "round" procedure:
+      * Round away from zero on positive numbers (this is never
+      * negative).  In case of exactly halfway, we round up if odd.
+      */
+     fraction = C_bignum_to_double(q);
+     switch (basic_cmp(C_bignum_simplify(r), C_bignum_simplify(denom), "", 0)) {
+     case C_fix(0):
+       if (*(C_bignum_digits(q)) & 1) fraction += 1.0;
+       break;
+     case C_fix(1):
+       fraction += 1.0;
+       break;
+     default: /* if r <= denom, we're done */ break;
+     }
+
+     free_tmp_bignum(q);
+     free_tmp_bignum(r);
+     if (tmp1) free_tmp_bignum(tmp1);
+     if (tmp2) free_tmp_bignum(tmp2);
+     if (tmp3) free_tmp_bignum(tmp3);
+
+     shift_amount = nmin(DBL_MANT_DIG-1, e - (DBL_MIN_EXP - DBL_MANT_DIG));
+     res = ldexp(fraction, e - shift_amount);
+     return C_flonum(ptr, C_truep(negp) ? -res : res);
+  } else {
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "exact->inexact", n);
+  }
 }
 
 
