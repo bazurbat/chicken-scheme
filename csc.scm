@@ -529,10 +529,7 @@ EOF
     (set! shared #t) )
 
   (define (use-private-repository)
-    (set! compile-options (cons "-DC_PRIVATE_REPOSITORY" compile-options))
-    (when osx
-      ;; needed for C_path_to_executable (see chicken.h):
-      (set! link-options (cons "-framework CoreFoundation" link-options))))
+    (set! compile-options (cons "-DC_PRIVATE_REPOSITORY" compile-options)))
 
   (let loop ((args args))
     (cond [(null? args)

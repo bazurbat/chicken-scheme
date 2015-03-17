@@ -368,6 +368,9 @@ C_TLS C_uword C_maximal_heap_size;
 C_TLS time_t C_startup_time_seconds;
 C_TLS char 
   **C_main_argv,
+#ifdef SEARCH_EXE_PATH
+  *C_main_exe = NULL,
+#endif
   *C_dlerror;
 
 static C_TLS TRACE_INFO
@@ -1219,6 +1222,11 @@ void CHICKEN_parse_command_line(int argc, char *argv[], C_word *heap, C_word *st
 
   C_main_argc = argc;
   C_main_argv = argv;
+
+#ifdef SEARCH_EXE_PATH
+  C_main_exe = C_resolve_executable_pathname(argv[0]);
+#endif
+
   *heap = DEFAULT_HEAP_SIZE;
   *stack = DEFAULT_STACK_SIZE;
   *symbols = DEFAULT_SYMBOL_TABLE_SIZE;
@@ -8945,7 +8953,7 @@ C_decode_literal(C_word **ptr, C_char *str)
 void
 C_use_private_repository(C_char *path)
 {
-  private_repository = path == NULL ? NULL : C_strdup(path);
+  private_repository = path;
 }
 
 
@@ -8955,6 +8963,150 @@ C_private_repository_path()
   return private_repository;
 }
 
+C_char *
+C_executable_pathname() {
+#ifdef SEARCH_EXE_PATH
+  return C_main_exe == NULL ? NULL : C_strdup(C_main_exe);
+#else
+  return C_resolve_executable_pathname(C_main_argv[0]);
+#endif
+}
+
+C_char *
+C_path_to_executable(C_char *fname) {
+  int len;
+  C_char *path;
+
+  if((path = C_resolve_executable_pathname(fname)) == NULL)
+    return NULL;
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+  for(len = C_strlen(path); len >= 0 && path[len] != '\\'; len--);
+#else
+  for(len = C_strlen(path); len >= 0 && path[len] != '/'; len--);
+#endif
+
+  path[len] = '\0';
+  return path;
+}
+
+C_char *
+C_resolve_executable_pathname(C_char *fname)
+{
+  int n;
+  C_char *buffer = (C_char *) C_malloc(C_MAX_PATH);
+
+  if(buffer == NULL) return NULL;
+
+#if defined(__linux__) || defined(__sun)
+  C_char linkname[64]; /* /proc/<pid>/exe */
+  pid_t pid = C_getpid();
+
+# ifdef __linux__
+  C_snprintf(linkname, sizeof(linkname), "/proc/%i/exe", pid);
+# else
+  C_snprintf(linkname, sizeof(linkname), "/proc/%i/path/a.out", pid); /* SunOS / Solaris */
+# endif
+
+  n = C_readlink(linkname, buffer, C_MAX_PATH);
+  if(n < 0 || n >= C_MAX_PATH)
+    goto error;
+
+  buffer[n] = '\0';
+  return buffer;
+#elif defined(_WIN32) && !defined(__CYGWIN__)
+  n = GetModuleFileName(NULL, buffer, C_MAX_PATH);
+  if(n == 0 || n >= C_MAX_PATH)
+    goto error;
+
+  return buffer;
+#elif defined(C_MACOSX)
+  C_char buf[C_MAX_PATH];
+  C_u32 size = C_MAX_PATH;
+
+  if(_NSGetExecutablePath(buf, &size) != 0)
+    goto error;
+
+  if(C_realpath(buf, buffer) == NULL)
+    goto error;
+
+  return buffer;
+#elif defined(__HAIKU__)
+{
+  image_info info;
+  int32 cookie = 0;
+
+  while (get_next_image_info(0, &cookie, &info) == B_OK) {
+    if (info.type == B_APP_IMAGE) {
+      C_strlcpy(buffer, info.name, C_MAX_PATH);
+      return buffer;
+    }
+  }
+}
+#elif defined(SEARCH_EXE_PATH)
+  int len;
+  C_char *path, buf[C_MAX_PATH];
+
+  /* no name given (execve) */
+  if(fname == NULL)
+    goto error;
+
+  /* absolute pathname */
+  if(fname[0] == '/') {
+    if(C_realpath(fname, buffer) == NULL)
+      goto error;
+    else
+      return buffer;
+  }
+
+  /* current directory */
+  if(C_strchr(fname, '/') != NULL) {
+    if(C_getcwd(buffer, C_MAX_PATH) == NULL)
+      goto error;
+
+    n = C_snprintf(buf, C_MAX_PATH, "%s/%s", buffer, fname);
+    if(n < 0 || n >= C_MAX_PATH)
+      goto error;
+
+    if(C_access(buf, X_OK) == 0) {
+      if(C_realpath(buf, buffer) == NULL)
+        goto error;
+      else
+        return buffer;
+    }
+  }
+
+  /* walk PATH */
+  if((path = C_getenv("PATH")) == NULL)
+    goto error;
+
+  do {
+    /* check PATH entry length */
+    len = C_strcspn(path, ":");
+    if(len == 0 || len >= C_MAX_PATH)
+      continue;
+
+    /* "<path>/<fname>" to buf */
+    C_strncpy(buf, path, len);
+    n = C_snprintf(buf + len, C_MAX_PATH - len, "/%s", fname);
+    if(n < 0 || n + len >= C_MAX_PATH)
+      continue;
+
+    if(C_access(buf, X_OK) != 0)
+      continue;
+
+    /* fname found, resolve links */
+    if(C_realpath(buf, buffer) != NULL)
+      return buffer;
+
+  /* seek next entry, skip colon */
+  } while (path += len, *path++);
+#endif
+
+error:
+  C_free(buffer);
+  return NULL;
+}
 
 C_regparm C_word C_fcall
 C_i_getprop(C_word sym, C_word prop, C_word def)

@@ -443,6 +443,12 @@ if errorlevel 1 exit /b 1
 echo ======================================== syntax-rules stress test ...
 %interpret% -bnq syntax-rule-stress-test.scm
 
+echo "======================================== executable tests ..."
+%compile% executable-tests.scm
+if errorlevel 1 exit /b 1
+a.out %TEST_DIR%\a.out
+if errorlevel 1 exit /b 1
+
 echo ======================================== embedding (1) ...
 %compile% embedded1.c
 if errorlevel 1 exit /b 1

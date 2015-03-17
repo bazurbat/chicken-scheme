@@ -4,6 +4,8 @@
   - Removed support for memory-mapped files (posix), queues (data-structures),
     binary-search (data-structures) and object-eviction (lolevel). These
     are now available as eggs.
+  - Added the `executable-pathname` procedure for retrieving a path to
+    the currently-running executable.
 
 - Module system
   - The compiler has been modularised, for improved namespacing.  This
