@@ -281,6 +281,8 @@ extern void _C_do_apply_hack(void *proc, C_word *args, int count) C_noret;
 
 /* Type definitions: */
 
+typedef C_regparm C_word C_fcall (*integer_plusmin_op) (C_word **ptr, C_word n, C_word x, C_word y);
+
 typedef void (*TOPLEVEL)(C_word c, C_word self, C_word k) C_noret;
 typedef void (C_fcall *TRAMPOLINE)(void *proc) C_regparm C_noret;
 
@@ -519,6 +521,9 @@ static void bignum_times_bignum_unsigned(C_word k, C_word x, C_word y, C_word ne
 static void bignum_times_bignum_unsigned_2(C_word c, C_word self, C_word result) C_noret;
 static void integer_times_2(C_word c, C_word self, C_word new_big) C_noret;
 static C_word bignum_plus_unsigned(C_word **ptr, C_word x, C_word y, C_word negp);
+static C_word rat_plusmin_integer(C_word **ptr, C_word rat, C_word i, integer_plusmin_op plusmin_op);
+static C_word integer_minus_rat(C_word **ptr, C_word i, C_word rat);
+static C_word rat_plusmin_rat(C_word **ptr, C_word x, C_word y, integer_plusmin_op plusmin_op);
 static C_word bignum_minus_unsigned(C_word **ptr, C_word x, C_word y);
 static C_regparm void basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_r, C_word return_q) C_noret;
 static C_regparm void integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_q, C_word return_r) C_noret;
@@ -844,7 +849,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size -
      this must match the number of C_pte calls + 1 (NULL terminator)! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 74);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 73);
   int i = 0;
 
   if(pt == NULL)
@@ -915,8 +920,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_flonum_to_string);
   /* IMPORTANT: have you read the comments at the start and the end of this function? */
   C_pte(C_signum);
-  C_pte(C_2_basic_plus);
-  C_pte(C_2_basic_minus);
   C_pte(C_2_basic_times);
   C_pte(C_basic_quotient);
   C_pte(C_basic_remainder);
@@ -7596,56 +7599,317 @@ static C_word bignum_plus_unsigned(C_word **ptr, C_word x, C_word y, C_word negp
   return C_bignum_simplify(result);
 }
 
-void C_ccall
-C_2_basic_plus(C_word c, C_word self, C_word k, C_word x, C_word y)
+/* Unfortunately we can't use karatsuba multiplication here, either... */
+static C_word rat_plusmin_integer(C_word **ptr, C_word rat, C_word i, integer_plusmin_op plusmin_op)
+{
+  C_word ab[C_SIZEOF_FIX_BIGNUM*2], *a = ab,
+         num, denom, tmp, res, size, negp;
+
+  if (i == C_fix(0)) return rat;
+
+  /* Make i and denom bignums to keep things simple */
+  if (i & C_FIXNUM_BIT) i = C_a_u_i_fix_to_big(&a, i);
+  num = C_block_item(rat, 1);
+  denom = C_block_item(rat, 2);
+  if (denom & C_FIXNUM_BIT) denom = C_a_u_i_fix_to_big(&a, denom);
+
+  /* a/b [+-] c/d = (a*d [+-] b*c)/(b*d) | d = 1: (num + denom * i) / denom */
+  size = C_fix(C_bignum_size(denom) + C_bignum_size(i));
+  negp = C_mk_bool(C_bignum_negativep(denom) != C_bignum_negativep(i));
+  tmp = allocate_tmp_bignum(C_fix(size), negp, C_SCHEME_TRUE);
+  bignum_digits_multiply(i, denom, tmp); /*  tmp = denom * i  */
+
+  res = plusmin_op(ptr, 2, num, C_bignum_simplify(tmp));
+  free_tmp_bignum(tmp);
+  return C_ratnum(ptr, res, C_block_item(rat, 2));
+}
+
+/* This is needed only for minus: plus is commutative but minus isn't. */
+static C_word integer_minus_rat(C_word **ptr, C_word i, C_word rat)
+{
+  C_word ab[C_SIZEOF_FIX_BIGNUM*2], *a = ab,
+         num, denom, tmp, res, size, negp;
+
+  num = C_block_item(rat, 1);
+  denom = C_block_item(rat, 2);
+
+  if (i == C_fix(0))
+    return C_ratnum(ptr, C_s_a_u_i_integer_negate(ptr, 1, num), denom);
+
+  /* Make i and denom bignums to keep things simple */
+  if (i & C_FIXNUM_BIT) i = C_a_u_i_fix_to_big(&a, i);
+  if (denom & C_FIXNUM_BIT) denom = C_a_u_i_fix_to_big(&a, denom);
+
+  /* a/b - c/d = (a*d - b*c)/(b*d) | b = 1: (denom * i - num) / denom */
+  size = C_fix(C_bignum_size(denom) + C_bignum_size(i));
+  negp = C_mk_bool(C_bignum_negativep(denom) != C_bignum_negativep(i));
+  tmp = allocate_tmp_bignum(C_fix(size), negp, C_SCHEME_TRUE);
+  bignum_digits_multiply(i, denom, tmp); /*  tmp = denom * i  */
+
+  res = C_s_a_u_i_integer_minus(ptr, 2, C_bignum_simplify(tmp), num);
+  free_tmp_bignum(tmp);
+  return C_ratnum(ptr, res, C_block_item(rat, 2));
+}
+
+/* This is completely braindead and slow */
+static C_word rat_plusmin_rat(C_word **ptr, C_word x, C_word y, integer_plusmin_op plusmin_op)
+{
+  C_word ab[C_SIZEOF_FIX_BIGNUM * 10], *a = ab,
+         xnum = C_block_item(x, 1), ynum = C_block_item(y, 1),
+         xdenom = C_block_item(x, 2), ydenom = C_block_item(y, 2),
+         xnorm, ynorm, tmp_r, g1, ydenom_g1, xdenom_g1, norm_sum, g2, len,
+         res_num, res_tmp_denom, res_denom;
+
+  /* Knuth, 4.5.1.  Start with g1 = gcd(xdenom, ydenom) */
+  g1 = C_s_a_u_i_integer_gcd(&a, 2, xdenom, ydenom);
+  if (g1 & C_FIXNUM_BIT) g1 = C_a_u_i_fix_to_big(&a, g1);
+
+  if (xnum & C_FIXNUM_BIT) xnum = C_a_u_i_fix_to_big(&a, xnum);
+  if (xdenom & C_FIXNUM_BIT) xdenom = C_a_u_i_fix_to_big(&a, xdenom);
+  if (ynum & C_FIXNUM_BIT) ynum = C_a_u_i_fix_to_big(&a, ynum);
+  if (ydenom & C_FIXNUM_BIT) ydenom = C_a_u_i_fix_to_big(&a, ydenom);
+
+  /* ydenom/g1: No need to compare first because |ydenom| >= |g1| */
+  len = C_bignum_size(ydenom) + 1 - C_bignum_size(g1);
+  ydenom_g1 = allocate_tmp_bignum(C_fix(len), C_SCHEME_FALSE, C_SCHEME_FALSE);
+  len = C_bignum_size(ydenom) + 1;
+  tmp_r = allocate_tmp_bignum(C_fix(len), C_SCHEME_FALSE, C_SCHEME_FALSE);
+  bignum_destructive_divide_full(ydenom, g1, ydenom_g1, tmp_r, C_SCHEME_FALSE);
+  free_tmp_bignum(tmp_r);
+  C_bignum_simplify(ydenom_g1); /* mutate in-place; ignore fixnum results */
+
+  /* xnorm = xnum * (ydenom/g1) */
+  len = C_bignum_size(xnum) + C_bignum_size(ydenom_g1);
+  xnorm = allocate_tmp_bignum(
+          C_fix(len), C_mk_bool(C_bignum_negativep(xnum)), C_SCHEME_TRUE);
+  bignum_digits_multiply(xnum, ydenom_g1, xnorm);
+  free_tmp_bignum(ydenom_g1); /* Not needed anymore */
+  C_bignum_simplify(xnorm); /* mutate in-place; ignore fixnum results */
+
+  /* xdenom/g1: No need to compare first because |xdenom| >= |g1| */
+  len = C_bignum_size(xdenom) + 1 - C_bignum_size(g1);
+  xdenom_g1 = allocate_tmp_bignum(C_fix(len), C_SCHEME_FALSE, C_SCHEME_FALSE);
+  len = C_bignum_size(xdenom) + 1;
+  tmp_r = allocate_tmp_bignum(C_fix(len), C_SCHEME_FALSE, C_SCHEME_FALSE);
+  bignum_destructive_divide_full(xdenom, g1, xdenom_g1, tmp_r, C_SCHEME_FALSE);
+  free_tmp_bignum(tmp_r);
+  C_bignum_simplify(xdenom_g1); /* mutate in-place; ignore fixnum results */
+
+  /* ynorm = ynum * (xdenom/g1) */
+  len = C_bignum_size(ynum) + C_bignum_size(xdenom_g1);
+  ynorm = allocate_tmp_bignum(
+          C_fix(len), C_mk_bool(C_bignum_negativep(ynum)), C_SCHEME_TRUE);
+  bignum_digits_multiply(ynum, xdenom_g1, ynorm);
+  C_bignum_simplify(ynorm); /* mutate in-place; ignore fixnum results */
+
+  /* norm_sum = xnorm [+-] ynorm */
+  norm_sum = plusmin_op(&a, 2, xnorm, ynorm); /* Not tmp, scratch */
+  free_tmp_bignum(xnorm);
+  free_tmp_bignum(ynorm);
+
+  /* g2 = gcd(norm_sum, g1) */
+  g2 = C_s_a_u_i_integer_gcd(&a, 2, norm_sum, C_bignum_simplify(g1));
+  if (g2 & C_FIXNUM_BIT) g2 = C_a_u_i_fix_to_big(&a, g2);
+  if (norm_sum & C_FIXNUM_BIT) norm_sum = C_a_u_i_fix_to_big(&a, norm_sum);
+
+  /* res_num = norm_sum / g2 */
+  switch(bignum_cmp_unsigned(norm_sum, g2)) {
+  case 0:
+   res_num = C_bignum_negativep(norm_sum) ? C_fix(-1) : C_fix(1);
+   break;
+
+  case -1:
+   free_tmp_bignum(xdenom_g1);
+   clear_buffer_object(ab, g1);
+   clear_buffer_object(ab, g2);
+   clear_buffer_object(ab, norm_sum);
+   return C_fix(0); /* Done: abort */
+   break;
+
+  case 1:
+  default:
+    len = C_bignum_size(norm_sum) + 1 - C_bignum_size(g2);
+    res_num = C_allocate_scratch_bignum(
+            ptr, C_fix(len),
+            C_mk_bool(C_bignum_negativep(norm_sum)), C_SCHEME_FALSE);
+    len = C_bignum_size(norm_sum) + 1;
+    tmp_r = allocate_tmp_bignum(C_fix(len), C_SCHEME_FALSE, C_SCHEME_FALSE);
+    bignum_destructive_divide_full(norm_sum, g2, res_num, tmp_r, C_SCHEME_FALSE);
+    free_tmp_bignum(tmp_r);
+    res_num = C_bignum_simplify(res_num);
+  }
+
+  /* res_denom = xdenom_g1 * (ydenom / g2).  We know |ydenom| >= |g2| */
+  if (bignum_cmp_unsigned(ydenom, g2) == 0) {
+    /* We must copy because xdenom is a tmp bignum.  TODO: Make it scratch? */
+    res_denom = C_allocate_scratch_bignum(ptr, C_fix(C_bignum_size(xdenom_g1)),
+                                          C_SCHEME_FALSE, C_SCHEME_FALSE);
+    bignum_digits_destructive_copy(res_denom, xdenom_g1);
+    res_denom = C_bignum_simplify(res_denom);
+  } else {
+    /* res_tmp_denom = ydenom / g2 */
+    len = C_bignum_size(ydenom) + 1 - C_bignum_size(g2);
+    res_tmp_denom = allocate_tmp_bignum(C_fix(len),
+                                        C_SCHEME_FALSE, C_SCHEME_FALSE);
+    len = C_bignum_size(ydenom) + 1;
+    tmp_r = allocate_tmp_bignum(C_fix(len), C_SCHEME_FALSE, C_SCHEME_FALSE);
+    bignum_destructive_divide_full(ydenom, g2,
+                                   res_tmp_denom, tmp_r, C_SCHEME_FALSE);
+    free_tmp_bignum(tmp_r);
+
+    /* res_denom = xdenom_g1 * res_tmp_denom */
+    len = C_bignum_size(xdenom_g1) + C_bignum_size(res_tmp_denom);
+    res_denom = C_allocate_scratch_bignum(ptr, C_fix(len),
+                                          C_SCHEME_FALSE, C_SCHEME_TRUE);
+    bignum_digits_multiply(xdenom_g1, res_tmp_denom, res_denom);
+    free_tmp_bignum(res_tmp_denom);
+    res_denom = C_bignum_simplify(res_denom);
+  }
+  free_tmp_bignum(xdenom_g1);
+
+  /* Ensure they're allocated in the correct place */
+  res_num = move_buffer_object(ptr, ab, res_num);
+  res_denom = move_buffer_object(ptr, ab, res_denom);
+
+  clear_buffer_object(ab, g1);
+  clear_buffer_object(ab, g2);
+  clear_buffer_object(ab, norm_sum);
+
+  switch (res_denom) {
+  case C_fix(0): return C_fix(0);
+  case C_fix(1): return res_num;
+  default: return C_ratnum(ptr, res_num, res_denom);
+  }
+}
+
+/* The maximum size this needs is that required to store a complex
+ * number result, where both real and imag parts consist of ratnums.
+ * The maximum size of those ratnums is if they consist of two "fix
+ * bignums", so we're looking at C_SIZEOF_STRUCT(3) * 3 +
+ * C_SIZEOF_FIX_BIGNUM * 4 = 36 words!
+ */
+C_regparm C_word C_fcall
+C_s_a_i_plus(C_word **ptr, C_word n, C_word x, C_word y)
 {
   if (x & C_FIXNUM_BIT) {
     if (y & C_FIXNUM_BIT) {
-      C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
-      C_kontinue(k, C_a_i_fixnum_plus(&a, 2, x, y));
+      return C_a_i_fixnum_plus(ptr, 2, x, y);
     } else if (C_immediatep(y)) {
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", y);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
-      C_word *a = C_alloc(C_SIZEOF_FLONUM);
-      C_kontinue(k, C_flonum(&a, (double)C_unfix(x) + C_flonum_magnitude(y)));
+      return C_flonum(ptr, (double)C_unfix(x) + C_flonum_magnitude(y));
     } else if (C_truep(C_bignump(y))) {
-      C_word ab[C_SIZEOF_BIGNUM_WRAPPER], *a = ab;
-      C_kontinue(k, C_s_a_u_i_integer_plus(&a, 2, x, y));
+      return C_s_a_u_i_integer_plus(ptr, 2, x, y);
+    } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
+      if (C_block_item(y, 0) == C_ratnum_type_tag) {
+        return rat_plusmin_integer(ptr, y, x, C_s_a_u_i_integer_plus);
+      } else if (C_block_item(y, 0) == C_cplxnum_type_tag) {
+        C_word real_sum = C_s_a_i_plus(ptr, 2, x, C_block_item(y, 1)),
+               imag = C_block_item(y, 2);
+        if (C_truep(C_u_i_inexactp(real_sum)))
+          imag = C_a_i_exact_to_inexact(ptr, 1, imag);
+        return C_cplxnum(ptr, real_sum, imag);
+      } else {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", y);
+      }
     } else {
-      try_extended_number("\003sysextended-plus", 3, k, x, y);
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", y);
     }
   } else if (C_immediatep(x)) {
     barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", x);
   } else if (C_block_header(x) == C_FLONUM_TAG) {
-    C_word *a = C_alloc(C_SIZEOF_FLONUM);
     if (y & C_FIXNUM_BIT) {
-      C_kontinue(k, C_flonum(&a, C_flonum_magnitude(x) + (double)C_unfix(y)));
+      return C_flonum(ptr, C_flonum_magnitude(x) + (double)C_unfix(y));
     } else if (C_immediatep(y)) {
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", y);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
-      C_kontinue(k, C_a_i_flonum_plus(&a, 2, x, y));
+      return C_a_i_flonum_plus(ptr, 2, x, y);
     } else if (C_truep(C_bignump(y))) {
-      C_kontinue(k, C_flonum(&a, C_flonum_magnitude(x)+C_bignum_to_double(y)));
+      return C_flonum(ptr, C_flonum_magnitude(x)+C_bignum_to_double(y));
+    } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
+      if (C_block_item(y, 0) == C_ratnum_type_tag) {
+        return C_s_a_i_plus(ptr, 2, x, C_a_i_exact_to_inexact(ptr, 1, y));
+      } else if (C_block_item(y, 0) == C_cplxnum_type_tag) {
+        C_word real_sum = C_s_a_i_plus(ptr, 2, x, C_block_item(y, 1)),
+               imag = C_block_item(y, 2);
+        if (C_truep(C_u_i_inexactp(real_sum)))
+          imag = C_a_i_exact_to_inexact(ptr, 1, imag);
+        return C_cplxnum(ptr, real_sum, imag);
+      } else {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", y);
+      }
     } else {
-      try_extended_number("\003sysextended-plus", 3, k, x, y);
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", y);
     }
   } else if (C_truep(C_bignump(x))) {
     if (y & C_FIXNUM_BIT) {
-      C_word ab[C_SIZEOF_BIGNUM_WRAPPER], *a = ab;
-      C_kontinue(k, C_s_a_u_i_integer_plus(&a, 2, x, y));
+      return C_s_a_u_i_integer_plus(ptr, 2, x, y);
     } else if (C_immediatep(y)) {
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", y);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
-      C_word *a = C_alloc(C_SIZEOF_FLONUM);
-      C_kontinue(k, C_flonum(&a, C_bignum_to_double(x)+C_flonum_magnitude(y)));
+      return C_flonum(ptr, C_bignum_to_double(x)+C_flonum_magnitude(y));
     } else if (C_truep(C_bignump(y))) {
-      C_word ab[C_SIZEOF_BIGNUM_WRAPPER], *a = ab;
-      C_kontinue(k, C_s_a_u_i_integer_plus(&a, 2, x, y));
+      return C_s_a_u_i_integer_plus(ptr, 2, x, y);
+    } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
+      if (C_block_item(y, 0) == C_ratnum_type_tag) {
+        return rat_plusmin_integer(ptr, y, x, C_s_a_u_i_integer_plus);
+      } else if (C_block_item(y, 0) == C_cplxnum_type_tag) {
+        C_word real_sum = C_s_a_i_plus(ptr, 2, x, C_block_item(y, 1)),
+               imag = C_block_item(y, 2);
+        if (C_truep(C_u_i_inexactp(real_sum)))
+          imag = C_a_i_exact_to_inexact(ptr, 1, imag);
+        return C_cplxnum(ptr, real_sum, imag);
+      } else {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", y);
+      }
     } else {
-      try_extended_number("\003sysextended-plus", 3, k, x, y);
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", y);
+    }
+  } else if (C_block_header(x) == C_STRUCTURE3_TAG) {
+    if (C_block_item(x, 0) == C_ratnum_type_tag) {
+      if (y & C_FIXNUM_BIT) {
+        return rat_plusmin_integer(ptr, x, y, C_s_a_u_i_integer_plus);
+      } else if (C_immediatep(y)) {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", y);
+      } else if (C_block_header(y) == C_FLONUM_TAG) {
+        return C_s_a_i_plus(ptr, 2, C_a_i_exact_to_inexact(ptr, 1, x), y);
+      } else if (C_truep(C_bignump(y))) {
+        return rat_plusmin_integer(ptr, x, y, C_s_a_u_i_integer_plus);
+      } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
+        if (C_block_item(y, 0) == C_ratnum_type_tag) {
+          return rat_plusmin_rat(ptr, x, y, C_s_a_u_i_integer_plus);
+        } else if (C_block_item(y, 0) == C_cplxnum_type_tag) {
+          C_word real_sum = C_s_a_i_plus(ptr, 2, x, C_block_item(y, 1)),
+                 imag = C_block_item(y, 2);
+          if (C_truep(C_u_i_inexactp(real_sum)))
+            imag = C_a_i_exact_to_inexact(ptr, 1, imag);
+          return C_cplxnum(ptr, real_sum, imag);
+        } else {
+          barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", y);
+        }
+      } else {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", y);
+      }
+    } else if (C_block_item(x, 0) == C_cplxnum_type_tag) {
+      if (!C_immediatep(y) && C_block_header(y) == C_STRUCTURE3_TAG &&
+          C_block_item(y, 0) == C_cplxnum_type_tag) {
+        C_word real_sum, imag_sum;
+        real_sum = C_s_a_i_plus(ptr, 2, C_block_item(x, 1), C_block_item(y, 1));
+        imag_sum = C_s_a_i_plus(ptr, 2, C_block_item(x, 2), C_block_item(y, 2));
+        if (C_truep(C_u_i_zerop(imag_sum))) return real_sum;
+        else return C_cplxnum(ptr, real_sum, imag_sum);
+      } else {
+        C_word real_sum = C_s_a_i_plus(ptr, 2, C_block_item(x, 1), y),
+               imag = C_block_item(x, 2);
+        if (C_truep(C_u_i_inexactp(real_sum)))
+          imag = C_a_i_exact_to_inexact(ptr, 1, imag);
+        return C_cplxnum(ptr, real_sum, imag);
+      }
+    } else {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", x);
     }
   } else {
-    try_extended_number("\003sysextended-plus", 3, k, x, y);
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "+", x);
   }
 }
 
@@ -7810,56 +8074,129 @@ static C_word bignum_minus_unsigned(C_word **ptr, C_word x, C_word y)
   return C_bignum_simplify(res);
 }
 
-void C_ccall
-C_2_basic_minus(C_word c, C_word self, C_word k, C_word x, C_word y)
+/* Like C_s_a_i_plus, this needs at most 36 words */
+C_regparm C_word C_fcall
+C_s_a_i_minus(C_word **ptr, C_word n, C_word x, C_word y)
 {
   if (x & C_FIXNUM_BIT) {
     if (y & C_FIXNUM_BIT) {
-      C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
-      C_kontinue(k, C_a_i_fixnum_difference(&a, 2, x, y));
+      return C_a_i_fixnum_difference(ptr, 2, x, y);
     } else if (C_immediatep(y)) {
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", y);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
-      C_word *a = C_alloc(C_SIZEOF_FLONUM);
-      C_kontinue(k, C_flonum(&a, (double)C_unfix(x) - C_flonum_magnitude(y)));
+      return C_flonum(ptr, (double)C_unfix(x) - C_flonum_magnitude(y));
     } else if (C_truep(C_bignump(y))) {
-      C_word ab[C_SIZEOF_BIGNUM_WRAPPER], *a = ab;
-      C_kontinue(k, C_s_a_u_i_integer_minus(&a, 2, x, y));
+      return C_s_a_u_i_integer_minus(ptr, 2, x, y);
+    } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
+      if (C_block_item(y, 0) == C_ratnum_type_tag) {
+        return integer_minus_rat(ptr, x, y);
+      } else if (C_block_item(y, 0) == C_cplxnum_type_tag) {
+        C_word real_diff = C_s_a_i_minus(ptr, 2, x, C_block_item(y, 1)),
+               imag = C_s_a_i_negate(ptr, 1, C_block_item(y, 2));
+        if (C_truep(C_u_i_inexactp(real_diff)))
+          imag = C_a_i_exact_to_inexact(ptr, 1, imag);
+        return C_cplxnum(ptr, real_diff, imag);
+      } else {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", y);
+      }
     } else {
-      try_extended_number("\003sysextended-minus", 3, k, x, y);
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", y);
     }
   } else if (C_immediatep(x)) {
     barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", x);
   } else if (C_block_header(x) == C_FLONUM_TAG) {
-    C_word *a = C_alloc(C_SIZEOF_FLONUM);
     if (y & C_FIXNUM_BIT) {
-      C_kontinue(k, C_flonum(&a, C_flonum_magnitude(x) - (double)C_unfix(y)));
+      return C_flonum(ptr, C_flonum_magnitude(x) - (double)C_unfix(y));
     } else if (C_immediatep(y)) {
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", y);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
-      C_kontinue(k, C_a_i_flonum_difference(&a, 2, x, y)); /* XXX NAMING! */
+      return C_a_i_flonum_difference(ptr, 2, x, y);
     } else if (C_truep(C_bignump(y))) {
-      C_kontinue(k, C_flonum(&a, C_flonum_magnitude(x)-C_bignum_to_double(y)));
+      return C_flonum(ptr, C_flonum_magnitude(x)-C_bignum_to_double(y));
+    } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
+      if (C_block_item(y, 0) == C_ratnum_type_tag) {
+        return C_s_a_i_minus(ptr, 2, x, C_a_i_exact_to_inexact(ptr, 1, y));
+      } else if (C_block_item(y, 0) == C_cplxnum_type_tag) {
+        C_word real_diff = C_s_a_i_minus(ptr, 2, x, C_block_item(y, 1)),
+               imag = C_s_a_i_negate(ptr, 1, C_block_item(y, 2));
+        if (C_truep(C_u_i_inexactp(real_diff)))
+          imag = C_a_i_exact_to_inexact(ptr, 1, imag);
+        return C_cplxnum(ptr, real_diff, imag);
+      } else {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", y);
+      }
     } else {
-      try_extended_number("\003sysextended-minus", 3, k, x, y);
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", y);
     }
   } else if (C_truep(C_bignump(x))) {
     if (y & C_FIXNUM_BIT) {
-      C_word ab[C_SIZEOF_BIGNUM_WRAPPER], *a = ab;
-      C_kontinue(k, C_s_a_u_i_integer_minus(&a, 2, x, y));
+      return C_s_a_u_i_integer_minus(ptr, 2, x, y);
     } else if (C_immediatep(y)) {
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", y);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
-      C_word *a = C_alloc(C_SIZEOF_FLONUM);
-      C_kontinue(k, C_flonum(&a, C_bignum_to_double(x)-C_flonum_magnitude(y)));
+      return C_flonum(ptr, C_bignum_to_double(x)-C_flonum_magnitude(y));
     } else if (C_truep(C_bignump(y))) {
-      C_word ab[C_SIZEOF_BIGNUM_WRAPPER], *a = ab;
-      C_kontinue(k, C_s_a_u_i_integer_minus(&a, 2, x, y));
+      return C_s_a_u_i_integer_minus(ptr, 2, x, y);
+    } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
+      if (C_block_item(y, 0) == C_ratnum_type_tag) {
+        return integer_minus_rat(ptr, x, y);
+      } else if (C_block_item(y, 0) == C_cplxnum_type_tag) {
+        C_word real_diff = C_s_a_i_minus(ptr, 2, x, C_block_item(y, 1)),
+               imag = C_s_a_i_negate(ptr, 1, C_block_item(y, 2));
+        if (C_truep(C_u_i_inexactp(real_diff)))
+          imag = C_a_i_exact_to_inexact(ptr, 1, imag);
+        return C_cplxnum(ptr, real_diff, imag);
+      } else {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", y);
+      }
     } else {
-      try_extended_number("\003sysextended-minus", 3, k, x, y);
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", y);
+    }
+  } else if (C_block_header(x) == C_STRUCTURE3_TAG) {
+    if (C_block_item(x, 0) == C_ratnum_type_tag) {
+      if (y & C_FIXNUM_BIT) {
+        return rat_plusmin_integer(ptr, x, y, C_s_a_u_i_integer_minus);
+      } else if (C_immediatep(y)) {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", y);
+      } else if (C_block_header(y) == C_FLONUM_TAG) {
+        return C_s_a_i_minus(ptr, 2, C_a_i_exact_to_inexact(ptr, 1, x), y);
+      } else if (C_truep(C_bignump(y))) {
+        return rat_plusmin_integer(ptr, x, y, C_s_a_u_i_integer_minus);
+      } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
+        if (C_block_item(y, 0) == C_ratnum_type_tag) {
+          return rat_plusmin_rat(ptr, x, y, C_s_a_u_i_integer_minus);
+        } else if (C_block_item(y, 0) == C_cplxnum_type_tag) {
+          C_word real_diff = C_s_a_i_minus(ptr, 2, x, C_block_item(y, 1)),
+                 imag = C_s_a_i_negate(ptr, 1, C_block_item(y, 2));
+          if (C_truep(C_u_i_inexactp(real_diff)))
+            imag = C_a_i_exact_to_inexact(ptr, 1, imag);
+          return C_cplxnum(ptr, real_diff, imag);
+        } else {
+          barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", y);
+        }
+      } else {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", y);
+      }
+    } else if (C_block_item(x, 0) == C_cplxnum_type_tag) {
+      if (!C_immediatep(y) && C_block_header(y) == C_STRUCTURE3_TAG &&
+          C_block_item(y, 0) == C_cplxnum_type_tag) {
+        C_word real_diff, imag_diff;
+        real_diff = C_s_a_i_minus(ptr,2,C_block_item(x, 1),C_block_item(y, 1));
+        imag_diff = C_s_a_i_minus(ptr,2,C_block_item(x, 2),C_block_item(y, 2));
+        if (C_truep(C_u_i_zerop(imag_diff))) return real_diff;
+        else return C_cplxnum(ptr, real_diff, imag_diff);
+      } else {
+        C_word real_diff = C_s_a_i_minus(ptr, 2, C_block_item(x, 1), y),
+               imag = C_block_item(x, 2);
+        if (C_truep(C_u_i_inexactp(real_diff)))
+          imag = C_a_i_exact_to_inexact(ptr, 1, imag);
+        return C_cplxnum(ptr, real_diff, imag);
+      }
+    } else {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", x);
     }
   } else {
-    try_extended_number("\003sysextended-minus", 3, k, x, y);
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", x);
   }
 }
 
@@ -9418,7 +9755,14 @@ C_regparm C_word C_fcall C_bignum_simplify(C_word big)
   while (scan >= start && *scan == 0)
     scan--;
   length = scan - start + 1;
-  
+
+  /* Always trim the bignum, even before returning a fixnum.  This
+   * benefits some code that uses bignums everywhere for simplicity.
+   * NOTE: This only works for stack-allocated or tmp bignums, not
+   * for scratchspace bignums!
+   */
+  if (scan < last_digit && length > 0) /* Keep a minimum of 1 word */
+    C_bignum_mutate_size(big, length);
   switch(length) {
   case 0:
     if (C_in_scratchspacep(C_internal_bignum_vector(big)))
@@ -9435,7 +9779,6 @@ C_regparm C_word C_fcall C_bignum_simplify(C_word big)
     }
     /* FALLTHROUGH */
   default:
-    if (scan < last_digit) C_bignum_mutate_size(big, length);
     return big;
   }
 }

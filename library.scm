@@ -1060,33 +1060,6 @@ EOF
 	       #:type-error 'numerator
 	       "bad argument type - not a rational number" n))))
 
-;; Knuth, 4.5.1
-(define (rat+/- loc op x y)
-  (let ((a (%ratnum-numerator x)) (b (%ratnum-denominator x))
-        (c (%ratnum-numerator y)) (d (%ratnum-denominator y)))
-    (let ((g1 (##sys#integer-gcd b d)))
-      (cond
-       ((eq? g1 1) (%make-ratnum (op (##sys#integer-times a d)
-				     (##sys#integer-times b c))
-				 (##sys#integer-times b d)))
-       ;; Save a quotient and multiplication if the gcd is equal
-       ;; to one of the denominators since quotient of b or d and g1 = 1
-       ((##sys#=-2 g1 b)
-	(let* ((t (op (##sys#integer-times a (##sys#integer-quotient d g1)) c))
-	       (g2 (##sys#integer-gcd t g1)))
-	  (ratnum (##sys#integer-quotient t g2) (##sys#integer-quotient d g2))))
-       ((##sys#=-2 g1 d)
-	(let* ((t (op a (##sys#integer-times c (##sys#integer-quotient b g1))))
-	       (g2 (##sys#integer-gcd t g1)))
-	  (ratnum (##sys#integer-quotient t g2) (##sys#integer-quotient b g2))))
-       (else (let* ((b/g1 (##sys#integer-quotient b g1))
-                    (t (op (##sys#integer-times a (##sys#integer-quotient d g1))
-			   (##sys#integer-times c b/g1)))
-                    (g2 (##sys#integer-gcd t g1)))
-               (%make-ratnum (##sys#integer-quotient t g2)
-                             (##sys#integer-times
-			      b/g1 (##sys#integer-quotient d g2)))))))))
-
 (define (##sys#extended-signum x)
   (cond
    ((ratnum? x) (##core#inline "C_u_i_integer_signum" (%ratnum-numerator x)))
@@ -1157,35 +1130,12 @@ EOF
                   (loop (##sys#slot args 1)
 			(##sys#+-2 x (##sys#slot args 0))) ) )  ) ) ) )
 
-(define ##sys#+-2 (##core#primitive "C_2_basic_plus"))
+;; OBSOLETE: Remove this (or change to define-inline)
+(define (##sys#+-2 x y)
+  (##core#inline_allocate ("C_s_a_i_plus" 36) x y))
 ;; OBSOLETE: Remove this (or change to define-inline)
 (define (##sys#integer-plus x y)
   (##core#inline_allocate ("C_s_a_u_i_integer_plus" 6) x y))
-
-(define (##sys#extended-plus x y)
-  (cond ((or (cplxnum? x) (cplxnum? y))
-         ;; Just add real and imag parts together
-         (let ((r (##sys#+-2 (real-part x) (real-part y)))
-               (i (##sys#+-2 (imag-part x) (imag-part y))) )
-           (make-complex r i) ))
-        ((ratnum? x)
-         (if (ratnum? y)
-             (rat+/- '+ ##sys#integer-plus x y)
-             ;; a/b + c/d = (a*d + b*c)/(b*d)  [with d = 1]
-             (let* ((b (%ratnum-denominator x))
-                    (numerator (##sys#+-2 (%ratnum-numerator x)
-					  (##sys#*-2 b y))))
-               (if (##core#inline "C_i_flonump" numerator)
-                   (##sys#/-2 numerator b)
-                   (%make-ratnum numerator b)))))
-        ((ratnum? y)
-         ;; a/b + c/d = (a*d + b*c)/(b*d)  [with b = 1]
-         (let* ((d (%ratnum-denominator y))
-                (numerator (##sys#+-2 (##sys#*-2 x d) (%ratnum-numerator y))))
-           (if (##core#inline "C_i_flonump" numerator)
-               (##sys#/-2 numerator d)
-               (%make-ratnum numerator d))))
-        (else (##sys#error-bad-number y '+)) ) )
 
 ;; OBSOLETE: Remove this (or change to define-inline)
 (define (##sys#negate x) (##core#inline_allocate ("C_s_a_i_negate" 36) x))
@@ -1203,34 +1153,12 @@ EOF
 	    (loop (##sys#slot args 1)
 		  (##sys#--2 x (##sys#slot args 0))) ) ) ) )
 
-(define ##sys#--2 (##core#primitive "C_2_basic_minus"))
+;; OBSOLETE: Remove this (or change to define-inline)
+(define (##sys#--2 x y)
+  (##core#inline_allocate ("C_s_a_i_minus" 36) x y))
 ;; OBSOLETE: Remove this (or change to define-inline)
 (define (##sys#integer-minus x y)
   (##core#inline_allocate ("C_s_a_u_i_integer_minus" 6) x y))
-
-(define (##sys#extended-minus x y)
-  (cond ((or (cplxnum? x) (cplxnum? y))
-         ;; Just subtract real and imag parts from eachother
-         (let ((r (##sys#--2 (real-part x) (real-part y)))
-               (i (##sys#--2 (imag-part x) (imag-part y))))
-           (make-complex r i) ))
-        ((ratnum? x)
-         (if (ratnum? y)
-             (rat+/- '- ##sys#integer-minus x y)
-             ;; a/b - c/d = (a*d - b*c)/(b*d)  [with d = 1]
-             (let* ((b (%ratnum-denominator x))
-                    (numerator (##sys#--2 (%ratnum-numerator x) (##sys#*-2 b y))))
-               (if (##core#inline "C_i_flonump" numerator)
-                   (##sys#/-2 numerator b)
-                   (%make-ratnum numerator b)))))
-        ((ratnum? y)
-         ;; a/b - c/d = (a*d - b*c)/(b*d)  [with b = 1]
-         (let* ((d (%ratnum-denominator y))
-                (numerator (##sys#--2 (##sys#*-2 x d) (%ratnum-numerator y))))
-           (if (##core#inline "C_i_flonump" numerator)
-               (##sys#/-2 numerator d)
-               (%make-ratnum numerator d))))
-        (else (##sys#error-bad-number y '-)) ) )
 
 (define ##sys#*-2 (##core#primitive "C_2_basic_times"))
 (define ##sys#integer-times (##core#primitive "C_u_2_integer_times"))

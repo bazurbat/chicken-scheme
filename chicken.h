@@ -1964,10 +1964,8 @@ C_fctexport void C_ccall C_2_basic_times(C_word c, C_word self, C_word k, C_word
 C_fctexport void C_ccall C_u_2_integer_times(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport void C_ccall C_plus(C_word c, C_word closure, C_word k, ...) C_noret;
-C_fctexport void C_ccall C_2_basic_plus(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport void C_ccall C_minus(C_word c, C_word closure, C_word k, C_word n1, ...) C_noret;
-C_fctexport void C_ccall C_2_basic_minus(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...) C_noret;
 C_fctexport void C_ccall C_basic_quotient(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
@@ -2188,8 +2186,10 @@ C_fctexport C_word C_fcall C_i_file_exists_p(C_word name, C_word file, C_word di
 
 C_fctexport C_word C_fcall C_s_a_i_abs(C_word **ptr, C_word n, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_s_a_i_negate(C_word **ptr, C_word n, C_word x) C_regparm;
+C_fctexport C_word C_fcall C_s_a_i_minus(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_u_i_integer_negate(C_word **ptr, C_word n, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_s_a_u_i_integer_minus(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
+C_fctexport C_word C_fcall C_s_a_i_plus(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_u_i_integer_plus(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_u_i_integer_gcd(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 
