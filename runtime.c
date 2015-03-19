@@ -842,7 +842,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size -
      this must match the number of C_pte calls + 1 (NULL terminator)! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 78);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 76);
   int i = 0;
 
   if(pt == NULL)
@@ -913,8 +913,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_flonum_to_string);
   /* IMPORTANT: have you read the comments at the start and the end of this function? */
   C_pte(C_signum);
-  C_pte(C_abs);
-  C_pte(C_negate);
   C_pte(C_2_basic_plus);
   C_pte(C_2_basic_minus);
   C_pte(C_2_basic_times);
@@ -1868,6 +1866,11 @@ void barf(int code, char *loc, ...)
 
   case C_BAD_ARGUMENT_TYPE_FOREIGN_LIMITATION:
     msg = C_text("number does not fit in foreign type");
+    c = 1;
+    break;
+
+  case C_BAD_ARGUMENT_TYPE_COMPLEX_ABS:
+    msg = C_text("cannot compute absolute value of complex number");
     c = 1;
     break;
 
@@ -5657,23 +5660,27 @@ C_regparm C_word C_fcall C_i_vector_set(C_word v, C_word i, C_word x)
   return C_SCHEME_UNDEFINED;
 }
 
-void C_ccall C_abs(C_word c, C_word self, C_word k, C_word x)
+/* This needs at most C_SIZEOF_FIX_BIGNUM + C_SIZEOF_STRUCTURE(3) so 10 words */
+C_regparm C_word C_fcall
+C_s_a_i_abs(C_word **ptr, C_word n, C_word x)
 {
-  if (c != 3) {
-    C_bad_argc_2(c, 3, self);
-  } else if (x & C_FIXNUM_BIT) {
-    C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
-    C_kontinue(k, C_a_i_fixnum_abs(&a, 1, x));
+  if (x & C_FIXNUM_BIT) {
+    return C_a_i_fixnum_abs(ptr, 1, x);
   } else if (C_immediatep(x)) {
     barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "abs", x);
   } else if (C_block_header(x) == C_FLONUM_TAG) {
-    C_word *a = C_alloc(C_SIZEOF_FLONUM);
-    C_kontinue(k, C_a_i_flonum_abs(&a, 1, x));
+    return C_a_i_flonum_abs(ptr, 1, x);
   } else if (C_truep(C_bignump(x))) {
-    C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
-    C_kontinue(k, C_s_a_u_i_integer_abs(&a, 1, x));
+    return C_s_a_u_i_integer_abs(ptr, 1, x);
+  } else if (C_block_header(x) == C_STRUCTURE3_TAG &&
+             (C_block_item(x, 0) == C_ratnum_type_tag)) {
+    return C_ratnum(ptr, C_s_a_u_i_integer_abs(ptr, 1, C_block_item(x, 1)),
+                    C_block_item(x, 2));
+  } else if (C_block_header(x) == C_STRUCTURE3_TAG &&
+             (C_block_item(x, 0) == C_cplxnum_type_tag)) {
+    barf(C_BAD_ARGUMENT_TYPE_COMPLEX_ABS, "abs", x);
   } else {
-    try_extended_number("\003sysextended-abs", 2, k, x);
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "abs", x);
   }
 }
 
@@ -5707,21 +5714,31 @@ C_regparm C_word C_fcall C_a_i_abs(C_word **a, int c, C_word x)
   return C_flonum(a, fabs(C_flonum_magnitude(x)));
 }
 
-void C_ccall C_negate(C_word c, C_word self, C_word k, C_word x)
+/* The maximum this can allocate is a cplxnum which consists of two
+ * ratnums that consist of 2 fix bignums each.  So that's
+ * C_SIZEOF_STRUCTURE(3) * 3 + C_SIZEOF_FIX_BIGNUM * 4 = 36 words!
+ */
+C_regparm C_word C_fcall
+C_s_a_i_negate(C_word **ptr, C_word n, C_word x)
 {
   if (x & C_FIXNUM_BIT) {
-    C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
-    C_kontinue(k, C_a_i_fixnum_negate(&a, 1, x));
+    return C_a_i_fixnum_negate(ptr, 1, x);
   } else if (C_immediatep(x)) {
     barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", x);
   } else if (C_block_header(x) == C_FLONUM_TAG) {
-    C_word *a = C_alloc(C_SIZEOF_FLONUM);
-    C_kontinue(k, C_a_i_flonum_negate(&a, 1, x));
+    return C_a_i_flonum_negate(ptr, 1, x);
   } else if (C_truep(C_bignump(x))) {
-    C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
-    C_kontinue(k, C_s_a_u_i_integer_negate(&a, 1, x));
+    return C_s_a_u_i_integer_negate(ptr, 1, x);
+  } else if (C_block_header(x) == C_STRUCTURE3_TAG &&
+             (C_block_item(x, 0) == C_ratnum_type_tag)) {
+    return C_ratnum(ptr, C_s_a_u_i_integer_negate(ptr, 1, C_block_item(x, 1)),
+                    C_block_item(x, 2));
+  } else if (C_block_header(x) == C_STRUCTURE3_TAG &&
+             (C_block_item(x, 0) == C_cplxnum_type_tag)) {
+    return C_cplxnum(ptr, C_s_a_i_negate(ptr, 1, C_block_item(x, 1)),
+                     C_s_a_i_negate(ptr, 1, C_block_item(x, 2)));
   } else {
-    try_extended_number("\003sysextended-negate", 2, k, x);
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "-", x);
   }
 }
 

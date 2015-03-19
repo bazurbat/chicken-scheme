@@ -328,7 +328,7 @@
    ((integer) (integer)
     (##core#inline_allocate ("C_s_a_u_i_integer_negate" 6) #(1)))
    ((float) (float) (##core#inline_allocate ("C_a_i_flonum_negate" 4) #(1)))
-   ((number) (number) (##sys#negate #(1)))
+   ((*) (*) (##core#inline_allocate ("C_s_a_i_negate" 36) #(1)))
    ((float fixnum) (float)
     (##core#inline_allocate 
      ("C_a_i_flonum_difference" 4) 
@@ -501,7 +501,9 @@
      ((fixnum) (integer) (##core#inline_allocate ("C_a_i_fixnum_abs" 6) #(1)))
      ((float) (float) (##core#inline_allocate ("C_a_i_flonum_abs" 4) #(1)))
      ((integer) (integer)
-      (##core#inline_allocate ("C_s_a_u_i_integer_abs" 6) #(1))))
+      (##core#inline_allocate ("C_s_a_u_i_integer_abs" 6) #(1)))
+     ((*) (*)
+      (##core#inline_allocate ("C_s_a_i_abs" 10) #(1))))
 
 (floor (#(procedure #:clean #:enforce #:foldable) floor ((or integer ratnum float)) (or integer ratnum float))
        ((fixnum) (fixnum) #(1))
@@ -797,7 +799,8 @@
 	   ((fixnum) (integer) (##core#inline_allocate ("C_a_i_fixnum_abs" 6) #(1)))
 	   ((integer) (##core#inline_allocate ("C_s_a_u_i_integer_abs" 6) #(1)))
 	   ((float) (float) (##core#inline_allocate ("C_a_i_flonum_abs" 4) #(1)))
-	   (((or fixnum float bignum ratnum)) (abs #(1))))
+	   (((or fixnum float bignum ratnum))
+	    (##core#inline_allocate ("C_s_a_i_abs" 10) #(1))))
 
 (angle (#(procedure #:clean #:enforce #:foldable) angle (number) float)
        ((float) (##core#inline_allocate ("C_a_i_flonum_atan2" 4) '0.0 #(1)))

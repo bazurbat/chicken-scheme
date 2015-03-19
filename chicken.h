@@ -538,7 +538,8 @@ static inline int isinf_ld (long double x)
 
 /* This is for convenience and allows flexibility in representation */
 #define C_SIZEOF_FIX_BIGNUM       C_SIZEOF_BIGNUM(1)
-#define C_SIZEOF_BIGNUM(n)        (C_SIZEOF_INTERNAL_BIGNUM_VECTOR(n)+C_SIZEOF_STRUCTURE(2))
+#define C_SIZEOF_BIGNUM_WRAPPER   C_SIZEOF_STRUCTURE(2)
+#define C_SIZEOF_BIGNUM(n)        (C_SIZEOF_INTERNAL_BIGNUM_VECTOR(n)+C_SIZEOF_BIGNUM_WRAPPER)
 
 /* Fixed size types have pre-computed header tags */
 #define C_PAIR_TAG                (C_PAIR_TYPE | (C_SIZEOF_PAIR - 1))
@@ -694,6 +695,7 @@ static inline int isinf_ld (long double x)
 #define C_BAD_ARGUMENT_TYPE_COMPLEX_NO_ORDERING_ERROR 51
 #define C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR    52
 #define C_BAD_ARGUMENT_TYPE_FOREIGN_LIMITATION        53
+#define C_BAD_ARGUMENT_TYPE_COMPLEX_ABS               54
 
 /* Platform information */
 #if defined(C_BIG_ENDIAN)
@@ -1944,7 +1946,6 @@ C_fctexport C_char *C_private_repository_path();
 C_fctimport void C_ccall C_toplevel(C_word c, C_word self, C_word k) C_noret;
 C_fctimport void C_ccall C_invalid_procedure(int c, C_word self, ...) C_noret;
 C_fctexport void C_ccall C_stop_timer(C_word c, C_word closure, C_word k) C_noret;
-C_fctexport void C_ccall C_abs(C_word c, C_word self, C_word k, C_word x) C_noret;
 C_fctexport void C_ccall C_signum(C_word c, C_word self, C_word k, C_word x) C_noret;
 C_fctexport void C_ccall C_apply(C_word c, C_word closure, C_word k, C_word fn, ...) C_noret;
 C_fctexport void C_ccall C_do_apply(C_word n, C_word closure, C_word k) C_noret;
@@ -1964,7 +1965,6 @@ C_fctexport void C_ccall C_2_basic_plus(C_word c, C_word self, C_word k, C_word 
 C_fctexport void C_ccall C_u_2_integer_plus(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport void C_ccall C_minus(C_word c, C_word closure, C_word k, C_word n1, ...) C_noret;
-C_fctexport void C_ccall C_negate(C_word c, C_word self, C_word k, C_word x) C_noret;
 C_fctexport void C_ccall C_2_basic_minus(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_u_2_integer_minus(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
@@ -2184,6 +2184,8 @@ C_fctexport C_word C_fcall C_a_i_string_to_number(C_word **a, int c, C_word str,
 C_fctexport C_word C_fcall C_a_i_exact_to_inexact(C_word **a, int c, C_word n) C_regparm;
 C_fctexport C_word C_fcall C_i_file_exists_p(C_word name, C_word file, C_word dir) C_regparm;
 
+C_fctexport C_word C_fcall C_s_a_i_abs(C_word **ptr, C_word n, C_word x) C_regparm;
+C_fctexport C_word C_fcall C_s_a_i_negate(C_word **ptr, C_word n, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_s_a_u_i_integer_negate(C_word **ptr, C_word n, C_word x) C_regparm;
 
 
@@ -2430,6 +2432,17 @@ C_inline C_word C_a_i_record8(C_word **ptr, int n, C_word x1, C_word x2, C_word 
   *ptr = p;
   return (C_word)p0;
 }
+
+C_inline C_word C_cplxnum(C_word **ptr, C_word x, C_word y)
+{
+  return C_a_i_record3(ptr, 2, C_cplxnum_type_tag, x, y);
+}
+
+C_inline C_word C_ratnum(C_word **ptr, C_word x, C_word y)
+{
+  return C_a_i_record3(ptr, 2, C_ratnum_type_tag, x, y);
+}
+
 
 /* Silly (this is not normalized) but in some cases needed internally */
 C_inline C_word C_bignum0(C_word **ptr)

@@ -1188,19 +1188,10 @@ EOF
 
 ;;; Basic arithmetic:
 
-(define abs (##core#primitive "C_abs"))
+(define (abs x) (##core#inline_allocate ("C_s_a_i_abs" 10) x))
 ;; OBSOLETE: Remove this (or change to define-inline)
 (define (##sys#integer-abs x)
   (##core#inline_allocate ("C_s_a_u_i_integer_abs" 6) x))
-(define (##sys#extended-abs x)
-  (cond ((ratnum? x)
-         (%make-ratnum (##sys#integer-abs (%ratnum-numerator x))
-		       (%ratnum-denominator x)))
-        ((cplxnum? x)
-         (##sys#signal-hook
-          #:type-error 'abs
-          "can not compute absolute value of complex number" x))
-        (else (##sys#error-bad-number x 'abs))))
 
 (define (+ . args)
   (if (null? args) 
@@ -1244,7 +1235,8 @@ EOF
                (%make-ratnum numerator d))))
         (else (##sys#error-bad-number y '+)) ) )
 
-(define ##sys#negate (##core#primitive "C_negate"))
+;; OBSOLETE: Remove this (or change to define-inline)
+(define (##sys#negate x) (##core#inline_allocate ("C_s_a_i_negate" 36) x))
 ;; OBSOLETE: Remove this (or change to define-inline)
 (define (##sys#integer-negate x)
   (##core#inline_allocate ("C_s_a_u_i_integer_negate" 6) x))
@@ -1261,15 +1253,6 @@ EOF
 
 (define ##sys#--2 (##core#primitive "C_2_basic_minus"))
 (define ##sys#integer-minus (##core#primitive "C_u_2_integer_minus"))
-
-(define (##sys#extended-negate x)
-  (cond ((ratnum? x)
-         (%make-ratnum (##sys#integer-negate (%ratnum-numerator x))
-                       (%ratnum-denominator x)))
-        ((cplxnum? x)
-         (make-complex (##sys#negate (%cplxnum-real x))
-		       (##sys#negate (%cplxnum-imag x))))
-        (else (##sys#error-bad-number x '-)) ) ) ; loc?
 
 (define (##sys#extended-minus x y)
   (cond ((or (cplxnum? x) (cplxnum? y))
@@ -5444,6 +5427,7 @@ EOF
 	((51) (apply ##sys#signal-hook #:type-error loc "bad argument type - complex number has no ordering" args))
 	((52) (apply ##sys#signal-hook #:type-error loc "bad argument type - not an exact integer" args))
 	((53) (apply ##sys#signal-hook #:type-error loc "number does not fit in foreign type" args))
+	((54) (apply ##sys#signal-hook #:type-error loc "cannot compute absolute value of complex number" args))
 	(else (apply ##sys#signal-hook #:runtime-error loc "unknown internal error" args)) ) ) ) )
 
 
