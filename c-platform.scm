@@ -215,6 +215,27 @@
 (rewrite '+ 19 0 "C_fixnum_plus" "C_u_fixnum_plus" #f)
 
 (let ()
+  ;; (add1 <x>) -> (##core#inline "C_fixnum_increase" <x>)     [fixnum-mode]
+  ;; (add1 <x>) -> (##core#inline "C_u_fixnum_increase" <x>)   [fixnum-mode + unsafe]
+  ;; (add1 <x>) -> (##core#inline_allocate ("C_s_a_i_plus" 36) <x> 1) 
+  ;; (sub1 <x>) -> (##core#inline "C_fixnum_decrease" <x>)     [fixnum-mode]
+  ;; (sub1 <x>) -> (##core#inline "C_u_fixnum_decrease" <x>)   [fixnum-mode + unsafe]
+  ;; (sub1 <x>) -> (##core#inline_allocate ("C_s_a_i_minus" 36) <x> 1) 
+  (define ((op1 fiop ufiop aiop) db classargs cont callargs)
+    (and (= (length callargs) 1)
+	 (make-node
+	  '##core#call (list #t)
+	  (list 
+	   cont
+	   (if (eq? 'fixnum number-type)
+	       (make-node '##core#inline (list (if unsafe ufiop fiop)) callargs)
+	       (make-node
+		'##core#inline_allocate (list aiop 36)
+		(list (car callargs) (qnode 1))))))))
+  (rewrite 'add1 8 (op1 "C_fixnum_increase" "C_u_fixnum_increase" "C_s_a_i_plus"))
+  (rewrite 'sub1 8 (op1 "C_fixnum_decrease" "C_u_fixnum_decrease" "C_s_a_i_minus")))
+
+(let ()
   (define (eqv?-id db classargs cont callargs)
     ;; (eqv? <var> <var>) -> (quote #t)          [two identical objects]
     ;; (eqv? ...) -> (##core#inline "C_eqp" ...)
@@ -611,6 +632,9 @@
 (rewrite 'lcm 18 1)
 (rewrite 'list 18 '())
 
+(rewrite '+ 16 2 "C_s_a_i_plus" #t 36)
+(rewrite '- 16 2 "C_s_a_i_minus" #t 36)
+
 (rewrite '= 17 2 "C_i_nequalp")
 (rewrite '> 17 2 "C_i_greaterp")
 (rewrite '< 17 2 "C_i_lessp")
@@ -622,6 +646,9 @@
 (rewrite '< 13 #f "C_lessp" #t)
 (rewrite '>= 13 #f "C_greater_or_equal_p" #t)
 (rewrite '<= 13 #f "C_less_or_equal_p" #t)
+
+(rewrite '+ 13 #f "C_plus" #t)
+(rewrite '- 13 '(1 . #f) "C_minus" #t)
 
 (rewrite 'number->string 13 '(1 . 2) "C_number_to_string" #t)
 (rewrite '##sys#call-with-current-continuation 13 1 "C_call_cc" #t)

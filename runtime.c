@@ -875,9 +875,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_apply_values);
   /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
   C_pte(C_times);
-  /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
   C_pte(C_minus);
-  /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
   C_pte(C_plus);
   /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
   C_pte(C_divide);
@@ -7785,7 +7783,7 @@ static C_word rat_plusmin_rat(C_word **ptr, C_word x, C_word y, integer_plusmin_
 /* The maximum size this needs is that required to store a complex
  * number result, where both real and imag parts consist of ratnums.
  * The maximum size of those ratnums is if they consist of two "fix
- * bignums", so we're looking at C_SIZEOF_STRUCT(3) * 3 +
+ * bignums", so we're looking at C_SIZEOF_STRUCTURE(3) * 3 +
  * C_SIZEOF_FIX_BIGNUM * 4 = 36 words!
  */
 C_regparm C_word C_fcall
@@ -7939,55 +7937,27 @@ C_s_a_u_i_integer_plus(C_word **ptr, C_word n, C_word x, C_word y)
   }
 }
 
-/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 void C_ccall C_plus(C_word c, C_word closure, C_word k, ...)
 {
+  C_word next_val, result = C_fix(0), prev_result = result;
+  C_word ab[2][C_SIZEOF_STRUCTURE(3) * 3 + C_SIZEOF_FIX_BIGNUM * 4], *a;
   va_list v;
-  C_word x, y;
-  C_word iresult = C_fix(0);
-  double fresult;
-  C_alloc_flonum;
 
+  c -= 2; 
   va_start(v, k);
-  c -= 2;
 
-  while(c--) {
-    x = va_arg(v, C_word);
-    
-    if(x & C_FIXNUM_BIT) {
-      y = C_i_o_fixnum_plus(iresult, x);
-
-      if(y == C_SCHEME_FALSE) {
-	fresult = (double)C_unfix(iresult) + (double)C_unfix(x);
-	goto flonum_result;
-      }
-      else iresult = y;
-    }
-    else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-      fresult = (double)C_unfix(iresult) + C_flonum_magnitude(x);
-      goto flonum_result;
-    }
-    else barf(C_BAD_ARGUMENT_TYPE_ERROR, "+", x);
+  while (c--) {
+    next_val = va_arg(v, C_word);
+    a = ab[c&1]; /* One may hold last iteration result, the other is unused */
+    result = C_s_a_i_plus(&a, 2, result, next_val);
+    result = move_buffer_object(&a, ab[(c+1)&1], result);
+    clear_buffer_object(ab[(c+1)&1], prev_result);
+    prev_result = result;
   }
 
   va_end(v);
-  C_kontinue(k, iresult);
-
- flonum_result:
-  while(c--) {
-    x = va_arg(v, C_word);
-
-    if(x & C_FIXNUM_BIT)
-      fresult += (double)C_unfix(x);
-    else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG)
-      fresult += C_flonum_magnitude(x);
-    else barf(C_BAD_ARGUMENT_TYPE_ERROR, "+", x);
-  }
-
-  va_end(v);
-  C_kontinue_flonum(k, fresult);
+  C_kontinue(k, result);
 }
-
 
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_2_plus(C_word **ptr, C_word x, C_word y)
@@ -8226,72 +8196,34 @@ C_s_a_u_i_integer_minus(C_word **ptr, C_word n, C_word x, C_word y)
   }
 }
 
-/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 void C_ccall C_minus(C_word c, C_word closure, C_word k, C_word n1, ...)
 {
+  C_word next_val, result = n1, prev_result = result;
+  C_word ab[2][C_SIZEOF_STRUCTURE(3) * 3 + C_SIZEOF_FIX_BIGNUM * 4], *a;
   va_list v;
-  C_word x, y;
-  C_word iresult;
-  double fresult;
-  int ff = 0;
-  C_alloc_flonum;
 
-  if(c < 3) C_bad_min_argc(c, 3);
+  if (c < 3) {
+    C_bad_min_argc(c, 3);
+  } else if (c == 3) {
+    a = ab[0];
+    C_kontinue(k, C_s_a_i_negate(&a, 1, n1));
+  } else {
+    c -= 2; 
+    va_start(v, n1);
 
-  if(n1 & C_FIXNUM_BIT) iresult = n1;
-  else if(!C_immediatep(n1) && C_block_header(n1) == C_FLONUM_TAG) {
-    fresult = C_flonum_magnitude(n1);
-    ff = 1;
-  }
-  else barf(C_BAD_ARGUMENT_TYPE_ERROR, "-", n1);
-
-  if(c == 3) {
-    if(!ff) C_kontinue(k, C_fix(-C_unfix(n1)));
-    else C_kontinue_flonum(k, -fresult);
-  }
-
-  va_start(v, n1);
-  c -= 3;
-
-  if(ff) goto flonum_result;
-
-  while(c--) {
-    x = va_arg(v, C_word);
-    
-    if(x & C_FIXNUM_BIT) {
-      y = C_i_o_fixnum_difference(iresult, x);
-
-      if(y == C_SCHEME_FALSE) {
-	fresult = (double)C_unfix(iresult) - (double)C_unfix(x);
-	goto flonum_result;
-      }
-      else iresult = y;
+    while (--c) {
+      next_val = va_arg(v, C_word);
+      a = ab[c&1]; /* One may hold last iteration result, the other is unused */
+      result = C_s_a_i_minus(&a, 2, result, next_val);
+      result = move_buffer_object(&a, ab[(c+1)&1], result);
+      clear_buffer_object(ab[(c+1)&1], prev_result);
+      prev_result = result;
     }
-    else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-      fresult = (double)C_unfix(iresult) - C_flonum_magnitude(x);
-      goto flonum_result;
-    }
-    else barf(C_BAD_ARGUMENT_TYPE_ERROR, "-", x);
+
+    va_end(v);
+    C_kontinue(k, result);
   }
-
-  va_end(v);
-  C_kontinue(k, iresult);
-
- flonum_result:
-  while(c--) {
-    x = va_arg(v, C_word);
-
-    if(x & C_FIXNUM_BIT)
-      fresult -= (double)C_unfix(x);
-    else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG)
-      fresult -= C_flonum_magnitude(x);
-    else barf(C_BAD_ARGUMENT_TYPE_ERROR, "-", x);
-  }
-
-  va_end(v);
-  C_kontinue_flonum(k, fresult);
 }
-
 
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_regparm C_word C_fcall C_2_minus(C_word **ptr, C_word x, C_word y)

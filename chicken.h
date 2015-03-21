@@ -1962,9 +1962,7 @@ C_fctexport void C_ccall C_u_call_with_values(C_word c, C_word closure, C_word k
 C_fctexport void C_ccall C_times(C_word c, C_word closure, C_word k, ...) C_noret;
 C_fctexport void C_ccall C_2_basic_times(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_u_2_integer_times(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
-/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport void C_ccall C_plus(C_word c, C_word closure, C_word k, ...) C_noret;
-/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport void C_ccall C_minus(C_word c, C_word closure, C_word k, C_word n1, ...) C_noret;
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...) C_noret;
