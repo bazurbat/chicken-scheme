@@ -164,7 +164,7 @@
 
 ;;; Compile a complete source file:
 
-(define (compile-source-file filename user-suppplied-options . options)
+(define (compile-source-file filename user-supplied-options . options)
   (define (option-arg p)
     (if (null? (cdr p))
 	(quit-compiling "missing argument to `-~A' option" (car p))
@@ -793,7 +793,7 @@
 			     ;; Code generation
 			     (let ((out (if outfile (open-output-file outfile) (current-output-port))) )
 			       (dribble "generating `~A' ..." outfile)
-			       (generate-code literals lliterals lambda-table out filename user-suppplied-options dynamic db)
+			       (generate-code literals lliterals lambda-table out filename user-supplied-options dynamic db)
 			       (when outfile
 				 (close-output-port out)))
 			     (end-time "code generation")
