@@ -1152,16 +1152,16 @@ EOF
                (b  (##sys#*-2 x-lo x-lo))
                (ab (- x-hi x-lo))
                (c  (##sys#*-2 ab ab)))
-          (+ (##sys#integer-shift a (fxshl bits 1))
-	     (+ (##sys#integer-shift (+ b (- a c)) bits) b)))
+          (+ (arithmetic-shift a (fxshl bits 1))
+	     (+ (arithmetic-shift (+ b (- a c)) bits) b)))
         (let* ((y (##core#inline_allocate ("C_s_a_u_i_integer_abs" 6) y))
                (y-hi (##sys#bignum-extract-digits y n/2 #f))
                (y-lo (##sys#bignum-extract-digits y 0 n/2))
                (a  (##sys#*-2 x-hi y-hi))
                (b  (##sys#*-2 x-lo y-lo))
                (c  (##sys#*-2 (- x-hi x-lo) (- y-hi y-lo))))
-          (##sys#*-2 rs (+ (##sys#integer-shift a (fxshl bits 1))
-			   (+ (##sys#integer-shift (+ b (- a c)) bits) b)))))))
+          (##sys#*-2 rs (+ (arithmetic-shift a (fxshl bits 1))
+			   (+ (arithmetic-shift (+ b (- a c)) bits) b)))))))
 
 (define (##sys#extended-times x y)
   (define (nonrat*rat x y)
@@ -1280,15 +1280,15 @@ EOF
   ;; up the number more than once.
   (define (burnikel-ziegler-3n/2n a12 a3 b b1 b2 n)
     (receive (q^ r1)
-        (if (< (##sys#integer-shift a12 (fxneg (digit-bits n))) b1)
+        (if (< (arithmetic-shift a12 (fxneg (digit-bits n))) b1)
             (let* ((n/2 (fxshr n 1))
                    (b11 (##sys#bignum-extract-digits b1 n/2 #f))
                    (b12 (##sys#bignum-extract-digits b1 0 n/2)))
               (burnikel-ziegler-2n/1n a12 b1 b11 b12 n))
             (let ((base*n (digit-bits n)))
-              (values (- (##sys#integer-shift 1 base*n) 1) ; B^n-1
-                      (+ (- a12 (##sys#integer-shift b1 base*n)) b1))))
-      (let ((r1a3 (+ (##sys#integer-shift r1 (digit-bits n)) a3)))
+              (values (- (arithmetic-shift 1 base*n) 1) ; B^n-1
+                      (+ (- a12 (arithmetic-shift b1 base*n)) b1))))
+      (let ((r1a3 (+ (arithmetic-shift r1 (digit-bits n)) a3)))
         (let lp ((r^ (- r1a3 (##sys#*-2 q^ b2)))
                  (q^ q^))
           (if (negative? r^)
@@ -1305,7 +1305,7 @@ EOF
                (a4  (##sys#bignum-extract-digits a 0 n/2)))
           (receive (q1 r1) (burnikel-ziegler-3n/2n a12 a3 b b1 b2 n/2)
             (receive (q2 r) (burnikel-ziegler-3n/2n r1 a4 b b1 b2 n/2)
-              (values (+ (##sys#integer-shift q1 (digit-bits n/2)) q2)
+              (values (+ (arithmetic-shift q1 (digit-bits n/2)) q2)
 		      r))))))
 
   ;; The caller will ensure that abs(x) > abs(y)
@@ -1322,29 +1322,29 @@ EOF
          (j (fx/ (fx+ s (fx- m 1)) m))  ; j = s/m, rounded up
          (n (fx* j m))
          (norm-shift (fx- (digit-bits n) (integer-length y)))
-         (x (##sys#integer-shift x norm-shift))
-         (y (##sys#integer-shift y norm-shift))
+         (x (arithmetic-shift x norm-shift))
+         (y (arithmetic-shift y norm-shift))
          ;; l needs to be the smallest value so that a < base^{l*n}/2
          (l (fx/ (fx+ (%bignum-digit-count x) (fx- n 1)) n))
          (l (if (fx= (digit-bits l) (integer-length x)) (fx+ l 1) l))
          (t (fxmax l 2))
          (y-hi (##sys#bignum-extract-digits y (fxshr n 1) #f))
          (y-lo (##sys#bignum-extract-digits y 0 (fxshr n 1))))
-    (let lp ((zi (##sys#integer-shift x (fxneg (digit-bits (fx* (fx- t 2) n)))))
+    (let lp ((zi (arithmetic-shift x (fxneg (digit-bits (fx* (fx- t 2) n)))))
              (i (fx- t 2))
              (quot 0))
       (receive (qi ri) (burnikel-ziegler-2n/1n zi y y-hi y-lo n)
-        (let ((quot (+ (##sys#integer-shift quot (digit-bits n)) qi)))
+        (let ((quot (+ (arithmetic-shift quot (digit-bits n)) qi)))
           (if (fx> i 0)
               (let ((zi-1 (let* ((base*n*i-1 (fx* n (fx- i 1)))
                                  (base*n*i   (fx* n i))
                                  (xi-1 (##sys#bignum-extract-digits
 					x base*n*i-1 base*n*i)))
-                            (+ (##sys#integer-shift ri (digit-bits n)) xi-1))))
+                            (+ (arithmetic-shift ri (digit-bits n)) xi-1))))
                 (lp zi-1 (fx- i 1) quot))
               (let ((rem (if (or (not return-rem?) (eq? 0 norm-shift))
                              ri
-                             (##sys#integer-shift ri (fxneg norm-shift)))))
+                             (arithmetic-shift ri (fxneg norm-shift)))))
                 ;; Return requested values (quot, rem or both) with correct sign:
                 (cond ((and return-quot? return-rem?)
                        (values (if q-neg? (- quot) quot)
@@ -1576,20 +1576,19 @@ EOF
           (((len/4) (fxshr (fx+ (integer-length a) 1) 2))
            ((len/2) (fxshl len/4 1))
            ((s^ r^) (##sys#exact-integer-sqrt
-		     (##sys#integer-shift a (fxneg len/2))))
-           ((mask)  (- (##sys#integer-shift 1 len/4) 1))
+		     (arithmetic-shift a (fxneg len/2))))
+           ((mask)  (- (arithmetic-shift 1 len/4) 1))
            ((a0)    (##sys#integer-bitwise-and a mask))
            ((a1)    (##sys#integer-bitwise-and
-		     (##sys#integer-shift a (fxneg len/4)) mask))
+		     (arithmetic-shift a (fxneg len/4)) mask))
            ((q u)   (##sys#integer-quotient&remainder
 		     (+ (arithmetic-shift r^ len/4) a1)
-		     (##sys#integer-shift s^ 1)))
-           ((s)     (+ (##sys#integer-shift s^ len/4) q))
-           ((r)     (+ (##sys#integer-shift u len/4)
-		       (- a0 (##sys#*-2 q q)))))
+		     (arithmetic-shift s^ 1)))
+           ((s)     (+ (arithmetic-shift s^ len/4) q))
+           ((r)     (+ (arithmetic-shift u len/4) (- a0 (##sys#*-2 q q)))))
         (if (negative? r)
             (values (- s 1)
-		    (- (+ r (##sys#integer-shift s 1)) 1))
+		    (- (+ r (arithmetic-shift s 1)) 1))
             (values s r)))))
 
 (define (exact-integer-sqrt x)
@@ -1661,7 +1660,7 @@ EOF
         (cond
          ((eq? e2 0) res)
          ((even? e2)	     ; recursion is faster than iteration here
-          (##sys#*-2 res (square (lp 1 (##sys#integer-shift e2 -1)))))
+          (##sys#*-2 res (square (lp 1 (arithmetic-shift e2 -1)))))
          (else
           (lp (##sys#*-2 res base) (- e2 1)))))))
 
@@ -1812,7 +1811,7 @@ EOF
 	     (bex (fx- (fx- (integer-length mant) (integer-length scl))
                        flonum-precision)))
         (if (fx< bex 0)
-            (let* ((num (##sys#integer-shift mant (fxneg bex)))
+            (let* ((num (arithmetic-shift mant (fxneg bex)))
                    (quo (round-quotient num scl)))
               (cond ((> (integer-length quo) flonum-precision)
                      ;; Too many bits of quotient; readjust
@@ -4379,7 +4378,6 @@ EOF
 (define ##sys#integer-bitwise-and (##core#primitive "C_u_2_integer_bitwise_and"))
 (define ##sys#integer-bitwise-ior (##core#primitive "C_u_2_integer_bitwise_ior"))
 (define ##sys#integer-bitwise-xor (##core#primitive "C_u_2_integer_bitwise_xor"))
-(define ##sys#integer-shift (##core#primitive "C_u_integer_shift"))
 
 (define (bitwise-and . xs)
   (if (null? xs)
@@ -4428,13 +4426,7 @@ EOF
   (##core#inline_allocate ("C_s_a_u_i_integer_minus" 6) -1 n))
 
 (define (arithmetic-shift n m)
-  (##sys#check-exact-integer n 'arithmetic-shift)
-  ;; Strictly speaking, shifting *right* is okay for any number
-  ;; (ie, shifting by a negative bignum would just result in 0 or -1)...
-  (unless (##core#inline "C_fixnump" m)
-    (##sys#signal-hook #:type-error 'arithmetic-shift
-                       "can only shift by fixnum amounts" n m))
-  (##sys#integer-shift n m))
+  (##core#inline_allocate ("C_s_a_i_arithmetic_shift" 6) n m))
 
 (define (bit-set? n i) (##core#inline "C_i_bit_setp" n i))
 

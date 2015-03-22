@@ -750,6 +750,40 @@
 (rewrite 'fxmod 17 2 "C_fixnum_modulo" "C_u_fixnum_modulo")
 (rewrite 'fxrem 17 2 "C_i_fixnum_remainder_checked")
 
+(rewrite
+ 'arithmetic-shift 8
+ (lambda (db classargs cont callargs)
+   ;; (arithmetic-shift <x> <-int>)
+   ;;           -> (##core#inline "C_fixnum_shift_right" <x> -<int>)
+   ;; (arithmetic-shift <x> <+int>)
+   ;;           -> (##core#inline "C_fixnum_shift_left" <x> <int>)
+   ;; _ -> (##core#inline "C_a_i_arithmetic_shift" <x> <y>)
+   ;;
+   ;; not in fixnum-mode:
+   ;; _ -> (##core#inline_allocate ("C_s_a_i_arithmetic_shift" 6) <x> <y>)
+   (and (= 2 (length callargs))
+	(let ((val (second callargs)))
+	  (make-node
+	   '##core#call (list #t)
+	   (list cont
+		 (or (and-let* (((eq? 'quote (node-class val)))
+				((eq? number-type 'fixnum))
+				(n (first (node-parameters val)))
+				((and (fixnum? n) (not (big-fixnum? n)))) )
+		       (if (negative? n)
+			   (make-node
+			    '##core#inline '("C_fixnum_shift_right")
+			    (list (first callargs) (qnode (- n))) )
+			   (make-node
+			    '##core#inline '("C_fixnum_shift_left")
+			    (list (first callargs) val) ) ) )
+		     (if (eq? number-type 'fixnum)
+			 (make-node '##core#inline
+				    '("C_i_fixnum_arithmetic_shift") callargs)
+			 (make-node '##core#inline_allocate
+				    (list "C_s_a_i_arithmetic_shift" 6)
+				    callargs) ) ) ) ) ) ) ) )
+
 (rewrite '##sys#byte 17 2 "C_subbyte")
 (rewrite '##sys#setbyte 17 3 "C_setbyte")
 (rewrite '##sys#peek-fixnum 17 2 "C_peek_fixnum")

@@ -515,7 +515,6 @@ static C_regparm int C_fcall C_in_new_heapp(C_word x);
 static void bignum_bitwise_and_2(C_word c, C_word self, C_word result) C_noret;
 static void bignum_bitwise_ior_2(C_word c, C_word self, C_word result) C_noret;
 static void bignum_bitwise_xor_2(C_word c, C_word self, C_word result) C_noret;
-static void bignum_actual_shift(C_word c, C_word self, C_word result) C_noret;
 static void bignum_times_bignum_unsigned(C_word k, C_word x, C_word y, C_word negp) C_noret;
 static void bignum_times_bignum_unsigned_2(C_word c, C_word self, C_word result) C_noret;
 static void integer_times_2(C_word c, C_word self, C_word new_big) C_noret;
@@ -848,7 +847,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size -
      this must match the number of C_pte calls + 1 (NULL terminator)! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 73);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 72);
   int i = 0;
 
   if(pt == NULL)
@@ -928,7 +927,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_u_2_integer_bitwise_and);
   C_pte(C_u_2_integer_bitwise_ior);
   C_pte(C_u_2_integer_bitwise_xor);
-  C_pte(C_u_integer_shift);
 
   /* IMPORTANT: did you remember the hardcoded pte table size? */
   pt[ i ].id = NULL;
@@ -6233,74 +6231,54 @@ C_regparm C_word C_fcall C_a_i_arithmetic_shift(C_word **a, int c, C_word n1, C_
   }
 }
 
-void C_ccall /* x is any exact integer but y is _always_ a fixnum */
-C_u_integer_shift(C_word c, C_word self, C_word k, C_word x, C_word y)
+C_regparm C_word C_fcall
+C_s_a_i_arithmetic_shift(C_word **ptr, C_word n, C_word x, C_word y)
 {
-  C_word ab[C_SIZEOF_FIX_BIGNUM], *a = ab;
+  C_word ab[C_SIZEOF_FIX_BIGNUM], *a = ab, size, negp, res,
+         digit_offset, bit_offset;
+
+  if (!(y & C_FIXNUM_BIT))
+    barf(C_BAD_ARGUMENT_TYPE_NO_FIXNUM_ERROR, "arithmetic-shift", y);
 
   y = C_unfix(y);
   if (y == 0 || x == C_fix(0)) { /* Done (no shift) */
-    C_kontinue(k, x);
+    return x;
   } else if (x & C_FIXNUM_BIT) {
     if (y < 0) {
       /* Don't shift more than a word's length (that's undefined in C!) */
       if (-y < C_WORD_SIZE) {
-        C_kontinue(k, C_fix(C_unfix(x) >> -y));
+        return C_fix(C_unfix(x) >> -y);
       } else {
-        C_kontinue(k, (x < 0) ? C_fix(-1) : C_fix(0));
+        return (x < 0) ? C_fix(-1) : C_fix(0);
       }
     } else if (y > 0 && y < C_WORD_SIZE-2 &&
                /* After shifting, the length still fits a fixnum */
                (C_ilen(C_unfix(x)) + y) < C_WORD_SIZE-2) {
-      C_kontinue(k, C_fix(C_unfix(x) << y));
+      return C_fix(C_unfix(x) << y);
     } else {
       x = C_a_u_i_fix_to_big(&a, x);
     }
+  } else if (!C_truep(C_i_bignump(x))) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR, "arithmetic-shift", x);
   }
 
-  {
-    C_word ab[C_SIZEOF_CLOSURE(6)], *a = ab,
-           k2, size, negp, digit_offset, bit_offset;
-
-    negp = C_mk_bool(C_bignum_negativep(x));
+  negp = C_mk_bool(C_bignum_negativep(x));
   
-    if (y > 0) { /* y is guaranteed not to be 0 here */
-      digit_offset = y / C_BIGNUM_DIGIT_LENGTH;
-      bit_offset =   y % C_BIGNUM_DIGIT_LENGTH;
+  if (y > 0) {                  /* Shift left */
+    C_uword *startr, *startx, *endx, *endr;
 
-      k2 = C_closure(&a, 6, (C_word)bignum_actual_shift, k,
-                     x, C_SCHEME_TRUE, C_fix(digit_offset), C_fix(bit_offset));
-      size = C_fix(C_bignum_size(x) + digit_offset + 1);
-      C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_FALSE);
-    } else if (-y >= C_bignum_size(x) * (C_word)C_BIGNUM_DIGIT_LENGTH) {
-      /* All bits are shifted out, just return 0 or -1 */
-      C_kontinue(k, C_truep(negp) ? C_fix(-1) : C_fix(0));
-    } else {
-      digit_offset = -y / C_BIGNUM_DIGIT_LENGTH;
-      bit_offset =   -y % C_BIGNUM_DIGIT_LENGTH;
-    
-      k2 = C_closure(&a, 6, (C_word)bignum_actual_shift, k,
-                     x, C_SCHEME_FALSE, C_fix(digit_offset), C_fix(bit_offset));
+    digit_offset = y / C_BIGNUM_DIGIT_LENGTH;
+    bit_offset =   y % C_BIGNUM_DIGIT_LENGTH;
 
-      size = C_fix(C_bignum_size(x) - digit_offset);
-      C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_FALSE);
-    }
-  }
-}
+    size = C_fix(C_bignum_size(x) + digit_offset + 1);
+    res = C_allocate_scratch_bignum(ptr, size, negp, C_SCHEME_FALSE);
 
-static void bignum_actual_shift(C_word c, C_word self, C_word result)
-{
-  C_word k = C_block_item(self, 1),
-         x = C_block_item(self, 2),
-         shift_left = C_truep(C_block_item(self, 3)),
-         digit_offset = C_unfix(C_block_item(self, 4)),
-         bit_offset = C_unfix(C_block_item(self, 5));
-  C_uword *startr = C_bignum_digits(result),
-          *startx = C_bignum_digits(x),
-          *endx = startx + C_bignum_size(x),
-          *endr = startr + C_bignum_size(result);
+    startr = C_bignum_digits(res);
+    endr = startr + C_bignum_size(res);
 
-  if (shift_left) {
+    startx = C_bignum_digits(x);
+    endx = startx + C_bignum_size(x);
+
     /* Initialize only the lower digits we're skipping and the MSD */
     C_memset(startr, 0, C_wordstobytes(digit_offset));
     *(endr-1) = 0;
@@ -6311,13 +6289,30 @@ static void bignum_actual_shift(C_word c, C_word self, C_word result)
     C_memcpy(startr, startx, C_wordstobytes(endx-startx));
     if(bit_offset > 0)
       bignum_digits_destructive_shift_left(startr, endr, bit_offset);
-  } else {
-    C_word nx, size = C_bignum_size(x) + 1;
-    if (C_truep(nx = maybe_negate_bignum_for_bitwise_op(x, size))) {
-      startx = C_bignum_digits(nx); /* update startx; x and endx are unused */
-    }
 
-    startx += digit_offset;
+    return C_bignum_simplify(res);
+  } else if (-y >= C_bignum_size(x) * (C_word)C_BIGNUM_DIGIT_LENGTH) {
+    /* All bits are shifted out, just return 0 or -1 */
+    return C_truep(negp) ? C_fix(-1) : C_fix(0);
+  } else {                      /* Shift right */
+    C_uword *startr, *startx, *endr;
+    C_word nx;
+
+    digit_offset = -y / C_BIGNUM_DIGIT_LENGTH;
+    bit_offset =   -y % C_BIGNUM_DIGIT_LENGTH;
+
+    size = C_fix(C_bignum_size(x) - digit_offset);
+    res = C_allocate_scratch_bignum(ptr, size, negp, C_SCHEME_FALSE);
+
+    startr = C_bignum_digits(res);
+    endr = startr + C_bignum_size(res);
+
+    size = C_bignum_size(x) + 1;
+    if (C_truep(nx = maybe_negate_bignum_for_bitwise_op(x, size))) {
+      startx = C_bignum_digits(nx) + digit_offset;
+    } else {
+      startx = C_bignum_digits(x) + digit_offset;
+    }
     /* Can't use bignum_digits_destructive_copy because that assumes
      * target is at least as big as source.
      */
@@ -6327,10 +6322,10 @@ static void bignum_actual_shift(C_word c, C_word self, C_word result)
 
     if (C_truep(nx)) {
       free_tmp_bignum(nx);
-      bignum_digits_destructive_negate(result);
+      bignum_digits_destructive_negate(res);
     }
+    return C_bignum_simplify(res);
   }
-  C_kontinue(k, C_bignum_simplify(result));
 }
 
 
@@ -8912,9 +8907,9 @@ static C_word flo_int_cmp(C_word flonum, C_word intnum)
 static C_word rat_flo_cmp(C_word ratnum, C_word flonum)
 {
   C_word ab[C_SIZEOF_FIX_BIGNUM * 2 + C_SIZEOF_FLONUM], *a = ab,
-         num, denom, ibig, res, nscaled, iscaled, negp;
+         num, denom, ibig, res, nscaled, iscaled, negp, shift_amount;
   C_uword *scan;
-  int shift_amount, ilen, nlen;
+  int ilen;
   double i, f;
 
   f = C_flonum_magnitude(flonum);
@@ -8938,21 +8933,17 @@ static C_word rat_flo_cmp(C_word ratnum, C_word flonum)
     i = f; /* TODO: split i and f so it'll work for denormalized flonums */
 
     num = C_block_item(ratnum, 1);
-    num = (num & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, num) : num;
+    negp = C_i_negativep(num);
 
-    if (C_bignum_negativep(num) && i >= 0.0) { /* Save time if signs differ */
+    if (C_truep(negp) && i >= 0.0) { /* Save some time if signs differ */
       return C_fix(-1);
-    } else if (!C_bignum_negativep(num) && i <= 0.0) { /* num is never 0 */
+    } else if (!C_truep(negp) && i <= 0.0) { /* num is never 0 */
       return C_fix(1);
     } else {
-      negp = C_mk_bool(C_bignum_negativep(num));
-
       denom = C_block_item(ratnum, 2);
       denom = (denom & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, denom) : denom;
 
       ibig = flo_to_tmp_bignum(C_flonum(&a, i));
-
-      nlen = C_bignum_size(num) + C_bignum_size(denom);
       ilen = C_bignum_size(ibig) + C_bignum_size(denom);
 
       /* Now, multiply the scaled flonum by the denominator, so we can
@@ -8965,26 +8956,11 @@ static C_word rat_flo_cmp(C_word ratnum, C_word flonum)
       bignum_digits_multiply(denom, ibig, iscaled); /* Swap args if i < d? */
       free_tmp_bignum(ibig);
 
-      nlen += C_BIGNUM_BITS_TO_DIGITS(shift_amount);
-      nscaled = allocate_tmp_bignum(C_fix(nlen), negp, C_SCHEME_TRUE);
-
-      scan = C_bignum_digits(nscaled) + shift_amount / C_BIGNUM_DIGIT_LENGTH;
-      C_memcpy(scan, C_bignum_digits(num), C_wordstobytes(C_bignum_size(num)));
-      shift_amount = shift_amount % C_BIGNUM_DIGIT_LENGTH;
-      if(shift_amount > 0) {
-        bignum_digits_destructive_shift_left(
-         scan, C_bignum_digits(nscaled) + nlen, shift_amount);
-      }
-
-      /* Shorten the numbers if needed */
-      for (scan = C_bignum_digits(iscaled)+ilen-1; *scan == 0; scan--) ilen--;
-      C_bignum_mutate_size(iscaled, ilen);
-      for (scan = C_bignum_digits(nscaled)+nlen-1; *scan == 0; scan--) nlen--;
-      C_bignum_mutate_size(nscaled, nlen);
+      nscaled = C_s_a_i_arithmetic_shift(&a, 2, num, C_fix(shift_amount));
 
       /* Finally, we're ready to compare them! */
-      res = C_i_bignum_cmp(nscaled, iscaled);
-      free_tmp_bignum(nscaled);
+      res = basic_cmp(nscaled, C_bignum_simplify(iscaled), "rat_flo_cmp", 0);
+      clear_buffer_object(ab, nscaled);
       free_tmp_bignum(iscaled);
 
       return res;
@@ -10084,67 +10060,34 @@ C_a_i_exact_to_inexact(C_word **ptr, int c, C_word n)
               * e_w in M2.  TODO: What if b!=2 (ie, flonum-radix isn't 2)?
               */
              e = integer_length_abs(num) - integer_length_abs(denom),
-             ab[C_SIZEOF_FIX_BIGNUM*4], *a = ab, tmp1 = 0, tmp2 = 0, tmp3 = 0,
-             shift_amount, negp = C_i_integer_negativep(num), q, r, len;
+             ab[C_SIZEOF_FIX_BIGNUM*6], *a = ab, tmp, q, r, len,
+             shift_amount, negp = C_i_integer_negativep(num);
      C_uword *d;
      double res, fraction;
 
-     /* Simplify logic by ensuring bignums */
-     if (num & C_FIXNUM_BIT) num = C_a_u_i_fix_to_big(&a, num);
-     if (denom & C_FIXNUM_BIT) denom = C_a_u_i_fix_to_big(&a, denom);
+     /* Align by shifting the smaller to the size of the larger */
+     if (e < 0)      num = C_s_a_i_arithmetic_shift(&a, 2, num, C_fix(-e));
+     else if (e > 0) denom = C_s_a_i_arithmetic_shift(&a, 2, denom, C_fix(e));
 
-     /* Align numbers by shifting the smaller to the same size of the
-      * larger. After this, "f" in alg. N is represented by num/denom.
-      */
-     if (e < 0) {
-       tmp1 = allocate_tmp_bignum(C_fix(C_bignum_size(denom)),
-                                  C_SCHEME_FALSE, C_SCHEME_TRUE);
-       d = C_bignum_digits(tmp1) - e / C_BIGNUM_DIGIT_LENGTH;
-       C_memcpy(d, C_bignum_digits(num), C_wordstobytes(C_bignum_size(num)));
-       shift_amount = -e % C_BIGNUM_DIGIT_LENGTH;
-       if(shift_amount > 0) {
-         bignum_digits_destructive_shift_left(
-           d, C_bignum_digits(tmp1) + C_bignum_size(tmp1), shift_amount);
-       }
-       num = tmp1;
-     } else if (e > 0) {
-       tmp1 = allocate_tmp_bignum(C_fix(C_bignum_size(num)),
-                                  C_SCHEME_FALSE, C_SCHEME_TRUE);
-       d = C_bignum_digits(tmp1) + e / C_BIGNUM_DIGIT_LENGTH;
-       C_memcpy(d, C_bignum_digits(denom), C_wordstobytes(C_bignum_size(denom)));
-       shift_amount = e % C_BIGNUM_DIGIT_LENGTH;
-       if(shift_amount > 0) {
-         bignum_digits_destructive_shift_left(
-           d, C_bignum_digits(tmp1) + C_bignum_size(tmp1), shift_amount);
-       }
-       denom = tmp1;
-     }
-     /* From here on, 1/2 <= n/d < 2 [N3] */
+     /* Here, 1/2 <= n/d < 2 [N3] */
      if (C_truep(C_i_integer_lessp(num, denom))) { /* n/d < 1? */
-       len = C_bignum_size(num) + 1;
-       tmp2 = allocate_tmp_bignum(C_fix(len), C_SCHEME_FALSE, C_SCHEME_FALSE);
-       bignum_digits_destructive_copy(tmp2, num);
-       d = C_bignum_digits(tmp2);
-       d[len-1] = 0; /* Init most significant digit */
-       bignum_digits_destructive_shift_left(d, d + len, 1);
-       num = tmp2;
-       e -= 1;
+       tmp = C_s_a_i_arithmetic_shift(&a, 2, num, C_fix(1));
+       clear_buffer_object(ab, num); /* "knows" shift creates fresh numbers */
+       num = tmp;
+       e--;
      }
 
      /* Here, 1 <= n/d < 2 (normalized) [N5] */
      shift_amount = nmin(DBL_MANT_DIG-1, e - (DBL_MIN_EXP - DBL_MANT_DIG));
 
-     len = C_bignum_size(num) + shift_amount / C_BIGNUM_DIGIT_LENGTH + 1;
-     tmp3 = allocate_tmp_bignum(C_fix(len), C_SCHEME_FALSE, C_SCHEME_TRUE);
-     d = C_bignum_digits(tmp3) + shift_amount / C_BIGNUM_DIGIT_LENGTH;
-     C_memcpy(d, C_bignum_digits(num), C_wordstobytes(C_bignum_size(num)));
-     shift_amount = shift_amount % C_BIGNUM_DIGIT_LENGTH;
-     if (shift_amount > 0) {
-       bignum_digits_destructive_shift_left(
-         d, C_bignum_digits(tmp3) + len, shift_amount);
-     }
-     num = tmp3;
+     tmp = C_s_a_i_arithmetic_shift(&a, 2, num, C_fix(shift_amount));
+     clear_buffer_object(ab, num); /* "knows" shift creates fresh numbers */
+     num = tmp;
 
+     /* Ensure num and denom are bignums, for simplicity */
+     if (num & C_FIXNUM_BIT) num = C_a_u_i_fix_to_big(&a, num);
+     if (denom & C_FIXNUM_BIT) denom = C_a_u_i_fix_to_big(&a, denom);
+     
      /* Now, calculate round(num/denom).  We start with a quotient&remainder */
      switch(bignum_cmp_unsigned(num, denom)) {
      case 0:                    /* q = 1, r = 0 */
@@ -10195,9 +10138,8 @@ C_a_i_exact_to_inexact(C_word **ptr, int c, C_word n)
 
      free_tmp_bignum(q);
      free_tmp_bignum(r);
-     if (tmp1) free_tmp_bignum(tmp1);
-     if (tmp2) free_tmp_bignum(tmp2);
-     if (tmp3) free_tmp_bignum(tmp3);
+     clear_buffer_object(ab, num);
+     clear_buffer_object(ab, denom);
 
      shift_amount = nmin(DBL_MANT_DIG-1, e - (DBL_MIN_EXP - DBL_MANT_DIG));
      res = ldexp(fraction, e - shift_amount);

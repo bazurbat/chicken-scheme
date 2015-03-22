@@ -1973,7 +1973,6 @@ C_fctexport void C_ccall C_u_integer_remainder(C_word c, C_word self, C_word k, 
 C_fctexport void C_ccall C_basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_u_integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_u_flo_to_int(C_word c, C_word self, C_word k, C_word x) C_noret;
-C_fctexport void C_ccall C_u_integer_shift(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_u_2_integer_bitwise_and(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_u_2_integer_bitwise_ior(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_u_2_integer_bitwise_xor(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
@@ -2189,6 +2188,7 @@ C_fctexport C_word C_fcall C_s_a_u_i_integer_minus(C_word **ptr, C_word n, C_wor
 C_fctexport C_word C_fcall C_s_a_i_plus(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_u_i_integer_plus(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_u_i_integer_gcd(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
+C_fctexport C_word C_fcall C_s_a_i_arithmetic_shift(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_u_i_bignum_extract_digits(C_word **ptr, C_word n, C_word x, C_word start, C_word end) C_regparm;
 
 

@@ -862,7 +862,8 @@
 		((*) (##core#inline "C_i_integer_length" #(1))))
 
 (arithmetic-shift (#(procedure #:clean #:enforce #:foldable) arithmetic-shift (integer fixnum) integer)
-		  ((integer fixnum) (##sys#integer-shift #(1) #(2))))
+		  ((* *) (##core#inline_allocate ("C_s_a_i_arithmetic_shift" 6)
+						 #(1) #(2))))
 
 (exact-integer-nth-root (#(procedure #:clean #:enforce #:foldable) exact-integer-nth-root (integer integer) integer integer)
 		    ((integer integer) (##sys#exact-integer-nth-root/loc 'exact-integer-nth-root #(1) #(2))))
