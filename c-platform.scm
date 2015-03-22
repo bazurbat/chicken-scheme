@@ -548,6 +548,12 @@
 
 (rewrite 'abs 14 'fixnum 1 "C_fixnum_abs" "C_fixnum_abs")
 
+(rewrite 'bitwise-and 21 -1 "C_fixnum_and" "C_u_fixnum_and" "C_s_a_i_bitwise_and" 6)
+(rewrite 'bitwise-xor 21 0 "C_fixnum_xor" "C_fixnum_xor" "C_s_a_i_bitwise_xor" 6)
+(rewrite 'bitwise-ior 21 0 "C_fixnum_or" "C_u_fixnum_or" "C_s_a_i_bitwise_ior" 6)
+
+(rewrite 'bitwise-not 22 1 "C_s_a_i_bitwise_not" #t 6 "C_fixnum_not")
+
 (rewrite 'fp+ 16 2 "C_a_i_flonum_plus" #f words-per-flonum)
 (rewrite 'fp- 16 2 "C_a_i_flonum_difference" #f words-per-flonum)
 (rewrite 'fp* 16 2 "C_a_i_flonum_times" #f words-per-flonum)

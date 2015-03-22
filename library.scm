@@ -1578,9 +1578,8 @@ EOF
            ((s^ r^) (##sys#exact-integer-sqrt
 		     (arithmetic-shift a (fxneg len/2))))
            ((mask)  (- (arithmetic-shift 1 len/4) 1))
-           ((a0)    (##sys#integer-bitwise-and a mask))
-           ((a1)    (##sys#integer-bitwise-and
-		     (arithmetic-shift a (fxneg len/4)) mask))
+           ((a0)    (bitwise-and a mask))
+           ((a1)    (bitwise-and (arithmetic-shift a (fxneg len/4)) mask))
            ((q u)   (##sys#integer-quotient&remainder
 		     (+ (arithmetic-shift r^ len/4) a1)
 		     (arithmetic-shift s^ 1)))
@@ -4374,61 +4373,14 @@ EOF
 
 ;; From SRFI-33
 (define (integer-length x) (##core#inline "C_i_integer_length" x))
- 
-(define ##sys#integer-bitwise-and (##core#primitive "C_u_2_integer_bitwise_and"))
-(define ##sys#integer-bitwise-ior (##core#primitive "C_u_2_integer_bitwise_ior"))
-(define ##sys#integer-bitwise-xor (##core#primitive "C_u_2_integer_bitwise_xor"))
+(define (bit-set? n i) (##core#inline "C_i_bit_setp" n i))
 
-(define (bitwise-and . xs)
-  (if (null? xs)
-      -1
-      (let ((x1 (##sys#slot xs 0)))
-	(##sys#check-exact-integer x1 'bitwise-and)
-        (let loop ((x x1) (xs (##sys#slot xs 1)))
-          (if (null? xs)
-              x
-              (let ((xi (##sys#slot xs 0)))
-		(##sys#check-exact-integer xi 'bitwise-and)
-                (loop
-                 (##sys#integer-bitwise-and x xi)
-                 (##sys#slot xs 1) ) ) ) ))) )
-
-(define (bitwise-ior . xs)
-  (if (null? xs)
-      0
-      (let ((x1 (##sys#slot xs 0)))
-	(##sys#check-exact-integer x1 'bitwise-ior)
-        (let loop ((x x1) (xs (##sys#slot xs 1)))
-          (if (null? xs)
-              x
-              (let ((xi (##sys#slot xs 0)))
-		(##sys#check-exact-integer xi 'bitwise-ior)
-                (loop
-		 (##sys#integer-bitwise-ior x xi)
-                 (##sys#slot xs 1) ) ) ) ))) )
-
-(define (bitwise-xor . xs)
-  (if (null? xs)
-      0
-      (let ((x1 (##sys#slot xs 0)))
-	(##sys#check-exact-integer x1 'bitwise-xor)
-        (let loop ((x x1) (xs (##sys#slot xs 1)))
-          (if (null? xs)
-              x
-              (let ((xi (##sys#slot xs 0)))
-		(##sys#check-exact-integer xi 'bitwise-xor)
-                (loop
-		 (##sys#integer-bitwise-xor x xi)
-                 (##sys#slot xs 1) ) ) ) ))) )
-
-(define (bitwise-not n)
-  (##sys#check-exact-integer n 'bitwise-not)
-  (##core#inline_allocate ("C_s_a_u_i_integer_minus" 6) -1 n))
-
+(define bitwise-and (##core#primitive "C_bitwise_and"))
+(define bitwise-ior (##core#primitive "C_bitwise_ior"))
+(define bitwise-xor (##core#primitive "C_bitwise_xor"))
+(define (bitwise-not n) (##core#inline_allocate ("C_s_a_i_bitwise_not" 6) n))
 (define (arithmetic-shift n m)
   (##core#inline_allocate ("C_s_a_i_arithmetic_shift" 6) n m))
-
-(define (bit-set? n i) (##core#inline "C_i_bit_setp" n i))
 
 ;;; String ports:
 ;

@@ -882,25 +882,24 @@
            ((fixnum) (fixnum) #(1))
            ((integer) #(1))
            ((fixnum fixnum) (fixnum) (##core#inline "C_u_fixnum_and" #(1) #(2)))
-           ((integer integer) (##sys#integer-bitwise-and #(1) #(2))))
+           ((* *) (##core#inline_allocate ("C_s_a_i_bitwise_and" 6) #(1) #(2))))
 
 (bitwise-ior (#(procedure #:clean #:enforce #:foldable) bitwise-ior (#!rest integer) integer)
            (() '0)
            ((fixnum) (fixnum) #(1))
            ((integer) #(1))
            ((fixnum fixnum) (fixnum) (##core#inline "C_u_fixnum_or" #(1) #(2)))
-           ((integer integer) (##sys#integer-bitwise-ior #(1) #(2))))
+	   ((* *) (##core#inline_allocate ("C_s_a_i_bitwise_ior" 6) #(1) #(2))))
 
 (bitwise-xor (#(procedure #:clean #:enforce #:foldable) bitwise-xor (#!rest integer) integer)
            (() '0)
            ((fixnum) (fixnum) #(1))
            ((integer) #(1))
            ((fixnum fixnum) (fixnum) (##core#inline "C_fixnum_xor" #(1) #(2)))
-           ((integer integer) (##sys#integer-bitwise-xor #(1) #(2))))
+           ((* *) (##core#inline_allocate ("C_s_a_i_bitwise_xor" 6) #(1) #(2))))
 
 (bitwise-not (#(procedure #:clean #:enforce #:foldable) bitwise-not (integer) integer)
-	     ((integer)
-	      (##core#inline_allocate ("C_s_a_u_i_integer_minus" 6) '1 #(1))))
+	     ((* *) (##core#inline_allocate ("C_s_a_i_bitwise_not" 6) #(1))))
 
 (blob->string (#(procedure #:clean #:enforce) blob->string (blob) string))
 

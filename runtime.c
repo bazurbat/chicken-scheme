@@ -512,9 +512,6 @@ static WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word con
 static C_ccall void values_continuation(C_word c, C_word closure, C_word dummy, ...) C_noret;
 static C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stable);
 static C_regparm int C_fcall C_in_new_heapp(C_word x);
-static void bignum_bitwise_and_2(C_word c, C_word self, C_word result) C_noret;
-static void bignum_bitwise_ior_2(C_word c, C_word self, C_word result) C_noret;
-static void bignum_bitwise_xor_2(C_word c, C_word self, C_word result) C_noret;
 static void bignum_times_bignum_unsigned(C_word k, C_word x, C_word y, C_word negp) C_noret;
 static void bignum_times_bignum_unsigned_2(C_word c, C_word self, C_word result) C_noret;
 static void integer_times_2(C_word c, C_word self, C_word new_big) C_noret;
@@ -847,7 +844,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size -
      this must match the number of C_pte calls + 1 (NULL terminator)! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 72);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 73);
   int i = 0;
 
   if(pt == NULL)
@@ -924,9 +921,9 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_u_integer_quotient);
   C_pte(C_u_integer_remainder);
   C_pte(C_u_integer_divrem);
-  C_pte(C_u_2_integer_bitwise_and);
-  C_pte(C_u_2_integer_bitwise_ior);
-  C_pte(C_u_2_integer_bitwise_xor);
+  C_pte(C_bitwise_and);
+  C_pte(C_bitwise_ior);
+  C_pte(C_bitwise_xor);
 
   /* IMPORTANT: did you remember the hardcoded pte table size? */
   pt[ i ].id = NULL;
@@ -6016,160 +6013,242 @@ C_regparm C_word C_fcall C_a_i_bitwise_not(C_word **a, int c, C_word n)
   else return C_flonum(a, nn);
 }
 
-void C_ccall
-C_u_2_integer_bitwise_and(C_word c, C_word self, C_word k, C_word x, C_word y)
+C_regparm C_word C_fcall
+C_s_a_i_bitwise_and(C_word **ptr, C_word n, C_word x, C_word y)
 {
   if ((x & y) & C_FIXNUM_BIT) {
-    C_kontinue(k, C_u_fixnum_and(x, y));
+    return C_u_fixnum_and(x, y);
+  } else if (!C_truep(C_i_exact_integerp(x))) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR, "bitwise-and", x);
+  } else if (!C_truep(C_i_exact_integerp(y))) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR, "bitwise-and", y);
   } else {
-    C_word kab[C_SIZEOF_FIX_BIGNUM*2], *ka = kab, negp, size, k2;
-    if (x & C_FIXNUM_BIT) x = C_a_u_i_fix_to_big(&ka, x);
-    if (y & C_FIXNUM_BIT) y = C_a_u_i_fix_to_big(&ka, y);
+    C_word ab[C_SIZEOF_FIX_BIGNUM*2], *a = ab, negp, size, res, nx, ny;
+    C_uword *scanr, *endr, *scans1, *ends1, *scans2;
+
+    if (x & C_FIXNUM_BIT) x = C_a_u_i_fix_to_big(&a, x);
+    if (y & C_FIXNUM_BIT) y = C_a_u_i_fix_to_big(&a, y);
 
     negp = C_mk_bool(C_bignum_negativep(x) && C_bignum_negativep(y));
     /* Allow negative 1-bits to propagate */
     if (C_bignum_negativep(x) || C_bignum_negativep(y))
-      size = C_fix(nmax(C_bignum_size(x), C_bignum_size(y)) + 1);
+      size = nmax(C_bignum_size(x), C_bignum_size(y)) + 1;
     else
-      size = C_fix(nmin(C_bignum_size(x), C_bignum_size(y)));
+      size = nmin(C_bignum_size(x), C_bignum_size(y));
 
-    ka = C_alloc(C_SIZEOF_CLOSURE(4)); /* Why faster than static alloc? */
-    k2 = C_closure(&ka, 4, (C_word)bignum_bitwise_and_2, k, x, y);
-    C_allocate_bignum(5, (C_word)NULL, k2, C_fix(size), negp, C_SCHEME_FALSE);
+    res = C_allocate_scratch_bignum(ptr, C_fix(size), negp, C_SCHEME_FALSE);
+    scanr = C_bignum_digits(res);
+    endr = scanr + C_bignum_size(res);
+    
+    if (C_truep(nx = maybe_negate_bignum_for_bitwise_op(x, size))) x = nx;
+    if (C_truep(ny = maybe_negate_bignum_for_bitwise_op(y, size))) y = ny;
+
+    if (C_bignum_size(x) < C_bignum_size(y)) {
+      scans1 = C_bignum_digits(x); ends1 = scans1 + C_bignum_size(x);
+      scans2 = C_bignum_digits(y);
+    } else {
+      scans1 = C_bignum_digits(y); ends1 = scans1 + C_bignum_size(y);
+      scans2 = C_bignum_digits(x);
+    }
+
+    while (scans1 < ends1) *scanr++ = *scans1++ & *scans2++;
+    C_memset(scanr, 0, C_wordstobytes(endr - scanr));
+
+    if (C_truep(nx)) free_tmp_bignum(nx);
+    if (C_truep(ny)) free_tmp_bignum(ny);
+    if (C_bignum_negativep(res)) bignum_digits_destructive_negate(res);
+    
+    return C_bignum_simplify(res);
   }
 }
 
-static void bignum_bitwise_and_2(C_word c, C_word self, C_word result)
+void C_ccall C_bitwise_and(C_word c, C_word closure, C_word k, ...)
 {
-  C_word k = C_block_item(self, 1),
-	 x = C_block_item(self, 2),
-	 y = C_block_item(self, 3),
-         size = C_bignum_size(result), nx, ny;
-  C_uword *scanr = C_bignum_digits(result),
-          *endr = scanr + C_bignum_size(result),
-          *scans1, *ends1, *scans2;
+  C_word next_val, result, prev_result;
+  C_word ab[2][C_SIZEOF_BIGNUM_WRAPPER], *a;
+  va_list v;
 
-  if (C_truep(nx = maybe_negate_bignum_for_bitwise_op(x, size))) x = nx;
-  if (C_truep(ny = maybe_negate_bignum_for_bitwise_op(y, size))) y = ny;
+  c -= 2; 
+  va_start(v, k);
 
-  if (C_bignum_size(x) < C_bignum_size(y)) {
-    scans1 = C_bignum_digits(x); ends1 = scans1 + C_bignum_size(x);
-    scans2 = C_bignum_digits(y);
-  } else {
-    scans1 = C_bignum_digits(y); ends1 = scans1 + C_bignum_size(y);
-    scans2 = C_bignum_digits(x);
+  if (c == 0) C_kontinue(k, C_fix(-1));
+
+  prev_result = result = va_arg(v, C_word);
+
+  if (c-- == 1 && !C_truep(C_i_exact_integerp(result)))
+    barf(C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR, "bitwise-and", result);
+
+  while (c--) {
+    next_val = va_arg(v, C_word);
+    a = ab[c&1]; /* One may hold last iteration result, the other is unused */
+    result = C_s_a_i_bitwise_and(&a, 2, result, next_val);
+    result = move_buffer_object(&a, ab[(c+1)&1], result);
+    clear_buffer_object(ab[(c+1)&1], prev_result);
+    prev_result = result;
   }
 
-  while (scans1 < ends1) *scanr++ = *scans1++ & *scans2++;
-  C_memset(scanr, 0, C_wordstobytes(endr - scanr));
-
-  if (C_truep(nx)) free_tmp_bignum(nx);
-  if (C_truep(ny)) free_tmp_bignum(ny);
-  if (C_bignum_negativep(result)) bignum_digits_destructive_negate(result);
-
-  C_kontinue(k, C_bignum_simplify(result));
+  va_end(v);
+  C_kontinue(k, result);
 }
 
-void C_ccall
-C_u_2_integer_bitwise_ior(C_word c, C_word self, C_word k, C_word x, C_word y)
+C_regparm C_word C_fcall
+C_s_a_i_bitwise_ior(C_word **ptr, C_word n, C_word x, C_word y)
 {
   if ((x & y) & C_FIXNUM_BIT) {
-    C_kontinue(k, C_u_fixnum_or(x, y));
+    return C_u_fixnum_or(x, y);
+  } else if (!C_truep(C_i_exact_integerp(x))) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR, "bitwise-ior", x);
+  } else if (!C_truep(C_i_exact_integerp(y))) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR, "bitwise-ior", y);
   } else {
-    C_word kab[C_SIZEOF_FIX_BIGNUM*2], *ka = kab, negp, size, k2;
-    if (x & C_FIXNUM_BIT) x = C_a_u_i_fix_to_big(&ka, x);
-    if (y & C_FIXNUM_BIT) y = C_a_u_i_fix_to_big(&ka, y);
+    C_word ab[C_SIZEOF_FIX_BIGNUM*2], *a = ab, negp, size, res, nx, ny;
+    C_uword *scanr, *endr, *scans1, *ends1, *scans2, *ends2;
 
-    ka = C_alloc(C_SIZEOF_CLOSURE(4)); /* Why faster than static alloc? */
-    k2 = C_closure(&ka, 4, (C_word)bignum_bitwise_ior_2, k, x, y);
-    size = C_fix(nmax(C_bignum_size(x), C_bignum_size(y)) + 1);
+    if (x & C_FIXNUM_BIT) x = C_a_u_i_fix_to_big(&a, x);
+    if (y & C_FIXNUM_BIT) y = C_a_u_i_fix_to_big(&a, y);
+
     negp = C_mk_bool(C_bignum_negativep(x) || C_bignum_negativep(y));
-    C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_FALSE);
+    size = nmax(C_bignum_size(x), C_bignum_size(y)) + 1;
+    res = C_allocate_scratch_bignum(ptr, C_fix(size), negp, C_SCHEME_FALSE);
+    scanr = C_bignum_digits(res);
+    endr = scanr + C_bignum_size(res);
+    
+    if (C_truep(nx = maybe_negate_bignum_for_bitwise_op(x, size))) x = nx;
+    if (C_truep(ny = maybe_negate_bignum_for_bitwise_op(y, size))) y = ny;
+
+    if (C_bignum_size(x) < C_bignum_size(y)) {
+      scans1 = C_bignum_digits(x); ends1 = scans1 + C_bignum_size(x);
+      scans2 = C_bignum_digits(y); ends2 = scans2 + C_bignum_size(y);
+    } else {
+      scans1 = C_bignum_digits(y); ends1 = scans1 + C_bignum_size(y);
+      scans2 = C_bignum_digits(x); ends2 = scans2 + C_bignum_size(x);
+    }
+
+    while (scans1 < ends1) *scanr++ = *scans1++ | *scans2++;
+    while (scans2 < ends2) *scanr++ = *scans2++;
+    if (scanr < endr) *scanr++ = 0; /* Only done when result is positive */
+    assert(scanr == endr);
+
+    if (C_truep(nx)) free_tmp_bignum(nx);
+    if (C_truep(ny)) free_tmp_bignum(ny);
+    if (C_bignum_negativep(res)) bignum_digits_destructive_negate(res);
+
+    return C_bignum_simplify(res);
   }
 }
 
-static void bignum_bitwise_ior_2(C_word c, C_word self, C_word result)
+void C_ccall C_bitwise_ior(C_word c, C_word closure, C_word k, ...)
 {
-  C_word k = C_block_item(self, 1),
-	 x = C_block_item(self, 2),
-	 y = C_block_item(self, 3),
-         size = C_bignum_size(result), nx, ny;
-  C_uword *scanr = C_bignum_digits(result),
-          *endr = scanr + C_bignum_size(result),
-          *scans1, *ends1, *scans2, *ends2;
+  C_word next_val, result, prev_result;
+  C_word ab[2][C_SIZEOF_BIGNUM_WRAPPER], *a;
+  va_list v;
 
-  if (C_truep(nx = maybe_negate_bignum_for_bitwise_op(x, size))) x = nx;
-  if (C_truep(ny = maybe_negate_bignum_for_bitwise_op(y, size))) y = ny;
+  c -= 2; 
+  va_start(v, k);
 
-  if (C_bignum_size(x) < C_bignum_size(y)) {
-    scans1 = C_bignum_digits(x); ends1 = scans1 + C_bignum_size(x);
-    scans2 = C_bignum_digits(y); ends2 = scans2 + C_bignum_size(y);
-  } else {
-    scans1 = C_bignum_digits(y); ends1 = scans1 + C_bignum_size(y);
-    scans2 = C_bignum_digits(x); ends2 = scans2 + C_bignum_size(x);
+  if (c == 0) C_kontinue(k, C_fix(0));
+
+  prev_result = result = va_arg(v, C_word);
+
+  if (c-- == 1 && !C_truep(C_i_exact_integerp(result)))
+    barf(C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR, "bitwise-ior", result);
+
+  while (c--) {
+    next_val = va_arg(v, C_word);
+    a = ab[c&1]; /* One may hold prev iteration result, the other is unused */
+    result = C_s_a_i_bitwise_ior(&a, 2, result, next_val);
+    result = move_buffer_object(&a, ab[(c+1)&1], result);
+    clear_buffer_object(ab[(c+1)&1], prev_result);
+    prev_result = result;
   }
 
-  while (scans1 < ends1) *scanr++ = *scans1++ | *scans2++;
-  while (scans2 < ends2) *scanr++ = *scans2++;
-  if (scanr < endr) *scanr++ = 0; /* Only done when result is positive */
-  assert(scanr == endr);
-
-  if (C_truep(nx)) free_tmp_bignum(nx);
-  if (C_truep(ny)) free_tmp_bignum(ny);
-  if (C_bignum_negativep(result)) bignum_digits_destructive_negate(result);
-
-  C_kontinue(k, C_bignum_simplify(result));
+  va_end(v);
+  C_kontinue(k, result);
 }
 
-void C_ccall
-C_u_2_integer_bitwise_xor(C_word c, C_word self, C_word k, C_word x, C_word y)
+C_regparm C_word C_fcall
+C_s_a_i_bitwise_xor(C_word **ptr, C_word n, C_word x, C_word y)
 {
   if ((x & y) & C_FIXNUM_BIT) {
-    C_kontinue(k, C_fixnum_xor(x, y));
+    return C_fixnum_xor(x, y);
+  } else if (!C_truep(C_i_exact_integerp(x))) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR, "bitwise-xor", x);
+  } else if (!C_truep(C_i_exact_integerp(y))) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR, "bitwise-xor", y);
   } else {
-    C_word kab[C_SIZEOF_FIX_BIGNUM*2], *ka = kab, size, k2, negp;
-    if (x & C_FIXNUM_BIT) x = C_a_u_i_fix_to_big(&ka, x);
-    if (y & C_FIXNUM_BIT) y = C_a_u_i_fix_to_big(&ka, y);
+    C_word ab[C_SIZEOF_FIX_BIGNUM*2], *a = ab, negp, size, res, nx, ny;
+    C_uword *scanr, *endr, *scans1, *ends1, *scans2, *ends2;
 
-    ka = C_alloc(C_SIZEOF_CLOSURE(4)); /* Why faster than static alloc? */
-    k2 = C_closure(&ka, 4, (C_word)bignum_bitwise_xor_2, k, x, y);
-    size = C_fix(nmax(C_bignum_size(x), C_bignum_size(y)) + 1);
+    if (x & C_FIXNUM_BIT) x = C_a_u_i_fix_to_big(&a, x);
+    if (y & C_FIXNUM_BIT) y = C_a_u_i_fix_to_big(&a, y);
+
+    size = nmax(C_bignum_size(x), C_bignum_size(y)) + 1;
     negp = C_mk_bool(C_bignum_negativep(x) != C_bignum_negativep(y));
-    C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_FALSE);
+    res = C_allocate_scratch_bignum(ptr, C_fix(size), negp, C_SCHEME_FALSE);
+    scanr = C_bignum_digits(res);
+    endr = scanr + C_bignum_size(res);
+
+    if (C_truep(nx = maybe_negate_bignum_for_bitwise_op(x, size))) x = nx;
+    if (C_truep(ny = maybe_negate_bignum_for_bitwise_op(y, size))) y = ny;
+
+    if (C_bignum_size(x) < C_bignum_size(y)) {
+      scans1 = C_bignum_digits(x); ends1 = scans1 + C_bignum_size(x);
+      scans2 = C_bignum_digits(y); ends2 = scans2 + C_bignum_size(y);
+    } else {
+      scans1 = C_bignum_digits(y); ends1 = scans1 + C_bignum_size(y);
+      scans2 = C_bignum_digits(x); ends2 = scans2 + C_bignum_size(x);
+    }
+
+    while (scans1 < ends1) *scanr++ = *scans1++ ^ *scans2++;
+    while (scans2 < ends2) *scanr++ = *scans2++;
+    if (scanr < endr) *scanr++ = 0; /* Only done when result is positive */
+    assert(scanr == endr);
+
+    if (C_truep(nx)) free_tmp_bignum(nx);
+    if (C_truep(ny)) free_tmp_bignum(ny);
+    if (C_bignum_negativep(res)) bignum_digits_destructive_negate(res);
+
+    return C_bignum_simplify(res);
   }
 }
 
-static void bignum_bitwise_xor_2(C_word c, C_word self, C_word result)
+void C_ccall C_bitwise_xor(C_word c, C_word closure, C_word k, ...)
 {
-  C_word k = C_block_item(self, 1),
-	 x = C_block_item(self, 2),
-	 y = C_block_item(self, 3),
-         size = C_bignum_size(result), nx, ny;
-  C_uword *scanr = C_bignum_digits(result),
-          *endr = scanr + C_bignum_size(result),
-          *scans1, *ends1, *scans2, *ends2;
+  C_word next_val, result, prev_result;
+  C_word ab[2][C_SIZEOF_STRUCTURE(3) * 3 + C_SIZEOF_FIX_BIGNUM * 4], *a;
+  va_list v;
 
-  if (C_truep(nx = maybe_negate_bignum_for_bitwise_op(x, size))) x = nx;
-  if (C_truep(ny = maybe_negate_bignum_for_bitwise_op(y, size))) y = ny;
+  c -= 2; 
+  va_start(v, k);
 
-  if (C_bignum_size(x) < C_bignum_size(y)) {
-    scans1 = C_bignum_digits(x); ends1 = scans1 + C_bignum_size(x);
-    scans2 = C_bignum_digits(y); ends2 = scans2 + C_bignum_size(y);
-  } else {
-    scans1 = C_bignum_digits(y); ends1 = scans1 + C_bignum_size(y);
-    scans2 = C_bignum_digits(x); ends2 = scans2 + C_bignum_size(x);
+  if (c == 0) C_kontinue(k, C_fix(0));
+
+  prev_result = result = va_arg(v, C_word);
+
+  if (c-- == 1 && !C_truep(C_i_exact_integerp(result)))
+    barf(C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR, "bitwise-xor", result);
+
+  while (c--) {
+    next_val = va_arg(v, C_word);
+    a = ab[c&1]; /* One may hold prev iteration result, the other is unused */
+    result = C_s_a_i_bitwise_xor(&a, 2, result, next_val);
+    result = move_buffer_object(&a, ab[(c+1)&1], result);
+    clear_buffer_object(ab[(c+1)&1], prev_result);
+    prev_result = result;
   }
 
-  while (scans1 < ends1) *scanr++ = *scans1++ ^ *scans2++;
-  while (scans2 < ends2) *scanr++ = *scans2++;
-  if (scanr < endr) *scanr++ = 0; /* Only done when result is positive */
-  assert(scanr == endr);
+  va_end(v);
+  C_kontinue(k, result);
+}
 
-  if (C_truep(nx)) free_tmp_bignum(nx);
-  if (C_truep(ny)) free_tmp_bignum(ny);
-  if (C_bignum_negativep(result)) bignum_digits_destructive_negate(result);
-
-  C_kontinue(k, C_bignum_simplify(result));
+C_regparm C_word C_fcall
+C_s_a_i_bitwise_not(C_word **ptr, C_word n, C_word x)
+{
+  if (!C_truep(C_i_exact_integerp(x))) {
+    barf(C_BAD_ARGUMENT_TYPE_NO_EXACT_INTEGER_ERROR, "bitwise-not", x);
+  } else {
+    return C_s_a_u_i_integer_minus(ptr, 2, C_fix(-1), x);
+  }
 }
 
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
