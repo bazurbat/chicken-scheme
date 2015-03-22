@@ -512,7 +512,6 @@ static WEAK_TABLE_ENTRY *C_fcall lookup_weak_table_entry(C_word item, C_word con
 static C_ccall void values_continuation(C_word c, C_word closure, C_word dummy, ...) C_noret;
 static C_word add_symbol(C_word **ptr, C_word key, C_word string, C_SYMBOL_TABLE *stable);
 static C_regparm int C_fcall C_in_new_heapp(C_word x);
-static void bignum_actual_extraction(C_word c, C_word self, C_word result) C_noret;
 static void bignum_bitwise_and_2(C_word c, C_word self, C_word result) C_noret;
 static void bignum_bitwise_ior_2(C_word c, C_word self, C_word result) C_noret;
 static void bignum_bitwise_xor_2(C_word c, C_word self, C_word result) C_noret;
@@ -5916,14 +5915,14 @@ C_regparm C_word C_fcall C_i_integer_length(C_word x)
 /* This is currently only used by Karatsuba multiplication and
  * Burnikel-Ziegler division.  It is not intended as a public API!
  */
-void C_ccall
-C_u_bignum_extract_digits(C_word c, C_word self, C_word k, C_word x, C_word start, C_word end)
+C_regparm C_word C_fcall
+C_s_a_u_i_bignum_extract_digits(C_word **ptr, C_word n, C_word x, C_word start, C_word end)
 {
   if (x & C_FIXNUM_BIT) { /* Needed? */
     if (C_unfix(start) == 0 && (end == C_SCHEME_FALSE || C_unfix(end) > 0))
-      C_kontinue(k, x);
+      return x;
     else
-      C_kontinue(k, C_fix(0));
+      return C_fix(0);
   } else {
     C_word negp, size;
 
@@ -5938,30 +5937,19 @@ C_u_bignum_extract_digits(C_word c, C_word self, C_word k, C_word x, C_word star
     size = end - start;
 
     if (size == 0 || start >= C_bignum_size(x)) {
-      C_kontinue(k, C_fix(0));
+      return C_fix(0);
     } else {
-      C_word k2, kab[C_SIZEOF_CLOSURE(5)], *ka = kab;
-      k2 = C_closure(&ka, 5, (C_word)bignum_actual_extraction,
-                     k, x, C_fix(start), C_fix(end));
-      C_allocate_bignum(5, (C_word)NULL, k2, C_fix(size), negp, C_SCHEME_FALSE);
+      C_uword res, *res_digits, *x_digits;
+      res = C_allocate_scratch_bignum(ptr, C_fix(size), negp, C_SCHEME_FALSE);
+      res_digits = C_bignum_digits(res);
+      x_digits = C_bignum_digits(x);
+      /* Can't use bignum_digits_destructive_copy because that assumes
+       * target is at least as big as source.
+       */
+      C_memcpy(res_digits, x_digits + start, C_wordstobytes(end - start));
+      return C_bignum_simplify(res);
     }
   }
-}
-
-static void bignum_actual_extraction(C_word c, C_word self, C_word result)
-{
-  C_word k = C_block_item(self, 1),
-         x = C_block_item(self, 2),
-         start = C_unfix(C_block_item(self, 3)),
-         end = C_unfix(C_block_item(self, 4));
-  C_uword *result_digits = C_bignum_digits(result),
-          *x_digits = C_bignum_digits(x);
-
-  /* Can't use bignum_digits_destructive_copy because that assumes
-   * target is at least as big as source.
-   */
-  C_memcpy(result_digits, x_digits + start, C_wordstobytes(end-start));
-  C_kontinue(k, C_bignum_simplify(result));
 }
 
 /* This returns a tmp bignum negated copy of X (must be freed!) when

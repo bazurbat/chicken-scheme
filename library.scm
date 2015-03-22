@@ -38,7 +38,7 @@
         maximal-string-length find-ratio-between find-ratio
 	make-complex flonum->ratnum ratnum rat+/-
 	+maximum-allowed-exponent+ mantexp->dbl ldexp round-quotient
-	##sys#string->compnum ##sys#bignum-extract-digits ##sys#internal-gcd)
+	##sys#string->compnum ##sys#internal-gcd)
   (not inline ##sys#user-read-hook ##sys#error-hook ##sys#signal-hook ##sys#schedule
        ##sys#default-read-info-hook ##sys#infix-list-hook ##sys#sharp-number-hook
        ##sys#user-print-hook ##sys#user-interrupt-hook ##sys#step-hook)
@@ -1129,8 +1129,8 @@ EOF
 			(##sys#*-2 x (##sys#slot args 0))) ) )  ) ) ) )
 
 (define-inline (%bignum-digit-count b) (##core#inline "C_u_i_bignum_size" b))
-(define ##sys#bignum-extract-digits
-  (##core#primitive "C_u_bignum_extract_digits"))
+(define-inline (##sys#bignum-extract-digits big start end)
+  (##core#inline_allocate ("C_s_a_u_i_bignum_extract_digits" 6) big start end))
 
 ;; Karatsuba multiplication: invoked from C when the two numbers are
 ;; large enough to make it worthwhile.  Complexity is O(n^log2(3)),
