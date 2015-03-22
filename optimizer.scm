@@ -936,7 +936,14 @@
 
 (define (simplify-named-call db may-rewrite params name cont
 			     class classargs callargs)
-  (define (test sym prop) (db-get db sym prop))
+  (define (argc-ok? argc)
+    (or (not argc)
+	(and (fixnum? argc)
+	     (fx= argc (length callargs)))
+	(and (pair? argc)
+	     (argc-ok? (car argc))
+	     (argc-ok? (cdr argc)))))
+
   (define (defarg x)
     (cond ((symbol? x) (varnode x))
 	  ((and (pair? x) (eq? 'quote (car x))) (qnode (cadr x)))
@@ -1115,11 +1122,13 @@
 					   cont callargs) ) ) ) ) ) ) )
 
     ;; (<op> ...) -> ((##core#proc <primitiveop>) ...)
-    ((13) ; classargs = (<primitiveop> <safe>)
+    ((13) ; classargs = (<argc> <primitiveop> <safe>)
+     ;; - <argc> may be #f for any number of args, or a pair specifying a range
      (and may-rewrite
 	  (intrinsic? name)
-	  (or (second classargs) unsafe)
-	  (let ((pname (first classargs)))
+	  (or (third classargs) unsafe)
+	  (argc-ok? (first classargs))
+	  (let ((pname (second classargs)))
 	    (make-node '##core#call (if (pair? params) (cons #t (cdr params)) params)
 		       (cons* (make-node '##core#proc (list pname #t) '())
 			      cont callargs) ) ) ) )
