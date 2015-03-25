@@ -1128,41 +1128,6 @@ EOF
                   (loop (##sys#slot args 1)
 			(##sys#*-2 x (##sys#slot args 0))) ) )  ) ) ) )
 
-(define-inline (%bignum-digit-count b) (##core#inline "C_u_i_bignum_size" b))
-(define-inline (##sys#bignum-extract-digits big start end)
-  (##core#inline_allocate ("C_s_a_u_i_bignum_extract_digits" 6) big start end))
-
-;; Karatsuba multiplication: invoked from C when the two numbers are
-;; large enough to make it worthwhile.  Complexity is O(n^log2(3)),
-;; where n is max(len(x), len(y)).  The description in [Knuth, 4.3.3]
-;; leaves a lot to be desired.  [MCA, 1.3.2] and [MpNT, 3.2] are a bit
-;; easier to understand.  We assume that length(x) <= length(y).
-(define (##sys#bignum-times-karatsuba x y)
-  (let* ((same? (eqv? x y))             ; Check before calling (abs)
-         (rs (fx* (##core#inline "C_u_i_integer_signum" x)
-                  (##core#inline "C_u_i_integer_signum" y)))
-         (x (##core#inline_allocate ("C_s_a_u_i_integer_abs" 6) x))
-         (n (%bignum-digit-count y))
-         (n/2 (fxshr n 1))
-         (bits (fx* n/2 (foreign-value "C_BIGNUM_DIGIT_LENGTH" int)))
-         (x-hi (##sys#bignum-extract-digits x n/2 #f))
-         (x-lo (##sys#bignum-extract-digits x 0 n/2)))
-    (if same?              ; This looks pointless, but reduces garbage
-        (let* ((a  (##sys#*-2 x-hi x-hi))
-               (b  (##sys#*-2 x-lo x-lo))
-               (ab (- x-hi x-lo))
-               (c  (##sys#*-2 ab ab)))
-          (+ (arithmetic-shift a (fxshl bits 1))
-	     (+ (arithmetic-shift (+ b (- a c)) bits) b)))
-        (let* ((y (##core#inline_allocate ("C_s_a_u_i_integer_abs" 6) y))
-               (y-hi (##sys#bignum-extract-digits y n/2 #f))
-               (y-lo (##sys#bignum-extract-digits y 0 n/2))
-               (a  (##sys#*-2 x-hi y-hi))
-               (b  (##sys#*-2 x-lo y-lo))
-               (c  (##sys#*-2 (- x-hi x-lo) (- y-hi y-lo))))
-          (##sys#*-2 rs (+ (arithmetic-shift a (fxshl bits 1))
-			   (+ (arithmetic-shift (+ b (- a c)) bits) b)))))))
-
 (define (##sys#extended-times x y)
   (define (nonrat*rat x y)
     ;; a/b * c/d = a*c / b*d  [with b = 1]
@@ -1258,6 +1223,10 @@ EOF
                (ratnum num denom))))
         ((not (number? x)) (##sys#error-bad-number x '/))
         (else (##sys#error-bad-number y '/))) )
+
+(define-inline (%bignum-digit-count b) (##core#inline "C_u_i_bignum_size" b))
+(define-inline (##sys#bignum-extract-digits big start end)
+  (##core#inline_allocate ("C_s_a_u_i_bignum_extract_digits" 6) big start end))
 
 ;; Burnikel-Ziegler recursive division: Split high number (x) in three
 ;; or four parts and divide by the lowest number (y), split in two
