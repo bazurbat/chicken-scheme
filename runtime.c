@@ -7848,53 +7848,26 @@ bignum_times_bignum_karatsuba(C_word **ptr, C_word x, C_word y, C_word negp)
    return n;
 }
 
-
 void C_ccall C_times(C_word c, C_word closure, C_word k, ...)
 {
+  C_word next_val, result = C_fix(1), prev_result = result;
+  C_word ab[2][C_SIZEOF_STRUCTURE(3) * 3 + C_SIZEOF_BIGNUM(2) * 4], *a;
   va_list v;
-  C_word x, y;
-  C_word iresult = C_fix(1);
-  double fresult;
-  C_alloc_flonum;
 
+  c -= 2; 
   va_start(v, k);
-  c -= 2;
 
-  while(c--) {
-    x = va_arg(v, C_word);
-    
-    if(x & C_FIXNUM_BIT) {
-      y = C_i_o_fixnum_times(iresult, x);
-
-      if(y == C_SCHEME_FALSE) {
-	fresult = (double)C_unfix(iresult) * (double)C_unfix(x);
-	goto flonum_result;
-      }
-      else iresult = y;
-    }
-    else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG) {
-      fresult = (double)C_unfix(iresult) * C_flonum_magnitude(x);
-      goto flonum_result;
-    }
-    else barf(C_BAD_ARGUMENT_TYPE_ERROR, "*", x);
+  while (c--) {
+    next_val = va_arg(v, C_word);
+    a = ab[c&1]; /* One may hold prev iteration result, the other is unused */
+    result = C_s_a_i_times(&a, 2, result, next_val);
+    result = move_buffer_object(&a, ab[(c+1)&1], result);
+    clear_buffer_object(ab[(c+1)&1], prev_result);
+    prev_result = result;
   }
 
   va_end(v);
-  C_kontinue(k, iresult);
-
- flonum_result:
-  while(c--) {
-    x = va_arg(v, C_word);
-
-    if(x & C_FIXNUM_BIT)
-      fresult *= (double)C_unfix(x);
-    else if(!C_immediatep(x) && C_block_header(x) == C_FLONUM_TAG)
-      fresult *= C_flonum_magnitude(x);
-    else barf(C_BAD_ARGUMENT_TYPE_ERROR, "*", x);
-  }
-
-  va_end(v);
-  C_kontinue_flonum(k, fresult);
+  C_kontinue(k, result);
 }
 
 

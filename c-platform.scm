@@ -654,6 +654,7 @@
 (rewrite '>= 13 #f "C_greater_or_equal_p" #t)
 (rewrite '<= 13 #f "C_less_or_equal_p" #t)
 
+(rewrite '* 13 #f "C_times" #t)
 (rewrite '+ 13 #f "C_plus" #t)
 (rewrite '- 13 '(1 . #f) "C_minus" #t)
 

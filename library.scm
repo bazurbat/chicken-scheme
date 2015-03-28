@@ -954,6 +954,7 @@ EOF
 
 (define + (##core#primitive "C_plus"))
 (define - (##core#primitive "C_minus"))
+(define * (##core#primitive "C_times"))
 (define (add1 n) (+ n 1))
 (define (sub1 n) (- n 1))
 
@@ -1111,23 +1112,6 @@ EOF
 ;;; Basic arithmetic:
 
 (define (abs x) (##core#inline_allocate ("C_s_a_i_abs" 10) x))
-
-(define (* . args)
-  (if (null? args) 
-      1
-      (let ((x (##sys#slot args 0))
-	    (args (##sys#slot args 1)))
-	(if (null? args)
-            (if (number? x) x (##sys#error-bad-number x '*))
-            (let loop ((args (##sys#slot args 1))
-                       (x (##core#inline_allocate
-			   ("C_s_a_i_times" 40) x (##sys#slot args 0))))
-              (if (null? args)
-                  x
-                  (loop (##sys#slot args 1)
-			(##core#inline_allocate
-			 ("C_s_a_i_times" 40)
-			 x (##sys#slot args 0))) ) )  ) ) ) )
 
 (define (/ arg1 . args)
   (if (null? args) 
