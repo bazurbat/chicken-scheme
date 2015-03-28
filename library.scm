@@ -995,8 +995,8 @@ EOF
   (##sys#check-real phi 'make-polar)
   (let ((fphi (exact->inexact phi)))
     (make-complex
-     (##sys#*-2 r (##core#inline_allocate ("C_a_i_cos" 4) fphi))
-     (##sys#*-2 r (##core#inline_allocate ("C_a_i_sin" 4) fphi)))))
+     (* r (##core#inline_allocate ("C_a_i_cos" 4) fphi))
+     (* r (##core#inline_allocate ("C_a_i_sin" 4) fphi)))))
 
 (define (real-part x)
   (cond ((cplxnum? x) (%cplxnum-real x))
@@ -1019,7 +1019,7 @@ EOF
   (cond ((cplxnum? x)
          (let ((r (%cplxnum-real x))
                (i (%cplxnum-imag x)) )
-           (sqrt (+ (##sys#*-2 r r) (##sys#*-2 i i))) ))
+           (sqrt (+ (* r r) (* i i))) ))
         ((number? x) (abs x))
         (else (##sys#error-bad-number x 'magnitude))))
 
@@ -1076,14 +1076,14 @@ EOF
 
   (define (deliver y d)
     (let* ((q (##sys#integer-power 2 (float-fraction-length y)))
-           (scaled-y (##sys#*-2 y (exact->inexact q))))
+           (scaled-y (* y (exact->inexact q))))
       (if (finite? scaled-y)          ; Shouldn't this always be true?
           (##sys#/-2 (##sys#/-2 ((##core#primitive "C_u_flo_to_int") scaled-y) q) d)
           (##sys#error-bad-inexact x 'inexact->exact))))
 
   (if (and (fp< x 1.0)         ; Watch out for denormalized numbers
            (fp> x -1.0))       ; XXX: Needs a test, it seems pointless
-      (deliver (##sys#*-2 x (expt 2.0 flonum-precision))
+      (deliver (* x (expt 2.0 flonum-precision))
                ;; Can be bignum (is on 32-bit), so must wait until after init.
                ;; We shouldn't need to calculate this every single time, tho..
                (##sys#integer-power 2 flonum-precision))
@@ -1112,8 +1112,6 @@ EOF
 
 (define (abs x) (##core#inline_allocate ("C_s_a_i_abs" 10) x))
 
-(define ##sys#*-2 (##core#primitive "C_2_basic_times"))
-
 (define (* . args)
   (if (null? args) 
       1
@@ -1122,45 +1120,14 @@ EOF
 	(if (null? args)
             (if (number? x) x (##sys#error-bad-number x '*))
             (let loop ((args (##sys#slot args 1))
-                       (x (##sys#*-2 x (##sys#slot args 0))))
+                       (x (##core#inline_allocate
+			   ("C_s_a_i_times" 40) x (##sys#slot args 0))))
               (if (null? args)
                   x
                   (loop (##sys#slot args 1)
-			(##sys#*-2 x (##sys#slot args 0))) ) )  ) ) ) )
-
-(define (##sys#extended-times x y)
-  (define (nonrat*rat x y)
-    ;; a/b * c/d = a*c / b*d  [with b = 1]
-    ;;  =  ((a / g) * c) / (d / g)
-    ;; With   g = gcd(a, d)   and  a = x   [Knuth, 4.5.1]
-    (let* ((d (%ratnum-denominator y))
-           (g (##sys#internal-gcd '* x d)))
-      (ratnum (##sys#*-2 (quotient x g) (%ratnum-numerator y))
-              (quotient d g))))
-
-  (cond ((or (cplxnum? x) (cplxnum? y))
-         (let* ((a (real-part x)) (b (imag-part x))
-                (c (real-part y)) (d (imag-part y))
-                (r (- (##sys#*-2 a c) (##sys#*-2 b d)))
-                (i (+ (##sys#*-2 a d) (##sys#*-2 b c))) )
-           (make-complex r i) ) )
-        ((or (##core#inline "C_i_flonump" x) (##core#inline "C_i_flonump" y))
-         ;; This may be incorrect when one is a ratnum consisting of bignums
-         (fp* (exact->inexact y) (exact->inexact x))) ; loc?
-        ((ratnum? x)
-         (if (ratnum? y)
-             ;; a/b * c/d = a*c / b*d  [generic]
-             ;;   = ((a / g1) * (c / g2)) / ((b / g2) * (d / g1))
-             ;; With  g1 = gcd(a, d)  and   g2 = gcd(b, c) [Knuth, 4.5.1]
-             (let* ((a (%ratnum-numerator x)) (b (%ratnum-denominator x))
-                    (c (%ratnum-numerator y)) (d (%ratnum-denominator y))
-                    (g1 (##sys#integer-gcd a d))
-                    (g2 (##sys#integer-gcd b c)))
-               (ratnum (##sys#*-2 (quotient a g1) (quotient c g2))
-                       (##sys#*-2 (quotient b g2) (quotient d g1))))
-             (nonrat*rat y x)))
-        ((ratnum? y) (nonrat*rat x y))
-        (else (##sys#error-bad-number x '*))))
+			(##core#inline_allocate
+			 ("C_s_a_i_times" 40)
+			 x (##sys#slot args 0))) ) )  ) ) ) )
 
 (define (/ arg1 . args)
   (if (null? args) 
@@ -1182,9 +1149,9 @@ EOF
         ((or (cplxnum? x) (cplxnum? y))
          (let* ((a (real-part x)) (b (imag-part x))
                 (c (real-part y)) (d (imag-part y))
-                (r (+ (##sys#*-2 c c) (##sys#*-2 d d)))
-                (x (##sys#/-2 (+ (##sys#*-2 a c) (##sys#*-2 b d)) r))
-                (y (##sys#/-2 (- (##sys#*-2 b c) (##sys#*-2 a d)) r)) )
+                (r (+ (* c c) (* d d)))
+                (x (##sys#/-2 (+ (* a c) (* b d)) r))
+                (y (##sys#/-2 (- (* b c) (* a d)) r)) )
            (make-complex x y) ))
         ((or (##core#inline "C_i_flonump" x) (##core#inline "C_i_flonump" y))
          ;; This may be incorrect when one is a ratnum consisting of bignums
@@ -1198,15 +1165,15 @@ EOF
                     (c (%ratnum-numerator y)) (d (%ratnum-denominator y))
                     (g1 (##sys#integer-gcd a c))
                     (g2 (##sys#integer-gcd b d)))
-               (ratnum (##sys#*-2 (quotient a g1) (quotient d g2))
-                       (##sys#*-2 (quotient b g2) (quotient c g1))))
+               (ratnum (* (quotient a g1) (quotient d g2))
+                       (* (quotient b g2) (quotient c g1))))
              ;; a/b / c/d = a*d / b*c  [with d = 1]
              ;;   = ((a / g) * sign(a)) / abs(b * (c / g))
              ;; With   g = gcd(a, c)   and  c = y  [Knuth, 4.5.1 ex. 4]
              (let* ((a (%ratnum-numerator x))
                     (g (##sys#internal-gcd '/ a y))
                     (num (quotient a g))
-                    (denom (##sys#*-2 (%ratnum-denominator x) (quotient y g))))
+                    (denom (* (%ratnum-denominator x) (quotient y g))))
                (if (##core#inline "C_i_flonump" denom)
                    (##sys#/-2 num denom)
                    (ratnum num denom)))))
@@ -1216,7 +1183,7 @@ EOF
          ;; With   g1 = gcd(a, c)   and   a = x  [Knuth, 4.5.1 ex. 4]
          (let* ((c (%ratnum-numerator y))
                 (g (##sys#internal-gcd '/ x c))
-                (num (##sys#*-2 (quotient x g) (%ratnum-denominator y)))
+                (num (* (quotient x g) (%ratnum-denominator y)))
                 (denom (quotient c g)))
            (if (##core#inline "C_i_flonump" denom)
                (##sys#/-2 num denom)
@@ -1258,7 +1225,7 @@ EOF
               (values (- (arithmetic-shift 1 base*n) 1) ; B^n-1
                       (+ (- a12 (arithmetic-shift b1 base*n)) b1))))
       (let ((r1a3 (+ (arithmetic-shift r1 (digit-bits n)) a3)))
-        (let lp ((r^ (- r1a3 (##sys#*-2 q^ b2)))
+        (let lp ((r^ (- r1a3 (* q^ b2)))
                  (q^ q^))
           (if (negative? r^)
               (lp (+ r^ b) (- q^ 1))
@@ -1365,7 +1332,7 @@ EOF
 	    ((= fx fy) 
 	     (let ((rat (sr (##sys#/-2 1 (- y fy))
 			    (##sys#/-2 1 (- x fx)))))
-	       (list (+ (cadr rat) (##sys#*-2 fx (car rat)))
+	       (list (+ (cadr rat) (* fx (car rat)))
 		     (car rat))))
 	    (else (list (+ 1 fx) 1)))))
   (cond ((< y x) (find-ratio-between y x))
@@ -1434,14 +1401,12 @@ EOF
 (define (exp n)
   (##sys#check-number n 'exp)
   (if (cplxnum? n)
-      (##sys#*-2 (##core#inline_allocate ("C_a_i_exp" 4)
-					 (exact->inexact (%cplxnum-real n)))
-		 (let ((p (%cplxnum-imag n)))
-		   (make-complex
-		    (##core#inline_allocate
-		     ("C_a_i_cos" 4) (exact->inexact p))
-		    (##core#inline_allocate
-		     ("C_a_i_sin" 4) (exact->inexact p)) ) ) )
+      (* (##core#inline_allocate ("C_a_i_exp" 4)
+				 (exact->inexact (%cplxnum-real n)))
+	 (let ((p (%cplxnum-imag n)))
+	   (make-complex
+	    (##core#inline_allocate ("C_a_i_cos" 4) (exact->inexact p))
+	    (##core#inline_allocate ("C_a_i_sin" 4) (exact->inexact p)) ) ) )
       (##core#inline_allocate ("C_a_i_flonum_exp" 4) (exact->inexact n))))
 
 (define (##sys#log-1 x)		       ; log_e(x)
@@ -1451,7 +1416,7 @@ EOF
    ;; avoid calling inexact->exact on X here (to avoid overflow?)
    ((or (cplxnum? x) (negative? x)) ; General case
     (+ (##sys#log-1 (magnitude x))
-       (##sys#*-2 (make-complex 0 1) (angle x))))
+       (* (make-complex 0 1) (angle x))))
    (else ; Real number case (< already ensured the argument type is a number)
     (##core#inline_allocate ("C_a_i_log" 4) (exact->inexact x)))))
 
@@ -1467,14 +1432,14 @@ EOF
 (define (sin n)
   (##sys#check-number n 'sin)
   (if (cplxnum? n)
-      (let ((in (##sys#*-2 %i n)))
+      (let ((in (* %i n)))
 	(##sys#/-2 (- (exp in) (exp (- in))) %i2))
       (##core#inline_allocate ("C_a_i_sin" 4) (exact->inexact n))))
 
 (define (cos n)
   (##sys#check-number n 'cos)
   (if (cplxnum? n)
-      (let ((in (##sys#*-2 %i n)))
+      (let ((in (* %i n)))
 	(##sys#/-2 (+ (exp in) (exp (- in))) 2) )
       (##core#inline_allocate ("C_a_i_cos" 4) (exact->inexact n))))
 
@@ -1494,10 +1459,9 @@ EOF
                                  (##core#inline_allocate
                                   ("C_a_i_fix_to_flo" 4) n)))
         ;; General definition can return compnums
-        (else (##sys#*-2 %-i
-			 (##sys#log-1
-			  (+ (##sys#*-2 %i n)
-			     (##sys#sqrt/loc 'asin (- 1 (##sys#*-2 n n)))))))))
+        (else (* %-i (##sys#log-1
+		      (+ (* %i n)
+			 (##sys#sqrt/loc 'asin (- 1 (* n n)))))))))
 
 ;; General case:
 ;; cos^{-1}(z) = 1/2\pi + i\ln(iz + \sqrt{1-z^2}) = 1/2\pi - sin^{-1}(z) = sin(1) - sin(z)
@@ -1519,7 +1483,7 @@ EOF
   (cond ((cplxnum? n)
 	 (if b
 	     (##sys#error-bad-real n 'atan)
-	     (let ((in (##sys#*-2 %i n)))
+	     (let ((in (* %i n)))
 	       (##sys#/-2 (- (##sys#log-1 (+ 1 in))
 			     (##sys#log-1 (- 1 in))) %i2))))
         (b
@@ -1553,7 +1517,7 @@ EOF
 		     (+ (arithmetic-shift r^ len/4) a1)
 		     (arithmetic-shift s^ 1)))
            ((s)     (+ (arithmetic-shift s^ len/4) q))
-           ((r)     (+ (arithmetic-shift u len/4) (- a0 (##sys#*-2 q q)))))
+           ((r)     (+ (arithmetic-shift u len/4) (- a0 (* q q)))))
         (if (negative? r)
             (values (- s 1)
 		    (- (+ r (arithmetic-shift s 1)) 1))
@@ -1569,7 +1533,7 @@ EOF
   (cond ((cplxnum? n)     ; Must be checked before we call "negative?"
          (let ((p (##sys#/-2 (angle n) 2))
                (m (##core#inline_allocate ("C_a_i_sqrt" 4) (magnitude n))) )
-           (make-complex (##sys#*-2 m (cos p)) (##sys#*-2 m (sin p)) ) ))
+           (make-complex (* m (cos p)) (* m (sin p)) ) ))
         ((negative? n)
          (make-complex .0 (##core#inline_allocate
 			   ("C_a_i_sqrt" 4) (exact->inexact (- n)))))
@@ -1610,44 +1574,44 @@ EOF
 		   (n-1 (- n 1)))
 	      (let lp ((g0 g0)
 		       (g1 (quotient
-			    (+ (##sys#*-2 n-1 g0)
+			    (+ (* n-1 g0)
 			       (quotient k (##sys#integer-power g0 n-1)))
 			    n)))
 		(if (< g1 g0)
 		    (lp g1 (quotient
-			    (+ (##sys#*-2 n-1 g1)
+			    (+ (* n-1 g1)
 			       (quotient k (##sys#integer-power g1 n-1)))
 			    n))
 		    (values g0 (- k (##sys#integer-power g0 n))))))))))
 
 (define (##sys#integer-power base e)
-  (define (square x) (##sys#*-2 x x))
+  (define (square x) (* x x))
   (if (negative? e)
       (##sys#/-2 1 (##sys#integer-power base (integer-negate e)))
       (let lp ((res 1) (e2 e))
         (cond
          ((eq? e2 0) res)
          ((even? e2)	     ; recursion is faster than iteration here
-          (##sys#*-2 res (square (lp 1 (arithmetic-shift e2 -1)))))
+          (* res (square (lp 1 (arithmetic-shift e2 -1)))))
          (else
-          (lp (##sys#*-2 res base) (- e2 1)))))))
+          (lp (* res base) (- e2 1)))))))
 
 (define (expt a b)
   (define (log-expt a b)
-    (exp (##sys#*-2 b (##sys#log-1 a))))
+    (exp (* b (##sys#log-1 a))))
   (define (slow-expt a b)
     (if (eq? 0 a)
         (##sys#signal-hook
 	 #:arithmetic-error 'expt
 	 "exponent of exact 0 with complex argument is undefined" a b)
-        (exp (##sys#*-2 b (##sys#log-1 a)))))
+        (exp (* b (##sys#log-1 a)))))
   (cond ((not (number? a)) (##sys#error-bad-number a 'expt))
         ((not (number? b)) (##sys#error-bad-number b 'expt))
         ((and (ratnum? a) (not (inexact? b)))
          ;; (n*d)^b = n^b * d^b = n^b * x^{-b}  | x = 1/b
          ;; Hopefully faster than integer-power
-         (##sys#*-2 (expt (%ratnum-numerator a) b)
-		    (expt (%ratnum-denominator a) (- b))))
+         (* (expt (%ratnum-numerator a) b)
+	    (expt (%ratnum-denominator a) (- b))))
         ((ratnum? b)
          ;; x^{a/b} = (x^{1/b})^a
          (cond
@@ -1728,7 +1692,7 @@ EOF
             (if (integer? head) (abs head) (##sys#error-bad-integer head 'lcm))
             (let* ((n2 (##sys#slot next 0))
 		   (gcd (##sys#internal-gcd 'lcm head n2)))
-              (loop (quotient (##sys#*-2 head n2) gcd)
+              (loop (quotient (* head n2) gcd)
                     (##sys#slot next 1)) ) )  ) ) )
 
 ;; This simple enough idea is from
@@ -1774,7 +1738,7 @@ EOF
 ;; by Aubrey Jaffer.
 (define (mantexp->dbl mant point)
   (if (not (negative? point))
-      (exact->inexact (##sys#*-2 mant (##sys#integer-power 10 point)))
+      (exact->inexact (* mant (##sys#integer-power 10 point)))
       (let* ((scl (##sys#integer-power 10 (abs point)))
 	     (bex (fx- (fx- (integer-length mant) (integer-length scl))
                        flonum-precision)))
@@ -1784,17 +1748,17 @@ EOF
               (cond ((> (integer-length quo) flonum-precision)
                      ;; Too many bits of quotient; readjust
                      (set! bex (fx+ 1 bex))
-                     (set! quo (round-quotient num (##sys#*-2 scl 2)))))
+                     (set! quo (round-quotient num (* scl 2)))))
               (ldexp (exact->inexact quo) bex))
             ;; Fall back to exact calculation in extreme cases
-            (##sys#*-2 mant (##sys#integer-power 10 point))))))
+            (* mant (##sys#integer-power 10 point))))))
 
 (define ldexp (foreign-lambda double "ldexp" double int))
 
 ;; Should we export this?
 (define (round-quotient n d)
   (let ((q (##sys#integer-quotient n d)))
-    (if ((if (even? q) > >=) (##sys#*-2 (abs (remainder n d)) 2) (abs d))
+    (if ((if (even? q) > >=) (* (abs (remainder n d)) 2) (abs d))
         (+ q (if (eqv? (negative? n) (negative? d)) 1 -1))
         q)))
 
@@ -1815,7 +1779,7 @@ EOF
             ((< e (fxneg +maximum-allowed-exponent+))
              (and (eq? exactness 'i) +0.0))
             ((eq? exactness 'i) (mantexp->dbl value e))
-            (else (##sys#*-2 value (##sys#integer-power 10 e))))))
+            (else (* value (##sys#integer-power 10 e))))))
   (define (make-nan)
     ;; Return fresh NaNs, so eqv? returns #f on two read NaNs.  This
     ;; is not mandated by the standard, but compatible with earlier

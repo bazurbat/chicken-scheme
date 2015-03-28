@@ -374,7 +374,7 @@
    ((integer integer) (integer)
     (##core#inline_allocate ("C_s_a_u_i_integer_times" 7) #(1) #(2)))
    ((* *) (number)
-    (##sys#*-2 #(1) #(2))))
+    (##core#inline_allocate ("C_s_a_i_times" 40) #(1) #(2))))
 
 (/ (#(procedure #:clean #:enforce #:foldable) / (number #!rest number) number)
    ((float fixnum) (float)

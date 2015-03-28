@@ -518,6 +518,9 @@ static C_word bignum_plus_unsigned(C_word **ptr, C_word x, C_word y, C_word negp
 static C_word rat_plusmin_integer(C_word **ptr, C_word rat, C_word i, integer_plusmin_op plusmin_op);
 static C_word integer_minus_rat(C_word **ptr, C_word i, C_word rat);
 static C_word rat_plusmin_rat(C_word **ptr, C_word x, C_word y, integer_plusmin_op plusmin_op);
+static C_word rat_times_integer(C_word **ptr, C_word x, C_word y);
+static C_word rat_times_rat(C_word **ptr, C_word x, C_word y);
+static C_word cplx_times(C_word **ptr, C_word rx, C_word ix, C_word ry, C_word iy);
 static C_word bignum_minus_unsigned(C_word **ptr, C_word x, C_word y);
 static C_regparm void basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_r, C_word return_q) C_noret;
 static C_regparm void integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_q, C_word return_r) C_noret;
@@ -585,7 +588,6 @@ static C_PTABLE_ENTRY *create_initial_ptable();
 #if !defined(NO_DLOAD2) && (defined(HAVE_DLFCN_H) || defined(HAVE_DL_H) || (defined(HAVE_LOADLIBRARY) && defined(HAVE_GETPROCADDRESS)))
 static void dload_2(void *dummy) C_noret;
 #endif
-
 
 static void
 C_dbg(C_char *prefix, C_char *fstr, ...)
@@ -843,7 +845,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size -
      this must match the number of C_pte calls + 1 (NULL terminator)! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 72);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 71);
   int i = 0;
 
   if(pt == NULL)
@@ -867,7 +869,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_set_dlopen_flags);
   C_pte(C_become);
   C_pte(C_apply_values);
-  /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
   C_pte(C_times);
   C_pte(C_minus);
   C_pte(C_plus);
@@ -912,7 +913,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_flonum_to_string);
   /* IMPORTANT: have you read the comments at the start and the end of this function? */
   C_pte(C_signum);
-  C_pte(C_2_basic_times);
   C_pte(C_basic_quotient);
   C_pte(C_basic_remainder);
   C_pte(C_basic_divrem);
@@ -7382,59 +7382,341 @@ void C_ccall values_continuation(C_word c, C_word closure, C_word arg0, ...)
   C_do_apply(n - 2, kont, k);
 }
 
+static C_word rat_times_integer(C_word **ptr, C_word rat, C_word i)
+{
+  C_word ab[C_SIZEOF_FIX_BIGNUM*7], *a = ab,
+         num, denom, d_big, gcd, gcd_big, i_big, tmp_r, a_div_g, size;
 
-void C_ccall
-C_2_basic_times(C_word c, C_word self, C_word k, C_word x, C_word y)
+  switch (i) {
+  case C_fix(0): return C_fix(0);
+  case C_fix(1): return rat;
+  case C_fix(-1):
+    num = C_s_a_u_i_integer_negate(ptr, 1, C_block_item(rat, 1));
+    return C_ratnum(ptr, num , C_block_item(rat, 2));
+  /* default: CONTINUE BELOW */
+  }
+
+  num = C_block_item(rat, 1);
+  denom = C_block_item(rat, 2);
+
+  /* a/b * c/d = a*c / b*d  [with b = 1] */
+  /*  =  ((a / g) * c) / (d / g) */
+  /* With   g = gcd(a, d)   and  a = x   [Knuth, 4.5.1] */
+  gcd = C_s_a_u_i_integer_gcd(&a, 2, i, denom);
+
+  /* Ensure bignums to simplify logic */
+  gcd_big = (gcd & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, gcd) : gcd;
+  i_big = (i & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, i) : i;
+  d_big = (denom & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, denom) : denom;
+
+  /* Calculate a/g  (= i/gcd), which will later be multiplied by y */
+  switch(bignum_cmp_unsigned(i_big, gcd_big)) {
+  case 0:
+    a_div_g = C_bignum_negativep(i_big) ? C_fix(-1) : C_fix(1);
+    break;
+  case -1:
+    clear_buffer_object(ab, gcd);
+    return C_fix(0); /* Save some work */
+    break;
+  case 1:
+  default:
+    size = C_bignum_size(i_big) + 1 - C_bignum_size(gcd_big);
+    a_div_g = C_allocate_scratch_bignum(
+            &a, C_fix(size), C_mk_bool(C_bignum_negativep(i_big)),
+            C_SCHEME_FALSE);
+    size = C_bignum_size(i_big) + 1;
+    tmp_r = allocate_tmp_bignum(C_fix(size), C_SCHEME_FALSE, C_SCHEME_FALSE);
+    bignum_destructive_divide_full(i_big, gcd_big, a_div_g,
+                                   tmp_r, C_SCHEME_FALSE);
+    free_tmp_bignum(tmp_r);
+    a_div_g = C_bignum_simplify(a_div_g);
+  }
+
+  /* Final numerator = a/g * c  (= a_div_g * num) */
+  num = C_s_a_u_i_integer_times(&a, 2, a_div_g, num);
+  num = move_buffer_object(ptr, ab, num);
+
+  /* Calculate d/g  (= denom/gcd).  We already know |d| >= |g| */
+  if(bignum_cmp_unsigned(d_big, gcd_big) == 0) {
+    denom = C_bignum_negativep(d_big) ? C_fix(-1) : C_fix(1);
+  } else {
+    size = C_bignum_size(d_big) + 1 - C_bignum_size(gcd_big);
+    denom = C_allocate_scratch_bignum(
+            &a, C_fix(size), C_SCHEME_FALSE, C_SCHEME_FALSE);
+    size = C_bignum_size(d_big) + 1;
+    tmp_r = allocate_tmp_bignum(C_fix(size), C_SCHEME_FALSE, C_SCHEME_FALSE);
+    bignum_destructive_divide_full(d_big, gcd_big, denom,
+                                   tmp_r, C_SCHEME_FALSE);
+    free_tmp_bignum(tmp_r);
+    denom = move_buffer_object(ptr, ab, C_bignum_simplify(denom));
+  }
+
+  clear_buffer_object(ab, gcd);
+  clear_buffer_object(ab, a_div_g);
+
+  if (denom == C_fix(1)) return num;
+  else return C_ratnum(ptr, num, denom);
+}
+
+/* This is truly wretched */
+static C_word rat_times_rat(C_word **ptr, C_word x, C_word y)
+{
+  C_word ab[C_SIZEOF_FIX_BIGNUM*14], *a = ab,
+         xnum, xdenom, ynum, ydenom, xnum_big, ynum_big, xdenom_big, ydenom_big,
+         g1, g1_big, g2, g2_big, tmp_r, num, denom,
+         a_div_g1, b_div_g2, c_div_g2, d_div_g1, size;
+
+  xnum = C_block_item(x, 1);
+  xdenom = C_block_item(x, 2);
+  ynum = C_block_item(y, 1);
+  ydenom = C_block_item(y, 2);
+
+  /* a/b * c/d = a*c / b*d  [generic] */
+  /*   = ((a / g1) * (c / g2)) / ((b / g2) * (d / g1)) */
+  /* With  g1 = gcd(a, d)  and   g2 = gcd(b, c) [Knuth, 4.5.1] */
+  g1 = C_s_a_u_i_integer_gcd(&a, 2, xnum, ydenom);
+  g2 = C_s_a_u_i_integer_gcd(&a, 2, ynum, xdenom);
+
+  /* Ensure bignums to simplify logic */
+  g1_big = (g1 & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, g1) : g1;
+  g2_big = (g2 & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, g2) : g2;
+  xnum_big = (xnum & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, xnum) : xnum;
+  xdenom_big = (xdenom & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, xdenom) : xdenom;
+  ynum_big = (ynum & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, ynum) : ynum;
+  ydenom_big = (ydenom & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, ydenom) : ydenom;
+
+  /* Calculate a/g1  (= xnum/g1), which will later be multiplied by c/g2 */
+  if (bignum_cmp_unsigned(xnum_big, g1_big) == 0) {
+    a_div_g1 = C_bignum_negativep(xnum_big) ? C_fix(-1) : C_fix(1);
+  } else {                      /* We know |xnum| >= |g1| */
+    size = C_bignum_size(xnum_big) + 1 - C_bignum_size(g1_big);
+    a_div_g1 = C_allocate_scratch_bignum(
+            &a, C_fix(size), C_mk_bool(C_bignum_negativep(xnum_big)),
+            C_SCHEME_FALSE);
+    size = C_bignum_size(xnum_big) + 1;
+    tmp_r = allocate_tmp_bignum(C_fix(size), C_SCHEME_FALSE, C_SCHEME_FALSE);
+    bignum_destructive_divide_full(xnum_big, g1_big, a_div_g1,
+                                   tmp_r, C_SCHEME_FALSE);
+    free_tmp_bignum(tmp_r);
+    a_div_g1 = C_bignum_simplify(a_div_g1);
+  }
+
+  /* Calculate c/g2  (= ynum/g2), which will later be multiplied by a/g1 */
+  if (bignum_cmp_unsigned(ynum_big, g2_big) == 0) {
+    c_div_g2 = C_bignum_negativep(ynum_big) ? C_fix(-1) : C_fix(1);
+  } else {                      /* We know |ynum| >= |g2| */
+    size = C_bignum_size(ynum_big) + 1 - C_bignum_size(g2_big);
+    c_div_g2 = C_allocate_scratch_bignum(
+            &a, C_fix(size), C_mk_bool(C_bignum_negativep(ynum_big)),
+            C_SCHEME_FALSE);
+    size = C_bignum_size(ynum_big) + 1;
+    tmp_r = allocate_tmp_bignum(C_fix(size), C_SCHEME_FALSE, C_SCHEME_FALSE);
+    bignum_destructive_divide_full(ynum_big, g2_big, c_div_g2,
+                                   tmp_r, C_SCHEME_FALSE);
+    free_tmp_bignum(tmp_r);
+    c_div_g2 = C_bignum_simplify(c_div_g2);
+  }
+
+  /* Final numerator = a/g1 * c/g2 */
+  num = C_s_a_u_i_integer_times(&a, 2, a_div_g1, c_div_g2);
+  num = move_buffer_object(ptr, ab, num);
+
+  /* Now, do the same for the denominator.... */
+
+  /* Calculate b/g2  (= xdenom/g2), which will later be multiplied by d/g1 */
+  if (bignum_cmp_unsigned(xdenom_big, g2_big) == 0) {
+    b_div_g2 = C_bignum_negativep(xdenom_big) ? C_fix(-1) : C_fix(1);
+  } else {                      /* We know |xdenom| >= |g2| */
+    size = C_bignum_size(xdenom_big) + 1 - C_bignum_size(g2_big);
+    b_div_g2 = C_allocate_scratch_bignum(
+            &a, C_fix(size), C_mk_bool(C_bignum_negativep(xdenom_big)),
+            C_SCHEME_FALSE);
+    size = C_bignum_size(xdenom_big) + 1;
+    tmp_r = allocate_tmp_bignum(C_fix(size), C_SCHEME_FALSE, C_SCHEME_FALSE);
+    bignum_destructive_divide_full(xdenom_big, g2_big, b_div_g2,
+                                   tmp_r, C_SCHEME_FALSE);
+    free_tmp_bignum(tmp_r);
+    b_div_g2 = C_bignum_simplify(b_div_g2);
+  }
+
+  /* Calculate d/g1  (= ydenom/g1), which will later be multiplied by b/g2 */
+  if (bignum_cmp_unsigned(ydenom_big, g1_big) == 0) {
+    d_div_g1 = C_bignum_negativep(ydenom_big) ? C_fix(-1) : C_fix(1);
+  } else {                      /* We know |ydenom| >= |g1| */
+    size = C_bignum_size(ydenom_big) + 1 - C_bignum_size(g1_big);
+    d_div_g1 = C_allocate_scratch_bignum(
+            &a, C_fix(size), C_mk_bool(C_bignum_negativep(ydenom_big)),
+            C_SCHEME_FALSE);
+    size = C_bignum_size(ydenom_big) + 1;
+    tmp_r = allocate_tmp_bignum(C_fix(size), C_SCHEME_FALSE, C_SCHEME_FALSE);
+    bignum_destructive_divide_full(ydenom_big, g1_big, d_div_g1,
+                                   tmp_r, C_SCHEME_FALSE);
+    free_tmp_bignum(tmp_r);
+    d_div_g1 = C_bignum_simplify(d_div_g1);
+  }
+
+  /* Final denominator = b/g2 * d/g1 */
+  denom = C_s_a_u_i_integer_times(&a, 2, b_div_g2, d_div_g1);
+  denom = move_buffer_object(ptr, ab, denom);
+
+  clear_buffer_object(ab, g1);
+  clear_buffer_object(ab, g2);
+  clear_buffer_object(ab, a_div_g1);
+  clear_buffer_object(ab, b_div_g2);
+  clear_buffer_object(ab, c_div_g2);
+  clear_buffer_object(ab, d_div_g1);
+
+  if (denom == C_fix(1)) return num;
+  else return C_ratnum(ptr, num, denom);
+}
+
+static C_word
+cplx_times(C_word **ptr, C_word rx, C_word ix, C_word ry, C_word iy)
+{
+  /* Allocation here is kind of tricky: Each intermediate result can
+   * be at most a ratnum consisting of two bignums (2 digits), so
+   * C_SIZEOF_STRUCTURE(3) + C_SIZEOF_BIGNUM(2) = 11 words
+   */
+  C_word ab[(C_SIZEOF_STRUCTURE(3) + C_SIZEOF_BIGNUM(2))*6], *a = ab,
+         r1, r2, i1, i2, r, i;
+
+  /* a+bi * c+di = (a*c - b*d) + (a*d + b*c)i */
+  /* We call these:  r1 = a*c, r2 = b*d, i1 = a*d, i2 = b*c */
+  r1 = C_s_a_i_times(&a, 2, rx, ry);
+  r2 = C_s_a_i_times(&a, 2, ix, iy);
+  i1 = C_s_a_i_times(&a, 2, rx, iy);
+  i2 = C_s_a_i_times(&a, 2, ix, ry);
+  
+  r = C_s_a_i_minus(ptr, 2, r1, r2);
+  i = C_s_a_i_plus(ptr, 2, i1, i2);
+
+  r = move_buffer_object(ptr, ab, r);
+  i = move_buffer_object(ptr, ab, i);
+
+  clear_buffer_object(ab, r1);
+  clear_buffer_object(ab, r2);
+  clear_buffer_object(ab, i1);
+  clear_buffer_object(ab, i2);
+
+  if (C_truep(C_u_i_zerop(i))) return r;
+  else return C_cplxnum(ptr, r, i);
+}
+
+/* The maximum size this needs is that required to store a complex
+ * number result, where both real and imag parts consist of ratnums.
+ * The maximum size of those ratnums is if they consist of two bignums
+ * from a fixnum multiplication (2 digits each), so we're looking at
+ * C_SIZEOF_STRUCTURE(3) * 3 + C_SIZEOF_BIGNUM(2) * 4 = 40 words!
+ */
+C_regparm C_word C_fcall
+C_s_a_i_times(C_word **ptr, C_word n, C_word x, C_word y)
 {
   if (x & C_FIXNUM_BIT) {
     if (y & C_FIXNUM_BIT) {
-      C_word *a = C_alloc(C_SIZEOF_BIGNUM(2));
-      C_kontinue(k, C_a_i_fixnum_times(&a, 2, x, y));
+      return C_a_i_fixnum_times(ptr, 2, x, y);
     } else if (C_immediatep(y)) {
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", y);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
-      C_word *a = C_alloc(C_SIZEOF_FLONUM);
-      C_kontinue(k, C_flonum(&a, (double)C_unfix(x) * C_flonum_magnitude(y)));
+      return C_flonum(ptr, (double)C_unfix(x) * C_flonum_magnitude(y));
     } else if (C_truep(C_bignump(y))) {
-      C_word *a = C_alloc(C_SIZEOF_BIGNUM(2));
-      C_kontinue(k, C_s_a_u_i_integer_times(&a, 2, x, y));
+      return C_s_a_u_i_integer_times(ptr, 2, x, y);
+    } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
+      if (C_block_item(y, 0) == C_ratnum_type_tag) {
+        return rat_times_integer(ptr, y, x);
+      } else if (C_block_item(y, 0) == C_cplxnum_type_tag) {
+        return cplx_times(ptr, x, C_fix(0),
+                          C_block_item(y, 1), C_block_item(y, 2));
+      } else {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", y);
+      }
     } else {
-      try_extended_number("\003sysextended-times", 3, k, x, y);
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", y);
     }
   } else if (C_immediatep(x)) {
     barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", x);
   } else if (C_block_header(x) == C_FLONUM_TAG) {
-    C_word *a = C_alloc(C_SIZEOF_FLONUM);
     if (y & C_FIXNUM_BIT) {
-      C_kontinue(k, C_flonum(&a, C_flonum_magnitude(x) * (double)C_unfix(y)));
+      return C_flonum(ptr, C_flonum_magnitude(x) * (double)C_unfix(y));
     } else if (C_immediatep(y)) {
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", y);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
-      C_kontinue(k, C_a_i_flonum_times(&a, 2, x, y));
+      return C_a_i_flonum_times(ptr, 2, x, y);
     } else if (C_truep(C_bignump(y))) {
-      C_kontinue(k, C_flonum(&a, C_flonum_magnitude(x)*C_bignum_to_double(y)));
+      return C_flonum(ptr, C_flonum_magnitude(x) * C_bignum_to_double(y));
+    } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
+      if (C_block_item(y, 0) == C_ratnum_type_tag) {
+        return C_s_a_i_times(ptr, 2, x, C_a_i_exact_to_inexact(ptr, 1, y));
+      } else if (C_block_item(y, 0) == C_cplxnum_type_tag) {
+        C_word ab[C_SIZEOF_FLONUM], *a = ab;
+        return cplx_times(ptr, x, C_flonum(&a, 0.0),
+                          C_block_item(y, 1), C_block_item(y, 2));
+      } else {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", y);
+      }
     } else {
-      try_extended_number("\003sysextended-times", 3, k, x, y);
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", y);
     }
   } else if (C_truep(C_bignump(x))) {
     if (y & C_FIXNUM_BIT) {
-      C_word *a = C_alloc(C_SIZEOF_BIGNUM(2));
-      C_kontinue(k, C_s_a_u_i_integer_times(&a, 2, x, y));
+      return C_s_a_u_i_integer_times(ptr, 2, x, y);
     } else if (C_immediatep(y)) {
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", x);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
-      C_word *a = C_alloc(C_SIZEOF_FLONUM);
-      C_kontinue(k, C_flonum(&a, C_bignum_to_double(x)*C_flonum_magnitude(y)));
+      return C_flonum(ptr, C_bignum_to_double(x) * C_flonum_magnitude(y));
     } else if (C_truep(C_bignump(y))) {
-      C_word *a = C_alloc(C_SIZEOF_BIGNUM(2));
-      C_kontinue(k, C_s_a_u_i_integer_times(&a, 2, x, y));
+      return C_s_a_u_i_integer_times(ptr, 2, x, y);
+    } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
+      if (C_block_item(y, 0) == C_ratnum_type_tag) {
+        return rat_times_integer(ptr, y, x);
+      } else if (C_block_item(y, 0) == C_cplxnum_type_tag) {
+        return cplx_times(ptr, x, C_fix(0),
+                          C_block_item(y, 1), C_block_item(y, 2));
+      } else {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", y);
+      }
     } else {
-      try_extended_number("\003sysextended-times", 3, k, x, y);
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", y);
+    }
+  } else if (C_block_header(x) == C_STRUCTURE3_TAG) {
+    if (C_block_item(x, 0) == C_ratnum_type_tag) {
+      if (y & C_FIXNUM_BIT) {
+        return rat_times_integer(ptr, x, y);
+      } else if (C_immediatep(y)) {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", y);
+      } else if (C_block_header(y) == C_FLONUM_TAG) {
+        return C_s_a_i_times(ptr, 2, C_a_i_exact_to_inexact(ptr, 1, x), y);
+      } else if (C_truep(C_bignump(y))) {
+        return rat_times_integer(ptr, x, y);
+      } else if (C_block_header(y) == C_STRUCTURE3_TAG) {
+        if (C_block_item(y, 0) == C_ratnum_type_tag) {
+          return rat_times_rat(ptr, x, y);
+        } else if (C_block_item(y, 0) == C_cplxnum_type_tag) {
+          return cplx_times(ptr, x, C_fix(0),
+                            C_block_item(y, 1),C_block_item(y, 2));
+        } else {
+          barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", y);
+        }
+      } else {
+        barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", y);
+      }
+    } else if (C_block_item(x, 0) == C_cplxnum_type_tag) {
+      if (!C_immediatep(y) && C_block_header(y) == C_STRUCTURE3_TAG &&
+          C_block_item(y, 0) == C_cplxnum_type_tag) {
+        return cplx_times(ptr, C_block_item(x, 1), C_block_item(x, 2),
+                          C_block_item(y, 1), C_block_item(y, 2));
+      } else {
+        C_word ab[C_SIZEOF_FLONUM], *a = ab, yi;
+        yi = C_truep(C_i_flonump(y)) ? C_flonum(&a,0) : C_fix(0);
+        return cplx_times(ptr, C_block_item(x, 1), C_block_item(x, 2), y, yi);
+      }
+    } else {
+      barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", x);
     }
   } else {
-    try_extended_number("\003sysextended-times", 3, k, x, y);
+    barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, "*", x);
   }
 }
+
 
 C_regparm C_word C_fcall
 C_s_a_u_i_integer_times(C_word **ptr, C_word n, C_word x, C_word y)
@@ -7567,7 +7849,6 @@ bignum_times_bignum_karatsuba(C_word **ptr, C_word x, C_word y, C_word negp)
 }
 
 
-/* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 void C_ccall C_times(C_word c, C_word closure, C_word k, ...)
 {
   va_list v;
