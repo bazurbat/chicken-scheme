@@ -428,16 +428,8 @@ static inline int isinf_ld (long double x)
  */
 # define C_KARATSUBA_THRESHOLD        70
 #endif
-#ifndef C_BURNIKEL_ZIEGLER_THRESHOLD
-/* This defines when to switch from schoolbook to Burnikel-Ziegler
- * division.  It creates even more garbage than Karatsuba :(
- */
-# define C_BURNIKEL_ZIEGLER_THRESHOLD 300
-#endif
 #ifndef C_RECURSIVE_TO_STRING_THRESHOLD
-/* This threshold is in terms of the expected string length.  It
- * depends on division speed: if you change the above, change this too.
- */
+/* This threshold is in terms of the expected string length. */
 # define C_RECURSIVE_TO_STRING_THRESHOLD 750
 #endif
 
@@ -2187,7 +2179,6 @@ C_fctexport C_word C_fcall C_s_a_i_times(C_word **ptr, C_word n, C_word x, C_wor
 C_fctexport C_word C_fcall C_s_a_u_i_integer_times(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_i_arithmetic_shift(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_u_i_integer_gcd(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
-C_fctexport C_word C_fcall C_s_a_u_i_bignum_extract_digits(C_word **ptr, C_word n, C_word x, C_word start, C_word end) C_regparm;
 C_fctexport C_word C_fcall C_s_a_i_bitwise_and(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_i_bitwise_ior(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_i_bitwise_xor(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
