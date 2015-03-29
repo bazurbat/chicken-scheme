@@ -1111,6 +1111,9 @@ EOF
 
 ;;; Basic arithmetic:
 
+(define-inline (%integer-gcd a b)
+  (##core#inline_allocate ("C_s_a_u_i_integer_gcd" 6) a b))
+
 (define (abs x) (##core#inline_allocate ("C_s_a_i_abs" 10) x))
 
 (define (/ arg1 . args)
@@ -1127,7 +1130,7 @@ EOF
   (when (eq? y 0)
     (##sys#error-hook (foreign-value "C_DIVISION_BY_ZERO_ERROR" int) '/ x y))
   (cond ((and (exact-integer? x) (exact-integer? y))
-         (let ((g (##sys#integer-gcd x y)))
+         (let ((g (%integer-gcd x y)))
            (ratnum (##sys#integer-quotient x g) (##sys#integer-quotient y g))))
         ;; Compnum *must* be checked first
         ((or (cplxnum? x) (cplxnum? y))
@@ -1147,8 +1150,8 @@ EOF
              ;; With   g1 = gcd(a, c)   and    g2 = gcd(b, d) [Knuth, 4.5.1 ex. 4]
              (let* ((a (%ratnum-numerator x)) (b (%ratnum-denominator x))
                     (c (%ratnum-numerator y)) (d (%ratnum-denominator y))
-                    (g1 (##sys#integer-gcd a c))
-                    (g2 (##sys#integer-gcd b d)))
+                    (g1 (%integer-gcd a c))
+                    (g2 (%integer-gcd b d)))
                (ratnum (* (quotient a g1) (quotient d g2))
                        (* (quotient b g2) (quotient c g1))))
              ;; a/b / c/d = a*d / b*c  [with d = 1]
@@ -1629,24 +1632,20 @@ EOF
                   (exact->inexact (##sys#integer-power a (inexact->exact b)))
                   (##sys#integer-power a b)))) )
 
-;; OBSOLETE: Remove this (or change to define-inline)
-(define (##sys#integer-gcd a b)
-  (##core#inline_allocate ("C_s_a_u_i_integer_gcd" 6) a b))
-
 ;; Useful for sane error messages
 (define (##sys#internal-gcd loc a b)
   (cond ((exact-integer? a)
-         (cond ((exact-integer? b) (##sys#integer-gcd a b))
+         (cond ((exact-integer? b) (%integer-gcd a b))
                ((and (##core#inline "C_i_flonump" b)
                      (##core#inline "C_u_i_fpintegerp" b))
-                (exact->inexact (##sys#integer-gcd a (inexact->exact b))))
+                (exact->inexact (%integer-gcd a (inexact->exact b))))
                (else (##sys#error-bad-integer b loc))))
         ((and (##core#inline "C_i_flonump" a)
               (##core#inline "C_u_i_fpintegerp" a))
          (cond ((##core#inline "C_i_flonump" b)
                 (##core#inline_allocate ("C_a_i_flonum_gcd" 4) a b))
                ((exact-integer? b)
-                (exact->inexact (##sys#integer-gcd (inexact->exact a) b)))
+                (exact->inexact (%integer-gcd (inexact->exact a) b)))
                (else (##sys#error-bad-integer b loc))))
         (else (##sys#error-bad-integer a loc))))
 ;; For compat reasons, we define this

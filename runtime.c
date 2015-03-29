@@ -10534,6 +10534,69 @@ C_a_i_flonum_gcd(C_word **p, C_word n, C_word x, C_word y)
    return C_flonum(p, xub);
 }
 
+/* This is Lehmer's GCD algorithm with Jebelean's quotient test, as
+ * it is presented in the paper "An Analysis of Lehmer’s Euclidean
+ * GCD Algorithm", by J. Sorenson.  Fuck the ACM and their goddamn
+ * paywall; you can currently find the paper here:
+ * http://www.csie.nuk.edu.tw/~cychen/gcd/An%20analysis%20of%20Lehmer%27s%20Euclidean%20GCD%20algorithm.pdf
+ * If that URI fails, it's also explained in [MpNT, 5.2]
+ *
+ * The basic idea is to avoid divisions which yield only small
+ * quotients, in which the remainder won't reduce the numbers by
+ * much.  This can be detected by dividing only the leading k bits.
+ * In our case, k = C_WORD_SIZE - 2.
+ */
+C_inline void lehmer_gcd(C_word **ptr, C_word u, C_word v, C_word *x, C_word *y)
+{
+  int i_even = 1, done = 0;
+  C_word shift_amount = integer_length_abs(u) - (C_WORD_SIZE - 2),
+         uhat, vhat, qhat, ab[C_SIZEOF_FIX_BIGNUM*6], *a = ab, xnext, ynext,
+         xprev = 1, yprev = 0, xcurr = 0, ycurr = 1;
+
+  uhat = C_s_a_i_arithmetic_shift(&a, 2, u, C_fix(-shift_amount));
+  vhat = C_s_a_i_arithmetic_shift(&a, 2, v, C_fix(-shift_amount));
+  assert(uhat & C_FIXNUM_BIT); uhat = C_unfix(uhat);
+  assert(vhat & C_FIXNUM_BIT); vhat = C_unfix(vhat);
+
+  do {
+    qhat = uhat / vhat;         /* Estimated quotient for this step */
+    xnext = xprev - qhat * xcurr;
+    ynext = yprev - qhat * ycurr;
+
+    /* Euclidean GCD swap on uhat and vhat (shift_amount is not needed): */
+    shift_amount = vhat;
+    vhat = uhat - qhat * vhat;
+    uhat = shift_amount;
+
+    i_even = !i_even;
+    if (i_even)
+      done = (vhat < -xnext) || ((uhat - vhat) < (ynext - ycurr));
+    else
+      done = (vhat < -ynext) || ((uhat - vhat) < (xnext - xcurr));
+
+    if (!done) {
+      xprev = xcurr; yprev = ycurr;
+      xcurr = xnext; ycurr = ynext;
+    }
+  } while (!done);
+
+  /* x = xprev * u + yprev * v */
+  uhat = C_s_a_u_i_integer_times(&a, 2, C_fix(xprev), u);
+  vhat = C_s_a_u_i_integer_times(&a, 2, C_fix(yprev), v);
+  *x = C_s_a_u_i_integer_plus(ptr, 2, uhat, vhat);
+  *x = move_buffer_object(ptr, ab, *x);
+  clear_buffer_object(ab, uhat);
+  clear_buffer_object(ab, vhat);
+
+  /* y = xcurr * u + ycurr * v */
+  uhat = C_s_a_u_i_integer_times(&a, 2, C_fix(xcurr), u);
+  vhat = C_s_a_u_i_integer_times(&a, 2, C_fix(ycurr), v);
+  *y = C_s_a_u_i_integer_plus(ptr, 2, uhat, vhat);
+  *y = move_buffer_object(ptr, ab, *y);
+  clear_buffer_object(ab, uhat);
+  clear_buffer_object(ab, vhat);
+}
+
 /* Because this must be inlineable (due to + and - using this for
  * ratnums), we can't use burnikel-ziegler division here, until we
  * have a C implementation that doesn't consume stack.  However,
@@ -10569,8 +10632,12 @@ C_s_a_u_i_integer_gcd(C_word **ptr, C_word n, C_word x, C_word y)
        break;
      }
    }
+   a = ab[i++];
+   x = C_s_a_u_i_integer_abs(&a, 1, x);
+   y = C_s_a_u_i_integer_abs(&a, 1, y);
 
    while(y != C_fix(0)) {
+     assert(integer_length_abs(x) >= integer_length_abs(y));
      /* x and y are stored in the same buffer, as well as a result */
      a = ab[i++];
      if (i == 2) i = 0;
@@ -10600,13 +10667,27 @@ C_s_a_u_i_integer_gcd(C_word **ptr, C_word n, C_word x, C_word y)
          x = y;
          y = C_bignum_simplify(res);
        }
-     } else { /* Both x and y are bignums */
-       /* TODO: re-implement Lehmer's GCD algorithm in C? */
+     } else {
+       /* First, see if we should run a Lehmer step */
+       if ((integer_length_abs(x) - integer_length_abs(y)) < C_HALF_WORD_SIZE) {
+         C_word newx, newy;
+
+         lehmer_gcd(&a, x, y, &newx, &newy);
+         clear_buffer_object(ab[i], x);
+         clear_buffer_object(ab[i], y);
+         x = newx;
+         y = newy;
+         if (x & C_FIXNUM_BIT) x = C_a_u_i_fix_to_big(&a, x);
+         if (y & C_FIXNUM_BIT) y = C_a_u_i_fix_to_big(&a, y);
+         a = ab[i++]; /* Ensure x and y get cleared correctly below */
+         if (i == 2) i = 0;
+       }
+
        size = C_fix(C_bignum_size(x) + 1);
        res = C_allocate_scratch_bignum(&a, size, C_SCHEME_FALSE, C_SCHEME_FALSE);
        bignum_destructive_divide_full(x, y, C_SCHEME_UNDEFINED, res,
                                       C_SCHEME_TRUE);
-       y = move_buffer_object(&a, ab[i], y);
+       y = move_buffer_object(&a, ab[i], C_bignum_simplify(y));
        clear_buffer_object(ab[i], x);
        x = y;
        y = C_bignum_simplify(res);
