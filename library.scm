@@ -1811,8 +1811,9 @@ EOF
                                (and all-hashes-ok? (scan-hashes start))))
                    (end (or hashes digits)))
               (and-let* ((end)
-                         (num ((##core#primitive "C_digits_to_integer")
-                               str start (car end) radix neg?)))
+                         (num (##core#inline_allocate
+			       ("C_s_a_i_digits_to_integer" 3)
+			       str start (car end) radix neg?)))
                 (when hashes            ; Eeewww. Feeling dirty yet?
                   (set! seen-hashes? #t)
                   (go-inexact!))
@@ -1825,8 +1826,9 @@ EOF
                    (and-let* ((start (if sign (fx+ start 1) start))
                               (end (scan-digits start)))
                      (go-inexact!)
-                     (cons ((##core#primitive "C_digits_to_integer")
-                            str start (car end) radix (eq? sign 'neg))
+                     (cons (##core#inline_allocate
+			    ("C_s_a_i_digits_to_integer" 3)
+			    str start (car end) radix (eq? sign 'neg))
                            (cdr end)))))))
          (scan-decimal-tail             ; The part after the decimal dot
           (lambda (start neg? decimal-head)

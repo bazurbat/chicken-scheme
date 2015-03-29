@@ -1987,7 +1987,6 @@ C_fctexport void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, 
 C_fctexport void C_ccall C_build_symbol(C_word c, C_word closure, C_word k, C_word string) C_noret;
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport void C_ccall C_quotient(C_word c, C_word closure, C_word k, C_word n1, C_word n2) C_noret;
-C_fctexport void C_ccall C_digits_to_integer(C_word c, C_word self, C_word k, C_word n, C_word start, C_word end, C_word radix, C_word negp) C_noret;
 C_fctexport void C_ccall C_number_to_string(C_word c, C_word closure, C_word k, C_word num, ...) C_noret;
 C_fctexport void C_ccall C_fixnum_to_string(C_word c, C_word closure, C_word k, C_word num, C_word radix) C_noret;
 C_fctexport void C_ccall C_flonum_to_string(C_word c, C_word closure, C_word k, C_word num, C_word radix) C_noret;
@@ -2193,7 +2192,7 @@ C_fctexport C_word C_fcall C_s_a_i_bitwise_and(C_word **ptr, C_word n, C_word x,
 C_fctexport C_word C_fcall C_s_a_i_bitwise_ior(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_i_bitwise_xor(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_i_bitwise_not(C_word **ptr, C_word n, C_word x) C_regparm;
-
+C_fctexport C_word C_fcall C_s_a_i_digits_to_integer(C_word **ptr, C_word n, C_word str, C_word start, C_word end, C_word radix, C_word negp) C_regparm;
 
 C_fctexport C_word C_fcall C_i_foreign_char_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_fixnum_argumentp(C_word x) C_regparm;

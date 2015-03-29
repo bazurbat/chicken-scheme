@@ -845,7 +845,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size -
      this must match the number of C_pte calls + 1 (NULL terminator)! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 71);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 70);
   int i = 0;
 
   if(pt == NULL)
@@ -907,7 +907,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_copy_closure);
   C_pte(C_dump_heap_state);
   C_pte(C_filter_heap_objects);
-  C_pte(C_digits_to_integer);
   C_pte(C_fixnum_to_string);
   C_pte(C_integer_to_string);
   C_pte(C_flonum_to_string);
@@ -10811,22 +10810,26 @@ C_a_i_string_to_number(C_word **a, int c, C_word str, C_word radix0)
   return n;
 }
 
-void C_ccall
-C_digits_to_integer(C_word c, C_word self, C_word k, C_word str,
-                    C_word start, C_word end, C_word radix, C_word negp)
+C_regparm C_word C_fcall
+C_s_a_i_digits_to_integer(C_word **ptr, C_word n, C_word str, C_word start, C_word end, C_word radix, C_word negp)
 {
-  assert((C_unfix(radix) > 1) && C_fitsinbignumhalfdigitp(C_unfix(radix)));
-  
   if (start == end) {
-    C_kontinue(k, C_SCHEME_FALSE);
+    return C_SCHEME_FALSE;
   } else {
-    C_word kab[C_SIZEOF_CLOSURE(6)], *ka = kab, k2, size;
     size_t nbits;
-    k2 = C_closure(&ka, 6, (C_word)digits_to_integer_2, k, str, start, end, radix);
+    char *s = C_c_string(str);
+    C_word result, size;
+    end = C_unfix(end);
+    start = C_unfix(start);
+    radix = C_unfix(radix);
 
-    nbits = (C_unfix(end) - C_unfix(start)) * C_ilen(C_unfix(radix)-1);
+    assert((radix > 1) && C_fitsinbignumhalfdigitp(radix));
+
+    nbits = (end - start) * C_ilen(radix - 1);
     size = C_fix(C_BIGNUM_BITS_TO_DIGITS(nbits));
-    C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_FALSE);
+    result = C_allocate_scratch_bignum(ptr, size, negp, C_SCHEME_FALSE);
+
+    return str_to_bignum(result, s + start, s + end, radix);
   }
 }
 
@@ -10836,19 +10839,6 @@ C_inline int hex_char_to_digit(int ch)
   else if (ch >= (int)'a') return ch - (int)'a' + 10; /* lower hex */
   else if (ch >= (int)'A') return ch - (int)'A' + 10; /* upper hex */
   else return ch - (int)'0'; /* decimal (OR INVALID; handled elsewhere) */
-}
-
-static void
-digits_to_integer_2(C_word c, C_word self, C_word result)
-{
-  C_word k = C_block_item(self, 1),
-         str = C_block_item(self, 2),
-         start = C_unfix(C_block_item(self, 3)),
-         end = C_unfix(C_block_item(self, 4)),
-         radix = C_unfix(C_block_item(self, 5));
-  char *s = C_c_string(str);
-
-  C_kontinue(k, str_to_bignum(result, s + start, s + end, radix));
 }
 
 /* Write from digit character stream to bignum.  Bignum does not need
