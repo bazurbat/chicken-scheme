@@ -444,7 +444,7 @@
 	   (##core#inline_allocate ("C_a_i_fixnum_quotient_checked" 6)
 				   #(1) #(2)))
 	  ((integer integer) (integer)
-	   (##sys#integer-quotient #(1) #(2))))
+	   (##core#inline_allocate ("C_s_a_u_i_integer_quotient" 6) #(1) #(2))))
 
 (remainder (#(procedure #:clean #:enforce #:foldable) remainder ((or integer float) (or integer float)) (or integer float))
 	  ((float float) (float)
@@ -453,8 +453,8 @@
 	   ;;XXX flonum/mixed case
 	   ((fixnum fixnum) (fixnum)
 	    (##core#inline "C_i_fixnum_remainder_checked" #(1) #(2)))
-	   ((integer integer) (integer)
-	    (##sys#integer-remainder #(1) #(2))))
+	  ((integer integer) (integer)
+	   (##core#inline_allocate ("C_s_a_u_i_integer_remainder" 6) #(1) #(2))))
 
 (quotient&remainder (#(procedure #:clean #:enforce #:foldable) quotient&remainder ((or integer float) (or integer float)) (or integer float) (or integer float))
 	  ((float float) (float float)
@@ -475,7 +475,7 @@
 		 (##core#inline
 		  "C_i_fixnum_remainder_checked" #(tmp1) #(tmp2))))))
 	   ((integer integer) (integer integer)
-	    (##sys#integer-quotient&remainder #(1) #(2))))
+	    ((##core#primitive "C_u_integer_divrem") #(1) #(2))))
 
 ;; TODO: Add nonspecializing type specific entries, to help flow analysis?
 (quotient&modulo (#(procedure #:clean #:enforce #:foldable) quotient&modulo ((or integer float) (or integer float)) (or integer float) (or integer float)))

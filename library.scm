@@ -1126,12 +1126,15 @@ EOF
 	    (loop (##sys#slot args 1)
 		  (##sys#/-2 x (##sys#slot args 0))) ) ) ) )
 
+(define-inline (%integer-quotient a b)
+  (##core#inline_allocate ("C_s_a_u_i_integer_quotient" 6) a b))
+
 (define (##sys#/-2 x y)
   (when (eq? y 0)
     (##sys#error-hook (foreign-value "C_DIVISION_BY_ZERO_ERROR" int) '/ x y))
   (cond ((and (exact-integer? x) (exact-integer? y))
          (let ((g (%integer-gcd x y)))
-           (ratnum (##sys#integer-quotient x g) (##sys#integer-quotient y g))))
+           (ratnum (%integer-quotient x g) (%integer-quotient y g))))
         ;; Compnum *must* be checked first
         ((or (cplxnum? x) (cplxnum? y))
          (let* ((a (real-part x)) (b (imag-part x))
@@ -1241,12 +1244,9 @@ EOF
         result)))
 
 (define quotient (##core#primitive "C_basic_quotient"))
-(define ##sys#integer-quotient (##core#primitive "C_u_integer_quotient"))
 (define remainder (##core#primitive "C_basic_remainder"))
-(define ##sys#integer-remainder (##core#primitive "C_u_integer_remainder"))
-(define ##sys#integer-quotient&remainder (##core#primitive "C_u_integer_divrem"))
-
 (define quotient&remainder (##core#primitive "C_basic_divrem"))
+
 ;; Modulo's sign follows y  (whereas remainder's sign follows x)
 (define (quotient&modulo x y)
   (receive (div rem) (quotient&remainder x y)
@@ -1403,7 +1403,7 @@ EOF
            ((mask)  (- (arithmetic-shift 1 len/4) 1))
            ((a0)    (bitwise-and a mask))
            ((a1)    (bitwise-and (arithmetic-shift a (fxneg len/4)) mask))
-           ((q u)   (##sys#integer-quotient&remainder
+           ((q u)   ((##core#primitive "C_u_integer_divrem")
 		     (+ (arithmetic-shift r^ len/4) a1)
 		     (arithmetic-shift s^ 1)))
            ((s)     (+ (arithmetic-shift s^ len/4) q))
@@ -1586,7 +1586,7 @@ EOF
 (define (##sys#integer->string/recursive n base expected-string-size)
   (let*-values (((halfsize) (fxshr (fx+ expected-string-size 1) 1))
                 ((b^M/2) (##sys#integer-power base halfsize))
-                ((hi lo) (quotient&remainder n b^M/2))
+                ((hi lo) ((##core#primitive "C_u_integer_divrem") n b^M/2))
                 ((strhi) (number->string hi base))
                 ((strlo) (number->string (abs lo) base)))
     (string-append strhi
@@ -1643,7 +1643,7 @@ EOF
 
 ;; Should we export this?
 (define (round-quotient n d)
-  (let ((q (##sys#integer-quotient n d)))
+  (let ((q (%integer-quotient n d)))
     (if ((if (even? q) > >=) (* (abs (remainder n d)) 2) (abs d))
         (+ q (if (eqv? (negative? n) (negative? d)) 1 -1))
         q)))

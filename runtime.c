@@ -525,10 +525,9 @@ static C_word rat_times_rat(C_word **ptr, C_word x, C_word y);
 static C_word cplx_times(C_word **ptr, C_word rx, C_word ix, C_word ry, C_word iy);
 static C_word bignum_minus_unsigned(C_word **ptr, C_word x, C_word y);
 static C_regparm void basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_r, C_word return_q) C_noret;
-static C_regparm void integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_q, C_word return_r) C_noret;
-static C_word bignum_remainder_unsigned_halfdigit(C_word num, C_word den);
+static C_regparm void integer_divrem(C_word **ptr, C_word x, C_word y, C_word *q, C_word *r);
+static C_regparm C_word bignum_remainder_unsigned_halfdigit(C_word x, C_word y);
 static C_regparm void bignum_divrem(C_word **ptr, C_word x, C_word y, C_word *q, C_word *r);
-static void divrem_intflo_2(C_word c, C_word self, ...) C_noret;
 static C_word rat_cmp(C_word x, C_word y);
 static void flo_to_int_2(C_word c, C_word self, C_word result) C_noret;
 static void fabs_frexp_to_digits(C_uword exp, double sign, C_uword *start, C_uword *scan);
@@ -568,7 +567,7 @@ static C_uword bignum_digits_destructive_shift_right(C_uword *start, C_uword *en
 static C_uword bignum_digits_destructive_shift_left(C_uword *start, C_uword *end, int shift_left);
 static C_regparm void bignum_digits_multiply(C_word x, C_word y, C_word result);
 static void bignum_divide_unsigned(C_word **ptr, C_word num, C_word denom, C_word *q, C_word q_negp, C_word *r, C_word r_negp);
-static void bignum_destructive_divide_unsigned_small(C_word c, C_word self, C_word quotient);
+static C_regparm void bignum_destructive_divide_unsigned_small(C_word **ptr, C_word x, C_word y, C_word *q, C_word *r);
 static C_regparm void bignum_destructive_divide_full(C_word numerator, C_word denominator, C_word quotient, C_word remainder, C_word return_remainder);
 static C_regparm void bignum_destructive_divide_normalized(C_word big_u, C_word big_v, C_word big_q);
 static void make_structure_2(void *dummy) C_noret;
@@ -846,7 +845,7 @@ static C_PTABLE_ENTRY *create_initial_ptable()
 {
   /* IMPORTANT: hardcoded table size -
      this must match the number of C_pte calls + 1 (NULL terminator)! */
-  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 70);
+  C_PTABLE_ENTRY *pt = (C_PTABLE_ENTRY *)C_malloc(sizeof(C_PTABLE_ENTRY) * 68);
   int i = 0;
 
   if(pt == NULL)
@@ -916,8 +915,6 @@ static C_PTABLE_ENTRY *create_initial_ptable()
   C_pte(C_basic_quotient);
   C_pte(C_basic_remainder);
   C_pte(C_basic_divrem);
-  C_pte(C_u_integer_quotient);
-  C_pte(C_u_integer_remainder);
   C_pte(C_u_integer_divrem);
   C_pte(C_bitwise_and);
   C_pte(C_bitwise_ior);
@@ -8578,7 +8575,10 @@ basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_
       RETURN_Q_AND_OR_R(C_a_i_flonum_actual_quotient_checked(&a, 2, x, y),
                         C_a_i_flonum_remainder_checked(&a, 2, x, y));
     } else if (C_truep(C_bignump(y))) {
-      integer_divrem(6, (C_word)NULL, k, x, y, return_q, return_r);
+      C_word ab[C_SIZEOF_FIX_BIGNUM*2], *a = ab, q, r;
+      integer_divrem(&a, x, y, C_truep(return_q) ? &q : NULL,
+                     C_truep(return_r) ? &r : NULL);
+      RETURN_Q_AND_OR_R(q, r);
     } else {
       barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, DIVREM_LOC, y);
     }
@@ -8603,16 +8603,27 @@ basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_
       RETURN_Q_AND_OR_R(C_a_i_flonum_actual_quotient_checked(&a, 2, x, y),
                         C_a_i_flonum_remainder_checked(&a, 2, x, y));
     } else if (C_truep(C_bignump(y))) {
-      C_word k2, ab[C_SIZEOF_CLOSURE(3)], *a = ab;
+      C_word ab[C_SIZEOF_FIX_BIGNUM*2+C_SIZEOF_FLONUM*2], *a = ab,
+             q = C_fix(0), r = C_fix(0);
       x = flo_to_tmp_bignum(x);
-      k2 = C_closure(&a, 3, (C_word)divrem_intflo_2, k, x);
-      integer_divrem(6, (C_word)NULL, k2, x, y, return_q, return_r);
+      integer_divrem(&a, x, y, C_truep(return_q) ? &q : NULL,
+                     C_truep(return_r) ? &r : NULL);
+      free_tmp_bignum(x);
+      if (q & C_FIXNUM_BIT) q = C_a_i_fix_to_flo(&a, 1, q);
+      else q = C_a_u_i_big_to_flo(&a, 1, q);
+      if (r & C_FIXNUM_BIT) r = C_a_i_fix_to_flo(&a, 1, r);
+      else r = C_a_u_i_big_to_flo(&a, 1, r);
+      RETURN_Q_AND_OR_R(q, r);
     } else {
       barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, DIVREM_LOC, y);
     }
   } else if (C_truep(C_bignump(x))) {
     if (y & C_FIXNUM_BIT) {
-      integer_divrem(6, (C_word)NULL, k, x, y, return_q, return_r);
+      C_word ab[C_SIZEOF_FIX_BIGNUM*2], *a = ab, q, r;
+      if (y == C_fix(0)) C_div_by_zero_error(DIVREM_LOC);
+      integer_divrem(&a, x, y, C_truep(return_q) ? &q : NULL,
+                     C_truep(return_r) ? &r : NULL);
+      RETURN_Q_AND_OR_R(q, r);
     } else if (C_immediatep(y)) {
       barf(C_BAD_ARGUMENT_TYPE_NO_NUMBER_ERROR, DIVREM_LOC, y);
     } else if (C_block_header(y) == C_FLONUM_TAG) {
@@ -8621,10 +8632,17 @@ basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_
       } else if (C_flonum_magnitude(y) == 0.0) {
         C_div_by_zero_error(DIVREM_LOC);
       } else {
-        C_word k2, ab[C_SIZEOF_CLOSURE(3)], *a = ab;
+        C_word ab[C_SIZEOF_FIX_BIGNUM*2+C_SIZEOF_FLONUM*2], *a = ab,
+               q = C_fix(0), r = C_fix(0);
         y = flo_to_tmp_bignum(y);
-        k2 = C_closure(&a, 3, (C_word)divrem_intflo_2, k, y);
-        integer_divrem(6, (C_word)NULL, k2, x, y, return_q, return_r);
+        integer_divrem(&a, x, y, C_truep(return_q) ? &q : NULL,
+                       C_truep(return_r) ? &r : NULL);
+        free_tmp_bignum(y);
+        if (q & C_FIXNUM_BIT) q = C_a_i_fix_to_flo(&a, 1, q);
+        else q = C_a_u_i_big_to_flo(&a, 1, q);
+        if (r & C_FIXNUM_BIT) r = C_a_i_fix_to_flo(&a, 1, r);
+        else r = C_a_u_i_big_to_flo(&a, 1, r);
+        RETURN_Q_AND_OR_R(q, r);
       }
     } else if (C_truep(C_bignump(y))) {
       C_word ab[C_SIZEOF_BIGNUM_WRAPPER*2], *a = ab, q, r;
@@ -8639,88 +8657,44 @@ basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_
     barf(C_BAD_ARGUMENT_TYPE_NO_INTEGER_ERROR, DIVREM_LOC, x);
   }
 }
-
-static void divrem_intflo_2(C_word c, C_word self, ...)
-{
-  C_word k = C_block_item(self, 1), x, y;
-  va_list v;
-
-  va_start(v, self);
-  if (c == 2) {
-    C_word ab[C_SIZEOF_FLONUM], *a = ab;
-    x = va_arg(v, C_word);
-    va_end(v);
-    if (x & C_FIXNUM_BIT) x = C_a_i_fix_to_flo(&a, 1, x);
-    else x = C_a_u_i_big_to_flo(&a, 1, x);
-    free_tmp_bignum(C_block_item(self, 2));
-    C_kontinue(k, x);
-  } else { /* c == 3 */
-    C_word ab[C_SIZEOF_FLONUM*2], *a = ab;
-    x = va_arg(v, C_word);
-    y = va_arg(v, C_word);
-    va_end(v);
-
-    if (x & C_FIXNUM_BIT) x = C_a_i_fix_to_flo(&a, 1, x);
-    else x = C_a_u_i_big_to_flo(&a, 1, x);
-    if (y & C_FIXNUM_BIT) y = C_a_i_fix_to_flo(&a, 1, y);
-    else y = C_a_u_i_big_to_flo(&a, 1, y);
-    free_tmp_bignum(C_block_item(self, 2));
-    C_values(4, C_SCHEME_UNDEFINED, k, x, y);
-  }
-}
+#undef RETURN_Q_AND_OR_R
 
 static C_regparm void
-integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word return_q, C_word return_r)
+integer_divrem(C_word **ptr, C_word x, C_word y, C_word *q, C_word *r)
 {
   if (!(y & C_FIXNUM_BIT)) { /* y is bignum. */
     if (x & C_FIXNUM_BIT) {
       /* abs(x) < abs(y), so it will always be [0, x] except for this case: */
       if (x == C_fix(C_MOST_NEGATIVE_FIXNUM) &&
           C_bignum_negated_fitsinfixnump(y)) {
-	RETURN_Q_AND_OR_R(C_fix(-1), C_fix(0));
+        if (q != NULL) *q = C_fix(-1);
+        if (r != NULL) *r = C_fix(0);
       } else {
-	RETURN_Q_AND_OR_R(C_fix(0), x);
+        if (q != NULL) *q = C_fix(0);
+        if (r != NULL) *r = x;
       }
     } else {
-      C_word ab[C_SIZEOF_BIGNUM_WRAPPER*2], *a = ab, q, r;
-      bignum_divrem(&a, x, y,
-                    C_truep(return_q) ? &q : NULL,
-                    C_truep(return_r) ? &r : NULL);
-      RETURN_Q_AND_OR_R(q, r);
+      bignum_divrem(ptr, x, y, q, r);
     }
   } else if (x & C_FIXNUM_BIT) { /* both x and y are fixnum. */
-    C_word ab[C_SIZEOF_FIX_BIGNUM], *a = ab;
-    if (y == C_fix(0)) C_div_by_zero_error(DIVREM_LOC);
-
-    RETURN_Q_AND_OR_R(C_a_i_fixnum_quotient_checked(&a, 2, x, y),
-                      C_i_fixnum_remainder_checked(x, y));
+    if (q != NULL) *q = C_a_i_fixnum_quotient_checked(ptr, 2, x, y);
+    if (r != NULL) *r = C_i_fixnum_remainder_checked(x, y);
   } else { /* x is bignum, y is fixnum. */
     C_word absy = (y & C_INT_SIGN_BIT) ? -C_unfix(y) : C_unfix(y);
 
     if (y == C_fix(1)) {
-      RETURN_Q_AND_OR_R(x, C_fix(0));
-    } else if (y == C_fix(0)) {
-      C_div_by_zero_error(DIVREM_LOC);
+      if (q != NULL) *q = x;
+      if (r != NULL) *r = C_fix(0);
     } else if (y == C_fix(-1)) {
-      C_word *a = C_alloc(C_SIZEOF_FIX_BIGNUM);
-      RETURN_Q_AND_OR_R(C_s_a_u_i_integer_negate(&a, 1, x), C_fix(0));
+      if (q != NULL) *q = C_s_a_u_i_integer_negate(ptr, 1, x);
+      if (r != NULL) *r = C_fix(0);
     } else if (C_fitsinbignumhalfdigitp(absy) ||
                ((((C_uword)1 << (C_ilen(absy)-1)) == absy) &&
                 C_fitsinfixnump(absy))) {
-      if (C_truep(return_q)) {
-        C_word q_negp = C_mk_bool((y & C_INT_SIGN_BIT) ?
-                                  !(C_bignum_negativep(x)) :
-                                  C_bignum_negativep(x)),
-                r_negp = C_mk_bool(C_bignum_negativep(x)),
-                *ka, k2, size;
-	ka = C_alloc(C_SIZEOF_CLOSURE(9));
-        size = C_fix(C_bignum_size(x));
-        k2 = C_closure(&ka, 7,
-                       (C_word)bignum_destructive_divide_unsigned_small,
-                       k, x, C_fix(absy),
-                       return_q, return_r, C_SCHEME_FALSE);
-        C_allocate_bignum(5, (C_word)NULL, k2, size, q_negp, C_SCHEME_FALSE);
-      } else {
+      assert(y != C_fix(0)); /* _must_ be checked by caller */
+      if (q != NULL) {
+        bignum_destructive_divide_unsigned_small(ptr, x, y, q, r);
+      } else { /* We assume r isn't NULL here (that makes no sense) */
         C_word rem;
 	C_uword next_power = (C_uword)1 << (C_ilen(absy)-1);
 
@@ -8729,18 +8703,16 @@ integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y, C_word retur
         } else { /* Too bad, we have to do some real work */
           rem = bignum_remainder_unsigned_halfdigit(x, absy);
 	}
-        C_kontinue(k, C_bignum_negativep(x) ? C_fix(-rem) : C_fix(rem));
+        *r = C_bignum_negativep(x) ? C_fix(-rem) : C_fix(rem);
       }
     } else {			/* Just divide it as two bignums */
-      C_word ab[C_SIZEOF_BIGNUM_WRAPPER*2+C_SIZEOF_FIX_BIGNUM], *a = ab, q, r;
-      bignum_divrem(&a, x, C_a_u_i_fix_to_big(&a, y),
-                    C_truep(return_q) ? &q : NULL,
-                    C_truep(return_r) ? &r : NULL);
-      RETURN_Q_AND_OR_R(q, r);
+      C_word ab[C_SIZEOF_FIX_BIGNUM], *a = ab;
+      bignum_divrem(ptr, x, C_a_u_i_fix_to_big(&a, y), q, r);
+      if (q != NULL) *q = move_buffer_object(ptr, ab, *q);
+      if (r != NULL) *r = move_buffer_object(ptr, ab, *r);
     }
   }
 }
-#undef RETURN_Q_AND_OR_R
 
 /* This _always_ needs two bignum wrappers in ptr! */
 static C_regparm void
@@ -8767,17 +8739,17 @@ bignum_divrem(C_word **ptr, C_word x, C_word y, C_word *q, C_word *r)
   }
 }
 
-static C_word bignum_remainder_unsigned_halfdigit(C_word num, C_word den)
+static C_regparm C_word bignum_remainder_unsigned_halfdigit(C_word x, C_word y)
 {
-  C_uword *start = C_bignum_digits(num),
-          *scan = start + C_bignum_size(num),
+  C_uword *start = C_bignum_digits(x),
+          *scan = start + C_bignum_size(x),
           rem = 0, two_digits;
 
-  assert((den > 1) && (C_fitsinbignumhalfdigitp(den)));
+  assert((y > 1) && (C_fitsinbignumhalfdigitp(y)));
   while (start < scan) {
     two_digits = (*--scan);
-    rem = C_BIGNUM_DIGIT_COMBINE(rem, C_BIGNUM_DIGIT_HI_HALF(two_digits)) % den;
-    rem = C_BIGNUM_DIGIT_COMBINE(rem, C_BIGNUM_DIGIT_LO_HALF(two_digits)) % den;
+    rem = C_BIGNUM_DIGIT_COMBINE(rem, C_BIGNUM_DIGIT_HI_HALF(two_digits)) % y;
+    rem = C_BIGNUM_DIGIT_COMBINE(rem, C_BIGNUM_DIGIT_LO_HALF(two_digits)) % y;
   }
   return rem;
 }
@@ -8790,10 +8762,14 @@ C_basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y)
   basic_divrem(6, (C_word)NULL, k, x, y, C_SCHEME_TRUE, C_SCHEME_TRUE);
 }
 
+/* There doesn't seem to be a way to return two values from inline functions */
 void C_ccall
 C_u_integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y)
 {
-  integer_divrem(6, (C_word)NULL, k, x, y, C_SCHEME_TRUE, C_SCHEME_TRUE);
+  C_word ab[C_SIZEOF_FIX_BIGNUM*2], *a = ab, q, r;
+  if (y == C_fix(0)) C_div_by_zero_error("quotient&remainder");
+  integer_divrem(&a, x, y, &q, &r);
+  C_values(4, C_SCHEME_UNDEFINED, k, q, r);
 }
 
 void C_ccall
@@ -8803,10 +8779,13 @@ C_basic_remainder(C_word c, C_word self, C_word k, C_word x, C_word y)
   basic_divrem(6, (C_word)NULL, k, x, y, C_SCHEME_FALSE, C_SCHEME_TRUE);
 }
 
-void C_ccall
-C_u_integer_remainder(C_word c, C_word self, C_word k, C_word x, C_word y)
+C_regparm C_word C_fcall
+C_s_a_u_i_integer_remainder(C_word **ptr, C_word n, C_word x, C_word y)
 {
-  integer_divrem(6, (C_word)NULL, k, x, y, C_SCHEME_FALSE, C_SCHEME_TRUE);
+  C_word ab[C_SIZEOF_FIX_BIGNUM*2], *a = ab, r;
+  if (y == C_fix(0)) C_div_by_zero_error("remainder");
+  integer_divrem(ptr, x, y, NULL, &r);
+  return move_buffer_object(ptr, ab, r);
 }
 
 void C_ccall
@@ -8816,10 +8795,13 @@ C_basic_quotient(C_word c, C_word self, C_word k, C_word x, C_word y)
   basic_divrem(6, (C_word)NULL, k, x, y, C_SCHEME_TRUE, C_SCHEME_FALSE);
 }
 
-void C_ccall
-C_u_integer_quotient(C_word c, C_word self, C_word k, C_word x, C_word y)
+C_regparm C_word C_fcall
+C_s_a_u_i_integer_quotient(C_word **ptr, C_word n, C_word x, C_word y)
 {
-  integer_divrem(6, (C_word)NULL, k, x, y, C_SCHEME_TRUE, C_SCHEME_FALSE);
+  C_word ab[C_SIZEOF_FIX_BIGNUM*2], *a = ab, q;
+  if (y == C_fix(0)) C_div_by_zero_error("quotient");
+  integer_divrem(ptr, x, y, &q, NULL);
+  return move_buffer_object(ptr, ab, q);
 }
 
 
@@ -10023,39 +10005,37 @@ bignum_digits_multiply(C_word x, C_word y, C_word result)
 
 
 /* "small" is either a number that fits a halfdigit, or a power of two */
-static void
-bignum_destructive_divide_unsigned_small(C_word c, C_word self, C_word quotient)
+static C_regparm void
+bignum_destructive_divide_unsigned_small(C_word **ptr, C_word x, C_word y, C_word *q, C_word *r)
 {
-  C_word k = C_block_item(self, 1),
-         numerator = C_block_item(self, 2),
-         denominator = C_unfix(C_block_item(self, 3)),
-         /* return_quotient = C_block_item(self, 4), */
-         return_remainder = C_block_item(self, 5),
-         remainder_negp = C_block_item(self, 6);
-  C_uword *start = C_bignum_digits(quotient),
-          *end = start + C_bignum_size(quotient),
-          remainder;
+  C_word size, quotient, q_negp = C_mk_bool((y & C_INT_SIGN_BIT) ?
+                                            !(C_bignum_negativep(x)) :
+                                            C_bignum_negativep(x)),
+         r_negp = C_mk_bool(C_bignum_negativep(x));
+  C_uword *start, *end, remainder;
   int shift_amount;
 
-  bignum_digits_destructive_copy(quotient, numerator);
+  size = C_fix(C_bignum_size(x));
+  quotient = C_allocate_scratch_bignum(ptr, size, q_negp, C_SCHEME_FALSE);
+  bignum_digits_destructive_copy(quotient, x);
 
-  shift_amount = C_ilen(denominator)-1;
-  if (((C_uword)1 << shift_amount) == denominator) { /* Power of two?  Shift! */
+  start = C_bignum_digits(quotient);
+  end = start + C_bignum_size(quotient);
+  
+  y = (y & C_INT_SIGN_BIT) ? -C_unfix(y) : C_unfix(y);
+
+  shift_amount = C_ilen(y) - 1;
+  if (((C_uword)1 << shift_amount) == y) { /* Power of two?  Shift! */
     remainder = bignum_digits_destructive_shift_right(start,end,shift_amount,0);
     assert(C_ufitsinfixnump(remainder));
   } else {
-    remainder = bignum_digits_destructive_scale_down(start, end, denominator);
+    remainder = bignum_digits_destructive_scale_down(start, end, y);
     assert(C_fitsinbignumhalfdigitp(remainder));
   }
 
-  quotient = C_bignum_simplify(quotient);
-
-  if (C_truep(return_remainder)) {
-    remainder = C_truep(remainder_negp) ? -remainder : remainder;
-    C_values(4, C_SCHEME_UNDEFINED, k, quotient, C_fix(remainder));
-  } else {
-    C_kontinue(k, quotient);
-  }
+  if (r != NULL) *r = C_truep(r_negp) ? C_fix(-remainder) : C_fix(remainder);
+  /* Calling this function only makes sense if quotient is needed */
+  *q = C_bignum_simplify(quotient);
 }
 
 static C_regparm void
