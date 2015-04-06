@@ -7379,8 +7379,7 @@ void C_ccall values_continuation(C_word c, C_word closure, C_word arg0, ...)
 
 static C_word rat_times_integer(C_word **ptr, C_word rat, C_word i)
 {
-  C_word ab[C_SIZEOF_FIX_BIGNUM*5+C_SIZEOF_BIGNUM_WRAPPER*4], *a = ab,
-         num, denom, d_big, gcd, gcd_big, i_big, a_div_g;
+  C_word ab[C_SIZEOF_FIX_BIGNUM * 2], *a = ab, num, denom, gcd, a_div_g;
 
   switch (i) {
   case C_fix(0): return C_fix(0);
@@ -7399,24 +7398,20 @@ static C_word rat_times_integer(C_word **ptr, C_word rat, C_word i)
   /* With   g = gcd(a, d)   and  a = x   [Knuth, 4.5.1] */
   gcd = C_s_a_u_i_integer_gcd(&a, 2, i, denom);
 
-  /* Ensure bignums to simplify logic */
-  gcd_big = (gcd & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, gcd) : gcd;
-  i_big = (i & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, i) : i;
-  d_big = (denom & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, denom) : denom;
-
   /* Calculate a/g  (= i/gcd), which will later be multiplied by y */
-  bignum_divrem(&a, i_big, gcd_big, &a_div_g, NULL);
+  a_div_g = C_s_a_u_i_integer_quotient(&a, 2, i, gcd);
   if (a_div_g == C_fix(0)) {
     clear_buffer_object(ab, gcd);
     return C_fix(0); /* Save some work */
   }
 
   /* Final numerator = a/g * c  (= a_div_g * num) */
-  num = C_s_a_u_i_integer_times(&a, 2, a_div_g, num);
-  num = move_buffer_object(ptr, ab, num);
+  num = C_s_a_u_i_integer_times(ptr, 2, a_div_g, num);
 
-  /* Calculate d/g  (= denom/gcd).  We already know |d| >= |g| */
-  bignum_divrem(&a, d_big, gcd_big, &denom, NULL);
+  /* Final denominator = d/g  (= denom/gcd) */
+  denom = C_s_a_u_i_integer_quotient(ptr, 2, denom, gcd);
+
+  num = move_buffer_object(ptr, ab, num);
   denom = move_buffer_object(ptr, ab, denom);
   
   clear_buffer_object(ab, gcd);
@@ -7426,13 +7421,11 @@ static C_word rat_times_integer(C_word **ptr, C_word rat, C_word i)
   else return C_ratnum(ptr, num, denom);
 }
 
-/* This is truly wretched */
 static C_word rat_times_rat(C_word **ptr, C_word x, C_word y)
 {
-  C_word ab[C_SIZEOF_FIX_BIGNUM*10 + C_SIZEOF_BIGNUM_WRAPPER*8], *a = ab,
+  C_word ab[C_SIZEOF_FIX_BIGNUM * 6], *a = ab,
          num, denom, xnum, xdenom, ynum, ydenom,
-         xnum_big, xdenom_big, ynum_big, ydenom_big,
-         g1, g1_big, g2, g2_big, a_div_g1, b_div_g2, c_div_g2, d_div_g1;
+         g1, g2, a_div_g1, b_div_g2, c_div_g2, d_div_g1;
 
   xnum = C_block_item(x, 1);
   xdenom = C_block_item(x, 2);
@@ -7445,34 +7438,27 @@ static C_word rat_times_rat(C_word **ptr, C_word x, C_word y)
   g1 = C_s_a_u_i_integer_gcd(&a, 2, xnum, ydenom);
   g2 = C_s_a_u_i_integer_gcd(&a, 2, ynum, xdenom);
 
-  /* Ensure bignums to simplify logic */
-  g1_big = (g1 & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, g1) : g1;
-  g2_big = (g2 & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, g2) : g2;
-  xnum_big = (xnum & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, xnum) : xnum;
-  xdenom_big = (xdenom & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, xdenom) : xdenom;
-  ynum_big = (ynum & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, ynum) : ynum;
-  ydenom_big = (ydenom & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, ydenom) : ydenom;
-
   /* Calculate a/g1  (= xnum/g1), which will later be multiplied by c/g2 */
-  bignum_divrem(&a, xnum_big, g1_big, &a_div_g1, NULL);
+  a_div_g1 = C_s_a_u_i_integer_quotient(&a, 2, xnum, g1);
 
   /* Calculate c/g2  (= ynum/g2), which will later be multiplied by a/g1 */
-  bignum_divrem(&a, ynum_big, g2_big, &c_div_g2, NULL);
+  c_div_g2 = C_s_a_u_i_integer_quotient(&a, 2, ynum, g2);
 
   /* Final numerator = a/g1 * c/g2 */
-  num = C_s_a_u_i_integer_times(&a, 2, a_div_g1, c_div_g2);
-  num = move_buffer_object(ptr, ab, num);
+  num = C_s_a_u_i_integer_times(ptr, 2, a_div_g1, c_div_g2);
 
   /* Now, do the same for the denominator.... */
 
   /* Calculate b/g2  (= xdenom/g2), which will later be multiplied by d/g1 */
-  bignum_divrem(&a, xdenom_big, g2_big, &b_div_g2, NULL);
+  b_div_g2 = C_s_a_u_i_integer_quotient(&a, 2, xdenom, g2);
 
   /* Calculate d/g1  (= ydenom/g1), which will later be multiplied by b/g2 */
-  bignum_divrem(&a, ydenom_big, g1_big, &d_div_g1, NULL);
+  d_div_g1 = C_s_a_u_i_integer_quotient(&a, 2, ydenom, g1);
 
   /* Final denominator = b/g2 * d/g1 */
-  denom = C_s_a_u_i_integer_times(&a, 2, b_div_g2, d_div_g1);
+  denom = C_s_a_u_i_integer_times(ptr, 2, b_div_g2, d_div_g1);
+
+  num = move_buffer_object(ptr, ab, num);
   denom = move_buffer_object(ptr, ab, denom);
 
   clear_buffer_object(ab, g1);
@@ -7869,7 +7855,8 @@ static C_word bignum_plus_unsigned(C_word **ptr, C_word x, C_word y, C_word negp
 
 static C_word rat_plusmin_integer(C_word **ptr, C_word rat, C_word i, integer_plusmin_op plusmin_op)
 {
-  C_word ab[C_SIZEOF_FIX_BIGNUM*2], *a = ab, num, denom, tmp, res;
+  C_word ab[C_SIZEOF_FIX_BIGNUM+C_SIZEOF_BIGNUM(2)], *a = ab,
+         num, denom, tmp, res;
 
   if (i == C_fix(0)) return rat;
 
@@ -7887,7 +7874,8 @@ static C_word rat_plusmin_integer(C_word **ptr, C_word rat, C_word i, integer_pl
 /* This is needed only for minus: plus is commutative but minus isn't. */
 static C_word integer_minus_rat(C_word **ptr, C_word i, C_word rat)
 {
-  C_word ab[C_SIZEOF_FIX_BIGNUM*2], *a = ab, num, denom, tmp, res;
+  C_word ab[C_SIZEOF_FIX_BIGNUM+C_SIZEOF_BIGNUM(2)], *a = ab,
+         num, denom, tmp, res;
 
   num = C_block_item(rat, 1);
   denom = C_block_item(rat, 2);
@@ -7903,46 +7891,40 @@ static C_word integer_minus_rat(C_word **ptr, C_word i, C_word rat)
   return C_ratnum(ptr, res, C_block_item(rat, 2));
 }
 
-/* This is completely braindead and ugly */
+/* This is pretty braindead and ugly */
 static C_word rat_plusmin_rat(C_word **ptr, C_word x, C_word y, integer_plusmin_op plusmin_op)
 {
-  C_word ab[C_SIZEOF_FIX_BIGNUM*11 + C_SIZEOF_BIGNUM_WRAPPER*8], *a = ab,
+  C_word ab[C_SIZEOF_FIX_BIGNUM*6 + C_SIZEOF_BIGNUM(2)*2], *a = ab,
          xnum = C_block_item(x, 1), ynum = C_block_item(y, 1),
          xdenom = C_block_item(x, 2), ydenom = C_block_item(y, 2),
          xnorm, ynorm, tmp_r, g1, ydenom_g1, xdenom_g1, norm_sum, g2, len,
-         res_num, res_tmp_denom, res_denom;
+         res_num, res_denom;
 
   /* Knuth, 4.5.1.  Start with g1 = gcd(xdenom, ydenom) */
   g1 = C_s_a_u_i_integer_gcd(&a, 2, xdenom, ydenom);
-  if (g1 & C_FIXNUM_BIT) g1 = C_a_u_i_fix_to_big(&a, g1);
-
-  if (xdenom & C_FIXNUM_BIT) xdenom = C_a_u_i_fix_to_big(&a, xdenom);
-  if (ydenom & C_FIXNUM_BIT) ydenom = C_a_u_i_fix_to_big(&a, ydenom);
 
   /* xnorm = xnum * (ydenom/g1) */
-  bignum_divrem(&a, ydenom, g1, &ydenom_g1, NULL);
+  ydenom_g1 = C_s_a_u_i_integer_quotient(&a, 2, ydenom, g1);
   xnorm = C_s_a_u_i_integer_times(&a, 2, xnum, ydenom_g1);
 
   /* ynorm = ynum * (xdenom/g1) */
-  bignum_divrem(&a, xdenom, g1, &xdenom_g1, NULL);
+  xdenom_g1 = C_s_a_u_i_integer_quotient(&a, 2, xdenom, g1);
   ynorm = C_s_a_u_i_integer_times(&a, 2, ynum, xdenom_g1);
 
   /* norm_sum = xnorm [+-] ynorm */
   norm_sum = plusmin_op(&a, 2, xnorm, ynorm);
 
   /* g2 = gcd(norm_sum, g1) */
-  g2 = C_s_a_u_i_integer_gcd(&a, 2, norm_sum, C_bignum_simplify(g1));
-  if (g2 & C_FIXNUM_BIT) g2 = C_a_u_i_fix_to_big(&a, g2);
-  if (norm_sum & C_FIXNUM_BIT) norm_sum = C_a_u_i_fix_to_big(&a, norm_sum);
+  g2 = C_s_a_u_i_integer_gcd(&a, 2, norm_sum, g1);
 
   /* res_num = norm_sum / g2 */
-  bignum_divrem(&a, norm_sum, g2, &res_num, NULL);
+  res_num = C_s_a_u_i_integer_quotient(ptr, 2, norm_sum, g2);
   if (res_num == C_fix(0)) {
     res_denom = C_fix(0); /* No need to calculate denom: we'll return 0 */
   } else {
     /* res_denom = xdenom_g1 * (ydenom / g2) */
-    bignum_divrem(&a, ydenom, g2, &res_tmp_denom, NULL);
-    res_denom = C_s_a_u_i_integer_times(&a, 2, xdenom_g1, res_tmp_denom);
+    C_word res_tmp_denom = C_s_a_u_i_integer_quotient(&a, 2, ydenom, g2);
+    res_denom = C_s_a_u_i_integer_times(ptr, 2, xdenom_g1, res_tmp_denom);
 
     /* Ensure they're allocated in the correct place */
     res_num = move_buffer_object(ptr, ab, res_num);
@@ -8784,7 +8766,7 @@ C_s_a_u_i_integer_remainder(C_word **ptr, C_word n, C_word x, C_word y)
 {
   C_word ab[C_SIZEOF_FIX_BIGNUM*2], *a = ab, r;
   if (y == C_fix(0)) C_div_by_zero_error("remainder");
-  integer_divrem(ptr, x, y, NULL, &r);
+  integer_divrem(&a, x, y, NULL, &r);
   return move_buffer_object(ptr, ab, r);
 }
 
@@ -8800,7 +8782,7 @@ C_s_a_u_i_integer_quotient(C_word **ptr, C_word n, C_word x, C_word y)
 {
   C_word ab[C_SIZEOF_FIX_BIGNUM*2], *a = ab, q;
   if (y == C_fix(0)) C_div_by_zero_error("quotient");
-  integer_divrem(ptr, x, y, &q, NULL);
+  integer_divrem(&a, x, y, &q, NULL);
   return move_buffer_object(ptr, ab, q);
 }
 
@@ -9851,13 +9833,6 @@ C_regparm C_word C_fcall C_bignum_simplify(C_word big)
     scan--;
   length = scan - start + 1;
 
-  /* Always trim the bignum, even before returning a fixnum.  This
-   * benefits some code that uses bignums everywhere for simplicity.
-   * NOTE: This only works for stack-allocated or tmp bignums, not
-   * for scratchspace bignums!
-   */
-  if (scan < last_digit && length > 0) /* Keep a minimum of 1 word */
-    C_bignum_mutate_size(big, length);
   switch(length) {
   case 0:
     if (C_in_scratchspacep(C_internal_bignum_vector(big)))
@@ -9874,6 +9849,7 @@ C_regparm C_word C_fcall C_bignum_simplify(C_word big)
     }
     /* FALLTHROUGH */
   default:
+    if (scan < last_digit) C_bignum_mutate_size(big, length);
     return big;
   }
 }
@@ -10217,7 +10193,7 @@ C_a_i_exact_to_inexact(C_word **ptr, int c, C_word n)
               * e_w in M2.  TODO: What if b!=2 (ie, flonum-radix isn't 2)?
               */
              e = integer_length_abs(num) - integer_length_abs(denom),
-             ab[C_SIZEOF_FIX_BIGNUM*6], *a = ab, tmp, q, r, len,
+             ab[C_SIZEOF_FIX_BIGNUM*5+C_SIZEOF_FLONUM], *a = ab, tmp, q, r, len,
              shift_amount, negp = C_i_integer_negativep(num);
      C_uword *d;
      double res, fraction;
@@ -10241,51 +10217,27 @@ C_a_i_exact_to_inexact(C_word **ptr, int c, C_word n)
      clear_buffer_object(ab, num); /* "knows" shift creates fresh numbers */
      num = tmp;
 
-     /* Ensure num and denom are bignums, for simplicity */
-     if (num & C_FIXNUM_BIT) num = C_a_u_i_fix_to_big(&a, num);
-     if (denom & C_FIXNUM_BIT) denom = C_a_u_i_fix_to_big(&a, denom);
-     
      /* Now, calculate round(num/denom).  We start with a quotient&remainder */
-     switch(bignum_cmp_unsigned(num, denom)) {
-     case 0:                    /* q = 1, r = 0 */
-       q = allocate_tmp_bignum(C_fix(1), C_SCHEME_FALSE, C_SCHEME_FALSE);
-       *(C_bignum_digits(q)) = 1;
-       r = allocate_tmp_bignum(C_fix(0), C_SCHEME_FALSE, C_SCHEME_FALSE);
-       break;
+     integer_divrem(&a, num, denom, &q, &r);
 
-     case -1:                   /* q = 0, r = num */
-       q = allocate_tmp_bignum(C_fix(0), C_SCHEME_FALSE, C_SCHEME_FALSE);
-       len = C_bignum_size(num) + 1; /* Ensure we can shift left by one */
-       r = allocate_tmp_bignum(C_fix(len), C_SCHEME_FALSE, C_SCHEME_FALSE);
-       bignum_digits_destructive_copy(r, num);
-       d = C_bignum_digits(r);
-       d[len-1] = 0; /* Initialize most significant digit */
-       bignum_digits_destructive_shift_left(d, d + len, 1);
-       break;
-
-     case 1:
-     default:
-       len = C_bignum_size(num) + 1 - C_bignum_size(denom);
-       q = allocate_tmp_bignum(C_fix(len), C_SCHEME_FALSE, C_SCHEME_FALSE);
-       len = C_bignum_size(num) + 1; /* LEN */
-       r = allocate_tmp_bignum(C_fix(len), C_SCHEME_FALSE, C_SCHEME_FALSE);
-       bignum_destructive_divide_full(num, denom, q, r, C_SCHEME_TRUE);
-       d = C_bignum_digits(r);
-       /* There should always be room to shift left by 1 because of LEN */
-       assert(C_ilen(d[len-1]) < C_BIGNUM_DIGIT_LENGTH);
-       bignum_digits_destructive_shift_left(d, d + len, 1);
-       break;
+     /* We multiply the remainder by two to simulate adding 1/2 for
+      * round.  However, we don't do it if num = denom (q=1,r=0) */
+     if (!((q == C_fix(1) || q == C_fix(-1)) && r == C_fix(0))) {
+       tmp = C_s_a_i_arithmetic_shift(&a, 2, r, C_fix(1));
+       clear_buffer_object(ab, r); /* "knows" shift creates fresh numbers */
+       r = tmp;
      }
 
      /* Now q is the quotient, but to "round" result we need to
       * adjust.  This follows the semantics of the "round" procedure:
-      * Round away from zero on positive numbers (this is never
-      * negative).  In case of exactly halfway, we round up if odd.
+      * Round away from zero on positive numbers (ignoring sign).  In
+      * case of exactly halfway, we round up if odd.
       */
-     fraction = C_bignum_to_double(q);
-     switch (basic_cmp(C_bignum_simplify(r), C_bignum_simplify(denom), "", 0)) {
+     tmp = C_a_i_exact_to_inexact(&a, 1, q);
+     fraction = fabs(C_flonum_magnitude(tmp));
+     switch (basic_cmp(r, denom, "", 0)) {
      case C_fix(0):
-       if (*(C_bignum_digits(q)) & 1) fraction += 1.0;
+       if (C_truep(C_i_oddp(q))) fraction += 1.0;
        break;
      case C_fix(1):
        fraction += 1.0;
@@ -10293,10 +10245,10 @@ C_a_i_exact_to_inexact(C_word **ptr, int c, C_word n)
      default: /* if r <= denom, we're done */ break;
      }
 
-     free_tmp_bignum(q);
-     free_tmp_bignum(r);
      clear_buffer_object(ab, num);
      clear_buffer_object(ab, denom);
+     clear_buffer_object(ab, q);
+     clear_buffer_object(ab, r);
 
      shift_amount = nmin(DBL_MANT_DIG-1, e - (DBL_MIN_EXP - DBL_MANT_DIG));
      res = ldexp(fraction, e - shift_amount);
@@ -10373,7 +10325,8 @@ C_inline void lehmer_gcd(C_word **ptr, C_word u, C_word v, C_word *x, C_word *y)
 {
   int i_even = 1, done = 0;
   C_word shift_amount = integer_length_abs(u) - (C_WORD_SIZE - 2),
-         uhat, vhat, qhat, ab[C_SIZEOF_FIX_BIGNUM*6], *a = ab, xnext, ynext,
+         ab[C_SIZEOF_BIGNUM(2)*2+C_SIZEOF_FIX_BIGNUM*2], *a = ab,
+         uhat, vhat, qhat, xnext, ynext,
          xprev = 1, yprev = 0, xcurr = 0, ycurr = 1;
 
   uhat = C_s_a_i_arithmetic_shift(&a, 2, u, C_fix(-shift_amount));
@@ -10428,36 +10381,17 @@ C_inline void lehmer_gcd(C_word **ptr, C_word u, C_word v, C_word *x, C_word *y)
 C_regparm C_word C_fcall
 C_s_a_u_i_integer_gcd(C_word **ptr, C_word n, C_word x, C_word y)
 {
-   C_word ab[2][C_SIZEOF_FIX_BIGNUM*4], *a, res, size, i = 0;
+   C_word ab[2][C_SIZEOF_BIGNUM(2) * 2], *a, newx, newy, size, i = 0;
 
-   /* Ensure loop invariant: abs(x) >= abs(y) */
-   if (x & C_FIXNUM_BIT) {
-     if (y & C_FIXNUM_BIT) {
-       return C_i_fixnum_gcd(x, y);
-     } else { /* x is fixnum, y is bignum: swap */
-       C_word tmp = y;
-       y = x;
-       x = tmp;
-     }
-   } else if (!(y & C_FIXNUM_BIT)) { /* Both are bignums: compare */
-     switch (bignum_cmp_unsigned(x, y)) {
-     case -1:
-     {
-       C_word tmp = y;
-       y = x;
-       x = tmp;
-       break;
-     }
-     case 0: /* gcd(x, x) = abs(x); Try to reuse positive argument, if any */
-       if (!C_bignum_negativep(x)) return x;
-       else return C_s_a_u_i_integer_abs(ptr, 1, y);
-     default: /* Do nothing: x > y */
-       break;
-     }
-   }
+   if (x & C_FIXNUM_BIT && y & C_FIXNUM_BIT) return C_i_fixnum_gcd(x, y);
+
    a = ab[i++];
    x = C_s_a_u_i_integer_abs(&a, 1, x);
    y = C_s_a_u_i_integer_abs(&a, 1, y);
+
+   if (!C_truep(C_i_integer_greaterp(x, y))) {
+     newx = y; y = x; x = newx; /* Ensure loop invariant: abs(x) >= abs(y) */
+   }
 
    while(y != C_fix(0)) {
      assert(integer_length_abs(x) >= integer_length_abs(y));
@@ -10465,57 +10399,35 @@ C_s_a_u_i_integer_gcd(C_word **ptr, C_word n, C_word x, C_word y)
      a = ab[i++];
      if (i == 2) i = 0;
 
-     if (x & C_FIXNUM_BIT) {
-       return C_i_fixnum_gcd(x, y);
-     } else if (y & C_FIXNUM_BIT) {
-       C_word absy = y & C_INT_SIGN_BIT ? -C_unfix(y) : C_unfix(y),
-              next_power = (C_uword)1 << (C_ilen(absy)-1);
+     if (x & C_FIXNUM_BIT) return C_i_fixnum_gcd(x, y);
 
-       if (next_power == absy && C_fitsinfixnump(absy)) {
-         y = C_fix(*(C_bignum_digits(x)) & (next_power - 1));
-         clear_buffer_object(ab[i], x);
-         x = C_fix(absy);
-       } else if (C_fitsinbignumhalfdigitp(absy)) {
-         y = C_fix(bignum_remainder_unsigned_halfdigit(x, absy));
-         clear_buffer_object(ab[i], x);
-         x = C_fix(absy);
-       } else {
-         absy = C_a_u_i_fix_to_big(&a, y);
-         bignum_divrem(&a, x, absy, NULL, &res);
-         clear_buffer_object(ab[i], x);
-         x = y;
-         y = res;
-       }
-     } else {
-       C_word newx, newy;
-
-       /* First, see if we should run a Lehmer step */
-       if ((integer_length_abs(x) - integer_length_abs(y)) < C_HALF_WORD_SIZE) {
-         lehmer_gcd(&a, x, y, &newx, &newy);
-         clear_buffer_object(ab[i], x);
-         clear_buffer_object(ab[i], y);
-         x = newx;
-         y = newy;
-         if (x & C_FIXNUM_BIT) x = C_a_u_i_fix_to_big(&a, x);
-         if (y & C_FIXNUM_BIT) y = C_a_u_i_fix_to_big(&a, y);
-         a = ab[i++]; /* Ensure x and y get cleared correctly below */
-         if (i == 2) i = 0;
-       }
-
-       bignum_divrem(&a, x, y, NULL, &newy);
+     /* First, see if we should run a Lehmer step */
+     if ((integer_length_abs(x) - integer_length_abs(y)) < C_HALF_WORD_SIZE) {
+       lehmer_gcd(&a, x, y, &newx, &newy);
+       newx = move_buffer_object(&a, ab[i], newx);
        newy = move_buffer_object(&a, ab[i], newy);
-       newx = move_buffer_object(&a, ab[i], C_bignum_simplify(y));
        clear_buffer_object(ab[i], x);
+       clear_buffer_object(ab[i], y);
        x = newx;
        y = newy;
+       a = ab[i++]; /* Ensure x and y get cleared correctly below */
+       if (i == 2) i = 0;
      }
+
+     newy = C_s_a_u_i_integer_remainder(&a, 2, x, y);
+     newy = move_buffer_object(&a, ab[i], newy);
+     newx = move_buffer_object(&a, ab[i], y);
+     clear_buffer_object(ab[i], x);
+     clear_buffer_object(ab[i], y);
+     x = newx;
+     y = newy;
    }
 
-   res = C_s_a_u_i_integer_abs(ptr, 1, x);
-   res = move_buffer_object(ptr, ab, res);
+   newx = C_s_a_u_i_integer_abs(ptr, 1, x);
+   newx = move_buffer_object(ptr, ab, newx);
    clear_buffer_object(ab, x);
    clear_buffer_object(ab, y);
-   return res;
+   return newx;
 }
 
 
