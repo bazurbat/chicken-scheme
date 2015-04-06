@@ -1289,8 +1289,6 @@ extern double trunc(double);
 #define C_u_fixnum_difference(n1, n2)   ((n1) - (n2) + C_FIXNUM_BIT)
 #define C_fixnum_difference(n1, n2)     (C_u_fixnum_difference(n1, n2) | C_FIXNUM_BIT)
 #define C_u_fixnum_divide(n1, n2)       (C_fix(C_unfix(n1) / C_unfix(n2)))
-/* XXX TODO OBSOLETE, but still used by C_fixnum_modulo, which is fxmod */
-#define C_u_fixnum_modulo(n1, n2)       (C_fix(C_unfix(n1) % C_unfix(n2)))
 #define C_u_fixnum_and(n1, n2)          ((n1) & (n2))
 #define C_fixnum_and(n1, n2)            (C_u_fixnum_and(n1, n2) | C_FIXNUM_BIT)
 #define C_u_fixnum_or(n1, n2)           ((n1) | (n2))
@@ -1955,10 +1953,8 @@ C_fctexport void C_ccall C_plus(C_word c, C_word closure, C_word k, ...) C_noret
 C_fctexport void C_ccall C_minus(C_word c, C_word closure, C_word k, C_word n1, ...) C_noret;
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
 C_fctexport void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...) C_noret;
-C_fctexport void C_ccall C_basic_quotient(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
-C_fctexport void C_ccall C_basic_remainder(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
-C_fctexport void C_ccall C_basic_divrem(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
-C_fctexport void C_ccall C_u_integer_divrem(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+C_fctexport void C_ccall C_quotient_and_remainder(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
+C_fctexport void C_ccall C_u_integer_quotient_and_remainder(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_u_flo_to_int(C_word c, C_word self, C_word k, C_word x) C_noret;
 C_fctexport void C_ccall C_bitwise_and(C_word c, C_word closure, C_word k, ...) C_noret;
 C_fctexport void C_ccall C_bitwise_ior(C_word c, C_word closure, C_word k, ...) C_noret;
@@ -2177,8 +2173,12 @@ C_fctexport C_word C_fcall C_s_a_i_times(C_word **ptr, C_word n, C_word x, C_wor
 C_fctexport C_word C_fcall C_s_a_u_i_integer_times(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_i_arithmetic_shift(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_u_i_integer_gcd(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
+C_fctexport C_word C_fcall C_s_a_i_quotient(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_u_i_integer_quotient(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
+C_fctexport C_word C_fcall C_s_a_i_remainder(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_u_i_integer_remainder(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
+C_fctexport C_word C_fcall C_s_a_i_modulo(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
+C_fctexport C_word C_fcall C_s_a_u_i_integer_modulo(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_i_bitwise_and(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_i_bitwise_ior(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_i_bitwise_xor(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
@@ -2969,8 +2969,14 @@ C_inline C_word C_fixnum_divide(C_word x, C_word y)
 
 C_inline C_word C_fixnum_modulo(C_word x, C_word y)
 {
-  if(y == C_fix(0)) C_div_by_zero_error("fxmod");
-  return C_u_fixnum_modulo(x, y);
+  if(y == C_fix(0)) {
+    C_div_by_zero_error("fxmod");
+  } else {
+    y = C_unfix(y);
+    x = C_unfix(x) % y;
+    if ((y < 0 && x > 0) || (y > 0 && x < 0)) x += y;
+    return C_fix(x);
+  }
 }
 
 /* XXX: Naming convention is inconsistent!  There's C_fixnum_divide()
@@ -3177,6 +3183,25 @@ C_a_i_flonum_remainder_checked(C_word **ptr, int c, C_word x, C_word y)
   }
 }
 
+C_inline C_word
+C_a_i_flonum_modulo_checked(C_word **ptr, int c, C_word x, C_word y)
+{
+  double dx = C_flonum_magnitude(x),
+         dy = C_flonum_magnitude(y), r;
+
+  if(dy == 0.0) {
+    C_div_by_zero_error("modulo");
+  } else if (!C_truep(C_u_i_fpintegerp(x))) {
+    C_not_an_integer_error("modulo", x);
+  } else if (!C_truep(C_u_i_fpintegerp(y))) {
+    C_not_an_integer_error("modulo", y);
+  } else {
+    modf(dx / dy, &r);
+    r = dx - r * dy;
+    if ((dy < 0 && r > 0) || (dy > 0 && r < 0)) r += y;
+    return C_flonum(ptr, r);
+  }
+}
 
 C_inline C_word C_i_safe_pointerp(C_word x)
 {

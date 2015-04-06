@@ -444,7 +444,8 @@
 	   (##core#inline_allocate ("C_a_i_fixnum_quotient_checked" 6)
 				   #(1) #(2)))
 	  ((integer integer) (integer)
-	   (##core#inline_allocate ("C_s_a_u_i_integer_quotient" 6) #(1) #(2))))
+	   (##core#inline_allocate ("C_s_a_u_i_integer_quotient" 6) #(1) #(2)))
+	  ((* *) (##core#inline_allocate ("C_s_a_i_quotient" 6) #(1) #(2))))
 
 (remainder (#(procedure #:clean #:enforce #:foldable) remainder ((or integer float) (or integer float)) (or integer float))
 	  ((float float) (float)
@@ -454,7 +455,8 @@
 	   ((fixnum fixnum) (fixnum)
 	    (##core#inline "C_i_fixnum_remainder_checked" #(1) #(2)))
 	  ((integer integer) (integer)
-	   (##core#inline_allocate ("C_s_a_u_i_integer_remainder" 6) #(1) #(2))))
+	   (##core#inline_allocate ("C_s_a_u_i_integer_remainder" 6) #(1) #(2)))
+	  ((* *) (##core#inline_allocate ("C_s_a_i_remainder" 6) #(1) #(2))))
 
 (quotient&remainder (#(procedure #:clean #:enforce #:foldable) quotient&remainder ((or integer float) (or integer float)) (or integer float) (or integer float))
 	  ((float float) (float float)
@@ -475,12 +477,21 @@
 		 (##core#inline
 		  "C_i_fixnum_remainder_checked" #(tmp1) #(tmp2))))))
 	   ((integer integer) (integer integer)
-	    ((##core#primitive "C_u_integer_divrem") #(1) #(2))))
+	    ((##core#primitive "C_u_integer_quotient_and_remainder") #(1) #(2))))
 
 ;; TODO: Add nonspecializing type specific entries, to help flow analysis?
 (quotient&modulo (#(procedure #:clean #:enforce #:foldable) quotient&modulo ((or integer float) (or integer float)) (or integer float) (or integer float)))
 
-(modulo (#(procedure #:clean #:enforce #:foldable) modulo ((or integer float) (or integer float)) (or integer float)))
+(modulo (#(procedure #:clean #:enforce #:foldable) modulo ((or integer float) (or integer float)) (or integer float))
+	  ((float float) (float)
+	   (##core#inline_allocate
+	    ("C_a_i_flonum_modulo_checked" 4) #(1) #(2)))
+	   ;;XXX flonum/mixed case
+	   ((fixnum fixnum) (fixnum)
+	    (##core#inline "C_fixnum_modulo" #(1) #(2)))
+	  ((integer integer) (integer)
+	   (##core#inline_allocate ("C_s_a_u_i_integer_modulo" 6) #(1) #(2)))
+	  ((* *) (##core#inline_allocate ("C_s_a_i_modulo" 6) #(1) #(2))))
 
 (gcd (#(procedure #:clean #:enforce #:foldable) gcd (#!rest (or integer float)) (or integer float))
      (() '0)

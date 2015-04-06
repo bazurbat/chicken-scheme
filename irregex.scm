@@ -126,8 +126,7 @@
 			       (##sys#setslot ,%cache ,%index ,%arg)
 			       (##sys#setslot ,%cache (,%fx+ ,%index 1) ,%tmp)
 			       (##sys#setislot 
-				,%cache ,n2
-				(##core#inline "C_u_fixnum_modulo" (,%fx+ ,%index 2) ,n2))
+				,%cache ,n2 (,%fxmod (,%fx+ ,%index 2) ,n2))
 			       ,%tmp)
 		       `(,%if (,%equal? (##sys#slot ,%cache ,(* i 2)) ,%arg)
 			      (##sys#slot ,%cache ,(add1 (* i 2)))

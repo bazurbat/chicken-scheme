@@ -641,6 +641,9 @@
 (rewrite '+ 16 2 "C_s_a_i_plus" #t 36)
 (rewrite '- 16 2 "C_s_a_i_minus" #t 36)
 (rewrite '* 16 2 "C_s_a_i_times" #t 40)
+(rewrite 'quotient 16 2 "C_s_a_i_quotient" #t 6)
+(rewrite 'remainder 16 2 "C_s_a_i_remainder" #t 6)
+(rewrite 'modulo 16 2 "C_s_a_i_modulo" #t 6)
 
 (rewrite '= 17 2 "C_i_nequalp")
 (rewrite '> 17 2 "C_i_greaterp")

@@ -1243,11 +1243,13 @@ EOF
         (exact->inexact result)
         result)))
 
-(define quotient (##core#primitive "C_basic_quotient"))
-(define remainder (##core#primitive "C_basic_remainder"))
-(define quotient&remainder (##core#primitive "C_basic_divrem"))
+(define (quotient a b) (##core#inline_allocate ("C_s_a_i_quotient" 6) a b))
+(define (remainder a b) (##core#inline_allocate ("C_s_a_i_remainder" 6) a b))
+(define (modulo a b) (##core#inline_allocate ("C_s_a_i_modulo" 6) a b))
+(define quotient&remainder (##core#primitive "C_quotient_and_remainder"))
 
-;; Modulo's sign follows y  (whereas remainder's sign follows x)
+;; Modulo's sign follows y (whereas remainder's sign follows x)
+;; Inlining this is not much use: quotient&remainder is primitive
 (define (quotient&modulo x y)
   (receive (div rem) (quotient&remainder x y)
     (if (positive? y)
@@ -1257,13 +1259,6 @@ EOF
         (if (positive? rem)
             (values div (+ rem y))
             (values div rem)))))
-
-;; Modulo's sign follows y  (whereas remainder's sign follows x)
-(define (modulo x y)
-  (let ((r (remainder x y)))
-    (if (positive? y)
-        (if (negative? r) (+ r y) r)
-        (if (positive? r) (+ r y) r))))
 
 (define (even? n) (##core#inline "C_i_evenp" n))
 (define (odd? n) (##core#inline "C_i_oddp" n))
@@ -1403,7 +1398,7 @@ EOF
            ((mask)  (- (arithmetic-shift 1 len/4) 1))
            ((a0)    (bitwise-and a mask))
            ((a1)    (bitwise-and (arithmetic-shift a (fxneg len/4)) mask))
-           ((q u)   ((##core#primitive "C_u_integer_divrem")
+           ((q u)   ((##core#primitive "C_u_integer_quotient_and_remainder")
 		     (+ (arithmetic-shift r^ len/4) a1)
 		     (arithmetic-shift s^ 1)))
            ((s)     (+ (arithmetic-shift s^ len/4) q))
@@ -1586,7 +1581,8 @@ EOF
 (define (##sys#integer->string/recursive n base expected-string-size)
   (let*-values (((halfsize) (fxshr (fx+ expected-string-size 1) 1))
                 ((b^M/2) (##sys#integer-power base halfsize))
-                ((hi lo) ((##core#primitive "C_u_integer_divrem") n b^M/2))
+                ((hi lo) ((##core#primitive "C_u_integer_quotient_and_remainder")
+			  n b^M/2))
                 ((strhi) (number->string hi base))
                 ((strlo) (number->string (abs lo) base)))
     (string-append strhi
