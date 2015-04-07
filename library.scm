@@ -1068,6 +1068,9 @@ EOF
 
 (define signum (##core#primitive "C_signum"))
 
+(define-inline (%flo->int x)
+  (##core#inline_allocate ("C_s_a_u_i_flo_to_int" 6) x))
+
 (define (flonum->ratnum x)
   ;; Try to multiply by two until we reach an integer
   (define (float-fraction-length x)
@@ -1079,7 +1082,7 @@ EOF
     (let* ((q (##sys#integer-power 2 (float-fraction-length y)))
            (scaled-y (* y (exact->inexact q))))
       (if (finite? scaled-y)          ; Shouldn't this always be true?
-          (##sys#/-2 (##sys#/-2 ((##core#primitive "C_u_flo_to_int") scaled-y) q) d)
+          (##sys#/-2 (##sys#/-2 (%flo->int scaled-y) q) d)
           (##sys#error-bad-inexact x 'inexact->exact))))
 
   (if (and (fp< x 1.0)         ; Watch out for denormalized numbers
@@ -1093,10 +1096,8 @@ EOF
 (define (inexact->exact x)
   (cond ((exact? x) x)
         ((##core#inline "C_i_flonump" x)
-         (cond ((##core#inline "C_u_i_fpintegerp" x)
-                ((##core#primitive "C_u_flo_to_int") x))
-               ((##core#inline "C_u_i_flonum_finitep" x)
-                (flonum->ratnum x))
+         (cond ((##core#inline "C_u_i_fpintegerp" x) (%flo->int x))
+               ((##core#inline "C_u_i_flonum_finitep" x) (flonum->ratnum x))
                (else (##sys#error-bad-inexact x 'inexact->exact))))
         ((cplxnum? x)
          (make-complex (inexact->exact (%cplxnum-real x))

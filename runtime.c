@@ -530,7 +530,6 @@ static C_regparm void bignum_divrem(C_word **ptr, C_word x, C_word y, C_word *q,
 static C_word rat_cmp(C_word x, C_word y);
 static void flo_to_int_2(C_word c, C_word self, C_word result) C_noret;
 static void fabs_frexp_to_digits(C_uword exp, double sign, C_uword *start, C_uword *scan);
-static C_word flo_to_tmp_bignum(C_word x);
 static C_word int_flo_cmp(C_word intnum, C_word flonum);
 static C_word flo_int_cmp(C_word flonum, C_word intnum);
 static C_word rat_flo_cmp(C_word ratnum, C_word flonum);
@@ -556,7 +555,6 @@ static C_ccall void call_cc_wrapper(C_word c, C_word closure, C_word k, C_word r
 static C_ccall void call_cc_values_wrapper(C_word c, C_word closure, C_word k, ...) C_noret;
 static void gc_2(void *dummy) C_noret;
 static void allocate_vector_2(void *dummy) C_noret;
-static void allocate_bignum_2(void *dummy) C_noret;
 static C_word allocate_tmp_bignum(C_word size, C_word negp, C_word initp);
 static C_word allocate_scratch_bignum(C_word **ptr, C_word size, C_word negp, C_word initp);
 static void bignum_digits_destructive_negate(C_word bignum);
@@ -8612,7 +8610,7 @@ static C_regparm C_word bignum_remainder_unsigned_halfdigit(C_word x, C_word y)
 void C_ccall
 C_quotient_and_remainder(C_word c, C_word self, C_word k, C_word x, C_word y)
 {
-  C_word ab[C_SIZEOF_FIX_BIGNUM*2+C_SIZEOF_FLONUM*2], *a = ab, q, r,
+  C_word ab[C_SIZEOF_FIX_BIGNUM*4+C_SIZEOF_FLONUM*2], *a = ab, q, r,
          nx = C_SCHEME_FALSE, ny = C_SCHEME_FALSE;
 
   if (c != 4) C_bad_argc_2(c, 4, self);
@@ -8631,12 +8629,10 @@ C_quotient_and_remainder(C_word c, C_word self, C_word k, C_word x, C_word y)
       r = C_flonum(&a, dx - tmp * dy);
       C_values(4, C_SCHEME_UNDEFINED, k, q, r);
     }
-    nx = flo_to_tmp_bignum(x);
-    x = C_bignum_simplify(nx);
+    x = nx = C_s_a_u_i_flo_to_int(&a, 1, x);
   }
   if (C_truep(C_i_flonump(y))) {
-    ny = flo_to_tmp_bignum(y);
-    y = C_bignum_simplify(ny);
+    y = ny = C_s_a_u_i_flo_to_int(&a, 1, y);
   }
 
   integer_divrem(&a, x, y, &q, &r);
@@ -8650,8 +8646,8 @@ C_quotient_and_remainder(C_word c, C_word self, C_word k, C_word x, C_word y)
     q = newq;
     r = newr;
 
-    if (C_truep(nx)) free_tmp_bignum(nx);
-    if (C_truep(ny)) free_tmp_bignum(ny);
+    clear_buffer_object(ab, nx);
+    clear_buffer_object(ab, ny);
   }
   C_values(4, C_SCHEME_UNDEFINED, k, q, r);
 }
@@ -8668,7 +8664,7 @@ C_u_integer_quotient_and_remainder(C_word c, C_word self, C_word k, C_word x, C_
 C_regparm C_word C_fcall
 C_s_a_i_remainder(C_word **ptr, C_word n, C_word x, C_word y)
 {
-  C_word ab[C_SIZEOF_FIX_BIGNUM*2+C_SIZEOF_FLONUM*2], *a = ab, r,
+  C_word ab[C_SIZEOF_FIX_BIGNUM*4+C_SIZEOF_FLONUM*2], *a = ab, r,
          nx = C_SCHEME_FALSE, ny = C_SCHEME_FALSE;
 
   if (!C_truep(C_i_integerp(x)))
@@ -8684,12 +8680,10 @@ C_s_a_i_remainder(C_word **ptr, C_word n, C_word x, C_word y)
       C_modf(dx / dy, &tmp);
       return C_flonum(ptr, dx - tmp * dy);
     }
-    nx = flo_to_tmp_bignum(x);
-    x = C_bignum_simplify(nx);
+    x = nx = C_s_a_u_i_flo_to_int(&a, 1, x);
   }
   if (C_truep(C_i_flonump(y))) {
-    ny = flo_to_tmp_bignum(y);
-    y = C_bignum_simplify(ny);
+    y = ny = C_s_a_u_i_flo_to_int(&a, 1, y);
   }
 
   integer_divrem(&a, x, y, NULL, &r);
@@ -8699,8 +8693,8 @@ C_s_a_i_remainder(C_word **ptr, C_word n, C_word x, C_word y)
     clear_buffer_object(ab, r);
     r = newr;
 
-    if (C_truep(nx)) free_tmp_bignum(nx);
-    if (C_truep(ny)) free_tmp_bignum(ny);
+    clear_buffer_object(ab, nx);
+    clear_buffer_object(ab, ny);
   }
   return move_buffer_object(ptr, ab, r);
 }
@@ -8755,7 +8749,7 @@ C_s_a_u_i_integer_modulo(C_word **ptr, C_word n, C_word x, C_word y)
 C_regparm C_word C_fcall
 C_s_a_i_quotient(C_word **ptr, C_word n, C_word x, C_word y)
 {
-  C_word ab[C_SIZEOF_FIX_BIGNUM*2+C_SIZEOF_FLONUM*2], *a = ab, q,
+  C_word ab[C_SIZEOF_FIX_BIGNUM*4+C_SIZEOF_FLONUM*2], *a = ab, q,
          nx = C_SCHEME_FALSE, ny = C_SCHEME_FALSE;
 
   if (!C_truep(C_i_integerp(x)))
@@ -8771,12 +8765,10 @@ C_s_a_i_quotient(C_word **ptr, C_word n, C_word x, C_word y)
       C_modf(dx / dy, &tmp);
       return C_flonum(ptr, tmp);
     }
-    nx = flo_to_tmp_bignum(x);
-    x = C_bignum_simplify(nx);
+    x = nx = C_s_a_u_i_flo_to_int(&a, 1, x);
   }
   if (C_truep(C_i_flonump(y))) {
-    ny = flo_to_tmp_bignum(y);
-    y = C_bignum_simplify(ny);
+    y = ny = C_s_a_u_i_flo_to_int(&a, 1, y);
   }
 
   integer_divrem(&a, x, y, &q, NULL);
@@ -8786,8 +8778,8 @@ C_s_a_i_quotient(C_word **ptr, C_word n, C_word x, C_word y)
     clear_buffer_object(ab, q);
     q = newq;
 
-    if (C_truep(nx)) free_tmp_bignum(nx);
-    if (C_truep(ny)) free_tmp_bignum(ny);
+    clear_buffer_object(ab, nx);
+    clear_buffer_object(ab, ny);
   }
   return move_buffer_object(ptr, ab, q);
 }
@@ -8969,7 +8961,8 @@ C_regparm double C_fcall C_bignum_to_double(C_word bignum)
   return(C_bignum_negativep(bignum) ? -accumulator : accumulator);
 }
 
-void C_ccall C_u_flo_to_int(C_word c, C_word self, C_word k, C_word x)
+C_regparm C_word C_fcall
+C_s_a_u_i_flo_to_int(C_word **ptr, C_word n, C_word x)
 {
   int exponent;
   double significand = frexp(C_flonum_magnitude(x), &exponent);
@@ -8977,31 +8970,22 @@ void C_ccall C_u_flo_to_int(C_word c, C_word self, C_word k, C_word x)
   assert(C_truep(C_u_i_fpintegerp(x)));
 
   if (exponent <= 0) {
-    C_kontinue(k, C_fix(0));
+    return C_fix(0);
   } else if (exponent == 1) { /* TODO: check significand * 2^exp fits fixnum? */
-    C_kontinue(k, significand < 0.0 ? C_fix(-1) : C_fix(1));
+    return significand < 0.0 ? C_fix(-1) : C_fix(1);
   } else {
-    C_word kab[C_SIZEOF_CLOSURE(4) + C_SIZEOF_FLONUM], *ka = kab, k2, size,
-           negp = C_mk_bool(C_flonum_magnitude(x) < 0.0),
-           sign = C_flonum(&ka, fabs(significand));
-
-    k2 = C_closure(&ka, 4, (C_word)flo_to_int_2, k, C_fix(exponent), sign);
+    C_word size, negp = C_mk_bool(C_flonum_magnitude(x) < 0.0), result;
+    C_uword *start, *end;
 
     size = C_fix(C_BIGNUM_BITS_TO_DIGITS(exponent));
-    C_allocate_bignum(5, (C_word)NULL, k2, size, negp, C_SCHEME_FALSE);
+    result = C_allocate_scratch_bignum(ptr, size, negp, C_SCHEME_FALSE);
+
+    start = C_bignum_digits(result);
+    end = start + C_bignum_size(result);
+
+    fabs_frexp_to_digits(exponent, fabs(significand), start, end);
+    return C_bignum_simplify(result);
   }
-}
-
-static void flo_to_int_2(C_word c, C_word self, C_word result)
-{
-  C_word k = C_block_item(self, 1);
-  C_uword exponent = C_unfix(C_block_item(self, 2)),
-          *start = C_bignum_digits(result),
-          *scan = start + C_bignum_size(result);
-  double significand = C_flonum_magnitude(C_block_item(self, 3));
-
-  fabs_frexp_to_digits(exponent, significand, start, scan);
-  C_kontinue(k, C_bignum_simplify(result));
 }
 
 static void
@@ -9032,47 +9016,13 @@ fabs_frexp_to_digits(C_uword exp, double sign, C_uword *start, C_uword *scan)
     (*--scan) = 0;
 }
 
-static C_word flo_to_tmp_bignum(C_word x)
-{
-  /* TODO: allocating and initialising the bignum is pointless if we
-   * already know the number of limbs in the comparand.  In fact,
-   * bignum_cmp will first check the number of limbs and *then*
-   * compare.  Instead, we can check beforehand and check the limbs
-   * directly against the generated limbs, without allocating at all!
-   */
-  C_word tmp_big, negp = C_mk_bool(C_flonum_magnitude(x) < 0.0);
-  int exponent;
-  double significand = frexp(C_flonum_magnitude(x), &exponent);
-
-  assert(C_u_i_fpintegerp(x));
-
-  if (exponent <= 0) {
-    tmp_big = allocate_tmp_bignum(C_fix(0), C_SCHEME_FALSE, C_SCHEME_FALSE);
-  } else if (exponent == 1) { /* TODO: check significand * 2^exp fits fixnum? */
-    /* Don't use fix_to_big to simplify caller code: it can just free this */
-    tmp_big = allocate_tmp_bignum(C_fix(1), negp, C_SCHEME_FALSE);
-    C_bignum_digits(tmp_big)[0] = 1;
-  } else {
-    C_uword size, *start, *end;
-
-    size = C_fix(C_BIGNUM_BITS_TO_DIGITS(exponent));
-
-    tmp_big = allocate_tmp_bignum(size, negp, C_SCHEME_FALSE);
-    start = C_bignum_digits(tmp_big);
-    end = start + C_bignum_size(tmp_big);
-
-    fabs_frexp_to_digits(exponent, fabs(significand), start, end);
-  }
-  return tmp_big;
-}
-
 /* This is a bit weird: We have to compare flonums as bignums due to
  * precision loss on 64-bit platforms.  For simplicity, we convert
  * fixnums to bignums here.
  */
 static C_word int_flo_cmp(C_word intnum, C_word flonum)
 {
-  C_word ab[C_SIZEOF_FIX_BIGNUM + C_SIZEOF_FLONUM], *a = ab, x, y, res;
+  C_word ab[C_SIZEOF_FIX_BIGNUM + C_SIZEOF_FLONUM], *a = ab, flo_int, res;
   double i, f;
 
   f = C_flonum_magnitude(flonum);
@@ -9084,11 +9034,10 @@ static C_word int_flo_cmp(C_word intnum, C_word flonum)
   } else {
     f = modf(f, &i);
 
-    x = (intnum & C_FIXNUM_BIT) ? C_a_u_i_fix_to_big(&a, intnum) : intnum;
-    y = flo_to_tmp_bignum(C_flonum(&a, i));
+    flo_int = C_s_a_u_i_flo_to_int(&a, 1, C_flonum(&a, i));
 
-    res = C_i_bignum_cmp(x, y);
-    free_tmp_bignum(y);
+    res = basic_cmp(intnum, flo_int, "int_flo_cmp", 0);
+    clear_buffer_object(ab, flo_int);
 
     if (res == C_fix(0)) /* Use fraction to break tie. If f > 0, x is smaller */
       return C_fix((f > 0.0) ? -1 : ((f < 0.0) ? 1 : 0));
@@ -9111,8 +9060,8 @@ static C_word flo_int_cmp(C_word flonum, C_word intnum)
 /* This code is a bit tedious, but it makes inline comparisons possible! */
 static C_word rat_flo_cmp(C_word ratnum, C_word flonum)
 {
-  C_word ab[C_SIZEOF_FIX_BIGNUM * 2 + C_SIZEOF_FLONUM], *a = ab,
-         num, denom, ibig, res, nscaled, iscaled, negp, shift_amount;
+  C_word ab[C_SIZEOF_FIX_BIGNUM * 4 + C_SIZEOF_FLONUM], *a = ab,
+         num, denom, i_int, res, nscaled, iscaled, negp, shift_amount;
   C_uword *scan;
   double i, f;
 
@@ -9145,19 +9094,18 @@ static C_word rat_flo_cmp(C_word ratnum, C_word flonum)
       return C_fix(1);
     } else {
       denom = C_block_item(ratnum, 2);
-      ibig = flo_to_tmp_bignum(C_flonum(&a, i));
+      i_int = C_s_a_u_i_flo_to_int(&a, 1, C_flonum(&a, i));
 
-      /* Now, multiply the scaled flonum by the denominator, so we can
-       * compare it directly to the scaled numerator. */
-      iscaled = C_s_a_u_i_integer_times(&a, 2, C_bignum_simplify(ibig), denom);
-      free_tmp_bignum(ibig);
-
+      /* Multiply the scaled flonum integer by the denominator, and
+       * shift the numerator so that they may be directly compared. */
+      iscaled = C_s_a_u_i_integer_times(&a, 2, i_int, denom);
       nscaled = C_s_a_i_arithmetic_shift(&a, 2, num, C_fix(shift_amount));
 
       /* Finally, we're ready to compare them! */
       res = basic_cmp(nscaled, iscaled, "rat_flo_cmp", 0);
       clear_buffer_object(ab, nscaled);
       clear_buffer_object(ab, iscaled);
+      clear_buffer_object(ab, i_int);
 
       return res;
     }
@@ -9729,72 +9677,6 @@ void allocate_vector_2(void *dummy)
   }
 
   C_kontinue(k, v);
-}
-
-
-void C_ccall
-C_allocate_bignum(C_word c, C_word self, C_word k, C_word size, C_word negp, C_word initp)
-{
-  C_uword bytes = C_wordstobytes(C_SIZEOF_INTERNAL_BIGNUM_VECTOR(C_unfix(size)));
-
-  if(bytes > C_HEADER_SIZE_MASK)
-    barf(C_OUT_OF_RANGE_ERROR, NULL, size, C_fix(C_HEADER_SIZE_MASK));
-
-  bytes += C_wordstobytes(C_SIZEOF_STRUCTURE(2)); /* Add wrapper struct */
-
-  C_save(k);
-  C_save(negp);
-  C_save(initp);
-  C_save(C_fix(bytes));
-
-  if(!C_demand(C_bytestowords(bytes))) {
-    /* Allocate on heap: */
-    if((C_uword)(C_fromspace_limit - C_fromspace_top) < (bytes + stack_size * 2))
-      C_fromspace_top = C_fromspace_limit; /* trigger major GC */
-  
-    C_save(C_SCHEME_TRUE);
-    C_reclaim((void *)allocate_bignum_2, NULL);
-  }
-
-  C_save(C_SCHEME_FALSE);
-  allocate_bignum_2(NULL);
-}
-
-static void allocate_bignum_2(void *dummy)
-{
-  C_word  mode = C_restore;
-  C_uword bytes = C_unfix(C_restore);
-  C_word  initp = C_restore;
-  C_word  negp = C_restore;
-  C_word  k = C_restore;
-  C_word  *v0, *v1, bigvec;
-
-  if(C_truep(mode)) {
-    while((C_uword)(C_fromspace_limit - C_fromspace_top) < (bytes + stack_size)) {
-      if(C_heap_size_is_fixed)
-	panic(C_text("out of memory - cannot allocate bignum (heap resizing disabled)"));
-
-      C_save(k);
-      C_rereclaim2(percentage(heap_size, C_heap_growth) + (C_uword)bytes, 0);
-      k = C_restore;
-    }
-
-    v0 = (C_word *)C_align((C_word)C_fromspace_top);
-    C_fromspace_top += C_align(bytes);
-  }
-  else v0 = C_alloc(C_bytestowords(bytes));
-
-  v1 = v0 + C_SIZEOF_STRUCTURE(2);
-  bigvec = (C_word)v1;
-  bytes -= C_wordstobytes(C_SIZEOF_STRUCTURE(2));
-  bytes -= sizeof(C_word); /* internal bignum vector's header */
-
-  *(v1++) = C_STRING_TYPE | bytes;
-
-  *(v1++) = C_truep(negp);
-  if(C_truep(initp)) C_memset(v1, '\0', bytes - sizeof(C_word));
-
-  C_kontinue(k, C_a_i_record2(&v0, 2, C_bignum_type_tag, bigvec));
 }
 
 static C_word allocate_tmp_bignum(C_word size, C_word negp, C_word initp)

@@ -1955,7 +1955,6 @@ C_fctexport void C_ccall C_minus(C_word c, C_word closure, C_word k, C_word n1, 
 C_fctexport void C_ccall C_divide(C_word c, C_word closure, C_word k, C_word n1, ...) C_noret;
 C_fctexport void C_ccall C_quotient_and_remainder(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
 C_fctexport void C_ccall C_u_integer_quotient_and_remainder(C_word c, C_word self, C_word k, C_word x, C_word y) C_noret;
-C_fctexport void C_ccall C_u_flo_to_int(C_word c, C_word self, C_word k, C_word x) C_noret;
 C_fctexport void C_ccall C_bitwise_and(C_word c, C_word closure, C_word k, ...) C_noret;
 C_fctexport void C_ccall C_bitwise_ior(C_word c, C_word closure, C_word k, ...) C_noret;
 C_fctexport void C_ccall C_bitwise_xor(C_word c, C_word closure, C_word k, ...) C_noret;
@@ -1968,7 +1967,6 @@ C_fctexport void C_ccall C_less_or_equal_p(C_word c, C_word closure, C_word k, .
 C_fctexport void C_ccall C_gc(C_word c, C_word closure, C_word k, ...) C_noret;
 C_fctexport void C_ccall C_open_file_port(C_word c, C_word closure, C_word k, C_word port, C_word channel, C_word mode) C_noret;
 C_fctexport void C_ccall C_allocate_vector(C_word c, C_word closure, C_word k, C_word size, C_word type, C_word init, C_word align8) C_noret;
-C_fctexport void C_ccall C_allocate_bignum(C_word c, C_word self, C_word k, C_word size, C_word negp, C_word initp) C_noret;
 C_fctexport void C_ccall C_string_to_symbol(C_word c, C_word closure, C_word k, C_word string) C_noret;
 C_fctexport void C_ccall C_build_symbol(C_word c, C_word closure, C_word k, C_word string) C_noret;
 /* XXX TODO OBSOLETE: This can be removed after recompiling c-platform.scm */
@@ -2184,6 +2182,8 @@ C_fctexport C_word C_fcall C_s_a_i_bitwise_ior(C_word **ptr, C_word n, C_word x,
 C_fctexport C_word C_fcall C_s_a_i_bitwise_xor(C_word **ptr, C_word n, C_word x, C_word y) C_regparm;
 C_fctexport C_word C_fcall C_s_a_i_bitwise_not(C_word **ptr, C_word n, C_word x) C_regparm;
 C_fctexport C_word C_fcall C_s_a_i_digits_to_integer(C_word **ptr, C_word n, C_word str, C_word start, C_word end, C_word radix, C_word negp) C_regparm;
+C_fctexport C_word C_fcall C_s_a_u_i_flo_to_int(C_word **ptr, C_word n, C_word x) C_regparm;
+
 
 C_fctexport C_word C_fcall C_i_foreign_char_argumentp(C_word x) C_regparm;
 C_fctexport C_word C_fcall C_i_foreign_fixnum_argumentp(C_word x) C_regparm;
