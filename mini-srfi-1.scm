@@ -219,7 +219,7 @@
 
 (define (iota n) (list-tabulate n (lambda (i) i)))
 
-(define (make-list n x)
+(define (make-list n #!optional x)
   (list-tabulate n (lambda _ x)))
 
 (define (posq x lst)
