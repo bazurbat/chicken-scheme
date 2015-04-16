@@ -1463,7 +1463,7 @@
 	(set! hoistable '())
 	(set! allocated 0)
 	(and (rec n #f #f env)
-	     (lset=/eq? closures (delete kvar inner-ks)))))
+	     (lset=/eq? closures (delete kvar inner-ks eq?)))))
 
     (define (transform n fnvar ks hoistable destn allocated)
       (if (pair? hoistable)

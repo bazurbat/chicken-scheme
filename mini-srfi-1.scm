@@ -100,7 +100,7 @@
 	'()
 	(append (car lst) (loop (cdr lst))))))
 
-(define (delete x lst #!optional (test eq?))
+(define (delete x lst #!optional (test equal?))
   (let loop ((lst lst))
     (cond ((null? lst) lst)
 	  ((test x (car lst)) (cdr lst))
