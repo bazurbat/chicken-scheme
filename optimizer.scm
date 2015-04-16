@@ -214,7 +214,7 @@
 			     (cond ((not ok)
 				    (unless odirty (set! dirty #f))
 				    (set! broken-constant-nodes
-				      (lset-adjoin broken-constant-nodes n1))
+				      (lset-adjoin/eq? broken-constant-nodes n1))
 				    n1)
 				   (else
 				    (touch)
@@ -885,7 +885,7 @@
 	       (alist-cons 
 		id
 		(filter-map
-		 (lambda (g2) (and (not (eq? g2 g)) (lset<= (cdr g2) deps) (car g2))) 
+		 (lambda (g2) (and (not (eq? g2 g)) (lset<=/eq? (cdr g2) deps) (car g2)))
 		 groups)
 		cgraph) ) ) )
 	 groups) 
@@ -1463,7 +1463,7 @@
 	(set! hoistable '())
 	(set! allocated 0)
 	(and (rec n #f #f env)
-	     (lset= closures (delete kvar inner-ks)) ) ) )
+	     (lset=/eq? closures (delete kvar inner-ks)))))
 
     (define (transform n fnvar ks hoistable destn allocated)
       (if (pair? hoistable)

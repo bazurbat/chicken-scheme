@@ -656,7 +656,7 @@
 			   (apply ##sys#require ids)
 			   (##sys#hash-table-update!
 			    file-requirements 'dynamic/syntax
-			    (cut lset-union <> ids)
+			    (cut lset-union/eq? <> ids)
 			    (lambda () ids) )
 			   '(##core#undefined) ) )
 
@@ -1415,7 +1415,7 @@
 	  (when (pair? us)
 	    (##sys#hash-table-update!
 	     file-requirements 'static
-	     (cut lset-union us <>)
+	     (cut lset-union/eq? us <>)
 	     (lambda () us))
 	    (let ((units (map (lambda (u) (string->c-identifier (stringify u))) us)))
 	      (set! used-units (append used-units units)) ) ) ) )
@@ -1440,8 +1440,8 @@
 	       (set! extended-bindings default-extended-bindings) ]
 	      [else
 	       (let ([syms (stripa (cdr spec))])
-		 (set! standard-bindings (lset-intersection syms default-standard-bindings))
-		 (set! extended-bindings (lset-intersection syms default-extended-bindings)) ) ] ) )
+		 (set! standard-bindings (lset-intersection/eq? syms default-standard-bindings))
+		 (set! extended-bindings (lset-intersection/eq? syms default-extended-bindings)))]))
        ((number-type)
 	(check-decl spec 1 1)
 	(set! number-type (strip (cadr spec))))
@@ -1491,14 +1491,14 @@
 	   (if (null? (cddr spec))
 	       (set! standard-bindings '())
 	       (set! standard-bindings
-		 (lset-difference default-standard-bindings
-				  (stripa (cddr spec))))) ]
+		 (lset-difference/eq? default-standard-bindings
+				      (stripa (cddr spec)))))]
 	  [(extended-bindings)
 	   (if (null? (cddr spec))
 	       (set! extended-bindings '())
 	       (set! extended-bindings
-		 (lset-difference default-extended-bindings
-				  (stripa (cddr spec))) )) ]
+		 (lset-difference/eq? default-extended-bindings
+				      (stripa (cddr spec)))))]
 	  [(inline)
 	   (if (null? (cddr spec))
 	       (set! inline-locally #f)
@@ -1511,8 +1511,8 @@
 		  (set! extended-bindings '()) ]
 		 [else
 		  (let ([syms (stripa (cddr spec))])
-		    (set! standard-bindings (lset-difference default-standard-bindings syms))
-		    (set! extended-bindings (lset-difference default-extended-bindings syms)) ) ] ) ]
+		    (set! standard-bindings (lset-difference/eq? default-standard-bindings syms))
+		    (set! extended-bindings (lset-difference/eq? default-extended-bindings syms)))])]
 	  ((inline-global)
 	   (set! enable-inline-files #t)
 	   (when (pair? (cddr spec))
@@ -2296,12 +2296,12 @@
     (define (test sym item) (db-get db sym item))
 
     (define (register-customizable! var id)
-      (set! customizable (lset-adjoin customizable var))
+      (set! customizable (lset-adjoin/eq? customizable var))
       (db-put! db id 'customizable #t) )
 
     (define (register-direct-call! id)
       (set! direct-calls (add1 direct-calls))
-      (set! direct-call-ids (lset-adjoin direct-call-ids id)) )
+      (set! direct-call-ids (lset-adjoin/eq? direct-call-ids id)))
 
     ;; Gather free-variable information:
     ;; (and: - register direct calls
@@ -2387,7 +2387,7 @@
 		  (let ((c (delete-duplicates (gather (first subs) id vars) eq?)))
 		    (db-put! db id 'closure-size (length c))
 		    (db-put! db id 'captured-variables c)
-		    (lset-difference c locals vars)))))))
+		    (lset-difference/eq? c locals vars)))))))
 
 	  (else (concatenate (map (lambda (n) (gather n here locals)) subs)) ) ) ))
 
@@ -2784,7 +2784,7 @@
 
 	  ((##core#call)
 	   (let ((len (length (cdr subs))))
-	     (set! signatures (lset-adjoin signatures len))
+	     (set! signatures (lset-adjoin/eq? signatures len))
 	     (when (and (>= (length params) 3) (eq? here (third params)))
 	       (set! looping (add1 looping)) )
 	     (make-node class params (mapwalk subs e e-count here boxes)) ) )

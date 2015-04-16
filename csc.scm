@@ -779,7 +779,7 @@ EOF
 			      (set! link-options (append link-options (list arg))) ]
 			     [(> (string-length arg) 2)
  			      (let ([opts (cdr (string->list arg))])
- 				(if (null? (lset-difference opts short-options))
+				(if (null? (lset-difference/eq? opts short-options))
  				    (set! rest
  				      (append (map (lambda (o) (string-append "-" (string o))) opts) rest) )
  				    (stop "invalid option `~A'" arg) ) ) ]

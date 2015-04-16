@@ -1266,8 +1266,8 @@
 				      (merge-result-types rtypes1 rtypes2))))
 				 (car ts)
 				 (cdr ts))))
-			   ((lset= '(true false) ts) 'boolean)
-			   ((lset= '(fixnum float) ts) 'number)
+			   ((lset=/eq? '(true false) ts) 'boolean)
+			   ((lset=/eq? '(fixnum float) ts) 'number)
 			   (else
 			    (let* ((ts (append-map
 					(lambda (t)
@@ -1327,7 +1327,7 @@
 		  (else t)))
 	       ((assq t typeenv) =>
 		(lambda (e)
-		  (set! used (lset-adjoin used t))
+		  (set! used (lset-adjoin/eq? used t))
 		  (cdr e)))
 	       (else t)))))
     (let ((t2 (simplify t)))

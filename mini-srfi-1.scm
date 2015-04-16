@@ -28,14 +28,14 @@
 (declare 
   (unused take span drop partition split-at append-map every any cons* concatenate delete
 	  first second third fourth alist-cons delete-duplicates fifth
-	  filter filter-map unzip1 last list-index lset-adjoin lset-difference
-	  lset-union lset-intersection list-tabulate lset<= lset= length+ find find-tail
-	  iota make-list posq posv)
+	  filter filter-map unzip1 last list-index lset-adjoin/eq? lset-difference/eq?
+	  lset-union/eq? lset-intersection/eq? list-tabulate lset<=/eq? lset=/eq? length+
+	  find find-tail iota make-list posq posv)
   (hide take span drop partition split-at append-map every any cons* concatenate delete
 	first second third fourth alist-cons delete-duplicates fifth
-	filter filter-map unzip1 last list-index lset-adjoin lset-difference
-	lset-union lset-intersection list-tabulate lset<= lset= length+ find find-tail
-	iota make-list posq posv))
+	filter filter-map unzip1 last list-index lset-adjoin/eq? lset-difference/eq?
+	lset-union/eq? lset-intersection/eq? list-tabulate lset<=/eq? lset=/eq? length+
+	find find-tail iota make-list posq posv))
 
 
 (define (partition pred lst)
@@ -149,20 +149,20 @@
 	  ((pred (car lst)) i)
 	  (else (loop (fx+ i 1) (cdr lst))))))
 
-(define (lset-adjoin lst . vals)
+(define (lset-adjoin/eq? lst . vals)
   (let loop ((vals vals) (lst lst))
     (cond ((null? vals) lst)
 	  ((memq (car vals) lst) (loop (cdr vals) lst))
 	  (else (loop (cdr vals) (cons (car vals) lst))))))
 
-(define (lset-difference ls . lss)
+(define (lset-difference/eq? ls . lss)
   (foldl
    (lambda (ls lst)
      (filter (lambda (x) (not (memq x lst))) ls))
    ls
    lss))
 
-(define (lset-union ls . lss)
+(define (lset-union/eq? ls . lss)
   (foldl
    (lambda (ls lst)
      (foldl
@@ -173,7 +173,7 @@
       ls lst))
    '() lss))
 
-(define (lset-intersection ls1 . lss)
+(define (lset-intersection/eq? ls1 . lss)
   (filter (lambda (x)
 	    (every (lambda (lis) (memq x lis)) lss))
 	  ls1))
@@ -184,10 +184,10 @@
 	'()
 	(cons (proc i) (loop (fx+ i 1))))))
 
-(define (lset<= s1 s2)
+(define (lset<=/eq? s1 s2)
   (every (lambda (s) (memq s s2)) s1))
 
-(define (lset= s1 s2)+
+(define (lset=/eq? s1 s2)
   (and (eq? (length s1) (length s2))
        (every (lambda (s) (memq s s2)) s1)))
 

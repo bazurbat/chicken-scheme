@@ -553,12 +553,12 @@
 		  [direct (lambda-literal-direct ll)] 
 		  [allocated (lambda-literal-allocated ll)] )
 	     (when (>= n small-parameter-limit)
-	       (set! large-signatures (lset-adjoin large-signatures (add1 n))) )
+	       (set! large-signatures (lset-adjoin/eq? large-signatures (add1 n))))
 	     (gen #t)
 	     (for-each
 	      (lambda (s) 
 		(when (>= s small-parameter-limit)
-		  (set! large-signatures (lset-adjoin large-signatures (add1 s))) ) )
+		  (set! large-signatures (lset-adjoin/eq? large-signatures (add1 s)))))
 	      (lambda-literal-callee-signatures ll) )
 	     (cond [(not (eq? 'toplevel id))
 		    (gen "C_noret_decl(" id ")" #t)
@@ -654,8 +654,8 @@
 		      (gen ");}") ]
 		     [(or rest (> (lambda-literal-allocated ll) 0) (lambda-literal-external ll))
 		      (if (and rest (not (eq? rest-mode 'none)))
-			  (set! nsr (lset-adjoin nsr argc)) 
-			  (set! ns (lset-adjoin ns argc)) ) ] ) ) ) )
+			  (set! nsr (lset-adjoin/eq? nsr argc))
+			  (set! ns (lset-adjoin/eq? ns argc)))]))))
 	 lambda-table)
 	(for-each
 	 (lambda (n)
